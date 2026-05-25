@@ -13,6 +13,7 @@ class UProjectileMovementComponent;
 class UProceduralMeshComponent;
 class UStaticMesh;
 class USkeletalMeshComponent;
+class UParticleSystemComponent;
 
 UCLASS(Placeable, DisplayName = "Empty Actor", Category = "Basic")
 class ASceneActor : public AActor
@@ -87,6 +88,21 @@ public:
 	ASubUVActor() = default;
 
 	void InitDefaultComponents();
+};
+
+UCLASS(Placeable, DisplayName = "Particle System", Category = "Basic")
+class AParticleSystemActor : public AActor
+{
+public:
+	GENERATED_BODY(AParticleSystemActor, AActor)
+	AParticleSystemActor() = default;
+
+	void InitDefaultComponents() override;
+	void PostDuplicate(UObject* Original) override;
+	UParticleSystemComponent* GetParticleSystemComponent() const { return ParticleSystemComp; }
+
+private:
+	UParticleSystemComponent* ParticleSystemComp = nullptr;
 };
 
 UCLASS(Placeable, DisplayName = "Text Render", Category = "Basic")

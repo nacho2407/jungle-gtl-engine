@@ -8,6 +8,7 @@
 #include "Component/SkeletalMeshComponent.h"
 #include "Component/TextRenderComponent.h"
 #include "Component/HeightFogComponent.h"
+#include "Particle/ParticleSystemComponent.h"
 
 #include "Component/PostProcess/Light/AmbientLightComponent.h"
 #include "Component/PostProcess/Light/DirectionalLightComponent.h"
@@ -140,6 +141,24 @@ void ASubUVActor::InitDefaultComponents()
 	SubUV->SetSubUV(FName("Explosion"));
 	SubUV->SetSpriteSize(2.0f, 2.0f);
 	SubUV->SetFrameRate(30.f);
+}
+
+void AParticleSystemActor::InitDefaultComponents()
+{
+	SetTickInEditor(true);
+
+	ParticleSystemComp = AddComponent<UParticleSystemComponent>();
+	SetRootComponent(ParticleSystemComp);
+}
+
+void AParticleSystemActor::PostDuplicate(UObject* Original)
+{
+	AActor::PostDuplicate(Original);
+	ParticleSystemComp = Cast<UParticleSystemComponent>(GetRootComponent());
+	if (!ParticleSystemComp)
+	{
+		ParticleSystemComp = FindComponent<UParticleSystemComponent>();
+	}
 }
 
 void ATextRenderActor::InitDefaultComponents()

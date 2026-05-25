@@ -115,6 +115,7 @@ void FParticleEditorViewer::Tick(float DeltaTime)
 
 	if (PreviewComponent && UObjectManager::Get().ContainsObject(PreviewComponent) && IsPlaying() && IsRealtime())
 	{
+		SimulationTime += std::max(0.0f, DeltaTime);
 		PreviewComponent->TickComponent(DeltaTime);
 	}
 }
@@ -306,6 +307,8 @@ void FParticleEditorViewer::CacheAllEmitters()
 // 프리뷰 컴포넌트의 템플릿을 현재 Particle System으로 갱신 → 시뮬레이션 재시작
 void FParticleEditorViewer::RestartSimulation()
 {
+	SimulationTime = 0.0f;
+
 	if (!PreviewComponent || !UObjectManager::Get().ContainsObject(PreviewComponent) || !ParticleSystem)
 	{
 		PreviewComponent = nullptr;
@@ -1172,7 +1175,7 @@ bool FParticleEditorViewer::CreatePreviewComponent()
 		return false;
 	}
 
-	PreviewActor = World->SpawnActor<AActor>();
+	PreviewActor = World->SpawnActor<AParticleSystemActor>();
 	if (!PreviewActor)
 	{
 		return false;
@@ -1182,15 +1185,15 @@ bool FParticleEditorViewer::CreatePreviewComponent()
 
 	PreviewActor->SetFName(FName("ParticleViewerActor"));
 	PreviewActor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+	PreviewActor->InitDefaultComponents();
 
-	PreviewComponent = PreviewActor->AddComponent<UParticleSystemComponent>();
+	PreviewComponent = PreviewActor->GetParticleSystemComponent();
 	if (!PreviewComponent)
 	{
 		ClearParticlePreview();
 		return false;
 	}
 
-	PreviewActor->SetRootComponent(PreviewComponent);
 	PreviewComponent->SetTemplate(ParticleSystem);
 	World->SyncSpatialIndex();
 	return true;

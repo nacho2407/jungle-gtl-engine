@@ -5,7 +5,8 @@
             "Id" : 1,
             "ObjectName" : "UParticleSystem_0",
             "Properties" : {
-              "Emitters" : [2, 3, 4]
+              "Emitters" : [2, 3, 4],
+              "LODDistances" : [0.000000]
             },
             "Type" : "UParticleSystem"
           }, {
@@ -60,10 +61,10 @@
             "ObjectName" : "UParticleLODLevel_2",
             "Properties" : {
               "Level" : 0,
-              "Modules" : [],
+              "Modules" : [18, 19, 20],
               "RequiredModule" : 16,
               "SpawnModule" : 17,
-              "TypeDataModule" : 18,
+              "TypeDataModule" : 21,
               "bEnabled" : true,
               "bSolo" : false
             },
@@ -253,7 +254,7 @@
             "Type" : "UParticleModuleRequired"
           }, {
             "Id" : 17,
-            "ObjectName" : "UParticleModuleSpawn_2",
+            "ObjectName" : "UParticleModuleSpawn_7",
             "Properties" : {
               "BurstCount" : 0,
               "BurstTime" : 0.000000,
@@ -266,6 +267,69 @@
             "Type" : "UParticleModuleSpawn"
           }, {
             "Id" : 18,
+            "ObjectName" : "UParticleModuleColor_1",
+            "Properties" : {
+              "StartColor" : {
+                "Constant" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "CurveA" : "",
+                "CurveB" : "",
+                "CurveG" : "",
+                "CurveR" : "",
+                "Max" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "MaxCurveA" : "",
+                "MaxCurveB" : "",
+                "MaxCurveG" : "",
+                "MaxCurveR" : "",
+                "Min" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "MinCurveA" : "",
+                "MinCurveB" : "",
+                "MinCurveG" : "",
+                "MinCurveR" : "",
+                "Mode" : 0
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleColor"
+          }, {
+            "Id" : 19,
+            "ObjectName" : "UParticleModuleLifetime_1",
+            "Properties" : {
+              "Lifetime" : {
+                "Constant" : 1.000000,
+                "Curve" : "",
+                "Max" : 1.000000,
+                "MaxCurve" : "",
+                "Min" : 1.000000,
+                "MinCurve" : "",
+                "Mode" : 0
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleLifetime"
+          }, {
+            "Id" : 20,
+            "ObjectName" : "UParticleModuleCollision_0",
+            "Properties" : {
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleCollision"
+          }, {
+            "Id" : 21,
             "ObjectName" : "UParticleModuleTypeDataBase_2",
             "Properties" : {
               "bEnabled" : true

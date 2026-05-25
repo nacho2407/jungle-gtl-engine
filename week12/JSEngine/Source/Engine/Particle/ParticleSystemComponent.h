@@ -36,14 +36,13 @@ public:
 	UParticleSystemComponent();
 	~UParticleSystemComponent() override;
 
-	UPROPERTY(DisplayName = "Template", ReferenceType = Asset)
-	TSoftObjectPtr<UParticleSystem> Template;
-
 	void SetTemplate(UParticleSystem* InTemplate);
 	void SetTemplateAsset(const TSoftObjectPtr<UParticleSystem>& InTemplate);
 	void SetTemplatePath(const FString& InPath);
+
 	UParticleSystem* GetTemplate();
 	const UParticleSystem* GetTemplate() const;
+
 	void SetEventManager(AParticleEventManager* InEventManager) { EventManager = InEventManager; }
 	UWorld* GetWorld() const;
 
@@ -99,4 +98,7 @@ private:
 	// CPP참고 -  EmitterInstance에게 넘겨주는 Component 정보
 	class FInstanceOwner;
 	std::unique_ptr<FInstanceOwner> InstanceOwner;
+
+	UPROPERTY(DisplayName = "Template", ReferenceType = Asset)
+	TSoftObjectPtr<UParticleSystem> Template;
 };

@@ -7,6 +7,7 @@
 #include "Particle/ParticleSystemComponent.h"
 
 class AActor;
+class AParticleSystemActor;
 class UParticleSystem;
 class UParticleSystemComponent;
 class UParticleEmitter;
@@ -80,6 +81,7 @@ public:
 	void RestartLevel();
 	void SetPlaying(bool bInPlaying) { bPlaying = bInPlaying; }
 	bool IsPlaying() const { return bPlaying; }
+	float GetSimulationTime() const { return SimulationTime; }
 
 	void SetLooping(bool bInLooping) { bLooping = bInLooping; }
 	bool IsLooping() const { return bLooping; }
@@ -159,9 +161,9 @@ private:
 	UParticleSystem* ParticleSystem = nullptr;
 
 	UParticleSystemComponent* PreviewComponent = nullptr;
-	AActor* PreviewActor = nullptr;
 	UWorld* PreviewWorld = nullptr;
-	// AParticleSystemActor* PreviewActor = nullptr;
+	AParticleSystemActor* PreviewActor = nullptr;
+
 	bool bOwnsParticleSystem = false; // 뷰어가 생성한 ParticleSystem인지, Asset을 참조한 것인지 구분
 
 	// Selection State
@@ -174,6 +176,7 @@ private:
 	bool bPlaying = true;
 	bool bLooping = true;
 	bool bDirty = false;
+	float SimulationTime = 0.0f;
 
 	// Undo & Redo
 	bool bRestoringParticleSnapshot = false;

@@ -1,7 +1,9 @@
-#include "ParticleEditorViewerWidget.h"
+﻿#include "ParticleEditorViewerWidget.h"
 
 #include "Core/Reflection/ReflectionRegistry.h"
 #include "Core/Paths.h"
+#include "Core/ResourceManager.h"
+#include "Editor/Asset/EditorAssetService.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/UI/EditorMainPanel.h"
 #include "Editor/UI/EditorMainPanelViewportToolbarHelpers.h"
@@ -10,6 +12,7 @@
 #include "Editor/Viewport/FSceneViewport.h"
 #include "Engine/Core/EditorResourcePaths.h"
 #include "Object/Class.h"
+#include "Object/Property.h"
 #include "Particle/ParticleAsset.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -60,6 +63,20 @@ namespace
 	void DrawParticlePanelTitle(const char* Title, const char* Subtitle);
 	void DrawParticleDetailsSection(const char* Title);
 	void DrawParticleDetailsText(const char* Label, const char* Value);
+
+	// Property Helpers
+	const char* GetPropertyDisplayName(const FProperty& Property);
+	FString MakeParticlePropertyWidgetLabel(const FProperty& Property);
+	bool IsParticleGraphReferenceProperty(const FProperty& Property);
+	void CollectParticleEditableProperties(UObject* Object, TArray<const FProperty*>& OutProperties);
+	bool RenderParticleReflectionProperties(FParticleEditorViewer* Viewer, UObject* Object, UEditorEngine* EditorEngine, bool& bUndoCaptured);
+	bool RenderParticlePropertyWidget(FParticleEditorViewer* Viewer, UObject* Object, const FProperty& Property, UEditorEngine* EditorEngine, bool& bUndoCaptured);
+	bool RenderParticlePropertyValueWidget(FParticleEditorViewer* Viewer, UObject* Object, const FProperty& Property, void* ValuePtr, const char* Label, UEditorEngine* EditorEngine, bool& bUndoCaptured);
+	bool RenderParticleObjectPtrWidget(const FProperty& Property, void* ValuePtr, const char* Label, UEditorEngine* EditorEngine);
+	bool RenderParticleSoftObjectPtrWidget(const FProperty& Property, void* ValuePtr, const char* Label, UEditorEngine* EditorEngine);
+	bool RenderParticleArrayPropertyWidget(FParticleEditorViewer* Viewer, UObject* Object, const FProperty& Property, void* ValuePtr, UEditorEngine* EditorEngine, bool& bUndoCaptured);
+	bool RenderParticleStructPropertyWidget(FParticleEditorViewer* Viewer, UObject* Object, const FProperty& Property, void* ValuePtr, const char* Label, UEditorEngine* EditorEngine, bool& bUndoCaptured);
+	
 	UParticleLODLevel* ResolveParticleLOD(FParticleEditorViewer* Viewer, int32 EmitterIndex, int32 LODIndex);
 	UParticleModule* ResolveParticleModule(FParticleEditorViewer* Viewer, EParticleEditorSelectionType Type, int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex);
 	void SelectParticleModuleTarget(FParticleEditorViewer* Viewer, EParticleEditorSelectionType Type, int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex);
@@ -927,33 +944,8 @@ void FParticleEditorViewerWidget::RenderDetailsPanel(FParticleEditorViewer* View
 		ImGui::Text("Emitter Count");
 		ImGui::SameLine(150.0f);
 		ImGui::Text("%d", ParticleSystem ? static_cast<int32>(ParticleSystem->Emitters.size()) : 0);
-		return;
 	}
-
-	if (UParticleLODLevel* LODLevel = Cast<UParticleLODLevel>(SelectedObject))
-	{
-		DrawParticleDetailsSection("LOD");
-		ImGui::PushItemWidth(std::max(120.0f, ImGui::GetContentRegionAvail().x * 0.5f));
-		int32 Level = LODLevel->Level;
-		if (ImGui::InputInt("Level", &Level) && Level != LODLevel->Level)
-		{
-			Viewer->CaptureUndoSnapshot("EditLODLevel");
-			LODLevel->Level = Level;
-			Viewer->MarkDirty();
-		}
-		bool bEnabled = LODLevel->bEnabled;
-		if (ImGui::Checkbox("Enabled", &bEnabled) && bEnabled != LODLevel->bEnabled)
-		{
-			Viewer->CaptureUndoSnapshot("EditLODEnabled");
-			LODLevel->bEnabled = bEnabled;
-			Viewer->MarkDirty();
-			Viewer->RestartSimulation();
-		}
-		ImGui::PopItemWidth();
-		return;
-	}
-
-	if (UParticleEmitter* Emitter = Cast<UParticleEmitter>(SelectedObject))
+	else if (UParticleEmitter* Emitter = Cast<UParticleEmitter>(SelectedObject))
 	{
 		DrawParticleDetailsSection("Emitter");
 		ImGui::Text("LOD Count");
@@ -962,76 +954,15 @@ void FParticleEditorViewerWidget::RenderDetailsPanel(FParticleEditorViewer* View
 		ImGui::Text("Runtime Caches");
 		ImGui::SameLine(150.0f);
 		ImGui::Text("%d", static_cast<int32>(Emitter->LODLevelRuntimeCaches.size()));
-		return;
-	}
-
-	if (UParticleModuleRequired* Required = Cast<UParticleModuleRequired>(SelectedObject))
-	{
-		DrawParticleDetailsSection(GetObjectLabel(Required));
-		ImGui::PushItemWidth(std::max(120.0f, ImGui::GetContentRegionAvail().x * 0.5f));
-		int32 MaxParticles = Required->MaxParticles;
-		if (ImGui::InputInt("Max Particles", &MaxParticles) && MaxParticles != Required->MaxParticles)
-		{
-			Viewer->CaptureUndoSnapshot("EditMaxParticles");
-			Required->MaxParticles = std::max(1, MaxParticles);
-			Viewer->MarkDirty();
-			Viewer->RestartSimulation();
-		}
-		float EmitterDuration = Required->EmitterDuration;
-		if (ImGui::InputFloat("Emitter Duration", &EmitterDuration, 0.1f, 1.0f, "%.3f") && EmitterDuration != Required->EmitterDuration)
-		{
-			Viewer->CaptureUndoSnapshot("EditEmitterDuration");
-			Required->EmitterDuration = std::max(0.0f, EmitterDuration);
-			Viewer->MarkDirty();
-			Viewer->RestartSimulation();
-		}
-		bool bEmitterLoops = Required->bEmitterLoops;
-		if (ImGui::Checkbox("Emitter Loops", &bEmitterLoops) && bEmitterLoops != Required->bEmitterLoops)
-		{
-			Viewer->CaptureUndoSnapshot("EditEmitterLoops");
-			Required->bEmitterLoops = bEmitterLoops;
-			Viewer->MarkDirty();
-			Viewer->RestartSimulation();
-		}
-		ImGui::PopItemWidth();
-		return;
-	}
-
-	if (UParticleModuleSpawn* Spawn = Cast<UParticleModuleSpawn>(SelectedObject))
-	{
-		DrawParticleDetailsSection(GetObjectLabel(Spawn));
-		ImGui::PushItemWidth(std::max(120.0f, ImGui::GetContentRegionAvail().x * 0.5f));
-		float SpawnRate = Spawn->SpawnRate;
-		if (ImGui::InputFloat("Spawn Rate", &SpawnRate, 1.0f, 10.0f, "%.3f") && SpawnRate != Spawn->SpawnRate)
-		{
-			Viewer->CaptureUndoSnapshot("EditSpawnRate");
-			Spawn->SpawnRate = std::max(0.0f, SpawnRate);
-			Viewer->MarkDirty();
-			Viewer->RestartSimulation();
-		}
-		float RateScale = Spawn->RateScale;
-		if (ImGui::InputFloat("Rate Scale", &RateScale, 0.1f, 1.0f, "%.3f") && RateScale != Spawn->RateScale)
-		{
-			Viewer->CaptureUndoSnapshot("EditRateScale");
-			Spawn->RateScale = std::max(0.0f, RateScale);
-			Viewer->MarkDirty();
-			Viewer->RestartSimulation();
-		}
-		bool bProcessSpawnRate = Spawn->bProcessSpawnRate;
-		if (ImGui::Checkbox("Process Spawn Rate", &bProcessSpawnRate) && bProcessSpawnRate != Spawn->bProcessSpawnRate)
-		{
-			Viewer->CaptureUndoSnapshot("EditProcessSpawnRate");
-			Spawn->bProcessSpawnRate = bProcessSpawnRate;
-			Viewer->MarkDirty();
-			Viewer->RestartSimulation();
-		}
-		ImGui::PopItemWidth();
-		return;
 	}
 
 	DrawParticleDetailsSection("Properties");
-	ImGui::TextDisabled("No reflected editable properties are exposed for this module yet.");
+	if (!RenderParticleReflectionProperties(Viewer, SelectedObject, EditorEngine, bPropertyEditUndoCaptured))
+	{
+		ImGui::TextDisabled("No reflected editable properties.");
+	}
 }
+
 
 void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewer)
 {
@@ -1801,6 +1732,12 @@ void HandleParticleEditorShortcuts(FParticleEditorViewer* Viewer)
 		return;
 	}
 
+	if (ImGui::IsKeyPressed(ImGuiKey_Space, false))
+	{
+		Viewer->RestartSimulation();
+		return;
+	}
+
 	if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
 	{
 		Viewer->DeleteSelection();
@@ -1849,6 +1786,473 @@ void DrawParticleDetailsText(const char* Label, const char* Value)
 	ImGui::TextDisabled("%s", Label);
 	ImGui::SameLine(150.0f);
 	ImGui::TextUnformatted(Value ? Value : "");
+}
+
+const char* GetPropertyDisplayName(const FProperty& Property)
+{
+	return (Property.DisplayName && Property.DisplayName[0] != '\0') ? Property.DisplayName : Property.Name;
+}
+
+FString MakeParticlePropertyWidgetLabel(const FProperty& Property)
+{
+	const char* DisplayName = GetPropertyDisplayName(Property);
+	if (!DisplayName)
+	{
+		return "";
+	}
+	if (!Property.Name || std::strcmp(DisplayName, Property.Name) == 0)
+	{
+		return DisplayName;
+	}
+	return FString(DisplayName) + "##" + Property.Name;
+}
+
+bool IsParticleGraphReferenceProperty(const FProperty& Property)
+{
+	if (Property.ReferenceKind != EObjectReferenceKind::RuntimeObject)
+	{
+		return false;
+	}
+	if (Property.Type == EPropertyType::ObjectPtr)
+	{
+		return true;
+	}
+	return Property.Type == EPropertyType::Array &&
+		   Property.InnerProperty &&
+		   Property.InnerProperty->Type == EPropertyType::ObjectPtr;
+}
+
+void CollectParticleEditableProperties(UObject* Object, TArray<const FProperty*>& OutProperties)
+{
+	if (!Object || !Object->GetClass())
+	{
+		return;
+	}
+
+	TArray<const FProperty*> AllProperties;
+	Object->GetClass()->GetAllProperties(AllProperties);
+	for (const FProperty* Property : AllProperties)
+	{
+		if (!Property || !Property->Name || !Property->IsEditable())
+		{
+			continue;
+		}
+		if (IsParticleGraphReferenceProperty(*Property))
+		{
+			continue;
+		}
+		OutProperties.push_back(Property);
+	}
+}
+
+bool RenderParticleReflectionProperties(FParticleEditorViewer* Viewer, UObject* Object, UEditorEngine* EditorEngine, bool& bUndoCaptured)
+{
+	TArray<const FProperty*> Properties;
+	CollectParticleEditableProperties(Object, Properties);
+	for (const FProperty* Property : Properties)
+	{
+		if (Property)
+		{
+			RenderParticlePropertyWidget(Viewer, Object, *Property, EditorEngine, bUndoCaptured);
+		}
+	}
+	return !Properties.empty();
+}
+
+bool RenderParticlePropertyWidget(FParticleEditorViewer* Viewer, UObject* Object, const FProperty& Property, UEditorEngine* EditorEngine, bool& bUndoCaptured)
+{
+	if (!Viewer || !Object || !Property.Name || !Property.IsEditable())
+	{
+		return false;
+	}
+
+	void* ValuePtr = Property.GetValuePtr(Object);
+	if (!ValuePtr)
+	{
+		return false;
+	}
+
+	const FString Label = MakeParticlePropertyWidgetLabel(Property);
+	const bool bChanged = RenderParticlePropertyValueWidget(Viewer, Object, Property, ValuePtr, Label.c_str(), EditorEngine, bUndoCaptured);
+	if (ImGui::IsItemActivated() && !bUndoCaptured)
+	{
+		Viewer->CaptureUndoSnapshot("EditParticleProperty");
+		bUndoCaptured = true;
+	}
+
+	if (bChanged)
+	{
+		if (!bUndoCaptured)
+		{
+			Viewer->CaptureUndoSnapshot("EditParticleProperty");
+			bUndoCaptured = true;
+		}
+		Object->PostEditProperty(Property.Name);
+		Viewer->MarkDirty();
+		Viewer->RestartSimulation();
+	}
+
+	if (ImGui::IsItemDeactivatedAfterEdit() || !ImGui::IsAnyItemActive())
+	{
+		bUndoCaptured = false;
+	}
+
+	(void)EditorEngine;
+	return bChanged;
+}
+
+bool RenderParticlePropertyValueWidget(FParticleEditorViewer* Viewer, UObject* Object, const FProperty& Property, void* ValuePtr, const char* Label, UEditorEngine* EditorEngine, bool& bUndoCaptured)
+{
+	if (!ValuePtr)
+	{
+		return false;
+	}
+
+	switch (Property.Type)
+	{
+	case EPropertyType::Bool:
+		return ImGui::Checkbox(Label, static_cast<bool*>(ValuePtr));
+	case EPropertyType::Int:
+		return ImGui::DragInt(Label, static_cast<int32*>(ValuePtr), Property.Speed);
+	case EPropertyType::Float:
+		if (Property.Min != 0.0f || Property.Max != 0.0f)
+		{
+			return ImGui::DragFloat(Label, static_cast<float*>(ValuePtr), Property.Speed, Property.Min, Property.Max);
+		}
+		return ImGui::DragFloat(Label, static_cast<float*>(ValuePtr), Property.Speed);
+	case EPropertyType::String:
+	{
+		FString* Value = static_cast<FString*>(ValuePtr);
+		char Buffer[512];
+		strncpy_s(Buffer, sizeof(Buffer), Value->c_str(), _TRUNCATE);
+		if (ImGui::InputText(Label, Buffer, sizeof(Buffer)))
+		{
+			*Value = Buffer;
+			return true;
+		}
+		return false;
+	}
+	case EPropertyType::Name:
+	{
+		FName* Value = static_cast<FName*>(ValuePtr);
+		FString Current = Value->ToString();
+		char Buffer[256];
+		strncpy_s(Buffer, sizeof(Buffer), Current.c_str(), _TRUNCATE);
+		if (ImGui::InputText(Label, Buffer, sizeof(Buffer)))
+		{
+			*Value = FName(Buffer);
+			return true;
+		}
+		return false;
+	}
+	case EPropertyType::Enum:
+	{
+		if (!Property.EnumMeta || !Property.EnumMeta->Values || Property.EnumMeta->Count == 0)
+		{
+			return false;
+		}
+
+		int64 CurrentValue = 0;
+		switch (Property.EnumMeta->Size)
+		{
+		case 1: CurrentValue = static_cast<int64>(*static_cast<uint8*>(ValuePtr)); break;
+		case 2: CurrentValue = static_cast<int64>(*static_cast<uint16*>(ValuePtr)); break;
+		case 4: CurrentValue = static_cast<int64>(*static_cast<int32*>(ValuePtr)); break;
+		case 8: CurrentValue = static_cast<int64>(*static_cast<int64*>(ValuePtr)); break;
+		default: break;
+		}
+
+		int32 CurrentIndex = 0;
+		for (uint32 Index = 0; Index < Property.EnumMeta->Count; ++Index)
+		{
+			if (Property.EnumMeta->Values[Index].Value == CurrentValue)
+			{
+				CurrentIndex = static_cast<int32>(Index);
+				break;
+			}
+		}
+
+		const auto ComboGetter = [](void* Data, int Index) -> const char*
+		{
+			const UEnum* EnumMeta = static_cast<const UEnum*>(Data);
+			if (!EnumMeta || Index < 0 || static_cast<uint32>(Index) >= EnumMeta->Count)
+			{
+				return "";
+			}
+			const FEnumValue& ValueMeta = EnumMeta->Values[Index];
+			return (ValueMeta.DisplayName && ValueMeta.DisplayName[0] != '\0') ? ValueMeta.DisplayName : ValueMeta.Name;
+		};
+
+		if (ImGui::Combo(Label, &CurrentIndex, ComboGetter, const_cast<UEnum*>(Property.EnumMeta), static_cast<int>(Property.EnumMeta->Count)))
+		{
+			const int64 NewValue = Property.EnumMeta->Values[CurrentIndex].Value;
+			switch (Property.EnumMeta->Size)
+			{
+			case 1: *static_cast<uint8*>(ValuePtr) = static_cast<uint8>(NewValue); break;
+			case 2: *static_cast<uint16*>(ValuePtr) = static_cast<uint16>(NewValue); break;
+			case 4: *static_cast<int32*>(ValuePtr) = static_cast<int32>(NewValue); break;
+			case 8: *static_cast<int64*>(ValuePtr) = static_cast<int64>(NewValue); break;
+			default: break;
+			}
+			return true;
+		}
+		return false;
+	}
+	case EPropertyType::Struct:
+		return RenderParticleStructPropertyWidget(Viewer, Object, Property, ValuePtr, Label, EditorEngine, bUndoCaptured);
+	case EPropertyType::ObjectPtr:
+		return RenderParticleObjectPtrWidget(Property, ValuePtr, Label, EditorEngine);
+	case EPropertyType::SoftObjectPtr:
+		return RenderParticleSoftObjectPtrWidget(Property, ValuePtr, Label, EditorEngine);
+	case EPropertyType::Array:
+		return RenderParticleArrayPropertyWidget(Viewer, Object, Property, ValuePtr, EditorEngine, bUndoCaptured);
+	default:
+		break;
+	}
+	return false;
+}
+
+bool RenderParticleObjectPtrWidget(const FProperty& Property, void* ValuePtr, const char* Label, UEditorEngine* EditorEngine)
+{
+	if (!Property.ObjectPtrOps || !ValuePtr)
+	{
+		return false;
+	}
+
+	UObject* CurrentObject = Property.ObjectPtrOps->GetObject(ValuePtr);
+	if (Property.ReferenceKind == EObjectReferenceKind::Asset &&
+		Property.ObjectClass &&
+		Property.ObjectClass->IsChildOf(UMaterialInterface::StaticClass()) &&
+		EditorEngine)
+	{
+		const TArray<FString>& MaterialNames = EditorEngine->GetAssetService().GetMaterialInterfaceNames();
+		UMaterialInterface* CurrentMaterial = Cast<UMaterialInterface>(CurrentObject);
+		const FString CurrentLabel = CurrentMaterial
+			? (CurrentMaterial->GetFilePath().empty() ? CurrentMaterial->GetName() : FPaths::Normalize(CurrentMaterial->GetFilePath()))
+			: FString("<None>");
+
+		bool bChanged = false;
+		if (ImGui::BeginCombo(Label, CurrentLabel.c_str()))
+		{
+			if (ImGui::Selectable("<None>", CurrentMaterial == nullptr))
+			{
+				Property.ObjectPtrOps->SetObject(ValuePtr, nullptr);
+				bChanged = true;
+			}
+			for (int32 MaterialIndex = 0; MaterialIndex < static_cast<int32>(MaterialNames.size()); ++MaterialIndex)
+			{
+				const FString& MaterialLabel = MaterialNames[MaterialIndex];
+				const bool bSelected = CurrentLabel == MaterialLabel;
+				if (ImGui::Selectable(MaterialLabel.c_str(), bSelected))
+				{
+					if (UMaterialInterface* Candidate = EditorEngine->GetAssetService().ResolveMaterialInterfaceByIndex(MaterialIndex))
+					{
+						Property.ObjectPtrOps->SetObject(ValuePtr, Candidate);
+						bChanged = true;
+					}
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return bChanged;
+	}
+
+	const FString ObjectLabel = CurrentObject ? CurrentObject->GetClassName() : FString("None");
+	ImGui::TextDisabled("%s: %s", Label, ObjectLabel.c_str());
+	return false;
+}
+
+bool RenderParticleSoftObjectPtrWidget(const FProperty& Property, void* ValuePtr, const char* Label, UEditorEngine* EditorEngine)
+{
+	if (!Property.SoftObjectOps || !ValuePtr)
+	{
+		return false;
+	}
+
+	FString Current = Property.SoftObjectOps->GetPath(ValuePtr);
+	TArray<FString> LocalOptions;
+	const TArray<FString>* Options = nullptr;
+	if (Property.ObjectClass)
+	{
+		if (Property.ObjectClass->IsChildOf(UStaticMesh::StaticClass()) && EditorEngine)
+		{
+			Options = &EditorEngine->GetAssetService().GetStaticMeshAssetPaths();
+		}
+		else if (Property.ObjectClass->IsChildOf(UCurveFloatAsset::StaticClass()))
+		{
+			LocalOptions = FResourceManager::Get().GetCurvePaths();
+			Options = &LocalOptions;
+		}
+		else if (Property.ObjectClass->IsChildOf(UParticleSystem::StaticClass()))
+		{
+			LocalOptions = FResourceManager::Get().GetParticleSystemPaths();
+			Options = &LocalOptions;
+		}
+	}
+
+	bool bChanged = false;
+	if (Options && !Options->empty())
+	{
+		if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
+		{
+			if (ImGui::Selectable("<None>", Current.empty()))
+			{
+				Property.SoftObjectOps->SetPath(ValuePtr, FString());
+				bChanged = true;
+			}
+			for (const FString& Path : *Options)
+			{
+				const bool bSelected = Current == Path;
+				if (ImGui::Selectable(Path.c_str(), bSelected))
+				{
+					Property.SoftObjectOps->SetPath(ValuePtr, Path);
+					bChanged = true;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+	}
+	else
+	{
+		char Buffer[512];
+		strncpy_s(Buffer, sizeof(Buffer), Current.c_str(), _TRUNCATE);
+		if (ImGui::InputText(Label, Buffer, sizeof(Buffer)))
+		{
+			Property.SoftObjectOps->SetPath(ValuePtr, Buffer);
+			bChanged = true;
+		}
+	}
+	return bChanged;
+}
+
+bool RenderParticleArrayPropertyWidget(FParticleEditorViewer* Viewer, UObject* Object, const FProperty& Property, void* ValuePtr, UEditorEngine* EditorEngine, bool& bUndoCaptured)
+{
+	if (!Property.ArrayOps || !Property.InnerProperty || !ValuePtr)
+	{
+		return false;
+	}
+	if (IsParticleGraphReferenceProperty(Property))
+	{
+		ImGui::TextDisabled("%s is managed by the emitter graph.", GetPropertyDisplayName(Property));
+		return false;
+	}
+
+	bool bChanged = false;
+	int32 RemoveIndex = -1;
+	DrawParticleDetailsSection(GetPropertyDisplayName(Property));
+	ImGui::PushID(Property.Name);
+
+	const int32 Count = Property.ArrayOps->Num(ValuePtr);
+	for (int32 Index = 0; Index < Count; ++Index)
+	{
+		ImGui::PushID(Index);
+		void* ElementPtr = Property.ArrayOps->GetElementPtr(ValuePtr, Index);
+		char ItemLabel[32];
+		snprintf(ItemLabel, sizeof(ItemLabel), "[%d]", Index);
+		ImGui::SetNextItemWidth(std::max(120.0f, ImGui::GetContentRegionAvail().x - 28.0f));
+		if (RenderParticlePropertyValueWidget(Viewer, Object, *Property.InnerProperty, ElementPtr, ItemLabel, EditorEngine, bUndoCaptured))
+		{
+			bChanged = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::SmallButton("X"))
+		{
+			RemoveIndex = Index;
+		}
+		ImGui::PopID();
+	}
+
+	if (RemoveIndex >= 0)
+	{
+		Property.ArrayOps->RemoveAt(ValuePtr, RemoveIndex);
+		bChanged = true;
+	}
+
+	char AddLabel[64];
+	snprintf(AddLabel, sizeof(AddLabel), "+ Add##%s", Property.Name);
+	if (ImGui::Button(AddLabel, ImVec2(-1, 0.0f)))
+	{
+		Property.ArrayOps->AddDefaulted(ValuePtr);
+		bChanged = true;
+	}
+
+	ImGui::PopID();
+	return bChanged;
+}
+
+bool RenderParticleStructPropertyWidget(FParticleEditorViewer* Viewer, UObject* Object, const FProperty& Property, void* ValuePtr, const char* Label, UEditorEngine* EditorEngine, bool& bUndoCaptured)
+{
+	if (!ValuePtr || Property.Type != EPropertyType::Struct)
+	{
+		return false;
+	}
+
+	const char* Hint = Property.EditorHint;
+	if ((!Hint || Hint[0] == '\0') && Property.ScriptStruct)
+	{
+		Hint = Property.ScriptStruct->GetName();
+	}
+
+	if (Hint && std::strcmp(Hint, "FVector") == 0)
+	{
+		return ImGui::DragFloat3(Label, static_cast<float*>(ValuePtr), Property.Speed);
+	}
+	if (Hint && std::strcmp(Hint, "FVector4") == 0)
+	{
+		return ImGui::DragFloat4(Label, static_cast<float*>(ValuePtr), Property.Speed);
+	}
+	if (Hint && std::strcmp(Hint, "FColor") == 0)
+	{
+		return ImGui::ColorEdit4(Label, &static_cast<FColor*>(ValuePtr)->R);
+	}
+	if (Hint && std::strcmp(Hint, "FQuat") == 0)
+	{
+		FQuat* Value = static_cast<FQuat*>(ValuePtr);
+		float Components[4] = { Value->X, Value->Y, Value->Z, Value->W };
+		if (ImGui::DragFloat4(Label, Components, Property.Speed))
+		{
+			*Value = FQuat(Components[0], Components[1], Components[2], Components[3]);
+			Value->Normalize();
+			return true;
+		}
+		return false;
+	}
+
+	if (!Property.ScriptStruct)
+	{
+		ImGui::TextDisabled("%s <unregistered struct>", Label);
+		return false;
+	}
+
+	bool bChanged = false;
+	if (ImGui::TreeNodeEx(Label, ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		TArray<const FProperty*> ChildProperties;
+		Property.ScriptStruct->GetAllProperties(ChildProperties);
+		for (const FProperty* Child : ChildProperties)
+		{
+			if (!Child || !Child->Name || !Child->IsEditable())
+			{
+				continue;
+			}
+			void* ChildPtr = reinterpret_cast<uint8*>(ValuePtr) + Child->Offset;
+			const FString ChildLabel = MakeParticlePropertyWidgetLabel(*Child);
+			if (RenderParticlePropertyValueWidget(Viewer, Object, *Child, ChildPtr, ChildLabel.c_str(), EditorEngine, bUndoCaptured))
+			{
+				bChanged = true;
+			}
+		}
+		ImGui::TreePop();
+	}
+	return bChanged;
 }
 
 void GetParticleModuleClasses(TArray<UClass*>& OutClasses)

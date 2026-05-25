@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "Particle/ParticleModules.h"
@@ -33,6 +33,7 @@ class UParticleLODLevel : public UObject
 public:
 	GENERATED_BODY(UParticleLODLevel, UObject)
 	~UParticleLODLevel() override;
+	void PostDuplicate(UObject* Original) override;
 
 	UPROPERTY(DisplayName = "Level")
 	int32 Level = 0;
@@ -60,6 +61,7 @@ class UParticleEmitter : public UObject
 public:
 	GENERATED_BODY(UParticleEmitter, UObject)
 	~UParticleEmitter() override;
+	void PostDuplicate(UObject* Original) override;
 
 	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleLODLevel*> LODLevels;
@@ -81,6 +83,7 @@ public:
 	GENERATED_BODY(UParticleSystem, UObject)
 	UParticleSystem();
 	~UParticleSystem() override;
+	void PostDuplicate(UObject* Original) override;
 
 	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleEmitter*> Emitters;

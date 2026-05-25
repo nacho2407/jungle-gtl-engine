@@ -35,6 +35,7 @@ private:
 private:
 	float EmitterPanelWidthRatio = 2.0f / 3.0f;
 	float BottomPanelHeightRatio = 0.5f;
+	bool bPropertyEditUndoCaptured = false;
 
 	EParticleEditorSelectionType CurveSourceType = EParticleEditorSelectionType::None;
 	int32 CurveSourceEmitterIndex = -1;

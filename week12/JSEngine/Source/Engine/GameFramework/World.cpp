@@ -18,13 +18,9 @@ UWorld::UWorld()
 UWorld::~UWorld()
 {
 	SpatialIndex.Clear();
-	if (ParticleEventManager != nullptr)
-	{
-		ParticleEventManager->SetWorld(nullptr);
-		UObjectManager::Get().DestroyObject(ParticleEventManager);
-		ParticleEventManager = nullptr;
-	}
+	ParticleEventManager = nullptr;
 	UObjectManager::Get().DestroyObject(PersistentLevel);
+	PersistentLevel = nullptr;
 }
 
 /* @brief 비노출 필드를 복사하고, Level을 깊은 복사한 뒤, 복제된 액터들의 소속을 자기 자신으로 재설정합니다. */
@@ -50,12 +46,30 @@ void UWorld::PostDuplicate(UObject* Original)
 	if (OrigWorld->PersistentLevel)
 	{
 		PersistentLevel = Cast<ULevel>(OrigWorld->PersistentLevel->Duplicate());
+		ParticleEventManager = nullptr;
+		TArray<AActor*> DuplicateEventManagersToDestroy;
 		for (AActor* DuplicatedActor : PersistentLevel->GetActors())
 		{
 			if (DuplicatedActor)
 			{
 				DuplicatedActor->SetWorld(this);
+				if (AParticleEventManager* DuplicatedManager = Cast<AParticleEventManager>(DuplicatedActor))
+				{
+					if (!ParticleEventManager)
+					{
+						ParticleEventManager = DuplicatedManager;
+					}
+					else
+					{
+						DuplicateEventManagersToDestroy.push_back(DuplicatedManager);
+					}
+				}
 			}
+		}
+
+		for (AActor* DuplicateEventManager : DuplicateEventManagersToDestroy)
+		{
+			DestroyActor(DuplicateEventManager);
 		}
 	}
 
@@ -101,6 +115,31 @@ AActor* UWorld::SpawnActorByTypeName(const FString& TypeName)
 	return Actor;
 }
 
+void UWorld::DestroyActor(AActor* Actor)
+{
+	if (!Actor)
+	{
+		return;
+	}
+
+	if (Actor == ParticleEventManager)
+	{
+		ParticleEventManager = nullptr;
+	}
+
+	Actor->EndPlay(EEndPlayReason::Type::Destroyed);
+	if (PersistentLevel)
+	{
+		PersistentLevel->RemoveActor(Actor);
+	}
+
+	// Actor의 raw pointer를 들고 있는 하위 시스템들에게 Actor가 파괴되었음을 알림
+	NotifyActorDestroyed(Actor);
+
+	Actor->SetWorld(nullptr);
+	UObjectManager::Get().DestroyObject(Actor);
+}
+
 void UWorld::Tick(float DeltaTime)
 {
 	LastUnscaledDeltaTime = std::max(0.0f, DeltaTime);
@@ -138,6 +177,11 @@ void UWorld::EndPlay(EEndPlayReason::Type EndPlayReason)
 
 AParticleEventManager* UWorld::GetOrCreateParticleEventManager()
 {
+	if (ParticleEventManager != nullptr && !UObjectManager::Get().ContainsObject(ParticleEventManager))
+	{
+		ParticleEventManager = nullptr;
+	}
+
 	if (ParticleEventManager == nullptr)
 	{
 		ParticleEventManager = SpawnActor<AParticleEventManager>();

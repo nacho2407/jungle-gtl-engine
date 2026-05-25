@@ -360,6 +360,56 @@ UParticleLODLevel::~UParticleLODLevel()
 	TypeDataModule = nullptr;
 }
 
+void UParticleLODLevel::PostDuplicate(UObject* Original)
+{
+	UObject::PostDuplicate(Original);
+
+	UParticleLODLevel* SourceLOD = Cast<UParticleLODLevel>(Original);
+	if (!SourceLOD)
+	{
+		return;
+	}
+
+	FDuplicateContext DuplicateContext;
+	DuplicateContext.Add(SourceLOD, this);
+
+	RequiredModule = SourceLOD->RequiredModule
+		? Cast<UParticleModuleRequired>(SourceLOD->RequiredModule->Duplicate(&DuplicateContext))
+		: nullptr;
+	if (RequiredModule)
+	{
+		DuplicateContext.Add(SourceLOD->RequiredModule, RequiredModule);
+	}
+
+	SpawnModule = SourceLOD->SpawnModule
+		? Cast<UParticleModuleSpawn>(SourceLOD->SpawnModule->Duplicate(&DuplicateContext))
+		: nullptr;
+	if (SpawnModule)
+	{
+		DuplicateContext.Add(SourceLOD->SpawnModule, SpawnModule);
+	}
+
+	TypeDataModule = SourceLOD->TypeDataModule
+		? Cast<UParticleModuleTypeDataBase>(SourceLOD->TypeDataModule->Duplicate(&DuplicateContext))
+		: nullptr;
+	if (TypeDataModule)
+	{
+		DuplicateContext.Add(SourceLOD->TypeDataModule, TypeDataModule);
+	}
+
+	Modules.clear();
+	for (UParticleModule* SourceModule : SourceLOD->Modules)
+	{
+		UParticleModule* DuplicatedModule = SourceModule
+			? Cast<UParticleModule>(SourceModule->Duplicate(&DuplicateContext))
+			: nullptr;
+		if (DuplicatedModule)
+		{
+			Modules.push_back(DuplicatedModule);
+		}
+	}
+}
+
 UParticleEmitter::~UParticleEmitter()
 {
 	for (UParticleLODLevel* LODLevel : LODLevels)
@@ -372,9 +422,33 @@ UParticleEmitter::~UParticleEmitter()
 	LODLevels.clear();
 }
 
+void UParticleEmitter::PostDuplicate(UObject* Original)
+{
+	UObject::PostDuplicate(Original);
+
+	UParticleEmitter* SourceEmitter = Cast<UParticleEmitter>(Original);
+	if (!SourceEmitter)
+	{
+		return;
+	}
+
+	LODLevels.clear();
+	for (UParticleLODLevel* SourceLOD : SourceEmitter->LODLevels)
+	{
+		UParticleLODLevel* DuplicatedLOD = SourceLOD
+			? Cast<UParticleLODLevel>(SourceLOD->Duplicate())
+			: nullptr;
+		if (DuplicatedLOD)
+		{
+			LODLevels.push_back(DuplicatedLOD);
+		}
+	}
+	CacheEmitterModuleInfo();
+}
+
 UParticleSystem::UParticleSystem()
 {
-    // LOD 0은 항상 0.0f로 설정되어야 함
+	// LOD 0은 항상 0.0f로 설정되어야 함
 	LODDistances.push_back(0.0f);
 }
 
@@ -390,6 +464,30 @@ UParticleSystem::~UParticleSystem()
 	Emitters.clear();
 }
 
+void UParticleSystem::PostDuplicate(UObject* Original)
+{
+	UObject::PostDuplicate(Original);
+
+	UParticleSystem* SourceParticleSystem = Cast<UParticleSystem>(Original);
+	if (!SourceParticleSystem)
+	{
+		return;
+	}
+
+	AssetPath = SourceParticleSystem->AssetPath;
+	Emitters.clear();
+	for (UParticleEmitter* SourceEmitter : SourceParticleSystem->Emitters)
+	{
+		UParticleEmitter* DuplicatedEmitter = SourceEmitter
+			? Cast<UParticleEmitter>(SourceEmitter->Duplicate())
+			: nullptr;
+		if (DuplicatedEmitter)
+		{
+			Emitters.push_back(DuplicatedEmitter);
+		}
+	}
+}
+
 FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
 	UParticleEmitter* InEmitterTemplate,
 	IParticleEmitterInstanceOwner& InOwner)
@@ -401,7 +499,7 @@ FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
 
 FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
 {
-    /** TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요*/
+	/** TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요*/
 
 	// EmitterInstance 유효성 체크
 	if (InEmitterInstance == nullptr ||
