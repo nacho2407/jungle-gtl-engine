@@ -26,6 +26,9 @@ public:
 	UParticleSystemComponent();
 	~UParticleSystemComponent() override;
 
+	void Serialize(FArchive& Ar) override;
+    void PostEditProperty(const char* PropertyName) override;
+
 	void SetTemplate(UParticleSystem* InTemplate);
 	void SetEventManager(AParticleEventManager* InEventManager) { EventManager = InEventManager; }
 	UWorld* GetWorld() const;
@@ -46,11 +49,17 @@ private:
 	void CreateEmitterInstances();
 	void ReleaseEmitterInstances();
 	void ReleaseRenderData();
+	// Particle Asset Template Reference 설정
+    void ResolveTemplateAssetReference();
 
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_ParticleSystem;
 
 	// Asset / Runtime
 	UParticleSystem* Template = nullptr;
+
+	UPROPERTY(DisplayName = "Particle System")
+    TSoftObjectPtr<UParticleSystem> TemplateAssetPath;
+
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
 

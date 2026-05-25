@@ -5,6 +5,7 @@
 #include "Particle/ParticleEventManager.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
+#include <cstring>
 #include <memory>
 
 // EmitterInstance에서 Component를 직접 참조해서 강하게 결합하는 문제를 해결하기 위해
@@ -81,6 +82,26 @@ UParticleSystemComponent::~UParticleSystemComponent()
 	ReleaseRenderData();
 }
 
+void UParticleSystemComponent::Serialize(FArchive& Ar)
+{
+	UPrimitiveComponent::Serialize(Ar);
+
+	if (Ar.IsLoading())
+	{
+		ResolveTemplateAssetReference();
+	}
+}
+
+void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
+{
+	UPrimitiveComponent::PostEditProperty(PropertyName);
+
+	if (PropertyName != nullptr && std::strcmp(PropertyName, "TemplateAssetPath") == 0)
+	{
+		ResolveTemplateAssetReference();
+	}
+}
+
 void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 {
 	if (Template == InTemplate)
@@ -91,6 +112,18 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 	Template = InTemplate;
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+}
+
+void UParticleSystemComponent::ResolveTemplateAssetReference()
+{
+	if (TemplateAssetPath.IsNull())
+	{
+		SetTemplate(nullptr);
+		return;
+	}
+
+	// TODO: ParticleSystem Asset 로더가 완성되면 TemplateAssetPath 경로로 로드한 템플릿을 SetTemplate에 전달한다.
+	SetTemplate(nullptr);
 }
 
 UWorld* UParticleSystemComponent::GetWorld() const

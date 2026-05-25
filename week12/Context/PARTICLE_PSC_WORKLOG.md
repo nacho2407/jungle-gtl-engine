@@ -44,3 +44,16 @@
 - Deferred TODO: Resolve `MeshAssetPath` during ParticleSystem asset deserialization once the asset-owner loading contract is available.
 - Deferred TODO: Leave consumption of the CPU mesh snapshot by GPU rendering code to the particle rendering owner.
 - Next step: Prepare `UParticleSystemComponent` ParticleSystem asset-reference persistence with an explicit unresolved loader TODO, after approval.
+
+## 2026-05-25 - PSC ParticleSystem asset reference persistence scaffold
+
+- Branch / HEAD: `feat/PSC` / `47c904d`
+- Completed step: Added the Scene-persisted ParticleSystem soft reference field and a single unresolved runtime resolution point on `UParticleSystemComponent`.
+- Changed files: `JSEngine/Source/Engine/Particle/ParticleSystemComponent.h`, `JSEngine/Source/Engine/Particle/ParticleSystemComponent.cpp`, `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` builds successfully for `Debug|x64`; reflection generation registers `UParticleSystemComponent::TemplateAssetPath` as `TSoftObjectPtr<UParticleSystem>`; `git diff --check` reported no whitespace errors.
+- Added contract: `TemplateAssetPath` is reflected and therefore preserved through component Scene serialization without duplicating the ParticleSystem asset graph.
+- Added behavior: PSC overrides `Serialize()` and `PostEditProperty()` so loaded or edited references enter `ResolveTemplateAssetReference()` consistently.
+- Added behavior: An empty path clears the runtime template and emitter instances; a non-empty unresolved path also clears stale runtime data until the asset loader is connected.
+- Deferred TODO: `ParticleSystemAssetLoader.cpp` is currently empty, so `ResolveTemplateAssetReference()` must be wired to the completed Asset loader rather than introducing a competing load policy here.
+- Deferred TODO: Provide path synchronization when the Asset-owned ParticleSystem runtime object exposes its persistent path contract.
+- Next step: Implement distance-based `UParticleLODLevel` selection only after approval and after rechecking the latest Core LOD API.
