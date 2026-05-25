@@ -19,37 +19,37 @@
 
 namespace
 {
-	constexpr const char* ParticleModuleDragPayload = "ParticleModule";
-	constexpr const char* ParticleEmitterDragPayload = "ParticleEmitter";
-	constexpr float EmitterNodeWidth = 220.0f;
-	constexpr float EmitterSeparatorGap = 10.0f;
+constexpr const char* ParticleModuleDragPayload = "ParticleModule";
+constexpr const char* ParticleEmitterDragPayload = "ParticleEmitter";
+constexpr float EmitterNodeWidth = 220.0f;
+constexpr float EmitterSeparatorGap = 10.0f;
 
-	struct FParticleModuleDragPayload
-	{
-		int32 EmitterIndex = -1;
-		int32 LODIndex = -1;
-		int32 ModuleIndex = -1;
-	};
+struct FParticleModuleDragPayload
+{
+	int32 EmitterIndex = -1;
+	int32 LODIndex = -1;
+	int32 ModuleIndex = -1;
+};
 
-	struct FParticleEmitterDragPayload
-	{
-		int32 EmitterIndex = -1;
-	};
+struct FParticleEmitterDragPayload
+{
+	int32 EmitterIndex = -1;
+};
 
-	FParticleEditorViewer* AsParticleViewer(FEditorViewer* Viewer);
-	const char* GetSelectionLabel(EParticleEditorSelectionType Type);
-	const char* GetObjectLabel(const UObject* Object);
-	void GetParticleModuleClasses(TArray<UClass*>& OutClasses);
-	bool DrawParticleModuleClassMenu(FParticleEditorViewer* Viewer);
-	void DrawViewModeMenuItems(FParticleEditorViewer* Viewer);
-	bool DrawPopupButton(const char* Label, const char* PopupId);
-	bool DrawRoundedToolbarButton(const char* Id, const char* Label, const char* Tooltip, const ImVec2& Size);
-	void DrawParticlePanelTitle(const char* Title, const char* Subtitle);
-	void DrawParticleDetailsSection(const char* Title);
-	void DrawParticleDetailsText(const char* Label, const char* Value);
-	void DrawEmitterPreview(const ImVec2& Size, int32 EmitterIndex, bool bSelected);
-	void DrawSelectableModuleRow(FParticleEditorViewer* Viewer, const char* Label, EParticleEditorSelectionType Type, int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex, ImU32 BackgroundColor);
-}
+FParticleEditorViewer* AsParticleViewer(FEditorViewer* Viewer);
+const char* GetSelectionLabel(EParticleEditorSelectionType Type);
+const char* GetObjectLabel(const UObject* Object);
+void GetParticleModuleClasses(TArray<UClass*>& OutClasses);
+bool DrawParticleModuleClassMenu(FParticleEditorViewer* Viewer);
+void DrawViewModeMenuItems(FParticleEditorViewer* Viewer);
+bool DrawPopupButton(const char* Label, const char* PopupId);
+bool DrawRoundedToolbarButton(const char* Id, const char* Label, const char* Tooltip, const ImVec2& Size);
+void DrawParticlePanelTitle(const char* Title, const char* Subtitle);
+void DrawParticleDetailsSection(const char* Title);
+void DrawParticleDetailsText(const char* Label, const char* Value);
+void DrawEmitterPreview(const ImVec2& Size, int32 EmitterIndex, bool bSelected);
+void DrawSelectableModuleRow(FParticleEditorViewer* Viewer, const char* Label, EParticleEditorSelectionType Type, int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex, ImU32 BackgroundColor);
+} // namespace
 
 void FParticleEditorViewerWidget::RenderContent(float DeltaTime)
 {
@@ -335,29 +335,41 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 		ImGui::SameLine();
 	};
 
-	DrawVisibleButton("Save", CascadeSaveIcon.Get(), "Save", Viewer->IsDirty(), nullptr, bHiddenSave, [&]() { Viewer->Save(); });
-	DrawVisibleButton("Find", CascadeFindIcon.Get(), "Find in Content Browser", true, nullptr, bHiddenFind, [&]() { Viewer->FindInContentBrowser(); });
+	DrawVisibleButton("Save", CascadeSaveIcon.Get(), "Save", Viewer->IsDirty(), nullptr, bHiddenSave, [&]()
+					  { Viewer->Save(); });
+	DrawVisibleButton("Find", CascadeFindIcon.Get(), "Find in Content Browser", true, nullptr, bHiddenFind, [&]()
+					  { Viewer->FindInContentBrowser(); });
 	DrawSeparatorIfFits();
-	DrawVisibleButton("RestartSim", CascadeRestartSimIcon.Get(), "Restart Simulation", true, "Restart Sim", bHiddenRestartSim, [&]() { Viewer->RestartSimulation(); });
-	DrawVisibleButton("RestartLevel", CascadeRestartLevelIcon.Get(), "Restart Level", true, "Restart Level", bHiddenRestartLevel, [&]() { Viewer->RestartLevel(); });
+	DrawVisibleButton("RestartSim", CascadeRestartSimIcon.Get(), "Restart Simulation", true, "Restart Sim", bHiddenRestartSim, [&]()
+					  { Viewer->RestartSimulation(); });
+	DrawVisibleButton("RestartLevel", CascadeRestartLevelIcon.Get(), "Restart Level", true, "Restart Level", bHiddenRestartLevel, [&]()
+					  { Viewer->RestartLevel(); });
 	DrawSeparatorIfFits();
 	DrawVisibleButton("Undo", CascadeUndoIcon.Get(), "Undo", false, "Undo", bHiddenUndo, []() {});
 	DrawVisibleButton("Redo", CascadeRedoIcon.Get(), "Redo", false, "Redo", bHiddenRedo, []() {});
 	DrawSeparatorIfFits();
 	DrawVisibleButton("Thumbnail", CascadeThumbnailIcon.Get(), "Thumbnail", false, "Thumbnail", bHiddenThumbnail, []() {});
 	DrawSeparatorIfFits();
-	DrawVisibleButton("Bounds", CascadeBoundsIcon.Get(), Viewer->IsShowBounds() ? "Hide Bounds" : "Show Bounds", true, "Bounds", bHiddenBounds, [&]() { Viewer->SetShowBounds(!Viewer->IsShowBounds()); });
-	DrawVisibleButton("Axis", CascadeAxisIcon.Get(), Viewer->IsShowGrid() ? "Hide Axis/Grid" : "Show Axis/Grid", true, "Axis", bHiddenAxis, [&]() { Viewer->SetShowGrid(!Viewer->IsShowGrid()); });
-	DrawVisibleButton("Background", CascadeBackgroundIcon.Get(), "Background", true, "Background", bHiddenBackground, [&]() { bOpenBackgroundPopup = true; });
+	DrawVisibleButton("Bounds", CascadeBoundsIcon.Get(), Viewer->IsShowBounds() ? "Hide Bounds" : "Show Bounds", true, "Bounds", bHiddenBounds, [&]()
+					  { Viewer->SetShowBounds(!Viewer->IsShowBounds()); });
+	DrawVisibleButton("Axis", CascadeAxisIcon.Get(), Viewer->IsShowGrid() ? "Hide Axis/Grid" : "Show Axis/Grid", true, "Axis", bHiddenAxis, [&]()
+					  { Viewer->SetShowGrid(!Viewer->IsShowGrid()); });
+	DrawVisibleButton("Background", CascadeBackgroundIcon.Get(), "Background", true, "Background", bHiddenBackground, [&]()
+					  { bOpenBackgroundPopup = true; });
 	DrawSeparatorIfFits();
 	DrawVisibleButton("RegenLOD", CascadeRegenLODIcon.Get(), "Regenerate LOD", false, "Regen LOD", bHiddenRegenLOD, []() {});
-	DrawVisibleButton("LowestLOD", CascadeLowestLODIcon.Get(), "Lowest LOD", true, "Lowest LOD", bHiddenLowestLOD, [&]() { Viewer->SetLowestLOD(); });
-	DrawVisibleButton("LowerLOD", CascadeLowerLODIcon.Get(), "Lower LOD", true, "Lower LOD", bHiddenLowerLOD, [&]() { Viewer->SelectLowerLOD(); });
-	DrawVisibleButton("AddLOD", CascadeAddLODIcon.Get(), "Add LOD", true, "Add LOD", bHiddenAddLOD, [&]() { Viewer->AddLOD(); });
+	DrawVisibleButton("LowestLOD", CascadeLowestLODIcon.Get(), "Lowest LOD", true, "Lowest LOD", bHiddenLowestLOD, [&]()
+					  { Viewer->SetLowestLOD(); });
+	DrawVisibleButton("LowerLOD", CascadeLowerLODIcon.Get(), "Lower LOD", true, "Lower LOD", bHiddenLowerLOD, [&]()
+					  { Viewer->SelectLowerLOD(); });
+	DrawVisibleButton("AddLOD", CascadeAddLODIcon.Get(), "Add LOD", true, "Add LOD", bHiddenAddLOD, [&]()
+					  { Viewer->AddLOD(); });
 	const FString LODLabel = "LOD: " + std::to_string(std::max(0, Viewer->GetSelectedLODIndex()));
 	DrawVisibleButton("CurrentLOD", CascadeGenericLODIcon.Get(), "Current LOD", false, LODLabel.c_str(), bHiddenCurrentLOD, []() {});
-	DrawVisibleButton("UpperLOD", CascadeUpperLODIcon.Get(), "Upper LOD", true, "Upper LOD", bHiddenUpperLOD, [&]() { Viewer->SelectUpperLOD(); });
-	DrawVisibleButton("HighestLOD", CascadeHighestLODIcon.Get(), "Highest LOD", true, "Highest LOD", bHiddenHighestLOD, [&]() { Viewer->SetHighestLOD(); });
+	DrawVisibleButton("UpperLOD", CascadeUpperLODIcon.Get(), "Upper LOD", true, "Upper LOD", bHiddenUpperLOD, [&]()
+					  { Viewer->SelectUpperLOD(); });
+	DrawVisibleButton("HighestLOD", CascadeHighestLODIcon.Get(), "Highest LOD", true, "Highest LOD", bHiddenHighestLOD, [&]()
+					  { Viewer->SetHighestLOD(); });
 
 	if (bHasOverflow)
 	{
@@ -410,12 +422,14 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 		bool bNeedsSeparator = false;
 		if (bHiddenSave)
 		{
-			DrawOverflowButton("OverflowSave", CascadeSaveIcon.Get(), "Save", Viewer->IsDirty(), "Save", [&]() { Viewer->Save(); });
+			DrawOverflowButton("OverflowSave", CascadeSaveIcon.Get(), "Save", Viewer->IsDirty(), "Save", [&]()
+							   { Viewer->Save(); });
 			bNeedsSeparator = true;
 		}
 		if (bHiddenFind)
 		{
-			DrawOverflowButton("OverflowFind", CascadeFindIcon.Get(), "Find in Content Browser", true, "Find", [&]() { Viewer->FindInContentBrowser(); });
+			DrawOverflowButton("OverflowFind", CascadeFindIcon.Get(), "Find in Content Browser", true, "Find", [&]()
+							   { Viewer->FindInContentBrowser(); });
 			bNeedsSeparator = true;
 		}
 		DrawSeparatorForHiddenGroup(bNeedsSeparator && (bHiddenRestartSim || bHiddenRestartLevel || bHiddenUndo || bHiddenRedo || bHiddenThumbnail || bHiddenBounds || bHiddenAxis || bHiddenBackground || bHiddenRegenLOD || bHiddenLowestLOD || bHiddenLowerLOD || bHiddenAddLOD || bHiddenCurrentLOD || bHiddenUpperLOD || bHiddenHighestLOD));
@@ -423,12 +437,14 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 		bNeedsSeparator = false;
 		if (bHiddenRestartSim)
 		{
-			DrawOverflowButton("OverflowRestartSim", CascadeRestartSimIcon.Get(), "Restart Simulation", true, "Restart Sim", [&]() { Viewer->RestartSimulation(); });
+			DrawOverflowButton("OverflowRestartSim", CascadeRestartSimIcon.Get(), "Restart Simulation", true, "Restart Sim", [&]()
+							   { Viewer->RestartSimulation(); });
 			bNeedsSeparator = true;
 		}
 		if (bHiddenRestartLevel)
 		{
-			DrawOverflowButton("OverflowRestartLevel", CascadeRestartLevelIcon.Get(), "Restart Level", true, "Restart Level", [&]() { Viewer->RestartLevel(); });
+			DrawOverflowButton("OverflowRestartLevel", CascadeRestartLevelIcon.Get(), "Restart Level", true, "Restart Level", [&]()
+							   { Viewer->RestartLevel(); });
 			bNeedsSeparator = true;
 		}
 		DrawSeparatorForHiddenGroup(bNeedsSeparator && (bHiddenUndo || bHiddenRedo || bHiddenThumbnail || bHiddenBounds || bHiddenAxis || bHiddenBackground || bHiddenRegenLOD || bHiddenLowestLOD || bHiddenLowerLOD || bHiddenAddLOD || bHiddenCurrentLOD || bHiddenUpperLOD || bHiddenHighestLOD));
@@ -455,17 +471,20 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 		bNeedsSeparator = false;
 		if (bHiddenBounds)
 		{
-			DrawOverflowButton("OverflowBounds", CascadeBoundsIcon.Get(), Viewer->IsShowBounds() ? "Hide Bounds" : "Show Bounds", true, "Bounds", [&]() { Viewer->SetShowBounds(!Viewer->IsShowBounds()); });
+			DrawOverflowButton("OverflowBounds", CascadeBoundsIcon.Get(), Viewer->IsShowBounds() ? "Hide Bounds" : "Show Bounds", true, "Bounds", [&]()
+							   { Viewer->SetShowBounds(!Viewer->IsShowBounds()); });
 			bNeedsSeparator = true;
 		}
 		if (bHiddenAxis)
 		{
-			DrawOverflowButton("OverflowAxis", CascadeAxisIcon.Get(), Viewer->IsShowGrid() ? "Hide Axis/Grid" : "Show Axis/Grid", true, "Axis", [&]() { Viewer->SetShowGrid(!Viewer->IsShowGrid()); });
+			DrawOverflowButton("OverflowAxis", CascadeAxisIcon.Get(), Viewer->IsShowGrid() ? "Hide Axis/Grid" : "Show Axis/Grid", true, "Axis", [&]()
+							   { Viewer->SetShowGrid(!Viewer->IsShowGrid()); });
 			bNeedsSeparator = true;
 		}
 		if (bHiddenBackground)
 		{
-			DrawOverflowButton("OverflowBackground", CascadeBackgroundIcon.Get(), "Background", true, "Background", [&]() { bOpenBackgroundPopup = true; });
+			DrawOverflowButton("OverflowBackground", CascadeBackgroundIcon.Get(), "Background", true, "Background", [&]()
+							   { bOpenBackgroundPopup = true; });
 			bNeedsSeparator = true;
 		}
 		DrawSeparatorForHiddenGroup(bNeedsSeparator && (bHiddenRegenLOD || bHiddenLowestLOD || bHiddenLowerLOD || bHiddenAddLOD || bHiddenCurrentLOD || bHiddenUpperLOD || bHiddenHighestLOD));
@@ -476,15 +495,18 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 		}
 		if (bHiddenLowestLOD)
 		{
-			DrawOverflowButton("OverflowLowestLOD", CascadeLowestLODIcon.Get(), "Lowest LOD", true, "Lowest LOD", [&]() { Viewer->SetLowestLOD(); });
+			DrawOverflowButton("OverflowLowestLOD", CascadeLowestLODIcon.Get(), "Lowest LOD", true, "Lowest LOD", [&]()
+							   { Viewer->SetLowestLOD(); });
 		}
 		if (bHiddenLowerLOD)
 		{
-			DrawOverflowButton("OverflowLowerLOD", CascadeLowerLODIcon.Get(), "Lower LOD", true, "Lower LOD", [&]() { Viewer->SelectLowerLOD(); });
+			DrawOverflowButton("OverflowLowerLOD", CascadeLowerLODIcon.Get(), "Lower LOD", true, "Lower LOD", [&]()
+							   { Viewer->SelectLowerLOD(); });
 		}
 		if (bHiddenAddLOD)
 		{
-			DrawOverflowButton("OverflowAddLOD", CascadeAddLODIcon.Get(), "Add LOD", true, "Add LOD", [&]() { Viewer->AddLOD(); });
+			DrawOverflowButton("OverflowAddLOD", CascadeAddLODIcon.Get(), "Add LOD", true, "Add LOD", [&]()
+							   { Viewer->AddLOD(); });
 		}
 		if (bHiddenCurrentLOD)
 		{
@@ -492,11 +514,13 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 		}
 		if (bHiddenUpperLOD)
 		{
-			DrawOverflowButton("OverflowUpperLOD", CascadeUpperLODIcon.Get(), "Upper LOD", true, "Upper LOD", [&]() { Viewer->SelectUpperLOD(); });
+			DrawOverflowButton("OverflowUpperLOD", CascadeUpperLODIcon.Get(), "Upper LOD", true, "Upper LOD", [&]()
+							   { Viewer->SelectUpperLOD(); });
 		}
 		if (bHiddenHighestLOD)
 		{
-			DrawOverflowButton("OverflowHighestLOD", CascadeHighestLODIcon.Get(), "Highest LOD", true, "Highest LOD", [&]() { Viewer->SetHighestLOD(); });
+			DrawOverflowButton("OverflowHighestLOD", CascadeHighestLODIcon.Get(), "Highest LOD", true, "Highest LOD", [&]()
+							   { Viewer->SetHighestLOD(); });
 		}
 		ImGui::EndPopup();
 	}
@@ -655,9 +679,8 @@ bool FParticleEditorViewerWidget::DrawCascadeToolbarIconButton(
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
 	const ImU32 BgColor = ImGui::GetColorU32(
-		bActive ? ImVec4(0.18f, 0.20f, 0.23f, 1.0f) :
-		bHovered ? ImVec4(0.14f, 0.16f, 0.19f, 1.0f) :
-				   ImVec4(0.09f, 0.10f, 0.12f, 1.0f));
+		bActive ? ImVec4(0.18f, 0.20f, 0.23f, 1.0f) : bHovered ? ImVec4(0.14f, 0.16f, 0.19f, 1.0f)
+															   : ImVec4(0.09f, 0.10f, 0.12f, 1.0f));
 	DrawList->AddRectFilled(Min, Max, BgColor, 3.0f);
 
 	if (Icon)
@@ -724,41 +747,70 @@ void FParticleEditorViewerWidget::RenderEmitterPanel(FParticleEditorViewer* View
 	}
 
 	const int32 EmitterCount = static_cast<int32>(ParticleSystem->Emitters.size());
-	if (EmitterCount > 0 && ImGui::BeginTable("##ParticleEmitterColumns", EmitterCount, ImGuiTableFlags_SizingFixedFit))
+	if (EmitterCount > 0)
 	{
-		for (int32 EmitterIndex = 0; EmitterIndex < EmitterCount; ++EmitterIndex)
+		ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(0.0f, ImGui::GetStyle().CellPadding.y));
+		constexpr ImGuiTableFlags TableFlags = ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_ScrollX;
+		
+		if (ImGui::BeginTable("##ParticleEmitterColumns", EmitterCount, TableFlags))
 		{
-			ImGui::TableSetupColumn(("Emitter " + std::to_string(EmitterIndex)).c_str(), ImGuiTableColumnFlags_WidthFixed, EmitterNodeWidth + EmitterSeparatorGap);
+			for (int32 EmitterIndex = 0; EmitterIndex < EmitterCount; ++EmitterIndex)
+			{
+				ImGui::TableSetupColumn(("Emitter " + std::to_string(EmitterIndex)).c_str(), ImGuiTableColumnFlags_WidthFixed, EmitterNodeWidth + EmitterSeparatorGap);
+			}
+			ImGui::TableNextRow();
+			for (int32 EmitterIndex = 0; EmitterIndex < EmitterCount; ++EmitterIndex)
+			{
+				ImGui::TableSetColumnIndex(EmitterIndex);
+				ImGui::PushID(EmitterIndex);
+				DrawEmitterNode(Viewer, EmitterIndex);
+				ImGui::PopID();
+			}
+			ImGui::EndTable();
 		}
-		ImGui::TableNextRow();
-		for (int32 EmitterIndex = 0; EmitterIndex < EmitterCount; ++EmitterIndex)
-		{
-			ImGui::TableSetColumnIndex(EmitterIndex);
-			ImGui::PushID(EmitterIndex);
-			DrawEmitterNode(Viewer, EmitterIndex);
-			ImGui::PopID();
-		}
-		ImGui::EndTable();
+		ImGui::PopStyleVar();
 	}
 
-	RenderEmitterContextMenu(Viewer);
+	// 패널에 남은 빈 공간 전체를 덮는 투명 버튼 생성
+	const ImVec2 Avail = ImGui::GetContentRegionAvail();
+    if (Avail.x > 0.0f && Avail.y > 0.0f)
+    {
+        ImGui::InvisibleButton("##EmitterPanelEmptySpace", Avail);
+        if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+        {
+            ImGui::OpenPopup("ParticleEmitterPanelContext");
+        }
+    }
+
+    if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !ImGui::IsAnyItemHovered())
+    {
+        ImGui::OpenPopup("ParticleEmitterPanelContext");
+    }
+
+    RenderEmitterContextMenu(Viewer);
 }
 
 void FParticleEditorViewerWidget::RenderEmitterContextMenu(FParticleEditorViewer* Viewer)
 {
-	if (ImGui::BeginPopupContextWindow("ParticleEmitterPanelContext", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
-	{
-		if (ImGui::MenuItem("Add Emitter"))
-		{
-			Viewer->AddEmitter();
-		}
-		if (Viewer->GetSelectedEmitterIndex() >= 0 && Viewer->GetSelectedLODLevel() != nullptr && ImGui::BeginMenu("Add Module"))
-		{
-			DrawParticleModuleClassMenu(Viewer);
-			ImGui::EndMenu();
-		}
-		ImGui::EndPopup();
-	}
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 6.0f));
+
+	// Emitter Card가 있는 영역을 제외한 빈 배경에서만 열립니다.
+	if (ImGui::BeginPopup("ParticleEmitterPanelContext"))
+    {
+        if (ImGui::MenuItem("Add Emitter"))
+        {
+            Viewer->AddEmitter();
+        }
+        if (Viewer->GetSelectedEmitterIndex() >= 0 && Viewer->GetSelectedLODLevel() != nullptr && ImGui::BeginMenu("Add Module"))
+        {
+            DrawParticleModuleClassMenu(Viewer);
+            ImGui::EndMenu();
+        }
+        ImGui::EndPopup();
+    }
+
+	ImGui::PopStyleVar(2);
 }
 
 void FParticleEditorViewerWidget::RenderDetailsPanel(FParticleEditorViewer* Viewer)
@@ -945,6 +997,25 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 	DrawList->AddRectFilled(CardStart, ImVec2(CardStart.x + CardWidth, CardStart.y + HeaderHeight), IM_COL32(33, 34, 38, 255), 4.0f);
 	DrawList->AddRect(CardStart, ImVec2(CardStart.x + CardWidth, CardStart.y + HeaderHeight), IM_COL32(75, 75, 82, 255), 4.0f);
 
+	auto DrawEmitterContextMenu = [&]()
+	{
+		bool bDeletedEmitter = false;
+		if (bSelected && ImGui::MenuItem("Delete Emitter"))
+		{
+			Viewer->DeleteSelectedEmitter();
+			bDeletedEmitter = true;
+		}
+		if (!bDeletedEmitter && ImGui::MenuItem("Add Emitter"))
+		{
+			Viewer->AddEmitter();
+		}
+		if (!bDeletedEmitter && LOD && ImGui::BeginMenu("Add Module"))
+		{
+			DrawParticleModuleClassMenu(Viewer);
+			ImGui::EndMenu();
+		}
+	};
+
 	ImGui::InvisibleButton("##EmitterHeader", ImVec2(CardWidth, HeaderHeight));
 	if (ImGui::IsItemClicked())
 	{
@@ -984,19 +1055,16 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 		}
 		ImGui::EndDragDropTarget();
 	}
+	
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f)); // 창 가장자리 여백
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 6.0f));   // 메뉴 항목 간격
 	if (ImGui::BeginPopupContextItem("EmitterHeaderContext"))
 	{
-		if (ImGui::MenuItem("Add Emitter"))
-		{
-			Viewer->AddEmitter();
-		}
-		if (LOD && ImGui::BeginMenu("Add Module"))
-		{
-			DrawParticleModuleClassMenu(Viewer);
-			ImGui::EndMenu();
-		}
+		DrawEmitterContextMenu();
 		ImGui::EndPopup();
 	}
+	ImGui::PopStyleVar(2);
+	
 	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID))
 	{
 		FParticleEmitterDragPayload Payload = {
@@ -1033,68 +1101,133 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 	DrawEmitterPreview(ImVec2(64.0f, 64.0f), EmitterIndex, bSelected);
 	ImGui::SetCursorScreenPos(ImVec2(CardStart.x, CardStart.y + HeaderHeight + 6.0f));
 
-	if (!LOD)
+	// 모듈 리스트 Child Window
+	const float ModulesStartY = ImGui::GetCursorScreenPos().y;
+	const float ChildHeight = SeparatorBottom - ModulesStartY;
+
+	if (ChildHeight > 0.0f)
 	{
-		ImGui::TextDisabled("No LOD");
-		const ImVec2 CardEnd(CardStart.x + CardWidth, ImGui::GetCursorScreenPos().y);
-		if (bSelected)
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 6.0f);
+		
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 8.0f); 
+
+		ImGui::BeginChild("ModuleList", ImVec2(CardWidth - 8.0f, ChildHeight), false, 
+			ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysVerticalScrollbar);
+
+		if (!LOD)
 		{
-			DrawList->AddRect(CardStart, CardEnd, IM_COL32(240, 219, 79, 255), 4.0f, 0, 2.0f);
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8.0f);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.0f);
+			ImGui::TextDisabled("No LOD");
 		}
-		return;
+		else
+		{
+			if (LOD->RequiredModule)
+			{
+				DrawSelectableModuleRow(
+					Viewer,
+					"Required Module",
+					EParticleEditorSelectionType::RequiredModule,
+					EmitterIndex,
+					LODIndex,
+					-1,
+					IM_COL32(244, 232, 156, 62));
+			}
+
+			if (LOD->SpawnModule)
+			{
+				DrawSelectableModuleRow(
+					Viewer,
+					"Spawn Module",
+					EParticleEditorSelectionType::SpawnModule,
+					EmitterIndex,
+					LODIndex,
+					-1,
+					IM_COL32(244, 150, 150, 58));
+			}
+
+			for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(LOD->Modules.size()); ++ModuleIndex)
+			{
+				UParticleModule* Module = LOD->Modules[ModuleIndex];
+				const bool bSpawnModule = Cast<UParticleModuleSpawn>(Module) != nullptr;
+				DrawSelectableModuleRow(
+					Viewer,
+					bSpawnModule ? "Spawn Module" : GetObjectLabel(Module),
+					EParticleEditorSelectionType::Module,
+					EmitterIndex,
+					LODIndex,
+					ModuleIndex,
+					bSpawnModule ? IM_COL32(244, 150, 150, 58) : IM_COL32(0, 0, 0, 0));
+			}
+
+			if (LOD->TypeDataModule)
+			{
+				DrawSelectableModuleRow(
+					Viewer,
+					"Type Data Module",
+					EParticleEditorSelectionType::TypeDataModule,
+					EmitterIndex,
+					LODIndex,
+					-1,
+					IM_COL32(150, 190, 244, 45));
+			}
+		}
+
+		// Child Window 내부에 남은 빈 공간에 투명 버튼 생성
+		const float EmptySpaceHeight = ImGui::GetContentRegionAvail().y;
+		if (EmptySpaceHeight > 0.0f)
+		{
+			ImGui::InvisibleButton("##EmitterEmptySpace", ImVec2(ImGui::GetContentRegionAvail().x, EmptySpaceHeight));
+			
+			if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+			{
+				Viewer->SelectEmitter(EmitterIndex);
+			}
+			else if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
+			{
+				Viewer->SelectEmitter(EmitterIndex);
+				Viewer->SelectLOD(LODIndex);
+			}
+
+			// ==== [수정 부분] 빈 영역 컨텍스트 메뉴 여백 추가 ====
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 6.0f));
+			if (ImGui::BeginPopupContextItem("EmitterEmptySpaceContext"))
+			{
+				DrawEmitterContextMenu();
+				ImGui::EndPopup();
+			}
+			ImGui::PopStyleVar(2);
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ParticleModuleDragPayload))
+				{
+					const FParticleModuleDragPayload* DragPayload = static_cast<const FParticleModuleDragPayload*>(Payload->Data);
+					if (DragPayload)
+					{
+						Viewer->SelectEmitter(DragPayload->EmitterIndex);
+						Viewer->SelectLOD(DragPayload->LODIndex);
+						if (ImGui::GetIO().KeyCtrl)
+						{
+							Viewer->CopyModuleToEmitter(DragPayload->ModuleIndex, EmitterIndex);
+						}
+						else
+						{
+							Viewer->MoveModuleToEmitter(DragPayload->ModuleIndex, EmitterIndex);
+						}
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+		}
+
+		ImGui::EndChild();
+		ImGui::PopStyleVar(2);
 	}
 
-	if (LOD->RequiredModule)
-	{
-		DrawSelectableModuleRow(
-			Viewer,
-			"Required Module",
-			EParticleEditorSelectionType::RequiredModule,
-			EmitterIndex,
-			LODIndex,
-			-1,
-			IM_COL32(244, 232, 156, 62));
-	}
-
-	if (LOD->SpawnModule)
-	{
-		DrawSelectableModuleRow(
-			Viewer,
-			"Spawn Module",
-			EParticleEditorSelectionType::SpawnModule,
-			EmitterIndex,
-			LODIndex,
-			-1,
-			IM_COL32(244, 150, 150, 58));
-	}
-
-	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(LOD->Modules.size()); ++ModuleIndex)
-	{
-		UParticleModule* Module = LOD->Modules[ModuleIndex];
-		const bool bSpawnModule = Cast<UParticleModuleSpawn>(Module) != nullptr;
-		DrawSelectableModuleRow(
-			Viewer,
-			bSpawnModule ? "Spawn Module" : GetObjectLabel(Module),
-			EParticleEditorSelectionType::Module,
-			EmitterIndex,
-			LODIndex,
-			ModuleIndex,
-			bSpawnModule ? IM_COL32(244, 150, 150, 58) : IM_COL32(0, 0, 0, 0));
-	}
-
-	if (LOD->TypeDataModule)
-	{
-		DrawSelectableModuleRow(
-			Viewer,
-			"Type Data Module",
-			EParticleEditorSelectionType::TypeDataModule,
-			EmitterIndex,
-			LODIndex,
-			-1,
-			IM_COL32(150, 190, 244, 45));
-	}
-
-	const ImVec2 CardEnd(CardStart.x + CardWidth, ImGui::GetCursorScreenPos().y);
+	const ImVec2 CardEnd(CardStart.x + CardWidth, SeparatorBottom);
 	if (bSelected)
 	{
 		DrawList->AddRect(CardStart, CardEnd, IM_COL32(240, 219, 79, 255), 4.0f, 0, 2.0f);
@@ -1116,8 +1249,8 @@ void FParticleEditorViewerWidget::DrawLODNode(FParticleEditorViewer* Viewer, int
 	}
 
 	const bool bSelected = Viewer->GetSelectionType() == EParticleEditorSelectionType::LODLevel &&
-		Viewer->GetSelectedEmitterIndex() == EmitterIndex &&
-		Viewer->GetSelectedLODIndex() == LODIndex;
+						   Viewer->GetSelectedEmitterIndex() == EmitterIndex &&
+						   Viewer->GetSelectedLODIndex() == LODIndex;
 	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 	if (bSelected)
 	{
@@ -1272,359 +1405,365 @@ void FParticleEditorViewerWidget::DrawModuleNode(FParticleEditorViewer* Viewer, 
 
 namespace
 {
-	FParticleEditorViewer* AsParticleViewer(FEditorViewer* Viewer)
+FParticleEditorViewer* AsParticleViewer(FEditorViewer* Viewer)
+{
+	return Viewer && Viewer->GetTabKind() == EEditorTabKind::ParticleViewer
+			   ? static_cast<FParticleEditorViewer*>(Viewer)
+			   : nullptr;
+}
+
+const char* GetSelectionLabel(EParticleEditorSelectionType Type)
+{
+	switch (Type)
 	{
-		return Viewer && Viewer->GetTabKind() == EEditorTabKind::ParticleViewer
-			? static_cast<FParticleEditorViewer*>(Viewer)
-			: nullptr;
+	case EParticleEditorSelectionType::ParticleSystem:
+		return "Particle System";
+	case EParticleEditorSelectionType::Emitter:
+		return "Emitter";
+	case EParticleEditorSelectionType::LODLevel:
+		return "LOD Level";
+	case EParticleEditorSelectionType::RequiredModule:
+		return "Required Module";
+	case EParticleEditorSelectionType::SpawnModule:
+		return "Spawn Module";
+	case EParticleEditorSelectionType::TypeDataModule:
+		return "Type Data Module";
+	case EParticleEditorSelectionType::Module:
+		return "Module";
+	case EParticleEditorSelectionType::None:
+	default:
+		return "None";
 	}
+}
 
-	const char* GetSelectionLabel(EParticleEditorSelectionType Type)
+const char* GetObjectLabel(const UObject* Object)
+{
+	return Object ? Object->GetClassName() : "None";
+}
+
+void DrawParticlePanelTitle(const char* Title, const char* Subtitle)
+{
+	const ImVec2 Start = ImGui::GetCursorScreenPos();
+	const float Width = ImGui::GetContentRegionAvail().x;
+	const float Height = 34.0f;
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	const ImVec2 End(Start.x + Width, Start.y + Height);
+
+	DrawList->AddRectFilled(Start, End, IM_COL32(27, 29, 35, 255), 3.0f);
+	DrawList->AddRectFilled(Start, ImVec2(Start.x + Width, Start.y + 2.0f), IM_COL32(112, 146, 214, 255), 3.0f);
+	DrawList->AddLine(ImVec2(Start.x, End.y), End, IM_COL32(66, 70, 82, 255), 1.0f);
+
+	const ImVec2 TitleSize = ImGui::CalcTextSize(Title);
+	DrawList->AddText(
+		ImVec2(Start.x + 10.0f, Start.y + (Height - TitleSize.y) * 0.5f),
+		ImGui::GetColorU32(ImVec4(0.93f, 0.95f, 1.0f, 1.0f)),
+		Title);
+
+	if (Subtitle && Subtitle[0] != '\0')
 	{
-		switch (Type)
-		{
-		case EParticleEditorSelectionType::ParticleSystem: return "Particle System";
-		case EParticleEditorSelectionType::Emitter: return "Emitter";
-		case EParticleEditorSelectionType::LODLevel: return "LOD Level";
-		case EParticleEditorSelectionType::RequiredModule: return "Required Module";
-		case EParticleEditorSelectionType::SpawnModule: return "Spawn Module";
-		case EParticleEditorSelectionType::TypeDataModule: return "Type Data Module";
-		case EParticleEditorSelectionType::Module: return "Module";
-		case EParticleEditorSelectionType::None:
-		default: return "None";
-		}
-	}
-
-	const char* GetObjectLabel(const UObject* Object)
-	{
-		return Object ? Object->GetClassName() : "None";
-	}
-
-	void DrawParticlePanelTitle(const char* Title, const char* Subtitle)
-	{
-		const ImVec2 Start = ImGui::GetCursorScreenPos();
-		const float Width = ImGui::GetContentRegionAvail().x;
-		const float Height = 34.0f;
-		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-		const ImVec2 End(Start.x + Width, Start.y + Height);
-
-		DrawList->AddRectFilled(Start, End, IM_COL32(27, 29, 35, 255), 3.0f);
-		DrawList->AddRectFilled(Start, ImVec2(Start.x + Width, Start.y + 2.0f), IM_COL32(112, 146, 214, 255), 3.0f);
-		DrawList->AddLine(ImVec2(Start.x, End.y), End, IM_COL32(66, 70, 82, 255), 1.0f);
-
-		const ImVec2 TitleSize = ImGui::CalcTextSize(Title);
+		const ImVec2 SubtitleSize = ImGui::CalcTextSize(Subtitle);
 		DrawList->AddText(
-			ImVec2(Start.x + 10.0f, Start.y + (Height - TitleSize.y) * 0.5f),
-			ImGui::GetColorU32(ImVec4(0.93f, 0.95f, 1.0f, 1.0f)),
-			Title);
-
-		if (Subtitle && Subtitle[0] != '\0')
-		{
-			const ImVec2 SubtitleSize = ImGui::CalcTextSize(Subtitle);
-			DrawList->AddText(
-				ImVec2(End.x - SubtitleSize.x - 10.0f, Start.y + (Height - SubtitleSize.y) * 0.5f),
-				ImGui::GetColorU32(ImVec4(0.56f, 0.60f, 0.68f, 1.0f)),
-				Subtitle);
-		}
-
-		ImGui::Dummy(ImVec2(Width, Height + 8.0f));
+			ImVec2(End.x - SubtitleSize.x - 10.0f, Start.y + (Height - SubtitleSize.y) * 0.5f),
+			ImGui::GetColorU32(ImVec4(0.56f, 0.60f, 0.68f, 1.0f)),
+			Subtitle);
 	}
 
-	void DrawParticleDetailsSection(const char* Title)
-	{
-		ImGui::Spacing();
-		ImGui::TextColored(ImVec4(0.72f, 0.77f, 0.88f, 1.0f), "%s", Title);
-		ImGui::Separator();
-	}
+	ImGui::Dummy(ImVec2(Width, Height + 8.0f));
+}
 
-	void DrawParticleDetailsText(const char* Label, const char* Value)
-	{
-		ImGui::TextDisabled("%s", Label);
-		ImGui::SameLine(150.0f);
-		ImGui::TextUnformatted(Value ? Value : "");
-	}
+void DrawParticleDetailsSection(const char* Title)
+{
+	ImGui::Spacing();
+	ImGui::TextColored(ImVec4(0.72f, 0.77f, 0.88f, 1.0f), "%s", Title);
+	ImGui::Separator();
+}
 
-	void GetParticleModuleClasses(TArray<UClass*>& OutClasses)
-	{
-		OutClasses.clear();
-		FReflectionRegistry::Get().GetClassesDerivedFrom(UParticleModule::StaticClass(), OutClasses);
-		OutClasses.erase(
-			std::remove_if(
-				OutClasses.begin(),
-				OutClasses.end(),
-				[](const UClass* Class)
-				{
-					return !Class ||
-						Class == UParticleModule::StaticClass() ||
-						Class->HasAnyClassFlags(CF_Abstract);
-				}),
-			OutClasses.end());
-		std::stable_sort(
+void DrawParticleDetailsText(const char* Label, const char* Value)
+{
+	ImGui::TextDisabled("%s", Label);
+	ImGui::SameLine(150.0f);
+	ImGui::TextUnformatted(Value ? Value : "");
+}
+
+void GetParticleModuleClasses(TArray<UClass*>& OutClasses)
+{
+	OutClasses.clear();
+	FReflectionRegistry::Get().GetClassesDerivedFrom(UParticleModule::StaticClass(), OutClasses);
+	OutClasses.erase(
+		std::remove_if(
 			OutClasses.begin(),
 			OutClasses.end(),
-			[](const UClass* Lhs, const UClass* Rhs)
+			[](const UClass* Class)
 			{
-				return std::strcmp(Lhs->GetDisplayName(), Rhs->GetDisplayName()) < 0;
-			});
+				return !Class ||
+					   Class == UParticleModule::StaticClass() ||
+					   Class->HasAnyClassFlags(CF_Abstract);
+			}),
+		OutClasses.end());
+	std::stable_sort(
+		OutClasses.begin(),
+		OutClasses.end(),
+		[](const UClass* Lhs, const UClass* Rhs)
+		{
+			return std::strcmp(Lhs->GetDisplayName(), Rhs->GetDisplayName()) < 0;
+		});
+}
+
+bool DrawParticleModuleClassMenu(FParticleEditorViewer* Viewer)
+{
+	TArray<UClass*> ModuleClasses;
+	GetParticleModuleClasses(ModuleClasses);
+
+	if (ModuleClasses.empty())
+	{
+		ImGui::TextDisabled("No particle module classes");
+		return false;
 	}
 
-	bool DrawParticleModuleClassMenu(FParticleEditorViewer* Viewer)
+	bool bAdded = false;
+	for (UClass* ModuleClass : ModuleClasses)
 	{
-		TArray<UClass*> ModuleClasses;
-		GetParticleModuleClasses(ModuleClasses);
-
-		if (ModuleClasses.empty())
+		if (!ModuleClass)
 		{
-			ImGui::TextDisabled("No particle module classes");
-			return false;
+			continue;
 		}
 
-		bool bAdded = false;
-		for (UClass* ModuleClass : ModuleClasses)
+		if (ImGui::MenuItem(ModuleClass->GetDisplayName()))
 		{
-			if (!ModuleClass)
+			Viewer->AddModule(ModuleClass);
+			bAdded = true;
+		}
+	}
+	return bAdded;
+}
+
+bool DrawPopupButton(const char* Label, const char* PopupId)
+{
+	if (ImGui::Button(Label))
+	{
+		ImGui::OpenPopup(PopupId);
+	}
+	return true;
+}
+
+bool DrawRoundedToolbarButton(const char* Id, const char* Label, const char* Tooltip, const ImVec2& Size)
+{
+	ImGui::PushID(Id);
+	const bool bPressed = ImGui::InvisibleButton("##RoundedToolbarButton", Size);
+	const bool bHovered = ImGui::IsItemHovered();
+	const bool bActive = ImGui::IsItemActive();
+	const ImVec2 Min = ImGui::GetItemRectMin();
+	const ImVec2 Max = ImGui::GetItemRectMax();
+	const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	const ImU32 FillColor = bActive ? IM_COL32(56, 104, 174, 232) : (bHovered ? IM_COL32(52, 58, 70, 220) : IM_COL32(28, 31, 38, 190));
+	DrawList->AddRectFilled(Min, Max, FillColor, 8.0f);
+
+	const ImVec2 TextSize = ImGui::CalcTextSize(Label);
+	DrawList->AddText(ImVec2(Center.x - TextSize.x * 0.5f, Center.y - TextSize.y * 0.5f), ImGui::GetColorU32(ImGuiCol_Text), Label);
+
+	if (bHovered && Tooltip && Tooltip[0] != '\0')
+	{
+		ImGui::SetTooltip("%s", Tooltip);
+	}
+	ImGui::PopID();
+	return bPressed;
+}
+
+void DrawEmitterPreview(const ImVec2& Size, int32 EmitterIndex, bool bSelected)
+{
+	const ImVec2 Start = ImGui::GetCursorScreenPos();
+	ImGui::InvisibleButton("##EmitterPreview", Size);
+
+	const ImVec2 End(Start.x + Size.x, Start.y + Size.y);
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	DrawList->AddRectFilled(Start, End, IM_COL32(18, 20, 24, 255), 4.0f);
+	DrawList->AddRect(Start, End, bSelected ? IM_COL32(240, 219, 79, 255) : IM_COL32(76, 78, 86, 255), 4.0f);
+
+	const ImU32 Warm = IM_COL32(255, 126, 82, 210);
+	const ImU32 Cool = IM_COL32(104, 190, 255, 180);
+	const ImU32 Soft = IM_COL32(255, 220, 130, 170);
+	for (int32 Index = 0; Index < 9; ++Index)
+	{
+		const float XRatio = 0.18f + 0.68f * static_cast<float>(((EmitterIndex * 17 + Index * 31) % 100)) / 100.0f;
+		const float YRatio = 0.18f + 0.62f * static_cast<float>(((EmitterIndex * 29 + Index * 23) % 100)) / 100.0f;
+		const float Radius = 2.0f + static_cast<float>((Index + EmitterIndex) % 4);
+		const ImU32 Color = Index % 3 == 0 ? Warm : (Index % 3 == 1 ? Cool : Soft);
+		const ImVec2 Center(Start.x + Size.x * XRatio, Start.y + Size.y * YRatio);
+		DrawList->AddCircleFilled(Center, Radius, Color, 12);
+	}
+	DrawList->AddLine(
+		ImVec2(Start.x + Size.x * 0.16f, End.y - Size.y * 0.18f),
+		ImVec2(End.x - Size.x * 0.14f, Start.y + Size.y * 0.24f),
+		IM_COL32(255, 255, 255, 32),
+		1.0f);
+}
+
+void DrawSelectableModuleRow(
+	FParticleEditorViewer* Viewer,
+	const char* Label,
+	EParticleEditorSelectionType Type,
+	int32 EmitterIndex,
+	int32 LODIndex,
+	int32 ModuleIndex,
+	ImU32 BackgroundColor)
+{
+	const bool bSelected =
+		Viewer->GetSelectionType() == Type &&
+		Viewer->GetSelectedEmitterIndex() == EmitterIndex &&
+		Viewer->GetSelectedLODIndex() == LODIndex &&
+		(Type != EParticleEditorSelectionType::Module || Viewer->GetSelectedModuleIndex() == ModuleIndex);
+
+	ImGui::PushID(static_cast<int>(Type));
+	ImGui::PushID(ModuleIndex);
+
+	const ImVec2 RowStart = ImGui::GetCursorScreenPos();
+	const float RowHeight = ImGui::GetTextLineHeight() + 6.0f;
+	const float TextLeftPadding = 12.0f;
+	const float RowWidth = std::max(1.0f, ImGui::GetContentRegionAvail().x - EmitterSeparatorGap);
+	const ImVec2 RowEnd(RowStart.x + RowWidth, RowStart.y + RowHeight);
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	if ((BackgroundColor & IM_COL32_A_MASK) != 0)
+	{
+		DrawList->AddRectFilled(
+			RowStart,
+			RowEnd,
+			BackgroundColor,
+			3.0f);
+	}
+
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
+	const bool bPressed = ImGui::InvisibleButton("##SelectableModuleRow", ImVec2(RowWidth, RowHeight));
+	ImGui::PopStyleVar();
+
+	if (bSelected || ImGui::IsItemHovered())
+	{
+		const ImU32 StateColor = ImGui::GetColorU32(
+			bSelected
+				? ImVec4(0.22f, 0.33f, 0.55f, 0.78f)
+				: ImVec4(0.22f, 0.24f, 0.30f, 0.42f));
+		DrawList->AddRectFilled(RowStart, RowEnd, StateColor, 3.0f);
+	}
+
+	const ImVec2 TextSize = ImGui::CalcTextSize(Label);
+	DrawList->AddText(
+		ImVec2(RowStart.x + TextLeftPadding, RowStart.y + (RowHeight - TextSize.y) * 0.5f),
+		ImGui::GetColorU32(ImGuiCol_Text),
+		Label);
+
+	if (bPressed)
+	{
+		Viewer->SelectEmitter(EmitterIndex);
+		Viewer->SelectLOD(LODIndex);
+		switch (Type)
+		{
+		case EParticleEditorSelectionType::RequiredModule:
+			Viewer->SelectRequiredModule();
+			break;
+		case EParticleEditorSelectionType::SpawnModule:
+			Viewer->SelectSpawnModule();
+			break;
+		case EParticleEditorSelectionType::TypeDataModule:
+			Viewer->SelectTypeDataModule();
+			break;
+		case EParticleEditorSelectionType::Module:
+			Viewer->SelectEmitterModule(EmitterIndex, LODIndex, ModuleIndex);
+			break;
+		case EParticleEditorSelectionType::LODLevel:
+			break;
+		case EParticleEditorSelectionType::Emitter:
+		case EParticleEditorSelectionType::ParticleSystem:
+		case EParticleEditorSelectionType::None:
+		default:
+			break;
+		}
+	}
+
+	if (Type == EParticleEditorSelectionType::Module)
+	{
+		if (ImGui::BeginDragDropSource())
+		{
+			FParticleModuleDragPayload Payload = {
+				EmitterIndex,
+				LODIndex,
+				ModuleIndex
+			};
+			ImGui::SetDragDropPayload(ParticleModuleDragPayload, &Payload, sizeof(Payload));
+			ImGui::Text("Module: %s", Label);
+			ImGui::EndDragDropSource();
+		}
+
+		if (ImGui::BeginPopupContextItem("ModuleContext"))
+		{
+			if (ImGui::MenuItem("Delete Module"))
 			{
-				continue;
-			}
-
-			if (ImGui::MenuItem(ModuleClass->GetDisplayName()))
-			{
-				Viewer->AddModule(ModuleClass);
-				bAdded = true;
-			}
-		}
-		return bAdded;
-	}
-
-	bool DrawPopupButton(const char* Label, const char* PopupId)
-	{
-		if (ImGui::Button(Label))
-		{
-			ImGui::OpenPopup(PopupId);
-		}
-		return true;
-	}
-
-	bool DrawRoundedToolbarButton(const char* Id, const char* Label, const char* Tooltip, const ImVec2& Size)
-	{
-		ImGui::PushID(Id);
-		const bool bPressed = ImGui::InvisibleButton("##RoundedToolbarButton", Size);
-		const bool bHovered = ImGui::IsItemHovered();
-		const bool bActive = ImGui::IsItemActive();
-		const ImVec2 Min = ImGui::GetItemRectMin();
-		const ImVec2 Max = ImGui::GetItemRectMax();
-		const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
-		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-
-		const ImU32 FillColor = bActive ? IM_COL32(56, 104, 174, 232) : (bHovered ? IM_COL32(52, 58, 70, 220) : IM_COL32(28, 31, 38, 190));
-		const ImU32 BorderColor = bHovered ? IM_COL32(190, 205, 238, 255) : IM_COL32(112, 120, 138, 230);
-		DrawList->AddRectFilled(Min, Max, FillColor, 8.0f);
-		DrawList->AddRect(Min, Max, BorderColor, 8.0f, 0, 1.0f);
-
-		const ImVec2 TextSize = ImGui::CalcTextSize(Label);
-		DrawList->AddText(ImVec2(Center.x - TextSize.x * 0.5f, Center.y - TextSize.y * 0.5f), ImGui::GetColorU32(ImGuiCol_Text), Label);
-
-		if (bHovered && Tooltip && Tooltip[0] != '\0')
-		{
-			ImGui::SetTooltip("%s", Tooltip);
-		}
-		ImGui::PopID();
-		return bPressed;
-	}
-
-	void DrawEmitterPreview(const ImVec2& Size, int32 EmitterIndex, bool bSelected)
-	{
-		const ImVec2 Start = ImGui::GetCursorScreenPos();
-		ImGui::InvisibleButton("##EmitterPreview", Size);
-
-		const ImVec2 End(Start.x + Size.x, Start.y + Size.y);
-		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-		DrawList->AddRectFilled(Start, End, IM_COL32(18, 20, 24, 255), 4.0f);
-		DrawList->AddRect(Start, End, bSelected ? IM_COL32(240, 219, 79, 255) : IM_COL32(76, 78, 86, 255), 4.0f);
-
-		const ImU32 Warm = IM_COL32(255, 126, 82, 210);
-		const ImU32 Cool = IM_COL32(104, 190, 255, 180);
-		const ImU32 Soft = IM_COL32(255, 220, 130, 170);
-		for (int32 Index = 0; Index < 9; ++Index)
-		{
-			const float XRatio = 0.18f + 0.68f * static_cast<float>(((EmitterIndex * 17 + Index * 31) % 100)) / 100.0f;
-			const float YRatio = 0.18f + 0.62f * static_cast<float>(((EmitterIndex * 29 + Index * 23) % 100)) / 100.0f;
-			const float Radius = 2.0f + static_cast<float>((Index + EmitterIndex) % 4);
-			const ImU32 Color = Index % 3 == 0 ? Warm : (Index % 3 == 1 ? Cool : Soft);
-			const ImVec2 Center(Start.x + Size.x * XRatio, Start.y + Size.y * YRatio);
-			DrawList->AddCircleFilled(Center, Radius, Color, 12);
-		}
-		DrawList->AddLine(
-			ImVec2(Start.x + Size.x * 0.16f, End.y - Size.y * 0.18f),
-			ImVec2(End.x - Size.x * 0.14f, Start.y + Size.y * 0.24f),
-			IM_COL32(255, 255, 255, 32),
-			1.0f);
-	}
-
-	void DrawSelectableModuleRow(
-		FParticleEditorViewer* Viewer,
-		const char* Label,
-		EParticleEditorSelectionType Type,
-		int32 EmitterIndex,
-		int32 LODIndex,
-		int32 ModuleIndex,
-		ImU32 BackgroundColor)
-	{
-		const bool bSelected =
-			Viewer->GetSelectionType() == Type &&
-			Viewer->GetSelectedEmitterIndex() == EmitterIndex &&
-			Viewer->GetSelectedLODIndex() == LODIndex &&
-			(Type != EParticleEditorSelectionType::Module || Viewer->GetSelectedModuleIndex() == ModuleIndex);
-
-		ImGui::PushID(static_cast<int>(Type));
-		ImGui::PushID(ModuleIndex);
-
-		const ImVec2 RowStart = ImGui::GetCursorScreenPos();
-		const float RowHeight = ImGui::GetTextLineHeight() + 6.0f;
-		const float TextLeftPadding = 12.0f;
-		const float RowWidth = std::max(1.0f, ImGui::GetContentRegionAvail().x - EmitterSeparatorGap);
-		const ImVec2 RowEnd(RowStart.x + RowWidth, RowStart.y + RowHeight);
-		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-		if ((BackgroundColor & IM_COL32_A_MASK) != 0)
-		{
-			DrawList->AddRectFilled(
-				RowStart,
-				RowEnd,
-				BackgroundColor,
-				3.0f);
-		}
-
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0.0f, 0.0f));
-		const bool bPressed = ImGui::InvisibleButton("##SelectableModuleRow", ImVec2(RowWidth, RowHeight));
-		ImGui::PopStyleVar();
-
-		if (bSelected || ImGui::IsItemHovered())
-		{
-			const ImU32 StateColor = ImGui::GetColorU32(
-				bSelected
-					? ImVec4(0.22f, 0.33f, 0.55f, 0.78f)
-					: ImVec4(0.22f, 0.24f, 0.30f, 0.42f));
-			DrawList->AddRectFilled(RowStart, RowEnd, StateColor, 3.0f);
-		}
-
-		const ImVec2 TextSize = ImGui::CalcTextSize(Label);
-		DrawList->AddText(
-			ImVec2(RowStart.x + TextLeftPadding, RowStart.y + (RowHeight - TextSize.y) * 0.5f),
-			ImGui::GetColorU32(ImGuiCol_Text),
-			Label);
-
-		if (bPressed)
-		{
-			Viewer->SelectEmitter(EmitterIndex);
-			Viewer->SelectLOD(LODIndex);
-			switch (Type)
-			{
-			case EParticleEditorSelectionType::RequiredModule:
-				Viewer->SelectRequiredModule();
-				break;
-			case EParticleEditorSelectionType::SpawnModule:
-				Viewer->SelectSpawnModule();
-				break;
-			case EParticleEditorSelectionType::TypeDataModule:
-				Viewer->SelectTypeDataModule();
-				break;
-			case EParticleEditorSelectionType::Module:
 				Viewer->SelectEmitterModule(EmitterIndex, LODIndex, ModuleIndex);
-				break;
-			case EParticleEditorSelectionType::LODLevel:
-				break;
-			case EParticleEditorSelectionType::Emitter:
-			case EParticleEditorSelectionType::ParticleSystem:
-			case EParticleEditorSelectionType::None:
-			default:
-				break;
+				Viewer->DeleteSelectedModule();
 			}
+			if (ImGui::MenuItem("Move Up"))
+			{
+				Viewer->SelectEmitterModule(EmitterIndex, LODIndex, ModuleIndex);
+				Viewer->MoveModule(ModuleIndex, ModuleIndex - 1);
+			}
+			if (ImGui::MenuItem("Move Down"))
+			{
+				Viewer->SelectEmitterModule(EmitterIndex, LODIndex, ModuleIndex);
+				Viewer->MoveModule(ModuleIndex, ModuleIndex + 1);
+			}
+			ImGui::EndPopup();
 		}
-
-		if (Type == EParticleEditorSelectionType::Module)
+	}
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ParticleModuleDragPayload))
 		{
-			if (ImGui::BeginDragDropSource())
+			const FParticleModuleDragPayload* DragPayload = static_cast<const FParticleModuleDragPayload*>(Payload->Data);
+			if (DragPayload)
 			{
-				FParticleModuleDragPayload Payload = {
-					EmitterIndex,
-					LODIndex,
-					ModuleIndex
-				};
-				ImGui::SetDragDropPayload(ParticleModuleDragPayload, &Payload, sizeof(Payload));
-				ImGui::Text("Module: %s", Label);
-				ImGui::EndDragDropSource();
-			}
-
-			if (ImGui::BeginPopupContextItem("ModuleContext"))
-			{
-				if (ImGui::MenuItem("Delete Module"))
+				const bool bSameModuleList =
+					Type == EParticleEditorSelectionType::Module &&
+					DragPayload->EmitterIndex == EmitterIndex &&
+					DragPayload->LODIndex == LODIndex;
+				if (bSameModuleList && !ImGui::GetIO().KeyCtrl)
 				{
-					Viewer->SelectEmitterModule(EmitterIndex, LODIndex, ModuleIndex);
-					Viewer->DeleteSelectedModule();
+					Viewer->SelectEmitterModule(EmitterIndex, LODIndex, DragPayload->ModuleIndex);
+					Viewer->MoveModule(DragPayload->ModuleIndex, ModuleIndex);
 				}
-				if (ImGui::MenuItem("Move Up"))
+				else
 				{
-					Viewer->SelectEmitterModule(EmitterIndex, LODIndex, ModuleIndex);
-					Viewer->MoveModule(ModuleIndex, ModuleIndex - 1);
-				}
-				if (ImGui::MenuItem("Move Down"))
-				{
-					Viewer->SelectEmitterModule(EmitterIndex, LODIndex, ModuleIndex);
-					Viewer->MoveModule(ModuleIndex, ModuleIndex + 1);
-				}
-				ImGui::EndPopup();
-			}
-		}
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ParticleModuleDragPayload))
-			{
-				const FParticleModuleDragPayload* DragPayload = static_cast<const FParticleModuleDragPayload*>(Payload->Data);
-				if (DragPayload)
-				{
-					const bool bSameModuleList =
-						Type == EParticleEditorSelectionType::Module &&
-						DragPayload->EmitterIndex == EmitterIndex &&
-						DragPayload->LODIndex == LODIndex;
-					if (bSameModuleList && !ImGui::GetIO().KeyCtrl)
+					Viewer->SelectEmitter(DragPayload->EmitterIndex);
+					Viewer->SelectLOD(DragPayload->LODIndex);
+					if (ImGui::GetIO().KeyCtrl)
 					{
-						Viewer->SelectEmitterModule(EmitterIndex, LODIndex, DragPayload->ModuleIndex);
-						Viewer->MoveModule(DragPayload->ModuleIndex, ModuleIndex);
+						Viewer->CopyModuleToEmitter(DragPayload->ModuleIndex, EmitterIndex);
 					}
 					else
 					{
-						Viewer->SelectEmitter(DragPayload->EmitterIndex);
-						Viewer->SelectLOD(DragPayload->LODIndex);
-						if (ImGui::GetIO().KeyCtrl)
-						{
-							Viewer->CopyModuleToEmitter(DragPayload->ModuleIndex, EmitterIndex);
-						}
-						else
-						{
-							Viewer->MoveModuleToEmitter(DragPayload->ModuleIndex, EmitterIndex);
-						}
+						Viewer->MoveModuleToEmitter(DragPayload->ModuleIndex, EmitterIndex);
 					}
 				}
 			}
-			ImGui::EndDragDropTarget();
 		}
-
-		ImGui::PopID();
-		ImGui::PopID();
+		ImGui::EndDragDropTarget();
 	}
 
-	void DrawViewModeMenuItems(FParticleEditorViewer* Viewer)
-	{
-		FEditorMainPanelViewportToolbarHelpers::ForEachViewMode(
-			[Viewer](EViewMode Mode)
-			{
-				if (ImGui::MenuItem(
+	ImGui::PopID();
+	ImGui::PopID();
+}
+
+void DrawViewModeMenuItems(FParticleEditorViewer* Viewer)
+{
+	FEditorMainPanelViewportToolbarHelpers::ForEachViewMode(
+		[Viewer](EViewMode Mode)
+		{
+			if (ImGui::MenuItem(
 					FEditorMainPanelViewportToolbarHelpers::GetViewModeName(Mode),
 					nullptr,
 					Viewer->GetViewMode() == Mode))
-				{
-					Viewer->SetViewMode(Mode);
-				}
-			});
-	}
+			{
+				Viewer->SetViewMode(Mode);
+			}
+		});
 }
+} // namespace

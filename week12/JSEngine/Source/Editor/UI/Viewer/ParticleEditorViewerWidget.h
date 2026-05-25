@@ -39,6 +39,7 @@ private:
 	int32 CurveSourceModuleIndex = -1;
 	bool bCascadeToolbarIconsLoadAttempted = false;
 
+	// Icons
 	TComPtr<ID3D11ShaderResourceView> CascadeSaveIcon;
 	TComPtr<ID3D11ShaderResourceView> CascadeFindIcon;
 	TComPtr<ID3D11ShaderResourceView> CascadeRestartSimIcon;
