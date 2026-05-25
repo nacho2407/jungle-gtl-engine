@@ -11,4 +11,6 @@ private:
     bool Begin(const FRenderPassContext* Context) override;
     bool DrawCommand(const FRenderPassContext* Context) override;
     bool End(const FRenderPassContext* Context) override;
+
+    uint32 BuildViewModeMeshPermutationKey(const FRenderPassContext* Context, const UMaterialInterface* Material) const;
 };

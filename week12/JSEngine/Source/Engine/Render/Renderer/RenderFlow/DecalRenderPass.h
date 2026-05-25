@@ -10,5 +10,6 @@ public:
 private:
     bool Begin(const FRenderPassContext* Context) override;
     bool DrawCommand(const FRenderPassContext* Context) override;
+    bool DrawEachCommand(const FRenderPassContext* Context, const FRenderCommand& Cmd);
     bool End(const FRenderPassContext* Context) override;
 };
