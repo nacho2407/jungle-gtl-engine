@@ -52,7 +52,6 @@ public:
 	~UParticleEmitter() override;
 
 	TArray<UParticleLODLevel*> LODLevels;
-	TArray<int32> ParticleSize;
 	TArray<FParticleLODLevelRuntimeCache> LODLevelRuntimeCaches;
 
 	void CacheEmitterModuleInfo();

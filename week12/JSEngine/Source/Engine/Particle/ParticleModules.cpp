@@ -265,7 +265,6 @@ UParticleEmitter::~UParticleEmitter()
 		UObjectManager::Get().DestroyObject(LODLevel);
 	}
 	LODLevels.clear();
-	ParticleSize.clear();
 }
 
 UParticleSystem::~UParticleSystem()
@@ -318,15 +317,9 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 	LODLevelRuntimeCaches.clear();
 	LODLevelRuntimeCaches.reserve(LODLevels.size());
 
-	ParticleSize.clear();
-	ParticleSize.reserve(LODLevels.size());
-
 	for (const UParticleLODLevel* LODLevel : LODLevels)
 	{
 		FParticleLODLevelRuntimeCache Cache = BuildLODLevelRuntimeCache(LODLevel);
-
-		// ParticleSize는 다음 lifecycle 정리 전까지 ParticleSystemComponent 호환을 위해 유지
-		ParticleSize.push_back(Cache.ParticleStride);
 		LODLevelRuntimeCaches.push_back(Cache);
 	}
 }

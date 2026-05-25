@@ -810,9 +810,9 @@ void FParticleEditorViewerWidget::RenderDetailsPanel(FParticleEditorViewer* View
 		ImGui::Text("LOD Count");
 		ImGui::SameLine(150.0f);
 		ImGui::Text("%d", static_cast<int32>(Emitter->LODLevels.size()));
-		ImGui::Text("Payload Entries");
+		ImGui::Text("Runtime Caches");
 		ImGui::SameLine(150.0f);
-		ImGui::Text("%d", static_cast<int32>(Emitter->ParticleSize.size()));
+		ImGui::Text("%d", static_cast<int32>(Emitter->LODLevelRuntimeCaches.size()));
 		return;
 	}
 
