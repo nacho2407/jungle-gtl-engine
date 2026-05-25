@@ -735,6 +735,8 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 {
 	ID3D11DeviceContext* Ctx = CachedContext;
 	EViewMode ViewMode = Frame.RenderOptions.ViewMode;
+
+	const FDrawCommandRenderState FogRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::Fog, ViewMode);
 	const FDrawCommandRenderState PPRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::PostProcess, ViewMode);
 
 	// HeightFog (UserBits=0 → Outline보다 먼저)
@@ -755,7 +757,7 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 			FogCB.Update(Ctx, &fogData, sizeof(FFogConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.InitFullscreenTriangle(FogShader, ERenderPass::PostProcess, PPRS);
+			Cmd.InitFullscreenTriangle(FogShader, ERenderPass::Fog, FogRS);
 			Cmd.Bindings.PerShaderCB[0] = &FogCB;
 			Cmd.BuildSortKey(0);
 		}

@@ -324,6 +324,7 @@ EDepthStencilState FMaterialManager::StringToDepthStencilState(const FString& St
 	// 문자열이 비어있으면 Pass 기반 기본값
 	switch (Pass)
 	{
+	case ERenderPass::AlphaBlend:
 	case ERenderPass::Decal:
 	case ERenderPass::AdditiveDecal:
 		return EDepthStencilState::DepthReadOnly;
