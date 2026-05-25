@@ -4,6 +4,7 @@
 
 class UMaterialInterface;
 class UStaticMesh;
+class UParticleModuleRequired;
 
 UENUM()
 enum class EParticleSortMode
