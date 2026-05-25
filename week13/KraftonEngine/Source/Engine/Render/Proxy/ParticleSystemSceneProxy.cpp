@@ -6,6 +6,7 @@
 #include "Render/Types/FrameContext.h"
 #include "Render/Types/VertexTypes.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 #include "Core/Logging/Log.h"
 #include "Particles/ParticleHelper.h"
 #include "Engine/Profiling/Stats/ParticleStats.h"
@@ -371,7 +372,8 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
 	FrameCB.CameraUp    = Frame.CameraUp;    FrameCB._pad1 = 0.0f;
 	Buffer.ParticleFrameCB.Update(Context, &FrameCB, sizeof(FParticleFrameConstants));
 
-	FShader* Shader = FShaderManager::Get().GetOrCreate(EShaderPath::ParticleSprite);
+    FShader* Shader = Buffer.Material && Buffer.Material->GetShader() ? Buffer.Material->GetShader()
+    : FShaderManager::Get().GetOrCreate(EShaderPath::ParticleSprite);
 	if (!Shader)
 	{
 		UE_LOG("[ParticleProxy] SubmitSpriteEmitter: ParticleSprite shader not found (%s)", EShaderPath::ParticleSprite);
@@ -382,10 +384,20 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
 
 	FDrawCommand& Cmd                  = OutCmdList.AddCommand();
 	Cmd.Shader                         = Shader;
-	Cmd.Pass                           = RS.Pass;
-	Cmd.RenderState.Blend              = RS.Blend;
-	Cmd.RenderState.DepthStencil       = RS.DepthStencil;
-	Cmd.RenderState.Rasterizer         = ERasterizerState::SolidNoCull; // 빌보드는 항상 양면
+    if (Buffer.Material)
+    {
+        Cmd.Pass                     = Buffer.Material->GetRenderPass();
+        Cmd.RenderState.Blend        = Buffer.Material->GetBlendState();
+        Cmd.RenderState.DepthStencil = Buffer.Material->GetDepthStencilState();
+        Cmd.RenderState.Rasterizer   = Buffer.Material->GetRasterizerState();
+    }
+    else
+    {
+        Cmd.Pass                     = RS.Pass;
+        Cmd.RenderState.Blend        = RS.Blend;
+        Cmd.RenderState.DepthStencil = RS.DepthStencil;
+        Cmd.RenderState.Rasterizer   = ERasterizerState::SolidNoCull; // 빌보드는 항상 양면
+    }
 
 	Cmd.Buffer.VB             = QuadVB.GetBuffer();
 	Cmd.Buffer.VBStride       = sizeof(FParticleQuadVertex);
@@ -395,12 +407,27 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
 	Cmd.Buffer.InstanceStride = sizeof(FParticleSpriteInstance);
 	Cmd.Buffer.InstanceCount  = static_cast<uint32>(Buffer.ActiveParticleCount);
 
-	Cmd.Bindings.PerShaderCB[0] = &Buffer.ParticleFrameCB;
-
 	if (Buffer.Material)
-		Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] =
-			const_cast<ID3D11ShaderResourceView*>(
-				Buffer.Material->GetCachedSRVs()[(int)EMaterialTextureSlot::Diffuse]);
+    {
+        Buffer.Material->FlushDirtyBuffers(Device, Context);
+
+        Cmd.Bindings.PerShaderCB[0] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader0);
+        Cmd.Bindings.PerShaderCB[1] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader1);
+
+        const ID3D11ShaderResourceView* const* MatSRVs       = Buffer.Material->GetCachedSRVs();
+        ID3D11ShaderResourceView*              FallbackWhite = FMaterialManager::Get().GetFallbackWhiteSRV();
+
+        for (int32 Slot = 0; Slot < static_cast<int32>(EMaterialTextureSlot::Max); ++Slot)
+        {
+            // null이면 1x1 흰색 → 셰이더가 sample 시 (1,1,1,1) 받아 alpha-clip 회피.
+            Cmd.Bindings.SRVs[Slot] = MatSRVs[Slot] ? const_cast<ID3D11ShaderResourceView*>(MatSRVs[Slot])
+            : FallbackWhite;
+        }
+    }
+    else
+    {
+        Cmd.Bindings.PerShaderCB[0] = &Buffer.ParticleFrameCB;
+    }
 
 	Cmd.BuildSortKey();
 	PARTICLE_STATS_ADD_DRAW_CALL();
@@ -432,7 +459,8 @@ void FParticleSystemSceneProxy::SubmitMeshEmitter(
 		return;
 	}
 
-	FShader* Shader = FShaderManager::Get().GetOrCreate(EShaderPath::ParticleMesh);
+    FShader* Shader = Buffer.Material && Buffer.Material->GetShader() ? Buffer.Material->GetShader()
+    : FShaderManager::Get().GetOrCreate(EShaderPath::ParticleMesh);
 	if (!Shader)
 	{
 		UE_LOG("[ParticleProxy] SubmitMeshEmitter: ParticleMesh shader not found (%s)", EShaderPath::ParticleMesh);
@@ -443,10 +471,20 @@ void FParticleSystemSceneProxy::SubmitMeshEmitter(
 
 	FDrawCommand& Cmd                  = OutCmdList.AddCommand();
 	Cmd.Shader                         = Shader;
-	Cmd.Pass                           = RS.Pass;
-	Cmd.RenderState.Blend              = RS.Blend;
-	Cmd.RenderState.DepthStencil       = RS.DepthStencil;
-	Cmd.RenderState.Rasterizer         = ERasterizerState::SolidNoCull; // 메시 파티클도 양면
+    if (Buffer.Material)
+    {
+        Cmd.Pass                     = Buffer.Material->GetRenderPass();
+        Cmd.RenderState.Blend        = Buffer.Material->GetBlendState();
+        Cmd.RenderState.DepthStencil = Buffer.Material->GetDepthStencilState();
+        Cmd.RenderState.Rasterizer   = Buffer.Material->GetRasterizerState();
+    }
+    else
+    {
+        Cmd.Pass                     = RS.Pass;
+        Cmd.RenderState.Blend        = RS.Blend;
+        Cmd.RenderState.DepthStencil = RS.DepthStencil;
+        Cmd.RenderState.Rasterizer   = ERasterizerState::SolidNoCull; // 메시 파티클도 양면
+    }
 
 	Cmd.Buffer.VB             = Buffer.EmitterMeshBuffer->GetVertexBuffer().GetBuffer();
 	Cmd.Buffer.VBStride       = Buffer.EmitterMeshBuffer->GetVertexBuffer().GetStride();
@@ -457,9 +495,22 @@ void FParticleSystemSceneProxy::SubmitMeshEmitter(
 	Cmd.Buffer.InstanceCount  = static_cast<uint32>(Buffer.ActiveParticleCount);
 
 	if (Buffer.Material)
-		Cmd.Bindings.SRVs[(int)EMaterialTextureSlot::Diffuse] =
-			const_cast<ID3D11ShaderResourceView*>(
-				Buffer.Material->GetCachedSRVs()[(int)EMaterialTextureSlot::Diffuse]);
+    {
+        Buffer.Material->FlushDirtyBuffers(Device, Context);
+
+        Cmd.Bindings.PerShaderCB[0] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader0);
+        Cmd.Bindings.PerShaderCB[1] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader1);
+
+        const ID3D11ShaderResourceView* const* MatSRVs       = Buffer.Material->GetCachedSRVs();
+        ID3D11ShaderResourceView*              FallbackWhite = FMaterialManager::Get().GetFallbackWhiteSRV();
+
+        for (int32 Slot = 0; Slot < static_cast<int32>(EMaterialTextureSlot::Max); ++Slot)
+        {
+            // null이면 1x1 흰색 → 셰이더가 sample 시 (1,1,1,1) 받아 alpha-clip 회피.
+            Cmd.Bindings.SRVs[Slot] = MatSRVs[Slot] ? const_cast<ID3D11ShaderResourceView*>(MatSRVs[Slot])
+            : FallbackWhite;
+        }
+    }
 
 	Cmd.BuildSortKey();
 	PARTICLE_STATS_ADD_DRAW_CALL();

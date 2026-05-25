@@ -41,6 +41,8 @@ private:
     void RestartPreviewSimulation();
     void HandleKeyboardShortcuts();
     void RefreshExternalComponents(class UParticleSystem* Template);
+    void OpenMaterialForRequired(class UParticleModuleRequired* Required);
+    void DuplicateMaterialForRequired(class UParticleModuleRequired* Required);
 
     void RenderMenuBar();
     void RenderToolbar();

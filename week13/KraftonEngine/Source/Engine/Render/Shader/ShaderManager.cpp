@@ -42,6 +42,16 @@ namespace
 
 	const FShaderInputLayoutDesc* GetExplicitInputLayoutDesc(const FShaderKey& Key)
 	{
+		switch (Key.VertexFactory)
+		{
+		case EShaderVertexFactory::ParticleSprite:
+			return &ParticleSpriteLayoutDesc;
+		case EShaderVertexFactory::ParticleMesh:
+			return &ParticleMeshLayoutDesc;
+		default:
+			break;
+		}
+
 		if (Key.Path == EShaderPath::ParticleSprite)
 		{
 			return &ParticleSpriteLayoutDesc;
@@ -235,6 +245,32 @@ FShader* FShaderManager::GetOrCreateUberLitPermutation(EUberLitDefines::ELightin
 FShader* FShaderManager::FindOrCreate(const FString& Path)
 {
 	return GetOrCreate(Path);
+}
+
+FShader* FShaderManager::FindOrCreate(const FShaderKey& Key)
+{
+	return GetOrCreate(Key);
+}
+
+void FShaderManager::InvalidatePath(const FString& Path)
+{
+	for (auto It = ShaderCache.begin(); It != ShaderCache.end();)
+	{
+		if (It->first.Path == Path)
+		{
+			if (It->second.Shader)
+			{
+				It->second.Shader->Release();
+			}
+			It = ShaderCache.erase(It);
+		}
+		else
+		{
+			++It;
+		}
+	}
+
+	RebuildIncludeDependents();
 }
 
 // ============================================================

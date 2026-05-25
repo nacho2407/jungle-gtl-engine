@@ -55,6 +55,7 @@ bool FAssetEditorManager::OpenEditorForObject(UObject* Object)
 	{
 		if (Editor->CanEdit(Object) && !Editor->AllowsMultipleInstances())
 		{
+			Editor->Initialize(EditorEngine);
 			Editor->Open(Object);
 			return true;
 		}
@@ -65,6 +66,7 @@ bool FAssetEditorManager::OpenEditorForObject(UObject* Object)
 		auto Editor = Factory();
 		if (!Editor || !Editor->CanEdit(Object)) continue;
 
+		Editor->Initialize(EditorEngine);
 		Editor->Open(Object);
 		OpenEditors.push_back(std::move(Editor));
 		return true;

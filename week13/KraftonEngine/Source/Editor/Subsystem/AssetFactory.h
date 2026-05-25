@@ -9,4 +9,5 @@ public:
 	static bool CreateCameraShake(const FString& DirectoryPath, const FString& AssetName, FString& OutCreatedPath);
 	static bool CreateAnimGraph(const FString& DirectoryPath, const FString& AssetName, FString& OutCreatedPath);
 	static bool CreateParticleSystem(const FString& DirectoryPath, const FString& AssetName, FString& OutCreatedPath);
+	static bool CreateMaterial(const FString& DirectoryPath, const FString& AssetName, FString& OutCreatedPath);
 };

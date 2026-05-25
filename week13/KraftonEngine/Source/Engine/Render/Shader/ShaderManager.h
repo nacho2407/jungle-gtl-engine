@@ -7,20 +7,33 @@
 #include <memory>
 #include <string_view>
 
+enum class EShaderVertexFactory : uint8
+{
+	Auto,
+	StaticMesh,
+	SkeletalMesh,
+	ParticleSprite,
+	ParticleMesh,
+	Fullscreen
+};
+
 struct FShaderKey
 {
 	FString Path;
 	FString VSEntryPoint = "VS";
 	FString PSEntryPoint = "PS";
+	EShaderVertexFactory VertexFactory = EShaderVertexFactory::Auto;
 	uint64  PathHash = 0;
 	uint64  DefinesHash = 0;
 	uint64  EntryHash = 0;
+	uint64  VertexFactoryHash = 0;
 
 	FShaderKey(const FString& InPath)
 		: Path(InPath)
 		, PathHash(std::hash<FString>{}(InPath))
 		, DefinesHash(0)
 		, EntryHash(HashEntryPoints(VSEntryPoint, PSEntryPoint))
+		, VertexFactoryHash(HashVertexFactory(VertexFactory))
 	{}
 
 	FShaderKey(const FString& InPath, const D3D_SHADER_MACRO* InDefines)
@@ -28,6 +41,7 @@ struct FShaderKey
 		, PathHash(std::hash<FString>{}(InPath))
 		, DefinesHash(HashDefines(InDefines))
 		, EntryHash(HashEntryPoints(VSEntryPoint, PSEntryPoint))
+		, VertexFactoryHash(HashVertexFactory(VertexFactory))
 	{}
 
 	FShaderKey(const FString& InPath, const D3D_SHADER_MACRO* InDefines, const FString& InVSEntryPoint, const FString& InPSEntryPoint = "PS")
@@ -37,16 +51,35 @@ struct FShaderKey
 		, PathHash(std::hash<FString>{}(InPath))
 		, DefinesHash(HashDefines(InDefines))
 		, EntryHash(HashEntryPoints(VSEntryPoint, PSEntryPoint))
+		, VertexFactoryHash(HashVertexFactory(VertexFactory))
 	{}
+
+	FShaderKey(const FString& InPath, EShaderVertexFactory InVertexFactory)
+		: FShaderKey(InPath)
+	{
+		SetVertexFactory(InVertexFactory);
+	}
+
+	void SetVertexFactory(EShaderVertexFactory InVertexFactory)
+	{
+		VertexFactory = InVertexFactory;
+		VertexFactoryHash = HashVertexFactory(VertexFactory);
+	}
 
 	bool operator==(const FShaderKey& Other) const
 	{
 		return PathHash == Other.PathHash
 			&& DefinesHash == Other.DefinesHash
-			&& EntryHash == Other.EntryHash;
+			&& EntryHash == Other.EntryHash
+			&& VertexFactory == Other.VertexFactory;
 	}
 
 private:
+	static uint64 HashVertexFactory(EShaderVertexFactory InVertexFactory)
+	{
+		return static_cast<uint64>(InVertexFactory) * 0x94d049bb133111ebULL;
+	}
+
 	static uint64 HashEntryPoints(const FString& VSEntryPoint, const FString& PSEntryPoint)
 	{
 		const uint64 VSHash = std::hash<FString>{}(VSEntryPoint);
@@ -80,7 +113,8 @@ namespace std
 		{
 			return static_cast<size_t>(K.PathHash
 				^ (K.DefinesHash * 0x9e3779b97f4a7c15ULL)
-				^ (K.EntryHash * 0xbf58476d1ce4e5b9ULL));
+				^ (K.EntryHash * 0xbf58476d1ce4e5b9ULL)
+				^ (static_cast<uint64>(K.VertexFactory) * 0x94d049bb133111ebULL));
 		}
 	};
 }
@@ -275,6 +309,8 @@ public:
 	FShader* GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel, EUberLitDefines::EVertexFactory VertexFactory,
 		EShaderErrorMode ErrorMode = EShaderErrorMode::Notification, bool bWeightBoneHeatMap = false);
 	FShader* FindOrCreate(const FString& Path);
+	FShader* FindOrCreate(const FShaderKey& Key);
+	void InvalidatePath(const FString& Path);
 
 	// Compute Shader — 캐시 기반. 호출자는 포인터만 보관, FShaderManager가 소유 + 핫 리로드.
 	FComputeShader* GetOrCreateCS(const FString& Path, const FString& EntryPoint);
