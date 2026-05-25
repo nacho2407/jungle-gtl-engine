@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <limits>
 
 namespace
 {
@@ -146,7 +147,15 @@ namespace
 		return Context;
 	}
 
+	// TODO: Owned Particle Data 부모 클래스로 빼기
 	uint8* GetAlignedSnapshotParticleData(FDynamicSpriteEmitterData& RenderData)
+	{
+		return RenderData.OwnedParticleData.empty()
+			? nullptr
+			: ParticleHelper::AlignParticlePointer(RenderData.OwnedParticleData.data());
+	}
+
+	uint8* GetAlignedSnapshotParticleData(FDynamicMeshEmitterData& RenderData)
 	{
 		return RenderData.OwnedParticleData.empty()
 			? nullptr
@@ -449,10 +458,27 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 		return nullptr;
 	}
 
+	// Particle Count
+	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
+	const int32 ParticleStride = InEmitterInstance->ParticleStride;
+	const size_t ParticleDataBytes = static_cast<size_t>(ActiveParticleCount) * static_cast<size_t>(ParticleStride);
+	const size_t ParticleIndexBytes = static_cast<size_t>(ActiveParticleCount) * sizeof(uint16);
+	const size_t SnapshotLogicalBytes = ParticleDataBytes + ParticleIndexBytes;
+
 	// Mesh
 	FDynamicMeshEmitterData* RenderData = new FDynamicMeshEmitterData();
 	RenderData->Mesh = GetStaticMesh();
-	RenderData->ReplayData.ParticleStride = static_cast<int32>(sizeof(FMeshParticleInstanceVertex));
+
+	// Particle Data, Indices
+	RenderData->OwnedParticleData.resize(ParticleDataBytes + ParticleHelper::ParticleAlignment);
+	RenderData->OwnedParticleIndices.resize(static_cast<size_t>(ActiveParticleCount));
+
+	uint8* SnapshotParticleData = GetAlignedSnapshotParticleData(*RenderData);
+	if (SnapshotParticleData == nullptr)
+	{
+		delete RenderData;
+		return nullptr;
+	}
 
 	// Require Module
 	const UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
@@ -462,30 +488,35 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 		? RequiredModule->SortMode
 		: EParticleSortMode::ViewDepthBackToFront;
 
-	// Particle Count
-	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
-	RenderData->InstanceVertices.reserve(ActiveParticleCount);
-
 	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticleCount; ++ActiveIndex)
 	{
-		const FBaseParticle& Particle = InEmitterInstance->GetParticleByActiveIndex(ActiveIndex);
+		const int32 SourcePhysicalIndex = InEmitterInstance->ParticleIndices[ActiveIndex];
+		const uint8* SourceParticleData =
+			InEmitterInstance->ParticleData + static_cast<size_t>(SourcePhysicalIndex) * ParticleStride;
+		uint8* DestinationParticleData = SnapshotParticleData + static_cast<size_t>(ActiveIndex) * ParticleStride;
 
-		FMeshParticleInstanceVertex InstanceVertex;
-        // TODO: Mesh Particle의 회전 축과 정렬 정책이 합의되면 Particle.Rotation을 Transform에 반영한다.
-		InstanceVertex.Transform =
-			FMatrix::MakeScale(Particle.Size) *
-			FMatrix::MakeTranslation(Particle.Location);
-
-		if (InEmitterInstance->UsesLocalSpace())
-		{
-			InstanceVertex.Transform *= InEmitterInstance->GetOwner().GetComponentToWorld();
-		}
-
-		InstanceVertex.Color = Particle.Color.ToVector4();
-		RenderData->InstanceVertices.push_back(InstanceVertex);
+		// renderer가 simulation memory를 직접 읽지 않도록 payload까지 포함한 particle stride 전체를 snapshot에 복사
+		std::memcpy(DestinationParticleData, SourceParticleData, static_cast<size_t>(ParticleStride));
+		RenderData->OwnedParticleIndices[ActiveIndex] = static_cast<uint16>(ActiveIndex);
 	}
+	// ReplayData
+	RenderData->ReplayData.ActiveParticleCount = ActiveParticleCount;
+	RenderData->ReplayData.ParticleStride = ParticleStride;
+	RenderData->ReplayData.Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
 
-	RenderData->ReplayData.ActiveParticleCount = static_cast<int32>(RenderData->InstanceVertices.size());
+	// renderer가 raw particle의 위치를 render space로 해석할 수 있도록 좌표계 메타데이터를 전달
+	RenderData->ReplayData.ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
+	RenderData->ReplayData.CoordinateSpace = RequiredModule != nullptr
+		? RequiredModule->CoordinateSpace
+		: EParticleCoordinateSpace::Local;
+
+	// TODO: 중앙 renderer가 Mesh instance transform을 생성할 때 Mesh Particle의 회전 축과 정렬 정책을 반영한다.
+	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);
+	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = static_cast<int32>(ParticleDataBytes);
+	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = ActiveParticleCount;
+	RenderData->ReplayData.DataContainer.ParticleData = SnapshotParticleData;
+	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
+
 	return RenderData;
 }
 

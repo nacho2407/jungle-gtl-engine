@@ -275,3 +275,57 @@
 - Boundary: `Rotation` application remains the existing unresolved Mesh alignment TODO; the renderer still owns eventual consumption of Mesh snapshot data.
 - Remaining TODO: Do not populate Sprite-style `DataContainer` for Mesh unless the renderer owner publishes a new shared consumption contract.
 - Next step: Continue with renderer handoff or another separately approved PSC task.
+
+## 2026-05-25 - Current completion status audit
+
+- Branch / HEAD: `feat/PSC` / `2d62a67` (`ParticleModules.cpp`, `ParticleTypes.h`에 기존 미커밋 변경 존재)
+- Completed step: 이전 작업 로그, 현재 소스/미커밋 diff, Asset/Renderer 연결 지점을 대조하여 PSC/Mesh 작업의 완료 여부를 재점검했다.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md` (이 분석 단계만의 변경); 기존 미커밋 `JSEngine/Source/Engine/Particle/ParticleModules.cpp`, `JSEngine/Source/Engine/Particle/ParticleTypes.h`는 수정하지 않았다.
+- Verification: 현재 작업 트리를 포함한 `JSEngine.sln` `Debug|x64` 빌드가 성공했고, `git diff --check`는 whitespace 오류를 보고하지 않았다. `LoadParticleSystem`, Mesh snapshot 소비, `particle test` 잔존 여부를 정적 검색했다.
+- Conclusion: 현재 상태를 전체 완료로 승인할 수 없다. 커밋된 PSC의 soft reference scaffold, Asset-owned `LODDistances` 선택, event forwarding, Mesh path 편집 해석 경로는 존재하고 빌드되지만, 아래 계약 충돌과 외부 연결 TODO가 남아 있다.
+- Finding: `HEAD`의 Mesh snapshot은 `UStaticMesh* Mesh`와 `InstanceVertices`를 전달했으나, 현재 미커밋 변경은 `InstanceVertices`를 제거하고 simulation-stride `DataContainer`를 전달하여 중앙 renderer가 Mesh instance transform을 만들도록 바꾼다. 이는 Mesh snapshot이 renderer에 필요한 per-particle instance snapshot을 보유해야 한다는 현재 작업 제약 및 직전 감사 결론과 일치하지 않는다.
+- Finding: `ResolveTemplateAssetReference()`는 여전히 Asset loader 연결 TODO에서 멈추며, `FParticleSystemAssetLoader` 구현 및 public `LoadParticleSystem` 경로는 검색되지 않았다. 이 미해결 지점은 Asset 소유 경계로 남겨둔 상태다.
+- Finding: Renderer 쪽에서 `FDynamicMeshEmitterData`를 소비하는 구현은 검색되지 않았고, 이전 런타임 검증용 `particle test` 명령도 현재 소스에는 남아 있지 않다.
+- Remaining TODO: Mesh snapshot 계약을 승인된 `InstanceVertices` 경계로 복원할지, renderer owner와 새 raw snapshot 계약을 명시적으로 승인할지 먼저 결정하고 그 결과를 코드/로그/검증에 일치시킨다.
+- Remaining TODO: ParticleSystem asset loader 연결과 renderer draw/GPU 소비는 각 소유자가 공개 계약을 제공한 뒤 연동한다.
+- Next step: Mesh snapshot 계약 충돌 해소를 별도 승인 단계로 수행한 뒤 `Debug|x64` 빌드와 가능한 런타임 검증을 다시 실행한다.
+
+## 2026-05-25 - Centralized renderer contract correction
+
+- Branch / HEAD: `feat/PSC` / `2d62a67` (`ParticleModules.cpp`, `ParticleTypes.h`에 기존 미커밋 변경 존재)
+- Completed step: `main`의 `69fbe1b` (`Update ParticleTypes.h`) 의도를 확인하고 직전 완료 판정에서 Mesh snapshot 계약을 잘못 해석한 부분을 정정했다.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md` (이 분석 단계만의 변경); 기존 미커밋 production 변경은 수정하지 않았다.
+- Verification: `69fbe1b` diff, `3695fce` merge conflict 해소 결과, 현재 Mesh/Sprite snapshot packing 구현과 검색 가능한 renderer 소비 지점을 정적 비교했다. 직전 단계에서 현재 작업 트리의 `JSEngine.sln` `Debug|x64` 빌드는 성공했다.
+- Correction: `69fbe1b`는 emitter data의 `Render()` 및 renderer vertex stride 다형성을 제거하고 `FDynamicEmitterReplayDataBase`에 공통 `DataContainer`, `Material`, `ComponentToWorld`, `CoordinateSpace`를 추가하여 중앙 renderer가 emitter type별 vertex/instance 생성을 담당하도록 계약을 변경했다.
+- Correction: 따라서 Mesh가 `InstanceVertices`를 보유해야 한다는 직전 분석 결론은 폐기한다. 현재 미커밋 Mesh 변경처럼 `UStaticMesh* Mesh`와 snapshot-owned active particle `DataContainer`를 전달하는 형태도, renderer가 TypeData나 simulation memory를 역참조하지 않는 한 현재 중앙집중형 renderer 경계에 부합한다.
+- Scope conclusion: PSC/Mesh 측의 renderer handoff 데이터 준비는 새 공통 replay 계약에 맞추는 방향으로 진행 중이며, 실제 draw/pass/GPU buffer 소비 구현이 검색되지 않는 것은 renderer 소유 작업으로 남겨야 한다. 이 부재만으로 PSC 범위 미완료라고 판정하지 않는다.
+- Remaining TODO: 현재 미커밋 Mesh snapshot 변경을 해당 계약의 최종 구현으로 확정하려면 코드 변경을 작업 로그에 정식 반영하고 `Debug|x64` 및 가능한 runtime 검증을 다시 남긴다.
+- Remaining TODO: `ResolveTemplateAssetReference()`의 ParticleSystem loader 연결은 여전히 Asset 소유 공개 API가 제공된 뒤 연결할 TODO이다.
+- Next step: 승인 후 현재 중앙 renderer용 Mesh snapshot 변경을 검증/정리하거나, Asset loader 공개 API가 제공되면 PSC 참조 해석을 연결한다.
+
+## 2026-05-25 - Assigned deliverables completion audit
+
+- Branch / HEAD: `feat/PSC` / `2d62a67` (`ParticleModules.cpp`, `ParticleTypes.h`에 기존 미커밋 Mesh snapshot 변경 존재)
+- Completed step: 담당 목록의 PSC lifecycle, Scene soft reference, Mesh TypeData/runtime/snapshot, LOD 선택 항목을 현재 소스와 중앙 renderer 계약에 맞춰 항목별로 판정했다.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md` (이 분석 단계만의 변경); production 파일은 이 단계에서 수정하지 않았다.
+- Verification: `UParticleSystemComponent`, `FParticleEmitterInstance`, `UParticleModuleTypeDataMesh`, reflection 생성 결과, Actor component save/load 경로, Particle Viewer, `69fbe1b` 기반 replay data 계약을 정적 점검했다. 현재 production diff를 포함한 `Debug|x64` 빌드는 직전 점검에서 성공했다.
+- Complete in PSC scope: `UParticleSystemComponent`는 reflected spawnable component이며 `SetTemplate()`, emitter instance 생성/해제, tick 및 render snapshot 소유 흐름이 구현되어 있다. 요청의 destroy/reset 동작은 각각 `ReleaseEmitterInstances()`와 `ResetParticles()` 이름으로 제공된다.
+- Complete without PSC override: `Activate()`와 `Deactivate()`는 `UActorComponent` 구현이 component tick 활성/비활성을 수행하고 `AActor::Tick()`가 이를 사용하므로, 별도의 PSC override가 요구되는 restart/clear 의미가 추가로 정해지지 않는 한 새 구현은 필요하지 않다.
+- Complete narrow persistence contract: `TemplateAssetPath`는 reflected `TSoftObjectPtr<UParticleSystem>`으로 Scene 저장/로드에서 경로를 유지하고, PSC는 load/edit 시 `ResolveTemplateAssetReference()` 연결 지점을 사용한다. 실제 ParticleSystem 객체 로드는 Asset 공개 API 부재로 TODO인 상태가 올바른 경계다.
+- Complete in PSC scope: `UParticleModuleTypeDataMesh`는 runtime instance 생성과 편집된 `MeshAssetPath`의 `UStaticMesh` 해석을 제공한다. Mesh snapshot은 중앙 renderer 계약에 따라 `UStaticMesh*`, snapshot-owned particle data/index, material 및 transform-space metadata를 전달하는 방향이 맞다.
+- Complete in PSC scope: 거리 기반 선택은 `UParticleSystem::LODDistances`를 사용하고, LOD 변경 시 instance를 다시 생성하여 `Init(..., LODIndex)`가 `CurrentLODLevelIndex`, selected level 및 LOD별 runtime module cache를 함께 교체한다. `UParticleLODLevel::bEnabled`도 emitter tick에서 적용된다.
+- Required fix in PSC scope: 현재 미커밋 Mesh snapshot 코드에서 Required module이 없을 때 `ReplayData.CoordinateSpace`를 `World`로 설정하지만, `FParticleEmitterInstance::UsesLocalSpace()`는 같은 조건을 local-space로 판단한다. Required module 없는 Mesh emitter가 particle을 만들면 renderer가 위치 좌표계를 잘못 해석할 수 있으므로 fallback을 runtime 규칙과 일치시켜야 한다.
+- Not required in PSC scope: ParticleSystem asset serializer/loader 구현, Particle Viewer의 asset save/load 연결, 중앙 renderer의 Mesh draw/pass/GPU buffer 소비는 각각 Asset/Editor/Renderer 소유 작업이므로 이 목록 완료를 위해 PSC에서 구현하면 안 된다.
+- Next step: 승인 후 Mesh snapshot coordinate-space fallback 불일치를 수정하고 현재 중앙 renderer용 snapshot 변경을 `Debug|x64` 빌드로 다시 검증한다.
+
+## 2026-05-25 - Assigned PSC blocker resolution verification
+
+- Branch / HEAD: `feat/PSC` / `2d62a67` (`ParticleModules.cpp`, `ParticleTypes.h`에 미커밋 Mesh snapshot 변경 존재)
+- Completed step: Mesh snapshot의 기본 좌표계를 runtime local-space 규칙과 일치시키는 수정 반영 여부를 확인하고 담당 목록의 필수 blocker 해소 여부를 재판정했다.
+- Changed files: `JSEngine/Source/Engine/Particle/ParticleModules.cpp` (사용자 수정 확인), `JSEngine/Source/Engine/Particle/ParticleTypes.h` (기존 중앙 renderer snapshot 변경), `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `ParticleModules.cpp`의 `RequiredModule == nullptr` fallback이 `EParticleCoordinateSpace::Local`로 변경된 것을 확인했고, 현재 작업 트리의 `JSEngine.sln`이 `Debug|x64`로 성공적으로 빌드되었으며 `git diff --check`가 whitespace 오류를 보고하지 않았다.
+- Conclusion: 제시된 PSC/Mesh/LOD 담당 기능 중 추가 production 구현이 반드시 필요한 항목은 현재 확인되지 않는다. 중앙 renderer용 Mesh snapshot 변경은 아직 미커밋 상태이므로 제출 전 변경 정리와 커밋은 필요하다.
+- Remaining TODO: 새로 추가된 코드 주석 및 TODO 문구가 로컬 작업 규칙의 한국어 작성 요구를 만족하는지 최종 정리한다.
+- External TODO: `ResolveTemplateAssetReference()`의 실제 ParticleSystem 로드는 Asset 소유 public loader API가 제공된 뒤 연결한다.
+- External TODO: Mesh snapshot의 draw/pass/GPU buffer 소비와 회전/정렬 적용은 중앙 Renderer 소유 구현에서 처리한다.
+- Next step: 현재 미커밋 Mesh snapshot 변경과 worklog를 제출 가능한 형태로 정리하여 커밋한다.
