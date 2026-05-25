@@ -38,6 +38,8 @@
 
 namespace
 {
+	constexpr float PropertyNameColumnWidth = 150.0f;
+
 	bool IsFbxFilePath(const FString& Path)
 	{
 		std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -261,6 +263,40 @@ namespace
 		}
 
 		return bChanged;
+	}
+
+	bool BeginPropertyChildTable(const char* Id)
+	{
+		const ImGuiTableFlags Flags =
+			ImGuiTableFlags_SizingStretchProp |
+			ImGuiTableFlags_BordersInnerV |
+			ImGuiTableFlags_PadOuterX |
+			ImGuiTableFlags_RowBg;
+
+		if (!ImGui::BeginTable(Id, 2, Flags))
+		{
+			return false;
+		}
+
+		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, PropertyNameColumnWidth);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImVec4(0.145f, 0.145f, 0.145f, 1.0f));
+		return true;
+	}
+
+	void EndPropertyChildTable()
+	{
+		ImGui::EndTable();
+		ImGui::PopStyleColor(2);
+	}
+
+	void DrawPropertyTableLabel(const char* Label)
+	{
+		ImGui::SetWindowFontScale(0.92f);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(Label ? Label : "");
+		ImGui::SetWindowFontScale(1.0f);
 	}
 }
 
@@ -823,29 +859,32 @@ bool FEditorPropertyRenderer::RenderStructPropertyWidget(FPropertyValue& Prop, F
 		TArray<FPropertyValue> ChildProps;
 		Prop.GetStructChildren(ChildProps);
 
-		ImGui::Indent(8.0f);
-
-		for (int32 ci = 0; ci < (int32)ChildProps.size(); ++ci)
+		if (BeginPropertyChildTable("##StructPropertyTable"))
 		{
-			ImGui::PushID(ci);
-
-			FPropertyValue& ChildProp = ChildProps[ci];
-			ImGui::AlignTextToFramePadding();
-			ImGui::TextUnformatted(GetPropertyDisplayName(ChildProp));
-			ImGui::SameLine(120.0f);
-			ImGui::SetNextItemWidth(-1);
-
-			FEditorPropertyRenderOptions ChildOptions = Options;
-			ChildOptions.PropertyPath = MakePropertyPath(Options.PropertyPath, ChildProp.GetName());
-			int32 ChildIdx = ci;
-			if (RenderPropertyWidget(ChildProps, ChildIdx, ChildOptions))
+			for (int32 ci = 0; ci < (int32)ChildProps.size(); ++ci)
 			{
-				bChanged = true;
+				ImGui::PushID(ci);
+
+				FPropertyValue& ChildProp = ChildProps[ci];
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				DrawPropertyTableLabel(GetPropertyDisplayName(ChildProp));
+
+				ImGui::TableSetColumnIndex(1);
+				ImGui::SetNextItemWidth(-1);
+
+				FEditorPropertyRenderOptions ChildOptions = Options;
+				ChildOptions.PropertyPath = MakePropertyPath(Options.PropertyPath, ChildProp.GetName());
+				int32 ChildIdx = ci;
+				if (RenderPropertyWidget(ChildProps, ChildIdx, ChildOptions))
+				{
+					bChanged = true;
+				}
+				ImGui::PopID();
 			}
-			ImGui::PopID();
+			EndPropertyChildTable();
 		}
 
-		ImGui::Unindent(8.0f);
 		ImGui::TreePop();
 	}
 
@@ -883,62 +922,76 @@ bool FEditorPropertyRenderer::RenderArrayPropertyWidget(FPropertyValue& Prop, FE
 		Num = Ops->GetNum(ArrayPtr);
 	}
 
-	for (int32 ElemIdx = 0; ElemIdx < static_cast<int32>(Num); ++ElemIdx)
+	if (BeginPropertyChildTable("##ArrayPropertyTable"))
 	{
-		void* ElementPtr = Ops->GetElementPtr(ArrayPtr, static_cast<size_t>(ElemIdx));
-		if (!ElementPtr)
+		for (int32 ElemIdx = 0; ElemIdx < static_cast<int32>(Num); ++ElemIdx)
 		{
-			continue;
-		}
-
-		ImGui::PushID(ElemIdx);
-
-		FString ElementName = "Element " + std::to_string(ElemIdx);
-		const FString ElementPath = MakeArrayElementPath(Options.PropertyPath, ElemIdx);
-
-		if (!bEditFixedSize && Ops->RemoveAt && ImGui::Button("-"))
-		{
-			Ops->RemoveAt(ArrayPtr, static_cast<size_t>(ElemIdx));
-			bChanged = true;
-			if (Options.bDispatchChange)
+			void* ElementPtr = Ops->GetElementPtr(ArrayPtr, static_cast<size_t>(ElemIdx));
+			if (!ElementPtr)
 			{
-				DispatchPostEditChange(Prop, EPropertyChangeType::ArrayRemove, ElemIdx, ElementPath, ElementName.c_str(), ElementName.c_str());
+				continue;
 			}
+
+			ImGui::PushID(ElemIdx);
+
+			FString ElementName = "Element " + std::to_string(ElemIdx);
+			const FString ElementPath = MakeArrayElementPath(Options.PropertyPath, ElemIdx);
+
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+
+			bool bRemovedElement = false;
+			if (!bEditFixedSize && Ops->RemoveAt && ImGui::Button("-"))
+			{
+				Ops->RemoveAt(ArrayPtr, static_cast<size_t>(ElemIdx));
+				bChanged = true;
+				bRemovedElement = true;
+				if (Options.bDispatchChange)
+				{
+					DispatchPostEditChange(Prop, EPropertyChangeType::ArrayRemove, ElemIdx, ElementPath, ElementName.c_str(), ElementName.c_str());
+				}
+			}
+
+			if (!bRemovedElement)
+			{
+				if (!bEditFixedSize && Ops->RemoveAt)
+				{
+					ImGui::SameLine();
+				}
+				DrawPropertyTableLabel(ElementName.c_str());
+
+				ImGui::TableSetColumnIndex(1);
+				ImGui::SetNextItemWidth(-1);
+
+				FPropertyValue ElementValue;
+				ElementValue.Object = Prop.Object;
+				ElementValue.Property = InnerProperty;
+				ElementValue.ContainerPtr = ElementPtr;
+
+				TArray<FPropertyValue> ElementProps;
+				ElementProps.push_back(ElementValue);
+				int32 ElementPropIndex = 0;
+
+				FEditorPropertyRenderOptions ElementOptions = Options;
+				ElementOptions.bDispatchChange = false;
+				ElementOptions.PropertyPath = ElementPath;
+				if (RenderPropertyWidget(ElementProps, ElementPropIndex, ElementOptions))
+				{
+					bChanged = true;
+					if (Options.bDispatchChange)
+					{
+						DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, ElemIdx, ElementPath, ElementName.c_str(), ElementName.c_str());
+					}
+				}
+			}
+
 			ImGui::PopID();
-			break;
-		}
-
-		if (!bEditFixedSize && Ops->RemoveAt)
-		{
-			ImGui::SameLine();
-		}
-		ImGui::AlignTextToFramePadding();
-		ImGui::TextUnformatted(ElementName.c_str());
-		ImGui::SameLine(120.0f);
-		ImGui::SetNextItemWidth(-1);
-
-		FPropertyValue ElementValue;
-		ElementValue.Object = Prop.Object;
-		ElementValue.Property = InnerProperty;
-		ElementValue.ContainerPtr = ElementPtr;
-
-		TArray<FPropertyValue> ElementProps;
-		ElementProps.push_back(ElementValue);
-		int32 ElementPropIndex = 0;
-
-		FEditorPropertyRenderOptions ElementOptions = Options;
-		ElementOptions.bDispatchChange = false;
-		ElementOptions.PropertyPath = ElementPath;
-		if (RenderPropertyWidget(ElementProps, ElementPropIndex, ElementOptions))
-		{
-			bChanged = true;
-			if (Options.bDispatchChange)
+			if (bRemovedElement)
 			{
-				DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, ElemIdx, ElementPath, ElementName.c_str(), ElementName.c_str());
+				break;
 			}
 		}
-
-		ImGui::PopID();
+		EndPropertyChildTable();
 	}
 
 	return bChanged;

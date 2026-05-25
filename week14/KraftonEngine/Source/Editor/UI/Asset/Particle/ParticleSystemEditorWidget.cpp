@@ -35,6 +35,7 @@ namespace
 	constexpr float MinCurveEditorHeight = 140.0f;
 	constexpr float SplitterThickness = 6.0f;
 	constexpr float ToolbarHeight = 34.0f;
+	constexpr float DetailsNameColumnWidth = 150.0f;
 	constexpr float EmitterColumnWidth = 176.0f;
 	constexpr float EmitterHeaderHeight = 58.0f;
 	constexpr float ModuleRowHeight = 24.0f;
@@ -379,8 +380,15 @@ namespace
 
 	void DrawDetailRow(const char* Label, const char* Value)
 	{
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::SetWindowFontScale(0.92f);
+		ImGui::AlignTextToFramePadding();
 		ImGui::TextUnformatted(Label);
-		ImGui::SameLine(180.0f);
+		ImGui::SetWindowFontScale(1.0f);
+
+		ImGui::TableSetColumnIndex(1);
+		ImGui::AlignTextToFramePadding();
 		ImGui::TextDisabled("%s", Value ? Value : "");
 	}
 
@@ -392,6 +400,46 @@ namespace
 		std::vsnprintf(Buffer, sizeof(Buffer), Format, Args);
 		va_end(Args);
 		DrawDetailRow(Label, Buffer);
+	}
+
+	bool DrawDetailsCategoryHeader(const char* Label)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.22f, 0.22f, 0.22f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.27f, 0.27f, 0.27f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.30f, 0.30f, 0.30f, 1.0f));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 3.0f));
+
+		const bool bOpen = ImGui::CollapsingHeader(Label, ImGuiTreeNodeFlags_DefaultOpen);
+
+		ImGui::PopStyleVar();
+		ImGui::PopStyleColor(3);
+		return bOpen;
+	}
+
+	bool BeginDetailsTable(const char* Id)
+	{
+		const ImGuiTableFlags Flags =
+			ImGuiTableFlags_SizingStretchProp |
+			ImGuiTableFlags_BordersInnerV |
+			ImGuiTableFlags_PadOuterX |
+			ImGuiTableFlags_RowBg;
+
+		if (!ImGui::BeginTable(Id, 2, Flags))
+		{
+			return false;
+		}
+
+		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, DetailsNameColumnWidth);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImVec4(0.145f, 0.145f, 0.145f, 1.0f));
+		return true;
+	}
+
+	void EndDetailsTable()
+	{
+		ImGui::EndTable();
+		ImGui::PopStyleColor(2);
 	}
 
 	const char* GetRenderTypeLabel(EParticleRenderType RenderType)
@@ -1133,50 +1181,70 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 		return;
 	}
 
-	if (ImGui::CollapsingHeader("Particle System", ImGuiTreeNodeFlags_DefaultOpen))
+	if (DrawDetailsCategoryHeader("Particle System"))
 	{
-		DrawDetailRow("Asset", ParticleSystem->GetAssetPathFileName().c_str());
-		DrawDetailRowF("Emitters", "%d", static_cast<int32>(ParticleSystem->GetEmitters().size()));
+		if (BeginDetailsTable("##ParticleSystemSummaryTable"))
+		{
+			DrawDetailRow("Asset", ParticleSystem->GetAssetPathFileName().c_str());
+			DrawDetailRowF("Emitters", "%d", static_cast<int32>(ParticleSystem->GetEmitters().size()));
+			EndDetailsTable();
+		}
 	}
-	if (ImGui::CollapsingHeader("Selection", ImGuiTreeNodeFlags_DefaultOpen))
+	if (DrawDetailsCategoryHeader("Selection"))
 	{
-		const FEditorSelectionState& Selection = ViewState.Selection;
-		DrawDetailRow("Selection Type", GetSelectionKindLabel());
-		DrawDetailRowF("Selected Emitter", "%d", Selection.EmitterIndex);
-		DrawDetailRowF("Selected LOD", "%d", Selection.LODIndex);
-		DrawDetailRowF("Selected Module", "%d", Selection.ModuleIndex);
+		if (BeginDetailsTable("##ParticleSelectionSummaryTable"))
+		{
+			const FEditorSelectionState& Selection = ViewState.Selection;
+			DrawDetailRow("Selection Type", GetSelectionKindLabel());
+			DrawDetailRowF("Selected Emitter", "%d", Selection.EmitterIndex);
+			DrawDetailRowF("Selected LOD", "%d", Selection.LODIndex);
+			DrawDetailRowF("Selected Module", "%d", Selection.ModuleIndex);
+			EndDetailsTable();
+		}
 	}
 
 	const UParticleEmitter* SelectedEmitter = GetSelectedEmitter(ParticleSystem);
-	if (SelectedEmitter && ImGui::CollapsingHeader("Emitter", ImGuiTreeNodeFlags_DefaultOpen))
+	if (SelectedEmitter && DrawDetailsCategoryHeader("Emitter"))
 	{
-		DrawDetailRowF("Max Active Particles", "%d", SelectedEmitter->GetMaxActiveParticles());
-		DrawDetailRowF("Emitter Duration", "%.3f", SelectedEmitter->GetEmitterDuration());
-		DrawDetailRow("Looping", SelectedEmitter->IsLooping() ? "true" : "false");
-		DrawDetailRowF("LOD Count", "%d", static_cast<int32>(SelectedEmitter->GetLODLevels().size()));
+		if (BeginDetailsTable("##ParticleEmitterSummaryTable"))
+		{
+			DrawDetailRowF("Max Active Particles", "%d", SelectedEmitter->GetMaxActiveParticles());
+			DrawDetailRowF("Emitter Duration", "%.3f", SelectedEmitter->GetEmitterDuration());
+			DrawDetailRow("Looping", SelectedEmitter->IsLooping() ? "true" : "false");
+			DrawDetailRowF("LOD Count", "%d", static_cast<int32>(SelectedEmitter->GetLODLevels().size()));
+			EndDetailsTable();
+		}
 	}
 
 	const UParticleLODLevel* SelectedLOD = GetSelectedLODLevel(ParticleSystem);
-	if (SelectedLOD && ImGui::CollapsingHeader("LOD", ImGuiTreeNodeFlags_DefaultOpen))
+	if (SelectedLOD && DrawDetailsCategoryHeader("LOD"))
 	{
-		const UParticleModuleTypeDataBase* TypeDataModule = SelectedLOD->GetTypeDataModule();
-		DrawDetailRowF("Level", "%d", SelectedLOD->GetLevel());
-		DrawDetailRow("Enabled", SelectedLOD->IsEnabled() ? "true" : "false");
-		DrawDetailRow("Render Type", GetRenderTypeLabel(GetLODRenderType(SelectedLOD)));
-		DrawDetailRow("Type Data", GetTypeDataDisplayName(TypeDataModule));
-		DrawDetailRowF("Payload Size", "%d", TypeDataModule ? TypeDataModule->GetParticlePayloadSize() : 0);
-		DrawDetailRowF("Module Count", "%d", static_cast<int32>(SelectedLOD->GetModules().size()));
+		if (BeginDetailsTable("##ParticleLODSummaryTable"))
+		{
+			const UParticleModuleTypeDataBase* TypeDataModule = SelectedLOD->GetTypeDataModule();
+			DrawDetailRowF("Level", "%d", SelectedLOD->GetLevel());
+			DrawDetailRow("Enabled", SelectedLOD->IsEnabled() ? "true" : "false");
+			DrawDetailRow("Render Type", GetRenderTypeLabel(GetLODRenderType(SelectedLOD)));
+			DrawDetailRow("Type Data", GetTypeDataDisplayName(TypeDataModule));
+			DrawDetailRowF("Payload Size", "%d", TypeDataModule ? TypeDataModule->GetParticlePayloadSize() : 0);
+			DrawDetailRowF("Module Count", "%d", static_cast<int32>(SelectedLOD->GetModules().size()));
+			EndDetailsTable();
+		}
 	}
 
 	UParticleModule* SelectedModule = const_cast<UParticleModule*>(GetSelectedModule(ParticleSystem));
-	if (SelectedModule && ImGui::CollapsingHeader("Module", ImGuiTreeNodeFlags_DefaultOpen))
+	if (SelectedModule && DrawDetailsCategoryHeader("Module"))
 	{
-		const UParticleModuleTypeDataBase* TypeDataModule = Cast<UParticleModuleTypeDataBase>(SelectedModule);
-		DrawDetailRow("Name", TypeDataModule ? GetTypeDataDisplayName(TypeDataModule) : GetModuleDisplayName(SelectedModule));
-		DrawDetailRow("Class", SelectedModule->GetClass()->GetName());
-		DrawDetailRow("Spawn Module", SelectedModule->IsSpawnModule() ? "true" : "false");
-		DrawDetailRow("Update Module", SelectedModule->IsUpdateModule() ? "true" : "false");
-		DrawDetailRow("Source", ViewState.Selection.ModuleIndex == TypeDataModuleIndex ? "LOD TypeDataModule" : "LOD Modules[]");
+		if (BeginDetailsTable("##ParticleModuleSummaryTable"))
+		{
+			const UParticleModuleTypeDataBase* TypeDataModule = Cast<UParticleModuleTypeDataBase>(SelectedModule);
+			DrawDetailRow("Name", TypeDataModule ? GetTypeDataDisplayName(TypeDataModule) : GetModuleDisplayName(SelectedModule));
+			DrawDetailRow("Class", SelectedModule->GetClass()->GetName());
+			DrawDetailRow("Spawn Module", SelectedModule->IsSpawnModule() ? "true" : "false");
+			DrawDetailRow("Update Module", SelectedModule->IsUpdateModule() ? "true" : "false");
+			DrawDetailRow("Source", ViewState.Selection.ModuleIndex == TypeDataModuleIndex ? "LOD TypeDataModule" : "LOD Modules[]");
+			EndDetailsTable();
+		}
 		ImGui::Separator();
 		if (RenderObjectProperties(SelectedModule))
 		{
@@ -1205,19 +1273,56 @@ bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object)
 	}
 
 	bool bAnyChanged = false;
-	if (ImGui::BeginTable("##ParticleObjectProperties", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV))
+	TArray<FString> CategoryOrder;
+	for (const FPropertyValue& PropertyValue : Properties)
 	{
-		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 180.0f);
-		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+		const FString Category = PropertyValue.GetCategory() ? PropertyValue.GetCategory() : "";
+		bool bFound = false;
+		for (const FString& ExistingCategory : CategoryOrder)
+		{
+			if (ExistingCategory == Category)
+			{
+				bFound = true;
+				break;
+			}
+		}
+		if (!bFound)
+		{
+			CategoryOrder.push_back(Category);
+		}
+	}
 
+	for (const FString& Category : CategoryOrder)
+	{
+		if (!Category.empty() && !DrawDetailsCategoryHeader(Category.c_str()))
+		{
+			continue;
+		}
+
+		ImGui::PushID(Category.c_str());
+		const bool bTableOpen = BeginDetailsTable("##ParticleObjectProperties");
+		if (!bTableOpen)
+		{
+			ImGui::PopID();
+			continue;
+		}
 		for (int32 Index = 0; Index < static_cast<int32>(Properties.size()); ++Index)
 		{
 			FPropertyValue& PropertyValue = Properties[Index];
+			const FString PropertyCategory = PropertyValue.GetCategory() ? PropertyValue.GetCategory() : "";
+			if (PropertyCategory != Category)
+			{
+				continue;
+			}
+
 			ImGui::PushID(Index);
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
+			ImGui::SetWindowFontScale(0.92f);
 			ImGui::AlignTextToFramePadding();
-			ImGui::TextUnformatted(PropertyValue.GetDisplayName());
+			ImGui::TextUnformatted(FEditorPropertyRenderer::GetPropertyDisplayName(PropertyValue));
+			ImGui::SetWindowFontScale(1.0f);
+
 			ImGui::TableSetColumnIndex(1);
 			ImGui::SetNextItemWidth(-1.0f);
 
@@ -1234,7 +1339,8 @@ bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object)
 			}
 			ImGui::PopID();
 		}
-		ImGui::EndTable();
+		EndDetailsTable();
+		ImGui::PopID();
 	}
 
 	return bAnyChanged;
