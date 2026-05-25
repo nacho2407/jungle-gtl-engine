@@ -1,5 +1,6 @@
 #include "GameFramework/World.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/ReferenceCollector.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "Engine/Component/Camera/CameraComponent.h"
@@ -411,4 +412,11 @@ void UWorld::EndPlay()
 	// PersistentLevel은 CreateObject로 생성되었으므로 DestroyObject로 해제해야 alloc count가 맞음
 	UObjectManager::Get().DestroyObject(PersistentLevel);
 	PersistentLevel = nullptr;
+}
+
+void UWorld::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UObject::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(PersistentLevel);
+	Collector.AddReferencedObject(GameMode);
 }

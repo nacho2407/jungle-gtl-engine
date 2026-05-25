@@ -1581,6 +1581,8 @@
     <ClCompile Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\MeshParticleGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Object\GarbageCollector.cpp" />
+    <ClCompile Include="Source\Engine\Object\ReferenceCollector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -4443,6 +4445,9 @@
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\MeshParticleGeometry.h" />
     <ClInclude Include="Source\Engine\Math\Distribution.h" />
+    <ClInclude Include="Source\Engine\Object\GarbageCollector.h" />
+    <ClInclude Include="Source\Engine\Object\ReferenceCollector.h" />
+    <ClInclude Include="Source\Engine\Serialization\GCArchive.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

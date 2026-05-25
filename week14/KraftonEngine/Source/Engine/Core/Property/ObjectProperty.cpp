@@ -37,6 +37,12 @@ void FObjectProperty::SetObjectValueFromValuePtr(void* ValuePtr, UObject* Object
 
 void FObjectProperty::SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const
 {
+	if (Ar.IsGarbageCollecting())
+	{
+		SerializeValue(ValuePtr, Ar);
+		return;
+	}
+
 	if ((Flags & PF_InstancedReference) == 0)
 	{
 		SerializeValue(ValuePtr, Ar);

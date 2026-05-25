@@ -1,5 +1,7 @@
 #include "GameFramework/Level.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/ReferenceCollector.h"
+
 #include <GameFramework/World.h>
 
 ULevel::ULevel(UWorld* OwingWorld)
@@ -67,6 +69,16 @@ void ULevel::Tick(float DeltaTime) {
 		{
 			Actor->Tick(DeltaTime);
 		}
+	}
+}
+
+void ULevel::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UObject::AddReferencedObjects(Collector);
+
+	for (AActor* Actor : Actors)
+	{
+		Collector.AddReferencedObject(Actor);
 	}
 }
 

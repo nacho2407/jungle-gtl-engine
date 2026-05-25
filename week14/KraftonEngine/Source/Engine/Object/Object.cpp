@@ -2,6 +2,7 @@
 #include "UUIDGenerator.h"
 #include "Serialization/Archive.h"
 #include "Serialization/DuplicateArchive.h"
+#include "Serialization/GCArchive.h"
 #include "Object/Reflection/ObjectFactory.h"
 
 TArray<UObject*> GUObjectArray;
@@ -69,6 +70,12 @@ void UObject::Serialize(FArchive& Ar)
 	// 기본 UObject는 직렬화할 상태 없음.
 	// UUID/InternalIndex/Name은 직렬화 금지 (복제 시 새로 발급).
 	Ar << ObjectName;
+}
+
+void UObject::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	FGCArchive Ar(Collector);
+	SerializeProperties(Ar, PF_None);
 }
 
 void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)

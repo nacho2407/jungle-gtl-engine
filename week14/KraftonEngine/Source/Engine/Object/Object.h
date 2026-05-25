@@ -11,6 +11,7 @@
 
 class FArchive;
 class FDuplicateArchiveContext;
+class FReferenceCollector;
 
 // Forward — IsValid 의 실제 정의는 GUObjectSet 선언 뒤. UObject::GetTypedOuter 가
 // non-dependent name lookup 으로 IsValid 를 찾을 수 있게 미리 알려둠.
@@ -98,8 +99,14 @@ public:
 	static UClass StaticClassInstance;
 	static UClass* StaticClass() { return &StaticClassInstance; }
 
+	bool IsGarbageMarked() const { return bIsReachable; }
+	void SetGarbageMarked(bool bMarked) { bIsReachable = bMarked; }
+
+	virtual void AddReferencedObjects(FReferenceCollector& Collector);
+
 protected:
 	FName ObjectName;
+	bool bIsReachable = false; // GC mark bit.
 
 private:
 	uint32 UUID;
