@@ -14,6 +14,7 @@ void UCapsuleComponent::SetCapsuleSize(float InRadius, float InHalfHeight)
 	CapsuleRadius = InRadius;
 	CapsuleHalfHeight = (std::max)(InHalfHeight, InRadius);
 	LocalExtents = FVector(CapsuleRadius, CapsuleRadius, CapsuleHalfHeight);
+	NotifyPhysicsBodyDirty();
 	MarkWorldBoundsDirty();
 	MarkRenderTransformDirty();
 }
@@ -21,7 +22,7 @@ void UCapsuleComponent::SetCapsuleSize(float InRadius, float InHalfHeight)
 float UCapsuleComponent::GetScaledCapsuleRadius() const
 {
 	FVector Scale = GetWorldScale();
-	return CapsuleRadius * std::min(Scale.X, Scale.Y);
+	return CapsuleRadius * (std::max)(Scale.X, Scale.Y);
 }
 
 float UCapsuleComponent::GetScaledCapsuleHalfHeight() const
@@ -35,8 +36,21 @@ void UCapsuleComponent::UpdateWorldAABB() const
 	FVector Center = GetWorldLocation();
 	float R = GetScaledCapsuleRadius();
 	float HH = GetScaledCapsuleHalfHeight();
-	WorldAABBMinLocation = Center - FVector(R, R, HH);
-	WorldAABBMaxLocation = Center + FVector(R, R, HH);
+	float SegmentHalfLength = (std::max)(0.0f, HH - R);
+	FVector Axis = GetUpVector();
+	if (Axis.Length() <= 1.0e-4f)
+	{
+		Axis = FVector::ZAxisVector;
+	}
+	Axis.Normalize();
+
+	const FVector Extents(
+		R + std::abs(Axis.X) * SegmentHalfLength,
+		R + std::abs(Axis.Y) * SegmentHalfLength,
+		R + std::abs(Axis.Z) * SegmentHalfLength
+	);
+	WorldAABBMinLocation = Center - Extents;
+	WorldAABBMaxLocation = Center + Extents;
 	bWorldAABBDirty = false;
 	bHasValidWorldAABB = true;
 }

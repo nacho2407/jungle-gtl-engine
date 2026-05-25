@@ -13,6 +13,7 @@ void USphereComponent::SetSphereRadius(float InRadius)
 {
 	SphereRadius = InRadius;
 	LocalExtents = FVector(SphereRadius, SphereRadius, SphereRadius);
+	NotifyPhysicsBodyDirty();
 	MarkWorldBoundsDirty();
 	MarkRenderTransformDirty();
 }
@@ -20,7 +21,7 @@ void USphereComponent::SetSphereRadius(float InRadius)
 float USphereComponent::GetScaledSphereRadius() const
 {
 	FVector Scale = GetWorldScale();
-	return SphereRadius * std::min({ Scale.X, Scale.Y, Scale.Z });
+	return SphereRadius * std::max({ Scale.X, Scale.Y, Scale.Z });
 }
 
 void USphereComponent::UpdateWorldAABB() const

@@ -44,21 +44,18 @@ namespace
 
 	FOrientedBox MakeOrientedBox(const UBoxComponent* Box)
 	{
-		const FQuat Rotation = Box->GetWorldMatrix().ToQuat();
-
 		FOrientedBox Result;
 		Result.Center = Box->GetWorldLocation();
-		Result.Axis[0] = SafeNormal(Rotation.RotateVector(FVector::XAxisVector), FVector::XAxisVector);
-		Result.Axis[1] = SafeNormal(Rotation.RotateVector(FVector::YAxisVector), FVector::YAxisVector);
-		Result.Axis[2] = SafeNormal(Rotation.RotateVector(FVector::ZAxisVector), FVector::ZAxisVector);
+		Result.Axis[0] = SafeNormal(Box->GetForwardVector(), FVector::XAxisVector);
+		Result.Axis[1] = SafeNormal(Box->GetRightVector(), FVector::YAxisVector);
+		Result.Axis[2] = SafeNormal(Box->GetUpVector(), FVector::ZAxisVector);
 		Result.Extent = Box->GetScaledBoxExtent();
 		return Result;
 	}
 
 	FCapsuleSegment MakeCapsuleSegment(const UCapsuleComponent* Capsule)
 	{
-		const FQuat Rotation = Capsule->GetWorldMatrix().ToQuat();
-		const FVector Up = SafeNormal(Rotation.RotateVector(FVector::ZAxisVector), FVector::ZAxisVector);
+		const FVector Up = SafeNormal(Capsule->GetUpVector(), FVector::ZAxisVector);
 		const float Radius = Capsule->GetScaledCapsuleRadius();
 		const float SegmentHalfLength = (std::max)(0.0f, Capsule->GetScaledCapsuleHalfHeight() - Radius);
 		const FVector Center = Capsule->GetWorldLocation();
@@ -621,10 +618,12 @@ bool FCollisionMath::SweepSphereShapeComponent(
 	}
 	else if (UCapsuleComponent* Capsule = Cast<UCapsuleComponent>(Shape))
 	{
-		const FQuat Rotation = Capsule->GetWorldMatrix().ToQuat();
-		const FQuat InvRotation = Rotation.Inverse();
-		const FVector LocalStart = InvRotation.RotateVector(Start - Capsule->GetWorldLocation());
-		const FVector LocalDir = InvRotation.RotateVector(Dir);
+		const FVector AxisX = SafeNormal(Capsule->GetForwardVector(), FVector::XAxisVector);
+		const FVector AxisY = SafeNormal(Capsule->GetRightVector(), FVector::YAxisVector);
+		const FVector AxisZ = SafeNormal(Capsule->GetUpVector(), FVector::ZAxisVector);
+		const FVector RelStart = Start - Capsule->GetWorldLocation();
+		const FVector LocalStart(RelStart.Dot(AxisX), RelStart.Dot(AxisY), RelStart.Dot(AxisZ));
+		const FVector LocalDir(Dir.Dot(AxisX), Dir.Dot(AxisY), Dir.Dot(AxisZ));
 		const float CapsuleRadius = Capsule->GetScaledCapsuleRadius();
 		const float SegmentHalfLength = (std::max)(0.0f, Capsule->GetScaledCapsuleHalfHeight() - CapsuleRadius);
 
@@ -633,7 +632,7 @@ bool FCollisionMath::SweepSphereShapeComponent(
 			SegmentHalfLength, CapsuleRadius + Radius, HitDistance, LocalNormal);
 		if (bHit)
 		{
-			HitNormal = SafeNormal(Rotation.RotateVector(LocalNormal));
+			HitNormal = SafeNormal(AxisX * LocalNormal.X + AxisY * LocalNormal.Y + AxisZ * LocalNormal.Z);
 		}
 	}
 
