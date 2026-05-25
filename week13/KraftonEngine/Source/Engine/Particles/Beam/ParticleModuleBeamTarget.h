@@ -28,7 +28,7 @@ public:
 	FRawDistributionVector TargetTangent;
 	uint32 bLockTargetTangent : 1;
 	FRawDistributionFloat TargetStrength;
-	uint32 bLockTargetStength : 1;
+	uint32 bLockTargetStrength : 1;
 	float LockRadius = 0.0f;
 	int32 LastSelectedParticleIndex = INDEX_NONE;
 

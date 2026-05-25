@@ -29,7 +29,7 @@ public:
 	FRawDistributionVector SourceTangent;
 	uint32 bLockSourceTangent : 1;
 	FRawDistributionFloat SourceStrength;
-	uint32 bLockSourceStength : 1;
+	uint32 bLockSourceStrength : 1;
 	int32 LastSelectedParticleIndex = INDEX_NONE;
 
 	UParticleModuleBeamSource();

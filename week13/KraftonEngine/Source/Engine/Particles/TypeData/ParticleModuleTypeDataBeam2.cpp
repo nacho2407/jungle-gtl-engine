@@ -69,8 +69,14 @@ void UParticleModuleTypeDataBeam2::GetDataPointers(FParticleEmitterInstance* Own
 	CurrentOffset += sizeof(float) * (std::max(0, InterpolationPoints) + 2);
 	NoiseDistanceScale = reinterpret_cast<float*>(Base + CurrentOffset);
 	CurrentOffset += sizeof(float);
-	SourceModifier = nullptr;
-	TargetModifier = nullptr;
+
+	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(Owner);
+	SourceModifier = (BeamInst && BeamInst->BeamModule_SourceModifier_Offset != INDEX_NONE)
+		? reinterpret_cast<FBeamParticleModifierPayloadData*>(Base + BeamInst->BeamModule_SourceModifier_Offset)
+		: nullptr;
+	TargetModifier = (BeamInst && BeamInst->BeamModule_TargetModifier_Offset != INDEX_NONE)
+		? reinterpret_cast<FBeamParticleModifierPayloadData*>(Base + BeamInst->BeamModule_TargetModifier_Offset)
+		: nullptr;
 }
 
 void UParticleModuleTypeDataBeam2::GetDataPointerOffsets(FParticleEmitterInstance* Owner, const uint8* ParticleBase,
@@ -218,7 +224,9 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 
 FParticleEmitterInstance* UParticleModuleTypeDataBeam2::CreateInstance(UParticleEmitter* InEmitterParent, UParticleSystemComponent& InComponent)
 {
-	return new FParticleBeam2EmitterInstance();
+	FParticleBeam2EmitterInstance* Instance = new FParticleBeam2EmitterInstance();
+	Instance->InitParameters(InEmitterParent, &InComponent);
+	return Instance;
 }
 
 void UParticleModuleTypeDataBeam2::CacheModuleInfo(UParticleEmitter* Emitter)
@@ -245,13 +253,29 @@ void UParticleModuleTypeDataBeam2::CacheModuleInfo(UParticleEmitter* Emitter)
 		{
 			for (UParticleModule* Module : LODLevel->Modules)
 			{
-				if (auto* Source = Cast<UParticleModuleBeamSource>(Module)) SourceModule = Source;
-				if (auto* Target = Cast<UParticleModuleBeamTarget>(Module)) TargetModule = Target;
-				if (auto* Noise = Cast<UParticleModuleBeamNoise>(Module)) NoiseModule = Noise;
+				const bool bIsSource = Cast<UParticleModuleBeamSource>(Module) != nullptr;
+				const bool bIsTarget = Cast<UParticleModuleBeamTarget>(Module) != nullptr;
+				const bool bIsNoise = Cast<UParticleModuleBeamNoise>(Module) != nullptr;
+				const bool bIsModifier = Cast<UParticleModuleBeamModifier>(Module) != nullptr;
+				const bool bBeamModule = bIsSource || bIsTarget || bIsNoise || bIsModifier;
+
+				if (bIsSource) SourceModule = Cast<UParticleModuleBeamSource>(Module);
+				if (bIsTarget) TargetModule = Cast<UParticleModuleBeamTarget>(Module);
+				if (bIsNoise) NoiseModule = Cast<UParticleModuleBeamNoise>(Module);
 				if (auto* Modifier = Cast<UParticleModuleBeamModifier>(Module))
 				{
 					if (Modifier->ModifierType == PEB2MT_Source) SourceModifier = Modifier;
 					else if (Modifier->ModifierType == PEB2MT_Target) TargetModifier = Modifier;
+				}
+
+				if (bBeamModule)
+				{
+					LODLevel->SpawnModules.erase(
+						std::remove(LODLevel->SpawnModules.begin(), LODLevel->SpawnModules.end(), Module),
+						LODLevel->SpawnModules.end());
+					LODLevel->UpdateModules.erase(
+						std::remove(LODLevel->UpdateModules.begin(), LODLevel->UpdateModules.end(), Module),
+						LODLevel->UpdateModules.end());
 				}
 			}
 		}

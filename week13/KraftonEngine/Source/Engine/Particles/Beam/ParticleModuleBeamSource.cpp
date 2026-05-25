@@ -4,11 +4,13 @@
 #include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
 #include "Serialization/Archive.h"
 
+#include <algorithm>
+
 UParticleModuleBeamSource::UParticleModuleBeamSource()
 	: bSourceAbsolute(false)
 	, bLockSource(false)
 	, bLockSourceTangent(false)
-	, bLockSourceStength(false)
+	, bLockSourceStrength(false)
 {
 	InitializeDefaults();
 }
@@ -45,7 +47,9 @@ void UParticleModuleBeamSource::Spawn(const FSpawnContext& Context)
 
 	FBeam2TypeDataPayload* BeamData = reinterpret_cast<FBeam2TypeDataPayload*>(reinterpret_cast<uint8*>(Context.ParticleBase) + Context.Owner.TypeDataOffset);
 	int32 CurrentOffset = Context.Offset;
-	ResolveSourceData(Context, BeamInst, BeamData, reinterpret_cast<const uint8*>(Context.ParticleBase), CurrentOffset, Context.Owner.ActiveParticles, true, nullptr);
+
+	const int32 BeamIndex = std::max(0, Context.Owner.ActiveParticles - 1);
+	ResolveSourceData(Context, BeamInst, BeamData, reinterpret_cast<const uint8*>(Context.ParticleBase), CurrentOffset, BeamIndex, true, nullptr);
 }
 
 void UParticleModuleBeamSource::Update(const FUpdateContext& Context)
@@ -109,6 +113,18 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 		return false;
 	}
 
+	// UE resolves Actor / Emitter / Particle source methods through named
+	// component parameters, emitter instance lookup, and selected source
+	// particles. Jungle does not expose those foundations yet, so these methods
+	// are intentionally stubbed. Do not fall back to Default distribution or
+	// Owner.Location, because that changes the meaning of the Cascade module.
+	if (SourceMethod == PEB2STM_Actor ||
+		SourceMethod == PEB2STM_Emitter ||
+		SourceMethod == PEB2STM_Particle)
+	{
+		return false;
+	}
+
 	switch (SourceMethod)
 	{
 	case PEB2STM_UserSet:
@@ -121,16 +137,10 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 		BeamData->SourceTangent = SourceTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
 		BeamData->SourceStrength = SourceStrength.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
 		break;
-	case PEB2STM_Actor:
-	case PEB2STM_Emitter:
-	case PEB2STM_Particle:
-		// UE original responsibility: resolve Actor/Emitter/Particle/Name sources.
-		// Missing Jungle foundation: actor lookup, emitter-name lookup, particle source selection, branch beam.
-		// System to connect later: particle system component instance parameters and emitter-instance lookup table.
-		break;
 	default:
-		break;
+		return false;
 	}
+
 	return true;
 }
 
@@ -149,13 +159,13 @@ void UParticleModuleBeamSource::Serialize(FArchive& Ar)
 	bool LockSourceTangent = bLockSourceTangent;
 	Ar << LockSourceTangent;
 	SourceStrength.Serialize(Ar);
-	bool LockSourceStrength = bLockSourceStength;
+	bool LockSourceStrength = bLockSourceStrength;
 	Ar << LockSourceStrength;
 	if (Ar.IsLoading())
 	{
 		bSourceAbsolute = SourceAbsolute;
 		bLockSource = LockSource;
 		bLockSourceTangent = LockSourceTangent;
-		bLockSourceStength = LockSourceStrength;
+		bLockSourceStrength = LockSourceStrength;
 	}
 }

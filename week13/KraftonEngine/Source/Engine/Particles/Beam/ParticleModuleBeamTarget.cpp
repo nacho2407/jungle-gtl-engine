@@ -3,11 +3,13 @@
 #include "Particles/ParticleEmitterInstances.h"
 #include "Serialization/Archive.h"
 
+#include <algorithm>
+
 UParticleModuleBeamTarget::UParticleModuleBeamTarget()
 	: bTargetAbsolute(false)
 	, bLockTarget(false)
 	, bLockTargetTangent(false)
-	, bLockTargetStength(false)
+	, bLockTargetStrength(false)
 {
 	InitializeDefaults();
 }
@@ -24,15 +26,19 @@ void UParticleModuleBeamTarget::Spawn(const FSpawnContext& Context)
 {
 	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(&Context.Owner);
 	if (!BeamInst) return;
+
 	FBeam2TypeDataPayload* BeamData = reinterpret_cast<FBeam2TypeDataPayload*>(reinterpret_cast<uint8*>(Context.ParticleBase) + Context.Owner.TypeDataOffset);
 	int32 CurrentOffset = Context.Offset;
-	ResolveTargetData(Context, BeamInst, BeamData, reinterpret_cast<const uint8*>(Context.ParticleBase), CurrentOffset, Context.Owner.ActiveParticles, true, nullptr);
+
+	const int32 BeamIndex = std::max(0, Context.Owner.ActiveParticles - 1);
+	ResolveTargetData(Context, BeamInst, BeamData, reinterpret_cast<const uint8*>(Context.ParticleBase), CurrentOffset, BeamIndex, true, nullptr);
 }
 
 void UParticleModuleBeamTarget::Update(const FUpdateContext& Context)
 {
 	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(&Context.Owner);
 	if (!BeamInst) return;
+
 	BEGIN_UPDATE_LOOP;
 	FBeam2TypeDataPayload* BeamData = reinterpret_cast<FBeam2TypeDataPayload*>(ParticleBase + Context.Owner.TypeDataOffset);
 	int32 LocalOffset = Context.Offset;
@@ -58,6 +64,19 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 	FBeamParticleModifierPayloadData* ModifierData)
 {
 	if (!BeamData) return false;
+
+	// UE resolves Actor / Emitter / Particle target methods through named
+	// component parameters, emitter instance lookup, and selected source
+	// particles. Jungle does not expose those foundations yet, so these methods
+	// are intentionally stubbed. Do not fall back to Default distribution or
+	// Owner.Location, because that changes the meaning of the Cascade module.
+	if (TargetMethod == PEB2STM_Actor ||
+		TargetMethod == PEB2STM_Emitter ||
+		TargetMethod == PEB2STM_Particle)
+	{
+		return false;
+	}
+
 	switch (TargetMethod)
 	{
 	case PEB2STM_UserSet:
@@ -70,16 +89,10 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 		BeamData->TargetTangent = TargetTangent.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
 		BeamData->TargetStrength = TargetStrength.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
 		break;
-	case PEB2STM_Actor:
-	case PEB2STM_Emitter:
-	case PEB2STM_Particle:
-		// UE original responsibility: resolve Actor/Emitter/Particle/Name targets.
-		// Missing Jungle foundation: actor lookup, emitter-name lookup, particle source selection, branch beam.
-		// System to connect later: particle system component instance parameters and emitter-instance lookup table.
-		break;
 	default:
-		break;
+		return false;
 	}
+
 	return true;
 }
 
@@ -98,7 +111,7 @@ void UParticleModuleBeamTarget::Serialize(FArchive& Ar)
 	bool LockTargetTangent = bLockTargetTangent;
 	Ar << LockTargetTangent;
 	TargetStrength.Serialize(Ar);
-	bool LockTargetStrength = bLockTargetStength;
+	bool LockTargetStrength = bLockTargetStrength;
 	Ar << LockTargetStrength;
 	Ar << LockRadius;
 	if (Ar.IsLoading())
@@ -106,6 +119,6 @@ void UParticleModuleBeamTarget::Serialize(FArchive& Ar)
 		bTargetAbsolute = TargetAbsolute;
 		bLockTarget = LockTarget;
 		bLockTargetTangent = LockTargetTangent;
-		bLockTargetStength = LockTargetStrength;
+		bLockTargetStrength = LockTargetStrength;
 	}
 }
