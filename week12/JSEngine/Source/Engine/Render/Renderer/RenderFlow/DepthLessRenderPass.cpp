@@ -7,14 +7,6 @@
 
 namespace
 {
-    bool IsDebugViewMode(EViewMode ViewMode)
-    {
-        return ViewMode == EViewMode::Normal ||
-            ViewMode == EViewMode::Heatmap ||
-            ViewMode == EViewMode::BoneWeightHeatmap ||
-            ViewMode == EViewMode::Depth;
-    }
-
     FShaderProgram* GetDepthLessShaderProgram(const FRenderCommand& Cmd)
     {
         if (!Cmd.Material)

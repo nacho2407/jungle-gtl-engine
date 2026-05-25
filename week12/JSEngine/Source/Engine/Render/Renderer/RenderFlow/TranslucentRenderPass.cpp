@@ -11,46 +11,7 @@
 
 namespace
 {
-    bool IsDebugViewMode(EViewMode ViewMode)
-    {
-        return ViewMode == EViewMode::Normal ||
-            ViewMode == EViewMode::Heatmap ||
-            ViewMode == EViewMode::BoneWeightHeatmap ||
-            ViewMode == EViewMode::Depth;
-    }
-
-    uint32 BuildTranslucentPermutationKey(const FRenderPassContext* Context, const UMaterialInterface* Material)
-    {
-        uint32 PermutationKey = (uint32)ELightingModel::Unlit;
-        switch (Context->RenderBus->GetViewMode())
-        {
-        case EViewMode::Lit_Gouraud:
-            PermutationKey = (uint32)ELightingModel::Gouraud;
-            break;
-        case EViewMode::Lit_Lambert:
-            PermutationKey = (uint32)ELightingModel::Lambert;
-            break;
-        case EViewMode::Lit_BlinnPhong:
-            PermutationKey = (uint32)ELightingModel::BlinnPhong;
-            break;
-        case EViewMode::Heatmap:
-            PermutationKey = (uint32)ELightingModel::Heatmap;
-            break;
-        }
-
-        if (Material)
-        {
-            if (Material->HasDiffuseMap()) PermutationKey |= (uint32)EShaderFeature::HasDiffuseMap;
-            if (Material->HasNormalMap()) PermutationKey |= (uint32)EShaderFeature::HasNormalMap;
-            if (Material->HasSpecularMap()) PermutationKey |= (uint32)EShaderFeature::HasSpecularMap;
-            if (Material->HasEmissiveMap()) PermutationKey |= (uint32)EShaderFeature::HasEmissiveMap;
-            if (Material->HasAlphaMask()) PermutationKey |= (uint32)EShaderFeature::HasAlphaMask;
-        }
-
-        return PermutationKey;
-    }
-
-    FShaderProgram* GetTranslucentShaderProgram(const FRenderCommand& Cmd, uint32 PermutationKey)
+    FShaderProgram* GetShaderProgram(const FRenderCommand& Cmd, uint32 PermutationKey)
     {
         if (!Cmd.Material)
         {
@@ -91,98 +52,7 @@ namespace
         const FVector Delta = Center - CameraPosition;
         return FVector::DotProduct(Delta, CameraForward);
     }
-
-    TArray<FRenderCommand> SortTranslucentCommands(const FRenderPassContext* Context)
-    {
-        const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(ERenderPass::Translucent);
-        TArray<FRenderCommand> SortedCommands = Commands;
-        const FVector CameraPosition = Context->RenderBus->GetCameraPosition();
-        const FVector CameraForward = Context->RenderBus->GetCameraForward();
-        std::sort(SortedCommands.begin(), SortedCommands.end(),
-            [&CameraPosition, &CameraForward](const FRenderCommand& A, const FRenderCommand& B)
-            {
-                return CalculateTranslucentSortKey(A, CameraPosition, CameraForward) >
-                    CalculateTranslucentSortKey(B, CameraPosition, CameraForward);
-            });
-        return SortedCommands;
-    }
-
-    bool DrawMeshCommandsForPass(const FRenderPassContext* Context, ERenderPass Pass)
-    {
-        const TArray<FRenderCommand> Commands = Pass == ERenderPass::Translucent
-            ? SortTranslucentCommands(Context)
-            : Context->RenderBus->GetCommands(Pass);
-        if (Commands.empty())
-        {
-            return true;
-        }
-
-        for (const FRenderCommand& Cmd : Commands)
-        {
-            Context->RenderResources->PerObjectConstantBuffer.Update(
-                Context->DeviceContext,
-                &Cmd.PerObjectConstants,
-                sizeof(FPerObjectConstants));
-            ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
-            Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
-            Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
-
-            if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
-            {
-                continue;
-            }
-
-            uint32 offset = 0;
-            ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-            if (vertexBuffer == nullptr)
-            {
-                continue;
-            }
-
-            uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
-            uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-            if (vertexCount == 0 || stride == 0)
-            {
-                continue;
-            }
-
-            if (Cmd.Material != nullptr)
-            {
-                const uint32 PermutationKey = BuildTranslucentPermutationKey(Context, Cmd.Material);
-                FShaderProgram* Program = GetTranslucentShaderProgram(Cmd, PermutationKey);
-                if (!Program)
-                {
-                    continue;
-                }
-
-                Program->Bind(Context->DeviceContext);
-                Cmd.Material->BindRenderStates(Context->DeviceContext);
-                Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
-                BindVertexFactoryResources(
-                    Context->DeviceContext,
-                    Cmd.VertexFactoryType,
-                    Context->RenderBus->GetBoneMatrixConstants(Cmd),
-                    Context->RenderResources,
-                    Cmd.BoneMatrixConstantBuffer);
-            }
-
-            Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-            ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-            if (indexBuffer != nullptr)
-            {
-                Context->DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-                Context->DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
-            }
-            else
-            {
-                Context->DeviceContext->Draw(vertexCount, 0);
-            }
-        }
-
-        return true;
-    }
-}
+} // namespace
 
 bool FTranslucentRenderPass::Initialize()
 {
@@ -216,15 +86,113 @@ bool FTranslucentRenderPass::Begin(const FRenderPassContext* Context)
 
 bool FTranslucentRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
+    // 현재 Translucent가 렌더링되어야 하는 DebugViewMode 없음
     if (IsDebugViewMode(Context->RenderBus->GetViewMode()))
     {
         return true;
     }
+    
+    const TArray<FRenderCommand> Commands = SortTranslucentCommands(Context);
+    if (Commands.empty())
+    {
+        return true;
+    }
 
-    return DrawMeshCommandsForPass(Context, ERenderPass::Translucent);
+    for (const FRenderCommand& Cmd : Commands)
+    {
+        if (!DrawEachCommand(Context, Cmd)) 
+            continue;        // Draw 실패 시 동작 추가할 거면 여기에 추가
+    }
+
+    return true;
 }
 
 bool FTranslucentRenderPass::End(const FRenderPassContext* Context)
 {
+    return true;
+}
+
+TArray<FRenderCommand> FTranslucentRenderPass::SortTranslucentCommands(const FRenderPassContext* Context)
+{
+    const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(ERenderPass::Translucent);
+    TArray<FRenderCommand> SortedCommands = Commands;
+    const FVector CameraPosition = Context->RenderBus->GetCameraPosition();
+    const FVector CameraForward = Context->RenderBus->GetCameraForward();
+    std::sort(SortedCommands.begin(), SortedCommands.end(),
+        [&CameraPosition, &CameraForward](const FRenderCommand& A, const FRenderCommand& B)
+        {
+            return CalculateTranslucentSortKey(A, CameraPosition, CameraForward) >
+                CalculateTranslucentSortKey(B, CameraPosition, CameraForward);
+        });
+    return SortedCommands;
+}
+
+bool FTranslucentRenderPass::DrawEachCommand(const FRenderPassContext* Context, const FRenderCommand& Cmd)
+{
+    ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
+    
+    Context->RenderResources->PerObjectConstantBuffer.Update(
+        DeviceContext,
+        &Cmd.PerObjectConstants,
+        sizeof(FPerObjectConstants));
+    ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
+    DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
+    DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
+
+    if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
+    {
+        return false;
+    }
+
+    uint32 offset = 0;
+    ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
+    if (vertexBuffer == nullptr)
+    {
+        return false;
+    }
+
+    uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
+    uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
+    if (vertexCount == 0 || stride == 0)
+    {
+        return false;
+    }
+
+    if (Cmd.Material != nullptr)
+    {
+        uint32 PermutationKey = 0;
+        PermutationKey |= GetLightingModelPermutationKey(Context->RenderBus->GetViewMode());
+        PermutationKey |= GetTexturePermutationKey(Cmd.Material);
+        
+        FShaderProgram* Program = GetShaderProgram(Cmd, PermutationKey);
+        if (!Program)
+        {
+            return false;
+        }
+
+        Program->Bind(DeviceContext);
+        Cmd.Material->BindRenderStates(DeviceContext);
+        Cmd.Material->BindParameters(DeviceContext, Program->PS);
+        BindVertexFactoryResources(
+            DeviceContext,
+            Cmd.VertexFactoryType,
+            Context->RenderBus->GetBoneMatrixConstants(Cmd),
+            Context->RenderResources,
+            Cmd.BoneMatrixConstantBuffer);
+    }
+
+    // 최종 Draw
+    DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+
+    ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
+    if (indexBuffer != nullptr)
+    {
+        DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
+    }
+    else
+    {
+        DeviceContext->Draw(vertexCount, 0);
+    }
     return true;
 }

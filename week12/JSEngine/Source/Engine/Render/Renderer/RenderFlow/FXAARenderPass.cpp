@@ -6,14 +6,6 @@
 
 namespace
 {
-    bool IsDebugViewMode(EViewMode ViewMode)
-    {
-        return ViewMode == EViewMode::Normal ||
-            ViewMode == EViewMode::Heatmap ||
-            ViewMode == EViewMode::BoneWeightHeatmap ||
-            ViewMode == EViewMode::Depth;
-    }
-
     FShaderProgram* GetFXAAProgram()
     {
         FShaderStageKey VSKey;
