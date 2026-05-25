@@ -8,9 +8,22 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
 #include "Mesh/MeshManager.h"
+#include "Particles/ParticleSystem.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
+
+#include <algorithm>
+
+namespace
+{
+	EParticleRenderType GetEmitterRenderType(const FParticleEmitterInstance* Instance)
+	{
+		const UParticleLODLevel* LODLevel = Instance ? Instance->GetCurrentLODLevel() : nullptr;
+		const UParticleModuleTypeDataBase* TypeData = LODLevel ? LODLevel->GetTypeDataModule() : nullptr;
+		return TypeData ? TypeData->GetRenderType() : EParticleRenderType::Sprite;
+	}
+}
 
 FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
@@ -49,6 +62,8 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	MeshInstances.clear();
 
 	RebuildSpriteParticleGeometry(Frame);
+	RebuildRibbonParticleGeometry(Frame);
+	RebuildBeamParticleGeometry(Frame);
 	RebuildMeshParticleGeometry();
 }
 
@@ -76,6 +91,8 @@ bool FParticleSystemSceneProxy::PrepareParticleDrawBuffer(const FParticleDrawBat
 	switch (Batch.Type)
 	{
 	case EParticleRenderType::Sprite:
+	case EParticleRenderType::Ribbon:
+	case EParticleRenderType::Beam:
 	{
 		if (SpriteIndexCount == 0 || Batch.Sections.empty()) return false;
 
@@ -136,7 +153,22 @@ void FParticleSystemSceneProxy::RebuildSpriteParticleGeometry(const FFrameContex
 	SpriteGeometry.Clear();
 	SpriteIndexCount = 0;
 
-	FParticleDrawBatch& Batch = FindOrAddDrawBatch(EParticleRenderType::Sprite);
+	RebuildSpriteLikeParticleGeometry(Frame, EParticleRenderType::Sprite, true);
+}
+
+void FParticleSystemSceneProxy::RebuildRibbonParticleGeometry(const FFrameContext& Frame)
+{
+	RebuildSpriteLikeParticleGeometry(Frame, EParticleRenderType::Ribbon, false);
+}
+
+void FParticleSystemSceneProxy::RebuildBeamParticleGeometry(const FFrameContext& Frame)
+{
+	RebuildSpriteLikeParticleGeometry(Frame, EParticleRenderType::Beam, false);
+}
+
+void FParticleSystemSceneProxy::RebuildSpriteLikeParticleGeometry(const FFrameContext& Frame, EParticleRenderType RenderType, bool bDepthSort)
+{
+	FParticleDrawBatch& Batch = FindOrAddDrawBatch(RenderType);
 	Batch.Sections.clear();
 
 	UParticleSystemComponent* Component = GetParticleSystemComponent();
@@ -147,20 +179,53 @@ void FParticleSystemSceneProxy::RebuildSpriteParticleGeometry(const FFrameContex
 	for (FParticleEmitterInstance* Instance : Instances)
 	{
 		if (!Instance) continue;
-		if (dynamic_cast<FParticleMeshEmitterInstance*>(Instance)) continue;
+		if (GetEmitterRenderType(Instance) != RenderType) continue;
 
 		const uint32 FirstIndex = SpriteGeometry.GetIndexCount();
 
 		const int32 ActiveCount = Instance->GetActiveParticleCount();
 		const FParticleDataContainer& Data = Instance->GetParticleDataContainer();
 		const uint16* ParticleIndices = Instance->ParticleIndices;
+		if (!ParticleIndices) continue;
 
-		for (int32 Index = 0; Index < ActiveCount; ++Index)
+		if (!bDepthSort)
 		{
-			const FBaseParticle& Particle = Data.GetParticle(ParticleIndices[Index]);
-			if (!Particle.bAlive) continue;
+			for (int32 Index = 0; Index < ActiveCount; ++Index)
+			{
+				const FBaseParticle& Particle = Data.GetParticle(ParticleIndices[Index]);
+				if (!Particle.bAlive) continue;
 
-			SpriteGeometry.AddParticleQuad(Particle, Frame.CameraRight, Frame.CameraUp);
+				SpriteGeometry.AddParticleQuad(Particle, Frame.CameraRight, Frame.CameraUp);
+			}
+		}
+		else
+		{
+			TArray<uint16> RenderOrder;
+			RenderOrder.reserve(ActiveCount);
+			for (int32 Index = 0; Index < ActiveCount; ++Index)
+			{
+				const uint16 ParticleSlot = ParticleIndices[Index];
+				const FBaseParticle& Particle = Data.GetParticle(ParticleSlot);
+				if (!Particle.bAlive) continue;
+
+				RenderOrder.push_back(ParticleSlot);
+			}
+
+			std::sort(RenderOrder.begin(), RenderOrder.end(),
+				[&Data, &Frame](uint16 A, uint16 B)
+				{
+					const FBaseParticle& ParticleA = Data.GetParticle(A);
+					const FBaseParticle& ParticleB = Data.GetParticle(B);
+
+					const float DepthA = (ParticleA.Position - Frame.CameraPosition).Dot(Frame.CameraForward);
+					const float DepthB = (ParticleB.Position - Frame.CameraPosition).Dot(Frame.CameraForward);
+					return DepthA > DepthB;
+				});
+
+			for (uint16 ParticleSlot : RenderOrder)
+			{
+				SpriteGeometry.AddParticleQuad(Data.GetParticle(ParticleSlot), Frame.CameraRight, Frame.CameraUp);
+			}
 		}
 
 		const uint32 IndexCount = SpriteGeometry.GetIndexCount() - FirstIndex;
@@ -192,6 +257,7 @@ void FParticleSystemSceneProxy::RebuildMeshParticleGeometry()
 	for (FParticleEmitterInstance* Instance : Instances)
 	{
 		if (!Instance) continue;
+		if (GetEmitterRenderType(Instance) != EParticleRenderType::Mesh) continue;
 
 		FParticleMeshEmitterInstance* MeshInstance = dynamic_cast<FParticleMeshEmitterInstance*>(Instance);
 

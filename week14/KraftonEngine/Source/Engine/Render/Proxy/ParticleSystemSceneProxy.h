@@ -48,6 +48,9 @@ public:
 
 private:
 	void RebuildSpriteParticleGeometry(const FFrameContext& Frame);
+	void RebuildRibbonParticleGeometry(const FFrameContext& Frame);
+	void RebuildBeamParticleGeometry(const FFrameContext& Frame);
+	void RebuildSpriteLikeParticleGeometry(const FFrameContext& Frame, EParticleRenderType RenderType, bool bDepthSort);
 	void RebuildMeshParticleGeometry();
 
 	void ClearDrawBatches()
