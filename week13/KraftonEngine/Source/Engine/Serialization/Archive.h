@@ -54,6 +54,10 @@ public:
 	virtual void SerializeRotator(FRotator& Value) { Serialize(&Value, sizeof(Value)); }
 
 	FArchive& operator<<(bool& Value) { SerializeBool(Value); return *this; }
+	FArchive& operator<<(int8& Value) { Serialize(&Value, 1); return *this; }
+	FArchive& operator<<(uint8& Value) { Serialize(&Value, 1); return *this; }
+	FArchive& operator<<(int16& Value) { Serialize(&Value, 2); return *this; }
+	FArchive& operator<<(uint16& Value) { Serialize(&Value, 2); return *this; }
 	FArchive& operator<<(int32& Value) { SerializeInt32(Value); return *this; }
 	FArchive& operator<<(uint32& Value) { SerializeUInt32(Value); return *this; }
 	FArchive& operator<<(float& Value) { SerializeFloat(Value); return *this; }
