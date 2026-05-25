@@ -13,6 +13,7 @@ class UParticleEmitter;
 class UParticleLODLevel;
 class UParticleModule;
 class UParticleModuleRequired;
+class UParticleModuleSpawn;
 class UParticleModuleTypeDataBase;
 class UWorld;
 
@@ -23,6 +24,7 @@ enum class EParticleEditorSelectionType : uint8
 	Emitter,
 	LODLevel,
 	RequiredModule,
+	SpawnModule,
 	TypeDataModule,
 	Module,
 };
@@ -58,6 +60,7 @@ public:
 	void SelectLOD(int32 LODIndex);
 	void SelectModule(int32 ModuleIndex);
 	void SelectRequiredModule();
+	void SelectSpawnModule();
 	void SelectTypeDataModule();
 	void SelectEmitterModule(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex);
 
@@ -66,6 +69,7 @@ public:
 	UParticleLODLevel* GetSelectedLODLevel() const;
 	UParticleModule* GetSelectedModule() const;
 	UParticleModuleRequired* GetSelectedRequiredModule() const;
+	UParticleModuleSpawn* GetSelectedSpawnModule() const;
 	UParticleModuleTypeDataBase* GetSelectedTypeDataModule() const;
 
 	UObject* GetSelectedObject() const;
