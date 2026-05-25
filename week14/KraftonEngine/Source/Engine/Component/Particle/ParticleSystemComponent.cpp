@@ -5,6 +5,8 @@
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Particles/Runtime/ParticleRuntimeTypes.h"
 #include "Render/Proxy/ParticleSystemSceneProxy.h"
+#include "Render/Types/MinimalViewInfo.h"
+#include "GameFramework/World.h"
 
 #include <cstring>
 
@@ -113,12 +115,20 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 		return;
 	}
 
+	FMinimalViewInfo POV;
+	const bool bHasViewLocation = GetWorld() && GetWorld()->GetActivePOV(POV);
+
 	bool bAnyEmitterTicked = false;
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		if (!Instance || !Instance->IsActive())
 		{
 			continue;
+		}
+
+		if (bHasViewLocation)
+		{
+			Instance->UpdateLOD(POV.Location);
 		}
 
 		Instance->Tick(DeltaTime);

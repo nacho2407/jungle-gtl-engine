@@ -21,9 +21,10 @@ namespace
 
 	UParticleLODLevel* CreateDefaultLODLevel(float EmitterDuration, bool bLooping, float SpawnRate, float Lifetime, const FVector& StartLocation, const FVector& StartVelocity, const FVector& StartSize, const FVector4& StartColor, const FVector4& EndColor)
 	{
-		UParticleLODLevel* LODLevel = UObjectManager::Get().CreateObject<UParticleLODLevel>();
-		LODLevel->SetLevel(0);
-		LODLevel->SetEnabled(true);
+	UParticleLODLevel* LODLevel = UObjectManager::Get().CreateObject<UParticleLODLevel>();
+	LODLevel->SetLevel(0);
+	LODLevel->SetEnabled(true);
+	LODLevel->SetDistance(0.0f);
 
 		UParticleModuleSpawn* SpawnModule = UObjectManager::Get().CreateObject<UParticleModuleSpawn>();
 		SpawnModule->SpawnRate = SpawnRate;
@@ -152,6 +153,30 @@ UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 Index) const
 	}
 
 	return LODLevels[Index];
+}
+
+int32 UParticleEmitter::SelectLODLevelIndex(float Distance) const
+{
+	int32 BestIndex = -1;
+	float BestDistance = -1.0f;
+
+	for (int32 Index = 0; Index < static_cast<int32>(LODLevels.size()); ++Index)
+	{
+		const UParticleLODLevel* LODLevel = LODLevels[Index];
+		if (!LODLevel || !LODLevel->IsEnabled())
+		{
+			continue;
+		}
+
+		const float LODDistance = LODLevel->GetDistance();
+		if (Distance >= LODDistance && LODDistance >= BestDistance)
+		{
+			BestIndex = Index;
+			BestDistance = LODDistance;
+		}
+	}
+
+	return BestIndex >= 0 ? BestIndex : 0;
 }
 
 void UParticleEmitter::AddLODLevel(UParticleLODLevel* LODLevel)
