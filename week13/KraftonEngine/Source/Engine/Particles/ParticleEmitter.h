@@ -97,6 +97,7 @@ public:
 	int32 OrbitModuleOffset = 0;
 
 	bool bUseLegacySpawningBehavior = false;
+	bool bMeshRotationActive = false;
 
 	int32 InitialAllocationCount = 0;
 	float QualityLevelSpawnRateScale = 1.0f;

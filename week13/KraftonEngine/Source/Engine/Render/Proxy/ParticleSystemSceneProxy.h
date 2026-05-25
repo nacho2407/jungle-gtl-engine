@@ -33,11 +33,15 @@ private:
 		FEmitterRenderBuffer() = default;
 
 		FDynamicVertexBuffer InstanceVB;
+		FDynamicIndexBuffer  DynamicIB;
 		FConstantBuffer      ParticleFrameCB;
 		TArray<uint8>        StagingBuffer;
+		TArray<uint32>       StagingIndices;
 
 		// UpdatePerViewport에서 채워지고 BuildParticleCommands에서 읽힘
 		int32               ActiveParticleCount = 0;
+		int32               DynamicVertexCount  = 0;
+		int32               DynamicIndexCount   = 0;
 		EDynamicEmitterType EmitterType         = EDynamicEmitterType::Sprite;
 		EParticleBlendMode  BlendMode           = EParticleBlendMode::AlphaBlend;
 		UMaterial*          Material            = nullptr;
@@ -66,6 +70,10 @@ private:
 		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
 
 	void SubmitMeshEmitter(FEmitterRenderBuffer& Buffer,
+		ID3D11Device* Device, ID3D11DeviceContext* Context,
+		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
+
+	void SubmitBeamTrailEmitter(FEmitterRenderBuffer& Buffer,
 		ID3D11Device* Device, ID3D11DeviceContext* Context,
 		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
 };
