@@ -7,6 +7,7 @@
 #include "Source/Engine/Component/Particle/ParticleSystemComponent.generated.h"
 
 struct FParticleEmitterInstance;
+class UParticleEmitter;
 class UParticleSystem;
 
 UCLASS()
@@ -30,11 +31,14 @@ public:
 
 	const TArray<FParticleEmitterInstance*>& GetEmitterInstances() const { return EmitterInstances; }
 	int32 GetCurrentLODIndex() const { return CurrentLODIndex; }
+	void SetPreviewSoloEmitterIndex(int32 InEmitterIndex);
+	int32 GetPreviewSoloEmitterIndex() const { return PreviewSoloEmitterIndex; }
 
 protected:
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
 private:
+	bool ShouldCreateEmitterInstance(int32 EmitterIndex, const UParticleEmitter* Emitter) const;
 	void InitializeEmitterInstances();
 	void ClearEmitterInstances();
 	void LoadTemplateFromPath();
@@ -42,6 +46,7 @@ private:
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TObjectPtr<UParticleSystem> ParticleSystem;
 	int32 CurrentLODIndex = 0;
+	int32 PreviewSoloEmitterIndex = -1;
 
 	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Particle System", AssetType="UParticleSystem")
 	FSoftObjectPtr ParticleSystemPath = "None";

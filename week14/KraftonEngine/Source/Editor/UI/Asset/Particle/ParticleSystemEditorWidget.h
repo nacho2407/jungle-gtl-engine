@@ -53,6 +53,7 @@ private:
 		bool bShowCurveEditor = true;
 		bool bPreviewPlaying = true;
 		bool bRestartPreviewRequested = false;
+		int32 SoloEmitterIndex = -1;
 		float PreviewTime = 0.0f;
 		float MainSplitRatio = 0.52f;
 		float ViewportDetailsSplitRatio = 0.58f;
