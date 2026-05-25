@@ -75,6 +75,10 @@ public:
 	UMaterialInterface* Material = nullptr;
 };
 
+/**
+ * @brief particle을 생성 정보를 담고 있는 모듈. 사실 Required에 통합해도 되기는 하지만,
+ *        Cascade 스타일을 따라 별도의 모듈로 분리합니다.
+ */
 UCLASS()
 class UParticleModuleSpawn : public UParticleModule
 {

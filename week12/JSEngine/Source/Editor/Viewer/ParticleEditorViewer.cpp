@@ -883,6 +883,7 @@ UParticleLODLevel* FParticleEditorViewer::CreateDefaultLODLevel(int32 Level)
 	LOD->Level = Level;
 	LOD->bEnabled = true;
 	LOD->RequiredModule = NewObject<UParticleModuleRequired>();
-	LOD->TypeDataModule = nullptr; // Note: 실제 Module이 정해졌을 때 생성
+	LOD->SpawnModule = NewObject<UParticleModuleSpawn>();
+	LOD->TypeDataModule = NewObject<UParticleModuleTypeDataBase>();
 	return LOD;
 }

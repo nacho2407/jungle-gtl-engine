@@ -3,6 +3,31 @@
 #include "Object/Object.h"
 #include "Particle/ParticleModules.h"
 
+/**
+ * @brief 매 프레임 업데이트 루프에서 자주 참조되는 정보를 캐싱하여, 런타임에 빠르게 접근할 수 있도록 하는 구조체.
+ *		  모듈마다 매번 payload offset를 계산하지 않아도 되도록 합니다.
+ */
+struct FParticleLODLevelRuntimeCache
+{
+	int32 ParticleSize = 0;
+	int32 ParticleStride = 0;
+	int32 PayloadOffset = 0;
+	int32 InstancePayloadSize = 0;
+
+	UParticleModuleRequired* RequiredModule = nullptr;
+	UParticleModuleSpawn* SpawnModule = nullptr;
+	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
+
+	TArray<UParticleModule*> SpawnModules;
+	TArray<UParticleModule*> UpdateModules;
+
+	TMap<UParticleModule*, int32> ModulePayloadOffsets;
+	TMap<UParticleModule*, int32> ModuleInstanceOffsets;
+
+	int32 GetParticlePayloadOffset(UParticleModule* Module) const;
+	int32 GetInstancePayloadOffset(UParticleModule* Module) const;
+};
+
 UCLASS()
 class UParticleLODLevel : public UObject
 {
@@ -14,6 +39,7 @@ public:
 	bool bEnabled = true;
 
 	UParticleModuleRequired* RequiredModule = nullptr;
+	UParticleModuleSpawn* SpawnModule = nullptr;
 	TArray<UParticleModule*> Modules;
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
 };
@@ -27,9 +53,14 @@ public:
 
 	TArray<UParticleLODLevel*> LODLevels;
 	TArray<int32> ParticleSize;
+	TArray<FParticleLODLevelRuntimeCache> LODLevelRuntimeCaches;
 
 	void CacheEmitterModuleInfo();
 	TArray<int32> CalculateTotalPayloadSize() const;
+	FParticleLODLevelRuntimeCache* GetLODLevelRuntimeCache(int32 LODIndex);
+	const FParticleLODLevelRuntimeCache* GetLODLevelRuntimeCache(int32 LODIndex) const;
+	FParticleLODLevelRuntimeCache* GetLOD0RuntimeCache(); // LOD 0 입니다!
+	const FParticleLODLevelRuntimeCache* GetLOD0RuntimeCache() const;
 };
 
 UCLASS()
