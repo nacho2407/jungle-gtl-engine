@@ -20,6 +20,7 @@
 
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
+#include "Mesh/Static/StaticMesh.h"
 #include "Math/Rotator.h"
 #include "Profiling/Stats/Stats.h"
 
@@ -57,6 +58,22 @@ namespace
 		FQuat Result(Axis.X, Axis.Y, Axis.Z, 1.0f + CosTheta);
 		Result.Normalize();
 		return Result;
+	}
+
+	FVector GetAxisLockVector(EParticleAxisLock AxisLock)
+	{
+		switch (AxisLock)
+		{
+		case EPAL_X: return FVector::XAxisVector;
+		case EPAL_Y: return FVector::YAxisVector;
+		case EPAL_NEGATIVE_X: return -FVector::XAxisVector;
+		case EPAL_NEGATIVE_Y: return -FVector::YAxisVector;
+		case EPAL_NEGATIVE_Z: return -FVector::ZAxisVector;
+		case EPAL_Z:
+		case EPAL_NONE:
+		default:
+			return FVector::ZAxisVector;
+		}
 	}
 
 	FVector CubicInterpDerivativeVector(const FVector& P0, const FVector& T0, const FVector& P1, const FVector& T1, float Alpha)
@@ -2196,15 +2213,11 @@ uint32 FParticleMeshEmitterInstance::RequiredBytes()
 {
 	uint32 Bytes = FParticleEmitterInstance::RequiredBytes();
 
-	if (bMeshRotationActive)
-	{
-		MeshRotationOffset = PayloadOffset + static_cast<int32>(Bytes);
-		Bytes += sizeof(FMeshRotationPayloadData);
-	}
-	else
-	{
-		MeshRotationOffset = 0;
-	}
+	// UE always reserves mesh rotation payload for mesh emitters. The active flag
+	// only controls per-frame rotation processing; mesh rotation modules and
+	// motion blur still rely on this payload layout being stable.
+	MeshRotationOffset = PayloadOffset + static_cast<int32>(Bytes);
+	Bytes += sizeof(FMeshRotationPayloadData);
 
 	if (bMotionBlurEnabled)
 	{
@@ -2332,15 +2345,32 @@ void FParticleMeshEmitterInstance::PostSpawn(
 	float SpawnTime)
 {
 	FParticleEmitterInstance::PostSpawn(Particle, InterpolationPercentage, SpawnTime);
+	UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
 
 	uint8* ParticleBase = reinterpret_cast<uint8*>(Particle);
 	if (MeshRotationOffset > 0)
 	{
 		FMeshRotationPayloadData& RotationPayload =
 			*reinterpret_cast<FMeshRotationPayloadData*>(ParticleBase + MeshRotationOffset);
-		RotationPayload.InitialOrientation = MeshTypeData ? MeshTypeData->RollPitchYawRange.GetValue(EmitterTime, Component) : FVector::ZeroVector;
-		RotationPayload.Rotation = RotationPayload.InitialOrientation + RotationPayload.InitRotation;
-		RotationPayload.CurContinuousRotation = FVector::ZeroVector;
+
+		if (LODLevel->RequiredModule->ScreenAlignment == PSA_Velocity ||
+			LODLevel->RequiredModule->ScreenAlignment == PSA_AwayFromCenter)
+		{
+			FVector NewDirection = Particle->Velocity;
+			if (LODLevel->RequiredModule->ScreenAlignment == PSA_AwayFromCenter)
+			{
+				NewDirection = Particle->Location;
+			}
+
+			NewDirection = NewDirection.GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+			const FQuat Rotation = FindBetweenNormals(FVector::XAxisVector, NewDirection);
+			const FVector Euler = Rotation.ToRotator().ToVector();
+			RotationPayload.Rotation.X += Euler.X;
+			RotationPayload.Rotation.Y += Euler.Y;
+			RotationPayload.Rotation.Z += Euler.Z;
+		}
+
+		RotationPayload.InitialOrientation = MeshTypeData ? MeshTypeData->RollPitchYawRange.GetValue(SpawnTime, Component) : FVector::ZeroVector;
 
 		// UE original responsibility: velocity/away-from-center alignment, camera-facing,
 		// axis-lock, bApplyParticleRotationAsSpin and bFaceCameraDirectionRatherThanPosition.
@@ -2351,18 +2381,67 @@ void FParticleMeshEmitterInstance::PostSpawn(
 
 	if (MeshMotionBlurOffset > 0)
 	{
+		const FMeshRotationPayloadData* RotationPayload =
+			MeshRotationOffset > 0 ? reinterpret_cast<const FMeshRotationPayloadData*>(ParticleBase + MeshRotationOffset) : nullptr;
 		FMeshMotionBlurPayloadData& MotionBlurPayload =
 			*reinterpret_cast<FMeshMotionBlurPayloadData*>(ParticleBase + MeshMotionBlurOffset);
 		MotionBlurPayload.BaseParticlePrevVelocity = Particle->Velocity;
 		MotionBlurPayload.BaseParticlePrevSize = Particle->Size;
 		MotionBlurPayload.BaseParticlePrevRotation = Particle->Rotation;
+		MotionBlurPayload.PayloadPrevRotation = RotationPayload ? RotationPayload->Rotation : FVector::ZeroVector;
+
+		if (CameraPayloadOffset > 0)
+		{
+			const FCameraOffsetParticlePayload* CameraPayload =
+				reinterpret_cast<const FCameraOffsetParticlePayload*>(ParticleBase + CameraPayloadOffset);
+			MotionBlurPayload.PayloadPrevCameraOffset = CameraPayload->Offset;
+		}
+		else
+		{
+			MotionBlurPayload.PayloadPrevCameraOffset = 0.0f;
+		}
+
+		const int32 OrbitOffset = GetOrbitPayloadOffset();
+		if (OrbitOffset != -1)
+		{
+			const FOrbitChainModuleInstancePayload* OrbitPayload =
+				reinterpret_cast<const FOrbitChainModuleInstancePayload*>(ParticleBase + OrbitOffset);
+			MotionBlurPayload.PayloadPrevOrbitOffset = OrbitPayload->Offset;
+		}
+		else
+		{
+			MotionBlurPayload.PayloadPrevOrbitOffset = FVector::ZeroVector;
+		}
 	}
 }
 
 void FParticleMeshEmitterInstance::Tick_MaterialOverrides(int32 EmitterIndex)
 {
 	FParticleEmitterInstance::Tick_MaterialOverrides(EmitterIndex);
-	CurrentMaterials.clear();
+	if (!Component)
+	{
+		return;
+	}
+
+	const TArray<UMaterial*>& EmitterMaterials = Component->GetEmitterMaterials();
+	if (EmitterIndex < 0 ||
+		EmitterIndex >= static_cast<int32>(EmitterMaterials.size()) ||
+		!EmitterMaterials[EmitterIndex])
+	{
+		return;
+	}
+
+	if (CurrentMaterials.empty())
+	{
+		CurrentMaterials.push_back(EmitterMaterials[EmitterIndex]);
+	}
+	else
+	{
+		for (UMaterial*& Material : CurrentMaterials)
+		{
+			Material = EmitterMaterials[EmitterIndex];
+		}
+	}
 }
 
 void FParticleMeshEmitterInstance::SetMeshMaterials(const TArray<UMaterial*>& InMaterials)
@@ -2373,47 +2452,61 @@ void FParticleMeshEmitterInstance::SetMeshMaterials(const TArray<UMaterial*>& In
 void FParticleMeshEmitterInstance::GetMeshMaterials(TArray<UMaterial*>& OutMaterials, const UParticleLODLevel* LODLevel, bool bLogWarnings) const
 {
 	OutMaterials.clear();
-	if (!CurrentMaterials.empty())
-	{
-		OutMaterials = CurrentMaterials;
-		return;
-	}
+	const UStaticMesh* StaticMesh = MeshTypeData ? MeshTypeData->Mesh : nullptr;
+	const TArray<FStaticMeshSection>* Sections = StaticMesh ? &StaticMesh->GetLODSections(0) : nullptr;
+	const TArray<FStaticMaterial>* StaticMaterials = StaticMesh ? &StaticMesh->GetStaticMaterials() : nullptr;
+	const int32 SectionCount = Sections && !Sections->empty() ? static_cast<int32>(Sections->size()) : 1;
 
-	if (LODLevel)
+	for (int32 SectionIndex = 0; SectionIndex < SectionCount; ++SectionIndex)
 	{
-		for (UParticleModule* Module : LODLevel->Modules)
+		UMaterial* Material = nullptr;
+
+		if (SectionIndex < static_cast<int32>(CurrentMaterials.size()))
 		{
-			if (UParticleModuleMeshMaterial* MeshMaterialModule = Cast<UParticleModuleMeshMaterial>(Module))
+			Material = CurrentMaterials[SectionIndex];
+		}
+
+		if (!Material && LODLevel)
+		{
+			for (UParticleModule* Module : LODLevel->Modules)
 			{
-				if (!MeshMaterialModule->MeshMaterials.empty())
+				UParticleModuleMeshMaterial* MeshMaterialModule = Cast<UParticleModuleMeshMaterial>(Module);
+				if (MeshMaterialModule && MeshMaterialModule->bEnabled &&
+					SectionIndex < static_cast<int32>(MeshMaterialModule->MeshMaterials.size()))
 				{
-					OutMaterials = MeshMaterialModule->MeshMaterials;
-					return;
+					Material = MeshMaterialModule->MeshMaterials[SectionIndex];
+					break;
 				}
 			}
 		}
-	}
 
-	if (MeshTypeData && MeshTypeData->bOverrideMaterial && CurrentMaterial)
-	{
-		OutMaterials.push_back(CurrentMaterial);
-		return;
-	}
+		if (!Material && MeshTypeData && MeshTypeData->bOverrideMaterial)
+		{
+			Material = CurrentMaterial ? CurrentMaterial : (LODLevel && LODLevel->RequiredModule ? LODLevel->RequiredModule->Material : nullptr);
+		}
 
-	if (CurrentMaterial)
-	{
-		OutMaterials.push_back(CurrentMaterial);
-	}
+		if (!Material && Sections && StaticMaterials && SectionIndex < static_cast<int32>(Sections->size()))
+		{
+			const int32 MaterialIndex = (*Sections)[SectionIndex].MaterialIndex;
+			if (MaterialIndex >= 0 && MaterialIndex < static_cast<int32>(StaticMaterials->size()))
+			{
+				Material = (*StaticMaterials)[MaterialIndex].MaterialInterface;
+			}
+		}
 
-	// UE original responsibility: append static mesh section materials after checking
-	// component/material/type-data overrides.
-	// Missing Jungle foundation: StaticMesh section material adapter on TypeData mesh asset.
-	// System to connect later: UStaticMesh material slot access.
+		if (!Material)
+		{
+			Material = CurrentMaterial ? CurrentMaterial : FMaterialManager::Get().GetOrCreateMaterial("None");
+		}
+
+		OutMaterials.push_back(Material);
+	}
 }
 
 FDynamicEmitterDataBase* FParticleMeshEmitterInstance::GetDynamicData(bool bSelected)
 {
-	if (!IsDynamicDataRequired())
+	UStaticMesh* StaticMesh = MeshTypeData ? MeshTypeData->GetStaticMesh() : nullptr;
+	if (!StaticMesh || !IsDynamicDataRequired())
 	{
 		return nullptr;
 	}
@@ -2427,6 +2520,11 @@ FDynamicEmitterDataBase* FParticleMeshEmitterInstance::GetDynamicData(bool bSele
 		return nullptr;
 	}
 
+	// UE FDynamicMeshEmitterData::Init selects the StaticMesh LOD after replay
+	// data is filled. Jungle currently lacks view-dependent mesh-particle LOD
+	// selection, so this adapter uses LOD0 until bUseStaticMeshLODs/LODSizeScale
+	// can be connected at the render boundary.
+	Data->MeshBuffer = StaticMesh->GetLODMeshBuffer(0);
 	return Data;
 }
 
@@ -2454,7 +2552,23 @@ bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 	MeshData.MeshMotionBlurOffset = MeshMotionBlurOffset;
 	MeshData.MeshAlignment = MeshTypeData ? static_cast<uint8>(MeshTypeData->MeshAlignment) : 0;
 	MeshData.bMeshRotationActive = bMeshRotationActive;
-	MeshData.LockedAxis = FVector::XAxisVector;
+	MeshData.Scale = FVector::OneVector;
+	if (!GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace && !bIgnoreComponentScale)
+	{
+		MeshData.Scale = Component->GetWorldScale();
+	}
+
+	if (MeshTypeData && MeshTypeData->AxisLockOption != EPAL_NONE)
+	{
+		MeshData.bLockAxis = true;
+		MeshData.LockedAxis = GetAxisLockVector(MeshTypeData->AxisLockOption);
+	}
+	else
+	{
+		MeshData.bLockAxis = false;
+		MeshData.LockedAxis = FVector::ZAxisVector;
+	}
+
 	MeshData.bEnableMotionBlur = bMotionBlurEnabled;
 	MeshData.SubUVDataOffset = SubUVDataOffset;
 	MeshData.DynamicParameterDataOffset = DynamicParameterDataOffset;

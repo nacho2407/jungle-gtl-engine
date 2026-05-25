@@ -6,7 +6,7 @@
 UParticleModuleMeshRotationRate::UParticleModuleMeshRotationRate()
 {
 	bSpawnModule = true;
-	bUpdateModule = false;
+	bUpdateModule = true;
 }
 
 void UParticleModuleMeshRotationRate::Spawn(const FSpawnContext& Context)
@@ -17,8 +17,9 @@ void UParticleModuleMeshRotationRate::Spawn(const FSpawnContext& Context)
 		return;
 	}
 	FMeshRotationPayloadData* Payload = reinterpret_cast<FMeshRotationPayloadData*>(reinterpret_cast<uint8*>(Context.ParticleBase) + MeshInst->MeshRotationOffset);
-	Payload->RotationRateBase = StartRotationRate.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-	Payload->RotationRate = Payload->RotationRateBase;
+	const FVector StartRate = StartRotationRate.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData()) * 360.0f;
+	Payload->RotationRateBase += StartRate;
+	Payload->RotationRate += StartRate;
 }
 
 void UParticleModuleMeshRotationRate::Serialize(FArchive& Ar)

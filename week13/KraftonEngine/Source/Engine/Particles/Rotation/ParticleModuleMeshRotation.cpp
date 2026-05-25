@@ -1,5 +1,6 @@
 #include "Particles/Rotation/ParticleModuleMeshRotation.h"
 
+#include "Component/Primitive/ParticleSystemComponent.h"
 #include "Particles/ParticleEmitterInstances.h"
 #include "Serialization/Archive.h"
 
@@ -18,8 +19,16 @@ void UParticleModuleMeshRotation::Spawn(const FSpawnContext& Context)
 		return;
 	}
 	FMeshRotationPayloadData* Payload = reinterpret_cast<FMeshRotationPayloadData*>(reinterpret_cast<uint8*>(Context.ParticleBase) + MeshInst->MeshRotationOffset);
-	Payload->InitRotation = StartRotation.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-	Payload->Rotation = Payload->InitRotation;
+	FVector Rotation = StartRotation.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+	if (bInheritParent && Context.Owner.Component)
+	{
+		const FVector ParentAffectedRotation = Context.Owner.Component->GetWorldRotation().ToVector();
+		Rotation.X += ParentAffectedRotation.X / 360.0f;
+		Rotation.Y += ParentAffectedRotation.Y / 360.0f;
+		Rotation.Z += ParentAffectedRotation.Z / 360.0f;
+	}
+	Payload->InitRotation = Rotation * 360.0f;
+	Payload->Rotation += Payload->InitRotation;
 }
 
 void UParticleModuleMeshRotation::Serialize(FArchive& Ar)
