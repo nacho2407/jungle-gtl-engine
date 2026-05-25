@@ -215,9 +215,10 @@ void FParticleSystemSceneProxy::RebuildMeshParticleGeometry()
 				if (IndexCount == 0) continue;
 
 				UMaterialInterface* Material = nullptr;
-				if (MeshSection.MaterialIndex >= 0 && MeshSection.MaterialIndex < static_cast<uint32>(StaticMaterials.size()))
+				const int32 MaterialIndex = MeshSection.MaterialIndex;
+				if (MaterialIndex >= 0 && MaterialIndex < static_cast<int32>(StaticMaterials.size()))
 				{
-					Material = StaticMaterials[MeshSection.MaterialIndex].MaterialInterface;
+					Material = StaticMaterials[MaterialIndex].MaterialInterface;
 				}
 
 				if (!Material)
