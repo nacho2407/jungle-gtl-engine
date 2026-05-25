@@ -1193,26 +1193,79 @@ bool FResourceManager::SaveSkeletalMesh(USkeletalMesh* Mesh)
 	return BinarySerializer.SaveSkeletalMesh(BinPath, SourcePath, *Data);
 }
 
+namespace
+{
+	void RegisterCurvePath(TArray<FString>& CurveFilePaths, const FString& NormalizedPath)
+	{
+		if (std::find(CurveFilePaths.begin(), CurveFilePaths.end(), NormalizedPath) == CurveFilePaths.end())
+		{
+			CurveFilePaths.push_back(NormalizedPath);
+		}
+	}
+}
+
 UCurveFloatAsset* FResourceManager::LoadCurve(const FString& Path)
 {
+	return LoadFloatCurve(Path);
+}
+
+UCurveFloatAsset* FResourceManager::LoadFloatCurve(const FString& Path)
+{
 	const FString NormalizedPath = FPaths::Normalize(Path);
-	UCurveFloatAsset* Curve = CurveCache.Load(NormalizedPath);
+	UCurveFloatAsset* Curve = CurveCache.LoadFloat(NormalizedPath);
 	if (!Curve)
 	{
 		return nullptr;
 	}
 
-	if (std::find(CurveFilePaths.begin(), CurveFilePaths.end(), NormalizedPath) == CurveFilePaths.end())
+	RegisterCurvePath(CurveFilePaths, NormalizedPath);
+	return Curve;
+}
+
+UCurveVectorAsset* FResourceManager::LoadVectorCurve(const FString& Path)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	UCurveVectorAsset* Curve = CurveCache.LoadVector(NormalizedPath);
+	if (!Curve)
 	{
-		CurveFilePaths.push_back(NormalizedPath);
+		return nullptr;
 	}
 
+	RegisterCurvePath(CurveFilePaths, NormalizedPath);
+	return Curve;
+}
+
+UCurveColorAsset* FResourceManager::LoadColorCurve(const FString& Path)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	UCurveColorAsset* Curve = CurveCache.LoadColor(NormalizedPath);
+	if (!Curve)
+	{
+		return nullptr;
+	}
+
+	RegisterCurvePath(CurveFilePaths, NormalizedPath);
 	return Curve;
 }
 
 UCurveFloatAsset* FResourceManager::FindCurve(const FString& Path) const
 {
-	return CurveCache.Find(Path);
+	return FindFloatCurve(Path);
+}
+
+UCurveFloatAsset* FResourceManager::FindFloatCurve(const FString& Path) const
+{
+	return CurveCache.FindFloat(Path);
+}
+
+UCurveVectorAsset* FResourceManager::FindVectorCurve(const FString& Path) const
+{
+	return CurveCache.FindVector(Path);
+}
+
+UCurveColorAsset* FResourceManager::FindColorCurve(const FString& Path) const
+{
+	return CurveCache.FindColor(Path);
 }
 
 bool FResourceManager::SaveCurve(const FString& Path, const UCurveFloatAsset* Curve)
@@ -1223,11 +1276,31 @@ bool FResourceManager::SaveCurve(const FString& Path, const UCurveFloatAsset* Cu
 		return false;
 	}
 
-	if (std::find(CurveFilePaths.begin(), CurveFilePaths.end(), NormalizedPath) == CurveFilePaths.end())
+	RegisterCurvePath(CurveFilePaths, NormalizedPath);
+	return true;
+}
+
+bool FResourceManager::SaveCurve(const FString& Path, const UCurveVectorAsset* Curve)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	if (!CurveCache.Save(NormalizedPath, Curve))
 	{
-		CurveFilePaths.push_back(NormalizedPath);
+		return false;
 	}
 
+	RegisterCurvePath(CurveFilePaths, NormalizedPath);
+	return true;
+}
+
+bool FResourceManager::SaveCurve(const FString& Path, const UCurveColorAsset* Curve)
+{
+	const FString NormalizedPath = FPaths::Normalize(Path);
+	if (!CurveCache.Save(NormalizedPath, Curve))
+	{
+		return false;
+	}
+
+	RegisterCurvePath(CurveFilePaths, NormalizedPath);
 	return true;
 }
 

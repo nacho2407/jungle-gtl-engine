@@ -698,7 +698,9 @@
     <ClCompile Include="Source\Engine\Asset\AssetQueryService.cpp" />
     <ClCompile Include="Source\Engine\Asset\BinarySerializer.cpp" />
     <ClCompile Include="Source\Engine\Asset\CurveAssetLoader.cpp" />
+    <ClCompile Include="Source\Engine\Asset\CurveColorAsset.cpp" />
     <ClCompile Include="Source\Engine\Asset\CurveFloatAsset.cpp" />
+    <ClCompile Include="Source\Engine\Asset\CurveVectorAsset.cpp" />
     <ClCompile Include="Source\Engine\Asset\FBX\FbxImporter.cpp" />
     <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterAnimation.cpp" />
     <ClCompile Include="Source\Engine\Asset\FBX\FbxImporterInternal.cpp" />
@@ -1060,7 +1062,9 @@
     <ClInclude Include="Source\Engine\Asset\AssetQueryService.h" />
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
     <ClInclude Include="Source\Engine\Asset\CurveAssetLoader.h" />
+    <ClInclude Include="Source\Engine\Asset\CurveColorAsset.h" />
     <ClInclude Include="Source\Engine\Asset\CurveFloatAsset.h" />
+    <ClInclude Include="Source\Engine\Asset\CurveVectorAsset.h" />
     <ClInclude Include="Source\Engine\Asset\FBX\FbxImporter.h" />
     <ClInclude Include="Source\Engine\Asset\FBX\FbxImporterInternal.h" />
     <ClInclude Include="Source\Engine\Asset\FileUtils.h" />

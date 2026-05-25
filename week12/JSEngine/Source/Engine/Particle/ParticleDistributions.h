@@ -1,6 +1,8 @@
 ﻿#pragma once
 
+#include "Asset/CurveColorAsset.h"
 #include "Asset/CurveFloatAsset.h"
+#include "Asset/CurveVectorAsset.h"
 #include "Core/CoreMinimal.h"
 #include "Core/Reflection/ReflectionMacros.h"
 #include "Object/ObjectPtr.h"
@@ -57,23 +59,11 @@ struct FParticleVectorDistribution
 	UPROPERTY()
 	FVector Max = FVector::ZeroVector;
 	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> CurveX;
+	TSoftObjectPtr<UCurveVectorAsset> Curve;
 	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> CurveY;
+	TSoftObjectPtr<UCurveVectorAsset> MinCurve;
 	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> CurveZ;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MinCurveX;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MinCurveY;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MinCurveZ;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MaxCurveX;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MaxCurveY;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MaxCurveZ;
+	TSoftObjectPtr<UCurveVectorAsset> MaxCurve;
 };
 
 USTRUCT()
@@ -90,87 +80,13 @@ struct FParticleColorDistribution
 	UPROPERTY()
 	FColor Max = FColor::White();
 	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> CurveR;
+	TSoftObjectPtr<UCurveColorAsset> Curve;
 	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> CurveG;
+	TSoftObjectPtr<UCurveColorAsset> MinCurve;
 	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> CurveB;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> CurveA;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MinCurveR;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MinCurveG;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MinCurveB;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MinCurveA;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MaxCurveR;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MaxCurveG;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MaxCurveB;
-	UPROPERTY(ReferenceType = Asset)
-	TSoftObjectPtr<UCurveFloatAsset> MaxCurveA;
+	TSoftObjectPtr<UCurveColorAsset> MaxCurve;
 };
 
-// TODO: Curve 모드와 RandomRangeCurve 모드에 대한 처리 추가 예정. 현재는 fallback
-
-inline float EvaluateParticleFloat(const FParticleFloatDistribution& Distribution, const FParticleDistributionContext& Context)
-{
-	switch (Distribution.Mode)
-	{
-	case EParticleDistributionMode::RandomRange:
-	case EParticleDistributionMode::RandomRangeCurve:
-		return Context.RandomStream != nullptr
-			? Context.RandomStream->GetRange(Distribution.Min, Distribution.Max)
-			: Distribution.Min;
-
-	case EParticleDistributionMode::Curve:
-	case EParticleDistributionMode::Constant:
-	default:
-		return Distribution.Constant;
-	}
-}
-
-inline FVector EvaluateParticleVector(const FParticleVectorDistribution& Distribution, const FParticleDistributionContext& Context)
-{
-	switch (Distribution.Mode)
-	{
-	case EParticleDistributionMode::RandomRange:
-	case EParticleDistributionMode::RandomRangeCurve:
-		return Context.RandomStream != nullptr
-			? FVector(
-				Context.RandomStream->GetRange(Distribution.Min.X, Distribution.Max.X),
-				Context.RandomStream->GetRange(Distribution.Min.Y, Distribution.Max.Y),
-				Context.RandomStream->GetRange(Distribution.Min.Z, Distribution.Max.Z))
-			: Distribution.Min;
-
-	case EParticleDistributionMode::Curve:
-	case EParticleDistributionMode::Constant:
-	default:
-		return Distribution.Constant;
-	}
-}
-
-inline FColor EvaluateParticleColor(const FParticleColorDistribution& Distribution, const FParticleDistributionContext& Context)
-{
-	switch (Distribution.Mode)
-	{
-	case EParticleDistributionMode::RandomRange:
-	case EParticleDistributionMode::RandomRangeCurve:
-		return Context.RandomStream != nullptr
-			? FColor(
-				Context.RandomStream->GetRange(Distribution.Min.R, Distribution.Max.R),
-				Context.RandomStream->GetRange(Distribution.Min.G, Distribution.Max.G),
-				Context.RandomStream->GetRange(Distribution.Min.B, Distribution.Max.B),
-				Context.RandomStream->GetRange(Distribution.Min.A, Distribution.Max.A))
-			: Distribution.Min;
-
-	case EParticleDistributionMode::Curve:
-	case EParticleDistributionMode::Constant:
-	default:
-		return Distribution.Constant;
-	}
-}
+float EvaluateParticleFloat(const FParticleFloatDistribution& Distribution, const FParticleDistributionContext& Context);
+FVector EvaluateParticleVector(const FParticleVectorDistribution& Distribution, const FParticleDistributionContext& Context);
+FColor EvaluateParticleColor(const FParticleColorDistribution& Distribution, const FParticleDistributionContext& Context);

@@ -107,15 +107,21 @@ public:
 
 	// Emitter Controls ────────────────────────────────────────────────────────────
 	void AddEmitter();
+	void DuplicateEmitter(int32 EmitterIndex);
 	void DeleteSelectedEmitter();
 	void DeleteSelection();
 	void MoveEmitter(int32 FromIndex, int32 ToIndex);
+	void MoveEmittersToIndex(const TArray<int32>& EmitterIndices, int32 ToIndex);
+	void CopyEmittersToIndex(const TArray<int32>& EmitterIndices, int32 ToIndex);
 
 	void AddModule(UClass* ModuleClass);
 	void DeleteSelectedModule();
 	void MoveModule(int32 FromIndex, int32 ToIndex);
+	void MoveModules(int32 SourceEmitterIndex, int32 SourceLODIndex, const TArray<int32>& ModuleIndices, int32 ToIndex);
 	void MoveModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex);
+	void MoveModulesToEmitter(int32 SourceEmitterIndex, int32 SourceLODIndex, const TArray<int32>& ModuleIndices, int32 TargetEmitterIndex);
 	void CopyModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex);
+	void CopyModulesToEmitter(int32 SourceEmitterIndex, int32 SourceLODIndex, const TArray<int32>& ModuleIndices, int32 TargetEmitterIndex);
 
 	// Toolbar Actions ────────────────────────────────────────────────────────────
 	bool Save();

@@ -7,7 +7,9 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Animation/AnimGraphAsset.h"
 #include "Animation/AnimSequence.h"
+#include "Asset/CurveColorAsset.h"
 #include "Asset/CurveFloatAsset.h"
+#include "Asset/CurveVectorAsset.h"
 #include "Asset/StaticMesh.h"
 #include "Core/AssetPathPolicy.h"
 #include "Engine/Core/EditorResourcePaths.h"
@@ -83,6 +85,83 @@ FString ToLower(FString Value)
 	std::transform(Value.begin(), Value.end(), Value.begin(),
 		[](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
 	return Value;
+}
+
+FCurveKey MakeDefaultCurveKey(float Time, float Value)
+{
+	FCurveKey Key;
+	Key.Time = Time;
+	Key.Value = Value;
+	Key.InterpMode = ECurveInterpMode::Linear;
+	return Key;
+}
+
+void ResetDefaultFloatCurve(FFloatCurve& Curve, float StartValue, float EndValue)
+{
+	Curve.Keys.clear();
+	Curve.Keys.push_back(MakeDefaultCurveKey(0.0f, StartValue));
+	Curve.Keys.push_back(MakeDefaultCurveKey(1.0f, EndValue));
+	Curve.SortKeys();
+}
+
+enum class EContentBrowserCurveKind : uint8
+{
+	Float,
+	Vector,
+	Color,
+};
+
+EContentBrowserCurveKind DetectCurveKindFromFile(const std::filesystem::path& Path)
+{
+	std::ifstream File(Path);
+	if (!File.is_open())
+	{
+		return EContentBrowserCurveKind::Float;
+	}
+
+	const FString Content((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
+	if (Content.find("\"RTimes\"") != FString::npos
+		|| Content.find("\"GTimes\"") != FString::npos
+		|| Content.find("\"BTimes\"") != FString::npos
+		|| Content.find("\"ATimes\"") != FString::npos)
+	{
+		return EContentBrowserCurveKind::Color;
+	}
+	if (Content.find("\"XTimes\"") != FString::npos
+		|| Content.find("\"YTimes\"") != FString::npos
+		|| Content.find("\"ZTimes\"") != FString::npos)
+	{
+		return EContentBrowserCurveKind::Vector;
+	}
+	return EContentBrowserCurveKind::Float;
+}
+
+const char* GetCurveKindDisplayName(EContentBrowserCurveKind Kind)
+{
+	switch (Kind)
+	{
+	case EContentBrowserCurveKind::Vector:
+		return "Vector Curve";
+	case EContentBrowserCurveKind::Color:
+		return "Color Curve";
+	case EContentBrowserCurveKind::Float:
+	default:
+		return "Float Curve";
+	}
+}
+
+const char* GetCurveKindTileLabel(EContentBrowserCurveKind Kind)
+{
+	switch (Kind)
+	{
+	case EContentBrowserCurveKind::Vector:
+		return "VEC";
+	case EContentBrowserCurveKind::Color:
+		return "COLOR";
+	case EContentBrowserCurveKind::Float:
+	default:
+		return "CURVE";
+	}
 }
 
 void ApplyContentBrowserWindowClass()
@@ -1108,6 +1187,7 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		}
 		else if (IsCurveAsset(Item.Path))
 		{
+			const EContentBrowserCurveKind CurveKind = DetectCurveKindFromFile(Item.Path);
 			const float Width = IconMax.x - IconMin.x;
 			const float Height = IconMax.y - IconMin.y;
 			const ImU32 LineColor = ImGui::GetColorU32(ImVec4(0.98f, 0.93f, 0.48f, 1.0f));
@@ -1121,7 +1201,7 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 				DrawList->AddLine(Prev, Next, LineColor, 3.0f);
 				Prev = Next;
 			}
-			const char* Kind = "CURVE";
+			const char* Kind = GetCurveKindTileLabel(CurveKind);
 			const ImVec2 TextSize = ImGui::CalcTextSize(Kind);
 			DrawList->AddText(ImVec2((IconMin.x + IconMax.x - TextSize.x) * 0.5f, IconMax.y - 22.0f),
 				ImGui::GetColorU32(ImVec4(0.96f, 0.97f, 0.99f, 1.0f)), Kind);
@@ -1167,7 +1247,7 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 	}
 	if (IsCurveAsset(Item.Path))
 	{
-		ExtLine = ".curve";
+		ExtLine = GetCurveKindDisplayName(DetectCurveKindFromFile(Item.Path));
 	}
 	DrawList->AddText(ImVec2(Min.x + 6.0f, Max.y - 35.0f), ImGui::GetColorU32(ImGuiCol_Text), Label.c_str());
 	DrawList->AddText(ImVec2(Min.x + 6.0f, Max.y - 18.0f), ImGui::GetColorU32(ImGuiCol_TextDisabled), ExtLine.c_str());
@@ -1187,7 +1267,15 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		}
 		else if (IsCurveAsset(Item.Path))
 		{
-			EditorEngine->GetMainPanel().OpenCurveAsset(MakeRelativeProjectPath(Item.Path));
+			const EContentBrowserCurveKind CurveKind = DetectCurveKindFromFile(Item.Path);
+			if (CurveKind == EContentBrowserCurveKind::Float)
+			{
+				EditorEngine->GetMainPanel().OpenCurveAsset(MakeRelativeProjectPath(Item.Path));
+			}
+			else
+			{
+				EditorEngine->GetNotificationService().Info("Vector/Color curve editor is not implemented yet.");
+			}
 		}
 		else if (IsAnimGraphAsset(Item.Extension))
 		{
@@ -1286,10 +1374,24 @@ void FEditorContentBrowserWidget::DrawContentContextMenu(bool bHasSelectedItem)
 			CreateMaterialAsset();
 			ImGui::CloseCurrentPopup();
 		}
-		if (ImGui::MenuItem("Curve"))
+		if (ImGui::BeginMenu("Curve"))
 		{
-			CreateCurveAsset();
-			ImGui::CloseCurrentPopup();
+			if (ImGui::MenuItem("Float Curve"))
+			{
+				CreateCurveAsset();
+				ImGui::CloseCurrentPopup();
+			}
+			if (ImGui::MenuItem("Vector Curve"))
+			{
+				CreateVectorCurveAsset();
+				ImGui::CloseCurrentPopup();
+			}
+			if (ImGui::MenuItem("Color Curve"))
+			{
+				CreateColorCurveAsset();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndMenu();
 		}
 		if (ImGui::MenuItem("Anim Graph"))
 		{
@@ -1542,7 +1644,7 @@ bool FEditorContentBrowserWidget::CreateMaterialAsset()
 
 bool FEditorContentBrowserWidget::CreateCurveAsset()
 {
-	const std::filesystem::path NewPath = MakeUniquePath(CurrentPath / L"New Curve.curve");
+	const std::filesystem::path NewPath = MakeUniquePath(CurrentPath / L"New Float Curve.curve");
 	const FString RelativePath = MakeRelativeProjectPath(NewPath);
 
 	UCurveFloatAsset* Curve = UObjectManager::Get().CreateObject<UCurveFloatAsset>();
@@ -1552,22 +1654,62 @@ bool FEditorContentBrowserWidget::CreateCurveAsset()
 	}
 
 	Curve->SetAssetPath(RelativePath);
+	ResetDefaultFloatCurve(Curve->GetMutableCurve(), 0.0f, 1.0f);
 
-	FCurveKey StartKey;
-	StartKey.Time = 0.0f;
-	StartKey.Value = 0.0f;
-	StartKey.InterpMode = ECurveInterpMode::Linear;
+	if (!FResourceManager::Get().SaveCurve(RelativePath, Curve))
+	{
+		return false;
+	}
 
-	FCurveKey EndKey;
-	EndKey.Time = 1.0f;
-	EndKey.Value = 1.0f;
-	EndKey.InterpMode = ECurveInterpMode::Linear;
+	SelectedPath = NewPath;
+	RefreshContent();
+	return true;
+}
 
-	FFloatCurve& FloatCurve = Curve->GetMutableCurve();
-	FloatCurve.Keys.clear();
-	FloatCurve.Keys.push_back(StartKey);
-	FloatCurve.Keys.push_back(EndKey);
-	FloatCurve.SortKeys();
+bool FEditorContentBrowserWidget::CreateVectorCurveAsset()
+{
+	const std::filesystem::path NewPath = MakeUniquePath(CurrentPath / L"New Vector Curve.curve");
+	const FString RelativePath = MakeRelativeProjectPath(NewPath);
+
+	UCurveVectorAsset* Curve = UObjectManager::Get().CreateObject<UCurveVectorAsset>();
+	if (!Curve)
+	{
+		return false;
+	}
+
+	Curve->SetAssetPath(RelativePath);
+	FVectorCurve& VectorCurve = Curve->GetMutableCurve();
+	ResetDefaultFloatCurve(VectorCurve.XCurve, 0.0f, 1.0f);
+	ResetDefaultFloatCurve(VectorCurve.YCurve, 0.0f, 1.0f);
+	ResetDefaultFloatCurve(VectorCurve.ZCurve, 0.0f, 1.0f);
+
+	if (!FResourceManager::Get().SaveCurve(RelativePath, Curve))
+	{
+		return false;
+	}
+
+	SelectedPath = NewPath;
+	RefreshContent();
+	return true;
+}
+
+bool FEditorContentBrowserWidget::CreateColorCurveAsset()
+{
+	const std::filesystem::path NewPath = MakeUniquePath(CurrentPath / L"New Color Curve.curve");
+	const FString RelativePath = MakeRelativeProjectPath(NewPath);
+
+	UCurveColorAsset* Curve = UObjectManager::Get().CreateObject<UCurveColorAsset>();
+	if (!Curve)
+	{
+		return false;
+	}
+
+	Curve->SetAssetPath(RelativePath);
+	FColorCurve& ColorCurve = Curve->GetMutableCurve();
+	ResetDefaultFloatCurve(ColorCurve.RCurve, 1.0f, 1.0f);
+	ResetDefaultFloatCurve(ColorCurve.GCurve, 1.0f, 1.0f);
+	ResetDefaultFloatCurve(ColorCurve.BCurve, 1.0f, 1.0f);
+	ResetDefaultFloatCurve(ColorCurve.ACurve, 1.0f, 1.0f);
 
 	if (!FResourceManager::Get().SaveCurve(RelativePath, Curve))
 	{
@@ -1931,9 +2073,56 @@ void FEditorContentBrowserWidget::DrawAssetPreview()
 
 	if (IsCurveAsset(SelectedPath))
 	{
-		UCurveFloatAsset* Curve = FResourceManager::Get().LoadCurve(RelativePath);
+		const EContentBrowserCurveKind CurveKind = DetectCurveKindFromFile(SelectedPath);
 		ImGui::Spacing();
-		ImGui::TextDisabled("Float Curve");
+		ImGui::TextDisabled("%s", GetCurveKindDisplayName(CurveKind));
+
+		if (CurveKind == EContentBrowserCurveKind::Vector)
+		{
+			UCurveVectorAsset* Curve = FResourceManager::Get().LoadVectorCurve(RelativePath);
+			if (!Curve)
+			{
+				ImGui::TextWrapped("Not loaded in ResourceManager.");
+				return;
+			}
+
+			const FVectorCurve& VectorCurve = Curve->GetCurve();
+			const FVector Value0 = Curve->Evaluate(0.0f);
+			const FVector Value1 = Curve->Evaluate(1.0f);
+			ImGui::Text("Keys: X %d / Y %d / Z %d",
+				static_cast<int32>(VectorCurve.XCurve.Keys.size()),
+				static_cast<int32>(VectorCurve.YCurve.Keys.size()),
+				static_cast<int32>(VectorCurve.ZCurve.Keys.size()));
+			ImGui::Text("Range: %.3f - %.3f", VectorCurve.GetStartTime(), VectorCurve.GetEndTime());
+			ImGui::Text("Value at 0.0: %.3f, %.3f, %.3f", Value0.X, Value0.Y, Value0.Z);
+			ImGui::Text("Value at 1.0: %.3f, %.3f, %.3f", Value1.X, Value1.Y, Value1.Z);
+			return;
+		}
+
+		if (CurveKind == EContentBrowserCurveKind::Color)
+		{
+			UCurveColorAsset* Curve = FResourceManager::Get().LoadColorCurve(RelativePath);
+			if (!Curve)
+			{
+				ImGui::TextWrapped("Not loaded in ResourceManager.");
+				return;
+			}
+
+			const FColorCurve& ColorCurve = Curve->GetCurve();
+			const FColor Value0 = Curve->Evaluate(0.0f);
+			const FColor Value1 = Curve->Evaluate(1.0f);
+			ImGui::Text("Keys: R %d / G %d / B %d / A %d",
+				static_cast<int32>(ColorCurve.RCurve.Keys.size()),
+				static_cast<int32>(ColorCurve.GCurve.Keys.size()),
+				static_cast<int32>(ColorCurve.BCurve.Keys.size()),
+				static_cast<int32>(ColorCurve.ACurve.Keys.size()));
+			ImGui::Text("Range: %.3f - %.3f", ColorCurve.GetStartTime(), ColorCurve.GetEndTime());
+			ImGui::Text("Value at 0.0: %.3f, %.3f, %.3f, %.3f", Value0.R, Value0.G, Value0.B, Value0.A);
+			ImGui::Text("Value at 1.0: %.3f, %.3f, %.3f, %.3f", Value1.R, Value1.G, Value1.B, Value1.A);
+			return;
+		}
+
+		UCurveFloatAsset* Curve = FResourceManager::Get().LoadCurve(RelativePath);
 		if (!Curve)
 		{
 			ImGui::TextWrapped("Not loaded in ResourceManager.");
