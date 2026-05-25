@@ -1575,7 +1575,7 @@ void FParticleSystemEditorWidget::RenderMenuBar()
         if (ImGui::MenuItem("Save", "Ctrl+S", false, IsDirty())) SaveAsset();
         ImGui::MenuItem("Save As...", nullptr, false, false);
         ImGui::Separator();
-        if (ImGui::MenuItem("Close")) Close();
+        if (ImGui::MenuItem("Close")) bPendingClose = true;
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("Edit"))
