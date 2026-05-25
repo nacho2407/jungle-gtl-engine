@@ -57,6 +57,7 @@ struct FDynamicRibbonEmitterData : public FDynamicSpriteEmitterDataBase
 
 	int32 GetDynamicVertexStride() const override;
 	void SortParticleRenderOrder(const FFrameContext& Frame, TArray<uint16>& RenderOrder) const override;
+	uint32 BuildDynamicVertexData(const FFrameContext& Frame, FSpriteParticleGeometry& OutGeometry) const;
 };
 
 struct FDynamicBeamEmitterData : public FDynamicSpriteEmitterDataBase
@@ -65,6 +66,7 @@ struct FDynamicBeamEmitterData : public FDynamicSpriteEmitterDataBase
 
 	int32 GetDynamicVertexStride() const override;
 	void SortParticleRenderOrder(const FFrameContext& Frame, TArray<uint16>& RenderOrder) const override;
+	uint32 BuildDynamicVertexData(const FFrameContext& Frame, FSpriteParticleGeometry& OutGeometry) const;
 };
 
 struct FDynamicMeshEmitterData : public FDynamicEmitterDataBase

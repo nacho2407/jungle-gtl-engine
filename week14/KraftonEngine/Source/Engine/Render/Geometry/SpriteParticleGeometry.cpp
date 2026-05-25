@@ -30,20 +30,46 @@ void FSpriteParticleGeometry::AddParticleQuad(const FBaseParticle& Particle, con
 	const FVector BottomLeft = Center - HalfRight - HalfUp;
 	const FVector BottomRight = Center + HalfRight - HalfUp;
 
-	const uint32 StartIndex = static_cast<uint32>(Vertices.size());
+	AddQuad(TopLeft, TopRight, BottomLeft, BottomRight, Particle.Color, { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 });
+}
 
-	Vertices.push_back({ TopLeft, Particle.Color, FVector2(0.0f, 0.0f) });
-	Vertices.push_back({ TopRight, Particle.Color, FVector2(1.0f, 0.0f) });
-	Vertices.push_back({ BottomLeft, Particle.Color, FVector2(0.0f, 1.0f) });
-	Vertices.push_back({ BottomRight, Particle.Color, FVector2(1.0f, 1.0f) });
+void FSpriteParticleGeometry::AddQuad(const FVector& TopLeft, const FVector& TopRight, const FVector& BottomLeft, const FVector& BottomRight,
+	const FVector4& Color, const FVector2& TopLeftUV, const FVector2& TopRightUV, const FVector2& BottomLeftUV, const FVector2& BottomRightUV)
+{
+	AddQuad(TopLeft, TopRight, BottomLeft, BottomRight,
+		Color, Color, Color, Color,
+		TopLeftUV, TopRightUV, BottomLeftUV, BottomRightUV);
+}
+
+void FSpriteParticleGeometry::AddQuad(const FVector& TopLeft, const FVector& TopRight, const FVector& BottomLeft, const FVector& BottomRight,
+	const FVector4& TopLeftColor, const FVector4& TopRightColor, const FVector4& BottomLeftColor, const FVector4& BottomRightColor,
+	const FVector2& TopLeftUV, const FVector2& TopRightUV, const FVector2& BottomLeftUV, const FVector2& BottomRightUV)
+{
+	const uint32 StartIndex = static_cast<uint32>(Vertices.size());
+	Vertices.push_back({ TopLeft, TopLeftColor, TopLeftUV });
+	Vertices.push_back({ TopRight, TopRightColor, TopRightUV });
+	Vertices.push_back({ BottomLeft, BottomLeftColor, BottomLeftUV });
+	Vertices.push_back({ BottomRight, BottomRightColor, BottomRightUV });
 	Indices.push_back(StartIndex + 0);
 	Indices.push_back(StartIndex + 1);
 	Indices.push_back(StartIndex + 2);
 	Indices.push_back(StartIndex + 1);
 	Indices.push_back(StartIndex + 3);
 	Indices.push_back(StartIndex + 2);
-
 	IndexCount += 6;
+}
+uint32 FSpriteParticleGeometry::AddVertex(const FParticleSpriteVertex& Vertex)
+{
+	Vertices.push_back(Vertex);
+	return static_cast<uint32>(Vertices.size() - 1);
+}
+
+void FSpriteParticleGeometry::AddTriangle(uint32 A, uint32 B, uint32 C)
+{
+	Indices.push_back(A);
+	Indices.push_back(B);
+	Indices.push_back(C);
+	IndexCount += 3;
 }
 
 bool FSpriteParticleGeometry::Upload(ID3D11DeviceContext* Context)
