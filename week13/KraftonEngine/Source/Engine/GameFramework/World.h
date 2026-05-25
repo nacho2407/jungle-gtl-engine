@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Object/Object.h"
 #include "Core/Types/RayTypes.h"
 #include "Core/Types/CollisionTypes.h"
@@ -59,6 +59,7 @@ public:
 	void EndDeferredPickingBVHUpdate();
 	void WarmupPickingData() const;
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
+	bool LinecastPrimitives(const FVector& Start, const FVector& End, FHitResult& OutHitResult, AActor*& OutActor) const;
 
 	const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
 
