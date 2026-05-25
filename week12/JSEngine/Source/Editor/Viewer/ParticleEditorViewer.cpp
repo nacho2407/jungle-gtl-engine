@@ -887,6 +887,12 @@ void FParticleEditorViewer::EnsureDefaultParticleSystem()
 		bOwnsParticleSystem = true;
 	}
 
+	// LOD 거리 설정이 비어있으면 기본값으로 LOD 0 거리 0.0f 추가
+	if (ParticleSystem && ParticleSystem->LODDistances.empty())
+	{
+		ParticleSystem->LODDistances.push_back(0.0f);
+	}
+
 	if (ParticleSystem && ParticleSystem->Emitters.empty())
 	{
 		UParticleEmitter* Emitter = NewObject<UParticleEmitter>();

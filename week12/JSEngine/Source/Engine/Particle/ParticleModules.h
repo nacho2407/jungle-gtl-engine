@@ -23,7 +23,7 @@ public:
 	virtual bool IsSpawnRateModule() const;
 	virtual bool IsSpawnModule() const;
 	virtual bool IsUpdateModule() const;
-	virtual void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime);
+	virtual void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle);
 	virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime);
 };
 
@@ -39,7 +39,7 @@ public:
 	UPROPERTY(DisplayName = "Coordinate Space")
 	EParticleCoordinateSpace CoordinateSpace = EParticleCoordinateSpace::Local;
 
-	UPROPERTY(DisplayName = "Max Particles", Min = 0.0f, Max = 65535.0f, Speed = 1.0f)
+	UPROPERTY(DisplayName = "Max Particles", Min = 1.0f, Max = 65535.0f, Speed = 1.0f)
 	int32 MaxParticles = 1000;
 
 	UPROPERTY(DisplayName = "Emitter Duration", Min = 0.0f, Speed = 0.1f)
@@ -77,8 +77,8 @@ public:
 };
 
 /**
- * @brief particle을 생성 정보를 담고 있는 모듈. 사실 Required에 통합해도 되기는 하지만,
- *        Cascade 스타일을 따라 별도의 모듈로 분리합니다.
+ * @brief particle의 생성 정보를 담고 있는 모듈. 사실 Required에 통합해도 되기는 하지만,
+ *        Cascade 스타일을 따라 별도의 특수 모듈로 분리합니다.
  */
 UCLASS()
 class UParticleModuleSpawn : public UParticleModule
@@ -198,6 +198,7 @@ public:
 		UParticleEmitter* InEmitterTemplate,
 		IParticleEmitterInstanceOwner& InOwner);
 	virtual FDynamicEmitterDataBase* GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance);
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
 	virtual int32 GetRequiredPayloadSize() const;
 };
 

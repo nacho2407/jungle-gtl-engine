@@ -66,7 +66,12 @@ class UParticleSystem : public UObject
 {
 public:
 	GENERATED_BODY(UParticleSystem, UObject)
+	UParticleSystem();
 	~UParticleSystem() override;
 
 	TArray<UParticleEmitter*> Emitters;
+
+	// 거리 기반 LOD 시스템을 위한 LOD 거리 설정. LOD 0은 항상 0.0f로 설정되어야 함에 유의!
+	UPROPERTY(DisplayName = "LOD Distances")
+	TArray<float> LODDistances;
 };

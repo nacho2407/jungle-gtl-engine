@@ -83,17 +83,6 @@ namespace
 		}
 
 		UParticleModuleTypeDataBase* TypeData = Cache.TypeDataModule;
-		if (TypeData != nullptr)
-		{
-			const int32 TypeDataPayloadSize = TypeData->GetRequiredPayloadSize();
-			if (TypeDataPayloadSize > 0)
-			{
-				ParticleBytes = AlignParticleBytes(ParticleBytes);
-				ParticleBytes += TypeDataPayloadSize;
-			}
-
-			AddInstancePayloadOffset(Cache, TypeData, TypeData, InstancePayloadSize);
-		}
 
 		if (Cache.SpawnModule == nullptr)
 		{
@@ -107,11 +96,13 @@ namespace
 			}
 		}
 
-		// Required / SpawnModule은 Modules 배열과 별개의 특수 모듈이므로 먼저 offset만 계산
+		// 모든 특수 모듈의 payload offset도 실제 실행 모듈 list와 같은 시작 주소 map에 넣어둠(별도 분리 안함)
 		AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
 		AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
 		AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
 		AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
+		AddParticlePayloadOffset(Cache, Cache.TypeDataModule, TypeData, ParticleBytes);
+		AddInstancePayloadOffset(Cache, Cache.TypeDataModule, TypeData, InstancePayloadSize);
 
 		for (UParticleModule* Module : LODLevel->Modules)
 		{
@@ -167,11 +158,12 @@ bool UParticleModule::IsUpdateModule() const
 	return false;
 }
 
-void UParticleModule::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+void UParticleModule::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
 	(void)Owner;
 	(void)Offset;
-	(void)DeltaTime;
+	(void)SpawnTime;
+	(void)Particle;
 }
 
 void UParticleModule::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
@@ -264,6 +256,12 @@ UParticleEmitter::~UParticleEmitter()
 	LODLevels.clear();
 }
 
+UParticleSystem::UParticleSystem()
+{
+    // LOD 0은 항상 0.0f로 설정되어야 함
+	LODDistances.push_back(0.0f);
+}
+
 UParticleSystem::~UParticleSystem()
 {
 	for (UParticleEmitter* Emitter : Emitters)
@@ -290,6 +288,12 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 {
 	(void)InEmitterInstance;
 	return nullptr;
+}
+
+int32 UParticleModuleTypeDataBase::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return GetRequiredPayloadSize();
 }
 
 int32 UParticleModuleTypeDataBase::GetRequiredPayloadSize() const
