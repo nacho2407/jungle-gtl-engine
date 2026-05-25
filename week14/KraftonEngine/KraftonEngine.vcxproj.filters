@@ -735,6 +735,9 @@
     <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.cpp">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
@@ -1743,6 +1746,9 @@
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.h">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h">

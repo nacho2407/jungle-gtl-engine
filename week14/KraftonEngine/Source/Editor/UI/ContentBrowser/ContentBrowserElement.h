@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "Core/Types/ClassTypes.h"
 #include "Editor/UI/ContentBrowser/ContentBrowserContext.h"
+#include "Editor/UI/Util/EditorMaterialThumbnailManager.h"
+#include "Editor/UI/Util/EditorMeshThumbnailManager.h"
 #include "ContentItem.h"
 #include <d3d11.h>
 #include <shellapi.h>
@@ -18,6 +20,19 @@ public:
 
 	void SetIcon(ID3D11ShaderResourceView* InIcon) { Icon = InIcon; }
 	void SetContent(FContentItem InContent) { ContentItem = InContent; }
+
+	void SetMeshThumbnailRequest(const FString& AssetPath, EMeshThumbnailType Type)
+	{
+		MeshThumbnailAssetPath = AssetPath;
+		MeshThumbnailType = Type;
+		bUseMeshThumbnail = true;
+	}
+
+	void SetMaterialThumbnailRequest(const FString& AssetPath)
+	{
+		MaterialThumbnailAssetPath = AssetPath;
+		bUseMaterialThumbnail = true;
+	}
 
 	std::wstring GetFileName() { return ContentItem.Path.filename(); }
 
@@ -46,6 +61,13 @@ protected:
 	ID3D11ShaderResourceView* Icon = nullptr;
 	FContentItem ContentItem;
 	bool bIsSelected = false;
+
+	bool bUseMeshThumbnail = false;
+	FString MeshThumbnailAssetPath;
+	EMeshThumbnailType MeshThumbnailType = EMeshThumbnailType::StaticMesh;
+
+	bool bUseMaterialThumbnail = false;
+	FString MaterialThumbnailAssetPath;
 };
 
 class DirectoryElement final : public ContentBrowserElement
@@ -60,7 +82,7 @@ public:
 	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
 };
 
-class ObjectElement final : public ContentBrowserElement
+class ObjectElement : public ContentBrowserElement
 {
 public:
 	void RenderContextMenu(ContentBrowserContext& Context) override;
@@ -71,6 +93,13 @@ public:
 protected:
 	const char* GetTypeLabel() const override { return "Static Mesh"; }
 	uint32 GetAccentColor() const override { return IM_COL32(88, 160, 230, 255); }
+};
+
+class ObjSourceElement final : public ObjectElement
+{
+protected:
+	const char* GetTypeLabel() const override { return "OBJ Source"; }
+	uint32 GetAccentColor() const override { return IM_COL32(120, 150, 180, 255); }
 };
 
 class FloatCurveElement final : public ContentBrowserElement
@@ -104,7 +133,7 @@ protected:
 	uint32 GetAccentColor() const override { return IM_COL32(200, 110, 200, 255); }
 };
 
-class MeshElement final : public ContentBrowserElement
+class MeshElement : public ContentBrowserElement
 {
 public:
 	void RenderContextMenu(ContentBrowserContext& Context) override;
@@ -114,6 +143,13 @@ public:
 protected:
 	const char* GetTypeLabel() const override { return "Skeletal Mesh"; }
 	uint32 GetAccentColor() const override { return IM_COL32(126, 140, 255, 255); }
+};
+
+class FbxSourceElement final : public MeshElement
+{
+protected:
+	const char* GetTypeLabel() const override { return "FBX Source"; }
+	uint32 GetAccentColor() const override { return IM_COL32(150, 150, 170, 255); }
 };
 
 class AnimationElement final : public ContentBrowserElement
@@ -146,10 +182,14 @@ protected:
 	uint32 GetAccentColor() const override { return IM_COL32(255, 120, 120, 255); }
 };
 
-class PNGElement final : public ContentBrowserElement
+class ImageElement final : public ContentBrowserElement
 {
 public:
-	virtual const char* GetDragItemType() override { return "PNGElement"; }
+	const char* GetDragItemType() override { return "PNGElement"; }
+
+protected:
+	const char* GetTypeLabel() const override { return "Image"; }
+	uint32 GetAccentColor() const override { return IM_COL32(120, 190, 255, 255); }
 };
 
 #include "Editor/UI/Panel/EditorMaterialInspector.h"
@@ -159,6 +199,10 @@ public:
 	virtual void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
 	virtual const char* GetDragItemType() override { return "MaterialContentItem"; }
 	virtual void RenderDetail() override;
+
+protected:
+	const char* GetTypeLabel() const override { return "Material"; }
+	uint32 GetAccentColor() const override { return IM_COL32(210, 170, 80, 255); }
 
 private:
 	FEditorMaterialInspector MaterialInspector;
