@@ -3,6 +3,8 @@
 #include "Core/CoreMinimal.h"
 
 struct ID3D11DeviceContext;
+class UMaterialInterface;
+class UParticleModuleRequired;
 
 namespace ERHIFeatureLevel
 {
@@ -116,6 +118,9 @@ struct FDynamicEmitterReplayDataBase
 struct FDynamicSpriteEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 {
 	FDynamicSpriteEmitterReplayDataBase() { eEmitterType = EDynamicEmitterType::Sprite; }
+
+	UMaterialInterface* MaterialInterface = nullptr;
+	UParticleModuleRequired* RequiredModule = nullptr;
 };
 
 struct FDynamicMeshEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
@@ -152,6 +157,8 @@ struct FDynamicSpriteEmitterDataBase : public FDynamicEmitterDataBase
 struct FDynamicSpriteEmitterData : public FDynamicSpriteEmitterDataBase
 {
 	FDynamicSpriteEmitterReplayDataBase ReplayData;
+	TArray<uint8> OwnedParticleData;
+	TArray<uint16> OwnedParticleIndices;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
 	void Render(ID3D11DeviceContext* Context) override { (void)Context; }

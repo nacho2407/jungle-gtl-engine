@@ -103,7 +103,7 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 
 	int32 RequestedMaxParticles = CurrentRuntimeCache->RequiredModule != nullptr
 		? CurrentRuntimeCache->RequiredModule->MaxParticles
-		: 0;
+        : 1; // clamp를 위해 최소값 1로 설정
 	if (RequestedMaxParticles > MaxParticleIndexValue)
 	{
 		UE_LOG_WARNING(
@@ -111,7 +111,7 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 			RequestedMaxParticles,
 			MaxParticleIndexValue);
 	}
-	MaxActiveParticles = std::clamp(RequestedMaxParticles, 0, MaxParticleIndexValue);
+	MaxActiveParticles = std::clamp(RequestedMaxParticles, 1, MaxParticleIndexValue);
 
 	if (!AllocateParticleData(MaxActiveParticles, ParticleStride, InstancePayloadSize))
 	{
