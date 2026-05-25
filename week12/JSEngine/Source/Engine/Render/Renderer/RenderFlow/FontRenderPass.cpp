@@ -3,17 +3,6 @@
 #include "Render/FontBatcher.h"
 #include "Render/Scene/RenderBus.h"
 
-namespace
-{
-    bool IsDebugViewMode(EViewMode ViewMode)
-    {
-        return ViewMode == EViewMode::Normal ||
-            ViewMode == EViewMode::Heatmap ||
-            ViewMode == EViewMode::BoneWeightHeatmap ||
-            ViewMode == EViewMode::Depth;
-    }
-}
-
 bool FFontRenderPass::Initialize()
 {
     return true;

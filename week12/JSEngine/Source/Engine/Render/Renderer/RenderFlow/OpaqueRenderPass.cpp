@@ -10,35 +10,74 @@
 #include "Core/ResourceManager.h"
 #include "Component/PostProcess/Light/LightComponent.h"
 
-static void DrawBoundMesh(
-	ID3D11DeviceContext* DeviceContext,
-	ID3D11Buffer* IndexBuffer,
-	uint32 IndexStart,
-	uint32 IndexCount,
-	uint32 VertexCount)
+namespace
 {
-	if (IndexBuffer != nullptr)
-	{
-		DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-		DeviceContext->DrawIndexed(IndexCount, IndexStart, 0);
-	}
-	else
-	{
-		DeviceContext->Draw(VertexCount, 0);
-	}
-}
+    FShaderProgram* GetShaderProgram(const FRenderCommand& Cmd, uint32 PermutationKey)
+    {
+        if (!Cmd.Material)
+        {
+            return nullptr;
+        }
 
-static bool IsDebugViewMode(EViewMode ViewMode)
-{
-	return ViewMode == EViewMode::Normal ||
-		ViewMode == EViewMode::Heatmap ||
-		ViewMode == EViewMode::BoneWeightHeatmap ||
-		ViewMode == EViewMode::Depth;
-}
+        // VertexFactory는 Mesh 타입에 맞는 VS를 고르고, Material은 표면용 PS만 제공합니다.
+        // 여기서 두 정보를 합쳐 실제 Draw에 사용할 FShaderProgram을 만듭니다.
+        const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
+        const FString& PixelShaderPath = Cmd.Material->GetPixelShaderPath();
+        const FString& PixelEntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
+
+        FShaderStageKey VSKey;
+        VSKey.FilePath = VertexFactoryDesc.VertexShaderPath;
+        VSKey.EntryPoint = VertexFactoryDesc.BasePassVSEntry;
+        VSKey.Target = "vs_5_0";
+        VSKey.PermutationKey = PermutationKey;
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = PixelShaderPath;
+        PSKey.EntryPoint = PixelEntryPoint;
+        PSKey.Target = "ps_5_0";
+        PSKey.PermutationKey = PermutationKey;
+
+        // PermutationKey는 ViewMode / LightCulling / Shadow / Material Feature를 한 번에 담습니다.
+        // VS와 PS가 같은 define 조건으로 컴파일되어야 하므로 동일한 Macros를 넘깁니다.
+        TArray<D3D_SHADER_MACRO> Macros = FShaderHelper::BuildUberLitMacros(PermutationKey);
+        return FResourceManager::Get().GetOrCreateShaderProgram(
+            VSKey,
+            PSKey,
+            Macros.data(),
+            Macros.data(),
+            &VertexFactoryDesc.VertexLayout);
+    }
+
+    void BindLightingResources(const FRenderPassContext* Context)
+    {
+        ID3D11SamplerState* ShadowSampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Shadow);
+        Context->DeviceContext->PSSetSamplers(1, 1, &ShadowSampler);
+
+        ID3D11ShaderResourceView* ShadowSRV = FShadowAtlasManager::Get().GetSRV();
+        Context->DeviceContext->PSSetShaderResources(10, 1, &ShadowSRV);
+
+        ID3D11ShaderResourceView* VSMSRV = FShadowAtlasManager::Get().GetVarianceSRV();
+        Context->DeviceContext->PSSetShaderResources(11, 1, &VSMSRV);
+        
+        ID3D11ShaderResourceView* PointShadowCubeSRV = FShadowAtlasManager::Get().GetCubeSRV();
+        Context->DeviceContext->PSSetShaderResources(12, 1, &PointShadowCubeSRV);
+
+        ID3D11ShaderResourceView* ShadowInfoSRVs[] = {
+            Context->RenderResources->LightShadowIndexBuffer.GetSRV(),
+            Context->RenderResources->AtlasShadowBuffer.GetSRV(),
+        };
+        Context->DeviceContext->PSSetShaderResources(14, 2, ShadowInfoSRVs);
+    }
+} // namespace
 
 bool FOpaqueRenderPass::Initialize()
 {
 	return true;
+}
+
+bool FOpaqueRenderPass::Release()
+{
+    return true;
 }
 
 bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
@@ -66,27 +105,8 @@ bool FOpaqueRenderPass::Begin(const FRenderPassContext* Context)
 	OutRTV = RenderTargets->SceneColorRTV;
 
 	Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	ID3D11SamplerState* ShadowSampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Shadow);
-	Context->DeviceContext->PSSetSamplers(1, 1, &ShadowSampler);
-
-	///// debugging
-	/*ID3D11ShaderResourceView* VSMSRV = FShadowAtlasManager::Get().VarianceShadowSRV.Get();
-	Context->DeviceContext->PSSetShaderResources(11, 1, &VSMSRV);
-	*////// debugging
-	ID3D11ShaderResourceView* VSMSRV = FShadowAtlasManager::Get().GetVarianceSRV();
-	Context->DeviceContext->PSSetShaderResources(11, 1, &VSMSRV);
-
-
-
-	ID3D11ShaderResourceView* ShadowInfoSRVs[] = {
-		Context->RenderResources->LightShadowIndexBuffer.GetSRV(),
-		Context->RenderResources->AtlasShadowBuffer.GetSRV(),
-	};
-	Context->DeviceContext->PSSetShaderResources(14, 2, ShadowInfoSRVs);
-
-	//ID3D11ShaderResourceView* VSMSRV = FShadowAtlasManager::Get().VarianceShadowSRV.Get();
- //   Context->DeviceContext->PSSetShaderResources(16, 1, &VSMSRV);
+    
+    BindLightingResources(Context);
 
 	return true;
 }
@@ -105,183 +125,104 @@ bool FOpaqueRenderPass::DrawCommand(const FRenderPassContext* Context)
 
    for (const FRenderCommand& Cmd : Commands)  
    {  
-	   Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));  
-	   ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();  
-	   Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);  
-	   Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
-
-	   ID3D11ShaderResourceView *ShadowSRV = FShadowAtlasManager::Get().GetSRV();
-	   Context->DeviceContext->PSSetShaderResources(10, 1, &ShadowSRV);
-	   ID3D11ShaderResourceView* PointShadowCubeSRV = FShadowAtlasManager::Get().GetCubeSRV();
-	   Context->DeviceContext->PSSetShaderResources(12, 1, &PointShadowCubeSRV);
-
-	   if (Cmd.Type == ERenderCommandType::PostProcessOutline)  
-	   {  
-		   continue;  
-	   }  
-
-	   if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())  
-	   {  
-		   return false;  
-	   }  
-
-	   uint32 offset = 0;  
-	   ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();  
-	   if (vertexBuffer == nullptr)  
-	   {  
-		   return false;  
-	   }  
-
-	   uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();  
-	   uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();  
-	   if (vertexCount == 0 || stride == 0)
-	   {  
-		   return false;  
-	   }  
-
-	   uint32 PermutationKey = (uint32)ELightingModel::Unlit;
-	   switch (ViewMode)
-	   {
-	   case EViewMode::Lit_Gouraud:
-		   PermutationKey = (uint32)ELightingModel::Gouraud;
-		   break;
-	   case EViewMode::Lit_Lambert:
-		   PermutationKey = (uint32)ELightingModel::Lambert;
-		   break;
-	   case EViewMode::Lit_BlinnPhong:
-		   PermutationKey = (uint32)ELightingModel::BlinnPhong;
-		   break;
-	   }
-
-	   if (RenderBus->GetLightCullMode() == ELightCullMode::Clustered)
-		   PermutationKey |= (uint32)EShaderFeature::ClusterCull;
-	   else if (RenderBus->GetLightCullMode() == ELightCullMode::Tiled)
-		   PermutationKey |= (uint32)EShaderFeature::TileCull;
-	   bool bShadowApplied = false; // 추가
-
-	   // ShadowMap Permutation Key 조합
-	   for (const FShadowLightRequest& Request : RenderBus->ShadowLightRequests)
-	   {
-		   if (!Request.bCastShadows || !Request.LightComponent) continue;
-		   if (Request.Type != EShadowLightType::SLT_Directional) continue;
-
-		   ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
-		   if (!LightComp) continue;
-		   switch (LightComp->GetShadowMapType())
-		   {
-		   case EShadowMap::CSM:
-		   {
-			   PermutationKey |= (uint32)EShaderFeature::ShadowCSM;
-			   if (RenderBus->GetCascadeVis())
-				   PermutationKey |= (uint32)EShaderFeature::CascadeVis;
-			   bShadowApplied = true;
-			   break;
-		   }
-
-		   case EShadowMap::PSM:
-		   {
-			   PermutationKey |= (uint32)EShaderFeature::ShadowPSM;
-			   bShadowApplied = true;
-
-			   break;
-		   }
-		   default: break;
-		   }
-		   break;
-	   }
-	   // VSM 모드 + 그림자 활성일 때만 OR
-	   if (bShadowApplied and Context->RenderBus->GetShadowFilterMode() == EShadowFilter::VSM)
-	   {
-		   PermutationKey |= (uint32)EShaderFeature::ShadowVSM;
-	   }
-	   if (Cmd.Material)
-	   {
-		   if (Cmd.Material->HasDiffuseMap()) PermutationKey |= (uint32)EShaderFeature::HasDiffuseMap;
-		   if (Cmd.Material->HasNormalMap()) PermutationKey |= (uint32)EShaderFeature::HasNormalMap;
-		   if (Cmd.Material->HasSpecularMap()) PermutationKey |= (uint32)EShaderFeature::HasSpecularMap;
-		   if (Cmd.Material->HasEmissiveMap()) PermutationKey |= (uint32)EShaderFeature::HasEmissiveMap;
-		   if (Cmd.Material->HasAlphaMask()) PermutationKey |= (uint32)EShaderFeature::HasAlphaMask;
-
-		   // VertexFactory는 Mesh 타입에 맞는 VS를 고르고, Material은 표면용 PS만 제공합니다.
-		   // 여기서 두 정보를 합쳐 실제 Draw에 사용할 FShaderProgram을 만듭니다.
-		   const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
-		   const FString& PixelShaderPath = Cmd.Material->GetPixelShaderPath();
-		   const FString& PixelEntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
-
-		   FShaderStageKey VSKey;
-		   VSKey.FilePath = VertexFactoryDesc.VertexShaderPath;
-		   VSKey.EntryPoint = VertexFactoryDesc.BasePassVSEntry;
-		   VSKey.Target = "vs_5_0";
-		   VSKey.PermutationKey = PermutationKey;
-
-		   FShaderStageKey PSKey;
-		   PSKey.FilePath = PixelShaderPath;
-		   PSKey.EntryPoint = PixelEntryPoint;
-		   PSKey.Target = "ps_5_0";
-		   PSKey.PermutationKey = PermutationKey;
-
-		   // PermutationKey는 ViewMode / LightCulling / Shadow / Material Feature를 한 번에 담습니다.
-		   // VS와 PS가 같은 define 조건으로 컴파일되어야 하므로 동일한 Macros를 넘깁니다.
-		   TArray<D3D_SHADER_MACRO> Macros = FShaderHelper::BuildUberLitMacros(PermutationKey);
-		   FShaderProgram* Program = FResourceManager::Get().GetOrCreateShaderProgram(
-			   VSKey,
-			   PSKey,
-			   Macros.data(),
-			   Macros.data(),
-			   &VertexFactoryDesc.VertexLayout);
-
-		   if (!Program)
-		   {
-			   return false;
-		   }
-
-		   Program->Bind(Context->DeviceContext);
-		   Cmd.Material->BindRenderStates(Context->DeviceContext);
-		   Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
-
-		   BindVertexFactoryResources(
-			   Context->DeviceContext,
-			   Cmd.VertexFactoryType,
-			   Context->RenderBus->GetBoneMatrixConstants(Cmd),
-			   Context->RenderResources,
-			   Cmd.BoneMatrixConstantBuffer);
-	   }
-
-	   auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
-	   Context->DeviceContext->OMSetDepthStencilState(DSState, 0);
-
-	   CheckOverrideViewMode(Context);  
-
-	   Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);  
-
-	   ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();  
-	   uint32 indexStart = Cmd.SectionIndexStart;
-	   uint32 indexCount = Cmd.SectionIndexCount;
-	   const bool bGPUSkinnedDraw =
-		   Cmd.Type == ERenderCommandType::SkeletalMesh && Cmd.bUseBoneMatrixConstants;
-	   if (bGPUSkinnedDraw)
-	   {
-		   FSkinningStats::Get().AddGPUSkinnedDraw(
-			   Cmd.SkinningWorkVertexCount,
-			   Cmd.AvgBoneInfluencePerVertex);
-	   }
-	   DrawBoundMesh(Context->DeviceContext, indexBuffer, indexStart, indexCount, vertexCount);
+	   if (!DrawEachCommand(Context, Cmd, ViewMode)) 
+	       continue;        // Draw 실패 시 동작 추가할 거면 여기에 추가
    }  
 
    return true;  
 }
 
-bool FOpaqueRenderPass::End(const FRenderPassContext* Context)
+bool FOpaqueRenderPass::DrawEachCommand(const FRenderPassContext* Context, const FRenderCommand& Cmd, const EViewMode ViewMode)
 {
-	//ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr };
-	//Context->DeviceContext->VSSetShaderResources(4, 3, nullSRVs);
-	//Context->DeviceContext->PSSetShaderResources(4, 3, nullSRVs);
-	ID3D11ShaderResourceView* nullSRV = nullptr;
-	Context->DeviceContext->PSSetShaderResources(16, 1, &nullSRV);
-	return true;
+    ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
+    
+    Context->RenderResources->PerObjectConstantBuffer.Update(DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));  
+    ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();  
+    DeviceContext->VSSetConstantBuffers(1, 1, &cb1);  
+    DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
+
+    if (Cmd.Type == ERenderCommandType::PostProcessOutline)  
+    {  
+        return false;  
+    }  
+
+    if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())  
+    {  
+        return false;  
+    }  
+
+    uint32 offset = 0;  
+    ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();  
+    if (vertexBuffer == nullptr)  
+    {  
+        return false;  
+    }  
+
+    uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();  
+    uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();  
+    if (vertexCount == 0 || stride == 0)
+    {  
+        return false;  
+    }  
+
+    if (Cmd.Material)
+    {
+        uint32 PermutationKey = 0;
+        PermutationKey |= GetLightingModelPermutationKey(ViewMode);
+        PermutationKey |= GetLightCullingPermutationKey(Context);
+        PermutationKey |= GetShadowMapPermutationKey(Context, true);
+        PermutationKey |= GetTexturePermutationKey(Cmd.Material);
+
+        FShaderProgram* Program = GetShaderProgram(Cmd, PermutationKey);
+        if (!Program)
+        {
+            return false;
+        }
+
+        Program->Bind(DeviceContext);
+        Cmd.Material->BindRenderStates(DeviceContext);
+        Cmd.Material->BindParameters(DeviceContext, Program->PS);
+        BindVertexFactoryResources(
+            DeviceContext,
+            Cmd.VertexFactoryType,
+            Context->RenderBus->GetBoneMatrixConstants(Cmd),
+            Context->RenderResources,
+            Cmd.BoneMatrixConstantBuffer);
+    }
+
+    auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+    DeviceContext->OMSetDepthStencilState(DSState, 0);
+
+    CheckOverrideViewMode(Context);  
+    
+    DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);  
+
+    const bool bGPUSkinnedDraw =
+        Cmd.Type == ERenderCommandType::SkeletalMesh && Cmd.bUseBoneMatrixConstants;
+    if (bGPUSkinnedDraw)
+    {
+        FSkinningStats::Get().AddGPUSkinnedDraw(Cmd.SkinningWorkVertexCount, Cmd.AvgBoneInfluencePerVertex);
+    }
+    
+    ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();  
+    if (indexBuffer != nullptr)
+    {
+        DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
+    }
+    else
+    {
+        DeviceContext->Draw(vertexCount, 0);
+    }
+    return true;
 }
 
-bool FOpaqueRenderPass::Release()
+bool FOpaqueRenderPass::End(const FRenderPassContext* Context)
 {
-	return true;
+    //ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr };
+    //Context->DeviceContext->VSSetShaderResources(4, 3, nullSRVs);
+    //Context->DeviceContext->PSSetShaderResources(4, 3, nullSRVs);
+    ID3D11ShaderResourceView* nullSRV = nullptr;
+    Context->DeviceContext->PSSetShaderResources(16, 1, &nullSRV);
+    return true;
 }

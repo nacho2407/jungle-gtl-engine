@@ -23,82 +23,7 @@ namespace
         }
     }
 
-    uint32 BuildDecalPermutationKey(const FRenderPassContext* Context, const UMaterialInterface* Material)
-    {
-        uint32 PermutationKey = (uint32)ELightingModel::Unlit;
-        switch (Context->RenderBus->GetViewMode())
-        {
-        case EViewMode::Lit_Gouraud:
-            PermutationKey = (uint32)ELightingModel::Gouraud;
-            break;
-        case EViewMode::Lit_Lambert:
-            PermutationKey = (uint32)ELightingModel::Lambert;
-            break;
-        case EViewMode::Lit_BlinnPhong:
-            PermutationKey = (uint32)ELightingModel::BlinnPhong;
-            break;
-        default:
-            break;
-        }
-
-        if (Context->RenderBus->GetLightCullMode() == ELightCullMode::Clustered)
-        {
-            PermutationKey |= (uint32)EShaderFeature::ClusterCull;
-        }
-        else if (Context->RenderBus->GetLightCullMode() == ELightCullMode::Tiled)
-        {
-            PermutationKey |= (uint32)EShaderFeature::TileCull;
-        }
-
-        bool bShadowApplied = false;
-        for (const FShadowLightRequest& Request : Context->RenderBus->ShadowLightRequests)
-        {
-            if (!Request.bCastShadows || !Request.LightComponent)
-            {
-                continue;
-            }
-            if (Request.Type != EShadowLightType::SLT_Directional)
-            {
-                continue;
-            }
-
-            ULightComponent* LightComp = Cast<ULightComponent>(Request.LightComponent);
-            if (!LightComp)
-            {
-                continue;
-            }
-
-            switch (LightComp->GetShadowMapType())
-            {
-            case EShadowMap::CSM:
-                PermutationKey |= (uint32)EShaderFeature::ShadowCSM;
-                bShadowApplied = true;
-                break;
-            case EShadowMap::PSM:
-                PermutationKey |= (uint32)EShaderFeature::ShadowPSM;
-                bShadowApplied = true;
-                break;
-            default:
-                break;
-            }
-            break;
-        }
-
-        if (bShadowApplied && Context->RenderBus->GetShadowFilterMode() == EShadowFilter::VSM)
-        {
-            PermutationKey |= (uint32)EShaderFeature::ShadowVSM;
-        }
-
-        if (Material)
-        {
-            if (Material->HasDiffuseMap()) PermutationKey |= (uint32)EShaderFeature::HasDiffuseMap;
-            if (Material->HasSpecularMap()) PermutationKey |= (uint32)EShaderFeature::HasSpecularMap;
-        }
-
-        return PermutationKey;
-    }
-
-    FShaderProgram* GetDecalShaderProgram(const FRenderCommand& Cmd, uint32 PermutationKey)
+    FShaderProgram* GetShaderProgram(const FRenderCommand& Cmd, uint32 PermutationKey)
     {
         if (!Cmd.Material)
         {
@@ -128,7 +53,7 @@ namespace
             &VertexFactoryDesc.VertexLayout);
     }
 
-    void BindDecalLightingResources(const FRenderPassContext* Context)
+    void BindLightingResources(const FRenderPassContext* Context)
     {
         ID3D11SamplerState* ShadowSampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Shadow);
         Context->DeviceContext->PSSetSamplers(1, 1, &ShadowSampler);
@@ -148,7 +73,7 @@ namespace
         };
         Context->DeviceContext->PSSetShaderResources(14, 2, ShadowInfoSRVs);
     }
-}
+} // namespace
 
 bool FDecalRenderPass::Initialize()
 {
@@ -179,7 +104,7 @@ bool FDecalRenderPass::Begin(const FRenderPassContext* Context)
     OutRTV = RenderTargets->SceneColorRTV;
 
     Context->DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    BindDecalLightingResources(Context);
+    BindLightingResources(Context);
     return true;
 }
 
@@ -195,74 +120,86 @@ bool FDecalRenderPass::DrawCommand(const FRenderPassContext* Context)
 
     for (const FRenderCommand& Cmd : Commands)
     {
-        Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
-        ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
-        Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
-        Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
-
-        if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
-        {
-            return false;
-        }
-
-        uint32 offset = 0;
-        ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-        if (vertexBuffer == nullptr)
-        {
-            return false;
-        }
-
-        uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
-        uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-        if (vertexCount == 0 || stride == 0)
-        {
-            return false;
-        }
-
-        if (Cmd.Material)
-        {
-            const uint32 PermutationKey = BuildDecalPermutationKey(Context, Cmd.Material);
-            FShaderProgram* Program = GetDecalShaderProgram(Cmd, PermutationKey);
-            if (!Program)
-            {
-                return false;
-            }
-
-            Program->Bind(Context->DeviceContext);
-            Cmd.Material->BindRenderStates(Context->DeviceContext);
-            Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
-
-            Context->RenderResources->ProjectionDecalConstantBuffer.Update(
-                Context->DeviceContext,
-                &Cmd.Constants.Decal,
-                sizeof(FProjectionDecalConstants));
-            ID3D11Buffer* DecalBuffer = Context->RenderResources->ProjectionDecalConstantBuffer.GetBuffer();
-            Context->DeviceContext->PSSetConstantBuffers(8, 1, &DecalBuffer);
-
-            BindVertexFactoryResources(
-                Context->DeviceContext,
-                Cmd.VertexFactoryType,
-                Context->RenderBus->GetBoneMatrixConstants(Cmd),
-                Context->RenderResources,
-                Cmd.BoneMatrixConstantBuffer);
-        }
-        CheckOverrideViewMode(Context);  
-        Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-        ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-        if (indexBuffer != nullptr)
-        {
-            uint32 indexStart = Cmd.SectionIndexStart;
-            uint32 indexCount = Cmd.SectionIndexCount;
-            Context->DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-            Context->DeviceContext->DrawIndexed(indexCount, indexStart, 0);
-        }
-        else
-        {
-            Context->DeviceContext->Draw(vertexCount, 0);
-        }
+        if (!DrawEachCommand(Context, Cmd)) 
+            continue;        // Draw 실패 시 동작 추가할 거면 여기에 추가
     }
 
+    return true;
+}
+
+bool FDecalRenderPass::DrawEachCommand(const FRenderPassContext* Context, const FRenderCommand& Cmd)
+{
+    Context->RenderResources->PerObjectConstantBuffer.Update(Context->DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
+    ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
+    Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
+    Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
+
+    if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
+    {
+        return false;
+    }
+
+    uint32 offset = 0;
+    ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
+    if (vertexBuffer == nullptr)
+    {
+        return false;
+    }
+
+    uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
+    uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
+    if (vertexCount == 0 || stride == 0)
+    {
+        return false;
+    }
+
+    if (Cmd.Material)
+    {
+        uint32 PermutationKey = 0;
+        PermutationKey |= GetLightingModelPermutationKey(Context->RenderBus->GetViewMode());
+        PermutationKey |= GetLightCullingPermutationKey(Context);
+        PermutationKey |= GetShadowMapPermutationKey(Context);
+        PermutationKey |= GetTexturePermutationKey(Cmd.Material, false, true, false, false);
+            
+        FShaderProgram* Program = GetShaderProgram(Cmd, PermutationKey);
+        if (!Program)
+        {
+            return false;
+        }
+
+        Program->Bind(Context->DeviceContext);
+        Cmd.Material->BindRenderStates(Context->DeviceContext);
+        Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
+
+        Context->RenderResources->ProjectionDecalConstantBuffer.Update(
+            Context->DeviceContext,
+            &Cmd.Constants.Decal,
+            sizeof(FProjectionDecalConstants));
+        ID3D11Buffer* DecalBuffer = Context->RenderResources->ProjectionDecalConstantBuffer.GetBuffer();
+        Context->DeviceContext->PSSetConstantBuffers(8, 1, &DecalBuffer);
+
+        BindVertexFactoryResources(
+            Context->DeviceContext,
+            Cmd.VertexFactoryType,
+            Context->RenderBus->GetBoneMatrixConstants(Cmd),
+            Context->RenderResources,
+            Cmd.BoneMatrixConstantBuffer);
+    }
+    CheckOverrideViewMode(Context);  
+    Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
+
+    ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
+    if (indexBuffer != nullptr)
+    {
+        uint32 indexStart = Cmd.SectionIndexStart;
+        uint32 indexCount = Cmd.SectionIndexCount;
+        Context->DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        Context->DeviceContext->DrawIndexed(indexCount, indexStart, 0);
+    }
+    else
+    {
+        Context->DeviceContext->Draw(vertexCount, 0);
+    }
     return true;
 }
 

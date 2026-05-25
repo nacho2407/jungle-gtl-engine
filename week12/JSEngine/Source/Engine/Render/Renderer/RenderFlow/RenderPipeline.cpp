@@ -132,12 +132,12 @@ bool FRenderPipeline::Initialize()
 	 * FXAARenderPass -> FontRenderPass 일 때 FXAASRV 가 아닌 ColorSRV 를 넘겨야 한다.
 	 * ColorSRV 가 최종 결과물 버퍼라고 생각하면 된다.
 	 */
-	RenderPasses.push_back(DepthPrePass);
-	RenderPasses.push_back(LightCullingPass);
-	RenderPasses.push_back(ShadowPass);
-	RenderPasses.push_back(VSMConversionRenderPass); // VSM 추가
-	RenderPasses.push_back(OpaqueRenderPass);
-	RenderPasses.push_back(DecalRenderPass);
+    RenderPasses.push_back(DepthPrePass);
+    RenderPasses.push_back(LightCullingPass);
+    RenderPasses.push_back(ShadowPass);
+    RenderPasses.push_back(VSMConversionRenderPass); // VSM 추가
+    RenderPasses.push_back(OpaqueRenderPass);
+    RenderPasses.push_back(DecalRenderPass);
     RenderPasses.push_back(ViewModeMeshRenderPass);
     RenderPasses.push_back(TranslucentRenderPass);
     RenderPasses.push_back(SubUVRenderPass);
@@ -146,7 +146,7 @@ bool FRenderPipeline::Initialize()
     RenderPasses.push_back(SandevistanRenderPass);
     RenderPasses.push_back(PostProcessRenderPass);
     RenderPasses.push_back(FXAARenderPass);
-	RenderPasses.push_back(FontRenderPass);
+    RenderPasses.push_back(FontRenderPass);
     RenderPasses.push_back(SelectionMaskRenderPass);
     RenderPasses.push_back(GridRenderPass);
     RenderPasses.push_back(EditorRenderPass);

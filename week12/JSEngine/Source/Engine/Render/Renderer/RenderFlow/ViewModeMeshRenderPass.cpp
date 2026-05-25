@@ -31,38 +31,6 @@ namespace
             ViewMode == EViewMode::BoneWeightHeatmap;
     }
 
-    uint32 BuildViewModeMeshPermutationKey(const FRenderPassContext* Context, const UMaterialInterface* Material)
-    {
-        uint32 PermutationKey = (uint32)ELightingModel::Unlit;
-        const EViewMode ViewMode = Context->RenderBus->GetViewMode();
-        if (ViewMode == EViewMode::Heatmap)
-        {
-            PermutationKey = (uint32)ELightingModel::Heatmap;
-        }
-        else if (ViewMode == EViewMode::BoneWeightHeatmap)
-        {
-            PermutationKey = (uint32)ELightingModel::BoneWeightHeatmap;
-        }
-
-        if (Context->RenderBus->GetLightCullMode() == ELightCullMode::Clustered)
-        {
-            PermutationKey |= (uint32)EShaderFeature::ClusterCull;
-        }
-        else if (Context->RenderBus->GetLightCullMode() == ELightCullMode::Tiled)
-        {
-            PermutationKey |= (uint32)EShaderFeature::TileCull;
-        }
-
-        if (Material)
-        {
-            if (Material->HasDiffuseMap()) PermutationKey |= (uint32)EShaderFeature::HasDiffuseMap;
-            if (Material->HasNormalMap()) PermutationKey |= (uint32)EShaderFeature::HasNormalMap;
-            if (Material->HasAlphaMask()) PermutationKey |= (uint32)EShaderFeature::HasAlphaMask;
-        }
-
-        return PermutationKey;
-    }
-
     FShaderProgram* GetViewModeMeshShaderProgram(const FRenderCommand& Cmd, uint32 PermutationKey)
     {
         if (!Cmd.Material)
@@ -110,6 +78,15 @@ namespace
             DeviceContext->Draw(VertexCount, 0);
         }
     }
+}
+
+uint32 FViewModeMeshRenderPass::BuildViewModeMeshPermutationKey(const FRenderPassContext* Context, const UMaterialInterface* Material) const
+{
+    uint32 PermutationKey = 0;
+    PermutationKey |= GetLightingModelPermutationKey(Context->RenderBus->GetViewMode());
+    PermutationKey |= GetLightCullingPermutationKey(Context);
+    PermutationKey |= GetTexturePermutationKey(Material, true, false, false, true);
+    return PermutationKey;
 }
 
 bool FViewModeMeshRenderPass::Initialize()

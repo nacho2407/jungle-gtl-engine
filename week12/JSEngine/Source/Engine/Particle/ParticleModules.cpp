@@ -6,6 +6,7 @@
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleHelper.h"
 
+#include <algorithm>
 #include <cstring>
 
 namespace
@@ -132,7 +133,26 @@ namespace
 		Cache.InstancePayloadSize = AlignParticleBytes(InstancePayloadSize);
 		return Cache;
 	}
-}
+
+	FParticleDistributionContext MakeDistributionContext(
+		FParticleEmitterInstance* Owner,
+		float SpawnTime,
+		const FBaseParticle& Particle)
+	{
+		FParticleDistributionContext Context;
+		Context.RandomStream = Owner != nullptr ? &Owner->RandomStream : nullptr;
+		Context.RelativeTime = Particle.RelativeTime;
+		Context.SpawnTime = SpawnTime;
+		return Context;
+	}
+
+	uint8* GetAlignedSnapshotParticleData(FDynamicSpriteEmitterData& RenderData)
+	{
+		return RenderData.OwnedParticleData.empty()
+			? nullptr
+			: ParticleHelper::AlignParticlePointer(RenderData.OwnedParticleData.data());
+	}
+} // namespace
 
 int32 UParticleModule::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
 {
@@ -193,14 +213,41 @@ bool UParticleModuleLifetime::IsSpawnModule() const
 	return true;
 }
 
+void UParticleModuleLifetime::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	(void)Offset;
+	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	Particle.Lifetime = std::max(EvaluateParticleFloat(Lifetime, Context), 0.0001f);
+	Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
+	Particle.RelativeTime = 0.0f;
+}
+
 bool UParticleModuleLocation::IsSpawnModule() const
 {
 	return true;
 }
 
+void UParticleModuleLocation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	(void)Offset;
+	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+
+	// StartLocation은 RequiredModule의 local / world 정책에 맞는 simulation space 값으로 저장
+	Particle.Location = EvaluateParticleVector(StartLocation, Context);
+	Particle.OldLocation = Particle.Location;
+}
+
 bool UParticleModuleVelocity::IsSpawnModule() const
 {
 	return true;
+}
+
+void UParticleModuleVelocity::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	(void)Offset;
+	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	Particle.Velocity = EvaluateParticleVector(StartVelocity, Context);
+	Particle.BaseVelocity = Particle.Velocity;
 }
 
 UParticleModuleColor::UParticleModuleColor()
@@ -215,6 +262,13 @@ bool UParticleModuleColor::IsSpawnModule() const
 	return true;
 }
 
+void UParticleModuleColor::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	(void)Offset;
+	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	Particle.Color = EvaluateParticleColor(StartColor, Context);
+}
+
 UParticleModuleSize::UParticleModuleSize()
 {
 	StartSize.Constant = FVector::OneVector;
@@ -225,6 +279,14 @@ UParticleModuleSize::UParticleModuleSize()
 bool UParticleModuleSize::IsSpawnModule() const
 {
 	return true;
+}
+
+void UParticleModuleSize::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	(void)Offset;
+	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	Particle.Size = EvaluateParticleVector(StartSize, Context);
+	Particle.BaseSize = Particle.Size;
 }
 
 bool UParticleModuleCollision::IsUpdateModule() const
@@ -289,8 +351,66 @@ FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
 
 FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
 {
-	(void)InEmitterInstance;
-	return nullptr;
+    // TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요
+
+	if (InEmitterInstance == nullptr ||
+		InEmitterInstance->ActiveParticles <= 0 ||
+		InEmitterInstance->ParticleData == nullptr ||
+		InEmitterInstance->ParticleIndices == nullptr ||
+		InEmitterInstance->ParticleStride <= 0 ||
+		InEmitterInstance->CurrentRuntimeCache == nullptr)
+	{
+		return nullptr;
+	}
+
+	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
+	const int32 ParticleStride = InEmitterInstance->ParticleStride;
+	const int32 ParticleDataBytes = ActiveParticleCount * ParticleStride;
+	const int32 ParticleIndexBytes = ActiveParticleCount * static_cast<int32>(sizeof(uint16));
+
+	FDynamicSpriteEmitterData* RenderData = new FDynamicSpriteEmitterData();
+	RenderData->OwnedParticleData.resize(static_cast<size_t>(ParticleDataBytes + ParticleHelper::ParticleAlignment));
+	RenderData->OwnedParticleIndices.resize(static_cast<size_t>(ActiveParticleCount));
+
+	uint8* SnapshotParticleData = GetAlignedSnapshotParticleData(*RenderData);
+	if (SnapshotParticleData == nullptr)
+	{
+		delete RenderData;
+		return nullptr;
+	}
+
+	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticleCount; ++ActiveIndex)
+	{
+		const int32 SourcePhysicalIndex = InEmitterInstance->ParticleIndices[ActiveIndex];
+		const uint8* SourceParticleData =
+			InEmitterInstance->ParticleData + static_cast<size_t>(SourcePhysicalIndex) * ParticleStride;
+		uint8* DestinationParticleData = SnapshotParticleData + static_cast<size_t>(ActiveIndex) * ParticleStride;
+
+		// renderer가 simulation memory를 직접 읽지 않아도 되도록 payload까지 포함한 particle stride 전체를 복사
+		std::memcpy(DestinationParticleData, SourceParticleData, static_cast<size_t>(ParticleStride));
+
+		const FBaseParticle& SourceParticle = *reinterpret_cast<const FBaseParticle*>(SourceParticleData);
+		FBaseParticle& SnapshotParticle = *reinterpret_cast<FBaseParticle*>(DestinationParticleData);
+		SnapshotParticle.Location = InEmitterInstance->GetParticleLocationForRender(SourceParticle);
+		RenderData->OwnedParticleIndices[ActiveIndex] = static_cast<uint16>(ActiveIndex);
+	}
+
+	UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
+	RenderData->ReplayData.ActiveParticleCount = ActiveParticleCount;
+	RenderData->ReplayData.ParticleStride = ParticleStride;
+	RenderData->ReplayData.SortMode = RequiredModule != nullptr
+		? RequiredModule->SortMode
+		: EParticleSortMode::ViewDepthBackToFront;
+	RenderData->ReplayData.MaterialInterface = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	RenderData->ReplayData.RequiredModule = RequiredModule;
+
+	RenderData->ReplayData.DataContainer.MemBlockSize = ParticleDataBytes + ParticleIndexBytes;
+	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = ParticleDataBytes;
+	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = ActiveParticleCount;
+	RenderData->ReplayData.DataContainer.ParticleData = SnapshotParticleData;
+	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
+
+	return RenderData;
 }
 
 int32 UParticleModuleTypeDataBase::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
