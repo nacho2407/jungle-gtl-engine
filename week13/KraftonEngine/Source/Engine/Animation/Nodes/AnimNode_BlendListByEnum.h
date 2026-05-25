@@ -36,6 +36,7 @@ public:
 	void Evaluate(FPoseContext& Output) override;
 	const FTransform& GetLastRootMotionDelta() const override { return LastRootMotionDelta; }
 	const char* GetDebugName() const override { return "BlendListByEnum"; }
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	// Inspection — debug widget.
 	int32 GetCurrentChildIndex()  const { return CurrentChildIndex; }

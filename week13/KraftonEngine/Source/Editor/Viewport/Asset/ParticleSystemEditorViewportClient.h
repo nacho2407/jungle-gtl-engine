@@ -4,6 +4,7 @@
 #include "Viewport/ViewportClient.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
 #include "Editor/Slate/SWindow.h"
+#include "Object/GarbageCollection.h"
 
 #include <d3d11.h>
 
@@ -12,11 +13,13 @@ class UParticleSystemComponent;
 class UWorld;
 class AActor;
 
-class FParticleSystemEditorViewportClient : public FViewportClient, public IEditorPreviewViewportClient
+class FParticleSystemEditorViewportClient : public FViewportClient, public IEditorPreviewViewportClient, public FGCObject
 {
 public:
     void Initialize(ID3D11Device* Device, uint32 Width, uint32 Height);
     void Release();
+
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 
     void ResetCameraToPreviewBounds();
 

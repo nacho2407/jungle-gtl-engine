@@ -22,6 +22,7 @@ public:
 	GENERATED_BODY()
 	UCameraModifier_CameraShake();
 	~UCameraModifier_CameraShake() override = default;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	bool ModifyCamera(float DeltaTime, FMinimalViewInfo& InOutPOV) override;
 

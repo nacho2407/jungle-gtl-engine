@@ -28,6 +28,8 @@ public:
 	int32 GetSelectedBoneIndex() const { return SelectedBoneIndex; }
 	void SetSelectedBoneIndex(int32 InBoneIndex) { SelectedBoneIndex = InBoneIndex; MarkRenderStateDirty(); }
 
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 	EBoneDebugDrawMode GetDrawMode() const { return DrawMode; }
 	void SetDrawMode(EBoneDebugDrawMode InDrawMode) { DrawMode = InDrawMode; MarkRenderStateDirty(); }
 

@@ -209,4 +209,6 @@ public:
 		EDepthStencilState InDepth = EDepthStencilState::Default,
 		ERasterizerState InRaster = ERasterizerState::SolidBackCull,
 		FShader* InShader = nullptr);
+
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 };

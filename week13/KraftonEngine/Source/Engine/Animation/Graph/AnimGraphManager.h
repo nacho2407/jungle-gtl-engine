@@ -2,6 +2,7 @@
 
 #include "Core/Types/CoreTypes.h"
 #include "Core/Singleton.h"
+#include "Object/GarbageCollection.h"
 #include "Asset/AssetRegistry.h"
 
 class UAnimGraphAsset;
@@ -9,6 +10,7 @@ class UAnimGraphAsset;
 // UAnimGraphAsset 의 디스크 IO + 캐시. FCameraShakeManager / FFloatCurveManager 와 동일 패턴.
 // 같은 NormalizedPath 로 두 번 Load 하면 동일 인스턴스 반환 (캐시 hit).
 class FAnimGraphManager : public TSingleton<FAnimGraphManager>
+, public FGCObject
 {
 	friend class TSingleton<FAnimGraphManager>;
 
@@ -24,6 +26,8 @@ public:
 	void RefreshAvailableGraphs();
 	const TArray<FAssetListItem>& GetAvailableGraphFiles() const { return AvailableGraphFiles; }
 
+
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
 	TMap<FString, UAnimGraphAsset*> LoadedGraphs;
 	TArray<FAssetListItem>          AvailableGraphFiles;

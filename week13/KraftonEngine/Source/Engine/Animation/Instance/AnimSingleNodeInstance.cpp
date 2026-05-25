@@ -6,6 +6,13 @@
 #include "Core/Logging/Log.h"
 
 #include <cmath>
+#include "Object/GarbageCollection.h"
+void UAnimSingleNodeInstance::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UAnimInstance::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(CurrentAsset);
+}
+
 void UAnimSingleNodeInstance::SetAnimationAsset(UAnimSequenceBase* InAsset)
 {
     if (UAnimSequence* Sequence = Cast<UAnimSequence>(InAsset))

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <filesystem>
+#include "Object/GarbageCollection.h"
 
 namespace
 {
@@ -82,6 +83,15 @@ namespace
     static FString GetDisplayNameFromPath(const std::filesystem::path& Path)
     {
         return FPaths::ToUtf8(Path.stem().generic_wstring());
+    }
+}
+
+
+void FSkeletonManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    for (auto& Pair : SkeletonCaches)
+    {
+        Collector.AddReferencedObject(Pair.second);
     }
 }
 

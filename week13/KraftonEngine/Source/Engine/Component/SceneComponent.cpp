@@ -1,6 +1,8 @@
 #include "SceneComponent.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include <GameFramework/World.h>
+
+#include "Object/GarbageCollection.h"
 #include "Serialization/Archive.h"
 
 HIDE_FROM_COMPONENT_LIST(USceneComponent)
@@ -88,28 +90,9 @@ USceneComponent::USceneComponent()
 
 USceneComponent::~USceneComponent()
 {
-	// 1. 부모로부터 자신을 제거 (댕글링 방지)
-	if (ParentComponent)
-	{
-		ParentComponent->RemoveChild(this);
-		ParentComponent = nullptr;
-	}
-
-	// 2. 자식들을 먼저 제거 (재귀적으로 subtree 파괴)
-	while (!ChildComponents.empty())
-	{
-		USceneComponent* Child = ChildComponents.back();
-		if (Child && Owner)
-		{
-			Owner->RemoveComponent(Child);
-		}
-		else
-		{
-			ChildComponents.pop_back();
-		}
-	}
+    ParentComponent = nullptr;
+    ChildComponents.clear();
 }
-
 
 void USceneComponent::SetParent(USceneComponent* NewParent)
 {
@@ -457,6 +440,47 @@ void USceneComponent::Rotate(float DeltaYaw, float DeltaPitch)
 	Rot.Roll = 0.0f;
 
 	SetRelativeRotationWithEulerHint(Rot.ToQuaternion(), Rot);
+}
+
+void USceneComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UActorComponent::AddReferencedObjects(Collector);
+
+    for (USceneComponent* Child : ChildComponents)
+    {
+        Collector.AddReferencedObject(Child);
+    }
+}
+
+void USceneComponent::BeginDestroy()
+{
+    if (HasAnyFlags(RF_BeginDestroy))
+    {
+        return;
+    }
+
+    UActorComponent::BeginDestroy();
+
+    if (ParentComponent)
+    {
+        ParentComponent->RemoveChild(this);
+        ParentComponent = nullptr;
+    }
+
+    TArray<USceneComponent*> Children = ChildComponents;
+    ChildComponents.clear();
+
+    for (USceneComponent* Child : Children)
+    {
+        if (!IsAliveObject(Child))
+        {
+            continue;
+        }
+
+        Child->ParentComponent = nullptr;
+        Child->MarkPendingKill();
+        Child->BeginDestroy();
+    }
 }
 
 FMatrix USceneComponent::GetRelativeMatrix() const

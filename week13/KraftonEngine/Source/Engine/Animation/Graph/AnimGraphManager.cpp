@@ -7,6 +7,16 @@
 
 #include <algorithm>
 #include <filesystem>
+#include "Object/GarbageCollection.h"
+
+
+void FAnimGraphManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (auto& Pair : LoadedGraphs)
+	{
+		Collector.AddReferencedObject(Pair.second);
+	}
+}
 
 UAnimGraphAsset* FAnimGraphManager::Load(const FString& Path)
 {

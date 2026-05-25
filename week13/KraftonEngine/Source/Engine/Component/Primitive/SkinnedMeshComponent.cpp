@@ -7,6 +7,7 @@
 #include "Core/Logging/Log.h"
 #include "Render/Types/ViewTypes.h"
 #include "Engine/Profiling/Stats/Stats.h"
+#include "Object/GarbageCollection.h"
 
 HIDE_FROM_COMPONENT_LIST(USkinnedMeshComponent)
 
@@ -908,6 +909,18 @@ void USkinnedMeshComponent::BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlob
 		const int32 ParentIndex = Asset->Bones[i].ParentIndex;
 		OutGlobals[i] = (ParentIndex >= 0) ? LocalMatrix * OutGlobals[ParentIndex] : LocalMatrix;
 	}
+}
+
+void USkinnedMeshComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UMeshComponent::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(SkeletalMesh);
+
+    for (UMaterial* Mat : OverrideMaterials)
+    {
+        Collector.AddReferencedObject(Mat);
+    }
 }
 
 // Cache 초기화는 resize까지만 담당하고, 실제 vertex 내용 갱신은 UpdateCPUSkinning에 모은다.

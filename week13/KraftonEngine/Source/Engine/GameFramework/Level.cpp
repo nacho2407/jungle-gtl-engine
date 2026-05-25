@@ -2,6 +2,8 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include <GameFramework/World.h>
 
+#include "Object/GarbageCollection.h"
+
 ULevel::ULevel(UWorld* OwingWorld)
 	: OwingWorld(OwingWorld)
 {
@@ -63,11 +65,48 @@ void ULevel::Clear()
 void ULevel::Tick(float DeltaTime) {
 	for (AActor* Actor : Actors)
 	{
-		if (Actor)
+        if (IsValid(Actor))
 		{
 			Actor->Tick(DeltaTime);
 		}
 	}
+}
+
+void ULevel::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+
+    for (AActor* Actor : Actors)
+    {
+        if (Actor)
+        {
+            Collector.AddReferencedObject(Actor);
+        }
+    }
+}
+
+void ULevel::BeginDestroy()
+{
+    if (HasAnyFlags(RF_BeginDestroy))
+    {
+        return;
+    }
+
+    UObject::BeginDestroy();
+
+    EndPlay();
+
+    for (AActor* Actor : Actors)
+    {
+        if (IsAliveObject(Actor))
+        {
+            Actor->MarkPendingKill();
+            Actor->BeginDestroy();
+        }
+    }
+
+    Actors.clear();
+    OwingWorld = nullptr;
 }
 
 void ULevel::BeginPlay()
@@ -87,7 +126,7 @@ void ULevel::EndPlay()
 {
 	for (AActor* Actor : Actors)
 	{
-		if (Actor)
+        if (IsValid(Actor))
 		{
 			Actor->EndPlay();
 		}
@@ -95,7 +134,7 @@ void ULevel::EndPlay()
 
 	for (AActor* Actor : Actors)
 	{
-		if (Actor)
+        if (IsAliveObject(Actor))
 		{
 			UObjectManager::Get().DestroyObject(Actor);
 		}

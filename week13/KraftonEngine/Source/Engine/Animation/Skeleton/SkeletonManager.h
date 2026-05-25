@@ -1,12 +1,14 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
+#include "Object/GarbageCollection.h"
 #include "Asset/AssetRegistry.h"
 #include "Animation/Skeleton/SkeletonTypes.h"
 
 class USkeleton;
 
 class FSkeletonManager
+: public FGCObject
 {
 public:
     static FSkeletonManager& Get();
@@ -41,6 +43,8 @@ public:
         bool                          bRequireExactBoneSet = true
         );
 
+
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
     FSkeletonManager() = default;
 

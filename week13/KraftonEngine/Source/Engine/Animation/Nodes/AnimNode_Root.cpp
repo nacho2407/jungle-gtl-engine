@@ -2,6 +2,7 @@
 
 #include "Animation/AnimInstance.h"
 #include "Animation/PoseContext.h"
+#include "Object/GarbageCollection.h"
 
 void FAnimNode_Root::Initialize(const FAnimationInitializeContext& Context)
 {
@@ -52,4 +53,12 @@ const FTransform& FAnimNode_Root::GetLastRootMotionDelta() const
 	// pass-through. 일반적으로 Root 위에 부모는 없지만 (이게 root), 안전 차원.
 	static const FTransform Identity;
 	return ChildPose ? ChildPose->GetLastRootMotionDelta() : Identity;
+}
+
+void FAnimNode_Root::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	if (ChildPose)
+	{
+		ChildPose->AddReferencedObjects(Collector);
+	}
 }

@@ -31,6 +31,8 @@ public:
     UPROPERTY(Edit, Save, Category="LOD", DisplayName="LOD Distances")
     TArray<float> LODDistances;
 
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 private:
     TArray<UParticleEmitter*> Emitters;
     FString                   SourcePath;

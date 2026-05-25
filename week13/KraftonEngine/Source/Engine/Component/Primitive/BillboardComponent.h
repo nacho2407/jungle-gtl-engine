@@ -30,6 +30,8 @@ public:
 	void SetMaterial(class UMaterial* InMaterial);
 	class UMaterial* GetMaterial() const { return Material; }
 
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 	// 주어진 카메라 방향으로 빌보드 월드 행렬을 계산 (per-view 렌더링용)
 	FMatrix ComputeBillboardMatrix(const FVector& CameraForward) const;
 

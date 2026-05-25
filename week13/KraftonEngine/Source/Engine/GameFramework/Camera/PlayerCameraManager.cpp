@@ -11,6 +11,19 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Object/Reflection/UClass.h"
 #include <algorithm>
+#include "Object/GarbageCollection.h"
+
+void APlayerCameraManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	AActor::AddReferencedObjects(Collector);
+
+	for (UCameraModifier* Modifier : ModifierList)
+	{
+		Collector.AddReferencedObject(Modifier);
+	}
+
+	Collector.AddReferencedObject(ShakeModifier);
+}
 
 void APlayerCameraManager::RegisterCamera(UCameraComponent* Camera)
 {

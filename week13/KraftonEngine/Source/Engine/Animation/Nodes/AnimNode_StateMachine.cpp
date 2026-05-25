@@ -5,6 +5,7 @@
 #include "Animation/AnimationRuntime.h"
 #include "Animation/PoseContext.h"
 #include "Math/Quat.h"
+#include "Object/GarbageCollection.h"
 
 void FAnimNode_StateMachine::RegisterState(UAnimState* State)
 {
@@ -258,5 +259,20 @@ void FAnimNode_StateMachine::BeginBlend(UAnimInstance* Owner, FName NewState, fl
 			if (BF.State) BF.State->OnExit(Owner);
 		}
 		BlendingFroms.clear();
+	}
+}
+
+void FAnimNode_StateMachine::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (UAnimState* State : States)
+	{
+		Collector.AddReferencedObject(State);
+	}
+
+	Collector.AddReferencedObject(CurrentState);
+
+	for (FBlendingFrom& Blend : BlendingFroms)
+	{
+		Collector.AddReferencedObject(Blend.State);
 	}
 }

@@ -42,6 +42,7 @@ public:
     bool          IsActive()       const { return State != EState::Inactive; }
     bool          IsBlendingOut()  const { return State == EState::BlendingOut; }
     UAnimMontage* GetCurrentMontage() const { return CurrentMontage; }
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
     FName         GetCurrentSectionName() const;
     float         GetSectionTime() const { return SectionTime; }
     float         GetBlendWeight() const;

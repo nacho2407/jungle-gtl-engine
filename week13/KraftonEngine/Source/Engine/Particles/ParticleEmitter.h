@@ -114,6 +114,7 @@ public:
 	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Pivot Offset")
 	FVector PivotOffset = FVector::ZeroVector;
 
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
 	void AddModuleOffsetToAllLODs(int32 ModuleIndex, uint32 Offset);
 	void AddModuleInstanceOffsetToAllLODs(int32 ModuleIndex, uint32 Offset);

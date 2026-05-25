@@ -29,6 +29,10 @@ public:
 	void BeginPlay();
 	void EndPlay();
 	void Tick(float DeltaTime);
+
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+    void BeginDestroy() override;
+    
 private:
 	FName LevelName;
 	TArray<AActor*> Actors;

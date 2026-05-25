@@ -7,6 +7,7 @@
 #include "GameFramework/AActor.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
+#include "Object/GarbageCollection.h"
 
 #include <cstring>
 
@@ -27,6 +28,13 @@ void UBillboardComponent::PostDuplicate()
 			SetMaterial(LoadedMat);
 		}
 	}
+}
+
+
+void UBillboardComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UPrimitiveComponent::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(Material);
 }
 
 void UBillboardComponent::SetMaterial(UMaterial* InMaterial)

@@ -1,8 +1,18 @@
-﻿#include "CameraShakeManager.h"
+#include "CameraShakeManager.h"
 #include "CameraShakeAsset.h"
 #include "Asset/AssetPackage.h"
 #include "Platform/Paths.h"
 #include "Serialization/WindowsArchive.h"
+#include "Object/GarbageCollection.h"
+
+
+void FCameraShakeManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (auto& Pair : LoadedShakes)
+	{
+		Collector.AddReferencedObject(Pair.second);
+	}
+}
 
 UCameraShakeAsset* FCameraShakeManager::Load(const FString& Path)
 {
@@ -36,7 +46,7 @@ UCameraShakeAsset* FCameraShakeManager::Load(const FString& Path)
 		}
 
 		NewAsset->SetSourcePath(NormalizedPath);
-		LoadedShakes.emplace(NormalizedPath, NewAsset);
+    		LoadedShakes.emplace(NormalizedPath, NewAsset);
 		return NewAsset;
 	}
 

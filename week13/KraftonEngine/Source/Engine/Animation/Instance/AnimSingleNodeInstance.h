@@ -37,6 +37,7 @@ public:
 	void  SetCurrentTime(float T)  { CurrentTime = T; }
 
 	// UAnimInstance:
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	void NativeUpdateAnimation(float DeltaSeconds) override;
 	void EvaluateAnimation(FPoseContext& Output) override;
 

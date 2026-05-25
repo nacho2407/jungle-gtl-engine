@@ -6,6 +6,7 @@
 #include "Object/Reflection/UClass.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include <algorithm>
+#include "Object/GarbageCollection.h"
 
 namespace
 {
@@ -29,6 +30,16 @@ namespace
 		default:
 			return Location;
 		}
+	}
+}
+
+void UCameraModifier_CameraShake::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UCameraModifier::AddReferencedObjects(Collector);
+
+	for (UCameraShakeBase* Shake : ActiveShakes)
+	{
+		Collector.AddReferencedObject(Shake);
 	}
 }
 

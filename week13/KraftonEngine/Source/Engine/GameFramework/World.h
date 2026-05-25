@@ -109,6 +109,9 @@ public:
 	void RemoveActorToOctree(AActor* actor);
 	void UpdateActorInOctree(AActor* actor);
 
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+    void BeginDestroy() override;
+
 private:
 	//TArray<AActor*> Actors;
 	ULevel* PersistentLevel;

@@ -23,6 +23,8 @@ public:
 
 	virtual void BeginPlay() override;
 	virtual void EndPlay() override;
+	void BeginDestroy() override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 
 	void PreGetEditableProperties() override;

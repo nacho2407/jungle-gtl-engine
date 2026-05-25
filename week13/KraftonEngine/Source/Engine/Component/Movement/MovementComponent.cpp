@@ -58,6 +58,13 @@ void UMovementComponent::PostEditProperty(const char* PropertyName)
 	}
 }
 
+
+void UMovementComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UActorComponent::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(UpdatedComponent);
+}
+
 void UMovementComponent::SetUpdatedComponent(USceneComponent* NewUpdatedComponent)
 {
 	UpdatedComponent = NewUpdatedComponent;

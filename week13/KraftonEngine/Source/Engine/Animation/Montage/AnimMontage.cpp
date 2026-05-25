@@ -4,6 +4,7 @@
 #include "Animation/AnimExtractContext.h"
 #include "Animation/AnimationManager.h"
 #include "Animation/PoseContext.h"
+#include "Object/GarbageCollection.h"
 
 FArchive& operator<<(FArchive& Ar, FCompositeSection& S)
 {
@@ -12,6 +13,12 @@ FArchive& operator<<(FArchive& Ar, FCompositeSection& S)
     Ar << S.LinkTime;
     Ar << S.NextSectionName;
     return Ar;
+}
+
+void UAnimMontage::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UAnimSequenceBase::AddReferencedObjects(Collector);
+    Collector.AddReferencedObject(SourceSequence);
 }
 
 void UAnimMontage::Serialize(FArchive& Ar)

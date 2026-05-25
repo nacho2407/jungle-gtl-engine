@@ -1030,7 +1030,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Particles\ParticleMemory.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleModule.generated.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleModule.h" />
-    <ClInclude Include="Source\Engine\Particles\ParticleModuleRequired.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h" />
     <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColor.h" />

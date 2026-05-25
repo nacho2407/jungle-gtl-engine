@@ -4,6 +4,7 @@
 #include "Color/ParticleModuleColor.h"
 #include "Lifetime/ParticleModuleLifetime.h"
 #include "Location/ParticleModuleLocation.h"
+#include "Object/GarbageCollection.h"
 #include "Particles/ParticleModule.h"
 #include "Serialization/Archive.h"
 #include "Particles/TypeData/ParticleModuleTypeDataBase.h"
@@ -19,6 +20,16 @@ UParticleLODLevel* UParticleEmitter::GetLODLevel(int32 LODIndex) const
 	}
 
 	return LODLevels[LODIndex];
+}
+
+void UParticleEmitter::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+
+    for (UParticleLODLevel* LODLevel : LODLevels)
+    {
+        Collector.AddReferencedObject(LODLevel);
+    }
 }
 
 void UParticleEmitter::AddModuleOffsetToAllLODs(int32 ModuleIndex, uint32 Offset)

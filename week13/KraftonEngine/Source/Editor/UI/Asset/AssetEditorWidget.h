@@ -1,5 +1,6 @@
-﻿#pragma once
+#pragma once
 #include "UI/EditorWidget.h"
+#include "Object/GarbageCollection.h"
 
 class UObject;
 class IEditorPreviewViewportClient;
@@ -16,6 +17,7 @@ public:
 	virtual void Tick(float DeltaTime) {}
 
 	virtual void CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const {}
+	virtual void AddReferencedObjects(FReferenceCollector& Collector) { Collector.AddReferencedObject(EditedObject); }
 
 	virtual bool AllowsMultipleInstances() const { return false; }
 	virtual bool IsEditingObject(UObject* Object) const { return IsOpen() && EditedObject == Object; }

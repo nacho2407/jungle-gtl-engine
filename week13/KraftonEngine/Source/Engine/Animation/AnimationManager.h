@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
+#include "Object/GarbageCollection.h"
 #include "Asset/AssetRegistry.h"
 #include "Animation/Skeleton/SkeletonTypes.h"
 
@@ -18,6 +19,7 @@ struct FAnimationImportRequest
 };
 
 class FAnimationManager
+: public FGCObject
 {
 public:
     static FAnimationManager& Get();
@@ -66,6 +68,8 @@ public:
     void RefreshAvailableMontages();
     const TArray<FAssetListItem>& GetAvailableMontageFiles() const { return AvailableMontageFiles; }
 
+
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
     FAnimationManager() = default;
 

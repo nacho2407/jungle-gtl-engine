@@ -7,6 +7,7 @@
 class UAnimNotify;
 class UAnimNotifyState;
 class UObject;
+class FReferenceCollector;
 
 // AnimSequence 타임라인의 한 지점에서 트리거되는 이벤트.
 // Duration > 0 + NotifyState != null 이면 [TriggerTime, TriggerTime+Duration) 구간 동안 활성
@@ -43,4 +44,5 @@ struct FAnimNotifyEvent
 	// 로드 시 ObjectFactory::Create 로 클래스 이름으로 인스턴스 생성, Outer 로 InOuter 설정.
 	// InOuter 는 보통 UAnimDataModel — Notify 객체의 라이프타임은 DataModel 과 함께.
 	void Serialize(FArchive& Ar, UObject* InOuter);
+	void AddReferencedObjects(FReferenceCollector& Collector) const;
 };

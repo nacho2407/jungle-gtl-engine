@@ -30,6 +30,7 @@ public:
 	UAnimGraphInstance() = default;
 	~UAnimGraphInstance() override = default;
 
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	void NativeInitializeAnimation()                override;
 	void NativeUpdateAnimation(float DeltaSeconds)  override;
 	void Serialize(FArchive& Ar)                    override;

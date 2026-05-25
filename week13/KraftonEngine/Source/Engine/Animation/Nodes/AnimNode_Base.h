@@ -2,6 +2,7 @@
 
 #include "AnimNodeContexts.h"
 #include "Math/Transform.h"
+#include "Object/GarbageCollection.h"
 
 struct FPoseContext;
 
@@ -63,6 +64,11 @@ public:
 	virtual float GetEffectiveBlendWeight() const { return 1.0f; }
 
 	virtual const char* GetDebugName() const { return "AnimNode"; }
+
+	virtual void AddReferencedObjects(FReferenceCollector& Collector)
+	{
+		(void)Collector;
+	}
 
 	// 트리의 entry (FAnimNode_Root) 만 true. AnimInstance::SetRootNode 가 dynamic_cast 대신
 	// 이 가상함수로 이미 Root 인지 판단 — RTTI 의존 제거.

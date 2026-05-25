@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <cstring>
 
+#include "Object/GarbageCollection.h"
+
 USkeletalMeshComponent::~USkeletalMeshComponent()
 {
     ClearAnimInstance();
@@ -440,4 +442,12 @@ bool USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
 
     SetAnimationPose(Out.Pose, Out.MorphWeights);
     return true;
+}
+
+void USkeletalMeshComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    USkinnedMeshComponent::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(AnimInstance);
+    Collector.AddReferencedObject(AnimationData.AnimToPlay.Get());
 }

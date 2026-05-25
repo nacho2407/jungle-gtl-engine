@@ -2,15 +2,16 @@
 #include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Object/Object.h"
 
 namespace
 {
 	bool ShouldDispatchActorTick(const AActor* Actor, ELevelTick TickType)
 	{
-		if (!Actor)
-		{
-			return false;
-		}
+        if (!IsValid(Actor))
+        {
+            return false;
+        }
 
 		switch (TickType)
 		{
@@ -94,7 +95,7 @@ void FTickManager::GatherTickFunctions(UWorld* World, ELevelTick TickType)
 
 		for (UActorComponent* Component : Actor->GetComponents())
 		{
-			if (!Component)
+            if (!IsValid(Component))
 			{
 				continue;
 			}
@@ -116,7 +117,7 @@ void FTickManager::QueueTickFunction(FTickFunction& TickFunction)
 
 void FActorTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType)
 {
-	if (Target)
+    if (IsValid(Target))
 	{
 		Target->TickActor(DeltaTime, TickType, *this);
 	}
@@ -129,7 +130,7 @@ const char* FActorTickFunction::GetDebugName() const
 
 void FActorComponentTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType)
 {
-	if (Target)
+    if (IsValid(Target))
 	{
 		Target->TickComponent(DeltaTime, TickType, *this);
 	}

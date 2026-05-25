@@ -2,6 +2,19 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Animation/Skeleton/Skeleton.h"
+#include "Object/GarbageCollection.h"
+
+void USkeletalMesh::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UObject::AddReferencedObjects(Collector);
+
+	Collector.AddReferencedObject(Skeleton);
+
+	for (FSkeletalMaterial& MaterialSlot : SkeletalMaterials)
+	{
+		Collector.AddReferencedObject(MaterialSlot.MaterialInterface);
+	}
+}
 
 void USkeletalMesh::Serialize(FArchive& Ar)
 {

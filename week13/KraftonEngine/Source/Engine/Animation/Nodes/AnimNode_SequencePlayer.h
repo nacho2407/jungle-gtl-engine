@@ -29,4 +29,5 @@ public:
 	const FTransform& GetLastRootMotionDelta() const override { return LastRootMotionDelta; }
 
 	const char* GetDebugName() const override { return "SequencePlayer"; }
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 };

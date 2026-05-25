@@ -52,6 +52,8 @@ public:
 
 	const FString& GetStaticMeshPath() const { return StaticMeshPath.ToString(); }
 
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 private:
 	void CacheLocalBounds();
 

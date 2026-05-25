@@ -6,6 +6,7 @@
 #include "GameFramework/Level.h"
 #include "Lua/LuaScriptManager.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/GarbageCollection.h"
 #include "Serialization/Archive.h"
 
 ULuaScriptComponent::ULuaScriptComponent()
@@ -14,6 +15,29 @@ ULuaScriptComponent::ULuaScriptComponent()
 
 ULuaScriptComponent::~ULuaScriptComponent()
 {
+}
+
+
+void ULuaScriptComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UActorComponent::AddReferencedObjects(Collector);
+
+	for (UPrimitiveComponent* Component : BoundOverlapComponents)
+	{
+		Collector.AddReferencedObject(Component);
+	}
+
+	for (UPrimitiveComponent* Component : BoundHitComponents)
+	{
+		Collector.AddReferencedObject(Component);
+	}
+}
+
+void ULuaScriptComponent::BeginDestroy()
+{
+	FLuaScriptManager::UnregisterComponent(this);
+	ClearCollisionBindings();
+	UActorComponent::BeginDestroy();
 }
 
 void ULuaScriptComponent::InitializeLua()

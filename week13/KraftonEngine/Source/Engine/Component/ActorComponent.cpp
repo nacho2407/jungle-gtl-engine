@@ -2,6 +2,7 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
+#include "Object/GarbageCollection.h"
 
 HIDE_FROM_COMPONENT_LIST(UActorComponent)
 
@@ -28,7 +29,27 @@ void UActorComponent::Deactivate()
 
 UWorld* UActorComponent::GetWorld() const
 {
-	return Owner ? Owner->GetWorld() : nullptr;
+    return IsAliveObject(Owner) ? Owner->GetWorld() : nullptr;
+}
+
+void UActorComponent::BeginDestroy()
+{
+    if (HasAnyFlags(RF_BeginDestroy))
+    {
+        return;
+    }
+
+    UObject::BeginDestroy();
+
+    PrimaryComponentTick.UnRegisterTickFunction();
+    DestroyRenderState();
+
+    Owner = nullptr;
+}
+
+void UActorComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
 }
 
 void UActorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)

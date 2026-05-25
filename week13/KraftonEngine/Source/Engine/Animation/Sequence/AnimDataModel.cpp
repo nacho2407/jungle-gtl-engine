@@ -1,4 +1,15 @@
 #include "AnimDataModel.h"
+#include "Object/GarbageCollection.h"
+
+void UAnimDataModel::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+
+    for (const FAnimNotifyEvent& Notify : Notifies)
+    {
+        Notify.AddReferencedObjects(Collector);
+    }
+}
 
 void UAnimDataModel::Serialize(FArchive& Ar)
 {

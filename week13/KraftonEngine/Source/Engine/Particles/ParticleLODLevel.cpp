@@ -15,6 +15,8 @@
 
 #include <algorithm>
 
+#include "Object/GarbageCollection.h"
+
 namespace
 {
 	// 모듈 한 슬롯을 (ClassName, [payload]) 형태로 직렬화한다. ClassName 으로 ObjectFactory
@@ -137,4 +139,33 @@ void UParticleLODLevel::Serialize(FArchive& Ar)
 	{
 		UpdateModuleLists();
 	}
+}
+
+void UParticleLODLevel::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(RequiredModule);
+    Collector.AddReferencedObject(SpawnModule);
+    Collector.AddReferencedObject(TypeDataModule);
+
+    for (UParticleModule* Module : Modules)
+    {
+        Collector.AddReferencedObject(Module);
+    }
+
+    for (UParticleModule* Module : SpawnModules)
+    {
+        Collector.AddReferencedObject(Module);
+    }
+
+    for (UParticleModule* Module : UpdateModules)
+    {
+        Collector.AddReferencedObject(Module);
+    }
+
+    for (UParticleModule* Module : OrbitModules)
+    {
+        Collector.AddReferencedObject(Module);
+    }
 }

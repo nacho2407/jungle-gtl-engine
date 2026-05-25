@@ -28,6 +28,13 @@ void UActionComponent::BeginPlay()
 	UActorComponent::BeginPlay();
 }
 
+
+void UActionComponent::BeginDestroy()
+{
+	StopAllActions();
+	UActorComponent::BeginDestroy();
+}
+
 void UActionComponent::EndPlay()
 {
 	StopAllActions();

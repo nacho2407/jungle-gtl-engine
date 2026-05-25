@@ -11,9 +11,48 @@
 #include "GameFramework/Pawn/Pawn.h"
 
 #include <algorithm>
+#include "Object/GarbageCollection.h"
 
 // Static 멤버 정의 — slot 이름 미지정 시 fallback. 가독성 위해 cpp 상단에 둠.
 const FName UAnimInstance::DefaultMontageSlot = FName("DefaultSlot");
+
+void UAnimInstance::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UObject::AddReferencedObjects(Collector);
+
+	Collector.AddReferencedObject(OwningComponent);
+
+	for (const FQueuedAnimNotify& QueuedNotify : NotifyQueue)
+	{
+		QueuedNotify.Event.AddReferencedObjects(Collector);
+		Collector.AddReferencedObject(const_cast<UAnimSequenceBase*>(QueuedNotify.Sequence));
+	}
+
+	for (const FQueuedAnimNotify& QueuedNotify : RecentNotifies)
+	{
+		QueuedNotify.Event.AddReferencedObjects(Collector);
+		Collector.AddReferencedObject(const_cast<UAnimSequenceBase*>(QueuedNotify.Sequence));
+	}
+
+	for (const FActiveAnimNotifyState& ActiveState : ActiveNotifyStates)
+	{
+		Collector.AddReferencedObject(ActiveState.State);
+		Collector.AddReferencedObject(const_cast<UAnimSequenceBase*>(ActiveState.Sequence));
+	}
+
+	for (FMontageSlotEntry& SlotEntry : MontageSlots)
+	{
+		Collector.AddReferencedObject(SlotEntry.Instance);
+	}
+
+	for (const std::unique_ptr<FAnimNode_Base>& Node : OwnedNodes)
+	{
+		if (Node)
+		{
+			Node->AddReferencedObjects(Collector);
+		}
+	}
+}
 
 void UAnimInstance::UpdateAnimation(float DeltaSeconds)
 {

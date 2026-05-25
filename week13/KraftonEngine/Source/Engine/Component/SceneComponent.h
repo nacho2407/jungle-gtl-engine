@@ -100,6 +100,9 @@ public:
 	UFUNCTION(Callable, Category="Scene|Transform")
 	void Rotate(float DeltaYaw, float DeltaPitch);
 
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+    void BeginDestroy() override;
+
 protected:
 	USceneComponent* ParentComponent = nullptr;
 	TArray<USceneComponent*> ChildComponents;

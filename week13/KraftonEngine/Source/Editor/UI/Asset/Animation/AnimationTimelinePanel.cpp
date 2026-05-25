@@ -11,6 +11,7 @@
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Object/Object.h"
+#include "Object/GarbageCollection.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Object/Reflection/UClass.h"
 #include "Core/Types/PropertyTypes.h"
@@ -42,6 +43,19 @@ namespace
 	// 마우스가 그래프 밖으로 나간 상태에서 값/스케일이 계속 확장되어 value가 폭주한다.
 	constexpr float MorphValueMin = -1.0f;
 	constexpr float MorphValueMax =  1.0f;
+
+	class FMorphCurveEditObjectRoot : public FGCObject
+	{
+	public:
+		void AddReferencedObjects(FReferenceCollector& Collector) override
+		{
+			Collector.AddReferencedObject(Object);
+		}
+
+		UMorphCurveEditObject* Object = nullptr;
+	};
+
+	FMorphCurveEditObjectRoot GMorphCurveEditObjectRoot;
 
 	constexpr ImU32 ColPanelBg   = IM_COL32(26, 26, 26, 255);
 	constexpr ImU32 ColHeaderBg  = IM_COL32(38, 38, 38, 255);
@@ -1639,9 +1653,9 @@ bool FAnimationTimelinePanel::RenderMorphDetails(
 		ImGui::TextUnformatted(SelectedKey ? "Reflected Morph Curve / Key Properties" : "Reflected Morph Curve Properties");
 		ImGui::Separator();
 
-		if (RenderObjectPropertiesInline(sMorphEditObject))
+		if (RenderObjectPropertiesInline(MorphEditObject))
 		{
-			sMorphEditObject->ApplyTo(Curve, SelectedKey);
+			MorphEditObject->ApplyTo(Curve, SelectedKey);
 			if (SelectedKey)
 			{
 				SelectedKey->Value = ClampMorphCurveValue(SelectedKey->Value);

@@ -39,6 +39,8 @@ public:
 	void SetMaterial(class UMaterial* InMaterial);
 	class UMaterial* GetMaterial() const { return Material; }
 
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 	const FConvexVolume GetDecalVolume() { return ConvexVolume; }
 	void UpdateDecalVolumeFromTransform();
 	void OnTransformDirty() override;

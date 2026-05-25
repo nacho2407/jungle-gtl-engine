@@ -136,6 +136,9 @@ public:
 	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
 	bool IsQueuedForPartitionUpdate() const { return bQueuedForPartitionUpdate; }
 	void SetQueuedForPartitionUpdate(bool bQueued) { bQueuedForPartitionUpdate = bQueued; }
+
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+    void BeginDestroy() override;
 	
 	FActorTickFunction PrimaryActorTick;
 protected:

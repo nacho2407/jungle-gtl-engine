@@ -23,6 +23,7 @@ public:
     ~UAnimSequence() override = default;
 
     void Serialize(FArchive& Ar) override;
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 
     void SetDataModel(UAnimDataModel* InModel);
 

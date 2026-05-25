@@ -6,6 +6,7 @@
 #include "Math/Quat.h"
 
 #include <algorithm>
+#include "Object/GarbageCollection.h"
 
 void FAnimNode_BlendListByEnum::Initialize(const FAnimationInitializeContext& Context)
 {
@@ -172,4 +173,15 @@ void FAnimNode_BlendListByEnum::Evaluate(FPoseContext& Output)
 	InputPoses[CurrentChildIndex]->Evaluate(CurPose);
 
 	FAnimationRuntime::BlendTwoPosesTogether(PrevPose, CurPose, BlendAlpha, Output);
+}
+
+void FAnimNode_BlendListByEnum::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (FAnimNode_Base* Pose : InputPoses)
+	{
+		if (Pose)
+		{
+			Pose->AddReferencedObjects(Collector);
+		}
+	}
 }

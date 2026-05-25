@@ -14,6 +14,12 @@ void FObjViewerViewportClient::Initialize(FWindowsWindow* InWindow)
 	Window = InWindow;
 }
 
+
+void FObjViewerViewportClient::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	Collector.AddReferencedObject(Camera);
+}
+
 void FObjViewerViewportClient::Release()
 {
 	DestroyCamera();

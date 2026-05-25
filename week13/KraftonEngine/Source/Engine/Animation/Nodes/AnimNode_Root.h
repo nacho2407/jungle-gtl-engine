@@ -29,4 +29,5 @@ public:
 	const FTransform& GetLastRootMotionDelta() const override;
 	const char*       GetDebugName()           const override { return "Root"; }
 	bool              IsRoot()                 const override { return true; }
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core/Singleton.h"
+#include "Object/GarbageCollection.h"
 #include "Core/Types/CoreTypes.h"
 #include "Render/Types/RenderTypes.h"
 #include "SimpleJSON/json.hpp"
@@ -31,6 +32,7 @@ struct FMaterialAssetListItem
 };
 
 class FMaterialManager : public TSingleton<FMaterialManager>
+, public FGCObject
 {
 	friend class TSingleton<FMaterialManager>;
 
@@ -55,6 +57,8 @@ public:
 	const TArray<FMaterialAssetListItem>& GetAvailableMaterialFiles() const { return AvailableMaterialFiles; }
 
 	void Release();
+
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
 	// 셰이더로 Template 생성 또는 캐시에서 반환
 	FMaterialTemplate* GetOrCreateTemplate(const FString& ShaderPath);

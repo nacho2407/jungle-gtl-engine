@@ -36,6 +36,7 @@ public:
 	// BlendPose 측 RM 도 weight 합성하려면 phase 3 정리 후보.
 	const FTransform& GetLastRootMotionDelta() const override { return BaseLastRM; }
 	const char* GetDebugName() const override { return "LayeredBlendPerBone"; }
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
 	FTransform BaseLastRM;

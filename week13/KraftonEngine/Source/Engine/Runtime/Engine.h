@@ -64,6 +64,8 @@ public:
 	void SetGameViewportClient(UGameViewportClient* InClient) { GameViewportClient = InClient; }
 	UGameViewportClient* GetGameViewportClient() const { return GameViewportClient; }
 
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 protected:
 	void Render(float DeltaTime);
 	void SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline);

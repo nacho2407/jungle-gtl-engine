@@ -12,6 +12,7 @@ public:
 	GENERATED_BODY()
 	USequenceCameraShake() = default;
 	~USequenceCameraShake() override = default;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	void StartShake(
 		APlayerCameraManager* Camera,

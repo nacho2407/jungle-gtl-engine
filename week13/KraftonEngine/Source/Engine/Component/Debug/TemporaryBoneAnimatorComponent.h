@@ -33,6 +33,8 @@ private:
 	void ResolveTargetMeshComponent();
 	void RefreshTargetBone();
 	int32 FindBoneIndexByName(const USkeletalMesh* SkeletalMesh) const;
+
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	void CaptureBasePose();
 	void ApplyAnimatedBonePose(float DeltaTime);
 

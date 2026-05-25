@@ -1,12 +1,14 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Core/Singleton.h"
+#include "Object/GarbageCollection.h"
 #include "Asset/AssetRegistry.h"
 
 class UParticleSystem;
 
 class FParticleSystemManager : public TSingleton<FParticleSystemManager>
+, public FGCObject
 {
     friend class TSingleton<FParticleSystemManager>;
 
@@ -23,6 +25,8 @@ public:
         return AvailableParticleSystemFiles;
     }
 
+
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
     TMap<FString, UParticleSystem*> LoadedParticleSystems;
     TArray<FAssetListItem>          AvailableParticleSystemFiles;

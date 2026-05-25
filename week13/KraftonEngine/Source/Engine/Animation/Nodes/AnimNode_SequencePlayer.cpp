@@ -8,6 +8,7 @@
 #include "Object/Object.h"   // Cast<>
 
 #include <cmath>
+#include "Object/GarbageCollection.h"
 
 void FAnimNode_SequencePlayer::OnBecomeRelevant(const FAnimationInitializeContext& /*Context*/)
 {
@@ -63,4 +64,9 @@ void FAnimNode_SequencePlayer::Evaluate(FPoseContext& Output)
 	Ctx.CurrentTime = LocalTime;
 	Ctx.bLooping    = bLooping;
 	Sequence->GetBonePose(Output, Ctx);
+}
+
+void FAnimNode_SequencePlayer::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	Collector.AddReferencedObject(Sequence);
 }

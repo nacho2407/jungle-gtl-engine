@@ -17,6 +17,20 @@ class FDuplicateArchiveContext;
 class UObject;
 inline bool IsValid(const UObject* Object);
 
+enum EObjectFlags : uint32
+{
+    RF_None          = 0,
+    RF_RootSet       = 1 << 0,
+    RF_PendingKill   = 1 << 1,
+    RF_Unreachable   = 1 << 2,
+    RF_Marked        = 1 << 3,
+    RF_BeginDestroy  = 1 << 4,
+    RF_FinishDestroy = 1 << 5,
+    RF_Garbage       = 1 << 6,
+};
+
+class FReferenceCollector;
+
 UCLASS()
 class UObject
 {
@@ -98,13 +112,45 @@ public:
 	static UClass StaticClassInstance;
 	static UClass* StaticClass() { return &StaticClassInstance; }
 
+    uint32 GetObjectFlags() const { return ObjectFlags; }
+
+    bool HasAnyFlags(uint32 Flags) const { return (ObjectFlags & Flags) != 0; }
+
+    bool HasAllFlags(uint32 Flags) const { return (ObjectFlags & Flags) == Flags; }
+
+    void SetFlags(uint32 Flags) { ObjectFlags |= Flags; }
+
+    void ClearFlags(uint32 Flags) { ObjectFlags &= ~Flags; }
+
+    bool IsRooted() const { return HasAnyFlags(RF_RootSet); }
+    bool IsPendingKill() const { return HasAnyFlags(RF_PendingKill); }
+    bool IsGarbage() const { return HasAnyFlags(RF_Garbage); }
+
+    void AddToRoot() { SetFlags(RF_RootSet); }
+    void RemoveFromRoot() { ClearFlags(RF_RootSet); }
+    void MarkPendingKill() { SetFlags(RF_PendingKill); }
+
+    virtual void AddReferencedObjects(FReferenceCollector& Collector);
+    virtual void BeginDestroy();
+    virtual bool IsReadyForFinishDestroy() const { return true; }
+    virtual void FinishDestroy();
+
+    uint32       GetSerialNumber() const { return SerialNumber; }
+    virtual bool ProcessEvent(
+        const FFunction* Function,
+        void*            ParametersStorage  = nullptr,
+        void*            ReturnValueStorage = nullptr
+        );
+
 protected:
 	FName ObjectName;
 
 private:
-	uint32 UUID;
-	uint32 InternalIndex;
-	UObject* Outer = nullptr;
+    uint32   UUID;
+    uint32   InternalIndex;
+    UObject* Outer        = nullptr;
+    uint32   ObjectFlags  = RF_None;
+    uint32   SerialNumber = 0;
 };
 
 extern TArray<UObject*> GUObjectArray;
@@ -114,14 +160,14 @@ extern TSet<UObject*> GUObjectSet;
 
 // 포인터가 현재 살아있는 UObject 를 가리키는지 확인. dangling/freed 포인터가 들어와도
 // 해시 테이블 조회만 하므로 deref 안 함 — 안전.
-inline bool IsValid(const UObject* Object)
-{
-	return Object && GUObjectSet.find(const_cast<UObject*>(Object)) != GUObjectSet.end();
-}
-
 inline bool IsAliveObject(const UObject* Object)
 {
-	return IsValid(Object);
+    return Object && GUObjectSet.find(const_cast<UObject*>(Object)) != GUObjectSet.end();
+}
+
+inline bool IsValid(const UObject* Object)
+{
+    return IsAliveObject(Object) && !Object->HasAnyFlags(RF_PendingKill | RF_Garbage);
 }
 
 class UObjectManager : public TSingleton<UObjectManager>
@@ -148,9 +194,39 @@ public:
 	// 측에서 IsValid 가드로 처리하므로 별도 deferred 큐 (PendingKill) 는 두지 않는다.
 	void DestroyObject(UObject* Obj)
 	{
-		if (!Obj) return;
-		delete Obj;
-	}
+        if (!IsAliveObject(Obj))
+        {
+            return;
+        }
+
+        if (Obj->HasAnyFlags(RF_PendingKill | RF_Garbage))
+        {
+            return;
+        }
+
+        Obj->MarkPendingKill();
+        Obj->BeginDestroy();
+    }
+
+    void DestroyObjectImmediate(UObject* Obj)
+    {
+        if (!IsAliveObject(Obj))
+        {
+            return;
+        }
+
+        if (!Obj->HasAnyFlags(RF_BeginDestroy))
+        {
+            Obj->BeginDestroy();
+        }
+
+        if (!Obj->HasAnyFlags(RF_FinishDestroy))
+        {
+            Obj->FinishDestroy();
+        }
+
+        delete Obj;
+    }
 
 private:
 	TMap<FString, uint32> NameCounters;
@@ -174,11 +250,11 @@ public:
 template<typename T>
 T* Cast(UObject* Obj)
 {
-	return (Obj && Obj->IsA<T>()) ? static_cast<T*>(Obj) : nullptr;
+    return (IsAliveObject(Obj) && Obj->IsA<T>()) ? static_cast<T*>(Obj) : nullptr;
 }
 
 template<typename T>
 const T* Cast(const UObject* Obj)
 {
-	return (Obj && Obj->IsA<T>()) ? static_cast<const T*>(Obj) : nullptr;
+    return (IsAliveObject(Obj) && Obj->IsA<T>()) ? static_cast<const T*>(Obj) : nullptr;
 }

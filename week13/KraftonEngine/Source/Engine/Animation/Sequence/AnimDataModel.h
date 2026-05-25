@@ -18,6 +18,7 @@ public:
     ~UAnimDataModel() override = default;
 
     void Serialize(FArchive& Ar) override;
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 
     float PlayLength = 0.0f;  // sec
     float FrameRate  = 30.0f; // fps

@@ -11,6 +11,13 @@
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Serialization/Archive.h"
+#include "Object/GarbageCollection.h"
+
+void UAnimGraphInstance::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UAnimInstance::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(GraphAsset);
+}
 
 namespace
 {

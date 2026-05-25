@@ -7,6 +7,7 @@
 #include "Collision/Ray/RayUtils.h"
 #include "Mesh/Static/StaticMeshAsset.h"
 #include "Engine/Runtime/Engine.h"
+#include "Object/GarbageCollection.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Texture/Texture2D.h"
 #include "Render/Proxy/StaticMeshSceneProxy.h"
@@ -50,6 +51,18 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 	CacheLocalBounds();
 	MarkRenderStateDirty();
 	MarkWorldBoundsDirty();
+}
+
+void UStaticMeshComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UMeshComponent::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(StaticMesh.Get());
+
+    for (UMaterial* Mat : OverrideMaterials)
+    {
+        Collector.AddReferencedObject(Mat);
+    }
 }
 
 void UStaticMeshComponent::CacheLocalBounds()

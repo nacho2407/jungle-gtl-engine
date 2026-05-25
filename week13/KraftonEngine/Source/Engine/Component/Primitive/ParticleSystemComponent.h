@@ -49,6 +49,7 @@ private:
     void BuildEmitterInstances();
     void BuildDynamicData();
     void ResolveEmitterMaterialsFromSlots();
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
     UPROPERTY(Edit, Save, Category="Particle", DisplayName="Template", AssetType="UParticleSystem")

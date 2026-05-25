@@ -7,6 +7,7 @@
 #include "Object/Reflection/UClass.h"
 #include "Core/Logging/Log.h"
 #include "Serialization/MemoryArchive.h"
+#include "Object/GarbageCollection.h"
 
 namespace
 {
@@ -110,4 +111,10 @@ void FAnimNotifyEvent::Serialize(FArchive& Ar, UObject* InOuter)
 
 	SerializeNotifyPointer<UAnimNotify>(Ar, Notify, InOuter);
 	SerializeNotifyPointer<UAnimNotifyState>(Ar, NotifyState, InOuter);
+}
+
+void FAnimNotifyEvent::AddReferencedObjects(FReferenceCollector& Collector) const
+{
+	Collector.AddReferencedObject(Notify);
+	Collector.AddReferencedObject(NotifyState);
 }

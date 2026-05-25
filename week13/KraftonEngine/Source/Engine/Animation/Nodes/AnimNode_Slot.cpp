@@ -4,6 +4,7 @@
 #include "Animation/Montage/AnimMontageInstance.h"
 #include "Animation/AnimationRuntime.h"
 #include "Animation/PoseContext.h"
+#include "Object/GarbageCollection.h"
 
 void FAnimNode_Slot::Initialize(const FAnimationInitializeContext& Context)
 {
@@ -93,5 +94,13 @@ void FAnimNode_Slot::Evaluate(FPoseContext& Output)
 	else
 	{
 		FAnimationRuntime::BlendTwoPosesTogether(Output, MontagePose, Weight, Output);
+	}
+}
+
+void FAnimNode_Slot::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	if (InputPose)
+	{
+		InputPose->AddReferencedObjects(Collector);
 	}
 }

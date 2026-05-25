@@ -17,6 +17,8 @@
 #include "Runtime/Engine.h"
 #include <algorithm>
 
+#include "Object/GarbageCollection.h"
+
 UWorld::~UWorld()
 {
 	if (PersistentLevel && !PersistentLevel->GetActors().empty())
@@ -71,19 +73,19 @@ UWorld* UWorld::DuplicateAs(EWorldType InWorldType) const
 
 void UWorld::DestroyActor(AActor* Actor)
 {
-	if (!Actor) return;
+    if (!IsValid(Actor))
+    {
+        return;
+    }
 
-	Actor->EndPlay();
-	PersistentLevel->RemoveActor(Actor);
+    Actor->EndPlay();
+    PersistentLevel->RemoveActor(Actor);
 
-	MarkWorldPrimitivePickingBVHDirty();
-	Partition.RemoveActor(Actor);
+    MarkWorldPrimitivePickingBVHDirty();
+    Partition.RemoveActor(Actor);
 
-	// 즉시 delete. octree / partition 측은 IsValid 가드로 stale 포인터 방어.
-	// PhysX onContact / TickManager 순회 도중에 self-destroy 하는 경로 (police HandleHit,
-	// meteor Tick) 는 호출자 측에서 stack 위쪽 코드가 더 이상 this 를 만지지 않도록
-	// 패턴화해뒀음 (bAlreadyCaught 가드, ElapsedTime=Lifetime 후 다음 Tick).
-	UObjectManager::Get().DestroyObject(Actor);
+    Actor->MarkPendingKill();
+    Actor->BeginDestroy();
 }
 
 AActor* UWorld::SpawnActorByClass(UClass* Class)
@@ -249,6 +251,44 @@ void UWorld::RemoveActorToOctree(AActor* Actor)
 void UWorld::UpdateActorInOctree(AActor* Actor)
 {
 	Partition.UpdateActor(Actor);
+}
+
+void UWorld::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(PersistentLevel);
+    Collector.AddReferencedObject(GameMode);
+}
+
+void UWorld::BeginDestroy()
+{
+    if (HasAnyFlags(RF_BeginDestroy))
+    {
+        return;
+    }
+
+    UObject::BeginDestroy();
+
+    EndPlay();
+
+    if (PhysicsScene)
+    {
+        PhysicsScene->Shutdown();
+        PhysicsScene.reset();
+    }
+
+    Partition.Reset(FBoundingBox());
+
+    if (PersistentLevel)
+    {
+        PersistentLevel->MarkPendingKill();
+        PersistentLevel->BeginDestroy();
+        PersistentLevel = nullptr;
+    }
+
+    GameMode = nullptr;
+    MarkWorldPrimitivePickingBVHDirty();
 }
 
 FLODUpdateContext UWorld::PrepareLODContext()

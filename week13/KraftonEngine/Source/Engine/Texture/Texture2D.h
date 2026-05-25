@@ -21,6 +21,8 @@ enum class ETextureColorSpace : uint8
 UCLASS()
 class UTexture2D : public UObject
 {
+	friend class FTexture2DCacheRoot;
+
 public:
 	GENERATED_BODY()
 	UTexture2D() = default;

@@ -97,6 +97,18 @@ bool FAssetEditorManager::IsMouseOverAnyEditorViewport() const
 	return false;
 }
 
+
+void FAssetEditorManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (const auto& Editor : OpenEditors)
+	{
+		if (Editor && Editor->IsOpen())
+		{
+			Editor->AddReferencedObjects(Collector);
+		}
+	}
+}
+
 void FAssetEditorManager::RemoveClosedEditors()
 {
 	OpenEditors.erase(std::remove_if(OpenEditors.begin(), OpenEditors.end(),

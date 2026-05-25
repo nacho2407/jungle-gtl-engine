@@ -78,7 +78,7 @@ void FLuaScriptManager::SetOnEscapePressed(sol::protected_function Callback)
 
 void FLuaScriptManager::RegisterComponent(ULuaScriptComponent* Component)
 {
-	if (!Component) return;
+    if (!IsAliveObject(Component)) return;
 
 	std::lock_guard<std::mutex> Lock(ComponentMutex);
 	auto It = std::find(RegisteredComponents.begin(), RegisteredComponents.end(), Component);
@@ -153,7 +153,7 @@ void FLuaScriptManager::UnregisterComponent(ULuaScriptComponent* Component)
 
 void FLuaScriptManager::RegisterAnimInstance(ULuaAnimInstance* Instance)
 {
-	if (!Instance) return;
+    if (!IsAliveObject(Instance)) return;
 	std::lock_guard<std::mutex> Lock(ComponentMutex);
 	auto It = std::find(RegisteredAnimInstances.begin(), RegisteredAnimInstances.end(), Instance);
 	if (It == RegisteredAnimInstances.end())
@@ -181,9 +181,17 @@ void FLuaScriptManager::OnScriptsChanged(const TSet<FString>& ChangedFiles)
 
 	{
 		std::lock_guard<std::mutex> Lock(ComponentMutex);
+        RegisteredComponents.erase(
+            std::remove_if(
+                RegisteredComponents.begin(),
+                RegisteredComponents.end(),
+                [](ULuaScriptComponent* Component) { return !IsValid(Component); }
+            ),
+            RegisteredComponents.end()
+        );
 		for (ULuaScriptComponent* Component : RegisteredComponents)
 		{
-			if (!Component) continue;
+            if (!IsValid(Component)) continue;
 
 			const FString& ScriptFile = Component->GetScriptFile();
 			if (ScriptFile.empty()) continue;
@@ -212,9 +220,17 @@ void FLuaScriptManager::OnScriptsChanged(const TSet<FString>& ChangedFiles)
 	TSet<ULuaAnimInstance*> AnimTargets;
 	{
 		std::lock_guard<std::mutex> Lock(ComponentMutex);
+        RegisteredAnimInstances.erase(
+            std::remove_if(
+                RegisteredAnimInstances.begin(),
+                RegisteredAnimInstances.end(),
+                [](ULuaAnimInstance* Instance) { return !IsValid(Instance); }
+            ),
+            RegisteredAnimInstances.end()
+        );
 		for (ULuaAnimInstance* Inst : RegisteredAnimInstances)
 		{
-			if (!Inst) continue;
+            if (!IsValid(Inst)) continue;
 			const FString& AnimScript = Inst->ScriptFile;
 			if (AnimScript.empty()) continue;
 			for (const FString& File : ChangedFiles)

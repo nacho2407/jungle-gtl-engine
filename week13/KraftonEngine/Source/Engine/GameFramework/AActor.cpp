@@ -11,6 +11,8 @@
 
 #include <algorithm>
 
+#include "Object/GarbageCollection.h"
+
 AActor::AActor()
 {
 	PrimaryActorTick.SetTarget(this);
@@ -22,16 +24,8 @@ AActor::~AActor()
 {
 	PrimaryActorTick.UnRegisterTickFunction();
 
-	// 계층 구조 파괴 시 OwnedComponents가 재귀적으로 수정되므로
-	// 리스트가 비워질 때까지 뒤에서부터 하나씩 제거
-	// (Iterator Invalidation 방지)
-	while (!OwnedComponents.empty())
-	{
-		UActorComponent* Comp = OwnedComponents.back();
-		// OwnedComponents.erase()는 RemoveComponent 내부에서 실행되므로 따로 해 줄 필요 없음
-		RemoveComponent(Comp);
-	}
-
+    OwnedComponents.clear();
+    PrimitiveCache.clear();
 	RootComponent = nullptr;
 }
 
@@ -74,8 +68,11 @@ void AActor::RegisterComponent(UActorComponent* Comp)
 
 void AActor::RemoveComponent(UActorComponent* Component)
 {
-	if (!Component) return;
-
+    if (!IsValid(Component))
+    {
+        return;
+    }
+    
 	USceneComponent* RemovedSceneComponent = Cast<USceneComponent>(Component);
 	if (RemovedSceneComponent)
 	{
@@ -188,7 +185,10 @@ void AActor::BeginPlay()
 	// UE 순서: 컴포넌트 BeginPlay 먼저, 그다음 Actor 본인 (오버라이드 측 Super 호출 시).
 	for (UActorComponent* Comp : OwnedComponents)
 	{
-		if (Comp) Comp->BeginPlay();
+        if (IsValid(Comp))
+        {
+            Comp->BeginPlay();
+        }
 	}
 }
 
@@ -210,7 +210,7 @@ void AActor::EndPlay()
 
 	for (UActorComponent* Comp : OwnedComponents)
 	{
-		if (Comp)
+        if (IsValid(Comp))
 		{
 			Comp->PrimaryComponentTick.UnRegisterTickFunction();
 			Comp->EndPlay();
@@ -516,7 +516,7 @@ const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
 		PrimitiveCache.clear();
 		for (UActorComponent* Comp : OwnedComponents)
 		{
-			if (Comp && Comp->IsA<UPrimitiveComponent>())
+            if (IsValid(Comp) && Comp->IsA<UPrimitiveComponent>())
 			{
 				PrimitiveCache.emplace_back(static_cast<UPrimitiveComponent*>(Comp));
 			}
@@ -524,4 +524,49 @@ const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
 		bPrimitiveCacheDirty = false;
 	}
 	return PrimitiveCache;
+}
+
+void AActor::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+
+    for (UActorComponent* Component : OwnedComponents)
+    {
+        Collector.AddReferencedObject(Component);
+    }
+
+    Collector.AddReferencedObject(RootComponent);
+}
+
+void AActor::BeginDestroy()
+{
+    if (HasAnyFlags(RF_BeginDestroy))
+    {
+        return;
+    }
+
+    UObject::BeginDestroy();
+
+    EndPlay();
+
+    PrimaryActorTick.UnRegisterTickFunction();
+
+    TArray<UActorComponent*> ComponentsToDestroy = OwnedComponents;
+
+    for (UActorComponent* Component : ComponentsToDestroy)
+    {
+        if (!IsAliveObject(Component))
+        {
+            continue;
+        }
+
+        Component->MarkPendingKill();
+        Component->BeginDestroy();
+    }
+
+    OwnedComponents.clear();
+    PrimitiveCache.clear();
+
+    RootComponent        = nullptr;
+    bPrimitiveCacheDirty = true;
 }

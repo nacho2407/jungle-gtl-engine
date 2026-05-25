@@ -94,6 +94,7 @@ protected:
 
     bool EvaluateAnimInstance(float DeltaTime);
 
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
     void LoadAnimationFromPath();
 

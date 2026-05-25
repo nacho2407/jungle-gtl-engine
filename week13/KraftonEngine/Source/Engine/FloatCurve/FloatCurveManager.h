@@ -1,10 +1,12 @@
 #pragma once
 #include "Core/Types/CoreTypes.h"
 #include "Core/Singleton.h"
+#include "Object/GarbageCollection.h"
 
 class UFloatCurveAsset;
 
 class FFloatCurveManager : public TSingleton<FFloatCurveManager>
+, public FGCObject
 {
 	friend class TSingleton<FFloatCurveManager>;
 
@@ -14,6 +16,8 @@ public:
 	
 	bool Save(UFloatCurveAsset* Asset);
 
+
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
 	TMap<FString, UFloatCurveAsset*> LoadedCurves;
 };

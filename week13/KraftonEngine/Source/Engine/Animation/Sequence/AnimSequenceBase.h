@@ -20,6 +20,7 @@ public:
     ~UAnimSequenceBase() override = default;
 
     void Serialize(FArchive& Ar) override;
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 
     // ── 시간/길이 ──
     virtual float GetPlayLength() const

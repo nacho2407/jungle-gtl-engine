@@ -1,8 +1,18 @@
-﻿#include "FloatCurveManager.h"
+#include "FloatCurveManager.h"
 #include "FloatCurveAsset.h"
 #include "Platform/Paths.h"
 #include "Asset/AssetPackage.h"
 #include "Serialization/WindowsArchive.h"
+#include "Object/GarbageCollection.h"
+
+
+void FFloatCurveManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (auto& Pair : LoadedCurves)
+	{
+		Collector.AddReferencedObject(Pair.second);
+	}
+}
 
 UFloatCurveAsset* FFloatCurveManager::Load(const FString& Path)
 {

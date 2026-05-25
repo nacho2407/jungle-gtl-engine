@@ -41,6 +41,7 @@ public:
 	float GetEffectiveBlendWeight() const override;
 
 	const char* GetDebugName() const override { return "Slot"; }
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
 	// Slot 이 Evaluate 시 AnimInstance->GetMontageInstanceForSlot 호출하기 위해 Initialize 에서 캐싱.

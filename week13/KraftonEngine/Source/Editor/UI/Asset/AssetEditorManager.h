@@ -2,6 +2,7 @@
 
 #include "Core/Types/CoreTypes.h"
 #include "Editor/UI/Asset/AssetEditorWidget.h"
+#include "Object/GarbageCollection.h"
 
 #include <functional>
 #include <memory>
@@ -9,7 +10,7 @@
 class UObject;
 class IEditorPreviewViewportClient;
 
-class FAssetEditorManager
+class FAssetEditorManager : public FGCObject
 {
 public:
 	~FAssetEditorManager();
@@ -32,6 +33,8 @@ public:
 	void CollectPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const;
 
 	bool IsMouseOverAnyEditorViewport() const;
+
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	void RemoveClosedEditors();
 

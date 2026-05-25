@@ -29,6 +29,7 @@ public:
 	~UStaticMesh() override;
 
 	void Serialize(FArchive& Ar);
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	void SetAssetPathFileName(const FString& InPathFileName) { AssetPathFileName = InPathFileName; }
 	const FString& GetAssetPathFileName() const { return AssetPathFileName; }

@@ -26,6 +26,17 @@ void FMeshEditorViewportClient::Initialize(ID3D11Device* Device, uint32 Width, u
 	bIsRenderable = true;
 }
 
+
+void FMeshEditorViewportClient::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	Collector.AddReferencedObject(SelectedMesh);
+	Collector.AddReferencedObject(Gizmo);
+	Collector.AddReferencedObject(PreviewMeshComponent);
+	Collector.AddReferencedObject(BoneDebugComponent);
+	Collector.AddReferencedObject(PreviewWorld);
+	Collector.AddReferencedObject(PreviewActor);
+}
+
 void FMeshEditorViewportClient::Release()
 {
 	if (Viewport)

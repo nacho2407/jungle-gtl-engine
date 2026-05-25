@@ -1,4 +1,5 @@
 #include "TemporaryBoneAnimatorComponent.h"
+#include "Object/GarbageCollection.h"
 
 #if JUNGLE_ENABLE_TEMP_BONE_ANIMATOR_COMPONENT
 
@@ -11,6 +12,14 @@
 
 #include <cmath>
 #include <cstring>
+
+
+void UTemporaryBoneAnimatorComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UActorComponent::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(TargetMeshComponent);
+	Collector.AddReferencedObject(CachedSkeletalMesh);
+}
 
 void UTemporaryBoneAnimatorComponent::PostEditProperty(const char* PropertyName)
 {

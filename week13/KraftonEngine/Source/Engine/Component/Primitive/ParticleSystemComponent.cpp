@@ -10,6 +10,7 @@
 
 #include <cstring>
 
+#include "Object/GarbageCollection.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 
 UParticleSystemComponent::UParticleSystemComponent()
@@ -293,6 +294,18 @@ void UParticleSystemComponent::ResolveEmitterMaterialsFromSlots()
         {
             EmitterMaterialSlots[Index] = "None";
         }
+    }
+}
+
+void UParticleSystemComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UPrimitiveComponent::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(Template.Get());
+
+    for (UMaterial* Material : EmitterMaterials)
+    {
+        Collector.AddReferencedObject(Material);
     }
 }
 

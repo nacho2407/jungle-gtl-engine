@@ -19,6 +19,8 @@
 #include "Lua/LuaScriptManager.h"
 #include "UI/UIManager.h"
 #include "Audio/AudioManager.h"
+#include  "Object/GarbageCollection.h"
+#include "Viewport/GameViewportClient.h"
 
 UEngine* GEngine = nullptr;
 
@@ -122,7 +124,19 @@ void UEngine::Tick(float DeltaTime)
 	InputSystem::Get().Tick();
 	FAudioManager::Get().Tick();
 	WorldTick(DeltaTime);
+    FGarbageCollector::Get().CollectGarbage();
 	Render(DeltaTime);
+}
+
+void UEngine::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+
+    for (FWorldContext& Ctx : WorldList)
+    {
+        Collector.AddReferencedObject(Ctx.World);
+    }
+    Collector.AddReferencedObject(GameViewportClient);
 }
 
 void UEngine::Render(float DeltaTime)

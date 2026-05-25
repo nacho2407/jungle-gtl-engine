@@ -69,6 +69,9 @@ public:
 	
 	FActorComponentTickFunction PrimaryComponentTick;
 
+    void BeginDestroy() override;
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 protected:
 	// Component의 Tick은 UE 기준 Actor가 아닌 별도 시스템에서 돌아가나, 현재 관리를 위해 friend AActor로 설정. 추후 시스템이 완성되면 별도 매니저에서 관리하도록 리팩토링할 예정.
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction);

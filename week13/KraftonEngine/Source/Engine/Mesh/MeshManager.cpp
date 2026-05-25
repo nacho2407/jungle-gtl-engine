@@ -10,6 +10,7 @@
 #include "Engine/Platform/Paths.h"
 #include "Materials/MaterialManager.h"
 #include "Asset/AssetPackage.h"
+#include "Object/GarbageCollection.h"
 
 #include <algorithm>
 #include <cwctype>
@@ -26,6 +27,28 @@
 
 TMap<FString, UStaticMesh*> FMeshManager::StaticMeshCache;
 TMap<FString, USkeletalMesh*> FMeshManager::SkeletalMeshCache;
+
+namespace
+{
+    class FMeshManagerCacheRoot final : public FGCObject
+    {
+    public:
+        void AddReferencedObjects(FReferenceCollector& Collector) override
+        {
+            for (auto& Pair : FMeshManager::StaticMeshCache)
+            {
+                Collector.AddReferencedObject(Pair.second);
+            }
+
+            for (auto& Pair : FMeshManager::SkeletalMeshCache)
+            {
+                Collector.AddReferencedObject(Pair.second);
+            }
+        }
+    };
+
+    FMeshManagerCacheRoot GMeshManagerCacheRoot;
+}
 TArray<FAssetListItem> FMeshManager::AvailableStaticMeshFiles;
 TArray<FAssetListItem> FMeshManager::AvailableStaticMeshSourceFiles;
 TArray<FAssetListItem> FMeshManager::AvailableSkeletalMeshFiles;
@@ -801,6 +824,7 @@ void FMeshManager::ReleaseAllGPU()
 			}
 		}
 	}
+    
 	StaticMeshCache.clear();
 
 	// Skeletal Mesh

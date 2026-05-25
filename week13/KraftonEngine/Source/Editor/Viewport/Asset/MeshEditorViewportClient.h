@@ -8,6 +8,7 @@
 #include "Core/Types/RayTypes.h"
 #include "Gizmo/BoneTransformGizmoTarget.h"
 #include "Component/Debug/BoneDebugComponent.h"
+#include "Object/GarbageCollection.h"
 
 #include <d3d11.h>
 
@@ -17,11 +18,13 @@ class UWorld;
 class AActor;
 class USkeletalMesh;
 
-class FMeshEditorViewportClient : public FViewportClient, public IEditorPreviewViewportClient
+class FMeshEditorViewportClient : public FViewportClient, public IEditorPreviewViewportClient, public FGCObject
 {
 public:
 	void Initialize(ID3D11Device* Device, uint32 Width, uint32 Height);
 	void Release();
+
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	void CreatePreviewGizmo();
 	void CreateBoneDebugComponent();

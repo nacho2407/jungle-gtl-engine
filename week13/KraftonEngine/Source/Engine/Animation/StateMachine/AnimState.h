@@ -28,6 +28,7 @@ public:
 	GENERATED_BODY()
 	UAnimState() = default;
 	~UAnimState() override = default;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	// 상태 식별자 (FSM 등록 시 키로 사용).
 	FName StateName = FName::None;

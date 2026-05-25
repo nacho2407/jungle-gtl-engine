@@ -8,6 +8,7 @@
 #include "Texture/Texture2D.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Materials/Material.h"
+#include "Object/GarbageCollection.h"
 
 void FMaterialManager::ScanMaterialAssets()
 {
@@ -408,6 +409,15 @@ FMaterialTemplate* FMaterialManager::GetOrCreateTemplate(const FString& ShaderPa
 	return NewTemplate;
 }
 
+
+void FMaterialManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (auto& Pair : MaterialCache)
+	{
+		Collector.AddReferencedObject(Pair.second);
+	}
+}
+
 FMaterialManager::~FMaterialManager()
 {
 	if (!Device)
@@ -435,7 +445,8 @@ void FMaterialManager::Release()
 	// 2. GPU 버퍼를 Device 해제 전에 명시 해제, UObject 수명은 UObjectManager가 관리
 	for (auto& [Key, Mat] : MaterialCache)
 	{
-		if (Mat) Mat->ReleaseGPUBuffers();
+        if (!Mat) continue;
+        Mat->ReleaseGPUBuffers();
 	}
 	MaterialCache.clear();
 

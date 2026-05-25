@@ -14,6 +14,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include "Object/GarbageCollection.h"
 
 namespace
 {
@@ -72,6 +73,20 @@ namespace
         }
 
         return Result;
+    }
+}
+
+
+void FAnimationManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    for (auto& Pair : AnimationCaches)
+    {
+        Collector.AddReferencedObject(Pair.second);
+    }
+
+    for (auto& Pair : MontageCaches)
+    {
+        Collector.AddReferencedObject(Pair.second);
     }
 }
 

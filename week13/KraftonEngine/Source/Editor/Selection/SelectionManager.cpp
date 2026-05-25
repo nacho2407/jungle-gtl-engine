@@ -6,6 +6,14 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Render/Scene/FScene.h"
+#include "Object/GarbageCollection.h"
+
+void FSelectionManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	// Selection targets/world are weak references. The editor-owned gizmo is the only UObject
+	// whose lifetime is owned by the selection manager.
+	Collector.AddReferencedObject(Gizmo);
+}
 
 void FSelectionManager::Init()
 {

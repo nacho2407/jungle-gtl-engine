@@ -38,6 +38,8 @@ public:
 	bool ResolveUpdatedComponent();
 	void ClearUpdatedComponentIfMatches(const USceneComponent* RemovedComponent);
 
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 protected:
 	void TryAutoRegisterUpdatedComponent();
 

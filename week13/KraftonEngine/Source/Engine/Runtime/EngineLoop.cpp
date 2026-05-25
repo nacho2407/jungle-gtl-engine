@@ -1,4 +1,6 @@
 ﻿#include "Engine/Runtime/EngineLoop.h"
+
+#include "Object/GarbageCollection.h"
 #include "Profiling/StartupProfiler.h"
 
 FEngineLoop::FEngineLoop(FCreateEngineFn InEngineFactory)
@@ -10,6 +12,10 @@ void FEngineLoop::CreateEngine()
 {
 	// 팩토리 미주입 시 베이스 UEngine 으로 fallback — 구체 변종 선택은 호출 측 책임.
 	GEngine = EngineFactory ? EngineFactory() : UObjectManager::Get().CreateObject<UEngine>();
+    if (GEngine)
+    {
+        GEngine->AddToRoot();
+    }
 }
 
 bool FEngineLoop::Init(HINSTANCE hInstance, int nShowCmd)
@@ -79,7 +85,9 @@ void FEngineLoop::Shutdown()
 	if (GEngine)
 	{
 		GEngine->Shutdown();
+        GEngine->RemoveFromRoot();
 		UObjectManager::Get().DestroyObject(GEngine);
+        FGarbageCollector::Get().CollectGarbage();
 		GEngine = nullptr;
 	}
 }

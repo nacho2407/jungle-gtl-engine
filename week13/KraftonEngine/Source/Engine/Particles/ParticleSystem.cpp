@@ -1,6 +1,7 @@
 ﻿#include "ParticleSystem.h"
 
 #include "ParticleEmitter.h"
+#include "Object/GarbageCollection.h"
 #include "Serialization/Archive.h"
 
 void UParticleSystem::Serialize(FArchive& Ar)
@@ -44,5 +45,15 @@ void UParticleSystem::Serialize(FArchive& Ar)
             Emitter->Serialize(Ar);
             Emitters.push_back(Emitter);
         }
+    }
+}
+
+void UParticleSystem::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+
+    for (UParticleEmitter* Emitter : Emitters)
+    {
+        Collector.AddReferencedObject(Emitter);
     }
 }

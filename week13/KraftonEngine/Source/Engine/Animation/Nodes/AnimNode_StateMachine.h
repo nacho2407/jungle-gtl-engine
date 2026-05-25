@@ -51,6 +51,7 @@ public:
 	void Evaluate(FPoseContext& Output) override;
 	const FTransform& GetLastRootMotionDelta() const override { return LastRootMotionDelta; }
 	const char* GetDebugName() const override { return "StateMachine"; }
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	// Inspection.
 	FName       GetCurrentStateName() const { return CurrentStateName; }

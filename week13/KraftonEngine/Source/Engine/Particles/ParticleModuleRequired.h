@@ -107,5 +107,7 @@ public:
 
 	UPROPERTY(Edit, Save, Category = "Emitter", DisplayName = "Delay First Loop Only")
 	bool bDelayFirstLoopOnly = false;
+
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 };
 

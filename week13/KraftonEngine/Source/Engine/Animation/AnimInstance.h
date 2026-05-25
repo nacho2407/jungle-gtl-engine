@@ -68,6 +68,8 @@ public:
 	~UAnimInstance() override = default;
 
 	// ── 후크 ──
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 	virtual void NativeInitializeAnimation() {}
 	virtual void NativeUpdateAnimation(float DeltaSeconds) { (void)DeltaSeconds; }
 	virtual void EvaluateAnimation(FPoseContext& Output) { (void)Output; }

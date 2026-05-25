@@ -43,4 +43,6 @@ public:
 	int32 CalculateMaxActiveParticleCount() const;
 
 	void Serialize(FArchive& Ar) override;
+
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 };

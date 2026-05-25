@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <queue>
+#include "Object/GarbageCollection.h"
 
 void FAnimNode_LayeredBlendPerBone::Initialize(const FAnimationInitializeContext& Context)
 {
@@ -126,4 +127,17 @@ TArray<bool> BuildBoneMaskFromRoot(USkeletalMesh* Mesh, const FString& RootBoneN
 	}
 
 	return Mask;
+}
+
+void FAnimNode_LayeredBlendPerBone::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	if (BasePose)
+	{
+		BasePose->AddReferencedObjects(Collector);
+	}
+
+	if (BlendPose)
+	{
+		BlendPose->AddReferencedObjects(Collector);
+	}
 }

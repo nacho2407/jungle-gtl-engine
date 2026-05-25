@@ -1,4 +1,4 @@
-﻿#include "ParticleSystemManager.h"
+#include "ParticleSystemManager.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -8,6 +8,16 @@
 #include "Platform/Paths.h"
 #include "Serialization/WindowsArchive.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/GarbageCollection.h"
+
+
+void FParticleSystemManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    for (auto& Pair : LoadedParticleSystems)
+    {
+        Collector.AddReferencedObject(Pair.second);
+    }
+}
 
 UParticleSystem* FParticleSystemManager::Load(const FString& Path)
 {

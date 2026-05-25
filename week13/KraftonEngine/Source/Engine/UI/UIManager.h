@@ -3,6 +3,7 @@
 #include "Core/Types/CoreTypes.h"
 #include "Core/Singleton.h"
 #include "Render/Types/RenderTypes.h"
+#include "Object/GarbageCollection.h"
 
 #ifdef GetNextSibling
 #undef GetNextSibling
@@ -81,7 +82,7 @@ private:
 	const FPassContext* Ctx = nullptr;
 };
 
-class UUIManager : public TSingleton<UUIManager>
+class UUIManager : public TSingleton<UUIManager>, public FGCObject
 {
 	friend class TSingleton<UUIManager>;
 
@@ -104,6 +105,8 @@ public:
 	// viewport 에 올라온 widget 중 하나라도 WantsMouse() == true 면 시스템 커서를 보이고
 	// raw mouse / clip 을 풀어야 한다 — GameViewportClient::ProcessInput 이 폴링해서 사용.
 	bool AnyViewportWidgetWantsMouse() const;
+
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
 	UUIManager() = default;

@@ -16,6 +16,7 @@ public:
 
 	void BeginPlay() override;
 	void EndPlay() override;
+	void BeginDestroy() override;
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
 	void HitStop(float Duration, float TimeDilation);

@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include "Object/GarbageCollection.h"
 namespace
 {
     static float NormalizeTime(float Time, float Length, bool bLooping)
@@ -472,6 +473,12 @@ namespace
 
         Output.Pose[RootBoneIndex] = FAnimationRuntime::DecomposeMatrix(DesiredLocal);
     }
+}
+
+void UAnimSequence::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UAnimSequenceBase::AddReferencedObjects(Collector);
+    Collector.AddReferencedObject(DataModel);
 }
 
 void UAnimSequence::Serialize(FArchive& Ar)

@@ -22,6 +22,9 @@ public:
 	const FName& GetParticleName() const { return ParticleName; }
 	UMaterial* GetSubUVMaterial() const { return SubUVMaterial; }
 
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
+	void BeginDestroy() override;
+
 	// --- SubUV Frame ---
 	void SetFrameIndex(uint32 InIndex) { FrameIndex = static_cast<int32>(InIndex); }
 	uint32 GetFrameIndex() const { return static_cast<uint32>(FrameIndex); }

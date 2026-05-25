@@ -107,6 +107,8 @@ protected:
 	void BuildBoneEditGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 	void BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
 
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 protected:
 	// Mesh/material state는 SetSkeletalMesh와 PostEditProperty가 같은 경로를 쓰도록 여기서 소유한다.
 	TObjectPtr<USkeletalMesh> SkeletalMesh;

@@ -23,6 +23,7 @@ public:
 	GENERATED_BODY()
 	APlayerCameraManager() = default;
 	~APlayerCameraManager() override = default;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	// ─── Camera 등록 / Active / Possess ────────────────────────────
 	void RegisterCamera(UCameraComponent* Camera);

@@ -1,4 +1,5 @@
 #include "Mesh/Static/StaticMesh.h"
+#include "Object/GarbageCollection.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Mesh/MeshManager.h"
 #include "Serialization/WindowsArchive.h"
@@ -16,6 +17,16 @@ UStaticMesh::~UStaticMesh()
 			static_cast<uint32>(StaticMeshAsset->Indices.size() * sizeof(uint32));
 
 		MemoryStats::SubStaticMeshCPUMemory(CPUSize);
+	}
+}
+
+void UStaticMesh::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UObject::AddReferencedObjects(Collector);
+
+	for (FStaticMaterial& MaterialSlot : StaticMaterials)
+	{
+		Collector.AddReferencedObject(MaterialSlot.MaterialInterface);
 	}
 }
 

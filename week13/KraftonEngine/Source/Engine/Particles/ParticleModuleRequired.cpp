@@ -6,6 +6,8 @@
 
 #include <cstring>
 
+#include "Object/GarbageCollection.h"
+
 void UParticleModuleRequired::SetMaterial(UMaterial* InMaterial)
 {
 	Material = InMaterial;
@@ -98,4 +100,11 @@ void UParticleModuleRequired::Serialize(FArchive& Ar)
 	{
 		ResolveMaterialFromSlot();
 	}
+}
+
+void UParticleModuleRequired::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UParticleModule::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(Material);
 }

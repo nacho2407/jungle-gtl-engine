@@ -5,6 +5,7 @@
 #include "GameFramework/Camera/PlayerCameraManager.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
+#include "Object/GarbageCollection.h"
 
 namespace
 {
@@ -12,6 +13,18 @@ namespace
 	{
 		return Path.empty() ? nullptr : FFloatCurveManager::Get().Load(Path);
 	}
+}
+
+void USequenceCameraShake::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UCameraShakeBase::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(LocXCurve);
+	Collector.AddReferencedObject(LocYCurve);
+	Collector.AddReferencedObject(LocZCurve);
+	Collector.AddReferencedObject(PitchCurve);
+	Collector.AddReferencedObject(YawCurve);
+	Collector.AddReferencedObject(RollCurve);
+	Collector.AddReferencedObject(FOVCurve);
 }
 
 void USequenceCameraShake::StartShake(

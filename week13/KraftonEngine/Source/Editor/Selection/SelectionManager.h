@@ -1,13 +1,14 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
+#include "Object/GarbageCollection.h"
 
 class AActor;
 class USceneComponent;
 class UGizmoComponent;
 class UWorld;
 
-class FSelectionManager
+class FSelectionManager : public FGCObject
 {
 public:
 	void Init();
@@ -41,6 +42,7 @@ public:
 
 	void SetGizmoEnabled(bool bEnabled);
 	void SetWorld(UWorld* InWorld);
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
 	void SyncGizmo();

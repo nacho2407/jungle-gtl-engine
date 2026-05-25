@@ -3,6 +3,7 @@
 #include "Render/Shader/Shader.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Runtime/Engine.h"
+#include "Object/GarbageCollection.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Render/Types/MaterialTextureSlot.h"
 
@@ -357,4 +358,17 @@ UMaterial* UMaterial::CreateTransient(ERenderPass InPass, EBlendState InBlend,
 	Mat->Create(FString("__transient__"), nullptr, InPass, InBlend, InDepth, InRaster, std::move(EmptyBuffers));
 	Mat->TransientShader = InShader;
 	return Mat;
+}
+
+void UMaterial::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+
+    for (auto& Pair : TextureParameters)
+    {
+        if (Pair.second)
+        {
+            Collector.AddReferencedObject(Pair.second);
+        }
+    }
 }

@@ -11,6 +11,7 @@
 #include "Render/Proxy/SubUVSceneProxy.h"
 #include "Serialization/Archive.h"
 #include "Materials/Material.h"
+#include "Object/GarbageCollection.h"
 
 FPrimitiveSceneProxy* USubUVComponent::CreateSceneProxy()
 {
@@ -36,6 +37,24 @@ USubUVComponent::~USubUVComponent()
 		UObjectManager::Get().DestroyObject(SubUVMaterial);
 		SubUVMaterial = nullptr;
 	}
+}
+
+
+void USubUVComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UBillboardComponent::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(SubUVMaterial);
+}
+
+void USubUVComponent::BeginDestroy()
+{
+	if (SubUVMaterial)
+	{
+		UObjectManager::Get().DestroyObject(SubUVMaterial);
+		SubUVMaterial = nullptr;
+	}
+
+	UBillboardComponent::BeginDestroy();
 }
 
 void USubUVComponent::SetParticle(const FName& InParticleName)

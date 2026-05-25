@@ -1,5 +1,6 @@
 #include "Texture/Texture2D.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/GarbageCollection.h"
 #include "Core/Logging/Log.h"
 #include "Platform/Paths.h"
 #include "WICTextureLoader.h"
@@ -13,6 +14,23 @@
 #include <vector>
 
 std::map<FString, UTexture2D*> UTexture2D::TextureCache;
+
+class FTexture2DCacheRoot final : public FGCObject
+{
+public:
+    void AddReferencedObjects(FReferenceCollector& Collector) override
+    {
+        for (auto& Pair : UTexture2D::TextureCache)
+        {
+            Collector.AddReferencedObject(Pair.second);
+        }
+    }
+};
+
+namespace
+{
+    FTexture2DCacheRoot GTexture2DCacheRoot;
+}
 
 FString UTexture2D::MakeCacheKey(const FString& FilePath, ETextureColorSpace ColorSpace)
 {
@@ -45,6 +63,8 @@ void UTexture2D::ReleaseAllGPU()
 {
 	for (auto& [Path, Texture] : TextureCache)
 	{
+        if (!Texture) continue;
+	    
 		if (Texture && Texture->SRV)
 		{
 			if (Texture->TrackedTextureMemory > 0)
@@ -55,6 +75,7 @@ void UTexture2D::ReleaseAllGPU()
 			Texture->SRV->Release();
 			Texture->SRV = nullptr;
 		}
+
 	}
 	TextureCache.clear();
 }

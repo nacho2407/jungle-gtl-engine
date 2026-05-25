@@ -18,6 +18,7 @@ public:
 	~USkeletalMesh() override = default;
 
     void Serialize(FArchive& Ar) override;
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
 
     const FString& GetAssetPathFileName() const
     {
