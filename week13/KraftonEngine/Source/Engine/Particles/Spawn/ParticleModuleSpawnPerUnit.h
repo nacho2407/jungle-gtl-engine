@@ -11,6 +11,7 @@ public:
 	GENERATED_BODY()
 
 	float UnitScalar = 1.0f;
+	float MovementTolerance = 0.1f;
 	float SpawnPerUnit = 0.0f;
 	float MaxFrameDistance = 0.0f;
 	uint32 bIgnoreSpawnRateWhenMoving : 1;

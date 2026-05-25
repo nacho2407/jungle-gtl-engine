@@ -10,6 +10,7 @@ UParticleModuleSpawnPerUnit::UParticleModuleSpawnPerUnit()
 {
 	bSpawnModule = false;
 	bUpdateModule = false;
+	MovementTolerance = 0.1f;
 }
 
 bool UParticleModuleSpawnPerUnit::GetSpawnAmount(const FSpawnContext& Context, int32 Offset, float OldLeftover, float DeltaTime, int32& OutNumber, float& OutRate)
@@ -27,7 +28,7 @@ bool UParticleModuleSpawnPerUnit::GetSpawnAmount(const FSpawnContext& Context, i
 void UParticleModuleSpawnPerUnit::Serialize(FArchive& Ar)
 {
 	UParticleModuleSpawnBase::Serialize(Ar);
-	Ar << UnitScalar << SpawnPerUnit << MaxFrameDistance;
+	Ar << UnitScalar << MovementTolerance << SpawnPerUnit << MaxFrameDistance;
 	bool IgnoreSpawnRateWhenMoving = bIgnoreSpawnRateWhenMoving;
 	bool IgnoreMovementAlongX = bIgnoreMovementAlongX;
 	bool IgnoreMovementAlongY = bIgnoreMovementAlongY;
