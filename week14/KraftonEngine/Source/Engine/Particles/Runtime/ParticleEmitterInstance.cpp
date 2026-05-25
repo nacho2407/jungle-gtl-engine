@@ -69,12 +69,19 @@ void FParticleEmitterInstance::SetLODLevelIndex(int32 LODLevelIndex)
 
 	int32 NewLODLevelIndex = (std::max)(0, (std::min)(LODLevelIndex, LODCount - 1));
 	UParticleLODLevel* NewLODLevel = SpriteTemplate->GetLODLevel(NewLODLevelIndex);
+	if (NewLODLevel && !NewLODLevel->IsEnabled())
+	{
+		CurrentLODLevelIndex = NewLODLevelIndex;
+		CurrentLODLevel = NewLODLevel;
+		return;
+	}
+
 	if (!CanUseLODLevel(NewLODLevel))
 	{
 		for (int32 CandidateIndex = NewLODLevelIndex - 1; CandidateIndex >= 0; --CandidateIndex)
 		{
 			UParticleLODLevel* CandidateLODLevel = SpriteTemplate->GetLODLevel(CandidateIndex);
-			if (CanUseLODLevel(CandidateLODLevel))
+			if (CandidateLODLevel && CandidateLODLevel->IsEnabled() && CanUseLODLevel(CandidateLODLevel))
 			{
 				NewLODLevelIndex = CandidateIndex;
 				NewLODLevel = CandidateLODLevel;
@@ -334,7 +341,7 @@ UParticleModuleSpawn* FParticleEmitterInstance::GetSpawnModule() const
 
 bool FParticleEmitterInstance::CanUseLODLevel(const UParticleLODLevel* LODLevel) const
 {
-	if (!LODLevel || !LODLevel->IsEnabled())
+	if (!LODLevel)
 	{
 		return false;
 	}

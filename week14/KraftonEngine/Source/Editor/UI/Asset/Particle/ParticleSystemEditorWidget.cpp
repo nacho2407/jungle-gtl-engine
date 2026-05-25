@@ -987,7 +987,7 @@ void FParticleSystemEditorWidget::SelectParticleSystem()
 
 void FParticleSystemEditorWidget::SelectEmitter(int32 EmitterIndex)
 {
-	const int32 CurrentLODIndex = (std::max)(0, ViewState.Selection.LODIndex);
+	const int32 CurrentLODIndex = GetCurrentSystemLODIndex(GetParticleSystem());
 	ViewState.Selection.Kind = ESelectionKind::Emitter;
 	ViewState.Selection.EmitterIndex = EmitterIndex;
 	ViewState.Selection.LODIndex = CurrentLODIndex;
@@ -998,7 +998,7 @@ void FParticleSystemEditorWidget::SelectLOD(int32 EmitterIndex, int32 LODIndex)
 {
 	ViewState.Selection.Kind = ESelectionKind::LOD;
 	ViewState.Selection.EmitterIndex = EmitterIndex;
-	ViewState.Selection.LODIndex = LODIndex;
+	ViewState.Selection.LODIndex = ClampSystemLODIndex(GetParticleSystem(), LODIndex);
 	ViewState.Selection.ModuleIndex = NoModuleIndex;
 }
 
@@ -1006,7 +1006,7 @@ void FParticleSystemEditorWidget::SelectModule(int32 EmitterIndex, int32 LODInde
 {
 	ViewState.Selection.Kind = ESelectionKind::Module;
 	ViewState.Selection.EmitterIndex = EmitterIndex;
-	ViewState.Selection.LODIndex = LODIndex;
+	ViewState.Selection.LODIndex = ClampSystemLODIndex(GetParticleSystem(), LODIndex);
 	ViewState.Selection.ModuleIndex = ModuleIndex;
 }
 
@@ -1285,15 +1285,9 @@ const char* FParticleSystemEditorWidget::GetSelectionKindLabel() const
 	}
 }
 
-int32 FParticleSystemEditorWidget::GetDisplayLODIndex(const UParticleEmitter* Emitter) const
+int32 FParticleSystemEditorWidget::GetCurrentSystemLODIndex(const UParticleSystem* ParticleSystem) const
 {
-	if (!Emitter || Emitter->GetLODLevels().empty())
-	{
-		return 0;
-	}
-
-	const int32 LODCount = static_cast<int32>(Emitter->GetLODLevels().size());
-	return (std::max)(0, (std::min)(ViewState.Selection.LODIndex, LODCount - 1));
+	return ClampSystemLODIndex(ParticleSystem, ViewState.Selection.LODIndex);
 }
 
 const UParticleEmitter* FParticleSystemEditorWidget::GetSelectedEmitter(const UParticleSystem* ParticleSystem) const
@@ -1321,7 +1315,7 @@ const UParticleLODLevel* FParticleSystemEditorWidget::GetSelectedLODLevel(const 
 		return nullptr;
 	}
 
-	return Emitter->GetLODLevel(GetDisplayLODIndex(Emitter));
+	return Emitter->GetLODLevel(GetCurrentSystemLODIndex(ParticleSystem));
 }
 
 const UParticleModule* FParticleSystemEditorWidget::GetSelectedModule(const UParticleSystem* ParticleSystem) const
@@ -1424,7 +1418,7 @@ void FParticleSystemEditorWidget::RenderToolbar()
 	ImGui::EndDisabled();
 
 	const int32 LODCount = ParticleSystem ? ParticleSystem->GetLODCount() : 0;
-	const int32 CurrentLODIndex = ParticleSystem ? ClampSystemLODIndex(ParticleSystem, ViewState.Selection.LODIndex) : 0;
+	const int32 CurrentLODIndex = GetCurrentSystemLODIndex(ParticleSystem);
 	const bool bCanUseLODControls = bCanAddLOD && LODCount > 0;
 	const bool bCanDeleteLOD = bCanUseLODControls && LODCount > 1;
 
@@ -1910,7 +1904,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			return Height + ImGui::GetTextLineHeightWithSpacing();
 		}
 
-		UParticleLODLevel* LODLevel = Emitter->GetLODLevel(GetDisplayLODIndex(Emitter));
+		UParticleLODLevel* LODLevel = Emitter->GetLODLevel(GetCurrentSystemLODIndex(ParticleSystem));
 		if (LODLevel)
 		{
 			Height += ModuleRowHeight + Style.ItemSpacing.y;
@@ -1935,7 +1929,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(Emitters.size()); ++EmitterIndex)
 	{
 		UParticleEmitter* Emitter = Emitters[EmitterIndex];
-		const int32 DisplayLODIndex = GetDisplayLODIndex(Emitter);
+		const int32 DisplayLODIndex = GetCurrentSystemLODIndex(ParticleSystem);
 		UParticleLODLevel* LODLevel = Emitter ? Emitter->GetLODLevel(DisplayLODIndex) : nullptr;
 		const EParticleRenderType RenderType = GetLODRenderType(LODLevel);
 		ImGui::PushID(EmitterIndex);
@@ -2265,9 +2259,9 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			const bool bEnableHovered = ImGui::IsItemHovered();
 			const bool bEnableActive = ImGui::IsItemActive();
 			bHeaderButtonHovered |= bEnableHovered;
-			if (bEnableClicked)
+			if (bEnableClicked && LODLevel)
 			{
-				Emitter->SetEnabled(!Emitter->IsEnabled());
+				LODLevel->SetEnabled(!LODLevel->IsEnabled());
 				SelectEmitter(EmitterIndex);
 				MarkDirty();
 				RefreshParticleSystemComponents();
@@ -2278,7 +2272,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				: (bEnableHovered ? IM_COL32(62, 66, 72, 255) : IM_COL32(28, 30, 34, 255));
 			DrawList->AddRectFilled(EnableButtonPos, EnableButtonMax, EnableFillColor, 1.0f);
 			DrawList->AddRect(EnableButtonPos, EnableButtonMax, IM_COL32(10, 11, 13, 255), 1.0f);
-			if (Emitter->IsEnabled())
+			if (LODLevel && LODLevel->IsEnabled())
 			{
 				DrawList->AddLine(ImVec2(EnableButtonPos.x + 3.0f, EnableButtonPos.y + 7.0f), ImVec2(EnableButtonPos.x + 6.0f, EnableButtonPos.y + 10.0f), IM_COL32(232, 236, 240, 255), 1.5f);
 				DrawList->AddLine(ImVec2(EnableButtonPos.x + 6.0f, EnableButtonPos.y + 10.0f), ImVec2(EnableButtonPos.x + 11.0f, EnableButtonPos.y + 4.0f), IM_COL32(232, 236, 240, 255), 1.5f);
@@ -2452,6 +2446,10 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			{
 				const int32 TargetIndex = DuplicateEmitterIndex + 1;
 				MutableEmitters.insert(MutableEmitters.begin() + TargetIndex, DuplicatedEmitter);
+				if (ViewState.SoloEmitterIndex >= TargetIndex)
+				{
+					++ViewState.SoloEmitterIndex;
+				}
 				ParticleSystem->NormalizeLODLevels();
 				SelectEmitter(TargetIndex);
 				MarkDirty();
@@ -2467,6 +2465,14 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			UParticleEmitter* RemovedEmitter = MutableEmitters[DeleteEmitterIndex];
 			MutableEmitters.erase(MutableEmitters.begin() + DeleteEmitterIndex);
 			UObjectManager::Get().DestroyObject(RemovedEmitter);
+			if (ViewState.SoloEmitterIndex == DeleteEmitterIndex)
+			{
+				ViewState.SoloEmitterIndex = -1;
+			}
+			else if (ViewState.SoloEmitterIndex > DeleteEmitterIndex)
+			{
+				--ViewState.SoloEmitterIndex;
+			}
 			ParticleSystem->NormalizeLODLevels();
 
 			if (MutableEmitters.empty())
@@ -2496,6 +2502,10 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			{
 				MutableEmitters.erase(MutableEmitters.begin() + AppendedIndex);
 				MutableEmitters.insert(MutableEmitters.begin() + TargetIndex, NewEmitter);
+				if (ViewState.SoloEmitterIndex >= TargetIndex && ViewState.SoloEmitterIndex < AppendedIndex)
+				{
+					++ViewState.SoloEmitterIndex;
+				}
 			}
 
 			ParticleSystem->NormalizeLODLevels();

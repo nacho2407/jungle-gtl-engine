@@ -77,7 +77,7 @@ private:
 	bool IsLODSelected(int32 EmitterIndex, int32 LODIndex) const;
 	bool IsModuleSelected(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex) const;
 	const char* GetSelectionKindLabel() const;
-	int32 GetDisplayLODIndex(const UParticleEmitter* Emitter) const;
+	int32 GetCurrentSystemLODIndex(const UParticleSystem* ParticleSystem) const;
 	const UParticleEmitter* GetSelectedEmitter(const UParticleSystem* ParticleSystem) const;
 	const UParticleLODLevel* GetSelectedLODLevel(const UParticleSystem* ParticleSystem) const;
 	const UParticleModule* GetSelectedModule(const UParticleSystem* ParticleSystem) const;

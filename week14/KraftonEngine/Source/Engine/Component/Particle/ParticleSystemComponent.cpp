@@ -132,13 +132,14 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 			continue;
 		}
 
-		const UParticleEmitter* Emitter = Instance->GetTemplate();
-		if (!Emitter || !Emitter->IsEnabled())
+		Instance->SetLODLevelIndex(CurrentLODIndex);
+
+		const UParticleLODLevel* CurrentLODLevel = Instance->GetCurrentLODLevel();
+		if (!CurrentLODLevel || !CurrentLODLevel->IsEnabled())
 		{
 			continue;
 		}
 
-		Instance->SetLODLevelIndex(CurrentLODIndex);
 		Instance->Tick(DeltaTime);
 		bAnyEmitterTicked = true;
 	}
@@ -156,7 +157,7 @@ void UParticleSystemComponent::SetPreviewSoloEmitterIndex(int32 InEmitterIndex)
 
 bool UParticleSystemComponent::ShouldCreateEmitterInstance(int32 EmitterIndex, const UParticleEmitter* Emitter) const
 {
-	if (!Emitter || !Emitter->IsEnabled())
+	if (!Emitter)
 	{
 		return false;
 	}

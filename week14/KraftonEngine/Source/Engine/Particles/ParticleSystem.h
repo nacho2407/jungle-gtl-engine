@@ -70,12 +70,10 @@ public:
 	int32 GetMaxActiveParticles() const { return MaxActiveParticles; }
 	float GetEmitterDuration() const { return EmitterDuration; }
 	bool IsLooping() const { return bLooping; }
-	bool IsEnabled() const { return bEnabled; }
 
 	void SetMaxActiveParticles(int32 InMaxActiveParticles) { MaxActiveParticles = InMaxActiveParticles; }
 	void SetEmitterDuration(float InEmitterDuration) { EmitterDuration = InEmitterDuration; }
 	void SetLooping(bool bInLooping) { bLooping = bInLooping; }
-	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
 	void AddLODLevel(UParticleLODLevel* LODLevel);
 
 	void Serialize(FArchive& Ar) override;
@@ -86,7 +84,6 @@ private:
 	int32 MaxActiveParticles = 100;
 	float EmitterDuration = 1.0f;
 	bool bLooping = true;
-	bool bEnabled = true;
 };
 
 UCLASS()

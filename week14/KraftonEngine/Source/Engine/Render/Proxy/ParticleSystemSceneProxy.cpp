@@ -8,6 +8,7 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
 #include "Mesh/MeshManager.h"
+#include "Particles/ParticleSystem.h"
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
@@ -71,6 +72,9 @@ void FParticleSystemSceneProxy::BuildDynamicEmitters(const FFrameContext& Frame,
 	{
 		FParticleEmitterInstance* Instance = Instances[EmitterIndex];
 		if (!Instance) continue;
+
+		const UParticleLODLevel* CurrentLODLevel = Instance->GetCurrentLODLevel();
+		if (!CurrentLODLevel || !CurrentLODLevel->IsEnabled()) continue;
 
 		AppendEmitter(Frame, EmitterIndex, BuildEmitterSource(Instance));
 	}

@@ -195,7 +195,6 @@ void UParticleEmitter::Serialize(FArchive& Ar)
 	Ar << MaxActiveParticles;
 	Ar << EmitterDuration;
 	Ar << bLooping;
-	Ar << bEnabled;
 
 	uint32 LODLevelCount = Ar.IsSaving() ? static_cast<uint32>(LODLevels.size()) : 0;
 	Ar << LODLevelCount;
