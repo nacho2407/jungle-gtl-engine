@@ -143,13 +143,43 @@ FPrimitiveSceneProxy* UParticleSystemComponent::CreateSceneProxy()
 
 void UParticleSystemComponent::UpdateWorldAABB() const
 {
-    const FVector Extent(100.0f, 100.0f, 100.0f);
-    const FVector Center = GetWorldLocation();
+    FBoundingBox CombinedBounds;
 
-    WorldAABBMinLocation = Center - Extent;
-    WorldAABBMaxLocation = Center + Extent;
+    for (FParticleEmitterInstance* Instance : EmitterInstances)
+    {
+        if (!Instance)
+        {
+            continue;
+        }
 
-    bWorldAABBDirty    = false;
+        FBoundingBox EmitterBounds = Instance->GetBoundingBox();
+        if (!EmitterBounds.IsValid())
+        {
+            continue;
+        }
+
+        CombinedBounds.Expand(EmitterBounds.Min);
+        CombinedBounds.Expand(EmitterBounds.Max);
+    }
+
+    if (CombinedBounds.IsValid())
+    {
+        WorldAABBMinLocation = CombinedBounds.Min;
+        WorldAABBMaxLocation = CombinedBounds.Max;
+    }
+    else
+    {
+        // 아직 파티클이 생성되기 전 fallback
+        const FVector Center = GetWorldLocation();
+
+        const FVector FallbackCenter = Center;
+        const FVector FallbackExtent = FVector(100.0f, 100.0f, 100.0f);
+
+        WorldAABBMinLocation = FallbackCenter - FallbackExtent;
+        WorldAABBMaxLocation = FallbackCenter + FallbackExtent;
+    }
+
+    bWorldAABBDirty = false;
     bHasValidWorldAABB = true;
 }
 

@@ -395,8 +395,8 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 	Location->StartLocation.Distribution = UObjectManager::Get().CreateObject<UDistributionVectorUniform>(Location);
 	if (UDistributionVectorUniform* Uniform = Cast<UDistributionVectorUniform>(Location->StartLocation.Distribution))
 	{
-		Uniform->Min = FVector(0.0f, 0.f, 20.0f);
-		Uniform->Max = FVector(0.0f, 0.f, 80.0f);
+		Uniform->Min = FVector(-1.0f, -1.f, -1.0f);
+		Uniform->Max = FVector(1.0f, 1.f, 1.0f);
 	}
 
 	LOD->Modules.push_back(Location);
@@ -411,8 +411,8 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 	Velocity->StartVelocity.Distribution = UObjectManager::Get().CreateObject<UDistributionVectorUniform>(Velocity);
 	if (UDistributionVectorUniform* Uniform = Cast<UDistributionVectorUniform>(Velocity->StartVelocity.Distribution))
 	{
-		Uniform->Min = FVector(0.0f, 0.f, 20.0f);
-		Uniform->Max = FVector(0.0f, 0.f, 80.0f);
+		Uniform->Min = FVector(-1.0f, -1.f, -1.0f);
+		Uniform->Max = FVector(1.0f, 1.f, 1.0f);
 	}
 
 	Velocity->StartVelocityRadial.Distribution = UObjectManager::Get().CreateObject<UDistributionFloatUniform>(Velocity);
