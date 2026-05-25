@@ -2,18 +2,8 @@
 
 #include "Core/CoreMinimal.h"
 
-struct ID3D11DeviceContext;
 class UMaterialInterface;
-class UParticleModuleRequired;
 class UStaticMesh;
-
-namespace ERHIFeatureLevel
-{
-	enum Type
-	{
-		SM5, // DirectX 11 Shader Model 5.0
-	};
-}
 
 UENUM()
 enum class EParticleSortMode
@@ -109,11 +99,38 @@ struct FDynamicEmitterReplayDataBase
 {
 	EDynamicEmitterType eEmitterType = EDynamicEmitterType::Sprite;
 	int32 ActiveParticleCount = 0;
+	// Simulation memory stride. This is not the renderer vertex stride.
 	int32 ParticleStride = 0;
 	FParticleDataContainer DataContainer;
 
+	UMaterialInterface* Material = nullptr;
+	FMatrix ComponentToWorld = FMatrix::Identity;
+	EParticleCoordinateSpace CoordinateSpace = EParticleCoordinateSpace::Local;
 	FVector Scale = FVector::OneVector;
 	EParticleSortMode SortMode = EParticleSortMode::ViewDepthBackToFront;
+
+    // active particle 순회 헬퍼 함수
+	const FBaseParticle* GetParticleByActiveIndex(int32 ActiveIndex) const
+	{
+		if (ActiveIndex < 0 || ActiveIndex >= ActiveParticleCount)
+		{
+			return nullptr;
+		}
+
+		if (DataContainer.ParticleData == nullptr || DataContainer.ParticleIndices == nullptr || ParticleStride <= 0)
+		{
+			return nullptr;
+		}
+
+		const uint16 PhysicalIndex = DataContainer.ParticleIndices[ActiveIndex];
+		const size_t ParticleOffset = static_cast<size_t>(PhysicalIndex) * static_cast<size_t>(ParticleStride);
+		if (ParticleOffset + sizeof(FBaseParticle) > static_cast<size_t>(DataContainer.ParticleDataNumBytes))
+		{
+			return nullptr;
+		}
+
+		return reinterpret_cast<const FBaseParticle*>(DataContainer.ParticleData + ParticleOffset);
+	}
 };
 
 struct FDynamicSpriteEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
@@ -146,13 +163,11 @@ struct FDynamicEmitterDataBase
 	int32 EmitterIndex = -1;
 
 	virtual const FDynamicEmitterReplayDataBase& GetSource() const = 0;
-	virtual void Render(ID3D11DeviceContext* Context) = 0;
+	EDynamicEmitterType GetEmitterType() const { return GetSource().eEmitterType; }
 };
 
 struct FDynamicSpriteEmitterDataBase : public FDynamicEmitterDataBase
 {
-	void SortSpriteParticles() {}
-	virtual int32 GetDynamicVertexStride(ERHIFeatureLevel::Type InFeatureLevel) const = 0;
 };
 
 struct FDynamicSpriteEmitterData : public FDynamicSpriteEmitterDataBase
@@ -162,15 +177,9 @@ struct FDynamicSpriteEmitterData : public FDynamicSpriteEmitterDataBase
 	TArray<uint16> OwnedParticleIndices;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
-	void Render(ID3D11DeviceContext* Context) override { (void)Context; }
-	int32 GetDynamicVertexStride(ERHIFeatureLevel::Type InFeatureLevel) const override
-	{
-		(void)InFeatureLevel;
-		return sizeof(FParticleSpriteVertex);
-	}
 };
 
-struct FDynamicMeshEmitterData : public FDynamicSpriteEmitterDataBase
+struct FDynamicMeshEmitterData : public FDynamicEmitterDataBase
 {
 	FDynamicMeshEmitterReplayDataBase ReplayData;
 
@@ -179,38 +188,20 @@ struct FDynamicMeshEmitterData : public FDynamicSpriteEmitterDataBase
 	TArray<FMeshParticleInstanceVertex> InstanceVertices;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
-	void Render(ID3D11DeviceContext* Context) override { (void)Context; }
-	int32 GetDynamicVertexStride(ERHIFeatureLevel::Type InFeatureLevel) const override
-	{
-		(void)InFeatureLevel;
-		return sizeof(FMeshParticleInstanceVertex);
-	}
 };
 
-struct FDynamicBeamEmitterData : public FDynamicSpriteEmitterDataBase
+struct FDynamicBeamEmitterData : public FDynamicEmitterDataBase
 {
 	FDynamicBeamEmitterReplayDataBase ReplayData;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
-	void Render(ID3D11DeviceContext* Context) override { (void)Context; }
-	int32 GetDynamicVertexStride(ERHIFeatureLevel::Type InFeatureLevel) const override
-	{
-		(void)InFeatureLevel;
-		return sizeof(FParticleSpriteVertex);
-	}
 };
 
-struct FDynamicTrailsEmitterData : public FDynamicSpriteEmitterDataBase
+struct FDynamicTrailsEmitterData : public FDynamicEmitterDataBase
 {
 	FDynamicRibbonEmitterReplayDataBase ReplayData;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
-	void Render(ID3D11DeviceContext* Context) override { (void)Context; }
-	int32 GetDynamicVertexStride(ERHIFeatureLevel::Type InFeatureLevel) const override
-	{
-		(void)InFeatureLevel;
-		return sizeof(FParticleSpriteVertex);
-	}
 };
 
 struct FDynamicAnimTrailsEmitterData : public FDynamicTrailsEmitterData
