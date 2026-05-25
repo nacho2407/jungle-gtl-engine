@@ -125,6 +125,73 @@ namespace
 		return Values[Index];
 	}
 
+	FVector ReadBeamNoisePoint(
+		const FDynamicBeam2EmitterReplayData& Source,
+		const FBaseParticle& Particle,
+		const FVector* NoisePoints,
+		const FVector* NextNoisePoints,
+		int32 NoiseIndex)
+	{
+		const int32 ClampedIndex = std::max(0, std::min(std::max(0, Source.Frequency), NoiseIndex));
+		FVector NoisePoint = NoisePoints ? NoisePoints[ClampedIndex] : FVector::ZeroVector;
+
+		if (Source.bSmoothNoise_Enabled &&
+			Source.NoiseLockTime >= 0.0f &&
+			NextNoisePoints &&
+			Source.NoiseRateOffset >= 0)
+		{
+			const float* NoiseRate = reinterpret_cast<const float*>(reinterpret_cast<const uint8*>(&Particle) + Source.NoiseRateOffset);
+			const FVector NextNoise = NextNoisePoints[ClampedIndex];
+			const FVector NoiseDir = (NextNoise - NoisePoint).GetSafeNormal(1.0e-6f, FVector::ZeroVector);
+			const FVector CheckNoisePoint = NoisePoint + (NoiseDir * Source.NoiseSpeed) * (NoiseRate ? *NoiseRate : 0.0f);
+			if (std::fabs(CheckNoisePoint.X - NextNoise.X) < Source.NoiseLockRadius &&
+				std::fabs(CheckNoisePoint.Y - NextNoise.Y) < Source.NoiseLockRadius &&
+				std::fabs(CheckNoisePoint.Z - NextNoise.Z) < Source.NoiseLockRadius)
+			{
+				NoisePoint = NextNoise;
+			}
+			else
+			{
+				NoisePoint = CheckNoisePoint;
+			}
+		}
+
+		return NoisePoint;
+	}
+
+	FVector SampleBeamNoiseOffset(
+		const FDynamicBeam2EmitterReplayData& Source,
+		const FBaseParticle& Particle,
+		float Alpha,
+		const FVector* NoisePoints,
+		const FVector* NextNoisePoints)
+	{
+		if (!NoisePoints || Source.Frequency <= 0)
+		{
+			return FVector::ZeroVector;
+		}
+
+		float NoiseDistanceScale = 1.0f;
+		if (Source.NoiseDistanceScaleOffset >= 0)
+		{
+			const float* NoiseDistanceScalePayload =
+				reinterpret_cast<const float*>(reinterpret_cast<const uint8*>(&Particle) + Source.NoiseDistanceScaleOffset);
+			if (NoiseDistanceScalePayload)
+			{
+				NoiseDistanceScale = *NoiseDistanceScalePayload;
+			}
+		}
+
+		const float NoisePosition = Clamp01(Alpha) * static_cast<float>(Source.Frequency);
+		const int32 NoiseIndex = std::max(0, std::min(Source.Frequency, static_cast<int32>(std::floor(NoisePosition))));
+		const int32 NextIndex = std::max(0, std::min(Source.Frequency, NoiseIndex + 1));
+		const float NoiseAlpha = NoisePosition - static_cast<float>(NoiseIndex);
+
+		const FVector NoiseA = ReadBeamNoisePoint(Source, Particle, NoisePoints, NextNoisePoints, NoiseIndex);
+		const FVector NoiseB = ReadBeamNoisePoint(Source, Particle, NoisePoints, NextNoisePoints, NextIndex);
+		return FVector::Lerp(NoiseA, NoiseB, NoiseAlpha) * Source.NoiseRangeScale * NoiseDistanceScale;
+	}
+
 	void AppendBeamSheet(
 		const FDynamicBeam2EmitterReplayData& Source,
 		const FBaseParticle& Particle,
@@ -210,6 +277,9 @@ namespace
 		const FVector* NoisePoints = Source.TargetNoisePointsOffset >= 0
 			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(&Particle) + Source.TargetNoisePointsOffset)
 			: nullptr;
+		const FVector* NextNoisePoints = Source.NextNoisePointsOffset >= 0
+			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(&Particle) + Source.NextNoisePointsOffset)
+			: nullptr;
 
 		TArray<FVector> InterpPath;
 		if (bUseInterpolatedPath && InterpPoints && Source.InterpolationPoints > 0)
@@ -247,8 +317,7 @@ namespace
 
 			if (bUseNoise && NoisePoints && Source.Frequency > 0)
 			{
-				const int32 NoiseIndex = std::max(0, std::min(Source.Frequency, static_cast<int32>(Alpha * static_cast<float>(Source.Frequency))));
-				Center += NoisePoints[NoiseIndex] * Source.NoiseRangeScale;
+				Center += SampleBeamNoiseOffset(Source, Particle, Alpha, NoisePoints, NextNoisePoints);
 			}
 
 			OutCenters.push_back(Center);
@@ -503,7 +572,7 @@ void FDynamicRibbonEmitterData::BuildMeshData()
     DoBufferFill();
 }
 
-int32 FDynamicRibbonEmitterData::FillVertexData()
+int32 FDynamicRibbonEmitterData::FillInterpolatedVertexData()
 {
 	FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
 	const int32 InitialVertexCount = static_cast<int32>(Staging.Vertices.size());
@@ -636,12 +705,7 @@ int32 FDynamicRibbonEmitterData::FillVertexData()
 	return static_cast<int32>(Staging.Vertices.size()) - InitialVertexCount;
 }
 
-int32 FDynamicRibbonEmitterData::FillInterpolatedVertexData()
+int32 FDynamicRibbonEmitterData::FillVertexData()
 {
-    // UE original responsibility:
-    // Fill tessellated ribbon vertices with tangent/cubic interpolation between
-    // particles. This must use the same RenderingInterpCount as
-    // DetermineVertexAndTriangleCount.
-    // TODO(Cascade port): port UE interpolated ribbon fill semantics.
-    return 0;
+	return FillInterpolatedVertexData();
 }
