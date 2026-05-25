@@ -100,4 +100,5 @@ private:
     FParticleSystemEditorViewportClient ViewportClient;
     FName                               PreviewWorldHandle = FName::None;
     UParticleSystemComponent*           PreviewPSC         = nullptr;
+    bool                                bPendingClose      = false;
 };

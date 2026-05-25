@@ -555,6 +555,8 @@ bool FParticleSystemEditorWidget::IsEditingObject(UObject* Object) const
 void FParticleSystemEditorWidget::Open(UObject* Object)
 {
     FAssetEditorWidget::Open(Object);
+    
+    bPendingClose = false;
 
     SelectedEmitterIndex = -1;
     SelectedModuleIndex  = -1;
@@ -614,7 +616,10 @@ void FParticleSystemEditorWidget::Open(UObject* Object)
 
 void FParticleSystemEditorWidget::Close()
 {
-    FAssetEditorWidget::Close();
+    if (!IsOpen() && !ViewportClient.IsRenderable())
+    {
+        return;
+    }
 
     FSlateApplication::Get().UnregisterViewport(&ViewportClient);
 
@@ -635,10 +640,19 @@ void FParticleSystemEditorWidget::Close()
     ViewportClient.SetPreviewActor(nullptr);
     ViewportClient.SetPreviewWorld(nullptr);
     ViewportClient.Release();
+
+    FAssetEditorWidget::Close();
 }
 
 void FParticleSystemEditorWidget::Tick(float DeltaTime)
 {
+    if (bPendingClose)
+    {
+        bPendingClose = false;
+        Close();
+        return;
+    }
+    
     if (bSimulating)
     {
         PreviewTime += DeltaTime;
@@ -692,7 +706,7 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
         ImGui::End();
         if (!bWindowOpen)
         {
-            Close();
+            bPendingClose = true;
         }
         return;
     }
@@ -752,7 +766,7 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 
     if (!bWindowOpen)
     {
-        Close();
+        bPendingClose = true;
     }
 }
 
