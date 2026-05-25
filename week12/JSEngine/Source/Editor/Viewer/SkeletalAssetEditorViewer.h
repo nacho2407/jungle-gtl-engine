@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 #include "Editor/Viewer/EditorViewer.h"
-#include "Editor/Viewport/SkeletalMeshViewportClient.h"
+#include "Editor/Viewport/Viewer/SkeletalMeshViewerViewportClient.h"
 
 class ASkeletalMeshActor;
 class USkeletalMeshComponent;
@@ -12,8 +12,8 @@ public:
 	void Init(FWindowsWindow* InWindow, UEditorEngine* InEditor, UWorld* InWorld, FSelectionManager* InSelectionManager) override;
 	void Shutdown() override;
 
-	FSkeletalMeshViewportClient& GetClient() override { return Client; }
-	const FSkeletalMeshViewportClient& GetClient() const override { return Client; }
+	FSkeletalMeshViewerViewportClient& GetClient() override { return Client; }
+	const FSkeletalMeshViewerViewportClient& GetClient() const override { return Client; }
 
 	ASkeletalMeshActor* GetViewTarget() const { return ViewTarget; }
 	void ClearViewTarget() { ViewTarget = nullptr; }
@@ -23,6 +23,6 @@ protected:
 	virtual bool HandleViewportBonePick(float LocalX, float LocalY);
 
 private:
-	FSkeletalMeshViewportClient Client;
+	FSkeletalMeshViewerViewportClient Client;
 	ASkeletalMeshActor* ViewTarget = nullptr;
 };

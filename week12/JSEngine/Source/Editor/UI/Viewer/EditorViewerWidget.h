@@ -30,8 +30,16 @@ public:
 protected:
 	virtual void RenderContent(float DeltaTime);
 	void RenderViewportPanel(FSceneViewport& SceneViewport, ID3D11ShaderResourceView* SRV, const ImVec2& Size);
+
+protected:	
 	void RenderDetachedDocumentChrome(bool& bDockRequested, bool& bCloseRequested);
 	void RenderDetachedDocumentToolbar(bool& bDockRequested);
+	void RenderDefaultViewportToolbar();
+	void RenderDefaultViewportToolbarContents();
+
+	bool BeginViewportToolbar(bool bDrawToolbarBackground);
+	void EndViewportToolbar();
+
 	void Shutdown();
 
 	FEditorViewer* Viewer = nullptr;
@@ -39,4 +47,10 @@ protected:
 
 	float LeftPanelWidth = 250.0f;
 	float RightPanelWidth = 250.0f;
+
+	float LastViewportToolbarX = 0.0f;
+	float LastViewportToolbarY = 0.0f;
+	float LastViewportToolbarWidth = 0.0f;
+	float LastViewportToolbarHeight = 0.0f;
+	bool bHasLastViewportToolbarRect = false;
 };

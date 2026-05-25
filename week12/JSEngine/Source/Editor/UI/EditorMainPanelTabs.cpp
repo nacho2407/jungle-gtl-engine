@@ -37,6 +37,8 @@ namespace
 			return { ImVec4(0.18f, 0.70f, 0.95f, 1.0f), "Skeletal Mesh Viewer" };
 		case EEditorTabKind::AnimSequenceViewer:
 			return { ImVec4(0.95f, 0.48f, 0.20f, 1.0f), "Animation Sequence Viewer" };
+		case EEditorTabKind::ParticleViewer:
+			return { ImVec4(0.72f, 0.42f, 0.95f, 1.0f), "Particle Viewer" };
 		case EEditorTabKind::MaterialEditor:
 			return { ImVec4(0.19f, 0.72f, 0.24f, 1.0f), "Material Editor" };
 		case EEditorTabKind::CurveEditor:
@@ -111,11 +113,14 @@ namespace
 			Min,
 			Max,
 			ImGui::GetColorU32(bHovered ? ImVec4(0.095f, 0.102f, 0.125f, 1.0f) : ImVec4(0.055f, 0.060f, 0.072f, 1.0f)));
-		DrawList->AddCircleFilled(
-			Center,
-			HomeCircleRadius,
-			ImGui::GetColorU32(bHovered ? ImVec4(0.13f, 0.14f, 0.17f, 1.0f) : ImVec4(0.075f, 0.080f, 0.095f, 1.0f)),
-			64);
+		if (HomeCircleRadius > 0.0f)
+		{
+			DrawList->AddCircleFilled(
+				Center,
+				HomeCircleRadius,
+				ImGui::GetColorU32(bHovered ? ImVec4(0.13f, 0.14f, 0.17f, 1.0f) : ImVec4(0.075f, 0.080f, 0.095f, 1.0f)),
+				64);
+		}
 		if (HomeIcon)
 		{
 			const ImVec2 IconMin(Center.x - HomeIconSize * 0.5f, Center.y - HomeIconSize * 0.5f);
@@ -127,12 +132,15 @@ namespace
 			const ImU32 HomeColor = ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f));
 			DrawList->AddText(ImVec2(Center.x - 7.0f, Center.y - 7.0f), HomeColor, "JS");
 		}
-		DrawList->AddCircle(
-			Center,
-			HomeCircleRadius,
-			ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f)),
-			64,
-			1.8f);
+		if (HomeCircleRadius > 0.0f)
+		{
+			DrawList->AddCircle(
+				Center,
+				HomeCircleRadius,
+				ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f)),
+				64,
+				1.8f);
+		}
 	}
 
 }

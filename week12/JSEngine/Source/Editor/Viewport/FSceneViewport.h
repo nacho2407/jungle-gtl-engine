@@ -64,6 +64,18 @@ public:
             return nullptr;
         if (State.ViewMode == EViewMode::IdBuffer && RenderTargetSet->EditorIdPickDebugSRV)
             return RenderTargetSet->EditorIdPickDebugSRV;
+        if ((State.ViewMode == EViewMode::Heatmap ||
+             State.ViewMode == EViewMode::BoneWeightHeatmap ||
+             State.ViewMode == EViewMode::Depth ||
+             State.ViewMode == EViewMode::Normal) &&
+            RenderTargetSet->DebugViewModeSRV)
+        {
+            return RenderTargetSet->DebugViewModeSRV;
+        }
+        if (RenderTargetSet->SceneFXAASRV)
+        {
+            return RenderTargetSet->SceneFXAASRV;
+        }
 		return RenderTargetSet->SceneColorSRV;
 	}
 

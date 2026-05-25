@@ -1,4 +1,4 @@
-﻿#include "SkeletalMeshViewportClient.h"
+﻿#include "Editor/Viewport/Viewer/SkeletalMeshViewerViewportClient.h"
 
 #include "Component/GizmoComponent.h"
 #include "Engine/Input/InputTypes.h"
@@ -6,12 +6,12 @@
 
 #include <utility>
 
-void FSkeletalMeshViewportClient::SetBonePickHandler(FBonePickHandler InHandler)
+void FSkeletalMeshViewerViewportClient::SetBonePickHandler(FBonePickHandler InHandler)
 {
 	BonePickHandler = std::move(InHandler);
 }
 
-bool FSkeletalMeshViewportClient::ProcessInput(FViewportInputContext& Context)
+bool FSkeletalMeshViewerViewportClient::ProcessInput(FViewportInputContext& Context)
 {
 	if (ShouldTryBonePick(Context) && !IsGizmoUnderCursor(Context))
 	{
@@ -22,10 +22,17 @@ bool FSkeletalMeshViewportClient::ProcessInput(FViewportInputContext& Context)
 			return true;
 		}
 	}
-	return FEditorViewportClient::ProcessInput(Context);
+	return FViewerViewportClient::ProcessInput(Context);
 }
 
-bool FSkeletalMeshViewportClient::ShouldTryBonePick(const FViewportInputContext& Context) const
+void FSkeletalMeshViewerViewportClient::BuildViewerShowFlags(FShowFlags& OutShowFlags) const
+{
+	FViewerViewportClient::BuildViewerShowFlags(OutShowFlags);
+	OutShowFlags.bSkeletalMesh = ShowFlags.bShowSkeletalMesh;
+	OutShowFlags.bBoundingVolume = ShowFlags.bShowBoundingBox || IsShowBounds();
+}
+
+bool FSkeletalMeshViewerViewportClient::ShouldTryBonePick(const FViewportInputContext& Context) const
 {
 	if (!ShowFlags.bShowBones || !BonePickHandler)
 	{
@@ -46,9 +53,9 @@ bool FSkeletalMeshViewportClient::ShouldTryBonePick(const FViewportInputContext&
 		(Context.WasReleased(VK_LBUTTON) && !Context.WasPointerDragEnded(EPointerButton::Left));
 }
 
-bool FSkeletalMeshViewportClient::IsGizmoUnderCursor(const FViewportInputContext& Context) const
+bool FSkeletalMeshViewerViewportClient::IsGizmoUnderCursor(const FViewportInputContext& Context) const
 {
-	UGizmoComponent* Gizmo = const_cast<FSkeletalMeshViewportClient*>(this)->GetGizmo();
+	UGizmoComponent* Gizmo = const_cast<FSkeletalMeshViewerViewportClient*>(this)->GetGizmo();
 	const FViewportCamera* Camera = GetCamera();
 	const FSceneViewport* SceneViewport = GetViewport();
 	if (!Gizmo || !Gizmo->IsVisible() || !Camera || !SceneViewport)

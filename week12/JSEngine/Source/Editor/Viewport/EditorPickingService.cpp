@@ -16,7 +16,7 @@
 
 bool FEditorPickingService::ResolveActorForSelection(
 	UWorld* World,
-	const FViewportCamera* Camera,
+const FViewportCamera* Camera,
 	FSceneViewport* Viewport,
 	UEditorEngine* Editor,
 	float LocalX,

@@ -2,6 +2,7 @@
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewer/SkeletalMeshEditorViewer.h"
+#include "Editor/Viewport/Viewer/ViewerViewportClient.h"
 #include "Camera/PlayerCameraManager.h"
 #include "Camera/ViewportCamera.h"
 #include "Render/Renderer/Renderer.h"
@@ -444,27 +445,12 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
 
 		const FEditorSettings& Settings = Editor->GetSettings();
 		const FSkeletalAssetEditorViewer* SkeletalViewer = AsSkeletalAssetViewer(Viewers[i].get());
-		const FSkeletalViewerShowFlags DefaultSkeletalFlags = {};
-		const FSkeletalViewerShowFlags& VFlags = SkeletalViewer
-			? SkeletalViewer->GetClient().GetShowFlags()
-			: DefaultSkeletalFlags;
-
+		const FSkeletalMeshViewerShowFlags DefaultSkeletalFlags = {};
+		const FSkeletalMeshViewerShowFlags& VFlags = SkeletalViewer ? SkeletalViewer->GetClient().GetShowFlags() : DefaultSkeletalFlags;
 		// ViewerPreview는 Level Editor의 전역 표시 상태를 상속하지 않는다.
 		// Asset 검사 도구로서 필요한 표면/오버레이만 명시적으로 켠다.
 		FShowFlags ShowFlags = {};
-		ShowFlags.bPrimitives = true;
-		ShowFlags.bSkeletalMesh = VFlags.bShowSkeletalMesh;
-		ShowFlags.bGrid = true;
-		ShowFlags.bAxis = true;
-		ShowFlags.bGizmo = true;
-		ShowFlags.bBillboardText = false;
-		ShowFlags.bBoundingVolume = VFlags.bShowBoundingBox;
-		ShowFlags.bBVHBoundingVolume = false;
-		ShowFlags.bEnableLOD = false;
-		ShowFlags.bDecals = false;
-		ShowFlags.bFog = false;
-		ShowFlags.bShadow = false;
-		ShowFlags.bGammaCorrection = false;
+		static_cast<FViewerViewportClient*>(VC)->BuildViewerShowFlags(ShowFlags);
 		ShowFlags.GammaValue = Settings.ShowFlags.GammaValue;
 		const FEditorViewportState* ViewportState = VC->GetViewportState();
 		const EViewMode ViewMode = ViewportState ? ViewportState->ViewMode : EViewMode::Lit_BlinnPhong;

@@ -1,6 +1,8 @@
 #include "../Common/Common.hlsli"
 #include "../Common/SkeletalSkinning.hlsli"
 #include "../Common/Lighting.hlsli"
+#include "../Common/LightCulling.hlsli"
+#include "../Common/NormalMapping.hlsli"
 #include "../Common/ShadowFunction.hlsli"
 
 cbuffer StaticMeshBuffer : register(b2)
@@ -20,23 +22,6 @@ cbuffer StaticMeshBuffer : register(b2)
     float3 EmissiveColor; // emissive glow color; non-zero means emissive
     float padding3;
 };
-
-cbuffer BoneWeightHeatmapBuffer : register(b6)
-{
-    int SelectedBoneIndex;
-    uint bBoneWeightHeatmapEnabled;
-    float2 BoneWeightHeatmapPadding;
-};
-
-struct FDecalInfo
-{
-    row_major matrix InvDecalWorld;
-    float4 DecalColorTint;
-    uint TextureIndex;
-    float3 Padding;
-};
-StructuredBuffer<FDecalInfo> Decals : register(t8);
-Texture2DArray DecalDiffuseTexture : register(t9);
 
 #if HAS_DIFFUSE_MAP
 Texture2D DiffuseMap  : register(t0);
@@ -85,9 +70,6 @@ struct PSInput
     float3 WorldPos : TEXCOORD0;
     float3 WorldNormal : TEXCOORD1;
     float2 UV : TEXCOORD2;
-#if BONE_WEIGHT_HEATMAP
-    float BoneWeightHeat : TEXCOORD6;
-#endif
 #if LIGHTING_MODEL_GOURAUD
     float3 LitColor     : TEXCOORD3;
 #elif HAS_NORMAL_MAP
@@ -95,18 +77,11 @@ struct PSInput
 #endif
 };
 
-struct PSOutput
-{
-    float4 Color : SV_TARGET0;
-    float4 Normal : SV_TARGET1;
-    float4 WorldPos : SV_TARGET2;
-};
-
-void ApplyWireframeColor(inout PSOutput output)
+void ApplyWireframeColor(inout float4 color)
 {
     if (bIsWireframe > 0.5f)
     {
-        output.Color = float4(WireframeRGB, 1.0f);
+        color = float4(WireframeRGB, 1.0f);
     }
 }
 
@@ -118,10 +93,6 @@ PSInput mainVS(VSInput input)
     output.ClipPos = ApplyMVP(input.Position);
     output.UV = input.UV + ScrollUV;
     output.WorldNormal = normalize(mul(input.Normal, (float3x3) WorldInvTrans));
-#if BONE_WEIGHT_HEATMAP
-    output.BoneWeightHeat = 0.0f;
-#endif
-    
 #if HAS_NORMAL_MAP && !LIGHTING_MODEL_GOURAUD
     output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, (float3x3)WorldInvTrans)), input.Tangent.w);
 #endif
@@ -151,28 +122,6 @@ PSInput mainVS(VSInput input)
     return output;
 }
 
-#if BONE_WEIGHT_HEATMAP
-float GetSelectedBoneWeight(uint4 BoneIndices, float4 BoneWeights)
-{
-    if (bBoneWeightHeatmapEnabled == 0 || SelectedBoneIndex < 0)
-    {
-        return 0.0f;
-    }
-
-    float SelectedWeight = 0.0f;
-    [unroll]
-    for (int i = 0; i < 4; ++i)
-    {
-        if ((int)BoneIndices[i] == SelectedBoneIndex)
-        {
-            SelectedWeight += BoneWeights[i];
-        }
-    }
-
-    return saturate(SelectedWeight);
-}
-#endif
-
 PSInput SkeletalMeshVS(SkeletalVSInput input)
 {
     FSkinningResult Skinned = ApplyLinearBlendSkinning(
@@ -189,245 +138,17 @@ PSInput SkeletalMeshVS(SkeletalVSInput input)
     passThrough.UV = input.UV;
     passThrough.Tangent = float4(Skinned.Tangent, input.Tangent.w);
 
-    PSInput output = mainVS(passThrough);
-#if BONE_WEIGHT_HEATMAP
-    output.BoneWeightHeat = GetSelectedBoneWeight(input.BoneIndices, input.BoneWeights);
-#endif
-    return output;
+    return mainVS(passThrough);
 }
 
-#if HAS_NORMAL_MAP
-float3 PerturbNormal(float3 worldNormal, float4 worldTangent, float2 uv)
+float4 mainPS(PSInput input) : SV_TARGET0
 {
-    float3 N = normalize(worldNormal);
-    float3 T = normalize(worldTangent.xyz - dot(worldTangent.xyz, N) * N);
-    float3 B = cross(N, T) * worldTangent.w;
-    float3x3 TBN = float3x3(T, B, N);
-    float3 tn = BumpMap.Sample(SampleState, uv).rgb * 2.0f - 1.0f;
-    return normalize(mul(tn, TBN));
-}
-#endif
-
-#if LIGHT_HEATMAP
-float3 GetHeatmapColor(float weight)
-{
-    float3 color;
-    color.r = smoothstep(0.4f, 0.7f, weight);
-    color.g = smoothstep(0.0f, 0.4f, weight) - smoothstep(0.7f, 1.0f, weight);
-    color.b = 1.0f - smoothstep(0.0f, 0.4f, weight);
-    return color;
-}
-#endif
-
-#if BONE_WEIGHT_HEATMAP
-float3 GetBoneWeightHeatmapColor(float weight)
-{
-    weight = saturate(weight);
-
-    const float3 noneColor = float3(1.0f, 0.0f, 1.0f);
-    const float3 lowColor = float3(0.0f, 0.25f, 1.0f);
-    const float3 midColor = float3(0.0f, 0.9f, 0.35f);
-    const float3 highColor = float3(1.0f, 0.85f, 0.0f);
-    const float3 maxColor = float3(1.0f, 0.05f, 0.0f);
-
-    if (weight < 0.25f)
-    {
-        return lerp(noneColor, lowColor, weight / 0.25f);
-    }
-    if (weight < 0.5f)
-    {
-        return lerp(lowColor, midColor, (weight - 0.25f) / 0.25f);
-    }
-    if (weight < 0.75f)
-    {
-        return lerp(midColor, highColor, (weight - 0.5f) / 0.25f);
-    }
-    return lerp(highColor, maxColor, (weight - 0.75f) / 0.25f);
-}
-#endif
-
-float GetCascadeSplitFarValue(uint CascadeIndex)
-{
-    return (CascadeIndex == 0) ? CascadeSplitFar.x :
-           (CascadeIndex == 1) ? CascadeSplitFar.y :
-           (CascadeIndex == 2) ? CascadeSplitFar.z :
-                                 CascadeSplitFar.w;
-}
-
-float GetCameraDepthForCSM(float3 WorldPos)
-{
-    float4 ViewPos = mul(float4(WorldPos, 1.0f), View);
-    return ViewPos.x;
-}
-
-uint SelectDirectionalCascade(float CameraDepth)
-{
-    for (uint i = 0; i < DirectionalCascadeCount; ++i)
-    {
-        if (CameraDepth <= GetCascadeSplitFarValue(i))
-        {
-            return i;
-        }
-    }
-
-    return MAX_DIRECTIONAL_CASCADE_COUNT;
-}
-
-float ComputeBias(float LightSpaceZ, float ConstantBias, float SlopeScaleBias)
-{
-    // 媛??湲곗슱湲곌? ??寃껋쑝濡?SlopBias 媛以묒튂瑜?寃곗젙
-    float dz_dx = ddx(LightSpaceZ);
-    float dz_dy = ddy(LightSpaceZ);
-    float slope = max(abs(dz_dx), abs(dz_dy));
-    float slopeBias = slope * SlopeScaleBias;
-    return ConstantBias + slopeBias;
-}
-
-float3 ComputeShadowCoordCascade(float4 worldPos, int CascadeIndex)
-{
-    FAtlasShadowData shadowData = AtlasShadowDatas[DirectionalShadowStartIndex + CascadeIndex];
-    float4 shadowCoord = mul(worldPos, shadowData.ShadowViewProj);
-
-    if (abs(shadowCoord.w) < 1e-5f)
-    {
-        return 1.0f;
-    }
-
-    return shadowCoord.xyz / shadowCoord.w;
-}
-
-#ifdef SHADOW_MAP_CSM
-float CalculateShadow(float4 worldPos)
-{
-    if (DirectionalCascadeCount == 0 || DirectionalCascadeCount == 0)
-    {
-        return 1.0f;
-    }
-
-    float CameraDepth = GetCameraDepthForCSM(worldPos.xyz);
-    uint CascadeIndex = SelectDirectionalCascade(CameraDepth);
-
-    if (CascadeIndex >= DirectionalCascadeCount)
-    {
-        return 1.0f;
-    }
-
-    const float BlendAreaRatio = 0.1f;
-    float CascadeFar  = GetCascadeSplitFarValue(CascadeIndex);
-    float CascadeNear = (CascadeIndex == 0) ? 0.0f : GetCascadeSplitFarValue(CascadeIndex - 1);
-    float BlendWidth  = (CascadeFar - CascadeNear) * BlendAreaRatio;
-
-    float BlendFactor = saturate((CameraDepth - (CascadeFar - BlendWidth)) / BlendWidth);
-
-    float3 projCoords = ComputeShadowCoordCascade(worldPos, CascadeIndex);
-    
-    float2 shadowUV = float2(
-          projCoords.x * 0.5f + 0.5f,
-          -projCoords.y * 0.5f + 0.5f
-      );
-
-    if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
-          shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
-          projCoords.z < 0.0f || projCoords.z > 1.0f)
-    {
-        return 1.0f;
-    }
-    
-    FAtlasShadowData cascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + CascadeIndex];
-    
-    float totalBias = ComputeBias(projCoords.z, cascadeShadowData.ConstantBias, cascadeShadowData.SlopedBias);
-#if SHADOW_MAP_VSM
-    float ShadowFactor = ComputeShadowVSM(projCoords, cascadeShadowData.ScaleOffset, VSMMap, SampleState, 0.0001);
-#else
-    float ShadowFactor = ComputeShadowPCF(projCoords, cascadeShadowData.ScaleOffset, (int) cascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
-#endif   
-    // 留덉?留??몃뜳???쒖쇅?섍퀬 釉붾젋??
-    if (CascadeIndex < DirectionalCascadeCount - 1)
-    {
-        int NextCascade = CascadeIndex + 1;
-        float3 NextCascadeProjCoords = ComputeShadowCoordCascade(worldPos, NextCascade);
-        FAtlasShadowData nextCascadeShadowData = AtlasShadowDatas[DirectionalShadowStartIndex + NextCascade];
-        float nextTotalBias = ComputeBias(NextCascadeProjCoords.z, nextCascadeShadowData.ConstantBias, nextCascadeShadowData.SlopedBias);
-
-#if SHADOW_MAP_VSM        
-        float NextCascadeShadowFactor = ComputeShadowVSM(NextCascadeProjCoords, nextCascadeShadowData.ScaleOffset , VSMMap, SampleState, 0.0001);        
-#else 
-        float NextCascadeShadowFactor = ComputeShadowPCF(NextCascadeProjCoords, nextCascadeShadowData.ScaleOffset, (int) nextCascadeShadowData.ShadowSoftness, ShadowSampler, ShadowMap, nextTotalBias);
-#endif
-        ShadowFactor = lerp(ShadowFactor, NextCascadeShadowFactor, BlendFactor);
-    }
-    
-    return ShadowFactor;
-}
-#elif SHADOW_MAP_PSM
-float CalculateShadow(float4 worldPos)
-{
-    float4 shadowCoord = float4(0.f, 0.f, 0.f, 1.f);
-    float4 camClip = mul(worldPos, VirtualViewProj);
-
-    if (abs(camClip.w) < 1e-5f)
-    {
-        return 1.0f;
-    }
-
-    float3 post = camClip.xyz / camClip.w;
-    shadowCoord = mul(float4(post, 1.0f), ShadowViewProj);
-    
-    if (abs(shadowCoord.w) < 1e-5f)
-    {
-        return 1.0f;
-    }
-
-    float3 projCoords = shadowCoord.xyz / shadowCoord.w;
-    float2 shadowUV = float2(
-          projCoords.x * 0.5f + 0.5f,
-          -projCoords.y * 0.5f + 0.5f
-      );
-
-    if (shadowUV.x < 0.0f || shadowUV.x > 1.0f ||
-          shadowUV.y < 0.0f || shadowUV.y > 1.0f ||
-          projCoords.z < 0.0f || projCoords.z > 1.0f)
-    {
-        return 1.0f;
-    }
-    
-    FAtlasShadowData shadowData = AtlasShadowDatas[DirectionalShadowStartIndex];
-    float totalBias = ComputeBias(projCoords.z, shadowData.ConstantBias, shadowData.SlopedBias);
-   
-#if SHADOW_MAP_VSM
-    float shadowFactor = ComputeShadowVSM(projCoords, shadowData.ScaleOffset, VSMMap, SampleState, 0.0001);
-#else
-    float shadowFactor = ComputeShadowPCF(projCoords, shadowData.ScaleOffset, (int) shadowData.ShadowSoftness, ShadowSampler, ShadowMap, totalBias);
-#endif
-    return shadowFactor;
-}
-#else
-    float CalculateShadow(float4 worldPos)
-    {
-        return 1.0f;
-    }
-#endif
-
-PSOutput mainPS(PSInput input) : SV_TARGET
-{
-    PSOutput output;
-    
     float4 DiffuseTex = float4(1.f, 1.f, 1.f, 1.f);
 #if HAS_DIFFUSE_MAP
         DiffuseTex = DiffuseMap.Sample(SampleState, input.UV);
         clip(DiffuseTex.a - 0.001f);
 #endif
 
-#if BONE_WEIGHT_HEATMAP
-    float Weight = bBoneWeightHeatmapEnabled != 0 ? input.BoneWeightHeat : 0.0f;
-    float3 HeatColor = GetBoneWeightHeatmapColor(Weight);
-    output.Color = float4(HeatColor, 1.0f);
-    output.Normal = float4(normalize(input.WorldNormal) * 0.5f + 0.5f, 1.f);
-    output.WorldPos = float4(input.WorldPos, 1.f);
-    ApplyWireframeColor(output);
-    return output;
-#endif
-    
     float4 FinalColor = float4(DiffuseColor * DiffuseTex.rgb, 1);
     float3 SpecularFactor = SpecularColor;
 #if HAS_SPECULAR_MAP
@@ -441,71 +162,25 @@ PSOutput mainPS(PSInput input) : SV_TARGET
 
     if (any(abs(Emissive) > 0.0001f))
     {
-        // Emissive surface: keep base color visible, add glow color, and mark normal.a = 2.
-        output.Color = float4(FinalColor.rgb + Emissive * DiffuseTex.rgb, 1.f);
-        output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 2.f);
-        output.WorldPos = float4(input.WorldPos, 1.f);
-        return output;
+        float4 emissiveColor = float4(FinalColor.rgb + Emissive * DiffuseTex.rgb, 1.f);
+        ApplyWireframeColor(emissiveColor);
+        return emissiveColor;
     }
 
     float3 N = normalize(input.WorldNormal);
 #if HAS_NORMAL_MAP && !LIGHTING_MODEL_GOURAUD
-    N = PerturbNormal(input.WorldNormal, input.WorldTangent, input.UV);
+    N = PerturbNormal(BumpMap, SampleState, input.WorldNormal, input.WorldTangent, input.UV);
 #endif
     
     float3 accumulatedLight = float3(1, 1, 1);
     
-#if LIGHT_HEATMAP
-#if CULLING_MODEL_CLUSTERED
-        uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
-        uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-        uint  numTilesY  = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
-        float z          = (IsOrthographic) ? NearZ + input.ClipPos.z * (FarZ - NearZ) : abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
-    
-        uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
-        uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
-        float weight = saturate(float(clusterData.y) / 64.0); // MAX_LIGHTS_PER_TILE 湲곗?
-#elif CULLING_MODEL_TILED
-        uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
-        uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-        uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
-        float weight = saturate((float)tileData.y / 64.0f); // MAX_LIGHTS_PER_TILE 湲곗?
-#endif
-    float3 heatmapColor = GetHeatmapColor(weight);
-    
-    // ???寃쎄퀎???쒓컖??(?좏깮 ?ы빆: ??쇱쓽 媛?μ옄由?1?쎌????대몼寃?泥섎━)
-    uint2 pixelInTile = uint2(input.ClipPos.xy) % TILE_SIZE;
-    if (pixelInTile.x == 0 || pixelInTile.y == 0)
-    {
-        heatmapColor *= 0.5f; 
-    }
-
-    output.Color = float4(heatmapColor, 1.0f);
-    output.Normal = float4(input.WorldNormal * 0.5f + 0.5f, 1.f);
-    output.WorldPos = float4(input.WorldPos, 1.f);
-    return output;
-#endif
-            
 #if LIGHTING_MODEL_GOURAUD
     accumulatedLight = input.LitColor;
     
 #elif LIGHTING_MODEL_LAMBERT || LIGHTING_MODEL_PHONG
-#if CULLING_MODEL_CLUSTERED
-        uint2 tileCoord  = uint2(input.ClipPos.xy) / TILE_SIZE;
-        uint  numTilesX  = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-        uint  numTilesY  = (uint(ViewportSize.y) + TILE_SIZE - 1) / TILE_SIZE;
-        float z          = (IsOrthographic) ? NearZ + input.ClipPos.z * (FarZ - NearZ) : abs(Projection[3][2] / (input.ClipPos.z - Projection[0][2]));
-        uint  sliceIndex = clamp(uint(log(z / NearZ) / log(FarZ / NearZ) * NUM_SLICE), 0, NUM_SLICE - 1);
-        uint2 clusterData = TileBuffer[(sliceIndex * numTilesY + tileCoord.y) * numTilesX + tileCoord.x];
-#elif CULLING_MODEL_TILED
-        uint2 tileCoord = uint2(input.ClipPos.xy) / TILE_SIZE;
-        uint  numTilesX = (uint(ViewportSize.x) + TILE_SIZE - 1) / TILE_SIZE;
-        uint2 tileData  = TileBuffer[tileCoord.y * numTilesX + tileCoord.x];
-#endif
-
     accumulatedLight = CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
     
-    float shadowFactor = CalculateShadow(float4(input.WorldPos, 1.0f));
+    float shadowFactor = CalculateDirectionalShadow(float4(input.WorldPos, 1.0f), ShadowSampler, ShadowMap, SampleState, VSMMap);
     
     float3 V = normalize(CameraPosition - input.WorldPos);
     if (IsOrthographic > 0.5f)
@@ -519,24 +194,11 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), N, input.WorldPos.xyz, V, Shininess, SpecularFactor) * shadowFactor;
 #endif
 
-    uint LightsToIterate;
-#if CULLING_MODEL_CLUSTERED
-        LightsToIterate = clusterData.y;
-#elif CULLING_MODEL_TILED
-        LightsToIterate = tileData.y;
-#else
-        LightsToIterate = LightCount;
-#endif 
+    FVisibleLightList VisibleLights = GetVisibleLightList(input.ClipPos);
     
-    for (uint i = 0; i < LightsToIterate; i++)
+    for (uint i = 0; i < VisibleLights.Count; i++)
     {
-#if CULLING_MODEL_CLUSTERED
-        uint lightIndex = CulledIndexBuffer[clusterData.x + i];
-#elif CULLING_MODEL_TILED
-        uint lightIndex = CulledIndexBuffer[tileData.x + i];
-#else 
-        uint lightIndex = i;
-#endif
+        uint lightIndex = GetVisibleLightIndex(VisibleLights, i);
         LightInfo light = Lights[lightIndex];
         float lightShadowFactor = ComputeShadowAtlas(lightIndex, float4(input.WorldPos, 1.0f), ShadowSampler, ShadowMap, SampleState, PointShadowCube);
     
@@ -552,26 +214,8 @@ PSOutput mainPS(PSInput input) : SV_TARGET
     }
 #endif
     
-    float4 DecalColor = float4(0, 0, 0, 0);
-    for (uint i = 0; i < DecalCount; i++)
-    {
-        float4 DecalWorldPos = mul(float4(input.WorldPos, 1.0f), Decals[i].InvDecalWorld);
-        if (any(abs(DecalWorldPos.xyz) > 0.5f))
-            continue;
-
-        float2 decalUV;
-        decalUV.xy = DecalWorldPos.yz + 0.5f;
-        decalUV.y = 1.0f - decalUV.y;
-
-        float4 decalTex = DecalDiffuseTexture.SampleLevel(SampleState, float3(decalUV, Decals[i].TextureIndex), 0);
-        DecalColor = (decalTex.a > 0.001) ? decalTex * Decals[i].DecalColorTint : DecalColor;
-    }
-    FinalColor = (DecalColor.a > 0.001) ? DecalColor : FinalColor;
-    output.Color = float4(FinalColor.xyz * accumulatedLight, 1.0f);
-    output.WorldPos = float4(input.WorldPos, 1.f);
-    output.Normal = float4(N * 0.5f + 0.5f, 1.f);
-
-    ApplyWireframeColor(output);
+    float4 outputColor = float4(FinalColor.xyz * accumulatedLight, 1.0f);
+    ApplyWireframeColor(outputColor);
 
 #ifdef CASCADE_VIS
     if (DirectionalCascadeCount > 0)
@@ -586,11 +230,11 @@ PSOutput mainPS(PSInput input) : SV_TARGET
         else                        cascadeColor = float3(1.0f, 1.0f, 0.0f);
 
         if (CascadeIndex < MAX_DIRECTIONAL_CASCADE_COUNT)
-            output.Color.rgb = lerp(output.Color.rgb, cascadeColor, 0.5f);
+            outputColor.rgb = lerp(outputColor.rgb, cascadeColor, 0.5f);
     }
 #endif
  
    
       
-    return output;
+    return outputColor;
 }

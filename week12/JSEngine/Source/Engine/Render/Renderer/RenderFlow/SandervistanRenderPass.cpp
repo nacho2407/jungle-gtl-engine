@@ -1,9 +1,18 @@
 #include "SandervistanRenderPass.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/ShaderPaths.h"
+#include "Render/Scene/RenderBus.h"
 
 namespace
 {
+    bool IsDebugViewMode(EViewMode ViewMode)
+    {
+        return ViewMode == EViewMode::Normal ||
+            ViewMode == EViewMode::Heatmap ||
+            ViewMode == EViewMode::BoneWeightHeatmap ||
+            ViewMode == EViewMode::Depth;
+    }
+
     FShaderProgram* GetSandevistanProgram()
     {
         FShaderStageKey VSKey;
@@ -30,6 +39,15 @@ bool FSandevistanRenderPass::Release()
 
 bool FSandevistanRenderPass::Begin(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()) ||
+        !Context->RenderBus->IsSandevistanEnabled() ||
+        Context->RenderBus->GetSandevistanIntensity() <= 0.001f)
+    {
+        OutSRV = PrevPassSRV;
+        OutRTV = PrevPassRTV;
+        return true;
+    }
+
     const FRenderTargetSet* RT = Context->RenderTargets;
 
     // ?? 안전: ping-pong 필요 (임시 RT)
@@ -81,12 +99,26 @@ bool FSandevistanRenderPass::Begin(const FRenderPassContext* Context)
 
 bool FSandevistanRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()) ||
+        !Context->RenderBus->IsSandevistanEnabled() ||
+        Context->RenderBus->GetSandevistanIntensity() <= 0.001f)
+    {
+        return true;
+    }
+
     Context->DeviceContext->Draw(3, 0);
     return true;
 }
 
 bool FSandevistanRenderPass::End(const FRenderPassContext* Context)
 {
+    if (IsDebugViewMode(Context->RenderBus->GetViewMode()) ||
+        !Context->RenderBus->IsSandevistanEnabled() ||
+        Context->RenderBus->GetSandevistanIntensity() <= 0.001f)
+    {
+        return true;
+    }
+
     ID3D11ShaderResourceView* nullSRVs[] = { nullptr };
     Context->DeviceContext->PSSetShaderResources(0, 1, nullSRVs);
     return true;

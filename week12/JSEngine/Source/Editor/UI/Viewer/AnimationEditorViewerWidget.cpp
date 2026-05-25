@@ -187,6 +187,7 @@ void FAnimationEditorViewerWidget::RenderContent(float DeltaTime)
 	const float ViewWidth = std::max(220.0f, WorkSize.x - DetailsWidth - ImGui::GetStyle().ItemSpacing.x);
 
 	RenderViewportPanel(SceneViewport, SRV, ImVec2(ViewWidth, ViewAreaHeight));
+	RenderDefaultViewportToolbar();
 
 	ImGui::SameLine();
 	ImGui::BeginChild("AnimSequenceDetailsPanel", ImVec2(DetailsWidth, ViewAreaHeight), true);

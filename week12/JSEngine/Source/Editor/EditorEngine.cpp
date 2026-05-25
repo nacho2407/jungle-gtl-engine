@@ -26,6 +26,7 @@
 #include "Settings/EditorSettings.h"
 #include "Settings/ProjectSettings.h"
 #include <algorithm>
+#include <cctype>
 #if STATS
 #include <chrono>
 #endif
@@ -38,11 +39,25 @@
 
 namespace
 {
+	FString ToLowerCopy(FString Value)
+	{
+		std::transform(
+			Value.begin(),
+			Value.end(),
+			Value.begin(),
+			[](unsigned char Ch)
+			{
+				return static_cast<char>(std::tolower(Ch));
+			});
+		return Value;
+	}
+
 	bool IsParticleViewerAssetPath(const FString& FileName)
 	{
 		const FString NormalizedFileName = FPaths::Normalize(FileName);
-		return NormalizedFileName.find("/Particle/") != FString::npos ||
-			NormalizedFileName.find("\\Particle\\") != FString::npos;
+		const std::filesystem::path FilePath(FPaths::ToWide(NormalizedFileName));
+		const FString Extension = ToLowerCopy(FPaths::ToUtf8(FilePath.extension().wstring()));
+		return Extension == ".particle";
 	}
 
 	std::unique_ptr<FEditorViewer> CreateEditorViewerForFile(const FString& FileName)

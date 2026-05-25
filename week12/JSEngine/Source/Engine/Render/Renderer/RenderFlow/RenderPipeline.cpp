@@ -4,7 +4,8 @@
 #include "LightCullingPass.h"
 #include "OpaqueRenderPass.h"
 #include "DecalRenderPass.h"
-#include "ViewModeResolvePass.h"
+#include "ViewModeMeshRenderPass.h"
+#include "DebugViewModeResolvePass.h"
 #include "FogRenderPass.h"
 #include "FXAARenderPass.h"
 #include "FontRenderPass.h"
@@ -34,14 +35,16 @@ namespace
             "RenderPass.Shadow",
             "RenderPass.VSMConversion",
             "RenderPass.Opaque",
-            "RenderPass.ViewModeResolve",
+            "RenderPass.Decal",
+            "RenderPass.ViewModeMesh",
+            "RenderPass.Translucent",
+            "RenderPass.SubUV",
+            "RenderPass.DebugViewModeResolve",
             "RenderPass.Fog",
             "RenderPass.Sandervistan",
             "RenderPass.PostProcess",
             "RenderPass.FXAA",
             "RenderPass.Font",
-            "RenderPass.SubUV",
-            "RenderPass.Translucent",
             "RenderPass.SelectionMask",
             "RenderPass.Grid",
             "RenderPass.Editor",
@@ -68,8 +71,14 @@ bool FRenderPipeline::Initialize()
     OpaqueRenderPass = std::make_shared<FOpaqueRenderPass>();
     OpaqueRenderPass->Initialize();
 
-	ViewModeResolvePass = std::make_shared<FViewModeResolvePass>();
-    ViewModeResolvePass->Initialize();
+	DecalRenderPass = std::make_shared<FDecalRenderPass>();
+	DecalRenderPass->Initialize();
+
+	ViewModeMeshRenderPass = std::make_shared<FViewModeMeshRenderPass>();
+    ViewModeMeshRenderPass->Initialize();
+
+	DebugViewModeResolvePass = std::make_shared<FDebugViewModeResolvePass>();
+    DebugViewModeResolvePass->Initialize();
 
 	FogRenderPass = std::make_shared<FFogRenderPass>();
     FogRenderPass->Initialize();
@@ -113,30 +122,31 @@ bool FRenderPipeline::Initialize()
 	PostProcessRenderPass = std::make_shared<FPostProcessRenderPass>();
     PostProcessRenderPass->Initialize();
 
-	ViewModeResolvePass->SetSkipWireframe(true);
+	DebugViewModeResolvePass->SetSkipWireframe(true);
     FogRenderPass->SetSkipWireframe(true);
     FXAARenderPass->SetSkipWireframe(true);
 
 	/**
 	 * 하나의 Render Pass 가 다음 Rneder Pass 에 넘기는 OutSRV 에 대해선 주의가 필요하다.
-	 * ViewModeResolvePass -> FogRenderPass 로 갈 때 SceneViewModeSRV 를 넘겨도 되지만
+	 * 각 pass가 넘기는 OutSRV/OutRTV가 다음 pass 입력이므로 skip/pass-through도 output을 명시해야 한다.
 	 * FXAARenderPass -> FontRenderPass 일 때 FXAASRV 가 아닌 ColorSRV 를 넘겨야 한다.
 	 * ColorSRV 가 최종 결과물 버퍼라고 생각하면 된다.
 	 */
 	RenderPasses.push_back(DepthPrePass);
 	RenderPasses.push_back(LightCullingPass);
 	RenderPasses.push_back(ShadowPass);
-    RenderPasses.push_back(VSMConversionRenderPass); // VSM 추가
+	RenderPasses.push_back(VSMConversionRenderPass); // VSM 추가
 	RenderPasses.push_back(OpaqueRenderPass);
-    RenderPasses.push_back(ViewModeResolvePass);
-
+	RenderPasses.push_back(DecalRenderPass);
+    RenderPasses.push_back(ViewModeMeshRenderPass);
+    RenderPasses.push_back(TranslucentRenderPass);
+    RenderPasses.push_back(SubUVRenderPass);
+    RenderPasses.push_back(DebugViewModeResolvePass);
     RenderPasses.push_back(FogRenderPass);
     RenderPasses.push_back(SandevistanRenderPass);
     RenderPasses.push_back(PostProcessRenderPass);
     RenderPasses.push_back(FXAARenderPass);
 	RenderPasses.push_back(FontRenderPass);
-    RenderPasses.push_back(SubUVRenderPass);
-    RenderPasses.push_back(TranslucentRenderPass);
     RenderPasses.push_back(SelectionMaskRenderPass);
     RenderPasses.push_back(GridRenderPass);
     RenderPasses.push_back(EditorRenderPass);
@@ -193,10 +203,22 @@ void FRenderPipeline::Release()
         OpaqueRenderPass.reset();
 	}
 
-	if (ViewModeResolvePass)
+	if (DecalRenderPass)
 	{
-        ViewModeResolvePass->Release();
-        ViewModeResolvePass.reset();
+		DecalRenderPass->Release();
+		DecalRenderPass.reset();
+	}
+
+	if (ViewModeMeshRenderPass)
+	{
+        ViewModeMeshRenderPass->Release();
+        ViewModeMeshRenderPass.reset();
+	}
+
+	if (DebugViewModeResolvePass)
+	{
+        DebugViewModeResolvePass->Release();
+        DebugViewModeResolvePass.reset();
 	}
 
 	if (FogRenderPass)

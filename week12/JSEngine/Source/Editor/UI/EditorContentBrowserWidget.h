@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/EditorWidget.h"
 #include "Render/Common/ComPtr.h"
@@ -112,6 +112,7 @@ private:
 	bool IsMaterialAsset(const FString& Extension) const;
 	bool IsCurveAsset(const std::filesystem::path& Path) const;
 	bool IsSequenceAsset(const FString& Extension) const;
+	bool IsParticleAsset(const FString& Extension) const;
 	bool IsAnimGraphAsset(const FString& Extension) const;
 	bool IsPrefabAsset(const FString& Extension) const;
 	std::filesystem::path ResolveLuaScriptCreateDirectory() const;

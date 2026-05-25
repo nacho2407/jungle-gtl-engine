@@ -95,6 +95,7 @@ public:
 		FFrameConstants Constants;
 		Constants.View = View;
 		Constants.Projection = Proj;
+		Constants.InvViewProjection = (View * Proj).GetInverse();
 		Constants.CameraPosition = CameraPosition;
 		Constants.bIsOrthographic = IsOrthographic();
 		Constants.WireframeColor = WireframeColor;

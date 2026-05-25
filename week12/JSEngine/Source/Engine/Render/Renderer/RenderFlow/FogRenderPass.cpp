@@ -8,6 +8,14 @@
 
 namespace
 {
+    bool IsDebugViewMode(EViewMode ViewMode)
+    {
+        return ViewMode == EViewMode::Normal ||
+            ViewMode == EViewMode::Heatmap ||
+            ViewMode == EViewMode::BoneWeightHeatmap ||
+            ViewMode == EViewMode::Depth;
+    }
+
     FShaderProgram* GetFogProgram()
     {
         FShaderStageKey VSKey;
@@ -35,7 +43,7 @@ bool FFogRenderPass::Release()
 bool FFogRenderPass::Begin(const FRenderPassContext* Context)
 {
     const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(ERenderPass::Fog);
-    if (Commands.empty())
+    if (Commands.empty() || IsDebugViewMode(Context->RenderBus->GetViewMode()) || PrevPassSRV == nullptr)
     {
         // Fog command가 없으면 이전 패스 결과를 그대로 넘긴다.
         OutSRV = PrevPassSRV;
@@ -43,8 +51,7 @@ bool FFogRenderPass::Begin(const FRenderPassContext* Context)
         return true;
     }
 
-    if (!Context->RenderTargets->SceneViewModeRTV || !Context->RenderTargets->SceneViewModeSRV ||
-        !Context->RenderTargets->SceneFogRTV || !Context->RenderTargets->SceneFogSRV)
+    if (!Context->RenderTargets->SceneFogRTV || !Context->RenderTargets->SceneFogSRV)
     {
         return false;
     }
@@ -61,8 +68,8 @@ bool FFogRenderPass::Begin(const FRenderPassContext* Context)
     ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::Opaque);
     Context->DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
 
-    ID3D11RenderTargetView* RTVs[3] = { Context->RenderTargets->SceneFogRTV, nullptr, nullptr };
-    Context->DeviceContext->OMSetRenderTargets(3, RTVs, nullptr);
+    ID3D11RenderTargetView* RTVs[1] = { Context->RenderTargets->SceneFogRTV };
+    Context->DeviceContext->OMSetRenderTargets(1, RTVs, nullptr);
 
     Context->DeviceContext->IASetInputLayout(nullptr);
     Context->DeviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
@@ -77,19 +84,16 @@ bool FFogRenderPass::Begin(const FRenderPassContext* Context)
 bool FFogRenderPass::DrawCommand(const FRenderPassContext* Context)
 {
     const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(ERenderPass::Fog);
-    if (Commands.empty())
+    if (Commands.empty() || IsDebugViewMode(Context->RenderBus->GetViewMode()) || PrevPassSRV == nullptr)
     {
         return true;
     }
 
     ID3D11ShaderResourceView* srvs[] = {
-        Context->RenderTargets->SceneColorSRV,
-        Context->RenderTargets->SceneNormalSRV,
-        Context->RenderTargets->SceneDepthSRV,
         PrevPassSRV,
-        Context->RenderTargets->SceneWorldPosSRV
+        Context->RenderTargets->SceneDepthSRV
     };
-    Context->DeviceContext->PSSetShaderResources(0, 5, srvs);
+    Context->DeviceContext->PSSetShaderResources(0, 2, srvs);
 
     FFogPassConstants FogPassConstants = {};
     FogPassConstants.FogCount = std::min<uint32>(static_cast<uint32>(Commands.size()), MaxFogLayerCount);
@@ -110,7 +114,7 @@ bool FFogRenderPass::DrawCommand(const FRenderPassContext* Context)
 
 bool FFogRenderPass::End(const FRenderPassContext* Context)
 {
-    ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr, nullptr, nullptr, nullptr };
-    Context->DeviceContext->PSSetShaderResources(0, 5, nullSRVs);
+    ID3D11ShaderResourceView* nullSRVs[] = { nullptr, nullptr };
+    Context->DeviceContext->PSSetShaderResources(0, 2, nullSRVs);
     return true;
 }

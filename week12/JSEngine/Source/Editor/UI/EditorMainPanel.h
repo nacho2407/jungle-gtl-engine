@@ -56,6 +56,7 @@ public:
 	bool ChangeViewerTarget(FEditorViewer* Viewer, const FString& NewFileName);
 	void RequestDockViewer(FEditorViewer* Viewer);
 	void RenderViewerToolbarControls(FEditorViewer* Viewer);
+	void RenderViewerTransformToolbarControls(FEditorViewer* Viewer);
 	ID3D11ShaderResourceView* GetHomeIconResource() const { return IconResources.HomeIcon; }
 	void FlushOpenViewerWidgets();
 	void CloseViewer(FEditorViewer* Viewer);

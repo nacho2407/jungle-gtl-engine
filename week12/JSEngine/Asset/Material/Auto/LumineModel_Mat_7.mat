@@ -1,4 +1,15 @@
 {
+        "BlendMode" : "Opaque",
+        "BlendState" : {
+          "AlphaOp" : "Add",
+          "BlendEnable" : false,
+          "ColorOp" : "Add",
+          "DestAlpha" : "Zero",
+          "DestColor" : "Zero",
+          "SrcAlpha" : "One",
+          "SrcColor" : "One",
+          "WriteMask" : 15
+        },
         "ImportedName" : "脸",
         "Name" : "LumineModel_Mat_7",
         "Params" : [{

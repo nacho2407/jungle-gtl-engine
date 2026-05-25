@@ -23,8 +23,9 @@ std::unique_ptr<FEditorViewerWidget> CreateEditorViewerWidget(FEditorViewer* Vie
 	{
 	case EEditorTabKind::AnimSequenceViewer:
 		return std::make_unique<FAnimationEditorViewerWidget>();
-	case EEditorTabKind::StaticMeshViewer:
+	case EEditorTabKind::ParticleViewer:
 		return std::make_unique<FParticleEditorViewerWidget>();
+	case EEditorTabKind::StaticMeshViewer:
 	case EEditorTabKind::SkeletalMeshViewer:
 	default:
 		return std::make_unique<FSkeletalMeshEditorViewerWidget>();

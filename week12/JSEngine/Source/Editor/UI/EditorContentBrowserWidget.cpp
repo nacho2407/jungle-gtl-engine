@@ -1163,6 +1163,10 @@ void FEditorContentBrowserWidget::DrawContentTile(const FContentItem& Item, cons
 		{
 			EditorEngine->CreateViewer(MakeRelativeProjectPath(Item.Path));
 		}
+		else if (IsParticleAsset(Item.Extension))
+		{
+			EditorEngine->CreateViewer(MakeRelativeProjectPath(Item.Path));
+		}
 		else if (Item.Extension == ".fbx")
 		{
 			const FString FbxPath = MakeRelativeProjectPath(Item.Path);
@@ -2317,6 +2321,11 @@ bool FEditorContentBrowserWidget::IsCurveAsset(const std::filesystem::path& Path
 bool FEditorContentBrowserWidget::IsSequenceAsset(const FString& Extension) const
 {
 	return Extension == ".sequence" || Extension == ".animseq";
+}
+
+bool FEditorContentBrowserWidget::IsParticleAsset(const FString& Extension) const
+{
+	return Extension == ".particle";
 }
 
 bool FEditorContentBrowserWidget::IsAnimGraphAsset(const FString& Extension) const
