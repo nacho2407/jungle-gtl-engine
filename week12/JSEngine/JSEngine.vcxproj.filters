@@ -2005,6 +2005,9 @@
     <ClInclude Include="Source\Engine\Particle\ParticleAsset.h">
       <Filter>Source\Engine\Particle</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particle\ParticleDistributions.h">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Particle\ParticleEmitterInstance.h">
       <Filter>Source\Engine\Particle</Filter>
     </ClInclude>
@@ -2014,7 +2017,13 @@
     <ClInclude Include="Source\Engine\Particle\ParticleEventManager.h">
       <Filter>Source\Engine\Particle</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particle\ParticleHelper.h">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Particle\ParticleModules.h">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particle\ParticleRandom.h">
       <Filter>Source\Engine\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Particle\ParticleSystemComponent.h">

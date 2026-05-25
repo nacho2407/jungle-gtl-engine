@@ -1213,10 +1213,13 @@
     <ClInclude Include="Source\Engine\Object\ObjectPtr.h" />
     <ClInclude Include="Source\Engine\Object\Property.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleAsset.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleDistributions.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleEmitterInstance.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleEmitterInstanceOwner.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleEventManager.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleHelper.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleModules.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleRandom.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleSystemComponent.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleTypes.h" />
     <ClInclude Include="Source\Engine\Render\Common\ComPtr.h" />
@@ -1353,6 +1356,7 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
     <None Include="Shaders\Atmosphere\HeightFogPixelShader.hlsl" />
     <None Include="Shaders\Common\Common.hlsli" />
     <None Include="Shaders\Common\LightCulling.hlsli" />
@@ -1408,12 +1412,12 @@
     <Copy SourceFiles="$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration)\libfbxsdk.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" />
+    <Import Project="packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets')" />
   </ImportGroup>
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild" DependsOnTargets="RestoreNuGetPackages">
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing and automatic restore failed. Restore NuGet packages or build again with network access. Missing file: {0}.</ErrorText>
+      <ErrorText>이 프로젝트는 이 컴퓨터에 없는 NuGet 패키지를 참조합니다. 해당 패키지를 다운로드하려면 NuGet 패키지 복원을 사용하십시오. 자세한 내용은 http://go.microsoft.com/fwlink/?LinkID=322105를 참조하십시오. 누락된 파일은 {0}입니다.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets'))" />
+    <Error Condition="!Exists('packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets'))" />
   </Target>
 </Project>

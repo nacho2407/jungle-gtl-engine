@@ -12,18 +12,20 @@ namespace ERHIFeatureLevel
 	};
 }
 
+UENUM()
 enum class EParticleSortMode
 {
-	None,
-	ViewDepthBackToFront,
-	ViewDepthFrontToBack,
-	RelativeTime,
+	None UMETA(DisplayName = "None"),
+	ViewDepthBackToFront UMETA(DisplayName = "View Depth Back To Front"),
+	ViewDepthFrontToBack UMETA(DisplayName = "View Depth Front To Back"),
+	RelativeTime UMETA(DisplayName = "Relative Time"),
 };
 
+UENUM()
 enum class EParticleCoordinateSpace
 {
-	Local,
-	World,
+	Local UMETA(DisplayName = "Local"),
+	World UMETA(DisplayName = "World"),
 };
 
 enum class EDynamicEmitterType
@@ -61,10 +63,20 @@ struct FParticleEventBurstData
 
 struct FBaseParticle
 {
-	FVector Location;
-	FVector Velocity;
+	FVector Location = FVector::ZeroVector;
+    FVector OldLocation = FVector::ZeroVector;
+	FVector Velocity = FVector::ZeroVector;
+    FVector BaseVelocity = FVector::ZeroVector;
 	float RelativeTime = 0.0f;
-	float Lifetime = 0.0f;
+	float Lifetime = 1.0f;
+    float OneOverMaxLifetime = 1.0f; // particle이 현재 수명의 몇 퍼센트 지점에 있는지 계산할 때 사용하는 MaxLifetime의 역수
+	float Rotation = 0.0f;
+	float RotationRate = 0.0f;
+	FVector Size = FVector::OneVector;
+	FVector BaseSize = FVector::OneVector;
+	FColor Color = FColor::White();
+	uint32 Flags = 0;
+    uint32 Seed = 0; // seeded procedural 재현성을 위한 랜덤 시드값
 };
 
 struct FParticleSpriteVertex
