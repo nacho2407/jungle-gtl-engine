@@ -4,24 +4,52 @@
 
 void AParticleEventManager::HandleParticleSpawnEvents(UParticleSystemComponent* Component, const TArray<FParticleEventSpawnData>& InSpawnEvents)
 {
-	(void)Component;
-	(void)InSpawnEvents;
+	if (Component == nullptr)
+	{
+		return;
+	}
+
+	for (const FParticleEventSpawnData& Event : InSpawnEvents)
+	{
+		Component->OnParticleSpawn.Broadcast(Component, Event);
+	}
 }
 
 void AParticleEventManager::HandleParticleDeathEvents(UParticleSystemComponent* Component, const TArray<FParticleEventDeathData>& InDeathEvents)
 {
-	(void)Component;
-	(void)InDeathEvents;
+	if (Component == nullptr)
+	{
+		return;
+	}
+
+	for (const FParticleEventDeathData& Event : InDeathEvents)
+	{
+		Component->OnParticleDeath.Broadcast(Component, Event);
+	}
 }
 
 void AParticleEventManager::HandleParticleCollisionEvents(UParticleSystemComponent* Component, const TArray<FParticleEventCollideData>& InCollisionEvents)
 {
-	(void)Component;
-	(void)InCollisionEvents;
+	if (Component == nullptr)
+	{
+		return;
+	}
+
+	for (const FParticleEventCollideData& Event : InCollisionEvents)
+	{
+		Component->OnParticleCollide.Broadcast(Component, Event);
+	}
 }
 
 void AParticleEventManager::HandleParticleBurstEvents(UParticleSystemComponent* Component, const TArray<FParticleEventBurstData>& InBurstEvents)
 {
-	(void)Component;
-	(void)InBurstEvents;
+	if (Component == nullptr)
+	{
+		return;
+	}
+
+	for (const FParticleEventBurstData& Event : InBurstEvents)
+	{
+		Component->OnParticleBurst.Broadcast(Component, Event);
+	}
 }

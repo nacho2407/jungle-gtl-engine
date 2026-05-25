@@ -40,7 +40,7 @@ public:
 	{
 		if (Component != nullptr)
 		{
-			Component->SpawnEvents.push_back(Event);
+			Component->ReportEventSpawn(Event);
 		}
 	}
 
@@ -48,7 +48,7 @@ public:
 	{
 		if (Component != nullptr)
 		{
-			Component->DeathEvents.push_back(Event);
+			Component->ReportEventDeath(Event);
 		}
 	}
 
@@ -56,7 +56,7 @@ public:
 	{
 		if (Component != nullptr)
 		{
-			Component->CollisionEvents.push_back(Event);
+			Component->ReportEventCollision(Event);
 		}
 	}
 
@@ -64,7 +64,7 @@ public:
 	{
 		if (Component != nullptr)
 		{
-			Component->BurstEvents.push_back(Event);
+			Component->ReportEventBurst(Event);
 		}
 	}
 
@@ -157,18 +157,51 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 void UParticleSystemComponent::FinalizeTickComponent()
 {
-	if (EventManager != nullptr)
+	if (!SpawnEvents.empty() || !DeathEvents.empty() || !CollisionEvents.empty() || !BurstEvents.empty())
 	{
-		if (!SpawnEvents.empty()) EventManager->HandleParticleSpawnEvents(this, SpawnEvents);
-		if (!DeathEvents.empty()) EventManager->HandleParticleDeathEvents(this, DeathEvents);
-		if (!CollisionEvents.empty()) EventManager->HandleParticleCollisionEvents(this, CollisionEvents);
-		if (!BurstEvents.empty()) EventManager->HandleParticleBurstEvents(this, BurstEvents);
+		AParticleEventManager* DispatchManager = EventManager;
+		if (DispatchManager == nullptr)
+		{
+			UWorld* World = GetWorld();
+			DispatchManager = World != nullptr ? World->GetOrCreateParticleEventManager() : nullptr;
+
+			// Caching ParticleEventManager
+            EventManager = DispatchManager;
+		}
+
+		if (DispatchManager != nullptr)
+		{
+			if (!SpawnEvents.empty()) DispatchManager->HandleParticleSpawnEvents(this, SpawnEvents);
+			if (!DeathEvents.empty()) DispatchManager->HandleParticleDeathEvents(this, DeathEvents);
+			if (!CollisionEvents.empty()) DispatchManager->HandleParticleCollisionEvents(this, CollisionEvents);
+			if (!BurstEvents.empty()) DispatchManager->HandleParticleBurstEvents(this, BurstEvents);
+		}
 	}
 
 	SpawnEvents.clear();
 	DeathEvents.clear();
 	CollisionEvents.clear();
 	BurstEvents.clear();
+}
+
+void UParticleSystemComponent::ReportEventSpawn(const FParticleEventSpawnData& Event)
+{
+	SpawnEvents.push_back(Event);
+}
+
+void UParticleSystemComponent::ReportEventDeath(const FParticleEventDeathData& Event)
+{
+	DeathEvents.push_back(Event);
+}
+
+void UParticleSystemComponent::ReportEventCollision(const FParticleEventCollideData& Event)
+{
+	CollisionEvents.push_back(Event);
+}
+
+void UParticleSystemComponent::ReportEventBurst(const FParticleEventBurstData& Event)
+{
+	BurstEvents.push_back(Event);
 }
 
 void UParticleSystemComponent::PackRenderData()

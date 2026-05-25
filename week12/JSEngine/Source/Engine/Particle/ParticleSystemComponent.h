@@ -8,12 +8,20 @@ class UWorld;
 class UParticleSystem;
 class AParticleEventManager;
 class FParticleEmitterInstance;
+class UParticleSystemComponent;
 
 struct FParticleEventSpawnData;
 struct FParticleEventDeathData;
 struct FParticleEventBurstData;
 struct FDynamicEmitterDataBase;
 struct FParticleEventCollideData;
+
+// --- Particle Event Delegate ---
+// TODO: Core 이벤트 데이터에 이름, 시간, 속도 정보가 추가되면 시그니처 확장
+DECLARE_DELEGATE(FParticleSpawnSignature, UParticleSystemComponent*, const FParticleEventSpawnData&)
+DECLARE_DELEGATE(FParticleDeathSignature, UParticleSystemComponent*, const FParticleEventDeathData&)
+DECLARE_DELEGATE(FParticleCollisionSignature, UParticleSystemComponent*, const FParticleEventCollideData&)
+DECLARE_DELEGATE(FParticleBurstSignature, UParticleSystemComponent*, const FParticleEventBurstData&)
 
 /******************************************************************
 * Particle System 런타임 객체 관리 컴포넌트
@@ -39,6 +47,12 @@ public:
 	void FinalizeTickComponent();
 	void PackRenderData();
 
+	// --- Particle Event Section ---
+	void ReportEventSpawn(const FParticleEventSpawnData& Event);
+	void ReportEventDeath(const FParticleEventDeathData& Event);
+	void ReportEventCollision(const FParticleEventCollideData& Event);
+	void ReportEventBurst(const FParticleEventBurstData& Event);
+
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
 	bool SupportsOutline() const override { return false; }
 
@@ -46,6 +60,11 @@ public:
 	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
 
 	void ResetParticles();
+
+	FParticleSpawnSignature OnParticleSpawn;
+	FParticleDeathSignature OnParticleDeath;
+	FParticleCollisionSignature OnParticleCollide;
+	FParticleBurstSignature OnParticleBurst;
 
 private:
 	void CreateEmitterInstances();

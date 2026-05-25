@@ -161,3 +161,44 @@
 - Boundary: Accurate PSC bounds and picking require a contract covering every renderable emitter snapshot type; implementing only Mesh behavior here is not valid for the component.
 - Remaining TODO: Implement PSC-wide bounds/picking only once Sprite and Mesh snapshot contracts can both be consumed without modifying renderer-owned draw behavior.
 - Next step: Continue an independently approved PSC/Mesh integration step after this rollback is verified.
+
+## 2026-05-25 - Particle event manager preimplementation analysis
+
+- Branch / HEAD: `feat/PSC` / `baf1f62`
+- Completed step: Determined which `AParticleEventManager` behavior can be implemented before Core and Asset event contracts are available.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: Analysis only; inspected PSC event queues/finalization, `IParticleEmitterInstanceOwner`, Core tick/module behavior, particle event data structs, the engine delegate pattern, and the bundled Cascade event-generator reference.
+- Findings: PSC already queues and forwards spawn, death, collision, and burst arrays to `AParticleEventManager`, but no code assigns an event manager to a PSC and Core does not invoke any `Add*Event()` path because particle spawning, death, and collision generation are not implemented yet.
+- Findings: Cascade event behavior depends on an asset-side `EventGenerator`/receiver module model; the current Particle asset graph and modules contain neither contract, and the current event structs do not include event names or receiver-selection metadata.
+- Safe candidate: A custom engine-level observer surface can be added now by exposing four `TDelegate` broadcasts from `AParticleEventManager::HandleParticle*Events()`; it would make manually injected or future Core-produced events observable without deciding how events spawn other particle effects.
+- Boundary: Implementing Cascade-style event receiver routing, effect spawning, collision consequences, or manager auto-registration now would invent Core/Asset/runtime policy outside the available contract.
+- Remaining TODO: Decide whether this project wants the narrow delegate observer surface as an interim/public runtime API, or will wait for the Asset/Core-owned Cascade event module contract.
+- Next step: If the delegate observer API is approved, add broadcasts and a minimal injection/usage verification step; otherwise leave `AParticleEventManager` as a TODO sink until generator/receiver APIs arrive.
+
+## 2026-05-25 - PSC particle event delegate dispatch scaffold
+
+- Branch / HEAD: `feat/PSC` / `baf1f62`
+- Completed step: Added the Cascade-aligned component-owned particle event delegate surface and filled `AParticleEventManager` as its forwarding dispatcher.
+- Changed files: `JSEngine/Source/Engine/Particle/ParticleSystemComponent.h`, `JSEngine/Source/Engine/Particle/ParticleEventManager.h`, `JSEngine/Source/Engine/Particle/ParticleEventManager.cpp`, `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` builds successfully for `Debug|x64`; `git diff --check` reported no whitespace errors.
+- Added behavior: PSC now exposes `OnParticleSpawn`, `OnParticleDeath`, `OnParticleCollide`, and `OnParticleBurst` delegate endpoints, following Unreal Cascade's ownership of particle event listeners on `UParticleSystemComponent`.
+- Added behavior: `AParticleEventManager::HandleParticle*Events()` methods broadcast each received event item to the corresponding PSC delegate.
+- Constraint: The current local event structs do not yet contain Unreal-level event name, emitter time, velocity, or receiver metadata; delegate payloads intentionally expose only the existing event records until Core/Asset extends the contract.
+- Boundary: No automatic event manager creation/assignment, event generation, receiver routing, or spawned-effect policy was added.
+- Correction: The handler methods remain non-virtual because this engine has no current `AParticleEventManager` subclass or override contract; Unreal API virtuality alone is not a reason to publish that extension point locally.
+- Remaining TODO: Core must produce spawn/death/collision/burst records and the Asset contract must supply generator/receiver policy before this path can drive authored Cascade-style effects.
+- Next step: Continue with another independently approved PSC/Mesh integration step or integrate richer event payloads once Core/Asset publishes that contract.
+
+## 2026-05-25 - PSC event queue reporting and lazy manager connection
+
+- Branch / HEAD: `feat/PSC` / `baf1f62`
+- Completed step: Opened explicit PSC event reporting entry points and connected queued events to a shared, non-scene `AParticleEventManager` created lazily by the owning world.
+- Changed files: `JSEngine/Source/Engine/Particle/ParticleSystemComponent.h`, `JSEngine/Source/Engine/Particle/ParticleSystemComponent.cpp`, `JSEngine/Source/Engine/GameFramework/World.h`, `JSEngine/Source/Engine/GameFramework/World.cpp`, `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` builds successfully for `Debug|x64`; `git diff --check` reported no whitespace errors.
+- Added behavior: The externally declared `FParticle*Signature` delegate aliases compile after forward-declaring `UParticleSystemComponent`, keeping the event signature types reusable outside the component declaration.
+- Added behavior: PSC now exposes `ReportEventSpawn()`, `ReportEventDeath()`, `ReportEventCollision()`, and `ReportEventBurst()` as the queue insertion contract; the instance owner forwards future Core event records through these methods.
+- Added behavior: If queued records exist and no custom manager was assigned, `FinalizeTickComponent()` asks `UWorld` for one shared lazy `AParticleEventManager` and dispatches through it.
+- Ownership boundary: The lazy manager is held and destroyed by `UWorld` without insertion into `ULevel::Actors`, so merely reporting particle events does not add a serializable scene actor.
+- Boundary: This does not invent particle lifecycle production; Core must still call the existing `IParticleEmitterInstanceOwner::Add*Event()` hooks at real spawn/death/collision/burst points.
+- Remaining TODO: Replace the temporary world-owned manager location if an engine-wide or WorldSettings-owned Particle Event Manager policy is introduced.
+- Next step: Hand the `ReportEvent*()`/`IParticleEmitterInstanceOwner::Add*Event()` production hook contract to Core, or proceed with another approved PSC/Mesh integration step.
