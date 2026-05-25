@@ -329,3 +329,39 @@
 - External TODO: `ResolveTemplateAssetReference()`의 실제 ParticleSystem 로드는 Asset 소유 public loader API가 제공된 뒤 연결한다.
 - External TODO: Mesh snapshot의 draw/pass/GPU buffer 소비와 회전/정렬 적용은 중앙 Renderer 소유 구현에서 처리한다.
 - Next step: 현재 미커밋 Mesh snapshot 변경과 worklog를 제출 가능한 형태로 정리하여 커밋한다.
+
+## 2026-05-25 - Unreal TypeData Build and final deliverable audit
+
+- Branch / HEAD: `feat/PSC` / `e52f750`
+- Completed step: 제공된 Unreal 파티클 참고 소스와 현재 TypeData, PSC, Mesh runtime/render snapshot, LOD 구현을 비교하여 `Build()`의 역할과 최종 잔여 작업을 판정했다.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md` (분석 기록만 추가); 이 단계에서는 production 소스를 수정하지 않았다.
+- Verification: 참고 소스의 `ParticleModuleTypeDataBase.h`, `ParticleModuleTypeDataGpu.h`, `ParticleModuleTypeDataMesh.h`, `ParticleEmitter.cpp`, `ParticleLODLevel.cpp`, `ParticleSystemComponent.h/.cpp`를 확인했고, 로컬 `UParticleModuleTypeDataBase::Build()`가 호출되지 않는 빈 구현임을 검색으로 확인했다. 현재 작업 트리의 `JSEngine.sln` `Debug|x64` 빌드는 `UParticleSystemComponent::Activate()` 및 `Deactivate()` 미정의 링크 오류로 실패했다.
+- Finding: Unreal의 `UParticleModuleTypeDataBase::Build(FParticleEmitterBuildInfo&)`는 `RequiresBuild()`가 참인 TypeData에만 실행되는 선택적 시뮬레이션 리소스 build hook이다. 참고 소스에서 Mesh TypeData는 이를 override하지 않으며 GPU TypeData가 override한다.
+- Finding: 로컬의 인자 없는 `virtual void Build()`는 현재 사용되지 않는 빈 골격이며 Mesh TypeData, Mesh runtime snapshot, PSC/LOD 담당 범위를 완료하기 위해 구현할 필요가 없다. 제거는 선택적인 API 정리에 해당한다.
+- Conclusion: Mesh TypeData, Mesh snapshot 및 LOD 범위에는 새 필수 구현 누락이 확인되지 않았지만, 현재 `UParticleSystemComponent` 헤더에 추가된 `Activate()`, `Deactivate()`, `ResetSystem()` 선언은 완료되지 않았다. `Activate()`와 `Deactivate()`는 링크 blocker이며, `ResetSystem()`은 기존 `ResetParticles()` 동작과 연결되어야 명시된 API 요구를 충족한다.
+- Remaining TODO: `Activate()` / `Deactivate()` 구현과 `ResetSystem()` 연결을 완료해 링크 오류를 제거하고, 새 주석의 한국어 작성 규칙 준수를 정리한 뒤 `Debug|x64` 빌드를 재실행한다.
+- External TODO: `TemplateAssetPath`의 runtime 해석은 Asset 소유 ParticleSystem loader 계약 제공 후 연결하고, Mesh draw 및 회전 소비는 Renderer 소유 구현에서 처리한다.
+- Next step: PSC lifecycle 선언의 구현을 완료하는 별도 승인 단계 후 `Debug|x64` 빌드로 재검증한다.
+
+## 2026-05-25 - PSC lifecycle declaration removal and Build override scope verification
+
+- Branch / HEAD: `feat/PSC` / `e52f750`
+- Completed step: 불필요한 PSC lifecycle 선언이 제거된 현재 작업 트리를 재검증하고, 제공된 Unreal 참고 소스 전체에서 TypeData `Build()` / `RequiresBuild()` override 범위를 검색했다.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md` (분석 기록만 추가); production 수정은 사용자가 반영한 상태를 확인했다.
+- Verification: 현재 `ParticleSystemComponent.h/.cpp`에는 `Activate()`, `Deactivate()`, `ResetSystem()`의 PSC 전용 선언/정의가 없고 base component activation과 기존 reset/release 경로를 사용한다. 현재 작업 트리의 `JSEngine.sln` `Debug|x64` 빌드는 성공했다.
+- Finding: 제공된 참고 소스 범위에서 `UParticleModuleTypeDataBase::Build(FParticleEmitterBuildInfo&)`와 `RequiresBuild()`를 override하는 TypeData는 `UParticleModuleTypeDataGpu`만 검색되었다. Mesh TypeData에는 override가 없다.
+- Conclusion: PSC lifecycle 전용 API는 현재 요구 동작을 위해 추가할 필요가 없으며, 해당 선언으로 발생했던 링크 blocker는 제거되었다. `UParticleModuleTypeDataBase::Build()` 역시 Mesh 담당 범위의 잔여 구현이 아니다.
+- Remaining TODO: 새로 추가된 production 주석/TODO 표현의 한국어 작성 규칙 준수 여부만 제출 전 정리한다.
+- External TODO: Asset-owned ParticleSystem loader 연동과 Renderer-owned Mesh draw/rotation 소비는 기존 소유 경계에 남긴다.
+- Next step: 주석 규칙 정리 여부를 결정하고 제출 상태를 확정한다.
+
+## 2026-05-25 - Unreal non-GPU emitter TypeData Build coverage check
+
+- Branch / HEAD: `feat/PSC` / `e52f750`
+- Completed step: 제공된 Unreal 참고 소스에서 Sprite, Beam2, Ribbon, AnimTrail 경로가 `Build()`를 사용하는지 추가 확인했다.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md` (분석 기록만 추가); production 소스는 수정하지 않았다.
+- Verification: `ParticleEmitter.cpp`, `ParticleModuleTypeDataBase.h`, `ParticleModuleTypeDataGpu.h`, `ParticleModuleTypeDataMesh.h`, `ParticleModuleTypeDataBeam2.h`, `ParticleModuleTypeDataRibbon.h`, `ParticleModuleTypeDataAnimTrail.h`를 검색 및 비교했다.
+- Finding: Sprite는 별도 TypeData 클래스가 아니라 `UParticleSpriteEmitter`의 기본 emitter 경로이므로 TypeData `Build()` override 대상이 아니다.
+- Finding: Beam2, Ribbon, AnimTrail TypeData는 runtime instance 생성을 override하지만 `Build()` 및 `RequiresBuild()`는 override하지 않는다.
+- Conclusion: 제공된 참고 소스 범위에서 TypeData build hook을 활성화하는 유형은 GPU TypeData만 확인되며, Sprite/Mesh/Beam2/Ribbon/AnimTrail의 PSC 및 Mesh 담당 작업에 `Build()` 추가 구현은 필요하지 않다.
+- Next step: 남아 있는 주석 규칙 정리만 제출 전 검토한다.

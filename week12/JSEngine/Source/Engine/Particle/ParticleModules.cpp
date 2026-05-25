@@ -345,10 +345,6 @@ UParticleSystem::~UParticleSystem()
 	Emitters.clear();
 }
 
-void UParticleModuleTypeDataBase::Build()
-{
-}
-
 FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
 	UParticleEmitter* InEmitterTemplate,
 	IParticleEmitterInstanceOwner& InOwner)
