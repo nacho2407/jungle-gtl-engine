@@ -57,3 +57,27 @@
 - Deferred TODO: `ParticleSystemAssetLoader.cpp` is currently empty, so `ResolveTemplateAssetReference()` must be wired to the completed Asset loader rather than introducing a competing load policy here.
 - Deferred TODO: Provide path synchronization when the Asset-owned ParticleSystem runtime object exposes its persistent path contract.
 - Next step: Implement distance-based `UParticleLODLevel` selection only after approval and after rechecking the latest Core LOD API.
+
+## 2026-05-25 - Post-merge Particle Core API and baseline build check
+
+- Branch / HEAD: `feat/PSC` / `999f3db`
+- Completed step: Inspected the merged Particle Core lifecycle/LOD public API and ran the required pre-extension `Debug|x64` baseline build.
+- Changed files: `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` `Debug|x64` build failed before LOD changes with `ParticleSystemComponent.h(61,5): error C7568` at `TSoftObjectPtr<UParticleSystem> TemplateAssetPath`.
+- Findings: Core now owns LOD memory initialization through `FParticleEmitterInstance::Init(EmitterTemplate, LODIndex)`, which selects `CurrentRuntimeCache`, allocates the selected stride/payload layout, and calls `Reset()`.
+- Findings: The safe initial LOD transition remains a component-controlled emitter recreation or `Init()` reinitialization path rather than direct mutation of instance memory layout fields.
+- Blocker: `UParticleSystemComponent` declares `TSoftObjectPtr` without directly including `Object/ObjectPtr.h`; after the merge it no longer compiles through incidental include availability.
+- Remaining TODO: Add the missing PSC header dependency and rerun the baseline build before implementing distance-based LOD selection.
+- Remaining TODO: Implement distance-based LOD selection with reinitialization on a selected LOD change after the baseline build is clean.
+- Next step: Restore the merged baseline build by adding the PSC `TSoftObjectPtr` header dependency, after approval.
+
+## 2026-05-25 - PSC soft ParticleSystem property build restoration
+
+- Branch / HEAD: `feat/PSC` / `999f3db`
+- Completed step: Restored the post-merge PSC baseline build by declaring the direct dependencies required by the reflected `TSoftObjectPtr<UParticleSystem>` property.
+- Changed files: `JSEngine/Source/Engine/Particle/ParticleSystemComponent.h`, `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` builds successfully for `Debug|x64`; `git diff --check` reported no whitespace errors.
+- Added dependency: `ParticleSystemComponent.h` now includes `Object/ObjectPtr.h` for `TSoftObjectPtr` and `Particle/ParticleAsset.h` so generated reflection code can call `UParticleSystem::StaticClass()`.
+- Remaining TODO: Implement distance-based LOD selection with safe emitter reinitialization when the selected LOD changes.
+- Remaining TODO: Keep ParticleSystem asset resolution limited to the existing Asset-loader TODO until the loader contract is provided.
+- Next step: Implement distance-based `UParticleLODLevel` selection through PSC-managed reinitialization, after approval.

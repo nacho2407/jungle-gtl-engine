@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include "Component/PrimitiveComponent.h"
+#include "Object/ObjectPtr.h"
+#include "Particle/ParticleAsset.h"
 
 class UWorld;
 class UParticleSystem;
