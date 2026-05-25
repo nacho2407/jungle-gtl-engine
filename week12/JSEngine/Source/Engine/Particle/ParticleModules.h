@@ -212,10 +212,15 @@ class UParticleModuleTypeDataMesh : public UParticleModuleTypeDataBase
 public:
 	GENERATED_BODY(UParticleModuleTypeDataMesh, UParticleModuleTypeDataBase)
 
+	FParticleEmitterInstance* CreateInstance(
+		UParticleEmitter* InEmitterTemplate,
+		IParticleEmitterInstanceOwner& InOwner) override;
+	FDynamicEmitterDataBase* GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance) override;
+
 	void SetStaticMesh(UStaticMesh* InStaticMesh);
 	UStaticMesh* GetStaticMesh() const { return Mesh; }
 
-	// TODO: Particle System Asset 담당자가 Deserialize할 때 이곳에 Mesh 경로를 넣는다.
+	// TODO: ParticleSystem Asset 역직렬화 계약이 확정되면 이 경로를 런타임 Mesh로 복구한다.
 	UPROPERTY(DisplayName = "Static Mesh")
 	TSoftObjectPtr<UStaticMesh> MeshAssetPath;
 
