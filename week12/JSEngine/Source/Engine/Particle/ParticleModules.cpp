@@ -5,6 +5,8 @@
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleHelper.h"
 
+#include <algorithm>
+
 namespace
 {
 	int32 AlignParticleBytes(int32 Value)
@@ -129,7 +131,19 @@ namespace
 		Cache.InstancePayloadSize = AlignParticleBytes(InstancePayloadSize);
 		return Cache;
 	}
-}
+
+	FParticleDistributionContext MakeDistributionContext(
+		FParticleEmitterInstance* Owner,
+		float SpawnTime,
+		const FBaseParticle& Particle)
+	{
+		FParticleDistributionContext Context;
+		Context.RandomStream = Owner != nullptr ? &Owner->RandomStream : nullptr;
+		Context.RelativeTime = Particle.RelativeTime;
+		Context.SpawnTime = SpawnTime;
+		return Context;
+	}
+} // namespace
 
 int32 UParticleModule::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
 {
@@ -190,14 +204,41 @@ bool UParticleModuleLifetime::IsSpawnModule() const
 	return true;
 }
 
+void UParticleModuleLifetime::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	(void)Offset;
+	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	Particle.Lifetime = std::max(EvaluateParticleFloat(Lifetime, Context), 0.0001f);
+	Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
+	Particle.RelativeTime = 0.0f;
+}
+
 bool UParticleModuleLocation::IsSpawnModule() const
 {
 	return true;
 }
 
+void UParticleModuleLocation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	(void)Offset;
+	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+
+	// StartLocation은 RequiredModule의 local / world 정책에 맞는 simulation space 값으로 저장
+	Particle.Location = EvaluateParticleVector(StartLocation, Context);
+	Particle.OldLocation = Particle.Location;
+}
+
 bool UParticleModuleVelocity::IsSpawnModule() const
 {
 	return true;
+}
+
+void UParticleModuleVelocity::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	(void)Offset;
+	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	Particle.Velocity = EvaluateParticleVector(StartVelocity, Context);
+	Particle.BaseVelocity = Particle.Velocity;
 }
 
 UParticleModuleColor::UParticleModuleColor()
@@ -212,6 +253,13 @@ bool UParticleModuleColor::IsSpawnModule() const
 	return true;
 }
 
+void UParticleModuleColor::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	(void)Offset;
+	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	Particle.Color = EvaluateParticleColor(StartColor, Context);
+}
+
 UParticleModuleSize::UParticleModuleSize()
 {
 	StartSize.Constant = FVector::OneVector;
@@ -222,6 +270,14 @@ UParticleModuleSize::UParticleModuleSize()
 bool UParticleModuleSize::IsSpawnModule() const
 {
 	return true;
+}
+
+void UParticleModuleSize::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	(void)Offset;
+	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	Particle.Size = EvaluateParticleVector(StartSize, Context);
+	Particle.BaseSize = Particle.Size;
 }
 
 bool UParticleModuleCollision::IsUpdateModule() const

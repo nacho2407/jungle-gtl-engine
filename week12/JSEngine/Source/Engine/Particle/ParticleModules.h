@@ -118,6 +118,7 @@ public:
 	UParticleModuleLifetime();
 
 	bool IsSpawnModule() const override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
 
 	UPROPERTY(DisplayName = "Lifetime")
 	FParticleFloatDistribution Lifetime;
@@ -130,6 +131,7 @@ public:
 	GENERATED_BODY(UParticleModuleLocation, UParticleModule)
 
 	bool IsSpawnModule() const override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
 
 	UPROPERTY(DisplayName = "Start Location")
 	FParticleVectorDistribution StartLocation;
@@ -142,6 +144,7 @@ public:
 	GENERATED_BODY(UParticleModuleVelocity, UParticleModule)
 
 	bool IsSpawnModule() const override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
 
 	UPROPERTY(DisplayName = "Start Velocity")
 	FParticleVectorDistribution StartVelocity;
@@ -156,6 +159,7 @@ public:
 	UParticleModuleColor();
 
 	bool IsSpawnModule() const override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
 
 	UPROPERTY(DisplayName = "Start Color")
 	FParticleColorDistribution StartColor;
@@ -170,6 +174,7 @@ public:
 	UParticleModuleSize();
 
 	bool IsSpawnModule() const override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
 
 	UPROPERTY(DisplayName = "Start Size")
 	FParticleVectorDistribution StartSize;

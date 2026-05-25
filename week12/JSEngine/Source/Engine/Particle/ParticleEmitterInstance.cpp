@@ -301,6 +301,10 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
 			Module->Spawn(this, Offset, SpawnTime, Particle);
 		}
 
+		Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
+		Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
+		Particle.OldLocation = Particle.Location;
+
 		FParticleEventSpawnData Event;
 		Event.ParticleIndex = PhysicalIndex;
 		Event.Location = GetParticleLocationForRender(Particle);
@@ -485,6 +489,7 @@ FVector FParticleEmitterInstance::TransformVelocityToSimulationSpace(const FVect
 
 FVector FParticleEmitterInstance::GetParticleLocationForRender(const FBaseParticle& Particle) const
 {
+	// particle의 simulation space와 관계 없이 항상 render-ready world space를 반환
 	return UsesLocalSpace()
 		? Owner.GetComponentToWorld().TransformPosition(Particle.Location)
 		: Particle.Location;
