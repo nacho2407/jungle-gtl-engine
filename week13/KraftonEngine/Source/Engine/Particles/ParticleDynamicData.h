@@ -70,7 +70,6 @@ struct FDynamicMeshEmitterReplayData : public FDynamicEmitterReplayDataBase
     int32 CameraPayloadOffset = 0;
 
     bool bUseLocalSpace = false;
-    bool bEnableMotionBlur = false;
 
     UMaterial* Material = nullptr;
 

@@ -500,7 +500,7 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 				TargetTangent,
 				InvTess * static_cast<float>(InterpIndex + 1));
 		}
-		for (; InterpIndex < InterpolationPoints; ++InterpIndex)
+		for (; InterpIndex < InterpSteps; ++InterpIndex)
 		{
 			InterpolatedPoints[InterpIndex] = CubicInterpVector(
 				BeamData->SourcePoint,

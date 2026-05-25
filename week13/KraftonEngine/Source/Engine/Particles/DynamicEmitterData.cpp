@@ -519,7 +519,7 @@ int32 FDynamicRibbonEmitterData::FillVertexData()
 			const FBaseParticle& P1 = *Particles[SegmentIndex + 1];
 			const FRibbonTypeDataPayload& D0 = *Payloads[SegmentIndex];
 			const FRibbonTypeDataPayload& D1 = *Payloads[SegmentIndex + 1];
-			const int32 InterpCount = std::max(1, D0.RenderingInterpCount);
+			const int32 InterpCount = std::max(1, D1.RenderingInterpCount);
 
 			if (SegmentIndex == 0)
 			{

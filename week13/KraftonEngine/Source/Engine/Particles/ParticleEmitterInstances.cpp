@@ -4223,6 +4223,7 @@ void FParticleRibbonEmitterInstance::DetermineVertexAndTriangleCount()
 {
 	VertexCount = 0;
 	TriangleCount = 0;
+	HeadOnlyParticles = 0;
 	const int32 Sheets = TrailTypeData ? std::max(1, TrailTypeData->SheetsPerTrail) : 1;
 	const int32 MaxTessellation = TrailTypeData ? std::max(1, TrailTypeData->MaxTessellationBetweenParticles) : 1;
 	const float DistanceStep = TrailTypeData ? TrailTypeData->DistanceTessellationStepSize : 0.0f;
@@ -4234,70 +4235,102 @@ void FParticleRibbonEmitterInstance::DetermineVertexAndTriangleCount()
 
 	for (int32 TrailIdx = 0; TrailIdx < MaxTrailCount; ++TrailIdx)
 	{
-		int32 StartIndex = INDEX_NONE;
-		FRibbonTypeDataPayload* TrailData = nullptr;
-		FBaseParticle* Particle = nullptr;
-		GetTrailStart<FRibbonTypeDataPayload>(TrailIdx, StartIndex, TrailData, Particle);
-		if (!Particle || !TrailData)
+		int32 EndIndex = INDEX_NONE;
+		FRibbonTypeDataPayload* CurrTrailData = nullptr;
+		FBaseParticle* CurrParticle = nullptr;
+		GetTrailEnd<FRibbonTypeDataPayload>(TrailIdx, EndIndex, CurrTrailData, CurrParticle);
+		if (!CurrParticle || !CurrTrailData)
 		{
 			continue;
 		}
 
-		int32 TrailPointCount = 1;
-		while (Particle && TrailData)
+		if (TRAIL_EMITTER_IS_HEADONLY(CurrTrailData->Flags))
 		{
-			const int32 NextIndex = TRAIL_EMITTER_GET_NEXT(TrailData->Flags);
-			if (NextIndex == TRAIL_EMITTER_NULL_NEXT || NextIndex == INDEX_NONE) break;
-			FBaseParticle* NextParticle = GetParticleDirect(NextIndex);
-			FRibbonTypeDataPayload* NextTrailData = NextParticle ? reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(NextParticle) + TypeDataOffset) : nullptr;
-			if (!NextParticle || !NextTrailData)
-			{
-				break;
-			}
-
-			float CheckTangent = 0.0f;
-			if (bCheckTangentValue)
-			{
-				const FVector SrcTangent = TrailData->Tangent.GetSafeNormal(1.0e-6f, FVector::XAxisVector);
-				const FVector NextTangent = NextTrailData->Tangent.GetSafeNormal(1.0e-6f, FVector::XAxisVector);
-				CheckTangent = (SrcTangent.Dot(NextTangent) - 1.0f) * -0.5f;
-			}
-
-			float DistDiff = 0.0f;
-			if (DistanceStep > 0.0f)
-			{
-				const float SegmentDistance = FVector::Distance(Particle->Location, NextParticle->Location);
-				DistDiff = SegmentDistance / DistanceStep;
-				if (bScaleTessellation && CheckTangent < ScaleStepFactor)
-				{
-					DistDiff *= 2.0f * FMath::Clamp(CheckTangent, 0.0f, ScaleStepFactor);
-				}
-			}
-
-			const float TangDiff = CheckTangent * TangentScalar;
-			int32 RenderingInterpCount =
-				std::min(static_cast<int32>(DistDiff), MaxTessellation) +
-				std::min(static_cast<int32>(TangDiff), MaxTessellation);
-			RenderingInterpCount = RenderingInterpCount > 0 ? RenderingInterpCount : 1;
-			TrailData->RenderingInterpCount = std::min(MaxTessellation, RenderingInterpCount);
-			if (CheckTangent <= 0.5f)
-			{
-				TrailData->PinchScaleFactor = 1.0f;
-			}
-			else
-			{
-				TrailData->PinchScaleFactor = 1.0f - (CheckTangent * 0.5f);
-			}
-			TrailPointCount += TrailData->RenderingInterpCount;
-
-			Particle = NextParticle;
-			TrailData = NextTrailData;
+			CurrTrailData->RenderingInterpCount = 0;
+			CurrTrailData->TriangleCount = 0;
+			++HeadOnlyParticles;
+			continue;
 		}
 
-		VertexCount += TrailPointCount * 2 * Sheets;
-		TriangleCount += std::max(0, TrailPointCount - 1) * 2 * Sheets;
-		if (TrailPointCount > 1)
+		int32 LocalVertexCount = 0;
+		int32 LocalIndexCount = 0;
+		int32 ParticleCount = 0;
+		bool bProcessParticle = false;
+
+		if (TRAIL_EMITTER_IS_END(CurrTrailData->Flags))
 		{
+			int32 Prev = TRAIL_EMITTER_GET_PREV(CurrTrailData->Flags);
+			if (Prev != TRAIL_EMITTER_NULL_PREV)
+			{
+				FBaseParticle* PrevParticle = GetParticleDirect(Prev);
+				FRibbonTypeDataPayload* PrevTrailData = PrevParticle ? reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(PrevParticle) + TypeDataOffset) : nullptr;
+
+				bool bDone = false;
+				while (!bDone && PrevParticle && PrevTrailData)
+				{
+					++ParticleCount;
+					float CheckTangent = 0.0f;
+					if (bCheckTangentValue)
+					{
+						const FVector SrcTangent = CurrTrailData->Tangent.GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+						const FVector PrevTangent = PrevTrailData->Tangent.GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+						CheckTangent = (SrcTangent.Dot(PrevTangent) - 1.0f) * -0.5f;
+					}
+
+					float DistDiff = 0.0f;
+					if (DistanceStep > 0.0f)
+					{
+						const float SegmentDistance = FVector::Distance(CurrParticle->Location, PrevParticle->Location);
+						DistDiff = SegmentDistance / DistanceStep;
+						if (bScaleTessellation && CheckTangent < ScaleStepFactor)
+						{
+							DistDiff *= 2.0f * FMath::Clamp(CheckTangent, 0.0f, ScaleStepFactor);
+						}
+					}
+
+					const float TangDiff = CheckTangent * TangentScalar;
+					int32 RenderingInterpCount =
+						std::min(static_cast<int32>(DistDiff), MaxTessellation) +
+						std::min(static_cast<int32>(TangDiff), MaxTessellation);
+					RenderingInterpCount = RenderingInterpCount > 0 ? RenderingInterpCount : 1;
+					CurrTrailData->RenderingInterpCount = std::min(MaxTessellation, RenderingInterpCount);
+					CurrTrailData->PinchScaleFactor = CheckTangent <= 0.5f ? 1.0f : (1.0f - (CheckTangent * 0.5f));
+
+					const int32 TempVertexCount = 2 * CurrTrailData->RenderingInterpCount * Sheets;
+					VertexCount += TempVertexCount;
+					LocalVertexCount += TempVertexCount;
+					LocalIndexCount += TempVertexCount;
+
+					CurrParticle = PrevParticle;
+					CurrTrailData = PrevTrailData;
+					Prev = TRAIL_EMITTER_GET_PREV(CurrTrailData->Flags);
+					if (Prev != TRAIL_EMITTER_NULL_PREV)
+					{
+						PrevParticle = GetParticleDirect(Prev);
+						PrevTrailData = PrevParticle ? reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(PrevParticle) + TypeDataOffset) : nullptr;
+					}
+					else
+					{
+						bDone = true;
+					}
+				}
+
+				bProcessParticle = true;
+			}
+		}
+
+		if (bProcessParticle)
+		{
+			++ParticleCount;
+			const int32 TempVertexCount = 2 * Sheets;
+			VertexCount += TempVertexCount;
+			LocalVertexCount += TempVertexCount;
+			LocalIndexCount += TempVertexCount;
+			LocalIndexCount += ((Sheets - 1) * 4);
+
+			CurrTrailData->TriangleCount = LocalIndexCount - 2;
+			CurrTrailData->RenderingInterpCount = 1;
+			TriangleCount += std::max(0, LocalVertexCount - (2 * Sheets));
 			++TheTrailCount;
 		}
 	}
