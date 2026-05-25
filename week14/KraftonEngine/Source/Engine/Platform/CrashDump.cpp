@@ -111,11 +111,48 @@ namespace
 		return std::filesystem::path(ExecutablePath);
 	}
 
-	bool TryCopyDumpToSharedFolder(const std::wstring& LocalDumpPath, const WCHAR* FileName, std::wstring& OutSharedPath)
+	void WriteCrashCopyLog(
+		const std::wstring& LocalDumpPath,
+		const std::wstring& SharedDumpRoot,
+		const std::wstring& SharedDumpPath,
+		const std::wstring& FailureReason,
+		bool bSucceeded)
+	{
+		try
+		{
+			std::filesystem::path LogPath(LocalDumpPath);
+			LogPath.replace_extension(L".copy.log.txt");
+
+			std::ofstream LogFile(LogPath, std::ios::out | std::ios::trunc);
+			if (!LogFile.is_open())
+			{
+				return;
+			}
+
+			LogFile << "Crash dump shared copy result: " << (bSucceeded ? "success" : "failed") << "\n";
+			LogFile << "RootDir: " << FPaths::ToUtf8(FPaths::RootDir()) << "\n";
+			LogFile << "ProjectSettings: " << FPaths::ToUtf8(FPaths::ProjectSettingsFilePath()) << "\n";
+			LogFile << "SharedDumpRoot: " << FPaths::ToUtf8(SharedDumpRoot) << "\n";
+			LogFile << "SharedDumpPath: " << FPaths::ToUtf8(SharedDumpPath) << "\n";
+			LogFile << "FailureReason: " << FPaths::ToUtf8(FailureReason) << "\n";
+		}
+		catch (...)
+		{
+		}
+	}
+
+	bool TryCopyDumpToSharedFolder(
+		const std::wstring& LocalDumpPath,
+		const WCHAR* FileName,
+		std::wstring& OutSharedPath,
+		std::wstring& OutSharedDumpRoot,
+		std::wstring& OutFailureReason)
 	{
 		std::wstring SharedCrashDumpRoot = GetCrashDumpShareDir();
+		OutSharedDumpRoot = SharedCrashDumpRoot;
 		if (SharedCrashDumpRoot.empty())
 		{
+			OutFailureReason = L"CrashDumpShareDir is empty. Check KRAFTON_CRASH_DUMP_DIR or Settings/ProjectSettings.ini.";
 			return false;
 		}
 
@@ -129,6 +166,7 @@ namespace
 			std::filesystem::create_directories(SharedDir, Error);
 			if (Error)
 			{
+				OutFailureReason = L"Failed to create shared crash dump directory: " + FPaths::ToWide(Error.message());
 				return false;
 			}
 
@@ -136,6 +174,7 @@ namespace
 			std::filesystem::copy_file(LocalDumpPath, SharedPath, std::filesystem::copy_options::overwrite_existing, Error);
 			if (Error)
 			{
+				OutFailureReason = L"Failed to copy dump file to shared directory: " + FPaths::ToWide(Error.message());
 				return false;
 			}
 
@@ -154,6 +193,7 @@ namespace
 		}
 		catch (...)
 		{
+			OutFailureReason = L"Unexpected exception while copying crash dump to shared directory.";
 			return false;
 		}
 	}
@@ -314,7 +354,15 @@ LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* ExceptionInfo)
 		FSourceLocation ExceptionLocation;
 		const bool bHasExceptionLocation = ResolveExceptionSource(ExceptionInfo, ExceptionLocation);
 		std::wstring SharedDumpPath;
-		const bool bSharedDumpCopied = TryCopyDumpToSharedFolder(DumpPath, FileName, SharedDumpPath);
+		std::wstring SharedDumpRoot;
+		std::wstring SharedDumpFailureReason;
+		const bool bSharedDumpCopied = TryCopyDumpToSharedFolder(
+			DumpPath,
+			FileName,
+			SharedDumpPath,
+			SharedDumpRoot,
+			SharedDumpFailureReason);
+		WriteCrashCopyLog(DumpPath, SharedDumpRoot, SharedDumpPath, SharedDumpFailureReason, bSharedDumpCopied);
 
 		WCHAR Message[4096];
 		if (bHasExceptionLocation)
@@ -322,7 +370,7 @@ LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* ExceptionInfo)
 			swprintf_s(Message, L"크래시 덤프가 저장되었습니다:\n%s\n\n공유 폴더 복사: %s\n%s\n\nException location:\n%hs:%lu",
 				DumpPath.c_str(),
 				bSharedDumpCopied ? L"성공" : L"실패",
-				bSharedDumpCopied ? SharedDumpPath.c_str() : L"공유 폴더 접근 또는 쓰기 권한을 확인하세요.",
+				bSharedDumpCopied ? SharedDumpPath.c_str() : SharedDumpFailureReason.c_str(),
 				ExceptionLocation.File,
 				ExceptionLocation.Line);
 		}
@@ -331,7 +379,7 @@ LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* ExceptionInfo)
 			swprintf_s(Message, L"크래시 덤프가 저장되었습니다:\n%s\n\n공유 폴더 복사: %s\n%s",
 				DumpPath.c_str(),
 				bSharedDumpCopied ? L"성공" : L"실패",
-				bSharedDumpCopied ? SharedDumpPath.c_str() : L"공유 폴더 접근 또는 쓰기 권한을 확인하세요.");
+				bSharedDumpCopied ? SharedDumpPath.c_str() : SharedDumpFailureReason.c_str());
 		}
 		MessageBoxW(nullptr, Message, L"Crash", MB_OK | MB_ICONERROR);
 	}
