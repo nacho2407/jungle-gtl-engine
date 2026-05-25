@@ -1,9 +1,10 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Core/Types/EngineTypes.h"
 #include "Math/Vector.h"
 #include "Math/Matrix.h"
+#include "Math/Quat.h"
 
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleEmitter.h"
@@ -13,6 +14,15 @@
 
 class UParticleSystemComponent;
 class UMaterial;
+class UParticleModuleTypeDataMesh;
+class UParticleModuleTypeDataBeam2;
+class UParticleModuleTypeDataRibbon;
+class UParticleModuleBeamSource;
+class UParticleModuleBeamTarget;
+class UParticleModuleBeamNoise;
+class UParticleModuleBeamModifier;
+class UParticleModuleTrailSource;
+class UParticleModuleSpawnPerUnit;
 
 struct FLODBurstFired
 {
@@ -229,26 +239,216 @@ struct FParticleSpriteEmitterInstance : public FParticleEmitterInstance
 
 struct FParticleMeshEmitterInstance : public FParticleEmitterInstance
 {
+    UParticleModuleTypeDataMesh* MeshTypeData = nullptr;
     int32 MeshRotationOffset = 0;
     int32 MeshMotionBlurOffset = 0;
 
     bool bMeshRotationActive = true;
     bool bMotionBlurEnabled = false;
+    TArray<UMaterial*> CurrentMaterials;
 
+    void InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent) override;
+    void Init() override;
+    bool Resize(int32 NewMaxActiveParticles, bool bSetMaxActiveCount = true) override;
     uint32 RequiredBytes() override;
     void Tick(float DeltaTime, bool bSuppressSpawning) override;
     void UpdateBoundingBox(float DeltaTime) override;
-
-    void PreSpawn(
-        FBaseParticle* Particle,
-        const FVector& InitialLocation,
-        const FVector& InitialVelocity) override;
 
     void PostSpawn(
         FBaseParticle* Particle,
         float InterpolationPercentage,
         float SpawnTime) override;
 
+    void Tick_MaterialOverrides(int32 EmitterIndex) override;
+    void SetMeshMaterials(const TArray<UMaterial*>& InMaterials);
+    void GetMeshMaterials(TArray<UMaterial*>& OutMaterials, const UParticleLODLevel* LODLevel, bool bLogWarnings = false) const;
     FDynamicEmitterDataBase* GetDynamicData(bool bSelected) override;
+    bool FillReplayData(FDynamicEmitterReplayDataBase& OutData) override;
+};
+
+struct FParticleBeam2EmitterInstance : public FParticleEmitterInstance
+{
+    UParticleModuleTypeDataBeam2* BeamTypeData = nullptr;
+    UParticleModuleBeamSource* BeamModule_Source = nullptr;
+    UParticleModuleBeamTarget* BeamModule_Target = nullptr;
+    UParticleModuleBeamNoise* BeamModule_Noise = nullptr;
+    UParticleModuleBeamModifier* BeamModule_SourceModifier = nullptr;
+    int32 BeamModule_SourceModifier_Offset = INDEX_NONE;
+    UParticleModuleBeamModifier* BeamModule_TargetModifier = nullptr;
+    int32 BeamModule_TargetModifier_Offset = INDEX_NONE;
+
+    bool FirstEmission = true;
+    int32 TickCount = 0;
+    int32 ForceSpawnCount = 0;
+    int32 BeamMethod = 0;
+    TArray<int32> TextureTiles;
+    int32 BeamCount = 0;
+    void* SourceActor = nullptr;
+    FParticleEmitterInstance* SourceEmitter = nullptr;
+    TArray<FVector> UserSetSourceArray;
+    TArray<FVector> UserSetSourceTangentArray;
+    TArray<float> UserSetSourceStrengthArray;
+    TArray<float> DistanceArray;
+    TArray<FVector> TargetPointArray;
+    TArray<FVector> TargetTangentArray;
+    TArray<float> UserSetTargetStrengthArray;
+    void* TargetActor = nullptr;
+    FParticleEmitterInstance* TargetEmitter = nullptr;
+    TArray<FName> TargetPointSourceNames;
+    TArray<FVector> UserSetTargetArray;
+    TArray<FVector> UserSetTargetTangentArray;
+    int32 VertexCount = 0;
+    int32 TriangleCount = 0;
+    TArray<int32> BeamTrianglesPerSheet;
+
+    void SetBeamEndPoint(FVector NewEndPoint);
+    void SetBeamSourcePoint(FVector NewSourcePoint, int32 SourceIndex);
+    void SetBeamSourceTangent(FVector NewTangentPoint, int32 SourceIndex);
+    void SetBeamSourceStrength(float NewSourceStrength, int32 SourceIndex);
+    void SetBeamTargetPoint(FVector NewTargetPoint, int32 TargetIndex);
+    void SetBeamTargetTangent(FVector NewTangentPoint, int32 TargetIndex);
+    void SetBeamTargetStrength(float NewTargetStrength, int32 TargetIndex);
+    void ApplyWorldOffset(FVector InOffset, bool bWorldShift) override;
+
+    bool GetBeamEndPoint(FVector& OutEndPoint) const;
+    bool GetBeamSourcePoint(int32 SourceIndex, FVector& OutSourcePoint) const;
+    bool GetBeamSourceTangent(int32 SourceIndex, FVector& OutTangentPoint) const;
+    bool GetBeamSourceStrength(int32 SourceIndex, float& OutSourceStrength) const;
+    bool GetBeamTargetPoint(int32 TargetIndex, FVector& OutTargetPoint) const;
+    bool GetBeamTargetTangent(int32 TargetIndex, FVector& OutTangentPoint) const;
+    bool GetBeamTargetStrength(int32 TargetIndex, float& OutTargetStrength) const;
+
+    void InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent) override;
+    void Init() override;
+    void Tick(float DeltaTime, bool bSuppressSpawning) override;
+    void Tick_ModulePostUpdate(float DeltaTime, UParticleLODLevel* CurrentLODLevel) override;
+    void SetCurrentLODIndex(int32 InLODIndex, bool bInFullyProcess) override;
+    void PostSpawn(FBaseParticle* Particle, float InterpolationPercentage, float SpawnTime) override;
+    void UpdateBoundingBox(float DeltaTime) override;
+    void ForceUpdateBoundingBox() override;
+    uint32 RequiredBytes() override;
+    float SpawnBeamParticles(float OldLeftover, float Rate, float DeltaTime, int32 Burst = 0, float BurstTime = 0.0f);
+    void KillParticles() override;
+    void SetupBeamModifierModulesOffsets();
+    void ResolveSource();
+    void ResolveTarget();
+    void DetermineVertexAndTriangleCount();
+    FDynamicEmitterDataBase* GetDynamicData(bool bSelected) override;
+    UMaterial* GetCurrentMaterial() override;
+    bool FillReplayData(FDynamicEmitterReplayDataBase& OutData) override;
+};
+
+struct FParticleTrailsEmitterInstance_Base : public FParticleEmitterInstance
+{
+    int32 VertexCount = 0;
+    int32 TriangleCount = 0;
+    int32 TrailCount = 0;
+    int32 MaxTrailCount = 0;
+    float RunningTime = 0.0f;
+    float LastTickTime = 0.0f;
+    uint32 bDeadTrailsOnDeactivate : 1;
+    TArray<float> TrailSpawnTimes;
+    TArray<float> LastSpawnTime;
+    TArray<float> SourceDistanceTraveled;
+    TArray<float> TiledUDistanceTraveled;
+    uint32 bFirstUpdate : 1;
+    uint32 bEnableInactiveTimeTracking : 1;
+    int32 CurrentStartIndices[128];
+    int32 CurrentEndIndices[128];
+
+    FParticleTrailsEmitterInstance_Base();
+    void Init() override;
+    void InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent) override;
+    void Tick(float DeltaTime, bool bSuppressSpawning) override;
+    bool AddParticleHelper(int32 InTrailIdx, int32 StartParticleIndex, FTrailsBaseTypeDataPayload* StartTrailData, int32 ParticleIndex, FTrailsBaseTypeDataPayload* TrailData);
+    virtual void Tick_RecalculateTangents(float DeltaTime, UParticleLODLevel* CurrentLODLevel);
+    void UpdateBoundingBox(float DeltaTime) override;
+    void ForceUpdateBoundingBox() override;
+    void KillParticles() override;
+    virtual void KillParticles(int32 InTrailIdx, int32 InKillCount);
+    virtual void SetupTrailModules() {}
+    virtual void UpdateSourceData(float DeltaTime, bool bFirstTime);
+
+    void SetStartIndex(int32 TrailIndex, int32 ParticleIndex);
+    void SetEndIndex(int32 TrailIndex, int32 ParticleIndex);
+    void SetDeadIndex(int32 TrailIndex, int32 ParticleIndex);
+    void ClearIndices(int32 TrailIndex, int32 ParticleIndex);
+
+    template<typename TrailDataType>
+    void GetTrailStart(const int32 TrailIdx, int32& OutStartIndex, TrailDataType*& OutTrailData, FBaseParticle*& OutParticle)
+    {
+        OutStartIndex = INDEX_NONE;
+        OutTrailData = nullptr;
+        OutParticle = nullptr;
+        if (TrailIdx != INDEX_NONE && CurrentStartIndices[TrailIdx] != INDEX_NONE)
+        {
+            OutStartIndex = CurrentStartIndices[TrailIdx];
+            OutParticle = GetParticleDirect(OutStartIndex);
+            OutTrailData = OutParticle ? reinterpret_cast<TrailDataType*>(reinterpret_cast<uint8*>(OutParticle) + TypeDataOffset) : nullptr;
+        }
+    }
+
+    template<typename TrailDataType>
+    void GetTrailEnd(const int32 TrailIdx, int32& OutEndIndex, TrailDataType*& OutTrailData, FBaseParticle*& OutParticle)
+    {
+        OutEndIndex = INDEX_NONE;
+        OutTrailData = nullptr;
+        OutParticle = nullptr;
+        if (TrailIdx != INDEX_NONE && CurrentEndIndices[TrailIdx] != INDEX_NONE)
+        {
+            OutEndIndex = CurrentEndIndices[TrailIdx];
+            OutParticle = GetParticleDirect(OutEndIndex);
+            OutTrailData = OutParticle ? reinterpret_cast<TrailDataType*>(reinterpret_cast<uint8*>(OutParticle) + TypeDataOffset) : nullptr;
+        }
+    }
+
+protected:
+    enum EGetTrailDirection { GET_Prev, GET_Next };
+    enum EGetTrailParticleOption { GET_Any, GET_Spawned, GET_Interpolated, GET_Start, GET_End };
+    bool GetParticleInTrail(bool bSkipStartingParticle, FBaseParticle* InStartingFromParticle, FTrailsBaseTypeDataPayload* InStartingTrailData, EGetTrailDirection InGetDirection, EGetTrailParticleOption InGetOption, FBaseParticle*& OutParticle, FTrailsBaseTypeDataPayload*& OutTrailData);
+};
+
+struct FParticleRibbonEmitterInstance : public FParticleTrailsEmitterInstance_Base
+{
+    UParticleModuleTypeDataRibbon* TrailTypeData = nullptr;
+    UParticleModuleSpawnPerUnit* SpawnPerUnitModule = nullptr;
+    UParticleModuleTrailSource* SourceModule = nullptr;
+    int32 TrailModule_Source_Offset = INDEX_NONE;
+    TArray<FVector> CurrentSourcePosition;
+    TArray<FQuat> CurrentSourceRotation;
+    TArray<FVector> CurrentSourceUp;
+    TArray<FVector> CurrentSourceTangent;
+    TArray<float> CurrentSourceTangentStrength;
+    TArray<FVector> LastSourcePosition;
+    TArray<FQuat> LastSourceRotation;
+    TArray<FVector> LastSourceUp;
+    TArray<FVector> LastSourceTangent;
+    TArray<float> LastSourceTangentStrength;
+    void* SourceActor = nullptr;
+    TArray<FVector> SourceOffsets;
+    FParticleEmitterInstance* SourceEmitter = nullptr;
+    int32 LastSelectedParticleIndex = INDEX_NONE;
+    TArray<int32> SourceIndices;
+    TArray<float> SourceTimes;
+    TArray<float> LastSourceTimes;
+    TArray<float> CurrentLifetimes;
+    TArray<float> CurrentSizes;
+    int32 HeadOnlyParticles = 0;
+
+    void InitParameters(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent) override;
+    void Tick_RecalculateTangents(float DeltaTime, UParticleLODLevel* CurrentLODLevel) override;
+    bool GetSpawnPerUnitAmount(float DeltaTime, int32 InTrailIdx, int32& OutCount, float& OutRate);
+    void GetParticleLifetimeAndSize(int32 InTrailIdx, const FBaseParticle* InParticle, bool bInNoLivingParticles, float& OutOneOverMaxLifetime, float& OutSize);
+    float Spawn(float DeltaTime) override;
+    bool Spawn_Source(float DeltaTime);
+    float Spawn_RateAndBurst(float DeltaTime);
+    void SetupTrailModules() override;
+    void ResolveSource();
+    void UpdateSourceData(float DeltaTime, bool bFirstTime) override;
+    bool ResolveSourcePoint(int32 InTrailIdx, FVector& OutPosition, FQuat& OutRotation, FVector& OutUp, FVector& OutTangent, float& OutTangentStrength);
+    void DetermineVertexAndTriangleCount();
+    bool IsDynamicDataRequired() const override;
+    FDynamicEmitterDataBase* GetDynamicData(bool bSelected) override;
+    void ApplyWorldOffset(FVector InOffset, bool bWorldShift) override;
     bool FillReplayData(FDynamicEmitterReplayDataBase& OutData) override;
 };

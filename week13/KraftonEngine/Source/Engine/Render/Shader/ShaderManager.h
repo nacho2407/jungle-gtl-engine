@@ -151,6 +151,7 @@ namespace EShaderPath
 
 	inline constexpr const char* ParticleSprite = "Shaders/Particle/Sprite.hlsl";
 	inline constexpr const char* ParticleMesh  = "Shaders/Particle/Mesh.hlsl";
+	inline constexpr const char* ParticleBeamTrail = "Shaders/Particle/BeamTrail.hlsl";
 }
 
 namespace EShadowDepthDefines

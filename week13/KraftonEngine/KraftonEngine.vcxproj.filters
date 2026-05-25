@@ -16,6 +16,12 @@
     <Filter Include="Shaders\Editor">
       <UniqueIdentifier>{f3afd37d-e427-b6e6-d610-351b0cbf0f39}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Generated">
+      <UniqueIdentifier>{89cde20b-0d22-3693-892a-01ff6973b7f3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Generated\Materials">
+      <UniqueIdentifier>{3de592bd-0830-b23c-449c-06a97393139e}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Shaders\Geometry">
       <UniqueIdentifier>{a95f0cc6-e11f-2881-9524-de9a7fdc530e}</UniqueIdentifier>
     </Filter>
@@ -268,6 +274,9 @@
     <Filter Include="Source\Engine\Particles">
       <UniqueIdentifier>{3d2b49e3-c373-08f7-b06b-addbb798f11a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Particles\Beam">
+      <UniqueIdentifier>{8d6ab37e-7f85-f5ce-b064-310a911ef785}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Particles\Color">
       <UniqueIdentifier>{6b808ded-3425-8835-3be8-24ac7fbc72a5}</UniqueIdentifier>
     </Filter>
@@ -277,11 +286,23 @@
     <Filter Include="Source\Engine\Particles\Location">
       <UniqueIdentifier>{4584099c-236c-f7a9-fca5-a6c68627cc12}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Particles\Material">
+      <UniqueIdentifier>{b3cc5550-6c3a-06b5-2960-595901edbeb3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles\Rotation">
+      <UniqueIdentifier>{a41f4243-2609-eb2d-d567-417ed0a70eab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles\RotationRate">
+      <UniqueIdentifier>{782dd979-1cb4-1285-b4dd-9794b3c014ac}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Particles\Size">
       <UniqueIdentifier>{c4524d1e-1fa9-358a-1fa3-397eb6ffacb1}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Particles\Spawn">
       <UniqueIdentifier>{4363c55a-5f86-5d68-fde8-8a7d5f098a6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles\Trail">
+      <UniqueIdentifier>{3462538e-d938-4ac5-0c7a-0aece555d94e}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Particles\TypeData">
       <UniqueIdentifier>{d7d10229-3582-f97b-a1b7-9df97ce90294}</UniqueIdentifier>
@@ -549,6 +570,9 @@
     <FxCompile Include="Shaders\Editor\Gizmo.hlsl">
       <Filter>Shaders\Editor</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\DDDFE619B008A8BB0000B824223D4600_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Geometry\Decal.hlsl">
       <Filter>Shaders\Geometry</Filter>
     </FxCompile>
@@ -583,6 +607,9 @@
       <Filter>Shaders\Lighting</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Particle\Mesh.hlsl">
+      <Filter>Shaders\Particle</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Particle\BeamTrail.hlsl">
       <Filter>Shaders\Particle</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Particle\Sprite.hlsl">
@@ -1112,6 +1139,9 @@
     <ClCompile Include="Source\Engine\Debug\DrawDebugHelpers.cpp">
       <Filter>Source\Engine\Debug</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Distributions\DistributionFloat.cpp">
+      <Filter>Source\Engine\Distributions</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Distributions\DistributionVector.cpp">
       <Filter>Source\Engine\Distributions</Filter>
     </ClCompile>
@@ -1346,7 +1376,22 @@
     <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp">
       <Filter>Source\Engine\Particles</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Beam\ParticleModuleBeamModifier.cpp">
+      <Filter>Source\Engine\Particles\Beam</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Beam\ParticleModuleBeamNoise.cpp">
+      <Filter>Source\Engine\Particles\Beam</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Beam\ParticleModuleBeamSource.cpp">
+      <Filter>Source\Engine\Particles\Beam</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Beam\ParticleModuleBeamTarget.cpp">
+      <Filter>Source\Engine\Particles\Beam</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Particles\Color\ParticleModuleColor.cpp">
+      <Filter>Source\Engine\Particles\Color</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Color\ParticleModuleColorOverLife.cpp">
       <Filter>Source\Engine\Particles\Color</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.cpp">
@@ -1355,13 +1400,37 @@
     <ClCompile Include="Source\Engine\Particles\Location\ParticleModuleLocation.cpp">
       <Filter>Source\Engine\Particles\Location</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Material\ParticleModuleMeshMaterial.cpp">
+      <Filter>Source\Engine\Particles\Material</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Rotation\ParticleModuleMeshRotation.cpp">
+      <Filter>Source\Engine\Particles\Rotation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\RotationRate\ParticleModuleMeshRotationRate.cpp">
+      <Filter>Source\Engine\Particles\RotationRate</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Particles\Size\ParticleModuleSize.cpp">
       <Filter>Source\Engine\Particles\Size</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawn.cpp">
       <Filter>Source\Engine\Particles\Spawn</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnPerUnit.cpp">
+      <Filter>Source\Engine\Particles\Spawn</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Trail\ParticleModuleTrailSource.cpp">
+      <Filter>Source\Engine\Particles\Trail</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBase.cpp">
+      <Filter>Source\Engine\Particles\TypeData</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBeam2.cpp">
+      <Filter>Source\Engine\Particles\TypeData</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataMesh.cpp">
+      <Filter>Source\Engine\Particles\TypeData</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataRibbon.cpp">
       <Filter>Source\Engine\Particles\TypeData</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.cpp">
@@ -2258,6 +2327,9 @@
     <ClInclude Include="Source\Engine\Distributions\Distribution.h">
       <Filter>Source\Engine\Distributions</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Distributions\DistributionFloat.h">
+      <Filter>Source\Engine\Distributions</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Distributions\DistributionVector.h">
       <Filter>Source\Engine\Distributions</Filter>
     </ClInclude>
@@ -2525,9 +2597,6 @@
     <ClInclude Include="Source\Engine\Particles\DynamicEmitterData.h">
       <Filter>Source\Engine\Particles</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Particles\ParticleDynamicData.h">
-      <Filter>Source\Engine\Particles</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Particles\ParticleEmitter.generated.h">
       <Filter>Source\Engine\Particles</Filter>
     </ClInclude>
@@ -2564,10 +2633,28 @@
     <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h">
       <Filter>Source\Engine\Particles</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Beam\ParticleModuleBeamBase.h">
+      <Filter>Source\Engine\Particles\Beam</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Beam\ParticleModuleBeamModifier.h">
+      <Filter>Source\Engine\Particles\Beam</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Beam\ParticleModuleBeamNoise.h">
+      <Filter>Source\Engine\Particles\Beam</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Beam\ParticleModuleBeamSource.h">
+      <Filter>Source\Engine\Particles\Beam</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Beam\ParticleModuleBeamTarget.h">
+      <Filter>Source\Engine\Particles\Beam</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColor.h">
       <Filter>Source\Engine\Particles\Color</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColorBase.h">
+      <Filter>Source\Engine\Particles\Color</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColorOverLife.h">
       <Filter>Source\Engine\Particles\Color</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.h">
@@ -2582,6 +2669,15 @@
     <ClInclude Include="Source\Engine\Particles\Location\ParticleModuleLocationBase.h">
       <Filter>Source\Engine\Particles\Location</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Material\ParticleModuleMeshMaterial.h">
+      <Filter>Source\Engine\Particles\Material</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Rotation\ParticleModuleMeshRotation.h">
+      <Filter>Source\Engine\Particles\Rotation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\RotationRate\ParticleModuleMeshRotationRate.h">
+      <Filter>Source\Engine\Particles\RotationRate</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Particles\Size\ParticleModuleSize.h">
       <Filter>Source\Engine\Particles\Size</Filter>
     </ClInclude>
@@ -2594,7 +2690,25 @@
     <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnBase.h">
       <Filter>Source\Engine\Particles\Spawn</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Spawn\ParticleModuleSpawnPerUnit.h">
+      <Filter>Source\Engine\Particles\Spawn</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Trail\ParticleModuleTrailBase.h">
+      <Filter>Source\Engine\Particles\Trail</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Trail\ParticleModuleTrailSource.h">
+      <Filter>Source\Engine\Particles\Trail</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBase.h">
+      <Filter>Source\Engine\Particles\TypeData</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataBeam2.h">
+      <Filter>Source\Engine\Particles\TypeData</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataMesh.h">
+      <Filter>Source\Engine\Particles\TypeData</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataRibbon.h">
       <Filter>Source\Engine\Particles\TypeData</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.h">
