@@ -9,6 +9,7 @@
 #include <cassert>
 #include <chrono>
 #include <cstdint>
+#include <cmath>
 #include <cstring>
 #include <limits>
 #include <new>
@@ -131,6 +132,7 @@ void FParticleEmitterInstance::Reset()
 	SpawnFraction = 0.0f;
 	EmitterTime = 0.0f;
 	SecondsSinceCreation = 0.0f;
+	bBurstFired = false;
 
 	for (int32 Index = 0; ParticleIndices != nullptr && Index < MaxActiveParticles; ++Index)
 	{
@@ -177,6 +179,7 @@ void FParticleEmitterInstance::Release()
 	SpawnFraction = 0.0f;
 	EmitterTime = 0.0f;
 	SecondsSinceCreation = 0.0f;
+	bBurstFired = false;
 }
 
 bool FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles, int32 InParticleStride, int32 InInstancePayloadSize)
@@ -211,6 +214,146 @@ bool FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles, 
 	DataContainer.ParticleData = ParticleData;
 	DataContainer.ParticleIndices = ParticleIndices;
 	return true;
+}
+
+int32 FParticleEmitterInstance::CalculateSpawnRateCount(float DeltaTime)
+{
+	if (DeltaTime <= 0.0f || CurrentRuntimeCache == nullptr || CurrentRuntimeCache->SpawnModule == nullptr)
+	{
+		return 0;
+	}
+
+	const UParticleModuleSpawn* SpawnModule = CurrentRuntimeCache->SpawnModule;
+	if (!SpawnModule->bProcessSpawnRate)
+	{
+		SpawnFraction = 0.0f;
+		return 0;
+	}
+
+	const float SpawnRate = std::max(0.0f, SpawnModule->SpawnRate * SpawnModule->RateScale);
+	const float SpawnAmount = SpawnRate * DeltaTime + SpawnFraction;
+	const int32 SpawnCount = static_cast<int32>(std::floor(SpawnAmount));
+	SpawnFraction = SpawnAmount - static_cast<float>(SpawnCount);
+	return std::max(0, SpawnCount);
+}
+
+int32 FParticleEmitterInstance::CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime)
+{
+	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->SpawnModule == nullptr || bBurstFired)
+	{
+		return 0;
+	}
+
+	const UParticleModuleSpawn* SpawnModule = CurrentRuntimeCache->SpawnModule;
+	if (!SpawnModule->bProcessBurst || SpawnModule->BurstCount <= 0)
+	{
+		return 0;
+	}
+
+	const float BurstTime = std::max(0.0f, SpawnModule->BurstTime);
+	if (PreviousEmitterTime <= BurstTime && CurrentEmitterTime >= BurstTime)
+	{
+		bBurstFired = true;
+		return SpawnModule->BurstCount;
+	}
+
+	return 0;
+}
+
+int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
+{
+	if (Count <= 0 || ParticleData == nullptr || ParticleIndices == nullptr)
+	{
+		return 0;
+	}
+
+	const int32 AvailableSlots = MaxActiveParticles - ActiveParticles;
+	const int32 SpawnCount = std::clamp(Count, 0, AvailableSlots);
+	if (SpawnCount <= 0)
+	{
+		return 0;
+	}
+
+	const float SpawnInterval = SpawnCount > 0 ? DeltaTime / static_cast<float>(SpawnCount) : 0.0f;
+
+	for (int32 SpawnIndex = 0; SpawnIndex < SpawnCount; ++SpawnIndex)
+	{
+		const int32 ActiveIndex = ActiveParticles;
+		const int32 PhysicalIndex = ParticleIndices[ActiveIndex];
+		FBaseParticle& Particle = GetParticleByPhysicalIndex(PhysicalIndex);
+		new (&Particle) FBaseParticle();
+
+		Particle.Seed = RandomStream.GetUnsignedInt();
+		Particle.OldLocation = Particle.Location;
+		Particle.RelativeTime = 0.0f;
+		Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
+		Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
+
+		const float SpawnTime = SpawnInterval * static_cast<float>(SpawnIndex);
+		for (UParticleModule* Module : CurrentRuntimeCache->SpawnModules)
+		{
+			if (Module == nullptr)
+			{
+				continue;
+			}
+
+			const int32 Offset = CurrentRuntimeCache->GetParticlePayloadOffset(Module);
+			Module->Spawn(this, Offset, SpawnTime, Particle);
+		}
+
+		FParticleEventSpawnData Event;
+		Event.ParticleIndex = PhysicalIndex;
+		Event.Location = GetParticleLocationForRender(Particle);
+		Owner.AddSpawnEvent(Event);
+
+		++ActiveParticles;
+		++ParticleCounter;
+	}
+
+	return SpawnCount;
+}
+
+void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
+{
+	int32 ActiveIndex = 0;
+	while (ActiveIndex < ActiveParticles)
+	{
+		FBaseParticle& Particle = GetParticleByActiveIndex(ActiveIndex);
+		Particle.OldLocation = Particle.Location;
+		Particle.Location += Particle.Velocity * DeltaTime;
+		Particle.Rotation += Particle.RotationRate * DeltaTime;
+		Particle.RelativeTime += DeltaTime * Particle.OneOverMaxLifetime;
+
+		if (Particle.RelativeTime >= 1.0f)
+		{
+			KillParticle(ActiveIndex);
+			continue;
+		}
+
+		++ActiveIndex;
+	}
+}
+
+void FParticleEmitterInstance::KillParticle(int32 ActiveIndex)
+{
+	if (ActiveIndex < 0 || ActiveIndex >= ActiveParticles || ParticleIndices == nullptr)
+	{
+		return;
+	}
+
+	const int32 LastActiveIndex = ActiveParticles - 1;
+	const uint16 KilledPhysicalIndex = ParticleIndices[ActiveIndex];
+	FBaseParticle& Particle = GetParticleByPhysicalIndex(KilledPhysicalIndex);
+
+	FParticleEventDeathData Event;
+	Event.ParticleIndex = KilledPhysicalIndex;
+	Event.Location = GetParticleLocationForRender(Particle);
+	Owner.AddDeathEvent(Event);
+
+	// particle memory는 옮기지 않고 active index 목록만 swap-remove해서 제거(속도 최적화)
+	ParticleIndices[ActiveIndex] = ParticleIndices[LastActiveIndex];
+	ParticleIndices[LastActiveIndex] = KilledPhysicalIndex;
+	--ActiveParticles;
 }
 
 FBaseParticle& FParticleEmitterInstance::GetParticleByActiveIndex(int32 ActiveIndex)
@@ -383,8 +526,27 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 		return;
 	}
 
+	if (DeltaTime <= 0.0f)
+	{
+		return;
+	}
+
+	const float PreviousEmitterTime = EmitterTime;
 	EmitterTime += DeltaTime;
 	SecondsSinceCreation += DeltaTime;
+
+	const int32 BurstSpawnCount = CalculateBurstSpawnCount(PreviousEmitterTime, EmitterTime);
+	const int32 ActualBurstSpawnCount = SpawnParticles(BurstSpawnCount, DeltaTime);
+	if (ActualBurstSpawnCount > 0)
+	{
+		FParticleEventBurstData Event;
+		Event.SpawnCount = ActualBurstSpawnCount;
+		Event.Location = Owner.GetWorldLocation();
+		Owner.AddBurstEvent(Event);
+	}
+
+	SpawnParticles(CalculateSpawnRateCount(DeltaTime), DeltaTime);
+	UpdateParticles(DeltaTime);
 
 	for (UParticleModule* Module : CurrentRuntimeCache->UpdateModules)
 	{
