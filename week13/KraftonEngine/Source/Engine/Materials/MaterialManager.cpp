@@ -43,6 +43,7 @@ namespace
         }
         return std::filesystem::exists(Full);
     }
+    constexpr const char* MaterialGraphGeneratorVersion = "ParticleSpriteCBLayout_v3";
 }
 
 void FMaterialManager::ScanMaterialAssets()
@@ -572,12 +573,17 @@ bool FMaterialManager::CompileMaterialGraph(const FString& MatFilePath, json::JS
     const FString GraphHash = MaterialGraphAsset::ComputeGraphHashString(InOutJson[MatKeys::Graph]);
     const FString OldHash   = InOutJson.hasKey(MatKeys::Compiled) && InOutJson[MatKeys::Compiled].
     hasKey(MatKeys::GraphHash) ? InOutJson[MatKeys::Compiled][MatKeys::GraphHash].ToString() : FString();
+    const FString OldGeneratorVersion = InOutJson.hasKey(MatKeys::Compiled) && InOutJson[MatKeys::Compiled].
+    hasKey(MatKeys::GeneratorVersion) ? InOutJson[MatKeys::Compiled][MatKeys::GeneratorVersion].ToString() : FString();
     const FString ExistingGeneratedPath = InOutJson.hasKey(MatKeys::GeneratedShaderPath)
     ? InOutJson[MatKeys::GeneratedShaderPath].ToString() : FString();
 
-    const bool bNeedsCompile = GraphHash != OldHash || ExistingGeneratedPath.empty() || !ProjectFileExists(
-        ExistingGeneratedPath
-    );
+    // graph 미변경이어도 generator/runtime 코드가 바뀌면 강제 재컴파일.
+    const bool bNeedsCompile =
+        GraphHash != OldHash
+        || OldGeneratorVersion != MaterialGraphGeneratorVersion
+        || ExistingGeneratedPath.empty()
+        || !ProjectFileExists(ExistingGeneratedPath);
     if (!bNeedsCompile)
     {
         return true;
@@ -627,12 +633,13 @@ bool FMaterialManager::CompileMaterialGraph(const FString& MatFilePath, json::JS
         File << Result.GeneratedHlsl;
     }
 
-    InOutJson[MatKeys::GeneratedShaderPath]           = Result.GeneratedShaderPath;
-    InOutJson[MatKeys::ShaderPath]                    = Result.GeneratedShaderPath;
-    InOutJson[MatKeys::Compiled]                      = json::JSON::Make(json::JSON::Class::Object);
-    InOutJson[MatKeys::Compiled][MatKeys::GraphHash]  = GraphHash;
-    InOutJson[MatKeys::Compiled][MatKeys::Parameters] = json::JSON::Make(json::JSON::Class::Object);
-    InOutJson[MatKeys::Compiled][MatKeys::Textures]   = json::JSON::Make(json::JSON::Class::Object);
+    InOutJson[MatKeys::GeneratedShaderPath]                  = Result.GeneratedShaderPath;
+    InOutJson[MatKeys::ShaderPath]                           = Result.GeneratedShaderPath;
+    InOutJson[MatKeys::Compiled]                             = json::JSON::Make(json::JSON::Class::Object);
+    InOutJson[MatKeys::Compiled][MatKeys::GraphHash]         = GraphHash;
+    InOutJson[MatKeys::Compiled][MatKeys::GeneratorVersion]  = MaterialGraphGeneratorVersion;
+    InOutJson[MatKeys::Compiled][MatKeys::Parameters]        = json::JSON::Make(json::JSON::Class::Object);
+    InOutJson[MatKeys::Compiled][MatKeys::Textures]          = json::JSON::Make(json::JSON::Class::Object);
 
     for (const auto& Pair : Result.Parameters)
     {

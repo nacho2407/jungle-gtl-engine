@@ -78,6 +78,10 @@ enum class EMaterialGraphNodeType : uint8
 	Normalize,           // normalize(V)
 	Dot,                 // dot(A, B) → Float
 	Cross,               // cross(A, B) → Float3
+
+	// 파티클 전용
+	ParticleSubUV,       // atlas Rows/Cols 파라미터, UV(Float2) 출력
+	DynamicParameter,    // Param1/2/3/4 + RGBA 출력
 };
 
 struct FMaterialGraphPin

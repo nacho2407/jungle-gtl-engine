@@ -268,6 +268,10 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 			Inst->Size     = P->Size.X * Source.Scale.X;
 			Inst->Color    = P->Color.ToVector4();
 			Inst->Rotation = P->Rotation;
+			// 라이프타임 진행도를 그대로 흘려보냄. 머티리얼 그래프의 ParticleSubUV가 Rows/Cols로 정수 프레임 변환.
+			Inst->SubImageIndex = P->RelativeTime;
+			// 모듈이 아직 없으므로 기본값. 0이어야 `pow(x, DP.r + 1)` 같은 패턴에서 자연스러움.
+			Inst->DynamicParam = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 	}
 	else if (Source.eEmitterType == EDynamicEmitterType::Mesh)
@@ -310,6 +314,8 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 
 			Inst->Transform = WorldTM;
 			Inst->Color     = P->Color.ToVector4();
+			Inst->SubImageIndex = P->RelativeTime;
+			Inst->DynamicParam  = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
 		}
 	}
 }
@@ -400,7 +406,9 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
     {
         Buffer.Material->FlushDirtyBuffers(Device, Context);
 
-        Cmd.Bindings.PerShaderCB[0] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader0);
+        // ParticleSprite 빌보드 확장은 카메라 축이 필요. ParticleFrameCB(b2)는 반드시 묶고,
+        // 머티리얼 파라미터 PerMaterial은 b3로 분리한다(generator도 ParticleSprite 도메인에서 PerMaterial을 b3로 emit).
+        Cmd.Bindings.PerShaderCB[0] = &Buffer.ParticleFrameCB;
         Cmd.Bindings.PerShaderCB[1] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader1);
 
         const ID3D11ShaderResourceView* const* MatSRVs       = Buffer.Material->GetCachedSRVs();

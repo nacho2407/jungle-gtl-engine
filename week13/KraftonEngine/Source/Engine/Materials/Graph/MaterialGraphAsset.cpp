@@ -310,6 +310,25 @@ FMaterialGraphNode* FMaterialGraph::AddNodeOfType(EMaterialGraphNodeType Type, f
 		AddPin(*N, EMaterialGraphPinKind::Output, EMaterialGraphPinType::Float3, FName("Result"));
 		return N;
 	}
+	case EMaterialGraphNodeType::ParticleSubUV:
+	{
+		FMaterialGraphNode* N = AddNode(Type, FName("Particle SubUV"), X, Y);
+		// Value.X = Cols, Value.Y = Rows. 기본 4x4 아틀라스.
+		N->Value = FVector4(4.0f, 4.0f, 0.0f, 0.0f);
+		AddPin(*N, EMaterialGraphPinKind::Output, EMaterialGraphPinType::Float2, FName("UV"));
+		return N;
+	}
+	case EMaterialGraphNodeType::DynamicParameter:
+	{
+		FMaterialGraphNode* N = AddNode(Type, FName("Dynamic Parameter"), X, Y);
+		// 4채널 분리 출력 + RGBA. swizzle helper에서 Param1~Param4 인식.
+		AddPin(*N, EMaterialGraphPinKind::Output, EMaterialGraphPinType::Float,  FName("Param1"));
+		AddPin(*N, EMaterialGraphPinKind::Output, EMaterialGraphPinType::Float,  FName("Param2"));
+		AddPin(*N, EMaterialGraphPinKind::Output, EMaterialGraphPinType::Float,  FName("Param3"));
+		AddPin(*N, EMaterialGraphPinKind::Output, EMaterialGraphPinType::Float,  FName("Param4"));
+		AddPin(*N, EMaterialGraphPinKind::Output, EMaterialGraphPinType::Float4, FName("RGBA"));
+		return N;
+	}
 	}
 	return nullptr;
 }
@@ -745,6 +764,8 @@ const char* ToString(EMaterialGraphNodeType Type)
 	case EMaterialGraphNodeType::Normalize: return "Normalize";
 	case EMaterialGraphNodeType::Dot: return "Dot";
 	case EMaterialGraphNodeType::Cross: return "Cross";
+	case EMaterialGraphNodeType::ParticleSubUV: return "ParticleSubUV";
+	case EMaterialGraphNodeType::DynamicParameter: return "DynamicParameter";
 	}
 	return "Output";
 }
@@ -791,7 +812,7 @@ EMaterialGraphPinType MaterialPinTypeFromString(const FString& Str, EMaterialGra
 
 EMaterialGraphNodeType MaterialNodeTypeFromString(const FString& Str, EMaterialGraphNodeType Default)
 {
-	for (int32 i = 0; i <= static_cast<int32>(EMaterialGraphNodeType::Cross); ++i)
+	for (int32 i = 0; i <= static_cast<int32>(EMaterialGraphNodeType::DynamicParameter); ++i)
 	{
 		const EMaterialGraphNodeType Type = static_cast<EMaterialGraphNodeType>(i);
 		if (Str == ToString(Type)) return Type;
