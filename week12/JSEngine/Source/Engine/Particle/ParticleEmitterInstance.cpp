@@ -386,7 +386,7 @@ void FParticleEmitterInstance::KillParticle(int32 ActiveIndex)
 	Event.Location = GetParticleLocationForRender(Particle);
 	Owner.AddDeathEvent(Event);
 
-	// particle memory는 옮기지 않고 active index 목록만 swap-remove해서 제거(속도 최적화)
+	// particle memory는 옮기지 않고 active index 목록만 swap-remove(속도 최적화)
 	ParticleIndices[ActiveIndex] = ParticleIndices[LastActiveIndex];
 	ParticleIndices[LastActiveIndex] = KilledPhysicalIndex;
 	--ActiveParticles;
@@ -612,4 +612,5 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 			Module->Update(this, Offset, DeltaTime);
 		}
 	}
+
 }
