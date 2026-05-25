@@ -59,6 +59,7 @@ namespace
 			Hash ^= std::hash<uint32>{}(static_cast<uint32>(Element.Format)) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
 			Hash ^= std::hash<uint32>{}(Element.InputSlot) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
 			Hash ^= std::hash<uint32>{}(Element.AlignedByteOffset) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
+			Hash ^= std::hash<uint32>{}(static_cast<uint32>(Element.InputRate)) + 0x9e3779b9 + (Hash << 6) + (Hash >> 2);
 		}
 
 		return static_cast<uint32>(Hash);
@@ -247,8 +248,10 @@ namespace
 			ElementDesc.Format = Element.Format;
 			ElementDesc.InputSlot = Element.InputSlot;
 			ElementDesc.AlignedByteOffset = Element.AlignedByteOffset;
-			ElementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-			ElementDesc.InstanceDataStepRate = 0;
+			ElementDesc.InputSlotClass = Element.InputRate == EVertexInputRate::PerInstance
+				? D3D11_INPUT_PER_INSTANCE_DATA
+				: D3D11_INPUT_PER_VERTEX_DATA;
+			ElementDesc.InstanceDataStepRate = Element.InputRate == EVertexInputRate::PerInstance ? 1 : 0;
 			InputElements.push_back(ElementDesc);
 		}
 

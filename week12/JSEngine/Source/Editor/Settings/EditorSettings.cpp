@@ -38,6 +38,7 @@ namespace EditorKey
 	constexpr const char* PickingMode = "PickingMode";
 	constexpr const char* bPrimitives = "bPrimitives";
 	constexpr const char* bSkeletalMesh = "bSkeletalMesh";
+    constexpr const char* bParticle = "bParticle";
 	constexpr const char* bGrid = "bGrid";
 	constexpr const char* bAxis = "bAxis";
 	constexpr const char* bGizmo = "bGizmo";
@@ -108,6 +109,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	ViewObj[EditorKey::PickingMode] = static_cast<int32>(PickingMode);
 	ViewObj[EditorKey::bPrimitives] = ShowFlags.bPrimitives;
 	ViewObj[EditorKey::bSkeletalMesh] = ShowFlags.bSkeletalMesh;
+    ViewObj[EditorKey::bParticle] = ShowFlags.bParticle;
 	ViewObj[EditorKey::bGrid] = ShowFlags.bGrid;
 	ViewObj[EditorKey::bAxis] = ShowFlags.bAxis;
 	ViewObj[EditorKey::bGizmo] = ShowFlags.bGizmo;
@@ -263,6 +265,8 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			ShowFlags.bPrimitives = ViewObj[EditorKey::bPrimitives].ToBool();
 		if (ViewObj.hasKey(EditorKey::bSkeletalMesh))
 			ShowFlags.bSkeletalMesh = ViewObj[EditorKey::bSkeletalMesh].ToBool();
+	    if (ViewObj.hasKey(EditorKey::bParticle))
+	        ShowFlags.bParticle = ViewObj[EditorKey::bParticle].ToBool();
 		if (ViewObj.hasKey(EditorKey::bGrid))
 			ShowFlags.bGrid = ViewObj[EditorKey::bGrid].ToBool();
 		if (ViewObj.hasKey(EditorKey::bAxis))

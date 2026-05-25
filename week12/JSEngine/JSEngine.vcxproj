@@ -835,6 +835,7 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\DebugViewModeResolvePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ParticleRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeMeshRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.cpp" />
@@ -1243,6 +1244,7 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\DebugViewModeResolvePass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ParticleRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeMeshRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.h" />

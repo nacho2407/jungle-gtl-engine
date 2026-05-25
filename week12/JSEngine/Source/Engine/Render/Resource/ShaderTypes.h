@@ -60,8 +60,14 @@ struct FShaderReflectionInfo
     uint32 ConstantBufferSize = 0;
 };
 
+enum class EVertexInputRate : uint8
+{
+    PerVertex,
+    PerInstance,
+};
+
 // 명시적 VertexLayout을 열어두기 위한 구조입니다.
-// 현재 InputLayout은 VS Reflection 기반으로 생성하지만, 이후 수동 Layout이 필요해질 때 사용합니다.
+// InputRate가 PerInstance면 GPU인스턴싱용 VertexElement. 인스턴스 1개 그릴 때마다 다음 데이터 읽음.
 struct FVertexElementDesc
 {
     FString SemanticName;
@@ -69,6 +75,7 @@ struct FVertexElementDesc
     DXGI_FORMAT Format = DXGI_FORMAT_UNKNOWN;
     uint32 InputSlot = 0;
     uint32 AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+    EVertexInputRate InputRate = EVertexInputRate::PerVertex;
 };
 
 struct FVertexLayoutDesc

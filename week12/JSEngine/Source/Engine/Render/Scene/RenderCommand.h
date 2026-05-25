@@ -19,6 +19,8 @@
 
 struct ID3D11ShaderResourceView;
 class UPrimitiveComponent;
+struct FDynamicEmitterDataBase;
+struct FDynamicEmitterReplayDataBase;
 
 enum class ERenderCommandType
 {
@@ -40,6 +42,7 @@ enum class ERenderCommandType
 	StaticMesh,	// UStaticMeshComponent — OBJ 메시 퐁셰이딩
 	SkeletalMesh,
 	Decal,
+    Particle,
 	Light,
 };
 
@@ -212,6 +215,22 @@ struct FProjectionDecalConstants
 {
 	FMatrix InvDecalWorld;
 	FVector4 ColorTint;
+};
+
+struct FParticleConstants
+{
+	FMatrix ComponentToWorld = FMatrix::Identity;
+
+	FVector CameraRight = FVector::RightVector;
+	float Padding0 = 0.0f;
+
+	FVector CameraUp = FVector::UpVector;
+	float Padding1 = 0.0f;
+
+	uint32 EmitterType = 0;
+	uint32 CoordinateSpace = 0;
+	uint32 ActiveParticleCount = 0;
+	uint32 bUseLocalSpace = 0;
 };
 
 struct FGizmoConstants
@@ -433,6 +452,8 @@ struct FRenderCommand
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
 	UMaterialInterface* Material = nullptr;
+	const FDynamicEmitterDataBase* ParticleEmitterData = nullptr;
+	const FDynamicEmitterReplayDataBase* ParticleReplayData = nullptr;
 
 	// MeshBuffer의 Vertex Data를 어떤 VS/입력 규칙으로 해석할지 결정합니다.
 	// Material과 분리되어 있어 같은 Material을 StaticMesh / SkeletalMesh가 같이 사용할 수 있습니다.
@@ -468,6 +489,7 @@ struct FRenderCommand
 		FFXAAConstants FXAA;
 		FDebugViewModeResolveConstants DebugViewModeResolve;
 		FProjectionDecalConstants Decal;
+	    FParticleConstants Particle;
 	} Constants;
 
 	ERenderCommandType Type = ERenderCommandType::Primitive;
