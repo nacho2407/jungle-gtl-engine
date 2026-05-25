@@ -1,11 +1,13 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
+#include "Object/Reflection/ObjectMacros.h"
 
 /*
 	렌더 파이프라인 상태(DepthStencil, Blend, Rasterizer)에 사용되는 enum 정의입니다.
 */
 
+UENUM()
 enum class EDepthStencilState
 {
 	Default,
@@ -21,6 +23,7 @@ enum class EDepthStencilState
 	MAX
 };
 
+UENUM()
 enum class EBlendState
 {
 	Opaque,
@@ -30,6 +33,7 @@ enum class EBlendState
 	MAX
 };
 
+UENUM()
 enum class ERasterizerState
 {
 	SolidBackCull,

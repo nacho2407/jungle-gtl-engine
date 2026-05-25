@@ -31,6 +31,7 @@ enum class EMeshShape
 	ScaleGizmo,
 };
 
+UENUM()
 enum class ERenderPass : uint32
 {
 	PreDepth,		// Depth-only 프리패스 (color write 없음, Early-Z용)

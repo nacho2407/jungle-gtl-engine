@@ -156,7 +156,7 @@ public:
 class MaterialElement final : public ContentBrowserElement
 {
 public:
-	virtual void OnLeftClicked(ContentBrowserContext& Context) override;
+	virtual void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
 	virtual const char* GetDragItemType() override { return "MaterialContentItem"; }
 	virtual void RenderDetail() override;
 

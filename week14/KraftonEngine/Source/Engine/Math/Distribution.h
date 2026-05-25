@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Math/MathUtils.h"
@@ -23,28 +23,28 @@ struct FDistributionLookupTable
 {
 	GENERATED_BODY()
 
-	UPROPERTY(Edit, Save, Category="Distribution")
+	UPROPERTY(Save, Category="Distribution")
 	float TimeScale = 1.0f;
 
-	UPROPERTY(Edit, Save, Category="Distribution")
+	UPROPERTY(Save, Category="Distribution")
 	float TimeBias = 0.0f;
 
-	UPROPERTY(Edit, Save, Category="Distribution")
+	UPROPERTY(Save, Category="Distribution")
 	TArray<float> Values;
 
-	UPROPERTY(Edit, Save, Category="Distribution")
+	UPROPERTY(Save, Category="Distribution")
 	uint8 Op = 0;
 
-	UPROPERTY(Edit, Save, Category="Distribution")
+	UPROPERTY(Save, Category="Distribution")
 	uint8 EntryCount = 0;
 
-	UPROPERTY(Edit, Save, Category="Distribution")
+	UPROPERTY(Save, Category="Distribution")
 	uint8 EntryStride = 0;
 
-	UPROPERTY(Edit, Save, Category="Distribution")
+	UPROPERTY(Save, Category="Distribution")
 	uint8 SubEntryStride = 0;
 
-	UPROPERTY(Edit, Save, Category="Distribution")
+	UPROPERTY(Save, Category="Distribution")
 	uint8 LockFlag = 0;
 };
 
@@ -53,7 +53,7 @@ struct FRawDistribution
 {
 	GENERATED_BODY()
 
-	UPROPERTY(Edit, Save, Category="Distribution", Type=Struct, Struct=FDistributionLookupTable)
+	UPROPERTY(Save, Category="Distribution", Type=Struct, Struct=FDistributionLookupTable)
 	FDistributionLookupTable Table;
 };
 
@@ -83,19 +83,19 @@ struct FRawDistributionFloat
 {
 	GENERATED_BODY()
 
-	UPROPERTY(Edit, Save, Category="Distribution", Type=Struct, Struct=FRawDistribution)
+	UPROPERTY(Save, Category="Distribution", Type=Struct, Struct=FRawDistribution)
 	FRawDistribution RawDistribution;
 
 	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Mode", Enum=EDistributionValueMode)
 	EDistributionValueMode Mode = EDistributionValueMode::Constant;
 
-	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Constant")
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Constant", EditCondition="Mode == Constant")
 	float Constant = 0.0f;
 
-	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Min")
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Min", EditCondition="Mode == Uniform")
 	float MinValue = 0.0f;
 
-	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Max")
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Max", EditCondition="Mode == Uniform")
 	float MaxValue = 0.0f;
 
 	float GetValue(float RandomFraction = FDistributionSampling::RandomUnit()) const
@@ -114,19 +114,19 @@ struct FRawDistributionVector
 {
 	GENERATED_BODY()
 
-	UPROPERTY(Edit, Save, Category="Distribution", Type=Struct, Struct=FRawDistribution)
+	UPROPERTY(Save, Category="Distribution", Type=Struct, Struct=FRawDistribution)
 	FRawDistribution RawDistribution;
 
 	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Mode", Enum=EDistributionValueMode)
 	EDistributionValueMode Mode = EDistributionValueMode::Constant;
 
-	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Constant")
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Constant", EditCondition="Mode == Constant")
 	FVector Constant = FVector::ZeroVector;
 
-	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Min")
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Min", EditCondition="Mode == Uniform")
 	FVector MinValue = FVector::ZeroVector;
 
-	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Max")
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Max", EditCondition="Mode == Uniform")
 	FVector MaxValue = FVector::ZeroVector;
 
 	FVector GetValue(const FVector& RandomFraction = FDistributionSampling::RandomUnitVector()) const
