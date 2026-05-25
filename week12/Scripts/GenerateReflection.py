@@ -48,6 +48,21 @@ def record_generated_file(gen_filepath):
 	EXPECTED_GENERATED_FILES.add(gen_filepath.resolve())
 
 
+def write_generated_file_if_changed(gen_filepath, gen_code):
+	record_generated_file(gen_filepath)
+	if gen_filepath.exists():
+		try:
+			if gen_filepath.read_text(encoding='utf-8') == gen_code:
+				return False
+		except UnicodeDecodeError:
+			pass
+
+	gen_filepath.parent.mkdir(parents=True, exist_ok=True)
+	with open(gen_filepath, 'w', encoding='utf-8', newline='\n') as f:
+		f.write(gen_code)
+	return True
+
+
 def cleanup_stale_generated_files():
 	if not REFLECTION_OUTPUT_DIR.exists():
 		return
@@ -1476,11 +1491,8 @@ def generate_lua_bindings_file():
 """
 
 	gen_filepath = REFLECTION_OUTPUT_DIR / 'GeneratedLuaBindings.gen.cpp'
-	record_generated_file(gen_filepath)
-	gen_filepath.parent.mkdir(parents=True, exist_ok=True)
-	with open(gen_filepath, 'w', encoding='utf-8', newline='\n') as f:
-		f.write(gen_code)
-	print(f'Generated: {gen_filepath.relative_to(ROOT)}')
+	if write_generated_file_if_changed(gen_filepath, gen_code):
+		print(f'Generated: {gen_filepath.relative_to(ROOT)}')
 
 
 def generate_class_file(header_path, class_info, properties, functions, used_enums):
@@ -1747,12 +1759,9 @@ static Z_AutoRegister_UClass_{class_name} Z_AutoRegister_UClass_{class_name}_Var
 """
 
 	gen_filepath = make_generated_file_path(header_path, class_name)
-	record_generated_file(gen_filepath)
-	gen_filepath.parent.mkdir(parents=True, exist_ok=True)
 	gen_code = wrap_generated_code(header_path, gen_code)
-	with open(gen_filepath, 'w', encoding='utf-8', newline='\n') as f:
-		f.write(gen_code)
-	print(f'Generated: {gen_filepath.relative_to(ROOT)}')
+	if write_generated_file_if_changed(gen_filepath, gen_code):
+		print(f'Generated: {gen_filepath.relative_to(ROOT)}')
 
 	if lua_registration_lines:
 		GENERATED_LUA_BINDING_CLASSES.append({
@@ -1874,12 +1883,9 @@ static Z_AutoRegister_UScriptStruct_{struct_name} Z_AutoRegister_UScriptStruct_{
 """
 
 	gen_filepath = make_generated_file_path(header_path, struct_name)
-	record_generated_file(gen_filepath)
-	gen_filepath.parent.mkdir(parents=True, exist_ok=True)
 	gen_code = wrap_generated_code(header_path, gen_code)
-	with open(gen_filepath, 'w', encoding='utf-8', newline='\n') as f:
-		f.write(gen_code)
-	print(f'Generated: {gen_filepath.relative_to(ROOT)}')
+	if write_generated_file_if_changed(gen_filepath, gen_code):
+		print(f'Generated: {gen_filepath.relative_to(ROOT)}')
 
 
 # 헤더 파일 하나를 분석하여 UCLASS, UPROPERTY 등을 추출하고 .gen.cpp 코드를 생성합니다.
