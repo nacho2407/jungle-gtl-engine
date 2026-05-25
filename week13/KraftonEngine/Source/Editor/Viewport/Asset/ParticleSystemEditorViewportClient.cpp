@@ -47,26 +47,24 @@ void FParticleSystemEditorViewportClient::Release()
 
 void FParticleSystemEditorViewportClient::ResetCameraToPreviewBounds()
 {
-    FBoundingBox Bounds = PreviewParticleSystemComponent ? PreviewParticleSystemComponent->GetWorldBoundingBox()
-    : FBoundingBox(FVector(-100.0f, -100.0f, -100.0f), FVector(100.0f, 100.0f, 100.0f));
+    FBoundingBox Bounds = PreviewParticleSystemComponent
+        ? PreviewParticleSystemComponent->GetWorldBoundingBox()
+        : FBoundingBox(FVector(-1.0f, -1.0f, -1.0f), FVector(1.0f, 1.0f, 1.0f));
 
     FVector Center = Bounds.GetCenter();
-    float   Radius = Bounds.GetExtent().Length();
-    if (Radius < 0.1f)
-    {
-        Radius = 100.0f;
-    }
 
-    const float   FovRadians = ViewTransform.FOV;
-    const float   Distance   = Radius / std::tan(FovRadians * 0.5f) * 1.25f;
-    const FVector ViewDir    = FVector(-1.0f, -1.0f, -0.6f).Normalized();
+    float Radius = min(Bounds.GetExtent().Length(), 5.0f);
+    const float FovRadians = ViewTransform.FOV;
+    const float Distance = Radius / std::tan(FovRadians * 0.5f) * 1.25f;
+
+    const FVector ViewDir = FVector(-1.0f, -1.0f, -0.45f).Normalized();
 
     ViewTransform.ViewLocation = Center - ViewDir * Distance;
     ViewTransform.LookAt(Center);
 
-    TargetLocation                        = ViewTransform.ViewLocation;
-    LastAppliedCameraLocation             = ViewTransform.ViewLocation;
-    bTargetLocationInitialized            = true;
+    TargetLocation = ViewTransform.ViewLocation;
+    LastAppliedCameraLocation = ViewTransform.ViewLocation;
+    bTargetLocationInitialized = true;
     bLastAppliedCameraLocationInitialized = true;
 }
 

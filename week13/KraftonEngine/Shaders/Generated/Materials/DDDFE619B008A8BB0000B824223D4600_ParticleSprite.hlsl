@@ -1,4 +1,4 @@
-// Generated from Content/Material/Auto/acc_002_Emitter0.mat
+// Generated from Content/Material/Material_Emitter0.mat
 // Domain: ParticleSprite
 
 #include "Common/ConstantBuffers.hlsli"

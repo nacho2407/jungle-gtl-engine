@@ -5,7 +5,7 @@
 void UParticleModuleSize::Spawn(const FSpawnContext& Context)
 {
 	SPAWN_INIT;
-	FVector Size = StartSize;
+	FVector Size = StartSize.GetValue(Context.Owner.EmitterTime);
 
 	Particle.Size += Size;
 	// Flip 을 Scale 로 표현. 
@@ -29,5 +29,5 @@ void UParticleModuleSize::Serialize(FArchive& Ar)
 	int32 Version = 0;
 	Ar << Version;
 
-	Ar << StartSize;
+	StartSize.Serialize(Ar);
 }

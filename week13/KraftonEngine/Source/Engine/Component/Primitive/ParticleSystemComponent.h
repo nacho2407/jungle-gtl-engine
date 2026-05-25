@@ -40,6 +40,8 @@ public:
     const TArray<FParticleEmitterInstance*>& GetEmitterInstances() const { return EmitterInstances; }
     const TArray<FDynamicEmitterDataBase*>&  GetEmitterRenderData() const { return EmitterRenderData; }
 
+	void SetCachedDistanceToCamera(float InDist) { CachedDistanceToCamera = InDist; }
+
 private:
     void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
@@ -65,4 +67,6 @@ private:
     TArray<UMaterial*>                EmitterMaterials;
 
     bool bInitialized = false;
+	
+	float CachedDistanceToCamera = 0.0f;
 };

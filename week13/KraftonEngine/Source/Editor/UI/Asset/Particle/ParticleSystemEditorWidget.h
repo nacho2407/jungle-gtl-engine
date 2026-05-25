@@ -44,6 +44,16 @@ private:
     void OpenMaterialForRequired(class UParticleModuleRequired* Required);
     void DuplicateMaterialForRequired(class UParticleModuleRequired* Required);
 
+    // LOD 관리. SelectedLODIndex가 현재 편집 중인 레벨.
+    void AddLODAfterSelected();
+    void RemoveLODAt(int32 LODIndex);
+    void SelectLOD(int32 LODIndex);
+
+    // 모듈 sharing 관리 — sub-LOD에서만 의미 있음.
+    void DuplicateModuleFromHigherLOD(class UParticleEmitter* Emitter, int32 LODIndex, int32 ModuleIndex);
+    void ShareModuleFromHigherLOD(class UParticleEmitter* Emitter, int32 LODIndex, int32 ModuleIndex);
+    void DuplicateModuleFromHighestLOD(class UParticleEmitter* Emitter, int32 LODIndex, int32 ModuleIndex);
+
     void RenderMenuBar();
     void RenderToolbar();
     void RenderStatusBar();
@@ -66,6 +76,10 @@ private:
     int32 SelectedEmitterIndex = -1;
     int32 SelectedModuleIndex  = -1;
 
+    // 현재 편집 중인 LOD 레벨. 0이 highest detail, N>0은 sub-LOD.
+    // 모든 이미터가 같은 LOD 수를 가진다고 가정 (Cascade 규약).
+    int32 SelectedLODIndex     = 0;
+
     // 툴바 Play/Pause와 연결되는 시뮬레이션 상태.
     bool  bSimulating = false;
     float PreviewTime = 0.0f;
@@ -86,4 +100,5 @@ private:
     FParticleSystemEditorViewportClient ViewportClient;
     FName                               PreviewWorldHandle = FName::None;
     UParticleSystemComponent*           PreviewPSC         = nullptr;
+    bool                                bPendingClose      = false;
 };

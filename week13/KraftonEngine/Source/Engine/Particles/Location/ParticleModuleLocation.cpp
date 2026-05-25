@@ -8,7 +8,7 @@ void UParticleModuleLocation::Spawn(const FSpawnContext& Context)
 	SPAWN_INIT;
 	FVector LocationOffset;
 
-	LocationOffset = StartLocation;
+	LocationOffset = StartLocation.GetValue(Context.Owner.EmitterTime);
 	LocationOffset = Context.Owner.EmitterToSimulation.TransformVector(LocationOffset);
 	Particle.Location += LocationOffset;
 
@@ -34,5 +34,5 @@ void UParticleModuleLocation::Serialize(FArchive& Ar)
 	int32 Version = 0;
 	Ar << Version;
 
-	Ar << StartLocation;
+	StartLocation.Serialize(Ar);
 }

@@ -9,7 +9,7 @@ void UParticleModuleVelocity::Spawn(const FSpawnContext& Context)
 {
 	SPAWN_INIT;
 	
-	FVector Vel = StartVelocity.GetValue(Context.Owner.EmitterTime, Context.Owner.Component);
+	FVector Vel = StartVelocity.GetValue(Context.Owner.EmitterTime);
 
 	FVector FromOrigin = (Particle.Location - Context.Owner.EmitterToSimulation.GetOrigin()).GetSafeNormal();
 

@@ -78,8 +78,7 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		return;
 	}
 
-	UParticleSystemComponent* Comp =
-		static_cast<UParticleSystemComponent*>(GetOwner());
+	UParticleSystemComponent* Comp = static_cast<UParticleSystemComponent*>(GetOwner());
 	if (!IsValid(Comp))
 	{
 		CachedEmitterData.clear();
@@ -88,19 +87,8 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		return;
 	}
 
-	// TODO: 파티클 전용 LOD 최종 결정 (카메라 거리 기반)
-	// UParticleSystem* Template = Comp->GetTemplate();
-	// if (Template && !Template->LODDistances.empty())
-	// {
-	//     float DistSq = FVector::DistSquared(CachedWorldPos, Frame.CameraPosition);
-	//     int32 LODIndex = ComputeParticleLOD(DistSq, Template->LODDistances);
-	//     CurrentLOD = LODIndex;
-	//     Comp->SetCurrentLODLevel(LODIndex);
-	// }
-	// else
-	// {
-	//     Comp->SetCurrentLODLevel(static_cast<int32>(CurrentLOD));
-	// }
+	float DistToCamera = FVector::Distance(Frame.CameraPosition, Comp->GetWorldLocation());
+	Comp->SetCachedDistanceToCamera(DistToCamera);
 
 	const TArray<FDynamicEmitterDataBase*>& EmitterList = Comp->GetEmitterRenderData();
 	CachedEmitterData.clear();
@@ -125,6 +113,7 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		}
 
 		const FDynamicEmitterReplayDataBase& Source = EmitterData->GetSource();
+
 		if (Source.eEmitterType == EDynamicEmitterType::Sprite ||
 			Source.eEmitterType == EDynamicEmitterType::Mesh)
 		{

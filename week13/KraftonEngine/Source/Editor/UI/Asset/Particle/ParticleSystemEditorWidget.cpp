@@ -1,4 +1,4 @@
-#include "ParticleSystemEditorWidget.h"
+﻿#include "ParticleSystemEditorWidget.h"
 
 #include "imgui.h"
 #include "Object/Object.h"
@@ -9,6 +9,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
 #include "Particles/Color/ParticleModuleColor.h"
+#include "Particles/Color/ParticleModuleColorOverLife.h"
 #include "Particles/Lifetime/ParticleModuleLifetime.h"
 #include "Particles/Location/ParticleModuleLocation.h"
 #include "Particles/Size/ParticleModuleSize.h"
@@ -44,6 +45,7 @@
 #include "Runtime/Engine.h"
 #include "Slate/SlateApplication.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Serialization/MemoryArchive.h"
 #include "Viewport/Viewport.h"
 
 namespace
@@ -162,35 +164,132 @@ namespace
         if (Cast<UParticleModuleLocation>(Module)) return "Location";
         if (Cast<UParticleModuleVelocity>(Module)) return "Velocity";
         if (Cast<UParticleModuleSize>(Module))     return "Size";
+        if (Cast<UParticleModuleColorOverLife>(Module)) return "Color Over Life";
         if (Cast<UParticleModuleColor>(Module))    return "Color";
         return "Module";
     }
 
-    void BuildEmitterModuleList(UParticleEmitter* Emitter, TArray<FEmitterModuleEntry>& OutList)
+    void BuildEmitterModuleListAt(UParticleEmitter* Emitter, int32 LODIndex, TArray<FEmitterModuleEntry>& OutList)
     {
         OutList.clear();
         if (!Emitter) return;
 
-        UParticleLODLevel* LOD0 = Emitter->GetLODLevel(0);
-        if (!LOD0) return;
+        UParticleLODLevel* LOD = Emitter->GetLODLevel(LODIndex);
+        if (!LOD) return;
 
-        if (LOD0->RequiredModule)
+        if (LOD->RequiredModule)
         {
-            OutList.push_back({ "Required", LOD0->RequiredModule });
+            OutList.push_back({ "Required", LOD->RequiredModule });
         }
-        if (LOD0->SpawnModule)
+        if (LOD->SpawnModule)
         {
-            OutList.push_back({ "Spawn", LOD0->SpawnModule });
+            OutList.push_back({ "Spawn", LOD->SpawnModule });
         }
-        for (UParticleModule* Module : LOD0->Modules)
+        for (UParticleModule* Module : LOD->Modules)
         {
             if (!Module) continue;
             OutList.push_back({ GetModuleDisplayName(Module), Module });
         }
-        if (LOD0->TypeDataModule)
+        if (LOD->TypeDataModule)
         {
-            OutList.push_back({ "TypeData", static_cast<UParticleModule*>(LOD0->TypeDataModule) });
+            OutList.push_back({ "TypeData", static_cast<UParticleModule*>(LOD->TypeDataModule) });
         }
+    }
+
+    // 호환용 — 기존 LOD0 전용 호출 사이트.
+    void BuildEmitterModuleList(UParticleEmitter* Emitter, TArray<FEmitterModuleEntry>& OutList)
+    {
+        BuildEmitterModuleListAt(Emitter, 0, OutList);
+    }
+
+    int32 GetParticleSystemLODCount(UParticleSystem* ParticleSystem)
+    {
+        int32 LODCount = 0;
+        if (ParticleSystem)
+        {
+            for (UParticleEmitter* Emitter : ParticleSystem->GetEmitters())
+            {
+                if (!Emitter) continue;
+                LODCount = (std::max)(LODCount, static_cast<int32>(Emitter->GetLODLevels().size()));
+            }
+            if (LODCount <= 0)
+            {
+                LODCount = static_cast<int32>(ParticleSystem->LODDistances.size());
+            }
+        }
+        return (std::max)(LODCount, 1);
+    }
+
+    void SyncParticleSystemLODDistances(UParticleSystem* ParticleSystem)
+    {
+        if (!ParticleSystem) return;
+
+        const int32 LODCount = GetParticleSystemLODCount(ParticleSystem);
+        TArray<float>& Dist = ParticleSystem->LODDistances;
+
+        if (Dist.empty())
+        {
+            Dist.push_back(0.0f);
+        }
+        if (LODCount > 1
+            && static_cast<int32>(Dist.size()) == LODCount - 1
+            && Dist[0] > 0.0f)
+        {
+            Dist.insert(Dist.begin(), 0.0f);
+        }
+        while (static_cast<int32>(Dist.size()) < LODCount)
+        {
+            const float Prev = Dist.empty() ? 0.0f : Dist.back();
+            Dist.push_back(Prev > 0.0f ? Prev * 2.0f : 1000.0f);
+        }
+        if (static_cast<int32>(Dist.size()) > LODCount)
+        {
+            Dist.resize(LODCount);
+        }
+
+        Dist[0] = 0.0f;
+        for (float& Value : Dist)
+        {
+            Value = (std::max)(0.0f, Value);
+        }
+    }
+
+    // SelectedLODIndex의 같은-위치 모듈이 상위(LODIndex-1) LOD의 같은-위치 모듈과
+    // 동일 포인터인지 검사한다. 동일하면 "공유 중"이므로 sub-LOD에서 편집 금지.
+    bool IsModuleSharedWithHigher(UParticleEmitter* Emitter, int32 LODIndex, int32 ModuleIndex)
+    {
+        if (!Emitter || LODIndex <= 0) return false;
+        TArray<FEmitterModuleEntry> Cur, Hi;
+        BuildEmitterModuleListAt(Emitter, LODIndex,     Cur);
+        BuildEmitterModuleListAt(Emitter, LODIndex - 1, Hi);
+        if (ModuleIndex < 0
+            || ModuleIndex >= static_cast<int32>(Cur.size())
+            || ModuleIndex >= static_cast<int32>(Hi.size()))
+        {
+            return false;
+        }
+        return Cur[ModuleIndex].Module == Hi[ModuleIndex].Module;
+    }
+    // 직렬화 라운드트립으로 모듈을 깊은 복사. ParticleSystem 의 Serialize 인프라가 이미
+    // 모든 모듈 필드를 지원하므로 일일이 필드를 베끼는 dispatch 표를 두지 않아도 된다.
+    UParticleModule* CloneParticleModule(UParticleModule* Source, UObject* Outer)
+    {
+        if (!Source) return nullptr;
+
+        const FString ClassName = FString(Source->GetClass()->GetName());
+        UObject* Created = FObjectFactory::Get().Create(ClassName, Outer);
+        UParticleModule* Copy = Cast<UParticleModule>(Created);
+        if (!Copy)
+        {
+            if (Created) UObjectManager::Get().DestroyObject(Created);
+            return nullptr;
+        }
+
+        FMemoryArchive Saver(true /*save*/);
+        Source->Serialize(Saver);
+        FMemoryArchive Loader(Saver.GetBuffer(), false /*load*/);
+        Copy->Serialize(Loader);
+        return Copy;
     }
 
     const char* ScreenAlignmentName(EParticleScreenAlignment V)
@@ -456,6 +555,8 @@ bool FParticleSystemEditorWidget::IsEditingObject(UObject* Object) const
 void FParticleSystemEditorWidget::Open(UObject* Object)
 {
     FAssetEditorWidget::Open(Object);
+    
+    bPendingClose = false;
 
     SelectedEmitterIndex = -1;
     SelectedModuleIndex  = -1;
@@ -515,7 +616,10 @@ void FParticleSystemEditorWidget::Open(UObject* Object)
 
 void FParticleSystemEditorWidget::Close()
 {
-    FAssetEditorWidget::Close();
+    if (!IsOpen() && !ViewportClient.IsRenderable())
+    {
+        return;
+    }
 
     FSlateApplication::Get().UnregisterViewport(&ViewportClient);
 
@@ -536,10 +640,19 @@ void FParticleSystemEditorWidget::Close()
     ViewportClient.SetPreviewActor(nullptr);
     ViewportClient.SetPreviewWorld(nullptr);
     ViewportClient.Release();
+
+    FAssetEditorWidget::Close();
 }
 
 void FParticleSystemEditorWidget::Tick(float DeltaTime)
 {
+    if (bPendingClose)
+    {
+        bPendingClose = false;
+        Close();
+        return;
+    }
+    
     if (bSimulating)
     {
         PreviewTime += DeltaTime;
@@ -593,7 +706,7 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
         ImGui::End();
         if (!bWindowOpen)
         {
-            Close();
+            bPendingClose = true;
         }
         return;
     }
@@ -653,7 +766,7 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
 
     if (!bWindowOpen)
     {
-        Close();
+        bPendingClose = true;
     }
 }
 
@@ -738,6 +851,28 @@ void FParticleSystemEditorWidget::AddEmitter()
     }
 
     NewEmitter->InitializeDefaultSpriteEmitter();
+
+    // 시스템에 sub-LOD가 이미 있다면, 새 이미터에도 같은 수의 LOD를 만들어준다 — 각 추가 LOD는
+    // 직전 LOD의 모듈 포인터를 그대로 공유 (Cascade 규약).
+    {
+        SyncParticleSystemLODDistances(ParticleSystem);
+        const int32 TargetLODCount = GetParticleSystemLODCount(ParticleSystem);
+        while (static_cast<int32>(NewEmitter->GetLODLevels().size()) < TargetLODCount)
+        {
+            UParticleLODLevel* Last = NewEmitter->GetLODLevels().back();
+            if (!Last) break;
+
+            UParticleLODLevel* NewLOD = UObjectManager::Get().CreateObject<UParticleLODLevel>(NewEmitter);
+            NewLOD->Level          = static_cast<int32>(NewEmitter->GetLODLevels().size());
+            NewLOD->bEnabled       = true;
+            NewLOD->RequiredModule = Last->RequiredModule;
+            NewLOD->SpawnModule    = Last->SpawnModule;
+            NewLOD->TypeDataModule = Last->TypeDataModule;
+            NewLOD->Modules        = Last->Modules;
+            NewEmitter->GetLODLevels().push_back(NewLOD);
+            NewLOD->UpdateModuleLists();
+        }
+    }
 
     TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
     Emitters.push_back(NewEmitter);
@@ -884,6 +1019,14 @@ void FParticleSystemEditorWidget::DuplicateEmitter(int32 SourceIndex)
                 N->StartSize = X->StartSize;
                 NewModule = N;
             }
+            else if (auto* X = Cast<UParticleModuleColorOverLife>(M))
+            {
+                auto* N = UObjectManager::Get().CreateObject<UParticleModuleColorOverLife>(DstLOD);
+                N->ColorOverLife = X->ColorOverLife;
+                N->AlphaOverLife = X->AlphaOverLife;
+                N->bClampAlpha = X->bClampAlpha;
+                NewModule = N;
+            }
             else if (auto* X = Cast<UParticleModuleColor>(M))
             {
                 auto* N = UObjectManager::Get().CreateObject<UParticleModuleColor>(DstLOD);
@@ -917,13 +1060,16 @@ void FParticleSystemEditorWidget::DeleteSelectedModule()
     if (SelectedEmitterIndex < 0 || SelectedEmitterIndex >= static_cast<int32>(ParticleSystem->GetEmitters().size())) return;
     if (SelectedModuleIndex < 0) return;
 
+    // Cascade 규약: 모듈 추가/삭제는 LOD 0(highest)에서만 가능. sub-LOD에서는 구조 변경 금지.
+    if (SelectedLODIndex != 0) return;
+
     UParticleEmitter*  Emitter = ParticleSystem->GetEmitters()[SelectedEmitterIndex];
     if (!Emitter) return;
     UParticleLODLevel* LOD0    = Emitter->GetLODLevel(0);
     if (!LOD0) return;
 
     TArray<FEmitterModuleEntry> ModuleList;
-    BuildEmitterModuleList(Emitter, ModuleList);
+    BuildEmitterModuleListAt(Emitter, 0, ModuleList);
 
     if (SelectedModuleIndex >= static_cast<int32>(ModuleList.size())) return;
 
@@ -935,14 +1081,310 @@ void FParticleSystemEditorWidget::DeleteSelectedModule()
     if (Target == LOD0->SpawnModule)    return;
     if (Target == static_cast<UParticleModule*>(LOD0->TypeDataModule)) return;
 
+    // LOD 0 에서 모듈 위치(인덱스)를 찾는다 — sub-LOD에서도 같은 위치를 제거한다.
     auto It = std::find(LOD0->Modules.begin(), LOD0->Modules.end(), Target);
     if (It == LOD0->Modules.end()) return;
+    const int32 ArrayIndex = static_cast<int32>(std::distance(LOD0->Modules.begin(), It));
 
-    LOD0->Modules.erase(It);
-    UObjectManager::Get().DestroyObject(Target);
-    LOD0->UpdateModuleLists();
+    // 모든 LOD에서 같은 위치의 모듈을 수거: unique 한 것만 destroy.
+    const int32 LODCount = static_cast<int32>(Emitter->GetLODLevels().size());
+    TArray<UParticleModule*> ToDestroy;
+
+    for (int32 L = 0; L < LODCount; ++L)
+    {
+        UParticleLODLevel* LOD = Emitter->GetLODLevel(L);
+        if (!LOD || ArrayIndex >= static_cast<int32>(LOD->Modules.size())) continue;
+        UParticleModule* M = LOD->Modules[ArrayIndex];
+        if (M && std::find(ToDestroy.begin(), ToDestroy.end(), M) == ToDestroy.end())
+        {
+            ToDestroy.push_back(M);
+        }
+        LOD->Modules.erase(LOD->Modules.begin() + ArrayIndex);
+        LOD->UpdateModuleLists();
+    }
+    for (UParticleModule* M : ToDestroy)
+    {
+        UObjectManager::Get().DestroyObject(M);
+    }
 
     SelectedModuleIndex = -1;
+
+    MarkDirty();
+    RestartPreviewSimulation();
+}
+
+// ── LOD 관리 ───────────────────────────────────────────────────────────────
+void FParticleSystemEditorWidget::SelectLOD(int32 LODIndex)
+{
+    SelectedLODIndex   = (std::max)(0, LODIndex);
+    SelectedModuleIndex = -1; // sub-LOD 전환 시 모듈 선택은 리셋 (구조가 다를 수 있음).
+}
+
+void FParticleSystemEditorWidget::AddLODAfterSelected()
+{
+    UParticleSystem* PS = GetParticleSystem();
+    if (!PS) return;
+    SyncParticleSystemLODDistances(PS);
+
+    // 시스템 단위 LODDistances 에 항목 추가 — 인덱스가 LOD 레벨과 1:1로 대응한다.
+    const int32 InsertLODIndex = SelectedLODIndex + 1;
+    const float PrevDist = InsertLODIndex > 0 && InsertLODIndex - 1 < static_cast<int32>(PS->LODDistances.size())
+        ? PS->LODDistances[InsertLODIndex - 1] : 0.0f;
+    const float NextDist = InsertLODIndex < static_cast<int32>(PS->LODDistances.size())
+        ? PS->LODDistances[InsertLODIndex] : (PrevDist > 0.0f ? PrevDist * 2.0f : 1000.0f);
+    const float DefaultDist = NextDist > PrevDist ? (PrevDist + NextDist) * 0.5f : (PrevDist > 0.0f ? PrevDist * 2.0f : 1000.0f);
+    if (InsertLODIndex >= static_cast<int32>(PS->LODDistances.size()))
+    {
+        PS->LODDistances.push_back(DefaultDist);
+    }
+    else
+    {
+        PS->LODDistances.insert(PS->LODDistances.begin() + InsertLODIndex, DefaultDist);
+    }
+
+    // 각 이미터에 새 LODLevel 을 동일 InsertLODIndex 위치에 끼워넣는다.
+    // 기본 정책: 새 LOD 의 모든 모듈 슬롯은 직전 LOD(SelectedLODIndex)의 같은 위치 포인터를
+    // 그대로 공유 — Cascade와 동일한 "shared by default" 동작.
+    for (UParticleEmitter* Emitter : PS->GetEmitters())
+    {
+        if (!Emitter) continue;
+        UParticleLODLevel* Src = Emitter->GetLODLevel(SelectedLODIndex);
+        if (!Src) continue;
+
+        UParticleLODLevel* New = UObjectManager::Get().CreateObject<UParticleLODLevel>(Emitter);
+        New->Level          = InsertLODIndex;
+        New->bEnabled       = true;
+        New->RequiredModule = Src->RequiredModule;
+        New->SpawnModule    = Src->SpawnModule;
+        New->TypeDataModule = Src->TypeDataModule;
+        New->Modules        = Src->Modules; // pointer copy = sharing
+
+        auto& LODs = Emitter->GetLODLevels();
+        if (InsertLODIndex >= static_cast<int32>(LODs.size()))
+            LODs.push_back(New);
+        else
+            LODs.insert(LODs.begin() + InsertLODIndex, New);
+
+        // Level 인덱스 재정렬.
+        for (int32 i = 0; i < static_cast<int32>(LODs.size()); ++i)
+        {
+            if (LODs[i]) LODs[i]->Level = i;
+        }
+        New->UpdateModuleLists();
+    }
+
+    SelectLOD(InsertLODIndex);
+    MarkDirty();
+    RestartPreviewSimulation();
+}
+
+void FParticleSystemEditorWidget::RemoveLODAt(int32 LODIndex)
+{
+    if (LODIndex <= 0) return; // LOD 0 은 삭제 불가.
+    UParticleSystem* PS = GetParticleSystem();
+    if (!PS) return;
+    SyncParticleSystemLODDistances(PS);
+
+    // 우선 어떤 모듈을 "이 LOD가 유일하게 보유" 하는지 모든 emitter 에 걸쳐 미리 수집.
+    // sharing 관계를 잃지 않으려면, 다른 어떤 LOD 슬롯에서도 참조되지 않는 포인터만 destroy.
+    auto IsReferencedElsewhere = [&](UParticleEmitter* E, UParticleModule* M, int32 ExcludeLOD) -> bool
+    {
+        if (!M || !E) return false;
+        const int32 LCount = static_cast<int32>(E->GetLODLevels().size());
+        for (int32 i = 0; i < LCount; ++i)
+        {
+            if (i == ExcludeLOD) continue;
+            UParticleLODLevel* L = E->GetLODLevel(i);
+            if (!L) continue;
+            if (L->RequiredModule == M) return true;
+            if (L->SpawnModule == M)    return true;
+            if (static_cast<UParticleModule*>(L->TypeDataModule) == M) return true;
+            for (UParticleModule* X : L->Modules) if (X == M) return true;
+        }
+        return false;
+    };
+
+    for (UParticleEmitter* Emitter : PS->GetEmitters())
+    {
+        if (!Emitter) continue;
+        auto& LODs = Emitter->GetLODLevels();
+        if (LODIndex >= static_cast<int32>(LODs.size())) continue;
+
+        UParticleLODLevel* Removed = LODs[LODIndex];
+        if (Removed)
+        {
+            TArray<UParticleModule*> ToDestroy;
+            auto Push = [&](UParticleModule* M)
+            {
+                if (!M) return;
+                if (IsReferencedElsewhere(Emitter, M, LODIndex)) return;
+                if (std::find(ToDestroy.begin(), ToDestroy.end(), M) != ToDestroy.end()) return;
+                ToDestroy.push_back(M);
+            };
+            Push(Removed->RequiredModule);
+            Push(Removed->SpawnModule);
+            Push(static_cast<UParticleModule*>(Removed->TypeDataModule));
+            for (UParticleModule* M : Removed->Modules) Push(M);
+
+            for (UParticleModule* M : ToDestroy) UObjectManager::Get().DestroyObject(M);
+            UObjectManager::Get().DestroyObject(Removed);
+        }
+        LODs.erase(LODs.begin() + LODIndex);
+
+        for (int32 i = 0; i < static_cast<int32>(LODs.size()); ++i)
+        {
+            if (LODs[i]) LODs[i]->Level = i;
+        }
+    }
+
+    if (LODIndex < static_cast<int32>(PS->LODDistances.size()))
+    {
+        PS->LODDistances.erase(PS->LODDistances.begin() + LODIndex);
+    }
+
+    SelectLOD((std::max)(0, LODIndex - 1));
+    MarkDirty();
+    RestartPreviewSimulation();
+}
+
+// ── 모듈 sharing 관리 ──────────────────────────────────────────────────────
+void FParticleSystemEditorWidget::DuplicateModuleFromHigherLOD(UParticleEmitter* Emitter, int32 LODIndex, int32 ModuleIndex)
+{
+    if (!Emitter || LODIndex <= 0 || ModuleIndex < 0) return;
+    UParticleLODLevel* Cur = Emitter->GetLODLevel(LODIndex);
+    UParticleLODLevel* Hi  = Emitter->GetLODLevel(LODIndex - 1);
+    if (!Cur || !Hi) return;
+
+    TArray<FEmitterModuleEntry> CurList, HiList;
+    BuildEmitterModuleListAt(Emitter, LODIndex,     CurList);
+    BuildEmitterModuleListAt(Emitter, LODIndex - 1, HiList);
+    if (ModuleIndex >= static_cast<int32>(HiList.size())) return;
+
+    UParticleModule* Source = HiList[ModuleIndex].Module;
+    UParticleModule* Clone  = CloneParticleModule(Source, Cur);
+    if (!Clone) return;
+
+    UParticleModule* Old = ModuleIndex < static_cast<int32>(CurList.size()) ? CurList[ModuleIndex].Module : nullptr;
+
+    // 슬롯 결정 — Required/Spawn/TypeData/Modules[i]
+    if (Cur->RequiredModule == Old)
+    {
+        if (auto* R = Cast<UParticleModuleRequired>(Clone)) Cur->RequiredModule = R;
+    }
+    else if (Cur->SpawnModule == Old)
+    {
+        if (auto* S = Cast<UParticleModuleSpawn>(Clone)) Cur->SpawnModule = S;
+    }
+    else if (static_cast<UParticleModule*>(Cur->TypeDataModule) == Old)
+    {
+        if (auto* T = Cast<UParticleModuleTypeDataBase>(Clone)) Cur->TypeDataModule = T;
+    }
+    else
+    {
+        auto It = std::find(Cur->Modules.begin(), Cur->Modules.end(), Old);
+        if (It != Cur->Modules.end()) *It = Clone;
+        else                          Cur->Modules.push_back(Clone);
+    }
+    Cur->UpdateModuleLists();
+
+    MarkDirty();
+    RestartPreviewSimulation();
+}
+
+void FParticleSystemEditorWidget::ShareModuleFromHigherLOD(UParticleEmitter* Emitter, int32 LODIndex, int32 ModuleIndex)
+{
+    if (!Emitter || LODIndex <= 0 || ModuleIndex < 0) return;
+    UParticleLODLevel* Cur = Emitter->GetLODLevel(LODIndex);
+    UParticleLODLevel* Hi  = Emitter->GetLODLevel(LODIndex - 1);
+    if (!Cur || !Hi) return;
+
+    TArray<FEmitterModuleEntry> CurList, HiList;
+    BuildEmitterModuleListAt(Emitter, LODIndex,     CurList);
+    BuildEmitterModuleListAt(Emitter, LODIndex - 1, HiList);
+    if (ModuleIndex >= static_cast<int32>(CurList.size())) return;
+    if (ModuleIndex >= static_cast<int32>(HiList.size())) return;
+
+    UParticleModule* OldUnique = CurList[ModuleIndex].Module;
+    UParticleModule* ShareSrc  = HiList[ModuleIndex].Module;
+    if (OldUnique == ShareSrc) return; // 이미 공유 중.
+
+    // 포인터 교체.
+    if (Cur->RequiredModule == OldUnique)
+    {
+        if (auto* R = Cast<UParticleModuleRequired>(ShareSrc)) Cur->RequiredModule = R;
+    }
+    else if (Cur->SpawnModule == OldUnique)
+    {
+        if (auto* S = Cast<UParticleModuleSpawn>(ShareSrc)) Cur->SpawnModule = S;
+    }
+    else if (static_cast<UParticleModule*>(Cur->TypeDataModule) == OldUnique)
+    {
+        if (auto* T = Cast<UParticleModuleTypeDataBase>(ShareSrc)) Cur->TypeDataModule = T;
+    }
+    else
+    {
+        auto It = std::find(Cur->Modules.begin(), Cur->Modules.end(), OldUnique);
+        if (It != Cur->Modules.end()) *It = ShareSrc;
+    }
+    Cur->UpdateModuleLists();
+
+    // OldUnique 가 다른 LOD에서도 참조되지 않으면 destroy.
+    bool bReferenced = false;
+    const int32 LCount = static_cast<int32>(Emitter->GetLODLevels().size());
+    for (int32 i = 0; i < LCount && !bReferenced; ++i)
+    {
+        UParticleLODLevel* L = Emitter->GetLODLevel(i);
+        if (!L) continue;
+        if (L->RequiredModule == OldUnique || L->SpawnModule == OldUnique ||
+            static_cast<UParticleModule*>(L->TypeDataModule) == OldUnique)
+        {
+            bReferenced = true; break;
+        }
+        for (UParticleModule* M : L->Modules) if (M == OldUnique) { bReferenced = true; break; }
+    }
+    if (!bReferenced && OldUnique) UObjectManager::Get().DestroyObject(OldUnique);
+
+    MarkDirty();
+    RestartPreviewSimulation();
+}
+
+void FParticleSystemEditorWidget::DuplicateModuleFromHighestLOD(UParticleEmitter* Emitter, int32 LODIndex, int32 ModuleIndex)
+{
+    if (!Emitter || LODIndex <= 0 || ModuleIndex < 0) return;
+    UParticleLODLevel* Cur = Emitter->GetLODLevel(LODIndex);
+    UParticleLODLevel* Top = Emitter->GetLODLevel(0);
+    if (!Cur || !Top) return;
+
+    TArray<FEmitterModuleEntry> CurList, TopList;
+    BuildEmitterModuleListAt(Emitter, LODIndex, CurList);
+    BuildEmitterModuleListAt(Emitter, 0,        TopList);
+    if (ModuleIndex >= static_cast<int32>(TopList.size())) return;
+
+    UParticleModule* Source = TopList[ModuleIndex].Module;
+    UParticleModule* Clone  = CloneParticleModule(Source, Cur);
+    if (!Clone) return;
+
+    UParticleModule* Old = ModuleIndex < static_cast<int32>(CurList.size()) ? CurList[ModuleIndex].Module : nullptr;
+
+    if (Cur->RequiredModule == Old)
+    {
+        if (auto* R = Cast<UParticleModuleRequired>(Clone)) Cur->RequiredModule = R;
+    }
+    else if (Cur->SpawnModule == Old)
+    {
+        if (auto* S = Cast<UParticleModuleSpawn>(Clone)) Cur->SpawnModule = S;
+    }
+    else if (static_cast<UParticleModule*>(Cur->TypeDataModule) == Old)
+    {
+        if (auto* T = Cast<UParticleModuleTypeDataBase>(Clone)) Cur->TypeDataModule = T;
+    }
+    else
+    {
+        auto It = std::find(Cur->Modules.begin(), Cur->Modules.end(), Old);
+        if (It != Cur->Modules.end()) *It = Clone;
+        else                          Cur->Modules.push_back(Clone);
+    }
+    Cur->UpdateModuleLists();
 
     MarkDirty();
     RestartPreviewSimulation();
@@ -951,6 +1393,7 @@ void FParticleSystemEditorWidget::DeleteSelectedModule()
 void FParticleSystemEditorWidget::SyncEmitterUIState()
 {
     UParticleSystem* ParticleSystem = GetParticleSystem();
+    SyncParticleSystemLODDistances(ParticleSystem);
 
     const int32 EmitterCount = ParticleSystem ? static_cast<int32>(ParticleSystem->GetEmitters().size()) : 0;
 
@@ -1132,7 +1575,7 @@ void FParticleSystemEditorWidget::RenderMenuBar()
         if (ImGui::MenuItem("Save", "Ctrl+S", false, IsDirty())) SaveAsset();
         ImGui::MenuItem("Save As...", nullptr, false, false);
         ImGui::Separator();
-        if (ImGui::MenuItem("Close")) Close();
+        if (ImGui::MenuItem("Close")) bPendingClose = true;
         ImGui::EndMenu();
     }
     if (ImGui::BeginMenu("Edit"))
@@ -1262,7 +1705,9 @@ void FParticleSystemEditorWidget::RenderToolbar()
         ImGui::SameLine();
         Group();
 
-        // 그룹 5: LOD.
+        // 그룹 5: LOD. RegenLOD 만 미구현, 나머지는 모두 작동.
+        const int32 PSLODCount = GetParticleSystemLODCount(GetParticleSystem());
+
         IconToolButton("##RegenLOD1",
                        LoadToolIcon(L"icon_Cascade_RegenLOD1_40x.png"),
                        "RL1", "Regenerate lowest LOD from highest (not implemented)", false, IconSize);
@@ -1271,32 +1716,72 @@ void FParticleSystemEditorWidget::RenderToolbar()
                        LoadToolIcon(L"icon_Cascade_RegenLOD2_40x.png"),
                        "RL2", "Regenerate highest LOD from lowest (not implemented)", false, IconSize);
         ImGui::SameLine();
-        IconToolButton("##LowestLOD",
-                       LoadToolIcon(L"icon_Cascade_LowestLOD_40x.png"),
-                       "LowL", "Jump to lowest LOD (not implemented)", false, IconSize);
+        if (IconToolButton("##LowestLOD",
+                           LoadToolIcon(L"icon_Cascade_LowestLOD_40x.png"),
+                           "LowL", "Jump to lowest LOD",
+                           SelectedLODIndex < PSLODCount - 1, IconSize))
+        {
+            SelectLOD(PSLODCount - 1);
+        }
         ImGui::SameLine();
-        IconToolButton("##LowerLOD",
-                       LoadToolIcon(L"icon_Cascade_LowerLOD_40x.png"),
-                       "Lwr", "Jump to next lower LOD (not implemented)", false, IconSize);
+        if (IconToolButton("##LowerLOD",
+                           LoadToolIcon(L"icon_Cascade_LowerLOD_40x.png"),
+                           "Lwr", "Jump to next lower LOD (higher index)",
+                           SelectedLODIndex < PSLODCount - 1, IconSize))
+        {
+            SelectLOD(SelectedLODIndex + 1);
+        }
         ImGui::SameLine();
-        IconToolButton("##HigherLOD",
-                       LoadToolIcon(L"icon_Cascade_HigherLOD_40x.png"),
-                       "Hgr", "Jump to next higher LOD (not implemented)", false, IconSize);
+        if (IconToolButton("##HigherLOD",
+                           LoadToolIcon(L"icon_Cascade_HigherLOD_40x.png"),
+                           "Hgr", "Jump to next higher LOD (lower index)",
+                           SelectedLODIndex > 0, IconSize))
+        {
+            SelectLOD(SelectedLODIndex - 1);
+        }
         ImGui::SameLine();
-        IconToolButton("##HighestLOD",
-                       LoadToolIcon(L"icon_Cascade_HighestLOD_40x.png"),
-                       "HghL", "Jump to highest LOD (not implemented)", false, IconSize);
+        if (IconToolButton("##HighestLOD",
+                           LoadToolIcon(L"icon_Cascade_HighestLOD_40x.png"),
+                           "HghL", "Jump to highest LOD (LOD 0)",
+                           SelectedLODIndex > 0, IconSize))
+        {
+            SelectLOD(0);
+        }
         ImGui::SameLine();
-        IconToolButton("##AddLOD1",
-                       LoadToolIcon(L"icon_Cascade_AddLOD1_40x.png"),
-                       "+L1", "Add LOD before the current (not implemented)", false, IconSize);
+        if (IconToolButton("##AddLOD1",
+                           LoadToolIcon(L"icon_Cascade_AddLOD1_40x.png"),
+                           "+L1", "Add LOD before the current (= insert at current index)",
+                           GetParticleSystem() != nullptr, IconSize))
+        {
+            // "Before" = 현재 인덱스에 끼워넣기 — SelectedLODIndex 를 1 줄여서 AddAfter 호출.
+            const int32 OldSel = SelectedLODIndex;
+            if (OldSel > 0)
+            {
+                SelectedLODIndex = OldSel - 1;
+                AddLODAfterSelected();
+            }
+            else
+            {
+                // LOD 0 위에 끼울 수는 없으므로 후행으로 추가하고 0번 유지.
+                AddLODAfterSelected();
+            }
+        }
         ImGui::SameLine();
-        IconToolButton("##AddLOD2",
-                       LoadToolIcon(L"icon_Cascade_AddLOD2_40x.png"),
-                       "+L2", "Add LOD after the current (not implemented)", false, IconSize);
-        IconToolButton("##DeleteLOD",
-                       LoadToolIcon(L"icon_Cascade_DeleteLOD_40x.png"),
-                       "-LOD", "Delete current LOD (not implemented)", false, IconSize);
+        if (IconToolButton("##AddLOD2",
+                           LoadToolIcon(L"icon_Cascade_AddLOD2_40x.png"),
+                           "+L2", "Add LOD after the current",
+                           GetParticleSystem() != nullptr, IconSize))
+        {
+            AddLODAfterSelected();
+        }
+        ImGui::SameLine();
+        if (IconToolButton("##DeleteLOD",
+                           LoadToolIcon(L"icon_Cascade_DeleteLOD_40x.png"),
+                           "-LOD", "Delete current LOD (LOD 0 cannot be removed)",
+                           SelectedLODIndex > 0, IconSize))
+        {
+            RemoveLODAt(SelectedLODIndex);
+        }
     }
     ImGui::EndChild();
     ImGui::PopStyleVar(); // WindowPadding
@@ -1337,7 +1822,7 @@ void FParticleSystemEditorWidget::RenderStatusBar()
             }
 
             TArray<FEmitterModuleEntry> ModuleList;
-            BuildEmitterModuleList(StatusEmitter, ModuleList);
+            BuildEmitterModuleListAt(StatusEmitter, SelectedLODIndex, ModuleList);
 
             const char* ModuleName = "?";
             if (SelectedModuleIndex < static_cast<int32>(ModuleList.size()))
@@ -1418,11 +1903,74 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
     UParticleSystem* ParticleSystem = GetParticleSystem();
     const int32      EmitterCount   = ParticleSystem ? static_cast<int32>(ParticleSystem->GetEmitters().size()) : 0;
 
-    char Context[32];
-    std::snprintf(Context, sizeof(Context), "%d emitter%s", EmitterCount, EmitterCount == 1 ? "" : "s");
+    // 시스템 단위 LOD 카운트 — LODDistances와 LODLevels가 같은 인덱스를 공유한다.
+    const int32 LODCount = GetParticleSystemLODCount(ParticleSystem);
+
+    // SelectedLODIndex 범위 검증.
+    if (SelectedLODIndex < 0)         SelectedLODIndex = 0;
+    if (SelectedLODIndex >= LODCount) SelectedLODIndex = LODCount - 1;
+
+    char Context[64];
+    std::snprintf(Context, sizeof(Context), "LOD %d / %d  ·  %d emitter%s",
+        SelectedLODIndex, LODCount - 1, EmitterCount, EmitterCount == 1 ? "" : "s");
 
     if (BeginPanel("##PSEEmitters", "Emitters", Width, Height, Context))
     {
+        // ── LOD 바 ─────────────────────────────────────────────────────────
+        // [LOD 0] [LOD 1] ... [+] [-]  Distance: [ ###### ]
+        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
+        for (int32 L = 0; L < LODCount; ++L)
+        {
+            char Label[16];
+            std::snprintf(Label, sizeof(Label), "LOD %d", L);
+            const bool bActive = (L == SelectedLODIndex);
+            if (bActive)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.29f, 0.56f, 1.0f, 0.40f));
+            }
+            if (ImGui::SmallButton(Label))
+            {
+                SelectLOD(L);
+            }
+            if (bActive) ImGui::PopStyleColor();
+            ImGui::SameLine();
+        }
+        if (ImGui::SmallButton("+##addlod"))
+        {
+            AddLODAfterSelected();
+        }
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Add a new LOD level after the current one");
+        ImGui::SameLine();
+        const bool bCanRemove = SelectedLODIndex > 0;
+        if (!bCanRemove) ImGui::BeginDisabled();
+        if (ImGui::SmallButton("-##rmlod"))
+        {
+            RemoveLODAt(SelectedLODIndex);
+        }
+        if (!bCanRemove) ImGui::EndDisabled();
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Remove the current LOD (LOD 0 cannot be removed)");
+
+        // sub-LOD 의 활성 거리 편집 — LOD N (N>0) 거리는 LODDistances[N].
+        if (SelectedLODIndex > 0 && ParticleSystem)
+        {
+            ImGui::SameLine();
+            ImGui::TextColored(PSE::DimTextV, "Distance");
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(100.0f);
+            const int32 DistIdx = SelectedLODIndex;
+            if (DistIdx < static_cast<int32>(ParticleSystem->LODDistances.size()))
+            {
+                float Dist = ParticleSystem->LODDistances[DistIdx];
+                if (ImGui::DragFloat("##LODDist", &Dist, 10.0f, 0.0f, 1000000.0f, "%.1f"))
+                {
+                    ParticleSystem->LODDistances[DistIdx] = (std::max)(0.0f, Dist);
+                    MarkDirty();
+                }
+            }
+        }
+        ImGui::PopStyleVar();
+        ImGui::Separator();
+
         constexpr float ColumnWidth = 178.0f;
         if (ImGui::BeginChild("##PSEEmitterColumns", ImVec2(0.0f, 0.0f), false, ImGuiWindowFlags_HorizontalScrollbar))
         {
@@ -1517,27 +2065,33 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                     ImGui::Separator();
 
                     TArray<FEmitterModuleEntry> ModuleList;
-                    BuildEmitterModuleList(Emitter, ModuleList);
+                    BuildEmitterModuleListAt(Emitter, SelectedLODIndex, ModuleList);
 
-                    int32 ModuleToDelete = -1;
+                    int32 ModuleToDelete           = -1;
+                    int32 ModuleToDuplicateHigher  = -1;
+                    int32 ModuleToShareHigher      = -1;
+                    int32 ModuleToDuplicateHighest = -1;
+                    int32 ModuleToRefresh          = -1;
                     for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(ModuleList.size()); ++ModuleIndex)
                     {
                         ImGui::PushID(ModuleIndex);
                         const FEmitterModuleEntry& Entry     = ModuleList[ModuleIndex];
                         const bool                 bSelected = bEmitterSelected && (SelectedModuleIndex == ModuleIndex);
 
-                        UParticleLODLevel* LOD0Probe = Emitter ? Emitter->GetLODLevel(0) : nullptr;
-                        const bool bIsCoreSlot = LOD0Probe && (
-                            Entry.Module == LOD0Probe->RequiredModule ||
-                            Entry.Module == LOD0Probe->SpawnModule ||
-                            Entry.Module == static_cast<UParticleModule*>(LOD0Probe->TypeDataModule));
+                        UParticleLODLevel* SelLOD = Emitter ? Emitter->GetLODLevel(SelectedLODIndex) : nullptr;
+                        const bool bIsCoreSlot = SelLOD && (
+                            Entry.Module == SelLOD->RequiredModule ||
+                            Entry.Module == SelLOD->SpawnModule ||
+                            Entry.Module == static_cast<UParticleModule*>(SelLOD->TypeDataModule));
 
-                        // 좌측 enable 토글 아이콘 (Required/Spawn/TypeData는 토글 의미 없음 → 비활성).
+                        const bool bIsShared = IsModuleSharedWithHigher(Emitter, SelectedLODIndex, ModuleIndex);
+
+                        // 좌측 enable 토글 아이콘 — sub-LOD에서 공유 중이면 회색.
                         ImDrawList*  DL  = ImGui::GetWindowDrawList();
                         const ImVec2 IconPos = ImGui::GetCursorScreenPos();
                         constexpr float IconSize = 14.0f;
                         const bool bModEnabled = Entry.Module && (Entry.Module->bEnabled != 0);
-                        const ImU32 IconCol = bIsCoreSlot
+                        const ImU32 IconCol = (bIsCoreSlot || bIsShared)
                             ? IM_COL32(110, 115, 125, 200)
                             : (bModEnabled ? PSE::Accent : IM_COL32(80, 84, 92, 255));
                         DL->AddRectFilled(IconPos,
@@ -1545,7 +2099,6 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                             IconCol, 2.0f);
                         if (bModEnabled)
                         {
-                            // 체크 표시 비슷한 시각 신호.
                             DL->AddLine(
                                 ImVec2(IconPos.x + 3.0f, IconPos.y + IconSize * 0.55f),
                                 ImVec2(IconPos.x + IconSize * 0.42f, IconPos.y + IconSize - 3.0f),
@@ -1556,7 +2109,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                                 IM_COL32(255, 255, 255, 230), 1.6f);
                         }
                         ImGui::InvisibleButton("##enableicon", ImVec2(IconSize, IconSize));
-                        if (!bIsCoreSlot && ImGui::IsItemClicked() && Entry.Module)
+                        if (!bIsCoreSlot && !bIsShared && ImGui::IsItemClicked() && Entry.Module)
                         {
                             Entry.Module->bEnabled = bModEnabled ? 0 : 1;
                             MarkDirty();
@@ -1566,23 +2119,25 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         {
                             ImGui::SetTooltip(bIsCoreSlot
                                 ? "Required/Spawn/TypeData are always enabled"
-                                : (bModEnabled ? "Disable module" : "Enable module"));
+                                : (bIsShared ? "Shared from higher LOD — duplicate first to edit"
+                                             : (bModEnabled ? "Disable module" : "Enable module")));
                         }
                         ImGui::SameLine(0.0f, 4.0f);
 
+                        // 공유 중인 모듈은 dim text로 표시 — 편집 불가 시각 신호.
+                        if (bIsShared) ImGui::PushStyleColor(ImGuiCol_Text, PSE::DimTextV);
                         if (ImGui::Selectable(Entry.Name, bSelected))
                         {
                             SelectEmitter(EmitterIndex, ModuleIndex);
                         }
+                        if (bIsShared) ImGui::PopStyleColor();
 
-                        // 우측 curve 표시 아이콘 — 모듈이 distribution 커브를 노출하는지 시각 신호.
-                        // 현재는 데이터 없음 → 모두 회색 outline.
+                        // 우측 curve placeholder 아이콘.
                         const ImVec2 RowMin = ImGui::GetItemRectMin();
                         const ImVec2 RowMax = ImGui::GetItemRectMax();
                         const ImVec2 CurveIconMin(RowMax.x - IconSize - 2.0f, RowMin.y + 1.0f);
                         const ImVec2 CurveIconMax(RowMax.x - 2.0f, RowMin.y + 1.0f + IconSize);
                         DL->AddRect(CurveIconMin, CurveIconMax, IM_COL32(90, 95, 105, 200), 2.0f);
-                        // 미니 sin 형태 폴리라인.
                         const float CW = CurveIconMax.x - CurveIconMin.x;
                         const float CH = CurveIconMax.y - CurveIconMin.y;
                         for (int32 i = 0; i < 6; ++i)
@@ -1596,28 +2151,69 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                                 ImVec2(CurveIconMin.x + CW * T1, Y1),
                                 IM_COL32(110, 115, 125, 180), 1.0f);
                         }
+
+                        // ── 모듈 컨텍스트 메뉴 (LOD 인식) ──
                         if (ImGui::BeginPopupContextItem("##ModuleCtx"))
                         {
-                            UParticleLODLevel* LOD0 = Emitter ? Emitter->GetLODLevel(0) : nullptr;
-                            const bool bIsCore = LOD0 && (
-                                Entry.Module == LOD0->RequiredModule ||
-                                Entry.Module == LOD0->SpawnModule ||
-                                Entry.Module == static_cast<UParticleModule*>(LOD0->TypeDataModule));
-
-                            if (ImGui::MenuItem("Delete Module", "Del", false, !bIsCore))
+                            const bool bIsLOD0      = (SelectedLODIndex == 0);
+                            const bool bIsRequired  = SelLOD && Entry.Module == SelLOD->RequiredModule;
+                            // 모듈 삭제 — LOD 0의 비-core 모듈만 가능 (구조 변경은 LOD 0에서만).
+                            if (ImGui::MenuItem("모듈 삭제", "Del", false, bIsLOD0 && !bIsCoreSlot))
                             {
                                 SelectEmitter(EmitterIndex, ModuleIndex);
                                 ModuleToDelete = ModuleIndex;
                             }
-                            if (bIsCore && ImGui::IsItemHovered())
+                            if (!bIsLOD0 && ImGui::IsItemHovered())
+                                ImGui::SetTooltip("Structural changes only in LOD 0");
+
+                            // 모듈 새로고침.
+                            if (ImGui::MenuItem("모듈 새로고침", nullptr, false, Entry.Module != nullptr))
                             {
-                                ImGui::SetTooltip("Required/Spawn/TypeData cannot be removed");
+                                ModuleToRefresh = ModuleIndex;
                             }
+
                             ImGui::Separator();
-                            bool bModEnabled = Entry.Module ? (Entry.Module->bEnabled != 0) : true;
-                            if (ImGui::MenuItem("Enabled", nullptr, &bModEnabled))
+
+                            // Required 전용 — 머티리얼 동기화 / 머티리얼 사용.
+                            if (ImGui::MenuItem("머티리얼 동기화", nullptr, false, bIsRequired))
                             {
-                                if (Entry.Module) Entry.Module->bEnabled = bModEnabled ? 1 : 0;
+                                if (auto* R = Cast<UParticleModuleRequired>(Entry.Module))
+                                {
+                                    R->ResolveMaterialFromSlot();
+                                    MarkDirty();
+                                    RestartPreviewSimulation();
+                                }
+                            }
+                            if (ImGui::MenuItem("머티리얼 사용", nullptr, false, bIsRequired))
+                            {
+                                if (auto* R = Cast<UParticleModuleRequired>(Entry.Module))
+                                {
+                                    OpenMaterialForRequired(R);
+                                }
+                            }
+
+                            ImGui::Separator();
+
+                            // sub-LOD 전용 sharing 메뉴.
+                            const bool bIsSubLOD = (SelectedLODIndex > 0);
+                            if (ImGui::MenuItem("상위에서 복제", nullptr, false, bIsSubLOD && bIsShared))
+                            {
+                                ModuleToDuplicateHigher = ModuleIndex;
+                            }
+                            if (ImGui::MenuItem("상위에서 공유", nullptr, false, bIsSubLOD))
+                            {
+                                ModuleToShareHigher = ModuleIndex;
+                            }
+                            if (ImGui::MenuItem("최상에서 복제", nullptr, false, bIsSubLOD))
+                            {
+                                ModuleToDuplicateHighest = ModuleIndex;
+                            }
+
+                            ImGui::Separator();
+                            bool bModEn = Entry.Module ? (Entry.Module->bEnabled != 0) : true;
+                            if (ImGui::MenuItem("Enabled", nullptr, &bModEn, !bIsCoreSlot && !bIsShared))
+                            {
+                                if (Entry.Module) Entry.Module->bEnabled = bModEn ? 1 : 0;
                                 MarkDirty();
                                 RestartPreviewSimulation();
                             }
@@ -1630,11 +2226,32 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         SelectEmitter(EmitterIndex, ModuleToDelete);
                         DeleteSelectedModule();
                     }
+                    if (ModuleToDuplicateHigher >= 0)
+                    {
+                        DuplicateModuleFromHigherLOD(Emitter, SelectedLODIndex, ModuleToDuplicateHigher);
+                    }
+                    if (ModuleToShareHigher >= 0)
+                    {
+                        ShareModuleFromHigherLOD(Emitter, SelectedLODIndex, ModuleToShareHigher);
+                    }
+                    if (ModuleToDuplicateHighest >= 0)
+                    {
+                        DuplicateModuleFromHighestLOD(Emitter, SelectedLODIndex, ModuleToDuplicateHighest);
+                    }
+                    if (ModuleToRefresh >= 0 && ModuleToRefresh < static_cast<int32>(ModuleList.size()))
+                    {
+                        if (UParticleModule* M = ModuleList[ModuleToRefresh].Module)
+                        {
+                            M->RefreshModule();
+                            MarkDirty();
+                            RestartPreviewSimulation();
+                        }
+                    }
 
                     ImGui::Separator();
 
-                    // + Module 팝업 — LOD0에 이미 있는 타입은 비활성.
-                    if (ImGui::SmallButton("+ Module"))
+                    // + Module 팝업 — LOD0 에서만 노출 (구조 변경은 LOD 0 전용).
+                    if (SelectedLODIndex == 0 && ImGui::SmallButton("+ Module"))
                     {
                         ImGui::OpenPopup("##AddModulePopup");
                     }
@@ -1648,6 +2265,21 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                             if (ImGui::MenuItem(Label, nullptr, false, LOD0 && !bExists))
                             {
                                 Creator(/*query*/false, LOD0);
+                                // LOD 0에 새 모듈이 추가됐다면 같은 포인터를 모든 sub-LOD에도 push
+                                // (기본 정책: 새 모듈은 sub-LOD에서 자동으로 shared).
+                                if (Emitter && LOD0 && !LOD0->Modules.empty())
+                                {
+                                    UParticleModule* New = LOD0->Modules.back();
+                                    const int32 LCount = static_cast<int32>(Emitter->GetLODLevels().size());
+                                    for (int32 L = 1; L < LCount; ++L)
+                                    {
+                                        if (UParticleLODLevel* Sub = Emitter->GetLODLevel(L))
+                                        {
+                                            Sub->Modules.push_back(New);
+                                            Sub->UpdateModuleLists();
+                                        }
+                                    }
+                                }
                                 SelectEmitter(EmitterIndex, -1);
                                 MarkDirty();
                                 RestartPreviewSimulation();
@@ -1690,6 +2322,14 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         {
                             if (bQuery) return HasModuleOfType<UParticleModuleColor>(L);
                             auto* N = UObjectManager::Get().CreateObject<UParticleModuleColor>(L);
+                            L->Modules.push_back(N);
+                            L->UpdateModuleLists();
+                            return true;
+                        });
+                        AddItem("Color Over Life", [](bool bQuery, UParticleLODLevel* L)
+                        {
+                            if (bQuery) return HasModuleOfType<UParticleModuleColorOverLife>(L);
+                            auto* N = UObjectManager::Get().CreateObject<UParticleModuleColorOverLife>(L);
                             L->Modules.push_back(N);
                             L->UpdateModuleLists();
                             return true;
@@ -1759,7 +2399,7 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
     }
 
     TArray<FEmitterModuleEntry> ModuleList;
-    BuildEmitterModuleList(SelectedEmitter, ModuleList);
+    BuildEmitterModuleListAt(SelectedEmitter, SelectedLODIndex, ModuleList);
 
     UParticleModule* SelectedModule     = nullptr;
     const char*      SelectedModuleName = nullptr;
@@ -1848,6 +2488,7 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
                 // LODDistances는 실제 UPROPERTY → 편집 가능.
                 if (ParticleSystem)
                 {
+                    SyncParticleSystemLODDistances(ParticleSystem);
                     TArray<float>& Dist = ParticleSystem->LODDistances;
                     ImGui::Text("LOD Distances (%d)", static_cast<int32>(Dist.size()));
                     bool bDistChanged = false;
@@ -1855,21 +2496,32 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
                     for (int32 i = 0; i < static_cast<int32>(Dist.size()); ++i)
                     {
                         ImGui::PushID(i);
-                        char Lbl[24]; std::snprintf(Lbl, sizeof(Lbl), "[%d]", i);
-                        bDistChanged |= ImGui::DragFloat(Lbl, &Dist[i], 1.0f, 0.0f, 100000.0f);
-                        ImGui::SameLine();
-                        if (ImGui::SmallButton("x")) { RemoveAt = i; }
+                        char Lbl[24]; std::snprintf(Lbl, sizeof(Lbl), "LOD %d", i);
+                        if (i == 0) ImGui::BeginDisabled();
+                        float Value = Dist[i];
+                        if (ImGui::DragFloat(Lbl, &Value, 1.0f, 0.0f, 100000.0f))
+                        {
+                            Dist[i] = (std::max)(0.0f, Value);
+                            bDistChanged = true;
+                        }
+                        if (i == 0) ImGui::EndDisabled();
+                        if (i > 0)
+                        {
+                            ImGui::SameLine();
+                            if (ImGui::SmallButton("x")) { RemoveAt = i; }
+                        }
                         ImGui::PopID();
                     }
-                    if (RemoveAt >= 0)
+                    if (RemoveAt > 0)
                     {
-                        Dist.erase(Dist.begin() + RemoveAt);
-                        bDistChanged = true;
+                        RemoveLODAt(RemoveAt);
+                        bDistChanged = false;
                     }
-                    if (ImGui::SmallButton("+ Distance"))
+                    if (ImGui::SmallButton("+ LOD"))
                     {
-                        Dist.push_back(Dist.empty() ? 1000.0f : Dist.back() * 2.0f);
-                        bDistChanged = true;
+                        SelectLOD(GetParticleSystemLODCount(ParticleSystem) - 1);
+                        AddLODAfterSelected();
+                        bDistChanged = false;
                     }
                     if (bDistChanged) MarkDirty();
                 }
@@ -1931,8 +2583,18 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
         }
         else
         {
-            // 모듈 편집.
+            // 모듈 편집. sub-LOD에서 공유 중인 모듈은 편집 금지 — 안내 + BeginDisabled.
+            const bool bIsShared = IsModuleSharedWithHigher(SelectedEmitter, SelectedLODIndex, SelectedModuleIndex);
+            if (bIsShared)
+            {
+                ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.40f, 1.0f),
+                    "이 모듈은 LOD %d 와 공유 중 — 편집하려면 우클릭 > '상위에서 복제'를 선택하세요.",
+                    SelectedLODIndex - 1);
+                ImGui::Spacing();
+                ImGui::BeginDisabled();
+            }
             RenderModuleProperties(SelectedModule);
+            if (bIsShared) ImGui::EndDisabled();
         }
 
         ImGui::PopItemWidth();
@@ -2147,7 +2809,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Location"))
         {
-            bChanged |= ImGui::DragFloat3("Start Location", Location->StartLocation.Data, 0.1f);
+			DrawRawDistributionVector("Start Location", Location->StartLocation, bChanged, Location);
         }
     }
     else if (UParticleModuleVelocity* Velocity = Cast<UParticleModuleVelocity>(Module))
@@ -2164,7 +2826,19 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Size"))
         {
-            bChanged |= ImGui::DragFloat3("Start Size", Size->StartSize.Data, 0.05f, 0.0f, 10000.0f);
+			DrawRawDistributionVector("Start Size", Size->StartSize, bChanged, Size);
+        }
+    }
+    else if (UParticleModuleColorOverLife* ColorOverLife = Cast<UParticleModuleColorOverLife>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Color"))
+        {
+            DrawRawDistributionVector("Color Over Life", ColorOverLife->ColorOverLife, bChanged, ColorOverLife);
+            DrawRawDistributionFloat("Alpha Over Life", ColorOverLife->AlphaOverLife, bChanged, ColorOverLife);
+            bool bClamp = ColorOverLife->bClampAlpha;
+            if (ImGui::Checkbox("Clamp Alpha", &bClamp))
+            { ColorOverLife->bClampAlpha = bClamp ? 1 : 0; bChanged = true; }
         }
     }
     else if (UParticleModuleColor* Color = Cast<UParticleModuleColor>(Module))
@@ -2172,19 +2846,8 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Color"))
         {
-            float ColorRGB[3] = {
-                Color->StartColor.R / 255.0f,
-                Color->StartColor.G / 255.0f,
-                Color->StartColor.B / 255.0f,
-            };
-            if (ImGui::ColorEdit3("Start Color", ColorRGB))
-            {
-                Color->StartColor.R = static_cast<uint32>(Clamp01(ColorRGB[0], 0.0f, 1.0f) * 255.0f);
-                Color->StartColor.G = static_cast<uint32>(Clamp01(ColorRGB[1], 0.0f, 1.0f) * 255.0f);
-                Color->StartColor.B = static_cast<uint32>(Clamp01(ColorRGB[2], 0.0f, 1.0f) * 255.0f);
-                bChanged = true;
-            }
-            bChanged |= ImGui::DragFloat("Start Alpha", &Color->StartAlpha, 0.01f, 0.0f, 1.0f);
+			DrawRawDistributionVector("Start Color", Color->StartColor, bChanged, Color);
+			DrawRawDistributionFloat("Start Alpha", Color->StartAlpha, bChanged, Color);
             bool bClamp = Color->bClampAlpha;
             if (ImGui::Checkbox("Clamp Alpha", &bClamp))
             { Color->bClampAlpha = bClamp ? 1 : 0; bChanged = true; }
@@ -2296,7 +2959,7 @@ void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Heig
     }
 
     TArray<FEmitterModuleEntry> ModuleList;
-    BuildEmitterModuleList(SelectedEmitter, ModuleList);
+    BuildEmitterModuleListAt(SelectedEmitter, SelectedLODIndex, ModuleList);
 
     const FEmitterModuleEntry* SelectedEntry = nullptr;
     if (SelectedModuleIndex >= 0 && SelectedModuleIndex < static_cast<int32>(ModuleList.size()))

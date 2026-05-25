@@ -144,13 +144,43 @@ FPrimitiveSceneProxy* UParticleSystemComponent::CreateSceneProxy()
 
 void UParticleSystemComponent::UpdateWorldAABB() const
 {
-    const FVector Extent(100.0f, 100.0f, 100.0f);
-    const FVector Center = GetWorldLocation();
+    FBoundingBox CombinedBounds;
 
-    WorldAABBMinLocation = Center - Extent;
-    WorldAABBMaxLocation = Center + Extent;
+    for (FParticleEmitterInstance* Instance : EmitterInstances)
+    {
+        if (!Instance)
+        {
+            continue;
+        }
 
-    bWorldAABBDirty    = false;
+        FBoundingBox EmitterBounds = Instance->GetBoundingBox();
+        if (!EmitterBounds.IsValid())
+        {
+            continue;
+        }
+
+        CombinedBounds.Expand(EmitterBounds.Min);
+        CombinedBounds.Expand(EmitterBounds.Max);
+    }
+
+    if (CombinedBounds.IsValid())
+    {
+        WorldAABBMinLocation = CombinedBounds.Min;
+        WorldAABBMaxLocation = CombinedBounds.Max;
+    }
+    else
+    {
+        // 아직 파티클이 생성되기 전 fallback
+        const FVector Center = GetWorldLocation();
+
+        const FVector FallbackCenter = Center;
+        const FVector FallbackExtent = FVector(100.0f, 100.0f, 100.0f);
+
+        WorldAABBMinLocation = FallbackCenter - FallbackExtent;
+        WorldAABBMaxLocation = FallbackCenter + FallbackExtent;
+    }
+
+    bWorldAABBDirty = false;
     bHasValidWorldAABB = true;
 }
 
@@ -227,11 +257,31 @@ void UParticleSystemComponent::TickComponent(
         InitializeSystem();
     }
 
+	int32 CalculatedLODIndex = 0;
+	if (Template.Get() && !Template->LODDistances.empty())
+	{
+		for (int32 i = 0; i < static_cast<int32>(Template->LODDistances.size()); i++)
+		{
+			if (CachedDistanceToCamera >= Template->LODDistances[i])
+				CalculatedLODIndex = i;
+			else
+				break;
+		}
+	}
+
+	int32 TargetLODIndex = CalculatedLODIndex;
     for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
     {
         FParticleEmitterInstance* Instance = EmitterInstances[EmitterIndex];
         if (Instance)
         {
+			if (Instance->SpriteTemplate)
+			{
+				int32 MaxLODCount = static_cast<int32>(Instance->SpriteTemplate->GetLODLevels().size());
+				int32 ResolvedLOD = std::clamp(TargetLODIndex, 0, MaxLODCount - 1);
+				Instance->SetCurrentLODIndex(ResolvedLOD, false);
+			}
+
             Instance->Tick(DeltaTime, false);
             Instance->Tick_MaterialOverrides(EmitterIndex);
         }
