@@ -890,10 +890,7 @@ void FMaterialManager::Initialize(ID3D11Device* InDevice)
 
 FMaterialManager::~FMaterialManager()
 {
-	if (!Device)
-	{
-		Release();
-	}
+    Release();
 }
 
 void FMaterialManager::Release()

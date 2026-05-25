@@ -4,6 +4,7 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
 #include "Object/Object.h"
+#include "Object/GarbageCollection.h"
 #include "Platform/Paths.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Texture/Texture2D.h"
@@ -212,6 +213,17 @@ void FMaterialEditorWidget::Close()
 	TexturePreviewCache.clear();
 	FAssetEditorWidget::Close();
 }
+
+void FMaterialEditorWidget::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    FAssetEditorWidget::AddReferencedObjects(Collector);
+
+    for (auto& Pair : TexturePreviewCache)
+    {
+        Collector.AddReferencedObject(Pair.second);
+    }
+}
+
 
 void FMaterialEditorWidget::EnsureContext()
 {

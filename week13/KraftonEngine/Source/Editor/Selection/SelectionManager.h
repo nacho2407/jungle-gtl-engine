@@ -3,6 +3,8 @@
 #include "Core/Types/CoreTypes.h"
 #include "Object/GarbageCollection.h"
 
+#include <algorithm>
+
 class AActor;
 class USceneComponent;
 class UGizmoComponent;
@@ -45,6 +47,7 @@ public:
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
+	void PruneInvalidSelection();
 	void SyncGizmo();
 	void SetActorProxiesSelected(AActor* Actor, bool bSelected);
 

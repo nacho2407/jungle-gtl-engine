@@ -8,324 +8,449 @@
 #include "Render/Scene/FScene.h"
 #include "Object/GarbageCollection.h"
 
-void FSelectionManager::AddReferencedObjects(FReferenceCollector& Collector)
-{
-	// Selection targets/world are weak references. The editor-owned gizmo is the only UObject
-	// whose lifetime is owned by the selection manager.
-	Collector.AddReferencedObject(Gizmo);
-}
+#include <algorithm>
 
 void FSelectionManager::Init()
 {
-	Gizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
-	Gizmo->SetWorldLocation(FVector(0.0f, 0.0f, 0.0f));
-	Gizmo->Deactivate();
-}
+    Gizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
+    if (!Gizmo)
+    {
+        return;
+    }
 
-void FSelectionManager::SetWorld(UWorld* InWorld)
-{
-	// 기존 Scene에서 Gizmo 프록시 해제
-	if (Gizmo && World)
-		Gizmo->DestroyRenderState();
-
-	World = InWorld;
-
-	// 새 Scene에 Gizmo 프록시 등록
-	if (Gizmo && World)
-	{
-		Gizmo->SetScene(&World->GetScene());
-		Gizmo->CreateRenderState();
-	}
-
-	SyncGizmo();
+    Gizmo->SetWorldLocation(FVector(0.0f, 0.0f, 0.0f));
+    Gizmo->Deactivate();
 }
 
 void FSelectionManager::Shutdown()
 {
-	ClearSelection();
+    ClearSelection();
+    World = nullptr;
 
-	if (Gizmo)
-	{
-		UObjectManager::Get().DestroyObject(Gizmo);
-		Gizmo = nullptr;
-	}
+    if (Gizmo)
+    {
+        UObjectManager::Get().DestroyObject(Gizmo);
+        Gizmo = nullptr;
+    }
 }
 
 void FSelectionManager::Select(AActor* Actor)
 {
-	if (SelectedActors.size() == 1 && SelectedActors.front() == Actor && (!Actor || SelectedComponent == Actor->GetRootComponent()))
-	{
-		return;
-	}
+    PruneInvalidSelection();
 
-	// 기존 선택 해제
-	for (AActor* Prev : SelectedActors)
-		SetActorProxiesSelected(Prev, false);
+    if (!IsValid(Actor))
+    {
+        ClearSelection();
+        return;
+    }
 
-	SelectedActors.clear();
-	SelectedComponent = nullptr;
+    USceneComponent* RootComponent = Actor->GetRootComponent();
+    if (!IsValid(RootComponent))
+    {
+        ClearSelection();
+        return;
+    }
 
-	if (Actor)
-	{
-		SelectedActors.push_back(Actor);
-		SetActorProxiesSelected(Actor, true);
-		SelectedComponent = Actor->GetRootComponent();
-	}
-	SyncGizmo();
+    if (SelectedActors.size() == 1 && SelectedActors.front() == Actor && SelectedComponent == RootComponent)
+    {
+        return;
+    }
+
+    // 기존 선택 해제
+    for (AActor* Prev : SelectedActors)
+    {
+        SetActorProxiesSelected(Prev, false);
+    }
+
+    SelectedActors.clear();
+    SelectedActors.push_back(Actor);
+    SetActorProxiesSelected(Actor, true);
+    SelectedComponent = RootComponent;
+
+    SyncGizmo();
 }
 
 void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>& ActorList)
 {
-	if (!ClickedActor) return;
+    PruneInvalidSelection();
 
-	// Find index of clicked actor
-	int32 ClickedIdx = -1;
-	for (int32 i = 0; i < static_cast<int32>(ActorList.size()); ++i)
-	{
-		if (ActorList[i] == ClickedActor) { ClickedIdx = i; break; }
-	}
-	if (ClickedIdx == -1) return;
+    if (!IsValid(ClickedActor)) return;
 
-	// Find nearest already-selected actor's index in ActorList
-	int32 AnchorIdx = ClickedIdx;
-	int32 MinDist = INT_MAX;
-	for (AActor* Sel : SelectedActors)
-	{
-		for (int32 i = 0; i < static_cast<int32>(ActorList.size()); ++i)
-		{
-			if (ActorList[i] == Sel)
-			{
-				int32 Dist = std::abs(i - ClickedIdx);
-				if (Dist < MinDist)
-				{
-					MinDist = Dist;
-					AnchorIdx = i;
-				}
-				break;
-			}
-		}
-	}
+    // Find index of clicked actor
+    int32 ClickedIdx = -1;
+    for (int32 i = 0; i < static_cast<int32>(ActorList.size()); ++i)
+    {
+        if (ActorList[i] == ClickedActor)
+        {
+            ClickedIdx = i;
+            break;
+        }
+    }
+    if (ClickedIdx == -1) return;
 
-	// Replace selection with range [min, max]
-	int32 Lo = std::min(AnchorIdx, ClickedIdx);
-	int32 Hi = std::max(AnchorIdx, ClickedIdx);
+    // Find nearest already-selected actor's index in ActorList
+    int32 AnchorIdx = ClickedIdx;
+    int32 MinDist   = INT_MAX;
+    for (AActor* Sel : SelectedActors)
+    {
+        if (!IsValid(Sel))
+        {
+            continue;
+        }
 
-	// 기존 선택 해제
-	for (AActor* Prev : SelectedActors)
-		SetActorProxiesSelected(Prev, false);
+        for (int32 i = 0; i < static_cast<int32>(ActorList.size()); ++i)
+        {
+            if (ActorList[i] == Sel)
+            {
+                int32 Dist = std::abs(i - ClickedIdx);
+                if (Dist < MinDist)
+                {
+                    MinDist   = Dist;
+                    AnchorIdx = i;
+                }
+                break;
+            }
+        }
+    }
 
-	SelectedActors.clear();
-	SelectedComponent = nullptr;
+    // Replace selection with range [min, max]
+    int32 Lo = std::min(AnchorIdx, ClickedIdx);
+    int32 Hi = std::max(AnchorIdx, ClickedIdx);
 
-	for (int32 i = Lo; i <= Hi; ++i)
-	{
-		if (ActorList[i])
-		{
-			SelectedActors.push_back(ActorList[i]);
-			SetActorProxiesSelected(ActorList[i], true);
-		}
-	}
+    // 기존 선택 해제
+    for (AActor* Prev : SelectedActors) SetActorProxiesSelected(Prev, false);
 
-	if (!SelectedActors.empty())
-	{
-		SelectedComponent = SelectedActors.front()->GetRootComponent();
-	}
+    SelectedActors.clear();
+    SelectedComponent = nullptr;
 
-	SyncGizmo();
+    for (int32 i = Lo; i <= Hi; ++i)
+    {
+        AActor* Actor = ActorList[i];
+        if (IsValid(Actor))
+        {
+            SelectedActors.push_back(Actor);
+            SetActorProxiesSelected(Actor, true);
+        }
+    }
+
+    PruneInvalidSelection();
+    SyncGizmo();
 }
 
 void FSelectionManager::ToggleSelect(AActor* Actor)
 {
-	if (!Actor) return;
+    PruneInvalidSelection();
 
-	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
-	if (It != SelectedActors.end())
-	{
-		SetActorProxiesSelected(Actor, false);
-		SelectedActors.erase(It);
-		if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
-		{
-			SelectedComponent = SelectedActors.empty() ? nullptr : SelectedActors.front()->GetRootComponent();
-		}
-	}
-	else
-	{
-		SelectedActors.push_back(Actor);
-		SetActorProxiesSelected(Actor, true);
-		if (SelectedActors.size() == 1)
-		{
-			SelectedComponent = Actor->GetRootComponent();
-		}
-	}
-	SyncGizmo();
+    if (!IsValid(Actor)) return;
+
+    auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
+    if (It != SelectedActors.end())
+    {
+        SetActorProxiesSelected(Actor, false);
+        SelectedActors.erase(It);
+        if (SelectedComponent && IsAliveObject(SelectedComponent) && SelectedComponent->GetOwner() == Actor)
+        {
+            SelectedComponent = nullptr;
+            PruneInvalidSelection();
+        }
+    }
+    else
+    {
+        SelectedActors.push_back(Actor);
+        SetActorProxiesSelected(Actor, true);
+        if (SelectedActors.size() == 1)
+        {
+            USceneComponent* RootComponent = Actor->GetRootComponent();
+            SelectedComponent              = IsValid(RootComponent) ? RootComponent : nullptr;
+        }
+    }
+    SyncGizmo();
 }
 
 void FSelectionManager::Deselect(AActor* Actor)
 {
-	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
-	if (It != SelectedActors.end())
-	{
-		SetActorProxiesSelected(Actor, false);
-		SelectedActors.erase(It);
-		if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
-		{
-			SelectedComponent = SelectedActors.empty() ? nullptr : SelectedActors.front()->GetRootComponent();
-		}
-	}
-	SyncGizmo();
+    PruneInvalidSelection();
+
+    auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
+    if (It != SelectedActors.end())
+    {
+        SetActorProxiesSelected(Actor, false);
+        SelectedActors.erase(It);
+        if (SelectedComponent && IsAliveObject(SelectedComponent) && SelectedComponent->GetOwner() == Actor)
+        {
+            SelectedComponent = nullptr;
+            PruneInvalidSelection();
+        }
+    }
+    SyncGizmo();
 }
 
 void FSelectionManager::ClearSelection()
 {
-	if (SelectedActors.empty() && SelectedComponent == nullptr)
-	{
-		return;
-	}
+    PruneInvalidSelection();
 
-	for (AActor* Actor : SelectedActors)
-		SetActorProxiesSelected(Actor, false);
+    if (SelectedActors.empty() && SelectedComponent == nullptr)
+    {
+        return;
+    }
 
-	SelectedActors.clear();
-	SelectedComponent = nullptr;
-	SyncGizmo();
+    for (AActor* Actor : SelectedActors)
+    {
+        SetActorProxiesSelected(Actor, false);
+    }
+
+    SelectedActors.clear();
+    SelectedComponent = nullptr;
+    SyncGizmo();
 }
 
 int32 FSelectionManager::DeleteSelectedActors()
 {
-	if (!World || SelectedActors.empty())
-	{
-		return 0;
-	}
+    PruneInvalidSelection();
 
-	TArray<AActor*> ActorsToDelete = SelectedActors;
-	const int32 DeletedCount = static_cast<int32>(ActorsToDelete.size());
+    if (!IsValid(World) || SelectedActors.empty())
+    {
+        return 0;
+    }
 
-	// 파괴 전에 선택/기즈모 참조를 먼저 끊어 dangling target을 방지한다.
-	ClearSelection();
+    TArray<AActor*> ActorsToDelete = SelectedActors;
+    const int32     DeletedCount   = static_cast<int32>(ActorsToDelete.size());
 
-	World->BeginDeferredPickingBVHUpdate();
-	for (AActor* Actor : ActorsToDelete)
-	{
-		if (!Actor)
-		{
-			continue;
-		}
+    // 파괴 전에 선택/기즈모 참조를 먼저 끊어 dangling target을 방지한다.
+    ClearSelection();
 
-		World->DestroyActor(Actor);
-	}
-	World->EndDeferredPickingBVHUpdate();
+    World->BeginDeferredPickingBVHUpdate();
+    for (AActor* Actor : ActorsToDelete)
+    {
+        if (!IsValid(Actor))
+        {
+            continue;
+        }
 
-	return DeletedCount;
+        World->DestroyActor(Actor);
+    }
+    World->EndDeferredPickingBVHUpdate();
+
+    return DeletedCount;
 }
 
 void FSelectionManager::Tick()
 {
-	if (!Gizmo || !bGizmoEnabled)
-	{
-		return;
-	}
+    PruneInvalidSelection();
 
-	USceneComponent* Primary = SelectedComponent;
-	if (!Primary)
-	{
-		return;
-	}
+    if (!IsValid(Gizmo) || !bGizmoEnabled)
+    {
+        return;
+    }
 
-	if (Gizmo->GetTargetComponent() != Primary)
-	{
-		SyncGizmo();
-		return;
-	}
+    USceneComponent* Primary = SelectedComponent;
+    if (!IsValid(Primary))
+    {
+        return;
+    }
 
-	Gizmo->UpdateGizmoTransform();
-}
+    if (Gizmo->GetTargetComponent() != Primary)
+    {
+        SyncGizmo();
+        return;
+    }
 
-void FSelectionManager::SetGizmoEnabled(bool bEnabled)
-{
-	if (bGizmoEnabled == bEnabled)
-	{
-		return;
-	}
-
-	bGizmoEnabled = bEnabled;
-	SyncGizmo();
+    Gizmo->UpdateGizmoTransform();
 }
 
 void FSelectionManager::SelectComponent(USceneComponent* Component)
 {
-	if (!Component)
-	{
-		return;
-	}
+    PruneInvalidSelection();
 
-	// [버그 수정] 에디터 전용 컴포넌트(광원 아이콘 등)는 개별 조작 대상이 아니므로,
-	// 부모 컴포넌트로 리다이렉트하여 함께 움직이도록 합니다.
-	USceneComponent* Target = Component;
-	if (Component->IsEditorOnlyComponent())
-	{
-		if (Component->GetParent())
-		{
-			Target = Component->GetParent();
-		}
-		else
-		{
-			Target = Component->GetOwner()->GetRootComponent();
-		}
-	}
+    if (!IsValid(Component))
+    {
+        return;
+    }
 
-	if (SelectedComponent == Target)
-	{
-		return;
-	}
+    // [버그 수정] 에디터 전용 컴포넌트(광원 아이콘 등)는 개별 조작 대상이 아니므로,
+    // 부모 컴포넌트로 리다이렉트하여 함께 움직이도록 합니다.
+    USceneComponent* Target = Component;
+    if (Component->IsEditorOnlyComponent())
+    {
+        if (IsValid(Component->GetParent()))
+        {
+            Target = Component->GetParent();
+        }
+        else if (IsValid(Component->GetOwner()))
+        {
+            Target = Component->GetOwner()->GetRootComponent();
+        }
+    }
 
-	SelectedComponent = Target;
+    if (!IsValid(Target))
+    {
+        return;
+    }
 
-	if (Target)
-	{
-		AActor* Owner = Target->GetOwner();
-		if (Owner && !IsSelected(Owner))
-		{
-			Select(Owner);
-		}
-	}
+    if (SelectedComponent == Target)
+    {
+        return;
+    }
 
-	SyncGizmo();
+    AActor* Owner = Target->GetOwner();
+    if (!IsValid(Owner))
+    {
+        return;
+    }
+
+    if (!IsSelected(Owner))
+    {
+        Select(Owner);
+    }
+
+    // Select(Owner)는 actor root를 선택 대상으로 잡기 때문에, owner 선택 보장 후
+    // 실제 component 선택 대상을 다시 설정합니다.
+    SelectedComponent = Target;
+
+    SyncGizmo();
 }
 
-void FSelectionManager::SetActorProxiesSelected(AActor* Actor, bool bSelected)
+void FSelectionManager::SetGizmoEnabled(bool bEnabled)
 {
-	if (!Actor || !World) return;
+    if (bGizmoEnabled == bEnabled)
+    {
+        return;
+    }
 
-	FScene& Scene = World->GetScene();
-	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
-	{
-		if (FPrimitiveSceneProxy* Proxy = Prim->GetSceneProxy())
-		{
-			Scene.SetProxySelected(Proxy, bSelected);
-		}
-	}
+    bGizmoEnabled = bEnabled;
+    SyncGizmo();
+}
+
+void FSelectionManager::SetWorld(UWorld* InWorld)
+{
+    PruneInvalidSelection();
+
+    // 기존 Scene에서 Gizmo 프록시 해제
+    if (Gizmo && IsValid(World))
+        Gizmo->DestroyRenderState();
+
+    World = IsValid(InWorld) ? InWorld : nullptr;
+
+    // 새 Scene에 Gizmo 프록시 등록
+    if (IsValid(Gizmo) && IsValid(World))
+    {
+        Gizmo->SetScene(&World->GetScene());
+        Gizmo->CreateRenderState();
+    }
+
+    SyncGizmo();
+}
+
+void FSelectionManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    // Selection targets/world are weak references. The editor-owned gizmo is the only UObject
+    // whose lifetime is owned by the selection manager.
+    Collector.AddReferencedObject(Gizmo);
+}
+
+void FSelectionManager::PruneInvalidSelection()
+{
+    bool bSelectionChanged = false;
+
+    const size_t OldActorCount = SelectedActors.size();
+    SelectedActors.erase(
+        std::remove_if(
+            SelectedActors.begin(),
+            SelectedActors.end(),
+            [](AActor* Actor)
+            {
+                return !IsValid(Actor);
+            }
+        ),
+        SelectedActors.end()
+    );
+    bSelectionChanged = bSelectionChanged || OldActorCount != SelectedActors.size();
+
+    if (SelectedComponent)
+    {
+        AActor* Owner = IsAliveObject(SelectedComponent) ? SelectedComponent->GetOwner() : nullptr;
+        if (!IsValid(SelectedComponent) || !IsValid(Owner))
+        {
+            SelectedComponent = nullptr;
+            bSelectionChanged = true;
+        }
+    }
+
+    if (SelectedComponent)
+    {
+        AActor* Owner = SelectedComponent->GetOwner();
+        if (!IsSelected(Owner))
+        {
+            SelectedComponent = nullptr;
+            bSelectionChanged = true;
+        }
+    }
+
+    if (!SelectedComponent && !SelectedActors.empty())
+    {
+        for (AActor* Actor : SelectedActors)
+        {
+            if (!IsValid(Actor))
+            {
+                continue;
+            }
+
+            USceneComponent* Root = Actor->GetRootComponent();
+            if (IsValid(Root))
+            {
+                SelectedComponent = Root;
+                break;
+            }
+        }
+    }
+
+    if (bSelectionChanged && IsValid(Gizmo))
+    {
+        Gizmo->SetSelectedActors(SelectedActors.empty() ? nullptr : &SelectedActors);
+    }
 }
 
 void FSelectionManager::SyncGizmo()
 {
-	if (!Gizmo) return;
+    PruneInvalidSelection();
 
-	if (!bGizmoEnabled)
-	{
-		Gizmo->Deactivate();
-		return;
-	}
+    if (!IsValid(Gizmo)) return;
 
-	USceneComponent* Primary = SelectedComponent;
-	if (Primary)
-	{
-		Gizmo->SetSelectedActors(&SelectedActors);
-		Gizmo->SetTarget(Primary);
-	}
-	else
-	{
-		Gizmo->SetSelectedActors(nullptr);
-		Gizmo->Deactivate();
-	}
+    if (!bGizmoEnabled)
+    {
+        Gizmo->Deactivate();
+        return;
+    }
+
+    USceneComponent* Primary = SelectedComponent;
+    if (IsValid(Primary))
+    {
+        Gizmo->SetSelectedActors(SelectedActors.empty() ? nullptr : &SelectedActors);
+        Gizmo->SetTarget(Primary);
+    }
+    else
+    {
+        Gizmo->SetSelectedActors(nullptr);
+        Gizmo->Deactivate();
+    }
+}
+
+void FSelectionManager::SetActorProxiesSelected(AActor* Actor, bool bSelected)
+{
+    if (!IsValid(Actor) || !IsValid(World)) return;
+
+    FScene& Scene = World->GetScene();
+    for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
+    {
+        if (!IsValid(Prim))
+        {
+            continue;
+        }
+
+        if (FPrimitiveSceneProxy* Proxy = Prim->GetSceneProxy())
+        {
+            Scene.SetProxySelected(Proxy, bSelected);
+        }
+    }
 }
 

@@ -20,6 +20,7 @@ public:
 	void Open(UObject* Object) override;
 	void Close() override;
 	void Render(float DeltaTime) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
 	void EnsureContext();
