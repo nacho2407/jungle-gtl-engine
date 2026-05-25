@@ -1,6 +1,6 @@
-#pragma once
+﻿#pragma once
 #include "ParticleModuleSizeBase.h"
-
+#include "Distributions/DistributionVector.h"
 #include "Source/Engine/Particles/Size/ParticleModuleSize.generated.h"
 
 UCLASS()
@@ -10,7 +10,7 @@ public:
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, Category = "Size")
-	FVector StartSize;
+	FRawDistributionVector StartSize;
 
 	virtual void Spawn(const FSpawnContext& Context) override;
 

@@ -321,7 +321,13 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 	Location->bSpawnModule       = true;
 	Location->bUpdateModule      = false;
 	Location->bFinalUpdateModule = false;
-	Location->StartLocation      = FVector::ZeroVector;
+
+	Location->StartLocation.Distribution = UObjectManager::Get().CreateObject<UDistributionVectorUniform>(Location);
+	if (UDistributionVectorUniform* Uniform = Cast<UDistributionVectorUniform>(Location->StartLocation.Distribution))
+	{
+		Uniform->Min = FVector(0.0f, 0.f, 20.0f);
+		Uniform->Max = FVector(0.0f, 0.f, 80.0f);
+	}
 
 	LOD->Modules.push_back(Location);
 
@@ -354,7 +360,12 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 	Size->bSpawnModule       = true;
 	Size->bUpdateModule      = false;
 	Size->bFinalUpdateModule = false;
-	Size->StartSize          = FVector(10.0f, 10.0f, 10.0f);
+	Size->StartSize.Distribution = UObjectManager::Get().CreateObject<UDistributionVectorUniform>(Size);
+	if (UDistributionVectorUniform* Uniform = Cast<UDistributionVectorUniform>(Size->StartSize.Distribution))
+	{
+		Uniform->Min = FVector(0.0f, 0.f, 0.0f);
+		Uniform->Max = FVector(0.0f, 0.f, 0.0f);
+	}
 
 	LOD->Modules.push_back(Size);
 
@@ -364,9 +375,19 @@ void UParticleEmitter::InitializeDefaultSpriteEmitter()
 	Color->bSpawnModule       = true;
 	Color->bUpdateModule      = false;
 	Color->bFinalUpdateModule = false;
-	Color->StartColor         = FColor::White();
-	Color->StartAlpha         = 1.0f;
 	Color->bClampAlpha        = true;
+
+	Color->StartColor.Distribution = UObjectManager::Get().CreateObject<UDistributionVectorConstant>(Color);
+	if (UDistributionVectorConstant* Constant = Cast<UDistributionVectorConstant>(Color->StartColor.Distribution))
+	{
+		Constant->Constant = FVector(1, 1, 1);
+	}
+
+	Color->StartAlpha.Distribution = UObjectManager::Get().CreateObject<UDistributionFloatConstant>();
+	if (UDistributionFloatConstant* Constant = Cast<UDistributionFloatConstant>(Color->StartAlpha.Distribution))
+	{
+		Constant->Constant = 1.0f;
+	}
 
 	LOD->Modules.push_back(Color);
 

@@ -1,7 +1,8 @@
 ﻿#pragma once
 #include "ParticleModuleColorBase.h"
 #include "Core/Types/EngineTypes.h"
-
+#include "Distributions/DistributionVector.h"
+#include "Distributions/DistributionFloat.h"
 #include "Source/Engine/Particles/Color/ParticleModuleColor.generated.h"
 
 UCLASS()
@@ -11,9 +12,10 @@ public:
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, Category = "Color")
-	FColor StartColor;
+	FRawDistributionVector StartColor;
+
 	UPROPERTY(EditAnywhere, Category = "Color")
-	float StartAlpha = 0;
+	FRawDistributionFloat StartAlpha;
 
 	uint8 bClampAlpha : 1;
 
