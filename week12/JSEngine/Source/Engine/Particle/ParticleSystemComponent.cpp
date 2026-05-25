@@ -115,6 +115,7 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 	// Template 변경 
 	// -> 기존 Emitter Instance 모두 해제 
 	// -> 새 Template 기준으로 EmitterIntsnace 생성
+	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
 
@@ -144,6 +145,11 @@ UWorld* UParticleSystemComponent::GetWorld() const
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
+	SpawnEvents.clear();
+	DeathEvents.clear();
+	CollisionEvents.clear();
+	BurstEvents.clear();
+
 	UpdateLODLevel();
 
 	for (FParticleEmitterInstance* Instance : EmitterInstances)

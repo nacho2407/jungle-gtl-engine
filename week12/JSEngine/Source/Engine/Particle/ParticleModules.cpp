@@ -161,6 +161,13 @@ namespace
 			? nullptr
 			: ParticleHelper::AlignParticlePointer(RenderData.OwnedParticleData.data());
 	}
+
+	FVector GetParticleOldLocationForRender(const FParticleEmitterInstance& EmitterInstance, const FBaseParticle& Particle)
+	{
+		return EmitterInstance.UsesLocalSpace()
+			? EmitterInstance.GetOwner().GetComponentToWorld().TransformPosition(Particle.OldLocation)
+			: Particle.OldLocation;
+	}
 } // namespace
 
 int32 UParticleModule::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
@@ -372,11 +379,19 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 	// Particle Count & Bytes
 	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
 	const int32 ParticleStride = InEmitterInstance->ParticleStride;
-	const int32 ParticleDataBytes = ActiveParticleCount * ParticleStride;
-	const int32 ParticleIndexBytes = ActiveParticleCount * static_cast<int32>(sizeof(uint16));
+	const size_t ParticleDataBytes =
+		static_cast<size_t>(ActiveParticleCount) * static_cast<size_t>(ParticleStride);
+	const size_t ParticleIndexBytes =
+		static_cast<size_t>(ActiveParticleCount) * sizeof(uint16);
+	const size_t SnapshotLogicalBytes = ParticleDataBytes + ParticleIndexBytes;
+	if (ParticleDataBytes > static_cast<size_t>(std::numeric_limits<int32>::max()) ||
+		SnapshotLogicalBytes > static_cast<size_t>(std::numeric_limits<int32>::max()))
+	{
+		return nullptr;
+	}
 
 	FDynamicSpriteEmitterData* RenderData = new FDynamicSpriteEmitterData();
-	RenderData->OwnedParticleData.resize(static_cast<size_t>(ParticleDataBytes + ParticleHelper::ParticleAlignment));
+	RenderData->OwnedParticleData.resize(ParticleDataBytes + ParticleHelper::ParticleAlignment);
 	RenderData->OwnedParticleIndices.resize(static_cast<size_t>(ActiveParticleCount));
 
 	uint8* SnapshotParticleData = GetAlignedSnapshotParticleData(*RenderData);
@@ -399,20 +414,32 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 		const FBaseParticle& SourceParticle = *reinterpret_cast<const FBaseParticle*>(SourceParticleData);
 		FBaseParticle& SnapshotParticle = *reinterpret_cast<FBaseParticle*>(DestinationParticleData);
 		SnapshotParticle.Location = InEmitterInstance->GetParticleLocationForRender(SourceParticle);
+		SnapshotParticle.OldLocation = GetParticleOldLocationForRender(*InEmitterInstance, SourceParticle);
 		RenderData->OwnedParticleIndices[ActiveIndex] = static_cast<uint16>(ActiveIndex);
 	}
 
 	UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
+	RenderData->ReplayData.eEmitterType = EDynamicEmitterType::Sprite;
 	RenderData->ReplayData.ActiveParticleCount = ActiveParticleCount;
 	RenderData->ReplayData.ParticleStride = ParticleStride;
 	RenderData->ReplayData.SortMode = RequiredModule != nullptr
 		? RequiredModule->SortMode
 		: EParticleSortMode::ViewDepthBackToFront;
+	RenderData->ReplayData.Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
 	RenderData->ReplayData.MaterialInterface = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+
+	// snapshot의 Location / OldLocation은 이미 world space이므로 renderer가 component transform을 다시 적용하면 안 됨!
+	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::World;
+	RenderData->ReplayData.ComponentToWorld = FMatrix::Identity;
+	RenderData->ReplayData.Scale = FVector::OneVector;
+
+	// renderer가 설정을 읽기 위한 단순 참조용 포인터. renderer 쪽에서 수정 금지!
 	RenderData->ReplayData.RequiredModule = RequiredModule;
 
-	RenderData->ReplayData.DataContainer.MemBlockSize = ParticleDataBytes + ParticleIndexBytes;
-	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = ParticleDataBytes;
+	// snapshot은 particle data와 index를 별도 버퍼로 소유. renderer는 연속 메모리를 가정하지 말고
+	// 반드시 DataContainer의 ParticleData / ParticleIndices 포인터를 통해 접근해야 함
+	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);
+	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = static_cast<int32>(ParticleDataBytes);
 	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = ActiveParticleCount;
 	RenderData->ReplayData.DataContainer.ParticleData = SnapshotParticleData;
 	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
