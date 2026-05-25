@@ -3,6 +3,7 @@
 #include "Core/CoreMinimal.h"
 
 class UMaterialInterface;
+class UParticleModuleRequired;
 
 UENUM()
 enum class EParticleSortMode
@@ -135,6 +136,9 @@ struct FDynamicEmitterReplayDataBase
 struct FDynamicSpriteEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 {
 	FDynamicSpriteEmitterReplayDataBase() { eEmitterType = EDynamicEmitterType::Sprite; }
+
+	UMaterialInterface* MaterialInterface = nullptr;
+	UParticleModuleRequired* RequiredModule = nullptr;
 };
 
 struct FDynamicMeshEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
@@ -169,6 +173,8 @@ struct FDynamicSpriteEmitterDataBase : public FDynamicEmitterDataBase
 struct FDynamicSpriteEmitterData : public FDynamicSpriteEmitterDataBase
 {
 	FDynamicSpriteEmitterReplayDataBase ReplayData;
+	TArray<uint8> OwnedParticleData;
+	TArray<uint16> OwnedParticleIndices;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
 };

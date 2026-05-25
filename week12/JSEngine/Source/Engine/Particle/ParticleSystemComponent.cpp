@@ -83,8 +83,9 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 	}
 
 	Template = InTemplate;
-	ReleaseEmitterInstances();
-	CreateEmitterInstances();
+    ReleaseRenderData();
+    ReleaseEmitterInstances();
+    CreateEmitterInstances();
 }
 
 UWorld* UParticleSystemComponent::GetWorld() const
@@ -94,6 +95,11 @@ UWorld* UParticleSystemComponent::GetWorld() const
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
+	SpawnEvents.clear();
+	DeathEvents.clear();
+	CollisionEvents.clear();
+	BurstEvents.clear();
+
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		if (Instance != nullptr)
@@ -103,6 +109,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	}
 
 	PackRenderData();
+	FinalizeTickComponent();
 }
 
 void UParticleSystemComponent::FinalizeTickComponent()

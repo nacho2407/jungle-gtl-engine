@@ -47,6 +47,7 @@ public:
 	float SpawnFraction = 0.0f;
 	float EmitterTime = 0.0f;
 	float SecondsSinceCreation = 0.0f;
+	bool bBurstFired = false;
 	FParticleRandomStream RandomStream;
 
 	virtual bool Init(UParticleEmitter* InTemplate, int32 InLODLevelIndex);
@@ -76,6 +77,11 @@ public:
 
 private:
 	bool AllocateParticleData(int32 InMaxActiveParticles, int32 InParticleStride, int32 InInstancePayloadSize);
+	int32 CalculateSpawnRateCount(float DeltaTime);
+	int32 CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime);
+	int32 SpawnParticles(int32 Count, float DeltaTime);
+	void UpdateParticles(float DeltaTime);
+	void KillParticle(int32 ActiveIndex);
 
 	IParticleEmitterInstanceOwner& Owner;
 };

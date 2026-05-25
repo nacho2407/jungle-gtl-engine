@@ -1,9 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include "Asset/CurveFloatAsset.h"
 #include "Core/CoreMinimal.h"
 #include "Core/Reflection/ReflectionMacros.h"
 #include "Object/ObjectPtr.h"
+#include "Particle/ParticleRandom.h"
 
 UENUM()
 enum class EParticleDistributionMode
@@ -33,6 +34,13 @@ struct FParticleFloatDistribution
 	TSoftObjectPtr<UCurveFloatAsset> MinCurve;
 	UPROPERTY(ReferenceType = Asset)
 	TSoftObjectPtr<UCurveFloatAsset> MaxCurve;
+};
+
+struct FParticleDistributionContext
+{
+	FParticleRandomStream* RandomStream = nullptr;
+	float RelativeTime = 0.0f;
+	float SpawnTime = 0.0f;
 };
 
 USTRUCT()
@@ -106,3 +114,63 @@ struct FParticleColorDistribution
 	UPROPERTY(ReferenceType = Asset)
 	TSoftObjectPtr<UCurveFloatAsset> MaxCurveA;
 };
+
+// TODO: Curve 모드와 RandomRangeCurve 모드에 대한 처리 추가 예정. 현재는 fallback
+
+inline float EvaluateParticleFloat(const FParticleFloatDistribution& Distribution, const FParticleDistributionContext& Context)
+{
+	switch (Distribution.Mode)
+	{
+	case EParticleDistributionMode::RandomRange:
+	case EParticleDistributionMode::RandomRangeCurve:
+		return Context.RandomStream != nullptr
+			? Context.RandomStream->GetRange(Distribution.Min, Distribution.Max)
+			: Distribution.Min;
+
+	case EParticleDistributionMode::Curve:
+	case EParticleDistributionMode::Constant:
+	default:
+		return Distribution.Constant;
+	}
+}
+
+inline FVector EvaluateParticleVector(const FParticleVectorDistribution& Distribution, const FParticleDistributionContext& Context)
+{
+	switch (Distribution.Mode)
+	{
+	case EParticleDistributionMode::RandomRange:
+	case EParticleDistributionMode::RandomRangeCurve:
+		return Context.RandomStream != nullptr
+			? FVector(
+				Context.RandomStream->GetRange(Distribution.Min.X, Distribution.Max.X),
+				Context.RandomStream->GetRange(Distribution.Min.Y, Distribution.Max.Y),
+				Context.RandomStream->GetRange(Distribution.Min.Z, Distribution.Max.Z))
+			: Distribution.Min;
+
+	case EParticleDistributionMode::Curve:
+	case EParticleDistributionMode::Constant:
+	default:
+		return Distribution.Constant;
+	}
+}
+
+inline FColor EvaluateParticleColor(const FParticleColorDistribution& Distribution, const FParticleDistributionContext& Context)
+{
+	switch (Distribution.Mode)
+	{
+	case EParticleDistributionMode::RandomRange:
+	case EParticleDistributionMode::RandomRangeCurve:
+		return Context.RandomStream != nullptr
+			? FColor(
+				Context.RandomStream->GetRange(Distribution.Min.R, Distribution.Max.R),
+				Context.RandomStream->GetRange(Distribution.Min.G, Distribution.Max.G),
+				Context.RandomStream->GetRange(Distribution.Min.B, Distribution.Max.B),
+				Context.RandomStream->GetRange(Distribution.Min.A, Distribution.Max.A))
+			: Distribution.Min;
+
+	case EParticleDistributionMode::Curve:
+	case EParticleDistributionMode::Constant:
+	default:
+		return Distribution.Constant;
+	}
+}
