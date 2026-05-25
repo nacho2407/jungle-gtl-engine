@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
 #include "Render/Types/VertexTypes.h"
@@ -33,14 +33,12 @@ struct FDynamicSpriteEmitterReplayDataBase : FDynamicEmitterReplayDataBase
 	UMaterial* Material = nullptr;
 	UParticleModuleRequired* RequiredModule = nullptr;
 
-	// 파티클 데이터 스트라이드 내 페이로드 오프셋
 	int32 SubUVDataOffset            = 0;
 	int32 DynamicParameterDataOffset = 0;
 	int32 LightDataOffset            = 0;
 	int32 OrbitModuleOffset          = 0;
 	int32 CameraPayloadOffset        = 0;
 
-	// 스프라이트 렌더링 옵션
 	bool    bUseLocalSpace = false;
 	bool    bLockAxis      = false;
 	FVector PivotOffset    = FVector::ZeroVector;
@@ -63,7 +61,6 @@ struct FDynamicEmitterDataBase
 
 struct FDynamicSpriteEmitterDataBase : FDynamicEmitterDataBase
 {
-	// ParticleIndices를 카메라 거리 기준으로 정렬
 	void SortSpriteParticles(const FParticleSortContext& SortCtx);
 };
 
@@ -108,6 +105,7 @@ struct FDynamicBeam2EmitterReplayData : FDynamicSpriteEmitterReplayDataBase
 	int32 NextNoisePointsOffset = -1;
 	int32 TaperValuesOffset = -1;
 	int32 NoiseDistanceScaleOffset = -1;
+	int32 TaperCount = 0;
 
 	bool bLowFreqNoise_Enabled = false;
 	bool bHighFreqNoise_Enabled = false;
@@ -149,7 +147,17 @@ struct FDynamicBeam2EmitterData : FDynamicSpriteEmitterDataBase
 	FDynamicBeam2EmitterData() { Source.eEmitterType = EDynamicEmitterType::Beam; }
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
 	int32 GetDynamicVertexStride() const override { return sizeof(FParticleBeamTrailVertex); }
+
 	void BuildMeshData();
+
+	// Unreal FDynamicBeam2EmitterData responsibility slots.
+	// RHI/async-buffer structures are not present in Jungle yet, so these fill
+	// Jungle CPU staging arrays or remain stubs without changing simulation state.
+	int32 FillIndexData_Stub();
+	int32 FillVertexData_NoNoise_Stub();
+	int32 FillData_Noise_Stub();
+	int32 FillData_InterpolatedNoise_Stub();
+	void DoBufferFill_Stub();
 };
 
 struct FDynamicTrailsEmitterReplayData : FDynamicSpriteEmitterReplayDataBase
@@ -184,6 +192,14 @@ struct FDynamicRibbonEmitterData : FDynamicSpriteEmitterDataBase
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
 	int32 GetDynamicVertexStride() const override { return sizeof(FParticleBeamTrailVertex); }
-	void BuildMeshData();
-};
 
+	void BuildMeshData();
+
+	// Unreal FDynamicRibbonEmitterData responsibility slots.
+	// These preserve the original renderer function boundaries while the
+	// missing beam-trail vertex factory/RHI fill path remains stubbed.
+	int32 FillIndexData_Stub();
+	int32 FillVertexData_Stub();
+	int32 FillInterpolatedVertexData_Stub();
+	void DoBufferFill_Stub();
+};

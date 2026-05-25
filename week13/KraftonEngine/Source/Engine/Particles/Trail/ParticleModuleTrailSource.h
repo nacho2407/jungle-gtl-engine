@@ -24,7 +24,7 @@ public:
 	ETrail2SourceMethod SourceMethod = PET2SRCM_Default;
 	FName SourceName = FName::None;
 	FRawDistributionFloat SourceStrength;
-	uint32 bLockSourceStength : 1;
+	uint32 bLockSourceStrength : 1;
 	int32 SourceOffsetCount = 0;
 	TArray<FVector> SourceOffsetDefaults;
 	EParticleSourceSelectionMethod SelectionMethod = EPSSM_Random;
@@ -33,5 +33,6 @@ public:
 	UParticleModuleTrailSource();
 	void InitializeDefaults();
 	void Serialize(FArchive& Ar) override;
+
 	bool ResolveSourceOffset(int32 InTrailIdx, FParticleEmitterInstance* InEmitterInst, FVector& OutSourceOffset);
 };
