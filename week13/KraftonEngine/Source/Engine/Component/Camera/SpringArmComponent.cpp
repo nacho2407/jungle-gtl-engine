@@ -109,7 +109,7 @@ void USpringArmComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	if (bDoCollisionTest)
 	{
 		AActor* Owner = GetOwner();
-		UWorld* World = Owner ? Owner->GetWorld() : nullptr;
+		UWorld* World = IsValid(Owner) ? GetWorld() : nullptr;
 		if (World)
 		{
 			const FVector Diff = ArmEndWorld - LaggedAttachLoc;

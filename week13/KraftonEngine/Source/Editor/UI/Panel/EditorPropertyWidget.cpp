@@ -26,6 +26,7 @@
 #include "Lua/LuaScriptManager.h"
 #include "Resource/ResourceManager.h"
 #include "Object/FName.h"
+#include "Object/Object.h"
 #include "Object/ObjectIterator.h"
 #include "Object/Ptr/SoftObjectPtr.h"
 #include "Materials/Material.h"
@@ -562,7 +563,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
 	AActor* PrimaryActor = Selection.GetPrimarySelection();
-	if (!PrimaryActor)
+	if (!IsValid(PrimaryActor))
 	{
 		SelectedComponent = nullptr;
 		LastSelectedActor = nullptr;
@@ -611,9 +612,13 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 			Selection.ClearSelection();
 			for (AActor* Actor : ToDelete)
 			{
-				if (Actor && Actor->GetWorld())
+				if (IsValid(Actor))
 				{
-					Actor->GetWorld()->DestroyActor(Actor);
+					UWorld* ActorWorld = Actor->GetWorld();
+					if (ActorWorld)
+					{
+						ActorWorld->DestroyActor(Actor);
+					}
 				}
 			}
 			// GPU Occlusion staging에 남은 dangling proxy 포인터 무효화
@@ -709,18 +714,20 @@ void FEditorPropertyWidget::RenameActor(AActor* PrimaryActor)
 
 void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
+	if (!IsValid(PrimaryActor)) return;
+
 	if (bActorSelected)
 	{
 		RenderActorProperties(PrimaryActor, SelectedActors);
 	}
-	else if (SelectedComponent && SelectedActors.size() >= 2)
+	else if (IsValid(SelectedComponent) && SelectedActors.size() >= 2)
 	{
 		// 다중 선택 시 모든 액터의 타입이 동일한지 검증
 		UClass* PrimaryClass = PrimaryActor->GetClass();
 		bool bAllSameType = true;
 		for (const AActor* Actor : SelectedActors)
 		{
-			if (Actor && Actor->GetClass() != PrimaryClass)
+			if (IsValid(Actor) && Actor->GetClass() != PrimaryClass)
 			{
 				bAllSameType = false;
 				break;
@@ -738,7 +745,7 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 			ImGui::TextDisabled("Primary: %s", PrimaryClass->GetName());
 			for (const AActor* Actor : SelectedActors)
 			{
-				if (Actor && Actor->GetClass() != PrimaryClass)
+				if (IsValid(Actor) && Actor->GetClass() != PrimaryClass)
 				{
 					ImGui::TextDisabled("  Mismatch: %s (%s)",
 						Actor->GetFName().ToString().c_str(),
@@ -763,6 +770,8 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 
 void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
+	if (!IsValid(PrimaryActor)) return;
+
 	if (PrimaryActor->GetRootComponent())
 	{
 		ImGui::Separator();
@@ -909,6 +918,8 @@ void FEditorPropertyWidget::RenderCallInEditorFunctions(UObject* Object)
 
 void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 {
+	if (!IsValid(Actor)) return;
+
 	// Get All Component Classes
 	TArray<UClass*>& AllClasses = UClass::GetAllClasses();
 
@@ -1197,6 +1208,8 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 
 void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArray<AActor*>& SelectedActors)
 {
+	if (!IsValid(Actor) || !IsValid(SelectedComponent)) return;
+
 	if (SelectedComponent != Actor->GetRootComponent())
 	{
 		if (ImGui::Button("Remove"))
@@ -1324,7 +1337,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 	RenderCallInEditorFunctions(SelectedComponent);
 
 	// 실제 변경이 있었을 때만 Transform dirty 마킹
-	if (bAnyChanged && SelectedComponent->IsA<USceneComponent>())
+	if (bAnyChanged && IsValid(SelectedComponent) && SelectedComponent->IsA<USceneComponent>())
 	{
 		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
 	}
@@ -1332,7 +1345,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 
 void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors)
 {
-	if (!SelectedComponent || SelectedActors.size() < 2) return;
+	if (!IsValid(SelectedComponent) || SelectedActors.size() < 2) return;
 
 	UClass* CompClass = SelectedComponent->GetClass();
 	AActor* PrimaryActor = SelectedActors[0];
@@ -1351,7 +1364,7 @@ void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, con
 
 	for (AActor* Actor : SelectedActors)
 	{
-		if (!Actor || Actor == PrimaryActor) continue;
+		if (!IsValid(Actor) || Actor == PrimaryActor) continue;
 
 		for (UActorComponent* Comp : Actor->GetComponents())
 		{
@@ -1378,7 +1391,7 @@ void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, con
 
 void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* ComponentClass)
 {
-	if (!Actor || !ComponentClass) return;
+	if (!IsValid(Actor) || !ComponentClass) return;
 
 	UActorComponent* Comp = Actor->AddComponentByClass(ComponentClass);
 	if (!Comp) return;
@@ -1388,7 +1401,7 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 		USceneComponent* Root = Actor->GetRootComponent();
 		USceneComponent* SceneComp = Cast<USceneComponent>(Comp);
 
-		if (SelectedComponent && SelectedComponent->IsA<USceneComponent>())
+		if (IsValid(SelectedComponent) && SelectedComponent->IsA<USceneComponent>())
 		{
 			SceneComp->AttachToComponent(Cast<USceneComponent>(SelectedComponent));
 		}
@@ -2113,7 +2126,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			Rot->Roll = RotXYZ[0];
 			Rot->Pitch = RotXYZ[1];
 			Rot->Yaw = RotXYZ[2];
-			if (SelectedComponent && SelectedComponent->IsA<USceneComponent>())
+			if (IsValid(SelectedComponent) && SelectedComponent->IsA<USceneComponent>())
 			{
 				static_cast<USceneComponent*>(SelectedComponent)->ApplyCachedEditRotator();
 			}

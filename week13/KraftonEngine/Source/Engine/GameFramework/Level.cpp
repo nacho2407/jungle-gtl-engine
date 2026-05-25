@@ -24,7 +24,7 @@ ULevel::~ULevel()
 
 void ULevel::AddActor(AActor* Actor)
 {
-	if (!Actor) return;
+	if (!IsValid(Actor)) return;
 
 	auto It = std::find(Actors.begin(), Actors.end(), Actor);
 	if (It != Actors.end())
@@ -38,7 +38,7 @@ void ULevel::AddActor(AActor* Actor)
 
 void ULevel::RemoveActor(AActor* Actor)
 {
-	if (!Actor) return;
+	if (!IsAliveObject(Actor)) return;
 
 	auto It = std::find(Actors.begin(), Actors.end(), Actor);
 	if (It == Actors.end())
@@ -53,7 +53,7 @@ void ULevel::Clear()
 {
 	for (AActor* Actor : Actors)
 	{
-		if (Actor)
+		if (IsAliveObject(Actor))
 		{
 			Actor->SetOuter(nullptr);
 		}
@@ -115,7 +115,7 @@ void ULevel::BeginPlay()
 	for (size_t i = 0; i < InitialCount; ++i)
 	{
 		AActor* Actor = Actors[i];
-		if (Actor && !Actor->HasActorBegunPlay())
+		if (IsValid(Actor) && !Actor->HasActorBegunPlay())
 		{
 			Actor->BeginPlay();
 		}

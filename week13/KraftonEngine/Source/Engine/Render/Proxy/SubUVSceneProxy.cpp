@@ -3,6 +3,7 @@
 #include "Render/Types/FrameContext.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Materials/Material.h"
+#include "Object/Object.h"
 
 // ============================================================
 // FSubUVSceneProxy
@@ -21,6 +22,13 @@ FSubUVSceneProxy::~FSubUVSceneProxy()
 void FSubUVSceneProxy::UpdateMesh()
 {
 	USubUVComponent* Comp = GetSubUVComponent();
+	if (!IsValid(Comp))
+	{
+		MeshBuffer = nullptr;
+		SectionDraws.clear();
+		bVisible = false;
+		return;
+	}
 
 	// TexturedQuad (FVertexPNCT with UVs) for rendering
 	MeshBuffer = &FMeshBufferManager::Get().GetMeshBuffer(EMeshShape::TexturedQuad);
@@ -48,6 +56,12 @@ void FSubUVSceneProxy::UpdateMaterial()
 {
 	// TickComponent에서 FrameIndex 변경 시 Material dirty로 호출됨
 	USubUVComponent* Comp = GetSubUVComponent();
+	if (!IsValid(Comp))
+	{
+		SectionDraws.clear();
+		bVisible = false;
+		return;
+	}
 	CachedFrameIndex = Comp->GetFrameIndex();
 	CachedParticle = Comp->GetParticle();
 
@@ -92,7 +106,7 @@ void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		const uint32 Row = CachedFrameIndex / Cols;
 
 		UMaterial* SubUVMat = SectionDraws.empty() ? nullptr : SectionDraws[0].Material;
-		if (!SubUVMat) return;
+		if (!IsValid(SubUVMat)) return;
 		FSubUVRegionConstants& Region = SubUVMat->GetPerShaderAs<FSubUVRegionConstants>();
 		Region.U = Col * FrameW;
 		Region.V = Row * FrameH;

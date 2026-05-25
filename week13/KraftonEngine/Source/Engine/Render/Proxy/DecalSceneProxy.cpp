@@ -7,6 +7,8 @@
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/GarbageCollection.h"
+#include "Object/Object.h"
 
 namespace
 {
@@ -47,10 +49,17 @@ UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
 	return static_cast<UDecalComponent*>(GetOwner());
 }
 
+void FDecalSceneProxy::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	FPrimitiveSceneProxy::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(DecalMaterial);
+	Collector.AddReferencedObject(DecalProxyMaterial);
+}
+
 void FDecalSceneProxy::UpdateMaterial()
 {
 	UDecalComponent* DecalComp = GetDecalComponent();
-	if (!DecalComp) return;
+	if (!IsValid(DecalComp)) return;
 
 	DecalMaterial = DecalComp->GetMaterial();
 
@@ -101,14 +110,14 @@ void FDecalSceneProxy::RebuildReceiverProxies()
 	CachedReceiverProxies.clear();
 
 	UDecalComponent* DecalComp = GetDecalComponent();
-	if (!DecalComp) return;
+	if (!IsValid(DecalComp)) return;
 
 	for (UStaticMeshComponent* Receiver : DecalComp->GetReceivers())
 	{
-		if (Receiver)
+		if (IsValid(Receiver))
 		{
 			FPrimitiveSceneProxy* ReceiverProxy = Receiver->GetSceneProxy();
-			if (ReceiverProxy)
+			if (ReceiverProxy && ReceiverProxy->HasValidOwner())
 				CachedReceiverProxies.push_back(ReceiverProxy);
 		}
 	}

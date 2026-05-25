@@ -71,4 +71,6 @@ private:
 	// Block 쌍 추적 — Hit 이벤트는 첫 접촉 시에만 발화
 	std::unordered_set<FOverlapPair> PreviousBlockPairs;
 	std::unordered_set<FOverlapPair> CurrentBlockPairs;
+
+    void PruneInvalidComponents();
 };

@@ -95,6 +95,12 @@ void FSkeletonManager::AddReferencedObjects(FReferenceCollector& Collector)
     }
 }
 
+void FSkeletonManager::ClearCache()
+{
+    SkeletonCaches.clear();
+    AvailableSkeletonFiles.clear();
+}
+
 FSkeletonManager& FSkeletonManager::Get()
 {
     static FSkeletonManager Instance;

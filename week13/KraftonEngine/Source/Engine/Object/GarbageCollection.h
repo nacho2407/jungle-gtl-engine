@@ -2,6 +2,7 @@
 
 #include "Core/Types/CoreTypes.h"
 #include "Core/Singleton.h"
+#include "Ptr/ObjectPtr.h"
 
 class UObject;
 
@@ -10,12 +11,27 @@ class FReferenceCollector
 public:
     void AddReferencedObject(UObject* Object);
 
-    template<typename T>
+    template <typename T>
+    void AddReferencedObject(const TObjectPtr<T>& ObjectPtr)
+    {
+        AddReferencedObject(ObjectPtr.Get());
+    }
+
+    template <typename T>
     void AddReferencedObjects(const TArray<T*>& Objects)
     {
         for (T* Object : Objects)
         {
             AddReferencedObject(Object);
+        }
+    }
+
+    template <typename T>
+    void AddReferencedObjects(const TArray<TObjectPtr<T>>& Objects)
+    {
+        for (const TObjectPtr<T>& ObjectPtr : Objects)
+        {
+            AddReferencedObject(ObjectPtr.Get());
         }
     }
 

@@ -84,7 +84,12 @@ private:
 	};
 	std::vector<FBodyMapping> BodyMappings;
 
+	bool bSharedPhysXAcquired = false;
+	bool bShutdownComplete = true;
+
 	// 내부 헬퍼
+	void ClearPhysXActorUserData(physx::PxRigidActor* Actor) const;
+	void ReleaseBodyMappings();
 	FBodyMapping* FindMappingByActor(AActor* OwnerActor);
 	const FBodyMapping* FindMappingByActor(AActor* OwnerActor) const;
 	FBodyMapping* FindMappingByComponent(UPrimitiveComponent* Comp);

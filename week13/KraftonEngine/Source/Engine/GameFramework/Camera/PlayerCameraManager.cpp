@@ -27,7 +27,7 @@ void APlayerCameraManager::AddReferencedObjects(FReferenceCollector& Collector)
 
 void APlayerCameraManager::RegisterCamera(UCameraComponent* Camera)
 {
-	if (Camera)
+	if (IsValid(Camera))
 	{
 		if (RegisteredCameras.insert(Camera).second)
 		{
@@ -66,9 +66,10 @@ void APlayerCameraManager::AutoPossessDefaultCamera()
 	// 이미 누가 ActiveCamera를 설정했으면(예: APawn::PossessedBy에서 자기 카메라 지정)
 	// 첫 등록 카메라로 덮어쓰지 않는다. World::BeginPlay 흐름상 GameMode->StartMatch가
 	// 먼저 호출되어 Pawn 카메라가 설정될 수 있고, 그 후 본 함수가 호출되기 때문.
-	if (ActiveCamera) return;
+	PruneInvalidReferences();
+	if (IsValid(ActiveCamera)) return;
 
-	if (!RegisteredCameraOrder.empty())
+	if (!RegisteredCameraOrder.empty() && IsValid(RegisteredCameraOrder.front()))
 	{
 		SetActiveCamera(RegisteredCameraOrder.front());
 		Possess(RegisteredCameraOrder.front());
@@ -79,10 +80,16 @@ void APlayerCameraManager::AutoPossessDefaultCamera()
 bool APlayerCameraManager::ToggleActiveCameraForActor(const FString& ActorName, float BlendTime)
 {
 	TArray<UCameraComponent*> ActorCameras;
+	PruneInvalidReferences();
 	for (UCameraComponent* Camera : RegisteredCameraOrder)
 	{
-		if (Camera && Camera->GetOwner()
-			&& Camera->GetOwner()->GetFName().ToString() == ActorName)
+		if (!IsValid(Camera))
+		{
+			continue;
+		}
+
+		AActor* CameraOwner = Camera->GetOwner();
+		if (IsValid(CameraOwner) && CameraOwner->GetFName().ToString() == ActorName)
 		{
 			ActorCameras.push_back(Camera);
 		}
@@ -113,15 +120,16 @@ bool APlayerCameraManager::ToggleActiveCameraForActor(const FString& ActorName, 
 
 bool APlayerCameraManager::ToggleActiveCameraForActor(const AActor* Actor, float BlendTime)
 {
-	if (!Actor)
+	if (!IsValid(Actor))
 	{
 		return false;
 	}
 
 	TArray<UCameraComponent*> ActorCameras;
+	PruneInvalidReferences();
 	for (UCameraComponent* Camera : RegisteredCameraOrder)
 	{
-		if (Camera && Camera->GetOwner() == Actor)
+		if (IsValid(Camera) && Camera->GetOwner() == Actor)
 		{
 			ActorCameras.push_back(Camera);
 		}
@@ -152,10 +160,11 @@ bool APlayerCameraManager::ToggleActiveCameraForActor(const AActor* Actor, float
 
 void APlayerCameraManager::SetActiveCameraWithBlend(UCameraComponent* NewCamera, float BlendTime, EViewTargetBlendFunction BlendFunction)
 {
-	if (!NewCamera) return;
+	if (!IsValid(NewCamera)) return;
+	PruneInvalidReferences();
 
 	// 즉시 전환: BlendTime 미지정 또는 기존 ActiveCamera 가 없어 lerp 의 source 가 없는 경우.
-	if (BlendTime <= 0.0f || !ActiveCamera || ActiveCamera == NewCamera)
+	if (BlendTime <= 0.0f || !IsValid(ActiveCamera) || ActiveCamera == NewCamera)
 	{
 		ActiveCamera = NewCamera;
 		PendingActiveCamera = nullptr;
@@ -180,17 +189,19 @@ void APlayerCameraManager::SetViewTarget(AActor* NewViewTarget, FViewTargetTrans
 	// TODO(B): NewViewTarget 의 UCameraComponent 를 찾아 ActiveCamera 로 전환.
 	//          BlendTime > 0 이면 PendingViewTarget 으로 보관, UpdateCamera 에서 보간.
 	//          BlendTime == 0 이면 즉시 전환.
-	if (!NewViewTarget)
+	if (!IsValid(NewViewTarget))
 	{
 		return;
 	}
 
-	if (!ViewTarget && ActiveCamera)
+	PruneInvalidReferences();
+	if (!IsValid(ViewTarget) && IsValid(ActiveCamera))
 	{
-		ViewTarget = ActiveCamera->GetOwner();
+		AActor* CameraOwner = ActiveCamera->GetOwner();
+		ViewTarget = IsValid(CameraOwner) ? CameraOwner : nullptr;
 	}
 
-	if (TransitionParams.BlendTime <= 0.0f || !ViewTarget)
+	if (TransitionParams.BlendTime <= 0.0f || !IsValid(ViewTarget))
 	{
 		ViewTarget = NewViewTarget;
 		PendingViewTarget = nullptr;
@@ -352,6 +363,61 @@ void APlayerCameraManager::ApplyCameraModifiers(float DeltaTime, FMinimalViewInf
 	}
 }
 
+void APlayerCameraManager::PruneInvalidReferences()
+{
+    for (auto It = RegisteredCameraOrder.begin(); It != RegisteredCameraOrder.end();)
+    {
+        if (!IsValid(*It))
+        {
+            It = RegisteredCameraOrder.erase(It);
+        }
+        else
+        {
+            ++It;
+        }
+    }
+
+    for (auto It = RegisteredCameras.begin(); It != RegisteredCameras.end();)
+    {
+        if (!IsValid(*It))
+        {
+            It = RegisteredCameras.erase(It);
+        }
+        else
+        {
+            ++It;
+        }
+    }
+
+    if (!IsValid(ActiveCamera))
+    {
+        ActiveCamera = nullptr;
+    }
+
+    if (!IsValid(PossessedCamera))
+    {
+        PossessedCamera = nullptr;
+    }
+
+    if (!IsValid(PendingViewTarget))
+    {
+        PendingViewTarget = nullptr;
+        BlendTimeRemaining = 0.0f;
+    }
+
+    if (!IsValid(ViewTarget))
+    {
+        ViewTarget = nullptr;
+    }
+
+    if (!IsValid(PendingActiveCamera))
+    {
+        PendingActiveCamera = nullptr;
+        ActiveCameraBlendTimeRemaining = 0.0f;
+        ActiveCameraBlendDuration = 0.0f;
+    }
+}
+
 // ─────────────────────────────────────────────────────────────────
 // Camera Fade
 // ─────────────────────────────────────────────────────────────────
@@ -415,7 +481,9 @@ void APlayerCameraManager::ClearCameraVignette()
 // ─────────────────────────────────────────────────────────────────
 bool APlayerCameraManager::GetCameraView(FMinimalViewInfo& OutPOV) const
 {
-	if (!ViewTarget && !ActiveCamera)
+	const bool bHasValidViewTarget = IsValid(ViewTarget);
+	const bool bHasValidActiveCamera = IsValid(ActiveCamera);
+	if (!bHasValidViewTarget && !bHasValidActiveCamera)
 	{
 		return false;
 	}
@@ -423,7 +491,7 @@ bool APlayerCameraManager::GetCameraView(FMinimalViewInfo& OutPOV) const
 	// (우선) ActiveCamera 단위 blend 가 진행 중이면 현재 ActiveCamera ↔ PendingActiveCamera 보간.
 	// 같은 액터 내 컴포넌트 간 전환에 사용. ViewTarget blend 와 동시 진행 시 ActiveCamera 가 더
 	// 최근 의도이므로 우선.
-	if (PendingActiveCamera && ActiveCamera
+	if (IsValid(PendingActiveCamera) && IsValid(ActiveCamera)
 		&& ActiveCameraBlendTimeRemaining > 0.0f && ActiveCameraBlendDuration > 0.0f)
 	{
 		FMinimalViewInfo FromPOV;
@@ -441,8 +509,8 @@ bool APlayerCameraManager::GetCameraView(FMinimalViewInfo& OutPOV) const
 		return true;
 	}
 
-	UCameraComponent* FromCamera = ViewTarget ? ViewTarget->GetComponentByClass<UCameraComponent>() : nullptr;
-	if (!FromCamera)
+	UCameraComponent* FromCamera = IsValid(ViewTarget) ? ViewTarget->GetComponentByClass<UCameraComponent>() : nullptr;
+	if (!FromCamera && IsValid(ActiveCamera))
 	{
 		FromCamera = ActiveCamera;
 	}
@@ -452,13 +520,13 @@ bool APlayerCameraManager::GetCameraView(FMinimalViewInfo& OutPOV) const
 		return false;
 	}
 
-	if (!PendingViewTarget || BlendTimeRemaining <= 0.0f || BlendParams.BlendTime <= 0.0f)
+	if (!IsValid(PendingViewTarget) || BlendTimeRemaining <= 0.0f || BlendParams.BlendTime <= 0.0f)
 	{
 		FromCamera->GetCameraView(0.0f, OutPOV);
 		return true;
 	}
 
-	UCameraComponent* ToCamera = PendingViewTarget->GetComponentByClass<UCameraComponent>();
+	UCameraComponent* ToCamera = IsValid(PendingViewTarget) ? PendingViewTarget->GetComponentByClass<UCameraComponent>() : nullptr;
 	if (!ToCamera)
 	{
 		FromCamera->GetCameraView(0.0f, OutPOV);
@@ -483,9 +551,11 @@ bool APlayerCameraManager::GetCameraView(FMinimalViewInfo& OutPOV) const
 // ─────────────────────────────────────────────────────────────────
 void APlayerCameraManager::UpdateCamera(float DeltaTime)
 {
+	PruneInvalidReferences();
+
 	// (1) ViewTarget blend timer 갱신 + 완료 시 ViewTarget 전환 + ActiveCamera 갱신.
 	//     base POV 산출 *전* 에 와야 새 BlendTimeRemaining 으로 보간된 POV 가 cache 에 들어간다.
-	if (PendingViewTarget && BlendTimeRemaining > 0.0f)
+	if (IsValid(PendingViewTarget) && BlendTimeRemaining > 0.0f)
 	{
 		BlendTimeRemaining = std::max(0.0f, BlendTimeRemaining - DeltaTime);
 
@@ -494,16 +564,19 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
 			ViewTarget = PendingViewTarget;
 			PendingViewTarget = nullptr;
 
-			if (UCameraComponent* Camera = ViewTarget->GetComponentByClass<UCameraComponent>())
+			if (IsValid(ViewTarget))
 			{
-				SetActiveCamera(Camera);
+				if (UCameraComponent* Camera = ViewTarget->GetComponentByClass<UCameraComponent>())
+				{
+					SetActiveCamera(Camera);
+				}
 			}
 		}
 	}
 
 	// (1b) ActiveCamera 컴포넌트 단위 blend timer 갱신 + 완료 시 swap.
 	//      GetCameraView 가 보간된 POV 를 반환할 수 있도록 timer 를 *base POV 산출 전* 에 줄인다.
-	if (PendingActiveCamera && ActiveCameraBlendTimeRemaining > 0.0f)
+	if (IsValid(PendingActiveCamera) && ActiveCameraBlendTimeRemaining > 0.0f)
 	{
 		ActiveCameraBlendTimeRemaining = std::max(0.0f, ActiveCameraBlendTimeRemaining - DeltaTime);
 		if (ActiveCameraBlendTimeRemaining <= 0.0f)

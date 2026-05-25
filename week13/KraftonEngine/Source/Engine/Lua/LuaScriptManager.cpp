@@ -1777,7 +1777,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	});
 	CameraManager.set_function("PossessCamera", [](UCameraComponent* Camera)
 	{
-		if (!GEngine || !GEngine->GetWorld() || !Camera)
+		if (!GEngine || !GEngine->GetWorld() || !IsValid(Camera))
 		{
 			return false;
 		}
@@ -1802,7 +1802,9 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
 		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
 		UCameraComponent* ActiveCamera = Manager ? Manager->GetActiveCamera() : nullptr;
-		return ActiveCamera ? ActiveCamera->GetOwner() : nullptr;
+		if (!IsValid(ActiveCamera)) return nullptr;
+		AActor* Owner = ActiveCamera->GetOwner();
+		return IsValid(Owner) ? Owner : nullptr;
 	});
 	CameraManager.set_function("GetPossessedCamera", []() -> UCameraComponent*
 	{
@@ -1823,7 +1825,9 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
 		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
 		UCameraComponent* PossessedCamera = Manager ? Manager->GetPossessedCamera() : nullptr;
-		return PossessedCamera ? PossessedCamera->GetOwner() : nullptr;
+		if (!IsValid(PossessedCamera)) return nullptr;
+		AActor* Owner = PossessedCamera->GetOwner();
+		return IsValid(Owner) ? Owner : nullptr;
 	});
 	CameraManager.set_function("FadeOut", [](float Duration)
 	{
@@ -1867,7 +1871,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	});
 	CameraManager.set_function("SetViewTargetWithBlend", [](AActor* Target, float BlendTime)
 	{
-		if (!GEngine || !GEngine->GetWorld() || !Target) return;
+		if (!GEngine || !GEngine->GetWorld() || !IsValid(Target)) return;
 
 		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
 		if (PC)
@@ -1879,7 +1883,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	// 컴포넌트 사이 부드럽게 전환. BlendTime 미지정 시 0 (즉시 swap).
 	CameraManager.set_function("SetActiveCameraWithBlend", [](UCameraComponent* NewCamera, sol::optional<float> BlendTime)
 	{
-		if (!GEngine || !GEngine->GetWorld() || !NewCamera) return;
+		if (!GEngine || !GEngine->GetWorld() || !IsValid(NewCamera)) return;
 		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
 		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
 		if (Manager)
@@ -2570,9 +2574,10 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	World.set_function("FindActorByName", [](const FString& ActorName) -> AActor*
 	{
 		if (!GEngine || !GEngine->GetWorld()) return nullptr;
-		for (AActor* Actor : GEngine->GetWorld()->GetActors())
+		UWorld* W = GEngine->GetWorld();
+		for (AActor* Actor : W->GetActors())
 		{
-			if (Actor && Actor->GetFName().ToString() == ActorName)
+			if (IsValid(Actor) && Actor->GetFName().ToString() == ActorName)
 			{
 				return Actor;
 			}
@@ -2582,11 +2587,12 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	World.set_function("FindFirstActorByClass", [](const FString& ClassName) -> AActor*
 	{
 		if (!GEngine || !GEngine->GetWorld()) return nullptr;
+		UWorld* W = GEngine->GetWorld();
 		UClass* Cls = UClass::FindByName(ClassName.c_str());
 		if (!Cls) return nullptr;
-		for (AActor* Actor : GEngine->GetWorld()->GetActors())
+		for (AActor* Actor : W->GetActors())
 		{
-			if (Actor && Actor->GetClass()->IsA(Cls))
+			if (IsValid(Actor) && Actor->GetClass()->IsA(Cls))
 			{
 				return Actor;
 			}

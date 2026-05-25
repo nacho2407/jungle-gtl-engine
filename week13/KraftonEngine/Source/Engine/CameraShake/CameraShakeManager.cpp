@@ -14,6 +14,11 @@ void FCameraShakeManager::AddReferencedObjects(FReferenceCollector& Collector)
 	}
 }
 
+void FCameraShakeManager::ClearCache()
+{
+	LoadedShakes.clear();
+}
+
 UCameraShakeAsset* FCameraShakeManager::Load(const FString& Path)
 {
 	FString NormalizedPath = FPaths::MakeProjectRelative(Path);

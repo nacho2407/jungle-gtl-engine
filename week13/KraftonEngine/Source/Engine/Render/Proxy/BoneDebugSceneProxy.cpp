@@ -3,6 +3,7 @@
 #include "Component/Debug/BoneDebugComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
+#include "Object/Object.h"
 
 #pragma region Line Draw
 
@@ -104,10 +105,10 @@ void FBoneDebugSceneProxy::RebuildLines()
 	CachedParentBoneLines.clear();
 
 	UBoneDebugComponent* Comp = static_cast<UBoneDebugComponent*>(GetOwner());
-	if (!Comp) return;
+	if (!IsValid(Comp)) return;
 
 	USkeletalMeshComponent* MeshComp = Comp->GetTargetMeshComponent();
-	if (!MeshComp) return;
+	if (!IsValid(MeshComp)) return;
 
 	USkeletalMesh* Mesh = MeshComp->GetSkeletalMesh();
 	FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;

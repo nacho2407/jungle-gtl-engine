@@ -13,7 +13,7 @@ void UCameraComponent::BeginPlay()
 
 	// E.2/3: PC 가 BeginPlay 시점엔 아직 spawn 전 → PlayerCameraManager nullptr.
 	// PC 의 BeginPlay 에서 World 의 모든 카메라 컴포넌트를 catch up 등록하므로 안전.
-	if (UWorld* World = GetOwner()->GetWorld())
+	if (UWorld* World = GetWorld())
 	{
 		if (APlayerController* PC = World->GetFirstPlayerController())
 		{
@@ -28,7 +28,7 @@ void UCameraComponent::BeginPlay()
 void UCameraComponent::EndPlay()
 {
 	Super::EndPlay();
-	if (UWorld* World = GetOwner()->GetWorld())
+	if (UWorld* World = GetWorld())
 	{
 		if (APlayerController* PC = World->GetFirstPlayerController())
 		{

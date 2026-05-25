@@ -5,6 +5,7 @@
 #include "GameFramework/AActor.h"
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
+#include "Object/Object.h"
 
 // ============================================================
 // FBillboardSceneProxy
@@ -15,7 +16,7 @@ FBillboardSceneProxy::FBillboardSceneProxy(UBillboardComponent* InComponent)
 	ProxyFlags |= EPrimitiveProxyFlags::PerViewportUpdate;
 	ProxyFlags &= ~EPrimitiveProxyFlags::ShowAABB;
 
-	if (InComponent->IsEditorOnly())
+	if (IsValid(InComponent) && InComponent->IsEditorOnly())
 		ProxyFlags |= EPrimitiveProxyFlags::EditorOnly;
 }
 
@@ -41,7 +42,7 @@ void FBillboardSceneProxy::UpdateTransform()
 void FBillboardSceneProxy::UpdateMesh()
 {
 	UBillboardComponent* Comp = GetBillboardComponent();
-	UMaterial* Mat = Comp ? Comp->GetMaterial() : nullptr;
+	UMaterial* Mat = IsValid(Comp) ? Comp->GetMaterial() : nullptr;
 
 	if (Mat)
 	{
@@ -55,7 +56,8 @@ void FBillboardSceneProxy::UpdateMesh()
 	}
 	else
 	{
-		MeshBuffer = GetOwner()->GetMeshBuffer();
+		UPrimitiveComponent* OwnerComp = GetOwner();
+		MeshBuffer = IsValid(OwnerComp) ? OwnerComp->GetMeshBuffer() : nullptr;
 		SectionDraws.clear();
 	}
 }

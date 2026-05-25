@@ -3,7 +3,27 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "UI/UIManager.h"
 
+void UUserWidget::BeginDestroy()
+{
+    if (HasAnyFlags(RF_BeginDestroy))
+    {
+        return;
+    }
 
+    RemoveFromParent();
+    ClearEventListeners();
+    PendingClickBindings.clear();
+    ClearDocument();
+
+    OwningPlayer = nullptr;
+
+    UObject::BeginDestroy();
+}
+
+void UUserWidget::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+}
 
 void UUserWidget::Initialize(APlayerController* InOwningPlayer, const FString& InDocumentPath)
 {

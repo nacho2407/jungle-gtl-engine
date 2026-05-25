@@ -4,6 +4,7 @@
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Render/Scene/SceneEnvironment.h"
 #include "Debug/DebugDrawQueue.h"
+#include "Object/GarbageCollection.h"
 
 class AActor;
 class UPrimitiveComponent;
@@ -16,11 +17,13 @@ struct FFrameContext;
 // UWorld와 1:1 대응. PrimitiveComponent 등록/해제 시 프록시를 관리하고,
 // 프레임마다 DirtyList의 프록시만 갱신한 뒤 RenderCollector에 전달한다.
 // 또한 매 프레임 수집되는 경량 디버그/에디터 데이터(라인, AABB, 텍스트, 그리드)를 소유.
-class FScene
+class FScene : public FGCObject
 {
 public:
 	FScene() = default;
 	~FScene();
+
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	// --- 프록시 등록/해제 ---
 	FPrimitiveSceneProxy* AddPrimitive(UPrimitiveComponent* Component);

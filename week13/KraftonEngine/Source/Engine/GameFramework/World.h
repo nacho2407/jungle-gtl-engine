@@ -60,7 +60,11 @@ public:
 	void WarmupPickingData() const;
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 
-	const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
+	const TArray<AActor*>& GetActors() const
+	{
+		static const TArray<AActor*> EmptyActors;
+		return PersistentLevel ? PersistentLevel->GetActors() : EmptyActors;
+	}
 
 	// LOD 컨텍스트를 FFrameContext에 전달 (Collect 단계에서 LOD 인라인 갱신용)
 	FLODUpdateContext PrepareLODContext();
@@ -74,6 +78,7 @@ private:
 	// PlayerCameraManager 갱신 — Slomo / HitStop 등 TimeDilation 의 영향을 받지 않도록
 	// FTimer 의 raw delta 를 직접 사용한다. Tick 의 paused / 정상 흐름 양쪽에서 호출.
 	void TickPlayerCamera() const;
+	void ShutdownPhysicsScene();
 
 public:
 

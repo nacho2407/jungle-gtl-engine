@@ -42,7 +42,7 @@ namespace
 		const FName CandidateFName(CandidateName);
 		for (AActor* Actor : World->GetActors())
 		{
-			if (Actor && Actor->GetFName() == CandidateFName)
+			if (IsValid(Actor) && Actor->GetFName() == CandidateFName)
 			{
 				return true;
 			}

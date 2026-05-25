@@ -21,6 +21,13 @@
 #include "Audio/AudioManager.h"
 #include  "Object/GarbageCollection.h"
 #include "Viewport/GameViewportClient.h"
+#include "Materials/MaterialManager.h"
+#include "Animation/AnimationManager.h"
+#include "Animation/Skeleton/SkeletonManager.h"
+#include "Animation/Graph/AnimGraphManager.h"
+#include "Particles/ParticleSystemManager.h"
+#include "CameraShake/CameraShakeManager.h"
+#include "FloatCurve/FloatCurveManager.h"
 
 UEngine* GEngine = nullptr;
 
@@ -101,6 +108,16 @@ void UEngine::Shutdown()
 	FResourceManager::Get().ReleaseGPUResources();
 	UTexture2D::ReleaseAllGPU();
 	FMeshManager::ReleaseAllGPU();
+	FMaterialManager::Get().Release();
+
+	FAnimationManager::Get().ClearCache();
+	FSkeletonManager::Get().ClearCache();
+	FAnimGraphManager::Get().ClearCache();
+	FParticleSystemManager::Get().ClearCache();
+	FCameraShakeManager::Get().ClearCache();
+	FFloatCurveManager::Get().ClearCache();
+	FGarbageCollector::Get().CollectGarbage();
+
 	FMeshBufferManager::Get().Release();
 	Renderer.Release();
 }

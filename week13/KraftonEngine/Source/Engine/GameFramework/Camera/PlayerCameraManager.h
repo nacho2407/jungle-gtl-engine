@@ -188,6 +188,8 @@ private:
 	TArray<UCameraModifier*> ModifierList;
 	UCameraModifier_CameraShake* ShakeModifier = nullptr;  // 빠른 접근용 캐시
 
+    void PruneInvalidReferences();
+
 	// Fade 상태
 	bool bEnableFading = false;
 	bool bHoldFadeWhenFinished = false;

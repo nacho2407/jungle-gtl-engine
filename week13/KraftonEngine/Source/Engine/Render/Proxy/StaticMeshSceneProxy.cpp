@@ -3,6 +3,8 @@
 #include "Mesh/Static/StaticMesh.h"
 #include "Mesh/Static/StaticMeshAsset.h"
 #include "Materials/Material.h"
+#include "Object/GarbageCollection.h"
+#include "Object/Object.h"
 
 #include <algorithm>
 
@@ -38,7 +40,7 @@ FStaticMeshSceneProxy::FStaticMeshSceneProxy(UStaticMeshComponent* InComponent)
 
 UStaticMeshComponent* FStaticMeshSceneProxy::GetStaticMeshComponent() const
 {
-	return static_cast<UStaticMeshComponent*>(GetOwner());
+	return HasValidOwner() ? static_cast<UStaticMeshComponent*>(GetOwner()) : nullptr;
 }
 
 // ============================================================
@@ -49,12 +51,32 @@ void FStaticMeshSceneProxy::UpdateMaterial()
 	RebuildSectionDraws();
 }
 
+void FStaticMeshSceneProxy::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	FPrimitiveSceneProxy::AddReferencedObjects(Collector);
+	for (const FLODDrawData& LOD : LODData)
+	{
+		for (const FMeshSectionDraw& Draw : LOD.SectionDraws)
+		{
+			Collector.AddReferencedObject(Draw.Material);
+		}
+	}
+}
+
 // ============================================================
 // UpdateMesh — 메시 버퍼 + 셰이더 교체 후 SectionDraws 재구축
 // ============================================================
 void FStaticMeshSceneProxy::UpdateMesh()
 {
-	MeshBuffer = GetOwner()->GetMeshBuffer();
+	if (!HasValidOwner())
+	{
+		MeshBuffer = nullptr;
+		SectionDraws.clear();
+		return;
+	}
+
+	UPrimitiveComponent* OwnerComp = GetOwner();
+	MeshBuffer = IsValid(OwnerComp) ? OwnerComp->GetMeshBuffer() : nullptr;
 	RebuildSectionDraws();
 }
 
@@ -83,6 +105,12 @@ void FStaticMeshSceneProxy::UpdateLOD(uint32 LODLevel)
 void FStaticMeshSceneProxy::RebuildSectionDraws()
 {
 	UStaticMeshComponent* SMC = GetStaticMeshComponent();
+	if (!IsValid(SMC))
+	{
+		MeshBuffer = nullptr;
+		SectionDraws.clear();
+		return;
+	}
 	UStaticMesh* Mesh = SMC->GetStaticMesh();
 	if (!Mesh || !Mesh->GetStaticMeshAsset())
 	{

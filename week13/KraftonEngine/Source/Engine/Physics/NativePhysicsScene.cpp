@@ -24,7 +24,7 @@ void FNativePhysicsScene::Shutdown()
 
 void FNativePhysicsScene::RegisterComponent(UPrimitiveComponent* Comp)
 {
-	if (!Comp) return;
+    if (!IsValid(Comp)) return;
 
 	for (UPrimitiveComponent* Existing : RegisteredComponents)
 	{
@@ -38,6 +38,7 @@ void FNativePhysicsScene::RegisterComponent(UPrimitiveComponent* Comp)
 
 void FNativePhysicsScene::RebuildBody(UPrimitiveComponent* Comp)
 {
+    if (!IsValid(Comp)) return;
 	auto It = BodyStates.find(Comp);
 	if (It == BodyStates.end()) return; // 등록 안 됨 — skip
 	// Native는 SimulatePhysics/ObjectType/Response를 매 Tick에서 컴포넌트로부터 직접 읽으므로
@@ -63,10 +64,10 @@ void FNativePhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
 		{
 			UPrimitiveComponent* Other = (PairIt->A == Comp) ? PairIt->B : PairIt->A;
 
-			if (Other->GetGenerateOverlapEvents())
+			if (IsValid(Other) && Other->GetGenerateOverlapEvents())
 			{
-				AActor* CompOwner = Comp->GetOwner();
-				Other->NotifyComponentEndOverlap(Other, CompOwner, Comp, 0);
+				AActor* CompOwner = IsValid(Comp) ? Comp->GetOwner() : nullptr;
+				Other->NotifyComponentEndOverlap(Other, IsValid(CompOwner) ? CompOwner : nullptr, Comp, 0);
 			}
 
 			PairIt = PreviousOverlaps.erase(PairIt);
@@ -106,10 +107,13 @@ void FNativePhysicsScene::Tick(float DeltaTime)
 {
 	if (!World) return;
 
+    PruneInvalidComponents();
+
 	// ── 힘 적분 + 중력: bSimulatePhysics인 컴포넌트에 적용 ──
 	for (UPrimitiveComponent* Comp : RegisteredComponents)
 	{
-		if (!Comp->GetSimulatePhysics()) continue;
+        if (!IsValid(Comp)) continue;
+        if (!Comp->GetSimulatePhysics()) continue;
 
 		FBodyState& State = BodyStates[Comp];
 
@@ -142,6 +146,7 @@ void FNativePhysicsScene::Tick(float DeltaTime)
 			UPrimitiveComponent* A = RegisteredComponents[i];
 			UPrimitiveComponent* B = RegisteredComponents[j];
 
+            if (!IsValid(A) || !IsValid(B)) continue;
 			if (A->GetOwner() == B->GetOwner()) continue;
 
 			ECollisionResponse Resp = UPrimitiveComponent::GetMinResponse(A, B);
@@ -167,17 +172,20 @@ void FNativePhysicsScene::Tick(float DeltaTime)
 				{
 					FVector NormalImpulse = Hit.ImpactNormal * Hit.PenetrationDepth;
 
+					AActor* AOwner = A->GetOwner();
+					AActor* BOwner = B->GetOwner();
+
 					FHitResult HitA = Hit;
 					HitA.HitComponent = B;
-					HitA.HitActor = B->GetOwner();
-					A->NotifyComponentHit(A, B->GetOwner(), B, NormalImpulse, HitA);
+					HitA.HitActor = IsValid(BOwner) ? BOwner : nullptr;
+					A->NotifyComponentHit(A, HitA.HitActor, B, NormalImpulse, HitA);
 
 					FHitResult HitB = Hit;
 					HitB.HitComponent = A;
-					HitB.HitActor = A->GetOwner();
+					HitB.HitActor = IsValid(AOwner) ? AOwner : nullptr;
 					HitB.ImpactNormal = Hit.ImpactNormal * -1.0f;
 					HitB.WorldNormal = Hit.WorldNormal * -1.0f;
-					B->NotifyComponentHit(B, A->GetOwner(), A, NormalImpulse * -1.0f, HitB);
+					B->NotifyComponentHit(B, HitB.HitActor, A, NormalImpulse * -1.0f, HitB);
 				}
 
 				// ── Block 위치 보정 + 속도 보정 ──
@@ -251,38 +259,48 @@ void FNativePhysicsScene::Tick(float DeltaTime)
 	// Begin Overlap
 	for (const FOverlapPair& Pair : CurrentOverlaps)
 	{
+        if (!IsValid(Pair.A) || !IsValid(Pair.B)) continue;
 		if (PreviousOverlaps.find(Pair) == PreviousOverlaps.end())
 		{
 			FHitResult DummyHit;
+			AActor* AOwner = Pair.A->GetOwner();
+			AActor* BOwner = Pair.B->GetOwner();
 
 			if (Pair.A->GetGenerateOverlapEvents())
-				Pair.A->NotifyComponentBeginOverlap(Pair.A, Pair.B->GetOwner(), Pair.B, 0, false, DummyHit);
+				Pair.A->NotifyComponentBeginOverlap(Pair.A, IsValid(BOwner) ? BOwner : nullptr, Pair.B, 0, false, DummyHit);
 
 			if (Pair.B->GetGenerateOverlapEvents())
-				Pair.B->NotifyComponentBeginOverlap(Pair.B, Pair.A->GetOwner(), Pair.A, 0, false, DummyHit);
+				Pair.B->NotifyComponentBeginOverlap(Pair.B, IsValid(AOwner) ? AOwner : nullptr, Pair.A, 0, false, DummyHit);
 		}
 	}
 
 	// End Overlap
 	for (const FOverlapPair& Pair : PreviousOverlaps)
 	{
+		if (!IsValid(Pair.A) || !IsValid(Pair.B)) continue;
 		if (CurrentOverlaps.find(Pair) == CurrentOverlaps.end())
 		{
+			AActor* AOwner = Pair.A->GetOwner();
+			AActor* BOwner = Pair.B->GetOwner();
+
 			if (Pair.A->GetGenerateOverlapEvents())
-				Pair.A->NotifyComponentEndOverlap(Pair.A, Pair.B->GetOwner(), Pair.B, 0);
+				Pair.A->NotifyComponentEndOverlap(Pair.A, IsValid(BOwner) ? BOwner : nullptr, Pair.B, 0);
 
 			if (Pair.B->GetGenerateOverlapEvents())
-				Pair.B->NotifyComponentEndOverlap(Pair.B, Pair.A->GetOwner(), Pair.A, 0);
+				Pair.B->NotifyComponentEndOverlap(Pair.B, IsValid(AOwner) ? AOwner : nullptr, Pair.A, 0);
 		}
 	}
 
 	// End Hit
 	for (const FOverlapPair& Pair : PreviousBlockPairs)
 	{
+		if (!IsValid(Pair.A) || !IsValid(Pair.B)) continue;
 		if (CurrentBlockPairs.find(Pair) == CurrentBlockPairs.end())
 		{
-			Pair.A->NotifyComponentEndHit(Pair.A, Pair.B->GetOwner(), Pair.B);
-			Pair.B->NotifyComponentEndHit(Pair.B, Pair.A->GetOwner(), Pair.A);
+			AActor* AOwner = Pair.A->GetOwner();
+			AActor* BOwner = Pair.B->GetOwner();
+			Pair.A->NotifyComponentEndHit(Pair.A, IsValid(BOwner) ? BOwner : nullptr, Pair.B);
+			Pair.B->NotifyComponentEndHit(Pair.B, IsValid(AOwner) ? AOwner : nullptr, Pair.A);
 		}
 	}
 
@@ -416,8 +434,9 @@ namespace
 
 		for (UPrimitiveComponent* Comp : RegisteredComponents)
 		{
-			if (!Comp) continue;
-			if (IgnoreActor && Comp->GetOwner() == IgnoreActor) continue;
+			if (!IsValid(Comp)) continue;
+			AActor* CompOwner = Comp->GetOwner();
+			if (IgnoreActor && IsValid(CompOwner) && CompOwner == IgnoreActor) continue;
 			if (!AcceptComponent(Comp)) continue;
 
 			FBoundingBox Box = Comp->GetWorldBoundingBox();
@@ -450,7 +469,8 @@ namespace
 			OutHit.bHit = true;
 			OutHit.Distance = tMin;
 			OutHit.HitComponent = Comp;
-			OutHit.HitActor = Comp->GetOwner();
+			AActor* CompOwnerForHit = Comp->GetOwner();
+			OutHit.HitActor = IsValid(CompOwnerForHit) ? CompOwnerForHit : nullptr;
 			OutHit.WorldHitLocation = Start + Dir * tMin;
 		}
 
@@ -482,4 +502,49 @@ bool FNativePhysicsScene::RaycastByObjectTypes(const FVector& Start, const FVect
 			const uint32 Bit = 1u << static_cast<uint32>(Comp->GetCollisionObjectType());
 			return (Bit & ObjectTypeMask) != 0;
 		}, OutHit);
+}
+
+void FNativePhysicsScene::PruneInvalidComponents()
+{
+    auto IsInvalidComponent = [](UPrimitiveComponent* Comp)
+    {
+        return !IsValid(Comp);
+    };
+
+    RegisteredComponents.erase(
+        std::remove_if(RegisteredComponents.begin(), RegisteredComponents.end(), IsInvalidComponent),
+        RegisteredComponents.end()
+    );
+
+    for (auto It = BodyStates.begin(); It != BodyStates.end();)
+    {
+        if (IsInvalidComponent(It->first))
+        {
+            It = BodyStates.erase(It);
+        }
+        else
+        {
+            ++It;
+        }
+    }
+
+    auto PrunePairSet = [&](std::unordered_set<FOverlapPair>& Set)
+    {
+        for (auto It = Set.begin(); It != Set.end();)
+        {
+            if (IsInvalidComponent(It->A) || IsInvalidComponent(It->B))
+            {
+                It = Set.erase(It);
+            }
+            else
+            {
+                ++It;
+            }
+        }
+    };
+
+    PrunePairSet(PreviousOverlaps);
+    PrunePairSet(CurrentOverlaps);
+    PrunePairSet(PreviousBlockPairs);
+    PrunePairSet(CurrentBlockPairs);
 }

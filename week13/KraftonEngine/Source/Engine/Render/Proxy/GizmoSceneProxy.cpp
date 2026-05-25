@@ -4,6 +4,8 @@
 #include "Render/Types/FrameContext.h"
 #include "Materials/Material.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/GarbageCollection.h"
+#include "Object/Object.h"
 
 // ============================================================
 // FGizmoSceneProxy
@@ -40,12 +42,24 @@ UGizmoComponent* FGizmoSceneProxy::GetGizmoComponent() const
 	return static_cast<UGizmoComponent*>(GetOwner());
 }
 
+void FGizmoSceneProxy::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	FPrimitiveSceneProxy::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(GizmoMaterial);
+}
+
 // ============================================================
 // UpdateMesh — 현재 Gizmo 모드에 맞는 메시 버퍼 + 셰이더 캐싱
 // ============================================================
 void FGizmoSceneProxy::UpdateMesh()
 {
 	UGizmoComponent* Gizmo = GetGizmoComponent();
+	if (!IsValid(Gizmo))
+	{
+		MeshBuffer = nullptr;
+		SectionDraws.clear();
+		return;
+	}
 	MeshBuffer = Gizmo->GetMeshBuffer();
 	RebuildGizmoSectionDraws();
 }
@@ -57,7 +71,7 @@ void FGizmoSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
 	UGizmoComponent* Gizmo = GetGizmoComponent();
 
-	if (!Frame.RenderOptions.ShowFlags.bGizmo || !Gizmo->IsVisible())
+	if (!IsValid(Gizmo) || !Frame.RenderOptions.ShowFlags.bGizmo || !Gizmo->IsVisible())
 	{
 		bVisible = false;
 		return;

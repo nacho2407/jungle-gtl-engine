@@ -70,6 +70,7 @@ public:
 
 
     void AddReferencedObjects(FReferenceCollector& Collector) override;
+    void ClearCache();
 private:
     FAnimationManager() = default;
 

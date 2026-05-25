@@ -38,6 +38,45 @@ public:
 };
 
 static FPhysXErrorCallback GPhysXErrorCallback;
+
+namespace
+{
+	bool ResolvePhysXRaycastTarget(const PxRaycastHit& Block, FHitResult& OutHit)
+	{
+		if (Block.shape && Block.shape->userData)
+		{
+			UPrimitiveComponent* HitComponent = static_cast<UPrimitiveComponent*>(Block.shape->userData);
+			if (!IsValid(HitComponent))
+			{
+				return false;
+			}
+
+			OutHit.HitComponent = HitComponent;
+
+			AActor* HitActor = HitComponent->GetOwner();
+			if (IsValid(HitActor))
+			{
+				OutHit.HitActor = HitActor;
+			}
+
+			return true;
+		}
+
+		if (Block.actor && Block.actor->userData)
+		{
+			AActor* HitActor = static_cast<AActor*>(Block.actor->userData);
+			if (!IsValid(HitActor))
+			{
+				return false;
+			}
+
+			OutHit.HitActor = HitActor;
+			return true;
+		}
+
+		return false;
+	}
+}
 static PxDefaultAllocator GPhysXAllocator;
 
 // ============================================================
@@ -48,28 +87,49 @@ static PxFoundation* GSharedFoundation = nullptr;
 static PxPhysics* GSharedPhysics = nullptr;
 static int32 GSharedRefCount = 0;
 
-static void AcquireSharedPhysX(PxFoundation*& OutFoundation, PxPhysics*& OutPhysics)
+static bool AcquireSharedPhysX(PxFoundation*& OutFoundation, PxPhysics*& OutPhysics)
 {
+	OutFoundation = nullptr;
+	OutPhysics = nullptr;
+
 	if (GSharedRefCount == 0)
 	{
 		GSharedFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, GPhysXAllocator, GPhysXErrorCallback);
-		if (GSharedFoundation)
+		if (!GSharedFoundation)
 		{
-			GSharedPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *GSharedFoundation, PxTolerancesScale());
+			UE_LOG("[PhysX] Failed to create shared foundation");
+			return false;
+		}
+
+		GSharedPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *GSharedFoundation, PxTolerancesScale());
+		if (!GSharedPhysics)
+		{
+			UE_LOG("[PhysX] Failed to create shared physics");
+			GSharedFoundation->release();
+			GSharedFoundation = nullptr;
+			return false;
 		}
 	}
+
 	++GSharedRefCount;
 	OutFoundation = GSharedFoundation;
 	OutPhysics = GSharedPhysics;
+	return true;
 }
 
 static void ReleaseSharedPhysX()
 {
-	if (--GSharedRefCount <= 0)
+	if (GSharedRefCount <= 0)
+	{
+		GSharedRefCount = 0;
+		return;
+	}
+
+	--GSharedRefCount;
+	if (GSharedRefCount == 0)
 	{
 		if (GSharedPhysics) { GSharedPhysics->release(); GSharedPhysics = nullptr; }
 		if (GSharedFoundation) { GSharedFoundation->release(); GSharedFoundation = nullptr; }
-		GSharedRefCount = 0;
 	}
 }
 
@@ -226,8 +286,9 @@ public:
 
 		for (FQueuedHit& E : HitsToDispatch)
 		{
-			if (!IsAliveObject(E.Self) || !IsAliveObject(E.Other)) continue;
+			if (!IsValid(E.Self) || !IsValid(E.Other)) continue;
 			AActor* OtherActor = E.Other->GetOwner();
+			if (!IsValid(OtherActor)) continue;
 			if (E.bBegin)
 			{
 				E.Self->NotifyComponentHit(E.Self, OtherActor, E.Other, E.NormalImpulse, E.Hit);
@@ -240,8 +301,9 @@ public:
 
 		for (FQueuedTrigger& E : TriggersToDispatch)
 		{
-			if (!IsAliveObject(E.Self) || !IsAliveObject(E.Other)) continue;
+			if (!IsValid(E.Self) || !IsValid(E.Other)) continue;
 			AActor* OtherActor = E.Other->GetOwner();
+			if (!IsValid(OtherActor)) continue;
 			if (E.bBegin)
 			{
 				FHitResult DummyHit;
@@ -252,6 +314,12 @@ public:
 				E.Self->NotifyComponentEndOverlap(E.Self, OtherActor, E.Other, 0);
 			}
 		}
+	}
+
+	void ClearPendingEvents()
+	{
+		PendingHits.clear();
+		PendingTriggers.clear();
 	}
 
 	void onConstraintBreak(PxConstraintInfo*, PxU32) override {}
@@ -299,7 +367,7 @@ static PxTransform GetPxTransform(UPrimitiveComponent* Comp)
 // UnregisterComponent 끝에서 호출된다.
 static void ApplyRootMassAndCOM(PxRigidDynamic* Dyn, UPrimitiveComponent* Root)
 {
-	if (!Dyn || !Root) return;
+	if (!Dyn || !IsValid(Root)) return;
 	const float MassKg = (Root->GetMass() > 0.0f) ? Root->GetMass() : 1.0f;
 	PxRigidBodyExt::setMassAndUpdateInertia(*Dyn, MassKg);
 	Dyn->setCMassLocalPose(PxTransform(ToPxVec3(Root->GetCenterOfMass())));
@@ -322,7 +390,8 @@ static void SetupFilterData(PxShape* Shape, UPrimitiveComponent* Comp)
 	Filter.word0 = static_cast<PxU32>(Comp->GetCollisionObjectType());
 	Filter.word1 = 0;
 	Filter.word2 = 0;
-	Filter.word3 = Comp->GetOwner() ? Comp->GetOwner()->GetUUID() : 0;
+	AActor* Owner = Comp ? Comp->GetOwner() : nullptr;
+	Filter.word3 = IsValid(Owner) ? Owner->GetUUID() : 0;
 
 	for (int32 Ch = 0; Ch < static_cast<int32>(ECollisionChannel::ActiveCount); ++Ch)
 	{
@@ -399,18 +468,30 @@ static PxFilterFlags KraftonFilterShader(
 
 void FPhysXPhysicsScene::Initialize(UWorld* InWorld)
 {
+	// 재초기화 경로가 들어와도 shared PhysX ref-count가 깨지지 않도록 먼저 정리한다.
+	Shutdown();
+
 	World = InWorld;
+	bShutdownComplete = false;
 
 	// Foundation / Physics — 프로세스 싱글턴 공유
-	AcquireSharedPhysX(Foundation, Physics);
-	if (!Foundation || !Physics)
+	if (!AcquireSharedPhysX(Foundation, Physics))
 	{
 		UE_LOG("[PhysX] Failed to create Foundation or Physics");
+		bShutdownComplete = true;
+		World = nullptr;
 		return;
 	}
+	bSharedPhysXAcquired = true;
 
 	// CPU Dispatcher
 	Dispatcher = PxDefaultCpuDispatcherCreate(2);
+	if (!Dispatcher)
+	{
+		UE_LOG("[PhysX] Failed to create CPU dispatcher");
+		Shutdown();
+		return;
+	}
 
 	// Event callback
 	EventCallback = new FPhysXSimulationCallback();
@@ -426,39 +507,127 @@ void FPhysXPhysicsScene::Initialize(UWorld* InWorld)
 	if (!Scene)
 	{
 		UE_LOG("[PhysX] Failed to create Scene");
+		Shutdown();
 		return;
 	}
 
 	// Default material (static friction, dynamic friction, restitution)
 	DefaultMaterial = Physics->createMaterial(0.5f, 0.5f, 0.3f);
+	if (!DefaultMaterial)
+	{
+		UE_LOG("[PhysX] Failed to create default material");
+		Shutdown();
+		return;
+	}
 
 	UE_LOG("[PhysX] Initialized successfully (Scene=%p)", Scene);
 }
 
 void FPhysXPhysicsScene::Shutdown()
 {
-	// Body 정리
-	for (auto& Mapping : BodyMappings)
+	if (bShutdownComplete)
 	{
-		if (Mapping.Actor)
-		{
-			Mapping.Actor->release();
-			Mapping.Actor = nullptr;
-		}
+		return;
 	}
-	BodyMappings.clear();
+	bShutdownComplete = true;
 
-	if (DefaultMaterial) { DefaultMaterial->release(); DefaultMaterial = nullptr; }
-	if (Scene) { Scene->release(); Scene = nullptr; }
-	if (EventCallback) { delete EventCallback; EventCallback = nullptr; }
-	if (Dispatcher) { Dispatcher->release(); Dispatcher = nullptr; }
+	if (EventCallback)
+	{
+		EventCallback->ClearPendingEvents();
+	}
 
-	// Foundation/Physics는 공유 싱글턴 — release 카운트 감소만
+	if (Scene)
+	{
+		Scene->setSimulationEventCallback(nullptr);
+	}
+
+	ReleaseBodyMappings();
+
+	if (Scene)
+	{
+		Scene->release();
+		Scene = nullptr;
+	}
+
+	if (DefaultMaterial)
+	{
+		DefaultMaterial->release();
+		DefaultMaterial = nullptr;
+	}
+
+	if (EventCallback)
+	{
+		delete EventCallback;
+		EventCallback = nullptr;
+	}
+
+	if (Dispatcher)
+	{
+		Dispatcher->release();
+		Dispatcher = nullptr;
+	}
+
 	Foundation = nullptr;
 	Physics = nullptr;
-	ReleaseSharedPhysX();
-
 	World = nullptr;
+
+	if (bSharedPhysXAcquired)
+	{
+		bSharedPhysXAcquired = false;
+		ReleaseSharedPhysX();
+	}
+}
+
+void FPhysXPhysicsScene::ClearPhysXActorUserData(PxRigidActor* Actor) const
+{
+	if (!Actor)
+	{
+		return;
+	}
+
+	Actor->userData = nullptr;
+
+	const PxU32 NumShapes = Actor->getNbShapes();
+	if (NumShapes == 0)
+	{
+		return;
+	}
+
+	std::vector<PxShape*> Shapes(NumShapes);
+	Actor->getShapes(Shapes.data(), NumShapes);
+	for (PxShape* Shape : Shapes)
+	{
+		if (Shape)
+		{
+			Shape->userData = nullptr;
+		}
+	}
+}
+
+void FPhysXPhysicsScene::ReleaseBodyMappings()
+{
+	for (FBodyMapping& Mapping : BodyMappings)
+	{
+		PxRigidActor* Actor = Mapping.Actor;
+		Mapping.OwnerActor = nullptr;
+		Mapping.RootComp = nullptr;
+		Mapping.Components.clear();
+		Mapping.Actor = nullptr;
+
+		if (!Actor)
+		{
+			continue;
+		}
+
+		ClearPhysXActorUserData(Actor);
+		if (Scene)
+		{
+			Scene->removeActor(*Actor);
+		}
+		Actor->release();
+	}
+
+	BodyMappings.clear();
 }
 
 // ============================================================
@@ -471,18 +640,18 @@ void FPhysXPhysicsScene::Shutdown()
 
 void FPhysXPhysicsScene::RegisterComponent(UPrimitiveComponent* Comp)
 {
-	if (!Comp || !Scene || !Physics || !DefaultMaterial) return;
+	if (!IsValid(Comp) || !Scene || !Physics || !DefaultMaterial) return;
 	if (FindMappingByComponent(Comp)) return; // 이미 등록됨
 
 	AActor* OwnerActor = Comp->GetOwner();
-	if (!OwnerActor) return;
+	if (!IsValid(OwnerActor)) return;
 
 	FBodyMapping* Mapping = FindMappingByActor(OwnerActor);
 
 	if (!Mapping)
 	{
 		UPrimitiveComponent* RootPrim = Cast<UPrimitiveComponent>(OwnerActor->GetRootComponent());
-		if (!RootPrim) RootPrim = Comp;
+		if (!IsValid(RootPrim)) RootPrim = Comp;
 
 		const bool bDynamic = RootPrim->GetSimulatePhysics();
 		PxTransform BodyXf = GetPxTransform(RootPrim);
@@ -509,15 +678,18 @@ void FPhysXPhysicsScene::RegisterComponent(UPrimitiveComponent* Comp)
 	Mapping->Components.push_back(Comp);
 
 	// Dynamic이면 RootComp의 Mass / CenterOfMass로 갱신 (shape 추가될 때마다 inertia 재계산).
-	if (PxRigidDynamic* Dyn = Mapping->Actor->is<PxRigidDynamic>())
+	if (Mapping->Actor && IsValid(Mapping->RootComp))
 	{
-		ApplyRootMassAndCOM(Dyn, Mapping->RootComp);
+		if (PxRigidDynamic* Dyn = Mapping->Actor->is<PxRigidDynamic>())
+		{
+			ApplyRootMassAndCOM(Dyn, Mapping->RootComp);
+		}
 	}
 }
 
 void FPhysXPhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
 {
-	if (!Comp || !Scene) return;
+	if (!IsValid(Comp) || !Scene) return;
 
 	FBodyMapping* Mapping = FindMappingByComponent(Comp);
 	if (!Mapping) return;
@@ -535,9 +707,14 @@ void FPhysXPhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
 	{
 		if (Mapping->Actor)
 		{
+			ClearPhysXActorUserData(Mapping->Actor);
 			Scene->removeActor(*Mapping->Actor);
 			Mapping->Actor->release();
 		}
+
+		Mapping->OwnerActor = nullptr;
+		Mapping->RootComp = nullptr;
+		Mapping->Actor = nullptr;
 
 		// swap-and-pop
 		*Mapping = BodyMappings.back();
@@ -546,9 +723,12 @@ void FPhysXPhysicsScene::UnregisterComponent(UPrimitiveComponent* Comp)
 	}
 
 	// 남은 shape가 있으면 mass/inertia 재계산
-	if (PxRigidDynamic* Dyn = Mapping->Actor->is<PxRigidDynamic>())
+	if (Mapping->Actor && IsValid(Mapping->RootComp))
 	{
-		ApplyRootMassAndCOM(Dyn, Mapping->RootComp);
+		if (PxRigidDynamic* Dyn = Mapping->Actor->is<PxRigidDynamic>())
+		{
+			ApplyRootMassAndCOM(Dyn, Mapping->RootComp);
+		}
 	}
 }
 
@@ -557,10 +737,10 @@ void FPhysXPhysicsScene::RebuildBody(UPrimitiveComponent* Comp)
 	// SimulatePhysics 변경(Dynamic ↔ Static)은 PxActor type 변경이라 actor를 통째 재생성해야 한다.
 	// 또한 ObjectType/Response 변경은 shape filterData도 새로 계산해야 정확.
 	// 단순화 위해 같은 액터의 모든 컴포넌트를 unregister + register로 일괄 재구성.
-	if (!Comp || !Scene) return;
+	if (!IsValid(Comp) || !Scene) return;
 
 	AActor* OwnerActor = Comp->GetOwner();
-	if (!OwnerActor) return;
+	if (!IsValid(OwnerActor)) return;
 
 	FBodyMapping* Mapping = FindMappingByActor(OwnerActor);
 	if (!Mapping) return; // 등록 안 됨 — skip
@@ -584,7 +764,7 @@ void FPhysXPhysicsScene::RebuildBody(UPrimitiveComponent* Comp)
 
 void FPhysXPhysicsScene::Tick(float DeltaTime)
 {
-	if (!Scene || DeltaTime <= 0.0f) return;
+	if (bShutdownComplete || !Scene || DeltaTime <= 0.0f) return;
 
 	// 어떤 이유로든 frame hitch (씬 로드 / 큰 OBJ 동기 로딩 / Alt-Tab / OS 스파이크) 가
 	// 발생해도 PhysX 가 큰 dt 한 번에 적분해 차량·메테오가 콜리전을 뚫는 tunneling 사고를
@@ -613,7 +793,7 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 
 	for (auto& Mapping : BodyMappings)
 	{
-		if (!Mapping.RootComp || !Mapping.Actor) continue;
+		if (!IsValid(Mapping.RootComp) || !Mapping.Actor) continue;
 
 		PxTransform NewPose = GetPxTransform(Mapping.RootComp);
 
@@ -653,7 +833,7 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 	// RootComp에만 transform 적용 → 자식 컴포넌트는 attach로 자동 따라감.
 	for (auto& Mapping : BodyMappings)
 	{
-		if (!Mapping.RootComp || !Mapping.Actor) continue;
+		if (!IsValid(Mapping.RootComp) || !Mapping.Actor) continue;
 
 		PxRigidDynamic* Dynamic = Mapping.Actor->is<PxRigidDynamic>();
 		if (!Dynamic) continue;
@@ -684,7 +864,7 @@ void FPhysXPhysicsScene::Tick(float DeltaTime)
 
 PxShape* FPhysXPhysicsScene::AddShapeForComponent(FBodyMapping& Mapping, UPrimitiveComponent* Comp)
 {
-	if (!Mapping.Actor || !DefaultMaterial || !Comp) return nullptr;
+	if (!Mapping.Actor || !DefaultMaterial || !IsValid(Comp)) return nullptr;
 
 	// Shape Component 타입에 따라 PxGeometry 결정
 	PxGeometryHolder Geom;
@@ -721,7 +901,7 @@ PxShape* FPhysXPhysicsScene::AddShapeForComponent(FBodyMapping& Mapping, UPrimit
 	// Local pose: Comp의 RootComp 대비 상대 transform.
 	// Compound shape에서 자식 컴포넌트가 부모(=PxActor 기준)에 정확히 박혀있도록.
 	PxTransform LocalPose = PxTransform(PxIdentity);
-	if (Comp != Mapping.RootComp && Mapping.RootComp)
+	if (Comp != Mapping.RootComp && IsValid(Mapping.RootComp))
 	{
 		FVector RootPos = Mapping.RootComp->GetWorldLocation();
 		FQuat RootRot = Mapping.RootComp->GetWorldMatrix().ToQuat();
@@ -792,6 +972,7 @@ void FPhysXPhysicsScene::DetachShapeForComponent(FBodyMapping& Mapping, UPrimiti
 	{
 		if (Shape && Shape->userData == Comp)
 		{
+			Shape->userData = nullptr;
 			Mapping.Actor->detachShape(*Shape);
 			break;
 		}
@@ -1021,21 +1202,16 @@ bool FPhysXPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float
 	if (!bStatus || !Hit.hasBlock) return false;
 
 	const PxRaycastHit& Block = Hit.block;
+	if (!ResolvePhysXRaycastTarget(Block, OutHit))
+	{
+		return false;
+	}
+
 	OutHit.bHit = true;
 	OutHit.Distance = Block.distance;
 	OutHit.WorldHitLocation = ToFVector(Block.position);
 	OutHit.ImpactNormal = ToFVector(Block.normal);
 	OutHit.WorldNormal = OutHit.ImpactNormal;
-
-	if (Block.shape && Block.shape->userData)
-	{
-		OutHit.HitComponent = static_cast<UPrimitiveComponent*>(Block.shape->userData);
-		OutHit.HitActor = OutHit.HitComponent->GetOwner();
-	}
-	else if (Block.actor && Block.actor->userData)
-	{
-		OutHit.HitActor = static_cast<AActor*>(Block.actor->userData);
-	}
 
 	return true;
 }
@@ -1092,21 +1268,16 @@ bool FPhysXPhysicsScene::RaycastByObjectTypes(const FVector& Start, const FVecto
 	if (!bStatus || !Hit.hasBlock) return false;
 
 	const PxRaycastHit& Block = Hit.block;
+	if (!ResolvePhysXRaycastTarget(Block, OutHit))
+	{
+		return false;
+	}
+
 	OutHit.bHit = true;
 	OutHit.Distance = Block.distance;
 	OutHit.WorldHitLocation = ToFVector(Block.position);
 	OutHit.ImpactNormal = ToFVector(Block.normal);
 	OutHit.WorldNormal = OutHit.ImpactNormal;
-
-	if (Block.shape && Block.shape->userData)
-	{
-		OutHit.HitComponent = static_cast<UPrimitiveComponent*>(Block.shape->userData);
-		OutHit.HitActor = OutHit.HitComponent->GetOwner();
-	}
-	else if (Block.actor && Block.actor->userData)
-	{
-		OutHit.HitActor = static_cast<AActor*>(Block.actor->userData);
-	}
 
 	return true;
 }

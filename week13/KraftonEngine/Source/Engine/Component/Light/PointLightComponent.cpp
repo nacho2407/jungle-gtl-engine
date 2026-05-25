@@ -39,8 +39,8 @@ void UPointLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 
 void UPointLightComponent::PushToScene()
 {
-	if (!Owner) return;
-	UWorld* World = Owner->GetWorld();
+	if (!IsValid(Owner)) return;
+	UWorld* World = GetWorld();
 	if (!World) return;
 
 	FPointLightParams Params;
@@ -63,8 +63,7 @@ void UPointLightComponent::PushToScene()
 
 void UPointLightComponent::DestroyFromScene()
 {
-	if (!Owner) return;
-	UWorld* World = Owner->GetWorld();
+	UWorld* World = GetWorld();
 	if (!World) return;
 	World->GetScene().GetEnvironment().RemovePointLight(this);
 }

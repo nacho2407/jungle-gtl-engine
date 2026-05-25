@@ -27,6 +27,7 @@ public:
 
 
     void AddReferencedObjects(FReferenceCollector& Collector) override;
+    void ClearCache();
 private:
     TMap<FString, UParticleSystem*> LoadedParticleSystems;
     TArray<FAssetListItem>          AvailableParticleSystemFiles;

@@ -45,6 +45,7 @@ public:
 
 
     void AddReferencedObjects(FReferenceCollector& Collector) override;
+    void ClearCache();
 private:
     FSkeletonManager() = default;
 

@@ -1,6 +1,8 @@
 #include "AnimGraphAsset.h"
 
 #include "Serialization/Archive.h"
+#include "Animation/Sequence/AnimSequenceBase.h"
+#include "Object/GarbageCollection.h"
 
 #include <algorithm>
 
@@ -383,4 +385,14 @@ void UAnimGraphAsset::Serialize(FArchive& Ar)
 	Ar << Nodes;
 	Ar << Links;
 	Ar << OwnerClassName;
+}
+
+void UAnimGraphAsset::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+
+    for (FAnimGraphNode& Node : Nodes)
+    {
+        Collector.AddReferencedObject(Node.SequenceRef);
+    }
 }

@@ -467,6 +467,14 @@ def normalize_cpp_type(cpp_type: str) -> str:
     cpp_type = " ".join(cpp_type.replace("\n", " ").split())
     cpp_type = cpp_type.replace(" *", "*").replace(" &", "&")
     cpp_type = re.sub(r"\b(const|mutable|volatile)\b", "", cpp_type)
+
+    # Support C++ elaborated type specifiers in reflected declarations:
+    #   struct FRawDistributionVector StartVelocity;
+    #   class UCameraComponent* ActiveCamera;
+    #   enum ESomeEnum Value;
+    # Reflection registration needs the actual type name, not the elaborated keyword.
+    cpp_type = re.sub(r"^(class|struct|enum)\s+(?=[A-Za-z_])", "", cpp_type)
+
     return " ".join(cpp_type.split()).strip()
 
 
@@ -888,7 +896,13 @@ def parse_member_declaration(declaration: str) -> tuple[str, str] | None:
     declaration = declaration.split(":", 1)[0].strip()
 
     match = re.match(
-        r"(?P<type>[A-Za-z_][A-Za-z0-9_:]*(?:\s*<[^;=(){}]+>)?(?:\s*[*&])?)\s+"
+        r"(?P<type>"
+        r"(?:(?:const|volatile)\s+)*"
+        r"(?:(?:class|struct|enum)\s+)?"
+        r"[A-Za-z_][A-Za-z0-9_:]*"
+        r"(?:\s*<[^;=(){}]+>)?"
+        r"(?:\s*[*&])?"
+        r")\s+"
         r"(?P<name>[A-Za-z_][A-Za-z0-9_]*)$",
         declaration,
     )
@@ -2457,6 +2471,34 @@ def run_self_tests() -> int:
     check("cpp_float_literal('M_PI')", cpp_float_literal("M_PI"), "M_PI")
     check("cpp_float_literal('FMath::PI')", cpp_float_literal("FMath::PI"), "FMath::PI")
     check("cpp_float_literal(' 2 ')", cpp_float_literal(" 2 "), "2.0f")
+
+
+    # parse_member_declaration / normalize_cpp_type — elaborated type specifiers must not break UPROPERTY.
+    check(
+        "parse_member_declaration('struct FRawDistributionVector StartVelocity')",
+        parse_member_declaration("struct FRawDistributionVector StartVelocity"),
+        ("FRawDistributionVector", "StartVelocity"),
+    )
+    check(
+        "parse_member_declaration('struct FRawDistributionFloat StartVelocityRadial')",
+        parse_member_declaration("struct FRawDistributionFloat StartVelocityRadial"),
+        ("FRawDistributionFloat", "StartVelocityRadial"),
+    )
+    check(
+        "parse_member_declaration('class UCameraComponent* ActiveCamera')",
+        parse_member_declaration("class UCameraComponent* ActiveCamera"),
+        ("UCameraComponent*", "ActiveCamera"),
+    )
+    check(
+        "normalize_cpp_type('struct FRawDistributionFloat')",
+        normalize_cpp_type("struct FRawDistributionFloat"),
+        "FRawDistributionFloat",
+    )
+    check(
+        "get_array_element_cpp_type('TArray<struct FRawDistributionFloat>')",
+        get_array_element_cpp_type("TArray<struct FRawDistributionFloat>"),
+        "FRawDistributionFloat",
+    )
 
     # get_array_element_property_type — TArray<float> must report Float, not Struct.
     def array_prop(cpp_type: str, struct_type: str = "nullptr", metadata: tuple = ()) -> ReflectedProperty:

@@ -23,6 +23,7 @@ public:
 
 	// E.2/1: BeginPlay 에서 World->GetCameraManager() 캐싱. E.3 에서 직접 SpawnActor 로 전환 예정.
 	void BeginPlay() override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	// Pawn을 점유한다. 이미 다른 Pawn을 점유 중이면 먼저 해제.
 	void Possess(APawn* Pawn);

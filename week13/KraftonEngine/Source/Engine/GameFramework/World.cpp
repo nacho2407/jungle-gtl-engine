@@ -79,7 +79,10 @@ void UWorld::DestroyActor(AActor* Actor)
     }
 
     Actor->EndPlay();
-    PersistentLevel->RemoveActor(Actor);
+    if (PersistentLevel)
+    {
+        PersistentLevel->RemoveActor(Actor);
+    }
 
     MarkWorldPrimitivePickingBVHDirty();
     Partition.RemoveActor(Actor);
@@ -91,6 +94,8 @@ void UWorld::DestroyActor(AActor* Actor)
 AActor* UWorld::SpawnActorByClass(UClass* Class)
 {
 	if (!Class) return nullptr;
+
+	if (!PersistentLevel) return nullptr;
 
 	UObject* Created = FObjectFactory::Get().Create(Class->GetName(), PersistentLevel);
 	AActor* Actor = Cast<AActor>(Created);
@@ -135,6 +140,11 @@ bool UWorld::GetActivePOV(FMinimalViewInfo& OutPOV) const
 void UWorld::AddActor(AActor* Actor)
 {
 	if (!Actor)
+	{
+		return;
+	}
+
+	if (!PersistentLevel)
 	{
 		return;
 	}
@@ -191,14 +201,14 @@ void UWorld::WarmupPickingData() const
 {
 	for (AActor* Actor : GetActors())
 	{
-		if (!Actor || !Actor->IsVisible())
+		if (!IsValid(Actor) || !Actor->IsVisible())
 		{
 			continue;
 		}
 
 		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 		{
-			if (!Primitive || !Primitive->IsVisible() || !Primitive->IsA<UStaticMeshComponent>())
+			if (!IsValid(Primitive) || !Primitive->IsVisible() || !Primitive->IsA<UStaticMeshComponent>())
 			{
 				continue;
 			}
@@ -261,6 +271,15 @@ void UWorld::AddReferencedObjects(FReferenceCollector& Collector)
     Collector.AddReferencedObject(GameMode);
 }
 
+void UWorld::ShutdownPhysicsScene()
+{
+    if (PhysicsScene)
+    {
+        PhysicsScene->Shutdown();
+        PhysicsScene.reset();
+    }
+}
+
 void UWorld::BeginDestroy()
 {
     if (HasAnyFlags(RF_BeginDestroy))
@@ -272,11 +291,7 @@ void UWorld::BeginDestroy()
 
     EndPlay();
 
-    if (PhysicsScene)
-    {
-        PhysicsScene->Shutdown();
-        PhysicsScene.reset();
-    }
+    ShutdownPhysicsScene();
 
     Partition.Reset(FBoundingBox());
 
@@ -434,11 +449,10 @@ void UWorld::EndPlay()
 
 	PersistentLevel->EndPlay();
 
-	// 물리 시스템 정리 — 액터/컴포넌트가 아직 살아있는 동안 해제
-	if (PhysicsScene)
-	{
-		PhysicsScene->Shutdown();
-	}
+	// 물리 시스템 정리 — 액터/컴포넌트가 아직 살아있는 동안 해제.
+	// EndPlay 이후 DestroyObject(World) → BeginDestroy가 다시 들어와도 double-shutdown이
+	// shared PhysX ref-count를 망가뜨리지 않도록 여기서 unique_ptr까지 비운다.
+	ShutdownPhysicsScene();
 
 	// Clear spatial partition while actors/components are still alive.
 	// Otherwise Octree teardown can dereference stale primitive pointers during shutdown.

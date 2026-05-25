@@ -35,6 +35,17 @@ void FObjectProperty::SetObjectValueFromValuePtr(void* ValuePtr, UObject* Object
 	}
 }
 
+void FObjectProperty::AddReferencedObjects(void* ValuePtr, FReferenceCollector& Collector) const
+{
+    if (!ValuePtr)
+    {
+        return;
+    }
+
+    UObject* Object = GetObjectValueFromValuePtr(ValuePtr);
+    Collector.AddReferencedObject(Object);
+}
+
 void FObjectProperty::SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const
 {
 	if ((Flags & PF_InstancedReference) == 0)

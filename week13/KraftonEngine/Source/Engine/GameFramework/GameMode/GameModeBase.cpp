@@ -4,6 +4,7 @@
 #include "GameFramework/Pawn/Pawn.h"
 #include "GameFramework/World.h"
 #include "Object/Reflection/UClass.h"
+#include "Object/GarbageCollection.h"
 #include "Core/Logging/Log.h"
 #include "Core/ProjectSettings.h"
 
@@ -32,6 +33,14 @@ void AGameModeBase::EndPlay()
 	GameState = nullptr;
 	PlayerController = nullptr;
 	AActor::EndPlay();
+}
+
+void AGameModeBase::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	AActor::AddReferencedObjects(Collector);
+
+	Collector.AddReferencedObject(GameState);
+	Collector.AddReferencedObject(PlayerController);
 }
 
 void AGameModeBase::StartMatch()
@@ -77,16 +86,16 @@ UClass* AGameModeBase::ResolveClassFromProjectSettings(UClass* InDefault)
 
 void AGameModeBase::AutoPossessFirstPawn()
 {
-	if (!PlayerController) return;
+	if (!IsValid(PlayerController)) return;
 
 	UWorld* World = GetWorld();
 	if (!World) return;
 
 	for (AActor* Actor : World->GetActors())
 	{
-		if (!Actor) continue;
+		if (!IsValid(Actor)) continue;
 		APawn* Pawn = Cast<APawn>(Actor);
-		if (!Pawn) continue;
+		if (!IsValid(Pawn)) continue;
 		if (!Pawn->GetAutoPossessPlayer()) continue;
 
 		PlayerController->Possess(Pawn);

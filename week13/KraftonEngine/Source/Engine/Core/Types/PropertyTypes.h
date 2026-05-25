@@ -5,6 +5,7 @@
 #include <cstring>
 #include <string>
 #include "Core/Types/CoreTypes.h"
+#include "Object/GarbageCollection.h"
 
 class FArchive;
 class UStruct;
@@ -268,6 +269,8 @@ struct FProperty
 	virtual const FSoftObjectProperty* AsSoftObjectProperty() const { return nullptr; }
 	virtual const FStructProperty* AsStructProperty() const { return nullptr; }
 	virtual const FArrayProperty* AsArrayProperty() const { return nullptr; }
+
+    virtual void AddReferencedObjects(void* ValuePtr, FReferenceCollector& Collector) const {}
 
 	virtual void	   Serialize(void* Container, FArchive& Ar) const;
 	virtual void	   SerializeValue(void* ValuePtr, FArchive& Ar) const = 0;

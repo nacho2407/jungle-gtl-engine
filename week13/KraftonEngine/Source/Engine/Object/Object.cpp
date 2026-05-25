@@ -4,89 +4,7 @@
 #include "Serialization/DuplicateArchive.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Object/GarbageCollection.h"
-#include "Core/Property/ObjectProperty.h"
-#include "Core/Property/ArrayProperty.h"
-#include "Core/Property/StructProperty.h"
 #include "GameFramework/WorldContext.h"
-
-namespace
-{
-    void CollectObjectReferencesFromProperty(FReferenceCollector& Collector, const FProperty& Property, void* ValuePtr)
-    {
-        if (!ValuePtr)
-        {
-            return;
-        }
-
-        switch (Property.GetType())
-        {
-        case EPropertyType::ObjectRef:
-        {
-            const FObjectProperty* ObjectProperty = Property.AsObjectProperty();
-            if (!ObjectProperty)
-            {
-                return;
-            }
-
-            UObject* ReferencedObject = ObjectProperty->GetObjectValueFromValuePtr(ValuePtr);
-            Collector.AddReferencedObject(ReferencedObject);
-            break;
-        }
-        case EPropertyType::Array:
-        {
-            const FArrayProperty* ArrayProperty = Property.AsArrayProperty();
-            if (!ArrayProperty)
-            {
-                return;
-            }
-
-            const FArrayProperty::FArrayOps* Ops           = ArrayProperty->GetArrayOps();
-            const FProperty*                 InnerProperty = ArrayProperty->GetInnerProperty();
-
-            if (!Ops || !Ops->GetNum || !Ops->GetElementPtr || !InnerProperty)
-            {
-                return;
-            }
-
-            const size_t Num = Ops->GetNum(ValuePtr);
-            for (size_t Index = 0; Index < Num; ++Index)
-            {
-                void* ElementPtr = Ops->GetElementPtr(ValuePtr, Index);
-                CollectObjectReferencesFromProperty(Collector, *InnerProperty, ElementPtr);
-            }
-            break;
-        }
-
-        case EPropertyType::Struct:
-        {
-            const FStructProperty* StructProperty = Property.AsStructProperty();
-            UStruct*               StructType     = StructProperty ? StructProperty->GetStructType() : nullptr;
-            if (!StructProperty || !StructType)
-            {
-                return;
-            }
-
-            TArray<const FProperty*> Children;
-            StructType->GetPropertyRefs(Children);
-
-            for (const FProperty* Child : Children)
-            {
-                if (!Child)
-                {
-                    continue;
-                }
-
-                void* ChildValuePtr = Child->GetValuePtrFor(ValuePtr);
-                CollectObjectReferencesFromProperty(Collector, *Child, ChildValuePtr);
-            }
-            break;
-        }
-        case EPropertyType::SoftObjectRef:
-        case EPropertyType::ClassRef: default:
-            break;
-        }
-    }
-}
 
 TArray<UObject*> GUObjectArray;
 TSet<UObject*>   GUObjectSet;
@@ -275,16 +193,14 @@ void UObject::AddReferencedObjects(FReferenceCollector& Collector)
 {
     TArray<const FProperty*> Properties;
     GetClass()->GetPropertyRefs(Properties);
-
+    
     for (const FProperty* Property : Properties)
     {
         if (!Property)
         {
             continue;
         }
-
-        void* ValuePtr = Property->GetValuePtrFor(this);
-        CollectObjectReferencesFromProperty(Collector, *Property, ValuePtr);
+        Property->AddReferencedObjects(Property->GetValuePtrFor(this), Collector);
     }
 }
 

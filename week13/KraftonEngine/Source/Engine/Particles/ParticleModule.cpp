@@ -4,7 +4,8 @@
 
 const FTransform& UParticleModule::FContext::GetTransform() const
 {
-	return FTransform();
+	static const FTransform IdentityTransform;
+	return IdentityTransform;
 }
 
 UObject* UParticleModule::FContext::GetDistributionData() const

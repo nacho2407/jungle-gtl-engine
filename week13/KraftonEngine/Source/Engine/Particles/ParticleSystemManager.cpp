@@ -19,6 +19,12 @@ void FParticleSystemManager::AddReferencedObjects(FReferenceCollector& Collector
     }
 }
 
+void FParticleSystemManager::ClearCache()
+{
+    LoadedParticleSystems.clear();
+    AvailableParticleSystemFiles.clear();
+}
+
 UParticleSystem* FParticleSystemManager::Load(const FString& Path)
 {
     const FString NormalizedPath = FPaths::MakeProjectRelative(Path);

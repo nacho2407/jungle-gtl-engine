@@ -1,6 +1,15 @@
 #include "Render/Scene/SceneEnvironment.h"
 #include <algorithm>
 
+void FSceneEnvironment::Clear()
+{
+	Fogs.clear();
+	AmbientLights.clear();
+	DirectionalLights.clear();
+	PointLights.clear();
+	SpotLights.clear();
+}
+
 // ============================================================
 // Fog
 // ============================================================

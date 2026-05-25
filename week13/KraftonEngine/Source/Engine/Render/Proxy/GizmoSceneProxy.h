@@ -19,6 +19,7 @@ public:
 
 	void UpdateMesh() override;
 	void UpdatePerViewport(const FFrameContext& Frame) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
 	UGizmoComponent* GetGizmoComponent() const;

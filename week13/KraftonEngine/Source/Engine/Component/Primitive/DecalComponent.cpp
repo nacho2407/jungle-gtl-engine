@@ -163,7 +163,7 @@ void UDecalComponent::UpdateReceivers()
 
 	UpdateDecalVolumeFromTransform();
 
-	UWorld* World = GetOwner() ? GetOwner()->GetWorld() : nullptr;
+	UWorld* World = GetWorld();
 	if (!World)
 	{
 		return;
@@ -209,7 +209,7 @@ void UDecalComponent::UpdateReceivers()
 
 UBillboardComponent* UDecalComponent::EnsureEditorBillboard()
 {
-	if (!Owner)
+	if (!IsValid(Owner))
 	{
 		return nullptr;
 	}

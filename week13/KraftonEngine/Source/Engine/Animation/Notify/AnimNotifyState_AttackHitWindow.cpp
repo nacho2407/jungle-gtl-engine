@@ -1,4 +1,4 @@
-﻿#include "AnimNotifyState_AttackHitWindow.h"
+#include "AnimNotifyState_AttackHitWindow.h"
 
 #include "Component/Input/ActionComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -11,6 +11,7 @@
 #include "GameFramework/World.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
+#include "Object/Object.h"
 
 #include <cfloat>
 
@@ -18,7 +19,7 @@ namespace
 {
 	int32 FindBoneIndex(USkeletalMeshComponent* MeshComp, const FString& BoneName)
 	{
-		if (!MeshComp || BoneName.empty()) return -1;
+		if (!IsValid(MeshComp) || BoneName.empty()) return -1;
 
 		USkeletalMesh* Mesh = MeshComp->GetSkeletalMesh();
 		FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
@@ -37,7 +38,7 @@ namespace
 
 	FVector MakeActorLocalOffset(AActor* Actor, const FVector& LocalOffset)
 	{
-		if (!Actor) return LocalOffset;
+		if (!IsValid(Actor)) return LocalOffset;
 
 		return Actor->GetActorForward() * LocalOffset.X
 			+ Actor->GetActorRight() * LocalOffset.Y
@@ -53,7 +54,7 @@ namespace
 			return MeshComp->GetBoneLocationByIndex(BoneIndex) + WorldOffset;
 		}
 
-		return Owner ? Owner->GetActorLocation() + WorldOffset : WorldOffset;
+		return IsValid(Owner) ? Owner->GetActorLocation() + WorldOffset : WorldOffset;
 	}
 
 	float DistanceSquaredPointAABB(const FVector& Point, const FBoundingBox& Box)
@@ -76,7 +77,7 @@ namespace
 
 	UActionComponent* GetOrCreateActionComponent(AActor* Actor, bool bAutoAdd)
 	{
-		if (!Actor) return nullptr;
+		if (!IsValid(Actor)) return nullptr;
 
 		if (UActionComponent* Existing = Actor->GetComponentByClass<UActionComponent>())
 		{
@@ -102,7 +103,7 @@ namespace
 			return FVector::UpVector;
 		case EAttackKnockbackMode::AwayFromAttacker:
 		{
-			if (!Attacker || !Target) return FVector::ForwardVector;
+			if (!IsValid(Attacker) || !IsValid(Target)) return FVector::ForwardVector;
 			FVector Delta = Target->GetActorLocation() - Attacker->GetActorLocation();
 			Delta.Z = 0.0f; // 수평 성분만 — 높낮이 차이로 위/아래로 날아가는 일 방지.
 			if (Delta.IsNearlyZero()) return Attacker->GetActorForward();
@@ -110,14 +111,14 @@ namespace
 		}
 		case EAttackKnockbackMode::Forward:
 		default:
-			return Attacker ? Attacker->GetActorForward() : FVector::ForwardVector;
+			return IsValid(Attacker) ? Attacker->GetActorForward() : FVector::ForwardVector;
 		}
 	}
 
 	void ApplyKnockback(AActor* Attacker, AActor* Target, EAttackKnockbackMode Mode,
 		float Distance, float Duration, bool bAutoAddActionComponent)
 	{
-		if (Distance <= 0.0f || !Target) return;
+		if (Distance <= 0.0f || !IsValid(Target)) return;
 
 		UActionComponent* Action = GetOrCreateActionComponent(Target, bAutoAddActionComponent);
 		if (!Action) return;
@@ -129,7 +130,7 @@ namespace
 
 void UAnimNotifyState_AttackHitWindow::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* /*Anim*/, float /*TotalDuration*/)
 {
-	if (!MeshComp)
+	if (!IsValid(MeshComp))
 	{
 		return;
 	}
@@ -141,14 +142,14 @@ void UAnimNotifyState_AttackHitWindow::NotifyBegin(USkeletalMeshComponent* MeshC
 
 void UAnimNotifyState_AttackHitWindow::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* /*Anim*/, float /*FrameDeltaTime*/)
 {
-	if (!MeshComp || Radius <= 0.0f)
+	if (!IsValid(MeshComp) || Radius <= 0.0f)
 	{
 		return;
 	}
 
 	AActor* Owner = MeshComp->GetOwner();
 	UWorld* World = MeshComp->GetWorld();
-	if (!Owner || !World)
+	if (!IsValid(Owner) || !World)
 	{
 		return;
 	}
@@ -164,7 +165,7 @@ void UAnimNotifyState_AttackHitWindow::NotifyTick(USkeletalMeshComponent* MeshCo
 	bool bSawTargetCandidate = false;
 	for (AActor* Candidate : World->GetActors())
 	{
-		if (!Candidate || Candidate == Owner)
+		if (!IsValid(Candidate) || Candidate == Owner)
 		{
 			continue;
 		}
@@ -194,7 +195,7 @@ void UAnimNotifyState_AttackHitWindow::NotifyTick(USkeletalMeshComponent* MeshCo
 		float ClosestDistanceSquared = FLT_MAX;
 		for (UPrimitiveComponent* Primitive : Candidate->GetPrimitiveComponents())
 		{
-			if (!Primitive)
+			if (!IsValid(Primitive))
 			{
 				continue;
 			}

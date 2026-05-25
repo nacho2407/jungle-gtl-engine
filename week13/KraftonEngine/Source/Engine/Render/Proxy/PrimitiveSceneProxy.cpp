@@ -5,6 +5,7 @@
 #include "Render/Command/DrawCommand.h"
 #include "Materials/Material.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/GarbageCollection.h"
 
 // ============================================================
 // FPrimitiveSceneProxy — 기본 구현
@@ -12,7 +13,7 @@
 FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
 	: Owner(InComponent)
 {
-	if (!Owner->SupportsOutline())
+	if (IsValid(Owner) && !Owner->SupportsOutline())
 		ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
 }
 
@@ -25,22 +26,42 @@ FPrimitiveSceneProxy::~FPrimitiveSceneProxy() noexcept
 	}
 }
 
+void FPrimitiveSceneProxy::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	Collector.AddReferencedObject(DefaultMaterial);
+	for (const FMeshSectionDraw& Draw : SectionDraws)
+	{
+		Collector.AddReferencedObject(Draw.Material);
+	}
+}
+
+bool FPrimitiveSceneProxy::HasValidOwner() const
+{
+	return IsValid(Owner);
+}
+
 ERenderPass FPrimitiveSceneProxy::GetRenderPass() const
 {
-	if (!SectionDraws.empty() && SectionDraws[0].Material)
+	if (!SectionDraws.empty() && IsValid(SectionDraws[0].Material))
 		return SectionDraws[0].Material->GetRenderPass();
 	return ERenderPass::Opaque;
 }
 
 FShader* FPrimitiveSceneProxy::GetShader() const
 {
-	if (!SectionDraws.empty() && SectionDraws[0].Material)
+	if (!SectionDraws.empty() && IsValid(SectionDraws[0].Material))
 		return SectionDraws[0].Material->GetShader();
 	return nullptr;
 }
 
 void FPrimitiveSceneProxy::UpdateTransform()
 {
+	if (!IsValid(Owner))
+	{
+		bVisible = false;
+		return;
+	}
+
 	PerObjectConstants = FPerObjectConstants::FromWorldMatrix(Owner->GetWorldMatrix());
 	CachedWorldPos = PerObjectConstants.Model.GetLocation();
 	CachedBounds = Owner->GetWorldBoundingBox();
@@ -55,11 +76,17 @@ void FPrimitiveSceneProxy::UpdateMaterial()
 
 void FPrimitiveSceneProxy::UpdateVisibility()
 {
+	if (!IsValid(Owner))
+	{
+		bVisible = false;
+		return;
+	}
+
 	bVisible = Owner->IsVisible();
 	if (bVisible)
 	{
 		AActor* OwnerActor = Owner->GetOwner();
-		if (OwnerActor && !OwnerActor->IsVisible())
+		if (!IsValid(OwnerActor) || !OwnerActor->IsVisible())
 			bVisible = false;
 	}
 	bCastShadow = Owner->GetCastShadow();
@@ -68,6 +95,14 @@ void FPrimitiveSceneProxy::UpdateVisibility()
 
 void FPrimitiveSceneProxy::UpdateMesh()
 {
+	if (!IsValid(Owner))
+	{
+		MeshBuffer = nullptr;
+		SectionDraws.clear();
+		bVisible = false;
+		return;
+	}
+
 	MeshBuffer = Owner->GetMeshBuffer();
 
 	if (!DefaultMaterial)

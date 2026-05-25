@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include "Object/Object.h"
 
 // ============================================================
 // 와이어프레임 빌드 헬퍼
@@ -167,7 +168,7 @@ void FShapeSceneProxy::RebuildLines()
 	CachedLines.clear();
 
 	UPrimitiveComponent* OwnerComp = GetOwner();
-	if (!OwnerComp) return;
+	if (!IsValid(OwnerComp)) return;
 
 	const FQuat WorldRot = OwnerComp->GetWorldMatrix().ToQuat();
 

@@ -39,6 +39,20 @@ void FArrayProperty::SerializeValue(void* ValuePtr, FArchive& Ar, const FPropert
 	}
 }
 
+void FArrayProperty::AddReferencedObjects(void* ValuePtr, FReferenceCollector& Collector) const
+{
+    if (!ValuePtr || !ArrayOps || !ArrayOps->GetNum || !ArrayOps->GetElementPtr || !InnerProperty)
+    {
+        return;
+    }
+
+    const size_t Num = static_cast<uint32>(ArrayOps->GetNum(ValuePtr));
+    for (size_t Index = 0; Index < Num; ++Index)
+    {
+        InnerProperty->AddReferencedObjects(ArrayOps->GetElementPtr(ValuePtr, Index), Collector);
+    }
+}
+
 void FArrayProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const
 {
 	if (!ValuePtr || !ArrayOps || !ArrayOps->GetNum || !ArrayOps->Resize || !ArrayOps->GetElementPtr || !InnerProperty)

@@ -46,9 +46,9 @@ void USpotLightComponent::ContributeSelectedVisuals(FScene& Scene) const
 
 void USpotLightComponent::PushToScene()
 {
-	if (!Owner) return;
+	if (!IsValid(Owner)) return;
 
-	UWorld* World = Owner->GetWorld();
+	UWorld* World = GetWorld();
 	if (!World) return;
 
 	const float ClampedOuterAngle = FMath::Clamp(OuterConeAngle, 0.0f, 89.0f);
@@ -77,9 +77,7 @@ void USpotLightComponent::PushToScene()
 
 void USpotLightComponent::DestroyFromScene()
 {
-	if (!Owner) return;
-
-	UWorld* World = Owner->GetWorld();
+	UWorld* World = GetWorld();
 	if (!World) return;
 
 	World->GetScene().GetEnvironment().RemoveSpotLight(this);

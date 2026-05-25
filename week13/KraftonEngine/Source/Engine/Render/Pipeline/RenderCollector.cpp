@@ -49,7 +49,7 @@ void FRenderCollector::Collect(UWorld* World, const FFrameContext& Frame, FColle
 
 		for (FPrimitiveSceneProxy* Proxy : Scene.GetNeverCullProxies())
 		{
-			if (Proxy)
+			if (Proxy && Proxy->HasValidOwner())
 			{
 				Output.FrustumVisibleProxies.push_back(Proxy);
 			}
@@ -108,7 +108,7 @@ void FRenderCollector::CollectOctreeDebug(const FOctree* Node, FScene& Scene, ui
 // ============================================================
 static bool ShouldCollectProxyForView(const FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame)
 {
-	if (!Proxy)
+	if (!Proxy || !Proxy->HasValidOwner())
 		return false;
 
 	// Light View에서는 EditorOnly 프록시(빌보드 아이콘 등) 제외
@@ -199,10 +199,10 @@ void FRenderCollector::CollectSelectedActorVisuals(FScene& Scene)
 {
 	for (AActor* Actor : Scene.GetSelectedActors())
 	{
-		if (!Actor) continue;
+		if (!IsValid(Actor)) continue;
 		for (UActorComponent* Comp : Actor->GetComponents())
 		{
-			if (Comp)
+			if (IsValid(Comp))
 				Comp->ContributeSelectedVisuals(Scene);
 		}
 	}

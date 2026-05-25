@@ -29,6 +29,22 @@ void FStructProperty::SerializeValue(void* ValuePtr, FArchive& Ar, const FProper
 	Ar.EndObject();
 }
 
+void FStructProperty::AddReferencedObjects(void* ValuePtr, FReferenceCollector& Collector) const
+{
+    if (!ValuePtr || !StructType)
+    {
+        return;
+    }
+
+    TArray<const FProperty*> Children;
+    StructType->GetPropertyRefs(Children);
+    for (const FProperty* Child : Children)
+    {
+        if (!Child) continue;
+        Child->AddReferencedObjects(Child->GetValuePtrFor(ValuePtr), Collector);
+    }
+}
+
 void FStructProperty::SerializeValue(void* ValuePtr, FArchive& Ar) const
 {
 	if (!ValuePtr || !StructType)

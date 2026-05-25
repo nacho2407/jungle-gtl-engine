@@ -892,9 +892,16 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 			{
 				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
 
-				AStaticMeshActor* NewActor = Cast<AStaticMeshActor>(FObjectFactory::Get().Create(AStaticMeshActor::StaticClass()->GetName(), Editor->GetWorld()));
-				NewActor->InitDefaultComponents(FPaths::ToUtf8(ContentItem.Path));
-				Editor->GetWorld()->AddActor(NewActor);
+				UWorld* EditorWorld = Editor ? Editor->GetWorld() : nullptr;
+				if (EditorWorld)
+				{
+					AStaticMeshActor* NewActor = Cast<AStaticMeshActor>(FObjectFactory::Get().Create(AStaticMeshActor::StaticClass()->GetName(), EditorWorld));
+					if (IsValid(NewActor))
+					{
+						NewActor->InitDefaultComponents(FPaths::ToUtf8(ContentItem.Path));
+						EditorWorld->AddActor(NewActor);
+					}
+				}
 			}
 			ImGui::EndDragDropTarget();
 		}

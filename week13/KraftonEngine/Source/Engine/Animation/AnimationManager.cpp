@@ -90,6 +90,14 @@ void FAnimationManager::AddReferencedObjects(FReferenceCollector& Collector)
     }
 }
 
+void FAnimationManager::ClearCache()
+{
+    AnimationCaches.clear();
+    MontageCaches.clear();
+    AvailableAnimationFiles.clear();
+    AvailableMontageFiles.clear();
+}
+
 FAnimationManager& FAnimationManager::Get()
 {
     static FAnimationManager Instance;

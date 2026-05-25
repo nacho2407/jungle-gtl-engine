@@ -276,9 +276,13 @@ void FSelectionManager::SelectComponent(USceneComponent* Component)
         {
             Target = Component->GetParent();
         }
-        else if (IsValid(Component->GetOwner()))
+        else
         {
-            Target = Component->GetOwner()->GetRootComponent();
+            AActor* ComponentOwner = Component->GetOwner();
+            if (IsValid(ComponentOwner))
+            {
+                Target = ComponentOwner->GetRootComponent();
+            }
         }
     }
 
@@ -379,7 +383,7 @@ void FSelectionManager::PruneInvalidSelection()
     if (SelectedComponent)
     {
         AActor* Owner = SelectedComponent->GetOwner();
-        if (!IsSelected(Owner))
+        if (!IsValid(Owner) || !IsSelected(Owner))
         {
             SelectedComponent = nullptr;
             bSelectionChanged = true;

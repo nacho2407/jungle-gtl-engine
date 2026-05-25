@@ -18,6 +18,7 @@ public:
 
 
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
+	void ClearCache();
 private:
 	TMap<FString, UFloatCurveAsset*> LoadedCurves;
 };

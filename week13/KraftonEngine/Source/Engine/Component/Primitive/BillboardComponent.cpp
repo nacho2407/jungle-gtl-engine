@@ -77,11 +77,13 @@ void UBillboardComponent::PostEditProperty(const char* PropertyName)
 
 void UBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
-	if (!GetOwner() || !GetOwner()->GetWorld()) return;
+	if (!IsValid(GetOwner())) return;
+	UWorld* World = GetWorld();
+	if (!World) return;
 
 	// 잔여 정리: POV currency 사용.
 	FMinimalViewInfo POV;
-	if (!GetOwner()->GetWorld()->GetActivePOV(POV)) return;
+	if (!World->GetActivePOV(POV)) return;
 
 	FVector WorldLocation = GetWorldLocation();
 	FVector CameraForward = POV.Rotation.GetForwardVector().Normalized();

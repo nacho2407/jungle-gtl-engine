@@ -4,6 +4,7 @@
 #include "Render/Proxy/CylindricalBillboardSceneProxy.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
+#include "Object/Object.h"
 
 #include <cmath>
 
@@ -14,11 +15,13 @@ FPrimitiveSceneProxy* UCylindricalBillboardComponent::CreateSceneProxy()
 
 void UCylindricalBillboardComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
-	if (!GetOwner() || !GetOwner()->GetWorld()) return;
+	if (!IsValid(GetOwner())) return;
+	UWorld* World = GetWorld();
+	if (!World) return;
 
 	// 잔여 정리: POV currency 사용.
 	FMinimalViewInfo POV;
-	if (!GetOwner()->GetWorld()->GetActivePOV(POV)) return;
+	if (!World->GetActivePOV(POV)) return;
 
 	CachedWorldMatrix = ComputeBillboardMatrix(POV.Rotation.GetForwardVector());
 	UpdateWorldAABB();
@@ -40,9 +43,10 @@ FMatrix UCylindricalBillboardComponent::ComputeBillboardMatrix(const FVector& Ca
 	}
 
 	FMatrix NonBillboardWorldMatrix;
-	if (GetParent())
+	USceneComponent* Parent = GetParent();
+	if (IsValid(Parent))
 	{
-		NonBillboardWorldMatrix = GetRelativeMatrix() * GetParent()->GetWorldMatrix();
+		NonBillboardWorldMatrix = GetRelativeMatrix() * Parent->GetWorldMatrix();
 	}
 	else
 	{

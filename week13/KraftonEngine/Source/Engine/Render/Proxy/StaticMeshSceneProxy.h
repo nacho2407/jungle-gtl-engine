@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 
@@ -20,6 +20,7 @@ public:
 	void UpdateMaterial() override;
 	void UpdateMesh() override;
 	void UpdateLOD(uint32 LODLevel) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
 	UStaticMeshComponent* GetStaticMeshComponent() const;

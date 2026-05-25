@@ -3,13 +3,14 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Object/FName.h"
+#include "Object/Object.h"
 
 AActor* FGameplayStatics::FindFirstActorByTag(const UWorld* World, const FName& Tag)
 {
 	if (!World) return nullptr;
 	for (AActor* Actor : World->GetActors())
 	{
-		if (Actor && Actor->HasTag(Tag))
+		if (IsValid(Actor) && Actor->HasTag(Tag))
 		{
 			return Actor;
 		}
@@ -23,7 +24,7 @@ TArray<AActor*> FGameplayStatics::FindActorsByTag(const UWorld* World, const FNa
 	if (!World) return Result;
 	for (AActor* Actor : World->GetActors())
 	{
-		if (Actor && Actor->HasTag(Tag))
+		if (IsValid(Actor) && Actor->HasTag(Tag))
 		{
 			Result.push_back(Actor);
 		}

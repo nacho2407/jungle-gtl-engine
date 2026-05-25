@@ -77,8 +77,8 @@ bool UDirectionalLightComponent::GetLightViewProj(FLightViewProjResult& OutResul
 
 void UDirectionalLightComponent::PushToScene()
 {
-	if (!Owner) return;
-	UWorld* World = Owner->GetWorld();
+	if (!IsValid(Owner)) return;
+	UWorld* World = GetWorld();
 	if (!World) return;
 
 	FGlobalDirectionalLightParams Params;
@@ -98,8 +98,7 @@ void UDirectionalLightComponent::PushToScene()
 
 void UDirectionalLightComponent::DestroyFromScene()
 {
-	if (!Owner) return;
-	UWorld* World = Owner->GetWorld();
+	UWorld* World = GetWorld();
 	if (!World) return;
 
 	World->GetScene().GetEnvironment().RemoveGlobalDirectionalLight(this);

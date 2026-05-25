@@ -317,8 +317,8 @@ bool UCharacterMovementComponent::TraceFloor(FHitResult& OutHit) const
 	USceneComponent* Updated = GetUpdatedComponent();
 	if (!Updated) return false;
 	AActor* Owner = GetOwner();
-	if (!Owner) return false;
-	UWorld* World = Owner->GetWorld();
+	if (!IsValid(Owner)) return false;
+	UWorld* World = GetWorld();
 	if (!World) return false;
 
 	const float HalfHeight = GetCapsuleHalfHeight();

@@ -10,9 +10,18 @@
 #include "Collision/Ray/RayUtils.h"
 #include "Render/Proxy/GizmoSceneProxy.h"
 #include "Render/Scene/FScene.h"
+#include "Object/Object.h"
 #include <cfloat>
 
 HIDE_FROM_COMPONENT_LIST(UGizmoComponent)
+
+namespace
+{
+    bool IsValidGizmoTarget(const IGizmoTransformTarget* InTarget)
+    {
+        return InTarget && InTarget->IsValid();
+    }
+}
 
 FPrimitiveSceneProxy* UGizmoComponent::CreateSceneProxy()
 {
@@ -24,8 +33,14 @@ void UGizmoComponent::CreateRenderState()
 	if (SceneProxy) return;
 
 	FScene* Scene = RegisteredScene;
-	if (!Scene && Owner && Owner->GetWorld())
-		Scene = &Owner->GetWorld()->GetScene();
+	if (!Scene && IsValid(Owner))
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			Scene = &World->GetScene();
+		}
+	}
 	if (!Scene) return;
 
 	// Outer 프록시 (기본 경로)
@@ -39,8 +54,14 @@ void UGizmoComponent::CreateRenderState()
 void UGizmoComponent::DestroyRenderState()
 {
 	FScene* Scene = RegisteredScene;
-	if (!Scene && Owner && Owner->GetWorld())
-		Scene = &Owner->GetWorld()->GetScene();
+	if (!Scene && IsValid(Owner))
+	{
+		UWorld* World = GetWorld();
+		if (World)
+		{
+			Scene = &World->GetScene();
+		}
+	}
 
 	if (Scene)
 	{
@@ -70,7 +91,7 @@ void UGizmoComponent::SetHolding(bool bHold)
 	}
 	if (!World && Owner)
 	{
-		World = Owner->GetWorld();
+		World = GetWorld();
 	}
 
 	if (bHold)
@@ -261,7 +282,7 @@ bool UGizmoComponent::HasMultipleSelectedActorTargets() const
 	int32 ValidActorCount = 0;
 	for (AActor* Actor : *AllSelectedActors)
 	{
-		if (Actor && Actor->GetRootComponent())
+		if (IsValid(Actor) && IsValid(Actor->GetRootComponent()))
 		{
 			++ValidActorCount;
 			if (ValidActorCount > 1)
@@ -278,14 +299,14 @@ FVector UGizmoComponent::GetTargetPivotLocation() const
 {
 	if (!HasMultipleSelectedActorTargets())
 	{
-		return Target ? Target->GetWorldLocation() : GetWorldLocation();
+		return IsValidGizmoTarget(Target) ? Target->GetWorldLocation() : GetWorldLocation();
 	}
 
 	FVector Sum = FVector::ZeroVector;
 	int32 ValidActorCount = 0;
 	for (AActor* Actor : *AllSelectedActors)
 	{
-		if (Actor && Actor->GetRootComponent())
+		if (IsValid(Actor) && IsValid(Actor->GetRootComponent()))
 		{
 			Sum += Actor->GetActorLocation();
 			++ValidActorCount;
@@ -294,7 +315,7 @@ FVector UGizmoComponent::GetTargetPivotLocation() const
 
 	return ValidActorCount > 0
 		? Sum / static_cast<float>(ValidActorCount)
-		: (Target ? Target->GetWorldLocation() : GetWorldLocation());
+		: (IsValidGizmoTarget(Target) ? Target->GetWorldLocation() : GetWorldLocation());
 }
 
 bool UGizmoComponent::TranslateSelectedActorTargets(const FVector& Delta)
@@ -306,7 +327,7 @@ bool UGizmoComponent::TranslateSelectedActorTargets(const FVector& Delta)
 
 	for (AActor* Actor : *AllSelectedActors)
 	{
-		if (Actor && Actor->GetRootComponent())
+		if (IsValid(Actor) && IsValid(Actor->GetRootComponent()))
 		{
 			Actor->AddActorWorldOffset(Delta);
 		}
@@ -317,7 +338,7 @@ bool UGizmoComponent::TranslateSelectedActorTargets(const FVector& Delta)
 
 void UGizmoComponent::TranslateTarget(float DragAmount)
 {
-	if (!Target) return;
+	if (!IsValidGizmoTarget(Target)) return;
 
 	FVector Delta = GetVectorForAxis(SelectedAxis) * DragAmount;
 	AddWorldOffset(Delta);
@@ -457,7 +478,7 @@ void UGizmoComponent::SetTarget(IGizmoTransformTarget* NewTarget)
 
 void UGizmoComponent::SetTarget(USceneComponent* NewTarget)
 {
-	if (!NewTarget)
+	if (!IsValid(NewTarget))
 	{
 		Deactivate();
 		return;
@@ -469,7 +490,7 @@ void UGizmoComponent::SetTarget(USceneComponent* NewTarget)
 
 void UGizmoComponent::SetTarget(AActor* NewTarget)
 {
-	SetTarget(NewTarget ? NewTarget->GetRootComponent() : nullptr);
+	SetTarget(IsValid(NewTarget) ? NewTarget->GetRootComponent() : nullptr);
 }
 
 void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
@@ -592,7 +613,7 @@ void UGizmoComponent::UpdateGizmoMode(EGizmoMode NewMode)
 
 void UGizmoComponent::UpdateGizmoTransform()
 {
-	if (!Target) return;
+	if (!IsValidGizmoTarget(Target)) return;
 
 	const FVector PivotLocation = GetTargetPivotLocation();
 	SetWorldLocation(PivotLocation);

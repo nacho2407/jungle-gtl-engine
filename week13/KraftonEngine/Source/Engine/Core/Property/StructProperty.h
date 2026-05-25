@@ -25,6 +25,8 @@ struct FStructProperty : FProperty
 	UStruct* GetStructType() const override { return StructType; }
 	const FStructProperty* AsStructProperty() const override { return this; }
 
+    void AddReferencedObjects(void* ValuePtr, FReferenceCollector& Collector) const override;
+
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const override;
 };

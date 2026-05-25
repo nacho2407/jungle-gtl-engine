@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
@@ -10,6 +10,7 @@ class FShader;
 class FMeshBuffer;
 class FScene;
 class UMaterial;
+class FReferenceCollector;
 struct FDrawCommandBuffer;
 struct FFrameContext;
 
@@ -50,6 +51,9 @@ class FPrimitiveSceneProxy
 public:
 	FPrimitiveSceneProxy(UPrimitiveComponent* InComponent);
 	virtual ~FPrimitiveSceneProxy();
+
+	virtual void AddReferencedObjects(FReferenceCollector& Collector);
+	bool HasValidOwner() const;
 
 	// ================================================================
 	// 읽기 전용 인터페이스 (DrawCommandBuilder, RenderCollector용)

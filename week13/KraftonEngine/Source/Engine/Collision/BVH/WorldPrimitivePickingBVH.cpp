@@ -47,14 +47,14 @@ void FWorldPrimitivePickingBVH::BuildNow(const TArray<AActor*>& Actors)
 
 	for (AActor* Actor : Actors)
 	{
-		if (!Actor || !Actor->IsVisible())
+        if (!IsValid(Actor) || !Actor->IsVisible())
 		{
 			continue;
 		}
 
 		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 		{
-			if (!Primitive || !Primitive->IsVisible())
+            if (!IsValid(Primitive) || !Primitive->IsVisible())
 			{
 				continue;
 			}
@@ -225,6 +225,12 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				}
 
 				const FLeaf& Leaf = Leaves[PrimitiveEntries[EntryIndex].NodeIndex];
+
+                if (!IsValid(Leaf.Primitive) || !IsValid(Leaf.Owner))
+                {
+                    continue;
+                }
+			    
 				FHitResult CandidateHit{};
 				bool bHit = false;
 

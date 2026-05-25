@@ -57,6 +57,9 @@ public:
 	UUserWidget() = default;
 	~UUserWidget() override = default;
 
+    void BeginDestroy() override;
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 	void Initialize(APlayerController* InOwningPlayer, const FString& InDocumentPath);
 	void AddToViewport(int32 InZOrder = 0);
 	void RemoveFromParent();

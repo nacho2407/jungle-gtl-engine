@@ -5,6 +5,7 @@
 #include "Runtime/Engine.h"
 #include "Profiling/Time/Timer.h"
 #include "Profiling/Stats/Stats.h"
+#include "Object/Object.h"
 
 #include <algorithm>
 #include <cstring>
@@ -22,7 +23,7 @@ FSkeletalMeshSceneProxy::~FSkeletalMeshSceneProxy()
 
 USkeletalMeshComponent* FSkeletalMeshSceneProxy::GetSkeletalMeshComponent() const
 {
-	return static_cast<USkeletalMeshComponent*>(GetOwner());
+	return HasValidOwner() ? static_cast<USkeletalMeshComponent*>(GetOwner()) : nullptr;
 }
 
 void FSkeletalMeshSceneProxy::UpdateMaterial()
@@ -32,7 +33,16 @@ void FSkeletalMeshSceneProxy::UpdateMaterial()
 
 void FSkeletalMeshSceneProxy::UpdateMesh()
 {
-	MeshBuffer = GetOwner()->GetMeshBuffer();
+	if (!HasValidOwner())
+	{
+		MeshBuffer = nullptr;
+		SectionDraws.clear();
+		bVisible = false;
+		return;
+	}
+
+	UPrimitiveComponent* OwnerComp = GetOwner();
+	MeshBuffer = IsValid(OwnerComp) ? OwnerComp->GetMeshBuffer() : nullptr;
 	RebuildSectionDraws();
 
 	CachedDynamicVertexCount = 0;
@@ -42,7 +52,7 @@ void FSkeletalMeshSceneProxy::UpdateMesh()
 	ReleaseSkinMatrixBuffer();
 
 	USkeletalMeshComponent* SMC = GetSkeletalMeshComponent();
-	USkeletalMesh* Mesh = SMC ? SMC->GetSkeletalMesh() : nullptr;
+	USkeletalMesh* Mesh = IsValid(SMC) ? SMC->GetSkeletalMesh() : nullptr;
 	FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
 	if (Asset)
 	{
@@ -53,7 +63,7 @@ void FSkeletalMeshSceneProxy::UpdateMesh()
 bool FSkeletalMeshSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context, FDrawCommandBuffer& OutBuffer) const
 {
 	USkeletalMeshComponent* SMC = GetSkeletalMeshComponent();
-	if (!SMC) return false;
+	if (!IsValid(SMC)) return false;
 
 	USkeletalMesh* Mesh = SMC->GetSkeletalMesh();
 	FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
@@ -91,7 +101,7 @@ bool FSkeletalMeshSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11Devi
 bool FSkeletalMeshSceneProxy::PrepareGpuSkinningDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context, FDrawCommandBuffer& OutBuffer) const
 {
 	USkeletalMeshComponent* SMC = GetSkeletalMeshComponent();
-	USkeletalMesh* Mesh = SMC ? SMC->GetSkeletalMesh() : nullptr;
+	USkeletalMesh* Mesh = IsValid(SMC) ? SMC->GetSkeletalMesh() : nullptr;
 	FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset || !Asset->RenderBuffer || !Asset->RenderBuffer->IsValid()) return false;
 
@@ -130,7 +140,7 @@ void FSkeletalMeshSceneProxy::ReleaseSkinMatrixBuffer() const
 bool FSkeletalMeshSceneProxy::UpdateSkinMatrixBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context) const
 {
 	USkeletalMeshComponent* SMC = GetSkeletalMeshComponent();
-	USkeletalMesh* Mesh = SMC ? SMC->GetSkeletalMesh() : nullptr;
+	USkeletalMesh* Mesh = IsValid(SMC) ? SMC->GetSkeletalMesh() : nullptr;
 	FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Device || !Context || !SMC || !Asset || Asset->Bones.empty()) return false;
 
@@ -205,6 +215,12 @@ void FSkeletalMeshSceneProxy::RebuildSectionDraws()
 	SectionDraws.clear();
 
 	USkeletalMeshComponent* SMC = GetSkeletalMeshComponent();
+	if (!IsValid(SMC))
+	{
+		MeshBuffer = nullptr;
+		SectionDraws.clear();
+		return;
+	}
 	USkeletalMesh* Mesh = SMC->GetSkeletalMesh();
 	if (!Mesh || !Mesh->GetSkeletalMeshAsset())
 	{

@@ -4,6 +4,8 @@
 #include "GameFramework/Camera/PlayerCameraManager.h"
 #include "Component/ActorComponent.h"
 #include "Component/Camera/CameraComponent.h"
+#include "Object/Object.h"
+#include "Object/GarbageCollection.h"
 
 void APlayerController::BeginPlay()
 {
@@ -14,15 +16,20 @@ void APlayerController::BeginPlay()
 	if (UWorld* World = GetWorld())
 	{
 		PlayerCameraManager = World->SpawnActor<APlayerCameraManager>();
-		if (PlayerCameraManager)
+		if (IsValid(PlayerCameraManager))
 		{
 			// 한 액터가 여러 카메라 컴포넌트(예: CarPawn 의 First/Third Person)를 가질 수
 			// 있으므로 GetComponents 전체를 순회. GetComponentByClass 는 첫 번째만 반환하므로 부족.
 			for (AActor* Actor : World->GetActors())
 			{
-				if (!Actor) continue;
+				if (!IsValid(Actor)) continue;
 				for (UActorComponent* Comp : Actor->GetComponents())
 				{
+					if (!IsValid(Comp))
+					{
+						continue;
+					}
+
 					if (UCameraComponent* Cam = Cast<UCameraComponent>(Comp))
 					{
 						PlayerCameraManager->RegisterCamera(Cam);
@@ -51,6 +58,13 @@ void APlayerController::SetViewTargetWithBlend(
 	Params.bLockOutgoing = bLockOutgoing;
 
 	CM->SetViewTarget(NewViewTarget, Params);
+}
+
+void APlayerController::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	AActor::AddReferencedObjects(Collector);
+
+	Collector.AddReferencedObject(PlayerCameraManager);
 }
 
 void APlayerController::Possess(APawn* Pawn)

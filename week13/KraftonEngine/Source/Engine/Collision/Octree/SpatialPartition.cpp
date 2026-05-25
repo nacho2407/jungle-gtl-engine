@@ -49,7 +49,7 @@ void FSpatialPartition::ClearQueuedActorFlags()
 {
 	for (AActor* Actor : DirtyActors)
 	{
-		if (Actor)
+        if (IsAliveObject(Actor))
 		{
 			Actor->SetQueuedForPartitionUpdate(false);
 		}
@@ -60,14 +60,14 @@ FBoundingBox FSpatialPartition::BuildActorVisibleBounds(AActor* Actor, bool bUpd
 {
 	FBoundingBox ActorBounds;
 
-	if (!Actor)
+    if (!IsValid(Actor))
 	{
 		return ActorBounds;
 	}
 
 	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
 	{
-		if (!Prim || !Prim->IsVisible())
+        if (!IsValid(Prim) || !Prim->IsVisible())
 		{
 			continue;
 		}
@@ -118,7 +118,7 @@ void FSpatialPartition::RebuildRootBounds(const FBoundingBox& RequiredBounds)
 	FBoundingBox NewRootBounds = RequiredBounds;
 	for (UPrimitiveComponent* Prim : AllPrimitives)
 	{
-		if (!Prim)
+        if (!IsValid(Prim))
 		{
 			continue;
 		}
@@ -143,7 +143,7 @@ void FSpatialPartition::RebuildRootBounds(const FBoundingBox& RequiredBounds)
 
 	for (UPrimitiveComponent* Prim : AllPrimitives)
 	{
-		if (!Prim || !Prim->IsVisible())
+        if (!IsValid(Prim) || !Prim->IsVisible())
 		{
 			continue;
 		}
@@ -172,7 +172,7 @@ void FSpatialPartition::FlushPrimitive()
 	FBoundingBox DirtyBounds;
 	for (AActor* Actor : DirtyActors)
 	{
-		if (!Actor)
+        if (!IsValid(Actor))
 		{
 			continue;
 		}
@@ -272,7 +272,7 @@ void FSpatialPartition::Reset(const FBoundingBox& RootBounds)
 		Octree->GetAllPrimitives(ExistingPrimitives);
 		for (UPrimitiveComponent* Prim : ExistingPrimitives)
 		{
-			if (Prim)
+            if (IsAliveObject(Prim))
 			{
 				Prim->ClearOctreeLocation();
 			}
@@ -281,7 +281,7 @@ void FSpatialPartition::Reset(const FBoundingBox& RootBounds)
 
 	for (UPrimitiveComponent* Prim : OverflowPrimitives)
 	{
-		if (Prim)
+        if (IsAliveObject(Prim))
 		{
 			Prim->ClearOctreeLocation();
 		}
@@ -309,7 +309,7 @@ void FSpatialPartition::Reset(const FBoundingBox& RootBounds)
 
 void FSpatialPartition::InsertActor(AActor* Actor)
 {
-	if (!Actor) return;
+    if (!IsValid(Actor)) return;
 
 	const FBoundingBox ActorBounds = BuildActorVisibleBounds(Actor, true);
 	EnsureRootContains(ActorBounds);
@@ -321,7 +321,7 @@ void FSpatialPartition::InsertActor(AActor* Actor)
 
 	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
 	{
-		if (!Prim || !Prim->IsVisible()) continue;
+        if (!IsValid(Prim) || !Prim->IsVisible()) continue;
 
 		if (!Octree->Insert(Prim))
 		{
@@ -352,7 +352,7 @@ void FSpatialPartition::RemoveActor(AActor* Actor)
 
 void FSpatialPartition::UpdateActor(AActor* Actor)
 {
-	if (!Actor) return;
+    if (!IsValid(Actor)) return;
 
 	if (!Octree)
 	{
@@ -376,7 +376,7 @@ void FSpatialPartition::QueryFrustumAllPrimitive(const FConvexVolume& ConvexVolu
 
 	for (UPrimitiveComponent* Prim : OverflowPrimitives)
 	{
-		if (!Prim || !Prim->IsVisible()) continue;
+        if (!IsValid(Prim) || !Prim->IsVisible()) continue;
 
 		if (ConvexVolume.IntersectAABB(Prim->GetWorldBoundingBox()))
 		{
@@ -426,7 +426,7 @@ void FSpatialPartition::QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveC
 
 void FSpatialPartition::InsertPrimitive(UPrimitiveComponent* Primitive)
 {
-	if (!Primitive) return;
+    if (!IsValid(Primitive)) return;
 
 	auto It = std::find(OverflowPrimitives.begin(), OverflowPrimitives.end(), Primitive);
 	if (It == OverflowPrimitives.end())

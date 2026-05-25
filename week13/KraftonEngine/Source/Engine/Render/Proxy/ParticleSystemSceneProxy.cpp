@@ -1,4 +1,4 @@
-﻿#include "ParticleSystemSceneProxy.h"
+#include "ParticleSystemSceneProxy.h"
 #include "Component/Primitive/ParticleSystemComponent.h"
 #include "Render/Command/DrawCommandList.h"
 #include "Render/Command/DrawCommand.h"
@@ -11,6 +11,7 @@
 #include "Particles/ParticleHelper.h"
 #include "Engine/Profiling/Stats/ParticleStats.h"
 #include "Object/Object.h"
+#include "Object/GarbageCollection.h"
 
 
 struct FParticleFrameConstants
@@ -59,6 +60,32 @@ FParticleSystemSceneProxy::~FParticleSystemSceneProxy()
 	CachedEmitterData.clear();
 	CachedEmitterCount = 0;
 	EmitterBuffers.clear();
+}
+
+void FParticleSystemSceneProxy::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	FPrimitiveSceneProxy::AddReferencedObjects(Collector);
+	for (const auto& BufferPtr : EmitterBuffers)
+	{
+		if (BufferPtr)
+		{
+			Collector.AddReferencedObject(BufferPtr->Material);
+		}
+	}
+	for (FDynamicEmitterDataBase* EmitterData : CachedEmitterData)
+	{
+		if (!EmitterData)
+		{
+			continue;
+		}
+		const FDynamicEmitterReplayDataBase& Source = EmitterData->GetSource();
+		if (Source.eEmitterType == EDynamicEmitterType::Sprite || Source.eEmitterType == EDynamicEmitterType::Mesh)
+		{
+			const FDynamicSpriteEmitterReplayDataBase& SpriteSource = static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
+			Collector.AddReferencedObject(SpriteSource.Material);
+			Collector.AddReferencedObject(SpriteSource.RequiredModule);
+		}
+	}
 }
 
 

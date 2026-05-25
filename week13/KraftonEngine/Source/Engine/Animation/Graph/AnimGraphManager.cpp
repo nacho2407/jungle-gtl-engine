@@ -18,6 +18,12 @@ void FAnimGraphManager::AddReferencedObjects(FReferenceCollector& Collector)
 	}
 }
 
+void FAnimGraphManager::ClearCache()
+{
+	LoadedGraphs.clear();
+	AvailableGraphFiles.clear();
+}
+
 UAnimGraphAsset* FAnimGraphManager::Load(const FString& Path)
 {
 	const FString NormalizedPath = FPaths::MakeProjectRelative(Path);

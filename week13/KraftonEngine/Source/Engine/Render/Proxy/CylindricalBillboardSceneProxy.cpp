@@ -5,6 +5,7 @@
 #include "GameFramework/AActor.h"
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
+#include "Object/Object.h"
 
 // ============================================================
 // FCylindricalBillboardSceneProxy
@@ -18,6 +19,11 @@ void FCylindricalBillboardSceneProxy::UpdateTransform()
 {
 	FBillboardSceneProxy::UpdateTransform();
 	UCylindricalBillboardComponent* Comp = static_cast<UCylindricalBillboardComponent*>(GetOwner());
+	if (!IsValid(Comp))
+	{
+		bVisible = false;
+		return;
+	}
 
 	FVector LocalAxis = Comp->GetBillboardAxis();
 	if (LocalAxis.Dot(LocalAxis) < 0.0001f)
@@ -30,7 +36,7 @@ void FCylindricalBillboardSceneProxy::UpdateTransform()
 	}
 
 	FMatrix NonBillboardWorldMatrix;
-	if (Comp->GetParent())
+	if (IsValid(Comp->GetParent()))
 	{
 		NonBillboardWorldMatrix = Comp->GetRelativeMatrix() * Comp->GetParent()->GetWorldMatrix();
 	}

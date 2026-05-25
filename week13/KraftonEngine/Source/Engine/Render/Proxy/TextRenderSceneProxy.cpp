@@ -4,6 +4,8 @@
 #include "Render/Shader/ShaderManager.h"
 #include "Materials/Material.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/GarbageCollection.h"
+#include "Object/Object.h"
 
 // ============================================================
 // FTextRenderSceneProxy
@@ -27,10 +29,24 @@ void FTextRenderSceneProxy::UpdateTransform()
 	FBillboardSceneProxy::UpdateTransform();
 }
 
+void FTextRenderSceneProxy::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	FBillboardSceneProxy::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(TextMaterial);
+}
+
 void FTextRenderSceneProxy::UpdateMesh()
 {
+	if (!HasValidOwner())
+	{
+		MeshBuffer = nullptr;
+		SectionDraws.clear();
+		bVisible = false;
+		return;
+	}
 	// SelectionMask 아웃라인 패스에서 사용할 mesh/shader
-	MeshBuffer = GetOwner()->GetMeshBuffer();
+	UPrimitiveComponent* OwnerComp = GetOwner();
+	MeshBuffer = IsValid(OwnerComp) ? OwnerComp->GetMeshBuffer() : nullptr;
 	ProxyFlags |= EPrimitiveProxyFlags::FontBatched;
 
 	if (!TextMaterial)
@@ -50,6 +66,11 @@ void FTextRenderSceneProxy::UpdateMesh()
 
 	// 텍스트/폰트 데이터 캐싱 (UpdatePerViewport에서 Owner 접근 제거)
 	UTextRenderComponent* TextComp = GetTextRenderComponent();
+	if (!IsValid(TextComp))
+	{
+		CachedText.clear();
+		return;
+	}
 	CachedText = TextComp->GetText();
 	CachedFontScale = TextComp->GetFontSize();
 	CachedFont = TextComp->GetFont();
@@ -59,7 +80,7 @@ void FTextRenderSceneProxy::UpdateMesh()
 
 UTextRenderComponent* FTextRenderSceneProxy::GetTextRenderComponent() const
 {
-	return static_cast<UTextRenderComponent*>(GetOwner());
+	return HasValidOwner() ? static_cast<UTextRenderComponent*>(GetOwner()) : nullptr;
 }
 
 // ============================================================

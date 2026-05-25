@@ -76,6 +76,8 @@ public:
 	uint32 GetVersion() const { return Version; }
 	void   BumpVersion()      { ++Version; }
 
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 private:
 	uint32 AllocateId() { return NextId++; }
 

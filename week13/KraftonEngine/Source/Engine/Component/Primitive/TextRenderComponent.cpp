@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include "GameFramework/AActor.h"
+#include "Object/Object.h"
 #include "GameFramework/World.h"
 #include "Resource/ResourceManager.h"
 #include "Object/Reflection/ObjectFactory.h"
@@ -78,7 +79,7 @@ void UTextRenderComponent::PostDuplicate()
 FString UTextRenderComponent::GetOwnerUUIDToString() const
 {
 	AActor* OwnerActor = GetOwner();
-	if (!OwnerActor)
+	if (!IsValid(OwnerActor))
 	{
 		return FName::None.ToString();
 	}
@@ -88,7 +89,7 @@ FString UTextRenderComponent::GetOwnerUUIDToString() const
 FString UTextRenderComponent::GetOwnerNameToString() const
 {
 	AActor* OwnerActor = GetOwner();
-	if (!OwnerActor)
+	if (!IsValid(OwnerActor))
 	{
 		return FName::None.ToString();
 	}

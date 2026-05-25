@@ -19,6 +19,8 @@ class USpotLightComponent;
 class FSceneEnvironment
 {
 public:
+	void Clear();
+
 	// --- Height Fog ---
 	void AddFog(const UHeightFogComponent* Owner, const FFogParams& Params);
 	void RemoveFog(const UHeightFogComponent* Owner);

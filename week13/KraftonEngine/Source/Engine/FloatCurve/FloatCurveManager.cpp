@@ -14,6 +14,11 @@ void FFloatCurveManager::AddReferencedObjects(FReferenceCollector& Collector)
 	}
 }
 
+void FFloatCurveManager::ClearCache()
+{
+	LoadedCurves.clear();
+}
+
 UFloatCurveAsset* FFloatCurveManager::Load(const FString& Path)
 {
 	FString NormalizedPath = FPaths::MakeProjectRelative(Path);

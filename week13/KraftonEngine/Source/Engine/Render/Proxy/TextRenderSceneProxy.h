@@ -20,6 +20,7 @@ public:
 	void UpdateTransform() override;
 	void UpdateMesh() override;
 	void UpdatePerViewport(const FFrameContext& Frame) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	// Collector가 FFontGeometry 배칭에 사용하는 캐싱된 텍스트 데이터
 	FString CachedText;

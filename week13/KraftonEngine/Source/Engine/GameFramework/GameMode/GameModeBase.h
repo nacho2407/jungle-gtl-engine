@@ -27,6 +27,7 @@ public:
 	// AActor
 	void BeginPlay() override;
 	void EndPlay() override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	// --- Match flow ---
 	// StartMatch는 모든 액터의 BeginPlay가 끝난 뒤 World가 호출한다.

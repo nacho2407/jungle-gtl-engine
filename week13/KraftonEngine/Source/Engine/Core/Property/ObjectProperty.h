@@ -76,6 +76,8 @@ struct FObjectProperty : FObjectPropertyBase
 	UObject* GetObjectValueFromValuePtr(void* ValuePtr) const;
 	void SetObjectValueFromValuePtr(void* ValuePtr, UObject* Object) const;
 
+    void AddReferencedObjects(void* ValuePtr, FReferenceCollector& Collector) const override;
+
 	void	   Serialize(UObject* Object, FArchive& Ar) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar) const override;
 	void	   SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const override;

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Engine/Particles/DynamicEmitterData.h"
@@ -18,6 +18,7 @@ public:
 
 	void UpdateLOD(uint32 LODLevel) override;
 	void UpdatePerViewport(const FFrameContext& Frame) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	// DrawCommandBuilder::BuildProxyCommands에서 Particle 분기로 호출
 	void BuildParticleCommands(ID3D11Device* Device, ID3D11DeviceContext* Context,

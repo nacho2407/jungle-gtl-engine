@@ -9,7 +9,7 @@ HIDE_FROM_COMPONENT_LIST(ULightComponentBase)
 
 UBillboardComponent* ULightComponentBase::EnsureEditorBillboard()
 {
-	if (!Owner)
+	if (!IsValid(Owner))
 	{
 		return nullptr;
 	}
