@@ -226,11 +226,31 @@ void UParticleSystemComponent::TickComponent(
         InitializeSystem();
     }
 
+	int32 CalculatedLODIndex = 0;
+	if (Template.Get() && !Template->LODDistances.empty())
+	{
+		for (int32 i = 0; i < static_cast<int32>(Template->LODDistances.size()); i++)
+		{
+			if (CachedDistanceToCamera >= Template->LODDistances[i])
+				CalculatedLODIndex = i;
+			else
+				break;
+		}
+	}
+
+	int32 TargetLODIndex = CalculatedLODIndex;
     for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
     {
         FParticleEmitterInstance* Instance = EmitterInstances[EmitterIndex];
         if (Instance)
         {
+			if (Instance->SpriteTemplate)
+			{
+				int32 MaxLODCount = static_cast<int32>(Instance->SpriteTemplate->GetLODLevels().size());
+				int32 ResolvedLOD = std::clamp(TargetLODIndex, 0, MaxLODCount - 1);
+				Instance->SetCurrentLODIndex(ResolvedLOD, false);
+			}
+
             Instance->Tick(DeltaTime, false);
             Instance->Tick_MaterialOverrides(EmitterIndex);
         }
