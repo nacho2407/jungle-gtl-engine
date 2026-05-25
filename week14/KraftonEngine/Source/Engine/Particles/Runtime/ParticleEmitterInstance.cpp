@@ -51,6 +51,30 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	UpdateParticles(DeltaTime);
 }
 
+void FParticleEmitterInstance::UpdateLOD(const FVector& ViewLocation)
+{
+	if (!SpriteTemplate || !Component)
+	{
+		return;
+	}
+
+	const float Distance = FVector::Distance(Component->GetWorldLocation(), ViewLocation);
+	const int32 NewLODLevelIndex = SpriteTemplate->SelectLODLevelIndex(Distance);
+	if (NewLODLevelIndex == CurrentLODLevelIndex)
+	{
+		return;
+	}
+
+	UParticleLODLevel* NewLODLevel = SpriteTemplate->GetLODLevel(NewLODLevelIndex);
+	if (!CanUseLODLevel(NewLODLevel))
+	{
+		return;
+	}
+
+	CurrentLODLevelIndex = NewLODLevelIndex;
+	CurrentLODLevel = NewLODLevel;
+}
+
 void FParticleEmitterInstance::Reset()
 {
 	for (int32 Index = 0; Index < MaxActiveParticles; ++Index)
@@ -281,6 +305,26 @@ UParticleModuleSpawn* FParticleEmitterInstance::GetSpawnModule() const
 {
 	return CurrentLODLevel ? CurrentLODLevel->FindModule<UParticleModuleSpawn>() : nullptr;
 
+}
+
+bool FParticleEmitterInstance::CanUseLODLevel(const UParticleLODLevel* LODLevel) const
+{
+	if (!LODLevel)
+	{
+		return false;
+	}
+
+	const UParticleModuleTypeDataBase* CurrentTypeData = CurrentLODLevel ? CurrentLODLevel->GetTypeDataModule() : nullptr;
+	const UParticleModuleTypeDataBase* NewTypeData = LODLevel->GetTypeDataModule();
+	const EParticleRenderType CurrentRenderType = CurrentTypeData ? CurrentTypeData->GetRenderType() : EParticleRenderType::Sprite;
+	const EParticleRenderType NewRenderType = NewTypeData ? NewTypeData->GetRenderType() : EParticleRenderType::Sprite;
+	if (CurrentRenderType != NewRenderType)
+	{
+		return false;
+	}
+
+	const int32 NewPayloadSize = NewTypeData ? NewTypeData->GetParticlePayloadSize() : 0;
+	return NewPayloadSize == InstancePayloadSize;
 }
 
 void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float SpawnTime)
