@@ -1,5 +1,6 @@
-#include "Physics/PhysXPhysicsScene.h"
+﻿#include "Physics/PhysXPhysicsScene.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/ShapeComponent.h"
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/SphereComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
@@ -1095,6 +1096,110 @@ bool FPhysXPhysicsScene::RaycastByObjectTypes(const FVector& Start, const FVecto
 	OutHit.bHit = true;
 	OutHit.Distance = Block.distance;
 	OutHit.WorldHitLocation = ToFVector(Block.position);
+	OutHit.ImpactNormal = ToFVector(Block.normal);
+	OutHit.WorldNormal = OutHit.ImpactNormal;
+
+	if (Block.shape && Block.shape->userData)
+	{
+		OutHit.HitComponent = static_cast<UPrimitiveComponent*>(Block.shape->userData);
+		OutHit.HitActor = OutHit.HitComponent->GetOwner();
+	}
+	else if (Block.actor && Block.actor->userData)
+	{
+		OutHit.HitActor = static_cast<AActor*>(Block.actor->userData);
+	}
+
+	return true;
+}
+
+bool FPhysXPhysicsScene::SphereSweepShapeComponents(const FVector& Start, const FVector& Dir, float MaxDist, float Radius,
+	FHitResult& OutHit, ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
+{
+	if (!Scene || MaxDist <= 0.0f) return false;
+
+	struct FShapeChannelSweepFilter : PxQueryFilterCallback
+	{
+		const AActor* IgnoreActor = nullptr;
+		PxU32 TraceBit = 0;
+
+		FShapeChannelSweepFilter(const AActor* InIgnoreActor, ECollisionChannel InChannel)
+			: IgnoreActor(InIgnoreActor)
+			, TraceBit(1u << static_cast<PxU32>(InChannel))
+		{
+		}
+
+		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* Shape, const PxRigidActor* Actor, PxHitFlags&) override
+		{
+			if (IgnoreActor && Actor && Actor->userData == IgnoreActor)
+			{
+				return PxQueryHitType::eNONE;
+			}
+
+			UPrimitiveComponent* Comp = Shape && Shape->userData
+				? static_cast<UPrimitiveComponent*>(Shape->userData)
+				: nullptr;
+			if (!Comp || !Cast<UShapeComponent>(Comp))
+			{
+				return PxQueryHitType::eNONE;
+			}
+
+			const PxFilterData ShapeData = Shape->getQueryFilterData();
+			if ((ShapeData.word1 & TraceBit) == 0)
+			{
+				return PxQueryHitType::eNONE;
+			}
+
+			return PxQueryHitType::eBLOCK;
+		}
+
+		PxQueryHitType::Enum postFilter(const PxFilterData&, const PxQueryHit&) override
+		{
+			return PxQueryHitType::eBLOCK;
+		}
+	};
+
+	PxQueryFilterData FilterData;
+	FilterData.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
+	FShapeChannelSweepFilter FilterCallback(IgnoreActor, TraceChannel);
+
+	if (Radius <= 0.0f)
+	{
+		PxRaycastBuffer RayHit;
+		const bool bStatus = Scene->raycast(ToPxVec3(Start), ToPxVec3(Dir), MaxDist, RayHit,
+			PxHitFlag::eDEFAULT, FilterData, &FilterCallback);
+		if (!bStatus || !RayHit.hasBlock) return false;
+
+		const PxRaycastHit& Block = RayHit.block;
+		OutHit.bHit = true;
+		OutHit.Distance = Block.distance;
+		OutHit.WorldHitLocation = Start + Dir * Block.distance;
+		OutHit.ImpactNormal = ToFVector(Block.normal);
+		OutHit.WorldNormal = OutHit.ImpactNormal;
+
+		if (Block.shape && Block.shape->userData)
+		{
+			OutHit.HitComponent = static_cast<UPrimitiveComponent*>(Block.shape->userData);
+			OutHit.HitActor = OutHit.HitComponent->GetOwner();
+		}
+		else if (Block.actor && Block.actor->userData)
+		{
+			OutHit.HitActor = static_cast<AActor*>(Block.actor->userData);
+		}
+
+		return true;
+	}
+
+	PxSweepBuffer Hit;
+	const PxSphereGeometry SweepGeometry(Radius);
+	const PxTransform StartPose(ToPxVec3(Start));
+	const bool bStatus = Scene->sweep(SweepGeometry, StartPose, ToPxVec3(Dir), MaxDist, Hit,
+		PxHitFlag::eDEFAULT, FilterData, &FilterCallback);
+	if (!bStatus || !Hit.hasBlock) return false;
+
+	const PxSweepHit& Block = Hit.block;
+	OutHit.bHit = true;
+	OutHit.Distance = Block.distance;
+	OutHit.WorldHitLocation = Start + Dir * Block.distance;
 	OutHit.ImpactNormal = ToFVector(Block.normal);
 	OutHit.WorldNormal = OutHit.ImpactNormal;
 

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
@@ -80,4 +80,10 @@ public:
 	// Trigger flag shape 는 백엔드 별 정책에 따라 자동 제외 (PhysX 는 query 단계, Native 는 ObjectType 마스크에서 빠짐).
 	virtual bool RaycastByObjectTypes(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 		uint32 ObjectTypeMask, const AActor* IgnoreActor = nullptr) const = 0;
+
+	// Sphere sweep against registered shape components only.
+	virtual bool SphereSweepShapeComponents(const FVector& Start, const FVector& Dir, float MaxDist, float Radius,
+		FHitResult& OutHit,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const = 0;
 };

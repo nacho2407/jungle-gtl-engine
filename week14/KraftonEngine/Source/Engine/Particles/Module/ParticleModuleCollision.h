@@ -28,8 +28,10 @@ public:
 	ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic;
 	UPROPERTY(Edit, Save, Category="Particle|Collision", DisplayName="Response", Enum=EParticleCollisionResponse)
 	EParticleCollisionResponse Response = EParticleCollisionResponse::Bounce;
-	UPROPERTY(Edit, Save, Category="Particle|Collision", DisplayName="Radius", Min=0.0f, Speed=0.1f)
-	float Radius = 1.0f;
+	UPROPERTY(Edit, Save, Category="Particle|Collision", DisplayName="Sphere Radius", Min=0.0f, Speed=0.1f)
+	float SphereRadius = 1.0f;
+	UPROPERTY(Edit, Save, Category="Particle|Collision", DisplayName="Bias", Min=0.0f, Speed=0.01f)
+	float Bias = 0.05f;
 	UPROPERTY(Edit, Save, Category="Particle|Collision", DisplayName="Restitution", Min=0.0f, Speed=0.05f)
 	float Restitution = 0.5f;
 	UPROPERTY(Edit, Save, Category="Particle|Collision", DisplayName="Friction", Min=0.0f, Max=1.0f, Speed=0.05f)
