@@ -24,6 +24,7 @@ void FViewerViewportClient::BuildViewerShowFlags(FShowFlags& OutShowFlags) const
 	OutShowFlags = {};
 	OutShowFlags.bPrimitives = true;
 	OutShowFlags.bSkeletalMesh = false;
+    OutShowFlags.bParticle = false;
 	OutShowFlags.bGrid = bShowGrid;
 	OutShowFlags.bAxis = bShowAxis;
 	OutShowFlags.bGizmo = bShowGizmo;

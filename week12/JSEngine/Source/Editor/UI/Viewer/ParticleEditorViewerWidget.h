@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 #include "Editor/UI/Viewer/EditorViewerWidget.h"
+#include "Editor/Viewer/ParticleEditorViewer.h"
 #include "Render/Common/ComPtr.h"
 
-class FParticleEditorViewer;
 class UParticleSystem;
 struct ID3D11ShaderResourceView;
 
@@ -35,10 +35,15 @@ private:
 private:
 	float EmitterPanelWidthRatio = 2.0f / 3.0f;
 	float BottomPanelHeightRatio = 0.5f;
+	bool bPropertyEditUndoCaptured = false;
 
+	EParticleEditorSelectionType CurveSourceType = EParticleEditorSelectionType::None;
+	int32 CurveSourceEmitterIndex = -1;
+	int32 CurveSourceLODIndex = -1;
 	int32 CurveSourceModuleIndex = -1;
 	bool bCascadeToolbarIconsLoadAttempted = false;
 
+	// Icons
 	TComPtr<ID3D11ShaderResourceView> CascadeSaveIcon;
 	TComPtr<ID3D11ShaderResourceView> CascadeFindIcon;
 	TComPtr<ID3D11ShaderResourceView> CascadeRestartSimIcon;

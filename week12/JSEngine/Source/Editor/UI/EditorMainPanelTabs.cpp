@@ -1,8 +1,9 @@
-﻿#include "Editor/UI/EditorMainPanel.h"
+#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/UI/EditorChromeConstants.h"
 #include "Editor/Viewer/EditorViewer.h"
+#include "Editor/Viewer/ParticleEditorViewer.h"
 #include "Editor/Viewport/EditorViewportClient.h"
 
 #include "ImGui/imgui.h"
@@ -143,6 +144,28 @@ namespace
 		}
 	}
 
+	void DrawUnsavedWarningIcon(ImDrawList* DrawList, const ImVec2& Center, float Size)
+	{
+		if (!DrawList)
+		{
+			return;
+		}
+
+		const float HalfWidth = Size * 0.50f;
+		const float HalfHeight = Size * 0.44f;
+		const ImVec2 Top(Center.x, Center.y - HalfHeight);
+		const ImVec2 Left(Center.x - HalfWidth, Center.y + HalfHeight);
+		const ImVec2 Right(Center.x + HalfWidth, Center.y + HalfHeight);
+		DrawList->AddTriangleFilled(Top, Left, Right, IM_COL32(255, 205, 28, 255));
+		DrawList->AddTriangle(Top, Left, Right, IM_COL32(190, 132, 0, 255), 1.2f);
+
+		const ImU32 MarkColor = IM_COL32(18, 18, 18, 255);
+		const float StemTop = Center.y - Size * 0.20f;
+		const float StemBottom = Center.y + Size * 0.12f;
+		DrawList->AddLine(ImVec2(Center.x, StemTop), ImVec2(Center.x, StemBottom), MarkColor, 2.2f);
+		DrawList->AddCircleFilled(ImVec2(Center.x, Center.y + Size * 0.26f), Size * 0.045f, MarkColor, 10);
+	}
+
 }
 
 void FEditorMainPanel::RenderEditorTabStrip()
@@ -177,6 +200,20 @@ void FEditorMainPanel::RenderEditorTabStrip()
 
 	if (ImGui::Begin("##EditorDocumentTabStrip", nullptr, Flags))
 	{
+		if (EditorEngine)
+		{
+			for (const auto& Viewer : EditorEngine->GetViewers())
+			{
+				FParticleEditorViewer* ParticleViewer = Viewer && Viewer->GetTabKind() == EEditorTabKind::ParticleViewer
+					? static_cast<FParticleEditorViewer*>(Viewer.get())
+					: nullptr;
+				if (ParticleViewer)
+				{
+					EditorTabs.SetTabDirty(MakeEditorViewerTabId(ParticleViewer->GetFileName(), ParticleViewer), ParticleViewer->IsDirty());
+				}
+			}
+		}
+
 		const FEditorTabEntry* ActiveTab = EditorTabs.GetActiveTab();
 		const TArray<FEditorTabEntry>& Tabs = EditorTabs.GetTabs();
 		FEditorTabId PendingCloseTabId;
@@ -214,12 +251,17 @@ void FEditorMainPanel::RenderEditorTabStrip()
 		const ImVec2 HomeIconMax(
 			HomeIconMin.x + HomeTabWidth,
 			TabStripPos.y + TabStripHeight);
+		DrawList->PushClipRect(
+			MainViewport->WorkPos,
+			ImVec2(MainViewport->WorkPos.x + MainViewport->WorkSize.x, MainViewport->WorkPos.y + MainViewport->WorkSize.y),
+			false);
 		DrawMainHomeIcon(
-			ImGui::GetForegroundDrawList(),
+			DrawList,
 			IconResources.HomeIcon,
 			HomeIconMin,
 			HomeIconMax,
 			bHomeHovered || ImGui::IsMouseHoveringRect(HomeIconMin, HomeIconMax));
+		DrawList->PopClipRect();
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !Tabs.empty())
 		{
 			ActivateEditorTab(Tabs[0].Id);
@@ -425,11 +467,130 @@ void FEditorMainPanel::RenderEditorTabStrip()
 			bDraggingTab = false;
 			bDraggingTabStarted = false;
 		}
+
+		RenderPendingParticleClosePrompt();
 	}
 
 	ImGui::End();
 	ImGui::PopStyleColor();
 	ImGui::PopStyleVar(3);
+}
+
+void FEditorMainPanel::RenderPendingParticleClosePrompt()
+{
+	if (bHasPendingParticleClosePrompt)
+	{
+		ImGui::OpenPopup("Unsaved Changes##UnsavedParticleChanges");
+	}
+
+	// [수정] 팝업 창을 화면 정중앙에 배치
+	ImVec2 Center = ImGui::GetMainViewport()->GetCenter();
+	ImGui::SetNextWindowPos(Center, ImGuiCond_Appearing, ImVec2(0.5f, 0.0f));
+
+	constexpr ImGuiWindowFlags PromptFlags =
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoSavedSettings;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.5f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.18f, 0.20f, 0.25f, 1.0f));
+
+	if (ImGui::BeginPopupModal("Unsaved Changes##UnsavedParticleChanges", nullptr, PromptFlags))
+	{
+		const float PromptWidth = 420.0f;
+		const ImVec2 HeaderStart = ImGui::GetCursorScreenPos();
+		const float HeaderHeight = 42.0f;
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+		DrawList->AddRectFilled(
+			HeaderStart,
+			ImVec2(HeaderStart.x + PromptWidth, HeaderStart.y + HeaderHeight),
+			ImGui::GetColorU32(ImVec4(0.075f, 0.080f, 0.098f, 1.0f)),
+			8.0f,
+			ImDrawFlags_RoundCornersTop);
+
+		const char* HeaderText = "Unsaved Changes";
+		const ImVec2 HeaderTextSize = ImGui::CalcTextSize(HeaderText);
+		DrawList->AddText(
+			ImVec2(HeaderStart.x + 14.0f, HeaderStart.y + (HeaderHeight - HeaderTextSize.y) * 0.5f),
+			ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f)),
+			HeaderText);
+		ImGui::Dummy(ImVec2(PromptWidth, HeaderHeight));
+
+		ImGui::Spacing();
+		const ImVec2 BodyStart = ImGui::GetCursorScreenPos();
+
+		DrawUnsavedWarningIcon(DrawList, ImVec2(BodyStart.x + 36.0f, BodyStart.y + 35.0f), 30.0f);
+
+		ImGui::SetCursorScreenPos(ImVec2(BodyStart.x + 66.0f, BodyStart.y + 12.0f));
+		ImGui::BeginGroup();
+		ImGui::TextWrapped("Save changes to this particle system before closing?");
+		ImGui::Spacing();
+		ImGui::TextDisabled("If you don't save, your changes will be lost.");
+		ImGui::EndGroup();
+
+		ImGui::Dummy(ImVec2(PromptWidth, 24.0f));
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		const char* SaveLabel = "Save";
+		const char* DontSaveLabel = "Don't Save";
+		const char* CancelLabel = "Cancel";
+
+		const float ButtonPaddingX = 24.0f;
+		const float ButtonHeight = 0.0f;
+		const float ButtonSpacing = 8.0f;
+		const float SaveWidth = ImGui::CalcTextSize(SaveLabel).x + ButtonPaddingX;
+		const float DontSaveWidth = ImGui::CalcTextSize(DontSaveLabel).x + ButtonPaddingX;
+		const float CancelWidth = ImGui::CalcTextSize(CancelLabel).x + ButtonPaddingX;
+		const float TotalButtonWidth = SaveWidth + DontSaveWidth + CancelWidth + ButtonSpacing * 2.0f;
+
+		const float RightPadding = 12.0f;
+		ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(), ImGui::GetCursorPosX() + PromptWidth - TotalButtonWidth - RightPadding));
+
+		if (ImGui::Button(SaveLabel, ImVec2(SaveWidth, ButtonHeight)))
+		{
+			if (FParticleEditorViewer* ParticleViewer = FindParticleViewerForTab(PendingParticleCloseTabId))
+			{
+				if (ParticleViewer->Save())
+				{
+					bBypassParticleClosePrompt = true;
+					RequestCloseEditorTab(PendingParticleCloseTabId);
+					bBypassParticleClosePrompt = false;
+					bHasPendingParticleClosePrompt = false;
+					ImGui::CloseCurrentPopup();
+				}
+			}
+		}
+		ImGui::SameLine(0.0f, ButtonSpacing);
+		if (ImGui::Button(DontSaveLabel, ImVec2(DontSaveWidth, ButtonHeight)))
+		{
+			if (FParticleEditorViewer* ParticleViewer = FindParticleViewerForTab(PendingParticleCloseTabId))
+			{
+				ParticleViewer->DiscardUnsavedChanges();
+			}
+
+			bBypassParticleClosePrompt = true;
+			RequestCloseEditorTab(PendingParticleCloseTabId);
+			bBypassParticleClosePrompt = false;
+			bHasPendingParticleClosePrompt = false;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine(0.0f, ButtonSpacing);
+		if (ImGui::Button(CancelLabel, ImVec2(CancelWidth, ButtonHeight)))
+		{
+			bHasPendingParticleClosePrompt = false;
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::Dummy(ImVec2(PromptWidth, 6.0f));
+
+		ImGui::EndPopup();
+	}
+
+	ImGui::PopStyleColor();
+	ImGui::PopStyleVar(2);
 }
 
 void FEditorMainPanel::ActivateEditorTab(const FEditorTabId& TabId)
@@ -469,8 +630,22 @@ bool FEditorMainPanel::RequestCloseEditorTab(const FEditorTabId& TabId)
 		return false;
 	}
 
+	if (TabId.Kind == EEditorTabKind::ParticleViewer && !bBypassParticleClosePrompt)
+	{
+		if (FParticleEditorViewer* ParticleViewer = FindParticleViewerForTab(TabId))
+		{
+			if (ParticleViewer->IsDirty())
+			{
+				PendingParticleCloseTabId = TabId;
+				bHasPendingParticleClosePrompt = true;
+				return false;
+			}
+		}
+	}
+
 	if ((TabId.Kind == EEditorTabKind::SkeletalMeshViewer ||
-		TabId.Kind == EEditorTabKind::AnimSequenceViewer) && EditorEngine)
+		TabId.Kind == EEditorTabKind::AnimSequenceViewer ||
+		TabId.Kind == EEditorTabKind::ParticleViewer) && EditorEngine)
 	{
 		for (auto& Viewer : EditorEngine->GetViewers())
 		{
@@ -483,6 +658,24 @@ bool FEditorMainPanel::RequestCloseEditorTab(const FEditorTabId& TabId)
 	}
 
 	return EditorTabs.CloseTab(TabId);
+}
+
+FParticleEditorViewer* FEditorMainPanel::FindParticleViewerForTab(const FEditorTabId& TabId) const
+{
+	if (TabId.Kind != EEditorTabKind::ParticleViewer || !EditorEngine)
+	{
+		return nullptr;
+	}
+
+	for (const auto& Viewer : EditorEngine->GetViewers())
+	{
+		if (Viewer && Viewer->GetTabKind() == EEditorTabKind::ParticleViewer && Viewer->GetFileName() == TabId.PayloadId)
+		{
+			return static_cast<FParticleEditorViewer*>(Viewer.get());
+		}
+	}
+
+	return nullptr;
 }
 
 void FEditorMainPanel::RequestDetachEditorTab(const FEditorTabId& TabId, bool bDetached)

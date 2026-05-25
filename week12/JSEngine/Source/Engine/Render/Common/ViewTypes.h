@@ -28,6 +28,7 @@ struct FShowFlags
 {
 	bool bPrimitives = true;
 	bool bSkeletalMesh = true;
+    bool bParticle = true;
 	bool bGrid = true;
 	bool bAxis = true;
 	bool bGizmo = true;

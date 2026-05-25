@@ -12,6 +12,11 @@
 
 namespace
 {
+	bool IsLiveObject(const UObject* Object)
+	{
+		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
+	}
+
 	int32 AlignParticleBytes(int32 Value)
 	{
 		return ParticleHelper::AlignParticleSize(Value);
@@ -88,12 +93,23 @@ namespace
 		}
 
 		UParticleModuleTypeDataBase* TypeData = Cache.TypeDataModule;
+		if (TypeData != nullptr && TypeData->bEnabled)
+		{
+			const int32 TypeDataPayloadSize = TypeData->GetRequiredPayloadSize();
+			if (TypeDataPayloadSize > 0)
+			{
+				ParticleBytes = AlignParticleBytes(ParticleBytes);
+				ParticleBytes += TypeDataPayloadSize;
+			}
+
+			AddInstancePayloadOffset(Cache, TypeData, TypeData, InstancePayloadSize);
+		}
 
 		if (Cache.SpawnModule == nullptr)
 		{
 			for (UParticleModule* Module : LODLevel->Modules)
 			{
-				if (Module != nullptr && Module->IsSpawnRateModule())
+				if (Module != nullptr && Module->bEnabled && Module->IsSpawnRateModule())
 				{
 					Cache.SpawnModule = Cast<UParticleModuleSpawn>(Module);
 					break;
@@ -101,17 +117,21 @@ namespace
 			}
 		}
 
-		// 모든 특수 모듈의 payload offset도 실제 실행 모듈 list와 같은 시작 주소 map에 넣어둠(별도 분리 안함)
-		AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
-		AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
-		AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
-		AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
-		AddParticlePayloadOffset(Cache, Cache.TypeDataModule, TypeData, ParticleBytes);
-		AddInstancePayloadOffset(Cache, Cache.TypeDataModule, TypeData, InstancePayloadSize);
+		// Required / SpawnModule은 Modules 배열과 별개의 특수 모듈이므로 먼저 offset만 계산
+		if (Cache.RequiredModule != nullptr && Cache.RequiredModule->bEnabled)
+		{
+			AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
+			AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
+		}
+		if (Cache.SpawnModule != nullptr && Cache.SpawnModule->bEnabled)
+		{
+			AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
+			AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
+		}
 
 		for (UParticleModule* Module : LODLevel->Modules)
 		{
-			if (Module == nullptr || Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
+			if (Module == nullptr || !Module->bEnabled || Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
 			{
 				continue;
 			}
@@ -312,34 +332,123 @@ bool UParticleModuleCollision::IsUpdateModule() const
 
 UParticleLODLevel::~UParticleLODLevel()
 {
-	UObjectManager::Get().DestroyObject(RequiredModule);
+	if (IsLiveObject(RequiredModule))
+	{
+		UObjectManager::Get().DestroyObject(RequiredModule);
+	}
 	RequiredModule = nullptr;
 
-	UObjectManager::Get().DestroyObject(SpawnModule);
+	if (IsLiveObject(SpawnModule))
+	{
+		UObjectManager::Get().DestroyObject(SpawnModule);
+	}
 	SpawnModule = nullptr;
 
 	for (UParticleModule* Module : Modules)
 	{
-		UObjectManager::Get().DestroyObject(Module);
+		if (Module != RequiredModule && Module != SpawnModule && Module != TypeDataModule && IsLiveObject(Module))
+		{
+			UObjectManager::Get().DestroyObject(Module);
+		}
 	}
 	Modules.clear();
 
-	UObjectManager::Get().DestroyObject(TypeDataModule);
+	if (IsLiveObject(TypeDataModule))
+	{
+		UObjectManager::Get().DestroyObject(TypeDataModule);
+	}
 	TypeDataModule = nullptr;
+}
+
+void UParticleLODLevel::PostDuplicate(UObject* Original)
+{
+	UObject::PostDuplicate(Original);
+
+	UParticleLODLevel* SourceLOD = Cast<UParticleLODLevel>(Original);
+	if (!SourceLOD)
+	{
+		return;
+	}
+
+	FDuplicateContext DuplicateContext;
+	DuplicateContext.Add(SourceLOD, this);
+
+	RequiredModule = SourceLOD->RequiredModule
+		? Cast<UParticleModuleRequired>(SourceLOD->RequiredModule->Duplicate(&DuplicateContext))
+		: nullptr;
+	if (RequiredModule)
+	{
+		DuplicateContext.Add(SourceLOD->RequiredModule, RequiredModule);
+	}
+
+	SpawnModule = SourceLOD->SpawnModule
+		? Cast<UParticleModuleSpawn>(SourceLOD->SpawnModule->Duplicate(&DuplicateContext))
+		: nullptr;
+	if (SpawnModule)
+	{
+		DuplicateContext.Add(SourceLOD->SpawnModule, SpawnModule);
+	}
+
+	TypeDataModule = SourceLOD->TypeDataModule
+		? Cast<UParticleModuleTypeDataBase>(SourceLOD->TypeDataModule->Duplicate(&DuplicateContext))
+		: nullptr;
+	if (TypeDataModule)
+	{
+		DuplicateContext.Add(SourceLOD->TypeDataModule, TypeDataModule);
+	}
+
+	Modules.clear();
+	for (UParticleModule* SourceModule : SourceLOD->Modules)
+	{
+		UParticleModule* DuplicatedModule = SourceModule
+			? Cast<UParticleModule>(SourceModule->Duplicate(&DuplicateContext))
+			: nullptr;
+		if (DuplicatedModule)
+		{
+			Modules.push_back(DuplicatedModule);
+		}
+	}
 }
 
 UParticleEmitter::~UParticleEmitter()
 {
 	for (UParticleLODLevel* LODLevel : LODLevels)
 	{
-		UObjectManager::Get().DestroyObject(LODLevel);
+		if (IsLiveObject(LODLevel))
+		{
+			UObjectManager::Get().DestroyObject(LODLevel);
+		}
 	}
 	LODLevels.clear();
 }
 
+void UParticleEmitter::PostDuplicate(UObject* Original)
+{
+	UObject::PostDuplicate(Original);
+
+	UParticleEmitter* SourceEmitter = Cast<UParticleEmitter>(Original);
+	if (!SourceEmitter)
+	{
+		return;
+	}
+
+	LODLevels.clear();
+	for (UParticleLODLevel* SourceLOD : SourceEmitter->LODLevels)
+	{
+		UParticleLODLevel* DuplicatedLOD = SourceLOD
+			? Cast<UParticleLODLevel>(SourceLOD->Duplicate())
+			: nullptr;
+		if (DuplicatedLOD)
+		{
+			LODLevels.push_back(DuplicatedLOD);
+		}
+	}
+	CacheEmitterModuleInfo();
+}
+
 UParticleSystem::UParticleSystem()
 {
-    // LOD 0은 항상 0.0f로 설정되어야 함
+	// LOD 0은 항상 0.0f로 설정되어야 함
 	LODDistances.push_back(0.0f);
 }
 
@@ -347,9 +456,36 @@ UParticleSystem::~UParticleSystem()
 {
 	for (UParticleEmitter* Emitter : Emitters)
 	{
-		UObjectManager::Get().DestroyObject(Emitter);
+		if (IsLiveObject(Emitter))
+		{
+			UObjectManager::Get().DestroyObject(Emitter);
+		}
 	}
 	Emitters.clear();
+}
+
+void UParticleSystem::PostDuplicate(UObject* Original)
+{
+	UObject::PostDuplicate(Original);
+
+	UParticleSystem* SourceParticleSystem = Cast<UParticleSystem>(Original);
+	if (!SourceParticleSystem)
+	{
+		return;
+	}
+
+	AssetPath = SourceParticleSystem->AssetPath;
+	Emitters.clear();
+	for (UParticleEmitter* SourceEmitter : SourceParticleSystem->Emitters)
+	{
+		UParticleEmitter* DuplicatedEmitter = SourceEmitter
+			? Cast<UParticleEmitter>(SourceEmitter->Duplicate())
+			: nullptr;
+		if (DuplicatedEmitter)
+		{
+			Emitters.push_back(DuplicatedEmitter);
+		}
+	}
 }
 
 FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
@@ -363,7 +499,7 @@ FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
 
 FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
 {
-    /** TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요*/
+	/** TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요*/
 
 	// EmitterInstance 유효성 체크
 	if (InEmitterInstance == nullptr ||
@@ -425,12 +561,11 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 	RenderData->ReplayData.SortMode = RequiredModule != nullptr
 		? RequiredModule->SortMode
 		: EParticleSortMode::ViewDepthBackToFront;
-	RenderData->ReplayData.Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
-	RenderData->ReplayData.MaterialInterface = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
 
 	// snapshot의 Location / OldLocation은 이미 world space이므로 renderer가 component transform을 다시 적용하면 안 됨!
 	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::World;
-	RenderData->ReplayData.ComponentToWorld = FMatrix::Identity;
+	RenderData->ComponentToWorld = FMatrix::Identity;
 	RenderData->ReplayData.Scale = FVector::OneVector;
 
 	// renderer가 설정을 읽기 위한 단순 참조용 포인터. renderer 쪽에서 수정 금지!
@@ -525,10 +660,10 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	// ReplayData
 	RenderData->ReplayData.ActiveParticleCount = ActiveParticleCount;
 	RenderData->ReplayData.ParticleStride = ParticleStride;
-	RenderData->ReplayData.Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
 
 	// renderer가 raw particle의 위치를 render space로 해석할 수 있도록 좌표계 메타데이터를 전달
-	RenderData->ReplayData.ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
+	RenderData->ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
 	RenderData->ReplayData.CoordinateSpace = RequiredModule != nullptr
 		? RequiredModule->CoordinateSpace
 		: EParticleCoordinateSpace::Local;

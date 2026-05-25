@@ -33,6 +33,7 @@ public:
 	void OpenAssetRoot();
 	bool IsMouseOverBrowser() const;
 	bool ConsumeReleasedDragPayload(FString& OutPayloadType, FString& OutPayloadPath);
+	bool RevealAsset(const FString& AssetPath);
 
 private:
 	struct FContentItem

@@ -36,12 +36,18 @@ public:
 	UParticleSystemComponent();
 	~UParticleSystemComponent() override;
 
-	void Serialize(FArchive& Ar) override;
-    void PostEditProperty(const char* PropertyName) override;
-
 	void SetTemplate(UParticleSystem* InTemplate);
+	void SetTemplateAsset(const TSoftObjectPtr<UParticleSystem>& InTemplate);
+	void SetTemplatePath(const FString& InPath);
+
+	UParticleSystem* GetTemplate();
+	const UParticleSystem* GetTemplate() const;
+
 	void SetEventManager(AParticleEventManager* InEventManager) { EventManager = InEventManager; }
 	UWorld* GetWorld() const;
+
+	void Serialize(FArchive& Ar) override;
+	void PostEditProperty(const char* PropertyName) override;
 
 	void TickComponent(float DeltaTime) override;
 	void FinalizeTickComponent();
@@ -74,16 +80,8 @@ private:
 	void ReleaseRenderData();
 	int32 SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const;
 	void UpdateLODLevel();
-	// Particle Asset Template Reference 설정
-    void ResolveTemplateAssetReference();
 
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_ParticleSystem;
-
-	// Asset / Runtime
-	UParticleSystem* Template = nullptr;
-
-	UPROPERTY(DisplayName = "Particle System")
-    TSoftObjectPtr<UParticleSystem> TemplateAssetPath;
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
@@ -95,8 +93,12 @@ private:
 	TArray<FParticleEventBurstData> BurstEvents;
 
 	AParticleEventManager* EventManager = nullptr;
+	UParticleSystem* ResolvedTemplate = nullptr;
 
 	// CPP참고 -  EmitterInstance에게 넘겨주는 Component 정보
 	class FInstanceOwner;
 	std::unique_ptr<FInstanceOwner> InstanceOwner;
+
+	UPROPERTY(DisplayName = "Template", ReferenceType = Asset)
+	TSoftObjectPtr<UParticleSystem> Template;
 };

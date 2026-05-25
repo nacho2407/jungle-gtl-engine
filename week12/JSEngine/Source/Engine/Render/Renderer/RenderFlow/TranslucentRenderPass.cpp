@@ -3,7 +3,6 @@
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
 #include "Render/Resource/ShaderHelper.h"
-#include "Render/Resource/ShaderPaths.h"
 #include "Render/Resource/VertexFactoryTypes.h"
 #include "Core/ResourceManager.h"
 
@@ -27,8 +26,8 @@ namespace
         VSKey.PermutationKey = PermutationKey;
 
         FShaderStageKey PSKey;
-        PSKey.FilePath = FShaderPaths::MaterialUberTranslucent;
-        PSKey.EntryPoint = "mainPS";
+        PSKey.FilePath = Cmd.Material->GetPixelShaderPath();
+        PSKey.EntryPoint = Cmd.Material->GetPixelShaderEntryPoint();
         PSKey.Target = "ps_5_0";
         PSKey.PermutationKey = PermutationKey;
 

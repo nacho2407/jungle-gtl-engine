@@ -1,16 +1,16 @@
 ﻿#pragma once
-#include "Particle/ParticleAsset.h"
+
+#include "Core/Containers/String.h"
+
+class UParticleSystem;
 
 class FParticleSystemAssetLoader
 {
 public:
-	UParticleSystem* Load(const FString& Path);
-	bool Save(const FString& Path, const UParticleSystem* ParticleSystem);
+	bool Save(const FString& Path, const UParticleSystem* ParticleSystem) const;
+	UParticleSystem* Load(const FString& Path) const;
+	bool SupportsExtension(const FString& Extension) const;
 
 private:
-	// TODO: 개별 Serializer 삭제하고 리플렉션으로 통일
-	bool SerializeParticleSystem(FArchive& Ar, UParticleSystem* ParticleSystem);
-	bool SerializeEmitter(FArchive& Ar, UParticleEmitter* Emitter);
-	bool SerializeLODLevel(FArchive& Ar, UParticleLODLevel* LODLevel);
-	bool SerializeModule(FArchive& Ar, UParticleModule* Module);
+	void FixupParticleSystem(UParticleSystem* ParticleSystem) const;
 };

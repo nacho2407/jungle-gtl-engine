@@ -1,5 +1,5 @@
 ﻿{
     "Name": "SubUVMat",
-    "ShaderType" : "UISubUV",
+    "ShaderType" : "VFXSubUV",
     "Params": []
 }

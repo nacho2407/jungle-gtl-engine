@@ -59,6 +59,7 @@ enum class ERenderPass : uint32
 	Font, // TextRenderComponent → FontBatcher 경유
 	SubUV, // SubUVComponent     → SubUVBatcher 경유
 	Translucent,
+    Particle,
 	SelectionMask,
 	Grid,
 	Editor,

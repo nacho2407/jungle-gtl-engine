@@ -1,6 +1,8 @@
 ﻿#include "Particle/ParticleSystemComponent.h"
 
 #include "Camera/ViewportCamera.h"
+#include "Core/Paths.h"
+#include "Core/ResourceManager.h"
 #include "GameFramework/World.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleEventManager.h"
@@ -10,9 +12,21 @@
 #include <cstring>
 #include <memory>
 
-// EmitterInstance에서 Component를 직접 참조해서 강하게 결합하는 문제를 해결하기 위해
-// Component의 일부 기능만 인터페이스로 제공하는 InstanceOwner를 EmitterInstance에 넘긴다
-// 위치를 보고 의문이 들 수 있지만 UE도 여기에 위치함
+namespace
+{
+	bool IsLiveObject(const UObject* Object)
+	{
+		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
+	}
+
+	bool IsSoloParticleInstance(const FParticleEmitterInstance* Instance)
+	{
+		return Instance != nullptr &&
+			IsLiveObject(Instance->CurrentLODLevel) &&
+			Instance->CurrentLODLevel->bSolo;
+	}
+}
+
 class UParticleSystemComponent::FInstanceOwner : public IParticleEmitterInstanceOwner
 {
 public:
@@ -80,62 +94,86 @@ UParticleSystemComponent::UParticleSystemComponent()
 
 UParticleSystemComponent::~UParticleSystemComponent()
 {
-    ReleaseRenderData();
+	ReleaseRenderData();
 	ReleaseEmitterInstances();
+}
+
+void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
+{
+	if (ResolvedTemplate == InTemplate)
+	{
+		return;
+	}
+
+	ResolvedTemplate = InTemplate;
+	Template.SetPath(InTemplate ? InTemplate->GetAssetPath() : FString());
+	ReleaseRenderData();
+	ReleaseEmitterInstances();
+	CreateEmitterInstances();
+}
+
+void UParticleSystemComponent::SetTemplateAsset(const TSoftObjectPtr<UParticleSystem>& InTemplate)
+{
+	Template = InTemplate;
+	ResolvedTemplate = nullptr;
+	ReleaseRenderData();
+	ReleaseEmitterInstances();
+	CreateEmitterInstances();
+}
+
+void UParticleSystemComponent::SetTemplatePath(const FString& InPath)
+{
+	Template.SetPath(FPaths::Normalize(InPath));
+	ResolvedTemplate = nullptr;
+	ReleaseRenderData();
+	ReleaseEmitterInstances();
+	CreateEmitterInstances();
+}
+
+UParticleSystem* UParticleSystemComponent::GetTemplate()
+{
+	if (ResolvedTemplate)
+	{
+		return ResolvedTemplate;
+	}
+
+	const FString Path = FPaths::Normalize(Template.GetPath());
+	if (Path.empty())
+	{
+		return nullptr;
+	}
+
+	ResolvedTemplate = FResourceManager::Get().LoadParticleSystem(Path);
+	return ResolvedTemplate;
+}
+
+const UParticleSystem* UParticleSystemComponent::GetTemplate() const
+{
+	return const_cast<UParticleSystemComponent*>(this)->GetTemplate();
 }
 
 void UParticleSystemComponent::Serialize(FArchive& Ar)
 {
-	UPrimitiveComponent::Serialize(Ar);
-
+	Super::Serialize(Ar);
 	if (Ar.IsLoading())
 	{
-		ResolveTemplateAssetReference();
+		ResolvedTemplate = nullptr;
+		ReleaseRenderData();
+		ReleaseEmitterInstances();
+		CreateEmitterInstances();
 	}
 }
 
 void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
 {
-	UPrimitiveComponent::PostEditProperty(PropertyName);
-
-	if (PropertyName != nullptr && std::strcmp(PropertyName, "TemplateAssetPath") == 0)
+	Super::PostEditProperty(PropertyName);
+	if (PropertyName && FString(PropertyName) == "Template")
 	{
-		ResolveTemplateAssetReference();
+		ResolvedTemplate = nullptr;
+		ReleaseRenderData();
+		ReleaseEmitterInstances();
+		CreateEmitterInstances();
 	}
-}
-
-void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
-{
-	if (Template == InTemplate)
-	{
-		return;
-	}
-
-	Template = InTemplate;
-	// Template 변경 
-	// -> 기존 Emitter Instance 모두 해제 
-	// -> 새 Template 기준으로 EmitterIntsnace 생성
-	ReleaseRenderData();
-	ReleaseEmitterInstances();
-	CreateEmitterInstances();
-
-	// TODO: SetTemplate() 호출 시 TemplateAssetPath를 갱신해야하는가..?
-    // 갱신 가능하면 SetTemplate() 안에서 SoftObjectPath 동기화
-    // 불가능하면 Editor Property 경유로만 Template 설정되도록 명시
-}
-
-void UParticleSystemComponent::ResolveTemplateAssetReference()
-{
-	if (TemplateAssetPath.IsNull())
-	{
-		SetTemplate(nullptr);
-		return;
-	}
-
-	// Asset 담당자의 ParticleSystem Load API가 들어오기 전까지는
-    // 기존 Template을 nullptr로 덮어쓰지 않는다.
-    // TODO: Asset 담당자 API 연동 후:
-    // SetTemplate(ResourceManager.LoadParticleSystem(TemplateAssetPath.GetPath()));
 }
 
 UWorld* UParticleSystemComponent::GetWorld() const
@@ -152,10 +190,24 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 	UpdateLODLevel();
 
+	bool bHasSoloEmitter = false;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (IsSoloParticleInstance(Instance))
+		{
+			bHasSoloEmitter = true;
+			break;
+		}
+	}
+
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		if (Instance != nullptr)
 		{
+			if (bHasSoloEmitter && !IsSoloParticleInstance(Instance))
+			{
+				continue;
+			}
 			Instance->Tick(DeltaTime);
 		}
 	}
@@ -220,15 +272,35 @@ void UParticleSystemComponent::PackRenderData()
 {
 	ReleaseRenderData();
 
+	bool bHasSoloEmitter = false;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (IsSoloParticleInstance(Instance))
+		{
+			bHasSoloEmitter = true;
+			break;
+		}
+	}
+
 	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
 	{
 		FParticleEmitterInstance* Instance = EmitterInstances[EmitterIndex];
-		if (Instance == nullptr || Instance->CurrentLODLevel == nullptr || Instance->CurrentLODLevel->TypeDataModule == nullptr)
+		if (Instance == nullptr || !IsLiveObject(Instance->CurrentLODLevel))
+		{
+			continue;
+		}
+		if (!Instance->CurrentLODLevel->bEnabled || (bHasSoloEmitter && !Instance->CurrentLODLevel->bSolo))
 		{
 			continue;
 		}
 
-		FDynamicEmitterDataBase* RenderData = Instance->CurrentLODLevel->TypeDataModule->GetDynamicRenderData(Instance);
+		UParticleModuleTypeDataBase* TypeDataModule = Instance->CurrentLODLevel->TypeDataModule;
+		if (!IsLiveObject(TypeDataModule) || !TypeDataModule->bEnabled)
+		{
+			continue;
+		}
+
+		FDynamicEmitterDataBase* RenderData = TypeDataModule->GetDynamicRenderData(Instance);
 		if (RenderData != nullptr)
 		{
 			RenderData->EmitterIndex = EmitterIndex;
@@ -293,7 +365,8 @@ void UParticleSystemComponent::ReleaseRenderData()
 
 int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const
 {
-	if (Template == nullptr || EmitterTemplate == nullptr || EmitterTemplate->LODLevels.size() <= 1)
+	const UParticleSystem* ParticleSystem = GetTemplate();
+	if (ParticleSystem == nullptr || EmitterTemplate == nullptr || EmitterTemplate->LODLevels.size() <= 1)
 	{
 		return 0;
 	}
@@ -309,21 +382,21 @@ int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* Emit
 	// ParticleSystem Asset의 LOD가 3이라고 하더라도, 특정 Emitter의 LOD가 1이라면 1을 적용.	
 	const int32 ThresholdCount = std::min(
 		static_cast<int32>(EmitterTemplate->LODLevels.size()),
-		static_cast<int32>(Template->LODDistances.size()));
+		static_cast<int32>(ParticleSystem->LODDistances.size()));
 	if (ThresholdCount <= 1)
 	{
 		return 0;
 	}
 
 	const float Distance = FVector::Distance(GetWorldLocation(), ActiveCamera->GetLocation());
-	float PreviousThreshold = Template->LODDistances[0];
+	float PreviousThreshold = ParticleSystem->LODDistances[0];
 	int32 SelectedIndex = 0;
 
 	// EmitterTemplate과 ParticleSystem의 LODDistance중 더 작은 Lod count를 선택한다.
 	// 순회하면서 거리를 체크, Threshold보다 더 멀리있다면 갱신, 아니라면 해당 구간이므로 LOD 인덱스 확정 후 반환.
 	for (int32 LODIndex = 1; LODIndex < ThresholdCount; ++LODIndex)
 	{
-		const float Threshold = Template->LODDistances[LODIndex];
+		const float Threshold = ParticleSystem->LODDistances[LODIndex];
 		if (Threshold < 0.0f || Threshold < PreviousThreshold)
 		{
 			// 잘못된 LOD 거리 데이터 이후의 전환은 사용하지 않음.
@@ -366,14 +439,15 @@ void UParticleSystemComponent::UpdateLODLevel()
 
 void UParticleSystemComponent::CreateEmitterInstances()
 {
-	if (Template == nullptr)
+	UParticleSystem* ParticleSystem = GetTemplate();
+	if (ParticleSystem == nullptr)
 	{
 		return;
 	}
 
-	for (UParticleEmitter* EmitterTemplate : Template->Emitters)
+	for (UParticleEmitter* EmitterTemplate : ParticleSystem->Emitters)
 	{
-		if (EmitterTemplate == nullptr)
+		if (!IsLiveObject(EmitterTemplate))
 		{
 			continue;
 		}
@@ -383,7 +457,9 @@ void UParticleSystemComponent::CreateEmitterInstances()
 		// LOD 기반으로 Particle LOD Level 및 TypeData를 가져온다
 		const int32 LODIndex = SelectLODLevelIndex(EmitterTemplate);
 		UParticleLODLevel* LODLevel = EmitterTemplate->LODLevels.empty() ? nullptr : EmitterTemplate->LODLevels[LODIndex];
-		UParticleModuleTypeDataBase* TypeData = LODLevel != nullptr ? LODLevel->TypeDataModule : nullptr;
+		UParticleModuleTypeDataBase* TypeData = IsLiveObject(LODLevel) && IsLiveObject(LODLevel->TypeDataModule)
+			? LODLevel->TypeDataModule
+			: nullptr;
 
 		if (TypeData == nullptr)
 		{

@@ -52,19 +52,7 @@ public:
 
 	AActor* SpawnActorByTypeName(const FString& TypeName);
 
-	void DestroyActor(AActor* Actor) 
-	{
-		if (!Actor) return;
-
-		Actor->EndPlay(EEndPlayReason::Type::Destroyed);
-		PersistentLevel->RemoveActor(Actor);
-
-		// Actor의 raw pointer를 들고 있는 하위 시스템들에게 Actor가 파괴되었음을 알림
-		NotifyActorDestroyed(Actor);
-
-		Actor->SetWorld(nullptr);
-		UObjectManager::Get().DestroyObject(Actor);
-	}
+	void DestroyActor(AActor* Actor);
 
 	const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
 
@@ -125,7 +113,7 @@ private:
 	FWorldGameModeSettings GameModeSettings;
 	ULevel* PersistentLevel = nullptr;
 	FViewportCamera* ActiveCamera = nullptr;
-	// TODO: Particle event manager의 엔진 전역/WorldSettings 소유 정책이 정해지면 이 임시 world 소유 경로를 교체한다.
+	// Non-owning cache. The manager is spawned as a level actor and owned by PersistentLevel.
 	AParticleEventManager* ParticleEventManager = nullptr;
 	FWorldSpatialIndex SpatialIndex;
 	bool bHasBegunPlay = false;

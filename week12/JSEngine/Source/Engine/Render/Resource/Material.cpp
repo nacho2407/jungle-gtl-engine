@@ -101,7 +101,8 @@ void UMaterial::BindRenderStates(ID3D11DeviceContext* Context) const
 	}
 
 	const bool bDecalMaterial = ShaderType == EMaterialShaderType::Decal;
-	const EDepthStencilType DepthPolicy = (bDecalMaterial || BlendMode == EMaterialBlendMode::Translucent)
+	const bool bTransparentMaterial = IsTransparentMaterialShaderType(ShaderType);
+	const EDepthStencilType DepthPolicy = (bDecalMaterial || bTransparentMaterial)
 		? EDepthStencilType::DepthReadOnly
 		: DepthStencilType;
 	const FMaterialBlendStateDesc EffectiveBlendStateDesc =
@@ -211,7 +212,8 @@ void UMaterialInstance::BindRenderStates(ID3D11DeviceContext* Context) const
 	}
 
 	const bool bDecalMaterial = GetShaderType() == EMaterialShaderType::Decal;
-	const EDepthStencilType DepthPolicy = (bDecalMaterial || GetBlendMode() == EMaterialBlendMode::Translucent)
+	const bool bTransparentMaterial = IsTransparentMaterialShaderType(GetShaderType());
+	const EDepthStencilType DepthPolicy = (bDecalMaterial || bTransparentMaterial)
 		? EDepthStencilType::DepthReadOnly
 		: (Parent ? Parent->DepthStencilType : EDepthStencilType::Default);
 	const FMaterialBlendStateDesc EffectiveBlendStateDesc =

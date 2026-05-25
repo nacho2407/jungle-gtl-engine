@@ -434,7 +434,14 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
 		SceneViewport.SetRenderTargetSet(&ViewportResource.GetView());
 
 		// 3. Begin
-		Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets());
+		const FColor& ViewerBackgroundColor = static_cast<FViewerViewportClient*>(VC)->GetBackgroundColor();
+		const float ViewerClearColor[4] = {
+			ViewerBackgroundColor.R,
+			ViewerBackgroundColor.G,
+			ViewerBackgroundColor.B,
+			ViewerBackgroundColor.A
+		};
+		Renderer.BeginViewportFrame(SceneViewport.GetViewportRenderTargets(), ViewerClearColor);
 
 		// 4. Bus 세팅
 		Bus.Clear();
@@ -740,7 +747,7 @@ ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
 			Cmd.SectionIndexCount = Section.IndexCount;
 			Cmd.PerObjectConstants = FPerObjectConstants(World, FColor::White().ToVector4());
 			Cmd.WorldAABB = FAABB::TransformAABB(Bounds, World);
-			Bus.AddCommand(ERenderPass::Opaque, Cmd);
+			Bus.AddCommand(ResolveMaterialRenderPass(Cmd.Material), Cmd);
 		}
 	}
 	else
@@ -754,7 +761,7 @@ ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
 		Cmd.SectionIndexCount = static_cast<uint32>(MeshData->Indices.size());
 		Cmd.PerObjectConstants = FPerObjectConstants(World, FColor::White().ToVector4());
 		Cmd.WorldAABB = FAABB::TransformAABB(Bounds, World);
-		Bus.AddCommand(ERenderPass::Opaque, Cmd);
+		Bus.AddCommand(ResolveMaterialRenderPass(Cmd.Material), Cmd);
 	}
 
 	Renderer.PrepareBatchers(Bus);

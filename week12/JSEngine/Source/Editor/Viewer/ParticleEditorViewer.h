@@ -7,6 +7,7 @@
 #include "Particle/ParticleSystemComponent.h"
 
 class AActor;
+class AParticleSystemActor;
 class UParticleSystem;
 class UParticleSystemComponent;
 class UParticleEmitter;
@@ -80,6 +81,7 @@ public:
 	void RestartLevel();
 	void SetPlaying(bool bInPlaying) { bPlaying = bInPlaying; }
 	bool IsPlaying() const { return bPlaying; }
+	float GetSimulationTime() const { return SimulationTime; }
 
 	void SetLooping(bool bInLooping) { bLooping = bInLooping; }
 	bool IsLooping() const { return bLooping; }
@@ -90,6 +92,9 @@ public:
 	// View Mode & Display Options ─────────────────────────────────────────────────
 	void SetShowGrid(bool bInShowGrid) { Client.SetShowGrid(bInShowGrid); }
 	bool IsShowGrid() const { return Client.IsShowGrid(); }
+
+	void SetShowAxis(bool bInShowAxis) { Client.SetShowAxis(bInShowAxis); }
+	bool IsShowAxis() const { return Client.IsShowAxis(); }
 
 	void SetShowBounds(bool bInShowBounds) { Client.SetShowBounds(bInShowBounds); }
 	bool IsShowBounds() const { return Client.IsShowBounds(); }
@@ -103,6 +108,7 @@ public:
 	// Emitter Controls ────────────────────────────────────────────────────────────
 	void AddEmitter();
 	void DeleteSelectedEmitter();
+	void DeleteSelection();
 	void MoveEmitter(int32 FromIndex, int32 ToIndex);
 
 	void AddModule(UClass* ModuleClass);
@@ -114,7 +120,16 @@ public:
 	// Toolbar Actions ────────────────────────────────────────────────────────────
 	bool Save();
 	bool SaveAs(const FString& InFileName);
+
 	void FindInContentBrowser();
+
+	bool Undo();
+	bool Redo();
+	bool CanUndo() const { return !UndoSnapshots.empty(); }
+	bool CanRedo() const { return !RedoSnapshots.empty(); }
+	void CaptureUndoSnapshot(const char* Reason = nullptr);
+	void DiscardUnsavedChanges();
+
 	void AddLOD();
 	void RemoveLOD(int32 LODIndex);
 	void SetHighestLOD();
@@ -126,22 +141,29 @@ public:
 	bool IsDirty() const { return bDirty; }
 
 private:
+	// State Clear
 	void ClearParticlePreview();
 	void ClearParticleSelection();
 	bool CreatePreviewComponent();
 
+	// Load & Create Asset
 	bool LoadParticleSystemAsset(const FString& InFileName);
 	void EnsureDefaultParticleSystem();
 	UParticleLODLevel* CreateDefaultLODLevel(int32 Level);
+	bool CaptureParticleSnapshot(FString& OutSnapshot) const;
+	bool RestoreParticleSnapshot(const FString& Snapshot);
+	void RefreshSavedSnapshot();
+	void ClearUndoHistory();
+	void CacheAllEmitters();
 
 private:
 	FParticleViewerViewportClient Client;
 	UParticleSystem* ParticleSystem = nullptr;
 
 	UParticleSystemComponent* PreviewComponent = nullptr;
-	AActor* PreviewActor = nullptr;
 	UWorld* PreviewWorld = nullptr;
-	// AParticleSystemActor* PreviewActor = nullptr;
+	AParticleSystemActor* PreviewActor = nullptr;
+
 	bool bOwnsParticleSystem = false; // 뷰어가 생성한 ParticleSystem인지, Asset을 참조한 것인지 구분
 
 	// Selection State
@@ -154,4 +176,12 @@ private:
 	bool bPlaying = true;
 	bool bLooping = true;
 	bool bDirty = false;
+	float SimulationTime = 0.0f;
+
+	// Undo & Redo
+	bool bRestoringParticleSnapshot = false;
+	FString SavedSnapshot;
+	TArray<FString> UndoSnapshots;
+	TArray<FString> RedoSnapshots;
+	static constexpr int32 MaxParticleUndoSnapshots = 50;
 };

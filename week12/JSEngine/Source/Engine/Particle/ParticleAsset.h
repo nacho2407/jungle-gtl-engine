@@ -33,13 +33,25 @@ class UParticleLODLevel : public UObject
 public:
 	GENERATED_BODY(UParticleLODLevel, UObject)
 	~UParticleLODLevel() override;
+	void PostDuplicate(UObject* Original) override;
 
+	UPROPERTY(DisplayName = "Level")
 	int32 Level = 0;
+	UPROPERTY(DisplayName = "Enabled")
 	bool bEnabled = true;
+	UPROPERTY(DisplayName = "Solo")
+	bool bSolo = false;
 
+	UPROPERTY(ReferenceType = RuntimeObject)
 	UParticleModuleRequired* RequiredModule = nullptr;
+
+	UPROPERTY(ReferenceType = RuntimeObject)
 	UParticleModuleSpawn* SpawnModule = nullptr;
+
+	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleModule*> Modules;
+
+	UPROPERTY(ReferenceType = RuntimeObject)
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
 };
 
@@ -49,8 +61,11 @@ class UParticleEmitter : public UObject
 public:
 	GENERATED_BODY(UParticleEmitter, UObject)
 	~UParticleEmitter() override;
+	void PostDuplicate(UObject* Original) override;
 
+	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleLODLevel*> LODLevels;
+
 	TArray<FParticleLODLevelRuntimeCache> LODLevelRuntimeCaches;
 
 	void CacheEmitterModuleInfo();
@@ -68,10 +83,18 @@ public:
 	GENERATED_BODY(UParticleSystem, UObject)
 	UParticleSystem();
 	~UParticleSystem() override;
+	void PostDuplicate(UObject* Original) override;
 
+	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleEmitter*> Emitters;
 
 	// 거리 기반 LOD 시스템을 위한 LOD 거리 설정. LOD 0은 항상 0.0f로 설정되어야 함에 유의!
 	UPROPERTY(DisplayName = "LOD Distances")
 	TArray<float> LODDistances;
+
+	void SetAssetPath(const FString& InPath) { AssetPath = InPath; }
+	const FString& GetAssetPath() const { return AssetPath; }
+
+private:
+	FString AssetPath;
 };
