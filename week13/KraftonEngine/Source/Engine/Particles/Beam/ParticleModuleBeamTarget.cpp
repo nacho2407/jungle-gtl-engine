@@ -1,9 +1,8 @@
 #include "Particles/Beam/ParticleModuleBeamTarget.h"
 
 #include "Particles/ParticleEmitterInstances.h"
+#include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
 #include "Serialization/Archive.h"
-
-#include <algorithm>
 
 UParticleModuleBeamTarget::UParticleModuleBeamTarget()
 	: bTargetAbsolute(false)
@@ -25,24 +24,56 @@ void UParticleModuleBeamTarget::InitializeDefaults()
 void UParticleModuleBeamTarget::Spawn(const FSpawnContext& Context)
 {
 	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(&Context.Owner);
-	if (!BeamInst) return;
+	if (!BeamInst || !BeamInst->BeamTypeData) return;
 
-	FBeam2TypeDataPayload* BeamData = reinterpret_cast<FBeam2TypeDataPayload*>(reinterpret_cast<uint8*>(Context.ParticleBase) + Context.Owner.TypeDataOffset);
+	FBeam2TypeDataPayload* BeamData = nullptr;
+	FVector* InterpolatedPoints = nullptr;
+	float* NoiseRate = nullptr;
+	float* NoiseDeltaTime = nullptr;
+	FVector* TargetNoisePoints = nullptr;
+	FVector* NextNoisePoints = nullptr;
+	float* TaperValues = nullptr;
+	float* NoiseDistanceScale = nullptr;
+	FBeamParticleModifierPayloadData* SourceModifier = nullptr;
+	FBeamParticleModifierPayloadData* TargetModifier = nullptr;
+
+	int32 TypeDataCurrentOffset = Context.Owner.TypeDataOffset;
+	BeamInst->BeamTypeData->GetDataPointers(&Context.Owner, reinterpret_cast<const uint8*>(Context.ParticleBase), TypeDataCurrentOffset,
+		BeamData, InterpolatedPoints, NoiseRate, NoiseDeltaTime, TargetNoisePoints, NextNoisePoints,
+		TaperValues, NoiseDistanceScale, SourceModifier, TargetModifier);
+
 	int32 CurrentOffset = Context.Offset;
 
-	const int32 BeamIndex = std::max(0, Context.Owner.ActiveParticles - 1);
-	ResolveTargetData(Context, BeamInst, BeamData, reinterpret_cast<const uint8*>(Context.ParticleBase), CurrentOffset, BeamIndex, true, nullptr);
+	// Keep the Unreal module-facing beam index convention.
+	// If this engine increments ActiveParticles at a different point,
+	// fix SpawnParticles ordering instead of compensating in this module.
+	ResolveTargetData(Context, BeamInst, BeamData, reinterpret_cast<const uint8*>(Context.ParticleBase), CurrentOffset, Context.Owner.ActiveParticles, true, TargetModifier);
 }
 
 void UParticleModuleBeamTarget::Update(const FUpdateContext& Context)
 {
 	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(&Context.Owner);
-	if (!BeamInst) return;
+	if (!BeamInst || !BeamInst->BeamTypeData) return;
 
 	BEGIN_UPDATE_LOOP;
-	FBeam2TypeDataPayload* BeamData = reinterpret_cast<FBeam2TypeDataPayload*>(ParticleBase + Context.Owner.TypeDataOffset);
+	FBeam2TypeDataPayload* BeamData = nullptr;
+	FVector* InterpolatedPoints = nullptr;
+	float* NoiseRate = nullptr;
+	float* NoiseDeltaTime = nullptr;
+	FVector* TargetNoisePoints = nullptr;
+	FVector* NextNoisePoints = nullptr;
+	float* TaperValues = nullptr;
+	float* NoiseDistanceScale = nullptr;
+	FBeamParticleModifierPayloadData* SourceModifier = nullptr;
+	FBeamParticleModifierPayloadData* TargetModifier = nullptr;
+
+	int32 TypeDataCurrentOffset = Context.Owner.TypeDataOffset;
+	BeamInst->BeamTypeData->GetDataPointers(&Context.Owner, ParticleBase, TypeDataCurrentOffset,
+		BeamData, InterpolatedPoints, NoiseRate, NoiseDeltaTime, TargetNoisePoints, NextNoisePoints,
+		TaperValues, NoiseDistanceScale, SourceModifier, TargetModifier);
+
 	int32 LocalOffset = Context.Offset;
-	ResolveTargetData(Context, BeamInst, BeamData, ParticleBase, LocalOffset, i, false, nullptr);
+	ResolveTargetData(Context, BeamInst, BeamData, ParticleBase, LocalOffset, i, false, TargetModifier);
 	END_UPDATE_LOOP;
 }
 
@@ -68,8 +99,8 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 	// UE resolves Actor / Emitter / Particle target methods through named
 	// component parameters, emitter instance lookup, and selected source
 	// particles. Jungle does not expose those foundations yet, so these methods
-	// are intentionally stubbed. Do not fall back to Default distribution or
-	// Owner.Location, because that changes the meaning of the Cascade module.
+	// are intentionally stubbed. Do not fall back to Default distribution,
+	// Owner.Location, or any substitute target.
 	if (TargetMethod == PEB2STM_Actor ||
 		TargetMethod == PEB2STM_Emitter ||
 		TargetMethod == PEB2STM_Particle)
@@ -91,6 +122,13 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 		break;
 	default:
 		return false;
+	}
+
+	if (ModifierData)
+	{
+		ModifierData->UpdatePosition(BeamData->TargetPoint);
+		ModifierData->UpdateTangent(BeamData->TargetTangent, false);
+		ModifierData->UpdateStrength(BeamData->TargetStrength);
 	}
 
 	return true;

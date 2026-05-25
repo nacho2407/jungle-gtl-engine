@@ -4,8 +4,6 @@
 #include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
 #include "Serialization/Archive.h"
 
-#include <algorithm>
-
 UParticleModuleBeamSource::UParticleModuleBeamSource()
 	: bSourceAbsolute(false)
 	, bLockSource(false)
@@ -40,30 +38,62 @@ uint32 UParticleModuleBeamSource::RequiredBytes(UParticleModuleTypeDataBase* Typ
 void UParticleModuleBeamSource::Spawn(const FSpawnContext& Context)
 {
 	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(&Context.Owner);
-	if (!BeamInst)
+	if (!BeamInst || !BeamInst->BeamTypeData)
 	{
 		return;
 	}
 
-	FBeam2TypeDataPayload* BeamData = reinterpret_cast<FBeam2TypeDataPayload*>(reinterpret_cast<uint8*>(Context.ParticleBase) + Context.Owner.TypeDataOffset);
+	FBeam2TypeDataPayload* BeamData = nullptr;
+	FVector* InterpolatedPoints = nullptr;
+	float* NoiseRate = nullptr;
+	float* NoiseDeltaTime = nullptr;
+	FVector* TargetNoisePoints = nullptr;
+	FVector* NextNoisePoints = nullptr;
+	float* TaperValues = nullptr;
+	float* NoiseDistanceScale = nullptr;
+	FBeamParticleModifierPayloadData* SourceModifier = nullptr;
+	FBeamParticleModifierPayloadData* TargetModifier = nullptr;
+
+	int32 TypeDataCurrentOffset = Context.Owner.TypeDataOffset;
+	BeamInst->BeamTypeData->GetDataPointers(&Context.Owner, reinterpret_cast<const uint8*>(Context.ParticleBase), TypeDataCurrentOffset,
+		BeamData, InterpolatedPoints, NoiseRate, NoiseDeltaTime, TargetNoisePoints, NextNoisePoints,
+		TaperValues, NoiseDistanceScale, SourceModifier, TargetModifier);
+
 	int32 CurrentOffset = Context.Offset;
 
-	const int32 BeamIndex = std::max(0, Context.Owner.ActiveParticles - 1);
-	ResolveSourceData(Context, BeamInst, BeamData, reinterpret_cast<const uint8*>(Context.ParticleBase), CurrentOffset, BeamIndex, true, nullptr);
+	// Keep the Unreal module-facing beam index convention.
+	// If this engine increments ActiveParticles at a different point,
+	// fix SpawnParticles ordering instead of compensating in this module.
+	ResolveSourceData(Context, BeamInst, BeamData, reinterpret_cast<const uint8*>(Context.ParticleBase), CurrentOffset, Context.Owner.ActiveParticles, true, SourceModifier);
 }
 
 void UParticleModuleBeamSource::Update(const FUpdateContext& Context)
 {
 	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(&Context.Owner);
-	if (!BeamInst)
+	if (!BeamInst || !BeamInst->BeamTypeData)
 	{
 		return;
 	}
 
 	BEGIN_UPDATE_LOOP;
-	FBeam2TypeDataPayload* BeamData = reinterpret_cast<FBeam2TypeDataPayload*>(ParticleBase + Context.Owner.TypeDataOffset);
+	FBeam2TypeDataPayload* BeamData = nullptr;
+	FVector* InterpolatedPoints = nullptr;
+	float* NoiseRate = nullptr;
+	float* NoiseDeltaTime = nullptr;
+	FVector* TargetNoisePoints = nullptr;
+	FVector* NextNoisePoints = nullptr;
+	float* TaperValues = nullptr;
+	float* NoiseDistanceScale = nullptr;
+	FBeamParticleModifierPayloadData* SourceModifier = nullptr;
+	FBeamParticleModifierPayloadData* TargetModifier = nullptr;
+
+	int32 TypeDataCurrentOffset = Context.Owner.TypeDataOffset;
+	BeamInst->BeamTypeData->GetDataPointers(&Context.Owner, ParticleBase, TypeDataCurrentOffset,
+		BeamData, InterpolatedPoints, NoiseRate, NoiseDeltaTime, TargetNoisePoints, NextNoisePoints,
+		TaperValues, NoiseDistanceScale, SourceModifier, TargetModifier);
+
 	int32 LocalOffset = Context.Offset;
-	ResolveSourceData(Context, BeamInst, BeamData, ParticleBase, LocalOffset, i, false, nullptr);
+	ResolveSourceData(Context, BeamInst, BeamData, ParticleBase, LocalOffset, i, false, SourceModifier);
 	END_UPDATE_LOOP;
 }
 
@@ -116,8 +146,8 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 	// UE resolves Actor / Emitter / Particle source methods through named
 	// component parameters, emitter instance lookup, and selected source
 	// particles. Jungle does not expose those foundations yet, so these methods
-	// are intentionally stubbed. Do not fall back to Default distribution or
-	// Owner.Location, because that changes the meaning of the Cascade module.
+	// are intentionally stubbed. Do not fall back to Default distribution,
+	// Owner.Location, or any substitute source.
 	if (SourceMethod == PEB2STM_Actor ||
 		SourceMethod == PEB2STM_Emitter ||
 		SourceMethod == PEB2STM_Particle)
@@ -139,6 +169,13 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 		break;
 	default:
 		return false;
+	}
+
+	if (ModifierData)
+	{
+		ModifierData->UpdatePosition(BeamData->SourcePoint);
+		ModifierData->UpdateTangent(BeamData->SourceTangent, false);
+		ModifierData->UpdateStrength(BeamData->SourceStrength);
 	}
 
 	return true;

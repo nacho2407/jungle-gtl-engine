@@ -29,19 +29,51 @@ void UParticleModuleTypeDataBeam2::InitializeDefaults()
 	Sheets = std::max(1, Sheets);
 }
 
+UParticleModuleBeamNoise* GetFirstBeamNoiseModuleForLayout(UParticleModuleTypeDataBeam2* TypeData)
+{
+	return (TypeData && TypeData->LOD_BeamModule_Noise.size() > 0) ? TypeData->LOD_BeamModule_Noise[0] : nullptr;
+}
+
 uint32 UParticleModuleTypeDataBeam2::RequiredBytes(UParticleModuleTypeDataBase* TypeData)
 {
-	uint32 Size = sizeof(FBeam2TypeDataPayload);
-	Size += sizeof(FVector) * std::max(0, InterpolationPoints);
-	Size += sizeof(float); // NoiseRate
-	Size += sizeof(float); // NoiseDeltaTime
-	Size += sizeof(FVector) * FDynamicBeam2EmitterData::MaxNoiseFrequency;
-	Size += sizeof(FVector) * FDynamicBeam2EmitterData::MaxNoiseFrequency;
-	Size += sizeof(float) * (std::max(0, InterpolationPoints) + 2);
-	Size += sizeof(float); // NoiseDistanceScale
+	uint32 Size = 0;
+	int32 TaperCount = 2;
 
-	// UE allocates modifier payload through modifier modules, but TypeData owns the shared
-	// pointer walk that every beam module uses.
+	Size += sizeof(FBeam2TypeDataPayload);
+
+	if (InterpolationPoints > 0)
+	{
+		Size += sizeof(FVector) * InterpolationPoints;
+		TaperCount = InterpolationPoints + 1;
+	}
+
+	UParticleModuleBeamNoise* BeamNoise = GetFirstBeamNoiseModuleForLayout(this);
+	if (BeamNoise && BeamNoise->bLowFreq_Enabled)
+	{
+		const int32 Frequency = BeamNoise->Frequency + 1;
+
+		Size += sizeof(float);              // NoiseRate
+		Size += sizeof(float);              // NoiseDeltaTime
+		Size += sizeof(FVector) * Frequency; // TargetNoisePoints
+
+		if (BeamNoise->bSmooth)
+		{
+			Size += sizeof(FVector) * Frequency; // NextNoisePoints
+		}
+
+		TaperCount = (Frequency + 1) * (BeamNoise->NoiseTessellation ? BeamNoise->NoiseTessellation : 1);
+
+		if (BeamNoise->bApplyNoiseScale)
+		{
+			Size += sizeof(float); // NoiseDistanceScale
+		}
+	}
+
+	if (TaperMethod != PEBTM_None)
+	{
+		Size += sizeof(float) * TaperCount;
+	}
+
 	return Size;
 }
 
@@ -53,24 +85,61 @@ void UParticleModuleTypeDataBeam2::GetDataPointers(FParticleEmitterInstance* Own
 	FBeamParticleModifierPayloadData*& TargetModifier)
 {
 	uint8* Base = const_cast<uint8*>(ParticleBase);
+	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(Owner);
+	UParticleModuleBeamNoise* BeamNoise = BeamInst ? BeamInst->BeamModule_Noise : nullptr;
+	int32 TaperCount = 2;
+
 	BeamData = reinterpret_cast<FBeam2TypeDataPayload*>(Base + CurrentOffset);
 	CurrentOffset += sizeof(FBeam2TypeDataPayload);
-	InterpolatedPoints = reinterpret_cast<FVector*>(Base + CurrentOffset);
-	CurrentOffset += sizeof(FVector) * std::max(0, InterpolationPoints);
-	NoiseRate = reinterpret_cast<float*>(Base + CurrentOffset);
-	CurrentOffset += sizeof(float);
-	NoiseDeltaTime = reinterpret_cast<float*>(Base + CurrentOffset);
-	CurrentOffset += sizeof(float);
-	TargetNoisePoints = reinterpret_cast<FVector*>(Base + CurrentOffset);
-	CurrentOffset += sizeof(FVector) * FDynamicBeam2EmitterData::MaxNoiseFrequency;
-	NextNoisePoints = reinterpret_cast<FVector*>(Base + CurrentOffset);
-	CurrentOffset += sizeof(FVector) * FDynamicBeam2EmitterData::MaxNoiseFrequency;
-	TaperValues = reinterpret_cast<float*>(Base + CurrentOffset);
-	CurrentOffset += sizeof(float) * (std::max(0, InterpolationPoints) + 2);
-	NoiseDistanceScale = reinterpret_cast<float*>(Base + CurrentOffset);
-	CurrentOffset += sizeof(float);
 
-	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(Owner);
+	InterpolatedPoints = nullptr;
+	NoiseRate = nullptr;
+	NoiseDeltaTime = nullptr;
+	TargetNoisePoints = nullptr;
+	NextNoisePoints = nullptr;
+	TaperValues = nullptr;
+	NoiseDistanceScale = nullptr;
+
+	if (InterpolationPoints > 0)
+	{
+		InterpolatedPoints = reinterpret_cast<FVector*>(Base + CurrentOffset);
+		CurrentOffset += sizeof(FVector) * InterpolationPoints;
+		TaperCount = InterpolationPoints + 1;
+	}
+
+	if (BeamNoise && BeamNoise->bLowFreq_Enabled)
+	{
+		const int32 Frequency = BeamNoise->Frequency + 1;
+
+		NoiseRate = reinterpret_cast<float*>(Base + CurrentOffset);
+		CurrentOffset += sizeof(float);
+		NoiseDeltaTime = reinterpret_cast<float*>(Base + CurrentOffset);
+		CurrentOffset += sizeof(float);
+
+		TargetNoisePoints = reinterpret_cast<FVector*>(Base + CurrentOffset);
+		CurrentOffset += sizeof(FVector) * Frequency;
+
+		if (BeamNoise->bSmooth)
+		{
+			NextNoisePoints = reinterpret_cast<FVector*>(Base + CurrentOffset);
+			CurrentOffset += sizeof(FVector) * Frequency;
+		}
+
+		TaperCount = (Frequency + 1) * (BeamNoise->NoiseTessellation ? BeamNoise->NoiseTessellation : 1);
+
+		if (BeamNoise->bApplyNoiseScale)
+		{
+			NoiseDistanceScale = reinterpret_cast<float*>(Base + CurrentOffset);
+			CurrentOffset += sizeof(float);
+		}
+	}
+
+	if (TaperMethod != PEBTM_None)
+	{
+		TaperValues = reinterpret_cast<float*>(Base + CurrentOffset);
+		CurrentOffset += sizeof(float) * TaperCount;
+	}
+
 	SourceModifier = (BeamInst && BeamInst->BeamModule_SourceModifier_Offset != INDEX_NONE)
 		? reinterpret_cast<FBeamParticleModifierPayloadData*>(Base + BeamInst->BeamModule_SourceModifier_Offset)
 		: nullptr;
@@ -84,23 +153,63 @@ void UParticleModuleTypeDataBeam2::GetDataPointerOffsets(FParticleEmitterInstanc
 	int32& NoiseDeltaTimeOffset, int32& TargetNoisePointsOffset, int32& NextNoisePointsOffset,
 	int32& TaperCount, int32& TaperValuesOffset, int32& NoiseDistanceScaleOffset)
 {
-	BeamDataOffset = CurrentOffset;
-	CurrentOffset += sizeof(FBeam2TypeDataPayload);
-	InterpolatedPointsOffset = CurrentOffset;
-	CurrentOffset += sizeof(FVector) * std::max(0, InterpolationPoints);
-	NoiseRateOffset = CurrentOffset;
-	CurrentOffset += sizeof(float);
-	NoiseDeltaTimeOffset = CurrentOffset;
-	CurrentOffset += sizeof(float);
-	TargetNoisePointsOffset = CurrentOffset;
-	CurrentOffset += sizeof(FVector) * FDynamicBeam2EmitterData::MaxNoiseFrequency;
-	NextNoisePointsOffset = CurrentOffset;
-	CurrentOffset += sizeof(FVector) * FDynamicBeam2EmitterData::MaxNoiseFrequency;
-	TaperCount = std::max(0, InterpolationPoints) + 2;
-	TaperValuesOffset = CurrentOffset;
-	CurrentOffset += sizeof(float) * TaperCount;
-	NoiseDistanceScaleOffset = CurrentOffset;
-	CurrentOffset += sizeof(float);
+	FParticleBeam2EmitterInstance* BeamInst = dynamic_cast<FParticleBeam2EmitterInstance*>(Owner);
+	UParticleModuleBeamNoise* BeamNoise = BeamInst ? BeamInst->BeamModule_Noise : nullptr;
+	int32 LocalOffset = 0;
+
+	BeamDataOffset = CurrentOffset + LocalOffset;
+	LocalOffset += sizeof(FBeam2TypeDataPayload);
+
+	InterpolatedPointsOffset = INDEX_NONE;
+	NoiseRateOffset = INDEX_NONE;
+	NoiseDeltaTimeOffset = INDEX_NONE;
+	TargetNoisePointsOffset = INDEX_NONE;
+	NextNoisePointsOffset = INDEX_NONE;
+	TaperValuesOffset = INDEX_NONE;
+	NoiseDistanceScaleOffset = INDEX_NONE;
+	TaperCount = 2;
+
+	if (InterpolationPoints > 0)
+	{
+		InterpolatedPointsOffset = CurrentOffset + LocalOffset;
+		LocalOffset += sizeof(FVector) * InterpolationPoints;
+		TaperCount = InterpolationPoints + 1;
+	}
+
+	if (BeamNoise && BeamNoise->bLowFreq_Enabled)
+	{
+		const int32 Frequency = BeamNoise->Frequency + 1;
+
+		NoiseRateOffset = CurrentOffset + LocalOffset;
+		LocalOffset += sizeof(float);
+		NoiseDeltaTimeOffset = CurrentOffset + LocalOffset;
+		LocalOffset += sizeof(float);
+
+		TargetNoisePointsOffset = CurrentOffset + LocalOffset;
+		LocalOffset += sizeof(FVector) * Frequency;
+
+		if (BeamNoise->bSmooth)
+		{
+			NextNoisePointsOffset = CurrentOffset + LocalOffset;
+			LocalOffset += sizeof(FVector) * Frequency;
+		}
+
+		TaperCount = (Frequency + 1) * (BeamNoise->NoiseTessellation ? BeamNoise->NoiseTessellation : 1);
+
+		if (BeamNoise->bApplyNoiseScale)
+		{
+			NoiseDistanceScaleOffset = CurrentOffset + LocalOffset;
+			LocalOffset += sizeof(float);
+		}
+	}
+
+	if (TaperMethod != PEBTM_None)
+	{
+		TaperValuesOffset = CurrentOffset + LocalOffset;
+		LocalOffset += sizeof(float) * TaperCount;
+	}
+
+	CurrentOffset += LocalOffset;
 }
 
 void UParticleModuleTypeDataBeam2::Spawn(const FSpawnContext& Context)
@@ -143,24 +252,9 @@ void UParticleModuleTypeDataBeam2::Spawn(const FSpawnContext& Context)
 		BeamData->TargetStrength = 0.0f;
 	}
 
-	if (SourceModifier)
-	{
-		SourceModifier->UpdatePosition(BeamData->SourcePoint);
-		SourceModifier->UpdateTangent(BeamData->SourceTangent, false);
-		SourceModifier->UpdateStrength(BeamData->SourceStrength);
-	}
-	if (TargetModifier)
-	{
-		TargetModifier->UpdatePosition(BeamData->TargetPoint);
-		TargetModifier->UpdateTangent(BeamData->TargetTangent, false);
-		TargetModifier->UpdateStrength(BeamData->TargetStrength);
-	}
-
 	BeamData->Lock_Max_NumNoisePoints = 0;
 	BEAM2_TYPEDATA_SETLOCKED(BeamData->Lock_Max_NumNoisePoints, Speed <= 0.0f);
 	Context.ParticleBase->Location = Speed > 0.0f ? BeamData->SourcePoint : BeamData->TargetPoint;
-
-	Update({ Context.Owner, Context.Owner.TypeDataOffset, 0.0f });
 }
 
 void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
@@ -179,6 +273,24 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 	FBeamParticleModifierPayloadData* TargetModifier = nullptr;
 	GetDataPointers(&Context.Owner, ParticleBase, LocalOffset, BeamData, InterpolatedPoints,
 		NoiseRate, NoiseDeltaTime, TargetNoisePoints, NextNoisePoints, TaperValues, NoiseDistanceScale, SourceModifier, TargetModifier);
+
+	if (!BeamData)
+	{
+		continue;
+	}
+
+	if (SourceModifier)
+	{
+		SourceModifier->UpdatePosition(BeamData->SourcePoint);
+		SourceModifier->UpdateTangent(BeamData->SourceTangent, false);
+		SourceModifier->UpdateStrength(BeamData->SourceStrength);
+	}
+	if (TargetModifier)
+	{
+		TargetModifier->UpdatePosition(BeamData->TargetPoint);
+		TargetModifier->UpdateTangent(BeamData->TargetTangent, false);
+		TargetModifier->UpdateStrength(BeamData->TargetStrength);
+	}
 
 	const FVector FullDelta = BeamData->TargetPoint - BeamData->SourcePoint;
 	const float FullDistance = FullDelta.Length();
@@ -208,9 +320,17 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 	BeamData->Steps = std::max(1, BeamData->InterpolationSteps + 1);
 	BeamData->StepSize = RenderDistance / static_cast<double>(BeamData->Steps);
 	BeamData->TriangleCount = BeamData->Steps * std::max(1, Sheets) * 2;
+
 	if (TaperValues)
 	{
-		const int32 TaperCount = BeamData->Steps + 1;
+		int32 TaperCount = BeamData->Steps + 1;
+		if (Context.Owner.CurrentLODLevel && Context.Owner.CurrentLODLevel->TypeDataModule == this)
+		{
+			int32 DummyOffset = Context.Owner.TypeDataOffset;
+			int32 DummyBeamOffset, DummyInterpOffset, DummyNoiseRate, DummyNoiseDelta, DummyTargetNoise, DummyNextNoise, DummyTaperOffset, DummyNoiseScale;
+			GetDataPointerOffsets(&Context.Owner, ParticleBase, DummyOffset, DummyBeamOffset, DummyInterpOffset, DummyNoiseRate, DummyNoiseDelta, DummyTargetNoise, DummyNextNoise, TaperCount, DummyTaperOffset, DummyNoiseScale);
+		}
+
 		for (int32 TaperIndex = 0; TaperIndex < TaperCount; ++TaperIndex)
 		{
 			const float Alpha = TaperCount > 1 ? static_cast<float>(TaperIndex) / static_cast<float>(TaperCount - 1) : 0.0f;
@@ -224,9 +344,7 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 
 FParticleEmitterInstance* UParticleModuleTypeDataBeam2::CreateInstance(UParticleEmitter* InEmitterParent, UParticleSystemComponent& InComponent)
 {
-	FParticleBeam2EmitterInstance* Instance = new FParticleBeam2EmitterInstance();
-	Instance->InitParameters(InEmitterParent, &InComponent);
-	return Instance;
+	return new FParticleBeam2EmitterInstance();
 }
 
 void UParticleModuleTypeDataBeam2::CacheModuleInfo(UParticleEmitter* Emitter)
