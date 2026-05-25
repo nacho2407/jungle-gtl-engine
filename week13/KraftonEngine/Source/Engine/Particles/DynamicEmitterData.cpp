@@ -2,10 +2,54 @@
 #include "Particles/ParticleHelper.h"
 #include <algorithm>
 #include <cmath>
+#include <unordered_map>
 
 namespace
 {
 	constexpr float PI = 3.14159265358979323846f;
+
+	struct FBeamTrailCPUStaging
+	{
+		TArray<FParticleBeamTrailVertex> Vertices;
+		TArray<uint32> Indices;
+	};
+
+	std::unordered_map<const void*, FBeamTrailCPUStaging> GBeamTrailCPUStaging;
+
+	FBeamTrailCPUStaging& GetCPUStaging(const void* Owner)
+	{
+		return GBeamTrailCPUStaging[Owner];
+	}
+
+	const FBeamTrailCPUStaging& GetCPUStagingConst(const void* Owner)
+	{
+		static const FBeamTrailCPUStaging Empty;
+		const auto It = GBeamTrailCPUStaging.find(Owner);
+		return It != GBeamTrailCPUStaging.end() ? It->second : Empty;
+	}
+
+	void RemoveCPUStaging(const void* Owner)
+	{
+		GBeamTrailCPUStaging.erase(Owner);
+	}
+
+	int32 ComputeBeamTaperCount(const FDynamicBeam2EmitterReplayData& Source, const FBeam2TypeDataPayload& BeamData)
+	{
+		if (Source.TaperMethod == 0)
+		{
+			return 0;
+		}
+		if (Source.bLowFreqNoise_Enabled)
+		{
+			const int32 NoiseTessellation = Source.NoiseTessellation ? Source.NoiseTessellation : 1;
+			return (std::max(0, Source.Frequency) + 2) * NoiseTessellation;
+		}
+		if (Source.InterpolationPoints > 0)
+		{
+			return Source.InterpolationPoints + 1;
+		}
+		return std::max(2, BeamData.Steps + 1);
+	}
 
 	float Clamp01(float Value)
 	{
@@ -68,15 +112,16 @@ namespace
 			+ T1 * (A3 - A2);
 	}
 
-	float ReadTaper(const FDynamicBeam2EmitterReplayData& Source, const FBaseParticle* Particle, int32 PointIndex, int32 PointCount)
+	float ReadTaper(const FDynamicBeam2EmitterReplayData& Source, const FBaseParticle* Particle, const FBeam2TypeDataPayload& BeamData, int32 PointIndex, int32 PointCount)
 	{
-		if (!Particle || Source.TaperValuesOffset < 0 || Source.TaperCount <= 0)
+		const int32 TaperCount = ComputeBeamTaperCount(Source, BeamData);
+		if (!Particle || Source.TaperValuesOffset < 0 || TaperCount <= 0)
 		{
 			return 1.0f;
 		}
 		const float* Values = reinterpret_cast<const float*>(reinterpret_cast<const uint8*>(Particle) + Source.TaperValuesOffset);
-		const int32 Index = std::max(0, std::min(Source.TaperCount - 1,
-			PointCount > 1 ? static_cast<int32>((static_cast<float>(PointIndex) / static_cast<float>(PointCount - 1)) * static_cast<float>(Source.TaperCount - 1)) : 0));
+		const int32 Index = std::max(0, std::min(TaperCount - 1,
+			PointCount > 1 ? static_cast<int32>((static_cast<float>(PointIndex) / static_cast<float>(PointCount - 1)) * static_cast<float>(TaperCount - 1)) : 0));
 		return Values[Index];
 	}
 
@@ -186,9 +231,9 @@ namespace
 			}
 
 			OutCenters.push_back(Center);
-			OutTapers.push_back(ReadTaper(Source, &Particle, PointIndex, PointCount));
-		}
+			OutTapers.push_back(ReadTaper(Source, &Particle, BeamData, PointIndex, PointCount));
 	}
+}
 }
 
 void FDynamicSpriteEmitterDataBase::SortSpriteParticles(const FParticleSortContext& SortCtx)
@@ -247,10 +292,26 @@ void FDynamicSpriteEmitterDataBase::SortSpriteParticles(const FParticleSortConte
     }
 }
 
+FDynamicBeam2EmitterData::~FDynamicBeam2EmitterData()
+{
+	RemoveCPUStaging(this);
+}
+
+const TArray<FParticleBeamTrailVertex>& FDynamicBeam2EmitterData::GetBuiltVertices() const
+{
+	return GetCPUStagingConst(this).Vertices;
+}
+
+const TArray<uint32>& FDynamicBeam2EmitterData::GetBuiltIndices() const
+{
+	return GetCPUStagingConst(this).Indices;
+}
+
 void FDynamicBeam2EmitterData::BuildMeshData()
 {
-    Vertices.clear();
-    Indices.clear();
+    FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
+    Staging.Vertices.clear();
+    Staging.Indices.clear();
     DoBufferFill();
 }
 
@@ -291,14 +352,15 @@ int32 FDynamicBeam2EmitterData::FillIndexData()
 	// UE original responsibility: build the beam strip index stream, including
 	// sheets and degenerate joins. Jungle keeps the same logical point sequence
 	// and sheet pass, then converts only the final output to triangle-list indices.
-	return static_cast<int32>(Indices.size());
+	return static_cast<int32>(GetCPUStaging(this).Indices.size());
 }
 
 int32 FDynamicBeam2EmitterData::FillVertexData_NoNoise()
 {
 	TArray<FVector> Centers;
 	TArray<float> Tapers;
-	const int32 InitialVertexCount = static_cast<int32>(Vertices.size());
+	FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
+	const int32 InitialVertexCount = static_cast<int32>(Staging.Vertices.size());
 
 	for (int32 ActiveIndex = 0; ActiveIndex < Source.ActiveParticleCount; ++ActiveIndex)
 	{
@@ -312,18 +374,19 @@ int32 FDynamicBeam2EmitterData::FillVertexData_NoNoise()
 		BuildBeamCenters(Source, *Particle, *BeamData, false, Centers, Tapers);
 		for (int32 SheetIndex = 0; SheetIndex < std::max(1, Source.Sheets); ++SheetIndex)
 		{
-			AppendBeamSheet(Source, *Particle, Centers, Tapers, SheetIndex, Vertices, Indices);
+			AppendBeamSheet(Source, *Particle, Centers, Tapers, SheetIndex, Staging.Vertices, Staging.Indices);
 		}
 	}
 
-	return static_cast<int32>(Vertices.size()) - InitialVertexCount;
+	return static_cast<int32>(Staging.Vertices.size()) - InitialVertexCount;
 }
 
 int32 FDynamicBeam2EmitterData::FillData_Noise()
 {
 	TArray<FVector> Centers;
 	TArray<float> Tapers;
-	const int32 InitialVertexCount = static_cast<int32>(Vertices.size());
+	FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
+	const int32 InitialVertexCount = static_cast<int32>(Staging.Vertices.size());
 
 	for (int32 ActiveIndex = 0; ActiveIndex < Source.ActiveParticleCount; ++ActiveIndex)
 	{
@@ -337,11 +400,11 @@ int32 FDynamicBeam2EmitterData::FillData_Noise()
 		BuildBeamCenters(Source, *Particle, *BeamData, true, Centers, Tapers);
 		for (int32 SheetIndex = 0; SheetIndex < std::max(1, Source.Sheets); ++SheetIndex)
 		{
-			AppendBeamSheet(Source, *Particle, Centers, Tapers, SheetIndex, Vertices, Indices);
+			AppendBeamSheet(Source, *Particle, Centers, Tapers, SheetIndex, Staging.Vertices, Staging.Indices);
 		}
 	}
 
-	return static_cast<int32>(Vertices.size()) - InitialVertexCount;
+	return static_cast<int32>(Staging.Vertices.size()) - InitialVertexCount;
 }
 
 int32 FDynamicBeam2EmitterData::FillData_InterpolatedNoise()
@@ -378,16 +441,33 @@ int32 FDynamicTrailsEmitterData::FillVertexData()
     return 0;
 }
 
+FDynamicRibbonEmitterData::~FDynamicRibbonEmitterData()
+{
+	RemoveCPUStaging(this);
+}
+
+const TArray<FParticleBeamTrailVertex>& FDynamicRibbonEmitterData::GetBuiltVertices() const
+{
+	return GetCPUStagingConst(this).Vertices;
+}
+
+const TArray<uint32>& FDynamicRibbonEmitterData::GetBuiltIndices() const
+{
+	return GetCPUStagingConst(this).Indices;
+}
+
 void FDynamicRibbonEmitterData::BuildMeshData()
 {
-    Vertices.clear();
-    Indices.clear();
+    FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
+    Staging.Vertices.clear();
+    Staging.Indices.clear();
     DoBufferFill();
 }
 
 int32 FDynamicRibbonEmitterData::FillVertexData()
 {
-	const int32 InitialVertexCount = static_cast<int32>(Vertices.size());
+	FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
+	const int32 InitialVertexCount = static_cast<int32>(Staging.Vertices.size());
 	const int32 Sheets = std::max(1, Source.Sheets);
 
 	for (int32 ActiveIndex = 0; ActiveIndex < Source.ActiveParticleCount; ++ActiveIndex)
@@ -470,7 +550,7 @@ int32 FDynamicRibbonEmitterData::FillVertexData()
 		const FVector TrailDirection = (Points.back().Position - Points.front().Position).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
 		for (int32 SheetIndex = 0; SheetIndex < Sheets; ++SheetIndex)
 		{
-			const uint32 BaseIndex = static_cast<uint32>(Vertices.size());
+			const uint32 BaseIndex = static_cast<uint32>(Staging.Vertices.size());
 			for (int32 PointIndex = 0; PointIndex < static_cast<int32>(Points.size()); ++PointIndex)
 			{
 				const FRibbonPoint& Point = Points[PointIndex];
@@ -494,8 +574,8 @@ int32 FDynamicRibbonEmitterData::FillVertexData()
 				Right.Tex_V = 1.0f;
 				Right.Tex_V2 = 1.0f;
 
-				Vertices.push_back(Left);
-				Vertices.push_back(Right);
+				Staging.Vertices.push_back(Left);
+				Staging.Vertices.push_back(Right);
 			}
 
 			for (uint32 Segment = 0; Segment + 1 < static_cast<uint32>(Points.size()); ++Segment)
@@ -504,17 +584,17 @@ int32 FDynamicRibbonEmitterData::FillVertexData()
 				const uint32 I1 = I0 + 1;
 				const uint32 I2 = I0 + 2;
 				const uint32 I3 = I0 + 3;
-				Indices.push_back(I0);
-				Indices.push_back(I2);
-				Indices.push_back(I1);
-				Indices.push_back(I1);
-				Indices.push_back(I2);
-				Indices.push_back(I3);
+				Staging.Indices.push_back(I0);
+				Staging.Indices.push_back(I2);
+				Staging.Indices.push_back(I1);
+				Staging.Indices.push_back(I1);
+				Staging.Indices.push_back(I2);
+				Staging.Indices.push_back(I3);
 			}
 		}
 	}
 
-	return static_cast<int32>(Vertices.size()) - InitialVertexCount;
+	return static_cast<int32>(Staging.Vertices.size()) - InitialVertexCount;
 }
 
 int32 FDynamicRibbonEmitterData::FillInterpolatedVertexData()

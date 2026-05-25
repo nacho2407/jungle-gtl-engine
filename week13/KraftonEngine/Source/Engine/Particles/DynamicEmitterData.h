@@ -120,7 +120,6 @@ struct FDynamicBeam2EmitterReplayData : FDynamicSpriteEmitterReplayDataBase
 	int32 NextNoisePointsOffset = -1;
 	int32 TaperValuesOffset = -1;
 	int32 NoiseDistanceScaleOffset = -1;
-	int32 TaperCount = 0;
 
 	bool bLowFreqNoise_Enabled = false;
 	bool bHighFreqNoise_Enabled = false;
@@ -156,12 +155,14 @@ struct FDynamicBeam2EmitterData : FDynamicSpriteEmitterDataBase
 	static const uint32 MaxNoiseFrequency = 250;
 
 	FDynamicBeam2EmitterReplayData Source;
-	TArray<FParticleBeamTrailVertex> Vertices;
-	TArray<uint32> Indices;
+	int32 LastFramePreRendered = -1;
 
 	FDynamicBeam2EmitterData() { Source.eEmitterType = EDynamicEmitterType::Beam; }
+	~FDynamicBeam2EmitterData() override;
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
 	int32 GetDynamicVertexStride() const override { return sizeof(FParticleBeamTrailVertex); }
+	const TArray<FParticleBeamTrailVertex>& GetBuiltVertices() const;
+	const TArray<uint32>& GetBuiltIndices() const;
 
 	void BuildMeshData();
 
@@ -223,8 +224,6 @@ struct FDynamicTrailsEmitterData : FDynamicSpriteEmitterDataBase
 struct FDynamicRibbonEmitterData : FDynamicTrailsEmitterData
 {
 	FDynamicRibbonEmitterReplayData Source;
-	TArray<FParticleBeamTrailVertex> Vertices;
-	TArray<uint32> Indices;
 	uint32 RenderAxisOption : 2;
 
 	FDynamicRibbonEmitterData()
@@ -236,6 +235,9 @@ struct FDynamicRibbonEmitterData : FDynamicTrailsEmitterData
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return Source; }
 	int32 GetDynamicVertexStride() const override { return sizeof(FParticleBeamTrailVertex); }
+	~FDynamicRibbonEmitterData() override;
+	const TArray<FParticleBeamTrailVertex>& GetBuiltVertices() const;
+	const TArray<uint32>& GetBuiltIndices() const;
 
 	void BuildMeshData();
 	int32 FillVertexData() override;

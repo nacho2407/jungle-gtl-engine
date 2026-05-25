@@ -2845,7 +2845,6 @@ bool FParticleBeam2EmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase
 			TaperCount,
 			BeamData.TaperValuesOffset,
 			BeamData.NoiseDistanceScaleOffset);
-		BeamData.TaperCount = TaperCount;
 	}
 	else
 	{
