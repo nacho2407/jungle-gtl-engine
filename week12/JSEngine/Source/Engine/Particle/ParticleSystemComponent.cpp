@@ -307,6 +307,8 @@ int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* Emit
 	float PreviousThreshold = Template->LODDistances[0];
 	int32 SelectedIndex = 0;
 
+	// EmitterTemplate과 ParticleSystem의 LODDistance중 더 작은 Lod count를 선택한다.
+	// 순회하면서 거리를 체크, Threshold보다 더 멀리있다면 갱신, 아니라면 해당 구간이므로 LOD 인덱스 확정 후 반환.
 	for (int32 LODIndex = 1; LODIndex < ThresholdCount; ++LODIndex)
 	{
 		const float Threshold = Template->LODDistances[LODIndex];

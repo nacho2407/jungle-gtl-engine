@@ -240,3 +240,15 @@
 - Findings: The current conditional `if (PropertyName || std::strcmp(PropertyName, "MeshAssetPath") == 0)` is invalid because any non-null property name enters the reload path and a null property name reaches `std::strcmp()` with a null pointer.
 - Remaining TODO: Restore the guarded `MeshAssetPath` equality check before relying on this runtime resolution path.
 - Next step: Correct the Mesh TypeData property-name guard after approval, then resume the approved runtime self-test step.
+
+## 2026-05-25 - Runtime particle self-test command and execution
+
+- Branch / HEAD: `feat/PSC` / `7f092ff` (uncommitted step changes)
+- Completed step: Added the disposable Editor console `particle test` self-test, corrected the Mesh TypeData property guard required by that path, and executed runtime verification for Mesh snapshots, LOD selection, and lifecycle event dispatch.
+- Changed files: `JSEngine/Source/Editor/UI/EditorConsoleWidget.h`, `JSEngine/Source/Editor/UI/EditorConsoleWidget.cpp`, `JSEngine/Source/Engine/Particle/ParticleModules.cpp`, `Context/PARTICLE_PSC_WORKLOG.md`
+- Verification: `JSEngine.sln` builds successfully for `Debug|x64`; `git diff --check` reported no whitespace errors; a temporary one-run launch hook was used and then removed after `Editor.log` reported `[ParticleTest] completed: 14 passed, 0 failed`.
+- Added verification path: `particle test` constructs in-memory PSC fixtures and reports Mesh path resolution, packed Mesh snapshot count/data, near/far/fallback LOD selection, and spawn/burst/death delegate dispatch from real ticks.
+- Correction: `UParticleModuleTypeDataMesh::PostEditProperty()` now resolves only non-null `MeshAssetPath` property edits; the test fixture uses the loadable `Asset\Mesh\Lumine\Lumine_Praise.obj` path because the previously referenced Dice OBJ is not present.
+- Boundary: The self-test intentionally does not cover collision event production, Sprite renderer consumption, or ParticleSystem asset serialization/loading; only the manual console command remains after verification.
+- Remaining TODO: Particle Viewer Mesh/LOD authoring UI and asset-owned serialization remain external integration work; renderer snapshot consumption remains renderer-owned.
+- Next step: Discard the temporary console self-test code after the requested investigation, or retain it for further manual regression checks.
