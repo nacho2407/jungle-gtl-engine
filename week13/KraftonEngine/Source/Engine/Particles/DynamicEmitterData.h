@@ -8,6 +8,7 @@
 
 class UMaterial;
 class FMeshBuffer;
+struct FFrameContext;
 enum class EDynamicEmitterType {Sprite, Mesh, Beam, Ribbon};
 
 struct FParticleSortContext
@@ -168,13 +169,13 @@ struct FDynamicBeam2EmitterData : FDynamicSpriteEmitterDataBase
 	const TArray<FParticleBeamTrailVertex>& GetBuiltVertices() const;
 	const TArray<uint32>& GetBuiltIndices() const;
 
-	void BuildMeshData();
+	void BuildMeshData(const FFrameContext& Frame);
 
 	int32 FillIndexData();
-	int32 FillVertexData_NoNoise();
-	int32 FillData_Noise();
-	int32 FillData_InterpolatedNoise();
-	void DoBufferFill();
+	int32 FillVertexData_NoNoise(const FFrameContext& Frame);
+	int32 FillData_Noise(const FFrameContext& Frame);
+	int32 FillData_InterpolatedNoise(const FFrameContext& Frame);
+	void DoBufferFill(const FFrameContext& Frame);
 };
 
 struct FDynamicTrailsEmitterReplayData : FDynamicSpriteEmitterReplayDataBase
@@ -221,8 +222,8 @@ struct FDynamicTrailsEmitterData : FDynamicSpriteEmitterDataBase
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return *SourcePointer; }
 	int32 GetDynamicVertexStride() const override { return sizeof(FParticleBeamTrailVertex); }
 	int32 FillIndexData();
-	virtual int32 FillVertexData();
-	void DoBufferFill();
+	virtual int32 FillVertexData(const FFrameContext& Frame);
+	void DoBufferFill(const FFrameContext& Frame);
 };
 
 struct FDynamicRibbonEmitterData : FDynamicTrailsEmitterData
@@ -243,7 +244,16 @@ struct FDynamicRibbonEmitterData : FDynamicTrailsEmitterData
 	const TArray<FParticleBeamTrailVertex>& GetBuiltVertices() const;
 	const TArray<uint32>& GetBuiltIndices() const;
 
-	void BuildMeshData();
-	int32 FillVertexData() override;
-	int32 FillInterpolatedVertexData();
+	void BuildMeshData(const FFrameContext& Frame);
+	int32 FillVertexData(const FFrameContext& Frame) override;
+	int32 FillInterpolatedVertexData(
+		const FFrameContext& Frame,
+		const FBaseParticle* PackingParticle,
+		const FRibbonTypeDataPayload* TrailPayload,
+		const FBaseParticle* PrevParticle,
+		const FRibbonTypeDataPayload* PrevTrailPayload,
+		const FVector& WorkingUp,
+		const FVector& PrevWorkingUp,
+		float& TexU,
+		float TextureIncrement);
 };

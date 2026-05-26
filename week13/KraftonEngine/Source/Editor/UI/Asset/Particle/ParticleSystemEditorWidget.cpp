@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "Object/Object.h"
 #include "Particles/ParticleEmitter.h"
+#include "Particles/ParticleEmitterInstances.h"
 #include "Particles/ParticleLODLevel.h"
 #include "Particles/ParticleModule.h"
 #include "Particles/ParticleModuleRequired.h"
@@ -47,6 +48,7 @@
 #include <fstream>
 #include <iterator>
 #include <random>
+#include <unordered_map>
 
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Primitive/ParticleSystemComponent.h"
@@ -164,6 +166,73 @@ namespace
         }
     }
 
+    FParticleBeam2EmitterInstance* GetPreviewBeamInstance(UParticleSystemComponent* PreviewPSC, int32 EmitterIndex)
+    {
+        if (!PreviewPSC || EmitterIndex < 0)
+        {
+            return nullptr;
+        }
+
+        const TArray<FParticleEmitterInstance*>& Instances = PreviewPSC->GetEmitterInstances();
+        if (EmitterIndex >= static_cast<int32>(Instances.size()))
+        {
+            return nullptr;
+        }
+
+        return dynamic_cast<FParticleBeam2EmitterInstance*>(Instances[EmitterIndex]);
+    }
+
+    FVector& GetPreviewBeamUserSetPoint(
+        std::unordered_map<const UParticleModule*, FVector>& Points,
+        const UParticleModule* Module,
+        UParticleSystemComponent* PreviewPSC,
+        int32 EmitterIndex,
+        bool bSource)
+    {
+        auto It = Points.find(Module);
+        if (It != Points.end())
+        {
+            return It->second;
+        }
+
+        FVector InitialPoint = bSource ? FVector::ZeroVector : FVector(100.0f, 0.0f, 0.0f);
+        if (FParticleBeam2EmitterInstance* BeamInst = GetPreviewBeamInstance(PreviewPSC, EmitterIndex))
+        {
+            FVector RuntimePoint;
+            const bool bHasRuntimePoint = bSource
+                ? BeamInst->GetBeamSourcePoint(0, RuntimePoint)
+                : BeamInst->GetBeamTargetPoint(0, RuntimePoint);
+            if (bHasRuntimePoint)
+            {
+                InitialPoint = RuntimePoint;
+            }
+        }
+
+        return Points.emplace(Module, InitialPoint).first->second;
+    }
+
+    void ApplyPreviewBeamUserSetPoint(
+        UParticleSystemComponent* PreviewPSC,
+        int32 EmitterIndex,
+        bool bSource,
+        const FVector& Point)
+    {
+        if (FParticleBeam2EmitterInstance* BeamInst = GetPreviewBeamInstance(PreviewPSC, EmitterIndex))
+        {
+            if (bSource)
+            {
+                BeamInst->SetBeamSourcePoint(Point, 0);
+            }
+            else
+            {
+                BeamInst->SetBeamTargetPoint(Point, 0);
+            }
+        }
+    }
+
+    std::unordered_map<const UParticleModule*, FVector> GPreviewBeamUserSetSourcePoints;
+    std::unordered_map<const UParticleModule*, FVector> GPreviewBeamUserSetTargetPoints;
+
     float Clamp01(float V, float Lo, float Hi)
     {
         return V < Lo ? Lo : (V > Hi ? Hi : V);
@@ -224,7 +293,7 @@ namespace
         // TypeData subclasses — 구체 타입을 표시.
         if (Cast<UParticleModuleTypeDataMesh>(Module))   return "Mesh Data";
         if (Cast<UParticleModuleTypeDataRibbon>(Module)) return "Ribbon Data";
-        if (Cast<UParticleModuleTypeDataBeam2>(Module))  return "Beam2 Data";
+        if (Cast<UParticleModuleTypeDataBeam2>(Module))  return "Beam Data";
         if (Cast<UParticleModuleTypeDataBase>(Module))   return "TypeData";
         return "Module";
     }
@@ -3911,7 +3980,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         ImGui::EndPopup();
                     }
 
-                    // ── 빈 영역 우클릭 → TypeData(Sprite/Mesh/Ribbon/Beam2) 전환 ──────
+                    // ── 빈 영역 우클릭 → TypeData(Sprite/Mesh/Ribbon/Beam) 전환 ──────
                     // ImGuiPopupFlags_NoOpenOverItems: 모듈 row(Selectable)/버튼 위에서는
                     // 이 메뉴가 안 뜨고, 진짜 빈 공간에서만 뜸. 모듈 컨텍스트 메뉴와 충돌 X.
                     if (ImGui::BeginPopupContextWindow("##EmitterTypeDataCtx",
@@ -3940,7 +4009,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         {
                             SetEmitterTypeData(EmitterIndex, "UParticleModuleTypeDataRibbon");
                         }
-                        if (ImGui::MenuItem("Beam2 Data", nullptr, bIsBeam2))
+                        if (ImGui::MenuItem("Beam Data", nullptr, bIsBeam2))
                         {
                             SetEmitterTypeData(EmitterIndex, "UParticleModuleTypeDataBeam2");
                         }
@@ -4525,6 +4594,10 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
 
     bool bChanged       = false;
     bool bMaterialDirty = false;
+    bool bApplyPreviewBeamSourcePoint = false;
+    bool bApplyPreviewBeamTargetPoint = false;
+    FVector PreviewBeamSourcePoint = FVector::ZeroVector;
+    FVector PreviewBeamTargetPoint = FVector::ZeroVector;
 
     // Required/Spawn/TypeData는 이미터 동작에 필수라 disable 토글이 무의미하다. 그 외 모듈만 노출.
     const bool bIsCoreModule = Cast<UParticleModuleRequired>(Module)
@@ -4971,35 +5044,45 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Beam Source"))
         {
-            if (BeamSource->SourceMethod == PEB2STM_Actor || BeamSource->SourceMethod == PEB2STM_Emitter || BeamSource->SourceMethod == PEB2STM_Particle)
+            if (BeamSource->SourceMethod != PEB2STM_Default && BeamSource->SourceMethod != PEB2STM_UserSet)
             {
-                ImGui::TextColored(PSE::DimTextV, "Actor/Emitter/Particle source methods are not supported yet.");
+                BeamSource->SourceMethod = PEB2STM_Default;
+                bChanged = true;
             }
+            if (BeamSource->bSourceAbsolute || BeamSource->bLockSource ||
+                BeamSource->bLockSourceTangent || BeamSource->bLockSourceStrength ||
+                BeamSource->SourceTangentMethod != PEB2STTM_Distribution)
+            {
+                BeamSource->bSourceAbsolute = 0;
+                BeamSource->bLockSource = 0;
+                BeamSource->bLockSourceTangent = 0;
+                BeamSource->bLockSourceStrength = 0;
+                BeamSource->SourceTangentMethod = PEB2STTM_Distribution;
+                bChanged = true;
+            }
+
             int32 Method = (BeamSource->SourceMethod == PEB2STM_UserSet) ? 1 : 0;
-            if (ImGui::Combo("Source Method", &Method, "Default\0User Set\0"))
+            if (ImGui::Combo("Source Method", &Method, "Default\0UserSet\0"))
             {
                 BeamSource->SourceMethod = (Method == 0) ? PEB2STM_Default : PEB2STM_UserSet;
                 bChanged = true;
             }
 
-            DrawRawDistributionVector("Source", BeamSource->Source, bChanged, BeamSource);
-            bool bAbs = BeamSource->bSourceAbsolute;
-            if (ImGui::Checkbox("Source Absolute", &bAbs)) { BeamSource->bSourceAbsolute = bAbs ? 1 : 0; bChanged = true; }
-            bool bLock = BeamSource->bLockSource;
-            if (ImGui::Checkbox("Lock Source", &bLock)) { BeamSource->bLockSource = bLock ? 1 : 0; bChanged = true; }
-
-            int32 TangentMethod = static_cast<int32>(BeamSource->SourceTangentMethod);
-            if (ImGui::Combo("Source Tangent Method", &TangentMethod, "Direct\0User Set\0Distribution\0Emitter X Axis\0"))
+            if (BeamSource->SourceMethod == PEB2STM_UserSet)
             {
-                BeamSource->SourceTangentMethod = static_cast<Beam2SourceTargetTangentMethod>(TangentMethod);
-                bChanged = true;
+                FVector& UserSetPoint = GetPreviewBeamUserSetPoint(
+                    GPreviewBeamUserSetSourcePoints, BeamSource, PreviewPSC, SelectedEmitterIndex, true);
+                ImGui::DragFloat3("UserSet Source Point", UserSetPoint.Data, 0.1f);
+                PreviewBeamSourcePoint = UserSetPoint;
+                bApplyPreviewBeamSourcePoint = true;
             }
+            else
+            {
+                DrawRawDistributionVector("Source", BeamSource->Source, bChanged, BeamSource);
+            }
+
             DrawRawDistributionVector("Source Tangent", BeamSource->SourceTangent, bChanged, BeamSource);
-            bool bLockTangent = BeamSource->bLockSourceTangent;
-            if (ImGui::Checkbox("Lock Source Tangent", &bLockTangent)) { BeamSource->bLockSourceTangent = bLockTangent ? 1 : 0; bChanged = true; }
             DrawRawDistributionFloat("Source Strength", BeamSource->SourceStrength, bChanged, BeamSource);
-            bool bLockStrength = BeamSource->bLockSourceStrength;
-            if (ImGui::Checkbox("Lock Source Strength", &bLockStrength)) { BeamSource->bLockSourceStrength = bLockStrength ? 1 : 0; bChanged = true; }
         }
     }
     else if (UParticleModuleBeamTarget* BeamTarget = Cast<UParticleModuleBeamTarget>(Module))
@@ -5007,36 +5090,45 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Beam Target"))
         {
-            if (BeamTarget->TargetMethod == PEB2STM_Actor || BeamTarget->TargetMethod == PEB2STM_Emitter || BeamTarget->TargetMethod == PEB2STM_Particle)
+            if (BeamTarget->TargetMethod != PEB2STM_Default && BeamTarget->TargetMethod != PEB2STM_UserSet)
             {
-                ImGui::TextColored(PSE::DimTextV, "Actor/Emitter/Particle target methods are not supported yet.");
+                BeamTarget->TargetMethod = PEB2STM_Default;
+                bChanged = true;
             }
+            if (BeamTarget->bTargetAbsolute || BeamTarget->bLockTarget ||
+                BeamTarget->bLockTargetTangent || BeamTarget->bLockTargetStrength ||
+                BeamTarget->TargetTangentMethod != PEB2STTM_Distribution)
+            {
+                BeamTarget->bTargetAbsolute = 0;
+                BeamTarget->bLockTarget = 0;
+                BeamTarget->bLockTargetTangent = 0;
+                BeamTarget->bLockTargetStrength = 0;
+                BeamTarget->TargetTangentMethod = PEB2STTM_Distribution;
+                bChanged = true;
+            }
+
             int32 Method = (BeamTarget->TargetMethod == PEB2STM_UserSet) ? 1 : 0;
-            if (ImGui::Combo("Target Method", &Method, "Default\0User Set\0"))
+            if (ImGui::Combo("Target Method", &Method, "Default\0UserSet\0"))
             {
                 BeamTarget->TargetMethod = (Method == 0) ? PEB2STM_Default : PEB2STM_UserSet;
                 bChanged = true;
             }
 
-            DrawRawDistributionVector("Target", BeamTarget->Target, bChanged, BeamTarget);
-            bool bAbs = BeamTarget->bTargetAbsolute;
-            if (ImGui::Checkbox("Target Absolute", &bAbs)) { BeamTarget->bTargetAbsolute = bAbs ? 1 : 0; bChanged = true; }
-            bool bLock = BeamTarget->bLockTarget;
-            if (ImGui::Checkbox("Lock Target", &bLock)) { BeamTarget->bLockTarget = bLock ? 1 : 0; bChanged = true; }
-
-            int32 TangentMethod = static_cast<int32>(BeamTarget->TargetTangentMethod);
-            if (ImGui::Combo("Target Tangent Method", &TangentMethod, "Direct\0User Set\0Distribution\0Emitter X Axis\0"))
+            if (BeamTarget->TargetMethod == PEB2STM_UserSet)
             {
-                BeamTarget->TargetTangentMethod = static_cast<Beam2SourceTargetTangentMethod>(TangentMethod);
-                bChanged = true;
+                FVector& UserSetPoint = GetPreviewBeamUserSetPoint(
+                    GPreviewBeamUserSetTargetPoints, BeamTarget, PreviewPSC, SelectedEmitterIndex, false);
+                ImGui::DragFloat3("UserSet Target Point", UserSetPoint.Data, 0.1f);
+                PreviewBeamTargetPoint = UserSetPoint;
+                bApplyPreviewBeamTargetPoint = true;
             }
+            else
+            {
+                DrawRawDistributionVector("Target", BeamTarget->Target, bChanged, BeamTarget);
+            }
+
             DrawRawDistributionVector("Target Tangent", BeamTarget->TargetTangent, bChanged, BeamTarget);
-            bool bLockTangent = BeamTarget->bLockTargetTangent;
-            if (ImGui::Checkbox("Lock Target Tangent", &bLockTangent)) { BeamTarget->bLockTargetTangent = bLockTangent ? 1 : 0; bChanged = true; }
             DrawRawDistributionFloat("Target Strength", BeamTarget->TargetStrength, bChanged, BeamTarget);
-            bool bLockStrength = BeamTarget->bLockTargetStrength;
-            if (ImGui::Checkbox("Lock Target Strength", &bLockStrength)) { BeamTarget->bLockTargetStrength = bLockStrength ? 1 : 0; bChanged = true; }
-            bChanged |= ImGui::DragFloat("Lock Radius", &BeamTarget->LockRadius, 0.1f, 0.0f, 100000.0f);
         }
     }
     else if (UParticleModuleBeamNoise* BeamNoise = Cast<UParticleModuleBeamNoise>(Module))
@@ -5079,31 +5171,8 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Beam Modifier"))
         {
-            bool bFlag = BeamModifier->PositionOptions.bModify;
-            if (ImGui::Checkbox("Position Modify", &bFlag)) { BeamModifier->PositionOptions.bModify = bFlag ? 1 : 0; bChanged = true; }
-            bFlag = BeamModifier->PositionOptions.bScale;
-            if (ImGui::Checkbox("Position Scale", &bFlag)) { BeamModifier->PositionOptions.bScale = bFlag ? 1 : 0; bChanged = true; }
-            bFlag = BeamModifier->PositionOptions.bLock;
-            if (ImGui::Checkbox("Position Lock", &bFlag)) { BeamModifier->PositionOptions.bLock = bFlag ? 1 : 0; bChanged = true; }
-            DrawRawDistributionVector("Position", BeamModifier->Position, bChanged, BeamModifier);
-
-            bFlag = BeamModifier->TangentOptions.bModify;
-            if (ImGui::Checkbox("Tangent Modify", &bFlag)) { BeamModifier->TangentOptions.bModify = bFlag ? 1 : 0; bChanged = true; }
-            bFlag = BeamModifier->TangentOptions.bScale;
-            if (ImGui::Checkbox("Tangent Scale", &bFlag)) { BeamModifier->TangentOptions.bScale = bFlag ? 1 : 0; bChanged = true; }
-            bFlag = BeamModifier->TangentOptions.bLock;
-            if (ImGui::Checkbox("Tangent Lock", &bFlag)) { BeamModifier->TangentOptions.bLock = bFlag ? 1 : 0; bChanged = true; }
-            DrawRawDistributionVector("Tangent", BeamModifier->Tangent, bChanged, BeamModifier);
-            bFlag = BeamModifier->bAbsoluteTangent;
-            if (ImGui::Checkbox("Absolute Tangent", &bFlag)) { BeamModifier->bAbsoluteTangent = bFlag ? 1 : 0; bChanged = true; }
-
-            bFlag = BeamModifier->StrengthOptions.bModify;
-            if (ImGui::Checkbox("Strength Modify", &bFlag)) { BeamModifier->StrengthOptions.bModify = bFlag ? 1 : 0; bChanged = true; }
-            bFlag = BeamModifier->StrengthOptions.bScale;
-            if (ImGui::Checkbox("Strength Scale", &bFlag)) { BeamModifier->StrengthOptions.bScale = bFlag ? 1 : 0; bChanged = true; }
-            bFlag = BeamModifier->StrengthOptions.bLock;
-            if (ImGui::Checkbox("Strength Lock", &bFlag)) { BeamModifier->StrengthOptions.bLock = bFlag ? 1 : 0; bChanged = true; }
-            DrawRawDistributionFloat("Strength", BeamModifier->Strength, bChanged, BeamModifier);
+            (void)BeamModifier;
+            ImGui::TextColored(PSE::DimTextV, "Hidden in the simplified Beam UI. Existing values are preserved.");
         }
     }
     else if (UParticleModuleTypeDataMesh* MeshT = Cast<UParticleModuleTypeDataMesh>(Module))
@@ -5185,7 +5254,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
     else if (UParticleModuleTypeDataBeam2* BeamT = Cast<UParticleModuleTypeDataBeam2>(Module))
     {
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        if (ImGui::CollapsingHeader("Beam2"))
+        if (ImGui::CollapsingHeader("Beam"))
         {
             int32 Method = static_cast<int32>(BeamT->BeamMethod);
             if (Method > 1)
@@ -5229,6 +5298,14 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
     {
         MarkDirty();
         RestartPreviewSimulation();
+    }
+    if (bApplyPreviewBeamSourcePoint)
+    {
+        ApplyPreviewBeamUserSetPoint(PreviewPSC, SelectedEmitterIndex, true, PreviewBeamSourcePoint);
+    }
+    if (bApplyPreviewBeamTargetPoint)
+    {
+        ApplyPreviewBeamUserSetPoint(PreviewPSC, SelectedEmitterIndex, false, PreviewBeamTargetPoint);
     }
 }
 
