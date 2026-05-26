@@ -180,7 +180,7 @@ void FWorldSpatialIndex::FlushDirtyBounds()
     }
 
     const int32 TotalDirtyCount = static_cast<int32>(DirtyObjectIndices.size());
-    int32       StructuralChangeCount = 0;
+    int32 StructuralChangeCount = 0;
     BatchRefitDirtyObjectIndicesScratch.clear();
     BatchRefitDirtyObjectIndicesScratch.reserve(DirtyObjectIndices.size());
 
@@ -200,8 +200,8 @@ void FWorldSpatialIndex::FlushDirtyBounds()
         }
 
         const FAABB NewBounds = Primitive->GetWorldAABB();
-        const bool  bShouldBeInBVH = ShouldInsertIntoBVH(Primitive, NewBounds);
-        const bool  bCurrentlyInBVH = (InBVH[ObjectIndex] != 0u);
+        const bool bShouldBeInBVH = ShouldInsertIntoBVH(Primitive, NewBounds);
+        const bool bCurrentlyInBVH = (InBVH[ObjectIndex] != 0u);
 
         if (!bShouldBeInBVH)
         {
@@ -240,7 +240,7 @@ void FWorldSpatialIndex::FlushDirtyBounds()
     }
 
     const bool bUseBatchRefit = ShouldUseBatchRefit(static_cast<int32>(BatchRefitDirtyObjectIndicesScratch.size()));
-    bool       bUsedBatchRefit = false;
+    bool bUsedBatchRefit = false;
 
     if (bUseBatchRefit)
     {
@@ -257,7 +257,7 @@ void FWorldSpatialIndex::FlushDirtyBounds()
                 const bool bRemoved = BVH.RemoveObject(Bounds, ObjectIndex);
                 (void)bRemoved;
                 const int32 LeafNodeIndex = BVH.InsertObject(Bounds, ObjectIndex);
-                const bool  bInserted = (LeafNodeIndex != FBVH::INDEX_NONE);
+                const bool bInserted = (LeafNodeIndex != FBVH::INDEX_NONE);
                 SetInBVHState(ObjectIndex, bInserted);
                 if (bInserted)
                 {
@@ -338,23 +338,43 @@ void FWorldSpatialIndex::FrustumQueryPrimitives(const FFrustum& Frustum, TArray<
 }
 
 void FWorldSpatialIndex::OBBQueryPrimitives(const FOBB& OBB, TArray<UPrimitiveComponent*>& OutPrimitives,
-											FPrimitiveOBBQueryScratch& Scratch)
+                                            FPrimitiveOBBQueryScratch& Scratch)
 {
-	FlushDirtyBounds();
-	
-	TArray<int32> ObjectIndices;
-	BVH.OBBQuery(Bounds, OBB, ObjectIndices, Scratch.BVHScratch);
+    FlushDirtyBounds();
 
-	OutPrimitives.clear();
-	OutPrimitives.reserve(ObjectIndices.size());
+    TArray<int32> ObjectIndices;
+    BVH.OBBQuery(Bounds, OBB, ObjectIndices, Scratch.BVHScratch);
 
-	for (int32 ObjectIndex : ObjectIndices)
-	{
-		if (UPrimitiveComponent* Primitive = Resolve(ObjectIndex))
-		{
-			OutPrimitives.push_back(Primitive);
-		}
-	}
+    OutPrimitives.clear();
+    OutPrimitives.reserve(ObjectIndices.size());
+
+    for (int32 ObjectIndex : ObjectIndices)
+    {
+        if (UPrimitiveComponent* Primitive = Resolve(ObjectIndex))
+        {
+            OutPrimitives.push_back(Primitive);
+        }
+    }
+}
+
+void FWorldSpatialIndex::SphereQueryPrimitives(const FVector& Center, float Radius, TArray<UPrimitiveComponent*>& OutPrimitives,
+                                               FPrimitiveSphereQueryScratch& Scratch)
+{
+    FlushDirtyBounds();
+
+    Scratch.ObjectIndices.clear();
+    BVH.SphereQuery(Bounds, Center, Radius, Scratch.ObjectIndices, Scratch.BVHScratch);
+
+    OutPrimitives.clear();
+    OutPrimitives.reserve(Scratch.ObjectIndices.size());
+
+    for (int32 ObjectIndex : Scratch.ObjectIndices)
+    {
+        if (UPrimitiveComponent* Primitive = Resolve(ObjectIndex))
+        {
+            OutPrimitives.push_back(Primitive);
+        }
+    }
 }
 
 UPrimitiveComponent* FWorldSpatialIndex::Resolve(int32 ObjectIndex) const

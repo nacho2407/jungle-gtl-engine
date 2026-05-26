@@ -11,34 +11,34 @@
 /** @brief Internal helper symbols used by `FBVH` implementation. */
 namespace BVHDetail
 {
-    /** @brief Axis selector for split-plane computation. */
-    enum class EBVHAxis
-    {
-        X,
-        Y,
-        Z
-    };
+/** @brief Axis selector for split-plane computation. */
+enum class EBVHAxis
+{
+    X,
+    Y,
+    Z
+};
 
-    /**
-     * @brief Convert an axis enum to `FVector` component index.
-     * @param Axis Axis enum value.
-     * @return `0` for X, `1` for Y, `2` for Z.
-     */
-    inline int32 GetAxisValue(EBVHAxis Axis)
+/**
+ * @brief Convert an axis enum to `FVector` component index.
+ * @param Axis Axis enum value.
+ * @return `0` for X, `1` for Y, `2` for Z.
+ */
+inline int32 GetAxisValue(EBVHAxis Axis)
+{
+    switch (Axis)
     {
-        switch (Axis)
-        {
-        case EBVHAxis::X:
-            return 0;
-        case EBVHAxis::Y:
-            return 1;
-        case EBVHAxis::Z:
-            return 2;
-        default:
-            assert(false && "Invalid EBVHAxis value.");
-            return 0;
-        }
+    case EBVHAxis::X:
+        return 0;
+    case EBVHAxis::Y:
+        return 1;
+    case EBVHAxis::Z:
+        return 2;
+    default:
+        assert(false && "Invalid EBVHAxis value.");
+        return 0;
     }
+}
 } // namespace BVHDetail
 
 /**
@@ -52,20 +52,20 @@ namespace BVHDetail
  */
 class FBVH
 {
-  public:
+public:
     /** @brief Sentinel index used for invalid node/object references. */
-    static constexpr int32 INDEX_NONE{-1};
+    static constexpr int32 INDEX_NONE{ -1 };
 
     /** @brief A single BVH node. */
     struct FNode
     {
         FAABB Bounds; /**< Node bounding box. */
 
-        int32 Parent{INDEX_NONE};      /**< Parent node index; `INDEX_NONE` for root. */
-        int32 Left{INDEX_NONE};        /**< Left child node index; `INDEX_NONE` for leaf. */
-        int32 Right{INDEX_NONE};       /**< Right child node index; `INDEX_NONE` for leaf. */
-        int32 ObjectIndex{INDEX_NONE}; /**< Object index stored by leaf nodes (`INDEX_NONE` for internal). */
-        int32 Depth{-1};               /**< Depth in BVH tree (`0` for root). */
+        int32 Parent{ INDEX_NONE };      /**< Parent node index; `INDEX_NONE` for root. */
+        int32 Left{ INDEX_NONE };        /**< Left child node index; `INDEX_NONE` for leaf. */
+        int32 Right{ INDEX_NONE };       /**< Right child node index; `INDEX_NONE` for leaf. */
+        int32 ObjectIndex{ INDEX_NONE }; /**< Object index stored by leaf nodes (`INDEX_NONE` for internal). */
+        int32 Depth{ -1 };               /**< Depth in BVH tree (`0` for root). */
 
         /**
          * @brief Check whether this node has no children.
@@ -75,7 +75,7 @@ class FBVH
         bool IsLeaf() const { return Left == INDEX_NONE && Right == INDEX_NONE; }
     };
 
-  public:
+public:
     FBVH() = default;
     ~FBVH() = default;
 
@@ -171,8 +171,8 @@ class FBVH
     {
         struct FStackEntry
         {
-            int32 NodeIndex{INDEX_NONE};
-            bool  bAssumeInside{false};
+            int32 NodeIndex{ INDEX_NONE };
+            bool bAssumeInside{ false };
         };
 
         TArray<FStackEntry> TraversalStack;
@@ -187,8 +187,8 @@ class FBVH
     {
         struct FStackEntry
         {
-            int32 NodeIndex{INDEX_NONE};
-            float TEnter{0.0f};
+            int32 NodeIndex{ INDEX_NONE };
+            float TEnter{ 0.0f };
         };
 
         TArray<FStackEntry> NodeStack;
@@ -197,15 +197,20 @@ class FBVH
         TArray<float> SortedTs;
     };
 
-	struct FOBBQueryScratch
-	{
-		struct FStackEntry
-		{
-			int32 NodeIndex{INDEX_NONE};
-			bool  bAssumeInside{false};
-		};
-		TArray<FStackEntry> TraversalStack;
-	};
+    struct FOBBQueryScratch
+    {
+        struct FStackEntry
+        {
+            int32 NodeIndex{ INDEX_NONE };
+            bool bAssumeInside{ false };
+        };
+        TArray<FStackEntry> TraversalStack;
+    };
+
+    struct FSphereQueryScratch
+    {
+        TArray<int32> TraversalStack;
+    };
 
     // Queries ---------------------------------------------------------------
 
@@ -245,8 +250,10 @@ class FBVH
     void RayQuery(const TArray<FAABB>& ObjectBounds, const FRay& Ray, TArray<int32>& OutIndices,
                   TArray<float>& OutTs, FRayQueryScratch& Scratch) const;
 
-	void OBBQuery(const TArray<FAABB>& ObjectBounds, const FOBB& OBB, TArray<int32>& OutIndices, FOBBQueryScratch& Scratch) const;
+    void OBBQuery(const TArray<FAABB>& ObjectBounds, const FOBB& OBB, TArray<int32>& OutIndices, FOBBQueryScratch& Scratch) const;
 
+    void SphereQuery(const TArray<FAABB>& ObjectBounds, const FVector& Center, float Radius, TArray<int32>& OutIndices,
+                     FSphereQueryScratch& Scratch) const;
 
     // State -----------------------------------------------------------------
 
@@ -290,15 +297,15 @@ class FBVH
     /** @brief Get root node index, or `INDEX_NONE` if tree is empty. */
     int32 GetRootNodeIndex() const { return RootNodeIndex; }
 
-  private:
+private:
     // Core Storage ----------------------------------------------------------
-    TArray<FNode> Nodes; /**< Storage slots for active BVH nodes and reusable free slots; released nodes stay here so
-                            indices remain stable. */
+    TArray<FNode> Nodes;            /**< Storage slots for active BVH nodes and reusable free slots; released nodes stay here so
+                                       indices remain stable. */
     TArray<int32> FreeNodeIndices;  /**< Indices of released node slots that can be reused by later insertions. */
     TArray<int32> ObjectToLeafNode; /**< Mapping from object index to its containing leaf node index, maintained only by
                                        structural build/insert/remove paths. */
 
-    int32 RootNodeIndex{INDEX_NONE}; /**< Root node index; `INDEX_NONE` if empty. */
+    int32 RootNodeIndex{ INDEX_NONE }; /**< Root node index; `INDEX_NONE` if empty. */
 
     // Build Helpers ---------------------------------------------------------
 
@@ -314,14 +321,14 @@ class FBVH
     /** @brief Split axis and split position used to partition objects. */
     struct FSplitCriterion
     {
-        BVHDetail::EBVHAxis Axis{BVHDetail::EBVHAxis::X};
-        float               Position{0.0f};
+        BVHDetail::EBVHAxis Axis{ BVHDetail::EBVHAxis::X };
+        float Position{ 0.0f };
     };
     /** @brief Temporary entry used while sorting object centers along a candidate axis. */
     struct FBuildAxisEntry
     {
-        int32 Index{INDEX_NONE};
-        float Center{0.0f};
+        int32 Index{ INDEX_NONE };
+        float Center{ 0.0f };
     };
     /** @brief Find split axis/position for object range `[Start, Start + Count)` in the build scratch index array. */
     FSplitCriterion FindSplitPosition(const TArray<FAABB>& ObjectBounds, const TArray<int32>& BuildObjectIndices,
@@ -336,20 +343,20 @@ class FBVH
 
     // Refit Helpers ---------------------------------------------------------
 
-    TArray<uint32> RefitLeafMarks;          /**< Generation marks used to deduplicate dirty leaves. */
-    TArray<uint32> RefitParentMarks;        /**< Generation marks used to deduplicate dirty parents. */
-    TArray<int32>  RefitDirtyLeafIndices;   /**< Unique dirty leaves collected for one incremental refit call. */
-    TArray<int32>  RefitDirtyParentIndices; /**< Unique dirty parents collected for one incremental refit call. */
-    uint32         RefitMark{1};            /**< Current generation value for the incremental refit scratch marks. */
+    TArray<uint32> RefitLeafMarks;         /**< Generation marks used to deduplicate dirty leaves. */
+    TArray<uint32> RefitParentMarks;       /**< Generation marks used to deduplicate dirty parents. */
+    TArray<int32> RefitDirtyLeafIndices;   /**< Unique dirty leaves collected for one incremental refit call. */
+    TArray<int32> RefitDirtyParentIndices; /**< Unique dirty parents collected for one incremental refit call. */
+    uint32 RefitMark{ 1 };                 /**< Current generation value for the incremental refit scratch marks. */
 
-    TArray<FBuildAxisEntry> BuildAxisEntriesScratch;  /**< Reused per-axis center list for SAH candidate evaluation. */
-    TArray<FAABB>           BuildPrefixBoundsScratch; /**< Reused prefix bounds scratch for SAH evaluation. */
-    TArray<FAABB>           BuildSuffixBoundsScratch; /**< Reused suffix bounds scratch for SAH evaluation. */
+    TArray<FBuildAxisEntry> BuildAxisEntriesScratch; /**< Reused per-axis center list for SAH candidate evaluation. */
+    TArray<FAABB> BuildPrefixBoundsScratch;          /**< Reused prefix bounds scratch for SAH evaluation. */
+    TArray<FAABB> BuildSuffixBoundsScratch;          /**< Reused suffix bounds scratch for SAH evaluation. */
 
-    mutable TArray<int32>  ReachableNodeIndicesScratch; /**< Reused list of active nodes collected from the root. */
-    mutable TArray<int32>  TraversalStackScratch;       /**< Reused DFS stack for active-tree traversals. */
-    mutable TArray<uint32> TraversalVisitMarks;         /**< Debug-only visit marks for validating acyclic traversal. */
-    mutable uint32         TraversalVisitMark{1};       /**< Debug-only generation value for traversal marks. */
+    mutable TArray<int32> ReachableNodeIndicesScratch; /**< Reused list of active nodes collected from the root. */
+    mutable TArray<int32> TraversalStackScratch;       /**< Reused DFS stack for active-tree traversals. */
+    mutable TArray<uint32> TraversalVisitMarks;        /**< Debug-only visit marks for validating acyclic traversal. */
+    mutable uint32 TraversalVisitMark{ 1 };            /**< Debug-only generation value for traversal marks. */
 
     /** @brief Prepare incremental-refit scratch buffers and advance their generation marks. */
     void PrepareRefitScratchBuffers();
@@ -369,15 +376,15 @@ class FBVH
 
     struct FRotationCandidate
     {
-        bool bValid{false};
+        bool bValid{ false };
         // `true` when rotating around the left child subtree, otherwise the right child subtree.
-        bool bRotateLeftChild{false};
-        bool bUseFirstGrandChild{false}; // Selects which grandchild participates in the candidate swap.
+        bool bRotateLeftChild{ false };
+        bool bUseFirstGrandChild{ false }; // Selects which grandchild participates in the candidate swap.
 
-        int32 NodeIndex{INDEX_NONE};
+        int32 NodeIndex{ INDEX_NONE };
 
-        float OldCost{0.0f};
-        float NewCost{0.0f};
+        float OldCost{ 0.0f };
+        float NewCost{ 0.0f };
 
         float Gain() const { return OldCost - NewCost; }
     };

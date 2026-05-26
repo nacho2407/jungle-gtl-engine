@@ -1,4 +1,4 @@
-#include "Core/StaticMeshLoadService.h"
+﻿#include "Core/StaticMeshLoadService.h"
 
 #include "Core/AssetPathPolicy.h"
 #include "Core/Logging/Log.h"
@@ -50,6 +50,9 @@ UStaticMesh* FStaticMeshLoadService::Load(const FString& Path)
 			ResourceManager.StaticMeshCache.RegisterLoaded(NormalizedPath, CachedMesh);
 			return CachedMesh;
 		}
+
+		UE_LOG_WARNING("[StaticMeshLoad] Missing OBJ and no binary fallback found | Path=%s", NormalizedPath.c_str());
+		return nullptr;
 	}
 
 	if (RequestedExt == L".bin")

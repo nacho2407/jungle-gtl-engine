@@ -11,6 +11,7 @@ void FRenderBus::Clear()
 	AmbientLightInfo	 = {};
 	DirectionalLightInfo = {};
 	ShadowLightRequests.clear();
+	ShadowCasterCommands.clear();
 	BoneMatrixConstantsPool.clear();
 	BoneWeightHeatmapViewState = {};
     VignetteIntensity = 0.0f;
@@ -31,6 +32,16 @@ void FRenderBus::AddCommand(ERenderPass Pass, const FRenderCommand& InCommand)
 void FRenderBus::AddCommand(ERenderPass Pass, FRenderCommand&& InCommand)
 {
 	PassQueues[(uint32)Pass].push_back(std::move(InCommand));
+}
+
+void FRenderBus::AddShadowCasterCommand(const FRenderCommand& InCommand)
+{
+	ShadowCasterCommands.push_back(InCommand);
+}
+
+void FRenderBus::AddShadowCasterCommand(FRenderCommand&& InCommand)
+{
+	ShadowCasterCommands.push_back(std::move(InCommand));
 }
 
 const TArray<FRenderCommand>& FRenderBus::GetCommands(ERenderPass Pass) const

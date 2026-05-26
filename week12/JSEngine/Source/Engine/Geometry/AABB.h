@@ -8,36 +8,36 @@ struct FMatrix;
 
 struct FAABB
 {
-    FVector Min;
-    FVector Max;
+	FVector Min;
+	FVector Max;
 
-    FAABB();
-    FAABB(const FVector& InMin, const FVector& InMax);
+	FAABB();
+	FAABB(const FVector& InMin, const FVector& InMax);
 
-    void Reset();
-    bool IsValid() const;
+	void Reset();
+	bool IsValid() const;
 
-    void Expand(const FVector& Point);
-    void Merge(const FAABB& Other);
+	void Expand(const FVector& Point);
+	void Merge(const FAABB& Other);
 
-    inline FVector GetCenter() const
-    {
-        // Original:
-        // return (Min + Max) * 0.5f;
+	inline FVector GetCenter() const
+	{
+		// Original:
+		// return (Min + Max) * 0.5f;
 
-        const XMVector Center =
-            DirectX::XMVectorScale(DirectX::XMVectorAdd(Min.ToXMVector(), Max.ToXMVector()), 0.5f);
-        return FVector(Center);
-    }
-    inline FVector GetExtent() const
-    {
-        // Original:
-        // return (Max - Min) * 0.5f;
+		const XMVector Center =
+			DirectX::XMVectorScale(DirectX::XMVectorAdd(Min.ToXMVector(), Max.ToXMVector()), 0.5f);
+		return FVector(Center);
+	}
+	inline FVector GetExtent() const
+	{
+		// Original:
+		// return (Max - Min) * 0.5f;
 
-        const XMVector Extent = DirectX::XMVectorScale(
-            DirectX::XMVectorSubtract(Max.ToXMVector(), Min.ToXMVector()), 0.5f);
-        return FVector(Extent);
-    }
+		const XMVector Extent = DirectX::XMVectorScale(
+			DirectX::XMVectorSubtract(Max.ToXMVector(), Min.ToXMVector()), 0.5f);
+		return FVector(Extent);
+	}
 	inline void GetVertices(FVector OutVertices[8]) const
 	{
 		OutVertices[0] = Min;
@@ -50,10 +50,12 @@ struct FAABB
 		OutVertices[7] = Max;
 	}
 
-    bool         IntersectRay(const FRay& Ray, float& OutT) const;
-    bool         IntersectRay(const FRay& Ray, float& OutTMin, float& OutTMax) const;
-    static FAABB TransformAABB(const FAABB& InLocalAABB, const FMatrix& InMatrix);
-    void         ExpandToInclude(const FAABB& Other);
-    bool         NearlyEqualAABB(const FAABB& Other) const;
-    static bool         NearlyEqualAABB(const FAABB& A, const FAABB& B);
+	bool IntersectRay(const FRay& Ray, float& OutT) const;
+	bool IntersectRay(const FRay& Ray, float& OutTMin, float& OutTMax) const;
+	float SquaredDistanceToPoint(const FVector& Point) const;
+	bool IntersectsSphere(const FVector& Center, float Radius) const;
+	static FAABB TransformAABB(const FAABB& InLocalAABB, const FMatrix& InMatrix);
+	void ExpandToInclude(const FAABB& Other);
+	bool NearlyEqualAABB(const FAABB& Other) const;
+	static bool NearlyEqualAABB(const FAABB& A, const FAABB& B);
 };

@@ -162,7 +162,9 @@ void USkeletalMeshComponent::PostDuplicate(UObject* Original)
 		return;
 	}
 
-	AnimInstance = nullptr;
+	// AnimationMode/AnimationAssetPath가 복사되면서 PostEditProperty()에서 임시 AnimInstance가 생성될 수 있습니다.
+    // PostDuplicate()에서는 런타임 인스턴스가 재구성되기 전에 해당 임시 인스턴스를 먼저 제거해야 합니다.
+	ClearAnimInstance();
 	AnimationAssetPath.SetPath(SourceComponent->AnimationAssetPath.GetPath());
 	AnimGraphAssetPath = SourceComponent->AnimGraphAssetPath;
 	AnimationToPlay = SourceComponent->AnimationToPlay;
