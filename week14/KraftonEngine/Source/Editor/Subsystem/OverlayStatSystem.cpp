@@ -1,4 +1,4 @@
-#include "Editor/Subsystem/OverlayStatSystem.h"
+﻿#include "Editor/Subsystem/OverlayStatSystem.h"
 
 #include "Editor/EditorEngine.h"
 #include "Engine/Profiling/Time/Timer.h"
@@ -6,6 +6,7 @@
 #include "Engine/Profiling/Stats/ShadowStats.h"
 #include "Engine/Profiling/Stats/Stats.h"
 #include "Engine/Profiling/GPUProfiler.h"
+#include "Viewport/Level/LevelEditorViewportClient.h"
 #include "Slate/SWindow.h"
 #include "ImGui/imgui.h"
 #include <algorithm>
@@ -298,6 +299,39 @@ void FOverlayStatSystem::BuildSkinningLines(TArray<FString>& OutLines) const
 #endif
 }
 
+void FOverlayStatSystem::BuildParticleLines(const UEditorEngine& Editor,TArray<FString>& OutLines) const
+{
+	const FLevelEditorViewportClient* ActiveVC = Editor.GetActiveViewport();
+	if (!ActiveVC)
+	{
+		OutLines.push_back(FString("No active viewport"));
+		return;
+	}
+
+	const FParticleViewportStats& S = ActiveVC->GetParticleStats();
+
+	char Buffer[160] = {};
+	snprintf(Buffer, sizeof(Buffer), "Systems : %d", S.ParticleSystemCount);
+	OutLines.push_back(Buffer);
+
+	snprintf(Buffer, sizeof(Buffer), "Emitters : %d active / %d total", S.ActiveEmitterCount, S.EmitterCount);
+	OutLines.push_back(Buffer);
+
+	snprintf(Buffer, sizeof(Buffer), "Particles : %d active / %d max", S.ActiveParticles, S.MaxParticles);
+	OutLines.push_back(Buffer);
+
+	snprintf(Buffer, sizeof(Buffer), "Types : Sprite %d  Mesh %d  Ribbon %d  Beam %d",
+		S.SpriteEmitters, S.MeshEmitters, S.RibbonEmitters, S.BeamEmitters);
+	OutLines.push_back(Buffer);
+
+	snprintf(Buffer, sizeof(Buffer), "Draw : %d batches  %d sections  %d mesh instances",
+		S.DrawBatches, S.DrawSections, S.MeshInstances);
+	OutLines.push_back(Buffer);
+
+	FormatBytes(Buffer, sizeof(Buffer), "Particle Memory", S.ParticleMemoryBytes);
+	OutLines.push_back(Buffer);
+}
+
 void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlayStatLine>& OutLines) const
 {
 	OutLines.clear();
@@ -472,5 +506,12 @@ void FOverlayStatSystem::RenderImGui(const UEditorEngine& Editor, const FRect& V
 		Lines.clear();
 		BuildSkinningLines(Lines);
 		RenderWindow("##StatSkinningOverlay", "Stat Skinning", ImVec4(0.05f, 0.10f, 0.08f, 0.62f), Lines);
+	}
+
+	if (bShowParticles)
+	{
+		Lines.clear();
+		BuildParticleLines(Editor, Lines);
+		RenderWindow("##StatParticlesOverlay", "Stat Particles", ImVec4(0.08f, 0.08f, 0.03f, 0.62f), Lines);
 	}
 }

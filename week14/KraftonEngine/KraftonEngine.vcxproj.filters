@@ -1595,6 +1595,7 @@
     <ClCompile Include="Source\Engine\Object\ReferenceCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -4474,6 +4475,8 @@
     <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h" />
     <ClInclude Include="Source\Engine\Core\Property\MapProperty.h" />
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleCollisionEvent.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\ParticleStats.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

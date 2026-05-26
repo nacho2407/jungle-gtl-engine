@@ -444,7 +444,8 @@ bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Pro
 			return FMaterialManager::Get().GetOrCreateMaterial(CurrentPath);
 		};
 
-		return RenderAssetReferenceField(Field);
+		const bool bAssetChanged = RenderAssetReferenceField(Field);
+		return bChanged || bAssetChanged;
 	}
 
 	if (AssetType == "Script")
@@ -526,7 +527,7 @@ bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Pro
 		float ButtonWidth = ImGui::CalcTextSize("Import FBX").x + ImGui::GetStyle().FramePadding.x * 2.0f;
 		float Spacing = ImGui::GetStyle().ItemSpacing.x;
 		ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
-		RenderAssetReferenceField(Field);
+		bChanged = RenderAssetReferenceField(Field) || bChanged;
 
 		ImGui::SameLine();
 
@@ -802,7 +803,7 @@ bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Pro
 	float Spacing = ImGui::GetStyle().ItemSpacing.x;
 	ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
 
-	RenderAssetReferenceField(Field);
+	bChanged = RenderAssetReferenceField(Field) || bChanged;
 
 	ImGui::SameLine();
 
@@ -1221,6 +1222,16 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 	{
 		float* Val = static_cast<float*>(Prop.GetValuePtr());
 		bChanged = ImGui::DragFloat3("##Value", Val, Prop.GetSpeed());
+		if (ImGui::TreeNodeEx("Components", ImGuiTreeNodeFlags_SpanAvailWidth))
+		{
+			ImGui::SetNextItemWidth(-1.0f);
+			bChanged |= ImGui::DragFloat("X", &Val[0], Prop.GetSpeed());
+			ImGui::SetNextItemWidth(-1.0f);
+			bChanged |= ImGui::DragFloat("Y", &Val[1], Prop.GetSpeed());
+			ImGui::SetNextItemWidth(-1.0f);
+			bChanged |= ImGui::DragFloat("Z", &Val[2], Prop.GetSpeed());
+			ImGui::TreePop();
+		}
 		break;
 	}
 	case EPropertyType::Rotator:

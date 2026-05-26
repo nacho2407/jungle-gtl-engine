@@ -21,6 +21,9 @@ struct FParticleEmitterInstance
 	bool IsActive() const { return bActive; }
 	void SetActive(bool bInActive) { bActive = bInActive; }
 
+	bool IsSpawningEnabled() const { return bSpawningEnabled; }
+	void SetSpawningEnabled(bool bInSpawningEnabled) { bSpawningEnabled = bInSpawningEnabled; }
+
 	UParticleEmitter* GetTemplate() const { return SpriteTemplate; }
 	UParticleSystemComponent* GetComponent() const { return Component; }
 	UParticleLODLevel* GetCurrentLODLevel() const { return CurrentLODLevel; }
@@ -132,4 +135,5 @@ protected:
 	FVector4 DefaultColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	float EmitterTime = 0.0f;
 	bool bActive = true;
+	bool bSpawningEnabled = true;
 };

@@ -6,6 +6,8 @@
 #include "Render/Geometry/SpriteParticleGeometry.h"
 #include "Render/Geometry/MeshParticleGeometry.h"
 
+#include "Profiling/Stats/ParticleStats.h"
+
 class UStaticMesh;
 class UParticleSystemComponent;
 struct FDynamicEmitterReplayDataBase;
@@ -47,6 +49,8 @@ public:
 	bool PrepareParticleDrawBuffer(const FParticleDrawBatch& Batch, ID3D11Device* Device, ID3D11DeviceContext* Context,
 		FDrawCommandBuffer& OutBuffer) const;
 
+	const FParticleViewportStats& GetStats() const { return CachedStats; }
+
 private:
 	void ResetDynamicGeometry();
 	void BuildDynamicEmitters(const FFrameContext& Frame, const TArray<FParticleEmitterInstance*>& Instances);
@@ -87,4 +91,6 @@ private:
 	mutable TArray<FMeshParticleInstanceData> MeshInstances;
 
 	mutable TArray<FParticleDrawBatch> DrawBatches;
+
+	FParticleViewportStats CachedStats;
 };

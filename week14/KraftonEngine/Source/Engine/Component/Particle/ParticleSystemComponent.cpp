@@ -29,6 +29,17 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 	MarkRenderStateDirty();
 }
 
+void UParticleSystemComponent::SetEmitterSpawningEnabled(bool bEnabled)
+{
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance)
+		{
+			Instance->SetSpawningEnabled(bEnabled);
+		}
+	}
+}
+
 void UParticleSystemComponent::ResetSystem()
 {
 	CurrentLODIndex = 0;

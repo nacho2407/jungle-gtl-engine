@@ -1,6 +1,58 @@
 ﻿#include "FloatCurve.h"
 
+#include "Serialization/Archive.h"
+
 #include <algorithm>
+
+FArchive& operator<<(FArchive& Ar, FCurveKey& Key)
+{
+	Ar << Key.Time;
+	Ar << Key.Value;
+
+	int32 InterpMode = static_cast<int32>(Key.InterpMode);
+	Ar << InterpMode;
+	if (Ar.IsLoading())
+	{
+		Key.InterpMode = static_cast<ECurveInterpMode>(InterpMode);
+	}
+
+	int32 TangentMode = static_cast<int32>(Key.TangentMode);
+	Ar << TangentMode;
+	if (Ar.IsLoading())
+	{
+		Key.TangentMode = static_cast<ECurveTangentMode>(TangentMode);
+	}
+
+	Ar << Key.ArriveTangent;
+	Ar << Key.LeaveTangent;
+
+	return Ar;
+}
+
+FArchive& operator<<(FArchive& Ar, FFloatCurve& Curve)
+{
+	Ar << Curve.DefaultValue;
+
+	int32 PreExtrap = static_cast<int32>(Curve.PreExtrapMode);
+	int32 PostExtrap = static_cast<int32>(Curve.PostExtrapMode);
+	Ar << PreExtrap;
+	Ar << PostExtrap;
+
+	if (Ar.IsLoading())
+	{
+		Curve.PreExtrapMode = static_cast<ECurveExtrapMode>(PreExtrap);
+		Curve.PostExtrapMode = static_cast<ECurveExtrapMode>(PostExtrap);
+	}
+
+	Ar << Curve.Keys;
+
+	if (Ar.IsLoading())
+	{
+		Curve.SortKeys();
+	}
+
+	return Ar;
+}
 
 bool FFloatCurve::IsEmpty() const
 {

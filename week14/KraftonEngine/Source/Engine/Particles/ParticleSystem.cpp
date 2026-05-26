@@ -22,7 +22,7 @@ namespace
 		return RequiredModule;
 	}
 
-	UParticleLODLevel* CreateDefaultLODLevel(float EmitterDuration, bool bLooping, float SpawnRate, float Lifetime, const FVector& StartLocation, const FVector& StartVelocity, const FVector& StartSize, const FVector4& StartColor, const FVector4& EndColor)
+	UParticleLODLevel* CreateDefaultLODLevel(float EmitterDuration, bool bLooping, float SpawnRate, float Lifetime, const FVector& StartVelocity, const FVector& StartSize, const FVector4& StartColor, const FVector4& EndColor)
 	{
 		UParticleLODLevel* LODLevel = UObjectManager::Get().CreateObject<UParticleLODLevel>();
 		LODLevel->SetLevel(0);
@@ -32,28 +32,33 @@ namespace
 		SpawnModule->SpawnRate = SpawnRate;
 
 		UParticleModuleLifetime* LifetimeModule = UObjectManager::Get().CreateObject<UParticleModuleLifetime>();
-		LifetimeModule->Lifetime = Lifetime;
-
-		UParticleModuleLocation* LocationModule = UObjectManager::Get().CreateObject<UParticleModuleLocation>();
-		LocationModule->StartLocation = StartLocation;
+		LifetimeModule->Lifetime.Mode = EDistributionValueMode::Uniform;
+		LifetimeModule->Lifetime.Constant = Lifetime;
+		LifetimeModule->Lifetime.MinValue = Lifetime;
+		LifetimeModule->Lifetime.MaxValue = Lifetime;
 
 		UParticleModuleVelocity* VelocityModule = UObjectManager::Get().CreateObject<UParticleModuleVelocity>();
-		VelocityModule->StartVelocity = StartVelocity;
+		VelocityModule->StartVelocity.Mode = EDistributionValueMode::Uniform;
+		VelocityModule->StartVelocity.Constant = StartVelocity;
+		VelocityModule->StartVelocity.MinValue = FVector(-10.0f, -10.0f, 50.0f);
+		VelocityModule->StartVelocity.MaxValue = FVector(10.0f, 10.0f, 100.0f);
 
 		UParticleModuleColor* ColorModule = UObjectManager::Get().CreateObject<UParticleModuleColor>();
 		ColorModule->StartColor = StartColor;
 		ColorModule->EndColor = EndColor;
 
 		UParticleModuleSize* SizeModule = UObjectManager::Get().CreateObject<UParticleModuleSize>();
-		SizeModule->StartSize = StartSize;
+		SizeModule->StartSize.Mode = EDistributionValueMode::Uniform;
+		SizeModule->StartSize.Constant = StartSize;
+		SizeModule->StartSize.MinValue = StartSize;
+		SizeModule->StartSize.MaxValue = StartSize;
 
 		LODLevel->GetMutableModules().push_back(CreateDefaultRequiredModule(EmitterDuration, bLooping));
 		LODLevel->GetMutableModules().push_back(SpawnModule);
 		LODLevel->GetMutableModules().push_back(LifetimeModule);
-		LODLevel->GetMutableModules().push_back(LocationModule);
+		LODLevel->GetMutableModules().push_back(SizeModule);
 		LODLevel->GetMutableModules().push_back(VelocityModule);
 		LODLevel->GetMutableModules().push_back(ColorModule);
-		LODLevel->GetMutableModules().push_back(SizeModule);
 		LODLevel->SetAllModuleEditStates(EParticleModuleEditState::Duplicated);
 
 		return LODLevel;
@@ -68,13 +73,12 @@ namespace
 		Emitter->AddLODLevel(CreateDefaultLODLevel(
 			Emitter->GetEmitterDuration(),
 			Emitter->IsLooping(),
-			18.0f,
+			20.0f,
 			1.0f,
-			FVector(-24.0f, 0.0f, 0.0f),
-			FVector(0.0f, 90.0f, 20.0f),
-			FVector(10.0f, 10.0f, 1.0f),
-			FVector4(1.0f, 0.72f, 0.28f, 1.0f),
-			FVector4(0.35f, 0.35f, 0.35f, 0.0f)));
+			FVector(0.0f, 0.0f, 0.0f),
+			FVector(25.0f, 25.0f, 25.0f),
+			FVector4(1.0f, 1.0f, 1.0f, 1.0f),
+			FVector4(1.0f, 1.0f, 1.0f, 0.0f)));
 		return Emitter;
 	}
 
@@ -90,7 +94,6 @@ namespace
 			Emitter->IsLooping(),
 			7.0f,
 			1.6f,
-			FVector(28.0f, 0.0f, 12.0f),
 			FVector(0.0f, 55.0f, 80.0f),
 			FVector(4.0f, 4.0f, 4.0f),
 			FVector4(0.55f, 0.78f, 1.0f, 1.0f),
@@ -320,7 +323,6 @@ void UParticleSystem::InitializeDefaultEmitters()
 	}
 
 	AddEmitter(CreateSpriteEmitter());
-	AddEmitter(CreateMeshEmitter());
 	NormalizeLODLevels();
 }
 
@@ -414,11 +416,10 @@ void UParticleSystem::NormalizeEmitterLODLevels(UParticleEmitter* Emitter)
 		LODLevels.push_back(CreateDefaultLODLevel(
 			Emitter->GetEmitterDuration(),
 			Emitter->IsLooping(),
-			10.0f,
+			20.0f,
 			1.0f,
-			FVector::ZeroVector,
-			FVector(0.0f, 100.0f, 0.0f),
-			FVector(10.0f, 10.0f, 1.0f),
+			FVector(0.0f, 0.0f, 0.0f),
+			FVector(25.0f, 25.0f, 25.0f),
 			FVector4(1.0f, 1.0f, 1.0f, 1.0f),
 			FVector4(1.0f, 1.0f, 1.0f, 0.0f)));
 	}

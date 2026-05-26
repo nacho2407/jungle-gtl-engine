@@ -1,4 +1,4 @@
-#include "Editor/UI/Panel/EditorConsoleWidget.h"
+﻿#include "Editor/UI/Panel/EditorConsoleWidget.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/Level/LevelEditorViewportClient.h"
 #include "Editor/Viewport/EditorPreviewViewportClient.h"
@@ -241,6 +241,8 @@ void FEditorConsoleWidget::RegisterDiagnosticsCommands()
 		"Diagnostics", "stat shadow", "Shows the shadow overlay stat.");
 	RegisterCommand("stat skinning", [this](const TArray<FString>& Args) { HandleStatSkinning(Args); },
 		"Diagnostics", "stat skinning", "Shows the skinning CPU overlay stat.");
+	RegisterCommand("stat particles", [this](const TArray<FString>& Args) { HandleStatParticles(Args); },
+		"Diagnostics", "stat particles", "Shows the particle overlay stat.");
 	RegisterCommand("stat none", [this](const TArray<FString>& Args) { HandleStatNone(Args); },
 		"Diagnostics", "stat none", "Hides all overlay stats.");
 	RegisterCommand("cause crash", [this](const TArray<FString>& Args) { HandleCauseCrash(Args); },
@@ -479,9 +481,9 @@ TArray<FEditorConsoleWidget::FCompletionCandidate> FEditorConsoleWidget::GetComp
 		{
 			return A.DisplayText < B.DisplayText;
 		});
-	if (Candidates.size() > 3)
+	if (Candidates.size() > 6)
 	{
-		Candidates.resize(3);
+		Candidates.resize(6);
 	}
 	return Candidates;
 }
@@ -862,6 +864,18 @@ void FEditorConsoleWidget::HandleStatSkinning(const TArray<FString>& Args)
 	}
 	const bool bEnabled = EditorEngine->GetOverlayStatSystem().ToggleSkinning();
 	AddLog("Overlay stat %s: skinning\n", bEnabled ? "enabled" : "disabled");
+}
+
+void FEditorConsoleWidget::HandleStatParticles(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+	const bool bEnabled = EditorEngine->GetOverlayStatSystem().ToggleParticles();
+	AddLog("Overlay stat %s: particles\n", bEnabled ? "enabled" : "disabled");
 }
 
 void FEditorConsoleWidget::HandleStatNone(const TArray<FString>& Args)

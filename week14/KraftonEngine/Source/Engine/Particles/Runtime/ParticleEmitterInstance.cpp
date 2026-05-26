@@ -115,11 +115,12 @@ void FParticleEmitterInstance::Reset()
 	EmitterTime = 0.0f;
 	CollisionEventQueue.clear();
 	bActive = true;
+	bSpawningEnabled = true;
 }
 
 int32 FParticleEmitterInstance::SpawnParticles(float DeltaTime)
 {
-	if (DeltaTime <= 0.0f || ActiveParticles >= MaxActiveParticles)
+	if (!bSpawningEnabled || DeltaTime <= 0.0f || ActiveParticles >= MaxActiveParticles)
 	{
 		return 0;
 	}
@@ -173,6 +174,7 @@ void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle)
 	Particle.Age = 0.0f;
 	Particle.RelativeTime = 0.0f;
 	Particle.OneOverMaxLifetime = DefaultLifetime > 0.0f ? 1.0f / DefaultLifetime : 1.0f;
+	Particle.RandomSeed = FDistributionSampling::RandomSeed();
 	Particle.FrameIndex = ParticleCounter;
 	Particle.bAlive = true;
 
