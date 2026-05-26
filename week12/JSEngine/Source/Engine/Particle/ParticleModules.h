@@ -192,6 +192,36 @@ public:
 	FParticleVectorDistribution StartVelocity;
 };
 
+UCLASS(Placeable, DisplayName = "Rotation Module")
+class UParticleModuleRotation : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleRotation, UParticleModule)
+
+	bool IsSpawnModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
+
+	UPROPERTY(DisplayName = "Start Rotation", Min = -360.0f, Max = 360.0f, Speed = 1.0f)
+	FParticleFloatDistribution StartRotation;
+};
+
+UCLASS(Placeable, DisplayName = "Mesh Rotation Module")
+class UParticleModuleMeshRotation : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleMeshRotation, UParticleModule)
+
+	bool IsSpawnModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
+
+	UPROPERTY(DisplayName = "Start Rotation", Min = -360.0f, Max = 360.0f, Speed = 1.0f)
+	FParticleVectorDistribution StartRotation;
+};
+
 UCLASS(Placeable, DisplayName = "Color Module")
 class UParticleModuleColor : public UParticleModule
 {

@@ -864,6 +864,52 @@ void UParticleModuleVelocity::Spawn(FParticleEmitterInstance* Owner, int32 Offse
 	Particle.BaseVelocity = Particle.Velocity;
 }
 
+bool UParticleModuleRotation::IsSpawnModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleRotation::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleRotation::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartRotation.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleRotation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
+	Particle.Rotation = EvaluateParticleFloat(StartRotation, Context);
+}
+
+bool UParticleModuleMeshRotation::IsSpawnModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleMeshRotation::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleMeshRotation::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartRotation.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleMeshRotation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
+	Particle.MeshRotation = EvaluateParticleVector(StartRotation, Context);
+}
+
 UParticleModuleColor::UParticleModuleColor()
 {
 	StartColor.Constant = FColor::White();

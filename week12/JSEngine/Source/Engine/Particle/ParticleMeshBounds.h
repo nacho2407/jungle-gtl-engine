@@ -23,7 +23,7 @@ namespace ParticleMeshBounds
 	{
 		const FMatrix ParticleTransform = FMatrix::MakeTRS(
 			Particle.Location,
-			FMatrix::Identity,
+			FMatrix::MakeRotationEuler(Particle.MeshRotation),
 			GetSafeParticleScale(Particle));
 		return ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local
 			? ParticleTransform * ComponentToWorld

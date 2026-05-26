@@ -127,12 +127,16 @@ namespace
 		const float Height = std::max(std::fabs(Particle.Size.Y), 0.001f);
 		const float HalfW = Width * 0.5f;
 		const float HalfH = Height * 0.5f;
+		const float RotationRadians = Particle.Rotation * (3.14159265358979323846f / 180.0f);
+		const float CosRotation = std::cos(RotationRadians);
+		const float SinRotation = std::sin(RotationRadians);
+		const FVector RotatedAxisX = CameraRight * CosRotation + CameraUp * SinRotation;
+		const FVector RotatedAxisY = CameraUp * CosRotation - CameraRight * SinRotation;
 
-		// TODO: FBaseParticle::Rotation 반영
 		Instances.push_back({
 			WorldLocation,
-			CameraRight * HalfW,
-			CameraUp * HalfH,
+			RotatedAxisX * HalfW,
+			RotatedAxisY * HalfH,
 			Particle.Color
 		});
 	}
