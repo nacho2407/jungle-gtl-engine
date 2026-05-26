@@ -244,6 +244,23 @@ bool UParticleSystemComponent::ShouldCreateEmitterInstance(int32 EmitterIndex, c
 	return PreviewSoloEmitterIndex < 0 || PreviewSoloEmitterIndex == EmitterIndex;
 }
 
+void UParticleSystemComponent::BroadcastParticleEvent(const FParticleCollisionEventPayload& Event)
+{
+	OnParticleEvent.Broadcast(this, Event);
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance && Instance->IsActive())
+		{
+			Instance->ReceiveParticleEvent(Event);
+		}
+	}
+
+	if (Event.EventType == EParticleEventType::Collision)
+	{
+		BroadcastParticleCollisionEvent(Event);
+	}
+}
+
 void UParticleSystemComponent::BroadcastParticleCollisionEvent(const FParticleCollisionEventPayload& Event)
 {
 	OnParticleCollideEvent.Broadcast(this, Event);

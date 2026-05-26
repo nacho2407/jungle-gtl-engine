@@ -14,6 +14,7 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleCollision.h"
+#include "Particles/Module/ParticleModuleEvent.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
@@ -1052,6 +1053,8 @@ namespace
 		if (Cast<UParticleModuleBeamNoise>(Module)) return "Beam Noise";
 		if (Cast<UParticleModuleBeamTarget>(Module)) return "Beam Target";
 		if (Cast<UParticleModuleCollision>(Module)) return "Collision";
+		if (Cast<UParticleModuleEventGenerator>(Module)) return "Event Generator";
+		if (Cast<UParticleModuleEventReceiver>(Module)) return "Event Receiver";
 		return Module->GetClass()->GetName();
 	}
 
@@ -2870,7 +2873,18 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				ImGui::EndMenu();
 			}
 
-			RenderUnavailableCategory("Event");
+			if (ImGui::BeginMenu("Event"))
+			{
+				if (ImGui::MenuItem("Event Generator"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleEventGenerator>());
+				}
+				if (ImGui::MenuItem("Event Receiver"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleEventReceiver>());
+				}
+				ImGui::EndMenu();
+			}
 
 			if (ImGui::BeginMenu("Lifetime"))
 			{
