@@ -2143,6 +2143,21 @@ bool FParticleEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& Out
 		return false;
 	}
 
+	// Render replay data is consumed after simulation, so carry the current
+	// simulation-to-world transform with the copied particle payloads.
+	UpdateTransforms();
+
+	const bool bLocalSpace = UseLocalSpace();
+	OutData.SimulationToWorld = bLocalSpace ? SimulationToWorld : FMatrix::Identity;
+
+	if (OutData.eEmitterType == EDynamicEmitterType::Sprite ||
+		OutData.eEmitterType == EDynamicEmitterType::Mesh ||
+		OutData.eEmitterType == EDynamicEmitterType::Beam ||
+		OutData.eEmitterType == EDynamicEmitterType::Ribbon)
+	{
+		static_cast<FDynamicSpriteEmitterReplayDataBase&>(OutData).bUseLocalSpace = bLocalSpace;
+	}
+
 	CopyActiveParticlesToReplay(*this, OutData);
 	return true;
 }

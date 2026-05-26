@@ -122,6 +122,13 @@ namespace
 			+ T1 * (A3 - A2);
 	}
 
+	FVector ToRenderPosition(const FDynamicSpriteEmitterReplayDataBase& Source, const FVector& Position)
+	{
+		return Source.bUseLocalSpace
+			? Source.SimulationToWorld.TransformPosition(Position)
+			: Position;
+	}
+
 	void BuildRibbonPointSequence(
 		const FDynamicTrailsEmitterReplayData& Source,
 		const FBaseParticle* StartParticle,
@@ -291,8 +298,8 @@ namespace
 			const FVector Offset = SheetUp * (Width * 0.5f);
 
 			FParticleBeamTrailVertex Left;
-			Left.Position = Centers[PointIndex] - Offset;
-			Left.OldPosition = Particle.OldLocation;
+			Left.Position = ToRenderPosition(Source, Centers[PointIndex] - Offset);
+			Left.OldPosition = ToRenderPosition(Source, Particle.OldLocation);
 			Left.RelativeTime = Particle.RelativeTime;
 			Left.ParticleId = static_cast<float>(PointIndex);
 			Left.Size = FVector2(Particle.Size.X, Particle.Size.Y);
@@ -305,7 +312,7 @@ namespace
 			Left.Tex_V2 = 0.0f;
 
 			FParticleBeamTrailVertex Right = Left;
-			Right.Position = Centers[PointIndex] + Offset;
+			Right.Position = ToRenderPosition(Source, Centers[PointIndex] + Offset);
 			Right.Tex_V = 1.0f;
 			Right.Tex_V2 = 1.0f;
 
@@ -420,13 +427,19 @@ void FDynamicSpriteEmitterDataBase::SortSpriteParticles(const FParticleSortConte
         return reinterpret_cast<const FBaseParticle*>(RawData + Idx * Stride);
     };
 
+    auto GetParticleRenderLocation = [&](uint16 Idx) -> FVector
+    {
+        const FBaseParticle* Particle = GetParticle(Idx);
+        return Particle ? ToRenderPosition(Source, Particle->Location) : FVector::ZeroVector;
+    };
+
     switch (Source.SortMode)
     {
     case PSORTMODE_DistanceToView:
         std::sort(Indices, Indices + Count, [&](uint16 A, uint16 B)
         {
-            const float DA = FVector::DistSquared(GetParticle(A)->Location, SortCtx.CameraPosition);
-            const float DB = FVector::DistSquared(GetParticle(B)->Location, SortCtx.CameraPosition);
+            const float DA = FVector::DistSquared(GetParticleRenderLocation(A), SortCtx.CameraPosition);
+            const float DB = FVector::DistSquared(GetParticleRenderLocation(B), SortCtx.CameraPosition);
             return DA > DB;
         });
         break;
@@ -434,8 +447,8 @@ void FDynamicSpriteEmitterDataBase::SortSpriteParticles(const FParticleSortConte
     case PSORTMODE_ViewProjDepth:
         std::sort(Indices, Indices + Count, [&](uint16 A, uint16 B)
         {
-            const float DA = (GetParticle(A)->Location - SortCtx.CameraPosition).Dot(SortCtx.CameraForward);
-            const float DB = (GetParticle(B)->Location - SortCtx.CameraPosition).Dot(SortCtx.CameraForward);
+            const float DA = (GetParticleRenderLocation(A) - SortCtx.CameraPosition).Dot(SortCtx.CameraForward);
+            const float DB = (GetParticleRenderLocation(B) - SortCtx.CameraPosition).Dot(SortCtx.CameraForward);
             return DA > DB;
         });
         break;
@@ -727,8 +740,8 @@ int32 FDynamicRibbonEmitterData::FillInterpolatedVertexData()
 				const FVector Offset = SheetUp.GetSafeNormal(1.0e-6f, FVector::ZAxisVector) * (std::max(0.0f, Point.Width) * 0.5f);
 
 				FParticleBeamTrailVertex Left;
-				Left.Position = Point.Position - Offset;
-				Left.OldPosition = Point.Position;
+				Left.Position = ToRenderPosition(Source, Point.Position - Offset);
+				Left.OldPosition = ToRenderPosition(Source, Point.Position);
 				Left.RelativeTime = Point.RelativeTime;
 				Left.ParticleId = static_cast<float>(PointIndex);
 				Left.Size = FVector2(Point.Width, Point.Width);
@@ -739,7 +752,7 @@ int32 FDynamicRibbonEmitterData::FillInterpolatedVertexData()
 				Left.Tex_V2 = 0.0f;
 
 				FParticleBeamTrailVertex Right = Left;
-				Right.Position = Point.Position + Offset;
+				Right.Position = ToRenderPosition(Source, Point.Position + Offset);
 				Right.Tex_V = 1.0f;
 				Right.Tex_V2 = 1.0f;
 
