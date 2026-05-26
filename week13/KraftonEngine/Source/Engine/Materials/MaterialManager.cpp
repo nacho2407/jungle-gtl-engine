@@ -676,6 +676,11 @@ bool FMaterialManager::CompileMaterialGraph(const FString& MatFilePath, json::JS
     DropTemplate(
         Result.GeneratedShaderPath + "#" + std::to_string(static_cast<int>(DomainToVertexFactory(Options.Domain)))
     );
+
+    // 재컴파일 결과(GeneratedShaderPath, GeneratorVersion 등)를 .mat 파일에 저장.
+    // 저장하지 않으면 다음 실행 시 버전 불일치로 인해 매번 재컴파일이 반복된다.
+    SaveToJSON(InOutJson, MatFilePath);
+
     return true;
 }
 
