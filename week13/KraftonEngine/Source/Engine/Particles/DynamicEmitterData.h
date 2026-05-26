@@ -221,8 +221,8 @@ struct FDynamicTrailsEmitterData : FDynamicSpriteEmitterDataBase
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return *SourcePointer; }
 	int32 GetDynamicVertexStride() const override { return sizeof(FParticleBeamTrailVertex); }
 	int32 FillIndexData();
-	virtual int32 FillVertexData();
-	void DoBufferFill();
+	virtual int32 FillVertexData(const FFrameContext& Frame);
+	void DoBufferFill(const FFrameContext& Frame);
 };
 
 struct FDynamicRibbonEmitterData : FDynamicTrailsEmitterData
@@ -243,7 +243,6 @@ struct FDynamicRibbonEmitterData : FDynamicTrailsEmitterData
 	const TArray<FParticleBeamTrailVertex>& GetBuiltVertices() const;
 	const TArray<uint32>& GetBuiltIndices() const;
 
-	void BuildMeshData();
-	int32 FillVertexData() override;
-	int32 FillInterpolatedVertexData();
+	void BuildMeshData(const FFrameContext& Frame);
+	int32 FillVertexData(const FFrameContext& Frame) override;
 };

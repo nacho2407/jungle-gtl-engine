@@ -1,5 +1,6 @@
 #include "DynamicEmitterData.h"
 #include "Particles/ParticleHelper.h"
+#include "Particles/TypeData/ParticleModuleTypeDataRibbon.h"
 #include "Render/Types/FrameContext.h"
 #include <algorithm>
 #include <cmath>
@@ -13,16 +14,6 @@ namespace
 	{
 		TArray<FParticleBeamTrailVertex> Vertices;
 		TArray<uint32> Indices;
-	};
-
-	struct FRibbonBuildPoint
-	{
-		FVector Position;
-		FVector Up;
-		float Width;
-		float U;
-		FLinearColor Color;
-		float RelativeTime;
 	};
 
 	std::unordered_map<const void*, FBeamTrailCPUStaging> GBeamTrailCPUStaging;
@@ -112,6 +103,47 @@ namespace
 			+ T0 * (A3 - 2.0f * A2 + Alpha)
 			+ P1 * (-2.0f * A3 + 3.0f * A2)
 			+ T1 * (A3 - A2);
+	}
+
+	FLinearColor LerpColor(const FLinearColor& A, const FLinearColor& B, float Alpha)
+	{
+		return FLinearColor(
+			A.R + (B.R - A.R) * Alpha,
+			A.G + (B.G - A.G) * Alpha,
+			A.B + (B.B - A.B) * Alpha,
+			A.A + (B.A - A.A) * Alpha);
+	}
+
+	void AppendStripAsTriangleList(const TArray<uint32>& Strip, TArray<uint32>& Indices)
+	{
+		if (Strip.size() < 3)
+		{
+			return;
+		}
+
+		for (int32 Index = 0; Index + 2 < static_cast<int32>(Strip.size()); ++Index)
+		{
+			const uint32 A = Strip[Index];
+			const uint32 B = Strip[Index + 1];
+			const uint32 C = Strip[Index + 2];
+			if (A == B || B == C || A == C)
+			{
+				continue;
+			}
+
+			if ((Index & 1) == 0)
+			{
+				Indices.push_back(A);
+				Indices.push_back(B);
+				Indices.push_back(C);
+			}
+			else
+			{
+				Indices.push_back(B);
+				Indices.push_back(A);
+				Indices.push_back(C);
+			}
+		}
 	}
 
 	FVector CalcBeamUp(const FVector& Location, const FVector& EndPoint, const FVector& ViewOrigin, const FVector& FallbackUp)
@@ -212,70 +244,6 @@ namespace
 				Indices.push_back(B);
 				Indices.push_back(A);
 				Indices.push_back(C);
-			}
-		}
-	}
-
-	void BuildRibbonPointSequence(
-		const FDynamicTrailsEmitterReplayData& Source,
-		const FBaseParticle* StartParticle,
-		const FRibbonTypeDataPayload* StartPayload,
-		TArray<FRibbonBuildPoint>& Points)
-	{
-		Points.clear();
-		if (!StartParticle || !StartPayload || !TRAIL_EMITTER_IS_HEAD(StartPayload->Flags))
-		{
-			return;
-		}
-
-		TArray<const FBaseParticle*> Particles;
-		TArray<const FRibbonTypeDataPayload*> Payloads;
-		const FBaseParticle* Particle = StartParticle;
-		const FRibbonTypeDataPayload* Payload = StartPayload;
-		while (Particle && Payload)
-		{
-			Particles.push_back(Particle);
-			Payloads.push_back(Payload);
-			const int32 NextIndex = TRAIL_EMITTER_GET_NEXT(Payload->Flags);
-			if (NextIndex == TRAIL_EMITTER_NULL_NEXT || NextIndex == INDEX_NONE)
-			{
-				break;
-			}
-			Particle = GetReplayParticle(Source, NextIndex);
-			Payload = GetReplayPayload<FRibbonTypeDataPayload>(Source, Particle, Source.TrailDataOffset);
-		}
-
-		if (Particles.size() < 2)
-		{
-			return;
-		}
-
-		for (int32 SegmentIndex = 0; SegmentIndex + 1 < static_cast<int32>(Particles.size()); ++SegmentIndex)
-		{
-			const FBaseParticle& P0 = *Particles[SegmentIndex];
-			const FBaseParticle& P1 = *Particles[SegmentIndex + 1];
-			const FRibbonTypeDataPayload& D0 = *Payloads[SegmentIndex];
-			const FRibbonTypeDataPayload& D1 = *Payloads[SegmentIndex + 1];
-			const int32 InterpCount = std::max(1, D1.RenderingInterpCount);
-
-			if (SegmentIndex == 0)
-			{
-				Points.push_back({ P0.Location, D0.Up.GetSafeNormal(1.0e-6f, FVector::ZAxisVector), P0.Size.X * D0.PinchScaleFactor, D0.TiledU, P0.Color, P0.RelativeTime });
-			}
-
-			const FVector T0 = D0.Tangent * std::max(1.0f, D0.SpawnDelta);
-			const FVector T1 = D1.Tangent * std::max(1.0f, D1.SpawnDelta);
-			for (int32 InterpIndex = 1; InterpIndex <= InterpCount; ++InterpIndex)
-			{
-				const float Alpha = static_cast<float>(InterpIndex) / static_cast<float>(InterpCount);
-				FRibbonBuildPoint Point;
-				Point.Position = CubicInterp(P0.Location, T0, P1.Location, T1, Alpha);
-				Point.Up = FVector::Lerp(D0.Up, D1.Up, Alpha).GetSafeNormal(1.0e-6f, FVector::ZAxisVector);
-				Point.Width = FVector::Lerp(FVector(P0.Size.X * D0.PinchScaleFactor, 0.0f, 0.0f), FVector(P1.Size.X * D1.PinchScaleFactor, 0.0f, 0.0f), Alpha).X;
-				Point.U = D0.TiledU + (D1.TiledU - D0.TiledU) * Alpha;
-				Point.Color = P0.Color;
-				Point.RelativeTime = P0.RelativeTime + (P1.RelativeTime - P0.RelativeTime) * Alpha;
-				Points.push_back(Point);
 			}
 		}
 	}
@@ -935,14 +903,14 @@ int32 FDynamicBeam2EmitterData::FillData_InterpolatedNoise(const FFrameContext& 
 	return static_cast<int32>(Staging.Vertices.size()) - InitialVertexCount;
 }
 
-void FDynamicTrailsEmitterData::DoBufferFill()
+void FDynamicTrailsEmitterData::DoBufferFill(const FFrameContext& Frame)
 {
     // UE original responsibility:
     // FDynamicTrailsEmitterData::DoBufferFill checks async buffer inputs and calls
     // FillIndexData then FillVertexData. Jungle's CPU staging arrays stand in for
     // the missing FAsyncBufferFillData/RHI layer, and simulation payload is read-only here.
     FillIndexData();
-    FillVertexData();
+    FillVertexData(Frame);
 }
 
 int32 FDynamicTrailsEmitterData::FillIndexData()
@@ -955,9 +923,9 @@ int32 FDynamicTrailsEmitterData::FillIndexData()
 	}
 
 	const FDynamicTrailsEmitterReplayData& Source = *SourcePointer;
-	TArray<FRibbonBuildPoint> Points;
-	const int32 Sheets = std::max(1, Source.Sheets);
-	uint32 ExpectedBaseVertex = 0;
+	TArray<uint32> StripIndices;
+	uint32 VertexIndex = 0;
+	int32 CurrentTrail = 0;
 	for (int32 ActiveIndex = 0; ActiveIndex < Source.ActiveParticleCount; ++ActiveIndex)
 	{
 		const uint16 DirectIndex = Source.DataContainer.ParticleIndices ? Source.DataContainer.ParticleIndices[ActiveIndex] : 0;
@@ -968,36 +936,41 @@ int32 FDynamicTrailsEmitterData::FillIndexData()
 			continue;
 		}
 
-		BuildRibbonPointSequence(Source, StartParticle, StartPayload, Points);
-		if (Points.size() < 2)
+		const int32 LocalTrianglesToRender = StartPayload->TriangleCount;
+		if (LocalTrianglesToRender == 0)
 		{
 			continue;
 		}
 
-		for (int32 SheetIndex = 0; SheetIndex < Sheets; ++SheetIndex)
+		// UE fills a triangle strip and joins multiple trails with degenerate
+		// indices. Krafton's renderer consumes triangle lists, so conversion is
+		// delayed until the strip stream is complete.
+		if (CurrentTrail == 0)
 		{
-			const uint32 BaseIndex = ExpectedBaseVertex + static_cast<uint32>(SheetIndex * Points.size() * 2);
-			for (uint32 Segment = 0; Segment + 1 < static_cast<uint32>(Points.size()); ++Segment)
-			{
-				const uint32 I0 = BaseIndex + Segment * 2;
-				const uint32 I1 = I0 + 1;
-				const uint32 I2 = I0 + 2;
-				const uint32 I3 = I0 + 3;
-				Staging.Indices.push_back(I0);
-				Staging.Indices.push_back(I2);
-				Staging.Indices.push_back(I1);
-				Staging.Indices.push_back(I1);
-				Staging.Indices.push_back(I2);
-				Staging.Indices.push_back(I3);
-			}
+			StripIndices.push_back(VertexIndex++);
+			StripIndices.push_back(VertexIndex++);
 		}
-		ExpectedBaseVertex += static_cast<uint32>(Points.size() * 2 * Sheets);
+		else
+		{
+			StripIndices.push_back(VertexIndex - 1);
+			StripIndices.push_back(VertexIndex);
+			StripIndices.push_back(VertexIndex++);
+			StripIndices.push_back(VertexIndex++);
+		}
+
+		for (int32 LocalIndex = 0; LocalIndex < LocalTrianglesToRender; ++LocalIndex)
+		{
+			StripIndices.push_back(VertexIndex++);
+		}
+
+		++CurrentTrail;
 	}
 
+	AppendStripAsTriangleList(StripIndices, Staging.Indices);
 	return static_cast<int32>(Staging.Indices.size()) / 3 - InitialTriangleCount;
 }
 
-int32 FDynamicTrailsEmitterData::FillVertexData()
+int32 FDynamicTrailsEmitterData::FillVertexData(const FFrameContext& /*Frame*/)
 {
     // UE original responsibility:
     // Base trail vertex fill entry point, overridden by Ribbon/AnimTrail dynamic data.
@@ -1020,7 +993,7 @@ const TArray<uint32>& FDynamicRibbonEmitterData::GetBuiltIndices() const
 	return GetCPUStagingConst(this).Indices;
 }
 
-void FDynamicRibbonEmitterData::BuildMeshData()
+void FDynamicRibbonEmitterData::BuildMeshData(const FFrameContext& Frame)
 {
     FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
     Staging.Vertices.clear();
@@ -1029,64 +1002,170 @@ void FDynamicRibbonEmitterData::BuildMeshData()
     {
         return;
     }
-    DoBufferFill();
+    DoBufferFill(Frame);
 }
 
-int32 FDynamicRibbonEmitterData::FillInterpolatedVertexData()
+int32 FDynamicRibbonEmitterData::FillVertexData(const FFrameContext& Frame)
 {
 	FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
 	const int32 InitialVertexCount = static_cast<int32>(Staging.Vertices.size());
-	const int32 Sheets = std::max(1, Source.Sheets);
-	TArray<FRibbonBuildPoint> Points;
+	const FVector CameraUp = Frame.CameraUp.GetSafeNormal(1.0e-6f, FVector::ZAxisVector);
+	const FVector ViewOrigin = Frame.CameraPosition;
+	float CurrDistance = 0.0f;
 
 	for (int32 ActiveIndex = 0; ActiveIndex < Source.ActiveParticleCount; ++ActiveIndex)
 	{
 		const uint16 DirectIndex = Source.DataContainer.ParticleIndices ? Source.DataContainer.ParticleIndices[ActiveIndex] : 0;
-		const FBaseParticle* StartParticle = GetReplayParticle(Source, DirectIndex);
-		const FRibbonTypeDataPayload* StartPayload = GetReplayPayload<FRibbonTypeDataPayload>(Source, StartParticle, Source.TrailDataOffset);
-		BuildRibbonPointSequence(Source, StartParticle, StartPayload, Points);
-		if (Points.size() < 2)
+		const FBaseParticle* PackingParticle = GetReplayParticle(Source, DirectIndex);
+		const FRibbonTypeDataPayload* TrailPayload = GetReplayPayload<FRibbonTypeDataPayload>(Source, PackingParticle, Source.TrailDataOffset);
+		if (!PackingParticle || !TrailPayload || !TRAIL_EMITTER_IS_HEAD(TrailPayload->Flags))
+		{
+			continue;
+		}
+		if (TRAIL_EMITTER_GET_NEXT(TrailPayload->Flags) == TRAIL_EMITTER_NULL_NEXT)
 		{
 			continue;
 		}
 
-		const FVector TrailDirection = (Points.back().Position - Points.front().Position).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
-		for (int32 SheetIndex = 0; SheetIndex < Sheets; ++SheetIndex)
+		const float TextureIncrement = TrailPayload->TriangleCount > 0
+			? 1.0f / (static_cast<float>(TrailPayload->TriangleCount) / 2.0f)
+			: 0.0f;
+		float TexU = 0.0f;
+		const FBaseParticle* PrevParticle = nullptr;
+		const FRibbonTypeDataPayload* PrevTrailPayload = nullptr;
+		FVector PrevWorkingUp = FVector::ZAxisVector;
+
+		FVector WorkingUp = TrailPayload->Up;
+		if (RenderAxisOption == Trails_CameraUp)
 		{
-			const uint32 BaseIndex = static_cast<uint32>(Staging.Vertices.size());
-			for (int32 PointIndex = 0; PointIndex < static_cast<int32>(Points.size()); ++PointIndex)
+			FVector DirToCamera = (PackingParticle->Location - ViewOrigin).GetSafeNormal(1.0e-6f, FVector::ZeroVector);
+			FVector NormalizedTangent = TrailPayload->Tangent.GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+			WorkingUp = NormalizedTangent.Cross(DirToCamera);
+			if (WorkingUp.IsNearlyZero())
 			{
-				const FRibbonBuildPoint& Point = Points[PointIndex];
-				const FVector SheetUp = RotateAroundAxis(Point.Up, TrailDirection, Sheets > 1 ? PI * static_cast<float>(SheetIndex) / static_cast<float>(Sheets) : 0.0f);
-				const FVector Offset = SheetUp.GetSafeNormal(1.0e-6f, FVector::ZAxisVector) * (std::max(0.0f, Point.Width) * 0.5f);
+				WorkingUp = CameraUp;
+			}
+			WorkingUp = WorkingUp.GetSafeNormal(1.0e-6f, CameraUp);
+		}
 
-				FParticleBeamTrailVertex Left;
-				Left.Position = Point.Position - Offset;
-				Left.OldPosition = Point.Position;
-				Left.RelativeTime = Point.RelativeTime;
-				Left.ParticleId = static_cast<float>(PointIndex);
-				Left.Size = FVector2(Point.Width, Point.Width);
-				Left.Color = Point.Color;
-				Left.Tex_U = Point.U;
-				Left.Tex_V = 0.0f;
-				Left.Tex_U2 = Point.U;
-				Left.Tex_V2 = 0.0f;
+		while (TrailPayload && PackingParticle)
+		{
+			const float CurrSize = PackingParticle->Size.X * Source.Scale.X;
+			const int32 InterpCount = TrailPayload->RenderingInterpCount;
+			if (InterpCount > 1 && PrevParticle && PrevTrailPayload)
+			{
+				const FVector CurrPosition = PackingParticle->Location;
+				const FVector CurrTangent = TrailPayload->Tangent;
+				const FVector CurrUp = WorkingUp;
+				const FLinearColor CurrColor = PackingParticle->Color;
+				const FVector PrevPosition = PrevParticle->Location;
+				const FVector PrevTangent = PrevTrailPayload->Tangent;
+				const FVector PrevUp = PrevWorkingUp;
+				const FLinearColor PrevColor = PrevParticle->Color;
+				const float PrevSize = PrevParticle->Size.X * Source.Scale.X;
+				const float InvCount = 1.0f / static_cast<float>(InterpCount);
 
-				FParticleBeamTrailVertex Right = Left;
-				Right.Position = Point.Position + Offset;
-				Right.Tex_V = 1.0f;
-				Right.Tex_V2 = 1.0f;
+				for (int32 SpawnIndex = InterpCount - 1; SpawnIndex >= 0; --SpawnIndex)
+				{
+					const float TimeStep = InvCount * static_cast<float>(SpawnIndex);
+					const FVector InterpPos = CubicInterp(CurrPosition, CurrTangent, PrevPosition, PrevTangent, TimeStep);
+					const FVector InterpUp = FVector::Lerp(CurrUp, PrevUp, TimeStep).GetSafeNormal(1.0e-6f, CameraUp);
+					const FLinearColor InterpColor = LerpColor(CurrColor, PrevColor, TimeStep);
+					const float InterpSize = CurrSize + (PrevSize - CurrSize) * TimeStep;
+					const float CurrTileU = bTextureTileDistance
+						? (TrailPayload->TiledU + (PrevTrailPayload->TiledU - TrailPayload->TiledU) * TimeStep)
+						: TexU;
 
-				Staging.Vertices.push_back(Left);
-				Staging.Vertices.push_back(Right);
+					FParticleBeamTrailVertex Top;
+					Top.Position = InterpPos + InterpUp * InterpSize;
+					Top.OldPosition = Top.Position;
+					Top.RelativeTime = PackingParticle->RelativeTime;
+					Top.ParticleId = 0.0f;
+					Top.Size = FVector2(InterpSize, InterpSize);
+					Top.Rotation = PackingParticle->Rotation;
+					Top.SubImageIndex = 0.0f;
+					Top.Color = InterpColor;
+					Top.Tex_U = TexU;
+					Top.Tex_V = 0.0f;
+					Top.Tex_U2 = CurrTileU;
+					Top.Tex_V2 = 0.0f;
+
+					FParticleBeamTrailVertex Bottom = Top;
+					Bottom.Position = InterpPos - InterpUp * InterpSize;
+					Bottom.Tex_V = 1.0f;
+					Bottom.Tex_V2 = 1.0f;
+
+					Staging.Vertices.push_back(Top);
+					Staging.Vertices.push_back(Bottom);
+					TexU += TextureIncrement;
+				}
+			}
+			else
+			{
+				const float CurrTileU = bTextureTileDistance ? TrailPayload->TiledU : TexU;
+
+				FParticleBeamTrailVertex Top;
+				Top.Position = PackingParticle->Location + WorkingUp * CurrSize;
+				Top.OldPosition = PackingParticle->OldLocation;
+				Top.RelativeTime = PackingParticle->RelativeTime;
+				Top.ParticleId = 0.0f;
+				Top.Size = FVector2(CurrSize, CurrSize);
+				Top.Rotation = PackingParticle->Rotation;
+				Top.SubImageIndex = 0.0f;
+				Top.Color = PackingParticle->Color;
+				Top.Tex_U = TexU;
+				Top.Tex_V = 0.0f;
+				Top.Tex_U2 = CurrTileU;
+				Top.Tex_V2 = 0.0f;
+
+				FParticleBeamTrailVertex Bottom = Top;
+				Bottom.Position = PackingParticle->Location - WorkingUp * CurrSize;
+				Bottom.Tex_V = 1.0f;
+				Bottom.Tex_V2 = 1.0f;
+
+				Staging.Vertices.push_back(Top);
+				Staging.Vertices.push_back(Bottom);
+				TexU += TextureIncrement;
+			}
+
+			PrevParticle = PackingParticle;
+			PrevTrailPayload = TrailPayload;
+			PrevWorkingUp = WorkingUp;
+
+			const int32 NextIndex = TRAIL_EMITTER_GET_NEXT(TrailPayload->Flags);
+			if (NextIndex == TRAIL_EMITTER_NULL_NEXT)
+			{
+				TrailPayload = nullptr;
+				PackingParticle = nullptr;
+			}
+			else
+			{
+				PackingParticle = GetReplayParticle(Source, NextIndex);
+				TrailPayload = GetReplayPayload<FRibbonTypeDataPayload>(Source, PackingParticle, Source.TrailDataOffset);
+				if (!PackingParticle || !TrailPayload)
+				{
+					break;
+				}
+
+				WorkingUp = TrailPayload->Up;
+				if (RenderAxisOption == Trails_CameraUp)
+				{
+					FVector DirToCamera = (PackingParticle->Location - ViewOrigin).GetSafeNormal(1.0e-6f, FVector::ZeroVector);
+					FVector NormalizedTangent = TrailPayload->Tangent.GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+					WorkingUp = NormalizedTangent.Cross(DirToCamera);
+					if (WorkingUp.IsNearlyZero())
+					{
+						WorkingUp = CameraUp;
+					}
+					WorkingUp = WorkingUp.GetSafeNormal(1.0e-6f, CameraUp);
+				}
 			}
 		}
 	}
 
+	// UE writes dynamic parameters to a parallel FParticleBeamTrailVertexDynamicParameter stream here.
+	// Jungle currently has no beam/ribbon dynamic-parameter vertex stream in the CPU staging adapter;
+	// wire ParticleSystemSceneProxy/BeamTrail.hlsl dynamic-parameter support here when that system exists.
+	(void)CurrDistance;
 	return static_cast<int32>(Staging.Vertices.size()) - InitialVertexCount;
-}
-
-int32 FDynamicRibbonEmitterData::FillVertexData()
-{
-	return FillInterpolatedVertexData();
 }

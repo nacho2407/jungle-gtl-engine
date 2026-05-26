@@ -282,7 +282,8 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 		}
 		else
 		{
-			const auto& RibbonData = static_cast<const FDynamicRibbonEmitterData&>(EmitterData);
+			auto& RibbonData = static_cast<FDynamicRibbonEmitterData&>(EmitterData);
+			RibbonData.BuildMeshData(Frame);
 			BuiltVertices = &RibbonData.GetBuiltVertices();
 			BuiltIndices = &RibbonData.GetBuiltIndices();
 		}

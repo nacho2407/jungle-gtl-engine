@@ -4637,12 +4637,24 @@ FDynamicEmitterDataBase* FParticleRibbonEmitterInstance::GetDynamicData(bool bSe
 	}
 
 	FDynamicRibbonEmitterData* Data = new FDynamicRibbonEmitterData();
+	if (TrailTypeData)
+	{
+		Data->bClipSourceSegement = TrailTypeData->bClipSourceSegement;
+		Data->bRenderGeometry = TrailTypeData->bRenderGeometry;
+		Data->bRenderParticles = TrailTypeData->bRenderSpawnPoints;
+		Data->bRenderTangents = TrailTypeData->bRenderTangents;
+		Data->bRenderTessellation = TrailTypeData->bRenderTessellation;
+		Data->DistanceTessellationStepSize = TrailTypeData->DistanceTessellationStepSize;
+		Data->TangentTessellationScalar = TrailTypeData->TangentTessellationScalar;
+		Data->RenderAxisOption = TrailTypeData->RenderAxis;
+		Data->TextureTileDistance = TrailTypeData->TilingDistance;
+		Data->bTextureTileDistance = std::fabs(Data->TextureTileDistance) > 1.0e-6f;
+	}
 	if (!FillReplayData(Data->Source))
 	{
 		delete Data;
 		return nullptr;
 	}
-	Data->BuildMeshData();
 	return Data;
 }
 
