@@ -7,17 +7,25 @@ void HandleModuleContextMenu(FParticleEditorViewer* Viewer, int32 EmitterIndex, 
 {
 	if (ImGui::BeginPopupContextItem("ModuleContext"))
 	{
-		if (ImGui::MenuItem("Delete Module"))
+		const bool bCanEditTopology = Viewer && Viewer->CanEditLODTopology(LODIndex);
+		if (!bCanEditTopology)
+		{
+			// lower LOD topology 보호 안내
+			ImGui::TextDisabled("Edit topology in LOD 0");
+			ImGui::Separator();
+		}
+
+		if (ImGui::MenuItem("Delete Module", nullptr, false, bCanEditTopology))
 		{
 			Viewer->SelectEmitterModule(EmitterIndex, LODIndex, ModuleIndex);
 			Viewer->DeleteSelectedModule();
 		}
-		if (ImGui::MenuItem("Move Up"))
+		if (ImGui::MenuItem("Move Up", nullptr, false, bCanEditTopology))
 		{
 			Viewer->SelectEmitterModule(EmitterIndex, LODIndex, ModuleIndex);
 			Viewer->MoveModule(ModuleIndex, ModuleIndex - 1);
 		}
-		if (ImGui::MenuItem("Move Down"))
+		if (ImGui::MenuItem("Move Down", nullptr, false, bCanEditTopology))
 		{
 			Viewer->SelectEmitterModule(EmitterIndex, LODIndex, ModuleIndex);
 			Viewer->MoveModule(ModuleIndex, ModuleIndex + 1);
@@ -171,6 +179,11 @@ bool HasDeletableSelectedEmitter(FParticleEditorViewer* Viewer)
 bool HasDeletableSelectedModule(FParticleEditorViewer* Viewer)
 {
 	if (!Viewer || Viewer->GetSelectionType() != EParticleEditorSelectionType::Module)
+	{
+		return false;
+	}
+
+	if (!Viewer->CanEditSelectedLODTopology())
 	{
 		return false;
 	}
@@ -827,6 +840,13 @@ void GetParticleTypeDataModuleClasses(TArray<UClass*>& OutClasses)
 // 새로운 모듈을 추가하기 위한 동적 컨텍스트 메뉴를 렌더링하고 모듈 생성 요청을 처리합니다.
 bool DrawParticleModuleClassMenu(FParticleEditorViewer* Viewer)
 {
+	if (!Viewer || !Viewer->CanEditSelectedLODTopology())
+	{
+		// lower LOD topology 보호 안내
+		ImGui::TextDisabled("Edit topology in LOD 0");
+		return false;
+	}
+
 	TArray<UClass*> ModuleClasses;
 	GetParticleModuleClasses(ModuleClasses);
 
@@ -1533,6 +1553,11 @@ TArray<int32> GetPayloadEmitterIndices(const FParticleEmitterDragPayload& Payloa
 // 드롭된 모듈 페이로드를 읽어 타겟 이미터로 복사(Ctrl 누름)하거나 이동시킵니다.
 void ApplyModulePayloadToEmitter(FParticleEditorViewer* Viewer, const FParticleModuleDragPayload& Payload, int32 TargetEmitterIndex)
 {
+	if (!Viewer || !Viewer->CanEditLODTopology(Payload.LODIndex))
+	{
+		return;
+	}
+
 	const TArray<int32> ModuleIndices = GetPayloadModuleIndices(Payload);
 	if (ImGui::GetIO().KeyCtrl)
 	{
@@ -1799,6 +1824,14 @@ void HandleModuleDragDropTarget(FParticleEditorViewer* Viewer, const FParticleMo
 		const FParticleModuleDragPayload* DragPayload = static_cast<const FParticleModuleDragPayload*>(Payload->Data);
 		if (DragPayload)
 		{
+			if (!Viewer ||
+				!Viewer->CanEditLODTopology(DragPayload->LODIndex) ||
+				!Viewer->CanEditLODTopology(LODIndex))
+			{
+				ImGui::EndDragDropTarget();
+				return;
+			}
+
 			const TArray<int32> ModuleIndices = GetPayloadModuleIndices(*DragPayload);
 			const bool bSameModuleList =
 				Type == EParticleEditorSelectionType::Module &&

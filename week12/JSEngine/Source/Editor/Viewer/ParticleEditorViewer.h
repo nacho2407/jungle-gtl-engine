@@ -123,6 +123,24 @@ public:
 	void CopyModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex);
 	void CopyModulesToEmitter(int32 SourceEmitterIndex, int32 SourceLODIndex, const TArray<int32>& ModuleIndices, int32 TargetEmitterIndex);
 
+	/**
+	 * @brief 지정된 LOD에서 module topology 편집을 시작할 수 있는지 확인합니다.
+	 *
+	 * @param LODIndex 검사 대상 LOD index
+	 *
+	 * @return topology 편집 가능 여부
+	 *
+	 * @details Cascade-style LOD에서는 module add / delete / reorder를 LOD 0에서만 시작할 수 있습니다.
+	 */
+	bool CanEditLODTopology(int32 LODIndex) const;
+
+	/**
+	 * @brief 현재 선택된 LOD에서 module topology 편집을 시작할 수 있는지 확인합니다.
+	 *
+	 * @return topology 편집 가능 여부
+	 */
+	bool CanEditSelectedLODTopology() const;
+
 	// Toolbar Actions ────────────────────────────────────────────────────────────
 	bool Save();
 	bool SaveAs(const FString& InFileName);
@@ -156,6 +174,25 @@ private:
 	bool LoadParticleSystemAsset(const FString& InFileName);
 	void EnsureDefaultParticleSystem();
 	UParticleLODLevel* CreateDefaultLODLevel(int32 Level);
+
+	/**
+	 * @brief LOD 0의 module topology를 복제한 새 LOD level을 생성합니다.
+	 *
+	 * @param Emitter 기준으로 사용할 particle emitter
+	 *
+	 * @param Level 생성할 LOD level index
+	 *
+	 * @return 생성된 LOD level 또는 실패 시 nullptr
+	 */
+	UParticleLODLevel* CreateLODFromLOD0Topology(UParticleEmitter* Emitter, int32 Level);
+
+	/**
+	 * @brief emitter runtime cache를 갱신하고 preview simulation을 재시작합니다.
+	 *
+	 * @param Emitter cache를 갱신할 particle emitter
+	 */
+	void RefreshEmitterAfterTopologyEdit(UParticleEmitter* Emitter);
+
 	bool CaptureParticleSnapshot(FString& OutSnapshot) const;
 	bool RestoreParticleSnapshot(const FString& Snapshot);
 	void RefreshSavedSnapshot();

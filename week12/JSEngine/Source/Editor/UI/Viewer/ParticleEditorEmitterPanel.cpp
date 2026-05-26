@@ -108,7 +108,11 @@ void FParticleEditorViewerWidget::RenderEmitterContextMenu(FParticleEditorViewer
 	{
 		Viewer->AddEmitter();
 	}
-	if (!bDeletedEmitter && !bDeletedModule && Viewer->GetSelectedEmitterIndex() >= 0 && Viewer->GetSelectedLODLevel() != nullptr && ImGui::BeginMenu("Add Module"))
+	const bool bCanAddModule =
+		Viewer->GetSelectedEmitterIndex() >= 0 &&
+		Viewer->GetSelectedLODLevel() != nullptr &&
+		Viewer->CanEditSelectedLODTopology();
+	if (!bDeletedEmitter && !bDeletedModule && Viewer->GetSelectedEmitterIndex() >= 0 && Viewer->GetSelectedLODLevel() != nullptr && ImGui::BeginMenu("Add Module", bCanAddModule))
 	{
 		DrawParticleModuleClassMenu(Viewer);
 		ImGui::EndMenu();
