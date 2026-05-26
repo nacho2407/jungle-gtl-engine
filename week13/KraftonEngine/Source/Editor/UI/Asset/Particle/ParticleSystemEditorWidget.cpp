@@ -1,4 +1,4 @@
-#include "ParticleSystemEditorWidget.h"
+﻿#include "ParticleSystemEditorWidget.h"
 #include "ParticleSystemEditorPrivate.h"
 
 static uint32 GNextParticleSystemEditorInstanceId = 0;
