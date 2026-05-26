@@ -214,12 +214,10 @@ bool FParticleRenderPass::DrawCommand(const FRenderPassContext* Context)
     Program->Bind(Context->DeviceContext);
 
     ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::DepthReadOnly);
-    ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::AlphaBlend);
     ID3D11RasterizerState* RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(
         Context->RenderBus->GetViewMode() == EViewMode::Wireframe ? ERasterizerType::WireFrame : ERasterizerType::SolidBackCull);
     ID3D11SamplerState* Sampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Linear);
     Context->DeviceContext->OMSetDepthStencilState(DepthState, 0);
-    Context->DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
     Context->DeviceContext->RSSetState(RasterizerState);
     Context->DeviceContext->PSSetSamplers(0, 1, &Sampler);
 
@@ -282,6 +280,10 @@ bool FParticleRenderPass::DrawCommand(const FRenderPassContext* Context)
         {
             Cmd.Material->BindParameters(Context->DeviceContext, Program->PS);
         }
+        ID3D11BlendState* BlendState = Cmd.Material != nullptr
+            ? FResourceManager::Get().GetOrCreateBlendState(Cmd.Material->GetBlendStateDesc())
+            : FResourceManager::Get().GetOrCreateBlendState(EBlendType::AlphaBlend);
+        Context->DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
 
         VertexBuffers[1] = InstanceBuffer.Get();
         Context->DeviceContext->IASetVertexBuffers(0, 2, VertexBuffers, Strides, Offsets);
