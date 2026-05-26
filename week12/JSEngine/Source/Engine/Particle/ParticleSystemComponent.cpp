@@ -66,6 +66,49 @@ namespace
 		}
 		return nullptr;
 	}
+
+	const FDynamicBeamEmitterData* FindBeamRenderDataForEmitter(
+		const TArray<FDynamicEmitterDataBase*>& RenderData,
+		int32 EmitterIndex)
+	{
+		for (const FDynamicEmitterDataBase* EmitterData : RenderData)
+		{
+			if (EmitterData != nullptr &&
+				EmitterData->EmitterIndex == EmitterIndex &&
+				EmitterData->GetEmitterType() == EDynamicEmitterType::Beam)
+			{
+				return static_cast<const FDynamicBeamEmitterData*>(EmitterData);
+			}
+		}
+		return nullptr;
+	}
+
+	FVector GetBeamWorldPoint(
+		const FDynamicBeamEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld,
+		const FVector& Point)
+	{
+		return ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local
+			? ComponentToWorld.TransformPosition(Point)
+			: Point;
+	}
+
+	FBoundingBox BuildBeamWorldBounds(
+		const FDynamicBeamEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld)
+	{
+		const FVector Source = GetBeamWorldPoint(ReplayData, ComponentToWorld, ReplayData.SourcePoint);
+		const FVector Target = GetBeamWorldPoint(ReplayData, ComponentToWorld, ReplayData.TargetPoint);
+		const float HalfWidth = std::max(ReplayData.BeamWidth, 0.1f) * 0.5f;
+		const FVector Extent(HalfWidth, HalfWidth, HalfWidth);
+
+		FBoundingBox Bounds;
+		Bounds.Expand(Source - Extent);
+		Bounds.Expand(Source + Extent);
+		Bounds.Expand(Target - Extent);
+		Bounds.Expand(Target + Extent);
+		return Bounds;
+	}
 }
 
 class UParticleSystemComponent::FInstanceOwner : public IParticleEmitterInstanceOwner
@@ -260,6 +303,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 	// Render Data 수집
 	PackRenderData();
+	NotifySpatialIndexDirty();
 	
 	// Tick이 끝날 때 Event를 처리
 	FinalizeTickComponent();
@@ -382,6 +426,19 @@ void UParticleSystemComponent::UpdateWorldAABB() const
 			: nullptr;
 		if (RequiredModule == nullptr || !RequiredModule->bUseFixedBounds)
 		{
+			const FDynamicBeamEmitterData* BeamEmitterData = FindBeamRenderDataForEmitter(EmitterRenderData, EmitterIndex);
+			if (BeamEmitterData != nullptr)
+			{
+				const FBoundingBox BeamBounds = BuildBeamWorldBounds(
+					BeamEmitterData->ReplayData,
+					BeamEmitterData->ComponentToWorld);
+				if (BeamBounds.IsValid())
+				{
+					WorldAABB.Merge(BeamBounds);
+					continue;
+				}
+			}
+
 			const FDynamicMeshEmitterData* MeshEmitterData = FindMeshRenderDataForEmitter(EmitterRenderData, EmitterIndex);
 			const FStaticMesh* MeshData = MeshEmitterData != nullptr && MeshEmitterData->Mesh != nullptr
 				? MeshEmitterData->Mesh->GetMeshData(0)

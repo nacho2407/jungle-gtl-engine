@@ -67,10 +67,39 @@ namespace
             &ParticleSpriteDesc.VertexLayout);
     }
 
+    FShaderProgram* GetParticleBeamShaderProgram()
+    {
+        const FVertexFactoryDesc& ParticleBeamDesc = FVertexFactoryRegistry::Get(EVertexFactoryType::ParticleBeam);
+
+        FShaderStageKey VSKey;
+        VSKey.FilePath = ParticleBeamDesc.VertexShaderPath;
+        VSKey.EntryPoint = ParticleBeamDesc.BasePassVSEntry;
+        VSKey.Target = "vs_5_0";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = FShaderPaths::VFXParticleBeam;
+        PSKey.EntryPoint = "PS";
+        PSKey.Target = "ps_5_0";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(
+            VSKey,
+            PSKey,
+            nullptr,
+            nullptr,
+            &ParticleBeamDesc.VertexLayout);
+    }
+
     bool IsParticleSpriteCommand(const FRenderCommand& Cmd)
     {
         return Cmd.Type == ERenderCommandType::Particle
             && Cmd.VertexFactoryType == EVertexFactoryType::ParticleSprite
+            && Cmd.HasInstanceBuffer();
+    }
+
+    bool IsParticleBeamCommand(const FRenderCommand& Cmd)
+    {
+        return Cmd.Type == ERenderCommandType::Particle
+            && Cmd.VertexFactoryType == EVertexFactoryType::ParticleBeam
             && Cmd.HasInstanceBuffer();
     }
 
@@ -117,6 +146,33 @@ namespace
             FResourceManager::Get().GetOrCreateParticleSpriteQuadResource(Context->Device);
         if (!QuadResource.IsValid())
         {
+            return false;
+        }
+
+        OutDraw.VertexBuffers[0] = QuadResource.VertexBuffer;
+        OutDraw.VertexBuffers[1] = Cmd.InstanceBufferView.Buffer;
+        OutDraw.Strides[0] = QuadResource.VertexStride;
+        OutDraw.Strides[1] = Cmd.InstanceBufferView.Stride;
+        OutDraw.Offsets[0] = 0;
+        OutDraw.Offsets[1] = Cmd.InstanceBufferView.Offset;
+        OutDraw.VertexBufferCount = 2;
+        OutDraw.IndexBuffer = QuadResource.IndexBuffer;
+        OutDraw.IndexCount = QuadResource.IndexCount;
+        OutDraw.InstanceCount = Cmd.InstanceBufferView.InstanceCount;
+        OutDraw.bInstanced = true;
+        return true;
+    }
+
+    bool BuildParticleBeamDrawResources(
+        const FRenderPassContext* Context,
+        const FRenderCommand& Cmd,
+        FTranslucentDrawResources& OutDraw)
+    {
+        const FParticleSpriteQuadResource QuadResource =
+            FResourceManager::Get().GetOrCreateParticleSpriteQuadResource(Context->Device);
+        if (!QuadResource.IsValid())
+        {
+            UE_LOG_WARNING("[Particle] Beam draw skipped because the shared quad resource is missing.");
             return false;
         }
 
@@ -218,6 +274,13 @@ namespace
             DeviceContext->IASetVertexBuffers(1, 1, &NullVertexBuffer, &NullStride, &NullOffset);
         }
         return true;
+    }
+
+    void BindParticleBeamRasterizerState(const FRenderPassContext* Context)
+    {
+        ID3D11RasterizerState* RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(
+            Context->RenderBus->GetViewMode() == EViewMode::Wireframe ? ERasterizerType::WireFrame : ERasterizerType::SolidNoCull);
+        Context->DeviceContext->RSSetState(RasterizerState);
     }
 
     float CalculateTranslucentSortKey(
@@ -346,6 +409,39 @@ bool FTranslucentRenderPass::DrawEachCommand(const FRenderPassContext* Context, 
 
         FTranslucentDrawResources DrawResources;
         return BuildParticleSpriteDrawResources(Context, Cmd, DrawResources)
+            && ExecuteTranslucentDraw(DeviceContext, DrawResources);
+    }
+
+    if (IsParticleBeamCommand(Cmd))
+    {
+        FShaderProgram* Program = GetParticleBeamShaderProgram();
+        if (Program == nullptr)
+        {
+            UE_LOG_WARNING("[Particle] Beam draw skipped because ParticleBeam shader failed to compile.");
+            return false;
+        }
+
+        Program->Bind(DeviceContext);
+
+        if (Cmd.Material != nullptr)
+        {
+            Cmd.Material->BindRenderStates(DeviceContext);
+        }
+        else
+        {
+            BindDefaultTranslucentStates(Context);
+        }
+        BindParticleBeamRasterizerState(Context);
+
+        ID3D11ShaderResourceView* DefaultDiffuseSRV = FResourceManager::Get().GetDefaultWhiteSRV();
+        DeviceContext->PSSetShaderResources(0, 1, &DefaultDiffuseSRV);
+        if (Cmd.Material != nullptr)
+        {
+            Cmd.Material->BindParameters(DeviceContext, Program->PS);
+        }
+
+        FTranslucentDrawResources DrawResources;
+        return BuildParticleBeamDrawResources(Context, Cmd, DrawResources)
             && ExecuteTranslucentDraw(DeviceContext, DrawResources);
     }
 

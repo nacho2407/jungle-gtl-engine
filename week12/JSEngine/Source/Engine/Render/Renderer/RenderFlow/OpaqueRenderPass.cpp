@@ -79,6 +79,94 @@ namespace
         return SupportsInstancedSurfaceVertexFactory(Cmd.VertexFactoryType)
             && Cmd.HasInstanceBuffer();
     }
+
+    FShaderProgram* GetParticleBeamShaderProgram()
+    {
+        const FVertexFactoryDesc& ParticleBeamDesc = FVertexFactoryRegistry::Get(EVertexFactoryType::ParticleBeam);
+
+        FShaderStageKey VSKey;
+        VSKey.FilePath = ParticleBeamDesc.VertexShaderPath;
+        VSKey.EntryPoint = ParticleBeamDesc.BasePassVSEntry;
+        VSKey.Target = "vs_5_0";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = FShaderPaths::VFXParticleBeam;
+        PSKey.EntryPoint = "PS";
+        PSKey.Target = "ps_5_0";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(
+            VSKey,
+            PSKey,
+            nullptr,
+            nullptr,
+            &ParticleBeamDesc.VertexLayout);
+    }
+
+    bool IsParticleBeamCommand(const FRenderCommand& Cmd)
+    {
+        return Cmd.Type == ERenderCommandType::Particle
+            && Cmd.VertexFactoryType == EVertexFactoryType::ParticleBeam
+            && Cmd.HasInstanceBuffer();
+    }
+
+    bool DrawParticleBeamCommand(const FRenderPassContext* Context, const FRenderCommand& Cmd)
+    {
+        FShaderProgram* Program = GetParticleBeamShaderProgram();
+        if (Program == nullptr)
+        {
+            UE_LOG_WARNING("[Particle] Beam draw skipped because ParticleBeam shader failed to compile.");
+            return false;
+        }
+
+        const FParticleSpriteQuadResource QuadResource =
+            FResourceManager::Get().GetOrCreateParticleSpriteQuadResource(Context->Device);
+        if (!QuadResource.IsValid())
+        {
+            UE_LOG_WARNING("[Particle] Beam draw skipped because the shared quad resource is missing.");
+            return false;
+        }
+
+        ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
+        Program->Bind(DeviceContext);
+
+        if (Cmd.Material != nullptr)
+        {
+            Cmd.Material->BindRenderStates(DeviceContext);
+        }
+        else
+        {
+            ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+            ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::Opaque);
+            ID3D11RasterizerState* RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidBackCull);
+            ID3D11SamplerState* Sampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Linear);
+            DeviceContext->OMSetDepthStencilState(DepthState, 0);
+            DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+            DeviceContext->RSSetState(RasterizerState);
+            DeviceContext->PSSetSamplers(0, 1, &Sampler);
+        }
+        ID3D11RasterizerState* ParticleRasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidNoCull);
+        DeviceContext->RSSetState(ParticleRasterizerState);
+
+        ID3D11ShaderResourceView* DefaultDiffuseSRV = FResourceManager::Get().GetDefaultWhiteSRV();
+        DeviceContext->PSSetShaderResources(0, 1, &DefaultDiffuseSRV);
+        if (Cmd.Material != nullptr)
+        {
+            Cmd.Material->BindParameters(DeviceContext, Program->PS);
+        }
+
+        ID3D11Buffer* VertexBuffers[2] = { QuadResource.VertexBuffer, Cmd.InstanceBufferView.Buffer };
+        uint32 Strides[2] = { QuadResource.VertexStride, Cmd.InstanceBufferView.Stride };
+        uint32 Offsets[2] = { 0, Cmd.InstanceBufferView.Offset };
+        DeviceContext->IASetVertexBuffers(0, 2, VertexBuffers, Strides, Offsets);
+        DeviceContext->IASetIndexBuffer(QuadResource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+        DeviceContext->DrawIndexedInstanced(QuadResource.IndexCount, Cmd.InstanceBufferView.InstanceCount, 0, 0, 0);
+
+        ID3D11Buffer* NullVertexBuffer = nullptr;
+        uint32 NullStride = 0;
+        uint32 NullOffset = 0;
+        DeviceContext->IASetVertexBuffers(1, 1, &NullVertexBuffer, &NullStride, &NullOffset);
+        return true;
+    }
 } // namespace
 
 bool FOpaqueRenderPass::Initialize()
@@ -156,6 +244,11 @@ bool FOpaqueRenderPass::DrawEachCommand(const FRenderPassContext* Context, const
     {  
         return false;  
     }  
+
+    if (IsParticleBeamCommand(Cmd))
+    {
+        return DrawParticleBeamCommand(Context, Cmd);
+    }
 
     if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())  
     {  

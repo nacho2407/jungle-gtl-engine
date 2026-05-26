@@ -41,17 +41,22 @@ private:
 
 	bool EnsureSpriteInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount);
 	bool EnsureMeshInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount);
+	bool EnsureBeamInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount);
 	bool UploadSpriteInstances(ID3D11DeviceContext* DeviceContext);
 	bool UploadMeshInstances(ID3D11DeviceContext* DeviceContext);
+	bool UploadBeamInstances(ID3D11DeviceContext* DeviceContext);
 
 private:
 	UParticleSystemComponent* Component = nullptr;
 	TArray<FParticleSpriteInstanceData> SpriteInstances;
 	TArray<FParticleMeshInstanceData> MeshInstances;
+	TArray<FBeamParticleInstanceData> BeamInstances;
 	// Particle-local transient streams. Promote to a shared dynamic instance
 	// buffer manager when another instanced-surface producer appears.
 	TComPtr<ID3D11Buffer> SpriteInstanceBuffer;
 	TComPtr<ID3D11Buffer> MeshInstanceBuffer;
+	TComPtr<ID3D11Buffer> BeamInstanceBuffer;
 	uint32 MaxSpriteInstanceCount = 0;
 	uint32 MaxMeshInstanceCount = 0;
+	uint32 MaxBeamInstanceCount = 0;
 };

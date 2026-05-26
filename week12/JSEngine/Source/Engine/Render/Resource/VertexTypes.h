@@ -69,6 +69,14 @@ struct FParticleMeshInstanceData
 	FMatrix Transform = FMatrix::Identity;
 };
 
+struct FBeamParticleInstanceData
+{
+	FVector Source;
+	FVector Target;
+	float HalfWidth = 0.5f;
+	FColor Color = FColor::White();
+};
+
 struct FMeshData
 {
 	TArray<FVertex> Vertices;

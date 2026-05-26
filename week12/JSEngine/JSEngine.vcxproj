@@ -1426,6 +1426,7 @@
     <None Include="Shaders\UI\Font.hlsl" />
     <None Include="Shaders\UI\Line.hlsl" />
     <None Include="Shaders\UI\ScreenOverlay.hlsl" />
+    <None Include="Shaders\VFX\ParticleBeam.hlsl" />
     <None Include="Shaders\VFX\ParticleSprite.hlsl" />
     <None Include="Shaders\VFX\SubUV.hlsl" />
   </ItemGroup>

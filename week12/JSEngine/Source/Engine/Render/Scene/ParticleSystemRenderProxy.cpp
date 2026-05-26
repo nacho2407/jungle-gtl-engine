@@ -249,6 +249,19 @@ namespace
 		return Material != nullptr ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
 	}
 
+	ERenderPass ResolveBeamParticleRenderPass(const UMaterialInterface* Material)
+	{
+		if (Material == nullptr)
+		{
+			return ERenderPass::Opaque;
+		}
+
+		return Material->GetBlendMode() == EMaterialBlendMode::Translucent ||
+			Material->GetBlendStateDesc().bBlendEnable
+			? ERenderPass::Translucent
+			: ResolveMaterialRenderPass(Material);
+	}
+
 	/**
 	 * @brief Beam replay point를 world space point로 변환합니다.
 	 */
@@ -361,12 +374,22 @@ void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyColle
 		return;
 	}
 
+	if (!BeamInstances.empty() && !EnsureBeamInstanceBuffer(Context.Device, static_cast<uint32>(BeamInstances.size())))
+	{
+		return;
+	}
+
 	if (!SpriteInstances.empty() && !UploadSpriteInstances(Context.DeviceContext))
 	{
 		return;
 	}
 
 	if (!MeshInstances.empty() && !UploadMeshInstances(Context.DeviceContext))
+	{
+		return;
+	}
+
+	if (!BeamInstances.empty() && !UploadBeamInstances(Context.DeviceContext))
 	{
 		return;
 	}
@@ -390,6 +413,7 @@ void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyColle
 
 	for (FRenderCommand& Command : OpaqueBeamCommands)
 	{
+		Command.InstanceBufferView.Buffer = BeamInstanceBuffer.Get();
 		Context.RenderBus.AddCommand(ERenderPass::Opaque, std::move(Command));
 	}
 
@@ -401,6 +425,7 @@ void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyColle
 
 	for (FRenderCommand& Command : TranslucentBeamCommands)
 	{
+		Command.InstanceBufferView.Buffer = BeamInstanceBuffer.Get();
 		Context.RenderBus.AddCommand(ERenderPass::Translucent, std::move(Command));
 	}
 }
@@ -409,10 +434,13 @@ void FParticleSystemSceneProxy::ReleaseResources()
 {
 	SpriteInstances.clear();
 	MeshInstances.clear();
+	BeamInstances.clear();
 	SpriteInstanceBuffer.Reset();
 	MeshInstanceBuffer.Reset();
+	BeamInstanceBuffer.Reset();
 	MaxSpriteInstanceCount = 0;
 	MaxMeshInstanceCount = 0;
+	MaxBeamInstanceCount = 0;
 }
 
 bool FParticleSystemSceneProxy::BuildSpriteCommands(
@@ -662,6 +690,7 @@ bool FParticleSystemSceneProxy::BuildBeamCommands(
 	TArray<FRenderCommand>& OutOpaqueCommands,
 	TArray<FRenderCommand>& OutTranslucentCommands)
 {
+	BeamInstances.clear();
 	OutOpaqueCommands.clear();
 	OutTranslucentCommands.clear();
 
@@ -680,6 +709,11 @@ bool FParticleSystemSceneProxy::BuildBeamCommands(
 		const FDynamicBeamEmitterReplayDataBase& ReplayData = BeamEmitterData->ReplayData;
 		if (ReplayData.ActiveParticleCount <= 0)
 		{
+			LogParticleDiagnosticOnce(
+				Component,
+				EmitterData->EmitterIndex,
+				EParticleProxyDiagnostic::EmptyActiveParticles,
+				"[Particle] Beam emitter has no active particles.");
 			continue;
 		}
 
@@ -692,6 +726,12 @@ bool FParticleSystemSceneProxy::BuildBeamCommands(
 
 		// material 누락 시에도 command 경로를 확인할 수 있는 fallback material
 		UMaterialInterface* BeamMaterial = ResolveBeamParticleMaterial(EmitterData->Material);
+		const uint32 FirstInstance = static_cast<uint32>(BeamInstances.size());
+		const FVector Source = GetBeamWorldPoint(ReplayData, EmitterData->ComponentToWorld, ReplayData.SourcePoint);
+		const FVector Target = GetBeamWorldPoint(ReplayData, EmitterData->ComponentToWorld, ReplayData.TargetPoint);
+		const float ParticleWidthScale = std::max(std::fabs(Particle->Size.X), 0.001f);
+		const float HalfWidth = std::max(ReplayData.BeamWidth * ParticleWidthScale, 0.1f) * 0.5f;
+		BeamInstances.push_back({ Source, Target, HalfWidth, Particle->Color });
 
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Particle;
@@ -699,6 +739,7 @@ bool FParticleSystemSceneProxy::BuildBeamCommands(
 		Cmd.Material = BeamMaterial;
 		Cmd.ParticleEmitterData = EmitterData;
 		Cmd.ParticleReplayData = &ReplayData;
+		Cmd.VertexFactoryType = EVertexFactoryType::ParticleBeam;
 		Cmd.PerObjectConstants = FPerObjectConstants{ FMatrix::Identity, FColor::White().ToVector4() };
 
 		// source / target / width 기준 command bounds. 실패 시 component bounds fallback
@@ -716,9 +757,12 @@ bool FParticleSystemSceneProxy::BuildBeamCommands(
 		Cmd.Constants.Particle.CoordinateSpace = static_cast<uint32>(ReplayData.CoordinateSpace);
 		Cmd.Constants.Particle.ActiveParticleCount = static_cast<uint32>(ReplayData.ActiveParticleCount);
 		Cmd.Constants.Particle.bUseLocalSpace = ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local ? 1u : 0u;
+		Cmd.InstanceBufferView.InstanceCount = 1;
+		Cmd.InstanceBufferView.Stride = sizeof(FBeamParticleInstanceData);
+		Cmd.InstanceBufferView.Offset = FirstInstance * sizeof(FBeamParticleInstanceData);
 
 		// material 정책에 따른 pass queue 분배
-		if (ResolveMaterialRenderPass(Cmd.Material) == ERenderPass::Translucent)
+		if (ResolveBeamParticleRenderPass(Cmd.Material) == ERenderPass::Translucent)
 		{
 			OutTranslucentCommands.push_back(std::move(Cmd));
 		}
@@ -777,6 +821,29 @@ bool FParticleSystemSceneProxy::EnsureMeshInstanceBuffer(ID3D11Device* Device, u
 	return SUCCEEDED(Device->CreateBuffer(&InstanceDesc, nullptr, MeshInstanceBuffer.ReleaseAndGetAddressOf()));
 }
 
+bool FParticleSystemSceneProxy::EnsureBeamInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
+{
+	if (Device == nullptr)
+	{
+		return false;
+	}
+
+	if (BeamInstanceBuffer && InstanceCount <= MaxBeamInstanceCount)
+	{
+		return true;
+	}
+
+	MaxBeamInstanceCount = std::max(InstanceCount * 2u, 1u);
+	BeamInstanceBuffer.Reset();
+
+	D3D11_BUFFER_DESC InstanceDesc = {};
+	InstanceDesc.Usage = D3D11_USAGE_DYNAMIC;
+	InstanceDesc.ByteWidth = sizeof(FBeamParticleInstanceData) * MaxBeamInstanceCount;
+	InstanceDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	InstanceDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	return SUCCEEDED(Device->CreateBuffer(&InstanceDesc, nullptr, BeamInstanceBuffer.ReleaseAndGetAddressOf()));
+}
+
 bool FParticleSystemSceneProxy::UploadSpriteInstances(ID3D11DeviceContext* DeviceContext)
 {
 	if (DeviceContext == nullptr || !SpriteInstanceBuffer)
@@ -826,6 +893,32 @@ bool FParticleSystemSceneProxy::UploadMeshInstances(ID3D11DeviceContext* DeviceC
 		MeshInstances.data(),
 		sizeof(FParticleMeshInstanceData) * MeshInstances.size());
 	DeviceContext->Unmap(MeshInstanceBuffer.Get(), 0);
+	return true;
+}
+
+bool FParticleSystemSceneProxy::UploadBeamInstances(ID3D11DeviceContext* DeviceContext)
+{
+	if (DeviceContext == nullptr || !BeamInstanceBuffer)
+	{
+		return false;
+	}
+
+	if (BeamInstances.empty())
+	{
+		return true;
+	}
+
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	if (FAILED(DeviceContext->Map(BeamInstanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+	{
+		return false;
+	}
+
+	std::memcpy(
+		Mapped.pData,
+		BeamInstances.data(),
+		sizeof(FBeamParticleInstanceData) * BeamInstances.size());
+	DeviceContext->Unmap(BeamInstanceBuffer.Get(), 0);
 	return true;
 }
 

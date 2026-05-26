@@ -2596,6 +2596,9 @@
     <None Include="Shaders\UI\ScreenOverlay.hlsl">
       <Filter>Shaders\UI</Filter>
     </None>
+    <None Include="Shaders\VFX\ParticleBeam.hlsl">
+      <Filter>Shaders\VFX</Filter>
+    </None>
     <None Include="Shaders\VFX\ParticleSprite.hlsl">
       <Filter>Shaders\VFX</Filter>
     </None>

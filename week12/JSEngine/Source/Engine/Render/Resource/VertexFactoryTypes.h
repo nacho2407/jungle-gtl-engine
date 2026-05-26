@@ -29,6 +29,7 @@ enum class EVertexFactoryType : uint8
     Gizmo,
     Decal,
     ParticleSprite,
+    ParticleBeam,
     InstancedSurface,
 };
 
@@ -115,6 +116,17 @@ public:
                 { "TEXCOORD", 1, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleSpriteInstanceData, AxisX)), EVertexInputRate::PerInstance },
                 { "TEXCOORD", 2, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleSpriteInstanceData, AxisY)), EVertexInputRate::PerInstance },
                 { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleSpriteInstanceData, Color)), EVertexInputRate::PerInstance },
+            },
+            sizeof(FParticleSpriteQuadVertex)
+        };
+        static const FVertexLayoutDesc ParticleBeamLayout = {
+            {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FParticleSpriteQuadVertex, Position)) },
+                { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FParticleSpriteQuadVertex, TexCoord)) },
+                { "POSITION", 1, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FBeamParticleInstanceData, Source)), EVertexInputRate::PerInstance },
+                { "POSITION", 2, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FBeamParticleInstanceData, Target)), EVertexInputRate::PerInstance },
+                { "TEXCOORD", 1, DXGI_FORMAT_R32_FLOAT, 1, static_cast<uint32>(offsetof(FBeamParticleInstanceData, HalfWidth)), EVertexInputRate::PerInstance },
+                { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, static_cast<uint32>(offsetof(FBeamParticleInstanceData, Color)), EVertexInputRate::PerInstance },
             },
             sizeof(FParticleSpriteQuadVertex)
         };
@@ -243,6 +255,19 @@ public:
             PositionOnlyLayout,
             PrimitiveVertexLayout
         };
+        static const FVertexFactoryDesc ParticleBeamDesc = {
+            FShaderPaths::VFXParticleBeam,
+            FShaderPaths::DepthPrepass,
+            FShaderPaths::Shadow,
+            FShaderPaths::EditorSelectionMask,
+            "VS",
+            "DepthPrepassVS",
+            "ShadowVS",
+            "VSBillboard",
+            ParticleBeamLayout,
+            PositionOnlyLayout,
+            PrimitiveVertexLayout
+        };
         static const FVertexFactoryDesc InstancedSurfaceDesc = {
             FShaderPaths::MaterialUberLit,
             FShaderPaths::DepthPrepass,
@@ -275,6 +300,8 @@ public:
             return TextDesc;
         case EVertexFactoryType::ParticleSprite:
             return ParticleSpriteDesc;
+        case EVertexFactoryType::ParticleBeam:
+            return ParticleBeamDesc;
         case EVertexFactoryType::InstancedSurface:
             return InstancedSurfaceDesc;
         case EVertexFactoryType::StaticMesh:
