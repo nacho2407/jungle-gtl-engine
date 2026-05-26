@@ -5,6 +5,7 @@
 #include "Particles/Runtime/ParticleRuntimeTypes.h"
 #include "Particles/ParticleHelper.h"
 #include "Core/Property/SoftObjectProperty.h"
+#include "Math/Distribution.h"
 
 #include "Source/Engine/Particles/Module/ParticleModule.generated.h"
 
@@ -63,18 +64,25 @@ class UParticleModuleLifetime : public UParticleModule
 {
 public:
 	GENERATED_BODY()
+	UParticleModuleLifetime()
+	{
+		Lifetime.Constant = 1.0f;
+		Lifetime.MinValue = 1.0f;
+		Lifetime.MaxValue = 1.0f;
+	}
+
 	bool IsSpawnModule() const override { return true; }
 
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
-		Particle.Lifetime = Lifetime;
-		Particle.OneOverMaxLifetime = Lifetime > 0.0f ? 1.0f / Lifetime : 0.0f;
+		Particle.Lifetime = Lifetime.GetValue(SpawnTime, FDistributionSampling::RandomUnit());
+		Particle.OneOverMaxLifetime = Particle.Lifetime > 0.0f ? 1.0f / Particle.Lifetime : 0.0f;
 		Particle.Age = 0.0f;
 		Particle.RelativeTime = 0.0f;
 	}
 
-	UPROPERTY(Edit, Save, Category="Particle|Lifetime", DisplayName="Lifetime", Min=0.0f, Speed=0.1f)
-	float Lifetime = 1.0f;
+	UPROPERTY(Edit, Save, Category="Particle|Lifetime", DisplayName="Lifetime", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat Lifetime;
 };
 
 UCLASS()
@@ -82,14 +90,14 @@ class UParticleModuleLocation : public UParticleModule
 {
 public:
 	GENERATED_BODY()
-	UPROPERTY(Edit, Save, Category="Particle|Location", DisplayName="Start Location")
-	FVector StartLocation = FVector::ZeroVector;
+	UPROPERTY(Edit, Save, Category="Particle|Location", DisplayName="Start Location", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector StartLocation;
 
 	bool IsSpawnModule() const override { return true; }
 
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
-		Particle.Position += StartLocation;
+		Particle.Position += StartLocation.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector());
 		Particle.OldPosition = Particle.Position;
 	}
 
@@ -100,13 +108,20 @@ class UParticleModuleVelocity : public UParticleModule
 {
 public:
 	GENERATED_BODY()
+	UParticleModuleVelocity()
+	{
+		StartVelocity.Constant = FVector(0.0f, 100.0f, 0.0f);
+		StartVelocity.MinValue = StartVelocity.Constant;
+		StartVelocity.MaxValue = StartVelocity.Constant;
+	}
+
 	bool IsSpawnModule() const override { return true; }
 
-	UPROPERTY(Edit, Save, Category="Particle|Velocity", DisplayName="Start Velocity")
-	FVector StartVelocity = FVector(0.0f, 100.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Particle|Velocity", DisplayName="Start Velocity", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector StartVelocity;
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
-		Particle.Velocity = StartVelocity;
+		Particle.Velocity = StartVelocity.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector());
 	}
 };
 
@@ -149,12 +164,19 @@ class UParticleModuleSize : public UParticleModule
 {
 public:
 	GENERATED_BODY()
+	UParticleModuleSize()
+	{
+		StartSize.Constant = FVector(10.0f, 10.0f, 1.0f);
+		StartSize.MinValue = StartSize.Constant;
+		StartSize.MaxValue = StartSize.Constant;
+	}
+
 	bool IsSpawnModule() const override { return true; }
-	UPROPERTY(Edit, Save, Category="Particle|Size", DisplayName="Start Size", Min=0.0f, Speed=0.1f)
-	FVector StartSize = FVector(10.0f, 10.0f, 1.0f);
+	UPROPERTY(Edit, Save, Category="Particle|Size", DisplayName="Start Size", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector StartSize;
 
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
-		Particle.Size = StartSize;
+		Particle.Size = StartSize.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector());
 	}
 };

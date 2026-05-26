@@ -6,7 +6,10 @@
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
+#include "Math/Distribution.h"
+#include "Math/FloatCurve.h"
 #include "Object/Object.h"
+#include "Object/Reflection/UStruct.h"
 #include "Object/ObjectIterator.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Particles/Module/ParticleModule.h"
@@ -23,6 +26,7 @@
 #include "Viewport/Viewport.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -43,6 +47,10 @@ namespace
 	constexpr float EmitterHeaderHeight = 58.0f;
 	constexpr float ModuleRowHeight = 24.0f;
 	constexpr float ModuleDropTargetHeight = 8.0f;
+	constexpr float CurveKeyHitRadius = 7.0f;
+	constexpr float CurveTangentHandleLength = 48.0f;
+	constexpr float CurveTangentHandleHitRadius = 6.0f;
+	constexpr float CurveTimeEpsilon = 0.001f;
 	constexpr int32 NoModuleIndex = -1;
 	constexpr int32 TypeDataModuleIndex = -2;
 	constexpr const char* ParticleModuleDragPayloadType = "ParticleModuleDragPayload";
@@ -130,6 +138,115 @@ namespace
 		}
 
 		return bActive;
+	}
+
+	ImVec2 CurveToScreen(
+		float Time,
+		float Value,
+		float ViewMinTime,
+		float ViewMaxTime,
+		float ViewMinValue,
+		float ViewMaxValue,
+		const ImVec2& Min,
+		const ImVec2& Max)
+	{
+		const float Width = Max.x - Min.x;
+		const float Height = Max.y - Min.y;
+		const float TimeSpan = (ViewMaxTime > ViewMinTime) ? (ViewMaxTime - ViewMinTime) : 1.0f;
+		const float ValueSpan = (ViewMaxValue > ViewMinValue) ? (ViewMaxValue - ViewMinValue) : 1.0f;
+		const float X = (Time - ViewMinTime) / TimeSpan;
+		const float Y = (Value - ViewMinValue) / ValueSpan;
+		return ImVec2(Min.x + X * Width, Max.y - Y * Height);
+	}
+
+	void ScreenToCurve(
+		const ImVec2& Position,
+		float ViewMinTime,
+		float ViewMaxTime,
+		float ViewMinValue,
+		float ViewMaxValue,
+		const ImVec2& Min,
+		const ImVec2& Max,
+		float& OutTime,
+		float& OutValue)
+	{
+		const float Width = Max.x - Min.x;
+		const float Height = Max.y - Min.y;
+		const float TimeSpan = (ViewMaxTime > ViewMinTime) ? (ViewMaxTime - ViewMinTime) : 1.0f;
+		const float ValueSpan = (ViewMaxValue > ViewMinValue) ? (ViewMaxValue - ViewMinValue) : 1.0f;
+		const float NormalizedX = (Width > 0.0f) ? ((Position.x - Min.x) / Width) : 0.0f;
+		const float NormalizedY = (Height > 0.0f) ? ((Max.y - Position.y) / Height) : 0.0f;
+		OutTime = ViewMinTime + NormalizedX * TimeSpan;
+		OutValue = ViewMinValue + NormalizedY * ValueSpan;
+	}
+
+	bool IsFinitePoint(const ImVec2& Point)
+	{
+		return std::isfinite(Point.x) && std::isfinite(Point.y);
+	}
+
+	bool IsPointNear(const ImVec2& A, const ImVec2& B, float Radius)
+	{
+		const float DX = A.x - B.x;
+		const float DY = A.y - B.y;
+		return (DX * DX + DY * DY) <= Radius * Radius;
+	}
+
+	ImVec2 GetTangentHandlePosition(
+		const FCurveKey& Key,
+		bool bArrive,
+		float ViewMinTime,
+		float ViewMaxTime,
+		float ViewMinValue,
+		float ViewMaxValue,
+		const ImVec2& Min,
+		const ImVec2& Max)
+	{
+		const float Tangent = bArrive ? Key.ArriveTangent : Key.LeaveTangent;
+		const float Direction = bArrive ? -1.0f : 1.0f;
+		const float Width = Max.x - Min.x;
+		const float Height = Max.y - Min.y;
+		const float TimeSpan = (ViewMaxTime > ViewMinTime) ? (ViewMaxTime - ViewMinTime) : 1.0f;
+		const float ValueSpan = (ViewMaxValue > ViewMinValue) ? (ViewMaxValue - ViewMinValue) : 1.0f;
+
+		ImVec2 DirectionVector(
+			Direction * Width / TimeSpan,
+			-Direction * Tangent * Height / ValueSpan);
+		const float Length = std::sqrt(DirectionVector.x * DirectionVector.x + DirectionVector.y * DirectionVector.y);
+		if (Length <= 1.0e-6f)
+		{
+			DirectionVector = ImVec2(Direction, 0.0f);
+		}
+		else
+		{
+			DirectionVector.x /= Length;
+			DirectionVector.y /= Length;
+		}
+
+		const ImVec2 KeyPos = CurveToScreen(
+			Key.Time,
+			Key.Value,
+			ViewMinTime,
+			ViewMaxTime,
+			ViewMinValue,
+			ViewMaxValue,
+			Min,
+			Max);
+		return ImVec2(
+			KeyPos.x + DirectionVector.x * CurveTangentHandleLength,
+			KeyPos.y + DirectionVector.y * CurveTangentHandleLength);
+	}
+
+	bool IsRawDistributionFloatProperty(const FPropertyValue& PropertyValue)
+	{
+		UStruct* StructType = PropertyValue.GetStructType();
+		return StructType && StructType->GetName() && std::strcmp(StructType->GetName(), "FRawDistributionFloat") == 0;
+	}
+
+	bool IsRawDistributionVectorProperty(const FPropertyValue& PropertyValue)
+	{
+		UStruct* StructType = PropertyValue.GetStructType();
+		return StructType && StructType->GetName() && std::strcmp(StructType->GetName(), "FRawDistributionVector") == 0;
 	}
 
 	ImVec2 ProjectWorldAxisToViewport(const FVector& Axis, const FMinimalViewInfo& POV)
@@ -1115,6 +1232,7 @@ UParticleSystem* FParticleSystemEditorWidget::GetParticleSystem() const
 void FParticleSystemEditorWidget::ResetEditorState()
 {
 	ViewState = FEditorViewState{};
+	ClearSelectedCurve();
 }
 
 void FParticleSystemEditorWidget::ValidateSelectionState(const UParticleSystem* ParticleSystem)
@@ -1179,6 +1297,7 @@ void FParticleSystemEditorWidget::ValidateSelectionState(const UParticleSystem* 
 void FParticleSystemEditorWidget::SelectParticleSystem()
 {
 	ViewState.Selection = FEditorSelectionState{};
+	ClearSelectedCurve();
 }
 
 void FParticleSystemEditorWidget::SelectEmitter(int32 EmitterIndex)
@@ -1188,6 +1307,7 @@ void FParticleSystemEditorWidget::SelectEmitter(int32 EmitterIndex)
 	ViewState.Selection.EmitterIndex = EmitterIndex;
 	ViewState.Selection.LODIndex = CurrentLODIndex;
 	ViewState.Selection.ModuleIndex = NoModuleIndex;
+	ClearSelectedCurve();
 }
 
 void FParticleSystemEditorWidget::SelectLOD(int32 EmitterIndex, int32 LODIndex)
@@ -1196,6 +1316,7 @@ void FParticleSystemEditorWidget::SelectLOD(int32 EmitterIndex, int32 LODIndex)
 	ViewState.Selection.EmitterIndex = EmitterIndex;
 	ViewState.Selection.LODIndex = ClampSystemLODIndex(GetParticleSystem(), LODIndex);
 	ViewState.Selection.ModuleIndex = NoModuleIndex;
+	ClearSelectedCurve();
 }
 
 void FParticleSystemEditorWidget::SelectModule(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex)
@@ -1204,6 +1325,7 @@ void FParticleSystemEditorWidget::SelectModule(int32 EmitterIndex, int32 LODInde
 	ViewState.Selection.EmitterIndex = EmitterIndex;
 	ViewState.Selection.LODIndex = ClampSystemLODIndex(GetParticleSystem(), LODIndex);
 	ViewState.Selection.ModuleIndex = ModuleIndex;
+	ClearSelectedCurve();
 }
 
 bool FParticleSystemEditorWidget::SelectLODByIndex(int32 LODIndex)
@@ -2104,11 +2226,49 @@ bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object, bool b
 				ImGui::BeginDisabled();
 			}
 			const bool bChanged = PropertyRenderer.RenderPropertyWidget(Properties, Index, Options);
-			if (bReadOnly)
+			if (IsRawDistributionFloatProperty(PropertyValue))
 			{
-				ImGui::EndDisabled();
+				if (FRawDistributionFloat* Distribution = static_cast<FRawDistributionFloat*>(PropertyValue.GetValuePtr()))
+				{
+					const FString PropertyLabel = FEditorPropertyRenderer::GetPropertyDisplayName(PropertyValue);
+					if (Distribution->Mode == EDistributionValueMode::ConstantCurve)
+					{
+						if (ImGui::Button("Edit Curve", ImVec2(-1.0f, 0.0f)))
+						{
+							SelectDistributionCurve(Object, Distribution, PropertyLabel, 0);
+						}
+					}
+					else if (Distribution->Mode == EDistributionValueMode::UniformCurve)
+					{
+						if (ImGui::Button("Edit Curve", ImVec2(-1.0f, 0.0f)))
+						{
+							SelectDistributionCurve(Object, Distribution, PropertyLabel, 0);
+						}
+					}
+				}
 			}
-			if (!bReadOnly && bChanged)
+			else if (IsRawDistributionVectorProperty(PropertyValue))
+			{
+				if (FRawDistributionVector* Distribution = static_cast<FRawDistributionVector*>(PropertyValue.GetValuePtr()))
+				{
+					const FString PropertyLabel = FEditorPropertyRenderer::GetPropertyDisplayName(PropertyValue);
+					if (Distribution->Mode == EDistributionValueMode::ConstantCurve)
+					{
+						if (ImGui::Button("Edit Curve", ImVec2(-1.0f, 0.0f)))
+						{
+							SelectDistributionCurve(Object, Distribution, PropertyLabel, 0);
+						}
+					}
+					else if (Distribution->Mode == EDistributionValueMode::UniformCurve)
+					{
+						if (ImGui::Button("Edit Curve", ImVec2(-1.0f, 0.0f)))
+						{
+							SelectDistributionCurve(Object, Distribution, PropertyLabel, 0);
+						}
+					}
+				}
+			}
+			if (bChanged)
 			{
 				bAnyChanged = true;
 				if (PropertyValue.Property)
@@ -3012,28 +3172,812 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 	ImGui::EndChild();
 }
 
-void FParticleSystemEditorWidget::RenderCurveEditorPanel(const ImVec2& Size) const
+void FParticleSystemEditorWidget::ClearSelectedCurve()
+{
+	CurveSelection = FCurveEditorSelection{};
+	CurveEditorState = FCurveEditorState{};
+}
+
+void FParticleSystemEditorWidget::SelectDistributionCurve(UObject* OwnerObject, FRawDistributionFloat* Distribution, const FString& Label, int32 CurveIndex)
+{
+	if (!OwnerObject || !Distribution)
+	{
+		ClearSelectedCurve();
+		return;
+	}
+
+	CurveSelection.OwnerObject = OwnerObject;
+	CurveSelection.Label = Label;
+	CurveSelection.CurveCount = 0;
+	if (Distribution->Mode == EDistributionValueMode::ConstantCurve)
+	{
+		CurveSelection.Curves[0] = &Distribution->ConstantCurve;
+		CurveSelection.CurveLabels[0] = "Constant";
+		CurveSelection.CurveCount = 1;
+	}
+	else if (Distribution->Mode == EDistributionValueMode::UniformCurve)
+	{
+		CurveSelection.Curves[0] = &Distribution->MinCurve;
+		CurveSelection.CurveLabels[0] = "Min";
+		CurveSelection.Curves[1] = &Distribution->MaxCurve;
+		CurveSelection.CurveLabels[1] = "Max";
+		CurveSelection.CurveCount = 2;
+	}
+	CurveSelection.ActiveCurveIndex = (std::max)(0, (std::min)(CurveIndex, CurveSelection.CurveCount > 0 ? CurveSelection.CurveCount - 1 : 0));
+	CurveEditorState.SelectedKeyIndex = -1;
+	CurveEditorState.bDraggingSelectedKey = false;
+	CurveEditorState.DraggingTangentHandle = ETangentHandle::None;
+	CurveEditorState.bPanningView = false;
+	CurveEditorState.bSuppressNextCanvasContextMenu = false;
+	FitCurveViewToSelectedCurves();
+}
+
+void FParticleSystemEditorWidget::SelectDistributionCurve(UObject* OwnerObject, FRawDistributionVector* Distribution, const FString& Label, int32 CurveIndex)
+{
+	if (!OwnerObject || !Distribution)
+	{
+		ClearSelectedCurve();
+		return;
+	}
+
+	CurveSelection.OwnerObject = OwnerObject;
+	CurveSelection.Label = Label;
+	CurveSelection.CurveCount = 0;
+	if (Distribution->Mode == EDistributionValueMode::ConstantCurve)
+	{
+		CurveSelection.Curves[0] = &Distribution->ConstantCurve.X;
+		CurveSelection.CurveLabels[0] = "X";
+		CurveSelection.Curves[1] = &Distribution->ConstantCurve.Y;
+		CurveSelection.CurveLabels[1] = "Y";
+		CurveSelection.Curves[2] = &Distribution->ConstantCurve.Z;
+		CurveSelection.CurveLabels[2] = "Z";
+		CurveSelection.CurveCount = 3;
+	}
+	else if (Distribution->Mode == EDistributionValueMode::UniformCurve)
+	{
+		CurveSelection.Curves[0] = &Distribution->MinCurve.X;
+		CurveSelection.CurveLabels[0] = "Min X";
+		CurveSelection.Curves[1] = &Distribution->MinCurve.Y;
+		CurveSelection.CurveLabels[1] = "Min Y";
+		CurveSelection.Curves[2] = &Distribution->MinCurve.Z;
+		CurveSelection.CurveLabels[2] = "Min Z";
+		CurveSelection.Curves[3] = &Distribution->MaxCurve.X;
+		CurveSelection.CurveLabels[3] = "Max X";
+		CurveSelection.Curves[4] = &Distribution->MaxCurve.Y;
+		CurveSelection.CurveLabels[4] = "Max Y";
+		CurveSelection.Curves[5] = &Distribution->MaxCurve.Z;
+		CurveSelection.CurveLabels[5] = "Max Z";
+		CurveSelection.CurveCount = 6;
+	}
+	CurveSelection.ActiveCurveIndex = (CurveIndex < 0 && CurveSelection.CurveCount > 1)
+		? -1
+		: (std::max)(0, (std::min)(CurveIndex, CurveSelection.CurveCount > 0 ? CurveSelection.CurveCount - 1 : 0));
+	CurveEditorState.SelectedKeyIndex = -1;
+	CurveEditorState.bDraggingSelectedKey = false;
+	CurveEditorState.DraggingTangentHandle = ETangentHandle::None;
+	CurveEditorState.bPanningView = false;
+	CurveEditorState.bSuppressNextCanvasContextMenu = false;
+	FitCurveViewToSelectedCurves();
+}
+
+int32 FParticleSystemEditorWidget::GetSelectedCurveCount() const
+{
+	return CurveSelection.CurveCount;
+}
+
+FFloatCurve* FParticleSystemEditorWidget::GetSelectedCurve(int32 CurveIndex) const
+{
+	if (CurveIndex < 0 || CurveIndex >= CurveSelection.CurveCount)
+	{
+		return nullptr;
+	}
+	return CurveSelection.Curves[CurveIndex];
+}
+
+FFloatCurve* FParticleSystemEditorWidget::GetActiveSelectedCurve() const
+{
+	if (CurveSelection.ActiveCurveIndex < 0)
+	{
+		return GetSelectedCurve(0);
+	}
+	return GetSelectedCurve(CurveSelection.ActiveCurveIndex);
+}
+
+void FParticleSystemEditorWidget::FitCurveViewToSelectedCurves()
+{
+	bool bHasKey = false;
+	for (int32 CurveIndex = 0; CurveIndex < GetSelectedCurveCount(); ++CurveIndex)
+	{
+		const FFloatCurve* Curve = GetSelectedCurve(CurveIndex);
+		if (!Curve)
+		{
+			continue;
+		}
+		for (const FCurveKey& Key : Curve->Keys)
+		{
+			if (!bHasKey)
+			{
+				CurveEditorState.ViewMinTime = Key.Time;
+				CurveEditorState.ViewMaxTime = Key.Time;
+				CurveEditorState.ViewMinValue = Key.Value;
+				CurveEditorState.ViewMaxValue = Key.Value;
+				bHasKey = true;
+			}
+			else
+			{
+				CurveEditorState.ViewMinTime = (std::min)(CurveEditorState.ViewMinTime, Key.Time);
+				CurveEditorState.ViewMaxTime = (std::max)(CurveEditorState.ViewMaxTime, Key.Time);
+				CurveEditorState.ViewMinValue = (std::min)(CurveEditorState.ViewMinValue, Key.Value);
+				CurveEditorState.ViewMaxValue = (std::max)(CurveEditorState.ViewMaxValue, Key.Value);
+			}
+		}
+	}
+
+	if (!bHasKey)
+	{
+		CurveEditorState.ViewMinTime = 0.0f;
+		CurveEditorState.ViewMaxTime = 1.0f;
+		CurveEditorState.ViewMinValue = -1.0f;
+		CurveEditorState.ViewMaxValue = 1.0f;
+		return;
+	}
+
+	if (CurveEditorState.ViewMaxTime <= CurveEditorState.ViewMinTime + CurveTimeEpsilon)
+	{
+		CurveEditorState.ViewMinTime -= 0.5f;
+		CurveEditorState.ViewMaxTime += 0.5f;
+	}
+	if (CurveEditorState.ViewMaxValue <= CurveEditorState.ViewMinValue + CurveTimeEpsilon)
+	{
+		CurveEditorState.ViewMinValue -= 0.5f;
+		CurveEditorState.ViewMaxValue += 0.5f;
+	}
+}
+
+bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
+{
+	FFloatCurve* ActiveCurve = GetActiveSelectedCurve();
+	if (!ActiveCurve)
+	{
+		return false;
+	}
+
+	bool bChanged = false;
+	const float InspectorWidth = 220.0f;
+	const ImVec2 CanvasSize((std::max)(160.0f, Size.x - InspectorWidth - 16.0f), (std::max)(100.0f, Size.y - 72.0f));
+	const ImVec2 CanvasMin = ImGui::GetCursorScreenPos();
+	const ImVec2 CanvasMax(CanvasMin.x + CanvasSize.x, CanvasMin.y + CanvasSize.y);
+
+	ImGui::InvisibleButton("##ParticleCurveCanvas", CanvasSize);
+	const bool bCanvasHovered = ImGui::IsItemHovered();
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	const ImGuiIO& IO = ImGui::GetIO();
+	const bool bEditAllCurves = CurveSelection.ActiveCurveIndex < 0 && GetSelectedCurveCount() > 1;
+	auto ForEditableCurves = [&](auto&& Function)
+	{
+		if (bEditAllCurves)
+		{
+			for (int32 CurveIndex = 0; CurveIndex < GetSelectedCurveCount(); ++CurveIndex)
+			{
+				if (FFloatCurve* Curve = GetSelectedCurve(CurveIndex))
+				{
+					Function(*Curve);
+				}
+			}
+		}
+		else
+		{
+			Function(*ActiveCurve);
+		}
+	};
+
+	DrawList->AddRectFilled(CanvasMin, CanvasMax, IM_COL32(22, 22, 25, 255), 3.0f);
+	DrawList->AddRect(CanvasMin, CanvasMax, IM_COL32(86, 86, 96, 255), 3.0f);
+	DrawList->PushClipRect(CanvasMin, CanvasMax, true);
+	auto FormatGridValue = [](float Value, char* Buffer, size_t BufferSize)
+	{
+		std::snprintf(Buffer, BufferSize, "%.3g", Value);
+	};
+	auto GetNiceGridStep = [](float Range)
+	{
+		if (Range <= 0.0f)
+		{
+			return 5.0f;
+		}
+		const float TargetStep = (std::max)(5.0f, Range / 6.0f);
+		float Scale = 1.0f;
+		while (10.0f * Scale < TargetStep)
+		{
+			Scale *= 10.0f;
+		}
+		if (5.0f * Scale >= TargetStep)
+		{
+			return 5.0f * Scale;
+		}
+		return 10.0f * Scale;
+	};
+	const float TimeGridStep = GetNiceGridStep(CurveEditorState.ViewMaxTime - CurveEditorState.ViewMinTime);
+	const float FirstTimeTick = std::ceil(CurveEditorState.ViewMinTime / TimeGridStep) * TimeGridStep;
+	for (float Time = FirstTimeTick; Time <= CurveEditorState.ViewMaxTime + 0.001f; Time += TimeGridStep)
+	{
+		const float T = (Time - CurveEditorState.ViewMinTime) / (CurveEditorState.ViewMaxTime - CurveEditorState.ViewMinTime);
+		const ImU32 GridColor = std::fabs(Time) < 0.001f ? IM_COL32(76, 76, 86, 255) : IM_COL32(48, 48, 56, 255);
+		const float GridX = CanvasMin.x + T * CanvasSize.x;
+		DrawList->AddLine(ImVec2(GridX, CanvasMin.y), ImVec2(GridX, CanvasMax.y), GridColor);
+
+		char TimeLabel[32] = {};
+		FormatGridValue(Time, TimeLabel, sizeof(TimeLabel));
+		const float LabelWidth = ImGui::CalcTextSize(TimeLabel).x;
+		const float LabelX = (std::min)((std::max)(GridX + 4.0f, CanvasMin.x + 4.0f), CanvasMax.x - LabelWidth - 4.0f);
+		DrawList->AddText(ImVec2(LabelX, CanvasMax.y - 18.0f), IM_COL32(170, 174, 184, 255), TimeLabel);
+	}
+	const float ValueGridStep = GetNiceGridStep(CurveEditorState.ViewMaxValue - CurveEditorState.ViewMinValue);
+	const float FirstValueTick = std::ceil(CurveEditorState.ViewMinValue / ValueGridStep) * ValueGridStep;
+	for (float Value = FirstValueTick; Value <= CurveEditorState.ViewMaxValue + 0.001f; Value += ValueGridStep)
+	{
+		const float T = (Value - CurveEditorState.ViewMinValue) / (CurveEditorState.ViewMaxValue - CurveEditorState.ViewMinValue);
+		const float GridY = CanvasMax.y - T * CanvasSize.y;
+		const ImU32 GridColor = std::fabs(Value) < 0.001f ? IM_COL32(76, 76, 86, 255) : IM_COL32(48, 48, 56, 255);
+		DrawList->AddLine(ImVec2(CanvasMin.x, GridY), ImVec2(CanvasMax.x, GridY), GridColor);
+
+		char ValueLabel[32] = {};
+		FormatGridValue(Value, ValueLabel, sizeof(ValueLabel));
+		const float LabelY = (std::min)((std::max)(GridY + 3.0f, CanvasMin.y + 3.0f), CanvasMax.y - ImGui::GetTextLineHeight() - 3.0f);
+		DrawList->AddText(ImVec2(CanvasMin.x + 6.0f, LabelY), IM_COL32(170, 174, 184, 255), ValueLabel);
+	}
+	DrawList->PopClipRect();
+
+	auto DrawCurveLine = [&](const FFloatCurve& Curve, ImU32 Color)
+	{
+		if (Curve.IsEmpty())
+		{
+			return;
+		}
+
+		const int32 SampleCount = 128;
+		ImVec2 PreviousPoint = CurveToScreen(
+			CurveEditorState.ViewMinTime,
+			Curve.Evaluate(CurveEditorState.ViewMinTime),
+			CurveEditorState.ViewMinTime,
+			CurveEditorState.ViewMaxTime,
+			CurveEditorState.ViewMinValue,
+			CurveEditorState.ViewMaxValue,
+			CanvasMin,
+			CanvasMax);
+
+		for (int32 SampleIndex = 1; SampleIndex < SampleCount; ++SampleIndex)
+		{
+			const float Alpha = static_cast<float>(SampleIndex) / static_cast<float>(SampleCount - 1);
+			const float SampleTime = CurveEditorState.ViewMinTime + (CurveEditorState.ViewMaxTime - CurveEditorState.ViewMinTime) * Alpha;
+			const ImVec2 CurrentPoint = CurveToScreen(
+				SampleTime,
+				Curve.Evaluate(SampleTime),
+				CurveEditorState.ViewMinTime,
+				CurveEditorState.ViewMaxTime,
+				CurveEditorState.ViewMinValue,
+				CurveEditorState.ViewMaxValue,
+				CanvasMin,
+				CanvasMax);
+			if (IsFinitePoint(PreviousPoint) && IsFinitePoint(CurrentPoint))
+			{
+				DrawList->AddLine(PreviousPoint, CurrentPoint, Color, 2.0f);
+			}
+			PreviousPoint = CurrentPoint;
+		}
+	};
+
+	if (GetSelectedCurveCount() > 1)
+	{
+		const ImU32 Palette[] =
+		{
+			IM_COL32(80, 220, 120, 255),
+			IM_COL32(255, 170, 80, 255),
+			IM_COL32(95, 150, 255, 255),
+			IM_COL32(110, 235, 210, 255),
+			IM_COL32(255, 105, 130, 255),
+			IM_COL32(200, 150, 255, 255),
+		};
+		const ImU32 DimPalette[] =
+		{
+			IM_COL32(80, 220, 120, 90),
+			IM_COL32(255, 170, 80, 90),
+			IM_COL32(95, 150, 255, 90),
+			IM_COL32(110, 235, 210, 90),
+			IM_COL32(255, 105, 130, 90),
+			IM_COL32(200, 150, 255, 90),
+		};
+		for (int32 CurveIndex = 0; CurveIndex < GetSelectedCurveCount(); ++CurveIndex)
+		{
+			if (FFloatCurve* Curve = GetSelectedCurve(CurveIndex))
+			{
+				DrawCurveLine(*Curve, (CurveSelection.ActiveCurveIndex < 0 || CurveSelection.ActiveCurveIndex == CurveIndex) ? Palette[CurveIndex % 6] : DimPalette[CurveIndex % 6]);
+			}
+		}
+	}
+	else
+	{
+		DrawCurveLine(*ActiveCurve, IM_COL32(80, 220, 120, 255));
+	}
+
+	ETangentHandle HoveredTangentHandle = ETangentHandle::None;
+	const bool bHasSelectedKey = CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(ActiveCurve->Keys.size());
+	const bool bCanShowArriveHandle =
+		bHasSelectedKey &&
+		CurveEditorState.SelectedKeyIndex > 0 &&
+		ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex - 1].InterpMode == ECurveInterpMode::Cubic;
+	const bool bCanShowLeaveHandle =
+		bHasSelectedKey &&
+		CurveEditorState.SelectedKeyIndex + 1 < static_cast<int32>(ActiveCurve->Keys.size()) &&
+		ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex].InterpMode == ECurveInterpMode::Cubic;
+
+	if (bHasSelectedKey && (bCanShowArriveHandle || bCanShowLeaveHandle))
+	{
+		const FCurveKey& Key = ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex];
+		const ImVec2 KeyPos = CurveToScreen(Key.Time, Key.Value, CurveEditorState.ViewMinTime, CurveEditorState.ViewMaxTime, CurveEditorState.ViewMinValue, CurveEditorState.ViewMaxValue, CanvasMin, CanvasMax);
+		if (bCanShowArriveHandle)
+		{
+			const ImVec2 HandlePos = GetTangentHandlePosition(Key, true, CurveEditorState.ViewMinTime, CurveEditorState.ViewMaxTime, CurveEditorState.ViewMinValue, CurveEditorState.ViewMaxValue, CanvasMin, CanvasMax);
+			if (IsPointNear(IO.MousePos, HandlePos, CurveTangentHandleHitRadius))
+			{
+				HoveredTangentHandle = ETangentHandle::Arrive;
+			}
+			DrawList->AddLine(KeyPos, HandlePos, IM_COL32(95, 150, 255, 180), 1.5f);
+			DrawList->AddCircleFilled(HandlePos, 4.5f, IM_COL32(95, 150, 255, 255));
+		}
+		if (bCanShowLeaveHandle)
+		{
+			const ImVec2 HandlePos = GetTangentHandlePosition(Key, false, CurveEditorState.ViewMinTime, CurveEditorState.ViewMaxTime, CurveEditorState.ViewMinValue, CurveEditorState.ViewMaxValue, CanvasMin, CanvasMax);
+			if (IsPointNear(IO.MousePos, HandlePos, CurveTangentHandleHitRadius))
+			{
+				HoveredTangentHandle = ETangentHandle::Leave;
+			}
+			DrawList->AddLine(KeyPos, HandlePos, IM_COL32(95, 150, 255, 180), 1.5f);
+			DrawList->AddCircleFilled(HandlePos, 4.5f, IM_COL32(95, 150, 255, 255));
+		}
+	}
+
+	int32 HoveredKeyIndex = -1;
+	for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(ActiveCurve->Keys.size()); ++KeyIndex)
+	{
+		const FCurveKey& Key = ActiveCurve->Keys[KeyIndex];
+		const ImVec2 KeyPos = CurveToScreen(Key.Time, Key.Value, CurveEditorState.ViewMinTime, CurveEditorState.ViewMaxTime, CurveEditorState.ViewMinValue, CurveEditorState.ViewMaxValue, CanvasMin, CanvasMax);
+		if (IsPointNear(IO.MousePos, KeyPos, CurveKeyHitRadius))
+		{
+			HoveredKeyIndex = KeyIndex;
+		}
+		const ImU32 KeyColor =
+			(CurveEditorState.SelectedKeyIndex == KeyIndex) ? IM_COL32(255, 245, 110, 255) :
+			(HoveredKeyIndex == KeyIndex) ? IM_COL32(255, 205, 90, 255) :
+			IM_COL32(255, 165, 60, 255);
+		DrawList->AddCircleFilled(KeyPos, 5.0f, KeyColor);
+		DrawList->AddCircle(KeyPos, 5.0f, IM_COL32(20, 20, 22, 220), 12, 1.0f);
+	}
+
+	if (bCanvasHovered && IO.MouseWheel != 0.0f)
+	{
+		float MouseTime = 0.0f;
+		float MouseValue = 0.0f;
+		ScreenToCurve(IO.MousePos, CurveEditorState.ViewMinTime, CurveEditorState.ViewMaxTime, CurveEditorState.ViewMinValue, CurveEditorState.ViewMaxValue, CanvasMin, CanvasMax, MouseTime, MouseValue);
+		const float Zoom = (IO.MouseWheel > 0.0f) ? 0.85f : 1.1764706f;
+		if (!IO.KeyCtrl)
+		{
+			CurveEditorState.ViewMinTime = MouseTime + (CurveEditorState.ViewMinTime - MouseTime) * Zoom;
+			CurveEditorState.ViewMaxTime = MouseTime + (CurveEditorState.ViewMaxTime - MouseTime) * Zoom;
+			CurveEditorState.ViewMaxTime = (std::max)(CurveEditorState.ViewMaxTime, CurveEditorState.ViewMinTime + CurveTimeEpsilon);
+		}
+		if (!IO.KeyShift)
+		{
+			CurveEditorState.ViewMinValue = MouseValue + (CurveEditorState.ViewMinValue - MouseValue) * Zoom;
+			CurveEditorState.ViewMaxValue = MouseValue + (CurveEditorState.ViewMaxValue - MouseValue) * Zoom;
+			CurveEditorState.ViewMaxValue = (std::max)(CurveEditorState.ViewMaxValue, CurveEditorState.ViewMinValue + CurveTimeEpsilon);
+		}
+	}
+
+	if (HoveredTangentHandle != ETangentHandle::None && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+	{
+		CurveEditorState.DraggingTangentHandle = HoveredTangentHandle;
+		CurveEditorState.bDraggingSelectedKey = false;
+	}
+	else if (HoveredKeyIndex != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+	{
+		CurveEditorState.SelectedKeyIndex = HoveredKeyIndex;
+		CurveEditorState.bDraggingSelectedKey = true;
+	}
+	else if (bCanvasHovered && HoveredKeyIndex == -1 && HoveredTangentHandle == ETangentHandle::None && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+	{
+		CurveEditorState.SelectedKeyIndex = -1;
+	}
+
+	if (CurveEditorState.DraggingTangentHandle != ETangentHandle::None && bHasSelectedKey && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+	{
+		FCurveKey& Key = ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex];
+		float MouseTime = 0.0f;
+		float MouseValue = 0.0f;
+		ScreenToCurve(IO.MousePos, CurveEditorState.ViewMinTime, CurveEditorState.ViewMaxTime, CurveEditorState.ViewMinValue, CurveEditorState.ViewMaxValue, CanvasMin, CanvasMax, MouseTime, MouseValue);
+
+		const bool bArrive = CurveEditorState.DraggingTangentHandle == ETangentHandle::Arrive;
+		const float DeltaTime = bArrive ? Key.Time - MouseTime : MouseTime - Key.Time;
+		const float NewTangent = std::fabs(DeltaTime) > CurveTimeEpsilon ? (bArrive ? (Key.Value - MouseValue) / DeltaTime : (MouseValue - Key.Value) / DeltaTime) : (bArrive ? Key.ArriveTangent : Key.LeaveTangent);
+		if (Key.TangentMode == ECurveTangentMode::Auto)
+		{
+			Key.TangentMode = ECurveTangentMode::User;
+		}
+		if (Key.TangentMode == ECurveTangentMode::Break)
+		{
+			if (bArrive)
+			{
+				Key.ArriveTangent = NewTangent;
+			}
+			else
+			{
+				Key.LeaveTangent = NewTangent;
+			}
+		}
+		else
+		{
+			Key.ArriveTangent = NewTangent;
+			Key.LeaveTangent = NewTangent;
+		}
+		bChanged = true;
+	}
+
+	if (CurveEditorState.bDraggingSelectedKey && CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(ActiveCurve->Keys.size()) && ImGui::IsMouseDragging(ImGuiMouseButton_Left))
+	{
+		const float TimeDelta = (IO.MouseDelta.x / CanvasSize.x) * (CurveEditorState.ViewMaxTime - CurveEditorState.ViewMinTime);
+		const float ValueDelta = -(IO.MouseDelta.y / CanvasSize.y) * (CurveEditorState.ViewMaxValue - CurveEditorState.ViewMinValue);
+		ForEditableCurves([&](FFloatCurve& Curve)
+		{
+			if (CurveEditorState.SelectedKeyIndex < 0 || CurveEditorState.SelectedKeyIndex >= static_cast<int32>(Curve.Keys.size()))
+			{
+				return;
+			}
+			FCurveKey& Key = Curve.Keys[CurveEditorState.SelectedKeyIndex];
+			Key.Time += TimeDelta;
+			Key.Value += ValueDelta;
+			if (CurveEditorState.SelectedKeyIndex > 0)
+			{
+				Key.Time = (std::max)(Key.Time, Curve.Keys[CurveEditorState.SelectedKeyIndex - 1].Time + CurveTimeEpsilon);
+			}
+			if (CurveEditorState.SelectedKeyIndex + 1 < static_cast<int32>(Curve.Keys.size()))
+			{
+				Key.Time = (std::min)(Key.Time, Curve.Keys[CurveEditorState.SelectedKeyIndex + 1].Time - CurveTimeEpsilon);
+			}
+		});
+		bChanged = true;
+	}
+
+	if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+	{
+		if (CurveEditorState.bDraggingSelectedKey)
+		{
+			ForEditableCurves([](FFloatCurve& Curve)
+			{
+				Curve.SortKeys();
+				Curve.AutoSetTangents();
+			});
+		}
+		CurveEditorState.bDraggingSelectedKey = false;
+		CurveEditorState.DraggingTangentHandle = ETangentHandle::None;
+	}
+
+	if (bCanvasHovered && HoveredKeyIndex == -1 && HoveredTangentHandle == ETangentHandle::None && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+	{
+		CurveEditorState.bPanningView = true;
+		CurveEditorState.bSuppressNextCanvasContextMenu = false;
+	}
+	if (CurveEditorState.bPanningView && ImGui::IsMouseDragging(ImGuiMouseButton_Right, 3.0f))
+	{
+		const float TimeDelta = (IO.MouseDelta.x / CanvasSize.x) * (CurveEditorState.ViewMaxTime - CurveEditorState.ViewMinTime);
+		const float ValueDelta = (IO.MouseDelta.y / CanvasSize.y) * (CurveEditorState.ViewMaxValue - CurveEditorState.ViewMinValue);
+		CurveEditorState.ViewMinTime -= TimeDelta;
+		CurveEditorState.ViewMaxTime -= TimeDelta;
+		CurveEditorState.ViewMinValue += ValueDelta;
+		CurveEditorState.ViewMaxValue += ValueDelta;
+		CurveEditorState.bSuppressNextCanvasContextMenu = true;
+	}
+	if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+	{
+		CurveEditorState.bPanningView = false;
+	}
+
+	if (HoveredKeyIndex != -1 && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+	{
+		CurveEditorState.SelectedKeyIndex = HoveredKeyIndex;
+		ImGui::OpenPopup("ParticleCurveKeyContext");
+	}
+	else if (bCanvasHovered && HoveredKeyIndex == -1 && HoveredTangentHandle == ETangentHandle::None && ImGui::IsMouseReleased(ImGuiMouseButton_Right) && !CurveEditorState.bSuppressNextCanvasContextMenu)
+	{
+		ScreenToCurve(IO.MousePos, CurveEditorState.ViewMinTime, CurveEditorState.ViewMaxTime, CurveEditorState.ViewMinValue, CurveEditorState.ViewMaxValue, CanvasMin, CanvasMax, CurveEditorState.PendingContextTime, CurveEditorState.PendingContextValue);
+		ImGui::OpenPopup("ParticleCurveCanvasContext");
+	}
+
+	if (ImGui::BeginPopup("ParticleCurveKeyContext"))
+	{
+		if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(ActiveCurve->Keys.size()))
+		{
+			if (ImGui::MenuItem("Delete Key"))
+			{
+				ForEditableCurves([&](FFloatCurve& Curve)
+				{
+					if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()))
+					{
+						Curve.Keys.erase(Curve.Keys.begin() + CurveEditorState.SelectedKeyIndex);
+						Curve.AutoSetTangents();
+					}
+				});
+				CurveEditorState.SelectedKeyIndex = -1;
+				bChanged = true;
+			}
+			ImGui::Separator();
+			if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(ActiveCurve->Keys.size()))
+			{
+				if (ImGui::MenuItem("Constant", nullptr, ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex].InterpMode == ECurveInterpMode::Constant))
+				{
+					ForEditableCurves([&](FFloatCurve& Curve)
+					{
+						if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()))
+						{
+							Curve.Keys[CurveEditorState.SelectedKeyIndex].InterpMode = ECurveInterpMode::Constant;
+						}
+					});
+					bChanged = true;
+				}
+				if (ImGui::MenuItem("Linear", nullptr, ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex].InterpMode == ECurveInterpMode::Linear))
+				{
+					ForEditableCurves([&](FFloatCurve& Curve)
+					{
+						if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()))
+						{
+							Curve.Keys[CurveEditorState.SelectedKeyIndex].InterpMode = ECurveInterpMode::Linear;
+						}
+					});
+					bChanged = true;
+				}
+				if (ImGui::MenuItem("Cubic", nullptr, ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex].InterpMode == ECurveInterpMode::Cubic))
+				{
+					ForEditableCurves([&](FFloatCurve& Curve)
+					{
+						if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()))
+						{
+							Curve.Keys[CurveEditorState.SelectedKeyIndex].InterpMode = ECurveInterpMode::Cubic;
+							Curve.Keys[CurveEditorState.SelectedKeyIndex].TangentMode = ECurveTangentMode::Auto;
+							Curve.AutoSetTangents();
+						}
+					});
+					bChanged = true;
+				}
+			}
+		}
+		ImGui::EndPopup();
+	}
+
+	if (ImGui::BeginPopup("ParticleCurveCanvasContext"))
+	{
+		if (ImGui::MenuItem("Add Key"))
+		{
+			FCurveKey NewKey{};
+			NewKey.Time = CurveEditorState.PendingContextTime;
+			NewKey.Value = CurveEditorState.PendingContextValue;
+			NewKey.InterpMode = ECurveInterpMode::Linear;
+			ForEditableCurves([&](FFloatCurve& Curve)
+			{
+				Curve.Keys.push_back(NewKey);
+				Curve.SortKeys();
+				Curve.AutoSetTangents();
+			});
+			for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(ActiveCurve->Keys.size()); ++KeyIndex)
+			{
+				if (std::fabs(ActiveCurve->Keys[KeyIndex].Time - NewKey.Time) <= CurveTimeEpsilon)
+				{
+					CurveEditorState.SelectedKeyIndex = KeyIndex;
+					break;
+				}
+			}
+			bChanged = true;
+		}
+		if (ImGui::MenuItem("Fit To Keys"))
+		{
+			FitCurveViewToSelectedCurves();
+		}
+		ImGui::EndPopup();
+	}
+
+	ImGui::SameLine();
+	ImGui::BeginChild("##ParticleCurveInspector", ImVec2(0.0f, CanvasSize.y), false);
+	{
+		if (ImGui::DragFloat("Default", &ActiveCurve->DefaultValue, 0.01f))
+		{
+			if (bEditAllCurves)
+			{
+				const float DefaultValue = ActiveCurve->DefaultValue;
+				ForEditableCurves([&](FFloatCurve& Curve)
+				{
+					Curve.DefaultValue = DefaultValue;
+				});
+			}
+			bChanged = true;
+		}
+		if (ImGui::Button("Fit"))
+		{
+			FitCurveViewToSelectedCurves();
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Clear"))
+		{
+			ForEditableCurves([](FFloatCurve& Curve)
+			{
+				Curve.Reset();
+			});
+			CurveEditorState.SelectedKeyIndex = -1;
+			FitCurveViewToSelectedCurves();
+			bChanged = true;
+		}
+
+		const char* ExtrapLabels[] = { "Clamp", "Linear", "Loop" };
+		int32 PreExtrap = static_cast<int32>(ActiveCurve->PreExtrapMode);
+		if (ImGui::Combo("Pre", &PreExtrap, ExtrapLabels, IM_ARRAYSIZE(ExtrapLabels)))
+		{
+			ActiveCurve->PreExtrapMode = static_cast<ECurveExtrapMode>(PreExtrap);
+			bChanged = true;
+		}
+		int32 PostExtrap = static_cast<int32>(ActiveCurve->PostExtrapMode);
+		if (ImGui::Combo("Post", &PostExtrap, ExtrapLabels, IM_ARRAYSIZE(ExtrapLabels)))
+		{
+			ActiveCurve->PostExtrapMode = static_cast<ECurveExtrapMode>(PostExtrap);
+			bChanged = true;
+		}
+
+		ImGui::Separator();
+		if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(ActiveCurve->Keys.size()))
+		{
+			FCurveKey& Key = ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex];
+			const float OldTime = Key.Time;
+			if (ImGui::DragFloat("Time", &Key.Time, 0.01f))
+			{
+				if (CurveEditorState.SelectedKeyIndex > 0)
+				{
+					Key.Time = (std::max)(Key.Time, ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex - 1].Time + CurveTimeEpsilon);
+				}
+				if (CurveEditorState.SelectedKeyIndex + 1 < static_cast<int32>(ActiveCurve->Keys.size()))
+				{
+					Key.Time = (std::min)(Key.Time, ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex + 1].Time - CurveTimeEpsilon);
+				}
+				const float TimeDelta = Key.Time - OldTime;
+				ForEditableCurves([&](FFloatCurve& Curve)
+				{
+					if (CurveEditorState.SelectedKeyIndex < 0 || CurveEditorState.SelectedKeyIndex >= static_cast<int32>(Curve.Keys.size()))
+					{
+						return;
+					}
+					if (&Curve != ActiveCurve)
+					{
+						Curve.Keys[CurveEditorState.SelectedKeyIndex].Time += TimeDelta;
+					}
+					Curve.SortKeys();
+					Curve.AutoSetTangents();
+				});
+				bChanged = true;
+			}
+			const float OldValue = Key.Value;
+			if (ImGui::DragFloat("Value", &Key.Value, 0.01f))
+			{
+				const float ValueDelta = Key.Value - OldValue;
+				ForEditableCurves([&](FFloatCurve& Curve)
+				{
+					if (CurveEditorState.SelectedKeyIndex < 0 || CurveEditorState.SelectedKeyIndex >= static_cast<int32>(Curve.Keys.size()))
+					{
+						return;
+					}
+					if (&Curve != ActiveCurve)
+					{
+						Curve.Keys[CurveEditorState.SelectedKeyIndex].Value += ValueDelta;
+					}
+					if (Curve.Keys[CurveEditorState.SelectedKeyIndex].TangentMode == ECurveTangentMode::Auto)
+					{
+						Curve.AutoSetTangents();
+					}
+				});
+				bChanged = true;
+			}
+
+			const char* InterpLabels[] = { "Constant", "Linear", "Cubic" };
+			int32 InterpMode = static_cast<int32>(Key.InterpMode);
+			if (ImGui::Combo("Interp", &InterpMode, InterpLabels, IM_ARRAYSIZE(InterpLabels)))
+			{
+				Key.InterpMode = static_cast<ECurveInterpMode>(InterpMode);
+				if (Key.InterpMode == ECurveInterpMode::Cubic)
+				{
+					Key.TangentMode = ECurveTangentMode::Auto;
+					ActiveCurve->AutoSetTangents();
+				}
+				bChanged = true;
+			}
+
+			const char* TangentLabels[] = { "Auto", "User", "Break" };
+			int32 TangentMode = static_cast<int32>(Key.TangentMode);
+			if (ImGui::Combo("Tangent", &TangentMode, TangentLabels, IM_ARRAYSIZE(TangentLabels)))
+			{
+				Key.TangentMode = static_cast<ECurveTangentMode>(TangentMode);
+				if (Key.TangentMode == ECurveTangentMode::Auto)
+				{
+					ActiveCurve->AutoSetTangents();
+				}
+				bChanged = true;
+			}
+
+			if (Key.TangentMode != ECurveTangentMode::Auto)
+			{
+				bChanged |= ImGui::DragFloat("Arrive", &Key.ArriveTangent, 0.01f);
+				bChanged |= ImGui::DragFloat("Leave", &Key.LeaveTangent, 0.01f);
+			}
+		}
+		else
+		{
+			ImGui::TextDisabled("No key selected");
+		}
+	}
+	ImGui::EndChild();
+
+	return bChanged;
+}
+
+void FParticleSystemEditorWidget::RenderCurveEditorPanel(const ImVec2& Size)
 {
 	ImGui::BeginChild("##ParticleCurveEditorPanel", Size, ImGuiChildFlags_Borders);
 	DrawPanelHeader("Curve Editor");
 
-	const ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
-	const ImVec2 CanvasMin = ImGui::GetCursorScreenPos();
-	const ImVec2 CanvasMax(CanvasMin.x + CanvasSize.x, CanvasMin.y + CanvasSize.y);
-	ImGui::InvisibleButton("##ParticleCurveEditorCanvas", CanvasSize);
+	if (GetSelectedCurveCount() <= 0)
+	{
+		const ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
+		const ImVec2 CanvasMin = ImGui::GetCursorScreenPos();
+		const ImVec2 CanvasMax(CanvasMin.x + CanvasSize.x, CanvasMin.y + CanvasSize.y);
+		ImGui::InvisibleButton("##ParticleCurveEditorCanvasEmpty", CanvasSize);
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		DrawList->AddRectFilled(CanvasMin, CanvasMax, IM_COL32(52, 52, 52, 255));
+		for (int32 i = 0; i <= 8; ++i)
+		{
+			const float X = CanvasMin.x + CanvasSize.x * (static_cast<float>(i) / 8.0f);
+			DrawList->AddLine(ImVec2(X, CanvasMin.y), ImVec2(X, CanvasMax.y), IM_COL32(140, 140, 140, 170));
+		}
+		for (int32 i = 0; i <= 4; ++i)
+		{
+			const float Y = CanvasMin.y + CanvasSize.y * (static_cast<float>(i) / 4.0f);
+			DrawList->AddLine(ImVec2(CanvasMin.x, Y), ImVec2(CanvasMax.x, Y), IM_COL32(140, 140, 140, 170));
+		}
+		DrawList->AddText(ImVec2(CanvasMin.x + 10.0f, CanvasMin.y + 8.0f), IM_COL32(225, 230, 235, 255), "Select a ConstantCurve or UniformCurve distribution in Details.");
+		ImGui::EndChild();
+		return;
+	}
 
-	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-	DrawList->AddRectFilled(CanvasMin, CanvasMax, IM_COL32(52, 52, 52, 255));
-	for (int32 i = 0; i <= 8; ++i)
+	ImGui::TextDisabled("%s", CurveSelection.Label.c_str());
+	if (GetSelectedCurveCount() > 1)
 	{
-		const float X = CanvasMin.x + CanvasSize.x * (static_cast<float>(i) / 8.0f);
-		DrawList->AddLine(ImVec2(X, CanvasMin.y), ImVec2(X, CanvasMax.y), IM_COL32(140, 140, 140, 170));
+		for (int32 CurveIndex = 0; CurveIndex < GetSelectedCurveCount(); ++CurveIndex)
+		{
+			const char* Label = CurveSelection.CurveLabels[CurveIndex] ? CurveSelection.CurveLabels[CurveIndex] : "Curve";
+			const float SelectorWidth = (std::max)(70.0f, ImGui::CalcTextSize(Label).x + 24.0f);
+			const float ContentMaxX = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+			if (CurveIndex > 0 && ImGui::GetItemRectMax().x + ImGui::GetStyle().ItemSpacing.x + SelectorWidth <= ContentMaxX)
+			{
+				ImGui::SameLine();
+			}
+			if (ImGui::Selectable(Label, CurveSelection.ActiveCurveIndex == CurveIndex, 0, ImVec2(SelectorWidth, 0.0f)))
+			{
+				CurveSelection.ActiveCurveIndex = CurveIndex;
+				CurveEditorState.SelectedKeyIndex = -1;
+			}
+		}
 	}
-	for (int32 i = 0; i <= 4; ++i)
+
+	if (RenderSelectedCurveEditor(ImGui::GetContentRegionAvail()))
 	{
-		const float Y = CanvasMin.y + CanvasSize.y * (static_cast<float>(i) / 4.0f);
-		DrawList->AddLine(ImVec2(CanvasMin.x, Y), ImVec2(CanvasMax.x, Y), IM_COL32(140, 140, 140, 170));
+		if (CurveSelection.OwnerObject)
+		{
+			CurveSelection.OwnerObject->PostEditProperty(nullptr);
+		}
+		MarkDirty();
+		RefreshParticleSystemComponents();
 	}
-	DrawList->AddText(ImVec2(CanvasMin.x + 10.0f, CanvasMin.y + 8.0f), IM_COL32(225, 230, 235, 255), "Curve data will be connected after module properties are defined.");
+
 	ImGui::EndChild();
 }

@@ -83,6 +83,26 @@ namespace FDistributionSampling
 }
 
 USTRUCT()
+struct FFloatVectorCurve
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Edit, Save, Category="Curve", DisplayName="X", Type=Struct, Struct=FFloatCurve)
+	FFloatCurve X;
+
+	UPROPERTY(Edit, Save, Category="Curve", DisplayName="Y", Type=Struct, Struct=FFloatCurve)
+	FFloatCurve Y;
+
+	UPROPERTY(Edit, Save, Category="Curve", DisplayName="Z", Type=Struct, Struct=FFloatCurve)
+	FFloatCurve Z;
+
+	FVector Evaluate(float Time) const
+	{
+		return FVector(X.Evaluate(Time), Y.Evaluate(Time), Z.Evaluate(Time));
+	}
+};
+
+USTRUCT()
 struct FRawDistributionFloat
 {
 	GENERATED_BODY()
@@ -161,11 +181,47 @@ struct FRawDistributionVector
 	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Max", EditCondition="Mode == Uniform")
 	FVector MaxValue = FVector::ZeroVector;
 
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Constant Curve", EditCondition="Mode == ConstantCurve", Type=Struct, Struct=FFloatVectorCurve)
+	FFloatVectorCurve ConstantCurve;
+
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Min Curve", EditCondition="Mode == UniformCurve", Type=Struct, Struct=FFloatVectorCurve)
+	FFloatVectorCurve MinCurve;
+
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Max Curve", EditCondition="Mode == UniformCurve", Type=Struct, Struct=FFloatVectorCurve)
+	FFloatVectorCurve MaxCurve;
+
 	FVector GetValue(const FVector& RandomFraction = FDistributionSampling::RandomUnitVector()) const
+	{
+		return GetValue(0.0f, RandomFraction);
+	}
+
+	FVector GetValue(float Time, const FVector& RandomFraction) const
 	{
 		if (Mode == EDistributionValueMode::Uniform)
 		{
 			return FDistributionSampling::Lerp(MinValue, MaxValue, RandomFraction);
+		}
+		if (Mode == EDistributionValueMode::ConstantCurve)
+		{
+			return ConstantCurve.Evaluate(Time);
+		}
+		if (Mode == EDistributionValueMode::UniformCurve)
+		{
+			FVector Min = MinCurve.Evaluate(Time);
+			FVector Max = MaxCurve.Evaluate(Time);
+			if (Max.X < Min.X)
+			{
+				std::swap(Min.X, Max.X);
+			}
+			if (Max.Y < Min.Y)
+			{
+				std::swap(Min.Y, Max.Y);
+			}
+			if (Max.Z < Min.Z)
+			{
+				std::swap(Min.Z, Max.Z);
+			}
+			return FDistributionSampling::Lerp(Min, Max, RandomFraction);
 		}
 
 		return Constant;

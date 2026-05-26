@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/Panel/EditorPropertyRenderer.h"
 #include "Editor/Viewport/Asset/ParticleSystemEditorViewportClient.h"
@@ -7,6 +7,9 @@
 
 struct ImVec2;
 struct FPropertyValue;
+struct FRawDistributionFloat;
+struct FRawDistributionVector;
+struct FFloatCurve;
 class AActor;
 class UObject;
 class UParticleEmitter;
@@ -60,6 +63,38 @@ private:
 		float EmittersCurveSplitRatio = 0.58f;
 	};
 
+	enum class ETangentHandle
+	{
+		None,
+		Arrive,
+		Leave,
+	};
+
+	struct FCurveEditorSelection
+	{
+		UObject* OwnerObject = nullptr;
+		FFloatCurve* Curves[6] = {};
+		const char* CurveLabels[6] = {};
+		int32 CurveCount = 0;
+		FString Label;
+		int32 ActiveCurveIndex = 0;
+	};
+
+	struct FCurveEditorState
+	{
+		int32 SelectedKeyIndex = -1;
+		bool bDraggingSelectedKey = false;
+		ETangentHandle DraggingTangentHandle = ETangentHandle::None;
+		bool bPanningView = false;
+		bool bSuppressNextCanvasContextMenu = false;
+		float PendingContextTime = 0.0f;
+		float PendingContextValue = 0.0f;
+		float ViewMinTime = 0.0f;
+		float ViewMaxTime = 1.0f;
+		float ViewMinValue = -1.0f;
+		float ViewMaxValue = 1.0f;
+	};
+
 	UParticleSystem* GetParticleSystem() const;
 	void ResetEditorState();
 	void ValidateSelectionState(const UParticleSystem* ParticleSystem);
@@ -86,16 +121,26 @@ private:
 	void RenderViewportPanel(const ImVec2& Size);
 	void RenderDetailsPanel(const ImVec2& Size);
 	void RenderEmittersPanel(const ImVec2& Size);
-	void RenderCurveEditorPanel(const ImVec2& Size) const;
-	bool RenderObjectProperties(UObject* Object, bool bReadOnly = false);
+	void RenderCurveEditorPanel(const ImVec2& Size);
+	bool RenderObjectProperties(UObject* Object, bool bReadOnly);
 	void ApplyEditedObjectSideEffects(UObject* Object);
 	void CreatePreviewWorld();
 	void DestroyPreviewWorld();
 	void RestartPreviewSimulation();
 	void RefreshParticleSystemComponents();
+	void ClearSelectedCurve();
+	void SelectDistributionCurve(UObject* OwnerObject, FRawDistributionFloat* Distribution, const FString& Label, int32 CurveIndex);
+	void SelectDistributionCurve(UObject* OwnerObject, FRawDistributionVector* Distribution, const FString& Label, int32 CurveIndex);
+	int32 GetSelectedCurveCount() const;
+	FFloatCurve* GetSelectedCurve(int32 CurveIndex) const;
+	FFloatCurve* GetActiveSelectedCurve() const;
+	void FitCurveViewToSelectedCurves();
+	bool RenderSelectedCurveEditor(const ImVec2& Size);
 
 private:
 	FEditorViewState ViewState;
+	FCurveEditorSelection CurveSelection;
+	FCurveEditorState CurveEditorState;
 	FEditorPropertyRenderer PropertyRenderer;
 	FParticleSystemEditorViewportClient ViewportClient;
 	AActor* PreviewActor = nullptr;

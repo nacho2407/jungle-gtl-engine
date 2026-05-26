@@ -30,20 +30,28 @@ namespace
 		SpawnModule->SpawnRate = SpawnRate;
 
 		UParticleModuleLifetime* LifetimeModule = UObjectManager::Get().CreateObject<UParticleModuleLifetime>();
-		LifetimeModule->Lifetime = Lifetime;
+		LifetimeModule->Lifetime.Constant = Lifetime;
+		LifetimeModule->Lifetime.MinValue = Lifetime;
+		LifetimeModule->Lifetime.MaxValue = Lifetime;
 
 		UParticleModuleLocation* LocationModule = UObjectManager::Get().CreateObject<UParticleModuleLocation>();
-		LocationModule->StartLocation = StartLocation;
+		LocationModule->StartLocation.Constant = StartLocation;
+		LocationModule->StartLocation.MinValue = StartLocation;
+		LocationModule->StartLocation.MaxValue = StartLocation;
 
 		UParticleModuleVelocity* VelocityModule = UObjectManager::Get().CreateObject<UParticleModuleVelocity>();
-		VelocityModule->StartVelocity = StartVelocity;
+		VelocityModule->StartVelocity.Constant = StartVelocity;
+		VelocityModule->StartVelocity.MinValue = StartVelocity;
+		VelocityModule->StartVelocity.MaxValue = StartVelocity;
 
 		UParticleModuleColor* ColorModule = UObjectManager::Get().CreateObject<UParticleModuleColor>();
 		ColorModule->StartColor = StartColor;
 		ColorModule->EndColor = EndColor;
 
 		UParticleModuleSize* SizeModule = UObjectManager::Get().CreateObject<UParticleModuleSize>();
-		SizeModule->StartSize = StartSize;
+		SizeModule->StartSize.Constant = StartSize;
+		SizeModule->StartSize.MinValue = StartSize;
+		SizeModule->StartSize.MaxValue = StartSize;
 
 		LODLevel->GetMutableModules().push_back(CreateDefaultRequiredModule(EmitterDuration, bLooping));
 		LODLevel->GetMutableModules().push_back(SpawnModule);

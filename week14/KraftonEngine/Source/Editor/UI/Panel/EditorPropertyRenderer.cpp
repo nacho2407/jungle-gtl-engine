@@ -1221,6 +1221,16 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 	{
 		float* Val = static_cast<float*>(Prop.GetValuePtr());
 		bChanged = ImGui::DragFloat3("##Value", Val, Prop.GetSpeed());
+		if (ImGui::TreeNodeEx("Components", ImGuiTreeNodeFlags_SpanAvailWidth))
+		{
+			ImGui::SetNextItemWidth(-1.0f);
+			bChanged |= ImGui::DragFloat("X", &Val[0], Prop.GetSpeed());
+			ImGui::SetNextItemWidth(-1.0f);
+			bChanged |= ImGui::DragFloat("Y", &Val[1], Prop.GetSpeed());
+			ImGui::SetNextItemWidth(-1.0f);
+			bChanged |= ImGui::DragFloat("Z", &Val[2], Prop.GetSpeed());
+			ImGui::TreePop();
+		}
 		break;
 	}
 	case EPropertyType::Rotator:
