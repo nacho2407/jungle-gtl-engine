@@ -1,5 +1,6 @@
 #include "DynamicEmitterData.h"
 #include "Particles/ParticleHelper.h"
+#include "Render/Types/FrameContext.h"
 #include <algorithm>
 #include <cmath>
 #include <unordered_map>
@@ -103,15 +104,6 @@ namespace
 		return Vector * C + N.Cross(Vector) * S + N * (N.Dot(Vector) * (1.0f - C));
 	}
 
-	FVector MakeSheetUp(const FVector& Direction, int32 SheetIndex, int32 SheetCount)
-	{
-		const FVector Dir = Direction.GetSafeNormal(1.0e-6f, FVector::XAxisVector);
-		FVector Up = std::fabs(Dir.Dot(FVector::ZAxisVector)) > 0.95f ? FVector::YAxisVector : FVector::ZAxisVector;
-		Up = (Up - Dir * Up.Dot(Dir)).GetSafeNormal(1.0e-6f, FVector::YAxisVector);
-		const float Angle = SheetCount > 1 ? (PI * static_cast<float>(SheetIndex) / static_cast<float>(SheetCount)) : 0.0f;
-		return RotateAroundAxis(Up, Dir, Angle).GetSafeNormal(1.0e-6f, Up);
-	}
-
 	FVector CubicInterp(const FVector& P0, const FVector& T0, const FVector& P1, const FVector& T1, float Alpha)
 	{
 		const float A2 = Alpha * Alpha;
@@ -120,6 +112,108 @@ namespace
 			+ T0 * (A3 - 2.0f * A2 + Alpha)
 			+ P1 * (-2.0f * A3 + 3.0f * A2)
 			+ T1 * (A3 - A2);
+	}
+
+	FVector CalcBeamUp(const FVector& Location, const FVector& EndPoint, const FVector& ViewOrigin, const FVector& FallbackUp)
+	{
+		const FVector Right = (Location - EndPoint).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+		FVector Up = Right.Cross(Location - ViewOrigin).GetSafeNormal(1.0e-6f, FallbackUp);
+		return Up.GetSafeNormal(1.0e-6f, FVector::ZAxisVector);
+	}
+
+	float CalcBeamTiles(const FDynamicBeam2EmitterReplayData& Source, const FBeam2TypeDataPayload& BeamData)
+	{
+		float Tiles = 1.0f;
+		if (Source.TextureTileDistance > 1.0e-6f)
+		{
+			Tiles = FVector::Distance(BeamData.TargetPoint, BeamData.SourcePoint) / Source.TextureTileDistance;
+		}
+		else
+		{
+			Tiles = static_cast<float>(std::max(1, Source.TextureTile));
+		}
+
+		if (BeamData.TravelRatio > 1.0e-6f)
+		{
+			Tiles *= BeamData.TravelRatio;
+		}
+		return Tiles;
+	}
+
+	void AppendBeamEdge(
+		const FDynamicBeam2EmitterReplayData& Source,
+		const FBaseParticle& Particle,
+		const FVector& Center,
+		const FVector& OldCenter,
+		const FVector& Up,
+		float Taper,
+		float TexU,
+		float TexU2,
+		TArray<FParticleBeamTrailVertex>& Vertices,
+		TArray<uint32>& Strip)
+	{
+		const FVector2 Size(Particle.Size.X * Source.Scale.X, Particle.Size.X * Source.Scale.X);
+		const FVector Offset = Up * (Size.X * Taper);
+		const uint32 BaseIndex = static_cast<uint32>(Vertices.size());
+
+		FParticleBeamTrailVertex Top;
+		Top.Position = Center + Offset;
+		Top.OldPosition = OldCenter;
+		Top.RelativeTime = Particle.RelativeTime;
+		Top.ParticleId = 0.0f;
+		Top.Size = Size;
+		Top.Rotation = Particle.Rotation;
+		Top.SubImageIndex = 0.0f;
+		Top.Color = Particle.Color;
+		Top.Tex_U = TexU;
+		Top.Tex_V = 0.0f;
+		Top.Tex_U2 = TexU2;
+		Top.Tex_V2 = 0.0f;
+
+		FParticleBeamTrailVertex Bottom = Top;
+		Bottom.Position = Center - Offset;
+		Bottom.Tex_V = 1.0f;
+		Bottom.Tex_V2 = 1.0f;
+
+		Vertices.push_back(Top);
+		Vertices.push_back(Bottom);
+		Strip.push_back(BaseIndex);
+		Strip.push_back(BaseIndex + 1);
+	}
+
+	void ConvertBeamStripToTriangles(const TArray<uint32>& Strip, TArray<uint32>& Indices)
+	{
+		if (Strip.size() < 3)
+		{
+			return;
+		}
+
+		for (int32 Index = 0; Index + 2 < static_cast<int32>(Strip.size()); ++Index)
+		{
+			const uint32 A = Strip[Index];
+			const uint32 B = Strip[Index + 1];
+			const uint32 C = Strip[Index + 2];
+			if (A == B || B == C || A == C)
+			{
+				continue;
+			}
+
+			// D3D triangle-strip winding flips every primitive. UE submits this as a
+			// strip; Krafton uploads a triangle list, so preserve the strip's logical
+			// winding at this final adapter boundary.
+			if ((Index & 1) == 0)
+			{
+				Indices.push_back(A);
+				Indices.push_back(B);
+				Indices.push_back(C);
+			}
+			else
+			{
+				Indices.push_back(B);
+				Indices.push_back(A);
+				Indices.push_back(C);
+			}
+		}
 	}
 
 	void BuildRibbonPointSequence(
@@ -233,10 +327,22 @@ namespace
 		return NoisePoint;
 	}
 
-	FVector SampleBeamNoiseOffset(
+	float ReadBeamNoiseDistanceScale(const FDynamicBeam2EmitterReplayData& Source, const FBaseParticle& Particle)
+	{
+		if (Source.NoiseDistanceScaleOffset < 0)
+		{
+			return 1.0f;
+		}
+
+		const float* NoiseDistanceScalePayload =
+			reinterpret_cast<const float*>(reinterpret_cast<const uint8*>(&Particle) + Source.NoiseDistanceScaleOffset);
+		return NoiseDistanceScalePayload ? *NoiseDistanceScalePayload : 1.0f;
+	}
+
+	FVector SampleBeamNoiseOffsetAtIndex(
 		const FDynamicBeam2EmitterReplayData& Source,
 		const FBaseParticle& Particle,
-		float Alpha,
+		int32 NoiseIndex,
 		const FVector* NoisePoints,
 		const FVector* NextNoisePoints)
 	{
@@ -245,159 +351,135 @@ namespace
 			return FVector::ZeroVector;
 		}
 
-		float NoiseDistanceScale = 1.0f;
-		if (Source.NoiseDistanceScaleOffset >= 0)
-		{
-			const float* NoiseDistanceScalePayload =
-				reinterpret_cast<const float*>(reinterpret_cast<const uint8*>(&Particle) + Source.NoiseDistanceScaleOffset);
-			if (NoiseDistanceScalePayload)
-			{
-				NoiseDistanceScale = *NoiseDistanceScalePayload;
-			}
-		}
-
-		const float NoisePosition = Clamp01(Alpha) * static_cast<float>(Source.Frequency);
-		const int32 NoiseIndex = std::max(0, std::min(Source.Frequency, static_cast<int32>(std::floor(NoisePosition))));
-		const int32 NextIndex = std::max(0, std::min(Source.Frequency, NoiseIndex + 1));
-		const float NoiseAlpha = NoisePosition - static_cast<float>(NoiseIndex);
-
-		const FVector NoiseA = ReadBeamNoisePoint(Source, Particle, NoisePoints, NextNoisePoints, NoiseIndex);
-		const FVector NoiseB = ReadBeamNoisePoint(Source, Particle, NoisePoints, NextNoisePoints, NextIndex);
-		return FVector::Lerp(NoiseA, NoiseB, NoiseAlpha) * Source.NoiseRangeScale * NoiseDistanceScale;
+		return ReadBeamNoisePoint(Source, Particle, NoisePoints, NextNoisePoints, NoiseIndex)
+			* Source.NoiseRangeScale
+			* ReadBeamNoiseDistanceScale(Source, Particle);
 	}
 
-	void AppendBeamSheet(
+	FVector SafeBeamInterpPoint(const FVector* InterpPoints, int32 InterpPointCount, int32 Index, const FVector& Fallback)
+	{
+		if (!InterpPoints || InterpPointCount <= 0)
+		{
+			return Fallback;
+		}
+		return InterpPoints[std::max(0, std::min(InterpPointCount - 1, Index))];
+	}
+
+	FVector GetBeamInterpolatedNoiseCurrentPosition(
+		const FVector* InterpPoints,
+		int32 InterpPointCount,
+		const FVector& TargetPoint,
+		int32 StepIndex,
+		int32 StepCount,
+		int32 InterpIndex,
+		float InterpFraction,
+		bool bInterpFractionIsZero)
+	{
+		if (bInterpFractionIsZero)
+		{
+			return SafeBeamInterpPoint(InterpPoints, InterpPointCount, StepIndex * InterpIndex, TargetPoint);
+		}
+
+		const int32 BaseIndex = StepIndex * InterpIndex;
+		if (StepIndex == StepCount - 1)
+		{
+			return SafeBeamInterpPoint(InterpPoints, InterpPointCount, BaseIndex, TargetPoint) * (1.0f - InterpFraction)
+				+ TargetPoint * InterpFraction;
+		}
+
+		return SafeBeamInterpPoint(InterpPoints, InterpPointCount, BaseIndex, TargetPoint) * (1.0f - InterpFraction)
+			+ SafeBeamInterpPoint(InterpPoints, InterpPointCount, BaseIndex + 1, TargetPoint) * InterpFraction;
+	}
+
+	FVector GetBeamInterpolatedNoiseNextPosition(
+		const FVector* InterpPoints,
+		int32 InterpPointCount,
+		const FVector& TargetPoint,
+		int32 StepIndex,
+		int32 StepCount,
+		int32 InterpIndex,
+		float InterpFraction,
+		bool bInterpFractionIsZero)
+	{
+		if (bInterpFractionIsZero)
+		{
+			if (StepIndex == StepCount - 2)
+			{
+				return TargetPoint;
+			}
+			return SafeBeamInterpPoint(InterpPoints, InterpPointCount, (StepIndex + 2) * InterpIndex, TargetPoint);
+		}
+
+		const int32 BaseIndex = (StepIndex + 1) * InterpIndex;
+		if (StepIndex == StepCount - 1)
+		{
+			return SafeBeamInterpPoint(InterpPoints, InterpPointCount, BaseIndex, TargetPoint) * InterpFraction
+				+ TargetPoint * (1.0f - InterpFraction);
+		}
+
+		return SafeBeamInterpPoint(InterpPoints, InterpPointCount, BaseIndex, TargetPoint) * InterpFraction
+			+ SafeBeamInterpPoint(InterpPoints, InterpPointCount, BaseIndex + 1, TargetPoint) * (1.0f - InterpFraction);
+	}
+
+	void AppendBeamPathSheet(
 		const FDynamicBeam2EmitterReplayData& Source,
 		const FBaseParticle& Particle,
-		const TArray<FVector>& Centers,
+		const TArray<FVector>& Points,
 		const TArray<float>& Tapers,
+		const FFrameContext& Frame,
 		int32 SheetIndex,
+		float Tiles,
 		TArray<FParticleBeamTrailVertex>& Vertices,
 		TArray<uint32>& Indices)
 	{
-		if (Centers.size() < 2)
+		if (Points.size() < 2)
 		{
 			return;
 		}
 
-		const FVector Direction = (Centers.back() - Centers.front()).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
-		const FVector SheetUp = MakeSheetUp(Direction, SheetIndex, std::max(1, Source.Sheets));
-		const uint32 BaseIndex = static_cast<uint32>(Vertices.size());
+		TArray<uint32> Strip;
+		Strip.reserve(Points.size() * 2);
+		FVector CachedUp = FVector::ZeroVector;
 
-		for (int32 PointIndex = 0; PointIndex < static_cast<int32>(Centers.size()); ++PointIndex)
+		for (int32 PointIndex = 0; PointIndex < static_cast<int32>(Points.size()); ++PointIndex)
 		{
-			const float Alpha = Centers.size() > 1 ? static_cast<float>(PointIndex) / static_cast<float>(Centers.size() - 1) : 0.0f;
-			const float Width = std::max(0.0f, Particle.Size.X) * (PointIndex < static_cast<int32>(Tapers.size()) ? Tapers[PointIndex] : 1.0f);
-			const FVector Offset = SheetUp * (Width * 0.5f);
+			const int32 EdgePointIndex = PointIndex == 0
+				? ((PointIndex + 1 < static_cast<int32>(Points.size())) ? PointIndex + 1 : PointIndex)
+				: PointIndex - 1;
+			const FVector& Center = Points[PointIndex];
+			const FVector& EdgePoint = Points[std::max(0, EdgePointIndex)];
+			const FVector LocationForUp = PointIndex == 0 ? Center : EdgePoint;
+			const FVector EndPointForUp = PointIndex == 0 ? EdgePoint : Center;
+			const FVector Right = (LocationForUp - EndPointForUp).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
 
-			FParticleBeamTrailVertex Left;
-			Left.Position = Centers[PointIndex] - Offset;
-			Left.OldPosition = Particle.OldLocation;
-			Left.RelativeTime = Particle.RelativeTime;
-			Left.ParticleId = static_cast<float>(PointIndex);
-			Left.Size = FVector2(Particle.Size.X, Particle.Size.Y);
-			Left.Rotation = Particle.Rotation;
-			Left.SubImageIndex = 0.0f;
-			Left.Color = Particle.Color;
-			Left.Tex_U = Alpha * static_cast<float>(std::max(1, Source.TextureTile));
-			Left.Tex_V = 0.0f;
-			Left.Tex_U2 = Left.Tex_U;
-			Left.Tex_V2 = 0.0f;
-
-			FParticleBeamTrailVertex Right = Left;
-			Right.Position = Centers[PointIndex] + Offset;
-			Right.Tex_V = 1.0f;
-			Right.Tex_V2 = 1.0f;
-
-			Vertices.push_back(Left);
-			Vertices.push_back(Right);
-		}
-
-		for (uint32 Segment = 0; Segment + 1 < static_cast<uint32>(Centers.size()); ++Segment)
-		{
-			const uint32 I0 = BaseIndex + Segment * 2;
-			const uint32 I1 = I0 + 1;
-			const uint32 I2 = I0 + 2;
-			const uint32 I3 = I0 + 3;
-			Indices.push_back(I0);
-			Indices.push_back(I2);
-			Indices.push_back(I1);
-			Indices.push_back(I1);
-			Indices.push_back(I2);
-			Indices.push_back(I3);
-		}
-	}
-
-	void BuildBeamCenters(
-		const FDynamicBeam2EmitterReplayData& Source,
-		const FBaseParticle& Particle,
-		const FBeam2TypeDataPayload& BeamData,
-		bool bUseNoise,
-		bool bUseInterpolatedPath,
-		TArray<FVector>& OutCenters,
-		TArray<float>& OutTapers)
-	{
-		OutCenters.clear();
-		OutTapers.clear();
-
-		const bool bLocked = BEAM2_TYPEDATA_LOCKED(BeamData.Lock_Max_NumNoisePoints);
-		const FVector EndPoint = bLocked ? BeamData.TargetPoint : Particle.Location;
-		const int32 Steps = std::max(1, BeamData.Steps);
-		const int32 PointCount = std::max(Steps + 1, BeamData.TriangleCount > 0 ? (BeamData.TriangleCount / 2) + 1 : 2);
-
-		const FVector* InterpPoints = Source.InterpolatedPointsOffset >= 0
-			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(&Particle) + Source.InterpolatedPointsOffset)
-			: nullptr;
-		const FVector* NoisePoints = Source.TargetNoisePointsOffset >= 0
-			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(&Particle) + Source.TargetNoisePointsOffset)
-			: nullptr;
-		const FVector* NextNoisePoints = Source.NextNoisePointsOffset >= 0
-			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(&Particle) + Source.NextNoisePointsOffset)
-			: nullptr;
-
-		TArray<FVector> InterpPath;
-		if (bUseInterpolatedPath && InterpPoints && Source.InterpolationPoints > 0)
-		{
-			InterpPath.reserve(Source.InterpolationPoints + 2);
-			InterpPath.push_back(BeamData.SourcePoint);
-			const int32 InterpCount = std::min(Source.InterpolationPoints, std::max(0, BeamData.InterpolationSteps));
-			for (int32 InterpIndex = 0; InterpIndex < InterpCount; ++InterpIndex)
+			FVector Up;
+			if (Source.UpVectorStepSize == 0 || PointIndex == 0 || CachedUp.IsNearlyZero())
 			{
-				InterpPath.push_back(InterpPoints[InterpIndex]);
-			}
-			InterpPath.push_back(EndPoint);
-		}
-
-		for (int32 PointIndex = 0; PointIndex < PointCount; ++PointIndex)
-		{
-			const float Alpha = PointCount > 1 ? static_cast<float>(PointIndex) / static_cast<float>(PointCount - 1) : 0.0f;
-			FVector Center = FVector::Lerp(BeamData.SourcePoint, EndPoint, Alpha);
-
-			if (!InterpPath.empty())
-			{
-				const float PathPosition = Alpha * static_cast<float>(InterpPath.size() - 1);
-				const int32 SegmentIndex = std::min(static_cast<int32>(InterpPath.size()) - 2, std::max(0, static_cast<int32>(std::floor(PathPosition))));
-				const float SegmentAlpha = PathPosition - static_cast<float>(SegmentIndex);
-				Center = FVector::Lerp(InterpPath[SegmentIndex], InterpPath[SegmentIndex + 1], SegmentAlpha);
-			}
-			else if (InterpPoints && PointIndex > 0 && PointIndex <= Source.InterpolationPoints)
-			{
-				Center = InterpPoints[PointIndex - 1];
-				if (!bLocked)
+				Up = CalcBeamUp(LocationForUp, EndPointForUp, Frame.CameraPosition, Frame.CameraUp);
+				if (Source.UpVectorStepSize != 0)
 				{
-					Center = FVector::Lerp(BeamData.SourcePoint, Center, Clamp01(BeamData.TravelRatio));
+					CachedUp = Up;
 				}
 			}
-
-			if (bUseNoise && NoisePoints && Source.Frequency > 0)
+			else
 			{
-				Center += SampleBeamNoiseOffset(Source, Particle, Alpha, NoisePoints, NextNoisePoints);
+				Up = CachedUp;
 			}
 
-			OutCenters.push_back(Center);
-			OutTapers.push_back(ReadTaper(Source, &Particle, BeamData, PointIndex, PointCount));
+			if (SheetIndex > 0)
+			{
+				const float Angle = (PI / static_cast<float>(std::max(1, Source.Sheets))) * static_cast<float>(SheetIndex);
+				Up = RotateAroundAxis(Up, Right, Angle).GetSafeNormal(1.0e-6f, Up);
+			}
+
+			const float Alpha = static_cast<float>(PointIndex) / static_cast<float>(Points.size() - 1);
+			const float Taper = PointIndex < static_cast<int32>(Tapers.size()) ? Tapers[PointIndex] : 1.0f;
+			const FVector OldCenter = (PointIndex + 1 == static_cast<int32>(Points.size())) ? Particle.OldLocation : Center;
+			AppendBeamEdge(Source, Particle, Center, OldCenter, Up, Taper, Tiles * Alpha, Alpha, Vertices, Strip);
+		}
+
+		ConvertBeamStripToTriangles(Strip, Indices);
 	}
-}
 }
 
 void FDynamicSpriteEmitterDataBase::SortSpriteParticles(const FParticleSortContext& SortCtx)
@@ -471,7 +553,7 @@ const TArray<uint32>& FDynamicBeam2EmitterData::GetBuiltIndices() const
 	return GetCPUStagingConst(this).Indices;
 }
 
-void FDynamicBeam2EmitterData::BuildMeshData()
+void FDynamicBeam2EmitterData::BuildMeshData(const FFrameContext& Frame)
 {
     FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
     Staging.Vertices.clear();
@@ -480,10 +562,10 @@ void FDynamicBeam2EmitterData::BuildMeshData()
     {
         return;
     }
-    DoBufferFill();
+    DoBufferFill(Frame);
 }
 
-void FDynamicBeam2EmitterData::DoBufferFill()
+void FDynamicBeam2EmitterData::DoBufferFill(const FFrameContext& Frame)
 {
     // UE original responsibility:
     // FDynamicBeam2EmitterData::DoBufferFill chooses the correct Beam path and
@@ -502,16 +584,16 @@ void FDynamicBeam2EmitterData::DoBufferFill()
     {
         if (Source.InterpolationPoints > 0)
         {
-            FillData_InterpolatedNoise();
+            FillData_InterpolatedNoise(Frame);
         }
         else
         {
-            FillData_Noise();
+            FillData_Noise(Frame);
         }
     }
     else
     {
-        FillVertexData_NoNoise();
+        FillVertexData_NoNoise(Frame);
     }
 }
 
@@ -523,9 +605,9 @@ int32 FDynamicBeam2EmitterData::FillIndexData()
 	return static_cast<int32>(GetCPUStaging(this).Indices.size());
 }
 
-int32 FDynamicBeam2EmitterData::FillVertexData_NoNoise()
+int32 FDynamicBeam2EmitterData::FillVertexData_NoNoise(const FFrameContext& Frame)
 {
-	TArray<FVector> Centers;
+	TArray<FVector> Points;
 	TArray<float> Tapers;
 	FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
 	const int32 InitialVertexCount = static_cast<int32>(Staging.Vertices.size());
@@ -539,19 +621,51 @@ int32 FDynamicBeam2EmitterData::FillVertexData_NoNoise()
 			continue;
 		}
 
-		BuildBeamCenters(Source, *Particle, *BeamData, false, true, Centers, Tapers);
+		Points.clear();
+		Tapers.clear();
+		const bool bLocked = BEAM2_TYPEDATA_LOCKED(BeamData->Lock_Max_NumNoisePoints);
+		const FVector EndPoint = bLocked ? BeamData->TargetPoint : Particle->Location;
+		const FVector* InterpPoints = Source.InterpolatedPointsOffset >= 0
+			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(Particle) + Source.InterpolatedPointsOffset)
+			: nullptr;
+
+		Points.push_back(BeamData->SourcePoint);
+		if (InterpPoints && Source.InterpolationPoints > 0 && BeamData->Steps > 0)
+		{
+			const int32 StepCount = std::min(BeamData->Steps, Source.InterpolationPoints);
+			for (int32 StepIndex = 0; StepIndex < StepCount; ++StepIndex)
+			{
+				Points.push_back(InterpPoints[StepIndex]);
+			}
+		}
+		else
+		{
+			Points.push_back(EndPoint);
+		}
+
+		if (Points.size() == 1 || FVector::Distance(Points.back(), EndPoint) > 1.0e-4f)
+		{
+			Points.push_back(EndPoint);
+		}
+
+		for (int32 PointIndex = 0; PointIndex < static_cast<int32>(Points.size()); ++PointIndex)
+		{
+			Tapers.push_back(ReadTaper(Source, Particle, *BeamData, PointIndex, static_cast<int32>(Points.size())));
+		}
+
+		const float Tiles = CalcBeamTiles(Source, *BeamData);
 		for (int32 SheetIndex = 0; SheetIndex < std::max(1, Source.Sheets); ++SheetIndex)
 		{
-			AppendBeamSheet(Source, *Particle, Centers, Tapers, SheetIndex, Staging.Vertices, Staging.Indices);
+			AppendBeamPathSheet(Source, *Particle, Points, Tapers, Frame, SheetIndex, Tiles, Staging.Vertices, Staging.Indices);
 		}
 	}
 
 	return static_cast<int32>(Staging.Vertices.size()) - InitialVertexCount;
 }
 
-int32 FDynamicBeam2EmitterData::FillData_Noise()
+int32 FDynamicBeam2EmitterData::FillData_Noise(const FFrameContext& Frame)
 {
-	TArray<FVector> Centers;
+	TArray<FVector> Points;
 	TArray<float> Tapers;
 	FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
 	const int32 InitialVertexCount = static_cast<int32>(Staging.Vertices.size());
@@ -565,19 +679,120 @@ int32 FDynamicBeam2EmitterData::FillData_Noise()
 			continue;
 		}
 
-		BuildBeamCenters(Source, *Particle, *BeamData, true, false, Centers, Tapers);
+		const FVector* NoisePoints = Source.TargetNoisePointsOffset >= 0
+			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(Particle) + Source.TargetNoisePointsOffset)
+			: nullptr;
+		const FVector* NextNoisePoints = Source.NextNoisePointsOffset >= 0
+			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(Particle) + Source.NextNoisePointsOffset)
+			: nullptr;
+		if (!NoisePoints)
+		{
+			continue;
+		}
+
+		Points.clear();
+		Tapers.clear();
+		const bool bLocked = BEAM2_TYPEDATA_LOCKED(BeamData->Lock_Max_NumNoisePoints);
+		const int32 Steps = BeamData->Steps;
+		if (Steps <= 0)
+		{
+			continue;
+		}
+		const int32 TessFactor = std::max(1, Source.NoiseTessellation);
+		const FVector Start = BeamData->SourcePoint;
+		const FVector End = bLocked ? BeamData->TargetPoint : Particle->Location;
+		const FVector Direction = (End - Start).GetSafeNormal(1.0e-6f, BeamData->Direction);
+		float StepSize = static_cast<float>(BeamData->StepSize);
+
+		FVector LastPosition = Start;
+		FVector LastDraw = Start;
+		const float SourceStrength = Source.bUseSource ? static_cast<float>(BeamData->SourceStrength) : Source.NoiseTangentStrength;
+		FVector LastTangent = (Source.bUseSource ? BeamData->SourceTangent : Direction).GetSafeNormal(1.0e-6f, Direction) * SourceStrength;
+		Points.push_back(LastDraw);
+
+		for (int32 StepIndex = 0; StepIndex < Steps; ++StepIndex)
+		{
+			const FVector CurrentPosition = LastPosition + Direction * StepSize;
+			FVector CurrentDraw = CurrentPosition + SampleBeamNoiseOffsetAtIndex(Source, *Particle, StepIndex, NoisePoints, NextNoisePoints);
+
+			const bool bFinalStep = bLocked && (StepIndex + 1 == Steps);
+			FVector NextTargetPosition = CurrentPosition + Direction * StepSize;
+			FVector NextTargetDraw = NextTargetPosition + SampleBeamNoiseOffsetAtIndex(Source, *Particle, StepIndex + 1, NoisePoints, NextNoisePoints);
+			FVector TargetTangent = FVector::ZeroVector;
+			float TargetStrength = Source.NoiseTangentStrength;
+			if (bFinalStep)
+			{
+				NextTargetDraw = BeamData->TargetPoint;
+				if (Source.bTargetNoise)
+				{
+					NextTargetDraw += SampleBeamNoiseOffsetAtIndex(Source, *Particle, Source.Frequency, NoisePoints, NextNoisePoints);
+				}
+				if (Source.bUseTarget)
+				{
+					TargetTangent = BeamData->TargetTangent;
+					TargetStrength = static_cast<float>(BeamData->TargetStrength);
+				}
+				else
+				{
+					TargetTangent = (NextTargetDraw - LastDraw) * ((1.0f - Source.NoiseTension) * 0.5f);
+				}
+			}
+			else
+			{
+				TargetTangent = (NextTargetDraw - LastDraw) * ((1.0f - Source.NoiseTension) * 0.5f);
+			}
+			TargetTangent = TargetTangent.GetSafeNormal(1.0e-6f, Direction) * TargetStrength;
+
+			for (int32 TessIndex = 0; TessIndex < TessFactor; ++TessIndex)
+			{
+				const float TessAlpha = static_cast<float>(TessIndex + 1) / static_cast<float>(TessFactor);
+				Points.push_back(CubicInterp(LastDraw, LastTangent, CurrentDraw, TargetTangent, TessAlpha));
+			}
+
+			LastPosition = CurrentPosition;
+			LastDraw = CurrentDraw;
+			LastTangent = TargetTangent;
+		}
+
+		if (bLocked)
+		{
+			FVector CurrentDraw = BeamData->TargetPoint;
+			if (Source.bTargetNoise)
+			{
+				CurrentDraw += SampleBeamNoiseOffsetAtIndex(Source, *Particle, Source.Frequency, NoisePoints, NextNoisePoints);
+			}
+
+			FVector TargetTangent = Source.bUseTarget
+				? BeamData->TargetTangent
+				: (CurrentDraw - LastDraw) * ((1.0f - Source.NoiseTension) * 0.5f);
+			const float TargetStrength = Source.bUseTarget ? static_cast<float>(BeamData->TargetStrength) : Source.NoiseTangentStrength;
+			TargetTangent = TargetTangent.GetSafeNormal(1.0e-6f, Direction) * TargetStrength;
+
+			for (int32 TessIndex = 0; TessIndex < TessFactor; ++TessIndex)
+			{
+				const float TessAlpha = static_cast<float>(TessIndex + 1) / static_cast<float>(TessFactor);
+				Points.push_back(CubicInterp(LastDraw, LastTangent, CurrentDraw, TargetTangent, TessAlpha));
+			}
+		}
+
+		for (int32 PointIndex = 0; PointIndex < static_cast<int32>(Points.size()); ++PointIndex)
+		{
+			Tapers.push_back(ReadTaper(Source, Particle, *BeamData, PointIndex, static_cast<int32>(Points.size())));
+		}
+
+		const float Tiles = CalcBeamTiles(Source, *BeamData);
 		for (int32 SheetIndex = 0; SheetIndex < std::max(1, Source.Sheets); ++SheetIndex)
 		{
-			AppendBeamSheet(Source, *Particle, Centers, Tapers, SheetIndex, Staging.Vertices, Staging.Indices);
+			AppendBeamPathSheet(Source, *Particle, Points, Tapers, Frame, SheetIndex, Tiles, Staging.Vertices, Staging.Indices);
 		}
 	}
 
 	return static_cast<int32>(Staging.Vertices.size()) - InitialVertexCount;
 }
 
-int32 FDynamicBeam2EmitterData::FillData_InterpolatedNoise()
+int32 FDynamicBeam2EmitterData::FillData_InterpolatedNoise(const FFrameContext& Frame)
 {
-	TArray<FVector> Centers;
+	TArray<FVector> Points;
 	TArray<float> Tapers;
 	FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
 	const int32 InitialVertexCount = static_cast<int32>(Staging.Vertices.size());
@@ -591,10 +806,129 @@ int32 FDynamicBeam2EmitterData::FillData_InterpolatedNoise()
 			continue;
 		}
 
-		BuildBeamCenters(Source, *Particle, *BeamData, true, true, Centers, Tapers);
+		const FVector* InterpPoints = Source.InterpolatedPointsOffset >= 0
+			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(Particle) + Source.InterpolatedPointsOffset)
+			: nullptr;
+		const FVector* NoisePoints = Source.TargetNoisePointsOffset >= 0
+			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(Particle) + Source.TargetNoisePointsOffset)
+			: nullptr;
+		const FVector* NextNoisePoints = Source.NextNoisePointsOffset >= 0
+			? reinterpret_cast<const FVector*>(reinterpret_cast<const uint8*>(Particle) + Source.NextNoisePointsOffset)
+			: nullptr;
+		if (!InterpPoints || !NoisePoints || BeamData->Steps <= 0)
+		{
+			continue;
+		}
+
+		Points.clear();
+		Tapers.clear();
+		const bool bLocked = BEAM2_TYPEDATA_LOCKED(BeamData->Lock_Max_NumNoisePoints);
+		const int32 Steps = BeamData->Steps;
+		if (Steps <= 0)
+		{
+			continue;
+		}
+		const int32 TessFactor = std::max(1, Source.NoiseTessellation);
+		const FVector End = bLocked ? BeamData->TargetPoint : Particle->Location;
+		const FVector Direction = (End - BeamData->SourcePoint).GetSafeNormal(1.0e-6f, BeamData->Direction);
+		const float InterpStepSize = static_cast<float>(BeamData->InterpolationSteps) / static_cast<float>(Steps);
+		const float InterpFraction = InterpStepSize - std::floor(InterpStepSize);
+		const bool bInterpFractionIsZero = false;
+		const int32 InterpIndex = static_cast<int32>(std::floor(InterpStepSize));
+
+		FVector LastDraw = BeamData->SourcePoint;
+		const float SourceStrength = Source.bUseSource ? Source.NoiseTangentStrength : Source.NoiseTangentStrength;
+		FVector LastTangent = (Source.bUseSource ? BeamData->SourceTangent : Direction).GetSafeNormal(1.0e-6f, Direction) * SourceStrength;
+		Points.push_back(LastDraw);
+
+		for (int32 StepIndex = 0; StepIndex < Steps; ++StepIndex)
+		{
+			const FVector CurrentPosition = GetBeamInterpolatedNoiseCurrentPosition(
+				InterpPoints,
+				Source.InterpolationPoints,
+				BeamData->TargetPoint,
+				StepIndex,
+				Steps,
+				InterpIndex,
+				InterpFraction,
+				bInterpFractionIsZero);
+			FVector CurrentDraw = CurrentPosition + SampleBeamNoiseOffsetAtIndex(Source, *Particle, StepIndex, NoisePoints, NextNoisePoints);
+
+			const bool bFinalStep = bLocked && (StepIndex + 1 == Steps);
+			FVector NextTargetPosition = GetBeamInterpolatedNoiseNextPosition(
+				InterpPoints,
+				Source.InterpolationPoints,
+				BeamData->TargetPoint,
+				StepIndex,
+				Steps,
+				InterpIndex,
+				InterpFraction,
+				bInterpFractionIsZero);
+			FVector NextTargetDraw = NextTargetPosition + SampleBeamNoiseOffsetAtIndex(Source, *Particle, StepIndex + 1, NoisePoints, NextNoisePoints);
+			FVector TargetTangent = FVector::ZeroVector;
+			float TargetStrength = Source.NoiseTangentStrength;
+			if (bFinalStep)
+			{
+				NextTargetDraw = BeamData->TargetPoint;
+				if (Source.bTargetNoise)
+				{
+					NextTargetDraw += SampleBeamNoiseOffsetAtIndex(Source, *Particle, Source.Frequency, NoisePoints, NextNoisePoints);
+				}
+				if (Source.bUseTarget)
+				{
+					TargetTangent = BeamData->TargetTangent;
+					TargetStrength = Source.NoiseTangentStrength;
+				}
+				else
+				{
+					TargetTangent = (NextTargetDraw - LastDraw) * ((1.0f - Source.NoiseTension) * 0.5f);
+				}
+			}
+			else
+			{
+				TargetTangent = (NextTargetDraw - LastDraw) * ((1.0f - Source.NoiseTension) * 0.5f);
+			}
+			TargetTangent = TargetTangent.GetSafeNormal(1.0e-6f, Direction) * TargetStrength;
+
+			for (int32 TessIndex = 0; TessIndex < TessFactor; ++TessIndex)
+			{
+				const float TessAlpha = static_cast<float>(TessIndex + 1) / static_cast<float>(TessFactor);
+				Points.push_back(CubicInterp(LastDraw, LastTangent, CurrentDraw, TargetTangent, TessAlpha));
+			}
+
+			LastDraw = CurrentDraw;
+			LastTangent = TargetTangent;
+		}
+
+		if (bLocked)
+		{
+			FVector CurrentDraw = BeamData->TargetPoint;
+			if (Source.bTargetNoise)
+			{
+				CurrentDraw += SampleBeamNoiseOffsetAtIndex(Source, *Particle, Source.Frequency, NoisePoints, NextNoisePoints);
+			}
+
+			FVector TargetTangent = Source.bUseTarget
+				? BeamData->TargetTangent
+				: (CurrentDraw - LastDraw) * ((1.0f - Source.NoiseTension) * 0.5f);
+			TargetTangent = TargetTangent.GetSafeNormal(1.0e-6f, Direction) * Source.NoiseTangentStrength;
+
+			for (int32 TessIndex = 0; TessIndex < TessFactor; ++TessIndex)
+			{
+				const float TessAlpha = static_cast<float>(TessIndex + 1) / static_cast<float>(TessFactor);
+				Points.push_back(CubicInterp(LastDraw, LastTangent, CurrentDraw, TargetTangent, TessAlpha));
+			}
+		}
+
+		for (int32 PointIndex = 0; PointIndex < static_cast<int32>(Points.size()); ++PointIndex)
+		{
+			Tapers.push_back(ReadTaper(Source, Particle, *BeamData, PointIndex, static_cast<int32>(Points.size())));
+		}
+
+		const float Tiles = CalcBeamTiles(Source, *BeamData);
 		for (int32 SheetIndex = 0; SheetIndex < std::max(1, Source.Sheets); ++SheetIndex)
 		{
-			AppendBeamSheet(Source, *Particle, Centers, Tapers, SheetIndex, Staging.Vertices, Staging.Indices);
+			AppendBeamPathSheet(Source, *Particle, Points, Tapers, Frame, SheetIndex, Tiles, Staging.Vertices, Staging.Indices);
 		}
 	}
 

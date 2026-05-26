@@ -3134,7 +3134,6 @@ FDynamicEmitterDataBase* FParticleBeam2EmitterInstance::GetDynamicData(bool bSel
 		delete Data;
 		return nullptr;
 	}
-	Data->BuildMeshData();
 	return Data;
 }
 

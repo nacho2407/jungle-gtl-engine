@@ -145,7 +145,7 @@ void FParticleSystemSceneProxy::BuildParticleCommands(
 		for (int32 i = 0; i < CachedEmitterCount; ++i)
 		{
 			if (CachedEmitterData[i] && EmitterBuffers[i])
-				FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i]);
+				FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i], Frame);
 		}
 	}
 
@@ -218,7 +218,7 @@ void FParticleSystemSceneProxy::EnsureEmitterBuffers(ID3D11Device* Device, int32
 
 
 void FParticleSystemSceneProxy::FillStagingBuffer(
-	const FDynamicEmitterDataBase& EmitterData, FEmitterRenderBuffer& OutBuffer)
+	FDynamicEmitterDataBase& EmitterData, FEmitterRenderBuffer& OutBuffer, const FFrameContext& Frame)
 {
 	const FDynamicEmitterReplayDataBase& Source = EmitterData.GetSource();
 	const int32 Stride = EmitterData.GetDynamicVertexStride();
@@ -275,7 +275,8 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 
 		if (Source.eEmitterType == EDynamicEmitterType::Beam)
 		{
-			const auto& BeamData = static_cast<const FDynamicBeam2EmitterData&>(EmitterData);
+			auto& BeamData = static_cast<FDynamicBeam2EmitterData&>(EmitterData);
+			BeamData.BuildMeshData(Frame);
 			BuiltVertices = &BeamData.GetBuiltVertices();
 			BuiltIndices = &BeamData.GetBuiltIndices();
 		}
