@@ -1274,6 +1274,7 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FogRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GeometryDrawPacket.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h" />

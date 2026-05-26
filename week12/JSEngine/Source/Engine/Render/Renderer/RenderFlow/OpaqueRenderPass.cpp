@@ -1,4 +1,5 @@
 ﻿#include "OpaqueRenderPass.h"
+#include "GeometryDrawPacket.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
@@ -109,15 +110,11 @@ namespace
             && Cmd.HasInstanceBuffer();
     }
 
-    bool DrawParticleBeamCommand(const FRenderPassContext* Context, const FRenderCommand& Cmd)
+    bool BuildParticleBeamDrawResources(
+        const FRenderPassContext* Context,
+        const FRenderCommand& Cmd,
+        FGeometryDrawPacket& OutDraw)
     {
-        FShaderProgram* Program = GetParticleBeamShaderProgram();
-        if (Program == nullptr)
-        {
-            UE_LOG_WARNING("[Particle] Beam draw skipped because ParticleBeam shader failed to compile.");
-            return false;
-        }
-
         const FParticleSpriteQuadResource QuadResource =
             FResourceManager::Get().GetOrCreateParticleSpriteQuadResource(Context->Device);
         if (!QuadResource.IsValid())
@@ -126,47 +123,20 @@ namespace
             return false;
         }
 
-        ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
-        Program->Bind(DeviceContext);
-
-        if (Cmd.Material != nullptr)
-        {
-            Cmd.Material->BindRenderStates(DeviceContext);
-        }
-        else
-        {
-            ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
-            ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::Opaque);
-            ID3D11RasterizerState* RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidBackCull);
-            ID3D11SamplerState* Sampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Linear);
-            DeviceContext->OMSetDepthStencilState(DepthState, 0);
-            DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
-            DeviceContext->RSSetState(RasterizerState);
-            DeviceContext->PSSetSamplers(0, 1, &Sampler);
-        }
-        ID3D11RasterizerState* ParticleRasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidNoCull);
-        DeviceContext->RSSetState(ParticleRasterizerState);
-
-        ID3D11ShaderResourceView* DefaultDiffuseSRV = FResourceManager::Get().GetDefaultWhiteSRV();
-        DeviceContext->PSSetShaderResources(0, 1, &DefaultDiffuseSRV);
-        if (Cmd.Material != nullptr)
-        {
-            Cmd.Material->BindParameters(DeviceContext, Program->PS);
-        }
-
-        ID3D11Buffer* VertexBuffers[2] = { QuadResource.VertexBuffer, Cmd.InstanceBufferView.Buffer };
-        uint32 Strides[2] = { QuadResource.VertexStride, Cmd.InstanceBufferView.Stride };
-        uint32 Offsets[2] = { 0, Cmd.InstanceBufferView.Offset };
-        DeviceContext->IASetVertexBuffers(0, 2, VertexBuffers, Strides, Offsets);
-        DeviceContext->IASetIndexBuffer(QuadResource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-        DeviceContext->DrawIndexedInstanced(QuadResource.IndexCount, Cmd.InstanceBufferView.InstanceCount, 0, 0, 0);
-
-        ID3D11Buffer* NullVertexBuffer = nullptr;
-        uint32 NullStride = 0;
-        uint32 NullOffset = 0;
-        DeviceContext->IASetVertexBuffers(1, 1, &NullVertexBuffer, &NullStride, &NullOffset);
+        OutDraw.VertexBuffers[0] = QuadResource.VertexBuffer;
+        OutDraw.VertexBuffers[1] = Cmd.InstanceBufferView.Buffer;
+        OutDraw.Strides[0] = QuadResource.VertexStride;
+        OutDraw.Strides[1] = Cmd.InstanceBufferView.Stride;
+        OutDraw.Offsets[0] = 0;
+        OutDraw.Offsets[1] = Cmd.InstanceBufferView.Offset;
+        OutDraw.VertexBufferCount = 2;
+        OutDraw.IndexBuffer = QuadResource.IndexBuffer;
+        OutDraw.IndexCount = QuadResource.IndexCount;
+        OutDraw.InstanceCount = Cmd.InstanceBufferView.InstanceCount;
+        OutDraw.bInstanced = true;
         return true;
     }
+
 } // namespace
 
 bool FOpaqueRenderPass::Initialize()
@@ -245,30 +215,56 @@ bool FOpaqueRenderPass::DrawEachCommand(const FRenderPassContext* Context, const
         return false;  
     }  
 
+    // TODO: Particle 렌더링도 기존 구조에 좀 더 융화시킬 수 없는지 고민해보기
     if (IsParticleBeamCommand(Cmd))
     {
-        return DrawParticleBeamCommand(Context, Cmd);
+        FShaderProgram* Program = GetParticleBeamShaderProgram();
+        if (Program == nullptr)
+        {
+            UE_LOG_WARNING("[Particle] Beam draw skipped because ParticleBeam shader failed to compile.");
+            return false;
+        }
+
+        FGeometryDrawPacket DrawResources;
+        if (!BuildParticleBeamDrawResources(Context, Cmd, DrawResources))
+        {
+            return false;
+        }
+
+        Program->Bind(DeviceContext);
+        if (Cmd.Material != nullptr)
+        {
+            Cmd.Material->BindRenderStates(DeviceContext);
+        }
+        else
+        {
+            ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+            ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::Opaque);
+            ID3D11RasterizerState* RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidBackCull);
+            ID3D11SamplerState* Sampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Linear);
+            DeviceContext->OMSetDepthStencilState(DepthState, 0);
+            DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+            DeviceContext->RSSetState(RasterizerState);
+            DeviceContext->PSSetSamplers(0, 1, &Sampler);
+        }
+        ID3D11RasterizerState* ParticleRasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidNoCull);
+        DeviceContext->RSSetState(ParticleRasterizerState);
+
+        ID3D11ShaderResourceView* DefaultDiffuseSRV = FResourceManager::Get().GetDefaultWhiteSRV();
+        DeviceContext->PSSetShaderResources(0, 1, &DefaultDiffuseSRV);
+        if (Cmd.Material != nullptr)
+        {
+            Cmd.Material->BindParameters(DeviceContext, Program->PS);
+        }
+        return ExecuteGeometryDrawPacket(DeviceContext, DrawResources);
     }
 
-    if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())  
-    {  
-        return false;  
-    }  
-
-    uint32 offset = 0;  
-    ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();  
-    if (vertexBuffer == nullptr)  
-    {  
-        return false;  
-    }  
-
-    uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();  
-    uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();  
-    if (vertexCount == 0 || stride == 0)
-    {  
-        return false;  
-    }  
     const bool bInstancedSurfaceDraw = IsInstancedSurfaceCommand(Cmd);
+    FGeometryDrawPacket DrawResources;
+    if (!BuildMeshGeometryDrawPacket(Cmd, DrawResources, bInstancedSurfaceDraw))
+    {
+        return false;
+    }
 
     if (Cmd.Material)
     {
@@ -299,8 +295,6 @@ bool FOpaqueRenderPass::DrawEachCommand(const FRenderPassContext* Context, const
     DeviceContext->OMSetDepthStencilState(DSState, 0);
 
     CheckOverrideViewMode(Context);  
-    
-    DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);  
 
     const bool bGPUSkinnedDraw =
         Cmd.Type == ERenderCommandType::SkeletalMesh && Cmd.bUseBoneMatrixConstants;
@@ -309,38 +303,7 @@ bool FOpaqueRenderPass::DrawEachCommand(const FRenderPassContext* Context, const
         FSkinningStats::Get().AddGPUSkinnedDraw(Cmd.SkinningWorkVertexCount, Cmd.AvgBoneInfluencePerVertex);
     }
     
-    ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();  
-    if (bInstancedSurfaceDraw)
-    {
-        if (indexBuffer == nullptr || Cmd.SectionIndexCount == 0)
-        {
-            return false;
-        }
-
-        ID3D11Buffer* VertexBuffers[2] = { vertexBuffer, Cmd.InstanceBufferView.Buffer };
-        uint32 Strides[2] = { stride, Cmd.InstanceBufferView.Stride };
-        uint32 Offsets[2] = { 0, Cmd.InstanceBufferView.Offset };
-        DeviceContext->IASetVertexBuffers(0, 2, VertexBuffers, Strides, Offsets);
-        DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-        DeviceContext->DrawIndexedInstanced(Cmd.SectionIndexCount, Cmd.InstanceBufferView.InstanceCount, Cmd.SectionIndexStart, 0, 0);
-
-        ID3D11Buffer* NullVertexBuffer = nullptr;
-        uint32 NullStride = 0;
-        uint32 NullOffset = 0;
-        DeviceContext->IASetVertexBuffers(1, 1, &NullVertexBuffer, &NullStride, &NullOffset);
-        return true;
-    }
-
-    if (indexBuffer != nullptr)
-    {
-        DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-        DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
-    }
-    else
-    {
-        DeviceContext->Draw(vertexCount, 0);
-    }
-    return true;
+    return ExecuteGeometryDrawPacket(DeviceContext, DrawResources);
 }
 
 bool FOpaqueRenderPass::End(const FRenderPassContext* Context)

@@ -1,5 +1,6 @@
 ﻿#include "ShadowPass.h"
 
+#include "GeometryDrawPacket.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShaderPaths.h"
@@ -88,15 +89,8 @@ void FShadowPass::RenderShadowDepth(
 
 	for (const auto& Cmd : ShadowDepthCmds)
 	{
-		if (!Cmd.MeshBuffer || !Cmd.MeshBuffer->IsValid())
-		{
-			continue;
-		}
-
-		ID3D11Buffer* VertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-		uint32 VertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
-		uint32 Stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-		if (!VertexBuffer || VertexCount == 0 || Stride == 0)
+		FGeometryDrawPacket DrawPacket;
+		if (!BuildMeshGeometryDrawPacket(Cmd, DrawPacket))
 		{
 			continue;
 		}
@@ -105,9 +99,6 @@ void FShadowPass::RenderShadowDepth(
 			DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
 		ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
 		DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
-
-		uint32 Offset = 0;
-		DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 
 		FShaderProgram* Program = GetShadowProgram(Cmd.VertexFactoryType, ShadowKey);
 		if (!Program)
@@ -124,7 +115,6 @@ void FShadowPass::RenderShadowDepth(
 			Cmd.BoneMatrixConstantBuffer);
 		CheckOverrideViewMode(Context);
 
-		ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
 		const bool bGPUSkinnedDraw =
 			Cmd.Type == ERenderCommandType::SkeletalMesh && Cmd.bUseBoneMatrixConstants;
 		if (bGPUSkinnedDraw)
@@ -133,15 +123,7 @@ void FShadowPass::RenderShadowDepth(
 				Cmd.SkinningWorkVertexCount,
 				Cmd.AvgBoneInfluencePerVertex);
 		}
-		if (IndexBuffer != nullptr)
-		{
-			DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-			DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
-		}
-		else
-		{
-			DeviceContext->Draw(VertexCount, 0);
-		}
+		ExecuteGeometryDrawPacket(DeviceContext, DrawPacket);
 	}
 }
 

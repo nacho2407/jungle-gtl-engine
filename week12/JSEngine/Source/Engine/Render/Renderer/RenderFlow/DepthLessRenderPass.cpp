@@ -1,4 +1,5 @@
 ﻿#include "DepthLessRenderPass.h"
+#include "GeometryDrawPacket.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
@@ -93,21 +94,8 @@ bool FDepthLessRenderPass::DrawCommand(const FRenderPassContext* Context)
         Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
         Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
 
-        if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
-        {
-            continue;
-        }
-
-        uint32 offset = 0;
-        ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-        if (vertexBuffer == nullptr)
-        {
-            continue;
-        }
-
-        uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
-        uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-        if (vertexCount == 0 || stride == 0)
+        FGeometryDrawPacket DrawPacket;
+        if (!BuildMeshGeometryDrawPacket(Cmd, DrawPacket))
         {
             continue;
         }
@@ -131,18 +119,7 @@ bool FDepthLessRenderPass::DrawCommand(const FRenderPassContext* Context)
                 Cmd.BoneMatrixConstantBuffer);
         }
 
-        Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-        ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-        if (indexBuffer != nullptr)
-        {
-            Context->DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-            Context->DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
-        }
-        else
-        {
-            Context->DeviceContext->Draw(vertexCount, 0);
-        }
+        ExecuteGeometryDrawPacket(Context->DeviceContext, DrawPacket);
     }
 
     return true;

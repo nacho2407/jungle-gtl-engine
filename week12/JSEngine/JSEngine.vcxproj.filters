@@ -2146,6 +2146,9 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GeometryDrawPacket.h">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>

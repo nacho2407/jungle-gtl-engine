@@ -1,4 +1,5 @@
 ﻿#include "SelectionMaskRenderPass.h"
+#include "GeometryDrawPacket.h"
 #include "Core/ResourceManager.h"
 #include "Component/PrimitiveComponent.h"
 #include "Render/Scene/RenderBus.h"
@@ -250,37 +251,13 @@ bool FSelectionMaskRenderPass::DrawCommand(const FRenderPassContext* Context)
 		Context->DeviceContext->PSSetConstantBuffers(12, 1, &cb12);
 		Context->DeviceContext->PSSetShaderResources(0, 1, &TextureSRV);
 
-		if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
+		FGeometryDrawPacket DrawPacket;
+		if (!BuildMeshGeometryDrawPacket(Cmd, DrawPacket))
 		{
 			continue;
 		}
 
-		uint32 offset = 0;
-		ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-		if (vertexBuffer == nullptr)
-		{
-			continue;
-		}
-
-		uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
-		uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-		if (vertexCount == 0 || stride == 0)
-		{
-			continue;
-		}
-
-		Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-		ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-		if (indexBuffer != nullptr)
-		{
-			Context->DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-			Context->DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
-		}
-		else
-		{
-			Context->DeviceContext->Draw(vertexCount, 0);
-		}
+		ExecuteGeometryDrawPacket(Context->DeviceContext, DrawPacket);
 	}
 
 	return true;
