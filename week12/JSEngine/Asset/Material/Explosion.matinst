@@ -1,0 +1,11 @@
+{
+        "BlendMode" : "Opaque",
+        "Name" : "Asset/Material/Explosion.matinst",
+        "OverridedParams" : [{
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/SubUV/Explosion.dds"
+          }],
+        "Parent" : "Asset/Material/DecalMat.mat",
+        "ShaderType" : "SurfaceLit"
+      }

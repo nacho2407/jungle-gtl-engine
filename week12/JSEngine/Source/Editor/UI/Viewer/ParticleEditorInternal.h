@@ -102,6 +102,10 @@ struct FParticleModuleRowDesc
 	const char* Label = nullptr;
 	FParticleModuleAddress Address;
 	ImU32 BackgroundColor = 0;
+	bool bCanToggleEnabled = true;
+	bool bForceEnabledState = false;
+	bool bForcedEnabledValue = true;
+	bool bDimmedText = false;
 };
 
 // Viewer & Window Helpers ────────────────────────────────────────────────────

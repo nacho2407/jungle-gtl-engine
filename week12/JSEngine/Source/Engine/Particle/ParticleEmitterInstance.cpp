@@ -400,7 +400,7 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
 		const float SpawnTime = SpawnInterval * static_cast<float>(SpawnIndex);
 		for (UParticleModule* Module : CurrentRuntimeCache->SpawnModules)
 		{
-			if (Module == nullptr)
+			if (Module == nullptr || !Module->bEnabled)
 			{
 				continue;
 			}

@@ -11,7 +11,9 @@
 class FParticleEmitterInstance;
 class IParticleEmitterInstanceOwner;
 class UParticleEmitter;
+class UParticleLODLevel;
 class UParticleModuleTypeDataBase;
+struct FParticleLODLevelRuntimeCache;
 
 UCLASS(Abstract)
 class UParticleModule : public UObject
@@ -194,6 +196,53 @@ public:
 	bool IsUpdateModule() const override;
 };
 
+UENUM()
+enum class EParticleSubUVInterpMethod
+{
+	Linear UMETA(DisplayName = "Linear"), // 프레임을 순서대로 재생 ── 불꽃, 연기
+	Random UMETA(DisplayName = "Random"), // 랜덤한 프레임 하나를 고정해 수명 내내 사용 ── 낙엽, 파편
+};
+
+USTRUCT()
+struct FSubUVParticlePayload
+{
+	GENERATED_STRUCT_BODY(FSubUVParticlePayload)
+
+	UPROPERTY(DisplayName = "SubUV Frame")
+	float ImageIndex;
+	UPROPERTY(DisplayName = "Random Seed")
+	uint32 RandomSeed;
+};
+
+UCLASS(Placeable, DisplayName = "SubUV Module")
+class UParticleModuleSubUV : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleSubUV, UParticleModule)
+
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	bool IsSpawnModule() const override { return true; }
+	bool IsUpdateModule() const override { return true; }
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override { return sizeof(FSubUVParticlePayload); }
+
+	UPROPERTY(DisplayName = "Columns", Min = 1.0f, Speed = 1.0f)
+	int32 Columns = 4;
+
+	UPROPERTY(DisplayName = "Rows", Min = 1.0f, Speed = 1.0f)
+	int32 Rows = 4;
+
+	UPROPERTY(DisplayName = "Interp Method")
+	EParticleSubUVInterpMethod InterpMethod = EParticleSubUVInterpMethod::Linear;
+
+	UPROPERTY(DisplayName = "Sub Image Index")
+	FParticleFloatDistribution SubImageIndex;
+
+	UPROPERTY(DisplayName = "Use Real Frame Time")
+	bool bUseRealFrameTime = false;
+};
+	
 // NOTE: Type-DataBase가 아니라 TypeData-Base 입니다.
 UCLASS(Placeable, DisplayName = "Sprite Type Data")
 class UParticleModuleTypeDataBase : public UParticleModule
@@ -205,6 +254,7 @@ public:
 		UParticleEmitter* InEmitterTemplate,
 		IParticleEmitterInstanceOwner& InOwner);
 	virtual FDynamicEmitterDataBase* GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance);
+	UParticleModuleSubUV* FindSubUVModule(const UParticleLODLevel* LODLevel);
 	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
 	virtual int32 GetRequiredPayloadSize() const;
 };

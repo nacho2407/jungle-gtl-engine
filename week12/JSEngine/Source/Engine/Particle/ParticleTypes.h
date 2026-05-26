@@ -4,6 +4,7 @@
 
 class UMaterialInterface;
 class UStaticMesh;
+class UTexture;
 class UParticleModuleRequired;
 
 UENUM()
@@ -58,19 +59,19 @@ struct FParticleEventBurstData
 struct FBaseParticle
 {
 	FVector Location = FVector::ZeroVector;
-    FVector OldLocation = FVector::ZeroVector;
+	FVector OldLocation = FVector::ZeroVector;
 	FVector Velocity = FVector::ZeroVector;
-    FVector BaseVelocity = FVector::ZeroVector;
+	FVector BaseVelocity = FVector::ZeroVector;
 	float RelativeTime = 0.0f;
 	float Lifetime = 1.0f;
-    float OneOverMaxLifetime = 1.0f; // particle이 현재 수명의 몇 퍼센트 지점에 있는지 계산할 때 사용하는 MaxLifetime의 역수
+	float OneOverMaxLifetime = 1.0f; // particle이 현재 수명의 몇 퍼센트 지점에 있는지 계산할 때 사용하는 MaxLifetime의 역수
 	float Rotation = 0.0f;
 	float RotationRate = 0.0f;
 	FVector Size = FVector::OneVector;
 	FVector BaseSize = FVector::OneVector;
 	FColor Color = FColor::White();
 	uint32 Flags = 0;
-    uint32 Seed = 0; // seeded procedural 재현성을 위한 랜덤 시드값
+	uint32 Seed = 0; // seeded procedural 재현성을 위한 랜덤 시드값
 };
 
 struct FParticleSpriteVertex
@@ -98,7 +99,7 @@ struct FParticleDataContainer
 
 struct FDynamicEmitterReplayDataBase
 {
-	EDynamicEmitterType eEmitterType = EDynamicEmitterType::Sprite;
+	EDynamicEmitterType EmitterType = EDynamicEmitterType::Sprite;
 	int32 ActiveParticleCount = 0;
 	// Simulation memory stride. This is not the renderer vertex stride.
 	int32 ParticleStride = 0;
@@ -108,7 +109,7 @@ struct FDynamicEmitterReplayDataBase
 	FVector Scale = FVector::OneVector;
 	EParticleSortMode SortMode = EParticleSortMode::ViewDepthBackToFront;
 
-    // active particle 순회 헬퍼 함수
+	// active particle 순회 헬퍼 함수
 	const FBaseParticle* GetParticleByActiveIndex(int32 ActiveIndex) const
 	{
 		if (ActiveIndex < 0 || ActiveIndex >= ActiveParticleCount)
@@ -134,24 +135,28 @@ struct FDynamicEmitterReplayDataBase
 
 struct FDynamicSpriteEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 {
-	FDynamicSpriteEmitterReplayDataBase() { eEmitterType = EDynamicEmitterType::Sprite; }
+	FDynamicSpriteEmitterReplayDataBase() { EmitterType = EDynamicEmitterType::Sprite; }
 
 	UParticleModuleRequired* RequiredModule = nullptr;
+	int32 SubUVPayloadOffset = -1;
+	int32 SubUVColumns = 1;
+	int32 SubUVRows = 1;
+	UTexture* SubUVTexture = nullptr;
 };
 
 struct FDynamicMeshEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 {
-	FDynamicMeshEmitterReplayDataBase() { eEmitterType = EDynamicEmitterType::Mesh; }
+	FDynamicMeshEmitterReplayDataBase() { EmitterType = EDynamicEmitterType::Mesh; }
 };
 
 struct FDynamicBeamEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 {
-	FDynamicBeamEmitterReplayDataBase() { eEmitterType = EDynamicEmitterType::Beam; }
+	FDynamicBeamEmitterReplayDataBase() { EmitterType = EDynamicEmitterType::Beam; }
 };
 
 struct FDynamicRibbonEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 {
-	FDynamicRibbonEmitterReplayDataBase() { eEmitterType = EDynamicEmitterType::Ribbon; }
+	FDynamicRibbonEmitterReplayDataBase() { EmitterType = EDynamicEmitterType::Ribbon; }
 };
 
 struct FDynamicEmitterDataBase
@@ -163,7 +168,7 @@ struct FDynamicEmitterDataBase
 	FMatrix ComponentToWorld = FMatrix::Identity;
 
 	virtual const FDynamicEmitterReplayDataBase& GetSource() const = 0;
-	EDynamicEmitterType GetEmitterType() const { return GetSource().eEmitterType; }
+	EDynamicEmitterType GetEmitterType() const { return GetSource().EmitterType; }
 };
 
 struct FDynamicSpriteEmitterDataBase : public FDynamicEmitterDataBase
