@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Object/ObjectIterator.h"
@@ -19,6 +19,7 @@ class UStaticMesh;
 class USkeletalMesh;
 class USkeleton;
 class UAnimSequence;
+class FReferenceCollector;
 
 struct FSkeletalMeshImportRequest
 {
@@ -89,6 +90,8 @@ public:
 	static bool IsStaticMeshPackage(const FString& Path);
 	static bool IsSkeletalMeshPackage(const FString& Path);
 
+	// GC
+	static void AddReferencedObjects(FReferenceCollector& Collector);
 public:
 	static TMap<FString, UStaticMesh*> StaticMeshCache;
 	static TMap<FString, USkeletalMesh*> SkeletalMeshCache;

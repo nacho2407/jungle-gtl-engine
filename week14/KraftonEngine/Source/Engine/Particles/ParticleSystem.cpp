@@ -6,6 +6,8 @@
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Serialization/Archive.h"
 
+#include "Object/ReferenceCollector.h"
+
 namespace
 {
 	UParticleModuleRequired* CreateDefaultRequiredModule(float EmitterDuration, bool bLooping)
@@ -262,5 +264,37 @@ void UParticleSystem::Serialize(FArchive& Ar)
 		{
 			Emitters.push_back(Emitter);
 		}
+	}
+}
+
+void UParticleSystem::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UObject::AddReferencedObjects(Collector);
+
+	for (UParticleEmitter* Emitter : Emitters)
+	{
+		Collector.AddReferencedObject(Emitter);
+	}
+}
+
+void UParticleEmitter::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UObject::AddReferencedObjects(Collector);
+
+	for (UParticleLODLevel* LODLevel : LODLevels)
+	{
+		Collector.AddReferencedObject(LODLevel);
+	}
+}
+
+void UParticleLODLevel::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UObject::AddReferencedObjects(Collector);
+
+	Collector.AddReferencedObject(TypeDataModule);
+
+	for (UParticleModule* Module : Modules)
+	{
+		Collector.AddReferencedObject(Module);
 	}
 }

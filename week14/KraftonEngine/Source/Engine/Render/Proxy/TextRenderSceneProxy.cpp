@@ -3,6 +3,7 @@
 #include "Render/Types/FrameContext.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 #include "Object/Reflection/ObjectFactory.h"
 
 // ============================================================
@@ -17,7 +18,7 @@ FTextRenderSceneProxy::~FTextRenderSceneProxy()
 {
 	if (TextMaterial)
 	{
-		UObjectManager::Get().DestroyObject(TextMaterial);
+		FMaterialManager::Get().DestroyTransientMaterial(TextMaterial);
 		TextMaterial = nullptr;
 	}
 }
@@ -35,7 +36,7 @@ void FTextRenderSceneProxy::UpdateMesh()
 
 	if (!TextMaterial)
 	{
-		TextMaterial = UMaterial::CreateTransient(
+		TextMaterial = FMaterialManager::Get().CreateTransientMaterial(
 			ERenderPass::AlphaBlend, EBlendState::AlphaBlend,
 			EDepthStencilState::Default, ERasterizerState::SolidBackCull,
 			FShaderManager::Get().GetOrCreate(EShaderPath::Primitive));

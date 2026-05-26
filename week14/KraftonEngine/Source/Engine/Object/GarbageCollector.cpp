@@ -3,6 +3,12 @@
 #include "ReferenceCollector.h"
 #include "Serialization/GCArchive.h"
 #include "Runtime/Engine.h"
+#include "Core/Logging/Log.h"
+#include "Mesh/MeshManager.h"
+#include "Materials/MaterialManager.h"
+#include "Texture/Texture2D.h"
+#include "Animation/Skeleton/SkeletonManager.h"
+#include "Particles/ParticleSystemManager.h"
 
 void FGarbageCollector::CollectGarbage()
 {
@@ -21,6 +27,11 @@ void FGarbageCollector::CollectGarbage()
 	{
 		Collector.AddReferencedObject(GEngine);
 	}
+	FMeshManager::AddReferencedObjects(Collector);
+	FMaterialManager::Get().AddReferencedObjects(Collector);
+	UTexture2D::AddReferencedObjects(Collector);
+	FSkeletonManager::Get().AddReferencedObjects(Collector);
+	FParticleSystemManager::Get().AddReferencedObjects(Collector);
 
 	while (UObject* Object = Collector.Pop())
 	{
@@ -34,7 +45,8 @@ void FGarbageCollector::CollectGarbage()
 		UObject* Obj = GUObjectArray[i];
 		if (!Obj->IsGarbageMarked()) {
 			// 참조되지 않음 -> 삭제!
-			UObjectManager::Get().DestroyObject(Obj);
+			UE_LOG("[GC] Sweep candidate: %s", Obj->GetName().c_str());
+			//UObjectManager::Get().DestroyObject(Obj);
 		}
 	}
 }

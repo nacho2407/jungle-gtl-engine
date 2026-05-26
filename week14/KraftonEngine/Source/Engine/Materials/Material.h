@@ -16,6 +16,7 @@
 class UTexture2D;
 class FArchive;
 class FShader;
+class FMaterialManager;
 class UMaterialInstanceDynamic;
 
 
@@ -76,6 +77,7 @@ public:
 UCLASS()
 class UMaterial : public UMaterialInterface
 {
+	friend class FMaterialManager;
 	friend class UMaterialInstanceDynamic;
 
 protected:
@@ -219,8 +221,9 @@ public:
 		}
 	}
 
+private:
 	// Template/CB 없는 경량 머티리얼 생성 — SRV만 래핑할 때 사용
-	// InShader를 지정하면 GetShader()가 해당 셰이더를 반환 (DrawCommandBuilder per-section 셰이더 지원)
+	// FMaterialManager::CreateTransientMaterial을 통해 생성/관리해야 한다.
 	static UMaterial* CreateTransient(ERenderPass InPass, EBlendState InBlend,
 		EDepthStencilState InDepth = EDepthStencilState::Default,
 		ERasterizerState InRaster = ERasterizerState::SolidBackCull,

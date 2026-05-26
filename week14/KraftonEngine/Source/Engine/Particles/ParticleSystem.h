@@ -43,6 +43,8 @@ public:
 		return nullptr;
 	}
 
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 private:
 	UPROPERTY(Edit, Save, Category="Particle|LOD", DisplayName="Level")
 	int32 Level = 0;
@@ -77,6 +79,7 @@ public:
 	void AddLODLevel(UParticleLODLevel* LODLevel);
 
 	void Serialize(FArchive& Ar) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
 	TArray<UParticleLODLevel*> LODLevels;
@@ -103,6 +106,8 @@ public:
 
 	void Serialize(FArchive& Ar) override;
 
+	//GC
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
 	TArray<UParticleEmitter*> Emitters;
 	FString AssetPathFileName = "None";

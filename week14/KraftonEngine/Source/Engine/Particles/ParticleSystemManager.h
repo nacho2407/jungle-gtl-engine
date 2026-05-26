@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "Asset/AssetRegistry.h"
 #include "Core/Singleton.h"
 #include "Core/Types/CoreTypes.h"
 
 class UParticleSystem;
+class FReferenceCollector;
 
 class FParticleSystemManager : public TSingleton<FParticleSystemManager>
 {
@@ -21,6 +22,8 @@ public:
 
 	void Release();
 
+	// GC
+	void AddReferencedObjects(FReferenceCollector& Collector);
 private:
 	FParticleSystemManager() = default;
 

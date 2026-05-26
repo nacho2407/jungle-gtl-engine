@@ -1,4 +1,4 @@
-#include "Editor/EditorEngine.h"
+﻿#include "Editor/EditorEngine.h"
 
 #include "Profiling/StartupProfiler.h"
 #include "Core/Logging/Notification.h"
@@ -27,6 +27,8 @@
 #include "Materials/MaterialManager.h"
 #include "Engine/Platform/Paths.h"
 #include "Lua/LuaScriptManager.h"
+#include "Object/GarbageCollector.h"
+
 #include <filesystem>
 
 #include "Mesh/Skeletal/SkeletalMesh.h"
@@ -166,6 +168,30 @@ void UEditorEngine::Tick(float DeltaTime)
 	WorldTick(DeltaTime);
 	Render(DeltaTime);
 	SelectionManager.Tick();
+
+	//GC 확인용
+	static int32 GCTickCounter = 0;
+	++GCTickCounter;
+
+	if (GCTickCounter >= 600)
+	{
+		GCTickCounter = 0;
+
+		const size_t BeforeCount = GUObjectArray.size();
+
+		UE_LOG("[GC] CollectGarbage begin. Objects=%zu", BeforeCount);
+
+		FGarbageCollector GC;
+		GC.CollectGarbage();
+
+		const size_t AfterCount = GUObjectArray.size();
+		const size_t CollectedCount = BeforeCount > AfterCount ? BeforeCount - AfterCount : 0;
+
+		UE_LOG("[GC] CollectGarbage end. Before=%zu After=%zu Collected=%zu",
+			BeforeCount,
+			AfterCount,
+			CollectedCount);
+	}
 }
 
 bool UEditorEngine::GetActiveViewportPOV(FMinimalViewInfo& OutPOV) const
@@ -749,4 +775,10 @@ bool UEditorEngine::LoadSceneWithDialog()
 	}
 
 	return LoadSceneFromPath(SelectedPath);
+}
+
+void UEditorEngine::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UEngine::AddReferencedObjects(Collector);
+	SelectionManager.AddReferencedObjects(Collector);
 }

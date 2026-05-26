@@ -4,6 +4,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Platform/Paths.h"
 #include "Serialization/WindowsArchive.h"
+#include "Object/ReferenceCollector.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -160,4 +161,12 @@ void FParticleSystemManager::Release()
 
 	LoadedParticleSystems.clear();
 	AvailableParticleSystemFiles.clear();
+}
+
+void FParticleSystemManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (auto& [Path, System] : LoadedParticleSystems)
+	{
+		Collector.AddReferencedObject(System);
+	}
 }
