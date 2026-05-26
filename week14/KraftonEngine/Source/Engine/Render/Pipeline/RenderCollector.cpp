@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+﻿#include "RenderCollector.h"
 
 #include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"
@@ -121,6 +121,10 @@ static bool ShouldCollectProxyForView(const FPrimitiveSceneProxy* Proxy, const F
 
 	if (!Frame.RenderOptions.ShowFlags.bSkeletalMesh &&
 		Proxy->HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh))
+		return false;
+
+	if (!Frame.RenderOptions.ShowFlags.bParticle &&
+		Proxy->HasProxyFlag(EPrimitiveProxyFlags::ParticleSystem))
 		return false;
 
 	return true;
