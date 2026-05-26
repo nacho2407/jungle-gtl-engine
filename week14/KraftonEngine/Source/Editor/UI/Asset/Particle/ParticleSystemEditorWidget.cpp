@@ -1048,6 +1048,9 @@ namespace
 		if (Cast<UParticleModuleColor>(Module)) return "Color Over Life";
 		if (Cast<UParticleModuleSize>(Module)) return "Initial Size";
 		if (Cast<UParticleModuleSubImageIndex>(Module)) return "Sub Image Index";
+		if (Cast<UParticleModuleBeamSource>(Module)) return "Beam Source";
+		if (Cast<UParticleModuleBeamNoise>(Module)) return "Beam Noise";
+		if (Cast<UParticleModuleBeamTarget>(Module)) return "Beam Target";
 		if (Cast<UParticleModuleCollision>(Module)) return "Collision";
 		return Module->GetClass()->GetName();
 	}
@@ -2831,6 +2834,23 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				ImGui::EndMenu();
 			}
 			RenderUnavailableCategory("Attraction");
+
+			if (ImGui::BeginMenu("Beam"))
+			{
+				if (ImGui::MenuItem("Beam Source"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleBeamSource>());
+				}
+				if (ImGui::MenuItem("Beam Noise"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleBeamNoise>());
+				}
+				if (ImGui::MenuItem("Beam Target"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleBeamTarget>());
+				}
+				ImGui::EndMenu();
+			}
 
 			if (ImGui::BeginMenu("Collision"))
 			{
