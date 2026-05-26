@@ -25,6 +25,13 @@ enum class EParticleRenderType
 	GPU,
 };
 
+UENUM()
+enum class EBeamMethod : uint8
+{
+	Distance,
+	Target,
+};
+
 //Payload Structures for different particle types
 
 struct FParticleMeshPayload
@@ -62,6 +69,7 @@ struct FBeamParticlePayload
 	float NoiseFrequency = 0.0f;
 	float NoisePhase = 0.0f;
 	uint16 BeamIndex = 0;
+	bool bAllowTargetModule = true;
 };
 
 struct FParticleMeshEmitterInstance : public FParticleEmitterInstance
@@ -321,6 +329,10 @@ public:
 		BeamWidth.MinValue = 8.0f;
 		BeamWidth.MaxValue = 8.0f;
 
+		Distance.Constant = 100.0f;
+		Distance.MinValue = 100.0f;
+		Distance.MaxValue = 100.0f;
+
 		TextureTileDistance = 100.0f;
 	}
 
@@ -329,8 +341,14 @@ public:
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Interpolation Points", Min=0.0f, Speed=1.0f)
 	int32 InterpolationPoints = 10;
 
+	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Beam Method", Enum=EBeamMethod)
+	EBeamMethod BeamMethod = EBeamMethod::Target;
+
 	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Beam", DisplayName = "Beam Width", Type = Struct, Struct = FRawDistributionFloat)
 	FRawDistributionFloat BeamWidth;
+
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Beam", DisplayName = "Distance", Type = Struct, Struct = FRawDistributionFloat)
+	FRawDistributionFloat Distance;
 
 	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Beam", DisplayName = "Texture Tile Distance", Min = 1.0f, Speed = 1.0f)
 	float TextureTileDistance = 100.0f;
@@ -356,6 +374,19 @@ public:
 		Payload->TargetTangent = FVector::ZeroVector;
 		Payload->SourceStrength = 0.0f;
 		Payload->TargetStrength = 0.0f;
+
+		if (BeamMethod == EBeamMethod::Distance)
+		{
+			const float EvaluatedDistance = Distance.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamDistance"));
+			const FVector Direction = Particle.Velocity.LengthSquared() > 0.0001f ? Particle.Velocity.Normalized() : FVector(1.0f, 0.0f, 0.0f);
+			Payload->TargetPoint = Payload->SourcePoint + Direction * EvaluatedDistance;
+			Payload->bAllowTargetModule = false;
+		}
+		else
+		{
+			Payload->bAllowTargetModule = true;
+		}
+
 		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
 		Payload->BeamIndex = static_cast<uint16>(MaxBeamCount > 0 ? Particle.FrameIndex % static_cast<uint32>(MaxBeamCount) : 0);
 		Payload->Width = BeamWidth.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamWidth"));
@@ -503,6 +534,11 @@ public:
 		}
 
 		FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
+		if (!Payload->bAllowTargetModule)
+		{
+			return;
+		}
+
 		Payload->TargetPoint = Particle.Position + TargetPoint.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamTargetPoint"));
 		Payload->TargetStrength = TargetStrength.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamTargetStrength"));
 		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
