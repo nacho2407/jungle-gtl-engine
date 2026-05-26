@@ -5049,11 +5049,10 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 BeamSource->SourceMethod = PEB2STM_Default;
                 bChanged = true;
             }
-            if (BeamSource->bSourceAbsolute || BeamSource->bLockSource ||
+            if (BeamSource->bLockSource ||
                 BeamSource->bLockSourceTangent || BeamSource->bLockSourceStrength ||
                 BeamSource->SourceTangentMethod != PEB2STTM_Distribution)
             {
-                BeamSource->bSourceAbsolute = 0;
                 BeamSource->bLockSource = 0;
                 BeamSource->bLockSourceTangent = 0;
                 BeamSource->bLockSourceStrength = 0;
@@ -5081,6 +5080,13 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 DrawRawDistributionVector("Source", BeamSource->Source, bChanged, BeamSource);
             }
 
+            bool bSourceAbsolute = BeamSource->bSourceAbsolute != 0;
+            if (ImGui::Checkbox("Source Absolute", &bSourceAbsolute))
+            {
+                BeamSource->bSourceAbsolute = bSourceAbsolute ? 1 : 0;
+                bChanged = true;
+            }
+
             DrawRawDistributionVector("Source Tangent", BeamSource->SourceTangent, bChanged, BeamSource);
             DrawRawDistributionFloat("Source Strength", BeamSource->SourceStrength, bChanged, BeamSource);
         }
@@ -5095,11 +5101,10 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 BeamTarget->TargetMethod = PEB2STM_Default;
                 bChanged = true;
             }
-            if (BeamTarget->bTargetAbsolute || BeamTarget->bLockTarget ||
+            if (BeamTarget->bLockTarget ||
                 BeamTarget->bLockTargetTangent || BeamTarget->bLockTargetStrength ||
                 BeamTarget->TargetTangentMethod != PEB2STTM_Distribution)
             {
-                BeamTarget->bTargetAbsolute = 0;
                 BeamTarget->bLockTarget = 0;
                 BeamTarget->bLockTargetTangent = 0;
                 BeamTarget->bLockTargetStrength = 0;
@@ -5125,6 +5130,13 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             else
             {
                 DrawRawDistributionVector("Target", BeamTarget->Target, bChanged, BeamTarget);
+            }
+
+            bool bTargetAbsolute = BeamTarget->bTargetAbsolute != 0;
+            if (ImGui::Checkbox("Target Absolute", &bTargetAbsolute))
+            {
+                BeamTarget->bTargetAbsolute = bTargetAbsolute ? 1 : 0;
+                bChanged = true;
             }
 
             DrawRawDistributionVector("Target Tangent", BeamTarget->TargetTangent, bChanged, BeamTarget);

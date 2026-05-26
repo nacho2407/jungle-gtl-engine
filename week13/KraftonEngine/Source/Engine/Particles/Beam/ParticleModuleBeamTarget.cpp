@@ -9,13 +9,24 @@
 
 namespace
 {
-	FVector GetBeamEmitterXAxis(const FParticleBeam2EmitterInstance* BeamInst)
+	FMatrix GetBeamContextMatrix(const UParticleModule::FContext& Context)
 	{
-		if (BeamInst && BeamInst->Component)
-		{
-			return BeamInst->Component->GetWorldMatrix().TransformVector(FVector::XAxisVector).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
-		}
-		return FVector::XAxisVector;
+		return Context.GetTransform().ToMatrix();
+	}
+
+	FVector GetBeamContextXAxis(const UParticleModule::FContext& Context)
+	{
+		return GetBeamContextMatrix(Context).TransformVector(FVector::XAxisVector).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+	}
+
+	FVector TransformBeamTargetPosition(const UParticleModule::FContext& Context, const FVector& Value, bool bAbsolute)
+	{
+		return bAbsolute ? Value : GetBeamContextMatrix(Context).TransformPosition(Value);
+	}
+
+	FVector TransformBeamTargetVector(const UParticleModule::FContext& Context, const FVector& Value, bool bAbsolute)
+	{
+		return bAbsolute ? Value : GetBeamContextMatrix(Context).TransformVector(Value);
 	}
 }
 
@@ -127,13 +138,12 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 	if (!BeamData) return false;
 	FBaseParticle& Particle = *reinterpret_cast<FBaseParticle*>(const_cast<uint8*>(ParticleBase));
 
-	// UE resolves Actor / Emitter / Particle target methods through named
-	// component parameters, emitter instance lookup, and selected source
-	// particles. Jungle does not expose those foundations yet, so these methods
-	// are intentionally stubbed. Do not fall back to Default distribution,
+	// UE resolves Actor / Particle target methods through named component
+	// parameters, emitter instance lookup, and selected source particles.
+	// Jungle does not expose those foundations yet, so these methods are
+	// intentionally stubbed. Do not fall back to Default distribution,
 	// emitter transform, or any substitute target.
 	if (TargetMethod == PEB2STM_Actor ||
-		TargetMethod == PEB2STM_Emitter ||
 		TargetMethod == PEB2STM_Particle)
 	{
 		return false;
@@ -149,7 +159,7 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 			{
 				BeamDistance = 0.001f;
 			}
-			FVector Direction = GetBeamEmitterXAxis(BeamInst);
+			FVector Direction = GetBeamContextXAxis(Context);
 			BeamData->TargetPoint = BeamData->SourcePoint + Direction * BeamDistance;
 			bSetTarget = true;
 		}
@@ -165,12 +175,24 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 					bSetTarget = true;
 				}
 				break;
+			case PEB2STM_Emitter:
+				break;
 			case PEB2STM_Default:
-				BeamData->TargetPoint = Target.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
+				BeamData->TargetPoint = TransformBeamTargetPosition(
+					Context,
+					Target.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData()),
+					bTargetAbsolute);
 				bSetTarget = true;
 				break;
 			default:
 				return false;
+			}
+			if (!bSetTarget)
+			{
+				BeamData->TargetPoint = TransformBeamTargetPosition(
+					Context,
+					Target.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData()),
+					bTargetAbsolute);
 			}
 		}
 	}
@@ -182,7 +204,7 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 		{
 		case PEB2STTM_Direct:
 		case PEB2STTM_Emitter:
-			BeamData->TargetTangent = GetBeamEmitterXAxis(BeamInst);
+			BeamData->TargetTangent = GetBeamContextXAxis(Context);
 			bSetTargetTangent = true;
 			break;
 		case PEB2STTM_UserSet:
@@ -199,7 +221,10 @@ bool UParticleModuleBeamTarget::ResolveTargetData(const FContext& Context, FPart
 		}
 		if (!bSetTargetTangent)
 		{
-			BeamData->TargetTangent = TargetTangent.GetValue(Particle.RelativeTime, Context.GetDistributionData());
+			BeamData->TargetTangent = TransformBeamTargetVector(
+				Context,
+				TargetTangent.GetValue(Particle.RelativeTime, Context.GetDistributionData()),
+				bTargetAbsolute);
 		}
 	}
 
