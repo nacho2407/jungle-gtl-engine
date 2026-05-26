@@ -306,6 +306,7 @@ bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 	const bool bClicked = ImGui::InvisibleButton("##ElementCard", CardSize);
 
 	const bool bHovered = ImGui::IsItemHovered();
+	const bool bVisible = ImGui::IsItemVisible();
 
 	ImVec2 Min = ImGui::GetItemRectMin();
 	ImVec2 Max = ImGui::GetItemRectMax();
@@ -347,7 +348,30 @@ bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 
 	if (Icon && IconMax.y > IconMin.y)
 	{
-		DrawList->AddImage(Icon, IconMin, IconMax);
+		ID3D11ShaderResourceView* DrawIcon = Icon;
+
+		if (bVisible && bUseMeshThumbnail)
+		{
+			if (ID3D11ShaderResourceView* Thumbnail =
+				FEditorMeshThumbnailManager::Get().GetOrRequestThumbnail(MeshThumbnailAssetPath, MeshThumbnailType))
+			{
+				DrawIcon = Thumbnail;
+			}
+		}
+
+		if (bVisible && bUseMaterialThumbnail)
+		{
+			if (ID3D11ShaderResourceView* Thumbnail =
+				FEditorMaterialThumbnailManager::Get().GetOrRequestThumbnail(MaterialThumbnailAssetPath))
+			{
+				DrawIcon = Thumbnail;
+			}
+		}
+
+		if (DrawIcon && IconMax.y > IconMin.y)
+		{
+			DrawList->AddImage(DrawIcon, IconMin, IconMax);
+		}
 	}
 
 	const char* TypeLabel = GetTypeLabel();
@@ -809,12 +833,19 @@ void ParticleSystemElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	}
 }
 
-void MaterialElement::OnLeftClicked(ContentBrowserContext& Context)
+void MaterialElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 {
-	MaterialInspector = { ContentItem.Path };
-}
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
 
-void MaterialElement::RenderDetail()
-{
-	MaterialInspector.Render();
+	const FString PackagePath = FPaths::ToUtf8(
+		ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
+	);
+
+	if (UMaterial* Material = FMaterialManager::Get().GetOrCreateMaterial(PackagePath))
+	{
+		Context.EditorEngine->OpenAssetEditorForObject(Material);
+	}
 }

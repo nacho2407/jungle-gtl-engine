@@ -52,6 +52,7 @@ struct FDrawCommandBindings
 {
 	FConstantBuffer*          PerShaderCB[2] = {};                           // [0]=b2, [1]=b3
 	FConstantBuffer*          BoneHeatMapCB = nullptr;                       // b6: SkeletalMesh weight heatmap
+	FConstantBuffer*		  FogCB = nullptr;								 // b7: FogPass 전용 CB (FogColor + Height)
 	ID3D11ShaderResourceView* SRVs[(int)(EMaterialTextureSlot::Max)] = {};   // t0 ~ t7
 	ID3D11ShaderResourceView* SkinMatrixSRV = nullptr;						 // t13
 };

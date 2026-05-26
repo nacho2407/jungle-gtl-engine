@@ -11,6 +11,7 @@
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "ShadowMode" : "Opaque",
   "Textures" : {
     "DiffuseTexture" : "Content/Data/BasicShape/BasicShape.png"
   }

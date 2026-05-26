@@ -17,7 +17,9 @@
 #include "Editor/Slate/SlateApplication.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/UI/Util/EditorFileUtils.h"
+#include "Editor/UI/Util/EditorMaterialThumbnailManager.h"
 #include "Editor/UI/Util/EditorTextureManager.h"
+#include "Editor/UI/Util/EditorMeshThumbnailManager.h"
 #include "Editor/Viewport/Level/LevelEditorViewportClient.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Mesh/MeshManager.h"
@@ -78,6 +80,8 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
 	FProjectSettings::Get().LoadFromFile(FProjectSettings::GetDefaultPath());
 	FEditorTextureManager::Get().Initialize(Renderer.GetFD3DDevice().GetDevice());
+	FEditorMeshThumbnailManager::Get().Initialize(Renderer.GetFD3DDevice().GetDevice());
+	FEditorMaterialThumbnailManager::Get().Initialize(Renderer.GetFD3DDevice().GetDevice());
 
 	{
 		SCOPE_STARTUP_STAT("EditorMainPanel::Create");
@@ -123,6 +127,8 @@ void UEditorEngine::Shutdown()
 
 	// 뷰포트 레이아웃 해제
 	ViewportLayout.Release();
+	FEditorMaterialThumbnailManager::Get().Shutdown();
+	FEditorMeshThumbnailManager::Get().Shutdown();
 	FEditorTextureManager::Get().Shutdown();
 
 	// 엔진 공통 해제 (Renderer, D3D 등)
@@ -164,6 +170,8 @@ void UEditorEngine::Tick(float DeltaTime)
 	}
 
 	MainPanel.TickAssetEditors(DeltaTime);
+	FEditorMeshThumbnailManager::Get().Tick(DeltaTime);
+	FEditorMaterialThumbnailManager::Get().Tick(DeltaTime);
 
 	WorldTick(DeltaTime);
 	Render(DeltaTime);

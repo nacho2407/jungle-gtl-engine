@@ -14,6 +14,7 @@
 #include "Common/VertexLayouts.hlsli"
 #include "Common/SystemSamplers.hlsli"
 #include "Common/Skinning.hlsli"
+#include "Common/Fog.hlsli"
 
 #if !defined(LIGHTING_MODEL_UNLIT)
 #include "Common/ForwardLighting.hlsli"
@@ -22,6 +23,10 @@
 // ── 기본값 설정 ──
 #if !defined(LIGHTING_MODEL_GOURAUD) && !defined(LIGHTING_MODEL_LAMBERT) && !defined(LIGHTING_MODEL_PHONG) && !defined(LIGHTING_MODEL_UNLIT)
 #define LIGHTING_MODEL_PHONG 1
+#endif
+
+#ifndef APPLY_FOG
+#define APPLY_FOG 0
 #endif
 
 // =============================================================================
@@ -291,6 +296,10 @@ return output;
     // (비금속 표면: specular 반사 = 빛의 색, 물체 색이 아님)
     float3 finalColor = baseColor.rgb * diffuse + specular + g_DefaultEmissive.rgb;
     finalColor = ApplyWireframe(finalColor);
+    
+#if APPLY_FOG
+    finalColor = ApplyHeightFog(finalColor, input.worldPos);
+#endif
 #endif
 
     output.Color = float4(finalColor, baseColor.a);

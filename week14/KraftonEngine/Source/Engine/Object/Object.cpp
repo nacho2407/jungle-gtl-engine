@@ -1,4 +1,4 @@
-#include "Object.h"
+﻿#include "Object.h"
 #include "UUIDGenerator.h"
 #include "Serialization/Archive.h"
 #include "Serialization/DuplicateArchive.h"
@@ -128,9 +128,15 @@ void UObject::GetEditableProperties(TArray<FPropertyValue>& OutProps)
 			continue;
 		}
 
+		FPropertyValue PropertyValue = Property->ToValue(this, this);
+		if (!PropertyValue.PassesEditCondition())
+		{
+			continue;
+		}
+
 		if(Property->GetValuePtrFor(this))
 		{
-			OutProps.push_back(Property->ToValue(this, this));
+			OutProps.push_back(PropertyValue);
 		}
 	}
 }

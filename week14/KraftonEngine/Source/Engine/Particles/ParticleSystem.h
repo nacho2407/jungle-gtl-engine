@@ -8,8 +8,16 @@ class UParticleModule;
 class UParticleSystemComponent;
 class UParticleModuleRequired;
 class UParticleModuleTypeDataBase;
+class UParticleEmitter;
 
 #include "Source/Engine/Particles/ParticleSystem.generated.h"
+
+enum class EParticleModuleEditState : uint8
+{
+	InheritedLocked = 0,
+	Duplicated,
+	Shared,
+};
 
 UCLASS()
 class UParticleLODLevel : public UObject
@@ -22,11 +30,18 @@ public:
 	bool IsEnabled() const { return bEnabled; }
 	const TArray<UParticleModule*>& GetModules() const { return Modules; }
 	TArray<UParticleModule*>& GetMutableModules() { return Modules; }
+	const TArray<EParticleModuleEditState>& GetModuleEditStates() const { return ModuleEditStates; }
+	TArray<EParticleModuleEditState>& GetMutableModuleEditStates() { return ModuleEditStates; }
 	UParticleModuleTypeDataBase* GetTypeDataModule() const { return TypeDataModule; }
+	EParticleModuleEditState GetModuleEditState(int32 ModuleIndex) const;
+	UParticleModule* ResolveModule(int32 ModuleIndex, const UParticleEmitter* OwnerEmitter) const;
 
 	void SetLevel(int32 InLevel) { Level = InLevel; }
 	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
 	void SetTypeDataModule(UParticleModuleTypeDataBase* InTypeDataModule) { TypeDataModule = InTypeDataModule; }
+	void SetModuleEditState(int32 ModuleIndex, EParticleModuleEditState State);
+	void NormalizeModuleEditStates(EParticleModuleEditState DefaultState);
+	void SetAllModuleEditStates(EParticleModuleEditState State);
 
 	void Serialize(FArchive& Ar) override;
 
@@ -44,6 +59,18 @@ public:
 	}
 
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
+	template<typename T>
+	T* FindResolvedModule(const UParticleEmitter* OwnerEmitter) const
+	{
+		for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
+		{
+			if (T* TypedModule = dynamic_cast<T*>(ResolveModule(ModuleIndex, OwnerEmitter)))
+			{
+				return TypedModule;
+			}
+		}
+		return nullptr;
+	}
 
 private:
 	UPROPERTY(Edit, Save, Category="Particle|LOD", DisplayName="Level")
@@ -56,6 +83,7 @@ private:
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
 	UPROPERTY(Edit, Save, Instanced, Category="Particle|LOD", DisplayName="Modules", AllowedClass=UParticleModule)
 	TArray<UParticleModule*> Modules;
+	TArray<EParticleModuleEditState> ModuleEditStates;
 };
 
 class UParticleEmitter : public UObject
@@ -89,15 +117,25 @@ private:
 	bool bLooping = true;
 };
 
+UCLASS()
 class UParticleSystem : public UObject
 {
 public:
+	GENERATED_BODY()
+
 	~UParticleSystem() override;
 
 	void InitializeDefaultEmitters();
 
 	const TArray<UParticleEmitter*>& GetEmitters() const { return Emitters; }
 	TArray<UParticleEmitter*>& GetMutableEmitters() { return Emitters; }
+	const TArray<float>& GetLODDistances() const { return LODDistances; }
+	TArray<float>& GetMutableLODDistances() { return LODDistances; }
+	int32 GetLODCount() const { return static_cast<int32>(LODDistances.size()); }
+	float GetLODDistance(int32 Index) const;
+	int32 SelectLODLevelIndex(float Distance) const;
+	void NormalizeLODLevels();
+
 	void AddEmitter(UParticleEmitter* Emitter);
 	UParticleEmitter* AddDefaultEmitter();
 
@@ -109,6 +147,9 @@ public:
 	//GC
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
+	void NormalizeEmitterLODLevels(UParticleEmitter* Emitter);
+
 	TArray<UParticleEmitter*> Emitters;
+	TArray<float> LODDistances = { 0.0f };
 	FString AssetPathFileName = "None";
 };

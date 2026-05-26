@@ -154,6 +154,11 @@ public:
 		uint32 ObjectTypeMask,
 		const AActor* IgnoreActor = nullptr) const;
 
+	bool PhysicsSphereSweepShapeComponents(const FVector& Start, const FVector& Dir, float MaxDist, float Radius,
+		FHitResult& OutHit,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const;
+
 	// --- Game flow ---
 	// BeginPlay 이전에 호출. WorldType이 Editor면 무시된다.
 	void SetGameModeClass(UClass* InClass) { GameModeClass = InClass; }

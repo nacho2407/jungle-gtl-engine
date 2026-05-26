@@ -40,6 +40,16 @@ namespace FCollisionMath
 		const FVector& SphereCenter, float SphereRadius,
 		FVector& OutNormal, float& OutDepth);
 
+	// --- Sphere sweep vs shape component ---
+	// Radius == 0이면 point raycast, Radius > 0이면 sphere sweep.
+	bool SweepSphereShapeComponent(
+		const FVector& Start,
+		const FVector& Dir,
+		float MaxDist,
+		float Radius,
+		UPrimitiveComponent* Shape,
+		FHitResult& OutHit);
+
 	// --- 유틸리티: 컴포넌트 쌍의 셰이프 타입 판별 ---
 	EShapeType GetShapeType(const UPrimitiveComponent* Comp);
 

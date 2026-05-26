@@ -107,7 +107,7 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 // SelectEffectiveShader — ViewMode에 따른 UberLit 셰이더 변형 선택
 // ============================================================
 FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode,
-	bool bUseSkeletalVertexFactory, bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap)
+	bool bUseSkeletalVertexFactory, bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap, bool bApplyFog)
 {
 	if (ProxyShader != FShaderManager::Get().GetOrCreate(EShaderPath::UberLit))
 		return ProxyShader;
@@ -120,21 +120,21 @@ FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewM
 	switch (ViewMode)
 	{
 	case EViewMode::Unlit:
-		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Unlit, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap);
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Unlit, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap, bApplyFog);
 	case EViewMode::Lit_Gouraud:
-		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Gouraud, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap);
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Gouraud, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap, bApplyFog);
 	case EViewMode::Lit_Lambert:
-		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Lambert, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap);
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Lambert, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap, bApplyFog);
 	case EViewMode::Lit_Phong:
 	case EViewMode::LightCulling:
-		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Phong, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap);
+		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Phong, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap, bApplyFog);
 	default:
 		return (bUseSkeletalVertexFactory || bUseInstancedVertexFactory)
 			? FShaderManager::Get().GetOrCreateUberLitPermutation(
 				EUberLitDefines::ELightingModel::Default,
 				VertexFactory,
 				EShaderErrorMode::Notification,
-				bWeightBoneHeatMap)
+				bWeightBoneHeatMap, bApplyFog)
 			: ProxyShader;
 	}
 }
@@ -519,7 +519,7 @@ void FDrawCommandBuilder::BuildCommandForSection(FScene& Scene, const FPrimitive
 	FShader* SectionShader = (Section.Material && Section.Material->GetShader())
 		? Section.Material->GetShader()
 		: Proxy.GetShader();
-	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, BuildCtx.bGPUSkinning, false, BuildCtx.bWeightBoneHeatMap);
+	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, BuildCtx.bGPUSkinning, false, BuildCtx.bWeightBoneHeatMap, false);
 
 	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
 
@@ -576,12 +576,13 @@ void FDrawCommandBuilder::BuildParticleCommandForSection(FScene& Scene, const FP
 	if (!Buffer.IB) return;
 
 	const bool bInstanced = Buffer.IsInstanced();
+	const bool bApplyFog = Pass == ERenderPass::AlphaBlend;
 
 	FShader* SectionShader = (Section.Material && Section.Material->GetShader())
 		? Section.Material->GetShader()
 		: Proxy.GetShader();
 
-	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, false, bInstanced, false);
+	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, false, bInstanced, false, bApplyFog);
 
 	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
 
@@ -621,6 +622,11 @@ void FDrawCommandBuilder::BuildParticleCommandForSection(FScene& Scene, const FP
 		// 섹션별 Material의 RenderPass가 현재 Pass와 일치할 때만 렌더 상태 오버라이드
 		if (Pass == Mat->GetRenderPass())
 			ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
+	}
+
+	if (bApplyFog)
+	{
+		Cmd.Bindings.FogCB = &FogCB;
 	}
 
 	Cmd.BuildSortKey();
@@ -735,6 +741,8 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 {
 	ID3D11DeviceContext* Ctx = CachedContext;
 	EViewMode ViewMode = Frame.RenderOptions.ViewMode;
+
+	const FDrawCommandRenderState FogRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::Fog, ViewMode);
 	const FDrawCommandRenderState PPRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::PostProcess, ViewMode);
 
 	// HeightFog (UserBits=0 → Outline보다 먼저)
@@ -755,8 +763,8 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 			FogCB.Update(Ctx, &fogData, sizeof(FFogConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.InitFullscreenTriangle(FogShader, ERenderPass::PostProcess, PPRS);
-			Cmd.Bindings.PerShaderCB[0] = &FogCB;
+			Cmd.InitFullscreenTriangle(FogShader, ERenderPass::Fog, FogRS);
+			Cmd.Bindings.FogCB = &FogCB;
 			Cmd.BuildSortKey(0);
 		}
 	}

@@ -39,8 +39,11 @@ struct FRibbonParticlePayload
 {
 	FVector SourcePosition = FVector::ZeroVector;
 	FVector PreviousPosition = FVector::ZeroVector;
+	float InitialWidth = 1.0f;
+	float EndWidth = 0.0f;
 	float Width = 1.0f;
 	float Twist = 0.0f;
+	uint16 RibbonId = 0;
 	uint16 SourceParticleIndex = 0;
 	uint16 NextParticleIndex = 0;
 };
@@ -54,6 +57,7 @@ struct FBeamParticlePayload
 	float SourceStrength = 0.0f;
 	float TargetStrength = 0.0f;
 	float BeamDistance = 0.0f;
+	float Width = 8.0f;
 	uint16 BeamIndex = 0;
 };
 
@@ -207,9 +211,21 @@ public:
 	GENERATED_BODY()
 	UParticleModuleTypeDataRibbon()
 	{
-		StartWidth.Constant = 1.0f;
-		StartWidth.MinValue = 1.0f;
-		StartWidth.MaxValue = 1.0f;
+		TessellationFactor = 1.0f;
+		bUseTrailSmoothing = true;
+		TextureTileDistance = 100.0f;
+
+		StartWidth.Constant = 16.0f;
+		StartWidth.MinValue = 16.0f;
+		StartWidth.MaxValue = 16.0f;
+
+		EndWidth.Constant = 0.0f;
+		EndWidth.MinValue = 0.0f;
+		EndWidth.MaxValue = 0.0f;
+
+		StartTwist.Constant = 0.0f;
+		StartTwist.MinValue = 0.0f;
+		StartTwist.MaxValue = 0.0f;
 	}
 
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Tessellation Factor", Min=0.0f, Speed=0.1f)
@@ -217,8 +233,14 @@ public:
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Use Trail Smoothing")
 	bool bUseTrailSmoothing = true;
 
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Ribbon", DisplayName = "Texture Tile Distance", Min = 1.0f, Speed = 1.0f)
+	float TextureTileDistance = 100.0f;
+
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Start Width", Type=Struct, Struct=FRawDistributionFloat)
 	FRawDistributionFloat StartWidth;
+
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Ribbon", DisplayName = "End Width", Type = Struct, Struct = FRawDistributionFloat)
+	FRawDistributionFloat EndWidth;
 
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Start Twist", Type=Struct, Struct=FRawDistributionFloat)
 	FRawDistributionFloat StartTwist;
@@ -241,8 +263,11 @@ public:
 		FRibbonParticlePayload* Payload = reinterpret_cast<FRibbonParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
 		Payload->SourcePosition = Particle.Position;
 		Payload->PreviousPosition = Particle.Position;
-		Payload->Width = StartWidth.GetValue();
+		Payload->InitialWidth = StartWidth.GetValue();
+		Payload->EndWidth = EndWidth.GetValue();
+		Payload->Width = Payload->InitialWidth;
 		Payload->Twist = StartTwist.GetValue();
+		Payload->RibbonId = 0;
 		Payload->SourceParticleIndex = static_cast<uint16>(Particle.FrameIndex & 0xffff);
 		Payload->NextParticleIndex = 0xffff;
 	}
@@ -265,6 +290,9 @@ public:
 			FRibbonParticlePayload* Payload = reinterpret_cast<FRibbonParticlePayload*>(ParticleBase + CurrentOffset);
 			Payload->PreviousPosition = Payload->SourcePosition;
 			Payload->SourcePosition = Particle->Position;
+
+			const float T = Particle->RelativeTime;
+			Payload->Width = Payload->InitialWidth * (1.0f - T) + Payload->EndWidth * T;
 		END_UPDATE_LOOP
 	}
 
@@ -286,6 +314,12 @@ public:
 	GENERATED_BODY()
 	UParticleModuleTypeDataBeam()
 	{
+		BeamWidth.Constant = 8.0f;
+		BeamWidth.MinValue = 8.0f;
+		BeamWidth.MaxValue = 8.0f;
+
+		TextureTileDistance = 100.0f;
+
 		TargetPoint.Constant = FVector(100.0f, 0.0f, 0.0f);
 		TargetPoint.MinValue = FVector(100.0f, 0.0f, 0.0f);
 		TargetPoint.MaxValue = FVector(100.0f, 0.0f, 0.0f);
@@ -295,6 +329,12 @@ public:
 	int32 MaxBeamCount = 1;
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Interpolation Points", Min=0.0f, Speed=1.0f)
 	int32 InterpolationPoints = 10;
+
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Beam", DisplayName = "Beam Width", Type = Struct, Struct = FRawDistributionFloat)
+	FRawDistributionFloat BeamWidth;
+
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Beam", DisplayName = "Texture Tile Distance", Min = 1.0f, Speed = 1.0f)
+	float TextureTileDistance = 100.0f;
 
 	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Source Point", Type=Struct, Struct=FRawDistributionVector)
 	FRawDistributionVector SourcePoint;
@@ -337,6 +377,7 @@ public:
 		Payload->TargetStrength = TargetStrength.GetValue();
 		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
 		Payload->BeamIndex = static_cast<uint16>(MaxBeamCount > 0 ? Particle.FrameIndex % static_cast<uint32>(MaxBeamCount) : 0);
+		Payload->Width = BeamWidth.GetValue();
 	}
 
 	EParticleRenderType GetRenderType() const override

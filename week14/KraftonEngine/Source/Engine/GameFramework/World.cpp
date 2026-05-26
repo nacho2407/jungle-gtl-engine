@@ -236,6 +236,14 @@ bool UWorld::PhysicsRaycastByObjectTypes(const FVector& Start, const FVector& Di
 	return false;
 }
 
+bool UWorld::PhysicsSphereSweepShapeComponents(const FVector& Start, const FVector& Dir, float MaxDist, float Radius,
+	FHitResult& OutHit, ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
+{
+	if (PhysicsScene)
+		return PhysicsScene->SphereSweepShapeComponents(Start, Dir, MaxDist, Radius, OutHit, TraceChannel, IgnoreActor);
+	return false;
+}
+
 
 void UWorld::InsertActorToOctree(AActor* Actor)
 {

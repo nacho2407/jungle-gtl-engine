@@ -596,6 +596,7 @@ void FAnimGraphEditorWidget::Render(float DeltaTime)
 	std::snprintf(WindowTitle, sizeof(WindowTitle),
 		"AnimGraph Editor##%p", static_cast<const void*>(Asset));
 
+	ImGui::SetNextWindowSize(ImVec2(1280.0f, 720.0f), ImGuiCond_Once);
 	if (ConsumeFocusRequest())
 	{
 		ImGui::SetNextWindowFocus();

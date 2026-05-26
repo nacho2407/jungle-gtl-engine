@@ -5,6 +5,8 @@
 #include "Particles/Runtime/ParticleEmitterInstance.h"
 #include "Particles/Runtime/ParticleRuntimeTypes.h"
 #include "Render/Proxy/ParticleSystemSceneProxy.h"
+#include "Render/Types/MinimalViewInfo.h"
+#include "GameFramework/World.h"
 
 #include <cstring>
 
@@ -29,6 +31,7 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 
 void UParticleSystemComponent::ResetSystem()
 {
+	CurrentLODIndex = 0;
 	ClearEmitterInstances();
 	InitializeEmitterInstances();
 }
@@ -113,10 +116,36 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 		return;
 	}
 
+	if (ParticleSystem && PreviewLODIndex >= 0)
+	{
+		const int32 LODCount = ParticleSystem->GetLODCount();
+		CurrentLODIndex = LODCount > 0
+			? (PreviewLODIndex < LODCount ? PreviewLODIndex : LODCount - 1)
+			: 0;
+	}
+	else
+	{
+		FMinimalViewInfo POV;
+		const bool bHasViewLocation = GetWorld() && GetWorld()->GetActivePOV(POV);
+		if (bHasViewLocation && ParticleSystem)
+		{
+			const float Distance = FVector::Distance(GetWorldLocation(), POV.Location);
+			CurrentLODIndex = ParticleSystem->SelectLODLevelIndex(Distance);
+		}
+	}
+
 	bool bAnyEmitterTicked = false;
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		if (!Instance || !Instance->IsActive())
+		{
+			continue;
+		}
+
+		Instance->SetLODLevelIndex(CurrentLODIndex);
+
+		const UParticleLODLevel* CurrentLODLevel = Instance->GetCurrentLODLevel();
+		if (!CurrentLODLevel || !CurrentLODLevel->IsEnabled())
 		{
 			continue;
 		}
@@ -131,6 +160,31 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	}
 }
 
+void UParticleSystemComponent::SetPreviewLODIndex(int32 InLODIndex)
+{
+	PreviewLODIndex = InLODIndex >= 0 ? InLODIndex : -1;
+}
+
+void UParticleSystemComponent::SetPreviewSoloEmitterIndex(int32 InEmitterIndex)
+{
+	PreviewSoloEmitterIndex = InEmitterIndex >= 0 ? InEmitterIndex : -1;
+}
+
+bool UParticleSystemComponent::ShouldCreateEmitterInstance(int32 EmitterIndex, const UParticleEmitter* Emitter) const
+{
+	if (!Emitter)
+	{
+		return false;
+	}
+
+	return PreviewSoloEmitterIndex < 0 || PreviewSoloEmitterIndex == EmitterIndex;
+}
+
+void UParticleSystemComponent::BroadcastParticleCollisionEvent(const FParticleCollisionEventPayload& Event)
+{
+	OnParticleCollideEvent.Broadcast(this, Event);
+}
+
 void UParticleSystemComponent::InitializeEmitterInstances()
 {
 	if (!ParticleSystem)
@@ -141,9 +195,10 @@ void UParticleSystemComponent::InitializeEmitterInstances()
 	const TArray<UParticleEmitter*>& Emitters = ParticleSystem->GetEmitters();
 	EmitterInstances.reserve(Emitters.size());
 
-	for (UParticleEmitter* Emitter : Emitters)
+	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(Emitters.size()); ++EmitterIndex)
 	{
-		if (!Emitter)
+		UParticleEmitter* Emitter = Emitters[EmitterIndex];
+		if (!ShouldCreateEmitterInstance(EmitterIndex, Emitter))
 		{
 			continue;
 		}

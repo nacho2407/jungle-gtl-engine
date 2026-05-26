@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Editor/UI/Panel/EditorPropertyRenderer.h"
 #include "Editor/Viewport/Asset/ParticleSystemEditorViewportClient.h"
 #include "Editor/UI/Asset/AssetEditorWidget.h"
 #include "Object/FName.h"
@@ -52,6 +53,7 @@ private:
 		bool bShowCurveEditor = true;
 		bool bPreviewPlaying = true;
 		bool bRestartPreviewRequested = false;
+		int32 SoloEmitterIndex = -1;
 		float PreviewTime = 0.0f;
 		float MainSplitRatio = 0.52f;
 		float ViewportDetailsSplitRatio = 0.58f;
@@ -65,11 +67,17 @@ private:
 	void SelectEmitter(int32 EmitterIndex);
 	void SelectLOD(int32 EmitterIndex, int32 LODIndex);
 	void SelectModule(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex);
+	bool SelectLODByIndex(int32 LODIndex);
+	bool SelectAdjacentLOD(int32 Direction);
+	bool SelectExtremeLOD(bool bLowest);
+	bool AddLODToSystem(bool bInsertAfterCurrent);
+	bool RegenerateLowestLOD(bool bDuplicateHighest);
+	bool DeleteSelectedLOD();
 	bool IsEmitterSelected(int32 EmitterIndex) const;
 	bool IsLODSelected(int32 EmitterIndex, int32 LODIndex) const;
 	bool IsModuleSelected(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex) const;
 	const char* GetSelectionKindLabel() const;
-	int32 GetDisplayLODIndex(const UParticleEmitter* Emitter) const;
+	int32 GetCurrentSystemLODIndex(const UParticleSystem* ParticleSystem) const;
 	const UParticleEmitter* GetSelectedEmitter(const UParticleSystem* ParticleSystem) const;
 	const UParticleLODLevel* GetSelectedLODLevel(const UParticleSystem* ParticleSystem) const;
 	const UParticleModule* GetSelectedModule(const UParticleSystem* ParticleSystem) const;
@@ -79,15 +87,16 @@ private:
 	void RenderDetailsPanel(const ImVec2& Size);
 	void RenderEmittersPanel(const ImVec2& Size);
 	void RenderCurveEditorPanel(const ImVec2& Size) const;
-	bool RenderObjectProperties(UObject* Object);
-	bool RenderPropertyValueEditor(FPropertyValue& PropertyValue);
+	bool RenderObjectProperties(UObject* Object, bool bReadOnly = false);
 	void ApplyEditedObjectSideEffects(UObject* Object);
 	void CreatePreviewWorld();
 	void DestroyPreviewWorld();
 	void RestartPreviewSimulation();
+	void RefreshParticleSystemComponents();
 
 private:
 	FEditorViewState ViewState;
+	FEditorPropertyRenderer PropertyRenderer;
 	FParticleSystemEditorViewportClient ViewportClient;
 	AActor* PreviewActor = nullptr;
 	UParticleSystemComponent* PreviewParticleComponent = nullptr;

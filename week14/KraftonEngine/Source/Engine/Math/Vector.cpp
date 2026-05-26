@@ -7,6 +7,10 @@ float FVector::Length() const {
 	return std::sqrtf(X * X + Y * Y + Z * Z);
 }
 
+float FVector::LengthSquared() const {
+	return X * X + Y * Y + Z * Z;
+}
+
 void FVector::Normalize() {
 	auto length = Length();
 

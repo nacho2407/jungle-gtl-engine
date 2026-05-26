@@ -178,7 +178,11 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	// 베이스 클래스의 transform 등 공통 프로퍼티 처리 보장
 	USceneComponent::PostEditProperty(PropertyName);
 
-	if (strcmp(PropertyName, "bIsVisible") == 0 || strcmp(PropertyName, "Visible") == 0)
+	if (strcmp(PropertyName, "RelativeTransform.Scale") == 0 || strcmp(PropertyName, "Scale") == 0)
+	{
+		NotifyPhysicsBodyDirty();
+	}
+	else if (strcmp(PropertyName, "bIsVisible") == 0 || strcmp(PropertyName, "Visible") == 0)
 	{
 		// Property Editor가 bIsVisible을 직접 수정한 경우 dirty 시퀀스만 전파한다.
 		MarkRenderVisibilityDirty();
@@ -417,6 +421,12 @@ void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
 		// 이미 등록된 상태에서 enabled 종류 변경 (예: QueryOnly ↔ QueryAndPhysics) — 재구성
 		NotifyPhysicsBodyDirty();
 	}
+}
+
+void UPrimitiveComponent::SetRelativeScale(const FVector& NewScale)
+{
+	USceneComponent::SetRelativeScale(NewScale);
+	NotifyPhysicsBodyDirty();
 }
 
 bool UPrimitiveComponent::IsQueryCollisionEnabled() const

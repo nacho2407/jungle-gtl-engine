@@ -360,6 +360,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	}
 
 	FString WindowTitle = VisibleTitle + WindowIdSuffix;
+	ImGui::SetNextWindowSize(ImVec2(1280.0f, 720.0f), ImGuiCond_Once);
 	if (ConsumeFocusRequest())
 	{
 		ImGui::SetNextWindowFocus();
