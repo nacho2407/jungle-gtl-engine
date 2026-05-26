@@ -8,6 +8,7 @@
 #include "Particle/ParticleEventManager.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
+#include "Render/Scene/ParticleSystemRenderProxy.h"
 #include <algorithm>
 #include <cstring>
 #include <memory>
@@ -90,10 +91,12 @@ UParticleSystemComponent::UParticleSystemComponent()
 {
 	bEnableCull = false;
 	InstanceOwner = std::make_unique<FInstanceOwner>(this);
+	RenderProxy = std::make_unique<FParticleSystemRenderProxy>(this);
 }
 
 UParticleSystemComponent::~UParticleSystemComponent()
 {
+	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 }
@@ -107,6 +110,7 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 
 	ResolvedTemplate = InTemplate;
 	Template.SetPath(InTemplate ? InTemplate->GetAssetPath() : FString());
+	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
@@ -116,6 +120,7 @@ void UParticleSystemComponent::SetTemplateAsset(const TSoftObjectPtr<UParticleSy
 {
 	Template = InTemplate;
 	ResolvedTemplate = nullptr;
+	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
@@ -125,6 +130,7 @@ void UParticleSystemComponent::SetTemplatePath(const FString& InPath)
 {
 	Template.SetPath(FPaths::Normalize(InPath));
 	ResolvedTemplate = nullptr;
+	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
@@ -158,6 +164,7 @@ void UParticleSystemComponent::Serialize(FArchive& Ar)
 	if (Ar.IsLoading())
 	{
 		ResolvedTemplate = nullptr;
+		ReleaseRenderProxyResources();
 		ReleaseRenderData();
 		ReleaseEmitterInstances();
 		CreateEmitterInstances();
@@ -170,6 +177,7 @@ void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
 	if (PropertyName && FString(PropertyName) == "Template")
 	{
 		ResolvedTemplate = nullptr;
+		ReleaseRenderProxyResources();
 		ReleaseRenderData();
 		ReleaseEmitterInstances();
 		CreateEmitterInstances();
@@ -319,6 +327,11 @@ const FDynamicEmitterDataBase* UParticleSystemComponent::GetEmitterRenderDataSna
 	return EmitterRenderData[SnapshotIndex];
 }
 
+FPrimitiveRenderProxy* UParticleSystemComponent::GetRenderProxy()
+{
+	return RenderProxy.get();
+}
+
 void UParticleSystemComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
@@ -360,6 +373,7 @@ bool UParticleSystemComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitRe
 
 void UParticleSystemComponent::ResetParticles()
 {
+	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
@@ -381,6 +395,14 @@ void UParticleSystemComponent::ReleaseRenderData()
 		delete RenderData;
 	}
 	EmitterRenderData.clear();
+}
+
+void UParticleSystemComponent::ReleaseRenderProxyResources()
+{
+	if (RenderProxy != nullptr)
+	{
+		RenderProxy->ReleaseResources();
+	}
 }
 
 int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const
@@ -449,6 +471,7 @@ void UParticleSystemComponent::UpdateLODLevel()
 			Instance->CurrentLODLevelIndex != SelectLODLevelIndex(Instance->SpriteTemplate))
 		{
 			// 선택 LOD가 바뀌면 TypeData 종류와 payload layout도 달라질 수 있으므로 모든 instance를 다시 생성
+			ReleaseRenderProxyResources();
 			ReleaseRenderData();
 			ReleaseEmitterInstances();
 			CreateEmitterInstances();

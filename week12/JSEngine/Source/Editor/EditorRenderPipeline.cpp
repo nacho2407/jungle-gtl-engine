@@ -87,7 +87,7 @@ namespace
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer) : Editor(InEditor)
 {
-	Collector.Initialize(InRenderer.GetFD3DDevice().GetDevice());
+	Collector.Initialize(InRenderer.GetFD3DDevice().GetDevice(), InRenderer.GetFD3DDevice().GetDeviceContext());
 	ViewportCullingStats.resize(FEditorViewportLayout::MaxViewports);
 	ViewportDecalStats.resize(FEditorViewportLayout::MaxViewports);
 	ViewportLightStats.resize(FEditorViewportLayout::MaxViewports);
