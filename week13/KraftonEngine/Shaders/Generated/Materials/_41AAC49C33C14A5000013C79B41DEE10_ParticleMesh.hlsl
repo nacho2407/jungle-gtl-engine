@@ -93,9 +93,7 @@ float4 PS(PS_Input_MaterialMeshParticle input) : SV_TARGET
     float3 N = normalize(input.normal);
     float3 ambient = AmbientLight.Color.rgb * AmbientLight.Intensity;
     float NdotL = saturate(dot(N, -DirectionalLight.Direction));
-    // Half-Lambert: 그림자 면이 완전히 검어지지 않도록 부드럽게
-    float halfLambert = NdotL * 0.5f + 0.5f;
-    float3 directional = DirectionalLight.Color.rgb * DirectionalLight.Intensity * halfLambert;
+    float3 directional = DirectionalLight.Color.rgb * DirectionalLight.Intensity * NdotL;
     float3 lighting = saturate(ambient + directional);
     BaseColor = BaseColor * lighting;
 
