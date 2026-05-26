@@ -602,6 +602,7 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 		ImGui::Checkbox("Octree", &RenderOptions.ShowFlags.bOctree);
 		ImGui::Checkbox("Fog", &RenderOptions.ShowFlags.bFog);
 		ImGui::Checkbox("FXAA", &RenderOptions.ShowFlags.bFXAA);
+		ImGui::Checkbox("Bloom", &RenderOptions.ShowFlags.bBloom);
 		ImGui::Checkbox("Gamma Correction", &RenderOptions.ShowFlags.bGammaCorrection);
 		ImGui::Checkbox("View Light Culling", &RenderOptions.ShowFlags.bViewLightCulling);
 		ImGui::Checkbox("Visualize 2.5D Culling", &RenderOptions.ShowFlags.bVisualize25DCulling);

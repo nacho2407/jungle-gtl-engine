@@ -20,5 +20,7 @@ float4 PS(PS_Input_Particle input) : SV_TARGET
     float4 tex = DiffuseTexture.Sample(LinearWrapSampler, input.texcoord);
     float4 color = tex * input.color;
     color.rgb = ApplyHeightFog(color.rgb, input.worldPos);
+    float emissive = 10.0f;
+    color.rgb *= emissive;
     return color;
 }

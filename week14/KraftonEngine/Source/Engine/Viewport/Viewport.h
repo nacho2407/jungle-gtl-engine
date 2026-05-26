@@ -53,6 +53,12 @@ public:
 	ID3D11RenderTargetView* GetCullingHeatmapRTV() const { return CullingHeatmapRTV; }
 	ID3D11ShaderResourceView* GetCullingHeatmapSRV() const { return CullingHeatmapSRV; }
 
+	// Bloom ping-pong RTs
+	ID3D11RenderTargetView* GetBloomRTVA() const { return BloomRTVA; }
+	ID3D11ShaderResourceView* GetBloomSRVA() const { return BloomSRVA; }
+	ID3D11RenderTargetView* GetBloomRTVB() const { return BloomRTVB; }
+	ID3D11ShaderResourceView* GetBloomSRVB() const { return BloomSRVB; }
+
 	const D3D11_VIEWPORT& GetViewportRect() const { return ViewportRect; }
 
 private:
@@ -91,6 +97,15 @@ private:
 	ID3D11Texture2D* CullingHeatmapTexture = nullptr;
 	ID3D11RenderTargetView* CullingHeatmapRTV = nullptr;
 	ID3D11ShaderResourceView* CullingHeatmapSRV = nullptr;
+
+	//Bloom용 텍스쳐
+	ID3D11Texture2D* BloomTextureA = nullptr;
+	ID3D11RenderTargetView* BloomRTVA = nullptr;
+	ID3D11ShaderResourceView* BloomSRVA = nullptr;
+
+	ID3D11Texture2D* BloomTextureB = nullptr;
+	ID3D11RenderTargetView* BloomRTVB = nullptr;
+	ID3D11ShaderResourceView* BloomSRVB = nullptr;
 
 	D3D11_VIEWPORT ViewportRect = {};
 

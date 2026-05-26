@@ -93,7 +93,7 @@ bool FViewport::CreateResources()
 	TexDesc.Height = Height;
 	TexDesc.MipLevels = 1;
 	TexDesc.ArraySize = 1;
-	TexDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	TexDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	TexDesc.SampleDesc.Count = 1;
 	TexDesc.Usage = D3D11_USAGE_DEFAULT;
 	TexDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
@@ -179,7 +179,7 @@ bool FViewport::CreateResources()
 	StencilCopySRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportStencilCopySRV")), "ViewportStencilCopySRV");
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SceneColorCopySRVDesc = {};
-	SceneColorCopySRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	SceneColorCopySRVDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	SceneColorCopySRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	SceneColorCopySRVDesc.Texture2D.MipLevels = 1;
 	SceneColorCopySRVDesc.Texture2D.MostDetailedMip = 0;
@@ -234,6 +234,44 @@ bool FViewport::CreateResources()
 	if (FAILED(hr)) return false;
 	CullingHeatmapSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportCullingHeatmapSRV")), "ViewportCullingHeatmapSRV");
 
+	//Bloom 텍스처
+	D3D11_TEXTURE2D_DESC BloomDesc = {};
+	BloomDesc.Width = Width;     // 주의: 블룸 최적화를 위해 Width / 2, Height / 2 로 다운샘플링하여 생성하기도 합니다.
+	BloomDesc.Height = Height;
+	BloomDesc.MipLevels = 1;
+	BloomDesc.ArraySize = 1;
+	BloomDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	BloomDesc.SampleDesc.Count = 1;
+	BloomDesc.Usage = D3D11_USAGE_DEFAULT;
+	BloomDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	// Bloom A 생성
+	hr = Device->CreateTexture2D(&BloomDesc, nullptr, &BloomTextureA);
+	if (FAILED(hr)) return false;
+	BloomTextureA->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportBloomTextureA")), "ViewportBloomTextureA");
+
+	hr = Device->CreateRenderTargetView(BloomTextureA, nullptr, &BloomRTVA);
+	if (FAILED(hr)) return false;
+	BloomRTVA->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportBloomRTVA")), "ViewportBloomRTVA");
+
+	hr = Device->CreateShaderResourceView(BloomTextureA, nullptr, &BloomSRVA);
+	if (FAILED(hr)) return false;
+	BloomSRVA->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportBloomSRVA")), "ViewportBloomSRVA");
+
+	// Bloom B 생성
+	hr = Device->CreateTexture2D(&BloomDesc, nullptr, &BloomTextureB);
+	if (FAILED(hr)) return false;
+	BloomTextureB->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportBloomTextureB")), "ViewportBloomTextureB");
+
+	hr = Device->CreateRenderTargetView(BloomTextureB, nullptr, &BloomRTVB);
+	if (FAILED(hr)) return false;
+	BloomRTVB->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportBloomRTVB")), "ViewportBloomRTVB");
+
+	hr = Device->CreateShaderResourceView(BloomTextureB, nullptr, &BloomSRVB);
+	if (FAILED(hr)) return false;
+	BloomSRVB->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportBloomSRVB")), "ViewportBloomSRVB");
+
+
 	// ── 뷰포트 렉트 ──
 	ViewportRect.TopLeftX = 0.0f;
 	ViewportRect.TopLeftY = 0.0f;
@@ -247,6 +285,14 @@ bool FViewport::CreateResources()
 
 void FViewport::ReleaseResources()
 {
+	if (BloomSRVB) { BloomSRVB->Release(); BloomSRVB = nullptr; }
+	if (BloomRTVB) { BloomRTVB->Release(); BloomRTVB = nullptr; }
+	if (BloomTextureB) { BloomTextureB->Release(); BloomTextureB = nullptr; }
+
+	if (BloomSRVA) { BloomSRVA->Release(); BloomSRVA = nullptr; }
+	if (BloomRTVA) { BloomRTVA->Release(); BloomRTVA = nullptr; }
+	if (BloomTextureA) { BloomTextureA->Release(); BloomTextureA = nullptr; }
+
 	if (CullingHeatmapSRV) { CullingHeatmapSRV->Release(); CullingHeatmapSRV = nullptr; }
 	if (CullingHeatmapRTV) { CullingHeatmapRTV->Release(); CullingHeatmapRTV = nullptr; }
 	if (CullingHeatmapTexture) { CullingHeatmapTexture->Release(); CullingHeatmapTexture = nullptr; }
