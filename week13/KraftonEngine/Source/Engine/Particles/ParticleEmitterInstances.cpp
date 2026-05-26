@@ -2694,6 +2694,12 @@ void FParticleBeam2EmitterInstance::InitParameters(UParticleEmitter* InTemplate,
 	FParticleEmitterInstance::InitParameters(InTemplate, InComponent);
 	bIsBeam = true;
 	BeamTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataBeam2>(CurrentLODLevel->TypeDataModule) : nullptr;
+	if (CurrentLODLevel && CurrentLODLevel->RequiredModule && CurrentLODLevel->RequiredModule->bUseLocalSpace)
+	{
+		// UE Cascade Beam2 forces beam emitters into world-space here. Source/Target
+		// modules then use the component transform when resolving default data.
+		CurrentLODLevel->RequiredModule->bUseLocalSpace = false;
+	}
 }
 
 void FParticleBeam2EmitterInstance::Init()
