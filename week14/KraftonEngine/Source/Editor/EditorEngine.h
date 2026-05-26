@@ -164,7 +164,7 @@ private:
 	bool bRequestEndPlayMapQueued = false;
 	EPIEControlMode PIEControlMode = EPIEControlMode::Possessed;
 	FString CurrentLevelFilePath;
-	bool bAutoGCEnabled = true;
+	bool bAutoGCEnabled = false;
 	float GCIntervalSeconds = 1.0f;
 	float GCTimeAccumulator = 0.0f;
 
