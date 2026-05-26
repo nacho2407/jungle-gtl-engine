@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cstring>
 #include <limits>
+#include <variant>
 
 namespace
 {
@@ -23,6 +24,11 @@ namespace
 	bool IsLiveObject(const UObject* Object)
 	{
 		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
+	}
+
+	bool IsSpriteTypeDataModule(const UParticleModuleTypeDataBase* TypeData)
+	{
+		return TypeData != nullptr && TypeData->GetClass() == UParticleModuleTypeDataBase::StaticClass();
 	}
 
 	int32 AlignParticleBytes(int32 Value)
@@ -208,6 +214,10 @@ namespace
 		AddInstancePayloadOffset(Cache, TypeData, TypeData, InstancePayloadSize);
 
 		// LOD 0 특수 module 고정 layout
+		if (Cache.RequiredModule != nullptr)
+		{
+			Cache.RequiredModule->bEnabled = true;
+		}
 		AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
 		AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
 		AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
@@ -215,7 +225,17 @@ namespace
 
 		for (UParticleModule* Module : LODLevel->Modules)
 		{
-			if (Module == nullptr || Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
+			if (Module == nullptr)
+			{
+				continue;
+			}
+
+			if (Cast<UParticleModuleSubUV>(Module) != nullptr && !IsSpriteTypeDataModule(TypeData))
+			{
+				Module->bEnabled = false;
+			}
+
+			if (Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
 			{
 				continue;
 			}
@@ -568,6 +588,45 @@ namespace
 		UCurveColorAsset* CurveAsset = ResolveColorCurve(Curve);
 		return CurveAsset ? CurveAsset->Evaluate(Time) : Fallback;
 	}
+
+	UTexture* ResolveDiffuseTexture(const UMaterialInterface* Material)
+	{
+		if (Material == nullptr)
+		{
+			return nullptr;
+		}
+
+		FMaterialParamValue DiffuseMap;
+		if (!Material->GetParam("DiffuseMap", DiffuseMap) ||
+			DiffuseMap.Type != EMaterialParamType::Texture ||
+			!std::holds_alternative<UTexture*>(DiffuseMap.Value))
+		{
+			return nullptr;
+		}
+
+		return std::get<UTexture*>(DiffuseMap.Value);
+	}
+
+	bool ShouldUseRelativeTimeForSubImageIndex(const FParticleFloatDistribution& Distribution)
+	{
+		return Distribution.Mode == EParticleDistributionMode::Constant &&
+			Distribution.Constant == 0.0f &&
+			Distribution.Min == 0.0f &&
+			Distribution.Max == 0.0f &&
+			Distribution.Curve.GetPath().empty() &&
+			Distribution.MinCurve.GetPath().empty() &&
+			Distribution.MaxCurve.GetPath().empty();
+	}
+
+	float EvaluateSubImageIndex(const UParticleModuleSubUV& Module, const FParticleDistributionContext& Context)
+	{
+		if (ShouldUseRelativeTimeForSubImageIndex(Module.SubImageIndex))
+		{
+			return Context.RelativeTime;
+		}
+
+		return EvaluateParticleFloat(Module.SubImageIndex, Context);
+	}
 }
 
 float EvaluateParticleFloat(const FParticleFloatDistribution& Distribution, const FParticleDistributionContext& Context)
@@ -869,6 +928,74 @@ bool UParticleModuleCollision::IsUpdateModule() const
 	return true;
 }
 
+static FSubUVParticlePayload* GetSubUVPayload(FParticleEmitterInstance* Owner, FBaseParticle& Particle, int32 Offset)
+{
+	if (Offset < 0)
+	{
+		return nullptr;
+	}
+
+	uint8* Raw = Owner->GetParticlePayloadByOffset(Particle, Offset);
+	return reinterpret_cast<FSubUVParticlePayload*>(Raw);
+}
+
+void UParticleModuleSubUV::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	FSubUVParticlePayload* Payload = GetSubUVPayload(Owner, Particle, Offset);
+	if (!Payload)
+	{
+		return;
+	}
+
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, nullptr);
+
+	if (InterpMethod == EParticleSubUVInterpMethod::Random) // Random: Spawn 시 프레임 Random 결정
+	{
+		const int32 TotalFrames = Columns * Rows;
+		Payload->ImageIndex = Owner->RandomStream.GetRange(0.0f, static_cast<float>(TotalFrames));
+		Payload->RandomSeed = Particle.Seed;
+	}
+	else
+	{
+		const int32 TotalFrames = std::max(Columns * Rows, 1);
+		Payload->ImageIndex = 0;
+		Payload->RandomSeed = 0;
+	}
+}
+
+void UParticleModuleSubUV::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)DeltaTime;
+
+	const int32 TotalFrames = Columns * Rows;
+	if (TotalFrames <= 0)
+	{
+		return;
+	}
+
+	const int32 ActiveCount = Owner->GetActiveParticleCount();
+	for (int32 i = 0; i < ActiveCount; ++i)
+	{
+		FBaseParticle& Particle = Owner->GetParticleByActiveIndex(i);
+
+		FSubUVParticlePayload* Payload = GetSubUVPayload(Owner, Particle, Offset);
+		if (!Payload)
+		{
+			return;
+		}
+
+		// 정규화된 RelativeTime(0.f ~ 1.f)을 Frame Index로 매핑 → DistributionMode가 Constant/Curve면 수명 기반 재평가
+		if (InterpMethod == EParticleSubUVInterpMethod::Linear)
+		{
+			const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, nullptr);
+			Payload->ImageIndex = EvaluateSubImageIndex(*this, Context) * static_cast<float>(TotalFrames - 1);
+		}
+		// Random일 경우 고정된 프레임 유지
+
+		Payload->ImageIndex = MathUtil::Clamp(Payload->ImageIndex, 0.0f, static_cast<float>(TotalFrames - 1));
+	}
+}
+
 UParticleLODLevel::~UParticleLODLevel()
 {
 	if (IsLiveObject(RequiredModule))
@@ -1090,7 +1217,7 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 	}
 
 	UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
-	RenderData->ReplayData.eEmitterType = EDynamicEmitterType::Sprite;
+	RenderData->ReplayData.EmitterType = EDynamicEmitterType::Sprite;
 	RenderData->ReplayData.ActiveParticleCount = SnapshotParticleCount;
 	RenderData->ReplayData.ParticleStride = ParticleStride;
 	RenderData->ReplayData.SortMode = RequiredModule != nullptr
@@ -1102,9 +1229,19 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::World;
 	RenderData->ComponentToWorld = FMatrix::Identity;
 	RenderData->ReplayData.Scale = FVector::OneVector;
-
-	// renderer가 설정을 읽기 위한 단순 참조용 포인터. renderer 쪽에서 수정 금지!
 	RenderData->ReplayData.RequiredModule = RequiredModule;
+
+	UParticleModuleSubUV* SubUVModule = FindSubUVModule(InEmitterInstance->CurrentLODLevel);
+	if (SubUVModule != nullptr && SubUVModule->bEnabled)
+	{
+		const int32 SubUVPayloadOffset =
+			InEmitterInstance->CurrentRuntimeCache->GetParticlePayloadOffset(SubUVModule);
+
+		RenderData->ReplayData.SubUVPayloadOffset = SubUVPayloadOffset;
+		RenderData->ReplayData.SubUVColumns = std::max(SubUVModule->Columns, 1);
+		RenderData->ReplayData.SubUVRows = std::max(SubUVModule->Rows, 1);
+		RenderData->ReplayData.SubUVTexture = ResolveDiffuseTexture(RenderData->Material);
+	}
 
 	// snapshot은 particle data와 index를 별도 버퍼로 소유. renderer는 연속 메모리를 가정하지 말고
 	// 반드시 DataContainer의 ParticleData / ParticleIndices 포인터를 통해 접근해야 함
@@ -1115,6 +1252,30 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
 
 	return RenderData;
+}
+
+UParticleModuleSubUV* UParticleModuleTypeDataBase::FindSubUVModule(const UParticleLODLevel* LODLevel)
+{
+	if (LODLevel == nullptr)
+	{
+		return nullptr;
+	}
+
+	if (!IsSpriteTypeDataModule(LODLevel->TypeDataModule))
+	{
+		return nullptr;
+	}
+
+	for (UParticleModule* Module : LODLevel->Modules)
+	{
+		UParticleModuleSubUV* SubUV = Cast<UParticleModuleSubUV>(Module);
+		if (SubUV != nullptr && SubUV->bEnabled)
+		{
+			return SubUV;
+		}
+	}
+
+	return nullptr;
 }
 
 int32 UParticleModuleTypeDataBase::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const

@@ -883,7 +883,7 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTi
 		const float SpawnTime = SegmentStartTime + SpawnInterval * static_cast<float>(SpawnIndex);
 		for (UParticleModule* Module : CurrentRuntimeCache->SpawnModules)
 		{
-			if (Module == nullptr)
+			if (Module == nullptr || !Module->bEnabled)
 			{
 				continue;
 			}

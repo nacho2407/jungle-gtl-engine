@@ -57,10 +57,29 @@ void FParticleEditorViewerWidget::RenderEmitterPanel(FParticleEditorViewer* View
 	if (Avail.x > 0.0f && Avail.y > 0.0f)
 	{
 		ImGui::InvisibleButton("##EmitterPanelEmptySpace", Avail);
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+		{
+			MultiSelectedEmitterIndices.clear();
+			ClearModuleMultiSelection(MultiSelectedModuleIndices, MultiSelectedModuleEmitterIndex, MultiSelectedModuleLODIndex);
+			Viewer->SelectParticleSystem();
+		}
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Right))
 		{
+			MultiSelectedEmitterIndices.clear();
+			ClearModuleMultiSelection(MultiSelectedModuleIndices, MultiSelectedModuleEmitterIndex, MultiSelectedModuleLODIndex);
+			Viewer->SelectParticleSystem();
 			ImGui::OpenPopup("ParticleEmitterPanelContext");
 		}
+	}
+
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
+		ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
+		!ImGui::IsAnyItemHovered() &&
+		!ImGui::IsAnyItemActive())
+	{
+		MultiSelectedEmitterIndices.clear();
+		ClearModuleMultiSelection(MultiSelectedModuleIndices, MultiSelectedModuleEmitterIndex, MultiSelectedModuleLODIndex);
+		Viewer->SelectParticleSystem();
 	}
 
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
@@ -360,10 +379,18 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 			RowContext.MultiSelection.EmitterIndex = &MultiSelectedModuleEmitterIndex;
 			RowContext.MultiSelection.LODIndex = &MultiSelectedModuleLODIndex;
 
+			const bool bSpriteTypeData =
+				LOD->TypeDataModule != nullptr &&
+				LOD->TypeDataModule->GetClass() == UParticleModuleTypeDataBase::StaticClass();
+
 			auto DrawModuleRow = [&](UObject* Mod, EParticleEditorSelectionType SelType, int32 ModIdx, ImU32 BgColor)
 			{
 				if (Mod)
 				{
+					const bool bRequiredModule = SelType == EParticleEditorSelectionType::RequiredModule;
+					const bool bSubUVIncompatible =
+						Cast<UParticleModuleSubUV>(Mod) != nullptr && !bSpriteTypeData;
+
 					FParticleModuleRowDesc Row;
 					Row.Label = GetObjectLabel(Mod);
 					Row.Address.Type = SelType;
@@ -371,6 +398,10 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 					Row.Address.LODIndex = LODIndex;
 					Row.Address.ModuleIndex = ModIdx;
 					Row.BackgroundColor = BgColor;
+					Row.bCanToggleEnabled = !bRequiredModule && !bSubUVIncompatible;
+					Row.bForceEnabledState = bRequiredModule || bSubUVIncompatible;
+					Row.bForcedEnabledValue = bRequiredModule;
+					Row.bDimmedText = bSubUVIncompatible;
 					DrawSelectableModuleRow(RowContext, Row);
 				}
 			};

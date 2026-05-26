@@ -345,6 +345,10 @@ void CollectParticleEditableProperties(UObject* Object, TArray<const FProperty*>
 		{
 			continue;
 		}
+		if (Object->IsA(UParticleModuleRequired::StaticClass()) && std::strcmp(Property->Name, "bEnabled") == 0)
+		{
+			continue;
+		}
 		OutProperties.push_back(Property);
 	}
 }
@@ -1727,9 +1731,12 @@ void DrawSelectableModuleRow(const FParticleModuleRowContext& Context, const FPa
 	}
 
 	const ImVec2 TextSize = ImGui::CalcTextSize(Label);
+	const ImU32 TextColor = Row.bDimmedText
+		? ImGui::GetColorU32(ImGuiCol_TextDisabled)
+		: ImGui::GetColorU32(ImGuiCol_Text);
 	DrawList->AddText(
 		ImVec2(RowStart.x + TextLeftPadding, RowStart.y + (RowHeight - TextSize.y) * 0.5f),
-		ImGui::GetColorU32(ImGuiCol_Text),
+		TextColor,
 		Label);
 
 	UParticleModule* Module = ResolveParticleModule(Viewer, Type, EmitterIndex, LODIndex, ModuleIndex);
@@ -1741,16 +1748,47 @@ void DrawSelectableModuleRow(const FParticleModuleRowContext& Context, const FPa
 		const float ControlY = RowStart.y + (RowHeight - ControlSize) * 0.5f;
 
 		ImGui::SetCursorScreenPos(ImVec2(CheckX, ControlY));
-		bool bModuleEnabled = Module->bEnabled;
+		if (Row.bForceEnabledState)
+		{
+			const bool bForcedStateChanged = Module->bEnabled != Row.bForcedEnabledValue;
+			Module->bEnabled = Row.bForcedEnabledValue;
+			if (bForcedStateChanged)
+			{
+				if (UParticleSystem* ParticleSystem = Viewer->GetParticleSystem();
+					ParticleSystem != nullptr &&
+					EmitterIndex >= 0 &&
+					EmitterIndex < static_cast<int32>(ParticleSystem->Emitters.size()) &&
+					ParticleSystem->Emitters[EmitterIndex] != nullptr)
+				{
+					ParticleSystem->Emitters[EmitterIndex]->CacheEmitterModuleInfo();
+				}
+				Viewer->MarkDirty();
+				Viewer->RestartSimulation();
+			}
+		}
+
+		bool bModuleEnabled = Row.bForceEnabledState ? Row.bForcedEnabledValue : Module->bEnabled;
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 0.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.0f, 1.0f));
-		if (ImGui::Checkbox("##ModuleEnabled", &bModuleEnabled))
+		if (!Row.bCanToggleEnabled)
+		{
+			ImGui::BeginDisabled();
+		}
+		if (ImGui::Checkbox("##ModuleEnabled", &bModuleEnabled) && Row.bCanToggleEnabled)
 		{
 			Viewer->CaptureUndoSnapshot("EditModuleEnabled");
 			Module->bEnabled = bModuleEnabled;
 			SelectParticleModuleTarget(Viewer, Type, EmitterIndex, LODIndex, ModuleIndex);
+			if (UParticleEmitter* Emitter = Viewer->GetSelectedEmitter())
+			{
+				Emitter->CacheEmitterModuleInfo();
+			}
 			Viewer->MarkDirty();
 			Viewer->RestartSimulation();
+		}
+		if (!Row.bCanToggleEnabled)
+		{
+			ImGui::EndDisabled();
 		}
 		ImGui::PopStyleVar(2);
 
