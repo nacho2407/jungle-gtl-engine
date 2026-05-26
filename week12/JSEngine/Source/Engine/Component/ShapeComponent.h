@@ -9,6 +9,19 @@ public:
 
 	void PostDuplicate(UObject* Original) override;
 
+	virtual bool LineTraceShape(
+		FHitResult& OutHit,
+		const FVector& StartWS,
+		const FVector& EndWS,
+		const FCollisionQueryParams& Params) const;
+
+	virtual bool SweepShape(
+		FHitResult& OutHit,
+		const FVector& StartWS,
+		const FVector& EndWS,
+		const FCollisionShape& CollisionShape,
+		const FCollisionQueryParams& Params) const;
+
 private:
 	UPROPERTY(DisplayName = "Shape Color")
 	FColor ShapeColor;

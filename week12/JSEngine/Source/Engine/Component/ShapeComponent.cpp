@@ -1,5 +1,32 @@
 ﻿#include "ShapeComponent.h"
 
+bool UShapeComponent::LineTraceShape(
+	FHitResult& OutHit,
+	const FVector& StartWS,
+	const FVector& EndWS,
+	const FCollisionQueryParams& Params) const
+{
+	(void)OutHit;
+	(void)StartWS;
+	(void)EndWS;
+	(void)Params;
+	return false;
+}
+
+bool UShapeComponent::SweepShape(
+	FHitResult& OutHit,
+	const FVector& StartWS,
+	const FVector& EndWS,
+	const FCollisionShape& CollisionShape,
+	const FCollisionQueryParams& Params) const
+{
+	(void)OutHit;
+	(void)StartWS;
+	(void)EndWS;
+	(void)CollisionShape;
+	(void)Params;
+	return false;
+}
 
 void UShapeComponent::UpdateWorldAABB() const
 {
@@ -23,4 +50,3 @@ void UShapeComponent::PostDuplicate(UObject* Original)
 	ShapeColor = ShapeComp->ShapeColor;
 	bDrawOnlyIfSelected = ShapeComp->bDrawOnlyIfSelected;
 }
-
