@@ -1,12 +1,19 @@
 #include "ParticleSystemRenderProxy.h"
 
 #include "Particle/ParticleSystemComponent.h"
+#include "Particle/ParticleMeshBounds.h"
 #include "Particle/ParticleTypes.h"
+#include "Asset/StaticMesh.h"
+#include "Core/ResourceManager.h"
+#include "Render/Resource/Material.h"
+#include "Render/Resource/MeshBufferManager.h"
 #include "Render/Scene/RenderBus.h"
 
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <cstdint>
+#include <unordered_set>
 #include <utility>
 
 namespace
@@ -145,6 +152,37 @@ namespace
 		}
 		return Bounds;
 	}
+
+	UMaterialInterface* ResolveMeshParticleMaterial(UMaterialInterface* Material)
+	{
+		return Material != nullptr ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
+	}
+
+	enum class EParticleProxyDiagnostic : uint32
+	{
+		EmptyActiveParticles = 1,
+		MissingMesh,
+		MissingMeshBuffer,
+		MissingSectionMaterial,
+		UnsupportedEmitterType,
+	};
+
+	void LogParticleDiagnosticOnce(
+		const void* Component,
+		int32 EmitterIndex,
+		EParticleProxyDiagnostic Diagnostic,
+		const char* Message)
+	{
+		static std::unordered_set<uint64> LoggedDiagnostics;
+		const uint64 ComponentKey = static_cast<uint64>(reinterpret_cast<std::uintptr_t>(Component) >> 4);
+		const uint64 Key = ComponentKey
+			^ (static_cast<uint64>(static_cast<uint32>(EmitterIndex)) << 32)
+			^ static_cast<uint64>(Diagnostic);
+		if (LoggedDiagnostics.insert(Key).second)
+		{
+			UE_LOG_WARNING("%s", Message);
+		}
+	}
 }
 
 FParticleSystemRenderProxy::FParticleSystemRenderProxy(UParticleSystemComponent* InComponent)
@@ -164,25 +202,52 @@ void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyColl
 		return;
 	}
 
-	TArray<FRenderCommand> Commands;
-	if (!BuildSpriteCommands(Context, Commands) || SpriteInstances.empty())
+	TArray<FRenderCommand> SpriteCommands;
+	TArray<FRenderCommand> OpaqueMeshCommands;
+	TArray<FRenderCommand> TranslucentMeshCommands;
+	BuildSpriteCommands(Context, SpriteCommands);
+	BuildMeshCommands(Context, OpaqueMeshCommands, TranslucentMeshCommands);
+
+	if (SpriteInstances.empty() && MeshInstances.empty())
 	{
 		return;
 	}
 
-	if (!EnsureSpriteInstanceBuffer(Context.Device, static_cast<uint32>(SpriteInstances.size())))
+	if (!SpriteInstances.empty() && !EnsureSpriteInstanceBuffer(Context.Device, static_cast<uint32>(SpriteInstances.size())))
 	{
 		return;
 	}
 
-	if (!UploadSpriteInstances(Context.DeviceContext))
+	if (!MeshInstances.empty() && !EnsureMeshInstanceBuffer(Context.Device, static_cast<uint32>(MeshInstances.size())))
 	{
 		return;
 	}
 
-	for (FRenderCommand& Command : Commands)
+	if (!SpriteInstances.empty() && !UploadSpriteInstances(Context.DeviceContext))
+	{
+		return;
+	}
+
+	if (!MeshInstances.empty() && !UploadMeshInstances(Context.DeviceContext))
+	{
+		return;
+	}
+
+	for (FRenderCommand& Command : SpriteCommands)
 	{
 		Command.InstanceBufferView.Buffer = SpriteInstanceBuffer.Get();
+		Context.RenderBus.AddCommand(ERenderPass::Translucent, std::move(Command));
+	}
+
+	for (FRenderCommand& Command : OpaqueMeshCommands)
+	{
+		Command.InstanceBufferView.Buffer = MeshInstanceBuffer.Get();
+		Context.RenderBus.AddCommand(ERenderPass::Opaque, std::move(Command));
+	}
+
+	for (FRenderCommand& Command : TranslucentMeshCommands)
+	{
+		Command.InstanceBufferView.Buffer = MeshInstanceBuffer.Get();
 		Context.RenderBus.AddCommand(ERenderPass::Translucent, std::move(Command));
 	}
 }
@@ -190,8 +255,11 @@ void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyColl
 void FParticleSystemRenderProxy::ReleaseResources()
 {
 	SpriteInstances.clear();
+	MeshInstances.clear();
 	SpriteInstanceBuffer.Reset();
+	MeshInstanceBuffer.Reset();
 	MaxSpriteInstanceCount = 0;
+	MaxMeshInstanceCount = 0;
 }
 
 bool FParticleSystemRenderProxy::BuildSpriteCommands(
@@ -272,6 +340,161 @@ bool FParticleSystemRenderProxy::BuildSpriteCommands(
 	return true;
 }
 
+bool FParticleSystemRenderProxy::BuildMeshCommands(
+	const FPrimitiveRenderProxyCollectionContext& Context,
+	TArray<FRenderCommand>& OutOpaqueCommands,
+	TArray<FRenderCommand>& OutTranslucentCommands)
+{
+	MeshInstances.clear();
+	OutOpaqueCommands.clear();
+	OutTranslucentCommands.clear();
+
+	const int32 SnapshotCount = Component->GetEmitterRenderDataSnapshotCount();
+	for (int32 SnapshotIndex = 0; SnapshotIndex < SnapshotCount; ++SnapshotIndex)
+	{
+		const FDynamicEmitterDataBase* EmitterData = Component->GetEmitterRenderDataSnapshot(SnapshotIndex);
+		if (EmitterData == nullptr)
+		{
+			continue;
+		}
+
+		if (EmitterData->GetEmitterType() != EDynamicEmitterType::Mesh)
+		{
+			if (EmitterData->GetEmitterType() != EDynamicEmitterType::Sprite)
+			{
+				LogParticleDiagnosticOnce(
+					Component,
+					EmitterData->EmitterIndex,
+					EParticleProxyDiagnostic::UnsupportedEmitterType,
+					"[Particle] Unsupported emitter type skipped by particle render proxy.");
+			}
+			continue;
+		}
+
+		const FDynamicMeshEmitterData* MeshEmitterData = static_cast<const FDynamicMeshEmitterData*>(EmitterData);
+		const FDynamicEmitterReplayDataBase& ReplayData = MeshEmitterData->GetSource();
+		if (ReplayData.ActiveParticleCount <= 0)
+		{
+			LogParticleDiagnosticOnce(
+				Component,
+				EmitterData->EmitterIndex,
+				EParticleProxyDiagnostic::EmptyActiveParticles,
+				"[Particle] Mesh emitter has no active particles.");
+			continue;
+		}
+
+		const UStaticMesh* Mesh = MeshEmitterData->Mesh;
+		if (Mesh == nullptr || !Mesh->HasValidMeshData())
+		{
+			LogParticleDiagnosticOnce(
+				Component,
+				EmitterData->EmitterIndex,
+				EParticleProxyDiagnostic::MissingMesh,
+				"[Particle] Mesh emitter skipped because its static mesh is missing.");
+			continue;
+		}
+
+		FMeshBuffer* MeshBuffer = Context.MeshBufferManager.GetStaticMeshBuffer(Mesh, 0);
+		if (MeshBuffer == nullptr)
+		{
+			LogParticleDiagnosticOnce(
+				Component,
+				EmitterData->EmitterIndex,
+				EParticleProxyDiagnostic::MissingMeshBuffer,
+				"[Particle] Mesh emitter skipped because LOD 0 mesh buffer is missing.");
+			continue;
+		}
+
+		const FStaticMesh* MeshData = Mesh->GetMeshData(0);
+		if (MeshData == nullptr || MeshData->Sections.empty())
+		{
+			continue;
+		}
+
+		const uint32 FirstInstance = static_cast<uint32>(MeshInstances.size());
+		const TArray<int32> SortedIndices = BuildSortedActiveIndices(
+			ReplayData,
+			EmitterData->ComponentToWorld,
+			Context.RenderBus);
+
+		for (int32 ActiveIndex : SortedIndices)
+		{
+			const FBaseParticle* Particle = ReplayData.GetParticleByActiveIndex(ActiveIndex);
+			if (Particle == nullptr)
+			{
+				continue;
+			}
+
+			MeshInstances.push_back({
+				ParticleMeshBounds::BuildInstanceTransform(ReplayData, EmitterData->ComponentToWorld, *Particle)
+			});
+		}
+
+		const uint32 InstanceCount = static_cast<uint32>(MeshInstances.size()) - FirstInstance;
+		if (InstanceCount == 0)
+		{
+			continue;
+		}
+
+		const FBoundingBox MeshParticleBounds = ParticleMeshBounds::BuildConservativeWorldBounds(
+			ReplayData,
+			EmitterData->ComponentToWorld,
+			MeshData->LocalBounds);
+
+		for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(MeshData->Sections.size()); ++SectionIdx)
+		{
+			const FStaticMeshSection& Section = MeshData->Sections[SectionIdx];
+			if (Section.IndexCount == 0)
+			{
+				continue;
+			}
+
+			UMaterialInterface* SectionMaterial = nullptr;
+			if (Section.MaterialSlotIndex >= 0 &&
+				Section.MaterialSlotIndex < static_cast<int32>(MeshData->Slots.size()))
+			{
+				SectionMaterial = MeshData->Slots[Section.MaterialSlotIndex].Material;
+			}
+
+			if (SectionMaterial == nullptr)
+			{
+				LogParticleDiagnosticOnce(
+					Component,
+					EmitterData->EmitterIndex,
+					EParticleProxyDiagnostic::MissingSectionMaterial,
+					"[Particle] Mesh emitter section material missing. Falling back to DefaultWhite.");
+			}
+
+			FRenderCommand Cmd = {};
+			Cmd.Type = ERenderCommandType::Particle;
+			Cmd.SourcePrimitive = Component;
+			Cmd.Material = ResolveMeshParticleMaterial(SectionMaterial);
+			Cmd.ParticleEmitterData = EmitterData;
+			Cmd.ParticleReplayData = &ReplayData;
+			Cmd.VertexFactoryType = EVertexFactoryType::ParticleMesh;
+			Cmd.MeshBuffer = MeshBuffer;
+			Cmd.PerObjectConstants = FPerObjectConstants{ FMatrix::Identity, FColor::White().ToVector4() };
+			Cmd.WorldAABB = MeshParticleBounds.IsValid() ? MeshParticleBounds : Component->GetWorldAABB();
+			Cmd.SectionIndexStart = Section.StartIndex;
+			Cmd.SectionIndexCount = Section.IndexCount;
+			Cmd.InstanceBufferView.InstanceCount = InstanceCount;
+			Cmd.InstanceBufferView.Stride = sizeof(FParticleMeshInstanceData);
+			Cmd.InstanceBufferView.Offset = FirstInstance * sizeof(FParticleMeshInstanceData);
+
+			if (ResolveMaterialRenderPass(Cmd.Material) == ERenderPass::Translucent)
+			{
+				OutTranslucentCommands.push_back(std::move(Cmd));
+			}
+			else
+			{
+				OutOpaqueCommands.push_back(std::move(Cmd));
+			}
+		}
+	}
+
+	return true;
+}
+
 bool FParticleSystemRenderProxy::EnsureSpriteInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
 {
 	if (Device == nullptr)
@@ -293,6 +516,29 @@ bool FParticleSystemRenderProxy::EnsureSpriteInstanceBuffer(ID3D11Device* Device
 	InstanceDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	InstanceDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	return SUCCEEDED(Device->CreateBuffer(&InstanceDesc, nullptr, SpriteInstanceBuffer.ReleaseAndGetAddressOf()));
+}
+
+bool FParticleSystemRenderProxy::EnsureMeshInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
+{
+	if (Device == nullptr)
+	{
+		return false;
+	}
+
+	if (MeshInstanceBuffer && InstanceCount <= MaxMeshInstanceCount)
+	{
+		return true;
+	}
+
+	MaxMeshInstanceCount = std::max(InstanceCount * 2u, 1u);
+	MeshInstanceBuffer.Reset();
+
+	D3D11_BUFFER_DESC InstanceDesc = {};
+	InstanceDesc.Usage = D3D11_USAGE_DYNAMIC;
+	InstanceDesc.ByteWidth = sizeof(FParticleMeshInstanceData) * MaxMeshInstanceCount;
+	InstanceDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	InstanceDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	return SUCCEEDED(Device->CreateBuffer(&InstanceDesc, nullptr, MeshInstanceBuffer.ReleaseAndGetAddressOf()));
 }
 
 bool FParticleSystemRenderProxy::UploadSpriteInstances(ID3D11DeviceContext* DeviceContext)
@@ -318,5 +564,31 @@ bool FParticleSystemRenderProxy::UploadSpriteInstances(ID3D11DeviceContext* Devi
 		SpriteInstances.data(),
 		sizeof(FParticleSpriteInstanceData) * SpriteInstances.size());
 	DeviceContext->Unmap(SpriteInstanceBuffer.Get(), 0);
+	return true;
+}
+
+bool FParticleSystemRenderProxy::UploadMeshInstances(ID3D11DeviceContext* DeviceContext)
+{
+	if (DeviceContext == nullptr || !MeshInstanceBuffer)
+	{
+		return false;
+	}
+
+	if (MeshInstances.empty())
+	{
+		return true;
+	}
+
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	if (FAILED(DeviceContext->Map(MeshInstanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+	{
+		return false;
+	}
+
+	std::memcpy(
+		Mapped.pData,
+		MeshInstances.data(),
+		sizeof(FParticleMeshInstanceData) * MeshInstances.size());
+	DeviceContext->Unmap(MeshInstanceBuffer.Get(), 0);
 	return true;
 }

@@ -74,6 +74,13 @@ namespace
             && Cmd.InstanceBufferView.IsValid();
     }
 
+    bool IsParticleMeshCommand(const FRenderCommand& Cmd)
+    {
+        return Cmd.Type == ERenderCommandType::Particle
+            && Cmd.VertexFactoryType == EVertexFactoryType::ParticleMesh
+            && Cmd.InstanceBufferView.IsValid();
+    }
+
     float CalculateTranslucentSortKey(
         const FRenderCommand& Cmd,
         const FVector& CameraPosition,
@@ -177,6 +184,11 @@ bool FTranslucentRenderPass::DrawEachCommand(const FRenderPassContext* Context, 
         return DrawParticleSpriteCommand(Context, Cmd);
     }
 
+    if (IsParticleMeshCommand(Cmd))
+    {
+        return DrawParticleMeshCommand(Context, Cmd);
+    }
+
     if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
     {
         return false;
@@ -232,6 +244,68 @@ bool FTranslucentRenderPass::DrawEachCommand(const FRenderPassContext* Context, 
     {
         DeviceContext->Draw(vertexCount, 0);
     }
+    return true;
+}
+
+bool FTranslucentRenderPass::DrawParticleMeshCommand(const FRenderPassContext* Context, const FRenderCommand& Cmd)
+{
+    ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
+    if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
+    {
+        return false;
+    }
+
+    ID3D11Buffer* VertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
+    ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
+    if (VertexBuffer == nullptr || IndexBuffer == nullptr)
+    {
+        return false;
+    }
+
+    const uint32 VertexStride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
+    if (Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount() == 0 || VertexStride == 0 || Cmd.SectionIndexCount == 0)
+    {
+        return false;
+    }
+
+    if (Cmd.Material != nullptr)
+    {
+        uint32 PermutationKey = 0;
+        PermutationKey |= GetLightingModelPermutationKey(Context->RenderBus->GetViewMode());
+        PermutationKey |= GetTexturePermutationKey(Cmd.Material);
+
+        FShaderProgram* Program = GetShaderProgram(Cmd, PermutationKey);
+        if (Program == nullptr)
+        {
+            return false;
+        }
+
+        Program->Bind(DeviceContext);
+        Cmd.Material->BindRenderStates(DeviceContext);
+        Cmd.Material->BindParameters(DeviceContext, Program->PS);
+        BindVertexFactoryResources(
+            DeviceContext,
+            Cmd.VertexFactoryType,
+            Context->RenderBus->GetBoneMatrixConstants(Cmd),
+            Context->RenderResources,
+            Cmd.BoneMatrixConstantBuffer);
+    }
+
+    ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::DepthReadOnly);
+    DeviceContext->OMSetDepthStencilState(DepthState, 0);
+
+    ID3D11Buffer* VertexBuffers[2] = { VertexBuffer, Cmd.InstanceBufferView.Buffer };
+    uint32 Strides[2] = { VertexStride, Cmd.InstanceBufferView.Stride };
+    uint32 Offsets[2] = { 0, Cmd.InstanceBufferView.Offset };
+    DeviceContext->IASetVertexBuffers(0, 2, VertexBuffers, Strides, Offsets);
+    DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+    DeviceContext->DrawIndexedInstanced(Cmd.SectionIndexCount, Cmd.InstanceBufferView.InstanceCount, Cmd.SectionIndexStart, 0, 0);
+
+    ID3D11Buffer* NullVertexBuffer = nullptr;
+    uint32 NullStride = 0;
+    uint32 NullOffset = 0;
+    DeviceContext->IASetVertexBuffers(1, 1, &NullVertexBuffer, &NullStride, &NullOffset);
+
     return true;
 }
 

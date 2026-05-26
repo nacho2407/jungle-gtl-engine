@@ -18,12 +18,18 @@ public:
 
 private:
 	bool BuildSpriteCommands(const FPrimitiveRenderProxyCollectionContext& Context, TArray<FRenderCommand>& OutCommands);
+	bool BuildMeshCommands(const FPrimitiveRenderProxyCollectionContext& Context, TArray<FRenderCommand>& OutOpaqueCommands, TArray<FRenderCommand>& OutTranslucentCommands);
 	bool EnsureSpriteInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount);
+	bool EnsureMeshInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount);
 	bool UploadSpriteInstances(ID3D11DeviceContext* DeviceContext);
+	bool UploadMeshInstances(ID3D11DeviceContext* DeviceContext);
 
 private:
 	UParticleSystemComponent* Component = nullptr;
 	TArray<FParticleSpriteInstanceData> SpriteInstances;
+	TArray<FParticleMeshInstanceData> MeshInstances;
 	TComPtr<ID3D11Buffer> SpriteInstanceBuffer;
+	TComPtr<ID3D11Buffer> MeshInstanceBuffer;
 	uint32 MaxSpriteInstanceCount = 0;
+	uint32 MaxMeshInstanceCount = 0;
 };

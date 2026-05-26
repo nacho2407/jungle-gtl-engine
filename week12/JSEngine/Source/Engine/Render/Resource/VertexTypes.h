@@ -64,6 +64,11 @@ struct FParticleSpriteInstanceData
 	FColor Color;
 };
 
+struct FParticleMeshInstanceData
+{
+	FMatrix Transform = FMatrix::Identity;
+};
+
 struct FMeshData
 {
 	TArray<FVertex> Vertices;

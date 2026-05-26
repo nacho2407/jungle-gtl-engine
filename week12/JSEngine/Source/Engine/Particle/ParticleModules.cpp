@@ -891,7 +891,6 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 {
 	// EmitterIntsance 유효성 검사
 	if (InEmitterInstance == nullptr ||
-		GetStaticMesh() == nullptr ||
 		InEmitterInstance->ActiveParticles <= 0 ||
 		InEmitterInstance->ParticleData == nullptr ||
 		InEmitterInstance->ParticleIndices == nullptr ||
@@ -945,13 +944,13 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	// ReplayData
 	RenderData->ReplayData.ActiveParticleCount = ActiveParticleCount;
 	RenderData->ReplayData.ParticleStride = ParticleStride;
-	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	// Mesh emitters render with the static mesh section materials; RequiredModule.Material is intentionally ignored.
+	RenderData->Material = nullptr;
 
-	// renderer가 raw particle의 위치를 render space로 해석할 수 있도록 좌표계 메타데이터를 전달
+	// Mesh particle snapshots stay in emitter local space; the renderer applies ComponentToWorld per instance.
 	RenderData->ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
-	RenderData->ReplayData.CoordinateSpace = RequiredModule != nullptr
-		? RequiredModule->CoordinateSpace
-		: EParticleCoordinateSpace::Local;
+	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::Local;
+	RenderData->ReplayData.Scale = FVector::OneVector;
 
 	// TODO: 중앙 renderer가 Mesh instance transform을 생성할 때 Mesh Particle의 회전 축과 정렬 정책을 반영한다.
 	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);

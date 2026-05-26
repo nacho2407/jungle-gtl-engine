@@ -538,6 +538,7 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 	{
 		FPrimitiveRenderProxyCollectionContext ProxyContext{
 			RenderBus,
+			MeshBufferManager,
 			Device,
 			DeviceContext
 		};

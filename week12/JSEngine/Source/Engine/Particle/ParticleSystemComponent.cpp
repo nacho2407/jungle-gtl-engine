@@ -6,6 +6,7 @@
 #include "GameFramework/World.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleEventManager.h"
+#include "Particle/ParticleMeshBounds.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
 #include "Render/Scene/ParticleSystemRenderProxy.h"
@@ -25,6 +26,22 @@ namespace
 		return Instance != nullptr &&
 			IsLiveObject(Instance->CurrentLODLevel) &&
 			Instance->CurrentLODLevel->bSolo;
+	}
+
+	const FDynamicMeshEmitterData* FindMeshRenderDataForEmitter(
+		const TArray<FDynamicEmitterDataBase*>& RenderData,
+		int32 EmitterIndex)
+	{
+		for (const FDynamicEmitterDataBase* EmitterData : RenderData)
+		{
+			if (EmitterData != nullptr &&
+				EmitterData->EmitterIndex == EmitterIndex &&
+				EmitterData->GetEmitterType() == EDynamicEmitterType::Mesh)
+			{
+				return static_cast<const FDynamicMeshEmitterData*>(EmitterData);
+			}
+		}
+		return nullptr;
 	}
 }
 
@@ -336,11 +353,36 @@ void UParticleSystemComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
 
-	for (const FParticleEmitterInstance* Instance : EmitterInstances)
+	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
 	{
+		const FParticleEmitterInstance* Instance = EmitterInstances[EmitterIndex];
 		if (!Instance || !IsLiveObject(Instance->CurrentLODLevel) || !Instance->CurrentLODLevel->bEnabled)
 		{
 			continue;
+		}
+
+		const UParticleModuleRequired* RequiredModule = Instance->CurrentRuntimeCache != nullptr
+			? Instance->CurrentRuntimeCache->RequiredModule
+			: nullptr;
+		if (RequiredModule == nullptr || !RequiredModule->bUseFixedBounds)
+		{
+			const FDynamicMeshEmitterData* MeshEmitterData = FindMeshRenderDataForEmitter(EmitterRenderData, EmitterIndex);
+			const FStaticMesh* MeshData = MeshEmitterData != nullptr && MeshEmitterData->Mesh != nullptr
+				? MeshEmitterData->Mesh->GetMeshData(0)
+				: nullptr;
+			if (MeshData != nullptr)
+			{
+				// Conservative visibility/framing bound only; exact picking/raycast remains unsupported for mesh particles.
+				const FBoundingBox MeshParticleBounds = ParticleMeshBounds::BuildConservativeWorldBounds(
+					MeshEmitterData->GetSource(),
+					MeshEmitterData->ComponentToWorld,
+					MeshData->LocalBounds);
+				if (MeshParticleBounds.IsValid())
+				{
+					WorldAABB.Merge(MeshParticleBounds);
+					continue;
+				}
+			}
 		}
 
 		FVector Min;

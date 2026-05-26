@@ -88,7 +88,7 @@ void FShadowPass::RenderShadowDepth(
 
 	for (const auto& Cmd : OpaqueCmds)
 	{
-		if (Cmd.Type == ERenderCommandType::PostProcessOutline)
+		if (Cmd.Type == ERenderCommandType::PostProcessOutline || Cmd.Type == ERenderCommandType::Particle)
 		{
 			continue;
 		}
@@ -197,7 +197,15 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		return true;
 	}
 
-	TArray<FRenderCommand> ShadowDepthCmds = OpaqueCmds;
+	TArray<FRenderCommand> ShadowDepthCmds;
+	ShadowDepthCmds.reserve(OpaqueCmds.size() + ShadowCasterCmds.size());
+	for (const FRenderCommand& Cmd : OpaqueCmds)
+	{
+		if (Cmd.Type != ERenderCommandType::Particle)
+		{
+			ShadowDepthCmds.push_back(Cmd);
+		}
+	}
 	ShadowDepthCmds.insert(ShadowDepthCmds.end(), ShadowCasterCmds.begin(), ShadowCasterCmds.end());
 
 	FConstantBuffer* ShadowBuffer = &Context->RenderResources->ShadowBuffer;
@@ -218,7 +226,10 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	TArray<FBoundingBox> VisibleBounds;
 	for (const auto& Cmd : OpaqueCmds)
 	{
-		VisibleBounds.push_back(Cmd.WorldAABB);
+		if (Cmd.Type != ERenderCommandType::Particle)
+		{
+			VisibleBounds.push_back(Cmd.WorldAABB);
+		}
 	}
 
 	TArray<FLightShadowIndices> LightShadowIndices(RenderBus->LightInfos.size(), FLightShadowIndices{ InvalidShadowIndex, 0});
