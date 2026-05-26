@@ -246,6 +246,15 @@ static ID3D11ShaderResourceView* GetDiffuseSRV(UMaterialInterface* Material)
 	return GetTextureSRVFromParam(Param);
 }
 
+static UTexture* GetSubUVCommandTexture(const FSubUVConstants& SubUV)
+{
+	if (SubUV.SubUV && SubUV.SubUV->IsLoaded())
+	{
+		return SubUV.SubUV->Texture;
+	}
+	return SubUV.Texture;
+}
+
 static FMatrix MakeEditorIdPickBillboardMatrix(const UBillboardComponent* Billboard, const FRenderBus& RenderBus)
 {
 	const FVector WorldScale = Billboard->GetBillboardWorldScale();
@@ -492,7 +501,7 @@ const TArray<FRenderCommand>& FRenderer::GetAlignedCommands(ERenderPass Pass, co
 
 		std::sort(SortedCommandBuffer.begin(), SortedCommandBuffer.end(),
 			[](const FRenderCommand& A, const FRenderCommand& B) {
-				return A.Constants.SubUV.SubUV < B.Constants.SubUV.SubUV;
+				return GetSubUVCommandTexture(A.Constants.SubUV) < GetSubUVCommandTexture(B.Constants.SubUV);
 			});
 
 		return SortedCommandBuffer;
@@ -1340,25 +1349,39 @@ void FRenderer::InitializePassBatchers()
 			SubUVCachedTexture = nullptr;
 		},
 		/*.Collect =*/ [this](const FRenderCommand& Cmd, const FRenderBus& Bus) {
-			if (Cmd.Type == ERenderCommandType::SubUV && Cmd.Constants.SubUV.SubUV)
+			if (Cmd.Type == ERenderCommandType::SubUV)
 			{
 				const auto& SubUV = Cmd.Constants.SubUV;
-				if (!SubUVCachedTexture && SubUV.SubUV->IsLoaded())
+				UTexture* Texture = GetSubUVCommandTexture(SubUV);
+				if (!Texture)
 				{
-					SubUVCachedTexture = SubUV.SubUV->Texture;
+					return;
+				}
+
+				const uint32 Columns = SubUV.SubUV ? SubUV.SubUV->Columns : SubUV.Columns;
+				const uint32 Rows = SubUV.SubUV ? SubUV.SubUV->Rows : SubUV.Rows;
+				if (Columns == 0 || Rows == 0)
+				{
+					return;
+				}
+
+				if (!SubUVCachedTexture)
+				{
+					SubUVCachedTexture = Texture;
 				}
 
 				SubUVBatcher.AddSprite(
-					SubUV.SubUV->Texture,
+					Texture,
 					Cmd.PerObjectConstants.Model.GetOrigin(),
 					Bus.GetCameraRight(),
 					Bus.GetCameraUp(),
 					Cmd.PerObjectConstants.Model.GetScaleVector(),
 					SubUV.FrameIndex,
-					SubUV.SubUV->Columns,
-					SubUV.SubUV->Rows,
+					Columns,
+					Rows,
 					SubUV.Width,
-					SubUV.Height
+					SubUV.Height,
+					SubUV.Color
 				);
 			}
 			// 기존 SubUV 분기 아래에

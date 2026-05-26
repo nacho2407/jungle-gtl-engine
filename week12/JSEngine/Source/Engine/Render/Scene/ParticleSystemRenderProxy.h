@@ -17,7 +17,10 @@ public:
 	void ReleaseResources() override;
 
 private:
-	bool BuildSpriteCommands(const FPrimitiveRenderProxyCollectionContext& Context, TArray<FRenderCommand>& OutCommands);
+	bool BuildSpriteCommands(
+		const FPrimitiveRenderProxyCollectionContext& Context,
+		TArray<FRenderCommand>& OutSpriteCommands,
+		TArray<FRenderCommand>& OutSubUVCommands);
 	bool BuildMeshCommands(const FPrimitiveRenderProxyCollectionContext& Context, TArray<FRenderCommand>& OutOpaqueCommands, TArray<FRenderCommand>& OutTranslucentCommands);
 	bool EnsureSpriteInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount);
 	bool EnsureMeshInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount);

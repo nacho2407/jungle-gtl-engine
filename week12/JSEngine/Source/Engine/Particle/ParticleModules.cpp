@@ -282,11 +282,14 @@ namespace
 			Distribution.MaxCurve.GetPath().empty();
 	}
 
-	float EvaluateSubImageIndex(const UParticleModuleSubUV& Module, const FParticleDistributionContext& Context)
+	float EvaluateSubImageFrameIndex(
+		const UParticleModuleSubUV& Module,
+		const FParticleDistributionContext& Context,
+		int32 TotalFrames)
 	{
 		if (ShouldUseRelativeTimeForSubImageIndex(Module.SubImageIndex))
 		{
-			return Context.RelativeTime;
+			return Context.RelativeTime * static_cast<float>(std::max(TotalFrames - 1, 0));
 		}
 
 		return EvaluateParticleFloat(Module.SubImageIndex, Context);
@@ -536,8 +539,8 @@ void UParticleModuleSubUV::Spawn(FParticleEmitterInstance* Owner, int32 Offset, 
 	
 	if (InterpMethod == EParticleSubUVInterpMethod::Random) // Random: Spawn 시 프레임 Random 결정
 	{
-		const int32 TotalFrames = Columns * Rows;
-		Payload->ImageIndex = Owner->RandomStream.GetRange(0.0f, static_cast<float>(TotalFrames));
+		const int32 TotalFrames = std::max(Columns * Rows, 1);
+		Payload->ImageIndex = Owner->RandomStream.GetRange(0.0f, static_cast<float>(TotalFrames - 1));
 		Payload->RandomSeed = Particle.Seed;
 	}
 	else
@@ -569,11 +572,11 @@ void UParticleModuleSubUV::Update(FParticleEmitterInstance* Owner, int32 Offset,
 			return;
 		}
 		
-		// 정규화된 RelativeTime(0.f ~ 1.f)을 Frame Index로 매핑 → DistributionMode가 Constant/Curve면 수명 기반 재평가
+		// 기본값은 수명 기반 재생, 명시된 SubImageIndex 값은 실제 frame index로 사용.
 		if (InterpMethod == EParticleSubUVInterpMethod::Linear)
 		{
 			const FParticleDistributionContext Context = MakeDistributionContext(Owner, 0.0f, Particle);
-			Payload->ImageIndex = EvaluateSubImageIndex(*this, Context) * static_cast<float>(TotalFrames - 1);
+			Payload->ImageIndex = EvaluateSubImageFrameIndex(*this, Context, TotalFrames);
 		}
 		// Random일 경우 고정된 프레임 유지
 		
