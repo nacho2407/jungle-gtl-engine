@@ -18,7 +18,8 @@
 namespace
 {
 	constexpr const char* ObjectGraphFormatName = "JSEngine.ObjectGraph";
-	constexpr int32 ObjectGraphFormatVersion = 1;
+	constexpr int32 ObjectGraphFormatVersion = 2;
+	constexpr int32 ObjectGraphMinSupportedVersion = 1;
 
 	FString GetJsonString(json::JSON& Object, const char* Key, const FString& DefaultValue = "");
 	uint32 GetJsonUInt(json::JSON& Object, const char* Key, uint32 DefaultValue = 0);
@@ -197,11 +198,13 @@ UObject* FObjectGraphSerializer::LoadFromString(const FString& Content, const FS
 		return nullptr;
 	}
 
-	if (GetJsonInt(Root, "Version") != ObjectGraphFormatVersion)
+	const int32 LoadedVersion = GetJsonInt(Root, "Version");
+	if (LoadedVersion < ObjectGraphMinSupportedVersion || LoadedVersion > ObjectGraphFormatVersion)
 	{
 		UE_LOG_ERROR("[ObjectGraphSerializer] Unsupported object graph version");
 		return nullptr;
 	}
+	LastLoadedVersion = LoadedVersion;
 
 	if (!ExpectedRootType.empty() && GetJsonString(Root, "AssetType") != ExpectedRootType)
 	{
@@ -290,6 +293,7 @@ void FObjectGraphSerializer::Clear()
 	Objects.clear();
 	ObjectToId.clear();
 	Resolver.Clear();
+	LastLoadedVersion = 0;
 }
 
 void FObjectGraphSerializer::CollectGraph(UObject* RootObject)

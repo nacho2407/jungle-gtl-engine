@@ -5,6 +5,7 @@
 #include "Particle/ParticleTypes.h"
 
 struct FParticleLODLevelRuntimeCache;
+struct FParticleBurstEntry;
 class IParticleEmitterInstanceOwner;
 class UParticleModule;
 class UParticleEmitter;
@@ -47,7 +48,9 @@ public:
 	float SpawnFraction = 0.0f;
 	float EmitterTime = 0.0f;
 	float SecondsSinceCreation = 0.0f;
-	bool bBurstFired = false;
+	int32 CompletedLoopCount = 0;
+	bool bEmitterSpawnComplete = false;
+	TArray<uint8> BurstFiredThisLoop;
 	FParticleRandomStream RandomStream;
 
 	virtual bool Init(UParticleEmitter* InTemplate, int32 InLODLevelIndex);
@@ -83,9 +86,19 @@ public:
 
 private:
 	bool AllocateParticleData(int32 InMaxActiveParticles, int32 InParticleStride, int32 InInstancePayloadSize);
+	const UParticleModuleRequired* GetRequiredModule() const;
+	float GetEmitterDuration() const;
+	int32 GetTotalLoopCount() const;
+	bool CanSpawnEmitter() const;
+	void ResetLoopRuntimeState();
+	void ResetBurstFiredState();
+	void CompleteEmitterLoop();
+	void TickEmitterSpawn(float DeltaTime);
+	void TickEmitterSpawnSegment(float SegmentStartTime, float SegmentEndTime);
 	int32 CalculateSpawnRateCount(float DeltaTime);
 	int32 CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime);
-	int32 SpawnParticles(int32 Count, float DeltaTime);
+	int32 ResolveBurstSpawnAmount(const FParticleBurstEntry& Entry);
+	int32 SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime);
 	void MarkParticlePendingKill(int32 ActiveIndex);
 	void CompactPendingKilledParticles();
 	void AgeParticles(float DeltaTime);

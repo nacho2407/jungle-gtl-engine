@@ -237,10 +237,8 @@ void FParticleEmitterInstance::Reset()
 {
 	ActiveParticles = 0;
 	ParticleCounter = 0;
-	SpawnFraction = 0.0f;
-	EmitterTime = 0.0f;
 	SecondsSinceCreation = 0.0f;
-	bBurstFired = false;
+	ResetLoopRuntimeState();
 
 	for (int32 Index = 0; ParticleIndices != nullptr && Index < MaxActiveParticles; ++Index)
 	{
@@ -287,7 +285,9 @@ void FParticleEmitterInstance::Release()
 	SpawnFraction = 0.0f;
 	EmitterTime = 0.0f;
 	SecondsSinceCreation = 0.0f;
-	bBurstFired = false;
+	CompletedLoopCount = 0;
+	bEmitterSpawnComplete = false;
+	BurstFiredThisLoop.clear();
 }
 
 bool FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles, int32 InParticleStride, int32 InInstancePayloadSize)
@@ -324,6 +324,142 @@ bool FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles, 
 	return true;
 }
 
+const UParticleModuleRequired* FParticleEmitterInstance::GetRequiredModule() const
+{
+	return CurrentRuntimeCache != nullptr ? CurrentRuntimeCache->RequiredModule : nullptr;
+}
+
+float FParticleEmitterInstance::GetEmitterDuration() const
+{
+	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+	return RequiredModule != nullptr ? RequiredModule->EmitterDuration : 0.0f;
+}
+
+int32 FParticleEmitterInstance::GetTotalLoopCount() const
+{
+	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+	if (RequiredModule == nullptr)
+	{
+		return 0;
+	}
+
+	return RequiredModule->bEmitterLoops
+		? std::max(RequiredModule->MaxEmitterLoops, 0)
+		: 1;
+}
+
+bool FParticleEmitterInstance::CanSpawnEmitter() const
+{
+	return !bEmitterSpawnComplete &&
+		CurrentRuntimeCache != nullptr &&
+		CurrentRuntimeCache->SpawnModule != nullptr &&
+		GetEmitterDuration() > 0.0f &&
+		GetTotalLoopCount() > 0 &&
+		CompletedLoopCount < GetTotalLoopCount();
+}
+
+void FParticleEmitterInstance::ResetLoopRuntimeState()
+{
+	SpawnFraction = 0.0f;
+	EmitterTime = 0.0f;
+	CompletedLoopCount = 0;
+	bEmitterSpawnComplete = false;
+	ResetBurstFiredState();
+}
+
+void FParticleEmitterInstance::ResetBurstFiredState()
+{
+	const UParticleModuleSpawn* SpawnModule = CurrentRuntimeCache != nullptr
+		? CurrentRuntimeCache->SpawnModule
+		: nullptr;
+	const int32 BurstEntryCount = SpawnModule != nullptr
+		? static_cast<int32>(SpawnModule->BurstList.size())
+		: 0;
+
+	BurstFiredThisLoop.clear();
+	BurstFiredThisLoop.resize(static_cast<size_t>(std::max(BurstEntryCount, 0)), 0u);
+}
+
+void FParticleEmitterInstance::CompleteEmitterLoop()
+{
+	++CompletedLoopCount;
+	SpawnFraction = 0.0f;
+
+	const int32 TotalLoopCount = GetTotalLoopCount();
+	if (TotalLoopCount <= 0 || CompletedLoopCount >= TotalLoopCount)
+	{
+		bEmitterSpawnComplete = true;
+		EmitterTime = GetEmitterDuration();
+		return;
+	}
+
+	EmitterTime = 0.0f;
+	ResetBurstFiredState();
+
+	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+	if (RequiredModule != nullptr && RequiredModule->bResetSeedOnEmitterLoop)
+	{
+		RandomStream.Reset();
+	}
+}
+
+void FParticleEmitterInstance::TickEmitterSpawn(float DeltaTime)
+{
+	if (DeltaTime <= 0.0f || !CanSpawnEmitter())
+	{
+		return;
+	}
+
+	float RemainingDeltaTime = DeltaTime;
+	constexpr float MinSegmentTime = 0.000001f;
+
+	while (RemainingDeltaTime > MinSegmentTime && CanSpawnEmitter())
+	{
+		const float Duration = GetEmitterDuration();
+		const float SegmentStartTime = EmitterTime;
+		const float TimeToLoopEnd = Duration - SegmentStartTime;
+		if (TimeToLoopEnd <= MinSegmentTime)
+		{
+			CompleteEmitterLoop();
+			continue;
+		}
+
+		const float SegmentDeltaTime = std::min(RemainingDeltaTime, TimeToLoopEnd);
+		const float SegmentEndTime = SegmentStartTime + SegmentDeltaTime;
+
+		// 한 프레임 안에서 loop boundary를 넘을 수 있으므로, 현재 loop 안에서 처리 가능한 구간만 먼저 spawn 계산
+		TickEmitterSpawnSegment(SegmentStartTime, SegmentEndTime);
+		EmitterTime = SegmentEndTime;
+		RemainingDeltaTime -= SegmentDeltaTime;
+
+		if (EmitterTime >= Duration - MinSegmentTime)
+		{
+			CompleteEmitterLoop();
+		}
+	}
+}
+
+void FParticleEmitterInstance::TickEmitterSpawnSegment(float SegmentStartTime, float SegmentEndTime)
+{
+	const float SegmentDeltaTime = std::max(SegmentEndTime - SegmentStartTime, 0.0f);
+	if (SegmentDeltaTime <= 0.0f)
+	{
+		return;
+	}
+
+	const int32 BurstSpawnCount = CalculateBurstSpawnCount(SegmentStartTime, SegmentEndTime);
+	const int32 ActualBurstSpawnCount = SpawnParticles(BurstSpawnCount, SegmentStartTime, SegmentDeltaTime);
+	if (ActualBurstSpawnCount > 0)
+	{
+		FParticleEventBurstData Event;
+		Event.SpawnCount = ActualBurstSpawnCount;
+		Event.Location = Owner.GetWorldLocation();
+		Owner.AddBurstEvent(Event);
+	}
+
+	SpawnParticles(CalculateSpawnRateCount(SegmentDeltaTime), SegmentStartTime, SegmentDeltaTime);
+}
+
 int32 FParticleEmitterInstance::CalculateSpawnRateCount(float DeltaTime)
 {
 	if (DeltaTime <= 0.0f || CurrentRuntimeCache == nullptr || CurrentRuntimeCache->SpawnModule == nullptr)
@@ -347,28 +483,70 @@ int32 FParticleEmitterInstance::CalculateSpawnRateCount(float DeltaTime)
 
 int32 FParticleEmitterInstance::CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime)
 {
-	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->SpawnModule == nullptr || bBurstFired)
+	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->SpawnModule == nullptr)
 	{
 		return 0;
 	}
 
 	const UParticleModuleSpawn* SpawnModule = CurrentRuntimeCache->SpawnModule;
-	if (!SpawnModule->bProcessBurst || SpawnModule->BurstCount <= 0)
+	if (!SpawnModule->bProcessBurst || SpawnModule->BurstList.empty())
 	{
 		return 0;
 	}
 
-	const float BurstTime = std::max(0.0f, SpawnModule->BurstTime);
-	if (PreviousEmitterTime <= BurstTime && CurrentEmitterTime >= BurstTime)
+	if (BurstFiredThisLoop.size() != SpawnModule->BurstList.size())
 	{
-		bBurstFired = true;
-		return SpawnModule->BurstCount;
+		ResetBurstFiredState();
 	}
 
-	return 0;
+	int32 SpawnCount = 0;
+	for (int32 BurstIndex = 0; BurstIndex < static_cast<int32>(SpawnModule->BurstList.size()); ++BurstIndex)
+	{
+		if (BurstFiredThisLoop[static_cast<size_t>(BurstIndex)] != 0u)
+		{
+			continue;
+		}
+
+		const FParticleBurstEntry& Entry = SpawnModule->BurstList[static_cast<size_t>(BurstIndex)];
+		if (!Entry.bEnabled)
+		{
+			continue;
+		}
+
+		const float EntryTime = std::max(Entry.Time, 0.0f);
+		if (PreviousEmitterTime <= EntryTime && CurrentEmitterTime >= EntryTime)
+		{
+			BurstFiredThisLoop[static_cast<size_t>(BurstIndex)] = 1u;
+
+			const float Chance = std::clamp(Entry.Chance, 0.0f, 1.0f);
+			if (Chance <= 0.0f || (Chance < 1.0f && RandomStream.GetFraction() > Chance))
+			{
+				continue;
+			}
+
+			SpawnCount += ResolveBurstSpawnAmount(Entry);
+		}
+	}
+
+	return SpawnCount;
 }
 
-int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
+int32 FParticleEmitterInstance::ResolveBurstSpawnAmount(const FParticleBurstEntry& Entry)
+{
+	if (Entry.Count <= 0)
+	{
+		return 0;
+	}
+
+	if (Entry.CountLow <= 0 || Entry.CountLow >= Entry.Count)
+	{
+		return Entry.Count;
+	}
+
+	return RandomStream.GetRange(Entry.CountLow, Entry.Count);
+}
+
+int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime)
 {
 	if (Count <= 0 || ParticleData == nullptr || ParticleIndices == nullptr)
 	{
@@ -382,7 +560,7 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
 		return 0;
 	}
 
-	const float SpawnInterval = SpawnCount > 0 ? DeltaTime / static_cast<float>(SpawnCount) : 0.0f;
+	const float SpawnInterval = SpawnCount > 0 ? SegmentDeltaTime / static_cast<float>(SpawnCount) : 0.0f;
 
 	for (int32 SpawnIndex = 0; SpawnIndex < SpawnCount; ++SpawnIndex)
 	{
@@ -399,7 +577,7 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
 		Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
 		InitializeModulePayloadsForExistingParticle(Particle);
 
-		const float SpawnTime = SpawnInterval * static_cast<float>(SpawnIndex);
+		const float SpawnTime = SegmentStartTime + SpawnInterval * static_cast<float>(SpawnIndex);
 		for (UParticleModule* Module : CurrentRuntimeCache->SpawnModules)
 		{
 			if (Module == nullptr)
@@ -765,23 +943,10 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 		return;
 	}
 
-	const float PreviousEmitterTime = EmitterTime;
-	EmitterTime += DeltaTime;
 	SecondsSinceCreation += DeltaTime;
 
 	CompactPendingKilledParticles();
-
-	const int32 BurstSpawnCount = CalculateBurstSpawnCount(PreviousEmitterTime, EmitterTime);
-	const int32 ActualBurstSpawnCount = SpawnParticles(BurstSpawnCount, DeltaTime);
-	if (ActualBurstSpawnCount > 0)
-	{
-		FParticleEventBurstData Event;
-		Event.SpawnCount = ActualBurstSpawnCount;
-		Event.Location = Owner.GetWorldLocation();
-		Owner.AddBurstEvent(Event);
-	}
-
-	SpawnParticles(CalculateSpawnRateCount(DeltaTime), DeltaTime);
+	TickEmitterSpawn(DeltaTime);
 	AgeParticles(DeltaTime);
 	UpdateModules(DeltaTime);
 	IntegrateParticles(DeltaTime);

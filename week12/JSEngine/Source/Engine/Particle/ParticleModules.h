@@ -136,12 +136,6 @@ public:
 	UPROPERTY(DisplayName = "Process Burst")
 	bool bProcessBurst = false;
 
-	UPROPERTY(DisplayName = "Burst Count", Min = 0.0f, Speed = 1.0f)
-	int32 BurstCount = 0;
-
-	UPROPERTY(DisplayName = "Burst Time", Min = 0.0f, Speed = 0.1f)
-	float BurstTime = 0.0f;
-
 	UPROPERTY(DisplayName = "Burst List")
 	TArray<FParticleBurstEntry> BurstList;
 };

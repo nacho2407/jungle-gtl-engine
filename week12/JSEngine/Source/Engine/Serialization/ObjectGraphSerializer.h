@@ -30,6 +30,7 @@ public:
 	bool SaveToString(UObject* RootObject, const FString& AssetType, FString& OutJson);
 	UObject* LoadFromFile(const FString& Path, const FString& ExpectedRootType);
 	UObject* LoadFromString(const FString& Content, const FString& ExpectedRootType);
+	int32 GetLastLoadedVersion() const { return LastLoadedVersion; }
 
 private:
 	void Clear();
@@ -40,4 +41,5 @@ private:
 	TArray<UObject*> Objects;
 	TMap<UObject*, uint32> ObjectToId;
 	FObjectGraphReferenceResolver Resolver;
+	int32 LastLoadedVersion = 0;
 };
