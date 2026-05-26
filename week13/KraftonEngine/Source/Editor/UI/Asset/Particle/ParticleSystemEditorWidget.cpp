@@ -224,7 +224,7 @@ namespace
         // TypeData subclasses — 구체 타입을 표시.
         if (Cast<UParticleModuleTypeDataMesh>(Module))   return "Mesh Data";
         if (Cast<UParticleModuleTypeDataRibbon>(Module)) return "Ribbon Data";
-        if (Cast<UParticleModuleTypeDataBeam2>(Module))  return "Beam Data";
+        if (Cast<UParticleModuleTypeDataBeam2>(Module))  return "Beam2 Data";
         if (Cast<UParticleModuleTypeDataBase>(Module))   return "TypeData";
         return "Module";
     }
@@ -3911,7 +3911,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         ImGui::EndPopup();
                     }
 
-                    // ── 빈 영역 우클릭 → TypeData(Sprite/Mesh/Ribbon/Beam) 전환 ──────
+                    // ── 빈 영역 우클릭 → TypeData(Sprite/Mesh/Ribbon/Beam2) 전환 ──────
                     // ImGuiPopupFlags_NoOpenOverItems: 모듈 row(Selectable)/버튼 위에서는
                     // 이 메뉴가 안 뜨고, 진짜 빈 공간에서만 뜸. 모듈 컨텍스트 메뉴와 충돌 X.
                     if (ImGui::BeginPopupContextWindow("##EmitterTypeDataCtx",
@@ -3940,7 +3940,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         {
                             SetEmitterTypeData(EmitterIndex, "UParticleModuleTypeDataRibbon");
                         }
-                        if (ImGui::MenuItem("Beam Data", nullptr, bIsBeam2))
+                        if (ImGui::MenuItem("Beam2 Data", nullptr, bIsBeam2))
                         {
                             SetEmitterTypeData(EmitterIndex, "UParticleModuleTypeDataBeam2");
                         }
@@ -4525,12 +4525,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
 
     bool bChanged       = false;
     bool bMaterialDirty = false;
-    const auto DrawCategory = [](const char* Label)
-    {
-        ImGui::Spacing();
-        ImGui::TextColored(PSE::DimTextV, "%s", Label);
-        ImGui::Separator();
-    };
 
     // Required/Spawn/TypeData는 이미터 동작에 필수라 disable 토글이 무의미하다. 그 외 모듈만 노출.
     const bool bIsCoreModule = Cast<UParticleModuleRequired>(Module)
@@ -4892,7 +4886,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Spawn Per Unit"))
         {
-            DrawCategory("Movement");
             bChanged |= ImGui::DragFloat("Unit Scalar", &SpawnPerUnit->UnitScalar, 0.01f, 0.0f, 100000.0f);
             bChanged |= ImGui::DragFloat("Movement Tolerance", &SpawnPerUnit->MovementTolerance, 0.01f, 0.0f, 100000.0f);
             bChanged |= ImGui::DragFloat("Spawn Per Unit", &SpawnPerUnit->SpawnPerUnit, 0.01f, 0.0f, 100000.0f);
@@ -4905,7 +4898,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             if (ImGui::Checkbox("Ignore Movement Along Y", &bFlag)) { SpawnPerUnit->bIgnoreMovementAlongY = bFlag ? 1 : 0; bChanged = true; }
             bFlag = SpawnPerUnit->bIgnoreMovementAlongZ;
             if (ImGui::Checkbox("Ignore Movement Along Z", &bFlag)) { SpawnPerUnit->bIgnoreMovementAlongZ = bFlag ? 1 : 0; bChanged = true; }
-            DrawCategory("Rate And Burst");
             bFlag = SpawnPerUnit->bProcessSpawnRate;
             if (ImGui::Checkbox("Process Spawn Rate", &bFlag)) { SpawnPerUnit->bProcessSpawnRate = bFlag ? 1 : 0; bChanged = true; }
             bFlag = SpawnPerUnit->bProcessBurstList;
@@ -4917,7 +4909,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Trail Source"))
         {
-            DrawCategory("Source");
             if (TrailSource->SourceMethod != PET2SRCM_Default)
             {
                 ImGui::TextColored(
@@ -4941,7 +4932,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 bChanged = true;
             }
 
-            DrawCategory("Offsets");
             int32 OffsetCount = TrailSource->SourceOffsetCount;
             if (ImGui::DragInt("Source Offset Count", &OffsetCount, 1.0f, 0, 64))
             {
@@ -4962,7 +4952,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 ImGui::PopID();
             }
 
-            DrawCategory("Selection");
             int32 SelectionMethod = static_cast<int32>(TrailSource->SelectionMethod);
             if (ImGui::Combo("Selection Method", &SelectionMethod, "Random\0Sequential\0"))
             {
@@ -4982,7 +4971,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Beam Source"))
         {
-            DrawCategory("Source");
             if (BeamSource->SourceMethod == PEB2STM_Actor || BeamSource->SourceMethod == PEB2STM_Emitter || BeamSource->SourceMethod == PEB2STM_Particle)
             {
                 ImGui::TextColored(PSE::DimTextV, "Actor/Emitter/Particle source methods are not supported yet.");
@@ -5000,7 +4988,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             bool bLock = BeamSource->bLockSource;
             if (ImGui::Checkbox("Lock Source", &bLock)) { BeamSource->bLockSource = bLock ? 1 : 0; bChanged = true; }
 
-            DrawCategory("Tangent");
             int32 TangentMethod = static_cast<int32>(BeamSource->SourceTangentMethod);
             if (ImGui::Combo("Source Tangent Method", &TangentMethod, "Direct\0User Set\0Distribution\0Emitter X Axis\0"))
             {
@@ -5010,7 +4997,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             DrawRawDistributionVector("Source Tangent", BeamSource->SourceTangent, bChanged, BeamSource);
             bool bLockTangent = BeamSource->bLockSourceTangent;
             if (ImGui::Checkbox("Lock Source Tangent", &bLockTangent)) { BeamSource->bLockSourceTangent = bLockTangent ? 1 : 0; bChanged = true; }
-            DrawCategory("Strength");
             DrawRawDistributionFloat("Source Strength", BeamSource->SourceStrength, bChanged, BeamSource);
             bool bLockStrength = BeamSource->bLockSourceStrength;
             if (ImGui::Checkbox("Lock Source Strength", &bLockStrength)) { BeamSource->bLockSourceStrength = bLockStrength ? 1 : 0; bChanged = true; }
@@ -5021,7 +5007,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Beam Target"))
         {
-            DrawCategory("Target");
             if (BeamTarget->TargetMethod == PEB2STM_Actor || BeamTarget->TargetMethod == PEB2STM_Emitter || BeamTarget->TargetMethod == PEB2STM_Particle)
             {
                 ImGui::TextColored(PSE::DimTextV, "Actor/Emitter/Particle target methods are not supported yet.");
@@ -5039,7 +5024,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             bool bLock = BeamTarget->bLockTarget;
             if (ImGui::Checkbox("Lock Target", &bLock)) { BeamTarget->bLockTarget = bLock ? 1 : 0; bChanged = true; }
 
-            DrawCategory("Tangent");
             int32 TangentMethod = static_cast<int32>(BeamTarget->TargetTangentMethod);
             if (ImGui::Combo("Target Tangent Method", &TangentMethod, "Direct\0User Set\0Distribution\0Emitter X Axis\0"))
             {
@@ -5049,7 +5033,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             DrawRawDistributionVector("Target Tangent", BeamTarget->TargetTangent, bChanged, BeamTarget);
             bool bLockTangent = BeamTarget->bLockTargetTangent;
             if (ImGui::Checkbox("Lock Target Tangent", &bLockTangent)) { BeamTarget->bLockTargetTangent = bLockTangent ? 1 : 0; bChanged = true; }
-            DrawCategory("Strength");
             DrawRawDistributionFloat("Target Strength", BeamTarget->TargetStrength, bChanged, BeamTarget);
             bool bLockStrength = BeamTarget->bLockTargetStrength;
             if (ImGui::Checkbox("Lock Target Strength", &bLockStrength)) { BeamTarget->bLockTargetStrength = bLockStrength ? 1 : 0; bChanged = true; }
@@ -5061,19 +5044,14 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Beam Noise"))
         {
-            DrawCategory("Frequency");
             bool bFlag = BeamNoise->bLowFreq_Enabled;
             if (ImGui::Checkbox("Low Freq Enabled", &bFlag)) { BeamNoise->bLowFreq_Enabled = bFlag ? 1 : 0; bChanged = true; }
             bChanged |= ImGui::DragInt("Frequency", &BeamNoise->Frequency, 1.0f, 0, 4096);
             bChanged |= ImGui::DragInt("Frequency Low Range", &BeamNoise->Frequency_LowRange, 1.0f, 0, 4096);
-
-            DrawCategory("Range");
             DrawRawDistributionVector("Noise Range", BeamNoise->NoiseRange, bChanged, BeamNoise);
             DrawRawDistributionFloat("Noise Range Scale", BeamNoise->NoiseRangeScale, bChanged, BeamNoise);
             bFlag = BeamNoise->bNRScaleEmitterTime;
             if (ImGui::Checkbox("NR Scale Emitter Time", &bFlag)) { BeamNoise->bNRScaleEmitterTime = bFlag ? 1 : 0; bChanged = true; }
-
-            DrawCategory("Motion");
             DrawRawDistributionVector("Noise Speed", BeamNoise->NoiseSpeed, bChanged, BeamNoise);
             bFlag = BeamNoise->bSmooth;
             if (ImGui::Checkbox("Smooth", &bFlag)) { BeamNoise->bSmooth = bFlag ? 1 : 0; bChanged = true; }
@@ -5084,8 +5062,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             if (ImGui::Checkbox("Oscillate", &bFlag)) { BeamNoise->bOscillate = bFlag ? 1 : 0; bChanged = true; }
             bChanged |= ImGui::DragFloat("Noise Lock Time", &BeamNoise->NoiseLockTime, 0.01f, -1.0f, 100000.0f);
             bChanged |= ImGui::DragFloat("Noise Tension", &BeamNoise->NoiseTension, 0.01f, 0.0f, 1000.0f);
-
-            DrawCategory("Tangents And Tessellation");
             bFlag = BeamNoise->bUseNoiseTangents;
             if (ImGui::Checkbox("Use Noise Tangents", &bFlag)) { BeamNoise->bUseNoiseTangents = bFlag ? 1 : 0; bChanged = true; }
             DrawRawDistributionFloat("Noise Tangent Strength", BeamNoise->NoiseTangentStrength, bChanged, BeamNoise);
@@ -5093,8 +5069,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             bFlag = BeamNoise->bTargetNoise;
             if (ImGui::Checkbox("Target Noise", &bFlag)) { BeamNoise->bTargetNoise = bFlag ? 1 : 0; bChanged = true; }
             bChanged |= ImGui::DragFloat("Frequency Distance", &BeamNoise->FrequencyDistance, 0.1f, 0.0f, 100000.0f);
-
-            DrawCategory("Scale");
             bFlag = BeamNoise->bApplyNoiseScale;
             if (ImGui::Checkbox("Apply Noise Scale", &bFlag)) { BeamNoise->bApplyNoiseScale = bFlag ? 1 : 0; bChanged = true; }
             DrawRawDistributionFloat("Noise Scale", BeamNoise->NoiseScale, bChanged, BeamNoise);
@@ -5105,19 +5079,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Beam Modifier"))
         {
-            DrawCategory("Modifier");
-            int32 ModifierType = static_cast<int32>(BeamModifier->ModifierType);
-            if (ModifierType < static_cast<int32>(PEB2MT_Source) || ModifierType > static_cast<int32>(PEB2MT_Target))
-            {
-                ModifierType = static_cast<int32>(PEB2MT_Source);
-            }
-            if (ImGui::Combo("Modifier Type", &ModifierType, "Source\0Target\0"))
-            {
-                BeamModifier->ModifierType = static_cast<BeamModifierType>(ModifierType);
-                bChanged = true;
-            }
-
-            DrawCategory("Position");
             bool bFlag = BeamModifier->PositionOptions.bModify;
             if (ImGui::Checkbox("Position Modify", &bFlag)) { BeamModifier->PositionOptions.bModify = bFlag ? 1 : 0; bChanged = true; }
             bFlag = BeamModifier->PositionOptions.bScale;
@@ -5126,7 +5087,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             if (ImGui::Checkbox("Position Lock", &bFlag)) { BeamModifier->PositionOptions.bLock = bFlag ? 1 : 0; bChanged = true; }
             DrawRawDistributionVector("Position", BeamModifier->Position, bChanged, BeamModifier);
 
-            DrawCategory("Tangent");
             bFlag = BeamModifier->TangentOptions.bModify;
             if (ImGui::Checkbox("Tangent Modify", &bFlag)) { BeamModifier->TangentOptions.bModify = bFlag ? 1 : 0; bChanged = true; }
             bFlag = BeamModifier->TangentOptions.bScale;
@@ -5137,7 +5097,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             bFlag = BeamModifier->bAbsoluteTangent;
             if (ImGui::Checkbox("Absolute Tangent", &bFlag)) { BeamModifier->bAbsoluteTangent = bFlag ? 1 : 0; bChanged = true; }
 
-            DrawCategory("Strength");
             bFlag = BeamModifier->StrengthOptions.bModify;
             if (ImGui::Checkbox("Strength Modify", &bFlag)) { BeamModifier->StrengthOptions.bModify = bFlag ? 1 : 0; bChanged = true; }
             bFlag = BeamModifier->StrengthOptions.bScale;
@@ -5152,7 +5111,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Mesh"))
         {
-            DrawCategory("Mesh Asset");
             FString CurrentPath = MeshT->MeshAssetPath.ToString();
             if (CurrentPath.empty()) CurrentPath = "None";
 
@@ -5190,7 +5148,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 }
             }
 
-            DrawCategory("Material");
             bool bOM = MeshT->bOverrideMaterial;   if (ImGui::Checkbox("Override Material", &bOM))   { MeshT->bOverrideMaterial  = bOM ? 1 : 0; bChanged = true; }
             ImGui::TextColored(PSE::DimTextV, "Resolved Mesh: %s", MeshT->Mesh ? "Yes" : "No");
         }
@@ -5200,54 +5157,36 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Ribbon"))
         {
-            DrawCategory("Trail");
+            bChanged |= ImGui::DragInt("Max Tessellation Between Particles", &RibT->MaxTessellationBetweenParticles, 1.0f, 0, 64);
             bChanged |= ImGui::DragInt("Sheets Per Trail",  &RibT->SheetsPerTrail,  1.0f, 1, 32);
             bChanged |= ImGui::DragInt("Max Trail Count",   &RibT->MaxTrailCount,   1.0f, 1, 1024);
             bChanged |= ImGui::DragInt("Max Particles In Trail Count", &RibT->MaxParticleInTrailCount, 1.0f, 0, 100000);
             bChanged |= ImGui::DragFloat("Tangent Spawning Scalar",     &RibT->TangentSpawningScalar,     0.01f, 0.0f, 100.0f);
             bChanged |= ImGui::DragFloat("Tiling Distance",             &RibT->TilingDistance,            0.1f, 0.0f, 10000.0f);
-
-            DrawCategory("Tessellation");
-            bChanged |= ImGui::DragInt("Max Tessellation Between Particles", &RibT->MaxTessellationBetweenParticles, 1.0f, 0, 64);
             bChanged |= ImGui::DragFloat("Distance Tessellation Step",  &RibT->DistanceTessellationStepSize, 0.1f, 0.1f, 1000.0f);
             bChanged |= ImGui::DragFloat("Tangent Tessellation Scalar", &RibT->TangentTessellationScalar, 0.1f, 0.0f, 1000.0f);
+            int32 Ax = static_cast<int32>(RibT->RenderAxis);
+            if (ImGui::Combo("Render Axis", &Ax, "CameraUp\0SourceUp\0WorldUp\0"))
+            { RibT->RenderAxis = static_cast<ETrailsRenderAxisOption>(Ax); bChanged = true; }
             bool bA;
-            bA = RibT->bEnablePreviousTangentRecalculation;
-            if (ImGui::Checkbox("Enable Previous Tangent Recalculation", &bA))
-            {
-                RibT->bEnablePreviousTangentRecalculation = bA ? 1 : 0;
-                bChanged = true;
-            }
-            bA = RibT->bTangentRecalculationEveryFrame;
-            if (ImGui::Checkbox("Tangent Recalculation Every Frame", &bA))
-            {
-                RibT->bTangentRecalculationEveryFrame = bA ? 1 : 0;
-                bChanged = true;
-            }
             bA = RibT->bDeadTrailsOnDeactivate; if (ImGui::Checkbox("Dead Trails On Deactivate", &bA))   { RibT->bDeadTrailsOnDeactivate = bA ? 1 : 0; bChanged = true; }
             bA = RibT->bDeadTrailsOnSourceLoss; if (ImGui::Checkbox("Dead Trails On Source Loss", &bA))  { RibT->bDeadTrailsOnSourceLoss = bA ? 1 : 0; bChanged = true; }
             bA = RibT->bClipSourceSegement;     if (ImGui::Checkbox("Clip Source Segment", &bA))        { RibT->bClipSourceSegement     = bA ? 1 : 0; bChanged = true; }
             bA = RibT->bSpawnInitialParticle;   if (ImGui::Checkbox("Spawn Initial Particle", &bA))     { RibT->bSpawnInitialParticle   = bA ? 1 : 0; bChanged = true; }
+            bA = RibT->bRenderGeometry;         if (ImGui::Checkbox("Render Geometry", &bA))            { RibT->bRenderGeometry         = bA ? 1 : 0; bChanged = true; }
             bA = RibT->bEnableTangentDiffInterpScale;
             if (ImGui::Checkbox("Enable Tangent Diff Interp Scale", &bA))
             {
                 RibT->bEnableTangentDiffInterpScale = bA ? 1 : 0;
                 bChanged = true;
             }
-
-            DrawCategory("Rendering");
-            int32 Ax = static_cast<int32>(RibT->RenderAxis);
-            if (ImGui::Combo("Render Axis", &Ax, "CameraUp\0SourceUp\0WorldUp\0"))
-            { RibT->RenderAxis = static_cast<ETrailsRenderAxisOption>(Ax); bChanged = true; }
-            bA = RibT->bRenderGeometry;         if (ImGui::Checkbox("Render Geometry", &bA))            { RibT->bRenderGeometry         = bA ? 1 : 0; bChanged = true; }
         }
     }
     else if (UParticleModuleTypeDataBeam2* BeamT = Cast<UParticleModuleTypeDataBeam2>(Module))
     {
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        if (ImGui::CollapsingHeader("Beam"))
+        if (ImGui::CollapsingHeader("Beam2"))
         {
-            DrawCategory("Beam");
             int32 Method = static_cast<int32>(BeamT->BeamMethod);
             if (Method > 1)
             {
@@ -5256,44 +5195,20 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             int32 ComboMethod = (Method > 1) ? 0 : Method;
             if (ImGui::Combo("Beam Method", &ComboMethod, "Distance\0Target\0"))
             { BeamT->BeamMethod = static_cast<EBeam2Method>(ComboMethod); bChanged = true; }
-            bChanged |= ImGui::DragInt  ("Max Beam Count",        &BeamT->MaxBeamCount,         1.0f, 1, 1024);
-            bool bAO = BeamT->bAlwaysOn;         if (ImGui::Checkbox("Always On",          &bAO)) { BeamT->bAlwaysOn         = bAO ? 1 : 0; bChanged = true; }
-
-            DrawCategory("Path");
-            if (BeamT->BeamMethod != PEB2M_Distance)
-            {
-                ImGui::BeginDisabled();
-            }
-            DrawRawDistributionFloat("Distance", BeamT->Distance, bChanged, BeamT);
-            if (BeamT->BeamMethod != PEB2M_Distance)
-            {
-                ImGui::EndDisabled();
-            }
-            bChanged |= ImGui::DragFloat("Speed",                 &BeamT->Speed,                0.1f, 0.0f, 100000.0f);
-            bChanged |= ImGui::DragInt  ("Interpolation Points",  &BeamT->InterpolationPoints,  1.0f, 0, 100);
-            bChanged |= ImGui::DragInt  ("Up Vector Step Size",   &BeamT->UpVectorStepSize,     1.0f, 0, 100);
-
-            DrawCategory("Texture");
             bChanged |= ImGui::DragInt  ("Texture Tile",          &BeamT->TextureTile,          1.0f, 1, 64);
             bChanged |= ImGui::DragFloat("Texture Tile Distance", &BeamT->TextureTileDistance,  1.0f, 0.0f, 100000.0f);
             bChanged |= ImGui::DragInt  ("Sheets",                &BeamT->Sheets,               1.0f, 1, 32);
-
-            DrawCategory("Taper");
+            bChanged |= ImGui::DragInt  ("Max Beam Count",        &BeamT->MaxBeamCount,         1.0f, 1, 1024);
+            bChanged |= ImGui::DragFloat("Speed",                 &BeamT->Speed,                0.1f, 0.0f, 100000.0f);
+            bChanged |= ImGui::DragInt  ("Interpolation Points",  &BeamT->InterpolationPoints,  1.0f, 0, 100);
+            bChanged |= ImGui::DragInt  ("Up Vector Step Size",   &BeamT->UpVectorStepSize,     1.0f, 0, 100);
+            bool bAO = BeamT->bAlwaysOn;         if (ImGui::Checkbox("Always On",          &bAO)) { BeamT->bAlwaysOn         = bAO ? 1 : 0; bChanged = true; }
+            DrawRawDistributionFloat("Distance", BeamT->Distance, bChanged, BeamT);
             int32 Taper = static_cast<int32>(BeamT->TaperMethod);
             if (ImGui::Combo("Taper Method", &Taper, "None\0Full\0Partial\0"))
             { BeamT->TaperMethod = static_cast<EBeamTaperMethod>(Taper); bChanged = true; }
-            if (BeamT->TaperMethod == PEBTM_None)
-            {
-                ImGui::BeginDisabled();
-            }
             DrawRawDistributionFloat("Taper Factor", BeamT->TaperFactor, bChanged, BeamT);
             DrawRawDistributionFloat("Taper Scale", BeamT->TaperScale, bChanged, BeamT);
-            if (BeamT->TaperMethod == PEBTM_None)
-            {
-                ImGui::EndDisabled();
-            }
-
-            DrawCategory("Rendering");
             bool bRG = BeamT->RenderGeometry;    if (ImGui::Checkbox("Render Geometry",    &bRG)) { BeamT->RenderGeometry    = bRG ? 1 : 0; bChanged = true; }
         }
     }
