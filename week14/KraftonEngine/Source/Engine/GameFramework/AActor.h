@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Object/Object.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Component/SceneComponent.h"
@@ -78,35 +78,53 @@ public:
 	}
 
 	// Transform — Location
+	UFUNCTION(Lua)
 	FVector GetActorLocation() const;
+	UFUNCTION(Lua)
 	void SetActorLocation(const FVector& Location);
+	UFUNCTION(Lua)
 	void AddActorWorldOffset(const FVector& Delta);
 
 	// Transform — Rotation
+	UFUNCTION(Lua)
 	FRotator GetActorRotation() const;
+	UFUNCTION(Lua)
 	void SetActorRotation(const FRotator& NewRotation);
+	UFUNCTION(Lua)
 	void SetActorRotation(const FVector& EulerRotation);
 
 	// Transform — Scale
+	UFUNCTION(Lua)
 	FVector GetActorScale() const;
+	UFUNCTION(Lua)
 	void SetActorScale(const FVector& NewScale);
 
 	// Direction
+	UFUNCTION(Lua)
 	FVector GetActorForward() const;
+	UFUNCTION(Lua)
 	FVector GetActorRight() const;
 
 	UWorld* GetWorld() const;
 	ULevel* GetLevel() const;
 
+	UFUNCTION(Lua)
 	bool IsVisible() const { return bVisible; }
+	UFUNCTION(Lua)
 	void SetVisible(bool Visible);
 
 	// Tags — 게임 측에서 액터를 의미적으로 분류하는 FName 배열 (UE Actor::Tags 대응).
 	// Trigger volume 의 TriggerTag 같은 단일-태그 필드는 그대로 두고, 이건 범용 다중 태그.
 	// 에디터에서는 콤마 구분 문자열로 편집 — PostEditProperty 가 split 해서 반영.
+	UFUNCTION(Lua)
 	bool HasTag(const FName& Tag) const;
+
+	UFUNCTION(Lua)
 	void AddTag(const FName& Tag);
+
+	UFUNCTION(Lua)
 	void RemoveTag(const FName& Tag);
+
 	const TArray<FName>& GetTags() const { return Tags; }
 	void SetTags(TArray<FName> InTags) { Tags = std::move(InTags); }
 

@@ -64,11 +64,14 @@
     <Filter Include="Source\Editor\UI\Asset\Curve">
       <UniqueIdentifier>{a9a5d4ee-210d-8455-10fc-cd6653ca56e6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Asset\Material">
+      <UniqueIdentifier>{994177d8-b52e-61fd-e3e8-c510233e7128}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI\Asset\Mesh">
       <UniqueIdentifier>{5084842c-4071-bc7f-36a2-4a3bf67026e8}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\UI\Asset\Particle">
-      <UniqueIdentifier>{0ee6db7d-9b37-4a49-b356-6ecf8fc7e89a}</UniqueIdentifier>
+      <UniqueIdentifier>{ebf11781-61db-1727-e031-70fd890518c6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\UI\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
@@ -169,6 +172,9 @@
     <Filter Include="Source\Engine\Component\Movement">
       <UniqueIdentifier>{9d062af4-b676-61f1-319e-efb1ba670c12}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component\Particle">
+      <UniqueIdentifier>{35416e1f-359c-3d0d-7186-922fdee6933f}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component\Primitive">
       <UniqueIdentifier>{57bc4de3-ad9b-789f-c9a3-f7282f3fe720}</UniqueIdentifier>
     </Filter>
@@ -252,6 +258,15 @@
     </Filter>
     <Filter Include="Source\Engine\Object\Reflection">
       <UniqueIdentifier>{469de7df-5ecb-d3cb-8cf2-aff37b3c7c25}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles">
+      <UniqueIdentifier>{3d2b49e3-c373-08f7-b06b-addbb798f11a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles\Module">
+      <UniqueIdentifier>{bec915f6-587e-a65f-e38b-15e5c12cebab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles\Runtime">
+      <UniqueIdentifier>{a6fd8b55-c786-051b-c272-a120a4f17b47}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Physics">
       <UniqueIdentifier>{c1985821-1144-9a46-639a-f7de31f4a1fa}</UniqueIdentifier>
@@ -483,6 +498,9 @@
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Common\Fog.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -514,6 +532,9 @@
       <Filter>Shaders\Editor</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Geometry\Decal.hlsl">
+      <Filter>Shaders\Geometry</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Geometry\Particle.hlsl">
       <Filter>Shaders\Geometry</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Geometry\Primitive.hlsl">
@@ -600,7 +621,6 @@
     <FxCompile Include="Shaders\UI\SubUV.hlsl">
       <Filter>Shaders\UI</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Geometry\Particle.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -662,6 +682,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Curve</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\Material</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
@@ -732,10 +755,13 @@
     <ClCompile Include="Source\Editor\UI\Util\EditorFileUtils.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp">
+    <ClCompile Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.cpp">
+    <ClCompile Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.cpp">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.cpp">
@@ -975,6 +1001,9 @@
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp">
+      <Filter>Source\Engine\Component\Particle</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Primitive\BillboardComponent.cpp">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClCompile>
@@ -1176,6 +1205,9 @@
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp">
       <Filter>Source\Engine\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Lua\LuaDocRegistry.cpp">
+      <Filter>Source\Engine\Lua</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Lua\LuaScriptManager.cpp">
       <Filter>Source\Engine\Lua</Filter>
     </ClCompile>
@@ -1263,6 +1295,18 @@
     <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp">
       <Filter>Source\Engine\Object</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp">
+      <Filter>Source\Engine\Particles\Module</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp">
+      <Filter>Source\Engine\Particles\Runtime</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\NativePhysicsScene.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
@@ -1326,6 +1370,12 @@
     <ClCompile Include="Source\Engine\Render\Geometry\LineGeometry.cpp">
       <Filter>Source\Engine\Render\Geometry</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Geometry\MeshParticleGeometry.cpp">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.cpp">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClCompile>
@@ -1348,6 +1398,12 @@
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\GizmoSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.cpp">
@@ -1374,6 +1430,9 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\AlphaBlendPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\BloomPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\DecalPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
@@ -1381,6 +1440,9 @@
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.cpp">
@@ -1582,10 +1644,14 @@
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Intermediate\Generated\LuaBindings.generated.cpp">
+      <Filter>Intermediate\Generated</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp" />
     <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp" />
     <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleEvent.cpp" />
     <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.cpp" />
@@ -1677,6 +1743,9 @@
     <ClInclude Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Curve</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\Material</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
     </ClInclude>
@@ -1752,10 +1821,13 @@
     <ClInclude Include="Source\Editor\UI\Util\EditorFileUtils.h">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h">
+    <ClInclude Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.h">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.h">
+    <ClInclude Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.h">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.h">
@@ -2037,6 +2109,9 @@
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h">
+      <Filter>Source\Engine\Component\Particle</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Primitive\BillboardComponent.h">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClInclude>
@@ -2274,6 +2349,9 @@
     <ClInclude Include="Source\Engine\Input\InputSystem.h">
       <Filter>Source\Engine\Input</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Lua\LuaDocRegistry.h">
+      <Filter>Source\Engine\Lua</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Lua\LuaScriptManager.h">
       <Filter>Source\Engine\Lua</Filter>
     </ClInclude>
@@ -2285,6 +2363,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h">
       <Filter>Source\Engine\Materials</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Math\Distribution.h">
+      <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\FloatCurve.h">
       <Filter>Source\Engine\Math</Filter>
@@ -2406,6 +2487,33 @@
     <ClInclude Include="Source\Engine\Object\Reflection\UStruct.h">
       <Filter>Source\Engine\Object\Reflection</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleHelper.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleSystem.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h">
+      <Filter>Source\Engine\Particles</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h">
+      <Filter>Source\Engine\Particles\Module</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleCollision.h">
+      <Filter>Source\Engine\Particles\Module</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h">
+      <Filter>Source\Engine\Particles\Module</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleCollisionEvent.h">
+      <Filter>Source\Engine\Particles\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.h">
+      <Filter>Source\Engine\Particles\Runtime</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h">
+      <Filter>Source\Engine\Particles\Runtime</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\IPhysicsScene.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
@@ -2443,6 +2551,9 @@
       <Filter>Source\Engine\Profiling</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\Stats\MemoryStats.h">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Profiling\Stats\ParticleStats.h">
       <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\Stats\ShadowStats.h">
@@ -2484,6 +2595,12 @@
     <ClInclude Include="Source\Engine\Render\Geometry\LineGeometry.h">
       <Filter>Source\Engine\Render\Geometry</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Geometry\MeshParticleGeometry.h">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.h">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h">
       <Filter>Source\Engine\Render\Pipeline</Filter>
     </ClInclude>
@@ -2514,6 +2631,12 @@
     <ClInclude Include="Source\Engine\Render\Proxy\GizmoSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
@@ -2538,6 +2661,9 @@
     <ClInclude Include="Source\Engine\Render\RenderPass\AlphaBlendPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\BloomPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\DecalPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
@@ -2545,6 +2671,9 @@
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\FogPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.h">
@@ -4466,6 +4595,7 @@
     <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleCollision.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleEvent.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\MeshParticleGeometry.h" />
     <ClInclude Include="Source\Engine\Math\Distribution.h" />

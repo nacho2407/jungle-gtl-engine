@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Math/Transform.h"
 #include "Math/Rotator.h"
@@ -33,8 +33,11 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 	virtual void UpdateWorldMatrix() const;
+
 	virtual void AddWorldOffset(const FVector& WorldDelta);
+	UFUNCTION(Lua)
 	virtual void SetRelativeLocation(const FVector& NewLocation);
+	UFUNCTION(Lua)
 	virtual void SetRelativeRotation(const FRotator& NewRotation);
 	virtual void SetRelativeRotation(const FQuat& NewRotation);
 	void SetRelativeRotation(const FVector& EulerRotation);	// FVector 호환
@@ -55,17 +58,24 @@ public:
 	void SetRelativeRotationWithEulerHint(const FQuat& NewQuat, const FRotator& EulerHint);
 	const FMatrix& GetWorldMatrix() const;
 	const FMatrix& GetWorldInverseMatrix() const;
+	UFUNCTION(Lua)
 	void SetWorldLocation(FVector NewWorldLocation);
+	UFUNCTION(Lua)
 	FVector GetWorldLocation() const;
 	FRotator GetWorldRotation() const;
 	FVector GetWorldScale() const;
 	const FTransform& GetRelativeTransform() const { return RelativeTransform; }
+	UFUNCTION(Lua)
 	FVector GetRelativeLocation() const { return RelativeTransform.Location; }
+	UFUNCTION(Lua)
 	FRotator GetRelativeRotation() const { return RelativeTransform.GetRotator(); }
 	const FQuat& GetRelativeQuat() const { return RelativeTransform.Rotation; }
 	FVector GetRelativeScale() const { return RelativeTransform.Scale; }
+	UFUNCTION(Lua)
 	FVector GetForwardVector() const;
+	UFUNCTION(Lua)
 	FVector GetUpVector() const;
+	UFUNCTION(Lua)
 	FVector GetRightVector() const;
 
 	FMatrix GetRelativeMatrix() const;

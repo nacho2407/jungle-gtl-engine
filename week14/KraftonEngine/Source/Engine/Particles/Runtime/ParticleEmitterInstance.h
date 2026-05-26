@@ -8,9 +8,12 @@ class UParticleLODLevel;
 class UParticleSystemComponent;
 class UParticleModuleRequired;
 class UParticleModuleSpawn;
+class UParticleModuleEventReceiver;
 
 struct FParticleEmitterInstance
 {
+	friend class UParticleModuleEventReceiver;
+
 	virtual ~FParticleEmitterInstance();
 
 	virtual void Init(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent);
@@ -39,6 +42,8 @@ struct FParticleEmitterInstance
 	float GetEmitterTime() const { return EmitterTime; }
 	const TArray<FParticleCollisionEventPayload>& GetCollisionEventQueue() const { return CollisionEventQueue; }
 	TArray<FParticleCollisionEventPayload>& GetMutableCollisionEventQueue() { return CollisionEventQueue; }
+	void QueueParticleEvent(EParticleEventType EventType, const FName& EventName, const FBaseParticle& Particle, int32 ParticleIndex);
+	void ReceiveParticleEvent(const FParticleCollisionEventPayload& Event);
 
 	template<typename T>
 	T* GetParticlePayload(int32 ParticleIndex)
@@ -100,11 +105,18 @@ struct FParticleEmitterInstance
 	int32 MaxActiveParticles = 0;
 	float SpawnFraction = 0.0f;
 	bool bIsEventGenerator = false;
+	bool bGenerateSpawnEvents = false;
+	bool bGenerateKillEvents = false;
+	bool bGenerateCollisionEvents = false;
+	FName SpawnEventName = FName("Spawn");
+	FName KillEventName = FName("Kill");
+	FName CollisionEventName = FName("Collision");
 	TArray<FParticleCollisionEventPayload> CollisionEventQueue;
 
 protected:
 	virtual int32 SpawnParticles(float DeltaTime);
 	virtual void InitializeParticle(FBaseParticle& Particle);
+	void InitializeParticle(FBaseParticle& Particle, const FVector& SpawnLocation);
 	virtual void UpdateParticles(float DeltaTime);
 	virtual void KillParticle(int32 ParticleIndex);
 	void CompactDeadParticles();
@@ -119,6 +131,7 @@ protected:
 
 	UParticleModuleSpawn* GetSpawnModule() const;
 	bool CanUseLODLevel(const UParticleLODLevel* LODLevel) const;
+	void RefreshEventGeneratorFlags();
 
 	void RunSpawnModules(FBaseParticle& Particle, float SpawnTime);
 	void RunUpdateModules(float DeltaTime);

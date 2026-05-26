@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Component/PrimitiveComponent.h"
+#include "Object/FName.h"
 #include "Object/Ptr/ObjectPtr.h"
 #include "Object/Ptr/SoftObjectPtr.h"
 #include "Particles/Runtime/ParticleCollisionEvent.h"
@@ -17,6 +18,23 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(
 	UParticleSystemComponent* /*ParticleSystemComponent*/,
 	const FParticleCollisionEventPayload& /*CollisionEvent*/);
 
+DECLARE_MULTICAST_DELEGATE_TwoParams(
+	FParticleEventSignature,
+	UParticleSystemComponent* /*ParticleSystemComponent*/,
+	const FParticleCollisionEventPayload& /*ParticleEvent*/);
+
+USTRUCT()
+struct FParticleSysParam
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Edit, Save, Category="Particle")
+	FName Name = FName::None;
+
+	UPROPERTY(Edit, Save, Category="Particle")
+	FVector Vector = FVector::ZeroVector;
+};
+
 UCLASS()
 class UParticleSystemComponent : public UPrimitiveComponent
 {
@@ -29,6 +47,10 @@ public:
 	UParticleSystem* GetTemplate() const { return ParticleSystem.Get(); }
 
 	void SetEmitterSpawningEnabled(bool bEnabled);
+	void SetVectorParameter(const FName& ParameterName, const FVector& Value);
+	void SetVectorParameter(const FString& ParameterName, const FVector& Value);
+	bool GetVectorParameter(const FName& ParameterName, FVector& OutValue) const;
+	bool GetVectorParameter(const FString& ParameterName, FVector& OutValue) const;
 
 	void ResetSystem();
 	void Activate() override;
@@ -44,8 +66,10 @@ public:
 	int32 GetPreviewLODIndex() const { return PreviewLODIndex; }
 	void SetPreviewSoloEmitterIndex(int32 InEmitterIndex);
 	int32 GetPreviewSoloEmitterIndex() const { return PreviewSoloEmitterIndex; }
+	void BroadcastParticleEvent(const FParticleCollisionEventPayload& Event);
 	void BroadcastParticleCollisionEvent(const FParticleCollisionEventPayload& Event);
 
+	FParticleEventSignature OnParticleEvent;
 	FParticleCollideEventSignature OnParticleCollideEvent;
 
 protected:
@@ -59,6 +83,10 @@ private:
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TObjectPtr<UParticleSystem> ParticleSystem;
+
+	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Instance Parameters")
+	TArray<FParticleSysParam> InstanceParameters;
+
 	int32 CurrentLODIndex = 0;
 	int32 PreviewLODIndex = -1;
 	int32 PreviewSoloEmitterIndex = -1;

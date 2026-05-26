@@ -19,16 +19,19 @@
 --
 -- Hot-reload: 이 파일 저장만 해도 에디터에서 즉시 반영.
 
-local IDLE_PATH = "Content/Data/hirasawa-yui/IdleWithSkin_mixamo_com.uasset"
+local IDLE_PATH = "Content/Data/hirasawa-yui/Sword And Shield Idle_mixamo_com.uasset"
 local WALK_PATH = "Content/Data/hirasawa-yui/Walking_mixamo_com.uasset"
 --local JUMP_PATH = "Content/Data/hirasawa-yui/Jump_mixamo_com.uasset"
 local JUMP_PATH = "Content/Data/hirasawa-yui/Falling Idle_mixamo_com.uasset"
 local BENCAO_PATH = "Content/Data/hirasawa-yui/bencao_mixamo_com.uasset"
 local ESQUIVA_1_PATH = "Content/Data/hirasawa-yui/esquiva 1_mixamo_com.uasset"
 
-local ATTACK_MONTAGE_PATH = "Content/Montages/AM_MagicAttack.uasset"
 local DEFAULT_SLOT = "DefaultSlot"
+local UPPER_BODY_SLOT = "UpperBody"
 local ACTION_PLAY_RATE = 1.5
+local KEY_1 = string.byte("1")
+local KEY_2 = string.byte("2")
+local KEY_3 = string.byte("3")
 local KEY_Z = string.byte("Z")
 local KEY_X = string.byte("X")
 local KEY_C = string.byte("C")
@@ -39,13 +42,97 @@ local ESQUIVA_1_DURATION = 4.066667 / ACTION_PLAY_RATE
 local ESQUIVA_1_BLEND_IN = 0.35
 local ESQUIVA_1_BLEND_OUT = 0.35
 
+local COMBAT_MODE_SWORD = "Sword"
+local COMBAT_MODE_RAYGUN = "RayGun"
+local COMBAT_MODE_KI = "Ki"
+
+local COMBAT_MODES = {
+    Sword = {
+        idle_sequence = IDLE_PATH,
+        walk_sequence = WALK_PATH,
+        attack_montage = "Content/Montages/One Hand Sword Combo_mixamo_com_Montage.uasset",
+        play_rate = ACTION_PLAY_RATE,
+    },
+    RayGun = {
+        idle_sequence = "Content/Data/hirasawa-yui/Pistol Idle_mixamo_com.uasset",
+        walk_sequence = WALK_PATH,
+        attack_montage = "Content/Montages/Pistol Idle_mixamo_com_Montage.uasset",
+        play_rate = 1.0,
+    },
+    Ki = {
+        idle_sequence = "Content/Data/hirasawa-yui/Standing 1H Magic Attack 03_mixamo_com.uasset",
+        walk_sequence = WALK_PATH,
+        attack_montage = "Content/Montages/AM_MagicAttack.uasset",
+        play_rate = ACTION_PLAY_RATE,
+    },
+}
+
+local MODE_ORDER = {
+    COMBAT_MODE_SWORD,
+    COMBAT_MODE_RAYGUN,
+    COMBAT_MODE_KI,
+}
+
+local MODE_KEYS = {
+    { key = KEY_1, mode = COMBAT_MODE_SWORD, attack = true, slot = nil },
+    { key = KEY_2, mode = COMBAT_MODE_RAYGUN, attack = true, slot = nil },
+    { key = KEY_3, mode = COMBAT_MODE_KI, attack = true, slot = nil },
+}
+
+local ATTACK_KEYS = {
+    { key = KEY_Z, slot = nil },
+}
+
 -- UpperBody mask 의 root 본 — Spine 부터 자손 (팔/머리/손) 까지 자동 mask BFS.
 -- mixamo rig 의 본 이름은 보통 "mixamorig:Spine" 류. 본 못 찾으면 mask 가 전부 false → base 100%.
 local UPPER_BODY_ROOT_BONE = "Bip001 Spine"
 
+local function set_combat_mode(self, mode)
+    if COMBAT_MODES[mode] == nil then
+        return
+    end
+
+    self.CombatMode = mode
+    _G.YuiCombatMode = mode
+    for index, mode_name in ipairs(MODE_ORDER) do
+        if mode_name == mode then
+            self.CombatModeIndex = index - 1
+            break
+        end
+    end
+    print("[Yui] CombatMode = " .. mode)
+end
+
+local function get_current_combat_mode(self)
+    return COMBAT_MODES[self.CombatMode] or COMBAT_MODES[COMBAT_MODE_SWORD]
+end
+
+local function play_current_mode_attack(self, slot)
+    if Anim.is_owner_falling() or Anim.is_montage_playing(DEFAULT_SLOT) then
+        return
+    end
+
+    local mode = get_current_combat_mode(self)
+    Anim.play_montage(mode.attack_montage, mode.section, mode.play_rate, mode.blend_in, slot)
+end
+
+local function create_mode_blend_pose(sequence_key, fallback_path)
+    local blend = Anim.create_blend_list_by_enum(0, 0.2)
+    for _, mode_name in ipairs(MODE_ORDER) do
+        local mode = COMBAT_MODES[mode_name]
+        local path = mode[sequence_key] or fallback_path
+        Anim.blend_list_add_pose(blend, Anim.create_sequence_player(path, 1.0, true))
+    end
+    return blend
+end
+
 function init(self)
     self.Speed          = 0
     self.SpeedThreshold = 0.5
+    self.CombatMode = COMBAT_MODE_SWORD
+    _G.YuiCombatMode = self.CombatMode
+    _G.YuiRaygunFiring = false
+    self.CombatModeIndex = 0
     self.BencaoRequested = false
     self.BencaoPlaying = false
     self.BencaoElapsed = 0.0
@@ -55,8 +142,10 @@ function init(self)
 
     -- ── Locomotion sub-SM (Idle ↔ Walk) ──
     local loco = Anim.create_state_machine("Locomotion")
-    Anim.sm_add_state(loco, "Idle", Anim.create_sequence_player(IDLE_PATH, 1.0, true))
-    Anim.sm_add_state(loco, "Walk", Anim.create_sequence_player(WALK_PATH, 1.0, true))
+    self.IdleByCombatMode = create_mode_blend_pose("idle_sequence", IDLE_PATH)
+    self.WalkByCombatMode = create_mode_blend_pose("walk_sequence", WALK_PATH)
+    Anim.sm_add_state(loco, "Idle", self.IdleByCombatMode)
+    Anim.sm_add_state(loco, "Walk", self.WalkByCombatMode)
     Anim.sm_add_transition(loco, "Idle", "Walk",
         function() return self.Speed >  self.SpeedThreshold end, 0.2)
     Anim.sm_add_transition(loco, "Walk", "Idle",
@@ -127,11 +216,11 @@ function init(self)
     Anim.sm_set_initial_state(top, "Locomotion")
 
     -- ── DefaultSlot — 풀바디 montage 진입점. InputPose = TopSM ──
-    local default_slot = Anim.create_slot("DefaultSlot", top)
+    local default_slot = Anim.create_slot(DEFAULT_SLOT, top)
 
     -- ── UpperBodySlot — 상반신 montage 진입점. InputPose = RefPose ──
     -- montage 없을 땐 Slot.GetEffectiveBlendWeight 가 0 이라 base 만 보임.
-    local upper_slot = Anim.create_slot("UpperBody", Anim.create_ref_pose())
+    local upper_slot = Anim.create_slot(UPPER_BODY_SLOT, Anim.create_ref_pose())
 
     -- ── LayeredBlend — Spine 본 트리만 upper_slot 적용. 하반신은 default_slot (loco/jump) ──
     local layer = Anim.create_layered_blend_per_bone(default_slot, upper_slot, UPPER_BODY_ROOT_BONE)
@@ -141,6 +230,9 @@ end
 
 function update(self, dt)
     self.Speed = Anim.get_owner_speed()
+    Anim.blend_list_set_active(self.IdleByCombatMode, self.CombatModeIndex)
+    Anim.blend_list_set_active(self.WalkByCombatMode, self.CombatModeIndex)
+    _G.YuiRaygunFiring = self.CombatMode == COMBAT_MODE_RAYGUN and Anim.is_left_mouse_down()
 
     if self.BencaoPlaying then
         self.BencaoElapsed = self.BencaoElapsed + dt
@@ -156,18 +248,29 @@ function update(self, dt)
         self.Esquiva1Requested = true
     end
 
-    if Anim.is_key_pressed(KEY_Z) then
-        Anim.play_montage(ATTACK_MONTAGE_PATH, nil, ACTION_PLAY_RATE)
+    for _, binding in ipairs(MODE_KEYS) do
+        if Anim.is_key_pressed(binding.key) then
+            set_combat_mode(self, binding.mode)
+            if binding.attack then
+                play_current_mode_attack(self, binding.slot)
+            end
+        end
+    end
+
+    for _, binding in ipairs(ATTACK_KEYS) do
+        if Anim.is_key_pressed(binding.key) then
+            play_current_mode_attack(self, binding.slot)
+        end
     end
 
     -- 좌클릭 → 풀바디 attack (DefaultSlot 기본).
     if Anim.is_left_mouse_pressed() then
-        Anim.play_montage(ATTACK_MONTAGE_PATH)
+        play_current_mode_attack(self, nil)
     end
 
     -- 우클릭 → 상반신만 attack (UpperBody slot). 하반신은 locomotion 유지.
     if Anim.is_right_mouse_pressed() then
-        Anim.play_montage(ATTACK_MONTAGE_PATH, nil, nil, nil, "UpperBody")
+        play_current_mode_attack(self, UPPER_BODY_SLOT)
     end
 end
 
