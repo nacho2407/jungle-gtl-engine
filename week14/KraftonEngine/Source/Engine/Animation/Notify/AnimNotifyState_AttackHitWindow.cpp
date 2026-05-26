@@ -127,7 +127,7 @@ namespace
 		Action->Knockback(Dir, Distance, Duration);
 	}
 
-	UParticleSystemComponent* FindTrailParticleComponent(USkeletalMeshComponent* MeshComp)
+	UParticleSystemComponent* FindTrailParticleComponent(USkeletalMeshComponent* MeshComp, const FString& TrailActorTag)
 	{
 		if (!MeshComp)
 		{
@@ -140,7 +140,32 @@ namespace
 			return nullptr;
 		}
 
-		return Owner->GetComponentByClass<UParticleSystemComponent>();
+		if (UParticleSystemComponent* OwnerParticle = Owner->GetComponentByClass<UParticleSystemComponent>())
+		{
+			return OwnerParticle;
+		}
+
+		UWorld* World = MeshComp->GetWorld();
+		if (!World || TrailActorTag.empty())
+		{
+			return nullptr;
+		}
+
+		const FName TagName(TrailActorTag);
+		for (AActor* Actor : World->GetActors())
+		{
+			if (!Actor || Actor == Owner || !Actor->HasTag(TagName))
+			{
+				continue;
+			}
+
+			if (UParticleSystemComponent* Particle = Actor->GetComponentByClass<UParticleSystemComponent>())
+			{
+				return Particle;
+			}
+		}
+
+		return nullptr;
 	}
 }
 
@@ -153,7 +178,7 @@ void UAnimNotifyState_AttackHitWindow::NotifyBegin(USkeletalMeshComponent* MeshC
 
 	if (bControlTrailParticle)
 	{
-		if (UParticleSystemComponent* Trail = FindTrailParticleComponent(MeshComp))
+		if (UParticleSystemComponent* Trail = FindTrailParticleComponent(MeshComp, TrailActorTag))
 		{
 			if (bResetTrailOnBegin)
 			{
@@ -336,7 +361,7 @@ void UAnimNotifyState_AttackHitWindow::NotifyEnd(USkeletalMeshComponent* MeshCom
 {
 	if (bControlTrailParticle)
 	{
-		if (UParticleSystemComponent* Trail = FindTrailParticleComponent(MeshComp))
+		if (UParticleSystemComponent* Trail = FindTrailParticleComponent(MeshComp, TrailActorTag))
 		{
 			Trail->SetEmitterSpawningEnabled(false);
 		}
