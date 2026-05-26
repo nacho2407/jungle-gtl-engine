@@ -858,7 +858,6 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ParticleRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\RenderPass.cpp" />
@@ -891,6 +890,7 @@
     <ClCompile Include="Source\Engine\Render\Scene\DecalCommandBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\EditorOverlayCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\LightRenderCollector.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\ParticleSystemRenderProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\PrimitiveDrawCommandBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\RenderBus.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\RenderCollector.cpp" />
@@ -1275,7 +1275,6 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h" />
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ParticleRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\RenderPass.h" />
@@ -1314,7 +1313,9 @@
     <ClInclude Include="Source\Engine\Render\Scene\DecalCommandBuilder.h" />
     <ClInclude Include="Source\Engine\Render\Scene\EditorOverlayCollector.h" />
     <ClInclude Include="Source\Engine\Render\Scene\LightRenderCollector.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\ParticleSystemRenderProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\PrimitiveDrawCommandBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\PrimitiveRenderProxy.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderBus.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderCollector.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderCommand.h" />

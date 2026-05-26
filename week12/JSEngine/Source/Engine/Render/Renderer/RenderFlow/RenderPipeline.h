@@ -24,7 +24,6 @@ class FBaseRenderPass;
 class FVSMConversionRenderPass;
 class FSandevistanRenderPass;
 class FPostProcessRenderPass;
-class FParticleRenderPass;
 
 class FRenderPipeline
 {
@@ -47,7 +46,6 @@ private:
 	std::shared_ptr<FDecalRenderPass> DecalRenderPass;
     std::shared_ptr<FViewModeMeshRenderPass> ViewModeMeshRenderPass;
     std::shared_ptr<FTranslucentRenderPass> TranslucentRenderPass;
-    std::shared_ptr<FParticleRenderPass> ParticleRenderPass;
     std::shared_ptr<FSubUVRenderPass> SubUVRenderPass;
     std::shared_ptr<FDebugViewModeResolvePass> DebugViewModeResolvePass;
     std::shared_ptr<FFogRenderPass> FogRenderPass;

@@ -28,6 +28,8 @@ enum class EVertexFactoryType : uint8
     Text,
     Gizmo,
     Decal,
+    ParticleSprite,
+    ParticleMesh,
 };
 
 // VertexFactory별 Shader Entry 정책입니다.
@@ -97,6 +99,31 @@ public:
                 { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FTextureVertex, TexCoord)) },
             },
             sizeof(FTextureVertex)
+        };
+        static const FVertexLayoutDesc ParticleSpriteLayout = {
+            {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FParticleSpriteQuadVertex, Position)) },
+                { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FParticleSpriteQuadVertex, TexCoord)) },
+                { "POSITION", 1, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleSpriteInstanceData, Center)), EVertexInputRate::PerInstance },
+                { "TEXCOORD", 1, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleSpriteInstanceData, AxisX)), EVertexInputRate::PerInstance },
+                { "TEXCOORD", 2, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleSpriteInstanceData, AxisY)), EVertexInputRate::PerInstance },
+                { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleSpriteInstanceData, Color)), EVertexInputRate::PerInstance },
+            },
+            sizeof(FParticleSpriteQuadVertex)
+        };
+        static const FVertexLayoutDesc ParticleMeshLayout = {
+            {
+                { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Position)) },
+                { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Color)) },
+                { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Normal)) },
+                { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, UVs)) },
+                { "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Tangent)) },
+                { "TEXCOORD", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleMeshInstanceData, Transform) + sizeof(float) * 4u * 0u), EVertexInputRate::PerInstance },
+                { "TEXCOORD", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleMeshInstanceData, Transform) + sizeof(float) * 4u * 1u), EVertexInputRate::PerInstance },
+                { "TEXCOORD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleMeshInstanceData, Transform) + sizeof(float) * 4u * 2u), EVertexInputRate::PerInstance },
+                { "TEXCOORD", 4, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleMeshInstanceData, Transform) + sizeof(float) * 4u * 3u), EVertexInputRate::PerInstance },
+            },
+            sizeof(FNormalVertex)
         };
         static const FVertexLayoutDesc PositionOnlyLayout = {
             {
@@ -196,6 +223,32 @@ public:
             PositionOnlyLayout,
             PrimitiveVertexLayout
         };
+        static const FVertexFactoryDesc ParticleSpriteDesc = {
+            FShaderPaths::VFXParticle,
+            FShaderPaths::DepthPrepass,
+            FShaderPaths::Shadow,
+            FShaderPaths::EditorSelectionMask,
+            "VS",
+            "DepthPrepassVS",
+            "ShadowVS",
+            "VSBillboard",
+            ParticleSpriteLayout,
+            PositionOnlyLayout,
+            PrimitiveVertexLayout
+        };
+        static const FVertexFactoryDesc ParticleMeshDesc = {
+            FShaderPaths::MaterialUberLit,
+            FShaderPaths::DepthPrepass,
+            FShaderPaths::Shadow,
+            FShaderPaths::EditorSelectionMask,
+            "ParticleMeshVS",
+            "DepthPrepassVS",
+            "ShadowVS",
+            "VSStaticMesh",
+            ParticleMeshLayout,
+            PositionOnlyLayout,
+            NormalVertexLayout
+        };
 
         switch (Type)
         {
@@ -213,6 +266,10 @@ public:
             return TexturedQuadDesc;
         case EVertexFactoryType::Text:
             return TextDesc;
+        case EVertexFactoryType::ParticleSprite:
+            return ParticleSpriteDesc;
+        case EVertexFactoryType::ParticleMesh:
+            return ParticleMeshDesc;
         case EVertexFactoryType::StaticMesh:
         case EVertexFactoryType::ProceduralMesh:
         default:

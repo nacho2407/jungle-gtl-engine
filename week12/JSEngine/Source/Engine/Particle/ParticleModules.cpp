@@ -618,11 +618,14 @@ namespace
 			Distribution.MaxCurve.GetPath().empty();
 	}
 
-	float EvaluateSubImageIndex(const UParticleModuleSubUV& Module, const FParticleDistributionContext& Context)
+	float EvaluateSubImageFrameIndex(
+		const UParticleModuleSubUV& Module,
+		const FParticleDistributionContext& Context,
+		int32 TotalFrames)
 	{
 		if (ShouldUseRelativeTimeForSubImageIndex(Module.SubImageIndex))
 		{
-			return Context.RelativeTime;
+			return Context.RelativeTime * static_cast<float>(std::max(TotalFrames - 1, 0));
 		}
 
 		return EvaluateParticleFloat(Module.SubImageIndex, Context);
@@ -951,8 +954,8 @@ void UParticleModuleSubUV::Spawn(FParticleEmitterInstance* Owner, int32 Offset, 
 
 	if (InterpMethod == EParticleSubUVInterpMethod::Random) // Random: Spawn 시 프레임 Random 결정
 	{
-		const int32 TotalFrames = Columns * Rows;
-		Payload->ImageIndex = Owner->RandomStream.GetRange(0.0f, static_cast<float>(TotalFrames));
+		const int32 TotalFrames = std::max(Columns * Rows, 1);
+		Payload->ImageIndex = Owner->RandomStream.GetRange(0.0f, static_cast<float>(TotalFrames - 1));
 		Payload->RandomSeed = Particle.Seed;
 	}
 	else
@@ -983,12 +986,11 @@ void UParticleModuleSubUV::Update(FParticleEmitterInstance* Owner, int32 Offset,
 		{
 			return;
 		}
-
-		// 정규화된 RelativeTime(0.f ~ 1.f)을 Frame Index로 매핑 → DistributionMode가 Constant/Curve면 수명 기반 재평가
+		// 기본값은 수명 기반 재생, 명시된 SubImageIndex 값은 실제 frame index로 사용.
 		if (InterpMethod == EParticleSubUVInterpMethod::Linear)
 		{
 			const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, nullptr);
-			Payload->ImageIndex = EvaluateSubImageIndex(*this, Context) * static_cast<float>(TotalFrames - 1);
+			Payload->ImageIndex = EvaluateSubImageFrameIndex(*this, Context, TotalFrames);
 		}
 		// Random일 경우 고정된 프레임 유지
 
@@ -1302,7 +1304,6 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 {
 	// EmitterIntsance 유효성 검사
 	if (InEmitterInstance == nullptr ||
-		GetStaticMesh() == nullptr ||
 		InEmitterInstance->ActiveParticles <= 0 ||
 		InEmitterInstance->ParticleData == nullptr ||
 		InEmitterInstance->ParticleIndices == nullptr ||
@@ -1364,13 +1365,13 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	// ReplayData
 	RenderData->ReplayData.ActiveParticleCount = SnapshotParticleCount;
 	RenderData->ReplayData.ParticleStride = ParticleStride;
-	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	// Mesh emitters render with the static mesh section materials; RequiredModule.Material is intentionally ignored.
+	RenderData->Material = nullptr;
 
-	// renderer가 raw particle의 위치를 render space로 해석할 수 있도록 좌표계 메타데이터를 전달
+	// Mesh particle snapshots stay in emitter local space; the renderer applies ComponentToWorld per instance.
 	RenderData->ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
-	RenderData->ReplayData.CoordinateSpace = RequiredModule != nullptr
-		? RequiredModule->CoordinateSpace
-		: EParticleCoordinateSpace::Local;
+	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::Local;
+	RenderData->ReplayData.Scale = FVector::OneVector;
 
 	// TODO: 중앙 renderer가 Mesh instance transform을 생성할 때 Mesh Particle의 회전 축과 정렬 정책을 반영한다.
 	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);

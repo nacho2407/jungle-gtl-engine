@@ -11,7 +11,6 @@
 #include "FontRenderPass.h"
 #include "SubUVRenderPass.h"
 #include "TranslucentRenderPass.h"
-#include "ParticleRenderPass.h"
 #include "SelectionMaskRenderPass.h"
 #include "GridRenderPass.h"
 #include "EditorRenderPass.h"
@@ -39,7 +38,6 @@ namespace
             "RenderPass.Decal",
             "RenderPass.ViewModeMesh",
             "RenderPass.Translucent",
-            "RenderPass.Particle",
             "RenderPass.SubUV",
             "RenderPass.DebugViewModeResolve",
             "RenderPass.Fog",
@@ -97,9 +95,6 @@ bool FRenderPipeline::Initialize()
     TranslucentRenderPass = std::make_shared<FTranslucentRenderPass>();
     TranslucentRenderPass->Initialize();
 
-    ParticleRenderPass = std::make_shared<FParticleRenderPass>();
-    ParticleRenderPass->Initialize();
-
     SelectionMaskRenderPass = std::make_shared<FSelectionMaskRenderPass>();
     SelectionMaskRenderPass->Initialize();
 
@@ -145,7 +140,6 @@ bool FRenderPipeline::Initialize()
     RenderPasses.push_back(DecalRenderPass);
     RenderPasses.push_back(ViewModeMeshRenderPass);
     RenderPasses.push_back(TranslucentRenderPass);
-    RenderPasses.push_back(ParticleRenderPass);
     RenderPasses.push_back(SubUVRenderPass);
     RenderPasses.push_back(DebugViewModeResolvePass);
     RenderPasses.push_back(FogRenderPass);
@@ -255,12 +249,6 @@ void FRenderPipeline::Release()
     {
         TranslucentRenderPass->Release();
         TranslucentRenderPass.reset();
-    }
-
-    if (ParticleRenderPass)
-    {
-        ParticleRenderPass->Release();
-        ParticleRenderPass.reset();
     }
 
     if (SelectionMaskRenderPass)

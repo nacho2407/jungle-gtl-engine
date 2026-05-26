@@ -59,7 +59,10 @@ namespace
 			const TArray<FRenderCommand>& SurfaceCommands = RenderBus.GetCommands(SourcePass);
 			for (const FRenderCommand& SourceCmd : SurfaceCommands)
 			{
-				if (SourceCmd.SourcePrimitive != PrimitiveComponent || !SourceCmd.MeshBuffer || SourceCmd.SectionIndexCount == 0)
+				if (SourceCmd.SourcePrimitive != PrimitiveComponent ||
+					SourceCmd.Type == ERenderCommandType::Particle ||
+					!SourceCmd.MeshBuffer ||
+					SourceCmd.SectionIndexCount == 0)
 				{
 					continue;
 				}

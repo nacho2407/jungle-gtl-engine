@@ -11,6 +11,7 @@
 #include "Component/PostProcess/Light/PointLightComponent.h"
 #include "Component/PostProcess/Light/SpotlightComponent.h"
 #include "Engine/Geometry/Frustum.h"
+#include "Render/Scene/PrimitiveRenderProxy.h"
 
 #include <cmath>
 #include <unordered_set>
@@ -528,6 +529,22 @@ void FRenderCollector::CollectFromComponent(UPrimitiveComponent* Primitive, cons
 		return;
 
 	EPrimitiveType PrimType = Primitive->GetPrimitiveType();
+	if (PrimType == EPrimitiveType::EPT_ParticleSystem && !ShowFlags.bParticle)
+	{
+		return;
+	}
+
+	if (FPrimitiveRenderProxy* RenderProxy = Primitive->GetRenderProxy())
+	{
+		FPrimitiveRenderProxyCollectionContext ProxyContext{
+			RenderBus,
+			MeshBufferManager,
+			Device,
+			DeviceContext
+		};
+		RenderProxy->CollectCommands(ProxyContext);
+		return;
+	}
 
 	switch (PrimType)
 	{
