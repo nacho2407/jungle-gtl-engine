@@ -178,12 +178,12 @@ void UEditorEngine::Tick(float DeltaTime)
 	SelectionManager.Tick();
 
 	//GC 확인용
-	static int32 GCTickCounter = 0;
-	++GCTickCounter;
+	static float GCTimeAccumulator = 0.0f;
+	GCTimeAccumulator += DeltaTime;
 
-	if (GCTickCounter >= 600)
+	if (GCTimeAccumulator >= 60)
 	{
-		GCTickCounter = 0;
+		GCTimeAccumulator = 0;
 
 		const size_t BeforeCount = GUObjectArray.size();
 

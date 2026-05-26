@@ -11,8 +11,8 @@
 #include <optional>
 #if STATS
 #include "Editor/EditorRenderPipeline.h"
-#include "Source/Editor/EditorEngine.generated.h"
 #endif
+#include "Source/Editor/EditorEngine.generated.h"
 
 class UGizmoComponent;
 class FLevelEditorViewportClient;
