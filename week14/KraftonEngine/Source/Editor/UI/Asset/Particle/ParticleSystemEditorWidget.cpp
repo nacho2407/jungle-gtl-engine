@@ -607,6 +607,7 @@ namespace
 		constexpr float IconGap = 4.0f;
 		constexpr float CheckPadding = 6.0f;
 		const bool bHasCurveIcon = HasModuleCurveDistribution(Module);
+		const bool bHasCheckSlot = IsModuleEnableToggleAllowed(Module);
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		const ImU32 BackgroundColor = GetModuleRowBackgroundColor(Module, bSelected);
 		const ImU32 TextColor = GetModuleRowTextColor(Module, bDirectEditLocked);
@@ -618,7 +619,7 @@ namespace
 				return;
 			}
 
-			const float CheckRight = Pos.x + Width - CheckPadding - (bHasCurveIcon ? (CurveIconSize + IconGap) : 0.0f);
+			const float CheckRight = Pos.x + Width - CheckPadding - (bHasCheckSlot ? (CurveIconSize + IconGap) : 0.0f);
 			const ImVec2 CheckMin(CheckRight - CheckSize, Pos.y + (ModuleRowHeight - CheckSize) * 0.5f);
 			const ImVec2 CheckMax(CheckMin.x + CheckSize, CheckMin.y + CheckSize);
 			const ImU32 FillColor = Module->IsEnabled() ? IM_COL32(58, 65, 72, 255) : IM_COL32(24, 26, 30, 255);
@@ -794,6 +795,7 @@ namespace
 		constexpr float CurveHitWidth = 22.0f;
 		const bool bCanToggleEnabled = IsModuleEnableToggleAllowed(Module) && !bDirectEditLocked;
 		const bool bCanUseCurveButton = HasModuleCurveDistribution(Module) && !bDirectEditLocked;
+		const bool bReserveCurveSlot = IsModuleEnableToggleAllowed(Module);
 
 		DrawModuleRow(Label, bSelected, Module, bDirectEditLocked);
 		float SelectWidth = Width;
@@ -801,6 +803,9 @@ namespace
 		{
 			ImGui::SetCursorScreenPos(ImVec2(Pos.x + Width - CurveHitWidth, Pos.y));
 			Action.bShowCurves = ImGui::InvisibleButton("##ShowModuleCurves", ImVec2(CurveHitWidth, ModuleRowHeight));
+		}
+		if (bReserveCurveSlot)
+		{
 			SelectWidth -= CurveHitWidth;
 		}
 		if (bCanToggleEnabled)
@@ -862,6 +867,23 @@ namespace
 		ImGui::BeginDisabled(bReadOnly);
 		ImGui::SetNextItemWidth(-1.0f);
 		const bool bChanged = ImGui::InputFloat("##Value", &Value, 0.0f, 0.0f, Format);
+		ImGui::EndDisabled();
+		return bChanged && !bReadOnly;
+	}
+
+	bool DrawDetailIntInputRow(const char* Label, int32& Value, bool bReadOnly = false)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::SetWindowFontScale(0.92f);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(Label);
+		ImGui::SetWindowFontScale(1.0f);
+
+		ImGui::TableSetColumnIndex(1);
+		ImGui::BeginDisabled(bReadOnly);
+		ImGui::SetNextItemWidth(-1.0f);
+		const bool bChanged = ImGui::InputInt("##Value", &Value, 0, 0);
 		ImGui::EndDisabled();
 		return bChanged && !bReadOnly;
 	}
@@ -2291,7 +2313,12 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 
 	auto RenderEmitterDetails = [&]()
 	{
-		const UParticleEmitter* SelectedEmitter = GetSelectedEmitter(ParticleSystem);
+		UParticleEmitter* SelectedEmitter = nullptr;
+		TArray<UParticleEmitter*>& MutableEmitters = ParticleSystem->GetMutableEmitters();
+		if (ViewState.Selection.EmitterIndex >= 0 && ViewState.Selection.EmitterIndex < static_cast<int32>(MutableEmitters.size()))
+		{
+			SelectedEmitter = MutableEmitters[ViewState.Selection.EmitterIndex];
+		}
 		if (!SelectedEmitter || !DrawDetailsCategoryHeader("Emitter"))
 		{
 			return;
@@ -2299,7 +2326,17 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 
 		if (BeginDetailsTable("##ParticleEmitterSummaryTable"))
 		{
-			DrawDetailRowF("Max Active Particles", "%d", SelectedEmitter->GetMaxActiveParticles());
+			int32 EditableMaxActiveParticles = SelectedEmitter->GetMaxActiveParticles();
+			if (DrawDetailIntInputRow("Max Active Particles", EditableMaxActiveParticles))
+			{
+				EditableMaxActiveParticles = (std::max)(0, (std::min)(EditableMaxActiveParticles, 65535));
+				if (EditableMaxActiveParticles != SelectedEmitter->GetMaxActiveParticles())
+				{
+					SelectedEmitter->SetMaxActiveParticles(EditableMaxActiveParticles);
+					MarkDirty();
+					RefreshParticleSystemComponents();
+				}
+			}
 			DrawDetailRowF("Emitter Duration", "%.3f", SelectedEmitter->GetEmitterDuration());
 			DrawDetailRow("Looping", SelectedEmitter->IsLooping() ? "true" : "false");
 			DrawDetailRowF("Emitter LOD Levels", "%d", static_cast<int32>(SelectedEmitter->GetLODLevels().size()));
