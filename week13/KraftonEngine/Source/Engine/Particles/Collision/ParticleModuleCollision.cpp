@@ -28,17 +28,25 @@ void UParticleModuleCollision::Update(const FUpdateContext& Context)
 	{
 		FVector NextLocation = Particle.Location + Particle.Velocity * Context.DeltaTime;
 		FHitResult HitResult;
-		if (PerformCollisionCheck(&Context.Owner, &Particle, HitResult, Context.Owner.Component->GetOwner(), Particle.Location, NextLocation))
+
+		if (PerformCollisionCheck(&Context.Owner, &Particle, HitResult,
+			Context.Owner.Component->GetOwner(),
+			Particle.Location, NextLocation))
 		{
 			if (bKillOnCollision)
 			{
-				Particle.RelativeTime = 1.0f;
+				Particle.RelativeTime = 1.0f;  // 수명 만료 처리
+				Context.Owner.KillParticle(CurrentIndex);
 			}
 			else
 			{
-				FVector HitNormal = HitResult.ImpactNormal.IsNearlyZero() ? HitResult.WorldNormal : HitResult.ImpactNormal;
-				HitNormal = HitNormal.GetSafeNormal(1.0e-6f, FVector::ZAxisVector);
-				Particle.Velocity = (Particle.Velocity - HitNormal * (2.0f * Particle.Velocity.Dot(HitNormal))) * Restitution;
+				// 반사
+				Particle.Location = HitResult.WorldHitLocation + HitResult.ImpactNormal * 0.5f;
+
+				FVector Reflected = Particle.Velocity -
+					HitResult.ImpactNormal * 2.f * (Particle.Velocity.Dot(HitResult.ImpactNormal));
+				Particle.Velocity = Reflected * Restitution;
+				Particle.BaseVelocity = Particle.Velocity;
 			}
 		}
 	}
@@ -57,7 +65,25 @@ void UParticleModuleCollision::Serialize(FArchive& Ar)
 bool UParticleModuleCollision::PerformCollisionCheck(FParticleEmitterInstance* Owner, FBaseParticle* InParticle, FHitResult& OutHitResult, AActor* SourceActor, const FVector& Start, const FVector& End)
 {
 	UWorld* World = Owner->Component->GetWorld();
-	AActor* Actor;
-	bool bCollided = World->LinecastPrimitives(Start, End, OutHitResult, Actor);
+	FVector Diff = End - Start;
+	float Dist = Diff.Length();
+
+	FCollisionShape BoxShape = FCollisionShape::MakeBox(InParticle->Size * 0.5f);
+
+	bool bCollided = World->PhysicsSweep(
+		Start, Diff / Dist, Dist,
+		BoxShape, FQuat::Identity,
+		OutHitResult,
+		ECollisionChannel::WorldStatic,
+		SourceActor
+	);
+
+	if (bCollided)
+	{
+		// penetrating이면 충돌 없는 것으로 처리 (위치 보정 하지 않음)
+		if (OutHitResult.bStartPenetrating || OutHitResult.Distance <= 0.f)
+			return false;
+	}
+
 	return bCollided;
 }

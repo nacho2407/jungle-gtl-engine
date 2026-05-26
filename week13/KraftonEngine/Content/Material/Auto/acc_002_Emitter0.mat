@@ -1,6 +1,7 @@
 {
   "BlendState" : "AlphaBlend",
   "Compiled" : {
+    "GeneratorVersion" : "ParticleMeshLighting_v1",
     "GraphHash" : "940C6C856F3457F4",
     "Parameters" : {
 
@@ -273,6 +274,7 @@
   "MaterialGuid" : "628A9F53151EB9DD000131497CDADFC0",
   "PathFileName" : "Content/Material/Auto/acc_002_Emitter0.mat",
   "RasterizerState" : "SolidNoCull",
+  "ReceiveLighting": true,
   "RenderPass" : "AlphaBlend",
   "ShaderPath" : "Shaders/Generated/Materials/_628A9F53151EB9DD000131497CDADFC0_ParticleSprite.hlsl",
   "Version" : 2
