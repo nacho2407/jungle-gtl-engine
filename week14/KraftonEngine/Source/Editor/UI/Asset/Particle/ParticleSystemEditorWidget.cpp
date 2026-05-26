@@ -42,7 +42,8 @@ namespace
 	constexpr float MinCurveEditorHeight = 140.0f;
 	constexpr float SplitterThickness = 6.0f;
 	constexpr float ToolbarHeight = 34.0f;
-	constexpr float DetailsNameColumnWidth = 150.0f;
+	constexpr float DetailsNameColumnWidth = 275.0f;
+	constexpr float DetailsScalarInputWidth = 124.0f;
 	constexpr float EmitterColumnWidth = 176.0f;
 	constexpr float EmitterHeaderHeight = 58.0f;
 	constexpr float ModuleRowHeight = 24.0f;
@@ -865,7 +866,7 @@ namespace
 
 		ImGui::TableSetColumnIndex(1);
 		ImGui::BeginDisabled(bReadOnly);
-		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::SetNextItemWidth(DetailsScalarInputWidth);
 		const bool bChanged = ImGui::InputFloat("##Value", &Value, 0.0f, 0.0f, Format);
 		ImGui::EndDisabled();
 		return bChanged && !bReadOnly;
@@ -882,7 +883,7 @@ namespace
 
 		ImGui::TableSetColumnIndex(1);
 		ImGui::BeginDisabled(bReadOnly);
-		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::SetNextItemWidth(DetailsScalarInputWidth);
 		const bool bChanged = ImGui::InputInt("##Value", &Value, 0, 0);
 		ImGui::EndDisabled();
 		return bChanged && !bReadOnly;
@@ -2246,6 +2247,17 @@ void FParticleSystemEditorWidget::RefreshParticleSystemComponents()
 void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 {
 	ImGui::BeginChild("##ParticleDetailsPanel", Size, ImGuiChildFlags_Borders);
+	if (PendingDetailsScrollRestoreFrames > 0 && PendingDetailsScrollY >= 0.0f)
+	{
+		ImGui::SetScrollY(PendingDetailsScrollY);
+	}
+	const float DetailsScrollYBeforeRender = ImGui::GetScrollY();
+	if (LastStableDetailsScrollY < 0.0f)
+	{
+		LastStableDetailsScrollY = DetailsScrollYBeforeRender;
+	}
+	bool bDetailsValueChanged = false;
+
 	DrawPanelHeader("Details");
 
 	UParticleSystem* ParticleSystem = GetParticleSystem();
@@ -2265,6 +2277,7 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 		}
 
 		LODDistances[LODIndex] = LODIndex == 0 ? 0.0f : (std::max)(0.0f, NewDistance);
+		bDetailsValueChanged = true;
 		MarkDirty();
 		RefreshParticleSystemComponents();
 	};
@@ -2334,6 +2347,7 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 				if (EditableMaxActiveParticles != SelectedEmitter->GetMaxActiveParticles())
 				{
 					SelectedEmitter->SetMaxActiveParticles(EditableMaxActiveParticles);
+					bDetailsValueChanged = true;
 					MarkDirty();
 					RefreshParticleSystemComponents();
 				}
@@ -2406,6 +2420,7 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 		ImGui::Separator();
 		if (RenderObjectProperties(SelectedModule, bModuleReadOnly))
 		{
+			bDetailsValueChanged = true;
 			ApplyEditedObjectSideEffects(SelectedModule);
 			MarkDirty();
 			RefreshParticleSystemComponents();
@@ -2427,6 +2442,26 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 	default:
 		RenderParticleSystemDetails();
 		break;
+	}
+
+	if (bDetailsValueChanged)
+	{
+		PendingDetailsScrollY = LastStableDetailsScrollY >= 0.0f ? LastStableDetailsScrollY : DetailsScrollYBeforeRender;
+		PendingDetailsScrollRestoreFrames = 3;
+	}
+	if (PendingDetailsScrollY >= 0.0f && PendingDetailsScrollRestoreFrames > 0)
+	{
+		ImGui::SetScrollY(PendingDetailsScrollY);
+		--PendingDetailsScrollRestoreFrames;
+		if (PendingDetailsScrollRestoreFrames <= 0)
+		{
+			LastStableDetailsScrollY = PendingDetailsScrollY;
+			PendingDetailsScrollY = -1.0f;
+		}
+	}
+	else
+	{
+		LastStableDetailsScrollY = ImGui::GetScrollY();
 	}
 
 	ImGui::EndChild();
@@ -2494,10 +2529,7 @@ bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object, bool b
 			ImGui::PushID(Index);
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
-			ImGui::SetWindowFontScale(0.92f);
-			ImGui::AlignTextToFramePadding();
-			ImGui::TextUnformatted(FEditorPropertyRenderer::GetPropertyDisplayName(PropertyValue));
-			ImGui::SetWindowFontScale(1.0f);
+			const bool bPropertyOpen = FEditorPropertyRenderer::DrawPropertyLabel(PropertyValue);
 
 			ImGui::TableSetColumnIndex(1);
 			const bool bCurveDistributionProperty = IsRawDistributionFloatProperty(PropertyValue) || IsRawDistributionVectorProperty(PropertyValue);
@@ -2514,6 +2546,8 @@ bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object, bool b
 
 			FEditorPropertyRenderOptions Options;
 			Options.bDispatchChange = false;
+			Options.bUseExternalExpansion = true;
+			Options.bParentExpanded = bPropertyOpen;
 			if (bReadOnly)
 			{
 				ImGui::BeginDisabled();

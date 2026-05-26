@@ -158,4 +158,7 @@ private:
 	uint32 InstanceId = 0;
 	FName PreviewWorldHandle = FName::None;
 	FString WindowIdSuffix;
+	float PendingDetailsScrollY = -1.0f;
+	int32 PendingDetailsScrollRestoreFrames = 0;
+	float LastStableDetailsScrollY = -1.0f;
 };

@@ -470,7 +470,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		if (ImGui::BeginTable("##ActorPropertyTable", 2,
 			ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_PadOuterX | ImGuiTableFlags_RowBg))
 		{
-			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 275.0f);
 			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
 			ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
@@ -482,18 +482,14 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				ImGui::PushID(i);
 
 				ImGui::TableSetColumnIndex(0);
-
-				ImGui::SetWindowFontScale(0.92f);
-
-				ImGui::AlignTextToFramePadding();
-				ImGui::TextUnformatted(GetPropertyDisplayName(Props[i]));
-
-				ImGui::SetWindowFontScale(1.0f);
+				const bool bPropertyOpen = FEditorPropertyRenderer::DrawPropertyLabel(Props[i]);
 
 				ImGui::TableSetColumnIndex(1);
 				ImGui::SetNextItemWidth(-1);
 
 				FEditorPropertyRenderOptions Options;
+				Options.bUseExternalExpansion = true;
+				Options.bParentExpanded = bPropertyOpen;
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
 				PropertyRenderer.RenderPropertyWidget(Props, i, Options);
 				ImGui::PopID();
@@ -869,7 +865,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 		if (ImGui::BeginTable("##PropertyTable", 2,
 			ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_PadOuterX | ImGuiTableFlags_RowBg))
 		{
-			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 275.0f);
 			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
 			ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
@@ -884,18 +880,14 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				ImGui::PushID(i);
 
 				ImGui::TableSetColumnIndex(0);
-				
-				ImGui::SetWindowFontScale(0.92f);
-
-				ImGui::AlignTextToFramePadding();
-				ImGui::TextUnformatted(GetPropertyDisplayName(Props[i]));
-
-				ImGui::SetWindowFontScale(1.0f);
+				const bool bPropertyOpen = FEditorPropertyRenderer::DrawPropertyLabel(Props[i]);
 
 				ImGui::TableSetColumnIndex(1);
 				ImGui::SetNextItemWidth(-1);
 
 				FEditorPropertyRenderOptions Options;
+				Options.bUseExternalExpansion = true;
+				Options.bParentExpanded = bPropertyOpen;
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
 				bool bChanged = PropertyRenderer.RenderPropertyWidget(Props, i, Options);
 
