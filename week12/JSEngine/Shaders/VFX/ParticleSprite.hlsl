@@ -3,6 +3,12 @@
 Texture2D DiffuseMap : register(t0);
 SamplerState SampleState : register(s0);
 
+cbuffer ParticleMaterialBuffer : register(b2)
+{
+    float Opacity;
+    float3 ParticleMaterialPadding;
+};
+
 struct VSInput
 {
     float3 position : POSITION0;
@@ -34,6 +40,7 @@ float4 PS(PSInput input) : SV_TARGET
 {
     float4 diffuse = DiffuseMap.Sample(SampleState, input.texCoord);
     float4 color = input.color * diffuse;
+    color.a *= Opacity;
 
     if (color.a <= 0.001f)
     {

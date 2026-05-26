@@ -11,6 +11,7 @@ struct FRenderResources
 {
 	FConstantBuffer FrameBuffer;					// b0
     FConstantBuffer PerObjectConstantBuffer;        // b1
+    // b2 = Per-Material Constants. Shader Reflection에 의해 hlsl과 material에 같은 타입&같은 이름으로 저장된 값 자동 바인딩 
 	FConstantBuffer LightBuffer;					// b3 (Ambient, Directional Light)		
 	FConstantBuffer ShadowBuffer;                   // b4
 	FConstantBuffer BoneMatrixConstantBuffer;       // b5 (GPU Skinning bone matrices)
