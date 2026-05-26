@@ -606,6 +606,26 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorCurvePanel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorDetailsPanel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorEmitterPanel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorInternal.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorToolbar.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorViewerWidget.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='GameClientRelease|x64'">true</ExcludedFromBuild>
@@ -1023,6 +1043,11 @@
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Viewer\AnimationEditorViewerWidget.h" />
     <ClInclude Include="Source\Editor\UI\Viewer\EditorViewerWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorCurvePanel.h" />
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorDetailsPanel.h" />
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorEmitterPanel.h" />
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorInternal.h" />
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorToolbar.h" />
     <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorViewerWidget.h" />
     <ClInclude Include="Source\Editor\UI\Viewer\SkeletalMeshEditorViewerWidget.h" />
     <ClInclude Include="Source\Editor\Undo\EditorUndoSystem.h" />
@@ -1396,7 +1421,6 @@
     <None Include="Shaders\Shadow\VSMShadow.hlsl" />
     <None Include="Shaders\UI\Font.hlsl" />
     <None Include="Shaders\UI\Line.hlsl" />
-    <None Include="Shaders\UI\ParticleSprite.hlsl" />
     <None Include="Shaders\UI\ScreenOverlay.hlsl" />
     <None Include="Shaders\VFX\ParticleSprite.hlsl" />
     <None Include="Shaders\VFX\SubUV.hlsl" />

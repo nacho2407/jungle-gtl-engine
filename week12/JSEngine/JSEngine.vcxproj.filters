@@ -444,6 +444,21 @@
     <ClCompile Include="Source\Editor\UI\Viewer\EditorViewerWidget.cpp">
       <Filter>Source\Editor\UI\Viewer</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorCurvePanel.cpp">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorDetailsPanel.cpp">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorEmitterPanel.cpp">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorInternal.cpp">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorToolbar.cpp">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Viewer\ParticleEditorViewerWidget.cpp">
       <Filter>Source\Editor\UI\Viewer</Filter>
     </ClCompile>
@@ -1436,6 +1451,21 @@
       <Filter>Source\Editor\UI\Viewer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Viewer\EditorViewerWidget.h">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorCurvePanel.h">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorDetailsPanel.h">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorEmitterPanel.h">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorInternal.h">
+      <Filter>Source\Editor\UI\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorToolbar.h">
       <Filter>Source\Editor\UI\Viewer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorViewerWidget.h">
@@ -2549,9 +2579,6 @@
       <Filter>Shaders\UI</Filter>
     </None>
     <None Include="Shaders\UI\Line.hlsl">
-      <Filter>Shaders\UI</Filter>
-    </None>
-    <None Include="Shaders\UI\ParticleSprite.hlsl">
       <Filter>Shaders\UI</Filter>
     </None>
     <None Include="Shaders\UI\ScreenOverlay.hlsl">
