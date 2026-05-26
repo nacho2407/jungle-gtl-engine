@@ -1021,6 +1021,7 @@ namespace
 		if (Cast<UParticleModuleLifetime>(Module)) return "Lifetime";
 		if (Cast<UParticleModuleLocation>(Module)) return "Initial Location";
 		if (Cast<UParticleModuleVelocity>(Module)) return "Initial Velocity";
+		if (Cast<UParticleModuleAcceleration>(Module)) return "Acceleration";
 		if (Cast<UParticleModuleColor>(Module)) return "Initial Color";
 		if (Cast<UParticleModuleSize>(Module)) return "Initial Size";
 		if (Cast<UParticleModuleCollision>(Module)) return "Collision";
@@ -2750,7 +2751,14 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				ImGui::EndMenu();
 			}
 
-			RenderUnavailableCategory("Acceleration");
+			if (ImGui::BeginMenu("Acceleration"))
+			{
+				if (ImGui::MenuItem("Acceleration"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleAcceleration>());
+				}
+				ImGui::EndMenu();
+			}
 			RenderUnavailableCategory("Attraction");
 
 			if (ImGui::BeginMenu("Collision"))

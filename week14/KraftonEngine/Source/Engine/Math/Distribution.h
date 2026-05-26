@@ -63,14 +63,61 @@ struct FRawDistribution
 
 namespace FDistributionSampling
 {
+	inline uint32 Hash(uint32 Value)
+	{
+		Value ^= Value >> 16;
+		Value *= 0x7feb352du;
+		Value ^= Value >> 15;
+		Value *= 0x846ca68bu;
+		Value ^= Value >> 16;
+		return Value;
+	}
+
+	inline uint32 HashString(const char* Text)
+	{
+		uint32 HashValue = 2166136261u;
+		while (Text && *Text)
+		{
+			HashValue ^= static_cast<uint8>(*Text++);
+			HashValue *= 16777619u;
+		}
+		return HashValue;
+	}
+
+	inline uint32 CombineSeed(uint32 Seed, const char* StreamName, uint32 Channel = 0)
+	{
+		return Hash(Seed ^ HashString(StreamName) ^ Hash(Channel + 0x9e3779b9u));
+	}
+
+	inline uint32 RandomSeed()
+	{
+		const uint32 High = static_cast<uint32>(std::rand()) & 0xffffu;
+		const uint32 Low = static_cast<uint32>(std::rand()) & 0xffffu;
+		return Hash((High << 16) | Low);
+	}
+
 	inline float RandomUnit()
 	{
 		return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
 	}
 
+	inline float RandomUnit(uint32 Seed, const char* StreamName, uint32 Channel = 0)
+	{
+		const uint32 Value = CombineSeed(Seed, StreamName, Channel);
+		return static_cast<float>(Value & 0x00FFFFFFu) / static_cast<float>(0x00FFFFFFu);
+	}
+
 	inline FVector RandomUnitVector()
 	{
 		return FVector(RandomUnit(), RandomUnit(), RandomUnit());
+	}
+
+	inline FVector RandomUnitVector(uint32 Seed, const char* StreamName)
+	{
+		return FVector(
+			RandomUnit(Seed, StreamName, 0),
+			RandomUnit(Seed, StreamName, 1),
+			RandomUnit(Seed, StreamName, 2));
 	}
 
 	inline FVector Lerp(const FVector& A, const FVector& B, const FVector& Alpha)

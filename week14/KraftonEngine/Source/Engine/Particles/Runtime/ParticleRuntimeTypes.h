@@ -20,6 +20,7 @@ struct FBaseParticle
 	float Lifetime = 1.0f;
 	float Age = 0.0f;
 
+	uint32 RandomSeed = 0;
 	uint32 FrameIndex = 0;
 	bool bAlive = false;
 };
