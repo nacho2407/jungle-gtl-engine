@@ -333,6 +333,7 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
 		{
 			CollectAABBCommand(PrimitiveComponent, ShowFlags, RenderBus);
 		}
+		CollectBoundingSphereCommand(PrimitiveComponent, ShowFlags, RenderBus);
 
 		CollectBVHInternalNodeAABBs(PrimitiveComponent, ShowFlags, RenderBus, SeenBVHNodeIndices);
 	};
@@ -363,12 +364,13 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
 				continue;
 		}
 
+		CollectSelectionBounds(primitiveComponent);
+
 		if (primitiveComponent->SupportsOutline() &&
 			primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SkeletalMesh &&
 			AddSelectionMaskCommandsFromMainPass(primitiveComponent, RenderBus))
 		{
 			bHasSelectionMask = true;
-			CollectSelectionBounds(primitiveComponent);
 			continue;
 		}
 
@@ -580,8 +582,6 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
 			RenderBus.AddCommand(ERenderPass::SelectionMask, MaskCmd);
 		}
 		bHasSelectionMask = true;
-
-		CollectSelectionBounds(primitiveComponent);
 	}
 
 	return bHasSelectionMask;
@@ -677,7 +677,30 @@ void FEditorOverlayCollector::CollectAABBCommand(UPrimitiveComponent* PrimitiveC
 	if (!ShowFlags.bBoundingVolume) return;
 
 	const FAABB Box = BuildRenderAABB(PrimitiveComponent, RenderBus);
-	CollectAABBCommand(Box, FColor::White(), RenderBus);
+	CollectAABBCommand(Box, FColor(240, 219, 79), RenderBus);
+}
+
+void FEditorOverlayCollector::CollectBoundingSphereCommand(const FAABB& Box, const FColor& Color, FRenderBus& RenderBus) const
+{
+	if (!Box.IsValid())
+	{
+		return;
+	}
+
+	FRenderCommand SphereCmd = {};
+	SphereCmd.Type = ERenderCommandType::DebugSphere;
+	SphereCmd.Constants.Sphere.Center = Box.GetCenter();
+	SphereCmd.Constants.Sphere.Radius = std::max(Box.GetExtent().Size(), 1.0f);
+	SphereCmd.Constants.Sphere.Color = Color;
+	RenderBus.AddCommand(ERenderPass::Editor, SphereCmd);
+}
+
+void FEditorOverlayCollector::CollectBoundingSphereCommand(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags, FRenderBus& RenderBus) const
+{
+	if (!ShowFlags.bBoundingVolume) return;
+
+	const FAABB Box = BuildRenderAABB(PrimitiveComponent, RenderBus);
+	CollectBoundingSphereCommand(Box, FColor(80, 180, 255), RenderBus);
 }
 
 void FEditorOverlayCollector::CollectOBBCommand(const FOBB& Box, const FColor& Color, FRenderBus& RenderBus) const

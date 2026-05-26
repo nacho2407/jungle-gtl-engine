@@ -86,6 +86,8 @@ private:
 	bool CreateLuaScriptFile();
 	bool CreateMaterialAsset();
 	bool CreateCurveAsset();
+	bool CreateVectorCurveAsset();
+	bool CreateColorCurveAsset();
 	bool CreateAnimGraphAsset();
 	bool CreateSceneAsset();
 	bool DeleteSelectedItem();

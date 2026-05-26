@@ -5,6 +5,13 @@
 
 #include <algorithm>
 
+
+namespace
+{
+	void SerializeFloatCurve(FArchive& Ar, const char* Prefix, FFloatCurve& Curve);
+}
+
+
 float FFloatCurve::Evaluate(float Time) const
 {
 	if (Keys.empty())
@@ -153,61 +160,75 @@ void UCurveFloatAsset::Serialize(FArchive& Ar)
 {
 	UObject::Serialize(Ar);
 	Ar << "AssetPath" << AssetPath;
+	SerializeFloatCurve(Ar, "", FloatCurve);
+}
 
-	TArray<float> Times;
-	TArray<float> Values;
-	TArray<int32> InterpModes;
-	TArray<int32> TangentModes;
-	TArray<float> ArriveTangents;
-	TArray<float> LeaveTangents;
-
-	if (Ar.IsSaving())
+namespace
+{
+	void SerializeFloatCurve(FArchive& Ar, const char* Prefix, FFloatCurve& Curve)
 	{
-		Times.reserve(FloatCurve.Keys.size());
-		Values.reserve(FloatCurve.Keys.size());
-		InterpModes.reserve(FloatCurve.Keys.size());
-		TangentModes.reserve(FloatCurve.Keys.size());
-		ArriveTangents.reserve(FloatCurve.Keys.size());
-		LeaveTangents.reserve(FloatCurve.Keys.size());
+		TArray<float> Times;
+		TArray<float> Values;
+		TArray<int32> InterpModes;
+		TArray<int32> TangentModes;
+		TArray<float> ArriveTangents;
+		TArray<float> LeaveTangents;
 
-		for (const FCurveKey& Key : FloatCurve.Keys)
+		if (Ar.IsSaving())
 		{
-			Times.push_back(Key.Time);
-			Values.push_back(Key.Value);
-			InterpModes.push_back(static_cast<int32>(Key.InterpMode));
-			TangentModes.push_back(static_cast<int32>(Key.TangentMode));
-			ArriveTangents.push_back(Key.ArriveTangent);
-			LeaveTangents.push_back(Key.LeaveTangent);
+			Times.reserve(Curve.Keys.size());
+			Values.reserve(Curve.Keys.size());
+			InterpModes.reserve(Curve.Keys.size());
+			TangentModes.reserve(Curve.Keys.size());
+			ArriveTangents.reserve(Curve.Keys.size());
+			LeaveTangents.reserve(Curve.Keys.size());
+
+			for (const FCurveKey& Key : Curve.Keys)
+			{
+				Times.push_back(Key.Time);
+				Values.push_back(Key.Value);
+				InterpModes.push_back(static_cast<int32>(Key.InterpMode));
+				TangentModes.push_back(static_cast<int32>(Key.TangentMode));
+				ArriveTangents.push_back(Key.ArriveTangent);
+				LeaveTangents.push_back(Key.LeaveTangent);
+			}
 		}
-	}
 
-	Ar << "Times" << Times;
-	Ar << "Values" << Values;
-	Ar << "InterpModes" << InterpModes;
-	Ar << "TangentModes" << TangentModes;
-	Ar << "ArriveTangents" << ArriveTangents;
-	Ar << "LeaveTangents" << LeaveTangents;
+		const FString TimesKey = FString(Prefix) + "Times";
+		const FString ValuesKey = FString(Prefix) + "Values";
+		const FString InterpModesKey = FString(Prefix) + "InterpModes";
+		const FString TangentModesKey = FString(Prefix) + "TangentModes";
+		const FString ArriveTangentsKey = FString(Prefix) + "ArriveTangents";
+		const FString LeaveTangentsKey = FString(Prefix) + "LeaveTangents";
 
-	if (Ar.IsLoading())
-	{
-		const size_t KeyCount = Times.size();
-		FloatCurve.Keys.clear();
-		FloatCurve.Keys.reserve(KeyCount);
-		for (size_t Index = 0; Index < KeyCount; ++Index)
+		Ar << TimesKey.c_str() << Times;
+		Ar << ValuesKey.c_str() << Values;
+		Ar << InterpModesKey.c_str() << InterpModes;
+		Ar << TangentModesKey.c_str() << TangentModes;
+		Ar << ArriveTangentsKey.c_str() << ArriveTangents;
+		Ar << LeaveTangentsKey.c_str() << LeaveTangents;
+
+		if (Ar.IsLoading())
 		{
-			FCurveKey Key;
-			Key.Time = Times[Index];
-			Key.Value = Index < Values.size() ? Values[Index] : 0.0f;
-			Key.InterpMode = Index < InterpModes.size()
-				? static_cast<ECurveInterpMode>(InterpModes[Index])
-				: ECurveInterpMode::Cubic;
-			Key.TangentMode = Index < TangentModes.size()
-				? static_cast<ECurveTangentMode>(TangentModes[Index])
-				: ECurveTangentMode::Auto;
-			Key.ArriveTangent = Index < ArriveTangents.size() ? ArriveTangents[Index] : 0.0f;
-			Key.LeaveTangent = Index < LeaveTangents.size() ? LeaveTangents[Index] : 0.0f;
-			FloatCurve.Keys.push_back(Key);
+			const size_t KeyCount = Times.size();
+			Curve.Keys.clear();
+			Curve.Keys.reserve(KeyCount);
+			for (size_t Index = 0; Index < KeyCount; ++Index)
+			{
+				FCurveKey Key;
+				Key.Time = Times[Index];
+				Key.Value = Index < Values.size() ? Values[Index] : 0.0f;
+				Key.InterpMode = Index < InterpModes.size()
+					? static_cast<ECurveInterpMode>(InterpModes[Index])
+					: ECurveInterpMode::Cubic;
+				Key.TangentMode = Index < TangentModes.size()
+					? static_cast<ECurveTangentMode>(TangentModes[Index])
+					: ECurveTangentMode::Auto;
+				Key.ArriveTangent = Index < ArriveTangents.size() ? ArriveTangents[Index] : 0.0f;
+				Key.LeaveTangent = Index < LeaveTangents.size() ? LeaveTangents[Index] : 0.0f;
+				Curve.Keys.push_back(Key);
+			}
+			Curve.SortKeys();
 		}
-		FloatCurve.SortKeys();
 	}
 }

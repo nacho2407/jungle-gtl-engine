@@ -30,6 +30,7 @@ enum class ERenderCommandType
 	PostProcessOutline,
 	Billboard,
 	DebugBox,
+	DebugSphere,
 	DebugOBB,
 	DebugDirectionalLight,
 	DebugPointLight,
@@ -42,7 +43,7 @@ enum class ERenderCommandType
 	StaticMesh,	// UStaticMeshComponent — OBJ 메시 퐁셰이딩
 	SkeletalMesh,
 	Decal,
-    Particle,
+	Particle,
 	Light,
 };
 
@@ -267,6 +268,13 @@ struct FAABBConstants
 	FColor Color;
 };
 
+struct FSphereConstants
+{
+	FVector Center;
+	float Radius;
+	FColor Color;
+};
+
 struct FOBBConstants
 {
 	FVector Center;
@@ -475,6 +483,7 @@ struct FRenderCommand
 	union
 	{
 		FAABBConstants AABB;
+		FSphereConstants Sphere;
 		FOBBConstants OBB;
 		FDirectionalLightConstants DirectionalLight;
 		FPointLightConstants PointLight;
@@ -489,7 +498,7 @@ struct FRenderCommand
 		FFXAAConstants FXAA;
 		FDebugViewModeResolveConstants DebugViewModeResolve;
 		FProjectionDecalConstants Decal;
-	    FParticleConstants Particle;
+		FParticleConstants Particle;
 	} Constants;
 
 	ERenderCommandType Type = ERenderCommandType::Primitive;

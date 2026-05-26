@@ -92,6 +92,11 @@ namespace
 		{
 			return nullptr;
 		}
+		if (Cmd.Material->GetShaderType() == EMaterialShaderType::None)
+		{
+			UE_LOG_WARNING("[Render] ShaderType None material cannot be drawn by material command path: %s", Cmd.Material->GetName().c_str());
+			return nullptr;
+		}
 
 		const FVertexFactoryDesc& VertexFactoryDesc = FVertexFactoryRegistry::Get(Cmd.VertexFactoryType);
 
@@ -1224,6 +1229,11 @@ void FRenderer::InitializePassBatchers()
 			if (Cmd.Type == ERenderCommandType::DebugBox)
 			{
 				EditorLineBatcher.AddAABB(FBoundingBox{ Cmd.Constants.AABB.Min, Cmd.Constants.AABB.Max }, Cmd.Constants.AABB.Color);
+			}
+			else if (Cmd.Type == ERenderCommandType::DebugSphere)
+			{
+				const auto& S = Cmd.Constants.Sphere;
+				EditorLineBatcher.AddWireSphere(S.Center, S.Radius, S.Color.ToVector4(), 24);
 			}
 			else if (Cmd.Type == ERenderCommandType::DebugOBB)
 			{

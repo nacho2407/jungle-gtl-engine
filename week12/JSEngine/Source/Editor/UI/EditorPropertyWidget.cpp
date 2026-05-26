@@ -34,14 +34,19 @@
 #include "Render/Resource/Material.h"
 #include "Asset/StaticMesh.h"
 #include "Asset/SkeletalMesh.h"
+#include "Asset/CurveColorAsset.h"
+#include "Asset/CurveFloatAsset.h"
+#include "Asset/CurveVectorAsset.h"
 #include "Animation/AnimGraphAsset.h"
 #include "Animation/AnimSequence.h"
+#include "Particle/ParticleAsset.h"
 #include "Object/FName.h"
 #include "Object/Class.h"
 #include "Object/Property.h"
 #include <algorithm>
 #include <chrono>
 #include <cctype>
+#include <cfloat>
 #include <filesystem>
 #include <cstring>
 #include "Component/HeightFogComponent.h"
@@ -80,6 +85,89 @@ namespace
 		static const TArray<FString> Empty;
 		return Empty;
 	}
+
+	bool PassesAssetSearchFilter(const FString& Path, const char* Filter)
+	{
+		if (!Filter || Filter[0] == '\0')
+		{
+			return true;
+		}
+
+		FString LowerPath = Path;
+		FString LowerFilter = Filter;
+		std::transform(
+			LowerPath.begin(),
+			LowerPath.end(),
+			LowerPath.begin(),
+			[](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
+		std::transform(
+			LowerFilter.begin(),
+			LowerFilter.end(),
+			LowerFilter.begin(),
+			[](unsigned char Ch) { return static_cast<char>(std::tolower(Ch)); });
+		return LowerPath.find(LowerFilter) != FString::npos;
+	}
+
+	void PushDetailsComboStyle()
+	{
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.10f, 0.115f, 0.135f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.16f, 0.18f, 0.22f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.19f, 0.215f, 0.26f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.13f, 0.145f, 0.17f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.20f, 0.22f, 0.26f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.22f, 0.25f, 0.32f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.25f, 0.29f, 0.37f, 1.0f));
+	}
+
+	void PopDetailsComboStyle()
+	{
+		ImGui::PopStyleColor(7);
+	}
+
+bool DrawSearchableAssetPathCombo(const char* Label, const FString& Current, const TArray<FString>& Options, FString& OutSelectedPath)
+{
+	bool bChanged = false;
+	static char SearchBuffer[128] = {};
+
+	ImGui::PushID(Label);
+	PushDetailsComboStyle();
+	if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
+		{
+			ImGui::SetNextItemWidth(-1.0f);
+			ImGui::InputTextWithHint("##AssetSearch", "Search...", SearchBuffer, sizeof(SearchBuffer));
+			ImGui::Separator();
+
+			if (ImGui::Selectable("<None>", Current.empty()))
+			{
+				OutSelectedPath.clear();
+				bChanged = true;
+			}
+
+			for (const FString& Path : Options)
+			{
+				if (!PassesAssetSearchFilter(Path, SearchBuffer))
+				{
+					continue;
+				}
+
+				const bool bSelected = Current == Path;
+				if (ImGui::Selectable(Path.c_str(), bSelected))
+				{
+					OutSelectedPath = Path;
+					bChanged = true;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+	}
+	PopDetailsComboStyle();
+	ImGui::PopID();
+
+	return bChanged;
+}
 
 	static bool DrawXButton(const char* id, float size = UIConstants::XButtonSize)
 	{
@@ -1891,6 +1979,7 @@ bool FEditorPropertyWidget::RenderObjectPtrWidget(const FProperty& Property, voi
 		const FString CurrentLabel = CurrentIdentifier.empty() ? FString("None") : CurrentIdentifier;
 		bool bChanged = false;
 
+		PushDetailsComboStyle();
 		if (ImGui::BeginCombo(Label, CurrentLabel.c_str()))
 		{
 			if (ImGui::Selectable("None", CurrentMaterial == nullptr))
@@ -1929,6 +2018,7 @@ bool FEditorPropertyWidget::RenderObjectPtrWidget(const FProperty& Property, voi
 			}
 			ImGui::EndCombo();
 		}
+		PopDetailsComboStyle();
 		if (ImGui::IsItemHovered() && CurrentMaterial)
 		{
 			RenderMaterialPreviewTooltip(CurrentMaterial);
@@ -1999,6 +2089,7 @@ bool FEditorPropertyWidget::RenderObjectPtrWidget(const FProperty& Property, voi
 	};
 
 	bool bChanged = false;
+	PushDetailsComboStyle();
 	if (ImGui::BeginCombo(Label, GetLabel(CurrentObject).c_str()))
 	{
 		for (UObject* Candidate : Choices)
@@ -2019,6 +2110,7 @@ bool FEditorPropertyWidget::RenderObjectPtrWidget(const FProperty& Property, voi
 		}
 		ImGui::EndCombo();
 	}
+	PopDetailsComboStyle();
 	return bChanged;
 }
 
@@ -2065,31 +2157,27 @@ bool FEditorPropertyWidget::RenderSoftObjectPtrWidget(const FProperty& Property,
 		{
 			Options = &EditorEngine->GetAssetService().GetAnimGraphAssetPaths();
 		}
+		else if (Property.ObjectClass->IsChildOf(UCurveFloatAsset::StaticClass()) ||
+				 Property.ObjectClass->IsChildOf(UCurveVectorAsset::StaticClass()) ||
+				 Property.ObjectClass->IsChildOf(UCurveColorAsset::StaticClass()))
+		{
+			LocalOptions = FResourceManager::Get().GetCurvePaths();
+			Options = &LocalOptions;
+		}
+		else if (Property.ObjectClass->IsChildOf(UParticleSystem::StaticClass()))
+		{
+			LocalOptions = FResourceManager::Get().GetParticleSystemPaths();
+			Options = &LocalOptions;
+		}
 	}
 
 	if (Options && !Options->empty())
 	{
-		if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
+		FString SelectedPath;
+		if (DrawSearchableAssetPathCombo(Label, Current, *Options, SelectedPath))
 		{
-			if (ImGui::Selectable("<None>", Current.empty()))
-			{
-				Property.SoftObjectOps->SetPath(ValuePtr, FString());
-				bChanged = true;
-			}
-			for (const FString& Path : *Options)
-			{
-				const bool bSelected = Current == Path;
-				if (ImGui::Selectable(Path.c_str(), bSelected))
-				{
-					Property.SoftObjectOps->SetPath(ValuePtr, Path);
-					bChanged = true;
-				}
-				if (bSelected)
-				{
-					ImGui::SetItemDefaultFocus();
-				}
-			}
-			ImGui::EndCombo();
+			Property.SoftObjectOps->SetPath(ValuePtr, SelectedPath);
+			bChanged = true;
 		}
 	}
 	else

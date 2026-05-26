@@ -18,6 +18,11 @@ namespace
         {
             return nullptr;
         }
+        if (Cmd.Material->GetShaderType() == EMaterialShaderType::None)
+        {
+            UE_LOG_WARNING("[Render] ShaderType None material cannot be drawn by OpaqueRenderPass: %s", Cmd.Material->GetName().c_str());
+            return nullptr;
+        }
 
         // VertexFactory는 Mesh 타입에 맞는 VS를 고르고, Material은 표면용 PS만 제공합니다.
         // 여기서 두 정보를 합쳐 실제 Draw에 사용할 FShaderProgram을 만듭니다.

@@ -5,6 +5,7 @@
 
 enum class EMaterialShaderType : uint8
 {
+	None,
 	SurfaceLit,
 	Translucent,
 	Decal,
@@ -18,6 +19,7 @@ enum class EMaterialShaderType : uint8
 
 inline const FString& ToString(EMaterialShaderType Type)
 {
+	static const FString None = "None";
 	static const FString SurfaceLit = "SurfaceLit";
 	static const FString Translucent = "Translucent";
 	static const FString Decal = "Decal";
@@ -30,6 +32,8 @@ inline const FString& ToString(EMaterialShaderType Type)
 
 	switch (Type)
 	{
+	case EMaterialShaderType::None:
+		return None;
 	case EMaterialShaderType::Translucent:
 		return Translucent;
 	case EMaterialShaderType::Decal:
@@ -54,6 +58,11 @@ inline const FString& ToString(EMaterialShaderType Type)
 
 inline bool TryParseMaterialShaderType(const FString& Name, EMaterialShaderType& OutType)
 {
+	if (Name == "None")
+	{
+		OutType = EMaterialShaderType::None;
+		return true;
+	}
 	if (Name == "SurfaceLit")
 	{
 		OutType = EMaterialShaderType::SurfaceLit;
@@ -104,6 +113,7 @@ inline bool TryParseMaterialShaderType(const FString& Name, EMaterialShaderType&
 
 inline const FString& GetMaterialPixelShaderPath(EMaterialShaderType Type)
 {
+	static const FString Empty;
 	static const FString MaterialUberLit = FShaderPaths::MaterialUberLit;
 	static const FString MaterialUberTranslucent = FShaderPaths::MaterialUberTranslucent;
 	static const FString MaterialDecal = FShaderPaths::MaterialDecal;
@@ -116,6 +126,8 @@ inline const FString& GetMaterialPixelShaderPath(EMaterialShaderType Type)
 
 	switch (Type)
 	{
+	case EMaterialShaderType::None:
+		return Empty;
 	case EMaterialShaderType::Translucent:
 		return MaterialUberTranslucent;
 	case EMaterialShaderType::Decal:
@@ -140,11 +152,14 @@ inline const FString& GetMaterialPixelShaderPath(EMaterialShaderType Type)
 
 inline const FString& GetMaterialPixelShaderEntryPoint(EMaterialShaderType Type)
 {
+	static const FString Empty;
 	static const FString MainPS = "mainPS";
 	static const FString PS = "PS";
 
 	switch (Type)
 	{
+	case EMaterialShaderType::None:
+		return Empty;
 	case EMaterialShaderType::UIFont:
 	case EMaterialShaderType::UILine:
 	case EMaterialShaderType::VFXSubUV:
