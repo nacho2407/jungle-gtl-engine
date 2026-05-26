@@ -195,7 +195,7 @@ public:
 };
 
 // NOTE: Type-DataBase가 아니라 TypeData-Base 입니다.
-UCLASS(Placeable, DisplayName = "Type Data Module")
+UCLASS(Placeable, DisplayName = "Sprite Type Data")
 class UParticleModuleTypeDataBase : public UParticleModule
 {
 public:
