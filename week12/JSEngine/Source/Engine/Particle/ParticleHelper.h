@@ -49,7 +49,11 @@ namespace ParticleHelper
 #define BEGIN_UPDATE_LOOP(Owner, ParticleName) \
 	for (int32 ParticleActiveIndex = 0; ParticleActiveIndex < (Owner)->GetActiveParticleCount(); ++ParticleActiveIndex) \
 	{ \
-		DECLARE_PARTICLE_PTR(Owner, ParticleActiveIndex, ParticleName);
+		DECLARE_PARTICLE_PTR(Owner, ParticleActiveIndex, ParticleName); \
+		if ((Owner)->IsParticlePendingKill(ParticleName)) \
+		{ \
+			continue; \
+		}
 
 #define END_UPDATE_LOOP() \
 	}

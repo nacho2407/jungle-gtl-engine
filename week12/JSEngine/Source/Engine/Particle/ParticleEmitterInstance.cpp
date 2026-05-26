@@ -428,48 +428,118 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
 	return SpawnCount;
 }
 
-void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
+bool FParticleEmitterInstance::IsParticlePendingKill(const FBaseParticle& Particle) const
 {
-	int32 ActiveIndex = 0;
-	while (ActiveIndex < ActiveParticles)
-	{
-		FBaseParticle& Particle = GetParticleByActiveIndex(ActiveIndex);
-		Particle.OldLocation = Particle.Location;
-		Particle.Location += Particle.Velocity * DeltaTime;
-		Particle.Rotation += Particle.RotationRate * DeltaTime;
-		Particle.RelativeTime += DeltaTime * Particle.OneOverMaxLifetime;
-
-		if (Particle.RelativeTime >= 1.0f)
-		{
-			KillParticle(ActiveIndex);
-			continue;
-		}
-
-		++ActiveIndex;
-	}
+	return (Particle.Flags & ParticleFlags::PendingKill) != 0u;
 }
 
-void FParticleEmitterInstance::KillParticle(int32 ActiveIndex)
+void FParticleEmitterInstance::MarkParticlePendingKill(int32 ActiveIndex)
 {
 	if (ActiveIndex < 0 || ActiveIndex >= ActiveParticles || ParticleIndices == nullptr)
 	{
 		return;
 	}
 
-	const int32 LastActiveIndex = ActiveParticles - 1;
 	const uint16 KilledPhysicalIndex = ParticleIndices[ActiveIndex];
 	FBaseParticle& Particle = GetParticleByPhysicalIndex(KilledPhysicalIndex);
+	if (IsParticlePendingKill(Particle))
+	{
+		return;
+	}
+
+	Particle.Flags |= ParticleFlags::PendingKill;
 
 	FParticleEventDeathData Event;
 	Event.ParticleIndex = KilledPhysicalIndex;
 	Event.SpawnId = Particle.SpawnId;
 	Event.Location = GetParticleLocationForRender(Particle);
 	Owner.AddDeathEvent(Event);
+}
 
-	// particle memory는 옮기지 않고 active index 목록만 swap-remove(속도 최적화)
-	ParticleIndices[ActiveIndex] = ParticleIndices[LastActiveIndex];
-	ParticleIndices[LastActiveIndex] = KilledPhysicalIndex;
-	--ActiveParticles;
+void FParticleEmitterInstance::CompactPendingKilledParticles()
+{
+	if (ActiveParticles <= 0 || ParticleIndices == nullptr)
+	{
+		return;
+	}
+
+	TArray<uint16> PendingKilledIndices;
+	PendingKilledIndices.reserve(static_cast<size_t>(ActiveParticles));
+
+	int32 LiveParticleCount = 0;
+	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticles; ++ActiveIndex)
+	{
+		const uint16 PhysicalIndex = ParticleIndices[ActiveIndex];
+		const FBaseParticle& Particle = GetParticleByPhysicalIndex(PhysicalIndex);
+		if (IsParticlePendingKill(Particle))
+		{
+			PendingKilledIndices.push_back(PhysicalIndex);
+			continue;
+		}
+
+		ParticleIndices[LiveParticleCount] = PhysicalIndex;
+		++LiveParticleCount;
+	}
+
+	// particle memory는 그대로 두고, active index 목록에서만 죽을 particle을 뒤쪽 free slot 구간으로 밀어냄
+	for (int32 PendingIndex = 0; PendingIndex < static_cast<int32>(PendingKilledIndices.size()); ++PendingIndex)
+	{
+		ParticleIndices[LiveParticleCount + PendingIndex] = PendingKilledIndices[PendingIndex];
+	}
+
+	ActiveParticles = LiveParticleCount;
+}
+
+void FParticleEmitterInstance::AgeParticles(float DeltaTime)
+{
+	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticles; ++ActiveIndex)
+	{
+		FBaseParticle& Particle = GetParticleByActiveIndex(ActiveIndex);
+		if (IsParticlePendingKill(Particle))
+		{
+			continue;
+		}
+
+		Particle.RelativeTime += DeltaTime * Particle.OneOverMaxLifetime;
+
+		if (Particle.RelativeTime >= 1.0f)
+		{
+			MarkParticlePendingKill(ActiveIndex);
+		}
+	}
+}
+
+void FParticleEmitterInstance::UpdateModules(float DeltaTime)
+{
+	if (CurrentRuntimeCache == nullptr)
+	{
+		return;
+	}
+
+	for (UParticleModule* Module : CurrentRuntimeCache->UpdateModules)
+	{
+		if (Module != nullptr && Module->bEnabled)
+		{
+			const int32 Offset = CurrentRuntimeCache->GetParticlePayloadOffset(Module);
+			Module->Update(this, Offset, DeltaTime);
+		}
+	}
+}
+
+void FParticleEmitterInstance::IntegrateParticles(float DeltaTime)
+{
+	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticles; ++ActiveIndex)
+	{
+		FBaseParticle& Particle = GetParticleByActiveIndex(ActiveIndex);
+		if (IsParticlePendingKill(Particle))
+		{
+			continue;
+		}
+
+		Particle.OldLocation = Particle.Location;
+		Particle.Location += Particle.Velocity * DeltaTime;
+		Particle.Rotation += Particle.RotationRate * DeltaTime;
+	}
 }
 
 FBaseParticle& FParticleEmitterInstance::GetParticleByActiveIndex(int32 ActiveIndex)
@@ -699,6 +769,8 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	EmitterTime += DeltaTime;
 	SecondsSinceCreation += DeltaTime;
 
+	CompactPendingKilledParticles();
+
 	const int32 BurstSpawnCount = CalculateBurstSpawnCount(PreviousEmitterTime, EmitterTime);
 	const int32 ActualBurstSpawnCount = SpawnParticles(BurstSpawnCount, DeltaTime);
 	if (ActualBurstSpawnCount > 0)
@@ -710,15 +782,8 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	}
 
 	SpawnParticles(CalculateSpawnRateCount(DeltaTime), DeltaTime);
-	UpdateParticles(DeltaTime);
-
-	for (UParticleModule* Module : CurrentRuntimeCache->UpdateModules)
-	{
-		if (Module != nullptr && Module->bEnabled)
-		{
-			const int32 Offset = CurrentRuntimeCache->GetParticlePayloadOffset(Module);
-			Module->Update(this, Offset, DeltaTime);
-		}
-	}
-
+	AgeParticles(DeltaTime);
+	UpdateModules(DeltaTime);
+	IntegrateParticles(DeltaTime);
+	CompactPendingKilledParticles();
 }

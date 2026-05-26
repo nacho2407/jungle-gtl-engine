@@ -55,6 +55,7 @@ public:
 	virtual void Release();
 
 	int32 GetActiveParticleCount() const { return ActiveParticles; }
+	bool IsParticlePendingKill(const FBaseParticle& Particle) const;
 	FBaseParticle& GetParticleByActiveIndex(int32 ActiveIndex);
 	const FBaseParticle& GetParticleByActiveIndex(int32 ActiveIndex) const;
 	FBaseParticle& GetParticleByPhysicalIndex(int32 PhysicalIndex);
@@ -85,8 +86,11 @@ private:
 	int32 CalculateSpawnRateCount(float DeltaTime);
 	int32 CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime);
 	int32 SpawnParticles(int32 Count, float DeltaTime);
-	void UpdateParticles(float DeltaTime);
-	void KillParticle(int32 ActiveIndex);
+	void MarkParticlePendingKill(int32 ActiveIndex);
+	void CompactPendingKilledParticles();
+	void AgeParticles(float DeltaTime);
+	void UpdateModules(float DeltaTime);
+	void IntegrateParticles(float DeltaTime);
 
 	IParticleEmitterInstanceOwner& Owner;
 };
