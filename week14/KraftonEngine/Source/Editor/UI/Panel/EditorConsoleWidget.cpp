@@ -4,6 +4,7 @@
 #include "Editor/Viewport/EditorPreviewViewportClient.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Object/Object.h"
+#include "Object/GarbageCollectionTest.h"
 #include "Render/Types/ShadowSettings.h"
 #include "Render/Types/LightFrustumUtils.h"
 #include "Render/Types/RenderConstants.h"
@@ -233,6 +234,8 @@ void FEditorConsoleWidget::RegisterDiagnosticsCommands()
 {
 	RegisterCommand("obj list", [this](const TArray<FString>& Args) { HandleObjList(Args); },
 		"Diagnostics", "obj list [<ClassName>]", "Lists live UObject counts and memory by class.");
+	RegisterCommand("gc test", [this](const TArray<FString>& Args) { HandleGCTest(Args); },
+		"Diagnostics", "gc test", "Runs a small garbage collector self-test.");
 	RegisterCommand("stat fps", [this](const TArray<FString>& Args) { HandleStatFPS(Args); },
 		"Diagnostics", "stat fps", "Shows the FPS overlay stat.");
 	RegisterCommand("stat memory", [this](const TArray<FString>& Args) { HandleStatMemory(Args); },
@@ -816,6 +819,13 @@ void FEditorConsoleWidget::HandleObjList(const TArray<FString>& Args)
 	AddLog("-------------------------------------------------------------\n");
 	AddLog("%-35s %8u %10.1f\n", "TOTAL", TotalCount, TotalBytes / 1024.0);
 	AddLog("GUObjectArray capacity: %zu\n", GUObjectArray.capacity());
+}
+
+void FEditorConsoleWidget::HandleGCTest(const TArray<FString>& Args)
+{
+	(void)Args;
+	const bool bPassed = FGarbageCollectionTest::RunAll();
+	AddLog("GC test %s. Check UE_LOG output for each assertion.\n", bPassed ? "PASS" : "FAIL");
 }
 
 void FEditorConsoleWidget::HandleStatFPS(const TArray<FString>& Args)

@@ -8,7 +8,7 @@ public:
 	FWeakObjectPtr() = default;
 	FWeakObjectPtr(UObject* InObject)
 	{
-		if (IsValid(InObject))
+		if (::IsValid(InObject))
 		{
 			ObjectIndex = InObject->GetInternalIndex();
 			SerialNumber = InObject->GetSerialNumber();

@@ -30,6 +30,7 @@
 #include "Engine/Platform/Paths.h"
 #include "Lua/LuaScriptManager.h"
 #include "Object/GarbageCollector.h"
+#include "Object/Object.h"
 
 #include <filesystem>
 
@@ -48,6 +49,40 @@ FString GetFileStem(const FString& InPath)
 {
 	const std::filesystem::path Path(FPaths::ToWide(InPath));
 	return FPaths::ToUtf8(Path.stem().wstring());
+}
+
+struct FGCObjectStats
+{
+	size_t SlotCount = 0;
+	size_t LiveCount = 0;
+	size_t PendingKillCount = 0;
+	size_t FreeSlotCount = 0;
+};
+
+FGCObjectStats GatherGCObjectStats()
+{
+	FGCObjectStats Stats;
+	Stats.SlotCount = GUObjectArray.size();
+	Stats.FreeSlotCount = GFreeObjectIndices.size();
+
+	for (UObject* Object : GUObjectArray)
+	{
+		if (!Object)
+		{
+			continue;
+		}
+
+		if (Object->IsPendingKill())
+		{
+			++Stats.PendingKillCount;
+		}
+		else
+		{
+			++Stats.LiveCount;
+		}
+	}
+
+	return Stats;
 }
 }
 
@@ -185,22 +220,39 @@ void UEditorEngine::Tick(float DeltaTime)
 	{
 		GCTimeAccumulator = 0;
 
-		const size_t BeforeCount = GUObjectArray.size();
+		const FGCObjectStats BeforeStats = GatherGCObjectStats();
 
-		UE_LOG("[GC] CollectGarbage begin. Objects=%zu", BeforeCount);
+		UE_LOG("[GC] CollectGarbage begin. Live=%zu Pending=%zu FreeSlots=%zu Slots=%zu",
+			BeforeStats.LiveCount,
+			BeforeStats.PendingKillCount,
+			BeforeStats.FreeSlotCount,
+			BeforeStats.SlotCount);
 
 		FGarbageCollector GC;
 		GC.CollectGarbage();
 
-		const size_t AfterCount = GUObjectArray.size();
-		const size_t CollectedCount = BeforeCount > AfterCount ? BeforeCount - AfterCount : 0;
-
-		UE_LOG("[GC] CollectGarbage end. Before=%zu After=%zu Collected=%zu",
-			BeforeCount,
-			AfterCount,
-			CollectedCount);
-
+		const FGCObjectStats AfterMarkStats = GatherGCObjectStats();
 		GC.PurgePendingKillObjects();
+		const FGCObjectStats AfterPurgeStats = GatherGCObjectStats();
+
+		const size_t NewPendingCount = AfterMarkStats.PendingKillCount > BeforeStats.PendingKillCount
+			? AfterMarkStats.PendingKillCount - BeforeStats.PendingKillCount
+			: 0;
+		const size_t PurgedCount = AfterMarkStats.PendingKillCount > AfterPurgeStats.PendingKillCount
+			? AfterMarkStats.PendingKillCount - AfterPurgeStats.PendingKillCount
+			: 0;
+
+		UE_LOG("[GC] CollectGarbage end. Live=%zu->%zu->%zu Pending=%zu->%zu->%zu NewPending=%zu Purged=%zu FreeSlots=%zu Slots=%zu",
+			BeforeStats.LiveCount,
+			AfterMarkStats.LiveCount,
+			AfterPurgeStats.LiveCount,
+			BeforeStats.PendingKillCount,
+			AfterMarkStats.PendingKillCount,
+			AfterPurgeStats.PendingKillCount,
+			NewPendingCount,
+			PurgedCount,
+			AfterPurgeStats.FreeSlotCount,
+			AfterPurgeStats.SlotCount);
 	}
 }
 
