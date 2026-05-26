@@ -101,6 +101,12 @@ public:
 	FOverlayStatSystem& GetOverlayStatSystem() { return OverlayStatSystem; }
 	const FOverlayStatSystem& GetOverlayStatSystem() const { return OverlayStatSystem; }
 
+	void SetAutoGCEnabled(bool bEnabled);
+	bool IsAutoGCEnabled() const { return bAutoGCEnabled; }
+	void SetGCIntervalSeconds(float Seconds);
+	float GetGCIntervalSeconds() const { return GCIntervalSeconds; }
+	void ForceCollectGarbage();
+
 	// --- PIE (Play In Editor) ---
 	// UE의 FRequestPlaySessionParams 대응. 요청은 단일 슬롯에 저장되고
 	// 다음 Tick에서 StartQueuedPlaySessionRequest가 실제 StartPIE를 수행한다.
@@ -143,6 +149,7 @@ private:
 	void LoadStartLevel();
 	bool FindSceneViewportPOV(struct FMinimalViewInfo& OutPOV) const;
 	void RestoreViewportCamera(const FPerspectiveCameraData& CamData);
+	void RunGarbageCollectionPass();
 
 	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;
@@ -157,5 +164,8 @@ private:
 	bool bRequestEndPlayMapQueued = false;
 	EPIEControlMode PIEControlMode = EPIEControlMode::Possessed;
 	FString CurrentLevelFilePath;
+	bool bAutoGCEnabled = true;
+	float GCIntervalSeconds = 1.0f;
+	float GCTimeAccumulator = 0.0f;
 
 };

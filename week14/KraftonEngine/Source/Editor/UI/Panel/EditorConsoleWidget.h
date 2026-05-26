@@ -103,6 +103,11 @@ private:
 	void HandleContentBrowserIconSize(const TArray<FString>& Args);
 	void HandleObjList(const TArray<FString>& Args);
 	void HandleGCTest(const TArray<FString>& Args);
+	void HandleGCOn(const TArray<FString>& Args);
+	void HandleGCOff(const TArray<FString>& Args);
+	void HandleGCInterval(const TArray<FString>& Args);
+	void HandleGCCollect(const TArray<FString>& Args);
+	void HandleGCStatus(const TArray<FString>& Args);
 	void HandleStatFPS(const TArray<FString>& Args);
 	void HandleStatMemory(const TArray<FString>& Args);
 	void HandleStatShadow(const TArray<FString>& Args);

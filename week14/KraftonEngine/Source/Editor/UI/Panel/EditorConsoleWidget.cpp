@@ -236,6 +236,16 @@ void FEditorConsoleWidget::RegisterDiagnosticsCommands()
 		"Diagnostics", "obj list [<ClassName>]", "Lists live UObject counts and memory by class.");
 	RegisterCommand("gc test", [this](const TArray<FString>& Args) { HandleGCTest(Args); },
 		"Diagnostics", "gc test", "Runs a small garbage collector self-test.");
+	RegisterCommand("gc on", [this](const TArray<FString>& Args) { HandleGCOn(Args); },
+		"Diagnostics", "gc on", "Enables automatic garbage collection.");
+	RegisterCommand("gc off", [this](const TArray<FString>& Args) { HandleGCOff(Args); },
+		"Diagnostics", "gc off", "Disables automatic garbage collection.");
+	RegisterCommand("gc interval", [this](const TArray<FString>& Args) { HandleGCInterval(Args); },
+		"Diagnostics", "gc interval [seconds]", "Shows or sets the automatic garbage collection interval.");
+	RegisterCommand("gc collect", [this](const TArray<FString>& Args) { HandleGCCollect(Args); },
+		"Diagnostics", "gc collect", "Runs garbage collection immediately.");
+	RegisterCommand("gc status", [this](const TArray<FString>& Args) { HandleGCStatus(Args); },
+		"Diagnostics", "gc status", "Shows automatic garbage collection status.");
 	RegisterCommand("stat fps", [this](const TArray<FString>& Args) { HandleStatFPS(Args); },
 		"Diagnostics", "stat fps", "Shows the FPS overlay stat.");
 	RegisterCommand("stat memory", [this](const TArray<FString>& Args) { HandleStatMemory(Args); },
@@ -826,6 +836,84 @@ void FEditorConsoleWidget::HandleGCTest(const TArray<FString>& Args)
 	(void)Args;
 	const bool bPassed = FGarbageCollectionTest::RunAll();
 	AddLog("GC test %s. Check UE_LOG output for each assertion.\n", bPassed ? "PASS" : "FAIL");
+}
+
+void FEditorConsoleWidget::HandleGCOn(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+
+	EditorEngine->SetAutoGCEnabled(true);
+	AddLog("GC auto collection enabled. Interval=%.2fs\n", EditorEngine->GetGCIntervalSeconds());
+}
+
+void FEditorConsoleWidget::HandleGCOff(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+
+	EditorEngine->SetAutoGCEnabled(false);
+	AddLog("GC auto collection disabled.\n");
+}
+
+void FEditorConsoleWidget::HandleGCInterval(const TArray<FString>& Args)
+{
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+
+	if (Args.empty())
+	{
+		AddLog("GC interval: %.2fs\n", EditorEngine->GetGCIntervalSeconds());
+		AddLog("Usage: gc interval <seconds>\n");
+		return;
+	}
+
+	const float Seconds = static_cast<float>(std::atof(Args[0].c_str()));
+	if (Seconds <= 0.0f)
+	{
+		AddLog("[ERROR] GC interval must be greater than 0.\n");
+		return;
+	}
+
+	EditorEngine->SetGCIntervalSeconds(Seconds);
+	AddLog("GC interval set to %.2fs.\n", EditorEngine->GetGCIntervalSeconds());
+}
+
+void FEditorConsoleWidget::HandleGCCollect(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+
+	EditorEngine->ForceCollectGarbage();
+	AddLog("GC collect requested.\n");
+}
+
+void FEditorConsoleWidget::HandleGCStatus(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+
+	AddLog("GC auto: %s\n", EditorEngine->IsAutoGCEnabled() ? "on" : "off");
+	AddLog("GC interval: %.2fs\n", EditorEngine->GetGCIntervalSeconds());
 }
 
 void FEditorConsoleWidget::HandleStatFPS(const TArray<FString>& Args)
