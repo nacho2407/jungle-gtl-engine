@@ -1,12 +1,14 @@
 ﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
+#include "Math/FloatCurve.h"
 #include "Math/MathUtils.h"
 #include "Math/Vector.h"
 #include "Object/Object.h"
 #include "Object/Reflection/ObjectMacros.h"
 #include "Object/Reflection/UStruct.h"
 
+#include <algorithm>
 #include <cstdlib>
 
 #include "Source/Engine/Math/Distribution.generated.h"
@@ -16,6 +18,8 @@ enum class EDistributionValueMode : uint8
 {
 	Constant,
 	Uniform,
+	ConstantCurve,
+	UniformCurve,
 };
 
 USTRUCT()
@@ -98,11 +102,39 @@ struct FRawDistributionFloat
 	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Max", EditCondition="Mode == Uniform")
 	float MaxValue = 0.0f;
 
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Constant Curve", EditCondition="Mode == ConstantCurve", Type=Struct, Struct=FFloatCurve)
+	FFloatCurve ConstantCurve;
+
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Min Curve", EditCondition="Mode == UniformCurve", Type=Struct, Struct=FFloatCurve)
+	FFloatCurve MinCurve;
+
+	UPROPERTY(Edit, Save, Category="Distribution", DisplayName="Max Curve", EditCondition="Mode == UniformCurve", Type=Struct, Struct=FFloatCurve)
+	FFloatCurve MaxCurve;
+
 	float GetValue(float RandomFraction = FDistributionSampling::RandomUnit()) const
+	{
+		return GetValue(0.0f, RandomFraction);
+	}
+
+	float GetValue(float Time, float RandomFraction) const
 	{
 		if (Mode == EDistributionValueMode::Uniform)
 		{
 			return FMath::Lerp(MinValue, MaxValue, RandomFraction);
+		}
+		if (Mode == EDistributionValueMode::ConstantCurve)
+		{
+			return ConstantCurve.Evaluate(Time);
+		}
+		if (Mode == EDistributionValueMode::UniformCurve)
+		{
+			float Min = MinCurve.Evaluate(Time);
+			float Max = MaxCurve.Evaluate(Time);
+			if (Max < Min)
+			{
+				std::swap(Min, Max);
+			}
+			return FMath::Lerp(Min, Max, RandomFraction);
 		}
 
 		return Constant;
