@@ -1,5 +1,6 @@
 #include "Particles/Beam/ParticleModuleBeamNoise.h"
 
+#include "Object/Object.h"
 #include "Particles/ParticleEmitterInstances.h"
 #include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
 #include "Math/RandomStream.h"
@@ -61,35 +62,35 @@ void UParticleModuleBeamNoise::InitializeDefaults()
 
 	if (!NoiseSpeed.IsCreated())
 	{
-		UDistributionVectorConstant* DistributionNoiseSpeed = new UDistributionVectorConstant();
+		UDistributionVectorConstant* DistributionNoiseSpeed = UObjectManager::Get().CreateObject<UDistributionVectorConstant>(this);
 		DistributionNoiseSpeed->Constant = FVector(50.0f, 50.0f, 50.0f);
 		NoiseSpeed.Distribution = DistributionNoiseSpeed;
 	}
 
 	if (!NoiseRange.IsCreated())
 	{
-		UDistributionVectorConstant* DistributionNoiseRange = new UDistributionVectorConstant();
+		UDistributionVectorConstant* DistributionNoiseRange = UObjectManager::Get().CreateObject<UDistributionVectorConstant>(this);
 		DistributionNoiseRange->Constant = FVector(50.0f, 50.0f, 50.0f);
 		NoiseRange.Distribution = DistributionNoiseRange;
 	}
 
 	if (!NoiseRangeScale.IsCreated())
 	{
-		UDistributionFloatConstant* DistributionNoiseRangeScale = new UDistributionFloatConstant();
+		UDistributionFloatConstant* DistributionNoiseRangeScale = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(this);
 		DistributionNoiseRangeScale->Constant = 1.0f;
 		NoiseRangeScale.Distribution = DistributionNoiseRangeScale;
 	}
 
 	if (!NoiseTangentStrength.IsCreated())
 	{
-		UDistributionFloatConstant* DistributionNoiseTangentStrength = new UDistributionFloatConstant();
+		UDistributionFloatConstant* DistributionNoiseTangentStrength = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(this);
 		DistributionNoiseTangentStrength->Constant = 250.0f;
 		NoiseTangentStrength.Distribution = DistributionNoiseTangentStrength;
 	}
 
 	if (!NoiseScale.IsCreated())
 	{
-		UDistributionFloatConstant* DistributionNoiseScale = new UDistributionFloatConstant();
+		UDistributionFloatConstant* DistributionNoiseScale = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(this);
 		DistributionNoiseScale->Constant = 1.0f;
 		NoiseScale.Distribution = DistributionNoiseScale;
 	}

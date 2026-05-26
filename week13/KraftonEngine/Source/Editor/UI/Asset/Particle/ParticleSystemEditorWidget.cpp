@@ -4526,8 +4526,10 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
     bool bChanged       = false;
     bool bMaterialDirty = false;
 
-    // Required/Spawn은 이미터 동작에 필수라 disable 토글이 무의미하다. 그 외 모듈만 노출.
-    const bool bIsCoreModule = Cast<UParticleModuleRequired>(Module) || Cast<UParticleModuleSpawn>(Module);
+    // Required/Spawn/TypeData는 이미터 동작에 필수라 disable 토글이 무의미하다. 그 외 모듈만 노출.
+    const bool bIsCoreModule = Cast<UParticleModuleRequired>(Module)
+        || Cast<UParticleModuleSpawn>(Module)
+        || Cast<UParticleModuleTypeDataBase>(Module);
     if (!bIsCoreModule)
     {
         bool bModuleEnabled = Module->bEnabled != 0;
@@ -4625,7 +4627,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 bChanged                        = true;
             }
             bChanged |= ImGui::DragFloat("Duration", &Required->EmitterDuration, 0.05f, 0.0f, 10000.0f);
-            bChanged |= ImGui::DragFloat("Duration Low", &Required->EmitterDurationLow, 0.05f, 0.0f, 10000.0f);
             bChanged |= ImGui::DragFloat("Delay", &Required->EmitterDelay, 0.05f, 0.0f, 10000.0f);
             bChanged |= ImGui::DragInt("Loops", &Required->EmitterLoops, 1.0f, 0, 10000);
         }
@@ -4634,36 +4635,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Rendering##Req"))
         {
-            if (ImGui::BeginCombo("Screen Alignment", ScreenAlignmentName(Required->ScreenAlignment)))
-            {
-                for (int32 i = 0; i < PSA_MAX; ++i)
-                {
-                    const auto V    = static_cast<EParticleScreenAlignment>(i);
-                    const bool bSel = (Required->ScreenAlignment == V);
-                    if (ImGui::Selectable(ScreenAlignmentName(V), bSel))
-                    {
-                        Required->ScreenAlignment = V;
-                        bChanged                  = true;
-                    }
-                    if (bSel) ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-            if (ImGui::BeginCombo("Sort Mode", SortModeName(Required->SortMode)))
-            {
-                for (int32 i = 0; i < PSORTMODE_MAX; ++i)
-                {
-                    const auto V    = static_cast<EParticleSortMode>(i);
-                    const bool bSel = (Required->SortMode == V);
-                    if (ImGui::Selectable(SortModeName(V), bSel))
-                    {
-                        Required->SortMode = V;
-                        bChanged           = true;
-                    }
-                    if (bSel) ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
             bChanged |= ImGui::Checkbox("Use Max Draw Count", &Required->bUseMaxDrawCount);
             if (!Required->bUseMaxDrawCount) ImGui::BeginDisabled();
             bChanged |= ImGui::DragInt("Max Draw Count", &Required->MaxDrawCount, 1.0f, 0, 100000);
@@ -4675,13 +4646,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             if (!Required->bUseMaxDrawCount) ImGui::EndDisabled();
         }
 
-        // ── Sub-UV ──
-        if (ImGui::CollapsingHeader("Sub-UV##Req"))
-        {
-            bChanged |= ImGui::DragInt("Horizontal", &Required->SubImages_Horizontal, 1.0f, 1, 64);
-            bChanged |= ImGui::DragInt("Vertical", &Required->SubImages_Vertical, 1.0f, 1, 64);
-        }
-
         // ── Flags ──
         if (ImGui::CollapsingHeader("Flags##Req"))
         {
@@ -4691,22 +4655,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 Required->bUseLocalSpace = bUseLocal ? 1 : 0;
                 bChanged                 = true;
             }
-
-            bool bKillDeact = Required->bKillOnDeactivate;
-            if (ImGui::Checkbox("Kill on Deactivate", &bKillDeact))
-            {
-                Required->bKillOnDeactivate = bKillDeact ? 1 : 0;
-                bChanged                    = true;
-            }
-
-            bool bKillComp = Required->bKillOnCompleted;
-            if (ImGui::Checkbox("Kill on Completed", &bKillComp))
-            {
-                Required->bKillOnCompleted = bKillComp ? 1 : 0;
-                bChanged                   = true;
-            }
-
-            bChanged |= ImGui::Checkbox("Delay First Loop Only", &Required->bDelayFirstLoopOnly);
         }
     }
     else if (UParticleModuleSpawn* Spawn = Cast<UParticleModuleSpawn>(Module))
@@ -4846,7 +4794,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                             {
                                 if (UStaticMesh* StaticMesh = MeshType->GetStaticMesh())
                                 {
-                                    SectionCount = max(1, static_cast<int32>(StaticMesh->GetLODSections(0).size()));
+                                    SectionCount = (std::max)(1, static_cast<int32>(StaticMesh->GetLODSections(0).size()));
                                 }
                             }
                         }
@@ -4889,6 +4837,19 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 }
                 ImGui::SameLine();
                 ImGui::TextColored(PSE::DimTextV, "Section %d", SectionIdx);
+
+                if (SectionIdx < static_cast<int32>(MeshMaterial->MeshMaterials.size()))
+                {
+                    UMaterial* Mat = MeshMaterial->MeshMaterials[SectionIdx];
+                    if (Mat && Mat->GetDomain() != EMaterialDomain::ParticleMesh)
+                    {
+                        ImGui::TextColored(
+                            ImVec4(1.0f, 0.80f, 0.25f, 1.0f),
+                            "Domain is %s (expected ParticleMesh).",
+                            MaterialDomainName(Mat->GetDomain())
+                        );
+                    }
+                }
                 ImGui::PopID();
             }
 
@@ -4950,14 +4911,18 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         {
             if (TrailSource->SourceMethod != PET2SRCM_Default)
             {
-                ImGui::TextColored(PSE::DimTextV, "Particle/Actor source methods are not supported yet.");
+                ImGui::TextColored(
+                    ImVec4(1.0f, 0.80f, 0.25f, 1.0f),
+                    "Particle/Actor source methods are not supported yet."
+                );
+                ImGui::SameLine();
+                if (ImGui::SmallButton("Reset to Default"))
+                {
+                    TrailSource->SourceMethod = PET2SRCM_Default;
+                    bChanged = true;
+                }
             }
-            int32 SourceMethod = TrailSource->SourceMethod == PET2SRCM_Default ? 0 : 1;
-            if (ImGui::Combo("Source Method", &SourceMethod, "Default\0Unsupported (stub)\0"))
-            {
-                TrailSource->SourceMethod = (SourceMethod == 0) ? PET2SRCM_Default : TrailSource->SourceMethod;
-                bChanged = (SourceMethod == 0);
-            }
+            ImGui::TextColored(PSE::DimTextV, "Source Method: Default");
 
             DrawRawDistributionFloat("Source Strength", TrailSource->SourceStrength, bChanged, TrailSource);
             bool bLock = TrailSource->bLockSourceStrength;
@@ -4970,7 +4935,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             int32 OffsetCount = TrailSource->SourceOffsetCount;
             if (ImGui::DragInt("Source Offset Count", &OffsetCount, 1.0f, 0, 64))
             {
-                TrailSource->SourceOffsetCount = max(0, OffsetCount);
+                TrailSource->SourceOffsetCount = (std::max)(0, OffsetCount);
                 TrailSource->SourceOffsetDefaults.resize(TrailSource->SourceOffsetCount, FVector::ZeroVector);
                 bChanged = true;
             }
@@ -5024,7 +4989,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             if (ImGui::Checkbox("Lock Source", &bLock)) { BeamSource->bLockSource = bLock ? 1 : 0; bChanged = true; }
 
             int32 TangentMethod = static_cast<int32>(BeamSource->SourceTangentMethod);
-            if (ImGui::Combo("Source Tangent Method", &TangentMethod, "Direct\0User Set\0Distribution\0Emitter\0"))
+            if (ImGui::Combo("Source Tangent Method", &TangentMethod, "Direct\0User Set\0Distribution\0Emitter X Axis\0"))
             {
                 BeamSource->SourceTangentMethod = static_cast<Beam2SourceTargetTangentMethod>(TangentMethod);
                 bChanged = true;
@@ -5060,7 +5025,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             if (ImGui::Checkbox("Lock Target", &bLock)) { BeamTarget->bLockTarget = bLock ? 1 : 0; bChanged = true; }
 
             int32 TangentMethod = static_cast<int32>(BeamTarget->TargetTangentMethod);
-            if (ImGui::Combo("Target Tangent Method", &TangentMethod, "Direct\0User Set\0Distribution\0Emitter\0"))
+            if (ImGui::Combo("Target Tangent Method", &TangentMethod, "Direct\0User Set\0Distribution\0Emitter X Axis\0"))
             {
                 BeamTarget->TargetTangentMethod = static_cast<Beam2SourceTargetTangentMethod>(TangentMethod);
                 bChanged = true;
@@ -5165,12 +5130,24 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                     if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
                     {
                         MeshT->MeshAssetPath = Item.FullPath;
-                        MeshT->ResolveMeshFromPath();
+                        ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+                        MeshT->Mesh = FMeshManager::LoadStaticMesh(Item.FullPath, Device);
                         bChanged = true;
                     }
                 }
                 ImGui::EndCombo();
             }
+
+            // 저장된 자산을 다시 열었을 때 캐시 미스로 Mesh=null 이면 자동 로드.
+            if (!MeshT->Mesh && !CurrentPath.empty() && CurrentPath != "None")
+            {
+                ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+                if (Device)
+                {
+                    MeshT->Mesh = FMeshManager::LoadStaticMesh(CurrentPath, Device);
+                }
+            }
+
             bool bOM = MeshT->bOverrideMaterial;   if (ImGui::Checkbox("Override Material", &bOM))   { MeshT->bOverrideMaterial  = bOM ? 1 : 0; bChanged = true; }
             ImGui::TextColored(PSE::DimTextV, "Resolved Mesh: %s", MeshT->Mesh ? "Yes" : "No");
         }
@@ -5211,8 +5188,13 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         if (ImGui::CollapsingHeader("Beam2"))
         {
             int32 Method = static_cast<int32>(BeamT->BeamMethod);
-            if (ImGui::Combo("Beam Method", &Method, "Distance\0Target\0Branch\0"))
-            { BeamT->BeamMethod = static_cast<EBeam2Method>(Method); bChanged = true; }
+            if (Method > 1)
+            {
+                ImGui::TextColored(PSE::DimTextV, "Branch beam method is not supported yet.");
+            }
+            int32 ComboMethod = (Method > 1) ? 0 : Method;
+            if (ImGui::Combo("Beam Method", &ComboMethod, "Distance\0Target\0"))
+            { BeamT->BeamMethod = static_cast<EBeam2Method>(ComboMethod); bChanged = true; }
             bChanged |= ImGui::DragInt  ("Texture Tile",          &BeamT->TextureTile,          1.0f, 1, 64);
             bChanged |= ImGui::DragFloat("Texture Tile Distance", &BeamT->TextureTileDistance,  1.0f, 0.0f, 100000.0f);
             bChanged |= ImGui::DragInt  ("Sheets",                &BeamT->Sheets,               1.0f, 1, 32);
