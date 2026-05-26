@@ -348,14 +348,20 @@ int32 FParticleEmitterInstance::GetTotalLoopCount() const
 		: 1;
 }
 
+bool FParticleEmitterInstance::IsInfiniteLooping() const
+{
+	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+	return RequiredModule != nullptr && RequiredModule->bInfiniteEmitterLoops;
+}
+
 bool FParticleEmitterInstance::CanSpawnEmitter() const
 {
+	const bool bInfiniteLooping = IsInfiniteLooping();
 	return !bEmitterSpawnComplete &&
 		CurrentRuntimeCache != nullptr &&
 		CurrentRuntimeCache->SpawnModule != nullptr &&
 		GetEmitterDuration() > 0.0f &&
-		GetTotalLoopCount() > 0 &&
-		CompletedLoopCount < GetTotalLoopCount();
+		(bInfiniteLooping || (GetTotalLoopCount() > 0 && CompletedLoopCount < GetTotalLoopCount()));
 }
 
 void FParticleEmitterInstance::ResetLoopRuntimeState()
@@ -384,6 +390,20 @@ void FParticleEmitterInstance::CompleteEmitterLoop()
 {
 	++CompletedLoopCount;
 	SpawnFraction = 0.0f;
+
+	if (IsInfiniteLooping())
+	{
+		// 무한 루프는 종료 상태로 가지 않고 다음 loop-local time 구간을 즉시 준비합니다.
+		EmitterTime = 0.0f;
+		ResetBurstFiredState();
+
+		const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+		if (RequiredModule != nullptr && RequiredModule->bResetSeedOnEmitterLoop)
+		{
+			RandomStream.Reset();
+		}
+		return;
+	}
 
 	const int32 TotalLoopCount = GetTotalLoopCount();
 	if (TotalLoopCount <= 0 || CompletedLoopCount >= TotalLoopCount)

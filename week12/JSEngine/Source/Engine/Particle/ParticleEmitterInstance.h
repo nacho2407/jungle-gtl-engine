@@ -89,6 +89,7 @@ private:
 	const UParticleModuleRequired* GetRequiredModule() const;
 	float GetEmitterDuration() const;
 	int32 GetTotalLoopCount() const;
+	bool IsInfiniteLooping() const;
 	bool CanSpawnEmitter() const;
 	void ResetLoopRuntimeState();
 	void ResetBurstFiredState();

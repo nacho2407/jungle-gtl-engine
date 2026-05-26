@@ -60,6 +60,9 @@ public:
 	UPROPERTY(DisplayName = "Emitter Loops")
 	bool bEmitterLoops = false;
 
+	UPROPERTY(DisplayName = "Infinite Emitter Loops")
+	bool bInfiniteEmitterLoops = false;
+
 	UPROPERTY(DisplayName = "Max Emitter Loops", Min = 0.0f, Speed = 1.0f)
 	int32 MaxEmitterLoops = 1;
 
