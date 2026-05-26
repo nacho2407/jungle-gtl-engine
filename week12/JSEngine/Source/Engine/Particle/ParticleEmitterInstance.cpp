@@ -387,35 +387,29 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 {
 	Release();
 
-	if (InTemplate == nullptr || InLODLevelIndex < 0 || InLODLevelIndex >= static_cast<int32>(InTemplate->LODLevels.size()))
+	if (InTemplate == nullptr || InTemplate->LODLevels.empty())
 	{
 		return false;
 	}
 
 	SpriteTemplate = InTemplate;
-	CurrentLODLevelIndex = InLODLevelIndex;
-	CurrentLODLevel = SpriteTemplate->LODLevels[CurrentLODLevelIndex];
-	if (CurrentLODLevel == nullptr)
-	{
-		return false;
-	}
-
 	SpriteTemplate->CacheEmitterModuleInfo();
-	CurrentRuntimeCache = SpriteTemplate->GetLODLevelRuntimeCache(CurrentLODLevelIndex);
-	if (CurrentRuntimeCache == nullptr)
+
+	const FParticleLODLevelRuntimeCache* LayoutRuntimeCache = SpriteTemplate->GetLOD0RuntimeCache();
+	if (LayoutRuntimeCache == nullptr)
 	{
 		return false;
 	}
 
-	ParticleStride = CurrentRuntimeCache->ParticleStride > 0
-		? CurrentRuntimeCache->ParticleStride
+	ParticleStride = LayoutRuntimeCache->ParticleStride > 0
+		? LayoutRuntimeCache->ParticleStride
 		: AlignParticleBytes(static_cast<int32>(sizeof(FBaseParticle)));
-	PayloadOffset = CurrentRuntimeCache->PayloadOffset;
-	InstancePayloadSize = CurrentRuntimeCache->InstancePayloadSize;
+	PayloadOffset = LayoutRuntimeCache->PayloadOffset;
+	InstancePayloadSize = LayoutRuntimeCache->InstancePayloadSize;
 
-	int32 RequestedMaxParticles = CurrentRuntimeCache->RequiredModule != nullptr
-		? CurrentRuntimeCache->RequiredModule->MaxParticles
-		: 1; // clamp를 위해 최소값 1로 설정
+	int32 RequestedMaxParticles = LayoutRuntimeCache->RequiredModule != nullptr
+		? LayoutRuntimeCache->RequiredModule->MaxParticles
+		: 1; // clamp 최소값
 	if (RequestedMaxParticles > MaxParticleIndexValue)
 	{
 		UE_LOG_WARNING(
@@ -431,8 +425,73 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 		return false;
 	}
 
-	RandomStream.Initialize(GetInitialRandomSeed(CurrentRuntimeCache->RequiredModule, SpriteTemplate, this));
+	const int32 InitialLODIndex = (InLODLevelIndex >= 0 && InLODLevelIndex < static_cast<int32>(SpriteTemplate->LODLevels.size()))
+		? InLODLevelIndex
+		: 0;
+	if (!SetCurrentLODIndex(InitialLODIndex) && !SetCurrentLODIndex(0))
+	{
+		Release();
+		return false;
+	}
+
+	RandomStream.Initialize(GetInitialRandomSeed(GetRequiredModule(), SpriteTemplate, this));
 	Reset();
+	return true;
+}
+
+bool FParticleEmitterInstance::SetCurrentLODIndex(int32 InLODLevelIndex)
+{
+	if (SpriteTemplate == nullptr ||
+		InLODLevelIndex < 0 ||
+		InLODLevelIndex >= static_cast<int32>(SpriteTemplate->LODLevels.size()))
+	{
+		return false;
+	}
+
+	// invalid topology의 lower LOD 차단
+	if (InLODLevelIndex != 0 && !SpriteTemplate->ValidateLODTopology(false))
+	{
+		return false;
+	}
+
+	UParticleLODLevel* NewLODLevel = SpriteTemplate->LODLevels[static_cast<size_t>(InLODLevelIndex)];
+	const FParticleLODLevelRuntimeCache* NewRuntimeCache = SpriteTemplate->GetLODLevelRuntimeCache(InLODLevelIndex);
+	if (NewLODLevel == nullptr || NewRuntimeCache == nullptr)
+	{
+		return false;
+	}
+
+	// storage layout 불변성
+	if (ParticleStride > 0 && NewRuntimeCache->ParticleStride != ParticleStride)
+	{
+		UE_LOG_WARNING("[Particle] LOD switch rejected because particle stride differs from the allocated storage.");
+		return false;
+	}
+	if (NewRuntimeCache->InstancePayloadSize != InstancePayloadSize)
+	{
+		UE_LOG_WARNING("[Particle] LOD switch rejected because instance payload size differs from the allocated storage.");
+		return false;
+	}
+
+	const size_t PreviousBurstCount =
+		CurrentRuntimeCache != nullptr && CurrentRuntimeCache->SpawnModule != nullptr
+			? CurrentRuntimeCache->SpawnModule->BurstList.size()
+			: 0;
+
+	CurrentLODLevelIndex = InLODLevelIndex;
+	CurrentLODLevel = NewLODLevel;
+	CurrentRuntimeCache = NewRuntimeCache;
+
+	const size_t NewBurstCount =
+		CurrentRuntimeCache->SpawnModule != nullptr
+			? CurrentRuntimeCache->SpawnModule->BurstList.size()
+			: 0;
+	if (BurstFiredThisLoop.size() != NewBurstCount || PreviousBurstCount != NewBurstCount)
+	{
+		// burst fired state layout
+		ResetBurstFiredState();
+	}
+
 	return true;
 }
 
@@ -587,6 +646,16 @@ void FParticleEmitterInstance::ResetBurstFiredState()
 
 	BurstFiredThisLoop.clear();
 	BurstFiredThisLoop.resize(static_cast<size_t>(std::max(BurstEntryCount, 0)), 0u);
+}
+
+int32 FParticleEmitterInstance::GetCurrentLODMaxParticles() const
+{
+	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+	const int32 CurrentLODMaxParticles = RequiredModule != nullptr
+		? RequiredModule->MaxParticles
+		: MaxActiveParticles;
+
+	return std::clamp(CurrentLODMaxParticles, 1, std::max(MaxActiveParticles, 1));
 }
 
 void FParticleEmitterInstance::CompleteEmitterLoop()
@@ -776,8 +845,15 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTi
 		return 0;
 	}
 
-	const int32 AvailableSlots = MaxActiveParticles - ActiveParticles;
-	const int32 SpawnCount = std::clamp(Count, 0, AvailableSlots);
+	const int32 CurrentLODParticleLimit = std::min(MaxActiveParticles, GetCurrentLODMaxParticles());
+	const int32 AvailableSlots = CurrentLODParticleLimit - ActiveParticles;
+	if (AvailableSlots <= 0)
+	{
+		return 0;
+	}
+
+	// lower LOD MaxParticles soft cap
+	const int32 SpawnCount = std::min(Count, AvailableSlots);
 	if (SpawnCount <= 0)
 	{
 		return 0;

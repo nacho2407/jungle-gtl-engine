@@ -4,8 +4,10 @@
 #include "Particle/ParticleModules.h"
 
 /**
- * @brief 매 프레임 업데이트 루프에서 자주 참조되는 정보를 캐싱하여, 런타임에 빠르게 접근할 수 있도록 하는 구조체.
- *		  모듈마다 매번 payload offset를 계산하지 않아도 되도록 합니다.
+ * @brief LOD별 particle runtime cache
+ *
+ * @details Cascade 스타일 LOD에서는 모든 LOD가 LOD 0의 particle layout을 공유합니다.
+ *          각 cache는 현재 LOD에서 실행할 module 목록과, LOD 0 layout 기준 payload offset을 함께 보관합니다.
  */
 struct FParticleLODLevelRuntimeCache
 {
@@ -69,6 +71,19 @@ public:
 	TArray<FParticleLODLevelRuntimeCache> LODLevelRuntimeCaches;
 
 	void CacheEmitterModuleInfo();
+
+	/**
+	 * @brief LOD topology가 LOD 0 layout을 공유할 수 있는지 검사합니다.
+	 *
+	 * @param bLogWarnings warning log 출력 여부
+	 *
+	 * @return LOD 0 layout 공유 가능 여부
+	 *
+	 * @details module add/delete는 LOD 0에서만 허용한다는 제약을 런타임에서 검증합니다.
+	 *          lower LOD는 LOD 0과 module slot 수, module class, TypeData class가 같아야 합니다.
+	 */
+	bool ValidateLODTopology(bool bLogWarnings = true) const;
+
 	TArray<int32> CalculateTotalPayloadSize() const;
 	FParticleLODLevelRuntimeCache* GetLODLevelRuntimeCache(int32 LODIndex);
 	const FParticleLODLevelRuntimeCache* GetLODLevelRuntimeCache(int32 LODIndex) const;

@@ -57,6 +57,18 @@ public:
 	virtual void Reset();
 	virtual void Release();
 
+	/**
+	 * @brief 현재 emitter instance가 참조하는 LOD runtime cache를 교체합니다.
+	 *
+	 * @param InLODLevelIndex 전환 대상 LOD index
+	 *
+	 * @return LOD runtime cache 교체 성공 여부
+	 *
+	 * @details Cascade 스타일 LOD는 particle storage를 재할당하지 않습니다.
+	 *          이 함수는 CurrentLODLevelIndex, CurrentLODLevel, CurrentRuntimeCache만 교체합니다.
+	 */
+	bool SetCurrentLODIndex(int32 InLODLevelIndex);
+
 	int32 GetActiveParticleCount() const { return ActiveParticles; }
 	bool IsParticlePendingKill(const FBaseParticle& Particle) const;
 	FBaseParticle& GetParticleByActiveIndex(int32 ActiveIndex);
@@ -71,7 +83,7 @@ public:
 	const uint8* GetModuleInstanceData(UParticleModule* Module) const;
 
 	/**
-	 * @brief LOD preserve로 기존 particle을 새 LOD instance에 복사하고, 새 LOD의 module payload를 초기화하는 helper
+	 * @brief 기존 particle을 새 LOD instance에 복사한 뒤 새 LOD의 module payload를 초기화합니다.
 	 */
 	void InitializeModulePayloadsForExistingParticle(FBaseParticle& Particle);
 
@@ -93,6 +105,7 @@ private:
 	bool CanSpawnEmitter() const;
 	void ResetLoopRuntimeState();
 	void ResetBurstFiredState();
+	int32 GetCurrentLODMaxParticles() const;
 	void CompleteEmitterLoop();
 	void TickEmitterSpawn(float DeltaTime);
 	void TickEmitterSpawnSegment(float SegmentStartTime, float SegmentEndTime);

@@ -30,6 +30,50 @@ namespace
 		return ParticleHelper::AlignParticleSize(Value);
 	}
 
+	UParticleModuleSpawn* ResolveSpawnModule(const UParticleLODLevel* LODLevel)
+	{
+		if (LODLevel == nullptr)
+		{
+			return nullptr;
+		}
+
+		// 명시적 SpawnModule 우선
+		if (LODLevel->SpawnModule != nullptr)
+		{
+			return LODLevel->SpawnModule;
+		}
+
+		// legacy module 배열 fallback
+		for (UParticleModule* Module : LODLevel->Modules)
+		{
+			if (Module != nullptr && Module->bEnabled && Module->IsSpawnRateModule())
+			{
+				return Cast<UParticleModuleSpawn>(Module);
+			}
+		}
+
+		return nullptr;
+	}
+
+	bool AreModuleClassesCompatible(const UParticleModule* LayoutModule, const UParticleModule* LODModule)
+	{
+		if (LayoutModule == nullptr || LODModule == nullptr)
+		{
+			// null slot 대칭성
+			return LayoutModule == LODModule;
+		}
+
+		return LayoutModule->GetClass() == LODModule->GetClass();
+	}
+
+	void LogLODWarning(bool bLogWarnings, const char* Message)
+	{
+		if (bLogWarnings)
+		{
+			UE_LOG_WARNING("[Particle] %s", Message);
+		}
+	}
+
 	void AddParticlePayloadOffset(
 		FParticleLODLevelRuntimeCache& Cache,
 		UParticleModule* Module,
@@ -49,6 +93,28 @@ namespace
 
 		InOutParticleBytes = AlignParticleBytes(InOutParticleBytes);
 		Cache.ModulePayloadOffsets[Module] = InOutParticleBytes;
+		InOutParticleBytes += RequiredBytes;
+	}
+
+	void AddTypeDataParticlePayloadOffset(
+		FParticleLODLevelRuntimeCache& Cache,
+		UParticleModuleTypeDataBase* TypeData,
+		int32& InOutParticleBytes)
+	{
+		if (TypeData == nullptr)
+		{
+			return;
+		}
+
+		const int32 RequiredBytes = TypeData->GetRequiredPayloadSize();
+		if (RequiredBytes <= 0)
+		{
+			return;
+		}
+
+		// TypeData payload 시작 offset
+		InOutParticleBytes = AlignParticleBytes(InOutParticleBytes);
+		Cache.ModulePayloadOffsets[TypeData] = InOutParticleBytes;
 		InOutParticleBytes += RequiredBytes;
 	}
 
@@ -74,7 +140,51 @@ namespace
 		InOutInstancePayloadSize += RequiredBytes;
 	}
 
-	FParticleLODLevelRuntimeCache BuildLODLevelRuntimeCache(const UParticleLODLevel* LODLevel)
+	void CopyStablePayloadOffsets(
+		FParticleLODLevelRuntimeCache& Cache,
+		UParticleModule* LODModule,
+		UParticleModule* LayoutModule,
+		const FParticleLODLevelRuntimeCache& StableLayoutCache)
+	{
+		if (LODModule == nullptr || LayoutModule == nullptr)
+		{
+			return;
+		}
+
+		// particle payload offset 공유
+		const int32 ParticlePayloadOffset = StableLayoutCache.GetParticlePayloadOffset(LayoutModule);
+		if (ParticlePayloadOffset >= 0)
+		{
+			Cache.ModulePayloadOffsets[LODModule] = ParticlePayloadOffset;
+		}
+
+		// instance payload offset 공유
+		const int32 InstancePayloadOffset = StableLayoutCache.GetInstancePayloadOffset(LayoutModule);
+		if (InstancePayloadOffset >= 0)
+		{
+			Cache.ModuleInstanceOffsets[LODModule] = InstancePayloadOffset;
+		}
+	}
+
+	void AddEnabledModuleExecution(FParticleLODLevelRuntimeCache& Cache, UParticleModule* Module)
+	{
+		if (Module == nullptr || !Module->bEnabled)
+		{
+			return;
+		}
+
+		if (Module->IsSpawnModule())
+		{
+			Cache.SpawnModules.push_back(Module);
+		}
+
+		if (Module->IsUpdateModule())
+		{
+			Cache.UpdateModules.push_back(Module);
+		}
+	}
+
+	FParticleLODLevelRuntimeCache BuildStableLOD0RuntimeCache(const UParticleLODLevel* LODLevel)
 	{
 		FParticleLODLevelRuntimeCache Cache;
 		Cache.PayloadOffset = AlignParticleBytes(static_cast<int32>(sizeof(FBaseParticle)));
@@ -90,76 +200,82 @@ namespace
 		}
 
 		Cache.RequiredModule = LODLevel->RequiredModule;
-		Cache.SpawnModule = LODLevel->SpawnModule;
+		Cache.SpawnModule = ResolveSpawnModule(LODLevel);
 		Cache.TypeDataModule = LODLevel->TypeDataModule;
 
-		if (!LODLevel->bEnabled)
-		{
-			Cache.ParticleStride = AlignParticleBytes(ParticleBytes);
-			Cache.InstancePayloadSize = AlignParticleBytes(InstancePayloadSize);
-			return Cache;
-		}
-
 		UParticleModuleTypeDataBase* TypeData = Cache.TypeDataModule;
-		if (TypeData != nullptr && TypeData->bEnabled)
-		{
-			const int32 TypeDataPayloadSize = TypeData->GetRequiredPayloadSize();
-			if (TypeDataPayloadSize > 0)
-			{
-				ParticleBytes = AlignParticleBytes(ParticleBytes);
-				ParticleBytes += TypeDataPayloadSize;
-			}
+		AddTypeDataParticlePayloadOffset(Cache, TypeData, ParticleBytes);
+		AddInstancePayloadOffset(Cache, TypeData, TypeData, InstancePayloadSize);
 
-			AddInstancePayloadOffset(Cache, TypeData, TypeData, InstancePayloadSize);
-		}
-
-		if (Cache.SpawnModule == nullptr)
-		{
-			for (UParticleModule* Module : LODLevel->Modules)
-			{
-				if (Module != nullptr && Module->bEnabled && Module->IsSpawnRateModule())
-				{
-					Cache.SpawnModule = Cast<UParticleModuleSpawn>(Module);
-					break;
-				}
-			}
-		}
-
-		// Required / SpawnModule은 Modules 배열과 별개의 특수 모듈이므로 먼저 offset만 계산
-		if (Cache.RequiredModule != nullptr && Cache.RequiredModule->bEnabled)
-		{
-			AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
-			AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
-		}
-		if (Cache.SpawnModule != nullptr && Cache.SpawnModule->bEnabled)
-		{
-			AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
-			AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
-		}
+		// LOD 0 특수 module 고정 layout
+		AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
+		AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
+		AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
+		AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
 
 		for (UParticleModule* Module : LODLevel->Modules)
 		{
-			if (Module == nullptr || !Module->bEnabled || Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
+			if (Module == nullptr || Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
 			{
 				continue;
 			}
 
-			if (Module->IsSpawnModule())
-			{
-				Cache.SpawnModules.push_back(Module);
-			}
-
-			if (Module->IsUpdateModule())
-			{
-				Cache.UpdateModules.push_back(Module);
-			}
-
+			// LOD 0 module slot 고정 layout
 			AddParticlePayloadOffset(Cache, Module, TypeData, ParticleBytes);
 			AddInstancePayloadOffset(Cache, Module, TypeData, InstancePayloadSize);
 		}
 
 		Cache.ParticleStride = AlignParticleBytes(ParticleBytes);
 		Cache.InstancePayloadSize = AlignParticleBytes(InstancePayloadSize);
+		return Cache;
+	}
+
+	FParticleLODLevelRuntimeCache BuildLODLevelRuntimeCacheFromStableLayout(
+		const UParticleLODLevel* LODLevel,
+		const UParticleLODLevel* LayoutLODLevel,
+		const FParticleLODLevelRuntimeCache& StableLayoutCache)
+	{
+		FParticleLODLevelRuntimeCache Cache;
+		Cache.ParticleStride = StableLayoutCache.ParticleStride;
+		Cache.PayloadOffset = StableLayoutCache.PayloadOffset;
+		Cache.InstancePayloadSize = StableLayoutCache.InstancePayloadSize;
+
+		if (LODLevel == nullptr || LayoutLODLevel == nullptr)
+		{
+			return Cache;
+		}
+
+		Cache.RequiredModule = LODLevel->RequiredModule;
+		Cache.SpawnModule = ResolveSpawnModule(LODLevel);
+		Cache.TypeDataModule = LODLevel->TypeDataModule;
+
+		// 특수 module stable offset
+		CopyStablePayloadOffsets(Cache, Cache.RequiredModule, StableLayoutCache.RequiredModule, StableLayoutCache);
+		CopyStablePayloadOffsets(Cache, Cache.SpawnModule, StableLayoutCache.SpawnModule, StableLayoutCache);
+		CopyStablePayloadOffsets(Cache, Cache.TypeDataModule, StableLayoutCache.TypeDataModule, StableLayoutCache);
+
+		const int32 SharedModuleCount = std::min(
+			static_cast<int32>(LODLevel->Modules.size()),
+			static_cast<int32>(LayoutLODLevel->Modules.size()));
+		for (int32 ModuleIndex = 0; ModuleIndex < SharedModuleCount; ++ModuleIndex)
+		{
+			UParticleModule* Module = LODLevel->Modules[static_cast<size_t>(ModuleIndex)];
+			UParticleModule* LayoutModule = LayoutLODLevel->Modules[static_cast<size_t>(ModuleIndex)];
+			CopyStablePayloadOffsets(Cache, Module, LayoutModule, StableLayoutCache);
+
+			// 특수 module 실행 목록 제외
+			if (Module == nullptr ||
+				Module == Cache.RequiredModule ||
+				Module == Cache.SpawnModule ||
+				Module == Cache.TypeDataModule)
+			{
+				continue;
+			}
+
+			// 현재 LOD 실행 목록
+			AddEnabledModuleExecution(Cache, Module);
+		}
+
 		return Cache;
 	}
 
@@ -986,11 +1102,117 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 	LODLevelRuntimeCaches.clear();
 	LODLevelRuntimeCaches.reserve(LODLevels.size());
 
-	for (const UParticleLODLevel* LODLevel : LODLevels)
+	if (LODLevels.empty())
 	{
-		FParticleLODLevelRuntimeCache Cache = BuildLODLevelRuntimeCache(LODLevel);
-		LODLevelRuntimeCaches.push_back(Cache);
+		return;
 	}
+
+	const UParticleLODLevel* LayoutLODLevel = LODLevels[0];
+	const FParticleLODLevelRuntimeCache StableLayoutCache = BuildStableLOD0RuntimeCache(LayoutLODLevel);
+	const bool bValidCascadeTopology = ValidateLODTopology(true);
+
+	for (int32 LODIndex = 0; LODIndex < static_cast<int32>(LODLevels.size()); ++LODIndex)
+	{
+		const UParticleLODLevel* LODLevel = LODLevels[static_cast<size_t>(LODIndex)];
+		const UParticleLODLevel* RuntimeLODLevel = (LODIndex == 0 || bValidCascadeTopology)
+			? LODLevel
+			: LayoutLODLevel;
+
+		// invalid topology LOD 0 fallback
+		LODLevelRuntimeCaches.push_back(
+			BuildLODLevelRuntimeCacheFromStableLayout(RuntimeLODLevel, LayoutLODLevel, StableLayoutCache));
+	}
+}
+
+bool UParticleEmitter::ValidateLODTopology(bool bLogWarnings) const
+{
+	if (LODLevels.empty() || !IsLiveObject(LODLevels[0]))
+	{
+		LogLODWarning(bLogWarnings, "LOD topology validation failed. LOD 0 is missing.");
+		return false;
+	}
+
+	const UParticleLODLevel* LayoutLODLevel = LODLevels[0];
+	const int32 LOD0MaxParticles = LayoutLODLevel->RequiredModule != nullptr
+		? LayoutLODLevel->RequiredModule->MaxParticles
+		: 1;
+
+	for (int32 LODIndex = 1; LODIndex < static_cast<int32>(LODLevels.size()); ++LODIndex)
+	{
+		const UParticleLODLevel* LODLevel = LODLevels[static_cast<size_t>(LODIndex)];
+		if (!IsLiveObject(LODLevel))
+		{
+			if (bLogWarnings)
+			{
+				UE_LOG_WARNING("[Particle] LOD topology validation failed. LOD %d is missing.", LODIndex);
+			}
+			return false;
+		}
+
+		if (!AreModuleClassesCompatible(LayoutLODLevel->RequiredModule, LODLevel->RequiredModule))
+		{
+			if (bLogWarnings)
+			{
+				UE_LOG_WARNING("[Particle] LOD topology validation failed. LOD %d RequiredModule class differs from LOD 0.", LODIndex);
+			}
+			return false;
+		}
+
+		if (!AreModuleClassesCompatible(LayoutLODLevel->SpawnModule, LODLevel->SpawnModule))
+		{
+			if (bLogWarnings)
+			{
+				UE_LOG_WARNING("[Particle] LOD topology validation failed. LOD %d SpawnModule class differs from LOD 0.", LODIndex);
+			}
+			return false;
+		}
+
+		if (!AreModuleClassesCompatible(LayoutLODLevel->TypeDataModule, LODLevel->TypeDataModule))
+		{
+			if (bLogWarnings)
+			{
+				UE_LOG_WARNING("[Particle] LOD topology validation failed. LOD %d TypeDataModule class differs from LOD 0.", LODIndex);
+			}
+			return false;
+		}
+
+		if (LODLevel->Modules.size() != LayoutLODLevel->Modules.size())
+		{
+			if (bLogWarnings)
+			{
+				UE_LOG_WARNING(
+					"[Particle] LOD topology validation failed. LOD %d module slot count differs from LOD 0.",
+					LODIndex);
+			}
+			return false;
+		}
+
+		for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(LayoutLODLevel->Modules.size()); ++ModuleIndex)
+		{
+			const UParticleModule* LayoutModule = LayoutLODLevel->Modules[static_cast<size_t>(ModuleIndex)];
+			const UParticleModule* LODModule = LODLevel->Modules[static_cast<size_t>(ModuleIndex)];
+			if (!AreModuleClassesCompatible(LayoutModule, LODModule))
+			{
+				if (bLogWarnings)
+				{
+					UE_LOG_WARNING(
+						"[Particle] LOD topology validation failed. LOD %d module slot %d class differs from LOD 0.",
+						LODIndex,
+						ModuleIndex);
+				}
+				return false;
+			}
+		}
+
+		if (LODLevel->RequiredModule != nullptr && LODLevel->RequiredModule->MaxParticles > LOD0MaxParticles && bLogWarnings)
+		{
+			UE_LOG_WARNING(
+				"[Particle] LOD %d MaxParticles is greater than LOD 0. Runtime hard capacity remains LOD 0 MaxParticles.",
+				LODIndex);
+		}
+	}
+
+	return true;
 }
 
 TArray<int32> UParticleEmitter::CalculateTotalPayloadSize() const
@@ -998,9 +1220,17 @@ TArray<int32> UParticleEmitter::CalculateTotalPayloadSize() const
 	TArray<int32> Result;
 	Result.reserve(LODLevels.size());
 
-	for (const UParticleLODLevel* LODLevel : LODLevels)
+	if (LODLevels.empty())
 	{
-		Result.push_back(BuildLODLevelRuntimeCache(LODLevel).ParticleStride);
+		return Result;
+	}
+
+	const UParticleLODLevel* LayoutLODLevel = LODLevels[0];
+	const FParticleLODLevelRuntimeCache StableLayoutCache = BuildStableLOD0RuntimeCache(LayoutLODLevel);
+	for (int32 LODIndex = 0; LODIndex < static_cast<int32>(LODLevels.size()); ++LODIndex)
+	{
+		(void)LODIndex;
+		Result.push_back(StableLayoutCache.ParticleStride);
 	}
 
 	return Result;

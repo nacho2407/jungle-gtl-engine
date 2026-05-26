@@ -25,6 +25,29 @@ namespace
 			IsLiveObject(Instance->CurrentLODLevel) &&
 			Instance->CurrentLODLevel->bSolo;
 	}
+
+	UParticleLODLevel* GetLODLevel(UParticleEmitter* EmitterTemplate, int32 LODIndex)
+	{
+		// template / index 방어
+		if (!IsLiveObject(EmitterTemplate) ||
+			LODIndex < 0 ||
+			LODIndex >= static_cast<int32>(EmitterTemplate->LODLevels.size()))
+		{
+			return nullptr;
+		}
+
+		// live LOD만 반환
+		UParticleLODLevel* LODLevel = EmitterTemplate->LODLevels[static_cast<size_t>(LODIndex)];
+		return IsLiveObject(LODLevel) ? LODLevel : nullptr;
+	}
+
+	UParticleModuleTypeDataBase* GetLiveTypeData(UParticleLODLevel* LODLevel)
+	{
+		// null TypeData 허용
+		return IsLiveObject(LODLevel) && IsLiveObject(LODLevel->TypeDataModule)
+			? LODLevel->TypeDataModule
+			: nullptr;
+	}
 }
 
 class UParticleSystemComponent::FInstanceOwner : public IParticleEmitterInstanceOwner
@@ -437,22 +460,32 @@ int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* Emit
 
 void UParticleSystemComponent::UpdateLODLevel()
 {
-	// TODO: 현재 방식은 거리 기반 LOD 선택 구현
-	// CurrentLODLevelIndex 갱신
-	// LOD 변경 시 EmitterInstance 재생성
-	// 기존 Particle 유지형 LOD 전환은 미구현
-
-	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
 	{
-		if (Instance != nullptr &&
-			Instance->SpriteTemplate != nullptr &&
-			Instance->CurrentLODLevelIndex != SelectLODLevelIndex(Instance->SpriteTemplate))
+		FParticleEmitterInstance* Instance = EmitterInstances[static_cast<size_t>(EmitterIndex)];
+		if (Instance == nullptr || Instance->SpriteTemplate == nullptr)
 		{
-			// 선택 LOD가 바뀌면 TypeData 종류와 payload layout도 달라질 수 있으므로 모든 instance를 다시 생성
-			ReleaseRenderData();
-			ReleaseEmitterInstances();
-			CreateEmitterInstances();
-			return;
+			continue;
+		}
+
+		// 거리 기반 LOD 선택
+		int32 NewLODIndex = SelectLODLevelIndex(Instance->SpriteTemplate);
+		if (NewLODIndex != 0 && !Instance->SpriteTemplate->ValidateLODTopology(false))
+		{
+			// invalid topology fallback
+			NewLODIndex = 0;
+		}
+
+		if (Instance->CurrentLODLevelIndex == NewLODIndex)
+		{
+			continue;
+		}
+
+		// Cascade-style LOD 전환
+		if (!Instance->SetCurrentLODIndex(NewLODIndex))
+		{
+			UE_LOG_WARNING("[Particle] LOD switch failed. Falling back to LOD 0.");
+			Instance->SetCurrentLODIndex(0);
 		}
 	}
 }
@@ -467,36 +500,61 @@ void UParticleSystemComponent::CreateEmitterInstances()
 
 	for (UParticleEmitter* EmitterTemplate : ParticleSystem->Emitters)
 	{
+		// 유효한 emitter asset만 instance화
 		if (!IsLiveObject(EmitterTemplate))
 		{
 			continue;
 		}
 
-		EmitterTemplate->CacheEmitterModuleInfo();
-
-		// LOD 기반으로 Particle LOD Level 및 TypeData를 가져온다
+		// 현재 거리 기준 LOD 선택
 		const int32 LODIndex = SelectLODLevelIndex(EmitterTemplate);
-		UParticleLODLevel* LODLevel = EmitterTemplate->LODLevels.empty() ? nullptr : EmitterTemplate->LODLevels[LODIndex];
-		UParticleModuleTypeDataBase* TypeData = IsLiveObject(LODLevel) && IsLiveObject(LODLevel->TypeDataModule)
-			? LODLevel->TypeDataModule
-			: nullptr;
-
-		if (TypeData == nullptr)
-		{
-			UE_LOG_WARNING("[Particle] Emitter has no TypeDataModule. Falling back to base particle emitter instance.");
-		}
-
-		FParticleEmitterInstance* Instance = TypeData != nullptr
-			? TypeData->CreateInstance(EmitterTemplate, *InstanceOwner)
-			: new FParticleEmitterInstance(*InstanceOwner);
-
-		if (Instance != nullptr && Instance->Init(EmitterTemplate, LODIndex))
+		if (FParticleEmitterInstance* Instance = CreateEmitterInstanceForLOD(EmitterTemplate, LODIndex))
 		{
 			EmitterInstances.push_back(Instance);
 		}
-		else
-		{
-			delete Instance;
-		}
 	}
+}
+
+FParticleEmitterInstance* UParticleSystemComponent::CreateEmitterInstanceForLOD(
+	UParticleEmitter* EmitterTemplate,
+	int32 LODIndex)
+{
+	// template 방어
+	if (!IsLiveObject(EmitterTemplate))
+	{
+		return nullptr;
+	}
+
+	// runtime cache 최신화
+	EmitterTemplate->CacheEmitterModuleInfo();
+
+	if (LODIndex != 0 && !EmitterTemplate->ValidateLODTopology(false))
+	{
+		// invalid topology fallback
+		LODIndex = 0;
+	}
+
+	// LOD / TypeData 조회
+	UParticleLODLevel* LODLevel = GetLODLevel(EmitterTemplate, LODIndex);
+	UParticleModuleTypeDataBase* TypeData = GetLiveTypeData(LODLevel);
+
+	if (TypeData == nullptr)
+	{
+		UE_LOG_WARNING("[Particle] Emitter has no TypeDataModule. Falling back to base particle emitter instance.");
+	}
+
+	// TypeData factory 또는 base instance
+	FParticleEmitterInstance* Instance = TypeData != nullptr
+		? TypeData->CreateInstance(EmitterTemplate, *InstanceOwner)
+		: new FParticleEmitterInstance(*InstanceOwner);
+
+	// LOD 기준 초기화
+	if (Instance != nullptr && Instance->Init(EmitterTemplate, LODIndex))
+	{
+		return Instance;
+	}
+
+	// init 실패 정리
+	delete Instance;
+	return nullptr;
 }
