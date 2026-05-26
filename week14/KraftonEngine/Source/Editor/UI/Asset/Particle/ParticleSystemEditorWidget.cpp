@@ -52,6 +52,7 @@ namespace
 		bool bSelect = false;
 		bool bDelete = false;
 		bool bRefresh = false;
+		bool bToggleEnabled = false;
 		bool bDuplicateFromHigher = false;
 		bool bShareFromHigher = false;
 		bool bDuplicateFromHighest = false;
@@ -300,23 +301,54 @@ namespace
 		}
 	}
 
+	bool IsModuleEnableToggleAllowed(const UParticleModule* Module)
+	{
+		return Module
+			&& !Cast<UParticleModuleRequired>(Module)
+			&& !Cast<UParticleModuleTypeDataBase>(Module);
+	}
+
 	void DrawModuleRow(const char* Label, bool bSelected, const UParticleModule* Module, bool bDirectEditLocked = false)
 	{
 		const ImVec2 Pos = ImGui::GetCursorScreenPos();
 		const float Width = ImGui::GetContentRegionAvail().x;
+		constexpr float CheckSize = 13.0f;
+		constexpr float CheckPadding = 6.0f;
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		const ImU32 BackgroundColor = GetModuleRowBackgroundColor(Module, bSelected);
 		const ImU32 TextColor = GetModuleRowTextColor(Module, bDirectEditLocked);
 		DrawList->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + ModuleRowHeight), BackgroundColor);
+		auto DrawEnabledCheck = [&]()
+		{
+			if (!IsModuleEnableToggleAllowed(Module))
+			{
+				return;
+			}
+
+			const ImVec2 CheckMin(Pos.x + Width - CheckPadding - CheckSize, Pos.y + (ModuleRowHeight - CheckSize) * 0.5f);
+			const ImVec2 CheckMax(CheckMin.x + CheckSize, CheckMin.y + CheckSize);
+			const ImU32 FillColor = Module->IsEnabled() ? IM_COL32(58, 65, 72, 255) : IM_COL32(24, 26, 30, 255);
+			const ImU32 BorderColor = bDirectEditLocked ? IM_COL32(130, 134, 138, 190) : IM_COL32(205, 210, 216, 230);
+			DrawList->AddRectFilled(CheckMin, CheckMax, FillColor, 1.0f);
+			DrawList->AddRect(CheckMin, CheckMax, BorderColor, 1.0f);
+			if (Module->IsEnabled())
+			{
+				DrawList->AddLine(ImVec2(CheckMin.x + 3.0f, CheckMin.y + 7.0f), ImVec2(CheckMin.x + 5.8f, CheckMin.y + 10.0f), IM_COL32(235, 238, 242, 255), 1.4f);
+				DrawList->AddLine(ImVec2(CheckMin.x + 5.8f, CheckMin.y + 10.0f), ImVec2(CheckMin.x + 10.0f, CheckMin.y + 3.5f), IM_COL32(235, 238, 242, 255), 1.4f);
+			}
+		};
+
 		if (bDirectEditLocked)
 		{
 			DrawLockedModuleRowOverlay(DrawList, Pos, Width);
 			const ImVec2 TextPos(Pos.x + 8.0f, Pos.y + 4.0f);
 			DrawList->AddText(ImVec2(TextPos.x + 1.0f, TextPos.y + 1.0f), IM_COL32(0, 0, 0, 220), Label);
 			DrawList->AddText(TextPos, TextColor, Label);
+			DrawEnabledCheck();
 			return;
 		}
 		DrawList->AddText(ImVec2(Pos.x + 8.0f, Pos.y + 4.0f), TextColor, Label);
+		DrawEnabledCheck();
 	}
 
 	void StartModuleDragSource(const FParticleModuleDragPayload& DragPayload, const char* Label)
@@ -452,10 +484,17 @@ namespace
 
 		const ImVec2 Pos = ImGui::GetCursorScreenPos();
 		const float Width = ImGui::GetContentRegionAvail().x;
+		constexpr float EnableHitWidth = 24.0f;
+		const bool bCanToggleEnabled = IsModuleEnableToggleAllowed(Module) && !bDirectEditLocked;
 
 		DrawModuleRow(Label, bSelected, Module, bDirectEditLocked);
+		if (bCanToggleEnabled)
+		{
+			ImGui::SetCursorScreenPos(ImVec2(Pos.x + Width - EnableHitWidth, Pos.y));
+			Action.bToggleEnabled = ImGui::InvisibleButton("##ToggleModuleEnabled", ImVec2(EnableHitWidth, ModuleRowHeight));
+		}
 		ImGui::SetCursorScreenPos(Pos);
-		Action.bSelect = ImGui::InvisibleButton("##SelectModuleRow", ImVec2(Width, ModuleRowHeight));
+		Action.bSelect = ImGui::InvisibleButton("##SelectModuleRow", ImVec2(bCanToggleEnabled ? (std::max)(1.0f, Width - EnableHitWidth) : Width, ModuleRowHeight));
 		RenderModuleContextMenu(Action, bCanDelete, bCanOverrideFromHigher, bCanOverrideFromHighest, Pos, ImVec2(Pos.x + Width, Pos.y + ModuleRowHeight));
 		if (DragPayload)
 		{
@@ -908,6 +947,16 @@ void FParticleSystemEditorWidget::Tick(float DeltaTime)
 	if (ViewportClient.IsRenderable())
 	{
 		ViewportClient.Tick(DeltaTime);
+	}
+
+	if (PreviewParticleComponent)
+	{
+		const int32 DesiredPreviewLODIndex = GetCurrentSystemLODIndex(GetParticleSystem());
+		if (PreviewParticleComponent->GetPreviewLODIndex() != DesiredPreviewLODIndex)
+		{
+			PreviewParticleComponent->SetPreviewLODIndex(DesiredPreviewLODIndex);
+			ViewState.bRestartPreviewRequested = true;
+		}
 	}
 
 	if (ViewState.bRestartPreviewRequested)
@@ -1565,16 +1614,6 @@ void FParticleSystemEditorWidget::RenderToolbar()
 
 	ImGui::SameLine(0.0f, 18.0f);
 	ImGui::BeginDisabled(!bCanUseLODControls);
-	if (DrawParticleToolbarIconButton("##ParticleRegenLowestFromHighest", L"icon_Cascade_RegenLOD1_40x.png", "Regen LOD", "Regenerate Lowest LOD by duplicating Highest LOD"))
-	{
-		RegenerateLowestLOD(/*bDuplicateHighest=*/true);
-	}
-	ImGui::SameLine();
-	if (DrawParticleToolbarIconButton("##ParticleRegenLowest", L"icon_Cascade_RegenLOD2_40x.png", "Regen LOD", "Regenerate Lowest LOD from the next higher LOD"))
-	{
-		RegenerateLowestLOD(/*bDuplicateHighest=*/false);
-	}
-	ImGui::SameLine();
 	if (DrawParticleToolbarIconButton("##ParticleLowestLOD", L"icon_Cascade_LowestLOD_40x.png", "Lowest LOD", "Select Lowest LOD"))
 	{
 		SelectExtremeLOD(/*bLowest=*/true);
@@ -1586,14 +1625,6 @@ void FParticleSystemEditorWidget::RenderToolbar()
 	}
 	ImGui::SameLine();
 	ImGui::EndDisabled();
-
-	ImGui::BeginDisabled(!bCanAddLOD);
-	if (DrawParticleToolbarIconButton("##ParticleAddLODBefore", L"icon_Cascade_AddLOD2_40x.png", "Add LOD", "Add LOD Before Current"))
-	{
-		AddLODToSystem(/*bInsertAfterCurrent=*/false);
-	}
-	ImGui::EndDisabled();
-	ImGui::SameLine();
 
 	ImGui::AlignTextToFramePadding();
 	ImGui::TextUnformatted("LOD:");
@@ -1700,6 +1731,7 @@ void FParticleSystemEditorWidget::CreatePreviewWorld()
 	PreviewActor = WorldContext.World->SpawnActor<AActor>();
 	PreviewParticleComponent = PreviewActor->AddComponent<UParticleSystemComponent>();
 	PreviewParticleComponent->SetTemplate(GetParticleSystem());
+	PreviewParticleComponent->SetPreviewLODIndex(GetCurrentSystemLODIndex(GetParticleSystem()));
 	PreviewParticleComponent->SetPreviewSoloEmitterIndex(ViewState.SoloEmitterIndex);
 	PreviewParticleComponent->ResetSystem();
 	PreviewParticleComponent->Activate();
@@ -1765,6 +1797,7 @@ void FParticleSystemEditorWidget::RestartPreviewSimulation()
 	}
 
 	PreviewParticleComponent->SetPreviewSoloEmitterIndex(ViewState.SoloEmitterIndex);
+	PreviewParticleComponent->SetPreviewLODIndex(GetCurrentSystemLODIndex(GetParticleSystem()));
 	PreviewParticleComponent->ResetSystem();
 	PreviewParticleComponent->Activate();
 	PreviewParticleComponent->MarkRenderStateDirty();
@@ -1792,6 +1825,7 @@ void FParticleSystemEditorWidget::RefreshParticleSystemComponents()
 		if (Component == PreviewParticleComponent)
 		{
 			Component->SetPreviewSoloEmitterIndex(ViewState.SoloEmitterIndex);
+			Component->SetPreviewLODIndex(GetCurrentSystemLODIndex(ParticleSystem));
 		}
 		Component->ResetSystem();
 		if (bWasActive)
@@ -1880,7 +1914,10 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 		const EParticleModuleEditState ModuleEditState = (!bTypeDataSelection && SelectedLOD)
 			? SelectedLOD->GetModuleEditState(ViewState.Selection.ModuleIndex)
 			: (CurrentLODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
-		const bool bModuleReadOnly = !CanDirectEditModulesInLOD(CurrentLODIndex) && (bTypeDataSelection || ModuleEditState == EParticleModuleEditState::InheritedLocked);
+		const bool bModuleReadOnly = !CanDirectEditModulesInLOD(CurrentLODIndex)
+			&& (bTypeDataSelection
+				|| ModuleEditState == EParticleModuleEditState::InheritedLocked
+				|| ModuleEditState == EParticleModuleEditState::Shared);
 		if (BeginDetailsTable("##ParticleModuleSummaryTable"))
 		{
 			const UParticleModuleTypeDataBase* TypeDataModule = Cast<UParticleModuleTypeDataBase>(SelectedModule);
@@ -2012,11 +2049,6 @@ void FParticleSystemEditorWidget::ApplyEditedObjectSideEffects(UObject* Object)
 	if (UParticleModuleRequired* RequiredModule = Cast<UParticleModuleRequired>(Object))
 	{
 		RequiredModule->Material = nullptr;
-		if (UParticleEmitter* Emitter = const_cast<UParticleEmitter*>(GetSelectedEmitter(GetParticleSystem())))
-		{
-			Emitter->SetEmitterDuration(RequiredModule->EmitterDuration);
-			Emitter->SetLooping(RequiredModule->bLooping);
-		}
 	}
 
 	if (UParticleModuleTypeDataMesh* MeshTypeData = Cast<UParticleModuleTypeDataMesh>(Object))
@@ -2480,6 +2512,65 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			return true;
 		};
 
+		auto DeleteModuleAcrossLODs = [&](int32 ModuleIndex) -> bool
+		{
+			if (!Emitter || ModuleIndex < 0)
+			{
+				return false;
+			}
+
+			TArray<UParticleModule*> RemovedModules;
+			for (int32 LODIndex = 0; LODIndex < static_cast<int32>(Emitter->GetLODLevels().size()); ++LODIndex)
+			{
+				UParticleLODLevel* TargetLODLevel = Emitter->GetLODLevel(LODIndex);
+				if (!TargetLODLevel)
+				{
+					continue;
+				}
+
+				TArray<UParticleModule*>& TargetModules = TargetLODLevel->GetMutableModules();
+				if (ModuleIndex >= static_cast<int32>(TargetModules.size()))
+				{
+					continue;
+				}
+
+				UParticleModule* RemovedModule = TargetModules[ModuleIndex];
+				TargetModules.erase(TargetModules.begin() + ModuleIndex);
+
+				TArray<EParticleModuleEditState>& TargetEditStates = TargetLODLevel->GetMutableModuleEditStates();
+				if (ModuleIndex < static_cast<int32>(TargetEditStates.size()))
+				{
+					TargetEditStates.erase(TargetEditStates.begin() + ModuleIndex);
+				}
+				TargetLODLevel->NormalizeModuleEditStates(LODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+
+				if (RemovedModule && std::find(RemovedModules.begin(), RemovedModules.end(), RemovedModule) == RemovedModules.end())
+				{
+					RemovedModules.push_back(RemovedModule);
+				}
+			}
+
+			for (UParticleModule* RemovedModule : RemovedModules)
+			{
+				UObjectManager::Get().DestroyObject(RemovedModule);
+			}
+
+			UParticleLODLevel* SelectionLODLevel = Emitter->GetLODLevel(DisplayLODIndex);
+			const int32 RemainingModuleCount = SelectionLODLevel ? static_cast<int32>(SelectionLODLevel->GetModules().size()) : 0;
+			if (RemainingModuleCount <= 0)
+			{
+				SelectLOD(EmitterIndex, DisplayLODIndex);
+			}
+			else
+			{
+				SelectModule(EmitterIndex, DisplayLODIndex, (std::min)(ModuleIndex, RemainingModuleCount - 1));
+			}
+
+			MarkDirty();
+			RefreshParticleSystemComponents();
+			return !RemovedModules.empty();
+		};
+
 		const ImVec2 HeaderMin = ImGui::GetCursorScreenPos();
 		const float HeaderWidth = ImGui::GetContentRegionAvail().x;
 		const ImVec2 HeaderMax(HeaderMin.x + HeaderWidth, HeaderMin.y + EmitterHeaderHeight);
@@ -2638,7 +2729,8 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				{
 					UParticleModule* Module = LODLevel->ResolveModule(ModuleIndex, Emitter);
 					const EParticleModuleEditState ModuleEditState = LODLevel->GetModuleEditState(ModuleIndex);
-					const bool bModuleInheritedLocked = !bCanDirectEditModules && ModuleEditState == EParticleModuleEditState::InheritedLocked;
+					const bool bModuleInheritedLocked = !bCanDirectEditModules
+						&& (ModuleEditState == EParticleModuleEditState::InheritedLocked || ModuleEditState == EParticleModuleEditState::Shared);
 					const bool bHasHigherModule = DisplayLODIndex > 0 && GetModuleFromLOD(DisplayLODIndex - 1, ModuleIndex) != nullptr;
 					const bool bHasHighestModule = DisplayLODIndex > 0 && GetModuleFromLOD(0, ModuleIndex) != nullptr;
 					const bool bDeleteLocked = IsModuleDeleteLocked(Module);
@@ -2649,10 +2741,10 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 						GetModuleDisplayName(Module),
 						Module,
 						IsModuleSelected(EmitterIndex, DisplayLODIndex, ModuleIndex),
-						bCanDirectEditModules && !bDeleteLocked,
+						!bDeleteLocked,
 						bModuleInheritedLocked,
-						bModuleInheritedLocked && bHasHigherModule,
-						bModuleInheritedLocked && bHasHighestModule,
+						bHasHigherModule,
+						bHasHighestModule,
 						(bCanDirectEditModules && !bOrderLocked) ? &DragPayload : nullptr,
 						bCanDirectEditModules ? &DropRequest : nullptr,
 						EmitterIndex,
@@ -2666,29 +2758,18 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 					bModuleContextMenuOpen |= Action.bContextMenuOpen;
 					ImGui::PopID();
 
-					if (Action.bDelete && bCanDirectEditModules && !bDeleteLocked)
+					if (Action.bToggleEnabled && Module && !bModuleInheritedLocked)
 					{
-						UParticleModule* RemovedModule = Modules[ModuleIndex];
-						Modules.erase(Modules.begin() + ModuleIndex);
-						TArray<EParticleModuleEditState>& ModuleEditStates = LODLevel->GetMutableModuleEditStates();
-						if (ModuleIndex >= 0 && ModuleIndex < static_cast<int32>(ModuleEditStates.size()))
-						{
-							ModuleEditStates.erase(ModuleEditStates.begin() + ModuleIndex);
-						}
-						LODLevel->NormalizeModuleEditStates(DisplayLODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
-						UObjectManager::Get().DestroyObject(RemovedModule);
-						if (Modules.empty())
-						{
-							SelectLOD(EmitterIndex, DisplayLODIndex);
-						}
-						else
-						{
-							const int32 NewModuleIndex = (std::min)(ModuleIndex, static_cast<int32>(Modules.size()) - 1);
-							SelectModule(EmitterIndex, DisplayLODIndex, NewModuleIndex);
-						}
+						Module->SetEnabled(!Module->IsEnabled());
+						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);
+						ApplyEditedObjectSideEffects(Module);
 						MarkDirty();
 						RefreshParticleSystemComponents();
 						bModuleListMutated = true;
+					}
+					else if (Action.bDelete && !bDeleteLocked)
+					{
+						bModuleListMutated = DeleteModuleAcrossLODs(ModuleIndex);
 					}
 					else if (Action.bRefresh)
 					{

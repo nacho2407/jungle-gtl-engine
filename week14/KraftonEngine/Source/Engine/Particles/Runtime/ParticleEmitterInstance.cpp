@@ -33,10 +33,12 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	CollisionEventQueue.clear();
 	EmitterTime += DeltaTime;
 
-	const float Duration = SpriteTemplate->GetEmitterDuration();
+	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+	const float Duration = RequiredModule ? RequiredModule->EmitterDuration : SpriteTemplate->GetEmitterDuration();
 	if (Duration > 0.0f && EmitterTime >= Duration)
 	{
-		if (SpriteTemplate->IsLooping())
+		const bool bLooping = RequiredModule ? RequiredModule->bLooping : SpriteTemplate->IsLooping();
+		if (bLooping)
 		{
 			while (EmitterTime >= Duration)
 			{
@@ -330,12 +332,14 @@ const FBaseParticle& FParticleEmitterInstance::GetParticleBySlot(int32 ParticleS
 
 UParticleModuleRequired* FParticleEmitterInstance::GetRequiredModule() const
 {
-	return CurrentLODLevel ? CurrentLODLevel->FindResolvedModule<UParticleModuleRequired>(SpriteTemplate) : nullptr;
+	UParticleModuleRequired* RequiredModule = CurrentLODLevel ? CurrentLODLevel->FindResolvedModule<UParticleModuleRequired>(SpriteTemplate) : nullptr;
+	return RequiredModule && RequiredModule->IsEnabled() ? RequiredModule : nullptr;
 }
 
 UParticleModuleSpawn* FParticleEmitterInstance::GetSpawnModule() const
 {
-	return CurrentLODLevel ? CurrentLODLevel->FindResolvedModule<UParticleModuleSpawn>(SpriteTemplate) : nullptr;
+	UParticleModuleSpawn* SpawnModule = CurrentLODLevel ? CurrentLODLevel->FindResolvedModule<UParticleModuleSpawn>(SpriteTemplate) : nullptr;
+	return SpawnModule && SpawnModule->IsEnabled() ? SpawnModule : nullptr;
 
 }
 
@@ -378,7 +382,7 @@ void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float Sp
 	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 	{
 		UParticleModule* Module = CurrentLODLevel->ResolveModule(ModuleIndex, SpriteTemplate);
-		if (Module && Module->IsSpawnModule())
+		if (Module && Module->IsEnabled() && Module->IsSpawnModule())
 		{
 			Module->Spawn(this, PayloadOffset, SpawnTime, Particle);
 		}
@@ -404,7 +408,7 @@ void FParticleEmitterInstance::RunUpdateModules(float DeltaTime)
 	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 	{
 		UParticleModule* Module = CurrentLODLevel->ResolveModule(ModuleIndex, SpriteTemplate);
-		if (Module && Module->IsUpdateModule())
+		if (Module && Module->IsEnabled() && Module->IsUpdateModule())
 		{
 			Module->Update(this, PayloadOffset, DeltaTime);
 		}

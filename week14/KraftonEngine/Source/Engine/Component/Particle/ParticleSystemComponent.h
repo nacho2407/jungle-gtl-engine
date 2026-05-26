@@ -38,6 +38,8 @@ public:
 
 	const TArray<FParticleEmitterInstance*>& GetEmitterInstances() const { return EmitterInstances; }
 	int32 GetCurrentLODIndex() const { return CurrentLODIndex; }
+	void SetPreviewLODIndex(int32 InLODIndex);
+	int32 GetPreviewLODIndex() const { return PreviewLODIndex; }
 	void SetPreviewSoloEmitterIndex(int32 InEmitterIndex);
 	int32 GetPreviewSoloEmitterIndex() const { return PreviewSoloEmitterIndex; }
 	void BroadcastParticleCollisionEvent(const FParticleCollisionEventPayload& Event);
@@ -56,6 +58,7 @@ private:
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TObjectPtr<UParticleSystem> ParticleSystem;
 	int32 CurrentLODIndex = 0;
+	int32 PreviewLODIndex = -1;
 	int32 PreviewSoloEmitterIndex = -1;
 
 	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Particle System", AssetType="UParticleSystem")

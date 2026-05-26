@@ -19,9 +19,15 @@ public:
 
 	virtual bool IsSpawnModule() const { return false; }
 	virtual bool IsUpdateModule() const { return false; }
+	bool IsEnabled() const { return bEnabled; }
+	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
 
 	virtual void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) {}
 	virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) {}
+
+private:
+	UPROPERTY(Save, Category="Particle|Module", DisplayName="Enabled")
+	bool bEnabled = true;
 };
 
 UCLASS()
