@@ -10,6 +10,9 @@ UParticleModuleSpawnPerUnit::UParticleModuleSpawnPerUnit()
 {
 	bSpawnModule = false;
 	bUpdateModule = false;
+	bProcessSpawnRate = true;
+	bProcessBurstList = true;
+	SpawnPerUnit = 1.0f;
 	MovementTolerance = 0.1f;
 }
 

@@ -298,7 +298,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 		Ctx->IASetVertexBuffers(1, 1, &Cmd.Buffer.InstanceVB,
 			&Cmd.Buffer.InstanceStride, &Offset);
 		Ctx->DrawIndexedInstanced(Cmd.Buffer.IndexCount,
-			Cmd.Buffer.InstanceCount, 0, 0, 0);
+			Cmd.Buffer.InstanceCount, Cmd.Buffer.FirstIndex, Cmd.Buffer.BaseVertex, 0);
 	}
 	else if(Cmd.Buffer.IndexCount > 0)
 	{

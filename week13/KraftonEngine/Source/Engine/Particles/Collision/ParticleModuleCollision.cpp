@@ -14,11 +14,15 @@ UParticleModuleCollision::UParticleModuleCollision()
 
 void UParticleModuleCollision::Update(const FUpdateContext& Context)
 {
+	if (!Context.Owner.Component)
+	{
+		return;
+	}
+
 	UParticleLODLevel* LODLevel = Context.Owner.GetCurrentLODLevelChecked();
 	UParticleModuleEventGenerator* EventGenerator = LODLevel->EventGenerator;
-
-	if (!EventGenerator || !EventGenerator->bGenerateCollisionEvents)
-		return;
+	const bool bEmitCollisionEvent = EventGenerator && EventGenerator->bEnabled && EventGenerator->bGenerateCollisionEvents;
+	(void)bEmitCollisionEvent;
 
 	BEGIN_UPDATE_LOOP
 	{
@@ -26,10 +30,15 @@ void UParticleModuleCollision::Update(const FUpdateContext& Context)
 		FHitResult HitResult;
 		if (PerformCollisionCheck(&Context.Owner, &Particle, HitResult, Context.Owner.Component->GetOwner(), Particle.Location, NextLocation))
 		{
-			UE_LOG("Hit");
 			if (bKillOnCollision)
 			{
 				Particle.RelativeTime = 1.0f;
+			}
+			else
+			{
+				FVector HitNormal = HitResult.ImpactNormal.IsNearlyZero() ? HitResult.WorldNormal : HitResult.ImpactNormal;
+				HitNormal = HitNormal.GetSafeNormal(1.0e-6f, FVector::ZAxisVector);
+				Particle.Velocity = (Particle.Velocity - HitNormal * (2.0f * Particle.Velocity.Dot(HitNormal))) * Restitution;
 			}
 		}
 	}
