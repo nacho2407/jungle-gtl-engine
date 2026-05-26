@@ -1,7 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
+#include "Math/Quat.h"
 #include "Core/Types/RayTypes.h"
 #include "Core/Types/CollisionTypes.h"
 
@@ -9,6 +10,7 @@ class UWorld;
 class AActor;
 class UPrimitiveComponent;
 struct FHitResult;
+struct FCollisionShape;
 
 // 물리 백엔드 선택
 enum class EPhysicsBackend : uint8
@@ -70,6 +72,10 @@ public:
 	virtual bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
 		const AActor* IgnoreActor = nullptr) const = 0;
+
+	virtual bool Sweep(const FVector& Start, const FVector& Dir, float MaxDist,
+		const FCollisionShape& Shape, const FQuat& ShapeRot, FHitResult& OutHit,
+		ECollisionChannel TraceChannel, const AActor* IgnoreActor) const = 0;
 
 	// ObjectType 기반 Raycast — UE의 LineTraceSingleByObjectType 대응.
 	//   ObjectTypeMask: bit i = ECollisionChannel(i)의 shape를 hit 후보로 둘지.

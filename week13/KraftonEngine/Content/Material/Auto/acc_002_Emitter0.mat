@@ -1,6 +1,7 @@
 {
   "BlendState" : "AlphaBlend",
   "Compiled" : {
+    "GeneratorVersion" : "ParticleSpriteFog_v5",
     "GraphHash" : "940C6C856F3457F4",
     "Parameters" : {
 
