@@ -38,7 +38,8 @@ FBloomPass::FBloomPass()
 bool FBloomPass::BeginPass(const FPassContext& Ctx)
 {
 	const FFrameContext& Frame = Ctx.Frame;
-	return Frame.SceneColorCopyTexture
+	return Frame.RenderOptions.ShowFlags.bBloom
+		&& Frame.SceneColorCopyTexture
 		&& Frame.ViewportRenderTexture
 		&& Frame.SceneColorCopySRV
 		&& Frame.BloomRTVA
