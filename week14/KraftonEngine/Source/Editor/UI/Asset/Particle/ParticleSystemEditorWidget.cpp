@@ -1135,10 +1135,9 @@ namespace
 
 		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSpawn>());
 		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLifetime>());
-		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleLocation>());
+		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSize>());
 		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());
 		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleColor>());
-		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleSize>());
 		LODLevel->SetAllModuleEditStates(EParticleModuleEditState::Duplicated);
 		return LODLevel;
 	}

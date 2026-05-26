@@ -60,7 +60,7 @@ class UParticleModuleSpawn : public UParticleModule
 public:
 	GENERATED_BODY()
 	UPROPERTY(Edit, Save, Category="Particle|Spawn", DisplayName="Spawn Rate", Min=0.0f, Speed=0.1f)
-	float SpawnRate = 10.0f;
+	float SpawnRate = 20.0f;
 
 	virtual bool IsSpawnModule() const override { return true; }
 };
@@ -72,6 +72,7 @@ public:
 	GENERATED_BODY()
 	UParticleModuleLifetime()
 	{
+		Lifetime.Mode = EDistributionValueMode::Uniform;
 		Lifetime.Constant = 1.0f;
 		Lifetime.MinValue = 1.0f;
 		Lifetime.MaxValue = 1.0f;
@@ -116,9 +117,10 @@ public:
 	GENERATED_BODY()
 	UParticleModuleVelocity()
 	{
-		StartVelocity.Constant = FVector(0.0f, 100.0f, 0.0f);
-		StartVelocity.MinValue = StartVelocity.Constant;
-		StartVelocity.MaxValue = StartVelocity.Constant;
+		StartVelocity.Mode = EDistributionValueMode::Uniform;
+		StartVelocity.Constant = FVector::ZeroVector;
+		StartVelocity.MinValue = FVector(-10.0f, -10.0f, 50.0f);
+		StartVelocity.MaxValue = FVector(10.0f, 10.0f, 100.0f);
 	}
 
 	bool IsSpawnModule() const override { return true; }
@@ -206,7 +208,8 @@ public:
 	GENERATED_BODY()
 	UParticleModuleSize()
 	{
-		StartSize.Constant = FVector(10.0f, 10.0f, 1.0f);
+		StartSize.Mode = EDistributionValueMode::Uniform;
+		StartSize.Constant = FVector(25.0f, 25.0f, 25.0f);
 		StartSize.MinValue = StartSize.Constant;
 		StartSize.MaxValue = StartSize.Constant;
 	}
