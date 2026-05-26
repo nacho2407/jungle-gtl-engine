@@ -868,53 +868,51 @@ void FParticleEditorViewerWidget::RenderEmitterPanel(FParticleEditorViewer* View
 		ImGui::OpenPopup("ParticleEmitterPanelContext");
 	}
 
-	RenderEmitterContextMenu(Viewer);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 6.0f));
+	if (ImGui::BeginPopup("ParticleEmitterPanelContext"))
+	{
+		RenderEmitterContextMenu(Viewer);
+		ImGui::EndPopup();
+	}
+	ImGui::PopStyleVar(2);
 }
 
 void FParticleEditorViewerWidget::RenderEmitterContextMenu(FParticleEditorViewer* Viewer)
 {
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 6.0f));
-
-	if (ImGui::BeginPopup("ParticleEmitterPanelContext"))
+	bool bDeletedEmitter = false;
+	bool bDeletedModule = false;
+	if (ImGui::MenuItem("Duplicate Emitter", nullptr, false, HasDeletableSelectedEmitter(Viewer)))
 	{
-		bool bDeletedEmitter = false;
-		bool bDeletedModule = false;
-		if (ImGui::MenuItem("Duplicate Emitter", nullptr, false, HasDeletableSelectedEmitter(Viewer)))
+		TArray<int32> EmitterIndices = MultiSelectedEmitterIndices;
+		if (EmitterIndices.empty() || !ContainsIndex(EmitterIndices, Viewer->GetSelectedEmitterIndex()))
 		{
-			TArray<int32> EmitterIndices = MultiSelectedEmitterIndices;
-			if (EmitterIndices.empty() || !ContainsIndex(EmitterIndices, Viewer->GetSelectedEmitterIndex()))
-			{
-				EmitterIndices.clear();
-				EmitterIndices.push_back(Viewer->GetSelectedEmitterIndex());
-			}
-			Viewer->CopyEmittersToIndex(EmitterIndices, Viewer->GetSelectedEmitterIndex() + 1);
-			MultiSelectedEmitterIndices.clear();
+			EmitterIndices.clear();
+			EmitterIndices.push_back(Viewer->GetSelectedEmitterIndex());
 		}
-		if (ImGui::MenuItem("Delete Emitter", nullptr, false, HasDeletableSelectedEmitter(Viewer)))
-		{
-			Viewer->DeleteSelectedEmitter();
-			bDeletedEmitter = true;
-			MultiSelectedEmitterIndices.clear();
-		}
-		if (!bDeletedEmitter && ImGui::MenuItem("Delete Module", nullptr, false, HasDeletableSelectedModule(Viewer)))
-		{
-			Viewer->DeleteSelectedModule();
-			bDeletedModule = true;
-		}
-		if (!bDeletedEmitter && !bDeletedModule && ImGui::MenuItem("Add Emitter"))
-		{
-			Viewer->AddEmitter();
-		}
-		if (!bDeletedEmitter && !bDeletedModule && Viewer->GetSelectedEmitterIndex() >= 0 && Viewer->GetSelectedLODLevel() != nullptr && ImGui::BeginMenu("Add Module"))
-		{
-			DrawParticleModuleClassMenu(Viewer);
-			ImGui::EndMenu();
-		}
-		ImGui::EndPopup();
+		Viewer->CopyEmittersToIndex(EmitterIndices, Viewer->GetSelectedEmitterIndex() + 1);
+		MultiSelectedEmitterIndices.clear();
 	}
-
-	ImGui::PopStyleVar(2);
+	if (ImGui::MenuItem("Delete Emitter", nullptr, false, HasDeletableSelectedEmitter(Viewer)))
+	{
+		Viewer->DeleteSelectedEmitter();
+		bDeletedEmitter = true;
+		MultiSelectedEmitterIndices.clear();
+	}
+	if (!bDeletedEmitter && ImGui::MenuItem("Delete Module", nullptr, false, HasDeletableSelectedModule(Viewer)))
+	{
+		Viewer->DeleteSelectedModule();
+		bDeletedModule = true;
+	}
+	if (!bDeletedEmitter && !bDeletedModule && ImGui::MenuItem("Add Emitter"))
+	{
+		Viewer->AddEmitter();
+	}
+	if (!bDeletedEmitter && !bDeletedModule && Viewer->GetSelectedEmitterIndex() >= 0 && Viewer->GetSelectedLODLevel() != nullptr && ImGui::BeginMenu("Add Module"))
+	{
+		DrawParticleModuleClassMenu(Viewer);
+		ImGui::EndMenu();
+	}
 }
 
 void FParticleEditorViewerWidget::RenderDetailsPanel(FParticleEditorViewer* Viewer)
@@ -2517,7 +2515,6 @@ void GetParticleTypeDataModuleClasses(TArray<UClass*>& OutClasses)
 			[](const UClass* Class)
 			{
 				return !Class ||
-					   Class == UParticleModuleTypeDataBase::StaticClass() ||
 					   Class->HasAnyClassFlags(CF_Abstract);
 			}),
 		OutClasses.end());
