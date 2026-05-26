@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Render/Common/ComPtr.h"
 #include "Render/Scene/PrimitiveRenderProxy.h"
@@ -22,6 +22,23 @@ private:
 		TArray<FRenderCommand>& OutSpriteCommands,
 		TArray<FRenderCommand>& OutSubUVCommands);
 	bool BuildMeshCommands(const FPrimitiveRenderProxyCollectionContext& Context, TArray<FRenderCommand>& OutOpaqueCommands, TArray<FRenderCommand>& OutTranslucentCommands);
+
+	/**
+	 * @brief Beam emitter snapshot에서 render command를 생성합니다.
+	 *
+	 * @param Context render command 수집 context
+	 *
+	 * @param OutOpaqueCommands opaque material Beam command 목록
+	 *
+	 * @param OutTranslucentCommands translucent material Beam command 목록
+	 *
+	 * @return command 생성 경로 처리 성공 여부
+	 */
+	bool BuildBeamCommands(
+		const FPrimitiveRenderProxyCollectionContext& Context,
+		TArray<FRenderCommand>& OutOpaqueCommands,
+		TArray<FRenderCommand>& OutTranslucentCommands);
+
 	bool EnsureSpriteInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount);
 	bool EnsureMeshInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount);
 	bool UploadSpriteInstances(ID3D11DeviceContext* DeviceContext);
