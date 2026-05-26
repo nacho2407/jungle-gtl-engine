@@ -977,13 +977,18 @@ bool UParticleModuleCollision::IsUpdateModule() const
 	return true;
 }
 
+/**
+ * @brief SubUV module의 particle payload를 조회합니다.
+ */
 static FSubUVParticlePayload* GetSubUVPayload(FParticleEmitterInstance* Owner, FBaseParticle& Particle, int32 Offset)
 {
-	if (Offset < 0)
+	// 유효하지 않은 emitter instance 또는 payload offset 방어
+	if (Owner == nullptr || Offset < 0)
 	{
 		return nullptr;
 	}
 
+	// particle stride 범위 검사는 emitter instance의 payload 조회 함수에 위임
 	uint8* Raw = Owner->GetParticlePayloadByOffset(Particle, Offset);
 	return reinterpret_cast<FSubUVParticlePayload*>(Raw);
 }
@@ -1016,32 +1021,34 @@ void UParticleModuleSubUV::Update(FParticleEmitterInstance* Owner, int32 Offset,
 {
 	(void)DeltaTime;
 
+	// SubUV frame 수와 emitter instance 유효성 방어
 	const int32 TotalFrames = Columns * Rows;
-	if (TotalFrames <= 0)
+	if (Owner == nullptr || TotalFrames <= 0)
 	{
 		return;
 	}
 
-	const int32 ActiveCount = Owner->GetActiveParticleCount();
-	for (int32 i = 0; i < ActiveCount; ++i)
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
 	{
-		FBaseParticle& Particle = Owner->GetParticleByActiveIndex(i);
-
+		// 특정 particle payload가 없더라도 나머지 particle update는 계속 진행
 		FSubUVParticlePayload* Payload = GetSubUVPayload(Owner, Particle, Offset);
 		if (!Payload)
 		{
-			return;
+			continue;
 		}
-		// 기본값은 수명 기반 재생, 명시된 SubImageIndex 값은 실제 frame index로 사용.
+
+		// Linear 모드: 수명 또는 SubImageIndex distribution 기반 frame 갱신
 		if (InterpMethod == EParticleSubUVInterpMethod::Linear)
 		{
 			const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, nullptr);
 			Payload->ImageIndex = EvaluateSubImageFrameIndex(*this, Context, TotalFrames);
 		}
-		// Random일 경우 고정된 프레임 유지
 
+		// Random 모드: Spawn 시점에 정한 frame 유지, 공통 clamp만 적용
 		Payload->ImageIndex = MathUtil::Clamp(Payload->ImageIndex, 0.0f, static_cast<float>(TotalFrames - 1));
 	}
+	END_UPDATE_LOOP()
 }
 
 UParticleLODLevel::~UParticleLODLevel()
