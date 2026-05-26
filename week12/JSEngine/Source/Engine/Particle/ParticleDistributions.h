@@ -43,6 +43,9 @@ struct FParticleDistributionContext
 	FParticleRandomStream* RandomStream = nullptr;
 	float RelativeTime = 0.0f;
 	float SpawnTime = 0.0f;
+	float CurveTime = 0.0f;
+	float EmitterTime = 0.0f;
+	const float* RandomAlpha = nullptr;
 };
 
 USTRUCT()

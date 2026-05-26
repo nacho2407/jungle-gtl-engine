@@ -167,6 +167,8 @@ namespace
 		Context.RandomStream = Owner != nullptr ? &Owner->RandomStream : nullptr;
 		Context.RelativeTime = Particle.RelativeTime;
 		Context.SpawnTime = SpawnTime;
+		Context.CurveTime = Particle.RelativeTime;
+		Context.EmitterTime = Owner != nullptr ? Owner->EmitterTime : 0.0f;
 		return Context;
 	}
 
@@ -197,7 +199,7 @@ namespace
 {
 	float GetDistributionEvalTime(const FParticleDistributionContext& Context)
 	{
-		return Context.RelativeTime;
+		return Context.CurveTime;
 	}
 
 	UCurveFloatAsset* ResolveFloatCurve(const TSoftObjectPtr<UCurveFloatAsset>& Curve)
@@ -344,6 +346,13 @@ bool UParticleModule::IsUpdateModule() const
 	return false;
 }
 
+void UParticleModule::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	(void)Owner;
+	(void)Offset;
+	(void)Particle;
+}
+
 void UParticleModule::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
 	(void)Owner;
@@ -430,6 +439,7 @@ void UParticleModuleColor::Spawn(FParticleEmitterInstance* Owner, int32 Offset, 
 	(void)Offset;
 	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
 	Particle.Color = EvaluateParticleColor(StartColor, Context);
+	Particle.BaseColor = Particle.Color;
 }
 
 UParticleModuleSize::UParticleModuleSize()

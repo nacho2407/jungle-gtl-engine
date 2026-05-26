@@ -30,21 +30,30 @@ enum class EDynamicEmitterType
 	Ribbon,
 };
 
+namespace ParticleFlags
+{
+	static constexpr uint32 None = 0u;
+	static constexpr uint32 PendingKill = 1u << 0;
+}
+
 struct FParticleEventSpawnData
 {
 	int32 ParticleIndex = -1;
+	uint32 SpawnId = 0;
 	FVector Location = FVector::ZeroVector;
 };
 
 struct FParticleEventDeathData
 {
 	int32 ParticleIndex = -1;
+	uint32 SpawnId = 0;
 	FVector Location = FVector::ZeroVector;
 };
 
 struct FParticleEventCollideData
 {
 	int32 ParticleIndex = -1;
+	uint32 SpawnId = 0;
 	FVector Location = FVector::ZeroVector;
 	FVector Normal = FVector::UpVector;
 };
@@ -69,8 +78,15 @@ struct FBaseParticle
 	FVector Size = FVector::OneVector;
 	FVector BaseSize = FVector::OneVector;
 	FColor Color = FColor::White();
+	FColor BaseColor = FColor::White();
 	uint32 Flags = 0;
     uint32 Seed = 0; // seeded procedural 재현성을 위한 랜덤 시드값
+
+	/**
+     * @brief ribbon emitter 내 정렬이나 LOD preserve 시 MaxParticles가 줄어들면 어떤 Particle을 먼저 죽일지
+     *        결정하기 위한 particle 생성 순서 보존 식별자
+     */
+	uint32 SpawnId = 0;
 };
 
 struct FParticleSpriteVertex

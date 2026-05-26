@@ -66,6 +66,11 @@ public:
 	uint8* GetModuleInstanceData(UParticleModule* Module);
 	const uint8* GetModuleInstanceData(UParticleModule* Module) const;
 
+	/**
+	 * @brief LOD preserve로 기존 particle을 새 LOD instance에 복사하고, 새 LOD의 module payload를 초기화하는 helper
+	 */
+	void InitializeModulePayloadsForExistingParticle(FBaseParticle& Particle);
+
 	bool UsesLocalSpace() const;
 	FVector TransformLocationToSimulationSpace(const FVector& WorldLocation) const;
 	FVector TransformVelocityToSimulationSpace(const FVector& WorldVelocity) const;

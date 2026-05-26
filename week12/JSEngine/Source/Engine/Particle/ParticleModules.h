@@ -27,6 +27,14 @@ public:
 	virtual bool IsSpawnRateModule() const;
 	virtual bool IsSpawnModule() const;
 	virtual bool IsUpdateModule() const;
+
+	/**
+	 * @brief spawn module이 아닌 module들도 spawn 시점에 particle을 초기화할 수 있도록 하는 hook
+	 * 
+	 * @note random range curve를 사용하는 module이 spawn 시점에 random alpha 초기값을 넣어주려면 이 hook이 필요합니다.
+	 */
+	virtual void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle);
+
 	virtual void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle);
 	virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime);
 };
@@ -50,10 +58,10 @@ public:
 	float EmitterDuration = 5.0f;
 
 	UPROPERTY(DisplayName = "Emitter Loops")
-	bool bEmitterLoops = true;
+	bool bEmitterLoops = false;
 
 	UPROPERTY(DisplayName = "Max Emitter Loops", Min = 0.0f, Speed = 1.0f)
-	int32 MaxEmitterLoops = 0;
+	int32 MaxEmitterLoops = 1;
 
 	UPROPERTY(DisplayName = "Use Seeded Random")
 	bool bUseSeededRandom = false;
@@ -78,6 +86,27 @@ public:
 
 	UPROPERTY(DisplayName = "Material", ReferenceType = Asset)
 	UMaterialInterface* Material = nullptr;
+};
+
+USTRUCT()
+struct FParticleBurstEntry
+{
+	GENERATED_STRUCT_BODY(FParticleBurstEntry)
+
+	UPROPERTY(DisplayName = "Enabled")
+	bool bEnabled = true;
+
+	UPROPERTY(DisplayName = "Time", Min = 0.0f, Speed = 0.1f)
+	float Time = 0.0f;
+
+	UPROPERTY(DisplayName = "Count", Min = 0.0f, Speed = 1.0f)
+	int32 Count = 0;
+
+	UPROPERTY(DisplayName = "Count Low", Min = 0.0f, Speed = 1.0f)
+	int32 CountLow = 0;
+
+	UPROPERTY(DisplayName = "Chance", Min = 0.0f, Max = 1.0f, Speed = 0.05f)
+	float Chance = 1.0f;
 };
 
 /**
@@ -112,6 +141,9 @@ public:
 
 	UPROPERTY(DisplayName = "Burst Time", Min = 0.0f, Speed = 0.1f)
 	float BurstTime = 0.0f;
+
+	UPROPERTY(DisplayName = "Burst List")
+	TArray<FParticleBurstEntry> BurstList;
 };
 
 UCLASS(Placeable, DisplayName = "Lifetime Module")

@@ -392,10 +392,12 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
 		new (&Particle) FBaseParticle();
 
 		Particle.Seed = RandomStream.GetUnsignedInt();
+		Particle.SpawnId = ++ParticleCounter;
 		Particle.OldLocation = Particle.Location;
 		Particle.RelativeTime = 0.0f;
 		Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
 		Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
+		InitializeModulePayloadsForExistingParticle(Particle);
 
 		const float SpawnTime = SpawnInterval * static_cast<float>(SpawnIndex);
 		for (UParticleModule* Module : CurrentRuntimeCache->SpawnModules)
@@ -412,14 +414,15 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
 		Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
 		Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
 		Particle.OldLocation = Particle.Location;
+		Particle.BaseColor = Particle.Color;
 
 		FParticleEventSpawnData Event;
 		Event.ParticleIndex = PhysicalIndex;
+		Event.SpawnId = Particle.SpawnId;
 		Event.Location = GetParticleLocationForRender(Particle);
 		Owner.AddSpawnEvent(Event);
 
 		++ActiveParticles;
-		++ParticleCounter;
 	}
 
 	return SpawnCount;
@@ -459,6 +462,7 @@ void FParticleEmitterInstance::KillParticle(int32 ActiveIndex)
 
 	FParticleEventDeathData Event;
 	Event.ParticleIndex = KilledPhysicalIndex;
+	Event.SpawnId = Particle.SpawnId;
 	Event.Location = GetParticleLocationForRender(Particle);
 	Owner.AddDeathEvent(Event);
 
@@ -566,6 +570,45 @@ const uint8* FParticleEmitterInstance::GetModuleInstanceData(UParticleModule* Mo
 	}
 
 	return InstanceData + Offset;
+}
+
+void FParticleEmitterInstance::InitializeModulePayloadsForExistingParticle(FBaseParticle& Particle)
+{
+	if (CurrentRuntimeCache == nullptr)
+	{
+		return;
+	}
+
+	TArray<UParticleModule*> InitializedModules;
+	const auto InitializeModule = [this, &Particle, &InitializedModules](UParticleModule* Module)
+	{
+		if (Module == nullptr || !Module->bEnabled)
+		{
+			return;
+		}
+
+		// 같은 모듈이 spawn / update 양쪽 목록에 들어갈 수 있으므로 중복 검사를 통해 한 번만 초기화
+		if (std::find(InitializedModules.begin(), InitializedModules.end(), Module) != InitializedModules.end())
+		{
+			return;
+		}
+
+		InitializedModules.push_back(Module);
+		const int32 Offset = CurrentRuntimeCache->GetParticlePayloadOffset(Module);
+		Module->InitializeParticle(this, Offset, Particle);
+	};
+
+	InitializeModule(CurrentRuntimeCache->RequiredModule);
+	InitializeModule(CurrentRuntimeCache->SpawnModule);
+	InitializeModule(CurrentRuntimeCache->TypeDataModule);
+	for (UParticleModule* Module : CurrentRuntimeCache->SpawnModules)
+	{
+		InitializeModule(Module);
+	}
+	for (UParticleModule* Module : CurrentRuntimeCache->UpdateModules)
+	{
+		InitializeModule(Module);
+	}
 }
 
 bool FParticleEmitterInstance::UsesLocalSpace() const
