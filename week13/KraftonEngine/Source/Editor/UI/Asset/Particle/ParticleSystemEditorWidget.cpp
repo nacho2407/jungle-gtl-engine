@@ -3161,6 +3161,13 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                     const ImGuiPayload* ActiveCarry       = ImGui::GetDragDropPayload();
                     const bool          bModuleDragActive = ActiveCarry && ActiveCarry->IsDataType("PSE_MODULE");
 
+                    // 모듈 row 들은 모서리 라운드 없이 edge-to-edge fill + 패딩 0 으로 빽빽하게.
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+
+                    // 컬럼의 좌/우 픽셀 좌표 (WindowPadding 무시) — row bg 를 edge 까지 채우기 위함.
+                    const float ColLeftPx  = ImGui::GetWindowPos().x;
+                    const float ColRightPx = ColLeftPx + ImGui::GetWindowSize().x;
+
                     for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(ModuleList.size()); ++ModuleIndex)
                     {
                         ImGui::PushID(ModuleIndex);
@@ -3191,18 +3198,50 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
 
                         // 활성 drop zone 이 이 row 바로 위 위치일 때만 14px 갭 + 사각형 강조 표시.
                         // 그 외 row 들은 갭 없이 평소처럼 붙어있음 → 한 곳만 벌어지는 효과.
+                        // ★ 갭 영역 자체도 hover/drop target 으로 만들어 oscillation 방지 —
+                        // 갭이 열리면서 row 가 아래로 밀려 마우스가 갭 위에 있게 되어도 같은
+                        // PendingDropSlot 을 유지해, 다음 프레임에 갭이 닫혔다가 다시 열리는
+                        // 진동을 막는다.
                         if (SelectedLODIndex == 0 && bModuleDragActive && ThisRowArrayIdx >= 0 &&
                             ActiveDropEmitter == EmitterIndex && ActiveDropSlot == ThisRowArrayIdx)
                         {
-                            const ImVec2 GapMin = ImGui::GetCursorScreenPos();
-                            const float  GapW   = ImGui::GetContentRegionAvail().x;
-                            constexpr float GapH = 14.0f;
-                            ImGui::Dummy(ImVec2(GapW, GapH));
-                            const ImVec2 GapMax(GapMin.x + GapW, GapMin.y + GapH);
+                            constexpr float GapH   = 14.0f;
+                            const ImVec2    GapMin = ImGui::GetCursorScreenPos();
+                            const float     GapW   = ColRightPx - GapMin.x;
+                            ImGui::InvisibleButton("##activegap", ImVec2(GapW, GapH));
+                            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
+                            {
+                                PendingDropEmitter = EmitterIndex;
+                                PendingDropSlot    = ThisRowArrayIdx;
+                            }
+                            if (ImGui::BeginDragDropTarget())
+                            {
+                                if (const ImGuiPayload* P = ImGui::AcceptDragDropPayload("PSE_MODULE"))
+                                {
+                                    const int32* D  = static_cast<const int32*>(P->Data);
+                                    ModuleDropSrcE  = D[0];
+                                    ModuleDropSrcAi = D[1];
+                                    ModuleDropDstE  = EmitterIndex;
+                                    ModuleDropDstAi = ThisRowArrayIdx;
+                                }
+                                ImGui::EndDragDropTarget();
+                            }
+                            const ImVec2 GapMax = ImGui::GetItemRectMax();
+                            // edge-to-edge 강조 사각형.
                             ImGui::GetWindowDrawList()->AddRectFilled(
-                                GapMin, GapMax, IM_COL32(74, 144, 255, 60), 3.0f);
+                                ImVec2(ColLeftPx, GapMin.y),
+                                ImVec2(ColRightPx, GapMax.y),
+                                IM_COL32(74, 144, 255, 60),
+                                0.0f
+                            );
                             ImGui::GetWindowDrawList()->AddRect(
-                                GapMin, GapMax, PSE::Accent, 3.0f, 0, 2.0f);
+                                ImVec2(ColLeftPx, GapMin.y),
+                                ImVec2(ColRightPx, GapMax.y),
+                                PSE::Accent,
+                                0.0f,
+                                0,
+                                2.0f
+                            );
                         }
 
                         const bool bIsShared = IsModuleSharedWithHigher(Emitter, SelectedLODIndex, ModuleIndex);
@@ -3216,10 +3255,9 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         constexpr float LeftPad     = 4.0f;
                         const ImVec2    IconDrawPos(IconPos.x + LeftPad, IconPos.y + IconYOff);
 
-                        // 모듈 카테고리 색으로 row 배경을 칠한다.
-                        // sub-LOD에서 공유 중이면 alpha 절반으로 dim.
+                        // 모듈 카테고리 색으로 row 배경을 칠한다. edge-to-edge fill (컬럼 좌/우
+                        // 끝까지) + 모서리 라운드 0. sub-LOD에서 공유 중이면 alpha 절반으로 dim.
                         {
-                            const float  RowBgW = ImGui::GetContentRegionAvail().x;
                             ImU32 RowBgCol = GetModuleCategoryColor(Entry.Module);
                             if (bIsShared)
                             {
@@ -3228,9 +3266,11 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                                 RowBgCol = (RowBgCol & 0x00FFFFFF) | (A << 24);
                             }
                             DL->AddRectFilled(
-                                ImVec2(IconPos.x,          IconPos.y),
-                                ImVec2(IconPos.x + RowBgW, IconPos.y + RowH),
-                                RowBgCol, 3.0f);
+                                ImVec2(ColLeftPx, IconPos.y),
+                                ImVec2(ColRightPx, IconPos.y + RowH),
+                                RowBgCol,
+                                0.0f
+                            );
                         }
 
                         const bool      bModEnabled = Entry.Module && (Entry.Module->bEnabled != 0);
@@ -3329,11 +3369,12 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         // Row 자체는 drop target 아님 — 갭 zone 들이 insert 위치를 정확히
                         // 표시하므로 row-onto-row 드롭은 모호함만 만든다.
 
-                        // 우측 curve placeholder 아이콘.
-                        const ImVec2 RowMin = ImGui::GetItemRectMin();
-                        const ImVec2 RowMax = ImGui::GetItemRectMax();
-                        const ImVec2 CurveIconMin(RowMax.x - IconSize - 2.0f, RowMin.y + 1.0f);
-                        const ImVec2 CurveIconMax(RowMax.x - 2.0f, RowMin.y + 1.0f + IconSize);
+                        // 우측 curve placeholder 아이콘 — row 세로 중앙 정렬.
+                        const ImVec2 RowMin     = ImGui::GetItemRectMin();
+                        const ImVec2 RowMax     = ImGui::GetItemRectMax();
+                        const float  RowCenterY = (RowMin.y + RowMax.y) * 0.5f;
+                        const ImVec2 CurveIconMin(ColRightPx - IconSize - 4.0f, RowCenterY - IconSize * 0.5f);
+                        const ImVec2 CurveIconMax(ColRightPx - 4.0f, RowCenterY + IconSize * 0.5f);
                         DL->AddRect(CurveIconMin, CurveIconMax, IM_COL32(90, 95, 105, 200), 2.0f);
                         const float CW = CurveIconMax.x - CurveIconMin.x;
                         const float CH = CurveIconMax.y - CurveIconMin.y;
@@ -3422,6 +3463,8 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         }
                         ImGui::PopID();
                     }
+                    ImGui::PopStyleVar(); // ItemSpacing(0,0) for module loop
+
                     if (ModuleToDelete >= 0)
                     {
                         SelectEmitter(EmitterIndex, ModuleToDelete);
@@ -3633,7 +3676,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         const bool bIsRibbon = (Cast<UParticleModuleTypeDataRibbon>(CurType) != nullptr);
                         const bool bIsBeam2  = (Cast<UParticleModuleTypeDataBeam2>(CurType) != nullptr);
 
-                        if (ImGui::MenuItem("Sprite (no TypeData)", nullptr, bIsSprite))
+                        if (ImGui::MenuItem("Sprite", nullptr, bIsSprite))
                         {
                             SetEmitterTypeData(EmitterIndex, nullptr);
                         }

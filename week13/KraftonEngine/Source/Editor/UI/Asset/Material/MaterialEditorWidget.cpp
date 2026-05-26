@@ -31,6 +31,74 @@ namespace
 	inline uint32 PinIdToU32(ed::PinId Id) { return static_cast<uint32>(Id.Get()); }
 	inline uint32 LinkIdToU32(ed::LinkId Id) { return static_cast<uint32>(Id.Get()); }
 
+	enum class EMaterialEditorBlendMode
+	{
+		Opaque,
+		Translucent,
+		Additive,
+		Custom
+	};
+
+	const char* ToString(EMaterialEditorBlendMode Mode)
+	{
+		switch (Mode)
+		{
+		case EMaterialEditorBlendMode::Opaque: return "Opaque";
+		case EMaterialEditorBlendMode::Translucent: return "Translucent";
+		case EMaterialEditorBlendMode::Additive: return "Additive";
+		case EMaterialEditorBlendMode::Custom: return "Custom";
+		}
+		return "Custom";
+	}
+
+	EMaterialEditorBlendMode GetMaterialEditorBlendMode(const UMaterial* Material)
+	{
+		const ERenderPass Pass = Material->GetRenderPass();
+		const EBlendState Blend = Material->GetBlendState();
+		const EDepthStencilState Depth = Material->GetDepthStencilState();
+
+		if (Pass == ERenderPass::Opaque && Blend == EBlendState::Opaque)
+		{
+			return EMaterialEditorBlendMode::Opaque;
+		}
+		if (Pass == ERenderPass::AlphaBlend && Blend == EBlendState::Additive && Depth == EDepthStencilState::DepthReadOnly)
+		{
+			return EMaterialEditorBlendMode::Additive;
+		}
+		if (Pass == ERenderPass::AlphaBlend && Blend == EBlendState::AlphaBlend && Depth == EDepthStencilState::DepthReadOnly)
+		{
+			return EMaterialEditorBlendMode::Translucent;
+		}
+		return EMaterialEditorBlendMode::Custom;
+	}
+
+	void ApplyMaterialEditorBlendMode(UMaterial* Material, EMaterialEditorBlendMode Mode)
+	{
+		switch (Mode)
+		{
+		case EMaterialEditorBlendMode::Opaque:
+			Material->SetRenderPass(ERenderPass::Opaque);
+			Material->SetBlendState(EBlendState::Opaque);
+			Material->SetDepthStencilState(EDepthStencilState::Default);
+			Material->SetRasterizerState(ERasterizerState::SolidBackCull);
+			break;
+		case EMaterialEditorBlendMode::Translucent:
+			Material->SetRenderPass(ERenderPass::AlphaBlend);
+			Material->SetBlendState(EBlendState::AlphaBlend);
+			Material->SetDepthStencilState(EDepthStencilState::DepthReadOnly);
+			Material->SetRasterizerState(ERasterizerState::SolidNoCull);
+			break;
+		case EMaterialEditorBlendMode::Additive:
+			Material->SetRenderPass(ERenderPass::AlphaBlend);
+			Material->SetBlendState(EBlendState::Additive);
+			Material->SetDepthStencilState(EDepthStencilState::DepthReadOnly);
+			Material->SetRasterizerState(ERasterizerState::SolidNoCull);
+			break;
+		case EMaterialEditorBlendMode::Custom:
+			break;
+		}
+	}
+
 	ImVec4 NodeColor(EMaterialGraphNodeType Type)
 	{
 		switch (Type)
@@ -310,6 +378,30 @@ void FMaterialEditorWidget::RenderToolbar(UMaterial* Material)
 			{
 				Material->SetDomain(Candidate);
 				RebuildOutputPinsForDomain(Material);
+			}
+			if (bSelected) ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	ImGui::SameLine();
+	EMaterialEditorBlendMode BlendMode = GetMaterialEditorBlendMode(Material);
+	ImGui::SetNextItemWidth(130.0f);
+	if (ImGui::BeginCombo("Mode", ToString(BlendMode)))
+	{
+		const EMaterialEditorBlendMode Modes[] =
+		{
+			EMaterialEditorBlendMode::Opaque,
+			EMaterialEditorBlendMode::Translucent,
+			EMaterialEditorBlendMode::Additive
+		};
+		for (EMaterialEditorBlendMode Candidate : Modes)
+		{
+			const bool bSelected = (BlendMode == Candidate);
+			if (ImGui::Selectable(ToString(Candidate), bSelected))
+			{
+				ApplyMaterialEditorBlendMode(Material, Candidate);
+				MarkDirty();
 			}
 			if (bSelected) ImGui::SetItemDefaultFocus();
 		}
