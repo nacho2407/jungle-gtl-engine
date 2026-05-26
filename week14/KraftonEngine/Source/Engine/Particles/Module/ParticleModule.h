@@ -46,6 +46,12 @@ public:
 	float EmitterDuration = 1.0f;
 	UPROPERTY(Edit, Save, Category="Particle|Required", DisplayName="Looping")
 	bool bLooping = true;
+
+	UPROPERTY(Edit, Save, Category="Particle|Required|SubUV", DisplayName="Sub Images Horizontal", Min=1.0f, Speed=1.0f)
+	int32 SubImagesHorizontal = 1;
+
+	UPROPERTY(Edit, Save, Category="Particle|Required|SubUV", DisplayName="Sub Images Vertical", Min=1.0f, Speed=1.0f)
+	int32 SubImagesVertical = 1;
 };
 
 UCLASS()
@@ -212,5 +218,44 @@ public:
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
 		Particle.Size = StartSize.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "StartSize"));
+	}
+};
+
+UCLASS()
+class UParticleModuleSubImageIndex : public UParticleModule
+{
+public:
+	GENERATED_BODY()
+	UParticleModuleSubImageIndex()
+	{
+		SubImageIndex.Constant = 0.0f;
+		SubImageIndex.MinValue = 0.0f;
+		SubImageIndex.MaxValue = 0.0f;
+	}
+
+	bool IsSpawnModule() const override { return true; }
+	bool IsUpdateModule() const override { return true; }
+
+	UPROPERTY(Edit, Save, Category="Particle|SubUV", DisplayName="Sub Image Index", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat SubImageIndex;
+
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
+	{
+		Particle.SubImageIndex = SubImageIndex.GetValue(0.0f, FDistributionSampling::RandomUnit(Particle.RandomSeed, "SubImageIndex"));
+	}
+
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
+	{
+		struct
+		{
+			FParticleEmitterInstance& Owner;
+			int32 Offset;
+			float DeltaTime;
+		} Context{ *Owner, Offset, DeltaTime };
+
+		BEGIN_UPDATE_LOOP
+			const float RandomFraction = FDistributionSampling::RandomUnit(Particle->RandomSeed, "SubImageIndex");
+			Particle->SubImageIndex = SubImageIndex.GetValue(Particle->RelativeTime, RandomFraction);
+		END_UPDATE_LOOP
 	}
 };

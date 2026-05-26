@@ -5,6 +5,7 @@
 #include "Render/Types/FrameContext.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -59,6 +60,40 @@ namespace
 			return nullptr;
 		}
 		return Cast<UParticleModuleTypeDataBeam>(LODLevel->GetTypeDataModule());
+	}
+
+	void GetParticleSubUVs(const FBaseParticle& Particle, int32 Columns, int32 Rows,
+		FVector2& OutTopLeftUV, FVector2& OutTopRightUV, FVector2& OutBottomLeftUV, FVector2& OutBottomRightUV)
+	{
+		Columns = (std::max)(Columns, 1);
+		Rows = (std::max)(Rows, 1);
+
+		if (Columns == 1 && Rows == 1)
+		{
+			OutTopLeftUV = FVector2(0.0f, 0.0f);
+			OutTopRightUV = FVector2(1.0f, 0.0f);
+			OutBottomLeftUV = FVector2(0.0f, 1.0f);
+			OutBottomRightUV = FVector2(1.0f, 1.0f);
+			return;
+		}
+
+		const int32 TotalFrames = Columns * Rows;
+		int32 FrameIndex = static_cast<int32>(std::floor(Particle.SubImageIndex));
+		FrameIndex = (std::max)(0, (std::min)(FrameIndex, TotalFrames - 1));
+
+		const int32 Column = FrameIndex % Columns;
+		const int32 Row = FrameIndex / Columns;
+		const float FrameWidth = 1.0f / static_cast<float>(Columns);
+		const float FrameHeight = 1.0f / static_cast<float>(Rows);
+		const float U0 = static_cast<float>(Column) * FrameWidth;
+		const float V0 = static_cast<float>(Row) * FrameHeight;
+		const float U1 = U0 + FrameWidth;
+		const float V1 = V0 + FrameHeight;
+
+		OutTopLeftUV = FVector2(U0, V0);
+		OutTopRightUV = FVector2(U1, V0);
+		OutBottomLeftUV = FVector2(U0, V1);
+		OutBottomRightUV = FVector2(U1, V1);
 	}
 }
 
@@ -133,9 +168,18 @@ uint32 FDynamicSpriteEmitterDataBase::BuildDynamicVertexData(const FFrameContext
 
 	const FParticleDataContainer& Data = Source.Instance->GetParticleDataContainer();
 	const uint32 FirstIndex = OutGeometry.GetIndexCount();
+	const UParticleModuleRequired* RequiredModule = Source.Instance->GetRequiredModule();
+	const int32 SubImagesHorizontal = RequiredModule ? RequiredModule->SubImagesHorizontal : 1;
+	const int32 SubImagesVertical = RequiredModule ? RequiredModule->SubImagesVertical : 1;
 	for (uint16 ParticleSlot : RenderOrder)
 	{
-		OutGeometry.AddParticleQuad(Data.GetParticle(ParticleSlot), Frame.CameraRight, Frame.CameraUp);
+		const FBaseParticle& Particle = Data.GetParticle(ParticleSlot);
+		FVector2 TopLeftUV;
+		FVector2 TopRightUV;
+		FVector2 BottomLeftUV;
+		FVector2 BottomRightUV;
+		GetParticleSubUVs(Particle, SubImagesHorizontal, SubImagesVertical, TopLeftUV, TopRightUV, BottomLeftUV, BottomRightUV);
+		OutGeometry.AddParticleQuad(Particle, Frame.CameraRight, Frame.CameraUp, TopLeftUV, TopRightUV, BottomLeftUV, BottomRightUV);
 	}
 
 	return OutGeometry.GetIndexCount() - FirstIndex;

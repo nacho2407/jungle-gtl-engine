@@ -1024,6 +1024,7 @@ namespace
 		if (Cast<UParticleModuleAcceleration>(Module)) return "Acceleration";
 		if (Cast<UParticleModuleColor>(Module)) return "Initial Color";
 		if (Cast<UParticleModuleSize>(Module)) return "Initial Size";
+		if (Cast<UParticleModuleSubImageIndex>(Module)) return "Sub Image Index";
 		if (Cast<UParticleModuleCollision>(Module)) return "Collision";
 		return Module->GetClass()->GetName();
 	}
@@ -2814,7 +2815,16 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			}
 
 			RenderUnavailableCategory("Spawn");
-			RenderUnavailableCategory("SubUV");
+
+			if (ImGui::BeginMenu("SubUV"))
+			{
+				if (ImGui::MenuItem("Sub Image Index"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleSubImageIndex>());
+				}
+				ImGui::EndMenu();
+			}
+
 			RenderUnavailableCategory("Vector Field");
 
 			if (ImGui::BeginMenu("Velocity"))
