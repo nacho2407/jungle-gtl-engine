@@ -28,6 +28,8 @@ public:
 	void SetTemplate(UParticleSystem* InTemplate);
 	UParticleSystem* GetTemplate() const { return ParticleSystem.Get(); }
 
+	void SetEmitterSpawningEnabled(bool bEnabled);
+
 	void ResetSystem();
 	void Activate() override;
 	void Deactivate() override;

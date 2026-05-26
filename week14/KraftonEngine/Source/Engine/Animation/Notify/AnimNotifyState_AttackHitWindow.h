@@ -9,6 +9,7 @@
 
 class AActor;
 class USkeletalMeshComponent;
+class UParticleSystemComponent;
 
 // 히트 시 대상에게 줄 충격 방향. UActionComponent::Knockback 의 Direction 인자로 사용.
 UENUM()
@@ -90,6 +91,12 @@ public:
 
 	UPROPERTY(Edit, Save, Category="AttackHitWindow", DisplayName="Log Misses")
 	bool bLogMisses = true;
+
+	UPROPERTY(Edit, Save, Category = "AttackHitWindow|Trail", DisplayName = "Control Trail Particle")
+	bool bControlTrailParticle = false;
+
+	UPROPERTY(Edit, Save, Category = "AttackHitWindow|Trail", DisplayName = "Reset Trail On Begin")
+	bool bResetTrailOnBegin = true;
 
 	void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Anim, float TotalDuration) override;
 	void NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Anim, float FrameDeltaTime) override;
