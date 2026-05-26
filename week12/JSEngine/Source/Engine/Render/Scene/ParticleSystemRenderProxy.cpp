@@ -1,4 +1,4 @@
-#include "ParticleSystemRenderProxy.h"
+﻿#include "ParticleSystemRenderProxy.h"
 
 #include "Particle/ParticleSystemComponent.h"
 #include "Particle/ParticleMeshBounds.h"
@@ -241,6 +241,53 @@ namespace
 		return Material != nullptr ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
 	}
 
+	/**
+	 * @brief Beam particle command가 사용할 material을 선택합니다.
+	 */
+	UMaterialInterface* ResolveBeamParticleMaterial(UMaterialInterface* Material)
+	{
+		return Material != nullptr ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
+	}
+
+	/**
+	 * @brief Beam replay point를 world space point로 변환합니다.
+	 */
+	FVector GetBeamWorldPoint(
+		const FDynamicBeamEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld,
+		const FVector& Point)
+	{
+		return ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local
+			? ComponentToWorld.TransformPosition(Point)
+			: Point;
+	}
+
+	/**
+	 * @brief Beam source/target과 첫 live particle의 width scale에서 보수적인 world bounds를 생성합니다.
+	 */
+	FBoundingBox BuildBeamWorldBounds(
+		const FDynamicBeamEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld,
+		const FBaseParticle& Particle)
+	{
+		// source / target 좌표계 반영
+		const FVector Source = GetBeamWorldPoint(ReplayData, ComponentToWorld, ReplayData.SourcePoint);
+		const FVector Target = GetBeamWorldPoint(ReplayData, ComponentToWorld, ReplayData.TargetPoint);
+
+		// BeamWidth와 Particle.Size.X를 함께 고려한 보수적 두께
+		const float ParticleWidthScale = std::max(std::fabs(Particle.Size.X), 0.001f);
+		const float HalfWidth = std::max(ReplayData.BeamWidth * ParticleWidthScale, 0.1f) * 0.5f;
+		const FVector Extent(HalfWidth, HalfWidth, HalfWidth);
+
+		// source / target 양 끝점을 모두 포함하는 AABB
+		FBoundingBox Bounds;
+		Bounds.Expand(Source - Extent);
+		Bounds.Expand(Source + Extent);
+		Bounds.Expand(Target - Extent);
+		Bounds.Expand(Target + Extent);
+		return Bounds;
+	}
+
 	enum class EParticleProxyDiagnostic : uint32
 	{
 		EmptyActiveParticles = 1,
@@ -289,10 +336,17 @@ void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyColl
 	TArray<FRenderCommand> SubUVCommands;
 	TArray<FRenderCommand> OpaqueMeshCommands;
 	TArray<FRenderCommand> TranslucentMeshCommands;
+	TArray<FRenderCommand> OpaqueBeamCommands;
+	TArray<FRenderCommand> TranslucentBeamCommands;
 	BuildSpriteCommands(Context, SpriteCommands, SubUVCommands);
 	BuildMeshCommands(Context, OpaqueMeshCommands, TranslucentMeshCommands);
+	BuildBeamCommands(Context, OpaqueBeamCommands, TranslucentBeamCommands);
 
-	if (SpriteInstances.empty() && MeshInstances.empty() && SubUVCommands.empty())
+	if (SpriteInstances.empty() &&
+		MeshInstances.empty() &&
+		SubUVCommands.empty() &&
+		OpaqueBeamCommands.empty() &&
+		TranslucentBeamCommands.empty())
 	{
 		return;
 	}
@@ -334,9 +388,19 @@ void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyColl
 		Context.RenderBus.AddCommand(ERenderPass::Opaque, std::move(Command));
 	}
 
+	for (FRenderCommand& Command : OpaqueBeamCommands)
+	{
+		Context.RenderBus.AddCommand(ERenderPass::Opaque, std::move(Command));
+	}
+
 	for (FRenderCommand& Command : TranslucentMeshCommands)
 	{
 		Command.InstanceBufferView.Buffer = MeshInstanceBuffer.Get();
+		Context.RenderBus.AddCommand(ERenderPass::Translucent, std::move(Command));
+	}
+
+	for (FRenderCommand& Command : TranslucentBeamCommands)
+	{
 		Context.RenderBus.AddCommand(ERenderPass::Translucent, std::move(Command));
 	}
 }
@@ -457,7 +521,8 @@ bool FParticleSystemRenderProxy::BuildMeshCommands(
 
 		if (EmitterData->GetEmitterType() != EDynamicEmitterType::Mesh)
 		{
-			if (EmitterData->GetEmitterType() != EDynamicEmitterType::Sprite)
+			if (EmitterData->GetEmitterType() != EDynamicEmitterType::Sprite &&
+				EmitterData->GetEmitterType() != EDynamicEmitterType::Beam)
 			{
 				LogParticleDiagnosticOnce(
 					Component,
@@ -586,6 +651,80 @@ bool FParticleSystemRenderProxy::BuildMeshCommands(
 			{
 				OutOpaqueCommands.push_back(std::move(Cmd));
 			}
+		}
+	}
+
+	return true;
+}
+
+bool FParticleSystemRenderProxy::BuildBeamCommands(
+	const FPrimitiveRenderProxyCollectionContext& Context,
+	TArray<FRenderCommand>& OutOpaqueCommands,
+	TArray<FRenderCommand>& OutTranslucentCommands)
+{
+	OutOpaqueCommands.clear();
+	OutTranslucentCommands.clear();
+
+	// ParticleSystemComponent가 만들어둔 emitter render snapshot 순회
+	const int32 SnapshotCount = Component->GetEmitterRenderDataSnapshotCount();
+	for (int32 SnapshotIndex = 0; SnapshotIndex < SnapshotCount; ++SnapshotIndex)
+	{
+		const FDynamicEmitterDataBase* EmitterData = Component->GetEmitterRenderDataSnapshot(SnapshotIndex);
+		if (EmitterData == nullptr || EmitterData->GetEmitterType() != EDynamicEmitterType::Beam)
+		{
+			continue;
+		}
+
+		// Beam replay data와 active particle 유효성
+		const FDynamicBeamEmitterData* BeamEmitterData = static_cast<const FDynamicBeamEmitterData*>(EmitterData);
+		const FDynamicBeamEmitterReplayDataBase& ReplayData = BeamEmitterData->ReplayData;
+		if (ReplayData.ActiveParticleCount <= 0)
+		{
+			continue;
+		}
+
+		// 최소 Beam은 첫 번째 live particle의 색상과 Size.X를 render 입력으로 사용
+		const FBaseParticle* Particle = ReplayData.GetParticleByActiveIndex(0);
+		if (Particle == nullptr)
+		{
+			continue;
+		}
+
+		// material 누락 시에도 command 경로를 확인할 수 있는 fallback material
+		UMaterialInterface* BeamMaterial = ResolveBeamParticleMaterial(EmitterData->Material);
+
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::Particle;
+		Cmd.SourcePrimitive = Component;
+		Cmd.Material = BeamMaterial;
+		Cmd.ParticleEmitterData = EmitterData;
+		Cmd.ParticleReplayData = &ReplayData;
+		Cmd.PerObjectConstants = FPerObjectConstants{ FMatrix::Identity, FColor::White().ToVector4() };
+
+		// source / target / width 기준 command bounds. 실패 시 component bounds fallback
+		Cmd.WorldAABB = BuildBeamWorldBounds(ReplayData, EmitterData->ComponentToWorld, *Particle);
+		if (!Cmd.WorldAABB.IsValid())
+		{
+			Cmd.WorldAABB = Component->GetWorldAABB();
+		}
+
+		// Beam draw path가 사용할 공통 particle constants
+		Cmd.Constants.Particle.ComponentToWorld = EmitterData->ComponentToWorld;
+		Cmd.Constants.Particle.CameraRight = Context.RenderBus.GetCameraRight();
+		Cmd.Constants.Particle.CameraUp = Context.RenderBus.GetCameraUp();
+		Cmd.Constants.Particle.EmitterType = static_cast<uint32>(EmitterData->GetEmitterType());
+		Cmd.Constants.Particle.CoordinateSpace = static_cast<uint32>(ReplayData.CoordinateSpace);
+		Cmd.Constants.Particle.ActiveParticleCount = static_cast<uint32>(ReplayData.ActiveParticleCount);
+		Cmd.Constants.Particle.bUseLocalSpace = ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local ? 1u : 0u;
+
+		// material 정책에 따른 pass queue 분배
+		if (ResolveMaterialRenderPass(Cmd.Material) == ERenderPass::Translucent)
+		{
+			OutTranslucentCommands.push_back(std::move(Cmd));
+		}
+		else
+		{
+			OutOpaqueCommands.push_back(std::move(Cmd));
 		}
 	}
 
