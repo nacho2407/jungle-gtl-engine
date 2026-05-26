@@ -352,8 +352,8 @@ bool FParticleEmitterInstance::CanUseLODLevel(const UParticleLODLevel* LODLevel)
 		return false;
 	}
 
-	const UParticleModuleTypeDataBase* CurrentTypeData = CurrentLODLevel ? CurrentLODLevel->GetTypeDataModule() : nullptr;
-	const UParticleModuleTypeDataBase* NewTypeData = LODLevel->GetTypeDataModule();
+	const UParticleModuleTypeDataBase* CurrentTypeData = CurrentLODLevel ? CurrentLODLevel->ResolveTypeDataModule(SpriteTemplate) : nullptr;
+	const UParticleModuleTypeDataBase* NewTypeData = LODLevel->ResolveTypeDataModule(SpriteTemplate);
 	const EParticleRenderType CurrentRenderType = CurrentTypeData ? CurrentTypeData->GetRenderType() : EParticleRenderType::Sprite;
 	const EParticleRenderType NewRenderType = NewTypeData ? NewTypeData->GetRenderType() : EParticleRenderType::Sprite;
 	if (CurrentRenderType != NewRenderType)
@@ -372,7 +372,7 @@ void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float Sp
 		return;
 	}
 
-	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->GetTypeDataModule())
+	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->ResolveTypeDataModule(SpriteTemplate))
 	{
 		if (TypeDataModule->IsSpawnModule())
 		{
@@ -398,7 +398,7 @@ void FParticleEmitterInstance::RunUpdateModules(float DeltaTime)
 		return;
 	}
 
-	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->GetTypeDataModule())
+	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->ResolveTypeDataModule(SpriteTemplate))
 	{
 		if (TypeDataModule->IsUpdateModule())
 		{

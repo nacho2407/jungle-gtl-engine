@@ -3,13 +3,13 @@
 #include "Editor/UI/Panel/EditorPropertyRenderer.h"
 #include "Editor/Viewport/Asset/ParticleSystemEditorViewportClient.h"
 #include "Editor/UI/Asset/AssetEditorWidget.h"
+#include "Math/FloatCurve.h"
 #include "Object/FName.h"
 
 struct ImVec2;
 struct FPropertyValue;
 struct FRawDistributionFloat;
 struct FRawDistributionVector;
-struct FFloatCurve;
 class AActor;
 class UObject;
 class UParticleEmitter;
@@ -80,6 +80,9 @@ private:
 	{
 		UObject* OwnerObject = nullptr;
 		FFloatCurve* Curves[MaxCurveEditorTracks] = {};
+		FFloatCurve InlineCurves[MaxCurveEditorTracks];
+		float* ValueBindings[MaxCurveEditorTracks] = {};
+		bool bSingleKeyOnly[MaxCurveEditorTracks] = {};
 		FString CurveLabels[MaxCurveEditorTracks];
 		int32 CurveCount = 0;
 		FString Label;
