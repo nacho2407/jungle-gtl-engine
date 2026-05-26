@@ -45,6 +45,7 @@ private:
 	void EnsureDefaultScriptFile();
 	void BindOwnerCollisionEvents();
 	void ClearCollisionBindings();
+	void ClearLuaRuntime();
 	void HandleBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,

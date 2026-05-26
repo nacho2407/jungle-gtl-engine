@@ -23,14 +23,7 @@ void ULuaScriptComponent::AddReferencedObjects(FReferenceCollector& Collector)
 	UActorComponent::AddReferencedObjects(Collector);
 }
 
-void ULuaScriptComponent::BeginDestroy()
-{
-	FLuaScriptManager::UnregisterComponent(this);
-	ClearCollisionBindings();
-	UActorComponent::BeginDestroy();
-}
-
-void ULuaScriptComponent::InitializeLua()
+void ULuaScriptComponent::ClearLuaRuntime()
 {
 	LuaBeginPlay = sol::nil;
 	LuaTick = sol::nil;
@@ -39,6 +32,20 @@ void ULuaScriptComponent::InitializeLua()
 	LuaOnEndOverlap = sol::nil;
 	LuaOnHit = sol::nil;
 	LuaOnEndHit = sol::nil;
+	Env = sol::environment();
+}
+
+void ULuaScriptComponent::BeginDestroy()
+{
+	FLuaScriptManager::UnregisterComponent(this);
+	ClearCollisionBindings();
+	ClearLuaRuntime();
+	UActorComponent::BeginDestroy();
+}
+
+void ULuaScriptComponent::InitializeLua()
+{
+	ClearLuaRuntime();
 
 	sol::state& Lua = FLuaScriptManager::GetState();
 
@@ -126,6 +133,7 @@ void ULuaScriptComponent::EndPlay()
 			UE_LOG("Lua EndPlay error in %s: %s", ScriptFile.c_str(), Err.what());
 		}
 	}
+	ClearLuaRuntime();
 }
 
 void ULuaScriptComponent::BindOwnerCollisionEvents()

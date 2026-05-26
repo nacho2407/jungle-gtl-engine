@@ -1,4 +1,4 @@
-﻿#include "ParticleSystemComponent.h"
+#include "ParticleSystemComponent.h"
 
 #include "Particles/ParticleEmitter.h"
 #include "Particles/ParticleEmitterInstances.h"
@@ -373,30 +373,15 @@ void UParticleSystemComponent::AddReferencedObjects(FReferenceCollector& Collect
             Instance->AddReferencedObjects(Collector);
         }
     }
-
-    for (FDynamicEmitterDataBase* Data : EmitterRenderData)
-    {
-        if (!Data)
-        {
-            continue;
-        }
-
-        const FDynamicEmitterReplayDataBase& Source = Data->GetSource();
-        if (Source.eEmitterType == EDynamicEmitterType::Sprite ||
-            Source.eEmitterType == EDynamicEmitterType::Mesh ||
-            Source.eEmitterType == EDynamicEmitterType::Beam ||
-            Source.eEmitterType == EDynamicEmitterType::Ribbon)
-        {
-            const FDynamicSpriteEmitterReplayDataBase& SpriteSource =
-                static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
-            Collector.AddReferencedObject(SpriteSource.Material, "UParticleSystemComponent.DynamicData.Material");
-            Collector.AddReferencedObject(SpriteSource.RequiredModule, "UParticleSystemComponent.DynamicData.RequiredModule");
-        }
-    }
 }
 
 void UParticleSystemComponent::ClearRenderData()
 {
+    if (SceneProxy && SceneProxy->HasProxyFlag(EPrimitiveProxyFlags::Particle))
+    {
+        static_cast<FParticleSystemSceneProxy*>(SceneProxy)->InvalidateEmitterDataCache();
+    }
+
     for (FDynamicEmitterDataBase* Data : EmitterRenderData)
     {
         delete Data;

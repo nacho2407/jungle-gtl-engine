@@ -99,6 +99,31 @@ void UPrimitiveComponent::EndPlay()
 	USceneComponent::EndPlay();
 }
 
+void UPrimitiveComponent::BeginDestroy()
+{
+    if (HasAnyFlags(RF_BeginDestroy))
+    {
+        return;
+    }
+
+    if (UWorld* World = GetWorld())
+    {
+        if (IPhysicsScene* PS = World->GetPhysicsScene())
+        {
+            PS->UnregisterComponent(this);
+        }
+
+        World->GetPartition().RemoveSinglePrimitive(this);
+        World->MarkWorldPrimitivePickingBVHDirty();
+    }
+
+    ClearOctreeLocation();
+    DestroyRenderState();
+    bComponentHasBegunPlay = false;
+
+    USceneComponent::BeginDestroy();
+}
+
 void UPrimitiveComponent::NotifyPhysicsBodyDirty()
 {
 	if (!bComponentHasBegunPlay) return;

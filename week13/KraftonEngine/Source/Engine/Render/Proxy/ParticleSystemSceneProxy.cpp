@@ -58,9 +58,32 @@ FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* I
 
 FParticleSystemSceneProxy::~FParticleSystemSceneProxy()
 {
+    InvalidateEmitterDataCache();
+    EmitterBuffers.clear();
+}
+
+void FParticleSystemSceneProxy::InvalidateEmitterDataCache()
+{
 	CachedEmitterData.clear();
 	CachedEmitterCount = 0;
-	EmitterBuffers.clear();
+
+    for (auto& BufferPtr : EmitterBuffers)
+    {
+        if (!BufferPtr)
+        {
+            continue;
+        }
+
+        BufferPtr->ActiveParticleCount = 0;
+        BufferPtr->DynamicVertexCount  = 0;
+        BufferPtr->DynamicIndexCount   = 0;
+        BufferPtr->EmitterType         = EDynamicEmitterType::Sprite;
+        BufferPtr->BlendMode           = EParticleBlendMode::AlphaBlend;
+        BufferPtr->Material            = nullptr;
+        BufferPtr->EmitterMeshBuffer   = nullptr;
+        BufferPtr->StagingBuffer.clear();
+        BufferPtr->StagingIndices.clear();
+    }
 }
 
 void FParticleSystemSceneProxy::AddReferencedObjects(FReferenceCollector& Collector)
@@ -71,23 +94,6 @@ void FParticleSystemSceneProxy::AddReferencedObjects(FReferenceCollector& Collec
 		if (BufferPtr)
 		{
 			Collector.AddReferencedObject(BufferPtr->Material, "FParticleSystemSceneProxy.EmitterBuffer.Material");
-		}
-	}
-	for (FDynamicEmitterDataBase* EmitterData : CachedEmitterData)
-	{
-		if (!EmitterData)
-		{
-			continue;
-		}
-		const FDynamicEmitterReplayDataBase& Source = EmitterData->GetSource();
-		if (Source.eEmitterType == EDynamicEmitterType::Sprite ||
-			Source.eEmitterType == EDynamicEmitterType::Mesh ||
-			Source.eEmitterType == EDynamicEmitterType::Beam ||
-			Source.eEmitterType == EDynamicEmitterType::Ribbon)
-		{
-			const FDynamicSpriteEmitterReplayDataBase& SpriteSource = static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
-			Collector.AddReferencedObject(SpriteSource.Material, "FParticleSystemSceneProxy.DynamicData.Material");
-			Collector.AddReferencedObject(SpriteSource.RequiredModule, "FParticleSystemSceneProxy.DynamicData.RequiredModule");
 		}
 	}
 }
@@ -104,16 +110,14 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
 	if (!bVisible)
 	{
-		CachedEmitterData.clear();
-		CachedEmitterCount = 0;
+        InvalidateEmitterDataCache();
 		return;
 	}
 
 	UParticleSystemComponent* Comp = static_cast<UParticleSystemComponent*>(GetOwner());
 	if (!IsValid(Comp))
 	{
-		CachedEmitterData.clear();
-		CachedEmitterCount = 0;
+        InvalidateEmitterDataCache();
 		bVisible = false;
 		return;
 	}

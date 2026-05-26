@@ -1,4 +1,5 @@
 #include "Render/Scene/FScene.h"
+#include "Render/Proxy/DecalSceneProxy.h"
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/AActor.h"
 #include "Profiling/Stats/Stats.h"
@@ -47,6 +48,27 @@ void FScene::RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList
 	Proxy->SelectedListIndex = UINT32_MAX;
 }
 
+void FScene::RemoveReceiverProxyFromDecalCaches(FPrimitiveSceneProxy* RemovedProxy)
+{
+    if (!RemovedProxy)
+    {
+        return;
+    }
+
+    for (FPrimitiveSceneProxy* Proxy : Proxies)
+    {
+        if (!Proxy || Proxy == RemovedProxy)
+        {
+            continue;
+        }
+
+        if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Decal))
+        {
+            static_cast<FDecalSceneProxy*>(Proxy)->RemoveReceiverProxy(RemovedProxy);
+        }
+    }
+}
+
 // ============================================================
 // 소멸자 — 모든 프록시 정리
 // ============================================================
@@ -66,7 +88,8 @@ FScene::~FScene()
 
 void FScene::AddReferencedObjects(FReferenceCollector& Collector)
 {
-	for (FPrimitiveSceneProxy* Proxy : Proxies)
+    TArray<FPrimitiveSceneProxy*> ProxySnapshot = Proxies;
+    for (FPrimitiveSceneProxy* Proxy : ProxySnapshot)
 	{
 		if (Proxy)
 		{
@@ -170,6 +193,10 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 		auto it = std::find(NeverCullProxies.begin(), NeverCullProxies.end(), Proxy);
 		if (it != NeverCullProxies.end()) NeverCullProxies.erase(it);
 	}
+
+    // Decal receiver cache는 FPrimitiveSceneProxy*를 non-owning으로 들고 있다.
+    // 제거되는 proxy를 다른 decal proxy들이 계속 들고 있으면 다음 render frame에서 stale pointer가 된다.
+    RemoveReceiverProxyFromDecalCaches(Proxy);
 
 	// 슬롯 비우고 재활용 목록에 추가
 	Proxies[Slot] = nullptr;

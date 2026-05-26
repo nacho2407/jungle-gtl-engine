@@ -28,6 +28,7 @@
 #include "Engine/Platform/Paths.h"
 #include "Lua/LuaScriptManager.h"
 #include <filesystem>
+#include "Object/GarbageCollection.h"
 
 #include "Mesh/Skeletal/SkeletalMesh.h"
 
@@ -164,6 +165,9 @@ void UEditorEngine::Tick(float DeltaTime)
 	MainPanel.TickAssetEditors(DeltaTime);
 
 	WorldTick(DeltaTime);
+    
+    FGarbageCollector::Get().CollectGarbage();
+    
 	Render(DeltaTime);
 	SelectionManager.Tick();
 }

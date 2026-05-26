@@ -9,6 +9,7 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Object/GarbageCollection.h"
 #include "Object/Object.h"
+#include <algorithm>
 
 namespace
 {
@@ -31,6 +32,8 @@ FDecalSceneProxy::FDecalSceneProxy(UDecalComponent* InComponent)
 
 FDecalSceneProxy::~FDecalSceneProxy()
 {
+	InvalidateReceiverCache();
+
 	if (DecalCB)
 	{
 		DecalCB->Release();
@@ -54,6 +57,23 @@ void FDecalSceneProxy::AddReferencedObjects(FReferenceCollector& Collector)
 	FPrimitiveSceneProxy::AddReferencedObjects(Collector);
 	Collector.AddReferencedObject(DecalMaterial);
 	Collector.AddReferencedObject(DecalProxyMaterial);
+}
+
+void FDecalSceneProxy::RemoveReceiverProxy(FPrimitiveSceneProxy* ReceiverProxy)
+{
+	if (!ReceiverProxy)
+	{
+		return;
+	}
+
+	CachedReceiverProxies.erase(
+		std::remove(CachedReceiverProxies.begin(), CachedReceiverProxies.end(), ReceiverProxy),
+		CachedReceiverProxies.end());
+}
+
+void FDecalSceneProxy::InvalidateReceiverCache()
+{
+	CachedReceiverProxies.clear();
 }
 
 void FDecalSceneProxy::UpdateMaterial()

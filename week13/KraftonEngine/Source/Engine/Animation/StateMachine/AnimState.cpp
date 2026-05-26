@@ -17,10 +17,6 @@ void UAnimState::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UObject::AddReferencedObjects(Collector);
 	Player.AddReferencedObjects(Collector);
-	if (SubGraphOverride)
-	{
-		SubGraphOverride->AddReferencedObjects(Collector);
-	}
 }
 
 void UAnimState::OnEnter(UAnimInstance* Instance)

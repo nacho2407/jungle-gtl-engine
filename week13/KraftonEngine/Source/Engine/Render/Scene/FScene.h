@@ -86,6 +86,7 @@ private:
 	// --- 내부 헬퍼 (friend 경유로 Proxy private 멤버 접근) ---
 	static void EnqueueDirtyProxy(TArray<FPrimitiveSceneProxy*>& DirtyList, FPrimitiveSceneProxy* Proxy);
 	static void RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList, FPrimitiveSceneProxy* Proxy);
+	void RemoveReceiverProxyFromDecalCaches(FPrimitiveSceneProxy* RemovedProxy);
 
 	// 전체 프록시 목록 (ProxyId = 인덱스)
 	TArray<FPrimitiveSceneProxy*> Proxies;

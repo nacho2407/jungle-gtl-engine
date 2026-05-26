@@ -20,6 +20,8 @@ public:
 	void UpdatePerViewport(const FFrameContext& Frame) override;
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
+    void InvalidateEmitterDataCache();
+
 	// DrawCommandBuilder::BuildProxyCommands에서 Particle 분기로 호출
 	void BuildParticleCommands(ID3D11Device* Device, ID3D11DeviceContext* Context,
 		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
