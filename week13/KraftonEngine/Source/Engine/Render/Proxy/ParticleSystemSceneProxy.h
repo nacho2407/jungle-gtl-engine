@@ -21,7 +21,7 @@ public:
 
 	// DrawCommandBuilder::BuildProxyCommands에서 Particle 분기로 호출
 	void BuildParticleCommands(ID3D11Device* Device, ID3D11DeviceContext* Context,
-		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
+		const FFrameContext& Frame, FDrawCommandList& OutCmdList, ERenderPass CurrentPass);
 
 private:
 	FVertexBuffer QuadVB;

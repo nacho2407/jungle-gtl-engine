@@ -8,7 +8,6 @@
 class UMaterial;
 class FMeshBuffer;
 enum class EDynamicEmitterType {Sprite, Mesh, Beam, Ribbon};
-enum class EParticleBlendMode { AlphaBlend, Additive, Translucent };
 
 struct FParticleSortContext
 {

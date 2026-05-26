@@ -484,3 +484,4 @@ bool UParticleEmitter::HasValidLOD0() const
 	UParticleLODLevel* LOD0 = GetLODLevel(0);
 	return LOD0 && LOD0->RequiredModule && LOD0->SpawnModule;
 }
+

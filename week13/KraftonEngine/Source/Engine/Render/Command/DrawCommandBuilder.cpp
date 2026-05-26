@@ -401,7 +401,8 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 		{
 			FParticleSystemSceneProxy* ParticleProxy =
 				static_cast<FParticleSystemSceneProxy*>(Proxy);
-			ParticleProxy->BuildParticleCommands(CachedDevice, CachedContext, Frame, DrawCommandList);
+			ParticleProxy->BuildParticleCommands(CachedDevice, CachedContext, Frame, DrawCommandList, ERenderPass::Opaque);
+			ParticleProxy->BuildParticleCommands(CachedDevice, CachedContext, Frame, DrawCommandList, ERenderPass::AlphaBlend);
 		}
 		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Decal))
 			BuildDecalCommands(Scene, Proxy, Frame, Output);
