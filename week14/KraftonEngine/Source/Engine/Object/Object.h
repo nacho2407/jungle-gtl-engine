@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Profiling/Stats/MemoryStats.h"
 #include "Object/FName.h"
@@ -99,14 +99,36 @@ public:
 	static UClass StaticClassInstance;
 	static UClass* StaticClass() { return &StaticClassInstance; }
 
-	bool IsGarbageMarked() const { return bIsReachable; }
-	void SetGarbageMarked(bool bMarked) { bIsReachable = bMarked; }
-
+	// GC 관련
 	virtual void AddReferencedObjects(FReferenceCollector& Collector);
+
+	bool HasAnyFlags(uint32 Flags) const { return (ObjectFlags & Flags) != 0; }
+	void SetFlags(uint32 Flags) { ObjectFlags |= Flags; }
+	void ClearFlags(uint32 Flags) { ObjectFlags &= ~Flags; }
+
+	bool IsGarbageMarked() const { return HasAnyFlags(RF_GCMarked); }
+	void SetGarbageMarked(bool bMarked)
+	{
+		if (bMarked) SetFlags(RF_GCMarked);
+		else ClearFlags(RF_GCMarked);
+	}
+
+	bool IsPendingKill() const { return HasAnyFlags(RF_PendingKill); }
+	void MarkPendingKill() { SetFlags(RF_PendingKill); }
 
 protected:
 	FName ObjectName;
+
+	enum EObjectFlags : uint32
+	{
+		RF_None = 0,
+		RF_RootSet = 1 << 0,
+		RF_GCMarked = 1 << 1,
+		RF_PendingKill = 1 << 2,
+		RF_Transient = 1 << 3,
+	};
 	bool bIsReachable = false; // GC mark bit.
+	uint32 ObjectFlags = RF_None;
 
 private:
 	uint32 UUID;
@@ -123,7 +145,9 @@ extern TSet<UObject*> GUObjectSet;
 // 해시 테이블 조회만 하므로 deref 안 함 — 안전.
 inline bool IsValid(const UObject* Object)
 {
-	return Object && GUObjectSet.find(const_cast<UObject*>(Object)) != GUObjectSet.end();
+	return Object 
+		&& GUObjectSet.find(const_cast<UObject*>(Object)) != GUObjectSet.end()
+		&& !Object->IsPendingKill();
 }
 
 inline bool IsAliveObject(const UObject* Object)

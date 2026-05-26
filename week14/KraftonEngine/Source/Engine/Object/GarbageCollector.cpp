@@ -37,18 +37,47 @@ void FGarbageCollector::CollectGarbage()
 
 	while (UObject* Object = Collector.Pop())
 	{
+		if (Object->IsPendingKill())
+		{
+			continue;
+		}
+
 		FGCArchive Ar(Collector);
 		Object->Serialize(Ar);
 		Object->AddReferencedObjects(Collector);
 	}
 
 	// [Step 3] 마킹되지 않은 객체들 삭제 (Sweep)
-	for (int32 i = static_cast<int32>(GUObjectArray.size()) - 1; i >= 0; --i) {
-		UObject* Obj = GUObjectArray[i];
-		if (!Obj->IsGarbageMarked()) {
-			// 참조되지 않음 -> 삭제!
-			UE_LOG("[GC] Sweep candidate: %s", Obj->GetName().c_str());
-			UObjectManager::Get().DestroyObject(Obj);
+	for (UObject* Obj : GUObjectArray)
+	{
+		if (!Obj || Obj->IsPendingKill())
+		{
+			continue;
 		}
+
+		if (!Obj->IsGarbageMarked())
+		{
+			UE_LOG("[GC] PendingKill: %s", Obj->GetName().c_str());
+			Obj->MarkPendingKill();
+		}
+	}
+
+	// [Step 4] Purge
+	PurgePendingKillObjects();
+}
+
+//Purge는 뒤에서부터:
+void FGarbageCollector::PurgePendingKillObjects()
+{
+	for (int32 i = static_cast<int32>(GUObjectArray.size()) - 1; i >= 0; --i)
+	{
+		UObject* Obj = GUObjectArray[i];
+		if (!Obj || !Obj->IsPendingKill())
+		{
+			continue;
+		}
+
+		UE_LOG("[GC] Purge: %s", Obj->GetName().c_str());
+		UObjectManager::Get().DestroyObject(Obj);
 	}
 }

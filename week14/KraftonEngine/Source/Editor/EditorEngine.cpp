@@ -181,7 +181,7 @@ void UEditorEngine::Tick(float DeltaTime)
 	static float GCTimeAccumulator = 0.0f;
 	GCTimeAccumulator += DeltaTime;
 
-	if (GCTimeAccumulator >= 60)
+	if (GCTimeAccumulator >= 1.0)
 	{
 		GCTimeAccumulator = 0;
 
