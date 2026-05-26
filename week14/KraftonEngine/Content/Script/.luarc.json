@@ -1,0 +1,22 @@
+{
+  "runtime.version": "Lua 5.1",
+  "workspace.library": [
+    "./.lua_defs"
+  ],
+  "diagnostics.globals": [
+    "obj",
+    "this",
+    "self",
+    "Input",
+    "Engine",
+    "World",
+    "CameraManager",
+    "AudioManager",
+    "UI",
+    "Key",
+    "Anim"
+  ],
+  "diagnostics.disable": [
+    "lowercase-global"
+  ]
+}

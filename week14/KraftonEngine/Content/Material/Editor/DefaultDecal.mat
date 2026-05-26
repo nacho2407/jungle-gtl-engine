@@ -1,38 +1,17 @@
 {
-  "BlendState": "",
-  "DepthStencilState": "",
-  "Parameters": {
-    "DecalColor": [
-      1.0,
-      1.0,
-      1.0,
-      1.0
-    ],
-    "DecalWorldToLocal": [
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0
-    ]
-  },
-  "PathFileName": "Content/Material/Editor/DefaultDecal.mat",
-  "RasterizerState": "",
-  "RenderPass": "Decal",
-  "ShaderPath": "Shaders/Geometry/Decal.hlsl",
-  "Textures": {
-    "DiffuseTexture": "Content/Editor/Icons/Pawn_64x.png"
-  },
-  "Origin": "Editor"
-}
+        "BlendState" : "",
+        "DepthStencilState" : "",
+        "Origin" : "Editor",
+        "Parameters" : {
+          "DecalColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "DecalWorldToLocal" : [0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000]
+        },
+        "PathFileName" : "Content/Material/Editor/DefaultDecal.mat",
+        "RasterizerState" : "",
+        "RenderPass" : "Decal",
+        "ShaderPath" : "Shaders/Geometry/Decal.hlsl",
+        "ShadowMode" : "Opaque",
+        "Textures" : {
+          "DiffuseTexture" : "Content/Editor/Icons/Pawn_64x.png"
+        }
+      }

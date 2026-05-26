@@ -58,6 +58,7 @@ namespace
 		LODLevel->GetMutableModules().push_back(VelocityModule);
 		LODLevel->GetMutableModules().push_back(ColorModule);
 		LODLevel->SetAllModuleEditStates(EParticleModuleEditState::Duplicated);
+		LODLevel->SetTypeDataEditState(EParticleModuleEditState::Duplicated);
 
 		return LODLevel;
 	}
@@ -126,6 +127,7 @@ namespace
 		DuplicatedLODLevel->Serialize(Reader);
 		DuplicatedLODLevel->SetFName(UniqueName);
 		DuplicatedLODLevel->GetMutableModuleEditStates() = SourceLODLevel->GetModuleEditStates();
+		DuplicatedLODLevel->SetTypeDataEditState(SourceLODLevel->GetTypeDataEditState());
 		DuplicatedLODLevel->NormalizeModuleEditStates(EParticleModuleEditState::InheritedLocked);
 		return DuplicatedLODLevel;
 	}
@@ -149,7 +151,23 @@ void UParticleLODLevel::Serialize(FArchive& Ar)
 	UObject::Serialize(Ar);
 	SerializeProperties(Ar, PF_Save);
 	Ar << ModuleEditStates;
+	int32 TypeDataState = static_cast<int32>(TypeDataEditState);
+	Ar << TypeDataState;
+	if (Ar.IsLoading())
+	{
+		if (TypeDataState < static_cast<int32>(EParticleModuleEditState::InheritedLocked) ||
+			TypeDataState > static_cast<int32>(EParticleModuleEditState::Shared))
+		{
+			TypeDataState = static_cast<int32>(Level == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+		}
+		TypeDataEditState = static_cast<EParticleModuleEditState>(TypeDataState);
+	}
 	NormalizeModuleEditStates(Level == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+}
+
+EParticleModuleEditState UParticleLODLevel::GetTypeDataEditState() const
+{
+	return Level == 0 ? EParticleModuleEditState::Duplicated : TypeDataEditState;
 }
 
 EParticleModuleEditState UParticleLODLevel::GetModuleEditState(int32 ModuleIndex) const
@@ -160,6 +178,30 @@ EParticleModuleEditState UParticleLODLevel::GetModuleEditState(int32 ModuleIndex
 	}
 
 	return ModuleEditStates[ModuleIndex];
+}
+
+UParticleModuleTypeDataBase* UParticleLODLevel::ResolveTypeDataModule(const UParticleEmitter* OwnerEmitter) const
+{
+	if (GetTypeDataEditState() != EParticleModuleEditState::Shared || !OwnerEmitter)
+	{
+		return TypeDataModule;
+	}
+
+	for (int32 SourceLODIndex = Level - 1; SourceLODIndex >= 0; --SourceLODIndex)
+	{
+		const UParticleLODLevel* SourceLODLevel = OwnerEmitter->GetLODLevel(SourceLODIndex);
+		if (!SourceLODLevel || SourceLODLevel == this)
+		{
+			continue;
+		}
+
+		if (UParticleModuleTypeDataBase* SourceTypeData = SourceLODLevel->ResolveTypeDataModule(OwnerEmitter))
+		{
+			return SourceTypeData;
+		}
+	}
+
+	return TypeDataModule;
 }
 
 UParticleModule* UParticleLODLevel::ResolveModule(int32 ModuleIndex, const UParticleEmitter* OwnerEmitter) const
@@ -233,9 +275,10 @@ UParticleEmitter::~UParticleEmitter()
 FParticleEmitterInstance* UParticleEmitter::CreateInstance(UParticleSystemComponent* Component)
 {
 	UParticleLODLevel* LODLevel = GetLODLevel(0);
-	if (LODLevel && LODLevel->GetTypeDataModule())
+	UParticleModuleTypeDataBase* TypeDataModule = LODLevel ? LODLevel->ResolveTypeDataModule(this) : nullptr;
+	if (TypeDataModule)
 	{
-		if (FParticleEmitterInstance* Instance = LODLevel->GetTypeDataModule()->CreateInstance(this, Component))
+		if (FParticleEmitterInstance* Instance = TypeDataModule->CreateInstance(this, Component))
 		{
 			return Instance;
 		}
@@ -432,6 +475,7 @@ void UParticleSystem::NormalizeEmitterLODLevels(UParticleEmitter* Emitter)
 		}
 		NewLODLevel->SetLevel(static_cast<int32>(LODLevels.size()));
 		NewLODLevel->SetAllModuleEditStates(EParticleModuleEditState::InheritedLocked);
+		NewLODLevel->SetTypeDataEditState(EParticleModuleEditState::InheritedLocked);
 		LODLevels.push_back(NewLODLevel);
 	}
 

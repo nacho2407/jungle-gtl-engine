@@ -14,6 +14,7 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Particles/Module/ParticleModule.h"
 #include "Particles/Module/ParticleModuleCollision.h"
+#include "Particles/Module/ParticleModuleEvent.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
@@ -42,7 +43,8 @@ namespace
 	constexpr float MinCurveEditorHeight = 140.0f;
 	constexpr float SplitterThickness = 6.0f;
 	constexpr float ToolbarHeight = 34.0f;
-	constexpr float DetailsNameColumnWidth = 150.0f;
+	constexpr float DetailsNameColumnWidth = 275.0f;
+	constexpr float DetailsScalarInputWidth = 124.0f;
 	constexpr float EmitterColumnWidth = 176.0f;
 	constexpr float EmitterHeaderHeight = 58.0f;
 	constexpr float ModuleRowHeight = 24.0f;
@@ -363,7 +365,15 @@ namespace
 		return Cast<UParticleModuleLifetime>(Module)
 			|| Cast<UParticleModuleLocation>(Module)
 			|| Cast<UParticleModuleVelocity>(Module)
-			|| Cast<UParticleModuleSize>(Module);
+			|| Cast<UParticleModuleAcceleration>(Module)
+			|| Cast<UParticleModuleSize>(Module)
+			|| Cast<UParticleModuleSubImageIndex>(Module)
+			|| Cast<UParticleModuleTypeDataMesh>(Module)
+			|| Cast<UParticleModuleTypeDataRibbon>(Module)
+			|| Cast<UParticleModuleTypeDataBeam>(Module)
+			|| Cast<UParticleModuleBeamSource>(Module)
+			|| Cast<UParticleModuleBeamNoise>(Module)
+			|| Cast<UParticleModuleBeamTarget>(Module);
 	}
 
 	ImU32 GetCurveTrackColor(int32 CurveIndex, bool bDim = false)
@@ -865,7 +875,7 @@ namespace
 
 		ImGui::TableSetColumnIndex(1);
 		ImGui::BeginDisabled(bReadOnly);
-		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::SetNextItemWidth(DetailsScalarInputWidth);
 		const bool bChanged = ImGui::InputFloat("##Value", &Value, 0.0f, 0.0f, Format);
 		ImGui::EndDisabled();
 		return bChanged && !bReadOnly;
@@ -882,7 +892,7 @@ namespace
 
 		ImGui::TableSetColumnIndex(1);
 		ImGui::BeginDisabled(bReadOnly);
-		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::SetNextItemWidth(DetailsScalarInputWidth);
 		const bool bChanged = ImGui::InputInt("##Value", &Value, 0, 0);
 		ImGui::EndDisabled();
 		return bChanged && !bReadOnly;
@@ -1008,9 +1018,9 @@ namespace
 		}
 	}
 
-	EParticleRenderType GetLODRenderType(const UParticleLODLevel* LODLevel)
+	EParticleRenderType GetLODRenderType(const UParticleLODLevel* LODLevel, const UParticleEmitter* OwnerEmitter = nullptr)
 	{
-		const UParticleModuleTypeDataBase* TypeDataModule = LODLevel ? LODLevel->GetTypeDataModule() : nullptr;
+		const UParticleModuleTypeDataBase* TypeDataModule = LODLevel ? LODLevel->ResolveTypeDataModule(OwnerEmitter) : nullptr;
 		return TypeDataModule ? TypeDataModule->GetRenderType() : EParticleRenderType::Sprite;
 	}
 
@@ -1051,6 +1061,8 @@ namespace
 		if (Cast<UParticleModuleBeamNoise>(Module)) return "Beam Noise";
 		if (Cast<UParticleModuleBeamTarget>(Module)) return "Beam Target";
 		if (Cast<UParticleModuleCollision>(Module)) return "Collision";
+		if (Cast<UParticleModuleEventGenerator>(Module)) return "Event Generator";
+		if (Cast<UParticleModuleEventReceiver>(Module)) return "Event Receiver";
 		return Module->GetClass()->GetName();
 	}
 
@@ -1086,6 +1098,7 @@ namespace
 			}
 
 			DuplicatedLODLevels[LODIndex]->GetMutableModuleEditStates() = SourceLODLevels[LODIndex]->GetModuleEditStates();
+			DuplicatedLODLevels[LODIndex]->SetTypeDataEditState(SourceLODLevels[LODIndex]->GetTypeDataEditState());
 			DuplicatedLODLevels[LODIndex]->NormalizeModuleEditStates(LODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
 		}
 		return DuplicatedEmitter;
@@ -1117,6 +1130,11 @@ namespace
 		return DuplicatedModule;
 	}
 
+	UParticleModuleTypeDataBase* DuplicateTypeDataModule(UParticleModuleTypeDataBase* SourceTypeDataModule)
+	{
+		return Cast<UParticleModuleTypeDataBase>(DuplicateParticleModule(SourceTypeDataModule));
+	}
+
 	UParticleLODLevel* CreateEditorDefaultLODLevel(const UParticleEmitter* Emitter)
 	{
 		UParticleLODLevel* LODLevel = UObjectManager::Get().CreateObject<UParticleLODLevel>();
@@ -1142,6 +1160,7 @@ namespace
 		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleVelocity>());
 		LODLevel->GetMutableModules().push_back(UObjectManager::Get().CreateObject<UParticleModuleColor>());
 		LODLevel->SetAllModuleEditStates(EParticleModuleEditState::Duplicated);
+		LODLevel->SetTypeDataEditState(EParticleModuleEditState::Duplicated);
 		return LODLevel;
 	}
 
@@ -1166,6 +1185,7 @@ namespace
 		DuplicatedLODLevel->Serialize(Reader);
 		DuplicatedLODLevel->SetFName(UniqueName);
 		DuplicatedLODLevel->GetMutableModuleEditStates() = SourceLODLevel->GetModuleEditStates();
+		DuplicatedLODLevel->SetTypeDataEditState(SourceLODLevel->GetTypeDataEditState());
 		DuplicatedLODLevel->NormalizeModuleEditStates(EParticleModuleEditState::InheritedLocked);
 		return DuplicatedLODLevel;
 	}
@@ -1533,7 +1553,7 @@ void FParticleSystemEditorWidget::ValidateSelectionState(const UParticleSystem* 
 	const int32 ModuleCount = LODLevel ? static_cast<int32>(LODLevel->GetModules().size()) : 0;
 	if (Selection.Kind == ESelectionKind::Module)
 	{
-		const bool bValidTypeDataSelection = Selection.ModuleIndex == TypeDataModuleIndex && LODLevel && LODLevel->GetTypeDataModule();
+		const bool bValidTypeDataSelection = Selection.ModuleIndex == TypeDataModuleIndex && LODLevel && LODLevel->ResolveTypeDataModule(Emitter);
 		const bool bValidModuleSelection = Selection.ModuleIndex >= 0 && Selection.ModuleIndex < ModuleCount;
 		if (!bValidTypeDataSelection && !bValidModuleSelection)
 		{
@@ -1544,7 +1564,9 @@ void FParticleSystemEditorWidget::ValidateSelectionState(const UParticleSystem* 
 
 void FParticleSystemEditorWidget::SelectParticleSystem()
 {
+	const int32 CurrentLODIndex = GetCurrentSystemLODIndex(GetParticleSystem());
 	ViewState.Selection = FEditorSelectionState{};
+	ViewState.Selection.LODIndex = CurrentLODIndex;
 	ClearSelectedCurve();
 }
 
@@ -1625,7 +1647,7 @@ bool FParticleSystemEditorWidget::SelectExtremeLOD(bool bLowest)
 	}
 
 	const int32 LODCount = ParticleSystem->GetLODCount();
-	return SelectLODByIndex(bLowest ? LODCount - 1 : 0);
+	return SelectLODByIndex(bLowest ? 0 : LODCount - 1);
 }
 
 bool FParticleSystemEditorWidget::AddLODToSystem(bool bInsertAfterCurrent)
@@ -1665,6 +1687,7 @@ bool FParticleSystemEditorWidget::AddLODToSystem(bool bInsertAfterCurrent)
 		NewLODLevel->SetLevel(InsertIndex);
 		NewLODLevel->SetEnabled(true);
 		NewLODLevel->SetAllModuleEditStates(InsertIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+		NewLODLevel->SetTypeDataEditState(InsertIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
 		const int32 EmitterInsertIndex = (std::max)(0, (std::min)(InsertIndex, static_cast<int32>(LODLevels.size())));
 		LODLevels.insert(LODLevels.begin() + EmitterInsertIndex, NewLODLevel);
 	}
@@ -1731,6 +1754,7 @@ bool FParticleSystemEditorWidget::RegenerateLowestLOD(bool bDuplicateHighest)
 		NewLowestLOD->SetLevel(LowestLODIndex);
 		NewLowestLOD->SetEnabled(true);
 		NewLowestLOD->SetAllModuleEditStates(EParticleModuleEditState::InheritedLocked);
+		NewLowestLOD->SetTypeDataEditState(EParticleModuleEditState::InheritedLocked);
 		if (LowestLODIndex < static_cast<int32>(LODLevels.size()))
 		{
 			UParticleLODLevel* RemovedLOD = LODLevels[LowestLODIndex];
@@ -1907,7 +1931,7 @@ const UParticleModule* FParticleSystemEditorWidget::GetSelectedModule(const UPar
 
 	if (ViewState.Selection.ModuleIndex == TypeDataModuleIndex)
 	{
-		return LODLevel->GetTypeDataModule();
+		return LODLevel->ResolveTypeDataModule(Emitter);
 	}
 
 	const TArray<UParticleModule*>& Modules = LODLevel->GetModules();
@@ -1993,7 +2017,7 @@ void FParticleSystemEditorWidget::RenderToolbar()
 	ImGui::SameLine();
 	if (DrawParticleToolbarIconButton("##ParticleLowerLOD", L"icon_Cascade_LowerLOD_40x.png", "Lower LOD", "Select Lower LOD"))
 	{
-		SelectAdjacentLOD(+1);
+		SelectAdjacentLOD(-1);
 	}
 	ImGui::EndDisabled();
 
@@ -2022,7 +2046,7 @@ void FParticleSystemEditorWidget::RenderToolbar()
 	ImGui::BeginDisabled(!bCanUseLODControls);
 	if (DrawParticleToolbarIconButton("##ParticleHigherLOD", L"icon_Cascade_HigherLOD_40x.png", "Higher LOD", "Select Higher LOD"))
 	{
-		SelectAdjacentLOD(-1);
+		SelectAdjacentLOD(+1);
 	}
 	ImGui::SameLine();
 	if (DrawParticleToolbarIconButton("##ParticleHighestLOD", L"icon_Cascade_HighestLOD_40x.png", "Highest LOD", "Select Highest LOD"))
@@ -2249,6 +2273,17 @@ void FParticleSystemEditorWidget::RefreshParticleSystemComponents()
 void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 {
 	ImGui::BeginChild("##ParticleDetailsPanel", Size, ImGuiChildFlags_Borders);
+	if (PendingDetailsScrollRestoreFrames > 0 && PendingDetailsScrollY >= 0.0f)
+	{
+		ImGui::SetScrollY(PendingDetailsScrollY);
+	}
+	const float DetailsScrollYBeforeRender = ImGui::GetScrollY();
+	if (LastStableDetailsScrollY < 0.0f)
+	{
+		LastStableDetailsScrollY = DetailsScrollYBeforeRender;
+	}
+	bool bDetailsValueChanged = false;
+
 	DrawPanelHeader("Details");
 
 	UParticleSystem* ParticleSystem = GetParticleSystem();
@@ -2268,6 +2303,7 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 		}
 
 		LODDistances[LODIndex] = LODIndex == 0 ? 0.0f : (std::max)(0.0f, NewDistance);
+		bDetailsValueChanged = true;
 		MarkDirty();
 		RefreshParticleSystemComponents();
 	};
@@ -2337,6 +2373,7 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 				if (EditableMaxActiveParticles != SelectedEmitter->GetMaxActiveParticles())
 				{
 					SelectedEmitter->SetMaxActiveParticles(EditableMaxActiveParticles);
+					bDetailsValueChanged = true;
 					MarkDirty();
 					RefreshParticleSystemComponents();
 				}
@@ -2358,7 +2395,8 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 
 		if (BeginDetailsTable("##ParticleLODSummaryTable"))
 		{
-			const UParticleModuleTypeDataBase* TypeDataModule = SelectedLOD->GetTypeDataModule();
+			const UParticleEmitter* SelectedEmitter = GetSelectedEmitter(ParticleSystem);
+			const UParticleModuleTypeDataBase* TypeDataModule = SelectedLOD->ResolveTypeDataModule(SelectedEmitter);
 			float EditableDistance = ParticleSystem->GetLODDistance(SelectedLOD->GetLevel());
 			DrawDetailRowF("Level", "%d", SelectedLOD->GetLevel());
 			ImGui::PushID("LODDistance");
@@ -2368,8 +2406,9 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 			}
 			ImGui::PopID();
 			DrawDetailRow("Enabled", SelectedLOD->IsEnabled() ? "true" : "false");
-			DrawDetailRow("Render Type", GetRenderTypeLabel(GetLODRenderType(SelectedLOD)));
+			DrawDetailRow("Render Type", GetRenderTypeLabel(GetLODRenderType(SelectedLOD, SelectedEmitter)));
 			DrawDetailRow("Type Data", GetTypeDataDisplayName(TypeDataModule));
+			DrawDetailRow("Type Data Edit State", GetModuleEditStateLabel(SelectedLOD->GetTypeDataEditState()));
 			DrawDetailRowF("Payload Size", "%d", TypeDataModule ? TypeDataModule->GetParticlePayloadSize() : 0);
 			DrawDetailRowF("Module Count", "%d", static_cast<int32>(SelectedLOD->GetModules().size()));
 			EndDetailsTable();
@@ -2387,12 +2426,13 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 
 		const int32 CurrentLODIndex = GetCurrentSystemLODIndex(ParticleSystem);
 		const bool bTypeDataSelection = ViewState.Selection.ModuleIndex == TypeDataModuleIndex;
-		const EParticleModuleEditState ModuleEditState = (!bTypeDataSelection && SelectedLOD)
-			? SelectedLOD->GetModuleEditState(ViewState.Selection.ModuleIndex)
+		const EParticleModuleEditState ModuleEditState = SelectedLOD
+			? (bTypeDataSelection
+				? SelectedLOD->GetTypeDataEditState()
+				: SelectedLOD->GetModuleEditState(ViewState.Selection.ModuleIndex))
 			: (CurrentLODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
 		const bool bModuleReadOnly = !CanDirectEditModulesInLOD(CurrentLODIndex)
-			&& (bTypeDataSelection
-				|| ModuleEditState == EParticleModuleEditState::InheritedLocked
+			&& (ModuleEditState == EParticleModuleEditState::InheritedLocked
 				|| ModuleEditState == EParticleModuleEditState::Shared);
 		if (BeginDetailsTable("##ParticleModuleSummaryTable"))
 		{
@@ -2402,13 +2442,14 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 			DrawDetailRow("Spawn Module", SelectedModule->IsSpawnModule() ? "true" : "false");
 			DrawDetailRow("Update Module", SelectedModule->IsUpdateModule() ? "true" : "false");
 			DrawDetailRow("Source", ViewState.Selection.ModuleIndex == TypeDataModuleIndex ? "LOD TypeDataModule" : "LOD Modules[]");
-			DrawDetailRow("Edit State", bTypeDataSelection ? "TypeData" : GetModuleEditStateLabel(ModuleEditState));
+			DrawDetailRow("Edit State", GetModuleEditStateLabel(ModuleEditState));
 			DrawDetailRow("Editable", bModuleReadOnly ? "false" : "true");
 			EndDetailsTable();
 		}
 		ImGui::Separator();
 		if (RenderObjectProperties(SelectedModule, bModuleReadOnly))
 		{
+			bDetailsValueChanged = true;
 			ApplyEditedObjectSideEffects(SelectedModule);
 			MarkDirty();
 			RefreshParticleSystemComponents();
@@ -2430,6 +2471,26 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 	default:
 		RenderParticleSystemDetails();
 		break;
+	}
+
+	if (bDetailsValueChanged)
+	{
+		PendingDetailsScrollY = LastStableDetailsScrollY >= 0.0f ? LastStableDetailsScrollY : DetailsScrollYBeforeRender;
+		PendingDetailsScrollRestoreFrames = 3;
+	}
+	if (PendingDetailsScrollY >= 0.0f && PendingDetailsScrollRestoreFrames > 0)
+	{
+		ImGui::SetScrollY(PendingDetailsScrollY);
+		--PendingDetailsScrollRestoreFrames;
+		if (PendingDetailsScrollRestoreFrames <= 0)
+		{
+			LastStableDetailsScrollY = PendingDetailsScrollY;
+			PendingDetailsScrollY = -1.0f;
+		}
+	}
+	else
+	{
+		LastStableDetailsScrollY = ImGui::GetScrollY();
 	}
 
 	ImGui::EndChild();
@@ -2497,53 +2558,20 @@ bool FParticleSystemEditorWidget::RenderObjectProperties(UObject* Object, bool b
 			ImGui::PushID(Index);
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
-			ImGui::SetWindowFontScale(0.92f);
-			ImGui::AlignTextToFramePadding();
-			ImGui::TextUnformatted(FEditorPropertyRenderer::GetPropertyDisplayName(PropertyValue));
-			ImGui::SetWindowFontScale(1.0f);
+			const bool bPropertyOpen = FEditorPropertyRenderer::DrawPropertyLabel(PropertyValue);
 
 			ImGui::TableSetColumnIndex(1);
-			const bool bCurveDistributionProperty = IsRawDistributionFloatProperty(PropertyValue) || IsRawDistributionVectorProperty(PropertyValue);
-			if (bCurveDistributionProperty)
-			{
-				const float CurveButtonWidth = 18.0f;
-				const float Width = (std::max)(1.0f, ImGui::GetContentRegionAvail().x - CurveButtonWidth - ImGui::GetStyle().ItemSpacing.x);
-				ImGui::SetNextItemWidth(Width);
-			}
-			else
-			{
-				ImGui::SetNextItemWidth(-1.0f);
-			}
+			ImGui::SetNextItemWidth(-1.0f);
 
 			FEditorPropertyRenderOptions Options;
 			Options.bDispatchChange = false;
+			Options.bUseExternalExpansion = true;
+			Options.bParentExpanded = bPropertyOpen;
 			if (bReadOnly)
 			{
 				ImGui::BeginDisabled();
 			}
 			const bool bChanged = PropertyRenderer.RenderPropertyWidget(Properties, Index, Options);
-			if (bCurveDistributionProperty)
-			{
-				ImGui::SameLine();
-				if (DrawCurveIconButton("##DistributionCurve", ImVec2(18.0f, 18.0f), bReadOnly))
-				{
-					const FString PropertyLabel = FEditorPropertyRenderer::GetPropertyDisplayName(PropertyValue);
-					if (IsRawDistributionFloatProperty(PropertyValue))
-					{
-						if (FRawDistributionFloat* Distribution = static_cast<FRawDistributionFloat*>(PropertyValue.GetValuePtr()))
-						{
-							SelectDistributionCurve(Object, Distribution, PropertyLabel, 0);
-						}
-					}
-					else if (IsRawDistributionVectorProperty(PropertyValue))
-					{
-						if (FRawDistributionVector* Distribution = static_cast<FRawDistributionVector*>(PropertyValue.GetValuePtr()))
-						{
-							SelectDistributionCurve(Object, Distribution, PropertyLabel, -1);
-						}
-					}
-				}
-			}
 			if (bReadOnly)
 			{
 				ImGui::EndDisabled();
@@ -2650,7 +2678,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 		{
 			LODLevel->NormalizeModuleEditStates(DisplayLODIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
 		}
-		const EParticleRenderType RenderType = GetLODRenderType(LODLevel);
+		const EParticleRenderType RenderType = GetLODRenderType(LODLevel, Emitter);
 		const bool bCanDirectEditModules = CanDirectEditModulesInLOD(DisplayLODIndex);
 		const bool bModuleDirectEditLocked = !bCanDirectEditModules;
 		ImGui::PushID(EmitterIndex);
@@ -2685,6 +2713,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			}
 
 			LODLevel->SetTypeDataModule(NewTypeDataModule);
+			LODLevel->SetTypeDataEditState(EParticleModuleEditState::Duplicated);
 			if (NewTypeDataModule)
 			{
 				SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
@@ -2836,7 +2865,18 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				ImGui::EndMenu();
 			}
 
-			RenderUnavailableCategory("Event");
+			if (ImGui::BeginMenu("Event"))
+			{
+				if (ImGui::MenuItem("Event Generator"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleEventGenerator>());
+				}
+				if (ImGui::MenuItem("Event Receiver"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleEventReceiver>());
+				}
+				ImGui::EndMenu();
+			}
 
 			if (ImGui::BeginMenu("Lifetime"))
 			{
@@ -3071,6 +3111,76 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			return true;
 		};
 
+		auto GetTypeDataFromLOD = [&](int32 SourceLODIndex) -> UParticleModuleTypeDataBase*
+		{
+			if (!Emitter || SourceLODIndex < 0 || SourceLODIndex >= static_cast<int32>(Emitter->GetLODLevels().size()))
+			{
+				return nullptr;
+			}
+
+			UParticleLODLevel* SourceLODLevel = Emitter->GetLODLevel(SourceLODIndex);
+			return SourceLODLevel ? SourceLODLevel->ResolveTypeDataModule(Emitter) : nullptr;
+		};
+
+		auto ReplaceTypeDataFromSource = [&](int32 SourceLODIndex, EParticleModuleEditState NewEditState) -> bool
+		{
+			if (!LODLevel)
+			{
+				return false;
+			}
+
+			UParticleModuleTypeDataBase* SourceTypeData = GetTypeDataFromLOD(SourceLODIndex);
+			if (!SourceTypeData)
+			{
+				return false;
+			}
+
+			UParticleModuleTypeDataBase* OldTypeData = LODLevel->GetTypeDataModule();
+			const EParticleModuleEditState OldEditState = LODLevel->GetTypeDataEditState();
+
+			if (NewEditState == EParticleModuleEditState::Shared)
+			{
+				if (!OldTypeData || OldTypeData == SourceTypeData)
+				{
+					UParticleModuleTypeDataBase* LocalPlaceholder = DuplicateTypeDataModule(SourceTypeData);
+					if (!LocalPlaceholder)
+					{
+						return false;
+					}
+					LODLevel->SetTypeDataModule(LocalPlaceholder);
+					OldTypeData = nullptr;
+				}
+
+				LODLevel->SetTypeDataEditState(EParticleModuleEditState::Shared);
+				SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
+				ApplyEditedObjectSideEffects(SourceTypeData);
+				MarkDirty();
+				RefreshParticleSystemComponents();
+				return true;
+			}
+
+			UParticleModuleTypeDataBase* ReplacementTypeData = DuplicateTypeDataModule(SourceTypeData);
+			if (!ReplacementTypeData)
+			{
+				return false;
+			}
+
+			LODLevel->SetTypeDataModule(ReplacementTypeData);
+			LODLevel->SetTypeDataEditState(NewEditState);
+
+			const bool bOldTypeDataWasSharedSource = OldEditState == EParticleModuleEditState::Shared && OldTypeData == SourceTypeData;
+			if (OldTypeData && OldTypeData != ReplacementTypeData && !bOldTypeDataWasSharedSource)
+			{
+				UObjectManager::Get().DestroyObject(OldTypeData);
+			}
+
+			SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
+			ApplyEditedObjectSideEffects(ReplacementTypeData);
+			MarkDirty();
+			RefreshParticleSystemComponents();
+			return true;
+		};
+
 		auto DeleteModuleAcrossLODs = [&](int32 ModuleIndex) -> bool
 		{
 			if (!Emitter || ModuleIndex < 0)
@@ -3242,18 +3352,40 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			{
 				FParticleModuleDropRequest DropRequest;
 				TArray<UParticleModule*>& Modules = LODLevel->GetMutableModules();
-				const UParticleModuleTypeDataBase* TypeDataModule = LODLevel->GetTypeDataModule();
+				const UParticleModuleTypeDataBase* TypeDataModule = LODLevel->ResolveTypeDataModule(Emitter);
 				const char* TypeDataLabel = TypeDataModule ? GetTypeDataDisplayName(TypeDataModule) : GetRenderTypeLabel(RenderType);
 				if (TypeDataModule)
 				{
+					const EParticleModuleEditState TypeDataEditState = LODLevel->GetTypeDataEditState();
+					const bool bTypeDataInheritedLocked = !bCanDirectEditModules
+						&& (TypeDataEditState == EParticleModuleEditState::InheritedLocked || TypeDataEditState == EParticleModuleEditState::Shared);
+					const bool bHasHigherTypeData = DisplayLODIndex > 0 && GetTypeDataFromLOD(DisplayLODIndex - 1) != nullptr;
+					const bool bHasHighestTypeData = DisplayLODIndex > 0 && GetTypeDataFromLOD(0) != nullptr;
 					ImGui::PushID(TypeDataModuleIndex);
-					FModuleRowAction TypeDataAction;
-					if (SelectableModuleRow(TypeDataLabel, IsModuleSelected(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex), TypeDataModule, bModuleDirectEditLocked))
+					const FModuleRowAction TypeDataAction = EditableModuleRow(
+						TypeDataLabel,
+						TypeDataModule,
+						IsModuleSelected(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex),
+						bCanDirectEditModules,
+						bTypeDataInheritedLocked,
+						bHasHigherTypeData,
+						bHasHighestTypeData,
+						nullptr,
+						nullptr,
+						EmitterIndex,
+						DisplayLODIndex,
+						0,
+						0);
+					bModuleContextMenuOpen |= TypeDataAction.bContextMenuOpen;
+					if (TypeDataAction.bSelect)
 					{
 						SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
 					}
-					RenderModuleContextMenu(TypeDataAction, bCanDirectEditModules, false, false, ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
-					bModuleContextMenuOpen |= TypeDataAction.bContextMenuOpen;
+					if (TypeDataAction.bShowCurves)
+					{
+						SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
+						SelectModuleDistributionCurves(const_cast<UParticleModuleTypeDataBase*>(TypeDataModule));
+					}
 					if (TypeDataAction.bDelete && bCanDirectEditModules)
 					{
 						SetTypeDataModule(nullptr);
@@ -3262,6 +3394,18 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 					{
 						SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
 						RefreshParticleSystemComponents();
+					}
+					else if (TypeDataAction.bDuplicateFromHigher)
+					{
+						ReplaceTypeDataFromSource(DisplayLODIndex - 1, EParticleModuleEditState::Duplicated);
+					}
+					else if (TypeDataAction.bShareFromHigher)
+					{
+						ReplaceTypeDataFromSource(DisplayLODIndex - 1, EParticleModuleEditState::Shared);
+					}
+					else if (TypeDataAction.bDuplicateFromHighest)
+					{
+						ReplaceTypeDataFromSource(0, EParticleModuleEditState::Duplicated);
 					}
 					if (bCanDirectEditModules)
 					{
@@ -3503,26 +3647,55 @@ bool FParticleSystemEditorWidget::AppendDistributionCurve(UObject* OwnerObject, 
 		return false;
 	}
 
-	const bool bChanged = EnsureFloatDistributionHasCurve(*Distribution);
+	bool bChanged = false;
 	CurveSelection.OwnerObject = OwnerObject;
-	auto AddCurve = [&](FFloatCurve* Curve, const FString& TrackLabel)
+	auto AddCurve = [&](FFloatCurve* Curve, const FString& TrackLabel, bool bSingleKeyOnly = false, float* ValueBinding = nullptr)
 	{
 		if (!Curve || CurveSelection.CurveCount >= MaxCurveEditorTracks)
 		{
 			return;
 		}
 
-		CurveSelection.Curves[CurveSelection.CurveCount] = Curve;
-		CurveSelection.CurveLabels[CurveSelection.CurveCount] = TrackLabel;
+		const int32 TrackIndex = CurveSelection.CurveCount;
+		CurveSelection.Curves[TrackIndex] = Curve;
+		CurveSelection.ValueBindings[TrackIndex] = ValueBinding;
+		CurveSelection.bSingleKeyOnly[TrackIndex] = bSingleKeyOnly;
+		CurveSelection.CurveLabels[TrackIndex] = TrackLabel;
 		++CurveSelection.CurveCount;
 	};
-
-	if (Distribution->Mode == EDistributionValueMode::ConstantCurve)
+	auto AddValueCurve = [&](float* Value, const FString& TrackLabel)
 	{
+		if (!Value || CurveSelection.CurveCount >= MaxCurveEditorTracks)
+		{
+			return;
+		}
+
+		const int32 TrackIndex = CurveSelection.CurveCount;
+		SetFloatCurveToConstant(CurveSelection.InlineCurves[TrackIndex], *Value);
+		if (CurveSelection.InlineCurves[TrackIndex].Keys.size() > 1)
+		{
+			CurveSelection.InlineCurves[TrackIndex].Keys.resize(1);
+		}
+		AddCurve(&CurveSelection.InlineCurves[TrackIndex], TrackLabel, true, Value);
+	};
+
+	if (Distribution->Mode == EDistributionValueMode::Constant)
+	{
+		AddValueCurve(&Distribution->Constant, Label);
+	}
+	else if (Distribution->Mode == EDistributionValueMode::Uniform)
+	{
+		AddValueCurve(&Distribution->MinValue, Label + ".Min");
+		AddValueCurve(&Distribution->MaxValue, Label + ".Max");
+	}
+	else if (Distribution->Mode == EDistributionValueMode::ConstantCurve)
+	{
+		bChanged = EnsureFloatDistributionHasCurve(*Distribution);
 		AddCurve(&Distribution->ConstantCurve, Label);
 	}
 	else if (Distribution->Mode == EDistributionValueMode::UniformCurve)
 	{
+		bChanged = EnsureFloatDistributionHasCurve(*Distribution);
 		AddCurve(&Distribution->MinCurve, Label + ".Min");
 		AddCurve(&Distribution->MaxCurve, Label + ".Max");
 	}
@@ -3537,28 +3710,63 @@ bool FParticleSystemEditorWidget::AppendDistributionCurve(UObject* OwnerObject, 
 		return false;
 	}
 
-	const bool bChanged = EnsureVectorDistributionHasCurve(*Distribution);
+	bool bChanged = false;
 	CurveSelection.OwnerObject = OwnerObject;
-	auto AddCurve = [&](FFloatCurve* Curve, const FString& TrackLabel)
+	auto AddCurve = [&](FFloatCurve* Curve, const FString& TrackLabel, bool bSingleKeyOnly = false, float* ValueBinding = nullptr)
 	{
 		if (!Curve || CurveSelection.CurveCount >= MaxCurveEditorTracks)
 		{
 			return;
 		}
 
-		CurveSelection.Curves[CurveSelection.CurveCount] = Curve;
-		CurveSelection.CurveLabels[CurveSelection.CurveCount] = TrackLabel;
+		const int32 TrackIndex = CurveSelection.CurveCount;
+		CurveSelection.Curves[TrackIndex] = Curve;
+		CurveSelection.ValueBindings[TrackIndex] = ValueBinding;
+		CurveSelection.bSingleKeyOnly[TrackIndex] = bSingleKeyOnly;
+		CurveSelection.CurveLabels[TrackIndex] = TrackLabel;
 		++CurveSelection.CurveCount;
 	};
-
-	if (Distribution->Mode == EDistributionValueMode::ConstantCurve)
+	auto AddValueCurve = [&](float* Value, const FString& TrackLabel)
 	{
+		if (!Value || CurveSelection.CurveCount >= MaxCurveEditorTracks)
+		{
+			return;
+		}
+
+		const int32 TrackIndex = CurveSelection.CurveCount;
+		SetFloatCurveToConstant(CurveSelection.InlineCurves[TrackIndex], *Value);
+		if (CurveSelection.InlineCurves[TrackIndex].Keys.size() > 1)
+		{
+			CurveSelection.InlineCurves[TrackIndex].Keys.resize(1);
+		}
+		AddCurve(&CurveSelection.InlineCurves[TrackIndex], TrackLabel, true, Value);
+	};
+
+	if (Distribution->Mode == EDistributionValueMode::Constant)
+	{
+		AddValueCurve(&Distribution->Constant.X, Label + ".X");
+		AddValueCurve(&Distribution->Constant.Y, Label + ".Y");
+		AddValueCurve(&Distribution->Constant.Z, Label + ".Z");
+	}
+	else if (Distribution->Mode == EDistributionValueMode::Uniform)
+	{
+		AddValueCurve(&Distribution->MinValue.X, Label + ".Min X");
+		AddValueCurve(&Distribution->MinValue.Y, Label + ".Min Y");
+		AddValueCurve(&Distribution->MinValue.Z, Label + ".Min Z");
+		AddValueCurve(&Distribution->MaxValue.X, Label + ".Max X");
+		AddValueCurve(&Distribution->MaxValue.Y, Label + ".Max Y");
+		AddValueCurve(&Distribution->MaxValue.Z, Label + ".Max Z");
+	}
+	else if (Distribution->Mode == EDistributionValueMode::ConstantCurve)
+	{
+		bChanged = EnsureVectorDistributionHasCurve(*Distribution);
 		AddCurve(&Distribution->ConstantCurve.X, Label + ".X");
 		AddCurve(&Distribution->ConstantCurve.Y, Label + ".Y");
 		AddCurve(&Distribution->ConstantCurve.Z, Label + ".Z");
 	}
 	else if (Distribution->Mode == EDistributionValueMode::UniformCurve)
 	{
+		bChanged = EnsureVectorDistributionHasCurve(*Distribution);
 		AddCurve(&Distribution->MinCurve.X, Label + ".Min X");
 		AddCurve(&Distribution->MinCurve.Y, Label + ".Min Y");
 		AddCurve(&Distribution->MinCurve.Z, Label + ".Min Z");
@@ -3608,9 +3816,7 @@ void FParticleSystemEditorWidget::SelectDistributionCurve(UObject* OwnerObject, 
 	ClearSelectedCurve();
 	CurveSelection.Label = Label;
 	const bool bChanged = AppendDistributionCurve(OwnerObject, Distribution, Label);
-	CurveSelection.ActiveCurveIndex = (CurveIndex < 0 && CurveSelection.CurveCount > 1)
-		? -1
-		: (std::max)(0, (std::min)(CurveIndex, CurveSelection.CurveCount > 0 ? CurveSelection.CurveCount - 1 : 0));
+	CurveSelection.ActiveCurveIndex = (std::max)(0, (std::min)(CurveIndex, CurveSelection.CurveCount > 0 ? CurveSelection.CurveCount - 1 : 0));
 	CurveEditorState.SelectedKeyIndex = -1;
 	CurveEditorState.bDraggingSelectedKey = false;
 	CurveEditorState.DraggingTangentHandle = ETangentHandle::None;
@@ -3648,9 +3854,50 @@ bool FParticleSystemEditorWidget::SelectModuleDistributionCurves(UParticleModule
 	{
 		bChanged |= AppendDistributionCurve(Module, &VelocityModule->StartVelocity, "StartVelocity");
 	}
+	else if (UParticleModuleAcceleration* AccelerationModule = Cast<UParticleModuleAcceleration>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &AccelerationModule->Acceleration, "Acceleration");
+	}
 	else if (UParticleModuleSize* SizeModule = Cast<UParticleModuleSize>(Module))
 	{
 		bChanged |= AppendDistributionCurve(Module, &SizeModule->StartSize, "StartSize");
+	}
+	else if (UParticleModuleSubImageIndex* SubImageModule = Cast<UParticleModuleSubImageIndex>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &SubImageModule->SubImageIndex, "SubImageIndex");
+	}
+	else if (UParticleModuleTypeDataMesh* MeshTypeData = Cast<UParticleModuleTypeDataMesh>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &MeshTypeData->StartMeshScale, "StartMeshScale");
+		bChanged |= AppendDistributionCurve(Module, &MeshTypeData->StartMeshRotation, "StartMeshRotation");
+		bChanged |= AppendDistributionCurve(Module, &MeshTypeData->MeshRotationRate, "MeshRotationRate");
+	}
+	else if (UParticleModuleTypeDataRibbon* RibbonTypeData = Cast<UParticleModuleTypeDataRibbon>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &RibbonTypeData->StartWidth, "StartWidth");
+		bChanged |= AppendDistributionCurve(Module, &RibbonTypeData->EndWidth, "EndWidth");
+		bChanged |= AppendDistributionCurve(Module, &RibbonTypeData->StartTwist, "StartTwist");
+	}
+	else if (UParticleModuleTypeDataBeam* BeamTypeData = Cast<UParticleModuleTypeDataBeam>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &BeamTypeData->BeamWidth, "BeamWidth");
+		bChanged |= AppendDistributionCurve(Module, &BeamTypeData->Distance, "Distance");
+	}
+	else if (UParticleModuleBeamSource* BeamSourceModule = Cast<UParticleModuleBeamSource>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &BeamSourceModule->SourcePoint, "SourcePoint");
+		bChanged |= AppendDistributionCurve(Module, &BeamSourceModule->SourceTangent, "SourceTangent");
+	}
+	else if (UParticleModuleBeamNoise* BeamNoiseModule = Cast<UParticleModuleBeamNoise>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &BeamNoiseModule->NoiseRange, "NoiseRange");
+		bChanged |= AppendDistributionCurve(Module, &BeamNoiseModule->NoiseFrequency, "NoiseFrequency");
+		bChanged |= AppendDistributionCurve(Module, &BeamNoiseModule->NoiseSpeed, "NoiseSpeed");
+	}
+	else if (UParticleModuleBeamTarget* BeamTargetModule = Cast<UParticleModuleBeamTarget>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &BeamTargetModule->TargetPoint, "TargetPoint");
+		bChanged |= AppendDistributionCurve(Module, &BeamTargetModule->TargetStrength, "TargetStrength");
 	}
 
 	if (CurveSelection.CurveCount <= 0)
@@ -3659,7 +3906,7 @@ bool FParticleSystemEditorWidget::SelectModuleDistributionCurves(UParticleModule
 		return false;
 	}
 
-	CurveSelection.ActiveCurveIndex = CurveSelection.CurveCount > 1 ? -1 : 0;
+	CurveSelection.ActiveCurveIndex = 0;
 	CurveEditorState.SelectedKeyIndex = -1;
 	CurveEditorState.bDraggingSelectedKey = false;
 	CurveEditorState.DraggingTangentHandle = ETangentHandle::None;
@@ -3686,10 +3933,15 @@ void FParticleSystemEditorWidget::RemoveSelectedCurve(int32 CurveIndex)
 	for (int32 Index = CurveIndex; Index + 1 < CurveSelection.CurveCount; ++Index)
 	{
 		CurveSelection.Curves[Index] = CurveSelection.Curves[Index + 1];
+		CurveSelection.InlineCurves[Index] = CurveSelection.InlineCurves[Index + 1];
+		CurveSelection.ValueBindings[Index] = CurveSelection.ValueBindings[Index + 1];
+		CurveSelection.bSingleKeyOnly[Index] = CurveSelection.bSingleKeyOnly[Index + 1];
 		CurveSelection.CurveLabels[Index] = CurveSelection.CurveLabels[Index + 1];
 	}
 	--CurveSelection.CurveCount;
 	CurveSelection.Curves[CurveSelection.CurveCount] = nullptr;
+	CurveSelection.ValueBindings[CurveSelection.CurveCount] = nullptr;
+	CurveSelection.bSingleKeyOnly[CurveSelection.CurveCount] = false;
 	CurveSelection.CurveLabels[CurveSelection.CurveCount].clear();
 
 	if (CurveSelection.CurveCount <= 0)
@@ -3698,12 +3950,17 @@ void FParticleSystemEditorWidget::RemoveSelectedCurve(int32 CurveIndex)
 		return;
 	}
 
-	if (CurveSelection.ActiveCurveIndex >= CurveSelection.CurveCount)
+	if (CurveSelection.ActiveCurveIndex > CurveIndex)
+	{
+		--CurveSelection.ActiveCurveIndex;
+	}
+	else if (CurveSelection.ActiveCurveIndex >= CurveSelection.CurveCount)
 	{
 		CurveSelection.ActiveCurveIndex = CurveSelection.CurveCount - 1;
 	}
 	if (CurveSelection.ActiveCurveIndex == CurveIndex)
 	{
+		CurveSelection.ActiveCurveIndex = (std::min)(CurveIndex, CurveSelection.CurveCount - 1);
 		CurveEditorState.SelectedKeyIndex = -1;
 	}
 	FitCurveViewToSelectedCurves();
@@ -3725,11 +3982,8 @@ FFloatCurve* FParticleSystemEditorWidget::GetSelectedCurve(int32 CurveIndex) con
 
 FFloatCurve* FParticleSystemEditorWidget::GetActiveSelectedCurve() const
 {
-	if (CurveSelection.ActiveCurveIndex < 0)
-	{
-		return GetSelectedCurve(0);
-	}
-	return GetSelectedCurve(CurveSelection.ActiveCurveIndex);
+	const int32 ActiveIndex = CurveSelection.ActiveCurveIndex < 0 ? 0 : CurveSelection.ActiveCurveIndex;
+	return GetSelectedCurve(ActiveIndex);
 }
 
 void FParticleSystemEditorWidget::FitCurveViewToSelectedCurves()
@@ -3814,7 +4068,34 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 	const bool bCanvasHovered = ImGui::IsItemHovered();
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 	const ImGuiIO& IO = ImGui::GetIO();
-	const bool bEditAllCurves = CurveSelection.ActiveCurveIndex < 0 && GetSelectedCurveCount() > 1;
+	const bool bEditAllCurves = false;
+	auto IsSingleKeyOnlyCurve = [&](int32 CurveIndex) -> bool
+	{
+		return CurveIndex >= 0 && CurveIndex < CurveSelection.CurveCount && CurveSelection.bSingleKeyOnly[CurveIndex];
+	};
+	auto SyncCurveValueBinding = [&](int32 CurveIndex, FFloatCurve& Curve)
+	{
+		if (!IsSingleKeyOnlyCurve(CurveIndex))
+		{
+			return;
+		}
+
+		if (Curve.Keys.empty())
+		{
+			const float Value = CurveSelection.ValueBindings[CurveIndex] ? *CurveSelection.ValueBindings[CurveIndex] : Curve.DefaultValue;
+			Curve.AddKey(0.0f, Value);
+		}
+		if (Curve.Keys.size() > 1)
+		{
+			Curve.Keys.resize(1);
+		}
+		Curve.Keys[0].Time = 0.0f;
+		Curve.DefaultValue = Curve.Keys[0].Value;
+		if (CurveSelection.ValueBindings[CurveIndex])
+		{
+			*CurveSelection.ValueBindings[CurveIndex] = Curve.Keys[0].Value;
+		}
+	};
 	auto ForEditableCurves = [&](auto&& Function)
 	{
 		if (bEditAllCurves)
@@ -3823,14 +4104,23 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 			{
 				if (FFloatCurve* Curve = GetSelectedCurve(CurveIndex))
 				{
-					Function(*Curve);
+					Function(CurveIndex, *Curve);
 				}
 			}
 		}
 		else
 		{
-			Function(*ActiveCurve);
+			Function((std::max)(0, CurveSelection.ActiveCurveIndex), *ActiveCurve);
 		}
+	};
+	auto HasSingleKeyOnlyEditableCurve = [&]() -> bool
+	{
+		bool bHasSingleKeyOnly = false;
+		ForEditableCurves([&](int32 CurveIndex, FFloatCurve&)
+		{
+			bHasSingleKeyOnly |= IsSingleKeyOnlyCurve(CurveIndex);
+		});
+		return bHasSingleKeyOnly;
 	};
 
 	DrawList->AddRectFilled(CanvasMin, CanvasMax, IM_COL32(57, 57, 57, 255));
@@ -3940,7 +4230,7 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 		{
 			if (FFloatCurve* Curve = GetSelectedCurve(CurveIndex))
 			{
-				DrawCurveLine(*Curve, GetCurveTrackColor(CurveIndex, !(CurveSelection.ActiveCurveIndex < 0 || CurveSelection.ActiveCurveIndex == CurveIndex)));
+				DrawCurveLine(*Curve, GetCurveTrackColor(CurveIndex, CurveSelection.ActiveCurveIndex != CurveIndex));
 			}
 		}
 	}
@@ -4075,23 +4365,27 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 	{
 		const float TimeDelta = (IO.MouseDelta.x / CanvasSize.x) * (CurveEditorState.ViewMaxTime - CurveEditorState.ViewMinTime);
 		const float ValueDelta = -(IO.MouseDelta.y / CanvasSize.y) * (CurveEditorState.ViewMaxValue - CurveEditorState.ViewMinValue);
-		ForEditableCurves([&](FFloatCurve& Curve)
+		ForEditableCurves([&](int32 CurveIndex, FFloatCurve& Curve)
 		{
 			if (CurveEditorState.SelectedKeyIndex < 0 || CurveEditorState.SelectedKeyIndex >= static_cast<int32>(Curve.Keys.size()))
 			{
 				return;
 			}
 			FCurveKey& Key = Curve.Keys[CurveEditorState.SelectedKeyIndex];
-			Key.Time += TimeDelta;
+			if (!IsSingleKeyOnlyCurve(CurveIndex))
+			{
+				Key.Time += TimeDelta;
+			}
 			Key.Value += ValueDelta;
-			if (CurveEditorState.SelectedKeyIndex > 0)
+			if (!IsSingleKeyOnlyCurve(CurveIndex) && CurveEditorState.SelectedKeyIndex > 0)
 			{
 				Key.Time = (std::max)(Key.Time, Curve.Keys[CurveEditorState.SelectedKeyIndex - 1].Time + CurveTimeEpsilon);
 			}
-			if (CurveEditorState.SelectedKeyIndex + 1 < static_cast<int32>(Curve.Keys.size()))
+			if (!IsSingleKeyOnlyCurve(CurveIndex) && CurveEditorState.SelectedKeyIndex + 1 < static_cast<int32>(Curve.Keys.size()))
 			{
 				Key.Time = (std::min)(Key.Time, Curve.Keys[CurveEditorState.SelectedKeyIndex + 1].Time - CurveTimeEpsilon);
 			}
+			SyncCurveValueBinding(CurveIndex, Curve);
 		});
 		bChanged = true;
 	}
@@ -4100,10 +4394,17 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 	{
 		if (CurveEditorState.bDraggingSelectedKey)
 		{
-			ForEditableCurves([](FFloatCurve& Curve)
+			ForEditableCurves([&](int32 CurveIndex, FFloatCurve& Curve)
 			{
-				Curve.SortKeys();
-				Curve.AutoSetTangents();
+				if (IsSingleKeyOnlyCurve(CurveIndex))
+				{
+					SyncCurveValueBinding(CurveIndex, Curve);
+				}
+				else
+				{
+					Curve.SortKeys();
+					Curve.AutoSetTangents();
+				}
 			});
 		}
 		CurveEditorState.bDraggingSelectedKey = false;
@@ -4145,10 +4446,16 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 	{
 		if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(ActiveCurve->Keys.size()))
 		{
+			const bool bCanDeleteKey = !HasSingleKeyOnlyEditableCurve();
+			ImGui::BeginDisabled(!bCanDeleteKey);
 			if (ImGui::MenuItem("Delete Key"))
 			{
-				ForEditableCurves([&](FFloatCurve& Curve)
+				ForEditableCurves([&](int32 CurveIndex, FFloatCurve& Curve)
 				{
+					if (IsSingleKeyOnlyCurve(CurveIndex))
+					{
+						return;
+					}
 					if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()))
 					{
 						Curve.Keys.erase(Curve.Keys.begin() + CurveEditorState.SelectedKeyIndex);
@@ -4158,12 +4465,13 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 				CurveEditorState.SelectedKeyIndex = -1;
 				bChanged = true;
 			}
+			ImGui::EndDisabled();
 			ImGui::Separator();
 			if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(ActiveCurve->Keys.size()))
 			{
 				if (ImGui::MenuItem("Constant", nullptr, ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex].InterpMode == ECurveInterpMode::Constant))
 				{
-					ForEditableCurves([&](FFloatCurve& Curve)
+					ForEditableCurves([&](int32, FFloatCurve& Curve)
 					{
 						if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()))
 						{
@@ -4174,7 +4482,7 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 				}
 				if (ImGui::MenuItem("Linear", nullptr, ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex].InterpMode == ECurveInterpMode::Linear))
 				{
-					ForEditableCurves([&](FFloatCurve& Curve)
+					ForEditableCurves([&](int32, FFloatCurve& Curve)
 					{
 						if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()))
 						{
@@ -4185,7 +4493,7 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 				}
 				if (ImGui::MenuItem("Cubic", nullptr, ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex].InterpMode == ECurveInterpMode::Cubic))
 				{
-					ForEditableCurves([&](FFloatCurve& Curve)
+					ForEditableCurves([&](int32, FFloatCurve& Curve)
 					{
 						if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(Curve.Keys.size()))
 						{
@@ -4203,14 +4511,20 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 
 	if (ImGui::BeginPopup("ParticleCurveCanvasContext"))
 	{
+		const bool bCanAddKey = !HasSingleKeyOnlyEditableCurve();
+		ImGui::BeginDisabled(!bCanAddKey);
 		if (ImGui::MenuItem("Add Key"))
 		{
 			FCurveKey NewKey{};
 			NewKey.Time = CurveEditorState.PendingContextTime;
 			NewKey.Value = CurveEditorState.PendingContextValue;
 			NewKey.InterpMode = ECurveInterpMode::Linear;
-			ForEditableCurves([&](FFloatCurve& Curve)
+			ForEditableCurves([&](int32 CurveIndex, FFloatCurve& Curve)
 			{
+				if (IsSingleKeyOnlyCurve(CurveIndex))
+				{
+					return;
+				}
 				Curve.Keys.push_back(NewKey);
 				Curve.SortKeys();
 				Curve.AutoSetTangents();
@@ -4225,6 +4539,7 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 			}
 			bChanged = true;
 		}
+		ImGui::EndDisabled();
 		if (ImGui::MenuItem("Fit To Keys"))
 		{
 			FitCurveViewToSelectedCurves();

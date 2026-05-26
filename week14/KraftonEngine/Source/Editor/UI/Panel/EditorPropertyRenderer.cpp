@@ -41,8 +41,9 @@
 
 namespace
 {
-	constexpr float PropertyNameColumnWidth = 150.0f;
-	constexpr float StructChildIndentWidth = 8.0f;
+	constexpr float PropertyNameColumnWidth = 275.0f;
+	constexpr float StructChildIndentWidth = 16.0f;
+	constexpr float ScalarInputWidth = 124.0f;
 
 	bool IsFbxFilePath(const FString& Path)
 	{
@@ -295,18 +296,129 @@ namespace
 		ImGui::PopStyleColor(2);
 	}
 
-	void DrawPropertyTableLabel(const char* Label)
+	void DrawIndentGuides(int32 IndentLevel)
+	{
+		if (IndentLevel <= 0)
+		{
+			return;
+		}
+
+		const ImVec2 CursorPos = ImGui::GetCursorScreenPos();
+		const ImGuiStyle& Style = ImGui::GetStyle();
+		const float RowMinY = CursorPos.y - Style.FramePadding.y;
+		const float RowMaxY = RowMinY + ImGui::GetFrameHeight();
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+		for (int32 Level = 0; Level < IndentLevel; ++Level)
+		{
+			const float X0 = CursorPos.x + static_cast<float>(Level) * StructChildIndentWidth;
+			const float X1 = X0 + StructChildIndentWidth;
+			const ImU32 FillColor = (Level % 2 == 0)
+				? IM_COL32(28, 28, 28, 255)
+				: IM_COL32(35, 35, 35, 255);
+			DrawList->AddRectFilled(ImVec2(X0, RowMinY), ImVec2(X1, RowMaxY), FillColor);
+			DrawList->AddLine(ImVec2(X1, RowMinY), ImVec2(X1, RowMaxY), IM_COL32(15, 15, 15, 210));
+		}
+	}
+
+	void DrawPropertyTableLabel(const char* Label, int32 IndentLevel = 0)
 	{
 		ImGui::SetWindowFontScale(0.92f);
 		ImGui::AlignTextToFramePadding();
+		DrawIndentGuides(IndentLevel);
+		if (IndentLevel > 0)
+		{
+			ImGui::Indent(static_cast<float>(IndentLevel) * StructChildIndentWidth);
+		}
+		ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
 		ImGui::TextUnformatted(Label ? Label : "");
+		ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+		if (IndentLevel > 0)
+		{
+			ImGui::Unindent(static_cast<float>(IndentLevel) * StructChildIndentWidth);
+		}
 		ImGui::SetWindowFontScale(1.0f);
+	}
+
+	bool RenderVectorComponentRows(float* Values, float Speed, int32 IndentLevel)
+	{
+		if (!Values)
+		{
+			return false;
+		}
+
+		bool bChanged = false;
+		const char* Labels[] = { "X", "Y", "Z" };
+		for (int32 ComponentIndex = 0; ComponentIndex < 3; ++ComponentIndex)
+		{
+			ImGui::PushID(ComponentIndex);
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			DrawPropertyTableLabel(Labels[ComponentIndex], IndentLevel + 1);
+
+			ImGui::TableSetColumnIndex(1);
+			ImGui::SetNextItemWidth(ScalarInputWidth);
+			bChanged |= ImGui::DragFloat("##ComponentValue", &Values[ComponentIndex], Speed);
+			ImGui::PopID();
+		}
+
+		return bChanged;
 	}
 }
 
 const char* FEditorPropertyRenderer::GetPropertyDisplayName(const FPropertyValue& Prop)
 {
 	return Prop.GetDisplayName();
+}
+
+bool FEditorPropertyRenderer::IsExpandableProperty(const FPropertyValue& Prop)
+{
+	return Prop.GetType() == EPropertyType::Array
+		|| Prop.GetType() == EPropertyType::Struct
+		|| Prop.GetType() == EPropertyType::Vec3;
+}
+
+bool FEditorPropertyRenderer::DrawPropertyLabel(const FPropertyValue& Prop, int32 IndentLevel)
+{
+	const char* Label = GetPropertyDisplayName(Prop);
+	const bool bExpandable = IsExpandableProperty(Prop);
+	const float ChildIndent = static_cast<float>(IndentLevel) * StructChildIndentWidth;
+
+	ImGui::SetWindowFontScale(0.92f);
+	ImGui::AlignTextToFramePadding();
+	DrawIndentGuides(IndentLevel);
+	if (ChildIndent > 0.0f)
+	{
+		ImGui::Indent(ChildIndent);
+	}
+
+	bool bOpen = true;
+	if (bExpandable)
+	{
+		ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
+		if (IndentLevel == 0)
+		{
+			Flags |= ImGuiTreeNodeFlags_DefaultOpen;
+		}
+		bOpen = ImGui::TreeNodeEx("##PropertyLabel", Flags, "%s", Label ? Label : "");
+		if (bOpen)
+		{
+			ImGui::TreePop();
+		}
+	}
+	else
+	{
+		ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+		ImGui::TextUnformatted(Label ? Label : "");
+		ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+	}
+
+	if (ChildIndent > 0.0f)
+	{
+		ImGui::Unindent(ChildIndent);
+	}
+	ImGui::SetWindowFontScale(1.0f);
+	return bOpen;
 }
 
 FString FEditorPropertyRenderer::OpenStaticMeshFileDialog()
@@ -888,6 +1000,7 @@ bool FEditorPropertyRenderer::RenderEnumPropertyWidget(FPropertyValue& Prop)
 	int32 Val = 0;
 	memcpy(&Val, Prop.GetValuePtr(), EnumSize);
 	const char* Preview = ((uint32)Val < EnumCount) ? EnumNames[Val] : "Unknown";
+	ImGui::SetNextItemWidth(ScalarInputWidth);
 	if (ImGui::BeginCombo("##Value", Preview))
 	{
 		for (uint32 i = 0; i < EnumCount; ++i)
@@ -918,10 +1031,13 @@ bool FEditorPropertyRenderer::RenderStructPropertyWidget(FPropertyValue& Prop, F
 	}
 
 	bool bChanged = false;
-	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_DefaultOpen |
-		ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
-
-	bool bOpen = ImGui::TreeNodeEx("##StructValue", Flags, "");
+	bool bOpen = Options.bUseExternalExpansion ? Options.bParentExpanded : true;
+	if (!Options.bUseExternalExpansion)
+	{
+		ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_DefaultOpen |
+			ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
+		bOpen = ImGui::TreeNodeEx("##StructValue", Flags, "");
+	}
 	if (bOpen)
 	{
 		TArray<FPropertyValue> ChildProps;
@@ -934,16 +1050,14 @@ bool FEditorPropertyRenderer::RenderStructPropertyWidget(FPropertyValue& Prop, F
 			FPropertyValue& ChildProp = ChildProps[ci];
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
-			ImGui::AlignTextToFramePadding();
-			const float ChildIndent = static_cast<float>(Options.IndentLevel + 1) * StructChildIndentWidth;
-			ImGui::Indent(ChildIndent);
-			DrawPropertyTableLabel(GetPropertyDisplayName(ChildProp));
-			ImGui::Unindent(ChildIndent);
+			const bool bChildOpen = DrawPropertyLabel(ChildProp, Options.IndentLevel + 1);
 
 			ImGui::TableSetColumnIndex(1);
 			ImGui::SetNextItemWidth(-1);
 
 			FEditorPropertyRenderOptions ChildOptions = Options;
+			ChildOptions.bUseExternalExpansion = true;
+			ChildOptions.bParentExpanded = bChildOpen;
 			ChildOptions.IndentLevel = Options.IndentLevel + 1;
 			ChildOptions.PropertyPath = MakePropertyPath(Options.PropertyPath, ChildProp.GetName());
 			int32 ChildIdx = ci;
@@ -953,7 +1067,10 @@ bool FEditorPropertyRenderer::RenderStructPropertyWidget(FPropertyValue& Prop, F
 			}
 			ImGui::PopID();
 		}
-		ImGui::TreePop();
+		if (!Options.bUseExternalExpansion)
+		{
+			ImGui::TreePop();
+		}
 	}
 
 	return bChanged;
@@ -979,18 +1096,25 @@ bool FEditorPropertyRenderer::RenderArrayPropertyWidget(FPropertyValue& Prop, FE
 	size_t Num = Ops->GetNum(ArrayPtr);
 	const bool bEditFixedSize = HasTruthyPropertyMetadata(Prop, "editfixedsize") || HasTruthyPropertyMetadata(Prop, "fixedsize");
 
-	if (!bEditFixedSize && Ops->InsertDefault && ImGui::Button("+"))
+	ImGui::AlignTextToFramePadding();
+	ImGui::TextDisabled("%zu Array element%s", Num, Num == 1 ? "" : "s");
+	if (!bEditFixedSize && Ops->InsertDefault)
 	{
-		Ops->InsertDefault(ArrayPtr, Num);
-		bChanged = true;
-		if (Options.bDispatchChange)
+		ImGui::SameLine();
+		if (ImGui::SmallButton("+"))
 		{
-			DispatchPostEditChange(Prop, EPropertyChangeType::ArrayAdd, static_cast<int32>(Num), MakeArrayElementPath(Options.PropertyPath, static_cast<int32>(Num)));
+			Ops->InsertDefault(ArrayPtr, Num);
+			bChanged = true;
+			if (Options.bDispatchChange)
+			{
+				DispatchPostEditChange(Prop, EPropertyChangeType::ArrayAdd, static_cast<int32>(Num), MakeArrayElementPath(Options.PropertyPath, static_cast<int32>(Num)));
+			}
+			Num = Ops->GetNum(ArrayPtr);
 		}
-		Num = Ops->GetNum(ArrayPtr);
 	}
 
-	if (BeginPropertyChildTable("##ArrayPropertyTable"))
+	const bool bOpen = Options.bUseExternalExpansion ? Options.bParentExpanded : true;
+	if (bOpen)
 	{
 		for (int32 ElemIdx = 0; ElemIdx < static_cast<int32>(Num); ++ElemIdx)
 		{
@@ -1002,7 +1126,7 @@ bool FEditorPropertyRenderer::RenderArrayPropertyWidget(FPropertyValue& Prop, FE
 
 			ImGui::PushID(ElemIdx);
 
-			FString ElementName = "Element " + std::to_string(ElemIdx);
+			FString ElementName = "Index [" + std::to_string(ElemIdx) + "]";
 			const FString ElementPath = MakeArrayElementPath(Options.PropertyPath, ElemIdx);
 
 			ImGui::TableNextRow();
@@ -1026,15 +1150,35 @@ bool FEditorPropertyRenderer::RenderArrayPropertyWidget(FPropertyValue& Prop, FE
 				{
 					ImGui::SameLine();
 				}
-				DrawPropertyTableLabel(ElementName.c_str());
 
-				ImGui::TableSetColumnIndex(1);
-				ImGui::SetNextItemWidth(-1);
 
 				FPropertyValue ElementValue;
 				ElementValue.Object = Prop.Object;
 				ElementValue.Property = InnerProperty;
 				ElementValue.ContainerPtr = ElementPtr;
+
+				const bool bElementExpandable = IsExpandableProperty(ElementValue);
+				bool bElementOpen = true;
+				if (bElementExpandable)
+				{
+					const int32 ElementIndentLevel = Options.IndentLevel + 1;
+					DrawIndentGuides(ElementIndentLevel);
+					ImGui::Indent(static_cast<float>(ElementIndentLevel) * StructChildIndentWidth);
+					ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding;
+					bElementOpen = ImGui::TreeNodeEx("##ArrayElementLabel", Flags, "%s", ElementName.c_str());
+					if (bElementOpen)
+					{
+						ImGui::TreePop();
+					}
+					ImGui::Unindent(static_cast<float>(ElementIndentLevel) * StructChildIndentWidth);
+				}
+				else
+				{
+					DrawPropertyTableLabel(ElementName.c_str(), Options.IndentLevel + 1);
+				}
+
+				ImGui::TableSetColumnIndex(1);
+				ImGui::SetNextItemWidth(-1);
 
 				TArray<FPropertyValue> ElementProps;
 				ElementProps.push_back(ElementValue);
@@ -1042,6 +1186,9 @@ bool FEditorPropertyRenderer::RenderArrayPropertyWidget(FPropertyValue& Prop, FE
 
 				FEditorPropertyRenderOptions ElementOptions = Options;
 				ElementOptions.bDispatchChange = false;
+				ElementOptions.bUseExternalExpansion = true;
+				ElementOptions.bParentExpanded = bElementOpen;
+				ElementOptions.IndentLevel = Options.IndentLevel + 1;
 				ElementOptions.PropertyPath = ElementPath;
 				if (RenderPropertyWidget(ElementProps, ElementPropIndex, ElementOptions))
 				{
@@ -1059,7 +1206,6 @@ bool FEditorPropertyRenderer::RenderArrayPropertyWidget(FPropertyValue& Prop, FE
 				break;
 			}
 		}
-		EndPropertyChildTable();
 	}
 
 	return bChanged;
@@ -1191,6 +1337,7 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 		const float Min = NumericProperty ? NumericProperty->GetMin() : Prop.GetMin();
 		const float Max = NumericProperty ? NumericProperty->GetMax() : Prop.GetMax();
 		const float Speed = NumericProperty ? NumericProperty->GetSpeed() : Prop.GetSpeed();
+		ImGui::SetNextItemWidth(ScalarInputWidth);
 		if (Min != 0.0f || Max != 0.0f)
 		{
 			bChanged = ImGui::DragInt("##Value", Val, Speed, (int32)Min, (int32)Max);
@@ -1208,6 +1355,7 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 		const float Min = NumericProperty ? NumericProperty->GetMin() : Prop.GetMin();
 		const float Max = NumericProperty ? NumericProperty->GetMax() : Prop.GetMax();
 		const float Speed = NumericProperty ? NumericProperty->GetSpeed() : Prop.GetSpeed();
+		ImGui::SetNextItemWidth(ScalarInputWidth);
 		if (Min != 0.0f || Max != 0.0f)
 		{
 			bChanged = ImGui::DragFloat("##Value", Val, Speed, Min, Max, "%.4f");
@@ -1222,15 +1370,9 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 	{
 		float* Val = static_cast<float*>(Prop.GetValuePtr());
 		bChanged = ImGui::DragFloat3("##Value", Val, Prop.GetSpeed());
-		if (ImGui::TreeNodeEx("Components", ImGuiTreeNodeFlags_SpanAvailWidth))
+		if (!Options.bUseExternalExpansion || Options.bParentExpanded)
 		{
-			ImGui::SetNextItemWidth(-1.0f);
-			bChanged |= ImGui::DragFloat("X", &Val[0], Prop.GetSpeed());
-			ImGui::SetNextItemWidth(-1.0f);
-			bChanged |= ImGui::DragFloat("Y", &Val[1], Prop.GetSpeed());
-			ImGui::SetNextItemWidth(-1.0f);
-			bChanged |= ImGui::DragFloat("Z", &Val[2], Prop.GetSpeed());
-			ImGui::TreePop();
+			bChanged |= RenderVectorComponentRows(Val, Prop.GetSpeed(), Options.IndentLevel);
 		}
 		break;
 	}

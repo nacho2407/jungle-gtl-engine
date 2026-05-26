@@ -8,6 +8,8 @@ class USceneComponent;
 struct FEditorPropertyRenderOptions
 {
 	bool bDispatchChange = true;
+	bool bUseExternalExpansion = false;
+	bool bParentExpanded = true;
 	FString PropertyPath;
 	USceneComponent* EditedSceneComponent = nullptr;
 	int32 IndentLevel = 0;
@@ -35,6 +37,8 @@ public:
 	bool RenderPropertyWidget(TArray<FPropertyValue>& Props, int32& Index, FEditorPropertyRenderOptions Options = {});
 
 	static const char* GetPropertyDisplayName(const FPropertyValue& Prop);
+	static bool IsExpandableProperty(const FPropertyValue& Prop);
+	static bool DrawPropertyLabel(const FPropertyValue& Prop, int32 IndentLevel = 0);
 
 private:
 	bool RenderSoftObjectPropertyWidget(FPropertyValue& Prop);

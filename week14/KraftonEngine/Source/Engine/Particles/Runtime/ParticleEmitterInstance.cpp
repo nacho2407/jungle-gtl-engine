@@ -4,6 +4,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/Module/ParticleModule.h"
+#include "Particles/Module/ParticleModuleEvent.h"
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 
 #include <algorithm>
@@ -31,6 +32,7 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	}
 
 	CollisionEventQueue.clear();
+	RefreshEventGeneratorFlags();
 	EmitterTime += DeltaTime;
 
 	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
@@ -114,6 +116,13 @@ void FParticleEmitterInstance::Reset()
 	SpawnFraction = 0.0f;
 	EmitterTime = 0.0f;
 	CollisionEventQueue.clear();
+	bIsEventGenerator = false;
+	bGenerateSpawnEvents = false;
+	bGenerateKillEvents = false;
+	bGenerateCollisionEvents = false;
+	SpawnEventName = FName("Spawn");
+	KillEventName = FName("Kill");
+	CollisionEventName = FName("Collision");
 	bActive = true;
 	bSpawningEnabled = true;
 }
@@ -162,7 +171,11 @@ int32 FParticleEmitterInstance::SpawnParticles(float DeltaTime)
 void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle)
 {
 	const FVector SpawnLocation = Component ? Component->GetWorldLocation() : FVector::ZeroVector;
+	InitializeParticle(Particle, SpawnLocation);
+}
 
+void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle, const FVector& SpawnLocation)
+{
 	Particle.Position = SpawnLocation;
 	Particle.OldPosition = SpawnLocation;
 	Particle.Velocity = DefaultVelocity;
@@ -179,6 +192,11 @@ void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle)
 	Particle.bAlive = true;
 
 	RunSpawnModules(Particle, EmitterTime);
+
+	if (bGenerateSpawnEvents)
+	{
+		QueueParticleEvent(EParticleEventType::Spawn, SpawnEventName, Particle, static_cast<int32>(Particle.FrameIndex));
+	}
 }
 
 void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
@@ -208,14 +226,14 @@ void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
 	END_UPDATE_LOOP
 
 	RunUpdateModules(DeltaTime);
+	CompactDeadParticles();
 	if (Component && bIsEventGenerator)
 	{
 		for (const FParticleCollisionEventPayload& Event : CollisionEventQueue)
 		{
-			Component->BroadcastParticleCollisionEvent(Event);
+			Component->BroadcastParticleEvent(Event);
 		}
 	}
-	CompactDeadParticles();
 }
 
 void FParticleEmitterInstance::CompactDeadParticles()
@@ -225,6 +243,10 @@ void FParticleEmitterInstance::CompactDeadParticles()
 		FBaseParticle& Particle = GetParticle(ParticleIndex);
 		if (!Particle.bAlive)
 		{
+			if (bGenerateKillEvents)
+			{
+				QueueParticleEvent(EParticleEventType::Kill, KillEventName, Particle, ParticleIndex);
+			}
 			KillParticle(ParticleIndex);
 			continue;
 		}
@@ -251,6 +273,45 @@ void FParticleEmitterInstance::KillParticle(int32 ParticleIndex)
 
 	--ActiveParticles;
 	ParticleIndices[ActiveParticles] = static_cast<uint16>(ParticleSlot);
+}
+
+void FParticleEmitterInstance::QueueParticleEvent(EParticleEventType EventType, const FName& EventName, const FBaseParticle& Particle, int32 ParticleIndex)
+{
+	if (!bIsEventGenerator)
+	{
+		return;
+	}
+
+	FParticleCollisionEventPayload NewEvent;
+	NewEvent.EventName = EventName;
+	NewEvent.EventType = EventType;
+	NewEvent.EmitterTime = EmitterTime;
+	NewEvent.Location = Particle.Position;
+	NewEvent.Normal = FVector::ZeroVector;
+	NewEvent.Velocity = Particle.Velocity;
+	NewEvent.Direction = Particle.Velocity.LengthSquared() > 0.0001f ? Particle.Velocity.Normalized() : FVector::ZeroVector;
+	NewEvent.ParticleIndex = ParticleIndex;
+	NewEvent.HitComponent = nullptr;
+	CollisionEventQueue.push_back(NewEvent);
+}
+
+void FParticleEmitterInstance::ReceiveParticleEvent(const FParticleCollisionEventPayload& Event)
+{
+	if (!CurrentLODLevel || !CurrentLODLevel->IsEnabled())
+	{
+		return;
+	}
+
+	const TArray<UParticleModule*>& Modules = CurrentLODLevel->GetModules();
+	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
+	{
+		UParticleModule* Module = CurrentLODLevel->ResolveModule(ModuleIndex, SpriteTemplate);
+		UParticleModuleEventReceiver* Receiver = Cast<UParticleModuleEventReceiver>(Module);
+		if (Receiver && Receiver->IsEnabled())
+		{
+			Receiver->ReceiveEvent(this, Event);
+		}
+	}
 }
 
 void FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles)
@@ -352,8 +413,8 @@ bool FParticleEmitterInstance::CanUseLODLevel(const UParticleLODLevel* LODLevel)
 		return false;
 	}
 
-	const UParticleModuleTypeDataBase* CurrentTypeData = CurrentLODLevel ? CurrentLODLevel->GetTypeDataModule() : nullptr;
-	const UParticleModuleTypeDataBase* NewTypeData = LODLevel->GetTypeDataModule();
+	const UParticleModuleTypeDataBase* CurrentTypeData = CurrentLODLevel ? CurrentLODLevel->ResolveTypeDataModule(SpriteTemplate) : nullptr;
+	const UParticleModuleTypeDataBase* NewTypeData = LODLevel->ResolveTypeDataModule(SpriteTemplate);
 	const EParticleRenderType CurrentRenderType = CurrentTypeData ? CurrentTypeData->GetRenderType() : EParticleRenderType::Sprite;
 	const EParticleRenderType NewRenderType = NewTypeData ? NewTypeData->GetRenderType() : EParticleRenderType::Sprite;
 	if (CurrentRenderType != NewRenderType)
@@ -365,6 +426,51 @@ bool FParticleEmitterInstance::CanUseLODLevel(const UParticleLODLevel* LODLevel)
 	return NewPayloadSize == InstancePayloadSize;
 }
 
+void FParticleEmitterInstance::RefreshEventGeneratorFlags()
+{
+	bIsEventGenerator = false;
+	bGenerateSpawnEvents = false;
+	bGenerateKillEvents = false;
+	bGenerateCollisionEvents = false;
+	SpawnEventName = FName("Spawn");
+	KillEventName = FName("Kill");
+	CollisionEventName = FName("Collision");
+
+	if (!CurrentLODLevel)
+	{
+		return;
+	}
+
+	const TArray<UParticleModule*>& Modules = CurrentLODLevel->GetModules();
+	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
+	{
+		UParticleModule* Module = CurrentLODLevel->ResolveModule(ModuleIndex, SpriteTemplate);
+		UParticleModuleEventGenerator* Generator = Cast<UParticleModuleEventGenerator>(Module);
+		if (!Generator || !Generator->IsEnabled())
+		{
+			continue;
+		}
+
+		bGenerateSpawnEvents = bGenerateSpawnEvents || Generator->bGenerateSpawnEvents;
+		bGenerateKillEvents = bGenerateKillEvents || Generator->bGenerateKillEvents;
+		bGenerateCollisionEvents = bGenerateCollisionEvents || Generator->bGenerateCollisionEvents;
+		if (Generator->SpawnEventName.IsValid() && Generator->SpawnEventName != FName::None)
+		{
+			SpawnEventName = Generator->SpawnEventName;
+		}
+		if (Generator->KillEventName.IsValid() && Generator->KillEventName != FName::None)
+		{
+			KillEventName = Generator->KillEventName;
+		}
+		if (Generator->CollisionEventName.IsValid() && Generator->CollisionEventName != FName::None)
+		{
+			CollisionEventName = Generator->CollisionEventName;
+		}
+	}
+
+	bIsEventGenerator = bGenerateSpawnEvents || bGenerateKillEvents || bGenerateCollisionEvents;
+}
+
 void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float SpawnTime)
 {
 	if (!CurrentLODLevel)
@@ -372,7 +478,7 @@ void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float Sp
 		return;
 	}
 
-	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->GetTypeDataModule())
+	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->ResolveTypeDataModule(SpriteTemplate))
 	{
 		if (TypeDataModule->IsSpawnModule())
 		{
@@ -398,7 +504,7 @@ void FParticleEmitterInstance::RunUpdateModules(float DeltaTime)
 		return;
 	}
 
-	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->GetTypeDataModule())
+	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->ResolveTypeDataModule(SpriteTemplate))
 	{
 		if (TypeDataModule->IsUpdateModule())
 		{

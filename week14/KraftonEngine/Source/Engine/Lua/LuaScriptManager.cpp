@@ -1,5 +1,6 @@
 ﻿#include "LuaScriptManager.h"
 
+#include "Lua/LuaDocRegistry.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
 #include "Audio/AudioManager.h"
@@ -14,6 +15,7 @@
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Primitive/SkinnedMeshComponent.h"
+#include "Component/Particle/ParticleSystemComponent.h"
 #include "Core/Types/CollisionTypes.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
@@ -28,6 +30,7 @@
 #include "GameFramework/World.h"
 #include "Object/Reflection/UClass.h"
 #include "Platform/Paths.h"
+#include "Math/Transform.h"
 #include "Math/Vector.h"
 #include "Platform/WindowsWindow.h"
 #include "UI/UIManager.h"
@@ -37,6 +40,8 @@
 #include <fstream>
 #include <sstream>
 #include <windows.h>  // PostQuitMessage
+
+#include "Intermediate/Generated/LuaBindings.generated.h"
 
 std::unique_ptr<sol::state> FLuaScriptManager::Lua;
 sol::protected_function FLuaScriptManager::OnEscapePressedCallback;
@@ -402,11 +407,48 @@ sol::state& FLuaScriptManager::GetState()
 
 void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 {
+	FLuaDocRegistry::Get().Reset();
+
 	RegisterLuaHelpers(Lua);
 	RegisterCoreBindings(Lua);
 	RegisterMathBindings(Lua);
 	RegisterActorBindings(Lua);
 	RegisterUIBindings(Lua);
+
+	RegisterGeneratedLuaBindings(Lua);
+
+	FLuaDocRegistry::Get().Global("obj", "Actor");
+	FLuaDocRegistry::Get().Global("this", "any");
+	FLuaDocRegistry::Get().Global("self", "table");
+
+	FLuaDocRegistry::Get().Type("AnimNode");
+	FLuaDocRegistry::Get().Type("AnimLib")
+		.Method("---@return number\nfunction Anim.get_owner_speed() end")
+		.Method("---@return string\nfunction Anim.get_owner_movement_mode() end")
+		.Method("---@return boolean\nfunction Anim.is_owner_falling() end")
+		.Method("---@param path string\n---@param section? string\n---@param rate? number\n---@param blendIn? number\n---@param slotName? string\nfunction Anim.play_montage(path, section, rate, blendIn, slotName) end")
+		.Method("---@param blendOut? number\n---@param slotName? string\nfunction Anim.stop_montage(blendOut, slotName) end")
+		.Method("---@param slotName? string\n---@return boolean\nfunction Anim.is_montage_playing(slotName) end")
+		.Method("---@param sectionName string\n---@param slotName? string\nfunction Anim.jump_to_section(sectionName, slotName) end")
+		.Method("---@return boolean\nfunction Anim.is_left_mouse_pressed() end")
+		.Method("---@return boolean\nfunction Anim.is_left_mouse_down() end")
+		.Method("---@return boolean\nfunction Anim.is_right_mouse_pressed() end")
+		.Method("---@param key integer\n---@return boolean\nfunction Anim.is_key_pressed(key) end")
+		.Method("---@param name? string\n---@return AnimNode\nfunction Anim.create_state_machine(name) end")
+		.Method("---@param path string\n---@param rate number\n---@param loop boolean\n---@return AnimNode\nfunction Anim.create_sequence_player(path, rate, loop) end")
+		.Method("---@param stateMachine AnimNode\n---@param name string\n---@param subGraph AnimNode\nfunction Anim.sm_add_state(stateMachine, name, subGraph) end")
+		.Method("---@param stateMachine AnimNode\n---@param from string\n---@param to string\n---@param condition fun(): boolean\n---@param blendTime number\nfunction Anim.sm_add_transition(stateMachine, from, to, condition, blendTime) end")
+		.Method("---@param stateMachine AnimNode\n---@param name string\nfunction Anim.sm_set_initial_state(stateMachine, name) end")
+		.Method("---@param root AnimNode\nfunction Anim.set_root_node(root) end")
+		.Method("---@param name string\n---@param input AnimNode\n---@return AnimNode\nfunction Anim.create_slot(name, input) end")
+		.Method("---@return AnimNode\nfunction Anim.create_ref_pose() end")
+		.Method("---@param base AnimNode\n---@param blend AnimNode\n---@param maskRootBone string\n---@return AnimNode\nfunction Anim.create_layered_blend_per_bone(base, blend, maskRootBone) end")
+		.Method("---@param initialIndex? integer\n---@param blendTime? number\n---@return AnimNode\nfunction Anim.create_blend_list_by_enum(initialIndex, blendTime) end")
+		.Method("---@param blendList AnimNode\n---@param pose AnimNode\nfunction Anim.blend_list_add_pose(blendList, pose) end")
+		.Method("---@param blendList AnimNode\n---@param index integer\nfunction Anim.blend_list_set_active(blendList, index) end");
+	FLuaDocRegistry::Get().Global("Anim", "AnimLib");
+
+	FLuaDocRegistry::Get().GenerateStubs();
 }
 
 FInputSystemSnapshot FLuaScriptManager::GetLuaInputSnapshot()
@@ -462,29 +504,13 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	});
 
 	sol::table Input = Lua.create_named_table("Input");
-	Input.set_function("GetKeyDown", sol::overload(
-		[](int VK)
 	{
-		return GetLuaInputSnapshot().WasPressed(VK);
-	}));
-	Input.set_function("GetKey", sol::overload(
-		[](int VK)
-	{
-		return GetLuaInputSnapshot().IsDown(VK);
-	}));
-	Input.set_function("GetKeyUp", sol::overload(
-		[](int VK)
-	{
-		return GetLuaInputSnapshot().WasReleased(VK);
-	}));
-	Input.set_function("GetMouseDeltaX", []()
-	{
-		return GetLuaInputSnapshot().MouseDeltaX;
-	});
-	Input.set_function("GetMouseDeltaY", []()
-	{
-		return GetLuaInputSnapshot().MouseDeltaY;
-	});
+		Input.set_function("GetKeyDown", [](int VK) { return GetLuaInputSnapshot().WasPressed(VK); });
+		Input.set_function("GetKey", [](int VK) { return GetLuaInputSnapshot().IsDown(VK); });
+		Input.set_function("GetKeyUp", [](int VK) { return GetLuaInputSnapshot().WasReleased(VK); });
+		Input.set_function("GetMouseDeltaX", []() { return GetLuaInputSnapshot().MouseDeltaX; });
+		Input.set_function("GetMouseDeltaY", []() { return GetLuaInputSnapshot().MouseDeltaY; });
+	}
 
 	// Engine — 게임 일시정지 / 종료.
 	sol::table Engine = Lua.create_named_table("Engine");
@@ -818,6 +844,56 @@ void FLuaScriptManager::RegisterMathBindings(sol::state& Lua)
 		"XAxis", []() { return FVector::XAxisVector; },
 		"YAxis", []() { return FVector::YAxisVector; },
 		"ZAxis", []() { return FVector::ZAxisVector; });
+
+	FLuaDocRegistry::Get().Type("Vector")
+		.Property("X", "number")
+		.Property("Y", "number")
+		.Property("Z", "number")
+		.Method("---@param x? number\n---@param y? number\n---@param z? number\n---@return Vector\nfunction Vector.new(x, y, z) end")
+		.Method("---@return number\nfunction Vector:Length() end")
+		.Method("---@return nil\nfunction Vector:Normalize() end")
+		.Method("---@return Vector\nfunction Vector:Normalized() end")
+		.Method("---@param other Vector\n---@return number\nfunction Vector:Dot(other) end")
+		.Method("---@param other Vector\n---@return Vector\nfunction Vector:Cross(other) end")
+		.Method("---@param a Vector\n---@param b Vector\n---@return number\nfunction Vector.Distance(a, b) end")
+		.Method("---@param a Vector\n---@param b Vector\n---@return number\nfunction Vector.DistSquared(a, b) end")
+		.Method("---@param a Vector\n---@param b Vector\n---@param alpha number\n---@return Vector\nfunction Vector.Lerp(a, b, alpha) end")
+		.Method("---@return Vector\nfunction Vector.Zero() end")
+		.Method("---@return Vector\nfunction Vector.One() end")
+		.Method("---@return Vector\nfunction Vector.Up() end")
+		.Method("---@return Vector\nfunction Vector.Forward() end")
+		.Method("---@return Vector\nfunction Vector.Right() end");
+
+	Lua.new_usertype<FTransform>("Transform",
+		sol::constructors<FTransform()>(),
+		"Location", &FTransform::Location,
+		"Rotation", sol::property(
+			[](const FTransform& Transform)
+	{
+		return Transform.GetRotator().ToVector();
+	},
+			[](FTransform& Transform, const FVector& Rotation)
+	{
+		Transform.SetRotation(FRotator(Rotation));
+	}
+		),
+		"Scale", &FTransform::Scale,
+		"New", [](const FVector& Location, const FVector& Rotation, const FVector& Scale)
+	{
+		return FTransform(Location, Rotation, Scale);
+	},
+		"Identity", []()
+	{
+		return FTransform();
+	});
+
+	FLuaDocRegistry::Get().Type("Transform")
+		.Property("Location", "Vector")
+		.Property("Rotation", "Vector")
+		.Property("Scale", "Vector")
+		.Method("---@return Transform\nfunction Transform.new() end")
+		.Method("---@param location Vector\n---@param rotation Vector\n---@param scale Vector\n---@return Transform\nfunction Transform.New(location, rotation, scale) end")
+		.Method("---@return Transform\nfunction Transform.Identity() end");
 }
 
 void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
@@ -833,9 +909,18 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"StopSlomo", &UActionComponent::StopSlomo,
 		"StopAllActions", &UActionComponent::StopAllActions);
 
+	FLuaDocRegistry::Get().Type("ActionComponent")
+		.Method("---@param duration number\nfunction ActionComponent:HitStop(duration) end")
+		.Method("---@param direction Vector\n---@param distance number\n---@param duration number\nfunction ActionComponent:Knockback(direction, distance, duration) end")
+		.Method("function ActionComponent:StopAllActions() end");
+
 	Lua.new_usertype<UFloatingPawnMovementComponent>("FloatingPawnMovementComponent",
 		"SetMoveInput", &UFloatingPawnMovementComponent::SetMoveInput,
 		"SetLookInput", &UFloatingPawnMovementComponent::SetLookInput);
+
+	FLuaDocRegistry::Get().Type("FloatingPawnMovementComponent")
+		.Method("---@param input Vector\nfunction FloatingPawnMovementComponent:SetMoveInput(input) end")
+		.Method("---@param input Vector\nfunction FloatingPawnMovementComponent:SetLookInput(input) end");
 
 	Lua.new_usertype<USceneComponent>("SceneComponent",
 		"Location", sol::property(
@@ -897,6 +982,18 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		[](USceneComponent& Component, const FVector& V) { Component.SetRelativeLocation(V); }
 		));
 
+	FLuaDocRegistry::Get().Type("SceneComponent")
+		.Property("Location", "Vector")
+		.Property("Rotation", "Vector")
+		.Property("RelativeLocation", "Vector")
+		.Property("Forward", "Vector")
+		.Property("Right", "Vector")
+		.Property("Up", "Vector")
+		.Method("---@return Vector\nfunction SceneComponent:GetLocation() end")
+		.Method("---@param location Vector\nfunction SceneComponent:SetLocation(location) end")
+		.Method("---@return Vector\nfunction SceneComponent:GetRotation() end")
+		.Method("---@param rotation Vector\nfunction SceneComponent:SetRotation(rotation) end");
+
 	Lua.new_usertype<UPrimitiveComponent>("PrimitiveComponent",
 		sol::base_classes, sol::bases<USceneComponent>(),
 		"SetSimulatePhysics", &UPrimitiveComponent::SetSimulatePhysics,
@@ -912,6 +1009,20 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"SetMass", &UPrimitiveComponent::SetMass,
 		"GetGenerateOverlapEvents", &UPrimitiveComponent::GetGenerateOverlapEvents);
 
+	FLuaDocRegistry::Get().Type("PrimitiveComponent", "SceneComponent")
+		.Method("---@param enabled boolean\nfunction PrimitiveComponent:SetSimulatePhysics(enabled) end")
+		.Method("---@return boolean\nfunction PrimitiveComponent:GetSimulatePhysics() end")
+		.Method("---@param force Vector\nfunction PrimitiveComponent:AddForce(force) end")
+		.Method("---@param force Vector\n---@param location Vector\nfunction PrimitiveComponent:AddForceAtLocation(force, location) end")
+		.Method("---@param torque Vector\nfunction PrimitiveComponent:AddTorque(torque) end")
+		.Method("---@return Vector\nfunction PrimitiveComponent:GetLinearVelocity() end")
+		.Method("---@param velocity Vector\nfunction PrimitiveComponent:SetLinearVelocity(velocity) end")
+		.Method("---@return Vector\nfunction PrimitiveComponent:GetAngularVelocity() end")
+		.Method("---@param velocity Vector\nfunction PrimitiveComponent:SetAngularVelocity(velocity) end")
+		.Method("---@return number\nfunction PrimitiveComponent:GetMass() end")
+		.Method("---@param mass number\nfunction PrimitiveComponent:SetMass(mass) end")
+		.Method("---@return boolean\nfunction PrimitiveComponent:GetGenerateOverlapEvents() end");
+
 	// 메시 에셋 경로로 컴포넌트 식별 가능하게 노출. 자동 생성된 FName ("UStaticMeshComponent_41")
 	// 은 월드 초기화 순서에 따라 카운터가 달라져 빌드별로 매칭이 깨질 수 있다. 메시 경로는
 	// 씬 파일에 명시 저장되므로 deterministic.
@@ -919,6 +1030,28 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		sol::base_classes, sol::bases<UPrimitiveComponent, USceneComponent>(),
 		"MeshPath", sol::property([](UStaticMeshComponent& C) { return C.GetStaticMeshPath(); }),
 		"GetMeshPath", [](UStaticMeshComponent& C) { return C.GetStaticMeshPath(); });
+
+	FLuaDocRegistry::Get().Type("StaticMeshComponent", "PrimitiveComponent")
+		.Property("MeshPath", "string")
+		.Method("---@return string\nfunction StaticMeshComponent:GetMeshPath() end");
+
+	Lua.new_usertype<UParticleSystemComponent>("ParticleSystemComponent",
+		sol::base_classes, sol::bases<UPrimitiveComponent, USceneComponent>(),
+		"SetVectorParameter", [](UParticleSystemComponent& Component, const FString& ParameterName, const FVector& Value)
+	{
+		Component.SetVectorParameter(ParameterName, Value);
+	},
+		"Activate", &UParticleSystemComponent::Activate,
+		"Deactivate", &UParticleSystemComponent::Deactivate,
+		"ResetSystem", &UParticleSystemComponent::ResetSystem,
+		"SetEmitterSpawningEnabled", &UParticleSystemComponent::SetEmitterSpawningEnabled);
+
+	FLuaDocRegistry::Get().Type("ParticleSystemComponent", "PrimitiveComponent")
+		.Method("---@param parameterName string\n---@param value Vector\nfunction ParticleSystemComponent:SetVectorParameter(parameterName, value) end")
+		.Method("function ParticleSystemComponent:Activate() end")
+		.Method("function ParticleSystemComponent:Deactivate() end")
+		.Method("function ParticleSystemComponent:ResetSystem() end")
+		.Method("---@param enabled boolean\nfunction ParticleSystemComponent:SetEmitterSpawningEnabled(enabled) end");
 
 	Lua.new_usertype<FHitResult>("HitResult",
 		"HitComponent", &FHitResult::HitComponent,
@@ -931,148 +1064,106 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"FaceIndex", &FHitResult::FaceIndex,
 		"bHit", &FHitResult::bHit);
 
+	FLuaDocRegistry::Get().Type("HitResult")
+		.Property("HitComponent", "PrimitiveComponent?")
+		.Property("HitActor", "Actor?")
+		.Property("Distance", "number")
+		.Property("PenetrationDepth", "number")
+		.Property("WorldHitLocation", "Vector")
+		.Property("WorldNormal", "Vector")
+		.Property("ImpactNormal", "Vector")
+		.Property("FaceIndex", "integer")
+		.Property("bHit", "boolean");
+
 	Lua.new_usertype<UCameraComponent>("CameraComponent",
 		sol::base_classes, sol::bases<USceneComponent>());
 
-	Lua.new_usertype<AActor>("Actor",
-		"Location", sol::property(
-		[](AActor& Actor)
-	{
-		return Actor.GetActorLocation();
-	},
-		[](AActor& Actor, const FVector& Location)
-	{
-		Actor.SetActorLocation(Location);
-	}
-	),
-		"Rotation", sol::property(
-		[](AActor& Actor)
-	{
-		return Actor.GetActorRotation().ToVector();
-	},
-		[](AActor& Actor, const FVector& Rotation)
-	{
-		Actor.SetActorRotation(Rotation);
-	}
-	),
+	FLuaDocRegistry::Get().Type("CameraComponent", "SceneComponent");
 
-		"Scale", sol::property(
-		[](AActor& Actor)
-	{
-		return Actor.GetActorScale();
-	},
-		[](AActor& Actor, const FVector& Scale)
-	{
-		Actor.SetActorScale(Scale);
-	}
-	),
+	Lua.new_usertype<USkinnedMeshComponent>("SkinnedMeshComponent",
+		sol::base_classes, sol::bases<UPrimitiveComponent, USceneComponent>());
 
-		"Forward", sol::property([](AActor& Actor)
-	{
-		return Actor.GetActorForward();
-	}
-	),
-		
-		"Right", sol::property([](AActor& Actor)
-	{
-		return Actor.GetActorRight();
-	}
-	),
+	FLuaDocRegistry::Get().Type("SkinnedMeshComponent", "PrimitiveComponent");
 
-		"AddWorldOffset", [](AActor& Actor, const FVector& Offset)
-	{
-		Actor.AddActorWorldOffset(Offset);
-	},
-
-		"Destroy", [](AActor& Actor)
-	{
-		// World->DestroyActor가 EndPlay + 정리. Lua는 호출 후 해당 액터를 더 참조하지 말 것.
-		if (UWorld* W = Actor.GetWorld()) W->DestroyActor(&Actor);
-	},
-
-		"IsValid", [](AActor* Actor)
-	{
-		// Lua가 보유한 actor 핸들이 cpp 측에서 destroy됐는지 확인. nil/destroyed면 false.
-		return Actor != nullptr && IsAliveObject(Actor);
-	},
-
-		"HasTag", [](AActor& Actor, const FString& Tag)
-	{
-		return Actor.HasTag(FName(Tag));
-	},
-		"AddTag", [](AActor& Actor, const FString& Tag)
-	{
-		Actor.AddTag(FName(Tag));
-	},
-		"RemoveTag", [](AActor& Actor, const FString& Tag)
-	{
-		Actor.RemoveTag(FName(Tag));
-	},
-
-		"GetFloatingPawnMovement", [](AActor& Actor)
-	{
-		return Actor.GetComponentByClass<UFloatingPawnMovementComponent>();
-	},
-
-		"GetCamera", [](AActor& Actor)
-	{
-		return Actor.GetComponentByClass<UCameraComponent>();
-	},
-
-		"GetActionComponent", [](AActor& Actor)
-	{
-		return Actor.GetComponentByClass<UActionComponent>();
-	},
-
-		"GetRootPrimitiveComponent", [](AActor& Actor) -> UPrimitiveComponent*
-	{
-		return Cast<UPrimitiveComponent>(Actor.GetRootComponent());
-	},
-
-		"GetPrimitiveComponent", [](AActor& Actor) -> UPrimitiveComponent*
-	{
-		return Actor.GetComponentByClass<UPrimitiveComponent>();
-	},
-		"GetSkeletalMesh", [](AActor& Actor) -> USkeletalMeshComponent*
-	{
-		return Actor.GetComponentByClass<USkeletalMeshComponent>();
-	},
-
-	"GetPrimitiveComponentByName", [](AActor& Actor, const FString& ComponentName) -> UPrimitiveComponent*
-	{
-		for (UActorComponent* Component : Actor.GetComponents())
-		{
-			UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
-			if (PrimitiveComponent && PrimitiveComponent->GetFName().ToString() == ComponentName)
+	auto Actor = FLuaDocRegistry::Get().BindType<AActor>(Lua, "Actor");
+	Actor
+		.ReadonlyProperty("UUID", "integer", [](AActor& Actor) { return Actor.GetUUID(); })
+		.ReadonlyProperty("Name", "string", [](AActor& Actor) { return Actor.GetFName().ToString(); })
+		.Property("Location", "Vector",
+			[](AActor& Actor) { return Actor.GetActorLocation(); },
+			[](AActor& Actor, const FVector& Location) { Actor.SetActorLocation(Location); })
+		.Property("Rotation", "Vector",
+			[](AActor& Actor) { return Actor.GetActorRotation().ToVector(); },
+			[](AActor& Actor, const FVector& Rotation) { Actor.SetActorRotation(FRotator(Rotation)); })
+		.Property("Scale", "Vector",
+			[](AActor& Actor) { return Actor.GetActorScale(); },
+			[](AActor& Actor, const FVector& Scale) { Actor.SetActorScale(Scale); })
+		.ReadonlyProperty("Forward", "Vector", [](AActor& Actor) { return Actor.GetActorForward(); })
+		.ReadonlyProperty("Right", "Vector", [](AActor& Actor) { return Actor.GetActorRight(); })
+		.Method("AddWorldOffset",
+			"---@param offset Vector\nfunction Actor:AddWorldOffset(offset) end",
+			[](AActor& Actor, const FVector& Offset) { Actor.AddActorWorldOffset(Offset); })
+		.Method("Destroy",
+			"function Actor:Destroy() end",
+			[](AActor& Actor)
 			{
-				return PrimitiveComponent;
-			}
-		}
-		return nullptr;
-	},
-
-		"GetComponentByName", [](AActor& Actor, const FString& ComponentName) -> USceneComponent*
-	{
-		for (UActorComponent* Component : Actor.GetComponents())
-		{
-			USceneComponent* SceneComponent = Cast<USceneComponent>(Component);
-			if (SceneComponent && SceneComponent->GetFName().ToString() == ComponentName)
+				if (UWorld* W = Actor.GetWorld())
+				{
+					W->DestroyActor(&Actor);
+				}
+			})
+		.Method("IsValid",
+			"---@return boolean\nfunction Actor:IsValid() end",
+			[](AActor* Actor) { return Actor != nullptr && IsAliveObject(Actor); })
+		.Method("GetFloatingPawnMovement",
+			"---@return FloatingPawnMovementComponent?\nfunction Actor:GetFloatingPawnMovement() end",
+			[](AActor& Actor) { return Actor.GetComponentByClass<UFloatingPawnMovementComponent>(); })
+		.Method("GetCamera",
+			"---@return CameraComponent?\nfunction Actor:GetCamera() end",
+			[](AActor& Actor) { return Actor.GetComponentByClass<UCameraComponent>(); })
+		.Method("GetActionComponent",
+			"---@return ActionComponent?\nfunction Actor:GetActionComponent() end",
+			[](AActor& Actor) { return Actor.GetComponentByClass<UActionComponent>(); })
+		.Method("GetRootPrimitiveComponent",
+			"---@return PrimitiveComponent?\nfunction Actor:GetRootPrimitiveComponent() end",
+			[](AActor& Actor) -> UPrimitiveComponent* { return Cast<UPrimitiveComponent>(Actor.GetRootComponent()); })
+		.Method("GetPrimitiveComponent",
+			"---@return PrimitiveComponent?\nfunction Actor:GetPrimitiveComponent() end",
+			[](AActor& Actor) -> UPrimitiveComponent* { return Actor.GetComponentByClass<UPrimitiveComponent>(); })
+		.Method("GetSkeletalMesh",
+			"---@return SkeletalMeshComponent?\nfunction Actor:GetSkeletalMesh() end",
+			[](AActor& Actor) -> USkeletalMeshComponent* { return Actor.GetComponentByClass<USkeletalMeshComponent>(); })
+		.Method("GetParticleSystem",
+			"---@return ParticleSystemComponent?\nfunction Actor:GetParticleSystem() end",
+			[](AActor& Actor) -> UParticleSystemComponent* { return Actor.GetComponentByClass<UParticleSystemComponent>(); })
+		.Method("GetPrimitiveComponentByName",
+			"---@param name string\n---@return PrimitiveComponent?\nfunction Actor:GetPrimitiveComponentByName(name) end",
+			[](AActor& Actor, const FString& ComponentName) -> UPrimitiveComponent*
 			{
-				return SceneComponent;
-			}
-		}
-		return nullptr;
-	},
-
-		"UUID", sol::property([](AActor& Actor)
-	{
-		return Actor.GetUUID();
-	}),
-
-		"Name", sol::property([](AActor& Actor)
-	{
-		return Actor.GetFName().ToString();
-	}));
+				for (UActorComponent* Component : Actor.GetComponents())
+				{
+					UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
+					if (PrimitiveComponent && PrimitiveComponent->GetFName().ToString() == ComponentName)
+					{
+						return PrimitiveComponent;
+					}
+				}
+				return nullptr;
+			})
+		.Method("GetComponentByName",
+			"---@param name string\n---@return SceneComponent?\nfunction Actor:GetComponentByName(name) end",
+			[](AActor& Actor, const FString& ComponentName) -> USceneComponent*
+			{
+				for (UActorComponent* Component : Actor.GetComponents())
+				{
+					USceneComponent* SceneComponent = Cast<USceneComponent>(Component);
+					if (SceneComponent && SceneComponent->GetFName().ToString() == ComponentName)
+					{
+						return SceneComponent;
+					}
+				}
+				return nullptr;
+			});
 
 	Lua.new_usertype<APawn>("Pawn",
 		sol::base_classes, sol::bases<AActor>(),
@@ -1080,6 +1171,12 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"SetAutoPossessPlayer", &APawn::SetAutoPossessPlayer,
 		"GetAutoPossessPlayer", &APawn::GetAutoPossessPlayer,
 		"GetInputComponent", &APawn::GetInputComponent);
+
+	FLuaDocRegistry::Get().Type("Pawn", "Actor")
+		.Method("---@return boolean\nfunction Pawn:IsPossessed() end")
+		.Method("---@param enabled boolean\nfunction Pawn:SetAutoPossessPlayer(enabled) end")
+		.Method("---@return boolean\nfunction Pawn:GetAutoPossessPlayer() end")
+		.Method("---@return InputComponent?\nfunction Pawn:GetInputComponent() end");
 
 	// UInputComponent — Pawn::GetInputComponent 로 얻어 lua 에서 직접 매핑/binding 추가 가능.
 	// 예 (BeginPlay 안):
@@ -1107,6 +1204,13 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 			});
 		},
 		"ClearBindings", &UInputComponent::ClearBindings);
+
+	FLuaDocRegistry::Get().Type("InputComponent")
+		.Method("---@param name string\n---@param key integer\nfunction InputComponent:AddAxisMapping(name, key) end")
+		.Method("---@param name string\n---@param key integer\nfunction InputComponent:AddActionMapping(name, key) end")
+		.Method("---@param name string\n---@param callback fun(value: number)\nfunction InputComponent:BindAxis(name, callback) end")
+		.Method("---@param name string\n---@param event 'Pressed'|'Released'\n---@param callback fun()\nfunction InputComponent:BindAction(name, event, callback) end")
+		.Method("function InputComponent:ClearBindings() end");
 
 	// --- World binding — 런타임 액터 spawn 용 (Engine 일반 기능) ---
 	sol::table World = Lua.create_named_table("World");
@@ -1163,8 +1267,16 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		return Result;
 	});
 
+	FLuaDocRegistry::Get().Type("WorldLib")
+		.Method("---@param className string\n---@return Actor?\nfunction World.SpawnActor(className) end")
+		.Method("---@param actorName string\n---@return Actor?\nfunction World.FindActorByName(actorName) end")
+		.Method("---@param className string\n---@return Actor?\nfunction World.FindFirstActorByClass(className) end")
+		.Method("---@param tag string\n---@return Actor?\nfunction World.FindFirstActorByTag(tag) end")
+		.Method("---@param tag string\n---@return Actor[]\nfunction World.FindActorsByTag(tag) end");
+	FLuaDocRegistry::Get().Global("World", "WorldLib");
+
 	Lua.new_usertype<USkeletalMeshComponent>("SkeletalMeshComponent",
-		sol::base_classes, sol::bases<UPrimitiveComponent, USceneComponent>(),
+		sol::base_classes, sol::bases<USkinnedMeshComponent, UPrimitiveComponent, USceneComponent>(),
 
 		"GetBoneSocketLocation", [](USkeletalMeshComponent& C, const FString& BoneName, const FVector& LocalOffset)
 	{
@@ -1194,6 +1306,10 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		return FVector::ZeroVector;
 	}
 	);
+
+	FLuaDocRegistry::Get().Type("SkeletalMeshComponent", "PrimitiveComponent")
+		.Method("---@param boneName string\n---@param localOffset Vector\n---@return Vector\nfunction SkeletalMeshComponent:GetBoneSocketLocation(boneName, localOffset) end")
+		.Method("---@param boneName string\n---@param localOffset Vector\n---@return Vector\nfunction SkeletalMeshComponent:GetBoneSocketRotation(boneName, localOffset) end");
 
 	// 게임 특화 usertype/enum/global(GetGameState 등) 은 Game 모듈의
 	// RegisterGameLuaBindings 가 등록한다. 호출 순서는 GameEngine/EditorEngine::Init

@@ -18,6 +18,11 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(
 	UParticleSystemComponent* /*ParticleSystemComponent*/,
 	const FParticleCollisionEventPayload& /*CollisionEvent*/);
 
+DECLARE_MULTICAST_DELEGATE_TwoParams(
+	FParticleEventSignature,
+	UParticleSystemComponent* /*ParticleSystemComponent*/,
+	const FParticleCollisionEventPayload& /*ParticleEvent*/);
+
 USTRUCT()
 struct FParticleSysParam
 {
@@ -61,8 +66,10 @@ public:
 	int32 GetPreviewLODIndex() const { return PreviewLODIndex; }
 	void SetPreviewSoloEmitterIndex(int32 InEmitterIndex);
 	int32 GetPreviewSoloEmitterIndex() const { return PreviewSoloEmitterIndex; }
+	void BroadcastParticleEvent(const FParticleCollisionEventPayload& Event);
 	void BroadcastParticleCollisionEvent(const FParticleCollisionEventPayload& Event);
 
+	FParticleEventSignature OnParticleEvent;
 	FParticleCollideEventSignature OnParticleCollideEvent;
 
 protected:

@@ -20,7 +20,6 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 		return;
 	}
 
-	Owner->bIsEventGenerator = true;
 	AActor* IgnoreActor = Component ? Component->GetOwner() : nullptr;
 
 	struct
@@ -61,10 +60,11 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 	const float PositionBias = Bias > 0.0f ? Bias : 0.0f;
 	Particle->Position = Hit.WorldHitLocation + Normal * PositionBias;
 
-	if (Owner->bIsEventGenerator)
+	if (Owner->bGenerateCollisionEvents)
 	{
 		FParticleCollisionEventPayload NewEvent;
-		NewEvent.EventName = FName("Collision");
+		NewEvent.EventName = Owner->CollisionEventName;
+		NewEvent.EventType = EParticleEventType::Collision;
 		NewEvent.EmitterTime = Owner->GetEmitterTime();
 		NewEvent.Location = Hit.WorldHitLocation;
 		NewEvent.Normal = Normal;

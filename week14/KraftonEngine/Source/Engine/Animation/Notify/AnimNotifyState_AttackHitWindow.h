@@ -98,6 +98,9 @@ public:
 	UPROPERTY(Edit, Save, Category = "AttackHitWindow|Trail", DisplayName = "Reset Trail On Begin")
 	bool bResetTrailOnBegin = true;
 
+	UPROPERTY(Edit, Save, Category = "AttackHitWindow|Trail", DisplayName = "Trail Actor Tag")
+	FString TrailActorTag = "";
+
 	void NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Anim, float TotalDuration) override;
 	void NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Anim, float FrameDeltaTime) override;
 	void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Anim) override;
