@@ -39,11 +39,11 @@ $header = @(
     'SRCSRV: ini ------------------------------------------------',
     'VERSION=2',
     'INDEXVERSION=2',
-    'VERCTRL=http',
+    'VERCTRL=fs',
     'SRCSRV: variables ------------------------------------------',
     "SOURCE_SHARE=$SourceServer\$Project",
     'SRCSRVTRG=%SOURCE_SHARE%\%var2%',
-    'SRCSRVCMD=cmd /c copy "%SRCSRVTRG%" "%targ%"',
+    'SRCSRVCMD=cmd /c copy /Y "%SRCSRVTRG%" "%targ%"',
     'SRCSRV: source files ---------------------------------------'
 )
 $footer = @('SRCSRV: end ------------------------------------------------')
