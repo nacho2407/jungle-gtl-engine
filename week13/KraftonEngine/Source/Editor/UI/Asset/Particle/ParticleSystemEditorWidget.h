@@ -63,6 +63,10 @@ private:
     void MoveModule(int32 SrcEmitterIndex, int32 SrcArrayIndex, int32 DstEmitterIndex, int32 DstArrayIndex);
     void MoveEmitter(int32 SrcEmitterIndex, int32 DstEmitterIndex);
 
+    // 이미터의 TypeData 슬롯을 지정 클래스로 교체. ClassName == nullptr 면 Sprite (TypeData 없음).
+    // 모든 LOD에 동일하게 적용 (sharing).
+    void SetEmitterTypeData(int32 EmitterIndex, const char* TypeDataClassName);
+
     // Undo / Redo — 구조적 변경(Add/Delete/Duplicate Emitter/Module/LOD) 단위로 스냅샷.
     void PushUndoSnapshot();
     void Undo();
