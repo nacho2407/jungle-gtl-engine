@@ -45,7 +45,7 @@ namespace
 			return nullptr;
 		}
 
-		return Cast<UParticleModuleTypeDataRibbon>(LODLevel->GetTypeDataModule());
+		return Cast<UParticleModuleTypeDataRibbon>(LODLevel->ResolveTypeDataModule(Instance->SpriteTemplate));
 	}
 
 	const UParticleModuleTypeDataBeam* GetBeamTypeData(const FParticleEmitterInstance* Instance)
@@ -59,7 +59,7 @@ namespace
 		{
 			return nullptr;
 		}
-		return Cast<UParticleModuleTypeDataBeam>(LODLevel->GetTypeDataModule());
+		return Cast<UParticleModuleTypeDataBeam>(LODLevel->ResolveTypeDataModule(Instance->SpriteTemplate));
 	}
 
 	FVector ApplyBeamNoise(const FBeamParticlePayload& Payload, const FFrameContext& Frame, const FVector& Position, float T)
@@ -119,7 +119,7 @@ namespace
 EParticleRenderType GetEmitterRenderType(const FParticleEmitterInstance* Instance)
 {
 	const UParticleLODLevel* LODLevel = Instance ? Instance->GetCurrentLODLevel() : nullptr;
-	const UParticleModuleTypeDataBase* TypeData = LODLevel ? LODLevel->GetTypeDataModule() : nullptr;
+	const UParticleModuleTypeDataBase* TypeData = LODLevel ? LODLevel->ResolveTypeDataModule(Instance->SpriteTemplate) : nullptr;
 	return TypeData ? TypeData->GetRenderType() : EParticleRenderType::Sprite;
 }
 

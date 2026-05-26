@@ -92,7 +92,7 @@ bool FSpriteParticleGeometry::Upload(ID3D11Device* Device, ID3D11DeviceContext* 
 
 	VertexBuffer.EnsureCapacity(Device, static_cast<uint32>(Vertices.size()));
 	IndexBuffer.EnsureCapacity(Device, static_cast<uint32>(Indices.size()));
-
+	
 	if (!VertexBuffer.Update(Context, Vertices.data(), static_cast<uint32>(Vertices.size())))
 	{
 		return false;
