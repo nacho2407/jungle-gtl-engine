@@ -5136,8 +5136,34 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Beam Noise"))
         {
-            (void)BeamNoise;
-            ImGui::TextColored(PSE::DimTextV, "Hidden in the simplified Beam UI. Existing values are preserved.");
+            bool bFlag = BeamNoise->bLowFreq_Enabled;
+            if (ImGui::Checkbox("Low Freq Enabled", &bFlag)) { BeamNoise->bLowFreq_Enabled = bFlag ? 1 : 0; bChanged = true; }
+            bChanged |= ImGui::DragInt("Frequency", &BeamNoise->Frequency, 1.0f, 0, 4096);
+            bChanged |= ImGui::DragInt("Frequency Low Range", &BeamNoise->Frequency_LowRange, 1.0f, 0, 4096);
+            DrawRawDistributionVector("Noise Range", BeamNoise->NoiseRange, bChanged, BeamNoise);
+            DrawRawDistributionFloat("Noise Range Scale", BeamNoise->NoiseRangeScale, bChanged, BeamNoise);
+            bFlag = BeamNoise->bNRScaleEmitterTime;
+            if (ImGui::Checkbox("NR Scale Emitter Time", &bFlag)) { BeamNoise->bNRScaleEmitterTime = bFlag ? 1 : 0; bChanged = true; }
+            DrawRawDistributionVector("Noise Speed", BeamNoise->NoiseSpeed, bChanged, BeamNoise);
+            bFlag = BeamNoise->bSmooth;
+            if (ImGui::Checkbox("Smooth", &bFlag)) { BeamNoise->bSmooth = bFlag ? 1 : 0; bChanged = true; }
+            bChanged |= ImGui::DragFloat("Noise Lock Radius", &BeamNoise->NoiseLockRadius, 0.1f, 0.0f, 100000.0f);
+            bFlag = BeamNoise->bNoiseLock;
+            if (ImGui::Checkbox("Noise Lock", &bFlag)) { BeamNoise->bNoiseLock = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = BeamNoise->bOscillate;
+            if (ImGui::Checkbox("Oscillate", &bFlag)) { BeamNoise->bOscillate = bFlag ? 1 : 0; bChanged = true; }
+            bChanged |= ImGui::DragFloat("Noise Lock Time", &BeamNoise->NoiseLockTime, 0.01f, -1.0f, 100000.0f);
+            bChanged |= ImGui::DragFloat("Noise Tension", &BeamNoise->NoiseTension, 0.01f, 0.0f, 1000.0f);
+            bFlag = BeamNoise->bUseNoiseTangents;
+            if (ImGui::Checkbox("Use Noise Tangents", &bFlag)) { BeamNoise->bUseNoiseTangents = bFlag ? 1 : 0; bChanged = true; }
+            DrawRawDistributionFloat("Noise Tangent Strength", BeamNoise->NoiseTangentStrength, bChanged, BeamNoise);
+            bChanged |= ImGui::DragInt("Noise Tessellation", &BeamNoise->NoiseTessellation, 1.0f, 0, 4096);
+            bFlag = BeamNoise->bTargetNoise;
+            if (ImGui::Checkbox("Target Noise", &bFlag)) { BeamNoise->bTargetNoise = bFlag ? 1 : 0; bChanged = true; }
+            bChanged |= ImGui::DragFloat("Frequency Distance", &BeamNoise->FrequencyDistance, 0.1f, 0.0f, 100000.0f);
+            bFlag = BeamNoise->bApplyNoiseScale;
+            if (ImGui::Checkbox("Apply Noise Scale", &bFlag)) { BeamNoise->bApplyNoiseScale = bFlag ? 1 : 0; bChanged = true; }
+            DrawRawDistributionFloat("Noise Scale", BeamNoise->NoiseScale, bChanged, BeamNoise);
         }
     }
     else if (UParticleModuleBeamModifier* BeamModifier = Cast<UParticleModuleBeamModifier>(Module))
