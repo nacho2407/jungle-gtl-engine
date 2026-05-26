@@ -972,6 +972,233 @@ void UParticleModuleSize::Spawn(FParticleEmitterInstance* Owner, int32 Offset, f
 	Particle.BaseSize = Particle.Size;
 }
 
+UParticleModuleColorOverLife::UParticleModuleColorOverLife()
+{
+	// 기본 배율: spawn color를 그대로 유지하는 white multiplier
+	ColorOverLife.Constant = FColor::White();
+	ColorOverLife.Min = FColor::White();
+	ColorOverLife.Max = FColor::White();
+}
+
+bool UParticleModuleColorOverLife::IsUpdateModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleColorOverLife::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+
+	// RandomRangeCurve의 particle별 random alpha 저장 payload
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleColorOverLife::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	// RandomRangeCurve 모드에서만 particle별 random alpha 고정
+	InitializeDistributionPayload(Owner, Offset, Particle, ColorOverLife.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleColorOverLife::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)DeltaTime;
+
+	// update loop 진입 전 emitter instance 유효성 방어
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		// spawn color를 기준값으로 유지하고, 수명 기반 색상 distribution은 multiplier로만 사용
+		const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+		const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, Payload);
+		const FColor Factor = EvaluateParticleColor(ColorOverLife, Context);
+		Particle.Color = Particle.BaseColor * Factor;
+	}
+	END_UPDATE_LOOP()
+}
+
+UParticleModuleSizeScaleOverLife::UParticleModuleSizeScaleOverLife()
+{
+	// 기본 배율: spawn size를 그대로 유지하는 one vector multiplier
+	SizeScaleOverLife.Constant = FVector::OneVector;
+	SizeScaleOverLife.Min = FVector::OneVector;
+	SizeScaleOverLife.Max = FVector::OneVector;
+}
+
+bool UParticleModuleSizeScaleOverLife::IsUpdateModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleSizeScaleOverLife::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+
+	// RandomRangeCurve의 particle별 random alpha 저장 payload
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleSizeScaleOverLife::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	// RandomRangeCurve 모드에서만 particle별 random alpha 고정
+	InitializeDistributionPayload(Owner, Offset, Particle, SizeScaleOverLife.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleSizeScaleOverLife::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)DeltaTime;
+
+	// update loop 진입 전 emitter instance 유효성 방어
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		// 누적 곱 폭주 방지: 매 frame spawn size 기준으로 최종 크기 재계산
+		const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+		const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, Payload);
+		const FVector Scale = EvaluateParticleVector(SizeScaleOverLife, Context);
+		Particle.Size = Particle.BaseSize * Scale;
+	}
+	END_UPDATE_LOOP()
+}
+
+bool UParticleModuleVelocityOverLife::IsUpdateModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleVelocityOverLife::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+
+	// RandomRangeCurve의 particle별 random alpha 저장 payload
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleVelocityOverLife::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	// RandomRangeCurve 모드에서만 particle별 random alpha 고정
+	InitializeDistributionPayload(Owner, Offset, Particle, VelocityOverLife.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleVelocityOverLife::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)DeltaTime;
+
+	// update loop 진입 전 emitter instance 유효성 방어
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		// 수명 기반 velocity distribution 평가
+		const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+		const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, Payload);
+		const FVector EvaluatedVelocity = EvaluateParticleVector(VelocityOverLife, Context);
+
+		// absolute 모드: distribution 값을 최종 속도로 직접 사용
+		if (bAbsolute)
+		{
+			Particle.Velocity = EvaluatedVelocity;
+			continue;
+		}
+
+		// additive 모드: 초기 속도와 acceleration이 갱신한 기준 속도 위에 offset 추가
+		Particle.Velocity = Particle.BaseVelocity + EvaluatedVelocity;
+	}
+	END_UPDATE_LOOP()
+}
+
+bool UParticleModuleAcceleration::IsUpdateModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleAcceleration::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+
+	// RandomRangeCurve의 particle별 random alpha 저장 payload
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleAcceleration::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	// RandomRangeCurve 모드에서만 particle별 random alpha 고정
+	InitializeDistributionPayload(Owner, Offset, Particle, Acceleration.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleAcceleration::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	// update loop 진입 전 emitter instance 유효성 방어
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		// frame별 acceleration distribution 평가
+		const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+		const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, Payload);
+		const FVector Accel = EvaluateParticleVector(Acceleration, Context);
+
+		// 별도 acceleration field 없이 기준 속도 자체를 적분
+		Particle.BaseVelocity += Accel * DeltaTime;
+
+		// 기본 최종 속도 동기화: 뒤쪽 VelocityOverLife module이 있으면 이 값을 다시 보정
+		Particle.Velocity = Particle.BaseVelocity;
+	}
+	END_UPDATE_LOOP()
+}
+
+bool UParticleModuleSizeScaleBySpeed::IsUpdateModule() const
+{
+	return true;
+}
+
+void UParticleModuleSizeScaleBySpeed::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)Offset;
+	(void)DeltaTime;
+
+	// update loop 진입 전 emitter instance 유효성 방어
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		// 현재 속도 크기 기반 축별 scale 계산
+		const float Speed = Particle.Velocity.Size();
+		const FVector RawScale = SpeedScale * Speed;
+
+		// 최소 scale 1 보장 후 MaxScale로 축별 상한 적용
+		const FVector ClampedScale(
+			std::min(std::max(RawScale.X, 1.0f), MaxScale.X),
+			std::min(std::max(RawScale.Y, 1.0f), MaxScale.Y),
+			std::min(std::max(RawScale.Z, 1.0f), MaxScale.Z));
+
+		// 앞선 size module이 만든 현재 크기에 속도 기반 scale 추가 적용
+		Particle.Size = Particle.Size * ClampedScale;
+	}
+	END_UPDATE_LOOP()
+}
+
 bool UParticleModuleCollision::IsUpdateModule() const
 {
 	return true;

@@ -256,6 +256,104 @@ public:
 	FParticleVectorDistribution StartSize;
 };
 
+/**
+ * @brief 수명 비율 기반 particle 색상 배율 module
+ */
+UCLASS(Placeable, DisplayName = "Color Over Life Module")
+class UParticleModuleColorOverLife : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleColorOverLife, UParticleModule)
+
+	UParticleModuleColorOverLife();
+
+	bool IsUpdateModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Color Over Life")
+	FParticleColorDistribution ColorOverLife;
+};
+
+/**
+ * @brief 수명 비율 기반 particle 크기 배율 module
+ */
+UCLASS(Placeable, DisplayName = "Size Scale Over Life Module")
+class UParticleModuleSizeScaleOverLife : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleSizeScaleOverLife, UParticleModule)
+
+	UParticleModuleSizeScaleOverLife();
+
+	bool IsUpdateModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Size Scale Over Life")
+	FParticleVectorDistribution SizeScaleOverLife;
+};
+
+/**
+ * @brief 수명 비율 기반 particle 속도 보정 module
+ */
+UCLASS(Placeable, DisplayName = "Velocity Over Life Module")
+class UParticleModuleVelocityOverLife : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleVelocityOverLife, UParticleModule)
+
+	bool IsUpdateModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Velocity Over Life")
+	FParticleVectorDistribution VelocityOverLife;
+
+	UPROPERTY(DisplayName = "Absolute")
+	bool bAbsolute = false;
+};
+
+/**
+ * @brief frame별 particle 기준 속도 가속 module
+ */
+UCLASS(Placeable, DisplayName = "Acceleration Module")
+class UParticleModuleAcceleration : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleAcceleration, UParticleModule)
+
+	bool IsUpdateModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Acceleration")
+	FParticleVectorDistribution Acceleration;
+};
+
+/**
+ * @brief 속도 크기 기반 particle 크기 배율 module
+ */
+UCLASS(Placeable, DisplayName = "Size Scale By Speed Module")
+class UParticleModuleSizeScaleBySpeed : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleSizeScaleBySpeed, UParticleModule)
+
+	bool IsUpdateModule() const override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Speed Scale")
+	FVector SpeedScale = FVector(0.01f, 0.01f, 0.0f);
+
+	UPROPERTY(DisplayName = "Max Scale")
+	FVector MaxScale = FVector(10.0f, 10.0f, 1.0f);
+};
+
 UCLASS(Placeable, DisplayName = "Collision Module")
 class UParticleModuleCollision : public UParticleModule
 {
