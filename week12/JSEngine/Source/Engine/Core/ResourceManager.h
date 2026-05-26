@@ -25,6 +25,7 @@
 #include "Render/Resource/Material.h"
 #include "Render/Resource/Texture.h"
 #include "Render/Resource/RenderResources.h"
+#include "Render/Resource/VertexTypes.h"
 #include <d3d11.h>
 
 #include "Animation/AnimGraphAsset.h"
@@ -39,6 +40,16 @@ class UAnimSequence;
 class UCurveColorAsset;
 class UCurveVectorAsset;
 class UParticleSystem;
+
+struct FParticleSpriteQuadResource
+{
+	ID3D11Buffer* VertexBuffer = nullptr;
+	ID3D11Buffer* IndexBuffer = nullptr;
+	uint32 VertexStride = sizeof(FParticleSpriteQuadVertex);
+	uint32 IndexCount = 6;
+
+	bool IsValid() const { return VertexBuffer != nullptr && IndexBuffer != nullptr && VertexStride > 0 && IndexCount > 0; }
+};
 
 // 리소스를 관리하는 싱글턴: 텍스처, 쉐이더, 머티리얼, 메시 등 다양한 리소스의 로드/캐싱/관리 기능을 제공합니다.
 class FResourceManager : public TSingleton<FResourceManager>
@@ -154,6 +165,7 @@ public:
 
 	bool SaveParticleSystem(const FString& Path, const UParticleSystem* ParticleSystem);
 	TArray<FString> GetParticleSystemPaths() const;
+	FParticleSpriteQuadResource GetOrCreateParticleSpriteQuadResource(ID3D11Device* Device = nullptr);
 
 	// Device State
 	ID3D11SamplerState* GetOrCreateSamplerState(ESamplerType Type, ID3D11Device* Device = nullptr);
@@ -178,6 +190,8 @@ private:
 	FBinarySerializer BinarySerializer;
 
 	TComPtr<ID3D11Texture2D> DefaultWhiteTexture;
+	TComPtr<ID3D11Buffer> ParticleSpriteQuadVertexBuffer;
+	TComPtr<ID3D11Buffer> ParticleSpriteQuadIndexBuffer;
 
 	FCurveResourceCache CurveCache;
 	FShaderResourceCache ShaderCache;

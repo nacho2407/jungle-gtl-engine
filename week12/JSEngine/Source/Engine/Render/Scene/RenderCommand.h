@@ -18,6 +18,7 @@
 #include "Render/Resource/VertexFactoryTypes.h"
 
 struct ID3D11ShaderResourceView;
+struct ID3D11Buffer;
 class UPrimitiveComponent;
 struct FDynamicEmitterDataBase;
 struct FDynamicEmitterReplayDataBase;
@@ -234,6 +235,16 @@ struct FParticleConstants
 	uint32 bUseLocalSpace = 0;
 };
 
+struct FInstanceBufferView
+{
+	ID3D11Buffer* Buffer = nullptr;
+	uint32 InstanceCount = 0;
+	uint32 Stride = 0;
+	uint32 Offset = 0;
+
+	bool IsValid() const { return Buffer != nullptr && InstanceCount > 0 && Stride > 0; }
+};
+
 struct FGizmoConstants
 {
 	FVector4 ColorTint;
@@ -350,9 +361,13 @@ struct FFontConstants
 struct FSubUVConstants
 {
 	const FSubUVResource* SubUV = nullptr;
+	UTexture* Texture = nullptr;
 	uint32 FrameIndex = 0;
+	uint32 Columns = 1;
+	uint32 Rows = 1;
 	float Width  = 1.0f;
 	float Height = 1.0f;
+	FColor Color = FColor::White();
 };
 struct FBillboardConstants
 {
@@ -460,6 +475,7 @@ struct FRenderCommand
 	//	VB, IB 모두 담고 있는 MB
 	FMeshBuffer* MeshBuffer = nullptr;
 	UMaterialInterface* Material = nullptr;
+	FInstanceBufferView InstanceBufferView;
 	const FDynamicEmitterDataBase* ParticleEmitterData = nullptr;
 	const FDynamicEmitterReplayDataBase* ParticleReplayData = nullptr;
 

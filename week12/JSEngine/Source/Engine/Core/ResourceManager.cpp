@@ -802,7 +802,59 @@ void FResourceManager::ReleaseGPUResources()
 	DestroyUniqueParticleSystems(ParticleSystemMap);
 
 	DefaultWhiteTexture.Reset();
+	ParticleSpriteQuadVertexBuffer.Reset();
+	ParticleSpriteQuadIndexBuffer.Reset();
 	CachedDevice.Reset();
+}
+
+FParticleSpriteQuadResource FResourceManager::GetOrCreateParticleSpriteQuadResource(ID3D11Device* Device)
+{
+	if (ParticleSpriteQuadVertexBuffer && ParticleSpriteQuadIndexBuffer)
+	{
+		return { ParticleSpriteQuadVertexBuffer.Get(), ParticleSpriteQuadIndexBuffer.Get() };
+	}
+
+	ID3D11Device* DeviceToUse = Device != nullptr ? Device : CachedDevice.Get();
+	if (DeviceToUse == nullptr)
+	{
+		return {};
+	}
+
+	static const FParticleSpriteQuadVertex QuadVertices[] = {
+		{ FVector(-1.0f,  1.0f, 0.0f), FVector2(0.0f, 0.0f) },
+		{ FVector( 1.0f,  1.0f, 0.0f), FVector2(1.0f, 0.0f) },
+		{ FVector(-1.0f, -1.0f, 0.0f), FVector2(0.0f, 1.0f) },
+		{ FVector( 1.0f, -1.0f, 0.0f), FVector2(1.0f, 1.0f) },
+	};
+	static const uint32 QuadIndices[] = { 0, 1, 2, 1, 3, 2 };
+
+	ParticleSpriteQuadVertexBuffer.Reset();
+	ParticleSpriteQuadIndexBuffer.Reset();
+
+	D3D11_BUFFER_DESC VertexDesc = {};
+	VertexDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	VertexDesc.ByteWidth = sizeof(QuadVertices);
+	VertexDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	D3D11_SUBRESOURCE_DATA VertexData = {};
+	VertexData.pSysMem = QuadVertices;
+	if (FAILED(DeviceToUse->CreateBuffer(&VertexDesc, &VertexData, ParticleSpriteQuadVertexBuffer.ReleaseAndGetAddressOf())))
+	{
+		return {};
+	}
+
+	D3D11_BUFFER_DESC IndexDesc = {};
+	IndexDesc.Usage = D3D11_USAGE_IMMUTABLE;
+	IndexDesc.ByteWidth = sizeof(QuadIndices);
+	IndexDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	D3D11_SUBRESOURCE_DATA IndexData = {};
+	IndexData.pSysMem = QuadIndices;
+	if (FAILED(DeviceToUse->CreateBuffer(&IndexDesc, &IndexData, ParticleSpriteQuadIndexBuffer.ReleaseAndGetAddressOf())))
+	{
+		ParticleSpriteQuadVertexBuffer.Reset();
+		return {};
+	}
+
+	return { ParticleSpriteQuadVertexBuffer.Get(), ParticleSpriteQuadIndexBuffer.Get() };
 }
 
 FVertexShader* FResourceManager::GetOrCreateVertexShader(

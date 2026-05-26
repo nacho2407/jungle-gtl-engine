@@ -76,6 +76,7 @@ struct FBaseParticle
 	float OneOverMaxLifetime = 1.0f; // particle이 현재 수명의 몇 퍼센트 지점에 있는지 계산할 때 사용하는 MaxLifetime의 역수
 	float Rotation = 0.0f;
 	float RotationRate = 0.0f;
+	FVector MeshRotation = FVector::ZeroVector;
 	FVector Size = FVector::OneVector;
 	FVector BaseSize = FVector::OneVector;
 	FColor Color = FColor::White();
@@ -179,9 +180,21 @@ struct FDynamicMeshEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 	FDynamicMeshEmitterReplayDataBase() { EmitterType = EDynamicEmitterType::Mesh; }
 };
 
+/**
+ * @brief Beam emitter render replay snapshot 데이터
+ */
 struct FDynamicBeamEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 {
 	FDynamicBeamEmitterReplayDataBase() { EmitterType = EDynamicEmitterType::Beam; }
+
+	// Beam 시작점. CoordinateSpace가 Local이면 component local space, World면 world space
+	FVector SourcePoint = FVector::ZeroVector;
+
+	// Beam 끝점. CoordinateSpace가 Local이면 component local space, World면 world space
+	FVector TargetPoint = FVector(100.0f, 0.0f, 0.0f);
+
+	// Beam quad 두께의 기본 폭
+	float BeamWidth = 10.0f;
 };
 
 struct FDynamicRibbonEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
@@ -229,9 +242,16 @@ struct FDynamicMeshEmitterData : public FDynamicEmitterDataBase
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
 };
 
+/**
+ * @brief Beam emitter render thread 전달 데이터
+ */
 struct FDynamicBeamEmitterData : public FDynamicEmitterDataBase
 {
 	FDynamicBeamEmitterReplayDataBase ReplayData;
+
+	// ReplayData.DataContainer가 참조하는 현재 frame Beam particle snapshot 소유 buffer
+	TArray<uint8> OwnedParticleData;
+	TArray<uint16> OwnedParticleIndices;
 
 	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
 };

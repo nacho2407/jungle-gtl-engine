@@ -6,8 +6,10 @@
 #include "GameFramework/World.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleEventManager.h"
+#include "Particle/ParticleMeshBounds.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
+#include "Render/Scene/ParticleSystemRenderProxy.h"
 #include <algorithm>
 #include <cstring>
 #include <memory>
@@ -47,6 +49,22 @@ namespace
 		return IsLiveObject(LODLevel) && IsLiveObject(LODLevel->TypeDataModule)
 			? LODLevel->TypeDataModule
 			: nullptr;
+	}
+
+	const FDynamicMeshEmitterData* FindMeshRenderDataForEmitter(
+		const TArray<FDynamicEmitterDataBase*>& RenderData,
+		int32 EmitterIndex)
+	{
+		for (const FDynamicEmitterDataBase* EmitterData : RenderData)
+		{
+			if (EmitterData != nullptr &&
+				EmitterData->EmitterIndex == EmitterIndex &&
+				EmitterData->GetEmitterType() == EDynamicEmitterType::Mesh)
+			{
+				return static_cast<const FDynamicMeshEmitterData*>(EmitterData);
+			}
+		}
+		return nullptr;
 	}
 }
 
@@ -113,10 +131,12 @@ UParticleSystemComponent::UParticleSystemComponent()
 {
 	bEnableCull = false;
 	InstanceOwner = std::make_unique<FInstanceOwner>(this);
+	RenderProxy = std::make_unique<FParticleSystemRenderProxy>(this);
 }
 
 UParticleSystemComponent::~UParticleSystemComponent()
 {
+	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 }
@@ -130,6 +150,7 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 
 	ResolvedTemplate = InTemplate;
 	Template.SetPath(InTemplate ? InTemplate->GetAssetPath() : FString());
+	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
@@ -139,6 +160,7 @@ void UParticleSystemComponent::SetTemplateAsset(const TSoftObjectPtr<UParticleSy
 {
 	Template = InTemplate;
 	ResolvedTemplate = nullptr;
+	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
@@ -148,6 +170,7 @@ void UParticleSystemComponent::SetTemplatePath(const FString& InPath)
 {
 	Template.SetPath(FPaths::Normalize(InPath));
 	ResolvedTemplate = nullptr;
+	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
@@ -181,6 +204,7 @@ void UParticleSystemComponent::Serialize(FArchive& Ar)
 	if (Ar.IsLoading())
 	{
 		ResolvedTemplate = nullptr;
+		ReleaseRenderProxyResources();
 		ReleaseRenderData();
 		ReleaseEmitterInstances();
 		CreateEmitterInstances();
@@ -193,6 +217,7 @@ void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
 	if (PropertyName && FString(PropertyName) == "Template")
 	{
 		ResolvedTemplate = nullptr;
+		ReleaseRenderProxyResources();
 		ReleaseRenderData();
 		ReleaseEmitterInstances();
 		CreateEmitterInstances();
@@ -342,15 +367,45 @@ const FDynamicEmitterDataBase* UParticleSystemComponent::GetEmitterRenderDataSna
 	return EmitterRenderData[SnapshotIndex];
 }
 
+FPrimitiveRenderProxy* UParticleSystemComponent::GetRenderProxy()
+{
+	return RenderProxy.get();
+}
+
 void UParticleSystemComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
 
-	for (const FParticleEmitterInstance* Instance : EmitterInstances)
+	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
 	{
+		const FParticleEmitterInstance* Instance = EmitterInstances[EmitterIndex];
 		if (!Instance || !IsLiveObject(Instance->CurrentLODLevel) || !Instance->CurrentLODLevel->bEnabled)
 		{
 			continue;
+		}
+
+		const UParticleModuleRequired* RequiredModule = Instance->CurrentRuntimeCache != nullptr
+			? Instance->CurrentRuntimeCache->RequiredModule
+			: nullptr;
+		if (RequiredModule == nullptr || !RequiredModule->bUseFixedBounds)
+		{
+			const FDynamicMeshEmitterData* MeshEmitterData = FindMeshRenderDataForEmitter(EmitterRenderData, EmitterIndex);
+			const FStaticMesh* MeshData = MeshEmitterData != nullptr && MeshEmitterData->Mesh != nullptr
+				? MeshEmitterData->Mesh->GetMeshData(0)
+				: nullptr;
+			if (MeshData != nullptr)
+			{
+				// Conservative visibility/framing bound only; exact picking/raycast remains unsupported for mesh particles.
+				const FBoundingBox MeshParticleBounds = ParticleMeshBounds::BuildConservativeWorldBounds(
+					MeshEmitterData->GetSource(),
+					MeshEmitterData->ComponentToWorld,
+					MeshData->LocalBounds);
+				if (MeshParticleBounds.IsValid())
+				{
+					WorldAABB.Merge(MeshParticleBounds);
+					continue;
+				}
+			}
 		}
 
 		FVector Min;
@@ -383,6 +438,7 @@ bool UParticleSystemComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitRe
 
 void UParticleSystemComponent::ResetParticles()
 {
+	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
@@ -404,6 +460,14 @@ void UParticleSystemComponent::ReleaseRenderData()
 		delete RenderData;
 	}
 	EmitterRenderData.clear();
+}
+
+void UParticleSystemComponent::ReleaseRenderProxyResources()
+{
+	if (RenderProxy != nullptr)
+	{
+		RenderProxy->ReleaseResources();
+	}
 }
 
 int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const
@@ -487,6 +551,9 @@ void UParticleSystemComponent::UpdateLODLevel()
 			UE_LOG_WARNING("[Particle] LOD switch failed. Falling back to LOD 0.");
 			Instance->SetCurrentLODIndex(0);
 		}
+
+		ReleaseRenderProxyResources();
+		ReleaseRenderData();
 	}
 }
 

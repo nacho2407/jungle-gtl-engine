@@ -64,6 +64,16 @@ struct SkeletalVSInput
     float4 BoneWeights : BLENDWEIGHT;
 };
 
+struct ParticleMeshVSInput
+{
+    float3 Position : POSITION;
+    float4 Color : COLOR;
+    float3 Normal : NORMAL;
+    float2 UV : TEXCOORD0;
+    float4 Tangent : TANGENT;
+    row_major float4x4 InstanceTransform : TEXCOORD1;
+};
+
 struct PSInput
 {
     float4 ClipPos : SV_POSITION;
@@ -139,6 +149,46 @@ PSInput SkeletalMeshVS(SkeletalVSInput input)
     passThrough.Tangent = float4(Skinned.Tangent, input.Tangent.w);
 
     return mainVS(passThrough);
+}
+
+PSInput ParticleMeshVS(ParticleMeshVSInput input)
+{
+    PSInput output;
+
+    float4 world = mul(float4(input.Position, 1.0f), input.InstanceTransform);
+    output.WorldPos = world.xyz;
+    output.ClipPos = mul(mul(world, View), Projection);
+    output.UV = input.UV + ScrollUV;
+
+    float3x3 instanceBasis = (float3x3)input.InstanceTransform;
+    output.WorldNormal = normalize(mul(input.Normal, instanceBasis));
+#if HAS_NORMAL_MAP && !LIGHTING_MODEL_GOURAUD
+    output.WorldTangent = float4(normalize(mul(input.Tangent.xyz, instanceBasis)), input.Tangent.w);
+#endif
+
+#if LIGHTING_MODEL_GOURAUD
+    float3 accumulatedLight = float3(0, 0, 0);
+    float3 VertexSpecular = SpecularColor;
+    float3 V = CameraPosition - output.WorldPos;
+    if (IsOrthographic > 0.5f)
+    {
+        V = -float3(View[0].xyz);
+    }
+
+    accumulatedLight += CalcAmbient(AmbientLight, float3(1.0f, 1.0f, 1.0f));
+    accumulatedLight += CalcDirectionalBlinnPhong(DirectionalLight, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess, VertexSpecular);
+
+    for (uint i = 0; i < LightCount; i++) {
+        LightInfo light = Lights[i];
+        accumulatedLight += light.Type == 0 ?
+            CalcSpotlightBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess, VertexSpecular)
+            : CalcPointBlinnPhong(light, float3(1.0f, 1.0f, 1.0f), output.WorldNormal, output.WorldPos, V, Shininess, VertexSpecular);
+    }
+
+    output.LitColor = accumulatedLight;
+#endif
+
+    return output;
 }
 
 float4 mainPS(PSInput input) : SV_TARGET0

@@ -16,6 +16,8 @@ class UGizmoComponent;
 class ULightComponentBase;
 class USkeletalMeshComponent;
 struct FFrustum;
+struct ID3D11Device;
+struct ID3D11DeviceContext;
 
 class FRenderCollector
 {
@@ -31,6 +33,8 @@ public:
 	using FLightStats = FRenderLightStats;
 
 private:
+	ID3D11Device* Device = nullptr;
+	ID3D11DeviceContext* DeviceContext = nullptr;
 	FMeshBufferManager MeshBufferManager;
 	FDecalCommandBuilder DecalCommandBuilder;
 	FPrimitiveDrawCommandBuilder PrimitiveDrawCommandBuilder;
@@ -47,8 +51,20 @@ private:
 	FCullingStats LastCullingStats;
 
 public:
-	void Initialize(ID3D11Device* InDevice) { MeshBufferManager.Create(InDevice); }
-	void Release() { MeshBufferManager.Release(); }
+    // NOTE: Render Proxy 부분 도입으로 인해서 생긴 과도기적 형태
+    // 최종적으로는 InDevice만 가지고 DeviceContext와 MeshBuffer는 몰라도 되게 바뀌어야 함
+	void Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InDeviceContext)
+	{
+		Device = InDevice;
+		DeviceContext = InDeviceContext;
+		MeshBufferManager.Create(InDevice);
+	}
+	void Release()
+	{
+		MeshBufferManager.Release();
+		Device = nullptr;
+		DeviceContext = nullptr;
+	}
 
 	void CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, const FFrustum* ViewFrustum = nullptr, bool bIncludeEditorOnlyPrimitives = false);
 	void CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives = false);

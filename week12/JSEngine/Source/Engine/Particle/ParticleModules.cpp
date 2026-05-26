@@ -369,6 +369,16 @@ namespace
 			: ParticleHelper::AlignParticlePointer(RenderData.OwnedParticleData.data());
 	}
 
+	/**
+	 * @brief Beam render snapshot의 aligned particle data 시작 주소를 반환합니다.
+	 */
+	uint8* GetAlignedSnapshotParticleData(FDynamicBeamEmitterData& RenderData)
+	{
+		return RenderData.OwnedParticleData.empty()
+			? nullptr
+			: ParticleHelper::AlignParticlePointer(RenderData.OwnedParticleData.data());
+	}
+
 	FVector GetParticleOldLocationForRender(const FParticleEmitterInstance& EmitterInstance, const FBaseParticle& Particle)
 	{
 		return EmitterInstance.UsesLocalSpace()
@@ -618,11 +628,14 @@ namespace
 			Distribution.MaxCurve.GetPath().empty();
 	}
 
-	float EvaluateSubImageIndex(const UParticleModuleSubUV& Module, const FParticleDistributionContext& Context)
+	float EvaluateSubImageFrameIndex(
+		const UParticleModuleSubUV& Module,
+		const FParticleDistributionContext& Context,
+		int32 TotalFrames)
 	{
 		if (ShouldUseRelativeTimeForSubImageIndex(Module.SubImageIndex))
 		{
-			return Context.RelativeTime;
+			return Context.RelativeTime * static_cast<float>(std::max(TotalFrames - 1, 0));
 		}
 
 		return EvaluateParticleFloat(Module.SubImageIndex, Context);
@@ -861,6 +874,52 @@ void UParticleModuleVelocity::Spawn(FParticleEmitterInstance* Owner, int32 Offse
 	Particle.BaseVelocity = Particle.Velocity;
 }
 
+bool UParticleModuleRotation::IsSpawnModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleRotation::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleRotation::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartRotation.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleRotation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
+	Particle.Rotation = EvaluateParticleFloat(StartRotation, Context);
+}
+
+bool UParticleModuleMeshRotation::IsSpawnModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleMeshRotation::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleMeshRotation::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartRotation.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleMeshRotation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
+	Particle.MeshRotation = EvaluateParticleVector(StartRotation, Context);
+}
+
 UParticleModuleColor::UParticleModuleColor()
 {
 	StartColor.Constant = FColor::White();
@@ -923,18 +982,250 @@ void UParticleModuleSize::Spawn(FParticleEmitterInstance* Owner, int32 Offset, f
 	Particle.BaseSize = Particle.Size;
 }
 
+UParticleModuleColorOverLife::UParticleModuleColorOverLife()
+{
+	// 기본 배율: spawn color를 그대로 유지하는 white multiplier
+	ColorOverLife.Constant = FColor::White();
+	ColorOverLife.Min = FColor::White();
+	ColorOverLife.Max = FColor::White();
+}
+
+bool UParticleModuleColorOverLife::IsUpdateModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleColorOverLife::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+
+	// RandomRangeCurve의 particle별 random alpha 저장 payload
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleColorOverLife::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	// RandomRangeCurve 모드에서만 particle별 random alpha 고정
+	InitializeDistributionPayload(Owner, Offset, Particle, ColorOverLife.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleColorOverLife::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)DeltaTime;
+
+	// update loop 진입 전 emitter instance 유효성 방어
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		// spawn color를 기준값으로 유지하고, 수명 기반 색상 distribution은 multiplier로만 사용
+		const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+		const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, Payload);
+		const FColor Factor = EvaluateParticleColor(ColorOverLife, Context);
+		Particle.Color = Particle.BaseColor * Factor;
+	}
+	END_UPDATE_LOOP()
+}
+
+UParticleModuleSizeScaleOverLife::UParticleModuleSizeScaleOverLife()
+{
+	// 기본 배율: spawn size를 그대로 유지하는 one vector multiplier
+	SizeScaleOverLife.Constant = FVector::OneVector;
+	SizeScaleOverLife.Min = FVector::OneVector;
+	SizeScaleOverLife.Max = FVector::OneVector;
+}
+
+bool UParticleModuleSizeScaleOverLife::IsUpdateModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleSizeScaleOverLife::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+
+	// RandomRangeCurve의 particle별 random alpha 저장 payload
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleSizeScaleOverLife::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	// RandomRangeCurve 모드에서만 particle별 random alpha 고정
+	InitializeDistributionPayload(Owner, Offset, Particle, SizeScaleOverLife.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleSizeScaleOverLife::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)DeltaTime;
+
+	// update loop 진입 전 emitter instance 유효성 방어
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		// 누적 곱 폭주 방지: 매 frame spawn size 기준으로 최종 크기 재계산
+		const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+		const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, Payload);
+		const FVector Scale = EvaluateParticleVector(SizeScaleOverLife, Context);
+		Particle.Size = Particle.BaseSize * Scale;
+	}
+	END_UPDATE_LOOP()
+}
+
+bool UParticleModuleVelocityOverLife::IsUpdateModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleVelocityOverLife::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+
+	// RandomRangeCurve의 particle별 random alpha 저장 payload
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleVelocityOverLife::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	// RandomRangeCurve 모드에서만 particle별 random alpha 고정
+	InitializeDistributionPayload(Owner, Offset, Particle, VelocityOverLife.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleVelocityOverLife::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)DeltaTime;
+
+	// update loop 진입 전 emitter instance 유효성 방어
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		// 수명 기반 velocity distribution 평가
+		const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+		const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, Payload);
+		const FVector EvaluatedVelocity = EvaluateParticleVector(VelocityOverLife, Context);
+
+		// absolute 모드: distribution 값을 최종 속도로 직접 사용
+		if (bAbsolute)
+		{
+			Particle.Velocity = EvaluatedVelocity;
+			continue;
+		}
+
+		// additive 모드: 초기 속도와 acceleration이 갱신한 기준 속도 위에 offset 추가
+		Particle.Velocity = Particle.BaseVelocity + EvaluatedVelocity;
+	}
+	END_UPDATE_LOOP()
+}
+
+bool UParticleModuleAcceleration::IsUpdateModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleAcceleration::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+
+	// RandomRangeCurve의 particle별 random alpha 저장 payload
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleAcceleration::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	// RandomRangeCurve 모드에서만 particle별 random alpha 고정
+	InitializeDistributionPayload(Owner, Offset, Particle, Acceleration.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleAcceleration::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	// update loop 진입 전 emitter instance 유효성 방어
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		// frame별 acceleration distribution 평가
+		const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+		const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, Payload);
+		const FVector Accel = EvaluateParticleVector(Acceleration, Context);
+
+		// 별도 acceleration field 없이 기준 속도 자체를 적분
+		Particle.BaseVelocity += Accel * DeltaTime;
+
+		// 기본 최종 속도 동기화: 뒤쪽 VelocityOverLife module이 있으면 이 값을 다시 보정
+		Particle.Velocity = Particle.BaseVelocity;
+	}
+	END_UPDATE_LOOP()
+}
+
+bool UParticleModuleSizeScaleBySpeed::IsUpdateModule() const
+{
+	return true;
+}
+
+void UParticleModuleSizeScaleBySpeed::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)Offset;
+	(void)DeltaTime;
+
+	// update loop 진입 전 emitter instance 유효성 방어
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		// 현재 속도 크기 기반 축별 scale 계산
+		const float Speed = Particle.Velocity.Size();
+		const FVector RawScale = SpeedScale * Speed;
+
+		// 최소 scale 1 보장 후 MaxScale로 축별 상한 적용
+		const FVector ClampedScale(
+			std::min(std::max(RawScale.X, 1.0f), MaxScale.X),
+			std::min(std::max(RawScale.Y, 1.0f), MaxScale.Y),
+			std::min(std::max(RawScale.Z, 1.0f), MaxScale.Z));
+
+		// 앞선 size module이 만든 현재 크기에 속도 기반 scale 추가 적용
+		Particle.Size = Particle.Size * ClampedScale;
+	}
+	END_UPDATE_LOOP()
+}
+
 bool UParticleModuleCollision::IsUpdateModule() const
 {
 	return true;
 }
 
+/**
+ * @brief SubUV module의 particle payload를 조회합니다.
+ */
 static FSubUVParticlePayload* GetSubUVPayload(FParticleEmitterInstance* Owner, FBaseParticle& Particle, int32 Offset)
 {
-	if (Offset < 0)
+	// 유효하지 않은 emitter instance 또는 payload offset 방어
+	if (Owner == nullptr || Offset < 0)
 	{
 		return nullptr;
 	}
 
+	// particle stride 범위 검사는 emitter instance의 payload 조회 함수에 위임
 	uint8* Raw = Owner->GetParticlePayloadByOffset(Particle, Offset);
 	return reinterpret_cast<FSubUVParticlePayload*>(Raw);
 }
@@ -951,8 +1242,8 @@ void UParticleModuleSubUV::Spawn(FParticleEmitterInstance* Owner, int32 Offset, 
 
 	if (InterpMethod == EParticleSubUVInterpMethod::Random) // Random: Spawn 시 프레임 Random 결정
 	{
-		const int32 TotalFrames = Columns * Rows;
-		Payload->ImageIndex = Owner->RandomStream.GetRange(0.0f, static_cast<float>(TotalFrames));
+		const int32 TotalFrames = std::max(Columns * Rows, 1);
+		Payload->ImageIndex = Owner->RandomStream.GetRange(0.0f, static_cast<float>(TotalFrames - 1));
 		Payload->RandomSeed = Particle.Seed;
 	}
 	else
@@ -967,33 +1258,34 @@ void UParticleModuleSubUV::Update(FParticleEmitterInstance* Owner, int32 Offset,
 {
 	(void)DeltaTime;
 
+	// SubUV frame 수와 emitter instance 유효성 방어
 	const int32 TotalFrames = Columns * Rows;
-	if (TotalFrames <= 0)
+	if (Owner == nullptr || TotalFrames <= 0)
 	{
 		return;
 	}
 
-	const int32 ActiveCount = Owner->GetActiveParticleCount();
-	for (int32 i = 0; i < ActiveCount; ++i)
+	// 공통 update loop 사용: pending kill particle 자동 건너뜀
+	BEGIN_UPDATE_LOOP(Owner, Particle)
 	{
-		FBaseParticle& Particle = Owner->GetParticleByActiveIndex(i);
-
+		// 특정 particle payload가 없더라도 나머지 particle update는 계속 진행
 		FSubUVParticlePayload* Payload = GetSubUVPayload(Owner, Particle, Offset);
 		if (!Payload)
 		{
-			return;
+			continue;
 		}
 
-		// 정규화된 RelativeTime(0.f ~ 1.f)을 Frame Index로 매핑 → DistributionMode가 Constant/Curve면 수명 기반 재평가
+		// Linear 모드: 수명 또는 SubImageIndex distribution 기반 frame 갱신
 		if (InterpMethod == EParticleSubUVInterpMethod::Linear)
 		{
 			const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, nullptr);
-			Payload->ImageIndex = EvaluateSubImageIndex(*this, Context) * static_cast<float>(TotalFrames - 1);
+			Payload->ImageIndex = EvaluateSubImageFrameIndex(*this, Context, TotalFrames);
 		}
-		// Random일 경우 고정된 프레임 유지
 
+		// Random 모드: Spawn 시점에 정한 frame 유지, 공통 clamp만 적용
 		Payload->ImageIndex = MathUtil::Clamp(Payload->ImageIndex, 0.0f, static_cast<float>(TotalFrames - 1));
 	}
+	END_UPDATE_LOOP()
 }
 
 UParticleLODLevel::~UParticleLODLevel()
@@ -1302,7 +1594,6 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 {
 	// EmitterIntsance 유효성 검사
 	if (InEmitterInstance == nullptr ||
-		GetStaticMesh() == nullptr ||
 		InEmitterInstance->ActiveParticles <= 0 ||
 		InEmitterInstance->ParticleData == nullptr ||
 		InEmitterInstance->ParticleIndices == nullptr ||
@@ -1364,15 +1655,113 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	// ReplayData
 	RenderData->ReplayData.ActiveParticleCount = SnapshotParticleCount;
 	RenderData->ReplayData.ParticleStride = ParticleStride;
-	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	// Mesh emitters render with the static mesh section materials; RequiredModule.Material is intentionally ignored.
+	RenderData->Material = nullptr;
 
-	// renderer가 raw particle의 위치를 render space로 해석할 수 있도록 좌표계 메타데이터를 전달
+	// Mesh particle snapshots stay in emitter local space; the renderer applies ComponentToWorld per instance.
 	RenderData->ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
+	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::Local;
+	RenderData->ReplayData.Scale = FVector::OneVector;
+
+	// TODO: 중앙 renderer가 Mesh instance transform을 생성할 때 Mesh Particle의 회전 축과 정렬 정책을 반영한다.
+	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);
+	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = static_cast<int32>(ParticleDataBytes);
+	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = SnapshotParticleCount;
+	RenderData->ReplayData.DataContainer.ParticleData = SnapshotParticleData;
+	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
+
+	return RenderData;
+}
+
+FParticleEmitterInstance* UParticleModuleTypeDataBeam::CreateInstance(
+	UParticleEmitter* InEmitterTemplate,
+	IParticleEmitterInstanceOwner& InOwner)
+{
+	// Beam TypeData 전용 emitter instance 생성
+	FParticleBeamEmitterInstance* Instance = new FParticleBeamEmitterInstance(InOwner);
+
+	// 기존 emitter instance 계약에 맞춘 template 보관
+	Instance->SpriteTemplate = InEmitterTemplate;
+	return Instance;
+}
+
+FDynamicEmitterDataBase* UParticleModuleTypeDataBeam::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
+{
+	// EmitterInstance 기본 유효성
+	if (InEmitterInstance == nullptr ||
+		InEmitterInstance->ActiveParticles <= 0 ||
+		InEmitterInstance->ParticleData == nullptr ||
+		InEmitterInstance->ParticleIndices == nullptr ||
+		InEmitterInstance->ParticleStride <= 0 ||
+		InEmitterInstance->CurrentRuntimeCache == nullptr)
+	{
+		return nullptr;
+	}
+
+	// pending kill을 제외한 render 대상 particle 수
+	const int32 ActiveParticleCount = CountLiveParticlesForRender(*InEmitterInstance);
+	if (ActiveParticleCount <= 0)
+	{
+		return nullptr;
+	}
+
+	// live particle snapshot buffer 크기
+	const int32 ParticleStride = InEmitterInstance->ParticleStride;
+	size_t ParticleDataBytes = 0;
+	size_t SnapshotLogicalBytes = 0;
+	if (!CalculateRenderSnapshotByteSizes(ActiveParticleCount, ParticleStride, ParticleDataBytes, SnapshotLogicalBytes))
+	{
+		return nullptr;
+	}
+
+	// Beam render data와 snapshot 소유 buffer
+	FDynamicBeamEmitterData* RenderData = new FDynamicBeamEmitterData();
+	RenderData->OwnedParticleData.resize(ParticleDataBytes + ParticleHelper::ParticleAlignment);
+	RenderData->OwnedParticleIndices.resize(static_cast<size_t>(ActiveParticleCount));
+
+	// DataContainer가 참조할 aligned particle data 시작 주소
+	uint8* SnapshotParticleData = GetAlignedSnapshotParticleData(*RenderData);
+	if (SnapshotParticleData == nullptr)
+	{
+		delete RenderData;
+		return nullptr;
+	}
+
+	// Beam source/target은 RequiredModule coordinate space를 그대로 따르므로 particle 위치를 world로 굽지 않음
+	const int32 SnapshotParticleCount = CopyLiveParticlesForRenderSnapshot(
+		*InEmitterInstance,
+		SnapshotParticleData,
+		RenderData->OwnedParticleIndices,
+		false);
+	if (SnapshotParticleCount <= 0)
+	{
+		delete RenderData;
+		return nullptr;
+	}
+
+	// RequiredModule 기반 render 정책
+	const UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
+	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	RenderData->ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
+
+	// Beam replay 공통 정보
+	RenderData->ReplayData.EmitterType = EDynamicEmitterType::Beam;
+	RenderData->ReplayData.ActiveParticleCount = SnapshotParticleCount;
+	RenderData->ReplayData.ParticleStride = ParticleStride;
+	RenderData->ReplayData.SortMode = RequiredModule != nullptr
+		? RequiredModule->SortMode
+		: EParticleSortMode::ViewDepthBackToFront;
 	RenderData->ReplayData.CoordinateSpace = RequiredModule != nullptr
 		? RequiredModule->CoordinateSpace
 		: EParticleCoordinateSpace::Local;
+	RenderData->ReplayData.Scale = FVector::OneVector;
 
-	// TODO: 중앙 renderer가 Mesh instance transform을 생성할 때 Mesh Particle의 회전 축과 정렬 정책을 반영한다.
+	// Beam TypeData property snapshot
+	RenderData->ReplayData.SourcePoint = SourcePoint;
+	RenderData->ReplayData.TargetPoint = TargetPoint;
+	RenderData->ReplayData.BeamWidth = std::max(BeamWidth, 0.1f);
+
+	// snapshot은 particle data와 index를 별도 buffer로 소유
 	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);
 	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = static_cast<int32>(ParticleDataBytes);
 	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = SnapshotParticleCount;

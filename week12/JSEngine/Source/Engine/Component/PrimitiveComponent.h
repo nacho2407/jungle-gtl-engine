@@ -7,6 +7,8 @@
 #include "Core/Delegates/Delegate.h"
 #include "Collision/Collision.h"
 
+class FPrimitiveRenderProxy;
+
 /*
 	아직 미사용
 */
@@ -67,6 +69,7 @@ public:
 	void UpdateWorldMatrix() const override;
 	void AddWorldOffset(const FVector& WorldDelta) override;
 	virtual EPrimitiveType GetPrimitiveType() const = 0;
+	virtual FPrimitiveRenderProxy* GetRenderProxy() { return nullptr; }
 
 	/* For Material */
 	virtual int32 GetNumMaterials() const { return 0; }

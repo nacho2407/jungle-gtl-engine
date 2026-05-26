@@ -63,7 +63,7 @@ bool FDepthPrePass::DrawCommand(const FRenderPassContext* Context)
 
 	for (const auto& Cmd : OpaqueCmds)
 	{
-		if (Cmd.Type == ERenderCommandType::PostProcessOutline)
+		if (Cmd.Type == ERenderCommandType::PostProcessOutline || Cmd.Type == ERenderCommandType::Particle)
 		{
 			continue;
 		}

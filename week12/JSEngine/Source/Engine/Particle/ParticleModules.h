@@ -192,6 +192,36 @@ public:
 	FParticleVectorDistribution StartVelocity;
 };
 
+UCLASS(Placeable, DisplayName = "Rotation Module")
+class UParticleModuleRotation : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleRotation, UParticleModule)
+
+	bool IsSpawnModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
+
+	UPROPERTY(DisplayName = "Start Rotation", Min = -360.0f, Max = 360.0f, Speed = 1.0f)
+	FParticleFloatDistribution StartRotation;
+};
+
+UCLASS(Placeable, DisplayName = "Mesh Rotation Module")
+class UParticleModuleMeshRotation : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleMeshRotation, UParticleModule)
+
+	bool IsSpawnModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
+
+	UPROPERTY(DisplayName = "Start Rotation", Min = -360.0f, Max = 360.0f, Speed = 1.0f)
+	FParticleVectorDistribution StartRotation;
+};
+
 UCLASS(Placeable, DisplayName = "Color Module", Category = "Color", CategoryName = "Color")
 class UParticleModuleColor : public UParticleModule
 {
@@ -226,7 +256,105 @@ public:
 	FParticleVectorDistribution StartSize;
 };
 
-UCLASS(Placeable, DisplayName = "Collision Module", Category = "Collision", CategoryName = "Collision")
+/**
+ * @brief 수명 비율 기반 particle 색상 배율 module
+ */
+UCLASS(Placeable, DisplayName = "Color Over Life Module", Category = "Color")
+class UParticleModuleColorOverLife : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleColorOverLife, UParticleModule)
+
+	UParticleModuleColorOverLife();
+
+	bool IsUpdateModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Color Over Life")
+	FParticleColorDistribution ColorOverLife;
+};
+
+/**
+ * @brief 수명 비율 기반 particle 크기 배율 module
+ */
+UCLASS(Placeable, DisplayName = "Size Scale Over Life Module", Category = "Size")
+class UParticleModuleSizeScaleOverLife : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleSizeScaleOverLife, UParticleModule)
+
+	UParticleModuleSizeScaleOverLife();
+
+	bool IsUpdateModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Size Scale Over Life")
+	FParticleVectorDistribution SizeScaleOverLife;
+};
+
+/**
+ * @brief 수명 비율 기반 particle 속도 보정 module
+ */
+UCLASS(Placeable, DisplayName = "Velocity Over Life Module")
+class UParticleModuleVelocityOverLife : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleVelocityOverLife, UParticleModule)
+
+	bool IsUpdateModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Velocity Over Life")
+	FParticleVectorDistribution VelocityOverLife;
+
+	UPROPERTY(DisplayName = "Absolute")
+	bool bAbsolute = false;
+};
+
+/**
+ * @brief frame별 particle 기준 속도 가속 module
+ */
+UCLASS(Placeable, DisplayName = "Acceleration Module")
+class UParticleModuleAcceleration : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleAcceleration, UParticleModule)
+
+	bool IsUpdateModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Acceleration")
+	FParticleVectorDistribution Acceleration;
+};
+
+/**
+ * @brief 속도 크기 기반 particle 크기 배율 module
+ */
+UCLASS(Placeable, DisplayName = "Size Scale By Speed Module", Category = "Velocity")
+class UParticleModuleSizeScaleBySpeed : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleSizeScaleBySpeed, UParticleModule)
+
+	bool IsUpdateModule() const override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Speed Scale")
+	FVector SpeedScale = FVector(0.01f, 0.01f, 0.0f);
+
+	UPROPERTY(DisplayName = "Max Scale")
+	FVector MaxScale = FVector(10.0f, 10.0f, 1.0f);
+};
+
+UCLASS(Placeable, DisplayName = "Collision Module", Category = "Collision")
 class UParticleModuleCollision : public UParticleModule
 {
 public:
@@ -283,7 +411,7 @@ public:
 };
 
 // NOTE: Type-DataBase가 아니라 TypeData-Base 입니다.
-UCLASS(Placeable, DisplayName = "Sprite Type Data", Category = "Type Data", CategoryName = "Basic")
+UCLASS(Placeable, DisplayName = "Sprite Type Data", Category = "Type Data")
 class UParticleModuleTypeDataBase : public UParticleModule
 {
 public:
@@ -303,7 +431,7 @@ public:
  *        sprite emitter가 기본 emitter 타입이고, TypeData 모듈은 기본 sprite emitter가 아닌 다른 타입으로 바꿀 때 붙는 모듈입니다.
  */
 
-UCLASS(Placeable, DisplayName = "Mesh Type Data", Category = "Type Data", CategoryName = "Basic")
+UCLASS(Placeable, DisplayName = "Mesh Type Data", Category = "Type Data")
 class UParticleModuleTypeDataMesh : public UParticleModuleTypeDataBase
 {
 public:
@@ -326,16 +454,65 @@ private:
 	UStaticMesh* Mesh = nullptr;
 };
 
-UCLASS(Placeable, DisplayName = "Ribbon Type Data", Category = "Type Data", CategoryName = "Basic")
+UCLASS(Placeable, DisplayName = "Ribbon Type Data", Category = "Type Data")
 class UParticleModuleTypeDataRibbon : public UParticleModuleTypeDataBase
 {
 public:
 	GENERATED_BODY(UParticleModuleTypeDataRibbon, UParticleModuleTypeDataBase)
 };
 
-UCLASS(Placeable, DisplayName = "Beam Type Data", Category = "Type Data", CategoryName = "Basic")
+/**
+ * @brief Source / Target 기반 최소 Beam TypeData module
+ */
+UCLASS(Placeable, DisplayName = "Beam Type Data", Category = "Type Data")
 class UParticleModuleTypeDataBeam : public UParticleModuleTypeDataBase
 {
 public:
 	GENERATED_BODY(UParticleModuleTypeDataBeam, UParticleModuleTypeDataBase)
+
+	/**
+	 * @brief Beam emitter instance를 생성합니다.
+	 *
+	 * @param InEmitterTemplate instance를 만들 particle emitter template
+	 *
+	 * @param InOwner 생성한 instance가 참조할 owner
+	 *
+	 * @return 생성된 Beam emitter instance
+	 */
+	FParticleEmitterInstance* CreateInstance(
+		UParticleEmitter* InEmitterTemplate,
+		IParticleEmitterInstanceOwner& InOwner) override;
+
+	/**
+	 * @brief 현재 Beam emitter instance에서 render snapshot을 생성합니다.
+	 *
+	 * @param InEmitterInstance render snapshot을 생성할 emitter instance
+	 *
+	 * @return render thread로 전달할 Beam emitter data. 생성할 수 없으면 nullptr 반환
+	 */
+	FDynamicEmitterDataBase* GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance) override;
+
+	/**
+	 * @brief Beam 시작점
+	 *
+	 * @details RequiredModule의 CoordinateSpace 정책을 그대로 따릅니다.
+	 */
+	UPROPERTY(DisplayName = "Source Point")
+	FVector SourcePoint = FVector::ZeroVector;
+
+	/**
+	 * @brief Beam 끝점
+	 *
+	 * @details RequiredModule의 CoordinateSpace 정책을 그대로 따릅니다.
+	 */
+	UPROPERTY(DisplayName = "Target Point")
+	FVector TargetPoint = FVector(100.0f, 0.0f, 0.0f);
+
+	/**
+	 * @brief Beam quad 기본 두께
+	 *
+	 * @details Particle.Size.X가 이후 draw 단계에서 배율로 반영됩니다.
+	 */
+	UPROPERTY(DisplayName = "Beam Width", Min = 0.1f, Speed = 1.0f)
+	float BeamWidth = 10.0f;
 };
