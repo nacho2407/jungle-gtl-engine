@@ -1,6 +1,7 @@
 #pragma once
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
+#include "Math/Matrix.h"
 #include "Render/Types/VertexTypes.h"
 #include "Particles/ParticleHelper.h"
 #include "Particles/ParticleModuleRequired.h"
@@ -9,7 +10,6 @@ class UMaterial;
 class FMeshBuffer;
 struct FFrameContext;
 enum class EDynamicEmitterType {Sprite, Mesh, Beam, Ribbon};
-enum class EParticleBlendMode { AlphaBlend, Additive, Translucent };
 
 struct FParticleSortContext
 {
@@ -25,6 +25,7 @@ struct FDynamicEmitterReplayDataBase
 	int32 ParticleStride = 0;
 	FParticleDataContainer DataContainer;
 	FVector Scale = FVector(1, 1, 1);
+	FMatrix SimulationToWorld = FMatrix::Identity;
 	EParticleSortMode  SortMode  = PSORTMODE_None;
 	EParticleBlendMode BlendMode = EParticleBlendMode::AlphaBlend;
 };

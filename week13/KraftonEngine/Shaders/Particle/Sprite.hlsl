@@ -1,6 +1,8 @@
 #include "Common/ConstantBuffers.hlsli"
 #include "Common/VertexLayouts.hlsli"
 #include "Common/SystemSamplers.hlsli"
+#define USE_FOG 1
+#include "Common/Fog.hlsli"
 
 Texture2D ParticleTexture : register(t0);
 
@@ -17,7 +19,8 @@ struct PS_Input_Particle
 {
     float4 position : SV_POSITION;
     float2 texcoord : TEXCOORD0;
-    float4 color : COLOR;
+    float4 color    : COLOR;
+    float3 worldPos : TEXCOORD1;
 };
 
 PS_Input_Particle VS(VS_Input_ParticleQuad quad, VS_Input_ParticleInstance inst)
@@ -37,7 +40,8 @@ PS_Input_Particle VS(VS_Input_ParticleQuad quad, VS_Input_ParticleInstance inst)
     PS_Input_Particle output;
     output.position = mul(float4(worldPos, 1.0f), mul(View, Projection));
     output.texcoord = quad.cornerUV + 0.5f;
-    output.color = inst.color;
+    output.color    = inst.color;
+    output.worldPos = worldPos;
     return output;
 }
 
@@ -46,5 +50,5 @@ float4 PS(PS_Input_Particle input) : SV_TARGET
     float4 col = ParticleTexture.Sample(LinearClampSampler, input.texcoord);
     col *= input.color;
     clip(col.a - 0.01f);
-    return col;
+    return ApplyFogTranslucent(col, input.worldPos, CameraWorldPos);
 }

@@ -59,7 +59,7 @@ private:
 	// 공통 헬퍼
 	void EmitLineCommand(FLineGeometry& Lines, FShader* Shader, const FDrawCommandRenderState& RS);
 	void ApplyMaterialRenderState(FDrawCommandRenderState& OutState, const UMaterial* Mat, const FDrawCommandRenderState& BaseState);
-	FShader* SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode, bool bUseSkeletalVertexFactory, bool bWeightBoneHeatMap);
+	FShader* SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode, bool bUseSkeletalVertexFactory, bool bWeightBoneHeatMap, bool bFog = false);
 
 	FConstantBuffer* GetPerObjectCBForProxy(FScene* Scene, const FPrimitiveSceneProxy& Proxy);
 	void EnsurePerObjectCBPoolCapacity(FScene* Scene, uint32 RequiredCount);
@@ -85,8 +85,7 @@ private:
 	// PerObject CB 풀
 	TMap<FScene*, TArray<FConstantBuffer>> PerSceneObjectCBPool;
 
-	// PostProcess CBs (Fog, Outline, SceneDepth, FXAA)
-	FConstantBuffer FogCB;
+	// PostProcess CBs (Outline, SceneDepth, FXAA) — FogCB는 FSystemResources::FogConstantBuffer(b7)로 이동
 	FConstantBuffer OutlineCB;
 	FConstantBuffer SceneDepthCB;
 	FConstantBuffer FXAACB;

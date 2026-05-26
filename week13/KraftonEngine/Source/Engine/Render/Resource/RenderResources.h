@@ -270,6 +270,9 @@ struct FSystemResources
 
 	// --- Lighting ---
 	FConstantBuffer LightingConstantBuffer;		// b4 — ECBSlot::Lighting
+
+	// --- Fog ---
+	FConstantBuffer FogConstantBuffer;			// b7 — ECBSlot::Fog
 	FLightingResource ForwardLights;			// t8 — ELightTexSlot::AllLights
 	FTileCullingResource TileCullingResource;	// t9/t10 — 타일 컬링 결과 버퍼
 	uint32 LastNumLights = 0;					// Dispatch용 총 라이트 수 캐시
@@ -303,6 +306,9 @@ struct FSystemResources
 
 	// 라이팅 CB + StructuredBuffer 업데이트 + 바인딩 (b4, t8)
 	void UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame);
+
+	// 포그 CB 업데이트 + 전역 바인딩 (b7) — 포그 없으면 FogEnabled=0으로 바인딩
+	void UpdateFogBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame);
 
 	// s0-s2 시스템 샘플러 일괄 바인딩 (프레임 1회)
 	void BindSystemSamplers(FD3DDevice& Device);

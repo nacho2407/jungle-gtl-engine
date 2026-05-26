@@ -32,14 +32,14 @@ static FParticleRenderState ResolveParticleRenderState(EParticleBlendMode BlendM
 {
 	switch (BlendMode)
 	{
+	case EParticleBlendMode::Opaque:
+		return { ERenderPass::Opaque, EBlendState::Opaque, EDepthStencilState::Default };
+
 	case EParticleBlendMode::Additive:
-		// 가산 합성 — 뒤 색상에 더해지므로 소팅 불필요, 뎁스 쓰기 금지
 		return { ERenderPass::AlphaBlend, EBlendState::Additive, EDepthStencilState::DepthReadOnly };
 
 	case EParticleBlendMode::AlphaBlend:
-	case EParticleBlendMode::Translucent:
 	default:
-		// 반투명 — 뎁스 쓰기 금지, back-to-front 소팅 필요
 		return { ERenderPass::AlphaBlend, EBlendState::AlphaBlend, EDepthStencilState::DepthReadOnly };
 	}
 }
@@ -126,21 +126,20 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 
 void FParticleSystemSceneProxy::BuildParticleCommands(
 	ID3D11Device* Device, ID3D11DeviceContext* Context,
-	const FFrameContext& Frame, FDrawCommandList& OutCmdList)
+	const FFrameContext& Frame, FDrawCommandList& OutCmdList, ERenderPass CurrentPass)
 {
 	if (CachedEmitterCount <= 0) return;
 
-	PARTICLE_STATS_RESET();
-
-	// QuadVB/IB 최초 1회 생성
-	if (!QuadVB.GetBuffer())
-		BuildQuadGeometry(Device);
-
-	// 에미터 수에 맞게 GPU 버퍼 확보
-	EnsureEmitterBuffers(Device, CachedEmitterCount);
-
-	// CPU 스테이징 채우기 — 매 프레임 여기서만 1회 실행
+	// Opaque 패스에서만 1회 실행 (스테이징은 패스와 무관하게 한 번만 채워야 함)
+	if (CurrentPass == ERenderPass::Opaque)
 	{
+		PARTICLE_STATS_RESET();
+
+		if (!QuadVB.GetBuffer())
+			BuildQuadGeometry(Device);
+
+		EnsureEmitterBuffers(Device, CachedEmitterCount);
+
 		SCOPE_STAT_CAT("ParticleStagingFill", "Particle");
 		for (int32 i = 0; i < CachedEmitterCount; ++i)
 		{
@@ -149,18 +148,17 @@ void FParticleSystemSceneProxy::BuildParticleCommands(
 		}
 	}
 
-	// GPU 업로드 + 드로우 커맨드 생성
-	int32 SubmittedCount = 0;
+	// GPU 업로드 + 드로우 커맨드 생성 — 현재 패스에 해당하는 에미터만 제출
 	for (auto& BufferPtr : EmitterBuffers)
 	{
-		if (!BufferPtr || BufferPtr->ActiveParticleCount <= 0) continue;
-		SubmitEmitter(*BufferPtr, Device, Context, Frame, OutCmdList);
-		++SubmittedCount;
-	}
+		if (!BufferPtr || (BufferPtr->ActiveParticleCount <= 0 && BufferPtr->DynamicVertexCount <= 0)) continue;
 
-	if (SubmittedCount == 0)
-	{
-		UE_LOG("[ParticleProxy] BuildParticleCommands: %d emitter(s) cached but none had active particles", CachedEmitterCount);
+		const ERenderPass EmitterPass = BufferPtr->Material
+			? BufferPtr->Material->GetRenderPass()
+			: ResolveParticleRenderState(BufferPtr->BlendMode).Pass;
+		if (EmitterPass != CurrentPass) continue;
+
+		SubmitEmitter(*BufferPtr, Device, Context, Frame, OutCmdList);
 	}
 }
 
@@ -318,6 +316,9 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 
 	if (Source.eEmitterType == EDynamicEmitterType::Sprite)
 	{
+		const FDynamicSpriteEmitterReplayDataBase& SpriteSource =
+			static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
+
 		for (int32 i = 0; i < Count; ++i)
 		{
 			const uint32 Idx = Source.DataContainer.ParticleIndices
@@ -328,7 +329,9 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 			    Source.DataContainer.ParticleData + Idx * Source.ParticleStride);
 			FParticleSpriteInstance* Inst = reinterpret_cast<FParticleSpriteInstance*>(
 			    OutBuffer.StagingBuffer.data() + i * Stride);
-			Inst->Position = P->Location;
+			Inst->Position = SpriteSource.bUseLocalSpace
+				? SpriteSource.SimulationToWorld.TransformPosition(P->Location)
+				: P->Location;
 			Inst->Size     = P->Size.X * Source.Scale.X;
 			Inst->Color    = P->Color.ToVector4();
 			Inst->Rotation = P->Rotation;
@@ -340,9 +343,11 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 	}
 	else if (Source.eEmitterType == EDynamicEmitterType::Mesh)
 	{
+		const FDynamicMeshEmitterReplayData& MeshSource =
+			static_cast<const FDynamicMeshEmitterReplayData&>(Source);
+
 		// FDynamicMeshEmitterReplayData에 있는 MeshRotationOffset을 꺼낸다.
-		const int32 MeshRotOffset =
-			static_cast<const FDynamicMeshEmitterReplayData&>(Source).MeshRotationOffset;
+		const int32 MeshRotOffset = MeshSource.MeshRotationOffset;
 
 		for (int32 i = 0; i < Count; ++i)
 		{
@@ -372,11 +377,13 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 				P->Size.Y * Source.Scale.Y,
 				P->Size.Z * Source.Scale.Z);
 
-			// SRT 순서로 월드 트랜스폼 구성
-			FMatrix WorldTM = FMatrix::MakeScaleMatrix(Scale) * FMatrix::MakeRotationEuler(Euler);
-			WorldTM.SetLocation(P->Location);
+			// Particle location/rotation is in simulation space when Local Space is enabled.
+			FMatrix ParticleTM = FMatrix::MakeScaleMatrix(Scale) * FMatrix::MakeRotationEuler(Euler);
+			ParticleTM.SetLocation(P->Location);
 
-			Inst->Transform = WorldTM;
+			Inst->Transform = MeshSource.bUseLocalSpace
+				? ParticleTM * MeshSource.SimulationToWorld
+				: ParticleTM;
 			Inst->Color     = P->Color.ToVector4();
 			Inst->SubImageIndex = P->RelativeTime;
 			Inst->DynamicParam  = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
