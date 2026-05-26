@@ -144,7 +144,7 @@ void FParticleSystemSceneProxy::BuildParticleCommands(
 		for (int32 i = 0; i < CachedEmitterCount; ++i)
 		{
 			if (CachedEmitterData[i] && EmitterBuffers[i])
-				FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i]);
+				FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i], Frame);
 		}
 	}
 
@@ -216,7 +216,7 @@ void FParticleSystemSceneProxy::EnsureEmitterBuffers(ID3D11Device* Device, int32
 
 
 void FParticleSystemSceneProxy::FillStagingBuffer(
-	const FDynamicEmitterDataBase& EmitterData, FEmitterRenderBuffer& OutBuffer)
+	FDynamicEmitterDataBase& EmitterData, FEmitterRenderBuffer& OutBuffer, const FFrameContext& Frame)
 {
 	const FDynamicEmitterReplayDataBase& Source = EmitterData.GetSource();
 	const int32 Stride = EmitterData.GetDynamicVertexStride();
@@ -273,13 +273,15 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 
 		if (Source.eEmitterType == EDynamicEmitterType::Beam)
 		{
-			const auto& BeamData = static_cast<const FDynamicBeam2EmitterData&>(EmitterData);
+			auto& BeamData = static_cast<FDynamicBeam2EmitterData&>(EmitterData);
+			BeamData.BuildMeshData(Frame);
 			BuiltVertices = &BeamData.GetBuiltVertices();
 			BuiltIndices = &BeamData.GetBuiltIndices();
 		}
 		else
 		{
-			const auto& RibbonData = static_cast<const FDynamicRibbonEmitterData&>(EmitterData);
+			auto& RibbonData = static_cast<FDynamicRibbonEmitterData&>(EmitterData);
+			RibbonData.BuildMeshData(Frame);
 			BuiltVertices = &RibbonData.GetBuiltVertices();
 			BuiltIndices = &RibbonData.GetBuiltIndices();
 		}
@@ -314,6 +316,9 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 
 	if (Source.eEmitterType == EDynamicEmitterType::Sprite)
 	{
+		const FDynamicSpriteEmitterReplayDataBase& SpriteSource =
+			static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
+
 		for (int32 i = 0; i < Count; ++i)
 		{
 			const uint32 Idx = Source.DataContainer.ParticleIndices
@@ -324,7 +329,9 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 			    Source.DataContainer.ParticleData + Idx * Source.ParticleStride);
 			FParticleSpriteInstance* Inst = reinterpret_cast<FParticleSpriteInstance*>(
 			    OutBuffer.StagingBuffer.data() + i * Stride);
-			Inst->Position = P->Location;
+			Inst->Position = SpriteSource.bUseLocalSpace
+				? SpriteSource.SimulationToWorld.TransformPosition(P->Location)
+				: P->Location;
 			Inst->Size     = P->Size.X * Source.Scale.X;
 			Inst->Color    = P->Color.ToVector4();
 			Inst->Rotation = P->Rotation;
@@ -336,9 +343,11 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 	}
 	else if (Source.eEmitterType == EDynamicEmitterType::Mesh)
 	{
+		const FDynamicMeshEmitterReplayData& MeshSource =
+			static_cast<const FDynamicMeshEmitterReplayData&>(Source);
+
 		// FDynamicMeshEmitterReplayData에 있는 MeshRotationOffset을 꺼낸다.
-		const int32 MeshRotOffset =
-			static_cast<const FDynamicMeshEmitterReplayData&>(Source).MeshRotationOffset;
+		const int32 MeshRotOffset = MeshSource.MeshRotationOffset;
 
 		for (int32 i = 0; i < Count; ++i)
 		{
@@ -368,11 +377,13 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 				P->Size.Y * Source.Scale.Y,
 				P->Size.Z * Source.Scale.Z);
 
-			// SRT 순서로 월드 트랜스폼 구성
-			FMatrix WorldTM = FMatrix::MakeScaleMatrix(Scale) * FMatrix::MakeRotationEuler(Euler);
-			WorldTM.SetLocation(P->Location);
+			// Particle location/rotation is in simulation space when Local Space is enabled.
+			FMatrix ParticleTM = FMatrix::MakeScaleMatrix(Scale) * FMatrix::MakeRotationEuler(Euler);
+			ParticleTM.SetLocation(P->Location);
 
-			Inst->Transform = WorldTM;
+			Inst->Transform = MeshSource.bUseLocalSpace
+				? ParticleTM * MeshSource.SimulationToWorld
+				: ParticleTM;
 			Inst->Color     = P->Color.ToVector4();
 			Inst->SubImageIndex = P->RelativeTime;
 			Inst->DynamicParam  = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
