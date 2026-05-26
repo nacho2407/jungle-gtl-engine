@@ -44,7 +44,7 @@ public:
 	void Play() { FrameIndex = 0; TimeAccumulator = 0.0f; bIsExecute = false; } // 처음부터 다시 재생
 
 	// --- Sprite Size (월드 공간 크기) ---
-	void SetSpriteSize(float InWidth, float InHeight) { Width = InWidth; Height = InHeight; }
+	void SetSpriteSize(float InWidth, float InHeight);
 	float GetWidth()  const { return Width; }
 	float GetHeight() const { return Height; }
 

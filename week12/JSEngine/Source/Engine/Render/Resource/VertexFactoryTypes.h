@@ -29,8 +29,15 @@ enum class EVertexFactoryType : uint8
     Gizmo,
     Decal,
     ParticleSprite,
-    ParticleMesh,
+    InstancedSurface,
 };
+
+inline bool SupportsInstancedSurfaceVertexFactory(EVertexFactoryType Type)
+{
+    // Pass consumption contract only: this does not mean every primitive producer
+    // can create instance-buffer-backed commands.
+    return Type == EVertexFactoryType::InstancedSurface;
+}
 
 // VertexFactory별 Shader Entry 정책입니다.
 // 같은 Material PS라도 StaticMeshVS / SkeletalMeshVS처럼 VS만 갈아끼울 수 있게 분리합니다.
@@ -111,7 +118,7 @@ public:
             },
             sizeof(FParticleSpriteQuadVertex)
         };
-        static const FVertexLayoutDesc ParticleMeshLayout = {
+        static const FVertexLayoutDesc InstancedSurfaceLayout = {
             {
                 { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Position)) },
                 { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, static_cast<uint32>(offsetof(FNormalVertex, Color)) },
@@ -236,16 +243,16 @@ public:
             PositionOnlyLayout,
             PrimitiveVertexLayout
         };
-        static const FVertexFactoryDesc ParticleMeshDesc = {
+        static const FVertexFactoryDesc InstancedSurfaceDesc = {
             FShaderPaths::MaterialUberLit,
             FShaderPaths::DepthPrepass,
             FShaderPaths::Shadow,
             FShaderPaths::EditorSelectionMask,
-            "ParticleMeshVS",
+            "InstancedSurfaceVS",
             "DepthPrepassVS",
             "ShadowVS",
             "VSStaticMesh",
-            ParticleMeshLayout,
+            InstancedSurfaceLayout,
             PositionOnlyLayout,
             NormalVertexLayout
         };
@@ -268,8 +275,8 @@ public:
             return TextDesc;
         case EVertexFactoryType::ParticleSprite:
             return ParticleSpriteDesc;
-        case EVertexFactoryType::ParticleMesh:
-            return ParticleMeshDesc;
+        case EVertexFactoryType::InstancedSurface:
+            return InstancedSurfaceDesc;
         case EVertexFactoryType::StaticMesh:
         case EVertexFactoryType::ProceduralMesh:
         default:

@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "Core/ResourceManager.h"
+#include "Render/Scene/Scene.h"
 
 
 //	기본 도형은 Cube로 설정
@@ -65,7 +66,7 @@ void UStaticMeshComponent::Serialize(FArchive& Ar)
 			{
 				SetMaterial(i, LoadedMaterials[i]);
 			}
-			MarkRenderStateDirty();
+			MarkLocalRenderStateDirty();
 		}
 	}
 }
@@ -99,7 +100,8 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InStaticMesh)
 	}
 
 	MarkBoundsDirty();
-	MarkRenderStateDirty();
+	MarkLocalRenderStateDirty();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Mesh);
 }
 
 UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
@@ -136,7 +138,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 		{
 			SetMaterial(i, Materials[i]);
 		}
-		MarkRenderStateDirty();
+		MarkLocalRenderStateDirty();
 	}
 }
 
@@ -296,10 +298,10 @@ void UStaticMeshComponent::GetMeshData(TArray<FNormalVertex>& OutVertices, TArra
 void UStaticMeshComponent::MarkBoundsDirty()
 {
 	bBoundsDirty = true;
-	NotifySpatialIndexDirty();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Mesh);
 }
 
-void UStaticMeshComponent::MarkRenderStateDirty()
+void UStaticMeshComponent::MarkLocalRenderStateDirty()
 {
 	bRenderStateDirty = true;
 }

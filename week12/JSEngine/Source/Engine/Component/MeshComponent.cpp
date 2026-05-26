@@ -1,5 +1,7 @@
 ﻿#include "MeshComponent.h"
 
+#include "Render/Scene/Scene.h"
+
 void UMeshComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
@@ -18,6 +20,7 @@ void UMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial
 	}
 
 	Materials[SlotIndex] = InMaterial;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Material);
 }
 
 UMaterialInterface* UMeshComponent::GetMaterial(int32 SlotIndex) const

@@ -6,7 +6,8 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Geometry/OBB.h"
-#include "Render/Resource/MeshBufferManager.h"
+#include "Render/Resource/Buffer.h"
+#include "Render/Scene/PrimitiveRenderProxy.h"
 #include "Render/Scene/RenderBus.h"
 #include "Runtime/Stats/ScopeCycleCounter.h"
 
@@ -52,7 +53,7 @@ void FDecalCommandBuilder::Reset()
 }
 
 void FDecalCommandBuilder::CollectDecal(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, FRenderBus& RenderBus,
-                                        FMeshBufferManager& MeshBufferManager,
+                                        FRenderResourceProvider& ResourceProvider,
                                         FWorldSpatialIndex::FPrimitiveOBBQueryScratch& OBBQueryScratch)
 {
     if (!ShowFlags.bDecals) return;
@@ -94,7 +95,7 @@ void FDecalCommandBuilder::CollectDecal(UPrimitiveComponent* Primitive, const FS
             SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
         }
 
-        FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
+        FMeshBuffer* MeshBuffer = ResourceProvider.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
         if (!MeshBuffer) continue;
 
         const FStaticMesh* MeshData = StaticMesh->GetMeshData(SelectedLOD);

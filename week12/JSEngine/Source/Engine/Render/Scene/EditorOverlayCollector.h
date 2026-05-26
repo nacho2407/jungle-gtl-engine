@@ -7,7 +7,7 @@
 #include <unordered_set>
 
 class AActor;
-class FMeshBufferManager;
+class FRenderResourceProvider;
 class FRenderBus;
 class UGizmoComponent;
 class UPrimitiveComponent;
@@ -21,10 +21,10 @@ class FEditorOverlayCollector
 {
 public:
 	void CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode,
-						  FRenderBus& RenderBus, FMeshBufferManager& MeshBufferManager,
+						  FRenderBus& RenderBus, FRenderResourceProvider& ResourceProvider,
 						  bool bIncludeEditorOnlyPrimitives) const;
 	void CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus,
-					  FMeshBufferManager& MeshBufferManager, bool bIsActiveOperation) const;
+					  FRenderResourceProvider& ResourceProvider, bool bIsActiveOperation) const;
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic) const;
 
 	// 본 부모-자식 라인을 EditorLineBatcher용 DebugLine 커맨드로 발행. SkComp 본 자세가
@@ -36,7 +36,7 @@ public:
 
 private:
 	bool CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode,
-								  FRenderBus& RenderBus, FMeshBufferManager& MeshBufferManager,
+								  FRenderBus& RenderBus, FRenderResourceProvider& ResourceProvider,
 								  bool bIncludeEditorOnlyPrimitives) const;
 	void CollectBVHInternalNodeAABBs(UPrimitiveComponent* PrimitiveComponent, const FShowFlags& ShowFlags,
 									 FRenderBus& RenderBus, std::unordered_set<int32>& SeenNodeIndices) const;

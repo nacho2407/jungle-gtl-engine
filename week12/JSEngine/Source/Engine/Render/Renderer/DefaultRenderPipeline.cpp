@@ -82,7 +82,9 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 			Bus);
 
 		const FFrustum& ViewFrustum = Camera->GetFrustum();
-		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum);
+		FScene& Scene = World->GetScene();
+		Scene.Initialize(Renderer.GetFD3DDevice().GetDevice(), Renderer.GetFD3DDevice().GetDeviceContext());
+		Scene.CollectView(Collector, ShowFlags, ViewMode, Bus, &ViewFrustum);
 
 		const auto& CullingStats = Collector.GetLastCullingStats();
 		const int32 OpaqueCount = static_cast<int32>(Bus.GetCommands(ERenderPass::Opaque).size());
@@ -116,7 +118,7 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 					? Engine->GetPrimaryPlayerController()->GetPlayerCameraManager()
 					: nullptr,
 				Bus);
-			Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, nullptr);
+			Scene.CollectView(Collector, ShowFlags, ViewMode, Bus, nullptr);
 
 			if (!bLoggedRuntimeFallback)
 			{

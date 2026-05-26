@@ -6,8 +6,8 @@
 #include "Particle/ParticleTypes.h"
 #include "Asset/StaticMesh.h"
 #include "Core/ResourceManager.h"
+#include "Render/Resource/Buffer.h"
 #include "Render/Resource/Material.h"
-#include "Render/Resource/MeshBufferManager.h"
 #include "Render/Scene/RenderBus.h"
 
 #include <algorithm>
@@ -315,19 +315,19 @@ namespace
 	}
 }
 
-FParticleSystemRenderProxy::FParticleSystemRenderProxy(UParticleSystemComponent* InComponent)
+FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* InComponent)
 	: Component(InComponent)
 {
 }
 
-FParticleSystemRenderProxy::~FParticleSystemRenderProxy()
+FParticleSystemSceneProxy::~FParticleSystemSceneProxy()
 {
 	ReleaseResources();
 }
 
-void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyCollectionContext& Context)
+void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyCollectionContext& Context)
 {
-	if (Component == nullptr)
+	if (Component == nullptr || !Context.ShowFlags.bParticle)
 	{
 		return;
 	}
@@ -405,7 +405,7 @@ void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyColl
 	}
 }
 
-void FParticleSystemRenderProxy::ReleaseResources()
+void FParticleSystemSceneProxy::ReleaseResources()
 {
 	SpriteInstances.clear();
 	MeshInstances.clear();
@@ -415,7 +415,7 @@ void FParticleSystemRenderProxy::ReleaseResources()
 	MaxMeshInstanceCount = 0;
 }
 
-bool FParticleSystemRenderProxy::BuildSpriteCommands(
+bool FParticleSystemSceneProxy::BuildSpriteCommands(
 	const FPrimitiveRenderProxyCollectionContext& Context,
 	TArray<FRenderCommand>& OutSpriteCommands,
 	TArray<FRenderCommand>& OutSubUVCommands)
@@ -501,7 +501,7 @@ bool FParticleSystemRenderProxy::BuildSpriteCommands(
 	return true;
 }
 
-bool FParticleSystemRenderProxy::BuildMeshCommands(
+bool FParticleSystemSceneProxy::BuildMeshCommands(
 	const FPrimitiveRenderProxyCollectionContext& Context,
 	TArray<FRenderCommand>& OutOpaqueCommands,
 	TArray<FRenderCommand>& OutTranslucentCommands)
@@ -556,7 +556,7 @@ bool FParticleSystemRenderProxy::BuildMeshCommands(
 			continue;
 		}
 
-		FMeshBuffer* MeshBuffer = Context.MeshBufferManager.GetStaticMeshBuffer(Mesh, 0);
+		FMeshBuffer* MeshBuffer = Context.ResourceProvider.GetStaticMeshBuffer(Mesh, 0);
 		if (MeshBuffer == nullptr)
 		{
 			LogParticleDiagnosticOnce(
@@ -633,7 +633,7 @@ bool FParticleSystemRenderProxy::BuildMeshCommands(
 			Cmd.Material = ResolveMeshParticleMaterial(SectionMaterial);
 			Cmd.ParticleEmitterData = EmitterData;
 			Cmd.ParticleReplayData = &ReplayData;
-			Cmd.VertexFactoryType = EVertexFactoryType::ParticleMesh;
+			Cmd.VertexFactoryType = EVertexFactoryType::InstancedSurface;
 			Cmd.MeshBuffer = MeshBuffer;
 			Cmd.PerObjectConstants = FPerObjectConstants{ FMatrix::Identity, FColor::White().ToVector4() };
 			Cmd.WorldAABB = MeshParticleBounds.IsValid() ? MeshParticleBounds : Component->GetWorldAABB();
@@ -657,7 +657,7 @@ bool FParticleSystemRenderProxy::BuildMeshCommands(
 	return true;
 }
 
-bool FParticleSystemRenderProxy::BuildBeamCommands(
+bool FParticleSystemSceneProxy::BuildBeamCommands(
 	const FPrimitiveRenderProxyCollectionContext& Context,
 	TArray<FRenderCommand>& OutOpaqueCommands,
 	TArray<FRenderCommand>& OutTranslucentCommands)
@@ -731,7 +731,7 @@ bool FParticleSystemRenderProxy::BuildBeamCommands(
 	return true;
 }
 
-bool FParticleSystemRenderProxy::EnsureSpriteInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
+bool FParticleSystemSceneProxy::EnsureSpriteInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
 {
 	if (Device == nullptr)
 	{
@@ -754,7 +754,7 @@ bool FParticleSystemRenderProxy::EnsureSpriteInstanceBuffer(ID3D11Device* Device
 	return SUCCEEDED(Device->CreateBuffer(&InstanceDesc, nullptr, SpriteInstanceBuffer.ReleaseAndGetAddressOf()));
 }
 
-bool FParticleSystemRenderProxy::EnsureMeshInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
+bool FParticleSystemSceneProxy::EnsureMeshInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
 {
 	if (Device == nullptr)
 	{
@@ -777,7 +777,7 @@ bool FParticleSystemRenderProxy::EnsureMeshInstanceBuffer(ID3D11Device* Device, 
 	return SUCCEEDED(Device->CreateBuffer(&InstanceDesc, nullptr, MeshInstanceBuffer.ReleaseAndGetAddressOf()));
 }
 
-bool FParticleSystemRenderProxy::UploadSpriteInstances(ID3D11DeviceContext* DeviceContext)
+bool FParticleSystemSceneProxy::UploadSpriteInstances(ID3D11DeviceContext* DeviceContext)
 {
 	if (DeviceContext == nullptr || !SpriteInstanceBuffer)
 	{
@@ -803,7 +803,7 @@ bool FParticleSystemRenderProxy::UploadSpriteInstances(ID3D11DeviceContext* Devi
 	return true;
 }
 
-bool FParticleSystemRenderProxy::UploadMeshInstances(ID3D11DeviceContext* DeviceContext)
+bool FParticleSystemSceneProxy::UploadMeshInstances(ID3D11DeviceContext* DeviceContext)
 {
 	if (DeviceContext == nullptr || !MeshInstanceBuffer)
 	{
@@ -828,3 +828,4 @@ bool FParticleSystemRenderProxy::UploadMeshInstances(ID3D11DeviceContext* Device
 	DeviceContext->Unmap(MeshInstanceBuffer.Get(), 0);
 	return true;
 }
+

@@ -5,6 +5,8 @@
 #include "GameFramework/AActor.h"
 
 
+#include "Render/Scene/Scene.h"
+
 void UProceduralMeshComponent::CreateFrom(UStaticMesh* StaticMesh)
 {
 	if (StaticMesh)
@@ -49,6 +51,7 @@ void UProceduralMeshComponent::CreateSection(int32 SectionIndex, const TArray<FN
 
 	Sections[SectionIndex].Vertices = InVertices;
 	Sections[SectionIndex].Indices = InIndices;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Mesh);
 }
 
 void UProceduralMeshComponent::ClearSection(int32 SectionIndex)
@@ -57,12 +60,14 @@ void UProceduralMeshComponent::ClearSection(int32 SectionIndex)
 	{
 		Sections[SectionIndex].Indices.clear();
 		Sections[SectionIndex].Vertices.clear();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Mesh);
 	}
 }
 
 void UProceduralMeshComponent::ClearAllSections()
 {
 	Sections.clear();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Mesh);
 }
 
 void UProceduralMeshComponent::UpdateWorldAABB() const
@@ -132,6 +137,7 @@ void UProceduralMeshComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* 
 	}
 
 	Materials[SlotIndex] = InMaterial;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Material);
 }
 
 void UProceduralMeshComponent::PostDuplicate(UObject* Original)

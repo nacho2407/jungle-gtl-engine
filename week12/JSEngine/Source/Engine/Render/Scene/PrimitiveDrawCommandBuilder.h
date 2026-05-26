@@ -2,7 +2,7 @@
 
 #include "Render/Common/ViewTypes.h"
 
-class FMeshBufferManager;
+class FRenderResourceProvider;
 class FRenderBus;
 class UPrimitiveComponent;
 
@@ -10,11 +10,11 @@ class FPrimitiveDrawCommandBuilder
 {
 public:
     bool CollectPrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode,
-                          FRenderBus& RenderBus, FMeshBufferManager& MeshBufferManager) const;
+                          FRenderBus& RenderBus, FRenderResourceProvider& ResourceProvider) const;
     bool CollectShadowCasterPrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode,
-                                      FRenderBus& RenderBus, FMeshBufferManager& MeshBufferManager) const;
+                                      FRenderBus& RenderBus, FRenderResourceProvider& ResourceProvider) const;
 
 private:
     bool CollectPrimitiveInternal(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode,
-                                  FRenderBus& RenderBus, FMeshBufferManager& MeshBufferManager, bool bShadowOnly) const;
+                                  FRenderBus& RenderBus, FRenderResourceProvider& ResourceProvider, bool bShadowOnly) const;
 };

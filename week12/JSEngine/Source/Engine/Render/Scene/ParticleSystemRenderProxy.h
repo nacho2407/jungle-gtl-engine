@@ -7,11 +7,11 @@
 class UParticleSystemComponent;
 struct ID3D11Buffer;
 
-class FParticleSystemRenderProxy : public FPrimitiveRenderProxy
+class FParticleSystemSceneProxy : public FPrimitiveRenderProxy
 {
 public:
-	explicit FParticleSystemRenderProxy(UParticleSystemComponent* InComponent);
-	~FParticleSystemRenderProxy() override;
+	explicit FParticleSystemSceneProxy(UParticleSystemComponent* InComponent);
+	~FParticleSystemSceneProxy() override;
 
 	void CollectCommands(const FPrimitiveRenderProxyCollectionContext& Context) override;
 	void ReleaseResources() override;
@@ -48,6 +48,8 @@ private:
 	UParticleSystemComponent* Component = nullptr;
 	TArray<FParticleSpriteInstanceData> SpriteInstances;
 	TArray<FParticleMeshInstanceData> MeshInstances;
+	// Particle-local transient streams. Promote to a shared dynamic instance
+	// buffer manager when another instanced-surface producer appears.
 	TComPtr<ID3D11Buffer> SpriteInstanceBuffer;
 	TComPtr<ID3D11Buffer> MeshInstanceBuffer;
 	uint32 MaxSpriteInstanceCount = 0;

@@ -49,7 +49,7 @@ public:
 	float GetWidth()  const { return Width; }
 	float GetHeight() const { return Height; }
 	FColor GetColor() const { return Color; }
-	void SetColor(const FColor& InColor) { Color = InColor; }
+	void SetColor(const FColor& InColor);
 	// Billboard는 outline 미지원 (Batcher 계열)
 	//void SetSpriteSize(float InWidth, float InHeight) { Width = InWidth; Height = InHeight; }
 

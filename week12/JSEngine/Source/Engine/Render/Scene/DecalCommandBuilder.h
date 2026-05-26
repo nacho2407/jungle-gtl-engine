@@ -3,7 +3,7 @@
 #include "Core/CoreMinimal.h"
 #include "Spatial/WorldSpatialIndex.h"
 
-class FMeshBufferManager;
+class FRenderResourceProvider;
 class FRenderBus;
 class UPrimitiveComponent;
 struct FShowFlags;
@@ -19,7 +19,7 @@ class FDecalCommandBuilder
 public:
     void Reset();
     void CollectDecal(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, FRenderBus& RenderBus,
-                      FMeshBufferManager& MeshBufferManager,
+                      FRenderResourceProvider& ResourceProvider,
                       FWorldSpatialIndex::FPrimitiveOBBQueryScratch& OBBQueryScratch);
 
     const FRenderDecalStats& GetLastStats() const { return LastStats; }

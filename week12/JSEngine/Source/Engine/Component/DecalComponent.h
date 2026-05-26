@@ -15,7 +15,7 @@ public:
 
 	void BeginPlay() override;
 
-	virtual void SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial) override { if (SlotIndex == 0) Materials[0] = InMaterial; }
+	virtual void SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial) override;
 	virtual UMaterialInterface* GetMaterial(int32 SlotIndex) const override { return (SlotIndex == 0) ? Materials[0] : nullptr; }
 	virtual int32 GetNumMaterials() const override { return 1; }
 
@@ -28,7 +28,7 @@ public:
 	FMatrix GetDecalMatrix() const;
 	FColor GetDecalColor() const { return DecalColor; }
 
-	void SetSize(const FVector& InSize) { DecalSize = InSize; }
+	void SetSize(const FVector& InSize);
 
 	void SetFadeIn(float InStartDelay, float InDuration);
 	void SetFadeOut(float InStartDelay, float InDuration, bool bInDestroyOwnerAfterFade = false);

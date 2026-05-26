@@ -8,8 +8,6 @@ class UWorld;
 class UParticleSystem;
 class AParticleEventManager;
 class FParticleEmitterInstance;
-class FParticleSystemRenderProxy;
-class FPrimitiveRenderProxy;
 class UParticleSystemComponent;
 
 struct FParticleEventSpawnData;
@@ -64,7 +62,6 @@ public:
 	void ReportEventBurst(const FParticleEventBurstData& Event);
 
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
-	FPrimitiveRenderProxy* GetRenderProxy() override;
 	bool SupportsOutline() const override { return false; }
 
 	void UpdateWorldAABB() const override;
@@ -81,7 +78,6 @@ private:
 	void CreateEmitterInstances();
 	void ReleaseEmitterInstances();
 	void ReleaseRenderData();
-	void ReleaseRenderProxyResources();
 	int32 SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const;
 	void UpdateLODLevel();
 
@@ -115,7 +111,6 @@ private:
 	// CPP참고 -  EmitterInstance에게 넘겨주는 Component 정보
 	class FInstanceOwner;
 	std::unique_ptr<FInstanceOwner> InstanceOwner;
-	std::unique_ptr<FParticleSystemRenderProxy> RenderProxy;
 
 	UPROPERTY(DisplayName = "Template", ReferenceType = Asset)
 	TSoftObjectPtr<UParticleSystem> Template;

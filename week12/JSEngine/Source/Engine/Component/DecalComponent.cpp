@@ -5,6 +5,7 @@
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
 #include "Core/Logging/Log.h"
+#include "Render/Scene/Scene.h"
 
 
 // Decal Box가 화면 밖으로 나가도 컬링되지 않도록 합니다.
@@ -45,6 +46,23 @@ void UDecalComponent::BeginPlay()
 	UPrimitiveComponent::BeginPlay();
 
 	LifeTime = 0.0f;
+}
+
+void UDecalComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial)
+{
+	if (SlotIndex != 0)
+	{
+		return;
+	}
+
+	Materials[0] = InMaterial;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Material);
+}
+
+void UDecalComponent::SetSize(const FVector& InSize)
+{
+	DecalSize = InSize;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Decal);
 }
 
 void UDecalComponent::PostEditProperty(const char* PropertyName)

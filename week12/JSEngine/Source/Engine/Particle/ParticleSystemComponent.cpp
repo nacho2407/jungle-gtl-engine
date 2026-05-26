@@ -9,7 +9,7 @@
 #include "Particle/ParticleMeshBounds.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
-#include "Render/Scene/ParticleSystemRenderProxy.h"
+#include "Render/Scene/Scene.h"
 #include <algorithm>
 #include <cstring>
 #include <memory>
@@ -131,12 +131,10 @@ UParticleSystemComponent::UParticleSystemComponent()
 {
 	bEnableCull = false;
 	InstanceOwner = std::make_unique<FInstanceOwner>(this);
-	RenderProxy = std::make_unique<FParticleSystemRenderProxy>(this);
 }
 
 UParticleSystemComponent::~UParticleSystemComponent()
 {
-	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 }
@@ -150,30 +148,30 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 
 	ResolvedTemplate = InTemplate;
 	Template.SetPath(InTemplate ? InTemplate->GetAssetPath() : FString());
-	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 }
 
 void UParticleSystemComponent::SetTemplateAsset(const TSoftObjectPtr<UParticleSystem>& InTemplate)
 {
 	Template = InTemplate;
 	ResolvedTemplate = nullptr;
-	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 }
 
 void UParticleSystemComponent::SetTemplatePath(const FString& InPath)
 {
 	Template.SetPath(FPaths::Normalize(InPath));
 	ResolvedTemplate = nullptr;
-	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 }
 
 UParticleSystem* UParticleSystemComponent::GetTemplate()
@@ -204,10 +202,10 @@ void UParticleSystemComponent::Serialize(FArchive& Ar)
 	if (Ar.IsLoading())
 	{
 		ResolvedTemplate = nullptr;
-		ReleaseRenderProxyResources();
 		ReleaseRenderData();
 		ReleaseEmitterInstances();
 		CreateEmitterInstances();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 	}
 }
 
@@ -217,10 +215,10 @@ void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
 	if (PropertyName && FString(PropertyName) == "Template")
 	{
 		ResolvedTemplate = nullptr;
-		ReleaseRenderProxyResources();
 		ReleaseRenderData();
 		ReleaseEmitterInstances();
 		CreateEmitterInstances();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 	}
 }
 
@@ -367,11 +365,6 @@ const FDynamicEmitterDataBase* UParticleSystemComponent::GetEmitterRenderDataSna
 	return EmitterRenderData[SnapshotIndex];
 }
 
-FPrimitiveRenderProxy* UParticleSystemComponent::GetRenderProxy()
-{
-	return RenderProxy.get();
-}
-
 void UParticleSystemComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
@@ -438,10 +431,10 @@ bool UParticleSystemComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitRe
 
 void UParticleSystemComponent::ResetParticles()
 {
-	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 }
 
 void UParticleSystemComponent::ReleaseEmitterInstances()
@@ -460,14 +453,6 @@ void UParticleSystemComponent::ReleaseRenderData()
 		delete RenderData;
 	}
 	EmitterRenderData.clear();
-}
-
-void UParticleSystemComponent::ReleaseRenderProxyResources()
-{
-	if (RenderProxy != nullptr)
-	{
-		RenderProxy->ReleaseResources();
-	}
 }
 
 int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const
@@ -552,8 +537,8 @@ void UParticleSystemComponent::UpdateLODLevel()
 			Instance->SetCurrentLODIndex(0);
 		}
 
-		ReleaseRenderProxyResources();
 		ReleaseRenderData();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 	}
 }
 

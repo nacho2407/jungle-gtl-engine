@@ -16,8 +16,9 @@
 #include "Engine/Asset/StaticMesh.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Render/Resource/Buffer.h"
 #include "Render/Resource/Material.h"
-#include "Render/Resource/MeshBufferManager.h"
+#include "Render/Scene/PrimitiveRenderProxy.h"
 #include "Render/Scene/RenderBus.h"
 #include "Spatial/WorldSpatialIndex.h"
 
@@ -168,13 +169,13 @@ namespace
 
 void FEditorOverlayCollector::CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags,
 											   EViewMode ViewMode, FRenderBus& RenderBus,
-											   FMeshBufferManager& MeshBufferManager,
+											   FRenderResourceProvider& ResourceProvider,
 											   bool bIncludeEditorOnlyPrimitives) const
 {
 	bool bHasSelectionMask = false;
 	for (AActor* Actor : SelectedActors)
 	{
-		bHasSelectionMask |= CollectFromSelectedActor(Actor, ShowFlags, ViewMode, RenderBus, MeshBufferManager, bIncludeEditorOnlyPrimitives);
+		bHasSelectionMask |= CollectFromSelectedActor(Actor, ShowFlags, ViewMode, RenderBus, ResourceProvider, bIncludeEditorOnlyPrimitives);
 	}
 
 	if (bHasSelectionMask)
@@ -261,12 +262,12 @@ void FEditorOverlayCollector::CollectSingleBone(USkeletalMeshComponent* SkComp, 
 }
 
 void FEditorOverlayCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus,
-										   FMeshBufferManager& MeshBufferManager, bool bIsActiveOperation) const
+										   FRenderResourceProvider& ResourceProvider, bool bIsActiveOperation) const
 {
 	if (ShowFlags.bGizmo == false) return;
 	if (!Gizmo || !Gizmo->IsVisible()) return;
 
-	FMeshBuffer* GizmoMesh = &MeshBufferManager.GetMeshBuffer(Gizmo->GetPrimitiveType());
+	FMeshBuffer* GizmoMesh = &ResourceProvider.GetMeshBuffer(Gizmo->GetPrimitiveType());
 	FMatrix WorldMatrix = Gizmo->GetWorldMatrix();
 	bool bHolding = Gizmo->IsHolding();
 	int32 SelectedAxis = Gizmo->GetSelectedAxis();
@@ -315,7 +316,7 @@ void FEditorOverlayCollector::CollectGizmo(UGizmoComponent* Gizmo, const FShowFl
 }
 
 bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode,
-													   FRenderBus& RenderBus, FMeshBufferManager& MeshBufferManager,
+													   FRenderBus& RenderBus, FRenderResourceProvider& ResourceProvider,
 													   bool bIncludeEditorOnlyPrimitives) const
 {
 	(void)ViewMode;
@@ -384,7 +385,7 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
 		if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_StaticMesh)
 		{
 			auto* StaticMeshComp = static_cast<UStaticMeshComponent*>(primitiveComponent);
-			MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMeshComp->GetStaticMesh());
+			MeshBuffer = ResourceProvider.GetStaticMeshBuffer(StaticMeshComp->GetStaticMesh());
 		}
 		else if (primitiveComponent->GetPrimitiveType() == EPrimitiveType::EPT_SkeletalMesh)
 		{
@@ -401,7 +402,7 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
 			{
 				FBoneMatrixConstants BoneMatrixConstants = {};
 				BuildBoneMatrixConstants(SkeletalMeshComp, BoneMatrixConstants);
-				BoneMatrixConstantBuffer = MeshBufferManager.GetGPUSkeletalBoneMatrixBuffer(
+				BoneMatrixConstantBuffer = ResourceProvider.GetGPUSkeletalBoneMatrixBuffer(
 					SkeletalMeshComp->GetUUID(),
 					BoneMatrixConstants,
 					/*bNeedsUpload=*/ false);
@@ -417,8 +418,8 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
 			}
 
 			MeshBuffer = bUseGPUSkinning
-				? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)
-				: MeshBufferManager.GetCPUSkeletalMeshBuffer(
+				? ResourceProvider.GetGPUSkeletalMeshBuffer(SkeletalMesh)
+				: ResourceProvider.GetCPUSkeletalMeshBuffer(
 					SkeletalMeshComp->GetUUID(),
 					SkeletalMesh,
 					SkeletalMeshComp->GetSkinnedVertices(),
@@ -427,7 +428,7 @@ bool FEditorOverlayCollector::CollectFromSelectedActor(AActor* Actor, const FSho
 		}
 		else
 		{
-			MeshBuffer = &MeshBufferManager.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
+			MeshBuffer = &ResourceProvider.GetMeshBuffer(primitiveComponent->GetPrimitiveType());
 		}
 
 		if (!MeshBuffer)

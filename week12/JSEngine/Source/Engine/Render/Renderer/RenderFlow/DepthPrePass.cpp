@@ -59,15 +59,10 @@ bool FDepthPrePass::Begin(const FRenderPassContext* Context)
 bool FDepthPrePass::DrawCommand(const FRenderPassContext* Context)
 {
 	const FRenderBus* RenderBus = Context->RenderBus;
-	const TArray<FRenderCommand>& OpaqueCmds = RenderBus->GetCommands(ERenderPass::Opaque);
+	const TArray<FRenderCommand>& DepthPrepassCmds = RenderBus->GetDepthPrepassCommands();
 
-	for (const auto& Cmd : OpaqueCmds)
+	for (const auto& Cmd : DepthPrepassCmds)
 	{
-		if (Cmd.Type == ERenderCommandType::PostProcessOutline || Cmd.Type == ERenderCommandType::Particle)
-		{
-			continue;
-		}
-
 		if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
 		{
 			continue;

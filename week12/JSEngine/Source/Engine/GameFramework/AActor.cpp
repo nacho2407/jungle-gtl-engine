@@ -1,6 +1,7 @@
 ﻿#include "GameFramework/AActor.h"
 #include "Animation/AnimTypes.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/PostProcess/Light/LightComponentBase.h"
 #include "Component/ActorComponent.h"
 #include "GameFramework/World.h"
 #include "Core/Delegates/Delegate.h"
@@ -161,6 +162,7 @@ AActor::~AActor()
 {
 	if (OwningWorld != nullptr)
 	{
+		OwningWorld->GetScene().UnregisterActor(this);
 		OwningWorld->GetSpatialIndex().UnregisterActor(this);
 		OwningWorld = nullptr;
 	}
@@ -531,6 +533,7 @@ void AActor::SetWorld(UWorld* World)
 
 	if (OwningWorld != nullptr)
 	{
+		OwningWorld->GetScene().UnregisterActor(this);
 		OwningWorld->GetSpatialIndex().UnregisterActor(this);
 	}
 
@@ -539,6 +542,7 @@ void AActor::SetWorld(UWorld* World)
 	if (OwningWorld != nullptr)
 	{
 		OwningWorld->GetSpatialIndex().RegisterActor(this);
+		OwningWorld->GetScene().RegisterActor(this);
 	}
 }
 
@@ -610,14 +614,17 @@ void AActor::NotifyComponentRegistered(UActorComponent* Component)
 		return;
 	}
 
-	UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Component);
-	if (Primitive == nullptr)
+	if (ULightComponentBase* Light = Cast<ULightComponentBase>(Component))
 	{
-		return;
+		OwningWorld->GetScene().RegisterLight(Light);
 	}
 
-	OwningWorld->GetSpatialIndex().RegisterPrimitive(Primitive);
-	OwningWorld->GetSpatialIndex().FlushDirtyBounds();
+	if (UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Component))
+	{
+		OwningWorld->GetSpatialIndex().RegisterPrimitive(Primitive);
+		OwningWorld->GetScene().RegisterPrimitive(Primitive);
+		OwningWorld->GetSpatialIndex().FlushDirtyBounds();
+	}
 }
 
 void AActor::NotifyComponentUnregistered(UActorComponent* Component)
@@ -629,13 +636,16 @@ void AActor::NotifyComponentUnregistered(UActorComponent* Component)
 		return;
 	}
 
-	UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Component);
-	if (Primitive == nullptr)
+	if (ULightComponentBase* Light = Cast<ULightComponentBase>(Component))
 	{
-		return;
+		OwningWorld->GetScene().UnregisterLight(Light);
 	}
 
-	OwningWorld->GetSpatialIndex().UnregisterPrimitive(Primitive);
+	if (UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Component))
+	{
+		OwningWorld->GetScene().UnregisterPrimitive(Primitive);
+		OwningWorld->GetSpatialIndex().UnregisterPrimitive(Primitive);
+	}
 }
 
 void AActor::MarkPrimitiveComponentsDirty()
@@ -647,7 +657,7 @@ void AActor::MarkPrimitiveComponentsDirty()
 
 	for (UPrimitiveComponent* Primitive : GetPrimitiveComponents())
 	{
-		OwningWorld->GetSpatialIndex().MarkPrimitiveDirty(Primitive);
+		Primitive->MarkRenderStateDirty(ESceneProxyDirtyFlag::Visibility);
 	}
 }
 

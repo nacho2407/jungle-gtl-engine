@@ -3,6 +3,7 @@
 #include "Core/CollisionTypes.h"
 #include "GameFramework/World.h"
 #include "Math/Utils.h"
+#include "Render/Scene/Scene.h"
 
 
 UPrimitiveComponent::~UPrimitiveComponent()
@@ -51,7 +52,29 @@ void UPrimitiveComponent::SetVisibility(bool bVisible)
 	}
 
 	bIsVisible = bVisible;
-	NotifySpatialIndexDirty();
+	MarkRenderStateDirty(ESceneProxyDirtyFlag::Visibility);
+}
+
+void UPrimitiveComponent::SetEnableCull(const bool bInEnableCull)
+{
+	if (bEnableCull == bInEnableCull)
+	{
+		return;
+	}
+
+	bEnableCull = bInEnableCull;
+	MarkRenderStateDirty(ESceneProxyDirtyFlag::Culling);
+}
+
+void UPrimitiveComponent::SetCastDecal(bool bInCastDecal)
+{
+	if (bCastDecal == bInCastDecal)
+	{
+		return;
+	}
+
+	bCastDecal = bInCastDecal;
+	MarkRenderStateDirty(ESceneProxyDirtyFlag::Decal);
 }
 
 bool UPrimitiveComponent::Raycast(const FRay& Ray, FHitResult& OutHitResult)
@@ -169,24 +192,22 @@ void UPrimitiveComponent::ResolveOverlaps()
 
 void UPrimitiveComponent::OnTransformDirty()
 {
-	NotifySpatialIndexDirty();
+	MarkRenderStateDirty(ESceneProxyDirtyFlag::Transform);
 }
 
 void UPrimitiveComponent::NotifySpatialIndexDirty() const
 {
-	AActor* Owner = GetOwner();
-	if (Owner == nullptr)
+	MarkRenderStateDirty(ESceneProxyDirtyFlag::Transform);
+}
+
+void UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag DirtyFlag) const
+{
+	if (RegisteredScene == nullptr)
 	{
 		return;
 	}
 
-	UWorld* World = Owner->GetFocusedWorld();
-	if (World == nullptr)
-	{
-		return;
-	}
-
-	World->GetSpatialIndex().MarkPrimitiveDirty(const_cast<UPrimitiveComponent*>(this));
+	RegisteredScene->MarkPrimitiveDirty(const_cast<UPrimitiveComponent*>(this), DirtyFlag);
 }
 
 // void UPrimitiveComponent::UpdateWorldAABB() const
