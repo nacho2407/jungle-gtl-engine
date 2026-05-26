@@ -81,6 +81,19 @@ private:
 	int32 SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const;
 	void UpdateLODLevel();
 
+	/**
+	 * @brief 지정된 emitter template과 LOD index에 맞는 새 emitter instance를 생성합니다.
+	 *
+	 * @param EmitterTemplate instance를 만들 particle emitter template
+	 *
+	 * @param LODIndex 생성할 instance가 사용할 LOD index
+	 *
+	 * @return 생성과 초기화에 성공한 emitter instance. 실패하면 nullptr 반환
+	 *
+	 * @details TypeDataModule이 있으면 TypeDataModule의 factory를 사용하고, 없으면 기본 FParticleEmitterInstance로 fallback합니다.
+	 */
+	FParticleEmitterInstance* CreateEmitterInstanceForLOD(UParticleEmitter* EmitterTemplate, int32 LODIndex);
+
 	static constexpr EPrimitiveType PrimitiveType = EPrimitiveType::EPT_ParticleSystem;
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;

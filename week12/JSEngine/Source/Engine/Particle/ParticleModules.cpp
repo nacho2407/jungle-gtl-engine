@@ -16,6 +16,11 @@
 
 namespace
 {
+	struct FParticleDistributionPayload
+	{
+		float RandomAlpha = 0.0f;
+	};
+
 	bool IsLiveObject(const UObject* Object)
 	{
 		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
@@ -29,6 +34,50 @@ namespace
 	int32 AlignParticleBytes(int32 Value)
 	{
 		return ParticleHelper::AlignParticleSize(Value);
+	}
+
+	UParticleModuleSpawn* ResolveSpawnModule(const UParticleLODLevel* LODLevel)
+	{
+		if (LODLevel == nullptr)
+		{
+			return nullptr;
+		}
+
+		// 명시적 SpawnModule 우선
+		if (LODLevel->SpawnModule != nullptr)
+		{
+			return LODLevel->SpawnModule;
+		}
+
+		// legacy module 배열 fallback
+		for (UParticleModule* Module : LODLevel->Modules)
+		{
+			if (Module != nullptr && Module->bEnabled && Module->IsSpawnRateModule())
+			{
+				return Cast<UParticleModuleSpawn>(Module);
+			}
+		}
+
+		return nullptr;
+	}
+
+	bool AreModuleClassesCompatible(const UParticleModule* LayoutModule, const UParticleModule* LODModule)
+	{
+		if (LayoutModule == nullptr || LODModule == nullptr)
+		{
+			// null slot 대칭성
+			return LayoutModule == LODModule;
+		}
+
+		return LayoutModule->GetClass() == LODModule->GetClass();
+	}
+
+	void LogLODWarning(bool bLogWarnings, const char* Message)
+	{
+		if (bLogWarnings)
+		{
+			UE_LOG_WARNING("[Particle] %s", Message);
+		}
 	}
 
 	void AddParticlePayloadOffset(
@@ -50,6 +99,28 @@ namespace
 
 		InOutParticleBytes = AlignParticleBytes(InOutParticleBytes);
 		Cache.ModulePayloadOffsets[Module] = InOutParticleBytes;
+		InOutParticleBytes += RequiredBytes;
+	}
+
+	void AddTypeDataParticlePayloadOffset(
+		FParticleLODLevelRuntimeCache& Cache,
+		UParticleModuleTypeDataBase* TypeData,
+		int32& InOutParticleBytes)
+	{
+		if (TypeData == nullptr)
+		{
+			return;
+		}
+
+		const int32 RequiredBytes = TypeData->GetRequiredPayloadSize();
+		if (RequiredBytes <= 0)
+		{
+			return;
+		}
+
+		// TypeData payload 시작 offset
+		InOutParticleBytes = AlignParticleBytes(InOutParticleBytes);
+		Cache.ModulePayloadOffsets[TypeData] = InOutParticleBytes;
 		InOutParticleBytes += RequiredBytes;
 	}
 
@@ -75,7 +146,51 @@ namespace
 		InOutInstancePayloadSize += RequiredBytes;
 	}
 
-	FParticleLODLevelRuntimeCache BuildLODLevelRuntimeCache(const UParticleLODLevel* LODLevel)
+	void CopyStablePayloadOffsets(
+		FParticleLODLevelRuntimeCache& Cache,
+		UParticleModule* LODModule,
+		UParticleModule* LayoutModule,
+		const FParticleLODLevelRuntimeCache& StableLayoutCache)
+	{
+		if (LODModule == nullptr || LayoutModule == nullptr)
+		{
+			return;
+		}
+
+		// particle payload offset 공유
+		const int32 ParticlePayloadOffset = StableLayoutCache.GetParticlePayloadOffset(LayoutModule);
+		if (ParticlePayloadOffset >= 0)
+		{
+			Cache.ModulePayloadOffsets[LODModule] = ParticlePayloadOffset;
+		}
+
+		// instance payload offset 공유
+		const int32 InstancePayloadOffset = StableLayoutCache.GetInstancePayloadOffset(LayoutModule);
+		if (InstancePayloadOffset >= 0)
+		{
+			Cache.ModuleInstanceOffsets[LODModule] = InstancePayloadOffset;
+		}
+	}
+
+	void AddEnabledModuleExecution(FParticleLODLevelRuntimeCache& Cache, UParticleModule* Module)
+	{
+		if (Module == nullptr || !Module->bEnabled)
+		{
+			return;
+		}
+
+		if (Module->IsSpawnModule())
+		{
+			Cache.SpawnModules.push_back(Module);
+		}
+
+		if (Module->IsUpdateModule())
+		{
+			Cache.UpdateModules.push_back(Module);
+		}
+	}
+
+	FParticleLODLevelRuntimeCache BuildStableLOD0RuntimeCache(const UParticleLODLevel* LODLevel)
 	{
 		FParticleLODLevelRuntimeCache Cache;
 		Cache.PayloadOffset = AlignParticleBytes(static_cast<int32>(sizeof(FBaseParticle)));
@@ -91,53 +206,22 @@ namespace
 		}
 
 		Cache.RequiredModule = LODLevel->RequiredModule;
-		Cache.SpawnModule = LODLevel->SpawnModule;
+		Cache.SpawnModule = ResolveSpawnModule(LODLevel);
 		Cache.TypeDataModule = LODLevel->TypeDataModule;
 
-		if (!LODLevel->bEnabled)
-		{
-			Cache.ParticleStride = AlignParticleBytes(ParticleBytes);
-			Cache.InstancePayloadSize = AlignParticleBytes(InstancePayloadSize);
-			return Cache;
-		}
-
 		UParticleModuleTypeDataBase* TypeData = Cache.TypeDataModule;
-		if (TypeData != nullptr && TypeData->bEnabled)
-		{
-			const int32 TypeDataPayloadSize = TypeData->GetRequiredPayloadSize();
-			if (TypeDataPayloadSize > 0)
-			{
-				ParticleBytes = AlignParticleBytes(ParticleBytes);
-				ParticleBytes += TypeDataPayloadSize;
-			}
+		AddTypeDataParticlePayloadOffset(Cache, TypeData, ParticleBytes);
+		AddInstancePayloadOffset(Cache, TypeData, TypeData, InstancePayloadSize);
 
-			AddInstancePayloadOffset(Cache, TypeData, TypeData, InstancePayloadSize);
-		}
-
-		if (Cache.SpawnModule == nullptr)
-		{
-			for (UParticleModule* Module : LODLevel->Modules)
-			{
-				if (Module != nullptr && Module->bEnabled && Module->IsSpawnRateModule())
-				{
-					Cache.SpawnModule = Cast<UParticleModuleSpawn>(Module);
-					break;
-				}
-			}
-		}
-
-		// Required / SpawnModule은 Modules 배열과 별개의 특수 모듈이므로 먼저 offset만 계산
+		// LOD 0 특수 module 고정 layout
 		if (Cache.RequiredModule != nullptr)
 		{
 			Cache.RequiredModule->bEnabled = true;
-			AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
-			AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
 		}
-		if (Cache.SpawnModule != nullptr && Cache.SpawnModule->bEnabled)
-		{
-			AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
-			AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
-		}
+		AddParticlePayloadOffset(Cache, Cache.RequiredModule, TypeData, ParticleBytes);
+		AddInstancePayloadOffset(Cache, Cache.RequiredModule, TypeData, InstancePayloadSize);
+		AddParticlePayloadOffset(Cache, Cache.SpawnModule, TypeData, ParticleBytes);
+		AddInstancePayloadOffset(Cache, Cache.SpawnModule, TypeData, InstancePayloadSize);
 
 		for (UParticleModule* Module : LODLevel->Modules)
 		{
@@ -151,21 +235,12 @@ namespace
 				Module->bEnabled = false;
 			}
 
-			if (!Module->bEnabled || Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
+			if (Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
 			{
 				continue;
 			}
 
-			if (Module->IsSpawnModule())
-			{
-				Cache.SpawnModules.push_back(Module);
-			}
-
-			if (Module->IsUpdateModule())
-			{
-				Cache.UpdateModules.push_back(Module);
-			}
-
+			// LOD 0 module slot 고정 layout
 			AddParticlePayloadOffset(Cache, Module, TypeData, ParticleBytes);
 			AddInstancePayloadOffset(Cache, Module, TypeData, InstancePayloadSize);
 		}
@@ -175,15 +250,107 @@ namespace
 		return Cache;
 	}
 
-	FParticleDistributionContext MakeDistributionContext(
+	FParticleLODLevelRuntimeCache BuildLODLevelRuntimeCacheFromStableLayout(
+		const UParticleLODLevel* LODLevel,
+		const UParticleLODLevel* LayoutLODLevel,
+		const FParticleLODLevelRuntimeCache& StableLayoutCache)
+	{
+		FParticleLODLevelRuntimeCache Cache;
+		Cache.ParticleStride = StableLayoutCache.ParticleStride;
+		Cache.PayloadOffset = StableLayoutCache.PayloadOffset;
+		Cache.InstancePayloadSize = StableLayoutCache.InstancePayloadSize;
+
+		if (LODLevel == nullptr || LayoutLODLevel == nullptr)
+		{
+			return Cache;
+		}
+
+		Cache.RequiredModule = LODLevel->RequiredModule;
+		Cache.SpawnModule = ResolveSpawnModule(LODLevel);
+		Cache.TypeDataModule = LODLevel->TypeDataModule;
+
+		// 특수 module stable offset
+		CopyStablePayloadOffsets(Cache, Cache.RequiredModule, StableLayoutCache.RequiredModule, StableLayoutCache);
+		CopyStablePayloadOffsets(Cache, Cache.SpawnModule, StableLayoutCache.SpawnModule, StableLayoutCache);
+		CopyStablePayloadOffsets(Cache, Cache.TypeDataModule, StableLayoutCache.TypeDataModule, StableLayoutCache);
+
+		const int32 SharedModuleCount = std::min(
+			static_cast<int32>(LODLevel->Modules.size()),
+			static_cast<int32>(LayoutLODLevel->Modules.size()));
+		for (int32 ModuleIndex = 0; ModuleIndex < SharedModuleCount; ++ModuleIndex)
+		{
+			UParticleModule* Module = LODLevel->Modules[static_cast<size_t>(ModuleIndex)];
+			UParticleModule* LayoutModule = LayoutLODLevel->Modules[static_cast<size_t>(ModuleIndex)];
+			CopyStablePayloadOffsets(Cache, Module, LayoutModule, StableLayoutCache);
+
+			// 특수 module 실행 목록 제외
+			if (Module == nullptr ||
+				Module == Cache.RequiredModule ||
+				Module == Cache.SpawnModule ||
+				Module == Cache.TypeDataModule)
+			{
+				continue;
+			}
+
+			// 현재 LOD 실행 목록
+			AddEnabledModuleExecution(Cache, Module);
+		}
+
+		return Cache;
+	}
+
+	FParticleDistributionPayload* GetDistributionPayload(
+		FParticleEmitterInstance* Owner,
+		int32 Offset,
+		FBaseParticle& Particle)
+	{
+		uint8* Payload = Owner != nullptr ? Owner->GetParticlePayloadByOffset(Particle, Offset) : nullptr;
+		return Payload != nullptr ? reinterpret_cast<FParticleDistributionPayload*>(Payload) : nullptr;
+	}
+
+	void InitializeDistributionPayload(
+		FParticleEmitterInstance* Owner,
+		int32 Offset,
+		FBaseParticle& Particle,
+		bool bUseRandomAlpha)
+	{
+		FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+		if (Payload == nullptr)
+		{
+			return;
+		}
+
+		Payload->RandomAlpha = bUseRandomAlpha && Owner != nullptr ? Owner->RandomStream.GetFraction() : 0.0f;
+	}
+
+	FParticleDistributionContext MakeSpawnDistributionContext(
 		FParticleEmitterInstance* Owner,
 		float SpawnTime,
-		const FBaseParticle& Particle)
+		const FBaseParticle& Particle,
+		const FParticleDistributionPayload* Payload)
 	{
 		FParticleDistributionContext Context;
 		Context.RandomStream = Owner != nullptr ? &Owner->RandomStream : nullptr;
 		Context.RelativeTime = Particle.RelativeTime;
 		Context.SpawnTime = SpawnTime;
+		Context.CurveTime = SpawnTime;
+		Context.EmitterTime = SpawnTime;
+		Context.RandomAlpha = Payload != nullptr ? &Payload->RandomAlpha : nullptr;
+		return Context;
+	}
+
+	FParticleDistributionContext MakeUpdateDistributionContext(
+		FParticleEmitterInstance* Owner,
+		const FBaseParticle& Particle,
+		const FParticleDistributionPayload* Payload)
+	{
+		FParticleDistributionContext Context;
+		Context.RandomStream = Owner != nullptr ? &Owner->RandomStream : nullptr;
+		Context.RelativeTime = Particle.RelativeTime;
+		Context.SpawnTime = 0.0f;
+		Context.CurveTime = Particle.RelativeTime;
+		Context.EmitterTime = Owner != nullptr ? Owner->EmitterTime : 0.0f;
+		Context.RandomAlpha = Payload != nullptr ? &Payload->RandomAlpha : nullptr;
 		return Context;
 	}
 
@@ -208,13 +375,182 @@ namespace
 			? EmitterInstance.GetOwner().GetComponentToWorld().TransformPosition(Particle.OldLocation)
 			: Particle.OldLocation;
 	}
+
+	/**
+	 * @brief render snapshot으로 넘길 수 있는 live particle 포인터를 active index에서 조회합니다.
+	 */
+	const FBaseParticle* ResolveLiveParticleForRender(
+		const FParticleEmitterInstance& EmitterInstance,
+		int32 ActiveIndex,
+		int32& OutPhysicalIndex)
+	{
+		OutPhysicalIndex = -1;
+
+		// active index 범위
+		if (ActiveIndex < 0 || ActiveIndex >= EmitterInstance.ActiveParticles)
+		{
+			return nullptr;
+		}
+
+		// particle storage 유효성
+		if (EmitterInstance.ParticleData == nullptr ||
+			EmitterInstance.ParticleIndices == nullptr ||
+			EmitterInstance.ParticleStride <= 0 ||
+			EmitterInstance.MaxActiveParticles <= 0)
+		{
+			return nullptr;
+		}
+
+		// physical index 범위
+		const int32 PhysicalIndex = static_cast<int32>(EmitterInstance.ParticleIndices[ActiveIndex]);
+		if (PhysicalIndex < 0 || PhysicalIndex >= EmitterInstance.MaxActiveParticles)
+		{
+			return nullptr;
+		}
+
+		// source particle memory 범위
+		const size_t ParticleOffset = static_cast<size_t>(PhysicalIndex) * static_cast<size_t>(EmitterInstance.ParticleStride);
+		if (ParticleOffset + sizeof(FBaseParticle) > static_cast<size_t>(EmitterInstance.DataContainer.ParticleDataNumBytes))
+		{
+			return nullptr;
+		}
+
+		const FBaseParticle* Particle = reinterpret_cast<const FBaseParticle*>(EmitterInstance.ParticleData + ParticleOffset);
+		if (EmitterInstance.IsParticlePendingKill(*Particle))
+		{
+			return nullptr;
+		}
+
+		OutPhysicalIndex = PhysicalIndex;
+		return Particle;
+	}
+
+	/**
+	 * @brief render snapshot에 포함할 live particle 수를 계산합니다.
+	 */
+	int32 CountLiveParticlesForRender(const FParticleEmitterInstance& EmitterInstance)
+	{
+		int32 LiveParticleCount = 0;
+		for (int32 ActiveIndex = 0; ActiveIndex < EmitterInstance.ActiveParticles; ++ActiveIndex)
+		{
+			int32 PhysicalIndex = -1;
+			if (ResolveLiveParticleForRender(EmitterInstance, ActiveIndex, PhysicalIndex) != nullptr)
+			{
+				++LiveParticleCount;
+			}
+		}
+		return LiveParticleCount;
+	}
+
+	/**
+	 * @brief live particle count와 stride에서 render snapshot byte 크기를 계산합니다.
+	 */
+	bool CalculateRenderSnapshotByteSizes(
+		int32 LiveParticleCount,
+		int32 ParticleStride,
+		size_t& OutParticleDataBytes,
+		size_t& OutSnapshotLogicalBytes)
+	{
+		OutParticleDataBytes = 0;
+		OutSnapshotLogicalBytes = 0;
+
+		// 빈 snapshot 또는 잘못된 stride
+		if (LiveParticleCount <= 0 || ParticleStride <= 0)
+		{
+			return false;
+		}
+
+		// snapshot buffer 크기
+		OutParticleDataBytes = static_cast<size_t>(LiveParticleCount) * static_cast<size_t>(ParticleStride);
+		const size_t ParticleIndexBytes = static_cast<size_t>(LiveParticleCount) * sizeof(uint16);
+		OutSnapshotLogicalBytes = OutParticleDataBytes + ParticleIndexBytes;
+
+		// DataContainer int32 계약 보호
+		return OutParticleDataBytes <= static_cast<size_t>(std::numeric_limits<int32>::max()) &&
+			   OutSnapshotLogicalBytes <= static_cast<size_t>(std::numeric_limits<int32>::max());
+	}
+
+	/**
+	 * @brief live particle만 render snapshot buffer에 compact된 순서로 복사합니다.
+	 */
+	int32 CopyLiveParticlesForRenderSnapshot(
+		const FParticleEmitterInstance& EmitterInstance,
+		uint8* SnapshotParticleData,
+		TArray<uint16>& SnapshotParticleIndices,
+		bool bBakeWorldSpaceLocation)
+	{
+		if (SnapshotParticleData == nullptr || SnapshotParticleIndices.empty() || EmitterInstance.ParticleStride <= 0)
+		{
+			return 0;
+		}
+
+		int32 SnapshotIndex = 0;
+		for (int32 ActiveIndex = 0; ActiveIndex < EmitterInstance.ActiveParticles; ++ActiveIndex)
+		{
+			if (SnapshotIndex >= static_cast<int32>(SnapshotParticleIndices.size()))
+			{
+				break;
+			}
+
+			// live source particle 조회
+			int32 SourcePhysicalIndex = -1;
+			const FBaseParticle* SourceParticle = ResolveLiveParticleForRender(EmitterInstance, ActiveIndex, SourcePhysicalIndex);
+			if (SourceParticle == nullptr)
+			{
+				continue;
+			}
+
+			// source / destination stride 위치
+			const uint8* SourceParticleData =
+				EmitterInstance.ParticleData + static_cast<size_t>(SourcePhysicalIndex) * static_cast<size_t>(EmitterInstance.ParticleStride);
+			uint8* DestinationParticleData =
+				SnapshotParticleData + static_cast<size_t>(SnapshotIndex) * static_cast<size_t>(EmitterInstance.ParticleStride);
+
+			// payload 포함 particle stride 전체 복사
+			std::memcpy(DestinationParticleData, SourceParticleData, static_cast<size_t>(EmitterInstance.ParticleStride));
+
+			// sprite snapshot world-space 위치 굽기
+			if (bBakeWorldSpaceLocation)
+			{
+				FBaseParticle& SnapshotParticle = *reinterpret_cast<FBaseParticle*>(DestinationParticleData);
+				SnapshotParticle.Location = EmitterInstance.GetParticleLocationForRender(*SourceParticle);
+				SnapshotParticle.OldLocation = GetParticleOldLocationForRender(EmitterInstance, *SourceParticle);
+			}
+
+			// snapshot-local physical index
+			SnapshotParticleIndices[static_cast<size_t>(SnapshotIndex)] = static_cast<uint16>(SnapshotIndex);
+			++SnapshotIndex;
+		}
+
+		return SnapshotIndex;
+	}
 } // namespace
 
 namespace
 {
 	float GetDistributionEvalTime(const FParticleDistributionContext& Context)
 	{
-		return Context.RelativeTime;
+		return Context.CurveTime;
+	}
+
+	float GetDistributionRandomAlpha(const FParticleDistributionContext& Context)
+	{
+		if (Context.RandomAlpha != nullptr)
+		{
+			return std::clamp(*Context.RandomAlpha, 0.0f, 1.0f);
+		}
+
+		return Context.RandomStream != nullptr ? Context.RandomStream->GetFraction() : 0.0f;
+	}
+
+	bool IsUniformXYZ(const FParticleVectorDistribution& Distribution)
+	{
+		return Distribution.VectorMode == EParticleVectorDistributionMode::UniformXYZ;
+	}
+
+	FVector MakeUniformVector(float Value)
+	{
+		return FVector(Value, Value, Value);
 	}
 
 	UCurveFloatAsset* ResolveFloatCurve(const TSoftObjectPtr<UCurveFloatAsset>& Curve)
@@ -308,9 +644,8 @@ float EvaluateParticleFloat(const FParticleFloatDistribution& Distribution, cons
 	{
 		const float MinValue = EvaluateFloatCurveOrFallback(Distribution.MinCurve, Time, Distribution.Min);
 		const float MaxValue = EvaluateFloatCurveOrFallback(Distribution.MaxCurve, Time, Distribution.Max);
-		return Context.RandomStream
-			? Context.RandomStream->GetRange(MinValue, MaxValue)
-			: MinValue;
+		const float Alpha = GetDistributionRandomAlpha(Context);
+		return MinValue + (MaxValue - MinValue) * Alpha;
 	}
 	case EParticleDistributionMode::Constant:
 	default:
@@ -324,24 +659,41 @@ FVector EvaluateParticleVector(const FParticleVectorDistribution& Distribution, 
 	switch (Distribution.Mode)
 	{
 	case EParticleDistributionMode::RandomRange:
-		return Context.RandomStream
-			? FVector(
-				Context.RandomStream->GetRange(Distribution.Min.X, Distribution.Max.X),
-				Context.RandomStream->GetRange(Distribution.Min.Y, Distribution.Max.Y),
-				Context.RandomStream->GetRange(Distribution.Min.Z, Distribution.Max.Z))
-			: Distribution.Min;
+		if (IsUniformXYZ(Distribution))
+		{
+			const float Value = Context.RandomStream
+				? Context.RandomStream->GetRange(Distribution.Min.X, Distribution.Max.X)
+				: Distribution.Min.X;
+			return MakeUniformVector(Value);
+		}
+		else
+		{
+			return Context.RandomStream
+				? FVector(
+					Context.RandomStream->GetRange(Distribution.Min.X, Distribution.Max.X),
+					Context.RandomStream->GetRange(Distribution.Min.Y, Distribution.Max.Y),
+					Context.RandomStream->GetRange(Distribution.Min.Z, Distribution.Max.Z))
+				: Distribution.Min;
+		}
 	case EParticleDistributionMode::Curve:
-		return EvaluateVectorCurveOrFallback(Distribution.Curve, Time, Distribution.Constant);
+	{
+		const FVector Value = EvaluateVectorCurveOrFallback(Distribution.Curve, Time, Distribution.Constant);
+		return IsUniformXYZ(Distribution) ? MakeUniformVector(Value.X) : Value;
+	}
 	case EParticleDistributionMode::RandomRangeCurve:
 	{
 		const FVector MinValue = EvaluateVectorCurveOrFallback(Distribution.MinCurve, Time, Distribution.Min);
 		const FVector MaxValue = EvaluateVectorCurveOrFallback(Distribution.MaxCurve, Time, Distribution.Max);
-		const float Alpha = Context.RandomStream ? Context.RandomStream->GetFraction() : 0.0f;
+		const float Alpha = GetDistributionRandomAlpha(Context);
+		if (IsUniformXYZ(Distribution))
+		{
+			return MakeUniformVector(MinValue.X + (MaxValue.X - MinValue.X) * Alpha);
+		}
 		return FVector::Lerp(MinValue, MaxValue, Alpha);
 	}
 	case EParticleDistributionMode::Constant:
 	default:
-		return Distribution.Constant;
+		return IsUniformXYZ(Distribution) ? MakeUniformVector(Distribution.Constant.X) : Distribution.Constant;
 	}
 }
 
@@ -364,7 +716,7 @@ FColor EvaluateParticleColor(const FParticleColorDistribution& Distribution, con
 	{
 		const FColor MinValue = EvaluateColorCurveOrFallback(Distribution.MinCurve, Time, Distribution.Min);
 		const FColor MaxValue = EvaluateColorCurveOrFallback(Distribution.MaxCurve, Time, Distribution.Max);
-		const float Alpha = Context.RandomStream ? Context.RandomStream->GetFraction() : 0.0f;
+		const float Alpha = GetDistributionRandomAlpha(Context);
 		return FColor::Lerp(MinValue, MaxValue, Alpha);
 	}
 	case EParticleDistributionMode::Constant:
@@ -400,6 +752,13 @@ bool UParticleModule::IsUpdateModule() const
 	return false;
 }
 
+void UParticleModule::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	(void)Owner;
+	(void)Offset;
+	(void)Particle;
+}
+
 void UParticleModule::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
 	(void)Owner;
@@ -432,10 +791,21 @@ bool UParticleModuleLifetime::IsSpawnModule() const
 	return true;
 }
 
+int32 UParticleModuleLifetime::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleLifetime::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, Lifetime.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
 void UParticleModuleLifetime::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
-	(void)Offset;
-	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 	Particle.Lifetime = std::max(EvaluateParticleFloat(Lifetime, Context), 0.0001f);
 	Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
 	Particle.RelativeTime = 0.0f;
@@ -446,10 +816,21 @@ bool UParticleModuleLocation::IsSpawnModule() const
 	return true;
 }
 
+int32 UParticleModuleLocation::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleLocation::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartLocation.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
 void UParticleModuleLocation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
-	(void)Offset;
-	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 
 	// StartLocation은 RequiredModule의 local / world 정책에 맞는 simulation space 값으로 저장
 	Particle.Location = EvaluateParticleVector(StartLocation, Context);
@@ -461,10 +842,21 @@ bool UParticleModuleVelocity::IsSpawnModule() const
 	return true;
 }
 
+int32 UParticleModuleVelocity::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleVelocity::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartVelocity.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
 void UParticleModuleVelocity::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
-	(void)Offset;
-	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 	Particle.Velocity = EvaluateParticleVector(StartVelocity, Context);
 	Particle.BaseVelocity = Particle.Velocity;
 }
@@ -481,11 +873,23 @@ bool UParticleModuleColor::IsSpawnModule() const
 	return true;
 }
 
+int32 UParticleModuleColor::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleColor::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartColor.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
 void UParticleModuleColor::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
-	(void)Offset;
-	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 	Particle.Color = EvaluateParticleColor(StartColor, Context);
+	Particle.BaseColor = Particle.Color;
 }
 
 UParticleModuleSize::UParticleModuleSize()
@@ -500,10 +904,21 @@ bool UParticleModuleSize::IsSpawnModule() const
 	return true;
 }
 
+int32 UParticleModuleSize::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleSize::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartSize.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
 void UParticleModuleSize::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
-	(void)Offset;
-	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 	Particle.Size = EvaluateParticleVector(StartSize, Context);
 	Particle.BaseSize = Particle.Size;
 }
@@ -515,7 +930,7 @@ bool UParticleModuleCollision::IsUpdateModule() const
 
 static FSubUVParticlePayload* GetSubUVPayload(FParticleEmitterInstance* Owner, FBaseParticle& Particle, int32 Offset)
 {
-	if (Offset < 0) 
+	if (Offset < 0)
 	{
 		return nullptr;
 	}
@@ -527,13 +942,13 @@ static FSubUVParticlePayload* GetSubUVPayload(FParticleEmitterInstance* Owner, F
 void UParticleModuleSubUV::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
 	FSubUVParticlePayload* Payload = GetSubUVPayload(Owner, Particle, Offset);
-	if (!Payload) 
+	if (!Payload)
 	{
 		return;
 	}
 
-	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
-	
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, nullptr);
+
 	if (InterpMethod == EParticleSubUVInterpMethod::Random) // Random: Spawn 시 프레임 Random 결정
 	{
 		const int32 TotalFrames = Columns * Rows;
@@ -551,32 +966,32 @@ void UParticleModuleSubUV::Spawn(FParticleEmitterInstance* Owner, int32 Offset, 
 void UParticleModuleSubUV::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
 {
 	(void)DeltaTime;
-	
+
 	const int32 TotalFrames = Columns * Rows;
 	if (TotalFrames <= 0)
 	{
 		return;
 	}
-	
+
 	const int32 ActiveCount = Owner->GetActiveParticleCount();
 	for (int32 i = 0; i < ActiveCount; ++i)
 	{
 		FBaseParticle& Particle = Owner->GetParticleByActiveIndex(i);
-		
+
 		FSubUVParticlePayload* Payload = GetSubUVPayload(Owner, Particle, Offset);
 		if (!Payload)
 		{
 			return;
 		}
-		
+
 		// 정규화된 RelativeTime(0.f ~ 1.f)을 Frame Index로 매핑 → DistributionMode가 Constant/Curve면 수명 기반 재평가
 		if (InterpMethod == EParticleSubUVInterpMethod::Linear)
 		{
-			const FParticleDistributionContext Context = MakeDistributionContext(Owner, 0.0f, Particle);
+			const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, nullptr);
 			Payload->ImageIndex = EvaluateSubImageIndex(*this, Context) * static_cast<float>(TotalFrames - 1);
 		}
 		// Random일 경우 고정된 프레임 유지
-		
+
 		Payload->ImageIndex = MathUtil::Clamp(Payload->ImageIndex, 0.0f, static_cast<float>(TotalFrames - 1));
 	}
 }
@@ -750,7 +1165,7 @@ FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
 
 FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
 {
-	/** TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요*/
+	// note: TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요
 
 	// EmitterInstance 유효성 체크
 	if (InEmitterInstance == nullptr ||
@@ -763,16 +1178,18 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 		return nullptr;
 	}
 
-	// Particle Count & Bytes
-	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
+	// render 대상 live particle count
+	const int32 ActiveParticleCount = CountLiveParticlesForRender(*InEmitterInstance);
+	if (ActiveParticleCount <= 0)
+	{
+		return nullptr;
+	}
+
+	// live particle 기준 snapshot 크기
 	const int32 ParticleStride = InEmitterInstance->ParticleStride;
-	const size_t ParticleDataBytes =
-		static_cast<size_t>(ActiveParticleCount) * static_cast<size_t>(ParticleStride);
-	const size_t ParticleIndexBytes =
-		static_cast<size_t>(ActiveParticleCount) * sizeof(uint16);
-	const size_t SnapshotLogicalBytes = ParticleDataBytes + ParticleIndexBytes;
-	if (ParticleDataBytes > static_cast<size_t>(std::numeric_limits<int32>::max()) ||
-		SnapshotLogicalBytes > static_cast<size_t>(std::numeric_limits<int32>::max()))
+	size_t ParticleDataBytes = 0;
+	size_t SnapshotLogicalBytes = 0;
+	if (!CalculateRenderSnapshotByteSizes(ActiveParticleCount, ParticleStride, ParticleDataBytes, SnapshotLogicalBytes))
 	{
 		return nullptr;
 	}
@@ -788,26 +1205,20 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 		return nullptr;
 	}
 
-	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticleCount; ++ActiveIndex)
+	const int32 SnapshotParticleCount = CopyLiveParticlesForRenderSnapshot(
+		*InEmitterInstance,
+		SnapshotParticleData,
+		RenderData->OwnedParticleIndices,
+		true);
+	if (SnapshotParticleCount <= 0)
 	{
-		const int32 SourcePhysicalIndex = InEmitterInstance->ParticleIndices[ActiveIndex];
-		const uint8* SourceParticleData =
-			InEmitterInstance->ParticleData + static_cast<size_t>(SourcePhysicalIndex) * ParticleStride;
-		uint8* DestinationParticleData = SnapshotParticleData + static_cast<size_t>(ActiveIndex) * ParticleStride;
-
-		// renderer가 simulation memory를 직접 읽지 않아도 되도록 payload까지 포함한 particle stride 전체를 복사
-		std::memcpy(DestinationParticleData, SourceParticleData, static_cast<size_t>(ParticleStride));
-
-		const FBaseParticle& SourceParticle = *reinterpret_cast<const FBaseParticle*>(SourceParticleData);
-		FBaseParticle& SnapshotParticle = *reinterpret_cast<FBaseParticle*>(DestinationParticleData);
-		SnapshotParticle.Location = InEmitterInstance->GetParticleLocationForRender(SourceParticle);
-		SnapshotParticle.OldLocation = GetParticleOldLocationForRender(*InEmitterInstance, SourceParticle);
-		RenderData->OwnedParticleIndices[ActiveIndex] = static_cast<uint16>(ActiveIndex);
+		delete RenderData;
+		return nullptr;
 	}
 
 	UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
 	RenderData->ReplayData.EmitterType = EDynamicEmitterType::Sprite;
-	RenderData->ReplayData.ActiveParticleCount = ActiveParticleCount;
+	RenderData->ReplayData.ActiveParticleCount = SnapshotParticleCount;
 	RenderData->ReplayData.ParticleStride = ParticleStride;
 	RenderData->ReplayData.SortMode = RequiredModule != nullptr
 		? RequiredModule->SortMode
@@ -836,7 +1247,7 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 	// 반드시 DataContainer의 ParticleData / ParticleIndices 포인터를 통해 접근해야 함
 	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);
 	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = static_cast<int32>(ParticleDataBytes);
-	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = ActiveParticleCount;
+	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = SnapshotParticleCount;
 	RenderData->ReplayData.DataContainer.ParticleData = SnapshotParticleData;
 	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
 
@@ -901,12 +1312,21 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 		return nullptr;
 	}
 
-	// Particle Count
-	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
+	// render 대상 live particle count
+	const int32 ActiveParticleCount = CountLiveParticlesForRender(*InEmitterInstance);
+	if (ActiveParticleCount <= 0)
+	{
+		return nullptr;
+	}
+
+	// live particle 기준 snapshot 크기
 	const int32 ParticleStride = InEmitterInstance->ParticleStride;
-	const size_t ParticleDataBytes = static_cast<size_t>(ActiveParticleCount) * static_cast<size_t>(ParticleStride);
-	const size_t ParticleIndexBytes = static_cast<size_t>(ActiveParticleCount) * sizeof(uint16);
-	const size_t SnapshotLogicalBytes = ParticleDataBytes + ParticleIndexBytes;
+	size_t ParticleDataBytes = 0;
+	size_t SnapshotLogicalBytes = 0;
+	if (!CalculateRenderSnapshotByteSizes(ActiveParticleCount, ParticleStride, ParticleDataBytes, SnapshotLogicalBytes))
+	{
+		return nullptr;
+	}
 
 	// Mesh
 	FDynamicMeshEmitterData* RenderData = new FDynamicMeshEmitterData();
@@ -931,19 +1351,18 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 		? RequiredModule->SortMode
 		: EParticleSortMode::ViewDepthBackToFront;
 
-	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticleCount; ++ActiveIndex)
+	const int32 SnapshotParticleCount = CopyLiveParticlesForRenderSnapshot(
+		*InEmitterInstance,
+		SnapshotParticleData,
+		RenderData->OwnedParticleIndices,
+		false);
+	if (SnapshotParticleCount <= 0)
 	{
-		const int32 SourcePhysicalIndex = InEmitterInstance->ParticleIndices[ActiveIndex];
-		const uint8* SourceParticleData =
-			InEmitterInstance->ParticleData + static_cast<size_t>(SourcePhysicalIndex) * ParticleStride;
-		uint8* DestinationParticleData = SnapshotParticleData + static_cast<size_t>(ActiveIndex) * ParticleStride;
-
-		// renderer가 simulation memory를 직접 읽지 않도록 payload까지 포함한 particle stride 전체를 snapshot에 복사
-		std::memcpy(DestinationParticleData, SourceParticleData, static_cast<size_t>(ParticleStride));
-		RenderData->OwnedParticleIndices[ActiveIndex] = static_cast<uint16>(ActiveIndex);
+		delete RenderData;
+		return nullptr;
 	}
 	// ReplayData
-	RenderData->ReplayData.ActiveParticleCount = ActiveParticleCount;
+	RenderData->ReplayData.ActiveParticleCount = SnapshotParticleCount;
 	RenderData->ReplayData.ParticleStride = ParticleStride;
 	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
 
@@ -956,7 +1375,7 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	// TODO: 중앙 renderer가 Mesh instance transform을 생성할 때 Mesh Particle의 회전 축과 정렬 정책을 반영한다.
 	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);
 	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = static_cast<int32>(ParticleDataBytes);
-	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = ActiveParticleCount;
+	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = SnapshotParticleCount;
 	RenderData->ReplayData.DataContainer.ParticleData = SnapshotParticleData;
 	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
 
@@ -997,11 +1416,117 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 	LODLevelRuntimeCaches.clear();
 	LODLevelRuntimeCaches.reserve(LODLevels.size());
 
-	for (const UParticleLODLevel* LODLevel : LODLevels)
+	if (LODLevels.empty())
 	{
-		FParticleLODLevelRuntimeCache Cache = BuildLODLevelRuntimeCache(LODLevel);
-		LODLevelRuntimeCaches.push_back(Cache);
+		return;
 	}
+
+	const UParticleLODLevel* LayoutLODLevel = LODLevels[0];
+	const FParticleLODLevelRuntimeCache StableLayoutCache = BuildStableLOD0RuntimeCache(LayoutLODLevel);
+	const bool bValidCascadeTopology = ValidateLODTopology(true);
+
+	for (int32 LODIndex = 0; LODIndex < static_cast<int32>(LODLevels.size()); ++LODIndex)
+	{
+		const UParticleLODLevel* LODLevel = LODLevels[static_cast<size_t>(LODIndex)];
+		const UParticleLODLevel* RuntimeLODLevel = (LODIndex == 0 || bValidCascadeTopology)
+			? LODLevel
+			: LayoutLODLevel;
+
+		// invalid topology LOD 0 fallback
+		LODLevelRuntimeCaches.push_back(
+			BuildLODLevelRuntimeCacheFromStableLayout(RuntimeLODLevel, LayoutLODLevel, StableLayoutCache));
+	}
+}
+
+bool UParticleEmitter::ValidateLODTopology(bool bLogWarnings) const
+{
+	if (LODLevels.empty() || !IsLiveObject(LODLevels[0]))
+	{
+		LogLODWarning(bLogWarnings, "LOD topology validation failed. LOD 0 is missing.");
+		return false;
+	}
+
+	const UParticleLODLevel* LayoutLODLevel = LODLevels[0];
+	const int32 LOD0MaxParticles = LayoutLODLevel->RequiredModule != nullptr
+		? LayoutLODLevel->RequiredModule->MaxParticles
+		: 1;
+
+	for (int32 LODIndex = 1; LODIndex < static_cast<int32>(LODLevels.size()); ++LODIndex)
+	{
+		const UParticleLODLevel* LODLevel = LODLevels[static_cast<size_t>(LODIndex)];
+		if (!IsLiveObject(LODLevel))
+		{
+			if (bLogWarnings)
+			{
+				UE_LOG_WARNING("[Particle] LOD topology validation failed. LOD %d is missing.", LODIndex);
+			}
+			return false;
+		}
+
+		if (!AreModuleClassesCompatible(LayoutLODLevel->RequiredModule, LODLevel->RequiredModule))
+		{
+			if (bLogWarnings)
+			{
+				UE_LOG_WARNING("[Particle] LOD topology validation failed. LOD %d RequiredModule class differs from LOD 0.", LODIndex);
+			}
+			return false;
+		}
+
+		if (!AreModuleClassesCompatible(LayoutLODLevel->SpawnModule, LODLevel->SpawnModule))
+		{
+			if (bLogWarnings)
+			{
+				UE_LOG_WARNING("[Particle] LOD topology validation failed. LOD %d SpawnModule class differs from LOD 0.", LODIndex);
+			}
+			return false;
+		}
+
+		if (!AreModuleClassesCompatible(LayoutLODLevel->TypeDataModule, LODLevel->TypeDataModule))
+		{
+			if (bLogWarnings)
+			{
+				UE_LOG_WARNING("[Particle] LOD topology validation failed. LOD %d TypeDataModule class differs from LOD 0.", LODIndex);
+			}
+			return false;
+		}
+
+		if (LODLevel->Modules.size() != LayoutLODLevel->Modules.size())
+		{
+			if (bLogWarnings)
+			{
+				UE_LOG_WARNING(
+					"[Particle] LOD topology validation failed. LOD %d module slot count differs from LOD 0.",
+					LODIndex);
+			}
+			return false;
+		}
+
+		for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(LayoutLODLevel->Modules.size()); ++ModuleIndex)
+		{
+			const UParticleModule* LayoutModule = LayoutLODLevel->Modules[static_cast<size_t>(ModuleIndex)];
+			const UParticleModule* LODModule = LODLevel->Modules[static_cast<size_t>(ModuleIndex)];
+			if (!AreModuleClassesCompatible(LayoutModule, LODModule))
+			{
+				if (bLogWarnings)
+				{
+					UE_LOG_WARNING(
+						"[Particle] LOD topology validation failed. LOD %d module slot %d class differs from LOD 0.",
+						LODIndex,
+						ModuleIndex);
+				}
+				return false;
+			}
+		}
+
+		if (LODLevel->RequiredModule != nullptr && LODLevel->RequiredModule->MaxParticles > LOD0MaxParticles && bLogWarnings)
+		{
+			UE_LOG_WARNING(
+				"[Particle] LOD %d MaxParticles is greater than LOD 0. Runtime hard capacity remains LOD 0 MaxParticles.",
+				LODIndex);
+		}
+	}
+
+	return true;
 }
 
 TArray<int32> UParticleEmitter::CalculateTotalPayloadSize() const
@@ -1009,9 +1534,17 @@ TArray<int32> UParticleEmitter::CalculateTotalPayloadSize() const
 	TArray<int32> Result;
 	Result.reserve(LODLevels.size());
 
-	for (const UParticleLODLevel* LODLevel : LODLevels)
+	if (LODLevels.empty())
 	{
-		Result.push_back(BuildLODLevelRuntimeCache(LODLevel).ParticleStride);
+		return Result;
+	}
+
+	const UParticleLODLevel* LayoutLODLevel = LODLevels[0];
+	const FParticleLODLevelRuntimeCache StableLayoutCache = BuildStableLOD0RuntimeCache(LayoutLODLevel);
+	for (int32 LODIndex = 0; LODIndex < static_cast<int32>(LODLevels.size()); ++LODIndex)
+	{
+		(void)LODIndex;
+		Result.push_back(StableLayoutCache.ParticleStride);
 	}
 
 	return Result;

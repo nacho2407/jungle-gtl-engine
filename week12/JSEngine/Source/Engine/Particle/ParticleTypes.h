@@ -31,21 +31,30 @@ enum class EDynamicEmitterType
 	Ribbon,
 };
 
+namespace ParticleFlags
+{
+	static constexpr uint32 None = 0u;
+	static constexpr uint32 PendingKill = 1u << 0;
+}
+
 struct FParticleEventSpawnData
 {
 	int32 ParticleIndex = -1;
+	uint32 SpawnId = 0;
 	FVector Location = FVector::ZeroVector;
 };
 
 struct FParticleEventDeathData
 {
 	int32 ParticleIndex = -1;
+	uint32 SpawnId = 0;
 	FVector Location = FVector::ZeroVector;
 };
 
 struct FParticleEventCollideData
 {
 	int32 ParticleIndex = -1;
+	uint32 SpawnId = 0;
 	FVector Location = FVector::ZeroVector;
 	FVector Normal = FVector::UpVector;
 };
@@ -70,8 +79,15 @@ struct FBaseParticle
 	FVector Size = FVector::OneVector;
 	FVector BaseSize = FVector::OneVector;
 	FColor Color = FColor::White();
+	FColor BaseColor = FColor::White();
 	uint32 Flags = 0;
-	uint32 Seed = 0; // seeded procedural 재현성을 위한 랜덤 시드값
+    uint32 Seed = 0; // seeded procedural 재현성을 위한 랜덤 시드값
+
+	/**
+     * @brief ribbon emitter 내 정렬이나 LOD preserve 시 MaxParticles가 줄어들면 어떤 Particle을 먼저 죽일지
+     *        결정하기 위한 particle 생성 순서 보존 식별자
+     */
+	uint32 SpawnId = 0;
 };
 
 struct FParticleSpriteVertex
@@ -109,7 +125,16 @@ struct FDynamicEmitterReplayDataBase
 	FVector Scale = FVector::OneVector;
 	EParticleSortMode SortMode = EParticleSortMode::ViewDepthBackToFront;
 
-	// active particle 순회 헬퍼 함수
+	/**
+	 * @brief render replay snapshot의 active index에 해당하는 particle을 조회합니다.
+	 *
+	 * @param ActiveIndex snapshot-local active particle index
+	 *
+	 * @return 조회된 particle 포인터 또는 유효하지 않으면 nullptr
+	 *
+	 * @details render snapshot은 원본 emitter storage와 다른 compacted index 배열을 가질 수 있으므로,
+	 *          active index와 physical index 양쪽의 snapshot buffer 범위를 모두 확인합니다.
+	 */
 	const FBaseParticle* GetParticleByActiveIndex(int32 ActiveIndex) const
 	{
 		if (ActiveIndex < 0 || ActiveIndex >= ActiveParticleCount)
@@ -118,6 +143,11 @@ struct FDynamicEmitterReplayDataBase
 		}
 
 		if (DataContainer.ParticleData == nullptr || DataContainer.ParticleIndices == nullptr || ParticleStride <= 0)
+		{
+			return nullptr;
+		}
+
+		if (ActiveIndex >= DataContainer.ParticleIndicesNumShorts)
 		{
 			return nullptr;
 		}

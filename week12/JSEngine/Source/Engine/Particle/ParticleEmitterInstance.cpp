@@ -1,5 +1,8 @@
 ﻿#include "Particle/ParticleEmitterInstance.h"
 
+#include "Asset/CurveFloatAsset.h"
+#include "Asset/CurveVectorAsset.h"
+#include "Core/ResourceManager.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleHelper.h"
@@ -17,6 +20,7 @@
 namespace
 {
 	constexpr int32 MaxParticleIndexValue = static_cast<int32>(std::numeric_limits<uint16>::max());
+	constexpr int32 CurveBoundsSampleSteps = 32;
 
 	int32 AlignParticleBytes(int32 Value)
 	{
@@ -103,31 +107,225 @@ namespace
 		FVector Max = FVector::ZeroVector;
 	};
 
-	FFloatRange GetFloatDistributionRange(const FParticleFloatDistribution& Distribution)
+	FVector MakeUniformVector(float Value)
+	{
+		return FVector(Value, Value, Value);
+	}
+
+	FVector ApplyVectorDistributionMode(const FParticleVectorDistribution& Distribution, const FVector& Value)
+	{
+		return Distribution.VectorMode == EParticleVectorDistributionMode::UniformXYZ
+			? MakeUniformVector(Value.X)
+			: Value;
+	}
+
+	void ExpandFloatRange(FFloatRange& Range, float Value)
+	{
+		Range.Min = std::min(Range.Min, Value);
+		Range.Max = std::max(Range.Max, Value);
+	}
+
+	void ExpandVectorRange(FVectorRange& Range, const FVector& Value)
+	{
+		Range.Min = FVector::Min(Range.Min, Value);
+		Range.Max = FVector::Max(Range.Max, Value);
+	}
+
+	UCurveFloatAsset* ResolveFloatCurve(const TSoftObjectPtr<UCurveFloatAsset>& Curve)
+	{
+		const FString& Path = Curve.GetPath();
+		return Path.empty() ? nullptr : FResourceManager::Get().LoadFloatCurve(Path);
+	}
+
+	UCurveVectorAsset* ResolveVectorCurve(const TSoftObjectPtr<UCurveVectorAsset>& Curve)
+	{
+		const FString& Path = Curve.GetPath();
+		return Path.empty() ? nullptr : FResourceManager::Get().LoadVectorCurve(Path);
+	}
+
+	float GetCurveBoundsSampleTime(float CurveStartTime, float CurveEndTime, int32 SampleIndex)
+	{
+		const float SafeEndTime = std::max(CurveStartTime, CurveEndTime);
+		if (SafeEndTime <= CurveStartTime)
+		{
+			return CurveStartTime;
+		}
+
+		const float Alpha = static_cast<float>(SampleIndex) / static_cast<float>(CurveBoundsSampleSteps);
+		return CurveStartTime + (SafeEndTime - CurveStartTime) * Alpha;
+	}
+
+	FFloatRange SampleFloatCurveRange(
+		UCurveFloatAsset* Curve,
+		float CurveStartTime,
+		float CurveEndTime,
+		float Fallback)
+	{
+		if (Curve == nullptr)
+		{
+			return { Fallback, Fallback };
+		}
+
+		const float FirstValue = Curve->Evaluate(CurveStartTime);
+		FFloatRange Range{ FirstValue, FirstValue };
+		for (int32 SampleIndex = 1; SampleIndex <= CurveBoundsSampleSteps; ++SampleIndex)
+		{
+			ExpandFloatRange(Range, Curve->Evaluate(GetCurveBoundsSampleTime(CurveStartTime, CurveEndTime, SampleIndex)));
+		}
+		return Range;
+	}
+
+	FFloatRange SampleFloatCurvePairRange(
+		UCurveFloatAsset* MinCurve,
+		UCurveFloatAsset* MaxCurve,
+		float CurveStartTime,
+		float CurveEndTime,
+		float MinFallback,
+		float MaxFallback)
+	{
+		const float FirstMin = MinCurve != nullptr ? MinCurve->Evaluate(CurveStartTime) : MinFallback;
+		const float FirstMax = MaxCurve != nullptr ? MaxCurve->Evaluate(CurveStartTime) : MaxFallback;
+		FFloatRange Range{ std::min(FirstMin, FirstMax), std::max(FirstMin, FirstMax) };
+
+		for (int32 SampleIndex = 1; SampleIndex <= CurveBoundsSampleSteps; ++SampleIndex)
+		{
+			const float Time = GetCurveBoundsSampleTime(CurveStartTime, CurveEndTime, SampleIndex);
+			ExpandFloatRange(Range, MinCurve != nullptr ? MinCurve->Evaluate(Time) : MinFallback);
+			ExpandFloatRange(Range, MaxCurve != nullptr ? MaxCurve->Evaluate(Time) : MaxFallback);
+		}
+		return Range;
+	}
+
+	FVectorRange SampleVectorCurveRange(
+		const FParticleVectorDistribution& Distribution,
+		UCurveVectorAsset* Curve,
+		float CurveStartTime,
+		float CurveEndTime,
+		const FVector& Fallback)
+	{
+		if (Curve == nullptr)
+		{
+			const FVector Value = ApplyVectorDistributionMode(Distribution, Fallback);
+			return { Value, Value };
+		}
+
+		const FVector FirstValue = ApplyVectorDistributionMode(Distribution, Curve->Evaluate(CurveStartTime));
+		FVectorRange Range{ FirstValue, FirstValue };
+		for (int32 SampleIndex = 1; SampleIndex <= CurveBoundsSampleSteps; ++SampleIndex)
+		{
+			const float Time = GetCurveBoundsSampleTime(CurveStartTime, CurveEndTime, SampleIndex);
+			ExpandVectorRange(Range, ApplyVectorDistributionMode(Distribution, Curve->Evaluate(Time)));
+		}
+		return Range;
+	}
+
+	FVectorRange SampleVectorCurvePairRange(
+		const FParticleVectorDistribution& Distribution,
+		UCurveVectorAsset* MinCurve,
+		UCurveVectorAsset* MaxCurve,
+		float CurveStartTime,
+		float CurveEndTime,
+		const FVector& MinFallback,
+		const FVector& MaxFallback)
+	{
+		const FVector FirstMin = ApplyVectorDistributionMode(
+			Distribution,
+			MinCurve != nullptr ? MinCurve->Evaluate(CurveStartTime) : MinFallback);
+		const FVector FirstMax = ApplyVectorDistributionMode(
+			Distribution,
+			MaxCurve != nullptr ? MaxCurve->Evaluate(CurveStartTime) : MaxFallback);
+		FVectorRange Range{ FVector::Min(FirstMin, FirstMax), FVector::Max(FirstMin, FirstMax) };
+
+		for (int32 SampleIndex = 1; SampleIndex <= CurveBoundsSampleSteps; ++SampleIndex)
+		{
+			const float Time = GetCurveBoundsSampleTime(CurveStartTime, CurveEndTime, SampleIndex);
+			ExpandVectorRange(
+				Range,
+				ApplyVectorDistributionMode(Distribution, MinCurve != nullptr ? MinCurve->Evaluate(Time) : MinFallback));
+			ExpandVectorRange(
+				Range,
+				ApplyVectorDistributionMode(Distribution, MaxCurve != nullptr ? MaxCurve->Evaluate(Time) : MaxFallback));
+		}
+		return Range;
+	}
+
+	FFloatRange GetFloatDistributionRange(
+		const FParticleFloatDistribution& Distribution,
+		float CurveStartTime,
+		float CurveEndTime)
 	{
 		switch (Distribution.Mode)
 		{
 		case EParticleDistributionMode::RandomRange:
-		case EParticleDistributionMode::RandomRangeCurve:
 			return { std::min(Distribution.Min, Distribution.Max), std::max(Distribution.Min, Distribution.Max) };
 		case EParticleDistributionMode::Curve:
+			return SampleFloatCurveRange(
+				ResolveFloatCurve(Distribution.Curve),
+				CurveStartTime,
+				CurveEndTime,
+				Distribution.Constant);
+		case EParticleDistributionMode::RandomRangeCurve:
+			return SampleFloatCurvePairRange(
+				ResolveFloatCurve(Distribution.MinCurve),
+				ResolveFloatCurve(Distribution.MaxCurve),
+				CurveStartTime,
+				CurveEndTime,
+				Distribution.Min,
+				Distribution.Max);
 		case EParticleDistributionMode::Constant:
 		default:
 			return { Distribution.Constant, Distribution.Constant };
 		}
 	}
 
-	FVectorRange GetVectorDistributionRange(const FParticleVectorDistribution& Distribution)
+	FVectorRange GetVectorDistributionRange(
+		const FParticleVectorDistribution& Distribution,
+		float CurveStartTime,
+		float CurveEndTime)
 	{
+		const bool bUniformXYZ = Distribution.VectorMode == EParticleVectorDistributionMode::UniformXYZ;
 		switch (Distribution.Mode)
 		{
 		case EParticleDistributionMode::RandomRange:
-		case EParticleDistributionMode::RandomRangeCurve:
-			return { FVector::Min(Distribution.Min, Distribution.Max), FVector::Max(Distribution.Min, Distribution.Max) };
+			if (bUniformXYZ)
+			{
+				const float MinValue = std::min(Distribution.Min.X, Distribution.Max.X);
+				const float MaxValue = std::max(Distribution.Min.X, Distribution.Max.X);
+				return { FVector(MinValue, MinValue, MinValue), FVector(MaxValue, MaxValue, MaxValue) };
+			}
+			else
+			{
+				return { FVector::Min(Distribution.Min, Distribution.Max), FVector::Max(Distribution.Min, Distribution.Max) };
+			}
 		case EParticleDistributionMode::Curve:
+			return SampleVectorCurveRange(
+				Distribution,
+				ResolveVectorCurve(Distribution.Curve),
+				CurveStartTime,
+				CurveEndTime,
+				Distribution.Constant);
+		case EParticleDistributionMode::RandomRangeCurve:
+			return SampleVectorCurvePairRange(
+				Distribution,
+				ResolveVectorCurve(Distribution.MinCurve),
+				ResolveVectorCurve(Distribution.MaxCurve),
+				CurveStartTime,
+				CurveEndTime,
+				Distribution.Min,
+				Distribution.Max);
 		case EParticleDistributionMode::Constant:
 		default:
-			return { Distribution.Constant, Distribution.Constant };
+			if (bUniformXYZ)
+			{
+				return {
+					FVector(Distribution.Constant.X, Distribution.Constant.X, Distribution.Constant.X),
+					FVector(Distribution.Constant.X, Distribution.Constant.X, Distribution.Constant.X)
+				};
+			}
+			else
+			{
+				return { Distribution.Constant, Distribution.Constant };
+			}
 		}
 	}
 
@@ -137,6 +335,10 @@ namespace
 		FVectorRange LocationRange{ FVector::ZeroVector, FVector::ZeroVector };
 		FVectorRange VelocityRange{ FVector::ZeroVector, FVector::ZeroVector };
 		FVectorRange SizeRange{ FVector::OneVector, FVector::OneVector };
+		const float CurveStartTime = 0.0f;
+		const float CurveEndTime = Cache.RequiredModule != nullptr
+			? std::max(Cache.RequiredModule->EmitterDuration, 0.0f)
+			: CurveStartTime;
 
 		for (UParticleModule* Module : Cache.SpawnModules)
 		{
@@ -147,19 +349,20 @@ namespace
 
 			if (const UParticleModuleLifetime* LifetimeModule = Cast<UParticleModuleLifetime>(Module))
 			{
-				LifetimeRange = GetFloatDistributionRange(LifetimeModule->Lifetime);
+				// Spawn 모듈의 curve time은 loop-local SpawnTime이므로 emitter duration 전체를 샘플링합니다.
+				LifetimeRange = GetFloatDistributionRange(LifetimeModule->Lifetime, CurveStartTime, CurveEndTime);
 			}
 			else if (const UParticleModuleLocation* LocationModule = Cast<UParticleModuleLocation>(Module))
 			{
-				LocationRange = GetVectorDistributionRange(LocationModule->StartLocation);
+				LocationRange = GetVectorDistributionRange(LocationModule->StartLocation, CurveStartTime, CurveEndTime);
 			}
 			else if (const UParticleModuleVelocity* VelocityModule = Cast<UParticleModuleVelocity>(Module))
 			{
-				VelocityRange = GetVectorDistributionRange(VelocityModule->StartVelocity);
+				VelocityRange = GetVectorDistributionRange(VelocityModule->StartVelocity, CurveStartTime, CurveEndTime);
 			}
 			else if (const UParticleModuleSize* SizeModule = Cast<UParticleModuleSize>(Module))
 			{
-				SizeRange = GetVectorDistributionRange(SizeModule->StartSize);
+				SizeRange = GetVectorDistributionRange(SizeModule->StartSize, CurveStartTime, CurveEndTime);
 			}
 		}
 
@@ -184,35 +387,29 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 {
 	Release();
 
-	if (InTemplate == nullptr || InLODLevelIndex < 0 || InLODLevelIndex >= static_cast<int32>(InTemplate->LODLevels.size()))
+	if (InTemplate == nullptr || InTemplate->LODLevels.empty())
 	{
 		return false;
 	}
 
 	SpriteTemplate = InTemplate;
-	CurrentLODLevelIndex = InLODLevelIndex;
-	CurrentLODLevel = SpriteTemplate->LODLevels[CurrentLODLevelIndex];
-	if (CurrentLODLevel == nullptr)
-	{
-		return false;
-	}
-
 	SpriteTemplate->CacheEmitterModuleInfo();
-	CurrentRuntimeCache = SpriteTemplate->GetLODLevelRuntimeCache(CurrentLODLevelIndex);
-	if (CurrentRuntimeCache == nullptr)
+
+	const FParticleLODLevelRuntimeCache* LayoutRuntimeCache = SpriteTemplate->GetLOD0RuntimeCache();
+	if (LayoutRuntimeCache == nullptr)
 	{
 		return false;
 	}
 
-	ParticleStride = CurrentRuntimeCache->ParticleStride > 0
-		? CurrentRuntimeCache->ParticleStride
+	ParticleStride = LayoutRuntimeCache->ParticleStride > 0
+		? LayoutRuntimeCache->ParticleStride
 		: AlignParticleBytes(static_cast<int32>(sizeof(FBaseParticle)));
-	PayloadOffset = CurrentRuntimeCache->PayloadOffset;
-	InstancePayloadSize = CurrentRuntimeCache->InstancePayloadSize;
+	PayloadOffset = LayoutRuntimeCache->PayloadOffset;
+	InstancePayloadSize = LayoutRuntimeCache->InstancePayloadSize;
 
-	int32 RequestedMaxParticles = CurrentRuntimeCache->RequiredModule != nullptr
-		? CurrentRuntimeCache->RequiredModule->MaxParticles
-		: 1; // clamp를 위해 최소값 1로 설정
+	int32 RequestedMaxParticles = LayoutRuntimeCache->RequiredModule != nullptr
+		? LayoutRuntimeCache->RequiredModule->MaxParticles
+		: 1; // clamp 최소값
 	if (RequestedMaxParticles > MaxParticleIndexValue)
 	{
 		UE_LOG_WARNING(
@@ -228,8 +425,73 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 		return false;
 	}
 
-	RandomStream.Initialize(GetInitialRandomSeed(CurrentRuntimeCache->RequiredModule, SpriteTemplate, this));
+	const int32 InitialLODIndex = (InLODLevelIndex >= 0 && InLODLevelIndex < static_cast<int32>(SpriteTemplate->LODLevels.size()))
+		? InLODLevelIndex
+		: 0;
+	if (!SetCurrentLODIndex(InitialLODIndex) && !SetCurrentLODIndex(0))
+	{
+		Release();
+		return false;
+	}
+
+	RandomStream.Initialize(GetInitialRandomSeed(GetRequiredModule(), SpriteTemplate, this));
 	Reset();
+	return true;
+}
+
+bool FParticleEmitterInstance::SetCurrentLODIndex(int32 InLODLevelIndex)
+{
+	if (SpriteTemplate == nullptr ||
+		InLODLevelIndex < 0 ||
+		InLODLevelIndex >= static_cast<int32>(SpriteTemplate->LODLevels.size()))
+	{
+		return false;
+	}
+
+	// invalid topology의 lower LOD 차단
+	if (InLODLevelIndex != 0 && !SpriteTemplate->ValidateLODTopology(false))
+	{
+		return false;
+	}
+
+	UParticleLODLevel* NewLODLevel = SpriteTemplate->LODLevels[static_cast<size_t>(InLODLevelIndex)];
+	const FParticleLODLevelRuntimeCache* NewRuntimeCache = SpriteTemplate->GetLODLevelRuntimeCache(InLODLevelIndex);
+	if (NewLODLevel == nullptr || NewRuntimeCache == nullptr)
+	{
+		return false;
+	}
+
+	// storage layout 불변성
+	if (ParticleStride > 0 && NewRuntimeCache->ParticleStride != ParticleStride)
+	{
+		UE_LOG_WARNING("[Particle] LOD switch rejected because particle stride differs from the allocated storage.");
+		return false;
+	}
+	if (NewRuntimeCache->InstancePayloadSize != InstancePayloadSize)
+	{
+		UE_LOG_WARNING("[Particle] LOD switch rejected because instance payload size differs from the allocated storage.");
+		return false;
+	}
+
+	const size_t PreviousBurstCount =
+		CurrentRuntimeCache != nullptr && CurrentRuntimeCache->SpawnModule != nullptr
+			? CurrentRuntimeCache->SpawnModule->BurstList.size()
+			: 0;
+
+	CurrentLODLevelIndex = InLODLevelIndex;
+	CurrentLODLevel = NewLODLevel;
+	CurrentRuntimeCache = NewRuntimeCache;
+
+	const size_t NewBurstCount =
+		CurrentRuntimeCache->SpawnModule != nullptr
+			? CurrentRuntimeCache->SpawnModule->BurstList.size()
+			: 0;
+	if (BurstFiredThisLoop.size() != NewBurstCount || PreviousBurstCount != NewBurstCount)
+	{
+		// burst fired state layout
+		ResetBurstFiredState();
+	}
+
 	return true;
 }
 
@@ -237,10 +499,8 @@ void FParticleEmitterInstance::Reset()
 {
 	ActiveParticles = 0;
 	ParticleCounter = 0;
-	SpawnFraction = 0.0f;
-	EmitterTime = 0.0f;
 	SecondsSinceCreation = 0.0f;
-	bBurstFired = false;
+	ResetLoopRuntimeState();
 
 	for (int32 Index = 0; ParticleIndices != nullptr && Index < MaxActiveParticles; ++Index)
 	{
@@ -287,7 +547,9 @@ void FParticleEmitterInstance::Release()
 	SpawnFraction = 0.0f;
 	EmitterTime = 0.0f;
 	SecondsSinceCreation = 0.0f;
-	bBurstFired = false;
+	CompletedLoopCount = 0;
+	bEmitterSpawnComplete = false;
+	BurstFiredThisLoop.clear();
 }
 
 bool FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles, int32 InParticleStride, int32 InInstancePayloadSize)
@@ -324,6 +586,172 @@ bool FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles, 
 	return true;
 }
 
+const UParticleModuleRequired* FParticleEmitterInstance::GetRequiredModule() const
+{
+	return CurrentRuntimeCache != nullptr ? CurrentRuntimeCache->RequiredModule : nullptr;
+}
+
+float FParticleEmitterInstance::GetEmitterDuration() const
+{
+	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+	return RequiredModule != nullptr ? RequiredModule->EmitterDuration : 0.0f;
+}
+
+int32 FParticleEmitterInstance::GetTotalLoopCount() const
+{
+	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+	if (RequiredModule == nullptr)
+	{
+		return 0;
+	}
+
+	return RequiredModule->bEmitterLoops
+		? std::max(RequiredModule->MaxEmitterLoops, 0)
+		: 1;
+}
+
+bool FParticleEmitterInstance::IsInfiniteLooping() const
+{
+	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+	return RequiredModule != nullptr && RequiredModule->bInfiniteEmitterLoops;
+}
+
+bool FParticleEmitterInstance::CanSpawnEmitter() const
+{
+	const bool bInfiniteLooping = IsInfiniteLooping();
+	return !bEmitterSpawnComplete &&
+		CurrentRuntimeCache != nullptr &&
+		CurrentRuntimeCache->SpawnModule != nullptr &&
+		GetEmitterDuration() > 0.0f &&
+		(bInfiniteLooping || (GetTotalLoopCount() > 0 && CompletedLoopCount < GetTotalLoopCount()));
+}
+
+void FParticleEmitterInstance::ResetLoopRuntimeState()
+{
+	SpawnFraction = 0.0f;
+	EmitterTime = 0.0f;
+	CompletedLoopCount = 0;
+	bEmitterSpawnComplete = false;
+	ResetBurstFiredState();
+}
+
+void FParticleEmitterInstance::ResetBurstFiredState()
+{
+	const UParticleModuleSpawn* SpawnModule = CurrentRuntimeCache != nullptr
+		? CurrentRuntimeCache->SpawnModule
+		: nullptr;
+	const int32 BurstEntryCount = SpawnModule != nullptr
+		? static_cast<int32>(SpawnModule->BurstList.size())
+		: 0;
+
+	BurstFiredThisLoop.clear();
+	BurstFiredThisLoop.resize(static_cast<size_t>(std::max(BurstEntryCount, 0)), 0u);
+}
+
+int32 FParticleEmitterInstance::GetCurrentLODMaxParticles() const
+{
+	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+	const int32 CurrentLODMaxParticles = RequiredModule != nullptr
+		? RequiredModule->MaxParticles
+		: MaxActiveParticles;
+
+	return std::clamp(CurrentLODMaxParticles, 1, std::max(MaxActiveParticles, 1));
+}
+
+void FParticleEmitterInstance::CompleteEmitterLoop()
+{
+	++CompletedLoopCount;
+	SpawnFraction = 0.0f;
+
+	if (IsInfiniteLooping())
+	{
+		// 무한 루프는 종료 상태로 가지 않고 다음 loop-local time 구간을 즉시 준비합니다.
+		EmitterTime = 0.0f;
+		ResetBurstFiredState();
+
+		const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+		if (RequiredModule != nullptr && RequiredModule->bResetSeedOnEmitterLoop)
+		{
+			RandomStream.Reset();
+		}
+		return;
+	}
+
+	const int32 TotalLoopCount = GetTotalLoopCount();
+	if (TotalLoopCount <= 0 || CompletedLoopCount >= TotalLoopCount)
+	{
+		bEmitterSpawnComplete = true;
+		EmitterTime = GetEmitterDuration();
+		return;
+	}
+
+	EmitterTime = 0.0f;
+	ResetBurstFiredState();
+
+	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
+	if (RequiredModule != nullptr && RequiredModule->bResetSeedOnEmitterLoop)
+	{
+		RandomStream.Reset();
+	}
+}
+
+void FParticleEmitterInstance::TickEmitterSpawn(float DeltaTime)
+{
+	if (DeltaTime <= 0.0f || !CanSpawnEmitter())
+	{
+		return;
+	}
+
+	float RemainingDeltaTime = DeltaTime;
+	constexpr float MinSegmentTime = 0.000001f;
+
+	while (RemainingDeltaTime > MinSegmentTime && CanSpawnEmitter())
+	{
+		const float Duration = GetEmitterDuration();
+		const float SegmentStartTime = EmitterTime;
+		const float TimeToLoopEnd = Duration - SegmentStartTime;
+		if (TimeToLoopEnd <= MinSegmentTime)
+		{
+			CompleteEmitterLoop();
+			continue;
+		}
+
+		const float SegmentDeltaTime = std::min(RemainingDeltaTime, TimeToLoopEnd);
+		const float SegmentEndTime = SegmentStartTime + SegmentDeltaTime;
+
+		// 한 프레임 안에서 loop boundary를 넘을 수 있으므로, 현재 loop 안에서 처리 가능한 구간만 먼저 spawn 계산
+		TickEmitterSpawnSegment(SegmentStartTime, SegmentEndTime);
+		EmitterTime = SegmentEndTime;
+		RemainingDeltaTime -= SegmentDeltaTime;
+
+		if (EmitterTime >= Duration - MinSegmentTime)
+		{
+			CompleteEmitterLoop();
+		}
+	}
+}
+
+void FParticleEmitterInstance::TickEmitterSpawnSegment(float SegmentStartTime, float SegmentEndTime)
+{
+	const float SegmentDeltaTime = std::max(SegmentEndTime - SegmentStartTime, 0.0f);
+	if (SegmentDeltaTime <= 0.0f)
+	{
+		return;
+	}
+
+	const int32 BurstSpawnCount = CalculateBurstSpawnCount(SegmentStartTime, SegmentEndTime);
+	const int32 ActualBurstSpawnCount = SpawnParticles(BurstSpawnCount, SegmentStartTime, SegmentDeltaTime);
+	if (ActualBurstSpawnCount > 0)
+	{
+		FParticleEventBurstData Event;
+		Event.SpawnCount = ActualBurstSpawnCount;
+		Event.Location = Owner.GetWorldLocation();
+		Owner.AddBurstEvent(Event);
+	}
+
+	SpawnParticles(CalculateSpawnRateCount(SegmentDeltaTime), SegmentStartTime, SegmentDeltaTime);
+}
+
 int32 FParticleEmitterInstance::CalculateSpawnRateCount(float DeltaTime)
 {
 	if (DeltaTime <= 0.0f || CurrentRuntimeCache == nullptr || CurrentRuntimeCache->SpawnModule == nullptr)
@@ -347,42 +775,93 @@ int32 FParticleEmitterInstance::CalculateSpawnRateCount(float DeltaTime)
 
 int32 FParticleEmitterInstance::CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime)
 {
-	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->SpawnModule == nullptr || bBurstFired)
+	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->SpawnModule == nullptr)
 	{
 		return 0;
 	}
 
 	const UParticleModuleSpawn* SpawnModule = CurrentRuntimeCache->SpawnModule;
-	if (!SpawnModule->bProcessBurst || SpawnModule->BurstCount <= 0)
+	if (!SpawnModule->bProcessBurst || SpawnModule->BurstList.empty())
 	{
 		return 0;
 	}
 
-	const float BurstTime = std::max(0.0f, SpawnModule->BurstTime);
-	if (PreviousEmitterTime <= BurstTime && CurrentEmitterTime >= BurstTime)
+	if (BurstFiredThisLoop.size() != SpawnModule->BurstList.size())
 	{
-		bBurstFired = true;
-		return SpawnModule->BurstCount;
+		ResetBurstFiredState();
 	}
 
-	return 0;
+	int32 SpawnCount = 0;
+	for (int32 BurstIndex = 0; BurstIndex < static_cast<int32>(SpawnModule->BurstList.size()); ++BurstIndex)
+	{
+		if (BurstFiredThisLoop[static_cast<size_t>(BurstIndex)] != 0u)
+		{
+			continue;
+		}
+
+		const FParticleBurstEntry& Entry = SpawnModule->BurstList[static_cast<size_t>(BurstIndex)];
+		if (!Entry.bEnabled)
+		{
+			continue;
+		}
+
+		const float EntryTime = std::max(Entry.Time, 0.0f);
+		if (PreviousEmitterTime <= EntryTime && CurrentEmitterTime >= EntryTime)
+		{
+			BurstFiredThisLoop[static_cast<size_t>(BurstIndex)] = 1u;
+
+			const float Chance = std::clamp(Entry.Chance, 0.0f, 1.0f);
+			if (Chance <= 0.0f || (Chance < 1.0f && RandomStream.GetFraction() > Chance))
+			{
+				continue;
+			}
+
+			SpawnCount += ResolveBurstSpawnAmount(Entry);
+		}
+	}
+
+	return SpawnCount;
 }
 
-int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
+int32 FParticleEmitterInstance::ResolveBurstSpawnAmount(const FParticleBurstEntry& Entry)
+{
+    const int32 MaxCount = std::max(Entry.Count, 0);
+    if (MaxCount <= 0)
+    {
+        return 0;
+    }
+
+    const int32 MinCount = std::clamp(Entry.CountLow, 0, MaxCount);
+    if (MinCount == MaxCount)
+    {
+        return MaxCount;
+    }
+
+    return RandomStream.GetRange(MinCount, MaxCount);
+}
+
+int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime)
 {
 	if (Count <= 0 || ParticleData == nullptr || ParticleIndices == nullptr)
 	{
 		return 0;
 	}
 
-	const int32 AvailableSlots = MaxActiveParticles - ActiveParticles;
-	const int32 SpawnCount = std::clamp(Count, 0, AvailableSlots);
+	const int32 CurrentLODParticleLimit = std::min(MaxActiveParticles, GetCurrentLODMaxParticles());
+	const int32 AvailableSlots = CurrentLODParticleLimit - ActiveParticles;
+	if (AvailableSlots <= 0)
+	{
+		return 0;
+	}
+
+	// lower LOD MaxParticles soft cap
+	const int32 SpawnCount = std::min(Count, AvailableSlots);
 	if (SpawnCount <= 0)
 	{
 		return 0;
 	}
 
-	const float SpawnInterval = SpawnCount > 0 ? DeltaTime / static_cast<float>(SpawnCount) : 0.0f;
+	const float SpawnInterval = SpawnCount > 0 ? SegmentDeltaTime / static_cast<float>(SpawnCount) : 0.0f;
 
 	for (int32 SpawnIndex = 0; SpawnIndex < SpawnCount; ++SpawnIndex)
 	{
@@ -391,13 +870,17 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
 		FBaseParticle& Particle = GetParticleByPhysicalIndex(PhysicalIndex);
 		new (&Particle) FBaseParticle();
 
+		ClearParticlePayloads(Particle);
+
 		Particle.Seed = RandomStream.GetUnsignedInt();
+		Particle.SpawnId = ++ParticleCounter;
 		Particle.OldLocation = Particle.Location;
 		Particle.RelativeTime = 0.0f;
 		Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
 		Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
+		InitializeModulePayloads(Particle);
 
-		const float SpawnTime = SpawnInterval * static_cast<float>(SpawnIndex);
+		const float SpawnTime = SegmentStartTime + SpawnInterval * static_cast<float>(SpawnIndex);
 		for (UParticleModule* Module : CurrentRuntimeCache->SpawnModules)
 		{
 			if (Module == nullptr || !Module->bEnabled)
@@ -412,60 +895,132 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float DeltaTime)
 		Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
 		Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
 		Particle.OldLocation = Particle.Location;
+		Particle.BaseColor = Particle.Color;
 
 		FParticleEventSpawnData Event;
 		Event.ParticleIndex = PhysicalIndex;
+		Event.SpawnId = Particle.SpawnId;
 		Event.Location = GetParticleLocationForRender(Particle);
 		Owner.AddSpawnEvent(Event);
 
 		++ActiveParticles;
-		++ParticleCounter;
 	}
 
 	return SpawnCount;
 }
 
-void FParticleEmitterInstance::UpdateParticles(float DeltaTime)
+bool FParticleEmitterInstance::IsParticlePendingKill(const FBaseParticle& Particle) const
 {
-	int32 ActiveIndex = 0;
-	while (ActiveIndex < ActiveParticles)
-	{
-		FBaseParticle& Particle = GetParticleByActiveIndex(ActiveIndex);
-		Particle.OldLocation = Particle.Location;
-		Particle.Location += Particle.Velocity * DeltaTime;
-		Particle.Rotation += Particle.RotationRate * DeltaTime;
-		Particle.RelativeTime += DeltaTime * Particle.OneOverMaxLifetime;
-
-		if (Particle.RelativeTime >= 1.0f)
-		{
-			KillParticle(ActiveIndex);
-			continue;
-		}
-
-		++ActiveIndex;
-	}
+	return (Particle.Flags & ParticleFlags::PendingKill) != 0u;
 }
 
-void FParticleEmitterInstance::KillParticle(int32 ActiveIndex)
+void FParticleEmitterInstance::MarkParticlePendingKill(int32 ActiveIndex)
 {
 	if (ActiveIndex < 0 || ActiveIndex >= ActiveParticles || ParticleIndices == nullptr)
 	{
 		return;
 	}
 
-	const int32 LastActiveIndex = ActiveParticles - 1;
 	const uint16 KilledPhysicalIndex = ParticleIndices[ActiveIndex];
 	FBaseParticle& Particle = GetParticleByPhysicalIndex(KilledPhysicalIndex);
+	if (IsParticlePendingKill(Particle))
+	{
+		return;
+	}
+
+	Particle.Flags |= ParticleFlags::PendingKill;
 
 	FParticleEventDeathData Event;
 	Event.ParticleIndex = KilledPhysicalIndex;
+	Event.SpawnId = Particle.SpawnId;
 	Event.Location = GetParticleLocationForRender(Particle);
 	Owner.AddDeathEvent(Event);
+}
 
-	// particle memory는 옮기지 않고 active index 목록만 swap-remove해서 제거(속도 최적화)
-	ParticleIndices[ActiveIndex] = ParticleIndices[LastActiveIndex];
-	ParticleIndices[LastActiveIndex] = KilledPhysicalIndex;
-	--ActiveParticles;
+void FParticleEmitterInstance::CompactPendingKilledParticles()
+{
+	if (ActiveParticles <= 0 || ParticleIndices == nullptr)
+	{
+		return;
+	}
+
+	TArray<uint16> PendingKilledIndices;
+	PendingKilledIndices.reserve(static_cast<size_t>(ActiveParticles));
+
+	int32 LiveParticleCount = 0;
+	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticles; ++ActiveIndex)
+	{
+		const uint16 PhysicalIndex = ParticleIndices[ActiveIndex];
+		const FBaseParticle& Particle = GetParticleByPhysicalIndex(PhysicalIndex);
+		if (IsParticlePendingKill(Particle))
+		{
+			PendingKilledIndices.push_back(PhysicalIndex);
+			continue;
+		}
+
+		ParticleIndices[LiveParticleCount] = PhysicalIndex;
+		++LiveParticleCount;
+	}
+
+	// particle memory는 그대로 두고, active index 목록에서만 죽을 particle을 뒤쪽 free slot 구간으로 밀어냄
+	for (int32 PendingIndex = 0; PendingIndex < static_cast<int32>(PendingKilledIndices.size()); ++PendingIndex)
+	{
+		ParticleIndices[LiveParticleCount + PendingIndex] = PendingKilledIndices[PendingIndex];
+	}
+
+	ActiveParticles = LiveParticleCount;
+}
+
+void FParticleEmitterInstance::AgeParticles(float DeltaTime)
+{
+	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticles; ++ActiveIndex)
+	{
+		FBaseParticle& Particle = GetParticleByActiveIndex(ActiveIndex);
+		if (IsParticlePendingKill(Particle))
+		{
+			continue;
+		}
+
+		Particle.RelativeTime += DeltaTime * Particle.OneOverMaxLifetime;
+
+		if (Particle.RelativeTime >= 1.0f)
+		{
+			MarkParticlePendingKill(ActiveIndex);
+		}
+	}
+}
+
+void FParticleEmitterInstance::UpdateModules(float DeltaTime)
+{
+	if (CurrentRuntimeCache == nullptr)
+	{
+		return;
+	}
+
+	for (UParticleModule* Module : CurrentRuntimeCache->UpdateModules)
+	{
+		if (Module != nullptr && Module->bEnabled)
+		{
+			const int32 Offset = CurrentRuntimeCache->GetParticlePayloadOffset(Module);
+			Module->Update(this, Offset, DeltaTime);
+		}
+	}
+}
+
+void FParticleEmitterInstance::IntegrateParticles(float DeltaTime)
+{
+	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticles; ++ActiveIndex)
+	{
+		FBaseParticle& Particle = GetParticleByActiveIndex(ActiveIndex);
+		if (IsParticlePendingKill(Particle))
+		{
+			continue;
+		}
+
+		Particle.OldLocation = Particle.Location;
+		Particle.Location += Particle.Velocity * DeltaTime;
+		Particle.Rotation += Particle.RotationRate * DeltaTime;
+	}
 }
 
 FBaseParticle& FParticleEmitterInstance::GetParticleByActiveIndex(int32 ActiveIndex)
@@ -568,6 +1123,59 @@ const uint8* FParticleEmitterInstance::GetModuleInstanceData(UParticleModule* Mo
 	return InstanceData + Offset;
 }
 
+void FParticleEmitterInstance::InitializeModulePayloads(FBaseParticle& Particle)
+{
+	if (CurrentRuntimeCache == nullptr)
+	{
+		return;
+	}
+
+	TArray<UParticleModule*> InitializedModules;
+	const auto InitializeModule = [this, &Particle, &InitializedModules](UParticleModule* Module)
+	{
+		if (Module == nullptr)
+		{
+			return;
+		}
+
+		// 같은 모듈이 spawn / update 양쪽 목록에 들어갈 수 있으므로 중복 검사를 통해 한 번만 초기화
+		if (std::find(InitializedModules.begin(), InitializedModules.end(), Module) != InitializedModules.end())
+		{
+			return;
+		}
+
+		InitializedModules.push_back(Module);
+		const int32 Offset = CurrentRuntimeCache->GetParticlePayloadOffset(Module);
+		Module->InitializeParticle(this, Offset, Particle);
+	};
+
+	InitializeModule(CurrentRuntimeCache->RequiredModule);
+	InitializeModule(CurrentRuntimeCache->SpawnModule);
+	InitializeModule(CurrentRuntimeCache->TypeDataModule);
+	
+	if (CurrentLODLevel != nullptr)
+    {
+        // disable된 모듈도 payload offset은 할당되어 있을 수 있으므로, enabled 여부와 관계 없이 모두 초기화 시도
+        for (UParticleModule* Module : CurrentLODLevel->Modules)
+        {
+            InitializeModule(Module);
+        }
+    }
+}
+
+void FParticleEmitterInstance::ClearParticlePayloads(FBaseParticle& Particle) const
+{
+    if (PayloadOffset < 0 || ParticleStride <= PayloadOffset)
+    {
+        return;
+    }
+
+    std::memset(
+        reinterpret_cast<uint8*>(&Particle) + PayloadOffset,
+        0,
+        static_cast<size_t>(ParticleStride - PayloadOffset));
+}
+
 bool FParticleEmitterInstance::UsesLocalSpace() const
 {
 	return CurrentRuntimeCache == nullptr ||
@@ -652,29 +1260,12 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 		return;
 	}
 
-	const float PreviousEmitterTime = EmitterTime;
-	EmitterTime += DeltaTime;
 	SecondsSinceCreation += DeltaTime;
 
-	const int32 BurstSpawnCount = CalculateBurstSpawnCount(PreviousEmitterTime, EmitterTime);
-	const int32 ActualBurstSpawnCount = SpawnParticles(BurstSpawnCount, DeltaTime);
-	if (ActualBurstSpawnCount > 0)
-	{
-		FParticleEventBurstData Event;
-		Event.SpawnCount = ActualBurstSpawnCount;
-		Event.Location = Owner.GetWorldLocation();
-		Owner.AddBurstEvent(Event);
-	}
-
-	SpawnParticles(CalculateSpawnRateCount(DeltaTime), DeltaTime);
-	UpdateParticles(DeltaTime);
-
-	for (UParticleModule* Module : CurrentRuntimeCache->UpdateModules)
-	{
-		if (Module != nullptr && Module->bEnabled)
-		{
-			const int32 Offset = CurrentRuntimeCache->GetParticlePayloadOffset(Module);
-			Module->Update(this, Offset, DeltaTime);
-		}
-	}
+	CompactPendingKilledParticles();
+	TickEmitterSpawn(DeltaTime);
+	AgeParticles(DeltaTime);
+	UpdateModules(DeltaTime);
+	IntegrateParticles(DeltaTime);
+	CompactPendingKilledParticles();
 }

@@ -12,5 +12,5 @@ public:
 	bool SupportsExtension(const FString& Extension) const;
 
 private:
-	void FixupParticleSystem(UParticleSystem* ParticleSystem) const;
+	void FixupParticleSystem(UParticleSystem* ParticleSystem, int32 AssetVersion) const;
 };

@@ -5,6 +5,7 @@
 #include "Particle/ParticleTypes.h"
 
 struct FParticleLODLevelRuntimeCache;
+struct FParticleBurstEntry;
 class IParticleEmitterInstanceOwner;
 class UParticleModule;
 class UParticleEmitter;
@@ -47,14 +48,29 @@ public:
 	float SpawnFraction = 0.0f;
 	float EmitterTime = 0.0f;
 	float SecondsSinceCreation = 0.0f;
-	bool bBurstFired = false;
+	int32 CompletedLoopCount = 0;
+	bool bEmitterSpawnComplete = false;
+	TArray<uint8> BurstFiredThisLoop;
 	FParticleRandomStream RandomStream;
 
 	virtual bool Init(UParticleEmitter* InTemplate, int32 InLODLevelIndex);
 	virtual void Reset();
 	virtual void Release();
 
+	/**
+	 * @brief 현재 emitter instance가 참조하는 LOD runtime cache를 교체합니다.
+	 *
+	 * @param InLODLevelIndex 전환 대상 LOD index
+	 *
+	 * @return LOD runtime cache 교체 성공 여부
+	 *
+	 * @details Cascade 스타일 LOD는 particle storage를 재할당하지 않습니다.
+	 *          이 함수는 CurrentLODLevelIndex, CurrentLODLevel, CurrentRuntimeCache만 교체합니다.
+	 */
+	bool SetCurrentLODIndex(int32 InLODLevelIndex);
+
 	int32 GetActiveParticleCount() const { return ActiveParticles; }
+	bool IsParticlePendingKill(const FBaseParticle& Particle) const;
 	FBaseParticle& GetParticleByActiveIndex(int32 ActiveIndex);
 	const FBaseParticle& GetParticleByActiveIndex(int32 ActiveIndex) const;
 	FBaseParticle& GetParticleByPhysicalIndex(int32 PhysicalIndex);
@@ -65,6 +81,16 @@ public:
 	const uint8* GetParticlePayload(const FBaseParticle& Particle, UParticleModule* Module) const;
 	uint8* GetModuleInstanceData(UParticleModule* Module);
 	const uint8* GetModuleInstanceData(UParticleModule* Module) const;
+
+	/**
+	 * @brief 기존 particle을 새 LOD instance에 복사한 뒤 새 LOD의 module payload를 초기화합니다.
+	 */
+	void InitializeModulePayloads(FBaseParticle& Particle);
+
+	/**
+	 * @brief particle의 모든 module payload를 초기화합니다.
+	 */
+    void ClearParticlePayloads(FBaseParticle& Particle) const;
 
 	bool UsesLocalSpace() const;
 	FVector TransformLocationToSimulationSpace(const FVector& WorldLocation) const;
@@ -77,11 +103,26 @@ public:
 
 private:
 	bool AllocateParticleData(int32 InMaxActiveParticles, int32 InParticleStride, int32 InInstancePayloadSize);
+	const UParticleModuleRequired* GetRequiredModule() const;
+	float GetEmitterDuration() const;
+	int32 GetTotalLoopCount() const;
+	bool IsInfiniteLooping() const;
+	bool CanSpawnEmitter() const;
+	void ResetLoopRuntimeState();
+	void ResetBurstFiredState();
+	int32 GetCurrentLODMaxParticles() const;
+	void CompleteEmitterLoop();
+	void TickEmitterSpawn(float DeltaTime);
+	void TickEmitterSpawnSegment(float SegmentStartTime, float SegmentEndTime);
 	int32 CalculateSpawnRateCount(float DeltaTime);
 	int32 CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime);
-	int32 SpawnParticles(int32 Count, float DeltaTime);
-	void UpdateParticles(float DeltaTime);
-	void KillParticle(int32 ActiveIndex);
+	int32 ResolveBurstSpawnAmount(const FParticleBurstEntry& Entry);
+	int32 SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime);
+	void MarkParticlePendingKill(int32 ActiveIndex);
+	void CompactPendingKilledParticles();
+	void AgeParticles(float DeltaTime);
+	void UpdateModules(float DeltaTime);
+	void IntegrateParticles(float DeltaTime);
 
 	IParticleEmitterInstanceOwner& Owner;
 };
