@@ -21,17 +21,19 @@ void FGarbageCollector::CollectGarbage()
 	// [Step 2] Root Set(절대 삭제되면 안 되는 시작점)들로부터 순회 시작
 	FReferenceCollector Collector;
 
-
 	// Root set
 	if (GEngine)
 	{
 		Collector.AddReferencedObject(GEngine);
 	}
+	//Manager 생성자가 통일성이 없어서 하드코딩해둠
 	FMeshManager::AddReferencedObjects(Collector);
 	FMaterialManager::Get().AddReferencedObjects(Collector);
 	UTexture2D::AddReferencedObjects(Collector);
 	FSkeletonManager::Get().AddReferencedObjects(Collector);
 	FParticleSystemManager::Get().AddReferencedObjects(Collector);
+
+	FGCReferenceRegistry::AddReferencedObjects(Collector);
 
 	while (UObject* Object = Collector.Pop())
 	{
@@ -46,7 +48,7 @@ void FGarbageCollector::CollectGarbage()
 		if (!Obj->IsGarbageMarked()) {
 			// 참조되지 않음 -> 삭제!
 			UE_LOG("[GC] Sweep candidate: %s", Obj->GetName().c_str());
-			//UObjectManager::Get().DestroyObject(Obj);
+			UObjectManager::Get().DestroyObject(Obj);
 		}
 	}
 }
