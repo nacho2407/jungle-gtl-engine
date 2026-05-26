@@ -66,7 +66,7 @@ private:
 	// 타입별 GPU 업로드 + FDrawCommand 생성
 	void SubmitEmitter(FEmitterRenderBuffer& Buffer,
 		ID3D11Device* Device, ID3D11DeviceContext* Context,
-		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
+		const FFrameContext& Frame, FDrawCommandList& OutCmdList, ERenderPass CurrentPass);
 
 	void SubmitSpriteEmitter(FEmitterRenderBuffer& Buffer,
 		ID3D11Device* Device, ID3D11DeviceContext* Context,
@@ -74,7 +74,7 @@ private:
 
 	void SubmitMeshEmitter(FEmitterRenderBuffer& Buffer,
 		ID3D11Device* Device, ID3D11DeviceContext* Context,
-		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
+		const FFrameContext& Frame, FDrawCommandList& OutCmdList, ERenderPass CurrentPass);
 
 	void SubmitBeamTrailEmitter(FEmitterRenderBuffer& Buffer,
 		ID3D11Device* Device, ID3D11DeviceContext* Context,
