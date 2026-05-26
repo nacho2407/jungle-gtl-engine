@@ -245,4 +245,14 @@ struct FDynamicRibbonEmitterData : FDynamicTrailsEmitterData
 
 	void BuildMeshData(const FFrameContext& Frame);
 	int32 FillVertexData(const FFrameContext& Frame) override;
+	int32 FillInterpolatedVertexData(
+		const FFrameContext& Frame,
+		const FBaseParticle* PackingParticle,
+		const FRibbonTypeDataPayload* TrailPayload,
+		const FBaseParticle* PrevParticle,
+		const FRibbonTypeDataPayload* PrevTrailPayload,
+		const FVector& WorkingUp,
+		const FVector& PrevWorkingUp,
+		float& TexU,
+		float TextureIncrement);
 };

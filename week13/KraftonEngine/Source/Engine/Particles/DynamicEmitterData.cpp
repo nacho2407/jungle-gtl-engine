@@ -1054,51 +1054,16 @@ int32 FDynamicRibbonEmitterData::FillVertexData(const FFrameContext& Frame)
 			const int32 InterpCount = TrailPayload->RenderingInterpCount;
 			if (InterpCount > 1 && PrevParticle && PrevTrailPayload)
 			{
-				const FVector CurrPosition = PackingParticle->Location;
-				const FVector CurrTangent = TrailPayload->Tangent;
-				const FVector CurrUp = WorkingUp;
-				const FLinearColor CurrColor = PackingParticle->Color;
-				const FVector PrevPosition = PrevParticle->Location;
-				const FVector PrevTangent = PrevTrailPayload->Tangent;
-				const FVector PrevUp = PrevWorkingUp;
-				const FLinearColor PrevColor = PrevParticle->Color;
-				const float PrevSize = PrevParticle->Size.X * Source.Scale.X;
-				const float InvCount = 1.0f / static_cast<float>(InterpCount);
-
-				for (int32 SpawnIndex = InterpCount - 1; SpawnIndex >= 0; --SpawnIndex)
-				{
-					const float TimeStep = InvCount * static_cast<float>(SpawnIndex);
-					const FVector InterpPos = CubicInterp(CurrPosition, CurrTangent, PrevPosition, PrevTangent, TimeStep);
-					const FVector InterpUp = FVector::Lerp(CurrUp, PrevUp, TimeStep).GetSafeNormal(1.0e-6f, CameraUp);
-					const FLinearColor InterpColor = LerpColor(CurrColor, PrevColor, TimeStep);
-					const float InterpSize = CurrSize + (PrevSize - CurrSize) * TimeStep;
-					const float CurrTileU = bTextureTileDistance
-						? (TrailPayload->TiledU + (PrevTrailPayload->TiledU - TrailPayload->TiledU) * TimeStep)
-						: TexU;
-
-					FParticleBeamTrailVertex Top;
-					Top.Position = InterpPos + InterpUp * InterpSize;
-					Top.OldPosition = Top.Position;
-					Top.RelativeTime = PackingParticle->RelativeTime;
-					Top.ParticleId = 0.0f;
-					Top.Size = FVector2(InterpSize, InterpSize);
-					Top.Rotation = PackingParticle->Rotation;
-					Top.SubImageIndex = 0.0f;
-					Top.Color = InterpColor;
-					Top.Tex_U = TexU;
-					Top.Tex_V = 0.0f;
-					Top.Tex_U2 = CurrTileU;
-					Top.Tex_V2 = 0.0f;
-
-					FParticleBeamTrailVertex Bottom = Top;
-					Bottom.Position = InterpPos - InterpUp * InterpSize;
-					Bottom.Tex_V = 1.0f;
-					Bottom.Tex_V2 = 1.0f;
-
-					Staging.Vertices.push_back(Top);
-					Staging.Vertices.push_back(Bottom);
-					TexU += TextureIncrement;
-				}
+				FillInterpolatedVertexData(
+					Frame,
+					PackingParticle,
+					TrailPayload,
+					PrevParticle,
+					PrevTrailPayload,
+					WorkingUp,
+					PrevWorkingUp,
+					TexU,
+					TextureIncrement);
 			}
 			else
 			{
@@ -1167,5 +1132,80 @@ int32 FDynamicRibbonEmitterData::FillVertexData(const FFrameContext& Frame)
 	// Jungle currently has no beam/ribbon dynamic-parameter vertex stream in the CPU staging adapter;
 	// wire ParticleSystemSceneProxy/BeamTrail.hlsl dynamic-parameter support here when that system exists.
 	(void)CurrDistance;
+	return static_cast<int32>(Staging.Vertices.size()) - InitialVertexCount;
+}
+
+int32 FDynamicRibbonEmitterData::FillInterpolatedVertexData(
+	const FFrameContext& Frame,
+	const FBaseParticle* PackingParticle,
+	const FRibbonTypeDataPayload* TrailPayload,
+	const FBaseParticle* PrevParticle,
+	const FRibbonTypeDataPayload* PrevTrailPayload,
+	const FVector& WorkingUp,
+	const FVector& PrevWorkingUp,
+	float& TexU,
+	float TextureIncrement)
+{
+	FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
+	const int32 InitialVertexCount = static_cast<int32>(Staging.Vertices.size());
+	if (!PackingParticle || !TrailPayload || !PrevParticle || !PrevTrailPayload)
+	{
+		return 0;
+	}
+
+	const int32 InterpCount = TrailPayload->RenderingInterpCount;
+	if (InterpCount <= 1)
+	{
+		return 0;
+	}
+
+	const FVector CameraUp = Frame.CameraUp.GetSafeNormal(1.0e-6f, FVector::ZAxisVector);
+	const FVector CurrPosition = PackingParticle->Location;
+	const FVector CurrTangent = TrailPayload->Tangent;
+	const FVector CurrUp = WorkingUp;
+	const FLinearColor CurrColor = PackingParticle->Color;
+	const FVector PrevPosition = PrevParticle->Location;
+	const FVector PrevTangent = PrevTrailPayload->Tangent;
+	const FVector PrevUp = PrevWorkingUp;
+	const FLinearColor PrevColor = PrevParticle->Color;
+	const float CurrSize = PackingParticle->Size.X * Source.Scale.X;
+	const float PrevSize = PrevParticle->Size.X * Source.Scale.X;
+	const float InvCount = 1.0f / static_cast<float>(InterpCount);
+
+	for (int32 SpawnIndex = InterpCount - 1; SpawnIndex >= 0; --SpawnIndex)
+	{
+		const float TimeStep = InvCount * static_cast<float>(SpawnIndex);
+		const FVector InterpPos = CubicInterp(CurrPosition, CurrTangent, PrevPosition, PrevTangent, TimeStep);
+		const FVector InterpUp = FVector::Lerp(CurrUp, PrevUp, TimeStep).GetSafeNormal(1.0e-6f, CameraUp);
+		const FLinearColor InterpColor = LerpColor(CurrColor, PrevColor, TimeStep);
+		const float InterpSize = CurrSize + (PrevSize - CurrSize) * TimeStep;
+		const float CurrTileU = bTextureTileDistance
+			? (TrailPayload->TiledU + (PrevTrailPayload->TiledU - TrailPayload->TiledU) * TimeStep)
+			: TexU;
+
+		FParticleBeamTrailVertex Top;
+		Top.Position = InterpPos + InterpUp * InterpSize;
+		Top.OldPosition = Top.Position;
+		Top.RelativeTime = PackingParticle->RelativeTime;
+		Top.ParticleId = 0.0f;
+		Top.Size = FVector2(InterpSize, InterpSize);
+		Top.Rotation = PackingParticle->Rotation;
+		Top.SubImageIndex = 0.0f;
+		Top.Color = InterpColor;
+		Top.Tex_U = TexU;
+		Top.Tex_V = 0.0f;
+		Top.Tex_U2 = CurrTileU;
+		Top.Tex_V2 = 0.0f;
+
+		FParticleBeamTrailVertex Bottom = Top;
+		Bottom.Position = InterpPos - InterpUp * InterpSize;
+		Bottom.Tex_V = 1.0f;
+		Bottom.Tex_V2 = 1.0f;
+
+		Staging.Vertices.push_back(Top);
+		Staging.Vertices.push_back(Bottom);
+		TexU += TextureIncrement;
+	}
+
 	return static_cast<int32>(Staging.Vertices.size()) - InitialVertexCount;
 }
