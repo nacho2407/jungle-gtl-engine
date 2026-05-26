@@ -32,12 +32,14 @@ void UParticleModuleColorOverLife::Spawn(const FSpawnContext& Context)
 
 	FVector Color = ColorOverLife.GetValue(0.0f);
 	float Alpha = AlphaOverLife.GetValue(0.0f);
-
-	Particle.BaseColor.R = Color.R;
-	Particle.BaseColor.G = Color.G;
-	Particle.BaseColor.B = Color.B;
-	Particle.BaseColor.A = Alpha;
-	Particle.Color = Particle.BaseColor;
+	if (bClampAlpha)
+	{
+		Alpha = FMath::Clamp(Alpha, 0.0f, 1.0f);
+	}
+	Particle.Color.R = Particle.BaseColor.R * Color.R;
+	Particle.Color.G = Particle.BaseColor.G * Color.G;
+	Particle.Color.B = Particle.BaseColor.B * Color.B;
+	Particle.Color.A = Particle.BaseColor.A * Alpha;
 }
 
 void UParticleModuleColorOverLife::Update(const FUpdateContext& Context)

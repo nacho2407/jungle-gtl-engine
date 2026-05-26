@@ -1,5 +1,7 @@
 #include "Particles/Material/ParticleModuleMeshMaterial.h"
 
+#include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 #include "Serialization/Archive.h"
 
 UParticleModuleMeshMaterial::UParticleModuleMeshMaterial()
@@ -10,19 +12,52 @@ UParticleModuleMeshMaterial::UParticleModuleMeshMaterial()
 
 void UParticleModuleMeshMaterial::ResolveMaterials()
 {
-	// UE original responsibility: expose per-section material overrides for mesh particles.
-	// Missing Jungle foundation: material slot resolution by static-mesh section.
-	// System to connect later: StaticMesh section material lookup plus ParticleSystemComponent
-	// material override array.
+	MeshMaterials.clear();
+	MeshMaterials.resize(MeshMaterialSlots.size(), nullptr);
+	for (int32 Index = 0; Index < static_cast<int32>(MeshMaterialSlots.size()); ++Index)
+	{
+		const FString Path = MeshMaterialSlots[Index].ToString();
+		if (Path.empty() || Path == "None")
+		{
+			MeshMaterialSlots[Index] = "None";
+			MeshMaterials[Index] = nullptr;
+			continue;
+		}
+
+		UMaterial* Material = FMaterialManager::Get().GetOrCreateMaterial(Path);
+		if (!Material)
+		{
+			MeshMaterialSlots[Index] = "None";
+		}
+		MeshMaterials[Index] = Material;
+	}
 }
 
 void UParticleModuleMeshMaterial::Serialize(FArchive& Ar)
 {
 	UParticleModule::Serialize(Ar);
-	// UE original responsibility: serialize mesh material override object references.
-	// Missing Jungle foundation: stable material soft-object array serializer for particle
-	// modules.
-	// System to connect later: FSoftObjectPtr array save/load and UMaterial resolve.
+
+	int32 Version = 0;
+	Ar << Version;
+
+	uint32 SlotCount = Ar.IsSaving() ? static_cast<uint32>(MeshMaterialSlots.size()) : 0;
+	Ar << SlotCount;
+	if (Ar.IsLoading())
+	{
+		MeshMaterialSlots.clear();
+		MeshMaterialSlots.resize(SlotCount);
+	}
+
+	for (uint32 SlotIdx = 0; SlotIdx < SlotCount; ++SlotIdx)
+	{
+		FString SlotPath = Ar.IsSaving() ? MeshMaterialSlots[SlotIdx].ToString() : FString("None");
+		Ar << SlotPath;
+		if (Ar.IsLoading())
+		{
+			MeshMaterialSlots[SlotIdx] = SlotPath;
+		}
+	}
+
 	if (Ar.IsLoading())
 	{
 		ResolveMaterials();

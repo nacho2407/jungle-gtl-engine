@@ -7,6 +7,10 @@ void UParticleModuleColor::Spawn(const FSpawnContext& Context)
 	SPAWN_INIT;
 	FVector Color = StartColor.GetValue(Context.Owner.EmitterTime);
 	float Alpha = StartAlpha.GetValue(Context.Owner.EmitterTime);
+	if (bClampAlpha)
+	{
+		Alpha = FMath::Clamp(Alpha, 0.0f, 1.0f);
+	}
 
 	Particle.BaseColor.R = Color.R;
 	Particle.BaseColor.G = Color.G;

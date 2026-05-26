@@ -37,6 +37,8 @@ struct FDynamicSpriteEmitterReplayDataBase : FDynamicEmitterReplayDataBase
 	int32 LightDataOffset            = 0;
 	int32 OrbitModuleOffset          = 0;
 	int32 CameraPayloadOffset        = 0;
+	int32 SubImages_Horizontal       = 1;
+	int32 SubImages_Vertical         = 1;
 
 	bool    bUseLocalSpace = false;
 	bool    bLockAxis      = false;
@@ -47,14 +49,15 @@ struct FDynamicMeshEmitterReplayData : FDynamicSpriteEmitterReplayDataBase
 {
 	int32 SubUVInterpMethod = 0;
 	int32 SubUVDataOffset = 0;
-	int32 SubImages_Horizontal = 0;
-	int32 SubImages_Vertical = 0;
 	bool bScaleUV = false;
 	int32 MeshRotationOffset  = 0;
 	int32 MeshMotionBlurOffset = 0;
 	uint8 MeshAlignment = 0;
 	bool bMeshRotationActive = false;
 	FVector LockedAxis = FVector::XAxisVector;
+	TArray<UMaterial*> SectionMaterials;
+	TArray<uint32> SectionFirstIndices;
+	TArray<uint32> SectionIndexCounts;
 };
 
 struct FDynamicEmitterDataBase

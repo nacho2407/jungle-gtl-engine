@@ -10,6 +10,9 @@ UParticleModuleSpawnPerUnit::UParticleModuleSpawnPerUnit()
 {
 	bSpawnModule = false;
 	bUpdateModule = false;
+	bProcessSpawnRate = true;
+	bProcessBurstList = true;
+	SpawnPerUnit = 1.0f;
 	MovementTolerance = 0.1f;
 }
 
@@ -29,13 +32,18 @@ void UParticleModuleSpawnPerUnit::Serialize(FArchive& Ar)
 {
 	UParticleModuleSpawnBase::Serialize(Ar);
 	Ar << UnitScalar << MovementTolerance << SpawnPerUnit << MaxFrameDistance;
+	bool ProcessSpawnRate = bProcessSpawnRate;
+	bool ProcessBurstList = bProcessBurstList;
 	bool IgnoreSpawnRateWhenMoving = bIgnoreSpawnRateWhenMoving;
 	bool IgnoreMovementAlongX = bIgnoreMovementAlongX;
 	bool IgnoreMovementAlongY = bIgnoreMovementAlongY;
 	bool IgnoreMovementAlongZ = bIgnoreMovementAlongZ;
+	Ar << ProcessSpawnRate << ProcessBurstList;
 	Ar << IgnoreSpawnRateWhenMoving << IgnoreMovementAlongX << IgnoreMovementAlongY << IgnoreMovementAlongZ;
 	if (Ar.IsLoading())
 	{
+		bProcessSpawnRate = ProcessSpawnRate;
+		bProcessBurstList = ProcessBurstList;
 		bIgnoreSpawnRateWhenMoving = IgnoreSpawnRateWhenMoving;
 		bIgnoreMovementAlongX = IgnoreMovementAlongX;
 		bIgnoreMovementAlongY = IgnoreMovementAlongY;

@@ -1,9 +1,26 @@
 ﻿#include "ParticleModule.h"
 
+#include "Component/Primitive/ParticleSystemComponent.h"
+#include "Particles/ParticleEmitterInstances.h"
 #include "Serialization/Archive.h"
 
-const FTransform& UParticleModule::FContext::GetTransform() const
+UParticleModule::UParticleModule()
 {
+	bEnabled = true;
+	bSpawnModule = false;
+	bUpdateModule = false;
+	bFinalUpdateModule = false;
+}
+
+FTransform UParticleModule::FContext::GetTransform() const
+{
+	if (Owner.Component)
+	{
+		return FTransform(
+			Owner.Component->GetWorldLocation(),
+			Owner.Component->GetWorldRotation(),
+			Owner.Component->GetWorldScale());
+	}
 	return FTransform();
 }
 
