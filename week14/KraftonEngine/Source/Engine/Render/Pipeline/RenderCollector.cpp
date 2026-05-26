@@ -9,6 +9,7 @@
 #include "Debug/DebugDrawQueue.h"
 #include "Render/Types/LODContext.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Proxy/ParticleSystemSceneProxy.h"
 #include "Render/Scene/FScene.h"
 
 #include <Collision/Octree/Octree.h>
@@ -180,6 +181,12 @@ void FRenderCollector::FilterVisibleProxies(const FFrameContext& Frame, FScene& 
 		if (Occlusion && !Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull) && Occlusion->IsOccluded(Proxy))
 		{
 			continue;
+		}
+
+		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::ParticleSystem))
+		{
+			const FParticleSystemSceneProxy* ParticleProxy = static_cast<const FParticleSystemSceneProxy*>(Proxy);
+			Output.ParticleStats.Accumulate(ParticleProxy->GetStats());
 		}
 
 		Output.RenderableProxies.push_back(Proxy);

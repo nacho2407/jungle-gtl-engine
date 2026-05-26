@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Core/Types/CoreTypes.h"
 #include "Core/Logging/Log.h"
 #include <cstdarg>
@@ -106,6 +106,7 @@ private:
 	void HandleStatMemory(const TArray<FString>& Args);
 	void HandleStatShadow(const TArray<FString>& Args);
 	void HandleStatSkinning(const TArray<FString>& Args);
+	void HandleStatParticles(const TArray<FString>& Args);
 	void HandleStatNone(const TArray<FString>& Args);
 	void HandleCauseCrash(const TArray<FString>& Args);
 	void HandleCSMResolution(const TArray<FString>& Args);

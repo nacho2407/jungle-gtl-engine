@@ -45,6 +45,8 @@ void FParticleSystemSceneProxy::UpdateMaterial()
 
 void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 {
+	CachedStats.Reset();
+
 	if (!bVisible) return;
 
 	ResetDynamicGeometry();
@@ -52,8 +54,18 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 	UParticleSystemComponent* Component = GetParticleSystemComponent();
 	if (!Component) return;
 
+	CachedStats.ParticleSystemCount = Component->GetTemplate() ? 1 : 0;
+
 	BuildDynamicEmitters(Frame, Component->GetEmitterInstances());
 	FinalizeDynamicGeometry();
+
+	CachedStats.DrawBatches = static_cast<int32>(DrawBatches.size());
+	CachedStats.MeshInstances = static_cast<int32>(MeshInstances.size());
+
+	for (const FParticleDrawBatch& Batch : DrawBatches)
+	{
+		CachedStats.DrawSections += static_cast<int32>(Batch.Sections.size());
+	}
 }
 
 void FParticleSystemSceneProxy::ResetDynamicGeometry()
@@ -70,8 +82,37 @@ void FParticleSystemSceneProxy::BuildDynamicEmitters(const FFrameContext& Frame,
 {
 	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(Instances.size()); ++EmitterIndex)
 	{
+		++CachedStats.EmitterCount;
+
 		FParticleEmitterInstance* Instance = Instances[EmitterIndex];
 		if (!Instance) continue;
+
+		if (Instance->IsActive())
+		{
+			++CachedStats.ActiveEmitterCount;
+		}
+
+		CachedStats.ActiveParticles += Instance->GetActiveParticleCount();
+		CachedStats.MaxParticles += Instance->GetMaxParticleCount();
+		CachedStats.ParticleMemoryBytes += Instance->GetParticleDataContainer().MemBlockSize;
+
+		switch (GetEmitterRenderType(Instance))
+		{
+			case EParticleRenderType::Sprite:
+				++CachedStats.SpriteEmitters;
+				break;
+			case EParticleRenderType::Ribbon:
+				++CachedStats.RibbonEmitters;
+				break;
+			case EParticleRenderType::Beam:
+				++CachedStats.BeamEmitters;
+				break;
+			case EParticleRenderType::Mesh:
+				++CachedStats.MeshEmitters;
+				break;
+			default:
+				break;
+		}
 
 		const UParticleLODLevel* CurrentLODLevel = Instance->GetCurrentLODLevel();
 		if (!CurrentLODLevel || !CurrentLODLevel->IsEnabled()) continue;

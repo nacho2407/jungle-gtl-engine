@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 #include "Render/Types/FrameContext.h"
 #include "Engine/Collision/Octree/Octree.h"
+#include "Profiling/Stats/ParticleStats.h"
 
 class AActor;
 class UWorld;
@@ -12,6 +13,8 @@ struct FCollectOutput
 	TArray<FPrimitiveSceneProxy*> FrustumVisibleProxies;  // GPUOcclusion용
 	TArray<FPrimitiveSceneProxy*> RenderableProxies;       // 최종 렌더 대상
 	TSet<FPrimitiveSceneProxy*>   VisibleProxySet;         // Decal receiver lookup
+
+	FParticleViewportStats ParticleStats;
 };
 
 class FRenderCollector

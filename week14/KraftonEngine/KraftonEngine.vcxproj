@@ -1037,6 +1037,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Profiling\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Profiling\StartupProfiler.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats\MemoryStats.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\ParticleStats.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats\ShadowStats.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Time\PlatformTime.h" />
