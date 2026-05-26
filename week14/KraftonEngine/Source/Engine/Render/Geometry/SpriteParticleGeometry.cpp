@@ -21,6 +21,12 @@ void FSpriteParticleGeometry::Clear()
 
 void FSpriteParticleGeometry::AddParticleQuad(const FBaseParticle& Particle, const FVector& CameraRight, const FVector& CameraUp)
 {
+	AddParticleQuad(Particle, CameraRight, CameraUp, { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 });
+}
+
+void FSpriteParticleGeometry::AddParticleQuad(const FBaseParticle& Particle, const FVector& CameraRight, const FVector& CameraUp,
+	const FVector2& TopLeftUV, const FVector2& TopRightUV, const FVector2& BottomLeftUV, const FVector2& BottomRightUV)
+{
 	const FVector Center = Particle.Position;
 	const FVector HalfRight = CameraRight * (Particle.Size.X * 0.5f);
 	const FVector HalfUp = CameraUp * (Particle.Size.Y * 0.5f);
@@ -30,7 +36,7 @@ void FSpriteParticleGeometry::AddParticleQuad(const FBaseParticle& Particle, con
 	const FVector BottomLeft = Center - HalfRight - HalfUp;
 	const FVector BottomRight = Center + HalfRight - HalfUp;
 
-	AddQuad(TopLeft, TopRight, BottomLeft, BottomRight, Particle.Color, { 0, 0 }, { 1, 0 }, { 0, 1 }, { 1, 1 });
+	AddQuad(TopLeft, TopRight, BottomLeft, BottomRight, Particle.Color, TopLeftUV, TopRightUV, BottomLeftUV, BottomRightUV);
 }
 
 void FSpriteParticleGeometry::AddQuad(const FVector& TopLeft, const FVector& TopRight, const FVector& BottomLeft, const FVector& BottomRight,

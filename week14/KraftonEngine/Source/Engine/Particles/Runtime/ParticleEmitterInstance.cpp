@@ -173,6 +173,7 @@ void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle)
 	Particle.Age = 0.0f;
 	Particle.RelativeTime = 0.0f;
 	Particle.OneOverMaxLifetime = DefaultLifetime > 0.0f ? 1.0f / DefaultLifetime : 1.0f;
+	Particle.RandomSeed = FDistributionSampling::RandomSeed();
 	Particle.FrameIndex = ParticleCounter;
 	Particle.bAlive = true;
 

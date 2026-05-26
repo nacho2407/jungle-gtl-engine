@@ -167,10 +167,10 @@ public:
 		}
 
 		FParticleMeshPayload* Payload = reinterpret_cast<FParticleMeshPayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
-		Payload->InitialMeshScale = StartMeshScale.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector());
+		Payload->InitialMeshScale = StartMeshScale.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "StartMeshScale"));
 		Payload->MeshScale = Payload->InitialMeshScale;
-		Payload->MeshRotation = StartMeshRotation.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector());
-		Payload->MeshRotationRate = MeshRotationRate.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector());
+		Payload->MeshRotation = StartMeshRotation.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "StartMeshRotation"));
+		Payload->MeshRotationRate = MeshRotationRate.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "MeshRotationRate"));
 	}
 
 	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
@@ -263,10 +263,10 @@ public:
 		FRibbonParticlePayload* Payload = reinterpret_cast<FRibbonParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
 		Payload->SourcePosition = Particle.Position;
 		Payload->PreviousPosition = Particle.Position;
-		Payload->InitialWidth = StartWidth.GetValue(SpawnTime, FDistributionSampling::RandomUnit());
-		Payload->EndWidth = EndWidth.GetValue(SpawnTime, FDistributionSampling::RandomUnit());
+		Payload->InitialWidth = StartWidth.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "StartWidth"));
+		Payload->EndWidth = EndWidth.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "EndWidth"));
 		Payload->Width = Payload->InitialWidth;
-		Payload->Twist = StartTwist.GetValue(SpawnTime, FDistributionSampling::RandomUnit());
+		Payload->Twist = StartTwist.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "StartTwist"));
 		Payload->RibbonId = 0;
 		Payload->SourceParticleIndex = static_cast<uint16>(Particle.FrameIndex & 0xffff);
 		Payload->NextParticleIndex = 0xffff;
@@ -369,15 +369,15 @@ public:
 		}
 
 		FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
-		Payload->SourcePoint = Particle.Position + SourcePoint.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector());
-		Payload->TargetPoint = Particle.Position + TargetPoint.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector());
-		Payload->SourceTangent = SourceTangent.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector());
-		Payload->TargetTangent = TargetTangent.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector());
-		Payload->SourceStrength = SourceStrength.GetValue(SpawnTime, FDistributionSampling::RandomUnit());
-		Payload->TargetStrength = TargetStrength.GetValue(SpawnTime, FDistributionSampling::RandomUnit());
+		Payload->SourcePoint = Particle.Position + SourcePoint.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "SourcePoint"));
+		Payload->TargetPoint = Particle.Position + TargetPoint.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "TargetPoint"));
+		Payload->SourceTangent = SourceTangent.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "SourceTangent"));
+		Payload->TargetTangent = TargetTangent.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "TargetTangent"));
+		Payload->SourceStrength = SourceStrength.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "SourceStrength"));
+		Payload->TargetStrength = TargetStrength.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "TargetStrength"));
 		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
 		Payload->BeamIndex = static_cast<uint16>(MaxBeamCount > 0 ? Particle.FrameIndex % static_cast<uint32>(MaxBeamCount) : 0);
-		Payload->Width = BeamWidth.GetValue(SpawnTime, FDistributionSampling::RandomUnit());
+		Payload->Width = BeamWidth.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamWidth"));
 	}
 
 	EParticleRenderType GetRenderType() const override

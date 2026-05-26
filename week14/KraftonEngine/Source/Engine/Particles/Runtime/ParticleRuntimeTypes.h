@@ -14,12 +14,14 @@ struct FBaseParticle
 	float RotationRate = 0.0f;
 
 	FVector4 Color = { 1, 1, 1, 1 };
+	float SubImageIndex = 0.0f;
 
 	float RelativeTime = 0.0f;
 	float OneOverMaxLifetime = 1.0f;
 	float Lifetime = 1.0f;
 	float Age = 0.0f;
 
+	uint32 RandomSeed = 0;
 	uint32 FrameIndex = 0;
 	bool bAlive = false;
 };
