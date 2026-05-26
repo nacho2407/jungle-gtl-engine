@@ -744,6 +744,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Object\Ptr\WeakObjectPtr.h" />
     <ClInclude Include="Source\Engine\Object\ReferenceCollector.h" />
     <ClInclude Include="Source\Engine\Object\GarbageCollector.h" />
     <ClInclude Include="Source\Engine\Serialization\GCArchive.h" />

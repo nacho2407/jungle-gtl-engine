@@ -18,6 +18,12 @@ class FReferenceCollector;
 class UObject;
 inline bool IsValid(const UObject* Object);
 
+struct FObjectSlot
+{
+	UObject* Object = nullptr;
+	uint32 SerialNumber = 0;
+};
+
 UCLASS()
 class UObject
 {
@@ -29,6 +35,7 @@ public:
 
 	uint32 GetUUID() const { return UUID; }
 	uint32 GetInternalIndex() const { return InternalIndex; }
+	uint32 GetSerialNumber() const { return SerialNumber; }
 	void SetUUID(uint32 InUUID) { UUID = InUUID; }
 	void SetInternalIndex(uint32 InIndex) { InternalIndex = InIndex; }
 
@@ -100,25 +107,6 @@ public:
 	static UClass* StaticClass() { return &StaticClassInstance; }
 
 	// GC 관련
-	virtual void AddReferencedObjects(FReferenceCollector& Collector);
-
-	bool HasAnyFlags(uint32 Flags) const { return (ObjectFlags & Flags) != 0; }
-	void SetFlags(uint32 Flags) { ObjectFlags |= Flags; }
-	void ClearFlags(uint32 Flags) { ObjectFlags &= ~Flags; }
-
-	bool IsGarbageMarked() const { return HasAnyFlags(EObjectFlags::RF_GCMarked); }
-	void SetGarbageMarked(bool bMarked)
-	{
-		if (bMarked) SetFlags(EObjectFlags::RF_GCMarked);
-		else ClearFlags(RF_GCMarked);
-	}
-
-	bool IsPendingKill() const { return HasAnyFlags(EObjectFlags::RF_PendingKill); }
-	void MarkPendingKill() { SetFlags(EObjectFlags::RF_PendingKill); }
-
-protected:
-	FName ObjectName;
-
 	enum EObjectFlags : uint32
 	{
 		RF_None = 0,
@@ -127,15 +115,36 @@ protected:
 		RF_PendingKill = 1 << 2,
 		RF_Transient = 1 << 3,
 	};
-	bool bIsReachable = false; // GC mark bit.
-	uint32 ObjectFlags = EObjectFlags::RF_None;
+
+	virtual void AddReferencedObjects(FReferenceCollector& Collector);
+
+	bool HasAnyFlags(uint32 Flags) const { return (ObjectFlags & Flags) != 0; }
+	void SetFlags(uint32 Flags) { ObjectFlags |= Flags; }
+	void ClearFlags(uint32 Flags) { ObjectFlags &= ~Flags; }
+
+	bool IsGarbageMarked() const { return HasAnyFlags(RF_GCMarked); }
+	void SetGarbageMarked(bool bMarked)
+	{
+		if (bMarked) SetFlags(EObjectFlags::RF_GCMarked);
+		else ClearFlags(RF_GCMarked);
+	}
+
+	bool IsPendingKill() const { return HasAnyFlags(RF_PendingKill); }
+	void MarkPendingKill() { SetFlags(RF_PendingKill); }
+
+protected:
+	FName ObjectName;
+	uint32 ObjectFlags = RF_None;
 
 private:
 	uint32 UUID;
-	uint32 InternalIndex;
 	UObject* Outer = nullptr;
+	uint32 InternalIndex = 0;
+	uint32 SerialNumber = 0;
 };
 
+extern TArray<FObjectSlot> GUObjectSlots;
+extern TArray<uint32> GFreeObjectIndices;
 extern TArray<UObject*> GUObjectArray;
 // 살아있는 UObject 포인터를 O(1) 로 조회하기 위한 set. UObject ctor/dtor 가 자동 유지.
 // dangling pointer 도 hash 만 계산하므로(deref 없음) 안전.
@@ -186,12 +195,18 @@ public:
 private:
 	TMap<FString, uint32> NameCounters;
 
+
+
 public:
 	UObject* FindByUUID(uint32 InUUID)
 	{
 		for (auto* Obj : GUObjectArray)
+		{
 			if (Obj && Obj->GetUUID() == InUUID)
+			{
 				return Obj;
+			}
+		}
 		return nullptr;
 	}
 

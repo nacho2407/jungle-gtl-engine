@@ -4477,6 +4477,7 @@
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleCollisionEvent.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats\ParticleStats.h" />
+    <ClInclude Include="Source\Engine\Object\Ptr\WeakObjectPtr.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
