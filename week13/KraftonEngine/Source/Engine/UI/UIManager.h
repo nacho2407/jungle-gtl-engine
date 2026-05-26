@@ -82,7 +82,7 @@ private:
 	const FPassContext* Ctx = nullptr;
 };
 
-class UUIManager : public TSingleton<UUIManager>, public FGCObject
+class UUIManager : public TSingleton<UUIManager>
 {
 	friend class TSingleton<UUIManager>;
 
@@ -106,7 +106,7 @@ public:
 	// raw mouse / clip 을 풀어야 한다 — GameViewportClient::ProcessInput 이 폴링해서 사용.
 	bool AnyViewportWidgetWantsMouse() const;
 
-    void AddReferencedObjects(FReferenceCollector& Collector) override;
+    void AddReferencedObjects(FReferenceCollector& Collector);
 
 private:
 	UUIManager() = default;

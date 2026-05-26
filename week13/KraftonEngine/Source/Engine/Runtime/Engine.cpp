@@ -153,7 +153,10 @@ void UEngine::AddReferencedObjects(FReferenceCollector& Collector)
     {
         Collector.AddReferencedObject(Ctx.World, "UEngine.WorldList.World");
     }
+
     Collector.AddReferencedObject(GameViewportClient, "UEngine.GameViewportClient");
+
+    UUIManager::Get().AddReferencedObjects(Collector);
 }
 
 void UEngine::Render(float DeltaTime)

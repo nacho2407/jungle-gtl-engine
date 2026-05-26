@@ -47,6 +47,7 @@ namespace
 	class FMorphCurveEditObjectRoot : public FGCObject
 	{
 	public:
+		const char* GetReferencerName() const override { return "FMorphCurveEditObjectRoot"; }
 		void AddReferencedObjects(FReferenceCollector& Collector) override
 		{
 			Collector.AddReferencedObject(Object);

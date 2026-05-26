@@ -13,6 +13,20 @@ class UClass;
 struct FPropertyValue;
 struct FProperty;
 struct FFunction;
+
+enum class EGCReferenceTokenType : uint8
+{
+	Object,
+	Array,
+	Struct,
+	Custom,
+};
+
+struct FGCReferenceToken
+{
+	const FProperty* Property = nullptr;
+	EGCReferenceTokenType Type = EGCReferenceTokenType::Custom;
+};
 struct FNumericProperty;
 struct FBoolProperty;
 struct FStringProperty;
@@ -253,6 +267,8 @@ struct FProperty
 	}
 
 	virtual EPropertyType GetType() const = 0;
+	virtual bool ContainsObjectReference() const { return false; }
+	virtual EGCReferenceTokenType GetReferenceTokenType() const { return EGCReferenceTokenType::Custom; }
 	virtual float GetMin() const { return 0.0f; }
 	virtual float GetMax() const { return 0.0f; }
 	virtual float GetSpeed() const { return 0.1f; }

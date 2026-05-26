@@ -33,6 +33,7 @@ namespace
     class FMeshManagerCacheRoot final : public FGCObject
     {
     public:
+        const char* GetReferencerName() const override { return "FMeshManagerCacheRoot"; }
         void AddReferencedObjects(FReferenceCollector& Collector) override
         {
             for (auto& Pair : FMeshManager::StaticMeshCache)

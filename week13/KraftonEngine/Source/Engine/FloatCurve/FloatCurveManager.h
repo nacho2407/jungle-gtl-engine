@@ -17,6 +17,7 @@ public:
 	bool Save(UFloatCurveAsset* Asset);
 
 
+	const char* GetReferencerName() const override { return "FFloatCurveManager"; }
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	void ClearCache();
 private:

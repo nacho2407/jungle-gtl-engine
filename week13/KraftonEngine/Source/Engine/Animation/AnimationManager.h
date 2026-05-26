@@ -69,6 +69,7 @@ public:
     const TArray<FAssetListItem>& GetAvailableMontageFiles() const { return AvailableMontageFiles; }
 
 
+    const char* GetReferencerName() const override { return "FAnimationManager"; }
     void AddReferencedObjects(FReferenceCollector& Collector) override;
     void ClearCache();
 private:

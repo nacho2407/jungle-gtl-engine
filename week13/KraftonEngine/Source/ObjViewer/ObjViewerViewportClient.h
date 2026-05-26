@@ -15,6 +15,7 @@ public:
 	void Initialize(FWindowsWindow* InWindow);
 	void Release();
 
+	const char* GetReferencerName() const override { return "FObjViewerViewportClient"; }
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	// Camera lifecycle

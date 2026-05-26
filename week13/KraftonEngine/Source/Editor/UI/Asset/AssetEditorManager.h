@@ -36,6 +36,7 @@ public:
 
 	bool IsMouseOverAnyEditorViewport() const;
 
+	const char* GetReferencerName() const override { return "FAssetEditorManager"; }
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	void RemoveClosedEditors();

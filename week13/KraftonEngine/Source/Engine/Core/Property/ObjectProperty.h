@@ -70,6 +70,8 @@ struct FObjectProperty : FObjectPropertyBase
 	}
 
 	EPropertyType GetType() const override { return EPropertyType::ObjectRef; }
+	bool ContainsObjectReference() const override { return true; }
+	EGCReferenceTokenType GetReferenceTokenType() const override { return EGCReferenceTokenType::Object; }
 	const FObjectProperty* AsObjectProperty() const override { return this; }
 	UObject* GetObjectValue(void* Container) const;
 	void SetObjectValue(void* Container, UObject* Object) const;

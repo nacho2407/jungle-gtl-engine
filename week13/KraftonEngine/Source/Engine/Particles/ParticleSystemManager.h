@@ -26,6 +26,7 @@ public:
     }
 
 
+    const char* GetReferencerName() const override { return "FParticleSystemManager"; }
     void AddReferencedObjects(FReferenceCollector& Collector) override;
     void ClearCache();
 private:

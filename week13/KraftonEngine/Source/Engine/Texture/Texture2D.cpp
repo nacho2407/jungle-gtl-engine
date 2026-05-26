@@ -19,6 +19,7 @@ std::map<FString, UTexture2D*> UTexture2D::TextureCache;
 class FTexture2DCacheRoot final : public FGCObject
 {
 public:
+    const char* GetReferencerName() const override { return "FTexture2DCacheRoot"; }
     void AddReferencedObjects(FReferenceCollector& Collector) override
     {
         for (auto& Pair : UTexture2D::TextureCache)

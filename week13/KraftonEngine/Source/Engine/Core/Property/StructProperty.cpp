@@ -1,7 +1,13 @@
-﻿#include "StructProperty.h"
+#include "StructProperty.h"
 
 #include "Serialization/Archive.h"
 #include "Object/Reflection/UStruct.h"
+
+
+bool FStructProperty::ContainsObjectReference() const
+{
+	return StructType && StructType->HasObjectReferences();
+}
 
 void FStructProperty::SerializeValue(void* ValuePtr, FArchive& Ar, const FPropertySerializeContext& Context) const
 {
@@ -36,11 +42,15 @@ void FStructProperty::AddReferencedObjects(void* ValuePtr, FReferenceCollector& 
         return;
     }
 
-    TArray<const FProperty*> Children;
-    StructType->GetPropertyRefs(Children);
-    for (const FProperty* Child : Children)
+    const TArray<FGCReferenceToken>& Tokens = StructType->GetReferenceTokenStream();
+    for (const FGCReferenceToken& Token : Tokens)
     {
-        if (!Child) continue;
+        const FProperty* Child = Token.Property;
+        if (!Child)
+        {
+            continue;
+        }
+
         FScopedReferenceName ChildReferenceScope(Collector, Child->Name);
         Child->AddReferencedObjects(Child->GetValuePtrFor(ValuePtr), Collector);
     }

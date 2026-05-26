@@ -1,6 +1,7 @@
 #include "Particles/Material/ParticleModuleMeshMaterial.h"
 #include "Object/GarbageCollection.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 #include "Serialization/Archive.h"
 
 UParticleModuleMeshMaterial::UParticleModuleMeshMaterial()

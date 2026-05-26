@@ -44,6 +44,7 @@ public:
 
 	void SetGizmoEnabled(bool bEnabled);
 	void SetWorld(UWorld* InWorld);
+	const char* GetReferencerName() const override { return "FSelectionManager"; }
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:

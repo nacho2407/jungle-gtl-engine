@@ -19,6 +19,7 @@ public:
     void Initialize(ID3D11Device* Device, uint32 Width, uint32 Height);
     void Release();
 
+    const char* GetReferencerName() const override { return "FParticleSystemEditorViewportClient"; }
     void AddReferencedObjects(FReferenceCollector& Collector) override;
 
     void ResetCameraToPreviewBounds();

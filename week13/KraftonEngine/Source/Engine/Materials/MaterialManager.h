@@ -81,6 +81,7 @@ public:
 
 	void Release();
 
+	const char* GetReferencerName() const override { return "FMaterialManager"; }
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
 	// 셰이더로 Template 생성 또는 캐시에서 반환

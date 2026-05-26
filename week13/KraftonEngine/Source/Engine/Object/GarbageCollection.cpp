@@ -172,9 +172,19 @@ void FGarbageCollector::MarkRoots()
 
     for (FGCObject* Root : ExternalRoots)
     {
-        if (Root)
+        if (!Root)
         {
-            Root->AddReferencedObjects(Collector);
+            continue;
+        }
+
+        FReferenceCollector RootCollector;
+        RootCollector.CurrentReferenceName = Root->GetReferencerName();
+        Root->AddReferencedObjects(RootCollector);
+
+        while (!RootCollector.Stack.empty())
+        {
+            Collector.Stack.push_back(RootCollector.Stack.back());
+            RootCollector.Stack.pop_back();
         }
     }
 

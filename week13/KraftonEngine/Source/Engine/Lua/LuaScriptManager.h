@@ -3,6 +3,7 @@
 #include "Core/Types/CoreTypes.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include "Input/InputSystem.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 #include <sol/sol.hpp>
 #include <mutex>
 
@@ -60,7 +61,7 @@ private:
 	static std::unique_ptr<sol::state> Lua;
 	static sol::protected_function OnEscapePressedCallback;
 	static std::mutex ComponentMutex;
-	static TArray<ULuaScriptComponent*> RegisteredComponents;
-	static TArray<ULuaAnimInstance*>    RegisteredAnimInstances;
+	static TArray<TWeakObjectPtr<ULuaScriptComponent>> RegisteredComponents;
+	static TArray<TWeakObjectPtr<ULuaAnimInstance>>    RegisteredAnimInstances;
 	static FSubscriptionID WatchSub;
 };

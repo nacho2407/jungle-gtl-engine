@@ -1,4 +1,4 @@
-﻿#include "Object.h"
+#include "Object.h"
 #include "UUIDGenerator.h"
 #include "Serialization/Archive.h"
 #include "Serialization/DuplicateArchive.h"
@@ -191,15 +191,21 @@ namespace
 
 void UObject::AddReferencedObjects(FReferenceCollector& Collector)
 {
-    TArray<const FProperty*> Properties;
-    GetClass()->GetPropertyRefs(Properties);
-    
-    for (const FProperty* Property : Properties)
+    UClass* Class = GetClass();
+    if (!Class)
     {
+        return;
+    }
+
+    const TArray<FGCReferenceToken>& Tokens = Class->GetReferenceTokenStream();
+    for (const FGCReferenceToken& Token : Tokens)
+    {
+        const FProperty* Property = Token.Property;
         if (!Property)
         {
             continue;
         }
+
         FScopedReferenceName PropertyScope(Collector, Property->Name);
         Property->AddReferencedObjects(Property->GetValuePtrFor(this), Collector);
     }

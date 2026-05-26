@@ -105,11 +105,45 @@ public:
 					delete Existing;
 				}
 				Existing = Property;
+				InvalidateReferenceTokenStream();
 				return;
 			}
 		}
 
 		Properties.push_back(Property);
+		InvalidateReferenceTokenStream();
+	}
+
+	void InvalidateReferenceTokenStream() const
+	{
+		if (bReferenceTokenStreamDirty)
+		{
+			return;
+		}
+
+		bReferenceTokenStreamDirty = true;
+
+		for (UStruct* Struct : GetAllStructs())
+		{
+			if (Struct && Struct->GetSuperStruct() == this)
+			{
+				Struct->InvalidateReferenceTokenStream();
+			}
+		}
+	}
+
+	bool HasObjectReferences() const
+	{
+		return !GetReferenceTokenStream().empty();
+	}
+
+	const TArray<FGCReferenceToken>& GetReferenceTokenStream() const
+	{
+		if (bReferenceTokenStreamDirty)
+		{
+			BuildReferenceTokenStream();
+		}
+		return ReferenceTokenStream;
 	}
 
 	virtual void GetFunctionRefs(TArray<const FFunction*>& OutFunctions, bool bIncludeSuper = true) const
@@ -225,11 +259,40 @@ public:
 	}
 
 private:
+	void BuildReferenceTokenStream() const
+	{
+		ReferenceTokenStream.clear();
+
+		if (SuperStruct)
+		{
+			const TArray<FGCReferenceToken>& SuperTokens = SuperStruct->GetReferenceTokenStream();
+			ReferenceTokenStream.insert(ReferenceTokenStream.end(), SuperTokens.begin(), SuperTokens.end());
+		}
+
+		for (const FProperty* Property : Properties)
+		{
+			if (!Property || !Property->ContainsObjectReference())
+			{
+				continue;
+			}
+
+			FGCReferenceToken Token;
+			Token.Property = Property;
+			Token.Type = Property->GetReferenceTokenType();
+			ReferenceTokenStream.push_back(Token);
+		}
+
+		bReferenceTokenStreamDirty = false;
+	}
+
+private:
 	const char*        Name        = nullptr;
 	UStruct*           SuperStruct = nullptr;
 	size_t             Size        = 0;
 	TArray<FProperty*> Properties;
 	TArray<FFunction*> Functions;
+	mutable TArray<FGCReferenceToken> ReferenceTokenStream;
+	mutable bool bReferenceTokenStreamDirty = true;
 };
 
 // static initializer 에서 UStruct를 전역 레지스트리에 등록

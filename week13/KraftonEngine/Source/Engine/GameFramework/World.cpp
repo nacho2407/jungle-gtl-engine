@@ -273,6 +273,7 @@ void UWorld::UpdateActorInOctree(AActor* Actor)
 void UWorld::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UObject::AddReferencedObjects(Collector);
+    Scene.AddReferencedObjects(Collector);
 }
 
 void UWorld::ShutdownPhysicsScene()

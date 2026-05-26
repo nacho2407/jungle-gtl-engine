@@ -27,6 +27,7 @@ public:
 	const TArray<FAssetListItem>& GetAvailableGraphFiles() const { return AvailableGraphFiles; }
 
 
+	const char* GetReferencerName() const override { return "FAnimGraphManager"; }
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	void ClearCache();
 private:

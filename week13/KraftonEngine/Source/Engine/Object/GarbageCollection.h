@@ -82,6 +82,7 @@ public:
     virtual ~FGCObject();
 
     virtual void AddReferencedObjects(FReferenceCollector& Collector) = 0;
+    virtual const char* GetReferencerName() const { return "FGCObject"; }
 };
 
 class FGarbageCollector : public TSingleton<FGarbageCollector>

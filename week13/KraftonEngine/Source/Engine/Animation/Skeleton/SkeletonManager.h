@@ -44,6 +44,7 @@ public:
         );
 
 
+    const char* GetReferencerName() const override { return "FSkeletonManager"; }
     void AddReferencedObjects(FReferenceCollector& Collector) override;
     void ClearCache();
 private:

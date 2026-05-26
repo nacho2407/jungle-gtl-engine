@@ -17,6 +17,7 @@ public:
 	bool Save(UCameraShakeAsset* Asset);
 
 
+	const char* GetReferencerName() const override { return "FCameraShakeManager"; }
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	void ClearCache();
 private:

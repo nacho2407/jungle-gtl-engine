@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Types/PropertyTypes.h"
 
@@ -92,6 +92,8 @@ struct FArrayProperty : FProperty
 	}
 
 	EPropertyType GetType() const override { return Type; }
+	bool ContainsObjectReference() const override;
+	EGCReferenceTokenType GetReferenceTokenType() const override { return EGCReferenceTokenType::Array; }
 	EPropertyType GetElementType() const { return ElementType; }
 	const FProperty* GetInnerProperty() const { return InnerProperty; }
 	const FArrayOps* GetArrayOps() const { return ArrayOps; }

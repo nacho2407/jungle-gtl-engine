@@ -53,13 +53,19 @@
 std::unique_ptr<sol::state> FLuaScriptManager::Lua;
 sol::protected_function FLuaScriptManager::OnEscapePressedCallback;
 std::mutex FLuaScriptManager::ComponentMutex;
-TArray<ULuaScriptComponent*> FLuaScriptManager::RegisteredComponents;
-TArray<ULuaAnimInstance*>    FLuaScriptManager::RegisteredAnimInstances;
+TArray<TWeakObjectPtr<ULuaScriptComponent>> FLuaScriptManager::RegisteredComponents;
+TArray<TWeakObjectPtr<ULuaAnimInstance>>    FLuaScriptManager::RegisteredAnimInstances;
 FSubscriptionID FLuaScriptManager::WatchSub = 0;
 
 namespace
 {
-	TMap<FString, sol::protected_function> GLuaReflectedEventOverrides;
+	struct FLuaReflectedEventOverride
+	{
+		TWeakObjectPtr<UObject> Target;
+		sol::protected_function Callback;
+	};
+
+	TMap<FString, FLuaReflectedEventOverride> GLuaReflectedEventOverrides;
 
 	FString MakeLuaReflectedEventKey(const UObject* Object, const FFunction& Function)
 	{
@@ -68,6 +74,19 @@ namespace
 			return {};
 		}
 		return std::to_string(Object->GetUUID()) + "::" + Function.GetSignature();
+	}
+
+	void CompactLuaReflectedEventOverrides()
+	{
+		for (auto It = GLuaReflectedEventOverrides.begin(); It != GLuaReflectedEventOverrides.end(); )
+		{
+			if (!It->second.Target.IsValid() || !It->second.Callback.valid())
+			{
+				It = GLuaReflectedEventOverrides.erase(It);
+				continue;
+			}
+			++It;
+		}
 	}
 }
 
@@ -81,11 +100,14 @@ void FLuaScriptManager::RegisterComponent(ULuaScriptComponent* Component)
     if (!IsAliveObject(Component)) return;
 
 	std::lock_guard<std::mutex> Lock(ComponentMutex);
-	auto It = std::find(RegisteredComponents.begin(), RegisteredComponents.end(), Component);
-	if (It == RegisteredComponents.end())
+	for (const TWeakObjectPtr<ULuaScriptComponent>& Existing : RegisteredComponents)
 	{
-		RegisteredComponents.push_back(Component);
+		if (Existing.Get() == Component)
+		{
+			return;
+		}
 	}
+	RegisteredComponents.push_back(Component);
 }
 
 void FLuaScriptManager::InvalidateChangedModules(const TSet<FString>& ChangedFiles)
@@ -144,33 +166,44 @@ void FLuaScriptManager::UnregisterComponent(ULuaScriptComponent* Component)
 	if (!Component) return;
 
 	std::lock_guard<std::mutex> Lock(ComponentMutex);
-	auto It = std::find(RegisteredComponents.begin(), RegisteredComponents.end(), Component);
-	if (It != RegisteredComponents.end())
-	{
-		RegisteredComponents.erase(It);
-	}
+	RegisteredComponents.erase(
+		std::remove_if(
+			RegisteredComponents.begin(),
+			RegisteredComponents.end(),
+			[Component](const TWeakObjectPtr<ULuaScriptComponent>& Existing)
+			{
+				return Existing.Get() == Component || !Existing.IsValid();
+			}),
+		RegisteredComponents.end());
 }
 
 void FLuaScriptManager::RegisterAnimInstance(ULuaAnimInstance* Instance)
 {
     if (!IsAliveObject(Instance)) return;
 	std::lock_guard<std::mutex> Lock(ComponentMutex);
-	auto It = std::find(RegisteredAnimInstances.begin(), RegisteredAnimInstances.end(), Instance);
-	if (It == RegisteredAnimInstances.end())
+	for (const TWeakObjectPtr<ULuaAnimInstance>& Existing : RegisteredAnimInstances)
 	{
-		RegisteredAnimInstances.push_back(Instance);
+		if (Existing.Get() == Instance)
+		{
+			return;
+		}
 	}
+	RegisteredAnimInstances.push_back(Instance);
 }
 
 void FLuaScriptManager::UnregisterAnimInstance(ULuaAnimInstance* Instance)
 {
 	if (!Instance) return;
 	std::lock_guard<std::mutex> Lock(ComponentMutex);
-	auto It = std::find(RegisteredAnimInstances.begin(), RegisteredAnimInstances.end(), Instance);
-	if (It != RegisteredAnimInstances.end())
-	{
-		RegisteredAnimInstances.erase(It);
-	}
+	RegisteredAnimInstances.erase(
+		std::remove_if(
+			RegisteredAnimInstances.begin(),
+			RegisteredAnimInstances.end(),
+			[Instance](const TWeakObjectPtr<ULuaAnimInstance>& Existing)
+			{
+				return Existing.Get() == Instance || !Existing.IsValid();
+			}),
+		RegisteredAnimInstances.end());
 }
 
 void FLuaScriptManager::OnScriptsChanged(const TSet<FString>& ChangedFiles)
@@ -185,12 +218,13 @@ void FLuaScriptManager::OnScriptsChanged(const TSet<FString>& ChangedFiles)
             std::remove_if(
                 RegisteredComponents.begin(),
                 RegisteredComponents.end(),
-                [](ULuaScriptComponent* Component) { return !IsValid(Component); }
+                [](const TWeakObjectPtr<ULuaScriptComponent>& Component) { return !Component.IsValid(); }
             ),
             RegisteredComponents.end()
         );
-		for (ULuaScriptComponent* Component : RegisteredComponents)
+		for (const TWeakObjectPtr<ULuaScriptComponent>& ComponentPtr : RegisteredComponents)
 		{
+            ULuaScriptComponent* Component = ComponentPtr.Get();
             if (!IsValid(Component)) continue;
 
 			const FString& ScriptFile = Component->GetScriptFile();
@@ -224,12 +258,13 @@ void FLuaScriptManager::OnScriptsChanged(const TSet<FString>& ChangedFiles)
             std::remove_if(
                 RegisteredAnimInstances.begin(),
                 RegisteredAnimInstances.end(),
-                [](ULuaAnimInstance* Instance) { return !IsValid(Instance); }
+                [](const TWeakObjectPtr<ULuaAnimInstance>& Instance) { return !Instance.IsValid(); }
             ),
             RegisteredAnimInstances.end()
         );
-		for (ULuaAnimInstance* Inst : RegisteredAnimInstances)
+		for (const TWeakObjectPtr<ULuaAnimInstance>& InstPtr : RegisteredAnimInstances)
 		{
+            ULuaAnimInstance* Inst = InstPtr.Get();
             if (!IsValid(Inst)) continue;
 			const FString& AnimScript = Inst->ScriptFile;
 			if (AnimScript.empty()) continue;
@@ -368,6 +403,7 @@ void FLuaScriptManager::Shutdown()
 	{
 		std::lock_guard<std::mutex> Lock(ComponentMutex);
 		RegisteredComponents.clear();
+		RegisteredAnimInstances.clear();
 	}
 
 	// 등록된 Lua 콜백 (sol::protected_function 들) 을 lua_State 가 살아있는 동안 먼저 release.
@@ -1209,8 +1245,9 @@ namespace
 			return ELuaEventOverrideResult::NotBound;
 		}
 
+		CompactLuaReflectedEventOverrides();
 		auto It = GLuaReflectedEventOverrides.find(MakeLuaReflectedEventKey(Instance, Function));
-		if (It == GLuaReflectedEventOverrides.end() || !It->second.valid())
+		if (It == GLuaReflectedEventOverrides.end() || It->second.Target.Get() != Instance || !It->second.Callback.valid())
 		{
 			return ELuaEventOverrideResult::NotBound;
 		}
@@ -1230,7 +1267,7 @@ namespace
 			LuaArgs.push_back(LuaValueToObject(State, *Parameter, Parameter->GetValuePtrFor(Storage)));
 		}
 
-		sol::protected_function_result Result = It->second(sol::as_args(LuaArgs));
+		sol::protected_function_result Result = It->second.Callback(sol::as_args(LuaArgs));
 		if (!Result.valid())
 		{
 			sol::error Err = Result;
@@ -1349,7 +1386,11 @@ namespace
 			return false;
 		}
 
-		GLuaReflectedEventOverrides[MakeLuaReflectedEventKey(Object, *Function)] = std::move(Callback);
+		FLuaReflectedEventOverride Override;
+		Override.Target = Object;
+		Override.Callback = std::move(Callback);
+		GLuaReflectedEventOverrides[MakeLuaReflectedEventKey(Object, *Function)] = std::move(Override);
+		CompactLuaReflectedEventOverrides();
 		return true;
 	}
 
@@ -1382,8 +1423,9 @@ namespace
 			return false;
 		}
 
-		return GLuaReflectedEventOverrides.find(MakeLuaReflectedEventKey(Object, *Function)) !=
-		GLuaReflectedEventOverrides.end();
+		CompactLuaReflectedEventOverrides();
+		auto It = GLuaReflectedEventOverrides.find(MakeLuaReflectedEventKey(Object, *Function));
+		return It != GLuaReflectedEventOverrides.end() && It->second.Target.Get() == Object && It->second.Callback.valid();
 	}
 
 	sol::object LuaInvokeReflectedFunction(
