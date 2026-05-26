@@ -1,4 +1,4 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
@@ -25,6 +25,7 @@
 #include "Editor/UI/Asset/Mesh/StaticMeshEditorWidget.h"
 #include "Editor/UI/Asset/Animation/AnimGraphEditorWidget.h"
 #include "Editor/UI/Asset/Particle/ParticleSystemEditorWidget.h"
+#include "Editor/UI/Asset/Material/MaterialEditorWidget.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -98,6 +99,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	AssetEditorManager.RegisterEditor<FStaticMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FAnimGraphEditorWidget>();
 	AssetEditorManager.RegisterEditor<FParticleSystemEditorWidget>();
+	AssetEditorManager.RegisterEditor<FMaterialEditorWidget>();
 }
 
 void FEditorMainPanel::Release()

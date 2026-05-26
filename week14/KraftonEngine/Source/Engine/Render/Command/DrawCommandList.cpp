@@ -297,6 +297,14 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 		Cache.Bindings.BoneHeatMapCB = Cmd.Bindings.BoneHeatMapCB;
 	}
 
+	if (bForce || Cmd.Bindings.FogCB != Cache.Bindings.FogCB)
+	{
+		ID3D11Buffer* RawCB = Cmd.Bindings.FogCB ? Cmd.Bindings.FogCB->GetBuffer() : nullptr;
+		Ctx->VSSetConstantBuffers(ECBSlot::Fog, 1, &RawCB);
+		Ctx->PSSetConstantBuffers(ECBSlot::Fog, 1, &RawCB);
+		Cache.Bindings.FogCB = Cmd.Bindings.FogCB;
+	}
+
 	// --- SRV (t0 ~ t7) 바인딩 ---
 	for (int i = 0; i < (int)EMaterialTextureSlot::Max; i++)
 	{

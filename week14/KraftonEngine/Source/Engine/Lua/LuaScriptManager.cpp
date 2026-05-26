@@ -1,4 +1,4 @@
-#include "LuaScriptManager.h"
+﻿#include "LuaScriptManager.h"
 
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
@@ -12,6 +12,8 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Component/Primitive/SkinnedMeshComponent.h"
 #include "Core/Types/CollisionTypes.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
@@ -1031,6 +1033,10 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	{
 		return Actor.GetComponentByClass<UPrimitiveComponent>();
 	},
+		"GetSkeletalMesh", [](AActor& Actor) -> USkeletalMeshComponent*
+	{
+		return Actor.GetComponentByClass<USkeletalMeshComponent>();
+	},
 
 	"GetPrimitiveComponentByName", [](AActor& Actor, const FString& ComponentName) -> UPrimitiveComponent*
 	{
@@ -1156,6 +1162,38 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		}
 		return Result;
 	});
+
+	Lua.new_usertype<USkeletalMeshComponent>("SkeletalMeshComponent",
+		sol::base_classes, sol::bases<UPrimitiveComponent, USceneComponent>(),
+
+		"GetBoneSocketLocation", [](USkeletalMeshComponent& C, const FString& BoneName, const FVector& LocalOffset)
+	{
+		FTransform SocketWorld;
+		if (C.GetBoneSocketWorldTransform(
+			BoneName,
+			FTransform(LocalOffset, FQuat::Identity, FVector::OneVector),
+			SocketWorld))
+		{
+			return SocketWorld.Location;
+		}
+
+		return FVector::ZeroVector;
+	},
+
+		"GetBoneSocketRotation", [](USkeletalMeshComponent& C, const FString& BoneName, const FVector& LocalOffset)
+	{
+		FTransform SocketWorld;
+		if (C.GetBoneSocketWorldTransform(
+			BoneName,
+			FTransform(LocalOffset, FQuat::Identity, FVector::OneVector),
+			SocketWorld))
+		{
+			return SocketWorld.Rotation.ToRotator().ToVector();
+		}
+
+		return FVector::ZeroVector;
+	}
+	);
 
 	// 게임 특화 usertype/enum/global(GetGameState 등) 은 Game 모듈의
 	// RegisterGameLuaBindings 가 등록한다. 호출 순서는 GameEngine/EditorEngine::Init

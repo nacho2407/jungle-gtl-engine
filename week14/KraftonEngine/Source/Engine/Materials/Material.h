@@ -85,9 +85,16 @@ protected:
 	FMaterialTemplate* Template; // 공유
 
 	// 렌더링 상태 정보 (인스턴스별)
+	UPROPERTY(Edit, Save, Category="Material", DisplayName="Render Pass", Enum=ERenderPass)
 	ERenderPass RenderPass = ERenderPass::Opaque;
+
+	UPROPERTY(Edit, Save, Category="Material", DisplayName="Blend State", Enum=EBlendState)
 	EBlendState BlendState = EBlendState::Opaque;
+
+	UPROPERTY(Edit, Save, Category="Material", DisplayName="Depth-Stencil State", Enum=EDepthStencilState)
 	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
+
+	UPROPERTY(Edit, Save, Category="Material", DisplayName="Rasterizer State", Enum=ERasterizerState)
 	ERasterizerState RasterizerState = ERasterizerState::SolidBackCull;
 
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap; // 인스턴스 고유
@@ -101,6 +108,7 @@ protected:
 	// SRV 캐시 — SetTextureParameter 시 갱신, BuildCommandForProxy에서 map lookup 회피
 	ID3D11ShaderResourceView* CachedSRVs[(int)EMaterialTextureSlot::Max] = {};
 
+	UPROPERTY(Edit, Save, Category="Material", DisplayName="Shadow Mode", Enum=EMaterialShadowMode)
 	EMaterialShadowMode ShadowMode = EMaterialShadowMode::Opaque;
 
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);

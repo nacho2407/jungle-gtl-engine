@@ -705,6 +705,9 @@
     <ClCompile Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyRenderer.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
@@ -730,6 +733,9 @@
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp">
@@ -1579,8 +1585,12 @@
     <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp" />
     <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\MeshParticleGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1709,6 +1719,9 @@
     <ClInclude Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyRenderer.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyWidget.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
@@ -1734,6 +1747,9 @@
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.h">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h">
@@ -4437,14 +4453,26 @@
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.h" />
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleCollision.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\MeshParticleGeometry.h" />
     <ClInclude Include="Source\Engine\Math\Distribution.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\FogPass.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h" />
+    <ClInclude Include="Source\Engine\Core\Property\MapProperty.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleCollisionEvent.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\ParticleStats.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Common\Fog.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </None>
   </ItemGroup>
 </Project>

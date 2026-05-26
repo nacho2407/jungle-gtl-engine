@@ -1,4 +1,4 @@
-#include "RenderCollector.h"
+﻿#include "RenderCollector.h"
 
 #include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"
@@ -9,6 +9,7 @@
 #include "Debug/DebugDrawQueue.h"
 #include "Render/Types/LODContext.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Render/Proxy/ParticleSystemSceneProxy.h"
 #include "Render/Scene/FScene.h"
 
 #include <Collision/Octree/Octree.h>
@@ -123,6 +124,10 @@ static bool ShouldCollectProxyForView(const FPrimitiveSceneProxy* Proxy, const F
 		Proxy->HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh))
 		return false;
 
+	if (!Frame.RenderOptions.ShowFlags.bParticle &&
+		Proxy->HasProxyFlag(EPrimitiveProxyFlags::ParticleSystem))
+		return false;
+
 	return true;
 }
 
@@ -176,6 +181,12 @@ void FRenderCollector::FilterVisibleProxies(const FFrameContext& Frame, FScene& 
 		if (Occlusion && !Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull) && Occlusion->IsOccluded(Proxy))
 		{
 			continue;
+		}
+
+		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::ParticleSystem))
+		{
+			const FParticleSystemSceneProxy* ParticleProxy = static_cast<const FParticleSystemSceneProxy*>(Proxy);
+			Output.ParticleStats.Accumulate(ParticleProxy->GetStats());
 		}
 
 		Output.RenderableProxies.push_back(Proxy);

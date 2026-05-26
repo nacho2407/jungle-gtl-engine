@@ -407,6 +407,10 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyRenderer.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.cpp" />
     <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp" />
     <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp" />
@@ -659,6 +663,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\GizmoSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\ShapeSceneProxy.cpp" />
@@ -670,6 +675,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Engine\Render\RenderPass\AlphaBlendPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\DecalPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\EditorLinesPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\GizmoInnerPass.cpp" />
@@ -741,7 +747,12 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyRenderer.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.h" />
     <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h" />
+    <ClInclude Include="Source\Engine\Core\Property\MapProperty.h" />
     <ClInclude Include="Source\Engine\Math\Distribution.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleCollision.h" />
@@ -749,6 +760,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleCollisionEvent.h" />
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.h" />
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h" />
     <ClInclude Include="Source\Editor\EditorEngine.h" />
@@ -1030,6 +1042,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Engine\Profiling\GPUProfiler.h" />
     <ClInclude Include="Source\Engine\Profiling\StartupProfiler.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats\MemoryStats.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\ParticleStats.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats\ShadowStats.h" />
     <ClInclude Include="Source\Engine\Profiling\Stats\Stats.h" />
     <ClInclude Include="Source\Engine\Profiling\Time\PlatformTime.h" />
@@ -1054,6 +1067,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\GizmoSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\ShapeSceneProxy.h" />
@@ -1065,6 +1079,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Engine\Render\RenderPass\AlphaBlendPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\DecalPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\EditorLinesPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\FogPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\GizmoInnerPass.h" />
@@ -1995,6 +2010,15 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\Common\Fog.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

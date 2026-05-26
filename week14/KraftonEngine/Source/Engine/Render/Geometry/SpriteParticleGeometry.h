@@ -16,6 +16,16 @@ public:
 	void Clear();
 
 	void AddParticleQuad(const FBaseParticle& Particle, const FVector& CameraRight, const FVector& CameraUp);
+	void AddParticleQuad(const FBaseParticle& Particle, const FVector& CameraRight, const FVector& CameraUp,
+		const FVector2& TopLeftUV, const FVector2& TopRightUV, const FVector2& BottomLeftUV, const FVector2& BottomRightUV);
+	void AddQuad(const FVector& TopLeft, const FVector& TopRight, const FVector& BottomLeft, const FVector& BottomRight,
+		const FVector4& Color, const FVector2& TopLeftUV, const FVector2& TopRightUV, const FVector2& BottomLeftUV, const FVector2& BottomRightUV);
+	void AddQuad(const FVector& TopLeft, const FVector& TopRight, const FVector& BottomLeft, const FVector& BottomRight,
+		const FVector4& TopLeftColor, const FVector4& TopRightColor, const FVector4& BottomLeftColor, const FVector4& BottomRightColor,
+		const FVector2& TopLeftUV, const FVector2& TopRightUV, const FVector2& BottomLeftUV, const FVector2& BottomRightUV);
+
+	uint32 AddVertex(const FParticleSpriteVertex& Vertex);
+	void AddTriangle(uint32 A, uint32 B, uint32 C);
 
 	bool Upload(ID3D11DeviceContext* Context);
 

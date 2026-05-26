@@ -1,4 +1,4 @@
-#include "EditorRenderPipeline.h"
+﻿#include "EditorRenderPipeline.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/Viewport/Level/LevelEditorViewportClient.h"
 #include "Editor/Viewport/EditorPreviewViewportClient.h"
@@ -181,6 +181,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 
 	FCollectOutput Output;
 	CollectCommands(VC, World, Renderer, Output);
+	VC->SetParticleStats(Output.ParticleStats);
 
 	FScene& Scene = World->GetScene();
 

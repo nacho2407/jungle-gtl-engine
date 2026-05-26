@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Particles/Runtime/ParticleCollisionEvent.h"
 #include "Particles/Runtime/ParticleRuntimeTypes.h"
 
 class UParticleEmitter;
@@ -15,9 +16,13 @@ struct FParticleEmitterInstance
 	virtual void Init(UParticleEmitter* InTemplate, UParticleSystemComponent* InComponent);
 	virtual void Tick(float DeltaTime);
 	virtual void Reset();
+	void SetLODLevelIndex(int32 LODLevelIndex);
 
 	bool IsActive() const { return bActive; }
 	void SetActive(bool bInActive) { bActive = bInActive; }
+
+	bool IsSpawningEnabled() const { return bSpawningEnabled; }
+	void SetSpawningEnabled(bool bInSpawningEnabled) { bSpawningEnabled = bInSpawningEnabled; }
 
 	UParticleEmitter* GetTemplate() const { return SpriteTemplate; }
 	UParticleSystemComponent* GetComponent() const { return Component; }
@@ -32,6 +37,8 @@ struct FParticleEmitterInstance
 	int32 GetActiveParticleCount() const { return ActiveParticles; }
 	int32 GetMaxParticleCount() const { return MaxActiveParticles; }
 	float GetEmitterTime() const { return EmitterTime; }
+	const TArray<FParticleCollisionEventPayload>& GetCollisionEventQueue() const { return CollisionEventQueue; }
+	TArray<FParticleCollisionEventPayload>& GetMutableCollisionEventQueue() { return CollisionEventQueue; }
 
 	template<typename T>
 	T* GetParticlePayload(int32 ParticleIndex)
@@ -92,6 +99,8 @@ struct FParticleEmitterInstance
 	uint32 ParticleCounter = 0;
 	int32 MaxActiveParticles = 0;
 	float SpawnFraction = 0.0f;
+	bool bIsEventGenerator = false;
+	TArray<FParticleCollisionEventPayload> CollisionEventQueue;
 
 protected:
 	virtual int32 SpawnParticles(float DeltaTime);
@@ -109,6 +118,7 @@ protected:
 	const FBaseParticle& GetParticleBySlot(int32 ParticleSlot) const;
 
 	UParticleModuleSpawn* GetSpawnModule() const;
+	bool CanUseLODLevel(const UParticleLODLevel* LODLevel) const;
 
 	void RunSpawnModules(FBaseParticle& Particle, float SpawnTime);
 	void RunUpdateModules(float DeltaTime);
@@ -125,4 +135,5 @@ protected:
 	FVector4 DefaultColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	float EmitterTime = 0.0f;
 	bool bActive = true;
+	bool bSpawningEnabled = true;
 };

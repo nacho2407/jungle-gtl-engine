@@ -56,6 +56,7 @@ struct FVector {
 	}
 	
 	float Length() const;
+	float LengthSquared() const;
 	void  Normalize();
 	FVector Normalized() const;
 

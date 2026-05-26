@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 //	Windows API Include
 #define NOMINMAX
@@ -31,6 +31,7 @@ enum class EMeshShape
 	ScaleGizmo,
 };
 
+UENUM()
 enum class ERenderPass : uint32
 {
 	PreDepth,		// Depth-only 프리패스 (color write 없음, Early-Z용)
@@ -39,6 +40,7 @@ enum class ERenderPass : uint32
 	Opaque,			// 불투명 지오메트리 (StaticMesh 등)
 	Decal,			// 데칼 (DepthReadOnly)
 	AdditiveDecal,	// Additive 빌보드 등
+	Fog,			// 볼륨 안개 (AlphaBlend + DepthReadOnly)	
 	AlphaBlend,		// 반투명 지오메트리 (Font, SubUV, Billboard, Translucent)
 	SelectionMask,	// 선택 스텐실 마스크
 	EditorLines,	// 디버그 라인 + 그리드 (LINELIST)
@@ -61,6 +63,7 @@ inline const char* GetRenderPassName(ERenderPass Pass)
 		"RenderPass::Opaque",
 		"RenderPass::Decal",
 		"RenderPass::AdditiveDecal",
+		"RenderPass::Fog",
 		"RenderPass::AlphaBlend",
 		"RenderPass::SelectionMask",
 		"RenderPass::EditorLines",
@@ -86,6 +89,7 @@ namespace RenderStateStrings
 		{ "Opaque",        (int)ERenderPass::Opaque },
 		{ "Decal",         (int)ERenderPass::Decal },
 		{ "AdditiveDecal", (int)ERenderPass::AdditiveDecal },
+		{ "Fog",           (int)ERenderPass::Fog },
 		{ "AlphaBlend",    (int)ERenderPass::AlphaBlend },
 		{ "SelectionMask", (int)ERenderPass::SelectionMask },
 		{ "EditorLines",   (int)ERenderPass::EditorLines },

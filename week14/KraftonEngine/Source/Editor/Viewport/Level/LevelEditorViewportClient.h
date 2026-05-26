@@ -1,6 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/Viewport/EditorViewportClient.h"
+
+#include "Profiling/Stats/ParticleStats.h"
 
 // UE의 FLevelEditorViewportClient 대응
 // 레벨 편집 전용 뷰포트 (카메라 조작, 기즈모, 액터 피킹 등)
@@ -10,4 +12,11 @@ class FLevelEditorViewportClient : public FEditorViewportClient
 public:
 	FLevelEditorViewportClient() = default;
 	~FLevelEditorViewportClient() override = default;
+
+public:
+	void SetParticleStats(const FParticleViewportStats& InStats) { ParticleStats = InStats; }
+	const FParticleViewportStats& GetParticleStats() const { return ParticleStats; }
+
+private:
+	FParticleViewportStats ParticleStats;
 };

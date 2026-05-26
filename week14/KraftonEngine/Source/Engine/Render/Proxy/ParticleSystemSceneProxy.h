@@ -6,8 +6,11 @@
 #include "Render/Geometry/SpriteParticleGeometry.h"
 #include "Render/Geometry/MeshParticleGeometry.h"
 
+#include "Profiling/Stats/ParticleStats.h"
+
 class UStaticMesh;
 class UParticleSystemComponent;
+struct FDynamicEmitterReplayDataBase;
 struct FParticleEmitterInstance;
 
 struct FParticleGeometrySection
@@ -46,9 +49,19 @@ public:
 	bool PrepareParticleDrawBuffer(const FParticleDrawBatch& Batch, ID3D11Device* Device, ID3D11DeviceContext* Context,
 		FDrawCommandBuffer& OutBuffer) const;
 
+	const FParticleViewportStats& GetStats() const { return CachedStats; }
+
 private:
-	void RebuildSpriteParticleGeometry(const FFrameContext& Frame);
-	void RebuildMeshParticleGeometry();
+	void ResetDynamicGeometry();
+	void BuildDynamicEmitters(const FFrameContext& Frame, const TArray<FParticleEmitterInstance*>& Instances);
+	FDynamicEmitterReplayDataBase BuildEmitterSource(FParticleEmitterInstance* Instance) const;
+	void AppendEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
+	void FinalizeDynamicGeometry();
+
+	void AppendSpriteEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
+	void AppendRibbonEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
+	void AppendBeamEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
+	void AppendMeshEmitter(const FFrameContext& Frame, int32 EmitterIndex, const FDynamicEmitterReplayDataBase& Source);
 
 	void ClearDrawBatches()
 	{
@@ -61,6 +74,7 @@ private:
 
 	UMaterialInterface* ResolveEmitterMaterial(const FParticleEmitterInstance* Instance) const;
 	UStaticMesh* ResolveTypeDataMesh(UParticleModuleTypeDataMesh* TypeData) const;
+	bool ShouldSortMeshParticles(const FParticleDrawBatch& Batch, UMaterialInterface* FallbackMaterial) const;
 	UParticleSystemComponent* GetParticleSystemComponent() const;
 
 private:
@@ -77,4 +91,6 @@ private:
 	mutable TArray<FMeshParticleInstanceData> MeshInstances;
 
 	mutable TArray<FParticleDrawBatch> DrawBatches;
+
+	FParticleViewportStats CachedStats;
 };

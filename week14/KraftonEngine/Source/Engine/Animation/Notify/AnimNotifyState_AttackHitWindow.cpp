@@ -3,6 +3,7 @@
 #include "Component/Input/ActionComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Component/Particle/ParticleSystemComponent.h"
 #include "Core/Types/CollisionTypes.h"
 #include "Core/Types/EngineTypes.h"
 #include "Debug/DrawDebugHelpers.h"
@@ -125,6 +126,22 @@ namespace
 		const FVector Dir = ResolveKnockbackDirection(Attacker, Target, Mode);
 		Action->Knockback(Dir, Distance, Duration);
 	}
+
+	UParticleSystemComponent* FindTrailParticleComponent(USkeletalMeshComponent* MeshComp)
+	{
+		if (!MeshComp)
+		{
+			return nullptr;
+		}
+
+		AActor* Owner = MeshComp->GetOwner();
+		if (!Owner)
+		{
+			return nullptr;
+		}
+
+		return Owner->GetComponentByClass<UParticleSystemComponent>();
+	}
 }
 
 void UAnimNotifyState_AttackHitWindow::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* /*Anim*/, float /*TotalDuration*/)
@@ -132,6 +149,20 @@ void UAnimNotifyState_AttackHitWindow::NotifyBegin(USkeletalMeshComponent* MeshC
 	if (!MeshComp)
 	{
 		return;
+	}
+
+	if (bControlTrailParticle)
+	{
+		if (UParticleSystemComponent* Trail = FindTrailParticleComponent(MeshComp))
+		{
+			if (bResetTrailOnBegin)
+			{
+				Trail->ResetSystem();
+			}
+
+			Trail->Activate();
+			Trail->SetEmitterSpawningEnabled(true);
+		}
 	}
 
 	HitActorsByMesh[MeshComp].clear();
@@ -303,6 +334,14 @@ void UAnimNotifyState_AttackHitWindow::NotifyTick(USkeletalMeshComponent* MeshCo
 
 void UAnimNotifyState_AttackHitWindow::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* /*Anim*/)
 {
+	if (bControlTrailParticle)
+	{
+		if (UParticleSystemComponent* Trail = FindTrailParticleComponent(MeshComp))
+		{
+			Trail->SetEmitterSpawningEnabled(false);
+		}
+	}
+
 	HitActorsByMesh.erase(MeshComp);
 	MissLoggedActorsByMesh.erase(MeshComp);
 	NoTargetLoggedMeshes.erase(MeshComp);

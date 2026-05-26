@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Component/MeshComponent.h"
 
 #include "Math/Rotator.h"
@@ -47,6 +47,12 @@ public:
 	// Bone edit 섹션: bone getter/setter는 edit pose를 만들고 CPU skinning/cache revision까지 갱신해야 한다.
 	void EnsureBoneEditPose();
 	void ResetBoneEditPose();
+
+	int32 FindBoneIndex(const FString& BoneName) const;
+	bool GetBoneWorldTransformByIndex(int32 BoneIndex, FTransform& OutTransform) const;
+	bool GetBoneWorldTransformByName(const FString& BoneName, FTransform& OutTransform) const;
+
+	bool GetBoneSocketWorldTransform(const FString& BoneName, const FTransform& LocalOffset, FTransform& OutTransform) const;
 
 	FVector GetBoneLocationByIndex(int32 BoneIndex) const;
 	FRotator GetBoneRotationByIndex(int32 BoneIndex) const;

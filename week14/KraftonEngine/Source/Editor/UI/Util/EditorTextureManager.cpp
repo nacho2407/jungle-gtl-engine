@@ -1,4 +1,4 @@
-#include "EditorTextureManager.h"
+﻿#include "EditorTextureManager.h"
 
 #include "Platform/Paths.h"
 #include "WICTextureLoader.h"

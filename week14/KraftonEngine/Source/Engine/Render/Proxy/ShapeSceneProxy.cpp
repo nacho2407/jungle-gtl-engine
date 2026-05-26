@@ -49,19 +49,18 @@ namespace
 		}
 	}
 
-	void BuildBoxLines(TArray<FWireLine>& Lines, const FVector& Center, const FVector& Ext, const FQuat& Rot)
+	void BuildBoxLines(TArray<FWireLine>& Lines, const FVector& Center, const FVector& Ext,
+		const FVector& AxisX, const FVector& AxisY, const FVector& AxisZ)
 	{
 		// Local axis-aligned 코너에 컴포넌트의 world rotation을 적용해야 차량처럼
 		// 회전된 콜라이더가 시각상 자식 컴포넌트와 일치한다.
 		FVector Corners[8];
 		for (int32 i = 0; i < 8; ++i)
 		{
-			FVector LocalOffset(
-				(i & 1) ? Ext.X : -Ext.X,
-				(i & 2) ? Ext.Y : -Ext.Y,
-				(i & 4) ? Ext.Z : -Ext.Z
-			);
-			Corners[i] = Center + Rot.RotateVector(LocalOffset);
+			const float X = (i & 1) ? Ext.X : -Ext.X;
+			const float Y = (i & 2) ? Ext.Y : -Ext.Y;
+			const float Z = (i & 4) ? Ext.Z : -Ext.Z;
+			Corners[i] = Center + AxisX * X + AxisY * Y + AxisZ * Z;
 		}
 
 		// Bottom 4
@@ -89,16 +88,12 @@ namespace
 		AddWireCircle(Lines, Center, FVector(0, 1, 0), FVector(0, 0, 1), Radius, Segments);
 	}
 
-	void BuildCapsuleLines(TArray<FWireLine>& Lines, const FVector& Center, float Radius, float HalfHeight, const FQuat& Rot)
+	void BuildCapsuleLines(TArray<FWireLine>& Lines, const FVector& Center, float Radius, float HalfHeight,
+		const FVector& AxisX, const FVector& AxisY, const FVector& AxisZ)
 	{
 		const float CylinderHalf = HalfHeight - Radius;
 		constexpr int32 Segments = 24;
 		constexpr int32 HalfSegments = 12;
-
-		// 컴포넌트의 회전된 local 축들 (X=Right, Y=Forward, Z=Up 기준)
-		const FVector AxisX = Rot.RotateVector(FVector(1, 0, 0));
-		const FVector AxisY = Rot.RotateVector(FVector(0, 1, 0));
-		const FVector AxisZ = Rot.RotateVector(FVector(0, 0, 1));
 
 		const FVector TopCenter = Center + AxisZ * CylinderHalf;
 		const FVector BotCenter = Center - AxisZ * CylinderHalf;
@@ -169,11 +164,16 @@ void FShapeSceneProxy::RebuildLines()
 	UPrimitiveComponent* OwnerComp = GetOwner();
 	if (!OwnerComp) return;
 
-	const FQuat WorldRot = OwnerComp->GetWorldMatrix().ToQuat();
+	FVector AxisX = OwnerComp->GetForwardVector();
+	FVector AxisY = OwnerComp->GetRightVector();
+	FVector AxisZ = OwnerComp->GetUpVector();
+	AxisX.Normalize();
+	AxisY.Normalize();
+	AxisZ.Normalize();
 
 	if (const UBoxComponent* Box = Cast<UBoxComponent>(OwnerComp))
 	{
-		BuildBoxLines(CachedLines, Box->GetWorldLocation(), Box->GetScaledBoxExtent(), WorldRot);
+		BuildBoxLines(CachedLines, Box->GetWorldLocation(), Box->GetScaledBoxExtent(), AxisX, AxisY, AxisZ);
 	}
 	else if (const USphereComponent* Sphere = Cast<USphereComponent>(OwnerComp))
 	{
@@ -186,6 +186,6 @@ void FShapeSceneProxy::RebuildLines()
 			Capsule->GetWorldLocation(),
 			Capsule->GetScaledCapsuleRadius(),
 			Capsule->GetScaledCapsuleHalfHeight(),
-			WorldRot);
+			AxisX, AxisY, AxisZ);
 	}
 }

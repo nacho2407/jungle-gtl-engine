@@ -12,6 +12,8 @@
 #include "Editor/UI/Panel/EditorWorldSettingsWidget.h"
 #include "Editor/UI/ContentBrowser/ContentBrowser.h"
 #include "Editor/UI/Asset/AssetEditorManager.h"
+#include "Editor/UI/Util/EditorMaterialThumbnailManager.h"
+#include "Editor/UI/Util/EditorMeshThumbnailManager.h"
 #include "Math/Vector.h"
 
 class AActor;
@@ -41,7 +43,12 @@ public:
 	float GetContentBrowserIconSize() const { return ContentBrowserWidget.GetIconSize(); }
 
 	void OpenAssetEditorForObject(UObject* Object);
-	void CollectAssetEditorPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const { AssetEditorManager.CollectPreviewViewportClients(OutClients); }
+	void CollectAssetEditorPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const
+	{
+		AssetEditorManager.CollectPreviewViewportClients(OutClients);
+		FEditorMeshThumbnailManager::Get().CollectPreviewViewports(OutClients);
+		FEditorMaterialThumbnailManager::Get().CollectPreviewViewports(OutClients);
+	}
 	bool IsMouseOverAssetEditorPreviewViewport() const { return AssetEditorManager.IsMouseOverAnyEditorViewport(); }
 
 private:

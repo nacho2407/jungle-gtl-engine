@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstddef>
 #include <cstdint>
@@ -99,6 +99,7 @@ struct FPropertyValue
 
 	void*	   GetValuePtr() const;
 	void	   GetStructChildren(TArray<FPropertyValue>& OutProps) const;
+	bool	   PassesEditCondition() const;
 
 	const char* GetName() const;
 	const char* GetDisplayName() const;

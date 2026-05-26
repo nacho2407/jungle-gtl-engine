@@ -9,6 +9,7 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Subsystem/AssetFactory.h"
 #include "Editor/UI/Util/EditorTextureManager.h"
+#include "Editor/UI/Util/EditorMeshThumbnailManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "Particles/ParticleSystem.h"
@@ -111,10 +112,10 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	if (!InDevice) return;
 
 	IconFileMap[".Scene"] = L"World_64x.png";
-	IconFileMap[".obj"] = L"icon_MatEd_Mesh_40x.png";
+	IconFileMap[".obj"] = L"obj.png";
 	IconFileMap[".mat"] = L"Sphere_64x.png";
 	IconFileMap[".shake"] = L"StartMerge_42x.png";
-	IconFileMap[".fbx"] = L"icon_MatEd_Mesh_40x.png";
+	IconFileMap[".fbx"] = L"fbx.png";
 	IconFileMap[".uasset"] = L"icon_MatEd_Mesh_40x.png";
 
 	ContentBrowserContext Context;
@@ -372,11 +373,13 @@ void FEditorContentBrowserWidget::RefreshContent()
 		}
 		else if (Extension == ".obj")
 		{
-			Element = std::make_shared<ObjectElement>();
+			Element = std::make_shared<ObjSourceElement>();
 		}
 		else if (Extension == ".mat")
 		{
 			Element = std::make_shared<MaterialElement>();
+			Element->SetMaterialThumbnailRequest(
+				FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring()));
 		}
 		else if (Extension == ".curve")
 		{
@@ -388,11 +391,11 @@ void FEditorContentBrowserWidget::RefreshContent()
 		}
 		else if (Extension == ".fbx")
 		{
-			Element = std::make_shared<MeshElement>();
+			Element = std::make_shared<FbxSourceElement>();
 		}
-		else if (Extension == ".png")
+		else if (Extension == ".png" || Extension == ".jpg" || Extension == ".jpeg" || Extension == ".dds")
 		{
-			Element = std::make_shared<PNGElement>();
+			Element = std::make_shared<ImageElement>();
 			Icon = FEditorTextureManager::Get().GetOrLoadThumbnail(FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring()));
 		}
 		else if (Extension == ".uasset")
@@ -406,9 +409,11 @@ void FEditorContentBrowserWidget::RefreshContent()
 				{
 				case EAssetPackageType::StaticMesh:
 					Element = std::make_shared<ObjectElement>();
+					Element->SetMeshThumbnailRequest(PackagePath, EMeshThumbnailType::StaticMesh);
 					break;
 				case EAssetPackageType::SkeletalMesh:
 					Element = std::make_shared<MeshElement>();
+					Element->SetMeshThumbnailRequest(PackagePath, EMeshThumbnailType::SkeletalMesh);
 					break;
 				case EAssetPackageType::FloatCurve:
 					Element = std::make_shared<FloatCurveElement>();

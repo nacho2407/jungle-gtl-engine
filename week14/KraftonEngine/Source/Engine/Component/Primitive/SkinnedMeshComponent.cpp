@@ -1,4 +1,4 @@
-#include "SkinnedMeshComponent.h"
+﻿#include "SkinnedMeshComponent.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Serialization/Archive.h"
 #include "Runtime/Engine.h"
@@ -271,6 +271,55 @@ void USkinnedMeshComponent::ResetBoneEditPose()
 	{
 		BoneEditLocalMatrices.push_back(Bone.GetReferenceLocalPose());
 	}
+}
+
+int32 USkinnedMeshComponent::FindBoneIndex(const FString& BoneName) const
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneName.empty()) return -1;
+
+	for (int32 Index = 0; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
+	{
+		if (Asset->Bones[Index].Name == BoneName)
+		{
+			return Index;
+		}
+	}
+	return -1;
+}
+
+bool USkinnedMeshComponent::GetBoneWorldTransformByIndex(int32 BoneIndex, FTransform& OutTransform) const
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return false;
+
+	TArray<FMatrix> GlobalMatrices;
+	BuildBoneEditGlobalMatrices(GlobalMatrices);
+
+	const FMatrix BoneWorldMatrix = GlobalMatrices[BoneIndex] * GetWorldMatrix();
+	OutTransform = MatrixToEditorTransform(BoneWorldMatrix);
+	return true;
+}
+
+bool USkinnedMeshComponent::GetBoneWorldTransformByName(const FString& BoneName, FTransform& OutTransform) const
+{
+	int32 BoneIndex = FindBoneIndex(BoneName);
+	if (BoneIndex < 0) return false;
+	return GetBoneWorldTransformByIndex(BoneIndex, OutTransform);
+}
+
+bool USkinnedMeshComponent::GetBoneSocketWorldTransform(const FString& BoneName, const FTransform& LocalOffset, FTransform& OutTransform) const
+{
+	int32 BoneIndex = FindBoneIndex(BoneName);
+	if (BoneIndex < 0) return false;
+
+	FTransform BoneWorldTransform;
+	if (!GetBoneWorldTransformByIndex(BoneIndex, BoneWorldTransform)) return false;
+
+	const FMatrix SocketWorldMatrix = LocalOffset.ToMatrix() * BoneWorldTransform.ToMatrix();
+
+	OutTransform = MatrixToEditorTransform(SocketWorldMatrix);
+	return true;
 }
 
 FVector USkinnedMeshComponent::GetBoneLocationByIndex(int32 BoneIndex) const

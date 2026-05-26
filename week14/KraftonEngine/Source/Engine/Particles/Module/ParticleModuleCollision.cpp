@@ -1,9 +1,10 @@
-#include "ParticleModuleCollision.h"
+﻿#include "ParticleModuleCollision.h"
 
 #include "Component/Particle/ParticleSystemComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Particles/ParticleHelper.h"
+#include "Particles/Runtime/ParticleCollisionEvent.h"
 
 void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
 {
@@ -19,6 +20,7 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 		return;
 	}
 
+	Owner->bIsEventGenerator = true;
 	AActor* IgnoreActor = Component ? Component->GetOwner() : nullptr;
 
 	struct
@@ -30,66 +32,84 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 
 	BEGIN_UPDATE_LOOP
 		const FVector Move = Particle->Position - Particle->OldPosition;
-		const float MoveDistance = Move.Length();
-		if (MoveDistance <= 1.0e-4f)
-		{
-			continue;
-		}
+	const float MoveDistance = Move.Length();
+	if (MoveDistance <= 1.0e-4f)
+	{
+		continue;
+	}
 
-		FVector Direction = Move / MoveDistance;
-		FHitResult Hit;
-		if (!World->PhysicsRaycast(Particle->OldPosition, Direction, MoveDistance, Hit, TraceChannel, IgnoreActor))
-		{
-			continue;
-		}
+	FVector Direction = Move / MoveDistance;
+	FHitResult Hit;
+	const float SweepRadius = SphereRadius > 0.0f ? SphereRadius : 0.0f;
 
-		FVector Normal = Hit.WorldNormal;
-		if (Normal.Length() <= 1.0e-4f)
-		{
-			Normal = Hit.ImpactNormal;
-		}
-		if (Normal.Length() <= 1.0e-4f)
-		{
-			Normal = FVector::UpVector;
-		}
-		Normal.Normalize();
+	if (!World->PhysicsSphereSweepShapeComponents(Particle->OldPosition, Direction, MoveDistance, SweepRadius, Hit, TraceChannel, IgnoreActor))
+	{
+		continue;
+	}
 
-		Particle->Position = Hit.WorldHitLocation + Normal * Radius;
+	FVector Normal = Hit.WorldNormal;
+	if (Normal.Length() <= 1.0e-4f)
+	{
+		Normal = Hit.ImpactNormal;
+	}
+	if (Normal.Length() <= 1.0e-4f)
+	{
+		Normal = FVector::UpVector;
+	}
+	Normal.Normalize();
 
-		if (Response == EParticleCollisionResponse::Kill)
-		{
-			Particle->bAlive = false;
-			continue;
-		}
+	const float PositionBias = Bias > 0.0f ? Bias : 0.0f;
+	Particle->Position = Hit.WorldHitLocation + Normal * PositionBias;
 
-		if (Response == EParticleCollisionResponse::Stop)
-		{
-			Particle->Velocity = FVector::ZeroVector;
-			continue;
-		}
+	if (Owner->bIsEventGenerator)
+	{
+		FParticleCollisionEventPayload NewEvent;
+		NewEvent.EventName = FName("Collision");
+		NewEvent.EmitterTime = Owner->GetEmitterTime();
+		NewEvent.Location = Hit.WorldHitLocation;
+		NewEvent.Normal = Normal;
+		NewEvent.Velocity = Particle->Velocity;
+		NewEvent.Direction = Direction;
+		NewEvent.ParticleIndex = CurrentIndex;
+		NewEvent.HitComponent = Hit.HitComponent;
 
-		const float NormalSpeed = Particle->Velocity.Dot(Normal);
-		FVector NormalVelocity = Normal * NormalSpeed;
-		FVector TangentVelocity = Particle->Velocity - NormalVelocity;
+		Owner->CollisionEventQueue.push_back(NewEvent);
+	}
 
-		float ClampedRestitution = Restitution;
-		if (ClampedRestitution < 0.0f)
-		{
-			ClampedRestitution = 0.0f;
-		}
+	if (Response == EParticleCollisionResponse::Kill)
+	{
+		Particle->bAlive = false;
+		continue;
+	}
 
-		float ClampedFriction = Friction;
-		if (ClampedFriction < 0.0f)
-		{
-			ClampedFriction = 0.0f;
-		}
-		else if (ClampedFriction > 1.0f)
-		{
-			ClampedFriction = 1.0f;
-		}
+	if (Response == EParticleCollisionResponse::Stop)
+	{
+		Particle->Velocity = FVector::ZeroVector;
+		continue;
+	}
 
-		NormalVelocity = NormalVelocity * -ClampedRestitution;
-		TangentVelocity = TangentVelocity * (1.0f - ClampedFriction);
-		Particle->Velocity = NormalVelocity + TangentVelocity;
+	const float NormalSpeed = Particle->Velocity.Dot(Normal);
+	FVector NormalVelocity = Normal * NormalSpeed;
+	FVector TangentVelocity = Particle->Velocity - NormalVelocity;
+
+	float ClampedRestitution = Restitution;
+	if (ClampedRestitution < 0.0f)
+	{
+		ClampedRestitution = 0.0f;
+	}
+
+	float ClampedFriction = Friction;
+	if (ClampedFriction < 0.0f)
+	{
+		ClampedFriction = 0.0f;
+	}
+	else if (ClampedFriction > 1.0f)
+	{
+		ClampedFriction = 1.0f;
+	}
+
+	NormalVelocity = NormalVelocity * -ClampedRestitution;
+	TangentVelocity = TangentVelocity * (1.0f - ClampedFriction);
+	Particle->Velocity = NormalVelocity + TangentVelocity;
 	END_UPDATE_LOOP
 }
