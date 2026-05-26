@@ -626,9 +626,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp" />
-    <ClCompile Include="Source\Engine\Particles\Collision\ParticleModuleCollision.cpp" />
     <ClCompile Include="Source\Engine\Particles\DynamicEmitterData.cpp" />
-    <ClCompile Include="Source\Engine\Particles\Event\ParticleModuleEventGenerator.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleEmitter.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleEmitterInstances.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleHelper.cpp" />
@@ -642,8 +640,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Particles\Beam\ParticleModuleBeamNoise.cpp" />
     <ClCompile Include="Source\Engine\Particles\Beam\ParticleModuleBeamSource.cpp" />
     <ClCompile Include="Source\Engine\Particles\Beam\ParticleModuleBeamTarget.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Collision\ParticleModuleCollision.cpp" />
     <ClCompile Include="Source\Engine\Particles\Color\ParticleModuleColor.cpp" />
     <ClCompile Include="Source\Engine\Particles\Color\ParticleModuleColorOverLife.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Event\ParticleModuleEventGenerator.cpp" />
     <ClCompile Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.cpp" />
     <ClCompile Include="Source\Engine\Particles\Location\ParticleModuleLocation.cpp" />
     <ClCompile Include="Source\Engine\Particles\Material\ParticleModuleMeshMaterial.cpp" />
@@ -1046,11 +1046,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Object\Reflection\ObjectMacros.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UClass.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UStruct.h" />
-    <ClInclude Include="Source\Engine\Particles\Collision\ParticleModuleCollision.h" />
-    <ClInclude Include="Source\Engine\Particles\Collision\ParticleModuleCollisionBase.h" />
     <ClInclude Include="Source\Engine\Particles\DynamicEmitterData.h" />
-    <ClInclude Include="Source\Engine\Particles\Event\ParticleModuleEventBase.h" />
-    <ClInclude Include="Source\Engine\Particles\Event\ParticleModuleEventGenerator.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleEmitter.generated.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleEmitter.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleEmitterInstances.h" />
@@ -1068,9 +1064,13 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Particles\Beam\ParticleModuleBeamNoise.h" />
     <ClInclude Include="Source\Engine\Particles\Beam\ParticleModuleBeamSource.h" />
     <ClInclude Include="Source\Engine\Particles\Beam\ParticleModuleBeamTarget.h" />
+    <ClInclude Include="Source\Engine\Particles\Collision\ParticleModuleCollision.h" />
+    <ClInclude Include="Source\Engine\Particles\Collision\ParticleModuleCollisionBase.h" />
     <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColor.h" />
     <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColorBase.h" />
     <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColorOverLife.h" />
+    <ClInclude Include="Source\Engine\Particles\Event\ParticleModuleEventBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Event\ParticleModuleEventGenerator.h" />
     <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.h" />
     <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetimeBase.h" />
     <ClInclude Include="Source\Engine\Particles\Location\ParticleModuleLocation.h" />
@@ -1786,6 +1786,13 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\Common\Fog.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -1850,6 +1857,13 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Editor\Gizmo.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\BD78AAE88B260EBC_ParticleSprite.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
@@ -1940,14 +1954,14 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Particle\Mesh.hlsl">
+    <FxCompile Include="Shaders\Particle\BeamTrail.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shaders\Particle\BeamTrail.hlsl">
+    <FxCompile Include="Shaders\Particle\Mesh.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>

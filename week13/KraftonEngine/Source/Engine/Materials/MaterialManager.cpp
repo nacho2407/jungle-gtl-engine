@@ -43,7 +43,7 @@ namespace
         }
         return std::filesystem::exists(Full);
     }
-    constexpr const char* MaterialGraphGeneratorVersion = "ParticleSpriteCBLayout_v3";
+    constexpr const char* MaterialGraphGeneratorVersion = "ParticleSpriteFog_v5";
 }
 
 void FMaterialManager::ScanMaterialAssets()

@@ -14,6 +14,7 @@
 #include "Common/VertexLayouts.hlsli"
 #include "Common/SystemSamplers.hlsli"
 #include "Common/Skinning.hlsli"
+#include "Common/Fog.hlsli"
 
 #if !defined(LIGHTING_MODEL_UNLIT)
 #include "Common/ForwardLighting.hlsli"
@@ -248,8 +249,8 @@ return output;
     finalColor = ApplyWireframe(finalColor);
 #endif
 
-    output.Color = float4(finalColor, baseColor.a);
+    output.Color = ApplyFogTranslucent(float4(finalColor, baseColor.a), input.worldPos, CameraWorldPos);
     output.Normal = float4(N, 1.0f); // alpha=1: 유효한 노말 마킹
-    
+
     return output;
 }

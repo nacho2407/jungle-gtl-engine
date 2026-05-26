@@ -94,6 +94,10 @@ void FRenderer::Render(const FFrameContext& Frame, UWorld* World, FScene& Scene)
 		SCOPE_STAT_CAT("UpdateLightBuffer", "4_ExecutePass");
 		Resources.UpdateLightBuffer(Device, Scene, Frame);
 	}
+	{
+		SCOPE_STAT_CAT("UpdateFogBuffer", "4_ExecutePass");
+		Resources.UpdateFogBuffer(Device, Scene, Frame);
+	}
 
 	// 시스템 샘플러 영구 바인딩 (s0-s2)
 	Resources.BindSystemSamplers(Device);

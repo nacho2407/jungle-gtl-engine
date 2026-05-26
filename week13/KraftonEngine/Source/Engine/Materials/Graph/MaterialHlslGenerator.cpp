@@ -809,7 +809,14 @@ namespace
 		SS << "#include \"Common/ConstantBuffers.hlsli\"\n";
 		SS << "#include \"Common/VertexLayouts.hlsli\"\n";
 		SS << "#include \"Common/Functions.hlsli\"\n";
-		SS << "#include \"Common/SystemSamplers.hlsli\"\n\n";
+		SS << "#include \"Common/SystemSamplers.hlsli\"\n";
+		// AlphaBlend 도메인에서는 per-pixel fog 적용
+		if (Domain == EMaterialDomain::ParticleSprite || Domain == EMaterialDomain::ParticleMesh)
+		{
+			SS << "#define USE_FOG 1\n";
+			SS << "#include \"Common/Fog.hlsli\"\n";
+		}
+		SS << "\n";
 		SS << "struct FMaterialPixelInput\n";
 		SS << "{\n";
 		SS << "    float2 UV0;\n";
@@ -853,6 +860,7 @@ struct PS_Input_MaterialParticle
     float4 color          : COLOR;
     float  subImageIndex  : TEXCOORD1;
     float4 dynamicParam   : TEXCOORD2;
+    float3 worldPos       : TEXCOORD3;
 };
 
 PS_Input_MaterialParticle VS(VS_Input_ParticleQuad quad, VS_Input_ParticleInstance inst)
@@ -875,6 +883,7 @@ PS_Input_MaterialParticle VS(VS_Input_ParticleQuad quad, VS_Input_ParticleInstan
     output.color          = inst.color;
     output.subImageIndex  = inst.subImageIndex;
     output.dynamicParam   = inst.dynamicParam;
+    output.worldPos       = worldPos;
     return output;
 }
 
@@ -893,7 +902,7 @@ float4 PS(PS_Input_MaterialParticle input) : SV_TARGET
     FMaterialResult Result = EvaluateMaterial(MaterialInput);
     float4 FinalColor = float4(Result.Color + Result.Emissive, Result.Opacity);
     clip(FinalColor.a - 0.01f);
-    return FinalColor;
+    return ApplyFogTranslucent(FinalColor, input.worldPos, CameraWorldPos);
 }
 )";
 	}
@@ -909,6 +918,7 @@ struct PS_Input_MaterialMeshParticle
     float4 color          : COLOR;
     float  subImageIndex  : TEXCOORD1;
     float4 dynamicParam   : TEXCOORD2;
+    float3 worldPos       : TEXCOORD3;
 };
 
 PS_Input_MaterialMeshParticle VS(VS_Input_PNCT vert, VS_Input_MeshParticleInstance inst)
@@ -923,6 +933,7 @@ PS_Input_MaterialMeshParticle VS(VS_Input_PNCT vert, VS_Input_MeshParticleInstan
     output.color          = vert.color * inst.color;
     output.subImageIndex  = inst.subImageIndex;
     output.dynamicParam   = inst.dynamicParam;
+    output.worldPos       = worldPos.xyz / worldPos.w;
     return output;
 }
 
@@ -941,7 +952,7 @@ float4 PS(PS_Input_MaterialMeshParticle input) : SV_TARGET
     FMaterialResult Result = EvaluateMaterial(MaterialInput);
     float4 FinalColor = float4(Result.Color + Result.Emissive, Result.Opacity);
     clip(FinalColor.a - 0.01f);
-    return FinalColor;
+    return ApplyFogTranslucent(FinalColor, input.worldPos, CameraWorldPos);
 }
 )";
 	}

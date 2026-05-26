@@ -3,19 +3,7 @@
 
 #include "Common/Functions.hlsli"
 #include "Common/SystemResources.hlsli"
-
-// b2 (PerShader0): Fog parameters
-cbuffer FogBuffer : register(b2)
-{
-    float4 FogInscatteringColor;
-    float FogDensity;
-    float FogHeightFalloff;
-    float FogBaseHeight;
-    float FogStartDistance;
-    float FogCutoffDistance;
-    float FogMaxOpacity;
-    float2 _fogPad;
-};
+#include "Common/Fog.hlsli"
 
 // SceneDepthTexture (t16) is declared in Common/SystemResources.hlsli
 
