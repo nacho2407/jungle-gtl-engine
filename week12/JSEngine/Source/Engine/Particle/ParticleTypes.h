@@ -124,7 +124,16 @@ struct FDynamicEmitterReplayDataBase
 	FVector Scale = FVector::OneVector;
 	EParticleSortMode SortMode = EParticleSortMode::ViewDepthBackToFront;
 
-    // active particle 순회 헬퍼 함수
+	/**
+	 * @brief render replay snapshot의 active index에 해당하는 particle을 조회합니다.
+	 *
+	 * @param ActiveIndex snapshot-local active particle index
+	 *
+	 * @return 조회된 particle 포인터 또는 유효하지 않으면 nullptr
+	 *
+	 * @details render snapshot은 원본 emitter storage와 다른 compacted index 배열을 가질 수 있으므로,
+	 *          active index와 physical index 양쪽의 snapshot buffer 범위를 모두 확인합니다.
+	 */
 	const FBaseParticle* GetParticleByActiveIndex(int32 ActiveIndex) const
 	{
 		if (ActiveIndex < 0 || ActiveIndex >= ActiveParticleCount)
@@ -133,6 +142,11 @@ struct FDynamicEmitterReplayDataBase
 		}
 
 		if (DataContainer.ParticleData == nullptr || DataContainer.ParticleIndices == nullptr || ParticleStride <= 0)
+		{
+			return nullptr;
+		}
+
+		if (ActiveIndex >= DataContainer.ParticleIndicesNumShorts)
 		{
 			return nullptr;
 		}

@@ -355,6 +355,155 @@ namespace
 			? EmitterInstance.GetOwner().GetComponentToWorld().TransformPosition(Particle.OldLocation)
 			: Particle.OldLocation;
 	}
+
+	/**
+	 * @brief render snapshot으로 넘길 수 있는 live particle 포인터를 active index에서 조회합니다.
+	 */
+	const FBaseParticle* ResolveLiveParticleForRender(
+		const FParticleEmitterInstance& EmitterInstance,
+		int32 ActiveIndex,
+		int32& OutPhysicalIndex)
+	{
+		OutPhysicalIndex = -1;
+
+		// active index 범위
+		if (ActiveIndex < 0 || ActiveIndex >= EmitterInstance.ActiveParticles)
+		{
+			return nullptr;
+		}
+
+		// particle storage 유효성
+		if (EmitterInstance.ParticleData == nullptr ||
+			EmitterInstance.ParticleIndices == nullptr ||
+			EmitterInstance.ParticleStride <= 0 ||
+			EmitterInstance.MaxActiveParticles <= 0)
+		{
+			return nullptr;
+		}
+
+		// physical index 범위
+		const int32 PhysicalIndex = static_cast<int32>(EmitterInstance.ParticleIndices[ActiveIndex]);
+		if (PhysicalIndex < 0 || PhysicalIndex >= EmitterInstance.MaxActiveParticles)
+		{
+			return nullptr;
+		}
+
+		// source particle memory 범위
+		const size_t ParticleOffset = static_cast<size_t>(PhysicalIndex) * static_cast<size_t>(EmitterInstance.ParticleStride);
+		if (ParticleOffset + sizeof(FBaseParticle) > static_cast<size_t>(EmitterInstance.DataContainer.ParticleDataNumBytes))
+		{
+			return nullptr;
+		}
+
+		const FBaseParticle* Particle = reinterpret_cast<const FBaseParticle*>(EmitterInstance.ParticleData + ParticleOffset);
+		if (EmitterInstance.IsParticlePendingKill(*Particle))
+		{
+			return nullptr;
+		}
+
+		OutPhysicalIndex = PhysicalIndex;
+		return Particle;
+	}
+
+	/**
+	 * @brief render snapshot에 포함할 live particle 수를 계산합니다.
+	 */
+	int32 CountLiveParticlesForRender(const FParticleEmitterInstance& EmitterInstance)
+	{
+		int32 LiveParticleCount = 0;
+		for (int32 ActiveIndex = 0; ActiveIndex < EmitterInstance.ActiveParticles; ++ActiveIndex)
+		{
+			int32 PhysicalIndex = -1;
+			if (ResolveLiveParticleForRender(EmitterInstance, ActiveIndex, PhysicalIndex) != nullptr)
+			{
+				++LiveParticleCount;
+			}
+		}
+		return LiveParticleCount;
+	}
+
+	/**
+	 * @brief live particle count와 stride에서 render snapshot byte 크기를 계산합니다.
+	 */
+	bool CalculateRenderSnapshotByteSizes(
+		int32 LiveParticleCount,
+		int32 ParticleStride,
+		size_t& OutParticleDataBytes,
+		size_t& OutSnapshotLogicalBytes)
+	{
+		OutParticleDataBytes = 0;
+		OutSnapshotLogicalBytes = 0;
+
+		// 빈 snapshot 또는 잘못된 stride
+		if (LiveParticleCount <= 0 || ParticleStride <= 0)
+		{
+			return false;
+		}
+
+		// snapshot buffer 크기
+		OutParticleDataBytes = static_cast<size_t>(LiveParticleCount) * static_cast<size_t>(ParticleStride);
+		const size_t ParticleIndexBytes = static_cast<size_t>(LiveParticleCount) * sizeof(uint16);
+		OutSnapshotLogicalBytes = OutParticleDataBytes + ParticleIndexBytes;
+
+		// DataContainer int32 계약 보호
+		return OutParticleDataBytes <= static_cast<size_t>(std::numeric_limits<int32>::max()) &&
+			   OutSnapshotLogicalBytes <= static_cast<size_t>(std::numeric_limits<int32>::max());
+	}
+
+	/**
+	 * @brief live particle만 render snapshot buffer에 compact된 순서로 복사합니다.
+	 */
+	int32 CopyLiveParticlesForRenderSnapshot(
+		const FParticleEmitterInstance& EmitterInstance,
+		uint8* SnapshotParticleData,
+		TArray<uint16>& SnapshotParticleIndices,
+		bool bBakeWorldSpaceLocation)
+	{
+		if (SnapshotParticleData == nullptr || SnapshotParticleIndices.empty() || EmitterInstance.ParticleStride <= 0)
+		{
+			return 0;
+		}
+
+		int32 SnapshotIndex = 0;
+		for (int32 ActiveIndex = 0; ActiveIndex < EmitterInstance.ActiveParticles; ++ActiveIndex)
+		{
+			if (SnapshotIndex >= static_cast<int32>(SnapshotParticleIndices.size()))
+			{
+				break;
+			}
+
+			// live source particle 조회
+			int32 SourcePhysicalIndex = -1;
+			const FBaseParticle* SourceParticle = ResolveLiveParticleForRender(EmitterInstance, ActiveIndex, SourcePhysicalIndex);
+			if (SourceParticle == nullptr)
+			{
+				continue;
+			}
+
+			// source / destination stride 위치
+			const uint8* SourceParticleData =
+				EmitterInstance.ParticleData + static_cast<size_t>(SourcePhysicalIndex) * static_cast<size_t>(EmitterInstance.ParticleStride);
+			uint8* DestinationParticleData =
+				SnapshotParticleData + static_cast<size_t>(SnapshotIndex) * static_cast<size_t>(EmitterInstance.ParticleStride);
+
+			// payload 포함 particle stride 전체 복사
+			std::memcpy(DestinationParticleData, SourceParticleData, static_cast<size_t>(EmitterInstance.ParticleStride));
+
+			// sprite snapshot world-space 위치 굽기
+			if (bBakeWorldSpaceLocation)
+			{
+				FBaseParticle& SnapshotParticle = *reinterpret_cast<FBaseParticle*>(DestinationParticleData);
+				SnapshotParticle.Location = EmitterInstance.GetParticleLocationForRender(*SourceParticle);
+				SnapshotParticle.OldLocation = GetParticleOldLocationForRender(EmitterInstance, *SourceParticle);
+			}
+
+			// snapshot-local physical index
+			SnapshotParticleIndices[static_cast<size_t>(SnapshotIndex)] = static_cast<uint16>(SnapshotIndex);
+			++SnapshotIndex;
+		}
+
+		return SnapshotIndex;
+	}
 } // namespace
 
 namespace
@@ -889,7 +1038,7 @@ FParticleEmitterInstance* UParticleModuleTypeDataBase::CreateInstance(
 
 FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
 {
-	/** TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요*/
+	// note: TypeDataBase에서는 Sprite용 Render Data임에 유의. 다른 렌더러는 별도의 Render Data가 필요
 
 	// EmitterInstance 유효성 체크
 	if (InEmitterInstance == nullptr ||
@@ -902,16 +1051,18 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 		return nullptr;
 	}
 
-	// Particle Count & Bytes
-	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
+	// render 대상 live particle count
+	const int32 ActiveParticleCount = CountLiveParticlesForRender(*InEmitterInstance);
+	if (ActiveParticleCount <= 0)
+	{
+		return nullptr;
+	}
+
+	// live particle 기준 snapshot 크기
 	const int32 ParticleStride = InEmitterInstance->ParticleStride;
-	const size_t ParticleDataBytes =
-		static_cast<size_t>(ActiveParticleCount) * static_cast<size_t>(ParticleStride);
-	const size_t ParticleIndexBytes =
-		static_cast<size_t>(ActiveParticleCount) * sizeof(uint16);
-	const size_t SnapshotLogicalBytes = ParticleDataBytes + ParticleIndexBytes;
-	if (ParticleDataBytes > static_cast<size_t>(std::numeric_limits<int32>::max()) ||
-		SnapshotLogicalBytes > static_cast<size_t>(std::numeric_limits<int32>::max()))
+	size_t ParticleDataBytes = 0;
+	size_t SnapshotLogicalBytes = 0;
+	if (!CalculateRenderSnapshotByteSizes(ActiveParticleCount, ParticleStride, ParticleDataBytes, SnapshotLogicalBytes))
 	{
 		return nullptr;
 	}
@@ -927,26 +1078,20 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 		return nullptr;
 	}
 
-	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticleCount; ++ActiveIndex)
+	const int32 SnapshotParticleCount = CopyLiveParticlesForRenderSnapshot(
+		*InEmitterInstance,
+		SnapshotParticleData,
+		RenderData->OwnedParticleIndices,
+		true);
+	if (SnapshotParticleCount <= 0)
 	{
-		const int32 SourcePhysicalIndex = InEmitterInstance->ParticleIndices[ActiveIndex];
-		const uint8* SourceParticleData =
-			InEmitterInstance->ParticleData + static_cast<size_t>(SourcePhysicalIndex) * ParticleStride;
-		uint8* DestinationParticleData = SnapshotParticleData + static_cast<size_t>(ActiveIndex) * ParticleStride;
-
-		// renderer가 simulation memory를 직접 읽지 않아도 되도록 payload까지 포함한 particle stride 전체를 복사
-		std::memcpy(DestinationParticleData, SourceParticleData, static_cast<size_t>(ParticleStride));
-
-		const FBaseParticle& SourceParticle = *reinterpret_cast<const FBaseParticle*>(SourceParticleData);
-		FBaseParticle& SnapshotParticle = *reinterpret_cast<FBaseParticle*>(DestinationParticleData);
-		SnapshotParticle.Location = InEmitterInstance->GetParticleLocationForRender(SourceParticle);
-		SnapshotParticle.OldLocation = GetParticleOldLocationForRender(*InEmitterInstance, SourceParticle);
-		RenderData->OwnedParticleIndices[ActiveIndex] = static_cast<uint16>(ActiveIndex);
+		delete RenderData;
+		return nullptr;
 	}
 
 	UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
 	RenderData->ReplayData.eEmitterType = EDynamicEmitterType::Sprite;
-	RenderData->ReplayData.ActiveParticleCount = ActiveParticleCount;
+	RenderData->ReplayData.ActiveParticleCount = SnapshotParticleCount;
 	RenderData->ReplayData.ParticleStride = ParticleStride;
 	RenderData->ReplayData.SortMode = RequiredModule != nullptr
 		? RequiredModule->SortMode
@@ -965,7 +1110,7 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBase::GetDynamicRenderData(FPart
 	// 반드시 DataContainer의 ParticleData / ParticleIndices 포인터를 통해 접근해야 함
 	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);
 	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = static_cast<int32>(ParticleDataBytes);
-	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = ActiveParticleCount;
+	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = SnapshotParticleCount;
 	RenderData->ReplayData.DataContainer.ParticleData = SnapshotParticleData;
 	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
 
@@ -1006,12 +1151,21 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 		return nullptr;
 	}
 
-	// Particle Count
-	const int32 ActiveParticleCount = InEmitterInstance->ActiveParticles;
+	// render 대상 live particle count
+	const int32 ActiveParticleCount = CountLiveParticlesForRender(*InEmitterInstance);
+	if (ActiveParticleCount <= 0)
+	{
+		return nullptr;
+	}
+
+	// live particle 기준 snapshot 크기
 	const int32 ParticleStride = InEmitterInstance->ParticleStride;
-	const size_t ParticleDataBytes = static_cast<size_t>(ActiveParticleCount) * static_cast<size_t>(ParticleStride);
-	const size_t ParticleIndexBytes = static_cast<size_t>(ActiveParticleCount) * sizeof(uint16);
-	const size_t SnapshotLogicalBytes = ParticleDataBytes + ParticleIndexBytes;
+	size_t ParticleDataBytes = 0;
+	size_t SnapshotLogicalBytes = 0;
+	if (!CalculateRenderSnapshotByteSizes(ActiveParticleCount, ParticleStride, ParticleDataBytes, SnapshotLogicalBytes))
+	{
+		return nullptr;
+	}
 
 	// Mesh
 	FDynamicMeshEmitterData* RenderData = new FDynamicMeshEmitterData();
@@ -1036,19 +1190,18 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 		? RequiredModule->SortMode
 		: EParticleSortMode::ViewDepthBackToFront;
 
-	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticleCount; ++ActiveIndex)
+	const int32 SnapshotParticleCount = CopyLiveParticlesForRenderSnapshot(
+		*InEmitterInstance,
+		SnapshotParticleData,
+		RenderData->OwnedParticleIndices,
+		false);
+	if (SnapshotParticleCount <= 0)
 	{
-		const int32 SourcePhysicalIndex = InEmitterInstance->ParticleIndices[ActiveIndex];
-		const uint8* SourceParticleData =
-			InEmitterInstance->ParticleData + static_cast<size_t>(SourcePhysicalIndex) * ParticleStride;
-		uint8* DestinationParticleData = SnapshotParticleData + static_cast<size_t>(ActiveIndex) * ParticleStride;
-
-		// renderer가 simulation memory를 직접 읽지 않도록 payload까지 포함한 particle stride 전체를 snapshot에 복사
-		std::memcpy(DestinationParticleData, SourceParticleData, static_cast<size_t>(ParticleStride));
-		RenderData->OwnedParticleIndices[ActiveIndex] = static_cast<uint16>(ActiveIndex);
+		delete RenderData;
+		return nullptr;
 	}
 	// ReplayData
-	RenderData->ReplayData.ActiveParticleCount = ActiveParticleCount;
+	RenderData->ReplayData.ActiveParticleCount = SnapshotParticleCount;
 	RenderData->ReplayData.ParticleStride = ParticleStride;
 	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
 
@@ -1061,7 +1214,7 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	// TODO: 중앙 renderer가 Mesh instance transform을 생성할 때 Mesh Particle의 회전 축과 정렬 정책을 반영한다.
 	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);
 	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = static_cast<int32>(ParticleDataBytes);
-	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = ActiveParticleCount;
+	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = SnapshotParticleCount;
 	RenderData->ReplayData.DataContainer.ParticleData = SnapshotParticleData;
 	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
 
