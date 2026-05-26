@@ -239,6 +239,31 @@ namespace
 		OutBindings.push_back(Binding);
 	}
 
+	void AddVectorBinding(
+		TArray<FParticleCurveBinding>& OutBindings,
+		const FString& Label,
+		TSoftObjectPtr<UCurveVectorAsset>& SoftCurve,
+		UObject* Owner,
+		const char* NotifyPropertyName)
+	{
+		FParticleCurveBinding Binding;
+		Binding.Label = Label;
+		Binding.Path = SoftCurve.GetPath();
+		Binding.Kind = EParticleCurveAssetKind::Vector;
+		Binding.SoftPtr = &SoftCurve;
+		Binding.Owner = Owner;
+		Binding.NotifyPropertyName = NotifyPropertyName;
+		if (!Binding.Path.empty())
+		{
+			if (UCurveVectorAsset* Asset = FResourceManager::Get().LoadVectorCurve(Binding.Path))
+			{
+				Binding.Asset = Asset;
+				Binding.Curve = &Asset->GetMutableCurve().XCurve;
+			}
+		}
+		OutBindings.push_back(Binding);
+	}
+
 	void AddColorChannelBinding(
 		TArray<FParticleCurveBinding>& OutBindings,
 		const FString& Label,
@@ -273,6 +298,31 @@ namespace
 		OutBindings.push_back(Binding);
 	}
 
+	void AddColorBinding(
+		TArray<FParticleCurveBinding>& OutBindings,
+		const FString& Label,
+		TSoftObjectPtr<UCurveColorAsset>& SoftCurve,
+		UObject* Owner,
+		const char* NotifyPropertyName)
+	{
+		FParticleCurveBinding Binding;
+		Binding.Label = Label;
+		Binding.Path = SoftCurve.GetPath();
+		Binding.Kind = EParticleCurveAssetKind::Color;
+		Binding.SoftPtr = &SoftCurve;
+		Binding.Owner = Owner;
+		Binding.NotifyPropertyName = NotifyPropertyName;
+		if (!Binding.Path.empty())
+		{
+			if (UCurveColorAsset* Asset = FResourceManager::Get().LoadColorCurve(Binding.Path))
+			{
+				Binding.Asset = Asset;
+				Binding.Curve = &Asset->GetMutableCurve().RCurve;
+			}
+		}
+		OutBindings.push_back(Binding);
+	}
+
 	void CollectDistributionCurveBindings(UObject* Module, TArray<FParticleCurveBinding>& OutBindings)
 	{
 		OutBindings.clear();
@@ -301,36 +351,49 @@ namespace
 			if (std::strcmp(StructName, "FParticleFloatDistribution") == 0)
 			{
 				FParticleFloatDistribution& Distribution = *static_cast<FParticleFloatDistribution*>(ValuePtr);
-				AddFloatBinding(OutBindings, BaseLabel + ".Curve", Distribution.Curve, Module, Property->Name);
-				AddFloatBinding(OutBindings, BaseLabel + ".MinCurve", Distribution.MinCurve, Module, Property->Name);
-				AddFloatBinding(OutBindings, BaseLabel + ".MaxCurve", Distribution.MaxCurve, Module, Property->Name);
+				if (Distribution.Mode == EParticleDistributionMode::Curve)
+				{
+					AddFloatBinding(OutBindings, BaseLabel + ".Curve", Distribution.Curve, Module, Property->Name);
+				}
+				else if (Distribution.Mode == EParticleDistributionMode::RandomRangeCurve)
+				{
+					AddFloatBinding(OutBindings, BaseLabel + ".MinCurve", Distribution.MinCurve, Module, Property->Name);
+					AddFloatBinding(OutBindings, BaseLabel + ".MaxCurve", Distribution.MaxCurve, Module, Property->Name);
+				}
 			}
 			else if (std::strcmp(StructName, "FParticleVectorDistribution") == 0)
 			{
 				FParticleVectorDistribution& Distribution = *static_cast<FParticleVectorDistribution*>(ValuePtr);
 				auto AddVectorSlots = [&](const FString& Label, TSoftObjectPtr<UCurveVectorAsset>& SoftCurve)
 				{
-					AddVectorChannelBinding(OutBindings, Label, SoftCurve, Module, Property->Name, 'X', false);
-					AddVectorChannelBinding(OutBindings, Label, SoftCurve, Module, Property->Name, 'Y', false);
-					AddVectorChannelBinding(OutBindings, Label, SoftCurve, Module, Property->Name, 'Z', false);
+					AddVectorBinding(OutBindings, Label, SoftCurve, Module, Property->Name);
 				};
-				AddVectorSlots(BaseLabel + ".Curve", Distribution.Curve);
-				AddVectorSlots(BaseLabel + ".MinCurve", Distribution.MinCurve);
-				AddVectorSlots(BaseLabel + ".MaxCurve", Distribution.MaxCurve);
+				if (Distribution.Mode == EParticleDistributionMode::Curve)
+				{
+					AddVectorSlots(BaseLabel + ".Curve", Distribution.Curve);
+				}
+				else if (Distribution.Mode == EParticleDistributionMode::RandomRangeCurve)
+				{
+					AddVectorSlots(BaseLabel + ".MinCurve", Distribution.MinCurve);
+					AddVectorSlots(BaseLabel + ".MaxCurve", Distribution.MaxCurve);
+				}
 			}
 			else if (std::strcmp(StructName, "FParticleColorDistribution") == 0)
 			{
 				FParticleColorDistribution& Distribution = *static_cast<FParticleColorDistribution*>(ValuePtr);
 				auto AddColorSlots = [&](const FString& Label, TSoftObjectPtr<UCurveColorAsset>& SoftCurve)
 				{
-					AddColorChannelBinding(OutBindings, Label, SoftCurve, Module, Property->Name, 'R');
-					AddColorChannelBinding(OutBindings, Label, SoftCurve, Module, Property->Name, 'G');
-					AddColorChannelBinding(OutBindings, Label, SoftCurve, Module, Property->Name, 'B');
-					AddColorChannelBinding(OutBindings, Label, SoftCurve, Module, Property->Name, 'A');
+					AddColorBinding(OutBindings, Label, SoftCurve, Module, Property->Name);
 				};
-				AddColorSlots(BaseLabel + ".Curve", Distribution.Curve);
-				AddColorSlots(BaseLabel + ".MinCurve", Distribution.MinCurve);
-				AddColorSlots(BaseLabel + ".MaxCurve", Distribution.MaxCurve);
+				if (Distribution.Mode == EParticleDistributionMode::Curve)
+				{
+					AddColorSlots(BaseLabel + ".Curve", Distribution.Curve);
+				}
+				else if (Distribution.Mode == EParticleDistributionMode::RandomRangeCurve)
+				{
+					AddColorSlots(BaseLabel + ".MinCurve", Distribution.MinCurve);
+					AddColorSlots(BaseLabel + ".MaxCurve", Distribution.MaxCurve);
+				}
 			}
 		}
 	}
@@ -655,7 +718,7 @@ namespace
 
 	bool IsParticleCurveBindingVisibleWithActive(const FParticleCurveBinding& Binding, const FParticleCurveBinding* ActiveBinding)
 	{
-		if (!Binding.Curve || Binding.Curve->Keys.empty())
+		if (!Binding.Asset && (!Binding.Curve || Binding.Curve->Keys.empty()))
 		{
 			return false;
 		}
@@ -668,6 +731,120 @@ namespace
 			return Binding.Kind == ActiveBinding->Kind && Binding.Path == ActiveBinding->Path;
 		}
 		return &Binding == ActiveBinding;
+	}
+
+	char GetDefaultParticleCurveChannel(const FParticleCurveBinding& Binding)
+	{
+		switch (Binding.Kind)
+		{
+		case EParticleCurveAssetKind::Vector:
+			return 'X';
+		case EParticleCurveAssetKind::Color:
+			return 'R';
+		case EParticleCurveAssetKind::Float:
+		default:
+			return '\0';
+		}
+	}
+
+	bool IsValidParticleCurveChannel(const FParticleCurveBinding& Binding, char Channel)
+	{
+		switch (Binding.Kind)
+		{
+		case EParticleCurveAssetKind::Float:
+			return Channel == '\0';
+		case EParticleCurveAssetKind::Vector:
+			return Channel == 'X' || Channel == 'Y' || Channel == 'Z';
+		case EParticleCurveAssetKind::Color:
+			return Channel == 'R' || Channel == 'G' || Channel == 'B' || Channel == 'A';
+		}
+		return false;
+	}
+
+	char NormalizeParticleCurveChannel(const FParticleCurveBinding& Binding, char Channel)
+	{
+		return IsValidParticleCurveChannel(Binding, Channel) ? Channel : GetDefaultParticleCurveChannel(Binding);
+	}
+
+	FFloatCurve* GetParticleCurveChannelCurve(const FParticleCurveBinding& Binding, char Channel)
+	{
+		const char NormalizedChannel = NormalizeParticleCurveChannel(Binding, Channel);
+		switch (Binding.Kind)
+		{
+		case EParticleCurveAssetKind::Float:
+			return Binding.Curve;
+		case EParticleCurveAssetKind::Vector:
+			if (UCurveVectorAsset* Asset = Cast<UCurveVectorAsset>(Binding.Asset))
+			{
+				FVectorCurve& Curve = Asset->GetMutableCurve();
+				switch (NormalizedChannel)
+				{
+				case 'Y': return &Curve.YCurve;
+				case 'Z': return &Curve.ZCurve;
+				case 'X':
+				default: return &Curve.XCurve;
+				}
+			}
+			break;
+		case EParticleCurveAssetKind::Color:
+			if (UCurveColorAsset* Asset = Cast<UCurveColorAsset>(Binding.Asset))
+			{
+				FColorCurve& Curve = Asset->GetMutableCurve();
+				switch (NormalizedChannel)
+				{
+				case 'G': return &Curve.GCurve;
+				case 'B': return &Curve.BCurve;
+				case 'A': return &Curve.ACurve;
+				case 'R':
+				default: return &Curve.RCurve;
+				}
+			}
+			break;
+		}
+		return nullptr;
+	}
+
+	FString GetParticleCurveChannelLabel(const FParticleCurveBinding& Binding, char Channel)
+	{
+		const char NormalizedChannel = NormalizeParticleCurveChannel(Binding, Channel);
+		if (NormalizedChannel == '\0')
+		{
+			return Binding.Label;
+		}
+		return Binding.Label + "." + FString(1, NormalizedChannel);
+	}
+
+	FString GetParticleCurveBindingDisplayLabel(const FParticleCurveBinding& Binding)
+	{
+		return Binding.Label;
+	}
+
+	void ForEachParticleCurveChannel(
+		const FParticleCurveBinding& Binding,
+		const std::function<void(const FString& ChannelLabel, FFloatCurve* Curve)>& Func)
+	{
+		if (!Func)
+		{
+			return;
+		}
+
+		switch (Binding.Kind)
+		{
+		case EParticleCurveAssetKind::Float:
+			Func(Binding.Label, Binding.Curve);
+			break;
+		case EParticleCurveAssetKind::Vector:
+			Func(GetParticleCurveChannelLabel(Binding, 'X'), GetParticleCurveChannelCurve(Binding, 'X'));
+			Func(GetParticleCurveChannelLabel(Binding, 'Y'), GetParticleCurveChannelCurve(Binding, 'Y'));
+			Func(GetParticleCurveChannelLabel(Binding, 'Z'), GetParticleCurveChannelCurve(Binding, 'Z'));
+			break;
+		case EParticleCurveAssetKind::Color:
+			Func(GetParticleCurveChannelLabel(Binding, 'R'), GetParticleCurveChannelCurve(Binding, 'R'));
+			Func(GetParticleCurveChannelLabel(Binding, 'G'), GetParticleCurveChannelCurve(Binding, 'G'));
+			Func(GetParticleCurveChannelLabel(Binding, 'B'), GetParticleCurveChannelCurve(Binding, 'B'));
+			Func(GetParticleCurveChannelLabel(Binding, 'A'), GetParticleCurveChannelCurve(Binding, 'A'));
+			break;
+		}
 	}
 
 	void FitParticleCurveView(FParticleCurveEditorState& State, const TArray<FParticleCurveBinding>& Bindings, const FParticleCurveBinding* ActiveBinding, const ImVec2& GraphSize, bool bFitX, bool bFitY)
@@ -684,14 +861,23 @@ namespace
 			{
 				continue;
 			}
-			for (const FCurveKey& Key : Binding.Curve->Keys)
-			{
-				MinTime = std::min(MinTime, Key.Time);
-				MaxTime = std::max(MaxTime, Key.Time);
-				MinValue = std::min(MinValue, Key.Value);
-				MaxValue = std::max(MaxValue, Key.Value);
-				bHasKeys = true;
-			}
+			ForEachParticleCurveChannel(
+				Binding,
+				[&](const FString&, FFloatCurve* Curve)
+				{
+					if (!Curve || Curve->Keys.empty())
+					{
+						return;
+					}
+					for (const FCurveKey& Key : Curve->Keys)
+					{
+						MinTime = std::min(MinTime, Key.Time);
+						MaxTime = std::max(MaxTime, Key.Time);
+						MinValue = std::min(MinValue, Key.Value);
+						MaxValue = std::max(MaxValue, Key.Value);
+						bHasKeys = true;
+					}
+				});
 		}
 
 		if (!bHasKeys)
@@ -731,22 +917,22 @@ namespace
 		return LabelLen >= SuffixLen && Label.compare(LabelLen - SuffixLen, SuffixLen, Suffix) == 0;
 	}
 
-	ImU32 GetParticleCurveDisplayColor(const FParticleCurveBinding& Binding, bool bActive)
+	ImU32 GetParticleCurveDisplayColor(const FString& Label, bool bActive)
 	{
 		const int32 Alpha = bActive ? 255 : 150;
-		if (ParticleCurveLabelHasSuffix(Binding.Label, ".R") || ParticleCurveLabelHasSuffix(Binding.Label, ".X"))
+		if (ParticleCurveLabelHasSuffix(Label, ".R") || ParticleCurveLabelHasSuffix(Label, ".X"))
 		{
 			return IM_COL32(255, 88, 88, Alpha);
 		}
-		if (ParticleCurveLabelHasSuffix(Binding.Label, ".G") || ParticleCurveLabelHasSuffix(Binding.Label, ".Y"))
+		if (ParticleCurveLabelHasSuffix(Label, ".G") || ParticleCurveLabelHasSuffix(Label, ".Y"))
 		{
 			return IM_COL32(92, 230, 120, Alpha);
 		}
-		if (ParticleCurveLabelHasSuffix(Binding.Label, ".B") || ParticleCurveLabelHasSuffix(Binding.Label, ".Z"))
+		if (ParticleCurveLabelHasSuffix(Label, ".B") || ParticleCurveLabelHasSuffix(Label, ".Z"))
 		{
 			return IM_COL32(98, 156, 255, Alpha);
 		}
-		if (ParticleCurveLabelHasSuffix(Binding.Label, ".A"))
+		if (ParticleCurveLabelHasSuffix(Label, ".A"))
 		{
 			return IM_COL32(238, 238, 238, Alpha);
 		}
@@ -838,16 +1024,18 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 	if (CurveBindings.empty())
 	{
 		CurveState.SelectedCurveIndex = 0;
+		CurveState.SelectedCurveChannel = '\0';
 		CurveState.SelectedKeyIndex = -1;
 		CurveState.ActiveKeyIndex = -1;
 	}
 	else
 	{
 		CurveState.SelectedCurveIndex = std::clamp(CurveState.SelectedCurveIndex, 0, static_cast<int32>(CurveBindings.size()) - 1);
+		CurveState.SelectedCurveChannel = NormalizeParticleCurveChannel(CurveBindings[CurveState.SelectedCurveIndex], CurveState.SelectedCurveChannel);
 	}
 
 	FParticleCurveBinding* ActiveBinding = CurveBindings.empty() ? nullptr : &CurveBindings[CurveState.SelectedCurveIndex];
-	FFloatCurve* ActiveCurve = ActiveBinding ? ActiveBinding->Curve : nullptr;
+	FFloatCurve* ActiveCurve = ActiveBinding ? GetParticleCurveChannelCurve(*ActiveBinding, CurveState.SelectedCurveChannel) : nullptr;
 	const bool bHasCurveSlots = !CurveBindings.empty();
 	const bool bHasEditableCurve = ActiveCurve != nullptr;
 
@@ -994,6 +1182,7 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 			if (ImGui::Selectable(Label.c_str(), bSelected))
 			{
 				CurveState.SelectedCurveIndex = Index;
+				CurveState.SelectedCurveChannel = GetDefaultParticleCurveChannel(CurveBindings[Index]);
 				CurveState.SelectedKeyIndex = -1;
 				CurveState.ActiveKeyIndex = -1;
 				CurveState.bPendingHorizontalFit = true;
@@ -1017,7 +1206,11 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 	ImGui::PopStyleVar();
 
 	ActiveBinding = CurveBindings.empty() ? nullptr : &CurveBindings[CurveState.SelectedCurveIndex];
-	ActiveCurve = ActiveBinding ? ActiveBinding->Curve : nullptr;
+	if (ActiveBinding)
+	{
+		CurveState.SelectedCurveChannel = NormalizeParticleCurveChannel(*ActiveBinding, CurveState.SelectedCurveChannel);
+	}
+	ActiveCurve = ActiveBinding ? GetParticleCurveChannelCurve(*ActiveBinding, CurveState.SelectedCurveChannel) : nullptr;
 
 	const ImVec2 Available = ImGui::GetContentRegionAvail();
 	if (Available.x <= 1.0f || Available.y <= 1.0f)
@@ -1205,18 +1398,117 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 	DrawList->AddLine(ImVec2(ChannelEnd.x, CanvasStart.y), ImVec2(ChannelEnd.x, CanvasEnd.y), IM_COL32(78, 80, 88, 255), 1.0f);
 
 	const float HeaderHeight = 32.0f;
-	const char* ChannelName = ActiveBinding ? ActiveBinding->Label.c_str() : (Module ? "No Distribution Curve" : "Select Curve Source");
 	DrawList->AddText(
 		ImVec2(CanvasStart.x + 6.0f, CanvasStart.y + 7.0f),
 		ActiveBinding ? IM_COL32(236, 236, 238, 255) : IM_COL32(166, 170, 180, 255),
-		ChannelName);
+		"Curve Source");
+
+	const auto SelectCurveSource = [&](int32 BindingIndex, char Channel)
+	{
+		if (BindingIndex < 0 || BindingIndex >= static_cast<int32>(CurveBindings.size()))
+		{
+			return;
+		}
+
+		CurveState.SelectedCurveIndex = BindingIndex;
+		CurveState.SelectedCurveChannel = NormalizeParticleCurveChannel(CurveBindings[BindingIndex], Channel);
+		CurveState.SelectedKeyIndex = -1;
+		CurveState.ActiveKeyIndex = -1;
+		CurveState.bPendingHorizontalFit = true;
+		CurveState.bPendingVerticalFit = true;
+	};
+
+	DrawList->PushClipRect(CanvasStart, ChannelEnd, true);
+	float SourceRowY = CanvasStart.y + HeaderHeight + 4.0f;
+	constexpr float SourceRowHeight = 20.0f;
+	constexpr float SourceRowGap = 2.0f;
+
+	ImGui::PushID("ParticleCurveSourceList");
+	const auto DrawSourceRow = [&](int32 BindingIndex, char Channel, const FString& Label, float Indent, bool bChannelRow)
+	{
+		if (SourceRowY + SourceRowHeight > ChannelEnd.y - 2.0f)
+		{
+			return;
+		}
+
+		const FParticleCurveBinding& Binding = CurveBindings[BindingIndex];
+		const char NormalizedChannel = NormalizeParticleCurveChannel(Binding, Channel);
+		const bool bSelected = BindingIndex == CurveState.SelectedCurveIndex &&
+			NormalizeParticleCurveChannel(Binding, CurveState.SelectedCurveChannel) == NormalizedChannel;
+		const ImVec2 RowMin(CanvasStart.x + 4.0f, SourceRowY);
+		const ImVec2 RowMax(ChannelEnd.x - 4.0f, SourceRowY + SourceRowHeight);
+
+		ImGui::PushID(BindingIndex);
+		ImGui::PushID(bChannelRow ? 1 : 0);
+		ImGui::PushID(static_cast<int>(NormalizedChannel));
+		ImGui::SetCursorScreenPos(RowMin);
+		ImGui::InvisibleButton("##CurveSourceRow", ImVec2(std::max(1.0f, RowMax.x - RowMin.x), SourceRowHeight));
+		const bool bHovered = ImGui::IsItemHovered();
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+		{
+			SelectCurveSource(BindingIndex, NormalizedChannel);
+		}
+		ImGui::PopID();
+		ImGui::PopID();
+		ImGui::PopID();
+
+		if (bSelected || bHovered)
+		{
+			DrawList->AddRectFilled(RowMin, RowMax, bSelected ? IM_COL32(58, 90, 130, 220) : IM_COL32(68, 70, 78, 150), 3.0f);
+		}
+
+		const FString ColorLabel = GetParticleCurveChannelLabel(Binding, NormalizedChannel);
+		const ImU32 SwatchColor = GetParticleCurveDisplayColor(ColorLabel, bSelected);
+		const float SwatchX = RowMin.x + 6.0f + Indent;
+		const float SwatchY = RowMin.y + 6.0f;
+		DrawList->AddRectFilled(ImVec2(SwatchX, SwatchY), ImVec2(SwatchX + 8.0f, SwatchY + 8.0f), SwatchColor, 2.0f);
+		DrawList->AddRect(ImVec2(SwatchX, SwatchY), ImVec2(SwatchX + 8.0f, SwatchY + 8.0f), IM_COL32(0, 0, 0, 180), 2.0f);
+
+		const bool bEmpty = Binding.Path.empty();
+		const ImU32 TextColor = bSelected
+			? IM_COL32(245, 248, 255, 255)
+			: (bEmpty ? IM_COL32(145, 148, 158, 255) : IM_COL32(218, 220, 226, 255));
+		FString RowText = Label;
+		if (!bChannelRow && bEmpty)
+		{
+			RowText += " (empty)";
+		}
+		DrawList->AddText(ImVec2(SwatchX + 13.0f, RowMin.y + 3.0f), TextColor, RowText.c_str());
+
+		SourceRowY += SourceRowHeight + SourceRowGap;
+	};
+
+	for (int32 BindingIndex = 0; BindingIndex < static_cast<int32>(CurveBindings.size()); ++BindingIndex)
+	{
+		const FParticleCurveBinding& Binding = CurveBindings[BindingIndex];
+		DrawSourceRow(BindingIndex, GetDefaultParticleCurveChannel(Binding), GetParticleCurveBindingDisplayLabel(Binding), 0.0f, false);
+
+		switch (Binding.Kind)
+		{
+		case EParticleCurveAssetKind::Vector:
+			DrawSourceRow(BindingIndex, 'X', "X", 16.0f, true);
+			DrawSourceRow(BindingIndex, 'Y', "Y", 16.0f, true);
+			DrawSourceRow(BindingIndex, 'Z', "Z", 16.0f, true);
+			break;
+		case EParticleCurveAssetKind::Color:
+			DrawSourceRow(BindingIndex, 'R', "R", 16.0f, true);
+			DrawSourceRow(BindingIndex, 'G', "G", 16.0f, true);
+			DrawSourceRow(BindingIndex, 'B', "B", 16.0f, true);
+			DrawSourceRow(BindingIndex, 'A', "A", 16.0f, true);
+			break;
+		case EParticleCurveAssetKind::Float:
+		default:
+			break;
+		}
+	}
+	ImGui::PopID();
+	DrawList->PopClipRect();
 
 	if (ActiveBinding)
 	{
-		const float SwatchY = CanvasStart.y + HeaderHeight - 8.0f;
-		DrawList->AddRectFilled(ImVec2(CanvasStart.x + 6.0f, SwatchY), ImVec2(CanvasStart.x + 13.0f, SwatchY + 7.0f), IM_COL32(255, 0, 44, 255), 0.0f);
-		DrawList->AddRect(ImVec2(CanvasStart.x + 6.0f, SwatchY), ImVec2(CanvasStart.x + 13.0f, SwatchY + 7.0f), IM_COL32(0, 0, 0, 255), 0.0f);
+		CurveState.SelectedCurveChannel = NormalizeParticleCurveChannel(*ActiveBinding, CurveState.SelectedCurveChannel);
 	}
+	ActiveCurve = ActiveBinding ? GetParticleCurveChannelCurve(*ActiveBinding, CurveState.SelectedCurveChannel) : nullptr;
 
 	const float GraphHeight = GraphSize.y;
 
@@ -1276,35 +1568,46 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 				continue;
 			}
 
-			const ImU32 CurveColor = GetParticleCurveDisplayColor(Binding, bActiveBinding);
-			ImVec2 PrevPoint;
-			bool bHasPrev = false;
-			for (int32 SampleIndex = 0; SampleIndex <= SampleCount; ++SampleIndex)
-			{
-				const float X = GraphStart.x + GraphSize.x * static_cast<float>(SampleIndex) / static_cast<float>(SampleCount);
-				const float Time = ScreenToTime(X);
-				const float Value = Binding.Curve->Evaluate(Time);
-				const float Y = GraphStart.y + (ValueMax - Value) * PixelsPerValue;
-				const ImVec2 Point(X, Y);
-				if (bHasPrev)
+			ForEachParticleCurveChannel(
+				Binding,
+				[&](const FString& ChannelLabel, FFloatCurve* Curve)
 				{
-					DrawList->AddLine(PrevPoint, Point, CurveColor, bActiveBinding ? 2.2f : 1.5f);
-				}
-				PrevPoint = Point;
-				bHasPrev = true;
-			}
+					if (!Curve || Curve->Keys.empty())
+					{
+						return;
+					}
 
-			for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Binding.Curve->Keys.size()); ++KeyIndex)
-			{
-				const FCurveKey& Key = Binding.Curve->Keys[KeyIndex];
-				const ImVec2 Point(
-					GraphStart.x + (Key.Time - FirstTime) * PixelsPerTime,
-					GraphStart.y + (ValueMax - Key.Value) * PixelsPerValue);
-				const bool bSelected = bActiveBinding && KeyIndex == CurveState.SelectedKeyIndex;
-				const ImU32 FillColor = bSelected ? IM_COL32(118, 214, 255, 255) : GetParticleCurveDisplayColor(Binding, bActiveBinding);
-				DrawList->AddCircleFilled(Point, bSelected ? 5.5f : (bActiveBinding ? 4.0f : 3.0f), FillColor, 16);
-				DrawList->AddCircle(Point, bSelected ? 6.5f : (bActiveBinding ? 5.0f : 4.0f), IM_COL32(20, 20, 20, 230), 16, 1.2f);
-			}
+					const bool bPrimaryEditableCurve = bActiveBinding && Curve == ActiveCurve;
+					const ImU32 CurveColor = GetParticleCurveDisplayColor(ChannelLabel, bPrimaryEditableCurve);
+					ImVec2 PrevPoint;
+					bool bHasPrev = false;
+					for (int32 SampleIndex = 0; SampleIndex <= SampleCount; ++SampleIndex)
+					{
+						const float X = GraphStart.x + GraphSize.x * static_cast<float>(SampleIndex) / static_cast<float>(SampleCount);
+						const float Time = ScreenToTime(X);
+						const float Value = Curve->Evaluate(Time);
+						const float Y = GraphStart.y + (ValueMax - Value) * PixelsPerValue;
+						const ImVec2 Point(X, Y);
+						if (bHasPrev)
+						{
+							DrawList->AddLine(PrevPoint, Point, CurveColor, bPrimaryEditableCurve ? 2.4f : 1.5f);
+						}
+						PrevPoint = Point;
+						bHasPrev = true;
+					}
+
+					for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Curve->Keys.size()); ++KeyIndex)
+					{
+						const FCurveKey& Key = Curve->Keys[KeyIndex];
+						const ImVec2 Point(
+							GraphStart.x + (Key.Time - FirstTime) * PixelsPerTime,
+							GraphStart.y + (ValueMax - Key.Value) * PixelsPerValue);
+						const bool bSelected = bPrimaryEditableCurve && KeyIndex == CurveState.SelectedKeyIndex;
+						const ImU32 FillColor = bSelected ? IM_COL32(118, 214, 255, 255) : GetParticleCurveDisplayColor(ChannelLabel, bPrimaryEditableCurve);
+						DrawList->AddCircleFilled(Point, bSelected ? 5.5f : (bPrimaryEditableCurve ? 4.0f : 3.0f), FillColor, 16);
+						DrawList->AddCircle(Point, bSelected ? 6.5f : (bPrimaryEditableCurve ? 5.0f : 4.0f), IM_COL32(20, 20, 20, 230), 16, 1.2f);
+					}
+				});
 		}
 	}
 	DrawList->PopClipRect();

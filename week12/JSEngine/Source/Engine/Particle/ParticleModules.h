@@ -41,7 +41,7 @@ public:
 	virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime);
 };
 
-UCLASS(Placeable, DisplayName = "Required Module", Category = "Required", CategoryName = "Required")
+UCLASS(Placeable, DisplayName = "Required Module", Category = "Basic", CategoryName = "Basic")
 class UParticleModuleRequired : public UParticleModule
 {
 public:
@@ -118,7 +118,7 @@ struct FParticleBurstEntry
  * @brief particle의 생성 정보를 담고 있는 모듈. 사실 Required에 통합해도 되기는 하지만,
  *        Cascade 스타일을 따라 별도의 특수 모듈로 분리합니다.
  */
-UCLASS(Placeable, DisplayName = "Spawn Module", Category = "Spawn", CategoryName = "Spawn")
+UCLASS(Placeable, DisplayName = "Spawn Module", Category = "Basic", CategoryName = "Basic")
 class UParticleModuleSpawn : public UParticleModule
 {
 public:
@@ -145,7 +145,7 @@ public:
 	TArray<FParticleBurstEntry> BurstList;
 };
 
-UCLASS(Placeable, DisplayName = "Lifetime Module", Category = "Spawn", CategoryName = "Spawn")
+UCLASS(Placeable, DisplayName = "Lifetime Module", Category = "Lifetime", CategoryName = "Lifetime")
 class UParticleModuleLifetime : public UParticleModule
 {
 public:
@@ -162,7 +162,7 @@ public:
 	FParticleFloatDistribution Lifetime;
 };
 
-UCLASS(Placeable, DisplayName = "Location Module", Category = "Spawn", CategoryName = "Spawn")
+UCLASS(Placeable, DisplayName = "Location Module", Category = "Location", CategoryName = "Location")
 class UParticleModuleLocation : public UParticleModule
 {
 public:
@@ -177,7 +177,7 @@ public:
 	FParticleVectorDistribution StartLocation;
 };
 
-UCLASS(Placeable, DisplayName = "Velocity Module", Category = "Spawn", CategoryName = "Spawn")
+UCLASS(Placeable, DisplayName = "Velocity Module", Category = "Velocity", CategoryName = "Velocity")
 class UParticleModuleVelocity : public UParticleModule
 {
 public:
@@ -192,7 +192,7 @@ public:
 	FParticleVectorDistribution StartVelocity;
 };
 
-UCLASS(Placeable, DisplayName = "Color Module", Category = "Spawn", CategoryName = "Spawn")
+UCLASS(Placeable, DisplayName = "Color Module", Category = "Color", CategoryName = "Color")
 class UParticleModuleColor : public UParticleModule
 {
 public:
@@ -209,7 +209,7 @@ public:
 	FParticleColorDistribution StartColor;
 };
 
-UCLASS(Placeable, DisplayName = "Size Module", Category = "Spawn", CategoryName = "Spawn")
+UCLASS(Placeable, DisplayName = "Size Module", Category = "Size", CategoryName = "Size")
 class UParticleModuleSize : public UParticleModule
 {
 public:
@@ -226,7 +226,7 @@ public:
 	FParticleVectorDistribution StartSize;
 };
 
-UCLASS(Placeable, DisplayName = "Collision Module", Category = "Update", CategoryName = "Update")
+UCLASS(Placeable, DisplayName = "Collision Module", Category = "Collision", CategoryName = "Collision")
 class UParticleModuleCollision : public UParticleModule
 {
 public:
@@ -283,7 +283,7 @@ public:
 };
 
 // NOTE: Type-DataBase가 아니라 TypeData-Base 입니다.
-UCLASS(Placeable, DisplayName = "Sprite Type Data", Category = "Type Data", CategoryName = "Type Data")
+UCLASS(Placeable, DisplayName = "Sprite Type Data", Category = "Type Data", CategoryName = "Basic")
 class UParticleModuleTypeDataBase : public UParticleModule
 {
 public:
@@ -303,7 +303,7 @@ public:
  *        sprite emitter가 기본 emitter 타입이고, TypeData 모듈은 기본 sprite emitter가 아닌 다른 타입으로 바꿀 때 붙는 모듈입니다.
  */
 
-UCLASS(Placeable, DisplayName = "Mesh Type Data", Category = "Type Data", CategoryName = "Type Data")
+UCLASS(Placeable, DisplayName = "Mesh Type Data", Category = "Type Data", CategoryName = "Basic")
 class UParticleModuleTypeDataMesh : public UParticleModuleTypeDataBase
 {
 public:
@@ -326,14 +326,14 @@ private:
 	UStaticMesh* Mesh = nullptr;
 };
 
-UCLASS(Placeable, DisplayName = "Ribbon Type Data", Category = "Type Data", CategoryName = "Type Data")
+UCLASS(Placeable, DisplayName = "Ribbon Type Data", Category = "Type Data", CategoryName = "Basic")
 class UParticleModuleTypeDataRibbon : public UParticleModuleTypeDataBase
 {
 public:
 	GENERATED_BODY(UParticleModuleTypeDataRibbon, UParticleModuleTypeDataBase)
 };
 
-UCLASS(Placeable, DisplayName = "Beam Type Data", Category = "Type Data", CategoryName = "Type Data")
+UCLASS(Placeable, DisplayName = "Beam Type Data", Category = "Type Data", CategoryName = "Basic")
 class UParticleModuleTypeDataBeam : public UParticleModuleTypeDataBase
 {
 public:

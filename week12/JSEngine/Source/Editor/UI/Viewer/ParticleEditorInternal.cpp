@@ -65,10 +65,14 @@ bool OpenParticleSaveFileDialog(HWND OwnerWindow, const FParticleEditorViewer* V
 	OutFilePath.clear();
 
 	constexpr DWORD ParticleDialogPathBufferLength = 32768;
-	WCHAR FileBuffer[ParticleDialogPathBufferLength] = {};
-	std::filesystem::path InitialDirectory = std::filesystem::path(FPaths::ToAbsolute(L"Asset/Particle")).lexically_normal();
+	std::vector<WCHAR> FileBuffer(ParticleDialogPathBufferLength, L'\0');
+
+	std::filesystem::path InitialDirectory =
+		std::filesystem::path(FPaths::ToAbsolute(L"Asset/Particle")).lexically_normal();
+
 	std::error_code ErrorCode;
-	if (!std::filesystem::exists(InitialDirectory, ErrorCode) || !std::filesystem::is_directory(InitialDirectory, ErrorCode))
+	if (!std::filesystem::exists(InitialDirectory, ErrorCode) ||
+		!std::filesystem::is_directory(InitialDirectory, ErrorCode))
 	{
 		InitialDirectory = std::filesystem::path(FPaths::RootDir()).lexically_normal();
 	}
@@ -76,20 +80,25 @@ bool OpenParticleSaveFileDialog(HWND OwnerWindow, const FParticleEditorViewer* V
 	const FString CurrentFileName = Viewer ? FPaths::Normalize(Viewer->GetFileName()) : FString();
 	if (!CurrentFileName.empty())
 	{
-		std::filesystem::path CurrentAbsolutePath = std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(CurrentFileName))).lexically_normal();
+		std::filesystem::path CurrentAbsolutePath =
+			std::filesystem::path(FPaths::ToAbsolute(FPaths::ToWide(CurrentFileName))).lexically_normal();
+
 		if (!CurrentAbsolutePath.parent_path().empty())
 		{
 			InitialDirectory = CurrentAbsolutePath.parent_path();
 		}
-		wcsncpy_s(FileBuffer, CurrentAbsolutePath.wstring().c_str(), _TRUNCATE);
+
+		const std::wstring CurrentPathText = CurrentAbsolutePath.wstring();
+		wcsncpy_s(FileBuffer.data(), FileBuffer.size(), CurrentPathText.c_str(), _TRUNCATE);
 	}
 
 	OPENFILENAMEW DialogDesc = {};
 	DialogDesc.lStructSize = sizeof(DialogDesc);
 	DialogDesc.hwndOwner = OwnerWindow;
 	DialogDesc.lpstrFilter = L"Particle System (*.particle)\0*.particle\0All Files (*.*)\0*.*\0";
-	DialogDesc.lpstrFile = FileBuffer;
-	DialogDesc.nMaxFile = ParticleDialogPathBufferLength;
+	DialogDesc.lpstrFile = FileBuffer.data();
+	DialogDesc.nMaxFile = static_cast<DWORD>(FileBuffer.size());
+
 	const std::wstring InitialDirectoryText = InitialDirectory.wstring();
 	DialogDesc.lpstrInitialDir = InitialDirectoryText.c_str();
 	DialogDesc.lpstrDefExt = L"particle";
@@ -101,13 +110,16 @@ bool OpenParticleSaveFileDialog(HWND OwnerWindow, const FParticleEditorViewer* V
 		if (DialogError != 0)
 		{
 			WCHAR DebugMessage[128] = {};
-			swprintf_s(DebugMessage, L"Particle Save As dialog failed. CommDlgExtendedError=0x%08X\n", DialogError);
+			swprintf_s(
+				DebugMessage,
+				L"Particle Save As dialog failed. CommDlgExtendedError=0x%08X\n",
+				DialogError);
 			OutputDebugStringW(DebugMessage);
 		}
 		return false;
 	}
 
-	std::filesystem::path PickedPath(FileBuffer);
+	std::filesystem::path PickedPath(FileBuffer.data());
 	if (PickedPath.extension().empty())
 	{
 		PickedPath.replace_extension(L".particle");
@@ -448,6 +460,37 @@ bool RenderParticleUniformVectorScalar(FVector& Value, const char* Label, float 
 	return false;
 }
 
+bool IsParticleDistributionChildVisible(EParticleDistributionMode Mode, const char* ChildName, bool bVectorDistribution)
+{
+	if (!ChildName)
+	{
+		return false;
+	}
+	if (std::strcmp(ChildName, "Mode") == 0)
+	{
+		return true;
+	}
+	if (bVectorDistribution && std::strcmp(ChildName, "VectorMode") == 0)
+	{
+		return Mode == EParticleDistributionMode::Constant || Mode == EParticleDistributionMode::RandomRange;
+	}
+
+	switch (Mode)
+	{
+	case EParticleDistributionMode::Constant:
+		return std::strcmp(ChildName, "Constant") == 0;
+	case EParticleDistributionMode::Curve:
+		return std::strcmp(ChildName, "Curve") == 0;
+	case EParticleDistributionMode::RandomRange:
+		return std::strcmp(ChildName, "Min") == 0 || std::strcmp(ChildName, "Max") == 0;
+	case EParticleDistributionMode::RandomRangeCurve:
+		return std::strcmp(ChildName, "MinCurve") == 0 || std::strcmp(ChildName, "MaxCurve") == 0;
+	default:
+		break;
+	}
+	return false;
+}
+
 
 bool DrawCurveInterpModeCombo(const char* Label, ECurveInterpMode& Mode)
 {
@@ -705,7 +748,8 @@ bool RenderParticleVectorDistributionWidget(FParticlePropertyRenderContext& Cont
 		const bool bUniformXYZ = Distribution->VectorMode == EParticleVectorDistributionMode::UniformXYZ;
 		for (const FProperty* Child : ChildProperties)
 		{
-			if (!Child || !Child->Name || !Child->IsEditable())
+			if (!Child || !Child->Name || !Child->IsEditable() ||
+				!IsParticleDistributionChildVisible(Distribution->Mode, Child->Name, true))
 			{
 				continue;
 			}
@@ -1132,9 +1176,23 @@ bool RenderParticleStructPropertyWidget(FParticlePropertyRenderContext& Context,
 	{
 		TArray<const FProperty*> ChildProperties;
 		Property.ScriptStruct->GetAllProperties(ChildProperties);
+		const char* StructName = Property.ScriptStruct ? Property.ScriptStruct->GetName() : nullptr;
+		EParticleDistributionMode* DistributionMode = nullptr;
+		if (StructName && std::strcmp(StructName, "FParticleFloatDistribution") == 0)
+		{
+			DistributionMode = &static_cast<FParticleFloatDistribution*>(ValuePtr)->Mode;
+		}
+		else if (StructName && std::strcmp(StructName, "FParticleColorDistribution") == 0)
+		{
+			DistributionMode = &static_cast<FParticleColorDistribution*>(ValuePtr)->Mode;
+		}
 		for (const FProperty* Child : ChildProperties)
 		{
 			if (!Child || !Child->Name || !Child->IsEditable())
+			{
+				continue;
+			}
+			if (DistributionMode && !IsParticleDistributionChildVisible(*DistributionMode, Child->Name, false))
 			{
 				continue;
 			}
@@ -1146,7 +1204,6 @@ bool RenderParticleStructPropertyWidget(FParticlePropertyRenderContext& Context,
 			}
 		}
 
-		const char* StructName = Property.ScriptStruct ? Property.ScriptStruct->GetName() : nullptr;
 		if (StructName && std::strcmp(StructName, "FParticleFloatDistribution") == 0)
 		{
 			if (RenderParticleDistributionCurveKeyEditors(*static_cast<FParticleFloatDistribution*>(ValuePtr)))
@@ -1175,8 +1232,56 @@ bool RenderParticleStructPropertyWidget(FParticlePropertyRenderContext& Context,
 
 const char* GetParticleModuleClassMenuCategory(const UClass* Class)
 {
+	if (Class &&
+		(Class->IsChildOf(UParticleModuleRequired::StaticClass()) ||
+		 Class->IsChildOf(UParticleModuleSpawn::StaticClass()) ||
+		 Class->IsChildOf(UParticleModuleTypeDataBase::StaticClass())))
+	{
+		return "Basic";
+	}
 	const char* Category = Class ? Class->GetCategory() : nullptr;
 	return (Category && Category[0] != '\0') ? Category : "Misc";
+}
+
+int32 GetParticleModuleClassMenuCategoryOrder(const char* Category)
+{
+	if (!Category)
+	{
+		return 100;
+	}
+	if (std::strcmp(Category, "Basic") == 0)
+	{
+		return 0;
+	}
+	if (std::strcmp(Category, "Lifetime") == 0)
+	{
+		return 10;
+	}
+	if (std::strcmp(Category, "Location") == 0)
+	{
+		return 20;
+	}
+	if (std::strcmp(Category, "Velocity") == 0)
+	{
+		return 30;
+	}
+	if (std::strcmp(Category, "Color") == 0)
+	{
+		return 40;
+	}
+	if (std::strcmp(Category, "Size") == 0)
+	{
+		return 50;
+	}
+	if (std::strcmp(Category, "Animation") == 0)
+	{
+		return 60;
+	}
+	if (std::strcmp(Category, "Collision") == 0)
+	{
+		return 70;
+	}
+	return 100;
 }
 
 void SortParticleModuleClassesForMenu(TArray<UClass*>& Classes)
@@ -1186,10 +1291,17 @@ void SortParticleModuleClassesForMenu(TArray<UClass*>& Classes)
 		Classes.end(),
 		[](const UClass* Lhs, const UClass* Rhs)
 		{
-			const int32 CategoryOrder = std::strcmp(GetParticleModuleClassMenuCategory(Lhs), GetParticleModuleClassMenuCategory(Rhs));
+			const char* LhsCategory = GetParticleModuleClassMenuCategory(Lhs);
+			const char* RhsCategory = GetParticleModuleClassMenuCategory(Rhs);
+			const int32 CategoryOrder = GetParticleModuleClassMenuCategoryOrder(LhsCategory) - GetParticleModuleClassMenuCategoryOrder(RhsCategory);
 			if (CategoryOrder != 0)
 			{
 				return CategoryOrder < 0;
+			}
+			const int32 CategoryNameOrder = std::strcmp(LhsCategory, RhsCategory);
+			if (CategoryNameOrder != 0)
+			{
+				return CategoryNameOrder < 0;
 			}
 			return std::strcmp(Lhs ? Lhs->GetDisplayName() : "", Rhs ? Rhs->GetDisplayName() : "") < 0;
 		});
@@ -1249,8 +1361,10 @@ bool DrawParticleModuleClassMenu(FParticleEditorViewer* Viewer)
 
 	TArray<UClass*> TypeDataModuleClasses;
 	GetParticleTypeDataModuleClasses(TypeDataModuleClasses);
+	ModuleClasses.insert(ModuleClasses.end(), TypeDataModuleClasses.begin(), TypeDataModuleClasses.end());
+	SortParticleModuleClassesForMenu(ModuleClasses);
 
-	if (ModuleClasses.empty() && TypeDataModuleClasses.empty())
+	if (ModuleClasses.empty())
 	{
 		ImGui::TextDisabled("No particle module classes");
 		return false;
@@ -1290,33 +1404,6 @@ bool DrawParticleModuleClassMenu(FParticleEditorViewer* Viewer)
 	}
 	if (bCategoryOpen)
 	{
-		ImGui::EndMenu();
-	}
-
-	if (!ModuleClasses.empty() && !TypeDataModuleClasses.empty())
-	{
-		ImGui::Separator();
-	}
-
-	if (ImGui::BeginMenu("Type Data"))
-	{
-		if (TypeDataModuleClasses.empty())
-		{
-			ImGui::TextDisabled("No type data modules");
-		}
-		for (UClass* ModuleClass : TypeDataModuleClasses)
-		{
-			if (!ModuleClass)
-			{
-				continue;
-			}
-
-			if (ImGui::MenuItem(ModuleClass->GetDisplayName()))
-			{
-				Viewer->AddModule(ModuleClass);
-				bAdded = true;
-			}
-		}
 		ImGui::EndMenu();
 	}
 	return bAdded;

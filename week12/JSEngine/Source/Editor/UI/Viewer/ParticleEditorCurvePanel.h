@@ -19,6 +19,7 @@ struct FParticleCurveEditorState
 	float CanvasZoomX = 1.0f;
 	float CanvasZoomY = 1.0f;
 	int32 SelectedCurveIndex = 0;
+	char SelectedCurveChannel = '\0';
 	int32 SelectedKeyIndex = -1;
 	int32 ActiveKeyIndex = -1;
 	bool bWantsDeleteKeyFocus = false;
@@ -33,6 +34,7 @@ struct FParticleCurveEditorState
 		LODIndex = -1;
 		ModuleIndex = -1;
 		SelectedCurveIndex = 0;
+		SelectedCurveChannel = '\0';
 		SelectedKeyIndex = -1;
 		ActiveKeyIndex = -1;
 		bWantsDeleteKeyFocus = false;
