@@ -45,6 +45,35 @@ namespace
             &VertexFactoryDesc.VertexLayout);
     }
 
+    FShaderProgram* GetParticleSpriteShaderProgram()
+    {
+        const FVertexFactoryDesc& ParticleSpriteDesc = FVertexFactoryRegistry::Get(EVertexFactoryType::ParticleSprite);
+
+        FShaderStageKey VSKey;
+        VSKey.FilePath = ParticleSpriteDesc.VertexShaderPath;
+        VSKey.EntryPoint = ParticleSpriteDesc.BasePassVSEntry;
+        VSKey.Target = "vs_5_0";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = FShaderPaths::VFXParticle;
+        PSKey.EntryPoint = "PS";
+        PSKey.Target = "ps_5_0";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(
+            VSKey,
+            PSKey,
+            nullptr,
+            nullptr,
+            &ParticleSpriteDesc.VertexLayout);
+    }
+
+    bool IsParticleSpriteCommand(const FRenderCommand& Cmd)
+    {
+        return Cmd.Type == ERenderCommandType::Particle
+            && Cmd.VertexFactoryType == EVertexFactoryType::ParticleSprite
+            && Cmd.InstanceBufferView.IsValid();
+    }
+
     float CalculateTranslucentSortKey(
         const FRenderCommand& Cmd,
         const FVector& CameraPosition,
@@ -143,6 +172,11 @@ bool FTranslucentRenderPass::DrawEachCommand(const FRenderPassContext* Context, 
     DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
     DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
 
+    if (IsParticleSpriteCommand(Cmd))
+    {
+        return DrawParticleSpriteCommand(Context, Cmd);
+    }
+
     if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
     {
         return false;
@@ -198,5 +232,58 @@ bool FTranslucentRenderPass::DrawEachCommand(const FRenderPassContext* Context, 
     {
         DeviceContext->Draw(vertexCount, 0);
     }
+    return true;
+}
+
+bool FTranslucentRenderPass::DrawParticleSpriteCommand(const FRenderPassContext* Context, const FRenderCommand& Cmd)
+{
+    ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
+    const FParticleSpriteQuadResource QuadResource =
+        FResourceManager::Get().GetOrCreateParticleSpriteQuadResource(Context->Device);
+    if (!QuadResource.IsValid())
+    {
+        return false;
+    }
+
+    FShaderProgram* Program = GetParticleSpriteShaderProgram();
+    if (Program == nullptr)
+    {
+        return false;
+    }
+
+    Program->Bind(DeviceContext);
+
+    ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::DepthReadOnly);
+    ID3D11RasterizerState* RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(
+        Context->RenderBus->GetViewMode() == EViewMode::Wireframe ? ERasterizerType::WireFrame : ERasterizerType::SolidBackCull);
+    ID3D11SamplerState* Sampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Linear);
+    DeviceContext->OMSetDepthStencilState(DepthState, 0);
+    DeviceContext->RSSetState(RasterizerState);
+    DeviceContext->PSSetSamplers(0, 1, &Sampler);
+
+    ID3D11ShaderResourceView* DefaultDiffuseSRV = FResourceManager::Get().GetDefaultWhiteSRV();
+    DeviceContext->PSSetShaderResources(0, 1, &DefaultDiffuseSRV);
+    if (Cmd.Material != nullptr)
+    {
+        Cmd.Material->BindParameters(DeviceContext, Program->PS);
+    }
+
+    ID3D11BlendState* BlendState = Cmd.Material != nullptr
+        ? FResourceManager::Get().GetOrCreateBlendState(Cmd.Material->GetBlendStateDesc())
+        : FResourceManager::Get().GetOrCreateBlendState(EBlendType::AlphaBlend);
+    DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+
+    ID3D11Buffer* VertexBuffers[2] = { QuadResource.VertexBuffer, Cmd.InstanceBufferView.Buffer };
+    uint32 Strides[2] = { QuadResource.VertexStride, Cmd.InstanceBufferView.Stride };
+    uint32 Offsets[2] = { 0, Cmd.InstanceBufferView.Offset };
+    DeviceContext->IASetVertexBuffers(0, 2, VertexBuffers, Strides, Offsets);
+    DeviceContext->IASetIndexBuffer(QuadResource.IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+    DeviceContext->DrawIndexedInstanced(QuadResource.IndexCount, Cmd.InstanceBufferView.InstanceCount, 0, 0, 0);
+
+    ID3D11Buffer* NullVertexBuffer = nullptr;
+    uint32 NullStride = 0;
+    uint32 NullOffset = 0;
+    DeviceContext->IASetVertexBuffers(1, 1, &NullVertexBuffer, &NullStride, &NullOffset);
+
     return true;
 }

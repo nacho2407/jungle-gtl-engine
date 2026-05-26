@@ -235,14 +235,6 @@ struct FParticleConstants
 	uint32 bUseLocalSpace = 0;
 };
 
-struct FParticleSpriteInstanceData
-{
-	FVector Center;
-	FVector AxisX;
-	FVector AxisY;
-	FColor Color;
-};
-
 struct FInstanceBufferView
 {
 	ID3D11Buffer* Buffer = nullptr;

@@ -50,6 +50,20 @@ struct FTextureVertex
 	FColor Color;
 };
 
+struct FParticleSpriteQuadVertex
+{
+	FVector Position;
+	FVector2 TexCoord;
+};
+
+struct FParticleSpriteInstanceData
+{
+	FVector Center;
+	FVector AxisX;
+	FVector AxisY;
+	FColor Color;
+};
+
 struct FMeshData
 {
 	TArray<FVertex> Vertices;

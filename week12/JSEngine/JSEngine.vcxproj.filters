@@ -984,9 +984,6 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ParticleRenderPass.cpp">
-      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClCompile>
@@ -2150,9 +2147,6 @@
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h">
-      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\ParticleRenderPass.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\PostProcessOutlineRenderPass.h">

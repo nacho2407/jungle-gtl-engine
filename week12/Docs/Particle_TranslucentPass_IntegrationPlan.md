@@ -27,12 +27,19 @@ Do not start this work until:
    - per-particle interleaving across different emitters
    - per-particle interleaving with non-particle translucent primitives
    - triangle-level sorting
-6. OIT is a future investigation, not part of this pass integration.
+6. OIT is not part of this pass integration. Do not create or implement an OIT follow-up in this scope.
+7. Sprite particles use a dedicated `EVertexFactoryType::ParticleSprite` first. The instance layout is center/axis/color, not a matrix.
+8. Sprite particle quad/index buffers should move behind a shared render resource access point, preferably `FResourceManager`, so later mesh particle support can reuse the same command path without making `FTranslucentRenderPass` own particle-only geometry.
+9. Particle commands keep the existing explicit VFX particle shader selection path for this phase. Do not require particle materials to route through the general surface/translucent material shader type before the pass integration is stable.
+10. Particle material blend state remains material-driven.
+11. Particle commands do not participate in selection mask or editor picking in this phase, matching `UParticleSystemComponent::SupportsOutline() == false`.
+12. Keep `FParticleRenderPass` and `ERenderPass::Particle` until sprite particles have been verified to render correctly through the translucent pass. Remove them only after that behavior is confirmed.
 
 ## Non-Goals
 
 - Perfect translucent sorting.
 - Weighted blended OIT or other OIT implementation.
+- OIT follow-up planning for this phase.
 - Depth pre-pass integration for particles.
 - Shadow casting for mesh particles.
 - Global particle batching across emitters.
@@ -62,35 +69,56 @@ FTranslucentRenderPass
 
 ## Implementation Steps
 
-### Step 1 - Teach Translucent Pass Instanced Drawing
+### Step 0 - Prepare Particle Sprite Render Resources and Shader Policy
+
+Tasks:
+- Add shared access for the sprite quad vertex/index buffers outside `FParticleRenderPass`, preferably through `FResourceManager`.
+- Add `EVertexFactoryType::ParticleSprite` or an equivalent dedicated descriptor for the existing sprite input layout:
+  - quad position/UV in stream 0
+  - center/axis X/axis Y/color in stream 1
+- Keep particle command drawing on the explicit `VFXParticle` shader path used by the current particle pass.
+- Do not require particle materials to declare `ShaderType = VFXParticle` for this integration step.
+- Keep material parameter and blend-state binding compatible with current sprite particle behavior.
+- Define resource lifetime/release behavior for the shared quad resource, including lazy creation and release during renderer/resource shutdown.
+
+Validation:
+- `FParticleRenderPass` can still draw sprite particles using the shared quad resource while it remains in the pipeline.
+- The shared quad resource can be used by `FTranslucentRenderPass` without depending on emitter replay data.
+
+### Step 1 - Teach Translucent Pass Particle Instanced Drawing
 
 Tasks:
 - Add instanced draw support to `FTranslucentRenderPass::DrawEachCommand()`.
-- If command instance buffer view is valid:
-  - bind vertex stream 0 for mesh or quad vertices
+- If a command is a particle sprite command with a valid instance buffer view:
+  - bind the shared sprite quad vertex/index buffers for stream 0
   - bind vertex stream 1 for instance data
+  - bind the explicit `VFXParticle` shader program
+  - bind material parameters and blend state using the command material
   - call `DrawIndexedInstanced(...)`
 - Otherwise keep current non-instanced draw behavior.
+- Keep the particle branch scoped so D3D state changes do not break later normal translucent mesh draws in the same pass.
 
 Validation:
 - Existing translucent static/skeletal/procedural commands still draw.
 - A prepared instanced command can draw through `FTranslucentRenderPass`.
+- Particle draw does not leak incompatible vertex buffers, shader state, blend/depth/rasterizer state, sampler state, or SRV bindings into following translucent commands.
 
-### Step 2 - Add Particle Sprite Vertex Factory or Command Type Support
+### Step 2 - Finalize Particle Sprite Command Contract
 
 Tasks:
-- Decide how sprite particle quads are represented in the translucent path.
+- Represent sprite particle quads through `EVertexFactoryType::ParticleSprite`.
 - Preserve the current sprite instance shape:
   - center
   - axis X
   - axis Y
   - color
-- Add a particle sprite vertex factory or equivalent shader program selection path.
-- Keep material parameter binding compatible with current sprite particle behavior.
+- Keep particle-specific shader selection inside the particle command branch, not in the general material surface path.
+- Set command bounds or pivot per emitter command, not only from the owning component's aggregate bounds.
 
 Validation:
 - Sprite particles render with the same texture/material behavior as before.
 - Particle command does not require `FTranslucentRenderPass` to inspect emitter replay data.
+- Materials with general `ShaderType = None` but valid particle parameters still render through the forced `VFXParticle` command path.
 
 ### Step 3 - Route Particle Proxy Commands to Translucent
 
@@ -118,10 +146,12 @@ Validation:
 
 ### Step 5 - Remove Particle Render Pass from Pipeline
 
+Do not start this step until sprite particles have been verified to render correctly through `FTranslucentRenderPass`.
+
 Tasks:
 - Remove `FParticleRenderPass` from `FRenderPipeline` members and pass list.
 - Remove particle pass perf label.
-- Remove or deprecate `ERenderPass::Particle`.
+- Remove `ERenderPass::Particle`.
 - Delete or quarantine `ParticleRenderPass.*` after no users remain.
 - Update project files if source files are removed.
 
@@ -138,24 +168,23 @@ Validation:
 4. If mesh particles later route to `Opaque`, they must not automatically enter shadow/depth-pre policies unless explicitly allowed.
 5. Editor picking and selection outline currently include selected surface commands by pass. Particle components currently do not support outline; keep that policy explicit.
 6. If `ERenderPass::Particle` is removed, all stale references must be cleaned from project files, perf labels, and any debug tooling.
+7. The current sprite particle material path works even when a material's general `ShaderType` is not `VFXParticle`. The translucent integration should preserve that behavior until particle material asset policy is explicitly revised.
+8. The current proxy uses component-level bounds for particle commands. Translucent command sorting needs emitter-level bounds or pivot data to avoid identical sort keys for multiple emitters on one component.
+9. Shared particle quad buffers need explicit lifetime rules. Avoid hiding device-context work in `FResourceManager`; prefer device-only lazy creation and a clear release path.
+10. The particle branch in `FTranslucentRenderPass` must restore or overwrite all state needed by subsequent normal translucent commands.
+11. Particle material parameter binding must be validated against the forced `VFXParticle` shader path, especially `DiffuseMap` and `Opacity`.
+12. Emitter-level bounds for sprite particles must respect the snapshot coordinate-space policy and particle size. Do not reapply component transforms to snapshots that are already in world space.
+13. Mesh particle support remains a future extension. This phase should not mix sprite integration with mesh section routing, opaque/translucent material splitting, or mesh instance transform layout work.
 
 ## Decisions Needed
 
-1. Whether sprite particles should use a dedicated `EVertexFactoryType::ParticleSprite` or a more generic instanced billboard factory.
-   - Suggested: dedicated `ParticleSprite` first, because its instance data is center/axis/color rather than matrix.
-2. Whether `ERenderPass::Particle` is deleted immediately or kept as a deprecated empty bucket for one transition commit.
-   - Suggested: delete once no command submits to it, but keep the work in a separate commit from proxy introduction.
-3. Whether particle material blend state should always be material-driven in translucent pass.
-   - Suggested: yes, matching current particle pass behavior.
-4. Whether particle commands participate in selection mask or editor picking.
-   - Suggested: no for this phase, matching `UParticleSystemComponent::SupportsOutline() == false`.
-5. Whether to create an OIT follow-up document now or leave it as a future investigation.
-   - Suggested: create a short follow-up only after translucent integration exposes concrete artifacts.
+None for this phase. The remaining open work is implementation and verification.
 
 ## Verification
 
 - `ReleaseBuild.bat` succeeds.
 - Sprite particles render through `FTranslucentRenderPass`.
+- Sprite particles still render after `FParticleRenderPass` is removed.
 - No command uses `ERenderPass::Particle`.
 - Emitter pivot or bounds sorting visibly changes order as expected.
 - Within-emitter particle sorting is preserved.

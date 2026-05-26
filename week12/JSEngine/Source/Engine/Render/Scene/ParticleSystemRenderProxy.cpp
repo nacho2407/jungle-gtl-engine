@@ -128,6 +128,23 @@ namespace
 			Particle.Color
 		});
 	}
+
+	FBoundingBox BuildSpriteInstanceBounds(
+		const TArray<FParticleSpriteInstanceData>& Instances,
+		uint32 FirstInstance,
+		uint32 InstanceCount)
+	{
+		FBoundingBox Bounds;
+		for (uint32 InstanceIndex = FirstInstance; InstanceIndex < FirstInstance + InstanceCount; ++InstanceIndex)
+		{
+			const FParticleSpriteInstanceData& Instance = Instances[InstanceIndex];
+			Bounds.Expand(Instance.Center + Instance.AxisX + Instance.AxisY);
+			Bounds.Expand(Instance.Center + Instance.AxisX - Instance.AxisY);
+			Bounds.Expand(Instance.Center - Instance.AxisX + Instance.AxisY);
+			Bounds.Expand(Instance.Center - Instance.AxisX - Instance.AxisY);
+		}
+		return Bounds;
+	}
 }
 
 FParticleSystemRenderProxy::FParticleSystemRenderProxy(UParticleSystemComponent* InComponent)
@@ -166,7 +183,7 @@ void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyColl
 	for (FRenderCommand& Command : Commands)
 	{
 		Command.InstanceBufferView.Buffer = SpriteInstanceBuffer.Get();
-		Context.RenderBus.AddCommand(ERenderPass::Particle, std::move(Command));
+		Context.RenderBus.AddCommand(ERenderPass::Translucent, std::move(Command));
 	}
 }
 
@@ -231,8 +248,13 @@ bool FParticleSystemRenderProxy::BuildSpriteCommands(
 		Cmd.SourcePrimitive = Component;
 		Cmd.Material = EmitterData->Material;
 		Cmd.ParticleEmitterData = EmitterData;
+		Cmd.VertexFactoryType = EVertexFactoryType::ParticleSprite;
 		Cmd.PerObjectConstants = FPerObjectConstants{ FMatrix::Identity, FColor::White().ToVector4() };
-		Cmd.WorldAABB = Component->GetWorldAABB();
+		Cmd.WorldAABB = BuildSpriteInstanceBounds(SpriteInstances, FirstInstance, InstanceCount);
+		if (!Cmd.WorldAABB.IsValid())
+		{
+			Cmd.WorldAABB = Component->GetWorldAABB();
+		}
 		Cmd.Constants.Particle.ComponentToWorld = EmitterData->ComponentToWorld;
 		Cmd.Constants.Particle.CameraRight = Context.RenderBus.GetCameraRight();
 		Cmd.Constants.Particle.CameraUp = Context.RenderBus.GetCameraUp();
