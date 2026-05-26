@@ -1,4 +1,4 @@
-#include "Physics/PhysXPhysicsScene.h"
+﻿#include "Physics/PhysXPhysicsScene.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/SphereComponent.h"
@@ -796,6 +796,103 @@ void FPhysXPhysicsScene::DetachShapeForComponent(FBodyMapping& Mapping, UPrimiti
 			break;
 		}
 	}
+}
+
+bool FPhysXPhysicsScene::Sweep(const FVector& Start, const FVector& Dir, float MaxDist, const FCollisionShape& Shape, const FQuat& ShapeRot, FHitResult& OutHit, ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
+{
+	if (!Scene) return false;
+
+	// Raycast의 FChannelRaycastFilter와 동일한 로직, Sweep용으로 재선언
+	struct FChannelSweepFilter : PxQueryFilterCallback
+	{
+		const AActor* IgnoreActor = nullptr;
+		PxU32 TraceBit = 0;
+		FChannelSweepFilter(const AActor* InIgnoreActor, ECollisionChannel InChannel)
+			: IgnoreActor(InIgnoreActor)
+			, TraceBit(1u << static_cast<PxU32>(InChannel))
+		{
+		}
+		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* Shape, const PxRigidActor* Actor, PxHitFlags&) override
+		{
+			if (IgnoreActor && Actor && Actor->userData == IgnoreActor)
+				return PxQueryHitType::eNONE;
+
+			if (Shape)
+			{
+				const PxFilterData ShapeData = Shape->getQueryFilterData();
+				if ((ShapeData.word1 & TraceBit) == 0)
+					return PxQueryHitType::eNONE;
+			}
+			return PxQueryHitType::eBLOCK;
+		}
+		PxQueryHitType::Enum postFilter(const PxFilterData&, const PxQueryHit&) override
+		{
+			return PxQueryHitType::eBLOCK;
+		}
+	};
+
+	// FCollisionShape → PxGeometry 변환
+	// GeometryHolder로 스택에 geometry 보관 (Sphere / Capsule / Box 지원)
+	PxGeometryHolder GeomHolder;
+	switch (Shape.ShapeType)
+	{
+	case ECollisionShape::Sphere:
+		GeomHolder.storeAny(PxSphereGeometry(Shape.GetSphereRadius()));
+		break;
+	case ECollisionShape::Capsule:
+		// PhysX capsule: halfHeight는 구 제외 실린더 절반 높이
+		GeomHolder.storeAny(PxCapsuleGeometry(Shape.GetCapsuleRadius(),
+			Shape.GetCapsuleHalfHeight() - Shape.GetCapsuleRadius()));
+		break;
+	case ECollisionShape::Box:
+		GeomHolder.storeAny(PxBoxGeometry(ToPxVec3(Shape.GetExtent())));
+		break;
+	default:
+		return false;
+	}
+
+	const PxTransform PxStartPose(ToPxVec3(Start), ToPxQuat(ShapeRot));
+	const PxVec3 PxDir = ToPxVec3(Dir);
+
+	PxSweepBuffer Hit;
+	PxQueryFilterData FilterData;
+	FilterData.flags = PxQueryFlag::eSTATIC | PxQueryFlag::eDYNAMIC | PxQueryFlag::ePREFILTER;
+	FChannelSweepFilter FilterCallback(IgnoreActor, TraceChannel);
+
+	bool bStatus = Scene->sweep(
+		GeomHolder.any(),    // sweep geometry
+		PxStartPose,         // 시작 pose (위치 + 회전)
+		PxDir,               // 방향 (unit vector)
+		MaxDist,             // 최대 거리
+		Hit,
+		PxHitFlag::eDEFAULT,
+		FilterData,
+		&FilterCallback
+	);
+
+	if (!bStatus || !Hit.hasBlock) return false;
+
+	const PxSweepHit& Block = Hit.block;
+	OutHit.bHit = true;
+	OutHit.Distance = Block.distance;
+	OutHit.WorldHitLocation = ToFVector(PxStartPose.p) + ToFVector(PxDir) * Block.distance;
+	OutHit.ImpactNormal = ToFVector(Block.normal);
+	OutHit.WorldNormal = OutHit.ImpactNormal;
+
+	// distance == 0 이면 시작 지점에서 이미 겹침 (initial overlap)
+	OutHit.bStartPenetrating = Block.distance <= 0.0f;
+
+	if (Block.shape && Block.shape->userData)
+	{
+		OutHit.HitComponent = static_cast<UPrimitiveComponent*>(Block.shape->userData);
+		OutHit.HitActor = OutHit.HitComponent->GetOwner();
+	}
+	else if (Block.actor && Block.actor->userData)
+	{
+		OutHit.HitActor = static_cast<AActor*>(Block.actor->userData);
+	}
+
+	return true;
 }
 
 FPhysXPhysicsScene::FBodyMapping* FPhysXPhysicsScene::FindMappingByActor(AActor* OwnerActor)

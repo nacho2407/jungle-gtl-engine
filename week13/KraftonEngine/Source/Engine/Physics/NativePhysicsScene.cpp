@@ -1,4 +1,4 @@
-#include "Physics/NativePhysicsScene.h"
+﻿#include "Physics/NativePhysicsScene.h"
 #include "Collision/Math/CollisionMath.h"
 #include "Component/PrimitiveComponent.h"
 #include "GameFramework/World.h"
@@ -482,4 +482,9 @@ bool FNativePhysicsScene::RaycastByObjectTypes(const FVector& Start, const FVect
 			const uint32 Bit = 1u << static_cast<uint32>(Comp->GetCollisionObjectType());
 			return (Bit & ObjectTypeMask) != 0;
 		}, OutHit);
+}
+
+bool FNativePhysicsScene::Sweep(const FVector& Start, const FVector& Dir, float MaxDist, const FCollisionShape& Shape, const FQuat& ShapeRot, FHitResult& OutHit, ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
+{
+	return false;
 }
