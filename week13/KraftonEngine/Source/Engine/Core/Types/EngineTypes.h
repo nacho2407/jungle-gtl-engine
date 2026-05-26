@@ -2,6 +2,7 @@
 
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
+#include <cfloat>
 
 // ============================================================
 // FColor — RGBA 색상 (0~255 정수 기반, 셰이더 전달 시 Normalized)

@@ -2,6 +2,8 @@
 
 #include "GameFramework/Camera/CameraModifier.h"
 #include "GameFramework/Camera/CameraTypes.h"
+#include "GameFramework/Camera/CameraShakeBase.h"
+#include "Object/Ptr/ObjectPtr.h"
 
 #include "Source/Engine/GameFramework/Camera/CameraShakeCameraModifier.generated.h"
 class UCameraShakeBase;
@@ -38,5 +40,6 @@ public:
 	void StopAllInstancesOfShake(UClass* ShakeClass, bool bImmediately);
 
 private:
-	TArray<UCameraShakeBase*> ActiveShakes;
+	UPROPERTY(Transient, Instanced, Category="Camera")
+	TArray<TObjectPtr<UCameraShakeBase>> ActiveShakes;
 };

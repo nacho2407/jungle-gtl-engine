@@ -17,6 +17,12 @@ class FDuplicateArchiveContext;
 class UObject;
 inline bool IsValid(const UObject* Object);
 
+template<typename T>
+T* Cast(UObject* Obj);
+
+template<typename T>
+const T* Cast(const UObject* Obj);
+
 enum EObjectFlags : uint32
 {
     RF_None          = 0,
@@ -160,14 +166,31 @@ extern TSet<UObject*> GUObjectSet;
 
 // 포인터가 현재 살아있는 UObject 를 가리키는지 확인. dangling/freed 포인터가 들어와도
 // 해시 테이블 조회만 하므로 deref 안 함 — 안전.
+inline UObject* GetAliveObjectFromAddress(const void* ObjectAddress)
+{
+    if (!ObjectAddress)
+    {
+        return nullptr;
+    }
+
+    // This intentionally does not dereference ObjectAddress before checking the
+    // global live-object set. It is used by weak/object-handle wrappers where T
+    // may be only forward declared at the assignment site. Engine UObjects use
+    // single UObject inheritance, so the UObject subobject address is the object
+    // address used by GUObjectSet.
+    UObject* Candidate = reinterpret_cast<UObject*>(const_cast<void*>(ObjectAddress));
+    return GUObjectSet.find(Candidate) != GUObjectSet.end() ? Candidate : nullptr;
+}
+
 inline bool IsAliveObject(const UObject* Object)
 {
-    return Object && GUObjectSet.find(const_cast<UObject*>(Object)) != GUObjectSet.end();
+    return GetAliveObjectFromAddress(Object) != nullptr;
 }
 
 inline bool IsValid(const UObject* Object)
 {
-    return IsAliveObject(Object) && !Object->HasAnyFlags(RF_PendingKill | RF_Garbage);
+    UObject* LiveObject = GetAliveObjectFromAddress(Object);
+    return LiveObject && !LiveObject->HasAnyFlags(RF_PendingKill | RF_Garbage);
 }
 
 class UObjectManager : public TSingleton<UObjectManager>

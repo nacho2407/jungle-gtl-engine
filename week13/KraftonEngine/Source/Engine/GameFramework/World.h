@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Object/Object.h"
+#include "Object/Ptr/ObjectPtr.h"
 #include "Core/Types/RayTypes.h"
 #include "Core/Types/CollisionTypes.h"
 #include "Collision/BVH/WorldPrimitivePickingBVH.h"
@@ -15,6 +16,7 @@
 #include <Collision/Octree/Octree.h>
 #include <Collision/Octree/SpatialPartition.h>
 #include "GameFramework/WorldSettings.h"
+#include "GameFramework/GameMode/GameModeBase.h"
 #include "Physics/IPhysicsScene.h"
 #include "Source/Engine/GameFramework/World.generated.h"
 #include <memory>
@@ -61,10 +63,9 @@ public:
 	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
 	bool LinecastPrimitives(const FVector& Start, const FVector& End, FHitResult& OutHitResult, AActor*& OutActor) const;
 
-	const TArray<AActor*>& GetActors() const
+	TArray<AActor*> GetActors() const
 	{
-		static const TArray<AActor*> EmptyActors;
-		return PersistentLevel ? PersistentLevel->GetActors() : EmptyActors;
+		return PersistentLevel ? PersistentLevel->GetActors() : TArray<AActor*>();
 	}
 
 	// LOD 컨텍스트를 FFrameContext에 전달 (Collect 단계에서 LOD 인라인 갱신용)
@@ -119,8 +120,9 @@ public:
     void BeginDestroy() override;
 
 private:
-	//TArray<AActor*> Actors;
-	ULevel* PersistentLevel;
+	// Runtime-owned persistent level. Scene persistence is handled explicitly, so this is GC-visible but not Save-serialized.
+	UPROPERTY(Transient, Instanced, Category="World")
+	TObjectPtr<ULevel> PersistentLevel = nullptr;
 
 	// CameraManager 는 PC 가 owner. Editor 모드에서는 active viewport 가 IPOVProvider 로
 	// 자기 POV 를 노출하면 World 가 pull. 직접 POV cache 는 보유하지 않는다.
@@ -143,7 +145,9 @@ private:
 	std::unique_ptr<IPhysicsScene> PhysicsScene;
 
 	// Game flow — Editor 월드에서는 nullptr로 유지된다.
-	AGameModeBase* GameMode = nullptr;
+	UPROPERTY(Transient, Category="World")
+	TObjectPtr<AGameModeBase> GameMode = nullptr;
+
 	UClass* GameModeClass = nullptr;  // GameEngine 등이 BeginPlay 전에 세팅
 
 public:
@@ -164,7 +168,7 @@ public:
 	// --- Game flow ---
 	// BeginPlay 이전에 호출. WorldType이 Editor면 무시된다.
 	void SetGameModeClass(UClass* InClass) { GameModeClass = InClass; }
-	AGameModeBase* GetGameMode() const { return GameMode; }
+	AGameModeBase* GetGameMode() const { return GameMode.Get(); }
 	AGameStateBase* GetGameState() const;
 	APlayerController* GetFirstPlayerController() const;
 };

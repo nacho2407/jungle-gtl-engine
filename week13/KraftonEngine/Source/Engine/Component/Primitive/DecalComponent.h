@@ -3,6 +3,9 @@
 #include "Core/Types/ResourceTypes.h"
 #include "Collision/Math/ConvexVolume.h"
 #include "Object/Ptr/SoftObjectPtr.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Object/Ptr/WeakObjectPtr.h"
+#include "Materials/Material.h"
 
 class UStaticMeshComponent;
 
@@ -37,7 +40,7 @@ public:
 
 	// --- Material ---
 	void SetMaterial(class UMaterial* InMaterial);
-	class UMaterial* GetMaterial() const { return Material; }
+	class UMaterial* GetMaterial() const { return Material.Get(); }
 
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
@@ -45,7 +48,7 @@ public:
 	void UpdateDecalVolumeFromTransform();
 	void OnTransformDirty() override;
 
-	const TArray<UStaticMeshComponent*>& GetReceivers() const { return Receivers; }
+	TArray<UStaticMeshComponent*> GetReceivers() const;
 
 	class UBillboardComponent* EnsureEditorBillboard();
 
@@ -58,10 +61,13 @@ private:
 
 private:
 	FConvexVolume ConvexVolume;
-	TArray<UStaticMeshComponent*> Receivers;
+	// Non-owning render receiver cache. Receivers are owned by their actors/components.
+	TArray<TWeakObjectPtr<UStaticMeshComponent>> Receivers;
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material")
 	FSoftObjectPtr MaterialSlot = "None";
-	UMaterial* Material = nullptr;
+	// Runtime loaded material reference. MaterialSlot is the persistent asset identity.
+	UPROPERTY(Transient, Category="Rendering")
+	TObjectPtr<UMaterial> Material = nullptr;
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Color", Type=Vec4)
 	FVector4 Color = {1,1,1,1};
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="FadeInDelay")

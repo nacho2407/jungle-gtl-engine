@@ -36,11 +36,6 @@ namespace
 void UCameraModifier_CameraShake::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UCameraModifier::AddReferencedObjects(Collector);
-
-	for (UCameraShakeBase* Shake : ActiveShakes)
-	{
-		Collector.AddReferencedObject(Shake);
-	}
 }
 
 UCameraModifier_CameraShake::UCameraModifier_CameraShake()

@@ -38,9 +38,6 @@ void AGameModeBase::EndPlay()
 void AGameModeBase::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	AActor::AddReferencedObjects(Collector);
-
-	Collector.AddReferencedObject(GameState);
-	Collector.AddReferencedObject(PlayerController);
 }
 
 void AGameModeBase::StartMatch()

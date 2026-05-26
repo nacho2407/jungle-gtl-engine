@@ -447,7 +447,4 @@ bool USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
 void USkeletalMeshComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
     USkinnedMeshComponent::AddReferencedObjects(Collector);
-
-    Collector.AddReferencedObject(AnimInstance);
-    Collector.AddReferencedObject(AnimationData.AnimToPlay.Get());
 }

@@ -28,6 +28,10 @@ public:
 		: ObjectPath(InPath)
 	{
 	}
+	FSoftObjectPtr(const char* InPath)
+		: ObjectPath(InPath ? FString(InPath) : FString("None"))
+	{
+	}
 	FSoftObjectPtr(const FSoftObjectPath& InPath)
 		: ObjectPath(InPath)
 	{

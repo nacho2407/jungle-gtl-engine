@@ -3,6 +3,7 @@
 #include <GameFramework/World.h>
 
 #include "Object/GarbageCollection.h"
+#include <algorithm>
 
 ULevel::ULevel(UWorld* OwingWorld)
 	: OwingWorld(OwingWorld)
@@ -10,16 +11,34 @@ ULevel::ULevel(UWorld* OwingWorld)
 	Actors.clear();
 }
 
-ULevel::ULevel(const TArray<AActor*>& Actors, UWorld* World)
-	: Actors(Actors)
+ULevel::ULevel(const TArray<AActor*>& InActors, UWorld* World)
+	: OwingWorld(World)
 {
-	OwingWorld = World;
+	Actors.reserve(InActors.size());
+	for (AActor* Actor : InActors)
+	{
+		Actors.push_back(Actor);
+	}
 }
 
 ULevel::~ULevel()
 {
 	Clear();
-	OwingWorld = nullptr;
+	OwingWorld.Reset();
+}
+
+TArray<AActor*> ULevel::GetActors() const
+{
+	TArray<AActor*> Result;
+	Result.reserve(Actors.size());
+	for (AActor* Actor : Actors)
+	{
+		if (Actor)
+		{
+			Result.push_back(Actor);
+		}
+	}
+	return Result;
 }
 
 void ULevel::AddActor(AActor* Actor)
@@ -75,14 +94,6 @@ void ULevel::Tick(float DeltaTime) {
 void ULevel::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UObject::AddReferencedObjects(Collector);
-
-    for (AActor* Actor : Actors)
-    {
-        if (Actor)
-        {
-            Collector.AddReferencedObject(Actor, "ULevel.Actors");
-        }
-    }
 }
 
 void ULevel::BeginDestroy()
@@ -106,7 +117,7 @@ void ULevel::BeginDestroy()
     }
 
     Actors.clear();
-    OwingWorld = nullptr;
+    OwingWorld.Reset();
 }
 
 void ULevel::BeginPlay()

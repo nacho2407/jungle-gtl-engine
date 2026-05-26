@@ -17,8 +17,6 @@
 void UTemporaryBoneAnimatorComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UActorComponent::AddReferencedObjects(Collector);
-	Collector.AddReferencedObject(TargetMeshComponent);
-	Collector.AddReferencedObject(CachedSkeletalMesh);
 }
 
 void UTemporaryBoneAnimatorComponent::PostEditProperty(const char* PropertyName)

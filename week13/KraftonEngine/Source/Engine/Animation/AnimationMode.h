@@ -4,6 +4,7 @@
 #include "Object/Ptr/ObjectPtr.h"
 #include "Object/Reflection/ObjectMacros.h"
 #include "Object/Ptr/SoftObjectPtr.h"
+#include "Animation/Sequence/AnimSequenceBase.h"
 #include "Object/Reflection/UStruct.h"
 
 #include "Source/Engine/Animation/AnimationMode.generated.h"
@@ -63,6 +64,8 @@ struct FSingleAnimationPlayData
 {
 	GENERATED_BODY()
 
+	// Runtime loaded animation reference. AnimToPlayPath is the persistent asset identity.
+	UPROPERTY(Transient, Category="Animation")
 	TObjectPtr<UAnimSequenceBase> AnimToPlay;
 
 	UPROPERTY(Edit, Save, Category="Animation", DisplayName="Anim To Play", AssetType="UAnimSequence")

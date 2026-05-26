@@ -3,6 +3,7 @@
 #include "Component/ActorComponent.h"
 #include "Core/Delegate.h"
 #include "Math/Vector.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 #include "Source/Engine/Component/Script/LuaScriptComponent.generated.h"
 #include <sol/sol.hpp>
 
@@ -78,8 +79,8 @@ private:
 	sol::protected_function LuaOnEndOverlap;
 	sol::protected_function LuaOnHit;
 	sol::protected_function LuaOnEndHit;
-	TArray<UPrimitiveComponent*> BoundOverlapComponents;
-	TArray<UPrimitiveComponent*> BoundHitComponents;
+	TArray<TWeakObjectPtr<UPrimitiveComponent>> BoundOverlapComponents;
+	TArray<TWeakObjectPtr<UPrimitiveComponent>> BoundHitComponents;
 	TArray<FDelegateHandle> BeginOverlapHandles;
 	TArray<FDelegateHandle> EndOverlapHandles;
 	TArray<FDelegateHandle> HitHandles;

@@ -3,6 +3,8 @@
 #include "Component/PrimitiveComponent.h"
 #include "Object/Ptr/ObjectPtr.h"
 #include "Object/Ptr/SoftObjectPtr.h"
+#include "Particles/ParticleSystem.h"
+#include "Materials/Material.h"
 #include "Core/Delegate.h"
 #include "Source/Engine/Component/Primitive/ParticleSystemComponent.generated.h"
 
@@ -103,7 +105,7 @@ public:
 
     void       SetMaterial(int32 ElementIndex, UMaterial* InMaterial);
     UMaterial* GetMaterial(int32 ElementIndex) const;
-    const TArray<UMaterial*>& GetEmitterMaterials() const { return EmitterMaterials; }
+    TArray<UMaterial*> GetEmitterMaterials() const;
 
     FPrimitiveSceneProxy* CreateSceneProxy() override;
     void                  UpdateWorldAABB() const override;
@@ -147,11 +149,16 @@ private:
     UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Emitter Materials", AssetType="Material")
     TArray<FSoftObjectPtr> EmitterMaterialSlots;
 
+    // Runtime loaded template reference. TemplatePath is the persistent asset identity.
+    UPROPERTY(Transient, Category="Particle")
     TObjectPtr<UParticleSystem> Template = nullptr;
 
     TArray<FParticleEmitterInstance*> EmitterInstances;
     TArray<FDynamicEmitterDataBase*>  EmitterRenderData;
-    TArray<UMaterial*>                EmitterMaterials;
+
+    // Runtime loaded material references. EmitterMaterialSlots stores persistent asset identity.
+    UPROPERTY(Transient, Category="Rendering")
+    TArray<TObjectPtr<UMaterial>>     EmitterMaterials;
 
     bool bInitialized = false;
 	

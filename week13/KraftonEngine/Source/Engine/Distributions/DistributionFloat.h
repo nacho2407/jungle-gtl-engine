@@ -2,6 +2,7 @@
 #include "Distributions.h"
 #include "Distribution.h"
 #include "Object/Reflection/ObjectMacros.h"
+#include "Object/Ptr/ObjectPtr.h"
 #include "Core/Types/EngineTypes.h"
 #include "Math/RandomStream.h"
 
@@ -71,8 +72,9 @@ private:
 	float MaxValue;
 
 public:
-	UPROPERTY(EditAnywhere, Category = "RawDistributionFloat")
-	UDistributionFloat* Distribution;
+	// Instanced runtime distribution object. Serialized by FRawDistributionFloat::Serialize as class + payload.
+	UPROPERTY(EditAnywhere, Instanced, Category = "RawDistributionFloat")
+	TObjectPtr<UDistributionFloat> Distribution;
 
 	/** Whether the distribution data has been cooked or the object itself is available */
 	bool IsCreated() const { return Distribution != nullptr; }

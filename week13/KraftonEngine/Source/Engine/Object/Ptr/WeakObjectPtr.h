@@ -2,6 +2,10 @@
 
 #include "Object/Object.h"
 
+// Weak UObject pointer with serial-number validation.
+// The typed pointer is cached separately so Get()/operator-> can be used from
+// headers that only forward declare T, while the UObject* is used for liveness
+// and serial checks.
 template <typename T>
 class TWeakObjectPtr
 {
@@ -13,37 +17,47 @@ public:
         Reset(InObject);
     }
 
+    TWeakObjectPtr& operator=(T* InObject)
+    {
+        Reset(InObject);
+        return *this;
+    }
+
     void Reset(T* InObject = nullptr)
     {
-        if (!IsAliveObject(InObject))
+        UObject* LiveObject = GetAliveObjectFromAddress(InObject);
+        if (!LiveObject)
         {
+            TypedObject = nullptr;
             Object = nullptr;
             SerialNumber = 0;
             return;
         }
 
-        Object = InObject;
-        SerialNumber = InObject->GetSerialNumber();
+        TypedObject = InObject;
+        Object = LiveObject;
+        SerialNumber = LiveObject->GetSerialNumber();
     }
 
     T* Get() const
     {
-        if (!IsAliveObject(Object))
+        UObject* LiveObject = GetAliveObjectFromAddress(Object);
+        if (!LiveObject)
         {
             return nullptr;
         }
 
-        if (Object->GetSerialNumber() != SerialNumber)
+        if (LiveObject->GetSerialNumber() != SerialNumber)
         {
             return nullptr;
         }
 
-        if (Object->HasAnyFlags(RF_PendingKill | RF_Garbage))
+        if (LiveObject->HasAnyFlags(RF_PendingKill | RF_Garbage))
         {
             return nullptr;
         }
 
-        return Object;
+        return TypedObject;
     }
 
     bool IsValid() const
@@ -61,22 +75,19 @@ public:
         return IsValid();
     }
 
+    operator T*() const
+    {
+        return Get();
+    }
+
     T* operator->() const
     {
         return Get();
     }
 
-    bool operator==(const T* Other) const
-    {
-        return Get() == Other;
-    }
-
-    bool operator!=(const T* Other) const
-    {
-        return Get() != Other;
-    }
 
 private:
-    T*     Object = nullptr;
-    uint32 SerialNumber = 0;
+    T*      TypedObject = nullptr;
+    UObject* Object = nullptr;
+    uint32   SerialNumber = 0;
 };

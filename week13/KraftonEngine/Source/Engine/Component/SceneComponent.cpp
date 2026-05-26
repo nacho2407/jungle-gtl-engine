@@ -3,6 +3,7 @@
 #include <GameFramework/World.h>
 
 #include "Object/GarbageCollection.h"
+#include <algorithm>
 #include "Serialization/Archive.h"
 
 HIDE_FROM_COMPONENT_LIST(USceneComponent)
@@ -90,13 +91,27 @@ USceneComponent::USceneComponent()
 
 USceneComponent::~USceneComponent()
 {
-    ParentComponent = nullptr;
+    ParentComponent.Reset();
     ChildComponents.clear();
+}
+
+TArray<USceneComponent*> USceneComponent::GetChildren() const
+{
+	TArray<USceneComponent*> Result;
+	Result.reserve(ChildComponents.size());
+	for (USceneComponent* Child : ChildComponents)
+	{
+		if (Child)
+		{
+			Result.push_back(Child);
+		}
+	}
+	return Result;
 }
 
 void USceneComponent::SetParent(USceneComponent* NewParent)
 {
-	if (NewParent == ParentComponent || NewParent == this)
+	if (ParentComponent == NewParent || NewParent == this)
 	{
 		return;
 	}
@@ -139,7 +154,7 @@ void USceneComponent::RemoveChild(USceneComponent* Child)
 	{
 		if ((*iter)->ParentComponent == this)
 		{
-			(*iter)->ParentComponent = nullptr;
+			(*iter)->ParentComponent.Reset();
 		}
 
 		ChildComponents.erase(iter);
@@ -281,7 +296,7 @@ void USceneComponent::MarkTransformDirty()
 	bTransformDirty = true;
 	bInverseWorldDirty = true;
 	OnTransformDirty();
-	for (auto* Child : ChildComponents)
+	for (USceneComponent* Child : ChildComponents)
 	{
 		Child->MarkTransformDirty();
 	}
@@ -445,11 +460,6 @@ void USceneComponent::Rotate(float DeltaYaw, float DeltaPitch)
 void USceneComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UActorComponent::AddReferencedObjects(Collector);
-
-    for (USceneComponent* Child : ChildComponents)
-    {
-        Collector.AddReferencedObject(Child, "USceneComponent.ChildComponents");
-    }
 }
 
 void USceneComponent::BeginDestroy()
@@ -464,10 +474,18 @@ void USceneComponent::BeginDestroy()
     if (ParentComponent)
     {
         ParentComponent->RemoveChild(this);
-        ParentComponent = nullptr;
+        ParentComponent.Reset();
     }
 
-    TArray<USceneComponent*> Children = ChildComponents;
+    TArray<USceneComponent*> Children;
+    Children.reserve(ChildComponents.size());
+    for (USceneComponent* Child : ChildComponents)
+    {
+        if (Child)
+        {
+            Children.push_back(Child);
+        }
+    }
     ChildComponents.clear();
 
     for (USceneComponent* Child : Children)
@@ -477,7 +495,7 @@ void USceneComponent::BeginDestroy()
             continue;
         }
 
-        Child->ParentComponent = nullptr;
+        Child->ParentComponent.Reset();
         Child->MarkPendingKill();
         Child->BeginDestroy();
     }

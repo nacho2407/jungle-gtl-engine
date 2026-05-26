@@ -2,6 +2,9 @@
 
 #include "GameFramework/AActor.h"
 #include "GameFramework/Camera/CameraTypes.h"
+#include "GameFramework/Pawn/Pawn.h"
+#include "GameFramework/Camera/PlayerCameraManager.h"
+#include "Object/Ptr/ObjectPtr.h"
 
 #include "Source/Engine/GameFramework/GameMode/PlayerController.generated.h"
 class APawn;
@@ -29,12 +32,12 @@ public:
 	void Possess(APawn* Pawn);
 	void UnPossess();
 
-	APawn* GetPossessedPawn() const { return PossessedPawn; }
+	APawn* GetPossessedPawn() const { return PossessedPawn.Get(); }
 
 	// ─── Camera Manager ──────────────────────────────────────────
 	// UE: APlayerController::PlayerCameraManager 멤버. 현재는 World 가 owner 이고 PC 는 reference 만 보유.
 	// E.2 청크 3 에서 World 의 CameraManager 멤버가 제거되면 PC 가 직접 SpawnActor 로 owner.
-	APlayerCameraManager* GetPlayerCameraManager() const { return PlayerCameraManager; }
+	APlayerCameraManager* GetPlayerCameraManager() const { return PlayerCameraManager.Get(); }
 
 	// ─── View Target ─────────────────────────────────────────────
 	// 새 view target 으로 전환 (블렌드 가능). UCameraComponent 가 붙어있는 액터 권장.
@@ -47,10 +50,12 @@ public:
 		bool bLockOutgoing = false);
 
 private:
-	APawn* PossessedPawn = nullptr;  // 직렬화 제외
+	UPROPERTY(Transient, Category="Controller")
+	TObjectPtr<APawn> PossessedPawn = nullptr;  // 직렬화 제외
 
 	// PlayerCameraManager — UE 의 PC->PlayerCameraManager 와 동일 의미. 직렬화 제외.
 	// 현재(E.2 청크 1)는 World 의 CameraManager 를 reference 로 캐싱. E.2 청크 3 에서
 	// PC 가 BeginPlay 에서 직접 SpawnActor 로 생성하는 owner 로 전환.
-	APlayerCameraManager* PlayerCameraManager = nullptr;
+	UPROPERTY(Transient, Instanced, Category="Controller")
+	TObjectPtr<APlayerCameraManager> PlayerCameraManager = nullptr;
 };

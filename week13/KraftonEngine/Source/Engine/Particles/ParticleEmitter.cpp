@@ -36,8 +36,8 @@ namespace
         Ar << bShareRequired;
         if (Ar.IsLoading() && bShareRequired && LOD && HigherLOD)
         {
-            UParticleModule* Target = LOD->RequiredModule;
-            ApplySharedModule(Target, HigherLOD->RequiredModule);
+            UParticleModule* Target = LOD->RequiredModule.Get();
+            ApplySharedModule(Target, HigherLOD->RequiredModule.Get());
             LOD->RequiredModule = Cast<UParticleModuleRequired>(Target);
         }
 
@@ -45,8 +45,8 @@ namespace
         Ar << bShareSpawn;
         if (Ar.IsLoading() && bShareSpawn && LOD && HigherLOD)
         {
-            UParticleModule* Target = LOD->SpawnModule;
-            ApplySharedModule(Target, HigherLOD->SpawnModule);
+            UParticleModule* Target = LOD->SpawnModule.Get();
+            ApplySharedModule(Target, HigherLOD->SpawnModule.Get());
             LOD->SpawnModule = Cast<UParticleModuleSpawn>(Target);
         }
 
@@ -54,8 +54,8 @@ namespace
         Ar << bShareTypeData;
         if (Ar.IsLoading() && bShareTypeData && LOD && HigherLOD)
         {
-            UParticleModule* Target = static_cast<UParticleModule*>(LOD->TypeDataModule);
-            ApplySharedModule(Target, static_cast<UParticleModule*>(HigherLOD->TypeDataModule));
+            UParticleModule* Target = LOD->TypeDataModule.Get();
+            ApplySharedModule(Target, HigherLOD->TypeDataModule.Get());
             LOD->TypeDataModule = Cast<UParticleModuleTypeDataBase>(Target);
         }
 
@@ -69,7 +69,9 @@ namespace
             if (Ar.IsLoading() && bShareModule && LOD && HigherLOD && ModuleIndex < LOD->Modules.size() && ModuleIndex <
                 HigherLOD->Modules.size())
             {
-                ApplySharedModule(LOD->Modules[ModuleIndex], HigherLOD->Modules[ModuleIndex]);
+                UParticleModule* Target = LOD->Modules[ModuleIndex].Get();
+                ApplySharedModule(Target, HigherLOD->Modules[ModuleIndex].Get());
+                LOD->Modules[ModuleIndex] = Target;
             }
         }
 

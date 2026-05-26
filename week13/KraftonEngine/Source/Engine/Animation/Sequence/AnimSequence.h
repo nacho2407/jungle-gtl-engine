@@ -4,6 +4,8 @@
 #include "Animation/Sequence/BoneAnimationTrack.h"
 #include "Animation/Skeleton/SkeletonTypes.h"
 #include "Math/Transform.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Animation/Sequence/AnimDataModel.h"
 
 class USkeletalMesh;
 class USkeleton;
@@ -29,7 +31,7 @@ public:
 
     UAnimDataModel* GetDataModel() const
     {
-        return DataModel;
+        return DataModel.Get();
     }
 
     // UAnimSequenceBase:
@@ -147,7 +149,8 @@ public:
         float AmplitudeDeg    = 15.0f);
 
 private:
-    UAnimDataModel* DataModel = nullptr;
+    UPROPERTY(Transient, Instanced, Category="Animation")
+    TObjectPtr<UAnimDataModel> DataModel = nullptr;
 
     FString AssetPathFileName = "None";
     FSkeletonBinding TargetSkeleton;

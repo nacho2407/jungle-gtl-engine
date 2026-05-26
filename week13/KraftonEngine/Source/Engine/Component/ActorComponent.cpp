@@ -29,7 +29,7 @@ void UActorComponent::Deactivate()
 
 UWorld* UActorComponent::GetWorld() const
 {
-    return IsAliveObject(Owner) ? Owner->GetWorld() : nullptr;
+    return Owner.IsValid() ? Owner->GetWorld() : nullptr;
 }
 
 void UActorComponent::BeginDestroy()
@@ -44,7 +44,7 @@ void UActorComponent::BeginDestroy()
     PrimaryComponentTick.UnRegisterTickFunction();
     DestroyRenderState();
 
-    Owner = nullptr;
+    Owner.Reset();
 }
 
 void UActorComponent::AddReferencedObjects(FReferenceCollector& Collector)

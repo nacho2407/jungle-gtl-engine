@@ -16,7 +16,6 @@
 void UAnimGraphInstance::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UAnimInstance::AddReferencedObjects(Collector);
-	Collector.AddReferencedObject(GraphAsset);
 }
 
 namespace

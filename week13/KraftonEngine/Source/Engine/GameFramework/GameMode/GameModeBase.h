@@ -1,6 +1,9 @@
 #pragma once
 
 #include "GameFramework/AActor.h"
+#include "GameFramework/GameMode/GameStateBase.h"
+#include "GameFramework/GameMode/PlayerController.h"
+#include "Object/Ptr/ObjectPtr.h"
 
 #include "Source/Engine/GameFramework/GameMode/GameModeBase.generated.h"
 class AGameStateBase;
@@ -42,9 +45,9 @@ public:
 	virtual void OnPossessedPawnExitedTrigger(ATriggerVolumeBase* Trigger, APawn* Pawn) {}
 
 	// --- Accessors ---
-	AGameStateBase* GetGameState() const { return GameState; }
+	AGameStateBase* GetGameState() const { return GameState.Get(); }
 	UClass* GetGameStateClass() const { return GameStateClass; }
-	APlayerController* GetPlayerController() const { return PlayerController; }
+	APlayerController* GetPlayerController() const { return PlayerController.Get(); }
 	UClass* GetPlayerControllerClass() const { return PlayerControllerClass; }
 
 	// ProjectSettings.Game.GameModeClassName을 룩업·검증해서 적합하면 반환,
@@ -61,6 +64,8 @@ protected:
 	UClass* PlayerControllerClass = nullptr;
 
 	// GameMode가 BeginPlay/StartMatch에서 spawn하여 소유.
-	AGameStateBase* GameState = nullptr;
-	APlayerController* PlayerController = nullptr;
+	UPROPERTY(Transient, Instanced, Category="GameMode")
+	TObjectPtr<AGameStateBase> GameState = nullptr;
+	UPROPERTY(Transient, Instanced, Category="GameMode")
+	TObjectPtr<APlayerController> PlayerController = nullptr;
 };

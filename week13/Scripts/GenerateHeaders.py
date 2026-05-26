@@ -790,11 +790,12 @@ def build_array_inner_property(
         )
 
     if element_property_type == "ObjectRef":
+        inner_flags = "PF_InstancedReference" if "PF_InstancedReference" in prop.flags else "PF_None"
         return (
             f"\tnew FObjectProperty(\n"
             f"\t\t{cpp_string_literal(inner_name)},\n"
             f"\t\t{cpp_string_literal(prop.category)},\n"
-            f"\t\tPF_None,\n"
+            f"\t\t{inner_flags},\n"
             f"\t\t0,\n"
             f"\t\tsizeof({element_cpp_type}),\n"
             f"\t\t{get_object_property_ops_for_type(element_cpp_type)},\n"
@@ -1448,13 +1449,54 @@ def parse_uproperties(scan_text: str, enums: dict[str, ReflectedEnum], known_str
             allowed_class = infer_allowed_class(asset_type, metadata.get("allowedclass"))
 
             if property_type == "ObjectRef" and is_asset_object_reference(cpp_type, allowed_class):
-                asset_class = get_object_reference_class(cpp_type, allowed_class) or cpp_type
-                warnings.append(
-                    f"error: {class_name}.{member_name}: asset UObject reference '{asset_class}' "
-                    "must not be reflected as FObjectProperty; use FSoftObjectPtr/FString with AssetType instead"
-                )
-                cursor = semicolon + 1
-                continue
+                # Unreal-style split for this engine:
+                #   - transient TObjectPtr/raw object refs are GC-visible runtime hard refs.
+                #   - saved asset identity must stay soft-path based until FObjectProperty serialization
+                #     is changed from runtime UUIDs to package/path references.
+                if "transient" not in flag_tokens:
+                    asset_class = get_object_reference_class(cpp_type, allowed_class) or cpp_type
+                    warnings.append(
+                        f"error: {class_name}.{member_name}: persistent asset UObject reference '{asset_class}' "
+                        "must not be reflected as FObjectProperty with Save/Edit persistence; "
+                        "use FSoftObjectPtr/FString with AssetType for saved asset identity, or mark the hard reference Transient"
+                    )
+                    cursor = semicolon + 1
+                    continue
+
+            if property_type == "Array":
+                element_cpp_type = get_array_element_cpp_type(cpp_type)
+                element_allowed_class = infer_allowed_class(metadata.get("assettype"), metadata.get("allowedclass"))
+                if (
+                    element_cpp_type
+                    and get_array_element_property_type(
+                        ReflectedProperty(
+                            owner=class_name,
+                            cpp_type=cpp_type,
+                            member_name=member_name,
+                            display_name=member_name,
+                            category="Default",
+                            property_type=property_type,
+                            flags="PF_None",
+                            metadata=tuple(sorted(metadata.items())),
+                            min_value="0.0f",
+                            max_value="0.0f",
+                            speed_value="0.1f",
+                            enum_type_name=None,
+                            struct_type=struct_type or "",
+                            asset_type=metadata.get("assettype"),
+                            allowed_class=element_allowed_class,
+                        )
+                    ) == "ObjectRef"
+                    and is_asset_object_reference(element_cpp_type, element_allowed_class)
+                    and "transient" not in flag_tokens
+                ):
+                    asset_class = get_object_reference_class(element_cpp_type, element_allowed_class) or element_cpp_type
+                    warnings.append(
+                        f"error: {class_name}.{member_name}: persistent asset UObject array reference '{asset_class}' "
+                        "must use FSoftObjectPtr/FString asset paths for saved asset identity, or be marked Transient"
+                    )
+                    cursor = semicolon + 1
+                    continue
 
             found.append(
                 ReflectedProperty(

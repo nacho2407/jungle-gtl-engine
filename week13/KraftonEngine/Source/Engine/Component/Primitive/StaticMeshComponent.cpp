@@ -56,13 +56,17 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 void UStaticMeshComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UMeshComponent::AddReferencedObjects(Collector);
+}
 
-    Collector.AddReferencedObject(StaticMesh.Get());
-
-    for (UMaterial* Mat : OverrideMaterials)
+TArray<UMaterial*> UStaticMeshComponent::GetOverrideMaterials() const
+{
+    TArray<UMaterial*> Result;
+    Result.reserve(OverrideMaterials.size());
+    for (UMaterial* Material : OverrideMaterials)
     {
-        Collector.AddReferencedObject(Mat);
+        Result.push_back(Material);
     }
+    return Result;
 }
 
 void UStaticMeshComponent::CacheLocalBounds()

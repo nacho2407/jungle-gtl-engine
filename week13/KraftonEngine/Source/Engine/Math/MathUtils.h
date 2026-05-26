@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Core/Types/CoreTypes.h"
+#include <cmath>
 
 namespace FMath
 {
@@ -68,7 +69,7 @@ namespace FMath
 	 */
 	[[nodiscard]] static float TruncToFloat(float F)
 	{
-		return truncf(F);
+		return std::trunc(F);
 	}
 
 	/** Returns lower value in a generic way */
@@ -120,6 +121,9 @@ namespace FMath
 }
 
 // 기존 매크로 호환 — 이행 완료 후 제거
+#ifdef M_PI
+#undef M_PI
+#endif
 #define M_PI FMath::Pi
 #define DEG_TO_RAD FMath::DegToRad
 #define RAD_TO_DEG FMath::RadToDeg

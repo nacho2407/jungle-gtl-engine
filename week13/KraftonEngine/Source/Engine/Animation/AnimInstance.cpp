@@ -20,8 +20,6 @@ void UAnimInstance::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UObject::AddReferencedObjects(Collector);
 
-	Collector.AddReferencedObject(OwningComponent);
-
 	for (const FQueuedAnimNotify& QueuedNotify : NotifyQueue)
 	{
 		QueuedNotify.Event.AddReferencedObjects(Collector);

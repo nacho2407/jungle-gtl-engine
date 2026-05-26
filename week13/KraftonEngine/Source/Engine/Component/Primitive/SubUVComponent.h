@@ -3,6 +3,8 @@
 #include "Component/Primitive/BillboardComponent.h"
 #include "Core/Types/ResourceTypes.h"
 #include "Object/FName.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Materials/Material.h"
 
 #include "Source/Engine/Component/Primitive/SubUVComponent.generated.h"
 class UMaterial;
@@ -20,7 +22,7 @@ public:
 	void SetParticle(const FName& InParticleName);
 	const FParticleResource* GetParticle() const { return CachedParticle; }
 	const FName& GetParticleName() const { return ParticleName; }
-	UMaterial* GetSubUVMaterial() const { return SubUVMaterial; }
+	UMaterial* GetSubUVMaterial() const { return SubUVMaterial.Get(); }
 
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	void BeginDestroy() override;
@@ -53,7 +55,9 @@ private:
 	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Particle", AssetType="Particle")
 	FName ParticleName;
 	FParticleResource* CachedParticle = nullptr; // ResourceManager 소유, 여기선 참조만
-	UMaterial* SubUVMaterial = nullptr;           // Particle SRV를 래핑하는 경량 머티리얼
+	// Runtime-generated UObject material. This component owns the GC-visible reference.
+	UPROPERTY(Transient, Category="Particle")
+	TObjectPtr<UMaterial> SubUVMaterial = nullptr;           // Particle SRV를 래핑하는 경량 머티리얼
 
 	UPROPERTY(Save, Category="Particle", DisplayName="Frame Index", Min=0.0f, Max=100000.0f, Speed=1.0f)
 	int32 FrameIndex = 0;

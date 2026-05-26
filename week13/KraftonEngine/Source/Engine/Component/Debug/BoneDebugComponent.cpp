@@ -21,5 +21,4 @@ FPrimitiveSceneProxy* UBoneDebugComponent::CreateSceneProxy()
 void UBoneDebugComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UPrimitiveComponent::AddReferencedObjects(Collector);
-	Collector.AddReferencedObject(TargetMeshComponent);
 }

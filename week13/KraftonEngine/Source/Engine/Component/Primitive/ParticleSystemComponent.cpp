@@ -351,16 +351,20 @@ void UParticleSystemComponent::ResolveEmitterMaterialsFromSlots()
     }
 }
 
+TArray<UMaterial*> UParticleSystemComponent::GetEmitterMaterials() const
+{
+    TArray<UMaterial*> Result;
+    Result.reserve(EmitterMaterials.size());
+    for (UMaterial* Material : EmitterMaterials)
+    {
+        Result.push_back(Material);
+    }
+    return Result;
+}
+
 void UParticleSystemComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UPrimitiveComponent::AddReferencedObjects(Collector);
-
-    Collector.AddReferencedObject(Template.Get(), "UParticleSystemComponent.Template");
-
-    for (UMaterial* Material : EmitterMaterials)
-    {
-        Collector.AddReferencedObject(Material, "UParticleSystemComponent.EmitterMaterials");
-    }
 
     for (FParticleEmitterInstance* Instance : EmitterInstances)
     {

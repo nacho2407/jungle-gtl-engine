@@ -273,9 +273,6 @@ void UWorld::UpdateActorInOctree(AActor* Actor)
 void UWorld::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UObject::AddReferencedObjects(Collector);
-
-    Collector.AddReferencedObject(PersistentLevel, "UWorld.PersistentLevel");
-    Collector.AddReferencedObject(GameMode, "UWorld.GameMode");
 }
 
 void UWorld::ShutdownPhysicsScene()

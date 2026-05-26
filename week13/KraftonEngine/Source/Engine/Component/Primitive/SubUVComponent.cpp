@@ -43,7 +43,6 @@ USubUVComponent::~USubUVComponent()
 void USubUVComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UBillboardComponent::AddReferencedObjects(Collector);
-	Collector.AddReferencedObject(SubUVMaterial);
 }
 
 void USubUVComponent::BeginDestroy()

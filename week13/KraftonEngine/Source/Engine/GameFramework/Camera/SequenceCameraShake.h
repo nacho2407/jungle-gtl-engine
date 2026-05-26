@@ -1,5 +1,7 @@
 #pragma once
 #include "GameFramework/Camera/CameraShakeBase.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "FloatCurve/FloatCurveAsset.h"
 
 #include "Source/Engine/GameFramework/Camera/SequenceCameraShake.generated.h"
 class UFloatCurveAsset;
@@ -30,15 +32,22 @@ public:
 	float BlendInTime = 0.05f;
 	float BlendOutTime = 0.10f;
 
-	UFloatCurveAsset* LocXCurve = nullptr;
-	UFloatCurveAsset* LocYCurve = nullptr;
-	UFloatCurveAsset* LocZCurve = nullptr;
+	UPROPERTY(Transient, Category="CameraShake")
+	TObjectPtr<UFloatCurveAsset> LocXCurve = nullptr;
+	UPROPERTY(Transient, Category="CameraShake")
+	TObjectPtr<UFloatCurveAsset> LocYCurve = nullptr;
+	UPROPERTY(Transient, Category="CameraShake")
+	TObjectPtr<UFloatCurveAsset> LocZCurve = nullptr;
 
-	UFloatCurveAsset* PitchCurve = nullptr;
-	UFloatCurveAsset* YawCurve = nullptr;
-	UFloatCurveAsset* RollCurve = nullptr;
+	UPROPERTY(Transient, Category="CameraShake")
+	TObjectPtr<UFloatCurveAsset> PitchCurve = nullptr;
+	UPROPERTY(Transient, Category="CameraShake")
+	TObjectPtr<UFloatCurveAsset> YawCurve = nullptr;
+	UPROPERTY(Transient, Category="CameraShake")
+	TObjectPtr<UFloatCurveAsset> RollCurve = nullptr;
 
-	UFloatCurveAsset* FOVCurve = nullptr;
+	UPROPERTY(Transient, Category="CameraShake")
+	TObjectPtr<UFloatCurveAsset> FOVCurve = nullptr;
 
 private:
 	float ElapsedTime = 0.0f;

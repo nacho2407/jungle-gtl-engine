@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Animation/AnimInstance.h"
+#include "Object/Ptr/ObjectPtr.h"
 
 #ifdef GetCurrentTime
 #undef GetCurrentTime
@@ -22,7 +23,7 @@ public:
 	~UAnimSingleNodeInstance() override = default;
 
 	void SetAnimationAsset(UAnimSequenceBase* InAsset);
-	UAnimSequenceBase* GetAnimationAsset() const { return CurrentAsset; }
+	UAnimSequenceBase* GetAnimationAsset() const { return CurrentAsset.Get(); }
 
 	void  SetPlayRate(float InRate) { PlayRate = InRate; }
 	float GetPlayRate() const       { return PlayRate; }
@@ -45,7 +46,8 @@ private:
 	// CurrentTime 을 dt * PlayRate 만큼 진행시키고 길이로 wrap/clamp.
 	void AdvanceTime(float DeltaSeconds);
 
-	UAnimSequenceBase* CurrentAsset = nullptr;
+	UPROPERTY(Transient, Category="Animation")
+	TObjectPtr<UAnimSequenceBase> CurrentAsset = nullptr;
 	float CurrentTime = 0.0f;
 	float PlayRate    = 1.0f;
 	bool  bPlaying    = true;

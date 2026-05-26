@@ -86,30 +86,38 @@ void FGarbageCollector::MarkObject(UObject* Object)
 
 void FGarbageCollector::MarkObjectFromEdge(const FGCReferenceEdge& Edge)
 {
-    UObject* Object = Edge.Object;
-    if (!IsAliveObject(Object))
+    TArray<FGCReferenceEdge> WorkStack;
+    WorkStack.push_back(Edge);
+
+    while (!WorkStack.empty())
     {
-        return;
-    }
+        FGCReferenceEdge CurrentEdge = WorkStack.back();
+        WorkStack.pop_back();
 
-    if (Object->HasAnyFlags(RF_PendingKill | RF_Garbage | RF_Marked))
-    {
-        return;
-    }
+        UObject* Object = CurrentEdge.Object;
+        if (!IsAliveObject(Object))
+        {
+            continue;
+        }
 
-    LastReferenceEdges[Object] = Edge;
+        if (Object->HasAnyFlags(RF_PendingKill | RF_Garbage | RF_Marked))
+        {
+            continue;
+        }
 
-    Object->SetFlags(RF_Marked);
-    Object->ClearFlags(RF_Unreachable);
+        LastReferenceEdges[Object] = CurrentEdge;
 
-    FReferenceCollector Collector(Object);
-    Object->AddReferencedObjects(Collector);
+        Object->SetFlags(RF_Marked);
+        Object->ClearFlags(RF_Unreachable);
 
-    while (!Collector.Stack.empty())
-    {
-        FGCReferenceEdge ReferencedEdge = Collector.Stack.back();
-        Collector.Stack.pop_back();
-        MarkObjectFromEdge(ReferencedEdge);
+        FReferenceCollector Collector(Object);
+        Object->AddReferencedObjects(Collector);
+
+        while (!Collector.Stack.empty())
+        {
+            WorkStack.push_back(Collector.Stack.back());
+            Collector.Stack.pop_back();
+        }
     }
 }
 

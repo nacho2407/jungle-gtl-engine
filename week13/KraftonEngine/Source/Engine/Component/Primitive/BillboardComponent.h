@@ -4,6 +4,8 @@
 #include "Core/Types/ResourceTypes.h"
 #include "Object/FName.h"
 #include "Object/Ptr/SoftObjectPtr.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Materials/Material.h"
 
 #include "Source/Engine/Component/Primitive/BillboardComponent.generated.h"
 
@@ -28,7 +30,7 @@ public:
 
 	// --- Material ---
 	void SetMaterial(class UMaterial* InMaterial);
-	class UMaterial* GetMaterial() const { return Material; }
+	class UMaterial* GetMaterial() const { return Material.Get(); }
 
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
@@ -44,6 +46,8 @@ protected:
 
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Material", AssetType="Material")
 	FSoftObjectPtr MaterialSlot = "None";
-	UMaterial* Material = nullptr;
+	// Runtime loaded material reference. MaterialSlot is the persistent asset identity.
+	UPROPERTY(Transient, Category="Rendering")
+	TObjectPtr<UMaterial> Material = nullptr;
 };
 

@@ -2,6 +2,8 @@
 
 #include "Animation/Sequence/AnimSequenceBase.h"
 #include "Object/FName.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Animation/Sequence/AnimSequence.h"
 
 class UAnimSequence;
 
@@ -47,7 +49,7 @@ public:
     void GetBonePose(FPoseContext& Output, const FAnimExtractContext& Ctx) const override;
 
     // ── Source ──
-    UAnimSequence* GetSourceSequence() const { return SourceSequence; }
+    UAnimSequence* GetSourceSequence() const { return SourceSequence.Get(); }
     void           SetSourceSequence(UAnimSequence* InSeq);   // PlayLength/FrameRate 자동 동기화
 
     // ── Sections ──
@@ -75,7 +77,9 @@ public:
     const FString& GetSourceSequencePath() const { return SourceSequencePath; }
 
 private:
-    UAnimSequence*            SourceSequence  = nullptr;
+    // Runtime loaded source sequence. SourceSequencePath is the persistent asset identity.
+    UPROPERTY(Transient, Category="Animation")
+    TObjectPtr<UAnimSequence> SourceSequence  = nullptr;
     TArray<FCompositeSection> Sections;
     float                     BlendInTime     = 0.25f;
     float                     BlendOutTime    = 0.25f;

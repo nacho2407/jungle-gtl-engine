@@ -3,6 +3,8 @@
 #include "Math/Transform.h"
 #include "Math/Rotator.h"
 #include "Component/ActorComponent.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 #include "Math/MathUtils.h"
 
 class AActor;
@@ -24,14 +26,14 @@ public:
 	UFUNCTION(Callable, Category="Scene|Hierarchy")
 	void SetParent(USceneComponent* NewParent);
 	UFUNCTION(Pure, Category="Scene|Hierarchy")
-	USceneComponent* GetParent() const { return ParentComponent; }
+	USceneComponent* GetParent() const { return ParentComponent.Get(); }
 	UFUNCTION(Callable, Category="Scene|Hierarchy")
 	void AddChild(USceneComponent* NewChild);
 	UFUNCTION(Callable, Category="Scene|Hierarchy")
 	void RemoveChild(USceneComponent* Child);
 	UFUNCTION(Pure, Category="Scene|Hierarchy")
 	bool ContainsChild(const USceneComponent* Child) const;
-	const TArray<USceneComponent*>& GetChildren() const { return ChildComponents; }
+	TArray<USceneComponent*> GetChildren() const;
 
 	void PreGetEditableProperties() override;
 	void PostEditProperty(const char* PropertyName) override;
@@ -104,8 +106,12 @@ public:
     void BeginDestroy() override;
 
 protected:
-	USceneComponent* ParentComponent = nullptr;
-	TArray<USceneComponent*> ChildComponents;
+	// Non-owning back-reference. Parent keeps children alive through ChildComponents.
+	TWeakObjectPtr<USceneComponent> ParentComponent;
+
+	// Runtime hierarchy ownership. SceneSaveManager persists topology explicitly, so this remains Transient.
+	UPROPERTY(Transient, Instanced, Category="Scene|Hierarchy")
+	TArray<TObjectPtr<USceneComponent>> ChildComponents;
 
 	bool bAbsoluteScale = false;
 

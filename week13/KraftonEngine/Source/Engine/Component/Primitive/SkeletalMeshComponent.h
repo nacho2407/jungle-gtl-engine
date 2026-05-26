@@ -6,6 +6,7 @@
 #include "Animation/AnimInstance.h"
 #include "Animation/Instance/AnimSingleNodeInstance.h"
 #include "Animation/Sequence/AnimSequenceBase.h"
+#include "Object/Ptr/ObjectPtr.h"
 
 #include "Source/Engine/Component/Primitive/SkeletalMeshComponent.generated.h"
 
@@ -72,7 +73,7 @@ public:
     UFUNCTION(Callable, Category="Animation")
     void SetAnimInstance(UAnimInstance* InInstance);
     UFUNCTION(Pure, Category="Animation")
-    UAnimInstance* GetAnimInstance() const { return AnimInstance; }
+    UAnimInstance* GetAnimInstance() const { return AnimInstance.Get(); }
 
     // SingleNode 모드에서 현재 자동 생성된 노드를 반환한다. NodeName 은 현재 단일 노드 구조에서는 무시한다.
     UFUNCTION(Pure, Category="Animation")
@@ -106,6 +107,7 @@ protected:
     FSingleAnimationPlayData   AnimationData;
     UPROPERTY(Edit, Save, Category="Animation", DisplayName="Anim Instance Class", Type=ClassRef, AllowedClass=UAnimInstance)
     TSubclassOf<UAnimInstance> AnimInstanceClass;
-    UPROPERTY(Save, Instanced, Category="Animation", DisplayName="Anim Instance", Type=ObjectRef, AllowedClass=UAnimInstance)
-    UAnimInstance*             AnimInstance  = nullptr;
+    // Runtime-owned instance. AnimInstanceClass is the persistent/editor-facing identity.
+    UPROPERTY(Transient, Instanced, Category="Animation", DisplayName="Anim Instance", Type=ObjectRef, AllowedClass=UAnimInstance)
+    TObjectPtr<UAnimInstance>  AnimInstance  = nullptr;
 };

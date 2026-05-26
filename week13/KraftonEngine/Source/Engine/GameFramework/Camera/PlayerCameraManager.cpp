@@ -16,13 +16,6 @@
 void APlayerCameraManager::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	AActor::AddReferencedObjects(Collector);
-
-	for (UCameraModifier* Modifier : ModifierList)
-	{
-		Collector.AddReferencedObject(Modifier);
-	}
-
-	Collector.AddReferencedObject(ShakeModifier);
 }
 
 void APlayerCameraManager::RegisterCamera(UCameraComponent* Camera)

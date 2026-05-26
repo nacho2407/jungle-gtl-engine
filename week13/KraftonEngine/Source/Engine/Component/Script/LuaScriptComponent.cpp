@@ -21,16 +21,6 @@ ULuaScriptComponent::~ULuaScriptComponent()
 void ULuaScriptComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UActorComponent::AddReferencedObjects(Collector);
-
-	for (UPrimitiveComponent* Component : BoundOverlapComponents)
-	{
-		Collector.AddReferencedObject(Component);
-	}
-
-	for (UPrimitiveComponent* Component : BoundHitComponents)
-	{
-		Collector.AddReferencedObject(Component);
-	}
 }
 
 void ULuaScriptComponent::BeginDestroy()

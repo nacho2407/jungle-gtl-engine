@@ -18,13 +18,6 @@ namespace
 void USequenceCameraShake::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UCameraShakeBase::AddReferencedObjects(Collector);
-	Collector.AddReferencedObject(LocXCurve);
-	Collector.AddReferencedObject(LocYCurve);
-	Collector.AddReferencedObject(LocZCurve);
-	Collector.AddReferencedObject(PitchCurve);
-	Collector.AddReferencedObject(YawCurve);
-	Collector.AddReferencedObject(RollCurve);
-	Collector.AddReferencedObject(FOVCurve);
 }
 
 void USequenceCameraShake::StartShake(

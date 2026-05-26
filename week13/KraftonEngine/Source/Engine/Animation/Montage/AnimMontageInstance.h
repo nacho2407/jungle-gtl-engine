@@ -2,6 +2,8 @@
 
 #include "Object/Object.h"
 #include "Object/FName.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Animation/Montage/AnimMontage.h"
 #include "Math/Transform.h"
 
 class UAnimMontage;
@@ -41,7 +43,7 @@ public:
     // ── 상태 조회 ──
     bool          IsActive()       const { return State != EState::Inactive; }
     bool          IsBlendingOut()  const { return State == EState::BlendingOut; }
-    UAnimMontage* GetCurrentMontage() const { return CurrentMontage; }
+    UAnimMontage* GetCurrentMontage() const { return CurrentMontage.Get(); }
     void AddReferencedObjects(FReferenceCollector& Collector) override;
     FName         GetCurrentSectionName() const;
     float         GetSectionTime() const { return SectionTime; }
@@ -69,7 +71,8 @@ private:
         BlendingOut
     };
 
-    UAnimMontage* CurrentMontage      = nullptr;
+    UPROPERTY(Transient, Category="Animation")
+    TObjectPtr<UAnimMontage> CurrentMontage = nullptr;
     int32         CurrentSectionIndex = -1;
     float         SectionTime         = 0.0f;   // 현재 section 시작 시점 이후 경과 (sec)
     FName         PendingNextSection  = FName::None;   // SetNextSection 의 1회성 override

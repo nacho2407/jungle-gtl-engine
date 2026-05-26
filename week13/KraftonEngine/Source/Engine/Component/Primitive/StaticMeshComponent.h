@@ -43,7 +43,7 @@ public:
 	void SetMaterial(int32 ElementIndex, UMaterial* InMaterial);
 	UFUNCTION(Pure, Category="Materials")
 	UMaterial* GetMaterial(int32 ElementIndex) const;
-	const TArray<UMaterial*>& GetOverrideMaterials() const { return OverrideMaterials; }
+	TArray<UMaterial*> GetOverrideMaterials() const;
 
 	void PostDuplicate() override;
 
@@ -57,10 +57,14 @@ public:
 private:
 	void CacheLocalBounds();
 
+	// Runtime loaded asset reference. Persistent asset identity is stored separately in StaticMeshPath.
+	UPROPERTY(Transient, Category="Mesh")
 	TObjectPtr<UStaticMesh> StaticMesh;
 	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Static Mesh", AssetType="StaticMesh")
 	FSoftObjectPtr StaticMeshPath = "None";
-	TArray<UMaterial*> OverrideMaterials;
+	// Runtime loaded material references. Persistent material identity is stored in MaterialSlots.
+	UPROPERTY(Transient, Category="Materials")
+	TArray<TObjectPtr<UMaterial>> OverrideMaterials;
 	UPROPERTY(Edit, Save, EditFixedSize, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
 

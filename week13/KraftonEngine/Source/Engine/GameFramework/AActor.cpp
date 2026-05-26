@@ -112,6 +112,20 @@ void AActor::SetRootComponent(USceneComponent* Comp)
 	RootComponent = Comp;
 }
 
+TArray<UActorComponent*> AActor::GetComponents() const
+{
+	TArray<UActorComponent*> Result;
+	Result.reserve(OwnedComponents.size());
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		if (Component)
+		{
+			Result.push_back(Component);
+		}
+	}
+	return Result;
+}
+
 UWorld* AActor::GetWorld() const
 {
 	return GetTypedOuter<UWorld>();
@@ -529,13 +543,6 @@ const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
 void AActor::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UObject::AddReferencedObjects(Collector);
-
-    for (UActorComponent* Component : OwnedComponents)
-    {
-        Collector.AddReferencedObject(Component, "AActor.OwnedComponents");
-    }
-
-    Collector.AddReferencedObject(RootComponent, "AActor.RootComponent");
 }
 
 void AActor::BeginDestroy()
@@ -551,7 +558,15 @@ void AActor::BeginDestroy()
 
     PrimaryActorTick.UnRegisterTickFunction();
 
-    TArray<UActorComponent*> ComponentsToDestroy = OwnedComponents;
+    TArray<UActorComponent*> ComponentsToDestroy;
+    ComponentsToDestroy.reserve(OwnedComponents.size());
+    for (UActorComponent* Component : OwnedComponents)
+    {
+        if (Component)
+        {
+            ComponentsToDestroy.push_back(Component);
+        }
+    }
 
     for (UActorComponent* Component : ComponentsToDestroy)
     {

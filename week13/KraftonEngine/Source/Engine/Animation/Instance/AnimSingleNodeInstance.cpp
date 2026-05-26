@@ -10,7 +10,6 @@
 void UAnimSingleNodeInstance::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UAnimInstance::AddReferencedObjects(Collector);
-	Collector.AddReferencedObject(CurrentAsset);
 }
 
 void UAnimSingleNodeInstance::SetAnimationAsset(UAnimSequenceBase* InAsset)

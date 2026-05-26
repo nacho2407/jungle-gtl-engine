@@ -914,13 +914,17 @@ void USkinnedMeshComponent::BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlob
 void USkinnedMeshComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UMeshComponent::AddReferencedObjects(Collector);
+}
 
-    Collector.AddReferencedObject(SkeletalMesh);
-
-    for (UMaterial* Mat : OverrideMaterials)
+TArray<UMaterial*> USkinnedMeshComponent::GetOverrideMaterials() const
+{
+    TArray<UMaterial*> Result;
+    Result.reserve(OverrideMaterials.size());
+    for (UMaterial* Material : OverrideMaterials)
     {
-        Collector.AddReferencedObject(Mat);
+        Result.push_back(Material);
     }
+    return Result;
 }
 
 // Cache 초기화는 resize까지만 담당하고, 실제 vertex 내용 갱신은 UpdateCPUSkinning에 모은다.

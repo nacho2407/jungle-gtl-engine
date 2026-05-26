@@ -5,6 +5,8 @@
 #include "Math/Transform.h"
 #include "Object/Ptr/ObjectPtr.h"
 #include "Object/Ptr/SoftObjectPtr.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
+#include "Materials/Material.h"
 
 #include "Source/Engine/Component/Primitive/SkinnedMeshComponent.generated.h"
 struct FSkeletalMesh;
@@ -34,7 +36,7 @@ public:
 	// Material 섹션: editor slot 경로와 runtime override 포인터를 같이 유지한다.
 	void SetMaterial(int32 ElementIndex, UMaterial* InMaterial);
 	UMaterial* GetMaterial(int32 ElementIndex) const;
-	const TArray<UMaterial*>& GetOverrideMaterials() const { return OverrideMaterials; }
+	TArray<UMaterial*> GetOverrideMaterials() const;
 
 	// Serialization/editor 섹션: asset pointer는 저장하지 않고 path를 저장한 뒤 로드 후 SetSkeletalMesh 흐름으로 복원한다.
 	void PostDuplicate() override;
@@ -111,10 +113,14 @@ protected:
 
 protected:
 	// Mesh/material state는 SetSkeletalMesh와 PostEditProperty가 같은 경로를 쓰도록 여기서 소유한다.
+	// Runtime loaded asset reference. Persistent asset identity is stored separately in SkeletalMeshPath.
+	UPROPERTY(Transient, Category="Mesh")
 	TObjectPtr<USkeletalMesh> SkeletalMesh;
 	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Skeletal Mesh", AssetType="SkeletalMesh")
 	FSoftObjectPtr SkeletalMeshPath = "None";
-	TArray<UMaterial*> OverrideMaterials;
+	// Runtime loaded material references. Persistent material identity is stored in MaterialSlots.
+	UPROPERTY(Transient, Category="Materials")
+	TArray<TObjectPtr<UMaterial>> OverrideMaterials;
 	UPROPERTY(Edit, Save, EditFixedSize, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
 

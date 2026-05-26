@@ -79,14 +79,23 @@ FVector4 UDecalComponent::GetColor() const
 }
 
 
+TArray<UStaticMeshComponent*> UDecalComponent::GetReceivers() const
+{
+	TArray<UStaticMeshComponent*> Result;
+	Result.reserve(Receivers.size());
+	for (const TWeakObjectPtr<UStaticMeshComponent>& Receiver : Receivers)
+	{
+		if (UStaticMeshComponent* Component = Receiver.Get())
+		{
+			Result.push_back(Component);
+		}
+	}
+	return Result;
+}
+
 void UDecalComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UPrimitiveComponent::AddReferencedObjects(Collector);
-	Collector.AddReferencedObject(Material);
-	for (UStaticMeshComponent* Receiver : Receivers)
-	{
-		Collector.AddReferencedObject(Receiver);
-	}
 }
 
 void UDecalComponent::SetMaterial(UMaterial* InMaterial)

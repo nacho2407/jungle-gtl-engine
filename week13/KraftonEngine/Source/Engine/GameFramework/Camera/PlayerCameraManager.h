@@ -5,6 +5,9 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/Camera/CameraTypes.h"
 #include "Render/Types/MinimalViewInfo.h"
+#include "GameFramework/Camera/CameraModifier.h"
+#include "GameFramework/Camera/CameraShakeCameraModifier.h"
+#include "Object/Ptr/ObjectPtr.h"
 
 #include "Source/Engine/GameFramework/Camera/PlayerCameraManager.generated.h"
 class UCameraComponent;
@@ -185,8 +188,10 @@ private:
 	EViewTargetBlendFunction ActiveCameraBlendFunction = EViewTargetBlendFunction::VTBlend_Linear;
 
 	// Camera modifier list — priority 오름차순 정렬. 기본 ShakeModifier 1개를 lazy 추가.
-	TArray<UCameraModifier*> ModifierList;
-	UCameraModifier_CameraShake* ShakeModifier = nullptr;  // 빠른 접근용 캐시
+	UPROPERTY(Transient, Instanced, Category="Camera")
+	TArray<TObjectPtr<UCameraModifier>> ModifierList;
+	UPROPERTY(Transient, Instanced, Category="Camera")
+	TObjectPtr<UCameraModifier_CameraShake> ShakeModifier = nullptr;  // 빠른 접근용 캐시
 
     void PruneInvalidReferences();
 

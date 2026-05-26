@@ -23,8 +23,6 @@ public:
 		return *this;
 	}
 
-	bool operator==(const T* Other) const { return Object == Other; }
-	bool operator!=(const T* Other) const { return Object != Other; }
 
 private:
 	T* Object = nullptr;

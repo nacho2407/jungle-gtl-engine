@@ -1,5 +1,8 @@
 #pragma once
 #include "Object/Object.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Object/Ptr/WeakObjectPtr.h"
+#include "GameFramework/AActor.h"
 #include "Source/Engine/GameFramework/Level.generated.h"
 #include <memory>
 
@@ -22,9 +25,9 @@ public:
 	void RemoveActor(AActor* Actor);
 	void Clear();
 
-	const TArray<AActor*>& GetActors() const { return Actors; }
-	UWorld* GetWorld() const { return OwingWorld; }
-	void SetWorld(UWorld* World) { OwingWorld = World;}
+	TArray<AActor*> GetActors() const;
+	UWorld* GetWorld() const { return OwingWorld.Get(); }
+	void SetWorld(UWorld* World) { OwingWorld = World; }
 
 	void BeginPlay();
 	void EndPlay();
@@ -35,7 +38,12 @@ public:
     
 private:
 	FName LevelName;
-	TArray<AActor*> Actors;
-	UWorld* OwingWorld = nullptr;
+
+	// Runtime actor ownership. World/Level persistence is handled by SceneSaveManager, so this is GC-visible but not Save-serialized.
+	UPROPERTY(Transient, Instanced, Category="Level")
+	TArray<TObjectPtr<AActor>> Actors;
+
+	// Non-owning back-reference to the world that owns this level.
+	TWeakObjectPtr<UWorld> OwingWorld;
 };
 

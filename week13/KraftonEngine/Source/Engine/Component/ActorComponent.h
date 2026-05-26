@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Object/Object.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 #include "Core/TickFunction.h"
 
 #include "Source/Engine/Component/ActorComponent.generated.h"
@@ -58,7 +59,7 @@ public:
 	inline bool IsActive() { return bIsActive; }
 
 	void SetOwner(AActor* Actor);
-	AActor* GetOwner() const { return Owner; }
+	AActor* GetOwner() const { return Owner.Get(); }
 	UWorld* GetWorld() const;
 
 	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
@@ -76,7 +77,8 @@ protected:
 	// Component의 Tick은 UE 기준 Actor가 아닌 별도 시스템에서 돌아가나, 현재 관리를 위해 friend AActor로 설정. 추후 시스템이 완성되면 별도 매니저에서 관리하도록 리팩토링할 예정.
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction);
 	
-	AActor* Owner = nullptr;
+	// Non-owning back-reference. Actor owns this component through AActor::OwnedComponents.
+	TWeakObjectPtr<AActor> Owner;
 	UPROPERTY(Edit, Save, Category="Component", DisplayName="bTickEnable")
 	bool bTickEnable = true;
 

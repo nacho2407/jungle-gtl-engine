@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Object/Object.h"
+#include "Object/Ptr/ObjectPtr.h"
+#include "Animation/Sequence/AnimSequenceBase.h"
 #include "Object/FName.h"
 #include "Math/Transform.h"
 #include "Animation/Nodes/AnimNode_SequencePlayer.h"
@@ -34,7 +36,8 @@ public:
 	FName StateName = FName::None;
 
 	// 이 상태가 재생할 시퀀스. nullptr 이면 ref pose 유지.
-	UAnimSequenceBase* Sequence = nullptr;
+	UPROPERTY(Transient, Category="Animation")
+	TObjectPtr<UAnimSequenceBase> Sequence = nullptr;
 	float              PlayRate = 1.0f;
 	bool               bLooping = true;
 

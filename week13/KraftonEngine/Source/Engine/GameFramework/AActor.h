@@ -1,6 +1,7 @@
 #pragma once
 #include "Object/Object.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Object/Ptr/ObjectPtr.h"
 #include "Component/SceneComponent.h"
 #include "Core/TickFunction.h"
 
@@ -8,7 +9,7 @@ class FArchive;
 
 #include <type_traits>
 
-enum ELevelTick;
+enum ELevelTick : int;
 struct FActorTickFunction;
 class UWorld;
 class ULevel;
@@ -64,9 +65,9 @@ public:
 	UFUNCTION(Callable, Category="Actor|Components")
 	void SetRootComponent(USceneComponent* Comp);
 	UFUNCTION(Pure, Category="Actor|Components")
-	USceneComponent* GetRootComponent() const { return RootComponent; }
+	USceneComponent* GetRootComponent() const { return RootComponent.Get(); }
 
-	const TArray<UActorComponent*>& GetComponents() const { return OwnedComponents; }
+	TArray<UActorComponent*> GetComponents() const;
 
 	// 특정 클래스의 컴포넌트를 검색하여 반환 (없으면 nullptr)
 	template<typename T>
@@ -146,7 +147,9 @@ protected:
 	
 	void MarkPickingDirty();
 
-	USceneComponent* RootComponent = nullptr;
+	// Runtime ownership reference. SceneSaveManager serializes component topology explicitly, so this must stay Transient.
+	UPROPERTY(Transient, Instanced, Category="Actor|Components")
+	TObjectPtr<USceneComponent> RootComponent = nullptr;
 
 	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Location")
 	FVector PendingActorLocation = FVector(0, 0, 0);
@@ -163,7 +166,9 @@ protected:
 	UPROPERTY(Edit, Save, Category="Actor", DisplayName="Tags")
 	FString PendingTagsString;  // 에디터용 — 콤마 구분 직렬화 캐시
 
-	TArray<UActorComponent*> OwnedComponents;
+	// Runtime-owned component list. Actor keeps components alive through reflected GC, not through manual collector loops.
+	UPROPERTY(Transient, Instanced, Category="Actor|Components")
+	TArray<TObjectPtr<UActorComponent>> OwnedComponents;
 
 	// 렌더링용 캐시
 	mutable TArray<UPrimitiveComponent*> PrimitiveCache;

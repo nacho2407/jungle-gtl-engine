@@ -2,6 +2,7 @@
 #include "Distributions.h"
 #include "Distribution.h"
 #include "Object/Reflection/ObjectMacros.h"
+#include "Object/Ptr/ObjectPtr.h"
 #include "Core/Types/EngineTypes.h"
 
 class FReferenceCollector;
@@ -79,8 +80,9 @@ private:
 	FVector MaxValueVec;
 
 public:
-	UPROPERTY(EditAnywhere, Category = "RawDistributionVector")
-	UDistributionVector* Distribution;
+	// Instanced runtime distribution object. Serialized by FRawDistributionVector::Serialize as class + payload.
+	UPROPERTY(EditAnywhere, Instanced, Category = "RawDistributionVector")
+	TObjectPtr<UDistributionVector> Distribution;
 
 	/** Whether the distribution data has been cooked or the object itself is available */
 	bool IsCreated() const { return Distribution != nullptr; }

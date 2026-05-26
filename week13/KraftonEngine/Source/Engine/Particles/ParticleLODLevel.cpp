@@ -25,7 +25,7 @@ namespace
 	// 디스패치를 해서 적절한 구체 클래스를 만들어준 뒤 해당 인스턴스의 Serialize 를 호출.
 	// 로드 시 클래스 미등록/타입 mismatch면 슬롯은 nullptr로 두고 다음으로 넘어간다.
 	template<class T>
-	void SerializeOwnedModule(FArchive& Ar, T*& Module, UObject* Outer)
+	void SerializeOwnedModuleRaw(FArchive& Ar, T*& Module, UObject* Outer)
 	{
 		FString ClassName = (Ar.IsSaving() && Module)
 			? FString(Module->GetClass()->GetName())
@@ -50,6 +50,14 @@ namespace
 		{
 			Module->Serialize(Ar);
 		}
+	}
+
+	template<class T>
+	void SerializeOwnedModule(FArchive& Ar, TObjectPtr<T>& Module, UObject* Outer)
+	{
+		T* RawModule = Module.Get();
+		SerializeOwnedModuleRaw(Ar, RawModule, Outer);
+		Module = RawModule;
 	}
 }
 
@@ -149,8 +157,8 @@ void UParticleLODLevel::Serialize(FArchive& Ar)
 
 	for (uint32 i = 0; i < ModuleCount; ++i)
 	{
-		UParticleModule* M = Ar.IsSaving() ? Modules[i] : nullptr;
-		SerializeOwnedModule(Ar, M, this);
+		UParticleModule* M = Ar.IsSaving() ? Modules[i].Get() : nullptr;
+		SerializeOwnedModuleRaw(Ar, M, this);
 		if (Ar.IsLoading()) Modules[i] = M;
 	}
 
@@ -162,30 +170,8 @@ void UParticleLODLevel::Serialize(FArchive& Ar)
 
 void UParticleLODLevel::AddReferencedObjects(FReferenceCollector& Collector)
 {
+    // RequiredModule, SpawnModule, TypeDataModule, EventGenerator and Modules are
+    // reflected UPROPERTY references. SpawnModules/UpdateModules/OrbitModules are
+    // non-owning caches rebuilt from those reflected owners.
     UObject::AddReferencedObjects(Collector);
-
-    Collector.AddReferencedObject(RequiredModule, "UParticleLODLevel.RequiredModule");
-    Collector.AddReferencedObject(SpawnModule, "UParticleLODLevel.SpawnModule");
-    Collector.AddReferencedObject(TypeDataModule, "UParticleLODLevel.TypeDataModule");
-    Collector.AddReferencedObject(EventGenerator, "UParticleLODLevel.EventGenerator");
-
-    for (UParticleModule* Module : Modules)
-    {
-        Collector.AddReferencedObject(Module, "UParticleLODLevel.Modules");
-    }
-
-    for (UParticleModule* Module : SpawnModules)
-    {
-        Collector.AddReferencedObject(Module, "UParticleLODLevel.Modules");
-    }
-
-    for (UParticleModule* Module : UpdateModules)
-    {
-        Collector.AddReferencedObject(Module, "UParticleLODLevel.Modules");
-    }
-
-    for (UParticleModule* Module : OrbitModules)
-    {
-        Collector.AddReferencedObject(Module, "UParticleLODLevel.Modules");
-    }
 }

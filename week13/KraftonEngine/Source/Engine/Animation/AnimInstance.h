@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Object/Object.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 #include "Animation/PoseContext.h"
 #include "Animation/Notify/AnimNotifyEvent.h"
 #include "Math/Transform.h"
@@ -82,7 +83,7 @@ public:
 
 	// ── 컴포넌트 접근 ──
 	void SetOwningComponent(USkeletalMeshComponent* InComp) { OwningComponent = InComp; }
-	USkeletalMeshComponent* GetOwningComponent() const { return OwningComponent; }
+	USkeletalMeshComponent* GetOwningComponent() const { return OwningComponent.Get(); }
 	UFUNCTION(Pure, Category="Animation")
 	USkeletalMesh*          GetSkeletalMesh()    const;
 
@@ -171,7 +172,8 @@ public:
 	}
 
 protected:
-	USkeletalMeshComponent*       OwningComponent = nullptr;
+	// Non-owning back-reference. The skeletal mesh component owns this instance.
+	TWeakObjectPtr<USkeletalMeshComponent> OwningComponent;
 	TArray<FQueuedAnimNotify>     NotifyQueue;
 
 	// 디버그용 최근 발사 notify 이력. DispatchQueuedAnimEvents 에서 push.

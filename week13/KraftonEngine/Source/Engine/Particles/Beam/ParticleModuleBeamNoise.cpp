@@ -12,7 +12,7 @@ namespace
 {
 	bool IsNoiseRangeUniform(const FRawDistributionVector& Distribution)
 	{
-		return dynamic_cast<UDistributionVectorUniform*>(Distribution.Distribution) != nullptr;
+		return Cast<UDistributionVectorUniform>(Distribution.Distribution.Get()) != nullptr;
 	}
 
 	FVector GetNoiseRangeValue(const FRawDistributionVector& Distribution, float Time, UObject* Data, int32 Extreme, FRandomStream* RandomStream)
