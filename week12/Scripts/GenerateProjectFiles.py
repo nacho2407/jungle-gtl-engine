@@ -89,7 +89,7 @@ INCLUDE_PATHS_GAME = [
 ]
 
 NUGET_PACKAGES = [
-	("directxtk_desktop_win10", "2025.10.28.2"),
+	("directxtk_desktop_win10", "2026.5.8.1"),
 ]
 
 GAME_CLIENT_CONFIGS = ("GameClientDebug", "GameClientRelease")
@@ -285,7 +285,7 @@ def cl_additional_includes(config, platform):
 
 def link_library_dirs(config, platform):
 	dirs = [
-		"$(ProjectDir)packages\\directxtk_desktop_win10.2025.10.28.2\\native\\lib\\$(DirectXTKPlatform)\\$(DirectXTKBinaryConfiguration)",
+		"$(ProjectDir)packages\\directxtk_desktop_win10.2026.5.8.1\\native\\lib\\$(DirectXTKPlatform)\\$(DirectXTKBinaryConfiguration)",
 		"$(ProjectDir)ThirdParty\\RmlUi\\Lib\\$(Platform)\\$(ThirdPartyBinaryConfiguration)",
 		"$(ProjectDir)ThirdParty\\SoLoud\\Lib\\$(Platform)\\$(ThirdPartyBinaryConfiguration)",
 	]
@@ -429,7 +429,7 @@ def add_item_definition_groups(proj):
 		add_text(
 			cl,
 			"AdditionalIncludeDirectories",
-			"$(ProjectDir)packages\\directxtk_desktop_win10.2025.10.28.2\\include;" + cl_additional_includes(config, platform),
+			"$(ProjectDir)packages\\directxtk_desktop_win10.2026.5.8.1\\include;" + cl_additional_includes(config, platform),
 		)
 
 		link = add_text(idg, "Link")
@@ -457,7 +457,7 @@ def add_build_targets(proj):
 		"Target",
 		Name="RestoreNuGetPackages",
 		BeforeTargets="PrepareForBuild",
-		Condition="!Exists('$(ProjectDir)packages\\directxtk_desktop_win10.2025.10.28.2\\build\\native\\directxtk_desktop_win10.targets')",
+		Condition="!Exists('$(ProjectDir)packages\\directxtk_desktop_win10.2026.5.8.1\\build\\native\\directxtk_desktop_win10.targets')",
 	)
 	restore_command = (
 		"powershell -NoProfile -ExecutionPolicy Bypass -Command "

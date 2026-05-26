@@ -183,12 +183,12 @@
       <ForcedIncludeFiles>pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\include;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\include;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>DirectXTK.lib;RmlUiCore.lib;SoLoud.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -206,12 +206,12 @@
       <ForcedIncludeFiles>pch.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
-      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\include;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\include;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>DirectXTK.lib;RmlUiCore.lib;SoLoud.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -228,12 +228,12 @@
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\include;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\include;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration);$(ProjectDir)ThirdParty\luajit\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration);$(ProjectDir)ThirdParty\luajit\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>DirectXTK.lib;RmlUiCore.lib;SoLoud.lib;libfbxsdk.lib;gdiplus.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -252,12 +252,12 @@
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\include;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\include;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration);$(ProjectDir)ThirdParty\luajit\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration);$(ProjectDir)ThirdParty\luajit\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>DirectXTK.lib;RmlUiCore.lib;SoLoud.lib;libfbxsdk.lib;gdiplus.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -276,12 +276,12 @@
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\include;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\include;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>DirectXTK.lib;RmlUiCore.lib;SoLoud.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -300,12 +300,12 @@
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\include;$(ProjectDir)Source\Editor;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\include;$(ProjectDir)Source\Editor;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration);$(ProjectDir)ThirdParty\luajit\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration);$(ProjectDir)ThirdParty\luajit\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>DirectXTK.lib;RmlUiCore.lib;SoLoud.lib;libfbxsdk.lib;gdiplus.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -324,16 +324,16 @@
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\include;$(ProjectDir)Source\Editor;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\include;$(ProjectDir)Source\Editor;$(ProjectDir)ThirdParty\luajit\src;$(ProjectDir)ThirdParty\SoLoud\include;$(ProjectDir)ThirdParty\RmlUi\Include;$(ProjectDir)ThirdParty;$(ProjectDir)ThirdParty\FBX\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration);$(ProjectDir)ThirdParty\luajit\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\native\lib\$(DirectXTKPlatform)\$(DirectXTKBinaryConfiguration);$(ProjectDir)ThirdParty\RmlUi\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\SoLoud\Lib\$(Platform)\$(ThirdPartyBinaryConfiguration);$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration);$(ProjectDir)ThirdParty\luajit\src;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>DirectXTK.lib;RmlUiCore.lib;SoLoud.lib;libfbxsdk.lib;gdiplus.lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <Target Name="RestoreNuGetPackages" BeforeTargets="PrepareForBuild" Condition="!Exists('$(ProjectDir)packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')">
+  <Target Name="RestoreNuGetPackages" BeforeTargets="PrepareForBuild" Condition="!Exists('$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets')">
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$ErrorActionPreference='Stop'; $toolsDir = Join-Path '$(MSBuildProjectDirectory)' 'Build\NuGet'; $nuget = Join-Path $toolsDir 'nuget.exe'; if (!(Test-Path $nuget)) { New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null; Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile $nuget }; &amp; $nuget restore '$(MSBuildProjectDirectory)\packages.config' -PackagesDirectory '$(MSBuildProjectDirectory)\packages' -ConfigFile '$(MSBuildProjectDirectory)\..\nuget.config'&quot;" />
   </Target>
   <Target Name="BuildRmlUiStaticLibrary" BeforeTargets="ClCompile">
@@ -1422,12 +1422,12 @@
     <Copy SourceFiles="$(ProjectDir)ThirdParty\FBX\lib\$(FbxSdkConfiguration)\libfbxsdk.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
   </Target>
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" />
+    <Import Project="packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild" DependsOnTargets="RestoreNuGetPackages">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing and automatic restore failed. Restore NuGet packages or build again with network access. Missing file: {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets'))" />
+    <Error Condition="!Exists('packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets'))" />
   </Target>
 </Project>
