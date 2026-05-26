@@ -11,6 +11,7 @@
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "ShadowMode" : "Opaque",
   "Textures" : {
     "DiffuseTexture" : "Content/Data/Samba Dancing/textures/e.0.png"
   }

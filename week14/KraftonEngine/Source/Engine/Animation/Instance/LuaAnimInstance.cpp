@@ -437,6 +437,8 @@ void ULuaAnimInstance::InstallBindings()
 	//   GetKeyDown == "이번 frame 에서 새로 눌림". 매 frame 호출 안전.
 	Anim.set_function("is_left_mouse_pressed",
 		[]() -> bool { return InputSystem::Get().GetKeyDown(VK_LBUTTON); });
+	Anim.set_function("is_left_mouse_down",
+		[]() -> bool { return InputSystem::Get().GetKey(VK_LBUTTON); });
 	Anim.set_function("is_right_mouse_pressed",
 		[]() -> bool { return InputSystem::Get().GetKeyDown(VK_RBUTTON); });
 	Anim.set_function("is_key_pressed",

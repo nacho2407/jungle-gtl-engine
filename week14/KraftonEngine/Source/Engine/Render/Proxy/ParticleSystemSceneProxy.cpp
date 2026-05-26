@@ -296,7 +296,7 @@ bool FParticleSystemSceneProxy::PrepareParticleDrawBuffer(const FParticleDrawBat
 			bSpriteGeometryCreated = true;
 		}
 
-		if (!SpriteGeometry.Upload(Context)) return false;
+		if (!SpriteGeometry.Upload(Device, Context)) return false;
 
 		OutBuffer.VB = SpriteGeometry.GetVertexBuffer();
 		OutBuffer.VBStride = SpriteGeometry.GetVertexStride();
