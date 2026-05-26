@@ -27,7 +27,10 @@ namespace
 		LODLevel->SetEnabled(true);
 
 		UParticleModuleSpawn* SpawnModule = UObjectManager::Get().CreateObject<UParticleModuleSpawn>();
-		SpawnModule->SpawnRate = SpawnRate;
+		SpawnModule->SpawnRate.Mode = EDistributionValueMode::Constant;
+		SpawnModule->SpawnRate.Constant = SpawnRate;
+		SpawnModule->SpawnRate.MinValue = SpawnRate;
+		SpawnModule->SpawnRate.MaxValue = SpawnRate;
 
 		UParticleModuleLifetime* LifetimeModule = UObjectManager::Get().CreateObject<UParticleModuleLifetime>();
 		LifetimeModule->Lifetime.Mode = EDistributionValueMode::Uniform;

@@ -134,7 +134,10 @@ int32 FParticleEmitterInstance::SpawnParticles(float DeltaTime)
 		return 0;
 	}
 
-	const float EffectiveSpawnRate = GetSpawnModule() ? GetSpawnModule()->SpawnRate : SpawnRate;
+	const UParticleModuleSpawn* SpawnModule = GetSpawnModule();
+	const float EffectiveSpawnRate = SpawnModule
+		? SpawnModule->SpawnRate.GetValue(EmitterTime, 0.5f)
+		: SpawnRate;
 	SpawnFraction += EffectiveSpawnRate * DeltaTime;
 	const int32 SpawnCount = static_cast<int32>(SpawnFraction);
 	if (SpawnCount <= 0)

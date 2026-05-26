@@ -59,8 +59,15 @@ class UParticleModuleSpawn : public UParticleModule
 {
 public:
 	GENERATED_BODY()
-	UPROPERTY(Edit, Save, Category="Particle|Spawn", DisplayName="Spawn Rate", Min=0.0f, Speed=0.1f)
-	float SpawnRate = 20.0f;
+	UParticleModuleSpawn()
+	{
+		SpawnRate.Constant = 20.0f;
+		SpawnRate.MinValue = 20.0f;
+		SpawnRate.MaxValue = 20.0f;
+	}
+
+	UPROPERTY(Edit, Save, Category="Particle|Spawn", DisplayName="Spawn Rate", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat SpawnRate;
 
 	virtual bool IsSpawnModule() const override { return true; }
 };
