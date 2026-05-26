@@ -98,8 +98,27 @@ namespace
 			ViewMode == EViewMode::BoneWeightHeatmap;
 	}
 
-	void AddSurfaceCommandByMaterial(FRenderBus& RenderBus, EViewMode ViewMode, FRenderCommand& Cmd)
+	bool IsShadowCasterPrimitiveType(EPrimitiveType PrimitiveType)
 	{
+		switch (PrimitiveType)
+		{
+		case EPrimitiveType::EPT_StaticMesh:
+		case EPrimitiveType::EPT_SkeletalMesh:
+		case EPrimitiveType::EPT_ProceduralMesh:
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	void AddSurfaceCommandByMaterial(FRenderBus& RenderBus, EViewMode ViewMode, FRenderCommand& Cmd, bool bShadowOnly)
+	{
+		if (bShadowOnly)
+		{
+			RenderBus.AddShadowCasterCommand(Cmd);
+			return;
+		}
+
 		RenderBus.AddCommand(IsMeshDebugViewMode(ViewMode) ? ERenderPass::ViewModeMesh : ResolveMaterialRenderPass(Cmd.Material), Cmd);
 	}
 
@@ -205,11 +224,15 @@ namespace
 	}
 }
 
-bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags,
-													EViewMode ViewMode, FRenderBus& RenderBus,
-													FMeshBufferManager& MeshBufferManager) const
+bool FPrimitiveDrawCommandBuilder::CollectPrimitiveInternal(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags,
+															EViewMode ViewMode, FRenderBus& RenderBus,
+															FMeshBufferManager& MeshBufferManager, bool bShadowOnly) const
 {
 	if (Primitive == nullptr || !Primitive->IsVisible()) return true;
+	if (bShadowOnly && !IsShadowCasterPrimitiveType(Primitive->GetPrimitiveType()))
+	{
+		return true;
+	}
 
 	switch (Primitive->GetPrimitiveType())
 	{
@@ -257,7 +280,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
 			Cmd.WorldAABB = StaticMeshComp->GetWorldAABB();
 
-			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd, bShadowOnly);
 		}
 
 		return true;
@@ -345,7 +368,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 			Cmd.Material = ResolveDrawMaterial(Cast<UMaterialInterface>(SkeletalMeshComp->GetMaterial(0)));
 			Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
 
-			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd, bShadowOnly);
 			return true;
 		}
 
@@ -384,7 +407,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
 			Cmd.WorldAABB = SkeletalMeshComp->GetWorldAABB();
 
-			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd, bShadowOnly);
 		}
 
 		return true;
@@ -536,7 +559,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 
 			Cmd.WorldAABB = ProcMeshComp->GetWorldAABB();
 
-			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd);
+			AddSurfaceCommandByMaterial(RenderBus, ViewMode, Cmd, bShadowOnly);
 		}
 		return true;
 	}
@@ -587,4 +610,33 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primiti
 	default:
 		return false;
 	}
+}
+
+bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags,
+													EViewMode ViewMode, FRenderBus& RenderBus,
+													FMeshBufferManager& MeshBufferManager) const
+{
+	return CollectPrimitiveInternal(Primitive, ShowFlags, ViewMode, RenderBus, MeshBufferManager, false);
+}
+
+bool FPrimitiveDrawCommandBuilder::CollectShadowCasterPrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags,
+															   EViewMode ViewMode, FRenderBus& RenderBus,
+															   FMeshBufferManager& MeshBufferManager) const
+{
+	if (Primitive == nullptr || !Primitive->IsVisible() || !IsShadowCasterPrimitiveType(Primitive->GetPrimitiveType()))
+	{
+		return true;
+	}
+
+	switch (Primitive->GetPrimitiveType())
+	{
+	case EPrimitiveType::EPT_StaticMesh:
+	case EPrimitiveType::EPT_SkeletalMesh:
+	case EPrimitiveType::EPT_ProceduralMesh:
+		break;
+	default:
+		return true;
+	}
+
+	return CollectPrimitiveInternal(Primitive, ShowFlags, ViewMode, RenderBus, MeshBufferManager, true);
 }

@@ -17,13 +17,14 @@ class ULightComponentBase;
 class USkeletalMeshComponent;
 struct FFrustum;
 
-class FRenderCollector {
+class FRenderCollector
+{
 public:
 	struct FCullingStats
 	{
-		int32 TotalVisiblePrimitiveCount{0};
-		int32 BVHPassedPrimitiveCount{0};
-		int32 FallbackPassedPrimitiveCount{0};
+		int32 TotalVisiblePrimitiveCount{ 0 };
+		int32 BVHPassedPrimitiveCount{ 0 };
+		int32 FallbackPassedPrimitiveCount{ 0 };
 	};
 
 	using FDecalStats = FRenderDecalStats;
@@ -32,33 +33,34 @@ public:
 private:
 	FMeshBufferManager MeshBufferManager;
 	FDecalCommandBuilder DecalCommandBuilder;
-	FEditorOverlayCollector EditorOverlayCollector;
 	FPrimitiveDrawCommandBuilder PrimitiveDrawCommandBuilder;
+
+	FEditorOverlayCollector EditorOverlayCollector;
 	FLightRenderCollector LightRenderCollector;
+
 	FWorldSpatialIndex::FPrimitiveFrustumQueryScratch FrustumQueryScratch;
 	FWorldSpatialIndex::FPrimitiveOBBQueryScratch OBBQueryScratch;
+	FWorldSpatialIndex::FPrimitiveSphereQueryScratch SphereQueryScratch;
+
 	TArray<UPrimitiveComponent*> VisiblePrimitiveScratch;
+	TArray<UPrimitiveComponent*> LocalLightShadowPrimitiveScratch;
 	FCullingStats LastCullingStats;
 
 public:
 	void Initialize(ID3D11Device* InDevice) { MeshBufferManager.Create(InDevice); }
 	void Release() { MeshBufferManager.Release(); }
 
-	void CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus,
-	                  const FFrustum* ViewFrustum = nullptr, bool bIncludeEditorOnlyPrimitives = false);
-	void CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode,
-	                      FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives = false);
+	void CollectWorld(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, const FFrustum* ViewFrustum = nullptr, bool bIncludeEditorOnlyPrimitives = false);
+	void CollectSelection(const TArray<AActor*>& SelectedActors, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives = false);
 	void CollectGizmo(UGizmoComponent* Gizmo, const FShowFlags& ShowFlags, FRenderBus& RenderBus, bool bIsActiveOperation);
 	void CollectGrid(float GridSpacing, int32 GridHalfLineCount, FRenderBus& RenderBus, bool bOrthographic = false);
 	void CollectSkeletonBones(USkeletalMeshComponent* SkComp, FRenderBus& RenderBus);
 	void CollectSingleBone(USkeletalMeshComponent* SkComp, int32 BoneIndex, FRenderBus& RenderBus);
-	FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0)
-	{
-		return MeshBufferManager.GetStaticMeshBuffer(StaticMeshAsset, LODLevel);
-	}
+	FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0) { return MeshBufferManager.GetStaticMeshBuffer(StaticMeshAsset, LODLevel); }
+
 	const FCullingStats& GetLastCullingStats() const { return LastCullingStats; }
 	const FDecalStats& GetLastDecalStats() const { return DecalCommandBuilder.GetLastStats(); }
-    const FLightStats& GetLastLightStats() const { return LightRenderCollector.GetLastStats(); }
+	const FLightStats& GetLastLightStats() const { return LightRenderCollector.GetLastStats(); }
 
 private:
 	void ResetCullingStats();
@@ -67,9 +69,15 @@ private:
 
 	void CollectWorldWithFrustum(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags, EViewMode ViewMode,
 	                             FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives);
+	void CollectDirectionalShadowCasters(UWorld* World, const FShowFlags& ShowFlags, EViewMode ViewMode,
+	                                     FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives);
+	void CollectLocalShadowCasters(UWorld* World, const FFrustum& ViewFrustum, const FShowFlags& ShowFlags, EViewMode ViewMode,
+	                               FRenderBus& RenderBus, bool bIncludeEditorOnlyPrimitives);
 	void CollectFromActor(AActor* Actor, const FShowFlags& ShowFlags, EViewMode ViewMode, FRenderBus& RenderBus,
 	                      EWorldType WorldType, bool bIncludeEditorOnlyPrimitives);
 	void CollectFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode,
 	                          FRenderBus& RenderBus, EWorldType WorldType, bool bIncludeEditorOnlyPrimitives);
+	void CollectShadowCasterFromComponent(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags, EViewMode ViewMode,
+	                                      FRenderBus& RenderBus, EWorldType WorldType, bool bIncludeEditorOnlyPrimitives);
 	void CollectLight(const ULightComponentBase* Light, FRenderBus& RenderBus);
 };

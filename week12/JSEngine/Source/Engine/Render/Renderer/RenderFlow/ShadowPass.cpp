@@ -169,9 +169,10 @@ bool FShadowPass::Begin(const FRenderPassContext* Context)
 	Context->DeviceContext->PSSetShaderResources(12, 1, NullSRV);
 
 	const TArray<FRenderCommand>& OpaqueCmds = Context->RenderBus->GetCommands(ERenderPass::Opaque);
+	const TArray<FRenderCommand>& ShadowCasterCmds = Context->RenderBus->GetShadowCasterCommands();
 	if (!Context->RenderBus->GetShowFlags().bShadow ||
 		Context->RenderBus->ShadowLightRequests.empty() ||
-		OpaqueCmds.empty())
+		(OpaqueCmds.empty() && ShadowCasterCmds.empty()))
 	{
 		return true;
 	}
@@ -190,10 +191,14 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
 	const FRenderBus* RenderBus = Context->RenderBus;
 	const TArray<FRenderCommand>& OpaqueCmds = RenderBus->GetCommands(ERenderPass::Opaque);
-	if (RenderBus->ShadowLightRequests.empty() || OpaqueCmds.empty())
+	const TArray<FRenderCommand>& ShadowCasterCmds = RenderBus->GetShadowCasterCommands();
+	if (RenderBus->ShadowLightRequests.empty() || (OpaqueCmds.empty() && ShadowCasterCmds.empty()))
 	{
 		return true;
 	}
+
+	TArray<FRenderCommand> ShadowDepthCmds = OpaqueCmds;
+	ShadowDepthCmds.insert(ShadowDepthCmds.end(), ShadowCasterCmds.begin(), ShadowCasterCmds.end());
 
 	FConstantBuffer* ShadowBuffer = &Context->RenderResources->ShadowBuffer;
 	FShadowAtlasManager& ShadowAtlasManager = FShadowAtlasManager::Get();
@@ -313,7 +318,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 				RenderShadowDepth(
 					Context,
 					ShadowBuffer,
-					OpaqueCmds,
+					ShadowDepthCmds,
 					ShadowDSV,
 					ShadowViewport,
 					ShadowKey,
@@ -447,7 +452,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 				RenderShadowDepth(
 					Context,
 					ShadowBuffer,
-					OpaqueCmds,
+					ShadowDepthCmds,
 					DSV,
 					ShadowViewport,
 					ShadowKey,
@@ -575,7 +580,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		RenderShadowDepth(
 			Context,
 			ShadowBuffer,
-			OpaqueCmds,
+			ShadowDepthCmds,
 			ShadowDSV,
 			ShadowViewport,
 			ShadowKey,

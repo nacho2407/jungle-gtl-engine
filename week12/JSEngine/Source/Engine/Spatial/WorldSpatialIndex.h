@@ -18,15 +18,15 @@ class UWorld;
  */
 class FWorldSpatialIndex
 {
-  public:
+public:
     /** @brief Tunable policy values that decide when batched maintenance paths should run. */
     struct FMaintenancePolicy
     {
-        int32 BatchRefitMinDirtyCount{8};
-        int32 BatchRefitDirtyPercentThreshold{15};
-        int32 RotationStructuralChangeThreshold{8};
-        int32 RotationDirtyCountThreshold{24};
-        int32 RotationDirtyPercentThreshold{30};
+        int32 BatchRefitMinDirtyCount{ 8 };
+        int32 BatchRefitDirtyPercentThreshold{ 15 };
+        int32 RotationStructuralChangeThreshold{ 8 };
+        int32 RotationDirtyCountThreshold{ 24 };
+        int32 RotationDirtyPercentThreshold{ 30 };
     };
 
     /**
@@ -37,7 +37,7 @@ class FWorldSpatialIndex
     struct FPrimitiveFrustumQueryScratch
     {
         FBVH::FFrustumQueryScratch BVHScratch;
-        TArray<int32>             ObjectIndices;
+        TArray<int32> ObjectIndices;
     };
 
     /**
@@ -48,15 +48,21 @@ class FWorldSpatialIndex
     struct FPrimitiveRayQueryScratch
     {
         FBVH::FRayQueryScratch BVHScratch;
-        TArray<int32>         ObjectIndices;
-        TArray<float>         HitTs;
+        TArray<int32> ObjectIndices;
+        TArray<float> HitTs;
     };
 
-	struct FPrimitiveOBBQueryScratch
-	{
-		FBVH::FOBBQueryScratch BVHScratch;
-		TArray<int32> ObjectIndices;
-	};
+    struct FPrimitiveOBBQueryScratch
+    {
+        FBVH::FOBBQueryScratch BVHScratch;
+        TArray<int32> ObjectIndices;
+    };
+
+    struct FPrimitiveSphereQueryScratch
+    {
+        FBVH::FSphereQueryScratch BVHScratch;
+        TArray<int32> ObjectIndices;
+    };
 
     FWorldSpatialIndex() = default;
     ~FWorldSpatialIndex() = default;
@@ -133,9 +139,11 @@ class FWorldSpatialIndex
     void FrustumQueryPrimitives(const FFrustum& Frustum, TArray<UPrimitiveComponent*>& OutPrimitives,
                                 FPrimitiveFrustumQueryScratch& Scratch, bool bInsideOnly = false);
 
-	void OBBQueryPrimitives(const FOBB& OBB, TArray<UPrimitiveComponent*>& OutPrimitives,
-							FPrimitiveOBBQueryScratch& Scratch);
+    void OBBQueryPrimitives(const FOBB& OBB, TArray<UPrimitiveComponent*>& OutPrimitives,
+                            FPrimitiveOBBQueryScratch& Scratch);
 
+    void SphereQueryPrimitives(const FVector& Center, float Radius, TArray<UPrimitiveComponent*>& OutPrimitives,
+                               FPrimitiveSphereQueryScratch& Scratch);
 
     /** @brief Resolve a tracked object index back to its primitive component. */
     UPrimitiveComponent* Resolve(int32 ObjectIndex) const;
@@ -161,7 +169,7 @@ class FWorldSpatialIndex
     /** @brief Access the maintenance thresholds for tuning. */
     FMaintenancePolicy& GetMaintenancePolicy() { return MaintenancePolicy; }
 
-  private:
+private:
     int32 AllocateObjectIndex();
     void ReleaseObjectIndex(int32 ObjectIndex);
     void SetInBVHState(int32 ObjectIndex, bool bInBVH);
@@ -174,7 +182,7 @@ class FWorldSpatialIndex
     /** @brief Whether this tracked primitive should currently exist inside the BVH. */
     bool ShouldInsertIntoBVH(const UPrimitiveComponent* Primitive, const FAABB& BoundsSnapshot) const;
 
-  private:
+private:
     FBVH BVH;
 
     TArray<UPrimitiveComponent*> Primitives;
@@ -188,6 +196,6 @@ class FWorldSpatialIndex
     TArray<int32> BatchRefitDirtyObjectIndicesScratch;
 
     TMap<UPrimitiveComponent*, int32> PrimitiveToIndex;
-    int32                             ActiveBVHObjectCount{0};
-    FMaintenancePolicy                MaintenancePolicy;
+    int32 ActiveBVHObjectCount{ 0 };
+    FMaintenancePolicy MaintenancePolicy;
 };

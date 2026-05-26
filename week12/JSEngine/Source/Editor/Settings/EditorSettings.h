@@ -60,7 +60,7 @@ public:
 	int32 SpatialRotationStructuralChangeThreshold = 8;
 	int32 SpatialRotationDirtyCountThreshold = 24;
 	int32 SpatialRotationDirtyPercentThreshold = 30;
-    EShadowFilter ShadowFilterMode = EShadowFilter::PCF;
+	EShadowFilter ShadowFilterMode = EShadowFilter::VSM;
 
 	// File paths
 	FString DefaultSavePath = FPaths::ToUtf8(FPaths::SceneDir());

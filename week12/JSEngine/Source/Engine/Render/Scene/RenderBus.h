@@ -28,7 +28,10 @@ public:
 	void Clear();
 	void AddCommand(ERenderPass Pass, const FRenderCommand& InCommand);
 	void AddCommand(ERenderPass Pass, FRenderCommand&& InCommand);
+	void AddShadowCasterCommand(const FRenderCommand& InCommand);
+	void AddShadowCasterCommand(FRenderCommand&& InCommand);
 	const TArray<FRenderCommand>& GetCommands(ERenderPass Pass) const;
+	const TArray<FRenderCommand>& GetShadowCasterCommands() const { return ShadowCasterCommands; }
 	uint32 AllocateBoneMatrixConstants();
 	FBoneMatrixConstants* GetMutableBoneMatrixConstants(uint32 Index);
 	const FBoneMatrixConstants* GetBoneMatrixConstants(uint32 Index) const;
@@ -122,6 +125,7 @@ public:
 
 private:
 	TArray<FRenderCommand> PassQueues[(uint32)ERenderPass::MAX];
+	TArray<FRenderCommand> ShadowCasterCommands; // Note: 그림자를 드리우는 데에만 사용한 뒤 버림
 	TArray<FBoneMatrixConstants> BoneMatrixConstantsPool;
 
 	FMatrix  View;
