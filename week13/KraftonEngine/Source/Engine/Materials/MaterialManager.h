@@ -28,6 +28,7 @@ namespace MatKeys
 	static constexpr const char* GeneratorVersion = "GeneratorVersion";
 	static constexpr const char* Parameters = "Parameters";
 	static constexpr const char* Textures = "Textures";
+	static constexpr const char* ReceiveLighting = "ReceiveLighting";
 }
 
 class FMaterialTemplate;
