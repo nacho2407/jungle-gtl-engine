@@ -277,8 +277,14 @@
     <Filter Include="Source\Engine\Particles\Beam">
       <UniqueIdentifier>{8d6ab37e-7f85-f5ce-b064-310a911ef785}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Particles\Collision">
+      <UniqueIdentifier>{053904d7-d7c3-a94b-279c-25491e2a398c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Particles\Color">
       <UniqueIdentifier>{6b808ded-3425-8835-3be8-24ac7fbc72a5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Particles\Event">
+      <UniqueIdentifier>{f2963592-e17e-edd6-149f-ee6df576cd7a}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Particles\Lifetime">
       <UniqueIdentifier>{f0094161-1079-1414-532d-eba4e3153cdf}</UniqueIdentifier>
@@ -540,6 +546,9 @@
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Common\Fog.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -569,6 +578,9 @@
     </FxCompile>
     <FxCompile Include="Shaders\Editor\Gizmo.hlsl">
       <Filter>Shaders\Editor</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\BD78AAE88B260EBC_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\DDDFE619B008A8BB0000B824223D4600_ParticleSprite.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
@@ -606,10 +618,10 @@
     <FxCompile Include="Shaders\Lighting\VSMBlur.hlsl">
       <Filter>Shaders\Lighting</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Particle\Mesh.hlsl">
+    <FxCompile Include="Shaders\Particle\BeamTrail.hlsl">
       <Filter>Shaders\Particle</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Particle\BeamTrail.hlsl">
+    <FxCompile Include="Shaders\Particle\Mesh.hlsl">
       <Filter>Shaders\Particle</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Particle\Sprite.hlsl">
@@ -1388,11 +1400,17 @@
     <ClCompile Include="Source\Engine\Particles\Beam\ParticleModuleBeamTarget.cpp">
       <Filter>Source\Engine\Particles\Beam</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Collision\ParticleModuleCollision.cpp">
+      <Filter>Source\Engine\Particles\Collision</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Particles\Color\ParticleModuleColor.cpp">
       <Filter>Source\Engine\Particles\Color</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Particles\Color\ParticleModuleColorOverLife.cpp">
       <Filter>Source\Engine\Particles\Color</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Event\ParticleModuleEventGenerator.cpp">
+      <Filter>Source\Engine\Particles\Event</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.cpp">
       <Filter>Source\Engine\Particles\Lifetime</Filter>
@@ -2648,6 +2666,12 @@
     <ClInclude Include="Source\Engine\Particles\Beam\ParticleModuleBeamTarget.h">
       <Filter>Source\Engine\Particles\Beam</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Collision\ParticleModuleCollision.h">
+      <Filter>Source\Engine\Particles\Collision</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Collision\ParticleModuleCollisionBase.h">
+      <Filter>Source\Engine\Particles\Collision</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColor.h">
       <Filter>Source\Engine\Particles\Color</Filter>
     </ClInclude>
@@ -2656,6 +2680,12 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Particles\Color\ParticleModuleColorOverLife.h">
       <Filter>Source\Engine\Particles\Color</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Event\ParticleModuleEventBase.h">
+      <Filter>Source\Engine\Particles\Event</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Event\ParticleModuleEventGenerator.h">
+      <Filter>Source\Engine\Particles\Event</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Particles\Lifetime\ParticleModuleLifetime.h">
       <Filter>Source\Engine\Particles\Lifetime</Filter>

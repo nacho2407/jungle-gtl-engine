@@ -19,13 +19,14 @@ class FShader;
 // HLSL CB 바인딩 슬롯 — b0/b1 고정, b2/b3 셰이더별 여분, b4 라이팅
 namespace ECBSlot
 {
-	constexpr uint32 Frame = 0;      // b0: View/Projection/Wireframe (고정)
-	constexpr uint32 PerObject = 1;  // b1: Model/Color (고정)
-	constexpr uint32 PerShader0 = 2; // b2: 셰이더별 여분 슬롯 #0
-	constexpr uint32 PerShader1 = 3; // b3: 셰이더별 여분 슬롯 #1 (PerShader2 예약)
-	constexpr uint32 Lighting = 4;   // b4: LightingBuffer (Ambient + Directional + 메타)
-	constexpr uint32 Shadow = 5;     // b5: ShadowBuffer (Shadow 행렬 + 파라미터)
+	constexpr uint32 Frame = 0;       // b0: View/Projection/Wireframe (고정)
+	constexpr uint32 PerObject = 1;   // b1: Model/Color (고정)
+	constexpr uint32 PerShader0 = 2;  // b2: 셰이더별 여분 슬롯 #0
+	constexpr uint32 PerShader1 = 3;  // b3: 셰이더별 여분 슬롯 #1
+	constexpr uint32 Lighting = 4;    // b4: LightingBuffer (Ambient + Directional + 메타)
+	constexpr uint32 Shadow = 5;      // b5: ShadowBuffer (Shadow 행렬 + 파라미터)
 	constexpr uint32 BoneHeatMap = 6; // b6: SkeletalMesh bone weight heatmap
+	constexpr uint32 Fog = 7;         // b7: FogBuffer (전역 포그 — AlphaBlend 포함 전 패스 바인딩)
 }
 
 // HLSL 라이팅 SRV 슬롯 — 프레임에 1회 바인딩 (Forward Shading)
@@ -242,7 +243,7 @@ struct FSceneDepthPConstants
 };
 
 
-// Height Fog CB (b6) — HLSL FogBuffer와 1:1 대응
+// Height Fog CB (b7) — HLSL Fog.hlsli FogBuffer와 1:1 대응
 struct FFogConstants
 {
 	FVector4 InscatteringColor;  // 16B
@@ -252,7 +253,8 @@ struct FFogConstants
 	float StartDistance;         // 4B  — 16B boundary
 	float CutoffDistance;        // 4B
 	float MaxOpacity;            // 4B
-	float _pad[2];              // 8B  — 16B boundary
+	float FogEnabled;            // 4B  — 0=비활성, 1=활성 (AlphaBlend 셰이더용)
+	float _pad;                  // 4B  — 16B boundary
 };
 
 struct FFXAAConstants

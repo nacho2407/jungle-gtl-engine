@@ -1,6 +1,8 @@
 #include "Common/ConstantBuffers.hlsli"
 #include "Common/VertexLayouts.hlsli"
 #include "Common/SystemSamplers.hlsli"
+#define USE_FOG 1
+#include "Common/Fog.hlsli"
 
 // t0: 머티리얼 디퓨즈 텍스처
 Texture2D MeshParticleTexture : register(t0);
@@ -16,6 +18,7 @@ struct PS_Input_MeshParticle
     float3 normal   : NORMAL;
     float2 texcoord : TEXCOORD0;
     float4 color    : COLOR;
+    float3 worldPos : TEXCOORD1;
 };
 
 PS_Input_MeshParticle VS(VS_Input_PNCT vert, VS_Input_MeshParticleInstance inst)
@@ -28,7 +31,8 @@ PS_Input_MeshParticle VS(VS_Input_PNCT vert, VS_Input_MeshParticleInstance inst)
     output.position = mul(worldPos, mul(View, Projection));
     output.normal   = normalize(worldNormal);
     output.texcoord = vert.texcoord;
-    output.color    = vert.color * inst.color;  // 메시 버텍스 컬러 × 인스턴스 컬러
+    output.color    = vert.color * inst.color;
+    output.worldPos = worldPos.xyz / worldPos.w;
     return output;
 }
 
@@ -40,5 +44,5 @@ float4 PS(PS_Input_MeshParticle input) : SV_TARGET
     float4 col = MeshParticleTexture.Sample(LinearClampSampler, input.texcoord);
     col *= input.color;
     clip(col.a - 0.01f);
-    return col;
+    return ApplyFogTranslucent(col, input.worldPos, CameraWorldPos);
 }
