@@ -58,6 +58,7 @@ private:
 		bool bRestartPreviewRequested = false;
 		int32 SoloEmitterIndex = -1;
 		float PreviewTime = 0.0f;
+		float PreviewAnimSpeed = 1.0f;
 		float MainSplitRatio = 0.52f;
 		float ViewportDetailsSplitRatio = 0.58f;
 		float EmittersCurveSplitRatio = 0.58f;
@@ -70,11 +71,16 @@ private:
 		Leave,
 	};
 
+	enum
+	{
+		MaxCurveEditorTracks = 16
+	};
+
 	struct FCurveEditorSelection
 	{
 		UObject* OwnerObject = nullptr;
-		FFloatCurve* Curves[6] = {};
-		const char* CurveLabels[6] = {};
+		FFloatCurve* Curves[MaxCurveEditorTracks] = {};
+		FString CurveLabels[MaxCurveEditorTracks];
 		int32 CurveCount = 0;
 		FString Label;
 		int32 ActiveCurveIndex = 0;
@@ -131,6 +137,10 @@ private:
 	void ClearSelectedCurve();
 	void SelectDistributionCurve(UObject* OwnerObject, FRawDistributionFloat* Distribution, const FString& Label, int32 CurveIndex);
 	void SelectDistributionCurve(UObject* OwnerObject, FRawDistributionVector* Distribution, const FString& Label, int32 CurveIndex);
+	bool SelectModuleDistributionCurves(UParticleModule* Module);
+	bool AppendDistributionCurve(UObject* OwnerObject, FRawDistributionFloat* Distribution, const FString& Label);
+	bool AppendDistributionCurve(UObject* OwnerObject, FRawDistributionVector* Distribution, const FString& Label);
+	void RemoveSelectedCurve(int32 CurveIndex);
 	int32 GetSelectedCurveCount() const;
 	FFloatCurve* GetSelectedCurve(int32 CurveIndex) const;
 	FFloatCurve* GetActiveSelectedCurve() const;
