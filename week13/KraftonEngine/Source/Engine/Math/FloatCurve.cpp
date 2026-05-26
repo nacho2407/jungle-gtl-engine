@@ -1,6 +1,7 @@
-﻿#include "FloatCurve.h"
+#include "FloatCurve.h"
 
 #include <algorithm>
+#include <cmath>
 
 bool FFloatCurve::IsEmpty() const
 {
@@ -75,11 +76,69 @@ float FFloatCurve::Evaluate(float Time) const
 		return Keys[0].Value;
 	}
 
-	if (Time <= Keys.front().Time)
+	const float FirstTime = Keys.front().Time;
+	const float LastTime = Keys.back().Time;
+	const float Range = LastTime - FirstTime;
+
+	if (Time < FirstTime)
+	{
+		switch (PreExtrapMode)
+		{
+		case ECurveExtrapMode::Loop:
+			if (std::fabs(Range) > 1e-6f)
+			{
+				float Wrapped = std::fmod(Time - FirstTime, Range);
+				if (Wrapped < 0.0f) Wrapped += Range;
+				Time = FirstTime + Wrapped;
+				break;
+			}
+			return Keys.front().Value;
+		case ECurveExtrapMode::Linear:
+		{
+			const FCurveKey& A = Keys[0];
+			const FCurveKey& B = Keys[1];
+			const float Dt = B.Time - A.Time;
+			const float Slope = std::fabs(Dt) < 1e-6f ? 0.0f : (B.Value - A.Value) / Dt;
+			return A.Value + (Time - A.Time) * Slope;
+		}
+		case ECurveExtrapMode::Clamp:
+		default:
+			return Keys.front().Value;
+		}
+	}
+
+	if (Time > LastTime)
+	{
+		switch (PostExtrapMode)
+		{
+		case ECurveExtrapMode::Loop:
+			if (std::fabs(Range) > 1e-6f)
+			{
+				float Wrapped = std::fmod(Time - FirstTime, Range);
+				if (Wrapped < 0.0f) Wrapped += Range;
+				Time = FirstTime + Wrapped;
+				break;
+			}
+			return Keys.back().Value;
+		case ECurveExtrapMode::Linear:
+		{
+			const FCurveKey& A = Keys[Keys.size() - 2];
+			const FCurveKey& B = Keys[Keys.size() - 1];
+			const float Dt = B.Time - A.Time;
+			const float Slope = std::fabs(Dt) < 1e-6f ? 0.0f : (B.Value - A.Value) / Dt;
+			return B.Value + (Time - B.Time) * Slope;
+		}
+		case ECurveExtrapMode::Clamp:
+		default:
+			return Keys.back().Value;
+		}
+	}
+
+	if (Time <= FirstTime)
 	{
 		return Keys.front().Value;
 	}
-	if (Time >= Keys.back().Time)
+	if (Time >= LastTime)
 	{
 		return Keys.back().Value;
 	}

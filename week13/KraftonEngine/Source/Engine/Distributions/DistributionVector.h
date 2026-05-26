@@ -1,8 +1,9 @@
-﻿#pragma once
+#pragma once
 #include "Distributions.h"
 #include "Distribution.h"
 #include "Object/Reflection/ObjectMacros.h"
 #include "Core/Types/EngineTypes.h"
+#include "Math/FloatCurve.h"
 
 #include "Source/Engine/Distributions/DistributionVector.generated.h"
 
@@ -57,6 +58,25 @@ public:
 	virtual void Serialize(FArchive& Ar) override;
 
 	UDistributionVectorUniform() : Min(FVector::ZeroVector), Max(FVector::ZeroVector) {}
+};
+
+
+UCLASS()
+class UDistributionVectorCurve : public UDistributionVector
+{
+public:
+	GENERATED_BODY()
+
+	FFloatCurve X;
+	FFloatCurve Y;
+	FFloatCurve Z;
+
+	UDistributionVectorCurve();
+
+	virtual FVector GetValue(float Time = 0.0f, UObject* Data = nullptr, struct FRandomStream* InRandomStream = nullptr) const override;
+	virtual void GetRange(FVector& OutMin, FVector& OutMax) const override;
+
+	virtual void Serialize(FArchive& Ar) override;
 };
 
 USTRUCT()

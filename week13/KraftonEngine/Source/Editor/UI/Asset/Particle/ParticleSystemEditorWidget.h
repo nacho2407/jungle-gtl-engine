@@ -3,6 +3,7 @@
 #include "Editor/UI/Asset/AssetEditorWidget.h"
 #include "Object/FName.h"
 #include "Editor/Viewport/Asset/ParticleSystemEditorViewportClient.h"
+#include "Editor/UI/Asset/Curve/InlineFloatCurveEditor.h"
 
 class UParticleSystem;
 class UParticleSystemComponent;
@@ -165,9 +166,12 @@ private:
     TArray<TArray<uint8>> RedoStack;
     static constexpr int32 MaxUndoStackSize = 50;
 
-    // 커브 에디터의 상호작용 모드 상태 (시각용).
+    // 커브 에디터의 상호작용 모드 상태.
     enum class ECurveInteractionMode : uint8 { Pan, Zoom };
     ECurveInteractionMode CurveMode = ECurveInteractionMode::Pan;
+    int32 SelectedCurveTrackIndex = -1;
+    UParticleModule* SelectedCurveTrackModule = nullptr;
+    FInlineFloatCurveEditor InlineCurveEditor;
 
     FParticleSystemEditorViewportClient ViewportClient;
     FName                               PreviewWorldHandle = FName::None;

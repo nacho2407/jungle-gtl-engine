@@ -58,8 +58,8 @@ FMaterialResult EvaluateMaterial(FMaterialPixelInput Input)
     float n_126 = 1.000000f;
     float n_118 = clamp(n_87, n_124, n_126);
     FMaterialResult Result;
-    Result.Color = float3(0, 0, 0);
-    Result.Emissive = n_111;
+    Result.Color = n_111;
+    Result.Emissive = float3(0, 0, 0);
     Result.Opacity = n_118;
     Result.UVOffset = float2(0, 0);
     return Result;
