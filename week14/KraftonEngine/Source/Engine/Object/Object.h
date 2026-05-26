@@ -106,15 +106,15 @@ public:
 	void SetFlags(uint32 Flags) { ObjectFlags |= Flags; }
 	void ClearFlags(uint32 Flags) { ObjectFlags &= ~Flags; }
 
-	bool IsGarbageMarked() const { return HasAnyFlags(RF_GCMarked); }
+	bool IsGarbageMarked() const { return HasAnyFlags(EObjectFlags::RF_GCMarked); }
 	void SetGarbageMarked(bool bMarked)
 	{
-		if (bMarked) SetFlags(RF_GCMarked);
+		if (bMarked) SetFlags(EObjectFlags::RF_GCMarked);
 		else ClearFlags(RF_GCMarked);
 	}
 
-	bool IsPendingKill() const { return HasAnyFlags(RF_PendingKill); }
-	void MarkPendingKill() { SetFlags(RF_PendingKill); }
+	bool IsPendingKill() const { return HasAnyFlags(EObjectFlags::RF_PendingKill); }
+	void MarkPendingKill() { SetFlags(EObjectFlags::RF_PendingKill); }
 
 protected:
 	FName ObjectName;
@@ -128,7 +128,7 @@ protected:
 		RF_Transient = 1 << 3,
 	};
 	bool bIsReachable = false; // GC mark bit.
-	uint32 ObjectFlags = RF_None;
+	uint32 ObjectFlags = EObjectFlags::RF_None;
 
 private:
 	uint32 UUID;

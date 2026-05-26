@@ -62,8 +62,8 @@ void FGarbageCollector::CollectGarbage()
 		}
 	}
 
-	// [Step 4] Purge
-	PurgePendingKillObjects();
+	//// [Step 4] Purge
+	//PurgePendingKillObjects();
 }
 
 //Purge는 뒤에서부터:

@@ -199,6 +199,8 @@ void UEditorEngine::Tick(float DeltaTime)
 			BeforeCount,
 			AfterCount,
 			CollectedCount);
+
+		GC.PurgePendingKillObjects();
 	}
 }
 
