@@ -500,6 +500,15 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
         Cmd.Bindings.PerShaderCB[0] = &Buffer.ParticleFrameCB;
     }
 
+	if (Cmd.Pass == ERenderPass::AlphaBlend)
+	{
+		UParticleSystemComponent* Comp = static_cast<UParticleSystemComponent*>(GetOwner());
+		if (IsValid(Comp))
+		{
+			Cmd.SortDepth = (Comp->GetWorldLocation() - Frame.CameraPosition).Length();
+		}
+	}
+
 	Cmd.BuildSortKey();
 	PARTICLE_STATS_ADD_DRAW_CALL();
 }
@@ -577,6 +586,15 @@ void FParticleSystemSceneProxy::SubmitBeamTrailEmitter(
 		{
 			Cmd.Bindings.SRVs[Slot] = MatSRVs[Slot] ? const_cast<ID3D11ShaderResourceView*>(MatSRVs[Slot])
 				: FallbackWhite;
+		}
+	}
+
+	if (Cmd.Pass == ERenderPass::AlphaBlend)
+	{
+		UParticleSystemComponent* Comp = static_cast<UParticleSystemComponent*>(GetOwner());
+		if (IsValid(Comp))
+		{
+			Cmd.SortDepth = (Comp->GetWorldLocation() - Frame.CameraPosition).Length();
 		}
 	}
 
@@ -681,6 +699,16 @@ void FParticleSystemSceneProxy::SubmitMeshEmitter(
 				Cmd.Bindings.SRVs[Slot] = MatSRVs[Slot]
 					? const_cast<ID3D11ShaderResourceView*>(MatSRVs[Slot])
 					: FallbackWhite;
+			}
+		}
+
+		if (Cmd.Pass == ERenderPass::AlphaBlend)
+		{
+			UParticleSystemComponent* Comp = static_cast<UParticleSystemComponent*>(GetOwner());
+			if (IsValid(Comp))
+			{
+				// 카메라 위치(Frame.CameraPosition)와 파티클 컴포넌트 월드 위치 사이의 거리 계산
+				Cmd.SortDepth = (Comp->GetWorldLocation() - Frame.CameraPosition).Length();
 			}
 		}
 
