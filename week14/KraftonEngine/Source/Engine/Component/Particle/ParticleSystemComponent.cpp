@@ -40,6 +40,59 @@ void UParticleSystemComponent::SetEmitterSpawningEnabled(bool bEnabled)
 	}
 }
 
+void UParticleSystemComponent::SetVectorParameter(const FName& ParameterName, const FVector& Value)
+{
+	if (!ParameterName.IsValid() || ParameterName == FName::None)
+	{
+		return;
+	}
+
+	for (FParticleSysParam& Parameter : InstanceParameters)
+	{
+		if (Parameter.Name == ParameterName)
+		{
+			Parameter.Vector = Value;
+			MarkProxyDirty(EDirtyFlag::Mesh);
+			return;
+		}
+	}
+
+	FParticleSysParam NewParameter;
+	NewParameter.Name = ParameterName;
+	NewParameter.Vector = Value;
+	InstanceParameters.push_back(NewParameter);
+	MarkProxyDirty(EDirtyFlag::Mesh);
+}
+
+void UParticleSystemComponent::SetVectorParameter(const FString& ParameterName, const FVector& Value)
+{
+	SetVectorParameter(FName(ParameterName), Value);
+}
+
+bool UParticleSystemComponent::GetVectorParameter(const FName& ParameterName, FVector& OutValue) const
+{
+	if (!ParameterName.IsValid() || ParameterName == FName::None)
+	{
+		return false;
+	}
+
+	for (const FParticleSysParam& Parameter : InstanceParameters)
+	{
+		if (Parameter.Name == ParameterName)
+		{
+			OutValue = Parameter.Vector;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool UParticleSystemComponent::GetVectorParameter(const FString& ParameterName, FVector& OutValue) const
+{
+	return GetVectorParameter(FName(ParameterName), OutValue);
+}
+
 void UParticleSystemComponent::ResetSystem()
 {
 	CurrentLODIndex = 0;
