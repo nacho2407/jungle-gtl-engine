@@ -198,7 +198,6 @@ class MaterialElement final : public ContentBrowserElement
 public:
 	virtual void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
 	virtual const char* GetDragItemType() override { return "MaterialContentItem"; }
-	virtual void RenderDetail() override;
 
 protected:
 	const char* GetTypeLabel() const override { return "Material"; }

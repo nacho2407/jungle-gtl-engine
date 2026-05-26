@@ -1,4 +1,4 @@
-#include "StaticMeshEditorWidget.h"
+﻿#include "StaticMeshEditorWidget.h"
 
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
@@ -72,13 +72,22 @@ void FStaticMeshEditorWidget::Open(UObject* Object)
 	WorldContext.World->InitWorld();
 
 	AActor* Actor = WorldContext.World->SpawnActor<AActor>();
+	UStaticMeshComponent* PreviewComp = nullptr;
 	if (UStaticMesh* Mesh = Cast<UStaticMesh>(EditedObject))
 	{
-		UStaticMeshComponent* Comp = Actor->AddComponent<UStaticMeshComponent>();
-		Comp->SetStaticMesh(Mesh);
-		Actor->SetRootComponent(Comp);
+		PreviewComp = Actor->AddComponent<UStaticMeshComponent>();
+		PreviewComp->SetStaticMesh(Mesh);
+		Actor->SetRootComponent(PreviewComp);
 	}
 	Actor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+
+	const FBoundingBox Bounds = PreviewComp
+		? PreviewComp->GetWorldBoundingBox()
+		: FBoundingBox(FVector(-0.5f, -0.5f, -0.5f), FVector(0.5f, 0.5f, 0.5f));
+
+	const FVector Extent = Bounds.GetExtent();
+	const float FloorZ = Bounds.Min.Z - 0.02f;
+	const float FloorScale = max(Extent.X, Extent.Y) * 10.0f;
 
 	ADirectionalLightActor* LightActor = WorldContext.World->SpawnActor<ADirectionalLightActor>();
 	LightActor->InitDefaultComponents();
@@ -89,8 +98,8 @@ void FStaticMeshEditorWidget::Open(UObject* Object)
 
 	AStaticMeshActor* FloorActor = WorldContext.World->SpawnActor<AStaticMeshActor>();
 	FloorActor->InitDefaultComponents("Content/Data/BasicShape/Cube.OBJ");
-	FloorActor->SetActorLocation(FVector(0.0f, 0.0f, -0.05f));
-	FloorActor->SetActorScale(FVector(10.0f, 10.0f, 0.02f));
+	FloorActor->SetActorLocation(FVector(Bounds.GetCenter().X, Bounds.GetCenter().Y, FloorZ));
+	FloorActor->SetActorScale(FVector(FloorScale, FloorScale, 0.02f));
 
 	ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
 
@@ -172,6 +181,7 @@ void FStaticMeshEditorWidget::Render(float DeltaTime)
 	}
 
 	FString WindowTitle = VisibleTitle + WindowIdSuffix;
+	ImGui::SetNextWindowSize(ImVec2(1280.0f, 720.0f), ImGuiCond_Once);
 	if (ConsumeFocusRequest())
 	{
 		ImGui::SetNextWindowFocus();

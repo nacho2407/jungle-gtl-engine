@@ -1,4 +1,4 @@
-#include "Editor/UI/Panel/EditorPropertyRenderer.h"
+﻿#include "Editor/UI/Panel/EditorPropertyRenderer.h"
 
 #include "Editor/EditorEngine.h"
 
@@ -15,6 +15,9 @@
 #include "Core/Types/ClassTypes.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "Editor/UI/ContentBrowser/ContentItem.h"
+#include "Editor/UI/Util/EditorMeshThumbnailManager.h"
+#include "Editor/UI/Util/EditorMaterialThumbnailManager.h"
+#include "Editor/UI/Util/EditorTextureManager.h"
 #include "GameFramework/AActor.h"
 #include "Lua/LuaScriptManager.h"
 #include "Math/Rotator.h"
@@ -374,50 +377,74 @@ bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Pro
 
 	if (AssetType == "Material")
 	{
-		FString Preview = (CurrentPath.empty() || CurrentPath == "None") ? "None" : CurrentPath;
-		if (ImGui::BeginCombo("##Material", Preview.c_str()))
-		{
-			bool bSelectedNone = (CurrentPath == "None" || CurrentPath.empty());
-			if (ImGui::Selectable("None", bSelectedNone))
-			{
-				SetPath("None");
-				bChanged = true;
-			}
-			if (bSelectedNone)
-			{
-				ImGui::SetItemDefaultFocus();
-			}
+		FString Preview = (CurrentPath.empty() || CurrentPath == "None") ? "None" : GetStemFromPath(CurrentPath);
 
-			const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
-			for (const FMaterialAssetListItem& Item : MatFiles)
+		FPropertyAssetFieldContext Field;
+		Field.CurrentPath = CurrentPath;
+		Field.PreviewName = Preview;
+		Field.Type = EPropertyAssetPreviewType::Material;
+		
+		Field.RenderPicker = [&]()
+		{
+			bool bLocalChanged = false;
+
+			ImGui::SetNextItemWidth(-1);
+			if (ImGui::BeginCombo("##Material", Preview.c_str()))
 			{
-				bool bSelected = (CurrentPath == Item.FullPath);
-				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				bool bSelectedNone = (CurrentPath == "None" || CurrentPath.empty());
+				if (ImGui::Selectable("None", bSelectedNone))
 				{
-					SetPath(Item.FullPath);
+					SetPath("None");
 					bChanged = true;
 				}
-				if (bSelected)
+				if (bSelectedNone)
 				{
 					ImGui::SetItemDefaultFocus();
 				}
-			}
-			ImGui::EndCombo();
-		}
 
-		if (ImGui::BeginDragDropTarget())
-		{
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
-			{
-				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
-				SetPath(FPaths::ToUtf8(
-					ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
-				));
-				bChanged = true;
+				const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
+				for (const FMaterialAssetListItem& Item : MatFiles)
+				{
+					bool bSelected = (CurrentPath == Item.FullPath);
+					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+					{
+						SetPath(Item.FullPath);
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
 			}
-			ImGui::EndDragDropTarget();
-		}
-		return bChanged;
+
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MaterialContentItem"))
+				{
+					FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
+					SetPath(FPaths::ToUtf8(
+						ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
+					));
+					bChanged = true;
+				}
+				ImGui::EndDragDropTarget();
+			}
+
+			return bLocalChanged;
+		};
+
+		Field.LoadObject = [&]() -> UObject*
+		{
+			if (CurrentPath.empty() || CurrentPath == "None")
+			{
+				return nullptr;
+			}
+			return FMaterialManager::Get().GetOrCreateMaterial(CurrentPath);
+		};
+
+		return RenderAssetReferenceField(Field);
 	}
 
 	if (AssetType == "Script")
@@ -448,37 +475,58 @@ bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Pro
 			Preview = "None";
 		}
 
-		float ButtonWidth = ImGui::CalcTextSize("Import FBX").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-		float Spacing = ImGui::GetStyle().ItemSpacing.x;
-		ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
-		if (ImGui::BeginCombo("##SkeletalMesh", Preview.c_str()))
+		FPropertyAssetFieldContext Field;
+		Field.CurrentPath = CurrentPath;
+		Field.PreviewName = Preview;
+		Field.Type = EPropertyAssetPreviewType::SkeletalMesh;
+
+		Field.RenderPicker = [&]()
 		{
-			bool bSelectedNone = (CurrentPath == "None");
-			if (ImGui::Selectable("None", bSelectedNone))
+			bool bLocalChanged = false;
+
+			ImGui::SetNextItemWidth(-1);
+			if (ImGui::BeginCombo("##SkeletalMesh", Preview.c_str()))
 			{
-				SetPath("None");
-				bChanged = true;
-			}
-			if (bSelectedNone)
-			{
-				ImGui::SetItemDefaultFocus();
-			}
-			const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
-			for (const FAssetListItem& Item : MeshFiles)
-			{
-				bool bSelected = (CurrentPath == Item.FullPath);
-				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				bool bSelectedNone = (CurrentPath == "None");
+				if (ImGui::Selectable("None", bSelectedNone))
 				{
-					SetPath(Item.FullPath);
-					bChanged = true;
+					SetPath("None");
+					bLocalChanged = true;
 				}
-				if (bSelected)
+				if (bSelectedNone)
 				{
 					ImGui::SetItemDefaultFocus();
 				}
+				const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableSkeletalMeshFiles();
+				for (const FAssetListItem& Item : MeshFiles)
+				{
+					bool bSelected = (CurrentPath == Item.FullPath);
+					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+					{
+						SetPath(Item.FullPath);
+						bLocalChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
 			}
-			ImGui::EndCombo();
-		}
+
+			return bLocalChanged;
+		};
+
+		Field.LoadObject = [&]() -> UObject*
+		{
+			if (CurrentPath.empty() || CurrentPath == "None") return nullptr;
+			return FMeshManager::LoadSkeletalMesh(CurrentPath, GEngine->GetRenderer().GetFD3DDevice().GetDevice());
+		};
+
+		float ButtonWidth = ImGui::CalcTextSize("Import FBX").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+		float Spacing = ImGui::GetStyle().ItemSpacing.x;
+		ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
+		RenderAssetReferenceField(Field);
 
 		ImGui::SameLine();
 
@@ -704,39 +752,57 @@ bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Pro
 		Preview = "None";
 	}
 
+	FPropertyAssetFieldContext Field;
+	Field.CurrentPath = CurrentPath;
+	Field.PreviewName = Preview;
+	Field.Type = EPropertyAssetPreviewType::StaticMesh;
+
+	Field.RenderPicker = [&]()
+	{
+		bool bLocalChanged = false;
+		ImGui::SetNextItemWidth(-1);
+		if (ImGui::BeginCombo("##Mesh", Preview.c_str()))
+		{
+			bool bSelectedNone = (CurrentPath == "None");
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				SetPath("None");
+				bLocalChanged = true;
+			}
+			if (bSelectedNone)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+			const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
+			for (const FAssetListItem& Item : MeshFiles)
+			{
+				bool bSelected = (CurrentPath == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					SetPath(Item.FullPath);
+					bLocalChanged = true;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return bLocalChanged;
+	};
+	
+	Field.LoadObject = [&]() -> UObject*
+	{
+		if (CurrentPath.empty() || CurrentPath == "None") return nullptr;
+		return FMeshManager::LoadStaticMesh(CurrentPath, GEngine->GetRenderer().GetFD3DDevice().GetDevice());
+	};
+
 	float ButtonWidth = ImGui::CalcTextSize("Import").x + ImGui::GetStyle().FramePadding.x * 2.0f;
 	float Spacing = ImGui::GetStyle().ItemSpacing.x;
 	ImGui::SetNextItemWidth(-(ButtonWidth + Spacing));
 
-	if (ImGui::BeginCombo("##Mesh", Preview.c_str()))
-	{
-		bool bSelectedNone = (CurrentPath == "None");
-		if (ImGui::Selectable("None", bSelectedNone))
-		{
-			SetPath("None");
-			bChanged = true;
-		}
-		if (bSelectedNone)
-		{
-			ImGui::SetItemDefaultFocus();
-		}
-
-		const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
-		for (const FAssetListItem& Item : MeshFiles)
-		{
-			bool bSelected = (CurrentPath == Item.FullPath);
-			if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
-			{
-				SetPath(Item.FullPath);
-				bChanged = true;
-			}
-			if (bSelected)
-			{
-				ImGui::SetItemDefaultFocus();
-			}
-		}
-		ImGui::EndCombo();
-	}
+	RenderAssetReferenceField(Field);
 
 	ImGui::SameLine();
 
@@ -993,6 +1059,73 @@ bool FEditorPropertyRenderer::RenderArrayPropertyWidget(FPropertyValue& Prop, FE
 			}
 		}
 		EndPropertyChildTable();
+	}
+
+	return bChanged;
+}
+
+bool FEditorPropertyRenderer::RenderAssetReferenceField(const FPropertyAssetFieldContext& Context)
+{
+	constexpr float ThumbSize = 56.0f;
+	bool bClickedOpen = false;
+
+	ID3D11ShaderResourceView* Thumb = nullptr;
+
+	if (!Context.CurrentPath.empty() && Context.CurrentPath != "None")
+	{
+		switch (Context.Type)
+		{
+		case EPropertyAssetPreviewType::StaticMesh:
+			Thumb = FEditorMeshThumbnailManager::Get().GetOrRequestThumbnail(Context.CurrentPath, EMeshThumbnailType::StaticMesh);
+			break;
+		case EPropertyAssetPreviewType::SkeletalMesh:
+			Thumb = FEditorMeshThumbnailManager::Get().GetOrRequestThumbnail(Context.CurrentPath, EMeshThumbnailType::SkeletalMesh);
+			break;
+		case EPropertyAssetPreviewType::Material:
+			Thumb = FEditorMaterialThumbnailManager::Get().GetOrRequestThumbnail(Context.CurrentPath);
+			break;
+		}
+	}
+
+	ImGui::BeginGroup();
+
+	if (Thumb)
+	{
+		ImGui::Image((ImTextureID)Thumb, ImVec2(ThumbSize, ThumbSize));
+	}
+	else
+	{
+		ImGui::Button("None", ImVec2(ThumbSize, ThumbSize));
+	}
+
+	if (ImGui::IsItemClicked() && Context.LoadObject)
+	{
+		bClickedOpen = true;
+	}
+
+	ImGui::EndGroup();
+
+	ImGui::SameLine();
+
+	ImGui::BeginGroup();
+	bool bChanged = Context.RenderPicker ? Context.RenderPicker() : false;
+
+	if (ImGui::SmallButton("Open"))
+	{
+		bClickedOpen = true;
+	}
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", Context.PreviewName.c_str());
+
+	ImGui::EndGroup();
+
+	if (bClickedOpen && Context.LoadObject)
+	{
+		if (UObject* Object = Context.LoadObject())
+		{
+			UEditorEngine* Editor = static_cast<UEditorEngine*>(GEngine);
+			Editor->OpenAssetEditorForObject(Object);
+		}
 	}
 
 	return bChanged;

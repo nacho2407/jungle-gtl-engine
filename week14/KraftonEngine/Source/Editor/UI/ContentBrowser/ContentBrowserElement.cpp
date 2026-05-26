@@ -849,8 +849,3 @@ void MaterialElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 		Context.EditorEngine->OpenAssetEditorForObject(Material);
 	}
 }
-
-void MaterialElement::RenderDetail()
-{
-	MaterialInspector.Render();
-}

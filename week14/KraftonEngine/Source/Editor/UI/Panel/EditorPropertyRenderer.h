@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/PropertyTypes.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
@@ -13,6 +13,22 @@ struct FEditorPropertyRenderOptions
 	int32 IndentLevel = 0;
 };
 
+enum class EPropertyAssetPreviewType
+{
+	StaticMesh,
+	SkeletalMesh,
+	Material
+};
+
+struct FPropertyAssetFieldContext
+{
+	FString CurrentPath;
+	FString PreviewName;
+	EPropertyAssetPreviewType Type;
+	std::function<bool()> RenderPicker;
+	std::function<UObject* ()> LoadObject;
+};
+
 class FEditorPropertyRenderer
 {
 public:
@@ -25,6 +41,8 @@ private:
 	bool RenderEnumPropertyWidget(FPropertyValue& Prop);
 	bool RenderStructPropertyWidget(FPropertyValue& Prop, FEditorPropertyRenderOptions Options);
 	bool RenderArrayPropertyWidget(FPropertyValue& Prop, FEditorPropertyRenderOptions Options);
+
+	bool RenderAssetReferenceField(const FPropertyAssetFieldContext& Context);
 
 	static FString OpenStaticMeshFileDialog();
 	static FString OpenFbxFileDialog();
