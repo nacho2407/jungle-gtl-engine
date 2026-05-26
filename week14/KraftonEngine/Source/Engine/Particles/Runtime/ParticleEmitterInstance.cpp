@@ -115,11 +115,12 @@ void FParticleEmitterInstance::Reset()
 	EmitterTime = 0.0f;
 	CollisionEventQueue.clear();
 	bActive = true;
+	bSpawningEnabled = true;
 }
 
 int32 FParticleEmitterInstance::SpawnParticles(float DeltaTime)
 {
-	if (DeltaTime <= 0.0f || ActiveParticles >= MaxActiveParticles)
+	if (!bSpawningEnabled || DeltaTime <= 0.0f || ActiveParticles >= MaxActiveParticles)
 	{
 		return 0;
 	}
