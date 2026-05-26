@@ -1044,7 +1044,7 @@ namespace
 		if (Cast<UParticleModuleLocation>(Module)) return "Initial Location";
 		if (Cast<UParticleModuleVelocity>(Module)) return "Initial Velocity";
 		if (Cast<UParticleModuleAcceleration>(Module)) return "Acceleration";
-		if (Cast<UParticleModuleColor>(Module)) return "Initial Color";
+		if (Cast<UParticleModuleColor>(Module)) return "Color Over Life";
 		if (Cast<UParticleModuleSize>(Module)) return "Initial Size";
 		if (Cast<UParticleModuleSubImageIndex>(Module)) return "Sub Image Index";
 		if (Cast<UParticleModuleCollision>(Module)) return "Collision";
@@ -2809,7 +2809,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 			if (ImGui::BeginMenu("Color"))
 			{
-				if (ImGui::MenuItem("Initial Color"))
+				if (ImGui::MenuItem("Color Over Life"))
 				{
 					AddModule(UObjectManager::Get().CreateObject<UParticleModuleColor>());
 				}
