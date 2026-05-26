@@ -58,6 +58,9 @@ struct FBeamParticlePayload
 	float TargetStrength = 0.0f;
 	float BeamDistance = 0.0f;
 	float Width = 8.0f;
+	FVector NoiseRange = FVector::ZeroVector;
+	float NoiseFrequency = 0.0f;
+	float NoisePhase = 0.0f;
 	uint16 BeamIndex = 0;
 };
 
@@ -356,6 +359,9 @@ public:
 		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
 		Payload->BeamIndex = static_cast<uint16>(MaxBeamCount > 0 ? Particle.FrameIndex % static_cast<uint32>(MaxBeamCount) : 0);
 		Payload->Width = BeamWidth.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamWidth"));
+		Payload->NoiseRange = FVector::ZeroVector;
+		Payload->NoiseFrequency = 0.0f;
+		Payload->NoisePhase = 0.0f;
 	}
 
 	EParticleRenderType GetRenderType() const override
@@ -376,21 +382,15 @@ public:
 	GENERATED_BODY()
 	UParticleModuleBeamSource()
 	{
-		SourcePoint.Constant = FVector::ZeroVector;
-		SourcePoint.MinValue = FVector::ZeroVector;
-		SourcePoint.MaxValue = FVector::ZeroVector;
+		SourceTangent.Constant = FVector::ZeroVector;
+		SourceTangent.MinValue = FVector::ZeroVector;
+		SourceTangent.MaxValue = FVector::ZeroVector;
 	}
 
 	bool IsSpawnModule() const override { return true; }
 
-	UPROPERTY(Edit, Save, Category="Particle|Beam|Source", DisplayName="Source Point", Type=Struct, Struct=FRawDistributionVector)
-	FRawDistributionVector SourcePoint;
-
 	UPROPERTY(Edit, Save, Category="Particle|Beam|Source", DisplayName="Source Tangent", Type=Struct, Struct=FRawDistributionVector)
 	FRawDistributionVector SourceTangent;
-
-	UPROPERTY(Edit, Save, Category="Particle|Beam|Source", DisplayName="Source Strength", Type=Struct, Struct=FRawDistributionFloat)
-	FRawDistributionFloat SourceStrength;
 
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
@@ -400,10 +400,78 @@ public:
 		}
 
 		FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
-		Payload->SourcePoint = Particle.Position + SourcePoint.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamSourcePoint"));
 		Payload->SourceTangent = SourceTangent.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamSourceTangent"));
-		Payload->SourceStrength = SourceStrength.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamSourceStrength"));
+		Payload->SourceStrength = 1.0f;
 		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
+	}
+};
+
+UCLASS()
+class UParticleModuleBeamNoise : public UParticleModule
+{
+public:
+	GENERATED_BODY()
+	UParticleModuleBeamNoise()
+	{
+		NoiseRange.Constant = FVector::ZeroVector;
+		NoiseRange.MinValue = FVector::ZeroVector;
+		NoiseRange.MaxValue = FVector::ZeroVector;
+
+		NoiseFrequency.Constant = 4.0f;
+		NoiseFrequency.MinValue = 4.0f;
+		NoiseFrequency.MaxValue = 4.0f;
+
+		NoiseSpeed.Constant = 0.0f;
+		NoiseSpeed.MinValue = 0.0f;
+		NoiseSpeed.MaxValue = 0.0f;
+	}
+
+	bool IsSpawnModule() const override { return true; }
+	bool IsUpdateModule() const override { return true; }
+
+	UPROPERTY(Edit, Save, Category="Particle|Beam|Noise", DisplayName="Noise Range", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector NoiseRange;
+
+	UPROPERTY(Edit, Save, Category="Particle|Beam|Noise", DisplayName="Noise Frequency", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat NoiseFrequency;
+
+	UPROPERTY(Edit, Save, Category="Particle|Beam|Noise", DisplayName="Noise Speed", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat NoiseSpeed;
+
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
+	{
+		if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FBeamParticlePayload)) > Owner->ParticleStride)
+		{
+			return;
+		}
+
+		FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
+		Payload->NoiseRange = NoiseRange.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamNoiseRange"));
+		Payload->NoiseFrequency = NoiseFrequency.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamNoiseFrequency"));
+		Payload->NoisePhase = FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamNoisePhase");
+	}
+
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
+	{
+		if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FBeamParticlePayload)) > Owner->ParticleStride)
+		{
+			return;
+		}
+
+		struct
+		{
+			FParticleEmitterInstance& Owner;
+			int32 Offset;
+			float DeltaTime;
+		} Context{ *Owner, Offset, DeltaTime };
+
+		BEGIN_UPDATE_LOOP
+			FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(ParticleBase + CurrentOffset);
+			Payload->NoiseRange = NoiseRange.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnitVector(Particle->RandomSeed, "BeamNoiseRange"));
+			Payload->NoiseFrequency = NoiseFrequency.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnit(Particle->RandomSeed, "BeamNoiseFrequency"));
+			const float Speed = NoiseSpeed.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnit(Particle->RandomSeed, "BeamNoiseSpeed"));
+			Payload->NoisePhase += Speed * DeltaTime;
+		END_UPDATE_LOOP
 	}
 };
 
@@ -424,9 +492,6 @@ public:
 	UPROPERTY(Edit, Save, Category="Particle|Beam|Target", DisplayName="Target Point", Type=Struct, Struct=FRawDistributionVector)
 	FRawDistributionVector TargetPoint;
 
-	UPROPERTY(Edit, Save, Category="Particle|Beam|Target", DisplayName="Target Tangent", Type=Struct, Struct=FRawDistributionVector)
-	FRawDistributionVector TargetTangent;
-
 	UPROPERTY(Edit, Save, Category="Particle|Beam|Target", DisplayName="Target Strength", Type=Struct, Struct=FRawDistributionFloat)
 	FRawDistributionFloat TargetStrength;
 
@@ -439,7 +504,6 @@ public:
 
 		FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
 		Payload->TargetPoint = Particle.Position + TargetPoint.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamTargetPoint"));
-		Payload->TargetTangent = TargetTangent.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamTargetTangent"));
 		Payload->TargetStrength = TargetStrength.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamTargetStrength"));
 		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
 	}

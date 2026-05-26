@@ -62,6 +62,25 @@ namespace
 		return Cast<UParticleModuleTypeDataBeam>(LODLevel->GetTypeDataModule());
 	}
 
+	FVector ApplyBeamNoise(const FBeamParticlePayload& Payload, const FFrameContext& Frame, const FVector& Position, float T)
+	{
+		if (T <= 0.0f || T >= 1.0f || Payload.NoiseFrequency <= 0.0f || Payload.NoiseRange.LengthSquared() <= 0.0001f)
+		{
+			return Position;
+		}
+
+		constexpr float TwoPi = FMath::Pi * 2.0f;
+		const float Envelope = std::sin(T * FMath::Pi);
+		const float Phase = (T * Payload.NoiseFrequency + Payload.NoisePhase) * TwoPi;
+		const float Phase2 = Phase * 1.37f + 1.618f;
+		const float Phase3 = Phase * 0.73f + 2.414f;
+		const FVector Offset =
+			Frame.CameraRight * (std::sin(Phase) * Payload.NoiseRange.X) +
+			Frame.CameraUp * (std::cos(Phase2) * Payload.NoiseRange.Y) +
+			Frame.CameraForward * (std::sin(Phase3) * Payload.NoiseRange.Z);
+		return Position + Offset * Envelope;
+	}
+
 	void GetParticleSubUVs(const FBaseParticle& Particle, int32 Columns, int32 Rows,
 		FVector2& OutTopLeftUV, FVector2& OutTopRightUV, FVector2& OutBottomLeftUV, FVector2& OutBottomRightUV)
 	{
@@ -473,8 +492,9 @@ uint32 FDynamicBeamEmitterData::BuildDynamicVertexData(const FFrameContext& Fram
 		TArray<FVector> BeamPoints;
 		BeamPoints.reserve(PointCount);
 
-		const FVector SourceTangent = Payload->SourceTangent * Payload->SourceStrength;
-		const FVector TargetTangent = Payload->TargetTangent * Payload->TargetStrength;
+		const FVector BeamDirection = (Payload->TargetPoint - Payload->SourcePoint).Normalized();
+		const FVector SourceTangent = Payload->SourceTangent;
+		const FVector TargetTangent = BeamDirection * Payload->TargetStrength;
 
 		for (int32 PointIndex = 0; PointIndex < PointCount; ++PointIndex)
 		{
@@ -482,7 +502,8 @@ uint32 FDynamicBeamEmitterData::BuildDynamicVertexData(const FFrameContext& Fram
 				? static_cast<float>(PointIndex) / static_cast<float>(PointCount - 1)
 				: 0.0f;
 
-			BeamPoints.push_back(EvalHermite(Payload->SourcePoint, Payload->TargetPoint, SourceTangent, TargetTangent, T));
+			const FVector Position = EvalHermite(Payload->SourcePoint, Payload->TargetPoint, SourceTangent, TargetTangent, T);
+			BeamPoints.push_back(ApplyBeamNoise(*Payload, Frame, Position, T));
 		}
 
 		TArray<uint32> LeftIndices;
