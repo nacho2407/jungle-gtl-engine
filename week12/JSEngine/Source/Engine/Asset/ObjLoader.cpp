@@ -52,6 +52,7 @@ FStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions&
 	if (!ParseObj(Path, RawData))
 	{
 		UE_LOG_ERROR("[ObjLoader] Failed to parse OBJ: %s", Path.c_str());
+		delete StaticMesh;
 		return nullptr;
 	}
 	
@@ -71,6 +72,7 @@ FStaticMesh* FObjLoader::Load(const FString& Path, const FStaticMeshLoadOptions&
 	if (!BuildStaticMesh(Path, StaticMesh, RawData))
 	{
 		UE_LOG_ERROR("[ObjLoader] Failed to build static mesh: %s", Path.c_str());
+		delete StaticMesh;
 		return nullptr;
 	}
 
@@ -646,7 +648,7 @@ void FObjLoader::ComputeTangents(FStaticMesh* InMesh)
 
 		FVector T, B;
 		GetTangent(T, B, V0.Position, V1.Position, V2.Position,
-		                                V0.UVs,      V1.UVs,      V2.UVs);
+										V0.UVs,      V1.UVs,      V2.UVs);
 		TangentAcc[I0] += T; TangentAcc[I1] += T; TangentAcc[I2] += T;
 		BitangentAcc[I0] += B; BitangentAcc[I1] += B; BitangentAcc[I2] += B;
 	}
@@ -663,7 +665,7 @@ void FObjLoader::ComputeTangents(FStaticMesh* InMesh)
 
 		float Sign = GetSign(N, T, BitangentAcc[i]);
 		//InMesh->Vertices[i].Tangent = T * Sign;
-        InMesh->Vertices[i].Tangent = FVector4(T.X, T.Y, T.Z, Sign);
+		InMesh->Vertices[i].Tangent = FVector4(T.X, T.Y, T.Z, Sign);
 	}
 }
 

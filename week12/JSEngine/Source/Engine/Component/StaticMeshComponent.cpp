@@ -6,10 +6,10 @@
 #include "Core/ResourceManager.h"
 
 
+//	기본 도형은 Cube로 설정
 UStaticMeshComponent::UStaticMeshComponent()
 {
-	//	기본 도형은 Cube로 설정
-	SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset\\Mesh\\Dice\\Dice.obj"));
+	SetStaticMesh(FResourceManager::Get().LoadStaticMesh("Asset/Mesh/Cube/Cube.obj"));
 }
 
 // 프로퍼티 시스템에 노출되지 않은 필드를 직접 복사합니다.
