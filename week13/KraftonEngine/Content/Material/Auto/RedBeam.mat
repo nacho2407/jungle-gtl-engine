@@ -1,0 +1,19 @@
+{
+  "BlendState" : "AlphaBlend",
+  "DepthStencilState" : "DepthReadOnly",
+  "Domain" : "ParticleSprite",
+  "Origin" : "ParticleEmitter",
+  "Parameters" : {
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "_pad" : [0.000000, 0.000000, 0.000000]
+  },
+  "PathFileName" : "Content/Material/Auto/RedBeam.mat",
+  "RasterizerState" : "SolidNoCull",
+  "RenderPass" : "AlphaBlend",
+  "ShaderPath" : null,
+  "Textures" : {
+    "DiffuseTexture" : "Content/Data/Image/RedBeam.png",
+    "EmissiveTexture" : "Content/Data/Image/RedBeam.png"
+  }
+}
