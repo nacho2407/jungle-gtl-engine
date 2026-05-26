@@ -39,9 +39,9 @@ struct FParticleFloatDistribution
 	float Max = 0.0f;
 	UPROPERTY(ReferenceType = Asset)
 	TSoftObjectPtr<UCurveFloatAsset> Curve;
-	UPROPERTY(ReferenceType = Asset)
+	UPROPERTY(ReferenceType = Asset, DisplayName = "Min Curve")
 	TSoftObjectPtr<UCurveFloatAsset> MinCurve;
-	UPROPERTY(ReferenceType = Asset)
+	UPROPERTY(ReferenceType = Asset, DisplayName = "Max Curve")
 	TSoftObjectPtr<UCurveFloatAsset> MaxCurve;
 };
 
@@ -62,7 +62,7 @@ struct FParticleVectorDistribution
 
 	UPROPERTY()
 	EParticleDistributionMode Mode = EParticleDistributionMode::Constant;
-	UPROPERTY()
+	UPROPERTY(DisplayName = "Vector Mode")
 	EParticleVectorDistributionMode VectorMode = EParticleVectorDistributionMode::Independent;
 	UPROPERTY()
 	FVector Constant = FVector::ZeroVector;
@@ -72,9 +72,9 @@ struct FParticleVectorDistribution
 	FVector Max = FVector::ZeroVector;
 	UPROPERTY(ReferenceType = Asset)
 	TSoftObjectPtr<UCurveVectorAsset> Curve;
-	UPROPERTY(ReferenceType = Asset)
+	UPROPERTY(ReferenceType = Asset, DisplayName = "Min Curve")
 	TSoftObjectPtr<UCurveVectorAsset> MinCurve;
-	UPROPERTY(ReferenceType = Asset)
+	UPROPERTY(ReferenceType = Asset, DisplayName = "Max Curve")
 	TSoftObjectPtr<UCurveVectorAsset> MaxCurve;
 };
 
@@ -93,9 +93,9 @@ struct FParticleColorDistribution
 	FColor Max = FColor::White();
 	UPROPERTY(ReferenceType = Asset)
 	TSoftObjectPtr<UCurveColorAsset> Curve;
-	UPROPERTY(ReferenceType = Asset)
+	UPROPERTY(ReferenceType = Asset, DisplayName = "Min Curve")
 	TSoftObjectPtr<UCurveColorAsset> MinCurve;
-	UPROPERTY(ReferenceType = Asset)
+	UPROPERTY(ReferenceType = Asset, DisplayName = "Max Curve")
 	TSoftObjectPtr<UCurveColorAsset> MaxCurve;
 };
 

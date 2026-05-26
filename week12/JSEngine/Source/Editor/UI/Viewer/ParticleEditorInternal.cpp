@@ -203,7 +203,7 @@ bool IsAnyPopupOpen()
 }
 
 // 에디터 내에서 발생하는 키보드 단축키(Undo, Redo, 시뮬레이션 재시작, 아이템 삭제) 이벤트를 감지하고 처리합니다.
-void HandleParticleEditorShortcuts(FParticleEditorViewer* Viewer)
+void HandleParticleEditorShortcuts(FParticleEditorViewer* Viewer, bool bAllowDeleteSelection)
 {
 	if (!Viewer || IsAnyPopupOpen())
 	{
@@ -242,7 +242,11 @@ void HandleParticleEditorShortcuts(FParticleEditorViewer* Viewer)
 
 	if (ImGui::IsKeyPressed(ImGuiKey_Delete, false))
 	{
-		Viewer->DeleteSelection();
+		if (bAllowDeleteSelection)
+		{
+			Viewer->DeleteSelection();
+		}
+		return;
 	}
 }
 
@@ -353,6 +357,9 @@ void CollectParticleEditableProperties(UObject* Object, TArray<const FProperty*>
 	}
 }
 
+// 프로퍼티 값 렌더 함수는 상위 위젯/구조체 위젯에서 재귀 호출되므로 먼저 선언합니다.
+bool RenderParticlePropertyValueWidget(FParticlePropertyRenderContext& Context, const FProperty& Property, void* ValuePtr, const char* Label);
+
 // 객체에서 수집된 편집 가능한 프로퍼티들을 디테일 패널에 일괄적으로 렌더링합니다.
 bool RenderParticleReflectionProperties(FParticlePropertyRenderContext& Context)
 {
@@ -401,6 +408,10 @@ bool RenderParticlePropertyWidget(FParticlePropertyRenderContext& Context, const
 			bUndoCaptured = true;
 		}
 		Object->PostEditProperty(Property.Name);
+		if (UParticleEmitter* Emitter = Viewer->GetSelectedEmitter())
+		{
+			Emitter->CacheEmitterModuleInfo();
+		}
 		Viewer->MarkDirty();
 		Viewer->RestartSimulation();
 	}
@@ -410,6 +421,321 @@ bool RenderParticlePropertyWidget(FParticlePropertyRenderContext& Context, const
 		bUndoCaptured = false;
 	}
 
+	return bChanged;
+}
+
+float GetParticleDetailsHalfItemWidth(float ReservedWidth = 0.0f)
+{
+	const float Available = ImGui::GetContentRegionAvail().x;
+	const float MaxUsable = std::max(80.0f, Available - ReservedWidth);
+	return std::max(120.0f, std::min(MaxUsable, Available * 0.5f));
+}
+
+void SetNextParticleDetailsHalfWidth(float ReservedWidth = 0.0f)
+{
+	ImGui::SetNextItemWidth(GetParticleDetailsHalfItemWidth(ReservedWidth));
+}
+
+bool RenderParticleUniformVectorScalar(FVector& Value, const char* Label, float Speed)
+{
+	float Scalar = Value.X;
+	SetNextParticleDetailsHalfWidth();
+	if (ImGui::DragFloat(Label, &Scalar, Speed))
+	{
+		Value = FVector(Scalar, Scalar, Scalar);
+		return true;
+	}
+	return false;
+}
+
+
+bool DrawCurveInterpModeCombo(const char* Label, ECurveInterpMode& Mode)
+{
+	bool bChanged = false;
+	int32 Current = static_cast<int32>(Mode);
+	SetNextParticleDetailsHalfWidth();
+	if (ImGui::Combo(Label, &Current, "Constant\0Linear\0Cubic\0"))
+	{
+		Mode = static_cast<ECurveInterpMode>(std::clamp(Current, 0, 2));
+		bChanged = true;
+	}
+	return bChanged;
+}
+
+bool DrawCurveTangentModeCombo(const char* Label, ECurveTangentMode& Mode)
+{
+	bool bChanged = false;
+	int32 Current = static_cast<int32>(Mode);
+	SetNextParticleDetailsHalfWidth();
+	if (ImGui::Combo(Label, &Current, "Auto\0User\0Break\0"))
+	{
+		Mode = static_cast<ECurveTangentMode>(std::clamp(Current, 0, 2));
+		bChanged = true;
+	}
+	return bChanged;
+}
+
+bool RenderParticleFloatCurveKeyEditor(const char* Label, FFloatCurve& Curve)
+{
+	bool bChanged = false;
+	ImGui::PushID(Label);
+	if (ImGui::TreeNodeEx(Label, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth))
+	{
+		int32 RemoveIndex = -1;
+		for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Curve.Keys.size()); ++KeyIndex)
+		{
+			FCurveKey& Key = Curve.Keys[KeyIndex];
+			ImGui::PushID(KeyIndex);
+			char Header[32];
+			snprintf(Header, sizeof(Header), "Key %d", KeyIndex);
+			if (ImGui::TreeNodeEx(Header, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
+			{
+				SetNextParticleDetailsHalfWidth();
+				if (ImGui::DragFloat("Time", &Key.Time, 0.01f, 0.0f, FLT_MAX))
+				{
+					Key.Time = std::max(0.0f, Key.Time);
+					bChanged = true;
+				}
+				SetNextParticleDetailsHalfWidth();
+				if (ImGui::DragFloat("Value", &Key.Value, 0.01f))
+				{
+					bChanged = true;
+				}
+				if (DrawCurveInterpModeCombo("Interp", Key.InterpMode))
+				{
+					bChanged = true;
+				}
+				if (DrawCurveTangentModeCombo("Tangent", Key.TangentMode))
+				{
+					bChanged = true;
+				}
+				SetNextParticleDetailsHalfWidth();
+				if (ImGui::DragFloat("Arrive Tangent", &Key.ArriveTangent, 0.01f))
+				{
+					bChanged = true;
+				}
+				SetNextParticleDetailsHalfWidth();
+				if (ImGui::DragFloat("Leave Tangent", &Key.LeaveTangent, 0.01f))
+				{
+					bChanged = true;
+				}
+				if (ImGui::SmallButton("Delete Key"))
+				{
+					RemoveIndex = KeyIndex;
+				}
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+		}
+
+		if (RemoveIndex >= 0 && RemoveIndex < static_cast<int32>(Curve.Keys.size()))
+		{
+			Curve.Keys.erase(Curve.Keys.begin() + RemoveIndex);
+			bChanged = true;
+		}
+
+		if (ImGui::Button("+ Add Key", ImVec2(GetParticleDetailsHalfItemWidth(), 0.0f)))
+		{
+			FCurveKey NewKey;
+			NewKey.Time = Curve.Keys.empty() ? 0.0f : Curve.Keys.back().Time + 1.0f;
+			NewKey.Value = Curve.Keys.empty() ? 0.0f : Curve.Keys.back().Value;
+			NewKey.InterpMode = ECurveInterpMode::Cubic;
+			NewKey.TangentMode = ECurveTangentMode::Auto;
+			Curve.Keys.push_back(NewKey);
+			bChanged = true;
+		}
+		ImGui::TreePop();
+	}
+	if (bChanged)
+	{
+		Curve.SortKeys();
+	}
+	ImGui::PopID();
+	return bChanged;
+}
+
+bool RenderParticleFloatCurveAssetKeys(const char* Label, const FString& Path)
+{
+	if (Path.empty())
+	{
+		return false;
+	}
+	UCurveFloatAsset* Asset = FResourceManager::Get().LoadFloatCurve(Path);
+	if (!Asset)
+	{
+		return false;
+	}
+	if (RenderParticleFloatCurveKeyEditor(Label, Asset->GetMutableCurve()))
+	{
+		FResourceManager::Get().SaveCurve(Path, Asset);
+		return true;
+	}
+	return false;
+}
+
+bool RenderParticleVectorCurveAssetKeys(const char* Label, const FString& Path, bool /*bUniformXYZ*/)
+{
+	if (Path.empty())
+	{
+		return false;
+	}
+	UCurveVectorAsset* Asset = FResourceManager::Get().LoadVectorCurve(Path);
+	if (!Asset)
+	{
+		return false;
+	}
+	bool bChanged = false;
+	FVectorCurve& Curve = Asset->GetMutableCurve();
+	ImGui::PushID(Label);
+	if (ImGui::TreeNodeEx(Label, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth))
+	{
+		bChanged |= RenderParticleFloatCurveKeyEditor("X", Curve.XCurve);
+		bChanged |= RenderParticleFloatCurveKeyEditor("Y", Curve.YCurve);
+		bChanged |= RenderParticleFloatCurveKeyEditor("Z", Curve.ZCurve);
+		ImGui::TreePop();
+	}
+	ImGui::PopID();
+	if (bChanged)
+	{
+		FResourceManager::Get().SaveCurve(Path, Asset);
+	}
+	return bChanged;
+}
+
+bool RenderParticleColorCurveAssetKeys(const char* Label, const FString& Path)
+{
+	if (Path.empty())
+	{
+		return false;
+	}
+	UCurveColorAsset* Asset = FResourceManager::Get().LoadColorCurve(Path);
+	if (!Asset)
+	{
+		return false;
+	}
+	bool bChanged = false;
+	FColorCurve& Curve = Asset->GetMutableCurve();
+	ImGui::PushID(Label);
+	if (ImGui::TreeNodeEx(Label, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth))
+	{
+		bChanged |= RenderParticleFloatCurveKeyEditor("R", Curve.RCurve);
+		bChanged |= RenderParticleFloatCurveKeyEditor("G", Curve.GCurve);
+		bChanged |= RenderParticleFloatCurveKeyEditor("B", Curve.BCurve);
+		bChanged |= RenderParticleFloatCurveKeyEditor("A", Curve.ACurve);
+		ImGui::TreePop();
+	}
+	ImGui::PopID();
+	if (bChanged)
+	{
+		FResourceManager::Get().SaveCurve(Path, Asset);
+	}
+	return bChanged;
+}
+
+bool RenderParticleDistributionCurveKeyEditors(const FParticleFloatDistribution& Distribution)
+{
+	bool bChanged = false;
+	if (Distribution.Mode == EParticleDistributionMode::Curve || Distribution.Mode == EParticleDistributionMode::RandomRangeCurve)
+	{
+		bChanged |= RenderParticleFloatCurveAssetKeys("Curve Keys", Distribution.Curve.GetPath());
+	}
+	if (Distribution.Mode == EParticleDistributionMode::RandomRangeCurve)
+	{
+		bChanged |= RenderParticleFloatCurveAssetKeys("Min Curve Keys", Distribution.MinCurve.GetPath());
+		bChanged |= RenderParticleFloatCurveAssetKeys("Max Curve Keys", Distribution.MaxCurve.GetPath());
+	}
+	return bChanged;
+}
+
+bool RenderParticleDistributionCurveKeyEditors(const FParticleVectorDistribution& Distribution)
+{
+	bool bChanged = false;
+	const bool bUniformXYZ = Distribution.VectorMode == EParticleVectorDistributionMode::UniformXYZ;
+	if (Distribution.Mode == EParticleDistributionMode::Curve || Distribution.Mode == EParticleDistributionMode::RandomRangeCurve)
+	{
+		bChanged |= RenderParticleVectorCurveAssetKeys("Curve Keys", Distribution.Curve.GetPath(), bUniformXYZ);
+	}
+	if (Distribution.Mode == EParticleDistributionMode::RandomRangeCurve)
+	{
+		bChanged |= RenderParticleVectorCurveAssetKeys("Min Curve Keys", Distribution.MinCurve.GetPath(), bUniformXYZ);
+		bChanged |= RenderParticleVectorCurveAssetKeys("Max Curve Keys", Distribution.MaxCurve.GetPath(), bUniformXYZ);
+	}
+	return bChanged;
+}
+
+bool RenderParticleDistributionCurveKeyEditors(const FParticleColorDistribution& Distribution)
+{
+	bool bChanged = false;
+	if (Distribution.Mode == EParticleDistributionMode::Curve || Distribution.Mode == EParticleDistributionMode::RandomRangeCurve)
+	{
+		bChanged |= RenderParticleColorCurveAssetKeys("Curve Keys", Distribution.Curve.GetPath());
+	}
+	if (Distribution.Mode == EParticleDistributionMode::RandomRangeCurve)
+	{
+		bChanged |= RenderParticleColorCurveAssetKeys("Min Curve Keys", Distribution.MinCurve.GetPath());
+		bChanged |= RenderParticleColorCurveAssetKeys("Max Curve Keys", Distribution.MaxCurve.GetPath());
+	}
+	return bChanged;
+}
+
+bool RenderParticleVectorDistributionWidget(FParticlePropertyRenderContext& Context, const FProperty& Property, void* ValuePtr, const char* Label)
+{
+	FParticleVectorDistribution* Distribution = static_cast<FParticleVectorDistribution*>(ValuePtr);
+	if (!Distribution || !Property.ScriptStruct)
+	{
+		return false;
+	}
+
+	bool bChanged = false;
+	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.115f, 0.125f, 0.145f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.18f, 0.20f, 0.24f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.22f, 0.25f, 0.31f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.86f, 0.88f, 0.91f, 1.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.0f, 4.0f));
+	const bool bOpen = ImGui::TreeNodeEx(
+		Label,
+		ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth);
+	ImGui::PopStyleVar();
+	ImGui::PopStyleColor(4);
+
+	if (bOpen)
+	{
+		TArray<const FProperty*> ChildProperties;
+		Property.ScriptStruct->GetAllProperties(ChildProperties);
+		const bool bUniformXYZ = Distribution->VectorMode == EParticleVectorDistributionMode::UniformXYZ;
+		for (const FProperty* Child : ChildProperties)
+		{
+			if (!Child || !Child->Name || !Child->IsEditable())
+			{
+				continue;
+			}
+
+			const FString ChildLabel = MakeParticlePropertyWidgetLabel(*Child);
+			void* ChildPtr = reinterpret_cast<uint8*>(ValuePtr) + Child->Offset;
+			if (bUniformXYZ && Child->Type == EPropertyType::Struct &&
+				(std::strcmp(Child->Name, "Constant") == 0 ||
+				 std::strcmp(Child->Name, "Min") == 0 ||
+				 std::strcmp(Child->Name, "Max") == 0))
+			{
+				if (RenderParticleUniformVectorScalar(*static_cast<FVector*>(ChildPtr), ChildLabel.c_str(), Child->Speed))
+				{
+					bChanged = true;
+				}
+				continue;
+			}
+
+			SetNextParticleDetailsHalfWidth();
+			if (RenderParticlePropertyValueWidget(Context, *Child, ChildPtr, ChildLabel.c_str()))
+			{
+				bChanged = true;
+			}
+		}
+		if (RenderParticleDistributionCurveKeyEditors(*Distribution))
+		{
+			bChanged = true;
+		}
+		ImGui::TreePop();
+	}
 	return bChanged;
 }
 
@@ -427,8 +753,10 @@ bool RenderParticlePropertyValueWidget(FParticlePropertyRenderContext& Context, 
 	case EPropertyType::Bool:
 		return ImGui::Checkbox(Label, static_cast<bool*>(ValuePtr));
 	case EPropertyType::Int:
+		SetNextParticleDetailsHalfWidth();
 		return ImGui::DragInt(Label, static_cast<int32*>(ValuePtr), Property.Speed);
 	case EPropertyType::Float:
+		SetNextParticleDetailsHalfWidth();
 		if (Property.Min != 0.0f || Property.Max != 0.0f)
 		{
 			return ImGui::DragFloat(Label, static_cast<float*>(ValuePtr), Property.Speed, Property.Min, Property.Max);
@@ -439,6 +767,7 @@ bool RenderParticlePropertyValueWidget(FParticlePropertyRenderContext& Context, 
 		FString* Value = static_cast<FString*>(ValuePtr);
 		char Buffer[512];
 		strncpy_s(Buffer, sizeof(Buffer), Value->c_str(), _TRUNCATE);
+		SetNextParticleDetailsHalfWidth();
 		if (ImGui::InputText(Label, Buffer, sizeof(Buffer)))
 		{
 			*Value = Buffer;
@@ -452,6 +781,7 @@ bool RenderParticlePropertyValueWidget(FParticlePropertyRenderContext& Context, 
 		FString Current = Value->ToString();
 		char Buffer[256];
 		strncpy_s(Buffer, sizeof(Buffer), Current.c_str(), _TRUNCATE);
+		SetNextParticleDetailsHalfWidth();
 		if (ImGui::InputText(Label, Buffer, sizeof(Buffer)))
 		{
 			*Value = FName(Buffer);
@@ -506,6 +836,7 @@ bool RenderParticlePropertyValueWidget(FParticlePropertyRenderContext& Context, 
 			return (ValueMeta.DisplayName && ValueMeta.DisplayName[0] != '\0') ? ValueMeta.DisplayName : ValueMeta.Name;
 		};
 
+		SetNextParticleDetailsHalfWidth();
 		if (ImGui::Combo(Label, &CurrentIndex, ComboGetter, const_cast<UEnum*>(Property.EnumMeta), static_cast<int>(Property.EnumMeta->Count)))
 		{
 			const int64 NewValue = Property.EnumMeta->Values[CurrentIndex].Value;
@@ -566,6 +897,7 @@ bool RenderParticleObjectPtrWidget(const FProperty& Property, void* ValuePtr, co
 
 		bool bChanged = false;
 		PushAssetComboStyle();
+		SetNextParticleDetailsHalfWidth();
 		if (ImGui::BeginCombo(Label, CurrentLabel.c_str()))
 		{
 			if (ImGui::Selectable("<None>", CurrentMaterial == nullptr))
@@ -636,6 +968,7 @@ bool RenderParticleSoftObjectPtrWidget(const FProperty& Property, void* ValuePtr
 	if (Options && !Options->empty())
 	{
 		FString SelectedPath;
+		SetNextParticleDetailsHalfWidth();
 		if (DrawSearchableAssetPathCombo(Label, Current, *Options, SelectedPath))
 		{
 			Property.SoftObjectOps->SetPath(ValuePtr, SelectedPath);
@@ -646,6 +979,7 @@ bool RenderParticleSoftObjectPtrWidget(const FProperty& Property, void* ValuePtr
 	{
 		char Buffer[512];
 		strncpy_s(Buffer, sizeof(Buffer), Current.c_str(), _TRUNCATE);
+		SetNextParticleDetailsHalfWidth();
 		if (ImGui::InputText(Label, Buffer, sizeof(Buffer)))
 		{
 			Property.SoftObjectOps->SetPath(ValuePtr, Buffer);
@@ -668,9 +1002,19 @@ bool RenderParticleArrayPropertyWidget(FParticlePropertyRenderContext& Context, 
 		return false;
 	}
 
+	const bool bManagedLODDistances =
+		Context.Object &&
+		Context.Object->IsA(UParticleSystem::StaticClass()) &&
+		Property.Name &&
+		std::strcmp(Property.Name, "LODDistances") == 0;
+
 	bool bChanged = false;
 	int32 RemoveIndex = -1;
 	DrawParticleDetailsSection(GetPropertyDisplayName(Property));
+	if (bManagedLODDistances)
+	{
+		ImGui::TextDisabled("Managed by Particle LOD count. Use Add/Remove LOD instead of editing array size.");
+	}
 	ImGui::PushID(Property.Name);
 
 	const int32 Count = Property.ArrayOps->Num(ValuePtr);
@@ -680,15 +1024,18 @@ bool RenderParticleArrayPropertyWidget(FParticlePropertyRenderContext& Context, 
 		void* ElementPtr = Property.ArrayOps->GetElementPtr(ValuePtr, Index);
 		char ItemLabel[32];
 		snprintf(ItemLabel, sizeof(ItemLabel), "[%d]", Index);
-		ImGui::SetNextItemWidth(std::max(120.0f, ImGui::GetContentRegionAvail().x - 28.0f));
+		SetNextParticleDetailsHalfWidth(32.0f);
 		if (RenderParticlePropertyValueWidget(Context, *Property.InnerProperty, ElementPtr, ItemLabel))
 		{
 			bChanged = true;
 		}
-		ImGui::SameLine();
-		if (ImGui::SmallButton("X"))
+		if (!bManagedLODDistances)
 		{
-			RemoveIndex = Index;
+			ImGui::SameLine();
+			if (ImGui::SmallButton("X"))
+			{
+				RemoveIndex = Index;
+			}
 		}
 		ImGui::PopID();
 	}
@@ -699,12 +1046,15 @@ bool RenderParticleArrayPropertyWidget(FParticlePropertyRenderContext& Context, 
 		bChanged = true;
 	}
 
-	char AddLabel[64];
-	snprintf(AddLabel, sizeof(AddLabel), "+ Add##%s", Property.Name);
-	if (ImGui::Button(AddLabel, ImVec2(-1, 0.0f)))
+	if (!bManagedLODDistances)
 	{
-		Property.ArrayOps->AddDefaulted(ValuePtr);
-		bChanged = true;
+		char AddLabel[64];
+		snprintf(AddLabel, sizeof(AddLabel), "+ Add##%s", Property.Name);
+		if (ImGui::Button(AddLabel, ImVec2(GetParticleDetailsHalfItemWidth(), 0.0f)))
+		{
+			Property.ArrayOps->AddDefaulted(ValuePtr);
+			bChanged = true;
+		}
 	}
 
 	ImGui::PopID();
@@ -725,22 +1075,31 @@ bool RenderParticleStructPropertyWidget(FParticlePropertyRenderContext& Context,
 		Hint = Property.ScriptStruct->GetName();
 	}
 
+	if (Property.ScriptStruct && std::strcmp(Property.ScriptStruct->GetName(), "FParticleVectorDistribution") == 0)
+	{
+		return RenderParticleVectorDistributionWidget(Context, Property, ValuePtr, Label);
+	}
+
 	if (Hint && std::strcmp(Hint, "FVector") == 0)
 	{
+		SetNextParticleDetailsHalfWidth();
 		return ImGui::DragFloat3(Label, static_cast<float*>(ValuePtr), Property.Speed);
 	}
 	if (Hint && std::strcmp(Hint, "FVector4") == 0)
 	{
+		SetNextParticleDetailsHalfWidth();
 		return ImGui::DragFloat4(Label, static_cast<float*>(ValuePtr), Property.Speed);
 	}
 	if (Hint && std::strcmp(Hint, "FColor") == 0)
 	{
+		SetNextParticleDetailsHalfWidth();
 		return ImGui::ColorEdit4(Label, &static_cast<FColor*>(ValuePtr)->R);
 	}
 	if (Hint && std::strcmp(Hint, "FQuat") == 0)
 	{
 		FQuat* Value = static_cast<FQuat*>(ValuePtr);
 		float Components[4] = { Value->X, Value->Y, Value->Z, Value->W };
+		SetNextParticleDetailsHalfWidth();
 		if (ImGui::DragFloat4(Label, Components, Property.Speed))
 		{
 			*Value = FQuat(Components[0], Components[1], Components[2], Components[3]);
@@ -786,19 +1145,53 @@ bool RenderParticleStructPropertyWidget(FParticlePropertyRenderContext& Context,
 				bChanged = true;
 			}
 		}
+
+		const char* StructName = Property.ScriptStruct ? Property.ScriptStruct->GetName() : nullptr;
+		if (StructName && std::strcmp(StructName, "FParticleFloatDistribution") == 0)
+		{
+			if (RenderParticleDistributionCurveKeyEditors(*static_cast<FParticleFloatDistribution*>(ValuePtr)))
+			{
+				bChanged = true;
+			}
+		}
+		else if (StructName && std::strcmp(StructName, "FParticleVectorDistribution") == 0)
+		{
+			if (RenderParticleDistributionCurveKeyEditors(*static_cast<FParticleVectorDistribution*>(ValuePtr)))
+			{
+				bChanged = true;
+			}
+		}
+		else if (StructName && std::strcmp(StructName, "FParticleColorDistribution") == 0)
+		{
+			if (RenderParticleDistributionCurveKeyEditors(*static_cast<FParticleColorDistribution*>(ValuePtr)))
+			{
+				bChanged = true;
+			}
+		}
 		ImGui::TreePop();
 	}
 	return bChanged;
 }
 
-void SortParticleModuleClassesByDisplayName(TArray<UClass*>& Classes)
+const char* GetParticleModuleClassMenuCategory(const UClass* Class)
+{
+	const char* Category = Class ? Class->GetCategory() : nullptr;
+	return (Category && Category[0] != '\0') ? Category : "Misc";
+}
+
+void SortParticleModuleClassesForMenu(TArray<UClass*>& Classes)
 {
 	std::stable_sort(
 		Classes.begin(),
 		Classes.end(),
 		[](const UClass* Lhs, const UClass* Rhs)
 		{
-			return std::strcmp(Lhs->GetDisplayName(), Rhs->GetDisplayName()) < 0;
+			const int32 CategoryOrder = std::strcmp(GetParticleModuleClassMenuCategory(Lhs), GetParticleModuleClassMenuCategory(Rhs));
+			if (CategoryOrder != 0)
+			{
+				return CategoryOrder < 0;
+			}
+			return std::strcmp(Lhs ? Lhs->GetDisplayName() : "", Rhs ? Rhs->GetDisplayName() : "") < 0;
 		});
 }
 
@@ -820,7 +1213,7 @@ void GetParticleModuleClasses(TArray<UClass*>& OutClasses)
 					   Class->HasAnyClassFlags(CF_Abstract);
 			}),
 		OutClasses.end());
-	SortParticleModuleClassesByDisplayName(OutClasses);
+	SortParticleModuleClassesForMenu(OutClasses);
 }
 
 // 이미터의 렌더링 방식을 결정하는 특수 모듈인 Type Data 모듈 클래스 목록을 추출합니다.
@@ -838,7 +1231,7 @@ void GetParticleTypeDataModuleClasses(TArray<UClass*>& OutClasses)
 					   Class->HasAnyClassFlags(CF_Abstract);
 			}),
 		OutClasses.end());
-	SortParticleModuleClassesByDisplayName(OutClasses);
+	SortParticleModuleClassesForMenu(OutClasses);
 }
 
 // 새로운 모듈을 추가하기 위한 동적 컨텍스트 메뉴를 렌더링하고 모듈 생성 요청을 처리합니다.
@@ -864,9 +1257,27 @@ bool DrawParticleModuleClassMenu(FParticleEditorViewer* Viewer)
 	}
 
 	bool bAdded = false;
+	const char* CurrentCategory = nullptr;
+	bool bCategoryOpen = false;
 	for (UClass* ModuleClass : ModuleClasses)
 	{
 		if (!ModuleClass)
+		{
+			continue;
+		}
+
+		const char* Category = GetParticleModuleClassMenuCategory(ModuleClass);
+		if (!CurrentCategory || std::strcmp(CurrentCategory, Category) != 0)
+		{
+			if (bCategoryOpen)
+			{
+				ImGui::EndMenu();
+			}
+			CurrentCategory = Category;
+			bCategoryOpen = ImGui::BeginMenu(CurrentCategory);
+		}
+
+		if (!bCategoryOpen)
 		{
 			continue;
 		}
@@ -876,6 +1287,10 @@ bool DrawParticleModuleClassMenu(FParticleEditorViewer* Viewer)
 			Viewer->AddModule(ModuleClass);
 			bAdded = true;
 		}
+	}
+	if (bCategoryOpen)
+	{
+		ImGui::EndMenu();
 	}
 
 	if (!ModuleClasses.empty() && !TypeDataModuleClasses.empty())

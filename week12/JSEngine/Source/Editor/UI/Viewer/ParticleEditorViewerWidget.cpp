@@ -30,7 +30,8 @@ void FParticleEditorViewerWidget::RenderContent(float DeltaTime)
 	}
 
 	ImGui::PushID(ParticleViewer);
-	HandleParticleEditorShortcuts(ParticleViewer);
+	const bool bCurveKeyOwnsDelete = CurveState.bWantsDeleteKeyFocus && CurveState.SelectedKeyIndex >= 0;
+	HandleParticleEditorShortcuts(ParticleViewer, !bCurveKeyOwnsDelete);
 
 	const float SplitterThickness = 4.0f;
 	const float SplitterSideGap = 6.0f;

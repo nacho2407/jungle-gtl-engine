@@ -66,13 +66,14 @@
                 "Y" : -100.000000,
                 "Z" : -100.000000
               },
-              "Material" : "Asset/Material/Auto/Furina_Mat_29.mat",
-              "MaxEmitterLoops" : 0,
+              "Material" : "DefaultWhite",
+              "MaxEmitterLoops" : 1,
               "MaxParticles" : 10000,
               "RandomSeed" : 1,
               "SortMode" : 1,
-              "bEmitterLoops" : true,
+              "bEmitterLoops" : false,
               "bEnabled" : true,
+              "bInfiniteEmitterLoops" : true,
               "bResetSeedOnEmitterLoop" : true,
               "bUseFixedBounds" : false,
               "bUseSeededRandom" : false
@@ -82,8 +83,7 @@
             "Id" : 7,
             "ObjectName" : "UParticleModuleSpawn_1",
             "Properties" : {
-              "BurstCount" : 0,
-              "BurstTime" : 0.000000,
+              "BurstList" : [],
               "RateScale" : 1.000000,
               "SpawnRate" : 1000.000000,
               "bEnabled" : true,
@@ -102,30 +102,21 @@
                   "G" : 1.000000,
                   "R" : 1.000000
                 },
-                "CurveA" : "",
-                "CurveB" : "",
-                "CurveG" : "",
-                "CurveR" : "",
+                "Curve" : "",
                 "Max" : {
                   "A" : 1.000000,
                   "B" : 0.759494,
                   "G" : 1.000000,
                   "R" : 0.820381
                 },
-                "MaxCurveA" : "",
-                "MaxCurveB" : "",
-                "MaxCurveG" : "",
-                "MaxCurveR" : "",
+                "MaxCurve" : "",
                 "Min" : {
                   "A" : 1.000000,
                   "B" : 1.000000,
                   "G" : 0.025316,
                   "R" : 0.000000
                 },
-                "MinCurveA" : "",
-                "MinCurveB" : "",
-                "MinCurveG" : "",
-                "MinCurveR" : "",
+                "MinCurve" : "",
                 "Mode" : 1
               },
               "bEnabled" : true
@@ -153,30 +144,25 @@
             "Properties" : {
               "StartLocation" : {
                 "Constant" : {
-                  "X" : 0.000000,
-                  "Y" : 0.000000,
-                  "Z" : 0.000000
+                  "X" : 1.000000,
+                  "Y" : 1.000000,
+                  "Z" : 1.000000
                 },
-                "CurveX" : "",
-                "CurveY" : "",
-                "CurveZ" : "",
+                "Curve" : "",
                 "Max" : {
                   "X" : 1.000000,
                   "Y" : 1.000000,
                   "Z" : 1.000000
                 },
-                "MaxCurveX" : "",
-                "MaxCurveY" : "",
-                "MaxCurveZ" : "",
+                "MaxCurve" : "",
                 "Min" : {
                   "X" : -1.000000,
                   "Y" : -1.000000,
                   "Z" : -1.000000
                 },
-                "MinCurveX" : "",
-                "MinCurveY" : "",
-                "MinCurveZ" : "",
-                "Mode" : 1
+                "MinCurve" : "",
+                "Mode" : 1,
+                "VectorMode" : 0
               },
               "bEnabled" : true
             },
@@ -191,26 +177,21 @@
                   "Y" : 0.000000,
                   "Z" : 0.000000
                 },
-                "CurveX" : "",
-                "CurveY" : "",
-                "CurveZ" : "",
+                "Curve" : "",
                 "Max" : {
                   "X" : 3.000000,
                   "Y" : 3.000000,
                   "Z" : 3.000000
                 },
-                "MaxCurveX" : "",
-                "MaxCurveY" : "",
-                "MaxCurveZ" : "",
+                "MaxCurve" : "",
                 "Min" : {
                   "X" : -3.000000,
                   "Y" : -3.000000,
                   "Z" : -3.000000
                 },
-                "MinCurveX" : "",
-                "MinCurveY" : "",
-                "MinCurveZ" : "",
-                "Mode" : 1
+                "MinCurve" : "",
+                "Mode" : 1,
+                "VectorMode" : 0
               },
               "bEnabled" : true
             },
@@ -225,26 +206,21 @@
                   "Y" : 1.000000,
                   "Z" : 1.000000
                 },
-                "CurveX" : "",
-                "CurveY" : "",
-                "CurveZ" : "",
+                "Curve" : "",
                 "Max" : {
                   "X" : 1.000000,
                   "Y" : 1.000000,
                   "Z" : 1.000000
                 },
-                "MaxCurveX" : "",
-                "MaxCurveY" : "",
-                "MaxCurveZ" : "",
+                "MaxCurve" : "",
                 "Min" : {
                   "X" : 0.250000,
                   "Y" : 0.250000,
                   "Z" : 0.250000
                 },
-                "MinCurveX" : "",
-                "MinCurveY" : "",
-                "MinCurveZ" : "",
-                "Mode" : 1
+                "MinCurve" : "",
+                "Mode" : 1,
+                "VectorMode" : 0
               },
               "bEnabled" : true
             },
@@ -273,13 +249,14 @@
                 "Y" : -100.000000,
                 "Z" : -100.000000
               },
-              "Material" : "Asset/Material/Auto/Furina_Mat_29.mat",
-              "MaxEmitterLoops" : 0,
+              "Material" : "DefaultWhite",
+              "MaxEmitterLoops" : 1,
               "MaxParticles" : 10000,
               "RandomSeed" : 1,
               "SortMode" : 1,
-              "bEmitterLoops" : true,
+              "bEmitterLoops" : false,
               "bEnabled" : true,
+              "bInfiniteEmitterLoops" : false,
               "bResetSeedOnEmitterLoop" : true,
               "bUseFixedBounds" : false,
               "bUseSeededRandom" : false
@@ -289,8 +266,7 @@
             "Id" : 15,
             "ObjectName" : "UParticleModuleSpawn_1",
             "Properties" : {
-              "BurstCount" : 0,
-              "BurstTime" : 0.000000,
+              "BurstList" : [],
               "RateScale" : 1.000000,
               "SpawnRate" : 1000.000000,
               "bEnabled" : true,
@@ -309,30 +285,21 @@
                   "G" : 1.000000,
                   "R" : 1.000000
                 },
-                "CurveA" : "",
-                "CurveB" : "",
-                "CurveG" : "",
-                "CurveR" : "",
+                "Curve" : "",
                 "Max" : {
                   "A" : 1.000000,
                   "B" : 0.759494,
                   "G" : 1.000000,
                   "R" : 0.820381
                 },
-                "MaxCurveA" : "",
-                "MaxCurveB" : "",
-                "MaxCurveG" : "",
-                "MaxCurveR" : "",
+                "MaxCurve" : "",
                 "Min" : {
                   "A" : 1.000000,
                   "B" : 0.108316,
                   "G" : 0.197331,
                   "R" : 0.987342
                 },
-                "MinCurveA" : "",
-                "MinCurveB" : "",
-                "MinCurveG" : "",
-                "MinCurveR" : "",
+                "MinCurve" : "",
                 "Mode" : 1
               },
               "bEnabled" : true
@@ -364,26 +331,21 @@
                   "Y" : 0.000000,
                   "Z" : 0.000000
                 },
-                "CurveX" : "",
-                "CurveY" : "",
-                "CurveZ" : "",
+                "Curve" : "",
                 "Max" : {
                   "X" : 1.000000,
                   "Y" : 1.000000,
                   "Z" : 1.000000
                 },
-                "MaxCurveX" : "",
-                "MaxCurveY" : "",
-                "MaxCurveZ" : "",
+                "MaxCurve" : "",
                 "Min" : {
                   "X" : -1.000000,
                   "Y" : -1.000000,
                   "Z" : -1.000000
                 },
-                "MinCurveX" : "",
-                "MinCurveY" : "",
-                "MinCurveZ" : "",
-                "Mode" : 1
+                "MinCurve" : "",
+                "Mode" : 1,
+                "VectorMode" : 0
               },
               "bEnabled" : true
             },
@@ -398,26 +360,21 @@
                   "Y" : 0.000000,
                   "Z" : 0.000000
                 },
-                "CurveX" : "",
-                "CurveY" : "",
-                "CurveZ" : "",
+                "Curve" : "",
                 "Max" : {
                   "X" : 3.000000,
                   "Y" : 3.000000,
                   "Z" : 3.000000
                 },
-                "MaxCurveX" : "",
-                "MaxCurveY" : "",
-                "MaxCurveZ" : "",
+                "MaxCurve" : "",
                 "Min" : {
                   "X" : -3.000000,
                   "Y" : -3.000000,
                   "Z" : -3.000000
                 },
-                "MinCurveX" : "",
-                "MinCurveY" : "",
-                "MinCurveZ" : "",
-                "Mode" : 1
+                "MinCurve" : "",
+                "Mode" : 1,
+                "VectorMode" : 0
               },
               "bEnabled" : true
             },
@@ -432,26 +389,21 @@
                   "Y" : 1.000000,
                   "Z" : 1.000000
                 },
-                "CurveX" : "",
-                "CurveY" : "",
-                "CurveZ" : "",
+                "Curve" : "",
                 "Max" : {
                   "X" : 1.000000,
                   "Y" : 1.000000,
                   "Z" : 1.000000
                 },
-                "MaxCurveX" : "",
-                "MaxCurveY" : "",
-                "MaxCurveZ" : "",
+                "MaxCurve" : "",
                 "Min" : {
                   "X" : 0.250000,
                   "Y" : 0.250000,
                   "Z" : 0.250000
                 },
-                "MinCurveX" : "",
-                "MinCurveY" : "",
-                "MinCurveZ" : "",
-                "Mode" : 1
+                "MinCurve" : "",
+                "Mode" : 1,
+                "VectorMode" : 0
               },
               "bEnabled" : true
             },
@@ -465,5 +417,5 @@
             "Type" : "UParticleModuleTypeDataBase"
           }],
         "RootObjectId" : 1,
-        "Version" : 1
+        "Version" : 2
       }

@@ -79,6 +79,52 @@ namespace
 		return Result;
 	}
 
+
+	int32 GetMaxParticleSystemLODCount(const UParticleSystem* ParticleSystem)
+	{
+		int32 MaxLODCount = 1;
+		if (!ParticleSystem)
+		{
+			return MaxLODCount;
+		}
+		for (const UParticleEmitter* Emitter : ParticleSystem->Emitters)
+		{
+			if (Emitter)
+			{
+				MaxLODCount = std::max(MaxLODCount, static_cast<int32>(Emitter->LODLevels.size()));
+			}
+		}
+		return MaxLODCount;
+	}
+
+	bool SyncParticleSystemLODDistancesToLODCount(UParticleSystem* ParticleSystem)
+	{
+		if (!ParticleSystem)
+		{
+			return false;
+		}
+		const int32 DesiredCount = GetMaxParticleSystemLODCount(ParticleSystem);
+		bool bChanged = false;
+		if (ParticleSystem->LODDistances.empty())
+		{
+			ParticleSystem->LODDistances.push_back(0.0f);
+			bChanged = true;
+		}
+		while (static_cast<int32>(ParticleSystem->LODDistances.size()) < DesiredCount)
+		{
+			const float Previous = ParticleSystem->LODDistances.empty() ? 0.0f : ParticleSystem->LODDistances.back();
+			ParticleSystem->LODDistances.push_back(Previous + 500.0f);
+			bChanged = true;
+		}
+		while (static_cast<int32>(ParticleSystem->LODDistances.size()) > DesiredCount)
+		{
+			ParticleSystem->LODDistances.pop_back();
+			bChanged = true;
+		}
+		ParticleSystem->LODDistances[0] = 0.0f;
+		return bChanged;
+	}
+
 	/**
 	 * @brief 단일 particle module을 같은 클래스의 새 객체로 복제합니다.
 	 */
@@ -1600,6 +1646,7 @@ void FParticleEditorViewer::AddLOD()
 	CaptureUndoSnapshot("AddLOD");
 
 	Emitter->LODLevels.push_back(LOD);
+	SyncParticleSystemLODDistancesToLODCount(ParticleSystem);
 
 	SelectionType = EParticleEditorSelectionType::LODLevel;
 	SelectedLODIndex = static_cast<int32>(Emitter->LODLevels.size()) - 1;
@@ -1627,6 +1674,7 @@ void FParticleEditorViewer::RemoveLOD(int32 LODIndex)
 	UParticleLODLevel* RemovedLOD = Emitter->LODLevels[LODIndex];
 	Emitter->LODLevels.erase(Emitter->LODLevels.begin() + LODIndex);
 	UObjectManager::Get().DestroyObject(RemovedLOD);
+	SyncParticleSystemLODDistancesToLODCount(ParticleSystem);
 
 	SelectedLODIndex = std::clamp(SelectedLODIndex, 0, static_cast<int32>(Emitter->LODLevels.size()) - 1);
 	SelectedModuleIndex = -1;
@@ -1783,6 +1831,7 @@ bool FParticleEditorViewer::LoadParticleSystemAsset(const FString& InFileName)
 
 	bOwnsParticleSystem = false;
 	bDirty = false;
+	SyncParticleSystemLODDistancesToLODCount(ParticleSystem);
 
 	if (!ParticleSystem->Emitters.empty())
 	{
@@ -1809,11 +1858,7 @@ void FParticleEditorViewer::EnsureDefaultParticleSystem()
 		ParticleSystem->SetAssetPath(FPaths::Normalize(GetFileName()));
 	}
 
-	// LOD 거리 설정이 비어있으면 기본값으로 LOD 0 거리 0.0f 추가
-	if (ParticleSystem && ParticleSystem->LODDistances.empty())
-	{
-		ParticleSystem->LODDistances.push_back(0.0f);
-	}
+	SyncParticleSystemLODDistancesToLODCount(ParticleSystem);
 
 	if (ParticleSystem && ParticleSystem->Emitters.empty())
 	{
@@ -1941,6 +1986,7 @@ void FParticleEditorViewer::RefreshEmitterAfterTopologyEdit(UParticleEmitter* Em
 		// runtime module cache 갱신
 		Emitter->CacheEmitterModuleInfo();
 	}
+	SyncParticleSystemLODDistancesToLODCount(ParticleSystem);
 
 	// 편집 상태와 preview simulation 갱신
 	MarkDirty();

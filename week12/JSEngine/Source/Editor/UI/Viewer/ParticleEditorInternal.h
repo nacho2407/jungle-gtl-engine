@@ -119,7 +119,7 @@ const char* GetObjectLabel(const UObject* Object);
 bool HasDeletableSelectedEmitter(FParticleEditorViewer* Viewer);
 bool HasDeletableSelectedModule(FParticleEditorViewer* Viewer);
 bool IsAnyPopupOpen();
-void HandleParticleEditorShortcuts(FParticleEditorViewer* Viewer);
+void HandleParticleEditorShortcuts(FParticleEditorViewer* Viewer, bool bAllowDeleteSelection = true);
 
 // Module Class Menu ──────────────────────────────────────────────────────────
 void GetParticleModuleClasses(TArray<UClass*>& OutClasses);

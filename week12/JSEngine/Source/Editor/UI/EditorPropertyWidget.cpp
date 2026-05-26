@@ -124,6 +124,18 @@ namespace
 		ImGui::PopStyleColor(7);
 	}
 
+	float GetDetailsHalfItemWidth(float ReservedWidth = 0.0f)
+	{
+		const float Available = ImGui::GetContentRegionAvail().x;
+		const float MaxUsable = std::max(80.0f, Available - ReservedWidth);
+		return std::max(120.0f, std::min(MaxUsable, Available * 0.5f));
+	}
+
+	void SetNextDetailsHalfWidth(float ReservedWidth = 0.0f)
+	{
+		ImGui::SetNextItemWidth(GetDetailsHalfItemWidth(ReservedWidth));
+	}
+
 bool DrawSearchableAssetPathCombo(const char* Label, const FString& Current, const TArray<FString>& Options, FString& OutSelectedPath)
 {
 	bool bChanged = false;
@@ -131,6 +143,9 @@ bool DrawSearchableAssetPathCombo(const char* Label, const FString& Current, con
 
 	ImGui::PushID(Label);
 	PushDetailsComboStyle();
+	const float ComboWidth = std::max(160.0f, ImGui::CalcItemWidth());
+	ImGui::SetNextItemWidth(ComboWidth);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(ComboWidth, 0.0f), ImVec2(ComboWidth, 340.0f));
 	if (ImGui::BeginCombo(Label, Current.empty() ? "<None>" : Current.c_str()))
 		{
 			ImGui::SetNextItemWidth(-1.0f);
@@ -1980,6 +1995,7 @@ bool FEditorPropertyWidget::RenderObjectPtrWidget(const FProperty& Property, voi
 		bool bChanged = false;
 
 		PushDetailsComboStyle();
+		SetNextDetailsHalfWidth();
 		if (ImGui::BeginCombo(Label, CurrentLabel.c_str()))
 		{
 			if (ImGui::Selectable("None", CurrentMaterial == nullptr))
@@ -2090,6 +2106,7 @@ bool FEditorPropertyWidget::RenderObjectPtrWidget(const FProperty& Property, voi
 
 	bool bChanged = false;
 	PushDetailsComboStyle();
+	SetNextDetailsHalfWidth();
 	if (ImGui::BeginCombo(Label, GetLabel(CurrentObject).c_str()))
 	{
 		for (UObject* Candidate : Choices)
@@ -2174,6 +2191,7 @@ bool FEditorPropertyWidget::RenderSoftObjectPtrWidget(const FProperty& Property,
 	if (Options && !Options->empty())
 	{
 		FString SelectedPath;
+		SetNextDetailsHalfWidth();
 		if (DrawSearchableAssetPathCombo(Label, Current, *Options, SelectedPath))
 		{
 			Property.SoftObjectOps->SetPath(ValuePtr, SelectedPath);
@@ -2184,6 +2202,7 @@ bool FEditorPropertyWidget::RenderSoftObjectPtrWidget(const FProperty& Property,
 	{
 		char Buf[512];
 		strncpy_s(Buf, sizeof(Buf), Current.c_str(), _TRUNCATE);
+		SetNextDetailsHalfWidth();
 		if (ImGui::InputText(Label, Buf, sizeof(Buf)))
 		{
 			Property.SoftObjectOps->SetPath(ValuePtr, Buf);
@@ -2236,7 +2255,7 @@ bool FEditorPropertyWidget::RenderArrayPropertyWidget(const FProperty& Property,
 		char ItemLabel[32];
 		snprintf(ItemLabel, sizeof(ItemLabel), "[%d]", Index);
 
-		ImGui::SetNextItemWidth(std::max(120.0f, ImGui::GetContentRegionAvail().x - UIConstants::XButtonSize - 8.0f));
+		SetNextDetailsHalfWidth(UIConstants::XButtonSize + 8.0f);
 		if (RenderPropertyValueWidget(*Property.InnerProperty, ElementPtr, NotifyTarget, ItemLabel, Index))
 		{
 			bChanged = true;
@@ -2283,16 +2302,64 @@ bool FEditorPropertyWidget::RenderStructPropertyWidget(const FProperty& Property
 		Hint = Property.ScriptStruct->GetName();
 	}
 
+	if (Property.ScriptStruct && std::strcmp(Property.ScriptStruct->GetName(), "FParticleVectorDistribution") == 0)
+	{
+		FParticleVectorDistribution* Distribution = static_cast<FParticleVectorDistribution*>(ValuePtr);
+		bool bChanged = false;
+		if (ImGui::TreeNodeEx(Label, ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			TArray<const FProperty*> ChildProperties;
+			Property.ScriptStruct->GetAllProperties(ChildProperties);
+			const bool bUniformXYZ = Distribution && Distribution->VectorMode == EParticleVectorDistributionMode::UniformXYZ;
+			for (const FProperty* Child : ChildProperties)
+			{
+				if (!Child || !Child->Name || !Child->IsEditable())
+				{
+					continue;
+				}
+
+				void* ChildPtr = reinterpret_cast<uint8*>(ValuePtr) + Child->Offset;
+				const FString ChildLabel = MakePropertyWidgetLabel(*Child);
+				if (bUniformXYZ && Child->Type == EPropertyType::Struct &&
+					(std::strcmp(Child->Name, "Constant") == 0 ||
+					 std::strcmp(Child->Name, "Min") == 0 ||
+					 std::strcmp(Child->Name, "Max") == 0))
+				{
+					FVector* Vec = static_cast<FVector*>(ChildPtr);
+					float Scalar = Vec ? Vec->X : 0.0f;
+					SetNextDetailsHalfWidth();
+					if (ImGui::DragFloat(ChildLabel.c_str(), &Scalar, Child->Speed))
+					{
+						*Vec = FVector(Scalar, Scalar, Scalar);
+						bChanged = true;
+					}
+					continue;
+				}
+
+				SetNextDetailsHalfWidth();
+				if (RenderPropertyValueWidget(*Child, ChildPtr, NotifyTarget, ChildLabel.c_str()))
+				{
+					bChanged = true;
+				}
+			}
+			ImGui::TreePop();
+		}
+		return bChanged;
+	}
+
 	if (Hint && std::strcmp(Hint, "FVector") == 0)
 	{
+		SetNextDetailsHalfWidth();
 		return ImGui::DragFloat3(Label, static_cast<float*>(ValuePtr), Property.Speed);
 	}
 	if (Hint && std::strcmp(Hint, "FVector4") == 0)
 	{
+		SetNextDetailsHalfWidth();
 		return ImGui::DragFloat4(Label, static_cast<float*>(ValuePtr), Property.Speed);
 	}
 	if (Hint && std::strcmp(Hint, "FColor") == 0)
 	{
+		SetNextDetailsHalfWidth();
 		return ImGui::ColorEdit4(Label, &static_cast<FColor*>(ValuePtr)->R);
 	}
 	if (Hint && std::strcmp(Hint, "FGuid") == 0)
@@ -2300,6 +2367,7 @@ bool FEditorPropertyWidget::RenderStructPropertyWidget(const FProperty& Property
 		FGuid* Val = static_cast<FGuid*>(ValuePtr);
 		char Buf[64];
 		strncpy_s(Buf, sizeof(Buf), Val->ToString().c_str(), _TRUNCATE);
+		SetNextDetailsHalfWidth();
 		if (ImGui::InputText(Label, Buf, sizeof(Buf), ImGuiInputTextFlags_EnterReturnsTrue))
 		{
 			FGuid ParsedGuid;
@@ -2315,6 +2383,7 @@ bool FEditorPropertyWidget::RenderStructPropertyWidget(const FProperty& Property
 	{
 		FQuat* Val = static_cast<FQuat*>(ValuePtr);
 		float Components[4] = { Val->X, Val->Y, Val->Z, Val->W };
+		SetNextDetailsHalfWidth();
 		if (ImGui::DragFloat4(Label, Components, Property.Speed))
 		{
 			*Val = FQuat(Components[0], Components[1], Components[2], Components[3]);
@@ -2344,6 +2413,7 @@ bool FEditorPropertyWidget::RenderStructPropertyWidget(const FProperty& Property
 
 			void* ChildPtr = reinterpret_cast<uint8*>(ValuePtr) + Child->Offset;
 			const FString ChildLabel = MakePropertyWidgetLabel(*Child);
+			SetNextDetailsHalfWidth();
 			if (RenderPropertyValueWidget(*Child, ChildPtr, NotifyTarget, ChildLabel.c_str()))
 			{
 				bChanged = true;
@@ -2366,8 +2436,10 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 	case EPropertyType::Bool:
 		return ImGui::Checkbox(Label, static_cast<bool*>(ValuePtr));
 	case EPropertyType::Int:
+		SetNextDetailsHalfWidth();
 		return ImGui::DragInt(Label, static_cast<int32*>(ValuePtr));
 	case EPropertyType::Float:
+		SetNextDetailsHalfWidth();
 		if (Property.Min != 0.0f || Property.Max != 0.0f)
 		{
 			return ImGui::DragFloat(Label, static_cast<float*>(ValuePtr), Property.Speed, Property.Min, Property.Max);
@@ -2399,6 +2471,7 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 
 		char Buf[512];
 		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
+		SetNextDetailsHalfWidth();
 		if (ImGui::InputText(Label, Buf, sizeof(Buf)))
 		{
 			*Val = Buf;
@@ -2423,6 +2496,7 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 		if (!Names.empty())
 		{
 			bool bChanged = false;
+			SetNextDetailsHalfWidth();
 			if (ImGui::BeginCombo(Label, Current.c_str()))
 			{
 				for (const FString& Name : Names)
@@ -2445,6 +2519,7 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 
 		char Buf[256];
 		strncpy_s(Buf, sizeof(Buf), Current.c_str(), _TRUNCATE);
+		SetNextDetailsHalfWidth();
 		if (ImGui::InputText(Label, Buf, sizeof(Buf)))
 		{
 			*Val = FName(Buf);
@@ -2490,6 +2565,7 @@ bool FEditorPropertyWidget::RenderPropertyValueWidget(const FProperty& Property,
 			return (ValueMeta.DisplayName && ValueMeta.DisplayName[0] != '\0') ? ValueMeta.DisplayName : ValueMeta.Name;
 		};
 
+		SetNextDetailsHalfWidth();
 		if (ImGui::Combo(Label, &CurrentIndex, ComboGetter, const_cast<UEnum*>(Property.EnumMeta), static_cast<int>(Property.EnumMeta->Count)))
 		{
 			const int64 NewValue = Property.EnumMeta->Values[CurrentIndex].Value;
