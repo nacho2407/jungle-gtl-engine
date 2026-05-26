@@ -116,12 +116,22 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 		return;
 	}
 
-	FMinimalViewInfo POV;
-	const bool bHasViewLocation = GetWorld() && GetWorld()->GetActivePOV(POV);
-	if (bHasViewLocation && ParticleSystem)
+	if (ParticleSystem && PreviewLODIndex >= 0)
 	{
-		const float Distance = FVector::Distance(GetWorldLocation(), POV.Location);
-		CurrentLODIndex = ParticleSystem->SelectLODLevelIndex(Distance);
+		const int32 LODCount = ParticleSystem->GetLODCount();
+		CurrentLODIndex = LODCount > 0
+			? (PreviewLODIndex < LODCount ? PreviewLODIndex : LODCount - 1)
+			: 0;
+	}
+	else
+	{
+		FMinimalViewInfo POV;
+		const bool bHasViewLocation = GetWorld() && GetWorld()->GetActivePOV(POV);
+		if (bHasViewLocation && ParticleSystem)
+		{
+			const float Distance = FVector::Distance(GetWorldLocation(), POV.Location);
+			CurrentLODIndex = ParticleSystem->SelectLODLevelIndex(Distance);
+		}
 	}
 
 	bool bAnyEmitterTicked = false;
@@ -148,6 +158,11 @@ void UParticleSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 	{
 		MarkProxyDirty(EDirtyFlag::Mesh);
 	}
+}
+
+void UParticleSystemComponent::SetPreviewLODIndex(int32 InLODIndex)
+{
+	PreviewLODIndex = InLODIndex >= 0 ? InLODIndex : -1;
 }
 
 void UParticleSystemComponent::SetPreviewSoloEmitterIndex(int32 InEmitterIndex)
