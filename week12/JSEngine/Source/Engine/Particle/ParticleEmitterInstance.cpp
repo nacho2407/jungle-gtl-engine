@@ -825,17 +825,19 @@ int32 FParticleEmitterInstance::CalculateBurstSpawnCount(float PreviousEmitterTi
 
 int32 FParticleEmitterInstance::ResolveBurstSpawnAmount(const FParticleBurstEntry& Entry)
 {
-	if (Entry.Count <= 0)
-	{
-		return 0;
-	}
+    const int32 MaxCount = std::max(Entry.Count, 0);
+    if (MaxCount <= 0)
+    {
+        return 0;
+    }
 
-	if (Entry.CountLow <= 0 || Entry.CountLow >= Entry.Count)
-	{
-		return Entry.Count;
-	}
+    const int32 MinCount = std::clamp(Entry.CountLow, 0, MaxCount);
+    if (MinCount == MaxCount)
+    {
+        return MaxCount;
+    }
 
-	return RandomStream.GetRange(Entry.CountLow, Entry.Count);
+    return RandomStream.GetRange(MinCount, MaxCount);
 }
 
 int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime)
@@ -868,13 +870,15 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTi
 		FBaseParticle& Particle = GetParticleByPhysicalIndex(PhysicalIndex);
 		new (&Particle) FBaseParticle();
 
+		ClearParticlePayloads(Particle);
+
 		Particle.Seed = RandomStream.GetUnsignedInt();
 		Particle.SpawnId = ++ParticleCounter;
 		Particle.OldLocation = Particle.Location;
 		Particle.RelativeTime = 0.0f;
 		Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
 		Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
-		InitializeModulePayloadsForExistingParticle(Particle);
+		InitializeModulePayloads(Particle);
 
 		const float SpawnTime = SegmentStartTime + SpawnInterval * static_cast<float>(SpawnIndex);
 		for (UParticleModule* Module : CurrentRuntimeCache->SpawnModules)
@@ -1119,7 +1123,7 @@ const uint8* FParticleEmitterInstance::GetModuleInstanceData(UParticleModule* Mo
 	return InstanceData + Offset;
 }
 
-void FParticleEmitterInstance::InitializeModulePayloadsForExistingParticle(FBaseParticle& Particle)
+void FParticleEmitterInstance::InitializeModulePayloads(FBaseParticle& Particle)
 {
 	if (CurrentRuntimeCache == nullptr)
 	{
@@ -1129,7 +1133,7 @@ void FParticleEmitterInstance::InitializeModulePayloadsForExistingParticle(FBase
 	TArray<UParticleModule*> InitializedModules;
 	const auto InitializeModule = [this, &Particle, &InitializedModules](UParticleModule* Module)
 	{
-		if (Module == nullptr || !Module->bEnabled)
+		if (Module == nullptr)
 		{
 			return;
 		}
@@ -1148,14 +1152,28 @@ void FParticleEmitterInstance::InitializeModulePayloadsForExistingParticle(FBase
 	InitializeModule(CurrentRuntimeCache->RequiredModule);
 	InitializeModule(CurrentRuntimeCache->SpawnModule);
 	InitializeModule(CurrentRuntimeCache->TypeDataModule);
-	for (UParticleModule* Module : CurrentRuntimeCache->SpawnModules)
-	{
-		InitializeModule(Module);
-	}
-	for (UParticleModule* Module : CurrentRuntimeCache->UpdateModules)
-	{
-		InitializeModule(Module);
-	}
+	
+	if (CurrentLODLevel != nullptr)
+    {
+        // disable된 모듈도 payload offset은 할당되어 있을 수 있으므로, enabled 여부와 관계 없이 모두 초기화 시도
+        for (UParticleModule* Module : CurrentLODLevel->Modules)
+        {
+            InitializeModule(Module);
+        }
+    }
+}
+
+void FParticleEmitterInstance::ClearParticlePayloads(FBaseParticle& Particle) const
+{
+    if (PayloadOffset < 0 || ParticleStride <= PayloadOffset)
+    {
+        return;
+    }
+
+    std::memset(
+        reinterpret_cast<uint8*>(&Particle) + PayloadOffset,
+        0,
+        static_cast<size_t>(ParticleStride - PayloadOffset));
 }
 
 bool FParticleEmitterInstance::UsesLocalSpace() const

@@ -85,7 +85,12 @@ public:
 	/**
 	 * @brief 기존 particle을 새 LOD instance에 복사한 뒤 새 LOD의 module payload를 초기화합니다.
 	 */
-	void InitializeModulePayloadsForExistingParticle(FBaseParticle& Particle);
+	void InitializeModulePayloads(FBaseParticle& Particle);
+
+	/**
+	 * @brief particle의 모든 module payload를 초기화합니다.
+	 */
+    void ClearParticlePayloads(FBaseParticle& Particle) const;
 
 	bool UsesLocalSpace() const;
 	FVector TransformLocationToSimulationSpace(const FVector& WorldLocation) const;
