@@ -461,9 +461,58 @@ public:
 	GENERATED_BODY(UParticleModuleTypeDataRibbon, UParticleModuleTypeDataBase)
 };
 
+/**
+ * @brief Source / Target 기반 최소 Beam TypeData module
+ */
 UCLASS(Placeable, DisplayName = "Beam Type Data")
 class UParticleModuleTypeDataBeam : public UParticleModuleTypeDataBase
 {
 public:
 	GENERATED_BODY(UParticleModuleTypeDataBeam, UParticleModuleTypeDataBase)
+
+	/**
+	 * @brief Beam emitter instance를 생성합니다.
+	 *
+	 * @param InEmitterTemplate instance를 만들 particle emitter template
+	 *
+	 * @param InOwner 생성한 instance가 참조할 owner
+	 *
+	 * @return 생성된 Beam emitter instance
+	 */
+	FParticleEmitterInstance* CreateInstance(
+		UParticleEmitter* InEmitterTemplate,
+		IParticleEmitterInstanceOwner& InOwner) override;
+
+	/**
+	 * @brief 현재 Beam emitter instance에서 render snapshot을 생성합니다.
+	 *
+	 * @param InEmitterInstance render snapshot을 생성할 emitter instance
+	 *
+	 * @return render thread로 전달할 Beam emitter data. 생성할 수 없으면 nullptr 반환
+	 */
+	FDynamicEmitterDataBase* GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance) override;
+
+	/**
+	 * @brief Beam 시작점
+	 *
+	 * @details RequiredModule의 CoordinateSpace 정책을 그대로 따릅니다.
+	 */
+	UPROPERTY(DisplayName = "Source Point")
+	FVector SourcePoint = FVector::ZeroVector;
+
+	/**
+	 * @brief Beam 끝점
+	 *
+	 * @details RequiredModule의 CoordinateSpace 정책을 그대로 따릅니다.
+	 */
+	UPROPERTY(DisplayName = "Target Point")
+	FVector TargetPoint = FVector(100.0f, 0.0f, 0.0f);
+
+	/**
+	 * @brief Beam quad 기본 두께
+	 *
+	 * @details Particle.Size.X가 이후 draw 단계에서 배율로 반영됩니다.
+	 */
+	UPROPERTY(DisplayName = "Beam Width", Min = 0.1f, Speed = 1.0f)
+	float BeamWidth = 10.0f;
 };

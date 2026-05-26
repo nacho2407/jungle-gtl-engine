@@ -369,6 +369,16 @@ namespace
 			: ParticleHelper::AlignParticlePointer(RenderData.OwnedParticleData.data());
 	}
 
+	/**
+	 * @brief Beam render snapshot의 aligned particle data 시작 주소를 반환합니다.
+	 */
+	uint8* GetAlignedSnapshotParticleData(FDynamicBeamEmitterData& RenderData)
+	{
+		return RenderData.OwnedParticleData.empty()
+			? nullptr
+			: ParticleHelper::AlignParticlePointer(RenderData.OwnedParticleData.data());
+	}
+
 	FVector GetParticleOldLocationForRender(const FParticleEmitterInstance& EmitterInstance, const FBaseParticle& Particle)
 	{
 		return EmitterInstance.UsesLocalSpace()
@@ -1654,6 +1664,104 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	RenderData->ReplayData.Scale = FVector::OneVector;
 
 	// TODO: 중앙 renderer가 Mesh instance transform을 생성할 때 Mesh Particle의 회전 축과 정렬 정책을 반영한다.
+	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);
+	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = static_cast<int32>(ParticleDataBytes);
+	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = SnapshotParticleCount;
+	RenderData->ReplayData.DataContainer.ParticleData = SnapshotParticleData;
+	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
+
+	return RenderData;
+}
+
+FParticleEmitterInstance* UParticleModuleTypeDataBeam::CreateInstance(
+	UParticleEmitter* InEmitterTemplate,
+	IParticleEmitterInstanceOwner& InOwner)
+{
+	// Beam TypeData 전용 emitter instance 생성
+	FParticleBeamEmitterInstance* Instance = new FParticleBeamEmitterInstance(InOwner);
+
+	// 기존 emitter instance 계약에 맞춘 template 보관
+	Instance->SpriteTemplate = InEmitterTemplate;
+	return Instance;
+}
+
+FDynamicEmitterDataBase* UParticleModuleTypeDataBeam::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
+{
+	// EmitterInstance 기본 유효성
+	if (InEmitterInstance == nullptr ||
+		InEmitterInstance->ActiveParticles <= 0 ||
+		InEmitterInstance->ParticleData == nullptr ||
+		InEmitterInstance->ParticleIndices == nullptr ||
+		InEmitterInstance->ParticleStride <= 0 ||
+		InEmitterInstance->CurrentRuntimeCache == nullptr)
+	{
+		return nullptr;
+	}
+
+	// pending kill을 제외한 render 대상 particle 수
+	const int32 ActiveParticleCount = CountLiveParticlesForRender(*InEmitterInstance);
+	if (ActiveParticleCount <= 0)
+	{
+		return nullptr;
+	}
+
+	// live particle snapshot buffer 크기
+	const int32 ParticleStride = InEmitterInstance->ParticleStride;
+	size_t ParticleDataBytes = 0;
+	size_t SnapshotLogicalBytes = 0;
+	if (!CalculateRenderSnapshotByteSizes(ActiveParticleCount, ParticleStride, ParticleDataBytes, SnapshotLogicalBytes))
+	{
+		return nullptr;
+	}
+
+	// Beam render data와 snapshot 소유 buffer
+	FDynamicBeamEmitterData* RenderData = new FDynamicBeamEmitterData();
+	RenderData->OwnedParticleData.resize(ParticleDataBytes + ParticleHelper::ParticleAlignment);
+	RenderData->OwnedParticleIndices.resize(static_cast<size_t>(ActiveParticleCount));
+
+	// DataContainer가 참조할 aligned particle data 시작 주소
+	uint8* SnapshotParticleData = GetAlignedSnapshotParticleData(*RenderData);
+	if (SnapshotParticleData == nullptr)
+	{
+		delete RenderData;
+		return nullptr;
+	}
+
+	// Beam source/target은 RequiredModule coordinate space를 그대로 따르므로 particle 위치를 world로 굽지 않음
+	const int32 SnapshotParticleCount = CopyLiveParticlesForRenderSnapshot(
+		*InEmitterInstance,
+		SnapshotParticleData,
+		RenderData->OwnedParticleIndices,
+		false);
+	if (SnapshotParticleCount <= 0)
+	{
+		delete RenderData;
+		return nullptr;
+	}
+
+	// RequiredModule 기반 render 정책
+	const UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
+	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	RenderData->ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
+
+	// Beam replay 공통 정보
+	RenderData->ReplayData.EmitterType = EDynamicEmitterType::Beam;
+	RenderData->ReplayData.ActiveParticleCount = SnapshotParticleCount;
+	RenderData->ReplayData.ParticleStride = ParticleStride;
+	RenderData->ReplayData.SortMode = RequiredModule != nullptr
+		? RequiredModule->SortMode
+		: EParticleSortMode::ViewDepthBackToFront;
+	RenderData->ReplayData.CoordinateSpace = RequiredModule != nullptr
+		? RequiredModule->CoordinateSpace
+		: EParticleCoordinateSpace::Local;
+	RenderData->ReplayData.Scale = FVector::OneVector;
+
+	// Beam TypeData property snapshot
+	RenderData->ReplayData.SourcePoint = SourcePoint;
+	RenderData->ReplayData.TargetPoint = TargetPoint;
+	RenderData->ReplayData.BeamWidth = std::max(BeamWidth, 0.1f);
+
+	// snapshot은 particle data와 index를 별도 buffer로 소유
 	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);
 	RenderData->ReplayData.DataContainer.ParticleDataNumBytes = static_cast<int32>(ParticleDataBytes);
 	RenderData->ReplayData.DataContainer.ParticleIndicesNumShorts = SnapshotParticleCount;
