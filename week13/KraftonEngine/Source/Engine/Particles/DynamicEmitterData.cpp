@@ -476,6 +476,10 @@ void FDynamicBeam2EmitterData::BuildMeshData()
     FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
     Staging.Vertices.clear();
     Staging.Indices.clear();
+    if (!Source.bRenderGeometry)
+    {
+        return;
+    }
     DoBufferFill();
 }
 
@@ -687,6 +691,10 @@ void FDynamicRibbonEmitterData::BuildMeshData()
     FBeamTrailCPUStaging& Staging = GetCPUStaging(this);
     Staging.Vertices.clear();
     Staging.Indices.clear();
+    if (!bRenderGeometry)
+    {
+        return;
+    }
     DoBufferFill();
 }
 

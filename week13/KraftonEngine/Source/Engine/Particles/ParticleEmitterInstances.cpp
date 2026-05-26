@@ -2204,6 +2204,8 @@ bool FParticleSpriteEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBas
 	SpriteData.bLockAxis = bAxisLockEnabled;
 	SpriteData.PivotOffset = PivotOffset;
 	SpriteData.bUseLocalSpace = GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace;
+	SpriteData.SubImages_Horizontal = GetCurrentLODLevelChecked()->RequiredModule ? GetCurrentLODLevelChecked()->RequiredModule->SubImages_Horizontal : 1;
+	SpriteData.SubImages_Vertical = GetCurrentLODLevelChecked()->RequiredModule ? GetCurrentLODLevelChecked()->RequiredModule->SubImages_Vertical : 1;
 
 	return true;
 }
@@ -2619,6 +2621,26 @@ bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase&
 	MeshData.OrbitModuleOffset = OrbitModuleOffset;
 	MeshData.CameraPayloadOffset = CameraPayloadOffset;
 	MeshData.bUseLocalSpace = GetCurrentLODLevelChecked()->RequiredModule->bUseLocalSpace;
+
+	MeshData.SectionMaterials.clear();
+	MeshData.SectionFirstIndices.clear();
+	MeshData.SectionIndexCounts.clear();
+	if (UStaticMesh* StaticMesh = MeshTypeData ? MeshTypeData->GetStaticMesh() : nullptr)
+	{
+		const TArray<FStaticMeshSection>& Sections = StaticMesh->GetLODSections(0);
+		TArray<UMaterial*> ResolvedMaterials;
+		GetMeshMaterials(ResolvedMaterials, GetCurrentLODLevelChecked(), false);
+		for (int32 SectionIdx = 0; SectionIdx < static_cast<int32>(Sections.size()); ++SectionIdx)
+		{
+			UMaterial* SectionMaterial =
+				SectionIdx < static_cast<int32>(ResolvedMaterials.size())
+				? ResolvedMaterials[SectionIdx]
+				: nullptr;
+			MeshData.SectionMaterials.push_back(SectionMaterial);
+			MeshData.SectionFirstIndices.push_back(Sections[SectionIdx].FirstIndex);
+			MeshData.SectionIndexCounts.push_back(Sections[SectionIdx].NumTriangles * 3u);
+		}
+	}
 	// UE original responsibility: choose static mesh LOD using bUseStaticMeshLODs and LODSizeScale.
 	// Missing Jungle foundation: view-dependent mesh particle LOD size calculation.
 	// System to connect later: StaticMesh LOD selector before FDynamicMeshEmitterData upload.
@@ -4082,7 +4104,11 @@ float FParticleRibbonEmitterInstance::Spawn_RateAndBurst(float DeltaTime)
 	float SpawnRate = 0.0f;
 	int32 BurstCount = 0;
 	const float OldLeftover = SpawnFraction;
-	const bool bProcessBurstList = false;
+	bool bProcessBurstList = true;
+	if (SpawnPerUnitModule)
+	{
+		bProcessBurstList = SpawnPerUnitModule->bProcessBurstList;
+	}
 
 	SpawnRate += LODLevel->SpawnModule->SpawnRate *
 		LODLevel->SpawnModule->SpawnRateScale *
@@ -4405,6 +4431,11 @@ bool FParticleRibbonEmitterInstance::ResolveSourcePoint(int32 InTrailIdx, FVecto
 		// Missing Jungle foundation: Actor lookup and particle source emitter lookup.
 		// System to connect later: ParticleTrailModules.cpp TrailSource adapter.
 	}
+	FVector SourceOffset = FVector::ZeroVector;
+	if (SourceModule && SourceModule->ResolveSourceOffset(InTrailIdx, this, SourceOffset))
+	{
+		OutPosition += SourceOffset;
+	}
 	return true;
 }
 
@@ -4642,6 +4673,11 @@ bool FParticleRibbonEmitterInstance::IsDynamicDataRequired() const
 
 FDynamicEmitterDataBase* FParticleRibbonEmitterInstance::GetDynamicData(bool bSelected)
 {
+	if (TrailTypeData && !TrailTypeData->bRenderGeometry)
+	{
+		return nullptr;
+	}
+
 	FDynamicRibbonEmitterData* Data = new FDynamicRibbonEmitterData();
 	if (!FillReplayData(Data->Source))
 	{
@@ -4662,6 +4698,10 @@ void FParticleRibbonEmitterInstance::ApplyWorldOffset(FVector InOffset, bool bWo
 bool FParticleRibbonEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
 {
 	if (!IsReplayType(OutData, EDynamicEmitterType::Ribbon)) return false;
+	if (TrailTypeData && !TrailTypeData->bRenderGeometry)
+	{
+		return false;
+	}
 	if (ActiveParticles <= 0 || !bEnabled)
 	{
 		return false;

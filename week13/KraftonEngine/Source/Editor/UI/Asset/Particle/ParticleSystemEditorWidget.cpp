@@ -10,17 +10,31 @@
 #include "Particles/ParticleSystemManager.h"
 #include "Particles/Color/ParticleModuleColor.h"
 #include "Particles/Color/ParticleModuleColorOverLife.h"
+#include "Particles/Material/ParticleModuleMeshMaterial.h"
 #include "Particles/Lifetime/ParticleModuleLifetime.h"
 #include "Particles/Location/ParticleModuleLocation.h"
+#include "Particles/Rotation/ParticleModuleMeshRotation.h"
+#include "Particles/RotationRate/ParticleModuleMeshRotationRate.h"
 #include "Particles/Size/ParticleModuleSize.h"
 #include "Particles/Spawn/ParticleModuleSpawn.h"
+#include "Particles/Spawn/ParticleModuleSpawnPerUnit.h"
+#include "Particles/Trail/ParticleModuleTrailSource.h"
 #include "Particles/TypeData/ParticleModuleTypeDataBase.h"
+#include "Particles/TypeData/ParticleModuleTypeDataMesh.h"
+#include "Particles/TypeData/ParticleModuleTypeDataRibbon.h"
+#include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
+#include "Particles/Beam/ParticleModuleBeamSource.h"
+#include "Particles/Beam/ParticleModuleBeamTarget.h"
+#include "Particles/Beam/ParticleModuleBeamNoise.h"
+#include "Particles/Beam/ParticleModuleBeamModifier.h"
 #include "Particles/Velocity/ParticleModuleVelocity.h"
 #include "Particles/Event/ParticleModuleEventGenerator.h"
 #include "Particles/Collision/ParticleModuleCollision.h"
 #include "Materials/Material.h"
 #include "Materials/Graph/MaterialGraphAsset.h"
 #include "Materials/MaterialManager.h"
+#include "Mesh/MeshManager.h"
+#include "Mesh/Static/StaticMesh.h"
 
 #include "Engine/Distributions/DistributionVector.h"
 #include "Engine/Distributions/DistributionFloat.h"
@@ -157,6 +171,25 @@ namespace
 
     // ── 모듈 목록 헬퍼 ───────────────────────────────────────────────────────
     // LOD0의 모듈을 표준 순서(Required → Spawn → Modules → TypeData)로 펼친다.
+    const char* MaterialDomainName(EMaterialDomain Domain)
+    {
+        switch (Domain)
+        {
+        case EMaterialDomain::Surface:
+            return "Surface";
+        case EMaterialDomain::ParticleSprite:
+            return "ParticleSprite";
+        case EMaterialDomain::ParticleMesh:
+            return "ParticleMesh";
+        case EMaterialDomain::Decal:
+            return "Decal";
+        case EMaterialDomain::PostProcess:
+            return "PostProcess";
+        default:
+            return "Unknown";
+        }
+    }
+
     struct FEmitterModuleEntry
     {
         const char*      Name;
@@ -176,7 +209,55 @@ namespace
         if (Cast<UParticleModuleEventGenerator>(Module)) return "Event Generator";
         if (Cast<UParticleModuleCollision>(Module)) return "Collision";
         if (Cast<UParticleModuleColor>(Module)) return "Color";
+        if (Cast<UParticleModuleMeshMaterial>(Module)) return "Mesh Material";
+        if (Cast<UParticleModuleMeshRotation>(Module)) return "Mesh Rotation";
+        if (Cast<UParticleModuleMeshRotationRate>(Module)) return "Mesh Rotation Rate";
+        if (Cast<UParticleModuleSpawnPerUnit>(Module)) return "Spawn Per Unit";
+        if (Cast<UParticleModuleTrailSource>(Module)) return "Trail Source";
+        if (Cast<UParticleModuleBeamSource>(Module)) return "Beam Source";
+        if (Cast<UParticleModuleBeamTarget>(Module)) return "Beam Target";
+        if (Cast<UParticleModuleBeamNoise>(Module)) return "Beam Noise";
+        if (auto* BeamModifier = Cast<UParticleModuleBeamModifier>(Module))
+        {
+            return BeamModifier->ModifierType == PEB2MT_Source ? "Beam Source Modifier" : "Beam Target Modifier";
+        }
+        // TypeData subclasses — 구체 타입을 표시.
+        if (Cast<UParticleModuleTypeDataMesh>(Module))   return "Mesh Data";
+        if (Cast<UParticleModuleTypeDataRibbon>(Module)) return "Ribbon Data";
+        if (Cast<UParticleModuleTypeDataBeam2>(Module))  return "Beam2 Data";
+        if (Cast<UParticleModuleTypeDataBase>(Module))   return "TypeData";
         return "Module";
+    }
+
+    // 모듈 카테고리별 row 배경 색 — Cascade 레퍼런스의 색 코딩을 차용. alpha 낮게 깔아서
+    // 텍스트 가독성 유지. 사용자가 빠르게 카테고리를 식별할 수 있게 한다.
+    ImU32 GetModuleCategoryColor(const UParticleModule* Module)
+    {
+        if (!Module) return IM_COL32(80, 85, 95, 90);
+        if (Cast<UParticleModuleRequired>(Module))         return IM_COL32(186, 154, 50, 110);  // yellow-olive
+        if (Cast<UParticleModuleSpawn>(Module))            return IM_COL32(178,  73, 73, 110);  // red
+        if (Cast<UParticleModuleLifetime>(Module))         return IM_COL32( 58, 142, 130, 100); // teal
+        if (Cast<UParticleModuleLocation>(Module))         return IM_COL32(132,  75, 156, 100); // purple
+        if (Cast<UParticleModuleVelocity>(Module))         return IM_COL32( 70, 140,  90, 100); // green
+        if (Cast<UParticleModuleSize>(Module))             return IM_COL32(196, 130,  60, 100); // orange
+        if (Cast<UParticleModuleColorOverLife>(Module))    return IM_COL32( 70, 130, 180, 110); // blue
+        if (Cast<UParticleModuleColor>(Module))            return IM_COL32( 80, 130, 170, 100); // blue
+        if (Cast<UParticleModuleCollision>(Module))        return IM_COL32(170,  90,  50, 100); // brown
+        if (Cast<UParticleModuleEventGenerator>(Module))   return IM_COL32(160,  95, 130, 100); // pink
+        if (Cast<UParticleModuleMeshMaterial>(Module))     return IM_COL32( 60,  80, 130, 110);
+        if (Cast<UParticleModuleMeshRotation>(Module))     return IM_COL32( 60, 100, 150, 110);
+        if (Cast<UParticleModuleMeshRotationRate>(Module)) return IM_COL32( 60, 100, 150, 110);
+        if (Cast<UParticleModuleSpawnPerUnit>(Module))     return IM_COL32(110,  90, 140, 110);
+        if (Cast<UParticleModuleTrailSource>(Module))      return IM_COL32(110,  90, 140, 110);
+        if (Cast<UParticleModuleBeamSource>(Module))       return IM_COL32(130,  75,  90, 110);
+        if (Cast<UParticleModuleBeamTarget>(Module))       return IM_COL32(130,  75,  90, 110);
+        if (Cast<UParticleModuleBeamNoise>(Module))        return IM_COL32(130,  75,  90, 110);
+        if (Cast<UParticleModuleBeamModifier>(Module))     return IM_COL32(130,  75,  90, 110);
+        if (Cast<UParticleModuleTypeDataMesh>(Module))     return IM_COL32( 60,  80, 130, 110); // dark blue
+        if (Cast<UParticleModuleTypeDataRibbon>(Module))   return IM_COL32(110,  90, 140, 110); // mauve
+        if (Cast<UParticleModuleTypeDataBeam2>(Module))    return IM_COL32(130,  75,  90, 110); // dark red
+        if (Cast<UParticleModuleTypeDataBase>(Module))     return IM_COL32( 80,  95, 120, 100); // grey-blue
+        return IM_COL32(80, 85, 95, 90);
     }
 
     void BuildEmitterModuleListAt(UParticleEmitter* Emitter, int32 LODIndex, TArray<FEmitterModuleEntry>& OutList)
@@ -202,7 +283,8 @@ namespace
         }
         if (LOD->TypeDataModule)
         {
-            OutList.push_back({ "TypeData", static_cast<UParticleModule*>(LOD->TypeDataModule) });
+            UParticleModule* AsModule = static_cast<UParticleModule*>(LOD->TypeDataModule);
+            OutList.push_back({ GetModuleDisplayName(AsModule), AsModule });
         }
     }
 
@@ -350,6 +432,22 @@ namespace
         for (UParticleModule* M : LOD->Modules)
         {
             if (Cast<T>(M)) return true;
+        }
+        return false;
+    }
+
+    bool HasBeamModifierOfType(UParticleLODLevel* LOD, BeamModifierType Type)
+    {
+        if (!LOD) return false;
+        for (UParticleModule* M : LOD->Modules)
+        {
+            if (auto* Mod = Cast<UParticleModuleBeamModifier>(M))
+            {
+                if (Mod->ModifierType == Type)
+                {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -1165,129 +1263,55 @@ void FParticleSystemEditorWidget::DuplicateEmitter(int32 SourceIndex)
 
     Dst->InitializeDefaultSpriteEmitter();
 
-    // 기본 이미터 필드.
     Dst->EmitterName            = FName(Src->EmitterName.ToString() + "_Copy");
     Dst->bUseMeshInstance       = Src->bUseMeshInstance;
     Dst->PivotOffset            = Src->PivotOffset;
     Dst->InitialAllocationCount = Src->InitialAllocationCount;
     Dst->SetEnabled(Src->IsEnabled());
 
-    UParticleLODLevel* SrcLOD = Src->GetLODLevel(0);
-    UParticleLODLevel* DstLOD = Dst->GetLODLevel(0);
-
-    if (SrcLOD && DstLOD)
+    auto DestroyLODModules = [](UParticleLODLevel* LOD)
     {
-        // Required 복사 (default emitter가 이미 생성해 둔 인스턴스에 값만 덮어쓴다).
-        if (UParticleModuleRequired* SR = SrcLOD->RequiredModule)
+        if (!LOD) return;
+        if (LOD->RequiredModule) UObjectManager::Get().DestroyObject(LOD->RequiredModule);
+        if (LOD->SpawnModule) UObjectManager::Get().DestroyObject(LOD->SpawnModule);
+        if (LOD->TypeDataModule) UObjectManager::Get().DestroyObject(LOD->TypeDataModule);
+        for (UParticleModule* M : LOD->Modules)
         {
-            if (UParticleModuleRequired* DR = DstLOD->RequiredModule)
-            {
-                DR->MaterialSlot         = SR->MaterialSlot;
-                DR->EmitterOrigin        = SR->EmitterOrigin;
-                DR->EmitterRotation      = SR->EmitterRotation;
-                DR->bUseLocalSpace       = SR->bUseLocalSpace;
-                DR->bKillOnDeactivate    = SR->bKillOnDeactivate;
-                DR->bKillOnCompleted     = SR->bKillOnCompleted;
-                DR->bDelayFirstLoopOnly  = SR->bDelayFirstLoopOnly;
-                DR->EmitterDuration      = SR->EmitterDuration;
-                DR->EmitterDurationLow   = SR->EmitterDurationLow;
-                DR->EmitterDelay         = SR->EmitterDelay;
-                DR->EmitterLoops         = SR->EmitterLoops;
-                DR->ScreenAlignment      = SR->ScreenAlignment;
-                DR->SortMode             = SR->SortMode;
-                DR->SubImages_Horizontal = SR->SubImages_Horizontal;
-                DR->SubImages_Vertical   = SR->SubImages_Vertical;
-                DR->SpawnRate            = SR->SpawnRate;
-                DR->BurstList            = SR->BurstList;
-                DR->bUseMaxDrawCount     = SR->bUseMaxDrawCount;
-                DR->MaxDrawCount         = SR->MaxDrawCount;
-                DR->bEnabled             = SR->bEnabled;
-                DR->ResolveMaterialFromSlot();
-            }
+            if (M) UObjectManager::Get().DestroyObject(M);
         }
-        // Spawn 복사.
-        if (UParticleModuleSpawn* SS = SrcLOD->SpawnModule)
-        {
-            if (UParticleModuleSpawn* DS = DstLOD->SpawnModule)
-            {
-                DS->SpawnRate      = SS->SpawnRate;
-                DS->SpawnRateScale = SS->SpawnRateScale;
-                DS->BurstScale     = SS->BurstScale;
-                DS->BurstList      = SS->BurstList;
-                DS->bEnabled       = SS->bEnabled;
-            }
-        }
-        // 추가 모듈 (Lifetime/Location/Velocity/Size/Color)을 같은 타입으로 신규 생성 + 얕은 복사.
+        LOD->Modules.clear();
+    };
+
+    for (UParticleLODLevel* LOD : Dst->GetLODLevels())
+    {
+        DestroyLODModules(LOD);
+        UObjectManager::Get().DestroyObject(LOD);
+    }
+    Dst->GetLODLevels().clear();
+
+    for (UParticleLODLevel* SrcLOD : Src->GetLODLevels())
+    {
+        if (!SrcLOD) continue;
+
+        UParticleLODLevel* NewLOD = UObjectManager::Get().CreateObject<UParticleLODLevel>(Dst);
+        if (!NewLOD) continue;
+
+        NewLOD->Level    = SrcLOD->Level;
+        NewLOD->bEnabled = SrcLOD->bEnabled;
+
+        if (auto* R = CloneParticleModule(SrcLOD->RequiredModule, NewLOD)) NewLOD->RequiredModule = Cast<UParticleModuleRequired>(R);
+        if (auto* S = CloneParticleModule(SrcLOD->SpawnModule, NewLOD)) NewLOD->SpawnModule = Cast<UParticleModuleSpawn>(S);
+        if (auto* T = CloneParticleModule(static_cast<UParticleModule*>(SrcLOD->TypeDataModule), NewLOD)) NewLOD->TypeDataModule = Cast<UParticleModuleTypeDataBase>(T);
         for (UParticleModule* M : SrcLOD->Modules)
         {
-            if (!M) continue;
-            UParticleModule* NewModule = nullptr;
-            if (auto* X = Cast<UParticleModuleLifetime>(M))
+            if (auto* Cloned = CloneParticleModule(M, NewLOD))
             {
-                auto* N        = UObjectManager::Get().CreateObject<UParticleModuleLifetime>(DstLOD);
-                N->LifetimeMin = X->LifetimeMin;
-                N->LifetimeMax = X->LifetimeMax;
-                NewModule      = N;
-            }
-            else if (auto* X = Cast<UParticleModuleLocation>(M))
-            {
-                auto* N          = UObjectManager::Get().CreateObject<UParticleModuleLocation>(DstLOD);
-                N->StartLocation = X->StartLocation;
-                NewModule        = N;
-            }
-            else if (auto* X = Cast<UParticleModuleVelocity>(M))
-            {
-                auto* N                = UObjectManager::Get().CreateObject<UParticleModuleVelocity>(DstLOD);
-                N->StartVelocity       = X->StartVelocity;
-                N->StartVelocityRadial = X->StartVelocityRadial;
-                NewModule              = N;
-            }
-            else if (auto* X = Cast<UParticleModuleSize>(M))
-            {
-                auto* N      = UObjectManager::Get().CreateObject<UParticleModuleSize>(DstLOD);
-                N->StartSize = X->StartSize;
-                NewModule    = N;
-            }
-            else if (auto* X = Cast<UParticleModuleColorOverLife>(M))
-            {
-                auto* N          = UObjectManager::Get().CreateObject<UParticleModuleColorOverLife>(DstLOD);
-                N->ColorOverLife = X->ColorOverLife;
-                N->AlphaOverLife = X->AlphaOverLife;
-                N->bClampAlpha   = X->bClampAlpha;
-                NewModule        = N;
-            }
-            else if (auto* X = Cast<UParticleModuleColor>(M))
-            {
-                auto* N        = UObjectManager::Get().CreateObject<UParticleModuleColor>(DstLOD);
-                N->StartColor  = X->StartColor;
-                N->StartAlpha  = X->StartAlpha;
-                N->bClampAlpha = X->bClampAlpha;
-                NewModule      = N;
-            }
-            else if (auto* X = Cast<UParticleModuleEventGenerator>(M))
-            {
-                auto* N                     = UObjectManager::Get().CreateObject<UParticleModuleEventGenerator>(DstLOD);
-                N->bGenerateCollisionEvents = X->bGenerateCollisionEvents;
-                N->bGenerateDeathEvents     = X->bGenerateDeathEvents;
-                N->bGenerateSpawnEvents     = X->bGenerateSpawnEvents;
-                NewModule                   = N;
-            }
-            else if (auto* X = Cast<UParticleModuleCollision>(M))
-            {
-                auto* N             = UObjectManager::Get().CreateObject<UParticleModuleCollision>(DstLOD);
-                N->Radius           = X->Radius;
-                N->Restitution      = X->Restitution;
-                N->bKillOnCollision = X->bKillOnCollision;
-                NewModule           = N;
-            }
-
-            if (NewModule)
-            {
-                NewModule->bEnabled = M->bEnabled;
-                DstLOD->Modules.push_back(NewModule);
+                NewLOD->Modules.push_back(Cloned);
             }
         }
-        DstLOD->UpdateModuleLists();
+
+        NewLOD->UpdateModuleLists();
+        Dst->GetLODLevels().push_back(NewLOD);
     }
 
     Emitters.push_back(Dst);
@@ -1498,6 +1522,20 @@ void FParticleSystemEditorWidget::DuplicateMaterialForRequired(UParticleModuleRe
     const bool    bHasSource    = !Required->MaterialSlot.IsNull() && !SourceSlot.empty() && SourceSlot != "None";
     const FString EmitterSuffix = SelectedEmitterIndex >= 0 ? FString("Emitter") + std::to_string(SelectedEmitterIndex)
     : FString("Emitter");
+    const bool bMeshEmitter = [&]()
+    {
+        UParticleSystem* PS = GetParticleSystem();
+        if (!PS) return false;
+        if (SelectedEmitterIndex < 0 || SelectedEmitterIndex >= static_cast<int32>(PS->GetEmitters().size())) return false;
+        UParticleEmitter* Emitter = PS->GetEmitters()[SelectedEmitterIndex];
+        if (!Emitter) return false;
+        if (UParticleLODLevel* LOD0 = Emitter->GetLODLevel(0))
+        {
+            return Cast<UParticleModuleTypeDataMesh>(LOD0->TypeDataModule) != nullptr;
+        }
+        return false;
+    }();
+    const FString ExpectedDomain = bMeshEmitter ? FString("ParticleMesh") : FString("ParticleSprite");
 
     if (bHasSource)
     {
@@ -1531,6 +1569,7 @@ void FParticleSystemEditorWidget::DuplicateMaterialForRequired(UParticleModuleRe
                 Root[MatKeys::Compiled][MatKeys::Parameters] = json::Object();
                 Root[MatKeys::Compiled][MatKeys::Textures]   = json::Object();
             }
+            Root[MatKeys::Domain] = ExpectedDomain;
 
             std::ofstream OutFile(TargetPath);
             if (OutFile.is_open())
@@ -1551,6 +1590,23 @@ void FParticleSystemEditorWidget::DuplicateMaterialForRequired(UParticleModuleRe
             return;
         }
         CreatedPath = FPaths::MakeProjectRelative(CreatedPath);
+
+        const std::filesystem::path CreatedFsPath = ToProjectPath(CreatedPath);
+        if (std::filesystem::exists(CreatedFsPath))
+        {
+            std::ifstream InFile(CreatedFsPath);
+            FString Content((std::istreambuf_iterator<char>(InFile)), std::istreambuf_iterator<char>());
+            json::JSON Root = json::JSON::Load(Content);
+            if (!Root.IsNull())
+            {
+                Root[MatKeys::Domain] = ExpectedDomain;
+                std::ofstream OutFile(CreatedFsPath);
+                if (OutFile.is_open())
+                {
+                    OutFile << Root.dump();
+                }
+            }
+        }
     }
 
     Required->MaterialSlot = CreatedPath;
@@ -2069,6 +2125,101 @@ void FParticleSystemEditorWidget::MoveEmitter(int32 SrcEmitterIndex, int32 DstEm
         ++SelectedEmitterIndex;
     }
     EmitterNameBufFor = -1;
+
+    MarkDirty();
+    RestartPreviewSimulation();
+}
+
+void FParticleSystemEditorWidget::SetEmitterTypeData(int32 EmitterIndex, const char* TypeDataClassName)
+{
+    UParticleSystem* PS = GetParticleSystem();
+    if (!PS) return;
+    if (EmitterIndex < 0 || EmitterIndex >= static_cast<int32>(PS->GetEmitters().size())) return;
+    UParticleEmitter* Emitter = PS->GetEmitters()[EmitterIndex];
+    if (!Emitter) return;
+
+    PushUndoSnapshot();
+
+    UParticleLODLevel* LOD0 = Emitter->GetLODLevel(0);
+    UParticleModuleTypeDataBase* OldType = LOD0 ? LOD0->TypeDataModule : nullptr;
+
+    UParticleModuleTypeDataBase* NewType = nullptr;
+    if (TypeDataClassName && std::strcmp(TypeDataClassName, "None") != 0)
+    {
+        UObject* Created = FObjectFactory::Get().Create(TypeDataClassName, LOD0);
+        NewType = Cast<UParticleModuleTypeDataBase>(Created);
+        if (!NewType && Created)
+        {
+            UObjectManager::Get().DestroyObject(Created);
+        }
+    }
+
+    if (NewType)
+    {
+        NewType->bEnabled           = true;
+        NewType->bSpawnModule       = true;
+        NewType->bUpdateModule      = true;
+        NewType->bFinalUpdateModule = false;
+
+        if (UParticleModuleTypeDataBeam2* BeamType = Cast<UParticleModuleTypeDataBeam2>(NewType))
+        {
+            if (!BeamType->Distance.Distribution)
+            {
+                auto* D = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(BeamType);
+                D->Constant = 500.0f;
+                BeamType->Distance.Distribution = D;
+            }
+            if (!BeamType->TaperFactor.Distribution)
+            {
+                auto* D = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(BeamType);
+                D->Constant = 1.0f;
+                BeamType->TaperFactor.Distribution = D;
+            }
+            if (!BeamType->TaperScale.Distribution)
+            {
+                auto* D = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(BeamType);
+                D->Constant = 1.0f;
+                BeamType->TaperScale.Distribution = D;
+            }
+        }
+    }
+
+    // 모든 LOD 의 TypeData 슬롯을 새 인스턴스 포인터로 동기화 (sharing).
+    for (UParticleLODLevel* LL : Emitter->GetLODLevels())
+    {
+        if (LL)
+        {
+            LL->TypeDataModule = NewType;
+            LL->UpdateModuleLists();
+        }
+    }
+
+    // 옛 TypeData 가 다른 어디서도 참조되지 않으면 destroy.
+    if (OldType)
+    {
+        bool bStillReferenced = false;
+        for (UParticleEmitter* OtherE : PS->GetEmitters())
+        {
+            if (!OtherE) continue;
+            for (UParticleLODLevel* LL : OtherE->GetLODLevels())
+            {
+                if (LL && static_cast<UParticleModuleTypeDataBase*>(LL->TypeDataModule) == OldType)
+                {
+                    bStillReferenced = true;
+                    break;
+                }
+            }
+            if (bStillReferenced) break;
+        }
+        if (!bStillReferenced)
+        {
+            UObjectManager::Get().DestroyObject(OldType);
+        }
+    }
+
+    // Mesh TypeData 면 emitter 도 mesh 모드로 표시 — runtime 측 BuildEmitterInstances 가
+    // bUseMeshInstance 분기를 한다.
+    Emitter->bUseMeshInstance = (Cast<UParticleModuleTypeDataMesh>(NewType) != nullptr);
 
     MarkDirty();
     RestartPreviewSimulation();
@@ -2890,10 +3041,6 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                     const ImVec2 ColStart    = ImGui::GetCursorScreenPos();
                     const float  ColW        = ImGui::GetContentRegionAvail().x;
                     float        HeaderZoneH = ImGui::GetFrameHeight() * 2.0f + 12.0f;
-                    if (Emitter && Emitter->bUseMeshInstance)
-                    {
-                        HeaderZoneH += ImGui::GetTextLineHeight() + 8.0f;
-                    }
 
                     ImGui::SetNextItemAllowOverlap();
                     ImGui::InvisibleButton("##EmitterDragZone", ImVec2(ColW, HeaderZoneH));
@@ -3039,18 +3186,6 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                     }
                     AttachEmitterDragOnLastItem();
 
-                    // Mesh emitter 표시 — 레퍼런스 Cascade의 "Mesh Data" 헤더와 동일한 위치.
-                    if (Emitter && Emitter->bUseMeshInstance)
-                    {
-                        ImDrawList*  DL  = ImGui::GetWindowDrawList();
-                        const ImVec2 Pos = ImGui::GetCursorScreenPos();
-                        const float  W   = ImGui::GetContentRegionAvail().x;
-                        const float  H   = ImGui::GetTextLineHeight() + 4.0f;
-                        DL->AddRectFilled(Pos, ImVec2(Pos.x + W, Pos.y + H), IM_COL32(60, 70, 90, 255), 3.0f);
-                        DL->AddText(ImVec2(Pos.x + 6.0f, Pos.y + 2.0f), PSE::HeaderText, "Mesh Data");
-                        ImGui::Dummy(ImVec2(W, H + 2.0f));
-                    }
-
                     ImGui::Separator();
 
                     TArray<FEmitterModuleEntry> ModuleList;
@@ -3065,6 +3200,13 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                     const ImGuiPayload* ActiveCarry       = ImGui::GetDragDropPayload();
                     const bool          bModuleDragActive = ActiveCarry && ActiveCarry->IsDataType("PSE_MODULE");
 
+                    // 모듈 row 들은 모서리 라운드 없이 edge-to-edge fill + 패딩 0 으로 빽빽하게.
+                    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+
+                    // 컬럼의 좌/우 픽셀 좌표 (WindowPadding 무시) — row bg 를 edge 까지 채우기 위함.
+                    const float ColLeftPx  = ImGui::GetWindowPos().x;
+                    const float ColRightPx = ColLeftPx + ImGui::GetWindowSize().x;
+
                     for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(ModuleList.size()); ++ModuleIndex)
                     {
                         ImGui::PushID(ModuleIndex);
@@ -3076,62 +3218,69 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                             SelLOD->SpawnModule || Entry.Module == static_cast<UParticleModule*>(SelLOD->
                                 TypeDataModule));
 
-                        // 비-core 모듈 위에 갭 drop zone — 드래그 중에만 노출.
-                        // 가장 가까운(=현재 hover 중인) 한 곳만 펼치고 라인 표시.
-                        if (!bIsCoreSlot && SelectedLODIndex == 0 && bModuleDragActive)
+                        // 비-core 모듈은 LOD0 Modules 배열에서의 인덱스를 미리 계산. drop 위치 산정용.
+                        int32 ThisRowArrayIdx = -1;
+                        if (!bIsCoreSlot)
                         {
-                            int32 GapInsertAt = -1;
                             if (UParticleLODLevel* L0 = Emitter ? Emitter->GetLODLevel(0) : nullptr)
                             {
                                 for (int32 i = 0; i < static_cast<int32>(L0->Modules.size()); ++i)
                                 {
                                     if (L0->Modules[i] == Entry.Module)
                                     {
-                                        GapInsertAt = i;
+                                        ThisRowArrayIdx = i;
                                         break;
                                     }
                                 }
                             }
-                            if (GapInsertAt >= 0)
+                        }
+
+                        // 활성 drop zone 이 이 row 바로 위 위치일 때만 14px 갭 + 사각형 강조 표시.
+                        // 그 외 row 들은 갭 없이 평소처럼 붙어있음 → 한 곳만 벌어지는 효과.
+                        // ★ 갭 영역 자체도 hover/drop target 으로 만들어 oscillation 방지 —
+                        // 갭이 열리면서 row 가 아래로 밀려 마우스가 갭 위에 있게 되어도 같은
+                        // PendingDropSlot 을 유지해, 다음 프레임에 갭이 닫혔다가 다시 열리는
+                        // 진동을 막는다.
+                        if (SelectedLODIndex == 0 && bModuleDragActive && ThisRowArrayIdx >= 0 &&
+                            ActiveDropEmitter == EmitterIndex && ActiveDropSlot == ThisRowArrayIdx)
+                        {
+                            constexpr float GapH   = 14.0f;
+                            const ImVec2    GapMin = ImGui::GetCursorScreenPos();
+                            const float     GapW   = ColRightPx - GapMin.x;
+                            ImGui::InvisibleButton("##activegap", ImVec2(GapW, GapH));
+                            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
                             {
-                                const bool bIsActive = (ActiveDropEmitter == EmitterIndex && ActiveDropSlot ==
-                                    GapInsertAt);
-                                const float GapH = bIsActive ? 14.0f : 3.0f;
-                                ImGui::InvisibleButton("##gap", ImVec2(-1.0f, GapH));
-                                const bool bGapHovered = ImGui::IsItemHovered(
-                                    ImGuiHoveredFlags_AllowWhenBlockedByActiveItem
-                                );
-                                if (bGapHovered)
-                                {
-                                    PendingDropEmitter = EmitterIndex;
-                                    PendingDropSlot    = GapInsertAt;
-                                }
-                                if (ImGui::BeginDragDropTarget())
-                                {
-                                    if (const ImGuiPayload* P = ImGui::AcceptDragDropPayload("PSE_MODULE"))
-                                    {
-                                        const int32* D  = static_cast<const int32*>(P->Data);
-                                        ModuleDropSrcE  = D[0];
-                                        ModuleDropSrcAi = D[1];
-                                        ModuleDropDstE  = EmitterIndex;
-                                        ModuleDropDstAi = GapInsertAt;
-                                    }
-                                    ImGui::EndDragDropTarget();
-                                }
-                                // 활성 zone 만 강조선 그림. 비활성 zone 은 보이지 않음 (작은 hit-area 만).
-                                if (bIsActive)
-                                {
-                                    const ImVec2 GMin  = ImGui::GetItemRectMin();
-                                    const ImVec2 GMax  = ImGui::GetItemRectMax();
-                                    const float  LineY = (GMin.y + GMax.y) * 0.5f;
-                                    ImGui::GetWindowDrawList()->AddLine(
-                                        ImVec2(GMin.x + 4.0f, LineY),
-                                        ImVec2(GMax.x - 4.0f, LineY),
-                                        PSE::Accent,
-                                        3.0f
-                                    );
-                                }
+                                PendingDropEmitter = EmitterIndex;
+                                PendingDropSlot    = ThisRowArrayIdx;
                             }
+                            if (ImGui::BeginDragDropTarget())
+                            {
+                                if (const ImGuiPayload* P = ImGui::AcceptDragDropPayload("PSE_MODULE"))
+                                {
+                                    const int32* D  = static_cast<const int32*>(P->Data);
+                                    ModuleDropSrcE  = D[0];
+                                    ModuleDropSrcAi = D[1];
+                                    ModuleDropDstE  = EmitterIndex;
+                                    ModuleDropDstAi = ThisRowArrayIdx;
+                                }
+                                ImGui::EndDragDropTarget();
+                            }
+                            const ImVec2 GapMax = ImGui::GetItemRectMax();
+                            // edge-to-edge 강조 사각형.
+                            ImGui::GetWindowDrawList()->AddRectFilled(
+                                ImVec2(ColLeftPx, GapMin.y),
+                                ImVec2(ColRightPx, GapMax.y),
+                                IM_COL32(74, 144, 255, 60),
+                                0.0f
+                            );
+                            ImGui::GetWindowDrawList()->AddRect(
+                                ImVec2(ColLeftPx, GapMin.y),
+                                ImVec2(ColRightPx, GapMax.y),
+                                PSE::Accent,
+                                0.0f,
+                                0,
+                                2.0f
+                            );
                         }
 
                         const bool bIsShared = IsModuleSharedWithHigher(Emitter, SelectedLODIndex, ModuleIndex);
@@ -3140,30 +3289,51 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         ImDrawList*     DL          = ImGui::GetWindowDrawList();
                         const ImVec2    IconPos     = ImGui::GetCursorScreenPos();
                         constexpr float IconSize    = 14.0f;
+                        const float     RowH        = ImGui::GetFrameHeight();
+                        const float     IconYOff    = (RowH - IconSize) * 0.5f;
+                        constexpr float LeftPad     = 4.0f;
+                        const ImVec2    IconDrawPos(IconPos.x + LeftPad, IconPos.y + IconYOff);
+
+                        // 모듈 카테고리 색으로 row 배경을 칠한다. edge-to-edge fill (컬럼 좌/우
+                        // 끝까지) + 모서리 라운드 0. sub-LOD에서 공유 중이면 alpha 절반으로 dim.
+                        {
+                            ImU32 RowBgCol = GetModuleCategoryColor(Entry.Module);
+                            if (bIsShared)
+                            {
+                                ImU32 A = (RowBgCol >> 24) & 0xFF;
+                                A = A / 2;
+                                RowBgCol = (RowBgCol & 0x00FFFFFF) | (A << 24);
+                            }
+                            DL->AddRectFilled(
+                                ImVec2(ColLeftPx, IconPos.y),
+                                ImVec2(ColRightPx, IconPos.y + RowH),
+                                RowBgCol,
+                                0.0f
+                            );
+                        }
+
                         const bool      bModEnabled = Entry.Module && (Entry.Module->bEnabled != 0);
                         const ImU32     IconCol     = (bIsCoreSlot || bIsShared) ? IM_COL32(110, 115, 125, 200)
                         : (bModEnabled ? PSE::Accent : IM_COL32(80, 84, 92, 255));
-                        DL->AddRectFilled(IconPos, ImVec2(IconPos.x + IconSize, IconPos.y + IconSize), IconCol, 2.0f);
+                        DL->AddRectFilled(
+                            IconDrawPos,
+                            ImVec2(IconDrawPos.x + IconSize, IconDrawPos.y + IconSize),
+                            IconCol, 2.0f);
                         if (bModEnabled)
                         {
                             DL->AddLine(
-                                ImVec2(IconPos.x + 3.0f, IconPos.y + IconSize * 0.55f),
-                                ImVec2(IconPos.x + IconSize * 0.42f, IconPos.y + IconSize - 3.0f),
-                                IM_COL32(255, 255, 255, 230),
-                                1.6f
-                            );
+                                ImVec2(IconDrawPos.x + 3.0f,              IconDrawPos.y + IconSize * 0.55f),
+                                ImVec2(IconDrawPos.x + IconSize * 0.42f,  IconDrawPos.y + IconSize - 3.0f),
+                                IM_COL32(255, 255, 255, 230), 1.6f);
                             DL->AddLine(
-                                ImVec2(IconPos.x + IconSize * 0.42f, IconPos.y + IconSize - 3.0f),
-                                ImVec2(IconPos.x + IconSize - 2.0f, IconPos.y + 3.0f),
-                                IM_COL32(255, 255, 255, 230),
-                                1.6f
-                            );
+                                ImVec2(IconDrawPos.x + IconSize * 0.42f,  IconDrawPos.y + IconSize - 3.0f),
+                                ImVec2(IconDrawPos.x + IconSize - 2.0f,   IconDrawPos.y + 3.0f),
+                                IM_COL32(255, 255, 255, 230), 1.6f);
                         }
-                        ImGui::InvisibleButton("##enableicon", ImVec2(IconSize, IconSize));
+                        // InvisibleButton 의 layout 높이를 RowH 로 맞춰서 SameLine 베이스라인을 통일.
+                        ImGui::InvisibleButton("##enableicon", ImVec2(IconSize + LeftPad * 2.0f, RowH));
                         if (!bIsCoreSlot && !bIsShared && ImGui::IsItemClicked() && Entry.Module)
                         {
-                            // Click 처리는 press 시점이라 자동 캡처가 PRE-toggle 상태를 잡지 못한다.
-                            // (이미 활성 전이가 일어난 직후 토글이 발생) → explicit snapshot.
                             PushUndoSnapshot();
                             Entry.Module->bEnabled = bModEnabled ? 0 : 1;
                             MarkDirty();
@@ -3177,15 +3347,40 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                                     : (bModEnabled ? "Disable module" : "Enable module"))
                             );
                         }
-                        ImGui::SameLine(0.0f, 4.0f);
+                        ImGui::SameLine(0.0f, 0.0f);
 
-                        // 공유 중인 모듈은 dim text로 표시 — 편집 불가 시각 신호.
+                        // Selectable 도 RowH 만큼 키우고 텍스트 세로 중앙 정렬 — 아이콘과 baseline 일치.
+                        ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.0f, 0.5f));
                         if (bIsShared) ImGui::PushStyleColor(ImGuiCol_Text, PSE::DimTextV);
-                        if (ImGui::Selectable(Entry.Name, bSelected))
+                        if (ImGui::Selectable(Entry.Name, bSelected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0.0f, RowH)))
                         {
                             SelectEmitter(EmitterIndex, ModuleIndex);
                         }
                         if (bIsShared) ImGui::PopStyleColor();
+                        ImGui::PopStyleVar();
+
+                        // Module row 자체가 drop hover 감지 + drop target — hover 시 다음 프레임에
+                        // "이 row 위 갭"이 활성으로 펼쳐진다. 비-core 모듈만 대상 (Required/Spawn/TypeData 제외).
+                        if (SelectedLODIndex == 0 && bModuleDragActive && ThisRowArrayIdx >= 0)
+                        {
+                            if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
+                            {
+                                PendingDropEmitter = EmitterIndex;
+                                PendingDropSlot    = ThisRowArrayIdx;
+                            }
+                            if (ImGui::BeginDragDropTarget())
+                            {
+                                if (const ImGuiPayload* P = ImGui::AcceptDragDropPayload("PSE_MODULE"))
+                                {
+                                    const int32* D = static_cast<const int32*>(P->Data);
+                                    ModuleDropSrcE  = D[0];
+                                    ModuleDropSrcAi = D[1];
+                                    ModuleDropDstE  = EmitterIndex;
+                                    ModuleDropDstAi = ThisRowArrayIdx;
+                                }
+                                ImGui::EndDragDropTarget();
+                            }
+                        }
 
                         // 모듈 drag and drop — LOD 0 에서 비-core 모듈만. ArrayIndex 는 LOD0->Modules
                         // 내부 인덱스 (Required/Spawn/TypeData 는 별도 슬롯이라 제외).
@@ -3213,11 +3408,12 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         // Row 자체는 drop target 아님 — 갭 zone 들이 insert 위치를 정확히
                         // 표시하므로 row-onto-row 드롭은 모호함만 만든다.
 
-                        // 우측 curve placeholder 아이콘.
-                        const ImVec2 RowMin = ImGui::GetItemRectMin();
-                        const ImVec2 RowMax = ImGui::GetItemRectMax();
-                        const ImVec2 CurveIconMin(RowMax.x - IconSize - 2.0f, RowMin.y + 1.0f);
-                        const ImVec2 CurveIconMax(RowMax.x - 2.0f, RowMin.y + 1.0f + IconSize);
+                        // 우측 curve placeholder 아이콘 — row 세로 중앙 정렬.
+                        const ImVec2 RowMin     = ImGui::GetItemRectMin();
+                        const ImVec2 RowMax     = ImGui::GetItemRectMax();
+                        const float  RowCenterY = (RowMin.y + RowMax.y) * 0.5f;
+                        const ImVec2 CurveIconMin(ColRightPx - IconSize - 4.0f, RowCenterY - IconSize * 0.5f);
+                        const ImVec2 CurveIconMax(ColRightPx - 4.0f, RowCenterY + IconSize * 0.5f);
                         DL->AddRect(CurveIconMin, CurveIconMax, IM_COL32(90, 95, 105, 200), 2.0f);
                         const float CW = CurveIconMax.x - CurveIconMin.x;
                         const float CH = CurveIconMax.y - CurveIconMin.y;
@@ -3306,6 +3502,8 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         }
                         ImGui::PopID();
                     }
+                    ImGui::PopStyleVar(); // ItemSpacing(0,0) for module loop
+
                     if (ModuleToDelete >= 0)
                     {
                         SelectEmitter(EmitterIndex, ModuleToDelete);
@@ -3341,8 +3539,10 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         UParticleLODLevel* L0Append  = Emitter ? Emitter->GetLODLevel(0) : nullptr;
                         const bool         bIsActive = (ActiveDropEmitter == EmitterIndex && ActiveDropSlot ==
                             SlotAppendSentinel);
-                        const float ZoneH = bIsActive ? 14.0f : 3.0f;
-                        ImGui::InvisibleButton("##ModuleAppendDrop", ImVec2(-1.0f, ZoneH));
+                        const float  ZoneH   = bIsActive ? 14.0f : 6.0f;
+                        const ImVec2 ZoneMin = ImGui::GetCursorScreenPos();
+                        const float  ZoneW   = ImGui::GetContentRegionAvail().x;
+                        ImGui::InvisibleButton("##ModuleAppendDrop", ImVec2(ZoneW, ZoneH));
                         const bool bAppHovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
                         if (bAppHovered)
                         {
@@ -3363,15 +3563,11 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                         }
                         if (bIsActive)
                         {
-                            const ImVec2 GMin  = ImGui::GetItemRectMin();
-                            const ImVec2 GMax  = ImGui::GetItemRectMax();
-                            const float  LineY = (GMin.y + GMax.y) * 0.5f;
-                            ImGui::GetWindowDrawList()->AddLine(
-                                ImVec2(GMin.x + 4.0f, LineY),
-                                ImVec2(GMax.x - 4.0f, LineY),
-                                PSE::Accent,
-                                3.0f
-                            );
+                            const ImVec2 ZoneMax(ZoneMin.x + ZoneW, ZoneMin.y + ZoneH);
+                            ImGui::GetWindowDrawList()->AddRectFilled(
+                                ZoneMin, ZoneMax, IM_COL32(74, 144, 255, 60), 3.0f);
+                            ImGui::GetWindowDrawList()->AddRect(
+                                ZoneMin, ZoneMax, PSE::Accent, 3.0f, 0, 2.0f);
                         }
                     }
 
@@ -3383,28 +3579,34 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                     if (ImGui::BeginPopup("##AddModulePopup"))
                     {
                         UParticleLODLevel* LOD0 = Emitter ? Emitter->GetLODLevel(0) : nullptr;
+                        UParticleModuleTypeDataBase* TypeData = LOD0 ? LOD0->TypeDataModule : nullptr;
+                        const bool bMeshType   = Cast<UParticleModuleTypeDataMesh>(TypeData) != nullptr;
+                        const bool bRibbonType = Cast<UParticleModuleTypeDataRibbon>(TypeData) != nullptr;
+                        const bool bBeamType   = Cast<UParticleModuleTypeDataBeam2>(TypeData) != nullptr;
 
-                        auto AddItem = [&](const char* Label, auto Creator)
+                        auto SyncNewModuleToSubLOD = [&](UParticleModule* New)
                         {
-                            const bool bExists = Creator(/*query*/true, LOD0);
-                            if (ImGui::MenuItem(Label, nullptr, false, LOD0 && !bExists))
+                            if (!Emitter || !LOD0 || !New) return;
+                            const int32 LCount = static_cast<int32>(Emitter->GetLODLevels().size());
+                            for (int32 L = 1; L < LCount; ++L)
                             {
-                                Creator(/*query*/false, LOD0);
-                                // LOD 0에 새 모듈이 추가됐다면 같은 포인터를 모든 sub-LOD에도 push
-                                // (기본 정책: 새 모듈은 sub-LOD에서 자동으로 shared).
-                                if (Emitter && LOD0 && !LOD0->Modules.empty())
+                                if (UParticleLODLevel* Sub = Emitter->GetLODLevel(L))
                                 {
-                                    UParticleModule* New    = LOD0->Modules.back();
-                                    const int32      LCount = static_cast<int32>(Emitter->GetLODLevels().size());
-                                    for (int32 L = 1; L < LCount; ++L)
-                                    {
-                                        if (UParticleLODLevel* Sub = Emitter->GetLODLevel(L))
-                                        {
-                                            Sub->Modules.push_back(New);
-                                            Sub->UpdateModuleLists();
-                                        }
-                                    }
+                                    Sub->Modules.push_back(New);
+                                    Sub->UpdateModuleLists();
                                 }
+                            }
+                        };
+
+                        auto AddItem = [&](const char* Label, bool bTypeAllowed, bool bExists, auto Creator)
+                        {
+                            if (ImGui::MenuItem(Label, nullptr, false, LOD0 && bTypeAllowed && !bExists))
+                            {
+                                UParticleModule* New = Creator(LOD0);
+                                if (!New) return;
+                                LOD0->Modules.push_back(New);
+                                LOD0->UpdateModuleLists();
+                                SyncNewModuleToSubLOD(New);
                                 SelectEmitter(EmitterIndex, -1);
                                 MarkDirty();
                                 RestartPreviewSimulation();
@@ -3413,92 +3615,335 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
 
                         AddItem(
                             "Lifetime",
-                            [](bool bQuery, UParticleLODLevel* L)
+                            true,
+                            HasModuleOfType<UParticleModuleLifetime>(LOD0),
+                            [](UParticleLODLevel* L)
                             {
-                                if (bQuery) return HasModuleOfType<UParticleModuleLifetime>(L);
                                 auto* N = UObjectManager::Get().CreateObject<UParticleModuleLifetime>(L);
-                                L->Modules.push_back(N);
-                                L->UpdateModuleLists();
-                                return true;
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = false;
+                                N->bFinalUpdateModule = false;
+                                N->LifetimeMin        = 1.0f;
+                                N->LifetimeMax        = 1.0f;
+                                return static_cast<UParticleModule*>(N);
                             }
                         );
                         AddItem(
                             "Location",
-                            [](bool bQuery, UParticleLODLevel* L)
+                            true,
+                            HasModuleOfType<UParticleModuleLocation>(LOD0),
+                            [](UParticleLODLevel* L)
                             {
-                                if (bQuery) return HasModuleOfType<UParticleModuleLocation>(L);
                                 auto* N = UObjectManager::Get().CreateObject<UParticleModuleLocation>(L);
-                                L->Modules.push_back(N);
-                                L->UpdateModuleLists();
-                                return true;
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = false;
+                                N->bFinalUpdateModule = false;
+                                auto* D = UObjectManager::Get().CreateObject<UDistributionVectorUniform>(N);
+                                D->Min = FVector(-1.0f, -1.0f, -1.0f);
+                                D->Max = FVector(1.0f, 1.0f, 1.0f);
+                                N->StartLocation.Distribution = D;
+                                return static_cast<UParticleModule*>(N);
                             }
                         );
                         AddItem(
                             "Velocity",
-                            [](bool bQuery, UParticleLODLevel* L)
+                            true,
+                            HasModuleOfType<UParticleModuleVelocity>(LOD0),
+                            [](UParticleLODLevel* L)
                             {
-                                if (bQuery) return HasModuleOfType<UParticleModuleVelocity>(L);
                                 auto* N = UObjectManager::Get().CreateObject<UParticleModuleVelocity>(L);
-                                L->Modules.push_back(N);
-                                L->UpdateModuleLists();
-                                return true;
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = false;
+                                N->bFinalUpdateModule = false;
+                                N->bInWorldSpace      = false;
+                                N->bApplyOwnerScale   = false;
+                                auto* V = UObjectManager::Get().CreateObject<UDistributionVectorUniform>(N);
+                                V->Min = FVector(-1.0f, -1.0f, -1.0f);
+                                V->Max = FVector(1.0f, 1.0f, 1.0f);
+                                N->StartVelocity.Distribution = V;
+                                auto* R = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(N);
+                                R->Constant = 0.0f;
+                                N->StartVelocityRadial.Distribution = R;
+                                return static_cast<UParticleModule*>(N);
                             }
                         );
                         AddItem(
                             "Size",
-                            [](bool bQuery, UParticleLODLevel* L)
+                            true,
+                            HasModuleOfType<UParticleModuleSize>(LOD0),
+                            [](UParticleLODLevel* L)
                             {
-                                if (bQuery) return HasModuleOfType<UParticleModuleSize>(L);
                                 auto* N = UObjectManager::Get().CreateObject<UParticleModuleSize>(L);
-                                L->Modules.push_back(N);
-                                L->UpdateModuleLists();
-                                return true;
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = false;
+                                N->bFinalUpdateModule = false;
+                                auto* D = UObjectManager::Get().CreateObject<UDistributionVectorUniform>(N);
+                                D->Min = FVector(0.0f, 0.0f, 0.0f);
+                                D->Max = FVector(50.0f, 50.0f, 50.0f);
+                                N->StartSize.Distribution = D;
+                                return static_cast<UParticleModule*>(N);
                             }
                         );
                         AddItem(
                             "Color",
-                            [](bool bQuery, UParticleLODLevel* L)
+                            true,
+                            HasModuleOfType<UParticleModuleColor>(LOD0),
+                            [](UParticleLODLevel* L)
                             {
-                                if (bQuery) return HasModuleOfType<UParticleModuleColor>(L);
                                 auto* N = UObjectManager::Get().CreateObject<UParticleModuleColor>(L);
-                                L->Modules.push_back(N);
-                                L->UpdateModuleLists();
-                                return true;
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = false;
+                                N->bFinalUpdateModule = false;
+                                N->bClampAlpha        = true;
+                                auto* C = UObjectManager::Get().CreateObject<UDistributionVectorConstant>(N);
+                                C->Constant = FVector(1.0f, 1.0f, 1.0f);
+                                N->StartColor.Distribution = C;
+                                auto* A = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(N);
+                                A->Constant = 1.0f;
+                                N->StartAlpha.Distribution = A;
+                                return static_cast<UParticleModule*>(N);
                             }
                         );
                         AddItem(
                             "Color Over Life",
-                            [](bool bQuery, UParticleLODLevel* L)
+                            true,
+                            HasModuleOfType<UParticleModuleColorOverLife>(LOD0),
+                            [](UParticleLODLevel* L)
                             {
-                                if (bQuery) return HasModuleOfType<UParticleModuleColorOverLife>(L);
                                 auto* N = UObjectManager::Get().CreateObject<UParticleModuleColorOverLife>(L);
-                                L->Modules.push_back(N);
-                                L->UpdateModuleLists();
-                                return true;
-                            }
-                        );
-                        AddItem(
-                            "Event Generator",
-                            [](bool bQuery, UParticleLODLevel* L)
-                            {
-                                if (bQuery) return HasModuleOfType<UParticleModuleEventGenerator>(L);
-                                auto* N = UObjectManager::Get().CreateObject<UParticleModuleEventGenerator>(L);
-                                L->Modules.push_back(N);
-                                L->UpdateModuleLists();
-                                return true;
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = true;
+                                N->bFinalUpdateModule = false;
+                                N->bClampAlpha        = true;
+                                auto* C = UObjectManager::Get().CreateObject<UDistributionVectorConstant>(N);
+                                C->Constant = FVector(1.0f, 1.0f, 1.0f);
+                                N->ColorOverLife.Distribution = C;
+                                auto* A = UObjectManager::Get().CreateObject<UDistributionFloatConstant>(N);
+                                A->Constant = 1.0f;
+                                N->AlphaOverLife.Distribution = A;
+                                return static_cast<UParticleModule*>(N);
                             }
                         );
                         AddItem(
                             "Collision",
-                            [](bool bQuery, UParticleLODLevel* L)
+                            true,
+                            HasModuleOfType<UParticleModuleCollision>(LOD0),
+                            [](UParticleLODLevel* L)
                             {
-                                if (bQuery) return HasModuleOfType<UParticleModuleCollision>(L);
                                 auto* N = UObjectManager::Get().CreateObject<UParticleModuleCollision>(L);
-                                L->Modules.push_back(N);
-                                L->UpdateModuleLists();
-                                return true;
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = false;
+                                N->bUpdateModule      = true;
+                                N->bFinalUpdateModule = false;
+                                N->Radius             = 1.0f;
+                                N->Restitution        = 0.5f;
+                                N->bKillOnCollision   = false;
+                                return static_cast<UParticleModule*>(N);
                             }
                         );
+
+                        ImGui::Separator();
+
+                        AddItem(
+                            "Mesh Material",
+                            bMeshType,
+                            HasModuleOfType<UParticleModuleMeshMaterial>(LOD0),
+                            [](UParticleLODLevel* L)
+                            {
+                                auto* N = UObjectManager::Get().CreateObject<UParticleModuleMeshMaterial>(L);
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = false;
+                                N->bUpdateModule      = false;
+                                N->bFinalUpdateModule = false;
+                                return static_cast<UParticleModule*>(N);
+                            }
+                        );
+                        AddItem(
+                            "Mesh Rotation",
+                            bMeshType,
+                            HasModuleOfType<UParticleModuleMeshRotation>(LOD0),
+                            [](UParticleLODLevel* L)
+                            {
+                                auto* N = UObjectManager::Get().CreateObject<UParticleModuleMeshRotation>(L);
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = false;
+                                N->bFinalUpdateModule = false;
+                                return static_cast<UParticleModule*>(N);
+                            }
+                        );
+                        AddItem(
+                            "Mesh Rotation Rate",
+                            bMeshType,
+                            HasModuleOfType<UParticleModuleMeshRotationRate>(LOD0),
+                            [](UParticleLODLevel* L)
+                            {
+                                auto* N = UObjectManager::Get().CreateObject<UParticleModuleMeshRotationRate>(L);
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = true;
+                                N->bFinalUpdateModule = false;
+                                return static_cast<UParticleModule*>(N);
+                            }
+                        );
+
+                        ImGui::Separator();
+
+                        AddItem(
+                            "Spawn Per Unit",
+                            bRibbonType,
+                            HasModuleOfType<UParticleModuleSpawnPerUnit>(LOD0),
+                            [](UParticleLODLevel* L)
+                            {
+                                auto* N = UObjectManager::Get().CreateObject<UParticleModuleSpawnPerUnit>(L);
+                                N->bEnabled                    = true;
+                                N->bSpawnModule                = false;
+                                N->bUpdateModule               = false;
+                                N->bFinalUpdateModule          = false;
+                                N->bProcessSpawnRate           = true;
+                                N->bProcessBurstList           = true;
+                                N->UnitScalar                  = 1.0f;
+                                N->MovementTolerance           = 0.1f;
+                                N->SpawnPerUnit                = 1.0f;
+                                N->MaxFrameDistance            = 0.0f;
+                                N->bIgnoreSpawnRateWhenMoving  = false;
+                                N->bIgnoreMovementAlongX       = false;
+                                N->bIgnoreMovementAlongY       = false;
+                                N->bIgnoreMovementAlongZ       = false;
+                                return static_cast<UParticleModule*>(N);
+                            }
+                        );
+                        AddItem(
+                            "Trail Source",
+                            bRibbonType,
+                            HasModuleOfType<UParticleModuleTrailSource>(LOD0),
+                            [](UParticleLODLevel* L)
+                            {
+                                auto* N = UObjectManager::Get().CreateObject<UParticleModuleTrailSource>(L);
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = false;
+                                N->bUpdateModule      = false;
+                                N->bFinalUpdateModule = false;
+                                return static_cast<UParticleModule*>(N);
+                            }
+                        );
+
+                        ImGui::Separator();
+
+                        AddItem(
+                            "Beam Source",
+                            bBeamType,
+                            HasModuleOfType<UParticleModuleBeamSource>(LOD0),
+                            [](UParticleLODLevel* L)
+                            {
+                                auto* N = UObjectManager::Get().CreateObject<UParticleModuleBeamSource>(L);
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = true;
+                                N->bFinalUpdateModule = false;
+                                return static_cast<UParticleModule*>(N);
+                            }
+                        );
+                        AddItem(
+                            "Beam Target",
+                            bBeamType,
+                            HasModuleOfType<UParticleModuleBeamTarget>(LOD0),
+                            [](UParticleLODLevel* L)
+                            {
+                                auto* N = UObjectManager::Get().CreateObject<UParticleModuleBeamTarget>(L);
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = true;
+                                N->bFinalUpdateModule = false;
+                                return static_cast<UParticleModule*>(N);
+                            }
+                        );
+                        AddItem(
+                            "Beam Noise",
+                            bBeamType,
+                            HasModuleOfType<UParticleModuleBeamNoise>(LOD0),
+                            [](UParticleLODLevel* L)
+                            {
+                                auto* N = UObjectManager::Get().CreateObject<UParticleModuleBeamNoise>(L);
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = true;
+                                N->bFinalUpdateModule = false;
+                                return static_cast<UParticleModule*>(N);
+                            }
+                        );
+                        AddItem(
+                            "Beam Source Modifier",
+                            bBeamType,
+                            HasBeamModifierOfType(LOD0, PEB2MT_Source),
+                            [](UParticleLODLevel* L)
+                            {
+                                auto* N = UObjectManager::Get().CreateObject<UParticleModuleBeamModifier>(L);
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = true;
+                                N->bFinalUpdateModule = false;
+                                N->ModifierType       = PEB2MT_Source;
+                                return static_cast<UParticleModule*>(N);
+                            }
+                        );
+                        AddItem(
+                            "Beam Target Modifier",
+                            bBeamType,
+                            HasBeamModifierOfType(LOD0, PEB2MT_Target),
+                            [](UParticleLODLevel* L)
+                            {
+                                auto* N = UObjectManager::Get().CreateObject<UParticleModuleBeamModifier>(L);
+                                N->bEnabled           = true;
+                                N->bSpawnModule       = true;
+                                N->bUpdateModule      = true;
+                                N->bFinalUpdateModule = false;
+                                N->ModifierType       = PEB2MT_Target;
+                                return static_cast<UParticleModule*>(N);
+                            }
+                        );
+                        ImGui::EndPopup();
+                    }
+
+                    // ── 빈 영역 우클릭 → TypeData(Sprite/Mesh/Ribbon/Beam2) 전환 ──────
+                    // ImGuiPopupFlags_NoOpenOverItems: 모듈 row(Selectable)/버튼 위에서는
+                    // 이 메뉴가 안 뜨고, 진짜 빈 공간에서만 뜸. 모듈 컨텍스트 메뉴와 충돌 X.
+                    if (ImGui::BeginPopupContextWindow("##EmitterTypeDataCtx",
+                            ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
+                    {
+                        ImGui::TextColored(PSE::DimTextV, "Emitter Type");
+                        ImGui::Separator();
+
+                        UParticleLODLevel*           LOD0Probe = Emitter ? Emitter->GetLODLevel(0) : nullptr;
+                        UParticleModuleTypeDataBase* CurType   = LOD0Probe ? LOD0Probe->TypeDataModule : nullptr;
+
+                        const bool bIsSprite = (CurType == nullptr);
+                        const bool bIsMesh   = (Cast<UParticleModuleTypeDataMesh>(CurType) != nullptr);
+                        const bool bIsRibbon = (Cast<UParticleModuleTypeDataRibbon>(CurType) != nullptr);
+                        const bool bIsBeam2  = (Cast<UParticleModuleTypeDataBeam2>(CurType) != nullptr);
+
+                        if (ImGui::MenuItem("Sprite", nullptr, bIsSprite))
+                        {
+                            SetEmitterTypeData(EmitterIndex, nullptr);
+                        }
+                        if (ImGui::MenuItem("Mesh Data", nullptr, bIsMesh))
+                        {
+                            SetEmitterTypeData(EmitterIndex, "UParticleModuleTypeDataMesh");
+                        }
+                        if (ImGui::MenuItem("Ribbon Data", nullptr, bIsRibbon))
+                        {
+                            SetEmitterTypeData(EmitterIndex, "UParticleModuleTypeDataRibbon");
+                        }
+                        if (ImGui::MenuItem("Beam2 Data", nullptr, bIsBeam2))
+                        {
+                            SetEmitterTypeData(EmitterIndex, "UParticleModuleTypeDataBeam2");
+                        }
                         ImGui::EndPopup();
                     }
                 }
@@ -3780,7 +4225,6 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
 
                 if (SelectedEmitter)
                 {
-                    bChanged |= ImGui::Checkbox("Use Mesh Instance", &SelectedEmitter->bUseMeshInstance);
                     bChanged |= ImGui::DragInt(
                         "Initial Alloc Count",
                         &SelectedEmitter->InitialAllocationCount,
@@ -4082,8 +4526,10 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
     bool bChanged       = false;
     bool bMaterialDirty = false;
 
-    // Required/Spawn은 이미터 동작에 필수라 disable 토글이 무의미하다. 그 외 모듈만 노출.
-    const bool bIsCoreModule = Cast<UParticleModuleRequired>(Module) || Cast<UParticleModuleSpawn>(Module);
+    // Required/Spawn/TypeData는 이미터 동작에 필수라 disable 토글이 무의미하다. 그 외 모듈만 노출.
+    const bool bIsCoreModule = Cast<UParticleModuleRequired>(Module)
+        || Cast<UParticleModuleSpawn>(Module)
+        || Cast<UParticleModuleTypeDataBase>(Module);
     if (!bIsCoreModule)
     {
         bool bModuleEnabled = Module->bEnabled != 0;
@@ -4141,6 +4587,26 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             DuplicateMaterialForRequired(Required);
             bMaterialDirty = true;
         }
+        UParticleEmitter* OwnerEmitter = nullptr;
+        if (UParticleSystem* ParticleSystem = GetParticleSystem())
+        {
+            if (SelectedEmitterIndex >= 0 && SelectedEmitterIndex < static_cast<int32>(ParticleSystem->GetEmitters().size()))
+            {
+                OwnerEmitter = ParticleSystem->GetEmitters()[SelectedEmitterIndex];
+            }
+        }
+        const UParticleLODLevel* OwnerLOD = OwnerEmitter ? OwnerEmitter->GetLODLevel(SelectedLODIndex) : nullptr;
+        const bool bMeshEmitter = OwnerLOD && Cast<UParticleModuleTypeDataMesh>(OwnerLOD->TypeDataModule);
+        const EMaterialDomain ExpectedDomain = bMeshEmitter ? EMaterialDomain::ParticleMesh : EMaterialDomain::ParticleSprite;
+        if (Required->Material && Required->Material->GetDomain() != ExpectedDomain)
+        {
+            ImGui::TextColored(
+                ImVec4(1.0f, 0.80f, 0.25f, 1.0f),
+                "Selected material domain is %s (expected %s).",
+                MaterialDomainName(Required->Material->GetDomain()),
+                MaterialDomainName(ExpectedDomain)
+            );
+        }
         ImGui::Spacing();
 
         // ── Emitter ──
@@ -4161,55 +4627,14 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 bChanged                        = true;
             }
             bChanged |= ImGui::DragFloat("Duration", &Required->EmitterDuration, 0.05f, 0.0f, 10000.0f);
-            bChanged |= ImGui::DragFloat("Duration Low", &Required->EmitterDurationLow, 0.05f, 0.0f, 10000.0f);
             bChanged |= ImGui::DragFloat("Delay", &Required->EmitterDelay, 0.05f, 0.0f, 10000.0f);
             bChanged |= ImGui::DragInt("Loops", &Required->EmitterLoops, 1.0f, 0, 10000);
-        }
-
-        // ── Spawn ──
-        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        if (ImGui::CollapsingHeader("Spawn##Req"))
-        {
-            bChanged |= ImGui::DragFloat("Spawn Rate", &Required->SpawnRate, 0.1f, 0.0f, 10000.0f);
-            ImGui::Spacing();
-            ImGui::TextColored(PSE::DimTextV, "Bursts");
-            RenderBurstList(Required->BurstList);
         }
 
         // ── Rendering ──
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Rendering##Req"))
         {
-            if (ImGui::BeginCombo("Screen Alignment", ScreenAlignmentName(Required->ScreenAlignment)))
-            {
-                for (int32 i = 0; i < PSA_MAX; ++i)
-                {
-                    const auto V    = static_cast<EParticleScreenAlignment>(i);
-                    const bool bSel = (Required->ScreenAlignment == V);
-                    if (ImGui::Selectable(ScreenAlignmentName(V), bSel))
-                    {
-                        Required->ScreenAlignment = V;
-                        bChanged                  = true;
-                    }
-                    if (bSel) ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-            if (ImGui::BeginCombo("Sort Mode", SortModeName(Required->SortMode)))
-            {
-                for (int32 i = 0; i < PSORTMODE_MAX; ++i)
-                {
-                    const auto V    = static_cast<EParticleSortMode>(i);
-                    const bool bSel = (Required->SortMode == V);
-                    if (ImGui::Selectable(SortModeName(V), bSel))
-                    {
-                        Required->SortMode = V;
-                        bChanged           = true;
-                    }
-                    if (bSel) ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
             bChanged |= ImGui::Checkbox("Use Max Draw Count", &Required->bUseMaxDrawCount);
             if (!Required->bUseMaxDrawCount) ImGui::BeginDisabled();
             bChanged |= ImGui::DragInt("Max Draw Count", &Required->MaxDrawCount, 1.0f, 0, 100000);
@@ -4221,13 +4646,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             if (!Required->bUseMaxDrawCount) ImGui::EndDisabled();
         }
 
-        // ── Sub-UV ──
-        if (ImGui::CollapsingHeader("Sub-UV##Req"))
-        {
-            bChanged |= ImGui::DragInt("Horizontal", &Required->SubImages_Horizontal, 1.0f, 1, 64);
-            bChanged |= ImGui::DragInt("Vertical", &Required->SubImages_Vertical, 1.0f, 1, 64);
-        }
-
         // ── Flags ──
         if (ImGui::CollapsingHeader("Flags##Req"))
         {
@@ -4237,22 +4655,6 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 Required->bUseLocalSpace = bUseLocal ? 1 : 0;
                 bChanged                 = true;
             }
-
-            bool bKillDeact = Required->bKillOnDeactivate;
-            if (ImGui::Checkbox("Kill on Deactivate", &bKillDeact))
-            {
-                Required->bKillOnDeactivate = bKillDeact ? 1 : 0;
-                bChanged                    = true;
-            }
-
-            bool bKillComp = Required->bKillOnCompleted;
-            if (ImGui::Checkbox("Kill on Completed", &bKillComp))
-            {
-                Required->bKillOnCompleted = bKillComp ? 1 : 0;
-                bChanged                   = true;
-            }
-
-            bChanged |= ImGui::Checkbox("Delay First Loop Only", &Required->bDelayFirstLoopOnly);
         }
     }
     else if (UParticleModuleSpawn* Spawn = Cast<UParticleModuleSpawn>(Module))
@@ -4300,6 +4702,18 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         {
             DrawRawDistributionVector("Start Velocity", Velocity->StartVelocity, bChanged, Velocity);
             DrawRawDistributionFloat("Start Velocity Radial", Velocity->StartVelocityRadial, bChanged, Velocity);
+            bool bWorld = Velocity->bInWorldSpace;
+            if (ImGui::Checkbox("In World Space", &bWorld))
+            {
+                Velocity->bInWorldSpace = bWorld ? 1 : 0;
+                bChanged = true;
+            }
+            bool bOwnerScale = Velocity->bApplyOwnerScale;
+            if (ImGui::Checkbox("Apply Owner Scale", &bOwnerScale))
+            {
+                Velocity->bApplyOwnerScale = bOwnerScale ? 1 : 0;
+                bChanged = true;
+            }
         }
     }
     else if (UParticleModuleSize* Size = Cast<UParticleModuleSize>(Module))
@@ -4342,15 +4756,11 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
     }
     else if (UParticleModuleEventGenerator* Generator = Cast<UParticleModuleEventGenerator>(Module))
     {
+        (void)Generator;
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Event"))
         {
-            bool bGenerateCollisionEvents = Generator->bGenerateCollisionEvents;
-            if (ImGui::Checkbox("Generate Collision Event", &bGenerateCollisionEvents))
-            {
-                Generator->bGenerateCollisionEvents = bGenerateCollisionEvents;
-                bChanged                            = true;
-            }
+            ImGui::TextColored(PSE::DimTextV, "Event Generator UI is hidden until dispatch path is fully connected.");
         }
     }
     else if (UParticleModuleCollision* Collision = Cast<UParticleModuleCollision>(Module))
@@ -4366,6 +4776,442 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             }
         }
     }
+    else if (UParticleModuleMeshMaterial* MeshMaterial = Cast<UParticleModuleMeshMaterial>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Mesh Material"))
+        {
+            int32 SectionCount = 1;
+            if (UParticleSystem* PS = GetParticleSystem())
+            {
+                if (SelectedEmitterIndex >= 0 && SelectedEmitterIndex < static_cast<int32>(PS->GetEmitters().size()))
+                {
+                    if (UParticleEmitter* Emitter = PS->GetEmitters()[SelectedEmitterIndex])
+                    {
+                        if (UParticleLODLevel* LOD = Emitter->GetLODLevel(SelectedLODIndex))
+                        {
+                            if (UParticleModuleTypeDataMesh* MeshType = Cast<UParticleModuleTypeDataMesh>(LOD->TypeDataModule))
+                            {
+                                if (UStaticMesh* StaticMesh = MeshType->GetStaticMesh())
+                                {
+                                    SectionCount = (std::max)(1, static_cast<int32>(StaticMesh->GetLODSections(0).size()));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (static_cast<int32>(MeshMaterial->MeshMaterialSlots.size()) < SectionCount)
+            {
+                MeshMaterial->MeshMaterialSlots.resize(SectionCount, FSoftObjectPtr("None"));
+                MeshMaterial->MeshMaterials.resize(SectionCount, nullptr);
+            }
+
+            const TArray<FMaterialAssetListItem>& MatFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
+            for (int32 SectionIdx = 0; SectionIdx < SectionCount; ++SectionIdx)
+            {
+                ImGui::PushID(SectionIdx);
+                FString CurrentSlot = MeshMaterial->MeshMaterialSlots[SectionIdx].ToString();
+                if (CurrentSlot.empty()) CurrentSlot = "None";
+                if (ImGui::BeginCombo("Material", CurrentSlot.c_str()))
+                {
+                    const bool bNoneSelected = (CurrentSlot == "None");
+                    if (ImGui::Selectable("None", bNoneSelected))
+                    {
+                        MeshMaterial->MeshMaterialSlots[SectionIdx] = "None";
+                        MeshMaterial->MeshMaterials[SectionIdx] = nullptr;
+                        bChanged = true;
+                    }
+
+                    for (const FMaterialAssetListItem& Item : MatFiles)
+                    {
+                        const bool bSelected = (CurrentSlot == Item.FullPath);
+                        if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+                        {
+                            MeshMaterial->MeshMaterialSlots[SectionIdx] = Item.FullPath;
+                            bChanged = true;
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+                ImGui::SameLine();
+                ImGui::TextColored(PSE::DimTextV, "Section %d", SectionIdx);
+
+                if (SectionIdx < static_cast<int32>(MeshMaterial->MeshMaterials.size()))
+                {
+                    UMaterial* Mat = MeshMaterial->MeshMaterials[SectionIdx];
+                    if (Mat && Mat->GetDomain() != EMaterialDomain::ParticleMesh)
+                    {
+                        ImGui::TextColored(
+                            ImVec4(1.0f, 0.80f, 0.25f, 1.0f),
+                            "Domain is %s (expected ParticleMesh).",
+                            MaterialDomainName(Mat->GetDomain())
+                        );
+                    }
+                }
+                ImGui::PopID();
+            }
+
+            if (bChanged)
+            {
+                MeshMaterial->ResolveMaterials();
+            }
+        }
+    }
+    else if (UParticleModuleMeshRotation* MeshRotation = Cast<UParticleModuleMeshRotation>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Mesh Rotation"))
+        {
+            DrawRawDistributionVector("Start Rotation", MeshRotation->StartRotation, bChanged, MeshRotation);
+            bool bInherit = MeshRotation->bInheritParent;
+            if (ImGui::Checkbox("Inherit Parent", &bInherit))
+            {
+                MeshRotation->bInheritParent = bInherit ? 1 : 0;
+                bChanged = true;
+            }
+        }
+    }
+    else if (UParticleModuleMeshRotationRate* MeshRotationRate = Cast<UParticleModuleMeshRotationRate>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Mesh Rotation Rate"))
+        {
+            DrawRawDistributionVector("Start Rotation Rate", MeshRotationRate->StartRotationRate, bChanged, MeshRotationRate);
+        }
+    }
+    else if (UParticleModuleSpawnPerUnit* SpawnPerUnit = Cast<UParticleModuleSpawnPerUnit>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Spawn Per Unit"))
+        {
+            bChanged |= ImGui::DragFloat("Unit Scalar", &SpawnPerUnit->UnitScalar, 0.01f, 0.0f, 100000.0f);
+            bChanged |= ImGui::DragFloat("Movement Tolerance", &SpawnPerUnit->MovementTolerance, 0.01f, 0.0f, 100000.0f);
+            bChanged |= ImGui::DragFloat("Spawn Per Unit", &SpawnPerUnit->SpawnPerUnit, 0.01f, 0.0f, 100000.0f);
+            bChanged |= ImGui::DragFloat("Max Frame Distance", &SpawnPerUnit->MaxFrameDistance, 0.01f, 0.0f, 100000.0f);
+            bool bFlag = SpawnPerUnit->bIgnoreSpawnRateWhenMoving;
+            if (ImGui::Checkbox("Ignore Spawn Rate When Moving", &bFlag)) { SpawnPerUnit->bIgnoreSpawnRateWhenMoving = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = SpawnPerUnit->bIgnoreMovementAlongX;
+            if (ImGui::Checkbox("Ignore Movement Along X", &bFlag)) { SpawnPerUnit->bIgnoreMovementAlongX = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = SpawnPerUnit->bIgnoreMovementAlongY;
+            if (ImGui::Checkbox("Ignore Movement Along Y", &bFlag)) { SpawnPerUnit->bIgnoreMovementAlongY = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = SpawnPerUnit->bIgnoreMovementAlongZ;
+            if (ImGui::Checkbox("Ignore Movement Along Z", &bFlag)) { SpawnPerUnit->bIgnoreMovementAlongZ = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = SpawnPerUnit->bProcessSpawnRate;
+            if (ImGui::Checkbox("Process Spawn Rate", &bFlag)) { SpawnPerUnit->bProcessSpawnRate = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = SpawnPerUnit->bProcessBurstList;
+            if (ImGui::Checkbox("Process Burst List", &bFlag)) { SpawnPerUnit->bProcessBurstList = bFlag ? 1 : 0; bChanged = true; }
+        }
+    }
+    else if (UParticleModuleTrailSource* TrailSource = Cast<UParticleModuleTrailSource>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Trail Source"))
+        {
+            if (TrailSource->SourceMethod != PET2SRCM_Default)
+            {
+                ImGui::TextColored(
+                    ImVec4(1.0f, 0.80f, 0.25f, 1.0f),
+                    "Particle/Actor source methods are not supported yet."
+                );
+                ImGui::SameLine();
+                if (ImGui::SmallButton("Reset to Default"))
+                {
+                    TrailSource->SourceMethod = PET2SRCM_Default;
+                    bChanged = true;
+                }
+            }
+            ImGui::TextColored(PSE::DimTextV, "Source Method: Default");
+
+            DrawRawDistributionFloat("Source Strength", TrailSource->SourceStrength, bChanged, TrailSource);
+            bool bLock = TrailSource->bLockSourceStrength;
+            if (ImGui::Checkbox("Lock Source Strength", &bLock))
+            {
+                TrailSource->bLockSourceStrength = bLock ? 1 : 0;
+                bChanged = true;
+            }
+
+            int32 OffsetCount = TrailSource->SourceOffsetCount;
+            if (ImGui::DragInt("Source Offset Count", &OffsetCount, 1.0f, 0, 64))
+            {
+                TrailSource->SourceOffsetCount = (std::max)(0, OffsetCount);
+                TrailSource->SourceOffsetDefaults.resize(TrailSource->SourceOffsetCount, FVector::ZeroVector);
+                bChanged = true;
+            }
+            for (int32 OffsetIdx = 0; OffsetIdx < TrailSource->SourceOffsetCount; ++OffsetIdx)
+            {
+                ImGui::PushID(OffsetIdx);
+                if (OffsetIdx >= static_cast<int32>(TrailSource->SourceOffsetDefaults.size()))
+                {
+                    TrailSource->SourceOffsetDefaults.resize(OffsetIdx + 1, FVector::ZeroVector);
+                }
+                bChanged |= ImGui::DragFloat3("Offset", TrailSource->SourceOffsetDefaults[OffsetIdx].Data, 0.1f);
+                ImGui::SameLine();
+                ImGui::TextColored(PSE::DimTextV, "#%d", OffsetIdx);
+                ImGui::PopID();
+            }
+
+            int32 SelectionMethod = static_cast<int32>(TrailSource->SelectionMethod);
+            if (ImGui::Combo("Selection Method", &SelectionMethod, "Random\0Sequential\0"))
+            {
+                TrailSource->SelectionMethod = static_cast<EParticleSourceSelectionMethod>(SelectionMethod);
+                bChanged = true;
+            }
+            bool bInherit = TrailSource->bInheritRotation;
+            if (ImGui::Checkbox("Inherit Rotation", &bInherit))
+            {
+                TrailSource->bInheritRotation = bInherit ? 1 : 0;
+                bChanged = true;
+            }
+        }
+    }
+    else if (UParticleModuleBeamSource* BeamSource = Cast<UParticleModuleBeamSource>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Beam Source"))
+        {
+            if (BeamSource->SourceMethod == PEB2STM_Actor || BeamSource->SourceMethod == PEB2STM_Emitter || BeamSource->SourceMethod == PEB2STM_Particle)
+            {
+                ImGui::TextColored(PSE::DimTextV, "Actor/Emitter/Particle source methods are not supported yet.");
+            }
+            int32 Method = (BeamSource->SourceMethod == PEB2STM_UserSet) ? 1 : 0;
+            if (ImGui::Combo("Source Method", &Method, "Default\0User Set\0"))
+            {
+                BeamSource->SourceMethod = (Method == 0) ? PEB2STM_Default : PEB2STM_UserSet;
+                bChanged = true;
+            }
+
+            DrawRawDistributionVector("Source", BeamSource->Source, bChanged, BeamSource);
+            bool bAbs = BeamSource->bSourceAbsolute;
+            if (ImGui::Checkbox("Source Absolute", &bAbs)) { BeamSource->bSourceAbsolute = bAbs ? 1 : 0; bChanged = true; }
+            bool bLock = BeamSource->bLockSource;
+            if (ImGui::Checkbox("Lock Source", &bLock)) { BeamSource->bLockSource = bLock ? 1 : 0; bChanged = true; }
+
+            int32 TangentMethod = static_cast<int32>(BeamSource->SourceTangentMethod);
+            if (ImGui::Combo("Source Tangent Method", &TangentMethod, "Direct\0User Set\0Distribution\0Emitter X Axis\0"))
+            {
+                BeamSource->SourceTangentMethod = static_cast<Beam2SourceTargetTangentMethod>(TangentMethod);
+                bChanged = true;
+            }
+            DrawRawDistributionVector("Source Tangent", BeamSource->SourceTangent, bChanged, BeamSource);
+            bool bLockTangent = BeamSource->bLockSourceTangent;
+            if (ImGui::Checkbox("Lock Source Tangent", &bLockTangent)) { BeamSource->bLockSourceTangent = bLockTangent ? 1 : 0; bChanged = true; }
+            DrawRawDistributionFloat("Source Strength", BeamSource->SourceStrength, bChanged, BeamSource);
+            bool bLockStrength = BeamSource->bLockSourceStrength;
+            if (ImGui::Checkbox("Lock Source Strength", &bLockStrength)) { BeamSource->bLockSourceStrength = bLockStrength ? 1 : 0; bChanged = true; }
+        }
+    }
+    else if (UParticleModuleBeamTarget* BeamTarget = Cast<UParticleModuleBeamTarget>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Beam Target"))
+        {
+            if (BeamTarget->TargetMethod == PEB2STM_Actor || BeamTarget->TargetMethod == PEB2STM_Emitter || BeamTarget->TargetMethod == PEB2STM_Particle)
+            {
+                ImGui::TextColored(PSE::DimTextV, "Actor/Emitter/Particle target methods are not supported yet.");
+            }
+            int32 Method = (BeamTarget->TargetMethod == PEB2STM_UserSet) ? 1 : 0;
+            if (ImGui::Combo("Target Method", &Method, "Default\0User Set\0"))
+            {
+                BeamTarget->TargetMethod = (Method == 0) ? PEB2STM_Default : PEB2STM_UserSet;
+                bChanged = true;
+            }
+
+            DrawRawDistributionVector("Target", BeamTarget->Target, bChanged, BeamTarget);
+            bool bAbs = BeamTarget->bTargetAbsolute;
+            if (ImGui::Checkbox("Target Absolute", &bAbs)) { BeamTarget->bTargetAbsolute = bAbs ? 1 : 0; bChanged = true; }
+            bool bLock = BeamTarget->bLockTarget;
+            if (ImGui::Checkbox("Lock Target", &bLock)) { BeamTarget->bLockTarget = bLock ? 1 : 0; bChanged = true; }
+
+            int32 TangentMethod = static_cast<int32>(BeamTarget->TargetTangentMethod);
+            if (ImGui::Combo("Target Tangent Method", &TangentMethod, "Direct\0User Set\0Distribution\0Emitter X Axis\0"))
+            {
+                BeamTarget->TargetTangentMethod = static_cast<Beam2SourceTargetTangentMethod>(TangentMethod);
+                bChanged = true;
+            }
+            DrawRawDistributionVector("Target Tangent", BeamTarget->TargetTangent, bChanged, BeamTarget);
+            bool bLockTangent = BeamTarget->bLockTargetTangent;
+            if (ImGui::Checkbox("Lock Target Tangent", &bLockTangent)) { BeamTarget->bLockTargetTangent = bLockTangent ? 1 : 0; bChanged = true; }
+            DrawRawDistributionFloat("Target Strength", BeamTarget->TargetStrength, bChanged, BeamTarget);
+            bool bLockStrength = BeamTarget->bLockTargetStrength;
+            if (ImGui::Checkbox("Lock Target Strength", &bLockStrength)) { BeamTarget->bLockTargetStrength = bLockStrength ? 1 : 0; bChanged = true; }
+            bChanged |= ImGui::DragFloat("Lock Radius", &BeamTarget->LockRadius, 0.1f, 0.0f, 100000.0f);
+        }
+    }
+    else if (UParticleModuleBeamNoise* BeamNoise = Cast<UParticleModuleBeamNoise>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Beam Noise"))
+        {
+            bool bFlag = BeamNoise->bLowFreq_Enabled;
+            if (ImGui::Checkbox("Low Freq Enabled", &bFlag)) { BeamNoise->bLowFreq_Enabled = bFlag ? 1 : 0; bChanged = true; }
+            bChanged |= ImGui::DragInt("Frequency", &BeamNoise->Frequency, 1.0f, 0, 4096);
+            bChanged |= ImGui::DragInt("Frequency Low Range", &BeamNoise->Frequency_LowRange, 1.0f, 0, 4096);
+            DrawRawDistributionVector("Noise Range", BeamNoise->NoiseRange, bChanged, BeamNoise);
+            DrawRawDistributionFloat("Noise Range Scale", BeamNoise->NoiseRangeScale, bChanged, BeamNoise);
+            bFlag = BeamNoise->bNRScaleEmitterTime;
+            if (ImGui::Checkbox("NR Scale Emitter Time", &bFlag)) { BeamNoise->bNRScaleEmitterTime = bFlag ? 1 : 0; bChanged = true; }
+            DrawRawDistributionVector("Noise Speed", BeamNoise->NoiseSpeed, bChanged, BeamNoise);
+            bFlag = BeamNoise->bSmooth;
+            if (ImGui::Checkbox("Smooth", &bFlag)) { BeamNoise->bSmooth = bFlag ? 1 : 0; bChanged = true; }
+            bChanged |= ImGui::DragFloat("Noise Lock Radius", &BeamNoise->NoiseLockRadius, 0.1f, 0.0f, 100000.0f);
+            bFlag = BeamNoise->bNoiseLock;
+            if (ImGui::Checkbox("Noise Lock", &bFlag)) { BeamNoise->bNoiseLock = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = BeamNoise->bOscillate;
+            if (ImGui::Checkbox("Oscillate", &bFlag)) { BeamNoise->bOscillate = bFlag ? 1 : 0; bChanged = true; }
+            bChanged |= ImGui::DragFloat("Noise Lock Time", &BeamNoise->NoiseLockTime, 0.01f, -1.0f, 100000.0f);
+            bChanged |= ImGui::DragFloat("Noise Tension", &BeamNoise->NoiseTension, 0.01f, 0.0f, 1000.0f);
+            bFlag = BeamNoise->bUseNoiseTangents;
+            if (ImGui::Checkbox("Use Noise Tangents", &bFlag)) { BeamNoise->bUseNoiseTangents = bFlag ? 1 : 0; bChanged = true; }
+            DrawRawDistributionFloat("Noise Tangent Strength", BeamNoise->NoiseTangentStrength, bChanged, BeamNoise);
+            bChanged |= ImGui::DragInt("Noise Tessellation", &BeamNoise->NoiseTessellation, 1.0f, 0, 4096);
+            bFlag = BeamNoise->bTargetNoise;
+            if (ImGui::Checkbox("Target Noise", &bFlag)) { BeamNoise->bTargetNoise = bFlag ? 1 : 0; bChanged = true; }
+            bChanged |= ImGui::DragFloat("Frequency Distance", &BeamNoise->FrequencyDistance, 0.1f, 0.0f, 100000.0f);
+            bFlag = BeamNoise->bApplyNoiseScale;
+            if (ImGui::Checkbox("Apply Noise Scale", &bFlag)) { BeamNoise->bApplyNoiseScale = bFlag ? 1 : 0; bChanged = true; }
+            DrawRawDistributionFloat("Noise Scale", BeamNoise->NoiseScale, bChanged, BeamNoise);
+        }
+    }
+    else if (UParticleModuleBeamModifier* BeamModifier = Cast<UParticleModuleBeamModifier>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Beam Modifier"))
+        {
+            bool bFlag = BeamModifier->PositionOptions.bModify;
+            if (ImGui::Checkbox("Position Modify", &bFlag)) { BeamModifier->PositionOptions.bModify = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = BeamModifier->PositionOptions.bScale;
+            if (ImGui::Checkbox("Position Scale", &bFlag)) { BeamModifier->PositionOptions.bScale = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = BeamModifier->PositionOptions.bLock;
+            if (ImGui::Checkbox("Position Lock", &bFlag)) { BeamModifier->PositionOptions.bLock = bFlag ? 1 : 0; bChanged = true; }
+            DrawRawDistributionVector("Position", BeamModifier->Position, bChanged, BeamModifier);
+
+            bFlag = BeamModifier->TangentOptions.bModify;
+            if (ImGui::Checkbox("Tangent Modify", &bFlag)) { BeamModifier->TangentOptions.bModify = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = BeamModifier->TangentOptions.bScale;
+            if (ImGui::Checkbox("Tangent Scale", &bFlag)) { BeamModifier->TangentOptions.bScale = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = BeamModifier->TangentOptions.bLock;
+            if (ImGui::Checkbox("Tangent Lock", &bFlag)) { BeamModifier->TangentOptions.bLock = bFlag ? 1 : 0; bChanged = true; }
+            DrawRawDistributionVector("Tangent", BeamModifier->Tangent, bChanged, BeamModifier);
+            bFlag = BeamModifier->bAbsoluteTangent;
+            if (ImGui::Checkbox("Absolute Tangent", &bFlag)) { BeamModifier->bAbsoluteTangent = bFlag ? 1 : 0; bChanged = true; }
+
+            bFlag = BeamModifier->StrengthOptions.bModify;
+            if (ImGui::Checkbox("Strength Modify", &bFlag)) { BeamModifier->StrengthOptions.bModify = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = BeamModifier->StrengthOptions.bScale;
+            if (ImGui::Checkbox("Strength Scale", &bFlag)) { BeamModifier->StrengthOptions.bScale = bFlag ? 1 : 0; bChanged = true; }
+            bFlag = BeamModifier->StrengthOptions.bLock;
+            if (ImGui::Checkbox("Strength Lock", &bFlag)) { BeamModifier->StrengthOptions.bLock = bFlag ? 1 : 0; bChanged = true; }
+            DrawRawDistributionFloat("Strength", BeamModifier->Strength, bChanged, BeamModifier);
+        }
+    }
+    else if (UParticleModuleTypeDataMesh* MeshT = Cast<UParticleModuleTypeDataMesh>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Mesh"))
+        {
+            FString CurrentPath = MeshT->MeshAssetPath.ToString();
+            if (CurrentPath.empty()) CurrentPath = "None";
+
+            const TArray<FAssetListItem>& MeshFiles = FMeshManager::GetAvailableStaticMeshFiles();
+            if (ImGui::BeginCombo("Static Mesh", CurrentPath.c_str()))
+            {
+                const bool bNoneSelected = (CurrentPath == "None");
+                if (ImGui::Selectable("None", bNoneSelected))
+                {
+                    MeshT->MeshAssetPath = FString("None");
+                    MeshT->Mesh = nullptr;
+                    bChanged = true;
+                }
+                for (const FAssetListItem& Item : MeshFiles)
+                {
+                    const bool bSelected = (CurrentPath == Item.FullPath);
+                    if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+                    {
+                        MeshT->MeshAssetPath = Item.FullPath;
+                        ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+                        MeshT->Mesh = FMeshManager::LoadStaticMesh(Item.FullPath, Device);
+                        bChanged = true;
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            // 저장된 자산을 다시 열었을 때 캐시 미스로 Mesh=null 이면 자동 로드.
+            if (!MeshT->Mesh && !CurrentPath.empty() && CurrentPath != "None")
+            {
+                ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+                if (Device)
+                {
+                    MeshT->Mesh = FMeshManager::LoadStaticMesh(CurrentPath, Device);
+                }
+            }
+
+            bool bOM = MeshT->bOverrideMaterial;   if (ImGui::Checkbox("Override Material", &bOM))   { MeshT->bOverrideMaterial  = bOM ? 1 : 0; bChanged = true; }
+            ImGui::TextColored(PSE::DimTextV, "Resolved Mesh: %s", MeshT->Mesh ? "Yes" : "No");
+        }
+    }
+    else if (UParticleModuleTypeDataRibbon* RibT = Cast<UParticleModuleTypeDataRibbon>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Ribbon"))
+        {
+            bChanged |= ImGui::DragInt("Max Tessellation Between Particles", &RibT->MaxTessellationBetweenParticles, 1.0f, 0, 64);
+            bChanged |= ImGui::DragInt("Sheets Per Trail",  &RibT->SheetsPerTrail,  1.0f, 1, 32);
+            bChanged |= ImGui::DragInt("Max Trail Count",   &RibT->MaxTrailCount,   1.0f, 1, 1024);
+            bChanged |= ImGui::DragInt("Max Particles In Trail Count", &RibT->MaxParticleInTrailCount, 1.0f, 0, 100000);
+            bChanged |= ImGui::DragFloat("Tangent Spawning Scalar",     &RibT->TangentSpawningScalar,     0.01f, 0.0f, 100.0f);
+            bChanged |= ImGui::DragFloat("Tiling Distance",             &RibT->TilingDistance,            0.1f, 0.0f, 10000.0f);
+            bChanged |= ImGui::DragFloat("Distance Tessellation Step",  &RibT->DistanceTessellationStepSize, 0.1f, 0.1f, 1000.0f);
+            bChanged |= ImGui::DragFloat("Tangent Tessellation Scalar", &RibT->TangentTessellationScalar, 0.1f, 0.0f, 1000.0f);
+            int32 Ax = static_cast<int32>(RibT->RenderAxis);
+            if (ImGui::Combo("Render Axis", &Ax, "CameraUp\0SourceUp\0WorldUp\0"))
+            { RibT->RenderAxis = static_cast<ETrailsRenderAxisOption>(Ax); bChanged = true; }
+            bool bA;
+            bA = RibT->bDeadTrailsOnDeactivate; if (ImGui::Checkbox("Dead Trails On Deactivate", &bA))   { RibT->bDeadTrailsOnDeactivate = bA ? 1 : 0; bChanged = true; }
+            bA = RibT->bDeadTrailsOnSourceLoss; if (ImGui::Checkbox("Dead Trails On Source Loss", &bA))  { RibT->bDeadTrailsOnSourceLoss = bA ? 1 : 0; bChanged = true; }
+            bA = RibT->bClipSourceSegement;     if (ImGui::Checkbox("Clip Source Segment", &bA))        { RibT->bClipSourceSegement     = bA ? 1 : 0; bChanged = true; }
+            bA = RibT->bSpawnInitialParticle;   if (ImGui::Checkbox("Spawn Initial Particle", &bA))     { RibT->bSpawnInitialParticle   = bA ? 1 : 0; bChanged = true; }
+            bA = RibT->bRenderGeometry;         if (ImGui::Checkbox("Render Geometry", &bA))            { RibT->bRenderGeometry         = bA ? 1 : 0; bChanged = true; }
+            bA = RibT->bEnableTangentDiffInterpScale;
+            if (ImGui::Checkbox("Enable Tangent Diff Interp Scale", &bA))
+            {
+                RibT->bEnableTangentDiffInterpScale = bA ? 1 : 0;
+                bChanged = true;
+            }
+        }
+    }
+    else if (UParticleModuleTypeDataBeam2* BeamT = Cast<UParticleModuleTypeDataBeam2>(Module))
+    {
+        ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+        if (ImGui::CollapsingHeader("Beam2"))
+        {
+            int32 Method = static_cast<int32>(BeamT->BeamMethod);
+            if (Method > 1)
+            {
+                ImGui::TextColored(PSE::DimTextV, "Branch beam method is not supported yet.");
+            }
+            int32 ComboMethod = (Method > 1) ? 0 : Method;
+            if (ImGui::Combo("Beam Method", &ComboMethod, "Distance\0Target\0"))
+            { BeamT->BeamMethod = static_cast<EBeam2Method>(ComboMethod); bChanged = true; }
+            bChanged |= ImGui::DragInt  ("Texture Tile",          &BeamT->TextureTile,          1.0f, 1, 64);
+            bChanged |= ImGui::DragFloat("Texture Tile Distance", &BeamT->TextureTileDistance,  1.0f, 0.0f, 100000.0f);
+            bChanged |= ImGui::DragInt  ("Sheets",                &BeamT->Sheets,               1.0f, 1, 32);
+            bChanged |= ImGui::DragInt  ("Max Beam Count",        &BeamT->MaxBeamCount,         1.0f, 1, 1024);
+            bChanged |= ImGui::DragFloat("Speed",                 &BeamT->Speed,                0.1f, 0.0f, 100000.0f);
+            bChanged |= ImGui::DragInt  ("Interpolation Points",  &BeamT->InterpolationPoints,  1.0f, 0, 100);
+            bChanged |= ImGui::DragInt  ("Up Vector Step Size",   &BeamT->UpVectorStepSize,     1.0f, 0, 100);
+            bool bAO = BeamT->bAlwaysOn;         if (ImGui::Checkbox("Always On",          &bAO)) { BeamT->bAlwaysOn         = bAO ? 1 : 0; bChanged = true; }
+            DrawRawDistributionFloat("Distance", BeamT->Distance, bChanged, BeamT);
+            int32 Taper = static_cast<int32>(BeamT->TaperMethod);
+            if (ImGui::Combo("Taper Method", &Taper, "None\0Full\0Partial\0"))
+            { BeamT->TaperMethod = static_cast<EBeamTaperMethod>(Taper); bChanged = true; }
+            DrawRawDistributionFloat("Taper Factor", BeamT->TaperFactor, bChanged, BeamT);
+            DrawRawDistributionFloat("Taper Scale", BeamT->TaperScale, bChanged, BeamT);
+            bool bRG = BeamT->RenderGeometry;    if (ImGui::Checkbox("Render Geometry",    &bRG)) { BeamT->RenderGeometry    = bRG ? 1 : 0; bChanged = true; }
+        }
+    }
     else if (Cast<UParticleModuleTypeDataBase>(Module))
     {
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
@@ -4379,13 +5225,9 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::TextColored(PSE::DimTextV, "No editable properties exposed for this module.");
     }
 
-    if (bChanged)
+    if (bChanged || bMaterialDirty)
     {
         MarkDirty();
-    }
-    if (bMaterialDirty)
-    {
-        // 머티리얼 변경은 인스턴스 캐시(렌더 상태)에 영향이 커서 시뮬레이션을 다시 시작.
         RestartPreviewSimulation();
     }
 }
@@ -4399,11 +5241,10 @@ void FParticleSystemEditorWidget::RenderBurstList(TArray<FParticleBurst>& Bursts
     constexpr ImGuiTableFlags TableFlags = ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg |
     ImGuiTableFlags_SizingStretchSame;
 
-    if (ImGui::BeginTable("##Bursts", 4, TableFlags))
+    if (ImGui::BeginTable("##Bursts", 3, TableFlags))
     {
         ImGui::TableSetupColumn("Time", ImGuiTableColumnFlags_WidthStretch, 1.2f);
         ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthStretch, 1.0f);
-        ImGui::TableSetupColumn("Count Low", ImGuiTableColumnFlags_WidthStretch, 1.0f);
         ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 24.0f);
         ImGui::TableHeadersRow();
 
@@ -4420,10 +5261,6 @@ void FParticleSystemEditorWidget::RenderBurstList(TArray<FParticleBurst>& Bursts
             ImGui::TableNextColumn();
             ImGui::SetNextItemWidth(-1.0f);
             bChanged |= ImGui::DragInt("##c", &B.Count, 1.0f, 0, 100000);
-
-            ImGui::TableNextColumn();
-            ImGui::SetNextItemWidth(-1.0f);
-            bChanged |= ImGui::DragInt("##cl", &B.CountLow, 1.0f, -1, 100000);
 
             ImGui::TableNextColumn();
             if (ImGui::SmallButton("x"))

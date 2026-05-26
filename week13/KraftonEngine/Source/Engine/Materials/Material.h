@@ -141,6 +141,10 @@ public:
 	EBlendState GetBlendState() const { return BlendState; }
 	EDepthStencilState GetDepthStencilState() const { return DepthStencilState; }
 	ERasterizerState GetRasterizerState() const { return RasterizerState; }
+	void SetRenderPass(ERenderPass InRenderPass) { RenderPass = InRenderPass; }
+	void SetBlendState(EBlendState InBlendState) { BlendState = InBlendState; }
+	void SetDepthStencilState(EDepthStencilState InDepthStencilState) { DepthStencilState = InDepthStencilState; }
+	void SetRasterizerState(ERasterizerState InRasterizerState) { RasterizerState = InRasterizerState; }
 
 	// Per-shader CB 오버라이드 — transient Material에서 Gizmo/SubUV/Decal 등이 사용
 	template<typename T>

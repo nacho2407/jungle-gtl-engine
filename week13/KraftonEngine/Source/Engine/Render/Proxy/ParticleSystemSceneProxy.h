@@ -49,6 +49,9 @@ private:
 		EParticleBlendMode  BlendMode           = EParticleBlendMode::AlphaBlend;
 		UMaterial*          Material            = nullptr;
 		FMeshBuffer*        EmitterMeshBuffer   = nullptr;  // Mesh 에미터 전용
+		TArray<UMaterial*>  MeshSectionMaterials;
+		TArray<uint32>      MeshSectionFirstIndices;
+		TArray<uint32>      MeshSectionIndexCounts;
 	};
 	TArray<std::unique_ptr<FEmitterRenderBuffer>> EmitterBuffers;
 

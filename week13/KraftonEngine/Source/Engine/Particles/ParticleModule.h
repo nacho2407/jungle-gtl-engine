@@ -50,6 +50,8 @@ class UParticleModule : public UObject
 public:
 	GENERATED_BODY()
 
+	UParticleModule();
+
 	// uint8 이지만 실제로는 1 bit 만 사용하도록 유도
 	uint8 bEnabled : 1;
 	uint8 bSpawnModule : 1;
@@ -59,7 +61,7 @@ public:
 	struct FContext
 	{
 		FParticleEmitterInstance& Owner;
-		const FTransform& GetTransform() const;
+		FTransform GetTransform() const;
 		UObject* GetDistributionData() const;
 		FString GetTemplateName() const;
 		FString GetInstanceName() const;

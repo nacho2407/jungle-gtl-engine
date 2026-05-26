@@ -269,6 +269,9 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 	OutBuffer.BlendMode           = Source.BlendMode;
 	OutBuffer.Material            = nullptr;
 	OutBuffer.EmitterMeshBuffer   = nullptr;
+	OutBuffer.MeshSectionMaterials.clear();
+	OutBuffer.MeshSectionFirstIndices.clear();
+	OutBuffer.MeshSectionIndexCounts.clear();
 	OutBuffer.StagingIndices.clear();
 	OutBuffer.StagingBuffer.resize(Count * Stride);
 
@@ -286,8 +289,12 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 
 		if (Source.eEmitterType == EDynamicEmitterType::Mesh)
 		{
-			OutBuffer.EmitterMeshBuffer =
-				static_cast<const FDynamicMeshEmitterData&>(EmitterData).MeshBuffer;
+			const FDynamicMeshEmitterData& MeshEmitterData = static_cast<const FDynamicMeshEmitterData&>(EmitterData);
+			const FDynamicMeshEmitterReplayData& MeshSource = MeshEmitterData.Source;
+			OutBuffer.EmitterMeshBuffer = MeshEmitterData.MeshBuffer;
+			OutBuffer.MeshSectionMaterials = MeshSource.SectionMaterials;
+			OutBuffer.MeshSectionFirstIndices = MeshSource.SectionFirstIndices;
+			OutBuffer.MeshSectionIndexCounts = MeshSource.SectionIndexCounts;
 
 			if (!OutBuffer.EmitterMeshBuffer)
 				UE_LOG("[ParticleProxy] FillStagingBuffer: MeshBuffer is null on Mesh emitter");
@@ -625,59 +632,73 @@ void FParticleSystemSceneProxy::SubmitMeshEmitter(
 		return;
 	}
 
-    FShader* Shader = Buffer.Material && Buffer.Material->GetShader() ? Buffer.Material->GetShader()
-    : FShaderManager::Get().GetOrCreate(EShaderPath::ParticleMesh);
-	if (!Shader)
-	{
-		UE_LOG("[ParticleProxy] SubmitMeshEmitter: ParticleMesh shader not found (%s)", EShaderPath::ParticleMesh);
-		return;
-	}
-
 	const FParticleRenderState RS = ResolveParticleRenderState(Buffer.BlendMode);
 
-	FDrawCommand& Cmd                  = OutCmdList.AddCommand();
-	Cmd.Shader                         = Shader;
-    if (Buffer.Material)
-    {
-        Cmd.Pass                     = Buffer.Material->GetRenderPass();
-        Cmd.RenderState.Blend        = Buffer.Material->GetBlendState();
-        Cmd.RenderState.DepthStencil = Buffer.Material->GetDepthStencilState();
-        Cmd.RenderState.Rasterizer   = Buffer.Material->GetRasterizerState();
-    }
-    else
-    {
-        Cmd.Pass                     = RS.Pass;
-        Cmd.RenderState.Blend        = RS.Blend;
-        Cmd.RenderState.DepthStencil = RS.DepthStencil;
-        Cmd.RenderState.Rasterizer   = ERasterizerState::SolidNoCull; // 메시 파티클도 양면
-    }
+	const uint32 TotalIndexCount = Buffer.EmitterMeshBuffer->GetIndexBuffer().GetIndexCount();
+	const int32 SectionCount = std::min(
+		static_cast<int32>(Buffer.MeshSectionFirstIndices.size()),
+		static_cast<int32>(Buffer.MeshSectionIndexCounts.size()));
+	const int32 DrawCount = SectionCount > 0 ? SectionCount : 1;
 
-	Cmd.Buffer.VB             = Buffer.EmitterMeshBuffer->GetVertexBuffer().GetBuffer();
-	Cmd.Buffer.VBStride       = Buffer.EmitterMeshBuffer->GetVertexBuffer().GetStride();
-	Cmd.Buffer.IB             = Buffer.EmitterMeshBuffer->GetIndexBuffer().GetBuffer();
-	Cmd.Buffer.IndexCount     = Buffer.EmitterMeshBuffer->GetIndexBuffer().GetIndexCount();
-	Cmd.Buffer.InstanceVB     = Buffer.InstanceVB.GetBuffer();
-	Cmd.Buffer.InstanceStride = sizeof(FMeshParticleInstanceVertex);
-	Cmd.Buffer.InstanceCount  = static_cast<uint32>(Buffer.ActiveParticleCount);
+	for (int32 DrawIdx = 0; DrawIdx < DrawCount; ++DrawIdx)
+	{
+		UMaterial* SectionMaterial = Buffer.Material;
+		if (DrawIdx < static_cast<int32>(Buffer.MeshSectionMaterials.size()) && Buffer.MeshSectionMaterials[DrawIdx])
+		{
+			SectionMaterial = Buffer.MeshSectionMaterials[DrawIdx];
+		}
 
-	if (Buffer.Material)
-    {
-        Buffer.Material->FlushDirtyBuffers(Device, Context);
+		FShader* Shader = SectionMaterial && SectionMaterial->GetShader()
+			? SectionMaterial->GetShader()
+			: FShaderManager::Get().GetOrCreate(EShaderPath::ParticleMesh);
+		if (!Shader)
+		{
+			continue;
+		}
 
-        Cmd.Bindings.PerShaderCB[0] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader0);
-        Cmd.Bindings.PerShaderCB[1] = Buffer.Material->GetGPUBufferBySlot(ECBSlot::PerShader1);
+		FDrawCommand& Cmd = OutCmdList.AddCommand();
+		Cmd.Shader = Shader;
+		if (SectionMaterial)
+		{
+			Cmd.Pass                     = SectionMaterial->GetRenderPass();
+			Cmd.RenderState.Blend        = SectionMaterial->GetBlendState();
+			Cmd.RenderState.DepthStencil = SectionMaterial->GetDepthStencilState();
+			Cmd.RenderState.Rasterizer   = SectionMaterial->GetRasterizerState();
+		}
+		else
+		{
+			Cmd.Pass                     = RS.Pass;
+			Cmd.RenderState.Blend        = RS.Blend;
+			Cmd.RenderState.DepthStencil = RS.DepthStencil;
+			Cmd.RenderState.Rasterizer   = ERasterizerState::SolidNoCull;
+		}
 
-        const ID3D11ShaderResourceView* const* MatSRVs       = Buffer.Material->GetCachedSRVs();
-        ID3D11ShaderResourceView*              FallbackWhite = FMaterialManager::Get().GetFallbackWhiteSRV();
+		Cmd.Buffer.VB             = Buffer.EmitterMeshBuffer->GetVertexBuffer().GetBuffer();
+		Cmd.Buffer.VBStride       = Buffer.EmitterMeshBuffer->GetVertexBuffer().GetStride();
+		Cmd.Buffer.IB             = Buffer.EmitterMeshBuffer->GetIndexBuffer().GetBuffer();
+		Cmd.Buffer.FirstIndex     = (SectionCount > 0) ? Buffer.MeshSectionFirstIndices[DrawIdx] : 0;
+		Cmd.Buffer.IndexCount     = (SectionCount > 0) ? Buffer.MeshSectionIndexCounts[DrawIdx] : TotalIndexCount;
+		Cmd.Buffer.InstanceVB     = Buffer.InstanceVB.GetBuffer();
+		Cmd.Buffer.InstanceStride = sizeof(FMeshParticleInstanceVertex);
+		Cmd.Buffer.InstanceCount  = static_cast<uint32>(Buffer.ActiveParticleCount);
 
-        for (int32 Slot = 0; Slot < static_cast<int32>(EMaterialTextureSlot::Max); ++Slot)
-        {
-            // null이면 1x1 흰색 → 셰이더가 sample 시 (1,1,1,1) 받아 alpha-clip 회피.
-            Cmd.Bindings.SRVs[Slot] = MatSRVs[Slot] ? const_cast<ID3D11ShaderResourceView*>(MatSRVs[Slot])
-            : FallbackWhite;
-        }
-    }
+		if (SectionMaterial)
+		{
+			SectionMaterial->FlushDirtyBuffers(Device, Context);
+			Cmd.Bindings.PerShaderCB[0] = SectionMaterial->GetGPUBufferBySlot(ECBSlot::PerShader0);
+			Cmd.Bindings.PerShaderCB[1] = SectionMaterial->GetGPUBufferBySlot(ECBSlot::PerShader1);
 
-	Cmd.BuildSortKey();
-	PARTICLE_STATS_ADD_DRAW_CALL();
+			const ID3D11ShaderResourceView* const* MatSRVs = SectionMaterial->GetCachedSRVs();
+			ID3D11ShaderResourceView* FallbackWhite = FMaterialManager::Get().GetFallbackWhiteSRV();
+			for (int32 Slot = 0; Slot < static_cast<int32>(EMaterialTextureSlot::Max); ++Slot)
+			{
+				Cmd.Bindings.SRVs[Slot] = MatSRVs[Slot]
+					? const_cast<ID3D11ShaderResourceView*>(MatSRVs[Slot])
+					: FallbackWhite;
+			}
+		}
+
+		Cmd.BuildSortKey();
+		PARTICLE_STATS_ADD_DRAW_CALL();
+	}
 }

@@ -1,6 +1,7 @@
 #include "Particles/Beam/ParticleModuleBeamNoise.h"
 #include "Object/GarbageCollection.h"
 
+#include "Object/Object.h"
 #include "Particles/ParticleEmitterInstances.h"
 #include "Particles/TypeData/ParticleModuleTypeDataBeam2.h"
 #include "Math/RandomStream.h"
