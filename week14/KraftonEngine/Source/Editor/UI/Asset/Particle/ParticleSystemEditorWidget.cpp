@@ -273,32 +273,25 @@ namespace
 	void DrawLockedModuleRowOverlay(ImDrawList* DrawList, const ImVec2& Pos, float Width)
 	{
 		const ImVec2 Max(Pos.x + Width, Pos.y + ModuleRowHeight);
-		DrawList->AddRectFilled(Pos, Max, IM_COL32(0, 0, 0, 42));
+		DrawList->AddRectFilled(Pos, Max, IM_COL32(0, 0, 0, 36));
 
-		for (float X = Pos.x - ModuleRowHeight; X < Pos.x + Width; X += 7.0f)
+		DrawList->PushClipRect(Pos, Max, true);
+		for (float X = Pos.x - ModuleRowHeight; X < Pos.x + Width + ModuleRowHeight; X += 14.0f)
 		{
 			const ImVec2 LineStart(X, Pos.y + ModuleRowHeight);
 			const ImVec2 LineEnd(X + ModuleRowHeight, Pos.y);
 			DrawList->AddLine(
 				LineStart,
 				LineEnd,
-				IM_COL32(5, 8, 12, 220),
+				IM_COL32(10, 12, 14, 150),
 				2.0f);
 			DrawList->AddLine(
 				ImVec2(LineStart.x + 1.0f, LineStart.y),
 				ImVec2(LineEnd.x + 1.0f, LineEnd.y),
-				IM_COL32(0, 245, 255, 210),
+				IM_COL32(220, 224, 210, 72),
 				1.0f);
 		}
-
-		for (float X = Pos.x + 3.0f; X < Pos.x + Width; X += 18.0f)
-		{
-			const float Y = Pos.y + 3.0f + static_cast<int32>(X - Pos.x) % 11;
-			DrawList->AddRectFilled(
-				ImVec2(X, Y),
-				ImVec2((std::min)(X + 5.0f, Pos.x + Width), (std::min)(Y + 2.0f, Max.y)),
-				IM_COL32(255, 255, 255, 120));
-		}
+		DrawList->PopClipRect();
 	}
 
 	bool IsModuleEnableToggleAllowed(const UParticleModule* Module)
@@ -533,6 +526,23 @@ namespace
 		DrawDetailRow(Label, Buffer);
 	}
 
+	bool DrawDetailFloatInputRow(const char* Label, float& Value, const char* Format = "%.3f", bool bReadOnly = false)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::SetWindowFontScale(0.92f);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(Label);
+		ImGui::SetWindowFontScale(1.0f);
+
+		ImGui::TableSetColumnIndex(1);
+		ImGui::BeginDisabled(bReadOnly);
+		ImGui::SetNextItemWidth(-1.0f);
+		const bool bChanged = ImGui::InputFloat("##Value", &Value, 0.0f, 0.0f, Format);
+		ImGui::EndDisabled();
+		return bChanged && !bReadOnly;
+	}
+
 	bool DrawDetailsCategoryHeader(const char* Label)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.22f, 0.22f, 0.22f, 1.0f));
@@ -564,8 +574,9 @@ namespace
 		constexpr float PaddingX = 7.0f;
 		constexpr float IconTextGap = 5.0f;
 
-		const ImVec2 TextSize = ImGui::CalcTextSize(Label);
-		const float ButtonWidth = PaddingX + IconSize + IconTextGap + TextSize.x + PaddingX;
+		const bool bHasLabel = Label && Label[0] != '\0';
+		const ImVec2 TextSize = bHasLabel ? ImGui::CalcTextSize(Label) : ImVec2(0.0f, 0.0f);
+		const float ButtonWidth = PaddingX + IconSize + (bHasLabel ? IconTextGap + TextSize.x : 0.0f) + PaddingX;
 		const ImVec2 Pos = ImGui::GetCursorScreenPos();
 		const bool bClicked = ImGui::InvisibleButton(Id, ImVec2(ButtonWidth, ButtonHeight));
 		const bool bHovered = ImGui::IsItemHovered();
@@ -585,8 +596,11 @@ namespace
 			DrawList->AddRect(IconMin, ImVec2(IconMin.x + IconSize, IconMin.y + IconSize), ImGui::GetColorU32(ImGuiCol_TextDisabled));
 		}
 
-		const ImVec2 TextPos(IconMin.x + IconSize + IconTextGap, Pos.y + (ButtonHeight - TextSize.y) * 0.5f);
-		DrawList->AddText(TextPos, ImGui::GetColorU32(ImGuiCol_Text), Label);
+		if (bHasLabel)
+		{
+			const ImVec2 TextPos(IconMin.x + IconSize + IconTextGap, Pos.y + (ButtonHeight - TextSize.y) * 0.5f);
+			DrawList->AddText(TextPos, ImGui::GetColorU32(ImGuiCol_Text), Label);
+		}
 		if (Tooltip && bHovered)
 		{
 			ImGui::SetTooltip("%s", Tooltip);
@@ -1572,8 +1586,18 @@ void FParticleSystemEditorWidget::RenderToolbar()
 {
 	ImGui::BeginChild("##ParticleEditorToolbar", ImVec2(0.0f, ToolbarHeight), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 	ImGui::AlignTextToFramePadding();
-	ImGui::TextDisabled("Particle System");
-	ImGui::SameLine(0.0f, 14.0f);
+	UParticleSystem* ParticleSystem = GetParticleSystem();
+
+	ImGui::BeginDisabled(ParticleSystem == nullptr);
+	if (DrawParticleToolbarIconButton("##ParticleSave", L"icon_file_save_40x.png", "", "Save"))
+	{
+		if (FParticleSystemManager::Get().Save(ParticleSystem))
+		{
+			ClearDirty();
+		}
+	}
+	ImGui::EndDisabled();
+	ImGui::SameLine(0.0f, 12.0f);
 
 	if (ImGui::Button(ViewState.bPreviewPlaying ? "Pause" : "Play", ImVec2(68.0f, 0.0f)))
 	{
@@ -1590,17 +1614,6 @@ void FParticleSystemEditorWidget::RenderToolbar()
 	ImGui::SameLine(0.0f, 18.0f);
 	ImGui::Checkbox("Curve", &ViewState.bShowCurveEditor);
 	ImGui::SameLine(0.0f, 18.0f);
-	UParticleSystem* ParticleSystem = GetParticleSystem();
-	ImGui::BeginDisabled(ParticleSystem == nullptr);
-	if (ImGui::Button("Save", ImVec2(62.0f, 0.0f)))
-	{
-		if (FParticleSystemManager::Get().Save(ParticleSystem))
-		{
-			ClearDirty();
-		}
-	}
-	ImGui::EndDisabled();
-	ImGui::SameLine();
 
 	const bool bCanAddLOD = ParticleSystem != nullptr;
 	ImGui::BeginDisabled();
@@ -1853,8 +1866,52 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 		return;
 	}
 
-	if (DrawDetailsCategoryHeader("Particle System"))
+	auto CommitLODDistanceChange = [&](int32 LODIndex, float NewDistance)
 	{
+		TArray<float>& LODDistances = ParticleSystem->GetMutableLODDistances();
+		if (LODIndex < 0 || LODIndex >= static_cast<int32>(LODDistances.size()))
+		{
+			return;
+		}
+
+		LODDistances[LODIndex] = LODIndex == 0 ? 0.0f : (std::max)(0.0f, NewDistance);
+		MarkDirty();
+		RefreshParticleSystemComponents();
+	};
+
+	auto RenderLODDistancesEditor = [&]()
+	{
+		if (!DrawDetailsCategoryHeader("LODDistances"))
+		{
+			return;
+		}
+
+		if (BeginDetailsTable("##ParticleSystemLODDistancesTable"))
+		{
+			TArray<float>& LODDistances = ParticleSystem->GetMutableLODDistances();
+			for (int32 LODIndex = 0; LODIndex < static_cast<int32>(LODDistances.size()); ++LODIndex)
+			{
+				char Label[32];
+				std::snprintf(Label, sizeof(Label), "Index [%d]", LODIndex);
+				float EditableDistance = LODDistances[LODIndex];
+				ImGui::PushID(LODIndex);
+				if (DrawDetailFloatInputRow(Label, EditableDistance, "%.1f"))
+				{
+					CommitLODDistanceChange(LODIndex, EditableDistance);
+				}
+				ImGui::PopID();
+			}
+			EndDetailsTable();
+		}
+	};
+
+	auto RenderParticleSystemDetails = [&]()
+	{
+		if (!DrawDetailsCategoryHeader("Particle System"))
+		{
+			return;
+		}
+
 		if (BeginDetailsTable("##ParticleSystemSummaryTable"))
 		{
 			DrawDetailRow("Asset", ParticleSystem->GetAssetPathFileName().c_str());
@@ -1862,23 +1919,17 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 			DrawDetailRowF("LOD Count", "%d", ParticleSystem->GetLODCount());
 			EndDetailsTable();
 		}
-	}
-	if (DrawDetailsCategoryHeader("Selection"))
-	{
-		if (BeginDetailsTable("##ParticleSelectionSummaryTable"))
-		{
-			const FEditorSelectionState& Selection = ViewState.Selection;
-			DrawDetailRow("Selection Type", GetSelectionKindLabel());
-			DrawDetailRowF("Selected Emitter", "%d", Selection.EmitterIndex);
-			DrawDetailRowF("Selected LOD", "%d", Selection.LODIndex);
-			DrawDetailRowF("Selected Module", "%d", Selection.ModuleIndex);
-			EndDetailsTable();
-		}
-	}
+		RenderLODDistancesEditor();
+	};
 
-	const UParticleEmitter* SelectedEmitter = GetSelectedEmitter(ParticleSystem);
-	if (SelectedEmitter && DrawDetailsCategoryHeader("Emitter"))
+	auto RenderEmitterDetails = [&]()
 	{
+		const UParticleEmitter* SelectedEmitter = GetSelectedEmitter(ParticleSystem);
+		if (!SelectedEmitter || !DrawDetailsCategoryHeader("Emitter"))
+		{
+			return;
+		}
+
 		if (BeginDetailsTable("##ParticleEmitterSummaryTable"))
 		{
 			DrawDetailRowF("Max Active Particles", "%d", SelectedEmitter->GetMaxActiveParticles());
@@ -1887,16 +1938,27 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 			DrawDetailRowF("Emitter LOD Levels", "%d", static_cast<int32>(SelectedEmitter->GetLODLevels().size()));
 			EndDetailsTable();
 		}
-	}
+	};
 
-	const UParticleLODLevel* SelectedLOD = GetSelectedLODLevel(ParticleSystem);
-	if (SelectedLOD && DrawDetailsCategoryHeader("LOD"))
+	auto RenderLODDetails = [&]()
 	{
+		const UParticleLODLevel* SelectedLOD = GetSelectedLODLevel(ParticleSystem);
+		if (!SelectedLOD || !DrawDetailsCategoryHeader("LOD"))
+		{
+			return;
+		}
+
 		if (BeginDetailsTable("##ParticleLODSummaryTable"))
 		{
 			const UParticleModuleTypeDataBase* TypeDataModule = SelectedLOD->GetTypeDataModule();
+			float EditableDistance = ParticleSystem->GetLODDistance(SelectedLOD->GetLevel());
 			DrawDetailRowF("Level", "%d", SelectedLOD->GetLevel());
-			DrawDetailRowF("Distance", "%.1f", ParticleSystem->GetLODDistance(SelectedLOD->GetLevel()));
+			ImGui::PushID("LODDistance");
+			if (DrawDetailFloatInputRow("Distance", EditableDistance, "%.1f"))
+			{
+				CommitLODDistanceChange(SelectedLOD->GetLevel(), EditableDistance);
+			}
+			ImGui::PopID();
 			DrawDetailRow("Enabled", SelectedLOD->IsEnabled() ? "true" : "false");
 			DrawDetailRow("Render Type", GetRenderTypeLabel(GetLODRenderType(SelectedLOD)));
 			DrawDetailRow("Type Data", GetTypeDataDisplayName(TypeDataModule));
@@ -1904,11 +1966,17 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 			DrawDetailRowF("Module Count", "%d", static_cast<int32>(SelectedLOD->GetModules().size()));
 			EndDetailsTable();
 		}
-	}
+	};
 
-	UParticleModule* SelectedModule = const_cast<UParticleModule*>(GetSelectedModule(ParticleSystem));
-	if (SelectedModule && DrawDetailsCategoryHeader("Module"))
+	auto RenderModuleDetails = [&]()
 	{
+		const UParticleLODLevel* SelectedLOD = GetSelectedLODLevel(ParticleSystem);
+		UParticleModule* SelectedModule = const_cast<UParticleModule*>(GetSelectedModule(ParticleSystem));
+		if (!SelectedModule || !DrawDetailsCategoryHeader("Module"))
+		{
+			return;
+		}
+
 		const int32 CurrentLODIndex = GetCurrentSystemLODIndex(ParticleSystem);
 		const bool bTypeDataSelection = ViewState.Selection.ModuleIndex == TypeDataModuleIndex;
 		const EParticleModuleEditState ModuleEditState = (!bTypeDataSelection && SelectedLOD)
@@ -1937,7 +2005,25 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 			MarkDirty();
 			RefreshParticleSystemComponents();
 		}
+	};
+
+	switch (ViewState.Selection.Kind)
+	{
+	case ESelectionKind::Module:
+		RenderModuleDetails();
+		break;
+	case ESelectionKind::Emitter:
+		RenderEmitterDetails();
+		break;
+	case ESelectionKind::LOD:
+		RenderLODDetails();
+		break;
+	case ESelectionKind::ParticleSystem:
+	default:
+		RenderParticleSystemDetails();
+		break;
 	}
+
 	ImGui::EndChild();
 }
 
@@ -2796,6 +2882,10 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				}
 
 				ImGui::InvisibleButton("##ModuleDropTail", ImVec2(ImGui::GetContentRegionAvail().x, (std::max)(ModuleDropTargetHeight, ImGui::GetContentRegionAvail().y)));
+				if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+				{
+					SelectLOD(EmitterIndex, DisplayLODIndex);
+				}
 				if (bCanDirectEditModules)
 				{
 					AcceptModuleDropTarget(DropRequest, EmitterIndex, DisplayLODIndex, static_cast<int32>(Modules.size()), static_cast<int32>(Modules.size()));
@@ -2814,12 +2904,26 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			}
 		}
 
+		if (IsEmitterSelected(EmitterIndex))
+		{
+			const ImVec2 ColumnMin = ImGui::GetWindowPos();
+			const ImVec2 ColumnMax(ColumnMin.x + ImGui::GetWindowSize().x, ColumnMin.y + ImGui::GetWindowSize().y);
+			ImDrawList* ColumnDrawList = ImGui::GetWindowDrawList();
+			ColumnDrawList->AddRect(ColumnMin, ColumnMax, IM_COL32(12, 14, 18, 235), 2.0f, 0, 3.0f);
+			ColumnDrawList->AddRect(ImVec2(ColumnMin.x + 1.0f, ColumnMin.y + 1.0f), ImVec2(ColumnMax.x - 1.0f, ColumnMax.y - 1.0f), IM_COL32(105, 164, 232, 255), 1.0f, 0, 2.0f);
+		}
+
 		ImGui::EndChild();
 		ImGui::PopID();
 		if (EmitterIndex + 1 < static_cast<int32>(Emitters.size()))
 		{
 			ImGui::SameLine();
 		}
+	}
+
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsAnyItemHovered())
+	{
+		bSelectParticleSystemRequested = true;
 	}
 
 	if (DuplicateEmitterIndex >= 0)
