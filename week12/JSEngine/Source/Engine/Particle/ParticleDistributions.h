@@ -17,6 +17,13 @@ enum class EParticleDistributionMode
 	RandomRangeCurve UMETA(DisplayName = "Random Range Curve"),
 };
 
+UENUM()
+enum class EParticleVectorDistributionMode
+{
+	Independent UMETA(DisplayName = "Independent"),
+	UniformXYZ UMETA(DisplayName = "Uniform XYZ"),
+};
+
 USTRUCT()
 struct FParticleFloatDistribution
 {
@@ -55,6 +62,8 @@ struct FParticleVectorDistribution
 
 	UPROPERTY()
 	EParticleDistributionMode Mode = EParticleDistributionMode::Constant;
+	UPROPERTY()
+	EParticleVectorDistributionMode VectorMode = EParticleVectorDistributionMode::Independent;
 	UPROPERTY()
 	FVector Constant = FVector::ZeroVector;
 	UPROPERTY()

@@ -152,6 +152,8 @@ public:
 	UParticleModuleLifetime();
 
 	bool IsSpawnModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
 
 	UPROPERTY(DisplayName = "Lifetime")
@@ -165,6 +167,8 @@ public:
 	GENERATED_BODY(UParticleModuleLocation, UParticleModule)
 
 	bool IsSpawnModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
 
 	UPROPERTY(DisplayName = "Start Location")
@@ -178,6 +182,8 @@ public:
 	GENERATED_BODY(UParticleModuleVelocity, UParticleModule)
 
 	bool IsSpawnModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
 
 	UPROPERTY(DisplayName = "Start Velocity")
@@ -193,6 +199,8 @@ public:
 	UParticleModuleColor();
 
 	bool IsSpawnModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
 
 	UPROPERTY(DisplayName = "Start Color")
@@ -208,6 +216,8 @@ public:
 	UParticleModuleSize();
 
 	bool IsSpawnModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
 
 	UPROPERTY(DisplayName = "Start Size")

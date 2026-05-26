@@ -1,5 +1,8 @@
 ﻿#include "Particle/ParticleEmitterInstance.h"
 
+#include "Asset/CurveFloatAsset.h"
+#include "Asset/CurveVectorAsset.h"
+#include "Core/ResourceManager.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
 #include "Particle/ParticleHelper.h"
@@ -17,6 +20,7 @@
 namespace
 {
 	constexpr int32 MaxParticleIndexValue = static_cast<int32>(std::numeric_limits<uint16>::max());
+	constexpr int32 CurveBoundsSampleSteps = 32;
 
 	int32 AlignParticleBytes(int32 Value)
 	{
@@ -103,31 +107,225 @@ namespace
 		FVector Max = FVector::ZeroVector;
 	};
 
-	FFloatRange GetFloatDistributionRange(const FParticleFloatDistribution& Distribution)
+	FVector MakeUniformVector(float Value)
+	{
+		return FVector(Value, Value, Value);
+	}
+
+	FVector ApplyVectorDistributionMode(const FParticleVectorDistribution& Distribution, const FVector& Value)
+	{
+		return Distribution.VectorMode == EParticleVectorDistributionMode::UniformXYZ
+			? MakeUniformVector(Value.X)
+			: Value;
+	}
+
+	void ExpandFloatRange(FFloatRange& Range, float Value)
+	{
+		Range.Min = std::min(Range.Min, Value);
+		Range.Max = std::max(Range.Max, Value);
+	}
+
+	void ExpandVectorRange(FVectorRange& Range, const FVector& Value)
+	{
+		Range.Min = FVector::Min(Range.Min, Value);
+		Range.Max = FVector::Max(Range.Max, Value);
+	}
+
+	UCurveFloatAsset* ResolveFloatCurve(const TSoftObjectPtr<UCurveFloatAsset>& Curve)
+	{
+		const FString& Path = Curve.GetPath();
+		return Path.empty() ? nullptr : FResourceManager::Get().LoadFloatCurve(Path);
+	}
+
+	UCurveVectorAsset* ResolveVectorCurve(const TSoftObjectPtr<UCurveVectorAsset>& Curve)
+	{
+		const FString& Path = Curve.GetPath();
+		return Path.empty() ? nullptr : FResourceManager::Get().LoadVectorCurve(Path);
+	}
+
+	float GetCurveBoundsSampleTime(float CurveStartTime, float CurveEndTime, int32 SampleIndex)
+	{
+		const float SafeEndTime = std::max(CurveStartTime, CurveEndTime);
+		if (SafeEndTime <= CurveStartTime)
+		{
+			return CurveStartTime;
+		}
+
+		const float Alpha = static_cast<float>(SampleIndex) / static_cast<float>(CurveBoundsSampleSteps);
+		return CurveStartTime + (SafeEndTime - CurveStartTime) * Alpha;
+	}
+
+	FFloatRange SampleFloatCurveRange(
+		UCurveFloatAsset* Curve,
+		float CurveStartTime,
+		float CurveEndTime,
+		float Fallback)
+	{
+		if (Curve == nullptr)
+		{
+			return { Fallback, Fallback };
+		}
+
+		const float FirstValue = Curve->Evaluate(CurveStartTime);
+		FFloatRange Range{ FirstValue, FirstValue };
+		for (int32 SampleIndex = 1; SampleIndex <= CurveBoundsSampleSteps; ++SampleIndex)
+		{
+			ExpandFloatRange(Range, Curve->Evaluate(GetCurveBoundsSampleTime(CurveStartTime, CurveEndTime, SampleIndex)));
+		}
+		return Range;
+	}
+
+	FFloatRange SampleFloatCurvePairRange(
+		UCurveFloatAsset* MinCurve,
+		UCurveFloatAsset* MaxCurve,
+		float CurveStartTime,
+		float CurveEndTime,
+		float MinFallback,
+		float MaxFallback)
+	{
+		const float FirstMin = MinCurve != nullptr ? MinCurve->Evaluate(CurveStartTime) : MinFallback;
+		const float FirstMax = MaxCurve != nullptr ? MaxCurve->Evaluate(CurveStartTime) : MaxFallback;
+		FFloatRange Range{ std::min(FirstMin, FirstMax), std::max(FirstMin, FirstMax) };
+
+		for (int32 SampleIndex = 1; SampleIndex <= CurveBoundsSampleSteps; ++SampleIndex)
+		{
+			const float Time = GetCurveBoundsSampleTime(CurveStartTime, CurveEndTime, SampleIndex);
+			ExpandFloatRange(Range, MinCurve != nullptr ? MinCurve->Evaluate(Time) : MinFallback);
+			ExpandFloatRange(Range, MaxCurve != nullptr ? MaxCurve->Evaluate(Time) : MaxFallback);
+		}
+		return Range;
+	}
+
+	FVectorRange SampleVectorCurveRange(
+		const FParticleVectorDistribution& Distribution,
+		UCurveVectorAsset* Curve,
+		float CurveStartTime,
+		float CurveEndTime,
+		const FVector& Fallback)
+	{
+		if (Curve == nullptr)
+		{
+			const FVector Value = ApplyVectorDistributionMode(Distribution, Fallback);
+			return { Value, Value };
+		}
+
+		const FVector FirstValue = ApplyVectorDistributionMode(Distribution, Curve->Evaluate(CurveStartTime));
+		FVectorRange Range{ FirstValue, FirstValue };
+		for (int32 SampleIndex = 1; SampleIndex <= CurveBoundsSampleSteps; ++SampleIndex)
+		{
+			const float Time = GetCurveBoundsSampleTime(CurveStartTime, CurveEndTime, SampleIndex);
+			ExpandVectorRange(Range, ApplyVectorDistributionMode(Distribution, Curve->Evaluate(Time)));
+		}
+		return Range;
+	}
+
+	FVectorRange SampleVectorCurvePairRange(
+		const FParticleVectorDistribution& Distribution,
+		UCurveVectorAsset* MinCurve,
+		UCurveVectorAsset* MaxCurve,
+		float CurveStartTime,
+		float CurveEndTime,
+		const FVector& MinFallback,
+		const FVector& MaxFallback)
+	{
+		const FVector FirstMin = ApplyVectorDistributionMode(
+			Distribution,
+			MinCurve != nullptr ? MinCurve->Evaluate(CurveStartTime) : MinFallback);
+		const FVector FirstMax = ApplyVectorDistributionMode(
+			Distribution,
+			MaxCurve != nullptr ? MaxCurve->Evaluate(CurveStartTime) : MaxFallback);
+		FVectorRange Range{ FVector::Min(FirstMin, FirstMax), FVector::Max(FirstMin, FirstMax) };
+
+		for (int32 SampleIndex = 1; SampleIndex <= CurveBoundsSampleSteps; ++SampleIndex)
+		{
+			const float Time = GetCurveBoundsSampleTime(CurveStartTime, CurveEndTime, SampleIndex);
+			ExpandVectorRange(
+				Range,
+				ApplyVectorDistributionMode(Distribution, MinCurve != nullptr ? MinCurve->Evaluate(Time) : MinFallback));
+			ExpandVectorRange(
+				Range,
+				ApplyVectorDistributionMode(Distribution, MaxCurve != nullptr ? MaxCurve->Evaluate(Time) : MaxFallback));
+		}
+		return Range;
+	}
+
+	FFloatRange GetFloatDistributionRange(
+		const FParticleFloatDistribution& Distribution,
+		float CurveStartTime,
+		float CurveEndTime)
 	{
 		switch (Distribution.Mode)
 		{
 		case EParticleDistributionMode::RandomRange:
-		case EParticleDistributionMode::RandomRangeCurve:
 			return { std::min(Distribution.Min, Distribution.Max), std::max(Distribution.Min, Distribution.Max) };
 		case EParticleDistributionMode::Curve:
+			return SampleFloatCurveRange(
+				ResolveFloatCurve(Distribution.Curve),
+				CurveStartTime,
+				CurveEndTime,
+				Distribution.Constant);
+		case EParticleDistributionMode::RandomRangeCurve:
+			return SampleFloatCurvePairRange(
+				ResolveFloatCurve(Distribution.MinCurve),
+				ResolveFloatCurve(Distribution.MaxCurve),
+				CurveStartTime,
+				CurveEndTime,
+				Distribution.Min,
+				Distribution.Max);
 		case EParticleDistributionMode::Constant:
 		default:
 			return { Distribution.Constant, Distribution.Constant };
 		}
 	}
 
-	FVectorRange GetVectorDistributionRange(const FParticleVectorDistribution& Distribution)
+	FVectorRange GetVectorDistributionRange(
+		const FParticleVectorDistribution& Distribution,
+		float CurveStartTime,
+		float CurveEndTime)
 	{
+		const bool bUniformXYZ = Distribution.VectorMode == EParticleVectorDistributionMode::UniformXYZ;
 		switch (Distribution.Mode)
 		{
 		case EParticleDistributionMode::RandomRange:
-		case EParticleDistributionMode::RandomRangeCurve:
-			return { FVector::Min(Distribution.Min, Distribution.Max), FVector::Max(Distribution.Min, Distribution.Max) };
+			if (bUniformXYZ)
+			{
+				const float MinValue = std::min(Distribution.Min.X, Distribution.Max.X);
+				const float MaxValue = std::max(Distribution.Min.X, Distribution.Max.X);
+				return { FVector(MinValue, MinValue, MinValue), FVector(MaxValue, MaxValue, MaxValue) };
+			}
+			else
+			{
+				return { FVector::Min(Distribution.Min, Distribution.Max), FVector::Max(Distribution.Min, Distribution.Max) };
+			}
 		case EParticleDistributionMode::Curve:
+			return SampleVectorCurveRange(
+				Distribution,
+				ResolveVectorCurve(Distribution.Curve),
+				CurveStartTime,
+				CurveEndTime,
+				Distribution.Constant);
+		case EParticleDistributionMode::RandomRangeCurve:
+			return SampleVectorCurvePairRange(
+				Distribution,
+				ResolveVectorCurve(Distribution.MinCurve),
+				ResolveVectorCurve(Distribution.MaxCurve),
+				CurveStartTime,
+				CurveEndTime,
+				Distribution.Min,
+				Distribution.Max);
 		case EParticleDistributionMode::Constant:
 		default:
-			return { Distribution.Constant, Distribution.Constant };
+			if (bUniformXYZ)
+			{
+				return {
+					FVector(Distribution.Constant.X, Distribution.Constant.X, Distribution.Constant.X),
+					FVector(Distribution.Constant.X, Distribution.Constant.X, Distribution.Constant.X)
+				};
+			}
+			else
+			{
+				return { Distribution.Constant, Distribution.Constant };
+			}
 		}
 	}
 
@@ -137,6 +335,10 @@ namespace
 		FVectorRange LocationRange{ FVector::ZeroVector, FVector::ZeroVector };
 		FVectorRange VelocityRange{ FVector::ZeroVector, FVector::ZeroVector };
 		FVectorRange SizeRange{ FVector::OneVector, FVector::OneVector };
+		const float CurveStartTime = 0.0f;
+		const float CurveEndTime = Cache.RequiredModule != nullptr
+			? std::max(Cache.RequiredModule->EmitterDuration, 0.0f)
+			: CurveStartTime;
 
 		for (UParticleModule* Module : Cache.SpawnModules)
 		{
@@ -147,19 +349,20 @@ namespace
 
 			if (const UParticleModuleLifetime* LifetimeModule = Cast<UParticleModuleLifetime>(Module))
 			{
-				LifetimeRange = GetFloatDistributionRange(LifetimeModule->Lifetime);
+				// Spawn 모듈의 curve time은 loop-local SpawnTime이므로 emitter duration 전체를 샘플링합니다.
+				LifetimeRange = GetFloatDistributionRange(LifetimeModule->Lifetime, CurveStartTime, CurveEndTime);
 			}
 			else if (const UParticleModuleLocation* LocationModule = Cast<UParticleModuleLocation>(Module))
 			{
-				LocationRange = GetVectorDistributionRange(LocationModule->StartLocation);
+				LocationRange = GetVectorDistributionRange(LocationModule->StartLocation, CurveStartTime, CurveEndTime);
 			}
 			else if (const UParticleModuleVelocity* VelocityModule = Cast<UParticleModuleVelocity>(Module))
 			{
-				VelocityRange = GetVectorDistributionRange(VelocityModule->StartVelocity);
+				VelocityRange = GetVectorDistributionRange(VelocityModule->StartVelocity, CurveStartTime, CurveEndTime);
 			}
 			else if (const UParticleModuleSize* SizeModule = Cast<UParticleModuleSize>(Module))
 			{
-				SizeRange = GetVectorDistributionRange(SizeModule->StartSize);
+				SizeRange = GetVectorDistributionRange(SizeModule->StartSize, CurveStartTime, CurveEndTime);
 			}
 		}
 

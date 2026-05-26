@@ -15,6 +15,11 @@
 
 namespace
 {
+	struct FParticleDistributionPayload
+	{
+		float RandomAlpha = 0.0f;
+	};
+
 	bool IsLiveObject(const UObject* Object)
 	{
 		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
@@ -158,17 +163,58 @@ namespace
 		return Cache;
 	}
 
-	FParticleDistributionContext MakeDistributionContext(
+	FParticleDistributionPayload* GetDistributionPayload(
+		FParticleEmitterInstance* Owner,
+		int32 Offset,
+		FBaseParticle& Particle)
+	{
+		uint8* Payload = Owner != nullptr ? Owner->GetParticlePayloadByOffset(Particle, Offset) : nullptr;
+		return Payload != nullptr ? reinterpret_cast<FParticleDistributionPayload*>(Payload) : nullptr;
+	}
+
+	void InitializeDistributionPayload(
+		FParticleEmitterInstance* Owner,
+		int32 Offset,
+		FBaseParticle& Particle,
+		bool bUseRandomAlpha)
+	{
+		FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+		if (Payload == nullptr)
+		{
+			return;
+		}
+
+		Payload->RandomAlpha = bUseRandomAlpha && Owner != nullptr ? Owner->RandomStream.GetFraction() : 0.0f;
+	}
+
+	FParticleDistributionContext MakeSpawnDistributionContext(
 		FParticleEmitterInstance* Owner,
 		float SpawnTime,
-		const FBaseParticle& Particle)
+		const FBaseParticle& Particle,
+		const FParticleDistributionPayload* Payload)
 	{
 		FParticleDistributionContext Context;
 		Context.RandomStream = Owner != nullptr ? &Owner->RandomStream : nullptr;
 		Context.RelativeTime = Particle.RelativeTime;
 		Context.SpawnTime = SpawnTime;
+		Context.CurveTime = SpawnTime;
+		Context.EmitterTime = SpawnTime;
+		Context.RandomAlpha = Payload != nullptr ? &Payload->RandomAlpha : nullptr;
+		return Context;
+	}
+
+	FParticleDistributionContext MakeUpdateDistributionContext(
+		FParticleEmitterInstance* Owner,
+		const FBaseParticle& Particle,
+		const FParticleDistributionPayload* Payload)
+	{
+		FParticleDistributionContext Context;
+		Context.RandomStream = Owner != nullptr ? &Owner->RandomStream : nullptr;
+		Context.RelativeTime = Particle.RelativeTime;
+		Context.SpawnTime = 0.0f;
 		Context.CurveTime = Particle.RelativeTime;
 		Context.EmitterTime = Owner != nullptr ? Owner->EmitterTime : 0.0f;
+		Context.RandomAlpha = Payload != nullptr ? &Payload->RandomAlpha : nullptr;
 		return Context;
 	}
 
@@ -200,6 +246,26 @@ namespace
 	float GetDistributionEvalTime(const FParticleDistributionContext& Context)
 	{
 		return Context.CurveTime;
+	}
+
+	float GetDistributionRandomAlpha(const FParticleDistributionContext& Context)
+	{
+		if (Context.RandomAlpha != nullptr)
+		{
+			return std::clamp(*Context.RandomAlpha, 0.0f, 1.0f);
+		}
+
+		return Context.RandomStream != nullptr ? Context.RandomStream->GetFraction() : 0.0f;
+	}
+
+	bool IsUniformXYZ(const FParticleVectorDistribution& Distribution)
+	{
+		return Distribution.VectorMode == EParticleVectorDistributionMode::UniformXYZ;
+	}
+
+	FVector MakeUniformVector(float Value)
+	{
+		return FVector(Value, Value, Value);
 	}
 
 	UCurveFloatAsset* ResolveFloatCurve(const TSoftObjectPtr<UCurveFloatAsset>& Curve)
@@ -254,9 +320,8 @@ float EvaluateParticleFloat(const FParticleFloatDistribution& Distribution, cons
 	{
 		const float MinValue = EvaluateFloatCurveOrFallback(Distribution.MinCurve, Time, Distribution.Min);
 		const float MaxValue = EvaluateFloatCurveOrFallback(Distribution.MaxCurve, Time, Distribution.Max);
-		return Context.RandomStream
-			? Context.RandomStream->GetRange(MinValue, MaxValue)
-			: MinValue;
+		const float Alpha = GetDistributionRandomAlpha(Context);
+		return MinValue + (MaxValue - MinValue) * Alpha;
 	}
 	case EParticleDistributionMode::Constant:
 	default:
@@ -270,24 +335,41 @@ FVector EvaluateParticleVector(const FParticleVectorDistribution& Distribution, 
 	switch (Distribution.Mode)
 	{
 	case EParticleDistributionMode::RandomRange:
-		return Context.RandomStream
-			? FVector(
-				Context.RandomStream->GetRange(Distribution.Min.X, Distribution.Max.X),
-				Context.RandomStream->GetRange(Distribution.Min.Y, Distribution.Max.Y),
-				Context.RandomStream->GetRange(Distribution.Min.Z, Distribution.Max.Z))
-			: Distribution.Min;
+		if (IsUniformXYZ(Distribution))
+		{
+			const float Value = Context.RandomStream
+				? Context.RandomStream->GetRange(Distribution.Min.X, Distribution.Max.X)
+				: Distribution.Min.X;
+			return MakeUniformVector(Value);
+		}
+		else
+		{
+			return Context.RandomStream
+				? FVector(
+					Context.RandomStream->GetRange(Distribution.Min.X, Distribution.Max.X),
+					Context.RandomStream->GetRange(Distribution.Min.Y, Distribution.Max.Y),
+					Context.RandomStream->GetRange(Distribution.Min.Z, Distribution.Max.Z))
+				: Distribution.Min;
+		}
 	case EParticleDistributionMode::Curve:
-		return EvaluateVectorCurveOrFallback(Distribution.Curve, Time, Distribution.Constant);
+	{
+		const FVector Value = EvaluateVectorCurveOrFallback(Distribution.Curve, Time, Distribution.Constant);
+		return IsUniformXYZ(Distribution) ? MakeUniformVector(Value.X) : Value;
+	}
 	case EParticleDistributionMode::RandomRangeCurve:
 	{
 		const FVector MinValue = EvaluateVectorCurveOrFallback(Distribution.MinCurve, Time, Distribution.Min);
 		const FVector MaxValue = EvaluateVectorCurveOrFallback(Distribution.MaxCurve, Time, Distribution.Max);
-		const float Alpha = Context.RandomStream ? Context.RandomStream->GetFraction() : 0.0f;
+		const float Alpha = GetDistributionRandomAlpha(Context);
+		if (IsUniformXYZ(Distribution))
+		{
+			return MakeUniformVector(MinValue.X + (MaxValue.X - MinValue.X) * Alpha);
+		}
 		return FVector::Lerp(MinValue, MaxValue, Alpha);
 	}
 	case EParticleDistributionMode::Constant:
 	default:
-		return Distribution.Constant;
+		return IsUniformXYZ(Distribution) ? MakeUniformVector(Distribution.Constant.X) : Distribution.Constant;
 	}
 }
 
@@ -310,7 +392,7 @@ FColor EvaluateParticleColor(const FParticleColorDistribution& Distribution, con
 	{
 		const FColor MinValue = EvaluateColorCurveOrFallback(Distribution.MinCurve, Time, Distribution.Min);
 		const FColor MaxValue = EvaluateColorCurveOrFallback(Distribution.MaxCurve, Time, Distribution.Max);
-		const float Alpha = Context.RandomStream ? Context.RandomStream->GetFraction() : 0.0f;
+		const float Alpha = GetDistributionRandomAlpha(Context);
 		return FColor::Lerp(MinValue, MaxValue, Alpha);
 	}
 	case EParticleDistributionMode::Constant:
@@ -385,10 +467,21 @@ bool UParticleModuleLifetime::IsSpawnModule() const
 	return true;
 }
 
+int32 UParticleModuleLifetime::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleLifetime::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, Lifetime.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
 void UParticleModuleLifetime::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
-	(void)Offset;
-	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 	Particle.Lifetime = std::max(EvaluateParticleFloat(Lifetime, Context), 0.0001f);
 	Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
 	Particle.RelativeTime = 0.0f;
@@ -399,10 +492,21 @@ bool UParticleModuleLocation::IsSpawnModule() const
 	return true;
 }
 
+int32 UParticleModuleLocation::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleLocation::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartLocation.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
 void UParticleModuleLocation::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
-	(void)Offset;
-	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 
 	// StartLocation은 RequiredModule의 local / world 정책에 맞는 simulation space 값으로 저장
 	Particle.Location = EvaluateParticleVector(StartLocation, Context);
@@ -414,10 +518,21 @@ bool UParticleModuleVelocity::IsSpawnModule() const
 	return true;
 }
 
+int32 UParticleModuleVelocity::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleVelocity::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartVelocity.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
 void UParticleModuleVelocity::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
-	(void)Offset;
-	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 	Particle.Velocity = EvaluateParticleVector(StartVelocity, Context);
 	Particle.BaseVelocity = Particle.Velocity;
 }
@@ -434,10 +549,21 @@ bool UParticleModuleColor::IsSpawnModule() const
 	return true;
 }
 
+int32 UParticleModuleColor::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleColor::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartColor.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
 void UParticleModuleColor::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
-	(void)Offset;
-	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 	Particle.Color = EvaluateParticleColor(StartColor, Context);
 	Particle.BaseColor = Particle.Color;
 }
@@ -454,10 +580,21 @@ bool UParticleModuleSize::IsSpawnModule() const
 	return true;
 }
 
+int32 UParticleModuleSize::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleSize::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartSize.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
 void UParticleModuleSize::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
 {
-	(void)Offset;
-	const FParticleDistributionContext Context = MakeDistributionContext(Owner, SpawnTime, Particle);
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 	Particle.Size = EvaluateParticleVector(StartSize, Context);
 	Particle.BaseSize = Particle.Size;
 }
