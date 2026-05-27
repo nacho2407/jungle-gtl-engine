@@ -2059,6 +2059,9 @@
     <ClInclude Include="Source\Engine\Particle\ParticleAsset.h">
       <Filter>Source\Engine\Particle</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particle\ParticleBeamPath.h">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Particle\ParticleDistributions.h">
       <Filter>Source\Engine\Particle</Filter>
     </ClInclude>

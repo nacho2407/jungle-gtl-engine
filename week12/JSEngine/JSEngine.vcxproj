@@ -1245,6 +1245,7 @@
     <ClInclude Include="Source\Engine\Object\ObjectPtr.h" />
     <ClInclude Include="Source\Engine\Object\Property.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleAsset.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleBeamPath.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleDistributions.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleEmitterInstance.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleEmitterInstanceOwner.h" />
