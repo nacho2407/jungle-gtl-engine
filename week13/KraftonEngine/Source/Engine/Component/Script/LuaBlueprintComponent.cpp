@@ -22,7 +22,15 @@ void ULuaBlueprintComponent::AddReferencedObjects(FReferenceCollector& Collector
 void ULuaBlueprintComponent::BeginDestroy()
 {
 	ClearCollisionBindings();
-	ClearLuaRuntime();
+	// GC 가 BeginDestroy 부르는 시점이 항상 Lua 콜백 바깥일 것이라 가정하지만, 방어적으로 가드.
+	if (LuaCallDepth > 0)
+	{
+		bPendingLuaCleanup = true;
+	}
+	else
+	{
+		ClearLuaRuntime();
+	}
 	UActorComponent::BeginDestroy();
 }
 
@@ -32,12 +40,21 @@ void ULuaBlueprintComponent::BeginPlay()
 	ReloadBlueprint();
 	if (LuaBeginPlay)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaBeginPlay();
 		if (!Result.valid())
 		{
 			sol::error Err = Result;
 			UE_LOG("LuaBlueprint BeginPlay error in %s: %s", GetRuntimeName().c_str(), Err.what());
 		}
+	}
+	// Lua 가 자기 자신 액터를 destroy 했다면 EndPlay 가 재진입으로 호출됐고 정리가 보류돼 있다.
+	// 이제 안전하게 정리. (단, ReloadBlueprint 가 깔아놓은 binding 은 destroy 가 풀었으므로 재바인딩 금지.)
+	if (bPendingLuaCleanup)
+	{
+		ClearLuaRuntime();
+		bPendingLuaCleanup = false;
+		return;
 	}
 	BindOwnerCollisionEvents();
 }
@@ -46,8 +63,16 @@ void ULuaBlueprintComponent::EndPlay()
 {
 	UActorComponent::EndPlay();
 	ClearCollisionBindings();
+	// 재진입 중이면 (Lua 안에서 obj:Destroy() 호출 → RouteActorDestroyed → 우리 EndPlay) Lua 정리 보류.
+	// 바깥 콜백 (BeginPlay/Tick/...) 반환 시점에 bPendingLuaCleanup 가 처리한다.
+	if (LuaCallDepth > 0)
+	{
+		bPendingLuaCleanup = true;
+		return;
+	}
 	if (LuaEndPlay)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaEndPlay();
 		if (!Result.valid())
 		{
@@ -69,12 +94,18 @@ void ULuaBlueprintComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 	if (LuaTick)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaTick(DeltaTime);
 		if (!Result.valid())
 		{
 			sol::error Err = Result;
 			UE_LOG("LuaBlueprint Tick error in %s: %s", GetRuntimeName().c_str(), Err.what());
 		}
+	}
+	if (bPendingLuaCleanup)
+	{
+		ClearLuaRuntime();
+		bPendingLuaCleanup = false;
 	}
 }
 
@@ -277,6 +308,7 @@ void ULuaBlueprintComponent::HandleBeginOverlap(
 {
 	if (LuaOnOverlap)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaOnOverlap(OtherActor, OverlappedComponent, OtherComp);
 		if (!Result.valid())
 		{
@@ -284,6 +316,7 @@ void ULuaBlueprintComponent::HandleBeginOverlap(
 			UE_LOG("LuaBlueprint OnOverlap error in %s: %s", GetRuntimeName().c_str(), Err.what());
 		}
 	}
+	if (bPendingLuaCleanup) { ClearLuaRuntime(); bPendingLuaCleanup = false; }
 }
 
 void ULuaBlueprintComponent::HandleEndOverlap(
@@ -294,6 +327,7 @@ void ULuaBlueprintComponent::HandleEndOverlap(
 {
 	if (LuaOnEndOverlap)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaOnEndOverlap(OtherActor, OverlappedComponent, OtherComp);
 		if (!Result.valid())
 		{
@@ -301,6 +335,7 @@ void ULuaBlueprintComponent::HandleEndOverlap(
 			UE_LOG("LuaBlueprint OnEndOverlap error in %s: %s", GetRuntimeName().c_str(), Err.what());
 		}
 	}
+	if (bPendingLuaCleanup) { ClearLuaRuntime(); bPendingLuaCleanup = false; }
 }
 
 void ULuaBlueprintComponent::HandleHit(
@@ -312,6 +347,7 @@ void ULuaBlueprintComponent::HandleHit(
 {
 	if (LuaOnHit)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaOnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, HitResult);
 		if (!Result.valid())
 		{
@@ -319,6 +355,7 @@ void ULuaBlueprintComponent::HandleHit(
 			UE_LOG("LuaBlueprint OnHit error in %s: %s", GetRuntimeName().c_str(), Err.what());
 		}
 	}
+	if (bPendingLuaCleanup) { ClearLuaRuntime(); bPendingLuaCleanup = false; }
 }
 
 void ULuaBlueprintComponent::HandleEndHit(
@@ -328,6 +365,7 @@ void ULuaBlueprintComponent::HandleEndHit(
 {
 	if (LuaOnEndHit)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaOnEndHit(OtherActor, HitComponent, OtherComp);
 		if (!Result.valid())
 		{
@@ -335,6 +373,7 @@ void ULuaBlueprintComponent::HandleEndHit(
 			UE_LOG("LuaBlueprint OnEndHit error in %s: %s", GetRuntimeName().c_str(), Err.what());
 		}
 	}
+	if (bPendingLuaCleanup) { ClearLuaRuntime(); bPendingLuaCleanup = false; }
 }
 
 bool ULuaBlueprintComponent::CallFunction(const FString& FunctionName)
@@ -351,14 +390,19 @@ bool ULuaBlueprintComponent::CallFunction(const FString& FunctionName)
 	}
 
 	sol::protected_function Fn = Target;
-	sol::protected_function_result Result = Fn();
-	if (!Result.valid())
+	bool bOk;
 	{
-		sol::error Err = Result;
-		UE_LOG("LuaBlueprint %s error in %s: %s", FunctionName.c_str(), GetRuntimeName().c_str(), Err.what());
-		return false;
+		FLuaCallScope Scope(this);
+		sol::protected_function_result Result = Fn();
+		bOk = Result.valid();
+		if (!bOk)
+		{
+			sol::error Err = Result;
+			UE_LOG("LuaBlueprint %s error in %s: %s", FunctionName.c_str(), GetRuntimeName().c_str(), Err.what());
+		}
 	}
-	return true;
+	if (bPendingLuaCleanup) { ClearLuaRuntime(); bPendingLuaCleanup = false; }
+	return bOk;
 }
 
 void ULuaBlueprintComponent::PreGetEditableProperties()

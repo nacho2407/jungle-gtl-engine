@@ -87,6 +87,19 @@ private:
 	sol::protected_function LuaOnHit;
 	sol::protected_function LuaOnEndHit;
 
+	// Lua 콜백 진입 카운터. obj:Destroy() 처럼 Lua 안에서 자기 자신을 destroy 하면
+	// EndPlay → ClearLuaRuntime 이 mid-execution 으로 호출되어 sol::env / function 이 nil 화 →
+	// 복귀 시 lua51 SIGSEGV. 재진입 중에는 정리를 미루고 outer 진입에서 처리한다.
+	int32 LuaCallDepth = 0;
+	bool  bPendingLuaCleanup = false;
+
+	struct FLuaCallScope
+	{
+		ULuaBlueprintComponent* Owner;
+		explicit FLuaCallScope(ULuaBlueprintComponent* InOwner) : Owner(InOwner) { ++Owner->LuaCallDepth; }
+		~FLuaCallScope() { --Owner->LuaCallDepth; }
+	};
+
 	TArray<TWeakObjectPtr<UPrimitiveComponent>> BoundOverlapComponents;
 	TArray<TWeakObjectPtr<UPrimitiveComponent>> BoundHitComponents;
 	TArray<FDelegateHandle> BeginOverlapHandles;

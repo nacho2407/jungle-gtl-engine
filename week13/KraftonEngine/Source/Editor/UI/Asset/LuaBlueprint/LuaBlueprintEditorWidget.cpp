@@ -61,7 +61,7 @@ namespace
 		case ELuaBlueprintNodeType::SetProperty:           return "Set Property";
 		case ELuaBlueprintNodeType::CallFunction:          return "Call Function";
 		case ELuaBlueprintNodeType::CallFunctionSignature: return "Call Signature";
-		case ELuaBlueprintNodeType::Self:                  return "Self";
+		case ELuaBlueprintNodeType::Self:                  return "Self (Owning Actor)";
 		case ELuaBlueprintNodeType::AddFloat:              return "Float + Float";
 		case ELuaBlueprintNodeType::SubtractFloat:         return "Float - Float";
 		case ELuaBlueprintNodeType::MultiplyFloat:         return "Float * Float";

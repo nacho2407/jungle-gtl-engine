@@ -147,7 +147,7 @@ namespace
 		case ELuaBlueprintNodeType::SetProperty:           return "Set Property";
 		case ELuaBlueprintNodeType::CallFunction:          return "Call Function";
 		case ELuaBlueprintNodeType::CallFunctionSignature: return "Call Signature";
-		case ELuaBlueprintNodeType::Self:                  return "Self";
+		case ELuaBlueprintNodeType::Self:                  return "Self (Owning Actor)";
 		case ELuaBlueprintNodeType::AddFloat:              return "Float + Float";
 		case ELuaBlueprintNodeType::SubtractFloat:         return "Float - Float";
 		case ELuaBlueprintNodeType::MultiplyFloat:         return "Float * Float";
@@ -488,7 +488,7 @@ FLuaBlueprintNode* ULuaBlueprintAsset::AddNodeOfType(ELuaBlueprintNodeType Type,
 		AddPin(*N, ELuaBlueprintPinKind::Output, ELuaBlueprintPinType::Vector, FName("Value"));
 		break;
 	case ELuaBlueprintNodeType::Self:
-		AddPin(*N, ELuaBlueprintPinKind::Output, ELuaBlueprintPinType::Object, FName("Self"));
+		AddPin(*N, ELuaBlueprintPinKind::Output, ELuaBlueprintPinType::Object, FName("Actor"));
 		break;
 
 	// ── Actor ──
