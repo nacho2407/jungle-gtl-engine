@@ -80,9 +80,11 @@ UObject* UObject::DuplicateWithArchiveContext(UObject* NewOuter, FDuplicateArchi
 
 void UObject::Serialize(FArchive& Ar)
 {
-	(void)Ar;
-	// 기본 UObject는 직렬화할 상태 없음.
-	// UUID/InternalIndex/ObjectName은 런타임 identity이므로 복제/저장 경로에서 덮어쓰지 않는다.
+	// 옛 에셋 포맷 호환: 저장 시엔 ObjectName 을 기록하지만, 로드 시엔 임시 버퍼로
+	// 읽고 버린다. UUID/InternalIndex/ObjectName 은 런타임 identity 이므로
+	// 복제/로드 경로에서 덮어쓰지 않는다.
+	FName SerializedName = Ar.IsSaving() ? ObjectName : FName();
+	Ar << SerializedName;
 }
 
 void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)
