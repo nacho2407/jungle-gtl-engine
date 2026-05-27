@@ -43,7 +43,7 @@ namespace
         }
         return std::filesystem::exists(Full);
     }
-    constexpr const char* MaterialGraphGeneratorVersion = "ParticleMeshLighting_v3";
+    constexpr const char* MaterialGraphGeneratorVersion = "ParticleMeshLighting_v4";
 }
 
 void FMaterialManager::ScanMaterialAssets()

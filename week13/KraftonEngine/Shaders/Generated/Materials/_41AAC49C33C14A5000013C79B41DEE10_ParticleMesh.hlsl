@@ -7,7 +7,7 @@
 #include "Common/SystemSamplers.hlsli"
 #define USE_FOG 1
 #include "Common/Fog.hlsli"
-#include "Common/ForwardLightData.hlsli"
+#include "Common/ForwardLighting.hlsli"
 
 struct FMaterialPixelInput
 {
@@ -91,10 +91,11 @@ float4 PS(PS_Input_MaterialMeshParticle input) : SV_TARGET
     float3 BaseColor = Result.Color;
 
     float3 N = normalize(input.normal);
-    float3 ambient = AmbientLight.Color.rgb * AmbientLight.Intensity;
+    float3 lighting = AmbientLight.Color.rgb * AmbientLight.Intensity;
     float NdotL = saturate(dot(N, -DirectionalLight.Direction));
-    float3 directional = DirectionalLight.Color.rgb * DirectionalLight.Intensity * NdotL;
-    float3 lighting = saturate(ambient + directional);
+    lighting += DirectionalLight.Color.rgb * DirectionalLight.Intensity * NdotL;
+    AccumulatePointSpotDiffuse(input.worldPos, N, input.position, lighting);
+    lighting = saturate(lighting);
     BaseColor = BaseColor * lighting;
 
     float4 FinalColor = float4(BaseColor + Result.Emissive, Result.Opacity);

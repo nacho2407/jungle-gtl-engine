@@ -818,7 +818,8 @@ namespace
 		}
 		if (Domain == EMaterialDomain::ParticleMesh && bReceiveLighting)
 		{
-			SS << "#include \"Common/ForwardLightData.hlsli\"\n";
+			// ForwardLighting.hlsli 가 ForwardLightData + ShadowSampling 을 포함
+			SS << "#include \"Common/ForwardLighting.hlsli\"\n";
 		}
 		SS << "\n";
 		SS << "struct FMaterialPixelInput\n";
@@ -969,10 +970,11 @@ float4 PS(PS_Input_MaterialMeshParticle input) : SV_TARGET
 		{
 			SS << R"(
     float3 N = normalize(input.normal);
-    float3 ambient = AmbientLight.Color.rgb * AmbientLight.Intensity;
+    float3 lighting = AmbientLight.Color.rgb * AmbientLight.Intensity;
     float NdotL = saturate(dot(N, -DirectionalLight.Direction));
-    float3 directional = DirectionalLight.Color.rgb * DirectionalLight.Intensity * NdotL;
-    float3 lighting = saturate(ambient + directional);
+    lighting += DirectionalLight.Color.rgb * DirectionalLight.Intensity * NdotL;
+    AccumulatePointSpotDiffuse(input.worldPos, N, input.position, lighting);
+    lighting = saturate(lighting);
     BaseColor = BaseColor * lighting;
 )";
 		}
