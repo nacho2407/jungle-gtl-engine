@@ -362,10 +362,12 @@ namespace
 
 	bool HasModuleCurveDistribution(const UParticleModule* Module)
 	{
-		return Cast<UParticleModuleLifetime>(Module)
+		return Cast<UParticleModuleSpawn>(Module)
+			|| Cast<UParticleModuleLifetime>(Module)
 			|| Cast<UParticleModuleLocation>(Module)
 			|| Cast<UParticleModuleVelocity>(Module)
 			|| Cast<UParticleModuleAcceleration>(Module)
+			|| Cast<UParticleModuleColor>(Module)
 			|| Cast<UParticleModuleSize>(Module)
 			|| Cast<UParticleModuleSubImageIndex>(Module)
 			|| Cast<UParticleModuleTypeDataMesh>(Module)
@@ -2449,8 +2451,18 @@ void FParticleSystemEditorWidget::RenderDetailsPanel(const ImVec2& Size)
 		ImGui::Separator();
 		if (RenderObjectProperties(SelectedModule, bModuleReadOnly))
 		{
+			const bool bRefreshOpenCurveSelection = CurveSelection.OwnerObject == SelectedModule && CurveSelection.CurveCount > 0;
+			const int32 PreviousActiveCurveIndex = CurveSelection.ActiveCurveIndex;
 			bDetailsValueChanged = true;
 			ApplyEditedObjectSideEffects(SelectedModule);
+			if (bRefreshOpenCurveSelection)
+			{
+				SelectModuleDistributionCurves(SelectedModule);
+				if (CurveSelection.CurveCount > 0)
+				{
+					CurveSelection.ActiveCurveIndex = (std::max)(0, (std::min)(PreviousActiveCurveIndex, CurveSelection.CurveCount - 1));
+				}
+			}
 			MarkDirty();
 			RefreshParticleSystemComponents();
 		}
@@ -3842,7 +3854,11 @@ bool FParticleSystemEditorWidget::SelectModuleDistributionCurves(UParticleModule
 	ClearSelectedCurve();
 	CurveSelection.Label = GetModuleDisplayName(Module);
 	bool bChanged = false;
-	if (UParticleModuleLifetime* LifetimeModule = Cast<UParticleModuleLifetime>(Module))
+	if (UParticleModuleSpawn* SpawnModule = Cast<UParticleModuleSpawn>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &SpawnModule->SpawnRate, "SpawnRate");
+	}
+	else if (UParticleModuleLifetime* LifetimeModule = Cast<UParticleModuleLifetime>(Module))
 	{
 		bChanged |= AppendDistributionCurve(Module, &LifetimeModule->Lifetime, "Lifetime");
 	}
@@ -3857,6 +3873,13 @@ bool FParticleSystemEditorWidget::SelectModuleDistributionCurves(UParticleModule
 	else if (UParticleModuleAcceleration* AccelerationModule = Cast<UParticleModuleAcceleration>(Module))
 	{
 		bChanged |= AppendDistributionCurve(Module, &AccelerationModule->Acceleration, "Acceleration");
+	}
+	else if (UParticleModuleColor* ColorModule = Cast<UParticleModuleColor>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &ColorModule->StartColor, "StartColor");
+		bChanged |= AppendDistributionCurve(Module, &ColorModule->StartAlpha, "StartAlpha");
+		bChanged |= AppendDistributionCurve(Module, &ColorModule->EndColor, "EndColor");
+		bChanged |= AppendDistributionCurve(Module, &ColorModule->EndAlpha, "EndAlpha");
 	}
 	else if (UParticleModuleSize* SizeModule = Cast<UParticleModuleSize>(Module))
 	{

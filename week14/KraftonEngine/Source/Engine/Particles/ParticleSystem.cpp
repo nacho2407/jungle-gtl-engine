@@ -29,7 +29,10 @@ namespace
 		LODLevel->SetEnabled(true);
 
 		UParticleModuleSpawn* SpawnModule = UObjectManager::Get().CreateObject<UParticleModuleSpawn>();
-		SpawnModule->SpawnRate = SpawnRate;
+		SpawnModule->SpawnRate.Mode = EDistributionValueMode::Constant;
+		SpawnModule->SpawnRate.Constant = SpawnRate;
+		SpawnModule->SpawnRate.MinValue = SpawnRate;
+		SpawnModule->SpawnRate.MaxValue = SpawnRate;
 
 		UParticleModuleLifetime* LifetimeModule = UObjectManager::Get().CreateObject<UParticleModuleLifetime>();
 		LifetimeModule->Lifetime.Mode = EDistributionValueMode::Uniform;
@@ -44,8 +47,22 @@ namespace
 		VelocityModule->StartVelocity.MaxValue = FVector(10.0f, 10.0f, 100.0f);
 
 		UParticleModuleColor* ColorModule = UObjectManager::Get().CreateObject<UParticleModuleColor>();
-		ColorModule->StartColor = StartColor;
-		ColorModule->EndColor = EndColor;
+		ColorModule->StartColor.Mode = EDistributionValueMode::Constant;
+		ColorModule->StartColor.Constant = FVector(StartColor.X, StartColor.Y, StartColor.Z);
+		ColorModule->StartColor.MinValue = ColorModule->StartColor.Constant;
+		ColorModule->StartColor.MaxValue = ColorModule->StartColor.Constant;
+		ColorModule->StartAlpha.Mode = EDistributionValueMode::Constant;
+		ColorModule->StartAlpha.Constant = StartColor.W;
+		ColorModule->StartAlpha.MinValue = StartColor.W;
+		ColorModule->StartAlpha.MaxValue = StartColor.W;
+		ColorModule->EndColor.Mode = EDistributionValueMode::Constant;
+		ColorModule->EndColor.Constant = FVector(EndColor.X, EndColor.Y, EndColor.Z);
+		ColorModule->EndColor.MinValue = ColorModule->EndColor.Constant;
+		ColorModule->EndColor.MaxValue = ColorModule->EndColor.Constant;
+		ColorModule->EndAlpha.Mode = EDistributionValueMode::Constant;
+		ColorModule->EndAlpha.Constant = EndColor.W;
+		ColorModule->EndAlpha.MinValue = EndColor.W;
+		ColorModule->EndAlpha.MaxValue = EndColor.W;
 
 		UParticleModuleSize* SizeModule = UObjectManager::Get().CreateObject<UParticleModuleSize>();
 		SizeModule->StartSize.Mode = EDistributionValueMode::Uniform;
