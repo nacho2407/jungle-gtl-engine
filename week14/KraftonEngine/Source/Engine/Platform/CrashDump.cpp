@@ -2,11 +2,13 @@
 #include "Engine/Platform/Paths.h"
 
 #include <DbgHelp.h>
+#include <cstddef>
 #include <ctime>
 #include <cstdio>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 
 #include "SimpleJSON/json.hpp"
 
@@ -18,8 +20,41 @@ namespace
 
 	struct FSourceLocation
 	{
-		char File[MAX_PATH] = {};
+		wchar_t File[MAX_PATH] = {};
 		DWORD Line = 0;
+	};
+
+	struct FPdbReference
+	{
+		std::wstring FileName;
+		std::wstring DecimalStoreIndex;
+		std::wstring HexStoreIndex;
+	};
+
+	struct FScopedHandle
+	{
+		HANDLE Handle = INVALID_HANDLE_VALUE;
+
+		~FScopedHandle()
+		{
+			if (Handle != INVALID_HANDLE_VALUE && Handle != nullptr)
+			{
+				CloseHandle(Handle);
+			}
+		}
+
+		bool IsValid() const
+		{
+			return Handle != INVALID_HANDLE_VALUE && Handle != nullptr;
+		}
+	};
+
+	struct FCodeViewRsdsHeader
+	{
+		DWORD Signature = 0;
+		GUID Guid = {};
+		DWORD Age = 0;
+		char PdbPath[1] = {};
 	};
 
 	std::wstring GetCrashDumpShareDirFromEnvironment()
@@ -99,16 +134,253 @@ namespace
 		return !Error;
 	}
 
-	std::filesystem::path GetExecutablePath()
+	bool IsRangeInsideFile(uint64_t Offset, uint64_t Size, uint64_t FileSize)
 	{
-		WCHAR ExecutablePath[MAX_PATH] = {};
-		const DWORD Length = GetModuleFileNameW(nullptr, ExecutablePath, MAX_PATH);
-		if (Length == 0 || Length >= MAX_PATH)
+		return Offset <= FileSize && Size <= FileSize - Offset;
+	}
+
+	bool TryRvaToFileOffset(DWORD Rva, const IMAGE_NT_HEADERS* NtHeaders, DWORD& OutOffset)
+	{
+		if (Rva < NtHeaders->OptionalHeader.SizeOfHeaders)
 		{
-			return {};
+			OutOffset = Rva;
+			return true;
 		}
 
-		return std::filesystem::path(ExecutablePath);
+		const IMAGE_SECTION_HEADER* Section = IMAGE_FIRST_SECTION(NtHeaders);
+		for (WORD Index = 0; Index < NtHeaders->FileHeader.NumberOfSections; ++Index, ++Section)
+		{
+			const uint64_t SectionStart = Section->VirtualAddress;
+			const uint64_t SectionSize =
+				Section->Misc.VirtualSize > Section->SizeOfRawData ? Section->Misc.VirtualSize : Section->SizeOfRawData;
+			if (Rva >= SectionStart && Rva < SectionStart + SectionSize)
+			{
+				OutOffset = Section->PointerToRawData + (Rva - Section->VirtualAddress);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	std::wstring FormatPdbStoreIndex(const GUID& Guid, DWORD Age, bool bHexAge)
+	{
+		WCHAR GuidText[64] = {};
+		swprintf_s(
+			GuidText,
+			L"%08lX%04X%04X%02X%02X%02X%02X%02X%02X%02X%02X",
+			Guid.Data1,
+			static_cast<unsigned int>(Guid.Data2),
+			static_cast<unsigned int>(Guid.Data3),
+			static_cast<unsigned int>(Guid.Data4[0]),
+			static_cast<unsigned int>(Guid.Data4[1]),
+			static_cast<unsigned int>(Guid.Data4[2]),
+			static_cast<unsigned int>(Guid.Data4[3]),
+			static_cast<unsigned int>(Guid.Data4[4]),
+			static_cast<unsigned int>(Guid.Data4[5]),
+			static_cast<unsigned int>(Guid.Data4[6]),
+			static_cast<unsigned int>(Guid.Data4[7]));
+
+		WCHAR AgeText[16] = {};
+		if (bHexAge)
+		{
+			swprintf_s(AgeText, L"%lX", Age);
+		}
+		else
+		{
+			swprintf_s(AgeText, L"%lu", Age);
+		}
+
+		return std::wstring(GuidText) + AgeText;
+	}
+
+	bool TryReadPdbReferenceFromExecutable(const std::filesystem::path& ExecutablePath, FPdbReference& OutReference)
+	{
+		FScopedHandle File{ CreateFileW(
+			ExecutablePath.c_str(),
+			GENERIC_READ,
+			FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+			nullptr,
+			OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL,
+			nullptr) };
+		if (!File.IsValid())
+		{
+			return false;
+		}
+
+		LARGE_INTEGER FileSize = {};
+		if (!GetFileSizeEx(File.Handle, &FileSize) || FileSize.QuadPart <= 0)
+		{
+			return false;
+		}
+
+		FScopedHandle Mapping{ CreateFileMappingW(File.Handle, nullptr, PAGE_READONLY, 0, 0, nullptr) };
+		if (!Mapping.IsValid())
+		{
+			return false;
+		}
+
+		const BYTE* Base = static_cast<const BYTE*>(MapViewOfFile(Mapping.Handle, FILE_MAP_READ, 0, 0, 0));
+		if (!Base)
+		{
+			return false;
+		}
+
+		const auto UnmapOnExit = std::unique_ptr<const BYTE, decltype(&UnmapViewOfFile)>(Base, UnmapViewOfFile);
+		const uint64_t MappedSize = static_cast<uint64_t>(FileSize.QuadPart);
+		if (!IsRangeInsideFile(0, sizeof(IMAGE_DOS_HEADER), MappedSize))
+		{
+			return false;
+		}
+
+		const IMAGE_DOS_HEADER* DosHeader = reinterpret_cast<const IMAGE_DOS_HEADER*>(Base);
+		if (DosHeader->e_magic != IMAGE_DOS_SIGNATURE || DosHeader->e_lfanew < 0)
+		{
+			return false;
+		}
+
+		const uint64_t NtOffset = static_cast<uint64_t>(DosHeader->e_lfanew);
+		if (!IsRangeInsideFile(NtOffset, sizeof(IMAGE_NT_HEADERS), MappedSize))
+		{
+			return false;
+		}
+
+		const IMAGE_NT_HEADERS* NtHeaders = reinterpret_cast<const IMAGE_NT_HEADERS*>(Base + NtOffset);
+		if (NtHeaders->Signature != IMAGE_NT_SIGNATURE)
+		{
+			return false;
+		}
+
+		const IMAGE_DATA_DIRECTORY& DebugDirectory =
+			NtHeaders->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
+		if (DebugDirectory.VirtualAddress == 0 || DebugDirectory.Size < sizeof(IMAGE_DEBUG_DIRECTORY))
+		{
+			return false;
+		}
+
+		DWORD DebugDirectoryOffset = 0;
+		if (!TryRvaToFileOffset(DebugDirectory.VirtualAddress, NtHeaders, DebugDirectoryOffset))
+		{
+			return false;
+		}
+
+		if (!IsRangeInsideFile(DebugDirectoryOffset, DebugDirectory.Size, MappedSize))
+		{
+			return false;
+		}
+
+		const size_t EntryCount = DebugDirectory.Size / sizeof(IMAGE_DEBUG_DIRECTORY);
+		const IMAGE_DEBUG_DIRECTORY* Entries =
+			reinterpret_cast<const IMAGE_DEBUG_DIRECTORY*>(Base + DebugDirectoryOffset);
+
+		for (size_t EntryIndex = 0; EntryIndex < EntryCount; ++EntryIndex)
+		{
+			const IMAGE_DEBUG_DIRECTORY& Entry = Entries[EntryIndex];
+			if (Entry.Type != IMAGE_DEBUG_TYPE_CODEVIEW || Entry.SizeOfData <= offsetof(FCodeViewRsdsHeader, PdbPath))
+			{
+				continue;
+			}
+
+			DWORD CodeViewOffset = Entry.PointerToRawData;
+			if (CodeViewOffset == 0 && Entry.AddressOfRawData != 0)
+			{
+				if (!TryRvaToFileOffset(Entry.AddressOfRawData, NtHeaders, CodeViewOffset))
+				{
+					continue;
+				}
+			}
+
+			if (!IsRangeInsideFile(CodeViewOffset, Entry.SizeOfData, MappedSize))
+			{
+				continue;
+			}
+
+			const FCodeViewRsdsHeader* Rsds =
+				reinterpret_cast<const FCodeViewRsdsHeader*>(Base + CodeViewOffset);
+			if (Rsds->Signature != 0x53445352)
+			{
+				continue;
+			}
+
+			const size_t PdbPathCapacity = Entry.SizeOfData - offsetof(FCodeViewRsdsHeader, PdbPath);
+			const char* PdbPathEnd = static_cast<const char*>(std::memchr(Rsds->PdbPath, '\0', PdbPathCapacity));
+			const size_t PdbPathLength = PdbPathEnd ? static_cast<size_t>(PdbPathEnd - Rsds->PdbPath) : PdbPathCapacity;
+			const std::string PdbPathText(Rsds->PdbPath, PdbPathLength);
+			const std::wstring WidePdbPath = FPaths::ToWide(PdbPathText);
+
+			OutReference.FileName = std::filesystem::path(WidePdbPath).filename().wstring();
+			if (OutReference.FileName.empty())
+			{
+				OutReference.FileName = ExecutablePath.stem().wstring() + L".pdb";
+			}
+
+			OutReference.DecimalStoreIndex = FormatPdbStoreIndex(Rsds->Guid, Rsds->Age, false);
+			OutReference.HexStoreIndex = FormatPdbStoreIndex(Rsds->Guid, Rsds->Age, true);
+			return true;
+		}
+
+		return false;
+	}
+
+	bool TryCopyPdbFromSymbolStore(
+		const std::filesystem::path& ExecutablePath,
+		const std::wstring& SharedCrashDumpRoot,
+		const std::filesystem::path& TargetDir)
+	{
+		std::filesystem::path CrashDumpRoot(SharedCrashDumpRoot);
+		if (CrashDumpRoot.filename() != L"_crashdumps")
+		{
+			return false;
+		}
+
+		FPdbReference PdbReference;
+		if (!TryReadPdbReferenceFromExecutable(ExecutablePath, PdbReference))
+		{
+			return false;
+		}
+
+		const std::filesystem::path SymbolServerRoot = CrashDumpRoot.parent_path();
+		const std::filesystem::path TargetPdbPath = TargetDir / PdbReference.FileName;
+		const std::filesystem::path DecimalCandidate =
+			SymbolServerRoot / PdbReference.FileName / PdbReference.DecimalStoreIndex / PdbReference.FileName;
+		if (CopyIfExists(DecimalCandidate, TargetPdbPath))
+		{
+			return true;
+		}
+
+		if (PdbReference.HexStoreIndex != PdbReference.DecimalStoreIndex)
+		{
+			const std::filesystem::path HexCandidate =
+				SymbolServerRoot / PdbReference.FileName / PdbReference.HexStoreIndex / PdbReference.FileName;
+			if (CopyIfExists(HexCandidate, TargetPdbPath))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	std::filesystem::path GetExecutablePath()
+	{
+		std::wstring Buffer(MAX_PATH, L'\0');
+		for (;;)
+		{
+			const DWORD Length = GetModuleFileNameW(nullptr, Buffer.data(), static_cast<DWORD>(Buffer.size()));
+			if (Length == 0)
+			{
+				return {};
+			}
+
+			if (Length < Buffer.size())
+			{
+				Buffer.resize(Length);
+				return std::filesystem::path(Buffer);
+			}
+
+			Buffer.resize(Buffer.size() * 2);
+		}
 	}
 
 	void WriteCrashCopyLog(
@@ -116,6 +388,7 @@ namespace
 		const std::wstring& SharedDumpRoot,
 		const std::wstring& SharedDumpPath,
 		const std::wstring& FailureReason,
+		const std::wstring& AuxiliaryCopyStatus,
 		bool bSucceeded)
 	{
 		try
@@ -135,6 +408,7 @@ namespace
 			LogFile << "SharedDumpRoot: " << FPaths::ToUtf8(SharedDumpRoot) << "\n";
 			LogFile << "SharedDumpPath: " << FPaths::ToUtf8(SharedDumpPath) << "\n";
 			LogFile << "FailureReason: " << FPaths::ToUtf8(FailureReason) << "\n";
+			LogFile << "AuxiliaryCopyStatus: " << FPaths::ToUtf8(AuxiliaryCopyStatus) << "\n";
 		}
 		catch (...)
 		{
@@ -146,7 +420,8 @@ namespace
 		const WCHAR* FileName,
 		std::wstring& OutSharedPath,
 		std::wstring& OutSharedDumpRoot,
-		std::wstring& OutFailureReason)
+		std::wstring& OutFailureReason,
+		std::wstring& OutAuxiliaryCopyStatus)
 	{
 		std::wstring SharedCrashDumpRoot = GetCrashDumpShareDir();
 		OutSharedDumpRoot = SharedCrashDumpRoot;
@@ -181,11 +456,28 @@ namespace
 			const std::filesystem::path ExecutablePath = GetExecutablePath();
 			if (!ExecutablePath.empty())
 			{
-				CopyIfExists(ExecutablePath, SharedDir / ExecutablePath.filename());
+				const bool bExecutableCopied = CopyIfExists(ExecutablePath, SharedDir / ExecutablePath.filename());
 
 				std::filesystem::path PdbPath = ExecutablePath;
 				PdbPath.replace_extension(L".pdb");
-				CopyIfExists(PdbPath, SharedDir / PdbPath.filename());
+				if (CopyIfExists(PdbPath, SharedDir / PdbPath.filename()))
+				{
+					OutAuxiliaryCopyStatus =
+						std::wstring(bExecutableCopied ? L"Executable copied. " : L"Executable was not copied. ") +
+						L"PDB copied from executable directory.";
+				}
+				else if (TryCopyPdbFromSymbolStore(ExecutablePath, SharedCrashDumpRoot, SharedDir))
+				{
+					OutAuxiliaryCopyStatus =
+						std::wstring(bExecutableCopied ? L"Executable copied. " : L"Executable was not copied. ") +
+						L"PDB copied from symbol store.";
+				}
+				else
+				{
+					OutAuxiliaryCopyStatus =
+						std::wstring(bExecutableCopied ? L"Executable copied. " : L"Executable was not copied. ") +
+						L"PDB was not copied. It was not next to the executable and a matching symbol-store entry was not found.";
+				}
 			}
 
 			OutSharedPath = SharedPath.wstring();
@@ -216,16 +508,16 @@ namespace
 			return false;
 		}
 
-		IMAGEHLP_LINE64 LineInfo = {};
+		IMAGEHLP_LINEW64 LineInfo = {};
 		LineInfo.SizeOfStruct = sizeof(LineInfo);
 
 		DWORD Displacement = 0;
-		if (!SymGetLineFromAddr64(Process, Address, &Displacement, &LineInfo))
+		if (!SymGetLineFromAddrW64(Process, Address, &Displacement, &LineInfo))
 		{
 			return false;
 		}
 
-		strcpy_s(OutLocation.File, LineInfo.FileName);
+		wcscpy_s(OutLocation.File, LineInfo.FileName);
 		OutLocation.Line = LineInfo.LineNumber;
 		return true;
 	}
@@ -364,18 +656,26 @@ LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* ExceptionInfo)
 		std::wstring SharedDumpPath;
 		std::wstring SharedDumpRoot;
 		std::wstring SharedDumpFailureReason;
+		std::wstring AuxiliaryCopyStatus;
 		const bool bSharedDumpCopied = TryCopyDumpToSharedFolder(
 			DumpPath,
 			FileName,
 			SharedDumpPath,
 			SharedDumpRoot,
-			SharedDumpFailureReason);
-		WriteCrashCopyLog(DumpPath, SharedDumpRoot, SharedDumpPath, SharedDumpFailureReason, bSharedDumpCopied);
+			SharedDumpFailureReason,
+			AuxiliaryCopyStatus);
+		WriteCrashCopyLog(
+			DumpPath,
+			SharedDumpRoot,
+			SharedDumpPath,
+			SharedDumpFailureReason,
+			AuxiliaryCopyStatus,
+			bSharedDumpCopied);
 
 		WCHAR Message[4096];
 		if (bHasExceptionLocation)
 		{
-			swprintf_s(Message, L"크래시 덤프가 저장되었습니다:\n%s\n\n공유 폴더 복사: %s\n%s\n\nException location:\n%hs:%lu",
+			swprintf_s(Message, L"크래시 덤프가 저장되었습니다:\n%s\n\n공유 폴더 복사: %s\n%s\n\nException location:\n%ls:%lu",
 				DumpPath.c_str(),
 				bSharedDumpCopied ? L"성공" : L"실패",
 				bSharedDumpCopied ? SharedDumpPath.c_str() : SharedDumpFailureReason.c_str(),

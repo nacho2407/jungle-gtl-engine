@@ -1,29 +1,91 @@
 ﻿#include "Engine/Platform/Paths.h"
 
 #include <filesystem>
+#include <vector>
+
+namespace
+{
+	std::filesystem::path GetExecutablePath()
+	{
+		std::wstring Buffer(MAX_PATH, L'\0');
+		for (;;)
+		{
+			const DWORD Length = GetModuleFileNameW(nullptr, Buffer.data(), static_cast<DWORD>(Buffer.size()));
+			if (Length == 0)
+			{
+				return {};
+			}
+
+			if (Length < Buffer.size())
+			{
+				Buffer.resize(Length);
+				return std::filesystem::path(Buffer);
+			}
+
+			Buffer.resize(Buffer.size() * 2);
+		}
+	}
+
+	bool LooksLikeProjectRoot(const std::filesystem::path& Path)
+	{
+		std::error_code Error;
+		const bool HasSettings = std::filesystem::exists(Path / L"Settings" / L"ProjectSettings.ini", Error);
+		Error.clear();
+		const bool HasShaders = std::filesystem::exists(Path / L"Shaders", Error);
+		Error.clear();
+		const bool HasContent = std::filesystem::exists(Path / L"Content", Error);
+		return HasSettings || (HasShaders && HasContent);
+	}
+
+	std::filesystem::path ResolveProjectRoot(const std::filesystem::path& ExeDir)
+	{
+		std::vector<std::filesystem::path> Candidates;
+		if (!ExeDir.empty())
+		{
+			Candidates.push_back(ExeDir);
+			Candidates.push_back(ExeDir.parent_path());
+		}
+
+		std::error_code Error;
+		const std::filesystem::path CurrentPath = std::filesystem::current_path(Error);
+		if (!Error)
+		{
+			Candidates.push_back(CurrentPath);
+			Candidates.push_back(CurrentPath.parent_path());
+		}
+
+		for (const std::filesystem::path& Candidate : Candidates)
+		{
+			if (!Candidate.empty() && LooksLikeProjectRoot(Candidate))
+			{
+				return Candidate.lexically_normal();
+			}
+		}
+
+		return CurrentPath.empty() ? ExeDir.lexically_normal() : CurrentPath.lexically_normal();
+	}
+
+	std::wstring ConvertToWide(const std::string& Text, UINT CodePage, DWORD Flags)
+	{
+		const int32_t Size = MultiByteToWideChar(CodePage, Flags, Text.c_str(), -1, nullptr, 0);
+		if (Size <= 0)
+		{
+			return {};
+		}
+
+		std::wstring Result(Size - 1, L'\0');
+		MultiByteToWideChar(CodePage, Flags, Text.c_str(), -1, Result.data(), Size);
+		return Result;
+	}
+}
 
 std::wstring FPaths::RootDir()
 {
 	static std::wstring Cached;
 	if (Cached.empty())
 	{
-		// exe 옆에 Shaders/ 가 있으면 배포 환경, 없으면 개발 환경 (CWD 사용)
-		WCHAR Buffer[MAX_PATH];
-		GetModuleFileNameW(nullptr, Buffer, MAX_PATH);
-		
-		std::filesystem::path RootPath;
-		std::filesystem::path ExeDir = std::filesystem::path(Buffer).parent_path();
-
-		if (std::filesystem::exists(ExeDir / L"Shaders"))
-		{
-			// 배포: exe와 리소스가 같은 디렉터리
-			RootPath = ExeDir;
-		}
-		else
-		{
-			// 개발: CWD(= $(ProjectDir))에 리소스가 있음
-			RootPath = std::filesystem::current_path();
-		}
+		const std::filesystem::path ExeDir = GetExecutablePath().parent_path();
+		const std::filesystem::path RootPath = ResolveProjectRoot(ExeDir);
 		Cached = (RootPath / L"").generic_wstring();
 	}
 	return Cached;
@@ -60,16 +122,16 @@ void FPaths::CreateDir(const std::wstring& Path)
 std::wstring FPaths::ToWide(const std::string& Utf8Str)
 {
 	if (Utf8Str.empty()) return {};
-	int32_t Size = MultiByteToWideChar(CP_UTF8, 0, Utf8Str.c_str(), -1, nullptr, 0);
-	std::wstring Result(Size - 1, L'\0');
-	MultiByteToWideChar(CP_UTF8, 0, Utf8Str.c_str(), -1, &Result[0], Size);
-	return Result;
+	std::wstring Result = ConvertToWide(Utf8Str, CP_UTF8, MB_ERR_INVALID_CHARS);
+	if (!Result.empty()) return Result;
+	return ConvertToWide(Utf8Str, CP_ACP, 0);
 }
 
 std::string FPaths::ToUtf8(const std::wstring& WideStr)
 {
 	if (WideStr.empty()) return {};
 	int32_t Size = WideCharToMultiByte(CP_UTF8, 0, WideStr.c_str(), -1, nullptr, 0, nullptr, nullptr);
+	if (Size <= 0) return {};
 	std::string Result(Size - 1, '\0');
 	WideCharToMultiByte(CP_UTF8, 0, WideStr.c_str(), -1, &Result[0], Size, nullptr, nullptr);
 	return Result;
