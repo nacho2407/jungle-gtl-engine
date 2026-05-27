@@ -212,6 +212,11 @@ public:
         TArray<int32> TraversalStack;
     };
 
+    struct FInflatedSegmentQueryScratch
+    {
+        TArray<int32> NodeStack;
+    };
+
     // Queries ---------------------------------------------------------------
 
     /**
@@ -254,6 +259,17 @@ public:
 
     void SphereQuery(const TArray<FAABB>& ObjectBounds, const FVector& Center, float Radius, TArray<int32>& OutIndices,
                      FSphereQueryScratch& Scratch) const;
+
+    /**
+     * @brief 이동 segment와 확장된 AABB가 겹치는 object 후보를 수집한다.
+     * @param InflationExtent Line이면 0, Sphere Sweep이면 sphere radius를 축별 extent로 전달한다.
+     *
+     * @note BVH에 저장된 bounds를 수정하지 않는다. query마다 필요한 크기만 임시로 늘려 검사한다.
+     * @note 이 함수의 결과는 후보 목록이다. 실제 Shape 충돌은 narrow phase에서 다시 계산한다.
+     */
+    void InflatedSegmentQuery(const TArray<FAABB>& ObjectBounds, const FVector& Start, const FVector& End,
+                              const FVector& InflationExtent, TArray<int32>& OutIndices,
+                              FInflatedSegmentQueryScratch& Scratch) const;
 
     // State -----------------------------------------------------------------
 

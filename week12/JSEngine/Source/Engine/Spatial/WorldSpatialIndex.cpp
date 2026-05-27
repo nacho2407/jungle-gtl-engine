@@ -377,6 +377,59 @@ void FWorldSpatialIndex::SphereQueryPrimitives(const FVector& Center, float Radi
     }
 }
 
+void FWorldSpatialIndex::LineQueryComponents(const FVector& Start, const FVector& End,
+                                             TArray<UPrimitiveComponent*>& OutComponents,
+                                             FPrimitiveInflatedSegmentQueryScratch& Scratch)
+{
+    FlushDirtyBounds();
+
+    // Line은 두께가 없으므로 AABB를 늘리지 않고 segment 그대로 후보를 찾는다.
+    Scratch.ObjectIndices.clear();
+    BVH.InflatedSegmentQuery(Bounds, Start, End, FVector::ZeroVector, Scratch.ObjectIndices, Scratch.BVHScratch);
+
+    OutComponents.clear();
+    OutComponents.reserve(Scratch.ObjectIndices.size());
+    for (int32 ObjectIndex : Scratch.ObjectIndices)
+    {
+        if (UPrimitiveComponent* Primitive = Resolve(ObjectIndex))
+        {
+            OutComponents.push_back(Primitive);
+        }
+    }
+}
+
+void FWorldSpatialIndex::SweepSphereQueryComponents(const FVector& Start, const FVector& End, float Radius,
+                                                    TArray<UPrimitiveComponent*>& OutComponents,
+                                                    FPrimitiveInflatedSegmentQueryScratch& Scratch)
+{
+    FlushDirtyBounds();
+
+    // 구 자체를 BVH에 넣는 대신, target AABB를 radius만큼 늘리고 구 중심의 이동만 검사한다.
+    const float SafeRadius = std::max(Radius, 0.0f);
+    const FVector InflationExtent(SafeRadius, SafeRadius, SafeRadius);
+
+    Scratch.ObjectIndices.clear();
+    BVH.InflatedSegmentQuery(
+        Bounds,
+        Start,
+        End,
+        InflationExtent,
+        Scratch.ObjectIndices,
+        Scratch.BVHScratch);
+
+    OutComponents.clear();
+    OutComponents.reserve(Scratch.ObjectIndices.size());
+    for (int32 ObjectIndex : Scratch.ObjectIndices)
+    {
+        if (UPrimitiveComponent* Primitive = Resolve(ObjectIndex))
+        {
+            // 여기서는 object index를 component로 되돌리기만 한다.
+            // 실제 hit 여부와 normal은 World query의 Shape narrow phase가 정한다.
+            OutComponents.push_back(Primitive);
+        }
+    }
+}
+
 UPrimitiveComponent* FWorldSpatialIndex::Resolve(int32 ObjectIndex) const
 {
     if (ObjectIndex < 0 || ObjectIndex >= static_cast<int32>(Primitives.size()))

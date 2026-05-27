@@ -134,20 +134,20 @@ public:
 		return Component != nullptr ? Component->GetWorldMatrix() : FMatrix::Identity;
 	}
 
-	void AddSpawnEvent(const FParticleEventSpawnData& Event) override
+	AActor* GetSourceActor() const override
 	{
-		if (Component != nullptr)
-		{
-			Component->ReportEventSpawn(Event);
-		}
+		return Component != nullptr ? Component->GetOwner() : nullptr;
 	}
 
-	void AddDeathEvent(const FParticleEventDeathData& Event) override
+	bool ParticleLineCheck(
+		FHitResult& Hit,
+		AActor* SourceActor,
+		const FVector& EndWS,
+		const FVector& StartWS,
+		const FCollisionShape& CollisionShape) override
 	{
-		if (Component != nullptr)
-		{
-			Component->ReportEventDeath(Event);
-		}
+		return Component != nullptr &&
+			Component->ParticleLineCheck(Hit, SourceActor, EndWS, StartWS, CollisionShape);
 	}
 
 	void AddCollisionEvent(const FParticleEventCollideData& Event) override
@@ -155,14 +155,6 @@ public:
 		if (Component != nullptr)
 		{
 			Component->ReportEventCollision(Event);
-		}
-	}
-
-	void AddBurstEvent(const FParticleEventBurstData& Event) override
-	{
-		if (Component != nullptr)
-		{
-			Component->ReportEventBurst(Event);
 		}
 	}
 
@@ -270,12 +262,33 @@ UWorld* UParticleSystemComponent::GetWorld() const
 	return GetOwner() != nullptr ? GetOwner()->GetFocusedWorld() : nullptr;
 }
 
+bool UParticleSystemComponent::ParticleLineCheck(
+	FHitResult& Hit,
+	AActor* SourceActor,
+	const FVector& EndWS,
+	const FVector& StartWS,
+	const FCollisionShape& CollisionShape)
+{
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		Hit.Reset();
+		return false;
+	}
+
+	FCollisionQueryParams Params;
+	Params.IgnoredActor = SourceActor;
+	Params.IgnoredComponent = this;
+	Params.bFindInitialOverlaps = true;
+
+	return CollisionShape.IsNearlyZero()
+		? World->LineTraceSingleShapeTarget(Hit, StartWS, EndWS, Params)
+		: World->SweepSingleShapeTarget(Hit, StartWS, EndWS, CollisionShape, Params);
+}
+
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
-	SpawnEvents.clear();
-	DeathEvents.clear();
 	CollisionEvents.clear();
-	BurstEvents.clear();
 
 	UpdateLODLevel();
 
@@ -311,7 +324,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 void UParticleSystemComponent::FinalizeTickComponent()
 {
-	if (!SpawnEvents.empty() || !DeathEvents.empty() || !CollisionEvents.empty() || !BurstEvents.empty())
+	if (!CollisionEvents.empty())
 	{
 		AParticleEventManager* DispatchManager = EventManager;
 		if (DispatchManager == nullptr)
@@ -325,37 +338,16 @@ void UParticleSystemComponent::FinalizeTickComponent()
 
 		if (DispatchManager != nullptr)
 		{
-			if (!SpawnEvents.empty()) DispatchManager->HandleParticleSpawnEvents(this, SpawnEvents);
-			if (!DeathEvents.empty()) DispatchManager->HandleParticleDeathEvents(this, DeathEvents);
-			if (!CollisionEvents.empty()) DispatchManager->HandleParticleCollisionEvents(this, CollisionEvents);
-			if (!BurstEvents.empty()) DispatchManager->HandleParticleBurstEvents(this, BurstEvents);
+			DispatchManager->HandleParticleCollisionEvents(this, CollisionEvents);
 		}
 	}
 
-	SpawnEvents.clear();
-	DeathEvents.clear();
 	CollisionEvents.clear();
-	BurstEvents.clear();
-}
-
-void UParticleSystemComponent::ReportEventSpawn(const FParticleEventSpawnData& Event)
-{
-	SpawnEvents.push_back(Event);
-}
-
-void UParticleSystemComponent::ReportEventDeath(const FParticleEventDeathData& Event)
-{
-	DeathEvents.push_back(Event);
 }
 
 void UParticleSystemComponent::ReportEventCollision(const FParticleEventCollideData& Event)
 {
 	CollisionEvents.push_back(Event);
-}
-
-void UParticleSystemComponent::ReportEventBurst(const FParticleEventBurstData& Event)
-{
-	BurstEvents.push_back(Event);
 }
 
 void UParticleSystemComponent::PackRenderData()
@@ -660,6 +652,7 @@ void UParticleSystemComponent::CreateEmitterInstances()
 		const int32 LODIndex = SelectLODLevelIndex(EmitterTemplate, 0);
 		if (FParticleEmitterInstance* Instance = CreateEmitterInstanceForLOD(EmitterTemplate, LODIndex))
 		{
+			Instance->SetEmitterIndex(static_cast<int32>(EmitterInstances.size()));
 			EmitterInstances.push_back(Instance);
 		}
 	}

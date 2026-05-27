@@ -904,6 +904,91 @@ void FBVH::SphereQuery(const TArray<FAABB>& ObjectBounds, const FVector& Center,
     }
 }
 
+void FBVH::InflatedSegmentQuery(const TArray<FAABB>& ObjectBounds, const FVector& Start, const FVector& End,
+                                const FVector& InflationExtent, TArray<int32>& OutIndices,
+                                FInflatedSegmentQueryScratch& Scratch) const
+{
+	// Query마다 결과 배열을 비운다
+	// Broad Phase 후보는 이번 Start -> End 이동에 대해서만 유효함
+    OutIndices.clear();
+
+	// BVH가 비어있으면 종료한다.
+    if (RootNodeIndex == INDEX_NONE)
+    {
+        return;
+    }
+
+    Scratch.NodeStack.clear();
+    Scratch.NodeStack.reserve(Nodes.size());
+
+    float RootTEnter = 0.0f;
+    float RootTExit = 1.0f;
+	// Root Bounds 부터 검사를 수행한다.
+    // Root가 이동 구간과 겹치지 않으면 아래 object는 전부 볼 필요가 없다.
+    if (!Nodes[RootNodeIndex].Bounds.ExpandedBy(InflationExtent).IntersectSegment(Start, End, RootTEnter, RootTExit))
+	{
+        return;
+    }
+	// stack에 node 사용 -> 런타임 query에서는 재귀 호출보다 명시적 stack이 관리하기 쉬움
+    Scratch.NodeStack.push_back(RootNodeIndex);
+
+	// stack하나씩 꺼내면서 검사
+    while (!Scratch.NodeStack.empty())
+    {
+        const int32 NodeIndex = Scratch.NodeStack.back();
+        Scratch.NodeStack.pop_back();
+
+        const FNode& Node = Nodes[NodeIndex];
+		// Node 가 Leaf -> 실제 Object 하나에 대응
+        if (Node.IsLeaf())
+        {
+            const int32 ObjectIndex = Node.ObjectIndex;
+			// Object Index 유효성 검사
+            if (ObjectIndex == INDEX_NONE || ObjectIndex < 0 ||
+                ObjectIndex >= static_cast<int32>(ObjectBounds.size()))
+            {
+                continue;
+            }
+
+			//  Leaf Object의 bound 다시 검사
+            float ObjectTEnter = 0.0f;
+            float ObjectTExit = 1.0f;
+            // Parent bounds를 통과했어도 leaf bounds는 빗나갈 수 있으므로 한 번 더 검사
+            if (ObjectBounds[ObjectIndex].ExpandedBy(InflationExtent).IntersectSegment(
+                    Start, End, ObjectTEnter, ObjectTExit))
+            {
+                // Broad phase는 후보만 만든다.
+                // 실제 충돌 위치와 normal은 Shape narrow phase에서 확정한다.
+                OutIndices.push_back(ObjectIndex);
+            }
+            continue;
+        }
+
+		// --- Internal Node ---
+        if (Node.Left != INDEX_NONE)
+        {
+            float TEnter = 0.0f;
+            float TExit = 1.0f;
+            if (Nodes[Node.Left].Bounds.ExpandedBy(InflationExtent).IntersectSegment(
+                    Start, End, TEnter, TExit))
+            {
+                Scratch.NodeStack.push_back(Node.Left);
+            }
+        }
+
+        if (Node.Right != INDEX_NONE)
+        {
+            float TEnter = 0.0f;
+            float TExit = 1.0f;
+            if (Nodes[Node.Right].Bounds.ExpandedBy(InflationExtent).IntersectSegment(
+                    Start, End, TEnter, TExit))
+            {
+                Scratch.NodeStack.push_back(Node.Right);
+            }
+        }
+    }
+}
+
 /**
  * @brief Return the closest leaf-AABB hit along the ray.
  * @param Ray Query ray.

@@ -64,6 +64,12 @@ public:
         TArray<int32> ObjectIndices;
     };
 
+    struct FPrimitiveInflatedSegmentQueryScratch
+    {
+        FBVH::FInflatedSegmentQueryScratch BVHScratch;
+        TArray<int32> ObjectIndices;
+    };
+
     FWorldSpatialIndex() = default;
     ~FWorldSpatialIndex() = default;
 
@@ -144,6 +150,17 @@ public:
 
     void SphereQueryPrimitives(const FVector& Center, float Radius, TArray<UPrimitiveComponent*>& OutPrimitives,
                                FPrimitiveSphereQueryScratch& Scratch);
+
+    /** @brief 두께 없는 이동 segment로 primitive broad phase 후보를 수집한다. */
+    void LineQueryComponents(const FVector& Start, const FVector& End, TArray<UPrimitiveComponent*>& OutComponents,
+                             FPrimitiveInflatedSegmentQueryScratch& Scratch);
+
+    /**
+     * @brief 움직이는 sphere의 중심 segment로 primitive broad phase 후보를 수집
+     * @note 실제 Shape hit 시간과 normal은 World query의 narrow phase에서 계산
+     */
+    void SweepSphereQueryComponents(const FVector& Start, const FVector& End, float Radius,
+                                    TArray<UPrimitiveComponent*>& OutComponents, FPrimitiveInflatedSegmentQueryScratch& Scratch);
 
     /** @brief Resolve a tracked object index back to its primitive component. */
     UPrimitiveComponent* Resolve(int32 ObjectIndex) const;

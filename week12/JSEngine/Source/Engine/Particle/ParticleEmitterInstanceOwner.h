@@ -1,7 +1,9 @@
 #pragma once
 
+#include "Core/CollisionTypes.h"
 #include "Particle/ParticleTypes.h"
 
+class AActor;
 class UWorld;
 
 /**
@@ -18,8 +20,21 @@ public:
 	virtual FVector GetWorldLocation() const = 0;
 	virtual FMatrix GetComponentToWorld() const = 0;
 
-	virtual void AddSpawnEvent(const FParticleEventSpawnData& Event) = 0;
-	virtual void AddDeathEvent(const FParticleEventDeathData& Event) = 0;
+	/**
+	 * @brief source actor ignore 정책에 사용할 PSC 소유 actor 조회
+	 */
+	virtual AActor* GetSourceActor() const = 0;
+
+	/**
+	 * @brief particle 이동 구간을 world Shape query로 검사
+	 * @param CollisionShape line 또는 이동 sphere query 형상
+	 */
+	virtual bool ParticleLineCheck(
+		FHitResult& Hit,
+		AActor* SourceActor,
+		const FVector& EndWS,
+		const FVector& StartWS,
+		const FCollisionShape& CollisionShape) = 0;
+
 	virtual void AddCollisionEvent(const FParticleEventCollideData& Event) = 0;
-	virtual void AddBurstEvent(const FParticleEventBurstData& Event) = 0;
 };

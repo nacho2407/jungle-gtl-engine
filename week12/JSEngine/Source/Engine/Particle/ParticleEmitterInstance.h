@@ -70,6 +70,24 @@ public:
 	bool SetCurrentLODIndex(int32 InLODLevelIndex);
 
 	int32 GetActiveParticleCount() const { return ActiveParticles; }
+
+	/**
+	 * @brief PSC 안에서 사용하는 emitter 식별 index 저장
+	 */
+	void SetEmitterIndex(int32 InEmitterIndex) { EmitterIndex = InEmitterIndex; }
+	int32 GetEmitterIndex() const { return EmitterIndex; }
+
+	/**
+	 * @brief active index에 연결된 고정 storage index 조회
+	 * @note event payload의 ParticleIndex에는 이 값을 기록
+	 */
+	int32 GetPhysicalIndexByActiveIndex(int32 ActiveIndex) const;
+
+	/**
+	 * @brief particle을 pending kill 상태로 표시
+	 * @note 실제 storage 제거는 tick 마지막 compact에서 수행
+	 */
+	bool KillParticleByActiveIndex(int32 ActiveIndex);
 	bool IsParticlePendingKill(const FBaseParticle& Particle) const;
 	FBaseParticle& GetParticleByActiveIndex(int32 ActiveIndex);
 	const FBaseParticle& GetParticleByActiveIndex(int32 ActiveIndex) const;
@@ -93,8 +111,13 @@ public:
     void ClearParticlePayloads(FBaseParticle& Particle) const;
 
 	bool UsesLocalSpace() const;
+
+	FVector TransformLocationToWorldSpace(const FVector& SimulationLocation) const;
+	FVector TransformVelocityToWorldSpace(const FVector& SimulationVelocity) const;
 	FVector TransformLocationToSimulationSpace(const FVector& WorldLocation) const;
 	FVector TransformVelocityToSimulationSpace(const FVector& WorldVelocity) const;
+
+	float TransformRadiusToWorldSpace(float Radius) const;
 	FVector GetParticleLocationForRender(const FBaseParticle& Particle) const;
 	void CalculateLocalBounds(FVector& OutMin, FVector& OutMax) const;
 	void CalculateWorldBounds(FVector& OutMin, FVector& OutMax) const;
@@ -117,14 +140,20 @@ private:
 	int32 CalculateSpawnRateCount(float DeltaTime);
 	int32 CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime);
 	int32 ResolveBurstSpawnAmount(const FParticleBurstEntry& Entry);
-	int32 SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime);
+	int32 SpawnParticles(
+		int32 Count,
+		float SegmentStartTime,
+		float SegmentDeltaTime);
 	void MarkParticlePendingKill(int32 ActiveIndex);
 	void CompactPendingKilledParticles();
 	void AgeParticles(float DeltaTime);
 	void UpdateModules(float DeltaTime);
 	void IntegrateParticles(float DeltaTime);
 
+	void UpdateCollisionModules(float DeltaTime);
+
 	IParticleEmitterInstanceOwner& Owner;
+	int32 EmitterIndex = -1;
 };
 
 class FParticleMeshEmitterInstance : public FParticleEmitterInstance

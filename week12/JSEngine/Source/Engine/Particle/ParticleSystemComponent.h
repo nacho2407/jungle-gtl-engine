@@ -10,18 +10,10 @@ class AParticleEventManager;
 class FParticleEmitterInstance;
 class UParticleSystemComponent;
 
-struct FParticleEventSpawnData;
-struct FParticleEventDeathData;
-struct FParticleEventBurstData;
 struct FDynamicEmitterDataBase;
 struct FParticleEventCollideData;
 
-// --- Particle Event Delegate ---
-// TODO: Core 이벤트 데이터에 이름, 시간, 속도 정보가 추가되면 시그니처 확장
-DECLARE_DELEGATE(FParticleSpawnSignature, UParticleSystemComponent*, const FParticleEventSpawnData&)
-DECLARE_DELEGATE(FParticleDeathSignature, UParticleSystemComponent*, const FParticleEventDeathData&)
 DECLARE_DELEGATE(FParticleCollisionSignature, UParticleSystemComponent*, const FParticleEventCollideData&)
-DECLARE_DELEGATE(FParticleBurstSignature, UParticleSystemComponent*, const FParticleEventBurstData&)
 
 /******************************************************************
 * Particle System 런타임 객체 관리 컴포넌트
@@ -55,11 +47,18 @@ public:
 	int32 GetEmitterRenderDataSnapshotCount() const { return static_cast<int32>(EmitterRenderData.size()); }
 	const FDynamicEmitterDataBase* GetEmitterRenderDataSnapshot(int32 SnapshotIndex) const;
 
-	// --- Particle Event Section ---
-	void ReportEventSpawn(const FParticleEventSpawnData& Event);
-	void ReportEventDeath(const FParticleEventDeathData& Event);
 	void ReportEventCollision(const FParticleEventCollideData& Event);
-	void ReportEventBurst(const FParticleEventBurstData& Event);
+
+	/**
+	 * @brief particle 이동 구간을 world Shape query로 검사
+	 * @param CollisionShape line 또는 이동 sphere query 형상
+	 */
+	bool ParticleLineCheck(
+		FHitResult& Hit,
+		AActor* SourceActor,
+		const FVector& EndWS,
+		const FVector& StartWS,
+		const FCollisionShape& CollisionShape);
 
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
 	bool SupportsOutline() const override { return false; }
@@ -69,10 +68,7 @@ public:
 
 	void ResetParticles();
 
-	FParticleSpawnSignature OnParticleSpawn;
-	FParticleDeathSignature OnParticleDeath;
 	FParticleCollisionSignature OnParticleCollide;
-	FParticleBurstSignature OnParticleBurst;
 
 private:
 	void CreateEmitterInstances();
@@ -111,11 +107,7 @@ private:
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
 
-	// Event Queue
-	TArray<FParticleEventSpawnData> SpawnEvents;
-	TArray<FParticleEventDeathData> DeathEvents;
 	TArray<FParticleEventCollideData> CollisionEvents;
-	TArray<FParticleEventBurstData> BurstEvents;
 
 	AParticleEventManager* EventManager = nullptr;
 	UParticleSystem* ResolvedTemplate = nullptr;

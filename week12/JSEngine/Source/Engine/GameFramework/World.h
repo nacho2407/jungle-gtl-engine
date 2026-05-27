@@ -7,6 +7,7 @@
 #include "Level.h"
 #include "Render/Scene/Scene.h"
 #include "Spatial/WorldSpatialIndex.h"
+#include "Core/CollisionTypes.h"
 
 class UCameraComponent;
 class FViewportCamera;
@@ -70,6 +71,28 @@ public:
 	/** @brief Flush pending bounds and visibility dirties into the world BVH. */
 	void SyncSpatialIndex();
 
+	/**
+	 * @brief ShapeComponent만 대상으로 line query의 가장 빠른 hit 검색
+	 * @note mesh 또는 triangle collision 경로 미사용
+	 */
+	bool LineTraceSingleShapeTarget(
+		FHitResult& OutHit,
+		const FVector& StartWS,
+		const FVector& EndWS,
+		const FCollisionQueryParams& Params);
+
+	/**
+	 * @brief ShapeComponent만 대상으로 sphere sweep의 가장 빠른 hit 검색
+	 * @param CollisionShape 이동하는 query sphere 형상
+	 * @note mesh 또는 triangle collision 경로 미사용
+	 */
+	bool SweepSingleShapeTarget(
+		FHitResult& OutHit,
+		const FVector& StartWS,
+		const FVector& EndWS,
+		const FCollisionShape& CollisionShape,
+		const FCollisionQueryParams& Params);
+
 	bool HasBegunPlay() const { return bHasBegunPlay; }
 
 	// Active Camera — EditorViewportClient 또는 PlayerController가 세팅
@@ -124,6 +147,8 @@ private:
 	AParticleEventManager* ParticleEventManager = nullptr;
 	FScene Scene;
 	FWorldSpatialIndex SpatialIndex;
+	TArray<UPrimitiveComponent*> SimpleShapeQueryCandidates;
+	FWorldSpatialIndex::FPrimitiveInflatedSegmentQueryScratch SimpleShapeQueryScratch;
 	bool bHasBegunPlay = false;
 
 	int32 NextActorDestroyedListenerId = 1;

@@ -1,6 +1,7 @@
 ﻿#include "GameFramework/World.h"
 #include "Engine/Collision/Collision.h"
 #include "Component/PrimitiveComponent.h"
+#include "Component/ShapeComponent.h"
 #include "Core/Reflection/ReflectionRegistry.h"
 #include "Core/Logging/Log.h"
 #include "GameFramework/PlayerController.h"
@@ -202,6 +203,121 @@ void UWorld::RebuildSpatialIndex()
 void UWorld::SyncSpatialIndex()
 {
 	SpatialIndex.FlushDirtyBounds();
+}
+
+bool UWorld::LineTraceSingleShapeTarget(
+	FHitResult& OutHit,
+	const FVector& StartWS,
+	const FVector& EndWS,
+	const FCollisionQueryParams& Params)
+{
+	OutHit.Reset();
+	SyncSpatialIndex();
+	SpatialIndex.LineQueryComponents(StartWS, EndWS, SimpleShapeQueryCandidates, SimpleShapeQueryScratch);
+
+	bool bFoundHit = false;
+	FHitResult BestHit;
+
+	// 이 query는 ShapeComponent simple collision만 확인
+	// TODO: 엔진 전역 collision channel 계약 확정 시 이 위치에 filtering 추가
+	for (UPrimitiveComponent* Candidate : SimpleShapeQueryCandidates)
+	{
+		if (Candidate == nullptr ||
+			Candidate == Params.IgnoredComponent ||
+			(Params.IgnoredActor != nullptr && Candidate->GetOwner() == Params.IgnoredActor))
+		{
+			continue;
+		}
+
+		UShapeComponent* ShapeComponent = Cast<UShapeComponent>(Candidate);
+		if (ShapeComponent == nullptr)
+		{
+			continue;
+		}
+
+		FHitResult Hit;
+		if (!ShapeComponent->LineTraceShape(Hit, StartWS, EndWS, Params) || !Hit.IsValid())
+		{
+			continue;
+		}
+
+		if (!bFoundHit || Hit.Time < BestHit.Time)
+		{
+			BestHit = Hit;
+			bFoundHit = true;
+		}
+	}
+
+	if (bFoundHit)
+	{
+		OutHit = BestHit;
+	}
+	return bFoundHit;
+}
+
+bool UWorld::SweepSingleShapeTarget(
+	FHitResult& OutHit,
+	const FVector& StartWS,
+	const FVector& EndWS,
+	const FCollisionShape& CollisionShape,
+	const FCollisionQueryParams& Params)
+{
+	if (CollisionShape.IsNearlyZero())
+	{
+		return LineTraceSingleShapeTarget(OutHit, StartWS, EndWS, Params);
+	}
+
+	OutHit.Reset();
+	if (!CollisionShape.IsSphere())
+	{
+		return false;
+	}
+
+	SyncSpatialIndex();
+	SpatialIndex.SweepSphereQueryComponents(
+		StartWS,
+		EndWS,
+		CollisionShape.SphereRadius,
+		SimpleShapeQueryCandidates,
+		SimpleShapeQueryScratch);
+
+	bool bFoundHit = false;
+	FHitResult BestHit;
+
+	// 이 query는 ShapeComponent simple collision만 확인
+	for (UPrimitiveComponent* Candidate : SimpleShapeQueryCandidates)
+	{
+		if (Candidate == nullptr ||
+			Candidate == Params.IgnoredComponent ||
+			(Params.IgnoredActor != nullptr && Candidate->GetOwner() == Params.IgnoredActor))
+		{
+			continue;
+		}
+
+		UShapeComponent* ShapeComponent = Cast<UShapeComponent>(Candidate);
+		if (ShapeComponent == nullptr)
+		{
+			continue;
+		}
+
+		FHitResult Hit;
+		if (!ShapeComponent->SweepShape(Hit, StartWS, EndWS, CollisionShape, Params) || !Hit.IsValid())
+		{
+			continue;
+		}
+
+		if (!bFoundHit || Hit.Time < BestHit.Time)
+		{
+			BestHit = Hit;
+			bFoundHit = true;
+		}
+	}
+
+	if (bFoundHit)
+	{
+		OutHit = BestHit;
+	}
+	return bFoundHit;
 }
 
 int32 UWorld::AddActorDestroyedListener(FActorDestroyedListener Listener)
