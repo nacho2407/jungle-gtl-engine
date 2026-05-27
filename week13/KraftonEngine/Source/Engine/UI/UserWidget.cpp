@@ -15,7 +15,7 @@ void UUserWidget::BeginDestroy()
     PendingClickBindings.clear();
     ClearDocument();
 
-    OwningPlayer = nullptr;
+    OwningPlayer.Reset();
 
     UObject::BeginDestroy();
 }

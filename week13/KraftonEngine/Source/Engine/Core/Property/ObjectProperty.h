@@ -33,7 +33,7 @@ struct FObjectProperty : FObjectPropertyBase
 		static const FOps Ops = {
 			[](const void* ValuePtr) -> UObject*
 			{
-				return static_cast<const TObjectPtr<ObjectT>*>(ValuePtr)->Get();
+				return static_cast<const TObjectPtr<ObjectT>*>(ValuePtr)->GetRaw();
 			},
 			[](void* ValuePtr, UObject* Object)
 			{

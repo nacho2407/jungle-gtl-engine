@@ -407,7 +407,7 @@ void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* 
 		{
 			for (FPrimitiveSceneProxy* Proxy : Output.RenderableProxies)
 			{
-				if (Proxy && Proxy->HasProxyFlag(EPrimitiveProxyFlags::ShowAABB))
+				if (Proxy && Proxy->HasValidOwner() && Proxy->HasProxyFlag(EPrimitiveProxyFlags::ShowAABB))
 				{
 					const FBoundingBox& B = Proxy->GetCachedBounds();
 					Scene.AddDebugAABB(B.Min, B.Max, FColor::White());

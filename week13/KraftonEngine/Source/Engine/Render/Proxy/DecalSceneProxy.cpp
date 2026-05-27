@@ -49,7 +49,7 @@ FDecalSceneProxy::~FDecalSceneProxy()
 
 UDecalComponent* FDecalSceneProxy::GetDecalComponent() const
 {
-	return static_cast<UDecalComponent*>(GetOwner());
+	return Cast<UDecalComponent>(GetOwner());
 }
 
 void FDecalSceneProxy::AddReferencedObjects(FReferenceCollector& Collector)

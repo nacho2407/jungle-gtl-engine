@@ -38,7 +38,7 @@ HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
-	if (UWorld* World = GetWorld())
+	if (UWorld* World = GetWorldEvenIfPendingKill())
 	{
 		if (IPhysicsScene* PS = World->GetPhysicsScene())
 		{
@@ -77,7 +77,7 @@ void UPrimitiveComponent::EndPlay()
 	// 참조해 crash. dtor에도 같은 호출이 있지만 (raw 포인터라 OwnedComponents의 컴포넌트들이
 	// 자동 delete되지 않아) dtor가 안 불릴 수 있어 EndPlay에서 명시적으로 보장한다.
 	// 이중 호출은 mapping/proxy 부재로 noop.
-	if (UWorld* World = GetWorld())
+	if (UWorld* World = GetWorldEvenIfPendingKill())
 	{
 		if (IPhysicsScene* PS = World->GetPhysicsScene())
 		{
@@ -99,14 +99,14 @@ void UPrimitiveComponent::EndPlay()
 	USceneComponent::EndPlay();
 }
 
-void UPrimitiveComponent::BeginDestroy()
+void UPrimitiveComponent::RouteComponentDestroyed()
 {
-    if (HasAnyFlags(RF_BeginDestroy))
+    if (bComponentDestroyRouted)
     {
         return;
     }
 
-    if (UWorld* World = GetWorld())
+    if (UWorld* World = GetWorldEvenIfPendingKill())
     {
         if (IPhysicsScene* PS = World->GetPhysicsScene())
         {
@@ -121,6 +121,17 @@ void UPrimitiveComponent::BeginDestroy()
     DestroyRenderState();
     bComponentHasBegunPlay = false;
 
+    USceneComponent::RouteComponentDestroyed();
+}
+
+void UPrimitiveComponent::BeginDestroy()
+{
+    if (HasAnyFlags(RF_BeginDestroy))
+    {
+        return;
+    }
+
+    RouteComponentDestroyed();
     USceneComponent::BeginDestroy();
 }
 
@@ -368,7 +379,7 @@ void UPrimitiveComponent::CreateRenderState()
 void UPrimitiveComponent::DestroyRenderState()
 {
 	// SceneProxy가 없더라도 Octree에는 등록돼 있을 수 있으므로 partition 정리는 항상 시도한다.
-	if (UWorld* World = GetWorld())
+	if (UWorld* World = GetWorldEvenIfPendingKill())
 		{
 			World->GetPartition().RemoveSinglePrimitive(this);
 			World->MarkWorldPrimitivePickingBVHDirty();

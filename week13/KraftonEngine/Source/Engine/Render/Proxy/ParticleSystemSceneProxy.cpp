@@ -114,7 +114,7 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 		return;
 	}
 
-	UParticleSystemComponent* Comp = static_cast<UParticleSystemComponent*>(GetOwner());
+	UParticleSystemComponent* Comp = Cast<UParticleSystemComponent>(GetOwner());
 	if (!IsValid(Comp))
 	{
         InvalidateEmitterDataCache();

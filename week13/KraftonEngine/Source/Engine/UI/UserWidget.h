@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Object/Object.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 #include "Core/Logging/Log.h"
 #include "Source/Engine/UI/UserWidget.generated.h"
 #include <sol/sol.hpp>
@@ -69,7 +70,7 @@ public:
 	void SetText(const FString& ElementId, const FString& Text);
 	bool SetProperty(const FString& ElementId, const FString& PropertyName, const FString& Value);
 
-	APlayerController* GetOwningPlayer() const { return OwningPlayer; }
+	APlayerController* GetOwningPlayer() const { return OwningPlayer.Get(); }
 	const FString& GetDocumentPath() const { return DocumentPath; }
 	int32 GetZOrder() const { return ZOrder; }
 	bool IsInViewport() const { return bInViewport; }
@@ -88,7 +89,7 @@ public:
 	void ClearDocument() { Document = nullptr; bDocumentLoaded = false; }
 
 private:
-	APlayerController* OwningPlayer = nullptr;
+	TWeakObjectPtr<APlayerController> OwningPlayer;
 	Rml::ElementDocument* Document = nullptr;
 	FString DocumentPath;
 	TArray<std::pair<FString, sol::protected_function>> PendingClickBindings;

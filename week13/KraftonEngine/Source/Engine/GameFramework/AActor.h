@@ -21,6 +21,7 @@ UCLASS()
 class AActor : public UObject
 {
     friend struct FActorTickFunction;
+    friend class UActorComponent;
 public:
 	GENERATED_BODY()
 	AActor();
@@ -29,6 +30,7 @@ public:
 	virtual void BeginPlay();
 	virtual void Tick(float DeltaTime);
 	virtual void EndPlay();
+	virtual void RouteActorDestroyed();
 
 	bool HasActorBegunPlay() const { return bActorHasBegunPlay; }
 
@@ -44,12 +46,8 @@ public:
 		static_assert(std::is_base_of_v<UActorComponent, T>,
 			"AddComponent<T>: T must derive from UActorComponent");
 		T* Comp = UObjectManager::Get().CreateObject<T>(this);
-		Comp->SetOwner(this);
-		OwnedComponents.push_back(Comp);
-		bPrimitiveCacheDirty = true;
-		Comp->CreateRenderState();
-		MarkPickingDirty();
-		return Comp;
+		RegisterComponent(Comp);
+		return IsValid(Comp) && Comp->GetOwner() == this ? Comp : nullptr;
 	}
 
 	// UClass 기반 런타임 컴포넌트 생성
@@ -65,7 +63,7 @@ public:
 	UFUNCTION(Callable, Category="Actor|Components")
 	void SetRootComponent(USceneComponent* Comp);
 	UFUNCTION(Pure, Category="Actor|Components")
-	USceneComponent* GetRootComponent() const { return RootComponent.Get(); }
+	USceneComponent* GetRootComponent() const { return RootComponent.GetValid(); }
 
 	TArray<UActorComponent*> GetComponents() const;
 
@@ -75,6 +73,10 @@ public:
 		static_assert(std::is_base_of_v<UActorComponent, T>,
 			"GetComponentByClass<T>: T must derive from UActorComponent");
 		for (UActorComponent* Comp : OwnedComponents) {
+			if (!IsValid(Comp)) {
+				continue;
+			}
+
 			if (T* Casted = Cast<T>(Comp)) {
 				return Casted;
 			}
@@ -110,6 +112,7 @@ public:
 	FVector GetActorRight() const;
 
 	UWorld* GetWorld() const;
+	UWorld* GetWorldEvenIfPendingKill() const;
 	ULevel* GetLevel() const;
 
 	UFUNCTION(Pure, Category="Actor|Visibility")
@@ -146,6 +149,9 @@ protected:
 	virtual void TickActor( float DeltaSeconds, ELevelTick TickType, FActorTickFunction& ThisTickFunction );
 	
 	void MarkPickingDirty();
+	bool CanRegisterComponent(UActorComponent* Comp) const;
+	bool OwnsComponent(const UActorComponent* Comp) const;
+	void OnComponentBeingDestroyed(UActorComponent* Component);
 
 	// Runtime ownership reference. SceneSaveManager serializes component topology explicitly, so this must stay Transient.
 	UPROPERTY(Transient, Instanced, Category="Actor|Components")
@@ -175,4 +181,5 @@ protected:
 	mutable bool bPrimitiveCacheDirty = true;
 	bool bQueuedForPartitionUpdate = false;
 	bool bActorHasBegunPlay = false;
+	bool bActorDestroyRouted = false;
 };

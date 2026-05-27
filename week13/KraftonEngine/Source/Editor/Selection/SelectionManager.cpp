@@ -10,6 +10,61 @@
 
 #include <algorithm>
 
+USceneComponent* FSelectionManager::GetSelectedComponent() const
+{
+    return IsValid(SelectedComponent) ? SelectedComponent : nullptr;
+}
+
+bool FSelectionManager::IsSelected(AActor* Actor) const
+{
+    if (!IsValid(Actor))
+    {
+        return false;
+    }
+
+    return std::find_if(
+        SelectedActors.begin(),
+        SelectedActors.end(),
+        [Actor](AActor* SelectedActor)
+        {
+            return IsValid(SelectedActor) && SelectedActor == Actor;
+        }) != SelectedActors.end();
+}
+
+AActor* FSelectionManager::GetPrimarySelection() const
+{
+    for (AActor* Actor : SelectedActors)
+    {
+        if (IsValid(Actor))
+        {
+            return Actor;
+        }
+    }
+
+    return nullptr;
+}
+
+UGizmoComponent* FSelectionManager::GetGizmo() const
+{
+    return IsValid(Gizmo) ? Gizmo : nullptr;
+}
+
+TArray<AActor*> FSelectionManager::GetSelectedActors() const
+{
+    TArray<AActor*> ValidActors;
+    ValidActors.reserve(SelectedActors.size());
+
+    for (AActor* Actor : SelectedActors)
+    {
+        if (IsValid(Actor))
+        {
+            ValidActors.push_back(Actor);
+        }
+    }
+
+    return ValidActors;
+}
+
 void FSelectionManager::Init()
 {
     Gizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
@@ -453,7 +508,10 @@ void FSelectionManager::SetActorProxiesSelected(AActor* Actor, bool bSelected)
 
         if (FPrimitiveSceneProxy* Proxy = Prim->GetSceneProxy())
         {
-            Scene.SetProxySelected(Proxy, bSelected);
+            if (Proxy->HasValidOwner())
+            {
+                Scene.SetProxySelected(Proxy, bSelected);
+            }
         }
     }
 }

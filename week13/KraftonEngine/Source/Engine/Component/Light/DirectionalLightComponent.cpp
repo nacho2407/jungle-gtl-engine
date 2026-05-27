@@ -98,7 +98,7 @@ void UDirectionalLightComponent::PushToScene()
 
 void UDirectionalLightComponent::DestroyFromScene()
 {
-	UWorld* World = GetWorld();
+	UWorld* World = GetWorldEvenIfPendingKill();
 	if (!World) return;
 
 	World->GetScene().GetEnvironment().RemoveGlobalDirectionalLight(this);

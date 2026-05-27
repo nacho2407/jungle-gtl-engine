@@ -74,7 +74,8 @@ public:
 	void InitWorld();      // Set up the world before gameplay begins
 	void BeginPlay();      // Triggers BeginPlay on all actors
 	void Tick(float DeltaTime, ELevelTick TickType);  // Drives the game loop every frame
-	void EndPlay();        // Cleanup before world is destroyed
+	void EndPlay();        // Stop gameplay without owning memory lifetime.
+	void RouteWorldDestroyed();
 
 private:
 	// PlayerCameraManager 갱신 — Slomo / HitStop 등 TimeDilation 의 영향을 받지 않도록
@@ -130,6 +131,7 @@ private:
 	EWorldType WorldType = EWorldType::Editor;
 	bool bHasBegunPlay = false;
 	bool bPaused = false;
+	bool bWorldDestroyRouted = false;
 	FWorldSettings WorldSettings;
 	bool bHasLastFullLODUpdateCameraPos = false;
 	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;

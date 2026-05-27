@@ -18,7 +18,7 @@ FCylindricalBillboardSceneProxy::FCylindricalBillboardSceneProxy(UCylindricalBil
 void FCylindricalBillboardSceneProxy::UpdateTransform()
 {
 	FBillboardSceneProxy::UpdateTransform();
-	UCylindricalBillboardComponent* Comp = static_cast<UCylindricalBillboardComponent*>(GetOwner());
+	UCylindricalBillboardComponent* Comp = Cast<UCylindricalBillboardComponent>(GetOwner());
 	if (!IsValid(Comp))
 	{
 		bVisible = false;

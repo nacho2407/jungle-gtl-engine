@@ -117,5 +117,5 @@ void FSubUVSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 
 USubUVComponent* FSubUVSceneProxy::GetSubUVComponent() const
 {
-	return static_cast<USubUVComponent*>(GetOwner());
+	return Cast<USubUVComponent>(GetOwner());
 }

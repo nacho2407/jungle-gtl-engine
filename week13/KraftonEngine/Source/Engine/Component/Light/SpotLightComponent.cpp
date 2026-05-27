@@ -77,7 +77,7 @@ void USpotLightComponent::PushToScene()
 
 void USpotLightComponent::DestroyFromScene()
 {
-	UWorld* World = GetWorld();
+	UWorld* World = GetWorldEvenIfPendingKill();
 	if (!World) return;
 
 	World->GetScene().GetEnvironment().RemoveSpotLight(this);

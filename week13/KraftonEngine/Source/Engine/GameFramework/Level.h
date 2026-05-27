@@ -31,6 +31,7 @@ public:
 
 	void BeginPlay();
 	void EndPlay();
+	void RouteLevelDestroyed();
 	void Tick(float DeltaTime);
 
     void AddReferencedObjects(FReferenceCollector& Collector) override;
@@ -45,5 +46,6 @@ private:
 
 	// Non-owning back-reference to the world that owns this level.
 	TWeakObjectPtr<UWorld> OwingWorld;
+	bool bLevelDestroyRouted = false;
 };
 

@@ -367,6 +367,11 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 
 	for (FPrimitiveSceneProxy* Proxy : Output.RenderableProxies)
 	{
+		if (!Proxy || !Proxy->HasValidOwner())
+		{
+			continue;
+		}
+
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::BoneDebug))
 		{
 			const FBoneDebugSceneProxy* BoneProxy = static_cast<const FBoneDebugSceneProxy*>(Proxy);
@@ -418,12 +423,20 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 // ============================================================
 void FDrawCommandBuilder::BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, const FCollectOutput& Output)
 {
+	if (!Proxy || !Proxy->HasValidOwner())
+	{
+		return;
+	}
+
 	FDecalSceneProxy* DecalProxy = static_cast<FDecalSceneProxy*>(Proxy);
 
 	for (FPrimitiveSceneProxy* ReceiverProxy : DecalProxy->GetReceiverProxies())
 	{
-		if (!ReceiverProxy || Output.VisibleProxySet.find(ReceiverProxy) == Output.VisibleProxySet.end())
+		if (!ReceiverProxy || !ReceiverProxy->HasValidOwner() ||
+			Output.VisibleProxySet.find(ReceiverProxy) == Output.VisibleProxySet.end())
+		{
 			continue;
+		}
 
 		UpdateProxyLOD(ReceiverProxy, Frame.LODContext);
 
@@ -440,6 +453,11 @@ void FDrawCommandBuilder::BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy
 // ============================================================
 void FDrawCommandBuilder::BuildMeshCommands(FScene& Scene, const FPrimitiveSceneProxy* Proxy)
 {
+	if (!Proxy || !Proxy->HasValidOwner())
+	{
+		return;
+	}
+
 	// Gizmo 등 전용 패스를 가진 프록시는 해당 패스에 직접 제출
 	ERenderPass ProxyPass = Proxy->GetRenderPass();
 	if (ProxyPass != ERenderPass::Opaque && ProxyPass != ERenderPass::AlphaBlend)
@@ -471,6 +489,11 @@ void FDrawCommandBuilder::BuildMeshCommands(FScene& Scene, const FPrimitiveScene
 // ============================================================
 void FDrawCommandBuilder::BuildSelectionCommands(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume, FScene& Scene)
 {
+	if (!Proxy || !Proxy->HasValidOwner())
+	{
+		return;
+	}
+
 	if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::SupportsOutline))
 		BuildCommandForProxy(Scene, *Proxy, ERenderPass::SelectionMask);
 

@@ -4,6 +4,7 @@
 #include "Render/Proxy/DirtyFlag.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/Types/RenderTypes.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 
 class UPrimitiveComponent;
 class FShader;
@@ -61,6 +62,7 @@ public:
 
 	// --- 식별 ---
 	uint32                GetProxyId()    const { return ProxyId; }
+	uint32                GetProxyGeneration() const { return ProxyGeneration; }
 	EPrimitiveProxyFlags  GetProxyFlags() const { return ProxyFlags; }
 	bool HasProxyFlag(EPrimitiveProxyFlags F) const { return (ProxyFlags & F) != EPrimitiveProxyFlags::None; }
 
@@ -108,9 +110,10 @@ protected:
 	// 서브클래스용 — Update*()에서 쓰기 가능한 캐시 데이터
 	// ================================================================
 
-	// Owner 접근 — protected이므로 서브클래스의 Update*() 안에서만 사용.
-	// UpdatePerViewport()에서는 가급적 캐싱된 값을 사용할 것.
-	UPrimitiveComponent* GetOwner() const { return Owner; }
+	// Owner 접근 — valid owner만 반환한다. PendingKill/Garbage cleanup 경로는
+	// GetOwnerEvenIfPendingKill()를 명시적으로 사용해야 한다.
+	UPrimitiveComponent* GetOwner() const { return Owner.Get(); }
+	UPrimitiveComponent* GetOwnerEvenIfPendingKill() const { return Owner.GetEvenIfPendingKill(); }
 
 	// 프록시 특성 플래그 (서브클래스 생성자에서 설정)
 	EPrimitiveProxyFlags ProxyFlags = EPrimitiveProxyFlags::SupportsOutline
@@ -142,10 +145,11 @@ private:
 	// ================================================================
 	friend class FScene;
 
-	UPrimitiveComponent* Owner = nullptr;
+	TWeakObjectPtr<UPrimitiveComponent> Owner;
 
 	FScene*		Scene			  = nullptr;
 	uint32      ProxyId           = UINT32_MAX;
+	uint32      ProxyGeneration   = 0;
 	uint32      SelectedListIndex = UINT32_MAX;
 	EDirtyFlag  DirtyFlags        = EDirtyFlag::All;
 	bool        bQueuedForDirtyUpdate = false;

@@ -1,4 +1,4 @@
-﻿#include "TickFunction.h"
+#include "TickFunction.h"
 #include "Component/ActorComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -125,7 +125,7 @@ void FActorTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType)
 
 const char* FActorTickFunction::GetDebugName() const
 {
-	return Target ? Target->GetClass()->GetName() : "FActorTickFunction";
+	return IsValid(Target) ? Target->GetClass()->GetName() : "FActorTickFunction";
 }
 
 void FActorComponentTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickType)
@@ -138,5 +138,5 @@ void FActorComponentTickFunction::ExecuteTick(float DeltaTime, ELevelTick TickTy
 
 const char* FActorComponentTickFunction::GetDebugName() const
 {
-	return Target ? Target->GetClass()->GetName() : "FActorComponentTickFunction";
+	return IsValid(Target) ? Target->GetClass()->GetName() : "FActorComponentTickFunction";
 }

@@ -23,7 +23,7 @@ void UAmbientLightComponent::PushToScene()
 
 void UAmbientLightComponent::DestroyFromScene()
 {
-	UWorld* World = GetWorld();
+	UWorld* World = GetWorldEvenIfPendingKill();
 	if (!World) return;
 
 	World->GetScene().GetEnvironment().RemoveGlobalAmbientLight(this);

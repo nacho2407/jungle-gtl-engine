@@ -63,7 +63,7 @@ void UPointLightComponent::PushToScene()
 
 void UPointLightComponent::DestroyFromScene()
 {
-	UWorld* World = GetWorld();
+	UWorld* World = GetWorldEvenIfPendingKill();
 	if (!World) return;
 	World->GetScene().GetEnvironment().RemovePointLight(this);
 }

@@ -22,7 +22,7 @@ FBillboardSceneProxy::FBillboardSceneProxy(UBillboardComponent* InComponent)
 
 UBillboardComponent* FBillboardSceneProxy::GetBillboardComponent() const
 {
-	return static_cast<UBillboardComponent*>(GetOwner());
+	return Cast<UBillboardComponent>(GetOwner());
 }
 
 // ============================================================
@@ -32,6 +32,14 @@ void FBillboardSceneProxy::UpdateTransform()
 {
 	FPrimitiveSceneProxy::UpdateTransform();
 	UBillboardComponent* Comp = GetBillboardComponent();
+	if (!IsValid(Comp))
+	{
+		bVisible = false;
+		CachedScale = FVector(1, 1, 1);
+		CachedLocation = FVector(0, 0, 0);
+		return;
+	}
+
 	CachedScale = Comp->GetWorldScale();
 	CachedLocation = Comp->GetWorldLocation();
 }

@@ -69,14 +69,18 @@ void FGarbageCollector::CollectGarbage()
         return;
     }
 
-    bIsCollecting = true;
+    struct FCollectingScope
+    {
+        bool& Flag;
+        explicit FCollectingScope(bool& InFlag) : Flag(InFlag) { Flag = true; }
+        ~FCollectingScope() { Flag = false; }
+    } CollectingScope(bIsCollecting);
+
     LastReferenceEdges.clear();
 
     MarkAllObjectsUnreachable();
     MarkRoots();
     Sweep();
-
-    bIsCollecting = false;
 }
 
 void FGarbageCollector::MarkObject(UObject* Object)
@@ -144,6 +148,11 @@ void FGarbageCollector::RemoveExternalRoot(FGCObject* Root)
     }
 }
 
+bool FGarbageCollector::IsExternalRootRegistered(FGCObject* Root) const
+{
+    return Root && std::find(ExternalRoots.begin(), ExternalRoots.end(), Root) != ExternalRoots.end();
+}
+
 void FGarbageCollector::MarkAllObjectsUnreachable()
 {
     for (UObject* Object : GUObjectArray)
@@ -170,9 +179,10 @@ void FGarbageCollector::MarkRoots()
         }
     }
 
-    for (FGCObject* Root : ExternalRoots)
+    const TArray<FGCObject*> ExternalRootSnapshot = ExternalRoots;
+    for (FGCObject* Root : ExternalRootSnapshot)
     {
-        if (!Root)
+        if (!IsExternalRootRegistered(Root))
         {
             continue;
         }
@@ -206,7 +216,7 @@ bool FGarbageCollector::GetLastReferenceChain(UObject* Object, TArray<FString>& 
 {
     OutChain.clear();
 
-    if (!Object)
+    if (!IsAliveObject(Object))
     {
         return false;
     }
@@ -223,6 +233,12 @@ bool FGarbageCollector::GetLastReferenceChain(UObject* Object, TArray<FString>& 
 
     while (Current)
     {
+        if (!IsAliveObject(Current))
+        {
+            ReverseChain.push_back(FString("<dead UObject in stale GC reference chain>"));
+            break;
+        }
+
         if (Visited.find(Current) != Visited.end())
         {
             ReverseChain.push_back(FString("<cycle in GC reference chain>"));
@@ -259,6 +275,13 @@ bool FGarbageCollector::GetLastReferenceChain(UObject* Object, TArray<FString>& 
 
 void FGarbageCollector::Sweep()
 {
+    QueueGarbageObjects();
+    BeginDestroyQueuedObjects();
+    PurgeReadyGarbageObjects();
+}
+
+void FGarbageCollector::QueueGarbageObjects()
+{
     TArray<UObject*> Snapshot = GUObjectArray;
     for (UObject* Object : Snapshot)
     {
@@ -268,34 +291,63 @@ void FGarbageCollector::Sweep()
         }
 
         const bool bShouldDestroy = Object->HasAnyFlags(RF_Unreachable) || Object->IsPendingKill();
-
-        if (!bShouldDestroy)
+        if (!bShouldDestroy || Object->HasAnyFlags(RF_Garbage))
         {
             continue;
         }
 
         Object->SetFlags(RF_Garbage);
-
-        if (!Object->HasAnyFlags(RF_BeginDestroy))
+        if (std::find(ObjectsPendingPurge.begin(), ObjectsPendingPurge.end(), Object) == ObjectsPendingPurge.end())
         {
-            Object->BeginDestroy();
+            ObjectsPendingPurge.push_back(Object);
         }
     }
+}
 
-    for (UObject* Object : Snapshot)
+void FGarbageCollector::BeginDestroyQueuedObjects()
+{
+    // BeginDestroy may mark additional objects pending kill. Keep queuing until
+    // the pending-kill frontier is stable, then purge only objects that are ready.
+    size_t NumBefore = 0;
+    do
     {
+        NumBefore = ObjectsPendingPurge.size();
+        QueueGarbageObjects();
+
+        TArray<UObject*> PendingSnapshot = ObjectsPendingPurge;
+        for (UObject* Object : PendingSnapshot)
+        {
+            if (!IsAliveObject(Object))
+            {
+                continue;
+            }
+
+            if (!Object->HasAnyFlags(RF_BeginDestroy))
+            {
+                Object->BeginDestroy();
+            }
+        }
+
+        QueueGarbageObjects();
+    }
+    while (ObjectsPendingPurge.size() != NumBefore);
+}
+
+void FGarbageCollector::PurgeReadyGarbageObjects()
+{
+    for (auto It = ObjectsPendingPurge.begin(); It != ObjectsPendingPurge.end(); )
+    {
+        UObject* Object = *It;
+
         if (!IsAliveObject(Object))
         {
+            It = ObjectsPendingPurge.erase(It);
             continue;
         }
 
-        if (!Object->HasAnyFlags(RF_Garbage))
+        if (!Object->HasAnyFlags(RF_Garbage) || !Object->IsReadyForFinishDestroy())
         {
-            continue;
-        }
-
-        if (!Object->IsReadyForFinishDestroy())
-        {
+            ++It;
             continue;
         }
 
@@ -305,5 +357,6 @@ void FGarbageCollector::Sweep()
         }
 
         delete Object;
+        It = ObjectsPendingPurge.erase(It);
     }
 }

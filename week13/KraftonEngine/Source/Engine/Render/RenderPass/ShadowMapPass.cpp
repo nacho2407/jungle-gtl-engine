@@ -685,7 +685,7 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 	bool bCurrentTwoSided = false;
 	for (FPrimitiveSceneProxy* Proxy : *ProxyList)
 	{
-		if (!Proxy || !Proxy->IsVisible()) continue;
+		if (!Proxy || !Proxy->HasValidOwner() || !Proxy->IsVisible()) continue;
 		if (!Proxy->CastsShadow()) continue;
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) continue;
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly)) continue;

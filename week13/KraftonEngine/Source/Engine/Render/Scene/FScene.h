@@ -39,7 +39,7 @@ public:
 	void SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected);
 	void SetProxyOutlineOnly(FPrimitiveSceneProxy* Proxy, bool bEnabled);
 	bool IsProxySelected(const FPrimitiveSceneProxy* Proxy) const;
-	const TSet<AActor*>& GetSelectedActors() const { return SelectedActors; }
+	TArray<AActor*> GetSelectedActors() const;
 
 	// --- 조회 ---
 	const TArray<FPrimitiveSceneProxy*>& GetAllProxies() const { return Proxies; }
@@ -105,6 +105,9 @@ private:
 
 	// 삭제된 슬롯 재활용
 	TArray<uint32> FreeSlots;
+
+	// ProxyId slot reuse와 다중 프레임 GPU readback 결과를 구분하기 위한 세대값.
+	uint32 NextProxyGeneration = 0;
 
 	// --- Per-frame ephemeral data ---
 	TArray<FOverlayText> OverlayTexts;

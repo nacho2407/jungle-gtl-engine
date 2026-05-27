@@ -21,6 +21,7 @@ public:
 
 	virtual void BeginPlay();
 	virtual void EndPlay() {};
+	virtual void RouteComponentDestroyed();
 
 	// --- 렌더 상태 관리 (UE RegisterComponent/UnregisterComponent 대응) ---
 	// 컴포넌트 등록 시 호출 — PrimitiveComponent에서 SceneProxy 생성
@@ -60,7 +61,9 @@ public:
 
 	void SetOwner(AActor* Actor);
 	AActor* GetOwner() const { return Owner.Get(); }
+	AActor* GetOwnerEvenIfPendingKill() const { return Owner.GetEvenIfPendingKill(); }
 	UWorld* GetWorld() const;
+	UWorld* GetWorldEvenIfPendingKill() const;
 
 	// 프로퍼티 값 변경 후 호출. 하위 클래스에서 override하여 부수효과(리소스 재로딩 등) 처리.
 	virtual void PostEditProperty(const char* PropertyName) override;
@@ -81,6 +84,7 @@ protected:
 	TWeakObjectPtr<AActor> Owner;
 	UPROPERTY(Edit, Save, Category="Component", DisplayName="bTickEnable")
 	bool bTickEnable = true;
+	bool bComponentDestroyRouted = false;
 
 private:
 	UPROPERTY(Edit, Save, Category="Component", DisplayName="bEditorOnly")

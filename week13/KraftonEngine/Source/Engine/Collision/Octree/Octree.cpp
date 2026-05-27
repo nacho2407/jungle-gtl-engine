@@ -3,6 +3,7 @@
 #include <algorithm>
 #include "Core/Logging/Log.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "Object/Object.h"
 
 namespace {
 	int GetChildIndex(const FVector& Center, const FVector& NodeCenter)
@@ -44,7 +45,7 @@ FOctree::~FOctree()
 
 bool FOctree::Insert(UPrimitiveComponent* Primitive)
 {
-	if(!Primitive) return false;
+	if(!IsValid(Primitive)) return false;
 	
 	const FBoundingBox PrimBox = Primitive->GetWorldBoundingBox();    
     const FVector PrimCenter = PrimBox.GetCenter();
@@ -84,7 +85,7 @@ bool FOctree::Insert(UPrimitiveComponent* Primitive)
 
 bool FOctree::RemoveDirect(UPrimitiveComponent* Primitive, bool bTryMergeNow)
 {
-	if (!IsValid(Primitive))
+	if (!IsAliveObject(Primitive))
 	{
 		return false;
 	}
@@ -138,7 +139,7 @@ void FOctree::TryMergeRecursive()
 
 bool FOctree::Remove(UPrimitiveComponent* Primitive)
 {
-	if (!Primitive)
+	if (!IsAliveObject(Primitive))
 	{
 		return false;
 	}
@@ -276,6 +277,10 @@ void FOctree::SubDivide()
 		// → 이미 내부 노드이므로 Insert의 "내부 노드" 분기를 타게 됨
 		// → 어느 자식에도 안 들어가면 PrimitiveList에 크로스-바운더리로 남음
 		// → 크로스-바운더리는 더 이상 SubDivide를 유발하지 않음 (CountDistributable 조건)
+		if (!IsValid(Prim))
+		{
+			continue;
+		}
 		bool bPlaced = false;
         const FBoundingBox PrimBox = Prim->GetWorldBoundingBox();
         const FVector PrimCenter = PrimBox.GetCenter();
@@ -378,7 +383,7 @@ void FOctree::QueryAABB(const FBoundingBox& QueryBox, TArray<UPrimitiveComponent
 
     for (UPrimitiveComponent* Primitive : PrimitiveList)
     {
-        if (Primitive && Primitive->GetWorldBoundingBox().IsIntersected(QueryBox))
+        if (IsValid(Primitive) && Primitive->GetWorldBoundingBox().IsIntersected(QueryBox))
         {
             OutPrimitives.push_back(Primitive);
         }
@@ -400,8 +405,12 @@ void FOctree::QueryRay(const FRay& Ray, TArray<UPrimitiveComponent*>& OutPrimiti
 
     for (UPrimitiveComponent* Primitive : PrimitiveList)
     {
-		const FBoundingBox & box = Primitive->GetWorldBoundingBox();
-        if (Primitive && FRayUtils::CheckRayAABB(Ray, box.Min, box.Max))
+        if (!IsValid(Primitive))
+        {
+            continue;
+        }
+        const FBoundingBox& box = Primitive->GetWorldBoundingBox();
+        if (FRayUtils::CheckRayAABB(Ray, box.Min, box.Max))
         {
             OutPrimitives.push_back(Primitive);
         }
@@ -445,7 +454,7 @@ bool FOctree::HasDistributable() const
 
     for (UPrimitiveComponent* Prim : PrimitiveList)
     {
-        if (!Prim) continue;
+        if (!IsValid(Prim)) continue;
 
         const FBoundingBox PrimBox = Prim->GetWorldBoundingBox();
         const FVector PrimCenter = PrimBox.GetCenter();
@@ -467,7 +476,7 @@ void FOctree::CollectAll(TArray<UPrimitiveComponent*>& OutPrimitives) const
 {
 	for (UPrimitiveComponent* Primitive : PrimitiveList)
 	{
-		if (Primitive)
+		if (IsValid(Primitive))
 			OutPrimitives.push_back(Primitive);
 	}
 
@@ -500,7 +509,7 @@ void FOctree::QueryFrustumInternal(const FConvexVolume& ConvexVolume, TArray<UPr
 
 	for (UPrimitiveComponent* Primitive : PrimitiveList)
 	{
-		if (Primitive && ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
+		if (IsValid(Primitive) && ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
 			OutPrimitives.push_back(Primitive);
 	}
 
@@ -525,10 +534,10 @@ void FOctree::CollectAllProxies(TArray<FPrimitiveSceneProxy*>& OutProxies) const
 {
 	for (UPrimitiveComponent* Primitive : PrimitiveList)
 	{
-		if (Primitive)
+		if (IsValid(Primitive))
 		{
 			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
-				if (!Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
+				if (Proxy->HasValidOwner() && !Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
 					OutProxies.push_back(Proxy);
 		}
 	}
@@ -562,12 +571,12 @@ void FOctree::QueryFrustumProxiesInternal(const FConvexVolume& ConvexVolume, TAr
 
 	for (UPrimitiveComponent* Primitive : PrimitiveList)
 	{
-		if (!Primitive) continue;
+		if (!IsValid(Primitive)) continue;
 
 		if (ConvexVolume.IntersectAABB(Primitive->GetWorldBoundingBox()))
 		{
 			if (FPrimitiveSceneProxy* Proxy = Primitive->GetSceneProxy())
-				if (!Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
+				if (Proxy->HasValidOwner() && !Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
 					OutProxies.push_back(Proxy);
 		}
 	}

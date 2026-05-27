@@ -40,7 +40,7 @@ FStaticMeshSceneProxy::FStaticMeshSceneProxy(UStaticMeshComponent* InComponent)
 
 UStaticMeshComponent* FStaticMeshSceneProxy::GetStaticMeshComponent() const
 {
-	return HasValidOwner() ? static_cast<UStaticMeshComponent*>(GetOwner()) : nullptr;
+	return Cast<UStaticMeshComponent>(GetOwner());
 }
 
 // ============================================================

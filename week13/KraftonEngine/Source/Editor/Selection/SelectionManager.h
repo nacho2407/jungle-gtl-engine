@@ -25,22 +25,16 @@ public:
 	void Tick();
 
 	void SelectComponent(USceneComponent* Component);
-	USceneComponent* GetSelectedComponent() const { return SelectedComponent; }
+	USceneComponent* GetSelectedComponent() const;
 
-	bool IsSelected(AActor* Actor) const
-	{
-		return std::find(SelectedActors.begin(), SelectedActors.end(), Actor) != SelectedActors.end();
-	}
+	bool IsSelected(AActor* Actor) const;
 
-	AActor* GetPrimarySelection() const
-	{
-		return SelectedActors.empty() ? nullptr : SelectedActors.front();
-	}
+	AActor* GetPrimarySelection() const;
 
-	const TArray<AActor*>& GetSelectedActors() const { return SelectedActors; }
-	bool IsEmpty() const { return SelectedActors.empty(); }
+	TArray<AActor*> GetSelectedActors() const;
+	bool IsEmpty() const { return GetSelectedActors().empty() && GetSelectedComponent() == nullptr; }
 
-	UGizmoComponent* GetGizmo() const { return Gizmo; }
+	UGizmoComponent* GetGizmo() const;
 
 	void SetGizmoEnabled(bool bEnabled);
 	void SetWorld(UWorld* InWorld);

@@ -64,6 +64,7 @@ public:
 
 	void BeginPlay() override;
 	void EndPlay() override;
+	void RouteComponentDestroyed() override;
     void BeginDestroy() override;
 
 	void PostEditProperty(const char* PropertyName) override;

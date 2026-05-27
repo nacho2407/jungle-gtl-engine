@@ -10,10 +10,10 @@ HIDE_FROM_COMPONENT_LIST(USceneComponent)
 
 static void NotifyOctreeTransformChanged(USceneComponent* Comp)
 {
-    if (!Comp) return;
+    if (!IsValid(Comp)) return;
 
     AActor* OwnerActor = Comp->GetOwner();
-    if (!OwnerActor) return;
+    if (!IsValid(OwnerActor)) return;
 
     UWorld* World = OwnerActor->GetWorld();
     if (!World) return;
@@ -23,7 +23,10 @@ static void NotifyOctreeTransformChanged(USceneComponent* Comp)
 
 void USceneComponent::AttachToComponent(USceneComponent* InParent)
 {
-	if (!InParent || InParent == this) return;
+	if (!IsValid(InParent) || InParent == this)
+	{
+		return;
+	}
 	SetParent(InParent);
 }
 
@@ -101,7 +104,7 @@ TArray<USceneComponent*> USceneComponent::GetChildren() const
 	Result.reserve(ChildComponents.size());
 	for (USceneComponent* Child : ChildComponents)
 	{
-		if (Child)
+		if (IsValid(Child))
 		{
 			Result.push_back(Child);
 		}
@@ -115,16 +118,34 @@ void USceneComponent::SetParent(USceneComponent* NewParent)
 	{
 		return;
 	}
-	
-	if (ParentComponent)
+
+	if (IsValid(NewParent))
 	{
-		ParentComponent->RemoveChild(this);
+		for (USceneComponent* Ancestor = NewParent; IsValid(Ancestor); Ancestor = Ancestor->GetParent())
+		{
+			if (Ancestor == this)
+			{
+				return;
+			}
+		}
+	}
+	else
+	{
+		NewParent = nullptr;
+	}
+	
+	if (USceneComponent* OldParent = ParentComponent.Get())
+	{
+		OldParent->RemoveChild(this);
 	}
 
 	ParentComponent = NewParent;
-	if (ParentComponent)
+	if (USceneComponent* Parent = ParentComponent.Get())
 	{
-		ParentComponent->ChildComponents.push_back(this);
+		if (!Parent->ContainsChild(this))
+		{
+			Parent->ChildComponents.push_back(this);
+		}
 	}
 
 	// 부모 변경 시 자신 및 하위 자식의 월드 행렬을 갱신하도록 dirty 마킹
@@ -133,7 +154,7 @@ void USceneComponent::SetParent(USceneComponent* NewParent)
 
 void USceneComponent::AddChild(USceneComponent* NewChild)
 {
-	if (NewChild == nullptr)
+	if (!IsValid(NewChild))
 	{
 		return;
 	}
@@ -143,7 +164,7 @@ void USceneComponent::AddChild(USceneComponent* NewChild)
 
 void USceneComponent::RemoveChild(USceneComponent* Child)
 {
-	if (Child == nullptr)
+	if (!Child)
 	{
 		return;
 	}
@@ -152,9 +173,10 @@ void USceneComponent::RemoveChild(USceneComponent* Child)
 
 	if (iter != ChildComponents.end())
 	{
-		if ((*iter)->ParentComponent == this)
+		USceneComponent* ExistingChild = iter->GetRaw();
+		if (IsAliveObject(ExistingChild) && ExistingChild->ParentComponent == this)
 		{
-			(*iter)->ParentComponent.Reset();
+			ExistingChild->ParentComponent.Reset();
 		}
 
 		ChildComponents.erase(iter);
@@ -163,7 +185,7 @@ void USceneComponent::RemoveChild(USceneComponent* Child)
 
 bool USceneComponent::ContainsChild(const USceneComponent* Child) const
 {
-	if (Child == nullptr)
+	if (!IsValid(Child))
 	{
 		return false;
 	}
@@ -181,18 +203,18 @@ void USceneComponent::UpdateWorldMatrix() const
 
 	FMatrix RelativeMatrix = GetRelativeMatrix();
 
-	if (ParentComponent != nullptr)
+	if (USceneComponent* Parent = ParentComponent.Get())
 	{
 		if (bAbsoluteScale)
 		{
 			// 에디터 아이콘 빌보드는 부모 스케일과 분리해 화면상 크기 변화를 막는다.
-			FMatrix ParentWorldNoScale = ParentComponent->GetWorldMatrix();
+			FMatrix ParentWorldNoScale = Parent->GetWorldMatrix();
 			ParentWorldNoScale.RemoveScaling();
 			CachedWorldMatrix = RelativeMatrix * ParentWorldNoScale;
 		}
 		else
 		{
-			CachedWorldMatrix = RelativeMatrix * ParentComponent->GetWorldMatrix();
+			CachedWorldMatrix = RelativeMatrix * Parent->GetWorldMatrix();
 		}
 	}
 	else
@@ -205,19 +227,19 @@ void USceneComponent::UpdateWorldMatrix() const
 
 void USceneComponent::AddWorldOffset(const FVector& WorldDelta)
 {
-	if (ParentComponent == nullptr)
+	if (USceneComponent* Parent = ParentComponent.Get())
 	{
-		Move(WorldDelta);
-	}
-	else
-	{
-		const FMatrix& parentWorldMatrix = ParentComponent->GetWorldMatrix();
+		const FMatrix& parentWorldMatrix = Parent->GetWorldMatrix();
 
 		FMatrix parentWorldInverseMatrix = parentWorldMatrix.GetInverse();
 
 		FVector localDelta = parentWorldInverseMatrix.TransformVector(WorldDelta);
 
 		Move(localDelta);
+	}
+	else
+	{
+		Move(WorldDelta);
 	}
 }
 
@@ -298,7 +320,10 @@ void USceneComponent::MarkTransformDirty()
 	OnTransformDirty();
 	for (USceneComponent* Child : ChildComponents)
 	{
-		Child->MarkTransformDirty();
+		if (IsValid(Child))
+		{
+			Child->MarkTransformDirty();
+		}
 	}
 }
 
@@ -359,15 +384,14 @@ const FMatrix& USceneComponent::GetWorldInverseMatrix() const
 
 void USceneComponent::SetWorldLocation(FVector NewWorldLocation)
 {
-	if (ParentComponent != nullptr)
+	if (USceneComponent* Parent = ParentComponent.Get())
 	{
-		const FMatrix& parentWorldInverseMatrix = ParentComponent->GetWorldMatrix().GetInverse();
+		const FMatrix& parentWorldInverseMatrix = Parent->GetWorldMatrix().GetInverse();
 
 		FVector newRelativeLocation = NewWorldLocation * parentWorldInverseMatrix;
 
 		SetRelativeLocation(newRelativeLocation);
 	}
-
 	else
 	{
 		SetRelativeLocation(NewWorldLocation);
@@ -384,11 +408,11 @@ FRotator USceneComponent::GetWorldRotation() const
 {
 	FQuat WorldQuat = RelativeTransform.Rotation.GetNormalized();
 
-	const USceneComponent* CurrentParent = ParentComponent;
-	while (CurrentParent)
+	const USceneComponent* CurrentParent = ParentComponent.Get();
+	while (IsValid(CurrentParent))
 	{
 		WorldQuat = (WorldQuat * CurrentParent->RelativeTransform.Rotation).GetNormalized();
-		CurrentParent = CurrentParent->ParentComponent;
+		CurrentParent = CurrentParent->ParentComponent.Get();
 	}
 
 	return WorldQuat.ToRotator();
@@ -462,30 +486,33 @@ void USceneComponent::AddReferencedObjects(FReferenceCollector& Collector)
     UActorComponent::AddReferencedObjects(Collector);
 }
 
-void USceneComponent::BeginDestroy()
+void USceneComponent::RouteComponentDestroyed()
 {
-    if (HasAnyFlags(RF_BeginDestroy))
+    if (bComponentDestroyRouted)
     {
         return;
-    }
-
-    UActorComponent::BeginDestroy();
-
-    if (ParentComponent)
-    {
-        ParentComponent->RemoveChild(this);
-        ParentComponent.Reset();
     }
 
     TArray<USceneComponent*> Children;
     Children.reserve(ChildComponents.size());
     for (USceneComponent* Child : ChildComponents)
     {
-        if (Child)
+        if (IsAliveObject(Child))
         {
             Children.push_back(Child);
         }
     }
+
+    // Notify the owner while the scene subtree is still intact so
+    // AActor::OnComponentBeingDestroyed can remove the whole subtree from
+    // OwnedComponents and clear dependent movement component references.
+    UActorComponent::RouteComponentDestroyed();
+
+    if (USceneComponent* Parent = ParentComponent.GetEvenIfPendingKill())
+    {
+        Parent->RemoveChild(this);
+    }
+    ParentComponent.Reset();
     ChildComponents.clear();
 
     for (USceneComponent* Child : Children)
@@ -496,9 +523,21 @@ void USceneComponent::BeginDestroy()
         }
 
         Child->ParentComponent.Reset();
+        Child->RouteComponentDestroyed();
         Child->MarkPendingKill();
-        Child->BeginDestroy();
     }
+}
+
+
+void USceneComponent::BeginDestroy()
+{
+    if (HasAnyFlags(RF_BeginDestroy))
+    {
+        return;
+    }
+
+    RouteComponentDestroyed();
+    UActorComponent::BeginDestroy();
 }
 
 FMatrix USceneComponent::GetRelativeMatrix() const

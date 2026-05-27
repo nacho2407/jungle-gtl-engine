@@ -39,7 +39,7 @@ FGizmoSceneProxy::~FGizmoSceneProxy()
 
 UGizmoComponent* FGizmoSceneProxy::GetGizmoComponent() const
 {
-	return static_cast<UGizmoComponent*>(GetOwner());
+	return Cast<UGizmoComponent>(GetOwner());
 }
 
 void FGizmoSceneProxy::AddReferencedObjects(FReferenceCollector& Collector)

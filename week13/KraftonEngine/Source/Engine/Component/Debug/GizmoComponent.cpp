@@ -54,9 +54,9 @@ void UGizmoComponent::CreateRenderState()
 void UGizmoComponent::DestroyRenderState()
 {
 	FScene* Scene = RegisteredScene;
-	if (!Scene && IsValid(Owner))
+	if (!Scene)
 	{
-		UWorld* World = GetWorld();
+		UWorld* World = GetWorldEvenIfPendingKill();
 		if (World)
 		{
 			Scene = &World->GetScene();

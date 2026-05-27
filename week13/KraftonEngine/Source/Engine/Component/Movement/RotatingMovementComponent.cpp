@@ -30,7 +30,7 @@ void URotatingMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	if (bRotationInLocalSpace)
 	{
 		bWorldPivotInitialized = false;
-		CachedWorldPivotComponent = nullptr;
+		CachedWorldPivotComponent.Reset();
 
 		const FVector OldPivotOffsetWorld = bHasPivotTranslation
 			? OldWorldQuat.RotateVector(PivotTranslation)
@@ -50,7 +50,8 @@ void URotatingMovementComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	{
 		const bool bPivotTranslationChanged =
 			FVector::DistSquared(CachedWorldPivotTranslation, PivotTranslation) > 1e-6f;
-		if (!bWorldPivotInitialized || CachedWorldPivotComponent != UpdatedSceneComponent || bPivotTranslationChanged)
+		USceneComponent* CachedPivotComponent = CachedWorldPivotComponent.Get();
+		if (!bWorldPivotInitialized || CachedPivotComponent != UpdatedSceneComponent || bPivotTranslationChanged)
 		{
 			CachedWorldPivotLocation = OldWorldLocation - OldWorldQuat.RotateVector(PivotTranslation);
 			CachedWorldPivotTranslation = PivotTranslation;

@@ -78,18 +78,19 @@ void UWorld::DestroyActor(AActor* Actor)
         return;
     }
 
-    Actor->EndPlay();
+    Actor->RouteActorDestroyed();
+
     if (PersistentLevel)
     {
         PersistentLevel->RemoveActor(Actor);
     }
 
-    MarkWorldPrimitivePickingBVHDirty();
     Partition.RemoveActor(Actor);
+    MarkWorldPrimitivePickingBVHDirty();
 
     Actor->MarkPendingKill();
-    Actor->BeginDestroy();
 }
+
 
 AActor* UWorld::SpawnActorByClass(UClass* Class)
 {
@@ -285,6 +286,36 @@ void UWorld::ShutdownPhysicsScene()
     }
 }
 
+void UWorld::RouteWorldDestroyed()
+{
+    if (bWorldDestroyRouted)
+    {
+        return;
+    }
+
+    bWorldDestroyRouted = true;
+
+    EndPlay();
+    ShutdownPhysicsScene();
+    Partition.Reset(FBoundingBox());
+    MarkWorldPrimitivePickingBVHDirty();
+
+    if (PersistentLevel)
+    {
+        PersistentLevel->RouteLevelDestroyed();
+        PersistentLevel->MarkPendingKill();
+        PersistentLevel = nullptr;
+    }
+
+    if (GameMode)
+    {
+        GameMode->MarkPendingKill();
+        GameMode = nullptr;
+    }
+
+    MarkPendingKill();
+}
+
 void UWorld::BeginDestroy()
 {
     if (HasAnyFlags(RF_BeginDestroy))
@@ -292,24 +323,10 @@ void UWorld::BeginDestroy()
         return;
     }
 
+    RouteWorldDestroyed();
     UObject::BeginDestroy();
-
-    EndPlay();
-
-    ShutdownPhysicsScene();
-
-    Partition.Reset(FBoundingBox());
-
-    if (PersistentLevel)
-    {
-        PersistentLevel->MarkPendingKill();
-        PersistentLevel->BeginDestroy();
-        PersistentLevel = nullptr;
-    }
-
-    GameMode = nullptr;
-    MarkWorldPrimitivePickingBVHDirty();
 }
+
 
 FLODUpdateContext UWorld::PrepareLODContext()
 {
@@ -447,27 +464,15 @@ void UWorld::EndPlay()
 	bHasBegunPlay = false;
 	TickManager.Reset();
 
-	if (!PersistentLevel)
+	if (PersistentLevel)
 	{
-		return;
+		PersistentLevel->EndPlay();
 	}
 
-	PersistentLevel->EndPlay();
-
-	// 물리 시스템 정리 — 액터/컴포넌트가 아직 살아있는 동안 해제.
-	// EndPlay 이후 DestroyObject(World) → BeginDestroy가 다시 들어와도 double-shutdown이
-	// shared PhysX ref-count를 망가뜨리지 않도록 여기서 unique_ptr까지 비운다.
+	// Stop external systems while actors/components are still addressable. Object
+	// memory ownership remains with GC; this function only tears down gameplay state.
 	ShutdownPhysicsScene();
-
-	// Clear spatial partition while actors/components are still alive.
-	// Otherwise Octree teardown can dereference stale primitive pointers during shutdown.
 	Partition.Reset(FBoundingBox());
-
-	PersistentLevel->Clear();
-	GameMode = nullptr; // 액터 리스트가 비워지면서 dangling 되므로 명시적으로 해제
 	MarkWorldPrimitivePickingBVHDirty();
-
-	// PersistentLevel은 CreateObject로 생성되었으므로 DestroyObject로 해제해야 alloc count가 맞음
-	UObjectManager::Get().DestroyObject(PersistentLevel);
-	PersistentLevel = nullptr;
 }
+

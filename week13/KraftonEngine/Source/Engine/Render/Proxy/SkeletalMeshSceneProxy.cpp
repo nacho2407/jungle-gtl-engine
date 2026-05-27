@@ -23,7 +23,7 @@ FSkeletalMeshSceneProxy::~FSkeletalMeshSceneProxy()
 
 USkeletalMeshComponent* FSkeletalMeshSceneProxy::GetSkeletalMeshComponent() const
 {
-	return HasValidOwner() ? static_cast<USkeletalMeshComponent*>(GetOwner()) : nullptr;
+	return Cast<USkeletalMeshComponent>(GetOwner());
 }
 
 void FSkeletalMeshSceneProxy::UpdateMaterial()

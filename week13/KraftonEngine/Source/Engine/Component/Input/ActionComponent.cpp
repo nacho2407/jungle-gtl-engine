@@ -188,7 +188,7 @@ void UActionComponent::LocalHitStop(float Duration)
 
 	for (UActorComponent* Component : OwnerActor->GetComponents())
 	{
-		if (!Component || Component == this)
+		if (!IsValid(Component) || Component == this)
 		{
 			continue;
 		}
@@ -442,7 +442,7 @@ void UActionComponent::RefreshGlobalTimeDilation()
 	{
 		for (UActionComponent* Component : TimeDilationComponents)
 		{
-			if (!Component || !Component->HasActiveTimeDilationAction(Component->SlomoAction))
+			if (!IsAliveObject(Component) || !Component->HasActiveTimeDilationAction(Component->SlomoAction))
 			{
 				continue;
 			}

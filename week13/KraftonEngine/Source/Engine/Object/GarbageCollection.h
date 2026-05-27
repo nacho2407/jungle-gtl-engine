@@ -25,7 +25,7 @@ public:
     template <typename T>
     void AddReferencedObject(const TObjectPtr<T>& ObjectPtr, const char* ReferenceName = nullptr)
     {
-        AddReferencedObject(ObjectPtr.Get(), ReferenceName);
+        AddReferencedObject(ObjectPtr.GetRaw(), ReferenceName);
     }
 
     template <typename T>
@@ -42,7 +42,7 @@ public:
     {
         for (const TObjectPtr<T>& ObjectPtr : Objects)
         {
-            AddReferencedObject(ObjectPtr.Get(), ReferenceName);
+            AddReferencedObject(ObjectPtr.GetRaw(), ReferenceName);
         }
     }
 
@@ -81,6 +81,11 @@ public:
     FGCObject();
     virtual ~FGCObject();
 
+    FGCObject(const FGCObject&) = delete;
+    FGCObject& operator=(const FGCObject&) = delete;
+    FGCObject(FGCObject&&) = delete;
+    FGCObject& operator=(FGCObject&&) = delete;
+
     virtual void AddReferencedObjects(FReferenceCollector& Collector) = 0;
     virtual const char* GetReferencerName() const { return "FGCObject"; }
 };
@@ -95,6 +100,7 @@ public:
     void AddExternalRoot(FGCObject* Root);
     void RemoveExternalRoot(FGCObject* Root);
     bool GetLastReferenceChain(UObject* Object, TArray<FString>& OutChain) const;
+    bool IsCollecting() const { return bIsCollecting; }
 
 private:
     FGarbageCollector() = default;
@@ -103,9 +109,14 @@ private:
     void MarkRoots();
     void MarkObjectFromEdge(const FGCReferenceEdge& Edge);
     void Sweep();
+    void QueueGarbageObjects();
+    void BeginDestroyQueuedObjects();
+    void PurgeReadyGarbageObjects();
+    bool IsExternalRootRegistered(FGCObject* Root) const;
 
 private:
     TArray<FGCObject*> ExternalRoots;
+    TArray<UObject*>   ObjectsPendingPurge;
     TMap<UObject*, FGCReferenceEdge> LastReferenceEdges;
     bool               bIsCollecting = false;
 };

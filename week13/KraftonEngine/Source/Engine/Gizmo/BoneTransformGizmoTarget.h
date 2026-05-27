@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "GizmoTransformTarget.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 
 class USkeletalMeshComponent;
 
@@ -12,7 +13,7 @@ public:
 	~FBoneTransformGizmoTarget() override = default;
 
 public:
-	void SetBone(USkeletalMeshComponent* MeshComp, int32 BoneIndex) { MeshComponent = MeshComp; this->BoneIndex = BoneIndex; }
+	void SetBone(USkeletalMeshComponent* MeshComp, int32 InBoneIndex);
 
 	bool IsValid() const override;
 	UWorld* GetWorld() const override;
@@ -32,6 +33,6 @@ public:
 	void AddScaleDelta(const FVector& Delta) override;
 
 private:
-	USkeletalMeshComponent* MeshComponent = nullptr;
+	TWeakObjectPtr<USkeletalMeshComponent> MeshComponent;
 	int32 BoneIndex = -1;
 };

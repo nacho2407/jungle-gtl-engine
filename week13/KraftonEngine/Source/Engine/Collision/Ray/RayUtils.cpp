@@ -1,5 +1,6 @@
 #include "Collision/Ray/RayUtils.h"
 #include "Component/PrimitiveComponent.h"
+#include "Object/Object.h"
 #include <cmath>
 #include <cfloat>
 #include <algorithm>
@@ -153,7 +154,7 @@ bool FRayUtils::RaycastTriangles(
 //visibility와 world AABB broad phase를 먼저 통과한 경우에만 실제 검사 함수를 호출합니다.
 bool FRayUtils::RaycastComponent(UPrimitiveComponent* Component, const FRay& Ray, FHitResult& OutHitResult)
 {
-	if (!Component || !Component->IsVisible())
+	if (!IsValid(Component) || !Component->IsVisible())
 		return false;
 
 	FBoundingBox AABB = Component->GetWorldBoundingBox();

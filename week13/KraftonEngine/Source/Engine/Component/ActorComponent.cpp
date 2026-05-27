@@ -32,6 +32,33 @@ UWorld* UActorComponent::GetWorld() const
     return Owner.IsValid() ? Owner->GetWorld() : nullptr;
 }
 
+UWorld* UActorComponent::GetWorldEvenIfPendingKill() const
+{
+    AActor* OwnerActor = GetOwnerEvenIfPendingKill();
+    return OwnerActor ? OwnerActor->GetWorldEvenIfPendingKill() : nullptr;
+}
+
+
+void UActorComponent::RouteComponentDestroyed()
+{
+    if (bComponentDestroyRouted)
+    {
+        return;
+    }
+
+    bComponentDestroyRouted = true;
+
+    PrimaryComponentTick.UnRegisterTickFunction();
+    DestroyRenderState();
+
+    if (AActor* OwnerActor = GetOwnerEvenIfPendingKill())
+    {
+        OwnerActor->OnComponentBeingDestroyed(this);
+    }
+
+    Owner.Reset();
+}
+
 void UActorComponent::BeginDestroy()
 {
     if (HasAnyFlags(RF_BeginDestroy))
@@ -39,12 +66,8 @@ void UActorComponent::BeginDestroy()
         return;
     }
 
+    RouteComponentDestroyed();
     UObject::BeginDestroy();
-
-    PrimaryComponentTick.UnRegisterTickFunction();
-    DestroyRenderState();
-
-    Owner.Reset();
 }
 
 void UActorComponent::AddReferencedObjects(FReferenceCollector& Collector)

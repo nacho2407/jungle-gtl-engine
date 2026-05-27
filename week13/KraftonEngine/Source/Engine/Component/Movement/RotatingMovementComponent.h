@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MovementComponent.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 #include "Math/Quat.h"
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
@@ -34,7 +35,7 @@ private:
 	FVector PivotTranslation = FVector(0.0f, 0.0f, 0.0f);
 
 	// World-space 공전 모드에서 고정 pivot을 유지하기 위한 런타임 캐시
-	USceneComponent* CachedWorldPivotComponent = nullptr;
+	TWeakObjectPtr<USceneComponent> CachedWorldPivotComponent;
 	FVector CachedWorldPivotTranslation = FVector(0.0f, 0.0f, 0.0f);
 	FVector CachedWorldPivotLocation = FVector(0.0f, 0.0f, 0.0f);
 	bool bWorldPivotInitialized = false;

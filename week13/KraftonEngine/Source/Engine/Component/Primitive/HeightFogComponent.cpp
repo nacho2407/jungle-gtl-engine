@@ -19,8 +19,7 @@ void UHeightFogComponent::CreateRenderState()
 
 void UHeightFogComponent::DestroyRenderState()
 {
-	if (!IsValid(Owner)) return;
-	UWorld* World = GetWorld();
+	UWorld* World = GetWorldEvenIfPendingKill();
 	if (!World) return;
 
 	World->GetScene().GetEnvironment().RemoveFog(this);

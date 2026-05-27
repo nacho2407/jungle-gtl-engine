@@ -41,7 +41,10 @@ void FScene::RemoveSelectedProxyFast(TArray<FPrimitiveSceneProxy*>& SelectedList
 	{
 		FPrimitiveSceneProxy* LastProxy = SelectedList.back();
 		SelectedList[Index] = LastProxy;
-		LastProxy->SelectedListIndex = Index;
+		if (LastProxy)
+		{
+			LastProxy->SelectedListIndex = Index;
+		}
 	}
 
 	SelectedList.pop_back();
@@ -81,6 +84,7 @@ FScene::~FScene()
 	Proxies.clear();
 	DirtyProxies.clear();
 	SelectedProxies.clear();
+	SelectedActors.clear();
 	NeverCullProxies.clear();
 	FreeSlots.clear();
 	Environment.Clear();
@@ -106,6 +110,11 @@ void FScene::RegisterProxy(FPrimitiveSceneProxy* Proxy)
 	if (!Proxy || !Proxy->HasValidOwner()) return;
 
 	Proxy->DirtyFlags = EDirtyFlag::All; // 초기 등록 시 전체 갱신
+	if (++NextProxyGeneration == 0)
+	{
+		++NextProxyGeneration;
+	}
+	Proxy->ProxyGeneration = NextProxyGeneration;
 
 	// 빈 슬롯 재활용 또는 새 슬롯 할당
 	if (!FreeSlots.empty())
@@ -170,14 +179,15 @@ void FScene::RemovePrimitive(FPrimitiveSceneProxy* Proxy)
 	{
 		RemoveSelectedProxyFast(SelectedProxies, Proxy);
 
-		// SelectedActors에서도 정리 — 같은 Actor의 다른 프록시가 없으면 제거
-		AActor* Actor = IsValid(Proxy->Owner) ? Proxy->Owner->GetOwner() : nullptr;
-		if (IsValid(Actor))
+		UPrimitiveComponent* OwnerComponent = Proxy->GetOwnerEvenIfPendingKill();
+		AActor* Actor = OwnerComponent ? OwnerComponent->GetOwnerEvenIfPendingKill() : nullptr;
+		if (IsAliveObject(Actor))
 		{
 			bool bActorStillSelected = false;
 			for (const FPrimitiveSceneProxy* P : SelectedProxies)
 			{
-				if (P && IsValid(P->Owner) && P->Owner->GetOwner() == Actor)
+				UPrimitiveComponent* OtherOwner = P ? P->GetOwner() : nullptr;
+				if (OtherOwner && OtherOwner->GetOwner() == Actor)
 				{
 					bActorStillSelected = true;
 					break;
@@ -225,7 +235,7 @@ void FScene::UpdateDirtyProxies()
 		}
 
 		Proxy->bQueuedForDirtyUpdate = false;
-		if (!IsValid(Proxy->Owner))
+		if (!Proxy->HasValidOwner())
 		{
 			continue;
 		}
@@ -286,7 +296,8 @@ void FScene::SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected)
 	if (!Proxy || !Proxy->HasValidOwner()) return;
 	Proxy->bSelected = bSelected;
 
-	AActor* Actor = IsValid(Proxy->Owner) ? Proxy->Owner->GetOwner() : nullptr;
+	UPrimitiveComponent* OwnerComponent = Proxy->GetOwner();
+	AActor* Actor = OwnerComponent ? OwnerComponent->GetOwner() : nullptr;
 
 	if (bSelected)
 	{
@@ -308,7 +319,8 @@ void FScene::SetProxySelected(FPrimitiveSceneProxy* Proxy, bool bSelected)
 			bool bActorStillSelected = false;
 			for (const FPrimitiveSceneProxy* P : SelectedProxies)
 			{
-				if (P && IsValid(P->Owner) && P->Owner->GetOwner() == Actor)
+				UPrimitiveComponent* OtherOwner = P ? P->GetOwner() : nullptr;
+				if (OtherOwner && OtherOwner->GetOwner() == Actor)
 				{
 					bActorStillSelected = true;
 					break;
@@ -341,6 +353,20 @@ void FScene::SetProxyOutlineOnly(FPrimitiveSceneProxy* Proxy, bool bEnabled)
 bool FScene::IsProxySelected(const FPrimitiveSceneProxy* Proxy) const
 {
 	return Proxy && Proxy->HasValidOwner() && Proxy->SelectedListIndex != UINT32_MAX;
+}
+
+TArray<AActor*> FScene::GetSelectedActors() const
+{
+	TArray<AActor*> Result;
+	Result.reserve(SelectedActors.size());
+	for (AActor* Actor : SelectedActors)
+	{
+		if (IsValid(Actor))
+		{
+			Result.push_back(Actor);
+		}
+	}
+	return Result;
 }
 
 // ============================================================

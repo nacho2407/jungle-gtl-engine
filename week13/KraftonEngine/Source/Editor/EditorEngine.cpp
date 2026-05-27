@@ -592,7 +592,7 @@ void UEditorEngine::ClearScene()
 
 		if (Ctx.World)
 		{
-			Ctx.World->EndPlay();
+			Ctx.World->RouteWorldDestroyed();
 			UObjectManager::Get().DestroyObject(Ctx.World);
 		}
 

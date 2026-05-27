@@ -1,5 +1,6 @@
-﻿#pragma once
+#pragma once
 #include "GizmoTransformTarget.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 
 class USceneComponent;
 
@@ -11,8 +12,8 @@ public:
 	~FComponentGizmoTarget() override = default;
 
 public:
-	USceneComponent* GetComponent() const { return Component; }
-	void SetComponent(USceneComponent* InComponent) { Component = InComponent; }
+	USceneComponent* GetComponent() const;
+	void SetComponent(USceneComponent* InComponent);
 
 	bool IsValid() const override;
 	UWorld* GetWorld() const override;
@@ -32,5 +33,5 @@ public:
 	void AddScaleDelta(const FVector& Delta) override;
 
 private:
-	USceneComponent* Component = nullptr;
+	TWeakObjectPtr<USceneComponent> Component;
 };

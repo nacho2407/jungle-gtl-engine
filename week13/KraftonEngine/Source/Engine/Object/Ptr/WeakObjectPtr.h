@@ -60,6 +60,27 @@ public:
         return TypedObject;
     }
 
+    T* GetEvenIfPendingKill() const
+    {
+        UObject* LiveObject = GetAliveObjectFromAddress(Object);
+        if (!LiveObject)
+        {
+            return nullptr;
+        }
+
+        if (LiveObject->GetSerialNumber() != SerialNumber)
+        {
+            return nullptr;
+        }
+
+        return TypedObject;
+    }
+
+    T* GetAlive() const
+    {
+        return GetEvenIfPendingKill();
+    }
+
     bool IsValid() const
     {
         return Get() != nullptr;

@@ -16,6 +16,7 @@ class FDuplicateArchiveContext;
 // non-dependent name lookup 으로 IsValid 를 찾을 수 있게 미리 알려둠.
 class UObject;
 inline bool IsValid(const UObject* Object);
+inline bool IsAliveObject(const UObject* Object);
 
 template<typename T>
 T* Cast(UObject* Obj);
@@ -68,6 +69,19 @@ public:
 			if (T* Hit = Cast<T>(O))
 			{
 				return Hit;
+			}
+		}
+		return nullptr;
+	}
+
+	template<typename T>
+	T* GetTypedOuterEvenIfPendingKill() const
+	{
+		for (UObject* O = Outer; IsAliveObject(O); O = O->Outer)
+		{
+			if (O->IsA<T>())
+			{
+				return static_cast<T*>(O);
 			}
 		}
 		return nullptr;
@@ -213,11 +227,12 @@ public:
 		return Obj;
 	}
 
-	// 즉시 destroy. dangling 포인터 위험은 octree / spatial partition / UObject 추적 set
-	// 측에서 IsValid 가드로 처리하므로 별도 deferred 큐 (PendingKill) 는 두지 않는다.
+	// UObject destruction is deferred to GC. This function only removes the object
+	// from normal reachability by marking it pending kill; BeginDestroy / FinishDestroy
+	// / delete are owned exclusively by FGarbageCollector.
 	void DestroyObject(UObject* Obj)
 	{
-        if (!IsAliveObject(Obj))
+        if (!IsAliveObject(Obj) || Obj->IsRooted())
         {
             return;
         }
@@ -228,27 +243,13 @@ public:
         }
 
         Obj->MarkPendingKill();
-        Obj->BeginDestroy();
     }
 
+    // Kept for API compatibility only. UObject memory is still reclaimed by GC;
+    // callers that need synchronous reclamation must request a GC pass after this.
     void DestroyObjectImmediate(UObject* Obj)
     {
-        if (!IsAliveObject(Obj))
-        {
-            return;
-        }
-
-        if (!Obj->HasAnyFlags(RF_BeginDestroy))
-        {
-            Obj->BeginDestroy();
-        }
-
-        if (!Obj->HasAnyFlags(RF_FinishDestroy))
-        {
-            Obj->FinishDestroy();
-        }
-
-        delete Obj;
+        DestroyObject(Obj);
     }
 
 private:
@@ -273,11 +274,11 @@ public:
 template<typename T>
 T* Cast(UObject* Obj)
 {
-    return (IsAliveObject(Obj) && Obj->IsA<T>()) ? static_cast<T*>(Obj) : nullptr;
+    return (IsValid(Obj) && Obj->IsA<T>()) ? static_cast<T*>(Obj) : nullptr;
 }
 
 template<typename T>
 const T* Cast(const UObject* Obj)
 {
-    return (IsAliveObject(Obj) && Obj->IsA<T>()) ? static_cast<const T*>(Obj) : nullptr;
+    return (IsValid(Obj) && Obj->IsA<T>()) ? static_cast<const T*>(Obj) : nullptr;
 }

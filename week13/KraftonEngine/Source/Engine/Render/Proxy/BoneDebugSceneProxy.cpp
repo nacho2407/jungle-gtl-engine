@@ -104,7 +104,7 @@ void FBoneDebugSceneProxy::RebuildLines()
 	CachedLines.clear();
 	CachedParentBoneLines.clear();
 
-	UBoneDebugComponent* Comp = static_cast<UBoneDebugComponent*>(GetOwner());
+	UBoneDebugComponent* Comp = Cast<UBoneDebugComponent>(GetOwner());
 	if (!IsValid(Comp)) return;
 
 	USkeletalMeshComponent* MeshComp = Comp->GetTargetMeshComponent();

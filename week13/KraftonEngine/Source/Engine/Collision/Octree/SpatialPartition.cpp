@@ -6,6 +6,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "GameFramework/AActor.h"
+#include "Object/Object.h"
 #include <algorithm>
 
 namespace
@@ -344,7 +345,7 @@ void FSpatialPartition::RemoveActor(AActor* Actor)
 
 	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
 	{
-		if (!Prim) continue;
+		if (!IsAliveObject(Prim)) continue;
 
 		RemoveSinglePrimitive(Prim);
 	}
@@ -394,12 +395,12 @@ void FSpatialPartition::QueryFrustumAllProxies(const FConvexVolume& ConvexVolume
 
 	for (UPrimitiveComponent* Prim : OverflowPrimitives)
 	{
-		if (!Prim || !Prim->IsVisible()) continue;
+		if (!IsValid(Prim) || !Prim->IsVisible()) continue;
 
 		if (ConvexVolume.IntersectAABB(Prim->GetWorldBoundingBox()))
 		{
 			if (FPrimitiveSceneProxy* Proxy = Prim->GetSceneProxy())
-				if (!Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
+				if (Proxy->HasValidOwner() && !Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull))
 					OutProxies.push_back(Proxy);
 		}
 	}
@@ -414,7 +415,7 @@ void FSpatialPartition::QueryRayAllPrimitive(const FRay& Ray, TArray<UPrimitiveC
 
 	for (UPrimitiveComponent* Prim : OverflowPrimitives)
 	{
-		if (!Prim || !Prim->IsVisible()) continue;
+		if (!IsValid(Prim) || !Prim->IsVisible()) continue;
 
 		const FBoundingBox Box = Prim->GetWorldBoundingBox();
 		if (FRayUtils::CheckRayAABB(Ray, Box.Min, Box.Max))
@@ -438,7 +439,7 @@ void FSpatialPartition::InsertPrimitive(UPrimitiveComponent* Primitive)
 
 void FSpatialPartition::RemoveSinglePrimitive(UPrimitiveComponent* Primitive)
 {
-	if (!IsValid(Primitive)) return;
+	if (!IsAliveObject(Primitive)) return;
 
 	if (Primitive->IsInOctreeOverflow())
 	{
@@ -457,7 +458,7 @@ void FSpatialPartition::RemoveSinglePrimitive(UPrimitiveComponent* Primitive)
 
 void FSpatialPartition::RemovePrimitive(UPrimitiveComponent* Primitive)
 {
-	if (!Primitive) return;
+	if (!IsAliveObject(Primitive)) return;
 
 	auto It = std::find(OverflowPrimitives.begin(), OverflowPrimitives.end(), Primitive);
 	if (It != OverflowPrimitives.end())

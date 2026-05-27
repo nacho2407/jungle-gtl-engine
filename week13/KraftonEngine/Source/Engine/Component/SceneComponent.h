@@ -103,6 +103,7 @@ public:
 	void Rotate(float DeltaYaw, float DeltaPitch);
 
     void AddReferencedObjects(FReferenceCollector& Collector) override;
+    void RouteComponentDestroyed() override;
     void BeginDestroy() override;
 
 protected:

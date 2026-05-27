@@ -33,7 +33,7 @@ TArray<AActor*> ULevel::GetActors() const
 	Result.reserve(Actors.size());
 	for (AActor* Actor : Actors)
 	{
-		if (Actor)
+		if (IsValid(Actor))
 		{
 			Result.push_back(Actor);
 		}
@@ -96,6 +96,43 @@ void ULevel::AddReferencedObjects(FReferenceCollector& Collector)
     UObject::AddReferencedObjects(Collector);
 }
 
+void ULevel::RouteLevelDestroyed()
+{
+    if (bLevelDestroyRouted)
+    {
+        return;
+    }
+
+    bLevelDestroyRouted = true;
+
+    EndPlay();
+
+    TArray<AActor*> ActorsToDestroy;
+    ActorsToDestroy.reserve(Actors.size());
+    for (AActor* Actor : Actors)
+    {
+        if (IsAliveObject(Actor))
+        {
+            ActorsToDestroy.push_back(Actor);
+        }
+    }
+
+    for (AActor* Actor : ActorsToDestroy)
+    {
+        if (!IsAliveObject(Actor))
+        {
+            continue;
+        }
+
+        Actor->RouteActorDestroyed();
+        Actor->MarkPendingKill();
+    }
+
+    Actors.clear();
+    OwingWorld.Reset();
+    MarkPendingKill();
+}
+
 void ULevel::BeginDestroy()
 {
     if (HasAnyFlags(RF_BeginDestroy))
@@ -103,22 +140,10 @@ void ULevel::BeginDestroy()
         return;
     }
 
+    RouteLevelDestroyed();
     UObject::BeginDestroy();
-
-    EndPlay();
-
-    for (AActor* Actor : Actors)
-    {
-        if (IsAliveObject(Actor))
-        {
-            Actor->MarkPendingKill();
-            Actor->BeginDestroy();
-        }
-    }
-
-    Actors.clear();
-    OwingWorld.Reset();
 }
+
 
 void ULevel::BeginPlay()
 {
@@ -142,13 +167,4 @@ void ULevel::EndPlay()
 			Actor->EndPlay();
 		}
 	}
-
-	for (AActor* Actor : Actors)
-	{
-        if (IsAliveObject(Actor))
-		{
-			UObjectManager::Get().DestroyObject(Actor);
-		}
-	}
-	Actors.clear();
 }

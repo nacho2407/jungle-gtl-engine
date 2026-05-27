@@ -65,10 +65,11 @@ void FGPUOcclusionCulling::Release()
 	OcclusionTestCS = nullptr;
 
 	OccludedBits.clear();
+	OccludedGenerations.clear();
 	bHasResults = false;
 	for (uint32 i = 0; i < STAGING_COUNT; i++)
 	{
-		StagingProxies[i].clear();
+		StagingProxyKeys[i].clear();
 		StagingProxyCount[i] = 0;
 	}
 	WriteIndex = 0;
@@ -81,11 +82,12 @@ void FGPUOcclusionCulling::InvalidateResults()
 {
 	for (uint32 i = 0; i < STAGING_COUNT; i++)
 	{
-		StagingProxies[i].clear();
+		StagingProxyKeys[i].clear();
 		StagingProxyCount[i] = 0;
 		StagingMaxProxyId[i] = 0;
 	}
 	OccludedBits.clear();
+	OccludedGenerations.clear();
 	bHasResults = false;
 	WriteIndex = 0;
 	FrameCount = 0;
@@ -197,7 +199,18 @@ void FGPUOcclusionCulling::CreateBuffers(uint32 ProxyCount)
 	if (ProxyCount == 0) return;
 	if (AABBBufferCapacity >= ProxyCount && AABBBuffer) return;
 
+	// CreateBuffers() is called after the current frame has gathered AABB/proxy-key data.
+	// Reallocating GPU buffers must invalidate old delayed readback slots, but it must not
+	// erase the metadata for the dispatch that is being built right now.
+	TArray<FGPUOcclusionProxyKey> PendingWriteKeys = std::move(StagingProxyKeys[WriteIndex]);
+	const uint32 PendingWriteCount = StagingProxyCount[WriteIndex];
+	const uint32 PendingWriteMaxProxyId = StagingMaxProxyId[WriteIndex];
+
 	ReleaseBuffers();
+
+	StagingProxyKeys[WriteIndex] = std::move(PendingWriteKeys);
+	StagingProxyCount[WriteIndex] = PendingWriteCount;
+	StagingMaxProxyId[WriteIndex] = PendingWriteMaxProxyId;
 
 	uint32 Cap = ProxyCount + (ProxyCount / 4) + 64; // headroom
 	AABBBufferCapacity = Cap;
@@ -259,10 +272,12 @@ void FGPUOcclusionCulling::ReleaseBuffers()
 	for (uint32 i = 0; i < STAGING_COUNT; i++)
 	{
 		if (StagingBuffers[i]) { StagingBuffers[i]->Release(); StagingBuffers[i] = nullptr; }
-		StagingProxies[i].clear();
+		StagingProxyKeys[i].clear();
 		StagingProxyCount[i] = 0;
+		StagingMaxProxyId[i] = 0;
 	}
 	AABBBufferCapacity = VisibilityBufferCapacity = 0;
+	bPreGathered = false;
 }
 
 // ================================================================
@@ -369,22 +384,26 @@ void FGPUOcclusionCulling::ReadbackResults(ID3D11DeviceContext* Ctx)
 	{
 		const uint32* vis = static_cast<const uint32*>(mapped.pData);
 		const uint32 count = StagingProxyCount[ReadIdx];
-		const auto& proxies = StagingProxies[ReadIdx];
+		const auto& keys = StagingProxyKeys[ReadIdx];
 
 		uint32 wordCount = (StagingMaxProxyId[ReadIdx] / 32) + 1;
 		OccludedBits.resize(wordCount);
 		memset(OccludedBits.data(), 0, wordCount * sizeof(uint32));
+		OccludedGenerations.resize(StagingMaxProxyId[ReadIdx] + 1, 0);
 
-		for (uint32 i = 0; i < count; i++)
+		for (uint32 i = 0; i < count && i < static_cast<uint32>(keys.size()); i++)
 		{
 			if (vis[i] == 0)
 			{
-				// 안전망: staging proxy가 destroy 후 다른 객체가 들어와 ProxyId가 캡처 시
-				// MaxProxyId보다 클 수 있다. 범위 초과 시 skip (다음 frame staging 갱신).
-				uint32 id = proxies[i]->GetProxyId();
+				const FGPUOcclusionProxyKey& Key = keys[i];
+				const uint32 id = Key.ProxyId;
 				const uint32 word = id >> 5;
-				if (word >= wordCount) continue;
+				if (id == UINT32_MAX || word >= wordCount || id >= static_cast<uint32>(OccludedGenerations.size()))
+				{
+					continue;
+				}
 				OccludedBits[word] |= (1u << (id & 31));
+				OccludedGenerations[id] = Key.Generation;
 			}
 		}
 
@@ -399,8 +418,8 @@ void FGPUOcclusionCulling::ReadbackResults(ID3D11DeviceContext* Ctx)
 
 void FGPUOcclusionCulling::BeginGatherAABB(uint32 ExpectedCount)
 {
-	auto& curProxies = StagingProxies[WriteIndex];
-	curProxies.resize(ExpectedCount);
+	auto& curKeys = StagingProxyKeys[WriteIndex];
+	curKeys.resize(ExpectedCount);
 	CPUAABBStaging.resize(ExpectedCount);
 	PreGatherWritePos = 0;
 	PreGatherMaxId = 0;
@@ -409,11 +428,12 @@ void FGPUOcclusionCulling::BeginGatherAABB(uint32 ExpectedCount)
 
 void FGPUOcclusionCulling::GatherAABB(FPrimitiveSceneProxy* Proxy)
 {
-	if (!Proxy || Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) return;
+	if (!Proxy || !Proxy->HasValidOwner() || Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) return;
 
-	auto& curProxies = StagingProxies[WriteIndex];
+	auto& curKeys = StagingProxyKeys[WriteIndex];
 	uint32 pos = PreGatherWritePos;
-	curProxies[pos] = Proxy;
+	if (pos >= static_cast<uint32>(curKeys.size()) || pos >= static_cast<uint32>(CPUAABBStaging.size())) return;
+	curKeys[pos] = { Proxy->GetProxyId(), Proxy->GetProxyGeneration() };
 	if (Proxy->GetProxyId() > PreGatherMaxId) PreGatherMaxId = Proxy->GetProxyId();
 	const FBoundingBox& B = Proxy->GetCachedBounds();
 	CPUAABBStaging[pos] = { B.Min.X, B.Min.Y, B.Min.Z, 0.0f,
@@ -450,8 +470,8 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 		{
 			// Fallback: 기존 GatherLoop
 			uint32 visCount = static_cast<uint32>(VisibleProxies.size());
-			auto& curProxies = StagingProxies[WriteIndex];
-			curProxies.resize(visCount);
+			auto& curKeys = StagingProxyKeys[WriteIndex];
+			curKeys.resize(visCount);
 			CPUAABBStaging.resize(visCount);
 			FGPUOcclusionAABB* staging = CPUAABBStaging.data();
 			uint32 writePos = 0;
@@ -460,9 +480,9 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 			for (uint32 i = 0; i < visCount; i++)
 			{
 				FPrimitiveSceneProxy* Proxy = VisibleProxies[i];
-				if (!Proxy || Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) continue;
+				if (!Proxy || !Proxy->HasValidOwner() || Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) continue;
 
-				curProxies[writePos] = Proxy;
+				curKeys[writePos] = { Proxy->GetProxyId(), Proxy->GetProxyGeneration() };
 				if (Proxy->GetProxyId() > maxId) maxId = Proxy->GetProxyId();
 				const FBoundingBox& B = Proxy->GetCachedBounds();
 				staging[writePos] = { B.Min.X, B.Min.Y, B.Min.Z, 0.0f,
@@ -540,9 +560,16 @@ void FGPUOcclusionCulling::DispatchOcclusionTest(
 
 bool FGPUOcclusionCulling::IsOccluded(const FPrimitiveSceneProxy* Proxy) const
 {
+	if (!Proxy || !Proxy->HasValidOwner())
+		return false;
+
 	uint32 id = Proxy->GetProxyId();
 	uint32 word = id >> 5;
 	if (word >= static_cast<uint32>(OccludedBits.size()))
+		return false;
+	if (id >= static_cast<uint32>(OccludedGenerations.size()))
+		return false;
+	if (OccludedGenerations[id] != Proxy->GetProxyGeneration())
 		return false;
 	return (OccludedBits[word] & (1u << (id & 31))) != 0;
 }

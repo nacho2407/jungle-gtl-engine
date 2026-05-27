@@ -50,7 +50,7 @@ void UObjViewerEngine::Shutdown()
 
 	for (FWorldContext& Ctx : WorldList)
 	{
-		Ctx.World->EndPlay();
+		Ctx.World->RouteWorldDestroyed();
 		UObjectManager::Get().DestroyObject(Ctx.World);
 	}
 	WorldList.clear();

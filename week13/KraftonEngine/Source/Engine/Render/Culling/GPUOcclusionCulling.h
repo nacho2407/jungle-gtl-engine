@@ -15,6 +15,13 @@ struct FGPUOcclusionAABB
 	float MaxX, MaxY, MaxZ, _pad1;
 };
 
+// Captured by value for delayed GPU readback. Never stores a proxy pointer across frames.
+struct FGPUOcclusionProxyKey
+{
+	uint32 ProxyId = UINT32_MAX;
+	uint32 Generation = 0;
+};
+
 class FGPUOcclusionCulling
 {
 public:
@@ -91,7 +98,7 @@ private:
 	ID3D11UnorderedAccessView* VisibilityUAV = nullptr;
 	static constexpr uint32 STAGING_COUNT = 3;
 	ID3D11Buffer* StagingBuffers[STAGING_COUNT] = {};
-	TArray<const FPrimitiveSceneProxy*> StagingProxies[STAGING_COUNT];
+	TArray<FGPUOcclusionProxyKey> StagingProxyKeys[STAGING_COUNT];
 	uint32 StagingProxyCount[STAGING_COUNT] = {};
 	uint32 StagingMaxProxyId[STAGING_COUNT] = {};
 	uint32 WriteIndex = 0;   // 현재 프레임 기록용
@@ -110,6 +117,7 @@ private:
 
 	// CPU-side occlusion results — bit array indexed by ProxyId (O(1) lookup)
 	TArray<uint32> OccludedBits;    // each bit = 1 proxy, OccludedBits[id/32] & (1<<(id%32))
+	TArray<uint32> OccludedGenerations; // same ProxyId slot must also match proxy generation
 	bool bHasResults = false;
 	uint32 FrameCount = 0;
 	bool bInitialized = false;

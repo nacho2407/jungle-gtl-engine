@@ -80,7 +80,7 @@ void FTextRenderSceneProxy::UpdateMesh()
 
 UTextRenderComponent* FTextRenderSceneProxy::GetTextRenderComponent() const
 {
-	return HasValidOwner() ? static_cast<UTextRenderComponent*>(GetOwner()) : nullptr;
+	return Cast<UTextRenderComponent>(GetOwner());
 }
 
 // ============================================================

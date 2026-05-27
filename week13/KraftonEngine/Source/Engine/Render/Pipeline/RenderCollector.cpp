@@ -19,6 +19,8 @@
 // ============================================================
 void UpdateProxyLOD(FPrimitiveSceneProxy* Proxy, const FLODUpdateContext& LODCtx)
 {
+	if (!Proxy || !Proxy->HasValidOwner())
+		return;
 	if (!LODCtx.bValid || !LODCtx.ShouldRefreshLOD(Proxy->GetProxyId(), Proxy->GetLastLODUpdateFrame()))
 		return;
 
@@ -137,7 +139,7 @@ void FRenderCollector::FilterVisibleProxies(const FFrameContext& Frame, FScene& 
 	Output.VisibleProxySet.reserve(Output.FrustumVisibleProxies.size());
 	for (FPrimitiveSceneProxy* Proxy : Output.FrustumVisibleProxies)
 	{
-		if (Proxy)
+		if (Proxy && Proxy->HasValidOwner())
 			Output.VisibleProxySet.insert(Proxy);
 	}
 
