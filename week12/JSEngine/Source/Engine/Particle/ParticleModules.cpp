@@ -844,8 +844,18 @@ void UParticleModuleLocation::Spawn(FParticleEmitterInstance* Owner, int32 Offse
 	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 
 	// StartLocation은 RequiredModule의 local / world 정책에 맞는 simulation space 값으로 저장
-	Particle.Location = EvaluateParticleVector(StartLocation, Context);
-	Particle.OldLocation = Particle.Location;
+    const FVector StartLocationLocal = EvaluateParticleVector(StartLocation, Context);
+
+    if (Owner != nullptr && !Owner->UsesLocalSpace())
+    {
+        Particle.Location = Owner->GetOwner().GetComponentToWorld().TransformPosition(StartLocationLocal);
+    }
+    else
+    {
+        Particle.Location = StartLocationLocal;
+    }
+
+    Particle.OldLocation = Particle.Location;
 }
 
 bool UParticleModuleVelocity::IsSpawnModule() const
@@ -868,8 +878,18 @@ void UParticleModuleVelocity::Spawn(FParticleEmitterInstance* Owner, int32 Offse
 {
 	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
 	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
-	Particle.Velocity = EvaluateParticleVector(StartVelocity, Context);
-	Particle.BaseVelocity = Particle.Velocity;
+    const FVector StartVelocityLocal = EvaluateParticleVector(StartVelocity, Context);
+
+    if (Owner != nullptr && !Owner->UsesLocalSpace())
+    {
+        Particle.Velocity = Owner->GetOwner().GetComponentToWorld().TransformVector(StartVelocityLocal);
+    }
+    else
+    {
+        Particle.Velocity = StartVelocityLocal;
+    }
+
+    Particle.BaseVelocity = Particle.Velocity;
 }
 
 bool UParticleModuleRotation::IsSpawnModule() const
