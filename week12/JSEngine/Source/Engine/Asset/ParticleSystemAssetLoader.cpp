@@ -138,6 +138,10 @@ void FParticleSystemAssetLoader::FixupParticleSystem(UParticleSystem* ParticleSy
 			{
 				LOD->TypeDataModule = NewObject<UParticleModuleTypeDataBase>();
 			}
+			else if (UParticleModuleTypeDataMesh* MeshTypeData = Cast<UParticleModuleTypeDataMesh>(LOD->TypeDataModule))
+			{
+				MeshTypeData->ResolveStaticMeshFromAssetPath();
+			}
 
 			LOD->Modules.erase(
 				std::remove_if(

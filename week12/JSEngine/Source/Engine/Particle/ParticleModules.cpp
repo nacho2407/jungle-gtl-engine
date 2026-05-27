@@ -2583,14 +2583,34 @@ void UParticleModuleTypeDataMesh::SetStaticMesh(UStaticMesh* InStaticMesh)
 	MeshAssetPath.SetPath(Mesh != nullptr ? Mesh->GetAssetPathFileName() : FString());
 }
 
+bool UParticleModuleTypeDataMesh::ResolveStaticMeshFromAssetPath()
+{
+	const FString RequestedPath = MeshAssetPath.GetPath();
+	if (RequestedPath.empty())
+	{
+		Mesh = nullptr;
+		return false;
+	}
+
+	UStaticMesh* ResolvedMesh = FResourceManager::Get().LoadStaticMesh(RequestedPath);
+	Mesh = ResolvedMesh;
+	if (ResolvedMesh != nullptr)
+	{
+		MeshAssetPath.SetPath(ResolvedMesh->GetAssetPathFileName());
+		return true;
+	}
+
+	MeshAssetPath.SetPath(RequestedPath);
+	return false;
+}
+
 void UParticleModuleTypeDataMesh::PostEditProperty(const char* PropertyName)
 {
 	UParticleModuleTypeDataBase::PostEditProperty(PropertyName);
 
 	if (PropertyName != nullptr && std::strcmp(PropertyName, "MeshAssetPath") == 0)
 	{
-		const FString RequestedPath = MeshAssetPath.GetPath();
-		SetStaticMesh(RequestedPath.empty() ? nullptr : FResourceManager::Get().LoadStaticMesh(RequestedPath));
+		ResolveStaticMeshFromAssetPath();
 	}
 }
 

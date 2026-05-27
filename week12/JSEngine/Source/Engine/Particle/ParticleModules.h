@@ -667,9 +667,10 @@ public:
 	void PostEditProperty(const char* PropertyName) override;
 
 	void SetStaticMesh(UStaticMesh* InStaticMesh);
+	bool ResolveStaticMeshFromAssetPath();
 	UStaticMesh* GetStaticMesh() const { return Mesh; }
 
-	// TODO: ParticleSystem Asset 역직렬화 계약이 확정되면 이 경로를 런타임 Mesh로 복구한다.
+	// 저장된 경로는 에디터 변경 및 ParticleSystem 에셋 로드 후 런타임 Mesh 포인터로 복구합니다.
 	UPROPERTY(DisplayName = "Static Mesh")
 	TSoftObjectPtr<UStaticMesh> MeshAssetPath;
 
