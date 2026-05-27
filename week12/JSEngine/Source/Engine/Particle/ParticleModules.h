@@ -208,6 +208,42 @@ public:
 	FParticleFloatDistribution StartRotation;
 };
 
+UCLASS(Placeable, DisplayName = "Rotation Rate Module", Category = "Rotation")
+class UParticleModuleRotationRate : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleRotationRate, UParticleModule)
+
+	bool IsSpawnModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override;
+
+	UPROPERTY(DisplayName = "Start Rotation Rate", Min = -360.0f, Max = 360.0f, Speed = 1.0f)
+	FParticleFloatDistribution StartRotationRate;
+};
+
+/**
+ * @brief 수명 비율 기반 particle 회전속도 보정 module
+ */
+UCLASS(Placeable, DisplayName = "Rotation Rate Over Life Module", Category = "Rotation")
+class UParticleModuleRotationRateOverLife : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleRotationRateOverLife, UParticleModule)
+
+	bool IsUpdateModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Rotation Rate Over Life", Min = -360.0f, Max = 360.0f, Speed = 1.0f)
+	FParticleFloatDistribution RotationRateOverLife;
+
+	UPROPERTY(DisplayName = "Absolute")
+	bool bAbsolute = false;
+};
+
 UCLASS(Placeable, DisplayName = "Mesh Rotation Module", Category = "Rotation")
 class UParticleModuleMeshRotation : public UParticleModule
 {

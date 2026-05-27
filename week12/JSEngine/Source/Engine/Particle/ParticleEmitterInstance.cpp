@@ -923,6 +923,7 @@ int32 FParticleEmitterInstance::SpawnParticles(
 		Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
 		Particle.OldLocation = Particle.Location;
 		Particle.BaseColor = Particle.Color;
+		Particle.BaseRotationRate = Particle.RotationRate;
 
 		++ActiveParticles;
 		GenerateSpawnEvent(Particle, PhysicalIndex);
@@ -980,6 +981,7 @@ int32 FParticleEmitterInstance::SpawnParticle(const FVector& WorldLocation, cons
 	Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
 	Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
 	Particle.BaseColor = Particle.Color;
+	Particle.BaseRotationRate = Particle.RotationRate;
 
 	if (CurrentRuntimeCache->TypeDataModule != nullptr)
 	{

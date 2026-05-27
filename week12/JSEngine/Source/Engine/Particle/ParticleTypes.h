@@ -154,6 +154,7 @@ struct FBaseParticle
 	float OneOverMaxLifetime = 1.0f; // particle이 현재 수명의 몇 퍼센트 지점에 있는지 계산할 때 사용하는 MaxLifetime의 역수
 	float Rotation = 0.0f;
 	float RotationRate = 0.0f;
+	float BaseRotationRate = 0.0f;
 	FVector MeshRotation = FVector::ZeroVector;
 	FVector Size = FVector::OneVector;
 	FVector BaseSize = FVector::OneVector;
