@@ -293,7 +293,6 @@ private:
 
 UParticleSystemComponent::UParticleSystemComponent()
 {
-	bEnableCull = false;
 	InstanceOwner = std::make_unique<FInstanceOwner>(this);
 }
 
