@@ -1,6 +1,7 @@
 param(
     [string]$Project,
     [string]$SourceServer,
+    [string]$BuildGuid,       # ← 추가
     [string]$RawList,
     [string]$SrcInfo
 )
@@ -27,7 +28,6 @@ if (-not $anchor) {
 foreach ($line in $lines) {
     if ($line -match 'source files') { continue }
     if ($line -match '\.(pdb|exe|obj|lib|dll)$') { continue }
-
     $idx = $line.ToLower().IndexOf($anchor.ToLower())
     if ($idx -ge 0) {
         $rel = $line.Substring($idx + $anchor.Length)
@@ -41,19 +41,18 @@ $header = @(
     'INDEXVERSION=2',
     'VERCTRL=fs',
     'SRCSRV: variables ------------------------------------------',
-    "SOURCE_SHARE=$SourceServer\$Project",
+    # ★ GUID가 포함된 버전별 경로
+    "SOURCE_SHARE=$SourceServer\$Project\$BuildGuid",
     'SRCSRVTRG=%SOURCE_SHARE%\%var2%',
     'SRCSRVCMD=cmd /c copy /Y "%SRCSRVTRG%" "%targ%"',
     'SRCSRV: source files ---------------------------------------'
 )
 $footer = @('SRCSRV: end ------------------------------------------------')
 
-# UTF8 without BOM
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllLines($SrcInfo, ($header + $mappings + $footer), $utf8NoBom)
 
-Write-Host ("[INFO] Indexed " + $mappings.Count + " source files.")
-
+Write-Host ("[INFO] Indexed $($mappings.Count) source files → $SourceServer\$Project\$BuildGuid")
 Write-Host "--- srcsrv.txt preview (first 15 lines) ---"
 Get-Content $SrcInfo | Select-Object -First 15 | ForEach-Object { Write-Host $_ }
 Write-Host "--------------------------------------------"
