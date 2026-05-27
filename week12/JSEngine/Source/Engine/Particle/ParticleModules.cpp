@@ -188,38 +188,6 @@ namespace
 			return;
 		}
 
-		if (UParticleModuleEventGenerator* EventGeneratorModule = Cast<UParticleModuleEventGenerator>(Module))
-		{
-			if (Cache.EventGeneratorModule == nullptr)
-			{
-				Cache.EventGeneratorModule = EventGeneratorModule;
-			}
-			else
-			{
-				UE_LOG_WARNING("[Particle] Multiple enabled Event Generator modules found. Using the first module.");
-			}
-			return;
-		}
-
-		if (UParticleModuleEventReceiverBase* EventReceiverModule = Cast<UParticleModuleEventReceiverBase>(Module))
-		{
-			Cache.EventReceiverModules.push_back(EventReceiverModule);
-			return;
-		}
-
-		if (UParticleModuleEventSendToGame* EventSendToGameModule = Cast<UParticleModuleEventSendToGame>(Module))
-		{
-			if (Cache.EventSendToGameModule == nullptr)
-			{
-				Cache.EventSendToGameModule = EventSendToGameModule;
-			}
-			else
-			{
-				UE_LOG_WARNING("[Particle] Multiple enabled Event Send To Game modules found. Using the first module.");
-			}
-			return;
-		}
-
 		if (Module->IsSpawnModule())
 		{
 			Cache.SpawnModules.push_back(Module);
@@ -1415,218 +1383,23 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 			Particle.BaseVelocity = Particle.Velocity;
 		}
 
-		if (UParticleModuleEventGenerator* EventGenerator = Owner->FindEventGeneratorModule())
-		{
-			const FVector IncomingDirectionWS = MoveWS.GetSafeNormal();
-			EventGenerator->HandleParticleCollision(
-				Owner,
-				Particle,
-				Owner->GetPhysicalIndexByActiveIndex(ActiveIndex),
-				Hit,
-				IncomingDirectionWS,
-				IncomingVelocityWS);
-		}
+		// Collision Event Data 생성
+		FParticleEventCollideData Event;
+		Event.EmitterIndex = Owner->GetEmitterIndex();
+		Event.ParticleIndex = Owner->GetPhysicalIndexByActiveIndex(ActiveIndex);
+		Event.SpawnId = Particle.SpawnId;
+		Event.ParticleTime = Particle.RelativeTime;
+		Event.CollisionTime = Hit.Time;
+		Event.Location = Hit.Location;
+		Event.Direction = MoveWS.GetSafeNormal();
+		Event.Velocity = IncomingVelocityWS;
+		Event.Normal = Hit.Normal;
+		Event.FaceIndex = Hit.FaceIndex;
+		Event.HitComponent = Hit.HitComponent;
+		Event.HitActor = Hit.HitComponent != nullptr ? Hit.HitComponent->GetOwner() : nullptr;
+		Owner->GetOwner().AddCollisionEvent(Event);
 
 		SetParticleFlag(Particle, EParticleFlags::CollisionHasOccurred);
-	}
-}
-
-bool UParticleModuleEventGenerator::GenerateEvent(
-	FParticleEmitterInstance* Owner,
-	const FParticleEventData& Occurrence,
-	bool bCollisionHasOccurred)
-{
-	if (Owner == nullptr)
-	{
-		return false;
-	}
-
-	FParticleEventGeneratorRuntimeState& RuntimeState = Owner->GetEventGeneratorRuntimeState();
-	if (RuntimeState.OccurrenceCounters.size() != Events.size() ||
-		RuntimeState.bHasFiredFirstTimeOnly.size() != Events.size())
-	{
-		RuntimeState.OccurrenceCounters.assign(Events.size(), 0);
-		RuntimeState.bHasFiredFirstTimeOnly.assign(Events.size(), false);
-	}
-
-	bool bGenerated = false;
-	for (int32 EventIndex = 0; EventIndex < static_cast<int32>(Events.size()); ++EventIndex)
-	{
-		const FParticleEventGenerateInfo& Info = Events[static_cast<size_t>(EventIndex)];
-		if (Info.Type != EParticleEventType::Any && Info.Type != Occurrence.Type)
-		{
-			continue;
-		}
-
-		// Any entry는 실제 event type 전체가 같은 frequency counter를 공유
-		// 타입별 횟수가 필요해지면 runtime state 분리
-		int32& OccurrenceCount = RuntimeState.OccurrenceCounters[static_cast<size_t>(EventIndex)];
-		++OccurrenceCount;
-		const int32 SafeFrequency = std::max(Info.Frequency, 1);
-		if ((OccurrenceCount % SafeFrequency) != 0)
-		{
-			continue;
-		}
-
-		if (Info.bFirstTimeOnly)
-		{
-			const bool bUsesEmitterFirstTime =
-				Info.Type == EParticleEventType::Any ||
-				Occurrence.Type == EParticleEventType::Burst;
-			if (bUsesEmitterFirstTime &&
-				RuntimeState.bHasFiredFirstTimeOnly[static_cast<size_t>(EventIndex)])
-			{
-				continue;
-			}
-			if (!bUsesEmitterFirstTime &&
-				Occurrence.Type == EParticleEventType::Collision &&
-				bCollisionHasOccurred)
-			{
-				continue;
-			}
-
-			if (bUsesEmitterFirstTime)
-			{
-				RuntimeState.bHasFiredFirstTimeOnly[static_cast<size_t>(EventIndex)] = true;
-			}
-		}
-
-		FParticleEventData Event = Occurrence;
-		Event.EventName = Info.CustomName;
-		Owner->GetOwner().AddGeneratedEvent(Event);
-		bGenerated = true;
-	}
-
-	return bGenerated;
-}
-
-bool UParticleModuleEventGenerator::HandleParticleSpawn(
-	FParticleEmitterInstance* Owner,
-	const FBaseParticle& Particle,
-	int32 PhysicalIndex)
-{
-	FParticleEventData Event;
-	Event.Type = EParticleEventType::Spawn;
-	Event.EmitterIndex = Owner->GetEmitterIndex();
-	Event.ParticleIndex = PhysicalIndex;
-	Event.SpawnId = Particle.SpawnId;
-	Event.EmitterTime = Owner->EmitterTime;
-	Event.ParticleTime = Particle.RelativeTime;
-	Event.Location = Owner->TransformLocationToWorldSpace(Particle.Location);
-	Event.Velocity = Owner->TransformVelocityToWorldSpace(Particle.Velocity);
-	Event.Direction = Event.Velocity.GetSafeNormal();
-	return GenerateEvent(Owner, Event, false);
-}
-
-bool UParticleModuleEventGenerator::HandleParticleDeath(
-	FParticleEmitterInstance* Owner,
-	const FBaseParticle& Particle,
-	int32 PhysicalIndex)
-{
-	FParticleEventData Event;
-	Event.Type = EParticleEventType::Death;
-	Event.EmitterIndex = Owner->GetEmitterIndex();
-	Event.ParticleIndex = PhysicalIndex;
-	Event.SpawnId = Particle.SpawnId;
-	Event.EmitterTime = Owner->EmitterTime;
-	Event.ParticleTime = Particle.RelativeTime;
-	Event.Location = Owner->TransformLocationToWorldSpace(Particle.Location);
-	Event.Velocity = Owner->TransformVelocityToWorldSpace(Particle.Velocity);
-	Event.Direction = Event.Velocity.GetSafeNormal();
-	return GenerateEvent(Owner, Event, false);
-}
-
-bool UParticleModuleEventGenerator::HandleParticleBurst(
-	FParticleEmitterInstance* Owner,
-	int32 SpawnCount)
-{
-	FParticleEventData Event;
-	Event.Type = EParticleEventType::Burst;
-	Event.EmitterIndex = Owner->GetEmitterIndex();
-	Event.EmitterTime = Owner->EmitterTime;
-	Event.Location = Owner->GetOwner().GetWorldLocation();
-	Event.SpawnCount = SpawnCount;
-	return GenerateEvent(Owner, Event, false);
-}
-
-bool UParticleModuleEventGenerator::HandleParticleCollision(
-	FParticleEmitterInstance* Owner,
-	const FBaseParticle& Particle,
-	int32 PhysicalIndex,
-	const FHitResult& Hit,
-	const FVector& IncomingDirectionWS,
-	const FVector& IncomingVelocityWS)
-{
-	FParticleEventData Event;
-	Event.Type = EParticleEventType::Collision;
-	Event.EmitterIndex = Owner->GetEmitterIndex();
-	Event.ParticleIndex = PhysicalIndex;
-	Event.SpawnId = Particle.SpawnId;
-	Event.EmitterTime = Owner->EmitterTime;
-	Event.ParticleTime = Particle.RelativeTime;
-	Event.Location = Hit.Location;
-	Event.Direction = IncomingDirectionWS;
-	Event.Velocity = IncomingVelocityWS;
-	Event.Normal = Hit.Normal;
-	Event.CollisionTime = Hit.Time;
-	Event.FaceIndex = Hit.FaceIndex;
-	Event.HitComponent = Hit.HitComponent;
-	Event.HitActor = Hit.HitComponent != nullptr ? Hit.HitComponent->GetOwner() : nullptr;
-	return GenerateEvent(Owner, Event, HasParticleFlag(Particle, EParticleFlags::CollisionHasOccurred));
-}
-
-bool UParticleModuleEventReceiverBase::WillProcessParticleEvent(const FParticleEventData& Event) const
-{
-	const bool bTypeMatches =
-		EventGeneratorType == EParticleEventType::Any ||
-		EventGeneratorType == Event.Type;
-	return bTypeMatches && EventName == Event.EventName;
-}
-
-bool UParticleModuleEventReceiverBase::ProcessParticleEvent(
-	FParticleEmitterInstance* Owner,
-	const FParticleEventData& Event,
-	float DeltaTime)
-{
-	(void)Owner;
-	(void)Event;
-	(void)DeltaTime;
-	return false;
-}
-
-bool UParticleModuleEventReceiverSpawn::ProcessParticleEvent(
-	FParticleEmitterInstance* Owner,
-	const FParticleEventData& Event,
-	float DeltaTime)
-{
-	(void)DeltaTime;
-	if (Owner == nullptr || SpawnCount <= 0)
-	{
-		return false;
-	}
-
-	return Owner->SpawnParticlesFromEvent(
-		SpawnCount,
-		Event,
-		bInheritVelocity,
-		bUsePSysLocation) > 0;
-}
-
-bool UParticleModuleEventSendToGame::ShouldSend(EParticleEventType Type) const
-{
-	switch (Type)
-	{
-	case EParticleEventType::Spawn:
-		return bSendSpawn;
-	case EParticleEventType::Death:
-		return bSendDeath;
-	case EParticleEventType::Collision:
-		return bSendCollision;
-	case EParticleEventType::Burst:
-		return bSendBurst;
-	case EParticleEventType::Any:
-	default:
-		return false;
 	}
 }
 

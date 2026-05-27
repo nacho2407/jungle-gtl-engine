@@ -12,18 +12,10 @@ class FParticleSystemRenderProxy;
 class FPrimitiveRenderProxy;
 class UParticleSystemComponent;
 
-struct FParticleEventSpawnData;
-struct FParticleEventDeathData;
-struct FParticleEventBurstData;
 struct FDynamicEmitterDataBase;
 struct FParticleEventCollideData;
 
-// --- Particle Event Delegate ---
-// TODO: Core 이벤트 데이터에 이름, 시간, 속도 정보가 추가되면 시그니처 확장
-DECLARE_DELEGATE(FParticleSpawnSignature, UParticleSystemComponent*, const FParticleEventSpawnData&)
-DECLARE_DELEGATE(FParticleDeathSignature, UParticleSystemComponent*, const FParticleEventDeathData&)
 DECLARE_DELEGATE(FParticleCollisionSignature, UParticleSystemComponent*, const FParticleEventCollideData&)
-DECLARE_DELEGATE(FParticleBurstSignature, UParticleSystemComponent*, const FParticleEventBurstData&)
 
 /******************************************************************
 * Particle System 런타임 객체 관리 컴포넌트
@@ -57,21 +49,7 @@ public:
 	int32 GetEmitterRenderDataSnapshotCount() const { return static_cast<int32>(EmitterRenderData.size()); }
 	const FDynamicEmitterDataBase* GetEmitterRenderDataSnapshot(int32 SnapshotIndex) const;
 
-	// --- Particle Event Section ---
-	void ReportEventSpawn(const FParticleEventSpawnData& Event);
-	void ReportEventDeath(const FParticleEventDeathData& Event);
 	void ReportEventCollision(const FParticleEventCollideData& Event);
-	void ReportEventBurst(const FParticleEventBurstData& Event);
-
-	/**
-	 * @brief 내부 receiver 입력용 named event 기록
-	 */
-	void ReportGeneratedEvent(const FParticleEventData& Event);
-
-	/**
-	 * @brief 현재 tick의 내부 receiver 입력 queue 조회
-	 */
-	const TArray<FParticleEventData>& GetGeneratedEvents() const { return GeneratedEvents; }
 
 	/**
 	 * @brief particle 이동 구간을 world Shape query로 검사
@@ -93,10 +71,7 @@ public:
 
 	void ResetParticles();
 
-	FParticleSpawnSignature OnParticleSpawn;
-	FParticleDeathSignature OnParticleDeath;
 	FParticleCollisionSignature OnParticleCollide;
-	FParticleBurstSignature OnParticleBurst;
 
 private:
 	void CreateEmitterInstances();
@@ -105,18 +80,6 @@ private:
 	void ReleaseRenderProxyResources();
 	int32 SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const;
 	void UpdateLODLevel();
-
-	/**
-	 * @brief 생성 emitter 정책을 확인하고 허용된 named event를 external queue로 복사
-	 * @param Event Generator policy를 통과한 internal event
-	 */
-	void ReportGeneratedEventToGame(const FParticleEventData& Event);
-
-	/**
-	 * @brief 이번 tick에 생성된 internal named event를 receiver module에 전달
-	 * @note 처리 시작 snapshot만 사용해 같은 tick 재귀 소비 차단
-	 */
-	void ProcessParticleEvents(float DeltaTime);
 
 	/**
 	 * @brief 지정된 emitter template과 LOD index에 맞는 새 emitter instance를 생성합니다.
@@ -136,14 +99,7 @@ private:
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
 
-	// GeneratedEvents는 같은 particle system 안의 receiver가 읽는 event
-	TArray<FParticleEventData> GeneratedEvents;
-
-	// 아래 typed queue는 game delegate로 내보낼 event만 보관
-	TArray<FParticleEventSpawnData> SpawnEvents;
-	TArray<FParticleEventDeathData> DeathEvents;
 	TArray<FParticleEventCollideData> CollisionEvents;
-	TArray<FParticleEventBurstData> BurstEvents;
 
 	AParticleEventManager* EventManager = nullptr;
 	UParticleSystem* ResolvedTemplate = nullptr;

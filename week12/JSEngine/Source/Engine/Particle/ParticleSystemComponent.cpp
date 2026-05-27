@@ -107,43 +107,11 @@ public:
 			Component->ParticleLineCheck(Hit, SourceActor, EndWS, StartWS, CollisionShape);
 	}
 
-	void AddSpawnEvent(const FParticleEventSpawnData& Event) override
-	{
-		if (Component != nullptr)
-		{
-			Component->ReportEventSpawn(Event);
-		}
-	}
-
-	void AddDeathEvent(const FParticleEventDeathData& Event) override
-	{
-		if (Component != nullptr)
-		{
-			Component->ReportEventDeath(Event);
-		}
-	}
-
 	void AddCollisionEvent(const FParticleEventCollideData& Event) override
 	{
 		if (Component != nullptr)
 		{
 			Component->ReportEventCollision(Event);
-		}
-	}
-
-	void AddBurstEvent(const FParticleEventBurstData& Event) override
-	{
-		if (Component != nullptr)
-		{
-			Component->ReportEventBurst(Event);
-		}
-	}
-
-	void AddGeneratedEvent(const FParticleEventData& Event) override
-	{
-		if (Component != nullptr)
-		{
-			Component->ReportGeneratedEvent(Event);
 		}
 	}
 
@@ -279,11 +247,7 @@ bool UParticleSystemComponent::ParticleLineCheck(
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
-	GeneratedEvents.clear();
-	SpawnEvents.clear();
-	DeathEvents.clear();
 	CollisionEvents.clear();
-	BurstEvents.clear();
 
 	UpdateLODLevel();
 
@@ -309,8 +273,6 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		}
 	}
 
-	ProcessParticleEvents(DeltaTime);
-
 	// Render Data 수집
 	PackRenderData();
 	
@@ -320,7 +282,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 void UParticleSystemComponent::FinalizeTickComponent()
 {
-	if (!SpawnEvents.empty() || !DeathEvents.empty() || !CollisionEvents.empty() || !BurstEvents.empty())
+	if (!CollisionEvents.empty())
 	{
 		AParticleEventManager* DispatchManager = EventManager;
 		if (DispatchManager == nullptr)
@@ -334,119 +296,16 @@ void UParticleSystemComponent::FinalizeTickComponent()
 
 		if (DispatchManager != nullptr)
 		{
-			if (!SpawnEvents.empty()) DispatchManager->HandleParticleSpawnEvents(this, SpawnEvents);
-			if (!DeathEvents.empty()) DispatchManager->HandleParticleDeathEvents(this, DeathEvents);
-			if (!CollisionEvents.empty()) DispatchManager->HandleParticleCollisionEvents(this, CollisionEvents);
-			if (!BurstEvents.empty()) DispatchManager->HandleParticleBurstEvents(this, BurstEvents);
+			DispatchManager->HandleParticleCollisionEvents(this, CollisionEvents);
 		}
 	}
 
-	SpawnEvents.clear();
-	DeathEvents.clear();
 	CollisionEvents.clear();
-	BurstEvents.clear();
-	GeneratedEvents.clear();
-}
-
-void UParticleSystemComponent::ProcessParticleEvents(float DeltaTime)
-{
-	if (GeneratedEvents.empty())
-	{
-		return;
-	}
-
-	// 처리 시작 시 복사한 event만 이번 tick receiver 입력으로 사용
-	// receiver spawn이 새 event를 만들어도 같은 tick 재귀 소비 금지
-	const TArray<FParticleEventData> EventSnapshot = GeneratedEvents;
-	for (FParticleEmitterInstance* Instance : EmitterInstances)
-	{
-		if (Instance != nullptr)
-		{
-			Instance->ProcessParticleEvents(EventSnapshot, DeltaTime);
-		}
-	}
-}
-
-void UParticleSystemComponent::ReportEventSpawn(const FParticleEventSpawnData& Event)
-{
-	SpawnEvents.push_back(Event);
-}
-
-void UParticleSystemComponent::ReportEventDeath(const FParticleEventDeathData& Event)
-{
-	DeathEvents.push_back(Event);
 }
 
 void UParticleSystemComponent::ReportEventCollision(const FParticleEventCollideData& Event)
 {
 	CollisionEvents.push_back(Event);
-}
-
-void UParticleSystemComponent::ReportEventBurst(const FParticleEventBurstData& Event)
-{
-	BurstEvents.push_back(Event);
-}
-
-void UParticleSystemComponent::ReportGeneratedEvent(const FParticleEventData& Event)
-{
-	GeneratedEvents.push_back(Event);
-	ReportGeneratedEventToGame(Event);
-}
-
-void UParticleSystemComponent::ReportGeneratedEventToGame(const FParticleEventData& Event)
-{
-	if (Event.EmitterIndex < 0 ||
-		Event.EmitterIndex >= static_cast<int32>(EmitterInstances.size()))
-	{
-		return;
-	}
-
-	FParticleEmitterInstance* Instance = EmitterInstances[static_cast<size_t>(Event.EmitterIndex)];
-	UParticleModuleEventSendToGame* SendToGame = Instance != nullptr
-		? Instance->FindEventSendToGameModule()
-		: nullptr;
-	if (SendToGame == nullptr || !SendToGame->ShouldSend(Event.Type))
-	{
-		return;
-	}
-
-	// GeneratedEvents는 같은 particle system 안의 receiver 입력
-	// typed queue는 game delegate로 전달할 event만 보관
-	// TODO: Generator entry마다 SendToGame module을 연결하는 asset 계약이 정해지면 이 단일 정책 확장
-	switch (Event.Type)
-	{
-	case EParticleEventType::Spawn:
-	{
-		FParticleEventSpawnData ExternalEvent;
-		static_cast<FParticleEventData&>(ExternalEvent) = Event;
-		ReportEventSpawn(ExternalEvent);
-		break;
-	}
-	case EParticleEventType::Death:
-	{
-		FParticleEventDeathData ExternalEvent;
-		static_cast<FParticleEventData&>(ExternalEvent) = Event;
-		ReportEventDeath(ExternalEvent);
-		break;
-	}
-	case EParticleEventType::Collision:
-	{
-		FParticleEventCollideData ExternalEvent;
-		static_cast<FParticleEventData&>(ExternalEvent) = Event;
-		ReportEventCollision(ExternalEvent);
-		break;
-	}
-	case EParticleEventType::Burst:
-	{
-		FParticleEventBurstData ExternalEvent;
-		static_cast<FParticleEventData&>(ExternalEvent) = Event;
-		ReportEventBurst(ExternalEvent);
-		break;
-	}
-	case EParticleEventType::Any:
-	default:
-		break;
-	}
 }
 
 void UParticleSystemComponent::PackRenderData()

@@ -8,8 +8,6 @@ struct FParticleLODLevelRuntimeCache;
 struct FParticleBurstEntry;
 class IParticleEmitterInstanceOwner;
 class UParticleModule;
-class UParticleModuleEventGenerator;
-class UParticleModuleEventSendToGame;
 class UParticleEmitter;
 class UParticleLODLevel;
 
@@ -103,39 +101,6 @@ public:
 	const uint8* GetModuleInstanceData(UParticleModule* Module) const;
 
 	/**
-	 * @brief 현재 LOD가 선택한 named event generator 조회
-	 */
-	UParticleModuleEventGenerator* FindEventGeneratorModule() const;
-
-	/**
-	 * @brief 현재 LOD가 선택한 external event 전달 정책 조회
-	 */
-	UParticleModuleEventSendToGame* FindEventSendToGameModule() const;
-
-	/**
-	 * @brief generator entry별 발생 횟수와 first-time 상태 조회
-	 */
-	FParticleEventGeneratorRuntimeState& GetEventGeneratorRuntimeState() { return EventGeneratorRuntimeState; }
-
-	/**
-	 * @brief 현재 LOD receiver가 이번 tick internal event snapshot 처리
-	 * @param Events 처리 시작 시 복사한 named event 목록
-	 */
-	void ProcessParticleEvents(const TArray<FParticleEventData>& Events, float DeltaTime);
-
-	/**
-	 * @brief receiver event를 기준으로 particle 강제 spawn
-	 * @param SpawnCount 생성 요청 particle 수
-	 * @param Event 최종 위치와 상속 속도의 기준 event
-	 * @note 일반 spawn module 초기화 뒤 event override 적용
-	 */
-	int32 SpawnParticlesFromEvent(
-		int32 SpawnCount,
-		const FParticleEventData& Event,
-		bool bInheritVelocity,
-		bool bUsePSysLocation);
-
-	/**
 	 * @brief 기존 particle을 새 LOD instance에 복사한 뒤 새 LOD의 module payload를 초기화합니다.
 	 */
 	void InitializeModulePayloads(FBaseParticle& Particle);
@@ -168,11 +133,6 @@ private:
 	bool CanSpawnEmitter() const;
 	void ResetLoopRuntimeState();
 	void ResetBurstFiredState();
-
-	/**
-	 * @brief 현재 Generator entry 배열 기준으로 runtime 판정 상태 초기화
-	 */
-	void ResetEventGeneratorRuntimeState();
 	int32 GetCurrentLODMaxParticles() const;
 	void CompleteEmitterLoop();
 	void TickEmitterSpawn(float DeltaTime);
@@ -183,10 +143,7 @@ private:
 	int32 SpawnParticles(
 		int32 Count,
 		float SegmentStartTime,
-		float SegmentDeltaTime,
-		const FParticleEventData* SpawnEvent = nullptr,
-		bool bInheritVelocity = false,
-		bool bUsePSysLocation = false);
+		float SegmentDeltaTime);
 	void MarkParticlePendingKill(int32 ActiveIndex);
 	void CompactPendingKilledParticles();
 	void AgeParticles(float DeltaTime);
@@ -197,7 +154,6 @@ private:
 
 	IParticleEmitterInstanceOwner& Owner;
 	int32 EmitterIndex = -1;
-	FParticleEventGeneratorRuntimeState EventGeneratorRuntimeState;
 };
 
 class FParticleMeshEmitterInstance : public FParticleEmitterInstance

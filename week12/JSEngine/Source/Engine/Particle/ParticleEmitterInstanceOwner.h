@@ -36,13 +36,5 @@ public:
 		const FVector& StartWS,
 		const FCollisionShape& CollisionShape) = 0;
 
-	virtual void AddSpawnEvent(const FParticleEventSpawnData& Event) = 0;
-	virtual void AddDeathEvent(const FParticleEventDeathData& Event) = 0;
 	virtual void AddCollisionEvent(const FParticleEventCollideData& Event) = 0;
-	virtual void AddBurstEvent(const FParticleEventBurstData& Event) = 0;
-
-	/**
-	 * @brief 같은 PSC 내부 receiver가 읽을 named event 추가
-	 */
-	virtual void AddGeneratedEvent(const FParticleEventData& Event) = 0;
 };
