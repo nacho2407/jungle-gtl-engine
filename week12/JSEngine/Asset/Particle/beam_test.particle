@@ -22,10 +22,10 @@
             "ObjectName" : "UParticleLODLevel_3",
             "Properties" : {
               "Level" : 0,
-              "Modules" : [6, 7],
+              "Modules" : [6, 7, 8],
               "RequiredModule" : 4,
               "SpawnModule" : 5,
-              "TypeDataModule" : 8,
+              "TypeDataModule" : 9,
               "bEnabled" : true,
               "bSolo" : false
             },
@@ -49,7 +49,7 @@
               },
               "Material" : "",
               "MaxEmitterLoops" : 1,
-              "MaxParticles" : 1000,
+              "MaxParticles" : 1,
               "RandomSeed" : 1,
               "SortMode" : 1,
               "bEmitterLoops" : false,
@@ -66,7 +66,7 @@
             "Properties" : {
               "BurstList" : [],
               "RateScale" : 1.000000,
-              "SpawnRate" : 10.000000,
+              "SpawnRate" : 1000.000000,
               "bEnabled" : true,
               "bProcessBurst" : false,
               "bProcessSpawnRate" : true
@@ -88,7 +88,7 @@
                 "Y" : 0.000000,
                 "Z" : 1.000000
               },
-              "SourceTangentStrength" : 10.000000,
+              "SourceTangentStrength" : 1.000000,
               "TangentMode" : 1,
               "bEnabled" : true
             },
@@ -110,24 +110,40 @@
                 "Y" : 0.000000,
                 "Z" : -1.000000
               },
-              "TargetTangentStrength" : 10.000000,
+              "TargetTangentStrength" : 1.000000,
               "bEnabled" : true
             },
             "Type" : "UParticleModuleBeamTarget"
           }, {
             "Id" : 8,
+            "ObjectName" : "UParticleModuleLifetime_10",
+            "Properties" : {
+              "Lifetime" : {
+                "Constant" : 5.000000,
+                "Curve" : "",
+                "Max" : 1.000000,
+                "MaxCurve" : "",
+                "Min" : 1.000000,
+                "MinCurve" : "",
+                "Mode" : 0
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleLifetime"
+          }, {
+            "Id" : 9,
             "ObjectName" : "UParticleModuleTypeDataBeam_0",
             "Properties" : {
               "BeamMethod" : 1,
               "BeamWidth" : 0.100000,
               "Distance" : 100.000000,
               "InterpolationPoints" : 16,
-              "NoiseFrequency" : 0,
-              "NoiseRange" : 0.000000,
+              "NoiseFrequency" : 60,
+              "NoiseRange" : 0.300000,
               "NoiseSeed" : 1337,
-              "NoiseSpeed" : 0.000000,
+              "NoiseSpeed" : 1.800000,
               "bEnabled" : true,
-              "bNoiseEnabled" : false
+              "bNoiseEnabled" : true
             },
             "Type" : "UParticleModuleTypeDataBeam"
           }],

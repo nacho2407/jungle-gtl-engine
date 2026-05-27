@@ -1,7 +1,48 @@
-﻿{
-    "Name": "TestMaterial",
-    "ShaderType" : "SurfaceLit",
-    "Params": [
-        { "Name": "Diffuse", "Type": "FVector4", "Value": [1.0, 1.0, 1.0, 1.0] }
-    ]
-}
+{
+        "BlendMode" : "Translucent",
+        "BlendState" : {
+          "AlphaOp" : "Add",
+          "BlendEnable" : true,
+          "ColorOp" : "Add",
+          "DestAlpha" : "InvSrcAlpha",
+          "DestColor" : "InvSrcAlpha",
+          "SrcAlpha" : "One",
+          "SrcColor" : "SrcAlpha",
+          "WriteMask" : 15
+        },
+        "Name" : "TestMaterial",
+        "Params" : [{
+            "Name" : "AmbientColor",
+            "Type" : "Vector3",
+            "Value" : [0.200000, 0.200000, 0.200000]
+          }, {
+            "Name" : "DiffuseColor",
+            "Type" : "Vector3",
+            "Value" : [0.800000, 0.800000, 0.800000]
+          }, {
+            "Name" : "ScrollUV",
+            "Type" : "Vector2",
+            "Value" : [0.000000, 0.000000]
+          }, {
+            "Name" : "SpecularColor",
+            "Type" : "Vector3",
+            "Value" : [0.000000, 0.000000, 0.000000]
+          }, {
+            "Name" : "EmissiveColor",
+            "Type" : "Vector3",
+            "Value" : [0.000000, 0.000000, 0.000000]
+          }, {
+            "Name" : "Shininess",
+            "Type" : "Float",
+            "Value" : 0.000000
+          }, {
+            "Name" : "Opacity",
+            "Type" : "Float",
+            "Value" : 1.000000
+          }, {
+            "Name" : "Diffuse",
+            "Type" : "Vector4",
+            "Value" : [1.000000, 1.000000, 1.000000, 1.000000]
+          }],
+        "ShaderType" : "Translucent"
+      }

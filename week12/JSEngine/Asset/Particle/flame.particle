@@ -1,0 +1,210 @@
+{
+        "AssetType" : "UParticleSystem",
+        "Format" : "JSEngine.ObjectGraph",
+        "Objects" : [{
+            "Id" : 1,
+            "ObjectName" : "UParticleSystem_0",
+            "Properties" : {
+              "Emitters" : [2],
+              "LODDistances" : [0.000000],
+              "LODHysteresisDistance" : 50.000000
+            },
+            "Type" : "UParticleSystem"
+          }, {
+            "Id" : 2,
+            "ObjectName" : "UParticleEmitter_1",
+            "Properties" : {
+              "LODLevels" : [3]
+            },
+            "Type" : "UParticleEmitter"
+          }, {
+            "Id" : 3,
+            "ObjectName" : "UParticleLODLevel_1",
+            "Properties" : {
+              "Level" : 0,
+              "Modules" : [6, 7, 8, 9, 10],
+              "RequiredModule" : 4,
+              "SpawnModule" : 5,
+              "TypeDataModule" : 11,
+              "bEnabled" : true,
+              "bSolo" : false
+            },
+            "Type" : "UParticleLODLevel"
+          }, {
+            "Id" : 4,
+            "ObjectName" : "UParticleModuleRequired_1",
+            "Properties" : {
+              "BoundsScale" : 1.000000,
+              "CoordinateSpace" : 1,
+              "EmitterDuration" : 5.000000,
+              "FixedBoundsMax" : {
+                "X" : 100.000000,
+                "Y" : 100.000000,
+                "Z" : 100.000000
+              },
+              "FixedBoundsMin" : {
+                "X" : -100.000000,
+                "Y" : -100.000000,
+                "Z" : -100.000000
+              },
+              "Material" : "Asset/Material/AdditiveFlame.mat",
+              "MaxEmitterLoops" : 1,
+              "MaxParticles" : 10000,
+              "RandomSeed" : 1,
+              "SortMode" : 1,
+              "bEmitterLoops" : false,
+              "bEnabled" : true,
+              "bInfiniteEmitterLoops" : true,
+              "bResetSeedOnEmitterLoop" : true,
+              "bUseFixedBounds" : true,
+              "bUseSeededRandom" : false
+            },
+            "Type" : "UParticleModuleRequired"
+          }, {
+            "Id" : 5,
+            "ObjectName" : "UParticleModuleSpawn_1",
+            "Properties" : {
+              "BurstList" : [],
+              "RateScale" : 1.000000,
+              "SpawnRate" : 100.000000,
+              "bEnabled" : true,
+              "bProcessBurst" : false,
+              "bProcessSpawnRate" : true
+            },
+            "Type" : "UParticleModuleSpawn"
+          }, {
+            "Id" : 6,
+            "ObjectName" : "UParticleModuleLifetime_0",
+            "Properties" : {
+              "Lifetime" : {
+                "Constant" : 1.000000,
+                "Curve" : "",
+                "Max" : 0.300000,
+                "MaxCurve" : "",
+                "Min" : 0.100000,
+                "MinCurve" : "",
+                "Mode" : 1
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleLifetime"
+          }, {
+            "Id" : 7,
+            "ObjectName" : "UParticleModuleLocation_0",
+            "Properties" : {
+              "StartLocation" : {
+                "Constant" : {
+                  "X" : 1.000000,
+                  "Y" : 1.000000,
+                  "Z" : 1.000000
+                },
+                "Curve" : "",
+                "Max" : {
+                  "X" : 0.100000,
+                  "Y" : 0.100000,
+                  "Z" : 0.100000
+                },
+                "MaxCurve" : "",
+                "Min" : {
+                  "X" : -0.100000,
+                  "Y" : -0.100000,
+                  "Z" : -0.100000
+                },
+                "MinCurve" : "",
+                "Mode" : 1,
+                "VectorMode" : 0
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleLocation"
+          }, {
+            "Id" : 8,
+            "ObjectName" : "UParticleModuleSize_0",
+            "Properties" : {
+              "StartSize" : {
+                "Constant" : {
+                  "X" : 1.000000,
+                  "Y" : 1.000000,
+                  "Z" : 1.000000
+                },
+                "Curve" : "",
+                "Max" : {
+                  "X" : 1.000000,
+                  "Y" : 1.000000,
+                  "Z" : 1.000000
+                },
+                "MaxCurve" : "",
+                "Min" : {
+                  "X" : 0.600000,
+                  "Y" : 0.600000,
+                  "Z" : 0.600000
+                },
+                "MinCurve" : "",
+                "Mode" : 1,
+                "VectorMode" : 0
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleSize"
+          }, {
+            "Id" : 9,
+            "ObjectName" : "UParticleModuleSubUV_0",
+            "Properties" : {
+              "Columns" : 7,
+              "InterpMethod" : 0,
+              "Rows" : 7,
+              "SubImageIndex" : {
+                "Constant" : 0.000000,
+                "Curve" : "",
+                "Max" : 0.000000,
+                "MaxCurve" : "",
+                "Min" : 0.000000,
+                "MinCurve" : "",
+                "Mode" : 0
+              },
+              "bEnabled" : true,
+              "bUseRealFrameTime" : false
+            },
+            "Type" : "UParticleModuleSubUV"
+          }, {
+            "Id" : 10,
+            "ObjectName" : "UParticleModuleColorOverLife_1",
+            "Properties" : {
+              "ColorOverLife" : {
+                "Constant" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "Curve" : "",
+                "Max" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "MaxCurve" : "Assets/Curves/Particle/flame_ColorOverLife_Color_Over_Life_MaxCurve.curve",
+                "Min" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "MinCurve" : "Assets/Curves/Particle/flame_ColorOverLife_Color_Over_Life_MinCurve.curve",
+                "Mode" : 3
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleColorOverLife"
+          }, {
+            "Id" : 11,
+            "ObjectName" : "UParticleModuleTypeDataBase_1",
+            "Properties" : {
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleTypeDataBase"
+          }],
+        "RootObjectId" : 1,
+        "Version" : 2
+      }

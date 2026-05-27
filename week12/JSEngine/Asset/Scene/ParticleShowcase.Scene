@@ -409,7 +409,7 @@
           "ObjectName" : "UParticleSystemComponent_1",
           "PersistentGuid" : "F57CF4F8-6AB64738-9CFF1EBC-E746B5BC",
           "RelativeLocation" : {
-            "X" : -84.916641,
+            "X" : -88.391884,
             "Y" : -20.515768,
             "Z" : 6.612343
           },
@@ -419,9 +419,9 @@
             "Z" : -0.000000
           },
           "RelativeScale3D" : {
-            "X" : 0.300000,
-            "Y" : 0.300000,
-            "Z" : 0.300000
+            "X" : 0.200000,
+            "Y" : 0.200000,
+            "Z" : 0.200000
           },
           "Tags" : [],
           "Template" : "Asset/Particle/test.particle",
@@ -438,7 +438,7 @@
           "bTransient" : false
         }],
       "EditorOnly" : true,
-      "Name" : "AParticleSystemActor_0",
+      "Name" : "SpriteParticleDemo",
       "RootComponent" : 604,
       "Tags" : [],
       "UUID" : 603,
@@ -453,18 +453,18 @@
           "ObjectName" : "UStaticMeshComponent_1",
           "PersistentGuid" : "9E5B26C9-6EB84635-A3149870-03E1763E",
           "RelativeLocation" : {
-            "X" : -35.598492,
-            "Y" : -21.347506,
+            "X" : 23.094006,
+            "Y" : -19.781721,
             "Z" : 4.348756
           },
           "RelativeRotation" : {
-            "X" : 0.000000,
+            "X" : -0.000000,
             "Y" : 0.000000,
             "Z" : -83.663483
           },
           "RelativeScale3D" : {
-            "X" : 5.000000,
-            "Y" : 5.000000,
+            "X" : 5.000006,
+            "Y" : 5.000006,
             "Z" : 5.000000
           },
           "ScrollU" : 0.000000,
@@ -499,8 +499,8 @@
           "ObjectName" : "UParticleSystemComponent_1",
           "PersistentGuid" : "30290CCE-3FDE4457-AE865179-31BE5197",
           "RelativeLocation" : {
-            "X" : -33.500679,
-            "Y" : -20.219889,
+            "X" : 25.191818,
+            "Y" : -18.654104,
             "Z" : 4.605413
           },
           "RelativeRotation" : {
@@ -543,8 +543,8 @@
           "ObjectName" : "UParticleSystemComponent_1",
           "PersistentGuid" : "D5D803F8-E6BA4FCB-BCF4AE7C-F9D8CD34",
           "RelativeLocation" : {
-            "X" : -33.131264,
-            "Y" : -22.107691,
+            "X" : 25.561234,
+            "Y" : -20.541906,
             "Z" : 4.667648
           },
           "RelativeRotation" : {
@@ -587,8 +587,8 @@
           "ObjectName" : "UStaticMeshComponent_1",
           "PersistentGuid" : "117721E1-E1DF4744-93D9A00E-852D2854",
           "RelativeLocation" : {
-            "X" : -22.231369,
-            "Y" : -21.097506,
+            "X" : 36.461128,
+            "Y" : -19.531721,
             "Z" : 3.580751
           },
           "RelativeRotation" : {
@@ -633,8 +633,8 @@
           "ObjectName" : "UParticleSystemComponent_1",
           "PersistentGuid" : "3AC5B30B-879C4153-914893F4-64760664",
           "RelativeLocation" : {
-            "X" : -23.493210,
-            "Y" : -21.817083,
+            "X" : 35.199287,
+            "Y" : -20.251299,
             "Z" : 3.987031
           },
           "RelativeRotation" : {
@@ -662,7 +662,7 @@
           "bTransient" : false
         }],
       "EditorOnly" : true,
-      "Name" : "AParticleSystemActor_4",
+      "Name" : "ThunderHit",
       "RootComponent" : 1063,
       "Tags" : [],
       "UUID" : 1062,
@@ -674,11 +674,11 @@
           "AnimGraphAssetPath" : "",
           "AnimInstanceData" : {
             "AnimationAssetPath" : "Asset/Animation/Ybot_Flair_mixamo.com.animseq",
-            "CurrentTime" : 0.484748,
+            "CurrentTime" : 0.185002,
             "ObjectName" : "UAnimSingleNodeInstance_1",
             "PlayRate" : 1.000000,
             "Playing" : true,
-            "PreviousTime" : 0.480484,
+            "PreviousTime" : 0.179549,
             "Type" : "UAnimSingleNodeInstance",
             "bAutoPlay" : true,
             "bLooping" : true
@@ -691,8 +691,8 @@
           "ObjectName" : "USkeletalMeshComponent_1",
           "PersistentGuid" : "C09BC649-3BDA432A-90145556-48691600",
           "RelativeLocation" : {
-            "X" : 0.975008,
-            "Y" : -21.875137,
+            "X" : 85.805107,
+            "Y" : -19.111490,
             "Z" : 2.539906
           },
           "RelativeRotation" : {
@@ -744,7 +744,7 @@
             "Z" : 1.000000
           },
           "Tags" : [],
-          "Template" : "Asset/Particle/mini.particle",
+          "Template" : "Asset/Particle/flame.particle",
           "Type" : "UParticleSystemComponent",
           "UUID" : 1227,
           "bAutoActivate" : true,
@@ -779,9 +779,79 @@
             "Z" : 1.000000
           },
           "Tags" : [],
-          "Template" : "Asset/Particle/mini.particle",
+          "Template" : "Asset/Particle/flame.particle",
           "Type" : "UParticleSystemComponent",
           "UUID" : 1228,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : false,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }, {
+          "AttachSocketName" : "LeftFoot",
+          "ClassName" : "UParticleSystemComponent",
+          "InstanceParameters" : [],
+          "ObjectName" : "Trail_LeftFoot",
+          "ParentUUID" : 1225,
+          "PersistentGuid" : "A080CA35-3A1D40CF-A8109043-B634F6D2",
+          "RelativeLocation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeRotation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 1.000000,
+            "Y" : 1.000000,
+            "Z" : 1.000000
+          },
+          "Tags" : [],
+          "Template" : "Asset/Particle/DefaultTrail.particle",
+          "Type" : "UParticleSystemComponent",
+          "UUID" : 1422,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : false,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }, {
+          "AttachSocketName" : "RightFoot",
+          "ClassName" : "UParticleSystemComponent",
+          "InstanceParameters" : [],
+          "ObjectName" : "Trail_RightFoot",
+          "ParentUUID" : 1225,
+          "PersistentGuid" : "44205BCE-24A944F6-AB31EDEA-75265B7E",
+          "RelativeLocation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeRotation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 1.000000,
+            "Y" : 1.000000,
+            "Z" : 1.000000
+          },
+          "Tags" : [],
+          "Template" : "Asset/Particle/DefaultTrail.particle",
+          "Type" : "UParticleSystemComponent",
+          "UUID" : 1458,
           "bAutoActivate" : true,
           "bCanEverTick" : true,
           "bCastDecal" : true,
@@ -798,16 +868,393 @@
       "Tags" : [],
       "UUID" : 1224,
       "Visible" : true
+    }, {
+      "Active" : true,
+      "ClassName" : "AParticleSystemActor",
+      "Components" : [{
+          "AttachSocketName" : "Name_None",
+          "ClassName" : "UParticleSystemComponent",
+          "InstanceParameters" : [],
+          "ObjectName" : "UParticleSystemComponent_1",
+          "PersistentGuid" : "60886524-FCA64CD7-BF723A02-E53F27CA",
+          "RelativeLocation" : {
+            "X" : -56.394409,
+            "Y" : -20.265768,
+            "Z" : 6.612343
+          },
+          "RelativeRotation" : {
+            "X" : -0.000000,
+            "Y" : 0.000000,
+            "Z" : -0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 0.300000,
+            "Y" : 0.300000,
+            "Z" : 0.300000
+          },
+          "Tags" : [],
+          "Template" : "Asset/Particle/mesh.particle",
+          "Type" : "UParticleSystemComponent",
+          "UUID" : 2633,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : false,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }],
+      "EditorOnly" : true,
+      "Name" : "MeshParticleDemo",
+      "RootComponent" : 2633,
+      "Tags" : [],
+      "UUID" : 2632,
+      "Visible" : true
+    }, {
+      "Active" : true,
+      "ClassName" : "AParticleSystemActor",
+      "Components" : [{
+          "AttachSocketName" : "Name_None",
+          "ClassName" : "UParticleSystemComponent",
+          "InstanceParameters" : [],
+          "ObjectName" : "UParticleSystemComponent_1",
+          "PersistentGuid" : "F7FAA271-7AE4441D-B36FB54C-DD0ECB86",
+          "RelativeLocation" : {
+            "X" : -31.955072,
+            "Y" : -20.015768,
+            "Z" : 3.925173
+          },
+          "RelativeRotation" : {
+            "X" : -0.000000,
+            "Y" : 0.000000,
+            "Z" : -0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 0.100000,
+            "Y" : 0.100000,
+            "Z" : 0.100000
+          },
+          "Tags" : [],
+          "Template" : "Asset/Particle/beam_test.particle",
+          "Type" : "UParticleSystemComponent",
+          "UUID" : 2635,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : false,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }],
+      "EditorOnly" : true,
+      "Name" : "BeamParticleDemo",
+      "RootComponent" : 2635,
+      "Tags" : [],
+      "UUID" : 2634,
+      "Visible" : true
+    }, {
+      "Active" : true,
+      "ClassName" : "AParticleSystemActor",
+      "Components" : [{
+          "AttachSocketName" : "Name_None",
+          "ClassName" : "UParticleSystemComponent",
+          "InstanceParameters" : [],
+          "ObjectName" : "UParticleSystemComponent_1",
+          "PersistentGuid" : "1A275DA5-9AD84C42-AD7765C2-B6527F33",
+          "RelativeLocation" : {
+            "X" : 1.405051,
+            "Y" : -21.391876,
+            "Z" : 5.905012
+          },
+          "RelativeRotation" : {
+            "X" : -59.366333,
+            "Y" : -39.250854,
+            "Z" : 133.105209
+          },
+          "RelativeScale3D" : {
+            "X" : 0.100000,
+            "Y" : 0.100004,
+            "Z" : 0.100004
+          },
+          "Tags" : [],
+          "Template" : "Asset/Particle/ribbon2.particle",
+          "Type" : "UParticleSystemComponent",
+          "UUID" : 2656,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : false,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "ObjectName" : "URotatingMovementComponent_1",
+          "PersistentGuid" : "B38B0F21-C1F84143-A5150D5C-D09DC9A1",
+          "PivotTranslation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 3.000000
+          },
+          "PlaneConstraintNormal" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 1.000000
+          },
+          "RotationRate" : {
+            "X" : 0.000000,
+            "Y" : 90.000000,
+            "Z" : 0.000000
+          },
+          "Tags" : [],
+          "Type" : "URotatingMovementComponent",
+          "UUID" : 2682,
+          "Velocity" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bConstrainToPlane" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bRotationInLocalSpace" : true,
+          "bTransient" : false,
+          "bUpdateOnlyIfRendered" : false
+        }],
+      "EditorOnly" : true,
+      "Name" : "TrailParticleDemo",
+      "RootComponent" : 2656,
+      "Tags" : [],
+      "UUID" : 2655,
+      "Visible" : true
+    }, {
+      "Active" : true,
+      "ClassName" : "AParticleSystemActor",
+      "Components" : [{
+          "AttachSocketName" : "Name_None",
+          "ClassName" : "UParticleSystemComponent",
+          "InstanceParameters" : [],
+          "ObjectName" : "UParticleSystemComponent_1",
+          "PersistentGuid" : "FE670420-F0D348C4-8B8DD98B-0CFCBBED",
+          "RelativeLocation" : {
+            "X" : 57.306217,
+            "Y" : -19.765768,
+            "Z" : 3.925173
+          },
+          "RelativeRotation" : {
+            "X" : -0.000000,
+            "Y" : 0.000000,
+            "Z" : -0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 1.000000,
+            "Y" : 1.000000,
+            "Z" : 1.000000
+          },
+          "Tags" : [],
+          "Template" : "Asset/Particle/Rain.particle",
+          "Type" : "UParticleSystemComponent",
+          "UUID" : 2719,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : false,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }],
+      "EditorOnly" : true,
+      "Name" : "RainParticleDemo",
+      "RootComponent" : 2719,
+      "Tags" : [],
+      "UUID" : 2718,
+      "Visible" : true
+    }, {
+      "Active" : true,
+      "ClassName" : "ASceneActor",
+      "Components" : [{
+          "AttachSocketName" : "Name_None",
+          "ClassName" : "USceneComponent",
+          "ObjectName" : "USceneComponent_1",
+          "PersistentGuid" : "A4A08652-D5B8428D-B4952190-2677C827",
+          "RelativeLocation" : {
+            "X" : 58.393230,
+            "Y" : -30.010948,
+            "Z" : 0.000000
+          },
+          "RelativeRotation" : {
+            "X" : -0.000000,
+            "Y" : 0.000000,
+            "Z" : -0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 1.000000,
+            "Y" : 1.000000,
+            "Z" : 1.000000
+          },
+          "Tags" : [],
+          "Type" : "USceneComponent",
+          "UUID" : 3195,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bTransient" : false
+        }, {
+          "AttachSocketName" : "Name_None",
+          "ClassName" : "UBillboardComponent",
+          "Height" : 1.000000,
+          "ObjectName" : "UBillboardComponent_1",
+          "ParentUUID" : 3195,
+          "PersistentGuid" : "9CB2C396-037E465C-91EB5DD0-926933A0",
+          "PlayRate" : 30.000000,
+          "RelativeLocation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeRotation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 1.000000,
+            "Y" : 1.000000,
+            "Z" : 1.000000
+          },
+          "Tags" : [],
+          "TextureName" : "Resources/Editor/Icons/EmptyActor.png",
+          "Type" : "UBillboardComponent",
+          "UUID" : 3196,
+          "Width" : 1.000000,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : true,
+          "bGenerateOverlapEvents" : false,
+          "bInheritOwnerScale" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : true,
+          "bIsVisible" : true,
+          "bLoop" : true,
+          "bTransient" : false
+        }, {
+          "AttachSocketName" : "Name_None",
+          "ClassName" : "UBoxComponent",
+          "Extent" : {
+            "X" : 20.000000,
+            "Y" : 20.000000,
+            "Z" : 1.000000
+          },
+          "ObjectName" : "UBoxComponent_1",
+          "ParentUUID" : 3195,
+          "PersistentGuid" : "43B8C3D1-436B46FA-B4B3D878-C877C355",
+          "RelativeLocation" : {
+            "X" : -2.398998,
+            "Y" : 9.878706,
+            "Z" : 2.095756
+          },
+          "RelativeRotation" : {
+            "X" : -0.000000,
+            "Y" : 0.000000,
+            "Z" : -0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 1.000000,
+            "Y" : 1.000000,
+            "Z" : 1.000000
+          },
+          "ShapeColor" : {
+            "A" : 1.000000,
+            "B" : 0.000000,
+            "G" : 0.000000,
+            "R" : 0.000000
+          },
+          "Tags" : [],
+          "Type" : "UBoxComponent",
+          "UUID" : 3198,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bDrawOnlyIfSelected" : false,
+          "bEnableCull" : true,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }],
+      "EditorOnly" : false,
+      "Name" : "ASceneActor_0",
+      "RootComponent" : 3195,
+      "Tags" : [],
+      "UUID" : 3194,
+      "Visible" : true
+    }, {
+      "Active" : true,
+      "ClassName" : "AParticleSystemActor",
+      "Components" : [{
+          "AttachSocketName" : "Name_None",
+          "ClassName" : "UParticleSystemComponent",
+          "InstanceParameters" : [],
+          "ObjectName" : "UParticleSystemComponent_1",
+          "PersistentGuid" : "48F7850C-065945FA-9F3571FC-B03B7CF2",
+          "RelativeLocation" : {
+            "X" : -82.027916,
+            "Y" : -20.265768,
+            "Z" : 6.612343
+          },
+          "RelativeRotation" : {
+            "X" : -0.000000,
+            "Y" : 0.000000,
+            "Z" : -0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 1.000000,
+            "Y" : 1.000000,
+            "Z" : 1.000000
+          },
+          "Tags" : [],
+          "Template" : "Asset/Particle/Boom.particle",
+          "Type" : "UParticleSystemComponent",
+          "UUID" : 3266,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : false,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }],
+      "EditorOnly" : true,
+      "Name" : "Explosive Demo",
+      "RootComponent" : 3266,
+      "Tags" : [],
+      "UUID" : 3265,
+      "Visible" : true
     }],
   "ClassName" : "UWorld",
   "Name" : "ParticleShowcase",
-  "NextUUID" : 1275,
+  "NextUUID" : 4070,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [-0.578057, -4.314939, 11.412368],
+    "Location" : [-91.667938, 3.758837, 10.147318],
     "NearClip" : 0.100000,
-    "Rotation" : [17.654552, 2.843169, -81.141663]
+    "Rotation" : [9.692782, 0.600297, -86.489899]
   },
   "Version" : 6,
   "WorldSettings" : {

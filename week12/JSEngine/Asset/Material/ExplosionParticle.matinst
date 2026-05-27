@@ -6,6 +6,6 @@
             "Type" : "Texture",
             "Value" : "Asset/SubUV/Explosion.dds"
           }],
-        "Parent" : "Asset/Material/DecalMat.mat",
+        "Parent" : "Asset/Material/AdditiveParticle.mat",
         "ShaderType" : "SurfaceLit"
       }

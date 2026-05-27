@@ -1,5 +1,5 @@
 {
-    "Name": "ParticleTest",
+    "Name": "AdditiveParticle",
     "ShaderType": "None",
     "BlendMode": "Translucent",
     "BlendState": {
