@@ -6,7 +6,7 @@
     "Parameters" : {
 
     },
-    "ReceiveLighting" : true,
+    "ReceiveLighting" : "true",
     "Textures" : {
       "DiffuseTexture" : {
         "Path" : "Content/Data/skull-coin/textures/UV_mapping_Coin.png",
@@ -151,7 +151,7 @@
   "MaterialGuid" : "DD233DA453A759A600000623DB3018D0",
   "PathFileName" : "Content/Material/Material_Emitter0_5.mat",
   "RasterizerState" : "SolidBack",
-  "ReceiveLighting" : true,
+  "ReceiveLighting" : "true",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Generated/Materials/DD233DA453A759A600000623DB3018D0_ParticleMesh.hlsl",
   "Version" : 2
