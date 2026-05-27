@@ -1,0 +1,21 @@
+{
+  "BlendState" : "",
+  "DepthStencilState" : "",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
+  "Origin" : "FbxImport",
+  "Parameters" : {
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "_pad" : [0.000000, 0.000000, 0.000000]
+  },
+  "PathFileName" : "Content/Material/Auto/Material__131.mat",
+  "RasterizerState" : "",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "ShadowMode" : "Opaque",
+  "Textures" : {
+    "DiffuseTexture" : "Content/Texture/Auto/sonic/sonic_body_texture_by_tomothys_d5hhp2h-pre.jpg"
+  },
+  "bEnableBloom" : false
+}

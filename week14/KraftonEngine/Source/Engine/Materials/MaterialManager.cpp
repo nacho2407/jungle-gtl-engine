@@ -246,6 +246,7 @@ UMaterialInstance* FMaterialManager::GetOrCreateMaterialInstance(const FString& 
 
 	ApplyParameters(MaterialInstance, JsonData);
 	ApplyTextures(MaterialInstance, JsonData);
+	ApplyBloomOverrides(MaterialInstance, JsonData);
 
 	return MaterialInstance;
 }
@@ -403,6 +404,43 @@ void FMaterialManager::ApplyTextures(UMaterialInterface* Material, json::JSON& J
 			Material->SetTextureParameter(SlotName, Texture);
 		}
 	}
+}
+
+void FMaterialManager::ApplyBloomOverrides(UMaterialInstance* MaterialInstance, json::JSON& JsonData)
+{
+	if (!MaterialInstance)
+	{
+		return;
+	}
+
+	const bool bOverrideColor = JsonData.hasKey(MatKeys::bOverrideEmissiveColor)
+		&& ReadJsonBool(JsonData[MatKeys::bOverrideEmissiveColor], false);
+	const bool bOverrideIntensity = JsonData.hasKey(MatKeys::bOverrideEmissiveIntensity)
+		&& ReadJsonBool(JsonData[MatKeys::bOverrideEmissiveIntensity], false);
+	const bool bOverrideBloom = JsonData.hasKey(MatKeys::bOverrideEnableBloom)
+		&& ReadJsonBool(JsonData[MatKeys::bOverrideEnableBloom], false);
+
+	FVector4 EmissiveColor = MaterialInstance->GetEmissiveColor();
+	if (JsonData.hasKey(MatKeys::EmissiveColor))
+	{
+		EmissiveColor = ReadJsonVector4(JsonData[MatKeys::EmissiveColor], EmissiveColor);
+	}
+
+	float EmissiveIntensity = MaterialInstance->GetEmissiveIntensity();
+	if (JsonData.hasKey(MatKeys::EmissiveIntensity))
+	{
+		EmissiveIntensity = ReadJsonNumber(JsonData[MatKeys::EmissiveIntensity], EmissiveIntensity);
+	}
+
+	bool bEnableBloom = MaterialInstance->IsBloomEnabled();
+	if (JsonData.hasKey(MatKeys::bEnableBloom))
+	{
+		bEnableBloom = ReadJsonBool(JsonData[MatKeys::bEnableBloom], bEnableBloom);
+	}
+
+	MaterialInstance->SetEmissiveColorOverride(bOverrideColor, EmissiveColor);
+	MaterialInstance->SetEmissiveIntensityOverride(bOverrideIntensity, EmissiveIntensity);
+	MaterialInstance->SetBloomEnabledOverride(bOverrideBloom, bEnableBloom);
 }
 
 
@@ -683,6 +721,10 @@ void FMaterialManager::Release()
 	}
 	TransientMaterialRegistry.clear();
 
+	for (auto& [Key, MatInst] : MaterialInstanceCache)
+	{
+		if (MatInst) MatInst->ReleaseGPUBuffers();
+	}
 	MaterialInstanceCache.clear();
 
 	// 3. Device 참조 해제

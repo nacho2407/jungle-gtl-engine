@@ -292,6 +292,8 @@ void FMaterialEditorWidget::RenderDetailsPanel(UMaterialInterface* Material)
 				EditorEngine->OpenAssetEditorForObject(Parent);
 			}
 		}
+
+		RenderBloomOverrides(Instance);
 	}
 
 	ImGui::SeparatorText("Shader Parameters");
@@ -346,6 +348,86 @@ void FMaterialEditorWidget::RenderMaterialSettings(UMaterial* Material)
 		}
 
 		ImGui::EndTable();
+	}
+}
+
+void FMaterialEditorWidget::RenderBloomOverrides(UMaterialInstance* Instance)
+{
+	if (!Instance)
+	{
+		return;
+	}
+
+	ImGui::SeparatorText("Bloom Overrides");
+
+	bool bAnyChanged = false;
+
+	bool bOverrideColor = Instance->HasEmissiveColorOverride();
+	FVector4 EmissiveColor = Instance->GetEmissiveColor();
+	if (ImGui::Checkbox("Override Emissive Color", &bOverrideColor))
+	{
+		Instance->SetEmissiveColorOverride(bOverrideColor, EmissiveColor);
+		CachedJson[MatKeys::bOverrideEmissiveColor] = bOverrideColor;
+		CachedJson[MatKeys::EmissiveColor] = json::Array(EmissiveColor.X, EmissiveColor.Y, EmissiveColor.Z, EmissiveColor.W);
+		bAnyChanged = true;
+	}
+	ImGui::BeginDisabled(!bOverrideColor);
+	if (ImGui::ColorEdit4("Emissive Color", &EmissiveColor.X))
+	{
+		Instance->SetEmissiveColorOverride(true, EmissiveColor);
+		CachedJson[MatKeys::bOverrideEmissiveColor] = true;
+		CachedJson[MatKeys::EmissiveColor] = json::Array(EmissiveColor.X, EmissiveColor.Y, EmissiveColor.Z, EmissiveColor.W);
+		bAnyChanged = true;
+	}
+	ImGui::EndDisabled();
+
+	bool bOverrideIntensity = Instance->HasEmissiveIntensityOverride();
+	float EmissiveIntensity = Instance->GetEmissiveIntensity();
+	if (ImGui::Checkbox("Override Emissive Intensity", &bOverrideIntensity))
+	{
+		Instance->SetEmissiveIntensityOverride(bOverrideIntensity, EmissiveIntensity);
+		CachedJson[MatKeys::bOverrideEmissiveIntensity] = bOverrideIntensity;
+		CachedJson[MatKeys::EmissiveIntensity] = EmissiveIntensity;
+		bAnyChanged = true;
+	}
+	ImGui::BeginDisabled(!bOverrideIntensity);
+	if (ImGui::DragFloat("Emissive Intensity", &EmissiveIntensity, 0.05f, 0.0f, 100.0f))
+	{
+		Instance->SetEmissiveIntensityOverride(true, EmissiveIntensity);
+		CachedJson[MatKeys::bOverrideEmissiveIntensity] = true;
+		CachedJson[MatKeys::EmissiveIntensity] = EmissiveIntensity;
+		bAnyChanged = true;
+	}
+	ImGui::EndDisabled();
+
+	bool bOverrideBloom = Instance->HasBloomEnabledOverride();
+	bool bEnableBloom = Instance->IsBloomEnabled();
+	if (ImGui::Checkbox("Override Enable Bloom", &bOverrideBloom))
+	{
+		Instance->SetBloomEnabledOverride(bOverrideBloom, bEnableBloom);
+		CachedJson[MatKeys::bOverrideEnableBloom] = bOverrideBloom;
+		CachedJson[MatKeys::bEnableBloom] = bEnableBloom;
+		bAnyChanged = true;
+	}
+	ImGui::BeginDisabled(!bOverrideBloom);
+	if (ImGui::Checkbox("Enable Bloom", &bEnableBloom))
+	{
+		Instance->SetBloomEnabledOverride(true, bEnableBloom);
+		CachedJson[MatKeys::bOverrideEnableBloom] = true;
+		CachedJson[MatKeys::bEnableBloom] = bEnableBloom;
+		bAnyChanged = true;
+	}
+	ImGui::EndDisabled();
+
+	if (bAnyChanged)
+	{
+		MarkDirty();
+		SaveMaterialJson();
+
+		if (PreviewMeshComponent)
+		{
+			PreviewMeshComponent->SetMaterial(0, Instance);
+		}
 	}
 }
 
@@ -674,6 +756,9 @@ void FMaterialEditorWidget::CreateMaterialInstanceAsset(UMaterial* ParentMateria
 	JsonData[MatKeys::ParentMaterial] = ParentMaterial->GetAssetPathFileName().c_str();
 	JsonData[MatKeys::Parameters] = json::JSON::Make(json::JSON::Class::Object);
 	JsonData[MatKeys::Textures] = json::JSON::Make(json::JSON::Class::Object);
+	JsonData[MatKeys::bOverrideEmissiveColor] = false;
+	JsonData[MatKeys::bOverrideEmissiveIntensity] = false;
+	JsonData[MatKeys::bOverrideEnableBloom] = false;
 
 	std::ofstream File(InstancePath);
 	if (!File.is_open()) return;

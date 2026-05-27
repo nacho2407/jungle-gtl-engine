@@ -33,6 +33,7 @@
             "Responses[4]" : 2
           },
           "StaticMeshPath" : "Content/Data/Map/de_dust2-cs-map/source/de_dust2/de_dust2_StaticMesh.uasset",
+          "TranslucentSortPriority" : 0,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
@@ -79,6 +80,7 @@
                 "Responses[3]" : 2,
                 "Responses[4]" : 2
               },
+              "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
@@ -112,6 +114,7 @@
                 "Responses[3]" : 2,
                 "Responses[4]" : 2
               },
+              "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
@@ -145,6 +148,7 @@
                 "Responses[3]" : 2,
                 "Responses[4]" : 2
               },
+              "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
@@ -178,6 +182,7 @@
                 "Responses[3]" : 2,
                 "Responses[4]" : 2
               },
+              "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
@@ -211,6 +216,41 @@
                 "Responses[3]" : 2,
                 "Responses[4]" : 2
               },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "ObjectId" : 11,
+            "Properties" : {
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
+              "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2
+              },
+              "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
@@ -251,7 +291,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 11,
+      "ObjectId" : 12,
       "Properties" : {
         "PendingActorLocation" : [57.616024, 145.178055, 10.294243],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -263,7 +303,7 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 12,
+        "ObjectId" : 13,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
           "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
@@ -281,6 +321,7 @@
             "Responses[4]" : 2
           },
           "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "TranslucentSortPriority" : 0,
           "bAutoActivate" : true,
           "bCastShadow" : false,
           "bCastShadowAsTwoSided" : false,
@@ -299,7 +340,7 @@
       "Name" : "ALuaCharacter_1",
       "NonSceneComponents" : [{
           "ClassName" : "UCharacterMovementComponent",
-          "ObjectId" : 18,
+          "ObjectId" : 19,
           "Properties" : {
             "BrakingFriction" : 8.000000,
             "FloorProbeDistance" : 0.100000,
@@ -309,7 +350,7 @@
             "MaxWalkSpeed" : 6.000000,
             "RotationYawRate" : 540.000000,
             "UpdatedComponent" : {
-              "ObjectId" : 14
+              "ObjectId" : 15
             },
             "bAutoActivate" : true,
             "bAutoRegisterUpdatedComponent" : false,
@@ -321,9 +362,9 @@
           }
         }, {
           "ClassName" : "ULuaScriptComponent",
-          "ObjectId" : 19,
+          "ObjectId" : 20,
           "Properties" : {
-            "ScriptFile" : "",
+            "ScriptFile" : "ULevel_2_ALuaCharacter_1.lua",
             "bAutoActivate" : true,
             "bEditorOnly" : false,
             "bHiddenInComponentTree" : false,
@@ -331,7 +372,7 @@
             "bTickEnable" : true
           }
         }],
-      "ObjectId" : 13,
+      "ObjectId" : 14,
       "Properties" : {
         "PendingActorLocation" : [49.995056, 151.197296, 16.067257],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -348,7 +389,7 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "USkeletalMeshComponent",
-            "ObjectId" : 15,
+            "ObjectId" : 16,
             "Properties" : {
               "AnimInstance" : {
                 "ClassName" : "ULuaAnimInstance",
@@ -381,6 +422,7 @@
                 "Responses[4]" : 2
               },
               "SkeletalMeshPath" : "Content/Data/hirasawa-yui/IdleWithSkin_SkeletalMesh.uasset",
+              "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
@@ -396,7 +438,7 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UCameraComponent",
-                "ObjectId" : 17,
+                "ObjectId" : 18,
                 "Properties" : {
                   "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
                   "CameraState.FOV" : 1.047198,
@@ -414,7 +456,7 @@
                 }
               }],
             "ClassName" : "USpringArmComponent",
-            "ObjectId" : 16,
+            "ObjectId" : 17,
             "Properties" : {
               "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CameraLagMaxDistance" : 0.000000,
@@ -438,7 +480,7 @@
             }
           }],
         "ClassName" : "UCapsuleComponent",
-        "ObjectId" : 14,
+        "ObjectId" : 15,
         "Properties" : {
           "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
           "CapsuleHalfHeight" : 3.000000,
@@ -457,6 +499,7 @@
             "Responses[4]" : 2
           },
           "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "TranslucentSortPriority" : 0,
           "bAutoActivate" : true,
           "bCastShadow" : false,
           "bCastShadowAsTwoSided" : false,
@@ -474,7 +517,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_7",
       "NonSceneComponents" : [],
-      "ObjectId" : 20,
+      "ObjectId" : 21,
       "Properties" : {
         "PendingActorLocation" : [70.343185, 164.093674, 14.472232],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -487,7 +530,7 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "USkeletalMeshComponent",
-            "ObjectId" : 22,
+            "ObjectId" : 23,
             "Properties" : {
               "AnimInstance" : {
                 "ClassName" : "UAnimSingleNodeInstance",
@@ -519,6 +562,7 @@
                 "Responses[4]" : 2
               },
               "SkeletalMeshPath" : "Content/Data/Samba Dancing/Yeoul_SkeletalMesh.uasset",
+              "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
@@ -532,7 +576,7 @@
             }
           }],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 21,
+        "ObjectId" : 22,
         "Properties" : {
           "BoxExtent" : [3.000000, 3.000000, 3.000000],
           "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
@@ -550,6 +594,7 @@
             "Responses[4]" : 2
           },
           "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
+          "TranslucentSortPriority" : 0,
           "bAutoActivate" : true,
           "bCastShadow" : false,
           "bCastShadowAsTwoSided" : false,

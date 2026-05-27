@@ -289,6 +289,7 @@ class UMaterialInstance : public UMaterialInterface
 {
 public:
 	GENERATED_BODY()
+	~UMaterialInstance() override;
 
 	static UMaterialInstance* Create(UMaterial* InParent);
 	static UMaterialInstance* Create(UMaterial* InParent,
@@ -322,10 +323,19 @@ public:
 	ID3D11ShaderResourceView* GetSRV(EMaterialTextureSlot Slot) const override;
 
 	EMaterialShadowMode GetShadowMode()  const override { return Parent->GetShadowMode(); }
-	FVector4 GetEmissiveColor() const override { return Parent ? Parent->GetEmissiveColor() : FVector4(1.0f, 1.0f, 1.0f, 1.0f); }
-	float GetEmissiveIntensity() const override { return Parent ? Parent->GetEmissiveIntensity() : 0.0f; }
-	bool IsBloomEnabled() const override { return Parent ? Parent->IsBloomEnabled() : false; }
+	FVector4 GetEmissiveColor() const override;
+	float GetEmissiveIntensity() const override;
+	bool IsBloomEnabled() const override;
 	bool CastsShadow() const override { return GetShadowMode() != EMaterialShadowMode::None; }
+
+	bool HasEmissiveColorOverride() const { return bOverrideEmissiveColor; }
+	bool HasEmissiveIntensityOverride() const { return bOverrideEmissiveIntensity; }
+	bool HasBloomEnabledOverride() const { return bOverrideBloomEnabled; }
+
+	void SetEmissiveColorOverride(bool bOverride, const FVector4& InColor);
+	void SetEmissiveIntensityOverride(bool bOverride, float InIntensity);
+	void SetBloomEnabledOverride(bool bOverride, bool bInEnableBloom);
+	void ReleaseGPUBuffers();
 
 protected:
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
@@ -340,6 +350,15 @@ protected:
 	TMap<FString, FVector4> Vector4Overrides;
 	TMap<FString, FMatrix> MatrixOverrides;
 	TMap<FString, UTexture2D*> TextureOverrides;
+
+	bool bOverrideEmissiveColor = false;
+	bool bOverrideEmissiveIntensity = false;
+	bool bOverrideBloomEnabled = false;
+	FVector4 EmissiveColorOverride = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	float EmissiveIntensityOverride = 0.0f;
+	bool bBloomEnabledOverride = false;
+	mutable FConstantBuffer MaterialBloomCB;
+	bool bMaterialBloomCBDirty = true;
 
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap;
 	ID3D11ShaderResourceView* CachedOverrideSRVs[(int)EMaterialTextureSlot::Max] = {};	//빠른 조회를 위한 테이블

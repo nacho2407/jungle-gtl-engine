@@ -35,6 +35,7 @@ private:
 	void RenderViewport();
 	void RenderDetailsPanel(UMaterialInterface* Material);
 	void RenderMaterialSettings(UMaterial* Material);
+	void RenderBloomOverrides(UMaterialInstance* Instance);
 	void RenderShaderParameters(UMaterialInterface* Material);
 	void RenderTextureSection(UMaterialInterface* Material);
 	void SaveMaterialJson();

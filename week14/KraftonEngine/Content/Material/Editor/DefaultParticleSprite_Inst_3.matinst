@@ -1,0 +1,10 @@
+{
+        "Parameters" : {
+
+        },
+        "ParentMaterial" : "Content/Material/Editor/DefaultParticleSprite.mat",
+        "PathFileName" : "Content/Material/Editor/DefaultParticleSprite_Inst_3.matinst",
+        "Textures" : {
+          "DiffuseTexture" : "Content/Texture/sprite-sheets-shine-ready-games-260nw-1210247917.png"
+        }
+      }

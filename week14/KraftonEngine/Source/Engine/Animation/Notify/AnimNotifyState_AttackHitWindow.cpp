@@ -4,6 +4,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Particle/ParticleSystemComponent.h"
+#include "Component/Script/LuaScriptComponent.h"
 #include "Core/Types/CollisionTypes.h"
 #include "Core/Types/EngineTypes.h"
 #include "Debug/DrawDebugHelpers.h"
@@ -323,6 +324,11 @@ void UAnimNotifyState_AttackHitWindow::NotifyTick(USkeletalMeshComponent* MeshCo
 		}
 
 		HitActors.insert(Candidate);
+		if (ULuaScriptComponent* LuaScript = Candidate->GetComponentByClass<ULuaScriptComponent>())
+		{
+			LuaScript->DispatchOverlap(Owner);
+		}
+
 		ApplyHitStop(Owner, HitStopDuration, bAutoAddActionComponent);
 		ApplyHitStop(Candidate, HitStopDuration, bAutoAddActionComponent);
 		if (bApplyKnockback)

@@ -373,6 +373,11 @@ UMaterial* UMaterial::CreateTransient(ERenderPass InPass, EBlendState InBlend,
 	return Mat;
 }
 
+UMaterialInstance::~UMaterialInstance()
+{
+	ReleaseGPUBuffers();
+}
+
 UMaterialInstance* UMaterialInstance::Create(UMaterial* InParent)
 {
 	if (!InParent)
@@ -409,6 +414,10 @@ void UMaterialInstance::Create(const FString& InPathFileName, UMaterial* InParen
 	ConstantBufferMap = std::move(InBuffers);
 	CopyParentConstantBuffers();
 	bConstantBufferDirty = true;
+	EmissiveColorOverride = Parent ? Parent->GetEmissiveColor() : FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	EmissiveIntensityOverride = Parent ? Parent->GetEmissiveIntensity() : 0.0f;
+	bBloomEnabledOverride = Parent ? Parent->IsBloomEnabled() : false;
+	bMaterialBloomCBDirty = true;
 }
 
 void UMaterialInstance::Serialize(FArchive& Ar)
@@ -603,6 +612,61 @@ bool UMaterialInstance::GetMatrixParameter(const FString& ParamName, FMatrix& Va
 	return Parent ? Parent->GetMatrixParameter(ParamName, Value) : false;
 }
 
+FVector4 UMaterialInstance::GetEmissiveColor() const
+{
+	return bOverrideEmissiveColor
+		? EmissiveColorOverride
+		: (Parent ? Parent->GetEmissiveColor() : FVector4(1.0f, 1.0f, 1.0f, 1.0f));
+}
+
+float UMaterialInstance::GetEmissiveIntensity() const
+{
+	return bOverrideEmissiveIntensity
+		? EmissiveIntensityOverride
+		: (Parent ? Parent->GetEmissiveIntensity() : 0.0f);
+}
+
+bool UMaterialInstance::IsBloomEnabled() const
+{
+	return bOverrideBloomEnabled
+		? bBloomEnabledOverride
+		: (Parent ? Parent->IsBloomEnabled() : false);
+}
+
+void UMaterialInstance::SetEmissiveColorOverride(bool bOverride, const FVector4& InColor)
+{
+	bOverrideEmissiveColor = bOverride;
+	EmissiveColorOverride = InColor;
+	bMaterialBloomCBDirty = true;
+}
+
+void UMaterialInstance::SetEmissiveIntensityOverride(bool bOverride, float InIntensity)
+{
+	bOverrideEmissiveIntensity = bOverride;
+	EmissiveIntensityOverride = InIntensity;
+	bMaterialBloomCBDirty = true;
+}
+
+void UMaterialInstance::SetBloomEnabledOverride(bool bOverride, bool bInEnableBloom)
+{
+	bOverrideBloomEnabled = bOverride;
+	bBloomEnabledOverride = bInEnableBloom;
+	bMaterialBloomCBDirty = true;
+}
+
+void UMaterialInstance::ReleaseGPUBuffers()
+{
+	for (auto& Pair : ConstantBufferMap)
+	{
+		if (Pair.second)
+		{
+			Pair.second->Release();
+		}
+	}
+	MaterialBloomCB.Release();
+	bMaterialBloomCBDirty = true;
+}
+
 FShader* UMaterialInstance::GetShader() const
 {
 	return Parent ? Parent->GetShader() : nullptr;
@@ -632,7 +696,7 @@ FConstantBuffer* UMaterialInstance::GetGPUBufferBySlot(uint32 InSlot) const
 {
 	if (InSlot == ECBSlot::MaterialBloom)
 	{
-		return Parent ? Parent->GetGPUBufferBySlot(InSlot) : nullptr;
+		return &MaterialBloomCB;
 	}
 
 	for (const auto& Pair : ConstantBufferMap)
@@ -704,6 +768,21 @@ void UMaterialInstance::FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceCont
 		{
 			Pair.second->Upload(Ctx);
 		}
+	}
+
+	const bool bNeedsCreate = MaterialBloomCB.GetBuffer() == nullptr;
+	if (bNeedsCreate)
+	{
+		MaterialBloomCB.Create(Device, sizeof(FMaterialBloomConstants), "MaterialInstanceBloomCB");
+	}
+	if (bNeedsCreate || bMaterialBloomCBDirty)
+	{
+		FMaterialBloomConstants BloomData = {};
+		BloomData.EmissiveColor = GetEmissiveColor();
+		BloomData.EmissiveIntensity = GetEmissiveIntensity();
+		BloomData.bEnableBloom = IsBloomEnabled() ? 1.0f : 0.0f;
+		MaterialBloomCB.Update(Ctx, &BloomData, sizeof(FMaterialBloomConstants));
+		bMaterialBloomCBDirty = false;
 	}
 
 	bConstantBufferDirty = false;

@@ -23,6 +23,9 @@ namespace MatKeys
 	static constexpr const char* EmissiveColor = "EmissiveColor";
 	static constexpr const char* EmissiveIntensity = "EmissiveIntensity";
 	static constexpr const char* bEnableBloom = "bEnableBloom";
+	static constexpr const char* bOverrideEmissiveColor = "bOverrideEmissiveColor";
+	static constexpr const char* bOverrideEmissiveIntensity = "bOverrideEmissiveIntensity";
+	static constexpr const char* bOverrideEnableBloom = "bOverrideEnableBloom";
 }
 
 class FMaterialTemplate;
@@ -90,6 +93,7 @@ private:
 
 	void ApplyParameters(UMaterialInterface* Material, json::JSON& JsonData);
 	void ApplyTextures(UMaterialInterface* Material, json::JSON& JsonData);
+	void ApplyBloomOverrides(UMaterialInstance* MaterialInstance, json::JSON& JsonData);
 
 	ERenderPass StringToRenderPass(const FString& Str) const;
 	EBlendState StringToBlendState(const FString& Str, ERenderPass Pass) const;
