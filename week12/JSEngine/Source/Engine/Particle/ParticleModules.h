@@ -499,6 +499,31 @@ public:
 	bool bUsePSysLocation = false;
 };
 
+UCLASS(Placeable, DisplayName = "Event Send To Game Module", Category = "Events")
+class UParticleModuleEventSendToGame : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleEventSendToGame, UParticleModule)
+
+	/**
+	 * @brief internal named event를 game delegate로 전달할지 판단
+	 * @param Type 실제 발생 event type
+	 */
+	bool ShouldSend(EParticleEventType Type) const;
+
+	UPROPERTY(DisplayName = "Send Spawn")
+	bool bSendSpawn = true;
+
+	UPROPERTY(DisplayName = "Send Death")
+	bool bSendDeath = true;
+
+	UPROPERTY(DisplayName = "Send Collision")
+	bool bSendCollision = true;
+
+	UPROPERTY(DisplayName = "Send Burst")
+	bool bSendBurst = true;
+};
+
 UCLASS(Placeable, DisplayName = "Collision Module", Category = "Collision")
 class UParticleModuleCollision : public UParticleModule
 {

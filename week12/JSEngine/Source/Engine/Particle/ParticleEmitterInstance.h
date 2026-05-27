@@ -9,6 +9,7 @@ struct FParticleBurstEntry;
 class IParticleEmitterInstanceOwner;
 class UParticleModule;
 class UParticleModuleEventGenerator;
+class UParticleModuleEventSendToGame;
 class UParticleEmitter;
 class UParticleLODLevel;
 
@@ -105,6 +106,11 @@ public:
 	 * @brief 현재 LOD가 선택한 named event generator 조회
 	 */
 	UParticleModuleEventGenerator* FindEventGeneratorModule() const;
+
+	/**
+	 * @brief 현재 LOD가 선택한 external event 전달 정책 조회
+	 */
+	UParticleModuleEventSendToGame* FindEventSendToGameModule() const;
 
 	/**
 	 * @brief generator entry별 발생 횟수와 first-time 상태 조회

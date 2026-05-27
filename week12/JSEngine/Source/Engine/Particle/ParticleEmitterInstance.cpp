@@ -1233,6 +1233,11 @@ UParticleModuleEventGenerator* FParticleEmitterInstance::FindEventGeneratorModul
 	return CurrentRuntimeCache != nullptr ? CurrentRuntimeCache->EventGeneratorModule : nullptr;
 }
 
+UParticleModuleEventSendToGame* FParticleEmitterInstance::FindEventSendToGameModule() const
+{
+	return CurrentRuntimeCache != nullptr ? CurrentRuntimeCache->EventSendToGameModule : nullptr;
+}
+
 void FParticleEmitterInstance::ProcessParticleEvents(
 	const TArray<FParticleEventData>& Events,
 	float DeltaTime)

@@ -91,32 +91,37 @@ struct FParticleEventGeneratorRuntimeState
 	TArray<bool> bHasFiredFirstTimeOnly;
 };
 
-struct FParticleEventSpawnData
+struct FParticleEventSpawnData : public FParticleEventData
 {
-	int32 ParticleIndex = -1;
-	uint32 SpawnId = 0;
-	FVector Location = FVector::ZeroVector;
+	FParticleEventSpawnData()
+	{
+		Type = EParticleEventType::Spawn;
+	}
 };
 
-struct FParticleEventDeathData
+struct FParticleEventDeathData : public FParticleEventData
 {
-	int32 ParticleIndex = -1;
-	uint32 SpawnId = 0;
-	FVector Location = FVector::ZeroVector;
+	FParticleEventDeathData()
+	{
+		Type = EParticleEventType::Death;
+	}
 };
 
-struct FParticleEventCollideData
+struct FParticleEventCollideData : public FParticleEventData
 {
-	int32 ParticleIndex = -1;
-	uint32 SpawnId = 0;
-	FVector Location = FVector::ZeroVector;
-	FVector Normal = FVector::UpVector;
+	FParticleEventCollideData()
+	{
+		Type = EParticleEventType::Collision;
+		Normal = FVector::UpVector;
+	}
 };
 
-struct FParticleEventBurstData
+struct FParticleEventBurstData : public FParticleEventData
 {
-	int32 SpawnCount = 0;
-	FVector Location = FVector::ZeroVector;
+	FParticleEventBurstData()
+	{
+		Type = EParticleEventType::Burst;
+	}
 };
 
 struct FBaseParticle

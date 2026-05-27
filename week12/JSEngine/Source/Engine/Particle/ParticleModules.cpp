@@ -207,6 +207,19 @@ namespace
 			return;
 		}
 
+		if (UParticleModuleEventSendToGame* EventSendToGameModule = Cast<UParticleModuleEventSendToGame>(Module))
+		{
+			if (Cache.EventSendToGameModule == nullptr)
+			{
+				Cache.EventSendToGameModule = EventSendToGameModule;
+			}
+			else
+			{
+				UE_LOG_WARNING("[Particle] Multiple enabled Event Send To Game modules found. Using the first module.");
+			}
+			return;
+		}
+
 		if (Module->IsSpawnModule())
 		{
 			Cache.SpawnModules.push_back(Module);
@@ -1597,6 +1610,24 @@ bool UParticleModuleEventReceiverSpawn::ProcessParticleEvent(
 		Event,
 		bInheritVelocity,
 		bUsePSysLocation) > 0;
+}
+
+bool UParticleModuleEventSendToGame::ShouldSend(EParticleEventType Type) const
+{
+	switch (Type)
+	{
+	case EParticleEventType::Spawn:
+		return bSendSpawn;
+	case EParticleEventType::Death:
+		return bSendDeath;
+	case EParticleEventType::Collision:
+		return bSendCollision;
+	case EParticleEventType::Burst:
+		return bSendBurst;
+	case EParticleEventType::Any:
+	default:
+		return false;
+	}
 }
 
 /**

@@ -19,6 +19,7 @@ struct FParticleLODLevelRuntimeCache
 	UParticleModuleSpawn* SpawnModule = nullptr;
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
 	UParticleModuleEventGenerator* EventGeneratorModule = nullptr;
+	UParticleModuleEventSendToGame* EventSendToGameModule = nullptr;
 
 	TArray<UParticleModule*> SpawnModules;
 	TArray<UParticleModule*> UpdateModules;

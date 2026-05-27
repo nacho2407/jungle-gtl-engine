@@ -390,6 +390,63 @@ void UParticleSystemComponent::ReportEventBurst(const FParticleEventBurstData& E
 void UParticleSystemComponent::ReportGeneratedEvent(const FParticleEventData& Event)
 {
 	GeneratedEvents.push_back(Event);
+	ReportGeneratedEventToGame(Event);
+}
+
+void UParticleSystemComponent::ReportGeneratedEventToGame(const FParticleEventData& Event)
+{
+	if (Event.EmitterIndex < 0 ||
+		Event.EmitterIndex >= static_cast<int32>(EmitterInstances.size()))
+	{
+		return;
+	}
+
+	FParticleEmitterInstance* Instance = EmitterInstances[static_cast<size_t>(Event.EmitterIndex)];
+	UParticleModuleEventSendToGame* SendToGame = Instance != nullptr
+		? Instance->FindEventSendToGameModule()
+		: nullptr;
+	if (SendToGame == nullptr || !SendToGame->ShouldSend(Event.Type))
+	{
+		return;
+	}
+
+	// GeneratedEvents는 같은 particle system 안의 receiver 입력
+	// typed queue는 game delegate로 전달할 event만 보관
+	// TODO: Generator entry마다 SendToGame module을 연결하는 asset 계약이 정해지면 이 단일 정책 확장
+	switch (Event.Type)
+	{
+	case EParticleEventType::Spawn:
+	{
+		FParticleEventSpawnData ExternalEvent;
+		static_cast<FParticleEventData&>(ExternalEvent) = Event;
+		ReportEventSpawn(ExternalEvent);
+		break;
+	}
+	case EParticleEventType::Death:
+	{
+		FParticleEventDeathData ExternalEvent;
+		static_cast<FParticleEventData&>(ExternalEvent) = Event;
+		ReportEventDeath(ExternalEvent);
+		break;
+	}
+	case EParticleEventType::Collision:
+	{
+		FParticleEventCollideData ExternalEvent;
+		static_cast<FParticleEventData&>(ExternalEvent) = Event;
+		ReportEventCollision(ExternalEvent);
+		break;
+	}
+	case EParticleEventType::Burst:
+	{
+		FParticleEventBurstData ExternalEvent;
+		static_cast<FParticleEventData&>(ExternalEvent) = Event;
+		ReportEventBurst(ExternalEvent);
+		break;
+	}
+	case EParticleEventType::Any:
+	default:
+		break;
+	}
 }
 
 void UParticleSystemComponent::PackRenderData()

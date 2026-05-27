@@ -107,6 +107,12 @@ private:
 	void UpdateLODLevel();
 
 	/**
+	 * @brief 생성 emitter 정책을 확인하고 허용된 named event를 external queue로 복사
+	 * @param Event Generator policy를 통과한 internal event
+	 */
+	void ReportGeneratedEventToGame(const FParticleEventData& Event);
+
+	/**
 	 * @brief 이번 tick에 생성된 internal named event를 receiver module에 전달
 	 * @note 처리 시작 snapshot만 사용해 같은 tick 재귀 소비 차단
 	 */
