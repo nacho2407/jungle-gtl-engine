@@ -1873,6 +1873,12 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	// Require Module
 	const UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
 
+	// Coordinate Space
+	const EParticleCoordinateSpace CoordinateSpace =
+        RequiredModule != nullptr
+            ? RequiredModule->CoordinateSpace
+            : EParticleCoordinateSpace::Local;
+
 	// Sort Mode
 	RenderData->ReplayData.SortMode = RequiredModule != nullptr
 		? RequiredModule->SortMode
@@ -1895,8 +1901,12 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	RenderData->Material = nullptr;
 
 	// Mesh particle snapshots stay in emitter local space; the renderer applies ComponentToWorld per instance.
-	RenderData->ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
-	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::Local;
+    RenderData->ComponentToWorld =
+        CoordinateSpace == EParticleCoordinateSpace::Local
+            ? InEmitterInstance->GetOwner().GetComponentToWorld()
+            : FMatrix::Identity;
+
+    RenderData->ReplayData.CoordinateSpace = CoordinateSpace;
 	RenderData->ReplayData.Scale = FVector::OneVector;
 
 	// TODO: 중앙 renderer가 Mesh instance transform을 생성할 때 Mesh Particle의 회전 축과 정렬 정책을 반영한다.
