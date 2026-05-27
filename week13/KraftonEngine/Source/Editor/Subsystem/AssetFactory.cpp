@@ -6,6 +6,8 @@
 #include "CameraShake/CameraShakeManager.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "FloatCurve/FloatCurveAsset.h"
+#include "LuaBlueprint/LuaBlueprintAsset.h"
+#include "LuaBlueprint/LuaBlueprintManager.h"
 #include "Materials/Graph/MaterialGraphAsset.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Platform/Paths.h"
@@ -167,6 +169,32 @@ bool FAssetFactory::CreateParticleSystem(
 	NewAsset->SetSourcePath(FPaths::ToUtf8(AssetPath.wstring()));
 
 	bool bSaved = FParticleSystemManager::Get().Save(NewAsset);
+	UObjectManager::Get().DestroyObject(NewAsset);
+
+	if (!bSaved)
+	{
+		return false;
+	}
+
+	OutCreatedPath = FPaths::ToUtf8(AssetPath.wstring());
+	return true;
+}
+
+bool FAssetFactory::CreateLuaBlueprint(const FString& DirectoryPath, const FString& AssetName, FString& OutCreatedPath)
+{
+	const std::filesystem::path Directory(FPaths::ToWide(DirectoryPath));
+	if (!std::filesystem::exists(Directory) || !std::filesystem::is_directory(Directory))
+	{
+		return false;
+	}
+
+	const std::filesystem::path AssetPath = BuildUniqueAssetPath(Directory, AssetName.empty() ? "NewLuaBlueprint" : AssetName, L".uasset");
+
+	ULuaBlueprintAsset* NewAsset = UObjectManager::Get().CreateObject<ULuaBlueprintAsset>();
+	NewAsset->SetSourcePath(FPaths::ToUtf8(AssetPath.wstring()));
+	NewAsset->InitializeDefault();
+
+	bool bSaved = FLuaBlueprintManager::Get().Save(NewAsset);
 	UObjectManager::Get().DestroyObject(NewAsset);
 
 	if (!bSaved)

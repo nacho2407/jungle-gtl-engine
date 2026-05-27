@@ -45,6 +45,7 @@
 #include "UI/UIManager.h"
 #include "UI/UserWidget.h"
 #include <algorithm>
+#include <ctime>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -2254,6 +2255,20 @@ void FLuaScriptManager::RegisterReflectionBindings(sol::state& Lua)
 			return Result;
 		}
 	);
+	// LuaBlueprint Cast 노드용 — IsA 통과 시 같은 객체 반환, 실패 시 nil.
+	// 실제 Unreal Blueprint Cast 와 동일한 의미 (성공/실패 분기).
+	Reflection.set_function(
+		"Cast",
+		[](UObject* Object, const FString& ClassName) -> UObject*
+		{
+			if (!Object) return nullptr;
+			UClass* Target = UClass::FindByName(ClassName.c_str());
+			if (!Target) return nullptr;
+			UClass* Source = Object->GetClass();
+			if (!Source) return nullptr;
+			return Source->IsA(Target) ? Object : nullptr;
+		}
+	);
 	Reflection.set_function(
 		"GetStaticFunctions",
 		[](const FString& ClassName, sol::this_state State)
@@ -2657,6 +2672,29 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 			Result[Idx++] = Actor;
 		}
 		return Result;
+	});
+	// LuaBlueprint ForEachActorByClass 노드용 — 동일 패턴(table 반환)으로 노출.
+	World.set_function("FindActorsByClass", [](const FString& ClassName) -> sol::table
+	{
+		sol::table Result = FLuaScriptManager::GetState().create_table();
+		if (!GEngine || !GEngine->GetWorld()) return Result;
+		UClass* Cls = UClass::FindByName(ClassName.c_str());
+		if (!Cls) return Result;
+		int Idx = 1;
+		for (AActor* Actor : GEngine->GetWorld()->GetActors())
+		{
+			if (IsValid(Actor) && Actor->GetClass() && Actor->GetClass()->IsA(Cls))
+			{
+				Result[Idx++] = Actor;
+			}
+		}
+		return Result;
+	});
+	World.set_function("GetGameTime", []() -> float
+	{
+		// 정확한 게임 시간은 World/Timer 가 owner 지만, 현재 노출된 API 가 없어
+		// CPU 시간으로 대체. 게임 시간 헬퍼가 추가되면 여기 교체.
+		return static_cast<float>(static_cast<double>(clock()) / static_cast<double>(CLOCKS_PER_SEC));
 	});
 
 	// 게임 특화 usertype/enum/global(GetGameState 등) 은 Game 모듈의

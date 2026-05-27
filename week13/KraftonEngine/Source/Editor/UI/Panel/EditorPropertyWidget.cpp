@@ -1714,6 +1714,37 @@ bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
 		return bChanged;
 	}
 
+	if (AssetType == "ULuaBlueprintAsset")
+	{
+		FString Preview = (CurrentPath.empty() || CurrentPath == "None") ? "None" : GetStemFromPath(CurrentPath);
+
+		if (ImGui::BeginCombo("##LuaBlueprintAsset", Preview.c_str()))
+		{
+			const bool bSelectedNone = (CurrentPath == "None" || CurrentPath.empty());
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				SetPath("None");
+				bChanged = true;
+			}
+			if (bSelectedNone) ImGui::SetItemDefaultFocus();
+
+			const TArray<FAssetListItem>& BlueprintFiles = FAssetRegistry::ListByTypeName("ULuaBlueprintAsset");
+			for (const FAssetListItem& Item : BlueprintFiles)
+			{
+				const bool bSelected = (CurrentPath == Item.FullPath);
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					SetPath(Item.FullPath);
+					bChanged = true;
+				}
+				if (bSelected) ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		return bChanged;
+	}
+
 	if (AssetType == "UParticleSystem")
 	{
 		FString Preview = (CurrentPath.empty() || CurrentPath == "None") ? "None" : GetStemFromPath(CurrentPath);

@@ -13,6 +13,8 @@
 #include "FloatCurve/FloatCurveManager.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
+#include "LuaBlueprint/LuaBlueprintAsset.h"
+#include "LuaBlueprint/LuaBlueprintManager.h"
 #include "Mesh/MeshManager.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
@@ -433,6 +435,9 @@ void FEditorContentBrowserWidget::RefreshContent()
 				case EAssetPackageType::ParticleSystem:
 					Element = std::make_shared<ParticleSystemElement>();
 					break;
+				case EAssetPackageType::LuaBlueprint:
+					Element = std::make_shared<LuaBlueprintElement>();
+					break;
 				default:
 					Element = std::make_shared<ContentBrowserElement>();
 					break;
@@ -587,6 +592,21 @@ void FEditorContentBrowserWidget::DrawContents()
 						if (UAnimGraphAsset* GraphAsset = FAnimGraphManager::Get().Load(CreatedPath))
 						{
 							BrowserContext.EditorEngine->OpenAssetEditorForObject(GraphAsset);
+						}
+					}
+				}
+			}
+			if (ImGui::MenuItem("Lua Blueprint"))
+			{
+				FString CreatedPath;
+				if (FAssetFactory::CreateLuaBlueprint(FPaths::ToUtf8(BrowserContext.CurrentPath), "NewLuaBlueprint", CreatedPath))
+				{
+					Refresh();
+					if (BrowserContext.EditorEngine)
+					{
+						if (ULuaBlueprintAsset* BlueprintAsset = FLuaBlueprintManager::Get().Load(CreatedPath))
+						{
+							BrowserContext.EditorEngine->OpenAssetEditorForObject(BlueprintAsset);
 						}
 					}
 				}

@@ -9,6 +9,8 @@
 #include "CameraShake/CameraShakeManager.h"
 #include "Animation/Graph/AnimGraphAsset.h"
 #include "Animation/Graph/AnimGraphManager.h"
+#include "LuaBlueprint/LuaBlueprintAsset.h"
+#include "LuaBlueprint/LuaBlueprintManager.h"
 #include "Platform/Paths.h"
 #include "Serialization/SceneSaveManager.h"
 #include "Mesh/Static/StaticMesh.h"
@@ -620,6 +622,19 @@ void AnimGraphElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	if (UAnimGraphAsset* GraphAsset = FAnimGraphManager::Get().Load(FilePath))
 	{
 		Context.EditorEngine->OpenAssetEditorForObject(GraphAsset);
+	}
+}
+
+void LuaBlueprintElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+	const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
+	if (ULuaBlueprintAsset* BlueprintAsset = FLuaBlueprintManager::Get().Load(FilePath))
+	{
+		Context.EditorEngine->OpenAssetEditorForObject(BlueprintAsset);
 	}
 }
 

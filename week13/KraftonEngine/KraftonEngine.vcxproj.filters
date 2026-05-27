@@ -73,6 +73,9 @@
     <Filter Include="Source\Editor\UI\Asset\Curve">
       <UniqueIdentifier>{a9a5d4ee-210d-8455-10fc-cd6653ca56e6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Asset\LuaBlueprint">
+      <UniqueIdentifier>{903d88fe-2f81-8e0e-87f8-e3f4e8c4c1cc}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI\Asset\Material">
       <UniqueIdentifier>{994177d8-b52e-61fd-e3e8-c510233e7128}</UniqueIdentifier>
     </Filter>
@@ -237,6 +240,9 @@
     </Filter>
     <Filter Include="Source\Engine\Lua">
       <UniqueIdentifier>{1e8146b0-d168-a83f-beb4-0488da76dd65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\LuaBlueprint">
+      <UniqueIdentifier>{8c80bb50-e755-58da-f8e5-099ac3178d11}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\Materials">
       <UniqueIdentifier>{0d06ac75-3073-6c4d-1a46-4fbda12823ff}</UniqueIdentifier>
@@ -585,6 +591,9 @@
     <FxCompile Include="Shaders\Generated\Materials\DDDFE619B008A8BB0000B824223D4600_ParticleSprite.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\_41AAC49C33C14A5000013C79B41DEE10_ParticleMesh.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\_628A9F53151EB9DD000131497CDADFC0_ParticleSprite.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
@@ -748,6 +757,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Curve\InlineFloatCurveEditor.cpp">
       <Filter>Source\Editor\UI\Asset\Curve</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\LuaBlueprint\LuaBlueprintEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\LuaBlueprint</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Material</Filter>
@@ -1094,6 +1106,9 @@
     <ClCompile Include="Source\Engine\Component\Primitive\TextRenderComponent.cpp">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Script\LuaBlueprintComponent.cpp">
+      <Filter>Source\Engine\Component\Script</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Script\LuaScriptComponent.cpp">
       <Filter>Source\Engine\Component\Script</Filter>
     </ClCompile>
@@ -1279,6 +1294,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Lua\LuaScriptManager.cpp">
       <Filter>Source\Engine\Lua</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\LuaBlueprint\LuaBlueprintAsset.cpp">
+      <Filter>Source\Engine\LuaBlueprint</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\LuaBlueprint\LuaBlueprintCompiler.cpp">
+      <Filter>Source\Engine\LuaBlueprint</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\LuaBlueprint\LuaBlueprintManager.cpp">
+      <Filter>Source\Engine\LuaBlueprint</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Materials\Material.cpp">
       <Filter>Source\Engine\Materials</Filter>
@@ -1886,6 +1910,9 @@
     <ClInclude Include="Source\Editor\UI\Asset\Curve\InlineFloatCurveEditor.h">
       <Filter>Source\Editor\UI\Asset\Curve</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\LuaBlueprint\LuaBlueprintEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\LuaBlueprint</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Material</Filter>
     </ClInclude>
@@ -2273,6 +2300,9 @@
     <ClInclude Include="Source\Engine\Component\Primitive\TextRenderComponent.h">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Script\LuaBlueprintComponent.h">
+      <Filter>Source\Engine\Component\Script</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Script\LuaScriptComponent.h">
       <Filter>Source\Engine\Component\Script</Filter>
     </ClInclude>
@@ -2497,6 +2527,18 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Lua\LuaScriptManager.h">
       <Filter>Source\Engine\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\LuaBlueprint\LuaBlueprintAsset.h">
+      <Filter>Source\Engine\LuaBlueprint</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\LuaBlueprint\LuaBlueprintCompiler.h">
+      <Filter>Source\Engine\LuaBlueprint</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\LuaBlueprint\LuaBlueprintManager.h">
+      <Filter>Source\Engine\LuaBlueprint</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\LuaBlueprint\LuaBlueprintTypes.h">
+      <Filter>Source\Engine\LuaBlueprint</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Materials\Material.h">
       <Filter>Source\Engine\Materials</Filter>

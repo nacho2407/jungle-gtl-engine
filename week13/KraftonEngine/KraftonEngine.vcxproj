@@ -422,6 +422,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Curve\InlineFloatCurveEditor.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\LuaBlueprint\LuaBlueprintEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.cpp" />
@@ -537,6 +538,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Component\Primitive\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\TextRenderComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Script\LuaBlueprintComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Script\LuaScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Shape\BoxComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp" />
@@ -599,6 +601,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
     <ClCompile Include="Source\Engine\Lua\LuaScriptManager.cpp" />
+    <ClCompile Include="Source\Engine\LuaBlueprint\LuaBlueprintAsset.cpp" />
+    <ClCompile Include="Source\Engine\LuaBlueprint\LuaBlueprintCompiler.cpp" />
+    <ClCompile Include="Source\Engine\LuaBlueprint\LuaBlueprintManager.cpp" />
     <ClCompile Include="Source\Engine\Materials\Material.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp" />
     <ClCompile Include="Source\Engine\Materials\Graph\MaterialGraphAsset.cpp" />
@@ -803,6 +808,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Curve\InlineFloatCurveEditor.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\LuaBlueprint\LuaBlueprintEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h" />
@@ -932,6 +938,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Component\Primitive\StaticMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\SubUVComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\TextRenderComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Script\LuaBlueprintComponent.h" />
     <ClInclude Include="Source\Engine\Component\Script\LuaScriptComponent.h" />
     <ClInclude Include="Source\Engine\Component\Shape\BoxComponent.h" />
     <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h" />
@@ -1007,6 +1014,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h" />
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
     <ClInclude Include="Source\Engine\Lua\LuaScriptManager.h" />
+    <ClInclude Include="Source\Engine\LuaBlueprint\LuaBlueprintAsset.h" />
+    <ClInclude Include="Source\Engine\LuaBlueprint\LuaBlueprintCompiler.h" />
+    <ClInclude Include="Source\Engine\LuaBlueprint\LuaBlueprintManager.h" />
+    <ClInclude Include="Source\Engine\LuaBlueprint\LuaBlueprintTypes.h" />
     <ClInclude Include="Source\Engine\Materials\Material.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h" />
     <ClInclude Include="Source\Engine\Materials\Graph\MaterialGraphAsset.h" />
@@ -1882,6 +1893,13 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\DDDFE619B008A8BB0000B824223D4600_ParticleSprite.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\_41AAC49C33C14A5000013C79B41DEE10_ParticleMesh.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
