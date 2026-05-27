@@ -462,9 +462,15 @@ def get_array_element_property_type(prop: ReflectedProperty) -> str | None:
             return "ClassRef"
         if get_tobjectptr_inner_type(element_cpp_type) or (element_cpp_type.endswith("*") and not element_cpp_type.endswith("char*")):
             return "ObjectRef"
-        if prop.struct_type or prop.metadata and any(key == "struct" or key == "structtype" for key, _ in prop.metadata):
+        has_explicit_struct = bool(prop.struct_type and prop.struct_type != "nullptr")
+        if has_explicit_struct or prop.metadata and any(key == "struct" or key == "structtype" for key, _ in prop.metadata):
             return "Struct"
-        return TYPE_MAP.get(element_cpp_type, "String")
+        mapped_type = TYPE_MAP.get(element_cpp_type)
+        if mapped_type:
+            return mapped_type
+        if element_cpp_type.startswith("F"):
+            return "Struct"
+        return "String"
     return None
 
 
@@ -581,7 +587,7 @@ def build_array_inner_property(
         )
 
     if element_property_type == "Struct":
-        struct_type = prop.struct_type or f"{element_cpp_type}::StaticStruct()"
+        struct_type = prop.struct_type if prop.struct_type and prop.struct_type != "nullptr" else f"{element_cpp_type}::StaticStruct()"
         return (
             f"\tnew FStructProperty(\n"
             f"\t\t{cpp_string_literal(inner_name)},\n"

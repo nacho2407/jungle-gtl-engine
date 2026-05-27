@@ -61,7 +61,7 @@ struct FFloatCurve
 {
 	GENERATED_BODY()
 
-	UPROPERTY(Edit, Save, Category="Curve")
+	UPROPERTY(Edit, Save, Category="Curve", Type=Array, Struct=FCurveKey)
 	TArray<FCurveKey> Keys;
 
 	UPROPERTY(Edit, Save, Category="Curve", Enum=ECurveExtrapMode)
