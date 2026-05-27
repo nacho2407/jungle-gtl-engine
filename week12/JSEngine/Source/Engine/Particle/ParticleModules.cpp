@@ -191,6 +191,12 @@ namespace
 			return;
 		}
 
+		if (UParticleModuleEventReceiverSpawn* EventReceiverModule = Cast<UParticleModuleEventReceiverSpawn>(Module))
+		{
+			Cache.EventReceiverSpawnModules.push_back(EventReceiverModule);
+			return;
+		}
+
 		if (Module->IsSpawnModule())
 		{
 			Cache.SpawnModules.push_back(Module);
@@ -858,6 +864,28 @@ void UParticleModuleEventGenerator::GenerateEvents(
 		Event.EventName = Info.EventName;
 		Owner.AddParticleEvent(Event);
 	}
+}
+
+bool UParticleModuleEventReceiverSpawn::MatchesEvent(const FParticleEventPayload& Event) const
+{
+	return Event.Type == SourceEventType && Event.EventName == SourceEventName;
+}
+
+void UParticleModuleEventReceiverSpawn::ProcessEvent(
+	FParticleEmitterInstance* Owner,
+	const FParticleEventPayload& Event) const
+{
+	if (Owner == nullptr || SpawnCount <= 0 || !MatchesEvent(Event))
+	{
+		return;
+	}
+
+	Owner->SpawnParticlesFromEvent(
+		Event,
+		SpawnCount,
+		bUseParticleSystemLocation,
+		bInheritVelocity,
+		InheritVelocityScale);
 }
 
 UParticleModuleLifetime::UParticleModuleLifetime()

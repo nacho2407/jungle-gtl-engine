@@ -91,6 +91,23 @@ public:
 	void ReportCollisionOccurrence(const FParticleEventCollideData& Event);
 
 	/**
+	 * @brief 내부 event를 receiver module에 전달
+	 */
+	void ProcessParticleEvents(const TArray<FParticleEventPayload>& Events);
+
+	/**
+	 * @brief event 위치와 속도 조건으로 particle 생성
+	 *
+	 * @param Event world space 위치와 속도를 가진 내부 payload
+	 */
+	int32 SpawnParticlesFromEvent(
+		const FParticleEventPayload& Event,
+		int32 SpawnCount,
+		bool bUseParticleSystemLocation,
+		bool bInheritVelocity,
+		float InheritVelocityScale);
+
+	/**
 	 * @brief particle을 pending kill 상태로 표시
 	 * @note 실제 storage 제거는 tick 마지막 compact에서 수행
 	 */
@@ -150,7 +167,12 @@ private:
 	int32 SpawnParticles(
 		int32 Count,
 		float SegmentStartTime,
-		float SegmentDeltaTime);
+		float SegmentDeltaTime,
+		EParticleSpawnReason SpawnReason = EParticleSpawnReason::Normal,
+		const FParticleEventPayload* SourceEvent = nullptr,
+		bool bUseParticleSystemLocation = false,
+		bool bInheritVelocity = false,
+		float InheritVelocityScale = 1.0f);
 	/**
 	 * @brief normal spawn named event 생성
 	 */

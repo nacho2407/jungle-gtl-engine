@@ -322,6 +322,8 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		}
 	}
 
+	ProcessParticleEventReceivers(bHasSoloEmitter);
+
 	// Render Data 수집
 	PackRenderData();
 	NotifySpatialIndexDirty();
@@ -361,6 +363,26 @@ void UParticleSystemComponent::ReportEventCollision(const FParticleEventCollideD
 void UParticleSystemComponent::ReportParticleEvent(const FParticleEventPayload& Event)
 {
 	ParticleEvents.push_back(Event);
+}
+
+void UParticleSystemComponent::ProcessParticleEventReceivers(bool bHasSoloEmitter)
+{
+	if (ParticleEvents.empty())
+	{
+		return;
+	}
+
+	// Receiver 실행 전 snapshot만 이번 tick 입력으로 사용
+	const TArray<FParticleEventPayload> EventSnapshot = ParticleEvents;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance == nullptr || (bHasSoloEmitter && !IsSoloParticleInstance(Instance)))
+		{
+			continue;
+		}
+
+		Instance->ProcessParticleEvents(EventSnapshot);
+	}
 }
 
 void UParticleSystemComponent::PackRenderData()

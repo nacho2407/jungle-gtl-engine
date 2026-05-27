@@ -79,6 +79,7 @@ private:
 	void CreateEmitterInstances();
 	void ReleaseEmitterInstances();
 	void ReleaseRenderData();
+	void ProcessParticleEventReceivers(bool bHasSoloEmitter);
 
 	/**
 	 * @brief 현재 거리와 hysteresis 정책으로 사용할 LOD index를 선택합니다.

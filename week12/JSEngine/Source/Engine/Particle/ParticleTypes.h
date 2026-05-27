@@ -54,6 +54,12 @@ enum class EParticleEventType
 	Collision UMETA(DisplayName = "Collision"),
 };
 
+enum class EParticleSpawnReason
+{
+	Normal,
+	EventReceiver,
+};
+
 /**
  * @brief 같은 particle system 내부 receiver 입력용 event payload
  *
