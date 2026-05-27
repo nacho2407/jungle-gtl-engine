@@ -45,7 +45,7 @@ namespace
         }
         return std::filesystem::exists(Full);
     }
-    constexpr const char* MaterialGraphGeneratorVersion = "ParticleSpriteCBLayout_v3";
+    constexpr const char* MaterialGraphGeneratorVersion = "ParticleMeshLighting_v3";
 }
 
 void FMaterialManager::ScanMaterialAssets()
@@ -228,6 +228,9 @@ bool FMaterialManager::LoadMaterialFromJson(
     Material->SetDomain(Domain);
     Material->SetGeneratedShaderPath(
         JsonData.hasKey(MatKeys::GeneratedShaderPath) ? JsonData[MatKeys::GeneratedShaderPath].ToString().c_str() : ""
+    );
+    Material->SetReceiveLighting(
+        JsonData.hasKey(MatKeys::ReceiveLighting) && JsonData[MatKeys::ReceiveLighting].ToBool()
     );
 
     FMaterialGraph Graph;
@@ -534,6 +537,7 @@ bool FMaterialManager::SaveMaterialAsset(UMaterial* Material)
         Material->GetRasterizerState()
     );
     JsonData[MatKeys::GeneratedShaderPath] = Material->GetGeneratedShaderPath();
+    JsonData[MatKeys::ReceiveLighting] = Material->GetReceiveLighting();
 
     json::JSON GraphJson;
     MaterialGraphAsset::SaveToJson(Material->GetGraph(), GraphJson);
@@ -580,12 +584,18 @@ bool FMaterialManager::CompileMaterialGraph(const FString& MatFilePath, json::JS
     const FString ExistingGeneratedPath = InOutJson.hasKey(MatKeys::GeneratedShaderPath)
     ? InOutJson[MatKeys::GeneratedShaderPath].ToString() : FString();
 
+    // ReceiveLighting 상태를 Compiled 섹션에 저장해 변경 감지
+    const bool bCurrentReceiveLighting = InOutJson.hasKey(MatKeys::ReceiveLighting) && InOutJson[MatKeys::ReceiveLighting].ToBool();
+    const bool bCompiledReceiveLighting = InOutJson.hasKey(MatKeys::Compiled) && InOutJson[MatKeys::Compiled].hasKey(MatKeys::ReceiveLighting)
+        && InOutJson[MatKeys::Compiled][MatKeys::ReceiveLighting].ToBool();
+
     // graph 미변경이어도 generator/runtime 코드가 바뀌면 강제 재컴파일.
     const bool bNeedsCompile =
         GraphHash != OldHash
         || OldGeneratorVersion != MaterialGraphGeneratorVersion
         || ExistingGeneratedPath.empty()
-        || !ProjectFileExists(ExistingGeneratedPath);
+        || !ProjectFileExists(ExistingGeneratedPath)
+        || bCurrentReceiveLighting != bCompiledReceiveLighting;
     if (!bNeedsCompile)
     {
         return true;
@@ -610,6 +620,7 @@ bool FMaterialManager::CompileMaterialGraph(const FString& MatFilePath, json::JS
         InOutJson.hasKey(MatKeys::RasterizerState) ? InOutJson[MatKeys::RasterizerState].ToString() : "",
         Options.RenderPass
     );
+    Options.bReceiveLighting = InOutJson.hasKey(MatKeys::ReceiveLighting) && InOutJson[MatKeys::ReceiveLighting].ToBool();
 
     FMaterialCompileResult Result;
     if (!FMaterialGraphCompiler::Compile(Graph, Options, Result))
@@ -637,11 +648,12 @@ bool FMaterialManager::CompileMaterialGraph(const FString& MatFilePath, json::JS
 
     InOutJson[MatKeys::GeneratedShaderPath]                  = Result.GeneratedShaderPath;
     InOutJson[MatKeys::ShaderPath]                           = Result.GeneratedShaderPath;
-    InOutJson[MatKeys::Compiled]                             = json::JSON::Make(json::JSON::Class::Object);
-    InOutJson[MatKeys::Compiled][MatKeys::GraphHash]         = GraphHash;
-    InOutJson[MatKeys::Compiled][MatKeys::GeneratorVersion]  = MaterialGraphGeneratorVersion;
-    InOutJson[MatKeys::Compiled][MatKeys::Parameters]        = json::JSON::Make(json::JSON::Class::Object);
-    InOutJson[MatKeys::Compiled][MatKeys::Textures]          = json::JSON::Make(json::JSON::Class::Object);
+    InOutJson[MatKeys::Compiled]                                  = json::JSON::Make(json::JSON::Class::Object);
+    InOutJson[MatKeys::Compiled][MatKeys::GraphHash]              = GraphHash;
+    InOutJson[MatKeys::Compiled][MatKeys::GeneratorVersion]       = MaterialGraphGeneratorVersion;
+    InOutJson[MatKeys::Compiled][MatKeys::ReceiveLighting]        = bCurrentReceiveLighting;
+    InOutJson[MatKeys::Compiled][MatKeys::Parameters]             = json::JSON::Make(json::JSON::Class::Object);
+    InOutJson[MatKeys::Compiled][MatKeys::Textures]               = json::JSON::Make(json::JSON::Class::Object);
 
     for (const auto& Pair : Result.Parameters)
     {
@@ -678,6 +690,11 @@ bool FMaterialManager::CompileMaterialGraph(const FString& MatFilePath, json::JS
     DropTemplate(
         Result.GeneratedShaderPath + "#" + std::to_string(static_cast<int>(DomainToVertexFactory(Options.Domain)))
     );
+
+    // 재컴파일 결과(GeneratedShaderPath, GeneratorVersion 등)를 .mat 파일에 저장.
+    // 저장하지 않으면 다음 실행 시 버전 불일치로 인해 매번 재컴파일이 반복된다.
+    SaveToJSON(InOutJson, MatFilePath);
+
     return true;
 }
 

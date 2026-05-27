@@ -90,6 +90,7 @@ private:
 	EBlendState BlendState = EBlendState::Opaque;
 	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
 	ERasterizerState RasterizerState = ERasterizerState::SolidBackCull;
+	bool bReceiveLighting = false; // ParticleMesh 전용
 
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap; // 인스턴스 고유
 	TMap<FString, UTexture2D*> TextureParameters;  //텍스처는 슬롯 이름으로 관리
@@ -145,6 +146,8 @@ public:
 	void SetBlendState(EBlendState InBlendState) { BlendState = InBlendState; }
 	void SetDepthStencilState(EDepthStencilState InDepthStencilState) { DepthStencilState = InDepthStencilState; }
 	void SetRasterizerState(ERasterizerState InRasterizerState) { RasterizerState = InRasterizerState; }
+	bool GetReceiveLighting() const { return bReceiveLighting; }
+	void SetReceiveLighting(bool bValue) { bReceiveLighting = bValue; }
 
 	// Per-shader CB 오버라이드 — transient Material에서 Gizmo/SubUV/Decal 등이 사용
 	template<typename T>

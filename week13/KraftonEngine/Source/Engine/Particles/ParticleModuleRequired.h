@@ -3,6 +3,13 @@
 #include "Particles/ParticleEmitter.h"
 #include "Object/Ptr/SoftObjectPtr.h"
 
+enum class EParticleBlendMode : uint8
+{
+	AlphaBlend,
+	Additive,
+	Opaque,
+};
+
 class UMaterial;
 
 UENUM()

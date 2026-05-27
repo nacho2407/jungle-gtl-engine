@@ -100,6 +100,24 @@ namespace
 		}
 	}
 
+    void ApplyDefaultBlendModeForDomain(UMaterial* Material, EMaterialDomain Domain)
+    {
+        if (!Material)
+        {
+            return;
+        }
+
+        switch (Domain)
+        {
+        case EMaterialDomain::ParticleMesh:
+            ApplyMaterialEditorBlendMode(Material, EMaterialEditorBlendMode::Opaque);
+            break;
+        case EMaterialDomain::ParticleSprite:
+        default:
+            break;
+        }
+    }
+
 	ImVec4 NodeColor(EMaterialGraphNodeType Type)
 	{
 		switch (Type)
@@ -386,11 +404,20 @@ void FMaterialEditorWidget::RenderToolbar(UMaterial* Material)
 		{
 			const EMaterialDomain Candidate = static_cast<EMaterialDomain>(i);
 			const bool bSelected = (Domain == Candidate);
-			if (ImGui::Selectable(ToString(Candidate), bSelected))
-			{
-				Material->SetDomain(Candidate);
-				RebuildOutputPinsForDomain(Material);
-			}
+            if (ImGui::Selectable(ToString(Candidate), bSelected))
+            {
+                const EMaterialDomain PreviousDomain = Material->GetDomain();
+
+                Material->SetDomain(Candidate);
+                RebuildOutputPinsForDomain(Material);
+
+                if (PreviousDomain != Candidate)
+                {
+                    ApplyDefaultBlendModeForDomain(Material, Candidate);
+                }
+
+                MarkDirty();
+            }
 			if (bSelected) ImGui::SetItemDefaultFocus();
 		}
 		ImGui::EndCombo();
@@ -429,18 +456,23 @@ void FMaterialEditorWidget::RenderToolbar(UMaterial* Material)
 	{
 		ImGui::TextDisabled("Replace current graph with:");
 		ImGui::Separator();
-		if (ImGui::MenuItem("Particle Color only (default)"))
-		{
-			Material->GetGraph().InitializeDefault(Material->GetDomain());
-			bPositionsPushed = false;
-			MarkDirty();
-		}
-		if (ImGui::MenuItem("Textured Particle (Tex × ParticleColor)"))
-		{
-			Material->GetGraph().ApplyTexturedParticlePreset(Material->GetDomain());
-			bPositionsPushed = false;
-			MarkDirty();
-		}
+        if (ImGui::MenuItem("Particle Color only (default)"))
+        {
+            Material->GetGraph().InitializeDefault(Material->GetDomain());
+            ApplyDefaultBlendModeForDomain(Material, Material->GetDomain());
+
+            bPositionsPushed = false;
+            MarkDirty();
+        }
+
+        if (ImGui::MenuItem("Textured Particle (Tex × ParticleColor)"))
+        {
+            Material->GetGraph().ApplyTexturedParticlePreset(Material->GetDomain());
+            ApplyDefaultBlendModeForDomain(Material, Material->GetDomain());
+
+            bPositionsPushed = false;
+            MarkDirty();
+        }
 		ImGui::EndPopup();
 	}
 

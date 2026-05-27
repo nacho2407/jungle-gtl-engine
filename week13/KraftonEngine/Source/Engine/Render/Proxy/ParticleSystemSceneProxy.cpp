@@ -33,14 +33,14 @@ static FParticleRenderState ResolveParticleRenderState(EParticleBlendMode BlendM
 {
 	switch (BlendMode)
 	{
+	case EParticleBlendMode::Opaque:
+		return { ERenderPass::Opaque, EBlendState::Opaque, EDepthStencilState::Default };
+
 	case EParticleBlendMode::Additive:
-		// 가산 합성 — 뒤 색상에 더해지므로 소팅 불필요, 뎁스 쓰기 금지
 		return { ERenderPass::AlphaBlend, EBlendState::Additive, EDepthStencilState::DepthReadOnly };
 
 	case EParticleBlendMode::AlphaBlend:
-	case EParticleBlendMode::Translucent:
 	default:
-		// 반투명 — 뎁스 쓰기 금지, back-to-front 소팅 필요
 		return { ERenderPass::AlphaBlend, EBlendState::AlphaBlend, EDepthStencilState::DepthReadOnly };
 	}
 }
@@ -160,41 +160,42 @@ void FParticleSystemSceneProxy::UpdatePerViewport(const FFrameContext& Frame)
 
 void FParticleSystemSceneProxy::BuildParticleCommands(
 	ID3D11Device* Device, ID3D11DeviceContext* Context,
-	const FFrameContext& Frame, FDrawCommandList& OutCmdList)
+	const FFrameContext& Frame, FDrawCommandList& OutCmdList, ERenderPass CurrentPass)
 {
 	if (CachedEmitterCount <= 0) return;
 
-	PARTICLE_STATS_RESET();
-
-	// QuadVB/IB 최초 1회 생성
-	if (!QuadVB.GetBuffer())
-		BuildQuadGeometry(Device);
-
-	// 에미터 수에 맞게 GPU 버퍼 확보
-	EnsureEmitterBuffers(Device, CachedEmitterCount);
-
-	// CPU 스테이징 채우기 — 매 프레임 여기서만 1회 실행
+	// Opaque 패스에서만 1회 실행 (스테이징은 패스와 무관하게 한 번만 채워야 함)
+	if (CurrentPass == ERenderPass::Opaque)
 	{
+		PARTICLE_STATS_RESET();
+
+		if (!QuadVB.GetBuffer())
+			BuildQuadGeometry(Device);
+
+		EnsureEmitterBuffers(Device, CachedEmitterCount);
+
 		SCOPE_STAT_CAT("ParticleStagingFill", "Particle");
 		for (int32 i = 0; i < CachedEmitterCount; ++i)
 		{
 			if (CachedEmitterData[i] && EmitterBuffers[i])
-				FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i]);
+				FillStagingBuffer(*CachedEmitterData[i], *EmitterBuffers[i], Frame);
 		}
 	}
 
-	// GPU 업로드 + 드로우 커맨드 생성
-	int32 SubmittedCount = 0;
+	// GPU 업로드 + 드로우 커맨드 생성 — 현재 패스에 해당하는 에미터만 제출
 	for (auto& BufferPtr : EmitterBuffers)
 	{
-		if (!BufferPtr || BufferPtr->ActiveParticleCount <= 0) continue;
-		SubmitEmitter(*BufferPtr, Device, Context, Frame, OutCmdList);
-		++SubmittedCount;
-	}
+		if (!BufferPtr || (BufferPtr->ActiveParticleCount <= 0 && BufferPtr->DynamicVertexCount <= 0)) continue;
 
-	if (SubmittedCount == 0)
-	{
-		UE_LOG("[ParticleProxy] BuildParticleCommands: %d emitter(s) cached but none had active particles", CachedEmitterCount);
+		if (BufferPtr->EmitterType != EDynamicEmitterType::Mesh)
+		{
+			const ERenderPass EmitterPass = BufferPtr->Material
+				? BufferPtr->Material->GetRenderPass()
+				: ResolveParticleRenderState(BufferPtr->BlendMode).Pass;
+			if (EmitterPass != CurrentPass) continue;
+		}
+
+		SubmitEmitter(*BufferPtr, Device, Context, Frame, OutCmdList, CurrentPass);
 	}
 }
 
@@ -252,7 +253,7 @@ void FParticleSystemSceneProxy::EnsureEmitterBuffers(ID3D11Device* Device, int32
 
 
 void FParticleSystemSceneProxy::FillStagingBuffer(
-	const FDynamicEmitterDataBase& EmitterData, FEmitterRenderBuffer& OutBuffer)
+	FDynamicEmitterDataBase& EmitterData, FEmitterRenderBuffer& OutBuffer, const FFrameContext& Frame)
 {
 	const FDynamicEmitterReplayDataBase& Source = EmitterData.GetSource();
 	const int32 Stride = EmitterData.GetDynamicVertexStride();
@@ -309,13 +310,15 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 
 		if (Source.eEmitterType == EDynamicEmitterType::Beam)
 		{
-			const auto& BeamData = static_cast<const FDynamicBeam2EmitterData&>(EmitterData);
+			auto& BeamData = static_cast<FDynamicBeam2EmitterData&>(EmitterData);
+			BeamData.BuildMeshData(Frame);
 			BuiltVertices = &BeamData.GetBuiltVertices();
 			BuiltIndices = &BeamData.GetBuiltIndices();
 		}
 		else
 		{
-			const auto& RibbonData = static_cast<const FDynamicRibbonEmitterData&>(EmitterData);
+			auto& RibbonData = static_cast<FDynamicRibbonEmitterData&>(EmitterData);
+			RibbonData.BuildMeshData(Frame);
 			BuiltVertices = &RibbonData.GetBuiltVertices();
 			BuiltIndices = &RibbonData.GetBuiltIndices();
 		}
@@ -350,6 +353,9 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 
 	if (Source.eEmitterType == EDynamicEmitterType::Sprite)
 	{
+		const FDynamicSpriteEmitterReplayDataBase& SpriteSource =
+			static_cast<const FDynamicSpriteEmitterReplayDataBase&>(Source);
+
 		for (int32 i = 0; i < Count; ++i)
 		{
 			const uint32 Idx = Source.DataContainer.ParticleIndices
@@ -360,7 +366,9 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 			    Source.DataContainer.ParticleData + Idx * Source.ParticleStride);
 			FParticleSpriteInstance* Inst = reinterpret_cast<FParticleSpriteInstance*>(
 			    OutBuffer.StagingBuffer.data() + i * Stride);
-			Inst->Position = P->Location;
+			Inst->Position = SpriteSource.bUseLocalSpace
+				? SpriteSource.SimulationToWorld.TransformPosition(P->Location)
+				: P->Location;
 			Inst->Size     = P->Size.X * Source.Scale.X;
 			Inst->Color    = P->Color.ToVector4();
 			Inst->Rotation = P->Rotation;
@@ -372,9 +380,11 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 	}
 	else if (Source.eEmitterType == EDynamicEmitterType::Mesh)
 	{
+		const FDynamicMeshEmitterReplayData& MeshSource =
+			static_cast<const FDynamicMeshEmitterReplayData&>(Source);
+
 		// FDynamicMeshEmitterReplayData에 있는 MeshRotationOffset을 꺼낸다.
-		const int32 MeshRotOffset =
-			static_cast<const FDynamicMeshEmitterReplayData&>(Source).MeshRotationOffset;
+		const int32 MeshRotOffset = MeshSource.MeshRotationOffset;
 
 		for (int32 i = 0; i < Count; ++i)
 		{
@@ -404,11 +414,13 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 				P->Size.Y * Source.Scale.Y,
 				P->Size.Z * Source.Scale.Z);
 
-			// SRT 순서로 월드 트랜스폼 구성
-			FMatrix WorldTM = FMatrix::MakeScaleMatrix(Scale) * FMatrix::MakeRotationEuler(Euler);
-			WorldTM.SetLocation(P->Location);
+			// Particle location/rotation is in simulation space when Local Space is enabled.
+			FMatrix ParticleTM = FMatrix::MakeScaleMatrix(Scale) * FMatrix::MakeRotationEuler(Euler);
+			ParticleTM.SetLocation(P->Location);
 
-			Inst->Transform = WorldTM;
+			Inst->Transform = MeshSource.bUseLocalSpace
+				? ParticleTM * MeshSource.SimulationToWorld
+				: ParticleTM;
 			Inst->Color     = P->Color.ToVector4();
 			Inst->SubImageIndex = P->RelativeTime;
 			Inst->DynamicParam  = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -420,7 +432,7 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 void FParticleSystemSceneProxy::SubmitEmitter(
 	FEmitterRenderBuffer& Buffer,
 	ID3D11Device* Device, ID3D11DeviceContext* Context,
-	const FFrameContext& Frame, FDrawCommandList& OutCmdList)
+	const FFrameContext& Frame, FDrawCommandList& OutCmdList, ERenderPass CurrentPass)
 {
 	switch (Buffer.EmitterType)
 	{
@@ -428,7 +440,7 @@ void FParticleSystemSceneProxy::SubmitEmitter(
 		SubmitSpriteEmitter(Buffer, Device, Context, Frame, OutCmdList);
 		break;
 	case EDynamicEmitterType::Mesh:
-		SubmitMeshEmitter(Buffer, Device, Context, Frame, OutCmdList);
+		SubmitMeshEmitter(Buffer, Device, Context, Frame, OutCmdList, CurrentPass);
 		break;
 	case EDynamicEmitterType::Ribbon:
 	case EDynamicEmitterType::Beam:
@@ -522,6 +534,15 @@ void FParticleSystemSceneProxy::SubmitSpriteEmitter(
         Cmd.Bindings.PerShaderCB[0] = &Buffer.ParticleFrameCB;
     }
 
+	if (Cmd.Pass == ERenderPass::AlphaBlend)
+	{
+		UParticleSystemComponent* Comp = static_cast<UParticleSystemComponent*>(GetOwner());
+		if (IsValid(Comp))
+		{
+			Cmd.SortDepth = (Comp->GetWorldLocation() - Frame.CameraPosition).Length();
+		}
+	}
+
 	Cmd.BuildSortKey();
 	PARTICLE_STATS_ADD_DRAW_CALL();
 }
@@ -602,6 +623,15 @@ void FParticleSystemSceneProxy::SubmitBeamTrailEmitter(
 		}
 	}
 
+	if (Cmd.Pass == ERenderPass::AlphaBlend)
+	{
+		UParticleSystemComponent* Comp = static_cast<UParticleSystemComponent*>(GetOwner());
+		if (IsValid(Comp))
+		{
+			Cmd.SortDepth = (Comp->GetWorldLocation() - Frame.CameraPosition).Length();
+		}
+	}
+
 	Cmd.BuildSortKey();
 	PARTICLE_STATS_ADD_DRAW_CALL();
 }
@@ -610,7 +640,7 @@ void FParticleSystemSceneProxy::SubmitBeamTrailEmitter(
 void FParticleSystemSceneProxy::SubmitMeshEmitter(
 	FEmitterRenderBuffer& Buffer,
 	ID3D11Device* Device, ID3D11DeviceContext* Context,
-	const FFrameContext& Frame, FDrawCommandList& OutCmdList)
+	const FFrameContext& Frame, FDrawCommandList& OutCmdList, ERenderPass CurrentPass)
 {
 	if (!Buffer.EmitterMeshBuffer)
 	{
@@ -648,7 +678,15 @@ void FParticleSystemSceneProxy::SubmitMeshEmitter(
 			SectionMaterial = Buffer.MeshSectionMaterials[DrawIdx];
 		}
 
-		FShader* Shader = SectionMaterial && SectionMaterial->GetShader()
+		const ERenderPass SectionPass = SectionMaterial
+			? SectionMaterial->GetRenderPass()
+			: RS.Pass;
+		if (SectionPass != CurrentPass)
+		{
+			continue;
+		}
+
+		FShader* Shader = SectionMaterial && SectionMaterial->GetDomain() == EMaterialDomain::ParticleMesh && SectionMaterial->GetShader()
 			? SectionMaterial->GetShader()
 			: FShaderManager::Get().GetOrCreate(EShaderPath::ParticleMesh);
 		if (!Shader)
@@ -695,6 +733,16 @@ void FParticleSystemSceneProxy::SubmitMeshEmitter(
 				Cmd.Bindings.SRVs[Slot] = MatSRVs[Slot]
 					? const_cast<ID3D11ShaderResourceView*>(MatSRVs[Slot])
 					: FallbackWhite;
+			}
+		}
+
+		if (Cmd.Pass == ERenderPass::AlphaBlend)
+		{
+			UParticleSystemComponent* Comp = static_cast<UParticleSystemComponent*>(GetOwner());
+			if (IsValid(Comp))
+			{
+				// 카메라 위치(Frame.CameraPosition)와 파티클 컴포넌트 월드 위치 사이의 거리 계산
+				Cmd.SortDepth = (Comp->GetWorldLocation() - Frame.CameraPosition).Length();
 			}
 		}
 

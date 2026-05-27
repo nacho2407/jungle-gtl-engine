@@ -8,13 +8,24 @@
 
 namespace
 {
-	FVector GetBeamEmitterXAxis(const FParticleBeam2EmitterInstance* BeamInst)
+	FMatrix GetBeamContextMatrix(const UParticleModule::FContext& Context)
 	{
-		if (BeamInst && BeamInst->Component)
-		{
-			return BeamInst->Component->GetWorldMatrix().TransformVector(FVector::XAxisVector).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
-		}
-		return FVector::XAxisVector;
+		return Context.GetTransform().ToMatrix();
+	}
+
+	FVector GetBeamContextXAxis(const UParticleModule::FContext& Context)
+	{
+		return GetBeamContextMatrix(Context).TransformVector(FVector::XAxisVector).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+	}
+
+	FVector TransformBeamSourcePosition(const UParticleModule::FContext& Context, const FVector& Value, bool bAbsolute)
+	{
+		return bAbsolute ? Value : GetBeamContextMatrix(Context).TransformPosition(Value);
+	}
+
+	FVector TransformBeamSourceVector(const UParticleModule::FContext& Context, const FVector& Value, bool bAbsolute)
+	{
+		return bAbsolute ? Value : GetBeamContextMatrix(Context).TransformVector(Value);
 	}
 
 }
@@ -183,28 +194,40 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 	// intentionally stubbed. Do not fall back to Default distribution,
 	// emitter transform, or any substitute source.
 	if (SourceMethod == PEB2STM_Actor ||
-		SourceMethod == PEB2STM_Emitter ||
 		SourceMethod == PEB2STM_Particle)
 	{
 		return false;
 	}
 
-	switch (SourceMethod)
+	if (bSpawning || !bLockSource)
 	{
-	case PEB2STM_UserSet:
-		if (bSpawning || !bLockSource)
+		bool bSetSource = false;
+		switch (SourceMethod)
 		{
-			if (!BeamInst->GetBeamSourcePoint(ParticleIndex, BeamData->SourcePoint))
+		case PEB2STM_UserSet:
+			if (BeamInst->GetBeamSourcePoint(ParticleIndex, BeamData->SourcePoint) ||
+				BeamInst->GetBeamSourcePoint(0, BeamData->SourcePoint))
 			{
-				BeamInst->GetBeamSourcePoint(0, BeamData->SourcePoint);
+				bSetSource = true;
 			}
+			break;
+		case PEB2STM_Emitter:
+			BeamData->SourcePoint = Context.GetTransform().Location;
+			bSetSource = true;
+			break;
+		case PEB2STM_Default:
+			break;
+		default:
+			return false;
 		}
-		break;
-	case PEB2STM_Default:
-		if (bSpawning || !bLockSource) BeamData->SourcePoint = Source.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		break;
-	default:
-		return false;
+
+		if (!bSetSource)
+		{
+			BeamData->SourcePoint = TransformBeamSourcePosition(
+				Context,
+				Source.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData()),
+				bSourceAbsolute);
+		}
 	}
 
 	if (bSpawning || !bLockSourceTangent)
@@ -214,7 +237,7 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 		{
 		case PEB2STTM_Direct:
 		case PEB2STTM_Emitter:
-			BeamData->SourceTangent = GetBeamEmitterXAxis(BeamInst);
+			BeamData->SourceTangent = GetBeamContextXAxis(Context);
 			bSetSourceTangent = true;
 			break;
 		case PEB2STTM_UserSet:
@@ -232,7 +255,10 @@ bool UParticleModuleBeamSource::ResolveSourceData(const FContext& Context, FPart
 
 		if (!bSetSourceTangent)
 		{
-			BeamData->SourceTangent = SourceTangent.GetValue(Particle.RelativeTime, Context.GetDistributionData());
+			BeamData->SourceTangent = TransformBeamSourceVector(
+				Context,
+				SourceTangent.GetValue(Particle.RelativeTime, Context.GetDistributionData()),
+				bSourceAbsolute);
 		}
 	}
 

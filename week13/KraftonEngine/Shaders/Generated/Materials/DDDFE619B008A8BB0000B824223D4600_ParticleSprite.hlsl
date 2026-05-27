@@ -5,6 +5,8 @@
 #include "Common/VertexLayouts.hlsli"
 #include "Common/Functions.hlsli"
 #include "Common/SystemSamplers.hlsli"
+#define USE_FOG 1
+#include "Common/Fog.hlsli"
 
 struct FMaterialPixelInput
 {
@@ -56,8 +58,8 @@ FMaterialResult EvaluateMaterial(FMaterialPixelInput Input)
     float n_126 = 1.000000f;
     float n_118 = clamp(n_87, n_124, n_126);
     FMaterialResult Result;
-    Result.Color = float3(0, 0, 0);
-    Result.Emissive = n_111;
+    Result.Color = n_111;
+    Result.Emissive = float3(0, 0, 0);
     Result.Opacity = n_118;
     Result.UVOffset = float2(0, 0);
     return Result;
@@ -71,6 +73,7 @@ struct PS_Input_MaterialParticle
     float4 color          : COLOR;
     float  subImageIndex  : TEXCOORD1;
     float4 dynamicParam   : TEXCOORD2;
+    float3 worldPos       : TEXCOORD3;
 };
 
 PS_Input_MaterialParticle VS(VS_Input_ParticleQuad quad, VS_Input_ParticleInstance inst)
@@ -93,6 +96,7 @@ PS_Input_MaterialParticle VS(VS_Input_ParticleQuad quad, VS_Input_ParticleInstan
     output.color          = inst.color;
     output.subImageIndex  = inst.subImageIndex;
     output.dynamicParam   = inst.dynamicParam;
+    output.worldPos       = worldPos;
     return output;
 }
 
@@ -111,5 +115,5 @@ float4 PS(PS_Input_MaterialParticle input) : SV_TARGET
     FMaterialResult Result = EvaluateMaterial(MaterialInput);
     float4 FinalColor = float4(Result.Color + Result.Emissive, Result.Opacity);
     clip(FinalColor.a - 0.01f);
-    return FinalColor;
+    return ApplyFogTranslucent(FinalColor, input.worldPos, CameraWorldPos);
 }

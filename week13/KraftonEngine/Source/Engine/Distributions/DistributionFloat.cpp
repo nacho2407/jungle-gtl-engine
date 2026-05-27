@@ -3,7 +3,9 @@
 #include "Serialization/Archive.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Object/GarbageCollection.h"
+#include "Math/FloatCurveSerialization.h"
 #include <cstdlib>
+#include <algorithm>
 
 void UDistributionFloat::Serialize(FArchive& Ar)
 {
@@ -29,6 +31,54 @@ float UDistributionFloatUniform::GetValue(float Time, UObject* Data, FRandomStre
 	return FMath::Lerp(Min, Max, Alpha);
 }
 
+
+static void GetFloatCurveRange(const FFloatCurve& Curve, float& OutMin, float& OutMax)
+{
+	if (Curve.Keys.empty())
+	{
+		OutMin = OutMax = Curve.DefaultValue;
+		return;
+	}
+
+	OutMin = Curve.Keys.front().Value;
+	OutMax = Curve.Keys.front().Value;
+	for (const FCurveKey& Key : Curve.Keys)
+	{
+		OutMin = (std::min)(OutMin, Key.Value);
+		OutMax = (std::max)(OutMax, Key.Value);
+	}
+}
+
+static void InitializeFloatCurve(FFloatCurve& Curve, float InitialValue)
+{
+	Curve.Reset();
+	Curve.DefaultValue = InitialValue;
+	Curve.AddKey(0.0f, InitialValue);
+	Curve.AddKey(1.0f, InitialValue);
+	Curve.SortKeys();
+	Curve.AutoSetTangents();
+}
+
+UDistributionFloatCurve::UDistributionFloatCurve()
+{
+	InitializeFloatCurve(Curve, 0.0f);
+}
+
+float UDistributionFloatCurve::GetValue(float Time, UObject* Data, FRandomStream* InRandomStream) const
+{
+	return Curve.Evaluate(Time);
+}
+
+void UDistributionFloatCurve::GetRange(float& OutMin, float& OutMax) const
+{
+	GetFloatCurveRange(Curve, OutMin, OutMax);
+}
+
+void UDistributionFloatCurve::Serialize(FArchive& Ar)
+{
+	UDistributionFloat::Serialize(Ar);
+	SerializeFloatCurve(Ar, Curve);
+}
 
 void FRawDistributionFloat::AddReferencedObjects(FReferenceCollector& Collector) const
 {

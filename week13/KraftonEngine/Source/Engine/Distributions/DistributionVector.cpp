@@ -1,9 +1,11 @@
-﻿#include "DistributionVector.h"
+#include "DistributionVector.h"
 #include "Math/RandomStream.h"
 #include "Serialization/Archive.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Object/GarbageCollection.h"
+#include "Math/FloatCurveSerialization.h"
 #include <cstdlib>
+#include <algorithm>
 
 void UDistributionVector::Serialize(FArchive& Ar)
 {
@@ -43,6 +45,60 @@ FVector UDistributionVectorUniform::GetValue(float Time, UObject* Data, FRandomS
 	return Result;
 }
 
+
+static void InitializeVectorCurveChannel(FFloatCurve& Curve, float InitialValue)
+{
+	Curve.Reset();
+	Curve.DefaultValue = InitialValue;
+	Curve.AddKey(0.0f, InitialValue);
+	Curve.AddKey(1.0f, InitialValue);
+	Curve.SortKeys();
+	Curve.AutoSetTangents();
+}
+
+static void GetVectorCurveChannelRange(const FFloatCurve& Curve, float& OutMin, float& OutMax)
+{
+	if (Curve.Keys.empty())
+	{
+		OutMin = OutMax = Curve.DefaultValue;
+		return;
+	}
+
+	OutMin = Curve.Keys.front().Value;
+	OutMax = Curve.Keys.front().Value;
+	for (const FCurveKey& Key : Curve.Keys)
+	{
+		OutMin = (std::min)(OutMin, Key.Value);
+		OutMax = (std::max)(OutMax, Key.Value);
+	}
+}
+
+UDistributionVectorCurve::UDistributionVectorCurve()
+{
+	InitializeVectorCurveChannel(X, 0.0f);
+	InitializeVectorCurveChannel(Y, 0.0f);
+	InitializeVectorCurveChannel(Z, 0.0f);
+}
+
+FVector UDistributionVectorCurve::GetValue(float Time, UObject* Data, FRandomStream* InRandomStream) const
+{
+	return FVector(X.Evaluate(Time), Y.Evaluate(Time), Z.Evaluate(Time));
+}
+
+void UDistributionVectorCurve::GetRange(FVector& OutMin, FVector& OutMax) const
+{
+	GetVectorCurveChannelRange(X, OutMin.X, OutMax.X);
+	GetVectorCurveChannelRange(Y, OutMin.Y, OutMax.Y);
+	GetVectorCurveChannelRange(Z, OutMin.Z, OutMax.Z);
+}
+
+void UDistributionVectorCurve::Serialize(FArchive& Ar)
+{
+	UDistributionVector::Serialize(Ar);
+	SerializeFloatCurve(Ar, X);
+	SerializeFloatCurve(Ar, Y);
+	SerializeFloatCurve(Ar, Z);
+}
 
 void FRawDistributionVector::AddReferencedObjects(FReferenceCollector& Collector) const
 {

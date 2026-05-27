@@ -15,18 +15,19 @@
 
 namespace
 {
-	FVector GetBeamEmitterXAxis(const FParticleEmitterInstance& Owner)
+	FMatrix GetBeamContextMatrix(const UParticleModule::FContext& Context)
 	{
-		if (Owner.Component)
-		{
-			return Owner.Component->GetWorldMatrix().TransformVector(FVector::XAxisVector).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
-		}
-		return FVector::XAxisVector;
+		return Context.GetTransform().ToMatrix();
 	}
 
-	FVector GetBeamEmitterLocation(const FParticleEmitterInstance& Owner)
+	FVector GetBeamContextXAxis(const UParticleModule::FContext& Context)
 	{
-		return Owner.Component ? Owner.Component->GetWorldLocation() : FVector::ZeroVector;
+		return GetBeamContextMatrix(Context).TransformVector(FVector::XAxisVector).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+	}
+
+	FVector GetBeamContextLocation(const UParticleModule::FContext& Context)
+	{
+		return Context.GetTransform().Location;
 	}
 
 	FVector CubicInterpVector(const FVector& P0, const FVector& T0, const FVector& P1, const FVector& T1, float Alpha)
@@ -268,15 +269,15 @@ void UParticleModuleTypeDataBeam2::Spawn(const FSpawnContext& Context)
 
 	if (!bHasSourceModule)
 	{
-		BeamData->SourcePoint = GetBeamEmitterLocation(Context.Owner);
-		BeamData->SourceTangent = GetBeamEmitterXAxis(Context.Owner);
+		BeamData->SourcePoint = GetBeamContextLocation(Context);
+		BeamData->SourceTangent = GetBeamContextXAxis(Context);
 		BeamData->SourceStrength = 1.0f;
 	}
 
 	if (!bHasTargetModule && BeamMethod == PEB2M_Distance)
 	{
 		const float BeamDistance = Distance.GetValue(Context.Owner.EmitterTime, Context.GetDistributionData());
-		FVector Direction = GetBeamEmitterXAxis(Context.Owner);
+		FVector Direction = GetBeamContextXAxis(Context);
 		BeamData->TargetPoint = BeamData->SourcePoint + Direction * BeamDistance;
 		BeamData->TargetTangent = -Direction;
 		BeamData->TargetStrength = 1.0f;
@@ -356,14 +357,14 @@ void UParticleModuleTypeDataBeam2::Update(const FUpdateContext& Context)
 
 	if (BeamInst && !BeamInst->BeamModule_Source)
 	{
-		BeamData->SourcePoint = GetBeamEmitterLocation(Context.Owner);
-		BeamData->SourceTangent = GetBeamEmitterXAxis(Context.Owner);
+		BeamData->SourcePoint = GetBeamContextLocation(Context);
+		BeamData->SourceTangent = GetBeamContextXAxis(Context);
 	}
 
 	if (BeamInst && !BeamInst->BeamModule_Target && BeamInst->BeamMethod == PEB2M_Distance)
 	{
 		const float TotalDistance = Distance.GetValue(Particle.RelativeTime, Context.GetDistributionData());
-		FVector Direction = GetBeamEmitterXAxis(Context.Owner);
+		FVector Direction = GetBeamContextXAxis(Context);
 		BeamData->TargetPoint = BeamData->SourcePoint + Direction * TotalDistance;
 		BeamData->TargetTangent = -Direction;
 	}

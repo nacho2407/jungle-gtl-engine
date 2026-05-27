@@ -4,10 +4,10 @@
 #include "Serialization/Archive.h"
 
 UParticleModuleTypeDataRibbon::UParticleModuleTypeDataRibbon()
-	: bDeadTrailsOnDeactivate(false)
-	, bDeadTrailsOnSourceLoss(false)
-	, bClipSourceSegement(false)
-	, bEnablePreviousTangentRecalculation(false)
+	: bDeadTrailsOnDeactivate(true)
+	, bDeadTrailsOnSourceLoss(true)
+	, bClipSourceSegement(true)
+	, bEnablePreviousTangentRecalculation(true)
 	, bTangentRecalculationEveryFrame(false)
 	, bSpawnInitialParticle(false)
 	, bRenderGeometry(true)
@@ -16,6 +16,13 @@ UParticleModuleTypeDataRibbon::UParticleModuleTypeDataRibbon()
 	, bRenderTessellation(false)
 	, bEnableTangentDiffInterpScale(false)
 {
+	MaxTessellationBetweenParticles = 25;
+	SheetsPerTrail = 1;
+	MaxTrailCount = 1;
+	MaxParticleInTrailCount = 500;
+	TangentSpawningScalar = 0.0f;
+	DistanceTessellationStepSize = 15.0f;
+	TangentTessellationScalar = 5.0f;
 }
 
 uint32 UParticleModuleTypeDataRibbon::RequiredBytes(UParticleModuleTypeDataBase* TypeData)

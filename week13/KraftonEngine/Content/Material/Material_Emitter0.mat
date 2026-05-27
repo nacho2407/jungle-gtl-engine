@@ -1,8 +1,8 @@
 {
   "BlendState" : "AlphaBlend",
   "Compiled" : {
-    "GeneratorVersion" : "ParticleSpriteCBLayout_v3",
-    "GraphHash" : "FD9BD15987AABC82",
+    "GeneratorVersion" : "ParticleSpriteFog_v5",
+    "GraphHash" : "A1872DB66E836FF2",
     "Parameters" : {
 
     },
@@ -102,10 +102,6 @@
         "LinkId" : 150,
         "ToPinId" : 44
       }, {
-        "FromPinId" : 122,
-        "LinkId" : 160,
-        "ToPinId" : 142
-      }, {
         "FromPinId" : 165,
         "LinkId" : 166,
         "ToPinId" : 112
@@ -113,10 +109,6 @@
         "FromPinId" : 46,
         "LinkId" : 170,
         "ToPinId" : 164
-      }, {
-        "FromPinId" : 114,
-        "LinkId" : 171,
-        "ToPinId" : 141
       }, {
         "FromPinId" : 97,
         "LinkId" : 177,
@@ -133,8 +125,16 @@
         "FromPinId" : 180,
         "LinkId" : 186,
         "ToPinId" : 174
+      }, {
+        "FromPinId" : 114,
+        "LinkId" : 198,
+        "ToPinId" : 194
+      }, {
+        "FromPinId" : 122,
+        "LinkId" : 199,
+        "ToPinId" : 196
       }],
-    "NextId" : 187,
+    "NextId" : 200,
     "Nodes" : [{
         "DisplayName" : "Texture Object",
         "Mask" : "RGBA",
@@ -270,25 +270,25 @@
             "DisplayName" : "Color",
             "Kind" : "Input",
             "OwningNodeId" : 27,
-            "PinId" : 140,
+            "PinId" : 194,
             "Type" : "Float3"
           }, {
             "DisplayName" : "Emissive",
             "Kind" : "Input",
             "OwningNodeId" : 27,
-            "PinId" : 141,
+            "PinId" : 195,
             "Type" : "Float3"
           }, {
             "DisplayName" : "Opacity",
             "Kind" : "Input",
             "OwningNodeId" : 27,
-            "PinId" : 142,
+            "PinId" : 196,
             "Type" : "Float"
           }, {
             "DisplayName" : "UVOffset",
             "Kind" : "Input",
             "OwningNodeId" : 27,
-            "PinId" : 143,
+            "PinId" : 197,
             "Type" : "Float2"
           }],
         "PosX" : 22.000000,

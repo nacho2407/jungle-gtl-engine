@@ -24,7 +24,7 @@ public:
 
 	// DrawCommandBuilder::BuildProxyCommands에서 Particle 분기로 호출
 	void BuildParticleCommands(ID3D11Device* Device, ID3D11DeviceContext* Context,
-		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
+		const FFrameContext& Frame, FDrawCommandList& OutCmdList, ERenderPass CurrentPass);
 
 private:
 	FVertexBuffer QuadVB;
@@ -63,13 +63,13 @@ private:
 	void EnsureEmitterBuffers(ID3D11Device* Device, int32 EmitterCount);
 
 	// 파티클 데이터 → 인스턴스 버퍼 포맷 변환 (CPU 전용)
-	void FillStagingBuffer(const FDynamicEmitterDataBase& EmitterData,
-		FEmitterRenderBuffer& OutBuffer);
+	void FillStagingBuffer(FDynamicEmitterDataBase& EmitterData,
+		FEmitterRenderBuffer& OutBuffer, const FFrameContext& Frame);
 
 	// 타입별 GPU 업로드 + FDrawCommand 생성
 	void SubmitEmitter(FEmitterRenderBuffer& Buffer,
 		ID3D11Device* Device, ID3D11DeviceContext* Context,
-		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
+		const FFrameContext& Frame, FDrawCommandList& OutCmdList, ERenderPass CurrentPass);
 
 	void SubmitSpriteEmitter(FEmitterRenderBuffer& Buffer,
 		ID3D11Device* Device, ID3D11DeviceContext* Context,
@@ -77,7 +77,7 @@ private:
 
 	void SubmitMeshEmitter(FEmitterRenderBuffer& Buffer,
 		ID3D11Device* Device, ID3D11DeviceContext* Context,
-		const FFrameContext& Frame, FDrawCommandList& OutCmdList);
+		const FFrameContext& Frame, FDrawCommandList& OutCmdList, ERenderPass CurrentPass);
 
 	void SubmitBeamTrailEmitter(FEmitterRenderBuffer& Buffer,
 		ID3D11Device* Device, ID3D11DeviceContext* Context,

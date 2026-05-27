@@ -144,6 +144,10 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	GetOrCreate(EShaderPath::UberLit, StartupError);
 	GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Default, EUberLitDefines::EVertexFactory::SkeletalMesh, StartupError);
 
+	// AlphaBlend 패스용 — USE_FOG=1 퍼뮤테이션 사전 컴파일
+	GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Default, EUberLitDefines::EVertexFactory::StaticMesh,   StartupError, false, true);
+	GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Default, EUberLitDefines::EVertexFactory::SkeletalMesh, StartupError, false, true);
+
 	// include 역매핑 구축
 	RebuildIncludeDependents();
 
@@ -261,10 +265,10 @@ FShader* FShaderManager::GetOrCreateShadowDepthPermutation(EShadowDepthDefines::
 }
 
 FShader* FShaderManager::GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel,
-	EUberLitDefines::EVertexFactory VertexFactory, EShaderErrorMode ErrorMode, bool bWeightBoneHeatMap)
+	EUberLitDefines::EVertexFactory VertexFactory, EShaderErrorMode ErrorMode, bool bWeightBoneHeatMap, bool bFog)
 {
-	const D3D_SHADER_MACRO* Defines = EUberLitDefines::GetDefines(LightingModel, VertexFactory, bWeightBoneHeatMap);
-	return PreCompile(EUberLitDefines::MakePermutationKey(LightingModel, VertexFactory, bWeightBoneHeatMap), Defines, ErrorMode);
+	const D3D_SHADER_MACRO* Defines = EUberLitDefines::GetDefines(LightingModel, VertexFactory, bWeightBoneHeatMap, bFog);
+	return PreCompile(EUberLitDefines::MakePermutationKey(LightingModel, VertexFactory, bWeightBoneHeatMap, bFog), Defines, ErrorMode);
 }
 
 // ============================================================

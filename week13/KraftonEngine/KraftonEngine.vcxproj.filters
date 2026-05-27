@@ -546,6 +546,9 @@
     <FxCompile Include="Shaders\Common\ConstantBuffers.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Common\Fog.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -580,6 +583,9 @@
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\DDDFE619B008A8BB0000B824223D4600_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\_628A9F53151EB9DD000131497CDADFC0_ParticleSprite.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Geometry\Decal.hlsl">
@@ -740,6 +746,9 @@
     <ClCompile Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Curve</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Curve\InlineFloatCurveEditor.cpp">
+      <Filter>Source\Editor\UI\Asset\Curve</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Material</Filter>
     </ClCompile>
@@ -748,6 +757,15 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorCommands.cpp">
+      <Filter>Source\Editor\UI\Asset\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorPanels.cpp">
+      <Filter>Source\Editor\UI\Asset\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorPrivate.cpp">
+      <Filter>Source\Editor\UI\Asset\Particle</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Particle</Filter>
@@ -1278,6 +1296,9 @@
       <Filter>Source\Engine\Materials\Graph</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\FloatCurve.cpp">
+      <Filter>Source\Engine\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Math\FloatCurveSerialization.cpp">
       <Filter>Source\Engine\Math</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Math\Matrix.cpp">
@@ -1862,6 +1883,9 @@
     <ClInclude Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Curve</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Curve\InlineFloatCurveEditor.h">
+      <Filter>Source\Editor\UI\Asset\Curve</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Material</Filter>
     </ClInclude>
@@ -1870,6 +1894,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorPrivate.h">
+      <Filter>Source\Editor\UI\Asset\Particle</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Particle</Filter>
@@ -2490,6 +2517,9 @@
       <Filter>Source\Engine\Materials\Graph</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\FloatCurve.h">
+      <Filter>Source\Engine\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Math\FloatCurveSerialization.h">
       <Filter>Source\Engine\Math</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Math\MathUtils.h">

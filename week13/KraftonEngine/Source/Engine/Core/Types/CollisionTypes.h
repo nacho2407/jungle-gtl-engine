@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Math/Vector.h"
 #include "Core/Types/CoreTypes.h"
 #include "Core/Types/PropertyTypes.h"
@@ -62,6 +62,72 @@ enum class ECollisionEnabled : uint8
 	COUNT
 };
 
+UENUM()
+// ECollisionShape: Sweep geometry 종류
+enum class ECollisionShape : uint8
+{
+	Sphere,
+	Capsule,
+	Box,
+
+	COUNT
+};
+
+// FCollisionShape: Sweep에 사용할 geometry 기술자
+// 각 shape별 파라미터를 union으로 보관, 팩토리 함수로 생성
+USTRUCT()
+struct FCollisionShape
+{
+	GENERATED_BODY()
+	ECollisionShape ShapeType = ECollisionShape::Sphere;
+	union
+	{
+		struct { float Radius; }                    Sphere;
+		struct { float Radius; float HalfHeight; }  Capsule;  // HalfHeight = 구 포함 전체 절반
+		struct { float HalfX; float HalfY; float HalfZ; } Box;
+	};
+
+	// -------------------------------------------------------
+	// 팩토리
+	// -------------------------------------------------------
+	static FCollisionShape MakeSphere(float Radius)
+	{
+		FCollisionShape S;
+		S.ShapeType = ECollisionShape::Sphere;
+		S.Sphere.Radius = Radius;
+		return S;
+	}
+
+	// HalfHeight: 구 포함 캡슐 전체 절반 높이 (UE 관례)
+	static FCollisionShape MakeCapsule(float Radius, float HalfHeight)
+	{
+		FCollisionShape S;
+		S.ShapeType = ECollisionShape::Capsule;
+		S.Capsule.Radius = Radius;
+		S.Capsule.HalfHeight = HalfHeight;
+		return S;
+	}
+
+	// Extent: 각 축 절반 크기 (Box half-extent)
+	static FCollisionShape MakeBox(const FVector& Extent)
+	{
+		FCollisionShape S;
+		S.ShapeType = ECollisionShape::Box;
+		S.Box.HalfX = Extent.X;
+		S.Box.HalfY = Extent.Y;
+		S.Box.HalfZ = Extent.Z;
+		return S;
+	}
+
+	// -------------------------------------------------------
+	// 접근자
+	// -------------------------------------------------------
+	float GetSphereRadius()      const { return Sphere.Radius; }
+	float GetCapsuleRadius()     const { return Capsule.Radius; }
+	float GetCapsuleHalfHeight() const { return Capsule.HalfHeight; }
+	FVector GetExtent()          const { return FVector(Box.HalfX, Box.HalfY, Box.HalfZ); }
+};
+
 // ============================================================
 // FCollisionResponseContainer — 채널별 응답 테이블
 // ============================================================
@@ -123,6 +189,7 @@ struct FHitResult
 	FVector ImpactNormal = { 0, 0, 0 };
 	int FaceIndex = -1;
 
+	bool bStartPenetrating = false;
 	bool bHit = false;
 };
 

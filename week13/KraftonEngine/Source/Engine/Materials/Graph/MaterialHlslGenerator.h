@@ -11,6 +11,7 @@ struct FMaterialCompileOptions
 	EBlendState BlendState = EBlendState::Opaque;
 	EDepthStencilState DepthStencilState = EDepthStencilState::Default;
 	ERasterizerState RasterizerState = ERasterizerState::SolidBackCull;
+	bool bReceiveLighting = false; // ParticleMesh 전용 — Ambient + Directional 조명 적용
 };
 
 struct FMaterialCompileResult

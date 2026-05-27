@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Core/Types/CoreTypes.h"
+#include "Math/Vector.h"
 #include <cmath>
 
 namespace FMath
@@ -8,6 +9,8 @@ namespace FMath
 	constexpr float DegToRad = Pi / 180.0f;
 	constexpr float RadToDeg = 180.0f / Pi;
 	constexpr float Epsilon = 1e-4f;
+	constexpr float SMALL_NUMBER = 1e-8f;
+	constexpr float KINDA_SMALL_NUMBER = 1e-4f;
 	static int32 GSRandSeed;
 
 	inline float Clamp(float Val, float Lo, float Hi)
@@ -117,6 +120,35 @@ namespace FMath
 	{
 		// 현재는 SRand 가 FRand 의 구현과 같아서 재활용 (향후 바꿔야할 경우를 위해 분리는 해둠)
 		return SRand();
+	}
+
+	inline static float Abs(float Value)
+	{
+		return fabsf(Value);
+	}
+
+	inline static double Abs(double Value)
+	{
+		return fabs(Value);
+	}
+
+	inline static int32 Abs(int32 Value)
+	{
+		return abs(Value);
+	}
+
+	// 단일 float
+	inline static bool IsNearlyZero(float Value, float Tolerance = KINDA_SMALL_NUMBER)
+	{
+		return Abs(Value) <= Tolerance;
+	}
+
+	// FVector 전체가 nearly zero인지
+	inline static bool IsNearlyZero(const FVector& V, float Tolerance = KINDA_SMALL_NUMBER)
+	{
+		return Abs(V.X) <= Tolerance
+			&& Abs(V.Y) <= Tolerance
+			&& Abs(V.Z) <= Tolerance;
 	}
 }
 

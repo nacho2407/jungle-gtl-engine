@@ -78,6 +78,7 @@ void FSystemResources::Create(ID3D11Device* InDevice)
 
 	FrameBuffer.Create(InDevice, sizeof(FFrameConstants), "FrameBuffer");
 	LightingConstantBuffer.Create(InDevice, sizeof(FLightingCBData), "LightingConstantBuffer");
+	FogConstantBuffer.Create(InDevice, sizeof(FFogConstants), "FogConstantBuffer");
 	ForwardLights.Create(InDevice, 32);
 
 	RasterizerStateManager.Create(InDevice);
@@ -807,6 +808,7 @@ void FSystemResources::Release()
 
 	FrameBuffer.Release();
 	LightingConstantBuffer.Release();
+	FogConstantBuffer.Release();
 	ForwardLights.Release();
 	TileCullingResource.Release();
 }
@@ -836,6 +838,31 @@ void FSystemResources::UpdateFrameBuffer(FD3DDevice& Device, const FFrameContext
 	Ctx->VSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 	Ctx->PSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
 	Ctx->CSSetConstantBuffers(ECBSlot::Frame, 1, &b0);
+}
+
+void FSystemResources::UpdateFogBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame)
+{
+	ID3D11DeviceContext* Ctx = Device.GetDeviceContext();
+
+	FFogConstants FogData = {};
+	const bool bHasFog = Frame.RenderOptions.ShowFlags.bFog && Scene.GetEnvironment().HasFog();
+	if (bHasFog)
+	{
+		const FFogParams& P = Scene.GetEnvironment().GetFogParams();
+		FogData.InscatteringColor = P.InscatteringColor;
+		FogData.Density           = P.Density;
+		FogData.HeightFalloff     = P.HeightFalloff;
+		FogData.FogBaseHeight     = P.FogBaseHeight;
+		FogData.StartDistance     = P.StartDistance;
+		FogData.CutoffDistance    = P.CutoffDistance;
+		FogData.MaxOpacity        = P.MaxOpacity;
+		FogData.FogEnabled        = 1.0f;
+	}
+
+	FogConstantBuffer.Update(Ctx, &FogData, sizeof(FFogConstants));
+	ID3D11Buffer* b7 = FogConstantBuffer.GetBuffer();
+	Ctx->VSSetConstantBuffers(ECBSlot::Fog, 1, &b7);
+	Ctx->PSSetConstantBuffers(ECBSlot::Fog, 1, &b7);
 }
 
 void FSystemResources::UpdateLightBuffer(FD3DDevice& Device, const FScene& Scene, const FFrameContext& Frame)

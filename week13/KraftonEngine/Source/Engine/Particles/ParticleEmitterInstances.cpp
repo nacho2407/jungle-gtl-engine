@@ -2152,6 +2152,21 @@ bool FParticleEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& Out
 		return false;
 	}
 
+	// Render replay data is consumed after simulation, so carry the current
+	// simulation-to-world transform with the copied particle payloads.
+	UpdateTransforms();
+
+	const bool bLocalSpace = UseLocalSpace();
+	OutData.SimulationToWorld = bLocalSpace ? SimulationToWorld : FMatrix::Identity;
+
+	if (OutData.eEmitterType == EDynamicEmitterType::Sprite ||
+		OutData.eEmitterType == EDynamicEmitterType::Mesh ||
+		OutData.eEmitterType == EDynamicEmitterType::Beam ||
+		OutData.eEmitterType == EDynamicEmitterType::Ribbon)
+	{
+		static_cast<FDynamicSpriteEmitterReplayDataBase&>(OutData).bUseLocalSpace = bLocalSpace;
+	}
+
 	CopyActiveParticlesToReplay(*this, OutData);
 	return true;
 }
@@ -2711,6 +2726,12 @@ void FParticleBeam2EmitterInstance::InitParameters(UParticleEmitter* InTemplate,
 	FParticleEmitterInstance::InitParameters(InTemplate, InComponent);
 	bIsBeam = true;
 	BeamTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataBeam2>(CurrentLODLevel->TypeDataModule) : nullptr;
+	if (CurrentLODLevel && CurrentLODLevel->RequiredModule && CurrentLODLevel->RequiredModule->bUseLocalSpace)
+	{
+		// UE Cascade Beam2 forces beam emitters into world-space here. Source/Target
+		// modules then use the component transform when resolving default data.
+		CurrentLODLevel->RequiredModule->bUseLocalSpace = false;
+	}
 }
 
 void FParticleBeam2EmitterInstance::Init()
@@ -3166,7 +3187,6 @@ FDynamicEmitterDataBase* FParticleBeam2EmitterInstance::GetDynamicData(bool bSel
 		delete Data;
 		return nullptr;
 	}
-	Data->BuildMeshData();
 	return Data;
 }
 
@@ -3293,43 +3313,37 @@ void FParticleTrailsEmitterInstance_Base::Tick(float DeltaTime, bool bSuppressSp
 
 bool FParticleTrailsEmitterInstance_Base::AddParticleHelper(int32 InTrailIdx, int32 StartParticleIndex, FTrailsBaseTypeDataPayload* StartTrailData, int32 ParticleIndex, FTrailsBaseTypeDataPayload* TrailData)
 {
-	if (!TrailData)
-	{
-		return false;
-	}
+	bool bAddedParticle = false;
 
 	TrailData->TrailIndex = InTrailIdx;
-
-	if (!StartTrailData || StartParticleIndex == INDEX_NONE)
-	{
-		TrailData->Flags = TRAIL_EMITTER_ONLY;
-		TrailData->Flags = TRAIL_EMITTER_SET_PREV(TrailData->Flags, TRAIL_EMITTER_NULL_PREV);
-		TrailData->Flags = TRAIL_EMITTER_SET_NEXT(TrailData->Flags, TRAIL_EMITTER_NULL_NEXT);
-		SetStartIndex(InTrailIdx, ParticleIndex);
-		SetEndIndex(InTrailIdx, ParticleIndex);
-		++TrailCount;
-		return true;
-	}
 
 	if (TRAIL_EMITTER_IS_ONLY(StartTrailData->Flags))
 	{
 		StartTrailData->Flags = TRAIL_EMITTER_SET_END(StartTrailData->Flags);
-		StartTrailData->Flags = TRAIL_EMITTER_SET_PREV(StartTrailData->Flags, ParticleIndex);
 		StartTrailData->Flags = TRAIL_EMITTER_SET_NEXT(StartTrailData->Flags, TRAIL_EMITTER_NULL_NEXT);
-		SetEndIndex(InTrailIdx, StartParticleIndex);
+		StartTrailData->Flags = TRAIL_EMITTER_SET_PREV(StartTrailData->Flags, ParticleIndex);
+		SetEndIndex(StartTrailData->TrailIndex, StartParticleIndex);
 	}
 	else
 	{
+		if (!TRAIL_EMITTER_IS_START(StartTrailData->Flags) ||
+			TRAIL_EMITTER_GET_NEXT(StartTrailData->Flags) == TRAIL_EMITTER_NULL_NEXT)
+		{
+			return false;
+		}
 		StartTrailData->Flags = TRAIL_EMITTER_SET_MIDDLE(StartTrailData->Flags);
 		StartTrailData->Flags = TRAIL_EMITTER_SET_PREV(StartTrailData->Flags, ParticleIndex);
-		ClearIndices(InTrailIdx, StartParticleIndex);
+		ClearIndices(StartTrailData->TrailIndex, StartParticleIndex);
 	}
 
-	TrailData->Flags = TRAIL_EMITTER_SET_START(0);
 	TrailData->Flags = TRAIL_EMITTER_SET_PREV(TrailData->Flags, TRAIL_EMITTER_NULL_PREV);
 	TrailData->Flags = TRAIL_EMITTER_SET_NEXT(TrailData->Flags, StartParticleIndex);
-	SetStartIndex(InTrailIdx, ParticleIndex);
-	return true;
+	TrailData->Flags = TRAIL_EMITTER_SET_START(TrailData->Flags);
+
+	SetStartIndex(TrailData->TrailIndex, ParticleIndex);
+	bAddedParticle = true;
+
+	return bAddedParticle;
 }
 
 void FParticleTrailsEmitterInstance_Base::Tick_RecalculateTangents(float DeltaTime, UParticleLODLevel* CurrentLODLevel)
@@ -3673,66 +3687,89 @@ bool FParticleTrailsEmitterInstance_Base::GetParticleInTrail(bool bSkipStartingP
 {
 	OutParticle = nullptr;
 	OutTrailData = nullptr;
-	if (!InStartingTrailData)
+	if (!InStartingFromParticle || !InStartingTrailData)
 	{
 		return false;
 	}
 
-	auto MatchesOption = [](FTrailsBaseTypeDataPayload* Data, EGetTrailParticleOption Option)
+	bool bDone = false;
+	FBaseParticle* CheckParticle = InStartingFromParticle;
+	FTrailsBaseTypeDataPayload* CheckTrailData = InStartingTrailData;
+	bool bCheckIt = !bSkipStartingParticle;
+	while (!bDone)
 	{
-		if (!Data)
+		if (bCheckIt)
 		{
-			return false;
+			bool bItsGood = false;
+			switch (InGetOption)
+			{
+			case GET_Any:
+				bItsGood = true;
+				break;
+			case GET_Spawned:
+				bItsGood = !CheckTrailData->bInterpolatedSpawn;
+				break;
+			case GET_Interpolated:
+				bItsGood = CheckTrailData->bInterpolatedSpawn != 0;
+				break;
+			case GET_Start:
+				bItsGood = TRAIL_EMITTER_IS_START(CheckTrailData->Flags);
+				break;
+			case GET_End:
+				bItsGood = TRAIL_EMITTER_IS_END(CheckTrailData->Flags);
+				break;
+			default:
+				break;
+			}
+
+			if (bItsGood)
+			{
+				OutParticle = CheckParticle;
+				OutTrailData = CheckTrailData;
+				bDone = true;
+			}
 		}
-		switch (Option)
+
+		int32 Index = INDEX_NONE;
+		if (!bDone)
 		{
-		case GET_Any:
-			return true;
-		case GET_Spawned:
-			return !Data->bInterpolatedSpawn;
-		case GET_Interpolated:
-			return Data->bInterpolatedSpawn != 0;
-		case GET_Start:
-			return TRAIL_EMITTER_IS_START(Data->Flags);
-		case GET_End:
-			return TRAIL_EMITTER_IS_END(Data->Flags);
-		default:
-			return false;
+			if (InGetDirection == GET_Prev)
+			{
+				Index = TRAIL_EMITTER_GET_PREV(CheckTrailData->Flags);
+				if (Index == TRAIL_EMITTER_NULL_PREV)
+				{
+					Index = INDEX_NONE;
+				}
+			}
+			else
+			{
+				Index = TRAIL_EMITTER_GET_NEXT(CheckTrailData->Flags);
+				if (Index == TRAIL_EMITTER_NULL_NEXT)
+				{
+					Index = INDEX_NONE;
+				}
+			}
 		}
-	};
 
-	const int32 NullIndex = (InGetDirection == GET_Next) ? TRAIL_EMITTER_NULL_NEXT : TRAIL_EMITTER_NULL_PREV;
-	FBaseParticle* CurrentParticle = InStartingFromParticle;
-	FTrailsBaseTypeDataPayload* CurrentTrailData = InStartingTrailData;
-
-	if (!bSkipStartingParticle && MatchesOption(CurrentTrailData, InGetOption))
-	{
-		OutParticle = CurrentParticle;
-		OutTrailData = CurrentTrailData;
-		return true;
+		if (Index != INDEX_NONE)
+		{
+			CheckParticle = GetParticleDirect(Index);
+			CheckTrailData = CheckParticle
+				? reinterpret_cast<FTrailsBaseTypeDataPayload*>(reinterpret_cast<uint8*>(CheckParticle) + TypeDataOffset)
+				: nullptr;
+			bCheckIt = true;
+			if (!CheckParticle || !CheckTrailData)
+			{
+				bDone = true;
+			}
+		}
+		else
+		{
+			bDone = true;
+		}
 	}
 
-	while (CurrentTrailData)
-	{
-		const int32 NextIndex = (InGetDirection == GET_Next)
-			? TRAIL_EMITTER_GET_NEXT(CurrentTrailData->Flags)
-			: TRAIL_EMITTER_GET_PREV(CurrentTrailData->Flags);
-		if (NextIndex == NullIndex || NextIndex == INDEX_NONE)
-		{
-			return false;
-		}
-
-		CurrentParticle = GetParticleDirect(NextIndex);
-		CurrentTrailData = CurrentParticle ? reinterpret_cast<FTrailsBaseTypeDataPayload*>(reinterpret_cast<uint8*>(CurrentParticle) + TypeDataOffset) : nullptr;
-		if (MatchesOption(CurrentTrailData, InGetOption))
-		{
-			OutParticle = CurrentParticle;
-			OutTrailData = CurrentTrailData;
-			return true;
-		}
-	}
-
-	return false;
+	return OutParticle && OutTrailData;
 }
 
 
@@ -3804,7 +3841,281 @@ void FParticleRibbonEmitterInstance::SetupTrailModules()
 float FParticleRibbonEmitterInstance::Spawn(float DeltaTime)
 {
 	const bool bProcessSpawnRate = Spawn_Source(DeltaTime);
-	return bProcessSpawnRate ? Spawn_RateAndBurst(DeltaTime) : SpawnFraction;
+	if (!bProcessSpawnRate)
+	{
+		return SpawnFraction;
+	}
+
+	UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
+	if (!LODLevel || !LODLevel->RequiredModule || !LODLevel->SpawnModule)
+	{
+		return SpawnFraction;
+	}
+
+	const int32 TrailIdx = 0;
+	float MovementSpawnRate = 0.0f;
+	int32 MovementSpawnCount = 0;
+	float SpawnRate = 0.0f;
+	int32 BurstCount = 0;
+	const float OldLeftover = SpawnFraction;
+	const bool bProcessBurstList = false;
+	(void)MovementSpawnRate;
+	(void)MovementSpawnCount;
+
+	if (bProcessSpawnRate)
+	{
+		const float QualityMult = SpriteTemplate ? SpriteTemplate->GetQualityLevelSpawnRateMult() : 1.0f;
+		SpawnRate +=
+			std::max(0.0f, LODLevel->SpawnModule->SpawnRate) *
+			std::max(0.0f, LODLevel->SpawnModule->SpawnRateScale) *
+			FMath::Clamp(QualityMult, 0.0f, 1.0f);
+	}
+
+	if (bProcessBurstList)
+	{
+		int32 Burst = 0;
+		GetCurrentBurstRateOffset(DeltaTime, Burst);
+		BurstCount += Burst;
+	}
+
+	const int32 LocalMaxParticleInTrailCount = TrailTypeData ? TrailTypeData->MaxParticleInTrailCount : 0;
+	const float SafetyLeftover = OldLeftover;
+	const float NewLeftover = OldLeftover + DeltaTime * SpawnRate;
+	int32 SpawnNumber = static_cast<int32>(std::floor(NewLeftover));
+	const float SliceIncrement = (SpawnRate > 0.0f) ? (1.0f / SpawnRate) : 0.0f;
+	const float SpawnStartTime = DeltaTime + OldLeftover * SliceIncrement - SliceIncrement;
+	(void)SpawnStartTime;
+	SpawnFraction = NewLeftover - static_cast<float>(SpawnNumber);
+
+	int32 TotalCount = MovementSpawnCount + SpawnNumber + BurstCount;
+	bool bNoLivingParticles = (ActiveParticles == 0);
+
+	if (LocalMaxParticleInTrailCount > 0)
+	{
+		const int32 KillCount = (TotalCount + ActiveParticles) - LocalMaxParticleInTrailCount;
+		if (KillCount > 0)
+		{
+			KillParticles(TrailIdx, KillCount);
+		}
+
+		if ((TotalCount + ActiveParticles) > LocalMaxParticleInTrailCount)
+		{
+			TotalCount = std::max(0, LocalMaxParticleInTrailCount - ActiveParticles);
+			SpawnNumber = std::min(SpawnNumber, TotalCount);
+			BurstCount = std::min(BurstCount, std::max(0, TotalCount - SpawnNumber));
+		}
+	}
+
+	bool bProcessSpawn = true;
+	const int32 NewCount = ActiveParticles + TotalCount;
+	if (NewCount >= MaxActiveParticles)
+	{
+		const int32 Slack = static_cast<int32>(std::sqrt(static_cast<float>(std::max(NewCount, 1)))) + 1;
+		bProcessSpawn = Resize(NewCount + Slack, DeltaTime < PeakActiveParticleUpdateDelta);
+	}
+
+	if (!bProcessSpawn)
+	{
+		return SafetyLeftover;
+	}
+
+	FBaseParticle* StartParticle = nullptr;
+	int32 StartIndex = INDEX_NONE;
+	FRibbonTypeDataPayload* StartTrailData = nullptr;
+	GetTrailStart<FRibbonTypeDataPayload>(TrailIdx, StartIndex, StartTrailData, StartParticle);
+
+	bNoLivingParticles = (StartParticle == nullptr);
+	const bool bTilingTrail = TrailTypeData && std::fabs(TrailTypeData->TilingDistance) >= 1.0e-6f;
+
+	// UE original handles EventGenerator spawn events here.
+	// Missing Krafton foundation: FParticleEventInstancePayload/EventGenerator wiring for ribbon spawn.
+	// System to connect later: particle event generator module instance data and dispatch.
+
+	const float ElapsedTime = RunningTime;
+	if ((SpawnRate > 0.0f) && (SpawnNumber > 0))
+	{
+		const float Increment = (SpawnRate > 0.0f) ? (1.0f / SpawnRate) : 0.0f;
+		const float StartTime = DeltaTime + OldLeftover * Increment - Increment;
+		FVector CurrentUp = FVector::ZAxisVector;
+		if (TrailTypeData && TrailTypeData->RenderAxis == Trails_SourceUp && Component)
+		{
+			CurrentUp = Component->GetWorldMatrix().TransformVector(FVector::ZAxisVector).GetSafeNormal(1.0e-6f, FVector::ZAxisVector);
+		}
+
+		const float InvCount = 1.0f / static_cast<float>(SpawnNumber);
+
+		for (int32 SpawnIdx = 0; SpawnIdx < SpawnNumber; ++SpawnIdx)
+		{
+			if (ActiveParticles >= MaxActiveParticles)
+			{
+				break;
+			}
+
+			const int32 ParticleIndex = ParticleIndices[ActiveParticles];
+			FBaseParticle* Particle = GetParticleDirect(ParticleIndex);
+			if (!Particle)
+			{
+				break;
+			}
+
+			FRibbonTypeDataPayload* TrailData =
+				reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(Particle) + TypeDataOffset);
+
+			const float SpawnTime = StartTime - static_cast<float>(SpawnIdx) * Increment;
+			const float TimeStep = FMath::Clamp(InvCount * static_cast<float>(SpawnIdx + 1), 0.0f, 1.0f);
+			const float StoredSpawnTime = DeltaTime * TimeStep;
+
+			PreSpawn(Particle, Location, FVector::ZeroVector);
+			SetDeadIndex(TrailData->TrailIndex, ParticleIndex);
+
+			if (LODLevel->TypeDataModule)
+			{
+				LODLevel->TypeDataModule->Spawn({ *this, TypeDataOffset, SpawnTime, Particle });
+			}
+
+			for (UParticleModule* SpawnModule : LODLevel->SpawnModules)
+			{
+				if (SpawnModule && SpawnModule->bEnabled)
+				{
+					SpawnModule->Spawn({ *this, static_cast<int32>(GetModuleDataOffset(SpawnModule)), SpawnTime, Particle });
+				}
+			}
+
+			FParticleEmitterInstance::PostSpawn(
+				Particle,
+				1.0f - static_cast<float>(SpawnIdx + 1) / static_cast<float>(SpawnNumber),
+				SpawnTime);
+
+			GetParticleLifetimeAndSize(TrailIdx, Particle, bNoLivingParticles, Particle->OneOverMaxLifetime, Particle->Size.X);
+			Particle->RelativeTime = SpawnTime * Particle->OneOverMaxLifetime;
+			Particle->Size.Y = Particle->Size.X;
+			Particle->BaseSize = Particle->Size;
+
+			TrailData->Flags = TRAIL_EMITTER_SET_NEXT(TrailData->Flags, TRAIL_EMITTER_NULL_NEXT);
+			TrailData->Flags = TRAIL_EMITTER_SET_PREV(TrailData->Flags, TRAIL_EMITTER_NULL_PREV);
+			TrailData->TrailIndex = TrailIdx;
+			TrailData->Tangent = -Particle->Velocity * DeltaTime;
+			TrailData->SpawnTime = ElapsedTime + StoredSpawnTime;
+			TrailData->SpawnDelta = static_cast<float>(SpawnIdx) * Increment;
+			TrailData->Up = CurrentUp;
+			TrailData->SourceIndex = (TrailIdx < static_cast<int32>(SourceIndices.size())) ? SourceIndices[TrailIdx] : INDEX_NONE;
+			TrailData->bMovementSpawned = false;
+			TrailData->bInterpolatedSpawn = false;
+			TrailData->SpawnedTessellationPoints = 1;
+
+			bool bAddedParticle = false;
+			if (bNoLivingParticles)
+			{
+				TrailData->Flags = TRAIL_EMITTER_SET_ONLY(TrailData->Flags);
+				if (TrailIdx < static_cast<int32>(TiledUDistanceTraveled.size()))
+				{
+					TiledUDistanceTraveled[TrailIdx] = 0.0f;
+				}
+				TrailData->TiledU = 0.0f;
+				bNoLivingParticles = false;
+				bAddedParticle = true;
+				SetStartIndex(TrailData->TrailIndex, ParticleIndex);
+			}
+			else if (StartParticle)
+			{
+				bAddedParticle = AddParticleHelper(
+					TrailIdx,
+					StartIndex,
+					StartTrailData,
+					ParticleIndex,
+					TrailData);
+			}
+
+			if (bAddedParticle)
+			{
+				if (bTilingTrail)
+				{
+					if (StartParticle == nullptr)
+					{
+						TrailData->TiledU = 0.0f;
+					}
+					else
+					{
+						const FVector PositionDelta = Particle->Location - StartParticle->Location;
+						if (TrailIdx < static_cast<int32>(TiledUDistanceTraveled.size()))
+						{
+							TiledUDistanceTraveled[TrailIdx] += PositionDelta.Length();
+							TrailData->TiledU = TiledUDistanceTraveled[TrailIdx] / TrailTypeData->TilingDistance;
+						}
+					}
+				}
+
+				StartParticle = Particle;
+				StartIndex = ParticleIndex;
+				StartTrailData = TrailData;
+
+				++ActiveParticles;
+
+				if (StartTrailData->Tangent.IsNearlyZero())
+				{
+					FBaseParticle* NextSpawnedParticle = nullptr;
+					FTrailsBaseTypeDataPayload* TempPayload = nullptr;
+					GetParticleInTrail(true, StartParticle, StartTrailData, GET_Next, GET_Spawned, NextSpawnedParticle, TempPayload);
+					FRibbonTypeDataPayload* NextSpawnedTrailData = static_cast<FRibbonTypeDataPayload*>(TempPayload);
+					if (NextSpawnedParticle && NextSpawnedTrailData)
+					{
+						const FVector PositionDelta = StartParticle->Location - NextSpawnedParticle->Location;
+						const float TimeDelta = StartTrailData->SpawnTime - NextSpawnedTrailData->SpawnTime;
+						if (std::fabs(TimeDelta) > 1.0e-6f)
+						{
+							StartTrailData->Tangent = PositionDelta / TimeDelta;
+						}
+					}
+				}
+
+				if (TrailTypeData &&
+					TrailTypeData->bEnablePreviousTangentRecalculation &&
+					!TrailTypeData->bTangentRecalculationEveryFrame)
+				{
+					FBaseParticle* NextSpawnedParticle = nullptr;
+					FBaseParticle* NextNextSpawnedParticle = nullptr;
+					FTrailsBaseTypeDataPayload* TempPayload = nullptr;
+					GetParticleInTrail(true, StartParticle, StartTrailData, GET_Next, GET_Spawned, NextSpawnedParticle, TempPayload);
+					FRibbonTypeDataPayload* NextSpawnedTrailData = static_cast<FRibbonTypeDataPayload*>(TempPayload);
+					TempPayload = nullptr;
+					GetParticleInTrail(true, NextSpawnedParticle, NextSpawnedTrailData, GET_Next, GET_Spawned, NextNextSpawnedParticle, TempPayload);
+					FRibbonTypeDataPayload* NextNextSpawnedTrailData = static_cast<FRibbonTypeDataPayload*>(TempPayload);
+
+					if (NextSpawnedParticle && NextSpawnedTrailData)
+					{
+						FVector NewTangent = FVector::ZeroVector;
+						if (NextNextSpawnedParticle && NextNextSpawnedTrailData)
+						{
+							const FVector PositionDelta = StartParticle->Location - NextNextSpawnedParticle->Location;
+							const float TimeDelta = StartTrailData->SpawnTime - NextNextSpawnedTrailData->SpawnTime;
+							if (std::fabs(TimeDelta) > 1.0e-6f)
+							{
+								NewTangent = PositionDelta / TimeDelta;
+							}
+							NextSpawnedTrailData->Tangent = NewTangent;
+						}
+						else
+						{
+							const FVector PositionDelta = StartParticle->Location - NextSpawnedParticle->Location;
+							const float TimeDelta = StartTrailData->SpawnTime - NextSpawnedTrailData->SpawnTime;
+							if (std::fabs(TimeDelta) > 1.0e-6f)
+							{
+								NewTangent = PositionDelta / TimeDelta;
+							}
+							NextSpawnedTrailData->Tangent = NewTangent;
+						}
+					}
+				}
+
+				if (TrailIdx < static_cast<int32>(TrailSpawnTimes.size()))
+				{
+					TrailSpawnTimes[TrailIdx] = TrailData->SpawnTime;
+				}
+			}
+		}
+	}
+
+	return SpawnFraction;
 }
 
 bool FParticleRibbonEmitterInstance::Spawn_Source(float DeltaTime)
@@ -3897,21 +4208,6 @@ bool FParticleRibbonEmitterInstance::Spawn_Source(float DeltaTime)
 		const float Diff = std::max(0.0f, ElapsedTime - LastTime);
 		const float InvCount = MovementSpawnCount > 0 ? 1.0f / static_cast<float>(MovementSpawnCount) : 0.0f;
 		const float Increment = MovementSpawnCount > 0 ? DeltaTime / static_cast<float>(MovementSpawnCount) : 0.0f;
-		FVector SpawnTravelDelta = CurrentSourcePosition[TrailIdx] - LastSourcePosition[TrailIdx];
-		if (SpawnPerUnitModule)
-		{
-			if (SpawnPerUnitModule->bIgnoreMovementAlongX) SpawnTravelDelta.X = 0.0f;
-			if (SpawnPerUnitModule->bIgnoreMovementAlongY) SpawnTravelDelta.Y = 0.0f;
-			if (SpawnPerUnitModule->bIgnoreMovementAlongZ) SpawnTravelDelta.Z = 0.0f;
-		}
-		const float TravelDistance = SpawnTravelDelta.Length();
-		const float UnitScalar = (SpawnPerUnitModule && SpawnPerUnitModule->UnitScalar != 0.0f) ? SpawnPerUnitModule->UnitScalar : 1.0f;
-		const float ParticlesPerUnit = SpawnPerUnitModule ? (SpawnPerUnitModule->SpawnPerUnit / UnitScalar) : 0.0f;
-		const float SpawnDistance = ParticlesPerUnit > 1.0e-6f ? 1.0f / ParticlesPerUnit : 0.0f;
-		const float LeftoverAfterFrame = (TrailIdx < static_cast<int32>(SourceDistanceTraveled.size())) ? SourceDistanceTraveled[TrailIdx] : 0.0f;
-		const float LeftoverBeforeFrame = (SpawnDistance > 0.0f && TravelDistance > 1.0e-6f)
-			? std::max(0.0f, static_cast<float>(MovementSpawnCount) * SpawnDistance + LeftoverAfterFrame - TravelDistance)
-			: 0.0f;
 
 		if (TrailTypeData && TrailTypeData->bEnablePreviousTangentRecalculation && !TrailTypeData->bTangentRecalculationEveryFrame && StartParticle && StartTrailData)
 		{
@@ -3972,14 +4268,10 @@ bool FParticleRibbonEmitterInstance::Spawn_Source(float DeltaTime)
 			}
 		}
 
-		for (int32 SpawnIdx = 0; SpawnIdx < MovementSpawnCount; ++SpawnIdx)
+		float CurrTimeStep = InvCount;
+		for (int32 SpawnIdx = 0; SpawnIdx < MovementSpawnCount; ++SpawnIdx, CurrTimeStep += InvCount)
 		{
-			float TimeStep = FMath::Clamp(InvCount * static_cast<float>(SpawnIdx + 1), 0.0f, 1.0f);
-			if (SpawnDistance > 0.0f && TravelDistance > 1.0e-6f)
-			{
-				const float DistanceAlongFrame = (SpawnDistance - LeftoverBeforeFrame) + static_cast<float>(SpawnIdx) * SpawnDistance;
-				TimeStep = FMath::Clamp(DistanceAlongFrame / TravelDistance, 0.0f, 1.0f);
-			}
+			const float TimeStep = FMath::Clamp(CurrTimeStep, 0.0f, 1.0f);
 			const FVector SpawnPosition = CubicInterpVector(
 				LastSourcePosition[TrailIdx], LastSourceTangent[TrailIdx] * Diff,
 				CurrentSourcePosition[TrailIdx], CurrentSourceTangent[TrailIdx] * Diff,
@@ -4000,17 +4292,22 @@ bool FParticleRibbonEmitterInstance::Spawn_Source(float DeltaTime)
 			FBaseParticle* Particle = GetParticleDirect(ParticleIndex);
 			PreSpawn(Particle, SpawnPosition, FVector::ZeroVector);
 			FRibbonTypeDataPayload* TrailData = reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(Particle) + TypeDataOffset);
+			SetDeadIndex(TrailData->TrailIndex, ParticleIndex);
 
-			if (LODLevel->TypeDataModule)
-			{
-				LODLevel->TypeDataModule->Spawn({ *this, TypeDataOffset, DeltaTime - (SpawnIdx * Increment), Particle });
-			}
+			// UE temporarily sets the component-to-world transform to the source
+			// position/rotation before running spawn modules. Krafton modules read
+			// FSpawnContext::GetTransform from the component; full temporary component
+			// transform swapping needs a scene-component transform adapter.
 			for (UParticleModule* SpawnModule : LODLevel->SpawnModules)
 			{
 				if (SpawnModule && SpawnModule->bEnabled)
 				{
 					SpawnModule->Spawn({ *this, static_cast<int32>(GetModuleDataOffset(SpawnModule)), DeltaTime - (SpawnIdx * Increment), Particle });
 				}
+			}
+			if (LODLevel->TypeDataModule)
+			{
+				LODLevel->TypeDataModule->Spawn({ *this, TypeDataOffset, DeltaTime - (SpawnIdx * Increment), Particle });
 			}
 
 			const float InterpolationPercentage = 1.0f - static_cast<float>(SpawnIdx + 1) / static_cast<float>(MovementSpawnCount);
@@ -4094,186 +4391,7 @@ bool FParticleRibbonEmitterInstance::Spawn_Source(float DeltaTime)
 
 float FParticleRibbonEmitterInstance::Spawn_RateAndBurst(float DeltaTime)
 {
-	UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
-	if (!LODLevel || !LODLevel->SpawnModule || !TrailTypeData)
-	{
-		return SpawnFraction;
-	}
-
-	const int32 TrailIdx = 0;
-	float SpawnRate = 0.0f;
-	int32 BurstCount = 0;
-	const float OldLeftover = SpawnFraction;
-	bool bProcessBurstList = true;
-	if (SpawnPerUnitModule)
-	{
-		bProcessBurstList = SpawnPerUnitModule->bProcessBurstList;
-	}
-
-	SpawnRate += LODLevel->SpawnModule->SpawnRate *
-		LODLevel->SpawnModule->SpawnRateScale *
-		(SpriteTemplate ? FMath::Clamp(SpriteTemplate->GetQualityLevelSpawnRateMult(), 0.0f, 1.0f) : 1.0f);
-
-	if (bProcessBurstList)
-	{
-		int32 Burst = 0;
-		GetCurrentBurstRateOffset(DeltaTime, Burst);
-		BurstCount += Burst;
-	}
-
-	const int32 LocalMaxParticleInTrailCount = TrailTypeData->MaxParticleInTrailCount;
-	const float SafetyLeftover = OldLeftover;
-	const float NewLeftover = OldLeftover + DeltaTime * SpawnRate;
-	int32 SpawnNumber = static_cast<int32>(std::floor(NewLeftover));
-	const float SliceIncrement = (SpawnRate > 0.0f) ? (1.0f / SpawnRate) : 0.0f;
-	const float SpawnStartTime = DeltaTime + OldLeftover * SliceIncrement - SliceIncrement;
-	SpawnFraction = NewLeftover - static_cast<float>(SpawnNumber);
-
-	int32 TotalCount = SpawnNumber + BurstCount;
-	if (LocalMaxParticleInTrailCount > 0)
-	{
-		const int32 KillCount = (TotalCount + ActiveParticles) - LocalMaxParticleInTrailCount;
-		if (KillCount > 0)
-		{
-			KillParticles(TrailIdx, KillCount);
-		}
-		if ((TotalCount + ActiveParticles) > LocalMaxParticleInTrailCount)
-		{
-			TotalCount = std::max(0, LocalMaxParticleInTrailCount - ActiveParticles);
-			SpawnNumber = std::min(SpawnNumber, TotalCount);
-		}
-	}
-
-	const int32 NewCount = ActiveParticles + TotalCount;
-	if (NewCount >= MaxActiveParticles)
-	{
-		const int32 Slack = static_cast<int32>(std::sqrt(static_cast<float>(std::max(NewCount, 1)))) + 1;
-		if (!Resize(NewCount + Slack, DeltaTime < PeakActiveParticleUpdateDelta))
-		{
-			return SafetyLeftover;
-		}
-	}
-
-	int32 StartIndex = INDEX_NONE;
-	FRibbonTypeDataPayload* StartTrailData = nullptr;
-	FBaseParticle* StartParticle = nullptr;
-	GetTrailStart<FRibbonTypeDataPayload>(TrailIdx, StartIndex, StartTrailData, StartParticle);
-
-	bool bNoLivingParticles = StartParticle == nullptr;
-	const bool bTilingTrail = std::fabs(TrailTypeData->TilingDistance) > 1.0e-6f;
-	const float ElapsedTime = RunningTime;
-	if ((SpawnRate > 0.0f) && (SpawnNumber > 0))
-	{
-		const float Increment = (SpawnRate > 0.0f) ? (1.0f / SpawnRate) : 0.0f;
-		const float StartTime = DeltaTime + OldLeftover * Increment - Increment;
-		const FVector CurrentUp = TrailTypeData->RenderAxis == Trails_SourceUp ? CurrentSourceUp[TrailIdx] : FVector::ZAxisVector;
-		const float InvCount = 1.0f / static_cast<float>(SpawnNumber);
-
-		for (int32 SpawnIdx = 0; SpawnIdx < SpawnNumber; ++SpawnIdx)
-		{
-			if (ActiveParticles >= MaxActiveParticles)
-			{
-				break;
-			}
-
-			const int32 ParticleIndex = ParticleIndices[ActiveParticles];
-			FBaseParticle* Particle = GetParticleDirect(ParticleIndex);
-			FRibbonTypeDataPayload* TrailData =
-				reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(Particle) + TypeDataOffset);
-
-			const float SpawnTime = StartTime - static_cast<float>(SpawnIdx) * Increment;
-			const float TimeStep = FMath::Clamp(InvCount * static_cast<float>(SpawnIdx + 1), 0.0f, 1.0f);
-			const float StoredSpawnTime = DeltaTime * TimeStep;
-
-			PreSpawn(Particle, Location, FVector::ZeroVector);
-			if (LODLevel->TypeDataModule)
-			{
-				LODLevel->TypeDataModule->Spawn({ *this, TypeDataOffset, SpawnTime, Particle });
-			}
-			for (UParticleModule* SpawnModule : LODLevel->SpawnModules)
-			{
-				if (SpawnModule && SpawnModule->bEnabled)
-				{
-					SpawnModule->Spawn({ *this, static_cast<int32>(GetModuleDataOffset(SpawnModule)), SpawnTime, Particle });
-				}
-			}
-			FParticleEmitterInstance::PostSpawn(Particle, 1.0f - static_cast<float>(SpawnIdx + 1) / static_cast<float>(SpawnNumber), SpawnTime);
-
-			GetParticleLifetimeAndSize(TrailIdx, Particle, bNoLivingParticles, Particle->OneOverMaxLifetime, Particle->Size.X);
-			Particle->RelativeTime = SpawnTime * Particle->OneOverMaxLifetime;
-			Particle->Size.Y = Particle->Size.X;
-			Particle->BaseSize = Particle->Size;
-
-			TrailData->Flags = TRAIL_EMITTER_SET_NEXT(TrailData->Flags, TRAIL_EMITTER_NULL_NEXT);
-			TrailData->Flags = TRAIL_EMITTER_SET_PREV(TrailData->Flags, TRAIL_EMITTER_NULL_PREV);
-			TrailData->TrailIndex = TrailIdx;
-			TrailData->Tangent = -Particle->Velocity * DeltaTime;
-			TrailData->SpawnTime = ElapsedTime + StoredSpawnTime;
-			TrailData->SpawnDelta = static_cast<float>(SpawnIdx) * Increment;
-			TrailData->Up = CurrentUp;
-			TrailData->bMovementSpawned = false;
-			TrailData->bInterpolatedSpawn = false;
-			TrailData->SpawnedTessellationPoints = 1;
-
-			bool bAddedParticle = false;
-			if (bNoLivingParticles)
-			{
-				TrailData->Flags = TRAIL_EMITTER_SET_ONLY(TrailData->Flags);
-				TiledUDistanceTraveled[TrailIdx] = 0.0f;
-				TrailData->TiledU = 0.0f;
-				bNoLivingParticles = false;
-				bAddedParticle = true;
-				SetStartIndex(TrailData->TrailIndex, ParticleIndex);
-				SetEndIndex(TrailData->TrailIndex, ParticleIndex);
-			}
-			else if (StartParticle)
-			{
-				bAddedParticle = AddParticleHelper(TrailIdx, StartIndex, StartTrailData, ParticleIndex, TrailData);
-			}
-
-			if (bAddedParticle)
-			{
-				if (bTilingTrail)
-				{
-					if (!StartParticle)
-					{
-						TrailData->TiledU = 0.0f;
-					}
-					else
-					{
-						const FVector PositionDelta = Particle->Location - StartParticle->Location;
-						TiledUDistanceTraveled[TrailIdx] += PositionDelta.Length();
-						TrailData->TiledU = TiledUDistanceTraveled[TrailIdx] / TrailTypeData->TilingDistance;
-					}
-				}
-
-				StartParticle = Particle;
-				StartIndex = ParticleIndex;
-				StartTrailData = TrailData;
-				++ActiveParticles;
-
-				if (StartTrailData->Tangent.IsNearlyZero())
-				{
-					FBaseParticle* NextSpawnedParticle = nullptr;
-					FTrailsBaseTypeDataPayload* TempPayload = nullptr;
-					GetParticleInTrail(true, StartParticle, StartTrailData, GET_Next, GET_Spawned, NextSpawnedParticle, TempPayload);
-					FRibbonTypeDataPayload* NextSpawnedTrailData = static_cast<FRibbonTypeDataPayload*>(TempPayload);
-					if (NextSpawnedParticle && NextSpawnedTrailData)
-					{
-						const FVector PositionDelta = StartParticle->Location - NextSpawnedParticle->Location;
-						const float TimeDelta = StartTrailData->SpawnTime - NextSpawnedTrailData->SpawnTime;
-						if (std::fabs(TimeDelta) > 1.0e-6f)
-						{
-							StartTrailData->Tangent = PositionDelta / TimeDelta;
-						}
-					}
-				}
-
-				TrailSpawnTimes[TrailIdx] = TrailData->SpawnTime;
-			}
-		}
-	}
-
+	(void)DeltaTime;
 	return SpawnFraction;
 }
 
@@ -4287,64 +4405,82 @@ bool FParticleRibbonEmitterInstance::GetSpawnPerUnitAmount(float DeltaTime, int3
 		return false;
 	}
 
-	FVector Delta = CurrentSourcePosition[InTrailIdx] - LastSourcePosition[InTrailIdx];
-	if (SpawnPerUnitModule->bIgnoreMovementAlongX) Delta.X = 0.0f;
-	if (SpawnPerUnitModule->bIgnoreMovementAlongY) Delta.Y = 0.0f;
-	if (SpawnPerUnitModule->bIgnoreMovementAlongZ) Delta.Z = 0.0f;
-
-	float Distance = Delta.Length();
+	bool bMoved = false;
+	float NewTravelLeftover = 0.0f;
 	const float UnitScalar = SpawnPerUnitModule->UnitScalar != 0.0f ? SpawnPerUnitModule->UnitScalar : 1.0f;
 	const float ParticlesPerUnit = SpawnPerUnitModule->SpawnPerUnit / UnitScalar;
 
-	if (SpawnPerUnitModule->MaxFrameDistance > 0.0f && Distance > SpawnPerUnitModule->MaxFrameDistance)
+	if (ParticlesPerUnit >= 0.0f)
 	{
-		SourceDistanceTraveled[InTrailIdx] = 0.0f;
-		LastSourcePosition[InTrailIdx] = CurrentSourcePosition[InTrailIdx];
-		Distance = 0.0f;
-	}
+		float LeftoverTravel = SourceDistanceTraveled[InTrailIdx];
+		FVector TravelDirection = CurrentSourcePosition[InTrailIdx] - LastSourcePosition[InTrailIdx];
+		if (SpawnPerUnitModule->bIgnoreMovementAlongX) TravelDirection.X = 0.0f;
+		if (SpawnPerUnitModule->bIgnoreMovementAlongY) TravelDirection.Y = 0.0f;
+		if (SpawnPerUnitModule->bIgnoreMovementAlongZ) TravelDirection.Z = 0.0f;
 
-	bool bMoved = false;
-	if (Distance > 0.0f && ParticlesPerUnit >= 0.0f)
-	{
-		if (Distance > (SpawnPerUnitModule->MovementTolerance * UnitScalar))
+		float TravelDistance = TravelDirection.Length();
+		constexpr float HalfWorldMax = 524288.0f;
+		if (((SpawnPerUnitModule->MaxFrameDistance > 0.0f) && (TravelDistance > SpawnPerUnitModule->MaxFrameDistance)) ||
+			(TravelDistance > HalfWorldMax))
 		{
-			bMoved = true;
+			// UE original responsibility: clear the per-module SpawnPerUnit instance payload.
+			// Missing Krafton foundation: FParticleSpawnPerUnitInstancePayload storage on modules.
+			// System to connect later: module instance data for SpawnPerUnit current distance.
+			TravelDistance = 0.0f;
+			SourceDistanceTraveled[InTrailIdx] = 0.0f;
+			LastSourcePosition[InTrailIdx] = CurrentSourcePosition[InTrailIdx];
+			LeftoverTravel = 0.0f;
 		}
-		const float LeftoverTravel = SourceDistanceTraveled[InTrailIdx];
-		float NewLeftover = (Distance + LeftoverTravel) * ParticlesPerUnit;
+
+		float CheckTangent = 0.0f;
 		if (TrailTypeData && TrailTypeData->TangentSpawningScalar > 0.0f)
 		{
 			float ElapsedTime = RunningTime;
-			if (ActiveParticles == 0 && ElapsedTime == 0.0f)
+			if (ActiveParticles == 0)
 			{
-				ElapsedTime = 1.0e-4f;
+				if (ElapsedTime == 0.0f)
+				{
+					ElapsedTime = 1.0e-4f;
+				}
+				LastSourceTangent[InTrailIdx] = (CurrentSourcePosition[InTrailIdx] - LastSourcePosition[InTrailIdx]) / ElapsedTime;
 			}
+
 			const float CurrTangentDivisor = std::max(1.0e-4f, ElapsedTime - TrailSpawnTimes[InTrailIdx]);
-			FVector CurrTangent = Delta / CurrTangentDivisor;
+			FVector CurrTangent = TravelDirection / CurrTangentDivisor;
 			CurrTangent.Normalize();
 			FVector PrevTangent = LastSourceTangent[InTrailIdx];
 			PrevTangent.Normalize();
-			const float CheckTangent = (CurrTangent.Dot(PrevTangent) - 1.0f) * -0.5f;
-			NewLeftover += CheckTangent * TrailTypeData->TangentSpawningScalar;
+			CheckTangent = (CurrTangent.Dot(PrevTangent) - 1.0f) * -0.5f;
 		}
 
-		OutCount = (TrailTypeData && TrailTypeData->bSpawnInitialParticle && ActiveParticles == 0 && NewLeftover < 1.0f)
-			? 1
-			: static_cast<int32>(std::floor(NewLeftover));
-		OutRate = DeltaTime > 0.0f ? static_cast<float>(OutCount) / DeltaTime : 0.0f;
-		SourceDistanceTraveled[InTrailIdx] =
-			std::max(0.0f, (Distance + LeftoverTravel) - (static_cast<float>(OutCount) * UnitScalar));
+		if (TravelDistance > 0.0f)
+		{
+			if (TravelDistance > (SpawnPerUnitModule->MovementTolerance * UnitScalar))
+			{
+				bMoved = true;
+			}
+
+			TravelDirection.Normalize();
+
+			float NewLeftover = (TravelDistance + LeftoverTravel) * ParticlesPerUnit;
+			if (TrailTypeData)
+			{
+				NewLeftover += CheckTangent * TrailTypeData->TangentSpawningScalar;
+			}
+
+			OutCount = (TrailTypeData && TrailTypeData->bSpawnInitialParticle && !ActiveParticles && NewLeftover < 1.0f)
+				? 1
+				: static_cast<int32>(std::floor(NewLeftover));
+			OutRate = DeltaTime > 0.0f ? static_cast<float>(OutCount) / DeltaTime : 0.0f;
+			NewTravelLeftover = (TravelDistance + LeftoverTravel) - (static_cast<float>(OutCount) * UnitScalar);
+			SourceDistanceTraveled[InTrailIdx] = std::max(0.0f, NewTravelLeftover);
+		}
 	}
 
-	if (SpawnPerUnitModule->bIgnoreSpawnRateWhenMoving && bMoved)
-	{
-		return false;
-	}
 	if (SpawnPerUnitModule->bIgnoreSpawnRateWhenMoving)
 	{
-		return true;
+		return !bMoved;
 	}
-
 	return SpawnPerUnitModule->bProcessSpawnRate;
 }
 
@@ -4420,23 +4556,59 @@ void FParticleRibbonEmitterInstance::ResolveSource()
 
 bool FParticleRibbonEmitterInstance::ResolveSourcePoint(int32 InTrailIdx, FVector& OutPosition, FQuat& OutRotation, FVector& OutUp, FVector& OutTangent, float& OutTangentStrength)
 {
-	OutPosition = Location;
-	OutRotation = FQuat::Identity;
-	OutUp = FVector::ZAxisVector;
-	OutTangent = FVector::XAxisVector;
-	OutTangentStrength = SourceModule ? SourceModule->SourceStrength.GetValue(EmitterTime, Component) : 0.0f;
-	if (SourceModule && SourceModule->SourceMethod != PET2SRCM_Default)
+	bool bSourceWasSet = false;
+
+	if (SourceModule)
 	{
-		// UE original responsibility: Actor/Particle source lookup for ribbon trails.
-		// Missing Jungle foundation: Actor lookup and particle source emitter lookup.
-		// System to connect later: ParticleTrailModules.cpp TrailSource adapter.
+		switch (SourceModule->SourceMethod)
+		{
+		case PET2SRCM_Particle:
+			// UE original responsibility: pick a source particle from SourceEmitter using
+			// random/sequential selection, then read its position, velocity and relative time.
+			// Missing Krafton foundation: particle source emitter lookup and async emitter instance access.
+			// System to connect later: component emitter-name lookup plus TrailSource selection payload.
+			break;
+		case PET2SRCM_Actor:
+			// UE original responsibility: resolve SourceName through component instance parameters,
+			// read Actor transform/velocity and optional per-source offsets.
+			// Missing Krafton foundation: Actor instance parameters and Actor velocity bridge.
+			// System to connect later: particle component instance-parameter lookup.
+			break;
+		default:
+			break;
+		}
 	}
-	FVector SourceOffset = FVector::ZeroVector;
-	if (SourceModule && SourceModule->ResolveSourceOffset(InTrailIdx, this, SourceOffset))
+
+	if (!bSourceWasSet)
 	{
-		OutPosition += SourceOffset;
+		if (!Component)
+		{
+			return false;
+		}
+
+		OutPosition = Component->GetWorldLocation();
+		if (SourceModule && SourceModule->SourceOffsetCount > 0)
+		{
+			FVector SourceOffsetValue = FVector::ZeroVector;
+			if (SourceModule->ResolveSourceOffset(InTrailIdx, this, SourceOffsetValue))
+			{
+				UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
+				if (LODLevel && LODLevel->RequiredModule && !LODLevel->RequiredModule->bUseLocalSpace)
+				{
+					SourceOffsetValue = Component->GetWorldMatrix().TransformVector(SourceOffsetValue);
+				}
+				OutPosition += SourceOffsetValue;
+			}
+		}
+
+		OutRotation = FQuat::FromRotator(Component->GetWorldRotation());
+		OutTangent = Component->GetLinearVelocity();
+		OutTangentStrength = OutTangent.Dot(OutTangent);
+		OutUp = Component->GetUpVector();
+		bSourceWasSet = true;
 	}
-	return true;
+
+	return bSourceWasSet;
 }
 
 void FParticleRibbonEmitterInstance::GetParticleLifetimeAndSize(int32 InTrailIdx, const FBaseParticle* InParticle, bool bInNoLivingParticles, float& OutOneOverMaxLifetime, float& OutSize)
@@ -4553,7 +4725,7 @@ void FParticleRibbonEmitterInstance::DetermineVertexAndTriangleCount()
 	VertexCount = 0;
 	TriangleCount = 0;
 	HeadOnlyParticles = 0;
-	const int32 Sheets = TrailTypeData ? std::max(1, TrailTypeData->SheetsPerTrail) : 1;
+	const int32 Sheets = 1;
 	const int32 MaxTessellation = TrailTypeData ? std::max(1, TrailTypeData->MaxTessellationBetweenParticles) : 1;
 	const float DistanceStep = TrailTypeData ? TrailTypeData->DistanceTessellationStepSize : 0.0f;
 	const float TangentScalar = TrailTypeData ? TrailTypeData->TangentTessellationScalar : 0.0f;
@@ -4561,19 +4733,21 @@ void FParticleRibbonEmitterInstance::DetermineVertexAndTriangleCount()
 	const bool bCheckTangentValue = (std::fabs(TangentScalar) > 1.0e-6f) || bScaleTessellation;
 	constexpr float ScaleStepFactor = 0.5f;
 	int32 TheTrailCount = 0;
+	int32 IndexCount = 0;
 
-	for (int32 TrailIdx = 0; TrailIdx < MaxTrailCount; ++TrailIdx)
+	for (int32 ii = 0; ii < ActiveParticles; ++ii)
 	{
-		int32 EndIndex = INDEX_NONE;
-		FRibbonTypeDataPayload* CurrTrailData = nullptr;
-		FBaseParticle* CurrParticle = nullptr;
-		GetTrailEnd<FRibbonTypeDataPayload>(TrailIdx, EndIndex, CurrTrailData, CurrParticle);
+		const int32 ParticleIndex = ParticleIndices[ii];
+		FBaseParticle* CurrParticle = GetParticleDirect(ParticleIndex);
+		FRibbonTypeDataPayload* CurrTrailData = CurrParticle
+			? reinterpret_cast<FRibbonTypeDataPayload*>(reinterpret_cast<uint8*>(CurrParticle) + TypeDataOffset)
+			: nullptr;
+
 		if (!CurrParticle || !CurrTrailData)
 		{
 			continue;
 		}
-
-		if (TRAIL_EMITTER_IS_HEADONLY(CurrTrailData->Flags))
+		else if (TRAIL_EMITTER_IS_HEADONLY(CurrTrailData->Flags))
 		{
 			CurrTrailData->RenderingInterpCount = 0;
 			CurrTrailData->TriangleCount = 0;
@@ -4581,9 +4755,9 @@ void FParticleRibbonEmitterInstance::DetermineVertexAndTriangleCount()
 			continue;
 		}
 
-		int32 LocalVertexCount = 0;
 		int32 LocalIndexCount = 0;
 		int32 ParticleCount = 0;
+		int32 LocalVertexCount = 0;
 		bool bProcessParticle = false;
 
 		if (TRAIL_EMITTER_IS_END(CurrTrailData->Flags))
@@ -4622,7 +4796,7 @@ void FParticleRibbonEmitterInstance::DetermineVertexAndTriangleCount()
 						std::min(static_cast<int32>(DistDiff), MaxTessellation) +
 						std::min(static_cast<int32>(TangDiff), MaxTessellation);
 					RenderingInterpCount = RenderingInterpCount > 0 ? RenderingInterpCount : 1;
-					CurrTrailData->RenderingInterpCount = std::min(MaxTessellation, RenderingInterpCount);
+					CurrTrailData->RenderingInterpCount = RenderingInterpCount;
 					CurrTrailData->PinchScaleFactor = CheckTangent <= 0.5f ? 1.0f : (1.0f - (CheckTangent * 0.5f));
 
 					const int32 TempVertexCount = 2 * CurrTrailData->RenderingInterpCount * Sheets;
@@ -4659,11 +4833,20 @@ void FParticleRibbonEmitterInstance::DetermineVertexAndTriangleCount()
 
 			CurrTrailData->TriangleCount = LocalIndexCount - 2;
 			CurrTrailData->RenderingInterpCount = 1;
-			TriangleCount += std::max(0, LocalVertexCount - (2 * Sheets));
+			IndexCount += LocalIndexCount;
 			++TheTrailCount;
 		}
 	}
 	TrailCount = TheTrailCount;
+	if (TheTrailCount > 0)
+	{
+		IndexCount += 4 * (TheTrailCount - 1);
+		TriangleCount = IndexCount - (2 * TheTrailCount);
+	}
+	else
+	{
+		TriangleCount = 0;
+	}
 }
 
 bool FParticleRibbonEmitterInstance::IsDynamicDataRequired() const
@@ -4679,12 +4862,24 @@ FDynamicEmitterDataBase* FParticleRibbonEmitterInstance::GetDynamicData(bool bSe
 	}
 
 	FDynamicRibbonEmitterData* Data = new FDynamicRibbonEmitterData();
+	if (TrailTypeData)
+	{
+		Data->bClipSourceSegement = TrailTypeData->bClipSourceSegement;
+		Data->bRenderGeometry = TrailTypeData->bRenderGeometry;
+		Data->bRenderParticles = TrailTypeData->bRenderSpawnPoints;
+		Data->bRenderTangents = TrailTypeData->bRenderTangents;
+		Data->bRenderTessellation = TrailTypeData->bRenderTessellation;
+		Data->DistanceTessellationStepSize = TrailTypeData->DistanceTessellationStepSize;
+		Data->TangentTessellationScalar = TrailTypeData->TangentTessellationScalar;
+		Data->RenderAxisOption = TrailTypeData->RenderAxis;
+		Data->TextureTileDistance = TrailTypeData->TilingDistance;
+		Data->bTextureTileDistance = std::fabs(Data->TextureTileDistance) > 1.0e-6f;
+	}
 	if (!FillReplayData(Data->Source))
 	{
 		delete Data;
 		return nullptr;
 	}
-	Data->BuildMeshData();
 	return Data;
 }
 
@@ -4711,13 +4906,20 @@ bool FParticleRibbonEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBas
 	// per-particle trail payload fields such as RenderingInterpCount and
 	// TriangleCount, so it must happen before the base replay copy.
 	DetermineVertexAndTriangleCount();
+	const int32 RibbonIndexCount = TriangleCount + 2;
 	if (!FParticleEmitterInstance::FillReplayData(OutData)) return false;
+	if (TriangleCount <= 0)
+	{
+		return false;
+	}
 
 	FDynamicRibbonEmitterReplayData& RibbonData = static_cast<FDynamicRibbonEmitterReplayData&>(OutData);
 	RibbonData.Material = GetCurrentMaterial();
+	RibbonData.bUseLocalSpace = false;
+	RibbonData.bLockAxis = false;
 	RibbonData.VertexCount = VertexCount;
 	RibbonData.PrimitiveCount = TriangleCount;
-	RibbonData.IndexCount = TriangleCount * 3;
+	RibbonData.IndexCount = RibbonIndexCount;
 	RibbonData.TrailDataOffset = TypeDataOffset;
 	RibbonData.MaxActiveParticleCount = MaxActiveParticles;
 	RibbonData.TrailCount = TrailCount;
