@@ -64,6 +64,16 @@ public:
 	void ReportEventBurst(const FParticleEventBurstData& Event);
 
 	/**
+	 * @brief 내부 receiver 입력용 named event 기록
+	 */
+	void ReportGeneratedEvent(const FParticleEventData& Event);
+
+	/**
+	 * @brief 현재 tick의 내부 receiver 입력 queue 조회
+	 */
+	const TArray<FParticleEventData>& GetGeneratedEvents() const { return GeneratedEvents; }
+
+	/**
 	 * @brief particle 이동 구간을 world Shape query로 검사
 	 * @param CollisionShape line 또는 이동 sphere query 형상
 	 */
@@ -114,7 +124,10 @@ private:
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
 
-	// Event Queue
+	// GeneratedEvents는 같은 particle system 안의 receiver가 읽는 event
+	TArray<FParticleEventData> GeneratedEvents;
+
+	// 아래 typed queue는 game delegate로 내보낼 event만 보관
 	TArray<FParticleEventSpawnData> SpawnEvents;
 	TArray<FParticleEventDeathData> DeathEvents;
 	TArray<FParticleEventCollideData> CollisionEvents;

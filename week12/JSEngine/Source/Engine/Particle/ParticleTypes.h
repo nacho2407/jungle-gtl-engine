@@ -1,7 +1,10 @@
 ﻿#pragma once
 
 #include "Core/CoreMinimal.h"
+#include "Object/FName.h"
 
+class AActor;
+class UPrimitiveComponent;
 class UMaterialInterface;
 class UStaticMesh;
 class UTexture;
@@ -42,6 +45,50 @@ enum class EParticleFlags : uint32
 	FreezeTranslation    = 1u << 4,
 	FreezeRotation       = 1u << 5,
 	FreezeMovement       = 1u << 6,
+};
+
+UENUM()
+enum class EParticleEventType
+{
+	Spawn UMETA(DisplayName = "Spawn"),
+	Death UMETA(DisplayName = "Death"),
+	Collision UMETA(DisplayName = "Collision"),
+	Burst UMETA(DisplayName = "Burst"),
+	Any UMETA(DisplayName = "Any"),
+};
+
+struct FParticleEventData
+{
+	EParticleEventType Type = EParticleEventType::Spawn;
+	FName EventName;
+
+	int32 EmitterIndex = -1;
+	int32 ParticleIndex = -1; // physical index
+	uint32 SpawnId = 0;
+
+	float EmitterTime = 0.0f;
+	float ParticleTime = 0.0f; // RelativeTime 기준 lifetime 진행률
+
+	FVector Location = FVector::ZeroVector;
+	FVector Velocity = FVector::ZeroVector;
+	FVector Direction = FVector::ZeroVector;
+	FVector Normal = FVector::ZeroVector;
+
+	// CollisionTime은 이번 이동 구간 안에서 맞은 시각
+	// particle lifetime 진행률로 쓰면 안 됨
+	float CollisionTime = 1.0f;
+	int FaceIndex = -1;
+
+	AActor* HitActor = nullptr;
+	UPrimitiveComponent* HitComponent = nullptr;
+
+	int32 SpawnCount = 0;
+};
+
+struct FParticleEventGeneratorRuntimeState
+{
+	TArray<int32> OccurrenceCounters;
+	TArray<bool> bHasFiredFirstTimeOnly;
 };
 
 struct FParticleEventSpawnData

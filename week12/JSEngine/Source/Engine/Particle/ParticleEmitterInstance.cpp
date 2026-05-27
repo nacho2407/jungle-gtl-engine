@@ -492,6 +492,7 @@ bool FParticleEmitterInstance::SetCurrentLODIndex(int32 InLODLevelIndex)
 		ResetBurstFiredState();
 	}
 
+	ResetEventGeneratorRuntimeState();
 	return true;
 }
 
@@ -501,6 +502,7 @@ void FParticleEmitterInstance::Reset()
 	ParticleCounter = 0;
 	SecondsSinceCreation = 0.0f;
 	ResetLoopRuntimeState();
+	ResetEventGeneratorRuntimeState();
 
 	for (int32 Index = 0; ParticleIndices != nullptr && Index < MaxActiveParticles; ++Index)
 	{
@@ -543,6 +545,7 @@ void FParticleEmitterInstance::Release()
 	InstancePayloadSize = 0;
 	ActiveParticles = 0;
 	MaxActiveParticles = 0;
+	EventGeneratorRuntimeState = FParticleEventGeneratorRuntimeState{};
 	ParticleCounter = 0;
 	SpawnFraction = 0.0f;
 	EmitterTime = 0.0f;
@@ -648,6 +651,14 @@ void FParticleEmitterInstance::ResetBurstFiredState()
 	BurstFiredThisLoop.resize(static_cast<size_t>(std::max(BurstEntryCount, 0)), 0u);
 }
 
+void FParticleEmitterInstance::ResetEventGeneratorRuntimeState()
+{
+	const UParticleModuleEventGenerator* EventGenerator = FindEventGeneratorModule();
+	const size_t EventCount = EventGenerator != nullptr ? EventGenerator->Events.size() : 0u;
+	EventGeneratorRuntimeState.OccurrenceCounters.assign(EventCount, 0);
+	EventGeneratorRuntimeState.bHasFiredFirstTimeOnly.assign(EventCount, false);
+}
+
 int32 FParticleEmitterInstance::GetCurrentLODMaxParticles() const
 {
 	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
@@ -743,10 +754,10 @@ void FParticleEmitterInstance::TickEmitterSpawnSegment(float SegmentStartTime, f
 	const int32 ActualBurstSpawnCount = SpawnParticles(BurstSpawnCount, SegmentStartTime, SegmentDeltaTime);
 	if (ActualBurstSpawnCount > 0)
 	{
-		FParticleEventBurstData Event;
-		Event.SpawnCount = ActualBurstSpawnCount;
-		Event.Location = Owner.GetWorldLocation();
-		Owner.AddBurstEvent(Event);
+		if (UParticleModuleEventGenerator* EventGenerator = FindEventGeneratorModule())
+		{
+			EventGenerator->HandleParticleBurst(this, ActualBurstSpawnCount);
+		}
 	}
 
 	SpawnParticles(CalculateSpawnRateCount(SegmentDeltaTime), SegmentStartTime, SegmentDeltaTime);
@@ -898,11 +909,10 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTi
 		Particle.OldLocation = Particle.Location;
 		Particle.BaseColor = Particle.Color;
 
-		FParticleEventSpawnData Event;
-		Event.ParticleIndex = PhysicalIndex;
-		Event.SpawnId = Particle.SpawnId;
-		Event.Location = GetParticleLocationForRender(Particle);
-		Owner.AddSpawnEvent(Event);
+		if (UParticleModuleEventGenerator* EventGenerator = FindEventGeneratorModule())
+		{
+			EventGenerator->HandleParticleSpawn(this, Particle, PhysicalIndex);
+		}
 
 		++ActiveParticles;
 	}
@@ -958,11 +968,10 @@ void FParticleEmitterInstance::MarkParticlePendingKill(int32 ActiveIndex)
 
 	SetParticleFlag(Particle, EParticleFlags::PendingKill);
 
-	FParticleEventDeathData Event;
-	Event.ParticleIndex = KilledPhysicalIndex;
-	Event.SpawnId = Particle.SpawnId;
-	Event.Location = GetParticleLocationForRender(Particle);
-	Owner.AddDeathEvent(Event);
+	if (UParticleModuleEventGenerator* EventGenerator = FindEventGeneratorModule())
+	{
+		EventGenerator->HandleParticleDeath(this, Particle, KilledPhysicalIndex);
+	}
 }
 
 void FParticleEmitterInstance::CompactPendingKilledParticles()
@@ -1178,6 +1187,11 @@ const uint8* FParticleEmitterInstance::GetModuleInstanceData(UParticleModule* Mo
 	}
 
 	return InstanceData + Offset;
+}
+
+UParticleModuleEventGenerator* FParticleEmitterInstance::FindEventGeneratorModule() const
+{
+	return CurrentRuntimeCache != nullptr ? CurrentRuntimeCache->EventGeneratorModule : nullptr;
 }
 
 void FParticleEmitterInstance::InitializeModulePayloads(FBaseParticle& Particle)

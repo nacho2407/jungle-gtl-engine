@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Asset/StaticMesh.h"
+#include "Core/CollisionTypes.h"
 #include "Object/Object.h"
 #include "Object/ObjectPtr.h"
 #include "Particle/ParticleDistributions.h"
@@ -372,6 +373,78 @@ struct FParticleCollisionPayload
 	FVector UsedDampingFactor = FVector::OneVector;
 	float UsedDelayAmount = 0.0f;
 	bool bIgnoreCollisions = false;
+};
+
+USTRUCT()
+struct FParticleEventGenerateInfo
+{
+	GENERATED_STRUCT_BODY(FParticleEventGenerateInfo)
+
+	UPROPERTY(DisplayName = "Type")
+	EParticleEventType Type = EParticleEventType::Collision;
+
+	UPROPERTY(DisplayName = "Custom Name")
+	FName CustomName = FName("Collision");
+
+	UPROPERTY(DisplayName = "Frequency", Min = 1.0f, Speed = 1.0f)
+	int32 Frequency = 1;
+
+	UPROPERTY(DisplayName = "First Time Only")
+	bool bFirstTimeOnly = false;
+};
+
+UCLASS(Placeable, DisplayName = "Event Generator Module", Category = "Events")
+class UParticleModuleEventGenerator : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleEventGenerator, UParticleModule)
+
+	/**
+	 * @brief spawn occurrence를 named event 정책으로 평가
+	 */
+	bool HandleParticleSpawn(
+		FParticleEmitterInstance* Owner,
+		const FBaseParticle& Particle,
+		int32 PhysicalIndex);
+
+	/**
+	 * @brief death occurrence를 named event 정책으로 평가
+	 */
+	bool HandleParticleDeath(
+		FParticleEmitterInstance* Owner,
+		const FBaseParticle& Particle,
+		int32 PhysicalIndex);
+
+	/**
+	 * @brief burst occurrence를 named event 정책으로 평가
+	 */
+	bool HandleParticleBurst(
+		FParticleEmitterInstance* Owner,
+		int32 SpawnCount);
+
+	/**
+	 * @brief collision occurrence를 named event 정책으로 평가
+	 * @note completion option 적용 뒤에도 호출되는 계약
+	 */
+	bool HandleParticleCollision(
+		FParticleEmitterInstance* Owner,
+		const FBaseParticle& Particle,
+		int32 PhysicalIndex,
+		const FHitResult& Hit,
+		const FVector& IncomingDirectionWS,
+		const FVector& IncomingVelocityWS);
+
+	UPROPERTY(DisplayName = "Events")
+	TArray<FParticleEventGenerateInfo> Events;
+
+private:
+	/**
+	 * @brief 실제 occurrence와 generator entry를 맞춰 internal event 생성
+	 */
+	bool GenerateEvent(
+		FParticleEmitterInstance* Owner,
+		const FParticleEventData& Occurrence,
+		bool bCollisionHasOccurred);
 };
 
 UCLASS(Placeable, DisplayName = "Collision Module", Category = "Collision")

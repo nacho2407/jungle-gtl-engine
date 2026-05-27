@@ -8,6 +8,7 @@ struct FParticleLODLevelRuntimeCache;
 struct FParticleBurstEntry;
 class IParticleEmitterInstanceOwner;
 class UParticleModule;
+class UParticleModuleEventGenerator;
 class UParticleEmitter;
 class UParticleLODLevel;
 
@@ -101,6 +102,16 @@ public:
 	const uint8* GetModuleInstanceData(UParticleModule* Module) const;
 
 	/**
+	 * @brief 현재 LOD가 선택한 named event generator 조회
+	 */
+	UParticleModuleEventGenerator* FindEventGeneratorModule() const;
+
+	/**
+	 * @brief generator entry별 발생 횟수와 first-time 상태 조회
+	 */
+	FParticleEventGeneratorRuntimeState& GetEventGeneratorRuntimeState() { return EventGeneratorRuntimeState; }
+
+	/**
 	 * @brief 기존 particle을 새 LOD instance에 복사한 뒤 새 LOD의 module payload를 초기화합니다.
 	 */
 	void InitializeModulePayloads(FBaseParticle& Particle);
@@ -133,6 +144,11 @@ private:
 	bool CanSpawnEmitter() const;
 	void ResetLoopRuntimeState();
 	void ResetBurstFiredState();
+
+	/**
+	 * @brief 현재 Generator entry 배열 기준으로 runtime 판정 상태 초기화
+	 */
+	void ResetEventGeneratorRuntimeState();
 	int32 GetCurrentLODMaxParticles() const;
 	void CompleteEmitterLoop();
 	void TickEmitterSpawn(float DeltaTime);
@@ -151,6 +167,7 @@ private:
 
 	IParticleEmitterInstanceOwner& Owner;
 	int32 EmitterIndex = -1;
+	FParticleEventGeneratorRuntimeState EventGeneratorRuntimeState;
 };
 
 class FParticleMeshEmitterInstance : public FParticleEmitterInstance

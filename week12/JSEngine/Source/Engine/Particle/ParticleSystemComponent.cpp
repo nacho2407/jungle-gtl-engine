@@ -139,6 +139,14 @@ public:
 		}
 	}
 
+	void AddGeneratedEvent(const FParticleEventData& Event) override
+	{
+		if (Component != nullptr)
+		{
+			Component->ReportGeneratedEvent(Event);
+		}
+	}
+
 private:
 	UParticleSystemComponent* Component = nullptr;
 };
@@ -271,6 +279,7 @@ bool UParticleSystemComponent::ParticleLineCheck(
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
+	GeneratedEvents.clear();
 	SpawnEvents.clear();
 	DeathEvents.clear();
 	CollisionEvents.clear();
@@ -334,6 +343,7 @@ void UParticleSystemComponent::FinalizeTickComponent()
 	DeathEvents.clear();
 	CollisionEvents.clear();
 	BurstEvents.clear();
+	GeneratedEvents.clear();
 }
 
 void UParticleSystemComponent::ReportEventSpawn(const FParticleEventSpawnData& Event)
@@ -354,6 +364,11 @@ void UParticleSystemComponent::ReportEventCollision(const FParticleEventCollideD
 void UParticleSystemComponent::ReportEventBurst(const FParticleEventBurstData& Event)
 {
 	BurstEvents.push_back(Event);
+}
+
+void UParticleSystemComponent::ReportGeneratedEvent(const FParticleEventData& Event)
+{
+	GeneratedEvents.push_back(Event);
 }
 
 void UParticleSystemComponent::PackRenderData()
