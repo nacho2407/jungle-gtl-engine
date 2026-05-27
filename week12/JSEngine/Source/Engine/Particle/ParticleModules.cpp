@@ -2361,6 +2361,7 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBeam::GetDynamicRenderData(FPart
 	RenderData->ReplayData.NoiseRange = std::max(NoiseRange, 0.0f);
 	RenderData->ReplayData.NoiseSpeed = std::max(NoiseSpeed, 0.0f);
 	RenderData->ReplayData.NoiseSeed = NoiseSeed;
+	RenderData->ReplayData.BeamTimeSeconds = std::max(InEmitterInstance->SecondsSinceCreation, 0.0f);
 
 	// snapshot은 particle data와 index를 별도 buffer로 소유
 	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);

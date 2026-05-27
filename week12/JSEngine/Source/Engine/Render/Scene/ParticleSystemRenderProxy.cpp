@@ -1,6 +1,7 @@
 ﻿#include "ParticleSystemRenderProxy.h"
 
 #include "Particle/ParticleSystemComponent.h"
+#include "Particle/ParticleBeamPath.h"
 #include "Particle/ParticleMeshBounds.h"
 #include "Particle/ParticleModules.h"
 #include "Particle/ParticleTypes.h"
@@ -240,93 +241,6 @@ namespace
 			? ERenderPass::Translucent
 			: ResolveMaterialRenderPass(Material);
 	}
-
-	/**
-	 * @brief Beam replay point를 world space point로 변환합니다.
-	 */
-	FVector GetBeamWorldPoint(
-		const FDynamicBeamEmitterReplayDataBase& ReplayData,
-		const FMatrix& ComponentToWorld,
-		const FVector& Point)
-	{
-		return ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local
-			? ComponentToWorld.TransformPosition(Point)
-			: Point;
-	}
-
-	/**
-	 * @brief Beam replay data의 선형 segment 수를 계산합니다.
-	 */
-	int32 CalculateLinearBeamSegmentCount(const FDynamicBeamEmitterReplayDataBase& ReplayData)
-	{
-		// InterpolationPoints는 source와 target 사이에 추가하는 중간점 개수
-		const int32 SafeInterpolationPoints = std::clamp(ReplayData.InterpolationPoints, 0, 64);
-		return std::max(SafeInterpolationPoints + 1, 1);
-	}
-
-	/**
-	 * @brief Beam source/target 사이의 world space 선형 path point를 생성합니다.
-	 */
-	void BuildLinearBeamWorldPoints(
-		const FDynamicBeamEmitterReplayDataBase& ReplayData,
-		const FMatrix& ComponentToWorld,
-		TArray<FVector>& OutPoints)
-	{
-		OutPoints.clear();
-
-		// replay coordinate space 기준 source / target을 render 입력용 world point로 변환
-		const FVector Source = GetBeamWorldPoint(ReplayData, ComponentToWorld, ReplayData.SourcePoint);
-		const FVector Target = GetBeamWorldPoint(ReplayData, ComponentToWorld, ReplayData.TargetPoint);
-
-		// segment N개를 만들려면 point N+1개 필요
-		const int32 SegmentCount = CalculateLinearBeamSegmentCount(ReplayData);
-		OutPoints.reserve(static_cast<size_t>(SegmentCount + 1));
-
-		for (int32 PointIndex = 0; PointIndex <= SegmentCount; ++PointIndex)
-		{
-			// source와 target을 포함하는 균등 선형 sampling
-			const float Alpha = static_cast<float>(PointIndex) / static_cast<float>(SegmentCount);
-			OutPoints.push_back(FVector::Lerp(Source, Target, Alpha));
-		}
-	}
-
-	/**
-	 * @brief Beam path point와 half width에서 world bounds를 생성합니다.
-	 */
-	FBoundingBox BuildBeamPointWorldBounds(
-		const TArray<FVector>& BeamPoints,
-		float HalfWidth)
-	{
-		// segment별 quad가 차지할 수 있는 보수적 두께 extent
-		const FVector Extent(HalfWidth, HalfWidth, HalfWidth);
-
-		FBoundingBox Bounds;
-		for (const FVector& Point : BeamPoints)
-		{
-			Bounds.Expand(Point - Extent);
-			Bounds.Expand(Point + Extent);
-		}
-		return Bounds;
-	}
-
-	/**
-	 * @brief Beam path point와 첫 live particle의 width scale에서 보수적인 world bounds를 생성합니다.
-	 */
-	FBoundingBox BuildBeamWorldBounds(
-		const FDynamicBeamEmitterReplayDataBase& ReplayData,
-		const FMatrix& ComponentToWorld,
-		const FBaseParticle& Particle)
-	{
-		// BeamWidth와 Particle.Size.X를 함께 고려한 보수적 두께
-		const float ParticleWidthScale = std::max(std::fabs(Particle.Size.X), 0.001f);
-		const float HalfWidth = std::max(ReplayData.BeamWidth * ParticleWidthScale, 0.1f) * 0.5f;
-
-		// 선형 segment path 전체 point를 포함하는 AABB
-		TArray<FVector> BeamPoints;
-		BuildLinearBeamWorldPoints(ReplayData, ComponentToWorld, BeamPoints);
-		return BuildBeamPointWorldBounds(BeamPoints, HalfWidth);
-	}
-
 
 	UMaterialInterface* ResolveRibbonParticleMaterial(UMaterialInterface* Material)
 	{
@@ -912,9 +826,9 @@ bool FParticleSystemSceneProxy::BuildBeamCommands(
 		const float ParticleWidthScale = std::max(std::fabs(Particle->Size.X), 0.001f);
 		const float HalfWidth = std::max(ReplayData.BeamWidth * ParticleWidthScale, 0.1f) * 0.5f;
 
-		// replay source / target을 여러 개의 world space segment point로 전개
+		// replay source / target / tangent / noise를 최종 world space segment point로 전개
 		TArray<FVector> BeamPoints;
-		BuildLinearBeamWorldPoints(ReplayData, EmitterData->ComponentToWorld, BeamPoints);
+		ParticleBeamPath::BuildBeamPathPoints(ReplayData, EmitterData->ComponentToWorld, BeamPoints);
 		for (int32 PointIndex = 0; PointIndex + 1 < static_cast<int32>(BeamPoints.size()); ++PointIndex)
 		{
 			// 기존 Beam shader 계약 유지: segment 하나당 source-target quad instance 하나
@@ -943,10 +857,13 @@ bool FParticleSystemSceneProxy::BuildBeamCommands(
 		Cmd.PerObjectConstants = FPerObjectConstants{ FMatrix::Identity, FColor::White().ToVector4() };
 
 		// source / target / width 기준 command bounds. 실패 시 component bounds fallback
-		Cmd.WorldAABB = BuildBeamPointWorldBounds(BeamPoints, HalfWidth);
+		Cmd.WorldAABB = ParticleBeamPath::BuildBeamPointWorldBounds(BeamPoints, HalfWidth);
 		if (!Cmd.WorldAABB.IsValid())
 		{
-			Cmd.WorldAABB = BuildBeamWorldBounds(ReplayData, EmitterData->ComponentToWorld, *Particle);
+			Cmd.WorldAABB = ParticleBeamPath::BuildBeamWorldBounds(
+				ReplayData,
+				EmitterData->ComponentToWorld,
+				HalfWidth);
 		}
 		if (!Cmd.WorldAABB.IsValid())
 		{

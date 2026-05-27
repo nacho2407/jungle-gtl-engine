@@ -461,6 +461,158 @@ bool DrawSearchableAssetPathCombo(const char* Label, const FString& Current, con
 		return Component && UObjectManager::Get().ContainsObject(Component);
 	}
 
+	/**
+	 * @brief Particle actor parameter 후보 선택 콤보를 렌더링합니다.
+	 */
+	bool DrawParticleActorParameterCombo(
+		const char* Label,
+		UWorld* World,
+		int32 CurrentActorUUID,
+		int32& OutActorUUID)
+	{
+		// 현재 parameter에 저장된 Actor UUID 기준 preview 문자열
+		const FString PreviewLabel = GetParticleParameterActorLabel(CurrentActorUUID);
+		bool bChanged = false;
+
+		// Details 패널의 다른 combo와 동일한 시각 스타일
+		PushDetailsComboStyle();
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::BeginCombo(Label, PreviewLabel.c_str()))
+		{
+			// Actor binding 해제용 명시적 None 항목
+			const bool bNoneSelected = CurrentActorUUID == 0;
+			if (ImGui::Selectable("<None>", bNoneSelected))
+			{
+				OutActorUUID = 0;
+				bChanged = true;
+			}
+			if (bNoneSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			// Focused world가 없을 때의 비활성 안내
+			if (World == nullptr)
+			{
+				ImGui::TextDisabled("No focused world.");
+			}
+			else
+			{
+				// 현재 world의 Actor 목록 기반 직접 선택
+				for (AActor* Actor : World->GetActors())
+				{
+					if (!IsLiveActor(Actor))
+					{
+						continue;
+					}
+
+					// 같은 이름 Actor가 있어도 UUID가 보이도록 label 구성
+					const int32 ActorUUID = static_cast<int32>(Actor->GetUUID());
+					const FString ActorLabel = GetObjectDisplayName(Actor) + " (" + std::to_string(ActorUUID) + ")";
+					const bool bSelected = CurrentActorUUID == ActorUUID;
+					if (ImGui::Selectable(ActorLabel.c_str(), bSelected))
+					{
+						OutActorUUID = ActorUUID;
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+		PopDetailsComboStyle();
+
+		return bChanged;
+	}
+
+	/**
+	 * @brief Particle component parameter 후보 선택 콤보를 렌더링합니다.
+	 */
+	bool DrawParticleComponentParameterCombo(
+		const char* Label,
+		UWorld* World,
+		int32 CurrentComponentUUID,
+		int32& OutActorUUID,
+		int32& OutComponentUUID)
+	{
+		// 현재 parameter에 저장된 SceneComponent UUID 기준 preview 문자열
+		const FString PreviewLabel = GetParticleParameterComponentLabel(CurrentComponentUUID);
+		bool bChanged = false;
+
+		// Details 패널의 다른 combo와 동일한 시각 스타일
+		PushDetailsComboStyle();
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::BeginCombo(Label, PreviewLabel.c_str()))
+		{
+			// Component binding 해제용 명시적 None 항목
+			const bool bNoneSelected = CurrentComponentUUID == 0;
+			if (ImGui::Selectable("<None>", bNoneSelected))
+			{
+				OutActorUUID = 0;
+				OutComponentUUID = 0;
+				bChanged = true;
+			}
+			if (bNoneSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			// Focused world가 없을 때의 비활성 안내
+			if (World == nullptr)
+			{
+				ImGui::TextDisabled("No focused world.");
+			}
+			else
+			{
+				// 현재 world의 Actor가 소유한 SceneComponent 목록 기반 직접 선택
+				for (AActor* Actor : World->GetActors())
+				{
+					if (!IsLiveActor(Actor))
+					{
+						continue;
+					}
+
+					for (UActorComponent* Component : Actor->GetComponents())
+					{
+						USceneComponent* SceneComponent = Cast<USceneComponent>(Component);
+						if (!IsLiveComponent(SceneComponent))
+						{
+							continue;
+						}
+
+						// Actor / Component 형태로 endpoint 후보의 소유 관계 표시
+						const int32 ActorUUID = static_cast<int32>(Actor->GetUUID());
+						const int32 ComponentUUID = static_cast<int32>(SceneComponent->GetUUID());
+						const FString ComponentLabel =
+							GetObjectDisplayName(Actor) + " / " +
+							GetObjectDisplayName(SceneComponent) + " (" +
+							std::to_string(ComponentUUID) + ")";
+						const bool bSelected = CurrentComponentUUID == ComponentUUID;
+						if (ImGui::Selectable(ComponentLabel.c_str(), bSelected))
+						{
+							OutActorUUID = ActorUUID;
+							OutComponentUUID = ComponentUUID;
+							bChanged = true;
+						}
+						if (bSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+		PopDetailsComboStyle();
+
+		return bChanged;
+	}
+
 	// 컴포넌트 포인터를 ImGui PushID 용 문자열로 변환
 	static void MakeXButtonId(char* OutBuf, size_t BufSize, const void* Ptr)
 	{
@@ -1623,9 +1775,9 @@ void FEditorPropertyWidget::RenderParticleInstanceParameters(UParticleSystemComp
 			}
 		};
 
-	// focused world selection 접근
+	// focused world 접근
 	const FWorldContext* FocusedContext = EditorEngine ? EditorEngine->GetFocusedWorldContext() : nullptr;
-	FSelectionManager* SelectionManager = FocusedContext ? FocusedContext->SelectionManager : nullptr;
+	UWorld* FocusedWorld = FocusedContext ? FocusedContext->World : nullptr;
 
 	// 수동 parameter 추가
 	if (ImGui::Button("Add Parameter"))
@@ -1772,20 +1924,16 @@ void FEditorPropertyWidget::RenderParticleInstanceParameters(UParticleSystemComp
 			const FString Label = GetParticleParameterActorLabel(Parameter.ActorUUID);
 			ImGui::Text("Value: %s", Label.c_str());
 
-			if (ImGui::Button("Use Selected Actor"))
+			// Details 선택을 유지한 상태에서 world Actor를 직접 고르는 기본 binding 경로
+			int32 SelectedActorUUID = Parameter.ActorUUID;
+			if (DrawParticleActorParameterCombo("Actor", FocusedWorld, Parameter.ActorUUID, SelectedActorUUID))
 			{
-				AActor* SelectedActor = SelectionManager != nullptr
-					? SelectionManager->GetPrimarySelection()
-					: nullptr;
-				if (SelectedActor != nullptr)
-				{
-					CaptureEdit("Set Particle Instance Actor Parameter");
-					Parameter.ActorUUID = static_cast<int32>(SelectedActor->GetUUID());
-					Parameter.ComponentUUID = 0;
-					MarkSceneDirty();
-				}
+				CaptureEdit("Set Particle Instance Actor Parameter");
+				Parameter.ActorUUID = SelectedActorUUID;
+				Parameter.ComponentUUID = 0;
+				MarkSceneDirty();
 			}
-			ImGui::SameLine();
+
 			if (ImGui::Button("Clear"))
 			{
 				CaptureEdit("Clear Particle Instance Actor Parameter");
@@ -1798,23 +1946,22 @@ void FEditorPropertyWidget::RenderParticleInstanceParameters(UParticleSystemComp
 			const FString Label = GetParticleParameterComponentLabel(Parameter.ComponentUUID);
 			ImGui::Text("Value: %s", Label.c_str());
 
-			if (ImGui::Button("Use Selected Component"))
+			// Details 선택을 유지한 상태에서 world SceneComponent를 직접 고르는 기본 binding 경로
+			int32 SelectedActorUUID = Parameter.ActorUUID;
+			int32 SelectedComponentUUID = Parameter.ComponentUUID;
+			if (DrawParticleComponentParameterCombo(
+				"Component",
+				FocusedWorld,
+				Parameter.ComponentUUID,
+				SelectedActorUUID,
+				SelectedComponentUUID))
 			{
-				UActorComponent* SelectedRawComponent = SelectionManager != nullptr
-					? SelectionManager->GetSelectedComponent()
-					: nullptr;
-				USceneComponent* SelectedSceneComponent = Cast<USceneComponent>(SelectedRawComponent);
-				if (SelectedSceneComponent != nullptr)
-				{
-					CaptureEdit("Set Particle Instance Component Parameter");
-					Parameter.ActorUUID = SelectedSceneComponent->GetOwner() != nullptr
-						? static_cast<int32>(SelectedSceneComponent->GetOwner()->GetUUID())
-						: 0;
-					Parameter.ComponentUUID = static_cast<int32>(SelectedSceneComponent->GetUUID());
-					MarkSceneDirty();
-				}
+				CaptureEdit("Set Particle Instance Component Parameter");
+				Parameter.ActorUUID = SelectedActorUUID;
+				Parameter.ComponentUUID = SelectedComponentUUID;
+				MarkSceneDirty();
 			}
-			ImGui::SameLine();
+
 			if (ImGui::Button("Clear"))
 			{
 				CaptureEdit("Clear Particle Instance Component Parameter");

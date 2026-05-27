@@ -331,6 +331,9 @@ struct FDynamicBeamEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 
 	// Noise deterministic random seed
 	int32 NoiseSeed = 1337;
+
+	// Beam path animation 기준 시간
+	float BeamTimeSeconds = 0.0f;
 };
 
 struct FRibbonRenderPoint
