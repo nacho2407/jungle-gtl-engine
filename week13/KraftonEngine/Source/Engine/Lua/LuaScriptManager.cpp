@@ -2692,9 +2692,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	});
 	World.set_function("GetGameTime", []() -> float
 	{
-		// 정확한 게임 시간은 World/Timer 가 owner 지만, 현재 노출된 API 가 없어
-		// CPU 시간으로 대체. 게임 시간 헬퍼가 추가되면 여기 교체.
-		return static_cast<float>(static_cast<double>(clock()) / static_cast<double>(CLOCKS_PER_SEC));
+		UWorld* CurrentWorld = GEngine ? GEngine->GetWorld() : nullptr;
+		return CurrentWorld ? CurrentWorld->GetGameTimeSeconds() : 0.0f;
 	});
 
 	// 게임 특화 usertype/enum/global(GetGameState 등) 은 Game 모듈의

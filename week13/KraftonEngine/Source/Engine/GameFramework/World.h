@@ -73,6 +73,7 @@ public:
 	void InitWorld();      // Set up the world before gameplay begins
 	void BeginPlay();      // Triggers BeginPlay on all actors
 	void Tick(float DeltaTime, ELevelTick TickType);  // Drives the game loop every frame
+	float GetGameTimeSeconds() const { return GameTimeSeconds; }
 	void EndPlay();        // Stop gameplay without owning memory lifetime.
 	void RouteWorldDestroyed();
 
@@ -130,6 +131,7 @@ private:
 	EWorldType WorldType = EWorldType::Editor;
 	bool bHasBegunPlay = false;
 	bool bPaused = false;
+	float GameTimeSeconds = 0.0f;
 	bool bWorldDestroyRouted = false;
 	FWorldSettings WorldSettings;
 	bool bHasLastFullLODUpdateCameraPos = false;

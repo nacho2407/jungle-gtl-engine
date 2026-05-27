@@ -429,6 +429,11 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 		return;
 	}
 
+	if (bHasBegunPlay)
+	{
+		GameTimeSeconds += DeltaTime;
+	}
+
 	if (bHasBegunPlay && PhysicsScene)
 	{
 		SCOPE_STAT_CAT("PhysicsScene", "1_WorldTick");

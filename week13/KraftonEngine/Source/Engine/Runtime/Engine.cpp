@@ -28,6 +28,7 @@
 #include "Particles/ParticleSystemManager.h"
 #include "CameraShake/CameraShakeManager.h"
 #include "FloatCurve/FloatCurveManager.h"
+#include "LuaBlueprint/LuaBlueprintManager.h"
 
 UEngine* GEngine = nullptr;
 
@@ -113,6 +114,7 @@ void UEngine::Shutdown()
 	FAnimationManager::Get().ClearCache();
 	FSkeletonManager::Get().ClearCache();
 	FAnimGraphManager::Get().ClearCache();
+	FLuaBlueprintManager::Get().ClearCache();
 	FParticleSystemManager::Get().ClearCache();
 	FCameraShakeManager::Get().ClearCache();
 	FFloatCurveManager::Get().ClearCache();
