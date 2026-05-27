@@ -6,6 +6,7 @@
 
 class FSelectionManager;
 class UActorComponent;
+class UParticleSystemComponent;
 class AActor;
 class UMaterialInterface;
 class UStaticMesh;
@@ -50,6 +51,7 @@ private:
 	void RenderActorTags(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	void RenderComponentTags(UActorComponent* Component);
 	void RenderComponentProperties();
+	void RenderParticleInstanceParameters(UParticleSystemComponent* ParticleSystemComponent);
 	void RenderReflectionProperties(UObject* Object);
 	void RenderReflectionProperty(const FPropertyHandle& Handle);
 	void RenderDebugDetails(UObject* Object, AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);

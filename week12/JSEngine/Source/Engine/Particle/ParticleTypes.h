@@ -41,6 +41,44 @@ enum class EDynamicEmitterType
 	Ribbon,
 };
 
+/**
+ * @brief Beam endpoint 생성 방식
+ *
+ * @details Distance는 source에서 거리 기반 target을 만들고, Target은 source / target endpoint를 각각 해석합니다.
+ */
+UENUM()
+enum class EParticleBeamMethod
+{
+	Distance UMETA(DisplayName = "Distance"),
+	Target UMETA(DisplayName = "Target"),
+};
+
+/**
+ * @brief Beam endpoint 해석 방식
+ *
+ * @details Default는 module fallback 값을 사용하고, 나머지 값은 PSC Instance Parameter를 통해 해석합니다.
+ */
+UENUM()
+enum class EParticleBeamEndpointMethod
+{
+	Default UMETA(DisplayName = "Default"),
+	UserSet UMETA(DisplayName = "User Set"),
+	Actor UMETA(DisplayName = "Actor"),
+	Component UMETA(DisplayName = "Component"),
+};
+
+/**
+ * @brief Beam tangent 입력 방식
+ *
+ * @details Auto는 source-target 방향 기반 자동 tangent를 사용하고, User는 module에 입력된 tangent를 사용합니다.
+ */
+UENUM()
+enum class EParticleBeamTangentMode
+{
+	Auto UMETA(DisplayName = "Auto"),
+	User UMETA(DisplayName = "User"),
+};
+
 struct FParticleFrameStats
 {
 	int32 SpriteParticleSpawned = 0;
@@ -287,8 +325,35 @@ struct FDynamicBeamEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 	// Beam 끝점. CoordinateSpace가 Local이면 component local space, World면 world space
 	FVector TargetPoint = FVector(100.0f, 0.0f, 0.0f);
 
+	// Beam 시작 tangent. CoordinateSpace가 Local이면 component local vector, World면 world vector
+	FVector SourceTangent = FVector::ForwardVector;
+
+	// Beam 끝 tangent. CoordinateSpace가 Local이면 component local vector, World면 world vector
+	FVector TargetTangent = FVector::ForwardVector;
+
 	// Beam quad 두께의 기본 폭
 	float BeamWidth = 10.0f;
+
+	// Source와 Target 사이에 추가할 중간 보간점 개수
+	int32 InterpolationPoints = 0;
+
+	// Noise segment path 생성 여부
+	bool bNoiseEnabled = false;
+
+	// Noise가 요구하는 최소 중간 흔들림 빈도
+	int32 NoiseFrequency = 0;
+
+	// Noise offset 최대 범위
+	float NoiseRange = 0.0f;
+
+	// Noise 시간 변화 속도
+	float NoiseSpeed = 0.0f;
+
+	// Noise deterministic random seed
+	int32 NoiseSeed = 1337;
+
+	// Beam path animation 기준 시간
+	float BeamTimeSeconds = 0.0f;
 };
 
 struct FRibbonRenderPoint

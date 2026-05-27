@@ -5,6 +5,7 @@
 
 class AActor;
 class UWorld;
+struct FParticleInstanceParameter;
 
 /**
  * IParticleEmitterInstanceOwner
@@ -19,6 +20,31 @@ public:
 	virtual UWorld* GetWorld() const = 0;
 	virtual FVector GetWorldLocation() const = 0;
 	virtual FMatrix GetComponentToWorld() const = 0;
+
+	/**
+	 * @brief 이름이 같은 PSC instance parameter를 조회합니다.
+	 *
+	 * @param Name 조회할 parameter 이름
+	 *
+	 * @return 이름이 같은 parameter 포인터. 없으면 nullptr
+	 */
+	virtual const FParticleInstanceParameter* FindInstanceParameter(const FString& Name) const = 0;
+
+	/**
+	 * @brief 이름과 Beam endpoint method에 맞는 world point를 해석합니다.
+	 *
+	 * @param Name 조회할 parameter 이름
+	 *
+	 * @param Method Beam endpoint 해석 방식
+	 *
+	 * @param OutWorldPoint 해석된 world space 위치
+	 *
+	 * @return 해석 성공 여부
+	 */
+	virtual bool ResolveParticleInstanceParameterWorldPoint(
+		const FString& Name,
+		EParticleBeamEndpointMethod Method,
+		FVector& OutWorldPoint) const = 0;
 
 	/**
 	 * @brief source actor ignore 정책에 사용할 PSC 소유 actor 조회

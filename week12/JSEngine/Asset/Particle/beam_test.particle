@@ -1,0 +1,136 @@
+{
+        "AssetType" : "UParticleSystem",
+        "Format" : "JSEngine.ObjectGraph",
+        "Objects" : [{
+            "Id" : 1,
+            "ObjectName" : "UParticleSystem_0",
+            "Properties" : {
+              "Emitters" : [2],
+              "LODDistances" : [0.000000],
+              "LODHysteresisDistance" : 50.000000
+            },
+            "Type" : "UParticleSystem"
+          }, {
+            "Id" : 2,
+            "ObjectName" : "UParticleEmitter_3",
+            "Properties" : {
+              "LODLevels" : [3]
+            },
+            "Type" : "UParticleEmitter"
+          }, {
+            "Id" : 3,
+            "ObjectName" : "UParticleLODLevel_3",
+            "Properties" : {
+              "Level" : 0,
+              "Modules" : [6, 7],
+              "RequiredModule" : 4,
+              "SpawnModule" : 5,
+              "TypeDataModule" : 8,
+              "bEnabled" : true,
+              "bSolo" : false
+            },
+            "Type" : "UParticleLODLevel"
+          }, {
+            "Id" : 4,
+            "ObjectName" : "UParticleModuleRequired_3",
+            "Properties" : {
+              "BoundsScale" : 1.000000,
+              "CoordinateSpace" : 0,
+              "EmitterDuration" : 5.000000,
+              "FixedBoundsMax" : {
+                "X" : 100.000000,
+                "Y" : 100.000000,
+                "Z" : 100.000000
+              },
+              "FixedBoundsMin" : {
+                "X" : -100.000000,
+                "Y" : -100.000000,
+                "Z" : -100.000000
+              },
+              "Material" : "",
+              "MaxEmitterLoops" : 1,
+              "MaxParticles" : 1000,
+              "RandomSeed" : 1,
+              "SortMode" : 1,
+              "bEmitterLoops" : false,
+              "bEnabled" : true,
+              "bInfiniteEmitterLoops" : true,
+              "bResetSeedOnEmitterLoop" : true,
+              "bUseFixedBounds" : false,
+              "bUseSeededRandom" : false
+            },
+            "Type" : "UParticleModuleRequired"
+          }, {
+            "Id" : 5,
+            "ObjectName" : "UParticleModuleSpawn_3",
+            "Properties" : {
+              "BurstList" : [],
+              "RateScale" : 1.000000,
+              "SpawnRate" : 10.000000,
+              "bEnabled" : true,
+              "bProcessBurst" : false,
+              "bProcessSpawnRate" : true
+            },
+            "Type" : "UParticleModuleSpawn"
+          }, {
+            "Id" : 6,
+            "ObjectName" : "UParticleModuleBeamSource_0",
+            "Properties" : {
+              "Source" : {
+                "X" : 0.000000,
+                "Y" : 0.000000,
+                "Z" : 0.000000
+              },
+              "SourceMethod" : 3,
+              "SourceName" : "BeamSource",
+              "SourceTangent" : {
+                "X" : 0.000000,
+                "Y" : 0.000000,
+                "Z" : 1.000000
+              },
+              "SourceTangentStrength" : 10.000000,
+              "TangentMode" : 1,
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleBeamSource"
+          }, {
+            "Id" : 7,
+            "ObjectName" : "UParticleModuleBeamTarget_0",
+            "Properties" : {
+              "TangentMode" : 1,
+              "Target" : {
+                "X" : 100.000000,
+                "Y" : 0.000000,
+                "Z" : 0.000000
+              },
+              "TargetMethod" : 3,
+              "TargetName" : "BeamTarget",
+              "TargetTangent" : {
+                "X" : 0.000000,
+                "Y" : 0.000000,
+                "Z" : -1.000000
+              },
+              "TargetTangentStrength" : 10.000000,
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleBeamTarget"
+          }, {
+            "Id" : 8,
+            "ObjectName" : "UParticleModuleTypeDataBeam_0",
+            "Properties" : {
+              "BeamMethod" : 1,
+              "BeamWidth" : 0.100000,
+              "Distance" : 100.000000,
+              "InterpolationPoints" : 16,
+              "NoiseFrequency" : 0,
+              "NoiseRange" : 0.000000,
+              "NoiseSeed" : 1337,
+              "NoiseSpeed" : 0.000000,
+              "bEnabled" : true,
+              "bNoiseEnabled" : false
+            },
+            "Type" : "UParticleModuleTypeDataBeam"
+          }],
+        "RootObjectId" : 1,
+        "Version" : 2
+      }

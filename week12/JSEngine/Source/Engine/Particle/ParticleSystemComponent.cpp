@@ -5,13 +5,17 @@
 #include "Core/ResourceManager.h"
 #include "GameFramework/World.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
+#include "Particle/ParticleBeamPath.h"
 #include "Particle/ParticleMeshBounds.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
 #include "Render/Scene/Scene.h"
+#include "Component/SceneComponent.h"
+#include "GameFramework/AActor.h"
 #include <algorithm>
 #include <cstring>
 #include <memory>
+#include <unordered_set>
 
 namespace
 {
@@ -25,6 +29,65 @@ namespace
 		return Instance != nullptr &&
 			IsLiveObject(Instance->CurrentLODLevel) &&
 			Instance->CurrentLODLevel->bSolo;
+	}
+
+	enum class EParticleInstanceParameterDiagnostic : uint32
+	{
+		MissingParameter = 1,
+		TypeMismatch,
+		ActorResolveFailed,
+		ComponentResolveFailed,
+		UnsupportedMethod,
+	};
+
+	/**
+	 * @brief Particle instance parameter warning 1회 출력
+	 */
+	void LogParticleInstanceParameterWarningOnce(
+		const UParticleSystemComponent* Component,
+		const FString& Name,
+		EParticleBeamEndpointMethod Method,
+		EParticleInstanceParameterDiagnostic Diagnostic,
+		const char* Message)
+	{
+		// tick마다 반복되는 endpoint resolve warning 중복 방지 key
+		static std::unordered_set<uint64> LoggedWarnings;
+		const uint64 ComponentKey = Component != nullptr
+			? static_cast<uint64>(Component->GetUUID())
+			: 0ull;
+		const uint64 NameKey = static_cast<uint64>(std::hash<FString>{}(Name));
+		const uint64 Key =
+			(ComponentKey << 32) ^
+			(NameKey & 0x00000000ffffffffull) ^
+			(static_cast<uint64>(static_cast<uint32>(Method)) << 24) ^
+			static_cast<uint64>(Diagnostic);
+
+		if (LoggedWarnings.insert(Key).second)
+		{
+			UE_LOG_WARNING("%s", Message);
+		}
+	}
+
+	/**
+	 * @brief Particle instance parameter type 일치 여부
+	 */
+	bool DoesParticleParameterTypeMatch(
+		EParticleInstanceParameterType ParameterType,
+		EParticleBeamEndpointMethod Method)
+	{
+		// Beam endpoint method별 기대 parameter type
+		switch (Method)
+		{
+		case EParticleBeamEndpointMethod::UserSet:
+			return ParameterType == EParticleInstanceParameterType::Vector;
+		case EParticleBeamEndpointMethod::Actor:
+			return ParameterType == EParticleInstanceParameterType::Actor;
+		case EParticleBeamEndpointMethod::Component:
+			return ParameterType == EParticleInstanceParameterType::Component;
+		case EParticleBeamEndpointMethod::Default:
+		default:
+			return false;
+		}
 	}
 
 	UParticleLODLevel* GetLODLevel(UParticleEmitter* EmitterTemplate, int32 LODIndex)
@@ -99,34 +162,6 @@ namespace
 		return nullptr;
 	}
 
-	FVector GetBeamWorldPoint(
-		const FDynamicBeamEmitterReplayDataBase& ReplayData,
-		const FMatrix& ComponentToWorld,
-		const FVector& Point)
-	{
-		return ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local
-			? ComponentToWorld.TransformPosition(Point)
-			: Point;
-	}
-
-	FBoundingBox BuildBeamWorldBounds(
-		const FDynamicBeamEmitterReplayDataBase& ReplayData,
-		const FMatrix& ComponentToWorld)
-	{
-		const FVector Source = GetBeamWorldPoint(ReplayData, ComponentToWorld, ReplayData.SourcePoint);
-		const FVector Target = GetBeamWorldPoint(ReplayData, ComponentToWorld, ReplayData.TargetPoint);
-		const float HalfWidth = std::max(ReplayData.BeamWidth, 0.1f) * 0.5f;
-		const FVector Extent(HalfWidth, HalfWidth, HalfWidth);
-
-		FBoundingBox Bounds;
-		Bounds.Expand(Source - Extent);
-		Bounds.Expand(Source + Extent);
-		Bounds.Expand(Target - Extent);
-		Bounds.Expand(Target + Extent);
-		return Bounds;
-	}
-
-
 	FVector GetRibbonWorldPoint(
 		const FDynamicRibbonEmitterReplayDataBase& ReplayData,
 		const FMatrix& ComponentToWorld,
@@ -175,6 +210,20 @@ public:
 	FMatrix GetComponentToWorld() const override
 	{
 		return Component != nullptr ? Component->GetWorldMatrix() : FMatrix::Identity;
+	}
+
+	const FParticleInstanceParameter* FindInstanceParameter(const FString& Name) const override
+	{
+		return Component != nullptr ? Component->FindInstanceParameter(Name) : nullptr;
+	}
+
+	bool ResolveParticleInstanceParameterWorldPoint(
+		const FString& Name,
+		EParticleBeamEndpointMethod Method,
+		FVector& OutWorldPoint) const override
+	{
+		return Component != nullptr &&
+			Component->ResolveParticleInstanceParameterWorldPoint(Name, Method, OutWorldPoint);
 	}
 
 	AActor* GetSourceActor() const override
@@ -298,6 +347,129 @@ void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
 		CreateEmitterInstances();
 		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 	}
+}
+
+const FParticleInstanceParameter* UParticleSystemComponent::FindInstanceParameter(const FString& Name) const
+{
+	// 이름이 비어 있으면 endpoint binding 대상으로 취급하지 않음
+	if (Name.empty())
+	{
+		return nullptr;
+	}
+
+	// PSC instance parameter exact match 조회
+	for (const FParticleInstanceParameter& Parameter : InstanceParameters)
+	{
+		if (Parameter.Name == Name)
+		{
+			return &Parameter;
+		}
+	}
+
+	return nullptr;
+}
+
+bool UParticleSystemComponent::ResolveParticleInstanceParameterWorldPoint(
+	const FString& Name,
+	EParticleBeamEndpointMethod Method,
+	FVector& OutWorldPoint) const
+{
+	// Default method는 caller가 module fallback point를 직접 사용
+	if (Method == EParticleBeamEndpointMethod::Default)
+	{
+		LogParticleInstanceParameterWarningOnce(
+			this,
+			Name,
+			Method,
+			EParticleInstanceParameterDiagnostic::UnsupportedMethod,
+			"[Particle] Default Beam endpoint method does not use PSC Instance Parameters.");
+		return false;
+	}
+
+	// 이름 기반 parameter 조회
+	const FParticleInstanceParameter* Parameter = FindInstanceParameter(Name);
+	if (Parameter == nullptr)
+	{
+		LogParticleInstanceParameterWarningOnce(
+			this,
+			Name,
+			Method,
+			EParticleInstanceParameterDiagnostic::MissingParameter,
+			"[Particle] Beam endpoint parameter was not found on ParticleSystemComponent.");
+		return false;
+	}
+
+	// endpoint method와 parameter type 계약 확인
+	if (!DoesParticleParameterTypeMatch(Parameter->Type, Method))
+	{
+		LogParticleInstanceParameterWarningOnce(
+			this,
+			Name,
+			Method,
+			EParticleInstanceParameterDiagnostic::TypeMismatch,
+			"[Particle] Beam endpoint parameter type does not match endpoint method.");
+		return false;
+	}
+
+	// Vector parameter는 world space 위치로 직접 사용
+	if (Method == EParticleBeamEndpointMethod::UserSet)
+	{
+		OutWorldPoint = Parameter->VectorValue;
+		return true;
+	}
+
+	// Actor parameter는 UUID로 live actor resolve 후 actor world location 사용
+	if (Method == EParticleBeamEndpointMethod::Actor)
+	{
+		UObject* Object = Parameter->ActorUUID > 0
+			? UObjectManager::Get().FindByUUID(static_cast<uint32>(Parameter->ActorUUID))
+			: nullptr;
+		AActor* Actor = Cast<AActor>(Object);
+		if (Actor == nullptr)
+		{
+			LogParticleInstanceParameterWarningOnce(
+				this,
+				Name,
+				Method,
+				EParticleInstanceParameterDiagnostic::ActorResolveFailed,
+				"[Particle] Beam endpoint actor UUID could not be resolved.");
+			return false;
+		}
+
+		OutWorldPoint = Actor->GetActorLocation();
+		return true;
+	}
+
+	// Component parameter는 UUID로 live scene component resolve 후 component world location 사용
+	if (Method == EParticleBeamEndpointMethod::Component)
+	{
+		UObject* Object = Parameter->ComponentUUID > 0
+			? UObjectManager::Get().FindByUUID(static_cast<uint32>(Parameter->ComponentUUID))
+			: nullptr;
+		USceneComponent* SceneComponent = Cast<USceneComponent>(Object);
+		if (SceneComponent == nullptr)
+		{
+			LogParticleInstanceParameterWarningOnce(
+				this,
+				Name,
+				Method,
+				EParticleInstanceParameterDiagnostic::ComponentResolveFailed,
+				"[Particle] Beam endpoint component UUID could not be resolved.");
+			return false;
+		}
+
+		OutWorldPoint = SceneComponent->GetWorldLocation();
+		return true;
+	}
+
+	// enum 확장 대비 fallback
+	LogParticleInstanceParameterWarningOnce(
+		this,
+		Name,
+		Method,
+		EParticleInstanceParameterDiagnostic::UnsupportedMethod,
+		"[Particle] Beam endpoint parameter method is unsupported.");
+	return false;
 }
 
 UWorld* UParticleSystemComponent::GetWorld() const
@@ -519,9 +691,12 @@ void UParticleSystemComponent::UpdateWorldAABB() const
 			const FDynamicBeamEmitterData* BeamEmitterData = FindBeamRenderDataForEmitter(EmitterRenderData, EmitterIndex);
 			if (BeamEmitterData != nullptr)
 			{
-				const FBoundingBox BeamBounds = BuildBeamWorldBounds(
+				// render와 동일한 최종 Beam path 기준 spatial bounds
+				const float HalfWidth = std::max(BeamEmitterData->ReplayData.BeamWidth, 0.1f) * 0.5f;
+				const FBoundingBox BeamBounds = ParticleBeamPath::BuildBeamWorldBounds(
 					BeamEmitterData->ReplayData,
-					BeamEmitterData->ComponentToWorld);
+					BeamEmitterData->ComponentToWorld,
+					HalfWidth);
 				if (BeamBounds.IsValid())
 				{
 					WorldAABB.Merge(BeamBounds);

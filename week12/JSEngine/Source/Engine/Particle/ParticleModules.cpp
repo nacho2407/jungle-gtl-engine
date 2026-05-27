@@ -240,6 +240,272 @@ namespace
 		}
 	}
 
+	/**
+	 * @brief Beam endpoint module cache 갱신
+	 */
+	void CacheBeamEndpointModule(FParticleLODLevelRuntimeCache& Cache, UParticleModule* Module)
+	{
+		// disabled module은 현재 LOD에서 없는 설정으로 취급
+		if (Module == nullptr || !Module->bEnabled)
+		{
+			return;
+		}
+
+		// Source endpoint 설정 module cache
+		if (UParticleModuleBeamSource* BeamSource = Cast<UParticleModuleBeamSource>(Module))
+		{
+			Cache.BeamSourceModule = BeamSource;
+			return;
+		}
+
+		// Target endpoint 설정 module cache
+		if (UParticleModuleBeamTarget* BeamTarget = Cast<UParticleModuleBeamTarget>(Module))
+		{
+			Cache.BeamTargetModule = BeamTarget;
+			return;
+		}
+	}
+
+	/**
+	 * @brief Beam source endpoint 계산
+	 */
+	bool ResolveBeamSourceEndpoint(
+		const IParticleEmitterInstanceOwner& Owner,
+		const UParticleModuleBeamSource* BeamSource,
+		FVector& OutSource)
+	{
+		// Source Module이 없으면 component origin 기준 fallback
+		if (BeamSource == nullptr)
+		{
+			OutSource = FVector::ZeroVector;
+			return false;
+		}
+
+		// Default method는 module fallback source 직접 사용
+		if (BeamSource->SourceMethod == EParticleBeamEndpointMethod::Default)
+		{
+			OutSource = BeamSource->Source;
+			return false;
+		}
+
+		// PSC Instance Parameter 기반 world endpoint resolve
+		if (Owner.ResolveParticleInstanceParameterWorldPoint(
+			BeamSource->SourceName,
+			BeamSource->SourceMethod,
+			OutSource))
+		{
+			return true;
+		}
+
+		// resolve 실패 시 module fallback source 사용
+		OutSource = BeamSource->Source;
+		return false;
+	}
+
+	/**
+	 * @brief Beam target endpoint 계산
+	 */
+	bool ResolveBeamTargetEndpoint(
+		const IParticleEmitterInstanceOwner& Owner,
+		const UParticleModuleBeamTarget* BeamTarget,
+		const FVector& DistanceFallbackTarget,
+		FVector& OutTarget)
+	{
+		// Target Module이 없으면 Distance 기반 fallback target 사용
+		if (BeamTarget == nullptr)
+		{
+			OutTarget = DistanceFallbackTarget;
+			return false;
+		}
+
+		// Default method는 module fallback target 직접 사용
+		if (BeamTarget->TargetMethod == EParticleBeamEndpointMethod::Default)
+		{
+			OutTarget = BeamTarget->Target;
+			return false;
+		}
+
+		// PSC Instance Parameter 기반 world endpoint resolve
+		if (Owner.ResolveParticleInstanceParameterWorldPoint(
+			BeamTarget->TargetName,
+			BeamTarget->TargetMethod,
+			OutTarget))
+		{
+			return true;
+		}
+
+		// resolve 실패 시 module fallback target 사용
+		OutTarget = BeamTarget->Target;
+		return false;
+	}
+
+	/**
+	 * @brief Beam TypeData 기준 endpoint 계산
+	 */
+	void ResolveBeamDefaultEndpoints(
+		const UParticleModuleTypeDataBeam& TypeData,
+		const FParticleLODLevelRuntimeCache& Cache,
+		const IParticleEmitterInstanceOwner& Owner,
+		const FMatrix& ComponentToWorld,
+		FVector& OutSource,
+		FVector& OutTarget,
+		EParticleCoordinateSpace& OutCoordinateSpace)
+	{
+		// 현재 LOD에서 활성화된 Beam Source / Target Module 조회
+		const UParticleModuleBeamSource* BeamSource = Cache.BeamSourceModule;
+		const UParticleModuleBeamTarget* BeamTarget = Cache.BeamTargetModule;
+
+		// Source endpoint resolve와 coordinate space 기록
+		bool bSourceWorldSpace = ResolveBeamSourceEndpoint(Owner, BeamSource, OutSource);
+
+		// Distance는 target module 여부와 무관하게 source + local X distance
+		const float SafeDistance = std::max(TypeData.Distance, 0.0f);
+		if (TypeData.BeamMethod == EParticleBeamMethod::Distance)
+		{
+			if (bSourceWorldSpace)
+			{
+				// Source가 PSC parameter로 world resolve된 경우 component forward 방향을 world distance로 사용
+				OutTarget = OutSource + ComponentToWorld.GetForwardVector() * SafeDistance;
+				OutCoordinateSpace = EParticleCoordinateSpace::World;
+			}
+			else if (BeamSource == nullptr && OutCoordinateSpace == EParticleCoordinateSpace::World)
+			{
+				// Source Module 없는 Distance Beam의 world coordinate 기본 시작점
+				OutSource = ComponentToWorld.TransformPosition(FVector::ZeroVector);
+
+				// world coordinate Distance Beam의 component forward 기반 target
+				OutTarget = OutSource + ComponentToWorld.GetForwardVector() * SafeDistance;
+				OutCoordinateSpace = EParticleCoordinateSpace::World;
+			}
+			else
+			{
+				// Source가 local fallback인 경우 기존 Beam replay local 계약 유지
+				OutTarget = OutSource + FVector(SafeDistance, 0.0f, 0.0f);
+			}
+			return;
+		}
+
+		// Target endpoint resolve와 coordinate space 기록
+		const FVector DistanceFallbackTarget = OutSource + FVector(SafeDistance, 0.0f, 0.0f);
+		bool bTargetWorldSpace = ResolveBeamTargetEndpoint(
+			Owner,
+			BeamTarget,
+			DistanceFallbackTarget,
+			OutTarget);
+
+		// 어느 한쪽이라도 PSC parameter로 world resolve되면 replay 전체를 world space로 통일
+		if (bSourceWorldSpace || bTargetWorldSpace)
+		{
+			if (!bSourceWorldSpace)
+			{
+				OutSource = ComponentToWorld.TransformPosition(OutSource);
+			}
+
+			if (!bTargetWorldSpace)
+			{
+				OutTarget = ComponentToWorld.TransformPosition(OutTarget);
+			}
+
+			OutCoordinateSpace = EParticleCoordinateSpace::World;
+		}
+	}
+
+	/**
+	 * @brief Beam tangent vector를 replay coordinate space에 맞게 변환합니다.
+	 */
+	FVector TransformBeamTangentToReplaySpace(
+		const FVector& Tangent,
+		const FMatrix& ComponentToWorld,
+		bool bTransformLocalToWorld)
+	{
+		// local fallback tangent와 world endpoint가 섞인 경우 replay 전체가 world space이므로 tangent도 world vector로 통일
+		return bTransformLocalToWorld
+			? ComponentToWorld.TransformVector(Tangent)
+			: Tangent;
+	}
+
+	/**
+	 * @brief Beam source tangent snapshot 값을 계산합니다.
+	 */
+	FVector ResolveBeamSourceTangent(
+		const UParticleModuleBeamSource* BeamSource,
+		const FVector& Source,
+		const FVector& Target,
+		const FMatrix& ComponentToWorld,
+		bool bTransformLocalToWorld)
+	{
+		// Source에서 Target으로 향하는 기본 tangent 방향과 길이 기준
+		const FVector BeamDelta = Target - Source;
+		const float BeamLength = std::max(BeamDelta.Size(), 1.0f);
+		FVector Tangent = BeamDelta.GetSafeNormal();
+
+		// Source와 Target이 거의 같을 때의 component forward fallback
+		if (Tangent.IsNearlyZero())
+		{
+			Tangent = bTransformLocalToWorld
+				? ComponentToWorld.GetForwardVector()
+				: FVector::ForwardVector;
+		}
+
+		// User tangent mode는 module 입력 방향을 사용하고 strength로 길이 조정
+		if (BeamSource != nullptr &&
+			BeamSource->TangentMode == EParticleBeamTangentMode::User &&
+			!BeamSource->SourceTangent.IsNearlyZero())
+		{
+			Tangent = TransformBeamTangentToReplaySpace(
+				BeamSource->SourceTangent,
+				ComponentToWorld,
+				bTransformLocalToWorld).GetSafeNormal();
+		}
+
+		// Hermite 계산용 최종 tangent 길이
+		const float TangentStrength = BeamSource != nullptr
+			? std::max(BeamSource->SourceTangentStrength, 0.0f)
+			: 1.0f;
+		return Tangent * (BeamLength * TangentStrength);
+	}
+
+	/**
+	 * @brief Beam target tangent snapshot 값을 계산합니다.
+	 */
+	FVector ResolveBeamTargetTangent(
+		const UParticleModuleBeamTarget* BeamTarget,
+		const FVector& Source,
+		const FVector& Target,
+		const FMatrix& ComponentToWorld,
+		bool bTransformLocalToWorld)
+	{
+		// Source에서 Target으로 향하는 기본 tangent 방향과 길이 기준
+		const FVector BeamDelta = Target - Source;
+		const float BeamLength = std::max(BeamDelta.Size(), 1.0f);
+		FVector Tangent = BeamDelta.GetSafeNormal();
+
+		// Source와 Target이 거의 같을 때의 component forward fallback
+		if (Tangent.IsNearlyZero())
+		{
+			Tangent = bTransformLocalToWorld
+				? ComponentToWorld.GetForwardVector()
+				: FVector::ForwardVector;
+		}
+
+		// User tangent mode는 module 입력 방향을 사용하고 strength로 길이 조정
+		if (BeamTarget != nullptr &&
+			BeamTarget->TangentMode == EParticleBeamTangentMode::User &&
+			!BeamTarget->TargetTangent.IsNearlyZero())
+		{
+			Tangent = TransformBeamTangentToReplaySpace(
+				BeamTarget->TargetTangent,
+				ComponentToWorld,
+				bTransformLocalToWorld).GetSafeNormal();
+		}
+
+		// Hermite 계산용 최종 tangent 길이
+		const float TangentStrength = BeamTarget != nullptr
+			? std::max(BeamTarget->TargetTangentStrength, 0.0f)
+			: 1.0f;
+		return Tangent * (BeamLength * TangentStrength);
+	}
+
 	FParticleLODLevelRuntimeCache BuildStableLOD0RuntimeCache(const UParticleLODLevel* LODLevel)
 	{
 		FParticleLODLevelRuntimeCache Cache;
@@ -341,6 +607,7 @@ namespace
 				Module->bEnabled = false;
 			}
 			CopyStablePayloadOffsets(Cache, Module, LayoutModule, StableLayoutCache);
+			CacheBeamEndpointModule(Cache, Module);
 
 			// 특수 module 실행 목록 제외
 			if (Module == nullptr ||
@@ -2258,10 +2525,47 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBeam::GetDynamicRenderData(FPart
 		: EParticleCoordinateSpace::Local;
 	RenderData->ReplayData.Scale = FVector::OneVector;
 
-	// Beam TypeData property snapshot
+	// Beam TypeData / Source / Target Module 기반 endpoint snapshot
+	FVector SourcePoint = FVector::ZeroVector;
+	FVector TargetPoint = FVector(100.0f, 0.0f, 0.0f);
+	const EParticleCoordinateSpace InitialBeamCoordinateSpace = RenderData->ReplayData.CoordinateSpace;
+	EParticleCoordinateSpace BeamCoordinateSpace = InitialBeamCoordinateSpace;
+	ResolveBeamDefaultEndpoints(
+		*this,
+		*InEmitterInstance->CurrentRuntimeCache,
+		InEmitterInstance->GetOwner(),
+		RenderData->ComponentToWorld,
+		SourcePoint,
+		TargetPoint,
+		BeamCoordinateSpace);
+	RenderData->ReplayData.CoordinateSpace = BeamCoordinateSpace;
 	RenderData->ReplayData.SourcePoint = SourcePoint;
 	RenderData->ReplayData.TargetPoint = TargetPoint;
 	RenderData->ReplayData.BeamWidth = std::max(BeamWidth, 0.1f);
+
+	// endpoint가 PSC parameter로 world resolve된 경우 module tangent도 replay coordinate space에 맞게 변환
+	const bool bTransformModuleTangentToWorld =
+		InitialBeamCoordinateSpace == EParticleCoordinateSpace::Local &&
+		BeamCoordinateSpace == EParticleCoordinateSpace::World;
+	RenderData->ReplayData.SourceTangent = ResolveBeamSourceTangent(
+		InEmitterInstance->CurrentRuntimeCache->BeamSourceModule,
+		SourcePoint,
+		TargetPoint,
+		RenderData->ComponentToWorld,
+		bTransformModuleTangentToWorld);
+	RenderData->ReplayData.TargetTangent = ResolveBeamTargetTangent(
+		InEmitterInstance->CurrentRuntimeCache->BeamTargetModule,
+		SourcePoint,
+		TargetPoint,
+		RenderData->ComponentToWorld,
+		bTransformModuleTangentToWorld);
+	RenderData->ReplayData.InterpolationPoints = std::clamp(InterpolationPoints, 0, 64);
+	RenderData->ReplayData.bNoiseEnabled = bNoiseEnabled;
+	RenderData->ReplayData.NoiseFrequency = std::clamp(NoiseFrequency, 0, 64);
+	RenderData->ReplayData.NoiseRange = std::max(NoiseRange, 0.0f);
+	RenderData->ReplayData.NoiseSpeed = std::max(NoiseSpeed, 0.0f);
+	RenderData->ReplayData.NoiseSeed = NoiseSeed;
+	RenderData->ReplayData.BeamTimeSeconds = std::max(InEmitterInstance->SecondsSinceCreation, 0.0f);
 
 	// snapshot은 particle data와 index를 별도 buffer로 소유
 	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);

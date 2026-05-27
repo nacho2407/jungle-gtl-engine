@@ -10,6 +10,60 @@ class FParticleEmitterInstance;
 
 struct FDynamicEmitterDataBase;
 
+/**
+ * @brief Particle System Component instance parameter 값 종류
+ *
+ * @details Particle asset이 아닌 level instance가 보관하는 endpoint binding 값 종류입니다.
+ */
+UENUM()
+enum class EParticleInstanceParameterType
+{
+	Vector UMETA(DisplayName = "Vector"),
+	Actor UMETA(DisplayName = "Actor"),
+	Component UMETA(DisplayName = "Component"),
+};
+
+/**
+ * @brief Particle System Component instance parameter 항목
+ *
+ * @details Beam Source / Target Module의 이름 기반 endpoint resolve에 사용되는 level instance 전용 값입니다.
+ */
+USTRUCT()
+struct FParticleInstanceParameter
+{
+	GENERATED_STRUCT_BODY(FParticleInstanceParameter)
+
+	/**
+	 * @brief Parameter 조회 이름
+	 */
+	UPROPERTY(DisplayName = "Name")
+	FString Name;
+
+	/**
+	 * @brief Parameter 값 종류
+	 */
+	UPROPERTY(DisplayName = "Type")
+	EParticleInstanceParameterType Type = EParticleInstanceParameterType::Vector;
+
+	/**
+	 * @brief World space vector 값
+	 */
+	UPROPERTY(DisplayName = "Vector")
+	FVector VectorValue = FVector::ZeroVector;
+
+	/**
+	 * @brief Actor UUID 값
+	 */
+	UPROPERTY(DisplayName = "Actor UUID")
+	int32 ActorUUID = 0;
+
+	/**
+	 * @brief Scene component UUID 값
+	 */
+	UPROPERTY(DisplayName = "Component UUID")
+	int32 ComponentUUID = 0;
+};
+
 /******************************************************************
 * Particle System 런타임 객체 관리 컴포넌트
 * Particle System이 Asset이라면 PSC는 Asset을 참조하는 개별 Instance
@@ -40,6 +94,31 @@ public:
 	int32 GetEmitterRenderDataSnapshotCount() const { return static_cast<int32>(EmitterRenderData.size()); }
 	const FDynamicEmitterDataBase* GetEmitterRenderDataSnapshot(int32 SnapshotIndex) const;
 	const FParticleFrameStats& GetLastParticleFrameStats() const { return LastParticleFrameStats; }
+
+	/**
+	 * @brief 이름이 같은 instance parameter를 조회합니다.
+	 *
+	 * @param Name 조회할 parameter 이름
+	 *
+	 * @return 이름이 같은 parameter 포인터. 없으면 nullptr
+	 */
+	const FParticleInstanceParameter* FindInstanceParameter(const FString& Name) const;
+
+	/**
+	 * @brief 이름과 endpoint method에 맞는 world point를 해석합니다.
+	 *
+	 * @param Name 조회할 parameter 이름
+	 *
+	 * @param Method endpoint 해석 방식
+	 *
+	 * @param OutWorldPoint 해석된 world space 위치
+	 *
+	 * @return 해석 성공 여부
+	 */
+	bool ResolveParticleInstanceParameterWorldPoint(
+		const FString& Name,
+		EParticleBeamEndpointMethod Method,
+		FVector& OutWorldPoint) const;
 
 	/**
 	 * @brief 내부 receiver 입력 event 저장
@@ -114,4 +193,13 @@ private:
 
 	UPROPERTY(DisplayName = "Template", ReferenceType = Asset)
 	TSoftObjectPtr<UParticleSystem> Template;
+
+public:
+	/**
+	 * @brief Particle System Component instance parameter 목록
+	 *
+	 * @details Particle asset이 공유하지 않는 level instance 단위의 Beam endpoint binding 값입니다.
+	 */
+	UPROPERTY(DisplayName = "Instance Parameters")
+	TArray<FParticleInstanceParameter> InstanceParameters;
 };
