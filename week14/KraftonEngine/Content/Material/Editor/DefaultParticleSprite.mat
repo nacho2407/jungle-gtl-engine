@@ -1,6 +1,6 @@
 {
-        "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-        "EmissiveIntensity" : 52.000000,
+        "EmissiveColor" : [1.000000, 0.000000, 0.000000, 1.000000],
+        "EmissiveIntensity" : 5.000000,
         "Origin" : "Editor",
         "PathFileName" : "Content/Material/Editor/DefaultParticleSprite.mat",
         "RenderPass" : "AlphaBlend",
