@@ -1591,11 +1591,10 @@ void FParticleEmitterInstance::CalculateLocalBounds(FVector& OutMin, FVector& Ou
 void FParticleEmitterInstance::CalculateWorldBounds(FVector& OutMin, FVector& OutMax) const
 {
 	CalculateLocalBounds(OutMin, OutMax);
-	if (!UsesLocalSpace())
-	{
-		return;
-	}
 
+	// CalculateLocalBounds() returns authoring/emitter-local bounds. World-space
+	// particles are spawned by transforming those local module values into world,
+	// so the culling bounds must do the same before entering the spatial index.
 	const FAABB LocalBounds(OutMin, OutMax);
 	const FAABB WorldBounds = FAABB::TransformAABB(LocalBounds, Owner.GetComponentToWorld());
 	OutMin = WorldBounds.Min;
