@@ -38,7 +38,6 @@ enum class EParticleFlags : uint32
 {
 	None                 = 0u,
 	PendingKill          = 1u << 0,
-	CollisionHasOccurred = 1u << 1,
 	IgnoreCollisions     = 1u << 2,
 	Freeze               = 1u << 3,
 	FreezeTranslation    = 1u << 4,

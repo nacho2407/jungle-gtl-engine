@@ -1398,8 +1398,6 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 		Event.HitComponent = Hit.HitComponent;
 		Event.HitActor = Hit.HitComponent != nullptr ? Hit.HitComponent->GetOwner() : nullptr;
 		Owner->GetOwner().AddCollisionEvent(Event);
-
-		SetParticleFlag(Particle, EParticleFlags::CollisionHasOccurred);
 	}
 }
 
