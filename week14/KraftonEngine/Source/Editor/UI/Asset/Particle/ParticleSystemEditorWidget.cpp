@@ -2788,7 +2788,46 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			MutableModules.push_back(NewModule);
 			LODLevel->GetMutableModuleEditStates().push_back(EParticleModuleEditState::Duplicated);
 			LODLevel->NormalizeModuleEditStates(EParticleModuleEditState::Duplicated);
-			SelectModule(EmitterIndex, DisplayLODIndex, static_cast<int32>(MutableModules.size()) - 1);
+			const int32 NewModuleIndex = static_cast<int32>(MutableModules.size()) - 1;
+
+			if (DisplayLODIndex == 0 && Emitter)
+			{
+				for (int32 LODIndex = 1; LODIndex < static_cast<int32>(Emitter->GetLODLevels().size()); ++LODIndex)
+				{
+					UParticleLODLevel* TargetLODLevel = Emitter->GetLODLevel(LODIndex);
+					if (!TargetLODLevel)
+					{
+						continue;
+					}
+
+					TArray<UParticleModule*>& TargetModules = TargetLODLevel->GetMutableModules();
+					TArray<EParticleModuleEditState>& TargetEditStates = TargetLODLevel->GetMutableModuleEditStates();
+					while (static_cast<int32>(TargetModules.size()) < NewModuleIndex)
+					{
+						const int32 MissingIndex = static_cast<int32>(TargetModules.size());
+						TargetModules.push_back(LODLevel->ResolveModule(MissingIndex, Emitter));
+						TargetEditStates.push_back(EParticleModuleEditState::Shared);
+					}
+
+					if (static_cast<int32>(TargetModules.size()) == NewModuleIndex)
+					{
+						TargetModules.push_back(NewModule);
+						TargetEditStates.push_back(EParticleModuleEditState::Shared);
+					}
+					else if (NewModuleIndex >= 0 && NewModuleIndex < static_cast<int32>(TargetModules.size()))
+					{
+						TargetModules[NewModuleIndex] = NewModule;
+						if (NewModuleIndex < static_cast<int32>(TargetEditStates.size()))
+						{
+							TargetEditStates[NewModuleIndex] = EParticleModuleEditState::Shared;
+						}
+					}
+
+					TargetLODLevel->NormalizeModuleEditStates(EParticleModuleEditState::Shared);
+				}
+			}
+
+			SelectModule(EmitterIndex, DisplayLODIndex, NewModuleIndex);
 			MarkDirty();
 			RefreshParticleSystemComponents();
 		};
