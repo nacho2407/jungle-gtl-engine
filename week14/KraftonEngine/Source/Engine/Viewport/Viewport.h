@@ -30,6 +30,8 @@ public:
 	// 크기
 	uint32 GetWidth() const { return Width; }
 	uint32 GetHeight() const { return Height; }
+	uint32 GetBloomWidth() const { return BloomWidth; }
+	uint32 GetBloomHeight() const { return BloomHeight; }
 
 	// D3D 리소스 접근자
 	ID3D11RenderTargetView* GetRTV() const { return RTV; }
@@ -111,6 +113,8 @@ private:
 
 	uint32 Width = 0;
 	uint32 Height = 0;
+	uint32 BloomWidth = 0;
+	uint32 BloomHeight = 0;
 
 	// 지연 리사이즈 요청
 	uint32 PendingWidth = 0;

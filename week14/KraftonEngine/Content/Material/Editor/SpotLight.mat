@@ -1,10 +1,16 @@
 {
-        "Origin" : "Editor",
-        "PathFileName" : "Content/Material/Editor/SpotLight.mat",
-        "RenderPass" : "AlphaBlend",
-        "ShaderPath" : "Shaders/UI/Billboard.hlsl",
-        "ShadowMode" : "Opaque",
-        "Textures" : {
-          "DiffuseTexture" : "Content/Editor/Icons/S_SpotLight_256x.png"
-        }
-      }
+  "BlendState" : "",
+  "DepthStencilState" : "",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
+  "Origin" : "Editor",
+  "PathFileName" : "Content/Material/Editor/SpotLight.mat",
+  "RasterizerState" : "",
+  "RenderPass" : "AlphaBlend",
+  "ShaderPath" : "Shaders/UI/Billboard.hlsl",
+  "ShadowMode" : "Opaque",
+  "Textures" : {
+    "DiffuseTexture" : "Content/Editor/Icons/S_SpotLight_256x.png"
+  },
+  "bEnableBloom" : false
+}

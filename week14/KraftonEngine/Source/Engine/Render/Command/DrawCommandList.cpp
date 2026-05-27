@@ -46,6 +46,14 @@ void FStateCache::Cleanup(ID3D11DeviceContext* Ctx)
 		Ctx->VSSetShaderResources(EVertexFactoryTexSlot::SkinMatrices, 1, &nullSRV);
 		Bindings.SkinMatrixSRV = nullptr;
 	}
+
+	if (Bindings.MaterialBloomCB)
+	{
+		ID3D11Buffer* nullCB = nullptr;
+		Ctx->VSSetConstantBuffers(ECBSlot::MaterialBloom, 1, &nullCB);
+		Ctx->PSSetConstantBuffers(ECBSlot::MaterialBloom, 1, &nullCB);
+		Bindings.MaterialBloomCB = nullptr;
+	}
 }
 
 // ============================================================
@@ -303,6 +311,14 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 		Ctx->VSSetConstantBuffers(ECBSlot::Fog, 1, &RawCB);
 		Ctx->PSSetConstantBuffers(ECBSlot::Fog, 1, &RawCB);
 		Cache.Bindings.FogCB = Cmd.Bindings.FogCB;
+	}
+
+	if (bForce || Cmd.Bindings.MaterialBloomCB != Cache.Bindings.MaterialBloomCB)
+	{
+		ID3D11Buffer* RawCB = Cmd.Bindings.MaterialBloomCB ? Cmd.Bindings.MaterialBloomCB->GetBuffer() : nullptr;
+		Ctx->VSSetConstantBuffers(ECBSlot::MaterialBloom, 1, &RawCB);
+		Ctx->PSSetConstantBuffers(ECBSlot::MaterialBloom, 1, &RawCB);
+		Cache.Bindings.MaterialBloomCB = Cmd.Bindings.MaterialBloomCB;
 	}
 
 	// --- SRV (t0 ~ t7) 바인딩 ---

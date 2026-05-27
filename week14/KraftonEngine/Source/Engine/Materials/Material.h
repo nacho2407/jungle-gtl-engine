@@ -54,6 +54,9 @@ public:
 	virtual FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const { return nullptr; }
 	virtual void FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx) {}
 	virtual ID3D11ShaderResourceView* GetSRV(EMaterialTextureSlot Slot) const { return nullptr; }
+	virtual FVector4 GetEmissiveColor() const { return FVector4(1.0f, 1.0f, 1.0f, 1.0f); }
+	virtual float GetEmissiveIntensity() const { return 0.0f; }
+	virtual bool IsBloomEnabled() const { return false; }
 	virtual const FString& GetAssetPathFileName() const
 	{
 		static const FString EmptyString;
@@ -113,6 +116,18 @@ protected:
 	UPROPERTY(Edit, Save, Category="Material", DisplayName="Shadow Mode", Enum=EMaterialShadowMode)
 	EMaterialShadowMode ShadowMode = EMaterialShadowMode::Opaque;
 
+	UPROPERTY(Edit, Save, Category="Bloom", DisplayName="Emissive Color", Type=Color4)
+	FVector4 EmissiveColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	UPROPERTY(Edit, Save, Category="Bloom", DisplayName="Emissive Intensity", Min=0.0f, Max=100.0f, Speed=0.05f)
+	float EmissiveIntensity = 0.0f;
+
+	UPROPERTY(Edit, Save, Category="Bloom", DisplayName="Enable Bloom")
+	bool bEnableBloom = false;
+
+	mutable FConstantBuffer MaterialBloomCB;
+	bool bMaterialBloomCBDirty = true;
+
 	bool SetParameter(const FString& Name, const void* Data, uint32 Size);
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> CloneConstantBuffers(ID3D11Device* Device) const;
 	void CopyTextureParametersFrom(const UMaterial& Other);
@@ -150,6 +165,14 @@ public:
 	EMaterialShadowMode GetShadowMode()const override  { return ShadowMode; }
 	void SetShadowMode(EMaterialShadowMode InMode) { ShadowMode = InMode; }
 
+	FVector4 GetEmissiveColor() const override { return EmissiveColor; }
+	float GetEmissiveIntensity() const override { return EmissiveIntensity; }
+	bool IsBloomEnabled() const override { return bEnableBloom; }
+	void SetEmissiveColor(const FVector4& InColor) { EmissiveColor = InColor; bMaterialBloomCBDirty = true; }
+	void SetEmissiveIntensity(float InIntensity) { EmissiveIntensity = InIntensity; bMaterialBloomCBDirty = true; }
+	void SetBloomEnabled(bool bInEnableBloom) { bEnableBloom = bInEnableBloom; bMaterialBloomCBDirty = true; }
+	void PostEditProperty(const char* PropertyName) override;
+
 	bool CastsShadow() const override { return ShadowMode != EMaterialShadowMode::None; }
 
 	void Bind(ID3D11DeviceContext* Context);
@@ -181,6 +204,11 @@ public:
 
 	FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const override
 	{
+		if (InSlot == ECBSlot::MaterialBloom)
+		{
+			return &MaterialBloomCB;
+		}
+
 		// Per-shader override (transient Material의 외부 CB)
 		if (PerShaderOverride.Buffer && PerShaderOverride.Slot == InSlot)
 			return PerShaderOverride.Buffer;
@@ -208,6 +236,21 @@ public:
 				PerShaderOverride.Buffer->Create(Device, PerShaderOverride.Size);
 			PerShaderOverride.Buffer->Update(Ctx, PerShaderOverride.Data, PerShaderOverride.Size);
 		}
+
+		const bool bNeedsCreate = MaterialBloomCB.GetBuffer() == nullptr;
+		if (bNeedsCreate)
+		{
+			MaterialBloomCB.Create(Device, sizeof(FMaterialBloomConstants), "MaterialBloomCB");
+		}
+		if (bNeedsCreate || bMaterialBloomCBDirty)
+		{
+			FMaterialBloomConstants BloomData = {};
+			BloomData.EmissiveColor = EmissiveColor;
+			BloomData.EmissiveIntensity = EmissiveIntensity;
+			BloomData.bEnableBloom = bEnableBloom ? 1.0f : 0.0f;
+			MaterialBloomCB.Update(Ctx, &BloomData, sizeof(FMaterialBloomConstants));
+			bMaterialBloomCBDirty = false;
+		}
 	}
 
 	// 캐시된 SRV 배열 직접 접근 (map lookup 회피)
@@ -227,6 +270,8 @@ public:
 		{
 			if (Pair.second) Pair.second->Release();
 		}
+		MaterialBloomCB.Release();
+		bMaterialBloomCBDirty = true;
 	}
 
 private:
@@ -277,6 +322,9 @@ public:
 	ID3D11ShaderResourceView* GetSRV(EMaterialTextureSlot Slot) const override;
 
 	EMaterialShadowMode GetShadowMode()  const override { return Parent->GetShadowMode(); }
+	FVector4 GetEmissiveColor() const override { return Parent ? Parent->GetEmissiveColor() : FVector4(1.0f, 1.0f, 1.0f, 1.0f); }
+	float GetEmissiveIntensity() const override { return Parent ? Parent->GetEmissiveIntensity() : 0.0f; }
+	bool IsBloomEnabled() const override { return Parent ? Parent->IsBloomEnabled() : false; }
 	bool CastsShadow() const override { return GetShadowMode() != EMaterialShadowMode::None; }
 
 protected:

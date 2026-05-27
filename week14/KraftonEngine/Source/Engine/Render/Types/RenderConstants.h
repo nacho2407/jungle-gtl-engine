@@ -27,6 +27,7 @@ namespace ECBSlot
 	constexpr uint32 Shadow = 5;     // b5: ShadowBuffer (Shadow 행렬 + 파라미터)
 	constexpr uint32 BoneHeatMap = 6; // b6: SkeletalMesh bone weight heatmap
 	constexpr uint32 Fog = 7;		 // b7: FogPass 전용 CB (FogColor + Height)
+	constexpr uint32 MaterialBloom = 8; // b8: Material emissive/bloom controls
 }
 
 // HLSL 라이팅 SRV 슬롯 — 프레임에 1회 바인딩 (Forward Shading)
@@ -104,6 +105,14 @@ struct FPerObjectConstants
 		Result.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 		return Result;
 	}
+};
+
+struct FMaterialBloomConstants
+{
+	FVector4 EmissiveColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	float EmissiveIntensity = 0.0f;
+	float bEnableBloom = 0.0f;
+	float Padding[2] = { 0.0f, 0.0f };
 };
 
 struct FBoneHeatMapConstants

@@ -1,6 +1,8 @@
 {
   "BlendState" : "",
   "DepthStencilState" : "",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
   "Origin" : "FbxImport",
   "Parameters" : {
     "HasNormalMap" : 0.000000,
@@ -10,5 +12,7 @@
   "PathFileName" : "Content/Material/Auto/MI_Manny_01_New.mat",
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl"
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "ShadowMode" : "Opaque",
+  "bEnableBloom" : false
 }

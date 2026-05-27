@@ -20,6 +20,9 @@ namespace MatKeys
 	static constexpr const char* Parameters = "Parameters";
 	static constexpr const char* Textures = "Textures";
 	static constexpr const char* ShadowMode = "ShadowMode";	
+	static constexpr const char* EmissiveColor = "EmissiveColor";
+	static constexpr const char* EmissiveIntensity = "EmissiveIntensity";
+	static constexpr const char* bEnableBloom = "bEnableBloom";
 }
 
 class FMaterialTemplate;

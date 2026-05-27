@@ -42,6 +42,8 @@ struct FFrameContext
 	// Viewport
 	float ViewportWidth  = 0.0f;
 	float ViewportHeight = 0.0f;
+	float BloomWidth     = 0.0f;
+	float BloomHeight    = 0.0f;
 
 	ID3D11RenderTargetView*   ViewportRTV          = nullptr;
 	ID3D11DepthStencilView*   ViewportDSV          = nullptr;
@@ -122,6 +124,8 @@ struct FFrameContext
 	{
 		ViewportRTV             = nullptr;
 		ViewportDSV             = nullptr;
+		BloomWidth              = 0.0f;
+		BloomHeight             = 0.0f;
 		SceneColorCopySRV       = nullptr;
 		SceneColorCopyTexture   = nullptr;
 		ViewportRenderTexture   = nullptr;
