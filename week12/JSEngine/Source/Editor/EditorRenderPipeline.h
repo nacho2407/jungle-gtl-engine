@@ -20,6 +20,7 @@ public:
 	const FRenderCollector::FCullingStats& GetViewportCullingStats(int32 ViewportIndex) const;
 	const FRenderCollector::FDecalStats& GetViewportDecalStats(int32 ViewportIndex) const;
     const FRenderCollector::FLightStats& GetViewportLightStats(int32 ViewportIndex) const;
+	const FRenderCollector::FParticleStats& GetViewportParticleStats(int32 ViewportIndex) const;
 	ID3D11ShaderResourceView* RenderMaterialPreview(FRenderer& Renderer, UStaticMesh* Mesh, UMaterialInterface* Material,
 	                                                uint32 Width, uint32 Height, float YawRad, float PitchRad,
 	                                                float Distance);
@@ -41,4 +42,5 @@ private:
 	TArray<FRenderCollector::FCullingStats> ViewportCullingStats;
 	TArray<FRenderCollector::FDecalStats> ViewportDecalStats;
 	TArray<FRenderCollector::FLightStats> ViewportLightStats;
+	TArray<FRenderCollector::FParticleStats> ViewportParticleStats;
 };

@@ -7,9 +7,11 @@
 #include "Editor/UI/EditorMainPanel.h"
 #include "GameFramework/PrimitiveActors.h"
 #include "GameFramework/World.h"
+#include "Particle/ParticleModules.h"
 #include "Serialization/ObjectGraphSerializer.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -79,6 +81,41 @@ namespace
 		return Result;
 	}
 
+
+	float GetLODStartSizeForTrailPreview(const UParticleLODLevel* LOD)
+	{
+		if (LOD == nullptr)
+		{
+			return 10.0f;
+		}
+
+		for (UParticleModule* Module : LOD->Modules)
+		{
+			const UParticleModuleSize* SizeModule = Cast<UParticleModuleSize>(Module);
+			if (SizeModule != nullptr && SizeModule->bEnabled)
+			{
+				return std::max(std::fabs(SizeModule->StartSize.Constant.X), 1.0f);
+			}
+		}
+
+		return 10.0f;
+	}
+
+	float GetTrailPreviewRadius(const UParticleLODLevel* LOD)
+	{
+		const UParticleModuleTypeDataRibbon* RibbonTypeData = LOD != nullptr
+			? Cast<UParticleModuleTypeDataRibbon>(LOD->TypeDataModule)
+			: nullptr;
+		if (RibbonTypeData == nullptr)
+		{
+			return 100.0f;
+		}
+
+		const float TrailSize = RibbonTypeData->bUseParticleSizeAsWidth
+			? GetLODStartSizeForTrailPreview(LOD)
+			: std::max(RibbonTypeData->RibbonWidth, 1.0f);
+		return std::max(TrailSize * 6.0f, 3.0f);
+	}
 
 	int32 GetMaxParticleSystemLODCount(const UParticleSystem* ParticleSystem)
 	{
@@ -350,7 +387,12 @@ void FParticleEditorViewer::Tick(float DeltaTime)
 	if (PreviewComponent && UObjectManager::Get().ContainsObject(PreviewComponent) && IsPlaying() && IsRealtime())
 	{
 		SimulationTime += std::max(0.0f, DeltaTime);
+		UpdateTrailPreviewMotion(DeltaTime);
 		PreviewComponent->TickComponent(DeltaTime);
+	}
+	else
+	{
+		UpdateTrailPreviewMotion(0.0f);
 	}
 }
 
@@ -542,6 +584,7 @@ void FParticleEditorViewer::CacheAllEmitters()
 void FParticleEditorViewer::RestartSimulation()
 {
 	SimulationTime = 0.0f;
+	TrailPreviewTime = 0.0f;
 
 	if (!PreviewComponent || !UObjectManager::Get().ContainsObject(PreviewComponent) || !ParticleSystem)
 	{
@@ -551,6 +594,7 @@ void FParticleEditorViewer::RestartSimulation()
 
 	PreviewComponent->SetTemplate(ParticleSystem);
 	PreviewComponent->ResetParticles();
+	UpdateTrailPreviewMotion(0.0f);
 }
 
 // Particle 시뮬레이션 재시작 → 레벨 재생 효과를 구현 (RestartSimulation과 동일)
@@ -1738,6 +1782,66 @@ void FParticleEditorViewer::SelectUpperLOD()
 	SelectionType = EParticleEditorSelectionType::LODLevel;
 }
 
+const UParticleLODLevel* FParticleEditorViewer::FindTrailPreviewLOD() const
+{
+	const UParticleLODLevel* SelectedLOD = GetSelectedLODLevel();
+	if (SelectedLOD && Cast<UParticleModuleTypeDataTrailBase>(SelectedLOD->TypeDataModule))
+	{
+		return SelectedLOD;
+	}
+
+	if (!ParticleSystem)
+	{
+		return nullptr;
+	}
+
+	for (const UParticleEmitter* Emitter : ParticleSystem->Emitters)
+	{
+		if (!Emitter)
+		{
+			continue;
+		}
+
+		for (const UParticleLODLevel* LOD : Emitter->LODLevels)
+		{
+			if (LOD && Cast<UParticleModuleTypeDataTrailBase>(LOD->TypeDataModule))
+			{
+				return LOD;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+void FParticleEditorViewer::UpdateTrailPreviewMotion(float DeltaTime)
+{
+	if (!PreviewActor || !UObjectManager::Get().ContainsObject(PreviewActor) ||
+		!PreviewComponent || !UObjectManager::Get().ContainsObject(PreviewComponent))
+	{
+		TrailPreviewTime = 0.0f;
+		return;
+	}
+
+	const UParticleLODLevel* LOD = FindTrailPreviewLOD();
+	if (!LOD)
+	{
+		TrailPreviewTime = 0.0f;
+		PreviewComponent->SetRelativeLocation(FVector::ZeroVector);
+		return;
+	}
+
+	constexpr float RotationSpeedRadiansPerSecond = 1.57079632679f;
+	const float Radius = GetTrailPreviewRadius(LOD);
+	TrailPreviewTime += std::max(0.0f, DeltaTime);
+	const float Angle = TrailPreviewTime * RotationSpeedRadiansPerSecond;
+
+	PreviewComponent->SetRelativeLocation(FVector(
+		std::cos(Angle) * Radius,
+		std::sin(Angle) * Radius,
+		0.0f));
+}
+
 // 뷰어 월드에 배치된 프리뷰 액터와 Particle 컴포넌트를 소거하여 렌더링 상태를 완전 초기화합니다.
 void FParticleEditorViewer::ClearParticlePreview()
 {
@@ -1748,6 +1852,7 @@ void FParticleEditorViewer::ClearParticlePreview()
 	}
 
 	PreviewComponent = nullptr;
+	TrailPreviewTime = 0.0f;
 
 	if (PreviewActor && UObjectManager::Get().ContainsObject(PreviewActor))
 	{
@@ -1808,6 +1913,7 @@ bool FParticleEditorViewer::CreatePreviewComponent()
 	}
 
 	PreviewComponent->SetTemplate(ParticleSystem);
+	UpdateTrailPreviewMotion(0.0f);
 	World->SyncSpatialIndex();
 	return true;
 }

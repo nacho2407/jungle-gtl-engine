@@ -100,6 +100,7 @@ public:
 	void PackRenderData();
 	int32 GetEmitterRenderDataSnapshotCount() const { return static_cast<int32>(EmitterRenderData.size()); }
 	const FDynamicEmitterDataBase* GetEmitterRenderDataSnapshot(int32 SnapshotIndex) const;
+	const FParticleFrameStats& GetLastParticleFrameStats() const { return LastParticleFrameStats; }
 
 	/**
 	 * @brief 이름이 같은 instance parameter를 조회합니다.
@@ -153,6 +154,7 @@ private:
 	void CreateEmitterInstances();
 	void ReleaseEmitterInstances();
 	void ReleaseRenderData();
+	void UpdateLastParticleFrameStats();
 
 	/**
 	 * @brief 현재 거리와 hysteresis 정책으로 사용할 LOD index를 선택합니다.
@@ -185,6 +187,7 @@ private:
 
 	TArray<FParticleEmitterInstance*> EmitterInstances;
 	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
+	FParticleFrameStats LastParticleFrameStats;
 
 	TArray<FParticleEventCollideData> CollisionEvents;
 

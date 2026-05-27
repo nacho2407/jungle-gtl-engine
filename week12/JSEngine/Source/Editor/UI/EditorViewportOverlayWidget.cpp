@@ -553,7 +553,15 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 		const FEditorViewportState& VS = Layout.GetViewportState(i);
         FViewportRect ViewportRect = Layout.GetSceneViewport(i).GetRect();
 
-		if (!VS.bShowStatFPS && !VS.bShowStatMemory && !VS.bShowStatNameTable && !VS.bShowLight&& !VS.bShowShadow) continue;
+		if (!VS.bShowStatFPS &&
+			!VS.bShowStatMemory &&
+			!VS.bShowStatNameTable &&
+			!VS.bShowStatParticles &&
+			!VS.bShowLight &&
+			!VS.bShowShadow)
+		{
+			continue;
+		}
         if (ViewportRect.Width <= 0 || ViewportRect.Height <= 0)
             continue; // 비활성 뷰포트 스킵
 
@@ -621,6 +629,8 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 
             const FRenderCollector::FLightStats* LightStats =
                 (RenderPipeline != nullptr) ? &RenderPipeline->GetViewportLightStats(i) : nullptr;
+			const FRenderCollector::FParticleStats* ParticleStats =
+				(RenderPipeline != nullptr) ? &RenderPipeline->GetViewportParticleStats(i) : nullptr;
 
 			if (VS.bShowLight)
             {
@@ -634,6 +644,32 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 					ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Point Lights: %d", LightStats->PointLightCount);
 					ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Spot Lights: %d", LightStats->SpotlightCount);
                     ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f), "- Shadow Cast Lights: %d", LightStats->ShadowCastingLightCount);
+				}
+			}
+
+			if (VS.bShowStatParticles)
+			{
+				if (ParticleStats != nullptr)
+				{
+					ImGui::Separator();
+
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "Particle Stat");
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Sprite Particle Spawned: %d", ParticleStats->SpriteParticleSpawned);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Sprite Particles Count: %d", ParticleStats->SpriteParticleCount);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Sprite Particle Killed: %d", ParticleStats->SpriteParticleKilled);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Mesh Particle Spawned: %d", ParticleStats->MeshParticleSpawned);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Mesh Particles Count: %d", ParticleStats->MeshParticleCount);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Mesh Particle Polygons: %llu", static_cast<unsigned long long>(ParticleStats->MeshParticlePolygons));
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Mesh Particle Killed: %d", ParticleStats->MeshParticleKilled);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Beam Particle Spawned: %d", ParticleStats->BeamParticleSpawned);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Beam Particle Count: %d", ParticleStats->BeamParticleCount);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Beam Particle Polygons: %llu", static_cast<unsigned long long>(ParticleStats->BeamParticlePolygons));
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Beam Particle Killed: %d", ParticleStats->BeamParticleKilled);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Trail Particle Spawned: %d", ParticleStats->TrailParticleSpawned);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Trail Particle Count: %d", ParticleStats->TrailParticleCount);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Trail Particle Polygons: %llu", static_cast<unsigned long long>(ParticleStats->TrailParticlePolygons));
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Trail Particle Killed: %d", ParticleStats->TrailParticleKilled);
+					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Particle Draw Calls: %d", ParticleStats->ParticleDrawCalls);
 				}
 			}
 

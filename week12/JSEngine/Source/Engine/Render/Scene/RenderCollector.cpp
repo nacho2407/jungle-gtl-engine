@@ -19,12 +19,18 @@ void FRenderCollector::ResetLightStats()
 	LightRenderCollector.Reset();
 }
 
+void FRenderCollector::ResetParticleStats()
+{
+	LastParticleStats = {};
+}
+
 void FRenderCollector::BeginSceneCollection(FRenderResourceProvider& ResourceProvider)
 {
 	ActiveResourceProvider = &ResourceProvider;
 	ResetCullingStats();
 	ResetDecalStats();
 	ResetLightStats();
+	ResetParticleStats();
 }
 
 void FRenderCollector::NoteVisiblePrimitive()
@@ -60,7 +66,8 @@ void FRenderCollector::CollectScenePrimitive(UPrimitiveComponent* Primitive, con
 	FPrimitiveRenderProxyCommandServices CommandServices{
 		PrimitiveDrawCommandBuilder,
 		DecalCommandBuilder,
-		OBBQueryScratch
+		OBBQueryScratch,
+		LastParticleStats
 	};
 	FPrimitiveRenderProxyCollectionContext ProxyContext{
 		RenderBus,
@@ -95,7 +102,8 @@ void FRenderCollector::CollectSceneShadowCaster(UPrimitiveComponent* Primitive, 
 	FPrimitiveRenderProxyCommandServices CommandServices{
 		PrimitiveDrawCommandBuilder,
 		DecalCommandBuilder,
-		OBBQueryScratch
+		OBBQueryScratch,
+		LastParticleStats
 	};
 	FPrimitiveRenderProxyCollectionContext ProxyContext{
 		RenderBus,

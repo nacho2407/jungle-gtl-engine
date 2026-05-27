@@ -145,6 +145,23 @@ namespace
 		return nullptr;
 	}
 
+
+	const FDynamicRibbonEmitterData* FindRibbonRenderDataForEmitter(
+		const TArray<FDynamicEmitterDataBase*>& RenderData,
+		int32 EmitterIndex)
+	{
+		for (const FDynamicEmitterDataBase* EmitterData : RenderData)
+		{
+			if (EmitterData != nullptr &&
+				EmitterData->EmitterIndex == EmitterIndex &&
+				EmitterData->GetEmitterType() == EDynamicEmitterType::Ribbon)
+			{
+				return static_cast<const FDynamicRibbonEmitterData*>(EmitterData);
+			}
+		}
+		return nullptr;
+	}
+
 	FVector GetBeamWorldPoint(
 		const FDynamicBeamEmitterReplayDataBase& ReplayData,
 		const FMatrix& ComponentToWorld,
@@ -169,6 +186,33 @@ namespace
 		Bounds.Expand(Source + Extent);
 		Bounds.Expand(Target - Extent);
 		Bounds.Expand(Target + Extent);
+		return Bounds;
+	}
+
+
+	FVector GetRibbonWorldPoint(
+		const FDynamicRibbonEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld,
+		const FRibbonRenderPoint& Point)
+	{
+		return ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local
+			? ComponentToWorld.TransformPosition(Point.Position)
+			: Point.Position;
+	}
+
+	FBoundingBox BuildRibbonWorldBounds(
+		const FDynamicRibbonEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld)
+	{
+		FBoundingBox Bounds;
+		for (const FRibbonRenderPoint& Point : ReplayData.RenderPoints)
+		{
+			const FVector WorldPoint = GetRibbonWorldPoint(ReplayData, ComponentToWorld, Point);
+			const float HalfWidth = std::max(Point.Width, 0.1f) * 0.5f;
+			const FVector Extent(HalfWidth, HalfWidth, HalfWidth);
+			Bounds.Expand(WorldPoint - Extent);
+			Bounds.Expand(WorldPoint + Extent);
+		}
 		return Bounds;
 	}
 }
@@ -514,11 +558,64 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	}
 
 	// Render Data 수집
+	UpdateLastParticleFrameStats();
 	PackRenderData();
 	NotifySpatialIndexDirty();
 	
 	// Tick이 끝날 때 Event를 처리
 	FinalizeTickComponent();
+}
+
+void UParticleSystemComponent::UpdateLastParticleFrameStats()
+{
+	LastParticleFrameStats = {};
+
+	bool bHasSoloEmitter = false;
+	for (const FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (IsSoloParticleInstance(Instance))
+		{
+			bHasSoloEmitter = true;
+			break;
+		}
+	}
+
+	for (const FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance == nullptr || Instance->CurrentRuntimeCache == nullptr)
+		{
+			continue;
+		}
+		if (bHasSoloEmitter && !IsSoloParticleInstance(Instance))
+		{
+			continue;
+		}
+
+		const int32 SpawnedCount = Instance->GetLastFrameSpawnedCount();
+		const int32 KilledCount = Instance->GetLastFrameKilledCount();
+		const UParticleModuleTypeDataBase* TypeDataModule = Instance->CurrentRuntimeCache->TypeDataModule;
+
+		if (Cast<UParticleModuleTypeDataRibbon>(TypeDataModule) != nullptr)
+		{
+			LastParticleFrameStats.TrailParticleSpawned += SpawnedCount;
+			LastParticleFrameStats.TrailParticleKilled += KilledCount;
+		}
+		else if (Cast<UParticleModuleTypeDataMesh>(TypeDataModule) != nullptr)
+		{
+			LastParticleFrameStats.MeshParticleSpawned += SpawnedCount;
+			LastParticleFrameStats.MeshParticleKilled += KilledCount;
+		}
+		else if (Cast<UParticleModuleTypeDataBeam>(TypeDataModule) != nullptr)
+		{
+			LastParticleFrameStats.BeamParticleSpawned += SpawnedCount;
+			LastParticleFrameStats.BeamParticleKilled += KilledCount;
+		}
+		else
+		{
+			LastParticleFrameStats.SpriteParticleSpawned += SpawnedCount;
+			LastParticleFrameStats.SpriteParticleKilled += KilledCount;
+		}
+	}
 }
 
 void UParticleSystemComponent::FinalizeTickComponent()
@@ -632,6 +729,19 @@ void UParticleSystemComponent::UpdateWorldAABB() const
 				if (BeamBounds.IsValid())
 				{
 					WorldAABB.Merge(BeamBounds);
+					continue;
+				}
+			}
+
+			const FDynamicRibbonEmitterData* RibbonEmitterData = FindRibbonRenderDataForEmitter(EmitterRenderData, EmitterIndex);
+			if (RibbonEmitterData != nullptr)
+			{
+				const FBoundingBox RibbonBounds = BuildRibbonWorldBounds(
+					RibbonEmitterData->ReplayData,
+					RibbonEmitterData->ComponentToWorld);
+				if (RibbonBounds.IsValid())
+				{
+					WorldAABB.Merge(RibbonBounds);
 					continue;
 				}
 			}

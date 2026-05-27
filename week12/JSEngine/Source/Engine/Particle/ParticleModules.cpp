@@ -163,9 +163,40 @@ namespace
 		}
 	}
 
-	void AddEnabledModuleExecution(FParticleLODLevelRuntimeCache& Cache, UParticleModule* Module)
+	bool IsTrailTypeDataModule(const UParticleModuleTypeDataBase* TypeData)
 	{
-		if (Module == nullptr || !Module->bEnabled)
+		return Cast<UParticleModuleTypeDataRibbon>(TypeData) != nullptr ||
+			Cast<UParticleModuleTypeDataAnimTrail>(TypeData) != nullptr;
+	}
+
+	bool IsTrailCompatibleModule(const UParticleModule* Module)
+	{
+		return Cast<UParticleModuleSpawn>(Module) != nullptr ||
+			Cast<UParticleModuleLifetime>(Module) != nullptr ||
+			Cast<UParticleModuleColor>(Module) != nullptr ||
+			Cast<UParticleModuleColorOverLife>(Module) != nullptr ||
+			Cast<UParticleModuleSize>(Module) != nullptr ||
+			Cast<UParticleModuleSizeScaleOverLife>(Module) != nullptr;
+	}
+
+	bool IsModuleExecutableForTypeData(const UParticleModule* Module, const UParticleModuleTypeDataBase* TypeData)
+	{
+		if (Module == nullptr)
+		{
+			return false;
+		}
+
+		if (!IsTrailTypeDataModule(TypeData))
+		{
+			return true;
+		}
+
+		return IsTrailCompatibleModule(Module);
+	}
+
+	void AddEnabledModuleExecution(FParticleLODLevelRuntimeCache& Cache, UParticleModule* Module, const UParticleModuleTypeDataBase* TypeData)
+	{
+		if (Module == nullptr || !Module->bEnabled || !IsModuleExecutableForTypeData(Module, TypeData))
 		{
 			return;
 		}
@@ -394,6 +425,11 @@ namespace
 				Module->bEnabled = false;
 			}
 
+			if (IsTrailTypeDataModule(TypeData) && !IsTrailCompatibleModule(Module))
+			{
+				Module->bEnabled = false;
+			}
+
 			if (Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
 			{
 				continue;
@@ -440,6 +476,10 @@ namespace
 		{
 			UParticleModule* Module = LODLevel->Modules[static_cast<size_t>(ModuleIndex)];
 			UParticleModule* LayoutModule = LayoutLODLevel->Modules[static_cast<size_t>(ModuleIndex)];
+			if (Module != nullptr && IsTrailTypeDataModule(Cache.TypeDataModule) && !IsTrailCompatibleModule(Module))
+			{
+				Module->bEnabled = false;
+			}
 			CopyStablePayloadOffsets(Cache, Module, LayoutModule, StableLayoutCache);
 			CacheBeamEndpointModule(Cache, Module);
 
@@ -453,7 +493,7 @@ namespace
 			}
 
 			// 현재 LOD 실행 목록
-			AddEnabledModuleExecution(Cache, Module);
+			AddEnabledModuleExecution(Cache, Module, Cache.TypeDataModule);
 		}
 
 		return Cache;
@@ -1006,8 +1046,18 @@ void UParticleModuleLocation::Spawn(FParticleEmitterInstance* Owner, int32 Offse
 	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
 
 	// StartLocation은 RequiredModule의 local / world 정책에 맞는 simulation space 값으로 저장
-	Particle.Location = EvaluateParticleVector(StartLocation, Context);
-	Particle.OldLocation = Particle.Location;
+    const FVector StartLocationLocal = EvaluateParticleVector(StartLocation, Context);
+
+    if (Owner != nullptr && !Owner->UsesLocalSpace())
+    {
+        Particle.Location = Owner->GetOwner().GetComponentToWorld().TransformPosition(StartLocationLocal);
+    }
+    else
+    {
+        Particle.Location = StartLocationLocal;
+    }
+
+    Particle.OldLocation = Particle.Location;
 }
 
 bool UParticleModuleVelocity::IsSpawnModule() const
@@ -1030,8 +1080,18 @@ void UParticleModuleVelocity::Spawn(FParticleEmitterInstance* Owner, int32 Offse
 {
 	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
 	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
-	Particle.Velocity = EvaluateParticleVector(StartVelocity, Context);
-	Particle.BaseVelocity = Particle.Velocity;
+    const FVector StartVelocityLocal = EvaluateParticleVector(StartVelocity, Context);
+
+    if (Owner != nullptr && !Owner->UsesLocalSpace())
+    {
+        Particle.Velocity = Owner->GetOwner().GetComponentToWorld().TransformVector(StartVelocityLocal);
+    }
+    else
+    {
+        Particle.Velocity = StartVelocityLocal;
+    }
+
+    Particle.BaseVelocity = Particle.Velocity;
 }
 
 bool UParticleModuleRotation::IsSpawnModule() const
@@ -1975,6 +2035,12 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	// Require Module
 	const UParticleModuleRequired* RequiredModule = InEmitterInstance->CurrentRuntimeCache->RequiredModule;
 
+	// Coordinate Space
+	const EParticleCoordinateSpace CoordinateSpace =
+        RequiredModule != nullptr
+            ? RequiredModule->CoordinateSpace
+            : EParticleCoordinateSpace::Local;
+
 	// Sort Mode
 	RenderData->ReplayData.SortMode = RequiredModule != nullptr
 		? RequiredModule->SortMode
@@ -1997,8 +2063,12 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	RenderData->Material = nullptr;
 
 	// Mesh particle snapshots stay in emitter local space; the renderer applies ComponentToWorld per instance.
-	RenderData->ComponentToWorld = InEmitterInstance->GetOwner().GetComponentToWorld();
-	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::Local;
+    RenderData->ComponentToWorld =
+        CoordinateSpace == EParticleCoordinateSpace::Local
+            ? InEmitterInstance->GetOwner().GetComponentToWorld()
+            : FMatrix::Identity;
+
+    RenderData->ReplayData.CoordinateSpace = CoordinateSpace;
 	RenderData->ReplayData.Scale = FVector::OneVector;
 
 	// TODO: 중앙 renderer가 Mesh instance transform을 생성할 때 Mesh Particle의 회전 축과 정렬 정책을 반영한다.
@@ -2009,6 +2079,67 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
 
 	return RenderData;
+}
+
+int32 UParticleModuleTypeDataRibbon::GetRequiredPayloadSize() const
+{
+	return static_cast<int32>(sizeof(FRibbonParticlePayload));
+}
+
+FParticleEmitterInstance* UParticleModuleTypeDataRibbon::CreateInstance(
+	UParticleEmitter* InEmitterTemplate,
+	IParticleEmitterInstanceOwner& InOwner)
+{
+	FParticleRibbonEmitterInstance* Instance = new FParticleRibbonEmitterInstance(InOwner);
+	Instance->SpriteTemplate = InEmitterTemplate;
+	return Instance;
+}
+
+FDynamicEmitterDataBase* UParticleModuleTypeDataRibbon::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
+{
+	FParticleRibbonEmitterInstance* RibbonInstance = static_cast<FParticleRibbonEmitterInstance*>(InEmitterInstance);
+	if (RibbonInstance == nullptr || RibbonInstance->CurrentRuntimeCache == nullptr)
+	{
+		return nullptr;
+	}
+
+	FDynamicRibbonEmitterData* RenderData = new FDynamicRibbonEmitterData();
+	RibbonInstance->BuildRenderSnapshot(
+		RenderData->ReplayData.RenderPoints,
+		RenderData->ReplayData.TrailRanges);
+
+	if (RenderData->ReplayData.RenderPoints.empty() || RenderData->ReplayData.TrailRanges.empty())
+	{
+		delete RenderData;
+		return nullptr;
+	}
+
+	const UParticleModuleRequired* RequiredModule = RibbonInstance->CurrentRuntimeCache->RequiredModule;
+	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	RenderData->ComponentToWorld = FMatrix::Identity;
+
+	RenderData->ReplayData.EmitterType = EDynamicEmitterType::Ribbon;
+	RenderData->ReplayData.ActiveParticleCount = static_cast<int32>(RenderData->ReplayData.RenderPoints.size());
+	RenderData->ReplayData.ParticleStride = RibbonInstance->ParticleStride;
+	RenderData->ReplayData.SortMode = EParticleSortMode::None;
+	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::World;
+	RenderData->ReplayData.Scale = FVector::OneVector;
+	RenderData->ReplayData.TrailCount = static_cast<int32>(RenderData->ReplayData.TrailRanges.size());
+	RenderData->ReplayData.RenderPointCount = static_cast<int32>(RenderData->ReplayData.RenderPoints.size());
+	RenderData->ReplayData.SheetsPerTrail = std::max(SheetsPerTrail, 1);
+	RenderData->ReplayData.TilingDistance = std::max(TilingDistance, 0.0f);
+	RenderData->ReplayData.RibbonFacingMode = FacingMode;
+
+	return RenderData;
+}
+
+FParticleEmitterInstance* UParticleModuleTypeDataAnimTrail::CreateInstance(
+	UParticleEmitter* InEmitterTemplate,
+	IParticleEmitterInstanceOwner& InOwner)
+{
+	FParticleAnimTrailEmitterInstance* Instance = new FParticleAnimTrailEmitterInstance(InOwner);
+	Instance->SpriteTemplate = InEmitterTemplate;
+	return Instance;
 }
 
 FParticleEmitterInstance* UParticleModuleTypeDataBeam::CreateInstance(

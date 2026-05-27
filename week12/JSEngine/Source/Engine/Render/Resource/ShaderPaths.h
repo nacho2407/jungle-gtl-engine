@@ -14,6 +14,7 @@ namespace FShaderPaths
 	inline constexpr const char* VFXSubUV = "Shaders/VFX/SubUV.hlsl";
 	inline constexpr const char* VFXParticle = "Shaders/VFX/ParticleSprite.hlsl";
 	inline constexpr const char* VFXParticleBeam = "Shaders/VFX/ParticleBeam.hlsl";
+	inline constexpr const char* VFXParticleRibbon = "Shaders/VFX/ParticleRibbon.hlsl";
 
 	inline constexpr const char* EditorGizmo = "Shaders/EditorDebug/Gizmo.hlsl";
 	inline constexpr const char* EditorPrimitive = "Shaders/EditorDebug/Primitive.hlsl";

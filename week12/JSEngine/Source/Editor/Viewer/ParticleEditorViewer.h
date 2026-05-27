@@ -192,6 +192,8 @@ private:
 	 * @param Emitter cache를 갱신할 particle emitter
 	 */
 	void RefreshEmitterAfterTopologyEdit(UParticleEmitter* Emitter);
+	const UParticleLODLevel* FindTrailPreviewLOD() const;
+	void UpdateTrailPreviewMotion(float DeltaTime);
 
 	bool CaptureParticleSnapshot(FString& OutSnapshot) const;
 	bool RestoreParticleSnapshot(const FString& Snapshot);
@@ -220,6 +222,7 @@ private:
 	bool bLooping = true;
 	bool bDirty = false;
 	float SimulationTime = 0.0f;
+	float TrailPreviewTime = 0.0f;
 
 	// Undo & Redo
 	bool bRestoringParticleSnapshot = false;
