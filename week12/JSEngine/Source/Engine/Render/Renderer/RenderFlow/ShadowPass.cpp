@@ -1,5 +1,6 @@
 ﻿#include "ShadowPass.h"
 
+#include "GeometryDrawPacket.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/ShaderPaths.h"
@@ -66,7 +67,7 @@ namespace
 void FShadowPass::RenderShadowDepth(
 	const FRenderPassContext* Context,
 	FConstantBuffer* ShadowBuffer,
-	const TArray<FRenderCommand>& OpaqueCmds,
+	const TArray<FRenderCommand>& ShadowDepthCmds,
 	ID3D11DepthStencilView* ShadowDSV,
 	const D3D11_VIEWPORT& ShadowViewport,
 	uint32 ShadowKey,
@@ -86,21 +87,10 @@ void FShadowPass::RenderShadowDepth(
 	DeviceContext->VSSetConstantBuffers(4, 1, &cb4);
 	DeviceContext->PSSetConstantBuffers(4, 1, &cb4);
 
-	for (const auto& Cmd : OpaqueCmds)
+	for (const auto& Cmd : ShadowDepthCmds)
 	{
-		if (Cmd.Type == ERenderCommandType::PostProcessOutline || Cmd.Type == ERenderCommandType::Particle)
-		{
-			continue;
-		}
-		if (!Cmd.MeshBuffer || !Cmd.MeshBuffer->IsValid())
-		{
-			continue;
-		}
-
-		ID3D11Buffer* VertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-		uint32 VertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
-		uint32 Stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-		if (!VertexBuffer || VertexCount == 0 || Stride == 0)
+		FGeometryDrawPacket DrawPacket;
+		if (!BuildMeshGeometryDrawPacket(Cmd, DrawPacket))
 		{
 			continue;
 		}
@@ -109,9 +99,6 @@ void FShadowPass::RenderShadowDepth(
 			DeviceContext, &Cmd.PerObjectConstants, sizeof(FPerObjectConstants));
 		ID3D11Buffer* cb1 = Context->RenderResources->PerObjectConstantBuffer.GetBuffer();
 		DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
-
-		uint32 Offset = 0;
-		DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 
 		FShaderProgram* Program = GetShadowProgram(Cmd.VertexFactoryType, ShadowKey);
 		if (!Program)
@@ -128,7 +115,6 @@ void FShadowPass::RenderShadowDepth(
 			Cmd.BoneMatrixConstantBuffer);
 		CheckOverrideViewMode(Context);
 
-		ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
 		const bool bGPUSkinnedDraw =
 			Cmd.Type == ERenderCommandType::SkeletalMesh && Cmd.bUseBoneMatrixConstants;
 		if (bGPUSkinnedDraw)
@@ -137,15 +123,7 @@ void FShadowPass::RenderShadowDepth(
 				Cmd.SkinningWorkVertexCount,
 				Cmd.AvgBoneInfluencePerVertex);
 		}
-		if (IndexBuffer != nullptr)
-		{
-			DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-			DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
-		}
-		else
-		{
-			DeviceContext->Draw(VertexCount, 0);
-		}
+		ExecuteGeometryDrawPacket(DeviceContext, DrawPacket);
 	}
 }
 
@@ -168,11 +146,10 @@ bool FShadowPass::Begin(const FRenderPassContext* Context)
 	Context->DeviceContext->PSSetShaderResources(10, 1, NullSRV);
 	Context->DeviceContext->PSSetShaderResources(12, 1, NullSRV);
 
-	const TArray<FRenderCommand>& OpaqueCmds = Context->RenderBus->GetCommands(ERenderPass::Opaque);
 	const TArray<FRenderCommand>& ShadowCasterCmds = Context->RenderBus->GetShadowCasterCommands();
 	if (!Context->RenderBus->GetShowFlags().bShadow ||
 		Context->RenderBus->ShadowLightRequests.empty() ||
-		(OpaqueCmds.empty() && ShadowCasterCmds.empty()))
+		ShadowCasterCmds.empty())
 	{
 		return true;
 	}
@@ -190,23 +167,11 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 
 	ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
 	const FRenderBus* RenderBus = Context->RenderBus;
-	const TArray<FRenderCommand>& OpaqueCmds = RenderBus->GetCommands(ERenderPass::Opaque);
 	const TArray<FRenderCommand>& ShadowCasterCmds = RenderBus->GetShadowCasterCommands();
-	if (RenderBus->ShadowLightRequests.empty() || (OpaqueCmds.empty() && ShadowCasterCmds.empty()))
+	if (RenderBus->ShadowLightRequests.empty() || ShadowCasterCmds.empty())
 	{
 		return true;
 	}
-
-	TArray<FRenderCommand> ShadowDepthCmds;
-	ShadowDepthCmds.reserve(OpaqueCmds.size() + ShadowCasterCmds.size());
-	for (const FRenderCommand& Cmd : OpaqueCmds)
-	{
-		if (Cmd.Type != ERenderCommandType::Particle)
-		{
-			ShadowDepthCmds.push_back(Cmd);
-		}
-	}
-	ShadowDepthCmds.insert(ShadowDepthCmds.end(), ShadowCasterCmds.begin(), ShadowCasterCmds.end());
 
 	FConstantBuffer* ShadowBuffer = &Context->RenderResources->ShadowBuffer;
 	FShadowAtlasManager& ShadowAtlasManager = FShadowAtlasManager::Get();
@@ -224,9 +189,9 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 	FMatrix CamProj = RenderBus->GetProj();
 
 	TArray<FBoundingBox> VisibleBounds;
-	for (const auto& Cmd : OpaqueCmds)
+	for (const auto& Cmd : ShadowCasterCmds)
 	{
-		if (Cmd.Type != ERenderCommandType::Particle)
+		if (Cmd.WorldAABB.IsValid())
 		{
 			VisibleBounds.push_back(Cmd.WorldAABB);
 		}
@@ -329,7 +294,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 				RenderShadowDepth(
 					Context,
 					ShadowBuffer,
-					ShadowDepthCmds,
+					ShadowCasterCmds,
 					ShadowDSV,
 					ShadowViewport,
 					ShadowKey,
@@ -463,7 +428,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 				RenderShadowDepth(
 					Context,
 					ShadowBuffer,
-					ShadowDepthCmds,
+					ShadowCasterCmds,
 					DSV,
 					ShadowViewport,
 					ShadowKey,
@@ -591,7 +556,7 @@ bool FShadowPass::DrawCommand(const FRenderPassContext* Context)
 		RenderShadowDepth(
 			Context,
 			ShadowBuffer,
-			ShadowDepthCmds,
+			ShadowCasterCmds,
 			ShadowDSV,
 			ShadowViewport,
 			ShadowKey,

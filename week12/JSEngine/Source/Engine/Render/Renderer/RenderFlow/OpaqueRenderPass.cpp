@@ -1,4 +1,5 @@
 ﻿#include "OpaqueRenderPass.h"
+#include "GeometryDrawPacket.h"
 #include "Render/Device/D3DDevice.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
@@ -74,12 +75,68 @@ namespace
         Context->DeviceContext->PSSetShaderResources(14, 2, ShadowInfoSRVs);
     }
 
-    bool IsParticleMeshCommand(const FRenderCommand& Cmd)
+    bool IsInstancedSurfaceCommand(const FRenderCommand& Cmd)
+    {
+        return SupportsInstancedSurfaceVertexFactory(Cmd.VertexFactoryType)
+            && Cmd.HasInstanceBuffer();
+    }
+
+    FShaderProgram* GetParticleBeamShaderProgram()
+    {
+        const FVertexFactoryDesc& ParticleBeamDesc = FVertexFactoryRegistry::Get(EVertexFactoryType::ParticleBeam);
+
+        FShaderStageKey VSKey;
+        VSKey.FilePath = ParticleBeamDesc.VertexShaderPath;
+        VSKey.EntryPoint = ParticleBeamDesc.BasePassVSEntry;
+        VSKey.Target = "vs_5_0";
+
+        FShaderStageKey PSKey;
+        PSKey.FilePath = FShaderPaths::VFXParticleBeam;
+        PSKey.EntryPoint = "PS";
+        PSKey.Target = "ps_5_0";
+
+        return FResourceManager::Get().GetOrCreateShaderProgram(
+            VSKey,
+            PSKey,
+            nullptr,
+            nullptr,
+            &ParticleBeamDesc.VertexLayout);
+    }
+
+    bool IsParticleBeamCommand(const FRenderCommand& Cmd)
     {
         return Cmd.Type == ERenderCommandType::Particle
-            && Cmd.VertexFactoryType == EVertexFactoryType::ParticleMesh
-            && Cmd.InstanceBufferView.IsValid();
+            && Cmd.VertexFactoryType == EVertexFactoryType::ParticleBeam
+            && Cmd.HasInstanceBuffer();
     }
+
+    bool BuildParticleBeamDrawResources(
+        const FRenderPassContext* Context,
+        const FRenderCommand& Cmd,
+        FGeometryDrawPacket& OutDraw)
+    {
+        const FParticleSpriteQuadResource QuadResource =
+            FResourceManager::Get().GetOrCreateParticleSpriteQuadResource(Context->Device);
+        if (!QuadResource.IsValid())
+        {
+            UE_LOG_WARNING("[Particle] Beam draw skipped because the shared quad resource is missing.");
+            return false;
+        }
+
+        OutDraw.VertexBuffers[0] = QuadResource.VertexBuffer;
+        OutDraw.VertexBuffers[1] = Cmd.InstanceBufferView.Buffer;
+        OutDraw.Strides[0] = QuadResource.VertexStride;
+        OutDraw.Strides[1] = Cmd.InstanceBufferView.Stride;
+        OutDraw.Offsets[0] = 0;
+        OutDraw.Offsets[1] = Cmd.InstanceBufferView.Offset;
+        OutDraw.VertexBufferCount = 2;
+        OutDraw.IndexBuffer = QuadResource.IndexBuffer;
+        OutDraw.IndexCount = QuadResource.IndexCount;
+        OutDraw.InstanceCount = Cmd.InstanceBufferView.InstanceCount;
+        OutDraw.bInstanced = true;
+        return true;
+    }
+
 } // namespace
 
 bool FOpaqueRenderPass::Initialize()
@@ -158,29 +215,56 @@ bool FOpaqueRenderPass::DrawEachCommand(const FRenderPassContext* Context, const
         return false;  
     }  
 
-    if (IsParticleMeshCommand(Cmd))
+    // TODO: Particle 렌더링도 기존 구조에 좀 더 융화시킬 수 없는지 고민해보기
+    if (IsParticleBeamCommand(Cmd))
     {
-        return DrawParticleMeshCommand(Context, Cmd, ViewMode);
+        FShaderProgram* Program = GetParticleBeamShaderProgram();
+        if (Program == nullptr)
+        {
+            UE_LOG_WARNING("[Particle] Beam draw skipped because ParticleBeam shader failed to compile.");
+            return false;
+        }
+
+        FGeometryDrawPacket DrawResources;
+        if (!BuildParticleBeamDrawResources(Context, Cmd, DrawResources))
+        {
+            return false;
+        }
+
+        Program->Bind(DeviceContext);
+        if (Cmd.Material != nullptr)
+        {
+            Cmd.Material->BindRenderStates(DeviceContext);
+        }
+        else
+        {
+            ID3D11DepthStencilState* DepthState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
+            ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::Opaque);
+            ID3D11RasterizerState* RasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidBackCull);
+            ID3D11SamplerState* Sampler = FResourceManager::Get().GetOrCreateSamplerState(ESamplerType::EST_Linear);
+            DeviceContext->OMSetDepthStencilState(DepthState, 0);
+            DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
+            DeviceContext->RSSetState(RasterizerState);
+            DeviceContext->PSSetSamplers(0, 1, &Sampler);
+        }
+        ID3D11RasterizerState* ParticleRasterizerState = FResourceManager::Get().GetOrCreateRasterizerState(ERasterizerType::SolidNoCull);
+        DeviceContext->RSSetState(ParticleRasterizerState);
+
+        ID3D11ShaderResourceView* DefaultDiffuseSRV = FResourceManager::Get().GetDefaultWhiteSRV();
+        DeviceContext->PSSetShaderResources(0, 1, &DefaultDiffuseSRV);
+        if (Cmd.Material != nullptr)
+        {
+            Cmd.Material->BindParameters(DeviceContext, Program->PS);
+        }
+        return ExecuteGeometryDrawPacket(DeviceContext, DrawResources);
     }
 
-    if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())  
-    {  
-        return false;  
-    }  
-
-    uint32 offset = 0;  
-    ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();  
-    if (vertexBuffer == nullptr)  
-    {  
-        return false;  
-    }  
-
-    uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();  
-    uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();  
-    if (vertexCount == 0 || stride == 0)
-    {  
-        return false;  
-    }  
+    const bool bInstancedSurfaceDraw = IsInstancedSurfaceCommand(Cmd);
+    FGeometryDrawPacket DrawResources;
+    if (!BuildMeshGeometryDrawPacket(Cmd, DrawResources, bInstancedSurfaceDraw))
+    {
+        return false;
+    }
 
     if (Cmd.Material)
     {
@@ -211,8 +295,6 @@ bool FOpaqueRenderPass::DrawEachCommand(const FRenderPassContext* Context, const
     DeviceContext->OMSetDepthStencilState(DSState, 0);
 
     CheckOverrideViewMode(Context);  
-    
-    DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);  
 
     const bool bGPUSkinnedDraw =
         Cmd.Type == ERenderCommandType::SkeletalMesh && Cmd.bUseBoneMatrixConstants;
@@ -221,83 +303,7 @@ bool FOpaqueRenderPass::DrawEachCommand(const FRenderPassContext* Context, const
         FSkinningStats::Get().AddGPUSkinnedDraw(Cmd.SkinningWorkVertexCount, Cmd.AvgBoneInfluencePerVertex);
     }
     
-    ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();  
-    if (indexBuffer != nullptr)
-    {
-        DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-        DeviceContext->DrawIndexed(Cmd.SectionIndexCount, Cmd.SectionIndexStart, 0);
-    }
-    else
-    {
-        DeviceContext->Draw(vertexCount, 0);
-    }
-    return true;
-}
-
-bool FOpaqueRenderPass::DrawParticleMeshCommand(const FRenderPassContext* Context, const FRenderCommand& Cmd, const EViewMode ViewMode)
-{
-    ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
-    if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
-    {
-        return false;
-    }
-
-    ID3D11Buffer* VertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-    ID3D11Buffer* IndexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-    if (VertexBuffer == nullptr || IndexBuffer == nullptr)
-    {
-        return false;
-    }
-
-    const uint32 VertexStride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-    if (Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount() == 0 || VertexStride == 0 || Cmd.SectionIndexCount == 0)
-    {
-        return false;
-    }
-
-    if (Cmd.Material != nullptr)
-    {
-        uint32 PermutationKey = 0;
-        PermutationKey |= GetLightingModelPermutationKey(ViewMode);
-        PermutationKey |= GetLightCullingPermutationKey(Context);
-        PermutationKey |= GetShadowMapPermutationKey(Context, true);
-        PermutationKey |= GetTexturePermutationKey(Cmd.Material);
-
-        FShaderProgram* Program = GetShaderProgram(Cmd, PermutationKey);
-        if (Program == nullptr)
-        {
-            return false;
-        }
-
-        Program->Bind(DeviceContext);
-        Cmd.Material->BindRenderStates(DeviceContext);
-        Cmd.Material->BindParameters(DeviceContext, Program->PS);
-        BindVertexFactoryResources(
-            DeviceContext,
-            Cmd.VertexFactoryType,
-            Context->RenderBus->GetBoneMatrixConstants(Cmd),
-            Context->RenderResources,
-            Cmd.BoneMatrixConstantBuffer);
-    }
-
-    auto DSState = FResourceManager::Get().GetOrCreateDepthStencilState(EDepthStencilType::Default);
-    DeviceContext->OMSetDepthStencilState(DSState, 0);
-
-    CheckOverrideViewMode(Context);
-
-    ID3D11Buffer* VertexBuffers[2] = { VertexBuffer, Cmd.InstanceBufferView.Buffer };
-    uint32 Strides[2] = { VertexStride, Cmd.InstanceBufferView.Stride };
-    uint32 Offsets[2] = { 0, Cmd.InstanceBufferView.Offset };
-    DeviceContext->IASetVertexBuffers(0, 2, VertexBuffers, Strides, Offsets);
-    DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-    DeviceContext->DrawIndexedInstanced(Cmd.SectionIndexCount, Cmd.InstanceBufferView.InstanceCount, Cmd.SectionIndexStart, 0, 0);
-
-    ID3D11Buffer* NullVertexBuffer = nullptr;
-    uint32 NullStride = 0;
-    uint32 NullOffset = 0;
-    DeviceContext->IASetVertexBuffers(1, 1, &NullVertexBuffer, &NullStride, &NullOffset);
-
-    return true;
+    return ExecuteGeometryDrawPacket(DeviceContext, DrawResources);
 }
 
 bool FOpaqueRenderPass::End(const FRenderPassContext* Context)

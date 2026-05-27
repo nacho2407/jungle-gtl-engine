@@ -33,7 +33,7 @@ private:
 	void RenderShadowDepth(
 		const FRenderPassContext* Context,
 		FConstantBuffer* ShadowBuffer,
-		const TArray<FRenderCommand>& OpaqueCmds,
+		const TArray<FRenderCommand>& ShadowCmds,
 		ID3D11DepthStencilView* ShadowDSV,
 		const D3D11_VIEWPORT& ShadowViewport,
 		uint32 ShadowKey,

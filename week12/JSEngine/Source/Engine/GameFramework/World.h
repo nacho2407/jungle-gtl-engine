@@ -5,6 +5,7 @@
 #include "Object/Object.h"
 #include "GameFramework/AActor.h"
 #include "Level.h"
+#include "Render/Scene/Scene.h"
 #include "Spatial/WorldSpatialIndex.h"
 #include "Core/CollisionTypes.h"
 
@@ -104,6 +105,12 @@ public:
 	/** @brief Access the world-level primitive AABB/BVH manager. */
 	const FWorldSpatialIndex& GetSpatialIndex() const { return SpatialIndex; }
 
+	/** @brief Access the render-side facade for this world. */
+	FScene& GetScene() { return Scene; }
+
+	/** @brief Access the render-side facade for this world. */
+	const FScene& GetScene() const { return Scene; }
+
 	EWorldType GetWorldType() const { return WorldType; }
 	void SetWorldType(EWorldType InWorldType) { WorldType = InWorldType; }
 
@@ -138,6 +145,7 @@ private:
 	FViewportCamera* ActiveCamera = nullptr;
 	// Non-owning cache. The manager is spawned as a level actor and owned by PersistentLevel.
 	AParticleEventManager* ParticleEventManager = nullptr;
+	FScene Scene;
 	FWorldSpatialIndex SpatialIndex;
 	TArray<UPrimitiveComponent*> SimpleShapeQueryCandidates;
 	FWorldSpatialIndex::FPrimitiveInflatedSegmentQueryScratch SimpleShapeQueryScratch;

@@ -8,6 +8,8 @@
 #include "Collision/Collision.h"
 
 class FPrimitiveRenderProxy;
+class FScene;
+enum class ESceneProxyDirtyFlag : uint32;
 
 /*
 	아직 미사용
@@ -45,10 +47,10 @@ public:
 	void SetVisibility(bool bVisible);
 	bool IsVisible() const { return bIsVisible; }
 
-	void SetEnableCull(const bool bInEnableCull) { bEnableCull = bInEnableCull; }
+	void SetEnableCull(const bool bInEnableCull);
 	bool IsEnableCull() const { return bEnableCull; }
 
-	void SetCastDecal(bool bInCastDecal) { bCastDecal = bInCastDecal; }
+	void SetCastDecal(bool bInCastDecal);
 	bool IsCastDecal() const { return bCastDecal; }
 
 	/* Getter */
@@ -69,7 +71,9 @@ public:
 	void UpdateWorldMatrix() const override;
 	void AddWorldOffset(const FVector& WorldDelta) override;
 	virtual EPrimitiveType GetPrimitiveType() const = 0;
-	virtual FPrimitiveRenderProxy* GetRenderProxy() { return nullptr; }
+	virtual FPrimitiveRenderProxy* CreateSceneProxy() { return nullptr; }
+	void MarkRenderStateDirty(ESceneProxyDirtyFlag DirtyFlag) const;
+	FScene* GetRegisteredScene() const { return RegisteredScene; }
 
 	/* For Material */
 	virtual int32 GetNumMaterials() const { return 0; }
@@ -94,7 +98,10 @@ protected:
 	void NotifySpatialIndexDirty() const;
 
 protected:
+	friend class FScene;
+
 	mutable FAABB WorldAABB;
+	FScene* RegisteredScene = nullptr;
 
 	UPROPERTY(DisplayName = "Visible", LuaReadWrite, LuaName = Visible)
 	bool bIsVisible = true;

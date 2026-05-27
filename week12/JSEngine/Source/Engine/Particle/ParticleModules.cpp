@@ -38,6 +38,9 @@ namespace
 		return ParticleHelper::AlignParticleSize(Value);
 	}
 
+	/**
+	 * @brief LOD level의 명시적 SpawnModule 포인터를 반환합니다.
+	 */
 	UParticleModuleSpawn* ResolveSpawnModule(const UParticleLODLevel* LODLevel)
 	{
 		if (LODLevel == nullptr)
@@ -45,22 +48,8 @@ namespace
 			return nullptr;
 		}
 
-		// 명시적 SpawnModule 우선
-		if (LODLevel->SpawnModule != nullptr)
-		{
-			return LODLevel->SpawnModule;
-		}
-
-		// legacy module 배열 fallback
-		for (UParticleModule* Module : LODLevel->Modules)
-		{
-			if (Module != nullptr && Module->bEnabled && Module->IsSpawnRateModule())
-			{
-				return Cast<UParticleModuleSpawn>(Module);
-			}
-		}
-
-		return nullptr;
+		// Version 2 에셋 계약의 명시적 SpawnModule만 사용
+		return LODLevel->SpawnModule;
 	}
 
 	bool AreModuleClassesCompatible(const UParticleModule* LayoutModule, const UParticleModule* LODModule)

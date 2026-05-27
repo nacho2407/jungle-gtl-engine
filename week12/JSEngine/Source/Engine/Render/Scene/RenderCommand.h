@@ -233,6 +233,8 @@ struct FParticleConstants
 	uint32 CoordinateSpace = 0;
 	uint32 ActiveParticleCount = 0;
 	uint32 bUseLocalSpace = 0;
+
+	UTexture* Texture = nullptr;
 };
 
 struct FInstanceBufferView
@@ -484,6 +486,11 @@ struct FRenderCommand
 	EVertexFactoryType VertexFactoryType = EVertexFactoryType::StaticMesh;
 	uint32 SectionIndexStart = 0;
 	uint32 SectionIndexCount = 0;
+
+	// Pass consumption contract for slot-1 instance data. Mesh particle instance
+	// transforms are already world-space, so the base-pass VS must not apply
+	// PerObjectConstants.Model again for those instances.
+	bool HasInstanceBuffer() const { return InstanceBufferView.IsValid(); }
 
 	bool bUseBoneMatrixConstants = false;
 	uint32 BoneMatrixConstantsIndex = InvalidBoneMatrixConstantsIndex;

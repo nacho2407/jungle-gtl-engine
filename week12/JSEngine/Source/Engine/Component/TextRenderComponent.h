@@ -48,7 +48,7 @@ public:
 	void PostEditProperty(const char* PropertyName) override;
 
 	// --- Text ---
-	void SetText(const FString& InText) { Text = InText; }
+	void SetText(const FString& InText);
 	const FString& GetText() const { return Text; }
 
 	// Owner의 UUID를 문자열로 반환
@@ -64,26 +64,26 @@ public:
 	const FName& GetFontName() const { return FontName; }
 
 	// --- Appearance ---
-	void SetColor(const FVector4& InColor) { Color = InColor; }
+	void SetColor(const FVector4& InColor);
 	const FVector4& GetColor() const { return Color; }
 
-	void SetFontSize(float InSize) { FontSize = InSize; }
+	void SetFontSize(float InSize);
 	float GetFontSize() const { return FontSize; }
 
 	// --- Space ---
-	void SetRenderSpace(ETextRenderSpace InSpace) { RenderSpace = InSpace; }
+	void SetRenderSpace(ETextRenderSpace InSpace);
 	ETextRenderSpace GetRenderSpace() const { return RenderSpace; }
 
 	// Screen 모드 전용: 스크린 좌표 (픽셀)
-	void SetScreenPosition(float X, float Y) { ScreenX = X; ScreenY = Y; }
+	void SetScreenPosition(float X, float Y);
 	float GetScreenX() const { return ScreenX; }
 	float GetScreenY() const { return ScreenY; }
 
 	// --- Alignment ---
-	void SetHorizontalAlignment(ETextHAlign InAlign) { HAlign = InAlign; }
+	void SetHorizontalAlignment(ETextHAlign InAlign);
 	ETextHAlign GetHorizontalAlignment() const { return HAlign; }
 
-	void SetVerticalAlignment(ETextVAlign InAlign) { VAlign = InAlign; }
+	void SetVerticalAlignment(ETextVAlign InAlign);
 	ETextVAlign GetVerticalAlignment() const { return VAlign; }
 
 	// --- PrimitiveComponent 인터페이스 ---

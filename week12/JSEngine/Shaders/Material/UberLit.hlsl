@@ -64,7 +64,7 @@ struct SkeletalVSInput
     float4 BoneWeights : BLENDWEIGHT;
 };
 
-struct ParticleMeshVSInput
+struct InstancedSurfaceVSInput
 {
     float3 Position : POSITION;
     float4 Color : COLOR;
@@ -151,7 +151,7 @@ PSInput SkeletalMeshVS(SkeletalVSInput input)
     return mainVS(passThrough);
 }
 
-PSInput ParticleMeshVS(ParticleMeshVSInput input)
+PSInput InstancedSurfaceVS(InstancedSurfaceVSInput input)
 {
     PSInput output;
 

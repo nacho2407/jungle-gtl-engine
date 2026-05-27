@@ -36,7 +36,9 @@ void FObjViewerRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Bus.SetRenderSettings(ViewMode, ShowFlags);
 		Bus.SetFXAAEnabled(true);
 
-		Collector.CollectWorld(World, ShowFlags, ViewMode, Bus);
+		FScene& Scene = World->GetScene();
+		Scene.Initialize(Renderer.GetFD3DDevice().GetDevice(), Renderer.GetFD3DDevice().GetDeviceContext());
+		Scene.CollectView(Collector, ShowFlags, ViewMode, Bus);
 		Collector.CollectGrid(Settings.GridSpacing, Settings.GridHalfLineCount, Bus);
 	}
 

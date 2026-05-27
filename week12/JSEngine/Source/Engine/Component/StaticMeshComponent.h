@@ -33,7 +33,7 @@ public:
 
 private:
 	void MarkBoundsDirty();
-	void MarkRenderStateDirty();
+	void MarkLocalRenderStateDirty();
 	void EnsureBoundsUpdated() const;
 
 private:

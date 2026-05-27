@@ -8,6 +8,7 @@
 #include "GameFramework/World.h"
 #include "Component/CameraComponent.h"
 #include "Math/Utils.h"
+#include "Render/Scene/Scene.h"
 
 USubUVComponent::USubUVComponent()
 {
@@ -41,6 +42,14 @@ void USubUVComponent::SetSubUV(const FName& InSubUVName)
 {
 	SubUVName = InSubUVName;
 	CachedSubUV = FResourceManager::Get().FindSubUV(InSubUVName);
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Resource);
+}
+
+void USubUVComponent::SetSpriteSize(float InWidth, float InHeight)
+{
+	Width = InWidth;
+	Height = InHeight;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Mesh);
 }
 
 const FSubUVResource* USubUVComponent::GetSubUV() const

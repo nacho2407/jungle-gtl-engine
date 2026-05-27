@@ -358,7 +358,9 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	
 	const FFrustum& ViewFrustum = SceneView.CameraFrustum;
 	const bool bDrawEditorViewportHelpers = VC->AllowsEditorWorldControl();
-	Collector.CollectWorld(World, ShowFlags, ViewMode, Bus, &ViewFrustum, bDrawEditorViewportHelpers);
+	FScene& Scene = World->GetScene();
+	Scene.Initialize(Renderer.GetFD3DDevice().GetDevice(), Renderer.GetFD3DDevice().GetDeviceContext());
+	Scene.CollectView(Collector, ShowFlags, ViewMode, Bus, &ViewFrustum, bDrawEditorViewportHelpers);
 	ViewportCullingStats[ViewportIndex] = Collector.GetLastCullingStats();
 	ViewportDecalStats[ViewportIndex] = Collector.GetLastDecalStats();
 	ViewportLightStats[ViewportIndex] = Collector.GetLastLightStats();
@@ -519,8 +521,10 @@ void FEditorRenderPipeline::RenderViewerViewport(FRenderer& Renderer)
 		const bool bDrawEditorViewportHelpers =
 			VC->AllowsEditorWorldControl();
 
-		Collector.CollectWorld(
-			World,
+		FScene& Scene = World->GetScene();
+		Scene.Initialize(Renderer.GetFD3DDevice().GetDevice(), Renderer.GetFD3DDevice().GetDeviceContext());
+		Scene.CollectView(
+			Collector,
 			ShowFlags,
 			ViewMode,
 			Bus,
@@ -720,7 +724,15 @@ ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
 		return nullptr;
 	}
 
-	FMeshBuffer* MeshBuffer = Collector.GetStaticMeshBuffer(Mesh, 0);
+	UWorld* World = Editor ? Editor->GetWorld() : nullptr;
+	if (World == nullptr)
+	{
+		return nullptr;
+	}
+
+	FScene& Scene = World->GetScene();
+	Scene.Initialize(Renderer.GetFD3DDevice().GetDevice(), Renderer.GetFD3DDevice().GetDeviceContext());
+	FMeshBuffer* MeshBuffer = Scene.GetRenderResources().GetStaticMeshBuffer(Mesh, 0);
 	const FStaticMesh* MeshData = Mesh->GetMeshData(0);
 	if (MeshBuffer == nullptr || MeshData == nullptr || MeshData->Indices.empty())
 	{
@@ -765,7 +777,7 @@ ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
 	const FMatrix CenterToOrigin = FMatrix::MakeTranslationMatrix(FVector(-Center.X, -Center.Y, -Center.Z));
 	const FMatrix ScaleMatrix = FMatrix::MakeScaleMatrix(FVector(Scale, Scale, Scale));
 	const FMatrix Rotation = FMatrix::MakeRotationY(ClampedPitch) * FMatrix::MakeRotationZ(YawRad);
-	const FMatrix World = CenterToOrigin * ScaleMatrix * Rotation;
+	const FMatrix PreviewWorld = CenterToOrigin * ScaleMatrix * Rotation;
 
 	if (!MeshData->Sections.empty())
 	{
@@ -783,8 +795,8 @@ ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
 			Cmd.Material = Material;
 			Cmd.SectionIndexStart = Section.StartIndex;
 			Cmd.SectionIndexCount = Section.IndexCount;
-			Cmd.PerObjectConstants = FPerObjectConstants(World, FColor::White().ToVector4());
-			Cmd.WorldAABB = FAABB::TransformAABB(Bounds, World);
+			Cmd.PerObjectConstants = FPerObjectConstants(PreviewWorld, FColor::White().ToVector4());
+			Cmd.WorldAABB = FAABB::TransformAABB(Bounds, PreviewWorld);
 			Bus.AddCommand(ResolveMaterialRenderPass(Cmd.Material), Cmd);
 		}
 	}
@@ -797,8 +809,8 @@ ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(
 		Cmd.Material = Material;
 		Cmd.SectionIndexStart = 0;
 		Cmd.SectionIndexCount = static_cast<uint32>(MeshData->Indices.size());
-		Cmd.PerObjectConstants = FPerObjectConstants(World, FColor::White().ToVector4());
-		Cmd.WorldAABB = FAABB::TransformAABB(Bounds, World);
+		Cmd.PerObjectConstants = FPerObjectConstants(PreviewWorld, FColor::White().ToVector4());
+		Cmd.WorldAABB = FAABB::TransformAABB(Bounds, PreviewWorld);
 		Bus.AddCommand(ResolveMaterialRenderPass(Cmd.Material), Cmd);
 	}
 

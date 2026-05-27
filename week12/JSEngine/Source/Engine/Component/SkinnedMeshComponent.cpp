@@ -3,6 +3,7 @@
 #include "Core/ResourceManager.h"
 #include "Core/Logging/SkinningStats.h"
 #include "Render/Resource/Material.h"
+#include "Render/Scene/Scene.h"
 
 #include <cfloat>
 #include <cstring>
@@ -94,7 +95,7 @@ void USkinnedMeshComponent::Serialize(FArchive& Ar)
 			{
 				SetMaterial(i, LoadedMaterials[i]);
 			}
-			MarkRenderStateDirty();
+			MarkLocalRenderStateDirty();
 		}
 
 		SetSkinningMode(SkinningMode);
@@ -163,13 +164,13 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 			SetMaterial(i, Materials[i]);
 		}
 
-		MarkRenderStateDirty();
+		MarkLocalRenderStateDirty();
 	}
 	else if (std::strcmp(PropertyName, "SkinningMode") == 0)
 	{
 		MarkSkinningDirty();
 		MarkBoundsDirty();
-		MarkRenderStateDirty();
+		MarkLocalRenderStateDirty();
 	}
 }
 
@@ -218,7 +219,8 @@ void USkinnedMeshComponent::SetSkeletalMesh(USkeletalMesh* InSkeletalMesh)
 	}
 
 	MarkBoundsDirty();
-	MarkRenderStateDirty();
+	MarkLocalRenderStateDirty();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Mesh);
 	MarkSkinningDirty();
 }
 
@@ -256,7 +258,7 @@ void USkinnedMeshComponent::SetSkinningMode(ESkinningMode InMode)
 	MarkSkinningDirty();
 	bCPUSkinnedVertexBufferDirty = true;
 	MarkBoundsDirty();
-	MarkRenderStateDirty();
+	MarkLocalRenderStateDirty();
 }
 
 ESkinningMode USkinnedMeshComponent::GetResolvedSkinningMode() const
@@ -455,7 +457,7 @@ bool USkinnedMeshComponent::ConsumeCPUSkinnedVertexBufferDirty()
 void USkinnedMeshComponent::MarkBoundsDirty()
 {
 	bBoundsDirty = true;
-	NotifySpatialIndexDirty();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Mesh);
 }
 
 void USkinnedMeshComponent::EnsureSkinningUpdated()
@@ -466,7 +468,7 @@ void USkinnedMeshComponent::EnsureSkinningUpdated()
 		LastResolvedSkinningMode = ResolvedSkinningMode;
 		bSkinningDirty = true;
 		MarkBoundsDirty();
-		MarkRenderStateDirty();
+		MarkLocalRenderStateDirty();
 	}
 
 	if (!bSkinningDirty)
@@ -493,7 +495,7 @@ void USkinnedMeshComponent::EnsureSkinningUpdated()
 
 	bSkinningDirty = false;
 	MarkBoundsDirty();
-	MarkRenderStateDirty();
+	MarkLocalRenderStateDirty();
 
 	// Bone 자세가 새로 계산됐으므로, *내* socket으로 붙은 child의 world transform이 stale.
 	// FName::None도 IsValid이므로 명시적 != 비교 + HasSocket 둘 다 확인.

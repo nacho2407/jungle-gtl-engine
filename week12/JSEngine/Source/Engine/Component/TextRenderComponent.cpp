@@ -5,6 +5,7 @@
 #include "Camera/ViewportCamera.h"
 #include "GameFramework/AActor.h"
 #include "Core/ResourceManager.h"
+#include "Render/Scene/Scene.h"
 
 
 // reflection에 노출되지 않은 private 필드를 직접 복사합니다.
@@ -38,6 +39,55 @@ void UTextRenderComponent::SetFont(const FName& InFontName)
 {
 	FontName = InFontName;
 	CachedFont = FResourceManager::Get().FindFont(FontName);
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Text);
+}
+
+void UTextRenderComponent::SetText(const FString& InText)
+{
+	if (Text == InText)
+	{
+		return;
+	}
+
+	Text = InText;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Text);
+}
+
+void UTextRenderComponent::SetColor(const FVector4& InColor)
+{
+	Color = InColor;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Material);
+}
+
+void UTextRenderComponent::SetFontSize(float InSize)
+{
+	FontSize = InSize;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Text);
+}
+
+void UTextRenderComponent::SetRenderSpace(ETextRenderSpace InSpace)
+{
+	RenderSpace = InSpace;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Text);
+}
+
+void UTextRenderComponent::SetScreenPosition(float X, float Y)
+{
+	ScreenX = X;
+	ScreenY = Y;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Text);
+}
+
+void UTextRenderComponent::SetHorizontalAlignment(ETextHAlign InAlign)
+{
+	HAlign = InAlign;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Text);
+}
+
+void UTextRenderComponent::SetVerticalAlignment(ETextVAlign InAlign)
+{
+	VAlign = InAlign;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Text);
 }
 
 const FFontResource* UTextRenderComponent::GetFont() const

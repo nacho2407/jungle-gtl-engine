@@ -1,4 +1,5 @@
 ﻿#include "DecalRenderPass.h"
+#include "GeometryDrawPacket.h"
 #include "Render/Scene/RenderBus.h"
 #include "Render/Resource/RenderResources.h"
 #include "Render/Resource/Material.h"
@@ -139,21 +140,8 @@ bool FDecalRenderPass::DrawEachCommand(const FRenderPassContext* Context, const 
     Context->DeviceContext->VSSetConstantBuffers(1, 1, &cb1);
     Context->DeviceContext->PSSetConstantBuffers(1, 1, &cb1);
 
-    if (Cmd.MeshBuffer == nullptr || !Cmd.MeshBuffer->IsValid())
-    {
-        return false;
-    }
-
-    uint32 offset = 0;
-    ID3D11Buffer* vertexBuffer = Cmd.MeshBuffer->GetVertexBuffer().GetBuffer();
-    if (vertexBuffer == nullptr)
-    {
-        return false;
-    }
-
-    uint32 vertexCount = Cmd.MeshBuffer->GetVertexBuffer().GetVertexCount();
-    uint32 stride = Cmd.MeshBuffer->GetVertexBuffer().GetStride();
-    if (vertexCount == 0 || stride == 0)
+    FGeometryDrawPacket DrawPacket;
+    if (!BuildMeshGeometryDrawPacket(Cmd, DrawPacket))
     {
         return false;
     }
@@ -191,21 +179,7 @@ bool FDecalRenderPass::DrawEachCommand(const FRenderPassContext* Context, const 
             Cmd.BoneMatrixConstantBuffer);
     }
     CheckOverrideViewMode(Context);  
-    Context->DeviceContext->IASetVertexBuffers(0, 1, &vertexBuffer, &stride, &offset);
-
-    ID3D11Buffer* indexBuffer = Cmd.MeshBuffer->GetIndexBuffer().GetBuffer();
-    if (indexBuffer != nullptr)
-    {
-        uint32 indexStart = Cmd.SectionIndexStart;
-        uint32 indexCount = Cmd.SectionIndexCount;
-        Context->DeviceContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
-        Context->DeviceContext->DrawIndexed(indexCount, indexStart, 0);
-    }
-    else
-    {
-        Context->DeviceContext->Draw(vertexCount, 0);
-    }
-    return true;
+    return ExecuteGeometryDrawPacket(Context->DeviceContext, DrawPacket);
 }
 
 bool FDecalRenderPass::End(const FRenderPassContext* Context)

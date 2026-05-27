@@ -11,6 +11,7 @@
 
 // FName, UUID 발급, 메모리 추적 등을 위해 UObjectManager를 통해 생성, 삭제한다.
 UWorld::UWorld()
+	: Scene(this)
 {
 	PersistentLevel = UObjectManager::Get().CreateObject<ULevel>();
 }
@@ -18,6 +19,7 @@ UWorld::UWorld()
 // 소멸 역시 UObjectManager를 통해 처리한다.
 UWorld::~UWorld()
 {
+	Scene.Release();
 	SpatialIndex.Clear();
 	ParticleEventManager = nullptr;
 	UObjectManager::Get().DestroyObject(PersistentLevel);
@@ -42,6 +44,7 @@ void UWorld::PostDuplicate(UObject* Original)
 	GameModeSettings = OrigWorld->GameModeSettings;
 	ActiveCamera   = OrigWorld->ActiveCamera;
 	bHasBegunPlay  = false; // 항상 미시작 상태로 시작
+	Scene.SetWorld(this);
 
 	// PersistentLevel 을 깊은 복사한 뒤, 복제된 액터들의 소속을 새 월드로 재설정합니다.
 	if (OrigWorld->PersistentLevel)
@@ -194,6 +197,7 @@ AParticleEventManager* UWorld::GetOrCreateParticleEventManager()
 void UWorld::RebuildSpatialIndex()
 {
 	SpatialIndex.Rebuild(this);
+	Scene.Rebuild(this);
 }
 
 void UWorld::SyncSpatialIndex()

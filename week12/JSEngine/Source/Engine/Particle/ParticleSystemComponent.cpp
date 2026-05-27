@@ -9,7 +9,7 @@
 #include "Particle/ParticleMeshBounds.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
-#include "Render/Scene/ParticleSystemRenderProxy.h"
+#include "Render/Scene/Scene.h"
 #include <algorithm>
 #include <cstring>
 #include <memory>
@@ -65,6 +65,49 @@ namespace
 			}
 		}
 		return nullptr;
+	}
+
+	const FDynamicBeamEmitterData* FindBeamRenderDataForEmitter(
+		const TArray<FDynamicEmitterDataBase*>& RenderData,
+		int32 EmitterIndex)
+	{
+		for (const FDynamicEmitterDataBase* EmitterData : RenderData)
+		{
+			if (EmitterData != nullptr &&
+				EmitterData->EmitterIndex == EmitterIndex &&
+				EmitterData->GetEmitterType() == EDynamicEmitterType::Beam)
+			{
+				return static_cast<const FDynamicBeamEmitterData*>(EmitterData);
+			}
+		}
+		return nullptr;
+	}
+
+	FVector GetBeamWorldPoint(
+		const FDynamicBeamEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld,
+		const FVector& Point)
+	{
+		return ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local
+			? ComponentToWorld.TransformPosition(Point)
+			: Point;
+	}
+
+	FBoundingBox BuildBeamWorldBounds(
+		const FDynamicBeamEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld)
+	{
+		const FVector Source = GetBeamWorldPoint(ReplayData, ComponentToWorld, ReplayData.SourcePoint);
+		const FVector Target = GetBeamWorldPoint(ReplayData, ComponentToWorld, ReplayData.TargetPoint);
+		const float HalfWidth = std::max(ReplayData.BeamWidth, 0.1f) * 0.5f;
+		const FVector Extent(HalfWidth, HalfWidth, HalfWidth);
+
+		FBoundingBox Bounds;
+		Bounds.Expand(Source - Extent);
+		Bounds.Expand(Source + Extent);
+		Bounds.Expand(Target - Extent);
+		Bounds.Expand(Target + Extent);
+		return Bounds;
 	}
 }
 
@@ -123,12 +166,10 @@ UParticleSystemComponent::UParticleSystemComponent()
 {
 	bEnableCull = false;
 	InstanceOwner = std::make_unique<FInstanceOwner>(this);
-	RenderProxy = std::make_unique<FParticleSystemRenderProxy>(this);
 }
 
 UParticleSystemComponent::~UParticleSystemComponent()
 {
-	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 }
@@ -142,30 +183,30 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
 
 	ResolvedTemplate = InTemplate;
 	Template.SetPath(InTemplate ? InTemplate->GetAssetPath() : FString());
-	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 }
 
 void UParticleSystemComponent::SetTemplateAsset(const TSoftObjectPtr<UParticleSystem>& InTemplate)
 {
 	Template = InTemplate;
 	ResolvedTemplate = nullptr;
-	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 }
 
 void UParticleSystemComponent::SetTemplatePath(const FString& InPath)
 {
 	Template.SetPath(FPaths::Normalize(InPath));
 	ResolvedTemplate = nullptr;
-	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 }
 
 UParticleSystem* UParticleSystemComponent::GetTemplate()
@@ -196,10 +237,10 @@ void UParticleSystemComponent::Serialize(FArchive& Ar)
 	if (Ar.IsLoading())
 	{
 		ResolvedTemplate = nullptr;
-		ReleaseRenderProxyResources();
 		ReleaseRenderData();
 		ReleaseEmitterInstances();
 		CreateEmitterInstances();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 	}
 }
 
@@ -209,10 +250,10 @@ void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
 	if (PropertyName && FString(PropertyName) == "Template")
 	{
 		ResolvedTemplate = nullptr;
-		ReleaseRenderProxyResources();
 		ReleaseRenderData();
 		ReleaseEmitterInstances();
 		CreateEmitterInstances();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 	}
 }
 
@@ -275,6 +316,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 
 	// Render Data 수집
 	PackRenderData();
+	NotifySpatialIndexDirty();
 	
 	// Tick이 끝날 때 Event를 처리
 	FinalizeTickComponent();
@@ -329,11 +371,15 @@ void UParticleSystemComponent::PackRenderData()
 		{
 			continue;
 		}
-		if (!Instance->CurrentLODLevel->bEnabled || (bHasSoloEmitter && !Instance->CurrentLODLevel->bSolo))
+		// solo 상태가 아닌 emitter의 render 차단
+		if (bHasSoloEmitter && !Instance->CurrentLODLevel->bSolo)
 		{
 			continue;
 		}
 
+		// LOD 비활성 상태의 기존 live particle render 허용
+		// bEnabled=false LOD는 emitter tick에서 spawn/update만 멈추고 age/kill은 계속 진행되므로,
+		// render snapshot은 계속 만들어야 기존 particle이 수명에 따라 자연스럽게 사라짐
 		UParticleModuleTypeDataBase* TypeDataModule = Instance->CurrentLODLevel->TypeDataModule;
 		if (!IsLiveObject(TypeDataModule) || !TypeDataModule->bEnabled)
 		{
@@ -359,11 +405,6 @@ const FDynamicEmitterDataBase* UParticleSystemComponent::GetEmitterRenderDataSna
 	return EmitterRenderData[SnapshotIndex];
 }
 
-FPrimitiveRenderProxy* UParticleSystemComponent::GetRenderProxy()
-{
-	return RenderProxy.get();
-}
-
 void UParticleSystemComponent::UpdateWorldAABB() const
 {
 	WorldAABB.Reset();
@@ -371,16 +412,31 @@ void UParticleSystemComponent::UpdateWorldAABB() const
 	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
 	{
 		const FParticleEmitterInstance* Instance = EmitterInstances[EmitterIndex];
-		if (!Instance || !IsLiveObject(Instance->CurrentLODLevel) || !Instance->CurrentLODLevel->bEnabled)
+		if (!Instance || !IsLiveObject(Instance->CurrentLODLevel))
 		{
 			continue;
 		}
 
+		// LOD 비활성 상태의 기존 live particle bounds 유지
+		// render는 허용되므로 spatial bounds도 함께 유지하여 자연 소멸 중인 particle이 잘리지 않도록 함
 		const UParticleModuleRequired* RequiredModule = Instance->CurrentRuntimeCache != nullptr
 			? Instance->CurrentRuntimeCache->RequiredModule
 			: nullptr;
 		if (RequiredModule == nullptr || !RequiredModule->bUseFixedBounds)
 		{
+			const FDynamicBeamEmitterData* BeamEmitterData = FindBeamRenderDataForEmitter(EmitterRenderData, EmitterIndex);
+			if (BeamEmitterData != nullptr)
+			{
+				const FBoundingBox BeamBounds = BuildBeamWorldBounds(
+					BeamEmitterData->ReplayData,
+					BeamEmitterData->ComponentToWorld);
+				if (BeamBounds.IsValid())
+				{
+					WorldAABB.Merge(BeamBounds);
+					continue;
+				}
+			}
+
 			const FDynamicMeshEmitterData* MeshEmitterData = FindMeshRenderDataForEmitter(EmitterRenderData, EmitterIndex);
 			const FStaticMesh* MeshData = MeshEmitterData != nullptr && MeshEmitterData->Mesh != nullptr
 				? MeshEmitterData->Mesh->GetMeshData(0)
@@ -430,10 +486,10 @@ bool UParticleSystemComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitRe
 
 void UParticleSystemComponent::ResetParticles()
 {
-	ReleaseRenderProxyResources();
 	ReleaseRenderData();
 	ReleaseEmitterInstances();
 	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 }
 
 void UParticleSystemComponent::ReleaseEmitterInstances()
@@ -454,15 +510,7 @@ void UParticleSystemComponent::ReleaseRenderData()
 	EmitterRenderData.clear();
 }
 
-void UParticleSystemComponent::ReleaseRenderProxyResources()
-{
-	if (RenderProxy != nullptr)
-	{
-		RenderProxy->ReleaseResources();
-	}
-}
-
-int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const
+int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate, int32 CurrentLODIndex) const
 {
 	const UParticleSystem* ParticleSystem = GetTemplate();
 	if (ParticleSystem == nullptr || EmitterTemplate == nullptr || EmitterTemplate->LODLevels.size() <= 1)
@@ -491,8 +539,8 @@ int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* Emit
 	float PreviousThreshold = ParticleSystem->LODDistances[0];
 	int32 SelectedIndex = 0;
 
-	// EmitterTemplate과 ParticleSystem의 LODDistance중 더 작은 Lod count를 선택한다.
-	// 순회하면서 거리를 체크, Threshold보다 더 멀리있다면 갱신, 아니라면 해당 구간이므로 LOD 인덱스 확정 후 반환.
+	// 순수 거리 기준 LOD 후보 계산
+	// EmitterTemplate과 ParticleSystem의 LODDistance 중 더 작은 LOD count를 사용
 	for (int32 LODIndex = 1; LODIndex < ThresholdCount; ++LODIndex)
 	{
 		const float Threshold = ParticleSystem->LODDistances[LODIndex];
@@ -511,6 +559,41 @@ int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* Emit
 		PreviousThreshold = Threshold;
 	}
 
+	// hysteresis 비활성 또는 LOD 일시적 유지가 불필요한 상태 처리
+	const int32 ClampedCurrentLODIndex = std::clamp(CurrentLODIndex, 0, ThresholdCount - 1);
+	const float HysteresisDistance = std::max(ParticleSystem->LODHysteresisDistance, 0.0f);
+	if (HysteresisDistance <= 0.0f || SelectedIndex == ClampedCurrentLODIndex)
+	{
+		return SelectedIndex;
+	}
+
+	// 더 먼 LOD로 내려가는 경우
+	// 현재 LOD의 다음 threshold를 hysteresis만큼 지나야 전환 허용
+	if (SelectedIndex > ClampedCurrentLODIndex)
+	{
+		const int32 NextLODIndex = ClampedCurrentLODIndex + 1;
+		if (NextLODIndex < ThresholdCount)
+		{
+			const float SwitchOutDistance = ParticleSystem->LODDistances[NextLODIndex] + HysteresisDistance;
+			if (Distance < SwitchOutDistance)
+			{
+				return ClampedCurrentLODIndex;
+			}
+		}
+	}
+
+	// 더 가까운 LOD로 올라가는 경우
+	// 현재 LOD의 시작 threshold보다 hysteresis만큼 안쪽으로 들어와야 전환 허용
+	if (SelectedIndex < ClampedCurrentLODIndex)
+	{
+		const float CurrentLODStartDistance = ParticleSystem->LODDistances[ClampedCurrentLODIndex];
+		const float SwitchInDistance = std::max(0.0f, CurrentLODStartDistance - HysteresisDistance);
+		if (Distance >= SwitchInDistance)
+		{
+			return ClampedCurrentLODIndex;
+		}
+	}
+
 	return SelectedIndex;
 }
 
@@ -525,7 +608,7 @@ void UParticleSystemComponent::UpdateLODLevel()
 		}
 
 		// 거리 기반 LOD 선택
-		int32 NewLODIndex = SelectLODLevelIndex(Instance->SpriteTemplate);
+		int32 NewLODIndex = SelectLODLevelIndex(Instance->SpriteTemplate, Instance->CurrentLODLevelIndex);
 		if (NewLODIndex != 0 && !Instance->SpriteTemplate->ValidateLODTopology(false))
 		{
 			// invalid topology fallback
@@ -544,8 +627,8 @@ void UParticleSystemComponent::UpdateLODLevel()
 			Instance->SetCurrentLODIndex(0);
 		}
 
-		ReleaseRenderProxyResources();
 		ReleaseRenderData();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
 	}
 }
 
@@ -566,7 +649,7 @@ void UParticleSystemComponent::CreateEmitterInstances()
 		}
 
 		// 현재 거리 기준 LOD 선택
-		const int32 LODIndex = SelectLODLevelIndex(EmitterTemplate);
+		const int32 LODIndex = SelectLODLevelIndex(EmitterTemplate, 0);
 		if (FParticleEmitterInstance* Instance = CreateEmitterInstanceForLOD(EmitterTemplate, LODIndex))
 		{
 			Instance->SetEmitterIndex(static_cast<int32>(EmitterInstances.size()));

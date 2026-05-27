@@ -5,6 +5,7 @@
 
 #include "Core/Paths.h"
 #include "Core/ResourceManager.h"
+#include "Render/Scene/Scene.h"
 
 
 // reflection에 노출되지 않은 필드를 직접 복사합니다.
@@ -74,6 +75,13 @@ void UBillboardComponent::SetTextureName(FString InName)
 {
 	TextureName = FPaths::Normalize(InName);
 	Texture = FResourceManager::Get().LoadTexture(TextureName.ToString());
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Resource);
+}
+
+void UBillboardComponent::SetColor(const FColor& InColor)
+{
+	Color = InColor;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Material);
 }
 
 FString UBillboardComponent::GetTextureName()

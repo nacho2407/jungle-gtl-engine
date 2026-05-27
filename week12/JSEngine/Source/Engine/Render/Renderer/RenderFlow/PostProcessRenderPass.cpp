@@ -53,6 +53,8 @@ bool FPostProcessRenderPass::Begin(const FRenderPassContext* Context)
 
 	ID3D11RenderTargetView* RTVs[1] = { Context->RenderTargets->ScenePostProcessRTV };
     Context->DeviceContext->OMSetRenderTargets(1, RTVs, nullptr);
+    ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::Opaque);
+    Context->DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
 
     // 이전 패스 결과 입력
     ID3D11ShaderResourceView* srvs[] = { PrevPassSRV };

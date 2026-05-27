@@ -46,6 +46,8 @@ bool FFXAARenderPass::Begin(const FRenderPassContext* Context)
     ID3D11DepthStencilView* DSV = nullptr;
 
     Context->DeviceContext->OMSetRenderTargets(ARRAYSIZE(RTVs), RTVs, DSV);
+    ID3D11BlendState* BlendState = FResourceManager::Get().GetOrCreateBlendState(EBlendType::Opaque);
+    Context->DeviceContext->OMSetBlendState(BlendState, nullptr, 0xFFFFFFFF);
     OutSRV = RenderTargets->SceneFXAASRV;
     OutRTV = RenderTargets->SceneFXAARTV;
 

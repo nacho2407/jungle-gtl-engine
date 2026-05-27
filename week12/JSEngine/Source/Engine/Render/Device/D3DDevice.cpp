@@ -67,11 +67,11 @@ void FD3DDevice::BeginViewportFrame(FRenderTargetSet& InRenderTargetSet, const f
 	if (InRenderTargetSet.SceneColorRTV && InRenderTargetSet.SelectionMaskRTV && InRenderTargetSet.DepthStencilView)
 	{
 		DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneColorRTV, ViewClearColor);
-		DeviceContext->ClearRenderTargetView(InRenderTargetSet.DebugViewModeRTV, ViewClearColor);
-		DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFogRTV, ViewClearColor);
-		DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneSandervistanRTV, ViewClearColor);
-		DeviceContext->ClearRenderTargetView(InRenderTargetSet.ScenePostProcessRTV, ViewClearColor);
-		DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFXAARTV, ViewClearColor);
+		DeviceContext->ClearRenderTargetView(InRenderTargetSet.DebugViewModeRTV, ClearMask);    // 중간 결과물 성격의 RTV는 무조건 (0,0,0,0)으로 Clear
+		DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFogRTV, ClearMask);
+		DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneSandervistanRTV, ClearMask);
+		DeviceContext->ClearRenderTargetView(InRenderTargetSet.ScenePostProcessRTV, ClearMask);
+		DeviceContext->ClearRenderTargetView(InRenderTargetSet.SceneFXAARTV, ClearMask);
 		DeviceContext->ClearRenderTargetView(InRenderTargetSet.SelectionMaskRTV, ClearMask);
 		DeviceContext->ClearDepthStencilView(InRenderTargetSet.DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 	}

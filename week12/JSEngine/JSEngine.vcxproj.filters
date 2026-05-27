@@ -1092,6 +1092,9 @@
     <ClCompile Include="Source\Engine\Render\Scene\RenderCollector.cpp">
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Scene\Scene.cpp">
+      <Filter>Source\Engine\Render\Scene</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\SubUVBatcher.cpp">
       <Filter>Source\Engine\Render</Filter>
     </ClCompile>
@@ -2071,6 +2074,9 @@
     <ClInclude Include="Source\Engine\Particle\ParticleHelper.h">
       <Filter>Source\Engine\Particle</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particle\ParticleMeshBounds.h">
+      <Filter>Source\Engine\Particle</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Particle\ParticleModules.h">
       <Filter>Source\Engine\Particle</Filter>
     </ClInclude>
@@ -2138,6 +2144,9 @@
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.h">
+      <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GeometryDrawPacket.h">
       <Filter>Source\Engine\Render\Renderer\RenderFlow</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.h">
@@ -2279,6 +2288,9 @@
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Scene\RenderCommand.h">
+      <Filter>Source\Engine\Render\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Scene\Scene.h">
       <Filter>Source\Engine\Render\Scene</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\SubUVBatcher.h">
@@ -2586,6 +2598,9 @@
     </None>
     <None Include="Shaders\UI\ScreenOverlay.hlsl">
       <Filter>Shaders\UI</Filter>
+    </None>
+    <None Include="Shaders\VFX\ParticleBeam.hlsl">
+      <Filter>Shaders\VFX</Filter>
     </None>
     <None Include="Shaders\VFX\ParticleSprite.hlsl">
       <Filter>Shaders\VFX</Filter>

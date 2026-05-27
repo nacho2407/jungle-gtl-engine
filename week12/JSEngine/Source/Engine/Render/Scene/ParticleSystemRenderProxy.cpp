@@ -6,8 +6,8 @@
 #include "Particle/ParticleTypes.h"
 #include "Asset/StaticMesh.h"
 #include "Core/ResourceManager.h"
+#include "Render/Resource/Buffer.h"
 #include "Render/Resource/Material.h"
-#include "Render/Resource/MeshBufferManager.h"
 #include "Render/Scene/RenderBus.h"
 
 #include <algorithm>
@@ -120,6 +120,7 @@ namespace
 		const FBaseParticle& Particle,
 		const FVector& CameraRight,
 		const FVector& CameraUp,
+		const FVector4& UVRect,
 		TArray<FParticleSpriteInstanceData>& Instances)
 	{
 		const FVector WorldLocation = GetParticleWorldLocation(ReplayData, ComponentToWorld, Particle);
@@ -137,7 +138,8 @@ namespace
 			WorldLocation,
 			RotatedAxisX * HalfW,
 			RotatedAxisY * HalfH,
-			Particle.Color
+			Particle.Color,
+			UVRect
 		});
 	}
 
@@ -155,16 +157,15 @@ namespace
 		return reinterpret_cast<const FSubUVParticlePayload*>(ParticleBytes + PayloadOffset);
 	}
 
-	bool BuildParticleSubUVCommands(
-		UParticleSystemComponent* Component,
-		const FDynamicEmitterDataBase& EmitterData,
+	FVector4 BuildParticleSpriteUVRect(
 		const FDynamicSpriteEmitterReplayDataBase& ReplayData,
-		const TArray<int32>& SortedIndices,
-		TArray<FRenderCommand>& OutCommands)
+		const FBaseParticle& Particle,
+		bool& bOutHasValidSubUVPayload)
 	{
+		bOutHasValidSubUVPayload = false;
 		if (ReplayData.SubUVPayloadOffset < 0 || ReplayData.SubUVTexture == nullptr)
 		{
-			return false;
+			return FVector4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
 
 		const int32 Columns = std::max(ReplayData.SubUVColumns, 1);
@@ -172,51 +173,29 @@ namespace
 		const int32 TotalFrames = Columns * Rows;
 		if (TotalFrames <= 0)
 		{
-			return true;
+			return FVector4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
 
-		for (int32 ActiveIndex : SortedIndices)
+		const FSubUVParticlePayload* Payload = GetSubUVPayloadFromSnapshot(ReplayData, Particle);
+		if (Payload == nullptr)
 		{
-			const FBaseParticle* Particle = ReplayData.GetParticleByActiveIndex(ActiveIndex);
-			if (Particle == nullptr)
-			{
-				continue;
-			}
-
-			const FSubUVParticlePayload* Payload = GetSubUVPayloadFromSnapshot(ReplayData, *Particle);
-			if (Payload == nullptr)
-			{
-				continue;
-			}
-
-			const uint32 FrameIndex = static_cast<uint32>(std::clamp(
-				static_cast<int32>(Payload->ImageIndex + 0.5f),
-				0,
-				TotalFrames - 1));
-			FMatrix Model = FMatrix::MakeScale(Particle->Size);
-			Model.SetOrigin(GetParticleWorldLocation(ReplayData, EmitterData.ComponentToWorld, *Particle));
-
-			FRenderCommand Cmd = {};
-			Cmd.Type = ERenderCommandType::SubUV;
-			Cmd.SourcePrimitive = Component;
-			Cmd.Material = EmitterData.Material;
-			Cmd.ParticleEmitterData = &EmitterData;
-			Cmd.ParticleReplayData = &ReplayData;
-			Cmd.VertexFactoryType = EVertexFactoryType::SubUV;
-			Cmd.PerObjectConstants = FPerObjectConstants{ Model, Particle->Color.ToVector4() };
-			Cmd.WorldAABB = Component ? Component->GetWorldAABB() : FBoundingBox{};
-			Cmd.Constants.SubUV.Texture = ReplayData.SubUVTexture;
-			Cmd.Constants.SubUV.FrameIndex = FrameIndex;
-			Cmd.Constants.SubUV.Columns = static_cast<uint32>(Columns);
-			Cmd.Constants.SubUV.Rows = static_cast<uint32>(Rows);
-			Cmd.Constants.SubUV.Width = 1.0f;
-			Cmd.Constants.SubUV.Height = 1.0f;
-			Cmd.Constants.SubUV.Color = Particle->Color;
-
-			OutCommands.push_back(std::move(Cmd));
+			return FVector4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
 
-		return true;
+		const uint32 FrameIndex = static_cast<uint32>(std::clamp(
+			static_cast<int32>(Payload->ImageIndex + 0.5f),
+			0,
+			TotalFrames - 1));
+		const float FrameW = 1.0f / static_cast<float>(Columns);
+		const float FrameH = 1.0f / static_cast<float>(Rows);
+		const uint32 Col = FrameIndex % static_cast<uint32>(Columns);
+		const uint32 Row = FrameIndex / static_cast<uint32>(Columns);
+		bOutHasValidSubUVPayload = true;
+		return FVector4(
+			static_cast<float>(Col) * FrameW,
+			static_cast<float>(Row) * FrameH,
+			FrameW,
+			FrameH);
 	}
 
 	FBoundingBox BuildSpriteInstanceBounds(
@@ -247,6 +226,19 @@ namespace
 	UMaterialInterface* ResolveBeamParticleMaterial(UMaterialInterface* Material)
 	{
 		return Material != nullptr ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
+	}
+
+	ERenderPass ResolveBeamParticleRenderPass(const UMaterialInterface* Material)
+	{
+		if (Material == nullptr)
+		{
+			return ERenderPass::Opaque;
+		}
+
+		return Material->GetBlendMode() == EMaterialBlendMode::Translucent ||
+			Material->GetBlendStateDesc().bBlendEnable
+			? ERenderPass::Translucent
+			: ResolveMaterialRenderPass(Material);
 	}
 
 	/**
@@ -315,36 +307,35 @@ namespace
 	}
 }
 
-FParticleSystemRenderProxy::FParticleSystemRenderProxy(UParticleSystemComponent* InComponent)
+FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* InComponent)
 	: Component(InComponent)
 {
 }
 
-FParticleSystemRenderProxy::~FParticleSystemRenderProxy()
+FParticleSystemSceneProxy::~FParticleSystemSceneProxy()
 {
 	ReleaseResources();
 }
 
-void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyCollectionContext& Context)
+void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyCollectionContext& Context)
 {
-	if (Component == nullptr)
+	if (Component == nullptr || !Context.ShowFlags.bParticle)
 	{
 		return;
 	}
 
 	TArray<FRenderCommand> SpriteCommands;
-	TArray<FRenderCommand> SubUVCommands;
 	TArray<FRenderCommand> OpaqueMeshCommands;
 	TArray<FRenderCommand> TranslucentMeshCommands;
 	TArray<FRenderCommand> OpaqueBeamCommands;
 	TArray<FRenderCommand> TranslucentBeamCommands;
-	BuildSpriteCommands(Context, SpriteCommands, SubUVCommands);
+	BuildSpriteCommands(Context, SpriteCommands);
 	BuildMeshCommands(Context, OpaqueMeshCommands, TranslucentMeshCommands);
 	BuildBeamCommands(Context, OpaqueBeamCommands, TranslucentBeamCommands);
 
 	if (SpriteInstances.empty() &&
 		MeshInstances.empty() &&
-		SubUVCommands.empty() &&
+		BeamInstances.empty() &&
 		OpaqueBeamCommands.empty() &&
 		TranslucentBeamCommands.empty())
 	{
@@ -361,6 +352,11 @@ void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyColl
 		return;
 	}
 
+	if (!BeamInstances.empty() && !EnsureBeamInstanceBuffer(Context.Device, static_cast<uint32>(BeamInstances.size())))
+	{
+		return;
+	}
+
 	if (!SpriteInstances.empty() && !UploadSpriteInstances(Context.DeviceContext))
 	{
 		return;
@@ -371,15 +367,15 @@ void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyColl
 		return;
 	}
 
+	if (!BeamInstances.empty() && !UploadBeamInstances(Context.DeviceContext))
+	{
+		return;
+	}
+
 	for (FRenderCommand& Command : SpriteCommands)
 	{
 		Command.InstanceBufferView.Buffer = SpriteInstanceBuffer.Get();
 		Context.RenderBus.AddCommand(ERenderPass::Translucent, std::move(Command));
-	}
-
-	for (FRenderCommand& Command : SubUVCommands)
-	{
-		Context.RenderBus.AddCommand(ERenderPass::SubUV, std::move(Command));
 	}
 
 	for (FRenderCommand& Command : OpaqueMeshCommands)
@@ -390,6 +386,7 @@ void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyColl
 
 	for (FRenderCommand& Command : OpaqueBeamCommands)
 	{
+		Command.InstanceBufferView.Buffer = BeamInstanceBuffer.Get();
 		Context.RenderBus.AddCommand(ERenderPass::Opaque, std::move(Command));
 	}
 
@@ -401,28 +398,30 @@ void FParticleSystemRenderProxy::CollectCommands(const FPrimitiveRenderProxyColl
 
 	for (FRenderCommand& Command : TranslucentBeamCommands)
 	{
+		Command.InstanceBufferView.Buffer = BeamInstanceBuffer.Get();
 		Context.RenderBus.AddCommand(ERenderPass::Translucent, std::move(Command));
 	}
 }
 
-void FParticleSystemRenderProxy::ReleaseResources()
+void FParticleSystemSceneProxy::ReleaseResources()
 {
 	SpriteInstances.clear();
 	MeshInstances.clear();
+	BeamInstances.clear();
 	SpriteInstanceBuffer.Reset();
 	MeshInstanceBuffer.Reset();
+	BeamInstanceBuffer.Reset();
 	MaxSpriteInstanceCount = 0;
 	MaxMeshInstanceCount = 0;
+	MaxBeamInstanceCount = 0;
 }
 
-bool FParticleSystemRenderProxy::BuildSpriteCommands(
+bool FParticleSystemSceneProxy::BuildSpriteCommands(
 	const FPrimitiveRenderProxyCollectionContext& Context,
-	TArray<FRenderCommand>& OutSpriteCommands,
-	TArray<FRenderCommand>& OutSubUVCommands)
+	TArray<FRenderCommand>& OutSpriteCommands)
 {
 	SpriteInstances.clear();
 	OutSpriteCommands.clear();
-	OutSubUVCommands.clear();
 
 	const int32 SnapshotCount = Component->GetEmitterRenderDataSnapshotCount();
 	for (int32 SnapshotIndex = 0; SnapshotIndex < SnapshotCount; ++SnapshotIndex)
@@ -446,22 +445,27 @@ bool FParticleSystemRenderProxy::BuildSpriteCommands(
 			Context.RenderBus);
 		const FDynamicSpriteEmitterReplayDataBase* SpriteReplayData =
 			static_cast<const FDynamicSpriteEmitterReplayDataBase*>(&ReplayData);
-		if (BuildParticleSubUVCommands(Component, *EmitterData, *SpriteReplayData, SortedIndices, OutSubUVCommands))
-		{
-			continue;
-		}
+		const bool bUseSubUVTexture = SpriteReplayData->SubUVPayloadOffset >= 0 && SpriteReplayData->SubUVTexture != nullptr;
 
 		for (int32 ActiveIndex : SortedIndices)
 		{
 			const FBaseParticle* Particle = ReplayData.GetParticleByActiveIndex(ActiveIndex);
 			if (Particle != nullptr)
 			{
+				bool bHasValidSubUVPayload = false;
+				const FVector4 UVRect = BuildParticleSpriteUVRect(*SpriteReplayData, *Particle, bHasValidSubUVPayload);
+				if (bUseSubUVTexture && !bHasValidSubUVPayload)
+				{
+					continue;
+				}
+
 				AppendParticleSpriteInstance(
 					ReplayData,
 					EmitterData->ComponentToWorld,
 					*Particle,
 					Context.RenderBus.GetCameraRight(),
 					Context.RenderBus.GetCameraUp(),
+					UVRect,
 					SpriteInstances);
 			}
 		}
@@ -491,6 +495,7 @@ bool FParticleSystemRenderProxy::BuildSpriteCommands(
 		Cmd.Constants.Particle.CoordinateSpace = static_cast<uint32>(ReplayData.CoordinateSpace);
 		Cmd.Constants.Particle.ActiveParticleCount = static_cast<uint32>(ReplayData.ActiveParticleCount);
 		Cmd.Constants.Particle.bUseLocalSpace = ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local ? 1u : 0u;
+		Cmd.Constants.Particle.Texture = bUseSubUVTexture ? SpriteReplayData->SubUVTexture : nullptr;
 		Cmd.InstanceBufferView.InstanceCount = InstanceCount;
 		Cmd.InstanceBufferView.Stride = sizeof(FParticleSpriteInstanceData);
 		Cmd.InstanceBufferView.Offset = FirstInstance * sizeof(FParticleSpriteInstanceData);
@@ -501,7 +506,7 @@ bool FParticleSystemRenderProxy::BuildSpriteCommands(
 	return true;
 }
 
-bool FParticleSystemRenderProxy::BuildMeshCommands(
+bool FParticleSystemSceneProxy::BuildMeshCommands(
 	const FPrimitiveRenderProxyCollectionContext& Context,
 	TArray<FRenderCommand>& OutOpaqueCommands,
 	TArray<FRenderCommand>& OutTranslucentCommands)
@@ -556,7 +561,7 @@ bool FParticleSystemRenderProxy::BuildMeshCommands(
 			continue;
 		}
 
-		FMeshBuffer* MeshBuffer = Context.MeshBufferManager.GetStaticMeshBuffer(Mesh, 0);
+		FMeshBuffer* MeshBuffer = Context.ResourceProvider.GetStaticMeshBuffer(Mesh, 0);
 		if (MeshBuffer == nullptr)
 		{
 			LogParticleDiagnosticOnce(
@@ -633,7 +638,7 @@ bool FParticleSystemRenderProxy::BuildMeshCommands(
 			Cmd.Material = ResolveMeshParticleMaterial(SectionMaterial);
 			Cmd.ParticleEmitterData = EmitterData;
 			Cmd.ParticleReplayData = &ReplayData;
-			Cmd.VertexFactoryType = EVertexFactoryType::ParticleMesh;
+			Cmd.VertexFactoryType = EVertexFactoryType::InstancedSurface;
 			Cmd.MeshBuffer = MeshBuffer;
 			Cmd.PerObjectConstants = FPerObjectConstants{ FMatrix::Identity, FColor::White().ToVector4() };
 			Cmd.WorldAABB = MeshParticleBounds.IsValid() ? MeshParticleBounds : Component->GetWorldAABB();
@@ -657,11 +662,12 @@ bool FParticleSystemRenderProxy::BuildMeshCommands(
 	return true;
 }
 
-bool FParticleSystemRenderProxy::BuildBeamCommands(
+bool FParticleSystemSceneProxy::BuildBeamCommands(
 	const FPrimitiveRenderProxyCollectionContext& Context,
 	TArray<FRenderCommand>& OutOpaqueCommands,
 	TArray<FRenderCommand>& OutTranslucentCommands)
 {
+	BeamInstances.clear();
 	OutOpaqueCommands.clear();
 	OutTranslucentCommands.clear();
 
@@ -680,6 +686,11 @@ bool FParticleSystemRenderProxy::BuildBeamCommands(
 		const FDynamicBeamEmitterReplayDataBase& ReplayData = BeamEmitterData->ReplayData;
 		if (ReplayData.ActiveParticleCount <= 0)
 		{
+			LogParticleDiagnosticOnce(
+				Component,
+				EmitterData->EmitterIndex,
+				EParticleProxyDiagnostic::EmptyActiveParticles,
+				"[Particle] Beam emitter has no active particles.");
 			continue;
 		}
 
@@ -692,6 +703,12 @@ bool FParticleSystemRenderProxy::BuildBeamCommands(
 
 		// material 누락 시에도 command 경로를 확인할 수 있는 fallback material
 		UMaterialInterface* BeamMaterial = ResolveBeamParticleMaterial(EmitterData->Material);
+		const uint32 FirstInstance = static_cast<uint32>(BeamInstances.size());
+		const FVector Source = GetBeamWorldPoint(ReplayData, EmitterData->ComponentToWorld, ReplayData.SourcePoint);
+		const FVector Target = GetBeamWorldPoint(ReplayData, EmitterData->ComponentToWorld, ReplayData.TargetPoint);
+		const float ParticleWidthScale = std::max(std::fabs(Particle->Size.X), 0.001f);
+		const float HalfWidth = std::max(ReplayData.BeamWidth * ParticleWidthScale, 0.1f) * 0.5f;
+		BeamInstances.push_back({ Source, Target, HalfWidth, Particle->Color });
 
 		FRenderCommand Cmd = {};
 		Cmd.Type = ERenderCommandType::Particle;
@@ -699,6 +716,7 @@ bool FParticleSystemRenderProxy::BuildBeamCommands(
 		Cmd.Material = BeamMaterial;
 		Cmd.ParticleEmitterData = EmitterData;
 		Cmd.ParticleReplayData = &ReplayData;
+		Cmd.VertexFactoryType = EVertexFactoryType::ParticleBeam;
 		Cmd.PerObjectConstants = FPerObjectConstants{ FMatrix::Identity, FColor::White().ToVector4() };
 
 		// source / target / width 기준 command bounds. 실패 시 component bounds fallback
@@ -716,9 +734,12 @@ bool FParticleSystemRenderProxy::BuildBeamCommands(
 		Cmd.Constants.Particle.CoordinateSpace = static_cast<uint32>(ReplayData.CoordinateSpace);
 		Cmd.Constants.Particle.ActiveParticleCount = static_cast<uint32>(ReplayData.ActiveParticleCount);
 		Cmd.Constants.Particle.bUseLocalSpace = ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local ? 1u : 0u;
+		Cmd.InstanceBufferView.InstanceCount = 1;
+		Cmd.InstanceBufferView.Stride = sizeof(FBeamParticleInstanceData);
+		Cmd.InstanceBufferView.Offset = FirstInstance * sizeof(FBeamParticleInstanceData);
 
 		// material 정책에 따른 pass queue 분배
-		if (ResolveMaterialRenderPass(Cmd.Material) == ERenderPass::Translucent)
+		if (ResolveBeamParticleRenderPass(Cmd.Material) == ERenderPass::Translucent)
 		{
 			OutTranslucentCommands.push_back(std::move(Cmd));
 		}
@@ -731,7 +752,7 @@ bool FParticleSystemRenderProxy::BuildBeamCommands(
 	return true;
 }
 
-bool FParticleSystemRenderProxy::EnsureSpriteInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
+bool FParticleSystemSceneProxy::EnsureSpriteInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
 {
 	if (Device == nullptr)
 	{
@@ -754,7 +775,7 @@ bool FParticleSystemRenderProxy::EnsureSpriteInstanceBuffer(ID3D11Device* Device
 	return SUCCEEDED(Device->CreateBuffer(&InstanceDesc, nullptr, SpriteInstanceBuffer.ReleaseAndGetAddressOf()));
 }
 
-bool FParticleSystemRenderProxy::EnsureMeshInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
+bool FParticleSystemSceneProxy::EnsureMeshInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
 {
 	if (Device == nullptr)
 	{
@@ -777,7 +798,30 @@ bool FParticleSystemRenderProxy::EnsureMeshInstanceBuffer(ID3D11Device* Device, 
 	return SUCCEEDED(Device->CreateBuffer(&InstanceDesc, nullptr, MeshInstanceBuffer.ReleaseAndGetAddressOf()));
 }
 
-bool FParticleSystemRenderProxy::UploadSpriteInstances(ID3D11DeviceContext* DeviceContext)
+bool FParticleSystemSceneProxy::EnsureBeamInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
+{
+	if (Device == nullptr)
+	{
+		return false;
+	}
+
+	if (BeamInstanceBuffer && InstanceCount <= MaxBeamInstanceCount)
+	{
+		return true;
+	}
+
+	MaxBeamInstanceCount = std::max(InstanceCount * 2u, 1u);
+	BeamInstanceBuffer.Reset();
+
+	D3D11_BUFFER_DESC InstanceDesc = {};
+	InstanceDesc.Usage = D3D11_USAGE_DYNAMIC;
+	InstanceDesc.ByteWidth = sizeof(FBeamParticleInstanceData) * MaxBeamInstanceCount;
+	InstanceDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	InstanceDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	return SUCCEEDED(Device->CreateBuffer(&InstanceDesc, nullptr, BeamInstanceBuffer.ReleaseAndGetAddressOf()));
+}
+
+bool FParticleSystemSceneProxy::UploadSpriteInstances(ID3D11DeviceContext* DeviceContext)
 {
 	if (DeviceContext == nullptr || !SpriteInstanceBuffer)
 	{
@@ -803,7 +847,7 @@ bool FParticleSystemRenderProxy::UploadSpriteInstances(ID3D11DeviceContext* Devi
 	return true;
 }
 
-bool FParticleSystemRenderProxy::UploadMeshInstances(ID3D11DeviceContext* DeviceContext)
+bool FParticleSystemSceneProxy::UploadMeshInstances(ID3D11DeviceContext* DeviceContext)
 {
 	if (DeviceContext == nullptr || !MeshInstanceBuffer)
 	{
@@ -828,3 +872,30 @@ bool FParticleSystemRenderProxy::UploadMeshInstances(ID3D11DeviceContext* Device
 	DeviceContext->Unmap(MeshInstanceBuffer.Get(), 0);
 	return true;
 }
+
+bool FParticleSystemSceneProxy::UploadBeamInstances(ID3D11DeviceContext* DeviceContext)
+{
+	if (DeviceContext == nullptr || !BeamInstanceBuffer)
+	{
+		return false;
+	}
+
+	if (BeamInstances.empty())
+	{
+		return true;
+	}
+
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	if (FAILED(DeviceContext->Map(BeamInstanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+	{
+		return false;
+	}
+
+	std::memcpy(
+		Mapped.pData,
+		BeamInstances.data(),
+		sizeof(FBeamParticleInstanceData) * BeamInstances.size());
+	DeviceContext->Unmap(BeamInstanceBuffer.Get(), 0);
+	return true;
+}
+

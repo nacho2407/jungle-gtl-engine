@@ -8,8 +8,6 @@ class UWorld;
 class UParticleSystem;
 class AParticleEventManager;
 class FParticleEmitterInstance;
-class FParticleSystemRenderProxy;
-class FPrimitiveRenderProxy;
 class UParticleSystemComponent;
 
 struct FDynamicEmitterDataBase;
@@ -63,7 +61,6 @@ public:
 		const FCollisionShape& CollisionShape);
 
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
-	FPrimitiveRenderProxy* GetRenderProxy() override;
 	bool SupportsOutline() const override { return false; }
 
 	void UpdateWorldAABB() const override;
@@ -77,8 +74,19 @@ private:
 	void CreateEmitterInstances();
 	void ReleaseEmitterInstances();
 	void ReleaseRenderData();
-	void ReleaseRenderProxyResources();
-	int32 SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const;
+
+	/**
+	 * @brief 현재 거리와 hysteresis 정책으로 사용할 LOD index를 선택합니다.
+	 *
+	 * @param EmitterTemplate LOD 후보 개수를 제공하는 emitter template
+	 *
+	 * @param CurrentLODIndex 현재 emitter instance가 사용 중인 LOD index
+	 *
+	 * @return 선택된 LOD index
+	 *
+	 * @details ParticleSystem의 LODDistances와 LODHysteresisDistance를 함께 사용하여 경계 근처의 잦은 LOD 왕복 전환을 방지합니다.
+	 */
+	int32 SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate, int32 CurrentLODIndex) const;
 	void UpdateLODLevel();
 
 	/**
@@ -107,7 +115,6 @@ private:
 	// CPP참고 -  EmitterInstance에게 넘겨주는 Component 정보
 	class FInstanceOwner;
 	std::unique_ptr<FInstanceOwner> InstanceOwner;
-	std::unique_ptr<FParticleSystemRenderProxy> RenderProxy;
 
 	UPROPERTY(DisplayName = "Template", ReferenceType = Asset)
 	TSoftObjectPtr<UParticleSystem> Template;

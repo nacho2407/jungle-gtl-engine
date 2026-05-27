@@ -1,4 +1,4 @@
-﻿#include "PrimitiveDrawCommandBuilder.h"
+#include "PrimitiveDrawCommandBuilder.h"
 
 #include "Component/BillboardComponent.h"
 #include "Component/FireballComponent.h"
@@ -11,7 +11,8 @@
 #include "Core/Logging/SkinningStats.h"
 #include "Core/ResourceManager.h"
 #include "Engine/Asset/StaticMesh.h"
-#include "Render/Resource/MeshBufferManager.h"
+#include "Render/Resource/Buffer.h"
+#include "Render/Scene/PrimitiveRenderProxy.h"
 #include "Render/Scene/RenderBus.h"
 
 #include <algorithm>
@@ -117,7 +118,15 @@ namespace
 			return;
 		}
 
-		RenderBus.AddCommand(IsMeshDebugViewMode(ViewMode) ? ERenderPass::ViewModeMesh : ResolveMaterialRenderPass(Cmd.Material), Cmd);
+		const ERenderPass Pass = IsMeshDebugViewMode(ViewMode)
+			? ERenderPass::ViewModeMesh
+			: ResolveMaterialRenderPass(Cmd.Material);
+		RenderBus.AddCommand(Pass, Cmd);
+		if (Pass == ERenderPass::Opaque)
+		{
+			RenderBus.AddDepthPrepassCommand(Cmd);
+			RenderBus.AddShadowCasterCommand(Cmd);
+		}
 	}
 
 	double CalculateAverageBoneInfluence(const TArray<FSkeletalMeshVertex>& Vertices)
@@ -224,7 +233,7 @@ namespace
 
 bool FPrimitiveDrawCommandBuilder::CollectPrimitiveInternal(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags,
 															EViewMode ViewMode, FRenderBus& RenderBus,
-															FMeshBufferManager& MeshBufferManager, bool bShadowOnly) const
+															FRenderResourceProvider& ResourceProvider, bool bShadowOnly) const
 {
 	if (Primitive == nullptr || !Primitive->IsVisible()) return true;
 	if (bShadowOnly && !IsShadowCasterPrimitiveType(Primitive->GetPrimitiveType()))
@@ -254,7 +263,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitiveInternal(UPrimitiveComponent*
 			SelectedLOD = SelectLODLevel(CameraPos, Bounds, ProjMatrix, ValidLODCount);
 		}
 
-		FMeshBuffer* MeshBuffer = MeshBufferManager.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
+		FMeshBuffer* MeshBuffer = ResourceProvider.GetStaticMeshBuffer(StaticMesh, SelectedLOD);
 		if (!MeshBuffer) return true;
 
 		const FStaticMesh* MeshData = StaticMesh->GetMeshData(SelectedLOD);
@@ -311,7 +320,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitiveInternal(UPrimitiveComponent*
 			FBoneMatrixConstants BoneMatrixConstants = {};
 			BuildBoneMatrixConstants(SkeletalMeshComp, BoneMatrixConstants);
 
-			BoneMatrixConstantBuffer = MeshBufferManager.GetGPUSkeletalBoneMatrixBuffer(
+			BoneMatrixConstantBuffer = ResourceProvider.GetGPUSkeletalBoneMatrixBuffer(
 				SkeletalMeshComp->GetUUID(),
 				BoneMatrixConstants,
 				bNeedsUpload);
@@ -334,8 +343,8 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitiveInternal(UPrimitiveComponent*
 			bUseGPUSkinning);
 
 		FMeshBuffer* MeshBuffer = bUseGPUSkinning
-			? MeshBufferManager.GetGPUSkeletalMeshBuffer(SkeletalMesh)
-			: MeshBufferManager.GetCPUSkeletalMeshBuffer(
+			? ResourceProvider.GetGPUSkeletalMeshBuffer(SkeletalMesh)
+			: ResourceProvider.GetCPUSkeletalMeshBuffer(
 				SkeletalMeshComp->GetUUID(),
 				SkeletalMesh,
 				SkeletalMeshComp->GetSkinnedVertices(),
@@ -448,7 +457,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitiveInternal(UPrimitiveComponent*
 		Cmd.SourcePrimitive = Primitive;
 		Cmd.Type = ERenderCommandType::SubUV;
 		Cmd.VertexFactoryType = EVertexFactoryType::SubUV;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_SubUV);
+		Cmd.MeshBuffer = &ResourceProvider.GetMeshBuffer(EPrimitiveType::EPT_SubUV);
 		Cmd.SectionIndexStart = 0;
 		Cmd.SectionIndexCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
 		Cmd.Constants.SubUV.SubUV = SubUV;
@@ -469,7 +478,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitiveInternal(UPrimitiveComponent*
 		Cmd.Type = ERenderCommandType::Billboard;
 		Cmd.VertexFactoryType = EVertexFactoryType::Billboard;
 		Cmd.SourcePrimitive = Primitive;
-		Cmd.MeshBuffer = &MeshBufferManager.GetMeshBuffer(EPrimitiveType::EPT_Billboard);
+		Cmd.MeshBuffer = &ResourceProvider.GetMeshBuffer(EPrimitiveType::EPT_Billboard);
 		Cmd.SectionIndexStart = 0;
 		Cmd.SectionIndexCount = Cmd.MeshBuffer->GetIndexBuffer().GetIndexCount();
 		Cmd.PerObjectConstants = FPerObjectConstants{
@@ -537,7 +546,7 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitiveInternal(UPrimitiveComponent*
 		{
 			const UProceduralMeshComponent::FMeshSection& Section = Sections[SectionIdx];
 			FMeshBuffer* MeshBuffer = nullptr;
-			MeshBuffer = MeshBufferManager.GetProcMeshBuffer(ProcMeshComp->GetUUID(), Section.Vertices, Section.Indices);
+			MeshBuffer = ResourceProvider.GetProcMeshBuffer(ProcMeshComp->GetUUID(), Section.Vertices, Section.Indices);
 
 			if (!MeshBuffer)
 				break;
@@ -574,14 +583,14 @@ bool FPrimitiveDrawCommandBuilder::CollectPrimitiveInternal(UPrimitiveComponent*
 
 bool FPrimitiveDrawCommandBuilder::CollectPrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags,
 													EViewMode ViewMode, FRenderBus& RenderBus,
-													FMeshBufferManager& MeshBufferManager) const
+													FRenderResourceProvider& ResourceProvider) const
 {
-	return CollectPrimitiveInternal(Primitive, ShowFlags, ViewMode, RenderBus, MeshBufferManager, false);
+	return CollectPrimitiveInternal(Primitive, ShowFlags, ViewMode, RenderBus, ResourceProvider, false);
 }
 
 bool FPrimitiveDrawCommandBuilder::CollectShadowCasterPrimitive(UPrimitiveComponent* Primitive, const FShowFlags& ShowFlags,
 															   EViewMode ViewMode, FRenderBus& RenderBus,
-															   FMeshBufferManager& MeshBufferManager) const
+															   FRenderResourceProvider& ResourceProvider) const
 {
 	if (Primitive == nullptr || !Primitive->IsVisible() || !IsShadowCasterPrimitiveType(Primitive->GetPrimitiveType()))
 	{
@@ -598,5 +607,5 @@ bool FPrimitiveDrawCommandBuilder::CollectShadowCasterPrimitive(UPrimitiveCompon
 		return true;
 	}
 
-	return CollectPrimitiveInternal(Primitive, ShowFlags, ViewMode, RenderBus, MeshBufferManager, true);
+	return CollectPrimitiveInternal(Primitive, ShowFlags, ViewMode, RenderBus, ResourceProvider, true);
 }

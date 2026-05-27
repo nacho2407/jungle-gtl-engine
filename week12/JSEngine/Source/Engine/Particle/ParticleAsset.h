@@ -105,9 +105,21 @@ public:
 	UPROPERTY(ReferenceType = RuntimeObject)
 	TArray<UParticleEmitter*> Emitters;
 
-	// 거리 기반 LOD 시스템을 위한 LOD 거리 설정. LOD 0은 항상 0.0f로 설정되어야 함에 유의!
+	/**
+	 * @brief 거리 기반 LOD 전환 기준 거리 목록
+	 *
+	 * @details LOD 0은 항상 0.0f로 유지되어야 하며, 각 값은 해당 LOD가 선택되기 시작하는 최소 거리입니다.
+	 */
 	UPROPERTY(DisplayName = "LOD Distances")
 	TArray<float> LODDistances;
+
+	/**
+	 * @brief 거리 기반 LOD 전환 히스테리시스 거리
+	 *
+	 * @details 현재 LOD를 유지하기 위한 전환 여유 거리입니다. 카메라가 LOD 경계 근처에서 흔들릴 때 잦은 LOD 왕복 전환을 줄입니다.
+	 */
+	UPROPERTY(DisplayName = "LOD Hysteresis Distance", Min = 0.0f, Speed = 10.0f)
+	float LODHysteresisDistance = 50.0f;
 
 	void SetAssetPath(const FString& InPath) { AssetPath = InPath; }
 	const FString& GetAssetPath() const { return AssetPath; }

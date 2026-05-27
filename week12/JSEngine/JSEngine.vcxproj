@@ -894,6 +894,7 @@
     <ClCompile Include="Source\Engine\Render\Scene\PrimitiveDrawCommandBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\RenderBus.cpp" />
     <ClCompile Include="Source\Engine\Render\Scene\RenderCollector.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\Scene.cpp" />
     <ClCompile Include="Source\Engine\Render\SubUVBatcher.cpp" />
     <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
     <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
@@ -1249,6 +1250,7 @@
     <ClInclude Include="Source\Engine\Particle\ParticleEmitterInstanceOwner.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleEventManager.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleHelper.h" />
+    <ClInclude Include="Source\Engine\Particle\ParticleMeshBounds.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleModules.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleRandom.h" />
     <ClInclude Include="Source\Engine\Particle\ParticleSystemComponent.h" />
@@ -1272,6 +1274,7 @@
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FXAARenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FogRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\FontRenderPass.h" />
+    <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GeometryDrawPacket.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\GridRenderPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\LightCullingPass.h" />
     <ClInclude Include="Source\Engine\Render\Renderer\RenderFlow\OpaqueRenderPass.h" />
@@ -1319,6 +1322,7 @@
     <ClInclude Include="Source\Engine\Render\Scene\RenderBus.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderCollector.h" />
     <ClInclude Include="Source\Engine\Render\Scene\RenderCommand.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\Scene.h" />
     <ClInclude Include="Source\Engine\Render\SubUVBatcher.h" />
     <ClInclude Include="Source\Engine\Runtime\Engine.h" />
     <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
@@ -1423,6 +1427,7 @@
     <None Include="Shaders\UI\Font.hlsl" />
     <None Include="Shaders\UI\Line.hlsl" />
     <None Include="Shaders\UI\ScreenOverlay.hlsl" />
+    <None Include="Shaders\VFX\ParticleBeam.hlsl" />
     <None Include="Shaders\VFX\ParticleSprite.hlsl" />
     <None Include="Shaders\VFX\SubUV.hlsl" />
   </ItemGroup>
