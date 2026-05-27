@@ -29,15 +29,15 @@ enum class EParticleRenderType
 UENUM()
 enum class EBeamMethod : uint8
 {
-        Distance,
-        Target,
+	Distance,
+	Target,
 };
 
 UENUM()
 enum class EBeamEndpointMethod : uint8
 {
-        Default,
-        UserSet,
+	Default,
+	UserSet,
 };
 
 //Payload Structures for different particle types
@@ -166,16 +166,16 @@ public:
 
 	UStaticMesh* Mesh = nullptr;
 
-	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Mesh", AssetType="StaticMesh")
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Mesh", DisplayName = "Mesh", AssetType = "StaticMesh")
 	FSoftObjectPtr MeshPath = "None";
 
-	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Start Mesh Scale", Type=Struct, Struct=FRawDistributionVector)
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Mesh", DisplayName = "Start Mesh Scale", Type = Struct, Struct = FRawDistributionVector)
 	FRawDistributionVector StartMeshScale;
 
-	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Start Mesh Rotation", Type=Struct, Struct=FRawDistributionVector)
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Mesh", DisplayName = "Start Mesh Rotation", Type = Struct, Struct = FRawDistributionVector)
 	FRawDistributionVector StartMeshRotation;
 
-	UPROPERTY(Edit, Save, Category="Particle|TypeData|Mesh", DisplayName="Mesh Rotation Rate", Type=Struct, Struct=FRawDistributionVector)
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Mesh", DisplayName = "Mesh Rotation Rate", Type = Struct, Struct = FRawDistributionVector)
 	FRawDistributionVector MeshRotationRate;
 
 	bool IsSpawnModule() const override { return true; }
@@ -216,10 +216,10 @@ public:
 
 		BEGIN_UPDATE_LOOP
 			FParticleMeshPayload* Payload = reinterpret_cast<FParticleMeshPayload*>(ParticleBase + CurrentOffset);
-			Payload->MeshRotation += Payload->MeshRotationRate * DeltaTime;
+		Payload->MeshRotation += Payload->MeshRotationRate * DeltaTime;
 		END_UPDATE_LOOP
 	}
-	
+
 	EParticleRenderType GetRenderType() const override
 	{
 		return EParticleRenderType::Mesh;
@@ -260,21 +260,21 @@ public:
 		StartTwist.MaxValue = 0.0f;
 	}
 
-	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Tessellation Factor", Min=0.0f, Speed=0.1f)
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Ribbon", DisplayName = "Tessellation Factor", Min = 0.0f, Speed = 0.1f)
 	float TessellationFactor = 1.0f;
-	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Use Trail Smoothing")
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Ribbon", DisplayName = "Use Trail Smoothing")
 	bool bUseTrailSmoothing = true;
 
 	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Ribbon", DisplayName = "Texture Tile Distance", Min = 1.0f, Speed = 1.0f)
 	float TextureTileDistance = 100.0f;
 
-	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Start Width", Type=Struct, Struct=FRawDistributionFloat)
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Ribbon", DisplayName = "Start Width", Type = Struct, Struct = FRawDistributionFloat)
 	FRawDistributionFloat StartWidth;
 
 	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Ribbon", DisplayName = "End Width", Type = Struct, Struct = FRawDistributionFloat)
 	FRawDistributionFloat EndWidth;
 
-	UPROPERTY(Edit, Save, Category="Particle|TypeData|Ribbon", DisplayName="Start Twist", Type=Struct, Struct=FRawDistributionFloat)
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Ribbon", DisplayName = "Start Twist", Type = Struct, Struct = FRawDistributionFloat)
 	FRawDistributionFloat StartTwist;
 
 	bool IsSpawnModule() const override { return true; }
@@ -320,11 +320,11 @@ public:
 
 		BEGIN_UPDATE_LOOP
 			FRibbonParticlePayload* Payload = reinterpret_cast<FRibbonParticlePayload*>(ParticleBase + CurrentOffset);
-			Payload->PreviousPosition = Payload->SourcePosition;
-			Payload->SourcePosition = Particle->Position;
+		Payload->PreviousPosition = Payload->SourcePosition;
+		Payload->SourcePosition = Particle->Position;
 
-			const float T = Particle->RelativeTime;
-			Payload->Width = Payload->InitialWidth * (1.0f - T) + Payload->EndWidth * T;
+		const float T = Particle->RelativeTime;
+		Payload->Width = Payload->InitialWidth * (1.0f - T) + Payload->EndWidth * T;
 		END_UPDATE_LOOP
 	}
 
@@ -362,12 +362,12 @@ public:
 		TextureTileDistance = 100.0f;
 	}
 
-	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Max Beam Count", Min=1.0f, Speed=1.0f)
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Beam", DisplayName = "Max Beam Count", Min = 1.0f, Speed = 1.0f)
 	int32 MaxBeamCount = 1;
-	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Interpolation Points", Min=0.0f, Speed=1.0f)
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Beam", DisplayName = "Interpolation Points", Min = 0.0f, Speed = 1.0f)
 	int32 InterpolationPoints = 10;
 
-	UPROPERTY(Edit, Save, Category="Particle|TypeData|Beam", DisplayName="Beam Method", Enum=EBeamMethod)
+	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Beam", DisplayName = "Beam Method", Enum = EBeamMethod)
 	EBeamMethod BeamMethod = EBeamMethod::Target;
 
 	UPROPERTY(Edit, Save, Category = "Particle|TypeData|Beam", DisplayName = "Beam Width", Type = Struct, Struct = FRawDistributionFloat)
@@ -441,33 +441,33 @@ UCLASS()
 class UParticleModuleBeamSource : public UParticleModule
 {
 public:
-        GENERATED_BODY()
-        UParticleModuleBeamSource()
-        {
-                SourcePoint.Constant = FVector::ZeroVector;
-                SourcePoint.MinValue = FVector::ZeroVector;
-                SourcePoint.MaxValue = FVector::ZeroVector;
-                SourcePointParameterName = FName("BeamSource");
+	GENERATED_BODY()
+	UParticleModuleBeamSource()
+	{
+		SourcePoint.Constant = FVector::ZeroVector;
+		SourcePoint.MinValue = FVector::ZeroVector;
+		SourcePoint.MaxValue = FVector::ZeroVector;
+		SourcePointParameterName = FName("BeamSource");
 
-                SourceTangent.Constant = FVector::ZeroVector;
-                SourceTangent.MinValue = FVector::ZeroVector;
-                SourceTangent.MaxValue = FVector::ZeroVector;
-        }
+		SourceTangent.Constant = FVector::ZeroVector;
+		SourceTangent.MinValue = FVector::ZeroVector;
+		SourceTangent.MaxValue = FVector::ZeroVector;
+	}
 
-        bool IsSpawnModule() const override { return true; }
-        bool IsUpdateModule() const override { return true; }
+	bool IsSpawnModule() const override { return true; }
+	bool IsUpdateModule() const override { return true; }
 
-        UPROPERTY(Edit, Save, Category="Particle|Beam|Source", DisplayName="Source Method", Enum=EBeamEndpointMethod)
-        EBeamEndpointMethod SourceMethod = EBeamEndpointMethod::Default;
+	UPROPERTY(Edit, Save, Category = "Particle|Beam|Source", DisplayName = "Source Method", Enum = EBeamEndpointMethod)
+	EBeamEndpointMethod SourceMethod = EBeamEndpointMethod::Default;
 
-        UPROPERTY(Edit, Save, Category="Particle|Beam|Source", DisplayName="Source Parameter", EditCondition="SourceMethod == UserSet")
-        FName SourcePointParameterName = FName("BeamSource");
+	UPROPERTY(Edit, Save, Category = "Particle|Beam|Source", DisplayName = "Source Parameter", EditCondition = "SourceMethod == UserSet")
+	FName SourcePointParameterName = FName("BeamSource");
 
-        UPROPERTY(Edit, Save, Category="Particle|Beam|Source", DisplayName="Source Point", EditCondition="SourceMethod == UserSet", Type=Struct, Struct=FRawDistributionVector)
-        FRawDistributionVector SourcePoint;
+	UPROPERTY(Edit, Save, Category = "Particle|Beam|Source", DisplayName = "Source Point", EditCondition = "SourceMethod == UserSet", Type = Struct, Struct = FRawDistributionVector)
+	FRawDistributionVector SourcePoint;
 
-        UPROPERTY(Edit, Save, Category="Particle|Beam|Source", DisplayName="Source Tangent", Type=Struct, Struct=FRawDistributionVector)
-        FRawDistributionVector SourceTangent;
+	UPROPERTY(Edit, Save, Category = "Particle|Beam|Source", DisplayName = "Source Tangent", Type = Struct, Struct = FRawDistributionVector)
+	FRawDistributionVector SourceTangent;
 
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
@@ -476,53 +476,53 @@ public:
 			return;
 		}
 
-                FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
-                ApplySourcePoint(Owner, *Payload, Particle, SpawnTime);
+		FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
+		ApplySourcePoint(Owner, *Payload, Particle, SpawnTime);
 
-                Payload->SourceTangent = SourceTangent.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamSourceTangent"));
-                Payload->SourceStrength = 1.0f;
-                Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
-        }
+		Payload->SourceTangent = SourceTangent.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamSourceTangent"));
+		Payload->SourceStrength = 1.0f;
+		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
+	}
 
-        void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
-        {
-                if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FBeamParticlePayload)) > Owner->ParticleStride)
-                {
-                        return;
-                }
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
+	{
+		if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FBeamParticlePayload)) > Owner->ParticleStride)
+		{
+			return;
+		}
 
-                struct
-                {
-                        FParticleEmitterInstance& Owner;
-                        int32 Offset;
-                        float DeltaTime;
-                } Context{ *Owner, Offset, DeltaTime };
+		struct
+		{
+			FParticleEmitterInstance& Owner;
+			int32 Offset;
+			float DeltaTime;
+		} Context{ *Owner, Offset, DeltaTime };
 
-                BEGIN_UPDATE_LOOP
-                        FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(ParticleBase + CurrentOffset);
-                        ApplySourcePoint(&Context.Owner, *Payload, *Particle, Particle->RelativeTime);
-                        Payload->SourceTangent = SourceTangent.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnitVector(Particle->RandomSeed, "BeamSourceTangent"));
-                        Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
-                END_UPDATE_LOOP
-        }
+		BEGIN_UPDATE_LOOP
+			FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(ParticleBase + CurrentOffset);
+		ApplySourcePoint(&Context.Owner, *Payload, *Particle, Particle->RelativeTime);
+		Payload->SourceTangent = SourceTangent.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnitVector(Particle->RandomSeed, "BeamSourceTangent"));
+		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
+		END_UPDATE_LOOP
+	}
 
-        void ApplySourcePoint(FParticleEmitterInstance* Owner, FBeamParticlePayload& Payload, const FBaseParticle& Particle, float Time)
-        {
-                if (SourceMethod != EBeamEndpointMethod::UserSet)
-                {
-                        return;
-                }
+	void ApplySourcePoint(FParticleEmitterInstance* Owner, FBeamParticlePayload& Payload, const FBaseParticle& Particle, float Time)
+	{
+		if (SourceMethod != EBeamEndpointMethod::UserSet)
+		{
+			return;
+		}
 
-                FVector ParameterValue;
-                UParticleSystemComponent* Component = Owner ? Owner->GetComponent() : nullptr;
-                if (Component && Component->GetVectorParameter(SourcePointParameterName, ParameterValue))
-                {
-                        Payload.SourcePoint = ParameterValue;
-                        return;
-                }
+		FVector ParameterValue;
+		UParticleSystemComponent* Component = Owner ? Owner->GetComponent() : nullptr;
+		if (Component && Component->GetVectorParameter(SourcePointParameterName, ParameterValue))
+		{
+			Payload.SourcePoint = ParameterValue;
+			return;
+		}
 
-                Payload.SourcePoint = Particle.Position + SourcePoint.GetValue(Time, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamSourcePoint"));
-        }
+		Payload.SourcePoint = Particle.Position + SourcePoint.GetValue(Time, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamSourcePoint"));
+	}
 };
 
 UCLASS()
@@ -548,13 +548,13 @@ public:
 	bool IsSpawnModule() const override { return true; }
 	bool IsUpdateModule() const override { return true; }
 
-	UPROPERTY(Edit, Save, Category="Particle|Beam|Noise", DisplayName="Noise Range", Type=Struct, Struct=FRawDistributionVector)
+	UPROPERTY(Edit, Save, Category = "Particle|Beam|Noise", DisplayName = "Noise Range", Type = Struct, Struct = FRawDistributionVector)
 	FRawDistributionVector NoiseRange;
 
-	UPROPERTY(Edit, Save, Category="Particle|Beam|Noise", DisplayName="Noise Frequency", Type=Struct, Struct=FRawDistributionFloat)
+	UPROPERTY(Edit, Save, Category = "Particle|Beam|Noise", DisplayName = "Noise Frequency", Type = Struct, Struct = FRawDistributionFloat)
 	FRawDistributionFloat NoiseFrequency;
 
-	UPROPERTY(Edit, Save, Category="Particle|Beam|Noise", DisplayName="Noise Speed", Type=Struct, Struct=FRawDistributionFloat)
+	UPROPERTY(Edit, Save, Category = "Particle|Beam|Noise", DisplayName = "Noise Speed", Type = Struct, Struct = FRawDistributionFloat)
 	FRawDistributionFloat NoiseSpeed;
 
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
@@ -586,10 +586,10 @@ public:
 
 		BEGIN_UPDATE_LOOP
 			FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(ParticleBase + CurrentOffset);
-			Payload->NoiseRange = NoiseRange.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnitVector(Particle->RandomSeed, "BeamNoiseRange"));
-			Payload->NoiseFrequency = NoiseFrequency.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnit(Particle->RandomSeed, "BeamNoiseFrequency"));
-			const float Speed = NoiseSpeed.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnit(Particle->RandomSeed, "BeamNoiseSpeed"));
-			Payload->NoisePhase += Speed * DeltaTime;
+		Payload->NoiseRange = NoiseRange.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnitVector(Particle->RandomSeed, "BeamNoiseRange"));
+		Payload->NoiseFrequency = NoiseFrequency.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnit(Particle->RandomSeed, "BeamNoiseFrequency"));
+		const float Speed = NoiseSpeed.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnit(Particle->RandomSeed, "BeamNoiseSpeed"));
+		Payload->NoisePhase += Speed * DeltaTime;
 		END_UPDATE_LOOP
 	}
 };
@@ -598,28 +598,28 @@ UCLASS()
 class UParticleModuleBeamTarget : public UParticleModule
 {
 public:
-        GENERATED_BODY()
-        UParticleModuleBeamTarget()
-        {
-                TargetPoint.Constant = FVector(100.0f, 0.0f, 0.0f);
-                TargetPoint.MinValue = TargetPoint.Constant;
-                TargetPoint.MaxValue = TargetPoint.Constant;
-                TargetPointParameterName = FName("BeamEnd");
-        }
+	GENERATED_BODY()
+	UParticleModuleBeamTarget()
+	{
+		TargetPoint.Constant = FVector(100.0f, 0.0f, 0.0f);
+		TargetPoint.MinValue = TargetPoint.Constant;
+		TargetPoint.MaxValue = TargetPoint.Constant;
+		TargetPointParameterName = FName("BeamEnd");
+	}
 
-        bool IsSpawnModule() const override { return true; }
-        bool IsUpdateModule() const override { return true; }
+	bool IsSpawnModule() const override { return true; }
+	bool IsUpdateModule() const override { return true; }
 
-        UPROPERTY(Edit, Save, Category="Particle|Beam|Target", DisplayName="Target Method", Enum=EBeamEndpointMethod)
-        EBeamEndpointMethod TargetMethod = EBeamEndpointMethod::Default;
+	UPROPERTY(Edit, Save, Category = "Particle|Beam|Target", DisplayName = "Target Method", Enum = EBeamEndpointMethod)
+	EBeamEndpointMethod TargetMethod = EBeamEndpointMethod::Default;
 
-        UPROPERTY(Edit, Save, Category="Particle|Beam|Target", DisplayName="Target Parameter", EditCondition="TargetMethod == UserSet")
-        FName TargetPointParameterName = FName("BeamEnd");
+	UPROPERTY(Edit, Save, Category = "Particle|Beam|Target", DisplayName = "Target Parameter", EditCondition = "TargetMethod == UserSet")
+	FName TargetPointParameterName = FName("BeamEnd");
 
-        UPROPERTY(Edit, Save, Category="Particle|Beam|Target", DisplayName="Target Point", EditCondition="TargetMethod == UserSet", Type=Struct, Struct=FRawDistributionVector)
-        FRawDistributionVector TargetPoint;
+	UPROPERTY(Edit, Save, Category = "Particle|Beam|Target", DisplayName = "Target Point", EditCondition = "TargetMethod == UserSet", Type = Struct, Struct = FRawDistributionVector)
+	FRawDistributionVector TargetPoint;
 
-        UPROPERTY(Edit, Save, Category="Particle|Beam|Target", DisplayName="Target Strength", Type=Struct, Struct=FRawDistributionFloat)
+	UPROPERTY(Edit, Save, Category = "Particle|Beam|Target", DisplayName = "Target Strength", Type = Struct, Struct = FRawDistributionFloat)
 	FRawDistributionFloat TargetStrength;
 
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
@@ -632,56 +632,56 @@ public:
 		FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
 		if (!Payload->bAllowTargetModule)
 		{
-                        return;
-                }
+			return;
+		}
 
-                ApplyTargetPoint(Owner, *Payload, Particle, SpawnTime);
-                Payload->TargetStrength = TargetStrength.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamTargetStrength"));
-                Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
-        }
+		ApplyTargetPoint(Owner, *Payload, Particle, SpawnTime);
+		Payload->TargetStrength = TargetStrength.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamTargetStrength"));
+		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
+	}
 
-        void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
-        {
-                if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FBeamParticlePayload)) > Owner->ParticleStride)
-                {
-                        return;
-                }
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
+	{
+		if (!Owner || Offset < 0 || Offset + static_cast<int32>(sizeof(FBeamParticlePayload)) > Owner->ParticleStride)
+		{
+			return;
+		}
 
-                struct
-                {
-                        FParticleEmitterInstance& Owner;
-                        int32 Offset;
-                        float DeltaTime;
-                } Context{ *Owner, Offset, DeltaTime };
+		struct
+		{
+			FParticleEmitterInstance& Owner;
+			int32 Offset;
+			float DeltaTime;
+		} Context{ *Owner, Offset, DeltaTime };
 
-                BEGIN_UPDATE_LOOP
-                        FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(ParticleBase + CurrentOffset);
-                        if (!Payload->bAllowTargetModule)
-                        {
-                                continue;
-                        }
+		BEGIN_UPDATE_LOOP
+			FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(ParticleBase + CurrentOffset);
+		if (!Payload->bAllowTargetModule)
+		{
+			continue;
+		}
 
-                        ApplyTargetPoint(&Context.Owner, *Payload, *Particle, Particle->RelativeTime);
-                        Payload->TargetStrength = TargetStrength.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnit(Particle->RandomSeed, "BeamTargetStrength"));
-                        Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
-                END_UPDATE_LOOP
-        }
+		ApplyTargetPoint(&Context.Owner, *Payload, *Particle, Particle->RelativeTime);
+		Payload->TargetStrength = TargetStrength.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnit(Particle->RandomSeed, "BeamTargetStrength"));
+		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
+		END_UPDATE_LOOP
+	}
 
-        void ApplyTargetPoint(FParticleEmitterInstance* Owner, FBeamParticlePayload& Payload, const FBaseParticle& Particle, float Time)
-        {
-                if (TargetMethod != EBeamEndpointMethod::UserSet)
-                {
-                        return;
-                }
+	void ApplyTargetPoint(FParticleEmitterInstance* Owner, FBeamParticlePayload& Payload, const FBaseParticle& Particle, float Time)
+	{
+		if (TargetMethod != EBeamEndpointMethod::UserSet)
+		{
+			return;
+		}
 
-                FVector ParameterValue;
-                UParticleSystemComponent* Component = Owner ? Owner->GetComponent() : nullptr;
-                if (Component && Component->GetVectorParameter(TargetPointParameterName, ParameterValue))
-                {
-                        Payload.TargetPoint = ParameterValue;
-                        return;
-                }
+		FVector ParameterValue;
+		UParticleSystemComponent* Component = Owner ? Owner->GetComponent() : nullptr;
+		if (Component && Component->GetVectorParameter(TargetPointParameterName, ParameterValue))
+		{
+			Payload.TargetPoint = ParameterValue;
+			return;
+		}
 
-                Payload.TargetPoint = Payload.SourcePoint + TargetPoint.GetValue(Time, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamTargetPoint"));
-        }
+		Payload.TargetPoint = Payload.SourcePoint + TargetPoint.GetValue(Time, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamTargetPoint"));
+	}
 };

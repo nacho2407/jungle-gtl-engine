@@ -367,6 +367,8 @@ namespace
 			|| Cast<UParticleModuleLifetime>(Module)
 			|| Cast<UParticleModuleLocation>(Module)
 			|| Cast<UParticleModuleVelocity>(Module)
+			|| Cast<UParticleModuleRotation>(Module)
+			|| Cast<UParticleModuleRotationRate>(Module)
 			|| Cast<UParticleModuleAcceleration>(Module)
 			|| Cast<UParticleModuleColor>(Module)
 			|| Cast<UParticleModuleSize>(Module)
@@ -1102,6 +1104,8 @@ namespace
 		if (Cast<UParticleModuleLifetime>(Module)) return "Lifetime";
 		if (Cast<UParticleModuleLocation>(Module)) return "Initial Location";
 		if (Cast<UParticleModuleVelocity>(Module)) return "Initial Velocity";
+		if (Cast<UParticleModuleRotation>(Module)) return "Initial Rotation";
+		if (Cast<UParticleModuleRotationRate>(Module)) return "Initial Rotation Rate";
 		if (Cast<UParticleModuleAcceleration>(Module)) return "Acceleration";
 		if (Cast<UParticleModuleColor>(Module)) return "Color Over Life";
 		if (Cast<UParticleModuleSize>(Module)) return "Initial Size";
@@ -2956,8 +2960,22 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				ImGui::EndMenu();
 			}
 
-			RenderUnavailableCategory("Rotation");
-			RenderUnavailableCategory("Rotation Rate");
+			if (ImGui::BeginMenu("Rotation"))
+			{
+				if (ImGui::MenuItem("Initial Rotation"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleRotation>());
+				}
+				ImGui::EndMenu();
+			}
+			if (ImGui::BeginMenu("Rotation Rate"))
+			{
+				if (ImGui::MenuItem("Initial Rotation Rate"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleRotationRate>());
+				}
+				ImGui::EndMenu();
+			}
 			RenderUnavailableCategory("Orbit");
 			RenderUnavailableCategory("Orientation");
 
@@ -3920,6 +3938,14 @@ bool FParticleSystemEditorWidget::SelectModuleDistributionCurves(UParticleModule
 	else if (UParticleModuleVelocity* VelocityModule = Cast<UParticleModuleVelocity>(Module))
 	{
 		bChanged |= AppendDistributionCurve(Module, &VelocityModule->StartVelocity, "StartVelocity");
+	}
+	else if (UParticleModuleRotation* RotationModule = Cast<UParticleModuleRotation>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &RotationModule->StartRotation, "StartRotation");
+	}
+	else if (UParticleModuleRotationRate* RotationRateModule = Cast<UParticleModuleRotationRate>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &RotationRateModule->StartRotationRate, "StartRotationRate");
 	}
 	else if (UParticleModuleAcceleration* AccelerationModule = Cast<UParticleModuleAcceleration>(Module))
 	{

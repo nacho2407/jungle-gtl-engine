@@ -141,6 +141,56 @@ public:
 };
 
 UCLASS()
+class UParticleModuleRotation : public UParticleModule
+{
+public:
+	GENERATED_BODY()
+	UParticleModuleRotation()
+	{
+		StartRotation.Constant = 0.0f;
+		StartRotation.MinValue = 0.0f;
+		StartRotation.MaxValue = 0.0f;
+	}
+
+	bool IsSpawnModule() const override { return true; }
+
+	UPROPERTY(Edit, Save, Category="Particle|Rotation", DisplayName="Start Rotation", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat StartRotation;
+
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
+	{
+		(void)Owner;
+		(void)Offset;
+		Particle.Rotation = StartRotation.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "StartRotation"));
+	}
+};
+
+UCLASS()
+class UParticleModuleRotationRate : public UParticleModule
+{
+public:
+	GENERATED_BODY()
+	UParticleModuleRotationRate()
+	{
+		StartRotationRate.Constant = 0.0f;
+		StartRotationRate.MinValue = 0.0f;
+		StartRotationRate.MaxValue = 0.0f;
+	}
+
+	bool IsSpawnModule() const override { return true; }
+
+	UPROPERTY(Edit, Save, Category="Particle|Rotation", DisplayName="Start Rotation Rate", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat StartRotationRate;
+
+	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
+	{
+		(void)Owner;
+		(void)Offset;
+		Particle.RotationRate = StartRotationRate.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "StartRotationRate"));
+	}
+};
+
+UCLASS()
 class UParticleModuleAcceleration : public UParticleModule
 {
 public:
