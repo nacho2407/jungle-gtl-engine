@@ -368,6 +368,15 @@ namespace
 				OutTarget = OutSource + ComponentToWorld.GetForwardVector() * SafeDistance;
 				OutCoordinateSpace = EParticleCoordinateSpace::World;
 			}
+			else if (BeamSource == nullptr && OutCoordinateSpace == EParticleCoordinateSpace::World)
+			{
+				// Source Module 없는 Distance Beam의 world coordinate 기본 시작점
+				OutSource = ComponentToWorld.TransformPosition(FVector::ZeroVector);
+
+				// world coordinate Distance Beam의 component forward 기반 target
+				OutTarget = OutSource + ComponentToWorld.GetForwardVector() * SafeDistance;
+				OutCoordinateSpace = EParticleCoordinateSpace::World;
+			}
 			else
 			{
 				// Source가 local fallback인 경우 기존 Beam replay local 계약 유지

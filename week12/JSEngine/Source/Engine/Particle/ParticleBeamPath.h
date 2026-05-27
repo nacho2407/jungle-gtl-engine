@@ -265,11 +265,20 @@ namespace ParticleBeamPath
 		const int32 SegmentCount = CalculateBeamSegmentCount(ReplayData);
 		OutPoints.reserve(static_cast<size_t>(SegmentCount + 1));
 
+		// InterpolationPoints 비활성 시 직선 중심선 의미 보존
+		const bool bUseHermitePath = std::clamp(ReplayData.InterpolationPoints, 0, 64) > 0;
+		const FVector BeamDelta = Target - Source;
+
 		for (int32 PointIndex = 0; PointIndex <= SegmentCount; ++PointIndex)
 		{
-			// Hermite 중심선 sampling
+			// segment point 정규화 위치
 			const float Alpha = static_cast<float>(PointIndex) / static_cast<float>(SegmentCount);
-			OutPoints.push_back(EvaluateCubicHermite(Source, SourceTangent, Target, TargetTangent, Alpha));
+
+			// interpolation이 켜진 경우에만 tangent 기반 Hermite path 사용
+			const FVector PathPoint = bUseHermitePath
+				? EvaluateCubicHermite(Source, SourceTangent, Target, TargetTangent, Alpha)
+				: Source + BeamDelta * Alpha;
+			OutPoints.push_back(PathPoint);
 		}
 
 		// noise 비활성 또는 유효 범위 없음
