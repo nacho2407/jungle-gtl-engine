@@ -667,16 +667,147 @@
       "Tags" : [],
       "UUID" : 1062,
       "Visible" : true
+    }, {
+      "Active" : true,
+      "ClassName" : "ASkeletalMeshActor",
+      "Components" : [{
+          "AnimGraphAssetPath" : "",
+          "AnimInstanceData" : {
+            "AnimationAssetPath" : "Asset/Animation/Ybot_Flair_mixamo.com.animseq",
+            "CurrentTime" : 0.484748,
+            "ObjectName" : "UAnimSingleNodeInstance_1",
+            "PlayRate" : 1.000000,
+            "Playing" : true,
+            "PreviousTime" : 0.480484,
+            "Type" : "UAnimSingleNodeInstance",
+            "bAutoPlay" : true,
+            "bLooping" : true
+          },
+          "AnimationAssetPath" : "Asset/Animation/Ybot_Flair_mixamo.com.animseq",
+          "AnimationMode" : 1,
+          "AttachSocketName" : "Name_None",
+          "ClassName" : "USkeletalMeshComponent",
+          "Materials" : ["Asset/Material/Auto/Ybot_Flair_Mat_0.mat", "Asset/Material/Auto/Ybot_Flair_Mat_1.mat"],
+          "ObjectName" : "USkeletalMeshComponent_1",
+          "PersistentGuid" : "C09BC649-3BDA432A-90145556-48691600",
+          "RelativeLocation" : {
+            "X" : 0.975008,
+            "Y" : -21.875137,
+            "Z" : 2.539906
+          },
+          "RelativeRotation" : {
+            "X" : -0.000000,
+            "Y" : 0.000000,
+            "Z" : -0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 3.000000,
+            "Y" : 3.000000,
+            "Z" : 3.000000
+          },
+          "ScrollU" : 0.000000,
+          "ScrollV" : 0.000000,
+          "SkeletalMeshPath" : "Asset/SkeletalMesh/Bin/Ybot_Flair.bin",
+          "SkinningMode" : 1,
+          "Tags" : [],
+          "Type" : "USkeletalMeshComponent",
+          "UUID" : 1225,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : true,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }, {
+          "AttachSocketName" : "LeftFoot",
+          "ClassName" : "UParticleSystemComponent",
+          "InstanceParameters" : [],
+          "ObjectName" : "Particle_LeftFoot",
+          "ParentUUID" : 1225,
+          "PersistentGuid" : "A1687D2B-A40D47C3-A9F82815-EC452964",
+          "RelativeLocation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeRotation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 1.000000,
+            "Y" : 1.000000,
+            "Z" : 1.000000
+          },
+          "Tags" : [],
+          "Template" : "Asset/Particle/mini.particle",
+          "Type" : "UParticleSystemComponent",
+          "UUID" : 1227,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : false,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }, {
+          "AttachSocketName" : "RightFoot",
+          "ClassName" : "UParticleSystemComponent",
+          "InstanceParameters" : [],
+          "ObjectName" : "Particle_RightFoot",
+          "ParentUUID" : 1225,
+          "PersistentGuid" : "A5A70276-858E4CDE-A39B5FA5-F531C5A0",
+          "RelativeLocation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeRotation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 1.000000,
+            "Y" : 1.000000,
+            "Z" : 1.000000
+          },
+          "Tags" : [],
+          "Template" : "Asset/Particle/mini.particle",
+          "Type" : "UParticleSystemComponent",
+          "UUID" : 1228,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : false,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }],
+      "EditorOnly" : true,
+      "Name" : "ASkeletalMeshActor_1",
+      "RootComponent" : 1225,
+      "Tags" : [],
+      "UUID" : 1224,
+      "Visible" : true
     }],
   "ClassName" : "UWorld",
   "Name" : "ParticleShowcase",
-  "NextUUID" : 1091,
+  "NextUUID" : 1275,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [-20.222538, -2.954849, 7.831728],
+    "Location" : [-0.578057, -4.314939, 11.412368],
     "NearClip" : 0.100000,
-    "Rotation" : [5.956315, -2.926575, -116.075073]
+    "Rotation" : [17.654552, 2.843169, -81.141663]
   },
   "Version" : 6,
   "WorldSettings" : {

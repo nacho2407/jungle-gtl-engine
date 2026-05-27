@@ -170,7 +170,7 @@
             "ObjectName" : "UParticleModuleTypeDataBeam_0",
             "Properties" : {
               "BeamMethod" : 0,
-              "BeamWidth" : 0.010000,
+              "BeamWidth" : 0.025000,
               "Distance" : 10.000000,
               "InterpolationPoints" : 16,
               "NoiseFrequency" : 40,
@@ -301,7 +301,7 @@
             "ObjectName" : "UParticleModuleTypeDataBeam_0",
             "Properties" : {
               "BeamMethod" : 0,
-              "BeamWidth" : 0.100000,
+              "BeamWidth" : 0.020000,
               "Distance" : 10.000000,
               "InterpolationPoints" : 16,
               "NoiseFrequency" : 50,

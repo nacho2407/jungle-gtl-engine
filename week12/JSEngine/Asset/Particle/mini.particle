@@ -76,7 +76,7 @@
               "bEnabled" : true,
               "bInfiniteEmitterLoops" : true,
               "bResetSeedOnEmitterLoop" : true,
-              "bUseFixedBounds" : false,
+              "bUseFixedBounds" : true,
               "bUseSeededRandom" : false
             },
             "Type" : "UParticleModuleRequired"
@@ -259,7 +259,7 @@
               "bEnabled" : true,
               "bInfiniteEmitterLoops" : true,
               "bResetSeedOnEmitterLoop" : true,
-              "bUseFixedBounds" : false,
+              "bUseFixedBounds" : true,
               "bUseSeededRandom" : false
             },
             "Type" : "UParticleModuleRequired"
