@@ -62,6 +62,7 @@ struct FParticleSpriteInstanceData
 	FVector AxisX;
 	FVector AxisY;
 	FColor Color;
+	FVector4 UVRect = FVector4(0.0f, 0.0f, 1.0f, 1.0f);
 };
 
 struct FParticleMeshInstanceData

@@ -5,5 +5,5 @@
             "Type" : "Texture",
             "Value" : "Asset/SubUV/Effect.dds"
           }],
-        "Parent" : "Asset/Material/Auto/Dice_Mat_0.mat"
+        "Parent" : "Asset/Material/AdditiveParticle.mat"
       }

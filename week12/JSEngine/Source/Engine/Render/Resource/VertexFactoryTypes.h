@@ -116,6 +116,7 @@ public:
                 { "TEXCOORD", 1, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleSpriteInstanceData, AxisX)), EVertexInputRate::PerInstance },
                 { "TEXCOORD", 2, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleSpriteInstanceData, AxisY)), EVertexInputRate::PerInstance },
                 { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleSpriteInstanceData, Color)), EVertexInputRate::PerInstance },
+                { "TEXCOORD", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleSpriteInstanceData, UVRect)), EVertexInputRate::PerInstance },
             },
             sizeof(FParticleSpriteQuadVertex)
         };

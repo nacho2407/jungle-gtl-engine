@@ -233,6 +233,8 @@ struct FParticleConstants
 	uint32 CoordinateSpace = 0;
 	uint32 ActiveParticleCount = 0;
 	uint32 bUseLocalSpace = 0;
+
+	UTexture* Texture = nullptr;
 };
 
 struct FInstanceBufferView

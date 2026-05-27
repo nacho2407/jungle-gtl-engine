@@ -17,6 +17,7 @@ struct VSInput
     float3 axisX : TEXCOORD1;
     float3 axisY : TEXCOORD2;
     float4 color : COLOR;
+    float4 uvRect : TEXCOORD3;
 };
 
 struct PSInput
@@ -31,7 +32,7 @@ PSInput VS(VSInput input)
     PSInput output;
     float3 worldPosition = input.center + input.axisX * input.position.x + input.axisY * input.position.y;
     output.position = mul(mul(float4(worldPosition, 1.0f), View), Projection);
-    output.texCoord = input.texCoord;
+    output.texCoord = input.uvRect.xy + input.texCoord * input.uvRect.zw;
     output.color = input.color;
     return output;
 }

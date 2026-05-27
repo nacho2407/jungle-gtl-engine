@@ -19,8 +19,7 @@ public:
 private:
 	bool BuildSpriteCommands(
 		const FPrimitiveRenderProxyCollectionContext& Context,
-		TArray<FRenderCommand>& OutSpriteCommands,
-		TArray<FRenderCommand>& OutSubUVCommands);
+		TArray<FRenderCommand>& OutSpriteCommands);
 	bool BuildMeshCommands(const FPrimitiveRenderProxyCollectionContext& Context, TArray<FRenderCommand>& OutOpaqueCommands, TArray<FRenderCommand>& OutTranslucentCommands);
 
 	/**

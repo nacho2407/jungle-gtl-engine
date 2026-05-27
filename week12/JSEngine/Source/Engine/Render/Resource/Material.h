@@ -73,7 +73,7 @@ inline FMaterialBlendStateDesc MakeAlphaBlendStateDesc()
 	Desc.DestColor = EBlendOption::InvSrcAlpha;
 	Desc.ColorOp = EBlendOp::Add;
 	Desc.SrcAlpha = EBlendOption::One;
-	Desc.DestAlpha = EBlendOption::Zero;
+	Desc.DestAlpha = EBlendOption::InvSrcAlpha;
 	Desc.AlphaOp = EBlendOp::Add;
 	Desc.WriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
 	return Desc;
@@ -96,7 +96,6 @@ inline FMaterialBlendStateDesc MakeMultiplyBlendStateDesc()
 }
 
 inline ERenderPass ResolveMaterialRenderPass(const class UMaterialInterface* Material);
-inline EDepthStencilType ResolveMaterialDepthPolicy(const class UMaterialInterface* Material);
 
 /**
  * @brief MTL 파일의 머테리얼 데이터를 표현하는 구조체.
@@ -540,14 +539,19 @@ public:
 
 inline ERenderPass ResolveMaterialRenderPass(const UMaterialInterface* Material)
 {
-	return Material && IsTransparentMaterialShaderType(Material->GetShaderType())
-		? ERenderPass::Translucent
-		: ERenderPass::Opaque;
-}
-
-inline EDepthStencilType ResolveMaterialDepthPolicy(const UMaterialInterface* Material)
-{
-	return Material && IsTransparentMaterialShaderType(Material->GetShaderType())
-		? EDepthStencilType::DepthReadOnly
-		: EDepthStencilType::Default;
+	if (Material &&
+		(
+		    // 대놓고 Translucent 쉐이더인 경우
+		    IsTransparentMaterialShaderType(Material->GetShaderType()) ||  
+		    // Particle 등 Opaque와 Translucent 왔다갔다 할 수 있는데 BlendMode가 반투명으로 설정된 경우
+		    Material->GetBlendMode() == EMaterialBlendMode::Translucent ||  
+		    Material->GetBlendStateDesc().bBlendEnable
+		))
+	{
+	    return ERenderPass::Translucent;
+	}
+    else
+    {
+        return ERenderPass::Opaque;
+    }
 }
