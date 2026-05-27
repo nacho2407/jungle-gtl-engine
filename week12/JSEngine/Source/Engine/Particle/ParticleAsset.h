@@ -24,6 +24,8 @@ struct FParticleLODLevelRuntimeCache
 	TArray<UParticleModule*> UpdateModules;
 	// 적분 후 이동 구간 query만 수행할 collision module 목록
 	TArray<UParticleModuleCollision*> CollisionModules;
+	// internal named event를 받을 receiver module 목록
+	TArray<UParticleModuleEventReceiverBase*> EventReceiverModules;
 
 	TMap<UParticleModule*, int32> ModulePayloadOffsets;
 	TMap<UParticleModule*, int32> ModuleInstanceOffsets;

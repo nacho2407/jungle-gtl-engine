@@ -851,7 +851,13 @@ int32 FParticleEmitterInstance::ResolveBurstSpawnAmount(const FParticleBurstEntr
     return RandomStream.GetRange(MinCount, MaxCount);
 }
 
-int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime)
+int32 FParticleEmitterInstance::SpawnParticles(
+	int32 Count,
+	float SegmentStartTime,
+	float SegmentDeltaTime,
+	const FParticleEventData* SpawnEvent,
+	bool bInheritVelocity,
+	bool bUsePSysLocation)
 {
 	if (Count <= 0 || ParticleData == nullptr || ParticleIndices == nullptr)
 	{
@@ -904,6 +910,24 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTi
 			Module->Spawn(this, Offset, SpawnTime, Particle);
 		}
 
+		if (SpawnEvent != nullptr)
+		{
+			// 일반 spawn module 초기화 뒤 receiver가 지정한 위치와 속도를 최종 적용
+			const FVector SpawnLocationWS = bUsePSysLocation
+				? Owner.GetWorldLocation()
+				: SpawnEvent->Location;
+			Particle.Location = TransformLocationToSimulationSpace(SpawnLocationWS);
+			Particle.OldLocation = Particle.Location;
+
+			if (bInheritVelocity)
+			{
+				const FVector InheritedVelocity =
+					TransformVelocityToSimulationSpace(SpawnEvent->Velocity);
+				Particle.Velocity += InheritedVelocity;
+				Particle.BaseVelocity += InheritedVelocity;
+			}
+		}
+
 		Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
 		Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
 		Particle.OldLocation = Particle.Location;
@@ -918,6 +942,21 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTi
 	}
 
 	return SpawnCount;
+}
+
+int32 FParticleEmitterInstance::SpawnParticlesFromEvent(
+	int32 SpawnCount,
+	const FParticleEventData& Event,
+	bool bInheritVelocity,
+	bool bUsePSysLocation)
+{
+	return SpawnParticles(
+		SpawnCount,
+		EmitterTime,
+		0.0f,
+		&Event,
+		bInheritVelocity,
+		bUsePSysLocation);
 }
 
 bool FParticleEmitterInstance::IsParticlePendingKill(const FBaseParticle& Particle) const
@@ -1192,6 +1231,32 @@ const uint8* FParticleEmitterInstance::GetModuleInstanceData(UParticleModule* Mo
 UParticleModuleEventGenerator* FParticleEmitterInstance::FindEventGeneratorModule() const
 {
 	return CurrentRuntimeCache != nullptr ? CurrentRuntimeCache->EventGeneratorModule : nullptr;
+}
+
+void FParticleEmitterInstance::ProcessParticleEvents(
+	const TArray<FParticleEventData>& Events,
+	float DeltaTime)
+{
+	if (CurrentRuntimeCache == nullptr || CurrentLODLevel == nullptr || !CurrentLODLevel->bEnabled)
+	{
+		return;
+	}
+
+	for (UParticleModuleEventReceiverBase* Receiver : CurrentRuntimeCache->EventReceiverModules)
+	{
+		if (Receiver == nullptr || !Receiver->bEnabled)
+		{
+			continue;
+		}
+
+		for (const FParticleEventData& Event : Events)
+		{
+			if (Receiver->WillProcessParticleEvent(Event))
+			{
+				Receiver->ProcessParticleEvent(this, Event, DeltaTime);
+			}
+		}
+	}
 }
 
 void FParticleEmitterInstance::InitializeModulePayloads(FBaseParticle& Particle)

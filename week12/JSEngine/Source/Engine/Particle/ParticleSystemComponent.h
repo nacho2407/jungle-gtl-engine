@@ -107,6 +107,12 @@ private:
 	void UpdateLODLevel();
 
 	/**
+	 * @brief 이번 tick에 생성된 internal named event를 receiver module에 전달
+	 * @note 처리 시작 snapshot만 사용해 같은 tick 재귀 소비 차단
+	 */
+	void ProcessParticleEvents(float DeltaTime);
+
+	/**
 	 * @brief 지정된 emitter template과 LOD index에 맞는 새 emitter instance를 생성합니다.
 	 *
 	 * @param EmitterTemplate instance를 만들 particle emitter template

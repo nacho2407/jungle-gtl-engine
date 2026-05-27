@@ -201,6 +201,12 @@ namespace
 			return;
 		}
 
+		if (UParticleModuleEventReceiverBase* EventReceiverModule = Cast<UParticleModuleEventReceiverBase>(Module))
+		{
+			Cache.EventReceiverModules.push_back(EventReceiverModule);
+			return;
+		}
+
 		if (Module->IsSpawnModule())
 		{
 			Cache.SpawnModules.push_back(Module);
@@ -1554,6 +1560,43 @@ bool UParticleModuleEventGenerator::HandleParticleCollision(
 	Event.HitComponent = Hit.HitComponent;
 	Event.HitActor = Hit.HitComponent != nullptr ? Hit.HitComponent->GetOwner() : nullptr;
 	return GenerateEvent(Owner, Event, HasParticleFlag(Particle, EParticleFlags::CollisionHasOccurred));
+}
+
+bool UParticleModuleEventReceiverBase::WillProcessParticleEvent(const FParticleEventData& Event) const
+{
+	const bool bTypeMatches =
+		EventGeneratorType == EParticleEventType::Any ||
+		EventGeneratorType == Event.Type;
+	return bTypeMatches && EventName == Event.EventName;
+}
+
+bool UParticleModuleEventReceiverBase::ProcessParticleEvent(
+	FParticleEmitterInstance* Owner,
+	const FParticleEventData& Event,
+	float DeltaTime)
+{
+	(void)Owner;
+	(void)Event;
+	(void)DeltaTime;
+	return false;
+}
+
+bool UParticleModuleEventReceiverSpawn::ProcessParticleEvent(
+	FParticleEmitterInstance* Owner,
+	const FParticleEventData& Event,
+	float DeltaTime)
+{
+	(void)DeltaTime;
+	if (Owner == nullptr || SpawnCount <= 0)
+	{
+		return false;
+	}
+
+	return Owner->SpawnParticlesFromEvent(
+		SpawnCount,
+		Event,
+		bInheritVelocity,
+		bUsePSysLocation) > 0;
 }
 
 /**

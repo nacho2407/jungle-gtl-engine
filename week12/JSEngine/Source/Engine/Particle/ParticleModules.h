@@ -447,6 +447,58 @@ private:
 		bool bCollisionHasOccurred);
 };
 
+UCLASS(Abstract)
+class UParticleModuleEventReceiverBase : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleEventReceiverBase, UParticleModule)
+
+	/**
+	 * @brief named event 이름과 실제 발생 type으로 수신 여부 판정
+	 * @param Event generator가 만든 internal event
+	 */
+	bool WillProcessParticleEvent(const FParticleEventData& Event) const;
+
+	/**
+	 * @brief 조건이 맞은 internal event 처리 hook
+	 */
+	virtual bool ProcessParticleEvent(
+		FParticleEmitterInstance* Owner,
+		const FParticleEventData& Event,
+		float DeltaTime);
+
+	UPROPERTY(DisplayName = "Event Generator Type")
+	EParticleEventType EventGeneratorType = EParticleEventType::Any;
+
+	UPROPERTY(DisplayName = "Event Name")
+	FName EventName = FName("Collision");
+};
+
+UCLASS(Placeable, DisplayName = "Event Receiver Spawn Module", Category = "Events")
+class UParticleModuleEventReceiverSpawn : public UParticleModuleEventReceiverBase
+{
+public:
+	GENERATED_BODY(UParticleModuleEventReceiverSpawn, UParticleModuleEventReceiverBase)
+
+	/**
+	 * @brief 수신한 named event 위치에서 particle spawn 요청
+	 * @param Event spawn 위치와 상속 속도를 가진 internal event
+	 */
+	bool ProcessParticleEvent(
+		FParticleEmitterInstance* Owner,
+		const FParticleEventData& Event,
+		float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Spawn Count", Min = 0.0f, Speed = 1.0f)
+	int32 SpawnCount = 1;
+
+	UPROPERTY(DisplayName = "Inherit Velocity")
+	bool bInheritVelocity = false;
+
+	UPROPERTY(DisplayName = "Use Particle System Location")
+	bool bUsePSysLocation = false;
+};
+
 UCLASS(Placeable, DisplayName = "Collision Module", Category = "Collision")
 class UParticleModuleCollision : public UParticleModule
 {

@@ -112,6 +112,24 @@ public:
 	FParticleEventGeneratorRuntimeState& GetEventGeneratorRuntimeState() { return EventGeneratorRuntimeState; }
 
 	/**
+	 * @brief 현재 LOD receiver가 이번 tick internal event snapshot 처리
+	 * @param Events 처리 시작 시 복사한 named event 목록
+	 */
+	void ProcessParticleEvents(const TArray<FParticleEventData>& Events, float DeltaTime);
+
+	/**
+	 * @brief receiver event를 기준으로 particle 강제 spawn
+	 * @param SpawnCount 생성 요청 particle 수
+	 * @param Event 최종 위치와 상속 속도의 기준 event
+	 * @note 일반 spawn module 초기화 뒤 event override 적용
+	 */
+	int32 SpawnParticlesFromEvent(
+		int32 SpawnCount,
+		const FParticleEventData& Event,
+		bool bInheritVelocity,
+		bool bUsePSysLocation);
+
+	/**
 	 * @brief 기존 particle을 새 LOD instance에 복사한 뒤 새 LOD의 module payload를 초기화합니다.
 	 */
 	void InitializeModulePayloads(FBaseParticle& Particle);
@@ -156,7 +174,13 @@ private:
 	int32 CalculateSpawnRateCount(float DeltaTime);
 	int32 CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime);
 	int32 ResolveBurstSpawnAmount(const FParticleBurstEntry& Entry);
-	int32 SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime);
+	int32 SpawnParticles(
+		int32 Count,
+		float SegmentStartTime,
+		float SegmentDeltaTime,
+		const FParticleEventData* SpawnEvent = nullptr,
+		bool bInheritVelocity = false,
+		bool bUsePSysLocation = false);
 	void MarkParticlePendingKill(int32 ActiveIndex);
 	void CompactPendingKilledParticles();
 	void AgeParticles(float DeltaTime);

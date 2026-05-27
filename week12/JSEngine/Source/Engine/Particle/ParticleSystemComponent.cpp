@@ -309,6 +309,8 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		}
 	}
 
+	ProcessParticleEvents(DeltaTime);
+
 	// Render Data 수집
 	PackRenderData();
 	
@@ -344,6 +346,25 @@ void UParticleSystemComponent::FinalizeTickComponent()
 	CollisionEvents.clear();
 	BurstEvents.clear();
 	GeneratedEvents.clear();
+}
+
+void UParticleSystemComponent::ProcessParticleEvents(float DeltaTime)
+{
+	if (GeneratedEvents.empty())
+	{
+		return;
+	}
+
+	// 처리 시작 시 복사한 event만 이번 tick receiver 입력으로 사용
+	// receiver spawn이 새 event를 만들어도 같은 tick 재귀 소비 금지
+	const TArray<FParticleEventData> EventSnapshot = GeneratedEvents;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance != nullptr)
+		{
+			Instance->ProcessParticleEvents(EventSnapshot, DeltaTime);
+		}
+	}
 }
 
 void UParticleSystemComponent::ReportEventSpawn(const FParticleEventSpawnData& Event)
