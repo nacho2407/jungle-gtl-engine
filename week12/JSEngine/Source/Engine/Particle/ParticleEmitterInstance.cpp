@@ -679,6 +679,8 @@ void FParticleEmitterInstance::CompleteEmitterLoop()
 		// 무한 루프는 종료 상태로 가지 않고 다음 loop-local time 구간을 즉시 준비합니다.
 		EmitterTime = 0.0f;
 		ResetBurstFiredState();
+		// emitter time rewind와 함께 named event 발생 횟수도 새 loop 기준으로 초기화
+		ResetEventGeneratorRuntimeState();
 
 		const UParticleModuleRequired* RequiredModule = GetRequiredModule();
 		if (RequiredModule != nullptr && RequiredModule->bResetSeedOnEmitterLoop)
@@ -698,6 +700,8 @@ void FParticleEmitterInstance::CompleteEmitterLoop()
 
 	EmitterTime = 0.0f;
 	ResetBurstFiredState();
+	// emitter time rewind와 함께 named event 발생 횟수도 새 loop 기준으로 초기화
+	ResetEventGeneratorRuntimeState();
 
 	const UParticleModuleRequired* RequiredModule = GetRequiredModule();
 	if (RequiredModule != nullptr && RequiredModule->bResetSeedOnEmitterLoop)
