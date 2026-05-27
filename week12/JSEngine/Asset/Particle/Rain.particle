@@ -67,7 +67,7 @@
                 "Y" : -100.000000,
                 "Z" : -100.000000
               },
-              "Material" : "DefaultWhite",
+              "Material" : "Asset/Material/DefaultParticle.mat",
               "MaxEmitterLoops" : 1,
               "MaxParticles" : 1000,
               "RandomSeed" : 1,
@@ -151,13 +151,13 @@
                 "Max" : {
                   "X" : 0.000000,
                   "Y" : 0.000000,
-                  "Z" : -5.000000
+                  "Z" : -20.000000
                 },
                 "MaxCurve" : "",
                 "Min" : {
                   "X" : 0.000000,
                   "Y" : 0.000000,
-                  "Z" : -3.000000
+                  "Z" : -7.000000
                 },
                 "MinCurve" : "",
                 "Mode" : 1,
@@ -203,9 +203,9 @@
             "Properties" : {
               "StartSize" : {
                 "Constant" : {
-                  "X" : 0.300000,
-                  "Y" : 0.300000,
-                  "Z" : 2.000000
+                  "X" : 0.100000,
+                  "Y" : 1.000000,
+                  "Z" : 0.000000
                 },
                 "Curve" : "",
                 "Max" : {
@@ -250,7 +250,7 @@
                 "Y" : -100.000000,
                 "Z" : -100.000000
               },
-              "Material" : "DefaultWhite",
+              "Material" : "Asset/Material/DefaultParticle.mat",
               "MaxEmitterLoops" : 1,
               "MaxParticles" : 1000,
               "RandomSeed" : 2,
@@ -351,37 +351,6 @@
             "Type" : "UParticleModuleVelocity"
           }, {
             "Id" : 20,
-            "ObjectName" : "EventRoutingTest_ReceiverColor",
-            "Properties" : {
-              "StartColor" : {
-                "Constant" : {
-                  "A" : 1.000000,
-                  "B" : 0.000000,
-                  "G" : 0.886076,
-                  "R" : 1.000000
-                },
-                "Curve" : "",
-                "Max" : {
-                  "A" : 1.000000,
-                  "B" : 0.200000,
-                  "G" : 1.000000,
-                  "R" : 0.200000
-                },
-                "MaxCurve" : "",
-                "Min" : {
-                  "A" : 1.000000,
-                  "B" : 0.200000,
-                  "G" : 1.000000,
-                  "R" : 0.200000
-                },
-                "MinCurve" : "",
-                "Mode" : 0
-              },
-              "bEnabled" : true
-            },
-            "Type" : "UParticleModuleColor"
-          }, {
-            "Id" : 21,
             "ObjectName" : "EventRoutingTest_DeathReceiver",
             "Properties" : {
               "InheritVelocityScale" : 1.000000,
@@ -394,7 +363,7 @@
             },
             "Type" : "UParticleModuleEventReceiverSpawn"
           }, {
-            "Id" : 22,
+            "Id" : 21,
             "ObjectName" : "UParticleModuleAcceleration_2",
             "Properties" : {
               "Acceleration" : {
@@ -423,7 +392,7 @@
             },
             "Type" : "UParticleModuleAcceleration"
           }, {
-            "Id" : 23,
+            "Id" : 22,
             "ObjectName" : "UParticleModuleSizeScaleOverLife_3",
             "Properties" : {
               "SizeScaleOverLife" : {
@@ -452,7 +421,7 @@
             },
             "Type" : "UParticleModuleSizeScaleOverLife"
           }, {
-            "Id" : 24,
+            "Id" : 23,
             "ObjectName" : "UParticleModuleSize_10",
             "Properties" : {
               "StartSize" : {
@@ -480,6 +449,37 @@
               "bEnabled" : true
             },
             "Type" : "UParticleModuleSize"
+          }, {
+            "Id" : 24,
+            "ObjectName" : "UParticleModuleColorOverLife_3",
+            "Properties" : {
+              "ColorOverLife" : {
+                "Constant" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "Curve" : "Assets/Curves/Particle/Rain_ColorOverLife_Color_Over_Life_Curve.curve",
+                "Max" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "MaxCurve" : "",
+                "Min" : {
+                  "A" : 1.000000,
+                  "B" : 1.000000,
+                  "G" : 1.000000,
+                  "R" : 1.000000
+                },
+                "MinCurve" : "",
+                "Mode" : 2
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleColorOverLife"
           }, {
             "Id" : 25,
             "ObjectName" : "EventRoutingTest_ReceiverTypeData",

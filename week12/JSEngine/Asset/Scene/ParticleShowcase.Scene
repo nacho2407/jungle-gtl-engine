@@ -674,11 +674,11 @@
           "AnimGraphAssetPath" : "",
           "AnimInstanceData" : {
             "AnimationAssetPath" : "Asset/Animation/Ybot_Flair_mixamo.com.animseq",
-            "CurrentTime" : 0.185002,
+            "CurrentTime" : 0.834567,
             "ObjectName" : "UAnimSingleNodeInstance_1",
             "PlayRate" : 1.000000,
             "Playing" : true,
-            "PreviousTime" : 0.179549,
+            "PreviousTime" : 0.827479,
             "Type" : "UAnimSingleNodeInstance",
             "bAutoPlay" : true,
             "bLooping" : true
@@ -966,14 +966,14 @@
           "ObjectName" : "UParticleSystemComponent_1",
           "PersistentGuid" : "1A275DA5-9AD84C42-AD7765C2-B6527F33",
           "RelativeLocation" : {
-            "X" : 1.405051,
-            "Y" : -21.391876,
-            "Z" : 5.905012
+            "X" : 1.743548,
+            "Y" : -21.392212,
+            "Z" : 7.072762
           },
           "RelativeRotation" : {
-            "X" : -59.366333,
-            "Y" : -39.250854,
-            "Z" : 133.105209
+            "X" : -89.540588,
+            "Y" : -48.205688,
+            "Z" : 90.616020
           },
           "RelativeScale3D" : {
             "X" : 0.100000,
@@ -1248,13 +1248,13 @@
     }],
   "ClassName" : "UWorld",
   "Name" : "ParticleShowcase",
-  "NextUUID" : 4070,
+  "NextUUID" : 4334,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [-91.667938, 3.758837, 10.147318],
+    "Location" : [-88.077499, 10.597024, 9.828629],
     "NearClip" : 0.100000,
-    "Rotation" : [9.692782, 0.600297, -86.489899]
+    "Rotation" : [1.460895, -0.027771, -91.088776]
   },
   "Version" : 6,
   "WorldSettings" : {
