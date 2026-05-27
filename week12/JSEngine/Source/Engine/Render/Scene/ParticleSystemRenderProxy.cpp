@@ -813,31 +813,63 @@ bool FParticleSystemSceneProxy::BuildBeamCommands(
 			continue;
 		}
 
-		// 최소 Beam은 첫 번째 live particle의 색상과 Size.X를 render 입력으로 사용
-		const FBaseParticle* Particle = ReplayData.GetParticleByActiveIndex(0);
-		if (Particle == nullptr)
+		// material 누락 시에도 command 경로를 확인할 수 있는 fallback material
+		UMaterialInterface* BeamMaterial = ResolveBeamParticleMaterial(EmitterData->Material);
+		const uint32 FirstInstance = static_cast<uint32>(BeamInstances.size());
+
+		// replay source / target / tangent / noise를 최종 world space segment point로 전개
+		TArray<FVector> SharedBeamPoints;
+		ParticleBeamPath::BuildBeamPathPoints(ReplayData, EmitterData->ComponentToWorld, SharedBeamPoints);
+		if (SharedBeamPoints.size() < 2)
 		{
 			continue;
 		}
 
-		// material 누락 시에도 command 경로를 확인할 수 있는 fallback material
-		UMaterialInterface* BeamMaterial = ResolveBeamParticleMaterial(EmitterData->Material);
-		const uint32 FirstInstance = static_cast<uint32>(BeamInstances.size());
-		const float ParticleWidthScale = std::max(std::fabs(Particle->Size.X), 0.001f);
-		const float HalfWidth = std::max(ReplayData.BeamWidth * ParticleWidthScale, 0.1f) * 0.5f;
-
-		// replay source / target / tangent / noise를 최종 world space segment point로 전개
-		TArray<FVector> BeamPoints;
-		ParticleBeamPath::BuildBeamPathPoints(ReplayData, EmitterData->ComponentToWorld, BeamPoints);
-		for (int32 PointIndex = 0; PointIndex + 1 < static_cast<int32>(BeamPoints.size()); ++PointIndex)
+		float MaxHalfWidth = 0.05f;
+		FBoundingBox BeamCommandBounds;
+		for (int32 ActiveIndex = 0; ActiveIndex < ReplayData.ActiveParticleCount; ++ActiveIndex)
 		{
-			// 기존 Beam shader 계약 유지: segment 하나당 source-target quad instance 하나
-			BeamInstances.push_back({
-				BeamPoints[static_cast<size_t>(PointIndex)],
-				BeamPoints[static_cast<size_t>(PointIndex + 1)],
-				HalfWidth,
-				Particle->Color
-			});
+			const FBaseParticle* Particle = ReplayData.GetParticleByActiveIndex(ActiveIndex);
+			if (Particle == nullptr)
+			{
+				continue;
+			}
+
+			const float ParticleWidthScale = std::max(std::fabs(Particle->Size.X), 0.001f);
+			const float HalfWidth = std::max(ReplayData.BeamWidth * ParticleWidthScale, 0.1f) * 0.5f;
+			MaxHalfWidth = std::max(MaxHalfWidth, HalfWidth);
+
+			const TArray<FVector>* BeamPoints = &SharedBeamPoints;
+			TArray<FVector> ParticleBeamPoints;
+			if (ActiveIndex > 0 &&
+				ReplayData.bNoiseEnabled &&
+				ReplayData.NoiseRange > 0.0f &&
+				ReplayData.NoiseFrequency > 0)
+			{
+				FDynamicBeamEmitterReplayDataBase ParticleReplayData = ReplayData;
+				const uint32 SeedInput =
+					static_cast<uint32>(ReplayData.NoiseSeed) ^
+					(static_cast<uint32>(ActiveIndex) * 0x9e3779b9u);
+				ParticleReplayData.NoiseSeed = static_cast<int32>(ParticleBeamPath::HashBeamNoise(SeedInput));
+				ParticleBeamPath::BuildBeamPathPoints(ParticleReplayData, EmitterData->ComponentToWorld, ParticleBeamPoints);
+				if (ParticleBeamPoints.size() >= 2)
+				{
+					BeamPoints = &ParticleBeamPoints;
+				}
+			}
+
+			BeamCommandBounds.Merge(ParticleBeamPath::BuildBeamPointWorldBounds(*BeamPoints, HalfWidth));
+
+			for (int32 PointIndex = 0; PointIndex + 1 < static_cast<int32>(BeamPoints->size()); ++PointIndex)
+			{
+				// Source/Target path는 emitter 단위로 공유하고, particle별 width/color만 instance에 반영합니다.
+				BeamInstances.push_back({
+					(*BeamPoints)[static_cast<size_t>(PointIndex)],
+					(*BeamPoints)[static_cast<size_t>(PointIndex + 1)],
+					HalfWidth,
+					Particle->Color
+				});
+			}
 		}
 
 		// 유효 segment가 없으면 command 생성 생략
@@ -857,13 +889,13 @@ bool FParticleSystemSceneProxy::BuildBeamCommands(
 		Cmd.PerObjectConstants = FPerObjectConstants{ FMatrix::Identity, FColor::White().ToVector4() };
 
 		// source / target / width 기준 command bounds. 실패 시 component bounds fallback
-		Cmd.WorldAABB = ParticleBeamPath::BuildBeamPointWorldBounds(BeamPoints, HalfWidth);
+		Cmd.WorldAABB = BeamCommandBounds;
 		if (!Cmd.WorldAABB.IsValid())
 		{
 			Cmd.WorldAABB = ParticleBeamPath::BuildBeamWorldBounds(
 				ReplayData,
 				EmitterData->ComponentToWorld,
-				HalfWidth);
+				MaxHalfWidth);
 		}
 		if (!Cmd.WorldAABB.IsValid())
 		{
