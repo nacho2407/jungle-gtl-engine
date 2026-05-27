@@ -278,6 +278,31 @@ public:
 };
 
 /**
+ * @brief 속도 크기 기반 particle 색상 배율 module
+ */
+UCLASS(Placeable, DisplayName = "Color By Speed Module", Category = "Color")
+class UParticleModuleColorBySpeed : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleColorBySpeed, UParticleModule)
+
+	bool IsUpdateModule() const override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Min Speed", Min = 0.0f, Speed = 1.0f)
+	float MinSpeed = 0.0f;
+
+	UPROPERTY(DisplayName = "Max Speed", Min = 0.0f, Speed = 1.0f)
+	float MaxSpeed = 100.0f;
+
+	UPROPERTY(DisplayName = "Min Color")
+	FColor MinColor = FColor::White();
+
+	UPROPERTY(DisplayName = "Max Color")
+	FColor MaxColor = FColor::White();
+};
+
+/**
  * @brief 수명 비율 기반 particle 크기 배율 module
  */
 UCLASS(Placeable, DisplayName = "Size Scale Over Life Module", Category = "Size")
@@ -373,6 +398,94 @@ struct FParticleCollisionPayload
 	FVector UsedDampingFactor = FVector::OneVector;
 	float UsedDelayAmount = 0.0f;
 	bool bIgnoreCollisions = false;
+};
+
+USTRUCT()
+struct FParticleEventGenerateInfo
+{
+	GENERATED_STRUCT_BODY(FParticleEventGenerateInfo)
+
+	UPROPERTY(DisplayName = "Type")
+	EParticleEventType Type = EParticleEventType::Collision;
+
+	// 같은 ParticleSystemComponent 내부 receiver 구독 이름
+	UPROPERTY(DisplayName = "Event Name")
+	FName EventName = FName("ParticleCollision");
+};
+
+UCLASS(Placeable, DisplayName = "Event Generator", Category = "Events")
+class UParticleModuleEventGenerator : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleEventGenerator, UParticleModule)
+
+	UParticleModuleEventGenerator();
+
+	/**
+	 * @brief 중복 named event entry 경고 출력
+	 *
+	 * @note 동일 type과 이름은 첫 entry만 유효
+	 */
+	void ValidateConfiguredEvents() const;
+
+	/**
+	 * @brief occurrence와 일치하는 named event 저장
+	 *
+	 * @param Occurrence 이름 미지정 발생 payload
+	 */
+	void GenerateEvents(
+		const FParticleEventPayload& Occurrence,
+		IParticleEmitterInstanceOwner& Owner) const;
+
+	UPROPERTY(DisplayName = "Events")
+	TArray<FParticleEventGenerateInfo> Events;
+
+private:
+	/**
+	 * @brief 동일 named event 조합의 첫 entry 여부 판정
+	 */
+	bool IsPrimaryEventEntry(int32 EventIndex) const;
+};
+
+UCLASS(Placeable, DisplayName = "Event Receiver Spawn", Category = "Events")
+class UParticleModuleEventReceiverSpawn : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleEventReceiverSpawn, UParticleModule)
+
+	/**
+	 * @brief 수신 대상 type과 이름 일치 여부 판정
+	 *
+	 * @param Event 같은 particle system의 내부 event payload
+	 */
+	bool MatchesEvent(const FParticleEventPayload& Event) const;
+
+	/**
+	 * @brief 일치한 event 위치에서 particle 생성
+	 *
+	 * @note hit object 포인터를 역참조하지 않는 위치와 속도 기반 처리
+	 */
+	void ProcessEvent(
+		FParticleEmitterInstance* Owner,
+		const FParticleEventPayload& Event) const;
+
+	UPROPERTY(DisplayName = "Source Event Type")
+	EParticleEventType SourceEventType = EParticleEventType::Collision;
+
+	UPROPERTY(DisplayName = "Source Event Name")
+	FName SourceEventName = FName("ParticleCollision");
+
+	UPROPERTY(DisplayName = "Spawn Count", Min = 0.0f, Speed = 1.0f)
+	int32 SpawnCount = 1;
+
+	UPROPERTY(DisplayName = "Use Particle System Location")
+	bool bUseParticleSystemLocation = false;
+
+	UPROPERTY(DisplayName = "Inherit Velocity")
+	bool bInheritVelocity = false;
+
+	UPROPERTY(DisplayName = "Inherit Velocity Scale", Speed = 0.1f)
+	float InheritVelocityScale = 1.0f;
 };
 
 UCLASS(Placeable, DisplayName = "Collision Module", Category = "Collision")

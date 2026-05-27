@@ -14,6 +14,7 @@ namespace
 			Cast<UParticleModuleLifetime>(Module) != nullptr ||
 			Cast<UParticleModuleColor>(Module) != nullptr ||
 			Cast<UParticleModuleColorOverLife>(Module) != nullptr ||
+			Cast<UParticleModuleColorBySpeed>(Module) != nullptr ||
 			Cast<UParticleModuleSize>(Module) != nullptr ||
 			Cast<UParticleModuleSizeScaleOverLife>(Module) != nullptr;
 	}

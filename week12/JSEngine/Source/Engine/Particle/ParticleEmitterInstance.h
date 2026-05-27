@@ -88,6 +88,30 @@ public:
 	int32 GetPhysicalIndexByActiveIndex(int32 ActiveIndex) const;
 
 	/**
+	 * @brief collision 발생 정보를 named event 생성 경로로 전달
+	 *
+	 * @param Event collision 발생 world space payload
+	 */
+	void ReportCollisionOccurrence(const FParticleEventPayload& Event);
+
+	/**
+	 * @brief 내부 event를 receiver module에 전달
+	 */
+	void ProcessParticleEvents(const TArray<FParticleEventPayload>& Events);
+
+	/**
+	 * @brief event 위치와 속도 조건으로 particle 생성
+	 *
+	 * @param Event world space 위치와 속도를 가진 내부 payload
+	 */
+	int32 SpawnParticlesFromEvent(
+		const FParticleEventPayload& Event,
+		int32 SpawnCount,
+		bool bUseParticleSystemLocation,
+		bool bInheritVelocity,
+		float InheritVelocityScale);
+
+	/**
 	 * @brief particle을 pending kill 상태로 표시
 	 * @note 실제 storage 제거는 tick 마지막 compact에서 수행
 	 */
@@ -146,7 +170,38 @@ protected:
 	int32 CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime);
 	int32 ResolveBurstSpawnAmount(const FParticleBurstEntry& Entry);
 	virtual int32 SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime);
-	int32 SpawnParticleAtLocation(const FVector& WorldLocation, const FVector& SpawnSide, float SpawnTime);
+
+	/**
+	 * @brief trail source 위치에 개별 particle 생성
+	 *
+	 * @param WorldLocation particle 중심 world 위치
+	 * @param SpawnSide trail 폭 방향 world 벡터
+	 */
+	virtual int32 SpawnParticle(const FVector& WorldLocation, const FVector& SpawnSide, float SpawnTime);
+
+	/**
+	 * @brief 내부 event payload로 개별 particle 생성
+	 *
+	 * @note normal spawn event를 다시 생성하지 않는 receiver 전용 경로
+	 */
+	int32 SpawnParticleFromEvent(
+		const FParticleEventPayload& Event,
+		bool bUseParticleSystemLocation,
+		bool bInheritVelocity,
+		float InheritVelocityScale);
+
+	/**
+	 * @brief normal spawn named event 생성
+	 */
+	void GenerateSpawnEvent(const FBaseParticle& Particle, int32 PhysicalIndex);
+	/**
+	 * @brief 최초 death named event 생성
+	 */
+	void GenerateDeathEvent(const FBaseParticle& Particle, int32 PhysicalIndex);
+	/**
+	 * @brief collision named event 생성
+	 */
+	void GenerateCollisionEvent(const FParticleEventPayload& Event);
 	void MarkParticlePendingKill(int32 ActiveIndex);
 	void CompactPendingKilledParticles();
 	void AgeParticles(float DeltaTime);
@@ -216,6 +271,7 @@ private:
 	bool bHasPendingSpawnSource = false;
 
 	int32 SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime) override;
+
 	void UpdateRibbonTrail(float DeltaTime);
 	bool HasEnabledSpawnModule() const;
 	void PrepareSpawnModuleSourceSpan();

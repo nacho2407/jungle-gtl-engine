@@ -263,7 +263,7 @@ static USceneComponent* DuplicateSubTree(
 		USceneComponent* DuplicatedChild = DuplicateSubTree(Child, NewActor, OwnedComponents, OutCompMap);
 		if (DuplicatedChild)
 		{
-			DuplicatedChild->AttachToComponent(DuplicatedComp);
+			DuplicatedChild->AttachToComponent(DuplicatedComp, Child->GetAttachSocketName());
 		}
 	}
 

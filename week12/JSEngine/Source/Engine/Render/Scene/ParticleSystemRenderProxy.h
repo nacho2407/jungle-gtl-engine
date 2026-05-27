@@ -20,7 +20,11 @@ private:
 	bool BuildSpriteCommands(
 		const FPrimitiveRenderProxyCollectionContext& Context,
 		TArray<FRenderCommand>& OutSpriteCommands);
-	bool BuildMeshCommands(const FPrimitiveRenderProxyCollectionContext& Context, TArray<FRenderCommand>& OutOpaqueCommands, TArray<FRenderCommand>& OutTranslucentCommands);
+    
+	bool BuildMeshCommands(
+	    const FPrimitiveRenderProxyCollectionContext& Context, 
+	    TArray<FRenderCommand>& OutOpaqueCommands, 
+	    TArray<FRenderCommand>& OutTranslucentCommands);
 
 	/**
 	 * @brief Beam emitter snapshot에서 render command를 생성합니다.
