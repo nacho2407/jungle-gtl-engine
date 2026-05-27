@@ -90,26 +90,6 @@ struct FParticleEventPayload
 	UPrimitiveComponent* HitComponent = nullptr;
 };
 
-struct FParticleEventCollideData
-{
-	int32 EmitterIndex = -1;
-	int32 ParticleIndex = -1; // physical index
-	uint32 SpawnId = 0;
-
-	float ParticleTime = 0.0f;
-	float CollisionTime = 1.0f;
-
-	FVector Location = FVector::ZeroVector;
-	FVector Direction = FVector::ZeroVector;
-	FVector Velocity = FVector::ZeroVector;
-	FVector Normal = FVector::UpVector;
-
-	int FaceIndex = -1;
-
-	AActor* HitActor = nullptr;
-	UPrimitiveComponent* HitComponent = nullptr;
-};
-
 struct FBaseParticle
 {
 	FVector Location = FVector::ZeroVector;

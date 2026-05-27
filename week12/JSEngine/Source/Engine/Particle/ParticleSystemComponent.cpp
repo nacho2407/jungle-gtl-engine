@@ -5,7 +5,6 @@
 #include "Core/ResourceManager.h"
 #include "GameFramework/World.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
-#include "Particle/ParticleEventManager.h"
 #include "Particle/ParticleMeshBounds.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
@@ -148,14 +147,6 @@ public:
 	{
 		return Component != nullptr &&
 			Component->ParticleLineCheck(Hit, SourceActor, EndWS, StartWS, CollisionShape);
-	}
-
-	void AddCollisionEvent(const FParticleEventCollideData& Event) override
-	{
-		if (Component != nullptr)
-		{
-			Component->ReportEventCollision(Event);
-		}
 	}
 
 	void AddParticleEvent(const FParticleEventPayload& Event) override
@@ -327,37 +318,6 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	// Render Data 수집
 	PackRenderData();
 	NotifySpatialIndexDirty();
-	
-	// Tick이 끝날 때 Event를 처리
-	FinalizeTickComponent();
-}
-
-void UParticleSystemComponent::FinalizeTickComponent()
-{
-	if (!CollisionEvents.empty())
-	{
-		AParticleEventManager* DispatchManager = EventManager;
-		if (DispatchManager == nullptr)
-		{
-			UWorld* World = GetWorld();
-			DispatchManager = World != nullptr ? World->GetOrCreateParticleEventManager() : nullptr;
-
-			// Caching ParticleEventManager
-			EventManager = DispatchManager;
-		}
-
-		if (DispatchManager != nullptr)
-		{
-			DispatchManager->HandleParticleCollisionEvents(this, CollisionEvents);
-		}
-	}
-
-	CollisionEvents.clear();
-}
-
-void UParticleSystemComponent::ReportEventCollision(const FParticleEventCollideData& Event)
-{
-	CollisionEvents.push_back(Event);
 }
 
 void UParticleSystemComponent::ReportParticleEvent(const FParticleEventPayload& Event)

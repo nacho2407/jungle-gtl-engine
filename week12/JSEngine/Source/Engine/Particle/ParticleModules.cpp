@@ -1456,21 +1456,21 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 			HitCenterWS + Hit.Normal * std::max(CollisionPushOut, 0.0f);
 		Particle.Location = Owner->TransformLocationToSimulationSpace(NewCenterWS);
 
-		// 기존 외부 collision payload와 내부 occurrence의 공통 hit 정보
-		FParticleEventCollideData Event;
+		// 내부 collision occurrence의 world space hit 정보
+		FParticleEventPayload Event;
+		Event.Type = EParticleEventType::Collision;
 		Event.EmitterIndex = Owner->GetEmitterIndex();
 		Event.ParticleIndex = Owner->GetPhysicalIndexByActiveIndex(ActiveIndex);
-		Event.SpawnId = Particle.SpawnId;
-		Event.ParticleTime = Particle.RelativeTime;
+		Event.ParticleId = Particle.SpawnId;
+		Event.RelativeTime = Particle.RelativeTime;
 		Event.CollisionTime = Hit.Time;
-		Event.Location = Hit.Location;
-		Event.Direction = MoveWS.GetSafeNormal();
-		Event.Velocity = IncomingVelocityWS;
-		Event.Normal = Hit.Normal;
+		Event.LocationWS = Hit.Location;
+		Event.DirectionWS = MoveWS.GetSafeNormal();
+		Event.VelocityWS = IncomingVelocityWS;
+		Event.NormalWS = Hit.Normal;
 		Event.FaceIndex = Hit.FaceIndex;
 		Event.HitComponent = Hit.HitComponent;
 		Event.HitActor = Hit.HitComponent != nullptr ? Hit.HitComponent->GetOwner() : nullptr;
-		Owner->GetOwner().AddCollisionEvent(Event);
 		Owner->ReportCollisionOccurrence(Event);
 
 		++Payload->UsedCollisions;

@@ -86,9 +86,9 @@ public:
 	/**
 	 * @brief collision 발생 정보를 named event 생성 경로로 전달
 	 *
-	 * @param Event 기존 외부 collision payload와 동일한 발생 정보
+	 * @param Event collision 발생 world space payload
 	 */
-	void ReportCollisionOccurrence(const FParticleEventCollideData& Event);
+	void ReportCollisionOccurrence(const FParticleEventPayload& Event);
 
 	/**
 	 * @brief 내부 event를 receiver module에 전달
@@ -184,7 +184,7 @@ private:
 	/**
 	 * @brief collision named event 생성
 	 */
-	void GenerateCollisionEvent(const FParticleEventCollideData& Event);
+	void GenerateCollisionEvent(const FParticleEventPayload& Event);
 	void MarkParticlePendingKill(int32 ActiveIndex);
 	void CompactPendingKilledParticles();
 	void AgeParticles(float DeltaTime);

@@ -988,32 +988,17 @@ void FParticleEmitterInstance::GenerateDeathEvent(const FBaseParticle& Particle,
 	CurrentRuntimeCache->EventGeneratorModule->GenerateEvents(Event, Owner);
 }
 
-void FParticleEmitterInstance::GenerateCollisionEvent(const FParticleEventCollideData& Event)
+void FParticleEmitterInstance::GenerateCollisionEvent(const FParticleEventPayload& Event)
 {
 	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->EventGeneratorModule == nullptr)
 	{
 		return;
 	}
 
-	FParticleEventPayload Payload;
-	Payload.Type = EParticleEventType::Collision;
-	Payload.EmitterIndex = Event.EmitterIndex;
-	Payload.ParticleIndex = Event.ParticleIndex;
-	// ParticleId는 기존 collision delegate 호환 SpawnId와 동일 식별자
-	Payload.ParticleId = Event.SpawnId;
-	Payload.RelativeTime = Event.ParticleTime;
-	Payload.LocationWS = Event.Location;
-	Payload.VelocityWS = Event.Velocity;
-	Payload.DirectionWS = Event.Direction;
-	Payload.NormalWS = Event.Normal;
-	Payload.CollisionTime = Event.CollisionTime;
-	Payload.FaceIndex = Event.FaceIndex;
-	Payload.HitActor = Event.HitActor;
-	Payload.HitComponent = Event.HitComponent;
-	CurrentRuntimeCache->EventGeneratorModule->GenerateEvents(Payload, Owner);
+	CurrentRuntimeCache->EventGeneratorModule->GenerateEvents(Event, Owner);
 }
 
-void FParticleEmitterInstance::ReportCollisionOccurrence(const FParticleEventCollideData& Event)
+void FParticleEmitterInstance::ReportCollisionOccurrence(const FParticleEventPayload& Event)
 {
 	GenerateCollisionEvent(Event);
 }
