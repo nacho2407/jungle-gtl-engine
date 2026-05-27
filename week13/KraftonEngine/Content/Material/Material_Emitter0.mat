@@ -1,11 +1,12 @@
 {
   "BlendState" : "AlphaBlend",
   "Compiled" : {
-    "GeneratorVersion" : "ParticleSpriteFog_v5",
+    "GeneratorVersion" : "ParticleMeshLighting_v4",
     "GraphHash" : "A1872DB66E836FF2",
     "Parameters" : {
 
     },
+    "ReceiveLighting" : false,
     "Textures" : {
       "Custom0Texture" : {
         "Path" : "Content/Particle/T_Fire_F.PNG",
