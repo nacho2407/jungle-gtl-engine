@@ -91,6 +91,17 @@ public:
 		return Component != nullptr ? Component->GetWorldMatrix() : FMatrix::Identity;
 	}
 
+	bool ParticleLineCheck(
+		FHitResult& Hit,
+		AActor* SourceActor,
+		const FVector& EndWS,
+		const FVector& StartWS,
+		const FCollisionShape& CollisionShape) override
+	{
+		return Component != nullptr &&
+			Component->ParticleLineCheck(Hit, SourceActor, EndWS, StartWS, CollisionShape);
+	}
+
 	void AddSpawnEvent(const FParticleEventSpawnData& Event) override
 	{
 		if (Component != nullptr)
@@ -227,6 +238,30 @@ void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
 UWorld* UParticleSystemComponent::GetWorld() const
 {
 	return GetOwner() != nullptr ? GetOwner()->GetFocusedWorld() : nullptr;
+}
+
+bool UParticleSystemComponent::ParticleLineCheck(
+	FHitResult& Hit,
+	AActor* SourceActor,
+	const FVector& EndWS,
+	const FVector& StartWS,
+	const FCollisionShape& CollisionShape)
+{
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		Hit.Reset();
+		return false;
+	}
+
+	FCollisionQueryParams Params;
+	Params.IgnoredActor = SourceActor;
+	Params.IgnoredComponent = this;
+	Params.bFindInitialOverlaps = true;
+
+	return CollisionShape.IsNearlyZero()
+		? World->LineTraceSingleShapeTarget(Hit, StartWS, EndWS, Params)
+		: World->SweepSingleShapeTarget(Hit, StartWS, EndWS, CollisionShape, Params);
 }
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
@@ -577,6 +612,7 @@ void UParticleSystemComponent::CreateEmitterInstances()
 		const int32 LODIndex = SelectLODLevelIndex(EmitterTemplate);
 		if (FParticleEmitterInstance* Instance = CreateEmitterInstanceForLOD(EmitterTemplate, LODIndex))
 		{
+			Instance->SetEmitterIndex(static_cast<int32>(EmitterInstances.size()));
 			EmitterInstances.push_back(Instance);
 		}
 	}

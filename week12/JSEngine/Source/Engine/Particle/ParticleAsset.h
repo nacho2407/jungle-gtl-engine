@@ -21,6 +21,8 @@ struct FParticleLODLevelRuntimeCache
 
 	TArray<UParticleModule*> SpawnModules;
 	TArray<UParticleModule*> UpdateModules;
+	// 적분 후 이동 구간 query만 수행할 collision module 목록
+	TArray<UParticleModuleCollision*> CollisionModules;
 
 	TMap<UParticleModule*, int32> ModulePayloadOffsets;
 	TMap<UParticleModule*, int32> ModuleInstanceOffsets;

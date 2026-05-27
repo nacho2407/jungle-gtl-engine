@@ -31,11 +31,18 @@ enum class EDynamicEmitterType
 	Ribbon,
 };
 
-namespace ParticleFlags
+UENUM()
+enum class EParticleFlags : uint32
 {
-	static constexpr uint32 None = 0u;
-	static constexpr uint32 PendingKill = 1u << 0;
-}
+	None                 = 0u,
+	PendingKill          = 1u << 0,
+	CollisionHasOccurred = 1u << 1,
+	IgnoreCollisions     = 1u << 2,
+	Freeze               = 1u << 3,
+	FreezeTranslation    = 1u << 4,
+	FreezeRotation       = 1u << 5,
+	FreezeMovement       = 1u << 6,
+};
 
 struct FParticleEventSpawnData
 {
@@ -71,7 +78,10 @@ struct FBaseParticle
 	FVector OldLocation = FVector::ZeroVector;
 	FVector Velocity = FVector::ZeroVector;
 	FVector BaseVelocity = FVector::ZeroVector;
+	// RelativeTime은 수명 기준 0~1 값
+	// DelayAmount는 초 단위라서 AgeSeconds와 비교
 	float RelativeTime = 0.0f;
+	float AgeSeconds = 0.0f;
 	float Lifetime = 1.0f;
 	float OneOverMaxLifetime = 1.0f; // particle이 현재 수명의 몇 퍼센트 지점에 있는지 계산할 때 사용하는 MaxLifetime의 역수
 	float Rotation = 0.0f;
@@ -90,6 +100,21 @@ struct FBaseParticle
      */
 	uint32 SpawnId = 0;
 };
+
+inline bool HasParticleFlag(const FBaseParticle& Particle, EParticleFlags Flag)
+{
+	return (Particle.Flags & static_cast<uint32>(Flag)) != 0u;
+}
+
+inline void SetParticleFlag(FBaseParticle& Particle, EParticleFlags Flag)
+{
+	Particle.Flags |= static_cast<uint32>(Flag);
+}
+
+inline void ClearParticleFlag(FBaseParticle& Particle, EParticleFlags Flag)
+{
+	Particle.Flags &= ~static_cast<uint32>(Flag);
+}
 
 struct FParticleSpriteVertex
 {

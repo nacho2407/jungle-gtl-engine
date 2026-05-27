@@ -876,6 +876,7 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTi
 		Particle.SpawnId = ++ParticleCounter;
 		Particle.OldLocation = Particle.Location;
 		Particle.RelativeTime = 0.0f;
+		Particle.AgeSeconds = 0.0f;
 		Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
 		Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
 		InitializeModulePayloads(Particle);
@@ -911,7 +912,34 @@ int32 FParticleEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTi
 
 bool FParticleEmitterInstance::IsParticlePendingKill(const FBaseParticle& Particle) const
 {
-	return (Particle.Flags & ParticleFlags::PendingKill) != 0u;
+	return HasParticleFlag(Particle, EParticleFlags::PendingKill);
+}
+
+int32 FParticleEmitterInstance::GetPhysicalIndexByActiveIndex(int32 ActiveIndex) const
+{
+	if (ActiveIndex < 0 || ActiveIndex >= ActiveParticles || ParticleIndices == nullptr)
+	{
+		return -1;
+	}
+
+	return static_cast<int32>(ParticleIndices[ActiveIndex]);
+}
+
+bool FParticleEmitterInstance::KillParticleByActiveIndex(int32 ActiveIndex)
+{
+	if (ActiveIndex < 0 || ActiveIndex >= ActiveParticles)
+	{
+		return false;
+	}
+
+	FBaseParticle& Particle = GetParticleByActiveIndex(ActiveIndex);
+	if (IsParticlePendingKill(Particle))
+	{
+		return false;
+	}
+
+	MarkParticlePendingKill(ActiveIndex);
+	return true;
 }
 
 void FParticleEmitterInstance::MarkParticlePendingKill(int32 ActiveIndex)
@@ -928,7 +956,7 @@ void FParticleEmitterInstance::MarkParticlePendingKill(int32 ActiveIndex)
 		return;
 	}
 
-	Particle.Flags |= ParticleFlags::PendingKill;
+	SetParticleFlag(Particle, EParticleFlags::PendingKill);
 
 	FParticleEventDeathData Event;
 	Event.ParticleIndex = KilledPhysicalIndex;
@@ -981,6 +1009,8 @@ void FParticleEmitterInstance::AgeParticles(float DeltaTime)
 			continue;
 		}
 
+		// RelativeTime은 lifetime 진행률, AgeSeconds는 충돌 지연에 쓰는 실제 경과 초
+		Particle.AgeSeconds += DeltaTime;
 		Particle.RelativeTime += DeltaTime * Particle.OneOverMaxLifetime;
 
 		if (Particle.RelativeTime >= 1.0f)
@@ -1018,8 +1048,35 @@ void FParticleEmitterInstance::IntegrateParticles(float DeltaTime)
 		}
 
 		Particle.OldLocation = Particle.Location;
-		Particle.Location += Particle.Velocity * DeltaTime;
-		Particle.Rotation += Particle.RotationRate * DeltaTime;
+
+		const bool bFreezeMovement =
+			HasParticleFlag(Particle, EParticleFlags::Freeze) ||
+			HasParticleFlag(Particle, EParticleFlags::FreezeMovement);
+		if (!bFreezeMovement && !HasParticleFlag(Particle, EParticleFlags::FreezeTranslation))
+		{
+			Particle.Location += Particle.Velocity * DeltaTime;
+		}
+		if (!bFreezeMovement && !HasParticleFlag(Particle, EParticleFlags::FreezeRotation))
+		{
+			Particle.Rotation += Particle.RotationRate * DeltaTime;
+		}
+	}
+}
+
+void FParticleEmitterInstance::UpdateCollisionModules(float DeltaTime)
+{
+	if (CurrentRuntimeCache == nullptr)
+	{
+		return;
+	}
+
+	for (UParticleModuleCollision* CollisionModule : CurrentRuntimeCache->CollisionModules)
+	{
+		if (CollisionModule != nullptr && CollisionModule->bEnabled)
+		{
+			const int32 Offset = CurrentRuntimeCache->GetParticlePayloadOffset(CollisionModule);
+			CollisionModule->Update(this, Offset, DeltaTime);
+		}
 	}
 }
 
@@ -1183,6 +1240,13 @@ bool FParticleEmitterInstance::UsesLocalSpace() const
 		CurrentRuntimeCache->RequiredModule->CoordinateSpace == EParticleCoordinateSpace::Local;
 }
 
+FVector FParticleEmitterInstance::TransformLocationToWorldSpace(const FVector& SimulationLocation) const
+{
+	return UsesLocalSpace()
+		? Owner.GetComponentToWorld().TransformPosition(SimulationLocation)
+		: SimulationLocation;
+}
+
 FVector FParticleEmitterInstance::TransformLocationToSimulationSpace(const FVector& WorldLocation) const
 {
 	if (!UsesLocalSpace())
@@ -1193,6 +1257,13 @@ FVector FParticleEmitterInstance::TransformLocationToSimulationSpace(const FVect
 	return Owner.GetComponentToWorld().GetInverse().TransformPosition(WorldLocation);
 }
 
+FVector FParticleEmitterInstance::TransformVelocityToWorldSpace(const FVector& SimulationVelocity) const
+{
+	return UsesLocalSpace()
+		? Owner.GetComponentToWorld().TransformVector(SimulationVelocity)
+		: SimulationVelocity;
+}
+
 FVector FParticleEmitterInstance::TransformVelocityToSimulationSpace(const FVector& WorldVelocity) const
 {
 	if (!UsesLocalSpace())
@@ -1201,6 +1272,23 @@ FVector FParticleEmitterInstance::TransformVelocityToSimulationSpace(const FVect
 	}
 
 	return Owner.GetComponentToWorld().GetInverse().TransformVector(WorldVelocity);
+}
+
+float FParticleEmitterInstance::TransformRadiusToWorldSpace(float Radius) const
+{
+	const float SafeRadius = std::max(Radius, 0.0f);
+	if (!UsesLocalSpace())
+	{
+		return SafeRadius;
+	}
+
+	const FMatrix& ComponentToWorld = Owner.GetComponentToWorld();
+	const float MaxScale = std::max(
+		ComponentToWorld.TransformVector(FVector(1.0f, 0.0f, 0.0f)).Size(),
+		std::max(
+			ComponentToWorld.TransformVector(FVector(0.0f, 1.0f, 0.0f)).Size(),
+			ComponentToWorld.TransformVector(FVector(0.0f, 0.0f, 1.0f)).Size()));
+	return SafeRadius * MaxScale;
 }
 
 FVector FParticleEmitterInstance::GetParticleLocationForRender(const FBaseParticle& Particle) const
@@ -1267,5 +1355,6 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 	AgeParticles(DeltaTime);
 	UpdateModules(DeltaTime);
 	IntegrateParticles(DeltaTime);
+	UpdateCollisionModules(DeltaTime);
 	CompactPendingKilledParticles();
 }

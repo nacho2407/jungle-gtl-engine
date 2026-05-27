@@ -179,6 +179,13 @@ namespace
 			return;
 		}
 
+		if (UParticleModuleCollision* CollisionModule = Cast<UParticleModuleCollision>(Module))
+		{
+			// Collision은 적분 뒤 OldLocation에서 Location까지의 이동 구간을 검사
+			Cache.CollisionModules.push_back(CollisionModule);
+			return;
+		}
+
 		if (Module->IsSpawnModule())
 		{
 			Cache.SpawnModules.push_back(Module);
@@ -1211,7 +1218,8 @@ void UParticleModuleSizeScaleBySpeed::Update(FParticleEmitterInstance* Owner, in
 
 bool UParticleModuleCollision::IsUpdateModule() const
 {
-	return true;
+	// 일반 update 이전 위치에서는 이번 frame 이동 구간을 검사할 수 없음
+	return false;
 }
 
 /**

@@ -63,6 +63,17 @@ public:
 	void ReportEventCollision(const FParticleEventCollideData& Event);
 	void ReportEventBurst(const FParticleEventBurstData& Event);
 
+	/**
+	 * @brief particle 이동 구간을 world Shape query로 검사
+	 * @param CollisionShape line 또는 이동 sphere query 형상
+	 */
+	bool ParticleLineCheck(
+		FHitResult& Hit,
+		AActor* SourceActor,
+		const FVector& EndWS,
+		const FVector& StartWS,
+		const FCollisionShape& CollisionShape);
+
 	EPrimitiveType GetPrimitiveType() const override { return PrimitiveType; }
 	FPrimitiveRenderProxy* GetRenderProxy() override;
 	bool SupportsOutline() const override { return false; }
