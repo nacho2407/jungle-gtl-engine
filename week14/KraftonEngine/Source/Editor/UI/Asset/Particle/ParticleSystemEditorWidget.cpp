@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdarg>
+#include <cfloat>
 #include <cstdio>
 #include <cstring>
 #include <imgui.h>
@@ -4195,6 +4196,67 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 		});
 		return bHasSingleKeyOnly;
 	};
+	auto RestoreSelectedKeyByTime = [&](float TargetTime)
+	{
+		CurveEditorState.SelectedKeyIndex = -1;
+		float BestDistance = FLT_MAX;
+		for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(ActiveCurve->Keys.size()); ++KeyIndex)
+		{
+			const float Distance = std::fabs(ActiveCurve->Keys[KeyIndex].Time - TargetTime);
+			if (Distance < BestDistance)
+			{
+				BestDistance = Distance;
+				CurveEditorState.SelectedKeyIndex = KeyIndex;
+			}
+		}
+	};
+	auto ApplySelectedKeyTime = [&]()
+	{
+		float AppliedTime = CurveEditorState.PendingSetKeyTime;
+		ForEditableCurves([&](int32 CurveIndex, FFloatCurve& Curve)
+		{
+			if (IsSingleKeyOnlyCurve(CurveIndex))
+			{
+				return;
+			}
+			if (CurveEditorState.SelectedKeyIndex < 0 || CurveEditorState.SelectedKeyIndex >= static_cast<int32>(Curve.Keys.size()))
+			{
+				return;
+			}
+
+			FCurveKey& Key = Curve.Keys[CurveEditorState.SelectedKeyIndex];
+			float NewTime = CurveEditorState.PendingSetKeyTime;
+			if (CurveEditorState.SelectedKeyIndex > 0)
+			{
+				NewTime = (std::max)(NewTime, Curve.Keys[CurveEditorState.SelectedKeyIndex - 1].Time + CurveTimeEpsilon);
+			}
+			if (CurveEditorState.SelectedKeyIndex + 1 < static_cast<int32>(Curve.Keys.size()))
+			{
+				NewTime = (std::min)(NewTime, Curve.Keys[CurveEditorState.SelectedKeyIndex + 1].Time - CurveTimeEpsilon);
+			}
+			Key.Time = NewTime;
+			AppliedTime = NewTime;
+			Curve.SortKeys();
+			Curve.AutoSetTangents();
+		});
+		RestoreSelectedKeyByTime(AppliedTime);
+	};
+	auto ApplySelectedKeyValue = [&]()
+	{
+		ForEditableCurves([&](int32 CurveIndex, FFloatCurve& Curve)
+		{
+			if (CurveEditorState.SelectedKeyIndex < 0 || CurveEditorState.SelectedKeyIndex >= static_cast<int32>(Curve.Keys.size()))
+			{
+				return;
+			}
+			Curve.Keys[CurveEditorState.SelectedKeyIndex].Value = CurveEditorState.PendingSetKeyValue;
+			SyncCurveValueBinding(CurveIndex, Curve);
+			if (!IsSingleKeyOnlyCurve(CurveIndex))
+			{
+				Curve.AutoSetTangents();
+			}
+		});
+	};
 
 	DrawList->AddRectFilled(CanvasMin, CanvasMax, IM_COL32(57, 57, 57, 255));
 	DrawList->AddRect(CanvasMin, CanvasMax, IM_COL32(20, 20, 20, 255));
@@ -4365,6 +4427,11 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 		DrawList->AddCircleFilled(KeyPos, 5.0f, KeyColor);
 		DrawList->AddCircle(KeyPos, 5.0f, IM_COL32(20, 20, 22, 220), 12, 1.0f);
 	}
+	if (HoveredKeyIndex != -1 && bCanvasHovered)
+	{
+		const FCurveKey& Key = ActiveCurve->Keys[HoveredKeyIndex];
+		ImGui::SetTooltip("(%.2f, %.2f)", Key.Time, Key.Value);
+	}
 
 	if (bCanvasHovered && IO.MouseWheel != 0.0f)
 	{
@@ -4519,6 +4586,19 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 	{
 		if (CurveEditorState.SelectedKeyIndex >= 0 && CurveEditorState.SelectedKeyIndex < static_cast<int32>(ActiveCurve->Keys.size()))
 		{
+			const bool bCanSetTime = !HasSingleKeyOnlyEditableCurve();
+			ImGui::BeginDisabled(!bCanSetTime);
+			if (ImGui::MenuItem("Set Time"))
+			{
+				CurveEditorState.PendingSetKeyTime = ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex].Time;
+				CurveEditorState.bOpenSetKeyTimePopup = true;
+			}
+			ImGui::EndDisabled();
+			if (ImGui::MenuItem("Set Value"))
+			{
+				CurveEditorState.PendingSetKeyValue = ActiveCurve->Keys[CurveEditorState.SelectedKeyIndex].Value;
+				CurveEditorState.bOpenSetKeyValuePopup = true;
+			}
 			const bool bCanDeleteKey = !HasSingleKeyOnlyEditableCurve();
 			ImGui::BeginDisabled(!bCanDeleteKey);
 			if (ImGui::MenuItem("Delete Key"))
@@ -4578,6 +4658,60 @@ bool FParticleSystemEditorWidget::RenderSelectedCurveEditor(const ImVec2& Size)
 					bChanged = true;
 				}
 			}
+		}
+		ImGui::EndPopup();
+	}
+	if (CurveEditorState.bOpenSetKeyTimePopup)
+	{
+		ImGui::OpenPopup("ParticleCurveSetTimePopup");
+		CurveEditorState.bOpenSetKeyTimePopup = false;
+	}
+	if (ImGui::BeginPopup("ParticleCurveSetTimePopup"))
+	{
+		ImGui::TextUnformatted("Time:");
+		ImGui::SetNextItemWidth(80.0f);
+		if (ImGui::IsWindowAppearing())
+		{
+			ImGui::SetKeyboardFocusHere();
+		}
+		if (ImGui::InputFloat("##ParticleCurveSetTimeInput", &CurveEditorState.PendingSetKeyTime, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			ApplySelectedKeyTime();
+			bChanged = true;
+			ImGui::CloseCurrentPopup();
+		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			ApplySelectedKeyTime();
+			bChanged = true;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::EndPopup();
+	}
+	if (CurveEditorState.bOpenSetKeyValuePopup)
+	{
+		ImGui::OpenPopup("ParticleCurveSetValuePopup");
+		CurveEditorState.bOpenSetKeyValuePopup = false;
+	}
+	if (ImGui::BeginPopup("ParticleCurveSetValuePopup"))
+	{
+		ImGui::TextUnformatted("Value:");
+		ImGui::SetNextItemWidth(80.0f);
+		if (ImGui::IsWindowAppearing())
+		{
+			ImGui::SetKeyboardFocusHere();
+		}
+		if (ImGui::InputFloat("##ParticleCurveSetValueInput", &CurveEditorState.PendingSetKeyValue, 0.0f, 0.0f, "%.2f", ImGuiInputTextFlags_EnterReturnsTrue))
+		{
+			ApplySelectedKeyValue();
+			bChanged = true;
+			ImGui::CloseCurrentPopup();
+		}
+		if (ImGui::IsItemDeactivatedAfterEdit())
+		{
+			ApplySelectedKeyValue();
+			bChanged = true;
+			ImGui::CloseCurrentPopup();
 		}
 		ImGui::EndPopup();
 	}

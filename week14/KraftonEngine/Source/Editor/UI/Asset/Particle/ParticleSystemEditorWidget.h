@@ -96,8 +96,12 @@ private:
 		ETangentHandle DraggingTangentHandle = ETangentHandle::None;
 		bool bPanningView = false;
 		bool bSuppressNextCanvasContextMenu = false;
+		bool bOpenSetKeyTimePopup = false;
+		bool bOpenSetKeyValuePopup = false;
 		float PendingContextTime = 0.0f;
 		float PendingContextValue = 0.0f;
+		float PendingSetKeyTime = 0.0f;
+		float PendingSetKeyValue = 0.0f;
 		float ViewMinTime = 0.0f;
 		float ViewMaxTime = 1.0f;
 		float ViewMinValue = -1.0f;
