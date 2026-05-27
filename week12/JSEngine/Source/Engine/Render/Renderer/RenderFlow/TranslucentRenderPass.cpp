@@ -5,6 +5,8 @@
 #include "Render/Resource/Material.h"
 #include "Render/Resource/ShaderHelper.h"
 #include "Render/Resource/VertexFactoryTypes.h"
+#include "Component/PrimitiveComponent.h"
+#include "Particle/ParticleTypes.h"
 #include "Core/ResourceManager.h"
 
 #include <algorithm>
@@ -140,6 +142,20 @@ namespace
 			&& Cmd.HasInstanceBuffer();
 	}
 
+	bool IsParticleEmitterCommand(const FRenderCommand& Cmd)
+	{
+		return Cmd.Type == ERenderCommandType::Particle
+			&& Cmd.SourcePrimitive != nullptr
+			&& Cmd.ParticleEmitterData != nullptr;
+	}
+
+	bool IsSameParticleSystemCommand(const FRenderCommand& A, const FRenderCommand& B)
+	{
+		return IsParticleEmitterCommand(A)
+			&& IsParticleEmitterCommand(B)
+			&& A.SourcePrimitive == B.SourcePrimitive;
+	}
+
 	void BindDefaultTranslucentStates(const FRenderPassContext* Context)
 	{
 		ID3D11DeviceContext* DeviceContext = Context->DeviceContext;
@@ -247,8 +263,11 @@ namespace
 		const FVector& CameraPosition,
 		const FVector& CameraForward)
 	{
-		const FVector Center = Cmd.WorldAABB.IsValid()
-			? Cmd.WorldAABB.GetCenter()
+		const FAABB& ComponentAABB = IsParticleEmitterCommand(Cmd)
+			? Cmd.SourcePrimitive->GetWorldAABB()
+			: Cmd.WorldAABB;
+		const FVector Center = ComponentAABB.IsValid()
+			? ComponentAABB.GetCenter()
 			: Cmd.PerObjectConstants.Model.GetOrigin();
 		const FVector Delta = Center - CameraPosition;
 		return FVector::DotProduct(Delta, CameraForward);
@@ -316,15 +335,35 @@ bool FTranslucentRenderPass::End(const FRenderPassContext* Context)
 TArray<FRenderCommand> FTranslucentRenderPass::SortTranslucentCommands(const FRenderPassContext* Context)
 {
 	const TArray<FRenderCommand>& Commands = Context->RenderBus->GetCommands(ERenderPass::Translucent);
-	TArray<FRenderCommand> SortedCommands = Commands;
+	TArray<size_t> SortedIndices;
+	SortedIndices.reserve(Commands.size());
+	for (size_t CommandIndex = 0; CommandIndex < Commands.size(); ++CommandIndex)
+	{
+		SortedIndices.push_back(CommandIndex);
+	}
+
 	const FVector CameraPosition = Context->RenderBus->GetCameraPosition();
 	const FVector CameraForward = Context->RenderBus->GetCameraForward();
-	std::sort(SortedCommands.begin(), SortedCommands.end(),
-		[&CameraPosition, &CameraForward](const FRenderCommand& A, const FRenderCommand& B)
+	std::stable_sort(SortedIndices.begin(), SortedIndices.end(),
+		[&Commands, &CameraPosition, &CameraForward](size_t AIndex, size_t BIndex)
 		{
+			const FRenderCommand& A = Commands[AIndex];
+			const FRenderCommand& B = Commands[BIndex];
+			if (IsSameParticleSystemCommand(A, B))
+			{
+				return A.ParticleEmitterData->EmitterIndex < B.ParticleEmitterData->EmitterIndex;
+			}
+
 			return CalculateTranslucentSortKey(A, CameraPosition, CameraForward) >
 				CalculateTranslucentSortKey(B, CameraPosition, CameraForward);
 		});
+
+	TArray<FRenderCommand> SortedCommands;
+	SortedCommands.reserve(Commands.size());
+	for (size_t CommandIndex : SortedIndices)
+	{
+		SortedCommands.push_back(Commands[CommandIndex]);
+	}
 	return SortedCommands;
 }
 
