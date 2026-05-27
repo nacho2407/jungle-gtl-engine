@@ -97,11 +97,11 @@ namespace
 		const FString ModuleName = GetParticleCurveModuleName(Module);
 		const FString CurveName = SanitizeCurveAssetName(SlotLabel.empty() ? FString("Curve") : SlotLabel);
 		const FString BaseName = ParticleName + "_" + ModuleName + "_" + CurveName;
-		FString Candidate = "Assets/Curves/Particle/" + BaseName + ".curve";
+		FString Candidate = "Asset/Curves/Particle/" + BaseName + ".curve";
 		int32 Suffix = 1;
 		while (std::filesystem::exists(FPaths::ToWide(Candidate)))
 		{
-			Candidate = "Assets/Curves/Particle/" + BaseName + "_" + std::to_string(Suffix++) + ".curve";
+			Candidate = "Asset/Curves/Particle/" + BaseName + "_" + std::to_string(Suffix++) + ".curve";
 		}
 		return Candidate;
 	}
@@ -960,6 +960,99 @@ namespace
 		return BestIndex;
 	}
 
+	struct FParticleCurveKeyHit
+	{
+		int32 BindingIndex = -1;
+		char Channel = '\0';
+		int32 KeyIndex = -1;
+		FFloatCurve* Curve = nullptr;
+
+		bool IsValid() const
+		{
+			return BindingIndex >= 0 && KeyIndex >= 0 && Curve != nullptr;
+		}
+	};
+
+	void TestParticleCurveKeyHit(
+		FFloatCurve* Curve,
+		int32 BindingIndex,
+		char Channel,
+		const ImVec2& Mouse,
+		const ImVec2& GraphStart,
+		float FirstTime,
+		float ValueMax,
+		float PixelsPerTime,
+		float PixelsPerValue,
+		float& InOutBestDistanceSq,
+		FParticleCurveKeyHit& InOutHit)
+	{
+		if (!Curve)
+		{
+			return;
+		}
+
+		for (int32 KeyIndex = 0; KeyIndex < static_cast<int32>(Curve->Keys.size()); ++KeyIndex)
+		{
+			const FCurveKey& Key = Curve->Keys[KeyIndex];
+			const float X = GraphStart.x + (Key.Time - FirstTime) * PixelsPerTime;
+			const float Y = GraphStart.y + (ValueMax - Key.Value) * PixelsPerValue;
+			const float Dx = Mouse.x - X;
+			const float Dy = Mouse.y - Y;
+			const float DistSq = Dx * Dx + Dy * Dy;
+			if (DistSq < InOutBestDistanceSq)
+			{
+				InOutBestDistanceSq = DistSq;
+				InOutHit.BindingIndex = BindingIndex;
+				InOutHit.Channel = Channel;
+				InOutHit.KeyIndex = KeyIndex;
+				InOutHit.Curve = Curve;
+			}
+		}
+	}
+
+	FParticleCurveKeyHit FindNearestVisibleParticleCurveKey(
+		const TArray<FParticleCurveBinding>& Bindings,
+		const FParticleCurveBinding* ActiveBinding,
+		const ImVec2& Mouse,
+		const ImVec2& GraphStart,
+		float FirstTime,
+		float ValueMax,
+		float PixelsPerTime,
+		float PixelsPerValue)
+	{
+		FParticleCurveKeyHit Hit;
+		float BestDistanceSq = 64.0f;
+
+		for (int32 BindingIndex = 0; BindingIndex < static_cast<int32>(Bindings.size()); ++BindingIndex)
+		{
+			const FParticleCurveBinding& Binding = Bindings[BindingIndex];
+			if (!IsParticleCurveBindingVisibleWithActive(Binding, ActiveBinding))
+			{
+				continue;
+			}
+
+			switch (Binding.Kind)
+			{
+			case EParticleCurveAssetKind::Float:
+				TestParticleCurveKeyHit(Binding.Curve, BindingIndex, '\0', Mouse, GraphStart, FirstTime, ValueMax, PixelsPerTime, PixelsPerValue, BestDistanceSq, Hit);
+				break;
+			case EParticleCurveAssetKind::Vector:
+				TestParticleCurveKeyHit(GetParticleCurveChannelCurve(Binding, 'X'), BindingIndex, 'X', Mouse, GraphStart, FirstTime, ValueMax, PixelsPerTime, PixelsPerValue, BestDistanceSq, Hit);
+				TestParticleCurveKeyHit(GetParticleCurveChannelCurve(Binding, 'Y'), BindingIndex, 'Y', Mouse, GraphStart, FirstTime, ValueMax, PixelsPerTime, PixelsPerValue, BestDistanceSq, Hit);
+				TestParticleCurveKeyHit(GetParticleCurveChannelCurve(Binding, 'Z'), BindingIndex, 'Z', Mouse, GraphStart, FirstTime, ValueMax, PixelsPerTime, PixelsPerValue, BestDistanceSq, Hit);
+				break;
+			case EParticleCurveAssetKind::Color:
+				TestParticleCurveKeyHit(GetParticleCurveChannelCurve(Binding, 'R'), BindingIndex, 'R', Mouse, GraphStart, FirstTime, ValueMax, PixelsPerTime, PixelsPerValue, BestDistanceSq, Hit);
+				TestParticleCurveKeyHit(GetParticleCurveChannelCurve(Binding, 'G'), BindingIndex, 'G', Mouse, GraphStart, FirstTime, ValueMax, PixelsPerTime, PixelsPerValue, BestDistanceSq, Hit);
+				TestParticleCurveKeyHit(GetParticleCurveChannelCurve(Binding, 'B'), BindingIndex, 'B', Mouse, GraphStart, FirstTime, ValueMax, PixelsPerTime, PixelsPerValue, BestDistanceSq, Hit);
+				TestParticleCurveKeyHit(GetParticleCurveChannelCurve(Binding, 'A'), BindingIndex, 'A', Mouse, GraphStart, FirstTime, ValueMax, PixelsPerTime, PixelsPerValue, BestDistanceSq, Hit);
+				break;
+			}
+		}
+
+		return Hit;
+	}
+
 	int32 FindClosestKeyByValue(const FFloatCurve& Curve, float Time, float Value)
 	{
 		int32 BestIndex = -1;
@@ -1142,11 +1235,11 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
 	DrawParticleCurveToolbarSeparator("CurveEditDisplay");
 	ImGui::SameLine(0.0f, CurveToolbarItemGap);
-	if (DrawParticleCurveToolbarButton("CreateCurve", ToolbarIcons.CurveCreateIcon.Get(), "Create", false, ActiveBinding != nullptr && !bHasEditableCurve))
+	if (DrawParticleCurveToolbarButton("CreateCurve", ToolbarIcons.CurveCreateIcon.Get(), "Create", false, ActiveBinding != nullptr))
 	{
 		if (Viewer)
 			{
-				Viewer->CaptureUndoSnapshot("CreateParticleCurveAsset");
+				Viewer->CaptureUndoSnapshot(bHasEditableCurve ? "ReplaceParticleCurveAsset" : "CreateParticleCurveAsset");
 			}
 		CreateCurveForBinding(Viewer, *ActiveBinding);
 		CurveState.bPendingHorizontalFit = true;
@@ -1276,12 +1369,39 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 		return ValueMax - (Y - GraphStart.y) / std::max(1.0f, PixelsPerValue);
 	};
 
-	if (bGraphHovered && ActiveCurve && !IO.WantTextInput)
+	const auto SelectCurveSource = [&](int32 BindingIndex, char Channel, bool bFitView)
 	{
-		const int32 HoveredKeyIndex = FindNearestKey(*ActiveCurve, IO.MousePos, GraphStart, FirstTime, ValueMax, PixelsPerTime, PixelsPerValue);
+		if (BindingIndex < 0 || BindingIndex >= static_cast<int32>(CurveBindings.size()))
+		{
+			return;
+		}
+
+		CurveState.SelectedCurveIndex = BindingIndex;
+		CurveState.SelectedCurveChannel = NormalizeParticleCurveChannel(CurveBindings[BindingIndex], Channel);
+		CurveState.SelectedKeyIndex = -1;
+		CurveState.ActiveKeyIndex = -1;
+		if (bFitView)
+		{
+			CurveState.bPendingHorizontalFit = true;
+			CurveState.bPendingVerticalFit = true;
+		}
+	};
+
+	if (bGraphHovered && !IO.WantTextInput)
+	{
+		const FParticleCurveKeyHit HoveredKey = FindNearestVisibleParticleCurveKey(
+			CurveBindings,
+			ActiveBinding,
+			IO.MousePos,
+			GraphStart,
+			FirstTime,
+			ValueMax,
+			PixelsPerTime,
+			PixelsPerValue);
+
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
-			if (IO.KeyCtrl && HoveredKeyIndex < 0)
+			if (IO.KeyCtrl && ActiveCurve && !HoveredKey.IsValid())
 			{
 				if (Viewer)
 					{
@@ -1293,10 +1413,13 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 				CurveState.ActiveKeyIndex = NewIndex;
 				NotifyCurveEdited(Viewer, *ActiveBinding);
 			}
-			else if (HoveredKeyIndex >= 0)
+			else if (HoveredKey.IsValid())
 			{
-				CurveState.SelectedKeyIndex = HoveredKeyIndex;
-				CurveState.ActiveKeyIndex = HoveredKeyIndex;
+				SelectCurveSource(HoveredKey.BindingIndex, HoveredKey.Channel, false);
+				ActiveBinding = &CurveBindings[CurveState.SelectedCurveIndex];
+				ActiveCurve = GetParticleCurveChannelCurve(*ActiveBinding, CurveState.SelectedCurveChannel);
+				CurveState.SelectedKeyIndex = HoveredKey.KeyIndex;
+				CurveState.ActiveKeyIndex = HoveredKey.KeyIndex;
 			}
 			else
 			{
@@ -1403,21 +1526,6 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 		ActiveBinding ? IM_COL32(236, 236, 238, 255) : IM_COL32(166, 170, 180, 255),
 		"Curve Source");
 
-	const auto SelectCurveSource = [&](int32 BindingIndex, char Channel)
-	{
-		if (BindingIndex < 0 || BindingIndex >= static_cast<int32>(CurveBindings.size()))
-		{
-			return;
-		}
-
-		CurveState.SelectedCurveIndex = BindingIndex;
-		CurveState.SelectedCurveChannel = NormalizeParticleCurveChannel(CurveBindings[BindingIndex], Channel);
-		CurveState.SelectedKeyIndex = -1;
-		CurveState.ActiveKeyIndex = -1;
-		CurveState.bPendingHorizontalFit = true;
-		CurveState.bPendingVerticalFit = true;
-	};
-
 	DrawList->PushClipRect(CanvasStart, ChannelEnd, true);
 	float SourceRowY = CanvasStart.y + HeaderHeight + 4.0f;
 	constexpr float SourceRowHeight = 20.0f;
@@ -1446,7 +1554,7 @@ void FParticleEditorViewerWidget::RenderCurveEditor(FParticleEditorViewer* Viewe
 		const bool bHovered = ImGui::IsItemHovered();
 		if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
 		{
-			SelectCurveSource(BindingIndex, NormalizedChannel);
+			SelectCurveSource(BindingIndex, NormalizedChannel, true);
 		}
 		ImGui::PopID();
 		ImGui::PopID();
