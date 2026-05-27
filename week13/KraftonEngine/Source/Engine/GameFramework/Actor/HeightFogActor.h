@@ -14,7 +14,13 @@ public:
 	AHeightFogActor();
 	void InitDefaultComponents();
 
+	void PostDuplicate() override;
+
 	UHeightFogComponent* GetFogComponent() const { return FogComponent; }
+
+
+protected:
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
 
 private:
 	UHeightFogComponent* FogComponent = nullptr;

@@ -17,3 +17,12 @@ void APawnStaticMesh::PostDuplicate()
 {
 	StaticMeshComponent = Cast<UStaticMeshComponent>(GetRootComponent());
 }
+
+void APawnStaticMesh::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == StaticMeshComponent)
+	{
+		StaticMeshComponent = nullptr;
+	}
+}

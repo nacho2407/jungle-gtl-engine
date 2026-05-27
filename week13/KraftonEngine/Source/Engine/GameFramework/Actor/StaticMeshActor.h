@@ -16,7 +16,13 @@ public:
 
 	void BeginPlay() override;
 
+	void PostDuplicate() override;
+
 	void InitDefaultComponents(const FString& UStaticMeshFileName = "Content/Data/BasicShape/Cylinder.obj");
+
+
+protected:
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
 
 private:
 	UStaticMeshComponent* StaticMeshComponent = nullptr;

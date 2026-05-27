@@ -17,6 +17,10 @@ public:
 
 	UBoxComponent* GetBoxComponent() const { return BoxComponent; }
 
+
+protected:
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
+
 private:
 	UBoxComponent* BoxComponent = nullptr;
 };

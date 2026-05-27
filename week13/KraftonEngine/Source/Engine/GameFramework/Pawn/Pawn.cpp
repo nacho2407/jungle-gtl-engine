@@ -73,3 +73,12 @@ void APawn::ApplyControllerRotationToRoot()
 	if (bUseControllerRotationRoll)  R.Roll  = ControlRotation.Roll;
 	Root->SetRelativeRotation(R);
 }
+
+void APawn::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == InputComponent)
+	{
+		InputComponent = nullptr;
+	}
+}

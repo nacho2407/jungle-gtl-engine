@@ -16,7 +16,13 @@ public:
 
 	void InitDefaultComponents();
 
+	void PostDuplicate() override;
+
 	UDecalComponent* GetDecalComponent() const { return DecalComponent; }
+
+
+protected:
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
 
 private:
 	UDecalComponent* DecalComponent;

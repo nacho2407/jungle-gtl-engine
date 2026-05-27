@@ -40,3 +40,20 @@ void ALuaCharacter::PostDuplicate()
 	SpringArm          = GetComponentByClass<USpringArmComponent>();
 	Camera             = GetComponentByClass<UCameraComponent>();
 }
+
+void ALuaCharacter::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == LuaScriptComponent)
+	{
+		LuaScriptComponent = nullptr;
+	}
+	if (Component == SpringArm)
+	{
+		SpringArm = nullptr;
+	}
+	if (Component == Camera)
+	{
+		Camera = nullptr;
+	}
+}

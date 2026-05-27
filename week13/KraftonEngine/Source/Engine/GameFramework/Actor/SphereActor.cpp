@@ -28,3 +28,12 @@ void ASphereActor::BeginPlay()
 		});
 	}
 }
+
+void ASphereActor::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == SphereComponent)
+	{
+		SphereComponent = nullptr;
+	}
+}

@@ -68,6 +68,8 @@ protected:
 	// 자동 mouse look + 향후 다른 per-frame 입력 처리.
 	void Tick(float DeltaTime) override;
 
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
+
 	UCapsuleComponent*           CapsuleComponent  = nullptr;
 	USkeletalMeshComponent*      Mesh              = nullptr;
 	UCharacterMovementComponent* CharacterMovement = nullptr;

@@ -14,7 +14,13 @@ public:
 
 	void BeginPlay() override;
 
+	void PostDuplicate() override;
+
 	void InitDefaultComponents(const FString& SkeletalMeshFileName = "Content/Data/Samba Dancing (10).fbx");
+
+
+protected:
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
 
 private:
 	USkeletalMeshComponent* SkeletalMeshComponent = nullptr;

@@ -152,6 +152,7 @@ protected:
 	bool CanRegisterComponent(UActorComponent* Comp) const;
 	bool OwnsComponent(const UActorComponent* Comp) const;
 	void OnComponentBeingDestroyed(UActorComponent* Component);
+	virtual void OnOwnedComponentRemoved(UActorComponent* Component);
 
 	// Runtime ownership reference. SceneSaveManager serializes component topology explicitly, so this must stay Transient.
 	UPROPERTY(Transient, Instanced, Category="Actor|Components")

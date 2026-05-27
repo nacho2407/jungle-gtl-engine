@@ -14,3 +14,12 @@ void ACapsuleActor::PostDuplicate()
 {
 	CapsuleComponent = Cast<UCapsuleComponent>(GetRootComponent());
 }
+
+void ACapsuleActor::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == CapsuleComponent)
+	{
+		CapsuleComponent = nullptr;
+	}
+}

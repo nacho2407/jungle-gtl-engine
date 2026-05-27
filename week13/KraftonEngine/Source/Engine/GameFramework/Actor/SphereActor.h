@@ -18,6 +18,10 @@ public:
 
 	USphereComponent* GetSphereComponent() const { return SphereComponent; }
 
+
+protected:
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
+
 private:
 	USphereComponent* SphereComponent = nullptr;
 };

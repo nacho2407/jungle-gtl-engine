@@ -41,6 +41,8 @@ public:
 	UCameraComponent*    GetCamera()             const { return Camera; }
 
 protected:
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
+
 	ULuaScriptComponent* LuaScriptComponent = nullptr;
 	USpringArmComponent* SpringArm          = nullptr;
 	UCameraComponent*    Camera             = nullptr;

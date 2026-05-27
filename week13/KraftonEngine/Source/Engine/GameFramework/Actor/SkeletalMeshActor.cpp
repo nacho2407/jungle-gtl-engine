@@ -27,3 +27,22 @@ void ASkeletalMeshActor::InitDefaultComponents(const FString& SkeletalMeshFileNa
 	SkeletalMeshComponent->SetAnimInstanceClass(UCharacterAnimInstance::StaticClass());
 	SkeletalMeshComponent->SetAnimationMode(EAnimationMode::AnimationCustom);
 }
+
+void ASkeletalMeshActor::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == SkeletalMeshComponent)
+	{
+		SkeletalMeshComponent = nullptr;
+	}
+}
+
+void ASkeletalMeshActor::PostDuplicate()
+{
+	Super::PostDuplicate();
+	SkeletalMeshComponent = Cast<USkeletalMeshComponent>(GetRootComponent());
+	if (!SkeletalMeshComponent)
+	{
+		SkeletalMeshComponent = GetComponentByClass<USkeletalMeshComponent>();
+	}
+}

@@ -59,3 +59,22 @@ void AStaticMeshActor::InitDefaultComponents(const FString& UStaticMeshFileName)
 	//SubUVComponent->AttachToComponent(StaticMeshComponent);
 	//SubUVComponent->SetVisibility(true);
 }
+
+void AStaticMeshActor::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == StaticMeshComponent)
+	{
+		StaticMeshComponent = nullptr;
+	}
+}
+
+void AStaticMeshActor::PostDuplicate()
+{
+	Super::PostDuplicate();
+	StaticMeshComponent = Cast<UStaticMeshComponent>(GetRootComponent());
+	if (!StaticMeshComponent)
+	{
+		StaticMeshComponent = GetComponentByClass<UStaticMeshComponent>();
+	}
+}

@@ -105,3 +105,12 @@ void ATriggerVolumeBase::HandleEndOverlap(
 		}
 	}
 }
+
+void ATriggerVolumeBase::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == TriggerBox)
+	{
+		TriggerBox = nullptr;
+	}
+}

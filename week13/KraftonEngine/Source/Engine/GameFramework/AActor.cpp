@@ -107,6 +107,12 @@ void AActor::OnComponentBeingDestroyed(UActorComponent* Component)
 		return;
 	}
 
+	const bool bComponentWasOwned = OwnsComponent(Component) || RootComponent.GetRaw() == Component;
+	if (!bComponentWasOwned)
+	{
+		return;
+	}
+
 	TArray<UActorComponent*> ComponentsToDetach;
 	TSet<UActorComponent*> Seen;
 	if (USceneComponent* SceneComponent = Cast<USceneComponent>(Component))
@@ -121,6 +127,11 @@ void AActor::OnComponentBeingDestroyed(UActorComponent* Component)
 	if (ComponentsToDetach.empty())
 	{
 		return;
+	}
+
+	for (UActorComponent* DetachedComponent : ComponentsToDetach)
+	{
+		OnOwnedComponentRemoved(DetachedComponent);
 	}
 
 	if (ContainsComponent(ComponentsToDetach, RootComponent.GetRaw()))
@@ -165,6 +176,11 @@ void AActor::OnComponentBeingDestroyed(UActorComponent* Component)
 	MarkPickingDirty();
 }
 
+
+void AActor::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	(void)Component;
+}
 
 UActorComponent* AActor::AddComponentByClass(UClass* Class)
 {

@@ -17,6 +17,10 @@ public:
 
 	UCapsuleComponent* GetCapsuleComponent() const { return CapsuleComponent; }
 
+
+protected:
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
+
 private:
 	UCapsuleComponent* CapsuleComponent = nullptr;
 };

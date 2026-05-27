@@ -87,6 +87,8 @@ public:
 	bool bUseControllerRotationRoll  = false;
 
 protected:
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
+
 	APlayerController* Controller = nullptr;  // 직렬화 제외 — 런타임에 PC가 세팅
 
 	UPROPERTY(Edit, Save, Category="Pawn", DisplayName="Auto Possess Player")

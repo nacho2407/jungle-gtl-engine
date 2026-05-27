@@ -26,6 +26,10 @@ public:
 
 	UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; }
 
+
+protected:
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
+
 private:
 	UStaticMeshComponent* StaticMeshComponent = nullptr;
 };

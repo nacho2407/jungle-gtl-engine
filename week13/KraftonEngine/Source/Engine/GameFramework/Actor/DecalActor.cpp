@@ -27,3 +27,32 @@ void ADecalActor::InitDefaultComponents()
 	TextRenderComponent->AttachToComponent(DecalComponent);
 	TextRenderComponent->SetFont(FName("Default"));
 }
+
+void ADecalActor::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == DecalComponent)
+	{
+		DecalComponent = nullptr;
+	}
+	if (Component == BillboardComponent)
+	{
+		BillboardComponent = nullptr;
+	}
+	if (Component == TextRenderComponent)
+	{
+		TextRenderComponent = nullptr;
+	}
+}
+
+void ADecalActor::PostDuplicate()
+{
+	Super::PostDuplicate();
+	DecalComponent = Cast<UDecalComponent>(GetRootComponent());
+	if (!DecalComponent)
+	{
+		DecalComponent = GetComponentByClass<UDecalComponent>();
+	}
+	BillboardComponent = GetComponentByClass<UBillboardComponent>();
+	TextRenderComponent = GetComponentByClass<UTextRenderComponent>();
+}

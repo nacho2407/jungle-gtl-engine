@@ -13,6 +13,12 @@ public:
 	GENERATED_BODY()
 	void InitDefaultComponents();
 
+	void PostDuplicate() override;
+
+
+protected:
+	void OnOwnedComponentRemoved(UActorComponent* Component) override;
+
 private:
 	UAmbientLightComponent* LightComponent = nullptr;
 	UBillboardComponent* BillboardComponent = nullptr;

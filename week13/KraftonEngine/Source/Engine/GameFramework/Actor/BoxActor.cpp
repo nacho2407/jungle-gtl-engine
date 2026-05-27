@@ -14,3 +14,12 @@ void ABoxActor::PostDuplicate()
 {
 	BoxComponent = Cast<UBoxComponent>(GetRootComponent());
 }
+
+void ABoxActor::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == BoxComponent)
+	{
+		BoxComponent = nullptr;
+	}
+}

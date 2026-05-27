@@ -147,3 +147,20 @@ void ACharacter::Tick(float DeltaTime)
 		if (bChanged) CapsuleComponent->SetRelativeRotation(R);
 	}
 }
+
+void ACharacter::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == CapsuleComponent)
+	{
+		CapsuleComponent = nullptr;
+	}
+	if (Component == Mesh)
+	{
+		Mesh = nullptr;
+	}
+	if (Component == CharacterMovement)
+	{
+		CharacterMovement = nullptr;
+	}
+}

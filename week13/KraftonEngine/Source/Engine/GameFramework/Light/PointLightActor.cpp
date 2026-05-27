@@ -10,3 +10,27 @@ void APointLightActor::InitDefaultComponents()
 
 	BillboardComponent = LightComponent->EnsureEditorBillboard();
 }
+
+void APointLightActor::OnOwnedComponentRemoved(UActorComponent* Component)
+{
+	Super::OnOwnedComponentRemoved(Component);
+	if (Component == LightComponent)
+	{
+		LightComponent = nullptr;
+	}
+	if (Component == BillboardComponent)
+	{
+		BillboardComponent = nullptr;
+	}
+}
+
+void APointLightActor::PostDuplicate()
+{
+	Super::PostDuplicate();
+	LightComponent = Cast<UPointLightComponent>(GetRootComponent());
+	if (!LightComponent)
+	{
+		LightComponent = GetComponentByClass<UPointLightComponent>();
+	}
+	BillboardComponent = GetComponentByClass<UBillboardComponent>();
+}
