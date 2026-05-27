@@ -1,9 +1,16 @@
 {
-  "PathFileName": "Content/Material/Editor/DirectionalLight.mat",
-  "ShaderPath": "Shaders/UI/Billboard.hlsl",
-  "RenderPass": "AlphaBlend",
-  "Textures": {
-    "DiffuseTexture": "Content/Editor/Icons/S_DirectionalLight_256x.png"
+  "BlendState" : "",
+  "DepthStencilState" : "",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
+  "Origin" : "Editor",
+  "PathFileName" : "Content/Material/Editor/DirectionalLight.mat",
+  "RasterizerState" : "",
+  "RenderPass" : "AlphaBlend",
+  "ShaderPath" : "Shaders/UI/Billboard.hlsl",
+  "ShadowMode" : "Opaque",
+  "Textures" : {
+    "DiffuseTexture" : "Content/Editor/Icons/S_DirectionalLight_256x.png"
   },
-  "Origin": "Editor"
+  "bEnableBloom" : false
 }

@@ -14,6 +14,7 @@ UMaterial::~UMaterial()
 		Pair.second->Release();
 	}
 	ConstantBufferMap.clear();
+	MaterialBloomCB.Release();
 
 	for (auto& Pair : TextureParameters)
 	{
@@ -233,6 +234,12 @@ bool UMaterial::GetMatrixParameter(const FString& ParamName, FMatrix& Value) con
 
 void UMaterial::Bind(ID3D11DeviceContext* Context)
 {
+}
+
+void UMaterial::PostEditProperty(const char* PropertyName)
+{
+	UObject::PostEditProperty(PropertyName);
+	bMaterialBloomCBDirty = true;
 }
 
 const FString& UMaterial::GetTexturePathFileName(const FString& TextureName)const
@@ -623,6 +630,11 @@ ERasterizerState UMaterialInstance::GetRasterizerState() const
 
 FConstantBuffer* UMaterialInstance::GetGPUBufferBySlot(uint32 InSlot) const
 {
+	if (InSlot == ECBSlot::MaterialBloom)
+	{
+		return Parent ? Parent->GetGPUBufferBySlot(InSlot) : nullptr;
+	}
+
 	for (const auto& Pair : ConstantBufferMap)
 	{
 		if (Pair.second && Pair.second->SlotIndex == InSlot)
@@ -659,6 +671,8 @@ void UMaterialInstance::FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceCont
 	{
 		return;
 	}
+
+	Parent->FlushDirtyBuffers(Device, Ctx);
 
 	if (bConstantBufferDirty)
 	{

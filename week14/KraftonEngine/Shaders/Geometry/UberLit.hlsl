@@ -15,6 +15,7 @@
 #include "Common/SystemSamplers.hlsli"
 #include "Common/Skinning.hlsli"
 #include "Common/Fog.hlsli"
+#include "Common/MaterialBloom.hlsli"
 
 #if !defined(LIGHTING_MODEL_UNLIT)
 #include "Common/ForwardLighting.hlsli"
@@ -45,7 +46,6 @@ cbuffer PerShader1 : register(b2)
 
 
 // 머티리얼 확장 파라미터 — 팀원 A CB 시스템 완성 후 b2 확장 예정
-static const float4 g_DefaultEmissive = float4(0, 0, 0, 0);
 static const float g_DefaultShininess = 32.0f;
 
 // =============================================================================
@@ -271,6 +271,7 @@ return output;
 #if defined(LIGHTING_MODEL_UNLIT) && LIGHTING_MODEL_UNLIT
     // Unlit: 라이팅 없이 Albedo만 출력
     float3 finalColor = ApplyWireframe(baseColor.rgb);
+    finalColor = ApplyMaterialEmissive(finalColor, baseColor.rgb);
     output.Culling = float4(0, 0, 0, 0);
 
 #else
@@ -294,7 +295,8 @@ return output;
     output.Culling = ComputeCullingHeatmap(input.position, input.worldPos);
     // Diffuse에만 albedo를 곱하고, Specular는 빛 색상 그대로 더한다
     // (비금속 표면: specular 반사 = 빛의 색, 물체 색이 아님)
-    float3 finalColor = baseColor.rgb * diffuse + specular + g_DefaultEmissive.rgb;
+    float3 finalColor = baseColor.rgb * diffuse + specular;
+    finalColor = ApplyMaterialEmissive(finalColor, baseColor.rgb);
     finalColor = ApplyWireframe(finalColor);
     
 #if APPLY_FOG

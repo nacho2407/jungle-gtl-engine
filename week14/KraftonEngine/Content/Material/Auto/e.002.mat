@@ -1,6 +1,8 @@
 {
   "BlendState" : "",
   "DepthStencilState" : "",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
   "Origin" : "FbxImport",
   "Parameters" : {
     "HasNormalMap" : 0.000000,
@@ -14,5 +16,6 @@
   "ShadowMode" : "Opaque",
   "Textures" : {
     "DiffuseTexture" : "Content/Data/Samba Dancing/textures/e.0.png"
-  }
+  },
+  "bEnableBloom" : false
 }

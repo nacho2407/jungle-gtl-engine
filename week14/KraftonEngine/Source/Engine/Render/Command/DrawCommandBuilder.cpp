@@ -557,6 +557,7 @@ void FDrawCommandBuilder::BuildCommandForSection(FScene& Scene, const FPrimitive
 
 		Cmd.Bindings.PerShaderCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
 		Cmd.Bindings.PerShaderCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
+		Cmd.Bindings.MaterialBloomCB = Mat->GetGPUBufferBySlot(ECBSlot::MaterialBloom);
 
 		for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
 			Cmd.Bindings.SRVs[s] = Mat->GetSRV(static_cast<EMaterialTextureSlot>(s));
@@ -615,6 +616,7 @@ void FDrawCommandBuilder::BuildParticleCommandForSection(FScene& Scene, const FP
 
 		Cmd.Bindings.PerShaderCB[0] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader0);
 		Cmd.Bindings.PerShaderCB[1] = Mat->GetGPUBufferBySlot(ECBSlot::PerShader1);
+		Cmd.Bindings.MaterialBloomCB = Mat->GetGPUBufferBySlot(ECBSlot::MaterialBloom);
 
 		for (int s = 0; s < (int)EMaterialTextureSlot::Max; s++)
 			Cmd.Bindings.SRVs[s] = Mat->GetSRV(static_cast<EMaterialTextureSlot>(s));

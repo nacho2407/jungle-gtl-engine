@@ -612,6 +612,15 @@ void FMaterialEditorWidget::SaveMaterialJson()
 				CachedJson[MatKeys::ShadowMode] = ShadowEnum->GetNames()[Index];
 			}
 		}
+
+		const FVector4 EmissiveColor = BaseMaterial->GetEmissiveColor();
+		CachedJson[MatKeys::EmissiveColor] = json::Array(
+			EmissiveColor.X,
+			EmissiveColor.Y,
+			EmissiveColor.Z,
+			EmissiveColor.W);
+		CachedJson[MatKeys::EmissiveIntensity] = BaseMaterial->GetEmissiveIntensity();
+		CachedJson[MatKeys::bEnableBloom] = BaseMaterial->IsBloomEnabled();
 	}
 
 	std::ofstream File(MaterialPath);

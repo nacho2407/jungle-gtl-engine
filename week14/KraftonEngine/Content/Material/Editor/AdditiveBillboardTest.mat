@@ -1,10 +1,16 @@
 {
-  "PathFileName": "Content/Material/Editor/AdditiveBillboardTest.mat",
-  "ShaderPath": "Shaders/UI/Billboard.hlsl",
-  "RenderPass": "AlphaBlend",
-  "BlendState": "Additive",
-  "Textures": {
-    "DiffuseTexture": "Content/Editor/Icons/PointLight_64x.png"
+  "BlendState" : "Additive",
+  "DepthStencilState" : "",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
+  "Origin" : "Editor",
+  "PathFileName" : "Content/Material/Editor/AdditiveBillboardTest.mat",
+  "RasterizerState" : "",
+  "RenderPass" : "AlphaBlend",
+  "ShaderPath" : "Shaders/UI/Billboard.hlsl",
+  "ShadowMode" : "Opaque",
+  "Textures" : {
+    "DiffuseTexture" : "Content/Editor/Icons/PointLight_64x.png"
   },
-  "Origin": "Editor"
+  "bEnableBloom" : false
 }

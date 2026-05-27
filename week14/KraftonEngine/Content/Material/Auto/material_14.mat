@@ -1,6 +1,8 @@
 {
   "BlendState" : "",
   "DepthStencilState" : "",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
   "Origin" : "ObjImport",
   "Parameters" : {
     "HasNormalMap" : 0.000000,
@@ -11,7 +13,9 @@
   "RasterizerState" : "",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "ShadowMode" : "Opaque",
   "Textures" : {
     "DiffuseTexture" : "Content/Data/Map/de_dust2-cs-map/source/de_dust2/de_dust2_material_14.tga"
-  }
+  },
+  "bEnableBloom" : false
 }

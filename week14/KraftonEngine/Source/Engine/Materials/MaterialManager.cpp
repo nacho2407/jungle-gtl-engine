@@ -9,6 +9,62 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Object/ReferenceCollector.h"
 
+namespace
+{
+	float ReadJsonNumber(const json::JSON& Value, float DefaultValue)
+	{
+		bool bOk = false;
+		const double FloatValue = Value.ToFloat(bOk);
+		if (bOk)
+		{
+			return static_cast<float>(FloatValue);
+		}
+
+		const long IntValue = Value.ToInt(bOk);
+		return bOk ? static_cast<float>(IntValue) : DefaultValue;
+	}
+
+	bool ReadJsonBool(const json::JSON& Value, bool bDefaultValue)
+	{
+		bool bOk = false;
+		const bool bBoolValue = Value.ToBool(bOk);
+		if (bOk)
+		{
+			return bBoolValue;
+		}
+
+		const long IntValue = Value.ToInt(bOk);
+		return bOk ? IntValue != 0 : bDefaultValue;
+	}
+
+	FVector4 ReadJsonVector4(json::JSON& Value, const FVector4& DefaultValue)
+	{
+		if (Value.JSONType() != json::JSON::Class::Array || Value.length() < 3)
+		{
+			return DefaultValue;
+		}
+
+		return FVector4(
+			ReadJsonNumber(Value[0], DefaultValue.X),
+			ReadJsonNumber(Value[1], DefaultValue.Y),
+			ReadJsonNumber(Value[2], DefaultValue.Z),
+			Value.length() >= 4 ? ReadJsonNumber(Value[3], DefaultValue.W) : DefaultValue.W);
+	}
+
+	void WriteMaterialBloomSettings(json::JSON& JsonData, const UMaterial* Material)
+	{
+		if (!Material)
+		{
+			return;
+		}
+
+		const FVector4 Color = Material->GetEmissiveColor();
+		JsonData[MatKeys::EmissiveColor] = json::Array(Color.X, Color.Y, Color.Z, Color.W);
+		JsonData[MatKeys::EmissiveIntensity] = Material->GetEmissiveIntensity();
+		JsonData[MatKeys::bEnableBloom] = Material->IsBloomEnabled();
+	}
+}
+
 void FMaterialManager::ScanMaterialAssets()
 {
 	AvailableMaterialFiles.clear();
@@ -82,6 +138,26 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 
 	FString ShadowModeStr = JsonData.hasKey(MatKeys::ShadowMode) ? JsonData[MatKeys::ShadowMode].ToString().c_str() : "Opaque";
 	EMaterialShadowMode ShadowMode = StringToShadowMode(ShadowModeStr);
+	const bool bHadEmissiveColor = JsonData.hasKey(MatKeys::EmissiveColor);
+	const bool bHadEmissiveIntensity = JsonData.hasKey(MatKeys::EmissiveIntensity);
+	const bool bHadEnableBloom = JsonData.hasKey(MatKeys::bEnableBloom);
+	const bool bMaterialSettingsInjected = !bHadEmissiveColor || !bHadEmissiveIntensity || !bHadEnableBloom;
+
+	FVector4 EmissiveColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	float EmissiveIntensity = 0.0f;
+	bool bEnableBloom = false;
+	if (bHadEmissiveColor)
+	{
+		EmissiveColor = ReadJsonVector4(JsonData[MatKeys::EmissiveColor], EmissiveColor);
+	}
+	if (bHadEmissiveIntensity)
+	{
+		EmissiveIntensity = ReadJsonNumber(JsonData[MatKeys::EmissiveIntensity], EmissiveIntensity);
+	}
+	if (bHadEnableBloom)
+	{
+		bEnableBloom = ReadJsonBool(JsonData[MatKeys::bEnableBloom], bEnableBloom);
+	}
 
 	// 4. 템플릿 확보 (없으면 리플렉션을 통해 생성됨)
 	FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath);
@@ -94,6 +170,9 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	UMaterial* Material = UObjectManager::Get().CreateObject<UMaterial>();
 	Material->Create(PathFileName, Template, RenderPass, BlendState, DepthState, RasterState, std::move(InjectedBuffers));
 	Material->SetShadowMode(ShadowMode);
+	Material->SetEmissiveColor(EmissiveColor);
+	Material->SetEmissiveIntensity(EmissiveIntensity);
+	Material->SetBloomEnabled(bEnableBloom);
 	MaterialCache.emplace(GenericPath, Material);
 
 	//템플릿을 통해 material에 넣기
@@ -114,9 +193,10 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	JsonData[MatKeys::ShadowMode] = ShadowModeToString(ShadowMode);
 
 	JsonData[MatKeys::ShadowMode] = "Opaque";
+	WriteMaterialBloomSettings(JsonData, Material);
 
 	//최종적으로 material 저장
-	if (bInjected || bPurged)
+	if (bInjected || bPurged || bMaterialSettingsInjected)
 	{
 		SaveToJSON(JsonData, GenericPath);
 	}
