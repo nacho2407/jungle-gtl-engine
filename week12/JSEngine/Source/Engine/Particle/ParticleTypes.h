@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/CoreMinimal.h"
+#include "Object/FName.h"
 
 class AActor;
 class UPrimitiveComponent;
@@ -43,6 +44,44 @@ enum class EParticleFlags : uint32
 	FreezeTranslation    = 1u << 4,
 	FreezeRotation       = 1u << 5,
 	FreezeMovement       = 1u << 6,
+};
+
+UENUM()
+enum class EParticleEventType
+{
+	Spawn UMETA(DisplayName = "Spawn"),
+	Death UMETA(DisplayName = "Death"),
+	Collision UMETA(DisplayName = "Collision"),
+};
+
+/**
+ * @brief 같은 particle system 내부 receiver 입력용 event payload
+ *
+ * @note 위치와 벡터 값은 world space 기준
+ */
+struct FParticleEventPayload
+{
+	EParticleEventType Type = EParticleEventType::Collision;
+	FName EventName;
+
+	int32 EmitterIndex = -1;
+	int32 ParticleIndex = -1;
+	uint32 ParticleId = 0;
+
+	// Particle lifetime 기준 0~1 정규화 진행률
+	float RelativeTime = 0.0f;
+
+	FVector LocationWS = FVector::ZeroVector;
+	FVector VelocityWS = FVector::ZeroVector;
+	FVector DirectionWS = FVector::ZeroVector;
+
+	// Collision event에서만 유효한 hit 정보
+	FVector NormalWS = FVector::ZeroVector;
+	float CollisionTime = 1.0f;
+	int FaceIndex = -1;
+
+	AActor* HitActor = nullptr;
+	UPrimitiveComponent* HitComponent = nullptr;
 };
 
 struct FParticleEventCollideData

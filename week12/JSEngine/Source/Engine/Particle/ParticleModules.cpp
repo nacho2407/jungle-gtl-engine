@@ -177,6 +177,20 @@ namespace
 			return;
 		}
 
+		if (UParticleModuleEventGenerator* EventGeneratorModule = Cast<UParticleModuleEventGenerator>(Module))
+		{
+			if (Cache.EventGeneratorModule == nullptr)
+			{
+				Cache.EventGeneratorModule = EventGeneratorModule;
+				EventGeneratorModule->ValidateConfiguredEvents();
+			}
+			else
+			{
+				UE_LOG_WARNING("[Particle] Multiple enabled Event Generator modules found. Using the first module.");
+			}
+			return;
+		}
+
 		if (Module->IsSpawnModule())
 		{
 			Cache.SpawnModules.push_back(Module);
@@ -788,6 +802,44 @@ void UParticleModule::Update(FParticleEmitterInstance* Owner, int32 Offset, floa
 bool UParticleModuleSpawn::IsSpawnRateModule() const
 {
 	return true;
+}
+
+UParticleModuleEventGenerator::UParticleModuleEventGenerator()
+{
+	Events.push_back(FParticleEventGenerateInfo{});
+}
+
+bool UParticleModuleEventGenerator::IsPrimaryEventEntry(int32 EventIndex) const
+{
+	if (EventIndex < 0 || EventIndex >= static_cast<int32>(Events.size()))
+	{
+		return false;
+	}
+
+	const FParticleEventGenerateInfo& Candidate = Events[static_cast<size_t>(EventIndex)];
+	for (int32 EarlierIndex = 0; EarlierIndex < EventIndex; ++EarlierIndex)
+	{
+		const FParticleEventGenerateInfo& Earlier = Events[static_cast<size_t>(EarlierIndex)];
+		if (Earlier.Type == Candidate.Type && Earlier.EventName == Candidate.EventName)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void UParticleModuleEventGenerator::ValidateConfiguredEvents() const
+{
+	for (int32 EventIndex = 0; EventIndex < static_cast<int32>(Events.size()); ++EventIndex)
+	{
+		if (!IsPrimaryEventEntry(EventIndex))
+		{
+			UE_LOG_WARNING(
+				"[Particle] Duplicate Event Generator entry found for '%s'. Using the first entry.",
+				Events[static_cast<size_t>(EventIndex)].EventName.ToString().c_str());
+		}
+	}
 }
 
 UParticleModuleLifetime::UParticleModuleLifetime()

@@ -375,6 +375,44 @@ struct FParticleCollisionPayload
 	bool bIgnoreCollisions = false;
 };
 
+USTRUCT()
+struct FParticleEventGenerateInfo
+{
+	GENERATED_STRUCT_BODY(FParticleEventGenerateInfo)
+
+	UPROPERTY(DisplayName = "Type")
+	EParticleEventType Type = EParticleEventType::Collision;
+
+	// 같은 ParticleSystemComponent 내부 receiver 구독 이름
+	UPROPERTY(DisplayName = "Event Name")
+	FName EventName = FName("ParticleCollision");
+};
+
+UCLASS(Placeable, DisplayName = "Event Generator", Category = "Events")
+class UParticleModuleEventGenerator : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleEventGenerator, UParticleModule)
+
+	UParticleModuleEventGenerator();
+
+	/**
+	 * @brief 중복 named event entry 경고 출력
+	 *
+	 * @note 동일 type과 이름은 첫 entry만 유효
+	 */
+	void ValidateConfiguredEvents() const;
+
+	UPROPERTY(DisplayName = "Events")
+	TArray<FParticleEventGenerateInfo> Events;
+
+private:
+	/**
+	 * @brief 동일 named event 조합의 첫 entry 여부 판정
+	 */
+	bool IsPrimaryEventEntry(int32 EventIndex) const;
+};
+
 UCLASS(Placeable, DisplayName = "Collision Module", Category = "Collision")
 class UParticleModuleCollision : public UParticleModule
 {
