@@ -836,7 +836,7 @@ bool FParticleSystemSceneProxy::BuildBeamCommands(
 			}
 
 			const float ParticleWidthScale = std::max(std::fabs(Particle->Size.X), 0.001f);
-			const float HalfWidth = std::max(ReplayData.BeamWidth * ParticleWidthScale, 0.1f) * 0.5f;
+			const float HalfWidth = std::max(ReplayData.BeamWidth * ParticleWidthScale, 0.0f) * 0.5f;
 			MaxHalfWidth = std::max(MaxHalfWidth, HalfWidth);
 
 			const TArray<FVector>* BeamPoints = &SharedBeamPoints;

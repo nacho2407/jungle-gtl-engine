@@ -2541,7 +2541,7 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBeam::GetDynamicRenderData(FPart
 	RenderData->ReplayData.CoordinateSpace = BeamCoordinateSpace;
 	RenderData->ReplayData.SourcePoint = SourcePoint;
 	RenderData->ReplayData.TargetPoint = TargetPoint;
-	RenderData->ReplayData.BeamWidth = std::max(BeamWidth, 0.1f);
+	RenderData->ReplayData.BeamWidth = std::max(BeamWidth, 0.0f);
 
 	// endpoint가 PSC parameter로 world resolve된 경우 module tangent도 replay coordinate space에 맞게 변환
 	const bool bTransformModuleTangentToWorld =

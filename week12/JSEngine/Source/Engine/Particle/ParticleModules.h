@@ -703,7 +703,7 @@ public:
 	FDynamicEmitterDataBase* GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance) override;
 	int32 GetRequiredPayloadSize() const override;
 
-	UPROPERTY(DisplayName = "Ribbon Width", Min = 0.1f, Speed = 1.0f)
+	UPROPERTY(DisplayName = "Ribbon Width", Min = 0.01f, Speed = 1.0f)
 	float RibbonWidth = 10.0f;
 
 	UPROPERTY(DisplayName = "Use Particle Size As Width")
