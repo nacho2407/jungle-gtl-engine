@@ -2602,6 +2602,9 @@
     <None Include="Shaders\VFX\ParticleBeam.hlsl">
       <Filter>Shaders\VFX</Filter>
     </None>
+    <None Include="Shaders\VFX\ParticleRibbon.hlsl">
+      <Filter>Shaders\VFX</Filter>
+    </None>
     <None Include="Shaders\VFX\ParticleSprite.hlsl">
       <Filter>Shaders\VFX</Filter>
     </None>

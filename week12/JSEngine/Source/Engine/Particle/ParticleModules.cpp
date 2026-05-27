@@ -172,9 +172,40 @@ namespace
 		}
 	}
 
-	void AddEnabledModuleExecution(FParticleLODLevelRuntimeCache& Cache, UParticleModule* Module)
+	bool IsTrailTypeDataModule(const UParticleModuleTypeDataBase* TypeData)
 	{
-		if (Module == nullptr || !Module->bEnabled)
+		return Cast<UParticleModuleTypeDataRibbon>(TypeData) != nullptr ||
+			Cast<UParticleModuleTypeDataAnimTrail>(TypeData) != nullptr;
+	}
+
+	bool IsTrailCompatibleModule(const UParticleModule* Module)
+	{
+		return Cast<UParticleModuleSpawn>(Module) != nullptr ||
+			Cast<UParticleModuleLifetime>(Module) != nullptr ||
+			Cast<UParticleModuleColor>(Module) != nullptr ||
+			Cast<UParticleModuleColorOverLife>(Module) != nullptr ||
+			Cast<UParticleModuleSize>(Module) != nullptr ||
+			Cast<UParticleModuleSizeScaleOverLife>(Module) != nullptr;
+	}
+
+	bool IsModuleExecutableForTypeData(const UParticleModule* Module, const UParticleModuleTypeDataBase* TypeData)
+	{
+		if (Module == nullptr)
+		{
+			return false;
+		}
+
+		if (!IsTrailTypeDataModule(TypeData))
+		{
+			return true;
+		}
+
+		return IsTrailCompatibleModule(Module);
+	}
+
+	void AddEnabledModuleExecution(FParticleLODLevelRuntimeCache& Cache, UParticleModule* Module, const UParticleModuleTypeDataBase* TypeData)
+	{
+		if (Module == nullptr || !Module->bEnabled || !IsModuleExecutableForTypeData(Module, TypeData))
 		{
 			return;
 		}
@@ -235,6 +266,11 @@ namespace
 				Module->bEnabled = false;
 			}
 
+			if (IsTrailTypeDataModule(TypeData) && !IsTrailCompatibleModule(Module))
+			{
+				Module->bEnabled = false;
+			}
+
 			if (Module == Cache.RequiredModule || Module == Cache.SpawnModule || Module == Cache.TypeDataModule)
 			{
 				continue;
@@ -281,6 +317,10 @@ namespace
 		{
 			UParticleModule* Module = LODLevel->Modules[static_cast<size_t>(ModuleIndex)];
 			UParticleModule* LayoutModule = LayoutLODLevel->Modules[static_cast<size_t>(ModuleIndex)];
+			if (Module != nullptr && IsTrailTypeDataModule(Cache.TypeDataModule) && !IsTrailCompatibleModule(Module))
+			{
+				Module->bEnabled = false;
+			}
 			CopyStablePayloadOffsets(Cache, Module, LayoutModule, StableLayoutCache);
 
 			// 특수 module 실행 목록 제외
@@ -293,7 +333,7 @@ namespace
 			}
 
 			// 현재 LOD 실행 목록
-			AddEnabledModuleExecution(Cache, Module);
+			AddEnabledModuleExecution(Cache, Module, Cache.TypeDataModule);
 		}
 
 		return Cache;
@@ -1671,6 +1711,67 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataMesh::GetDynamicRenderData(FPart
 	RenderData->ReplayData.DataContainer.ParticleIndices = RenderData->OwnedParticleIndices.data();
 
 	return RenderData;
+}
+
+int32 UParticleModuleTypeDataRibbon::GetRequiredPayloadSize() const
+{
+	return static_cast<int32>(sizeof(FRibbonParticlePayload));
+}
+
+FParticleEmitterInstance* UParticleModuleTypeDataRibbon::CreateInstance(
+	UParticleEmitter* InEmitterTemplate,
+	IParticleEmitterInstanceOwner& InOwner)
+{
+	FParticleRibbonEmitterInstance* Instance = new FParticleRibbonEmitterInstance(InOwner);
+	Instance->SpriteTemplate = InEmitterTemplate;
+	return Instance;
+}
+
+FDynamicEmitterDataBase* UParticleModuleTypeDataRibbon::GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance)
+{
+	FParticleRibbonEmitterInstance* RibbonInstance = static_cast<FParticleRibbonEmitterInstance*>(InEmitterInstance);
+	if (RibbonInstance == nullptr || RibbonInstance->CurrentRuntimeCache == nullptr)
+	{
+		return nullptr;
+	}
+
+	FDynamicRibbonEmitterData* RenderData = new FDynamicRibbonEmitterData();
+	RibbonInstance->BuildRenderSnapshot(
+		RenderData->ReplayData.RenderPoints,
+		RenderData->ReplayData.TrailRanges);
+
+	if (RenderData->ReplayData.RenderPoints.empty() || RenderData->ReplayData.TrailRanges.empty())
+	{
+		delete RenderData;
+		return nullptr;
+	}
+
+	const UParticleModuleRequired* RequiredModule = RibbonInstance->CurrentRuntimeCache->RequiredModule;
+	RenderData->Material = RequiredModule != nullptr ? RequiredModule->Material : nullptr;
+	RenderData->ComponentToWorld = FMatrix::Identity;
+
+	RenderData->ReplayData.EmitterType = EDynamicEmitterType::Ribbon;
+	RenderData->ReplayData.ActiveParticleCount = static_cast<int32>(RenderData->ReplayData.RenderPoints.size());
+	RenderData->ReplayData.ParticleStride = RibbonInstance->ParticleStride;
+	RenderData->ReplayData.SortMode = EParticleSortMode::None;
+	RenderData->ReplayData.CoordinateSpace = EParticleCoordinateSpace::World;
+	RenderData->ReplayData.Scale = FVector::OneVector;
+	RenderData->ReplayData.TrailCount = static_cast<int32>(RenderData->ReplayData.TrailRanges.size());
+	RenderData->ReplayData.RenderPointCount = static_cast<int32>(RenderData->ReplayData.RenderPoints.size());
+	RenderData->ReplayData.SheetsPerTrail = std::max(SheetsPerTrail, 1);
+	RenderData->ReplayData.TilingDistance = std::max(TilingDistance, 0.0f);
+	RenderData->ReplayData.RibbonFacingMode = FacingMode;
+
+	return RenderData;
+}
+
+FParticleEmitterInstance* UParticleModuleTypeDataAnimTrail::CreateInstance(
+	UParticleEmitter* InEmitterTemplate,
+	IParticleEmitterInstanceOwner& InOwner)
+{
+	FParticleAnimTrailEmitterInstance* Instance = new FParticleAnimTrailEmitterInstance(InOwner);
+	Instance->SpriteTemplate = InEmitterTemplate;
+	return Instance;
 }
 
 FParticleEmitterInstance* UParticleModuleTypeDataBeam::CreateInstance(

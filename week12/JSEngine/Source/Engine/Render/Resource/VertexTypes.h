@@ -20,21 +20,21 @@ struct FNormalVertex
 	FColor		Color;
 	FVector		Normal;
 	FVector2	UVs;	//	TexCoord
-    FVector4	Tangent;
+	FVector4	Tangent;
 };
 
 struct FSkeletalMeshVertex
 {
-    FVector Position;
-    FColor Color;
-    FVector Normal;
-    FVector2 UVs;
-    FVector4 Tangent;
+	FVector Position;
+	FColor Color;
+	FVector Normal;
+	FVector2 UVs;
+	FVector4 Tangent;
 
-    // Bone influence (핵심)
-    // TODO: invalid bone 표현이나 256개 이상의 bone 표현을 위해 int32로 변경을 고려
-    uint8 BoneIndices[4];
-    float BoneWeights[4];
+	// Bone influence (핵심)
+	// TODO: invalid bone 표현이나 256개 이상의 bone 표현을 위해 int32로 변경을 고려
+	uint8 BoneIndices[4];
+	float BoneWeights[4];
 };
 
 struct FOverlayVertex
@@ -75,6 +75,22 @@ struct FBeamParticleInstanceData
 	FVector Target;
 	float HalfWidth = 0.5f;
 	FColor Color = FColor::White();
+};
+
+struct FParticleRibbonSegmentInstanceData
+{
+	FVector Start = FVector::ZeroVector;
+	float HalfWidthStart = 0.5f;
+
+	FVector End = FVector::ZeroVector;
+	float HalfWidthEnd = 0.5f;
+
+	FVector4 StartColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	FVector4 EndColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+
+	FVector2 UVStartEnd = FVector2(0.0f, 1.0f);
+	FVector Side = FVector::RightVector;
+	float FacingMode = 0.0f;
 };
 
 struct FMeshData

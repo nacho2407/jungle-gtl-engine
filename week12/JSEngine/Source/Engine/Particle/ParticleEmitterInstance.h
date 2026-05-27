@@ -10,6 +10,8 @@ class IParticleEmitterInstanceOwner;
 class UParticleModule;
 class UParticleEmitter;
 class UParticleLODLevel;
+class UParticleModuleTypeDataRibbon;
+class UParticleModuleTypeDataAnimTrail;
 
 class FParticleEmitterInstance
 {
@@ -90,7 +92,7 @@ public:
 	/**
 	 * @brief particle의 모든 module payload를 초기화합니다.
 	 */
-    void ClearParticlePayloads(FBaseParticle& Particle) const;
+	void ClearParticlePayloads(FBaseParticle& Particle) const;
 
 	bool UsesLocalSpace() const;
 	FVector TransformLocationToSimulationSpace(const FVector& WorldLocation) const;
@@ -101,8 +103,9 @@ public:
 
 	virtual void Tick(float DeltaTime);
 
-private:
+protected:
 	bool AllocateParticleData(int32 InMaxActiveParticles, int32 InParticleStride, int32 InInstancePayloadSize);
+	bool RefreshCurrentRuntimeCache();
 	const UParticleModuleRequired* GetRequiredModule() const;
 	float GetEmitterDuration() const;
 	int32 GetTotalLoopCount() const;
@@ -117,7 +120,8 @@ private:
 	int32 CalculateSpawnRateCount(float DeltaTime);
 	int32 CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime);
 	int32 ResolveBurstSpawnAmount(const FParticleBurstEntry& Entry);
-	int32 SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime);
+	virtual int32 SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime);
+	int32 SpawnParticleAtLocation(const FVector& WorldLocation, const FVector& SpawnSide, float SpawnTime);
 	void MarkParticlePendingKill(int32 ActiveIndex);
 	void CompactPendingKilledParticles();
 	void AgeParticles(float DeltaTime);
@@ -154,11 +158,62 @@ public:
 	}
 };
 
+struct FRibbonTrailRuntimeState
+{
+	FVector LastSourcePosition = FVector::ZeroVector;
+	float DistanceRemainder = 0.0f;
+	bool bHasSource = false;
+};
+
 class FParticleRibbonEmitterInstance : public FParticleTrailsEmitterInstance
 {
 public:
-	explicit FParticleRibbonEmitterInstance(IParticleEmitterInstanceOwner& InOwner)
+	explicit FParticleRibbonEmitterInstance(IParticleEmitterInstanceOwner& InOwner) : FParticleTrailsEmitterInstance(InOwner) {}
+
+	bool Init(UParticleEmitter* InTemplate, int32 InLODLevelIndex) override;
+	void Reset() override;
+	void Tick(float DeltaTime) override;
+
+	void BuildRenderSnapshot(TArray<FRibbonRenderPoint>& OutPoints, TArray<FRibbonRenderRange>& OutRanges) const;
+	int32 GetRibbonPointCount() const;
+
+private:
+	UParticleModuleTypeDataRibbon* RibbonTypeData = nullptr;
+	TArray<FRibbonTrailRuntimeState> Trails;
+	FVector PendingSpawnSourceStart = FVector::ZeroVector;
+	FVector PendingSpawnSourceEnd = FVector::ZeroVector;
+	FVector PendingSpawnSourceSide = FVector::RightVector;
+	bool bHasPendingSpawnSource = false;
+
+	int32 SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime) override;
+	void UpdateRibbonTrail(float DeltaTime);
+	bool HasEnabledSpawnModule() const;
+	void PrepareSpawnModuleSourceSpan();
+	void FinishSpawnModuleSourceSpan();
+	FVector GetRibbonSourcePosition() const;
+	FVector GetRibbonSourceSide() const;
+};
+
+
+class FParticleAnimTrailEmitterInstance : public FParticleTrailsEmitterInstance
+{
+public:
+	explicit FParticleAnimTrailEmitterInstance(IParticleEmitterInstanceOwner& InOwner)
 		: FParticleTrailsEmitterInstance(InOwner)
 	{
 	}
+
+	bool Init(UParticleEmitter* InTemplate, int32 InLODLevelIndex) override;
+	void Reset() override;
+
+	void BeginTrail();
+	void EndTrail();
+	void SetTrailSourceData(const FString& InFirstSocketName, const FString& InSecondSocketName, float InWidth);
+
+private:
+	UParticleModuleTypeDataAnimTrail* AnimTrailTypeData = nullptr;
+	FString FirstSocketName;
+	FString SecondSocketName;
+	float TrailWidth = 1.0f;
+	bool bTrailEnabled = false;
 };

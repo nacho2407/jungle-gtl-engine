@@ -13,6 +13,9 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 	const ImVec2 IconSize(26.0f, 26.0f);
 	const float OverflowButtonWidth = IconSize.y;
 	const float VisibleRight = ImGui::GetWindowContentRegionMax().x - OverflowButtonWidth - 8.0f;
+	const int32 LODCount = GetSelectedEmitterLODCount(Viewer);
+	const int32 SelectedLODIndex = Viewer ? Viewer->GetSelectedLODIndex() : 0;
+	const bool bCanDeleteLOD = LODCount > 1 && SelectedLODIndex > 0;
 
 	bool bHasOverflow = false;
 	bool bOpenBackgroundPopup = false;
@@ -80,6 +83,7 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 		{ EToolbarItemType::Button, "LowestLOD", ToolbarIcons.LowestLODIcon.Get(), "Lowest LOD", true, "Lowest LOD", false },
 		{ EToolbarItemType::Button, "LowerLOD", ToolbarIcons.LowerLODIcon.Get(), "Lower LOD", true, "Lower LOD", false },
 		{ EToolbarItemType::Button, "AddLOD", ToolbarIcons.AddLODIcon.Get(), "Add LOD", true, "Add LOD", false },
+		{ EToolbarItemType::Button, "DeleteLOD", ToolbarIcons.DeleteLODIcon.Get(), "Delete LOD", bCanDeleteLOD, "Delete LOD", false },
 		{ EToolbarItemType::CurrentLOD, nullptr, nullptr, nullptr, false, nullptr, false },
 		{ EToolbarItemType::Button, "UpperLOD", ToolbarIcons.UpperLODIcon.Get(), "Upper LOD", true, "Upper LOD", false },
 		{ EToolbarItemType::Button, "HighestLOD", ToolbarIcons.HighestLODIcon.Get(), "Highest LOD", true, "Highest LOD", false }
@@ -134,6 +138,10 @@ void FParticleEditorViewerWidget::RenderToolbar(FParticleEditorViewer* Viewer)
 		else if (strcmp(Id, "AddLOD") == 0)
 		{
 			Viewer->AddLOD();
+		}
+		else if (strcmp(Id, "DeleteLOD") == 0)
+		{
+			Viewer->RemoveLOD(Viewer->GetSelectedLODIndex());
 		}
 		else if (strcmp(Id, "UpperLOD") == 0)
 		{
@@ -383,6 +391,7 @@ void FParticleEditorViewerWidget::LoadCascadeToolbarIcons()
 	LoadIcon(IconDir, L"Cascade_LowerLOD_512x.png", ToolbarIcons.LowerLODIcon);
 	LoadIcon(IconDir, L"Cascade_HigherLOD_512x.png", ToolbarIcons.UpperLODIcon);
 	LoadIcon(IconDir, L"Cascade_AddLOD1_512x.png", ToolbarIcons.AddLODIcon);
+	LoadIcon(IconDir, L"Cascade_DeleteLOD_512x.png", ToolbarIcons.DeleteLODIcon);
 	LoadIcon(IconDir, L"Cascade_GenericLOD_40x.png", ToolbarIcons.GenericLODIcon);
 	LoadIcon(IconDir, L"CurveEditor_Horizontal_40x.png", ToolbarIcons.CurveHorizontalIcon);
 	LoadIcon(IconDir, L"CurveEditor_Vertical_40x.png", ToolbarIcons.CurveVerticalIcon);

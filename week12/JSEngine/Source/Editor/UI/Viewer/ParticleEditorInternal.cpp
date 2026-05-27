@@ -1234,8 +1234,7 @@ const char* GetParticleModuleClassMenuCategory(const UClass* Class)
 {
 	if (Class &&
 		(Class->IsChildOf(UParticleModuleRequired::StaticClass()) ||
-		 Class->IsChildOf(UParticleModuleSpawn::StaticClass()) ||
-		 Class->IsChildOf(UParticleModuleTypeDataBase::StaticClass())))
+		 Class->IsChildOf(UParticleModuleSpawn::StaticClass())))
 	{
 		return "Basic";
 	}
@@ -1253,33 +1252,37 @@ int32 GetParticleModuleClassMenuCategoryOrder(const char* Category)
 	{
 		return 0;
 	}
-	if (std::strcmp(Category, "Lifetime") == 0)
+	if (std::strcmp(Category, "Type Data") == 0)
 	{
 		return 10;
 	}
-	if (std::strcmp(Category, "Location") == 0)
+	if (std::strcmp(Category, "Lifetime") == 0)
 	{
 		return 20;
 	}
-	if (std::strcmp(Category, "Velocity") == 0)
+	if (std::strcmp(Category, "Location") == 0)
 	{
 		return 30;
 	}
-	if (std::strcmp(Category, "Color") == 0)
+	if (std::strcmp(Category, "Velocity") == 0)
 	{
 		return 40;
 	}
-	if (std::strcmp(Category, "Size") == 0)
+	if (std::strcmp(Category, "Color") == 0)
 	{
 		return 50;
 	}
-	if (std::strcmp(Category, "Animation") == 0)
+	if (std::strcmp(Category, "Size") == 0)
 	{
 		return 60;
 	}
-	if (std::strcmp(Category, "Collision") == 0)
+	if (std::strcmp(Category, "Animation") == 0)
 	{
 		return 70;
+	}
+	if (std::strcmp(Category, "Collision") == 0)
+	{
+		return 80;
 	}
 	return 100;
 }
