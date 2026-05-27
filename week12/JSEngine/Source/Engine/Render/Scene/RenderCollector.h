@@ -3,6 +3,7 @@
 #include "DecalCommandBuilder.h"
 #include "EditorOverlayCollector.h"
 #include "LightRenderCollector.h"
+#include "Particle/ParticleTypes.h"
 #include "PrimitiveDrawCommandBuilder.h"
 #include "Spatial/WorldSpatialIndex.h"
 
@@ -29,6 +30,7 @@ public:
 
 	using FDecalStats = FRenderDecalStats;
 	using FLightStats = FRenderLightStats;
+	using FParticleStats = FParticleFrameStats;
 
 private:
 	ID3D11Device* Device = nullptr;
@@ -43,6 +45,7 @@ private:
 	FWorldSpatialIndex::FPrimitiveOBBQueryScratch OBBQueryScratch;
 
 	FCullingStats LastCullingStats;
+	FParticleStats LastParticleStats;
 
 public:
     // NOTE: Render Proxy 부분 도입으로 인해서 생긴 과도기적 형태
@@ -76,9 +79,11 @@ public:
 	const FCullingStats& GetLastCullingStats() const { return LastCullingStats; }
 	const FDecalStats& GetLastDecalStats() const { return DecalCommandBuilder.GetLastStats(); }
 	const FLightStats& GetLastLightStats() const { return LightRenderCollector.GetLastStats(); }
+	const FParticleStats& GetLastParticleStats() const { return LastParticleStats; }
 
 private:
 	void ResetCullingStats();
 	void ResetDecalStats();
 	void ResetLightStats();
+	void ResetParticleStats();
 };

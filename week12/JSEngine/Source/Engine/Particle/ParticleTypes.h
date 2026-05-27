@@ -40,6 +40,50 @@ enum class EDynamicEmitterType
 	Ribbon,
 };
 
+struct FParticleFrameStats
+{
+	int32 SpriteParticleSpawned = 0;
+	int32 SpriteParticleCount = 0;
+	int32 SpriteParticleKilled = 0;
+
+	int32 MeshParticleSpawned = 0;
+	int32 MeshParticleCount = 0;
+	uint64 MeshParticlePolygons = 0;
+	int32 MeshParticleKilled = 0;
+
+	int32 BeamParticleSpawned = 0;
+	int32 BeamParticleCount = 0;
+	uint64 BeamParticlePolygons = 0;
+	int32 BeamParticleKilled = 0;
+
+	int32 TrailParticleSpawned = 0;
+	int32 TrailParticleCount = 0;
+	uint64 TrailParticlePolygons = 0;
+	int32 TrailParticleKilled = 0;
+
+	int32 ParticleDrawCalls = 0;
+
+	void Accumulate(const FParticleFrameStats& Other)
+	{
+		SpriteParticleSpawned += Other.SpriteParticleSpawned;
+		SpriteParticleCount += Other.SpriteParticleCount;
+		SpriteParticleKilled += Other.SpriteParticleKilled;
+		MeshParticleSpawned += Other.MeshParticleSpawned;
+		MeshParticleCount += Other.MeshParticleCount;
+		MeshParticlePolygons += Other.MeshParticlePolygons;
+		MeshParticleKilled += Other.MeshParticleKilled;
+		BeamParticleSpawned += Other.BeamParticleSpawned;
+		BeamParticleCount += Other.BeamParticleCount;
+		BeamParticlePolygons += Other.BeamParticlePolygons;
+		BeamParticleKilled += Other.BeamParticleKilled;
+		TrailParticleSpawned += Other.TrailParticleSpawned;
+		TrailParticleCount += Other.TrailParticleCount;
+		TrailParticlePolygons += Other.TrailParticlePolygons;
+		TrailParticleKilled += Other.TrailParticleKilled;
+		ParticleDrawCalls += Other.ParticleDrawCalls;
+	}
+};
+
 UENUM()
 enum class EParticleFlags : uint32
 {

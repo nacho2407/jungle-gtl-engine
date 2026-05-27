@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "GameFramework/WorldContext.h"
+#include "Particle/ParticleTypes.h"
 #include "Render/Common/RenderTypes.h"
 #include "Render/Common/ViewTypes.h"
 #include "Render/Resource/VertexTypes.h"
@@ -44,6 +45,7 @@ struct FPrimitiveRenderProxyCommandServices
 	const FPrimitiveDrawCommandBuilder& PrimitiveDrawCommandBuilder;
 	FDecalCommandBuilder& DecalCommandBuilder;
 	FWorldSpatialIndex::FPrimitiveOBBQueryScratch& OBBQueryScratch;
+	FParticleFrameStats& ParticleStats;
 };
 
 struct FPrimitiveRenderProxyCollectionContext

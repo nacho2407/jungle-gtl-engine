@@ -72,6 +72,8 @@ public:
 	bool SetCurrentLODIndex(int32 InLODLevelIndex);
 
 	int32 GetActiveParticleCount() const { return ActiveParticles; }
+	int32 GetLastFrameSpawnedCount() const { return LastFrameSpawnedCount; }
+	int32 GetLastFrameKilledCount() const { return LastFrameKilledCount; }
 
 	/**
 	 * @brief PSC 안에서 사용하는 emitter 식별 index 저장
@@ -155,6 +157,8 @@ protected:
 
 	IParticleEmitterInstanceOwner& Owner;
 	int32 EmitterIndex = -1;
+	int32 LastFrameSpawnedCount = 0;
+	int32 LastFrameKilledCount = 0;
 };
 
 class FParticleMeshEmitterInstance : public FParticleEmitterInstance

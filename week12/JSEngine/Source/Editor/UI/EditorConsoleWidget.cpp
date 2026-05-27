@@ -169,7 +169,7 @@ FEditorConsoleWidget::FEditorConsoleWidget()
 	RegisterCommand("suggest", "Show recommended commands. Usage: suggest [prefix]", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
 	RegisterCommand("recommend", "Alias for suggest.", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
 	RegisterCommand("recommendations", "Alias for suggest.", [this](const TArray<FString>& Args) { CmdSuggest(Args); });
-	RegisterCommand("stat", "Viewport and editor stats. Usage: stat <fps|memory|gpu|history|nametable|cascadevis|none>", [this](const TArray<FString>& Args) { CmdStat(Args); });
+	RegisterCommand("stat", "Viewport and editor stats. Usage: stat <fps|memory|particles|gpu|history|nametable|cascadevis|none>", [this](const TArray<FString>& Args) { CmdStat(Args); });
 	RegisterCommand("skinning", "Set global skeletal mesh skinning override. Usage: skinning <cpu|gpu|component>", [this](const TArray<FString>& Args) { CmdSkinning(Args); });
 
 	RegisterCommand("shadow", "Set shadow options. Usage: shadow filter <pcf|vsm>", [this](const TArray<FString>& Args){ CmdShadow(Args); });
@@ -618,6 +618,7 @@ void FEditorConsoleWidget::CmdSuggest(const TArray<FString>& Args)
 	{
 		AddLog("  stat fps              Toggle FPS stat on focused viewport\n");
 		AddLog("  stat memory           Toggle memory stat on focused viewport\n");
+		AddLog("  stat particles        Toggle particle stat on focused viewport\n");
 		AddLog("  stat gpu              Toggle GPU timestamp profiler collection\n");
 		AddLog("  stat history          Print Undo/Redo history memory use\n");
 		AddLog("  stat none             Disable viewport stats\n");
@@ -716,6 +717,7 @@ TArray<FString> FEditorConsoleWidget::BuildCommandSuggestions(const FString& Que
 		"stat fps",
 		"stat history",
 		"stat memory",
+		"stat particles",
 		"stat cascadevis",
 		"stat nametable list",
 		"stat none",
@@ -830,7 +832,7 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 {
 	if (Args.size() < 2)
 	{
-		AddLog("[WARN] Usage: stat <fps|memory|gpu|history|nametable|cascadevis|none>\n");
+		AddLog("[WARN] Usage: stat <fps|memory|particles|gpu|history|nametable|cascadevis|none>\n");
 		AddLog("[WARN]        stat history         -- print Undo/Redo history memory use\n");
 		AddLog("[WARN]        stat nametable list  -- dump all entries\n");
 		return;
@@ -863,6 +865,12 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 		bool& bFlag = Layout.GetViewportState(FocusedIdx).bShowStatMemory;
 		bFlag = !bFlag;
 		AddLog("Stat Memory %s (viewport %d)\n", bFlag ? "Enabled" : "Disabled", FocusedIdx);
+	}
+	else if (Target == "particles")
+	{
+		bool& bFlag = Layout.GetViewportState(FocusedIdx).bShowStatParticles;
+		bFlag = !bFlag;
+		AddLog("Stat Particles %s (viewport %d)\n", bFlag ? "Enabled" : "Disabled", FocusedIdx);
 	}
 	else if (Target == "history")
 	{
@@ -902,6 +910,7 @@ void FEditorConsoleWidget::CmdStat(const TArray<FString>& Args)
 			Layout.GetViewportState(i).bShowStatFPS       = false;
 			Layout.GetViewportState(i).bShowStatMemory    = false;
 			Layout.GetViewportState(i).bShowStatNameTable = false;
+			Layout.GetViewportState(i).bShowStatParticles = false;
 			Layout.GetViewportState(i).bShowCascadeVis    = false;
 		}
 		AddLog("All Stats Disabled\n");

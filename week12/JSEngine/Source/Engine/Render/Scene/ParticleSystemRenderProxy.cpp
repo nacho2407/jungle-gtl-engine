@@ -376,6 +376,8 @@ void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyColle
 	TArray<FRenderCommand> TranslucentBeamCommands;
 	TArray<FRenderCommand> OpaqueRibbonCommands;
 	TArray<FRenderCommand> TranslucentRibbonCommands;
+	FParticleFrameStats ParticleStats = Component->GetLastParticleFrameStats();
+
 	BuildSpriteCommands(Context, SpriteCommands);
 	BuildMeshCommands(Context, OpaqueMeshCommands, TranslucentMeshCommands);
 	BuildBeamCommands(Context, OpaqueBeamCommands, TranslucentBeamCommands);
@@ -389,6 +391,7 @@ void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyColle
 		OpaqueRibbonCommands.empty() &&
 		TranslucentRibbonCommands.empty())
 	{
+		Context.CommandServices.ParticleStats.Accumulate(ParticleStats);
 		return;
 	}
 
@@ -431,6 +434,85 @@ void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyColle
 	{
 		return;
 	}
+
+	for (const FRenderCommand& Command : SpriteCommands)
+	{
+		ParticleStats.SpriteParticleCount += static_cast<int32>(Command.InstanceBufferView.InstanceCount);
+		++ParticleStats.ParticleDrawCalls;
+	}
+
+	std::unordered_set<const FDynamicEmitterReplayDataBase*> CountedMeshReplayData;
+	auto AccumulateMeshCommandStats = [&ParticleStats, &CountedMeshReplayData](const FRenderCommand& Command)
+	{
+		if (Command.ParticleReplayData != nullptr &&
+			CountedMeshReplayData.insert(Command.ParticleReplayData).second)
+		{
+			ParticleStats.MeshParticleCount += Command.ParticleReplayData->ActiveParticleCount;
+		}
+		ParticleStats.MeshParticlePolygons +=
+			(static_cast<uint64>(Command.SectionIndexCount) / 3ull) *
+			static_cast<uint64>(Command.InstanceBufferView.InstanceCount);
+		++ParticleStats.ParticleDrawCalls;
+	};
+
+	for (const FRenderCommand& Command : OpaqueMeshCommands)
+	{
+		AccumulateMeshCommandStats(Command);
+	}
+
+	for (const FRenderCommand& Command : TranslucentMeshCommands)
+	{
+		AccumulateMeshCommandStats(Command);
+	}
+
+	auto AccumulateBeamCommandStats = [&ParticleStats](const FRenderCommand& Command)
+	{
+		const uint32 ActiveParticleCount = Command.ParticleReplayData != nullptr
+			? static_cast<uint32>(Command.ParticleReplayData->ActiveParticleCount)
+			: Command.Constants.Particle.ActiveParticleCount;
+		ParticleStats.BeamParticleCount += static_cast<int32>(ActiveParticleCount);
+		ParticleStats.BeamParticlePolygons +=
+			static_cast<uint64>(Command.InstanceBufferView.InstanceCount) * 2ull;
+		++ParticleStats.ParticleDrawCalls;
+	};
+
+	for (const FRenderCommand& Command : OpaqueBeamCommands)
+	{
+		AccumulateBeamCommandStats(Command);
+	}
+
+	for (const FRenderCommand& Command : TranslucentBeamCommands)
+	{
+		AccumulateBeamCommandStats(Command);
+	}
+
+	std::unordered_set<const FDynamicEmitterReplayDataBase*> CountedRibbonReplayData;
+	auto AccumulateRibbonCommandStats = [&ParticleStats, &CountedRibbonReplayData](const FRenderCommand& Command)
+	{
+		if (const FDynamicRibbonEmitterReplayDataBase* ReplayData =
+			static_cast<const FDynamicRibbonEmitterReplayDataBase*>(Command.ParticleReplayData))
+		{
+			if (CountedRibbonReplayData.insert(ReplayData).second)
+			{
+				ParticleStats.TrailParticleCount += static_cast<int32>(ReplayData->RenderPoints.size());
+			}
+		}
+		ParticleStats.TrailParticlePolygons +=
+			static_cast<uint64>(Command.InstanceBufferView.InstanceCount) * 2ull;
+		++ParticleStats.ParticleDrawCalls;
+	};
+
+	for (const FRenderCommand& Command : OpaqueRibbonCommands)
+	{
+		AccumulateRibbonCommandStats(Command);
+	}
+
+	for (const FRenderCommand& Command : TranslucentRibbonCommands)
+	{
+		AccumulateRibbonCommandStats(Command);
+	}
+
+	Context.CommandServices.ParticleStats.Accumulate(ParticleStats);
 
 	for (FRenderCommand& Command : SpriteCommands)
 	{

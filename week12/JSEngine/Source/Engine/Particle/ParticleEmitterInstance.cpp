@@ -927,6 +927,7 @@ int32 FParticleEmitterInstance::SpawnParticles(
 		++ActiveParticles;
 	}
 
+	LastFrameSpawnedCount += SpawnCount;
 	return SpawnCount;
 }
 
@@ -1044,6 +1045,7 @@ void FParticleEmitterInstance::MarkParticlePendingKill(int32 ActiveIndex)
 	}
 
 	SetParticleFlag(Particle, EParticleFlags::PendingKill);
+	++LastFrameKilledCount;
 }
 
 void FParticleEmitterInstance::CompactPendingKilledParticles()
@@ -1419,6 +1421,9 @@ void FParticleEmitterInstance::CalculateWorldBounds(FVector& OutMin, FVector& Ou
 
 void FParticleEmitterInstance::Tick(float DeltaTime)
 {
+	LastFrameSpawnedCount = 0;
+	LastFrameKilledCount = 0;
+
 	if (!RefreshCurrentRuntimeCache() || CurrentLODLevel == nullptr || CurrentRuntimeCache == nullptr)
 	{
 		return;
