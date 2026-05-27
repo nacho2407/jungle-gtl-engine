@@ -1,0 +1,30 @@
+{
+    "Name": "DefaultParticle",
+    "ShaderType": "None",
+    "BlendMode": "Translucent",
+    "BlendState": {
+        "BlendEnable": true,
+        "SrcColor": "One",
+        "DestColor": "One",
+        "ColorOp": "Add",
+        "SrcAlpha": "One",
+        "DestAlpha": "Zero",
+        "AlphaOp": "Add",
+        "WriteMask": 15
+    },
+    "Params": [
+        { "Name": "AmbientColor", "Type": "Vector3", "Value": [1.0, 0.15, 0.05] },
+        { "Name": "DiffuseColor", "Type": "Vector3", "Value": [1.0, 0.25, 0.05] },
+        { "Name": "SpecularColor", "Type": "Vector3", "Value": [0.2, 0.2, 0.2] },
+        { "Name": "EmissiveColor", "Type": "Vector3", "Value": [1.0, 0.2, 0.0] },
+        { "Name": "Shininess", "Type": "Float", "Value": 8.0 },
+        { "Name": "Opacity", "Type": "Float", "Value": 0.75 },
+        { "Name": "DiffuseMap", "Type": "Texture", "Value": "Asset/Texture/kenney_particlePack/circle_05.png" },
+        { "Name": "bHasDiffuseMap", "Type": "Bool", "Value": true },
+        { "Name": "bHasSpecularMap", "Type": "Bool", "Value": false },
+        { "Name": "bHasAmbientMap", "Type": "Bool", "Value": false },
+        { "Name": "bHasEmissiveMap", "Type": "Bool", "Value": false },
+        { "Name": "bHasBumpMap", "Type": "Bool", "Value": false },
+        { "Name": "ScrollUV", "Type": "Vector2", "Value": [0.0, 0.0] }
+    ]
+}
