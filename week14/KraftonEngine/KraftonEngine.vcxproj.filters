@@ -767,9 +767,6 @@
     <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.cpp">
-      <Filter>Source\Editor\UI\Util</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
@@ -1650,22 +1647,10 @@
     <ClCompile Include="Intermediate\Generated\LuaBindings.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp" />
-    <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp" />
-    <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp" />
-    <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp" />
     <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleEvent.cpp" />
-    <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
-    <ClCompile Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.cpp" />
-    <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp" />
-    <ClCompile Include="Source\Engine\Render\Geometry\MeshParticleGeometry.cpp" />
     <ClCompile Include="Source\Engine\Object\GarbageCollector.cpp" />
     <ClCompile Include="Source\Engine\Object\GarbageCollectionTest.cpp" />
     <ClCompile Include="Source\Engine\Object\ReferenceCollector.cpp" />
-    <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
