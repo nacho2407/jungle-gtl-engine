@@ -1250,7 +1250,7 @@ void FParticleEmitterInstance::CalculateWorldBounds(FVector& OutMin, FVector& Ou
 
 void FParticleEmitterInstance::Tick(float DeltaTime)
 {
-	if (CurrentLODLevel == nullptr || CurrentRuntimeCache == nullptr || !CurrentLODLevel->bEnabled)
+	if (CurrentLODLevel == nullptr || CurrentRuntimeCache == nullptr)
 	{
 		return;
 	}
@@ -1262,10 +1262,26 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 
 	SecondsSinceCreation += DeltaTime;
 
+	// 이전 프레임에서 kill 예약된 particle 정리
 	CompactPendingKilledParticles();
-	TickEmitterSpawn(DeltaTime);
+
+	const bool bLODEnabled = CurrentLODLevel->bEnabled;
+	if (bLODEnabled)
+	{
+		// enabled LOD 전용 spawn 처리
+		TickEmitterSpawn(DeltaTime);
+	}
+
+	// LOD 비활성 상태에서도 기존 particle 수명 진행 및 kill 허용(disabled LOD에 대한 부드러운 전환)
 	AgeParticles(DeltaTime);
-	UpdateModules(DeltaTime);
-	IntegrateParticles(DeltaTime);
+
+	if (bLODEnabled)
+	{
+		// enabled LOD 전용 update/integrate 처리
+		UpdateModules(DeltaTime);
+		IntegrateParticles(DeltaTime);
+	}
+
+	// 이번 프레임에서 수명이 끝난 particle 정리
 	CompactPendingKilledParticles();
 }
