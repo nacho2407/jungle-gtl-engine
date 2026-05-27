@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "Core/Types/CoreTypes.h"
@@ -9,6 +9,8 @@
 
 struct ID3D11Device;
 struct ID3D11ShaderResourceView;
+
+class FReferenceCollector;
 
 enum class ETextureColorSpace : uint8
 {
@@ -39,6 +41,8 @@ public:
 	uint32 GetHeight() const { return Height; }
 	bool IsLoaded() const { return SRV != nullptr; }
 
+	// GC
+	static void AddReferencedObjects(FReferenceCollector& Collector);
 private:
 	static FString MakeCacheKey(const FString& FilePath, ETextureColorSpace ColorSpace);
 	bool LoadInternal(const FString& FilePath, ID3D11Device* Device, ETextureColorSpace ColorSpace);

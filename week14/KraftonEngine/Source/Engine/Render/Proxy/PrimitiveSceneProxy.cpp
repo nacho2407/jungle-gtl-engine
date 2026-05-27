@@ -4,6 +4,7 @@
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Command/DrawCommand.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 #include "Object/Reflection/ObjectFactory.h"
 
 // ============================================================
@@ -20,7 +21,7 @@ FPrimitiveSceneProxy::~FPrimitiveSceneProxy() noexcept
 {
 	if (DefaultMaterial)
 	{
-		UObjectManager::Get().DestroyObject(DefaultMaterial);
+		FMaterialManager::Get().DestroyTransientMaterial(DefaultMaterial);
 		DefaultMaterial = nullptr;
 	}
 }
@@ -74,7 +75,7 @@ void FPrimitiveSceneProxy::UpdateMesh()
 
 	if (!DefaultMaterial)
 	{
-		DefaultMaterial = UMaterial::CreateTransient(
+		DefaultMaterial = FMaterialManager::Get().CreateTransientMaterial(
 			ERenderPass::Opaque, EBlendState::Opaque,
 			EDepthStencilState::Default, ERasterizerState::SolidBackCull,
 			FShaderManager::Get().GetOrCreate(EShaderPath::Primitive));

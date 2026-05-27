@@ -70,6 +70,8 @@ public:
 	void Tick(float DeltaTime, ELevelTick TickType);  // Drives the game loop every frame
 	void EndPlay();        // Cleanup before world is destroyed
 
+	// GC
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
 	// PlayerCameraManager 갱신 — Slomo / HitStop 등 TimeDilation 의 영향을 받지 않도록
 	// FTimer 의 raw delta 를 직접 사용한다. Tick 의 paused / 정상 흐름 양쪽에서 호출.

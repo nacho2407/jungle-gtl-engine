@@ -59,8 +59,15 @@ class UParticleModuleSpawn : public UParticleModule
 {
 public:
 	GENERATED_BODY()
-	UPROPERTY(Edit, Save, Category="Particle|Spawn", DisplayName="Spawn Rate", Min=0.0f, Speed=0.1f)
-	float SpawnRate = 20.0f;
+	UParticleModuleSpawn()
+	{
+		SpawnRate.Constant = 20.0f;
+		SpawnRate.MinValue = 20.0f;
+		SpawnRate.MaxValue = 20.0f;
+	}
+
+	UPROPERTY(Edit, Save, Category="Particle|Spawn", DisplayName="Spawn Rate", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat SpawnRate;
 
 	virtual bool IsSpawnModule() const override { return true; }
 };
@@ -172,17 +179,42 @@ class UParticleModuleColor : public UParticleModule
 {
 public:
 	GENERATED_BODY()
+	UParticleModuleColor()
+	{
+		StartColor.Constant = FVector(1.0f, 1.0f, 1.0f);
+		StartColor.MinValue = StartColor.Constant;
+		StartColor.MaxValue = StartColor.Constant;
+
+		StartAlpha.Constant = 1.0f;
+		StartAlpha.MinValue = 1.0f;
+		StartAlpha.MaxValue = 1.0f;
+
+		EndColor.Constant = FVector(1.0f, 1.0f, 1.0f);
+		EndColor.MinValue = EndColor.Constant;
+		EndColor.MaxValue = EndColor.Constant;
+
+		EndAlpha.Constant = 0.0f;
+		EndAlpha.MinValue = 0.0f;
+		EndAlpha.MaxValue = 0.0f;
+	}
+
 	bool IsSpawnModule() const override { return true; }
 	bool IsUpdateModule() const override { return true; }
 
-	UPROPERTY(Edit, Save, Category="Particle|Color", DisplayName="Start Color")
-	FVector4 StartColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-	UPROPERTY(Edit, Save, Category="Particle|Color", DisplayName="End Color")
-	FVector4 EndColor = FVector4(1.0f, 1.0f, 1.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Particle|Color", DisplayName="Start Color", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector StartColor;
+	UPROPERTY(Edit, Save, Category="Particle|Color", DisplayName="Start Alpha", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat StartAlpha;
+	UPROPERTY(Edit, Save, Category="Particle|Color", DisplayName="End Color", Type=Struct, Struct=FRawDistributionVector)
+	FRawDistributionVector EndColor;
+	UPROPERTY(Edit, Save, Category="Particle|Color", DisplayName="End Alpha", Type=Struct, Struct=FRawDistributionFloat)
+	FRawDistributionFloat EndAlpha;
 
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
-		Particle.Color = StartColor;
+		const FVector RGB = StartColor.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "StartColor"));
+		const float Alpha = StartAlpha.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "StartAlpha"));
+		Particle.Color = FVector4(RGB.X, RGB.Y, RGB.Z, Alpha);
 	}
 
 	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override
@@ -196,7 +228,13 @@ public:
 
 		BEGIN_UPDATE_LOOP
 			const float T = Particle->RelativeTime;
-			Particle->Color = StartColor * (1.0f - T) + EndColor * T;
+			const FVector StartRGB = StartColor.GetValue(T, FDistributionSampling::RandomUnitVector(Particle->RandomSeed, "StartColor"));
+			const FVector EndRGB = EndColor.GetValue(T, FDistributionSampling::RandomUnitVector(Particle->RandomSeed, "EndColor"));
+			const float StartA = StartAlpha.GetValue(T, FDistributionSampling::RandomUnit(Particle->RandomSeed, "StartAlpha"));
+			const float EndA = EndAlpha.GetValue(T, FDistributionSampling::RandomUnit(Particle->RandomSeed, "EndAlpha"));
+			const FVector RGB = StartRGB * (1.0f - T) + EndRGB * T;
+			const float Alpha = StartA * (1.0f - T) + EndA * T;
+			Particle->Color = FVector4(RGB.X, RGB.Y, RGB.Z, Alpha);
 		END_UPDATE_LOOP
 	}
 };

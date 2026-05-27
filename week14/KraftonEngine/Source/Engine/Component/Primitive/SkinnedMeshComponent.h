@@ -48,10 +48,14 @@ public:
 	void EnsureBoneEditPose();
 	void ResetBoneEditPose();
 
+	UFUNCTION(Lua)
 	int32 FindBoneIndex(const FString& BoneName) const;
+	UFUNCTION(Lua)
 	bool GetBoneWorldTransformByIndex(int32 BoneIndex, FTransform& OutTransform) const;
+	UFUNCTION(Lua)
 	bool GetBoneWorldTransformByName(const FString& BoneName, FTransform& OutTransform) const;
 
+	UFUNCTION(Lua)
 	bool GetBoneSocketWorldTransform(const FString& BoneName, const FTransform& LocalOffset, FTransform& OutTransform) const;
 
 	FVector GetBoneLocationByIndex(int32 BoneIndex) const;

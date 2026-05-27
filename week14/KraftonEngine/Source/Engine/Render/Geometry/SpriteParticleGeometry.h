@@ -27,7 +27,7 @@ public:
 	uint32 AddVertex(const FParticleSpriteVertex& Vertex);
 	void AddTriangle(uint32 A, uint32 B, uint32 C);
 
-	bool Upload(ID3D11DeviceContext* Context);
+	bool Upload(ID3D11Device* Device, ID3D11DeviceContext* Context);
 
 	ID3D11Buffer* GetVertexBuffer() const { return VertexBuffer.GetBuffer(); }
 	ID3D11Buffer* GetIndexBuffer() const { return IndexBuffer.GetBuffer(); }

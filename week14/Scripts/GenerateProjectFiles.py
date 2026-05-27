@@ -76,7 +76,10 @@ ROOT_FILES = ["main.cpp"]
 # SCAN_DIRS. Created by GenerateHeaders.py during PreBuildEvent. Reflection.generated.cpp
 # is a TU hub that #includes the per-type *.generated.cpp files, so this single entry
 # is enough to pull all reflection code into the link.
-EXTRA_CL_COMPILE_FILES = ["Intermediate\\Generated\\Reflection.generated.cpp"]
+EXTRA_CL_COMPILE_FILES = [
+    "Intermediate\\Generated\\Reflection.generated.cpp",
+    "Intermediate\\Generated\\LuaBindings.generated.cpp",
+]
 
 # Include paths (relative to project dir)
 INCLUDE_PATHS = [
@@ -124,6 +127,7 @@ PHYSX_RELEASE_BIN = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\bin"
 # 빌드 시작 직전(PreBuildEvent)과 ClCompile 직전(GenerateReflectionHeaders target)
 # 두 위치에 모두 박는다 — VS IDE / msbuild 호출 경로 모두 커버.
 GENERATE_HEADERS_TOOL = "..\\Scripts\\GenerateHeaders.py"
+GENERATE_LUA_BINDINGS_TOOL = "..\\Scripts\\GenerateLuaBindings.py"
 PYTHON_EXE_DEFAULT = r"$(MSBuildProjectDirectory)\..\Scripts\python\python.exe"
 
 # Lua (LuaJIT, 5.1 ABI) — lua51.dll 은 .gitignore 의 **/[Bb]in/* 에 걸려 있어
@@ -427,7 +431,8 @@ def generate_vcxproj(files: dict[str, list[str]]):
         # *.generated.h/.cpp 를 생성. 모든 구성에서 동일하게 1회 실행.
         pre_build = ET.SubElement(idg, "PreBuildEvent")
         ET.SubElement(pre_build, "Command").text = (
-            f'"$(PythonExe)" "$(ProjectDir){GENERATE_HEADERS_TOOL}" --root "$(ProjectDir)."'
+            f'"$(PythonExe)" "$(ProjectDir){GENERATE_HEADERS_TOOL}" --root "$(ProjectDir)."\n'
+            f'"$(PythonExe)" "$(ProjectDir){GENERATE_LUA_BINDINGS_TOOL}" --root "$(ProjectDir)."'
         )
 
     # ClCompile items

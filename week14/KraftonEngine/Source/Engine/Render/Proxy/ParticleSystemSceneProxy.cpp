@@ -21,7 +21,7 @@ FParticleSystemSceneProxy::FParticleSystemSceneProxy(UParticleSystemComponent* I
 	ProxyFlags |= EPrimitiveProxyFlags::PerViewportUpdate;
 	ProxyFlags |= EPrimitiveProxyFlags::NeverCull; // 테스트 (Particle Bound 도입 시 삭제)
 
-	DefaultMaterial = UMaterial::CreateTransient(ERenderPass::Opaque, EBlendState::Opaque, EDepthStencilState::Default,
+	DefaultMaterial = FMaterialManager::Get().CreateTransientMaterial(ERenderPass::Opaque, EBlendState::Opaque, EDepthStencilState::Default,
 		ERasterizerState::SolidBackCull, FShaderManager::Get().GetOrCreate(EShaderPath::Particle));
 }
 
@@ -30,6 +30,11 @@ FParticleSystemSceneProxy::~FParticleSystemSceneProxy()
 	SpriteGeometry.Release();
 	MeshGeometry.Release();
 	MeshInstanceBuffer.Release();
+	if (DefaultMaterial)
+	{
+		FMaterialManager::Get().DestroyTransientMaterial(DefaultMaterial);
+		DefaultMaterial = nullptr;
+	}
 }
 
 void FParticleSystemSceneProxy::UpdateMesh()
@@ -296,7 +301,7 @@ bool FParticleSystemSceneProxy::PrepareParticleDrawBuffer(const FParticleDrawBat
 			bSpriteGeometryCreated = true;
 		}
 
-		if (!SpriteGeometry.Upload(Context)) return false;
+		if (!SpriteGeometry.Upload(Device, Context)) return false;
 
 		OutBuffer.VB = SpriteGeometry.GetVertexBuffer();
 		OutBuffer.VBStride = SpriteGeometry.GetVertexStride();

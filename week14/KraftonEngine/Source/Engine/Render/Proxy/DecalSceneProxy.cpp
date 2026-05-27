@@ -5,6 +5,7 @@
 #include "Render/Shader/ShaderManager.h"
 
 #include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 #include "Texture/Texture2D.h"
 #include "Object/Reflection/ObjectFactory.h"
 
@@ -37,7 +38,7 @@ FDecalSceneProxy::~FDecalSceneProxy()
 	}
 	if (DecalProxyMaterial)
 	{
-		UObjectManager::Get().DestroyObject(DecalProxyMaterial);
+		FMaterialManager::Get().DestroyTransientMaterial(DecalProxyMaterial);
 		DecalProxyMaterial = nullptr;
 	}
 }
@@ -65,7 +66,7 @@ void FDecalSceneProxy::UpdateMaterial()
 		EDepthStencilState Depth = DecalMaterial ? DecalMaterial->GetDepthStencilState() : EDepthStencilState::Default;
 		ERasterizerState Raster = DecalMaterial ? DecalMaterial->GetRasterizerState() : ERasterizerState::SolidBackCull;
 
-		DecalProxyMaterial = UMaterial::CreateTransient(Pass, Blend, Depth, Raster, Shader);
+		DecalProxyMaterial = FMaterialManager::Get().CreateTransientMaterial(Pass, Blend, Depth, Raster, Shader);
 	}
 
 	// SRV 동기화 (DecalMaterial의 텍스처를 래퍼에 복사)

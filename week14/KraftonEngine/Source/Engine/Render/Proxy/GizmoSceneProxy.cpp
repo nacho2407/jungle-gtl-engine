@@ -1,8 +1,9 @@
-#include "Render/Proxy/GizmoSceneProxy.h"
+﻿#include "Render/Proxy/GizmoSceneProxy.h"
 #include "Component/Debug/GizmoComponent.h"
 #include "Render/Shader/ShaderManager.h"
 #include "Render/Types/FrameContext.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 #include "Object/Reflection/ObjectFactory.h"
 
 // ============================================================
@@ -17,7 +18,7 @@ FGizmoSceneProxy::FGizmoSceneProxy(UGizmoComponent* InComponent, bool bInner)
 	ProxyFlags &= ~(EPrimitiveProxyFlags::SupportsOutline
 	              | EPrimitiveProxyFlags::ShowAABB);
 
-	GizmoMaterial = UMaterial::CreateTransient(
+	GizmoMaterial = FMaterialManager::Get().CreateTransientMaterial(
 		bInner ? ERenderPass::GizmoInner : ERenderPass::GizmoOuter,
 		bInner ? EBlendState::AlphaBlend : EBlendState::Opaque,
 		bInner ? EDepthStencilState::GizmoInside : EDepthStencilState::GizmoOutside,
@@ -30,7 +31,7 @@ FGizmoSceneProxy::~FGizmoSceneProxy()
 	GizmoCB.Release();
 	if (GizmoMaterial)
 	{
-		UObjectManager::Get().DestroyObject(GizmoMaterial);
+		FMaterialManager::Get().DestroyTransientMaterial(GizmoMaterial);
 		GizmoMaterial = nullptr;
 	}
 }

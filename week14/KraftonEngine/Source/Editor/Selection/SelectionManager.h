@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 
@@ -6,6 +6,7 @@ class AActor;
 class USceneComponent;
 class UGizmoComponent;
 class UWorld;
+class FReferenceCollector;
 
 class FSelectionManager
 {
@@ -42,6 +43,8 @@ public:
 	void SetGizmoEnabled(bool bEnabled);
 	void SetWorld(UWorld* InWorld);
 
+	// GC
+	void AddReferencedObjects(FReferenceCollector& Collector);
 private:
 	void SyncGizmo();
 	void SetActorProxiesSelected(AActor* Actor, bool bSelected);

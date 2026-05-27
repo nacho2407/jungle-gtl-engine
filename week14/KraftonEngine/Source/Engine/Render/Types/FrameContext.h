@@ -64,6 +64,11 @@ struct FFrameContext
 	ID3D11RenderTargetView*   CullingHeatmapRTV     = nullptr;
 	ID3D11ShaderResourceView* CullingHeatmapSRV     = nullptr;
 
+	ID3D11RenderTargetView*   BloomRTVA             = nullptr;
+	ID3D11ShaderResourceView* BloomSRVA             = nullptr;
+	ID3D11RenderTargetView*   BloomRTVB             = nullptr;
+	ID3D11ShaderResourceView* BloomSRVB             = nullptr;
+
 	// Cursor position relative to viewport (for debug visualization)
 	uint32 CursorViewportX = UINT32_MAX;
 	uint32 CursorViewportY = UINT32_MAX;
@@ -128,5 +133,9 @@ struct FFrameContext
 		NormalSRV               = nullptr;
 		CullingHeatmapRTV       = nullptr;
 		CullingHeatmapSRV       = nullptr;
+		BloomRTVA               = nullptr;
+		BloomSRVA               = nullptr;
+		BloomRTVB               = nullptr;
+		BloomSRVB               = nullptr;
 	}
 };

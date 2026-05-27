@@ -2,16 +2,36 @@
 #include "UUIDGenerator.h"
 #include "Serialization/Archive.h"
 #include "Serialization/DuplicateArchive.h"
+#include "Serialization/GCArchive.h"
 #include "Object/Reflection/ObjectFactory.h"
 
+TArray<FObjectSlot> GUObjectSlots;
+TArray<uint32> GFreeObjectIndices;
 TArray<UObject*> GUObjectArray;
 TSet<UObject*> GUObjectSet;
 
 UObject::UObject()
 {
 	UUID = UUIDGenerator::GenUUID();
-	InternalIndex = static_cast<uint32>(GUObjectArray.size());
-	GUObjectArray.push_back(this);
+
+	if (!GFreeObjectIndices.empty())
+	{
+		InternalIndex = GFreeObjectIndices.back();
+		GFreeObjectIndices.pop_back();
+	}
+	else
+	{
+		InternalIndex = static_cast<uint32>(GUObjectSlots.size());
+		GUObjectSlots.push_back({});
+		GUObjectArray.push_back(nullptr);
+	}
+
+	FObjectSlot& Slot = GUObjectSlots[InternalIndex];
+	++Slot.SerialNumber;
+	Slot.Object = this;
+	SerialNumber = Slot.SerialNumber;
+
+	GUObjectArray[InternalIndex] = this;
 	GUObjectSet.insert(this);
 }
 
@@ -19,16 +39,22 @@ UObject::~UObject()
 {
 	GUObjectSet.erase(this);
 
-	uint32 LastIndex = static_cast<uint32>(GUObjectArray.size() - 1);
-
-	if (InternalIndex != LastIndex)
+	if (InternalIndex < GUObjectSlots.size())
 	{
-		UObject* LastObject = GUObjectArray[LastIndex];
-		GUObjectArray[InternalIndex] = LastObject;
-		LastObject->InternalIndex = InternalIndex;
-	}
+		FObjectSlot& Slot = GUObjectSlots[InternalIndex];
+		if (Slot.Object == this)
+		{
+			Slot.Object = nullptr;
+			++Slot.SerialNumber;
 
-	GUObjectArray.pop_back();
+			if (InternalIndex < GUObjectArray.size())
+			{
+				GUObjectArray[InternalIndex] = nullptr;
+			}
+
+			GFreeObjectIndices.push_back(InternalIndex);
+		}
+	}
 }
 
 UObject* UObject::Duplicate(UObject* NewOuter) const
@@ -69,6 +95,12 @@ void UObject::Serialize(FArchive& Ar)
 	// 기본 UObject는 직렬화할 상태 없음.
 	// UUID/InternalIndex/Name은 직렬화 금지 (복제 시 새로 발급).
 	Ar << ObjectName;
+}
+
+void UObject::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	FGCArchive Ar(Collector);
+	SerializeProperties(Ar, PF_None);
 }
 
 void UObject::SerializeProperties(FArchive& Ar, uint32 RequiredFlags)

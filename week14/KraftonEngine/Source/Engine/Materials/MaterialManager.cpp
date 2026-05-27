@@ -7,7 +7,7 @@
 #include "Render/Resource/Buffer.h"
 #include "Texture/Texture2D.h"
 #include "Render/Pipeline/Renderer.h"
-#include "Materials/Material.h"
+#include "Object/ReferenceCollector.h"
 
 void FMaterialManager::ScanMaterialAssets()
 {
@@ -194,6 +194,47 @@ UMaterialInterface* FMaterialManager::GetOrCreateMaterialInterface(const FString
 	// 확장자가 없거나 legacy path면 우선 기존 material로 처리
 	// 필요하면 여기서 .mat -> .matinst fallback 탐색도 가능
 	return GetOrCreateMaterial(GenericPath);
+}
+
+UMaterial* FMaterialManager::CreateTransientMaterial(ERenderPass InPass, EBlendState InBlend,
+	EDepthStencilState InDepth, ERasterizerState InRaster, FShader* InShader)
+{
+	UMaterial* Material = UMaterial::CreateTransient(InPass, InBlend, InDepth, InRaster, InShader);
+	if (!Material)
+	{
+		return nullptr;
+	}
+
+	const uint32 TransientId = NextTransientMaterialId++;
+	TransientMaterialRegistry.emplace(TransientId, Material);
+	return Material;
+}
+
+void FMaterialManager::DestroyTransientMaterial(UMaterial* Material)
+{
+	if (!Material)
+	{
+		return;
+	}
+
+	bool bFound = false;
+	for (auto It = TransientMaterialRegistry.begin(); It != TransientMaterialRegistry.end(); ++It)
+	{
+		if (It->second == Material)
+		{
+			TransientMaterialRegistry.erase(It);
+			bFound = true;
+			break;
+		}
+	}
+
+	if (!bFound)
+	{
+		return;
+	}
+
+	Material->ReleaseGPUBuffers();
+	UObjectManager::Get().DestroyObject(Material);
 }
 
 json::JSON FMaterialManager::ReadJsonFile(const FString& FilePath) const
@@ -554,9 +595,34 @@ void FMaterialManager::Release()
 		if (Mat) Mat->ReleaseGPUBuffers();
 	}
 	MaterialCache.clear();
+
+	for (auto& [Key, Mat] : TransientMaterialRegistry)
+	{
+		if (Mat) Mat->ReleaseGPUBuffers();
+	}
+	TransientMaterialRegistry.clear();
+
 	MaterialInstanceCache.clear();
 
 	// 3. Device 참조 해제
 	// 외부에서 주입받은 리소스이므로 포인터만 초기화합니다.
 	Device = nullptr;
+}
+
+void FMaterialManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (auto& [Path, Mat] : MaterialCache)
+	{
+		Collector.AddReferencedObject(Mat);
+	}
+
+	for (auto& [Path, MatInst] : MaterialInstanceCache)
+	{
+		Collector.AddReferencedObject(MatInst);
+	}
+
+	for (auto& [Key, Mat] : TransientMaterialRegistry)
+	{
+		Collector.AddReferencedObject(Mat);
+	}
 }

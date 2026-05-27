@@ -3,13 +3,13 @@
 #include "Editor/UI/Panel/EditorPropertyRenderer.h"
 #include "Editor/Viewport/Asset/ParticleSystemEditorViewportClient.h"
 #include "Editor/UI/Asset/AssetEditorWidget.h"
+#include "Math/FloatCurve.h"
 #include "Object/FName.h"
 
 struct ImVec2;
 struct FPropertyValue;
 struct FRawDistributionFloat;
 struct FRawDistributionVector;
-struct FFloatCurve;
 class AActor;
 class UObject;
 class UParticleEmitter;
@@ -80,6 +80,9 @@ private:
 	{
 		UObject* OwnerObject = nullptr;
 		FFloatCurve* Curves[MaxCurveEditorTracks] = {};
+		FFloatCurve InlineCurves[MaxCurveEditorTracks];
+		float* ValueBindings[MaxCurveEditorTracks] = {};
+		bool bSingleKeyOnly[MaxCurveEditorTracks] = {};
 		FString CurveLabels[MaxCurveEditorTracks];
 		int32 CurveCount = 0;
 		FString Label;
@@ -93,8 +96,12 @@ private:
 		ETangentHandle DraggingTangentHandle = ETangentHandle::None;
 		bool bPanningView = false;
 		bool bSuppressNextCanvasContextMenu = false;
+		bool bOpenSetKeyTimePopup = false;
+		bool bOpenSetKeyValuePopup = false;
 		float PendingContextTime = 0.0f;
 		float PendingContextValue = 0.0f;
+		float PendingSetKeyTime = 0.0f;
+		float PendingSetKeyValue = 0.0f;
 		float ViewMinTime = 0.0f;
 		float ViewMaxTime = 1.0f;
 		float ViewMinValue = -1.0f;
@@ -158,4 +165,7 @@ private:
 	uint32 InstanceId = 0;
 	FName PreviewWorldHandle = FName::None;
 	FString WindowIdSuffix;
+	float PendingDetailsScrollY = -1.0f;
+	int32 PendingDetailsScrollRestoreFrames = 0;
+	float LastStableDetailsScrollY = -1.0f;
 };

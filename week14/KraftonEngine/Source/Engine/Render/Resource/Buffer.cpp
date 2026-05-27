@@ -258,6 +258,7 @@ void FDynamicVertexBuffer::EnsureCapacity(ID3D11Device* InDevice, uint32 Require
 bool FDynamicVertexBuffer::Update(ID3D11DeviceContext* Context, const void* Data, uint32 Count)
 {
 	if (!Buffer || !Context || !Data || Count == 0) return false;
+	if (Count > MaxCount) return false;
 	D3D11_MAPPED_SUBRESOURCE Mapped = {};
 	if (FAILED(Context->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped))) return false;
 	memcpy(Mapped.pData, Data, static_cast<size_t>(Stride) * Count);
@@ -307,6 +308,7 @@ void FDynamicIndexBuffer::EnsureCapacity(ID3D11Device* InDevice, uint32 Required
 bool FDynamicIndexBuffer::Update(ID3D11DeviceContext* Context, const void* Data, uint32 Count)
 {
 	if (!Buffer || !Context || !Data || Count == 0) return false;
+	if (Count > MaxCount) return false;
 	D3D11_MAPPED_SUBRESOURCE Mapped = {};
 	if (FAILED(Context->Map(Buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped))) return false;
 	memcpy(Mapped.pData, Data, sizeof(uint32) * Count);

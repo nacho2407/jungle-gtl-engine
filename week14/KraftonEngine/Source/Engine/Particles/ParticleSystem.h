@@ -33,12 +33,15 @@ public:
 	const TArray<EParticleModuleEditState>& GetModuleEditStates() const { return ModuleEditStates; }
 	TArray<EParticleModuleEditState>& GetMutableModuleEditStates() { return ModuleEditStates; }
 	UParticleModuleTypeDataBase* GetTypeDataModule() const { return TypeDataModule; }
+	EParticleModuleEditState GetTypeDataEditState() const;
 	EParticleModuleEditState GetModuleEditState(int32 ModuleIndex) const;
+	UParticleModuleTypeDataBase* ResolveTypeDataModule(const UParticleEmitter* OwnerEmitter) const;
 	UParticleModule* ResolveModule(int32 ModuleIndex, const UParticleEmitter* OwnerEmitter) const;
 
 	void SetLevel(int32 InLevel) { Level = InLevel; }
 	void SetEnabled(bool bInEnabled) { bEnabled = bInEnabled; }
 	void SetTypeDataModule(UParticleModuleTypeDataBase* InTypeDataModule) { TypeDataModule = InTypeDataModule; }
+	void SetTypeDataEditState(EParticleModuleEditState State) { TypeDataEditState = State; }
 	void SetModuleEditState(int32 ModuleIndex, EParticleModuleEditState State);
 	void NormalizeModuleEditStates(EParticleModuleEditState DefaultState);
 	void SetAllModuleEditStates(EParticleModuleEditState State);
@@ -58,6 +61,7 @@ public:
 		return nullptr;
 	}
 
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	template<typename T>
 	T* FindResolvedModule(const UParticleEmitter* OwnerEmitter) const
 	{
@@ -82,6 +86,7 @@ private:
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
 	UPROPERTY(Edit, Save, Instanced, Category="Particle|LOD", DisplayName="Modules", AllowedClass=UParticleModule)
 	TArray<UParticleModule*> Modules;
+	EParticleModuleEditState TypeDataEditState = EParticleModuleEditState::Duplicated;
 	TArray<EParticleModuleEditState> ModuleEditStates;
 };
 
@@ -106,6 +111,7 @@ public:
 	void AddLODLevel(UParticleLODLevel* LODLevel);
 
 	void Serialize(FArchive& Ar) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
 	TArray<UParticleLODLevel*> LODLevels;
@@ -142,6 +148,8 @@ public:
 
 	void Serialize(FArchive& Ar) override;
 
+	//GC
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
 	void NormalizeEmitterLODLevels(UParticleEmitter* Emitter);
 

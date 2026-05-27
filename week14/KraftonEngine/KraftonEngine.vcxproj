@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -199,7 +199,8 @@
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -222,7 +223,8 @@
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -240,8 +242,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\debug\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmodL_vc.lib;libfbxsdk.lib;PhysX_64.lib;PhysXFoundation_64.lib;PhysXCommon_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmodL_vc.lib;libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Debug\*.dll" "$(OutDir)"
@@ -252,7 +254,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"
 call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -272,8 +275,8 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(ProjectDir)packages\NVIDIA.PhysX.4.1.2\installed\x64-windows\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;PhysX_64.lib;PhysXFoundation_64.lib;PhysXCommon_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
@@ -284,7 +287,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
 call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
@@ -307,7 +311,8 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
       <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
@@ -339,7 +344,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
 call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
@@ -371,7 +377,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
 call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
@@ -403,16 +410,21 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
 call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform)"</Command>
     </PostBuildEvent>
     <PreBuildEvent>
-      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."</Command>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\Object\ReferenceCollector.cpp" />
+    <ClCompile Include="Source\Engine\Object\GarbageCollector.cpp" />
+    <ClCompile Include="Source\Engine\Object\GarbageCollectionTest.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyRenderer.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.cpp" />
     <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp" />
     <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleEvent.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp" />
     <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp" />
     <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
@@ -436,6 +448,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimationTransportBar.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp" />
@@ -450,6 +463,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Editor\UI\Panel\EditorMaterialInspector.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyRenderer.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorSceneWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorStatWidget.cpp" />
@@ -458,6 +472,8 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Editor\UI\Toolbar\ViewportToolbar.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorDragSource.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorFileUtils.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\NotificationToast.cpp" />
@@ -537,6 +553,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Engine\Component\Movement\PendulumMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\BillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\DecalComponent.cpp" />
@@ -604,6 +621,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.cpp" />
     <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp" />
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
+    <ClCompile Include="Source\Engine\Lua\LuaDocRegistry.cpp" />
     <ClCompile Include="Source\Engine\Lua\LuaScriptManager.cpp" />
     <ClCompile Include="Source\Engine\Materials\Material.cpp" />
     <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp" />
@@ -633,6 +651,10 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Engine\Object\FName.cpp" />
     <ClCompile Include="Source\Engine\Object\Object.cpp" />
     <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\NativePhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXPhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
@@ -655,6 +677,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Engine\Render\Geometry\FontGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\LineGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\MeshParticleGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
@@ -673,10 +696,11 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\AdditiveDecalPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\AlphaBlendPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\BloomPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\DecalPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\EditorLinesPass.cpp" />
-    <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\GizmoInnerPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\GizmoOuterPass.cpp" />
@@ -731,7 +755,6 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\ObjViewer\ObjViewerPanel.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerRenderPipeline.cpp" />
     <ClCompile Include="Source\ObjViewer\ObjViewerViewportClient.cpp" />
-    <ClCompile Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
@@ -745,8 +768,14 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="ThirdParty\imgui-node-editor\imgui_node_editor_api.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp" />
+    <ClCompile Include="Intermediate\Generated\LuaBindings.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Object\Ptr\WeakObjectPtr.h" />
+    <ClInclude Include="Source\Engine\Object\ReferenceCollector.h" />
+    <ClInclude Include="Source\Engine\Object\GarbageCollector.h" />
+    <ClInclude Include="Source\Engine\Object\GarbageCollectionTest.h" />
+    <ClInclude Include="Source\Engine\Serialization\GCArchive.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyRenderer.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.h" />
@@ -756,6 +785,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Engine\Math\Distribution.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleCollision.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleEvent.h" />
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
     <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
@@ -789,6 +819,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Editor\UI\Asset\Animation\MorphCurveEditObject.h" />
     <ClInclude Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h" />
@@ -805,6 +836,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Editor\UI\Panel\EditorMaterialInspector.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyRenderer.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorSceneWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorStatWidget.h" />
@@ -813,6 +845,8 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorDragSource.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorFileUtils.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h" />
     <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h" />
     <ClInclude Include="Source\Editor\UI\Util\NotificationToast.h" />
@@ -906,6 +940,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Engine\Component\Movement\PendulumMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\BillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\DecalComponent.h" />
@@ -985,10 +1020,12 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Engine\Gizmo\ComponentGizmoTarget.h" />
     <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h" />
     <ClInclude Include="Source\Engine\Input\InputSystem.h" />
+    <ClInclude Include="Source\Engine\Lua\LuaDocRegistry.h" />
     <ClInclude Include="Source\Engine\Lua\LuaScriptManager.h" />
     <ClInclude Include="Source\Engine\Materials\Material.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialCore.h" />
     <ClInclude Include="Source\Engine\Materials\MaterialManager.h" />
+    <ClInclude Include="Source\Engine\Math\Distribution.h" />
     <ClInclude Include="Source\Engine\Math\FloatCurve.h" />
     <ClInclude Include="Source\Engine\Math\MathUtils.h" />
     <ClInclude Include="Source\Engine\Math\Matrix.h" />
@@ -1029,6 +1066,15 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Engine\Object\Reflection\ObjectMacros.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UClass.h" />
     <ClInclude Include="Source\Engine\Object\Reflection\UStruct.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleCollision.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleCollisionEvent.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h" />
     <ClInclude Include="Source\Engine\Physics\IPhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\NativePhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXPhysicsScene.h" />
@@ -1057,6 +1103,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Engine\Render\Geometry\FontGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\LineGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\MeshParticleGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />
@@ -1077,10 +1124,11 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\AdditiveDecalPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\AlphaBlendPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\BloomPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\DecalPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\EditorLinesPass.h" />
-    <ClInclude Include="Source\Engine\Render\RenderPass\FogPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\FogPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\GizmoInnerPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\GizmoOuterPass.h" />
@@ -1154,7 +1202,6 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClInclude Include="Source\ObjViewer\ObjViewerRenderPipeline.h" />
     <ClInclude Include="Source\ObjViewer\ObjViewerViewportClient.h" />
     <ClInclude Include="ThirdParty\stb_image.h" />
-    <ClInclude Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.h" />
     <ClInclude Include="ThirdParty\fbx\include\fbxsdk.h" />
     <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_def.h" />
     <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_nsbegin.h" />
@@ -1727,6 +1774,13 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
+    <FxCompile Include="Shaders\Common\Fog.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -1805,11 +1859,11 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Geometry\Particle.hlsl">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\Geometry\Primitive.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -2010,15 +2064,6 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\Common\Fog.hlsli">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
-    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

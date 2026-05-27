@@ -27,6 +27,7 @@ public:
 	virtual UObject* ResolveObjectReference(uint32 /*SourceUUID*/) const { return nullptr; }
 	virtual void AddObjectReferenceFixup(uint32 /*SourceUUID*/, std::function<void(UObject*)> /*Fixup*/) {}
 	virtual bool UsesCustomObjectReferenceSerialization() const { return false; }
+	virtual bool IsGarbageCollecting() const { return false; }
 	virtual void SerializeObjectReference(UObject*& Object);
 
 	virtual void BeginObject() {}
@@ -62,7 +63,6 @@ public:
 	FArchive& operator<<(FVector& Value) { SerializeVector(Value); return *this; }
 	FArchive& operator<<(FVector4& Value) { SerializeVector4(Value); return *this; }
 	FArchive& operator<<(FRotator& Value) { SerializeRotator(Value); return *this; }
-
 	// ----------------------------------------------------
 	// 마법의 연산자 오버로딩 (기본 자료형: int, float, 구조체 등)
 	// ----------------------------------------------------

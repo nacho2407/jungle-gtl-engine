@@ -1,4 +1,4 @@
-#include "GameFramework/AActor.h"
+﻿#include "GameFramework/AActor.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/ActorComponent.h"
@@ -8,6 +8,7 @@
 #include "GameFramework/World.h"
 #include "Serialization/Archive.h"
 #include "Serialization/DuplicateArchive.h"
+#include "Object/ReferenceCollector.h"
 
 #include <algorithm>
 
@@ -189,6 +190,17 @@ void AActor::BeginPlay()
 	for (UActorComponent* Comp : OwnedComponents)
 	{
 		if (Comp) Comp->BeginPlay();
+	}
+}
+
+void AActor::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UObject::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(RootComponent);
+
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		Collector.AddReferencedObject(Component);
 	}
 }
 
