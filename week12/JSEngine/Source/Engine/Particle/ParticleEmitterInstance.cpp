@@ -474,11 +474,6 @@ bool FParticleEmitterInstance::SetCurrentLODIndex(int32 InLODLevelIndex)
 		return false;
 	}
 
-	const size_t PreviousBurstCount =
-		CurrentRuntimeCache != nullptr && CurrentRuntimeCache->SpawnModule != nullptr
-			? CurrentRuntimeCache->SpawnModule->BurstList.size()
-			: 0;
-
 	CurrentLODLevelIndex = InLODLevelIndex;
 	CurrentLODLevel = NewLODLevel;
 	CurrentRuntimeCache = NewRuntimeCache;
@@ -487,12 +482,46 @@ bool FParticleEmitterInstance::SetCurrentLODIndex(int32 InLODLevelIndex)
 		CurrentRuntimeCache->SpawnModule != nullptr
 			? CurrentRuntimeCache->SpawnModule->BurstList.size()
 			: 0;
-	if (BurstFiredThisLoop.size() != NewBurstCount || PreviousBurstCount != NewBurstCount)
+	if (BurstFiredThisLoop.size() != NewBurstCount)
 	{
 		// burst fired state layout
 		ResetBurstFiredState();
 	}
 
+	return true;
+}
+
+bool FParticleEmitterInstance::RefreshCurrentRuntimeCache()
+{
+	if (SpriteTemplate == nullptr ||
+		CurrentLODLevelIndex < 0 ||
+		CurrentLODLevelIndex >= static_cast<int32>(SpriteTemplate->LODLevels.size()))
+	{
+		CurrentLODLevel = nullptr;
+		CurrentRuntimeCache = nullptr;
+		return false;
+	}
+
+	UParticleLODLevel* NewLODLevel = SpriteTemplate->LODLevels[static_cast<size_t>(CurrentLODLevelIndex)];
+	const FParticleLODLevelRuntimeCache* NewRuntimeCache = SpriteTemplate->GetLODLevelRuntimeCache(CurrentLODLevelIndex);
+	if (NewLODLevel == nullptr || NewRuntimeCache == nullptr)
+	{
+		CurrentLODLevel = nullptr;
+		CurrentRuntimeCache = nullptr;
+		return false;
+	}
+
+	if (ParticleStride > 0 && NewRuntimeCache->ParticleStride != ParticleStride)
+	{
+		return false;
+	}
+	if (NewRuntimeCache->InstancePayloadSize != InstancePayloadSize)
+	{
+		return false;
+	}
+
+	CurrentLODLevel = NewLODLevel;
+	CurrentRuntimeCache = NewRuntimeCache;
 	return true;
 }
 
@@ -819,19 +848,19 @@ int32 FParticleEmitterInstance::CalculateBurstSpawnCount(float PreviousEmitterTi
 
 int32 FParticleEmitterInstance::ResolveBurstSpawnAmount(const FParticleBurstEntry& Entry)
 {
-    const int32 MaxCount = std::max(Entry.Count, 0);
-    if (MaxCount <= 0)
-    {
-        return 0;
-    }
+	const int32 MaxCount = std::max(Entry.Count, 0);
+	if (MaxCount <= 0)
+	{
+		return 0;
+	}
 
-    const int32 MinCount = std::clamp(Entry.CountLow, 0, MaxCount);
-    if (MinCount == MaxCount)
-    {
-        return MaxCount;
-    }
+	const int32 MinCount = std::clamp(Entry.CountLow, 0, MaxCount);
+	if (MinCount == MaxCount)
+	{
+		return MaxCount;
+	}
 
-    return RandomStream.GetRange(MinCount, MaxCount);
+	return RandomStream.GetRange(MinCount, MaxCount);
 }
 
 int32 FParticleEmitterInstance::SpawnParticles(
@@ -925,7 +954,75 @@ int32 FParticleEmitterInstance::SpawnParticles(
 		}
 	}
 
+	LastFrameSpawnedCount += SpawnCount;
 	return SpawnCount;
+}
+
+int32 FParticleEmitterInstance::SpawnParticleAtLocation(const FVector& WorldLocation, const FVector& SpawnSide, float SpawnTime)
+{
+	if (ParticleData == nullptr || ParticleIndices == nullptr || CurrentRuntimeCache == nullptr)
+	{
+		return -1;
+	}
+
+	const int32 CurrentLODParticleLimit = std::min(MaxActiveParticles, GetCurrentLODMaxParticles());
+	if (ActiveParticles >= CurrentLODParticleLimit)
+	{
+		return -1;
+	}
+
+	const int32 ActiveIndex = ActiveParticles;
+	const int32 PhysicalIndex = ParticleIndices[ActiveIndex];
+	FBaseParticle& Particle = GetParticleByPhysicalIndex(PhysicalIndex);
+	new (&Particle) FBaseParticle();
+
+	ClearParticlePayloads(Particle);
+
+	Particle.Seed = RandomStream.GetUnsignedInt();
+	Particle.SpawnId = ++ParticleCounter;
+	Particle.Location = WorldLocation;
+	Particle.OldLocation = WorldLocation;
+	Particle.RelativeTime = 0.0f;
+	Particle.AgeSeconds = 0.0f;
+	Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
+	Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
+	InitializeModulePayloads(Particle);
+
+	for (UParticleModule* Module : CurrentRuntimeCache->SpawnModules)
+	{
+		if (Module == nullptr || !Module->bEnabled)
+		{
+			continue;
+		}
+
+		const int32 Offset = CurrentRuntimeCache->GetParticlePayloadOffset(Module);
+		Module->Spawn(this, Offset, SpawnTime, Particle);
+	}
+
+	Particle.Location = WorldLocation;
+	Particle.OldLocation = WorldLocation;
+	Particle.Velocity = FVector::ZeroVector;
+	Particle.BaseVelocity = FVector::ZeroVector;
+	Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
+	Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
+	Particle.BaseColor = Particle.Color;
+
+	if (CurrentRuntimeCache->TypeDataModule != nullptr)
+	{
+		const int32 PayloadOffset = CurrentRuntimeCache->GetParticlePayloadOffset(CurrentRuntimeCache->TypeDataModule);
+		FRibbonParticlePayload* RibbonPayload = reinterpret_cast<FRibbonParticlePayload*>(GetParticlePayloadByOffset(Particle, PayloadOffset));
+		if (RibbonPayload != nullptr)
+		{
+			RibbonPayload->SpawnSide = SpawnSide.GetSafeNormal();
+			if (RibbonPayload->SpawnSide.IsNearlyZero())
+			{
+				RibbonPayload->SpawnSide = FVector::RightVector;
+			}
+		}
+	}
+
+	++ActiveParticles;
+	return PhysicalIndex;
 }
 
 int32 FParticleEmitterInstance::SpawnParticlesFromEvent(
@@ -1072,6 +1169,7 @@ void FParticleEmitterInstance::MarkParticlePendingKill(int32 ActiveIndex)
 
 	SetParticleFlag(Particle, EParticleFlags::PendingKill);
 	GenerateDeathEvent(Particle, static_cast<int32>(KilledPhysicalIndex));
+	++LastFrameKilledCount;
 }
 
 void FParticleEmitterInstance::CompactPendingKilledParticles()
@@ -1320,26 +1418,26 @@ void FParticleEmitterInstance::InitializeModulePayloads(FBaseParticle& Particle)
 	InitializeModule(CurrentRuntimeCache->TypeDataModule);
 	
 	if (CurrentLODLevel != nullptr)
-    {
-        // disable된 모듈도 payload offset은 할당되어 있을 수 있으므로, enabled 여부와 관계 없이 모두 초기화 시도
-        for (UParticleModule* Module : CurrentLODLevel->Modules)
-        {
-            InitializeModule(Module);
-        }
-    }
+	{
+		// disable된 모듈도 payload offset은 할당되어 있을 수 있으므로, enabled 여부와 관계 없이 모두 초기화 시도
+		for (UParticleModule* Module : CurrentLODLevel->Modules)
+		{
+			InitializeModule(Module);
+		}
+	}
 }
 
 void FParticleEmitterInstance::ClearParticlePayloads(FBaseParticle& Particle) const
 {
-    if (PayloadOffset < 0 || ParticleStride <= PayloadOffset)
-    {
-        return;
-    }
+	if (PayloadOffset < 0 || ParticleStride <= PayloadOffset)
+	{
+		return;
+	}
 
-    std::memset(
-        reinterpret_cast<uint8*>(&Particle) + PayloadOffset,
-        0,
-        static_cast<size_t>(ParticleStride - PayloadOffset));
+	std::memset(
+		reinterpret_cast<uint8*>(&Particle) + PayloadOffset,
+		0,
+		static_cast<size_t>(ParticleStride - PayloadOffset));
 }
 
 bool FParticleEmitterInstance::UsesLocalSpace() const
@@ -1447,7 +1545,10 @@ void FParticleEmitterInstance::CalculateWorldBounds(FVector& OutMin, FVector& Ou
 
 void FParticleEmitterInstance::Tick(float DeltaTime)
 {
-	if (CurrentLODLevel == nullptr || CurrentRuntimeCache == nullptr)
+	LastFrameSpawnedCount = 0;
+	LastFrameKilledCount = 0;
+
+	if (!RefreshCurrentRuntimeCache() || CurrentLODLevel == nullptr || CurrentRuntimeCache == nullptr)
 	{
 		return;
 	}
@@ -1482,4 +1583,340 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 
 	// 이번 프레임에서 수명이 끝난 particle 정리
 	CompactPendingKilledParticles();
+}
+
+bool FParticleRibbonEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLevelIndex)
+{
+	if (!FParticleTrailsEmitterInstance::Init(InTemplate, InLODLevelIndex))
+	{
+		return false;
+	}
+
+	RibbonTypeData = CurrentRuntimeCache != nullptr
+		? Cast<UParticleModuleTypeDataRibbon>(CurrentRuntimeCache->TypeDataModule)
+		: nullptr;
+
+	Trails.clear();
+	Trails.resize(1);
+	return true;
+}
+
+void FParticleRibbonEmitterInstance::Reset()
+{
+	FParticleTrailsEmitterInstance::Reset();
+
+	for (FRibbonTrailRuntimeState& Trail : Trails)
+	{
+		Trail.LastSourcePosition = FVector::ZeroVector;
+		Trail.DistanceRemainder = 0.0f;
+		Trail.bHasSource = false;
+	}
+
+	PendingSpawnSourceStart = FVector::ZeroVector;
+	PendingSpawnSourceEnd = FVector::ZeroVector;
+	PendingSpawnSourceSide = FVector::RightVector;
+	bHasPendingSpawnSource = false;
+}
+
+void FParticleRibbonEmitterInstance::Tick(float DeltaTime)
+{
+	if (!RefreshCurrentRuntimeCache() || CurrentLODLevel == nullptr || CurrentRuntimeCache == nullptr || !CurrentLODLevel->bEnabled)
+	{
+		return;
+	}
+
+	if (DeltaTime <= 0.0f)
+	{
+		return;
+	}
+
+	SecondsSinceCreation += DeltaTime;
+
+	CompactPendingKilledParticles();
+
+	if (HasEnabledSpawnModule())
+	{
+		PrepareSpawnModuleSourceSpan();
+		TickEmitterSpawn(DeltaTime);
+		FinishSpawnModuleSourceSpan();
+	}
+	else
+	{
+		EmitterTime += DeltaTime;
+		UpdateRibbonTrail(DeltaTime);
+	}
+
+	AgeParticles(DeltaTime);
+	UpdateModules(DeltaTime);
+
+	const int32 MaxPoints = RibbonTypeData != nullptr ? std::max(RibbonTypeData->MaxParticleInTrailCount, 2) : 2;
+	while (ActiveParticles > MaxPoints)
+	{
+		MarkParticlePendingKill(0);
+		CompactPendingKilledParticles();
+	}
+
+	CompactPendingKilledParticles();
+}
+
+FVector FParticleRibbonEmitterInstance::GetRibbonSourcePosition() const
+{
+	return GetOwner().GetComponentToWorld().GetOrigin();
+}
+
+FVector FParticleRibbonEmitterInstance::GetRibbonSourceSide() const
+{
+	FVector SourceSide = GetOwner().GetComponentToWorld().GetUnitAxis(EAxis::Y);
+	if (SourceSide.IsNearlyZero())
+	{
+		SourceSide = FVector::RightVector;
+	}
+	return SourceSide.GetSafeNormal();
+}
+
+bool FParticleRibbonEmitterInstance::HasEnabledSpawnModule() const
+{
+	const UParticleModuleSpawn* SpawnModule = CurrentRuntimeCache != nullptr
+		? CurrentRuntimeCache->SpawnModule
+		: nullptr;
+	if (SpawnModule == nullptr || !SpawnModule->bEnabled)
+	{
+		return false;
+	}
+
+	const bool bHasSpawnRate = SpawnModule->bProcessSpawnRate &&
+		(SpawnModule->SpawnRate * SpawnModule->RateScale) > 0.0f;
+	const bool bHasBurst = SpawnModule->bProcessBurst && !SpawnModule->BurstList.empty();
+	return bHasSpawnRate || bHasBurst;
+}
+
+void FParticleRibbonEmitterInstance::PrepareSpawnModuleSourceSpan()
+{
+	if (Trails.empty())
+	{
+		Trails.resize(1);
+	}
+
+	FRibbonTrailRuntimeState& Trail = Trails[0];
+	const FVector SourcePosition = GetRibbonSourcePosition();
+	PendingSpawnSourceStart = Trail.bHasSource ? Trail.LastSourcePosition : SourcePosition;
+	PendingSpawnSourceEnd = SourcePosition;
+	PendingSpawnSourceSide = GetRibbonSourceSide();
+	bHasPendingSpawnSource = true;
+
+	Trail.LastSourcePosition = SourcePosition;
+	Trail.DistanceRemainder = 0.0f;
+	Trail.bHasSource = true;
+}
+
+void FParticleRibbonEmitterInstance::FinishSpawnModuleSourceSpan()
+{
+	bHasPendingSpawnSource = false;
+}
+
+int32 FParticleRibbonEmitterInstance::SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime)
+{
+	if (Count <= 0)
+	{
+		return 0;
+	}
+
+	int32 ActualSpawnCount = 0;
+	const float SpawnInterval = Count > 0 ? SegmentDeltaTime / static_cast<float>(Count) : 0.0f;
+	for (int32 SpawnIndex = 0; SpawnIndex < Count; ++SpawnIndex)
+	{
+		const float SpawnTime = SegmentStartTime + SpawnInterval * static_cast<float>(SpawnIndex);
+		const float Alpha = SegmentDeltaTime > 1.0e-6f
+			? std::clamp((SpawnTime - SegmentStartTime) / SegmentDeltaTime, 0.0f, 1.0f)
+			: 1.0f;
+		const FVector SourceStart = bHasPendingSpawnSource ? PendingSpawnSourceStart : GetRibbonSourcePosition();
+		const FVector SourceEnd = bHasPendingSpawnSource ? PendingSpawnSourceEnd : SourceStart;
+		const FVector SourceSide = bHasPendingSpawnSource ? PendingSpawnSourceSide : GetRibbonSourceSide();
+		const FVector SpawnLocation = SourceStart + (SourceEnd - SourceStart) * Alpha;
+
+		if (SpawnParticleAtLocation(SpawnLocation, SourceSide, SpawnTime) >= 0)
+		{
+			++ActualSpawnCount;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	return ActualSpawnCount;
+}
+
+void FParticleRibbonEmitterInstance::UpdateRibbonTrail(float DeltaTime)
+{
+	(void)DeltaTime;
+	if (RibbonTypeData == nullptr || Trails.empty())
+	{
+		return;
+	}
+
+	const FVector SourcePosition = GetRibbonSourcePosition();
+	const FVector SourceSide = GetRibbonSourceSide();
+	const float SpawnDistance = std::max(RibbonTypeData->SpawnDistance, 0.1f);
+	const int32 MaxPoints = std::max(RibbonTypeData->MaxParticleInTrailCount, 2);
+
+	for (FRibbonTrailRuntimeState& Trail : Trails)
+	{
+		if (!Trail.bHasSource)
+		{
+			Trail.LastSourcePosition = SourcePosition;
+			Trail.DistanceRemainder = 0.0f;
+			Trail.bHasSource = true;
+
+			if (RibbonTypeData->bSpawnInitialPoint)
+			{
+				SpawnParticleAtLocation(SourcePosition, SourceSide, EmitterTime);
+			}
+			continue;
+		}
+
+		const FVector Delta = SourcePosition - Trail.LastSourcePosition;
+		const float Distance = Delta.Size();
+		if (Distance <= 1.0e-6f)
+		{
+			continue;
+		}
+
+		Trail.DistanceRemainder += Distance;
+		const FVector Direction = Delta / Distance;
+
+		while (Trail.DistanceRemainder >= SpawnDistance)
+		{
+			Trail.DistanceRemainder -= SpawnDistance;
+			const FVector PointPosition = SourcePosition - Direction * Trail.DistanceRemainder;
+			SpawnParticleAtLocation(PointPosition, SourceSide, EmitterTime);
+
+			while (ActiveParticles > MaxPoints)
+			{
+				MarkParticlePendingKill(0);
+				CompactPendingKilledParticles();
+			}
+		}
+
+		Trail.LastSourcePosition = SourcePosition;
+	}
+}
+
+void FParticleRibbonEmitterInstance::BuildRenderSnapshot(
+	TArray<FRibbonRenderPoint>& OutPoints,
+	TArray<FRibbonRenderRange>& OutRanges) const
+{
+	OutPoints.clear();
+	OutRanges.clear();
+
+	if (RibbonTypeData == nullptr || ActiveParticles <= 0)
+	{
+		return;
+	}
+
+	FRibbonRenderRange Range;
+	Range.PointStart = 0;
+	Range.PointCount = 0;
+
+	float U = 0.0f;
+	FVector PreviousPosition = FVector::ZeroVector;
+	bool bHasPrevious = false;
+
+	for (int32 ActiveIndex = 0; ActiveIndex < ActiveParticles; ++ActiveIndex)
+	{
+		const FBaseParticle& Particle = GetParticleByActiveIndex(ActiveIndex);
+		if (IsParticlePendingKill(Particle))
+		{
+			continue;
+		}
+
+		FRibbonRenderPoint Point;
+		Point.Position = Particle.Location;
+		Point.Color = Particle.Color.ToVector4();
+		Point.Width = RibbonTypeData->bUseParticleSizeAsWidth
+			? std::max(std::fabs(Particle.Size.X), 0.1f)
+			: std::max(RibbonTypeData->RibbonWidth, 0.1f);
+
+		if (bHasPrevious && RibbonTypeData->TilingDistance > 1.0e-6f)
+		{
+			U += FVector::Dist(Point.Position, PreviousPosition) / RibbonTypeData->TilingDistance;
+		}
+		Point.U = U;
+
+		const int32 PayloadOffset = CurrentRuntimeCache != nullptr && CurrentRuntimeCache->TypeDataModule != nullptr
+			? CurrentRuntimeCache->GetParticlePayloadOffset(CurrentRuntimeCache->TypeDataModule)
+			: -1;
+		const FRibbonParticlePayload* RibbonPayload = PayloadOffset >= 0
+			? reinterpret_cast<const FRibbonParticlePayload*>(GetParticlePayloadByOffset(Particle, PayloadOffset))
+			: nullptr;
+		Point.Side = RibbonPayload != nullptr ? RibbonPayload->SpawnSide.GetSafeNormal() : FVector::RightVector;
+		if (Point.Side.IsNearlyZero())
+		{
+			Point.Side = FVector::RightVector;
+		}
+
+		OutPoints.push_back(Point);
+		PreviousPosition = Point.Position;
+		bHasPrevious = true;
+		++Range.PointCount;
+	}
+
+	if (Range.PointCount >= 2)
+	{
+		OutRanges.push_back(Range);
+	}
+	else
+	{
+		OutPoints.clear();
+	}
+}
+
+int32 FParticleRibbonEmitterInstance::GetRibbonPointCount() const
+{
+	return ActiveParticles;
+}
+
+bool FParticleAnimTrailEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLevelIndex)
+{
+	if (!FParticleTrailsEmitterInstance::Init(InTemplate, InLODLevelIndex))
+	{
+		return false;
+	}
+
+	AnimTrailTypeData = CurrentRuntimeCache != nullptr
+		? Cast<UParticleModuleTypeDataAnimTrail>(CurrentRuntimeCache->TypeDataModule)
+		: nullptr;
+	if (AnimTrailTypeData != nullptr)
+	{
+		FirstSocketName = AnimTrailTypeData->FirstSocketName;
+		SecondSocketName = AnimTrailTypeData->SecondSocketName;
+		TrailWidth = std::max(AnimTrailTypeData->Width, 0.1f);
+	}
+	return true;
+}
+
+void FParticleAnimTrailEmitterInstance::Reset()
+{
+	FParticleTrailsEmitterInstance::Reset();
+	bTrailEnabled = false;
+}
+
+void FParticleAnimTrailEmitterInstance::BeginTrail()
+{
+	bTrailEnabled = true;
+}
+
+void FParticleAnimTrailEmitterInstance::EndTrail()
+{
+	bTrailEnabled = false;
+}
+
+void FParticleAnimTrailEmitterInstance::SetTrailSourceData(
+	const FString& InFirstSocketName,
+	const FString& InSecondSocketName,
+	float InWidth)
+{
+	FirstSocketName = InFirstSocketName;
+	SecondSocketName = InSecondSocketName;
+	TrailWidth = std::max(InWidth, 0.1f);
 }

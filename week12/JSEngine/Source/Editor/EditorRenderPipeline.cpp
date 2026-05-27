@@ -91,6 +91,7 @@ FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer&
 	ViewportCullingStats.resize(FEditorViewportLayout::MaxViewports);
 	ViewportDecalStats.resize(FEditorViewportLayout::MaxViewports);
 	ViewportLightStats.resize(FEditorViewportLayout::MaxViewports);
+	ViewportParticleStats.resize(FEditorViewportLayout::MaxViewports);
 }
 
 FEditorRenderPipeline::~FEditorRenderPipeline() { Collector.Release(); }
@@ -187,6 +188,10 @@ void FEditorRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	const auto StatsEnd = std::chrono::steady_clock::now();
 
 	for (FRenderCollector::FCullingStats& Stats : ViewportCullingStats)
+	{
+		Stats = {};
+	}
+	for (FRenderCollector::FParticleStats& Stats : ViewportParticleStats)
 	{
 		Stats = {};
 	}
@@ -364,6 +369,7 @@ void FEditorRenderPipeline::RenderViewport(FRenderer& Renderer, int32 ViewportIn
 	ViewportCullingStats[ViewportIndex] = Collector.GetLastCullingStats();
 	ViewportDecalStats[ViewportIndex] = Collector.GetLastDecalStats();
 	ViewportLightStats[ViewportIndex] = Collector.GetLastLightStats();
+	ViewportParticleStats[ViewportIndex] = Collector.GetLastParticleStats();
 
 	// 순수 편집 뷰포트와 PIE Eject는 모두 Editor viewport setting을 따릅니다.
 	if (bDrawEditorViewportHelpers)
@@ -707,6 +713,18 @@ const FRenderCollector::FLightStats& FEditorRenderPipeline::GetViewportLightStat
 	}
 
 	return ViewportLightStats[ViewportIndex];
+}
+
+const FRenderCollector::FParticleStats& FEditorRenderPipeline::GetViewportParticleStats(int32 ViewportIndex) const
+{
+	static const FRenderCollector::FParticleStats EmptyStats{};
+
+	if (ViewportIndex < 0 || ViewportIndex >= static_cast<int32>(ViewportParticleStats.size()))
+	{
+		return EmptyStats;
+	}
+
+	return ViewportParticleStats[ViewportIndex];
 }
 
 ID3D11ShaderResourceView* FEditorRenderPipeline::RenderMaterialPreview(

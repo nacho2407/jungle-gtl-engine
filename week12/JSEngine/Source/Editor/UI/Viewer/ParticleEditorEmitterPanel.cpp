@@ -1,5 +1,24 @@
 ﻿#include "ParticleEditorInternal.h"
 
+namespace
+{
+	bool IsTrailTypeDataModule(const UParticleModuleTypeDataBase* TypeData)
+	{
+		return Cast<UParticleModuleTypeDataRibbon>(TypeData) != nullptr ||
+			Cast<UParticleModuleTypeDataAnimTrail>(TypeData) != nullptr;
+	}
+
+	bool IsTrailCompatibleModule(const UParticleModule* Module)
+	{
+		return Cast<UParticleModuleSpawn>(Module) != nullptr ||
+			Cast<UParticleModuleLifetime>(Module) != nullptr ||
+			Cast<UParticleModuleColor>(Module) != nullptr ||
+			Cast<UParticleModuleColorOverLife>(Module) != nullptr ||
+			Cast<UParticleModuleSize>(Module) != nullptr ||
+			Cast<UParticleModuleSizeScaleOverLife>(Module) != nullptr;
+	}
+}
+
 using namespace ParticleEditorInternal;
 
 void FParticleEditorViewerWidget::RenderEmitterPanel(FParticleEditorViewer* Viewer)
@@ -382,6 +401,7 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 			const bool bSpriteTypeData =
 				LOD->TypeDataModule != nullptr &&
 				LOD->TypeDataModule->GetClass() == UParticleModuleTypeDataBase::StaticClass();
+			const bool bTrailTypeData = IsTrailTypeDataModule(LOD->TypeDataModule);
 
 			auto DrawModuleRow = [&](UObject* Mod, EParticleEditorSelectionType SelType, int32 ModIdx, ImU32 BgColor)
 			{
@@ -390,6 +410,11 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 					const bool bRequiredModule = SelType == EParticleEditorSelectionType::RequiredModule;
 					const bool bSubUVIncompatible =
 						Cast<UParticleModuleSubUV>(Mod) != nullptr && !bSpriteTypeData;
+					const bool bTrailIncompatible =
+						bTrailTypeData &&
+						!bRequiredModule &&
+						SelType != EParticleEditorSelectionType::TypeDataModule &&
+						!IsTrailCompatibleModule(Cast<UParticleModule>(Mod));
 
 					FParticleModuleRowDesc Row;
 					Row.Label = GetObjectLabel(Mod);
@@ -398,10 +423,10 @@ void FParticleEditorViewerWidget::DrawEmitterNode(FParticleEditorViewer* Viewer,
 					Row.Address.LODIndex = LODIndex;
 					Row.Address.ModuleIndex = ModIdx;
 					Row.BackgroundColor = BgColor;
-					Row.bCanToggleEnabled = !bRequiredModule && !bSubUVIncompatible;
-					Row.bForceEnabledState = bRequiredModule || bSubUVIncompatible;
+					Row.bCanToggleEnabled = !bRequiredModule && !bSubUVIncompatible && !bTrailIncompatible;
+					Row.bForceEnabledState = bRequiredModule || bSubUVIncompatible || bTrailIncompatible;
 					Row.bForcedEnabledValue = bRequiredModule;
-					Row.bDimmedText = bSubUVIncompatible;
+					Row.bDimmedText = bSubUVIncompatible || bTrailIncompatible;
 					DrawSelectableModuleRow(RowContext, Row);
 				}
 			};
