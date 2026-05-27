@@ -5,16 +5,198 @@
 #include <ctime>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
+
+#include "SimpleJSON/json.hpp"
 
 #pragma comment(lib, "DbgHelp.lib")
 
 namespace
 {
+	const wchar_t* CrashDumpShareDirEnv = L"KRAFTON_CRASH_DUMP_DIR";
+
 	struct FSourceLocation
 	{
 		char File[MAX_PATH] = {};
 		DWORD Line = 0;
 	};
+
+	std::wstring GetCrashDumpShareDirFromEnvironment()
+	{
+		DWORD RequiredSize = GetEnvironmentVariableW(CrashDumpShareDirEnv, nullptr, 0);
+		if (RequiredSize == 0)
+		{
+			return {};
+		}
+
+		std::wstring Value(RequiredSize, L'\0');
+		DWORD WrittenSize = GetEnvironmentVariableW(CrashDumpShareDirEnv, Value.data(), RequiredSize);
+		if (WrittenSize == 0)
+		{
+			return {};
+		}
+
+		Value.resize(WrittenSize);
+		return Value;
+	}
+
+	std::wstring GetCrashDumpShareDirFromProjectSettings()
+	{
+		std::ifstream File{ std::filesystem::path(FPaths::ProjectSettingsFilePath()) };
+		if (!File.is_open())
+		{
+			return {};
+		}
+
+		std::string Content((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
+		json::JSON Root = json::JSON::Load(Content);
+		if (!Root.hasKey("Diagnostics"))
+		{
+			return {};
+		}
+
+		json::JSON Diagnostics = Root["Diagnostics"];
+		if (!Diagnostics.hasKey("CrashDumpShareDir"))
+		{
+			return {};
+		}
+
+		return FPaths::ToWide(Diagnostics["CrashDumpShareDir"].ToString());
+	}
+
+	std::wstring GetCrashDumpShareDir()
+	{
+		std::wstring ShareDir = GetCrashDumpShareDirFromEnvironment();
+		if (!ShareDir.empty())
+		{
+			return ShareDir;
+		}
+
+		return GetCrashDumpShareDirFromProjectSettings();
+	}
+
+	std::wstring GetComputerNameForPath()
+	{
+		WCHAR ComputerName[MAX_COMPUTERNAME_LENGTH + 1] = {};
+		DWORD Size = MAX_COMPUTERNAME_LENGTH + 1;
+		if (!GetComputerNameW(ComputerName, &Size))
+		{
+			return L"UnknownPC";
+		}
+		return ComputerName;
+	}
+
+	bool CopyIfExists(const std::filesystem::path& SourcePath, const std::filesystem::path& TargetPath)
+	{
+		std::error_code Error;
+		if (!std::filesystem::exists(SourcePath, Error) || Error)
+		{
+			return false;
+		}
+
+		std::filesystem::copy_file(SourcePath, TargetPath, std::filesystem::copy_options::overwrite_existing, Error);
+		return !Error;
+	}
+
+	std::filesystem::path GetExecutablePath()
+	{
+		WCHAR ExecutablePath[MAX_PATH] = {};
+		const DWORD Length = GetModuleFileNameW(nullptr, ExecutablePath, MAX_PATH);
+		if (Length == 0 || Length >= MAX_PATH)
+		{
+			return {};
+		}
+
+		return std::filesystem::path(ExecutablePath);
+	}
+
+	void WriteCrashCopyLog(
+		const std::wstring& LocalDumpPath,
+		const std::wstring& SharedDumpRoot,
+		const std::wstring& SharedDumpPath,
+		const std::wstring& FailureReason,
+		bool bSucceeded)
+	{
+		try
+		{
+			std::filesystem::path LogPath(LocalDumpPath);
+			LogPath.replace_extension(L".copy.log.txt");
+
+			std::ofstream LogFile(LogPath, std::ios::out | std::ios::trunc);
+			if (!LogFile.is_open())
+			{
+				return;
+			}
+
+			LogFile << "Crash dump shared copy result: " << (bSucceeded ? "success" : "failed") << "\n";
+			LogFile << "RootDir: " << FPaths::ToUtf8(FPaths::RootDir()) << "\n";
+			LogFile << "ProjectSettings: " << FPaths::ToUtf8(FPaths::ProjectSettingsFilePath()) << "\n";
+			LogFile << "SharedDumpRoot: " << FPaths::ToUtf8(SharedDumpRoot) << "\n";
+			LogFile << "SharedDumpPath: " << FPaths::ToUtf8(SharedDumpPath) << "\n";
+			LogFile << "FailureReason: " << FPaths::ToUtf8(FailureReason) << "\n";
+		}
+		catch (...)
+		{
+		}
+	}
+
+	bool TryCopyDumpToSharedFolder(
+		const std::wstring& LocalDumpPath,
+		const WCHAR* FileName,
+		std::wstring& OutSharedPath,
+		std::wstring& OutSharedDumpRoot,
+		std::wstring& OutFailureReason)
+	{
+		std::wstring SharedCrashDumpRoot = GetCrashDumpShareDir();
+		OutSharedDumpRoot = SharedCrashDumpRoot;
+		if (SharedCrashDumpRoot.empty())
+		{
+			OutFailureReason = L"CrashDumpShareDir is empty. Check KRAFTON_CRASH_DUMP_DIR or Settings/ProjectSettings.ini.";
+			return false;
+		}
+
+		try
+		{
+			std::filesystem::path SharedDir =
+				std::filesystem::path(SharedCrashDumpRoot) /
+				GetComputerNameForPath() /
+				std::filesystem::path(FileName).stem();
+			std::error_code Error;
+			std::filesystem::create_directories(SharedDir, Error);
+			if (Error)
+			{
+				OutFailureReason = L"Failed to create shared crash dump directory: " + FPaths::ToWide(Error.message());
+				return false;
+			}
+
+			std::filesystem::path SharedPath = SharedDir / FileName;
+			std::filesystem::copy_file(LocalDumpPath, SharedPath, std::filesystem::copy_options::overwrite_existing, Error);
+			if (Error)
+			{
+				OutFailureReason = L"Failed to copy dump file to shared directory: " + FPaths::ToWide(Error.message());
+				return false;
+			}
+
+			const std::filesystem::path ExecutablePath = GetExecutablePath();
+			if (!ExecutablePath.empty())
+			{
+				CopyIfExists(ExecutablePath, SharedDir / ExecutablePath.filename());
+
+				std::filesystem::path PdbPath = ExecutablePath;
+				PdbPath.replace_extension(L".pdb");
+				CopyIfExists(PdbPath, SharedDir / PdbPath.filename());
+			}
+
+			OutSharedPath = SharedPath.wstring();
+			return true;
+		}
+		catch (...)
+		{
+			OutFailureReason = L"Unexpected exception while copying crash dump to shared directory.";
+			return false;
+		}
+	}
 
 	bool InitializeSymbols(HANDLE Process)
 	{
@@ -171,18 +353,33 @@ LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* ExceptionInfo)
 
 		FSourceLocation ExceptionLocation;
 		const bool bHasExceptionLocation = ResolveExceptionSource(ExceptionInfo, ExceptionLocation);
+		std::wstring SharedDumpPath;
+		std::wstring SharedDumpRoot;
+		std::wstring SharedDumpFailureReason;
+		const bool bSharedDumpCopied = TryCopyDumpToSharedFolder(
+			DumpPath,
+			FileName,
+			SharedDumpPath,
+			SharedDumpRoot,
+			SharedDumpFailureReason);
+		WriteCrashCopyLog(DumpPath, SharedDumpRoot, SharedDumpPath, SharedDumpFailureReason, bSharedDumpCopied);
 
-		WCHAR Message[MAX_PATH * 2 + 256];
+		WCHAR Message[4096];
 		if (bHasExceptionLocation)
 		{
-			swprintf_s(Message, L"크래시 덤프가 저장되었습니다:\n%s\n\nException location:\n%hs:%lu",
+			swprintf_s(Message, L"크래시 덤프가 저장되었습니다:\n%s\n\n공유 폴더 복사: %s\n%s\n\nException location:\n%hs:%lu",
 				DumpPath.c_str(),
+				bSharedDumpCopied ? L"성공" : L"실패",
+				bSharedDumpCopied ? SharedDumpPath.c_str() : SharedDumpFailureReason.c_str(),
 				ExceptionLocation.File,
 				ExceptionLocation.Line);
 		}
 		else
 		{
-			swprintf_s(Message, L"크래시 덤프가 저장되었습니다:\n%s", DumpPath.c_str());
+			swprintf_s(Message, L"크래시 덤프가 저장되었습니다:\n%s\n\n공유 폴더 복사: %s\n%s",
+				DumpPath.c_str(),
+				bSharedDumpCopied ? L"성공" : L"실패",
+				bSharedDumpCopied ? SharedDumpPath.c_str() : SharedDumpFailureReason.c_str());
 		}
 		MessageBoxW(nullptr, Message, L"Crash", MB_OK | MB_ICONERROR);
 	}
