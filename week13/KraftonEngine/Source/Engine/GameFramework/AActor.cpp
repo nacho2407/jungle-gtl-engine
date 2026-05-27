@@ -782,6 +782,9 @@ const TArray<UPrimitiveComponent*>& AActor::GetPrimitiveComponents() const
 void AActor::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UObject::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(RootComponent, "AActor.RootComponent");
+    Collector.AddReferencedObjects(OwnedComponents, "AActor.OwnedComponents");
 }
 
 void AActor::RouteActorDestroyed()

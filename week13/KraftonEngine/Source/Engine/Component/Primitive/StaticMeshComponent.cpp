@@ -56,6 +56,9 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 void UStaticMeshComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UMeshComponent::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(StaticMesh, "UStaticMeshComponent.StaticMesh");
+    Collector.AddReferencedObjects(OverrideMaterials, "UStaticMeshComponent.OverrideMaterials");
 }
 
 TArray<UMaterial*> UStaticMeshComponent::GetOverrideMaterials() const

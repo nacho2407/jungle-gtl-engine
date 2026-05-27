@@ -96,6 +96,8 @@ TArray<UStaticMeshComponent*> UDecalComponent::GetReceivers() const
 void UDecalComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UPrimitiveComponent::AddReferencedObjects(Collector);
+
+	Collector.AddReferencedObject(Material, "UDecalComponent.Material");
 }
 
 void UDecalComponent::SetMaterial(UMaterial* InMaterial)

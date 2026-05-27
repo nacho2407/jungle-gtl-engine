@@ -18,6 +18,8 @@ FArchive& operator<<(FArchive& Ar, FCompositeSection& S)
 void UAnimMontage::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UAnimSequenceBase::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(SourceSequence, "UAnimMontage.SourceSequence");
 }
 
 void UAnimMontage::Serialize(FArchive& Ar)

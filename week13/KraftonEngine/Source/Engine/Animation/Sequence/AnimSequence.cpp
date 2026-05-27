@@ -478,6 +478,8 @@ namespace
 void UAnimSequence::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UAnimSequenceBase::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(DataModel, "UAnimSequence.DataModel");
 }
 
 void UAnimSequence::Serialize(FArchive& Ar)

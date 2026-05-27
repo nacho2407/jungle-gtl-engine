@@ -2240,6 +2240,10 @@ void FParticleMeshEmitterInstance::InitParameters(UParticleEmitter* InTemplate, 
 {
 	FParticleEmitterInstance::InitParameters(InTemplate, InComponent);
 	MeshTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataMesh>(CurrentLODLevel->TypeDataModule) : nullptr;
+	if (!IsValid(MeshTypeData))
+	{
+		MeshTypeData = nullptr;
+	}
 	bMeshRotationActive = InTemplate ? InTemplate->bMeshRotationActive : false;
 	bMotionBlurEnabled = MeshTypeData ? MeshTypeData->IsMotionBlurEnabled() : false;
 }
@@ -2248,6 +2252,10 @@ void FParticleMeshEmitterInstance::Init()
 {
 	FParticleEmitterInstance::Init();
 	MeshTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataMesh>(CurrentLODLevel->TypeDataModule) : MeshTypeData;
+	if (!IsValid(MeshTypeData))
+	{
+		MeshTypeData = nullptr;
+	}
 }
 
 bool FParticleMeshEmitterInstance::Resize(int32 NewMaxActiveParticles, bool bSetMaxActiveCount)
@@ -2513,7 +2521,12 @@ void FParticleMeshEmitterInstance::SetMeshMaterials(const TArray<UMaterial*>& In
 void FParticleMeshEmitterInstance::GetMeshMaterials(TArray<UMaterial*>& OutMaterials, const UParticleLODLevel* LODLevel, bool bLogWarnings) const
 {
 	OutMaterials.clear();
-	const UStaticMesh* StaticMesh = MeshTypeData ? MeshTypeData->Mesh : nullptr;
+	if (!IsValid(MeshTypeData))
+	{
+		return;
+	}
+
+	const UStaticMesh* StaticMesh = MeshTypeData->Mesh;
 	const TArray<FStaticMeshSection>* Sections = StaticMesh ? &StaticMesh->GetLODSections(0) : nullptr;
 	const TArray<FStaticMaterial>* StaticMaterials = StaticMesh ? &StaticMesh->GetStaticMaterials() : nullptr;
 	const int32 SectionCount = Sections && !Sections->empty() ? static_cast<int32>(Sections->size()) : 1;
@@ -2566,7 +2579,13 @@ void FParticleMeshEmitterInstance::GetMeshMaterials(TArray<UMaterial*>& OutMater
 
 FDynamicEmitterDataBase* FParticleMeshEmitterInstance::GetDynamicData(bool bSelected)
 {
-	UStaticMesh* StaticMesh = MeshTypeData ? MeshTypeData->GetStaticMesh() : nullptr;
+	if (!IsValid(MeshTypeData))
+	{
+		MeshTypeData = nullptr;
+		return nullptr;
+	}
+
+	UStaticMesh* StaticMesh = MeshTypeData->GetStaticMesh();
 	if (!StaticMesh || !IsDynamicDataRequired())
 	{
 		return nullptr;
@@ -2591,6 +2610,12 @@ FDynamicEmitterDataBase* FParticleMeshEmitterInstance::GetDynamicData(bool bSele
 
 bool FParticleMeshEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
 {
+	if (!IsValid(MeshTypeData))
+	{
+		MeshTypeData = nullptr;
+		return false;
+	}
+
 	if (!IsReplayType(OutData, EDynamicEmitterType::Mesh))
 	{
 		return false;
@@ -2726,6 +2751,10 @@ void FParticleBeam2EmitterInstance::InitParameters(UParticleEmitter* InTemplate,
 	FParticleEmitterInstance::InitParameters(InTemplate, InComponent);
 	bIsBeam = true;
 	BeamTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataBeam2>(CurrentLODLevel->TypeDataModule) : nullptr;
+	if (!IsValid(BeamTypeData))
+	{
+		BeamTypeData = nullptr;
+	}
 	if (CurrentLODLevel && CurrentLODLevel->RequiredModule && CurrentLODLevel->RequiredModule->bUseLocalSpace)
 	{
 		// UE Cascade Beam2 forces beam emitters into world-space here. Source/Target
@@ -2738,6 +2767,10 @@ void FParticleBeam2EmitterInstance::Init()
 {
 	FParticleEmitterInstance::Init();
 	BeamTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataBeam2>(CurrentLODLevel->TypeDataModule) : BeamTypeData;
+	if (!IsValid(BeamTypeData))
+	{
+		BeamTypeData = nullptr;
+	}
 	FirstEmission = true;
 	TickCount = 0;
 	BeamCount = BeamTypeData ? std::max(1, BeamTypeData->MaxBeamCount) : 0;
@@ -2748,6 +2781,10 @@ void FParticleBeam2EmitterInstance::SetCurrentLODIndex(int32 InLODIndex, bool bI
 {
 	FParticleEmitterInstance::SetCurrentLODIndex(InLODIndex, bInFullyProcess);
 	BeamTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataBeam2>(CurrentLODLevel->TypeDataModule) : BeamTypeData;
+	if (!IsValid(BeamTypeData))
+	{
+		BeamTypeData = nullptr;
+	}
 	SetupBeamModifierModulesOffsets();
 }
 
@@ -3181,6 +3218,12 @@ UMaterial* FParticleBeam2EmitterInstance::GetCurrentMaterial()
 
 FDynamicEmitterDataBase* FParticleBeam2EmitterInstance::GetDynamicData(bool bSelected)
 {
+	if (!IsValid(BeamTypeData))
+	{
+		BeamTypeData = nullptr;
+		return nullptr;
+	}
+
 	FDynamicBeam2EmitterData* Data = new FDynamicBeam2EmitterData();
 	if (!FillReplayData(Data->Source))
 	{
@@ -3192,6 +3235,12 @@ FDynamicEmitterDataBase* FParticleBeam2EmitterInstance::GetDynamicData(bool bSel
 
 bool FParticleBeam2EmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
 {
+	if (!IsValid(BeamTypeData))
+	{
+		BeamTypeData = nullptr;
+		return false;
+	}
+
 	if (!IsReplayType(OutData, EDynamicEmitterType::Beam)) return false;
 	if (!FParticleEmitterInstance::FillReplayData(OutData)) return false;
 
@@ -3785,6 +3834,10 @@ void FParticleRibbonEmitterInstance::InitParameters(UParticleEmitter* InTemplate
 {
 	FParticleTrailsEmitterInstance_Base::InitParameters(InTemplate, InComponent);
 	TrailTypeData = CurrentLODLevel ? Cast<UParticleModuleTypeDataRibbon>(CurrentLODLevel->TypeDataModule) : nullptr;
+	if (!IsValid(TrailTypeData))
+	{
+		TrailTypeData = nullptr;
+	}
 	SetupTrailModules();
 	const int32 Count = TrailTypeData ? std::max(1, TrailTypeData->MaxTrailCount) : 1;
 	MaxTrailCount = Count;
@@ -3816,6 +3869,10 @@ void FParticleRibbonEmitterInstance::SetupTrailModules()
 	UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
 	for (UParticleModule* Module : LODLevel->Modules)
 	{
+		if (!IsValid(Module))
+		{
+			continue;
+		}
 		if (!SpawnPerUnitModule) SpawnPerUnitModule = Cast<UParticleModuleSpawnPerUnit>(Module);
 		if (!SourceModule) SourceModule = Cast<UParticleModuleTrailSource>(Module);
 	}
@@ -4856,6 +4913,12 @@ bool FParticleRibbonEmitterInstance::IsDynamicDataRequired() const
 
 FDynamicEmitterDataBase* FParticleRibbonEmitterInstance::GetDynamicData(bool bSelected)
 {
+	if (!IsValid(TrailTypeData))
+	{
+		TrailTypeData = nullptr;
+		return nullptr;
+	}
+
 	if (TrailTypeData && !TrailTypeData->bRenderGeometry)
 	{
 		return nullptr;
@@ -4892,6 +4955,12 @@ void FParticleRibbonEmitterInstance::ApplyWorldOffset(FVector InOffset, bool bWo
 
 bool FParticleRibbonEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& OutData)
 {
+	if (!IsValid(TrailTypeData))
+	{
+		TrailTypeData = nullptr;
+		return false;
+	}
+
 	if (!IsReplayType(OutData, EDynamicEmitterType::Ribbon)) return false;
 	if (TrailTypeData && !TrailTypeData->bRenderGeometry)
 	{

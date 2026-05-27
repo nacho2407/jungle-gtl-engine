@@ -16,7 +16,14 @@ static void SyncToPlayer(UAnimState& S, FAnimNode_SequencePlayer& Player)
 void UAnimState::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UObject::AddReferencedObjects(Collector);
+
+	Collector.AddReferencedObject(Sequence, "UAnimState.Sequence");
 	Player.AddReferencedObjects(Collector);
+
+	if (SubGraphOverride)
+	{
+		SubGraphOverride->AddReferencedObjects(Collector);
+	}
 }
 
 void UAnimState::OnEnter(UAnimInstance* Instance)

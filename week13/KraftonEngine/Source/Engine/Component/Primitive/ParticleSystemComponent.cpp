@@ -366,6 +366,9 @@ void UParticleSystemComponent::AddReferencedObjects(FReferenceCollector& Collect
 {
     UPrimitiveComponent::AddReferencedObjects(Collector);
 
+    Collector.AddReferencedObject(Template, "UParticleSystemComponent.Template");
+    Collector.AddReferencedObjects(EmitterMaterials, "UParticleSystemComponent.EmitterMaterials");
+
     for (FParticleEmitterInstance* Instance : EmitterInstances)
     {
         if (Instance)

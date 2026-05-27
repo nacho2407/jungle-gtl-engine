@@ -172,7 +172,7 @@ protected:
 	UPROPERTY(Edit, Save, Category="Actor", DisplayName="Tags")
 	FString PendingTagsString;  // 에디터용 — 콤마 구분 직렬화 캐시
 
-	// Runtime-owned component list. Actor keeps components alive through reflected GC, not through manual collector loops.
+	// Runtime-owned component list. Actor keeps components alive through AActor::AddReferencedObjects().
 	UPROPERTY(Transient, Instanced, Category="Actor|Components")
 	TArray<TObjectPtr<UActorComponent>> OwnedComponents;
 

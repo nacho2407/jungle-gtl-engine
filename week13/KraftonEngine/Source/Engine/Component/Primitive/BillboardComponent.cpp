@@ -34,6 +34,8 @@ void UBillboardComponent::PostDuplicate()
 void UBillboardComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UPrimitiveComponent::AddReferencedObjects(Collector);
+
+	Collector.AddReferencedObject(Material, "UBillboardComponent.Material");
 }
 
 void UBillboardComponent::SetMaterial(UMaterial* InMaterial)

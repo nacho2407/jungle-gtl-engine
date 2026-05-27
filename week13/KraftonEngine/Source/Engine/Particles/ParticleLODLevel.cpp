@@ -170,8 +170,11 @@ void UParticleLODLevel::Serialize(FArchive& Ar)
 
 void UParticleLODLevel::AddReferencedObjects(FReferenceCollector& Collector)
 {
-    // RequiredModule, SpawnModule, TypeDataModule, EventGenerator and Modules are
-    // reflected UPROPERTY references. SpawnModules/UpdateModules/OrbitModules are
-    // non-owning caches rebuilt from those reflected owners.
     UObject::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(EventGenerator, "UParticleLODLevel.EventGenerator");
+    Collector.AddReferencedObject(RequiredModule, "UParticleLODLevel.RequiredModule");
+    Collector.AddReferencedObject(SpawnModule, "UParticleLODLevel.SpawnModule");
+    Collector.AddReferencedObjects(Modules, "UParticleLODLevel.Modules");
+    Collector.AddReferencedObject(TypeDataModule, "UParticleLODLevel.TypeDataModule");
 }

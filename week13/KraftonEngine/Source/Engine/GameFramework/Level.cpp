@@ -94,6 +94,8 @@ void ULevel::Tick(float DeltaTime) {
 void ULevel::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UObject::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObjects(Actors, "ULevel.Actors");
 }
 
 void ULevel::RouteLevelDestroyed()

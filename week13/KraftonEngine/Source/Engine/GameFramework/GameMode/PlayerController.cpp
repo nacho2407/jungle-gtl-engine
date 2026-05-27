@@ -63,6 +63,9 @@ void APlayerController::SetViewTargetWithBlend(
 void APlayerController::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	AActor::AddReferencedObjects(Collector);
+
+	Collector.AddReferencedObject(PossessedPawn, "APlayerController.PossessedPawn");
+	Collector.AddReferencedObject(PlayerCameraManager, "APlayerController.PlayerCameraManager");
 }
 
 void APlayerController::Possess(APawn* Pawn)

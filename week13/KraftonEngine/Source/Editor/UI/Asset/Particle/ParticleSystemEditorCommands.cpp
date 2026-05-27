@@ -119,6 +119,7 @@ void FParticleSystemEditorWidget::AddEmitter()
     SelectEmitter(NewEmitterIndex, -1);
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -155,6 +156,7 @@ void FParticleSystemEditorWidget::DeleteSelectedEmitter()
     SyncEmitterUIState();
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -233,6 +235,7 @@ void FParticleSystemEditorWidget::DuplicateEmitter(int32 SourceIndex)
     SelectEmitter(NewIndex, -1);
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -295,6 +298,7 @@ void FParticleSystemEditorWidget::MoveEmitter(int32 SrcEmitterIndex, int32 DstEm
     EmitterNameBufFor = -1;
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -362,6 +366,7 @@ void FParticleSystemEditorWidget::DeleteSelectedModule()
     SelectedModuleIndex = -1;
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -451,6 +456,7 @@ void FParticleSystemEditorWidget::MoveModule(
     }
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -518,34 +524,17 @@ void FParticleSystemEditorWidget::SetEmitterTypeData(int32 EmitterIndex, const c
         }
     }
 
-    // 옛 TypeData 가 다른 어디서도 참조되지 않으면 destroy.
-    if (OldType)
-    {
-        bool bStillReferenced = false;
-        for (UParticleEmitter* OtherE : PS->GetEmitters())
-        {
-            if (!OtherE) continue;
-            for (UParticleLODLevel* LL : OtherE->GetLODLevels())
-            {
-                if (LL && static_cast<UParticleModuleTypeDataBase*>(LL->TypeDataModule) == OldType)
-                {
-                    bStillReferenced = true;
-                    break;
-                }
-            }
-            if (bStillReferenced) break;
-        }
-        if (!bStillReferenced)
-        {
-            UObjectManager::Get().DestroyObject(OldType);
-        }
-    }
+    // OldType은 여기서 PendingKill로 만들지 않는다.
+    // 실행 중인 UParticleSystemComponent가 아직 이전 emitter instance를 들고 있을 수 있으므로,
+    // 구조 변경 후 모든 외부 PSC를 ResetSystem()으로 먼저 재빌드하고 GC가 자연스럽게 수거하게 둔다.
+    (void)OldType;
 
     // Mesh TypeData 면 emitter 도 mesh 모드로 표시 — runtime 측 BuildEmitterInstances 가
     // bUseMeshInstance 분기를 한다.
     Emitter->bUseMeshInstance = (Cast<UParticleModuleTypeDataMesh>(NewType) != nullptr);
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -609,6 +598,7 @@ void FParticleSystemEditorWidget::AddLODAfterSelected()
 
     SelectLOD(InsertLODIndex);
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -680,6 +670,7 @@ void FParticleSystemEditorWidget::RemoveLODAt(int32 LODIndex)
 
     SelectLOD((std::max)(0, LODIndex - 1));
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -764,6 +755,7 @@ void FParticleSystemEditorWidget::RegenerateLOD(int32 SrcLODIndex, int32 DstLODI
     }
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -811,6 +803,7 @@ void FParticleSystemEditorWidget::DuplicateModuleFromHigherLOD(
     Cur->UpdateModuleLists();
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -873,6 +866,7 @@ void FParticleSystemEditorWidget::ShareModuleFromHigherLOD(UParticleEmitter* Emi
     if (!bReferenced && OldUnique) UObjectManager::Get().DestroyObject(OldUnique);
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -919,6 +913,7 @@ void FParticleSystemEditorWidget::DuplicateModuleFromHighestLOD(
     Cur->UpdateModuleLists();
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 }
 
@@ -1077,6 +1072,7 @@ void FParticleSystemEditorWidget::DuplicateMaterialForRequired(UParticleModuleRe
     FMaterialManager::Get().ScanMaterialAssets();
 
     MarkDirty();
+    RefreshExternalComponents(GetParticleSystem());
     RestartPreviewSimulation();
 
     if (EditorEngine)

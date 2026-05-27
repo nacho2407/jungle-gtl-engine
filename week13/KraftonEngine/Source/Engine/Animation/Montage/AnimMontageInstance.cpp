@@ -13,6 +13,8 @@
 void UAnimMontageInstance::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UObject::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(CurrentMontage, "UAnimMontageInstance.CurrentMontage");
 }
 
 void UAnimMontageInstance::Play(UAnimMontage* InMontage, FName StartSection, float InPlayRate, float InBlendInTime)

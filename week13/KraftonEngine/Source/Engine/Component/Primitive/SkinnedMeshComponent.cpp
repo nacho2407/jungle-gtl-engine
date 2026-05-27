@@ -914,6 +914,9 @@ void USkinnedMeshComponent::BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlob
 void USkinnedMeshComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UMeshComponent::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObject(SkeletalMesh, "USkinnedMeshComponent.SkeletalMesh");
+    Collector.AddReferencedObjects(OverrideMaterials, "USkinnedMeshComponent.OverrideMaterials");
 }
 
 TArray<UMaterial*> USkinnedMeshComponent::GetOverrideMaterials() const

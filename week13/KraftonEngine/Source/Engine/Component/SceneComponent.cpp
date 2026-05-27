@@ -484,6 +484,8 @@ void USceneComponent::Rotate(float DeltaYaw, float DeltaPitch)
 void USceneComponent::AddReferencedObjects(FReferenceCollector& Collector)
 {
     UActorComponent::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObjects(ChildComponents, "USceneComponent.ChildComponents");
 }
 
 void USceneComponent::RouteComponentDestroyed()
