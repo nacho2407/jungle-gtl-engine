@@ -97,6 +97,7 @@ struct FParticleEmitterInstance
 	uint16* ParticleIndices = nullptr;
 	uint8* InstanceData = nullptr;
 	int32 InstancePayloadSize = 0;
+	int32 InstancePayloadAlignment = static_cast<int32>(alignof(FBaseParticle));
 	int32 PayloadOffset = 0;
 	int32 ParticleSize = 0;
 	int32 ParticleStride = 0;

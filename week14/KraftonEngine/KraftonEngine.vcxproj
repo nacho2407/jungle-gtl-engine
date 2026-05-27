@@ -418,16 +418,7 @@ call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform
     <ClCompile Include="Source\Engine\Object\ReferenceCollector.cpp" />
     <ClCompile Include="Source\Engine\Object\GarbageCollector.cpp" />
     <ClCompile Include="Source\Engine\Object\GarbageCollectionTest.cpp" />
-    <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyRenderer.cpp" />
-    <ClCompile Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.cpp" />
-    <ClCompile Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.cpp" />
-    <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp" />
-    <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp" />
     <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleEvent.cpp" />
-    <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp" />
-    <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp" />
-    <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />

@@ -3,6 +3,9 @@
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
 
+#include <cstring>
+#include <malloc.h>
+
 struct FBaseParticle
 {
 	FVector Position;
@@ -37,35 +40,55 @@ struct FParticleDataContainer
 	FParticleDataContainer(const FParticleDataContainer&) = delete;
 	FParticleDataContainer& operator=(const FParticleDataContainer&) = delete;
 
-	void Initialize(int32 InMaxParticleCount, int32 InParticleStride)
+	static int32 AlignUp(int32 Value, int32 Alignment)
+	{
+		if (Alignment <= 1)
+		{
+			return Value;
+		}
+		return (Value + Alignment - 1) & ~(Alignment - 1);
+	}
+
+	void Initialize(int32 InMaxParticleCount, int32 InParticleStride, int32 InDataAlignment)
 	{
 		Release();
 
 		ParticleStride = InParticleStride;
+		DataAlignment = InDataAlignment > static_cast<int32>(alignof(void*)) ? InDataAlignment : static_cast<int32>(alignof(void*));
 		const int32 MaxParticleCount = InMaxParticleCount > 0 ? InMaxParticleCount : 0;
 		ParticleDataNumBytes = MaxParticleCount * ParticleStride;
 		ParticleIndicesNumShorts = MaxParticleCount;
-		MemBlockSize = ParticleDataNumBytes + ParticleIndicesNumShorts * static_cast<int32>(sizeof(uint16));
+		ParticleIndicesOffset = AlignUp(ParticleDataNumBytes, static_cast<int32>(alignof(uint16)));
+		MemBlockSize = ParticleIndicesOffset + ParticleIndicesNumShorts * static_cast<int32>(sizeof(uint16));
 
 		if (MemBlockSize <= 0)
 		{
 			return;
 		}
 
-		ParticleData = new uint8[MemBlockSize]();
-		ParticleIndices = reinterpret_cast<uint16*>(ParticleData + ParticleDataNumBytes);
+		ParticleData = static_cast<uint8*>(_aligned_malloc(MemBlockSize, static_cast<size_t>(DataAlignment)));
+		if (!ParticleData)
+		{
+			Release();
+			return;
+		}
+
+		std::memset(ParticleData, 0, static_cast<size_t>(MemBlockSize));
+		ParticleIndices = reinterpret_cast<uint16*>(ParticleData + ParticleIndicesOffset);
 	}
 
 	void Release()
 	{
-		delete[] ParticleData;
+		_aligned_free(ParticleData);
 
 		MemBlockSize = 0;
 		ParticleDataNumBytes = 0;
 		ParticleIndicesNumShorts = 0;
+		ParticleIndicesOffset = 0;
 		ParticleData = nullptr;
 		ParticleIndices = nullptr;
 		ParticleStride = 0;
+		DataAlignment = static_cast<int32>(alignof(void*));
 	}
 
 	const FBaseParticle* GetParticles() const
@@ -99,7 +122,9 @@ struct FParticleDataContainer
 	int32 MemBlockSize = 0;
 	int32 ParticleDataNumBytes = 0;
 	int32 ParticleIndicesNumShorts = 0;
+	int32 ParticleIndicesOffset = 0;
 	uint8* ParticleData = nullptr;
 	uint16* ParticleIndices = nullptr;
 	int32 ParticleStride = 0;
+	int32 DataAlignment = static_cast<int32>(alignof(void*));
 };
