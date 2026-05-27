@@ -32,6 +32,42 @@ namespace
 			Instance->CurrentLODLevel->bSolo;
 	}
 
+	bool AreEmitterInstancesOutOfSync(
+		const UParticleSystem* ParticleSystem,
+		const TArray<FParticleEmitterInstance*>& EmitterInstances)
+	{
+		if (ParticleSystem == nullptr)
+		{
+			return !EmitterInstances.empty();
+		}
+
+		int32 ExpectedInstanceIndex = 0;
+		for (UParticleEmitter* EmitterTemplate : ParticleSystem->Emitters)
+		{
+			if (!IsLiveObject(EmitterTemplate))
+			{
+				continue;
+			}
+
+			if (ExpectedInstanceIndex >= static_cast<int32>(EmitterInstances.size()))
+			{
+				return true;
+			}
+
+			const FParticleEmitterInstance* Instance = EmitterInstances[static_cast<size_t>(ExpectedInstanceIndex)];
+			if (Instance == nullptr ||
+				!IsLiveObject(Instance->SpriteTemplate) ||
+				Instance->SpriteTemplate != EmitterTemplate)
+			{
+				return true;
+			}
+
+			++ExpectedInstanceIndex;
+		}
+
+		return ExpectedInstanceIndex != static_cast<int32>(EmitterInstances.size());
+	}
+
 	enum class EParticleInstanceParameterDiagnostic : uint32
 	{
 		MissingParameter = 1,
@@ -506,6 +542,17 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
 	SCOPE_STAT("Particle.TotalTick");
 	ParticleEvents.clear();
+
+    // 파티클 에디터에서 emitter 삭제 시 간헐적으로 발생하는 크래시 방지
+    // TODO: 전역 오브젝트 리스트 순회하는 방법 대신 다른 파티클 시스템에서 댕글링 포인터 생기는 거 방지하는 방법 찾아보기
+	UParticleSystem* ParticleSystem = GetTemplate();
+	if (AreEmitterInstancesOutOfSync(ParticleSystem, EmitterInstances))
+	{
+		ReleaseRenderData();
+		ReleaseEmitterInstances();
+		CreateEmitterInstances();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
+	}
 
 	UpdateLODLevel();
 

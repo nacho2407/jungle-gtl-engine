@@ -23,6 +23,11 @@ namespace
 	constexpr int32 MaxParticleIndexValue = static_cast<int32>(std::numeric_limits<uint16>::max());
 	constexpr int32 CurveBoundsSampleSteps = 32;
 
+	bool IsLiveObject(const UObject* Object)
+	{
+		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
+	}
+
 	int32 AlignParticleBytes(int32 Value)
 	{
 		return ParticleHelper::AlignParticleSize(Value);
@@ -388,7 +393,7 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 {
 	Release();
 
-	if (InTemplate == nullptr || InTemplate->LODLevels.empty())
+	if (!IsLiveObject(InTemplate) || InTemplate->LODLevels.empty())
 	{
 		return false;
 	}
@@ -442,7 +447,7 @@ bool FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, int32 InLODLev
 
 bool FParticleEmitterInstance::SetCurrentLODIndex(int32 InLODLevelIndex)
 {
-	if (SpriteTemplate == nullptr ||
+	if (!IsLiveObject(SpriteTemplate) ||
 		InLODLevelIndex < 0 ||
 		InLODLevelIndex >= static_cast<int32>(SpriteTemplate->LODLevels.size()))
 	{
@@ -457,7 +462,7 @@ bool FParticleEmitterInstance::SetCurrentLODIndex(int32 InLODLevelIndex)
 
 	UParticleLODLevel* NewLODLevel = SpriteTemplate->LODLevels[static_cast<size_t>(InLODLevelIndex)];
 	const FParticleLODLevelRuntimeCache* NewRuntimeCache = SpriteTemplate->GetLODLevelRuntimeCache(InLODLevelIndex);
-	if (NewLODLevel == nullptr || NewRuntimeCache == nullptr)
+	if (!IsLiveObject(NewLODLevel) || NewRuntimeCache == nullptr)
 	{
 		return false;
 	}
@@ -493,10 +498,11 @@ bool FParticleEmitterInstance::SetCurrentLODIndex(int32 InLODLevelIndex)
 
 bool FParticleEmitterInstance::RefreshCurrentRuntimeCache()
 {
-	if (SpriteTemplate == nullptr ||
+	if (!IsLiveObject(SpriteTemplate) ||
 		CurrentLODLevelIndex < 0 ||
 		CurrentLODLevelIndex >= static_cast<int32>(SpriteTemplate->LODLevels.size()))
 	{
+		SpriteTemplate = nullptr;
 		CurrentLODLevel = nullptr;
 		CurrentRuntimeCache = nullptr;
 		return false;
@@ -504,7 +510,7 @@ bool FParticleEmitterInstance::RefreshCurrentRuntimeCache()
 
 	UParticleLODLevel* NewLODLevel = SpriteTemplate->LODLevels[static_cast<size_t>(CurrentLODLevelIndex)];
 	const FParticleLODLevelRuntimeCache* NewRuntimeCache = SpriteTemplate->GetLODLevelRuntimeCache(CurrentLODLevelIndex);
-	if (NewLODLevel == nullptr || NewRuntimeCache == nullptr)
+	if (!IsLiveObject(NewLODLevel) || NewRuntimeCache == nullptr)
 	{
 		CurrentLODLevel = nullptr;
 		CurrentRuntimeCache = nullptr;
