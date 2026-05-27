@@ -175,6 +175,7 @@ namespace
 			Cast<UParticleModuleLifetime>(Module) != nullptr ||
 			Cast<UParticleModuleColor>(Module) != nullptr ||
 			Cast<UParticleModuleColorOverLife>(Module) != nullptr ||
+			Cast<UParticleModuleColorBySpeed>(Module) != nullptr ||
 			Cast<UParticleModuleSize>(Module) != nullptr ||
 			Cast<UParticleModuleSizeScaleOverLife>(Module) != nullptr;
 	}
@@ -1183,6 +1184,32 @@ void UParticleModuleColorOverLife::Update(FParticleEmitterInstance* Owner, int32
 		const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, Payload);
 		const FColor Factor = EvaluateParticleColor(ColorOverLife, Context);
 		Particle.Color = Particle.BaseColor * Factor;
+	}
+	END_UPDATE_LOOP()
+}
+
+bool UParticleModuleColorBySpeed::IsUpdateModule() const
+{
+	return true;
+}
+
+void UParticleModuleColorBySpeed::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)Offset;
+	(void)DeltaTime;
+
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		const float Speed = Particle.Velocity.Size();
+		const float SpeedRange = std::max(MaxSpeed - MinSpeed, 0.0001f);
+		const float Alpha = MathUtil::Clamp((Speed - MinSpeed) / SpeedRange, 0.0f, 1.0f);
+		const FColor SpeedColor = FColor::Lerp(MinColor, MaxColor, Alpha);
+		Particle.Color = Particle.BaseColor * SpeedColor;
 	}
 	END_UPDATE_LOOP()
 }

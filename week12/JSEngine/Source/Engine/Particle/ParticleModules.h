@@ -278,6 +278,31 @@ public:
 };
 
 /**
+ * @brief 속도 크기 기반 particle 색상 배율 module
+ */
+UCLASS(Placeable, DisplayName = "Color By Speed Module", Category = "Color")
+class UParticleModuleColorBySpeed : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleColorBySpeed, UParticleModule)
+
+	bool IsUpdateModule() const override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Min Speed", Min = 0.0f, Speed = 1.0f)
+	float MinSpeed = 0.0f;
+
+	UPROPERTY(DisplayName = "Max Speed", Min = 0.0f, Speed = 1.0f)
+	float MaxSpeed = 100.0f;
+
+	UPROPERTY(DisplayName = "Min Color")
+	FColor MinColor = FColor::White();
+
+	UPROPERTY(DisplayName = "Max Color")
+	FColor MaxColor = FColor::White();
+};
+
+/**
  * @brief 수명 비율 기반 particle 크기 배율 module
  */
 UCLASS(Placeable, DisplayName = "Size Scale Over Life Module", Category = "Size")
