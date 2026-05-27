@@ -24,6 +24,7 @@ struct FCascadeToolbarIcons
 	TComPtr<ID3D11ShaderResourceView> LowerLODIcon;
 	TComPtr<ID3D11ShaderResourceView> UpperLODIcon;
 	TComPtr<ID3D11ShaderResourceView> AddLODIcon;
+	TComPtr<ID3D11ShaderResourceView> DeleteLODIcon;
 	TComPtr<ID3D11ShaderResourceView> GenericLODIcon;
 	TComPtr<ID3D11ShaderResourceView> CurveHorizontalIcon;
 	TComPtr<ID3D11ShaderResourceView> CurveVerticalIcon;

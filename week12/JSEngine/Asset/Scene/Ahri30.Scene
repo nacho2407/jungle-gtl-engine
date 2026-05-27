@@ -244,16 +244,132 @@
       "Tags" : [],
       "UUID" : 1549,
       "Visible" : true
+    }, {
+      "Active" : true,
+      "ClassName" : "AParticleSystemActor",
+      "Components" : [{
+          "AttachSocketName" : "Name_None",
+          "ClassName" : "UParticleSystemComponent",
+          "ObjectName" : "UParticleSystemComponent_1",
+          "PersistentGuid" : "903E7E31-3F6D420A-A54F6EA0-5DAB4243",
+          "RelativeLocation" : {
+            "X" : 13.566118,
+            "Y" : 14.087753,
+            "Z" : 334.627777
+          },
+          "RelativeRotation" : {
+            "X" : 128.322433,
+            "Y" : -33.847626,
+            "Z" : 45.286472
+          },
+          "RelativeScale3D" : {
+            "X" : 0.250042,
+            "Y" : 0.250024,
+            "Z" : 0.250016
+          },
+          "Tags" : [],
+          "Template" : "Asset/Particle/Neon.particle",
+          "Type" : "UParticleSystemComponent",
+          "UUID" : 1787,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : false,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "ObjectName" : "URotatingMovementComponent_1",
+          "PersistentGuid" : "8C54051D-7F114FBE-9F3CFCD5-0BBDC3ED",
+          "PivotTranslation" : {
+            "X" : 0.000000,
+            "Y" : 5.000000,
+            "Z" : 15.000000
+          },
+          "PlaneConstraintNormal" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 1.000000
+          },
+          "RotationRate" : {
+            "X" : 0.000000,
+            "Y" : 22.500000,
+            "Z" : 180.000000
+          },
+          "Tags" : [],
+          "Type" : "URotatingMovementComponent",
+          "UUID" : 1896,
+          "Velocity" : {
+            "X" : -1.000000,
+            "Y" : 0.000000,
+            "Z" : 1.000000
+          },
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bConstrainToPlane" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bRotationInLocalSpace" : true,
+          "bTransient" : false,
+          "bUpdateOnlyIfRendered" : false
+        }, {
+          "ClassName" : "UProjectileMovementComponent",
+          "GravityScale" : -0.100000,
+          "InitialSpeed" : 1.000000,
+          "MaxSpeed" : 1.000000,
+          "ObjectName" : "UProjectileMovementComponent_1",
+          "PersistentGuid" : "FCBD3098-889A4C4E-97BC7E87-6313465E",
+          "PlaneConstraintNormal" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 1.000000
+          },
+          "Tags" : [],
+          "Type" : "UProjectileMovementComponent",
+          "UUID" : 2192,
+          "Velocity" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 1.000000
+          },
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bConstrainToPlane" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bRotationFollowsVelocity" : false,
+          "bTransient" : false,
+          "bUpdateOnlyIfRendered" : false
+        }],
+      "EditorOnly" : true,
+      "Name" : "AParticleSystemActor_0",
+      "RootComponent" : 1787,
+      "Tags" : [],
+      "UUID" : 1786,
+      "Visible" : true
+    }, {
+      "Active" : true,
+      "ClassName" : "AParticleEventManager",
+      "Components" : [],
+      "EditorOnly" : false,
+      "Name" : "AParticleEventManager_0",
+      "RootComponent" : 0,
+      "Tags" : [],
+      "UUID" : 2015,
+      "Visible" : true
     }],
   "ClassName" : "UWorld",
   "Name" : "Ahri30",
-  "NextUUID" : 1767,
+  "NextUUID" : 2296,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [4.548739, 12.166883, 8.981921],
+    "Location" : [-17.622513, 30.934505, 345.168640],
     "NearClip" : 0.100000,
-    "Rotation" : [33.443378, -7.113037, -100.618835]
+    "Rotation" : [22.892719, 17.040846, -55.239319]
   },
   "Version" : 6,
   "WorldSettings" : {

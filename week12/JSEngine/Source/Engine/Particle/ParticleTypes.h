@@ -25,6 +25,13 @@ enum class EParticleCoordinateSpace
 	World UMETA(DisplayName = "World"),
 };
 
+UENUM()
+enum class EParticleRibbonFacingMode
+{
+	Billboard UMETA(DisplayName = "Billboard"),
+	SourceTransform UMETA(DisplayName = "Keep Source Transform"),
+};
+
 enum class EDynamicEmitterType
 {
 	Sprite,
@@ -65,6 +72,11 @@ struct FParticleEventCollideData
 	UPrimitiveComponent* HitComponent = nullptr;
 };
 
+struct FRibbonParticlePayload
+{
+	FVector SpawnSide = FVector::RightVector;
+};
+
 struct FBaseParticle
 {
 	FVector Location = FVector::ZeroVector;
@@ -85,12 +97,12 @@ struct FBaseParticle
 	FColor Color = FColor::White();
 	FColor BaseColor = FColor::White();
 	uint32 Flags = 0;
-    uint32 Seed = 0; // seeded procedural 재현성을 위한 랜덤 시드값
+	uint32 Seed = 0; // seeded procedural 재현성을 위한 랜덤 시드값
 
 	/**
-     * @brief ribbon emitter 내 정렬이나 LOD preserve 시 MaxParticles가 줄어들면 어떤 Particle을 먼저 죽일지
-     *        결정하기 위한 particle 생성 순서 보존 식별자
-     */
+	 * @brief ribbon emitter 내 정렬이나 LOD preserve 시 MaxParticles가 줄어들면 어떤 Particle을 먼저 죽일지
+	 *        결정하기 위한 particle 생성 순서 보존 식별자
+	 */
 	uint32 SpawnId = 0;
 };
 
@@ -215,9 +227,38 @@ struct FDynamicBeamEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 	float BeamWidth = 10.0f;
 };
 
-struct FDynamicRibbonEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
+struct FRibbonRenderPoint
+{
+	// Ribbon 중심선의 한 점입니다. 렌더 프록시가 인접 점 두 개를 segment instance로 전개합니다.
+	FVector Position = FVector::ZeroVector;
+	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	float Width = 1.0f;
+	float U = 0.0f;
+	FVector Side = FVector::RightVector;
+};
+
+struct FRibbonRenderRange
+{
+	int32 PointStart = 0;
+	int32 PointCount = 0;
+};
+
+struct FDynamicTrailEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
+{
+	int32 TrailCount = 0;
+	int32 RenderPointCount = 0;
+	int32 SheetsPerTrail = 1;
+	float TilingDistance = 100.0f;
+	EParticleRibbonFacingMode RibbonFacingMode = EParticleRibbonFacingMode::Billboard;
+};
+
+struct FDynamicRibbonEmitterReplayDataBase : public FDynamicTrailEmitterReplayDataBase
 {
 	FDynamicRibbonEmitterReplayDataBase() { EmitterType = EDynamicEmitterType::Ribbon; }
+
+	// Ribbon은 particle snapshot 대신 중심선 point snapshot을 직접 보유합니다.
+	TArray<FRibbonRenderPoint> RenderPoints;
+	TArray<FRibbonRenderRange> TrailRanges;
 };
 
 struct FDynamicEmitterDataBase
@@ -276,15 +317,16 @@ struct FDynamicBeamEmitterData : public FDynamicEmitterDataBase
 
 struct FDynamicTrailsEmitterData : public FDynamicEmitterDataBase
 {
-	FDynamicRibbonEmitterReplayDataBase ReplayData;
-
-	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
 };
 
 struct FDynamicAnimTrailsEmitterData : public FDynamicTrailsEmitterData
 {
+	FDynamicTrailEmitterReplayDataBase ReplayData;
+	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
 };
 
 struct FDynamicRibbonEmitterData : public FDynamicTrailsEmitterData
 {
+	FDynamicRibbonEmitterReplayDataBase ReplayData;
+	const FDynamicEmitterReplayDataBase& GetSource() const override { return ReplayData; }
 };

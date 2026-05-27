@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/WorldContext.h"
 #include "Render/Common/RenderTypes.h"
