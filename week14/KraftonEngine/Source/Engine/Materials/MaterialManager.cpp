@@ -28,7 +28,8 @@ void FMaterialManager::ScanMaterialAssets()
 
 		const std::filesystem::path& Path = Entry.path();
 
-		if (Path.extension() != L".mat") continue;
+		const auto Ext = Path.extension();
+		if (Ext != L".mat" && Ext != L".matinst") continue;
 		if (Path.stem() == L"None") continue; // Fallback 머티리얼은 목록에서 제외
 
 		FMaterialAssetListItem Item;

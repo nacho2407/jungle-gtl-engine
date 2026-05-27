@@ -11,6 +11,8 @@
 #include <filesystem>
 
 class UMaterial;
+class UMaterialInterface;
+class UMaterialInstance;
 class UStaticMeshComponent;
 
 class FMaterialEditorWidget : public FAssetEditorWidget
@@ -31,11 +33,13 @@ public:
 
 private:
 	void RenderViewport();
-	void RenderDetailsPanel(UMaterial* Material);
+	void RenderDetailsPanel(UMaterialInterface* Material);
 	void RenderMaterialSettings(UMaterial* Material);
-	void RenderShaderParameters(UMaterial* Material);
-	void RenderTextureSection(UMaterial* Material);
+	void RenderShaderParameters(UMaterialInterface* Material);
+	void RenderTextureSection(UMaterialInterface* Material);
 	void SaveMaterialJson();
+
+	void CreateMaterialInstanceAsset(UMaterial* ParentMaterial);
 
 private:
 	FStaticMeshEditorViewportClient ViewportClient;

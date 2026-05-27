@@ -844,8 +844,34 @@ void MaterialElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 		ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
 	);
 
-	if (UMaterial* Material = FMaterialManager::Get().GetOrCreateMaterial(PackagePath))
+	if (UMaterialInterface* Material = FMaterialManager::Get().GetOrCreateMaterialInterface(PackagePath))
 	{
 		Context.EditorEngine->OpenAssetEditorForObject(Material);
 	}
+}
+
+static FString GetLowerExtensionForContentBrowser(const std::filesystem::path& Path)
+{
+	FString Extension = FPaths::ToUtf8(Path.extension());
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
+	return Extension;
+}
+
+static bool IsMaterialInstanceContentPath(const std::filesystem::path& Path)
+{
+	return GetLowerExtensionForContentBrowser(Path) == ".matinst";
+}
+
+const char* MaterialElement::GetTypeLabel() const
+{
+	return IsMaterialInstanceContentPath(ContentItem.Path)
+		? "Material Instance"
+		: "Material";
+}
+
+uint32 MaterialElement::GetAccentColor() const
+{
+	return IsMaterialInstanceContentPath(ContentItem.Path)
+		? IM_COL32(130, 190, 255, 255)
+		: IM_COL32(210, 170, 80, 255);
 }

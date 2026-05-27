@@ -375,7 +375,7 @@ void FEditorContentBrowserWidget::RefreshContent()
 		{
 			Element = std::make_shared<ObjSourceElement>();
 		}
-		else if (Extension == ".mat")
+		else if (Extension == ".mat" || Extension == ".matinst")
 		{
 			Element = std::make_shared<MaterialElement>();
 			Element->SetMaterialThumbnailRequest(

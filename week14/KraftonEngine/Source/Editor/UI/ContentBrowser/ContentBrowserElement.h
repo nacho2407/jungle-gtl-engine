@@ -200,8 +200,8 @@ public:
 	virtual const char* GetDragItemType() override { return "MaterialContentItem"; }
 
 protected:
-	const char* GetTypeLabel() const override { return "Material"; }
-	uint32 GetAccentColor() const override { return IM_COL32(210, 170, 80, 255); }
+	const char* GetTypeLabel() const override;
+	uint32 GetAccentColor() const override;
 
 private:
 	FEditorMaterialInspector MaterialInspector;

@@ -1,9 +1,11 @@
 ﻿#include "UI/Asset/Material/MaterialEditorWidget.h"
 
+#include "Editor/EditorEngine.h"
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "Component/Light/DirectionalLightComponent.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 #include "Mesh/Static/StaticMesh.h"
 #include "Mesh/MeshManager.h"
 #include "Texture/Texture2D.h"
@@ -28,7 +30,7 @@ FMaterialEditorWidget::FMaterialEditorWidget()
 
 bool FMaterialEditorWidget::CanEdit(UObject* Object) const
 {
-	return Object && Object->IsA<UMaterial>();
+	return Object && Object->IsA<UMaterialInterface>();
 }
 
 bool FMaterialEditorWidget::IsEditingObject(UObject* Object) const
@@ -55,7 +57,7 @@ void FMaterialEditorWidget::Open(UObject* Object)
 {
 	FAssetEditorWidget::Open(Object);
 
-	UMaterial* Material = Cast<UMaterial>(EditedObject);
+	UMaterialInterface* Material = Cast<UMaterialInterface>(EditedObject);
 	if (!Material) return;
 
 	MaterialPath = std::filesystem::path(FPaths::RootDir()) /
@@ -155,7 +157,7 @@ void FMaterialEditorWidget::Render(float DeltaTime)
 	}
 
 	static float DetailsWidth = 300.0f;
-	UMaterial* Material = Cast<UMaterial>(EditedObject);
+	UMaterialInterface* Material = Cast<UMaterialInterface>(EditedObject);
 
 	bool bWindowOpen = true;
 	FString VisibleTitle = "Material Editor";
@@ -243,7 +245,7 @@ void FMaterialEditorWidget::Render(float DeltaTime)
 	ImGui::SameLine();
 
 	ImGui::BeginChild("Details", ImVec2(DetailsWidth, 0), true);
-	RenderDetailsPanel(Cast<UMaterial>(EditedObject));
+	RenderDetailsPanel(Cast<UMaterialInterface>(EditedObject));
 	ImGui::EndChild();
 
 	ImGui::End();
@@ -259,14 +261,38 @@ void FMaterialEditorWidget::RenderViewport()
 	// Viewport rendering is handled by the viewport client and ImGui integration in Render().
 }
 
-void FMaterialEditorWidget::RenderDetailsPanel(UMaterial* Material)
+void FMaterialEditorWidget::RenderDetailsPanel(UMaterialInterface* Material)
 {
 	if (!Material)
 	{
 		ImGui::Text("No material selected.");
 		return;
 	}
-	RenderMaterialSettings(Material);
+	
+	if (UMaterial* BaseMaterial = Cast<UMaterial>(Material))
+	{
+		RenderMaterialSettings(BaseMaterial);
+
+		if (ImGui::Button("Create Instance"))
+		{
+			CreateMaterialInstanceAsset(BaseMaterial);
+		}
+	}
+	else if (UMaterialInstance* Instance = Cast<UMaterialInstance>(Material))
+	{
+		ImGui::SeparatorText("Material Instance");
+
+		UMaterial* Parent = Instance->GetParent();
+		ImGui::Text("Parent: %s", Parent ? Parent->GetAssetPathFileName().c_str() : "None");
+
+		if (Parent && ImGui::Button("Open Parent"))
+		{
+			if (UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine))
+			{
+				EditorEngine->OpenAssetEditorForObject(Parent);
+			}
+		}
+	}
 
 	ImGui::SeparatorText("Shader Parameters");
 	RenderShaderParameters(Material);
@@ -323,9 +349,26 @@ void FMaterialEditorWidget::RenderMaterialSettings(UMaterial* Material)
 	}
 }
 
-void FMaterialEditorWidget::RenderShaderParameters(UMaterial* Material)
+void FMaterialEditorWidget::RenderShaderParameters(UMaterialInterface* Material)
 {
-	const auto& Layout = Material->GetParameterInfo();
+	if (!Material) return;
+
+	UMaterial* LayerOwner = Cast<UMaterial>(Material);
+	if (!LayerOwner)
+	{
+		if (UMaterialInstance* Instance = Cast<UMaterialInstance>(Material))
+		{
+			LayerOwner = Instance->GetParent();
+		}
+	}
+	
+	if (!LayerOwner)
+	{
+		ImGui::TextDisabled("No parameter layout.");
+		return;
+	}
+
+	const auto& Layout = LayerOwner->GetParameterInfo();
 
 	for (const auto& [ParamName, Info] : Layout)
 	{
@@ -425,14 +468,33 @@ void FMaterialEditorWidget::RenderShaderParameters(UMaterial* Material)
 	}
 }
 
-void FMaterialEditorWidget::RenderTextureSection(UMaterial* Material)
+void FMaterialEditorWidget::RenderTextureSection(UMaterialInterface* Material)
 {
-	TMap<FString, UTexture2D*>* Textures = Material->GetTexture();
+	if (!Material) return;
+
+	UMaterial* LayoutOwner = Cast<UMaterial>(Material);
+	if (!LayoutOwner)
+	{
+		if (UMaterialInstance* Instance = Cast<UMaterialInstance>(Material))
+		{
+			LayoutOwner = Instance->GetParent();
+		}
+	}
+
+	if (!LayoutOwner)
+	{
+		ImGui::TextDisabled("No texture layout.");
+		return;
+	}
+
+	TMap<FString, UTexture2D*>* Textures = LayoutOwner->GetTexture();
 
 	for (auto& Pair : *Textures)
 	{
 		FString SlotName = Pair.first.c_str();
+
 		UTexture2D* Texture = Pair.second;
+		Material->GetTextureParameter(SlotName, Texture);
 
 		ImGui::PushID(SlotName.c_str());
 		ImGui::TextUnformatted(SlotName.c_str());
@@ -451,23 +513,30 @@ void FMaterialEditorWidget::RenderTextureSection(UMaterial* Material)
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PNGElement"))
 			{
 				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
+
 				FString NewTexturePath = FPaths::ToUtf8(
 					ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring()
 				);
+
 				ID3D11Device* Device = GEngine ? GEngine->GetRenderer().GetFD3DDevice().GetDevice() : nullptr;
+
 				const bool bIsColorTexture =
 					SlotName == "DiffuseTexture" ||
 					SlotName == "EmissiveTexture" ||
 					SlotName == "Custom0Texture" ||
 					SlotName == "Custom1Texture";
+
 				UTexture2D* NewTexture = UTexture2D::LoadFromFile(
 					NewTexturePath,
 					Device,
 					bIsColorTexture ? ETextureColorSpace::SRGB : ETextureColorSpace::Linear);
-				if (NewTexture)
+
+				if (NewTexture && Material->SetTextureParameter(SlotName, NewTexture))
 				{
-					Material->SetTextureParameter(SlotName, NewTexture);
-					Material->RebuildCachedSRVs();
+					if (UMaterial* BaseMaterial = Cast<UMaterial>(Material))
+					{
+						BaseMaterial->RebuildCachedSRVs();
+					}
 
 					CachedJson[MatKeys::Textures][SlotName.c_str()] = NewTexturePath.c_str();
 
@@ -479,25 +548,31 @@ void FMaterialEditorWidget::RenderTextureSection(UMaterial* Material)
 						PreviewMeshComponent->SetMaterial(0, Material);
 					}
 				}
-
 			}
+
 			ImGui::EndDragDropTarget();
 		}
 
 		ImGui::SameLine();
+
 		if (ImGui::Button("Clear"))
 		{
-			Material->SetTextureParameter(SlotName, nullptr);
-			Material->RebuildCachedSRVs();
-
-			CachedJson[MatKeys::Textures][SlotName.c_str()] = "";
-
-			MarkDirty();
-			SaveMaterialJson();
-
-			if (PreviewMeshComponent)
+			if (Material->SetTextureParameter(SlotName, nullptr))
 			{
-				PreviewMeshComponent->SetMaterial(0, Material);
+				if (UMaterial* BaseMaterial = Cast<UMaterial>(Material))
+				{
+					BaseMaterial->RebuildCachedSRVs();
+				}
+
+				CachedJson[MatKeys::Textures][SlotName.c_str()] = "";
+
+				MarkDirty();
+				SaveMaterialJson();
+
+				if (PreviewMeshComponent)
+				{
+					PreviewMeshComponent->SetMaterial(0, Material);
+				}
 			}
 		}
 
@@ -507,11 +582,8 @@ void FMaterialEditorWidget::RenderTextureSection(UMaterial* Material)
 
 void FMaterialEditorWidget::SaveMaterialJson()
 {
-	UMaterial* Material = Cast<UMaterial>(EditedObject);
-	if (!Material || MaterialPath.empty())
-	{
-		return;
-	}
+	UMaterialInterface* Material = Cast<UMaterialInterface>(EditedObject);
+	if (!Material || MaterialPath.empty()) return;
 
 	if (CachedJson.IsNull())
 	{
@@ -529,13 +601,16 @@ void FMaterialEditorWidget::SaveMaterialJson()
 		CachedJson = json::JSON();
 	}
 
-	const FEnum* ShadowEnum = FEnum::FindEnumByName("EMaterialShadowMode");
-	if (ShadowEnum && ShadowEnum->GetNames())
+	if (UMaterial* BaseMaterial = Cast<UMaterial>(Material))
 	{
-		const int32 Index = static_cast<int32>(Material->GetShadowMode());
-		if (Index >= 0 && static_cast<uint32>(Index) < ShadowEnum->GetCount())
+		const FEnum* ShadowEnum = FEnum::FindEnumByName("EMaterialShadowMode");
+		if (ShadowEnum && ShadowEnum->GetNames())
 		{
-			CachedJson[MatKeys::ShadowMode] = ShadowEnum->GetNames()[Index];
+			const int32 Index = static_cast<int32>(Material->GetShadowMode());
+			if (Index >= 0 && static_cast<uint32>(Index) < ShadowEnum->GetCount())
+			{
+				CachedJson[MatKeys::ShadowMode] = ShadowEnum->GetNames()[Index];
+			}
 		}
 	}
 
@@ -546,4 +621,57 @@ void FMaterialEditorWidget::SaveMaterialJson()
 	}
 
 	File << CachedJson.dump(4);
+}
+
+void FMaterialEditorWidget::CreateMaterialInstanceAsset(UMaterial* ParentMaterial)
+{
+	if (!ParentMaterial) return;
+
+	const std::filesystem::path ProjectRoot = FPaths::RootDir();
+	const std::filesystem::path ParentRelativePath = FPaths::ToWide(ParentMaterial->GetAssetPathFileName());
+
+	const std::filesystem::path ParentFullPath = ProjectRoot / ParentRelativePath;
+	const std::filesystem::path InstanceDir = ParentFullPath.parent_path();
+
+	std::filesystem::create_directories(InstanceDir);
+
+	const std::wstring ParentStem = ParentFullPath.stem().wstring();
+
+	std::filesystem::path InstancePath;
+	FString RelativePath;
+
+	for (int32 Index = 0; Index < 1000; ++Index)
+	{
+		std::wstring FileName = ParentStem + L"_Inst";
+		if (Index > 0)
+		{
+			FileName += L"_" + std::to_wstring(Index);
+		}
+		FileName += L".matinst";
+
+		InstancePath = InstanceDir / FileName;
+
+		if (!std::filesystem::exists(InstancePath))
+		{
+			RelativePath = FPaths::ToUtf8(InstancePath.lexically_relative(ProjectRoot).generic_wstring());
+			break;
+		}
+	}
+
+	if (RelativePath.empty()) return;
+
+	json::JSON JsonData;
+	JsonData[MatKeys::PathFileName] = RelativePath.c_str();
+	JsonData[MatKeys::ParentMaterial] = ParentMaterial->GetAssetPathFileName().c_str();
+	JsonData[MatKeys::Parameters] = json::JSON::Make(json::JSON::Class::Object);
+	JsonData[MatKeys::Textures] = json::JSON::Make(json::JSON::Class::Object);
+
+	std::ofstream File(InstancePath);
+	if (!File.is_open()) return;
+
+	File << JsonData.dump(4);
+	File.close();
+
+	FMaterialManager::Get().ScanMaterialAssets();
+	FMaterialManager::Get().GetOrCreateMaterialInstance(RelativePath);
 }

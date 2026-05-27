@@ -1,4 +1,4 @@
-#include "Editor/UI/Util/EditorMaterialThumbnailManager.h"
+﻿#include "Editor/UI/Util/EditorMaterialThumbnailManager.h"
 
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
@@ -146,7 +146,7 @@ void FEditorMaterialThumbnailManager::BuildPreviewScene(FMaterialThumbnailEntry&
 		return;
 	}
 
-	UMaterial* Material = FMaterialManager::Get().GetOrCreateMaterial(Entry.AssetPath);
+	UMaterialInterface* Material = FMaterialManager::Get().GetOrCreateMaterialInterface(Entry.AssetPath);
 	if (!Material)
 	{
 		return;

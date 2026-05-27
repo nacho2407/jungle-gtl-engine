@@ -553,7 +553,7 @@ bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Pro
 			{
 				return nullptr;
 			}
-			return FMaterialManager::Get().GetOrCreateMaterial(CurrentPath);
+			return FMaterialManager::Get().GetOrCreateMaterialInterface(CurrentPath);
 		};
 
 		const bool bAssetChanged = RenderAssetReferenceField(Field);
