@@ -1321,6 +1321,72 @@ void UParticleModuleRotation::Spawn(FParticleEmitterInstance* Owner, int32 Offse
 	Particle.Rotation = EvaluateParticleFloat(StartRotation, Context);
 }
 
+bool UParticleModuleRotationRate::IsSpawnModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleRotationRate::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleRotationRate::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, StartRotationRate.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleRotationRate::Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle)
+{
+	const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+	const FParticleDistributionContext Context = MakeSpawnDistributionContext(Owner, SpawnTime, Particle, Payload);
+	Particle.RotationRate = EvaluateParticleFloat(StartRotationRate, Context);
+	Particle.BaseRotationRate = Particle.RotationRate;
+}
+
+bool UParticleModuleRotationRateOverLife::IsUpdateModule() const
+{
+	return true;
+}
+
+int32 UParticleModuleRotationRateOverLife::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleDistributionPayload));
+}
+
+void UParticleModuleRotationRateOverLife::InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle)
+{
+	InitializeDistributionPayload(Owner, Offset, Particle, RotationRateOverLife.Mode == EParticleDistributionMode::RandomRangeCurve);
+}
+
+void UParticleModuleRotationRateOverLife::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)DeltaTime;
+
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	BEGIN_UPDATE_LOOP(Owner, Particle)
+	{
+		const FParticleDistributionPayload* Payload = GetDistributionPayload(Owner, Offset, Particle);
+		const FParticleDistributionContext Context = MakeUpdateDistributionContext(Owner, Particle, Payload);
+		const float EvaluatedRotationRate = EvaluateParticleFloat(RotationRateOverLife, Context);
+
+		if (bAbsolute)
+		{
+			Particle.RotationRate = EvaluatedRotationRate;
+			continue;
+		}
+
+		Particle.RotationRate = Particle.BaseRotationRate + EvaluatedRotationRate;
+	}
+	END_UPDATE_LOOP()
+}
+
 bool UParticleModuleMeshRotation::IsSpawnModule() const
 {
 	return true;
@@ -1733,6 +1799,7 @@ void UParticleModuleCollision::ApplyCollisionCompleteOption(
 		Particle.Velocity = FVector::ZeroVector;
 		Particle.BaseVelocity = FVector::ZeroVector;
 		Particle.RotationRate = 0.0f;
+		Particle.BaseRotationRate = 0.0f;
 		break;
 	case EParticleCollisionComplete::HaltCollisions:
 		Payload.bIgnoreCollisions = true;
@@ -1746,6 +1813,7 @@ void UParticleModuleCollision::ApplyCollisionCompleteOption(
 	case EParticleCollisionComplete::FreezeRotation:
 		SetParticleFlag(Particle, EParticleFlags::FreezeRotation);
 		Particle.RotationRate = 0.0f;
+		Particle.BaseRotationRate = 0.0f;
 		break;
 	case EParticleCollisionComplete::FreezeMovement:
 		SetParticleFlag(Particle, EParticleFlags::FreezeMovement);
@@ -1754,6 +1822,7 @@ void UParticleModuleCollision::ApplyCollisionCompleteOption(
 		Particle.Velocity = FVector::ZeroVector;
 		Particle.BaseVelocity = FVector::ZeroVector;
 		Particle.RotationRate = 0.0f;
+		Particle.BaseRotationRate = 0.0f;
 		break;
 	}
 }
