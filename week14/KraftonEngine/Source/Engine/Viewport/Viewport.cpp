@@ -234,10 +234,15 @@ bool FViewport::CreateResources()
 	if (FAILED(hr)) return false;
 	CullingHeatmapSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportCullingHeatmapSRV")), "ViewportCullingHeatmapSRV");
 
+	// Bloom uses half resolution so a small blur radius spreads farther on screen
+	// without producing obvious sparse sample marks.
+	BloomWidth = Width > 1 ? Width / 2 : 1;
+	BloomHeight = Height > 1 ? Height / 2 : 1;
+
 	//Bloom 텍스처
 	D3D11_TEXTURE2D_DESC BloomDesc = {};
-	BloomDesc.Width = Width;     // 주의: 블룸 최적화를 위해 Width / 2, Height / 2 로 다운샘플링하여 생성하기도 합니다.
-	BloomDesc.Height = Height;
+	BloomDesc.Width = BloomWidth;
+	BloomDesc.Height = BloomHeight;
 	BloomDesc.MipLevels = 1;
 	BloomDesc.ArraySize = 1;
 	BloomDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -309,4 +314,6 @@ void FViewport::ReleaseResources()
 	if (RTTexture) { RTTexture->Release(); RTTexture = nullptr; }
 	if (SceneColorCopySRV) { SceneColorCopySRV->Release(); SceneColorCopySRV = nullptr; }
 	if (SceneColorCopyTexture) { SceneColorCopyTexture->Release(); SceneColorCopyTexture = nullptr; }
+	BloomWidth = 0;
+	BloomHeight = 0;
 }
