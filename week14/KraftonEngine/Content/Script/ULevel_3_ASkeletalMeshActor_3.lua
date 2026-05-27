@@ -10,6 +10,7 @@ local ENEMY_TAG = "enemy"
 local ENEMY_FALLBACK_TAG = "HitTarget"
 local BEAM_SOURCE_PARAMETER = "BeamSource"
 local BEAM_TARGET_PARAMETER = "BeamEnd"
+local BEAM_FORWARD_DISTANCE = 100.0
 
 local EQUIPMENT_BY_MODE = {
     Sword = {
@@ -131,15 +132,12 @@ local function update_raygun_beam()
         return
     end
 
-    local source = gunActor.Location
-    local target = find_nearest_enemy(source)
-    if target == nil then
-        stop_raygun()
-        return
-    end
+    local source = gunParticle.Location
+    local forward = gunParticle.Forward:Normalized()
+    local target = source + forward * BEAM_FORWARD_DISTANCE
 
     gunParticle:SetVectorParameter(BEAM_SOURCE_PARAMETER, source)
-    gunParticle:SetVectorParameter(BEAM_TARGET_PARAMETER, target.Location)
+    gunParticle:SetVectorParameter(BEAM_TARGET_PARAMETER, target)
     if not beamActive then
         gunParticle:ResetSystem()
         gunParticle:Activate()
