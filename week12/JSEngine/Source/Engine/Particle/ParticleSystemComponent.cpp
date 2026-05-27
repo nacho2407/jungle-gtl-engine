@@ -91,6 +91,11 @@ public:
 		return Component != nullptr ? Component->GetWorldMatrix() : FMatrix::Identity;
 	}
 
+	AActor* GetSourceActor() const override
+	{
+		return Component != nullptr ? Component->GetOwner() : nullptr;
+	}
+
 	bool ParticleLineCheck(
 		FHitResult& Hit,
 		AActor* SourceActor,

@@ -21,6 +21,11 @@ public:
 	virtual FMatrix GetComponentToWorld() const = 0;
 
 	/**
+	 * @brief source actor ignore 정책에 사용할 PSC 소유 actor 조회
+	 */
+	virtual AActor* GetSourceActor() const = 0;
+
+	/**
 	 * @brief particle 이동 구간을 world Shape query로 검사
 	 * @param CollisionShape line 또는 이동 sphere query 형상
 	 */

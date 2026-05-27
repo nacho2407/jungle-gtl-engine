@@ -10,6 +10,7 @@
 #include "Particle/ParticleHelper.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <limits>
 #include <variant>
@@ -1220,6 +1221,170 @@ bool UParticleModuleCollision::IsUpdateModule() const
 {
 	// 일반 update 이전 위치에서는 이번 frame 이동 구간을 검사할 수 없음
 	return false;
+}
+
+int32 UParticleModuleCollision::RequiredBytes(UParticleModuleTypeDataBase* TypeData) const
+{
+	(void)TypeData;
+	return static_cast<int32>(sizeof(FParticleCollisionPayload));
+}
+
+FParticleCollisionPayload* UParticleModuleCollision::GetCollisionPayload(
+	FParticleEmitterInstance* Owner,
+	int32 Offset,
+	FBaseParticle& Particle) const
+{
+	if (Owner == nullptr || Offset < 0)
+	{
+		return nullptr;
+	}
+
+	uint8* Payload = Owner->GetParticlePayloadByOffset(Particle, Offset);
+	return Payload != nullptr ? reinterpret_cast<FParticleCollisionPayload*>(Payload) : nullptr;
+}
+
+void UParticleModuleCollision::InitializeParticle(
+	FParticleEmitterInstance* Owner,
+	int32 Offset,
+	FBaseParticle& Particle)
+{
+	FParticleCollisionPayload* Payload = GetCollisionPayload(Owner, Offset, Particle);
+	if (Payload == nullptr)
+	{
+		return;
+	}
+
+	*Payload = FParticleCollisionPayload{};
+	Payload->UsedMaxCollisions = std::max(MaxCollisions, 1);
+	Payload->UsedDampingFactor = DampingFactor;
+	Payload->UsedDelayAmount = std::max(DelayAmount, 0.0f);
+}
+
+float UParticleModuleCollision::ComputeCollisionRadius(const FBaseParticle& Particle) const
+{
+	if (!bUseParticleRadius)
+	{
+		return std::max(CollisionRadius, 0.0f);
+	}
+
+	const float MaxParticleSize = std::max(
+		std::abs(Particle.Size.X),
+		std::max(std::abs(Particle.Size.Y), std::abs(Particle.Size.Z)));
+	return MaxParticleSize * std::max(ParticleRadiusScale, 0.0f);
+}
+
+void UParticleModuleCollision::ApplyCollisionCompleteOption(
+	FParticleEmitterInstance* Owner,
+	int32 ActiveIndex,
+	FBaseParticle& Particle,
+	FParticleCollisionPayload& Payload) const
+{
+	switch (CollisionCompletionOption)
+	{
+	case EParticleCollisionComplete::Kill:
+		Owner->KillParticleByActiveIndex(ActiveIndex);
+		break;
+	case EParticleCollisionComplete::Freeze:
+		SetParticleFlag(Particle, EParticleFlags::Freeze);
+		SetParticleFlag(Particle, EParticleFlags::FreezeTranslation);
+		SetParticleFlag(Particle, EParticleFlags::FreezeRotation);
+		Particle.Velocity = FVector::ZeroVector;
+		Particle.BaseVelocity = FVector::ZeroVector;
+		Particle.RotationRate = 0.0f;
+		break;
+	case EParticleCollisionComplete::HaltCollisions:
+		Payload.bIgnoreCollisions = true;
+		SetParticleFlag(Particle, EParticleFlags::IgnoreCollisions);
+		break;
+	case EParticleCollisionComplete::FreezeTranslation:
+		SetParticleFlag(Particle, EParticleFlags::FreezeTranslation);
+		Particle.Velocity = FVector::ZeroVector;
+		Particle.BaseVelocity = FVector::ZeroVector;
+		break;
+	case EParticleCollisionComplete::FreezeRotation:
+		SetParticleFlag(Particle, EParticleFlags::FreezeRotation);
+		Particle.RotationRate = 0.0f;
+		break;
+	case EParticleCollisionComplete::FreezeMovement:
+		SetParticleFlag(Particle, EParticleFlags::FreezeMovement);
+		SetParticleFlag(Particle, EParticleFlags::FreezeTranslation);
+		SetParticleFlag(Particle, EParticleFlags::FreezeRotation);
+		Particle.Velocity = FVector::ZeroVector;
+		Particle.BaseVelocity = FVector::ZeroVector;
+		Particle.RotationRate = 0.0f;
+		break;
+	}
+}
+
+void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime)
+{
+	(void)DeltaTime;
+	if (Owner == nullptr)
+	{
+		return;
+	}
+
+	for (int32 ActiveIndex = 0; ActiveIndex < Owner->GetActiveParticleCount(); ++ActiveIndex)
+	{
+		FBaseParticle& Particle = Owner->GetParticleByActiveIndex(ActiveIndex);
+		FParticleCollisionPayload* Payload = GetCollisionPayload(Owner, Offset, Particle);
+		if (Payload == nullptr ||
+			Owner->IsParticlePendingKill(Particle) ||
+			Payload->bIgnoreCollisions ||
+			Payload->UsedCollisions >= Payload->UsedMaxCollisions ||
+			HasParticleFlag(Particle, EParticleFlags::IgnoreCollisions) ||
+			HasParticleFlag(Particle, EParticleFlags::Freeze) ||
+			HasParticleFlag(Particle, EParticleFlags::FreezeMovement))
+		{
+			continue;
+		}
+
+		// RelativeTime은 수명 기준 0~1 값
+		// DelayAmount는 초 단위라서 AgeSeconds와 비교
+		if (Particle.AgeSeconds < Payload->UsedDelayAmount)
+		{
+			continue;
+		}
+
+		const FVector StartWS = Owner->TransformLocationToWorldSpace(Particle.OldLocation);
+		const FVector EndWS = Owner->TransformLocationToWorldSpace(Particle.Location);
+		const float RadiusWS = Owner->TransformRadiusToWorldSpace(ComputeCollisionRadius(Particle));
+		const FCollisionShape CollisionShape = RadiusWS <= 1.e-6f
+			? FCollisionShape::MakeLine()
+			: FCollisionShape::MakeSphere(RadiusWS);
+		AActor* SourceActor = bIgnoreSourceActor ? Owner->GetOwner().GetSourceActor() : nullptr;
+
+		FHitResult Hit;
+		if (!Owner->GetOwner().ParticleLineCheck(Hit, SourceActor, EndWS, StartWS, CollisionShape) ||
+			!Hit.IsValid())
+		{
+			continue;
+		}
+
+		const FVector MoveWS = EndWS - StartWS;
+		const FVector IncomingVelocityWS = Owner->TransformVelocityToWorldSpace(Particle.Velocity);
+		const FVector HitCenterWS = StartWS + MoveWS * Hit.Time;
+		const FVector NewCenterWS =
+			HitCenterWS + Hit.Normal * std::max(CollisionPushOut, 0.0f);
+		Particle.Location = Owner->TransformLocationToSimulationSpace(NewCenterWS);
+
+		++Payload->UsedCollisions;
+		if (Payload->UsedCollisions >= Payload->UsedMaxCollisions)
+		{
+			ApplyCollisionCompleteOption(Owner, ActiveIndex, Particle, *Payload);
+		}
+		else
+		{
+			const FVector ReflectedVelocityWS =
+				IncomingVelocityWS - Hit.Normal * (2.0f * FVector::DotProduct(IncomingVelocityWS, Hit.Normal));
+			const FVector DampenedVelocityWS = ReflectedVelocityWS * Payload->UsedDampingFactor;
+			Particle.Velocity = Owner->TransformVelocityToSimulationSpace(DampenedVelocityWS);
+			Particle.BaseVelocity = Particle.Velocity;
+		}
+
+		// TODO: EventGenerator 연결 시 Kill completion도 이 위치에서 collision occurrence 보고
+		SetParticleFlag(Particle, EParticleFlags::CollisionHasOccurred);
+	}
 }
 
 /**

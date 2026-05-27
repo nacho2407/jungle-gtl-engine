@@ -354,6 +354,26 @@ public:
 	FVector MaxScale = FVector(10.0f, 10.0f, 1.0f);
 };
 
+UENUM()
+enum class EParticleCollisionComplete
+{
+	Kill UMETA(DisplayName = "Kill"),
+	Freeze UMETA(DisplayName = "Freeze"),
+	HaltCollisions UMETA(DisplayName = "Halt Collisions"),
+	FreezeTranslation UMETA(DisplayName = "Freeze Translation"),
+	FreezeRotation UMETA(DisplayName = "Freeze Rotation"),
+	FreezeMovement UMETA(DisplayName = "Freeze Movement"),
+};
+
+struct FParticleCollisionPayload
+{
+	int32 UsedCollisions = 0;
+	int32 UsedMaxCollisions = 1;
+	FVector UsedDampingFactor = FVector::OneVector;
+	float UsedDelayAmount = 0.0f;
+	bool bIgnoreCollisions = false;
+};
+
 UCLASS(Placeable, DisplayName = "Collision Module", Category = "Collision")
 class UParticleModuleCollision : public UParticleModule
 {
@@ -361,6 +381,59 @@ public:
 	GENERATED_BODY(UParticleModuleCollision, UParticleModule)
 
 	bool IsUpdateModule() const override;
+	int32 RequiredBytes(UParticleModuleTypeDataBase* TypeData) const override;
+	void InitializeParticle(FParticleEmitterInstance* Owner, int32 Offset, FBaseParticle& Particle) override;
+	void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime) override;
+
+	UPROPERTY(DisplayName = "Max Collisions", Min = 1.0f, Speed = 1.0f)
+	int32 MaxCollisions = 1;
+
+	UPROPERTY(DisplayName = "Collision Complete Option")
+	EParticleCollisionComplete CollisionCompletionOption = EParticleCollisionComplete::Kill;
+
+	UPROPERTY(DisplayName = "Use Particle Radius")
+	bool bUseParticleRadius = true;
+
+	UPROPERTY(DisplayName = "Particle Radius Scale", Min = 0.0f, Speed = 0.01f)
+	float ParticleRadiusScale = 0.5f;
+
+	UPROPERTY(DisplayName = "Collision Radius", Min = 0.0f, Speed = 0.01f)
+	float CollisionRadius = 0.0f;
+
+	UPROPERTY(DisplayName = "Delay Amount", Min = 0.0f, Speed = 0.01f)
+	float DelayAmount = 0.0f;
+
+	UPROPERTY(DisplayName = "Damping Factor")
+	FVector DampingFactor = FVector::OneVector;
+
+	UPROPERTY(DisplayName = "Collision Push Out", Min = 0.0f, Speed = 0.01f)
+	float CollisionPushOut = 0.1f;
+
+	UPROPERTY(DisplayName = "Ignore Source Actor")
+	bool bIgnoreSourceActor = true;
+
+private:
+	/**
+	 * @brief particle에 저장된 collision runtime payload 조회
+	 */
+	FParticleCollisionPayload* GetCollisionPayload(
+		FParticleEmitterInstance* Owner,
+		int32 Offset,
+		FBaseParticle& Particle) const;
+
+	/**
+	 * @brief particle 크기 또는 고정값으로 simulation 반지름 계산
+	 */
+	float ComputeCollisionRadius(const FBaseParticle& Particle) const;
+
+	/**
+	 * @brief max collision 도달 particle에 completion option 적용
+	 */
+	void ApplyCollisionCompleteOption(
+		FParticleEmitterInstance* Owner,
+		int32 ActiveIndex,
+		FBaseParticle& Particle,
+		FParticleCollisionPayload& Payload) const;
 };
 
 UENUM()
