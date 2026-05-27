@@ -16,6 +16,7 @@
 #include "Render/Pipeline/RenderCollector.h"
 #include "Materials/Material.h"
 #include "Texture/Texture2D.h"
+#include "Profiling/Stats/ParticleStats.h"
 
 // UpdateProxyLOD defined in RenderCollector.cpp (shared)
 extern void UpdateProxyLOD(FPrimitiveSceneProxy* Proxy, const FLODUpdateContext& LODCtx);
@@ -79,6 +80,7 @@ void FDrawCommandBuilder::Release()
 // ============================================================
 void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 {
+	PARTICLE_STATS_RESET();
 	DrawCommandList.Reset();
 	CollectViewMode = Frame.RenderOptions.ViewMode;
 	bCollectWeightBoneHeatMap = Frame.RenderOptions.bWeightBoneHeatMap;
