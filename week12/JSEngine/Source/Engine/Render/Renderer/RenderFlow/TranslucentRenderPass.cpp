@@ -308,6 +308,11 @@ bool FTranslucentRenderPass::DrawEachCommand(const FRenderPassContext* Context, 
         {
             Cmd.Material->BindParameters(DeviceContext, Program->PS);
         }
+        if (Cmd.Constants.Particle.Texture != nullptr && Cmd.Constants.Particle.Texture->GetSRV() != nullptr)
+        {
+            ID3D11ShaderResourceView* ParticleTextureSRV = Cmd.Constants.Particle.Texture->GetSRV();
+            DeviceContext->PSSetShaderResources(0, 1, &ParticleTextureSRV);
+        }
 
         FGeometryDrawPacket DrawResources;
         return BuildParticleSpriteDrawResources(Context, Cmd, DrawResources)
