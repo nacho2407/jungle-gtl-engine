@@ -14,30 +14,13 @@
 
 namespace
 {
-	constexpr int32 ParticleObjectGraphVersionWithEmitterLoopContract = 2;
-
 	bool IsLiveObject(const UObject* Object)
 	{
 		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
 	}
-
-	void FixupLegacyEmitterLoopContract(UParticleModuleRequired* RequiredModule, int32 AssetVersion)
-	{
-		if (!RequiredModule || AssetVersion >= ParticleObjectGraphVersionWithEmitterLoopContract)
-		{
-			return;
-		}
-
-		if (RequiredModule->bEmitterLoops && RequiredModule->MaxEmitterLoops == 0)
-		{
-			// v1 에셋의 기본값은 새 loop 계약에서는 spawn 0회가 되므로, 기존 프리뷰가 보이도록 1회 실행 값으로 보정합니다.
-			RequiredModule->bEmitterLoops = false;
-			RequiredModule->MaxEmitterLoops = 1;
-		}
-	}
 }
 
-// 경로를 정규화한 뒤 객체 그래프를 로드한 뒤 에셋을 불러옵니다. 로드된 객체 그래프가 최신 버전이 아닐 수 있으므로 RepairParticleSystem()로 보정합니다.
+// 경로를 정규화한 뒤 객체 그래프를 로드한 뒤 에셋을 불러옵니다. 로드된 객체 그래프의 live reference와 필수 모듈을 보정합니다.
 UParticleSystem* FParticleSystemAssetLoader::Load(const FString& Path) const
 {
 	const FString NormalizedPath = FPaths::Normalize(Path);
@@ -56,7 +39,7 @@ UParticleSystem* FParticleSystemAssetLoader::Load(const FString& Path) const
 	}
 
 	ParticleSystem->SetAssetPath(NormalizedPath);
-	FixupParticleSystem(ParticleSystem, Serializer.GetLastLoadedVersion());
+	FixupParticleSystem(ParticleSystem);
 	return ParticleSystem;
 }
 
@@ -74,7 +57,7 @@ bool FParticleSystemAssetLoader::Save(const FString& Path, const UParticleSystem
 		return false;
 	}
 
-	FixupParticleSystem(const_cast<UParticleSystem*>(ParticleSystem), ParticleObjectGraphVersionWithEmitterLoopContract);
+	FixupParticleSystem(const_cast<UParticleSystem*>(ParticleSystem));
 
 	FObjectGraphSerializer Serializer;
 	return Serializer.SaveToFile(NormalizedPath, const_cast<UParticleSystem*>(ParticleSystem), "UParticleSystem");
@@ -97,8 +80,8 @@ bool FParticleSystemAssetLoader::SupportsExtension(const FString& Extension) con
 }
 
 
-// 로드된 파티클 시스템이 최신 버전이 아닐 수 있으므로, 보정 작업을 수행합니다.
-void FParticleSystemAssetLoader::FixupParticleSystem(UParticleSystem* ParticleSystem, int32 AssetVersion) const
+// 로드된 파티클 시스템의 live reference와 필수 모듈을 보정합니다.
+void FParticleSystemAssetLoader::FixupParticleSystem(UParticleSystem* ParticleSystem) const
 {
 	if (!ParticleSystem)
 	{
@@ -145,7 +128,6 @@ void FParticleSystemAssetLoader::FixupParticleSystem(UParticleSystem* ParticleSy
 			{
 				LOD->RequiredModule = NewObject<UParticleModuleRequired>();
 			}
-			FixupLegacyEmitterLoopContract(LOD->RequiredModule, AssetVersion);
 
 			if (!IsLiveObject(LOD->SpawnModule))
 			{

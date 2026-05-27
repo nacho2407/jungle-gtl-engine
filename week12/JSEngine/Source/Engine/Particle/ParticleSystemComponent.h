@@ -78,7 +78,19 @@ private:
 	void CreateEmitterInstances();
 	void ReleaseEmitterInstances();
 	void ReleaseRenderData();
-	int32 SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate) const;
+
+	/**
+	 * @brief 현재 거리와 hysteresis 정책으로 사용할 LOD index를 선택합니다.
+	 *
+	 * @param EmitterTemplate LOD 후보 개수를 제공하는 emitter template
+	 *
+	 * @param CurrentLODIndex 현재 emitter instance가 사용 중인 LOD index
+	 *
+	 * @return 선택된 LOD index
+	 *
+	 * @details ParticleSystem의 LODDistances와 LODHysteresisDistance를 함께 사용하여 경계 근처의 잦은 LOD 왕복 전환을 방지합니다.
+	 */
+	int32 SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate, int32 CurrentLODIndex) const;
 	void UpdateLODLevel();
 
 	/**
