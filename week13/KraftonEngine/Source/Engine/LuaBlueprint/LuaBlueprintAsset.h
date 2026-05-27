@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Object/Object.h"
 #include "Core/Types/CoreTypes.h"
 #include "LuaBlueprint/LuaBlueprintTypes.h"
+#include "Object/Object.h"
 
 #include "Source/Engine/LuaBlueprint/LuaBlueprintAsset.generated.h"
 

@@ -13,6 +13,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cfloat>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -307,6 +308,201 @@ namespace
             return "Has Event Binding";
         }
         return "Node";
+    }
+
+
+    const char* NodeTypeHelpText(ELuaBlueprintNodeType Type)
+    {
+        switch (Type)
+        {
+        case ELuaBlueprintNodeType::EventBeginPlay:       return "Exec entry fired when the owning actor begins play.";
+        case ELuaBlueprintNodeType::EventTick:            return "Exec entry fired every frame. DeltaSeconds carries frame time.";
+        case ELuaBlueprintNodeType::EventEndPlay:         return "Exec entry fired when the owning actor ends play.";
+        case ELuaBlueprintNodeType::EventOverlap:         return "Exec entry fired on overlap begin, with actor/component payloads.";
+        case ELuaBlueprintNodeType::EventEndOverlap:      return "Exec entry fired on overlap end.";
+        case ELuaBlueprintNodeType::EventHit:             return "Exec entry fired when a blocking hit occurs.";
+        case ELuaBlueprintNodeType::EventEndHit:          return "Exec entry fired for the matching hit-end event if available.";
+        case ELuaBlueprintNodeType::Sequence:             return "Runs multiple exec outputs in order.";
+        case ELuaBlueprintNodeType::Branch:               return "Chooses True or False exec flow from a Bool condition.";
+        case ELuaBlueprintNodeType::ForLoop:              return "Loops from FirstIndex to LastIndex and then fires Completed.";
+        case ELuaBlueprintNodeType::WhileLoop:            return "Repeats while Condition remains true. Keep the condition safe.";
+        case ELuaBlueprintNodeType::PrintString:          return "Prints text for debugging or quick feedback.";
+        case ELuaBlueprintNodeType::LiteralBool:          return "Constant Bool value.";
+        case ELuaBlueprintNodeType::LiteralInt:           return "Constant Int value.";
+        case ELuaBlueprintNodeType::LiteralFloat:         return "Constant Float value.";
+        case ELuaBlueprintNodeType::LiteralString:        return "Constant String value.";
+        case ELuaBlueprintNodeType::LiteralVector:        return "Constant Vector value.";
+        case ELuaBlueprintNodeType::GetVariable:          return "Reads a graph variable.";
+        case ELuaBlueprintNodeType::SetVariable:          return "Writes a graph variable and continues exec flow.";
+        case ELuaBlueprintNodeType::GetProperty:          return "Reads a named reflected property from the target object.";
+        case ELuaBlueprintNodeType::SetProperty:          return "Writes a named reflected property on the target object.";
+        case ELuaBlueprintNodeType::CallFunction:         return "Calls a reflected function by name.";
+        case ELuaBlueprintNodeType::CallFunctionSignature:return "Calls a function using an explicit signature string.";
+        case ELuaBlueprintNodeType::Self:                 return "Returns the owning actor/object for this Lua Blueprint.";
+        case ELuaBlueprintNodeType::AddFloat:             return "Float addition.";
+        case ELuaBlueprintNodeType::SubtractFloat:        return "Float subtraction.";
+        case ELuaBlueprintNodeType::MultiplyFloat:        return "Float multiplication.";
+        case ELuaBlueprintNodeType::DivideFloat:          return "Float division.";
+        case ELuaBlueprintNodeType::AddInt:               return "Integer addition.";
+        case ELuaBlueprintNodeType::SubtractInt:          return "Integer subtraction.";
+        case ELuaBlueprintNodeType::MultiplyInt:          return "Integer multiplication.";
+        case ELuaBlueprintNodeType::DivideInt:            return "Integer division.";
+        case ELuaBlueprintNodeType::ModInt:               return "Integer remainder.";
+        case ELuaBlueprintNodeType::EqualFloat:           return "Float equality comparison.";
+        case ELuaBlueprintNodeType::NotEqualFloat:        return "Float inequality comparison.";
+        case ELuaBlueprintNodeType::LessFloat:            return "Float less-than comparison.";
+        case ELuaBlueprintNodeType::GreaterFloat:         return "Float greater-than comparison.";
+        case ELuaBlueprintNodeType::LessEqualFloat:       return "Float less-or-equal comparison.";
+        case ELuaBlueprintNodeType::GreaterEqualFloat:    return "Float greater-or-equal comparison.";
+        case ELuaBlueprintNodeType::EqualInt:             return "Integer equality comparison.";
+        case ELuaBlueprintNodeType::NotEqualInt:          return "Integer inequality comparison.";
+        case ELuaBlueprintNodeType::LessInt:              return "Integer less-than comparison.";
+        case ELuaBlueprintNodeType::GreaterInt:           return "Integer greater-than comparison.";
+        case ELuaBlueprintNodeType::And:                  return "Boolean AND.";
+        case ELuaBlueprintNodeType::Or:                   return "Boolean OR.";
+        case ELuaBlueprintNodeType::Not:                  return "Boolean NOT.";
+        case ELuaBlueprintNodeType::AppendString:         return "Concatenates strings.";
+        case ELuaBlueprintNodeType::MakeVector:           return "Builds a Vector from X/Y/Z components.";
+        case ELuaBlueprintNodeType::BreakVector:          return "Splits a Vector into X/Y/Z components.";
+        case ELuaBlueprintNodeType::AddVector:            return "Vector addition.";
+        case ELuaBlueprintNodeType::SubtractVector:       return "Vector subtraction.";
+        case ELuaBlueprintNodeType::ScaleVector:          return "Scales a Vector by a Float.";
+        case ELuaBlueprintNodeType::DotVector:            return "Dot product of two Vectors.";
+        case ELuaBlueprintNodeType::CrossVector:          return "Cross product of two Vectors.";
+        case ELuaBlueprintNodeType::VectorLength:         return "Returns Vector length.";
+        case ELuaBlueprintNodeType::NormalizeVector:      return "Returns a normalized Vector direction.";
+        case ELuaBlueprintNodeType::SpawnActor:           return "Spawns an actor of the configured class.";
+        case ELuaBlueprintNodeType::DestroyActor:         return "Destroys the target actor.";
+        case ELuaBlueprintNodeType::FindActorByName:      return "Finds one actor by name.";
+        case ELuaBlueprintNodeType::FindActorByClass:     return "Finds one actor by class.";
+        case ELuaBlueprintNodeType::FindActorByTag:       return "Finds one actor with the tag.";
+        case ELuaBlueprintNodeType::FindActorsByTag:      return "Finds all actors with the tag.";
+        case ELuaBlueprintNodeType::FindActorsByClass:    return "Finds all actors of the class.";
+        case ELuaBlueprintNodeType::GetActorLocation:     return "Reads target actor location.";
+        case ELuaBlueprintNodeType::SetActorLocation:     return "Sets target actor location.";
+        case ELuaBlueprintNodeType::GetActorRotation:     return "Reads target actor rotation.";
+        case ELuaBlueprintNodeType::SetActorRotation:     return "Sets target actor rotation.";
+        case ELuaBlueprintNodeType::GetActorScale:        return "Reads target actor scale.";
+        case ELuaBlueprintNodeType::SetActorScale:        return "Sets target actor scale.";
+        case ELuaBlueprintNodeType::GetActorForward:      return "Returns target actor forward vector.";
+        case ELuaBlueprintNodeType::GetActorRight:        return "Returns target actor right vector.";
+        case ELuaBlueprintNodeType::AddActorWorldOffset:  return "Moves an actor by a world-space offset.";
+        case ELuaBlueprintNodeType::ActorHasTag:          return "Checks whether an actor owns a tag.";
+        case ELuaBlueprintNodeType::ActorAddTag:          return "Adds a tag to an actor.";
+        case ELuaBlueprintNodeType::ActorRemoveTag:       return "Removes a tag from an actor.";
+        case ELuaBlueprintNodeType::GetActorName:         return "Returns the actor name.";
+        case ELuaBlueprintNodeType::GetOwnerActor:        return "Returns the owner actor when available.";
+        case ELuaBlueprintNodeType::IsValid:              return "Checks whether an object reference is valid.";
+        case ELuaBlueprintNodeType::Cast:                 return "Casts an object reference to the configured class.";
+        case ELuaBlueprintNodeType::GetRootComponent:     return "Gets an actor root component.";
+        case ELuaBlueprintNodeType::GetComponentByName:   return "Gets a component by name.";
+        case ELuaBlueprintNodeType::GetPrimitiveComponent:return "Gets a primitive component from the actor/component target.";
+        case ELuaBlueprintNodeType::ActivateComponent:    return "Activates the target component.";
+        case ELuaBlueprintNodeType::DeactivateComponent:  return "Deactivates the target component.";
+        case ELuaBlueprintNodeType::AddForce:             return "Applies force to a primitive component.";
+        case ELuaBlueprintNodeType::AddTorque:            return "Applies torque to a primitive component.";
+        case ELuaBlueprintNodeType::GetLinearVelocity:    return "Reads linear velocity from a primitive component.";
+        case ELuaBlueprintNodeType::SetLinearVelocity:    return "Sets linear velocity on a primitive component.";
+        case ELuaBlueprintNodeType::GetMass:              return "Reads mass from a primitive component.";
+        case ELuaBlueprintNodeType::SetSimulatePhysics:   return "Enables or disables physics simulation.";
+        case ELuaBlueprintNodeType::Lerp:                 return "Linearly interpolates between two values.";
+        case ELuaBlueprintNodeType::Clamp:                return "Clamps a value between Min and Max.";
+        case ELuaBlueprintNodeType::Min:                  return "Returns the smaller value.";
+        case ELuaBlueprintNodeType::Max:                  return "Returns the larger value.";
+        case ELuaBlueprintNodeType::RandomFloat:          return "Returns a random Float in range.";
+        case ELuaBlueprintNodeType::RandomInt:            return "Returns a random Int in range.";
+        case ELuaBlueprintNodeType::Sin:                  return "Sine of the input angle/value.";
+        case ELuaBlueprintNodeType::Cos:                  return "Cosine of the input angle/value.";
+        case ELuaBlueprintNodeType::Sqrt:                 return "Square root.";
+        case ELuaBlueprintNodeType::AbsFloat:             return "Absolute Float value.";
+        case ELuaBlueprintNodeType::Floor:                return "Rounds down.";
+        case ELuaBlueprintNodeType::Ceil:                 return "Rounds up.";
+        case ELuaBlueprintNodeType::Distance:             return "Distance between two vectors.";
+        case ELuaBlueprintNodeType::GetGameTime:          return "Returns current game time.";
+        case ELuaBlueprintNodeType::ForEachActorByClass:  return "Iterates actors of a class.";
+        case ELuaBlueprintNodeType::ForEachActorByTag:    return "Iterates actors with a tag.";
+        case ELuaBlueprintNodeType::ForEachArray:         return "Iterates elements in an array.";
+        case ELuaBlueprintNodeType::Reroute:              return "Visual pass-through node for cleaner wiring.";
+        case ELuaBlueprintNodeType::Comment:              return "Resizable group/comment box. Deleting it also deletes contained nodes.";
+        case ELuaBlueprintNodeType::CustomEvent:          return "Defines a custom exec entry that can be called or bound.";
+        case ELuaBlueprintNodeType::CallCustomEvent:      return "Calls a Custom Event by name.";
+        case ELuaBlueprintNodeType::Delay:                return "Waits for a duration before continuing exec flow.";
+        case ELuaBlueprintNodeType::ToBool:               return "Converts a value to Bool.";
+        case ELuaBlueprintNodeType::ToInt:                return "Converts a value to Int.";
+        case ELuaBlueprintNodeType::ToFloat:              return "Converts a value to Float.";
+        case ELuaBlueprintNodeType::ToString:             return "Converts a value to String.";
+        case ELuaBlueprintNodeType::ToVector:             return "Converts a value to Vector.";
+        case ELuaBlueprintNodeType::BindEvent:            return "Binds a reflected event to a Custom Event callback.";
+        case ELuaBlueprintNodeType::UnbindEvent:          return "Removes a reflected event binding.";
+        case ELuaBlueprintNodeType::HasEventBinding:      return "Checks whether a reflected event binding exists.";
+        }
+        return "Lua Blueprint node.";
+    }
+
+    bool RenderNodeHelpIcon(ELuaBlueprintNodeType Type, ELuaBlueprintNodeType& OutHoveredType)
+    {
+        ImGui::SameLine();
+        ImGui::TextDisabled("(?)");
+        if (!ImGui::IsItemHovered())
+        {
+            return false;
+        }
+
+        // Do not open an ImGui tooltip while ax::NodeEditor is actively drawing a node.
+        // The node editor applies its own canvas transform/clipping while nodes are emitted,
+        // which can make regular BeginTooltip/SetTooltip appear at a seemingly unrelated
+        // screen position. Capture only the hovered help target here and render one overlay
+        // after ed::End(), constrained to the owning Lua Blueprint window/canvas.
+        OutHoveredType = Type;
+        return true;
+    }
+
+    void RenderNodeHelpTooltip(ELuaBlueprintNodeType Type, const ImRect& OwnerScreenRect, ImGuiID OwnerViewportId)
+    {
+        const ImGuiStyle& Style = ImGui::GetStyle();
+        constexpr float Margin = 8.0f;
+
+        // Keep sizing relative to the Blueprint owner rect, not the application's main viewport.
+        // This prevents the tooltip from snapping to the global top-left when the Blueprint
+        // editor is floating, docked away from (0,0), or rendered on a secondary viewport.
+        const float OwnerWidth = std::max(1.0f, OwnerScreenRect.Max.x - OwnerScreenRect.Min.x);
+        const float PreferredWindowWidth = ImGui::GetFontSize() * 34.0f + Style.WindowPadding.x * 2.0f;
+        const float AvailableWindowWidth = std::max(96.0f, OwnerWidth - Margin * 2.0f);
+        const float TooltipWindowWidth = std::min(PreferredWindowWidth, AvailableWindowWidth);
+        const float TextWrapWidth = std::max(64.0f, TooltipWindowWidth - Style.WindowPadding.x * 2.0f);
+
+        ImVec2 Pos(OwnerScreenRect.Max.x - Margin, OwnerScreenRect.Min.y + Margin);
+        Pos.x = std::max(OwnerScreenRect.Min.x + Margin, Pos.x);
+        Pos.y = std::max(OwnerScreenRect.Min.y + Margin, Pos.y);
+
+        if (OwnerViewportId != 0)
+        {
+            ImGui::SetNextWindowViewport(OwnerViewportId);
+        }
+        ImGui::SetNextWindowPos(Pos, ImGuiCond_Always, ImVec2(1.0f, 0.0f));
+        ImGui::SetNextWindowBgAlpha(0.96f);
+        ImGui::SetNextWindowSizeConstraints(ImVec2(0.0f, 0.0f), ImVec2(TooltipWindowWidth, FLT_MAX));
+
+        constexpr ImGuiWindowFlags TooltipFlags =
+            ImGuiWindowFlags_AlwaysAutoResize |
+            ImGuiWindowFlags_NoTitleBar |
+            ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoScrollbar |
+            ImGuiWindowFlags_NoMove |
+            ImGuiWindowFlags_NoSavedSettings |
+            ImGuiWindowFlags_NoFocusOnAppearing |
+            ImGuiWindowFlags_NoNav |
+            ImGuiWindowFlags_NoInputs;
+
+        if (ImGui::Begin("##LuaBPNodeHelpTooltip", nullptr, TooltipFlags))
+        {
+            ImGui::TextUnformatted(NodeTypeLabel(Type));
+            ImGui::Separator();
+            ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + TextWrapWidth);
+            ImGui::TextUnformatted(NodeTypeHelpText(Type));
+            ImGui::PopTextWrapPos();
+        }
+        ImGui::End();
     }
 
     const char* PinTypeLabel(ELuaBlueprintPinType Type)
@@ -634,18 +830,127 @@ namespace
         return FName(Candidate);
     }
 
-    ImVec2 ComputeNodeFragmentMin(const TArray<FLuaBlueprintNode>& Nodes)
+    struct FLuaBlueprintNodeFragmentBounds
     {
-        if (Nodes.empty()) return ImVec2(0.0f, 0.0f);
-        float MinX = Nodes[0].PosX;
-        float MinY = Nodes[0].PosY;
+        ImVec2 Min = ImVec2(0.0f, 0.0f);
+        ImVec2 Max = ImVec2(0.0f, 0.0f);
+        bool   bValid = false;
+    };
+
+    ImVec2 EstimateLuaBlueprintNodeSize(const FLuaBlueprintNode& Node)
+    {
+        if (Node.Type == ELuaBlueprintNodeType::Comment)
+        {
+            return ImVec2(std::max(80.0f, Node.VectorValue.X), std::max(40.0f, Node.VectorValue.Y));
+        }
+
+        return ImVec2(180.0f, 90.0f);
+    }
+
+    FLuaBlueprintNodeFragmentBounds ComputeNodeFragmentBounds(
+        const TArray<FLuaBlueprintNode>& Nodes,
+        bool bUseEditorNodeSizes,
+        bool bPreferNonCommentNodes = false
+        )
+    {
+        FLuaBlueprintNodeFragmentBounds Bounds;
+        if (Nodes.empty()) return Bounds;
+
+        bool bHasNonComment = false;
+        if (bPreferNonCommentNodes)
+        {
+            for (const FLuaBlueprintNode& Node : Nodes)
+            {
+                if (Node.Type != ELuaBlueprintNodeType::Comment)
+                {
+                    bHasNonComment = true;
+                    break;
+                }
+            }
+        }
+
+        float MinX = FLT_MAX;
+        float MinY = FLT_MAX;
+        float MaxX = -FLT_MAX;
+        float MaxY = -FLT_MAX;
+
         for (const FLuaBlueprintNode& Node : Nodes)
         {
-            MinX = std::min(MinX, Node.PosX);
-            MinY = std::min(MinY, Node.PosY);
+            if (bHasNonComment && Node.Type == ELuaBlueprintNodeType::Comment)
+            {
+                continue;
+            }
+
+            ImVec2 Pos(Node.PosX, Node.PosY);
+            ImVec2 Size = EstimateLuaBlueprintNodeSize(Node);
+            if (bUseEditorNodeSizes)
+            {
+                const ImVec2 EditorSize = ed::GetNodeSize(ToNodeId(Node.NodeId));
+                if (EditorSize.x > 1.0f && EditorSize.y > 1.0f)
+                {
+                    Size = EditorSize;
+                }
+            }
+
+            MinX = std::min(MinX, Pos.x);
+            MinY = std::min(MinY, Pos.y);
+            MaxX = std::max(MaxX, Pos.x + Size.x);
+            MaxY = std::max(MaxY, Pos.y + Size.y);
+            Bounds.bValid = true;
         }
-        return ImVec2(MinX, MinY);
+
+        if (!Bounds.bValid) return Bounds;
+        Bounds.Min = ImVec2(MinX, MinY);
+        Bounds.Max = ImVec2(MaxX, MaxY);
+        return Bounds;
     }
+
+    FLuaBlueprintNodeFragmentBounds ComputeLiveNodeBounds(const FLuaBlueprintNode& Node, bool bUseEditorNode)
+    {
+        FLuaBlueprintNodeFragmentBounds Bounds;
+        ImVec2 Pos(Node.PosX, Node.PosY);
+        ImVec2 Size = EstimateLuaBlueprintNodeSize(Node);
+        if (bUseEditorNode)
+        {
+            Pos = ed::GetNodePosition(ToNodeId(Node.NodeId));
+            const ImVec2 EditorSize = ed::GetNodeSize(ToNodeId(Node.NodeId));
+            if (EditorSize.x > 1.0f && EditorSize.y > 1.0f)
+            {
+                Size = EditorSize;
+            }
+        }
+        Bounds.Min = Pos;
+        Bounds.Max = ImVec2(Pos.x + Size.x, Pos.y + Size.y);
+        Bounds.bValid = true;
+        return Bounds;
+    }
+
+    bool IsBoundsFullyInside(const FLuaBlueprintNodeFragmentBounds& Inner, const FLuaBlueprintNodeFragmentBounds& Outer)
+    {
+        if (!Inner.bValid || !Outer.bValid) return false;
+        constexpr float Tolerance = 1.0f;
+        return Inner.Min.x >= Outer.Min.x - Tolerance
+            && Inner.Min.y >= Outer.Min.y - Tolerance
+            && Inner.Max.x <= Outer.Max.x + Tolerance
+            && Inner.Max.y <= Outer.Max.y + Tolerance;
+    }
+
+    ImVec2 ComputeNodeFragmentMin(const TArray<FLuaBlueprintNode>& Nodes)
+    {
+        const FLuaBlueprintNodeFragmentBounds Bounds = ComputeNodeFragmentBounds(Nodes, false);
+        return Bounds.bValid ? Bounds.Min : ImVec2(0.0f, 0.0f);
+    }
+
+    FLuaBlueprintNodeFragmentBounds ComputeNodeFragmentPasteReferenceBounds(
+        const TArray<FLuaBlueprintNode>& Nodes,
+        bool bUseEditorNodeSizes
+        )
+    {
+        // Duplicate/paste placement should be based on actual source nodes, not on an oversized
+        // selected comment/group rectangle. If only comments are selected, comments become the basis.
+        return ComputeNodeFragmentBounds(Nodes, bUseEditorNodeSizes, true);
+    }
+
 
     bool IsValueProducingNode(ELuaBlueprintNodeType Type)
     {
@@ -724,6 +1029,8 @@ void FLuaBlueprintEditorWidget::Open(UObject* Object)
     FAssetEditorWidget::Open(Object);
     EnsureContext();
     bPositionsPushed = false;
+    bPendingInitialContentFit = true;
+    bPendingNodeGeometryEdit = false;
 
     if (ULuaBlueprintAsset* Blueprint = GetBlueprint())
     {
@@ -741,14 +1048,23 @@ void FLuaBlueprintEditorWidget::Open(UObject* Object)
 
 void FLuaBlueprintEditorWidget::Close()
 {
+    if (bPendingNodeGeometryEdit)
+    {
+        if (ULuaBlueprintAsset* Blueprint = GetBlueprint())
+        {
+            CommitBlueprintEdit(Blueprint);
+        }
+        bPendingNodeGeometryEdit = false;
+    }
+
     DestroyContext();
     bPositionsPushed = false;
     UndoStack.clear();
     RedoStack.clear();
     ClipboardNodes.clear();
     ClipboardLinks.clear();
-    bHasQueuedPasteAnchor = false;
-    DuplicateSerial = 0;
+    bPendingInitialContentFit = false;
+    bPendingNodeGeometryEdit = false;
     FAssetEditorWidget::Close();
 }
 
@@ -763,23 +1079,22 @@ void FLuaBlueprintEditorWidget::Render(float /*DeltaTime*/)
 
     EnsureContext();
 
-    // 표시용 라벨 + `##` + 고정 ID. ImGui 는 title 의 `##` 이후를 윈도우 ID 로만 사용한다.
-    // 이전에는 dirty toggle 마다 title 전체가 바뀌어 ImGui 가 매번 신규 윈도우로 보고
-    // 위치/크기/도킹 상태를 reset 했다 → 사용자에게 "창이 갑자기 이동" 으로 보임.
-    // `##LuaBP_<ptr>` 로 ID 를 자산 인스턴스에 고정하면 라벨이 어떻게 바뀌어도 같은 윈도우.
+    // 표시 라벨은 dirty mark(*) 때문에 바뀔 수 있지만, ### 뒤 ID 는 자산 인스턴스로 고정한다.
+    // ## 는 표시 suffix 만 숨길 뿐 앞 라벨까지 ID 에 포함되므로 dirty toggle 시 다른 창으로 취급될 수 있다.
     const FString DisplayLabel = (Blueprint->GetSourcePath().empty() ? Blueprint->GetName() : Blueprint->GetSourcePath());
     const FString DirtyMark    = (IsDirty() || Blueprint->IsCompileDirty()) ? FString("*") : FString();
     char WindowTitleBuf[512];
     std::snprintf(
         WindowTitleBuf,
         sizeof(WindowTitleBuf),
-        "Lua Blueprint - %s%s##LuaBP_%p",
+        "Lua Blueprint - %s%s###LuaBP_%p",
         DisplayLabel.c_str(),
         DirtyMark.c_str(),
         static_cast<const void*>(Blueprint)
     );
 
     bool bWindowOpen = IsOpen();
+    ImGui::SetNextWindowSize(ImVec2(1440.0f, 900.0f), ImGuiCond_Once);
     if (!ImGui::Begin(WindowTitleBuf, &bWindowOpen, ImGuiWindowFlags_MenuBar))
     {
         ImGui::End();
@@ -885,360 +1200,6 @@ namespace
         Buffer = Saver.GetBuffer();
         return Buffer;
     }
-}
-
-void FLuaBlueprintEditorWidget::CaptureInitialUndoSnapshot(ULuaBlueprintAsset* Blueprint)
-{
-    UndoStack.clear();
-    RedoStack.clear();
-    ClipboardNodes.clear();
-    ClipboardLinks.clear();
-    bHasQueuedPasteAnchor = false;
-    DuplicateSerial = 0;
-    const TArray<uint8> Snapshot = CaptureLuaBlueprintSnapshot(Blueprint);
-    if (!Snapshot.empty())
-    {
-        UndoStack.push_back(Snapshot);
-    }
-}
-
-void FLuaBlueprintEditorWidget::CommitBlueprintEdit(ULuaBlueprintAsset* Blueprint)
-{
-    if (!Blueprint || bRestoringSnapshot) return;
-    const TArray<uint8> Snapshot = CaptureLuaBlueprintSnapshot(Blueprint);
-    if (!Snapshot.empty() && (UndoStack.empty() || UndoStack.back() != Snapshot))
-    {
-        UndoStack.push_back(Snapshot);
-        if (UndoStack.size() > 128)
-        {
-            UndoStack.erase(UndoStack.begin());
-        }
-    }
-    RedoStack.clear();
-    MarkDirty();
-}
-
-bool FLuaBlueprintEditorWidget::RestoreBlueprintSnapshot(ULuaBlueprintAsset* Blueprint, const TArray<uint8>& Snapshot)
-{
-    if (!Blueprint || Snapshot.empty()) return false;
-    bRestoringSnapshot = true;
-    FMemoryArchive Loader(Snapshot, false);
-    Blueprint->Serialize(Loader);
-    Blueprint->Compile();
-    bRestoringSnapshot = false;
-    bPositionsPushed = false;
-    MarkDirty();
-    return true;
-}
-
-void FLuaBlueprintEditorWidget::UndoBlueprintEdit(ULuaBlueprintAsset* Blueprint)
-{
-    if (!Blueprint || UndoStack.size() <= 1) return;
-    RedoStack.push_back(UndoStack.back());
-    UndoStack.pop_back();
-    RestoreBlueprintSnapshot(Blueprint, UndoStack.back());
-}
-
-void FLuaBlueprintEditorWidget::RedoBlueprintEdit(ULuaBlueprintAsset* Blueprint)
-{
-    if (!Blueprint || RedoStack.empty()) return;
-    const TArray<uint8> Snapshot = RedoStack.back();
-    RedoStack.pop_back();
-    UndoStack.push_back(Snapshot);
-    RestoreBlueprintSnapshot(Blueprint, Snapshot);
-}
-
-bool FLuaBlueprintEditorWidget::GatherSelectedNodes(
-    ULuaBlueprintAsset* Blueprint,
-    TArray<FLuaBlueprintNode>& OutNodes,
-    TArray<FLuaBlueprintLink>& OutLinks
-    ) const
-{
-    OutNodes.clear();
-    OutLinks.clear();
-    if (!Blueprint || !NodeEditorContext) return false;
-
-    FScopedNodeEditorCurrent Scope(NodeEditorContext);
-
-    ed::NodeId Selected[512];
-    const int Count = ed::GetSelectedNodes(Selected, 512);
-    if (Count <= 0) return false;
-
-    std::unordered_set<uint32> SelectedIds;
-    SelectedIds.reserve(static_cast<size_t>(Count));
-    for (int i = 0; i < Count; ++i)
-    {
-        SelectedIds.insert(NodeIdToU32(Selected[i]));
-    }
-
-    for (const FLuaBlueprintNode& Node : Blueprint->GetNodes())
-    {
-        if (SelectedIds.count(Node.NodeId))
-        {
-            OutNodes.push_back(Node);
-        }
-    }
-
-    for (const FLuaBlueprintLink& Link : Blueprint->GetLinks())
-    {
-        const FLuaBlueprintPin* From = Blueprint->FindPin(Link.FromPinId);
-        const FLuaBlueprintPin* To   = Blueprint->FindPin(Link.ToPinId);
-        if (From && To && SelectedIds.count(From->OwningNodeId) && SelectedIds.count(To->OwningNodeId))
-        {
-            OutLinks.push_back(Link);
-        }
-    }
-
-    return !OutNodes.empty();
-}
-
-bool FLuaBlueprintEditorWidget::CloneNodeFragment(
-    ULuaBlueprintAsset* Blueprint,
-    const TArray<FLuaBlueprintNode>& SourceNodes,
-    const TArray<FLuaBlueprintLink>& SourceLinks,
-    const ImVec2& TargetAnchor,
-    TArray<uint32>* OutNewNodeIds
-    )
-{
-    if (!Blueprint || SourceNodes.empty()) return false;
-
-    const ImVec2 SourceAnchor = ComputeNodeFragmentMin(SourceNodes);
-    const ImVec2 Delta(TargetAnchor.x - SourceAnchor.x, TargetAnchor.y - SourceAnchor.y);
-
-    std::unordered_map<uint32, uint32> PinIdMap;
-    TArray<uint32> NewNodeIds;
-    bool bChanged = false;
-
-    // ed::SetNodePosition 호출이 필요하므로 ed 컨텍스트를 활성화. CloneNodeFragment 가
-    // RenderGraph 의 ed::Begin/End 안에서 호출되는 경우(ProcessQueuedNodeEditorCommands)는
-    // 이미 current 이라 no-op. 바깥(외부 API)에서 호출돼도 안전하게 동작.
-    FScopedNodeEditorCurrent EdScope(NodeEditorContext);
-
-    for (const FLuaBlueprintNode& SrcNode : SourceNodes)
-    {
-        if (IsEventNode(SrcNode.Type) && HasNodeOfType(Blueprint, SrcNode.Type))
-        {
-            continue;
-        }
-
-        const float NewX = SrcNode.PosX + Delta.x;
-        const float NewY = SrcNode.PosY + Delta.y;
-        FLuaBlueprintNode* NewNode = Blueprint->AddNodeOfType(SrcNode.Type, NewX, NewY);
-        if (!NewNode) continue;
-
-        NewNode->DisplayName = SrcNode.DisplayName;
-        NewNode->NameValue   = SrcNode.NameValue;
-        NewNode->StringValue = SrcNode.StringValue;
-        NewNode->BoolValue   = SrcNode.BoolValue;
-        NewNode->IntValue    = SrcNode.IntValue;
-        NewNode->FloatValue  = SrcNode.FloatValue;
-        NewNode->VectorValue = SrcNode.VectorValue;
-
-        const size_t PinCount = std::min(NewNode->Pins.size(), SrcNode.Pins.size());
-        for (size_t PinIndex = 0; PinIndex < PinCount; ++PinIndex)
-        {
-            const FLuaBlueprintPin& SrcPin = SrcNode.Pins[PinIndex];
-            FLuaBlueprintPin& DstPin = NewNode->Pins[PinIndex];
-            DstPin.Type          = SrcPin.Type;
-            DstPin.DisplayName   = SrcPin.DisplayName;
-            DstPin.DefaultBool   = SrcPin.DefaultBool;
-            DstPin.DefaultInt    = SrcPin.DefaultInt;
-            DstPin.DefaultFloat  = SrcPin.DefaultFloat;
-            DstPin.DefaultString = SrcPin.DefaultString;
-            DstPin.DefaultVector = SrcPin.DefaultVector;
-            PinIdMap[SrcPin.PinId] = DstPin.PinId;
-        }
-        // 데이터모델 PosX/PosY 만 세팅하면 RenderGraph 끝의 sync loop 가 ed 의 (0,0) 으로
-        // 덮어쓴다 (새 노드는 아직 ed 에 push 안 된 상태). 즉시 ed::SetNodePosition 으로 push.
-        if (NodeEditorContext)
-        {
-            ed::SetNodePosition(ToNodeId(NewNode->NodeId), ImVec2(NewX, NewY));
-        }
-        NewNodeIds.push_back(NewNode->NodeId);
-        bChanged = true;
-    }
-
-    for (const FLuaBlueprintLink& SrcLink : SourceLinks)
-    {
-        auto FromIt = PinIdMap.find(SrcLink.FromPinId);
-        auto ToIt   = PinIdMap.find(SrcLink.ToPinId);
-        if (FromIt != PinIdMap.end() && ToIt != PinIdMap.end())
-        {
-            uint32 FromPinId = 0;
-            uint32 ToPinId   = 0;
-            if (Blueprint->CanLinkPins(FromIt->second, ToIt->second, &FromPinId, &ToPinId))
-            {
-                Blueprint->AddLink(FromPinId, ToPinId);
-            }
-        }
-    }
-
-    Blueprint->RefreshAllNodePinTypes();
-    if (OutNewNodeIds)
-    {
-        *OutNewNodeIds = NewNodeIds;
-    }
-    return bChanged;
-}
-
-void FLuaBlueprintEditorWidget::CopySelectedNodes(ULuaBlueprintAsset* Blueprint)
-{
-    GatherSelectedNodes(Blueprint, ClipboardNodes, ClipboardLinks);
-}
-
-void FLuaBlueprintEditorWidget::PasteCopiedNodes(ULuaBlueprintAsset* Blueprint, const ImVec2* OverrideAnchor)
-{
-    if (!Blueprint || ClipboardNodes.empty()) return;
-
-    ImVec2 Anchor = OverrideAnchor ? *OverrideAnchor : PendingNewNodePosition;
-    if (Anchor.x == 0.0f && Anchor.y == 0.0f && NodeEditorContext)
-    {
-        FScopedNodeEditorCurrent Scope(NodeEditorContext);
-        Anchor = ed::ScreenToCanvas(ImGui::GetMousePos());
-    }
-    if (Anchor.x == 0.0f && Anchor.y == 0.0f)
-    {
-        const ImVec2 SourceAnchor = ComputeNodeFragmentMin(ClipboardNodes);
-        Anchor = ImVec2(SourceAnchor.x + 40.0f, SourceAnchor.y + 40.0f);
-    }
-
-    if (CloneNodeFragment(Blueprint, ClipboardNodes, ClipboardLinks, Anchor))
-    {
-        bPositionsPushed = false;
-        CommitBlueprintEdit(Blueprint);
-    }
-}
-
-void FLuaBlueprintEditorWidget::DeleteSelectedNodes(ULuaBlueprintAsset* Blueprint)
-{
-    if (!Blueprint || !NodeEditorContext) return;
-    FScopedNodeEditorCurrent Scope(NodeEditorContext);
-    ed::NodeId Selected[512];
-    const int Count = ed::GetSelectedNodes(Selected, 512);
-    bool bChanged = false;
-    for (int i = 0; i < Count; ++i)
-    {
-        bChanged = Blueprint->RemoveNode(NodeIdToU32(Selected[i])) || bChanged;
-    }
-    if (bChanged)
-    {
-        Blueprint->RefreshAllNodePinTypes();
-        CommitBlueprintEdit(Blueprint);
-    }
-}
-
-void FLuaBlueprintEditorWidget::GroupSelectedNodesAsComment(ULuaBlueprintAsset* Blueprint)
-{
-    if (!Blueprint || !NodeEditorContext) return;
-    FScopedNodeEditorCurrent Scope(NodeEditorContext);
-
-    ed::NodeId Selected[512];
-    const int Count = ed::GetSelectedNodes(Selected, 512);
-    if (Count <= 0) return;
-
-    // ed 가 가진 위치/크기로 bounding box 계산 (데이터모델 PosX/PosY 는 한 프레임 뒤처질 수 있음).
-    float MinX = FLT_MAX, MinY = FLT_MAX, MaxX = -FLT_MAX, MaxY = -FLT_MAX;
-    bool bAny = false;
-    for (int i = 0; i < Count; ++i)
-    {
-        const ImVec2 P = ed::GetNodePosition(Selected[i]);
-        const ImVec2 S = ed::GetNodeSize(Selected[i]);
-        // 기존 Comment 자체는 제외 — Comment 안에 다시 Comment 를 만들면 nested group 이슈.
-        const uint32 NodeIdU = NodeIdToU32(Selected[i]);
-        const FLuaBlueprintNode* SrcNode = Blueprint->FindNode(NodeIdU);
-        if (!SrcNode || SrcNode->Type == ELuaBlueprintNodeType::Comment) continue;
-
-        bAny = true;
-        MinX = std::min(MinX, P.x);
-        MinY = std::min(MinY, P.y);
-        MaxX = std::max(MaxX, P.x + (S.x > 0 ? S.x : 120.0f));
-        MaxY = std::max(MaxY, P.y + (S.y > 0 ? S.y : 60.0f));
-    }
-    if (!bAny) return;
-
-    const float Pad      = 24.0f;
-    const float Header   = 28.0f; // 위쪽에 코멘트 타이틀이 들어갈 여유
-    const ImVec2 GroupPos(MinX - Pad, MinY - Pad - Header);
-    const ImVec2 GroupSize((MaxX - MinX) + Pad * 2.0f, (MaxY - MinY) + Pad * 2.0f + Header);
-
-    FLuaBlueprintNode* CommentNode = Blueprint->AddNodeOfType(
-        ELuaBlueprintNodeType::Comment, GroupPos.x, GroupPos.y);
-    if (!CommentNode) return;
-
-    CommentNode->StringValue = "Group";
-    CommentNode->VectorValue = FVector(GroupSize.x, GroupSize.y, 0.0f);
-
-    // ed 에 즉시 push — 안 그러면 다음 sync 루프가 (0,0) 로 덮어쓴다 (CloneNodeFragment 와 같은 이유).
-    ed::SetNodePosition(ToNodeId(CommentNode->NodeId), GroupPos);
-
-    CommitBlueprintEdit(Blueprint);
-}
-
-void FLuaBlueprintEditorWidget::DuplicateSelectedNodes(ULuaBlueprintAsset* Blueprint)
-{
-    TArray<FLuaBlueprintNode> SelectedNodes;
-    TArray<FLuaBlueprintLink> SelectedLinks;
-    if (!GatherSelectedNodes(Blueprint, SelectedNodes, SelectedLinks)) return;
-
-    ++DuplicateSerial;
-    const ImVec2 SourceAnchor = ComputeNodeFragmentMin(SelectedNodes);
-    const float Step = 40.0f * static_cast<float>((DuplicateSerial % 4) + 1);
-    const ImVec2 TargetAnchor(SourceAnchor.x + Step, SourceAnchor.y + Step);
-
-    if (CloneNodeFragment(Blueprint, SelectedNodes, SelectedLinks, TargetAnchor))
-    {
-        bPositionsPushed = false;
-        CommitBlueprintEdit(Blueprint);
-    }
-}
-
-void FLuaBlueprintEditorWidget::ProcessQueuedNodeEditorCommands(ULuaBlueprintAsset* Blueprint)
-{
-    if (!Blueprint || !NodeEditorContext)
-    {
-        bQueuedCopySelected = false;
-        bQueuedPasteNodes = false;
-        bQueuedDuplicateSelected = false;
-        bQueuedDeleteSelected = false;
-        bQueuedGroupSelected = false;
-        return;
-    }
-
-    // 이 함수는 RenderGraph() 내부, ed::Begin() 이후에 호출된다.
-    // 그래도 메뉴/단축키 경로가 나중에 바뀌어도 안전하도록 current editor를 다시 보장한다.
-    FScopedNodeEditorCurrent Scope(NodeEditorContext);
-
-    if (bQueuedCopySelected)
-    {
-        CopySelectedNodes(Blueprint);
-    }
-    if (bQueuedPasteNodes)
-    {
-        if (!bHasQueuedPasteAnchor)
-        {
-            QueuedPasteAnchor = ed::ScreenToCanvas(ImGui::GetMousePos());
-        }
-        PasteCopiedNodes(Blueprint, &QueuedPasteAnchor);
-    }
-    if (bQueuedDuplicateSelected)
-    {
-        DuplicateSelectedNodes(Blueprint);
-    }
-    if (bQueuedDeleteSelected)
-    {
-        DeleteSelectedNodes(Blueprint);
-    }
-    if (bQueuedGroupSelected)
-    {
-        GroupSelectedNodesAsComment(Blueprint);
-    }
-
-    bQueuedCopySelected = false;
-    bQueuedPasteNodes = false;
-    bQueuedDuplicateSelected = false;
-    bQueuedDeleteSelected = false;
-    bQueuedGroupSelected = false;
-    bHasQueuedPasteAnchor = false;
 }
 
 void FLuaBlueprintEditorWidget::RenderToolbar(ULuaBlueprintAsset* Blueprint)
@@ -1407,6 +1368,15 @@ void FLuaBlueprintEditorWidget::RenderGraph(ULuaBlueprintAsset* Blueprint)
 
     ImGui::BeginChild("##LuaBlueprintCanvasChild", ImVec2(CanvasWidth, 0), ImGuiChildFlags_Borders);
 
+    const ImVec2 TooltipOwnerMin = ImGui::GetWindowPos();
+    const ImVec2 TooltipOwnerMax(
+        TooltipOwnerMin.x + ImGui::GetWindowSize().x,
+        TooltipOwnerMin.y + ImGui::GetWindowSize().y
+    );
+    const ImRect TooltipOwnerRect(TooltipOwnerMin, TooltipOwnerMax);
+    const ImGuiViewport* TooltipOwnerViewport = ImGui::GetWindowViewport();
+    const ImGuiID TooltipOwnerViewportId = TooltipOwnerViewport ? TooltipOwnerViewport->ID : 0;
+
     ed::SetCurrentEditor(NodeEditorContext);
     ed::Begin("LuaBlueprintCanvas");
 
@@ -1430,6 +1400,10 @@ void FLuaBlueprintEditorWidget::RenderGraph(ULuaBlueprintAsset* Blueprint)
 
     ProcessQueuedNodeEditorCommands(Blueprint);
 
+    bool bAnyNodeGeometryChangedThisFrame = false;
+    bool bHoveredNodeHelpIcon = false;
+    ELuaBlueprintNodeType HoveredNodeHelpType = ELuaBlueprintNodeType::Comment;
+
     for (FLuaBlueprintNode& Node : Blueprint->GetMutableNodes())
     {
         // Comment 는 ed::Group 으로 노출 — 내부에 겹친 다른 노드들을 같이 드래그함 (UE BP Comment).
@@ -1440,6 +1414,10 @@ void FLuaBlueprintEditorWidget::RenderGraph(ULuaBlueprintAsset* Blueprint)
 
             ed::BeginNode(ToNodeId(Node.NodeId));
             ImGui::TextColored(ImVec4(1.0f, 0.95f, 0.5f, 1.0f), "%s", Node.StringValue.empty() ? "Comment" : Node.StringValue.c_str());
+            if (RenderNodeHelpIcon(Node.Type, HoveredNodeHelpType))
+            {
+                bHoveredNodeHelpIcon = true;
+            }
             const ImVec2 GroupSize(std::max(80.0f, Node.VectorValue.X), std::max(40.0f, Node.VectorValue.Y));
             ed::Group(GroupSize);
             ed::EndNode();
@@ -1453,6 +1431,7 @@ void FLuaBlueprintEditorWidget::RenderGraph(ULuaBlueprintAsset* Blueprint)
                     Node.VectorValue.X = ActualSize.x;
                     Node.VectorValue.Y = ActualSize.y;
                     Blueprint->BumpEditorVersion();
+                    bAnyNodeGeometryChangedThisFrame = true;
                 }
             }
 
@@ -1462,6 +1441,10 @@ void FLuaBlueprintEditorWidget::RenderGraph(ULuaBlueprintAsset* Blueprint)
 
         ed::BeginNode(ToNodeId(Node.NodeId));
         ImGui::TextColored(NodeHeaderColor(Node.Type), "%s", NodeTypeLabel(Node.Type));
+        if (RenderNodeHelpIcon(Node.Type, HoveredNodeHelpType))
+        {
+            bHoveredNodeHelpIcon = true;
+        }
         ImGui::Dummy(ImVec2(0.0f, 2.0f));
 
         RenderNodeBody(Blueprint, Node);
@@ -1505,6 +1488,14 @@ void FLuaBlueprintEditorWidget::RenderGraph(ULuaBlueprintAsset* Blueprint)
             LinkColor = PinTypeColor(From->Type);
         }
         ed::Link(ToLinkId(Link.LinkId), ToPinId(Link.FromPinId), ToPinId(Link.ToPinId), LinkColor);
+    }
+
+    // SetNodePosition 직후가 아니라, 실제 노드들이 이번 frame 에 제출된 뒤 fit 해야
+    // node-editor 내부 bounds 가 살아있는 노드 기준으로 계산된다.
+    if (bPendingInitialContentFit && !Blueprint->GetNodes().empty())
+    {
+        ed::NavigateToContent(0.0f);
+        bPendingInitialContentFit = false;
     }
 
     if (ed::BeginCreate())
@@ -1560,13 +1551,18 @@ void FLuaBlueprintEditorWidget::RenderGraph(ULuaBlueprintAsset* Blueprint)
             }
         }
 
+        TArray<uint32> DeletedNodeIds;
         ed::NodeId DeletedNode;
         while (ed::QueryDeletedNode(&DeletedNode))
         {
             if (ed::AcceptDeletedItem())
             {
-                if (Blueprint->RemoveNode(NodeIdToU32(DeletedNode))) CommitBlueprintEdit(Blueprint);
+                DeletedNodeIds.push_back(NodeIdToU32(DeletedNode));
             }
+        }
+        if (!DeletedNodeIds.empty() && DeleteNodesIncludingContainedGroups(Blueprint, DeletedNodeIds))
+        {
+            CommitBlueprintEdit(Blueprint);
         }
     }
     ed::EndDelete();
@@ -1579,8 +1575,26 @@ void FLuaBlueprintEditorWidget::RenderGraph(ULuaBlueprintAsset* Blueprint)
             Node.PosX = Pos.x;
             Node.PosY = Pos.y;
             Blueprint->BumpEditorVersion();
-            CommitBlueprintEdit(Blueprint);
+            bAnyNodeGeometryChangedThisFrame = true;
         }
+    }
+
+    // Node-editor drag/resize updates can arrive every frame. Keep the data model live so hit tests,
+    // grouping and saving use current coordinates, but push only one undo snapshot when the drag ends.
+    const bool bMouseDownForGeometryDrag = ImGui::IsMouseDown(ImGuiMouseButton_Left);
+    if (bAnyNodeGeometryChangedThisFrame)
+    {
+        bPendingNodeGeometryEdit = true;
+        if (!bMouseDownForGeometryDrag)
+        {
+            CommitBlueprintEdit(Blueprint);
+            bPendingNodeGeometryEdit = false;
+        }
+    }
+    else if (bPendingNodeGeometryEdit && !bMouseDownForGeometryDrag)
+    {
+        CommitBlueprintEdit(Blueprint);
+        bPendingNodeGeometryEdit = false;
     }
 
     ed::NodeId ContextNodeId = 0;
@@ -1630,7 +1644,9 @@ void FLuaBlueprintEditorWidget::RenderGraph(ULuaBlueprintAsset* Blueprint)
         ImGui::Separator();
         if (ImGui::MenuItem("Delete"))
         {
-            if (Blueprint->RemoveNode(NodeIdToU32(ContextNodeId))) CommitBlueprintEdit(Blueprint);
+            TArray<uint32> RootNodeIds;
+            RootNodeIds.push_back(NodeIdToU32(ContextNodeId));
+            if (DeleteNodesIncludingContainedGroups(Blueprint, RootNodeIds)) CommitBlueprintEdit(Blueprint);
         }
         ImGui::EndPopup();
     }
@@ -1726,6 +1742,11 @@ void FLuaBlueprintEditorWidget::RenderGraph(ULuaBlueprintAsset* Blueprint)
 
     ed::End();
     ed::SetCurrentEditor(nullptr);
+
+    if (bHoveredNodeHelpIcon)
+    {
+        RenderNodeHelpTooltip(HoveredNodeHelpType, TooltipOwnerRect, TooltipOwnerViewportId);
+    }
 
     // 캔버스 child 위의 빈 영역에서 drag-drop 수신. ed 컨텍스트는 자체 hit-test 를 하지만,
     // EndChild 직전 dummy invisible button 으로 받는 게 가장 안정적.
@@ -2330,26 +2351,6 @@ void FLuaBlueprintEditorWidget::RenderGeneratedLua(ULuaBlueprintAsset* Blueprint
     );
 }
 
-void FLuaBlueprintEditorWidget::RenderInputPinConnectionStatus(ULuaBlueprintAsset* Blueprint, const FLuaBlueprintPin& Pin)
-{
-    if (!Blueprint || Pin.Kind != ELuaBlueprintPinKind::Input) return;
-    const FLuaBlueprintLink* Link = Blueprint->FindLinkToInput(Pin.PinId);
-    if (!Link) return;
-
-    const FLuaBlueprintPin* SourcePin = Blueprint->FindPin(Link->FromPinId);
-    if (!SourcePin) return;
-    if (SourcePin->Type == ELuaBlueprintPinType::Exec || Pin.Type == ELuaBlueprintPinType::Exec) return;
-
-    if (SourcePin->Type != Pin.Type && ULuaBlueprintAsset::ArePinTypesCompatibleForLink(SourcePin->Type, Pin.Type))
-    {
-        ImGui::TextDisabled("auto %s -> %s", PinTypeLabel(SourcePin->Type), PinTypeLabel(Pin.Type));
-    }
-    else
-    {
-        ImGui::TextDisabled("linked");
-    }
-}
-
 bool FLuaBlueprintEditorWidget::RenderInlinePinLiteral(
     ULuaBlueprintAsset* Blueprint,
     FLuaBlueprintNode& /*Node*/,
@@ -2449,154 +2450,6 @@ bool FLuaBlueprintEditorWidget::AddVariableMenuItem(
     Blueprint->AddVariable(FName(NameBuf), Type);
     CommitBlueprintEdit(Blueprint);
     return true;
-}
-
-
-
-FLuaBlueprintPin* FLuaBlueprintEditorWidget::FindFirstCompatiblePinOnNode(
-    ULuaBlueprintAsset* Blueprint,
-    FLuaBlueprintNode&  Node,
-    const FLuaBlueprintPin& DragPin
-    ) const
-{
-    if (!Blueprint) return nullptr;
-    for (FLuaBlueprintPin& Candidate : Node.Pins)
-    {
-        if (Candidate.Kind == DragPin.Kind) continue;
-        uint32 FromPinId = 0;
-        uint32 ToPinId = 0;
-        if (Blueprint->CanLinkPins(DragPin.PinId, Candidate.PinId, &FromPinId, &ToPinId))
-        {
-            return &Candidate;
-        }
-    }
-    return nullptr;
-}
-
-bool FLuaBlueprintEditorWidget::NodeTypeCanConnectToPendingPin(ELuaBlueprintNodeType Type) const
-{
-    if (PendingPinSpawnPinId == 0) return true;
-    const ULuaBlueprintAsset* CurrentBlueprint = GetBlueprint();
-    if (!CurrentBlueprint) return false;
-    if (IsEventNode(Type) && HasNodeOfType(CurrentBlueprint, Type)) return false;
-    const FLuaBlueprintPin* DragPin = CurrentBlueprint->FindPin(PendingPinSpawnPinId);
-    if (!DragPin) return false;
-
-    ULuaBlueprintAsset Scratch;
-    FLuaBlueprintNode* Probe = Scratch.AddNodeOfType(Type, 0.0f, 0.0f);
-    if (!Probe) return false;
-
-    for (const FLuaBlueprintPin& Candidate : Probe->Pins)
-    {
-        if (Candidate.Kind == DragPin->Kind) continue;
-
-        // Output pin → blank: show nodes whose input can accept that output, including
-        // implicit conversion.
-        if (DragPin->Kind == ELuaBlueprintPinKind::Output && Candidate.Kind == ELuaBlueprintPinKind::Input)
-        {
-            if (ULuaBlueprintAsset::ArePinTypesCompatibleForLink(DragPin->Type, Candidate.Type))
-            {
-                return true;
-            }
-            continue;
-        }
-
-        // Input pin → blank: the produced output should be the same visible type as the
-        // dragged input. Any is allowed only for nodes that resolve their pin type on link
-        // such as Reroute/GetVariable before a variable is chosen.
-        if (DragPin->Kind == ELuaBlueprintPinKind::Input && Candidate.Kind == ELuaBlueprintPinKind::Output)
-        {
-            if (DragPin->Type == ELuaBlueprintPinType::Any || Candidate.Type == ELuaBlueprintPinType::Any || Candidate.Type == DragPin->Type)
-            {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-bool FLuaBlueprintEditorWidget::AddContextNodeMenuItem(ULuaBlueprintAsset* Blueprint, ELuaBlueprintNodeType Type)
-{
-    if (!Blueprint || PendingPinSpawnPinId == 0) return false;
-    const FLuaBlueprintPin* DragPin = Blueprint->FindPin(PendingPinSpawnPinId);
-    if (!DragPin) return false;
-    if (IsEventNode(Type) && HasNodeOfType(Blueprint, Type)) return false;
-    const FLuaBlueprintPin DragPinCopy = *DragPin;
-    if (!NodeTypeCanConnectToPendingPin(Type)) return false;
-
-    ImGui::PushStyleColor(ImGuiCol_Text, NodeHeaderColor(Type));
-    const bool bClicked = ImGui::MenuItem(NodeTypeLabel(Type));
-    ImGui::PopStyleColor();
-    if (!bClicked) return false;
-
-    FLuaBlueprintNode* NewNode = Blueprint->AddNodeOfType(Type, PendingPinSpawnPos.x, PendingPinSpawnPos.y);
-    if (!NewNode) return false;
-    Blueprint->RefreshNodePinTypes(*NewNode);
-
-    if (NodeEditorContext)
-    {
-        FScopedNodeEditorCurrent Scope(NodeEditorContext);
-        ed::SetNodePosition(ToNodeId(NewNode->NodeId), PendingPinSpawnPos);
-    }
-
-    FLuaBlueprintPin* OtherPin = FindFirstCompatiblePinOnNode(Blueprint, *NewNode, DragPinCopy);
-    if (OtherPin)
-    {
-        uint32 FromPinId = 0;
-        uint32 ToPinIdValue = 0;
-        if (Blueprint->CanLinkPins(DragPinCopy.PinId, OtherPin->PinId, &FromPinId, &ToPinIdValue))
-        {
-            Blueprint->AddLink(FromPinId, ToPinIdValue);
-        }
-    }
-    CommitBlueprintEdit(Blueprint);
-    return true;
-}
-
-void FLuaBlueprintEditorWidget::RenderPinSpawnMenu(ULuaBlueprintAsset* Blueprint)
-{
-    const FLuaBlueprintPin* DragPin = Blueprint ? Blueprint->FindPin(PendingPinSpawnPinId) : nullptr;
-    if (!DragPin)
-    {
-        ImGui::TextDisabled("No pin context.");
-        return;
-    }
-
-    ImGui::TextDisabled(
-        DragPin->Kind == ELuaBlueprintPinKind::Output
-        ? "Nodes accepting %s input"
-        : "Nodes producing %s output",
-        PinTypeLabel(DragPin->Type)
-    );
-    ImGui::Separator();
-    ImGui::SetNextItemWidth(260.0f);
-    ImGui::InputTextWithHint("##PinSpawnSearch", "search compatible nodes...", PinSpawnSearchBuf, sizeof(PinSpawnSearchBuf));
-    ImGui::Separator();
-
-    int32 NumShown = 0;
-    for (int32 i = 0; i <= static_cast<int32>(ELuaBlueprintNodeType::HasEventBinding); ++i)
-    {
-        const ELuaBlueprintNodeType Type = static_cast<ELuaBlueprintNodeType>(i);
-        if (!ContainsCaseInsensitive(NodeTypeLabel(Type), PinSpawnSearchBuf)) continue;
-
-        const size_t BeforeNodes = Blueprint ? Blueprint->GetNodes().size() : 0;
-        if (AddContextNodeMenuItem(Blueprint, Type))
-        {
-            PendingPinSpawnPinId = 0;
-            ImGui::CloseCurrentPopup();
-            return;
-        }
-        const size_t AfterNodes = Blueprint ? Blueprint->GetNodes().size() : 0;
-        if (AfterNodes == BeforeNodes && NodeTypeCanConnectToPendingPin(Type))
-        {
-            ++NumShown;
-        }
-    }
-
-    if (NumShown == 0)
-    {
-        ImGui::TextDisabled("No compatible nodes.");
-    }
 }
 
 void FLuaBlueprintEditorWidget::RenderAddNodeMenu(ULuaBlueprintAsset* Blueprint)
@@ -2823,6 +2676,152 @@ void FLuaBlueprintEditorWidget::RenderAddNodeMenu(ULuaBlueprintAsset* Blueprint)
     }
 }
 
+void FLuaBlueprintEditorWidget::RenderPinSpawnMenu(ULuaBlueprintAsset* Blueprint)
+{
+    const FLuaBlueprintPin* DragPin = Blueprint ? Blueprint->FindPin(PendingPinSpawnPinId) : nullptr;
+    if (!DragPin)
+    {
+        ImGui::TextDisabled("No pin context.");
+        return;
+    }
+
+    ImGui::TextDisabled(
+        DragPin->Kind == ELuaBlueprintPinKind::Output
+        ? "Nodes accepting %s input"
+        : "Nodes producing %s output",
+        PinTypeLabel(DragPin->Type)
+    );
+    ImGui::Separator();
+    ImGui::SetNextItemWidth(260.0f);
+    ImGui::InputTextWithHint("##PinSpawnSearch", "search compatible nodes...", PinSpawnSearchBuf, sizeof(PinSpawnSearchBuf));
+    ImGui::Separator();
+
+    int32 NumShown = 0;
+    for (int32 i = 0; i <= static_cast<int32>(ELuaBlueprintNodeType::HasEventBinding); ++i)
+    {
+        const ELuaBlueprintNodeType Type = static_cast<ELuaBlueprintNodeType>(i);
+        if (!ContainsCaseInsensitive(NodeTypeLabel(Type), PinSpawnSearchBuf)) continue;
+
+        const size_t BeforeNodes = Blueprint ? Blueprint->GetNodes().size() : 0;
+        if (AddContextNodeMenuItem(Blueprint, Type))
+        {
+            PendingPinSpawnPinId = 0;
+            ImGui::CloseCurrentPopup();
+            return;
+        }
+        const size_t AfterNodes = Blueprint ? Blueprint->GetNodes().size() : 0;
+        if (AfterNodes == BeforeNodes && NodeTypeCanConnectToPendingPin(Type))
+        {
+            ++NumShown;
+        }
+    }
+
+    if (NumShown == 0)
+    {
+        ImGui::TextDisabled("No compatible nodes.");
+    }
+}
+
+bool FLuaBlueprintEditorWidget::AddContextNodeMenuItem(ULuaBlueprintAsset* Blueprint, ELuaBlueprintNodeType Type)
+{
+    if (!Blueprint || PendingPinSpawnPinId == 0) return false;
+    const FLuaBlueprintPin* DragPin = Blueprint->FindPin(PendingPinSpawnPinId);
+    if (!DragPin) return false;
+    if (IsEventNode(Type) && HasNodeOfType(Blueprint, Type)) return false;
+    const FLuaBlueprintPin DragPinCopy = *DragPin;
+    if (!NodeTypeCanConnectToPendingPin(Type)) return false;
+
+    ImGui::PushStyleColor(ImGuiCol_Text, NodeHeaderColor(Type));
+    const bool bClicked = ImGui::MenuItem(NodeTypeLabel(Type));
+    ImGui::PopStyleColor();
+    if (!bClicked) return false;
+
+    FLuaBlueprintNode* NewNode = Blueprint->AddNodeOfType(Type, PendingPinSpawnPos.x, PendingPinSpawnPos.y);
+    if (!NewNode) return false;
+    Blueprint->RefreshNodePinTypes(*NewNode);
+
+    if (NodeEditorContext)
+    {
+        FScopedNodeEditorCurrent Scope(NodeEditorContext);
+        ed::SetNodePosition(ToNodeId(NewNode->NodeId), PendingPinSpawnPos);
+    }
+
+    FLuaBlueprintPin* OtherPin = FindFirstCompatiblePinOnNode(Blueprint, *NewNode, DragPinCopy);
+    if (OtherPin)
+    {
+        uint32 FromPinId = 0;
+        uint32 ToPinIdValue = 0;
+        if (Blueprint->CanLinkPins(DragPinCopy.PinId, OtherPin->PinId, &FromPinId, &ToPinIdValue))
+        {
+            Blueprint->AddLink(FromPinId, ToPinIdValue);
+        }
+    }
+    CommitBlueprintEdit(Blueprint);
+    return true;
+}
+
+bool FLuaBlueprintEditorWidget::NodeTypeCanConnectToPendingPin(ELuaBlueprintNodeType Type) const
+{
+    if (PendingPinSpawnPinId == 0) return true;
+    const ULuaBlueprintAsset* CurrentBlueprint = GetBlueprint();
+    if (!CurrentBlueprint) return false;
+    if (IsEventNode(Type) && HasNodeOfType(CurrentBlueprint, Type)) return false;
+    const FLuaBlueprintPin* DragPin = CurrentBlueprint->FindPin(PendingPinSpawnPinId);
+    if (!DragPin) return false;
+
+    ULuaBlueprintAsset Scratch;
+    FLuaBlueprintNode* Probe = Scratch.AddNodeOfType(Type, 0.0f, 0.0f);
+    if (!Probe) return false;
+
+    for (const FLuaBlueprintPin& Candidate : Probe->Pins)
+    {
+        if (Candidate.Kind == DragPin->Kind) continue;
+
+        // Output pin → blank: show nodes whose input can accept that output, including
+        // implicit conversion.
+        if (DragPin->Kind == ELuaBlueprintPinKind::Output && Candidate.Kind == ELuaBlueprintPinKind::Input)
+        {
+            if (ULuaBlueprintAsset::ArePinTypesCompatibleForLink(DragPin->Type, Candidate.Type))
+            {
+                return true;
+            }
+            continue;
+        }
+
+        // Input pin → blank: the produced output should be the same visible type as the
+        // dragged input. Any is allowed only for nodes that resolve their pin type on link
+        // such as Reroute/GetVariable before a variable is chosen.
+        if (DragPin->Kind == ELuaBlueprintPinKind::Input && Candidate.Kind == ELuaBlueprintPinKind::Output)
+        {
+            if (DragPin->Type == ELuaBlueprintPinType::Any || Candidate.Type == ELuaBlueprintPinType::Any || Candidate.Type == DragPin->Type)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+FLuaBlueprintPin* FLuaBlueprintEditorWidget::FindFirstCompatiblePinOnNode(
+    ULuaBlueprintAsset* Blueprint,
+    FLuaBlueprintNode&  Node,
+    const FLuaBlueprintPin& DragPin
+    ) const
+{
+    if (!Blueprint) return nullptr;
+    for (FLuaBlueprintPin& Candidate : Node.Pins)
+    {
+        if (Candidate.Kind == DragPin.Kind) continue;
+        uint32 FromPinId = 0;
+        uint32 ToPinId = 0;
+        if (Blueprint->CanLinkPins(DragPin.PinId, Candidate.PinId, &FromPinId, &ToPinId))
+        {
+            return &Candidate;
+        }
+    }
+    return nullptr;
+}
+
 void FLuaBlueprintEditorWidget::HandleVariableDropOnCanvas()
 {
     // 캔버스 child window 의 전체 영역을 custom drop target 으로 사용.
@@ -2856,29 +2855,9 @@ void FLuaBlueprintEditorWidget::RenameVariableCascade(
     if (OldName == NewName) return;
     for (FLuaBlueprintNode& Node : Blueprint->GetMutableNodes())
     {
-        if (Node.Type != ELuaBlueprintNodeType::GetVariable && Node.Type != ELuaBlueprintNodeType::SetVariable) continue
-        ;
+        if (Node.Type != ELuaBlueprintNodeType::GetVariable && Node.Type != ELuaBlueprintNodeType::SetVariable) {continue
+        ;}
         if (Node.NameValue == OldName) Node.NameValue = NewName;
-    }
-}
-
-void FLuaBlueprintEditorWidget::RemoveVariableCascade(ULuaBlueprintAsset* Blueprint, const FName& VariableName)
-{
-    if (!Blueprint || VariableName == FName::None) return;
-
-    TArray<uint32> NodesToRemove;
-    for (const FLuaBlueprintNode& Node : Blueprint->GetNodes())
-    {
-        if ((Node.Type == ELuaBlueprintNodeType::GetVariable || Node.Type == ELuaBlueprintNodeType::SetVariable) &&
-            Node.NameValue == VariableName)
-        {
-            NodesToRemove.push_back(Node.NodeId);
-        }
-    }
-
-    for (uint32 NodeId : NodesToRemove)
-    {
-        Blueprint->RemoveNode(NodeId);
     }
 }
 
@@ -2903,4 +2882,504 @@ void FLuaBlueprintEditorWidget::SpawnVariableNode(
     }
     Blueprint->BumpVersion();
     CommitBlueprintEdit(Blueprint);
+}
+
+void FLuaBlueprintEditorWidget::CaptureInitialUndoSnapshot(ULuaBlueprintAsset* Blueprint)
+{
+    UndoStack.clear();
+    RedoStack.clear();
+    ClipboardNodes.clear();
+    ClipboardLinks.clear();
+    const TArray<uint8> Snapshot = CaptureLuaBlueprintSnapshot(Blueprint);
+    if (!Snapshot.empty())
+    {
+        UndoStack.push_back(Snapshot);
+    }
+}
+
+void FLuaBlueprintEditorWidget::CommitBlueprintEdit(ULuaBlueprintAsset* Blueprint)
+{
+    if (!Blueprint || bRestoringSnapshot) return;
+    const TArray<uint8> Snapshot = CaptureLuaBlueprintSnapshot(Blueprint);
+    if (!Snapshot.empty() && (UndoStack.empty() || UndoStack.back() != Snapshot))
+    {
+        UndoStack.push_back(Snapshot);
+        if (UndoStack.size() > 128)
+        {
+            UndoStack.erase(UndoStack.begin());
+        }
+    }
+    RedoStack.clear();
+    MarkDirty();
+}
+
+void FLuaBlueprintEditorWidget::UndoBlueprintEdit(ULuaBlueprintAsset* Blueprint)
+{
+    if (!Blueprint || UndoStack.size() <= 1) return;
+    RedoStack.push_back(UndoStack.back());
+    UndoStack.pop_back();
+    RestoreBlueprintSnapshot(Blueprint, UndoStack.back());
+}
+
+void FLuaBlueprintEditorWidget::RedoBlueprintEdit(ULuaBlueprintAsset* Blueprint)
+{
+    if (!Blueprint || RedoStack.empty()) return;
+    const TArray<uint8> Snapshot = RedoStack.back();
+    RedoStack.pop_back();
+    UndoStack.push_back(Snapshot);
+    RestoreBlueprintSnapshot(Blueprint, Snapshot);
+}
+
+bool FLuaBlueprintEditorWidget::RestoreBlueprintSnapshot(ULuaBlueprintAsset* Blueprint, const TArray<uint8>& Snapshot)
+{
+    if (!Blueprint || Snapshot.empty()) return false;
+    bRestoringSnapshot = true;
+    FMemoryArchive Loader(Snapshot, false);
+    Blueprint->Serialize(Loader);
+    Blueprint->Compile();
+    bRestoringSnapshot = false;
+    bPositionsPushed = false;
+    MarkDirty();
+    return true;
+}
+
+bool FLuaBlueprintEditorWidget::GatherSelectedNodes(
+    ULuaBlueprintAsset* Blueprint,
+    TArray<FLuaBlueprintNode>& OutNodes,
+    TArray<FLuaBlueprintLink>& OutLinks
+    ) const
+{
+    OutNodes.clear();
+    OutLinks.clear();
+    if (!Blueprint || !NodeEditorContext) return false;
+
+    FScopedNodeEditorCurrent Scope(NodeEditorContext);
+
+    ed::NodeId Selected[512];
+    const int Count = ed::GetSelectedNodes(Selected, 512);
+    if (Count <= 0) return false;
+
+    std::unordered_set<uint32> SelectedIds;
+    SelectedIds.reserve(static_cast<size_t>(Count));
+    for (int i = 0; i < Count; ++i)
+    {
+        SelectedIds.insert(NodeIdToU32(Selected[i]));
+    }
+
+    for (const FLuaBlueprintNode& Node : Blueprint->GetNodes())
+    {
+        if (SelectedIds.count(Node.NodeId))
+        {
+            FLuaBlueprintNode SnapshotNode = Node;
+            const ImVec2 EditorPos = ed::GetNodePosition(ToNodeId(Node.NodeId));
+            SnapshotNode.PosX = EditorPos.x;
+            SnapshotNode.PosY = EditorPos.y;
+            OutNodes.push_back(SnapshotNode);
+        }
+    }
+
+    for (const FLuaBlueprintLink& Link : Blueprint->GetLinks())
+    {
+        const FLuaBlueprintPin* From = Blueprint->FindPin(Link.FromPinId);
+        const FLuaBlueprintPin* To   = Blueprint->FindPin(Link.ToPinId);
+        if (From && To && SelectedIds.count(From->OwningNodeId) && SelectedIds.count(To->OwningNodeId))
+        {
+            OutLinks.push_back(Link);
+        }
+    }
+
+    return !OutNodes.empty();
+}
+
+bool FLuaBlueprintEditorWidget::CloneNodeFragment(
+    ULuaBlueprintAsset* Blueprint,
+    const TArray<FLuaBlueprintNode>& SourceNodes,
+    const TArray<FLuaBlueprintLink>& SourceLinks,
+    const ImVec2& TargetAnchor,
+    TArray<uint32>* OutNewNodeIds,
+    const ImVec2* SourceAnchorOverride
+    )
+{
+    if (!Blueprint || SourceNodes.empty()) return false;
+
+    const ImVec2 SourceAnchor = SourceAnchorOverride ? *SourceAnchorOverride : ComputeNodeFragmentMin(SourceNodes);
+    const ImVec2 Delta(TargetAnchor.x - SourceAnchor.x, TargetAnchor.y - SourceAnchor.y);
+
+    std::unordered_map<uint32, uint32> PinIdMap;
+    TArray<uint32> NewNodeIds;
+    bool bChanged = false;
+
+    // ed::SetNodePosition 호출이 필요하므로 ed 컨텍스트를 활성화. CloneNodeFragment 가
+    // RenderGraph 의 ed::Begin/End 안에서 호출되는 경우(ProcessQueuedNodeEditorCommands)는
+    // 이미 current 이라 no-op. 바깥(외부 API)에서 호출돼도 안전하게 동작.
+    FScopedNodeEditorCurrent EdScope(NodeEditorContext);
+
+    for (const FLuaBlueprintNode& SrcNode : SourceNodes)
+    {
+        if (IsEventNode(SrcNode.Type) && HasNodeOfType(Blueprint, SrcNode.Type))
+        {
+            continue;
+        }
+
+        const float NewX = SrcNode.PosX + Delta.x;
+        const float NewY = SrcNode.PosY + Delta.y;
+        FLuaBlueprintNode* NewNode = Blueprint->AddNodeOfType(SrcNode.Type, NewX, NewY);
+        if (!NewNode) continue;
+
+        NewNode->DisplayName = SrcNode.DisplayName;
+        NewNode->NameValue   = SrcNode.NameValue;
+        NewNode->StringValue = SrcNode.StringValue;
+        NewNode->BoolValue   = SrcNode.BoolValue;
+        NewNode->IntValue    = SrcNode.IntValue;
+        NewNode->FloatValue  = SrcNode.FloatValue;
+        NewNode->VectorValue = SrcNode.VectorValue;
+
+        const size_t PinCount = std::min(NewNode->Pins.size(), SrcNode.Pins.size());
+        for (size_t PinIndex = 0; PinIndex < PinCount; ++PinIndex)
+        {
+            const FLuaBlueprintPin& SrcPin = SrcNode.Pins[PinIndex];
+            FLuaBlueprintPin& DstPin = NewNode->Pins[PinIndex];
+            DstPin.Type          = SrcPin.Type;
+            DstPin.DisplayName   = SrcPin.DisplayName;
+            DstPin.DefaultBool   = SrcPin.DefaultBool;
+            DstPin.DefaultInt    = SrcPin.DefaultInt;
+            DstPin.DefaultFloat  = SrcPin.DefaultFloat;
+            DstPin.DefaultString = SrcPin.DefaultString;
+            DstPin.DefaultVector = SrcPin.DefaultVector;
+            PinIdMap[SrcPin.PinId] = DstPin.PinId;
+        }
+        // 데이터모델 PosX/PosY 만 세팅하면 RenderGraph 끝의 sync loop 가 ed 의 (0,0) 으로
+        // 덮어쓴다 (새 노드는 아직 ed 에 push 안 된 상태). 즉시 ed::SetNodePosition 으로 push.
+        if (NodeEditorContext)
+        {
+            ed::SetNodePosition(ToNodeId(NewNode->NodeId), ImVec2(NewX, NewY));
+        }
+        NewNodeIds.push_back(NewNode->NodeId);
+        bChanged = true;
+    }
+
+    for (const FLuaBlueprintLink& SrcLink : SourceLinks)
+    {
+        auto FromIt = PinIdMap.find(SrcLink.FromPinId);
+        auto ToIt   = PinIdMap.find(SrcLink.ToPinId);
+        if (FromIt != PinIdMap.end() && ToIt != PinIdMap.end())
+        {
+            uint32 FromPinId = 0;
+            uint32 ToPinId   = 0;
+            if (Blueprint->CanLinkPins(FromIt->second, ToIt->second, &FromPinId, &ToPinId))
+            {
+                Blueprint->AddLink(FromPinId, ToPinId);
+            }
+        }
+    }
+
+    Blueprint->RefreshAllNodePinTypes();
+    if (OutNewNodeIds)
+    {
+        *OutNewNodeIds = NewNodeIds;
+    }
+    return bChanged;
+}
+
+void FLuaBlueprintEditorWidget::SelectOnlyNodes(const TArray<uint32>& NodeIds)
+{
+    if (!NodeEditorContext) return;
+
+    FScopedNodeEditorCurrent Scope(NodeEditorContext);
+    ed::ClearSelection();
+
+    bool bAppend = false;
+    for (uint32 NodeId : NodeIds)
+    {
+        if (NodeId == 0) continue;
+        ed::SelectNode(ToNodeId(NodeId), bAppend);
+        bAppend = true;
+    }
+}
+
+
+
+void FLuaBlueprintEditorWidget::CopySelectedNodes(ULuaBlueprintAsset* Blueprint)
+{
+    GatherSelectedNodes(Blueprint, ClipboardNodes, ClipboardLinks);
+}
+
+void FLuaBlueprintEditorWidget::PasteCopiedNodes(ULuaBlueprintAsset* Blueprint, const ImVec2* OverrideAnchor)
+{
+    if (!Blueprint || ClipboardNodes.empty()) return;
+
+    FScopedNodeEditorCurrent Scope(NodeEditorContext);
+
+    FLuaBlueprintNodeFragmentBounds ReferenceBounds;
+    ImVec2 Anchor = OverrideAnchor ? *OverrideAnchor : ImVec2(0.0f, 0.0f);
+    const ImVec2* SourceAnchorOverride = nullptr;
+
+    if (!OverrideAnchor)
+    {
+        ReferenceBounds = ComputeNodeFragmentPasteReferenceBounds(ClipboardNodes, NodeEditorContext != nullptr);
+        if (ReferenceBounds.bValid)
+        {
+            constexpr float PasteGap = 10.0f;
+            Anchor = ImVec2(ReferenceBounds.Max.x + PasteGap, ReferenceBounds.Min.y + PasteGap);
+            SourceAnchorOverride = &ReferenceBounds.Min;
+        }
+    }
+
+    if (Anchor.x == 0.0f && Anchor.y == 0.0f)
+    {
+        const ImVec2 SourceAnchor = ComputeNodeFragmentMin(ClipboardNodes);
+        Anchor = ImVec2(SourceAnchor.x + 10.0f, SourceAnchor.y + 10.0f);
+    }
+
+    TArray<uint32> NewNodeIds;
+    if (CloneNodeFragment(Blueprint, ClipboardNodes, ClipboardLinks, Anchor, &NewNodeIds, SourceAnchorOverride))
+    {
+        SelectOnlyNodes(NewNodeIds);
+        bPositionsPushed = false;
+        CommitBlueprintEdit(Blueprint);
+    }
+}
+
+void FLuaBlueprintEditorWidget::DeleteSelectedNodes(ULuaBlueprintAsset* Blueprint)
+{
+    if (!Blueprint || !NodeEditorContext) return;
+    FScopedNodeEditorCurrent Scope(NodeEditorContext);
+    ed::NodeId Selected[512];
+    const int Count = ed::GetSelectedNodes(Selected, 512);
+    if (Count <= 0) return;
+
+    TArray<uint32> RootNodeIds;
+    RootNodeIds.reserve(static_cast<size_t>(Count));
+    for (int i = 0; i < Count; ++i)
+    {
+        RootNodeIds.push_back(NodeIdToU32(Selected[i]));
+    }
+
+    if (DeleteNodesIncludingContainedGroups(Blueprint, RootNodeIds))
+    {
+        CommitBlueprintEdit(Blueprint);
+    }
+}
+
+bool FLuaBlueprintEditorWidget::DeleteNodesIncludingContainedGroups(
+    ULuaBlueprintAsset* Blueprint,
+    const TArray<uint32>& RootNodeIds
+    )
+{
+    if (!Blueprint || RootNodeIds.empty()) return false;
+
+    std::unordered_set<uint32> NodeIdsToDelete;
+    for (uint32 NodeId : RootNodeIds)
+    {
+        if (NodeId != 0)
+        {
+            NodeIdsToDelete.insert(NodeId);
+        }
+    }
+
+    // Comment/group membership is geometric in imgui-node-editor. When a comment is removed,
+    // recursively collect every node fully contained by that comment rectangle, including nested comments.
+    bool bExpanded = true;
+    while (bExpanded)
+    {
+        bExpanded = false;
+        TArray<uint32> SnapshotIds;
+        SnapshotIds.reserve(NodeIdsToDelete.size());
+        for (uint32 NodeId : NodeIdsToDelete)
+        {
+            SnapshotIds.push_back(NodeId);
+        }
+
+        for (uint32 NodeId : SnapshotIds)
+        {
+            const FLuaBlueprintNode* CommentNode = Blueprint->FindNode(NodeId);
+            if (!CommentNode || CommentNode->Type != ELuaBlueprintNodeType::Comment) continue;
+
+            const FLuaBlueprintNodeFragmentBounds CommentBounds = ComputeLiveNodeBounds(*CommentNode, NodeEditorContext != nullptr);
+            if (!CommentBounds.bValid) continue;
+
+            for (const FLuaBlueprintNode& Candidate : Blueprint->GetNodes())
+            {
+                if (Candidate.NodeId == CommentNode->NodeId) continue;
+                if (NodeIdsToDelete.count(Candidate.NodeId)) continue;
+
+                const FLuaBlueprintNodeFragmentBounds CandidateBounds = ComputeLiveNodeBounds(Candidate, NodeEditorContext != nullptr);
+                if (IsBoundsFullyInside(CandidateBounds, CommentBounds))
+                {
+                    NodeIdsToDelete.insert(Candidate.NodeId);
+                    bExpanded = true;
+                }
+            }
+        }
+    }
+
+    bool bChanged = false;
+    for (uint32 NodeId : NodeIdsToDelete)
+    {
+        bChanged = Blueprint->RemoveNode(NodeId) || bChanged;
+    }
+
+    if (bChanged)
+    {
+        Blueprint->RefreshAllNodePinTypes();
+        bPositionsPushed = false;
+    }
+    return bChanged;
+}
+
+void FLuaBlueprintEditorWidget::DuplicateSelectedNodes(ULuaBlueprintAsset* Blueprint)
+{
+    FScopedNodeEditorCurrent Scope(NodeEditorContext);
+
+    TArray<FLuaBlueprintNode> SelectedNodes;
+    TArray<FLuaBlueprintLink> SelectedLinks;
+    if (!GatherSelectedNodes(Blueprint, SelectedNodes, SelectedLinks)) return;
+
+    const FLuaBlueprintNodeFragmentBounds ReferenceBounds = ComputeNodeFragmentPasteReferenceBounds(SelectedNodes, NodeEditorContext != nullptr);
+    const ImVec2 SourceAnchor = ReferenceBounds.bValid ? ReferenceBounds.Min : ComputeNodeFragmentMin(SelectedNodes);
+    constexpr float PasteGap = 10.0f;
+    const ImVec2 TargetAnchor = ReferenceBounds.bValid
+        ? ImVec2(ReferenceBounds.Max.x + PasteGap, ReferenceBounds.Min.y + PasteGap)
+        : ImVec2(SourceAnchor.x + PasteGap, SourceAnchor.y + PasteGap);
+
+    TArray<uint32> NewNodeIds;
+    if (CloneNodeFragment(Blueprint, SelectedNodes, SelectedLinks, TargetAnchor, &NewNodeIds, &SourceAnchor))
+    {
+        SelectOnlyNodes(NewNodeIds);
+        bPositionsPushed = false;
+        CommitBlueprintEdit(Blueprint);
+    }
+}
+
+void FLuaBlueprintEditorWidget::GroupSelectedNodesAsComment(ULuaBlueprintAsset* Blueprint)
+{
+    if (!Blueprint || !NodeEditorContext) return;
+    FScopedNodeEditorCurrent Scope(NodeEditorContext);
+
+    ed::NodeId Selected[512];
+    const int Count = ed::GetSelectedNodes(Selected, 512);
+    if (Count <= 0) return;
+
+    // ed 가 가진 위치/크기로 bounding box 계산 (데이터모델 PosX/PosY 는 한 프레임 뒤처질 수 있음).
+    float MinX = FLT_MAX, MinY = FLT_MAX, MaxX = -FLT_MAX, MaxY = -FLT_MAX;
+    bool bAny = false;
+    for (int i = 0; i < Count; ++i)
+    {
+        const uint32 NodeIdU = NodeIdToU32(Selected[i]);
+        const FLuaBlueprintNode* SrcNode = Blueprint->FindNode(NodeIdU);
+        if (!SrcNode) continue;
+
+        // Existing comments/groups are now included in the bounds. This lets a new group wrap
+        // nested groups instead of ignoring them and creating a too-small comment box.
+        const FLuaBlueprintNodeFragmentBounds NodeBounds = ComputeLiveNodeBounds(*SrcNode, true);
+        if (!NodeBounds.bValid) continue;
+
+        bAny = true;
+        MinX = std::min(MinX, NodeBounds.Min.x);
+        MinY = std::min(MinY, NodeBounds.Min.y);
+        MaxX = std::max(MaxX, NodeBounds.Max.x);
+        MaxY = std::max(MaxY, NodeBounds.Max.y);
+    }
+    if (!bAny) return;
+
+    const float Pad      = 24.0f;
+    const float Header   = 28.0f; // 위쪽에 코멘트 타이틀이 들어갈 여유
+    const ImVec2 GroupPos(MinX - Pad, MinY - Pad - Header);
+    const ImVec2 GroupSize((MaxX - MinX) + Pad * 2.0f, (MaxY - MinY) + Pad * 2.0f + Header);
+
+    FLuaBlueprintNode* CommentNode = Blueprint->AddNodeOfType(
+        ELuaBlueprintNodeType::Comment, GroupPos.x, GroupPos.y);
+    if (!CommentNode) return;
+
+    CommentNode->StringValue = "Group";
+    CommentNode->VectorValue = FVector(GroupSize.x, GroupSize.y, 0.0f);
+
+    // ed 에 즉시 push — 안 그러면 다음 sync 루프가 (0,0) 로 덮어쓴다 (CloneNodeFragment 와 같은 이유).
+    ed::SetNodePosition(ToNodeId(CommentNode->NodeId), GroupPos);
+
+    CommitBlueprintEdit(Blueprint);
+}
+
+void FLuaBlueprintEditorWidget::ProcessQueuedNodeEditorCommands(ULuaBlueprintAsset* Blueprint)
+{
+    if (!Blueprint || !NodeEditorContext)
+    {
+        bQueuedCopySelected = false;
+        bQueuedPasteNodes = false;
+        bQueuedDuplicateSelected = false;
+        bQueuedDeleteSelected = false;
+        bQueuedGroupSelected = false;
+        return;
+    }
+
+    // 이 함수는 RenderGraph() 내부, ed::Begin() 이후에 호출된다.
+    // 그래도 메뉴/단축키 경로가 나중에 바뀌어도 안전하도록 current editor를 다시 보장한다.
+    FScopedNodeEditorCurrent Scope(NodeEditorContext);
+
+    if (bQueuedCopySelected)
+    {
+        CopySelectedNodes(Blueprint);
+    }
+    if (bQueuedPasteNodes)
+    {
+        PasteCopiedNodes(Blueprint);
+    }
+    if (bQueuedDuplicateSelected)
+    {
+        DuplicateSelectedNodes(Blueprint);
+    }
+    if (bQueuedDeleteSelected)
+    {
+        DeleteSelectedNodes(Blueprint);
+    }
+    if (bQueuedGroupSelected)
+    {
+        GroupSelectedNodesAsComment(Blueprint);
+    }
+
+    bQueuedCopySelected = false;
+    bQueuedPasteNodes = false;
+    bQueuedDuplicateSelected = false;
+    bQueuedDeleteSelected = false;
+    bQueuedGroupSelected = false;
+}
+
+void FLuaBlueprintEditorWidget::RemoveVariableCascade(ULuaBlueprintAsset* Blueprint, const FName& VariableName)
+{
+    if (!Blueprint || VariableName == FName::None) return;
+
+    TArray<uint32> NodesToRemove;
+    for (const FLuaBlueprintNode& Node : Blueprint->GetNodes())
+    {
+        if ((Node.Type == ELuaBlueprintNodeType::GetVariable || Node.Type == ELuaBlueprintNodeType::SetVariable) &&
+            Node.NameValue == VariableName)
+        {
+            NodesToRemove.push_back(Node.NodeId);
+        }
+    }
+
+    for (uint32 NodeId : NodesToRemove)
+    {
+        Blueprint->RemoveNode(NodeId);
+    }
+}
+
+void FLuaBlueprintEditorWidget::RenderInputPinConnectionStatus(ULuaBlueprintAsset* Blueprint, const FLuaBlueprintPin& Pin)
+{
+    if (!Blueprint || Pin.Kind != ELuaBlueprintPinKind::Input) return;
+    const FLuaBlueprintLink* Link = Blueprint->FindLinkToInput(Pin.PinId);
+    if (!Link) return;
+
+    const FLuaBlueprintPin* SourcePin = Blueprint->FindPin(Link->FromPinId);
+    if (!SourcePin) return;
+    if (SourcePin->Type == ELuaBlueprintPinType::Exec || Pin.Type == ELuaBlueprintPinType::Exec) return;
+
+    if (SourcePin->Type != Pin.Type && ULuaBlueprintAsset::ArePinTypesCompatibleForLink(SourcePin->Type, Pin.Type))
+    {
+        ImGui::TextDisabled("auto %s -> %s", PinTypeLabel(SourcePin->Type), PinTypeLabel(Pin.Type));
+    }
+    else
+    {
+        ImGui::TextDisabled("linked");
+    }
 }

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
-#include "Object/FName.h"
 #include "Math/Vector.h"
+#include "Object/FName.h"
 
 class FArchive;
 

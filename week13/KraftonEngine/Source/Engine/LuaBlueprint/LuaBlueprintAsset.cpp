@@ -428,6 +428,51 @@ namespace
     }
 }
 
+FLuaBlueprintLink* ULuaBlueprintAsset::AddLink(uint32 FromPinId, uint32 ToPinId)
+{
+    FLuaBlueprintLink Link;
+    Link.LinkId    = AllocateId();
+    Link.FromPinId = FromPinId;
+    Link.ToPinId   = ToPinId;
+    Links.push_back(std::move(Link));
+    ApplyResolvedPinTypesForLink(FromPinId, ToPinId);
+    BumpVersion();
+    return &Links.back();
+}
+
+FLuaBlueprintVariable* ULuaBlueprintAsset::AddVariable(const FName& Name, ELuaBlueprintPinType Type)
+{
+    FString BaseName = Name == FName::None ? FString("Variable") : Name.ToString();
+    if (BaseName.empty())
+    {
+        BaseName = "Variable";
+    }
+
+    FString UniqueName = BaseName;
+    int32   Suffix     = 1;
+    bool    bUnique    = false;
+    while (!bUnique)
+    {
+        bUnique = true;
+        for (const FLuaBlueprintVariable& Existing : Variables)
+        {
+            if (Existing.Name.ToString() == UniqueName)
+            {
+                bUnique    = false;
+                UniqueName = BaseName + std::to_string(Suffix++);
+                break;
+            }
+        }
+    }
+
+    FLuaBlueprintVariable Variable;
+    Variable.Name = FName(UniqueName);
+    Variable.Type = NormalizeLuaBlueprintVariableType(Type);
+    Variables.push_back(std::move(Variable));
+    BumpVersion();
+    return &Variables.back();
+}
+
 bool ULuaBlueprintAsset::IsConcreteDataPinType(ELuaBlueprintPinType Type)
 {
     return Type != ELuaBlueprintPinType::Exec && Type != ELuaBlueprintPinType::Any;
@@ -474,51 +519,6 @@ bool ULuaBlueprintAsset::ArePinTypesCompatibleForLink(ELuaBlueprintPinType FromT
         return FromType == ELuaBlueprintPinType::Exec && ToType == ELuaBlueprintPinType::Exec;
     }
     return CanConvertPinTypes(FromType, ToType);
-}
-
-FLuaBlueprintLink* ULuaBlueprintAsset::AddLink(uint32 FromPinId, uint32 ToPinId)
-{
-    FLuaBlueprintLink Link;
-    Link.LinkId    = AllocateId();
-    Link.FromPinId = FromPinId;
-    Link.ToPinId   = ToPinId;
-    Links.push_back(std::move(Link));
-    ApplyResolvedPinTypesForLink(FromPinId, ToPinId);
-    BumpVersion();
-    return &Links.back();
-}
-
-FLuaBlueprintVariable* ULuaBlueprintAsset::AddVariable(const FName& Name, ELuaBlueprintPinType Type)
-{
-    FString BaseName = Name == FName::None ? FString("Variable") : Name.ToString();
-    if (BaseName.empty())
-    {
-        BaseName = "Variable";
-    }
-
-    FString UniqueName = BaseName;
-    int32   Suffix     = 1;
-    bool    bUnique    = false;
-    while (!bUnique)
-    {
-        bUnique = true;
-        for (const FLuaBlueprintVariable& Existing : Variables)
-        {
-            if (Existing.Name.ToString() == UniqueName)
-            {
-                bUnique    = false;
-                UniqueName = BaseName + std::to_string(Suffix++);
-                break;
-            }
-        }
-    }
-
-    FLuaBlueprintVariable Variable;
-    Variable.Name = FName(UniqueName);
-    Variable.Type = NormalizeLuaBlueprintVariableType(Type);
-    Variables.push_back(std::move(Variable));
-    BumpVersion();
-    return &Variables.back();
 }
 
 FLuaBlueprintNode* ULuaBlueprintAsset::AddNodeOfType(ELuaBlueprintNodeType Type, float X, float Y)
@@ -1292,31 +1292,26 @@ const FLuaBlueprintLink* ULuaBlueprintAsset::FindFirstLinkFromOutput(uint32 Outp
 
 
 
-void ULuaBlueprintAsset::ApplyResolvedPinTypesForLink(uint32 FromPinId, uint32 ToPinId)
+const FString& ULuaBlueprintAsset::GetRuntimeLuaSource() const
 {
-    FLuaBlueprintPin* From = FindPin(FromPinId);
-    FLuaBlueprintPin* To   = FindPin(ToPinId);
-    if (!From || !To) return;
-    if (From->Type == ELuaBlueprintPinType::Exec || To->Type == ELuaBlueprintPinType::Exec) return;
+    return bLastCompileSucceeded ? GeneratedLuaSource : LastGoodGeneratedLuaSource;
+}
 
-    // Any pin 은 링크되는 순간 반대편 concrete type 을 받아 UI inline editor 와 후속 메뉴가 즉시 바뀐다.
-    if (To->Type == ELuaBlueprintPinType::Any && IsConcreteDataPinType(From->Type))
+bool ULuaBlueprintAsset::HasCompileErrors() const
+{
+    for (const FLuaBlueprintDiagnostic& Diagnostic : Diagnostics)
     {
-        To->Type = From->Type;
+        if (Diagnostic.Severity == ELuaBlueprintDiagnosticSeverity::Error)
+        {
+            return true;
+        }
     }
-    if (From->Type == ELuaBlueprintPinType::Any && IsConcreteDataPinType(To->Type))
-    {
-        From->Type = To->Type;
-    }
+    return false;
+}
 
-    if (FLuaBlueprintNode* FromNode = FindNode(From->OwningNodeId))
-    {
-        RefreshNodePinTypes(*FromNode);
-    }
-    if (FLuaBlueprintNode* ToNode = FindNode(To->OwningNodeId))
-    {
-        RefreshNodePinTypes(*ToNode);
-    }
+bool ULuaBlueprintAsset::HasRunnableLuaSource() const
+{
+    return !GetRuntimeLuaSource().empty();
 }
 
 void ULuaBlueprintAsset::RefreshNodePinTypes(FLuaBlueprintNode& Node)
@@ -1432,28 +1427,6 @@ void ULuaBlueprintAsset::RefreshAllNodePinTypes()
     }
 }
 
-const FString& ULuaBlueprintAsset::GetRuntimeLuaSource() const
-{
-    return bLastCompileSucceeded ? GeneratedLuaSource : LastGoodGeneratedLuaSource;
-}
-
-bool ULuaBlueprintAsset::HasCompileErrors() const
-{
-    for (const FLuaBlueprintDiagnostic& Diagnostic : Diagnostics)
-    {
-        if (Diagnostic.Severity == ELuaBlueprintDiagnosticSeverity::Error)
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-bool ULuaBlueprintAsset::HasRunnableLuaSource() const
-{
-    return !GetRuntimeLuaSource().empty();
-}
-
 void ULuaBlueprintAsset::Serialize(FArchive& Ar)
 {
     if (Ar.IsSaving())
@@ -1550,5 +1523,32 @@ void ULuaBlueprintAsset::SetCompileResult(
     if (bSuccess)
     {
         LastGoodGeneratedLuaSource = InSource;
+    }
+}
+
+void ULuaBlueprintAsset::ApplyResolvedPinTypesForLink(uint32 FromPinId, uint32 ToPinId)
+{
+    FLuaBlueprintPin* From = FindPin(FromPinId);
+    FLuaBlueprintPin* To   = FindPin(ToPinId);
+    if (!From || !To) return;
+    if (From->Type == ELuaBlueprintPinType::Exec || To->Type == ELuaBlueprintPinType::Exec) return;
+
+    // Any pin 은 링크되는 순간 반대편 concrete type 을 받아 UI inline editor 와 후속 메뉴가 즉시 바뀐다.
+    if (To->Type == ELuaBlueprintPinType::Any && IsConcreteDataPinType(From->Type))
+    {
+        To->Type = From->Type;
+    }
+    if (From->Type == ELuaBlueprintPinType::Any && IsConcreteDataPinType(To->Type))
+    {
+        From->Type = To->Type;
+    }
+
+    if (FLuaBlueprintNode* FromNode = FindNode(From->OwningNodeId))
+    {
+        RefreshNodePinTypes(*FromNode);
+    }
+    if (FLuaBlueprintNode* ToNode = FindNode(To->OwningNodeId))
+    {
+        RefreshNodePinTypes(*ToNode);
     }
 }

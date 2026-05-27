@@ -2,10 +2,10 @@
 
 #include "Editor/UI/Asset/AssetEditorWidget.h"
 
-#include "LuaBlueprint/LuaBlueprintTypes.h"
 #include "imgui.h"
+#include "LuaBlueprint/LuaBlueprintTypes.h"
 
-namespace ax { namespace NodeEditor { struct EditorContext; } }
+namespace ax::NodeEditor { struct EditorContext; }
 
 class ULuaBlueprintAsset;
 struct FLuaBlueprintNode;
@@ -61,10 +61,12 @@ private:
 	void RedoBlueprintEdit(ULuaBlueprintAsset* Blueprint);
 	bool RestoreBlueprintSnapshot(ULuaBlueprintAsset* Blueprint, const TArray<uint8>& Snapshot);
 	bool GatherSelectedNodes(ULuaBlueprintAsset* Blueprint, TArray<FLuaBlueprintNode>& OutNodes, TArray<FLuaBlueprintLink>& OutLinks) const;
-	bool CloneNodeFragment(ULuaBlueprintAsset* Blueprint, const TArray<FLuaBlueprintNode>& SourceNodes, const TArray<FLuaBlueprintLink>& SourceLinks, const ImVec2& TargetAnchor, TArray<uint32>* OutNewNodeIds = nullptr);
+	bool CloneNodeFragment(ULuaBlueprintAsset* Blueprint, const TArray<FLuaBlueprintNode>& SourceNodes, const TArray<FLuaBlueprintLink>& SourceLinks, const ImVec2& TargetAnchor, TArray<uint32>* OutNewNodeIds = nullptr, const ImVec2* SourceAnchorOverride = nullptr);
+	void SelectOnlyNodes(const TArray<uint32>& NodeIds);
 	void CopySelectedNodes(ULuaBlueprintAsset* Blueprint);
 	void PasteCopiedNodes(ULuaBlueprintAsset* Blueprint, const ImVec2* OverrideAnchor = nullptr);
 	void DeleteSelectedNodes(ULuaBlueprintAsset* Blueprint);
+	bool DeleteNodesIncludingContainedGroups(ULuaBlueprintAsset* Blueprint, const TArray<uint32>& RootNodeIds);
 	void DuplicateSelectedNodes(ULuaBlueprintAsset* Blueprint);
 	// 선택된 노드들의 bounding box 를 감싸는 Comment(Group) 노드 생성.
 	void GroupSelectedNodesAsComment(ULuaBlueprintAsset* Blueprint);
@@ -109,7 +111,6 @@ private:
 	bool bQueuedDuplicateSelected = false;
 	bool bQueuedDeleteSelected = false;
 	bool bQueuedGroupSelected = false;
-	ImVec2 QueuedPasteAnchor = ImVec2(0, 0);
-	bool bHasQueuedPasteAnchor = false;
-	uint32 DuplicateSerial = 0;
+	bool bPendingInitialContentFit = false;
+	bool bPendingNodeGeometryEdit = false;
 };

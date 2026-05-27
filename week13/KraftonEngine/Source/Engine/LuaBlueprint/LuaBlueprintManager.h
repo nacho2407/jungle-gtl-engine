@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Core/Types/CoreTypes.h"
-#include "Core/Singleton.h"
-#include "Object/GarbageCollection.h"
 #include "Asset/AssetRegistry.h"
+#include "Core/Singleton.h"
+#include "Core/Types/CoreTypes.h"
+#include "Object/GarbageCollection.h"
 
 class ULuaBlueprintAsset;
 
