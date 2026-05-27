@@ -208,6 +208,26 @@ namespace
 			return;
 		}
 
+		if (UParticleModuleEventGenerator* EventGeneratorModule = Cast<UParticleModuleEventGenerator>(Module))
+		{
+			if (Cache.EventGeneratorModule == nullptr)
+			{
+				Cache.EventGeneratorModule = EventGeneratorModule;
+				EventGeneratorModule->ValidateConfiguredEvents();
+			}
+			else
+			{
+				UE_LOG_WARNING("[Particle] Multiple enabled Event Generator modules found. Using the first module.");
+			}
+			return;
+		}
+
+		if (UParticleModuleEventReceiverSpawn* EventReceiverModule = Cast<UParticleModuleEventReceiverSpawn>(Module))
+		{
+			Cache.EventReceiverSpawnModules.push_back(EventReceiverModule);
+			return;
+		}
+
 		if (Module->IsSpawnModule())
 		{
 			Cache.SpawnModules.push_back(Module);
@@ -830,6 +850,84 @@ bool UParticleModuleSpawn::IsSpawnRateModule() const
 	return true;
 }
 
+UParticleModuleEventGenerator::UParticleModuleEventGenerator()
+{
+	Events.push_back(FParticleEventGenerateInfo{});
+}
+
+bool UParticleModuleEventGenerator::IsPrimaryEventEntry(int32 EventIndex) const
+{
+	if (EventIndex < 0 || EventIndex >= static_cast<int32>(Events.size()))
+	{
+		return false;
+	}
+
+	const FParticleEventGenerateInfo& Candidate = Events[static_cast<size_t>(EventIndex)];
+	for (int32 EarlierIndex = 0; EarlierIndex < EventIndex; ++EarlierIndex)
+	{
+		const FParticleEventGenerateInfo& Earlier = Events[static_cast<size_t>(EarlierIndex)];
+		if (Earlier.Type == Candidate.Type && Earlier.EventName == Candidate.EventName)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
+void UParticleModuleEventGenerator::ValidateConfiguredEvents() const
+{
+	for (int32 EventIndex = 0; EventIndex < static_cast<int32>(Events.size()); ++EventIndex)
+	{
+		if (!IsPrimaryEventEntry(EventIndex))
+		{
+			UE_LOG_WARNING(
+				"[Particle] Duplicate Event Generator entry found for '%s'. Using the first entry.",
+				Events[static_cast<size_t>(EventIndex)].EventName.ToString().c_str());
+		}
+	}
+}
+
+void UParticleModuleEventGenerator::GenerateEvents(
+	const FParticleEventPayload& Occurrence,
+	IParticleEmitterInstanceOwner& Owner) const
+{
+	for (int32 EventIndex = 0; EventIndex < static_cast<int32>(Events.size()); ++EventIndex)
+	{
+		const FParticleEventGenerateInfo& Info = Events[static_cast<size_t>(EventIndex)];
+		if (Info.Type != Occurrence.Type || !IsPrimaryEventEntry(EventIndex))
+		{
+			continue;
+		}
+
+		FParticleEventPayload Event = Occurrence;
+		Event.EventName = Info.EventName;
+		Owner.AddParticleEvent(Event);
+	}
+}
+
+bool UParticleModuleEventReceiverSpawn::MatchesEvent(const FParticleEventPayload& Event) const
+{
+	return Event.Type == SourceEventType && Event.EventName == SourceEventName;
+}
+
+void UParticleModuleEventReceiverSpawn::ProcessEvent(
+	FParticleEmitterInstance* Owner,
+	const FParticleEventPayload& Event) const
+{
+	if (Owner == nullptr || SpawnCount <= 0 || !MatchesEvent(Event))
+	{
+		return;
+	}
+
+	Owner->SpawnParticlesFromEvent(
+		Event,
+		SpawnCount,
+		bUseParticleSystemLocation,
+		bInheritVelocity,
+		InheritVelocityScale);
+}
+
 UParticleModuleLifetime::UParticleModuleLifetime()
 {
 	Lifetime.Constant = 1.0f;
@@ -1418,6 +1516,23 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 			HitCenterWS + Hit.Normal * std::max(CollisionPushOut, 0.0f);
 		Particle.Location = Owner->TransformLocationToSimulationSpace(NewCenterWS);
 
+		// 내부 collision occurrence의 world space hit 정보
+		FParticleEventPayload Event;
+		Event.Type = EParticleEventType::Collision;
+		Event.EmitterIndex = Owner->GetEmitterIndex();
+		Event.ParticleIndex = Owner->GetPhysicalIndexByActiveIndex(ActiveIndex);
+		Event.ParticleId = Particle.SpawnId;
+		Event.RelativeTime = Particle.RelativeTime;
+		Event.CollisionTime = Hit.Time;
+		Event.LocationWS = Hit.Location;
+		Event.DirectionWS = MoveWS.GetSafeNormal();
+		Event.VelocityWS = IncomingVelocityWS;
+		Event.NormalWS = Hit.Normal;
+		Event.FaceIndex = Hit.FaceIndex;
+		Event.HitComponent = Hit.HitComponent;
+		Event.HitActor = Hit.HitComponent != nullptr ? Hit.HitComponent->GetOwner() : nullptr;
+		Owner->ReportCollisionOccurrence(Event);
+
 		++Payload->UsedCollisions;
 		if (Payload->UsedCollisions >= Payload->UsedMaxCollisions)
 		{
@@ -1431,22 +1546,6 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 			Particle.Velocity = Owner->TransformVelocityToSimulationSpace(DampenedVelocityWS);
 			Particle.BaseVelocity = Particle.Velocity;
 		}
-
-		// Collision Event Data 생성
-		FParticleEventCollideData Event;
-		Event.EmitterIndex = Owner->GetEmitterIndex();
-		Event.ParticleIndex = Owner->GetPhysicalIndexByActiveIndex(ActiveIndex);
-		Event.SpawnId = Particle.SpawnId;
-		Event.ParticleTime = Particle.RelativeTime;
-		Event.CollisionTime = Hit.Time;
-		Event.Location = Hit.Location;
-		Event.Direction = MoveWS.GetSafeNormal();
-		Event.Velocity = IncomingVelocityWS;
-		Event.Normal = Hit.Normal;
-		Event.FaceIndex = Hit.FaceIndex;
-		Event.HitComponent = Hit.HitComponent;
-		Event.HitActor = Hit.HitComponent != nullptr ? Hit.HitComponent->GetOwner() : nullptr;
-		Owner->GetOwner().AddCollisionEvent(Event);
 	}
 }
 

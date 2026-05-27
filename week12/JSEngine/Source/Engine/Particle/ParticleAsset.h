@@ -18,11 +18,14 @@ struct FParticleLODLevelRuntimeCache
 	UParticleModuleRequired* RequiredModule = nullptr;
 	UParticleModuleSpawn* SpawnModule = nullptr;
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
+	UParticleModuleEventGenerator* EventGeneratorModule = nullptr;
 
 	TArray<UParticleModule*> SpawnModules;
 	TArray<UParticleModule*> UpdateModules;
 	// 적분 후 이동 구간 query만 수행할 collision module 목록
 	TArray<UParticleModuleCollision*> CollisionModules;
+	// 내부 event snapshot 소비 전용 receiver module 목록
+	TArray<UParticleModuleEventReceiverSpawn*> EventReceiverSpawnModules;
 
 	TMap<UParticleModule*, int32> ModulePayloadOffsets;
 	TMap<UParticleModule*, int32> ModuleInstanceOffsets;

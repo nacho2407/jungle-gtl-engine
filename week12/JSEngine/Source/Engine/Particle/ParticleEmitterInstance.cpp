@@ -925,13 +925,14 @@ int32 FParticleEmitterInstance::SpawnParticles(
 		Particle.BaseColor = Particle.Color;
 
 		++ActiveParticles;
+		GenerateSpawnEvent(Particle, PhysicalIndex);
 	}
 
 	LastFrameSpawnedCount += SpawnCount;
 	return SpawnCount;
 }
 
-int32 FParticleEmitterInstance::SpawnParticleAtLocation(const FVector& WorldLocation, const FVector& SpawnSide, float SpawnTime)
+int32 FParticleEmitterInstance::SpawnParticle(const FVector& WorldLocation, const FVector& SpawnSide, float SpawnTime)
 {
 	if (ParticleData == nullptr || ParticleIndices == nullptr || CurrentRuntimeCache == nullptr)
 	{
@@ -995,7 +996,180 @@ int32 FParticleEmitterInstance::SpawnParticleAtLocation(const FVector& WorldLoca
 	}
 
 	++ActiveParticles;
+	++LastFrameSpawnedCount;
+	GenerateSpawnEvent(Particle, PhysicalIndex);
 	return PhysicalIndex;
+}
+
+int32 FParticleEmitterInstance::SpawnParticleFromEvent(
+	const FParticleEventPayload& Event,
+	bool bUseParticleSystemLocation,
+	bool bInheritVelocity,
+	float InheritVelocityScale)
+{
+	if (ParticleData == nullptr || ParticleIndices == nullptr || CurrentRuntimeCache == nullptr)
+	{
+		return -1;
+	}
+
+	const int32 CurrentLODParticleLimit = std::min(MaxActiveParticles, GetCurrentLODMaxParticles());
+	if (ActiveParticles >= CurrentLODParticleLimit)
+	{
+		return -1;
+	}
+
+	const int32 ActiveIndex = ActiveParticles;
+	const int32 PhysicalIndex = ParticleIndices[ActiveIndex];
+	FBaseParticle& Particle = GetParticleByPhysicalIndex(PhysicalIndex);
+	new (&Particle) FBaseParticle();
+
+	ClearParticlePayloads(Particle);
+
+	Particle.Seed = RandomStream.GetUnsignedInt();
+	Particle.SpawnId = ++ParticleCounter;
+	Particle.RelativeTime = 0.0f;
+	Particle.AgeSeconds = 0.0f;
+	Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
+	Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
+	InitializeModulePayloads(Particle);
+
+	for (UParticleModule* Module : CurrentRuntimeCache->SpawnModules)
+	{
+		if (Module == nullptr || !Module->bEnabled)
+		{
+			continue;
+		}
+
+		const int32 Offset = CurrentRuntimeCache->GetParticlePayloadOffset(Module);
+		Module->Spawn(this, Offset, EmitterTime, Particle);
+	}
+
+	// Spawn module 초기화 뒤 event 위치 최종 적용
+	const FVector SpawnLocationWS = bUseParticleSystemLocation
+		? Owner.GetWorldLocation()
+		: Event.LocationWS;
+	Particle.Location = TransformLocationToSimulationSpace(SpawnLocationWS);
+	Particle.OldLocation = Particle.Location;
+
+	if (bInheritVelocity)
+	{
+		// Velocity의 translation 제외 변환
+		const FVector InheritedVelocityWS = Event.VelocityWS * InheritVelocityScale;
+		Particle.Velocity = TransformVelocityToSimulationSpace(InheritedVelocityWS);
+		Particle.BaseVelocity = Particle.Velocity;
+	}
+
+	Particle.Lifetime = std::max(Particle.Lifetime, 0.0001f);
+	Particle.OneOverMaxLifetime = 1.0f / Particle.Lifetime;
+	Particle.OldLocation = Particle.Location;
+	Particle.BaseColor = Particle.Color;
+
+	++ActiveParticles;
+	++LastFrameSpawnedCount;
+	return PhysicalIndex;
+}
+
+int32 FParticleEmitterInstance::SpawnParticlesFromEvent(
+	const FParticleEventPayload& Event,
+	int32 SpawnCount,
+	bool bUseParticleSystemLocation,
+	bool bInheritVelocity,
+	float InheritVelocityScale)
+{
+	int32 ActualSpawnCount = 0;
+	for (int32 SpawnIndex = 0; SpawnIndex < SpawnCount; ++SpawnIndex)
+	{
+		if (SpawnParticleFromEvent(
+			Event,
+			bUseParticleSystemLocation,
+			bInheritVelocity,
+			InheritVelocityScale) < 0)
+		{
+			break;
+		}
+
+		++ActualSpawnCount;
+	}
+
+	return ActualSpawnCount;
+}
+
+void FParticleEmitterInstance::GenerateSpawnEvent(const FBaseParticle& Particle, int32 PhysicalIndex)
+{
+	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->EventGeneratorModule == nullptr)
+	{
+		return;
+	}
+
+	FParticleEventPayload Event;
+	Event.Type = EParticleEventType::Spawn;
+	Event.EmitterIndex = EmitterIndex;
+	Event.ParticleIndex = PhysicalIndex;
+	Event.ParticleId = Particle.SpawnId;
+	Event.RelativeTime = Particle.RelativeTime;
+	Event.LocationWS = TransformLocationToWorldSpace(Particle.Location);
+	Event.VelocityWS = TransformVelocityToWorldSpace(Particle.Velocity);
+	Event.DirectionWS = Event.VelocityWS.IsNearlyZero()
+		? FVector::ZeroVector
+		: Event.VelocityWS.GetSafeNormal();
+	CurrentRuntimeCache->EventGeneratorModule->GenerateEvents(Event, Owner);
+}
+
+void FParticleEmitterInstance::GenerateDeathEvent(const FBaseParticle& Particle, int32 PhysicalIndex)
+{
+	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->EventGeneratorModule == nullptr)
+	{
+		return;
+	}
+
+	FParticleEventPayload Event;
+	Event.Type = EParticleEventType::Death;
+	Event.EmitterIndex = EmitterIndex;
+	Event.ParticleIndex = PhysicalIndex;
+	Event.ParticleId = Particle.SpawnId;
+	Event.RelativeTime = Particle.RelativeTime;
+	Event.LocationWS = TransformLocationToWorldSpace(Particle.Location);
+	Event.VelocityWS = TransformVelocityToWorldSpace(Particle.Velocity);
+	Event.DirectionWS = Event.VelocityWS.IsNearlyZero()
+		? FVector::ZeroVector
+		: Event.VelocityWS.GetSafeNormal();
+	CurrentRuntimeCache->EventGeneratorModule->GenerateEvents(Event, Owner);
+}
+
+void FParticleEmitterInstance::GenerateCollisionEvent(const FParticleEventPayload& Event)
+{
+	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->EventGeneratorModule == nullptr)
+	{
+		return;
+	}
+
+	CurrentRuntimeCache->EventGeneratorModule->GenerateEvents(Event, Owner);
+}
+
+void FParticleEmitterInstance::ReportCollisionOccurrence(const FParticleEventPayload& Event)
+{
+	GenerateCollisionEvent(Event);
+}
+
+void FParticleEmitterInstance::ProcessParticleEvents(const TArray<FParticleEventPayload>& Events)
+{
+	if (CurrentRuntimeCache == nullptr || CurrentLODLevel == nullptr || !CurrentLODLevel->bEnabled)
+	{
+		return;
+	}
+
+	for (UParticleModuleEventReceiverSpawn* Receiver : CurrentRuntimeCache->EventReceiverSpawnModules)
+	{
+		if (Receiver == nullptr || !Receiver->bEnabled)
+		{
+			continue;
+		}
+
+		for (const FParticleEventPayload& Event : Events)
+		{
+			Receiver->ProcessEvent(this, Event);
+		}
+	}
 }
 
 bool FParticleEmitterInstance::IsParticlePendingKill(const FBaseParticle& Particle) const
@@ -1045,6 +1219,7 @@ void FParticleEmitterInstance::MarkParticlePendingKill(int32 ActiveIndex)
 	}
 
 	SetParticleFlag(Particle, EParticleFlags::PendingKill);
+	GenerateDeathEvent(Particle, static_cast<int32>(KilledPhysicalIndex));
 	++LastFrameKilledCount;
 }
 
@@ -1610,7 +1785,7 @@ int32 FParticleRibbonEmitterInstance::SpawnParticles(int32 Count, float SegmentS
 		const FVector SourceSide = bHasPendingSpawnSource ? PendingSpawnSourceSide : GetRibbonSourceSide();
 		const FVector SpawnLocation = SourceStart + (SourceEnd - SourceStart) * Alpha;
 
-		if (SpawnParticleAtLocation(SpawnLocation, SourceSide, SpawnTime) >= 0)
+		if (SpawnParticle(SpawnLocation, SourceSide, SpawnTime) >= 0)
 		{
 			++ActualSpawnCount;
 		}
@@ -1646,7 +1821,7 @@ void FParticleRibbonEmitterInstance::UpdateRibbonTrail(float DeltaTime)
 
 			if (RibbonTypeData->bSpawnInitialPoint)
 			{
-				SpawnParticleAtLocation(SourcePosition, SourceSide, EmitterTime);
+				SpawnParticle(SourcePosition, SourceSide, EmitterTime);
 			}
 			continue;
 		}
@@ -1665,7 +1840,7 @@ void FParticleRibbonEmitterInstance::UpdateRibbonTrail(float DeltaTime)
 		{
 			Trail.DistanceRemainder -= SpawnDistance;
 			const FVector PointPosition = SourcePosition - Direction * Trail.DistanceRemainder;
-			SpawnParticleAtLocation(PointPosition, SourceSide, EmitterTime);
+			SpawnParticle(PointPosition, SourceSide, EmitterTime);
 
 			while (ActiveParticles > MaxPoints)
 			{

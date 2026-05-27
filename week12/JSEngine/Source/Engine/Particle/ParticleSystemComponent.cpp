@@ -5,7 +5,6 @@
 #include "Core/ResourceManager.h"
 #include "GameFramework/World.h"
 #include "Particle/ParticleEmitterInstanceOwner.h"
-#include "Particle/ParticleEventManager.h"
 #include "Particle/ParticleMeshBounds.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
@@ -194,11 +193,11 @@ public:
 			Component->ParticleLineCheck(Hit, SourceActor, EndWS, StartWS, CollisionShape);
 	}
 
-	void AddCollisionEvent(const FParticleEventCollideData& Event) override
+	void AddParticleEvent(const FParticleEventPayload& Event) override
 	{
 		if (Component != nullptr)
 		{
-			Component->ReportEventCollision(Event);
+			Component->ReportParticleEvent(Event);
 		}
 	}
 
@@ -332,7 +331,7 @@ bool UParticleSystemComponent::ParticleLineCheck(
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
-	CollisionEvents.clear();
+	ParticleEvents.clear();
 
 	UpdateLODLevel();
 
@@ -358,13 +357,17 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		}
 	}
 
+	ProcessParticleEventReceivers(bHasSoloEmitter);
+
 	// Render Data 수집
 	UpdateLastParticleFrameStats();
 	PackRenderData();
 	NotifySpatialIndexDirty();
-	
-	// Tick이 끝날 때 Event를 처리
-	FinalizeTickComponent();
+}
+
+void UParticleSystemComponent::ReportParticleEvent(const FParticleEventPayload& Event)
+{
+	ParticleEvents.push_back(Event);
 }
 
 void UParticleSystemComponent::UpdateLastParticleFrameStats()
@@ -419,32 +422,24 @@ void UParticleSystemComponent::UpdateLastParticleFrameStats()
 	}
 }
 
-void UParticleSystemComponent::FinalizeTickComponent()
+void UParticleSystemComponent::ProcessParticleEventReceivers(bool bHasSoloEmitter)
 {
-	if (!CollisionEvents.empty())
+	if (ParticleEvents.empty())
 	{
-		AParticleEventManager* DispatchManager = EventManager;
-		if (DispatchManager == nullptr)
-		{
-			UWorld* World = GetWorld();
-			DispatchManager = World != nullptr ? World->GetOrCreateParticleEventManager() : nullptr;
-
-			// Caching ParticleEventManager
-			EventManager = DispatchManager;
-		}
-
-		if (DispatchManager != nullptr)
-		{
-			DispatchManager->HandleParticleCollisionEvents(this, CollisionEvents);
-		}
+		return;
 	}
 
-	CollisionEvents.clear();
-}
+	// Receiver 실행 전 snapshot만 이번 tick 입력으로 사용
+	const TArray<FParticleEventPayload> EventSnapshot = ParticleEvents;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance == nullptr || (bHasSoloEmitter && !IsSoloParticleInstance(Instance)))
+		{
+			continue;
+		}
 
-void UParticleSystemComponent::ReportEventCollision(const FParticleEventCollideData& Event)
-{
-	CollisionEvents.push_back(Event);
+		Instance->ProcessParticleEvents(EventSnapshot);
+	}
 }
 
 void UParticleSystemComponent::PackRenderData()
@@ -604,6 +599,8 @@ void UParticleSystemComponent::ResetParticles()
 
 void UParticleSystemComponent::ReleaseEmitterInstances()
 {
+	ParticleEvents.clear();
+
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		delete Instance;

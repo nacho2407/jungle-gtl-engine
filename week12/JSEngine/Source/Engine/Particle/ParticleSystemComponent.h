@@ -6,14 +6,9 @@
 
 class UWorld;
 class UParticleSystem;
-class AParticleEventManager;
 class FParticleEmitterInstance;
-class UParticleSystemComponent;
 
 struct FDynamicEmitterDataBase;
-struct FParticleEventCollideData;
-
-DECLARE_DELEGATE(FParticleCollisionSignature, UParticleSystemComponent*, const FParticleEventCollideData&)
 
 /******************************************************************
 * Particle System 런타임 객체 관리 컴포넌트
@@ -35,20 +30,21 @@ public:
 	UParticleSystem* GetTemplate();
 	const UParticleSystem* GetTemplate() const;
 
-	void SetEventManager(AParticleEventManager* InEventManager) { EventManager = InEventManager; }
 	UWorld* GetWorld() const;
 
 	void Serialize(FArchive& Ar) override;
 	void PostEditProperty(const char* PropertyName) override;
 
 	void TickComponent(float DeltaTime) override;
-	void FinalizeTickComponent();
 	void PackRenderData();
 	int32 GetEmitterRenderDataSnapshotCount() const { return static_cast<int32>(EmitterRenderData.size()); }
 	const FDynamicEmitterDataBase* GetEmitterRenderDataSnapshot(int32 SnapshotIndex) const;
 	const FParticleFrameStats& GetLastParticleFrameStats() const { return LastParticleFrameStats; }
 
-	void ReportEventCollision(const FParticleEventCollideData& Event);
+	/**
+	 * @brief 내부 receiver 입력 event 저장
+	 */
+	void ReportParticleEvent(const FParticleEventPayload& Event);
 
 	/**
 	 * @brief particle 이동 구간을 world Shape query로 검사
@@ -69,12 +65,11 @@ public:
 
 	void ResetParticles();
 
-	FParticleCollisionSignature OnParticleCollide;
-
 private:
 	void CreateEmitterInstances();
 	void ReleaseEmitterInstances();
 	void ReleaseRenderData();
+	void ProcessParticleEventReceivers(bool bHasSoloEmitter);
 	void UpdateLastParticleFrameStats();
 
 	/**
@@ -110,9 +105,7 @@ private:
 	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
 	FParticleFrameStats LastParticleFrameStats;
 
-	TArray<FParticleEventCollideData> CollisionEvents;
-
-	AParticleEventManager* EventManager = nullptr;
+	TArray<FParticleEventPayload> ParticleEvents;
 	UParticleSystem* ResolvedTemplate = nullptr;
 
 	// CPP참고 -  EmitterInstance에게 넘겨주는 Component 정보

@@ -36,5 +36,8 @@ public:
 		const FVector& StartWS,
 		const FCollisionShape& CollisionShape) = 0;
 
-	virtual void AddCollisionEvent(const FParticleEventCollideData& Event) = 0;
+	/**
+	 * @brief 내부 receiver 입력 event 저장
+	 */
+	virtual void AddParticleEvent(const FParticleEventPayload& Event) = 0;
 };
