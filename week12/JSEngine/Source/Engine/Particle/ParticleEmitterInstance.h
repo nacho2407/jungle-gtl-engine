@@ -169,16 +169,26 @@ protected:
 	int32 CalculateSpawnRateCount(float DeltaTime);
 	int32 CalculateBurstSpawnCount(float PreviousEmitterTime, float CurrentEmitterTime);
 	int32 ResolveBurstSpawnAmount(const FParticleBurstEntry& Entry);
-	int32 SpawnParticles(
-		int32 Count,
-		float SegmentStartTime,
-		float SegmentDeltaTime,
-		EParticleSpawnReason SpawnReason = EParticleSpawnReason::Normal,
-		const FParticleEventPayload* SourceEvent = nullptr,
-		bool bUseParticleSystemLocation = false,
-		bool bInheritVelocity = false,
-		float InheritVelocityScale = 1.0f);
-	int32 SpawnParticleAtLocation(const FVector& WorldLocation, const FVector& SpawnSide, float SpawnTime);
+	virtual int32 SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime);
+
+	/**
+	 * @brief trail source 위치에 개별 particle 생성
+	 *
+	 * @param WorldLocation particle 중심 world 위치
+	 * @param SpawnSide trail 폭 방향 world 벡터
+	 */
+	virtual int32 SpawnParticle(const FVector& WorldLocation, const FVector& SpawnSide, float SpawnTime);
+
+	/**
+	 * @brief 내부 event payload로 개별 particle 생성
+	 *
+	 * @note normal spawn event를 다시 생성하지 않는 receiver 전용 경로
+	 */
+	int32 SpawnParticleFromEvent(
+		const FParticleEventPayload& Event,
+		bool bUseParticleSystemLocation,
+		bool bInheritVelocity,
+		float InheritVelocityScale);
 
 	/**
 	 * @brief normal spawn named event 생성
@@ -261,6 +271,7 @@ private:
 	bool bHasPendingSpawnSource = false;
 
 	int32 SpawnParticles(int32 Count, float SegmentStartTime, float SegmentDeltaTime) override;
+
 	void UpdateRibbonTrail(float DeltaTime);
 	bool HasEnabledSpawnModule() const;
 	void PrepareSpawnModuleSourceSpan();
