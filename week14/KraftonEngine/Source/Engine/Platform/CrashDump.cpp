@@ -311,8 +311,8 @@ namespace
 
 __declspec(noinline) void CauseCrash()
 {
-	ULONG_PTR ExceptionArguments[2] = { 1, 0 };
-	RaiseException(EXCEPTION_ACCESS_VIOLATION, EXCEPTION_NONCONTINUABLE, 2, ExceptionArguments);
+	volatile int* CrashAddress = nullptr;
+	*CrashAddress = 0xDEAD;
 }
 
 LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* ExceptionInfo)
@@ -340,11 +340,19 @@ LONG WINAPI WriteCrashDump(EXCEPTION_POINTERS* ExceptionInfo)
 		DumpInfo.ExceptionPointers = ExceptionInfo;
 		DumpInfo.ClientPointers = FALSE;
 
+		const MINIDUMP_TYPE DumpType = static_cast<MINIDUMP_TYPE>(
+			MiniDumpWithDataSegs |
+			MiniDumpWithThreadInfo |
+			MiniDumpWithUnloadedModules |
+			MiniDumpWithFullMemoryInfo |
+			MiniDumpWithIndirectlyReferencedMemory |
+			MiniDumpWithCodeSegs);
+
 		MiniDumpWriteDump(
 			GetCurrentProcess(),
 			GetCurrentProcessId(),
 			File,
-			MiniDumpWithDataSegs,
+			DumpType,
 			&DumpInfo,
 			nullptr,
 			nullptr);
