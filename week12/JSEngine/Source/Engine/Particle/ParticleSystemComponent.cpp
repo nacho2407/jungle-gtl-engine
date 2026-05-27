@@ -620,7 +620,7 @@ void UParticleSystemComponent::UpdateLastParticleFrameStats()
 		const int32 KilledCount = Instance->GetLastFrameKilledCount();
 		const UParticleModuleTypeDataBase* TypeDataModule = Instance->CurrentRuntimeCache->TypeDataModule;
 
-		if (Cast<UParticleModuleTypeDataRibbon>(TypeDataModule) != nullptr)
+		if (Cast<UParticleModuleTypeDataTrailBase>(TypeDataModule) != nullptr)
 		{
 			LastParticleFrameStats.TrailParticleSpawned += SpawnedCount;
 			LastParticleFrameStats.TrailParticleKilled += KilledCount;
