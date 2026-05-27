@@ -21,8 +21,8 @@ struct VSInput
 	float4 StartColor     : COLOR0;
 	float4 EndColor       : COLOR1;
 	float2 UVStartEnd     : TEXCOORD3;
-	float3 FixedSide      : TEXCOORD4;
-	float  FacingMode     : TEXCOORD5;
+	float3 StartSide      : TEXCOORD4;
+	float3 EndSide        : TEXCOORD5;
 };
 
 struct PSInput
@@ -47,11 +47,7 @@ PSInput VS(VSInput Input)
 
 	float3 Center = lerp(Input.Start, Input.End, T);
 	float HalfWidth = lerp(Input.HalfWidthStart, Input.HalfWidthEnd, T);
-	float3 SegmentDir = SafeNormalize(Input.End - Input.Start, float3(1.0f, 0.0f, 0.0f));
-	float3 ToCamera = SafeNormalize(CameraPosition - Center, float3(0.0f, 0.0f, 1.0f));
-	float3 BillboardSide = SafeNormalize(cross(ToCamera, SegmentDir), float3(0.0f, 1.0f, 0.0f));
-	float3 FixedSide = SafeNormalize(Input.FixedSide, float3(0.0f, 1.0f, 0.0f));
-	float3 Side = lerp(BillboardSide, FixedSide, step(0.5f, Input.FacingMode));
+	float3 Side = SafeNormalize(lerp(Input.StartSide, Input.EndSide, T), float3(0.0f, 1.0f, 0.0f));
 
 	float3 WorldPosition = Center + Side * HalfWidth * SideSign;
 	float4 ViewPosition = mul(float4(WorldPosition, 1.0f), View);

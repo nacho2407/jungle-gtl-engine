@@ -90,8 +90,8 @@ struct FParticleRibbonSegmentInstanceData
 	FVector4 EndColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 
 	FVector2 UVStartEnd = FVector2(0.0f, 1.0f);
-	FVector Side = FVector::RightVector;
-	float FacingMode = 0.0f;
+	FVector StartSide = FVector::RightVector;
+	FVector EndSide = FVector::RightVector;
 };
 
 struct FMeshData

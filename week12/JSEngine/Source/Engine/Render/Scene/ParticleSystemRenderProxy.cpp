@@ -288,6 +288,88 @@ namespace
 		return Bounds;
 	}
 
+	FVector GetRibbonSourceSide(const FRibbonRenderPoint& Point)
+	{
+		FVector Side = Point.Side.GetSafeNormal();
+		return Side.IsNearlyZero() ? FVector::RightVector : Side;
+	}
+
+	FVector GetRibbonPointTangent(
+		const FDynamicRibbonEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld,
+		const FRibbonRenderRange& Range,
+		int32 PointIndex)
+	{
+		const int32 RangeEnd = Range.PointStart + Range.PointCount;
+		const FVector Current = GetRibbonWorldPoint(
+			ReplayData,
+			ComponentToWorld,
+			ReplayData.RenderPoints[static_cast<size_t>(PointIndex)]);
+
+		FVector Tangent = FVector::ZeroVector;
+		if (PointIndex <= Range.PointStart && PointIndex + 1 < RangeEnd)
+		{
+			const FVector Next = GetRibbonWorldPoint(
+				ReplayData,
+				ComponentToWorld,
+				ReplayData.RenderPoints[static_cast<size_t>(PointIndex + 1)]);
+			Tangent = Next - Current;
+		}
+		else if (PointIndex >= RangeEnd - 1 && PointIndex - 1 >= Range.PointStart)
+		{
+			const FVector Prev = GetRibbonWorldPoint(
+				ReplayData,
+				ComponentToWorld,
+				ReplayData.RenderPoints[static_cast<size_t>(PointIndex - 1)]);
+			Tangent = Current - Prev;
+		}
+		else if (PointIndex - 1 >= Range.PointStart && PointIndex + 1 < RangeEnd)
+		{
+			const FVector Prev = GetRibbonWorldPoint(
+				ReplayData,
+				ComponentToWorld,
+				ReplayData.RenderPoints[static_cast<size_t>(PointIndex - 1)]);
+			const FVector Next = GetRibbonWorldPoint(
+				ReplayData,
+				ComponentToWorld,
+				ReplayData.RenderPoints[static_cast<size_t>(PointIndex + 1)]);
+			Tangent = Next - Prev;
+		}
+
+		Tangent = Tangent.GetSafeNormal();
+		return Tangent.IsNearlyZero() ? FVector::ForwardVector : Tangent;
+	}
+
+	FVector ResolveRibbonPointSide(
+		const FDynamicRibbonEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld,
+		const FRibbonRenderRange& Range,
+		int32 PointIndex,
+		const FVector& CameraPosition,
+		const FVector& CameraRight)
+	{
+		const FRibbonRenderPoint& Point = ReplayData.RenderPoints[static_cast<size_t>(PointIndex)];
+		if (ReplayData.RibbonFacingMode == EParticleRibbonFacingMode::SourceTransform)
+		{
+			return GetRibbonSourceSide(Point);
+		}
+
+		const FVector WorldPoint = GetRibbonWorldPoint(ReplayData, ComponentToWorld, Point);
+		FVector ToCamera = (CameraPosition - WorldPoint).GetSafeNormal();
+		if (ToCamera.IsNearlyZero())
+		{
+			ToCamera = FVector::ForwardVector;
+		}
+
+		const FVector Tangent = GetRibbonPointTangent(ReplayData, ComponentToWorld, Range, PointIndex);
+		FVector Side = FVector::CrossProduct(ToCamera, Tangent).GetSafeNormal();
+		if (Side.IsNearlyZero())
+		{
+			Side = CameraRight.GetSafeNormal();
+		}
+		return Side.IsNearlyZero() ? FVector::RightVector : Side;
+	}
+
 	enum class EParticleProxyDiagnostic : uint32
 	{
 		EmptyActiveParticles = 1,
@@ -972,6 +1054,27 @@ bool FParticleSystemSceneProxy::BuildRibbonCommands(
 				continue;
 			}
 
+			TArray<FVector> PointSides;
+			PointSides.reserve(Range.PointCount);
+			const bool bBillboardFacing = ReplayData.RibbonFacingMode != EParticleRibbonFacingMode::SourceTransform;
+			for (int32 PointIndex = Range.PointStart; PointIndex < RangeEnd; ++PointIndex)
+			{
+				FVector PointSide = ResolveRibbonPointSide(
+					ReplayData,
+					EmitterData->ComponentToWorld,
+					Range,
+					PointIndex,
+					Context.RenderBus.GetCameraPosition(),
+					Context.RenderBus.GetCameraRight());
+				if (bBillboardFacing &&
+					!PointSides.empty() &&
+					FVector::DotProduct(PointSide, PointSides.back()) < 0.0f)
+				{
+					PointSide = PointSide * -1.0f;
+				}
+				PointSides.push_back(PointSide);
+			}
+
 			for (int32 PointIndex = Range.PointStart; PointIndex + 1 < RangeEnd; ++PointIndex)
 			{
 				const FRibbonRenderPoint& A = ReplayData.RenderPoints[static_cast<size_t>(PointIndex)];
@@ -987,13 +1090,9 @@ bool FParticleSystemSceneProxy::BuildRibbonCommands(
 				Instance.StartColor = A.Color;
 				Instance.EndColor = B.Color;
 				Instance.UVStartEnd = FVector2(A.U, B.U);
-				const FVector BlendedSide = (A.Side + B.Side) * 0.5f;
-				Instance.Side = BlendedSide.GetSafeNormal();
-				if (Instance.Side.IsNearlyZero())
-				{
-					Instance.Side = FVector::RightVector;
-				}
-				Instance.FacingMode = ReplayData.RibbonFacingMode == EParticleRibbonFacingMode::SourceTransform ? 1.0f : 0.0f;
+				const int32 SideIndex = PointIndex - Range.PointStart;
+				Instance.StartSide = PointSides[static_cast<size_t>(SideIndex)];
+				Instance.EndSide = PointSides[static_cast<size_t>(SideIndex + 1)];
 				RibbonInstances.push_back(Instance);
 
 				const FVector StartExtent(Instance.HalfWidthStart, Instance.HalfWidthStart, Instance.HalfWidthStart);

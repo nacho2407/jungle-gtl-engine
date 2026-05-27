@@ -143,8 +143,8 @@ public:
 				{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleRibbonSegmentInstanceData, StartColor)), EVertexInputRate::PerInstance },
 				{ "COLOR", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleRibbonSegmentInstanceData, EndColor)), EVertexInputRate::PerInstance },
 				{ "TEXCOORD", 3, DXGI_FORMAT_R32G32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleRibbonSegmentInstanceData, UVStartEnd)), EVertexInputRate::PerInstance },
-				{ "TEXCOORD", 4, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleRibbonSegmentInstanceData, Side)), EVertexInputRate::PerInstance },
-				{ "TEXCOORD", 5, DXGI_FORMAT_R32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleRibbonSegmentInstanceData, FacingMode)), EVertexInputRate::PerInstance },
+				{ "TEXCOORD", 4, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleRibbonSegmentInstanceData, StartSide)), EVertexInputRate::PerInstance },
+				{ "TEXCOORD", 5, DXGI_FORMAT_R32G32B32_FLOAT, 1, static_cast<uint32>(offsetof(FParticleRibbonSegmentInstanceData, EndSide)), EVertexInputRate::PerInstance },
 			},
 			sizeof(FParticleSpriteQuadVertex)
 		};
