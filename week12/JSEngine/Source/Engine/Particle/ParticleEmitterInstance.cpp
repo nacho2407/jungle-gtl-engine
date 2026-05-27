@@ -1679,6 +1679,9 @@ void FParticleRibbonEmitterInstance::Reset()
 
 void FParticleRibbonEmitterInstance::Tick(float DeltaTime)
 {
+	LastFrameSpawnedCount = 0;
+	LastFrameKilledCount = 0;
+
 	if (!RefreshCurrentRuntimeCache() || CurrentLODLevel == nullptr || CurrentRuntimeCache == nullptr || !CurrentLODLevel->bEnabled)
 	{
 		return;
