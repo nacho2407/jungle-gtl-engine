@@ -556,8 +556,23 @@ namespace
 		}
 	}
 
-	ImU32 GetModuleRowBackgroundColor(const UParticleModule* Module, bool bSelected)
+	bool IsBeamOnlyModule(const UParticleModule* Module)
 	{
+		return Cast<UParticleModuleBeamSource>(Module)
+			|| Cast<UParticleModuleBeamNoise>(Module)
+			|| Cast<UParticleModuleBeamTarget>(Module);
+	}
+
+	ImU32 GetModuleRowBackgroundColor(const UParticleModule* Module, bool bSelected, bool bUnsupportedBeamModule = false)
+	{
+		if (bUnsupportedBeamModule)
+		{
+			return bSelected ? IM_COL32(190, 16, 22, 255) : IM_COL32(132, 0, 8, 255);
+		}
+		if (IsBeamOnlyModule(Module))
+		{
+			return bSelected ? IM_COL32(170, 154, 228, 255) : IM_COL32(151, 135, 210, 255);
+		}
 		if (Cast<UParticleModuleRequired>(Module))
 		{
 			return bSelected ? IM_COL32(205, 205, 112, 255) : IM_COL32(188, 190, 88, 255);
@@ -603,6 +618,28 @@ namespace
 		DrawList->PopClipRect();
 	}
 
+	void DrawUnsupportedBeamModuleRowOverlay(ImDrawList* DrawList, const ImVec2& Pos, float Width)
+	{
+		const ImVec2 Max(Pos.x + Width, Pos.y + ModuleRowHeight);
+		DrawList->PushClipRect(Pos, Max, true);
+
+		const ImU32 ShadowColor = IM_COL32(18, 0, 0, 210);
+		const ImU32 MarkColor = IM_COL32(245, 20, 28, 190);
+		for (float X = Pos.x - ModuleRowHeight; X < Pos.x + Width; X += 42.0f)
+		{
+			const ImVec2 A(X, Pos.y + 2.0f);
+			const ImVec2 B(X + ModuleRowHeight * 1.7f, Pos.y + ModuleRowHeight - 2.0f);
+			const ImVec2 C(X, Pos.y + ModuleRowHeight - 2.0f);
+			const ImVec2 D(X + ModuleRowHeight * 1.7f, Pos.y + 2.0f);
+			DrawList->AddLine(A, B, ShadowColor, 4.0f);
+			DrawList->AddLine(C, D, ShadowColor, 4.0f);
+			DrawList->AddLine(A, B, MarkColor, 1.4f);
+			DrawList->AddLine(C, D, MarkColor, 1.4f);
+		}
+
+		DrawList->PopClipRect();
+	}
+
 	bool IsModuleEnableToggleAllowed(const UParticleModule* Module)
 	{
 		return Module
@@ -610,7 +647,7 @@ namespace
 			&& !Cast<UParticleModuleTypeDataBase>(Module);
 	}
 
-	void DrawModuleRow(const char* Label, bool bSelected, const UParticleModule* Module, bool bDirectEditLocked = false)
+	void DrawModuleRow(const char* Label, bool bSelected, const UParticleModule* Module, bool bDirectEditLocked = false, bool bUnsupportedBeamModule = false)
 	{
 		const ImVec2 Pos = ImGui::GetCursorScreenPos();
 		const float Width = ImGui::GetContentRegionAvail().x;
@@ -621,7 +658,7 @@ namespace
 		const bool bHasCurveIcon = HasModuleCurveDistribution(Module);
 		const bool bHasCheckSlot = IsModuleEnableToggleAllowed(Module);
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-		const ImU32 BackgroundColor = GetModuleRowBackgroundColor(Module, bSelected);
+		const ImU32 BackgroundColor = GetModuleRowBackgroundColor(Module, bSelected, bUnsupportedBeamModule);
 		const ImU32 TextColor = GetModuleRowTextColor(Module, bDirectEditLocked);
 		DrawList->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + ModuleRowHeight), BackgroundColor);
 		auto DrawEnabledCheck = [&]()
@@ -658,12 +695,20 @@ namespace
 		if (bDirectEditLocked)
 		{
 			DrawLockedModuleRowOverlay(DrawList, Pos, Width);
+			if (bUnsupportedBeamModule)
+			{
+				DrawUnsupportedBeamModuleRowOverlay(DrawList, Pos, Width);
+			}
 			const ImVec2 TextPos(Pos.x + 8.0f, Pos.y + 4.0f);
 			DrawList->AddText(ImVec2(TextPos.x + 1.0f, TextPos.y + 1.0f), IM_COL32(0, 0, 0, 220), Label);
 			DrawList->AddText(TextPos, TextColor, Label);
 			DrawEnabledCheck();
 			DrawCurveButton();
 			return;
+		}
+		if (bUnsupportedBeamModule)
+		{
+			DrawUnsupportedBeamModuleRowOverlay(DrawList, Pos, Width);
 		}
 		DrawList->AddText(ImVec2(Pos.x + 8.0f, Pos.y + 4.0f), TextColor, Label);
 		DrawEnabledCheck();
@@ -773,9 +818,9 @@ namespace
 		}
 	}
 
-	bool SelectableModuleRow(const char* Label, bool bSelected, const UParticleModule* Module = nullptr, bool bDirectEditLocked = false)
+	bool SelectableModuleRow(const char* Label, bool bSelected, const UParticleModule* Module = nullptr, bool bDirectEditLocked = false, bool bUnsupportedBeamModule = false)
 	{
-		DrawModuleRow(Label, bSelected, Module, bDirectEditLocked);
+		DrawModuleRow(Label, bSelected, Module, bDirectEditLocked, bUnsupportedBeamModule);
 		return ImGui::InvisibleButton("##ModuleRow", ImVec2(ImGui::GetContentRegionAvail().x, ModuleRowHeight));
 	}
 
@@ -797,7 +842,8 @@ namespace
 		int32 TargetEmitterIndex,
 		int32 TargetLODIndex,
 		int32 InsertBeforeIndex,
-		int32 InsertAfterIndex)
+		int32 InsertAfterIndex,
+		bool bUnsupportedBeamModule = false)
 	{
 		FModuleRowAction Action;
 
@@ -809,7 +855,7 @@ namespace
 		const bool bCanUseCurveButton = HasModuleCurveDistribution(Module) && !bDirectEditLocked;
 		const bool bReserveCurveSlot = IsModuleEnableToggleAllowed(Module);
 
-		DrawModuleRow(Label, bSelected, Module, bDirectEditLocked);
+		DrawModuleRow(Label, bSelected, Module, bDirectEditLocked, bUnsupportedBeamModule);
 		float SelectWidth = Width;
 		if (bCanUseCurveButton)
 		{
@@ -2842,7 +2888,8 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			}
 			RenderUnavailableCategory("Attraction");
 
-			if (ImGui::BeginMenu("Beam"))
+			const bool bCurrentTypeDataIsBeam = Cast<UParticleModuleTypeDataBeam>(LODLevel ? LODLevel->ResolveTypeDataModule(Emitter) : nullptr) != nullptr;
+			if (bCurrentTypeDataIsBeam && ImGui::BeginMenu("Beam"))
 			{
 				if (ImGui::MenuItem("Beam Source"))
 				{
@@ -3365,6 +3412,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				FParticleModuleDropRequest DropRequest;
 				TArray<UParticleModule*>& Modules = LODLevel->GetMutableModules();
 				const UParticleModuleTypeDataBase* TypeDataModule = LODLevel->ResolveTypeDataModule(Emitter);
+				const bool bCurrentTypeDataIsBeam = Cast<UParticleModuleTypeDataBeam>(TypeDataModule) != nullptr;
 				const char* TypeDataLabel = TypeDataModule ? GetTypeDataDisplayName(TypeDataModule) : GetRenderTypeLabel(RenderType);
 				if (TypeDataModule)
 				{
@@ -3448,6 +3496,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 						&& (ModuleEditState == EParticleModuleEditState::InheritedLocked || ModuleEditState == EParticleModuleEditState::Shared);
 					const bool bHasHigherModule = DisplayLODIndex > 0 && GetModuleFromLOD(DisplayLODIndex - 1, ModuleIndex) != nullptr;
 					const bool bHasHighestModule = DisplayLODIndex > 0 && GetModuleFromLOD(0, ModuleIndex) != nullptr;
+					const bool bUnsupportedBeamModule = IsBeamOnlyModule(Module) && !bCurrentTypeDataIsBeam;
 					const bool bDeleteLocked = IsModuleDeleteLocked(Module);
 					const bool bOrderLocked = IsModuleOrderLocked(Module);
 					ImGui::PushID(ModuleIndex);
@@ -3465,7 +3514,8 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 						EmitterIndex,
 						DisplayLODIndex,
 						ModuleIndex,
-						ModuleIndex + 1);
+						ModuleIndex + 1,
+						bUnsupportedBeamModule);
 					if (Action.bSelect)
 					{
 						SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);

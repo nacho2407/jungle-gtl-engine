@@ -409,6 +409,16 @@ UParticleModuleSpawn* FParticleEmitterInstance::GetSpawnModule() const
 
 }
 
+namespace
+{
+	bool IsBeamOnlyModule(const UParticleModule* Module)
+	{
+		return Cast<UParticleModuleBeamSource>(Module)
+			|| Cast<UParticleModuleBeamNoise>(Module)
+			|| Cast<UParticleModuleBeamTarget>(Module);
+	}
+}
+
 bool FParticleEmitterInstance::CanUseLODLevel(const UParticleLODLevel* LODLevel) const
 {
 	if (!LODLevel)
@@ -481,7 +491,9 @@ void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float Sp
 		return;
 	}
 
-	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->ResolveTypeDataModule(SpriteTemplate))
+	UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->ResolveTypeDataModule(SpriteTemplate);
+	const bool bCurrentTypeDataIsBeam = Cast<UParticleModuleTypeDataBeam>(TypeDataModule) != nullptr;
+	if (TypeDataModule)
 	{
 		if (TypeDataModule->IsSpawnModule())
 		{
@@ -493,6 +505,10 @@ void FParticleEmitterInstance::RunSpawnModules(FBaseParticle& Particle, float Sp
 	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 	{
 		UParticleModule* Module = CurrentLODLevel->ResolveModule(ModuleIndex, SpriteTemplate);
+		if (IsBeamOnlyModule(Module) && !bCurrentTypeDataIsBeam)
+		{
+			continue;
+		}
 		if (Module && Module->IsEnabled() && Module->IsSpawnModule())
 		{
 			Module->Spawn(this, PayloadOffset, SpawnTime, Particle);
@@ -507,7 +523,9 @@ void FParticleEmitterInstance::RunUpdateModules(float DeltaTime)
 		return;
 	}
 
-	if (UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->ResolveTypeDataModule(SpriteTemplate))
+	UParticleModuleTypeDataBase* TypeDataModule = CurrentLODLevel->ResolveTypeDataModule(SpriteTemplate);
+	const bool bCurrentTypeDataIsBeam = Cast<UParticleModuleTypeDataBeam>(TypeDataModule) != nullptr;
+	if (TypeDataModule)
 	{
 		if (TypeDataModule->IsUpdateModule())
 		{
@@ -519,6 +537,10 @@ void FParticleEmitterInstance::RunUpdateModules(float DeltaTime)
 	for (int32 ModuleIndex = 0; ModuleIndex < static_cast<int32>(Modules.size()); ++ModuleIndex)
 	{
 		UParticleModule* Module = CurrentLODLevel->ResolveModule(ModuleIndex, SpriteTemplate);
+		if (IsBeamOnlyModule(Module) && !bCurrentTypeDataIsBeam)
+		{
+			continue;
+		}
 		if (Module && Module->IsEnabled() && Module->IsUpdateModule())
 		{
 			Module->Update(this, PayloadOffset, DeltaTime);
