@@ -1239,6 +1239,34 @@ namespace
 		return DuplicatedLODLevel;
 	}
 
+	UParticleLODLevel* CreateSharedParticleLODLevel(UParticleLODLevel* SourceLODLevel, const UParticleEmitter* Emitter)
+	{
+		if (!SourceLODLevel)
+		{
+			return CreateEditorDefaultLODLevel(Emitter);
+		}
+
+		UParticleLODLevel* SharedLODLevel = UObjectManager::Get().CreateObject<UParticleLODLevel>();
+		if (!SharedLODLevel)
+		{
+			return nullptr;
+		}
+
+		SharedLODLevel->SetEnabled(SourceLODLevel->IsEnabled());
+		SharedLODLevel->SetTypeDataModule(SourceLODLevel->ResolveTypeDataModule(Emitter));
+		SharedLODLevel->SetTypeDataEditState(EParticleModuleEditState::Shared);
+
+		TArray<UParticleModule*>& Modules = SharedLODLevel->GetMutableModules();
+		const int32 ModuleCount = static_cast<int32>(SourceLODLevel->GetModules().size());
+		Modules.reserve(ModuleCount);
+		for (int32 ModuleIndex = 0; ModuleIndex < ModuleCount; ++ModuleIndex)
+		{
+			Modules.push_back(SourceLODLevel->ResolveModule(ModuleIndex, Emitter));
+		}
+		SharedLODLevel->SetAllModuleEditStates(EParticleModuleEditState::Shared);
+		return SharedLODLevel;
+	}
+
 	int32 ClampSystemLODIndex(const UParticleSystem* ParticleSystem, int32 LODIndex)
 	{
 		const int32 LODCount = ParticleSystem ? ParticleSystem->GetLODCount() : 0;
@@ -1727,7 +1755,9 @@ bool FParticleSystemEditorWidget::AddLODToSystem(bool bInsertAfterCurrent)
 
 		TArray<UParticleLODLevel*>& LODLevels = Emitter->GetMutableLODLevels();
 		UParticleLODLevel* SourceLODLevel = LODLevels.empty() ? nullptr : Emitter->GetLODLevel((std::min)(CurrentLODIndex, static_cast<int32>(LODLevels.size()) - 1));
-		UParticleLODLevel* NewLODLevel = DuplicateParticleLODLevel(SourceLODLevel, Emitter);
+		UParticleLODLevel* NewLODLevel = InsertIndex == 0
+			? DuplicateParticleLODLevel(SourceLODLevel, Emitter)
+			: CreateSharedParticleLODLevel(SourceLODLevel, Emitter);
 		if (!NewLODLevel)
 		{
 			continue;
@@ -1735,8 +1765,8 @@ bool FParticleSystemEditorWidget::AddLODToSystem(bool bInsertAfterCurrent)
 
 		NewLODLevel->SetLevel(InsertIndex);
 		NewLODLevel->SetEnabled(true);
-		NewLODLevel->SetAllModuleEditStates(InsertIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
-		NewLODLevel->SetTypeDataEditState(InsertIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::InheritedLocked);
+		NewLODLevel->SetAllModuleEditStates(InsertIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::Shared);
+		NewLODLevel->SetTypeDataEditState(InsertIndex == 0 ? EParticleModuleEditState::Duplicated : EParticleModuleEditState::Shared);
 		const int32 EmitterInsertIndex = (std::max)(0, (std::min)(InsertIndex, static_cast<int32>(LODLevels.size())));
 		LODLevels.insert(LODLevels.begin() + EmitterInsertIndex, NewLODLevel);
 	}
@@ -3123,20 +3153,16 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 			if (NewEditState == EParticleModuleEditState::Shared)
 			{
-				if (!OldModule || OldModule == SourceModule)
-				{
-					UParticleModule* LocalPlaceholder = DuplicateParticleModule(SourceModule);
-					if (!LocalPlaceholder)
-					{
-						return false;
-					}
-
-					TargetModules[ModuleIndex] = LocalPlaceholder;
-				}
+				TargetModules[ModuleIndex] = SourceModule;
 
 				if (ModuleIndex >= 0 && ModuleIndex < static_cast<int32>(ModuleEditStates.size()))
 				{
 					ModuleEditStates[ModuleIndex] = EParticleModuleEditState::Shared;
+				}
+
+				if (OldModule && OldModule != SourceModule && OldEditState == EParticleModuleEditState::Duplicated)
+				{
+					UObjectManager::Get().DestroyObject(OldModule);
 				}
 
 				SelectModule(EmitterIndex, DisplayLODIndex, ModuleIndex);
@@ -3158,8 +3184,8 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				ModuleEditStates[ModuleIndex] = NewEditState;
 			}
 
-			const bool bOldModuleWasSharedSource = OldEditState == EParticleModuleEditState::Shared && OldModule == SourceModule;
-			if (OldModule && OldModule != ReplacementModule && !bOldModuleWasSharedSource)
+			const bool bOldModuleWasNonOwnedSource = OldEditState != EParticleModuleEditState::Duplicated && OldModule == SourceModule;
+			if (OldModule && OldModule != ReplacementModule && !bOldModuleWasNonOwnedSource)
 			{
 				UObjectManager::Get().DestroyObject(OldModule);
 			}
@@ -3200,18 +3226,12 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 
 			if (NewEditState == EParticleModuleEditState::Shared)
 			{
-				if (!OldTypeData || OldTypeData == SourceTypeData)
-				{
-					UParticleModuleTypeDataBase* LocalPlaceholder = DuplicateTypeDataModule(SourceTypeData);
-					if (!LocalPlaceholder)
-					{
-						return false;
-					}
-					LODLevel->SetTypeDataModule(LocalPlaceholder);
-					OldTypeData = nullptr;
-				}
-
+				LODLevel->SetTypeDataModule(SourceTypeData);
 				LODLevel->SetTypeDataEditState(EParticleModuleEditState::Shared);
+				if (OldTypeData && OldTypeData != SourceTypeData && OldEditState == EParticleModuleEditState::Duplicated)
+				{
+					UObjectManager::Get().DestroyObject(OldTypeData);
+				}
 				SelectModule(EmitterIndex, DisplayLODIndex, TypeDataModuleIndex);
 				ApplyEditedObjectSideEffects(SourceTypeData);
 				MarkDirty();
@@ -3228,8 +3248,8 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 			LODLevel->SetTypeDataModule(ReplacementTypeData);
 			LODLevel->SetTypeDataEditState(NewEditState);
 
-			const bool bOldTypeDataWasSharedSource = OldEditState == EParticleModuleEditState::Shared && OldTypeData == SourceTypeData;
-			if (OldTypeData && OldTypeData != ReplacementTypeData && !bOldTypeDataWasSharedSource)
+			const bool bOldTypeDataWasNonOwnedSource = OldEditState != EParticleModuleEditState::Duplicated && OldTypeData == SourceTypeData;
+			if (OldTypeData && OldTypeData != ReplacementTypeData && !bOldTypeDataWasNonOwnedSource)
 			{
 				UObjectManager::Get().DestroyObject(OldTypeData);
 			}
