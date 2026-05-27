@@ -188,6 +188,64 @@ namespace
 		}
 	}
 
+	/**
+	 * @brief Beam endpoint module cache 갱신
+	 */
+	void CacheBeamEndpointModule(FParticleLODLevelRuntimeCache& Cache, UParticleModule* Module)
+	{
+		// disabled module은 현재 LOD에서 없는 설정으로 취급
+		if (Module == nullptr || !Module->bEnabled)
+		{
+			return;
+		}
+
+		// Source endpoint 설정 module cache
+		if (UParticleModuleBeamSource* BeamSource = Cast<UParticleModuleBeamSource>(Module))
+		{
+			Cache.BeamSourceModule = BeamSource;
+			return;
+		}
+
+		// Target endpoint 설정 module cache
+		if (UParticleModuleBeamTarget* BeamTarget = Cast<UParticleModuleBeamTarget>(Module))
+		{
+			Cache.BeamTargetModule = BeamTarget;
+			return;
+		}
+	}
+
+	/**
+	 * @brief Beam TypeData 기본 endpoint 계산
+	 */
+	void ResolveBeamDefaultEndpoints(
+		const UParticleModuleTypeDataBeam& TypeData,
+		const FParticleLODLevelRuntimeCache& Cache,
+		FVector& OutSource,
+		FVector& OutTarget)
+	{
+		// 현재 LOD에서 활성화된 Beam Source / Target Module 조회
+		const UParticleModuleBeamSource* BeamSource = Cache.BeamSourceModule;
+		const UParticleModuleBeamTarget* BeamTarget = Cache.BeamTargetModule;
+
+		// Source Module이 없으면 component origin 기준 fallback
+		OutSource = BeamSource != nullptr
+			? BeamSource->Source
+			: FVector::ZeroVector;
+
+		// Distance는 target module 여부와 무관하게 source + local X distance
+		const float SafeDistance = std::max(TypeData.Distance, 0.0f);
+		if (TypeData.BeamMethod == EParticleBeamMethod::Distance)
+		{
+			OutTarget = OutSource + FVector(SafeDistance, 0.0f, 0.0f);
+			return;
+		}
+
+		// Target은 Target Module fallback을 우선 사용하고, 없으면 Distance fallback으로 유지
+		OutTarget = BeamTarget != nullptr
+			? BeamTarget->Target
+			: OutSource + FVector(SafeDistance, 0.0f, 0.0f);
+	}
+
 	FParticleLODLevelRuntimeCache BuildStableLOD0RuntimeCache(const UParticleLODLevel* LODLevel)
 	{
 		FParticleLODLevelRuntimeCache Cache;
@@ -280,6 +338,7 @@ namespace
 			UParticleModule* Module = LODLevel->Modules[static_cast<size_t>(ModuleIndex)];
 			UParticleModule* LayoutModule = LayoutLODLevel->Modules[static_cast<size_t>(ModuleIndex)];
 			CopyStablePayloadOffsets(Cache, Module, LayoutModule, StableLayoutCache);
+			CacheBeamEndpointModule(Cache, Module);
 
 			// 특수 module 실행 목록 제외
 			if (Module == nullptr ||
@@ -1932,7 +1991,10 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBeam::GetDynamicRenderData(FPart
 		: EParticleCoordinateSpace::Local;
 	RenderData->ReplayData.Scale = FVector::OneVector;
 
-	// Beam TypeData property snapshot
+	// Beam TypeData / Source / Target Module 기반 endpoint snapshot
+	FVector SourcePoint = FVector::ZeroVector;
+	FVector TargetPoint = FVector(100.0f, 0.0f, 0.0f);
+	ResolveBeamDefaultEndpoints(*this, *InEmitterInstance->CurrentRuntimeCache, SourcePoint, TargetPoint);
 	RenderData->ReplayData.SourcePoint = SourcePoint;
 	RenderData->ReplayData.TargetPoint = TargetPoint;
 	RenderData->ReplayData.BeamWidth = std::max(BeamWidth, 0.1f);

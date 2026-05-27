@@ -536,7 +536,109 @@ public:
 };
 
 /**
- * @brief Source / Target 기반 최소 Beam TypeData module
+ * @brief Beam source endpoint 설정 module
+ *
+ * @details Beam TypeData가 Target method를 사용할 때 source endpoint와 source tangent를 해석하기 위한 설정입니다.
+ */
+UCLASS(Placeable, DisplayName = "Beam Source", Category = "Beam", CategoryName = "Beam")
+class UParticleModuleBeamSource : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleBeamSource, UParticleModule)
+
+	/**
+	 * @brief Source endpoint 해석 방식
+	 */
+	UPROPERTY(DisplayName = "Source Method")
+	EParticleBeamEndpointMethod SourceMethod = EParticleBeamEndpointMethod::Default;
+
+	/**
+	 * @brief PSC Instance Parameter 조회 이름
+	 */
+	UPROPERTY(DisplayName = "Source Name")
+	FString SourceName = "BeamSource";
+
+	/**
+	 * @brief Source fallback 위치
+	 *
+	 * @details Default method에서 직접 사용하며, Instance Parameter resolve 실패 시 fallback으로 사용합니다.
+	 */
+	UPROPERTY(DisplayName = "Fallback Source")
+	FVector Source = FVector::ZeroVector;
+
+	/**
+	 * @brief Source tangent 입력 방식
+	 */
+	UPROPERTY(DisplayName = "Tangent Mode")
+	EParticleBeamTangentMode TangentMode = EParticleBeamTangentMode::Auto;
+
+	/**
+	 * @brief Source tangent fallback 값
+	 */
+	UPROPERTY(DisplayName = "Source Tangent")
+	FVector SourceTangent = FVector(1.0f, 0.0f, 0.0f);
+
+	/**
+	 * @brief Source tangent 길이 배율
+	 */
+	UPROPERTY(DisplayName = "Source Tangent Strength", Min = 0.0f, Speed = 0.1f)
+	float SourceTangentStrength = 1.0f;
+};
+
+/**
+ * @brief Beam target endpoint 설정 module
+ *
+ * @details Beam TypeData가 Target method를 사용할 때 target endpoint와 target tangent를 해석하기 위한 설정입니다.
+ */
+UCLASS(Placeable, DisplayName = "Beam Target", Category = "Beam", CategoryName = "Beam")
+class UParticleModuleBeamTarget : public UParticleModule
+{
+public:
+	GENERATED_BODY(UParticleModuleBeamTarget, UParticleModule)
+
+	/**
+	 * @brief Target endpoint 해석 방식
+	 */
+	UPROPERTY(DisplayName = "Target Method")
+	EParticleBeamEndpointMethod TargetMethod = EParticleBeamEndpointMethod::Default;
+
+	/**
+	 * @brief PSC Instance Parameter 조회 이름
+	 */
+	UPROPERTY(DisplayName = "Target Name")
+	FString TargetName = "BeamTarget";
+
+	/**
+	 * @brief Target fallback 위치
+	 *
+	 * @details Default method에서 직접 사용하며, Instance Parameter resolve 실패 시 fallback으로 사용합니다.
+	 */
+	UPROPERTY(DisplayName = "Fallback Target")
+	FVector Target = FVector(100.0f, 0.0f, 0.0f);
+
+	/**
+	 * @brief Target tangent 입력 방식
+	 */
+	UPROPERTY(DisplayName = "Tangent Mode")
+	EParticleBeamTangentMode TangentMode = EParticleBeamTangentMode::Auto;
+
+	/**
+	 * @brief Target tangent fallback 값
+	 */
+	UPROPERTY(DisplayName = "Target Tangent")
+	FVector TargetTangent = FVector(1.0f, 0.0f, 0.0f);
+
+	/**
+	 * @brief Target tangent 길이 배율
+	 */
+	UPROPERTY(DisplayName = "Target Tangent Strength", Min = 0.0f, Speed = 0.1f)
+	float TargetTangentStrength = 1.0f;
+};
+
+/**
+ * @brief Beam 공통 경로 및 품질 설정 TypeData module
+ *
+ * @details Beam의 method, 거리, 두께, 보간, noise 같은 공통 렌더 설정을 보관합니다.
  */
 UCLASS(Placeable, DisplayName = "Beam Type Data", Category = "Type Data")
 class UParticleModuleTypeDataBeam : public UParticleModuleTypeDataBase
@@ -567,20 +669,16 @@ public:
 	FDynamicEmitterDataBase* GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance) override;
 
 	/**
-	 * @brief Beam 시작점
-	 *
-	 * @details RequiredModule의 CoordinateSpace 정책을 그대로 따릅니다.
+	 * @brief Beam endpoint 생성 방식
 	 */
-	UPROPERTY(DisplayName = "Source Point")
-	FVector SourcePoint = FVector::ZeroVector;
+	UPROPERTY(DisplayName = "Beam Method")
+	EParticleBeamMethod BeamMethod = EParticleBeamMethod::Target;
 
 	/**
-	 * @brief Beam 끝점
-	 *
-	 * @details RequiredModule의 CoordinateSpace 정책을 그대로 따릅니다.
+	 * @brief Distance method target 생성 거리
 	 */
-	UPROPERTY(DisplayName = "Target Point")
-	FVector TargetPoint = FVector(100.0f, 0.0f, 0.0f);
+	UPROPERTY(DisplayName = "Distance", Min = 0.0f, Speed = 10.0f)
+	float Distance = 100.0f;
 
 	/**
 	 * @brief Beam quad 기본 두께
@@ -589,4 +687,40 @@ public:
 	 */
 	UPROPERTY(DisplayName = "Beam Width", Min = 0.1f, Speed = 1.0f)
 	float BeamWidth = 10.0f;
+
+	/**
+	 * @brief Source와 target 사이의 중간 sampling point 개수
+	 */
+	UPROPERTY(DisplayName = "Interpolation Points", Min = 0.0f, Max = 64.0f, Speed = 1.0f)
+	int32 InterpolationPoints = 0;
+
+	/**
+	 * @brief Beam noise 활성화 여부
+	 */
+	UPROPERTY(DisplayName = "Noise Enabled")
+	bool bNoiseEnabled = false;
+
+	/**
+	 * @brief Beam noise 최소 분할 빈도
+	 */
+	UPROPERTY(DisplayName = "Noise Frequency", Min = 0.0f, Max = 64.0f, Speed = 1.0f)
+	int32 NoiseFrequency = 0;
+
+	/**
+	 * @brief Beam noise 위치 offset 범위
+	 */
+	UPROPERTY(DisplayName = "Noise Range", Min = 0.0f, Speed = 1.0f)
+	float NoiseRange = 0.0f;
+
+	/**
+	 * @brief Beam noise 시간 변화 속도
+	 */
+	UPROPERTY(DisplayName = "Noise Speed", Min = 0.0f, Speed = 0.1f)
+	float NoiseSpeed = 0.0f;
+
+	/**
+	 * @brief Beam noise deterministic seed 값
+	 */
+	UPROPERTY(DisplayName = "Noise Seed")
+	int32 NoiseSeed = 1337;
 };

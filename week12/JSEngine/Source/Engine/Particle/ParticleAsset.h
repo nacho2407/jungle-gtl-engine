@@ -18,6 +18,8 @@ struct FParticleLODLevelRuntimeCache
 	UParticleModuleRequired* RequiredModule = nullptr;
 	UParticleModuleSpawn* SpawnModule = nullptr;
 	UParticleModuleTypeDataBase* TypeDataModule = nullptr;
+	UParticleModuleBeamSource* BeamSourceModule = nullptr;
+	UParticleModuleBeamTarget* BeamTargetModule = nullptr;
 
 	TArray<UParticleModule*> SpawnModules;
 	TArray<UParticleModule*> UpdateModules;

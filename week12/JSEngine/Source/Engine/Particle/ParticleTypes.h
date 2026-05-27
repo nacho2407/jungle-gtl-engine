@@ -33,6 +33,44 @@ enum class EDynamicEmitterType
 	Ribbon,
 };
 
+/**
+ * @brief Beam endpoint 생성 방식
+ *
+ * @details Distance는 source에서 거리 기반 target을 만들고, Target은 source / target endpoint를 각각 해석합니다.
+ */
+UENUM()
+enum class EParticleBeamMethod
+{
+	Distance UMETA(DisplayName = "Distance"),
+	Target UMETA(DisplayName = "Target"),
+};
+
+/**
+ * @brief Beam endpoint 해석 방식
+ *
+ * @details Default는 module fallback 값을 사용하고, 나머지 값은 PSC Instance Parameter를 통해 해석합니다.
+ */
+UENUM()
+enum class EParticleBeamEndpointMethod
+{
+	Default UMETA(DisplayName = "Default"),
+	UserSet UMETA(DisplayName = "User Set"),
+	Actor UMETA(DisplayName = "Actor"),
+	Component UMETA(DisplayName = "Component"),
+};
+
+/**
+ * @brief Beam tangent 입력 방식
+ *
+ * @details Auto는 source-target 방향 기반 자동 tangent를 사용하고, User는 module에 입력된 tangent를 사용합니다.
+ */
+UENUM()
+enum class EParticleBeamTangentMode
+{
+	Auto UMETA(DisplayName = "Auto"),
+	User UMETA(DisplayName = "User"),
+};
+
 UENUM()
 enum class EParticleFlags : uint32
 {
