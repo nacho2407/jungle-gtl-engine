@@ -253,14 +253,14 @@
           "ObjectName" : "UParticleSystemComponent_1",
           "PersistentGuid" : "903E7E31-3F6D420A-A54F6EA0-5DAB4243",
           "RelativeLocation" : {
-            "X" : 13.566118,
-            "Y" : 14.087753,
-            "Z" : 334.627777
+            "X" : -13.551646,
+            "Y" : 3.860466,
+            "Z" : 1885.448242
           },
           "RelativeRotation" : {
-            "X" : 128.322433,
-            "Y" : -33.847626,
-            "Z" : 45.286472
+            "X" : -133.632263,
+            "Y" : 71.455009,
+            "Z" : -87.083954
           },
           "RelativeScale3D" : {
             "X" : 0.250042,
@@ -360,16 +360,111 @@
       "Tags" : [],
       "UUID" : 2015,
       "Visible" : true
+    }, {
+      "Active" : true,
+      "ClassName" : "ASkeletalMeshActor",
+      "Components" : [{
+          "AnimGraphAssetPath" : "",
+          "AnimInstanceData" : {
+            "AnimationAssetPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_Ahri_skin14_run_homeguard_VARIANT.anm.animseq",
+            "CurrentTime" : 2.913158,
+            "ObjectName" : "UAnimSingleNodeInstance_2",
+            "PlayRate" : 1.000000,
+            "Playing" : true,
+            "PreviousTime" : 2.910205,
+            "Type" : "UAnimSingleNodeInstance",
+            "bAutoPlay" : true,
+            "bLooping" : true
+          },
+          "AnimationAssetPath" : "Asset/Animation/Ahri_Skeleton_Skeleton_Skeleton_Ahri_skin14_run_homeguard_VARIANT.anm.animseq",
+          "AnimationMode" : 1,
+          "AttachSocketName" : "Name_None",
+          "ClassName" : "USkeletalMeshComponent",
+          "Materials" : ["Asset/Material/Auto/Ahri_Mat_0.mat", "Asset/Material/Auto/Ahri_Mat_1.mat", "Asset/Material/Auto/Ahri_Mat_2.mat"],
+          "ObjectName" : "USkeletalMeshComponent_1",
+          "PersistentGuid" : "5CA870F7-27FD4917-A1E2DEAB-D2A980C8",
+          "RelativeLocation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeRotation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 1.000000,
+            "Y" : 1.000000,
+            "Z" : 1.000000
+          },
+          "ScrollU" : 0.000000,
+          "ScrollV" : 0.000000,
+          "SkeletalMeshPath" : "Asset/SkeletalMesh/Bin/Ahri.bin",
+          "SkinningMode" : 1,
+          "Tags" : [],
+          "Type" : "USkeletalMeshComponent",
+          "UUID" : 2344,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : true,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }, {
+          "AttachSocketName" : "SocketTest",
+          "ClassName" : "UParticleSystemComponent",
+          "ObjectName" : "UParticleSystemComponent_1",
+          "ParentUUID" : 2344,
+          "PersistentGuid" : "1020A9C9-8B6F44B6-95E7631B-0F4BEAD7",
+          "RelativeLocation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeRotation" : {
+            "X" : 0.000000,
+            "Y" : 0.000000,
+            "Z" : 0.000000
+          },
+          "RelativeScale3D" : {
+            "X" : 1.000000,
+            "Y" : 1.000000,
+            "Z" : 1.000000
+          },
+          "Tags" : [],
+          "Template" : "Asset/Particle/mini.particle",
+          "Type" : "UParticleSystemComponent",
+          "UUID" : 2412,
+          "bAutoActivate" : true,
+          "bCanEverTick" : true,
+          "bCastDecal" : true,
+          "bEnableCull" : false,
+          "bGenerateOverlapEvents" : false,
+          "bIsActive" : true,
+          "bIsEditorOnly" : false,
+          "bIsVisible" : true,
+          "bTransient" : false
+        }],
+      "EditorOnly" : true,
+      "Name" : "ASkeletalMeshActor_2",
+      "RootComponent" : 2344,
+      "Tags" : [],
+      "UUID" : 2343,
+      "Visible" : true
     }],
   "ClassName" : "UWorld",
   "Name" : "Ahri30",
-  "NextUUID" : 2296,
+  "NextUUID" : 2502,
   "PerspectiveCamera" : {
     "FOV" : 60.000000,
     "FarClip" : 2000.000000,
-    "Location" : [-17.622513, 30.934505, 345.168640],
+    "Location" : [0.449099, 2.765596, 1.908566],
     "NearClip" : 0.100000,
-    "Rotation" : [22.892719, 17.040846, -55.239319]
+    "Rotation" : [11.011516, -0.667542, -93.426544]
   },
   "Version" : 6,
   "WorldSettings" : {
