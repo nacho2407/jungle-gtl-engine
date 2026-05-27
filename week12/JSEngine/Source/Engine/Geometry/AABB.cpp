@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <cmath>
 
 FAABB::FAABB()
 {
@@ -23,6 +24,30 @@ void FAABB::Reset()
 bool FAABB::IsValid() const
 {
 	return Min.X <= Max.X && Min.Y <= Max.Y && Min.Z <= Max.Z;
+}
+
+FAABB FAABB::ExpandedBy(float Radius) const
+{
+	// Sphere Sweep은 moving sphere 대신 moving center를 검사한다.
+	// target AABB를 radius만큼 키우면 center segment 하나로 broad phase를 통일할 수 있다.
+	const float SafeRadius = std::max(Radius, 0.0f);
+	return ExpandedBy(FVector(SafeRadius, SafeRadius, SafeRadius));
+}
+
+FAABB FAABB::ExpandedBy(const FVector& Extent) const
+{
+	if (!IsValid())
+	{
+		return FAABB();
+	}
+
+	// 음수 확장은 bounds를 줄여 버리므로 query 입력은 0 이상으로만 사용한다.
+	const FVector SafeExtent(
+		std::max(Extent.X, 0.0f),
+		std::max(Extent.Y, 0.0f),
+		std::max(Extent.Z, 0.0f));
+
+	return FAABB(Min - SafeExtent, Max + SafeExtent);
 }
 
 void FAABB::Expand(const FVector& Point)
@@ -143,6 +168,61 @@ bool FAABB::IntersectRay(const FRay& Ray, float& OutTMin, float& OutTMax) const
 	}
 
 	return OutTMax >= OutTMin && OutTMax >= 0.0f;
+}
+
+bool FAABB::IntersectSegment(const FVector& Start, const FVector& End, float& OutTEnter, float& OutTExit) const
+{
+	// Segment는 T = 0에서 Start, T = 1에서 End다.
+	// 처음부터 0~1로 제한해 두면 이동 구간 밖의 AABB는 후보로 들어오지 않는다.
+	OutTEnter = 0.0f;
+	OutTExit = 1.0f;
+
+	if (!IsValid())
+	{
+		return false;
+	}
+
+	const FVector Move = End - Start;
+
+	// Slab test다. 각 축에서 box 안에 있는 T 구간을 구한 뒤,
+	// 세 축 모두에서 동시에 살아 있는 구간이 남는지 확인한다.
+	for (int Axis = 0; Axis < 3; ++Axis)
+	{
+		const float Origin = Start[Axis];
+		const float Direction = Move[Axis];
+
+		if (std::fabs(Direction) < MathUtil::Epsilon)
+		{
+			// 이 축으로 움직이지 않으면 시작점이 slab 안에 있어야 끝까지 통과할 수 있다.
+			if (Origin < Min[Axis] || Origin > Max[Axis])
+			{
+				return false;
+			}
+			continue;
+		}
+
+		// AABB 범위 안에 들어갈 조건
+		// Min <= Start + Dir * t <= Max
+		const float InvDirection = 1.0f / Direction;
+		float T1 = (Min[Axis] - Origin) * InvDirection;
+		float T2 = (Max[Axis] - Origin) * InvDirection;
+
+		// Dir이 음수인 경우 고려
+		if (T1 > T2)
+		{
+			std::swap(T1, T2);
+		}
+
+		// 지금까지 검사한 축들이 모두 허용하는 공통 시간 구간만 남긴다.
+		OutTEnter = std::max(OutTEnter, T1);
+		OutTExit = std::min(OutTExit, T2);
+		if (OutTEnter > OutTExit)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 float FAABB::SquaredDistanceToPoint(const FVector& Point) const

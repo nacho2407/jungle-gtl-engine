@@ -904,6 +904,171 @@ void FBVH::SphereQuery(const TArray<FAABB>& ObjectBounds, const FVector& Center,
     }
 }
 
+void FBVH::InflatedSegmentQuery(const TArray<FAABB>& ObjectBounds, const FVector& Start, const FVector& End,
+                                const FVector& InflationExtent, TArray<int32>& OutIndices, TArray<float>* OutTEnters,
+                                FInflatedSegmentQueryScratch& Scratch) const
+{
+    // Line은 InflationExtent가 0이고, Sphere Sweep은 radius만큼 늘어난 AABB를 검사한다.
+    // tree bounds 자체를 늘리지 않고 이번 query에서만 확장해야 radius가 다른 particle도 같은 BVH를 쓸 수 있다.
+
+	// Query마다 결과 배열을 비운다
+	// Broad Phase 후보는 이번 Start -> End 이동에 대해서만 유효함
+    OutIndices.clear();
+    if (OutTEnters != nullptr)
+    {
+        OutTEnters->clear();
+    }
+
+	// BVH가 비어있으면 종료한다.
+    if (RootNodeIndex == INDEX_NONE)
+    {
+        return;
+    }
+
+    Scratch.NodeStack.clear();
+    Scratch.NodeStack.reserve(Nodes.size());
+
+    float RootTEnter = 0.0f;
+    float RootTExit = 1.0f;
+	// Root Bounds 부터 검사를 수행한다.
+    // Root가 이동 구간과 겹치지 않으면 아래 object는 전부 볼 필요가 없다.
+    if (!Nodes[RootNodeIndex].Bounds.ExpandedBy(InflationExtent).IntersectSegment(Start, End, RootTEnter, RootTExit))
+    {
+        return;
+    }
+	// stack에 node 사용 -> 런타임 query에서는 재귀 호출보다 명시적 stack이 관리하기 쉬움
+    Scratch.NodeStack.push_back({ RootNodeIndex, RootTEnter });
+
+	// stack하나씩 꺼내면서 검사
+    while (!Scratch.NodeStack.empty())
+    {
+        const FInflatedSegmentQueryScratch::FStackEntry Entry = Scratch.NodeStack.back();
+        Scratch.NodeStack.pop_back();
+
+        const FNode& Node = Nodes[Entry.NodeIndex];
+		// Node 가 Leaf -> 실제 Object 하나에 대응
+        if (Node.IsLeaf())
+        {
+            const int32 ObjectIndex = Node.ObjectIndex;
+			// Object Index 유효성 검사
+            if (ObjectIndex == INDEX_NONE || ObjectIndex < 0 ||
+                ObjectIndex >= static_cast<int32>(ObjectBounds.size()))
+            {
+                continue;
+            }
+
+			//  Leaf Object의 bound 다시 검사
+            float ObjectTEnter = 0.0f;
+            float ObjectTExit = 1.0f;
+            // Parent bounds를 통과했어도 leaf bounds는 빗나갈 수 있으므로 한 번 더 검사
+            if (ObjectBounds[ObjectIndex].ExpandedBy(InflationExtent).IntersectSegment(
+                    Start, End, ObjectTEnter, ObjectTExit))
+            {
+                // Broad phase는 후보만 만든다.
+                // 실제 충돌 위치와 normal은 Shape narrow phase에서 확정한다.
+                OutIndices.push_back(ObjectIndex);
+                if (OutTEnters != nullptr)
+                {
+                    OutTEnters->push_back(ObjectTEnter);
+                }
+            }
+            continue;
+        }
+
+		// --- Internal Node ---
+		// Left Node와 Right Node 검사
+        float LeftTEnter = 0.0f;
+        float LeftTExit = 1.0f;
+        float RightTEnter = 0.0f;
+        float RightTExit = 1.0f;
+
+		// Sphere 중심점이 radius만큼 커진 bounds를 통과하는지 검사
+        const bool bHitLeft = Node.Left != INDEX_NONE &&
+            Nodes[Node.Left].Bounds.ExpandedBy(InflationExtent).IntersectSegment(
+                Start, End, LeftTEnter, LeftTExit);
+        const bool bHitRight = Node.Right != INDEX_NONE &&
+            Nodes[Node.Right].Bounds.ExpandedBy(InflationExtent).IntersectSegment(
+                Start, End, RightTEnter, RightTExit);
+
+        // 가까운 node를 먼저 꺼내도록 먼 node를 stack에 먼저 넣는다.
+        // narrow phase가 첫 hit를 찾을 때 가까운 후보부터 받기 쉬워진다.
+        if (bHitLeft && bHitRight)
+        {
+            if (LeftTEnter < RightTEnter)
+            {
+                Scratch.NodeStack.push_back({ Node.Right, RightTEnter });
+                Scratch.NodeStack.push_back({ Node.Left, LeftTEnter });
+            }
+            else
+            {
+                Scratch.NodeStack.push_back({ Node.Left, LeftTEnter });
+                Scratch.NodeStack.push_back({ Node.Right, RightTEnter });
+            }
+        }
+        else if (bHitLeft)
+        {
+            Scratch.NodeStack.push_back({ Node.Left, LeftTEnter });
+        }
+        else if (bHitRight)
+        {
+            Scratch.NodeStack.push_back({ Node.Right, RightTEnter });
+        }
+    }
+
+    if (OutTEnters == nullptr || OutIndices.size() <= 1)
+    {
+        return;
+    }
+
+    const int32 HitCount = static_cast<int32>(OutIndices.size());
+    constexpr int32 InsertionSortThreshold = 32;
+    // 후보가 적으면 별도 배열을 만들지 않고 바로 정렬
+    if (HitCount <= InsertionSortThreshold)
+    {
+        for (int32 HitIndex = 1; HitIndex < HitCount; ++HitIndex)
+        {
+            const float KeyT = (*OutTEnters)[HitIndex];
+            const int32 KeyObjectIndex = OutIndices[HitIndex];
+            int32 InsertIndex = HitIndex - 1;
+            while (InsertIndex >= 0 && (*OutTEnters)[InsertIndex] > KeyT)
+            {
+                (*OutTEnters)[InsertIndex + 1] = (*OutTEnters)[InsertIndex];
+                OutIndices[InsertIndex + 1] = OutIndices[InsertIndex];
+                --InsertIndex;
+            }
+
+            (*OutTEnters)[InsertIndex + 1] = KeyT;
+            OutIndices[InsertIndex + 1] = KeyObjectIndex;
+        }
+        return;
+    }
+
+    Scratch.Order.resize(HitCount);
+    for (int32 HitIndex = 0; HitIndex < HitCount; ++HitIndex)
+    {
+        Scratch.Order[HitIndex] = HitIndex;
+    }
+
+    // 후보가 많을 때는 scratch permutation으로 object index와 T 배열의 정렬 순서를 함께 유지
+    std::sort(Scratch.Order.begin(), Scratch.Order.end(), [&](int32 A, int32 B)
+    {
+        return (*OutTEnters)[A] < (*OutTEnters)[B];
+    });
+
+    Scratch.SortedIndices.clear();
+    Scratch.SortedIndices.reserve(HitCount);
+    Scratch.SortedTs.clear();
+    Scratch.SortedTs.reserve(HitCount);
+    for (int32 OrderedIndex : Scratch.Order)
+    {
+        Scratch.SortedIndices.push_back(OutIndices[OrderedIndex]);
+        Scratch.SortedTs.push_back((*OutTEnters)[OrderedIndex]);
+    }
+
+    OutIndices.swap(Scratch.SortedIndices);
+    OutTEnters->swap(Scratch.SortedTs);
+}
+
 /**
  * @brief Return the closest leaf-AABB hit along the ray.
  * @param Ray Query ray.
