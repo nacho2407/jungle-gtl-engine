@@ -84,6 +84,13 @@ public:
 	int32 GetPhysicalIndexByActiveIndex(int32 ActiveIndex) const;
 
 	/**
+	 * @brief collision 발생 정보를 named event 생성 경로로 전달
+	 *
+	 * @param Event 기존 외부 collision payload와 동일한 발생 정보
+	 */
+	void ReportCollisionOccurrence(const FParticleEventCollideData& Event);
+
+	/**
 	 * @brief particle을 pending kill 상태로 표시
 	 * @note 실제 storage 제거는 tick 마지막 compact에서 수행
 	 */
@@ -144,6 +151,18 @@ private:
 		int32 Count,
 		float SegmentStartTime,
 		float SegmentDeltaTime);
+	/**
+	 * @brief normal spawn named event 생성
+	 */
+	void GenerateSpawnEvent(const FBaseParticle& Particle, int32 PhysicalIndex);
+	/**
+	 * @brief 최초 death named event 생성
+	 */
+	void GenerateDeathEvent(const FBaseParticle& Particle, int32 PhysicalIndex);
+	/**
+	 * @brief collision named event 생성
+	 */
+	void GenerateCollisionEvent(const FParticleEventCollideData& Event);
 	void MarkParticlePendingKill(int32 ActiveIndex);
 	void CompactPendingKilledParticles();
 	void AgeParticles(float DeltaTime);

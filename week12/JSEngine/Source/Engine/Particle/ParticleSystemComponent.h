@@ -50,6 +50,11 @@ public:
 	void ReportEventCollision(const FParticleEventCollideData& Event);
 
 	/**
+	 * @brief 내부 receiver 입력 event 저장
+	 */
+	void ReportParticleEvent(const FParticleEventPayload& Event);
+
+	/**
 	 * @brief particle 이동 구간을 world Shape query로 검사
 	 * @param CollisionShape line 또는 이동 sphere query 형상
 	 */
@@ -108,6 +113,7 @@ private:
 	TArray<FDynamicEmitterDataBase*> EmitterRenderData;
 
 	TArray<FParticleEventCollideData> CollisionEvents;
+	TArray<FParticleEventPayload> ParticleEvents;
 
 	AParticleEventManager* EventManager = nullptr;
 	UParticleSystem* ResolvedTemplate = nullptr;

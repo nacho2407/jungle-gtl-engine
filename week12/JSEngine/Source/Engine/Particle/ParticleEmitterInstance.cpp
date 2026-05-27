@@ -896,9 +896,82 @@ int32 FParticleEmitterInstance::SpawnParticles(
 		Particle.BaseColor = Particle.Color;
 
 		++ActiveParticles;
+		GenerateSpawnEvent(Particle, PhysicalIndex);
 	}
 
 	return SpawnCount;
+}
+
+void FParticleEmitterInstance::GenerateSpawnEvent(const FBaseParticle& Particle, int32 PhysicalIndex)
+{
+	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->EventGeneratorModule == nullptr)
+	{
+		return;
+	}
+
+	FParticleEventPayload Event;
+	Event.Type = EParticleEventType::Spawn;
+	Event.EmitterIndex = EmitterIndex;
+	Event.ParticleIndex = PhysicalIndex;
+	Event.ParticleId = Particle.SpawnId;
+	Event.RelativeTime = Particle.RelativeTime;
+	Event.LocationWS = TransformLocationToWorldSpace(Particle.Location);
+	Event.VelocityWS = TransformVelocityToWorldSpace(Particle.Velocity);
+	Event.DirectionWS = Event.VelocityWS.IsNearlyZero()
+		? FVector::ZeroVector
+		: Event.VelocityWS.GetSafeNormal();
+	CurrentRuntimeCache->EventGeneratorModule->GenerateEvents(Event, Owner);
+}
+
+void FParticleEmitterInstance::GenerateDeathEvent(const FBaseParticle& Particle, int32 PhysicalIndex)
+{
+	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->EventGeneratorModule == nullptr)
+	{
+		return;
+	}
+
+	FParticleEventPayload Event;
+	Event.Type = EParticleEventType::Death;
+	Event.EmitterIndex = EmitterIndex;
+	Event.ParticleIndex = PhysicalIndex;
+	Event.ParticleId = Particle.SpawnId;
+	Event.RelativeTime = Particle.RelativeTime;
+	Event.LocationWS = TransformLocationToWorldSpace(Particle.Location);
+	Event.VelocityWS = TransformVelocityToWorldSpace(Particle.Velocity);
+	Event.DirectionWS = Event.VelocityWS.IsNearlyZero()
+		? FVector::ZeroVector
+		: Event.VelocityWS.GetSafeNormal();
+	CurrentRuntimeCache->EventGeneratorModule->GenerateEvents(Event, Owner);
+}
+
+void FParticleEmitterInstance::GenerateCollisionEvent(const FParticleEventCollideData& Event)
+{
+	if (CurrentRuntimeCache == nullptr || CurrentRuntimeCache->EventGeneratorModule == nullptr)
+	{
+		return;
+	}
+
+	FParticleEventPayload Payload;
+	Payload.Type = EParticleEventType::Collision;
+	Payload.EmitterIndex = Event.EmitterIndex;
+	Payload.ParticleIndex = Event.ParticleIndex;
+	// ParticleId는 기존 collision delegate 호환 SpawnId와 동일 식별자
+	Payload.ParticleId = Event.SpawnId;
+	Payload.RelativeTime = Event.ParticleTime;
+	Payload.LocationWS = Event.Location;
+	Payload.VelocityWS = Event.Velocity;
+	Payload.DirectionWS = Event.Direction;
+	Payload.NormalWS = Event.Normal;
+	Payload.CollisionTime = Event.CollisionTime;
+	Payload.FaceIndex = Event.FaceIndex;
+	Payload.HitActor = Event.HitActor;
+	Payload.HitComponent = Event.HitComponent;
+	CurrentRuntimeCache->EventGeneratorModule->GenerateEvents(Payload, Owner);
+}
+
+void FParticleEmitterInstance::ReportCollisionOccurrence(const FParticleEventCollideData& Event)
+{
+	GenerateCollisionEvent(Event);
 }
 
 bool FParticleEmitterInstance::IsParticlePendingKill(const FBaseParticle& Particle) const
@@ -948,6 +1021,7 @@ void FParticleEmitterInstance::MarkParticlePendingKill(int32 ActiveIndex)
 	}
 
 	SetParticleFlag(Particle, EParticleFlags::PendingKill);
+	GenerateDeathEvent(Particle, static_cast<int32>(KilledPhysicalIndex));
 }
 
 void FParticleEmitterInstance::CompactPendingKilledParticles()

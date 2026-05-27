@@ -158,6 +158,14 @@ public:
 		}
 	}
 
+	void AddParticleEvent(const FParticleEventPayload& Event) override
+	{
+		if (Component != nullptr)
+		{
+			Component->ReportParticleEvent(Event);
+		}
+	}
+
 private:
 	UParticleSystemComponent* Component = nullptr;
 };
@@ -288,7 +296,7 @@ bool UParticleSystemComponent::ParticleLineCheck(
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
-	CollisionEvents.clear();
+	ParticleEvents.clear();
 
 	UpdateLODLevel();
 
@@ -348,6 +356,11 @@ void UParticleSystemComponent::FinalizeTickComponent()
 void UParticleSystemComponent::ReportEventCollision(const FParticleEventCollideData& Event)
 {
 	CollisionEvents.push_back(Event);
+}
+
+void UParticleSystemComponent::ReportParticleEvent(const FParticleEventPayload& Event)
+{
+	ParticleEvents.push_back(Event);
 }
 
 void UParticleSystemComponent::PackRenderData()
@@ -494,6 +507,8 @@ void UParticleSystemComponent::ResetParticles()
 
 void UParticleSystemComponent::ReleaseEmitterInstances()
 {
+	ParticleEvents.clear();
+
 	for (FParticleEmitterInstance* Instance : EmitterInstances)
 	{
 		delete Instance;

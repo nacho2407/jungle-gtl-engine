@@ -842,6 +842,24 @@ void UParticleModuleEventGenerator::ValidateConfiguredEvents() const
 	}
 }
 
+void UParticleModuleEventGenerator::GenerateEvents(
+	const FParticleEventPayload& Occurrence,
+	IParticleEmitterInstanceOwner& Owner) const
+{
+	for (int32 EventIndex = 0; EventIndex < static_cast<int32>(Events.size()); ++EventIndex)
+	{
+		const FParticleEventGenerateInfo& Info = Events[static_cast<size_t>(EventIndex)];
+		if (Info.Type != Occurrence.Type || !IsPrimaryEventEntry(EventIndex))
+		{
+			continue;
+		}
+
+		FParticleEventPayload Event = Occurrence;
+		Event.EventName = Info.EventName;
+		Owner.AddParticleEvent(Event);
+	}
+}
+
 UParticleModuleLifetime::UParticleModuleLifetime()
 {
 	Lifetime.Constant = 1.0f;
@@ -1410,21 +1428,7 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 			HitCenterWS + Hit.Normal * std::max(CollisionPushOut, 0.0f);
 		Particle.Location = Owner->TransformLocationToSimulationSpace(NewCenterWS);
 
-		++Payload->UsedCollisions;
-		if (Payload->UsedCollisions >= Payload->UsedMaxCollisions)
-		{
-			ApplyCollisionCompleteOption(Owner, ActiveIndex, Particle, *Payload);
-		}
-		else
-		{
-			const FVector ReflectedVelocityWS =
-				IncomingVelocityWS - Hit.Normal * (2.0f * FVector::DotProduct(IncomingVelocityWS, Hit.Normal));
-			const FVector DampenedVelocityWS = ReflectedVelocityWS * Payload->UsedDampingFactor;
-			Particle.Velocity = Owner->TransformVelocityToSimulationSpace(DampenedVelocityWS);
-			Particle.BaseVelocity = Particle.Velocity;
-		}
-
-		// Collision Event Data 생성
+		// 기존 외부 collision payload와 내부 occurrence의 공통 hit 정보
 		FParticleEventCollideData Event;
 		Event.EmitterIndex = Owner->GetEmitterIndex();
 		Event.ParticleIndex = Owner->GetPhysicalIndexByActiveIndex(ActiveIndex);
@@ -1439,6 +1443,21 @@ void UParticleModuleCollision::Update(FParticleEmitterInstance* Owner, int32 Off
 		Event.HitComponent = Hit.HitComponent;
 		Event.HitActor = Hit.HitComponent != nullptr ? Hit.HitComponent->GetOwner() : nullptr;
 		Owner->GetOwner().AddCollisionEvent(Event);
+		Owner->ReportCollisionOccurrence(Event);
+
+		++Payload->UsedCollisions;
+		if (Payload->UsedCollisions >= Payload->UsedMaxCollisions)
+		{
+			ApplyCollisionCompleteOption(Owner, ActiveIndex, Particle, *Payload);
+		}
+		else
+		{
+			const FVector ReflectedVelocityWS =
+				IncomingVelocityWS - Hit.Normal * (2.0f * FVector::DotProduct(IncomingVelocityWS, Hit.Normal));
+			const FVector DampenedVelocityWS = ReflectedVelocityWS * Payload->UsedDampingFactor;
+			Particle.Velocity = Owner->TransformVelocityToSimulationSpace(DampenedVelocityWS);
+			Particle.BaseVelocity = Particle.Velocity;
+		}
 	}
 }
 

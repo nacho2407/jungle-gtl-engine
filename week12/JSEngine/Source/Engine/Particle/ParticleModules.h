@@ -403,6 +403,15 @@ public:
 	 */
 	void ValidateConfiguredEvents() const;
 
+	/**
+	 * @brief occurrence와 일치하는 named event 저장
+	 *
+	 * @param Occurrence 이름 미지정 발생 payload
+	 */
+	void GenerateEvents(
+		const FParticleEventPayload& Occurrence,
+		IParticleEmitterInstanceOwner& Owner) const;
+
 	UPROPERTY(DisplayName = "Events")
 	TArray<FParticleEventGenerateInfo> Events;
 
