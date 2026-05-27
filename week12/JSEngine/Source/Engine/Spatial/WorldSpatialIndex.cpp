@@ -385,7 +385,7 @@ void FWorldSpatialIndex::LineQueryComponents(const FVector& Start, const FVector
 
     // Line은 두께가 없으므로 AABB를 늘리지 않고 segment 그대로 후보를 찾는다.
     Scratch.ObjectIndices.clear();
-    BVH.InflatedSegmentQuery(Bounds, Start, End, FVector::ZeroVector, Scratch.ObjectIndices, nullptr, Scratch.BVHScratch);
+    BVH.InflatedSegmentQuery(Bounds, Start, End, FVector::ZeroVector, Scratch.ObjectIndices, Scratch.BVHScratch);
 
     OutComponents.clear();
     OutComponents.reserve(Scratch.ObjectIndices.size());
@@ -400,7 +400,6 @@ void FWorldSpatialIndex::LineQueryComponents(const FVector& Start, const FVector
 
 void FWorldSpatialIndex::SweepSphereQueryComponents(const FVector& Start, const FVector& End, float Radius,
                                                     TArray<UPrimitiveComponent*>& OutComponents,
-                                                    TArray<float>* OutBroadPhaseT,
                                                     FPrimitiveInflatedSegmentQueryScratch& Scratch)
 {
     FlushDirtyBounds();
@@ -410,35 +409,23 @@ void FWorldSpatialIndex::SweepSphereQueryComponents(const FVector& Start, const 
     const FVector InflationExtent(SafeRadius, SafeRadius, SafeRadius);
 
     Scratch.ObjectIndices.clear();
-    Scratch.HitTs.clear();
     BVH.InflatedSegmentQuery(
         Bounds,
         Start,
         End,
         InflationExtent,
         Scratch.ObjectIndices,
-        OutBroadPhaseT != nullptr ? &Scratch.HitTs : nullptr,
         Scratch.BVHScratch);
 
     OutComponents.clear();
     OutComponents.reserve(Scratch.ObjectIndices.size());
-    if (OutBroadPhaseT != nullptr)
+    for (int32 ObjectIndex : Scratch.ObjectIndices)
     {
-        OutBroadPhaseT->clear();
-        OutBroadPhaseT->reserve(Scratch.HitTs.size());
-    }
-
-    for (int32 HitIndex = 0; HitIndex < static_cast<int32>(Scratch.ObjectIndices.size()); ++HitIndex)
-    {
-        if (UPrimitiveComponent* Primitive = Resolve(Scratch.ObjectIndices[HitIndex]))
+        if (UPrimitiveComponent* Primitive = Resolve(ObjectIndex))
         {
             // 여기서는 object index를 component로 되돌리기만 한다.
             // 실제 hit 여부와 normal은 World query의 Shape narrow phase가 정한다.
             OutComponents.push_back(Primitive);
-            if (OutBroadPhaseT != nullptr)
-            {
-                OutBroadPhaseT->push_back(Scratch.HitTs[HitIndex]);
-            }
         }
     }
 }

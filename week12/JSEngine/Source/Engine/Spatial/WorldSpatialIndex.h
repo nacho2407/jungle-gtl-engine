@@ -68,7 +68,6 @@ public:
     {
         FBVH::FInflatedSegmentQueryScratch BVHScratch;
         TArray<int32> ObjectIndices;
-        TArray<float> HitTs;
     };
 
     FWorldSpatialIndex() = default;
@@ -157,12 +156,11 @@ public:
                              FPrimitiveInflatedSegmentQueryScratch& Scratch);
 
     /**
-     * @brief 움직이는 sphere의 중심 segment로 primitive broad phase 후보를 수집한다.
-     * @note OutBroadPhaseT는 AABB 후보 진입 시각이며 실제 Shape hit 시각이 아니다.
+     * @brief 움직이는 sphere의 중심 segment로 primitive broad phase 후보를 수집
+     * @note 실제 Shape hit 시간과 normal은 World query의 narrow phase에서 계산
      */
     void SweepSphereQueryComponents(const FVector& Start, const FVector& End, float Radius,
-                                    TArray<UPrimitiveComponent*>& OutComponents, TArray<float>* OutBroadPhaseT,
-                                    FPrimitiveInflatedSegmentQueryScratch& Scratch);
+                                    TArray<UPrimitiveComponent*>& OutComponents, FPrimitiveInflatedSegmentQueryScratch& Scratch);
 
     /** @brief Resolve a tracked object index back to its primitive component. */
     UPrimitiveComponent* Resolve(int32 ObjectIndex) const;
