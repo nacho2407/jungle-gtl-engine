@@ -380,6 +380,102 @@ namespace
 		}
 	}
 
+	/**
+	 * @brief Beam tangent vector를 replay coordinate space에 맞게 변환합니다.
+	 */
+	FVector TransformBeamTangentToReplaySpace(
+		const FVector& Tangent,
+		const FMatrix& ComponentToWorld,
+		bool bTransformLocalToWorld)
+	{
+		// local fallback tangent와 world endpoint가 섞인 경우 replay 전체가 world space이므로 tangent도 world vector로 통일
+		return bTransformLocalToWorld
+			? ComponentToWorld.TransformVector(Tangent)
+			: Tangent;
+	}
+
+	/**
+	 * @brief Beam source tangent snapshot 값을 계산합니다.
+	 */
+	FVector ResolveBeamSourceTangent(
+		const UParticleModuleBeamSource* BeamSource,
+		const FVector& Source,
+		const FVector& Target,
+		const FMatrix& ComponentToWorld,
+		bool bTransformLocalToWorld)
+	{
+		// Source에서 Target으로 향하는 기본 tangent 방향과 길이 기준
+		const FVector BeamDelta = Target - Source;
+		const float BeamLength = std::max(BeamDelta.Size(), 1.0f);
+		FVector Tangent = BeamDelta.GetSafeNormal();
+
+		// Source와 Target이 거의 같을 때의 component forward fallback
+		if (Tangent.IsNearlyZero())
+		{
+			Tangent = bTransformLocalToWorld
+				? ComponentToWorld.GetForwardVector()
+				: FVector::ForwardVector;
+		}
+
+		// User tangent mode는 module 입력 방향을 사용하고 strength로 길이 조정
+		if (BeamSource != nullptr &&
+			BeamSource->TangentMode == EParticleBeamTangentMode::User &&
+			!BeamSource->SourceTangent.IsNearlyZero())
+		{
+			Tangent = TransformBeamTangentToReplaySpace(
+				BeamSource->SourceTangent,
+				ComponentToWorld,
+				bTransformLocalToWorld).GetSafeNormal();
+		}
+
+		// Hermite 계산용 최종 tangent 길이
+		const float TangentStrength = BeamSource != nullptr
+			? std::max(BeamSource->SourceTangentStrength, 0.0f)
+			: 1.0f;
+		return Tangent * (BeamLength * TangentStrength);
+	}
+
+	/**
+	 * @brief Beam target tangent snapshot 값을 계산합니다.
+	 */
+	FVector ResolveBeamTargetTangent(
+		const UParticleModuleBeamTarget* BeamTarget,
+		const FVector& Source,
+		const FVector& Target,
+		const FMatrix& ComponentToWorld,
+		bool bTransformLocalToWorld)
+	{
+		// Source에서 Target으로 향하는 기본 tangent 방향과 길이 기준
+		const FVector BeamDelta = Target - Source;
+		const float BeamLength = std::max(BeamDelta.Size(), 1.0f);
+		FVector Tangent = BeamDelta.GetSafeNormal();
+
+		// Source와 Target이 거의 같을 때의 component forward fallback
+		if (Tangent.IsNearlyZero())
+		{
+			Tangent = bTransformLocalToWorld
+				? ComponentToWorld.GetForwardVector()
+				: FVector::ForwardVector;
+		}
+
+		// User tangent mode는 module 입력 방향을 사용하고 strength로 길이 조정
+		if (BeamTarget != nullptr &&
+			BeamTarget->TangentMode == EParticleBeamTangentMode::User &&
+			!BeamTarget->TargetTangent.IsNearlyZero())
+		{
+			Tangent = TransformBeamTangentToReplaySpace(
+				BeamTarget->TargetTangent,
+				ComponentToWorld,
+				bTransformLocalToWorld).GetSafeNormal();
+		}
+
+		// Hermite 계산용 최종 tangent 길이
+		const float TangentStrength = BeamTarget != nullptr
+			? std::max(BeamTarget->TargetTangentStrength, 0.0f)
+			: 1.0f;
+		return Tangent * (BeamLength * TangentStrength);
+	}
+
 	FParticleLODLevelRuntimeCache BuildStableLOD0RuntimeCache(const UParticleLODLevel* LODLevel)
 	{
 		FParticleLODLevelRuntimeCache Cache;
@@ -2228,7 +2324,8 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBeam::GetDynamicRenderData(FPart
 	// Beam TypeData / Source / Target Module 기반 endpoint snapshot
 	FVector SourcePoint = FVector::ZeroVector;
 	FVector TargetPoint = FVector(100.0f, 0.0f, 0.0f);
-	EParticleCoordinateSpace BeamCoordinateSpace = RenderData->ReplayData.CoordinateSpace;
+	const EParticleCoordinateSpace InitialBeamCoordinateSpace = RenderData->ReplayData.CoordinateSpace;
+	EParticleCoordinateSpace BeamCoordinateSpace = InitialBeamCoordinateSpace;
 	ResolveBeamDefaultEndpoints(
 		*this,
 		*InEmitterInstance->CurrentRuntimeCache,
@@ -2241,6 +2338,29 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBeam::GetDynamicRenderData(FPart
 	RenderData->ReplayData.SourcePoint = SourcePoint;
 	RenderData->ReplayData.TargetPoint = TargetPoint;
 	RenderData->ReplayData.BeamWidth = std::max(BeamWidth, 0.1f);
+
+	// endpoint가 PSC parameter로 world resolve된 경우 module tangent도 replay coordinate space에 맞게 변환
+	const bool bTransformModuleTangentToWorld =
+		InitialBeamCoordinateSpace == EParticleCoordinateSpace::Local &&
+		BeamCoordinateSpace == EParticleCoordinateSpace::World;
+	RenderData->ReplayData.SourceTangent = ResolveBeamSourceTangent(
+		InEmitterInstance->CurrentRuntimeCache->BeamSourceModule,
+		SourcePoint,
+		TargetPoint,
+		RenderData->ComponentToWorld,
+		bTransformModuleTangentToWorld);
+	RenderData->ReplayData.TargetTangent = ResolveBeamTargetTangent(
+		InEmitterInstance->CurrentRuntimeCache->BeamTargetModule,
+		SourcePoint,
+		TargetPoint,
+		RenderData->ComponentToWorld,
+		bTransformModuleTangentToWorld);
+	RenderData->ReplayData.InterpolationPoints = std::clamp(InterpolationPoints, 0, 64);
+	RenderData->ReplayData.bNoiseEnabled = bNoiseEnabled;
+	RenderData->ReplayData.NoiseFrequency = std::clamp(NoiseFrequency, 0, 64);
+	RenderData->ReplayData.NoiseRange = std::max(NoiseRange, 0.0f);
+	RenderData->ReplayData.NoiseSpeed = std::max(NoiseSpeed, 0.0f);
+	RenderData->ReplayData.NoiseSeed = NoiseSeed;
 
 	// snapshot은 particle data와 index를 별도 buffer로 소유
 	RenderData->ReplayData.DataContainer.MemBlockSize = static_cast<int32>(SnapshotLogicalBytes);

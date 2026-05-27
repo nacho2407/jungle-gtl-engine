@@ -305,8 +305,32 @@ struct FDynamicBeamEmitterReplayDataBase : public FDynamicEmitterReplayDataBase
 	// Beam 끝점. CoordinateSpace가 Local이면 component local space, World면 world space
 	FVector TargetPoint = FVector(100.0f, 0.0f, 0.0f);
 
+	// Beam 시작 tangent. CoordinateSpace가 Local이면 component local vector, World면 world vector
+	FVector SourceTangent = FVector::ForwardVector;
+
+	// Beam 끝 tangent. CoordinateSpace가 Local이면 component local vector, World면 world vector
+	FVector TargetTangent = FVector::ForwardVector;
+
 	// Beam quad 두께의 기본 폭
 	float BeamWidth = 10.0f;
+
+	// Source와 Target 사이에 추가할 중간 보간점 개수
+	int32 InterpolationPoints = 0;
+
+	// Noise segment path 생성 여부
+	bool bNoiseEnabled = false;
+
+	// Noise가 요구하는 최소 중간 흔들림 빈도
+	int32 NoiseFrequency = 0;
+
+	// Noise offset 최대 범위
+	float NoiseRange = 0.0f;
+
+	// Noise 시간 변화 속도
+	float NoiseSpeed = 0.0f;
+
+	// Noise deterministic random seed
+	int32 NoiseSeed = 1337;
 };
 
 struct FRibbonRenderPoint
