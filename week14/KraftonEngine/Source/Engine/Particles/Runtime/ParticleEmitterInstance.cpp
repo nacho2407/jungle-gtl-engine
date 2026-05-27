@@ -320,8 +320,12 @@ void FParticleEmitterInstance::ReceiveParticleEvent(const FParticleCollisionEven
 void FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles)
 {
 	const int32 RequestedInstancePayloadSize = InstancePayloadSize;
+	const int32 RequestedInstancePayloadAlignment = InstancePayloadAlignment;
 	ReleaseParticleData();
 	InstancePayloadSize = RequestedInstancePayloadSize;
+	InstancePayloadAlignment = RequestedInstancePayloadAlignment > 0
+		? RequestedInstancePayloadAlignment
+		: static_cast<int32>(alignof(FBaseParticle));
 
 	MaxActiveParticles = InMaxActiveParticles > 0 ? InMaxActiveParticles : 0;
 	if (MaxActiveParticles > 65535)
@@ -329,10 +333,14 @@ void FParticleEmitterInstance::AllocateParticleData(int32 InMaxActiveParticles)
 		MaxActiveParticles = 65535;
 	}
 
-	PayloadOffset = static_cast<int32>(sizeof(FBaseParticle));
+	const int32 BaseParticleAlignment = static_cast<int32>(alignof(FBaseParticle));
+	const int32 ParticleAlignment = BaseParticleAlignment > InstancePayloadAlignment
+		? BaseParticleAlignment
+		: InstancePayloadAlignment;
+	PayloadOffset = FParticleDataContainer::AlignUp(static_cast<int32>(sizeof(FBaseParticle)), InstancePayloadAlignment);
 	ParticleSize = PayloadOffset + InstancePayloadSize;
-	ParticleStride = ParticleSize;
-	ParticleDataContainer.Initialize(MaxActiveParticles, ParticleStride);
+	ParticleStride = FParticleDataContainer::AlignUp(ParticleSize, ParticleAlignment);
+	ParticleDataContainer.Initialize(MaxActiveParticles, ParticleStride, ParticleAlignment);
 
 	MemBlockSize = ParticleDataContainer.MemBlockSize;
 	ParticleDataNumBytes = ParticleDataContainer.ParticleDataNumBytes;
@@ -350,6 +358,7 @@ void FParticleEmitterInstance::ReleaseParticleData()
 	ParticleIndices = nullptr;
 	InstanceData = nullptr;
 	InstancePayloadSize = 0;
+	InstancePayloadAlignment = static_cast<int32>(alignof(FBaseParticle));
 	PayloadOffset = 0;
 	ParticleSize = 0;
 	ParticleStride = 0;
@@ -436,7 +445,8 @@ bool FParticleEmitterInstance::CanUseLODLevel(const UParticleLODLevel* LODLevel)
 	}
 
 	const int32 NewPayloadSize = NewTypeData ? NewTypeData->GetParticlePayloadSize() : 0;
-	return NewPayloadSize == InstancePayloadSize;
+	const int32 NewPayloadAlignment = NewTypeData ? NewTypeData->GetParticlePayloadAlignment() : static_cast<int32>(alignof(FBaseParticle));
+	return NewPayloadSize == InstancePayloadSize && NewPayloadAlignment == InstancePayloadAlignment;
 }
 
 void FParticleEmitterInstance::RefreshEventGeneratorFlags()

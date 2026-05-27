@@ -87,6 +87,7 @@ struct FParticleMeshEmitterInstance : public FParticleEmitterInstance
 		: TypeDataModule(InTypeDataModule)
 	{
 		InstancePayloadSize = sizeof(FParticleMeshPayload);
+		InstancePayloadAlignment = static_cast<int32>(alignof(FParticleMeshPayload));
 		Init(InEmitter, InComponent);
 	}
 
@@ -100,6 +101,7 @@ struct FParticleRibbonEmitterInstance : public FParticleEmitterInstance
 		: TypeDataModule(InTypeDataModule)
 	{
 		InstancePayloadSize = sizeof(FRibbonParticlePayload);
+		InstancePayloadAlignment = static_cast<int32>(alignof(FRibbonParticlePayload));
 		Init(InEmitter, InComponent);
 	}
 
@@ -113,6 +115,7 @@ struct FParticleBeamEmitterInstance : public FParticleEmitterInstance
 		: TypeDataModule(InTypeDataModule)
 	{
 		InstancePayloadSize = sizeof(FBeamParticlePayload);
+		InstancePayloadAlignment = static_cast<int32>(alignof(FBeamParticlePayload));
 		Init(InEmitter, InComponent);
 	}
 
@@ -136,6 +139,11 @@ public:
 	virtual int32 GetParticlePayloadSize() const
 	{
 		return 0;
+	}
+
+	virtual int32 GetParticlePayloadAlignment() const
+	{
+		return static_cast<int32>(alignof(FBaseParticle));
 	}
 
 	virtual EParticleRenderType GetRenderType() const
@@ -220,6 +228,11 @@ public:
 	int32 GetParticlePayloadSize() const override
 	{
 		return sizeof(FParticleMeshPayload);
+	}
+
+	int32 GetParticlePayloadAlignment() const override
+	{
+		return static_cast<int32>(alignof(FParticleMeshPayload));
 	}
 };
 
@@ -324,6 +337,11 @@ public:
 	{
 		return sizeof(FRibbonParticlePayload);
 	}
+
+	int32 GetParticlePayloadAlignment() const override
+	{
+		return static_cast<int32>(alignof(FRibbonParticlePayload));
+	}
 };
 
 UCLASS()
@@ -411,6 +429,11 @@ public:
 	int32 GetParticlePayloadSize() const override
 	{
 		return sizeof(FBeamParticlePayload);
+	}
+
+	int32 GetParticlePayloadAlignment() const override
+	{
+		return static_cast<int32>(alignof(FBeamParticlePayload));
 	}
 };
 
