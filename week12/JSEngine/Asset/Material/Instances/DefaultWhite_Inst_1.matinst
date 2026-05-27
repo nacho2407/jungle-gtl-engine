@@ -1,5 +1,5 @@
 {
-        "BlendMode" : "Translucent",
+        "BlendMode" : "Opaque",
         "BlendState" : {
           "AlphaOp" : "Add",
           "BlendEnable" : true,
@@ -15,6 +15,11 @@
             "Name" : "Opacity",
             "Type" : "Float",
             "Value" : 0.590000
+          }, {
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Texture/water.png"
           }],
-        "Parent" : "DefaultWhite"
+        "Parent" : "DefaultWhite",
+        "ShaderType" : "SurfaceLit"
       }

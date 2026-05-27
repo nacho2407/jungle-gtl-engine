@@ -280,6 +280,51 @@ namespace
 		return Bounds;
 	}
 
+
+	UMaterialInterface* ResolveRibbonParticleMaterial(UMaterialInterface* Material)
+	{
+		return Material != nullptr ? Material : FResourceManager::Get().GetMaterial("DefaultWhite");
+	}
+
+	ERenderPass ResolveRibbonParticleRenderPass(const UMaterialInterface* Material)
+	{
+		if (Material == nullptr)
+		{
+			return ERenderPass::Translucent;
+		}
+
+		return Material->GetBlendMode() == EMaterialBlendMode::Translucent ||
+			Material->GetBlendStateDesc().bBlendEnable
+			? ERenderPass::Translucent
+			: ResolveMaterialRenderPass(Material);
+	}
+
+	FVector GetRibbonWorldPoint(
+		const FDynamicRibbonEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld,
+		const FRibbonRenderPoint& Point)
+	{
+		return ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local
+			? ComponentToWorld.TransformPosition(Point.Position)
+			: Point.Position;
+	}
+
+	FBoundingBox BuildRibbonWorldBounds(
+		const FDynamicRibbonEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld)
+	{
+		FBoundingBox Bounds;
+		for (const FRibbonRenderPoint& Point : ReplayData.RenderPoints)
+		{
+			const FVector WorldPoint = GetRibbonWorldPoint(ReplayData, ComponentToWorld, Point);
+			const float HalfWidth = std::max(Point.Width, 0.1f) * 0.5f;
+			const FVector Extent(HalfWidth, HalfWidth, HalfWidth);
+			Bounds.Expand(WorldPoint - Extent);
+			Bounds.Expand(WorldPoint + Extent);
+		}
+		return Bounds;
+	}
+
 	enum class EParticleProxyDiagnostic : uint32
 	{
 		EmptyActiveParticles = 1,
@@ -329,16 +374,24 @@ void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyColle
 	TArray<FRenderCommand> TranslucentMeshCommands;
 	TArray<FRenderCommand> OpaqueBeamCommands;
 	TArray<FRenderCommand> TranslucentBeamCommands;
+	TArray<FRenderCommand> OpaqueRibbonCommands;
+	TArray<FRenderCommand> TranslucentRibbonCommands;
+	FParticleFrameStats ParticleStats = Component->GetLastParticleFrameStats();
+
 	BuildSpriteCommands(Context, SpriteCommands);
 	BuildMeshCommands(Context, OpaqueMeshCommands, TranslucentMeshCommands);
 	BuildBeamCommands(Context, OpaqueBeamCommands, TranslucentBeamCommands);
+	BuildRibbonCommands(Context, OpaqueRibbonCommands, TranslucentRibbonCommands);
 
 	if (SpriteInstances.empty() &&
 		MeshInstances.empty() &&
 		BeamInstances.empty() &&
 		OpaqueBeamCommands.empty() &&
-		TranslucentBeamCommands.empty())
+		TranslucentBeamCommands.empty() &&
+		OpaqueRibbonCommands.empty() &&
+		TranslucentRibbonCommands.empty())
 	{
+		Context.CommandServices.ParticleStats.Accumulate(ParticleStats);
 		return;
 	}
 
@@ -353,6 +406,11 @@ void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyColle
 	}
 
 	if (!BeamInstances.empty() && !EnsureBeamInstanceBuffer(Context.Device, static_cast<uint32>(BeamInstances.size())))
+	{
+		return;
+	}
+
+	if (!RibbonInstances.empty() && !EnsureRibbonInstanceBuffer(Context.Device, static_cast<uint32>(RibbonInstances.size())))
 	{
 		return;
 	}
@@ -372,6 +430,90 @@ void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyColle
 		return;
 	}
 
+	if (!RibbonInstances.empty() && !UploadRibbonInstances(Context.DeviceContext))
+	{
+		return;
+	}
+
+	for (const FRenderCommand& Command : SpriteCommands)
+	{
+		ParticleStats.SpriteParticleCount += static_cast<int32>(Command.InstanceBufferView.InstanceCount);
+		++ParticleStats.ParticleDrawCalls;
+	}
+
+	std::unordered_set<const FDynamicEmitterReplayDataBase*> CountedMeshReplayData;
+	auto AccumulateMeshCommandStats = [&ParticleStats, &CountedMeshReplayData](const FRenderCommand& Command)
+	{
+		if (Command.ParticleReplayData != nullptr &&
+			CountedMeshReplayData.insert(Command.ParticleReplayData).second)
+		{
+			ParticleStats.MeshParticleCount += Command.ParticleReplayData->ActiveParticleCount;
+		}
+		ParticleStats.MeshParticlePolygons +=
+			(static_cast<uint64>(Command.SectionIndexCount) / 3ull) *
+			static_cast<uint64>(Command.InstanceBufferView.InstanceCount);
+		++ParticleStats.ParticleDrawCalls;
+	};
+
+	for (const FRenderCommand& Command : OpaqueMeshCommands)
+	{
+		AccumulateMeshCommandStats(Command);
+	}
+
+	for (const FRenderCommand& Command : TranslucentMeshCommands)
+	{
+		AccumulateMeshCommandStats(Command);
+	}
+
+	auto AccumulateBeamCommandStats = [&ParticleStats](const FRenderCommand& Command)
+	{
+		const uint32 ActiveParticleCount = Command.ParticleReplayData != nullptr
+			? static_cast<uint32>(Command.ParticleReplayData->ActiveParticleCount)
+			: Command.Constants.Particle.ActiveParticleCount;
+		ParticleStats.BeamParticleCount += static_cast<int32>(ActiveParticleCount);
+		ParticleStats.BeamParticlePolygons +=
+			static_cast<uint64>(Command.InstanceBufferView.InstanceCount) * 2ull;
+		++ParticleStats.ParticleDrawCalls;
+	};
+
+	for (const FRenderCommand& Command : OpaqueBeamCommands)
+	{
+		AccumulateBeamCommandStats(Command);
+	}
+
+	for (const FRenderCommand& Command : TranslucentBeamCommands)
+	{
+		AccumulateBeamCommandStats(Command);
+	}
+
+	std::unordered_set<const FDynamicEmitterReplayDataBase*> CountedRibbonReplayData;
+	auto AccumulateRibbonCommandStats = [&ParticleStats, &CountedRibbonReplayData](const FRenderCommand& Command)
+	{
+		if (const FDynamicRibbonEmitterReplayDataBase* ReplayData =
+			static_cast<const FDynamicRibbonEmitterReplayDataBase*>(Command.ParticleReplayData))
+		{
+			if (CountedRibbonReplayData.insert(ReplayData).second)
+			{
+				ParticleStats.TrailParticleCount += static_cast<int32>(ReplayData->RenderPoints.size());
+			}
+		}
+		ParticleStats.TrailParticlePolygons +=
+			static_cast<uint64>(Command.InstanceBufferView.InstanceCount) * 2ull;
+		++ParticleStats.ParticleDrawCalls;
+	};
+
+	for (const FRenderCommand& Command : OpaqueRibbonCommands)
+	{
+		AccumulateRibbonCommandStats(Command);
+	}
+
+	for (const FRenderCommand& Command : TranslucentRibbonCommands)
+	{
+		AccumulateRibbonCommandStats(Command);
+	}
+
+	Context.CommandServices.ParticleStats.Accumulate(ParticleStats);
+
 	for (FRenderCommand& Command : SpriteCommands)
 	{
 		Command.InstanceBufferView.Buffer = SpriteInstanceBuffer.Get();
@@ -390,6 +532,12 @@ void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyColle
 		Context.RenderBus.AddCommand(ERenderPass::Opaque, std::move(Command));
 	}
 
+	for (FRenderCommand& Command : OpaqueRibbonCommands)
+	{
+		Command.InstanceBufferView.Buffer = RibbonInstanceBuffer.Get();
+		Context.RenderBus.AddCommand(ERenderPass::Opaque, std::move(Command));
+	}
+
 	for (FRenderCommand& Command : TranslucentMeshCommands)
 	{
 		Command.InstanceBufferView.Buffer = MeshInstanceBuffer.Get();
@@ -401,6 +549,12 @@ void FParticleSystemSceneProxy::CollectCommands(const FPrimitiveRenderProxyColle
 		Command.InstanceBufferView.Buffer = BeamInstanceBuffer.Get();
 		Context.RenderBus.AddCommand(ERenderPass::Translucent, std::move(Command));
 	}
+
+	for (FRenderCommand& Command : TranslucentRibbonCommands)
+	{
+		Command.InstanceBufferView.Buffer = RibbonInstanceBuffer.Get();
+		Context.RenderBus.AddCommand(ERenderPass::Translucent, std::move(Command));
+	}
 }
 
 void FParticleSystemSceneProxy::ReleaseResources()
@@ -408,12 +562,15 @@ void FParticleSystemSceneProxy::ReleaseResources()
 	SpriteInstances.clear();
 	MeshInstances.clear();
 	BeamInstances.clear();
+	RibbonInstances.clear();
 	SpriteInstanceBuffer.Reset();
 	MeshInstanceBuffer.Reset();
 	BeamInstanceBuffer.Reset();
+	RibbonInstanceBuffer.Reset();
 	MaxSpriteInstanceCount = 0;
 	MaxMeshInstanceCount = 0;
 	MaxBeamInstanceCount = 0;
+	MaxRibbonInstanceCount = 0;
 }
 
 bool FParticleSystemSceneProxy::BuildSpriteCommands(
@@ -527,7 +684,8 @@ bool FParticleSystemSceneProxy::BuildMeshCommands(
 		if (EmitterData->GetEmitterType() != EDynamicEmitterType::Mesh)
 		{
 			if (EmitterData->GetEmitterType() != EDynamicEmitterType::Sprite &&
-				EmitterData->GetEmitterType() != EDynamicEmitterType::Beam)
+				EmitterData->GetEmitterType() != EDynamicEmitterType::Beam &&
+				EmitterData->GetEmitterType() != EDynamicEmitterType::Ribbon)
 			{
 				LogParticleDiagnosticOnce(
 					Component,
@@ -752,6 +910,124 @@ bool FParticleSystemSceneProxy::BuildBeamCommands(
 	return true;
 }
 
+bool FParticleSystemSceneProxy::BuildRibbonCommands(
+	const FPrimitiveRenderProxyCollectionContext& Context,
+	TArray<FRenderCommand>& OutOpaqueCommands,
+	TArray<FRenderCommand>& OutTranslucentCommands)
+{
+	RibbonInstances.clear();
+	OutOpaqueCommands.clear();
+	OutTranslucentCommands.clear();
+
+	const int32 SnapshotCount = Component->GetEmitterRenderDataSnapshotCount();
+	for (int32 SnapshotIndex = 0; SnapshotIndex < SnapshotCount; ++SnapshotIndex)
+	{
+		const FDynamicEmitterDataBase* EmitterData = Component->GetEmitterRenderDataSnapshot(SnapshotIndex);
+		if (EmitterData == nullptr || EmitterData->GetEmitterType() != EDynamicEmitterType::Ribbon)
+		{
+			continue;
+		}
+
+		const FDynamicRibbonEmitterData* RibbonEmitterData = static_cast<const FDynamicRibbonEmitterData*>(EmitterData);
+		const FDynamicRibbonEmitterReplayDataBase& ReplayData = RibbonEmitterData->ReplayData;
+		if (ReplayData.RenderPoints.empty() || ReplayData.TrailRanges.empty())
+		{
+			continue;
+		}
+
+		UMaterialInterface* RibbonMaterial = ResolveRibbonParticleMaterial(EmitterData->Material);
+		const uint32 FirstInstance = static_cast<uint32>(RibbonInstances.size());
+		FBoundingBox Bounds;
+
+		for (const FRibbonRenderRange& Range : ReplayData.TrailRanges)
+		{
+			if (Range.PointCount < 2 || Range.PointStart < 0)
+			{
+				continue;
+			}
+
+			const int32 RangeEnd = Range.PointStart + Range.PointCount;
+			if (RangeEnd > static_cast<int32>(ReplayData.RenderPoints.size()))
+			{
+				continue;
+			}
+
+			for (int32 PointIndex = Range.PointStart; PointIndex + 1 < RangeEnd; ++PointIndex)
+			{
+				const FRibbonRenderPoint& A = ReplayData.RenderPoints[static_cast<size_t>(PointIndex)];
+				const FRibbonRenderPoint& B = ReplayData.RenderPoints[static_cast<size_t>(PointIndex + 1)];
+				const FVector Start = GetRibbonWorldPoint(ReplayData, EmitterData->ComponentToWorld, A);
+				const FVector End = GetRibbonWorldPoint(ReplayData, EmitterData->ComponentToWorld, B);
+
+				FParticleRibbonSegmentInstanceData Instance;
+				Instance.Start = Start;
+				Instance.End = End;
+				Instance.HalfWidthStart = std::max(A.Width, 0.1f) * 0.5f;
+				Instance.HalfWidthEnd = std::max(B.Width, 0.1f) * 0.5f;
+				Instance.StartColor = A.Color;
+				Instance.EndColor = B.Color;
+				Instance.UVStartEnd = FVector2(A.U, B.U);
+				const FVector BlendedSide = (A.Side + B.Side) * 0.5f;
+				Instance.Side = BlendedSide.GetSafeNormal();
+				if (Instance.Side.IsNearlyZero())
+				{
+					Instance.Side = FVector::RightVector;
+				}
+				Instance.FacingMode = ReplayData.RibbonFacingMode == EParticleRibbonFacingMode::SourceTransform ? 1.0f : 0.0f;
+				RibbonInstances.push_back(Instance);
+
+				const FVector StartExtent(Instance.HalfWidthStart, Instance.HalfWidthStart, Instance.HalfWidthStart);
+				const FVector EndExtent(Instance.HalfWidthEnd, Instance.HalfWidthEnd, Instance.HalfWidthEnd);
+				Bounds.Expand(Start - StartExtent);
+				Bounds.Expand(Start + StartExtent);
+				Bounds.Expand(End - EndExtent);
+				Bounds.Expand(End + EndExtent);
+			}
+		}
+
+		const uint32 InstanceCount = static_cast<uint32>(RibbonInstances.size()) - FirstInstance;
+		if (InstanceCount == 0)
+		{
+			continue;
+		}
+
+		FRenderCommand Cmd = {};
+		Cmd.Type = ERenderCommandType::Particle;
+		Cmd.SourcePrimitive = Component;
+		Cmd.Material = RibbonMaterial;
+		Cmd.ParticleEmitterData = EmitterData;
+		Cmd.ParticleReplayData = &ReplayData;
+		Cmd.VertexFactoryType = EVertexFactoryType::ParticleRibbon;
+		Cmd.PerObjectConstants = FPerObjectConstants{ FMatrix::Identity, FColor::White().ToVector4() };
+		Cmd.WorldAABB = Bounds.IsValid() ? Bounds : BuildRibbonWorldBounds(ReplayData, EmitterData->ComponentToWorld);
+		if (!Cmd.WorldAABB.IsValid())
+		{
+			Cmd.WorldAABB = Component->GetWorldAABB();
+		}
+		Cmd.Constants.Particle.ComponentToWorld = FMatrix::Identity;
+		Cmd.Constants.Particle.CameraRight = Context.RenderBus.GetCameraRight();
+		Cmd.Constants.Particle.CameraUp = Context.RenderBus.GetCameraUp();
+		Cmd.Constants.Particle.EmitterType = static_cast<uint32>(EmitterData->GetEmitterType());
+		Cmd.Constants.Particle.CoordinateSpace = static_cast<uint32>(EParticleCoordinateSpace::World);
+		Cmd.Constants.Particle.ActiveParticleCount = InstanceCount;
+		Cmd.Constants.Particle.bUseLocalSpace = 0u;
+		Cmd.InstanceBufferView.InstanceCount = InstanceCount;
+		Cmd.InstanceBufferView.Stride = sizeof(FParticleRibbonSegmentInstanceData);
+		Cmd.InstanceBufferView.Offset = FirstInstance * sizeof(FParticleRibbonSegmentInstanceData);
+
+		if (ResolveRibbonParticleRenderPass(Cmd.Material) == ERenderPass::Translucent)
+		{
+			OutTranslucentCommands.push_back(std::move(Cmd));
+		}
+		else
+		{
+			OutOpaqueCommands.push_back(std::move(Cmd));
+		}
+	}
+
+	return true;
+}
+
 bool FParticleSystemSceneProxy::EnsureSpriteInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
 {
 	if (Device == nullptr)
@@ -819,6 +1095,29 @@ bool FParticleSystemSceneProxy::EnsureBeamInstanceBuffer(ID3D11Device* Device, u
 	InstanceDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 	InstanceDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	return SUCCEEDED(Device->CreateBuffer(&InstanceDesc, nullptr, BeamInstanceBuffer.ReleaseAndGetAddressOf()));
+}
+
+bool FParticleSystemSceneProxy::EnsureRibbonInstanceBuffer(ID3D11Device* Device, uint32 InstanceCount)
+{
+	if (Device == nullptr)
+	{
+		return false;
+	}
+
+	if (RibbonInstanceBuffer && InstanceCount <= MaxRibbonInstanceCount)
+	{
+		return true;
+	}
+
+	MaxRibbonInstanceCount = std::max(InstanceCount * 2u, 1u);
+	RibbonInstanceBuffer.Reset();
+
+	D3D11_BUFFER_DESC InstanceDesc = {};
+	InstanceDesc.Usage = D3D11_USAGE_DYNAMIC;
+	InstanceDesc.ByteWidth = sizeof(FParticleRibbonSegmentInstanceData) * MaxRibbonInstanceCount;
+	InstanceDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	InstanceDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	return SUCCEEDED(Device->CreateBuffer(&InstanceDesc, nullptr, RibbonInstanceBuffer.ReleaseAndGetAddressOf()));
 }
 
 bool FParticleSystemSceneProxy::UploadSpriteInstances(ID3D11DeviceContext* DeviceContext)
@@ -899,3 +1198,29 @@ bool FParticleSystemSceneProxy::UploadBeamInstances(ID3D11DeviceContext* DeviceC
 	return true;
 }
 
+
+bool FParticleSystemSceneProxy::UploadRibbonInstances(ID3D11DeviceContext* DeviceContext)
+{
+	if (DeviceContext == nullptr || !RibbonInstanceBuffer)
+	{
+		return false;
+	}
+
+	if (RibbonInstances.empty())
+	{
+		return true;
+	}
+
+	D3D11_MAPPED_SUBRESOURCE Mapped = {};
+	if (FAILED(DeviceContext->Map(RibbonInstanceBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped)))
+	{
+		return false;
+	}
+
+	std::memcpy(
+		Mapped.pData,
+		RibbonInstances.data(),
+		sizeof(FParticleRibbonSegmentInstanceData) * RibbonInstances.size());
+	DeviceContext->Unmap(RibbonInstanceBuffer.Get(), 0);
+	return true;
+}

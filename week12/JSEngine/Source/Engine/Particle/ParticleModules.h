@@ -42,7 +42,7 @@ public:
 	virtual void Update(FParticleEmitterInstance* Owner, int32 Offset, float DeltaTime);
 };
 
-UCLASS(Placeable, DisplayName = "Required Module", Category = "Basic", CategoryName = "Basic")
+UCLASS(Placeable, DisplayName = "Required Module", Category = "Basic")
 class UParticleModuleRequired : public UParticleModule
 {
 public:
@@ -119,7 +119,7 @@ struct FParticleBurstEntry
  * @brief particle의 생성 정보를 담고 있는 모듈. 사실 Required에 통합해도 되기는 하지만,
  *        Cascade 스타일을 따라 별도의 특수 모듈로 분리합니다.
  */
-UCLASS(Placeable, DisplayName = "Spawn Module", Category = "Basic", CategoryName = "Basic")
+UCLASS(Placeable, DisplayName = "Spawn Module", Category = "Basic")
 class UParticleModuleSpawn : public UParticleModule
 {
 public:
@@ -146,7 +146,7 @@ public:
 	TArray<FParticleBurstEntry> BurstList;
 };
 
-UCLASS(Placeable, DisplayName = "Lifetime Module", Category = "Lifetime", CategoryName = "Lifetime")
+UCLASS(Placeable, DisplayName = "Lifetime Module", Category = "Lifetime")
 class UParticleModuleLifetime : public UParticleModule
 {
 public:
@@ -163,7 +163,7 @@ public:
 	FParticleFloatDistribution Lifetime;
 };
 
-UCLASS(Placeable, DisplayName = "Location Module", Category = "Location", CategoryName = "Location")
+UCLASS(Placeable, DisplayName = "Location Module", Category = "Location")
 class UParticleModuleLocation : public UParticleModule
 {
 public:
@@ -178,7 +178,7 @@ public:
 	FParticleVectorDistribution StartLocation;
 };
 
-UCLASS(Placeable, DisplayName = "Velocity Module", Category = "Velocity", CategoryName = "Velocity")
+UCLASS(Placeable, DisplayName = "Velocity Module", Category = "Velocity")
 class UParticleModuleVelocity : public UParticleModule
 {
 public:
@@ -193,7 +193,7 @@ public:
 	FParticleVectorDistribution StartVelocity;
 };
 
-UCLASS(Placeable, DisplayName = "Rotation Module")
+UCLASS(Placeable, DisplayName = "Rotation Module", Category = "Rotation")
 class UParticleModuleRotation : public UParticleModule
 {
 public:
@@ -208,7 +208,7 @@ public:
 	FParticleFloatDistribution StartRotation;
 };
 
-UCLASS(Placeable, DisplayName = "Mesh Rotation Module")
+UCLASS(Placeable, DisplayName = "Mesh Rotation Module", Category = "Rotation")
 class UParticleModuleMeshRotation : public UParticleModule
 {
 public:
@@ -223,7 +223,7 @@ public:
 	FParticleVectorDistribution StartRotation;
 };
 
-UCLASS(Placeable, DisplayName = "Color Module", Category = "Color", CategoryName = "Color")
+UCLASS(Placeable, DisplayName = "Color Module", Category = "Color")
 class UParticleModuleColor : public UParticleModule
 {
 public:
@@ -240,7 +240,7 @@ public:
 	FParticleColorDistribution StartColor;
 };
 
-UCLASS(Placeable, DisplayName = "Size Module", Category = "Size", CategoryName = "Size")
+UCLASS(Placeable, DisplayName = "Size Module", Category = "Size")
 class UParticleModuleSize : public UParticleModule
 {
 public:
@@ -300,7 +300,7 @@ public:
 /**
  * @brief 수명 비율 기반 particle 속도 보정 module
  */
-UCLASS(Placeable, DisplayName = "Velocity Over Life Module")
+UCLASS(Placeable, DisplayName = "Velocity Over Life Module", Category = "Velocity")
 class UParticleModuleVelocityOverLife : public UParticleModule
 {
 public:
@@ -321,7 +321,7 @@ public:
 /**
  * @brief frame별 particle 기준 속도 가속 module
  */
-UCLASS(Placeable, DisplayName = "Acceleration Module")
+UCLASS(Placeable, DisplayName = "Acceleration Module", Category = "Velocity")
 class UParticleModuleAcceleration : public UParticleModule
 {
 public:
@@ -339,7 +339,7 @@ public:
 /**
  * @brief 속도 크기 기반 particle 크기 배율 module
  */
-UCLASS(Placeable, DisplayName = "Size Scale By Speed Module", Category = "Velocity")
+UCLASS(Placeable, DisplayName = "Size Scale By Speed Module", Category = "Size")
 class UParticleModuleSizeScaleBySpeed : public UParticleModule
 {
 public:
@@ -455,7 +455,7 @@ struct FSubUVParticlePayload
 	int32 RandomSeed = 0;
 };
 
-UCLASS(Placeable, DisplayName = "SubUV Module", Category = "Animation", CategoryName = "Animation")
+UCLASS(Placeable, DisplayName = "SubUV Module", Category = "Animation")
 class UParticleModuleSubUV : public UParticleModule
 {
 public:
@@ -528,11 +528,65 @@ private:
 	UStaticMesh* Mesh = nullptr;
 };
 
-UCLASS(Placeable, DisplayName = "Ribbon Type Data", Category = "Type Data")
-class UParticleModuleTypeDataRibbon : public UParticleModuleTypeDataBase
+UCLASS(Abstract, Category = "Type Data", Category = "Type Data")
+class UParticleModuleTypeDataTrailBase : public UParticleModuleTypeDataBase
 {
+	GENERATED_BODY(UParticleModuleTypeDataTrailBase, UParticleModuleTypeDataBase)
+
 public:
-	GENERATED_BODY(UParticleModuleTypeDataRibbon, UParticleModuleTypeDataBase)
+	UPROPERTY(DisplayName = "Max Trail Count")
+	int32 MaxTrailCount = 1;
+	UPROPERTY(DisplayName = "Max Particles In Trail")
+	int32 MaxParticleInTrailCount = 64;
+	UPROPERTY(DisplayName = "Sheets Per Trail")
+	int32 SheetsPerTrail = 1;
+	UPROPERTY(DisplayName = "Tiling Distance", Min = 0.0f, Speed = 1.0f)
+	float TilingDistance = 100.0f;
+};
+
+UCLASS(Placeable, DisplayName = "Ribbon Type Data", Category = "Type Data")
+class UParticleModuleTypeDataRibbon : public UParticleModuleTypeDataTrailBase
+{
+	GENERATED_BODY(UParticleModuleTypeDataRibbon, UParticleModuleTypeDataTrailBase)
+	
+public:
+	FParticleEmitterInstance* CreateInstance(UParticleEmitter* InEmitterTemplate, IParticleEmitterInstanceOwner& InOwner) override;
+	FDynamicEmitterDataBase* GetDynamicRenderData(FParticleEmitterInstance* InEmitterInstance) override;
+	int32 GetRequiredPayloadSize() const override;
+
+	UPROPERTY(DisplayName = "Ribbon Width", Min = 0.1f, Speed = 1.0f)
+	float RibbonWidth = 10.0f;
+
+	UPROPERTY(DisplayName = "Use Particle Size As Width")
+	bool bUseParticleSizeAsWidth = true;
+
+	UPROPERTY(DisplayName = "Facing Mode")
+	EParticleRibbonFacingMode FacingMode = EParticleRibbonFacingMode::Billboard;
+
+	UPROPERTY(DisplayName = "Spawn Initial Point")
+	bool bSpawnInitialPoint = true;
+
+	UPROPERTY(DisplayName = "Spawn Distance", Min = 0.1f, Speed = 1.0f)
+	float SpawnDistance = 5.0f;
+};
+
+
+UCLASS(Placeable, DisplayName = "AnimTrail Type Data", Category = "Type Data")
+class UParticleModuleTypeDataAnimTrail : public UParticleModuleTypeDataTrailBase
+{
+	GENERATED_BODY(UParticleModuleTypeDataAnimTrail, UParticleModuleTypeDataTrailBase)
+
+public:
+	FParticleEmitterInstance* CreateInstance(UParticleEmitter* InEmitterTemplate, IParticleEmitterInstanceOwner& InOwner) override;
+
+	UPROPERTY(DisplayName = "First Socket Name")
+	FString FirstSocketName;
+
+	UPROPERTY(DisplayName = "Second Socket Name")
+	FString SecondSocketName;
+
+	UPROPERTY(DisplayName = "Width", Min = 0.1f, Speed = 0.1f)
+	float Width = 1.0f;
 };
 
 /**

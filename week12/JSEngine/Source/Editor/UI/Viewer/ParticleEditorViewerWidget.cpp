@@ -120,7 +120,11 @@ void FParticleEditorViewerWidget::RenderMenuBar(FParticleEditorViewer* Viewer)
 	{
 		if (ImGui::BeginPopup("##ParticleFileMenu"))
 		{
-			if (ImGui::MenuItem("Save As", "Ctrl+S", false, Viewer->GetParticleSystem() != nullptr))
+			if (ImGui::MenuItem("Save", "Ctrl+S", false, Viewer->GetParticleSystem() != nullptr))
+			{
+				Viewer->Save();
+			}
+			if (ImGui::MenuItem("Save As", nullptr, false, Viewer->GetParticleSystem() != nullptr))
 			{
 				FString SavePath;
 				if (OpenParticleSaveFileDialog(ResolveSaveDialogOwnerWindow(EditorEngine), Viewer, SavePath))

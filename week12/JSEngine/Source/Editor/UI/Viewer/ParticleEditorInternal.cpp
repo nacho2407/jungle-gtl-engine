@@ -214,7 +214,7 @@ bool IsAnyPopupOpen()
 	return Context && Context->OpenPopupStack.Size > 0;
 }
 
-// 에디터 내에서 발생하는 키보드 단축키(Undo, Redo, 시뮬레이션 재시작, 아이템 삭제) 이벤트를 감지하고 처리합니다.
+// 에디터 내에서 발생하는 키보드 단축키(Save, Undo, Redo, 시뮬레이션 재시작, 아이템 삭제) 이벤트를 감지하고 처리합니다.
 void HandleParticleEditorShortcuts(FParticleEditorViewer* Viewer, bool bAllowDeleteSelection)
 {
 	if (!Viewer || IsAnyPopupOpen())
@@ -230,6 +230,12 @@ void HandleParticleEditorShortcuts(FParticleEditorViewer* Viewer, bool bAllowDel
 
 	if (!ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
 	{
+		return;
+	}
+
+	if (IO.KeyCtrl && !IO.KeyShift && ImGui::IsKeyPressed(ImGuiKey_S, false))
+	{
+		Viewer->Save();
 		return;
 	}
 
@@ -1234,8 +1240,7 @@ const char* GetParticleModuleClassMenuCategory(const UClass* Class)
 {
 	if (Class &&
 		(Class->IsChildOf(UParticleModuleRequired::StaticClass()) ||
-		 Class->IsChildOf(UParticleModuleSpawn::StaticClass()) ||
-		 Class->IsChildOf(UParticleModuleTypeDataBase::StaticClass())))
+		 Class->IsChildOf(UParticleModuleSpawn::StaticClass())))
 	{
 		return "Basic";
 	}
@@ -1253,33 +1258,37 @@ int32 GetParticleModuleClassMenuCategoryOrder(const char* Category)
 	{
 		return 0;
 	}
-	if (std::strcmp(Category, "Lifetime") == 0)
+	if (std::strcmp(Category, "Type Data") == 0)
 	{
 		return 10;
 	}
-	if (std::strcmp(Category, "Location") == 0)
+	if (std::strcmp(Category, "Lifetime") == 0)
 	{
 		return 20;
 	}
-	if (std::strcmp(Category, "Velocity") == 0)
+	if (std::strcmp(Category, "Location") == 0)
 	{
 		return 30;
 	}
-	if (std::strcmp(Category, "Color") == 0)
+	if (std::strcmp(Category, "Velocity") == 0)
 	{
 		return 40;
 	}
-	if (std::strcmp(Category, "Size") == 0)
+	if (std::strcmp(Category, "Color") == 0)
 	{
 		return 50;
 	}
-	if (std::strcmp(Category, "Animation") == 0)
+	if (std::strcmp(Category, "Size") == 0)
 	{
 		return 60;
 	}
-	if (std::strcmp(Category, "Collision") == 0)
+	if (std::strcmp(Category, "Animation") == 0)
 	{
 		return 70;
+	}
+	if (std::strcmp(Category, "Collision") == 0)
+	{
+		return 80;
 	}
 	return 100;
 }
