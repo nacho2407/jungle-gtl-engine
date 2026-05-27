@@ -40,6 +40,7 @@
 #include "Animation/AnimGraphAsset.h"
 #include "Animation/AnimSequence.h"
 #include "Particle/ParticleAsset.h"
+#include "Particle/ParticleSystemComponent.h"
 #include "Object/FName.h"
 #include "Object/Class.h"
 #include "Object/Property.h"
@@ -84,6 +85,85 @@ namespace
 	{
 		static const TArray<FString> Empty;
 		return Empty;
+	}
+
+	/**
+	 * @brief Particle instance parameter type 표시 문자열
+	 */
+	const char* GetParticleInstanceParameterTypeLabel(EParticleInstanceParameterType Type)
+	{
+		switch (Type)
+		{
+		case EParticleInstanceParameterType::Vector:
+			return "Vector";
+		case EParticleInstanceParameterType::Actor:
+			return "Actor";
+		case EParticleInstanceParameterType::Component:
+			return "Component";
+		default:
+			return "Unknown";
+		}
+	}
+
+	/**
+	 * @brief UObject 표시 이름
+	 */
+	FString GetObjectDisplayName(const UObject* Object)
+	{
+		if (Object == nullptr)
+		{
+			return "<None>";
+		}
+
+		FString Name = Object->GetFName().ToString();
+		if (Name.empty())
+		{
+			Name = Object->GetClassName();
+		}
+		return Name;
+	}
+
+	/**
+	 * @brief Actor parameter 표시 문자열
+	 */
+	FString GetParticleParameterActorLabel(int32 ActorUUID)
+	{
+		UObject* Object = ActorUUID > 0 ? UObjectManager::Get().FindByUUID(static_cast<uint32>(ActorUUID)) : nullptr;
+		AActor* Actor = Cast<AActor>(Object);
+		if (Actor == nullptr)
+		{
+			return ActorUUID != 0
+				? FString("Missing Actor UUID=") + std::to_string(ActorUUID)
+				: FString("<None>");
+		}
+
+		return GetObjectDisplayName(Actor) + " (" + std::to_string(ActorUUID) + ")";
+	}
+
+	/**
+	 * @brief Component parameter 표시 문자열
+	 */
+	FString GetParticleParameterComponentLabel(int32 ComponentUUID)
+	{
+		UObject* Object = ComponentUUID > 0 ? UObjectManager::Get().FindByUUID(static_cast<uint32>(ComponentUUID)) : nullptr;
+		USceneComponent* SceneComponent = Cast<USceneComponent>(Object);
+		if (SceneComponent == nullptr)
+		{
+			return ComponentUUID != 0
+				? FString("Missing Component UUID=") + std::to_string(ComponentUUID)
+				: FString("<None>");
+		}
+
+		AActor* Owner = SceneComponent->GetOwner();
+		return GetObjectDisplayName(Owner) + " / " + GetObjectDisplayName(SceneComponent) + " (" + std::to_string(ComponentUUID) + ")";
+	}
+
+	/**
+	 * @brief Particle instance parameter 존재 여부
+	 */
+	bool HasParticleInstanceParameter(const UParticleSystemComponent* Component, const FString& Name)
+	{
+		return Component != nullptr && Component->FindInstanceParameter(Name) != nullptr;
 	}
 
 	bool PassesAssetSearchFilter(const FString& Path, const char* Filter)
@@ -1515,6 +1595,259 @@ void FEditorPropertyWidget::RenderComponentTags(UActorComponent* Component)
 	}
 }
 
+void FEditorPropertyWidget::RenderParticleInstanceParameters(UParticleSystemComponent* ParticleSystemComponent)
+{
+	if (ParticleSystemComponent == nullptr)
+	{
+		return;
+	}
+
+	// PSC 전용 Beam endpoint binding 섹션
+	DrawDetailsSeparator();
+	DrawDetailsSectionLabel("Particle Instance Parameters");
+	ImGui::Spacing();
+
+	// undo / dirty 공통 처리
+	auto CaptureEdit = [this](const char* Reason)
+		{
+			if (EditorEngine)
+			{
+				EditorEngine->GetUndoSystem().CaptureSnapshot(Reason);
+			}
+		};
+	auto MarkSceneDirty = [this]()
+		{
+			if (EditorEngine)
+			{
+				EditorEngine->GetSceneService().MarkDirty();
+			}
+		};
+
+	// focused world selection 접근
+	const FWorldContext* FocusedContext = EditorEngine ? EditorEngine->GetFocusedWorldContext() : nullptr;
+	FSelectionManager* SelectionManager = FocusedContext ? FocusedContext->SelectionManager : nullptr;
+
+	// 수동 parameter 추가
+	if (ImGui::Button("Add Parameter"))
+	{
+		CaptureEdit("Add Particle Instance Parameter");
+
+		// 새 parameter 기본 이름
+		FParticleInstanceParameter NewParameter;
+		NewParameter.Name = "Param" + std::to_string(static_cast<int32>(ParticleSystemComponent->InstanceParameters.size()));
+		NewParameter.Type = EParticleInstanceParameterType::Vector;
+		NewParameter.VectorValue = ParticleSystemComponent->GetWorldLocation();
+		ParticleSystemComponent->InstanceParameters.push_back(NewParameter);
+		MarkSceneDirty();
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("Add Beam Source/Target Params"))
+	{
+		CaptureEdit("Add Beam Instance Parameters");
+
+		// Template의 LOD 0 Beam Source / Target Module 이름을 PSC parameter로 자동 생성
+		UParticleSystem* Template = ParticleSystemComponent->GetTemplate();
+		if (Template != nullptr)
+		{
+			for (UParticleEmitter* Emitter : Template->Emitters)
+			{
+				UParticleLODLevel* LOD0 = Emitter != nullptr && !Emitter->LODLevels.empty()
+					? Emitter->LODLevels[0]
+					: nullptr;
+				if (LOD0 == nullptr)
+				{
+					continue;
+				}
+
+				for (UParticleModule* Module : LOD0->Modules)
+				{
+					// Beam Source Module 이름 기반 parameter 생성
+					if (UParticleModuleBeamSource* BeamSource = Cast<UParticleModuleBeamSource>(Module))
+					{
+						if (!HasParticleInstanceParameter(ParticleSystemComponent, BeamSource->SourceName))
+						{
+							FParticleInstanceParameter Parameter;
+							Parameter.Name = BeamSource->SourceName;
+							Parameter.VectorValue = ParticleSystemComponent->GetWorldLocation();
+							Parameter.Type = BeamSource->SourceMethod == EParticleBeamEndpointMethod::Actor
+								? EParticleInstanceParameterType::Actor
+								: BeamSource->SourceMethod == EParticleBeamEndpointMethod::Component
+									? EParticleInstanceParameterType::Component
+									: EParticleInstanceParameterType::Vector;
+							ParticleSystemComponent->InstanceParameters.push_back(Parameter);
+						}
+					}
+
+					// Beam Target Module 이름 기반 parameter 생성
+					if (UParticleModuleBeamTarget* BeamTarget = Cast<UParticleModuleBeamTarget>(Module))
+					{
+						if (!HasParticleInstanceParameter(ParticleSystemComponent, BeamTarget->TargetName))
+						{
+							FParticleInstanceParameter Parameter;
+							Parameter.Name = BeamTarget->TargetName;
+							Parameter.VectorValue = ParticleSystemComponent->GetWorldLocation();
+							Parameter.Type = BeamTarget->TargetMethod == EParticleBeamEndpointMethod::Actor
+								? EParticleInstanceParameterType::Actor
+								: BeamTarget->TargetMethod == EParticleBeamEndpointMethod::Component
+									? EParticleInstanceParameterType::Component
+									: EParticleInstanceParameterType::Vector;
+							ParticleSystemComponent->InstanceParameters.push_back(Parameter);
+						}
+					}
+				}
+			}
+		}
+
+		MarkSceneDirty();
+	}
+
+	if (ParticleSystemComponent->InstanceParameters.empty())
+	{
+		ImGui::TextDisabled("No instance parameters.");
+		return;
+	}
+
+	// parameter row 렌더링
+	for (int32 ParameterIndex = 0; ParameterIndex < static_cast<int32>(ParticleSystemComponent->InstanceParameters.size()); ++ParameterIndex)
+	{
+		FParticleInstanceParameter& Parameter = ParticleSystemComponent->InstanceParameters[ParameterIndex];
+		ImGui::PushID(ParameterIndex);
+		ImGui::Separator();
+
+		// row header와 삭제 버튼
+		ImGui::Text("Parameter %d", ParameterIndex);
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Remove"))
+		{
+			CaptureEdit("Remove Particle Instance Parameter");
+			ParticleSystemComponent->InstanceParameters.erase(
+				ParticleSystemComponent->InstanceParameters.begin() + ParameterIndex);
+			MarkSceneDirty();
+			ImGui::PopID();
+			--ParameterIndex;
+			continue;
+		}
+
+		// parameter 이름 편집
+		char NameBuffer[128] = {};
+		strncpy_s(NameBuffer, sizeof(NameBuffer), Parameter.Name.c_str(), _TRUNCATE);
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::InputText("Name", NameBuffer, IM_ARRAYSIZE(NameBuffer)))
+		{
+			if (ImGui::IsItemActivated())
+			{
+				CaptureEdit("Edit Particle Instance Parameter Name");
+			}
+			Parameter.Name = NameBuffer;
+			MarkSceneDirty();
+		}
+
+		// parameter type combo
+		int32 TypeIndex = static_cast<int32>(Parameter.Type);
+		const char* TypeLabels[] = { "Vector", "Actor", "Component" };
+		ImGui::SetNextItemWidth(-1.0f);
+		if (ImGui::Combo("Type", &TypeIndex, TypeLabels, IM_ARRAYSIZE(TypeLabels)))
+		{
+			CaptureEdit("Edit Particle Instance Parameter Type");
+			Parameter.Type = static_cast<EParticleInstanceParameterType>(TypeIndex);
+			MarkSceneDirty();
+		}
+
+		// type별 value 편집
+		if (Parameter.Type == EParticleInstanceParameterType::Vector)
+		{
+			ImGui::SetNextItemWidth(-1.0f);
+			if (ImGui::DragFloat3("Vector", &Parameter.VectorValue.X, 0.1f))
+			{
+				if (ImGui::IsItemActivated())
+				{
+					CaptureEdit("Edit Particle Instance Parameter Vector");
+				}
+				MarkSceneDirty();
+			}
+		}
+		else if (Parameter.Type == EParticleInstanceParameterType::Actor)
+		{
+			const FString Label = GetParticleParameterActorLabel(Parameter.ActorUUID);
+			ImGui::Text("Value: %s", Label.c_str());
+
+			if (ImGui::Button("Use Selected Actor"))
+			{
+				AActor* SelectedActor = SelectionManager != nullptr
+					? SelectionManager->GetPrimarySelection()
+					: nullptr;
+				if (SelectedActor != nullptr)
+				{
+					CaptureEdit("Set Particle Instance Actor Parameter");
+					Parameter.ActorUUID = static_cast<int32>(SelectedActor->GetUUID());
+					Parameter.ComponentUUID = 0;
+					MarkSceneDirty();
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Clear"))
+			{
+				CaptureEdit("Clear Particle Instance Actor Parameter");
+				Parameter.ActorUUID = 0;
+				MarkSceneDirty();
+			}
+		}
+		else if (Parameter.Type == EParticleInstanceParameterType::Component)
+		{
+			const FString Label = GetParticleParameterComponentLabel(Parameter.ComponentUUID);
+			ImGui::Text("Value: %s", Label.c_str());
+
+			if (ImGui::Button("Use Selected Component"))
+			{
+				UActorComponent* SelectedRawComponent = SelectionManager != nullptr
+					? SelectionManager->GetSelectedComponent()
+					: nullptr;
+				USceneComponent* SelectedSceneComponent = Cast<USceneComponent>(SelectedRawComponent);
+				if (SelectedSceneComponent != nullptr)
+				{
+					CaptureEdit("Set Particle Instance Component Parameter");
+					Parameter.ActorUUID = SelectedSceneComponent->GetOwner() != nullptr
+						? static_cast<int32>(SelectedSceneComponent->GetOwner()->GetUUID())
+						: 0;
+					Parameter.ComponentUUID = static_cast<int32>(SelectedSceneComponent->GetUUID());
+					MarkSceneDirty();
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Clear"))
+			{
+				CaptureEdit("Clear Particle Instance Component Parameter");
+				Parameter.ActorUUID = 0;
+				Parameter.ComponentUUID = 0;
+				MarkSceneDirty();
+			}
+
+			// Component tree의 scene component drag-drop binding
+			if (ImGui::BeginDragDropTarget())
+			{
+				if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("DND_SCENE_COMP"))
+				{
+					USceneComponent* DroppedComponent = *(USceneComponent**)Payload->Data;
+					if (DroppedComponent != nullptr)
+					{
+						CaptureEdit("Drop Particle Instance Component Parameter");
+						Parameter.ActorUUID = DroppedComponent->GetOwner() != nullptr
+							? static_cast<int32>(DroppedComponent->GetOwner()->GetUUID())
+							: 0;
+						Parameter.ComponentUUID = static_cast<int32>(DroppedComponent->GetUUID());
+						MarkSceneDirty();
+					}
+				}
+				ImGui::EndDragDropTarget();
+			}
+		}
+
+		ImGui::TextDisabled("Type: %s", GetParticleInstanceParameterTypeLabel(Parameter.Type));
+		ImGui::PopID();
+	}
+}
+
 void FEditorPropertyWidget::RenderComponentProperties()
 {
 	bDetailsPerfTraceFrame = false;
@@ -1630,10 +1963,18 @@ void FEditorPropertyWidget::RenderComponentProperties()
 	ImGui::Spacing();
 	RenderComponentTags(SelectedComponent);
 
+	if (UParticleSystemComponent* ParticleSystemComponent = Cast<UParticleSystemComponent>(SelectedComponent))
+	{
+		RenderParticleInstanceParameters(ParticleSystemComponent);
+	}
+
 	bool bRenderedPropertiesSection = false;
 	for (const FProperty* Property : ReflectedProperties)
 	{
-		if (!Property || !Property->Name || strcmp(Property->Name, "Tags") == 0)
+		if (!Property ||
+			!Property->Name ||
+			strcmp(Property->Name, "Tags") == 0 ||
+			(SelectedComponent->IsA<UParticleSystemComponent>() && strcmp(Property->Name, "InstanceParameters") == 0))
 		{
 			continue;
 		}

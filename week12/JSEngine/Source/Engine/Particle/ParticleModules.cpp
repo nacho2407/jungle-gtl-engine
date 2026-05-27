@@ -215,35 +215,138 @@ namespace
 	}
 
 	/**
-	 * @brief Beam TypeData 기본 endpoint 계산
+	 * @brief Beam source endpoint 계산
+	 */
+	bool ResolveBeamSourceEndpoint(
+		const IParticleEmitterInstanceOwner& Owner,
+		const UParticleModuleBeamSource* BeamSource,
+		FVector& OutSource)
+	{
+		// Source Module이 없으면 component origin 기준 fallback
+		if (BeamSource == nullptr)
+		{
+			OutSource = FVector::ZeroVector;
+			return false;
+		}
+
+		// Default method는 module fallback source 직접 사용
+		if (BeamSource->SourceMethod == EParticleBeamEndpointMethod::Default)
+		{
+			OutSource = BeamSource->Source;
+			return false;
+		}
+
+		// PSC Instance Parameter 기반 world endpoint resolve
+		if (Owner.ResolveParticleInstanceParameterWorldPoint(
+			BeamSource->SourceName,
+			BeamSource->SourceMethod,
+			OutSource))
+		{
+			return true;
+		}
+
+		// resolve 실패 시 module fallback source 사용
+		OutSource = BeamSource->Source;
+		return false;
+	}
+
+	/**
+	 * @brief Beam target endpoint 계산
+	 */
+	bool ResolveBeamTargetEndpoint(
+		const IParticleEmitterInstanceOwner& Owner,
+		const UParticleModuleBeamTarget* BeamTarget,
+		const FVector& DistanceFallbackTarget,
+		FVector& OutTarget)
+	{
+		// Target Module이 없으면 Distance 기반 fallback target 사용
+		if (BeamTarget == nullptr)
+		{
+			OutTarget = DistanceFallbackTarget;
+			return false;
+		}
+
+		// Default method는 module fallback target 직접 사용
+		if (BeamTarget->TargetMethod == EParticleBeamEndpointMethod::Default)
+		{
+			OutTarget = BeamTarget->Target;
+			return false;
+		}
+
+		// PSC Instance Parameter 기반 world endpoint resolve
+		if (Owner.ResolveParticleInstanceParameterWorldPoint(
+			BeamTarget->TargetName,
+			BeamTarget->TargetMethod,
+			OutTarget))
+		{
+			return true;
+		}
+
+		// resolve 실패 시 module fallback target 사용
+		OutTarget = BeamTarget->Target;
+		return false;
+	}
+
+	/**
+	 * @brief Beam TypeData 기준 endpoint 계산
 	 */
 	void ResolveBeamDefaultEndpoints(
 		const UParticleModuleTypeDataBeam& TypeData,
 		const FParticleLODLevelRuntimeCache& Cache,
+		const IParticleEmitterInstanceOwner& Owner,
+		const FMatrix& ComponentToWorld,
 		FVector& OutSource,
-		FVector& OutTarget)
+		FVector& OutTarget,
+		EParticleCoordinateSpace& OutCoordinateSpace)
 	{
 		// 현재 LOD에서 활성화된 Beam Source / Target Module 조회
 		const UParticleModuleBeamSource* BeamSource = Cache.BeamSourceModule;
 		const UParticleModuleBeamTarget* BeamTarget = Cache.BeamTargetModule;
 
-		// Source Module이 없으면 component origin 기준 fallback
-		OutSource = BeamSource != nullptr
-			? BeamSource->Source
-			: FVector::ZeroVector;
+		// Source endpoint resolve와 coordinate space 기록
+		bool bSourceWorldSpace = ResolveBeamSourceEndpoint(Owner, BeamSource, OutSource);
 
 		// Distance는 target module 여부와 무관하게 source + local X distance
 		const float SafeDistance = std::max(TypeData.Distance, 0.0f);
 		if (TypeData.BeamMethod == EParticleBeamMethod::Distance)
 		{
-			OutTarget = OutSource + FVector(SafeDistance, 0.0f, 0.0f);
+			if (bSourceWorldSpace)
+			{
+				// Source가 PSC parameter로 world resolve된 경우 component forward 방향을 world distance로 사용
+				OutTarget = OutSource + ComponentToWorld.GetForwardVector() * SafeDistance;
+				OutCoordinateSpace = EParticleCoordinateSpace::World;
+			}
+			else
+			{
+				// Source가 local fallback인 경우 기존 Beam replay local 계약 유지
+				OutTarget = OutSource + FVector(SafeDistance, 0.0f, 0.0f);
+			}
 			return;
 		}
 
-		// Target은 Target Module fallback을 우선 사용하고, 없으면 Distance fallback으로 유지
-		OutTarget = BeamTarget != nullptr
-			? BeamTarget->Target
-			: OutSource + FVector(SafeDistance, 0.0f, 0.0f);
+		// Target endpoint resolve와 coordinate space 기록
+		const FVector DistanceFallbackTarget = OutSource + FVector(SafeDistance, 0.0f, 0.0f);
+		bool bTargetWorldSpace = ResolveBeamTargetEndpoint(
+			Owner,
+			BeamTarget,
+			DistanceFallbackTarget,
+			OutTarget);
+
+		// 어느 한쪽이라도 PSC parameter로 world resolve되면 replay 전체를 world space로 통일
+		if (bSourceWorldSpace || bTargetWorldSpace)
+		{
+			if (!bSourceWorldSpace)
+			{
+				OutSource = ComponentToWorld.TransformPosition(OutSource);
+			}
+
+			if (!bTargetWorldSpace)
+			{
+				OutTarget = ComponentToWorld.TransformPosition(OutTarget);
+			}
+
+			OutCoordinateSpace = EParticleCoordinateSpace::World;
+		}
 	}
 
 	FParticleLODLevelRuntimeCache BuildStableLOD0RuntimeCache(const UParticleLODLevel* LODLevel)
@@ -1994,7 +2097,16 @@ FDynamicEmitterDataBase* UParticleModuleTypeDataBeam::GetDynamicRenderData(FPart
 	// Beam TypeData / Source / Target Module 기반 endpoint snapshot
 	FVector SourcePoint = FVector::ZeroVector;
 	FVector TargetPoint = FVector(100.0f, 0.0f, 0.0f);
-	ResolveBeamDefaultEndpoints(*this, *InEmitterInstance->CurrentRuntimeCache, SourcePoint, TargetPoint);
+	EParticleCoordinateSpace BeamCoordinateSpace = RenderData->ReplayData.CoordinateSpace;
+	ResolveBeamDefaultEndpoints(
+		*this,
+		*InEmitterInstance->CurrentRuntimeCache,
+		InEmitterInstance->GetOwner(),
+		RenderData->ComponentToWorld,
+		SourcePoint,
+		TargetPoint,
+		BeamCoordinateSpace);
+	RenderData->ReplayData.CoordinateSpace = BeamCoordinateSpace;
 	RenderData->ReplayData.SourcePoint = SourcePoint;
 	RenderData->ReplayData.TargetPoint = TargetPoint;
 	RenderData->ReplayData.BeamWidth = std::max(BeamWidth, 0.1f);
