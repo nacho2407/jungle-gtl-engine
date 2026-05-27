@@ -9,6 +9,7 @@
 #include "Particle/ParticleMeshBounds.h"
 #include "Particle/ParticleAsset.h"
 #include "Particle/ParticleEmitterInstance.h"
+#include "Core/Logging/Stats.h"
 #include "Render/Scene/Scene.h"
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
@@ -503,6 +504,7 @@ bool UParticleSystemComponent::ParticleLineCheck(
 
 void UParticleSystemComponent::TickComponent(float DeltaTime)
 {
+	SCOPE_STAT("Particle.TotalTick");
 	ParticleEvents.clear();
 
 	UpdateLODLevel();

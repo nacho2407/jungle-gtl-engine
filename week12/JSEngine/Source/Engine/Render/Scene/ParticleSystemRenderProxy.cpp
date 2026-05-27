@@ -5,6 +5,7 @@
 #include "Particle/ParticleMeshBounds.h"
 #include "Particle/ParticleModules.h"
 #include "Particle/ParticleTypes.h"
+#include "Core/Logging/Stats.h"
 #include "Asset/StaticMesh.h"
 #include "Core/ResourceManager.h"
 #include "Render/Resource/Buffer.h"
@@ -56,6 +57,7 @@ namespace
 			}
 		}
 
+		SCOPE_STAT("Particle.EmitterSort");
 		switch (ReplayData.SortMode)
 		{
 		case EParticleSortMode::ViewDepthBackToFront:

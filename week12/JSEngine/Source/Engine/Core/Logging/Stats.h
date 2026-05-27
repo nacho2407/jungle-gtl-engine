@@ -8,7 +8,7 @@
 
 // --- 빌드 설정 ---
 #ifndef STATS
-#define STATS 0
+#define STATS 1
 #endif
 
 // --- Stat Entry ---

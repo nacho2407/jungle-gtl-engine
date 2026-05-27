@@ -3,6 +3,7 @@
 #include "Core/ResourceManager.h"
 #include "Core/Logging/GPUProfiler.h"
 #include "Core/Logging/SkinningStats.h"
+#include "Core/Logging/Stats.h"
 #include "Editor/EditorEngine.h"
 #include "Editor/EditorRenderPipeline.h"
 #include "Editor/Settings/EditorSettings.h"
@@ -16,6 +17,7 @@
 #include "Engine/Object/FName.h"
 #include "Render/Resource/ShadowAtlasManager.h"
 #include <cstdio>
+#include <cstring>
 #include "Slate/SSplitterV.h"
 #include "Slate/SSplitterH.h"
 #include "Slate/SSplitterCross.h"
@@ -95,6 +97,28 @@ namespace
 			::ClientToScreen(Window->GetHWND(), &Result);
 		}
 		return ImVec2(static_cast<float>(Result.x), static_cast<float>(Result.y));
+	}
+
+	const FStatEntry* FindStatEntry(const TArray<FStatEntry>& Entries, const char* Name)
+	{
+		for (const FStatEntry& Entry : Entries)
+		{
+			if (Entry.Name != nullptr && std::strcmp(Entry.Name, Name) == 0)
+			{
+				return &Entry;
+			}
+		}
+		return nullptr;
+	}
+
+	double StatSecondsToMs(const FStatEntry* Entry)
+	{
+		return Entry != nullptr ? Entry->TotalTime * 1000.0 : 0.0;
+	}
+
+	uint32 StatCallCount(const FStatEntry* Entry)
+	{
+		return Entry != nullptr ? Entry->CallCount : 0;
 	}
 } // namespace
 
@@ -557,6 +581,7 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 			!VS.bShowStatMemory &&
 			!VS.bShowStatNameTable &&
 			!VS.bShowStatParticles &&
+			!VS.bShowStatTranslucent &&
 			!VS.bShowLight &&
 			!VS.bShowShadow)
 		{
@@ -579,6 +604,7 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 
 		if (ImGui::Begin(WinId, nullptr, kFlags))
 		{
+			const TArray<FStatEntry>& StatSnapshot = FStatManager::Get().GetSnapshot();
 			const FRenderCollector::FCullingStats* CullingStats =
 				(RenderPipeline != nullptr) ? &RenderPipeline->GetViewportCullingStats(i) : nullptr;
 
@@ -670,12 +696,38 @@ void FEditorViewportOverlayWidget::RenderDebugStats(float DeltaTime)
 					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Trail Particle Polygons: %llu", static_cast<unsigned long long>(ParticleStats->TrailParticlePolygons));
 					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Trail Particle Killed: %d", ParticleStats->TrailParticleKilled);
 					ImGui::TextColored(ImVec4(0.55f, 1.0f, 0.65f, 1.0f), "- Particle Draw Calls: %d", ParticleStats->ParticleDrawCalls);
+
+					const FStatEntry* TotalTickStat = FindStatEntry(StatSnapshot, "Particle.TotalTick");
+					const FStatEntry* EmitterSortStat = FindStatEntry(StatSnapshot, "Particle.EmitterSort");
+					ImGui::TextColored(
+						ImVec4(0.55f, 1.0f, 0.65f, 1.0f),
+						"- Total Tick: %.4f ms (%u calls)",
+						StatSecondsToMs(TotalTickStat),
+						StatCallCount(TotalTickStat));
+					ImGui::TextColored(
+						ImVec4(0.55f, 1.0f, 0.65f, 1.0f),
+						"- Sort: %.4f ms (%u emitters)",
+						StatSecondsToMs(EmitterSortStat),
+						StatCallCount(EmitterSortStat));
 				}
+			}
+
+			if (VS.bShowStatTranslucent)
+			{
+				ImGui::Separator();
+
+				const FStatEntry* TranslucentSortStat = FindStatEntry(StatSnapshot, "Translucent.Sort");
+				ImGui::TextColored(ImVec4(0.72f, 0.72f, 1.0f, 1.0f), "Translucent Stat");
+				ImGui::TextColored(
+					ImVec4(0.72f, 0.72f, 1.0f, 1.0f),
+					"- Sort: %.4f ms (%u calls)",
+					StatSecondsToMs(TranslucentSortStat),
+					StatCallCount(TranslucentSortStat));
 			}
 
             if (VS.bShowShadow)
             {
-                if (CullingStats != nullptr || VS.bShowStatFPS || VS.bShowStatMemory)
+                if (CullingStats != nullptr || VS.bShowStatFPS || VS.bShowStatMemory || VS.bShowStatTranslucent)
                 {
                     ImGui::Separator();
                 }

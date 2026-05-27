@@ -7,6 +7,7 @@
 #include "Render/Resource/VertexFactoryTypes.h"
 #include "Component/PrimitiveComponent.h"
 #include "Particle/ParticleTypes.h"
+#include "Core/Logging/Stats.h"
 #include "Core/ResourceManager.h"
 
 #include <algorithm>
@@ -344,19 +345,22 @@ TArray<FRenderCommand> FTranslucentRenderPass::SortTranslucentCommands(const FRe
 
 	const FVector CameraPosition = Context->RenderBus->GetCameraPosition();
 	const FVector CameraForward = Context->RenderBus->GetCameraForward();
-	std::stable_sort(SortedIndices.begin(), SortedIndices.end(),
-		[&Commands, &CameraPosition, &CameraForward](size_t AIndex, size_t BIndex)
-		{
-			const FRenderCommand& A = Commands[AIndex];
-			const FRenderCommand& B = Commands[BIndex];
-			if (IsSameParticleSystemCommand(A, B))
+	{
+		SCOPE_STAT("Translucent.Sort");
+		std::stable_sort(SortedIndices.begin(), SortedIndices.end(),
+			[&Commands, &CameraPosition, &CameraForward](size_t AIndex, size_t BIndex)
 			{
-				return A.ParticleEmitterData->EmitterIndex < B.ParticleEmitterData->EmitterIndex;
-			}
+				const FRenderCommand& A = Commands[AIndex];
+				const FRenderCommand& B = Commands[BIndex];
+				if (IsSameParticleSystemCommand(A, B))
+				{
+					return A.ParticleEmitterData->EmitterIndex < B.ParticleEmitterData->EmitterIndex;
+				}
 
-			return CalculateTranslucentSortKey(A, CameraPosition, CameraForward) >
-				CalculateTranslucentSortKey(B, CameraPosition, CameraForward);
-		});
+				return CalculateTranslucentSortKey(A, CameraPosition, CameraForward) >
+					CalculateTranslucentSortKey(B, CameraPosition, CameraForward);
+			});
+	}
 
 	TArray<FRenderCommand> SortedCommands;
 	SortedCommands.reserve(Commands.size());
