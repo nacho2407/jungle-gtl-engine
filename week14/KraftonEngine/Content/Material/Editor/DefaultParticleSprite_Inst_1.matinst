@@ -1,0 +1,10 @@
+{
+        "Parameters" : {
+
+        },
+        "ParentMaterial" : "Content/Material/Editor/DefaultParticleSprite.mat",
+        "PathFileName" : "Content/Material/Editor/DefaultParticleSprite_Inst_1.matinst",
+        "Textures" : {
+          "DiffuseTexture" : "Content/Texture/T_Beam.png"
+        }
+      }
