@@ -5,6 +5,8 @@
 #include "Common/VertexLayouts.hlsli"
 #include "Common/Functions.hlsli"
 #include "Common/SystemSamplers.hlsli"
+#define USE_FOG 1
+#include "Common/Fog.hlsli"
 
 struct FMaterialPixelInput
 {
@@ -13,7 +15,9 @@ struct FMaterialPixelInput
     float2 UV2;
     float4 ParticleColor;
     float4 VertexColor;
-    float Time;
+    float  Time;
+    float  SubImageIndex;
+    float4 DynamicParam;
 };
 
 struct FMaterialResult
@@ -45,9 +49,12 @@ FMaterialResult EvaluateMaterial(FMaterialPixelInput Input)
 
 struct PS_Input_MaterialParticle
 {
-    float4 position : SV_POSITION;
-    float2 texcoord : TEXCOORD0;
-    float4 color : COLOR;
+    float4 position       : SV_POSITION;
+    float2 texcoord       : TEXCOORD0;
+    float4 color          : COLOR;
+    float  subImageIndex  : TEXCOORD1;
+    float4 dynamicParam   : TEXCOORD2;
+    float3 worldPos       : TEXCOORD3;
 };
 
 PS_Input_MaterialParticle VS(VS_Input_ParticleQuad quad, VS_Input_ParticleInstance inst)
@@ -65,24 +72,29 @@ PS_Input_MaterialParticle VS(VS_Input_ParticleQuad quad, VS_Input_ParticleInstan
                     + FrameCameraUp * rotUV.y * inst.size;
 
     PS_Input_MaterialParticle output;
-    output.position = mul(float4(worldPos, 1.0f), mul(View, Projection));
-    output.texcoord = quad.cornerUV + 0.5f;
-    output.color = inst.color;
+    output.position       = mul(float4(worldPos, 1.0f), mul(View, Projection));
+    output.texcoord       = quad.cornerUV + 0.5f;
+    output.color          = inst.color;
+    output.subImageIndex  = inst.subImageIndex;
+    output.dynamicParam   = inst.dynamicParam;
+    output.worldPos       = worldPos;
     return output;
 }
 
 float4 PS(PS_Input_MaterialParticle input) : SV_TARGET
 {
     FMaterialPixelInput MaterialInput;
-    MaterialInput.UV0 = input.texcoord;
-    MaterialInput.UV1 = float2(0, 0);
-    MaterialInput.UV2 = float2(0, 0);
+    MaterialInput.UV0           = input.texcoord;
+    MaterialInput.UV1           = float2(0, 0);
+    MaterialInput.UV2           = float2(0, 0);
     MaterialInput.ParticleColor = input.color;
-    MaterialInput.VertexColor = input.color;
-    MaterialInput.Time = Time;
+    MaterialInput.VertexColor   = input.color;
+    MaterialInput.Time          = Time;
+    MaterialInput.SubImageIndex = input.subImageIndex;
+    MaterialInput.DynamicParam  = input.dynamicParam;
 
     FMaterialResult Result = EvaluateMaterial(MaterialInput);
     float4 FinalColor = float4(Result.Color + Result.Emissive, Result.Opacity);
     clip(FinalColor.a - 0.01f);
-    return FinalColor;
+    return ApplyFogTranslucent(FinalColor, input.worldPos, CameraWorldPos);
 }
