@@ -410,6 +410,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Engine\Object\ReferenceCollector.cpp" />
+    <ClCompile Include="Source\Engine\Object\GarbageCollector.cpp" />
+    <ClCompile Include="Source\Engine\Object\GarbageCollectionTest.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyRenderer.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.cpp" />
@@ -763,6 +766,11 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Intermediate\Generated\LuaBindings.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Engine\Object\Ptr\WeakObjectPtr.h" />
+    <ClInclude Include="Source\Engine\Object\ReferenceCollector.h" />
+    <ClInclude Include="Source\Engine\Object\GarbageCollector.h" />
+    <ClInclude Include="Source\Engine\Object\GarbageCollectionTest.h" />
+    <ClInclude Include="Source\Engine\Serialization\GCArchive.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyRenderer.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.h" />

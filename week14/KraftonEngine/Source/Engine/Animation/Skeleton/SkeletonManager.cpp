@@ -1,4 +1,4 @@
-#include "SkeletonManager.h"
+﻿#include "SkeletonManager.h"
 
 #include "Animation/Skeleton/Skeleton.h"
 #include "Asset/AssetPackage.h"
@@ -6,6 +6,7 @@
 #include "Object/Object.h"
 #include "Platform/Paths.h"
 #include "Serialization/WindowsArchive.h"
+#include "Object/ReferenceCollector.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -309,6 +310,14 @@ bool FSkeletonManager::BuildBoneRemapByName(
         OutReport->Reason = "bone remap built by name";
     }
     return true;
+}
+
+void FSkeletonManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (auto& [Path, Skeleton] : SkeletonCaches)
+	{
+		Collector.AddReferencedObject(Skeleton);
+	}
 }
 
 FSkeletonCompatibilityReport FSkeletonManager::CheckCompatibility(

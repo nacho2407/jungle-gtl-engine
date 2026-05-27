@@ -61,6 +61,7 @@ public:
 		return nullptr;
 	}
 
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	template<typename T>
 	T* FindResolvedModule(const UParticleEmitter* OwnerEmitter) const
 	{
@@ -110,6 +111,7 @@ public:
 	void AddLODLevel(UParticleLODLevel* LODLevel);
 
 	void Serialize(FArchive& Ar) override;
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
 	TArray<UParticleLODLevel*> LODLevels;
@@ -146,6 +148,8 @@ public:
 
 	void Serialize(FArchive& Ar) override;
 
+	//GC
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
 	void NormalizeEmitterLODLevels(UParticleEmitter* Emitter);
 

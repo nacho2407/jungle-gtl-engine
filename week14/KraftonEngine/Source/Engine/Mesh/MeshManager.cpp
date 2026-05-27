@@ -1,4 +1,4 @@
-#include "MeshManager.h"
+﻿#include "MeshManager.h"
 #include "Mesh/Static/StaticMesh.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Importer/ObjImporter.h"
@@ -23,6 +23,8 @@
 #include "Animation/Skeleton/Skeleton.h"
 #include "Animation/Skeleton/SkeletonManager.h"
 #include "Animation/Skeleton/SkeletonTypes.h"
+
+#include "Object/ReferenceCollector.h"
 
 TMap<FString, UStaticMesh*> FMeshManager::StaticMeshCache;
 TMap<FString, USkeletalMesh*> FMeshManager::SkeletalMeshCache;
@@ -541,6 +543,19 @@ bool FMeshManager::IsSkeletalMeshPackage(const FString& Path)
 {
 	FAssetImportMetadata Metadata;
 	return FAssetPackage::ReadMetadata(Path, EAssetPackageType::SkeletalMesh, Metadata);
+}
+
+void FMeshManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (auto& [Path, Mesh] : StaticMeshCache)
+	{
+		Collector.AddReferencedObject(Mesh);
+	}
+
+	for (auto& [Path, Mesh] : SkeletalMeshCache)
+	{
+		Collector.AddReferencedObject(Mesh);
+	}
 }
 
 void FMeshManager::ScanMeshAssets()

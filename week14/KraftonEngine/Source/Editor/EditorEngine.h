@@ -11,8 +11,8 @@
 #include <optional>
 #if STATS
 #include "Editor/EditorRenderPipeline.h"
-#include "Source/Editor/EditorEngine.generated.h"
 #endif
+#include "Source/Editor/EditorEngine.generated.h"
 
 class UGizmoComponent;
 class FLevelEditorViewportClient;
@@ -101,6 +101,12 @@ public:
 	FOverlayStatSystem& GetOverlayStatSystem() { return OverlayStatSystem; }
 	const FOverlayStatSystem& GetOverlayStatSystem() const { return OverlayStatSystem; }
 
+	void SetAutoGCEnabled(bool bEnabled);
+	bool IsAutoGCEnabled() const { return bAutoGCEnabled; }
+	void SetGCIntervalSeconds(float Seconds);
+	float GetGCIntervalSeconds() const { return GCIntervalSeconds; }
+	void ForceCollectGarbage();
+
 	// --- PIE (Play In Editor) ---
 	// UE의 FRequestPlaySessionParams 대응. 요청은 단일 슬롯에 저장되고
 	// 다음 Tick에서 StartQueuedPlaySessionRequest가 실제 StartPIE를 수행한다.
@@ -129,6 +135,9 @@ public:
 	// 점프하는 의미가 모호하므로). InScenePath 는 무시.
 	void RequestTransitionToScene(const FString& InScenePath) override;
 
+	//GC
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 private:
 	// Tick 내에서 호출 — 큐에 요청이 있으면 StartPlayInEditorSession 실행
 	void StartQueuedPlaySessionRequest();
@@ -140,6 +149,7 @@ private:
 	void LoadStartLevel();
 	bool FindSceneViewportPOV(struct FMinimalViewInfo& OutPOV) const;
 	void RestoreViewportCamera(const FPerspectiveCameraData& CamData);
+	void RunGarbageCollectionPass();
 
 	FSelectionManager SelectionManager;
 	FEditorMainPanel MainPanel;
@@ -154,5 +164,8 @@ private:
 	bool bRequestEndPlayMapQueued = false;
 	EPIEControlMode PIEControlMode = EPIEControlMode::Possessed;
 	FString CurrentLevelFilePath;
+	bool bAutoGCEnabled = false;
+	float GCIntervalSeconds = 1.0f;
+	float GCTimeAccumulator = 0.0f;
 
 };

@@ -138,6 +138,10 @@ public:
 	void SetQueuedForPartitionUpdate(bool bQueued) { bQueuedForPartitionUpdate = bQueued; }
 	
 	FActorTickFunction PrimaryActorTick;
+
+	// GC
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
+
 protected:
 	virtual void TickActor( float DeltaSeconds, ELevelTick TickType, FActorTickFunction& ThisTickFunction );
 	

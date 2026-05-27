@@ -39,7 +39,7 @@ private:
 		while (CurrentIndex < static_cast<int32>(GUObjectArray.size()))
 		{
 			UObject* Obj = GUObjectArray[CurrentIndex];
-			if (Obj && Obj->IsA<TObject>())
+			if (IsValid(Obj) && Obj->IsA<TObject>())
 			{
 				return;
 			}
@@ -83,7 +83,7 @@ private:
 		while (CurrentIndex < static_cast<int32>(GUObjectArray.size()))
 		{
 			UObject* Obj = GUObjectArray[CurrentIndex];
-			if (Obj != nullptr)
+			if (IsValid(Obj))
 			{
 				if (FilterType == nullptr || Obj->GetClass()->IsA(FilterType))
 				{

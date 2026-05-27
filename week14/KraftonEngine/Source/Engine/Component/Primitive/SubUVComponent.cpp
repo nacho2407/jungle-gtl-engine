@@ -11,6 +11,7 @@
 #include "Render/Proxy/SubUVSceneProxy.h"
 #include "Serialization/Archive.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialManager.h"
 
 FPrimitiveSceneProxy* USubUVComponent::CreateSceneProxy()
 {
@@ -33,7 +34,7 @@ USubUVComponent::~USubUVComponent()
 {
 	if (SubUVMaterial)
 	{
-		UObjectManager::Get().DestroyObject(SubUVMaterial);
+		FMaterialManager::Get().DestroyTransientMaterial(SubUVMaterial);
 		SubUVMaterial = nullptr;
 	}
 }
@@ -49,7 +50,7 @@ void USubUVComponent::RebuildSubUVMaterial()
 {
 	if (!SubUVMaterial)
 	{
-		SubUVMaterial = UMaterial::CreateTransient(
+		SubUVMaterial = FMaterialManager::Get().CreateTransientMaterial(
 			ERenderPass::AlphaBlend, EBlendState::AlphaBlend,
 			EDepthStencilState::Default, ERasterizerState::SolidBackCull,
 			FShaderManager::Get().GetOrCreate(EShaderPath::SubUV));

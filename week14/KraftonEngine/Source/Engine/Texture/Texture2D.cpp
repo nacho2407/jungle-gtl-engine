@@ -1,9 +1,11 @@
-#include "Texture/Texture2D.h"
+﻿#include "Texture/Texture2D.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Core/Logging/Log.h"
 #include "Platform/Paths.h"
 #include "WICTextureLoader.h"
 #include "stb_image.h"
+
+#include "Object/ReferenceCollector.h"
 
 #include <algorithm>
 #include <cwctype>
@@ -13,6 +15,14 @@
 #include <vector>
 
 std::map<FString, UTexture2D*> UTexture2D::TextureCache;
+
+void UTexture2D::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (auto& [Path, Texture] : TextureCache)
+	{
+		Collector.AddReferencedObject(Texture);
+	}
+}
 
 FString UTexture2D::MakeCacheKey(const FString& FilePath, ETextureColorSpace ColorSpace)
 {

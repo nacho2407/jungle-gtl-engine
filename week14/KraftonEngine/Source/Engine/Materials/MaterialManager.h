@@ -23,11 +23,14 @@ namespace MatKeys
 }
 
 class FMaterialTemplate;
+class FShader;
 class UMaterial;
 class UMaterialInterface;
 class UMaterialInstance;
 struct FMaterialConstantBuffer;
 enum class EMaterialShadowMode : uint8;
+
+class FReferenceCollector;
 
 struct FMaterialAssetListItem
 {
@@ -39,10 +42,12 @@ class FMaterialManager : public TSingleton<FMaterialManager>
 {
 	friend class TSingleton<FMaterialManager>;
 
-    TMap<FString, FMaterialTemplate*> TemplateCache;    // 셰이더 경로 → Template (공유)
+	TMap<FString, FMaterialTemplate*> TemplateCache;    // 셰이더 경로 → Template (공유)
 	TMap<FString, UMaterial*> MaterialCache;	//MatFilePath
 	TMap<FString, UMaterialInstance*> MaterialInstanceCache;
+	TMap<uint32, UMaterial*> TransientMaterialRegistry;
 	TArray<FMaterialAssetListItem> AvailableMaterialFiles;
+	uint32 NextTransientMaterialId = 1;
 
 	ID3D11Device* Device = nullptr;
 
@@ -59,11 +64,19 @@ public:
 	UMaterialInstance* GetOrCreateMaterialInstance(const FString& MatInstFilePath);
 
 	UMaterialInterface* GetOrCreateMaterialInterface(const FString& AssetPath);
+	UMaterial* CreateTransientMaterial(ERenderPass InPass, EBlendState InBlend,
+		EDepthStencilState InDepth = EDepthStencilState::Default,
+		ERasterizerState InRaster = ERasterizerState::SolidBackCull,
+		FShader* InShader = nullptr);
+	void DestroyTransientMaterial(UMaterial* Material);
 
 	void ScanMaterialAssets();
 	const TArray<FMaterialAssetListItem>& GetAvailableMaterialFiles() const { return AvailableMaterialFiles; }
 
 	void Release();
+
+	void AddReferencedObjects(FReferenceCollector& Collector);
+
 private:
 	// 셰이더로 Template 생성 또는 캐시에서 반환
 	FMaterialTemplate* GetOrCreateTemplate(const FString& ShaderPath);

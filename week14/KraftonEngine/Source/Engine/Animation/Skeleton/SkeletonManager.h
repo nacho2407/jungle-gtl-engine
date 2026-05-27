@@ -1,10 +1,11 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Asset/AssetRegistry.h"
 #include "Animation/Skeleton/SkeletonTypes.h"
 
 class USkeleton;
+class FReferenceCollector;
 
 class FSkeletonManager
 {
@@ -40,6 +41,9 @@ public:
         FSkeletonCompatibilityReport* OutReport            = nullptr,
         bool                          bRequireExactBoneSet = true
         );
+
+	// GC
+	void AddReferencedObjects(FReferenceCollector& Collector);
 
 private:
     FSkeletonManager() = default;

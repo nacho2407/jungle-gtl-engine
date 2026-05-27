@@ -1,4 +1,4 @@
-#include "Editor/Selection/SelectionManager.h"
+﻿#include "Editor/Selection/SelectionManager.h"
 #include "Object/Object.h"
 #include "Component/Debug/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -6,6 +6,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Render/Scene/FScene.h"
+#include "Object/ReferenceCollector.h"
 
 void FSelectionManager::Init()
 {
@@ -321,3 +322,7 @@ void FSelectionManager::SyncGizmo()
 	}
 }
 
+void FSelectionManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	Collector.AddReferencedObject(Gizmo);
+}
