@@ -5,6 +5,7 @@
 
 UHeightFogComponent::UHeightFogComponent() 
 {
+	bEnableCull = false;
 }
 
 void UHeightFogComponent::UpdateWorldAABB() const

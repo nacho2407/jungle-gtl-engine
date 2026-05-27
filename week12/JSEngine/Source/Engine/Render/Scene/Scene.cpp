@@ -335,6 +335,22 @@ public:
 	}
 };
 
+class FFogSceneProxy final : public FCommandBuilderPrimitiveSceneProxy
+{
+public:
+	using FCommandBuilderPrimitiveSceneProxy::FCommandBuilderPrimitiveSceneProxy;
+
+	void CollectCommands(const FPrimitiveRenderProxyCollectionContext& Context) override
+	{
+		if (Context.Intent == EPrimitiveRenderProxyCollectIntent::ShadowOnly)
+		{
+			return;
+		}
+
+		CollectSurfaceCommands(Context);
+	}
+};
+
 class FDecalSceneProxy final : public FPrimitiveRenderProxy
 {
 public:
@@ -1115,6 +1131,8 @@ std::unique_ptr<FPrimitiveRenderProxy> FScene::CreatePrimitiveProxy(UPrimitiveCo
 		return std::make_unique<FTextSceneProxy>(Primitive);
 	case EPrimitiveType::EPT_SubUV:
 		return std::make_unique<FSubUVSceneProxy>(Primitive);
+	case EPrimitiveType::EPT_FOG:
+		return std::make_unique<FFogSceneProxy>(Primitive);
 	case EPrimitiveType::EPT_Decal:
 		return std::make_unique<FDecalSceneProxy>(Primitive);
 	default:
