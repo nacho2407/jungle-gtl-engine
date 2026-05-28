@@ -423,8 +423,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
                 f'xcopy /Y "$(ProjectDir){FMOD_LIB_DIR}\\{fmod_dll}" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){physx_bin}\\*.dll" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){LUA_BIN_DIR}\\{LUA_DLL}" "$(OutDir)"\n'
-                f'xcopy /Y "$(ProjectDir){fbx_lib_dir}\\{FBX_DLL}" "$(OutDir)"\n'
-                f'call "$(ProjectDir)UploadSymbols.bat" "$(OutDir)" "$(Configuration)" "$(Platform)"'
+                f'xcopy /Y "$(ProjectDir){fbx_lib_dir}\\{FBX_DLL}" "$(OutDir)"'
             )
 
         # Reflection codegen — UCLASS/UPROPERTY 매크로가 박힌 헤더로부터
