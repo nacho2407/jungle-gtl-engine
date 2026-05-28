@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Animation/AnimInstance.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 
 #include <sol/sol.hpp>
 
@@ -51,10 +52,17 @@ public:
 	// FLuaScriptManager 가 .lua 변경 감지 시 호출.
 	void ReloadScript();
 
+	// Lua state shutdown 전에 sol reference 를 명시적으로 해제한다.
+	void ReleaseLuaRuntimeForShutdown();
+
 private:
 	void ClearGraph();      // ReloadScript 경로 — RootNode + OwnedNodes + lua env 정리.
 	void InstallBindings();
 	void DispatchLuaInit();
+
+	int32 StoreLuaTransitionCondition(sol::protected_function Condition);
+	bool EvaluateLuaTransitionCondition(int32 ConditionIndex, uint32 Generation);
+	void HandleDeferredLuaRuntimeRelease();
 
 	void EnsureLuaMorphWeightStorage();
 	void ApplyLuaMorphOverrides(FPoseContext& Output) const;
@@ -68,4 +76,32 @@ private:
 	TArray<float>                 LuaMorphWeights;
 	TArray<uint8>                 LuaMorphOverrideMask;
 	bool                          bLuaMorphOverrideEnabled = false;
+
+	uint32                        LuaRuntimeGeneration = 0;
+	int32                         LuaCallDepth = 0;
+	bool                          bPendingLuaRuntimeRelease = false;
+	TArray<sol::protected_function> LuaTransitionConditions;
+
+	struct FLuaCallScope
+	{
+		ULuaAnimInstance* Owner = nullptr;
+
+		explicit FLuaCallScope(ULuaAnimInstance* InOwner)
+			: Owner(InOwner)
+		{
+			if (Owner)
+			{
+				++Owner->LuaCallDepth;
+			}
+		}
+
+		~FLuaCallScope()
+		{
+			if (Owner && Owner->LuaCallDepth > 0)
+			{
+				--Owner->LuaCallDepth;
+				Owner->HandleDeferredLuaRuntimeRelease();
+			}
+		}
+	};
 };

@@ -30,8 +30,7 @@
 #include <cmath>
 ULuaAnimInstance::~ULuaAnimInstance()
 {
-	FLuaScriptManager::UnregisterAnimInstance(this);
-	ClearGraph();
+	ReleaseLuaRuntimeForShutdown();
 }
 
 // ──────────────────────────────────────────────
@@ -40,6 +39,7 @@ ULuaAnimInstance::~ULuaAnimInstance()
 void ULuaAnimInstance::NativeInitializeAnimation()
 {
 	Super::NativeInitializeAnimation();
+	FLuaScriptManager::UnregisterAnimInstance(this);
 	ClearGraph();
 
 	if (ScriptFile.empty() || ScriptFile == "None")
@@ -65,6 +65,7 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 	if (!FLuaScriptManager::ReadScriptFileContent(ScriptFile, Content))
 	{
 		UE_LOG("[LuaAnimInstance] Failed to read script: %s", ScriptFile.c_str());
+		ClearGraph();
 		return;
 	}
 	const FString ResolvedPath = FLuaScriptManager::ResolveScriptPath(ScriptFile);
@@ -73,6 +74,7 @@ void ULuaAnimInstance::NativeInitializeAnimation()
 	{
 		sol::error Err = Result;
 		UE_LOG("[LuaAnimInstance] Script load error %s: %s", ScriptFile.c_str(), Err.what());
+		ClearGraph();
 		return;
 	}
 
@@ -106,6 +108,7 @@ void ULuaAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	// 에서 condition 람다가 즉시 사용.
 	if (LuaUpdate.valid())
 	{
+		FLuaCallScope Scope(this);
 		auto R = LuaUpdate(LuaSelf, DeltaSeconds);
 		if (!R.valid())
 		{
@@ -119,6 +122,7 @@ void ULuaAnimInstance::HandleAnimNotify(const FAnimNotifyEvent& Notify)
 {
 	if (!LuaOnNotify.valid()) return;
 
+	FLuaCallScope Scope(this);
 	auto R = LuaOnNotify(LuaSelf, Notify.NotifyName.ToString());
 	if (!R.valid())
 	{
@@ -180,12 +184,16 @@ void ULuaAnimInstance::ReloadScript()
 
 void ULuaAnimInstance::ClearGraph()
 {
+	// 이전 graph 에 걸려 있던 transition 람다가 새 Lua runtime 을 보지 않도록 세대를 먼저 넘긴다.
+	++LuaRuntimeGeneration;
+
 	// RootNode 가 OwnedNodes 의 raw 를 가리키는 상태 — dangling 방지 위해 RootNode 먼저 nullptr.
 	SetRootNode(nullptr);
 
-	// graph build 로 생성된 노드들 정리 — ReloadScript 시 다시 build 하면 OwnedNodes 가
-	// 누적되어 메모리 leak. 매 reload 마다 cleanup.
+	// transition 조건은 sol reference 를 멤버 배열에서만 보유한다. Graph node 람다는 weak owner + index 만 가진다.
+	// 따라서 OwnedNodes clear 중 std::function 이 파괴되어도 Lua state 를 deref 하지 않는다.
 	OwnedNodes.clear();
+	LuaTransitionConditions.clear();
 
 	LuaInit     = sol::nil;
 	LuaUpdate   = sol::nil;
@@ -196,17 +204,81 @@ void ULuaAnimInstance::ClearGraph()
 	LuaMorphWeights.clear();
 	LuaMorphOverrideMask.clear();
 	bLuaMorphOverrideEnabled = false;
+	bPendingLuaRuntimeRelease = false;
 }
 
 void ULuaAnimInstance::DispatchLuaInit()
 {
 	if (!LuaInit.valid()) return;
+	FLuaCallScope Scope(this);
 	auto R = LuaInit(LuaSelf);
 	if (!R.valid())
 	{
 		sol::error Err = R;
 		UE_LOG("[LuaAnimInstance] init() error: %s", Err.what());
 	}
+}
+
+void ULuaAnimInstance::ReleaseLuaRuntimeForShutdown()
+{
+	FLuaScriptManager::UnregisterAnimInstance(this);
+
+	if (LuaCallDepth > 0)
+	{
+		bPendingLuaRuntimeRelease = true;
+		return;
+	}
+
+	if (FLuaScriptManager::IsInitialized())
+	{
+		ClearGraph();
+	}
+}
+
+void ULuaAnimInstance::HandleDeferredLuaRuntimeRelease()
+{
+	if (LuaCallDepth != 0 || !bPendingLuaRuntimeRelease)
+	{
+		return;
+	}
+
+	bPendingLuaRuntimeRelease = false;
+	if (FLuaScriptManager::IsInitialized())
+	{
+		ClearGraph();
+	}
+}
+
+int32 ULuaAnimInstance::StoreLuaTransitionCondition(sol::protected_function Condition)
+{
+	LuaTransitionConditions.push_back(Condition);
+	return static_cast<int32>(LuaTransitionConditions.size() - 1);
+}
+
+bool ULuaAnimInstance::EvaluateLuaTransitionCondition(int32 ConditionIndex, uint32 Generation)
+{
+	if (Generation != LuaRuntimeGeneration ||
+		ConditionIndex < 0 ||
+		ConditionIndex >= static_cast<int32>(LuaTransitionConditions.size()))
+	{
+		return false;
+	}
+
+	sol::protected_function& Cond = LuaTransitionConditions[ConditionIndex];
+	if (!Cond.valid())
+	{
+		return false;
+	}
+
+	FLuaCallScope Scope(this);
+	auto R = Cond();
+	if (!R.valid())
+	{
+		sol::error Err = R;
+		UE_LOG("[LuaAnim] sm_add_transition condition error: %s", Err.what());
+		return false;
+	}
+	return R.get<bool>();
 }
 
 // ──────────────────────────────────────────────
@@ -488,25 +560,29 @@ void ULuaAnimInstance::InstallBindings()
 		});
 
 	// SM 에 transition 등록. "AnyState" → FName::None (legacy 와 동일).
+	// sol::protected_function 을 graph node 람다가 직접 캡처하지 않는다.
+	// shutdown/GC 시 graph 가 Lua state 보다 늦게 파괴되면 sol::reference 소멸자가 lua_State 를 deref 하며 crash 난다.
 	Anim.set_function("sm_add_transition",
-		[](FAnimNode_StateMachine* SM, std::string From, std::string To,
-		   sol::protected_function Cond, float BlendTime)
+		[this](FAnimNode_StateMachine* SM, std::string From, std::string To,
+		       sol::protected_function Cond, float BlendTime)
 		{
 			if (!SM) return;
+			const int32 ConditionIndex = StoreLuaTransitionCondition(Cond);
+			const uint32 Generation = LuaRuntimeGeneration;
+			TWeakObjectPtr<ULuaAnimInstance> WeakOwner(this);
+
 			FStateTransition T;
 			T.From      = (From == "AnyState" || From.empty()) ? FName::None : FName(From.c_str());
 			T.To        = FName(To.c_str());
 			T.BlendTime = BlendTime;
-			T.Condition = [Cond](UAnimInstance*) -> bool
+			T.Condition = [WeakOwner, Generation, ConditionIndex](UAnimInstance* Instance) -> bool
 			{
-				auto R = Cond();
-				if (!R.valid())
+				ULuaAnimInstance* Owner = WeakOwner.Get();
+				if (!Owner || (Instance && Owner != Instance))
 				{
-					sol::error Err = R;
-					UE_LOG("[LuaAnim] sm_add_transition condition error: %s", Err.what());
 					return false;
 				}
-				return R.get<bool>();
+				return Owner->EvaluateLuaTransitionCondition(ConditionIndex, Generation);
 			};
 			SM->RegisterTransition(T);
 		});

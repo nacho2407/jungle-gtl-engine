@@ -832,7 +832,8 @@ void AActor::RouteActorDestroyed()
             continue;
         }
 
-        Component->EndPlay();
+        // Actor::EndPlay()/Level::EndPlay 경로에서 컴포넌트 EndPlay 는 이미 처리된다.
+        // 여기서 다시 호출하면 Lua EndPlay/sol cleanup 이 PIE 종료 중 재진입할 수 있다.
         Component->RouteComponentDestroyed();
         Component->MarkPendingKill();
     }

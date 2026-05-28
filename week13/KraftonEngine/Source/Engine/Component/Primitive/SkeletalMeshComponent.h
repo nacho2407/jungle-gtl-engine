@@ -14,6 +14,7 @@ class UAnimInstance;
 class UAnimSingleNodeInstance;
 class UAnimSequenceBase;
 class UClass;
+class ULuaAnimInstance;
 
 // SkeletalMesh 전용 render proxy만 제공하는 얇은 wrapper.
 // Skinning/bone/material/bounds 상태는 모두 USkinnedMeshComponent가 소유한다.
@@ -86,6 +87,7 @@ public:
     // Editor / 직렬화 통합.
     void GetEditableProperties(TArray<FPropertyValue>& OutProps) override;
     void PostEditProperty(const char* PropertyName) override;
+    void PostDuplicate() override;
     void Serialize(FArchive& Ar) override;
 
 protected:
@@ -98,6 +100,8 @@ protected:
     void AddReferencedObjects(FReferenceCollector& Collector) override;
 private:
     void LoadAnimationFromPath();
+    void CapturePersistentAnimInstanceSettings();
+    void ApplyPersistentAnimInstanceSettings(UAnimInstance* Instance);
 
 protected:
     // Animation 런타임 상태.
@@ -107,6 +111,9 @@ protected:
     FSingleAnimationPlayData   AnimationData;
     UPROPERTY(Edit, Save, Category="Animation", DisplayName="Anim Instance Class", Type=ClassRef, AllowedClass=UAnimInstance)
     TSubclassOf<UAnimInstance> AnimInstanceClass;
+    // AnimInstance 는 runtime-owned transient 이므로 PIE duplicate/scene save 에서 LuaAnimInstance.ScriptFile 을 컴포넌트가 영속 보관한다.
+    UPROPERTY(Save, Category="Animation|Lua", DisplayName="Lua Anim Script", AssetType="LuaAnimScript")
+    FString LuaAnimScriptFile;
     // Runtime-owned instance. AnimInstanceClass is the persistent/editor-facing identity.
     UPROPERTY(Transient, Instanced, Category="Animation", DisplayName="Anim Instance", Type=ObjectRef, AllowedClass=UAnimInstance)
     TObjectPtr<UAnimInstance>  AnimInstance  = nullptr;

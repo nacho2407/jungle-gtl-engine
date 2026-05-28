@@ -24,6 +24,7 @@ public:
 	static bool ReadScriptFileContent(const FString& ScriptFile, FString& OutContent);
 
 	static sol::state& GetState();
+	static bool IsInitialized();
 	static void RegisterBindings(sol::state& Lua);
 
 	static FInputSystemSnapshot GetLuaInputSnapshot();

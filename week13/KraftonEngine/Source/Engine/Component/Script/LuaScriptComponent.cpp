@@ -15,6 +15,10 @@ ULuaScriptComponent::ULuaScriptComponent()
 
 ULuaScriptComponent::~ULuaScriptComponent()
 {
+	if (FLuaScriptManager::IsInitialized())
+	{
+		ReleaseLuaRuntimeForShutdown();
+	}
 }
 
 
@@ -33,19 +37,43 @@ void ULuaScriptComponent::ClearLuaRuntime()
 	LuaOnHit = sol::nil;
 	LuaOnEndHit = sol::nil;
 	Env = sol::environment();
+	bHasCalledLuaEndPlay = false;
+	bPendingLuaEndPlay = false;
+	bPendingLuaCleanup = false;
+}
+
+void ULuaScriptComponent::ReleaseLuaRuntimeForShutdown()
+{
+	FLuaScriptManager::UnregisterComponent(this);
+	ClearCollisionBindings();
+	if (LuaCallDepth > 0)
+	{
+		bPendingLuaCleanup = true;
+		return;
+	}
+	ClearLuaRuntime();
 }
 
 void ULuaScriptComponent::BeginDestroy()
 {
 	FLuaScriptManager::UnregisterComponent(this);
 	ClearCollisionBindings();
-	ClearLuaRuntime();
+	if (LuaCallDepth > 0)
+	{
+		bPendingLuaCleanup = true;
+	}
+	else
+	{
+		ClearLuaRuntime();
+	}
 	UActorComponent::BeginDestroy();
 }
 
 void ULuaScriptComponent::InitializeLua()
 {
 	ClearLuaRuntime();
+	bEndPlayRouted = false;
+	bHasCalledLuaEndPlay = false;
 
 	sol::state& Lua = FLuaScriptManager::GetState();
 
@@ -60,6 +88,7 @@ void ULuaScriptComponent::InitializeLua()
 	if (!FLuaScriptManager::ReadScriptFileContent(ScriptFile, Content))
 	{
 		UE_LOG("Failed to read Lua script %s", ResolvedPath.c_str());
+		ClearLuaRuntime();
 		return;
 	}
 	sol::protected_function_result Result = Lua.safe_script(Content, Env, sol::script_pass_on_error, ResolvedPath);
@@ -68,6 +97,7 @@ void ULuaScriptComponent::InitializeLua()
 	{
 		sol::error Err = Result;
 		UE_LOG("Failed to load Lua script %s: %s", ScriptFile.c_str(), Err.what());
+		ClearLuaRuntime();
 		return;
 	}
 
@@ -87,6 +117,7 @@ void ULuaScriptComponent::ReloadScript()
 
 	if (LuaBeginPlay)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaBeginPlay();
 		if (!Result.valid())
 		{
@@ -108,6 +139,7 @@ void ULuaScriptComponent::BeginPlay()
 
 	if (LuaBeginPlay)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaBeginPlay();
 		if (!Result.valid())
 		{
@@ -121,17 +153,55 @@ void ULuaScriptComponent::BeginPlay()
 
 void ULuaScriptComponent::EndPlay()
 {
+	if (bEndPlayRouted)
+	{
+		return;
+	}
+	bEndPlayRouted = true;
+
 	UActorComponent::EndPlay();
 	FLuaScriptManager::UnregisterComponent(this);
 	ClearCollisionBindings();
-	if (LuaEndPlay)
+	if (LuaCallDepth > 0)
 	{
-		sol::protected_function_result Result = LuaEndPlay();
-		if (!Result.valid())
-		{
-			sol::error Err = Result;
-			UE_LOG("Lua EndPlay error in %s: %s", ScriptFile.c_str(), Err.what());
-		}
+		bPendingLuaEndPlay = true;
+		bPendingLuaCleanup = true;
+		return;
+	}
+	InvokeLuaEndPlay();
+	ClearLuaRuntime();
+}
+
+void ULuaScriptComponent::InvokeLuaEndPlay()
+{
+	if (bHasCalledLuaEndPlay || !LuaEndPlay)
+	{
+		return;
+	}
+
+	bHasCalledLuaEndPlay = true;
+	FLuaCallScope Scope(this);
+	sol::protected_function_result Result = LuaEndPlay();
+	if (!Result.valid())
+	{
+		sol::error Err = Result;
+		UE_LOG("Lua EndPlay error in %s: %s", ScriptFile.c_str(), Err.what());
+	}
+}
+
+void ULuaScriptComponent::HandleDeferredLuaCleanup()
+{
+	if (LuaCallDepth != 0 || !bPendingLuaCleanup)
+	{
+		return;
+	}
+
+	const bool bShouldRunEndPlay = bPendingLuaEndPlay;
+	bPendingLuaCleanup = false;
+	bPendingLuaEndPlay = false;
+	if (bShouldRunEndPlay)
+	{
+		InvokeLuaEndPlay();
 	}
 	ClearLuaRuntime();
 }
@@ -237,6 +307,7 @@ void ULuaScriptComponent::HandleBeginOverlap(
 {
 	if (LuaOnOverlap)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaOnOverlap(OtherActor, OverlappedComponent, OtherComp);
 		if (!Result.valid())
 		{
@@ -254,6 +325,7 @@ void ULuaScriptComponent::HandleEndOverlap(
 {
 	if (LuaOnEndOverlap)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaOnEndOverlap(OtherActor, OverlappedComponent, OtherComp);
 		if (!Result.valid())
 		{
@@ -272,6 +344,7 @@ void ULuaScriptComponent::HandleHit(
 {
 	if (LuaOnHit)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaOnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, HitResult);
 		if (!Result.valid())
 		{
@@ -288,6 +361,7 @@ void ULuaScriptComponent::HandleEndHit(
 {
 	if (LuaOnEndHit)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaOnEndHit(OtherActor, HitComponent, OtherComp);
 		if (!Result.valid())
 		{
@@ -311,20 +385,25 @@ bool ULuaScriptComponent::CallFunction(const FString& FunctionName)
 	}
 
 	sol::protected_function Fn = Target;
-	sol::protected_function_result Result = Fn();
-	if (!Result.valid())
+	bool bOk = false;
 	{
-		sol::error Err = Result;
-		UE_LOG("Lua %s error in %s: %s", FunctionName.c_str(), ScriptFile.c_str(), Err.what());
-		return false;
+		FLuaCallScope Scope(this);
+		sol::protected_function_result Result = Fn();
+		bOk = Result.valid();
+		if (!bOk)
+		{
+			sol::error Err = Result;
+			UE_LOG("Lua %s error in %s: %s", FunctionName.c_str(), ScriptFile.c_str(), Err.what());
+		}
 	}
-	return true;
+	return bOk;
 }
 
 void ULuaScriptComponent::DispatchOverlap(AActor* OtherActor)
 {
 	if (LuaOnOverlap)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaOnOverlap(OtherActor);
 		if (!Result.valid())
 		{
@@ -339,6 +418,7 @@ void ULuaScriptComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 	UActorComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (LuaTick)
 	{
+		FLuaCallScope Scope(this);
 		sol::protected_function_result Result = LuaTick(DeltaTime);
 		if (!Result.valid())
 		{

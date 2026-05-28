@@ -19,6 +19,7 @@ public:
 	~ULuaScriptComponent();
 
 	void InitializeLua();
+	void ReleaseLuaRuntimeForShutdown();
 	UFUNCTION(Callable, Exec, CallInEditor, Category="Script")
 	void ReloadScript();
 
@@ -46,6 +47,8 @@ private:
 	void BindOwnerCollisionEvents();
 	void ClearCollisionBindings();
 	void ClearLuaRuntime();
+	void InvokeLuaEndPlay();
+	void HandleDeferredLuaCleanup();
 	void HandleBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
 		AActor* OtherActor,
@@ -80,6 +83,38 @@ private:
 	sol::protected_function LuaOnEndOverlap;
 	sol::protected_function LuaOnHit;
 	sol::protected_function LuaOnEndHit;
+
+	bool bEndPlayRouted = false;
+	bool bHasCalledLuaEndPlay = false;
+	bool bPendingLuaEndPlay = false;
+	bool bPendingLuaCleanup = false;
+	int32 LuaCallDepth = 0;
+
+	struct FLuaCallScope
+	{
+		ULuaScriptComponent* Owner = nullptr;
+
+		explicit FLuaCallScope(ULuaScriptComponent* InOwner)
+			: Owner(InOwner)
+		{
+			if (Owner)
+			{
+				++Owner->LuaCallDepth;
+			}
+		}
+
+		~FLuaCallScope()
+		{
+			if (!Owner)
+			{
+				return;
+			}
+
+			--Owner->LuaCallDepth;
+			Owner->HandleDeferredLuaCleanup();
+		}
+	};
+
 	TArray<TWeakObjectPtr<UPrimitiveComponent>> BoundOverlapComponents;
 	TArray<TWeakObjectPtr<UPrimitiveComponent>> BoundHitComponents;
 	TArray<FDelegateHandle> BeginOverlapHandles;

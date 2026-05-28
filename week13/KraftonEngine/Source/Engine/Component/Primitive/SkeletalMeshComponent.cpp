@@ -6,6 +6,7 @@
 #include "Animation/Sequence/AnimSequence.h"
 #include "Animation/Sequence/AnimSequenceBase.h"
 #include "Animation/Instance/AnimSingleNodeInstance.h"
+#include "Animation/Instance/LuaAnimInstance.h"
 #include "Animation/PoseContext.h"
 #include "Asset/AssetRegistry.h"
 #include "Core/Logging/Log.h"
@@ -172,6 +173,7 @@ void USkeletalMeshComponent::SetAnimInstance(UAnimInstance* InInstance)
     {
         AnimInstance->SetOuter(this);
         AnimInstance->SetOwningComponent(this);
+        ApplyPersistentAnimInstanceSettings(AnimInstance);
         AnimInstance->NativeInitializeAnimation();
     }
 }
@@ -199,6 +201,35 @@ void USkeletalMeshComponent::LoadAnimationFromPath()
     else
     {
         AnimationData.AnimToPlay = nullptr;
+    }
+}
+
+void USkeletalMeshComponent::CapturePersistentAnimInstanceSettings()
+{
+    if (ULuaAnimInstance* LuaAnim = Cast<ULuaAnimInstance>(AnimInstance))
+    {
+        if (!LuaAnim->ScriptFile.empty() && LuaAnim->ScriptFile != "None")
+        {
+            LuaAnimScriptFile = LuaAnim->ScriptFile;
+        }
+    }
+}
+
+void USkeletalMeshComponent::ApplyPersistentAnimInstanceSettings(UAnimInstance* Instance)
+{
+    ULuaAnimInstance* LuaAnim = Cast<ULuaAnimInstance>(Instance);
+    if (!LuaAnim)
+    {
+        return;
+    }
+
+    if (!LuaAnimScriptFile.empty() && LuaAnimScriptFile != "None")
+    {
+        LuaAnim->ScriptFile = LuaAnimScriptFile;
+    }
+    else if (!LuaAnim->ScriptFile.empty() && LuaAnim->ScriptFile != "None")
+    {
+        LuaAnimScriptFile = LuaAnim->ScriptFile;
     }
 }
 
@@ -259,6 +290,7 @@ void USkeletalMeshComponent::InitializeAnimation()
         {
             AnimInstance->SetOuter(this);
             AnimInstance->SetOwningComponent(this);
+            ApplyPersistentAnimInstanceSettings(AnimInstance);
             AnimInstance->NativeInitializeAnimation();
             break;
         }
@@ -274,6 +306,7 @@ void USkeletalMeshComponent::InitializeAnimation()
             return;
         }
         AnimInstance->SetOwningComponent(this);
+        ApplyPersistentAnimInstanceSettings(AnimInstance);
 
         AnimInstance->NativeInitializeAnimation();
         break;
@@ -287,6 +320,11 @@ void USkeletalMeshComponent::ClearAnimInstance()
 {
     if (AnimInstance)
     {
+        CapturePersistentAnimInstanceSettings();
+        if (ULuaAnimInstance* LuaAnim = Cast<ULuaAnimInstance>(AnimInstance))
+        {
+            LuaAnim->ReleaseLuaRuntimeForShutdown();
+        }
         UObjectManager::Get().DestroyObject(AnimInstance);
         AnimInstance = nullptr;
     }
@@ -378,19 +416,55 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
     {
         SetPlaying(AnimationData.bPlaying);
     }
+    else if (std::strcmp(PropertyName, "LuaAnimScriptFile") == 0)
+    {
+        if (ULuaAnimInstance* LuaAnim = Cast<ULuaAnimInstance>(AnimInstance))
+        {
+            LuaAnim->ScriptFile = LuaAnimScriptFile;
+            LuaAnim->ReloadScript();
+        }
+    }
 
     // AnimInstance 자체 properties 는 자식이 자체 PostEdit 처리. 컴포넌트는 dispatch 만.
     // 컴포넌트가 인식한 이름과 겹치지 않는 한 무해 (자식이 모르는 이름은 no-op).
-    if (AnimInstance) AnimInstance->PostEditProperty(PropertyName);
+    if (AnimInstance)
+    {
+        AnimInstance->PostEditProperty(PropertyName);
+        CapturePersistentAnimInstanceSettings();
+    }
+}
+
+void USkeletalMeshComponent::PostDuplicate()
+{
+    Super::PostDuplicate();
+
+    // USkinnedMeshComponent::PostDuplicate() 의 SetSkeletalMesh() 경로가 이미 virtual override 를 통해
+    // InitializeAnimation() 을 호출할 수 있다. 없을 때만 보강해서 PIE duplicate 의 double init 을 피한다.
+    if (!AnimInstance)
+    {
+        InitializeAnimation();
+    }
+    else
+    {
+        ApplyPersistentAnimInstanceSettings(AnimInstance);
+    }
 }
 
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
 {
+    if (Ar.IsSaving())
+    {
+        CapturePersistentAnimInstanceSettings();
+    }
+
     Super::Serialize(Ar);
 
     uint8 ModeRaw = static_cast<uint8>(AnimationMode);
     Ar << ModeRaw;
     AnimationMode = static_cast<EAnimationMode>(ModeRaw);
+
+    // AnimInstance 는 Transient 이라 Duplicate/PIE 복사에서 사라진다. Lua script path 는 컴포넌트가 별도 보관한다.
+    Ar << LuaAnimScriptFile;
 
     // AnimToPlay 의 path 만 라운드트립. 실제 포인터 복원은 InitializeAnimation() → LoadAnimationFromPath() 가 처리.
     FString AnimToPlayPath = Ar.IsSaving() ? AnimationData.AnimToPlayPath.ToString() : FString();

@@ -91,6 +91,11 @@ namespace
 	}
 }
 
+bool FLuaScriptManager::IsInitialized()
+{
+	return Lua != nullptr;
+}
+
 void FLuaScriptManager::SetOnEscapePressed(sol::protected_function Callback)
 {
 	OnEscapePressedCallback = std::move(Callback);
@@ -399,6 +404,38 @@ void FLuaScriptManager::Shutdown()
 	{
 		FDirectoryWatcher::Get().Unsubscribe(WatchSub);
 		WatchSub = 0;
+	}
+
+	TArray<TWeakObjectPtr<ULuaScriptComponent>> ComponentsToRelease;
+	TArray<TWeakObjectPtr<ULuaAnimInstance>> AnimInstancesToRelease;
+	{
+		std::lock_guard<std::mutex> Lock(ComponentMutex);
+		ComponentsToRelease = RegisteredComponents;
+		AnimInstancesToRelease = RegisteredAnimInstances;
+	}
+
+	// lua_State 가 살아있는 동안 런타임 객체들이 들고 있는 sol reference 를 먼저 해제한다.
+	// 이 작업을 Lua.reset() 뒤로 미루면 GC/dtor 단계에서 sol::basic_reference::~basic_reference 가
+	// 닫힌 lua_State 에 luaL_unref 를 호출하며 lua51.dll 내부에서 크래시난다.
+	for (const TWeakObjectPtr<ULuaScriptComponent>& ComponentPtr : ComponentsToRelease)
+	{
+		if (ULuaScriptComponent* Component = ComponentPtr.GetEvenIfPendingKill())
+		{
+			if (IsAliveObject(Component))
+			{
+				Component->ReleaseLuaRuntimeForShutdown();
+			}
+		}
+	}
+	for (const TWeakObjectPtr<ULuaAnimInstance>& InstancePtr : AnimInstancesToRelease)
+	{
+		if (ULuaAnimInstance* Instance = InstancePtr.GetEvenIfPendingKill())
+		{
+			if (IsAliveObject(Instance))
+			{
+				Instance->ReleaseLuaRuntimeForShutdown();
+			}
+		}
 	}
 
 	{

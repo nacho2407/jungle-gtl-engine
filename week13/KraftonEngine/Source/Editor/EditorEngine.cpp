@@ -439,11 +439,14 @@ void UEditorEngine::EndPlayMap()
 
 	UUIManager::Get().ClearViewport();
 
+	// PIE WorldContext 제거 전에 require 캐시/코루틴/registry 의 월드 참조를 먼저 끊는다.
+	// DestroyWorldContext 중 Lua EndPlay 가 돌 수 있으므로 stale UObject 를 들고 있는 Lua 전역 상태를 선제 정리한다.
+	FLuaScriptManager::FireWorldReset();
+
 	// PIE WorldContext 제거 (DestroyWorldContext가 EndPlay + DestroyObject 수행).
 	DestroyWorldContext(FName("PIE"));
 
-	// require 캐시된 lua 모듈 (CoroutineManager / ObjRegistry) 의 stale 액터 참조 정리.
-	// 안 하면 다음 PIE 시작 시 옛 코루틴이 freed AActor* 를 deref → 크래시.
+	// Destroy 이후 남은 require 캐시의 stale 액터 참조를 한 번 더 정리한다.
 	FLuaScriptManager::FireWorldReset();
 
 	// PIE 월드의 프록시가 모두 파괴됐으므로 GPU Occlusion readback 무효화.
