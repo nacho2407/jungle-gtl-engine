@@ -32,6 +32,7 @@ public:
 	// 자식 (예: ALuaCharacter) 이 Super 호출 후 자기 컴포넌트 추가 가능.
 	virtual void InitDefaultComponents(const FString& SkeletalMeshFileName);
 
+	void BeginPlay() override;
 	void PostDuplicate() override;
 
 	// CharacterMovement->AddInputVector 의 액터 레벨 wrapper. UE 의 APawn::AddMovementInput 대응.
@@ -69,6 +70,7 @@ protected:
 	void Tick(float DeltaTime) override;
 
 	void OnOwnedComponentRemoved(UActorComponent* Component) override;
+	void RefreshCharacterComponents();
 
 	UCapsuleComponent*           CapsuleComponent  = nullptr;
 	USkeletalMeshComponent*      Mesh              = nullptr;

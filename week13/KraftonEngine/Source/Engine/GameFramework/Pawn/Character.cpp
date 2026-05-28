@@ -32,13 +32,28 @@ void ACharacter::InitDefaultComponents(const FString& SkeletalMeshFileName)
 	CharacterMovement->SetUpdatedComponent(CapsuleComponent);
 }
 
-void ACharacter::PostDuplicate()
+void ACharacter::RefreshCharacterComponents()
 {
-	Super::PostDuplicate();
-	// 컴포넌트 트리 재발견 — Duplicate 후 멤버 포인터 복원.
 	CapsuleComponent  = Cast<UCapsuleComponent>(GetRootComponent());
 	Mesh              = GetComponentByClass<USkeletalMeshComponent>();
 	CharacterMovement = GetComponentByClass<UCharacterMovementComponent>();
+
+	if (CharacterMovement && CapsuleComponent)
+	{
+		CharacterMovement->SetUpdatedComponent(CapsuleComponent);
+	}
+}
+
+void ACharacter::BeginPlay()
+{
+	RefreshCharacterComponents();
+	Super::BeginPlay();
+}
+
+void ACharacter::PostDuplicate()
+{
+	Super::PostDuplicate();
+	RefreshCharacterComponents();
 }
 
 void ACharacter::AddMovementInput(const FVector& WorldDirection, float ScaleValue)
