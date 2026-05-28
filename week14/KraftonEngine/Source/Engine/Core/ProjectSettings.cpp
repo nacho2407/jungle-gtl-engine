@@ -1,4 +1,4 @@
-#include "Core/ProjectSettings.h"
+﻿#include "Core/ProjectSettings.h"
 #include "SimpleJSON/json.hpp"
 
 #include <fstream>
@@ -82,7 +82,7 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 		{
 			int v = P[PSKey::Backend].ToInt();
 			if (v == 1)
-				Physics.Backend = EPhysicsBackend::PhysX;
+				Physics.Backend = EPhysicsBackend::Native; // TODO: PhysX 추가 예정
 			else
 				Physics.Backend = EPhysicsBackend::Native;
 		}

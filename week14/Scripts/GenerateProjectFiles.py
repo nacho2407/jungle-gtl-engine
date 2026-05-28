@@ -97,9 +97,6 @@ INCLUDE_PATHS = [
     "ThirdParty\\sol2\\include",
     "ThirdParty\\fmod\\include",
     "ThirdParty\\fbx\\include",
-    # PhysX(NuGet) — vcpkg.targets 가 조건부 Import 라 첫 clone 직후 IntelliSense 파싱 시점엔
-    # Exists()=false 로 include 경로가 안 잡힘. 직접 박아 restore 타이밍과 무관하게 잡히게 함.
-    "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\include",
     ".",
 ]
 
@@ -115,13 +112,6 @@ FMOD_DEBUG_LIB = "fmodL_vc.lib"
 FMOD_RELEASE_LIB = "fmod_vc.lib"
 FMOD_DEBUG_DLL = "fmodL.dll"
 FMOD_RELEASE_DLL = "fmod.dll"
-
-# PhysX (NuGet, 4.1.2) — vcpkg auto applocal-deps가 일부 환경에서 동작하지 않아
-# PostBuildEvent 에서 명시적으로 *.dll 을 OutDir 로 복사한다.
-# Debug 구성은 debug\\bin, 그 외(Release/Game/ObjViewDebug/Demo)는 release bin 사용.
-# (Include 경로는 INCLUDE_PATHS 에 직접 추가됨 — 위 주석 참고.)
-PHYSX_DEBUG_BIN   = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\debug\\bin"
-PHYSX_RELEASE_BIN = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\bin"
 
 # Reflection — UCLASS/UPROPERTY 매크로 → *.generated.h/.cpp 자동 생성.
 # 빌드 시작 직전(PreBuildEvent)과 ClCompile 직전(GenerateReflectionHeaders target)
@@ -155,7 +145,6 @@ ADDITIONAL_DEPENDENCIES = [
 # NuGet packages (id, version) — restored via packages.config
 NUGET_PACKAGES = [
     ("directxtk_desktop_win10", "2025.10.28.2"),
-    ("NVIDIA.PhysX", "4.1.2"),
 ]
 
 NS = "http://schemas.microsoft.com/developer/msbuild/2003"
@@ -415,13 +404,11 @@ def generate_vcxproj(files: dict[str, list[str]]):
         if is_x64:
             rmlui_dir = RMLUI_DEBUG_DIR if cfg == "Debug" else RMLUI_RELEASE_DIR
             fmod_dll = FMOD_DEBUG_DLL if cfg == "Debug" else FMOD_RELEASE_DLL
-            physx_bin = PHYSX_DEBUG_BIN if cfg == "Debug" else PHYSX_RELEASE_BIN
             fbx_lib_dir = FBX_DEBUG_LIB_DIR if cfg == "Debug" else FBX_RELEASE_LIB_DIR
             post_build = ET.SubElement(idg, "PostBuildEvent")
             ET.SubElement(post_build, "Command").text = (
                 f'xcopy /Y "$(ProjectDir){rmlui_dir}\\*.dll" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){FMOD_LIB_DIR}\\{fmod_dll}" "$(OutDir)"\n'
-                f'xcopy /Y "$(ProjectDir){physx_bin}\\*.dll" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){LUA_BIN_DIR}\\{LUA_DLL}" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){fbx_lib_dir}\\{FBX_DLL}" "$(OutDir)"'
             )

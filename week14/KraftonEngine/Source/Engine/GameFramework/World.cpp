@@ -1,4 +1,4 @@
-#include "GameFramework/World.h"
+﻿#include "GameFramework/World.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Object/ReferenceCollector.h"
 #include "Component/PrimitiveComponent.h"
@@ -6,7 +6,6 @@
 #include "Engine/Component/Camera/CameraComponent.h"
 #include "Render/Types/LODContext.h"
 #include "Physics/NativePhysicsScene.h"
-#include "Physics/PhysXPhysicsScene.h"
 #include "Core/ProjectSettings.h"
 #include "GameFramework/GameMode/GameModeBase.h"
 #include "GameFramework/GameMode/GameStateBase.h"
@@ -305,10 +304,7 @@ void UWorld::InitWorld()
 	// E.2/3: CameraManager spawn 은 PC 의 BeginPlay 가 담당. World 는 보유하지 않음.
 
 	// 물리 시스템 초기화 — ProjectSettings 백엔드 선택
-	if (FProjectSettings::Get().Physics.Backend == EPhysicsBackend::PhysX)
-		PhysicsScene = std::make_unique<FPhysXPhysicsScene>();
-	else
-		PhysicsScene = std::make_unique<FNativePhysicsScene>();
+	PhysicsScene = std::make_unique<FNativePhysicsScene>();
 	PhysicsScene->Initialize(this);
 }
 

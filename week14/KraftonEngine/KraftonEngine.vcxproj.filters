@@ -501,9 +501,6 @@
     <FxCompile Include="Shaders\Common\Fog.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Common\MaterialBloom.hlsli">
-      <Filter>Shaders\Common</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -511,6 +508,9 @@
       <Filter>Shaders\Common</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Common\Functions.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\MaterialBloom.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Common\ShadowSampling.hlsli">
@@ -571,6 +571,15 @@
       <Filter>Shaders\Lighting</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\Blit.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\BloomBlur.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\BloomComposite.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\BloomExtract.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\CameraFade.hlsl">
@@ -1289,7 +1298,16 @@
     <ClCompile Include="Source\Engine\Object\FName.cpp">
       <Filter>Source\Engine\Object</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Object\GarbageCollectionTest.cpp">
+      <Filter>Source\Engine\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Object\GarbageCollector.cpp">
+      <Filter>Source\Engine\Object</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Object\Object.cpp">
+      <Filter>Source\Engine\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Object\ReferenceCollector.cpp">
       <Filter>Source\Engine\Object</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp">
@@ -1304,13 +1322,13 @@
     <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp">
       <Filter>Source\Engine\Particles\Module</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleEvent.cpp">
+      <Filter>Source\Engine\Particles\Module</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp">
       <Filter>Source\Engine\Particles\Runtime</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\NativePhysicsScene.cpp">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\PhysXPhysicsScene.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp">
@@ -1647,10 +1665,6 @@
     <ClCompile Include="Intermediate\Generated\LuaBindings.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleEvent.cpp" />
-    <ClCompile Include="Source\Engine\Object\GarbageCollector.cpp" />
-    <ClCompile Include="Source\Engine\Object\GarbageCollectionTest.cpp" />
-    <ClCompile Include="Source\Engine\Object\ReferenceCollector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1816,9 +1830,6 @@
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h">
-      <Filter>Source\Editor\UI\Util</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.h">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h">
@@ -2445,10 +2456,19 @@
     <ClInclude Include="Source\Engine\Object\FName.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Object\GarbageCollectionTest.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\GarbageCollector.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Object\Object.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\ObjectIterator.h">
+      <Filter>Source\Engine\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\ReferenceCollector.h">
       <Filter>Source\Engine\Object</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\UUIDGenerator.h">
@@ -2461,6 +2481,9 @@
       <Filter>Source\Engine\Object\Ptr</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\Ptr\SubclassOf.h">
+      <Filter>Source\Engine\Object\Ptr</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Object\Ptr\WeakObjectPtr.h">
       <Filter>Source\Engine\Object\Ptr</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\Reflection\ObjectFactory.h">
@@ -2490,6 +2513,9 @@
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleCollision.h">
       <Filter>Source\Engine\Particles\Module</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleEvent.h">
+      <Filter>Source\Engine\Particles\Module</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h">
       <Filter>Source\Engine\Particles\Module</Filter>
     </ClInclude>
@@ -2506,9 +2532,6 @@
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\NativePhysicsScene.h">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\PhysXPhysicsScene.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h">
@@ -2830,6 +2853,9 @@
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\DuplicateArchive.h">
+      <Filter>Source\Engine\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Serialization\GCArchive.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\JsonArchive.h">
@@ -4572,39 +4598,8 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
-    <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
-    <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h" />
-    <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h" />
-    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.h" />
-    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h" />
-    <ClInclude Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.h" />
-    <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h" />
-    <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
-    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleCollision.h" />
-    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleEvent.h" />
-    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h" />
-    <ClInclude Include="Source\Engine\Render\Geometry\MeshParticleGeometry.h" />
-    <ClInclude Include="Source\Engine\Math\Distribution.h" />
-    <ClInclude Include="Source\Engine\Object\GarbageCollector.h" />
-    <ClInclude Include="Source\Engine\Object\GarbageCollectionTest.h" />
-    <ClInclude Include="Source\Engine\Object\ReferenceCollector.h" />
-    <ClInclude Include="Source\Engine\Serialization\GCArchive.h" />
-    <ClInclude Include="Source\Engine\Render\RenderPass\FogPass.h" />
-    <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h" />
-    <ClInclude Include="Source\Engine\Core\Property\MapProperty.h" />
-    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleCollisionEvent.h" />
-    <ClInclude Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.h" />
-    <ClInclude Include="Source\Engine\Profiling\Stats\ParticleStats.h" />
-    <ClInclude Include="Source\Engine\Object\Ptr\WeakObjectPtr.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\Common\Fog.hlsli">
-      <Filter>Shaders\Common</Filter>
-    </None>
   </ItemGroup>
 </Project>

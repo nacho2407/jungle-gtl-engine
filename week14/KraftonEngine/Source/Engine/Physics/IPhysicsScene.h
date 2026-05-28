@@ -14,7 +14,6 @@ struct FHitResult;
 enum class EPhysicsBackend : uint8
 {
 	Native,		// Hand-written collision math (O(N²) brute-force)
-	PhysX,		// NVIDIA PhysX 4.1
 };
 
 // ============================================================
