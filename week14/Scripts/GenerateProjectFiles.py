@@ -97,6 +97,9 @@ INCLUDE_PATHS = [
     "ThirdParty\\sol2\\include",
     "ThirdParty\\fmod\\include",
     "ThirdParty\\fbx\\include",
+    "ThirdParty\\PhysX\\include",
+    "ThirdParty\\PhysX\\include\\PhysX",
+    "ThirdParty\\PhysX\\include\\PxShared",
     ".",
 ]
 
@@ -133,6 +136,20 @@ FBX_DEBUG_LIB_DIR   = "ThirdParty\\fbx\\lib\\x64\\debug"
 FBX_RELEASE_LIB_DIR = "ThirdParty\\fbx\\lib\\x64\\release"
 FBX_LIB             = "libfbxsdk.lib"
 FBX_DLL             = "libfbxsdk.dll"
+
+# PhysX — 동적 링크. Debug/Release 디렉터리가 분리되어 있어 구성별로 경로를 선택한다.
+PHYSX_DEBUG_LIB_DIR = "ThirdParty\\PhysX\\lib\\debug"
+PHYSX_RELEASE_LIB_DIR = "ThirdParty\\PhysX\\lib\\release"
+
+PHYSX_LIBS = [
+    "PhysX_64.lib",
+    "PhysXCommon_64.lib",
+    "PhysXFoundation_64.lib",
+    "PhysXExtensions_static_64.lib",
+    "PhysXCooking_64.lib",
+    "PhysXPvdSDK_static_64.lib",
+    "PhysXVehicle_static_64.lib",
+]
 
 # Additional linker settings
 ADDITIONAL_LIB_DIRS = [
@@ -326,6 +343,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
         if is_x64:
             library_paths.append(FMOD_LIB_DIR)
             library_paths.append(FBX_DEBUG_LIB_DIR if cfg == "Debug" else FBX_RELEASE_LIB_DIR)
+            library_paths.append(PHYSX_DEBUG_LIB_DIR if cfg == "Debug" else PHYSX_RELEASE_LIB_DIR)
         library_path_value = ";".join(library_paths) + ";$(LibraryPath)" if library_paths else "$(LibraryPath)"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
         ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
@@ -396,6 +414,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
             # fmod: Debug면 logging 버전(fmodL_vc.lib), 그 외 release 버전(fmod_vc.lib)
             all_deps.append(FMOD_DEBUG_LIB if cfg == "Debug" else FMOD_RELEASE_LIB)
             all_deps.append(FBX_LIB)
+            all_deps.extend(PHYSX_LIBS)
         if all_deps:
             ET.SubElement(link, "AdditionalDependencies").text = (
                 ";".join(all_deps) + ";%(AdditionalDependencies)"
@@ -405,12 +424,17 @@ def generate_vcxproj(files: dict[str, list[str]]):
             rmlui_dir = RMLUI_DEBUG_DIR if cfg == "Debug" else RMLUI_RELEASE_DIR
             fmod_dll = FMOD_DEBUG_DLL if cfg == "Debug" else FMOD_RELEASE_DLL
             fbx_lib_dir = FBX_DEBUG_LIB_DIR if cfg == "Debug" else FBX_RELEASE_LIB_DIR
+            physx_lib_dir = PHYSX_DEBUG_LIB_DIR if cfg == "Debug" else PHYSX_RELEASE_LIB_DIR
             post_build = ET.SubElement(idg, "PostBuildEvent")
             ET.SubElement(post_build, "Command").text = (
                 f'xcopy /Y "$(ProjectDir){rmlui_dir}\\*.dll" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){FMOD_LIB_DIR}\\{fmod_dll}" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){LUA_BIN_DIR}\\{LUA_DLL}" "$(OutDir)"\n'
-                f'xcopy /Y "$(ProjectDir){fbx_lib_dir}\\{FBX_DLL}" "$(OutDir)"'
+                f'xcopy /Y "$(ProjectDir){fbx_lib_dir}\\{FBX_DLL}" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){physx_lib_dir}\\PhysX_64.dll" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){physx_lib_dir}\\PhysXCommon_64.dll" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){physx_lib_dir}\\PhysXFoundation_64.dll" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){physx_lib_dir}\\PhysXCooking_64.dll" "$(OutDir)"\n'
             )
 
         # Reflection codegen — UCLASS/UPROPERTY 매크로가 박힌 헤더로부터
