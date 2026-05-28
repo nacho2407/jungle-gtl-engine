@@ -8,6 +8,9 @@
 #include "Render/Proxy/ParticleSystemSceneProxy.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
+#include "Particles/TypeData/ParticleModuleTypeDataMesh.h"
+#include "Mesh/MeshManager.h"
+#include "Engine/Runtime/Engine.h"  
 
 #include <cstring>
 
@@ -432,6 +435,22 @@ void UParticleSystemComponent::BuildEmitterInstances()
         {
             if (LODLevel->TypeDataModule)
             {
+				if (UParticleModuleTypeDataMesh* MeshT = Cast<UParticleModuleTypeDataMesh>(LODLevel->TypeDataModule))
+				{
+					const FString MeshPath = MeshT->MeshAssetPath.ToString();
+					if (!MeshT->Mesh && !MeshPath.empty() && MeshPath != "None")
+					{
+						if (GEngine)
+						{
+							ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+							if (Device)
+							{
+								MeshT->Mesh = FMeshManager::LoadStaticMesh(MeshPath, Device);
+							}
+						}
+					}
+				}
+
                 Instance = LODLevel->TypeDataModule->CreateInstance(Emitter, *this);
             }
         }

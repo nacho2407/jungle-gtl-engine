@@ -2251,7 +2251,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
     else if (UParticleModuleSpawnPerUnit* SpawnPerUnit = Cast<UParticleModuleSpawnPerUnit>(Module))
     {
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-        if (ImGui::CollapsingHeader("Spawn Per Unit"))
+        if (ImGui::CollapsingHeader("Spawn Per Unit Module"))
         {
             bChanged |= ImGui::DragFloat("Unit Scalar", &SpawnPerUnit->UnitScalar, 0.01f, 0.0f, 100000.0f);
             bChanged |= ImGui::DragFloat("Movement Tolerance", &SpawnPerUnit->MovementTolerance, 0.01f, 0.0f, 100000.0f);

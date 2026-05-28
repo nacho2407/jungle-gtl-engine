@@ -1,11 +1,12 @@
 {
   "BlendState" : "AlphaBlend",
   "Compiled" : {
-    "GeneratorVersion" : "ParticleMeshLighting_v1",
+    "GeneratorVersion" : "ParticleMeshLighting_v4",
     "GraphHash" : "940C6C856F3457F4",
     "Parameters" : {
 
     },
+    "ReceiveLighting" : true,
     "Textures" : {
       "DiffuseTexture" : {
         "Path" : "Content/Texture/Auto/Ahri/Skin14_Familiar_Mat.png",
@@ -274,7 +275,7 @@
   "MaterialGuid" : "628A9F53151EB9DD000131497CDADFC0",
   "PathFileName" : "Content/Material/Auto/acc_002_Emitter0.mat",
   "RasterizerState" : "SolidNoCull",
-  "ReceiveLighting": true,
+  "ReceiveLighting" : true,
   "RenderPass" : "AlphaBlend",
   "ShaderPath" : "Shaders/Generated/Materials/_628A9F53151EB9DD000131497CDADFC0_ParticleSprite.hlsl",
   "Version" : 2

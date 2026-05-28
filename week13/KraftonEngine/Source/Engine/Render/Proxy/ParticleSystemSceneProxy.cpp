@@ -167,8 +167,6 @@ void FParticleSystemSceneProxy::BuildParticleCommands(
 	// Opaque 패스에서만 1회 실행 (스테이징은 패스와 무관하게 한 번만 채워야 함)
 	if (CurrentPass == ERenderPass::Opaque)
 	{
-		PARTICLE_STATS_RESET();
-
 		if (!QuadVB.GetBuffer())
 			BuildQuadGeometry(Device);
 
@@ -335,6 +333,8 @@ void FParticleSystemSceneProxy::FillStagingBuffer(
 		{
 			memcpy(OutBuffer.StagingBuffer.data(), BuiltVertices->data(), VertexCount * Stride);
 		}
+		if (Source.ActiveParticleCount > 0)
+			PARTICLE_STATS_ADD_SPRITE_PARTICLES(static_cast<uint32>(Source.ActiveParticleCount));
 		return;
 	}
 

@@ -1,0 +1,158 @@
+{
+  "BlendState" : "AlphaBlend",
+  "Compiled" : {
+    "GeneratorVersion" : "ParticleMeshLighting_v4",
+    "GraphHash" : "79DB30325CEB3A5E",
+    "Parameters" : {
+
+    },
+    "ReceiveLighting" : false,
+    "Textures" : {
+      "DiffuseTexture" : {
+        "Path" : "Content/Particle/BubleParticle.png",
+        "Slot" : "Diffuse"
+      }
+    }
+  },
+  "DepthStencilState" : "DepthReadOnly",
+  "Domain" : "ParticleSprite",
+  "GeneratedShaderPath" : "Shaders/Generated/Materials/AE6B9452D810D233000000DBA79CC8BC_ParticleSprite.hlsl",
+  "Graph" : {
+    "Links" : [{
+        "FromPinId" : 16,
+        "LinkId" : 26,
+        "ToPinId" : 18
+      }, {
+        "FromPinId" : 20,
+        "LinkId" : 27,
+        "ToPinId" : 9
+      }, {
+        "FromPinId" : 24,
+        "LinkId" : 29,
+        "ToPinId" : 11
+      }],
+    "NextId" : 30,
+    "Nodes" : [{
+        "DisplayName" : "Material Output",
+        "Mask" : "RGBA",
+        "NodeId" : 8,
+        "ParameterName" : "",
+        "Pins" : [{
+            "DisplayName" : "Color",
+            "Kind" : "Input",
+            "OwningNodeId" : 8,
+            "PinId" : 9,
+            "Type" : "Float3"
+          }, {
+            "DisplayName" : "Emissive",
+            "Kind" : "Input",
+            "OwningNodeId" : 8,
+            "PinId" : 10,
+            "Type" : "Float3"
+          }, {
+            "DisplayName" : "Opacity",
+            "Kind" : "Input",
+            "OwningNodeId" : 8,
+            "PinId" : 11,
+            "Type" : "Float"
+          }, {
+            "DisplayName" : "UVOffset",
+            "Kind" : "Input",
+            "OwningNodeId" : 8,
+            "PinId" : 12,
+            "Type" : "Float2"
+          }],
+        "PosX" : 80.000000,
+        "PosY" : 80.000000,
+        "TexturePath" : "",
+        "TextureSlot" : "Diffuse",
+        "Type" : "Output",
+        "Value" : [1.000000, 1.000000, 1.000000, 1.000000]
+      }, {
+        "DisplayName" : "Texture Object",
+        "Mask" : "RGBA",
+        "NodeId" : 15,
+        "ParameterName" : "Diffuse",
+        "Pins" : [{
+            "DisplayName" : "Texture",
+            "Kind" : "Output",
+            "OwningNodeId" : 15,
+            "PinId" : 16,
+            "Type" : "Texture2D"
+          }],
+        "PosX" : -565.000000,
+        "PosY" : 126.000000,
+        "TexturePath" : "Content/Particle/BubleParticle.png",
+        "TextureSlot" : "Diffuse",
+        "Type" : "TextureObject",
+        "Value" : [1.000000, 1.000000, 1.000000, 1.000000]
+      }, {
+        "DisplayName" : "Texture Sample",
+        "Mask" : "RGBA",
+        "NodeId" : 17,
+        "ParameterName" : "",
+        "Pins" : [{
+            "DisplayName" : "Texture",
+            "Kind" : "Input",
+            "OwningNodeId" : 17,
+            "PinId" : 18,
+            "Type" : "Texture2D"
+          }, {
+            "DisplayName" : "UV",
+            "Kind" : "Input",
+            "OwningNodeId" : 17,
+            "PinId" : 19,
+            "Type" : "Float2"
+          }, {
+            "DisplayName" : "RGB",
+            "Kind" : "Output",
+            "OwningNodeId" : 17,
+            "PinId" : 20,
+            "Type" : "Float3"
+          }, {
+            "DisplayName" : "R",
+            "Kind" : "Output",
+            "OwningNodeId" : 17,
+            "PinId" : 21,
+            "Type" : "Float"
+          }, {
+            "DisplayName" : "G",
+            "Kind" : "Output",
+            "OwningNodeId" : 17,
+            "PinId" : 22,
+            "Type" : "Float"
+          }, {
+            "DisplayName" : "B",
+            "Kind" : "Output",
+            "OwningNodeId" : 17,
+            "PinId" : 23,
+            "Type" : "Float"
+          }, {
+            "DisplayName" : "A",
+            "Kind" : "Output",
+            "OwningNodeId" : 17,
+            "PinId" : 24,
+            "Type" : "Float"
+          }, {
+            "DisplayName" : "RGBA",
+            "Kind" : "Output",
+            "OwningNodeId" : 17,
+            "PinId" : 25,
+            "Type" : "Float4"
+          }],
+        "PosX" : -273.000000,
+        "PosY" : 38.000000,
+        "TexturePath" : "",
+        "TextureSlot" : "Diffuse",
+        "Type" : "TextureSample",
+        "Value" : [1.000000, 1.000000, 1.000000, 1.000000]
+      }]
+  },
+  "MaterialGuid" : "AE6B9452D810D233000000DBA79CC8BC",
+  "PathFileName" : "Content/Material/Material_Emitter0_3.mat",
+  "RasterizerState" : "SolidNoCull",
+  "ReceiveLighting" : false,
+  "RenderPass" : "AlphaBlend",
+  "ShaderPath" : "Shaders/Generated/Materials/AE6B9452D810D233000000DBA79CC8BC_ParticleSprite.hlsl",
+  "Version" : 2
+}
