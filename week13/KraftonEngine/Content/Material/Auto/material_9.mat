@@ -1,12 +1,10 @@
 {
   "BlendState" : "Opaque",
   "Compiled" : {
-    "GeneratorVersion" : "ParticleMeshLighting_v3",
     "GraphHash" : "548DD24E7550C97E",
     "Parameters" : {
 
     },
-    "ReceiveLighting" : false,
     "Textures" : {
       "DiffuseTexture" : {
         "Path" : "Content/Texture/Auto/Yeoul/b0.png",
@@ -16,7 +14,7 @@
   },
   "DepthStencilState" : "Default",
   "Domain" : "ParticleSprite",
-  "GeneratedShaderPath" : "Shaders/Generated/Materials/BD78AAE88B260EBC_ParticleSprite.hlsl",
+  "GeneratedShaderPath" : "Shaders/Generated/Materials/Material_ParticleSprite.hlsl",
   "Graph" : {
     "Links" : [{
         "FromPinId" : 10,
@@ -252,7 +250,7 @@
         "Value" : [1.000000, 1.000000, 1.000000, 1.000000]
       }]
   },
-  "MaterialGuid" : "BD78AAE88B260EBC",
+  "MaterialGuid" : "",
   "Origin" : "ObjImport",
   "Parameters" : {
     "HasNormalMap" : 0.000000,
@@ -262,7 +260,7 @@
   "PathFileName" : "Content/Material/Auto/material_9.mat",
   "RasterizerState" : "SolidBackCull",
   "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/Generated/Materials/BD78AAE88B260EBC_ParticleSprite.hlsl",
+  "ShaderPath" : "Shaders/Generated/Materials/Material_ParticleSprite.hlsl",
   "Textures" : {
     "DiffuseTexture" : "Content/Data/Map/de_dust2-cs-map/source/de_dust2/de_dust2_material_9.tga"
   },

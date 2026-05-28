@@ -11,16 +11,30 @@
 
 namespace
 {
-	// 진입부 마커 — 호환 reader 가 신/구 포맷을 구분하는 데 사용.
-	// 값은 NotifyName 의 FString length 로 절대 나올 수 없는 sentinel.
-	// (FName 직렬화는 [Length:uint32][bytes]. 4GB 짜리 이름은 없으므로 0xFADE0001 은 안전.)
-	static constexpr uint32 GAnimNotifyEventFormatMagic   = 0xFADE0001u;
-	static constexpr uint32 GAnimNotifyEventFormatVersion = 1u;
-
-	// Notify/NotifyState 같은 UObject pointer 의 한 슬롯 (신포맷, v1+):
-	//   ClassName(FString) → PayloadSize(uint32) → properties bytes.
-	// 길이 prefix 로 인해 클래스 인스턴스화 실패해도 슬롯 단위로 skip 가능 → 깨진 슬롯 1 개만 잃고
-	// 시퀀스는 살아남음.
+	// Notify/NotifyState 같은 UObject pointer 의 직렬화 한 슬롯.
+	//   Save: 클래스명 ("None" 이면 null) → payload size(uint32) → SerializeProperties(PF_Save) bytes.
+	//   Load: 클래스명 → payload size + bytes 통째로 읽고, 클래스 인스턴스화 성공 시
+	//         메모리 아카이브로 properties 복원. 실패해도 메인 스트림 위치는 정확히 다음 슬롯.
+	//
+	// 과거에는 properties 를 메인 아카이브에 인라인으로 썼는데,
+	//   - 클래스가 삭제/리네임되어 ObjectFactory::Create 실패
+	//   - 또는 다른 base 로 Cast 실패
+	// 이면 SerializeProperties 호출이 통째로 skip → 스트림에 leftover bytes 가 남아
+	// 이후 모든 notify (및 그 다음 필드들) 의 read 가 misalign → uasset 전체가 read overrun
+	// → "load failed: corrupted package" 로 안 열림. 길이 prefix 가 있으면 슬롯 단위로
+	// 정확히 skip 가능해서 깨진 슬롯 1 개만 잃고 시퀀스는 살아남는다.
+	// Notify/NotifyState 같은 UObject pointer 의 직렬화 한 슬롯.
+	//   Save: 클래스명 ("None" 이면 null) → payload size(uint32) → SerializeProperties(PF_Save) bytes.
+	//   Load: 클래스명 → payload size + bytes 통째로 읽고, 클래스 인스턴스화 성공 시
+	//         메모리 아카이브로 properties 복원. 실패해도 메인 스트림 위치는 정확히 다음 슬롯.
+	//
+	// 과거에는 properties 를 메인 아카이브에 인라인으로 썼는데,
+	//   - 클래스가 삭제/리네임되어 ObjectFactory::Create 실패
+	//   - 또는 다른 base 로 Cast 실패
+	// 이면 SerializeProperties 호출이 통째로 skip → 스트림에 leftover bytes 가 남아
+	// 이후 모든 notify (및 그 다음 필드들) 의 read 가 misalign → uasset 전체가 read overrun
+	// → "load failed: corrupted package" 로 안 열림. 길이 prefix 가 있으면 슬롯 단위로
+	// 정확히 skip 가능해서 깨진 슬롯 1 개만 잃고 시퀀스는 살아남는다.
 	template<typename T>
 	void SerializeNotifyPointer(FArchive& Ar, T*& OutPtr, UObject* InOuter)
 	{
@@ -87,98 +101,16 @@ namespace
 			OutPtr->SerializeProperties(PayloadAr, PF_Save);
 		}
 	}
-
-	// Legacy (pre-da696c0d): ClassName 다음에 properties 가 메인 아카이브에 그대로 인라인.
-	// 클래스 인스턴스화 실패 시 properties 를 skip 할 방법이 없어 스트림 misalign — 해당 슬롯
-	// 이후가 모두 깨짐. 호환 reader 라 그 위험은 그대로 안고 간다 (옛 자산을 한 번 로드 후
-	// 재저장하면 신포맷으로 마이그레이션됨).
-	template<typename T>
-	void SerializeNotifyPointerLegacy(FArchive& Ar, T*& OutPtr, UObject* InOuter)
-	{
-		FString ClassName;
-		Ar << ClassName;
-
-		OutPtr = nullptr;
-		if (!ClassName.empty() && ClassName != "None")
-		{
-			UObject* Created = FObjectFactory::Get().Create(ClassName, InOuter);
-			if (Created)
-			{
-				OutPtr = Cast<T>(Created);
-				if (!OutPtr)
-				{
-					UObjectManager::Get().DestroyObject(Created);
-					UE_LOG("FAnimNotifyEvent legacy: class '%s' is not a %s — stream may corrupt after this slot.",
-					       ClassName.c_str(), T::StaticClass()->GetName());
-				}
-			}
-			else
-			{
-				UE_LOG("FAnimNotifyEvent legacy: class '%s' not registered — stream may corrupt after this slot.",
-				       ClassName.c_str());
-			}
-		}
-
-		if (OutPtr)
-		{
-			OutPtr->SerializeProperties(Ar, PF_Save);
-		}
-	}
 }
 
 void FAnimNotifyEvent::Serialize(FArchive& Ar, UObject* InOuter)
 {
-	if (Ar.IsSaving())
-	{
-		// 신포맷: magic + version 마커 → 표준 entry.
-		uint32 Magic   = GAnimNotifyEventFormatMagic;
-		uint32 Version = GAnimNotifyEventFormatVersion;
-		Ar << Magic;
-		Ar << Version;
-
-		Ar << NotifyName;
-		Ar << TriggerTime;
-		Ar << Duration;
-
-		SerializeNotifyPointer<UAnimNotify>(Ar, Notify, InOuter);
-		SerializeNotifyPointer<UAnimNotifyState>(Ar, NotifyState, InOuter);
-		return;
-	}
-
-	// Loading — 첫 uint32 가 magic 이면 신포맷, 아니면 옛 포맷의 NotifyName 길이.
-	uint32 FirstU32 = 0;
-	Ar << FirstU32;
-
-	if (FirstU32 == GAnimNotifyEventFormatMagic)
-	{
-		uint32 Version = 0;
-		Ar << Version;
-		(void)Version; // 현재 v1 만 — 향후 분기 추가 시 사용.
-
-		Ar << NotifyName;
-		Ar << TriggerTime;
-		Ar << Duration;
-
-		SerializeNotifyPointer<UAnimNotify>(Ar, Notify, InOuter);
-		SerializeNotifyPointer<UAnimNotifyState>(Ar, NotifyState, InOuter);
-		return;
-	}
-
-	// Legacy 경로: FirstU32 는 NotifyName 의 FString 길이였음. 그 길이만큼 데이터를 직접
-	// 읽어 NotifyName 재구성, 이후 필드는 옛 layout 으로 진행.
-	FString NotifyNameStr;
-	NotifyNameStr.resize(FirstU32);
-	if (FirstU32 > 0)
-	{
-		Ar.Serialize(NotifyNameStr.data(), FirstU32 * sizeof(char));
-	}
-	NotifyName = FName(NotifyNameStr);
-
+	Ar << NotifyName;
 	Ar << TriggerTime;
 	Ar << Duration;
 
-	SerializeNotifyPointerLegacy<UAnimNotify>(Ar, Notify, InOuter);
-	SerializeNotifyPointerLegacy<UAnimNotifyState>(Ar, NotifyState, InOuter);
+	SerializeNotifyPointer<UAnimNotify>(Ar, Notify, InOuter);
+	SerializeNotifyPointer<UAnimNotifyState>(Ar, NotifyState, InOuter);
 }
 
 void FAnimNotifyEvent::AddReferencedObjects(FReferenceCollector& Collector) const
