@@ -3,9 +3,9 @@
 #include "Object/ReferenceCollector.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
+#include "Collision/WorldCollisionQueries.h"
 #include "Engine/Component/Camera/CameraComponent.h"
 #include "Render/Types/LODContext.h"
-#include "Physics/NativePhysicsScene.h"
 #include "Core/ProjectSettings.h"
 #include "GameFramework/GameMode/GameModeBase.h"
 #include "GameFramework/GameMode/GameStateBase.h"
@@ -222,25 +222,19 @@ bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor
 bool UWorld::PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 	ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
 {
-	if (PhysicsScene)
-		return PhysicsScene->Raycast(Start, Dir, MaxDist, OutHit, TraceChannel, IgnoreActor);
-	return false;
+	return FWorldCollisionQueries::Raycast(*this, Start, Dir, MaxDist, OutHit, TraceChannel, IgnoreActor);
 }
 
 bool UWorld::PhysicsRaycastByObjectTypes(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 	uint32 ObjectTypeMask, const AActor* IgnoreActor) const
 {
-	if (PhysicsScene)
-		return PhysicsScene->RaycastByObjectTypes(Start, Dir, MaxDist, OutHit, ObjectTypeMask, IgnoreActor);
-	return false;
+	return FWorldCollisionQueries::RaycastByObjectTypes(*this, Start, Dir, MaxDist, OutHit, ObjectTypeMask, IgnoreActor);
 }
 
 bool UWorld::PhysicsSphereSweepShapeComponents(const FVector& Start, const FVector& Dir, float MaxDist, float Radius,
 	FHitResult& OutHit, ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
 {
-	if (PhysicsScene)
-		return PhysicsScene->SphereSweepShapeComponents(Start, Dir, MaxDist, Radius, OutHit, TraceChannel, IgnoreActor);
-	return false;
+	return FWorldCollisionQueries::SphereSweepShapeComponents(*this, Start, Dir, MaxDist, Radius, OutHit, TraceChannel, IgnoreActor);
 }
 
 
@@ -302,10 +296,6 @@ void UWorld::InitWorld()
 	PersistentLevel->SetWorld(this);
 
 	// E.2/3: CameraManager spawn 은 PC 의 BeginPlay 가 담당. World 는 보유하지 않음.
-
-	// 물리 시스템 초기화 — ProjectSettings 백엔드 선택
-	PhysicsScene = std::make_unique<FNativePhysicsScene>();
-	PhysicsScene->Initialize(this);
 }
 
 void UWorld::BeginPlay()
@@ -353,12 +343,6 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 		return;
 	}
 
-	if (bHasBegunPlay && PhysicsScene)
-	{
-		SCOPE_STAT_CAT("PhysicsScene", "1_WorldTick");
-		PhysicsScene->Tick(DeltaTime);
-	}
-
 	TickManager.Tick(this, DeltaTime, TickType);
 
 	// 카메라는 물리/액터 Tick 이후 갱신 — 차량 1인칭처럼 physics body 에 붙은 카메라가
@@ -398,12 +382,6 @@ void UWorld::EndPlay()
 	}
 
 	PersistentLevel->EndPlay();
-
-	// 물리 시스템 정리 — 액터/컴포넌트가 아직 살아있는 동안 해제
-	if (PhysicsScene)
-	{
-		PhysicsScene->Shutdown();
-	}
 
 	// Clear spatial partition while actors/components are still alive.
 	// Otherwise Octree teardown can dereference stale primitive pointers during shutdown.

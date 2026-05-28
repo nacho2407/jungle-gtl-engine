@@ -1,4 +1,4 @@
-#include "GameFramework/Actor/TriggerVolumeBase.h"
+﻿#include "GameFramework/Actor/TriggerVolumeBase.h"
 #include "GameFramework/Pawn/Pawn.h"
 #include "GameFramework/GameMode/GameModeBase.h"
 #include "GameFramework/World.h"
@@ -51,7 +51,6 @@ void ATriggerVolumeBase::BeginPlay()
 		TriggerBox->SetCollisionObjectType(ECollisionChannel::Trigger);
 		TriggerBox->SetCollisionResponseToAllChannels(ECollisionResponse::Overlap);
 		TriggerBox->SetGenerateOverlapEvents(true);
-		TriggerBox->SetSimulatePhysics(false);
 	}
 
 	Super::BeginPlay();

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Object/Object.h"
 #include "Core/Types/RayTypes.h"
 #include "Core/Types/CollisionTypes.h"
@@ -7,17 +7,15 @@
 #include "GameFramework/Camera/PlayerCameraManager.h"
 #include "GameFramework/Level.h"
 #include "Component/Camera/CameraComponent.h"
+#include "Collision/Octree/Octree.h"
+#include "Collision/Octree/SpatialPartition.h"
 #include "GameFramework/WorldContext.h"
+#include "GameFramework/WorldSettings.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/LODContext.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Render/Types/POVProvider.h"
-#include <Collision/Octree/Octree.h>
-#include <Collision/Octree/SpatialPartition.h>
-#include "GameFramework/WorldSettings.h"
-#include "Physics/IPhysicsScene.h"
 #include "Source/Engine/GameFramework/World.generated.h"
-#include <memory>
 
 class UCameraComponent;
 class UPrimitiveComponent;
@@ -133,15 +131,12 @@ private:
 	FTickManager TickManager;
 
 	FSpatialPartition Partition;
-	std::unique_ptr<IPhysicsScene> PhysicsScene;
 
 	// Game flow — Editor 월드에서는 nullptr로 유지된다.
 	AGameModeBase* GameMode = nullptr;
 	UClass* GameModeClass = nullptr;  // GameEngine 등이 BeginPlay 전에 세팅
 
 public:
-	IPhysicsScene* GetPhysicsScene() const { return PhysicsScene.get(); }
-
 	// Physics raycast convenience — delegates to IPhysicsScene::Raycast
 	bool PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,

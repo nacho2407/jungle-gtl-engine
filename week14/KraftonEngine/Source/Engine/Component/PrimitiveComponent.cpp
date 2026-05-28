@@ -4,7 +4,6 @@
 #include "Core/Types/RayTypes.h"
 #include "Collision/Ray/RayUtils.h"
 #include "Collision/Octree/SpatialPartition.h"
-#include "Physics/IPhysicsScene.h"
 #include "Render/Resource/MeshBufferManager.h"
 #include "Core/Types/CollisionTypes.h"
 #include "Render/Scene/FScene.h"
@@ -38,36 +37,12 @@ HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
-	if (Owner)
-	{
-		if (UWorld* World = Owner->GetWorld())
-		{
-			World->GetPhysicsScene()->UnregisterComponent(this);
-		}
-	}
 	DestroyRenderState();
 }
 
 void UPrimitiveComponent::BeginPlay()
 {
 	USceneComponent::BeginPlay();
-
-	// 직렬화나 InitDefaultComponents에서 CollisionEnabled가 이미 설정된 경우 등록.
-	// 이 시점에 SimulatePhysics/ObjectType/Response/Mass/COM 등 모든 셋업이 끝나있어
-	// PhysX/Native가 정확한 값으로 body를 생성한다.
-	if (IsQueryCollisionEnabled())
-	{
-		if (Owner)
-		{
-			if (UWorld* World = Owner->GetWorld())
-			{
-				World->GetPhysicsScene()->RegisterComponent(this);
-			}
-		}
-	}
-
-	// flag는 등록 흐름이 끝난 직후에만 true. 이후 setter들이 PhysicsScene::RebuildBody 호출.
-	bComponentHasBegunPlay = true;
 }
 
 void UPrimitiveComponent::EndPlay()
@@ -81,11 +56,6 @@ void UPrimitiveComponent::EndPlay()
 	{
 		if (UWorld* World = Owner->GetWorld())
 		{
-			if (IPhysicsScene* PS = World->GetPhysicsScene())
-			{
-				PS->UnregisterComponent(this);
-			}
-
 			// SpatialPartition에서도 즉시 제거. World::DestroyActor가 Partition.RemoveActor를
 			// 호출하지만, 그 시점에 OctreeNode 캐시가 이미 stale일 수 있는 경로(스폰 폭주 시
 			// RebuildRootBounds 등)가 있어 EndPlay에서 한 번 더 보장한다. 중복 제거는 noop.
@@ -97,28 +67,8 @@ void UPrimitiveComponent::EndPlay()
 	ClearOctreeLocation();
 
 	DestroyRenderState();
-	bComponentHasBegunPlay = false;
 
 	USceneComponent::EndPlay();
-}
-
-void UPrimitiveComponent::NotifyPhysicsBodyDirty()
-{
-	if (!bComponentHasBegunPlay) return;
-	if (!Owner) return;
-	UWorld* World = Owner->GetWorld();
-	if (!World) return;
-	if (IPhysicsScene* PS = World->GetPhysicsScene())
-	{
-		PS->RebuildBody(this);
-	}
-}
-
-void UPrimitiveComponent::SetSimulatePhysics(bool bInSimulate)
-{
-	if (bSimulatePhysics == bInSimulate) return;
-	bSimulatePhysics = bInSimulate;
-	NotifyPhysicsBodyDirty();
 }
 
 void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
@@ -180,7 +130,7 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 
 	if (strcmp(PropertyName, "RelativeTransform.Scale") == 0 || strcmp(PropertyName, "Scale") == 0)
 	{
-		NotifyPhysicsBodyDirty();
+		MarkWorldBoundsDirty();
 	}
 	else if (strcmp(PropertyName, "bIsVisible") == 0 || strcmp(PropertyName, "Visible") == 0)
 	{
@@ -201,42 +151,7 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	}
 	else if (strcmp(PropertyName, "CollisionEnabled") == 0 || strcmp(PropertyName, "Collision Enabled") == 0)
 	{
-		// 에디터 property panel 이 enum 값을 직접 바꾼 경우 — 이미 CollisionEnabled 필드는
-		// 갱신된 상태고 setter 를 안 거쳤으니 여기서 Register/Unregister 처리.
-		//
-		// 단 BeginPlay 이전에는 skip — DeserializeProperties 가 GetEditableProperties
-		// 순서대로 프로퍼티를 set 하면서 매번 PostEditProperty 를 부르는데, "Collision
-		// Enabled" 는 그 중에 비교적 앞쪽에 위치해서 ObjectType / Mass / COM / BoxExtent
-		// 같은 다른 프로퍼티들이 아직 default 인 시점에 RegisterComponent 가 발화해버린다.
-		// 결과: 단위 큐브 + mass=1 + WorldStatic 으로 PhysX 본체가 만들어지고, 이후 다른
-		// 프로퍼티 setter 들의 NotifyPhysicsBodyDirty 가 같은 가드에 막혀 no-op 라 영영
-		// 갱신 안 됨. BeginPlay 의 RegisterComponent 한 번에 위임하면 모든 프로퍼티가
-		// 최종 상태인 채로 등록된다 (PIE Duplicate 경로와 동일한 타이밍).
-		if (!bComponentHasBegunPlay) return;
-
-		if (Owner)
-		{
-			if (UWorld* World = Owner->GetWorld())
-			{
-				if (IsQueryCollisionEnabled())
-				{
-					World->GetPhysicsScene()->RegisterComponent(this);
-				}
-				else
-				{
-					World->GetPhysicsScene()->UnregisterComponent(this);
-				}
-			}
-		}
-	}
-	else if (strcmp(PropertyName, "Mass") == 0 || strcmp(PropertyName, "Mass (kg)") == 0)
-	{
-		// 에디터 슬라이더로 값을 바꾼 경우 백엔드에 즉시 반영.
-		SetMass(Mass);
-	}
-	else if (strcmp(PropertyName, "CenterOfMassOffset") == 0 || strcmp(PropertyName, "Center Of Mass Offset") == 0)
-	{
-		SetCenterOfMass(CenterOfMassOffset);
+		// World collision queries read CollisionEnabled directly.
 	}
 }
 
@@ -397,36 +312,12 @@ void UPrimitiveComponent::EnsureWorldAABBUpdated() const
 
 void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
 {
-	bool bWasQuery = IsQueryCollisionEnabled();
 	CollisionEnabled = InEnabled;
-	bool bIsQuery = IsQueryCollisionEnabled();
-
-	// 컴포넌트 BeginPlay 전이면 멤버만 변경. BeginPlay에서 한 번 등록되며 그 시점엔
-	// SimulatePhysics 등 다른 셋업이 모두 완료된 상태.
-	if (!bComponentHasBegunPlay) return;
-
-	if (!Owner) return;
-	UWorld* World = Owner->GetWorld();
-	if (!World) return;
-
-	if (bWasQuery != bIsQuery)
-	{
-		if (bIsQuery)
-			World->GetPhysicsScene()->RegisterComponent(this);
-		else
-			World->GetPhysicsScene()->UnregisterComponent(this);
-	}
-	else if (bWasQuery && bIsQuery)
-	{
-		// 이미 등록된 상태에서 enabled 종류 변경 (예: QueryOnly ↔ QueryAndPhysics) — 재구성
-		NotifyPhysicsBodyDirty();
-	}
 }
 
 void UPrimitiveComponent::SetRelativeScale(const FVector& NewScale)
 {
 	USceneComponent::SetRelativeScale(NewScale);
-	NotifyPhysicsBodyDirty();
 }
 
 bool UPrimitiveComponent::IsQueryCollisionEnabled() const
@@ -439,19 +330,16 @@ void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel InChannel)
 {
 	if (ObjectType == InChannel) return;
 	ObjectType = InChannel;
-	NotifyPhysicsBodyDirty();
 }
 
 void UPrimitiveComponent::SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response)
 {
 	ResponseContainer.SetResponse(Channel, Response);
-	NotifyPhysicsBodyDirty();
 }
 
 void UPrimitiveComponent::SetCollisionResponseToAllChannels(ECollisionResponse Response)
 {
 	ResponseContainer.SetAllChannels(Response);
-	NotifyPhysicsBodyDirty();
 }
 
 ECollisionResponse UPrimitiveComponent::GetCollisionResponseToChannel(ECollisionChannel Channel) const
@@ -468,98 +356,6 @@ ECollisionResponse UPrimitiveComponent::GetMinResponse(const UPrimitiveComponent
 }
 
 // --- Overlap / Hit ---
-
-// --- Physics Force/Velocity API ---
-
-void UPrimitiveComponent::AddForce(const FVector& Force)
-{
-	if (Owner)
-		if (UWorld* W = Owner->GetWorld())
-			if (IPhysicsScene* PS = W->GetPhysicsScene())
-				PS->AddForce(this, Force);
-}
-
-void UPrimitiveComponent::AddForceAtLocation(const FVector& Force, const FVector& Location)
-{
-	if (Owner)
-		if (UWorld* W = Owner->GetWorld())
-			if (IPhysicsScene* PS = W->GetPhysicsScene())
-				PS->AddForceAtLocation(this, Force, Location);
-}
-
-void UPrimitiveComponent::AddTorque(const FVector& Torque)
-{
-	if (Owner)
-		if (UWorld* W = Owner->GetWorld())
-			if (IPhysicsScene* PS = W->GetPhysicsScene())
-				PS->AddTorque(this, Torque);
-}
-
-FVector UPrimitiveComponent::GetLinearVelocity() const
-{
-	if (Owner)
-		if (UWorld* W = Owner->GetWorld())
-			if (IPhysicsScene* PS = W->GetPhysicsScene())
-				return PS->GetLinearVelocity(const_cast<UPrimitiveComponent*>(this));
-	return { 0, 0, 0 };
-}
-
-void UPrimitiveComponent::SetLinearVelocity(const FVector& Vel)
-{
-	if (Owner)
-		if (UWorld* W = Owner->GetWorld())
-			if (IPhysicsScene* PS = W->GetPhysicsScene())
-				PS->SetLinearVelocity(this, Vel);
-}
-
-FVector UPrimitiveComponent::GetAngularVelocity() const
-{
-	if (Owner)
-		if (UWorld* W = Owner->GetWorld())
-			if (IPhysicsScene* PS = W->GetPhysicsScene())
-				return PS->GetAngularVelocity(const_cast<UPrimitiveComponent*>(this));
-	return { 0, 0, 0 };
-}
-
-void UPrimitiveComponent::SetAngularVelocity(const FVector& Vel)
-{
-	if (Owner)
-		if (UWorld* W = Owner->GetWorld())
-			if (IPhysicsScene* PS = W->GetPhysicsScene())
-				PS->SetAngularVelocity(this, Vel);
-}
-
-void UPrimitiveComponent::SetMass(float NewMass)
-{
-	Mass = NewMass;
-	if (Owner)
-		if (UWorld* W = Owner->GetWorld())
-			if (IPhysicsScene* PS = W->GetPhysicsScene())
-				PS->SetMass(this, NewMass);
-}
-
-void UPrimitiveComponent::SetCenterOfMass(const FVector& LocalOffset)
-{
-	CenterOfMassOffset = LocalOffset;
-	if (Owner)
-		if (UWorld* W = Owner->GetWorld())
-			if (IPhysicsScene* PS = W->GetPhysicsScene())
-				PS->SetCenterOfMass(this, LocalOffset);
-}
-
-FVector UPrimitiveComponent::GetCenterOfMass() const
-{
-	// 멤버 직접 반환 — 백엔드의 BodyState/Px와 SetCenterOfMass에서 동기화된다.
-	// (백엔드 query를 거치면 RegisterComponent 내부에서 사용 시 fallback 루프 위험)
-	return CenterOfMassOffset;
-}
-
-float UPrimitiveComponent::GetMass() const
-{
-	// 멤버 직접 반환 (위 GetCenterOfMass와 동일 이유).
-	return Mass;
-}
-
 void UPrimitiveComponent::SetGenerateOverlapEvents(bool bInGenerateOverlapEvents)
 {
 	bGenerateOverlapEvents = bInGenerateOverlapEvents;

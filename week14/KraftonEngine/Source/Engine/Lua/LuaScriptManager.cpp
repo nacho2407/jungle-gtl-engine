@@ -994,35 +994,6 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@return Vector\nfunction SceneComponent:GetRotation() end")
 		.Method("---@param rotation Vector\nfunction SceneComponent:SetRotation(rotation) end");
 
-	Lua.new_usertype<UPrimitiveComponent>("PrimitiveComponent",
-		sol::base_classes, sol::bases<USceneComponent>(),
-		"SetSimulatePhysics", &UPrimitiveComponent::SetSimulatePhysics,
-		"GetSimulatePhysics", &UPrimitiveComponent::GetSimulatePhysics,
-		"AddForce", &UPrimitiveComponent::AddForce,
-		"AddForceAtLocation", &UPrimitiveComponent::AddForceAtLocation,
-		"AddTorque", &UPrimitiveComponent::AddTorque,
-		"GetLinearVelocity", &UPrimitiveComponent::GetLinearVelocity,
-		"SetLinearVelocity", &UPrimitiveComponent::SetLinearVelocity,
-		"GetAngularVelocity", &UPrimitiveComponent::GetAngularVelocity,
-		"SetAngularVelocity", &UPrimitiveComponent::SetAngularVelocity,
-		"GetMass", &UPrimitiveComponent::GetMass,
-		"SetMass", &UPrimitiveComponent::SetMass,
-		"GetGenerateOverlapEvents", &UPrimitiveComponent::GetGenerateOverlapEvents);
-
-	FLuaDocRegistry::Get().Type("PrimitiveComponent", "SceneComponent")
-		.Method("---@param enabled boolean\nfunction PrimitiveComponent:SetSimulatePhysics(enabled) end")
-		.Method("---@return boolean\nfunction PrimitiveComponent:GetSimulatePhysics() end")
-		.Method("---@param force Vector\nfunction PrimitiveComponent:AddForce(force) end")
-		.Method("---@param force Vector\n---@param location Vector\nfunction PrimitiveComponent:AddForceAtLocation(force, location) end")
-		.Method("---@param torque Vector\nfunction PrimitiveComponent:AddTorque(torque) end")
-		.Method("---@return Vector\nfunction PrimitiveComponent:GetLinearVelocity() end")
-		.Method("---@param velocity Vector\nfunction PrimitiveComponent:SetLinearVelocity(velocity) end")
-		.Method("---@return Vector\nfunction PrimitiveComponent:GetAngularVelocity() end")
-		.Method("---@param velocity Vector\nfunction PrimitiveComponent:SetAngularVelocity(velocity) end")
-		.Method("---@return number\nfunction PrimitiveComponent:GetMass() end")
-		.Method("---@param mass number\nfunction PrimitiveComponent:SetMass(mass) end")
-		.Method("---@return boolean\nfunction PrimitiveComponent:GetGenerateOverlapEvents() end");
-
 	// 메시 에셋 경로로 컴포넌트 식별 가능하게 노출. 자동 생성된 FName ("UStaticMeshComponent_41")
 	// 은 월드 초기화 순서에 따라 카운터가 달라져 빌드별로 매칭이 깨질 수 있다. 메시 경로는
 	// 씬 파일에 명시 저장되므로 deterministic.

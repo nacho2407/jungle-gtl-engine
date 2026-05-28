@@ -268,9 +268,6 @@
     <Filter Include="Source\Engine\Particles\Runtime">
       <UniqueIdentifier>{a6fd8b55-c786-051b-c272-a120a4f17b47}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Engine\Physics">
-      <UniqueIdentifier>{c1985821-1144-9a46-639a-f7de31f4a1fa}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Engine\Platform">
       <UniqueIdentifier>{813e0a37-91de-2afc-805f-1a0f801727b9}</UniqueIdentifier>
     </Filter>
@@ -911,6 +908,9 @@
     <ClCompile Include="Source\Engine\CameraShake\CameraShakeManager.cpp">
       <Filter>Source\Engine\CameraShake</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Collision\WorldCollisionQueries.cpp">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Collision\BVH\MeshTriangleBVH.cpp">
       <Filter>Source\Engine\Collision\BVH</Filter>
     </ClCompile>
@@ -1327,9 +1327,6 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp">
       <Filter>Source\Engine\Particles\Runtime</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\NativePhysicsScene.cpp">
-      <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp">
       <Filter>Source\Engine\Platform</Filter>
@@ -2006,6 +2003,9 @@
     <ClInclude Include="Source\Engine\CameraShake\CameraShakeManager.h">
       <Filter>Source\Engine\CameraShake</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Collision\WorldCollisionQueries.h">
+      <Filter>Source\Engine\Collision</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h">
       <Filter>Source\Engine\Collision\BVH</Filter>
     </ClInclude>
@@ -2527,12 +2527,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h">
       <Filter>Source\Engine\Particles\Runtime</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\IPhysicsScene.h">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\NativePhysicsScene.h">
-      <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h">
       <Filter>Source\Engine\Platform</Filter>

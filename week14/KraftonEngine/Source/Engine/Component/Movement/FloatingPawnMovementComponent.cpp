@@ -1,7 +1,8 @@
-#include "FloatingPawnMovementComponent.h"
+﻿#include "FloatingPawnMovementComponent.h"
 
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
+#include "GameFramework/AActor.h"
 #include "Math/Quat.h"
 #include "Math/Rotator.h"
 #include "Object/Reflection/ObjectFactory.h"
@@ -75,7 +76,12 @@ void UFloatingPawnMovementComponent::TickComponent(float DeltaTime, ELevelTick T
 		MoveDirection.Normalize();
 	}
 
-	UpdatedPrimitive->SetLinearVelocity(MoveDirection * Speed);
+	FVector Delta = MoveDirection * Speed * DeltaTime;
+	AActor* Owner = GetOwner();
+	if (Owner)
+	{
+		Owner->SetActorLocation(Owner->GetActorLocation() + Delta);
+	}
 
 	if (MouseYawDelta != 0.0f || MousePitchDelta != 0.0f)
 	{

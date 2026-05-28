@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 #include "CapsuleComponent.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -14,9 +14,7 @@ void UCapsuleComponent::SetCapsuleSize(float InRadius, float InHalfHeight)
 	CapsuleRadius = InRadius;
 	CapsuleHalfHeight = (std::max)(InHalfHeight, InRadius);
 	LocalExtents = FVector(CapsuleRadius, CapsuleRadius, CapsuleHalfHeight);
-	NotifyPhysicsBodyDirty();
 	MarkWorldBoundsDirty();
-	MarkRenderTransformDirty();
 }
 
 float UCapsuleComponent::GetScaledCapsuleRadius() const

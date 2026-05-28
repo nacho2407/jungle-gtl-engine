@@ -1,4 +1,4 @@
-#include "ActionComponent.h"
+﻿#include "ActionComponent.h"
 
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
@@ -225,28 +225,7 @@ void UActionComponent::Knockback(const FVector& Direction, float Distance, float
 
 	const FVector KnockbackDirection = Direction.Normalized();
 
-	// SimulatePhysics 바디 분기 — PhysX 가 매 프레임 root transform 의 authority 라
-	// AddActorWorldOffset 으로 더한 step 은 post-sync 가 덮어쓴다. step 이 1m teleport 임계값을
-	// 넘는 FPS 에서만 우연히 fire → FPS-의존 (저FPS = 더 잘 날아감). 물리 바디한텐 PhysX 측
-	// linear velocity 를 한 번에 박고 그 뒤는 PhysX 가 적분하도록 위임 — FPS 완전 독립.
-	//
-	// Distance 의 의미: 비물리 액터한텐 "Duration 동안 정확히 이만큼 이동" 이지만, 물리 바디는
-	// 마찰/중력으로 어차피 exact 거리 보장 불가 → "초기 속도 (m/s)" 로 재해석한다. Distance/Duration
-	// 을 그대로 쓰면 (예: 5/0.25 = 20 m/s) PhysX 마찰까지 고려해도 한참 멀리 날아가 의도보다
-	// 훨씬 강하게 느껴짐. Distance 를 직접 속도로 쓰면 기본값 5 = 5 m/s 가 되어 마찰 있는 바닥에서
-	// 몇 미터 굴러가는 자연스러운 거동.
 	AActor* OwnerActor = GetOwner();
-	UPrimitiveComponent* RootPrim = OwnerActor ? Cast<UPrimitiveComponent>(OwnerActor->GetRootComponent()) : nullptr;
-	if (RootPrim && RootPrim->GetSimulatePhysics())
-	{
-		const FVector Velocity = KnockbackDirection * Distance;
-		RootPrim->SetLinearVelocity(Velocity);
-
-		// per-frame step tracking 은 끔 — PhysX 가 알아서 적분.
-		(void)Duration; // 물리 바디한텐 의미 없음 (마찰이 감속 담당).
-		KnockbackAction = FKnockbackAction();
-		return;
-	}
 
 	// 비물리 액터 — 기존 per-frame AddActorWorldOffset step 경로.
 	KnockbackAction.bActive = true;
