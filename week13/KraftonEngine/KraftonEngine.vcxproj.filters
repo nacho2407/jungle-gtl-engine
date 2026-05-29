@@ -1532,6 +1532,15 @@
     <ClCompile Include="Source\Engine\PhysicsEngine\BodySetupCore.cpp">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAsset.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsConstraintTemplate.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\SkeletalBodySetup.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp">
       <Filter>Source\Engine\Platform</Filter>
     </ClCompile>
@@ -2885,7 +2894,13 @@
     <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAsset.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsConstraintTemplate.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\ShapeElem.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\SkeletalBodySetup.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\SphereElem.h">
