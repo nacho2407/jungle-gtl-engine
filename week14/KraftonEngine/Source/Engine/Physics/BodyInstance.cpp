@@ -1,5 +1,6 @@
 ﻿#include "Physics/BodyInstance.h"
 #include "Physics/PhysXConversions.h"
+#include "Physics/PhysicsFilterData.h"
 
 #include "Component/PrimitiveComponent.h"
 
@@ -158,4 +159,28 @@ void FBodyInstance::SyncToPhysics()
 		OwnerComponent->GetWorldRotation().ToQuaternion(), OwnerComponent->GetWorldScale());
 
 	SetBodyTransform(Transform);
+}
+
+void FBodyInstance::UpdateFilterData()
+{
+	if (!Body || !OwnerComponent) return;
+
+	const physx::PxFilterData FilterData = MakeFilterData(*OwnerComponent);
+
+	const physx::PxU32 ShapeCount = Body->getNbShapes();
+	if (ShapeCount == 0) return;
+
+	TArray<physx::PxShape*> Shapes;
+	Shapes.resize(ShapeCount);
+
+	const physx::PxU32 WrittenCount = Body->getShapes(Shapes.data(), ShapeCount);
+
+	for (physx::PxU32 Index = 0; Index < WrittenCount; ++Index)
+	{
+		physx::PxShape* Shape = Shapes[Index];
+		if (!Shape) continue;
+
+		Shape->setSimulationFilterData(FilterData);
+		Shape->setQueryFilterData(FilterData);
+	}
 }

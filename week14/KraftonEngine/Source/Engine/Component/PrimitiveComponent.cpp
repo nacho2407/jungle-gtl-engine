@@ -182,6 +182,19 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	{
 		RecreatePhysicsState();
 	}
+	else if (strncmp(PropertyName, "Responses", 9) == 0 ||
+		strcmp(PropertyName, "Collision Responses") == 0 ||
+		strcmp(PropertyName, "WorldStatic") == 0 ||
+		strcmp(PropertyName, "WorldDynamic") == 0 ||
+		strcmp(PropertyName, "Pawn") == 0 ||
+		strcmp(PropertyName, "Projectile") == 0 ||
+		strcmp(PropertyName, "Trigger") == 0)
+	{
+		if (BodyInstance.IsValidBody())
+		{
+			BodyInstance.UpdateFilterData();
+		}
+	}
 }
 
 FBoundingBox UPrimitiveComponent::GetWorldBoundingBox() const
@@ -448,12 +461,24 @@ void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel InChannel)
 
 void UPrimitiveComponent::SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response)
 {
+	if (ResponseContainer.GetResponse(Channel) == Response) return;
+
 	ResponseContainer.SetResponse(Channel, Response);
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.UpdateFilterData();
+	}
 }
 
 void UPrimitiveComponent::SetCollisionResponseToAllChannels(ECollisionResponse Response)
 {
 	ResponseContainer.SetAllChannels(Response);
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.UpdateFilterData();
+	}
 }
 
 ECollisionResponse UPrimitiveComponent::GetCollisionResponseToChannel(ECollisionChannel Channel) const

@@ -21,7 +21,7 @@ void FPhysicsScene::Initialize()
 	physx::PxPhysics* Physics = FPhysXSDK::Get().GetPhysics();
 
 	physx::PxSceneDesc SceneDesc(Physics->getTolerancesScale());
-	SceneDesc.gravity = physx::PxVec3(0.0f, 0.0f, -980.0f);
+	SceneDesc.gravity = physx::PxVec3(0.0f, 0.0f, -9.8f);
 
 	EventCallback = new FPhysicsEventCallback();
 	SceneDesc.simulationEventCallback = EventCallback;

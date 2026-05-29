@@ -45,4 +45,6 @@ struct FBodyInstance
 	AActor* GetOwnerActor() const;
 	void SyncFromPhysics();
 	void SyncToPhysics();
+
+	void UpdateFilterData();
 };
