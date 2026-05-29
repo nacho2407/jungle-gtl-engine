@@ -373,8 +373,7 @@ void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
 	}
 	else if (bHadCollision && bHasCollision)
 	{
-		DestroyPhysicsState();
-		CreatePhysicsState();
+		RecreatePhysicsState();
 	}
 }
 
@@ -382,11 +381,7 @@ void UPrimitiveComponent::SetRelativeScale(const FVector& NewScale)
 {
 	USceneComponent::SetRelativeScale(NewScale);
 
-	if (BodyInstance)
-	{
-		DestroyPhysicsState();
-		CreatePhysicsState();
-	}
+	RecreatePhysicsState();
 }
 
 bool UPrimitiveComponent::IsQueryCollisionEnabled() const
@@ -401,11 +396,7 @@ void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel InChannel)
 
 	ObjectType = InChannel;
 
-	if (BodyInstance)
-	{
-		DestroyPhysicsState();
-		CreatePhysicsState();
-	}
+	RecreatePhysicsState();
 }
 
 void UPrimitiveComponent::SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response)
@@ -438,11 +429,7 @@ void UPrimitiveComponent::SetGenerateOverlapEvents(bool bInGenerateOverlapEvents
 
 	bGenerateOverlapEvents = bInGenerateOverlapEvents;
 
-	if (BodyInstance)
-	{
-		DestroyPhysicsState();
-		CreatePhysicsState();
-	}
+	RecreatePhysicsState();
 }
 
 void UPrimitiveComponent::NotifyComponentBeginOverlap(

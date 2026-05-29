@@ -4,9 +4,13 @@
 #include "Physics/PhysXInclude.h"
 
 #include "Core/Types/CoreTypes.h"
+#include "Core/Types/CollisionTypes.h"
+#include "Math/Transform.h"
 
 class UPrimitiveComponent;
+class UBodySetup;
 struct FBodyInstance;
+struct FConstraintInstance;
 
 class FPhysicsScene
 {
@@ -16,7 +20,14 @@ public:
 	void Simulate(float DeltaTime);
 
 	FBodyInstance* CreateBody(UPrimitiveComponent* OwnerComp);
+	FBodyInstance* CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, const UBodySetup& BodySetup,
+		const FVector& WorldLocation, const FQuat& WorldRotation, ECollisionChannel ObjectType, ECollisionEnabled CollisionEnabled,
+		const FVector& Scale, bool bGenerateOverlapEvents);
 	void DestroyBody(FBodyInstance* Instance);
+
+	FConstraintInstance* CreateFixedConstraint(FBodyInstance* BodyA, FBodyInstance* BodyB,
+		const FTransform& LocalFrameA, const FTransform& LocalFrameB);
+	void DestroyConstraint(FConstraintInstance* Instance);
 
 	physx::PxScene* GetPxScene() const { return Scene; }
 
@@ -25,4 +36,5 @@ private:
 	physx::PxDefaultCpuDispatcher* Dispatcher = nullptr;
 
 	TArray<FBodyInstance*> Bodies;
+	TArray<FConstraintInstance*> Constraints;
 };

@@ -1737,6 +1737,7 @@
     <ClCompile Include="Source\Engine\Physics\PhysXConversions.cpp" />
     <ClCompile Include="Source\Engine\Physics\BodySetup.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXSDK.cpp" />
+    <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -5241,6 +5242,7 @@
     <ClInclude Include="Source\Engine\Physics\PhysicsGeometry.h" />
     <ClInclude Include="Source\Engine\Physics\BodySetupCore.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXSDK.h" />
+    <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

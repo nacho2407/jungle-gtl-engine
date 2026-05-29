@@ -57,6 +57,78 @@ void FPhysicsShapeFactory::CreateShapesForComponent(physx::PxPhysics& Physics, p
 	}
 }
 
+void FPhysicsShapeFactory::CreateShapesFromBodySetup(physx::PxPhysics& Physics, physx::PxMaterial& Material,
+	const UBodySetup& BodySetup, const FVector& Scale, UPrimitiveComponent* UserDataComponent,
+	bool bTrigger, TArray<physx::PxShape*>& OutShapes)
+{
+	if (!BodySetup.HasSimpleCollision()) return;
+
+	const FKAggregateGeom& AggGeom = BodySetup.GetAggGeom();
+	const FVector AbsScale(std::abs(Scale.X), std::abs(Scale.Y), std::abs(Scale.Z));
+
+	for (const FKBoxElem& Box : AggGeom.BoxElems)
+	{
+		const FVector Extent(
+			Box.Extents.X * AbsScale.X,
+			Box.Extents.Y * AbsScale.Y,
+			Box.Extents.Z * AbsScale.Z);
+
+		physx::PxShape* Shape = Physics.createShape(physx::PxBoxGeometry(Extent.X, Extent.Y, Extent.Z), Material);
+		if (!Shape) continue;
+
+		const FVector LocalCenter(
+			Box.Center.X * AbsScale.X,
+			Box.Center.Y * AbsScale.Y,
+			Box.Center.Z * AbsScale.Z);
+
+		Shape->setLocalPose(ToPxTransform(LocalCenter, Box.Rotation));
+		ApplyShapeFlags(*Shape, UserDataComponent, bTrigger);
+		OutShapes.push_back(Shape);
+	}
+
+	for (const FKSphereElem& Sphere : AggGeom.SphereElems)
+	{
+		const float MaxScale = std::max(AbsScale.X, std::max(AbsScale.Y, AbsScale.Z));
+
+		physx::PxShape* Shape = Physics.createShape(physx::PxSphereGeometry(Sphere.Radius * MaxScale), Material);
+		if (!Shape) continue;
+
+		const FVector LocalCenter(
+			Sphere.Center.X * AbsScale.X,
+			Sphere.Center.Y * AbsScale.Y,
+			Sphere.Center.Z * AbsScale.Z);
+
+		Shape->setLocalPose(physx::PxTransform(ToPxVec3(LocalCenter)));
+		ApplyShapeFlags(*Shape, UserDataComponent, bTrigger);
+		OutShapes.push_back(Shape);
+	}
+
+	for (const FKSphylElem& Sphyl : AggGeom.SphylElems)
+	{
+		const float RadiusScale = std::max(AbsScale.X, AbsScale.Y);
+		const float LengthScale = AbsScale.Z;
+
+		const float Radius = Sphyl.Radius * RadiusScale;
+		const float HalfLength = Sphyl.Length * LengthScale * 0.5f;
+
+		physx::PxShape* Shape = Physics.createShape(physx::PxCapsuleGeometry(Radius, HalfLength), Material);
+		if (!Shape) continue;
+
+		const FVector LocalCenter(
+			Sphyl.Center.X * AbsScale.X,
+			Sphyl.Center.Y * AbsScale.Y,
+			Sphyl.Center.Z * AbsScale.Z);
+
+		const FQuat CapsuleAxisFix = FQuat::FromAxisAngle(FVector(0.0f, 1.0f, 0.0f), 90.0f);
+
+		const FQuat LocalRot = (Sphyl.Rotation * CapsuleAxisFix).GetNormalized();
+
+		Shape->setLocalPose(ToPxTransform(LocalCenter, LocalRot));
+		ApplyShapeFlags(*Shape, UserDataComponent, bTrigger);
+		OutShapes.push_back(Shape);
+	}
+}
+
 void FPhysicsShapeFactory::CreateShapesForStaticMeshComponent(physx::PxPhysics& Physics, physx::PxMaterial& Material,
 	UStaticMeshComponent* Component, bool bTrigger, TArray<physx::PxShape*>& OutShapes)
 {
@@ -66,74 +138,9 @@ void FPhysicsShapeFactory::CreateShapesForStaticMeshComponent(physx::PxPhysics& 
 	if (!StaticMesh) return;
 
 	UBodySetup* BodySetup = StaticMesh->GetBodySetup();
-	if (!BodySetup || !BodySetup->HasSimpleCollision()) return;
+	if (!BodySetup) return;
 
-	const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
-	const FVector Scale = Component->GetWorldScale();
-	const FVector AbsWorldScale(std::abs(Scale.X), std::abs(Scale.Y), std::abs(Scale.Z));
-
-	for (const FKBoxElem& Box : AggGeom.BoxElems)
-	{
-		const FVector Extent(
-			Box.Extents.X * AbsWorldScale.X,
-			Box.Extents.Y * AbsWorldScale.Y,
-			Box.Extents.Z * AbsWorldScale.Z);
-
-		physx::PxShape* Shape = Physics.createShape(physx::PxBoxGeometry(Extent.X, Extent.Y, Extent.Z), Material);
-		if (!Shape) continue;
-
-		const FVector LocalCenter(
-			Box.Center.X * AbsWorldScale.X,
-			Box.Center.Y * AbsWorldScale.Y,
-			Box.Center.Z * AbsWorldScale.Z);
-
-		Shape->setLocalPose(ToPxTransform(LocalCenter, Box.Rotation));
-		ApplyShapeFlags(*Shape, Component, bTrigger);
-		OutShapes.push_back(Shape);
-	}
-
-	for (const FKSphereElem& Sphere : AggGeom.SphereElems)
-	{
-		const float MaxScale = std::max(AbsWorldScale.X, std::max(AbsWorldScale.Y, AbsWorldScale.Z));
-
-		physx::PxShape* Shape = Physics.createShape(physx::PxSphereGeometry(Sphere.Radius * MaxScale), Material);
-		if (!Shape) continue;
-
-		const FVector LocalCenter(
-			Sphere.Center.X * AbsWorldScale.X,
-			Sphere.Center.Y * AbsWorldScale.Y,
-			Sphere.Center.Z * AbsWorldScale.Z);
-
-		Shape->setLocalPose(physx::PxTransform(ToPxVec3(LocalCenter)));
-
-		ApplyShapeFlags(*Shape, Component, bTrigger);
-		OutShapes.push_back(Shape);
-	}
-
-	for (const FKSphylElem& Sphyl : AggGeom.SphylElems)
-	{
-		const float RadiusScale = std::max(AbsWorldScale.X, AbsWorldScale.Y);
-		const float LengthScale = AbsWorldScale.Z;
-
-		const float Radius = Sphyl.Radius * RadiusScale;
-		const float HalfLength = Sphyl.Length * LengthScale * 0.5f;
-
-		physx::PxShape* Shape = Physics.createShape(physx::PxCapsuleGeometry(Radius, HalfLength), Material);
-		if (!Shape) continue;
-
-		const FVector LocalCenter(
-			Sphyl.Center.X * AbsWorldScale.X,
-			Sphyl.Center.Y * AbsWorldScale.Y,
-			Sphyl.Center.Z * AbsWorldScale.Z);
-
-		const FQuat CapsuleAxisFix = FQuat::FromAxisAngle(FVector(0.0f, 1.0f, 0.0f), 90.0f);
-		
-		const FQuat LocalRot = (Sphyl.Rotation * CapsuleAxisFix).GetNormalized();
-
-		Shape->setLocalPose(ToPxTransform(LocalCenter, LocalRot));
-		ApplyShapeFlags(*Shape, Component, bTrigger);
-		OutShapes.push_back(Shape);
-	}
+	CreateShapesFromBodySetup(Physics, Material, *BodySetup, Component->GetWorldScale(), Component, bTrigger, OutShapes);
 }
 
 void FPhysicsShapeFactory::ApplyShapeFlags(physx::PxShape& Shape, UPrimitiveComponent* Component, bool bTrigger)
