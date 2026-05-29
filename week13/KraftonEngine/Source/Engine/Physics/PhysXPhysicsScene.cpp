@@ -6,6 +6,9 @@
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
 #include "Physics/PhysXTypeConversions.h"
+#include "Physics/BodyInstance.h"
+#include "Physics/ConstraintInstance.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Math/Quat.h"
 #include "Object/Object.h"  // IsAliveObject
 #include "Core/Logging/Log.h"
@@ -134,6 +137,65 @@ static void ReleaseSharedPhysX()
 		if (GSharedFoundation) { GSharedFoundation->release(); GSharedFoundation = nullptr; }
 	}
 }
+
+// 다른 물체와 충돌하는 필터링 시키기 위한 용도
+static void SetupFilterData(PxShape* Shape, const FBodyInstance& Body)
+{
+	PxFilterData Filter;
+	Filter.word0 = static_cast<PxU32>(Body.ObjectType);
+	Filter.word1 = 0;
+	Filter.word2 = 0;
+
+	AActor* Owner = nullptr;
+	if (Body.OwnerComponent)
+	{
+		Owner = Body.OwnerComponent->GetOwner();
+	}
+	else if (Body.OwnerSkeletalComponent)
+	{
+		Owner = Body.OwnerSkeletalComponent->GetOwner();
+	}
+
+	Filter.word3 = IsValid(Owner) ? Owner->GetUUID() : 0;
+
+	for (int32 Ch = 0; Ch < static_cast<int32>(ECollisionChannel::ActiveCount); ++Ch)
+	{
+		ECollisionResponse R = Body.ResponseContainer.GetResponse(static_cast<ECollisionChannel>(Ch));
+
+		if (R == ECollisionResponse::Block)
+		{
+			Filter.word1 |= (1u << Ch);
+		}
+		else if (R == ECollisionResponse::Overlap)
+		{
+			Filter.word2 |= (1u << Ch);
+		}
+	}
+
+	Shape->setSimulationFilterData(Filter);
+	Shape->setQueryFilterData(Filter);
+}
+
+// Trigger용도냐 Shape용도냐 확인하기 위한 용도
+static bool ShouldBodyShapeBeTrigger(const FBodyInstance& Body)
+{
+	if (Body.CollisionEnabled == ECollisionEnabled::NoCollision) return true;
+	if (Body.CollisionEnabled == ECollisionEnabled::QueryOnly) return true;
+
+	bool bHasAnyBlockResponse = false;
+
+	for (int32 Ch = 0; Ch < static_cast<int32>(ECollisionChannel::ActiveCount); ++Ch)
+	{
+		if (Body.ResponseContainer.GetResponse(static_cast<ECollisionChannel>(Ch)) == ECollisionResponse::Block)
+		{
+			bHasAnyBlockResponse = true;
+			break;
+		}
+	}
+
+	return !bHasAnyBlockResponse;
+}
+
 
 // ============================================================
 // PhysX Simulation Event Callback
@@ -737,6 +799,262 @@ void FPhysXPhysicsScene::RebuildBody(UPrimitiveComponent* Comp)
 	for (UPrimitiveComponent* C : CompList)
 	{
 		RegisterComponent(C);
+	}
+}
+
+bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInstanceInitDesc& Desc)
+{
+	if (!Scene || !Physics || !DefaultMaterial)
+	{
+		return false;
+	}
+
+	DestroyBodyInstance(Body);
+
+	// Desc 값 Body에 복사
+	Body.bSimulatePhysics = Desc.bSimulatePhysics;
+	Body.bKinematic = Desc.bKinematic;
+	Body.CollisionEnabled = Desc.CollisionEnabled;
+	Body.ObjectType = Desc.ObjectType;
+	Body.ResponseContainer = Desc.ResponseContainer;
+	Body.Mass = Desc.Mass;
+	Body.CenterOfMassOffset = Desc.CenterOfMassOffset;
+
+	const PxTransform ActorPose = ToPxTransform(Desc.WorldTransform);
+
+	PxRigidActor* Actor = nullptr;
+
+	if (Desc.bSimulatePhysics)
+	{
+		PxRigidDynamic* Dynamic = Physics->createRigidDynamic(ActorPose);
+		if (!Dynamic)
+		{
+			return false;
+		}
+
+		Dynamic->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, Desc.bKinematic);
+		Actor = Dynamic;
+	}
+	else
+	{
+		Actor = Physics->createRigidStatic(ActorPose);
+		if (!Actor)
+		{
+			return false;
+		}
+	}
+
+	AActor* OwnerActor = nullptr;
+	if (Body.OwnerComponent)
+	{
+		OwnerActor = Body.OwnerComponent->GetOwner();
+	}
+	else if (Body.OwnerSkeletalComponent)
+	{
+		OwnerActor = Body.OwnerSkeletalComponent->GetOwner();
+	}
+
+	Actor->userData = OwnerActor;
+
+	// Shape들 Body에 저장
+	for (const FBodyShapeDesc& ShapeDesc : Desc.Shapes)
+	{
+		PxGeometryHolder Geom;
+		bool bHasGeom = false;
+		PxQuat ShapeAxisRot = PxQuat(PxIdentity);
+
+		switch (ShapeDesc.ShapeType)
+		{
+		case EBodyInstanceShapeType::Sphere:
+			Geom.storeAny(PxSphereGeometry(std::max(ShapeDesc.SphereRadius, 0.001f)));
+			bHasGeom = true;
+			break;
+
+		case EBodyInstanceShapeType::Box:
+			Geom.storeAny(PxBoxGeometry(
+				std::max(ShapeDesc.BoxHalfExtent.X, 0.001f),
+				std::max(ShapeDesc.BoxHalfExtent.Y, 0.001f),
+				std::max(ShapeDesc.BoxHalfExtent.Z, 0.001f)
+			));
+			bHasGeom = true;
+			break;
+
+		case EBodyInstanceShapeType::Capsule:
+		{
+			const float Radius = std::max(ShapeDesc.CapsuleRadius, 0.001f);
+			const float HalfHeightWithoutCaps = std::max(ShapeDesc.CapsuleHalfHeight - Radius, 0.001f);
+
+			Geom.storeAny(PxCapsuleGeometry(Radius, HalfHeightWithoutCaps));
+
+			// 엔진 Capsule은 Z축 기준, PhysX Capsule은 X축 기준
+			ShapeAxisRot = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
+
+			bHasGeom = true;
+			break;
+		}
+
+		default:
+			break;
+		}
+
+		if (!bHasGeom)
+		{
+			continue;
+		}
+
+		PxShape* Shape = PxRigidActorExt::createExclusiveShape(*Actor, Geom.any(), *DefaultMaterial);
+		if (!Shape)
+		{
+			continue;
+		}
+
+		PxTransform LocalPose = ToPxTransform(ShapeDesc.LocalTransform);
+		LocalPose.q = LocalPose.q * ShapeAxisRot;
+		Shape->setLocalPose(LocalPose);
+
+		SetupFilterData(Shape, Body);
+
+		if (ShouldBodyShapeBeTrigger(Body))
+		{
+			Shape->setFlag(PxShapeFlag::eSIMULATION_SHAPE, false);
+			Shape->setFlag(PxShapeFlag::eTRIGGER_SHAPE, true);
+		}
+
+		Shape->userData = Body.OwnerComponent
+			? static_cast<UPrimitiveComponent*>(Body.OwnerComponent)
+			: static_cast<UPrimitiveComponent*>(Body.OwnerSkeletalComponent);
+
+		Body.Shapes.push_back(Shape);
+	}
+
+	if (Body.Shapes.empty())
+	{
+		Actor->release();
+		return false;
+	}
+
+	if (PxRigidDynamic* Dynamic = Actor->is<PxRigidDynamic>())
+	{
+		const float MassKg = Desc.Mass > 0.0f ? Desc.Mass : 1.0f;
+		PxVec3 LocalCOM = ToPxVec3(Desc.CenterOfMassOffset);
+
+		PxRigidBodyExt::setMassAndUpdateInertia(*Dynamic, MassKg, &LocalCOM);
+		Dynamic->setCMassLocalPose(PxTransform(LocalCOM));
+	}
+
+	Scene->addActor(*Actor);
+
+	Body.RigidActor = Actor;
+	return true;
+}
+
+void FPhysXPhysicsScene::DestroyBodyInstance(FBodyInstance& Body)
+{
+	PxRigidActor* Actor = Body.RigidActor;
+
+	if (!Actor)
+	{
+		Body.ClearPhysicsPointers();
+		return;
+	}
+
+	Actor->userData = nullptr;
+
+	const PxU32 NumShapes = Actor->getNbShapes();
+	if (NumShapes > 0)
+	{
+		std::vector<PxShape*> Shapes(NumShapes);
+		Actor->getShapes(Shapes.data(), NumShapes);
+
+		for (PxShape* Shape : Shapes)
+		{
+			if (Shape)
+			{
+				Shape->userData = nullptr;
+			}
+		}
+	}
+
+	if (Scene)
+	{
+		Scene->removeActor(*Actor);
+	}
+
+	Actor->release();
+	Body.ClearPhysicsPointers();
+}
+
+bool FPhysXPhysicsScene::CreateConstraintInstance(FConstraintInstance& Constraint)
+{
+	if (!Physics || !Constraint.ParentBody || !Constraint.ChildBody)
+	{
+		return false;
+	}
+
+	DestroyConstraintInstance(Constraint);
+
+	PxRigidActor* ParentActor = Constraint.ParentBody->RigidActor;
+	PxRigidActor* ChildActor = Constraint.ChildBody->RigidActor;
+
+	if (!ParentActor || !ChildActor)
+	{
+		return false;
+	}
+
+	PxTransform ParentFrame = ToPxTransform(Constraint.ParentFrame);
+	PxTransform ChildFrame = ToPxTransform(Constraint.ChildFrame);
+
+	PxD6Joint* Joint = PxD6JointCreate(
+		*Physics,
+		ParentActor,
+		ParentFrame,
+		ChildActor,
+		ChildFrame
+	);
+
+	if (!Joint)
+	{
+		return false;
+	}
+
+	Joint->setMotion(PxD6Axis::eX, PxD6Motion::eLOCKED);
+	Joint->setMotion(PxD6Axis::eY, PxD6Motion::eLOCKED);
+	Joint->setMotion(PxD6Axis::eZ, PxD6Motion::eLOCKED);
+
+	Joint->setMotion(PxD6Axis::eTWIST, PxD6Motion::eLIMITED);
+	Joint->setMotion(PxD6Axis::eSWING1, PxD6Motion::eLIMITED);
+	Joint->setMotion(PxD6Axis::eSWING2, PxD6Motion::eLIMITED);
+
+	constexpr float DegToRad = 3.14159265358979323846f / 180.0f;
+
+	const float Twist = std::max(Constraint.TwistLimitDegrees, 1.0f) * DegToRad;
+	const float Swing1 = std::max(Constraint.Swing1LimitDegrees, 1.0f) * DegToRad;
+	const float Swing2 = std::max(Constraint.Swing2LimitDegrees, 1.0f) * DegToRad;
+
+	// 비틀기 제한
+	Joint->setTwistLimit(PxJointAngularLimitPair(-Twist, Twist));
+	// 꺾이는 각도 제한(Cone 형태 모양 제한)
+	Joint->setSwingLimit(PxJointLimitCone(Swing1, Swing2));
+
+	// 보통 false로 설정 -> 인접한 두 Bone끼리 충돌 시킬것인지에 대한 처리.
+	// 손과 머리같은 연결되지 않은 body끼리의 충돌은 Collision Filtering으로 처리하는것이 더 좋다함.
+	Joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, Constraint.bEnableCollision);
+
+	// joint가 순간적으로 벌어지게 될때 보정해주는 장치
+	Joint->setProjectionLinearTolerance(0.1f);
+	Joint->setProjectionAngularTolerance(0.25f);
+	Joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+
+	Constraint.Joint = Joint;
+	return true;
+}
+
+void FPhysXPhysicsScene::DestroyConstraintInstance(FConstraintInstance& Constraint)
+{
+	if (Constraint.Joint)
+	{
+		Constraint.Joint->release();
+		Constraint.ClearPhysicsPointers();
 	}
 }
 

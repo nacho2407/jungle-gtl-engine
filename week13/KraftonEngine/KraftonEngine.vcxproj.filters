@@ -1520,6 +1520,12 @@
     <ClCompile Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.cpp">
       <Filter>Source\Engine\Particles\Velocity</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\BodyInstance.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\NativePhysicsScene.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
@@ -1530,9 +1536,6 @@
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\PhysicsEngine\BodySetupCore.cpp">
-      <Filter>Source\Engine\PhysicsEngine</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\PhysicsEngine\ConstraintInstance.cpp">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAsset.cpp">
@@ -2870,6 +2873,12 @@
     <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocityBase.h">
       <Filter>Source\Engine\Particles\Velocity</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\BodyInstance.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\IPhysicsScene.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
@@ -2877,6 +2886,9 @@
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysXPhysicsScene.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\PhysXTypeConversions.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\AggregateGeom.h">
@@ -2892,9 +2904,6 @@
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\ConvexElem.h">
-      <Filter>Source\Engine\PhysicsEngine</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\PhysicsEngine\ConstraintInstance.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\ConstraintTypes.h">
@@ -4976,7 +4985,6 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\PhysXTypeConversions.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

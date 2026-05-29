@@ -11,6 +11,9 @@ class AActor;
 class UPrimitiveComponent;
 struct FHitResult;
 struct FCollisionShape;
+struct FBodyInstance;
+struct FBodyInstanceInitDesc;
+struct FConstraintInstance;
 
 // 물리 백엔드 선택
 enum class EPhysicsBackend : uint8
@@ -41,6 +44,14 @@ public:
 	// PhysX는 actor 단위로 unregister + register (compound shape의 다른 컴포넌트도 함께 재등록),
 	// Native는 BodyState만 갱신.
 	virtual void RebuildBody(UPrimitiveComponent* Comp) = 0;
+
+	// BodyInstance / ConstraintInstance runtime path
+	// Native는 ragdoll미지원 - PhysX만 override
+	virtual bool CreateBodyInstance(FBodyInstance& Body, const FBodyInstanceInitDesc& Desc) { return false; }
+	virtual void DestroyBodyInstance(FBodyInstance& Body) {}
+
+	virtual bool CreateConstraintInstance(FConstraintInstance& Constraint) { return false; }
+	virtual void DestroyConstraintInstance(FConstraintInstance& Constraint) {}
 
 	// --- 시뮬레이션 ---
 	virtual void Tick(float DeltaTime) = 0;

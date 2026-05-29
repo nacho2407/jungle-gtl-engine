@@ -40,6 +40,12 @@ public:
 	void UnregisterComponent(UPrimitiveComponent* Comp) override;
 	void RebuildBody(UPrimitiveComponent* Comp) override;
 
+	bool CreateBodyInstance(FBodyInstance& Body, const FBodyInstanceInitDesc& Desc) override;
+	void DestroyBodyInstance(FBodyInstance& Body) override;
+
+	bool CreateConstraintInstance(FConstraintInstance& Constraint) override;
+	void DestroyConstraintInstance(FConstraintInstance& Constraint) override;
+
 	void Tick(float DeltaTime) override;
 
 	void AddForce(UPrimitiveComponent* Comp, const FVector& Force) override;
