@@ -5,6 +5,7 @@
 #include "Component/Shape/CapsuleComponent.h"
 #include "GameFramework/World.h"
 #include "GameFramework/AActor.h"
+#include "Physics/PhysXTypeConversions.h"
 #include "Math/Quat.h"
 #include "Object/Object.h"  // IsAliveObject
 #include "Core/Logging/Log.h"
@@ -13,6 +14,7 @@
 #include <PxPhysicsAPI.h>
 
 using namespace physx;
+using namespace PhysXConvert;
 
 // ============================================================
 // PhysX Error Callback
@@ -335,26 +337,6 @@ private:
 // ============================================================
 // Transform 변환 유틸
 // ============================================================
-static PxVec3 ToPxVec3(const FVector& V)
-{
-	return PxVec3(V.X, V.Y, V.Z);
-}
-
-static PxQuat ToPxQuat(const FQuat& Q)
-{
-	return PxQuat(Q.X, Q.Y, Q.Z, Q.W);
-}
-
-static FVector ToFVector(const PxVec3& V)
-{
-	return FVector(V.x, V.y, V.z);
-}
-
-static FQuat ToFQuat(const PxQuat& Q)
-{
-	return FQuat(Q.x, Q.y, Q.z, Q.w);
-}
-
 static PxTransform GetPxTransform(UPrimitiveComponent* Comp)
 {
 	FVector Pos = Comp->GetWorldLocation();
