@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Math/Vector.h"
 #include "Core/Types/CoreTypes.h"
 #include "Core/Types/PropertyTypes.h"
@@ -58,6 +58,22 @@ enum class ECollisionEnabled : uint8
 	QueryOnly = 1,		// Overlap/Hit 이벤트만
 	PhysicsOnly = 2,	// 향후 물리 엔진용
 	QueryAndPhysics = 3,
+
+	COUNT
+};
+
+UENUM()
+enum class ECollisionPreset : uint8
+{
+	Custom = 0,
+	NoCollision,
+	BlockAll,
+	OverlapAll,
+	WorldStatic,
+	WorldDynamic,
+	PhysicsActor,
+	Trigger,
+	Pawn,
 
 	COUNT
 };

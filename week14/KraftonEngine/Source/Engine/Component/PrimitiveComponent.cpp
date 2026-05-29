@@ -156,6 +156,7 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	}
 	else if (strcmp(PropertyName, "CollisionEnabled") == 0 || strcmp(PropertyName, "Collision Enabled") == 0)
 	{
+		CollisionPreset = ECollisionPreset::Custom;
 		RecreatePhysicsState();
 	}
 	else if (strcmp(PropertyName, "bSimulatePhysics") == 0 || strcmp(PropertyName, "Simulate Physics") == 0)
@@ -192,8 +193,13 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	{
 		if (BodyInstance.IsValidBody())
 		{
+			CollisionPreset = ECollisionPreset::Custom;
 			BodyInstance.UpdateFilterData();
 		}
+	}
+	else if (strcmp(PropertyName, "CollisionPreset") == 0 || strcmp(PropertyName, "Collision Preset") == 0)
+	{
+		SetCollisionPreset(CollisionPreset);
 	}
 }
 
@@ -418,6 +424,8 @@ void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
 {
 	if (CollisionEnabled == InEnabled) return;
 
+	CollisionPreset = ECollisionPreset::Custom;
+
 	const bool bHadCollision = CollisionEnabled != ECollisionEnabled::NoCollision;
 	const bool bHasCollision = InEnabled != ECollisionEnabled::NoCollision;
 
@@ -454,6 +462,8 @@ void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel InChannel)
 {
 	if (ObjectType == InChannel) return;
 
+	CollisionPreset = ECollisionPreset::Custom;
+
 	ObjectType = InChannel;
 
 	RecreatePhysicsState();
@@ -462,6 +472,8 @@ void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel InChannel)
 void UPrimitiveComponent::SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response)
 {
 	if (ResponseContainer.GetResponse(Channel) == Response) return;
+	
+	CollisionPreset = ECollisionPreset::Custom;
 
 	ResponseContainer.SetResponse(Channel, Response);
 
@@ -473,6 +485,8 @@ void UPrimitiveComponent::SetCollisionResponseToChannel(ECollisionChannel Channe
 
 void UPrimitiveComponent::SetCollisionResponseToAllChannels(ECollisionResponse Response)
 {
+	CollisionPreset = ECollisionPreset::Custom;
+
 	ResponseContainer.SetAllChannels(Response);
 
 	if (BodyInstance.IsValidBody())
@@ -497,6 +511,8 @@ ECollisionResponse UPrimitiveComponent::GetMinResponse(const UPrimitiveComponent
 void UPrimitiveComponent::SetSimulatePhysics(bool bInSimulatePhysics)
 {
 	if (bSimulatePhysics == bInSimulatePhysics) return;
+
+	CollisionPreset = ECollisionPreset::Custom;
 
 	bSimulatePhysics = bInSimulatePhysics;
 	RecreatePhysicsState();
@@ -548,7 +564,83 @@ void UPrimitiveComponent::SetGenerateOverlapEvents(bool bInGenerateOverlapEvents
 {
 	if (bGenerateOverlapEvents == bInGenerateOverlapEvents) return;
 
+	CollisionPreset = ECollisionPreset::Custom;
+
 	bGenerateOverlapEvents = bInGenerateOverlapEvents;
+
+	RecreatePhysicsState();
+}
+
+void UPrimitiveComponent::SetCollisionPreset(ECollisionPreset InPreset)
+{
+	CollisionPreset = InPreset;
+
+	switch (InPreset)
+	{
+	case ECollisionPreset::NoCollision:
+		CollisionEnabled = ECollisionEnabled::NoCollision;
+		ObjectType = ECollisionChannel::WorldStatic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Ignore);
+		bGenerateOverlapEvents = false;
+		break;
+
+	case ECollisionPreset::BlockAll:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::WorldStatic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		bGenerateOverlapEvents = false;
+		break;
+
+	case ECollisionPreset::OverlapAll:
+		CollisionEnabled = ECollisionEnabled::QueryOnly;
+		ObjectType = ECollisionChannel::WorldDynamic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Overlap);
+		bGenerateOverlapEvents = true;
+		break;
+
+	case ECollisionPreset::WorldStatic:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::WorldStatic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		bGenerateOverlapEvents = false;
+		bSimulatePhysics = false;
+		break;
+
+	case ECollisionPreset::WorldDynamic:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::WorldDynamic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		bGenerateOverlapEvents = false;
+		break;
+
+	case ECollisionPreset::PhysicsActor:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::WorldDynamic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		bGenerateOverlapEvents = false;
+		bSimulatePhysics = true;
+		break;
+
+	case ECollisionPreset::Trigger:
+		CollisionEnabled = ECollisionEnabled::QueryOnly;
+		ObjectType = ECollisionChannel::Trigger;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Overlap);
+		bGenerateOverlapEvents = true;
+		bSimulatePhysics = false;
+		break;
+
+	case ECollisionPreset::Pawn:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::Pawn;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		ResponseContainer.SetResponse(ECollisionChannel::Trigger, ECollisionResponse::Overlap);
+		bGenerateOverlapEvents = true;
+		break;
+
+	case ECollisionPreset::Custom:
+	default:
+		break;
+	}
 
 	RecreatePhysicsState();
 }

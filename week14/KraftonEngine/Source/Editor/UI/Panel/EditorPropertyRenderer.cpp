@@ -380,6 +380,9 @@ bool FEditorPropertyRenderer::IsExpandableProperty(const FPropertyValue& Prop)
 
 bool FEditorPropertyRenderer::DrawPropertyLabel(const FPropertyValue& Prop, int32 IndentLevel)
 {
+	const bool bDisabled = (Prop.Property && (Prop.Property->Flags & PF_ReadOnly) != 0) ||
+		!Prop.PassesEditCondition();
+
 	const char* Label = GetPropertyDisplayName(Prop);
 	const bool bExpandable = IsExpandableProperty(Prop);
 	const float ChildIndent = static_cast<float>(IndentLevel) * StructChildIndentWidth;
@@ -390,6 +393,11 @@ bool FEditorPropertyRenderer::DrawPropertyLabel(const FPropertyValue& Prop, int3
 	if (ChildIndent > 0.0f)
 	{
 		ImGui::Indent(ChildIndent);
+	}
+
+	if (bDisabled)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
 	}
 
 	bool bOpen = true;
@@ -418,6 +426,12 @@ bool FEditorPropertyRenderer::DrawPropertyLabel(const FPropertyValue& Prop, int3
 		ImGui::Unindent(ChildIndent);
 	}
 	ImGui::SetWindowFontScale(1.0f);
+	
+	if (bDisabled)
+	{
+		ImGui::PopStyleColor();
+	}
+
 	return bOpen;
 }
 
@@ -1284,8 +1298,12 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 	FPropertyValue& Prop = Props[Index];
 	bool bChanged = false;
 	Options.PropertyPath = Options.PropertyPath.empty() ? FString(Prop.GetName()) : Options.PropertyPath;
+	
 	const bool bReadOnly = Prop.Property && (Prop.Property->Flags & PF_ReadOnly) != 0;
-	if (bReadOnly)
+	const bool bPassesEditCondition = Prop.PassesEditCondition();
+	const bool bDisabled = bReadOnly || !bPassesEditCondition;
+
+	if (bDisabled)
 	{
 		ImGui::BeginDisabled();
 	}
@@ -1770,13 +1788,13 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 	}
 	}
 
-	if (bReadOnly)
+	if (bDisabled)
 	{
 		ImGui::EndDisabled();
 		bChanged = false;
 	}
 
-	if (Options.bDispatchChange && bChanged)
+	if (Options.bDispatchChange && bChanged && !bDisabled)
 	{
 		DispatchPostEditChange(Prop, EPropertyChangeType::ValueSet, -1, Options.PropertyPath);
 	}

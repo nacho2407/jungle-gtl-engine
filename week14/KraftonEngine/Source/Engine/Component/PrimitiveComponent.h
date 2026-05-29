@@ -174,6 +174,9 @@ public:
 	void SetGenerateOverlapEvents(bool bInGenerateOverlapEvents);
 	bool GetGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
 
+	void SetCollisionPreset(ECollisionPreset InPreset);
+	ECollisionPreset GetCollisionPreset() const { return CollisionPreset; }
+
 	// 서브클래스가 오버라이드할 수 있는 가상 함수 — 델리게이트 브로드캐스트 전에 호출됨
 	virtual void NotifyComponentBeginOverlap(
 		UPrimitiveComponent* OverlappedComponent,
@@ -238,18 +241,25 @@ protected:
 	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Angular Damping", Min=0.0f, Speed=0.1f)
 	float AngularDamping = 0.01f;
 
-	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Generate Overlap Events")
-	bool bGenerateOverlapEvents = false;
-
 	FBodyInstance BodyInstance;
 
+	UPROPERTY(Edit, Save, Category = "Collision", DisplayName = "Collision Preset", Enum = ECollisionPreset)
+	ECollisionPreset CollisionPreset = ECollisionPreset::Custom;
+
+	UPROPERTY(Edit, Save, Category = "Collision", DisplayName = "Generate Overlap Events", EditCondition="CollisionPreset == Custom")
+	bool bGenerateOverlapEvents = false;
+
 	// 물리 파라미터 — RootComponent의 값만 백엔드에 적용 (compound shape 정책).
-	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Enabled", Enum=ECollisionEnabled)
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Enabled",
+		Enum=ECollisionEnabled, EditCondition="CollisionPreset == Custom")
 	ECollisionEnabled CollisionEnabled = ECollisionEnabled::NoCollision;
-	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Object Type", Enum=ECollisionChannel)
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Object Type",
+		Enum=ECollisionChannel, EditCondition = "CollisionPreset == Custom")
 	ECollisionChannel ObjectType = ECollisionChannel::WorldStatic;
-	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Responses", Type=Struct)
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Responses",
+		Type=Struct, EditCondition = "CollisionPreset == Custom")
 	FCollisionResponseContainer ResponseContainer; // 기본: 전 채널 Block
+
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
 
 	FOctree* OctreeNode = nullptr;

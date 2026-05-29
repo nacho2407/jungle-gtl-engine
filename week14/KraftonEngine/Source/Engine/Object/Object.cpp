@@ -154,10 +154,6 @@ void UObject::GetEditableProperties(TArray<FPropertyValue>& OutProps)
 		}
 
 		FPropertyValue PropertyValue = Property->ToValue(this, this);
-		if (!PropertyValue.PassesEditCondition())
-		{
-			continue;
-		}
 
 		if(Property->GetValuePtrFor(this))
 		{
