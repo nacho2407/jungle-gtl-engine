@@ -325,6 +325,9 @@
     <Filter Include="Source\Engine\Physics">
       <UniqueIdentifier>{c1985821-1144-9a46-639a-f7de31f4a1fa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\PhysicsEngine">
+      <UniqueIdentifier>{d7db7665-b9f8-361f-54e7-282de2a8f944}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Platform">
       <UniqueIdentifier>{813e0a37-91de-2afc-805f-1a0f801727b9}</UniqueIdentifier>
     </Filter>
@@ -585,16 +588,34 @@
     <FxCompile Include="Shaders\Editor\Gizmo.hlsl">
       <Filter>Shaders\Editor</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\A9E0216820D68CBA000000CFB18250EC_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\AE6B9452D810D233000000DBA79CC8BC_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\BD78AAE88B260EBC_ParticleSprite.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\DD233DA453A759A600000623DB3018D0_ParticleMesh.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\DDDFE619B008A8BB0000B824223D4600_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\Material_Surface.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\_41AAC49C33C14A5000013C79B41DEE10_ParticleMesh.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\_628A9F53151EB9DD000131497CDADFC0_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\_7E40EEFEEA0FC6BA0000009F176F7898_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\_9493151FA1B327C40000061F4DA5B1B8_ParticleMesh.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Geometry\Decal.hlsl">
@@ -1504,6 +1525,12 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\PhysXPhysicsScene.cpp">
       <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\AggregateGeom.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\BodySetupCore.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp">
       <Filter>Source\Engine\Platform</Filter>
@@ -2833,6 +2860,33 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysXPhysicsScene.h">
       <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\AggregateGeom.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\BodySetup.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\BodySetupCore.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\BoxElem.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\ConvexElem.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAsset.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\ShapeElem.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\SphereElem.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\SphylElem.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h">
       <Filter>Source\Engine\Platform</Filter>

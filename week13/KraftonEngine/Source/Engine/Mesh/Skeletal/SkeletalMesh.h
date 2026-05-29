@@ -3,6 +3,7 @@
 #include "Object/Object.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Animation/Skeleton/SkeletonTypes.h"
+#include "Engine/PhysicsEngine/PhysicsAsset.h"
 
 class USkeleton;
 
@@ -56,4 +57,6 @@ private:
 
     FSkeletonBinding SkeletonBinding;
     USkeleton*       Skeleton = nullptr;
+
+	UPhysicsAsset* PhysicsAsset;
 };
