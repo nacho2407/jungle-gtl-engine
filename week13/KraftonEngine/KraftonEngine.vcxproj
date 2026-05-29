@@ -691,8 +691,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Render\Culling\GPUOcclusionCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\Culling\TileBasedLightCulling.cpp" />
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
+    <ClCompile Include="Source\Engine\Render\Geometry\CollisionDebugGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\FontGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Geometry\LineGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Geometry\PhysicsDebugSolidGeometry.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
@@ -1150,8 +1152,11 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Render\Culling\GPUOcclusionCulling.h" />
     <ClInclude Include="Source\Engine\Render\Culling\TileBasedLightCulling.h" />
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\CollisionDebugGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\DebugGeometryTypes.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\FontGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Geometry\LineGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\PhysicsDebugSolidGeometry.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
     <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />

@@ -9,6 +9,7 @@ void USkeletalMesh::AddReferencedObjects(FReferenceCollector& Collector)
 	UObject::AddReferencedObjects(Collector);
 
 	Collector.AddReferencedObject(Skeleton);
+	Collector.AddReferencedObject(PhysicsAsset, "USkeletalMesh.PhysicsAsset");
 
 	for (FSkeletalMaterial& MaterialSlot : SkeletalMaterials)
 	{

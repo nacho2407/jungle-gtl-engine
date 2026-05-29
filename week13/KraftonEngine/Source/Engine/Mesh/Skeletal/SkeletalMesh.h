@@ -44,6 +44,9 @@ public:
     void SetSkeletonBinding(const FSkeletonBinding& InBinding);
     const FSkeletonBinding& GetSkeletonBinding() const { return SkeletonBinding; }
 
+	UPhysicsAsset* GetPhysicsAsset() const { return PhysicsAsset; }
+	void SetPhysicsAsset(UPhysicsAsset* InPhysicsAsset) { PhysicsAsset = InPhysicsAsset; }
+
 private:
     void CacheSectionMaterialIndices();
     void SyncSkeletonBindingToAsset();
@@ -58,5 +61,5 @@ private:
     FSkeletonBinding SkeletonBinding;
     USkeleton*       Skeleton = nullptr;
 
-	UPhysicsAsset* PhysicsAsset;
+	UPhysicsAsset* PhysicsAsset = nullptr;
 };

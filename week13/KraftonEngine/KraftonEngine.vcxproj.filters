@@ -1586,10 +1586,16 @@
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Geometry\CollisionDebugGeometry.cpp">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Geometry\FontGeometry.cpp">
       <Filter>Source\Engine\Render\Geometry</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Geometry\LineGeometry.cpp">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Geometry\PhysicsDebugSolidGeometry.cpp">
       <Filter>Source\Engine\Render\Geometry</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp">
@@ -2954,10 +2960,19 @@
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Geometry\CollisionDebugGeometry.h">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Geometry\DebugGeometryTypes.h">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Geometry\FontGeometry.h">
       <Filter>Source\Engine\Render\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Geometry\LineGeometry.h">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Geometry\PhysicsDebugSolidGeometry.h">
       <Filter>Source\Engine\Render\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h">

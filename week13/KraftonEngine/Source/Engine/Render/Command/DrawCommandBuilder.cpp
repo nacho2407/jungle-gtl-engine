@@ -35,6 +35,7 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	GridLines.Create(InDevice);
 	DebugBoneLines.Create(InDevice);
 	FontGeometry.Create(InDevice);
+	PhysicsAssetSolidGeometry.Create(InDevice);
 
 	OutlineCB.Create(InDevice, sizeof(FOutlinePostProcessConstants), "OutlineCB");
 	SceneDepthCB.Create(InDevice, sizeof(FSceneDepthPConstants), "SceneDepthCB");
@@ -53,6 +54,7 @@ void FDrawCommandBuilder::Release()
 	GridLines.Release();
 	DebugBoneLines.Release();
 	FontGeometry.Release();
+	PhysicsAssetSolidGeometry.Release();
 
 	for (auto& Pair : PerSceneObjectCBPool)
 	{
@@ -95,6 +97,7 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 	DebugBoneLines.Clear();
 	FontGeometry.Clear();
 	FontGeometry.ClearScreen();
+	PhysicsAssetSolidGeometry.Clear();
 
 	if (const FFontResource* FontRes = FResourceManager::Get().FindFont(FName("Default")))
 		FontGeometry.EnsureCharInfoMap(FontRes);
@@ -411,7 +414,17 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Decal))
 			BuildDecalCommands(Scene, Proxy, Frame, Output);
 		else
+		{
 			BuildMeshCommands(Scene, Proxy);
+
+			if (Frame.RenderOptions.ShowFlags.bDebugPhysicsAsset &&
+				Proxy->HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh))
+			{
+				const FSkeletalMeshSceneProxy* SkeletalProxy =
+					static_cast<const FSkeletalMeshSceneProxy*>(Proxy);
+				BuildPhysicsAssetDebugCommands(Frame, *SkeletalProxy);
+			}
+		}
 
 		if (Proxy->IsSelected())
 			BuildSelectionCommands(Proxy, bShowBoundingVolume, Scene);
@@ -482,6 +495,66 @@ void FDrawCommandBuilder::BuildMeshCommands(FScene& Scene, const FPrimitiveScene
 	}
 	if (bHasTranslucent)
 		BuildCommandForProxy(Scene, *Proxy, ERenderPass::AlphaBlend);
+}
+
+void FDrawCommandBuilder::BuildPhysicsAssetDebugCommands(const FFrameContext& Frame, const FSkeletalMeshSceneProxy& SkeletalProxy)
+{
+	if (!Frame.RenderOptions.ShowFlags.bDebugPhysicsAsset)
+	{
+		return;
+	}
+
+	TArray<FWireLine> Lines;
+	SkeletalProxy.BuildPhysicsAssetWireLines(Frame, Lines);
+
+	const FVector4 WireColor(0.0f, 1.0f, 0.4f, 1.0f);
+	for (const FWireLine& Line : Lines)
+	{
+		EditorLines.AddLine(Line.Start, Line.End, WireColor);
+	}
+
+	BuildPhysicsAssetSolidCommand(Frame, SkeletalProxy);
+}
+
+void FDrawCommandBuilder::BuildPhysicsAssetSolidCommand(const FFrameContext& Frame, const FSkeletalMeshSceneProxy& SkeletalProxy)
+{
+	if (!Frame.RenderOptions.ShowFlags.bDebugPhysicsAsset)
+	{
+		return;
+	}
+
+	FPhysicsDebugSolidMesh SolidMesh;
+	SkeletalProxy.BuildPhysicsAssetSolidMesh(Frame, SolidMesh);
+	if (!SolidMesh.IsValid())
+	{
+		return;
+	}
+
+	PhysicsAssetSolidGeometry.AppendMesh(SolidMesh);
+}
+
+void FDrawCommandBuilder::EmitPhysicsAssetSolidCommand()
+{
+	if (!PhysicsAssetSolidGeometry.UploadBuffers(CachedContext))
+	{
+		return;
+	}
+
+	FDrawCommand& Cmd = DrawCommandList.AddCommand();
+	Cmd.Pass = ERenderPass::AlphaBlend;
+	Cmd.Shader = FShaderManager::Get().GetOrCreate(EShaderPath::Editor);
+	Cmd.RenderState = PassRenderStateTable->ToDrawCommandState(ERenderPass::AlphaBlend, CollectViewMode);
+	Cmd.RenderState.Blend = EBlendState::AlphaBlend;
+	Cmd.RenderState.DepthStencil = EDepthStencilState::DepthReadOnly;
+	Cmd.RenderState.Rasterizer = ERasterizerState::SolidNoCull;
+	Cmd.RenderState.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+	Cmd.Buffer = {
+		PhysicsAssetSolidGeometry.GetVBBuffer(),
+		PhysicsAssetSolidGeometry.GetVBStride(),
+		PhysicsAssetSolidGeometry.GetIBBuffer()
+	};
+	Cmd.Buffer.IndexCount = PhysicsAssetSolidGeometry.GetIndexCount();
+	Cmd.BuildSortKey();
 }
 
 // ============================================================
@@ -565,6 +638,7 @@ void FDrawCommandBuilder::BuildDynamicDrawCommands(const FFrameContext& Frame, c
 {
 	EViewMode ViewMode = Frame.RenderOptions.ViewMode;
 	BuildEditorLineCommands(ViewMode);
+	EmitPhysicsAssetSolidCommand();
 	BuildPostProcessCommands(Frame, Scene);
 	BuildFontCommands(ViewMode);
 }

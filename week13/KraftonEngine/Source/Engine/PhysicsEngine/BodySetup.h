@@ -4,6 +4,11 @@
 
 class UBodySetup : public UBodySetupCore
 {
+public:
+	const FKAggregateGeom& GetAggGeom() const { return AggGeom; }
+	FKAggregateGeom& GetAggGeom() { return AggGeom; }
+
+private:
 	// DisplayName = Primitives
-	struct FKAggregateGeom AggGeom;
+	FKAggregateGeom AggGeom;
 };

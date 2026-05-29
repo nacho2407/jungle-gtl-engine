@@ -4,10 +4,12 @@
 #include "Render/Types/FrameContext.h"
 #include "Render/Geometry/LineGeometry.h"
 #include "Render/Geometry/FontGeometry.h"
+#include "Render/Geometry/PhysicsDebugSolidGeometry.h"
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 
 class FPassRenderStateTable;
 class FTextRenderSceneProxy;
+class FSkeletalMeshSceneProxy;
 class FScene;
 struct FCollectOutput;
 
@@ -43,6 +45,9 @@ private:
 	void BuildProxyCommands(const FFrameContext& Frame, FScene& Scene, const FCollectOutput& Output);
 	void BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, const FCollectOutput& Output);
 	void BuildMeshCommands(FScene& Scene, const FPrimitiveSceneProxy* Proxy);
+	void BuildPhysicsAssetDebugCommands(const FFrameContext& Frame, const FSkeletalMeshSceneProxy& SkeletalProxy);
+	void BuildPhysicsAssetSolidCommand(const FFrameContext& Frame, const FSkeletalMeshSceneProxy& SkeletalProxy);
+	void EmitPhysicsAssetSolidCommand();
 	void BuildSelectionCommands(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume, FScene& Scene);
 
 	// Scene 경량 데이터 → 동적 지오메트리 → FDrawCommand
@@ -81,6 +86,7 @@ private:
 	FLineGeometry  GridLines;
 	FLineGeometry  DebugBoneLines;
 	FFontGeometry  FontGeometry;
+	FPhysicsDebugSolidGeometry PhysicsAssetSolidGeometry;
 
 	// PerObject CB 풀
 	TMap<FScene*, TArray<FConstantBuffer>> PerSceneObjectCBPool;
