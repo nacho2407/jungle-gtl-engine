@@ -1,11 +1,13 @@
-#include "Mesh/Static/StaticMesh.h"
-#include "Object/Reflection/ObjectFactory.h"
+﻿#include "Mesh/Static/StaticMesh.h"
 #include "Mesh/MeshManager.h"
-#include "Serialization/WindowsArchive.h"
-#include "Mesh/Importer/ObjImporter.h"
-#include "Texture/Texture2D.h"
-#include "Engine/Profiling/Stats/MemoryStats.h"
 #include "Mesh/MeshSimplifier.h"
+#include "Mesh/Importer/ObjImporter.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include "Object/ReferenceCollector.h"
+#include "Serialization/WindowsArchive.h"
+#include "Texture/Texture2D.h"
+#include "Profiling/Stats/MemoryStats.h"
+#include "Physics/BodySetup.h"
 
 UStaticMesh::~UStaticMesh()
 {
@@ -36,6 +38,8 @@ void UStaticMesh::Serialize(FArchive& Ar)
 	// 3. 로딩 시 Section → MaterialIndex 매핑 캐싱 (매 프레임 문자열 비교 방지)
 	if (Ar.IsLoading())
 	{
+		BuildDefaultBodySetupIfNeeded();
+
 		for (FStaticMeshSection& Section : StaticMeshAsset->Sections)
 		{
 			Section.MaterialIndex = -1;
@@ -49,6 +53,12 @@ void UStaticMesh::Serialize(FArchive& Ar)
 			}
 		}
 	}
+}
+
+void UStaticMesh::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UObject::AddReferencedObjects(Collector);
+	Collector.AddReferencedObject(BodySetup);
 }
 
 void UStaticMesh::InitResources(ID3D11Device* InDevice)
@@ -121,6 +131,8 @@ void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InMesh)
 	// Section → MaterialIndex 캐싱 갱신
 	if (StaticMeshAsset)
 	{
+		BuildDefaultBodySetupIfNeeded();
+
 		for (FStaticMeshSection& Section : StaticMeshAsset->Sections)
 		{
 			Section.MaterialIndex = -1;
@@ -191,4 +203,30 @@ const TArray<FStaticMeshSection>& UStaticMesh::GetLODSections(uint32 LODLevel) c
 	if (LODLevel >= 1 && LODLevel <= 3 && bHasLOD)
 		return AdditionalLODs[LODLevel - 1].Sections;
 	return StaticMeshAsset ? StaticMeshAsset->Sections : EmptySections;
+}
+
+UBodySetup* UStaticMesh::GetOrCreateBodySetup()
+{
+	if (!BodySetup)
+	{
+		BodySetup = UObjectManager::Get().CreateObject<UBodySetup>(this);
+	}
+
+	return BodySetup;
+}
+
+void UStaticMesh::BuildDefaultBodySetupIfNeeded()
+{
+	if (!StaticMeshAsset) return;
+
+	if (!StaticMeshAsset->bBoundsValid)
+	{
+		StaticMeshAsset->CacheBounds();
+	}
+
+	UBodySetup* Setup = GetOrCreateBodySetup();
+	if (Setup && !Setup->HasSimpleCollision())
+	{
+		Setup->CreateDefaultBox(StaticMeshAsset->BoundsCenter, StaticMeshAsset->BoundsExtent);
+	}
 }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "Collision/BVH/MeshTriangleBVH.h"
@@ -17,6 +17,8 @@ struct FLODMeshData
 	std::unique_ptr<FMeshBuffer> RenderBuffer;
 };
 
+class UBodySetup;
+
 // UStaticMesh — FStaticMesh를 소유하는 UObject 에셋
 UCLASS()
 class UStaticMesh : public UObject
@@ -29,6 +31,7 @@ public:
 	~UStaticMesh() override;
 
 	void Serialize(FArchive& Ar);
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	void SetAssetPathFileName(const FString& InPathFileName) { AssetPathFileName = InPathFileName; }
 	const FString& GetAssetPathFileName() const { return AssetPathFileName; }
@@ -49,6 +52,10 @@ public:
 	FMeshBuffer* GetLODMeshBuffer(uint32 LODLevel) const;
 	const TArray<FStaticMeshSection>& GetLODSections(uint32 LODLevel) const;
 
+	UBodySetup* GetBodySetup() const { return BodySetup; }
+	UBodySetup* GetOrCreateBodySetup();
+	void BuildDefaultBodySetupIfNeeded();
+
 private:
 	FString AssetPathFileName = "None";
 
@@ -59,4 +66,6 @@ private:
 	// LOD1 (70%), LOD2 (50%), LOD3 (25%) — LOD0 is the original StaticMeshAsset
 	FLODMeshData AdditionalLODs[3];
 	bool bHasLOD = false;
+
+	UBodySetup* BodySetup = nullptr;
 };

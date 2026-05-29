@@ -1,4 +1,4 @@
-#include "Engine/Runtime/Engine.h"
+﻿#include "Engine/Runtime/Engine.h"
 
 #include "Platform/Paths.h"
 #include "Core/Logging/Log.h"
@@ -21,6 +21,7 @@
 #include "Audio/AudioManager.h"
 #include "Object/ReferenceCollector.h"
 #include "Viewport/GameViewportClient.h"
+#include "Physics/PhysXSDK.h"
 
 UEngine* GEngine = nullptr;
 
@@ -103,6 +104,8 @@ void UEngine::Shutdown()
 	FMeshManager::ReleaseAllGPU();
 	FMeshBufferManager::Get().Release();
 	Renderer.Release();
+
+	FPhysXSDK::Get().Shutdown();
 }
 
 void UEngine::BeginPlay()

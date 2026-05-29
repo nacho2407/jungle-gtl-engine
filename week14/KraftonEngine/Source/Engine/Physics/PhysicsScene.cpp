@@ -1,4 +1,5 @@
 ﻿#include "Physics/PhysicsScene.h"
+#include "Physics/PhysXSDK.h"
 #include "Physics/BodyInstance.h"
 #include "Physics/PhysicsShape.h"
 #include "Physics/PhysXConversions.h"
@@ -9,17 +10,18 @@
 
 void FPhysicsScene::Initialize()
 {
-	Foundation = PxCreateFoundation(PX_PHYSICS_VERSION, Allocator, ErrorCallback);
-	Physics = PxCreatePhysics(PX_PHYSICS_VERSION, *Foundation, physx::PxTolerancesScale());
+	FPhysXSDK::Get().Initialize();
+
+	physx::PxPhysics* Physics = FPhysXSDK::Get().GetPhysics();
 
 	physx::PxSceneDesc SceneDesc(Physics->getTolerancesScale());
 	SceneDesc.gravity = physx::PxVec3(0.0f, 0.0f, -980.0f);
+
 	Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
 	SceneDesc.cpuDispatcher = Dispatcher;
 	SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
 
 	Scene = Physics->createScene(SceneDesc);
-	DefaultMaterial = Physics->createMaterial(0.5f, 0.5f, 0.6f);
 }
 
 void FPhysicsScene::Shutdown()
@@ -38,21 +40,6 @@ void FPhysicsScene::Shutdown()
 	{
 		Dispatcher->release();
 		Dispatcher = nullptr;
-	}
-	if (DefaultMaterial)
-	{
-		DefaultMaterial->release();
-		DefaultMaterial = nullptr;
-	}
-	if (Physics)
-	{
-		Physics->release();
-		Physics = nullptr;
-	}
-	if (Foundation)
-	{
-		Foundation->release();
-		Foundation = nullptr;
 	}
 }
 
@@ -75,7 +62,10 @@ void FPhysicsScene::Simulate(float DeltaTime)
 
 FBodyInstance* FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp)
 {
-	if (!Physics || !Scene || !OwnerComp) return nullptr;
+	if (!Scene || !OwnerComp) return nullptr;
+
+	physx::PxPhysics* Physics = FPhysXSDK::Get().GetPhysics();
+	physx::PxMaterial* DefaultMaterial = FPhysXSDK::Get().GetDefaultMaterial();
 
 	FBodyInstance* Instance = new FBodyInstance();
 	Instance->OwnerComponent = OwnerComp;

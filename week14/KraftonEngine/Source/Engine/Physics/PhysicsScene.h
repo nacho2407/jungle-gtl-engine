@@ -21,13 +21,7 @@ public:
 	physx::PxScene* GetPxScene() const { return Scene; }
 
 private:
-	physx::PxDefaultAllocator Allocator;
-	physx::PxDefaultErrorCallback ErrorCallback;
-
-	physx::PxFoundation* Foundation = nullptr;
-	physx::PxPhysics* Physics = nullptr;
 	physx::PxScene* Scene = nullptr;
-	physx::PxMaterial* DefaultMaterial = nullptr;
 	physx::PxDefaultCpuDispatcher* Dispatcher = nullptr;
 
 	TArray<FBodyInstance*> Bodies;
