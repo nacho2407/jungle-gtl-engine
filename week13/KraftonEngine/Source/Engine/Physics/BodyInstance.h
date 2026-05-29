@@ -1,0 +1,86 @@
+﻿#pragma once
+#include <PxRigidActor.h>
+
+#include "Core/Types/CoreTypes.h"
+#include "Core/Types/CollisionTypes.h"
+#include "Math/Transform.h"
+#include "Object/FName.h"
+
+class UPrimitiveComponent;
+class USkeletalMeshComponent;
+
+// PhysX Body에 붙일 Shape 종류
+enum class EBodyInstanceShapeType : uint8
+{
+	Sphere,
+	Box,
+	Capsule
+};
+
+struct FBodyShapeDesc
+{
+	EBodyInstanceShapeType ShapeType = EBodyInstanceShapeType::Sphere;
+
+	FTransform LocalTransform;
+
+	FVector BoxHalfExtent = FVector(10.0f, 10.0f, 10.0f);
+	float SphereRadius = 10.0f;
+	float CapsuleRadius = 5.0f;
+	float CapsuleHalfHeight = 20.0f;
+};
+
+// FBodyInscane를 만들 때 필요한 초기화 정보
+struct FBodyInstanceInitDesc
+{
+	FTransform WorldTransform;
+	TArray<FBodyShapeDesc> Shapes;
+
+	bool bSimulatePhysics = true;
+	bool bKinematic = false;
+
+	ECollisionEnabled CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+	ECollisionChannel ObjectType = ECollisionChannel::WorldDynamic;
+	FCollisionResponseContainer ResponseContainer;
+
+	float Mass = 1.0f;
+	FVector CenterOfMassOffset = FVector::ZeroVector;
+};
+
+struct FBodyInstance
+{
+	UPrimitiveComponent* OwnerComponent = nullptr;
+	USkeletalMeshComponent* OwnerSkeletalComponent = nullptr;
+
+	FName BoneName = FName::None;
+	int32 BoneIndex = -1;
+
+	bool bSimulatePhysics = true;
+	bool bKinematic = false;
+
+	ECollisionEnabled CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+	ECollisionChannel ObjectType = ECollisionChannel::WorldDynamic;
+	FCollisionResponseContainer ResponseContainer;
+
+	float Mass = 1.0f;
+	FVector CenterOfMassOffset = FVector::ZeroVector;
+
+	physx::PxRigidActor* RigidActor = nullptr;
+	TArray<physx::PxShape*>Shapes;
+
+	bool IsValidBodyInstance() const { return RigidActor != nullptr; }
+
+	physx::PxRigidDynamic* GetRigidDynamic() const;
+	physx::PxRigidStatic* GetRigidStatic() const;
+
+	FTransform GetBodyTransform() const;
+	void SetBodyTransform(const FTransform& WorldTransform);
+	void SetKinematicTarget(const FTransform& WorldTransform);
+
+	void AddForce(const FVector& Force);
+	void AddImpulse(const FVector& Impulse);
+	void WakeUp();
+	void SetLinearVelocity(const FVector& Velocity);
+	FVector GetLinearVelocity() const;
+
+	void ClearPhysicsPointers();
+};
