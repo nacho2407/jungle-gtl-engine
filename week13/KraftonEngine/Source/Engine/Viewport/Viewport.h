@@ -37,6 +37,10 @@ public:
 	ID3D11Texture2D* GetRTTexture() const { return RTTexture; }
 	ID3D11ShaderResourceView* GetSceneColorCopySRV() const { return SceneColorCopySRV; }
 	ID3D11Texture2D* GetSceneColorCopyTexture() const { return SceneColorCopyTexture; }
+	ID3D11RenderTargetView* GetDOFColorCoCRTV() const { return DOFColorCoCRTV; }
+	ID3D11ShaderResourceView* GetDOFColorCoCSRV() const { return DOFColorCoCSRV; }
+	ID3D11RenderTargetView* GetDOFBlurRTV() const { return DOFBlurRTV; }
+	ID3D11ShaderResourceView* GetDOFBlurSRV() const { return DOFBlurSRV; }
 	ID3D11DepthStencilView* GetDSV() const { return DSV; }
 	ID3D11Texture2D* GetDepthTexture() const { return DepthTexture; }
 
@@ -81,6 +85,14 @@ private:
 	// SceneColor 복사본 — FXAA 등 PostProcess에서 최종 화면을 읽기 위한 CopyResource 대상
 	ID3D11Texture2D* SceneColorCopyTexture = nullptr;
 	ID3D11ShaderResourceView* SceneColorCopySRV = nullptr;
+
+	// DOF half-resolution intermediate textures
+	ID3D11Texture2D* DOFColorCoCTexture = nullptr;
+	ID3D11RenderTargetView* DOFColorCoCRTV = nullptr;
+	ID3D11ShaderResourceView* DOFColorCoCSRV = nullptr;
+	ID3D11Texture2D* DOFBlurTexture = nullptr;
+	ID3D11RenderTargetView* DOFBlurRTV = nullptr;
+	ID3D11ShaderResourceView* DOFBlurSRV = nullptr;
 
 	// GBuffer Normal RT — Opaque 패스에서 MRT[1]로 world normal 기록
 	ID3D11Texture2D* NormalTexture = nullptr;

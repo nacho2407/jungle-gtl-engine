@@ -601,6 +601,13 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 		ImGui::Checkbox("Debug Draw", &RenderOptions.ShowFlags.bDebugDraw);
 		ImGui::Checkbox("Octree", &RenderOptions.ShowFlags.bOctree);
 		ImGui::Checkbox("Fog", &RenderOptions.ShowFlags.bFog);
+		ImGui::Checkbox("DepthOfField", &RenderOptions.ShowFlags.bDepthOfField);
+		if (RenderOptions.ShowFlags.bDepthOfField)
+		{
+			ImGui::SliderFloat("Aperture", &RenderOptions.DOFAperture, 0.0f, 12.0f, "%.2f");
+			ImGui::SliderFloat("Focal Distance", &RenderOptions.DOFFocalDistance, 0.1f, 200.0f, "%.2f");
+			ImGui::SliderFloat("Max CoC Radius", &RenderOptions.DOFMaxCoCRadius, 1.0f, 24.0f, "%.1f");
+		}
 		ImGui::Checkbox("FXAA", &RenderOptions.ShowFlags.bFXAA);
 		ImGui::Checkbox("Gamma Correction", &RenderOptions.ShowFlags.bGammaCorrection);
 		ImGui::Checkbox("View Light Culling", &RenderOptions.ShowFlags.bViewLightCulling);

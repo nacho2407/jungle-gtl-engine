@@ -133,6 +133,9 @@ namespace EShaderPath
 	inline constexpr const char* SceneDepth = "Shaders/PostProcess/SceneDepth.hlsl";
 	inline constexpr const char* SceneNormal = "Shaders/PostProcess/SceneNormal.hlsl";
 	inline constexpr const char* HeightFog = "Shaders/PostProcess/HeightFog.hlsl";
+	inline constexpr const char* DOFDownSampling = "Shaders/PostProcess/DOF/DOFDownSampling.hlsl";
+	inline constexpr const char* DOFBlur = "Shaders/PostProcess/DOF/DOFBlur.hlsl";
+	inline constexpr const char* DOFComposite = "Shaders/PostProcess/DOF/DOFComposite.hlsl";
 	inline constexpr const char* LightCulling = "Shaders/PostProcess/LightCulling.hlsl";
 	inline constexpr const char* GammaCorrection = "Shaders/PostProcess/GammaCorrection.hlsl";
 

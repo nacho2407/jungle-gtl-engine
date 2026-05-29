@@ -270,6 +270,13 @@ struct FGammaCorrectionConstants
 	float _pad[3];
 };
 
+struct FDepthOfFieldConstants
+{
+	FVector4 Params0; // x=FocalDistance, y=Aperture, z=MaxCoCRadius, w=NearClip
+	FVector4 Params1; // x=FarClip, y=InvFullWidth, z=InvFullHeight, w=InvHalfWidth
+	FVector4 Params2; // x=InvHalfHeight
+};
+
 
 // Camera Fade CB (b3) - HLSL CameraFadeCB와 1:1 대응
 struct FCameraFadeConstants

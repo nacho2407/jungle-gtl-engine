@@ -1,0 +1,33 @@
+#ifndef DEPTH_OF_FIELD_HLSL
+#define DEPTH_OF_FIELD_HLSL
+
+cbuffer DOFConstantBuffer : register(b2)
+{
+    float4 DOFParams0; // x=FocalDistance, y=Aperture, z=MaxCoCRadius, w=NearClip
+    float4 DOFParams1; // x=FarClip, y=InvFullWidth, z=InvFullHeight, w=InvHalfWidth
+    float4 DOFParams2; // x=InvHalfHeight
+};
+
+#define DOFFocalDistance DOFParams0.x
+#define DOFAperture DOFParams0.y
+#define DOFMaxCoCRadius DOFParams0.z
+#define DOFNearClip DOFParams0.w
+#define DOFFarClip DOFParams1.x
+#define DOFInvFullResolution DOFParams1.yz
+#define DOFInvHalfResolution float2(DOFParams1.w, DOFParams2.x)
+
+float LinearizeSceneDepth(float Depth)
+{
+    return DOFNearClip * DOFFarClip / (DOFNearClip - Depth * (DOFNearClip - DOFFarClip));
+}
+
+float CalculateSignedCoC(float Depth)
+{
+    float ViewDepth = LinearizeSceneDepth(Depth);
+    float FocusDistance = max(DOFFocalDistance, DOFNearClip);
+    float NormalizedDistance = (ViewDepth - FocusDistance) / max(FocusDistance, 0.001f);
+    float Radius = saturate(abs(NormalizedDistance) * max(DOFAperture, 0.0f)) * DOFMaxCoCRadius;
+    return (NormalizedDistance < 0.0f) ? -Radius : Radius;
+}
+
+#endif
