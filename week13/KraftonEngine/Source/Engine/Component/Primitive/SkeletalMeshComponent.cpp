@@ -228,6 +228,7 @@ void USkeletalMeshComponent::SetRagdollEnabled(bool bEnabled)
 {
     if (bRagdollActive == bEnabled)
     {
+        bRagdollEnabled = bEnabled;
         return;
     }
 
@@ -235,6 +236,7 @@ void USkeletalMeshComponent::SetRagdollEnabled(bool bEnabled)
     {
         DestroyRagdollBodies();
         bRagdollActive = false;
+        bRagdollEnabled = false;
         return;
     }
 
@@ -242,11 +244,13 @@ void USkeletalMeshComponent::SetRagdollEnabled(bool bEnabled)
     {
         DestroyRagdollBodies();
         bRagdollActive = false;
+        bRagdollEnabled = false;
         return;
     }
 
     CreateRagdollConstraintsFromHierarchy();
     bRagdollActive = true;
+    bRagdollEnabled = true;
     WakeAllRagdollBodies();
 }
 
@@ -733,6 +737,11 @@ void USkeletalMeshComponent::ClearAnimInstance()
 
 void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
+    if (bRagdollEnabled != bRagdollActive)
+    {
+        SetRagdollEnabled(bRagdollEnabled);
+    }
+
     if (bRagdollActive)
     {
         SyncBonesFromRagdollBodies();
@@ -838,6 +847,11 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
             LuaAnim->ReloadScript();
         }
     }
+    else if (std::strcmp(PropertyName, "bRagdollEnabled") == 0 ||
+        std::strcmp(PropertyName, "Enable Ragdoll") == 0)
+    {
+        SetRagdollEnabled(bRagdollEnabled);
+    }
 
     // AnimInstance 자체 properties 는 자식이 자체 PostEdit 처리. 컴포넌트는 dispatch 만.
     // 컴포넌트가 인식한 이름과 겹치지 않는 한 무해 (자식이 모르는 이름은 no-op).
@@ -890,6 +904,7 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
     Ar << AnimationData.PlayRate;
     Ar << AnimationData.bLooping;
     Ar << AnimationData.bPlaying;
+    Ar << bRagdollEnabled;
 
 }
 

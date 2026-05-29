@@ -154,6 +154,9 @@ protected:
     UPROPERTY(Transient, Instanced, Category="Animation", DisplayName="Anim Instance", Type=ObjectRef, AllowedClass=UAnimInstance)
     TObjectPtr<UAnimInstance>  AnimInstance  = nullptr;
 
+    UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Enable Ragdoll")
+    bool bRagdollEnabled = false;
+
     //Ragdoll runtime state
     TArray<FBodyInstance*> Bodies;
     TArray<FConstraintInstance*> Constraints;
