@@ -10,6 +10,8 @@ class UBodySetup : public UBodySetupCore
 {
 public:
 	GENERATED_BODY()
+	
+	void Serialize(FArchive& Ar) override; 
 
 	FKAggregateGeom& GetAggGeom() { return AggGeom; }
 	const FKAggregateGeom& GetAggGeom() const { return AggGeom; }

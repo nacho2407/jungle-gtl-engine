@@ -9,6 +9,7 @@
 #include "Texture/Texture2D.h"
 #include "Animation/Skeleton/SkeletonManager.h"
 #include "Particles/ParticleSystemManager.h"
+#include "Physics/PhysicsAssetManager.h"    
 
 void FGarbageCollector::CollectGarbage()
 {
@@ -32,6 +33,7 @@ void FGarbageCollector::CollectGarbage()
 	UTexture2D::AddReferencedObjects(Collector);
 	FSkeletonManager::Get().AddReferencedObjects(Collector);
 	FParticleSystemManager::Get().AddReferencedObjects(Collector);
+	FPhysicsAssetManager::Get().AddReferencedObjects(Collector);
 
 	FGCReferenceRegistry::AddReferencedObjects(Collector);
 

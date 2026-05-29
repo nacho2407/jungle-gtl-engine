@@ -1,4 +1,5 @@
 ﻿#include "Physics/BodySetup.h"
+#include "Serialization/Archive.h"
 
 void UBodySetup::CreateDefaultBox(const FVector& Center, const FVector& Extents)
 {
@@ -10,4 +11,10 @@ void UBodySetup::CreateDefaultBox(const FVector& Center, const FVector& Extents)
 	Box.Extents = Extents;
 
 	AggGeom.BoxElems.push_back(Box);
+}
+
+void UBodySetup::Serialize(FArchive& Ar)
+{
+	Ar << BoneName;
+	Ar << AggGeom;
 }
