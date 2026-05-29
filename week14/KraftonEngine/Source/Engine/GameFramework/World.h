@@ -149,6 +149,13 @@ public:
 	bool PhysicsSweepSphere(const FVector& Start, const FVector& Dir, float MaxDist, float Radius, FHitResult& OutHit,
 		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
 		const AActor* IgnoreActor = nullptr) const;
+	
+	bool PhysicsOverlapSphere(const FVector& Center, float Radius, TArray<FOverlapResult>& OutOverlaps,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const;
+	bool PhysicsOverlapBox(const FVector& Center, const FVector& HalfExtent, TArray<FOverlapResult>& OutOverlaps,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const;
 
 	// ObjectType 기반 raycast convenience — delegates to IPhysicsScene::RaycastByObjectTypes.
 	// 채널-응답 시맨틱이 아니라 "이 ObjectType 의 shape 만" 잡고 싶을 때 (예: 바닥은 WorldStatic 만).

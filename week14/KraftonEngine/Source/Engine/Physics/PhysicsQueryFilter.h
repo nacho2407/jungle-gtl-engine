@@ -13,11 +13,25 @@ class FPhysicsRaycastFilterCallback : public physx::PxQueryFilterCallback
 public:
 	FPhysicsRaycastFilterCallback(ECollisionChannel TraceChannel, const AActor* IgnoreActor);
 
-	virtual physx::PxQueryHitType::Enum preFilter(const physx::PxFilterData& FilterData, const physx::PxShape* Shape,
+	physx::PxQueryHitType::Enum preFilter(const physx::PxFilterData& FilterData, const physx::PxShape* Shape,
 		const physx::PxRigidActor* Actor, physx::PxHitFlags& QueryFlags) override;
-	virtual physx::PxQueryHitType::Enum postFilter(const physx::PxFilterData& FilterData, const physx::PxQueryHit& Hit) override;
+	physx::PxQueryHitType::Enum postFilter(const physx::PxFilterData& FilterData, const physx::PxQueryHit& Hit) override;
 
 private:
 	ECollisionChannel TraceChannel;
 	const AActor* IgnoreActor;
+};
+
+class FPhysicsOverlapFilterCallback : public physx::PxQueryFilterCallback
+{
+public:
+	FPhysicsOverlapFilterCallback(ECollisionChannel InTraceChannel, const AActor* InIgnoreActor);
+
+	physx::PxQueryHitType::Enum preFilter(const physx::PxFilterData& FilterData, const physx::PxShape* Shape,
+		const physx::PxRigidActor* Actor, physx::PxHitFlags& QueryFlags) override;
+	physx::PxQueryHitType::Enum postFilter(const physx::PxFilterData& FilterData, const physx::PxQueryHit& Hit) override;
+
+private:
+	ECollisionChannel TraceChannel;
+	const AActor* IgnoreActor = nullptr;
 };

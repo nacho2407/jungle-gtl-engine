@@ -38,6 +38,13 @@ public:
 		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
 		const AActor* IgnoreActor = nullptr);
 
+	bool OverlapSphere(const FVector& Center, float Radius, TArray<FOverlapResult>& OutOverlaps,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr);
+	bool OverlapBox(const FVector& Center, const FVector& HalfExtent, TArray<FOverlapResult>& OutOverlaps,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr);
+
 	physx::PxScene* GetPxScene() const { return Scene; }
 
 private:

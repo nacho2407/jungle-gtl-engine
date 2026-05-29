@@ -233,6 +233,18 @@ bool UWorld::PhysicsSweepSphere(const FVector& Start, const FVector& Dir, float 
 	return PhysicsScene ? PhysicsScene->SweepSphere(Start, Dir, MaxDist, Radius, OutHit, TraceChannel, IgnoreActor) : false;
 }
 
+bool UWorld::PhysicsOverlapSphere(const FVector& Center, float Radius, TArray<FOverlapResult>& OutOverlaps,
+	ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
+{
+	return PhysicsScene ? PhysicsScene->OverlapSphere(Center, Radius, OutOverlaps, TraceChannel, IgnoreActor) : false;
+}
+
+bool UWorld::PhysicsOverlapBox(const FVector& Center, const FVector& HalfExtent, TArray<FOverlapResult>& OutOverlaps,
+	ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
+{
+	return PhysicsScene ? PhysicsScene->OverlapBox(Center, HalfExtent, OutOverlaps, TraceChannel, IgnoreActor) : false;
+}
+
 bool UWorld::PhysicsRaycastByObjectTypes(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 	uint32 ObjectTypeMask, const AActor* IgnoreActor) const
 {

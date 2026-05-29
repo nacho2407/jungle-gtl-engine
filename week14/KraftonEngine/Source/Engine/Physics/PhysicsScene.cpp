@@ -14,6 +14,20 @@
 
 #include <algorithm>
 
+namespace
+{
+	void AppendOverlapHit(const physx::PxOverlapHit& PxHit, TArray<FOverlapResult>& OutOverlaps)
+	{
+		UPrimitiveComponent* Component = GetComponentFromQueryShape(PxHit.shape);
+		if (!Component) return;
+
+		FOverlapResult Result;
+		Result.OverlapComponent = Component;
+		Result.OverlapActor = Component->GetOwner();
+		OutOverlaps.push_back(Result);
+	}
+}
+
 void FPhysicsScene::Initialize()
 {
 	FPhysXSDK::Get().Initialize();
@@ -375,4 +389,78 @@ bool FPhysicsScene::SweepSphere(const FVector& Start, const FVector& Dir, float 
 	OutHit.FaceIndex = static_cast<int>(PxHit.faceIndex);
 
 	return true;
+}
+
+bool FPhysicsScene::OverlapSphere(const FVector& Center, float Radius, TArray<FOverlapResult>& OutOverlaps,
+	ECollisionChannel TraceChannel, const AActor* IgnoreActor)
+{
+	OutOverlaps.clear();
+
+	if (!Scene || Radius <= 0.0f) return false;
+
+	constexpr physx::PxU32 MaxHits = 64;
+	physx::PxOverlapHit Hits[MaxHits];
+	physx::PxOverlapBuffer HitBuffer(Hits, MaxHits);
+
+	physx::PxQueryFilterData QueryFilterData;
+	QueryFilterData.flags = physx::PxQueryFlag::eSTATIC |
+		physx::PxQueryFlag::eDYNAMIC |
+		physx::PxQueryFlag::ePREFILTER;
+
+	FPhysicsOverlapFilterCallback FilterCallback(TraceChannel, IgnoreActor);
+
+	const bool bHit = Scene->overlap(physx::PxSphereGeometry(Radius),
+		physx::PxTransform(ToPxVec3(Center)), HitBuffer,
+		QueryFilterData, &FilterCallback);
+
+	if (!bHit) return false;
+
+	for (physx::PxU32 Index = 0; Index < HitBuffer.nbTouches; ++Index)
+	{
+		AppendOverlapHit(HitBuffer.touches[Index], OutOverlaps);
+	}
+
+	if (HitBuffer.hasBlock)
+	{
+		AppendOverlapHit(HitBuffer.block, OutOverlaps);
+	}
+
+	return !OutOverlaps.empty();
+}
+
+bool FPhysicsScene::OverlapBox(const FVector& Center, const FVector& HalfExtent, TArray<FOverlapResult>& OutOverlaps,
+	ECollisionChannel TraceChannel, const AActor* IgnoreActor)
+{
+	OutOverlaps.clear();
+	
+	if (!Scene || HalfExtent.X <= 0.0f || HalfExtent.Y <= 0.0f || HalfExtent.Z <= 0.0f) return false;
+
+	constexpr physx::PxU32 MaxHits = 64;
+	physx::PxOverlapHit Hits[MaxHits];
+	physx::PxOverlapBuffer HitBuffer(Hits, MaxHits);
+
+	physx::PxQueryFilterData QueryFilterData;
+	QueryFilterData.flags = physx::PxQueryFlag::eSTATIC |
+		physx::PxQueryFlag::eDYNAMIC |
+		physx::PxQueryFlag::ePREFILTER;
+
+	FPhysicsOverlapFilterCallback FilterCallback(TraceChannel, IgnoreActor);
+
+	const bool bHit = Scene->overlap(physx::PxBoxGeometry(ToPxVec3(HalfExtent)),
+		physx::PxTransform(ToPxVec3(Center)), HitBuffer,
+		QueryFilterData, &FilterCallback);
+
+	if (!bHit) return false;
+
+	for (physx::PxU32 Index = 0; Index < HitBuffer.nbTouches; ++Index)
+	{
+		AppendOverlapHit(HitBuffer.touches[Index], OutOverlaps);
+	}
+
+	if (HitBuffer.hasBlock)
+	{
+		AppendOverlapHit(HitBuffer.block, OutOverlaps);
+	}
+
+	return !OutOverlaps.empty();
 }
