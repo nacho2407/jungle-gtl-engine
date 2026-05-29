@@ -6,6 +6,7 @@
 #include "Physics/PhysXConversions.h"
 #include "Physics/PhysicsEventCallback.h"
 #include "Physics/PhysicsFilterShader.h"
+#include "Physics/PhysicsQueryFilter.h"
 
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
@@ -273,4 +274,105 @@ void FPhysicsScene::DestroyConstraint(FConstraintInstance* Instance)
 
 	Instance->Release();
 	delete Instance;
+}
+
+bool FPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+	ECollisionChannel TraceChannel, const AActor* IgnoreActor)
+{
+	if (!Scene || MaxDist <= 0.0f) return false;
+
+	FVector RayDir = Dir;
+	if (RayDir.IsNearlyZero()) return false;
+
+	RayDir.Normalize();
+
+	physx::PxRaycastBuffer HitBuffer;
+
+	physx::PxQueryFilterData QueryFilterData;
+	QueryFilterData.flags = physx::PxQueryFlag::eSTATIC |
+		physx::PxQueryFlag::eDYNAMIC |
+		physx::PxQueryFlag::ePREFILTER;
+
+	FPhysicsRaycastFilterCallback FilterCallback(TraceChannel, IgnoreActor);
+
+	const bool bHit = Scene->raycast(ToPxVec3(Start), ToPxVec3(RayDir), MaxDist, HitBuffer,
+		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL | physx::PxHitFlag::eFACE_INDEX,
+		QueryFilterData, &FilterCallback);
+
+	if (!bHit || !HitBuffer.hasBlock)
+	{
+		OutHit = FHitResult{};
+		return false;
+	}
+
+	const physx::PxRaycastHit& PxHit = HitBuffer.block;
+	UPrimitiveComponent* HitComponent = GetComponentFromQueryShape(PxHit.shape);
+
+	OutHit = FHitResult{};
+	OutHit.bHit = true;
+	OutHit.HitComponent = HitComponent;
+	OutHit.HitActor = HitComponent ? HitComponent->GetOwner() : nullptr;
+	OutHit.Distance = PxHit.distance;
+	OutHit.WorldHitLocation = FromPxVec3(PxHit.position);
+	OutHit.WorldNormal = FromPxVec3(PxHit.normal);
+	OutHit.ImpactNormal = OutHit.WorldNormal;
+	OutHit.FaceIndex = static_cast<int>(PxHit.faceIndex);
+
+	return true;
+}
+
+bool FPhysicsScene::SweepSphere(const FVector& Start, const FVector& Dir, float MaxDist, float Radius, FHitResult& OutHit,
+	ECollisionChannel TraceChannel, const AActor* IgnoreActor)
+{
+	if (!Scene || MaxDist <= 0.0f || Radius <= 0.0f)
+	{
+		OutHit = FHitResult{};
+		return false;
+	}
+
+	FVector SweepDir = Dir;
+	if (SweepDir.IsNearlyZero())
+	{
+		OutHit = FHitResult{};
+		return false;
+	}
+	
+	SweepDir.Normalize();
+
+	physx::PxSweepBuffer HitBuffer;
+
+	physx::PxQueryFilterData QueryFilterData;
+	QueryFilterData.flags = physx::PxQueryFlag::eSTATIC |
+		physx::PxQueryFlag::eDYNAMIC |
+		physx::PxQueryFlag::ePREFILTER;
+
+	FPhysicsRaycastFilterCallback FilterCallback(TraceChannel, IgnoreActor);
+
+	const physx::PxSphereGeometry SphereGeometry(Radius);
+	const physx::PxTransform StartPose(ToPxVec3(Start));
+
+	const bool bHit = Scene->sweep(SphereGeometry, StartPose, ToPxVec3(SweepDir), MaxDist, HitBuffer,
+		physx::PxHitFlag::ePOSITION | physx::PxHitFlag::eNORMAL | physx::PxHitFlag::eFACE_INDEX,
+		QueryFilterData, &FilterCallback);
+
+	if (!bHit || !HitBuffer.hasBlock)
+	{
+		OutHit = FHitResult{};
+		return false;
+	}
+
+	const physx::PxSweepHit& PxHit = HitBuffer.block;
+	UPrimitiveComponent* HitComponent = GetComponentFromQueryShape(PxHit.shape);
+
+	OutHit = FHitResult{};
+	OutHit.bHit = true;
+	OutHit.HitComponent = HitComponent;
+	OutHit.HitActor = HitComponent ? HitComponent->GetOwner() : nullptr;
+	OutHit.Distance = PxHit.distance;
+	OutHit.WorldHitLocation = FromPxVec3(PxHit.position);
+	OutHit.WorldNormal = FromPxVec3(PxHit.normal);
+	OutHit.ImpactNormal = OutHit.WorldNormal;
+	OutHit.FaceIndex = static_cast<int>(PxHit.faceIndex);
+
+	return true;
 }

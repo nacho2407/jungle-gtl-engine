@@ -1,4 +1,4 @@
-#include "Component/Camera/SpringArmComponent.h"
+﻿#include "Component/Camera/SpringArmComponent.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
@@ -118,9 +118,9 @@ void USpringArmComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 			{
 				const FVector Dir = Diff / Distance;
 				FHitResult Hit;
-				if (World->PhysicsRaycast(LaggedAttachLoc, Dir, Distance, Hit, ProbeChannel, Owner))
+				if (World->PhysicsSweepSphere(LaggedAttachLoc, Dir, Distance, ProbeSize, Hit, ProbeChannel, Owner))
 				{
-					const float SafeDist = std::max(Hit.Distance - ProbeSize, 0.0f);
+					const float SafeDist = std::max(Hit.Distance, 0.0f);
 					ArmEndWorld = LaggedAttachLoc + Dir * SafeDist;
 				}
 			}

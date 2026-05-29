@@ -1741,6 +1741,7 @@
     <ClCompile Include="Source\Engine\Physics\PhysicsEventCallback.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsFilterShader.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsFilterData.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsQueryFilter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -5249,6 +5250,7 @@
     <ClInclude Include="Source\Engine\Physics\PhysicsEventCallback.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsFilterShader.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsFilterData.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsQueryFilter.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

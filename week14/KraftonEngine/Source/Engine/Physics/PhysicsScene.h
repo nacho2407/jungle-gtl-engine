@@ -7,6 +7,7 @@
 #include "Core/Types/CollisionTypes.h"
 #include "Math/Transform.h"
 
+class AActor;
 class UPrimitiveComponent;
 class UBodySetup;
 class FPhysicsEventCallback;
@@ -29,6 +30,13 @@ public:
 	FConstraintInstance* CreateFixedConstraint(FBodyInstance* BodyA, FBodyInstance* BodyB,
 		const FTransform& LocalFrameA, const FTransform& LocalFrameB);
 	void DestroyConstraint(FConstraintInstance* Instance);
+
+	bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr);
+	bool SweepSphere(const FVector& Start, const FVector& Dir, float MaxDist, float Radius, FHitResult& OutHit,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr);
 
 	physx::PxScene* GetPxScene() const { return Scene; }
 

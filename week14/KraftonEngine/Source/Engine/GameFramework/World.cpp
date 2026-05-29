@@ -224,7 +224,13 @@ bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor
 bool UWorld::PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 	ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
 {
-	return FWorldCollisionQueries::Raycast(*this, Start, Dir, MaxDist, OutHit, TraceChannel, IgnoreActor);
+	return PhysicsScene ? PhysicsScene->Raycast(Start, Dir, MaxDist, OutHit, TraceChannel, IgnoreActor) : false;
+}
+
+bool UWorld::PhysicsSweepSphere(const FVector& Start, const FVector& Dir, float MaxDist, float Radius, FHitResult& OutHit,
+	ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
+{
+	return PhysicsScene ? PhysicsScene->SweepSphere(Start, Dir, MaxDist, Radius, OutHit, TraceChannel, IgnoreActor) : false;
 }
 
 bool UWorld::PhysicsRaycastByObjectTypes(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,

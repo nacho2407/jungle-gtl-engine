@@ -146,6 +146,9 @@ public:
 	bool PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
 		const AActor* IgnoreActor = nullptr) const;
+	bool PhysicsSweepSphere(const FVector& Start, const FVector& Dir, float MaxDist, float Radius, FHitResult& OutHit,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const;
 
 	// ObjectType 기반 raycast convenience — delegates to IPhysicsScene::RaycastByObjectTypes.
 	// 채널-응답 시맨틱이 아니라 "이 ObjectType 의 shape 만" 잡고 싶을 때 (예: 바닥은 WorldStatic 만).

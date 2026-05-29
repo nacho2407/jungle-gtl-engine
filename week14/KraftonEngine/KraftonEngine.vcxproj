@@ -668,6 +668,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClCompile Include="Source\Engine\Physics\PhysicsEventCallback.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsFilterData.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsFilterShader.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsQueryFilter.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsShape.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXConversions.cpp" />
@@ -1082,6 +1083,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Engine\Physics\PhysicsFilterData.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsFilterShader.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsGeometry.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsQueryFilter.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsShape.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsTypes.h" />
