@@ -662,6 +662,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp" />
     <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleEvent.cpp" />
     <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\BodyInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsScene.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsShape.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysXConversions.cpp" />
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Platform\DirectoryWatcher.cpp" />
     <ClCompile Include="Source\Engine\Platform\Paths.cpp" />
@@ -1064,6 +1068,12 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleCollisionEvent.h" />
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.h" />
     <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h" />
+    <ClInclude Include="Source\Engine\Physics\BodyInstance.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsScene.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsShape.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsTypes.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXConversions.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXInclude.h" />
     <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h" />
     <ClInclude Include="Source\Engine\Platform\CrashDump.h" />
     <ClInclude Include="Source\Engine\Platform\DirectoryWatcher.h" />

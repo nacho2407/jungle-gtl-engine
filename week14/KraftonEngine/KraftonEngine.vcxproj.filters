@@ -1731,6 +1731,10 @@
     <ClCompile Include="Intermediate\Generated\LuaBindings.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\PhysicsScene.cpp" />
+    <ClCompile Include="Source\Engine\Physics\BodyInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsShape.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysXConversions.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -5225,6 +5229,12 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\PhysicsScene.h" />
+    <ClInclude Include="Source\Engine\Physics\BodyInstance.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsShape.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsTypes.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXInclude.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXConversions.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

@@ -10,6 +10,7 @@
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "GameFramework/World.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Physics/PhysicsScene.h"
 
 #include <cmath>
 #include <cstring>
@@ -43,6 +44,7 @@ UPrimitiveComponent::~UPrimitiveComponent()
 void UPrimitiveComponent::BeginPlay()
 {
 	USceneComponent::BeginPlay();
+	CreatePhysicsState();
 }
 
 void UPrimitiveComponent::EndPlay()
@@ -67,6 +69,7 @@ void UPrimitiveComponent::EndPlay()
 	ClearOctreeLocation();
 
 	DestroyRenderState();
+	DestroyPhysicsState();
 
 	USceneComponent::EndPlay();
 }
@@ -169,6 +172,36 @@ void UPrimitiveComponent::MarkWorldBoundsDirty()
 	bWorldAABBDirty = true;
 	bHasValidWorldAABB = false;
 	MarkRenderTransformDirty();
+}
+
+void UPrimitiveComponent::CreatePhysicsState()
+{
+	if (BodyInstance || !Owner) return;
+
+	UWorld* World = Owner->GetWorld();
+	if (!World || !World->GetPhysicsScene()) return;
+	if (CollisionEnabled == ECollisionEnabled::NoCollision) return;
+
+	BodyInstance = World->GetPhysicsScene()->CreateBody(this);
+}
+
+void UPrimitiveComponent::DestroyPhysicsState()
+{
+	if (!BodyInstance || !Owner) return;
+	
+	if (UWorld* World = Owner->GetWorld())
+	{
+		if (FPhysicsScene* Scene = World->GetPhysicsScene())
+		{
+			Scene->DestroyBody(BodyInstance);
+		}
+	}
+	BodyInstance = nullptr;
+}
+
+FBodyInstance* UPrimitiveComponent::GetBodyInstance() const
+{
+	return BodyInstance;
 }
 
 void UPrimitiveComponent::UpdateWorldAABB() const
@@ -312,7 +345,26 @@ void UPrimitiveComponent::EnsureWorldAABBUpdated() const
 
 void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
 {
+	if (CollisionEnabled == InEnabled) return;
+
+	const bool bHadCollision = CollisionEnabled != ECollisionEnabled::NoCollision;
+	const bool bHasCollision = InEnabled != ECollisionEnabled::NoCollision;
+
 	CollisionEnabled = InEnabled;
+
+	if (bHadCollision && !bHasCollision)
+	{
+		DestroyPhysicsState();
+	}
+	else if (!bHadCollision && bHasCollision)
+	{
+		CreatePhysicsState();
+	}
+	else if (bHadCollision && bHasCollision)
+	{
+		DestroyPhysicsState();
+		CreatePhysicsState();
+	}
 }
 
 void UPrimitiveComponent::SetRelativeScale(const FVector& NewScale)
@@ -329,7 +381,14 @@ bool UPrimitiveComponent::IsQueryCollisionEnabled() const
 void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel InChannel)
 {
 	if (ObjectType == InChannel) return;
+
 	ObjectType = InChannel;
+
+	if (BodyInstance)
+	{
+		DestroyPhysicsState();
+		CreatePhysicsState();
+	}
 }
 
 void UPrimitiveComponent::SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response)
@@ -358,7 +417,15 @@ ECollisionResponse UPrimitiveComponent::GetMinResponse(const UPrimitiveComponent
 // --- Overlap / Hit ---
 void UPrimitiveComponent::SetGenerateOverlapEvents(bool bInGenerateOverlapEvents)
 {
+	if (bGenerateOverlapEvents == bInGenerateOverlapEvents) return;
+
 	bGenerateOverlapEvents = bInGenerateOverlapEvents;
+
+	if (BodyInstance)
+	{
+		DestroyPhysicsState();
+		CreatePhysicsState();
+	}
 }
 
 void UPrimitiveComponent::NotifyComponentBeginOverlap(

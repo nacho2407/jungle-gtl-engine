@@ -15,6 +15,7 @@ class FPrimitiveSceneProxy;
 class FScene;
 class FMeshBuffer;
 class FOctree;
+struct FBodyInstance;
 
 // Overlap/Hit 델리게이트 시그니처
 // OnComponentBeginOverlap(OverlappedComp, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
@@ -84,6 +85,11 @@ public:
 	// 월드 공간 AABB를 FBoundingBox로 반환
 	FBoundingBox GetWorldBoundingBox() const;
 	void MarkWorldBoundsDirty();
+
+	//Physics
+	void CreatePhysicsState();
+	void DestroyPhysicsState();
+	FBodyInstance* GetBodyInstance() const;
 
 	//Collision
 	virtual void UpdateWorldAABB() const;
@@ -202,6 +208,8 @@ protected:
 	int32 TranslucentSortPriority = 0;
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Generate Overlap Events")
 	bool bGenerateOverlapEvents = false;
+
+	FBodyInstance* BodyInstance = nullptr;
 
 	// 물리 파라미터 — RootComponent의 값만 백엔드에 적용 (compound shape 정책).
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Enabled", Enum=ECollisionEnabled)

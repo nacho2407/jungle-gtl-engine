@@ -23,6 +23,7 @@ class AGameModeBase;
 class AGameStateBase;
 class APlayerController;
 class UClass;
+class FPhysicsScene;
 
 UCLASS()
 class UWorld : public UObject {
@@ -102,6 +103,8 @@ public:
 	// FScene — 렌더 프록시 관리자
 	FScene& GetScene() { return Scene; }
 	const FScene& GetScene() const { return Scene; }
+
+	FPhysicsScene* GetPhysicsScene() const { return PhysicsScene; }
 	
 	FSpatialPartition& GetPartition() { return Partition; }
 	const FOctree* GetOctree() const { return Partition.GetOctree(); }
@@ -112,6 +115,8 @@ public:
 private:
 	//TArray<AActor*> Actors;
 	ULevel* PersistentLevel;
+
+	FPhysicsScene* PhysicsScene = nullptr;
 
 	// CameraManager 는 PC 가 owner. Editor 모드에서는 active viewport 가 IPOVProvider 로
 	// 자기 POV 를 노출하면 World 가 pull. 직접 POV cache 는 보유하지 않는다.

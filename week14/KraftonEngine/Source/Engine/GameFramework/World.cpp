@@ -15,6 +15,8 @@
 #include "Profiling/Stats/Stats.h"
 #include "Profiling/Time/Timer.h"
 #include "Runtime/Engine.h"
+#include "Physics/PhysicsScene.h"
+
 #include <algorithm>
 
 UWorld::~UWorld()
@@ -295,7 +297,8 @@ void UWorld::InitWorld()
 	PersistentLevel = UObjectManager::Get().CreateObject<ULevel>(this);
 	PersistentLevel->SetWorld(this);
 
-	// E.2/3: CameraManager spawn 은 PC 의 BeginPlay 가 담당. World 는 보유하지 않음.
+	PhysicsScene = new FPhysicsScene();
+	PhysicsScene->Initialize();
 }
 
 void UWorld::BeginPlay()
@@ -345,6 +348,11 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 
 	TickManager.Tick(this, DeltaTime, TickType);
 
+	if (TickType == ELevelTick::LEVELTICK_All && PhysicsScene)
+	{
+		PhysicsScene->Simulate(DeltaTime);
+	}
+
 	// 카메라는 물리/액터 Tick 이후 갱신 — 차량 1인칭처럼 physics body 에 붙은 카메라가
 	// 같은 프레임의 최신 transform 으로 POV cache 를 채운다.
 	TickPlayerCamera();
@@ -383,11 +391,19 @@ void UWorld::EndPlay()
 
 	PersistentLevel->EndPlay();
 
+	if (PhysicsScene)
+	{
+		PhysicsScene->Shutdown();
+		delete PhysicsScene;
+		PhysicsScene = nullptr;
+	}
+
 	// Clear spatial partition while actors/components are still alive.
 	// Otherwise Octree teardown can dereference stale primitive pointers during shutdown.
 	Partition.Reset(FBoundingBox());
 
 	PersistentLevel->Clear();
+
 	GameMode = nullptr; // 액터 리스트가 비워지면서 dangling 되므로 명시적으로 해제
 	MarkWorldPrimitivePickingBVHDirty();
 
