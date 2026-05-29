@@ -1769,7 +1769,7 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp">
+    <ClCompile Include="Source\Engine\Render\RenderPass\EarlyPostProcessPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.cpp">
@@ -3185,7 +3185,7 @@
     <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\RenderPass\FogPass.h">
+    <ClInclude Include="Source\Engine\Render\RenderPass\EarlyPostProcessPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.h">

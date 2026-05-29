@@ -1,4 +1,4 @@
-#include "FogPass.h"
+#include "EarlyPostProcessPass.h"
 #include "RenderPassRegistry.h"
 
 #include "Render/Device/D3DDevice.h"
@@ -6,16 +6,16 @@
 #include "Render/Types/RenderConstants.h"
 #include "Render/Command/DrawCommandList.h"
 
-REGISTER_RENDER_PASS(FFogPass)
+REGISTER_RENDER_PASS(FEarlyPostProcessPass)
 
-FFogPass::FFogPass()
+FEarlyPostProcessPass::FEarlyPostProcessPass()
 {
-	PassType    = ERenderPass::Fog;
+	PassType    = ERenderPass::EarlyPostProcess;
 	RenderState = { EDepthStencilState::NoDepth, EBlendState::AlphaBlend,
 	                ERasterizerState::SolidNoCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, false };
 }
 
-bool FFogPass::BeginPass(const FPassContext& Ctx)
+bool FEarlyPostProcessPass::BeginPass(const FPassContext& Ctx)
 {
 	if (!Ctx.Frame.RenderOptions.ShowFlags.bFog)
 		return false;

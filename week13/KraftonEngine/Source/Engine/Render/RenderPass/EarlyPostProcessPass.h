@@ -2,9 +2,9 @@
 
 #include "Render/RenderPass/RenderPassBase.h"
 
-class FFogPass final : public FRenderPassBase
+class FEarlyPostProcessPass final : public FRenderPassBase
 {
 public:
-	FFogPass();
+	FEarlyPostProcessPass();
 	bool BeginPass(const FPassContext& Ctx) override;
 };
