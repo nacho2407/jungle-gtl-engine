@@ -90,16 +90,23 @@ FBodyInstance* FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp)
 
 	const bool bTrigger = OwnerComp->GetGenerateOverlapEvents() || OwnerComp->GetCollisionEnabled() == ECollisionEnabled::QueryOnly;
 
-	physx::PxShape* Shape = FPhysicsShapeFactory::CreateShapeForComponent(*Physics, *DefaultMaterial, OwnerComp, bTrigger);
-	if (!Shape)
+	TArray<physx::PxShape*> Shapes;
+	FPhysicsShapeFactory::CreateShapesForComponent(*Physics, *DefaultMaterial, OwnerComp, bTrigger, Shapes);
+
+	if (Shapes.empty())
 	{
 		Body->release();
 		delete Instance;
 		return nullptr;
 	}
 
-	Body->attachShape(*Shape);
-	Shape->release();
+	for (physx::PxShape* Shape : Shapes)
+	{
+		if (!Shape) continue;
+
+		Body->attachShape(*Shape);
+		Shape->release();
+	}
 
 	Instance->Body = Body;
 	Body->userData = Instance;

@@ -89,6 +89,7 @@ public:
 	//Physics
 	void CreatePhysicsState();
 	void DestroyPhysicsState();
+	void RecreatePhysicsState();
 	FBodyInstance* GetBodyInstance() const;
 
 	//Collision

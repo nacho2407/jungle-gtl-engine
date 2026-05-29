@@ -199,6 +199,17 @@ void UPrimitiveComponent::DestroyPhysicsState()
 	BodyInstance = nullptr;
 }
 
+void UPrimitiveComponent::RecreatePhysicsState()
+{
+	const bool bShouldRecreate = BodyInstance != nullptr;
+	
+	if (bShouldRecreate)
+	{
+		DestroyPhysicsState();
+		CreatePhysicsState();
+	}
+}
+
 FBodyInstance* UPrimitiveComponent::GetBodyInstance() const
 {
 	return BodyInstance;
@@ -370,6 +381,12 @@ void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
 void UPrimitiveComponent::SetRelativeScale(const FVector& NewScale)
 {
 	USceneComponent::SetRelativeScale(NewScale);
+
+	if (BodyInstance)
+	{
+		DestroyPhysicsState();
+		CreatePhysicsState();
+	}
 }
 
 bool UPrimitiveComponent::IsQueryCollisionEnabled() const

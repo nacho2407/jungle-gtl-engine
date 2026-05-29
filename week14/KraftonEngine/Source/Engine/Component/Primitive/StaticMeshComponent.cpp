@@ -1,4 +1,4 @@
-#include "Component/Primitive/StaticMeshComponent.h"
+﻿#include "Component/Primitive/StaticMeshComponent.h"
 #include <algorithm>
 #include <cmath>
 #include "Object/Reflection/ObjectFactory.h"
@@ -20,6 +20,13 @@ FPrimitiveSceneProxy* UStaticMeshComponent::CreateSceneProxy()
 
 void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 {
+	const bool bHadBody = GetBodyInstance() != nullptr;
+
+	if (bHadBody)
+	{
+		DestroyPhysicsState();
+	}
+
 	StaticMesh = InMesh;
 	if (InMesh)
 	{
@@ -50,6 +57,11 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 	CacheLocalBounds();
 	MarkRenderStateDirty();
 	MarkWorldBoundsDirty();
+
+	if (bHadBody)
+	{
+		CreatePhysicsState();
+	}
 }
 
 void UStaticMeshComponent::CacheLocalBounds()
