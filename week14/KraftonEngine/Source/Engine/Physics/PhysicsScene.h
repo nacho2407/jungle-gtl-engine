@@ -9,6 +9,7 @@
 
 class UPrimitiveComponent;
 class UBodySetup;
+class FPhysicsEventCallback;
 struct FBodyInstance;
 struct FConstraintInstance;
 
@@ -34,6 +35,8 @@ public:
 private:
 	physx::PxScene* Scene = nullptr;
 	physx::PxDefaultCpuDispatcher* Dispatcher = nullptr;
+
+	FPhysicsEventCallback* EventCallback = nullptr;
 
 	TArray<FBodyInstance*> Bodies;
 	TArray<FConstraintInstance*> Constraints;

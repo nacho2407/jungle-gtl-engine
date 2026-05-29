@@ -1,6 +1,7 @@
 ﻿#include "Physics/PhysicsShape.h"
 #include "Physics/BodySetup.h"
 #include "Physics/PhysXConversions.h"
+#include "Physics/PhysicsFilterData.h"
 
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/SphereComponent.h"
@@ -146,6 +147,13 @@ void FPhysicsShapeFactory::CreateShapesForStaticMeshComponent(physx::PxPhysics& 
 void FPhysicsShapeFactory::ApplyShapeFlags(physx::PxShape& Shape, UPrimitiveComponent* Component, bool bTrigger)
 {
 	Shape.userData = Component;
+
+	if (Component)
+	{
+		const physx::PxFilterData FilterData = MakeFilterData(*Component);
+		Shape.setSimulationFilterData(FilterData);
+		Shape.setQueryFilterData(FilterData);
+	}
 
 	if (bTrigger)
 	{

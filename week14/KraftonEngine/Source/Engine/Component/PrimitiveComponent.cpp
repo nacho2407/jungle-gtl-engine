@@ -178,6 +178,10 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	{
 		if (BodyInstance.IsValidBody()) BodyInstance.SetAngularDamping(AngularDamping);
 	}
+	else if (strcmp(PropertyName, "bGenerateOverlapEvents") == 0 || strcmp(PropertyName, "Generate Overlap Events") == 0)
+	{
+		RecreatePhysicsState();
+	}
 }
 
 FBoundingBox UPrimitiveComponent::GetWorldBoundingBox() const

@@ -4,6 +4,8 @@
 #include "Physics/ConstraintInstance.h"
 #include "Physics/PhysicsShape.h"
 #include "Physics/PhysXConversions.h"
+#include "Physics/PhysicsEventCallback.h"
+#include "Physics/PhysicsFilterShader.h"
 
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
@@ -20,9 +22,12 @@ void FPhysicsScene::Initialize()
 	physx::PxSceneDesc SceneDesc(Physics->getTolerancesScale());
 	SceneDesc.gravity = physx::PxVec3(0.0f, 0.0f, -980.0f);
 
+	EventCallback = new FPhysicsEventCallback();
+	SceneDesc.simulationEventCallback = EventCallback;
+
 	Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
 	SceneDesc.cpuDispatcher = Dispatcher;
-	SceneDesc.filterShader = physx::PxDefaultSimulationFilterShader;
+	SceneDesc.filterShader = PhysicsFilterShader;
 
 	Scene = Physics->createScene(SceneDesc);
 }
@@ -51,6 +56,11 @@ void FPhysicsScene::Shutdown()
 	{
 		Scene->release();
 		Scene = nullptr;
+	}
+	if (EventCallback)
+	{
+		delete EventCallback;
+		EventCallback = nullptr;
 	}
 	if (Dispatcher)
 	{
@@ -110,7 +120,7 @@ bool FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& Ou
 		OutInstance.Mode = EBodyInstanceMode::Static;
 	}
 
-	const bool bTrigger = OwnerComp->GetGenerateOverlapEvents() || OwnerComp->GetCollisionEnabled() == ECollisionEnabled::QueryOnly;
+	const bool bTrigger = OwnerComp->GetCollisionEnabled() == ECollisionEnabled::QueryOnly;
 
 	TArray<physx::PxShape*> Shapes;
 	FPhysicsShapeFactory::CreateShapesForComponent(*Physics, *DefaultMaterial, OwnerComp, bTrigger, Shapes);
@@ -177,7 +187,7 @@ bool FPhysicsScene::CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, FBodyIns
 		return false;
 	}
 
-	const bool bTrigger = bGenerateOverlapEvents || CollisionEnabled == ECollisionEnabled::QueryOnly;
+	const bool bTrigger = CollisionEnabled == ECollisionEnabled::QueryOnly;
 
 	TArray<physx::PxShape*> Shapes;
 	FPhysicsShapeFactory::CreateShapesFromBodySetup(*Physics, *DefaultMaterial, BodySetup, Scale, OwnerComp, bTrigger, Shapes);

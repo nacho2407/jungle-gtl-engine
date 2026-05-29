@@ -1738,6 +1738,9 @@
     <ClCompile Include="Source\Engine\Physics\BodySetup.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXSDK.cpp" />
     <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsEventCallback.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsFilterShader.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsFilterData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -5243,6 +5246,9 @@
     <ClInclude Include="Source\Engine\Physics\BodySetupCore.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXSDK.h" />
     <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsEventCallback.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsFilterShader.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsFilterData.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
