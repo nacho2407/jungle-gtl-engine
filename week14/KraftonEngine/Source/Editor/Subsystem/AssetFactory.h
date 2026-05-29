@@ -13,7 +13,7 @@ struct FPhysicsAssetCreationParams
 	// Body Creation
 	float MinBoneSize = 10.0f;
 	EPhysicsAssetPrimitiveType PrimitiveType = EPhysicsAssetPrimitiveType::Capsule;
-	EPhysicsAssetVertexWeighting VertexWeight = EPhysicsAssetVertexWeighting::DominantWeight;
+	EPhysicsAssetVertexWeighting VertexWeighting = EPhysicsAssetVertexWeighting::DominantWeight;
 	bool bAutoOrientToBone = true;
 	bool bWalkPastSmallBones = true;
 	bool bCreateBodyForAllBones = false;

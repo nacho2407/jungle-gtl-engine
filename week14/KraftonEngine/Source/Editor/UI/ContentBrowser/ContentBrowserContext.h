@@ -3,6 +3,7 @@
 #include "Platform/Paths.h"
 #include "Asset/AssetRegistry.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
+#include "Editor/UI/Dialog/PhysicsAssetCreationDialog.h"
 #include <memory>
 
 class ContentBrowserElement;
@@ -26,4 +27,6 @@ struct ContentBrowserContext final
 	// Shared FBX import options modal state. MeshElement fills this on double-click and
 	// ContentBrowser renders the common modal once per frame.
 	FFbxSceneImportDialogState FbxImportDialog;
+	
+	FPhysicsAssetCreationDialogState PhysicsAssetDialog;
 };

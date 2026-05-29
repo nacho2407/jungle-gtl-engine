@@ -28,6 +28,7 @@ private:
 	void DrawDirNode(const FDirNode& InNode);
 	void DrawContents();
 	void RenderFbxImportOptionsPopup();
+	void RenderPhysicsAssetCreationPopup();
 
 	TArray<FContentItem> ReadDirectory(std::wstring Path);
 	FDirNode BuildDirectoryTree(const std::filesystem::path& DirPath);
