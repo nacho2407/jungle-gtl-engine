@@ -669,6 +669,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataMesh.cpp" />
     <ClCompile Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataRibbon.cpp" />
     <ClCompile Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.cpp" />
+    <ClCompile Include="Source\Engine\PhysicsEngine\AggregateGeom.cpp" />
+    <ClCompile Include="Source\Engine\PhysicsEngine\BodySetupCore.cpp" />
     <ClCompile Include="Source\Engine\Physics\NativePhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXPhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
@@ -1113,6 +1115,15 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataRibbon.h" />
     <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.h" />
     <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocityBase.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\AggregateGeom.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\BodySetup.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\BodySetupCore.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\BoxElem.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\ConvexElem.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAsset.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\ShapeElem.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\SphereElem.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\SphylElem.h" />
     <ClInclude Include="Source\Engine\Physics\IPhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\NativePhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXPhysicsScene.h" />
