@@ -33,7 +33,16 @@ void FBodyInstance::SetBodyTransform(const FTransform& WorldTransform)
 void FBodyInstance::SetKinematicTarget(const FTransform& WorldTransform)
 {
 	physx::PxRigidDynamic* Dynamic = GetRigidDynamic();
-	if (!Dynamic) return;
+	if (!Dynamic)
+	{
+		SetBodyTransform(WorldTransform);
+		return;
+	}
+
+	if (!(Dynamic->getRigidBodyFlags() & physx::PxRigidBodyFlag::eKINEMATIC))
+	{
+		Dynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
+	}
 
 	Dynamic->setKinematicTarget(PhysXConvert::ToPxTransform(WorldTransform));
 }

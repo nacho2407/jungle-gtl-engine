@@ -1040,6 +1040,8 @@ bool FPhysXPhysicsScene::CreateConstraintInstance(FConstraintInstance& Constrain
 	// 손과 머리같은 연결되지 않은 body끼리의 충돌은 Collision Filtering으로 처리하는것이 더 좋다함.
 	Joint->setConstraintFlag(PxConstraintFlag::eCOLLISION_ENABLED, Constraint.bEnableCollision);
 
+	Joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
+
 	// joint가 순간적으로 벌어지게 될때 보정해주는 장치
 	Joint->setProjectionLinearTolerance(0.1f);
 	Joint->setProjectionAngularTolerance(0.25f);
