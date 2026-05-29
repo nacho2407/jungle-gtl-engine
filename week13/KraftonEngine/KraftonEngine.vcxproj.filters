@@ -1532,6 +1532,9 @@
     <ClCompile Include="Source\Engine\PhysicsEngine\BodySetupCore.cpp">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\ConstraintInstance.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAsset.cpp">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
@@ -2889,6 +2892,12 @@
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\ConvexElem.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\ConstraintInstance.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\ConstraintTypes.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAsset.h">

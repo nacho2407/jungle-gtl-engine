@@ -671,6 +671,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.cpp" />
     <ClCompile Include="Source\Engine\PhysicsEngine\AggregateGeom.cpp" />
     <ClCompile Include="Source\Engine\PhysicsEngine\BodySetupCore.cpp" />
+    <ClCompile Include="Source\Engine\PhysicsEngine\ConstraintInstance.cpp" />
     <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAsset.cpp" />
     <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsConstraintTemplate.cpp" />
     <ClCompile Include="Source\Engine\PhysicsEngine\SkeletalBodySetup.cpp" />
@@ -1125,6 +1126,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\PhysicsEngine\BodySetupCore.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\BoxElem.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\ConvexElem.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\ConstraintInstance.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\ConstraintTypes.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAsset.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsConstraintTemplate.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\ShapeElem.h" />
