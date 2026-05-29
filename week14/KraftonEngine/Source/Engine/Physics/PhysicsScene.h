@@ -19,11 +19,11 @@ public:
 	void Shutdown();
 	void Simulate(float DeltaTime);
 
-	FBodyInstance* CreateBody(UPrimitiveComponent* OwnerComp);
-	FBodyInstance* CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, const UBodySetup& BodySetup,
+	bool CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance);
+	bool CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance, const UBodySetup& BodySetup,
 		const FVector& WorldLocation, const FQuat& WorldRotation, ECollisionChannel ObjectType, ECollisionEnabled CollisionEnabled,
-		const FVector& Scale, bool bGenerateOverlapEvents);
-	void DestroyBody(FBodyInstance* Instance);
+		const FVector& Scale, bool bGenerateOverlapEvents, bool bSimulatePhysics);
+	void DestroyBody(FBodyInstance& Instance);
 
 	FConstraintInstance* CreateFixedConstraint(FBodyInstance* BodyA, FBodyInstance* BodyB,
 		const FTransform& LocalFrameA, const FTransform& LocalFrameB);

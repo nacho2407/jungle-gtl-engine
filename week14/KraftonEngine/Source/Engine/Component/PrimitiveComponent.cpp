@@ -11,6 +11,7 @@
 #include "GameFramework/World.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Physics/PhysicsScene.h"
+#include "Physics/BodyInstance.h"
 
 #include <cmath>
 #include <cstring>
@@ -38,6 +39,7 @@ HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
 
 UPrimitiveComponent::~UPrimitiveComponent()
 {
+	DestroyPhysicsState();
 	DestroyRenderState();
 }
 
@@ -154,7 +156,27 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	}
 	else if (strcmp(PropertyName, "CollisionEnabled") == 0 || strcmp(PropertyName, "Collision Enabled") == 0)
 	{
-		// World collision queries read CollisionEnabled directly.
+		RecreatePhysicsState();
+	}
+	else if (strcmp(PropertyName, "bSimulatePhysics") == 0 || strcmp(PropertyName, "Simulate Physics") == 0)
+	{
+		RecreatePhysicsState();
+	}
+	else if (strcmp(PropertyName, "bEnableGravity") == 0 || strcmp(PropertyName, "Enable Gravity") == 0)
+	{
+		if (BodyInstance.IsValidBody()) BodyInstance.SetGravityEnabled(bEnableGravity);
+	}
+	else if (strcmp(PropertyName, "Mass") == 0)
+	{
+		if (BodyInstance.IsValidBody()) BodyInstance.SetMass(Mass);
+	}
+	else if (strcmp(PropertyName, "LinearDamping") == 0 || strcmp(PropertyName, "Linear Damping") == 0)
+	{
+		if (BodyInstance.IsValidBody()) BodyInstance.SetLinearDamping(LinearDamping);
+	}
+	else if (strcmp(PropertyName, "AngularDamping") == 0 || strcmp(PropertyName, "Angular Damping") == 0)
+	{
+		if (BodyInstance.IsValidBody()) BodyInstance.SetAngularDamping(AngularDamping);
 	}
 }
 
@@ -176,18 +198,23 @@ void UPrimitiveComponent::MarkWorldBoundsDirty()
 
 void UPrimitiveComponent::CreatePhysicsState()
 {
-	if (BodyInstance || !Owner) return;
+	if (BodyInstance.IsValidBody() || !Owner) return;
 
 	UWorld* World = Owner->GetWorld();
 	if (!World || !World->GetPhysicsScene()) return;
 	if (CollisionEnabled == ECollisionEnabled::NoCollision) return;
 
-	BodyInstance = World->GetPhysicsScene()->CreateBody(this);
+	World->GetPhysicsScene()->CreateBody(this, BodyInstance);
+
+	if (BodyInstance.IsValidBody())
+	{
+		ApplyPhysicsSettingsToBody();
+	}
 }
 
 void UPrimitiveComponent::DestroyPhysicsState()
 {
-	if (!BodyInstance || !Owner) return;
+	if (!BodyInstance.IsValidBody() || !Owner) return;
 	
 	if (UWorld* World = Owner->GetWorld())
 	{
@@ -196,23 +223,39 @@ void UPrimitiveComponent::DestroyPhysicsState()
 			Scene->DestroyBody(BodyInstance);
 		}
 	}
-	BodyInstance = nullptr;
 }
 
 void UPrimitiveComponent::RecreatePhysicsState()
 {
-	const bool bShouldRecreate = BodyInstance != nullptr;
-	
-	if (bShouldRecreate)
+	if (BodyInstance.IsValidBody())
 	{
 		DestroyPhysicsState();
+	}
+
+	if (CollisionEnabled != ECollisionEnabled::NoCollision)
+	{
 		CreatePhysicsState();
 	}
 }
 
-FBodyInstance* UPrimitiveComponent::GetBodyInstance() const
+FBodyInstance* UPrimitiveComponent::GetBodyInstance()
 {
-	return BodyInstance;
+	return BodyInstance.IsValidBody() ? &BodyInstance : nullptr;
+}
+
+const FBodyInstance* UPrimitiveComponent::GetBodyInstance() const
+{
+	return BodyInstance.IsValidBody() ? &BodyInstance : nullptr;
+}
+
+void UPrimitiveComponent::ApplyPhysicsSettingsToBody()
+{
+	if (!BodyInstance.IsValidBody()) return;
+
+	BodyInstance.SetGravityEnabled(bEnableGravity);
+	BodyInstance.SetMass(Mass);
+	BodyInstance.SetLinearDamping(LinearDamping);
+	BodyInstance.SetAngularDamping(AngularDamping);
 }
 
 void UPrimitiveComponent::UpdateWorldAABB() const
@@ -420,6 +463,55 @@ ECollisionResponse UPrimitiveComponent::GetMinResponse(const UPrimitiveComponent
 	ECollisionResponse RespAtoB = A->GetCollisionResponseToChannel(B->GetCollisionObjectType());
 	ECollisionResponse RespBtoA = B->GetCollisionResponseToChannel(A->GetCollisionObjectType());
 	return (RespAtoB < RespBtoA) ? RespAtoB : RespBtoA;
+}
+
+void UPrimitiveComponent::SetSimulatePhysics(bool bInSimulatePhysics)
+{
+	if (bSimulatePhysics == bInSimulatePhysics) return;
+
+	bSimulatePhysics = bInSimulatePhysics;
+	RecreatePhysicsState();
+}
+
+void UPrimitiveComponent::SetEnableGravity(bool bInEnableGravity)
+{
+	if (bEnableGravity == bInEnableGravity) return;
+	bEnableGravity = bInEnableGravity;
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.SetGravityEnabled(bEnableGravity);
+	}
+}
+
+void UPrimitiveComponent::SetMass(float InMass)
+{
+	Mass = std::max(InMass, 0.001f);
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.SetMass(Mass);
+	}
+}
+
+void UPrimitiveComponent::SetLinearDamping(float InLinearDamping)
+{
+	LinearDamping = std::max(InLinearDamping, 0.0f);
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.SetLinearDamping(LinearDamping);
+	}
+}
+
+void UPrimitiveComponent::SetAngularDamping(float InAngularDamping)
+{
+	AngularDamping = std::max(InAngularDamping, 0.0f);
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.SetAngularDamping(AngularDamping);
+	}
 }
 
 // --- Overlap / Hit ---

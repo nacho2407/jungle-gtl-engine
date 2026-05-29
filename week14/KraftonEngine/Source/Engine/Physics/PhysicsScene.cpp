@@ -36,7 +36,15 @@ void FPhysicsScene::Shutdown()
 
 	while (!Bodies.empty())
 	{
-		DestroyBody(Bodies.back());
+		FBodyInstance* Body = Bodies.back();
+		if (Body)
+		{
+			DestroyBody(*Body);
+		}
+		else
+		{
+			Bodies.pop_back();
+		}
 	}
 
 	if (Scene)
@@ -68,44 +76,38 @@ void FPhysicsScene::Simulate(float DeltaTime)
 	}
 }
 
-FBodyInstance* FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp)
+bool FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance)
 {
-	if (!Scene || !OwnerComp) return nullptr;
+	if (!Scene || !OwnerComp) return false;
 
 	if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(OwnerComp))
 	{
 		UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
 		UBodySetup* BodySetup = StaticMesh ? StaticMesh->GetBodySetup() : nullptr;
 
-		if (!BodySetup) return nullptr;
+		if (!BodySetup) return false;
 
-		return CreateBodyFromSetup(OwnerComp, *BodySetup, OwnerComp->GetWorldLocation(), OwnerComp->GetWorldRotation().ToQuaternion(),
-			OwnerComp->GetCollisionObjectType(), OwnerComp->GetCollisionEnabled(), OwnerComp->GetWorldScale(), OwnerComp->GetGenerateOverlapEvents());
+		return CreateBodyFromSetup(OwnerComp, OutInstance, *BodySetup, OwnerComp->GetWorldLocation(), OwnerComp->GetWorldRotation().ToQuaternion(),
+			OwnerComp->GetCollisionObjectType(), OwnerComp->GetCollisionEnabled(), OwnerComp->GetWorldScale(),
+			OwnerComp->GetGenerateOverlapEvents(), OwnerComp->IsSimulatingPhysics());
 	}
 
 	physx::PxPhysics* Physics = FPhysXSDK::Get().GetPhysics();
 	physx::PxMaterial* DefaultMaterial = FPhysXSDK::Get().GetDefaultMaterial();
 
-	FBodyInstance* Instance = new FBodyInstance();
-	Instance->OwnerComponent = OwnerComp;
+	OutInstance.OwnerComponent = OwnerComp;
 
 	physx::PxRigidActor* Body = nullptr;
 
-	if (OwnerComp->GetCollisionObjectType() == ECollisionChannel::WorldStatic)
+	if (OwnerComp->IsSimulatingPhysics())
 	{
-		Body = Physics->createRigidStatic(ToPxTransform(OwnerComp->GetWorldLocation(), OwnerComp->GetWorldRotation().ToQuaternion()));
-		Instance->Mode = EBodyInstanceMode::Static;
+		Body = Physics->createRigidDynamic(ToPxTransform(OwnerComp->GetWorldLocation(), OwnerComp->GetWorldRotation().ToQuaternion()));
+		OutInstance.Mode = EBodyInstanceMode::Dynamic;
 	}
 	else
 	{
-		Body = Physics->createRigidDynamic(ToPxTransform(OwnerComp->GetWorldLocation(), OwnerComp->GetWorldRotation().ToQuaternion()));
-		Instance->Mode = EBodyInstanceMode::Dynamic;
-	}
-
-	if (!Body)
-	{
-		delete Instance;
-		return nullptr;
+		Body = Physics->createRigidStatic(ToPxTransform(OwnerComp->GetWorldLocation(), OwnerComp->GetWorldRotation().ToQuaternion()));
+		OutInstance.Mode = EBodyInstanceMode::Static;
 	}
 
 	const bool bTrigger = OwnerComp->GetGenerateOverlapEvents() || OwnerComp->GetCollisionEnabled() == ECollisionEnabled::QueryOnly;
@@ -116,8 +118,11 @@ FBodyInstance* FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp)
 	if (Shapes.empty())
 	{
 		Body->release();
-		delete Instance;
-		return nullptr;
+
+		OutInstance.Body = nullptr;
+		OutInstance.OwnerComponent = nullptr;
+		OutInstance.Mode = EBodyInstanceMode::Static;
+		return false;
 	}
 
 	for (physx::PxShape* Shape : Shapes)
@@ -128,47 +133,48 @@ FBodyInstance* FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp)
 		Shape->release();
 	}
 
-	Instance->Body = Body;
-	Body->userData = Instance;
+	OutInstance.Body = Body;
+	Body->userData = &OutInstance;
 
 	Scene->addActor(*Body);
-	Bodies.push_back(Instance);
+	Bodies.push_back(&OutInstance);
 
-	return Instance;
+	return true;
 }
 
-FBodyInstance* FPhysicsScene::CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, const UBodySetup& BodySetup,
+bool FPhysicsScene::CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance, const UBodySetup& BodySetup,
 	const FVector& WorldLocation, const FQuat& WorldRotation, ECollisionChannel ObjectType, ECollisionEnabled CollisionEnabled,
-	const FVector& Scale, bool bGenerateOverlapEvents)
+	const FVector& Scale, bool bGenerateOverlapEvents, bool bSimulatePhysics)
 {
-	if (!Scene) return nullptr;
+	if (!Scene) return false;
 
 	physx::PxPhysics* Physics = FPhysXSDK::Get().GetPhysics();
 	physx::PxMaterial* DefaultMaterial = FPhysXSDK::Get().GetDefaultMaterial();
-	if (!Physics || !DefaultMaterial) return nullptr;
+	if (!Physics || !DefaultMaterial) return false;
 
-	FBodyInstance* Instance = new FBodyInstance();
-	Instance->OwnerComponent = OwnerComp;
+	OutInstance.OwnerComponent = OwnerComp;
 
 	const physx::PxTransform Pose = ToPxTransform(WorldLocation, WorldRotation);
 
 	physx::PxRigidActor* Body = nullptr;
 
-	if (ObjectType == ECollisionChannel::WorldStatic)
+	if (bSimulatePhysics)
 	{
-		Body = Physics->createRigidStatic(Pose);
-		Instance->Mode = EBodyInstanceMode::Static;
+		Body = Physics->createRigidDynamic(Pose);
+		OutInstance.Mode = EBodyInstanceMode::Dynamic;
 	}
 	else
 	{
-		Body = Physics->createRigidDynamic(Pose);
-		Instance->Mode = EBodyInstanceMode::Dynamic;
+		Body = Physics->createRigidStatic(Pose);
+		OutInstance.Mode = EBodyInstanceMode::Static;
 	}
 
 	if (!Body)
 	{
-		delete Instance;
-		return nullptr;
+		OutInstance.Body = nullptr;
+		OutInstance.OwnerComponent = nullptr;
+		OutInstance.Mode = EBodyInstanceMode::Static;
+		return false;
 	}
 
 	const bool bTrigger = bGenerateOverlapEvents || CollisionEnabled == ECollisionEnabled::QueryOnly;
@@ -179,8 +185,10 @@ FBodyInstance* FPhysicsScene::CreateBodyFromSetup(UPrimitiveComponent* OwnerComp
 	if (Shapes.empty())
 	{
 		Body->release();
-		delete Instance;
-		return nullptr;
+		OutInstance.Body = nullptr;
+		OutInstance.OwnerComponent = nullptr;
+		OutInstance.Mode = EBodyInstanceMode::Static;
+		return false;
 	}
 
 	for (physx::PxShape* Shape : Shapes)
@@ -191,33 +199,33 @@ FBodyInstance* FPhysicsScene::CreateBodyFromSetup(UPrimitiveComponent* OwnerComp
 		Shape->release();
 	}
 
-	Instance->Body = Body;
-	Body->userData = Instance;
+	OutInstance.Body = Body;
+	Body->userData = &OutInstance;
 
 	Scene->addActor(*Body);
-	Bodies.push_back(Instance);
+	Bodies.push_back(&OutInstance);
 
-	return Instance;
+	return true;
 }
 
-void FPhysicsScene::DestroyBody(FBodyInstance* Instance)
+void FPhysicsScene::DestroyBody(FBodyInstance& Instance)
 {
-	if (!Instance) return;
+	Bodies.erase(std::remove(Bodies.begin(), Bodies.end(), &Instance), Bodies.end());
 
-	Bodies.erase(std::remove(Bodies.begin(), Bodies.end(), Instance), Bodies.end());
-
-	if (Instance->Body)
+	if (Instance.Body)
 	{
 		if (Scene)
 		{
-			Scene->removeActor(*Instance->Body);
+			Scene->removeActor(*Instance.Body);
 		}
 
-		Instance->Body->userData = nullptr;
-		Instance->Body->release();
-		Instance->Body = nullptr;
+		Instance.Body->userData = nullptr;
+		Instance.Body->release();
+		Instance.Body = nullptr;
 	}
-	delete Instance;
+
+	Instance.OwnerComponent = nullptr;
+	Instance.Mode = EBodyInstanceMode::Static;
 }
 
 FConstraintInstance* FPhysicsScene::CreateFixedConstraint(FBodyInstance* BodyA, FBodyInstance* BodyB,

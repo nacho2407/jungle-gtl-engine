@@ -9,13 +9,13 @@
 #include "Core/Delegate.h"
 #include "Render/Types/VertexTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
+#include "Physics/BodyInstance.h"
 
 #include "Source/Engine/Component/PrimitiveComponent.generated.h"
 class FPrimitiveSceneProxy;
 class FScene;
 class FMeshBuffer;
 class FOctree;
-struct FBodyInstance;
 
 // Overlap/Hit 델리게이트 시그니처
 // OnComponentBeginOverlap(OverlappedComp, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult)
@@ -90,7 +90,10 @@ public:
 	void CreatePhysicsState();
 	void DestroyPhysicsState();
 	void RecreatePhysicsState();
-	FBodyInstance* GetBodyInstance() const;
+	FBodyInstance* GetBodyInstance();
+	const FBodyInstance* GetBodyInstance() const;
+
+	void ApplyPhysicsSettingsToBody();
 
 	//Collision
 	virtual void UpdateWorldAABB() const;
@@ -153,6 +156,21 @@ public:
 	// 두 컴포넌트 간 최소(=더 제한적인) 응답을 반환
 	static ECollisionResponse GetMinResponse(const UPrimitiveComponent* A, const UPrimitiveComponent* B);
 
+	void SetSimulatePhysics(bool bInSimulate);
+	bool IsSimulatingPhysics() const { return bSimulatePhysics; }
+
+	void SetEnableGravity(bool bInEnable);
+	bool IsGravityEnabled() const { return bEnableGravity; }
+
+	void SetMass(float InMass);
+	float GetMass() const { return Mass; }
+
+	void SetLinearDamping(float InDamping);
+	float GetLinearDamping() const { return LinearDamping; }
+
+	void SetAngularDamping(float InDamping);
+	float GetAngularDamping() const { return AngularDamping; }
+
 	void SetGenerateOverlapEvents(bool bInGenerateOverlapEvents);
 	bool GetGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
 
@@ -207,10 +225,23 @@ protected:
 	bool bCastShadowAsTwoSided = false;
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Translucent Sort Priority")
 	int32 TranslucentSortPriority = 0;
+
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Simulate Physics")
+	bool bSimulatePhysics = false;
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Enable Gravity")
+	bool bEnableGravity = true;
+
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Mass", Min=0.001f, Speed=0.1f)
+	float Mass = 1.0f;
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Linear Damping", Min=0.0f, Speed=0.1f)
+	float LinearDamping = 0.01f;
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Angular Damping", Min=0.0f, Speed=0.1f)
+	float AngularDamping = 0.01f;
+
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Generate Overlap Events")
 	bool bGenerateOverlapEvents = false;
 
-	FBodyInstance* BodyInstance = nullptr;
+	FBodyInstance BodyInstance;
 
 	// 물리 파라미터 — RootComponent의 값만 백엔드에 적용 (compound shape 정책).
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Enabled", Enum=ECollisionEnabled)

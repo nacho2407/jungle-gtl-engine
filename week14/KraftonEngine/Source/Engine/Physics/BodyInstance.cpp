@@ -25,6 +25,40 @@ void FBodyInstance::SetKinematic(bool bEnable)
 	}
 }
 
+void FBodyInstance::SetMass(float InMass)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		Dynamic->setMass(std::max(InMass, 0.001f));
+	}
+}
+
+float FBodyInstance::GetMass() const
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		return Dynamic->getMass();
+	}
+
+	return 0.0f;
+}
+
+void FBodyInstance::SetLinearDamping(float InDamping)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		Dynamic->setLinearDamping(std::max(InDamping, 0.0f));
+	}
+}
+
+void FBodyInstance::SetAngularDamping(float InDamping)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		Dynamic->setAngularDamping(std::max(InDamping, 0.0f));
+	}
+}
+
 FTransform FBodyInstance::GetBodyTransform() const
 {
 	if (!Body) return FTransform();

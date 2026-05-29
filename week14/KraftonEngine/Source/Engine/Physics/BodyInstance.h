@@ -27,6 +27,12 @@ struct FBodyInstance
 	void SetGravityEnabled(bool bEnabled);
 	void SetKinematic(bool bEnable);
 
+	void SetMass(float InMass);
+	float GetMass() const;
+
+	void SetLinearDamping(float InDamping);
+	void SetAngularDamping(float InDamping);
+
 	FTransform GetBodyTransform() const;
 	void SetBodyTransform(const FTransform& Transform);
 
