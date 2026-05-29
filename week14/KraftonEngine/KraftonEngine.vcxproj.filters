@@ -1738,6 +1738,7 @@
     <ClCompile Include="Source\Engine\Physics\BodySetup.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXSDK.cpp" />
     <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
+    <ClCompile Include="HighPerformanceGPUHint.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">

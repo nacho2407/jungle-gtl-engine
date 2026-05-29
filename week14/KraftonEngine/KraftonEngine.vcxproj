@@ -430,6 +430,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="HighPerformanceGPUHint.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
