@@ -21,11 +21,26 @@ struct FTransform
 	FTransform(const FVector& NewLocation, const FVector& EulerRotation, const FVector& NewScale)
 		: Location(NewLocation), Rotation(FRotator(EulerRotation).ToQuaternion()), Scale(NewScale) {}
 
+	FTransform(const FVector& InTranslation)
+		: Location(InTranslation), Rotation(FQuat::Identity), Scale(1.0f, 1.0f, 1.0f) {}
+
+	FTransform(const FVector& InTranslation, const FRotator& InRotation)
+		: Location(InTranslation), Rotation(InRotation.ToQuaternion()), Scale(1.0f, 1.0f, 1.0f) {}
+
 	FTransform(const FMatrix& Mat);
 
+	FVector GetLocation() const { return Location; }
 	FRotator GetRotator() const { return Rotation.ToRotator(); }
 	void SetRotation(const FRotator& Rot) { Rotation = Rot.ToQuaternion(); }
 	void SetRotation(const FQuat& Quat) { Rotation = Quat; }
 
+	FVector TransformPosition(const FVector& Position) const;
+	FVector TransformVectorNoScale(const FVector& Vector) const;
+	FVector TransformPositionNoScale(const FVector& Position) const;
+	FVector InverseTransformPositionNoScale(const FVector& Position) const;
+
 	FMatrix ToMatrix() const;
+
+	FTransform operator*(const FTransform& Other) const;
+	FTransform& operator*=(const FTransform& Other);
 };

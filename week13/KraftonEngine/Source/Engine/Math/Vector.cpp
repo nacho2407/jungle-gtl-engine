@@ -51,6 +51,16 @@ float FVector::GetAbsMax() const
 	return std::max(std::max(std::abs(X), std::abs(Y)), std::abs(Z));
 }
 
+float FVector::GetAbsMin() const
+{
+	return std::min(std::min(std::abs(X), std::abs(Y)), std::abs(Z));
+}
+
+FVector FVector::GetAbs() const
+{
+	return FVector(std::abs(X), std::abs(Y), std::abs(Z));
+}
+
 float FVector::Dot(const FVector& Other) const {
 #if defined(__AVX2__) 
 	__m128 vTemp = _mm_dp_ps(_mm_set_ps(0.f, Z, Y, X), _mm_set_ps(0.f, Other.Z, Other.Y, Other.X), 0xff);
@@ -213,6 +223,15 @@ FVector& FVector::operator*=(float Scalar) {
 FVector& FVector::operator/=(float Scalar) {
 	*this = *this / Scalar;
 	return *this;
+}
+
+bool FVector::operator==(const FVector& Other) const
+{
+	constexpr float Tolerance = 0.0001f;
+
+	return std::abs(X - Other.X) <= Tolerance
+		&& std::abs(Y - Other.Y) <= Tolerance
+		&& std::abs(Z - Other.Z) <= Tolerance;
 }
 
 const FVector FVector::ZeroVector(0.f, 0.f, 0.f);

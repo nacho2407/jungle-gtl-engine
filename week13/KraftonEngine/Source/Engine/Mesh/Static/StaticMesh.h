@@ -4,6 +4,7 @@
 #include "Collision/BVH/MeshTriangleBVH.h"
 #include "Mesh/Static/StaticMeshAsset.h"
 #include "Serialization/Archive.h"
+#include "Engine/PhysicsEngine/BodySetup.h"
 
 #include "Source/Engine/Mesh/Static/StaticMesh.generated.h"
 #include <memory>
@@ -60,4 +61,6 @@ private:
 	// LOD1 (70%), LOD2 (50%), LOD3 (25%) — LOD0 is the original StaticMeshAsset
 	FLODMeshData AdditionalLODs[3];
 	bool bHasLOD = false;
+
+	UBodySetup* BodySetup;
 };

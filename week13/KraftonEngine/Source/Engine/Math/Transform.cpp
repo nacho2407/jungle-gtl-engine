@@ -17,3 +17,34 @@ FMatrix FTransform::ToMatrix() const
 
 	return scaleMatrix * rotationMatrix * translateMatrix;
 }
+
+FVector FTransform::TransformPosition(const FVector& Position) const
+{
+	return ToMatrix().TransformPosition(Position);
+}
+
+FVector FTransform::TransformVectorNoScale(const FVector& Vector) const
+{
+	return Rotation.RotateVector(Vector);
+}
+
+FVector FTransform::TransformPositionNoScale(const FVector& Position) const
+{
+	return Location + TransformVectorNoScale(Position);
+}
+
+FVector FTransform::InverseTransformPositionNoScale(const FVector& Position) const
+{
+	return Rotation.Inverse().RotateVector(Position - Location);
+}
+
+FTransform FTransform::operator*(const FTransform& Other) const
+{
+	return FTransform(ToMatrix() * Other.ToMatrix());
+}
+
+FTransform& FTransform::operator*=(const FTransform& Other)
+{
+	*this = *this * Other;
+	return *this;
+}
