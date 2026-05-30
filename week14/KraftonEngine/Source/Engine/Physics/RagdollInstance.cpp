@@ -11,12 +11,43 @@
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Math/Matrix.h"
 
+namespace
+{
+	FVector ScaleVectorComponentWise(const FVector& Value, const FVector& Scale)
+	{
+		return FVector(Value.X * Scale.X, Value.Y * Scale.Y, Value.Z * Scale.Z);
+	}
+
+	FTransform ScaleConstraintFrame(const FTransform& Frame, const FVector& Scale)
+	{
+		FTransform Result = Frame;
+		Result.Location = ScaleVectorComponentWise(Frame.Location, Scale);
+		return Result;
+	}
+}
+
 void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* MeshComp, FPhysicsScene* Scene)
 {
 	if (bInitialized || !Asset || !MeshComp || !Scene)
 	{
 		return;
 	}
+
+	USkeletalMesh* Mesh = MeshComp->GetSkeletalMesh();
+	FSkeletalMesh* SkeletalAsset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+	if (!SkeletalAsset)
+	{
+		return;
+	}
+
+	const int32 NumBones = static_cast<int32>(SkeletalAsset->Bones.size());
+	InitialLocalPose.clear();
+	InitialLocalPose.reserve(NumBones);
+	for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+	{
+		InitialLocalPose.push_back(MeshComp->GetBoneLocalTransformByIndex(BoneIndex));
+	}
+	ComponentWorldScaleAtStart = MeshComp->GetWorldScale();
 
 	const TArray<UBodySetup*>& BodySetups = Asset->GetBodySetups();
 	const int32 NumSetups = static_cast<int32>(BodySetups.size());
@@ -26,7 +57,6 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 
 	TMap<FString, int32> BoneToBody;
 
-	// 바디 생성
 	for (UBodySetup* Setup : BodySetups)
 	{
 		if (!Setup) continue;
@@ -46,7 +76,7 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 		const bool bCreated = Scene->CreateBodyFromSetup(MeshComp, Body, *Setup,
 			BoneWorld.Location, BoneWorld.Rotation,
 			ECollisionChannel::Pawn, ECollisionEnabled::QueryAndPhysics,
-			FVector::OneVector, false, true);
+			ComponentWorldScaleAtStart, false, true);
 
 		if (!bCreated)
 		{
@@ -59,7 +89,6 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 		BoneToBody[BoneName] = BodyIndex;
 	}
 
-	// 조인트 생성
 	for (UPhysicsConstraintTemplate* Constraint : Asset->GetConstraintTemplates())
 	{
 		if (!Constraint) continue;
@@ -68,12 +97,15 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 		auto ItChild  = BoneToBody.find(Constraint->GetChildBoneName().ToString());
 		if (ItParent == BoneToBody.end() || ItChild == BoneToBody.end())
 		{
-			continue; // 양쪽 바디가 다 있어야 연결
+			continue;
 		}
+
+		const FTransform LocalFrameA = ScaleConstraintFrame(Constraint->GetLocalFrameA(), ComponentWorldScaleAtStart);
+		const FTransform LocalFrameB = ScaleConstraintFrame(Constraint->GetLocalFrameB(), ComponentWorldScaleAtStart);
 
 		FConstraintInstance* Inst = Scene->CreateD6Constraint(
 			&Bodies[ItParent->second], &Bodies[ItChild->second],
-			Constraint->GetLocalFrameA(), Constraint->GetLocalFrameB(),
+			LocalFrameA, LocalFrameB,
 			Constraint->GetAngularMode(),
 			Constraint->GetSwing1Limit(), Constraint->GetSwing2Limit(), Constraint->GetTwistLimit());
 
@@ -90,7 +122,6 @@ void FRagdollInstance::Release(FPhysicsScene* Scene)
 {
 	if (Scene)
 	{
-		// 조인트 먼저, 그 다음 바디 (의존 역순)
 		for (FConstraintInstance* Inst : Constraints)
 		{
 			Scene->DestroyConstraint(Inst);
@@ -104,6 +135,8 @@ void FRagdollInstance::Release(FPhysicsScene* Scene)
 	Constraints.clear();
 	Bodies.clear();
 	BodyToBoneIndex.clear();
+	InitialLocalPose.clear();
+	ComponentWorldScaleAtStart = FVector::OneVector;
 	bInitialized = false;
 }
 
@@ -122,21 +155,18 @@ void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 	}
 
 	const int32 NumBones = static_cast<int32>(Asset->Bones.size());
-	if (NumBones == 0)
+	if (NumBones == 0 || static_cast<int32>(InitialLocalPose.size()) != NumBones)
 	{
 		return;
 	}
 
-	// 월드 → 컴포넌트 공간 변환
 	const FMatrix CompWorldInv = MeshComp->GetWorldMatrix().GetInverse();
 
-	// 각 본의 컴포넌트-공간 글로벌 행렬을 구한다. (parent-first 순서 가정)
 	TArray<FMatrix> CompGlobal;
 	CompGlobal.resize(NumBones, FMatrix::Identity);
 	TArray<bool> bHasBody;
 	bHasBody.resize(NumBones, false);
 
-	// 1) 바디가 있는 본 → 바디의 월드 트랜스폼을 컴포넌트 공간으로
 	for (int32 i = 0; i < static_cast<int32>(Bodies.size()); ++i)
 	{
 		if (!Bodies[i].IsValidBody())
@@ -155,7 +185,6 @@ void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 		bHasBody[BoneIndex]   = true;
 	}
 
-	// 2) 바디 없는 본 → 부모를 따라간다(레퍼런스 로컬 × 부모 글로벌)
 	for (int32 b = 0; b < NumBones; ++b)
 	{
 		if (bHasBody[b])
@@ -165,11 +194,10 @@ void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 
 		const int32 Parent = Asset->Bones[b].ParentIndex;
 		CompGlobal[b] = (Parent >= 0 && Parent < b)
-			? Asset->Bones[b].GetReferenceLocalPose() * CompGlobal[Parent]
-			: Asset->Bones[b].GetReferenceLocalPose(); // 루트
+			? InitialLocalPose[b].ToMatrix() * CompGlobal[Parent]
+			: InitialLocalPose[b].ToMatrix();
 	}
 
-	// 3) 컴포넌트 글로벌 → 로컬(부모 상대)로 변환 → 포즈 주입
 	TArray<FTransform> LocalPose;
 	LocalPose.resize(NumBones);
 
@@ -179,7 +207,9 @@ void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 		const FMatrix Local = (Parent >= 0)
 			? CompGlobal[b] * CompGlobal[Parent].GetInverse()
 			: CompGlobal[b];
+
 		LocalPose[b] = FTransform(Local);
+		LocalPose[b].Scale = InitialLocalPose[b].Scale;
 	}
 
 	MeshComp->SetBoneLocalTransforms(LocalPose);

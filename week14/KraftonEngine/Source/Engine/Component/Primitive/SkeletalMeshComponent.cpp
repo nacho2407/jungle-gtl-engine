@@ -21,6 +21,7 @@
 #include "Serialization/Archive.h"
 
 #include "Physics/RagdollInstance.h"
+#include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsScene.h"
 #include "GameFramework/World.h"
 #include "Input/InputSystem.h"
@@ -307,6 +308,9 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	// [임시 트리거] R 키로 래그돌 토글 (테스트용 — 나중에 게임 입력으로 교체)
 	if (InputSystem::Get().GetKeyDown('R'))
 	{
+		UE_LOG("Ragdoll toggle key detected. Enable=%s Mesh=%s",
+			bSimulatingPhysics ? "false" : "true",
+			GetSkeletalMesh() ? GetSkeletalMesh()->GetAssetPathFileName().c_str() : "None");
 		SetSimulatePhysics(!bSimulatingPhysics);
 	}
 
@@ -338,6 +342,7 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 	FPhysicsScene* Scene = World ? World->GetPhysicsScene() : nullptr;
 	if (!Scene)
 	{
+		UE_LOG("Ragdoll toggle skipped: PhysicsScene not available.");
 		return; // 물리 씬 없음(예: 에디터 프리뷰) → 래그돌 불가
 	}
 
@@ -346,6 +351,9 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 		UPhysicsAsset* Asset = GetPhysicsAsset(); // 3-B: 오버라이드 ?? 메시 기본
 		if (!Asset)
 		{
+			USkeletalMesh* Mesh = GetSkeletalMesh();
+			UE_LOG("Ragdoll enable skipped: PhysicsAsset not found. Mesh=%s",
+				Mesh ? Mesh->GetAssetPathFileName().c_str() : "None");
 			return; // PhysicsAsset 링크 없음
 		}
 
@@ -355,6 +363,12 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 		}
 		Ragdoll->Initialize(Asset, this, Scene);
 		bSimulatingPhysics = Ragdoll->IsActive();
+		if (!bSimulatingPhysics)
+		{
+			UE_LOG("Ragdoll enable failed: instance did not initialize. Mesh=%s PhysicsAsset=%s",
+				GetSkeletalMesh() ? GetSkeletalMesh()->GetAssetPathFileName().c_str() : "None",
+				Asset->GetSourcePath().c_str());
+		}
 	}
 	else
 	{

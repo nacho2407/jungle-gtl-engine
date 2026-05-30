@@ -13,6 +13,8 @@ struct FRagdollInstance
 	TArray<FBodyInstance> Bodies;
 	TArray<int32> BodyToBoneIndex;
 	TArray<FConstraintInstance*> Constraints;
+	TArray<FTransform> InitialLocalPose;
+	FVector ComponentWorldScaleAtStart = FVector::OneVector;
 
 	bool bInitialized = false;
 	bool IsActive() const {return bInitialized;}
