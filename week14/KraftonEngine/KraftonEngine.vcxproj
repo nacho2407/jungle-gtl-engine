@@ -605,9 +605,11 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClCompile Include="Source\Engine\GameFramework\Actor\SphereActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\CameraModifier.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeBase.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CineCameraActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.cpp" />
@@ -990,10 +992,12 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Engine\GameFramework\Actor\SphereActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraModifier.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraShakeBase.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraTypes.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CineCameraActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.h" />

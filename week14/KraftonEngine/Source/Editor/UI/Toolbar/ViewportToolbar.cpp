@@ -6,6 +6,7 @@
 #include "Settings/EditorViewportSettings.h"
 #include "Settings/GizmoToolSettings.h"
 
+#include <algorithm>
 #include <imgui.h>
 
 #pragma region Toolbar Icon Helper
@@ -105,7 +106,12 @@ static float CalcRightToolbarWidth(const FViewportToolbarContext& Context)
 
 	if (Context.bShowViewportType)
 	{
-		AddGroup(TextButtonMinWidth);
+		float ViewportTypeWidth = TextButtonMinWidth;
+		if (!Context.ViewportTypeLabelOverride.empty())
+		{
+			ViewportTypeWidth = (std::max)(120.0f, ImGui::CalcTextSize(Context.ViewportTypeLabelOverride.c_str()).x + 20.0f);
+		}
+		AddGroup(ViewportTypeWidth);
 	}
 
 	if (Context.bShowCameraControls)
@@ -375,14 +381,31 @@ void FViewportToolbar::RenderViewportType(const FToolbarRenderState& State)
 		CurrentTypeIndex = 0;
 	}
 
-	ImGui::SetNextItemWidth(90.0f);
-	if (ImGui::Button(ViewportTypeNames[CurrentTypeIndex], ImVec2(90.0f, 0.0f)))
+	const char* ButtonLabel = State.Context.ViewportTypeLabelOverride.empty()
+		? ViewportTypeNames[CurrentTypeIndex]
+		: State.Context.ViewportTypeLabelOverride.c_str();
+	const float ButtonWidth = State.Context.ViewportTypeLabelOverride.empty()
+		? 90.0f
+		: (std::max)(120.0f, ImGui::CalcTextSize(ButtonLabel).x + 20.0f);
+
+	ImGui::SetNextItemWidth(ButtonWidth);
+	if (ImGui::Button(ButtonLabel, ImVec2(ButtonWidth, 0.0f)))
 	{
 		ImGui::OpenPopup("##ViewportTypePopup");
 	}
 
 	if (ImGui::BeginPopup("##ViewportTypePopup"))
 	{
+		if (State.Context.OnStopPiloting)
+		{
+			if (ImGui::MenuItem("Stop Piloting"))
+			{
+				State.Context.OnStopPiloting();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::Separator();
+		}
+
 		for (int32 TypeIndex = 0; TypeIndex < ViewportTypeCount; ++TypeIndex)
 		{
 			const bool bSelected = TypeIndex == CurrentTypeIndex;
@@ -397,6 +420,17 @@ void FViewportToolbar::RenderViewportType(const FToolbarRenderState& State)
 				{
 					RenderOptions.ViewportType = NewType;
 				}
+				ImGui::CloseCurrentPopup();
+			}
+		}
+
+		if (State.Context.OnRenderPlacedCameraMenu)
+		{
+			ImGui::Separator();
+			if (ImGui::BeginMenu("Placed Cameras"))
+			{
+				State.Context.OnRenderPlacedCameraMenu();
+				ImGui::EndMenu();
 			}
 		}
 		ImGui::EndPopup();

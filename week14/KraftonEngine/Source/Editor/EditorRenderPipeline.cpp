@@ -290,7 +290,13 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMi
 
 	Frame.bIsLightView = VC->IsViewingFromLight();
 	Frame.WorldType = World->GetWorldType();
-	Frame.SetRenderOptions(VC->GetRenderOptions());
+	FViewportRenderOptions RenderOptions = VC->GetRenderOptions();
+	if (VC->IsPilotingActor())
+	{
+		RenderOptions.ShowFlags.bGizmo = false;
+		Frame.HiddenEditorOnlyActorForView = VC->GetPilotedActor();
+	}
+	Frame.SetRenderOptions(RenderOptions);
 	Frame.OcclusionCulling = &GetOcclusionForViewport(VC);
 	Frame.LODContext = World->PrepareLODContext();
 
@@ -377,6 +383,7 @@ void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* 
 	Frame.SetViewportInfo(VP);
 	Frame.SetCameraInfo(POV);
 	Frame.WorldType = World->GetWorldType();
+	Frame.HiddenEditorOnlyActorForView = nullptr;
 
 	Frame.SetRenderOptions(VC->GetRenderOptions());
 

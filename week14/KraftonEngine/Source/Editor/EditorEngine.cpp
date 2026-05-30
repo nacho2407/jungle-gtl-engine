@@ -390,6 +390,8 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	{
 		return;
 	}
+	ViewportLayout.StopAllPiloting(false);
+
 	// DuplicateAs(PIE)로 복제하면 Actor 복제 전에 WorldType이 설정되어
 	// EditorOnly 컴포넌트의 프록시가 아예 생성되지 않음.
 	UWorld* PIEWorld = EditorWorld->DuplicateAs(EWorldType::PIE);
@@ -682,6 +684,7 @@ void UEditorEngine::LoadStartLevel()
 void UEditorEngine::ClearScene()
 {
 	StopPlayInEditorImmediate();
+	ViewportLayout.StopAllPiloting(false);
 	SelectionManager.ClearSelection();
 	SelectionManager.SetWorld(nullptr);
 

@@ -1223,6 +1223,9 @@
     <ClCompile Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.cpp">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraActor.cpp">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Camera\CameraModifier.cpp">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClCompile>
@@ -1230,6 +1233,9 @@
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.cpp">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CineCameraActor.cpp">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.cpp">
@@ -2359,6 +2365,9 @@
     <ClInclude Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.h">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraActor.h">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraModifier.h">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClInclude>
@@ -2369,6 +2378,9 @@
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraTypes.h">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CineCameraActor.h">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.h">

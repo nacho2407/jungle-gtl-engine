@@ -14,6 +14,7 @@
 class UCameraComponent;
 class FViewport;
 class FGPUOcclusionCulling;
+class AActor;
 struct FMinimalViewInfo;
 
 /*
@@ -77,6 +78,7 @@ struct FFrameContext
 
 	// Render Settings (Single Source of Truth)
 	FViewportRenderOptions RenderOptions;
+	AActor* HiddenEditorOnlyActorForView = nullptr;
 
 	FVector    WireframeColor = FVector(0.0f, 0.0f, 0.7f);
 
@@ -141,5 +143,6 @@ struct FFrameContext
 		BloomSRVA               = nullptr;
 		BloomRTVB               = nullptr;
 		BloomSRVB               = nullptr;
+		HiddenEditorOnlyActorForView = nullptr;
 	}
 };

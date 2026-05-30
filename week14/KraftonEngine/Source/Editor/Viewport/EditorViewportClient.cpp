@@ -28,6 +28,7 @@ UWorld* FEditorViewportClient::GetWorld() const
 #include "GameFramework/AActor.h"
 #include "Viewport/GameViewportClient.h"
 #include "ImGui/imgui.h"
+#include "Component/Camera/CameraComponent.h"
 #include "Component/Light/LightComponentBase.h"
 
 namespace
@@ -80,15 +81,136 @@ void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 
 void FEditorViewportClient::ResetCamera()
 {
+	StopPilotingActor(false);
+
 	if (!Settings) return;
 	ViewTransform.ViewLocation = Settings->InitViewPos;
 	ViewTransform.LookAt(Settings->InitLookAt);
 	SyncCameraSmoothingTarget();
 }
 
+AActor* FEditorViewportClient::GetPilotedActor() const
+{
+	return Cast<AActor>(PilotedActor.Get());
+}
+
+UCameraComponent* FEditorViewportClient::GetPilotedCamera() const
+{
+	return Cast<UCameraComponent>(PilotedCamera.Get());
+}
+
+bool FEditorViewportClient::HasValidPilotedCamera() const
+{
+	AActor* Actor = GetPilotedActor();
+	UCameraComponent* Camera = GetPilotedCamera();
+	if (!Actor || !Camera || Camera->GetOwner() != Actor)
+	{
+		return false;
+	}
+
+	UWorld* World = GetWorld();
+	return World && Actor->GetWorld() == World;
+}
+
+bool FEditorViewportClient::IsPilotingActor() const
+{
+	return HasValidPilotedCamera();
+}
+
+void FEditorViewportClient::PilotCameraActor(AActor* Actor, UCameraComponent* Camera)
+{
+	if (!Actor || !Camera || Camera->GetOwner() != Actor)
+	{
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World || Actor->GetWorld() != World)
+	{
+		return;
+	}
+
+	if (!HasValidPilotedCamera())
+	{
+		SavedViewTransformBeforePilot = ViewTransform;
+		bHasSavedViewTransformBeforePilot = true;
+	}
+
+	PilotedActor = FWeakObjectPtr(Actor);
+	PilotedCamera = FWeakObjectPtr(Camera);
+	bHasPilotedTarget = true;
+	ClearLightViewOverride();
+
+	if (Viewport && Viewport->GetWidth() > 0 && Viewport->GetHeight() > 0)
+	{
+		Camera->OnResize(static_cast<int32>(Viewport->GetWidth()), static_cast<int32>(Viewport->GetHeight()));
+	}
+
+	FMinimalViewInfo CameraPOV;
+	Camera->GetCameraView(0.0f, CameraPOV);
+	ViewTransform.ViewLocation = CameraPOV.Location;
+	ViewTransform.ViewRotation = CameraPOV.Rotation;
+	ViewTransform.FOV = CameraPOV.FOV;
+	ViewTransform.AspectRatio = CameraPOV.AspectRatio;
+	ViewTransform.OrthoZoom = CameraPOV.OrthoWidth;
+	ViewTransform.NearClip = CameraPOV.NearClip;
+	ViewTransform.FarClip = CameraPOV.FarClip;
+	ViewTransform.bIsOrtho = CameraPOV.bIsOrtho;
+	RenderOptions.ViewportType = CameraPOV.bIsOrtho
+		? ELevelViewportType::FreeOrthographic
+		: ELevelViewportType::Perspective;
+	SyncCameraSmoothingTarget();
+}
+
+void FEditorViewportClient::StopPilotingActor(bool bRestoreSavedView)
+{
+	if (!bHasPilotedTarget)
+	{
+		return;
+	}
+
+	if (bRestoreSavedView && bHasSavedViewTransformBeforePilot)
+	{
+		ViewTransform = SavedViewTransformBeforePilot;
+	}
+	else if (HasValidPilotedCamera())
+	{
+		FMinimalViewInfo CameraPOV;
+		GetPilotedCamera()->GetCameraView(0.0f, CameraPOV);
+		ViewTransform.ViewLocation = CameraPOV.Location;
+		ViewTransform.ViewRotation = CameraPOV.Rotation;
+		ViewTransform.FOV = CameraPOV.FOV;
+		ViewTransform.AspectRatio = CameraPOV.AspectRatio;
+		ViewTransform.OrthoZoom = CameraPOV.OrthoWidth;
+		ViewTransform.NearClip = CameraPOV.NearClip;
+		ViewTransform.FarClip = CameraPOV.FarClip;
+		ViewTransform.bIsOrtho = CameraPOV.bIsOrtho;
+	}
+
+	PilotedActor = FWeakObjectPtr();
+	PilotedCamera = FWeakObjectPtr();
+	bHasPilotedTarget = false;
+	bHasSavedViewTransformBeforePilot = false;
+	SyncCameraSmoothingTarget();
+}
+
+void FEditorViewportClient::UpdatePilotedCameraValidity()
+{
+	if (bHasPilotedTarget && !HasValidPilotedCamera())
+	{
+		StopPilotingActor(true);
+	}
+}
+
 // IPOVProvider — World 가 LOD/render 의 POV 가 필요할 때 pull. ViewTransform 이 SoT.
 bool FEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
 {
+	if (HasValidPilotedCamera())
+	{
+		GetPilotedCamera()->GetCameraView(0.0f, OutPOV);
+		return true;
+	}
+
 	OutPOV.Location    = ViewTransform.ViewLocation;
 	OutPOV.Rotation    = ViewTransform.ViewRotation;
 	OutPOV.FOV         = ViewTransform.FOV;
@@ -102,6 +224,7 @@ bool FEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) const
 
 void FEditorViewportClient::SetViewportType(ELevelViewportType NewType)
 {
+	StopPilotingActor(true);
 	RenderOptions.ViewportType = NewType;
 
 	if (NewType == ELevelViewportType::Perspective)
@@ -179,6 +302,11 @@ void FEditorViewportClient::SetViewportSize(float InWidth, float InHeight)
 
 void FEditorViewportClient::NotifyViewportResized(int32 NewWidth, int32 NewHeight)
 {
+	if (NewHeight > 0 && HasValidPilotedCamera())
+	{
+		GetPilotedCamera()->OnResize(NewWidth, NewHeight);
+	}
+
 	// D.2: ViewTransform 이 SoT — AspectRatio 직접 갱신 후 컴포넌트 미러.
 	if (NewHeight > 0)
 	{
@@ -188,6 +316,8 @@ void FEditorViewportClient::NotifyViewportResized(int32 NewWidth, int32 NewHeigh
 
 void FEditorViewportClient::Tick(float DeltaTime)
 {
+	UpdatePilotedCameraValidity();
+
 	if (!bIsActive) return;
 
 	if (UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine))
@@ -420,6 +550,12 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	// 텍스트 입력 중에는 카메라 키/마우스 조작을 가로채지 않는다.
 	if (ImGui::GetIO().WantTextInput) return;
 
+	if (IsPilotingActor())
+	{
+		TickPilotedActorInput(DeltaTime);
+		return;
+	}
+
 	InputSystem& Input = InputSystem::Get();
 	const bool bCtrlHeld = Input.GetKey(VK_CONTROL);
 
@@ -527,9 +663,126 @@ void FEditorViewportClient::TickInput(float DeltaTime)
 	}
 }
 
+void FEditorViewportClient::TickPilotedActorInput(float DeltaTime)
+{
+	AActor* Actor = GetPilotedActor();
+	UCameraComponent* Camera = GetPilotedCamera();
+	if (!Actor || !Camera)
+	{
+		UpdatePilotedCameraValidity();
+		return;
+	}
+
+	InputSystem& Input = InputSystem::Get();
+	const bool bCtrlHeld = Input.GetKey(VK_CONTROL);
+
+	FMinimalViewInfo CameraPOV;
+	Camera->GetCameraView(DeltaTime, CameraPOV);
+
+	const float MoveSensitivity = RenderOptions.CameraMoveSensitivity;
+	const float CameraSpeed = (Settings ? Settings->LevelViewportCameraControls.MoveSpeed : 10.f) * MoveSensitivity;
+	const float PanMouseScale = CameraSpeed * 0.01f;
+
+	FVector LocalMove = FVector(0, 0, 0);
+	float WorldVerticalMove = 0.0f;
+
+	if (!bCtrlHeld && Input.GetKey('W'))
+		LocalMove.X += CameraSpeed;
+	if (!bCtrlHeld && Input.GetKey('A'))
+		LocalMove.Y -= CameraSpeed;
+	if (!bCtrlHeld && Input.GetKey('S'))
+		LocalMove.X -= CameraSpeed;
+	if (!bCtrlHeld && Input.GetKey('D'))
+		LocalMove.Y += CameraSpeed;
+	if (!bCtrlHeld && Input.GetKey('Q'))
+		WorldVerticalMove -= CameraSpeed;
+	if (!bCtrlHeld && Input.GetKey('E'))
+		WorldVerticalMove += CameraSpeed;
+
+	const FVector Forward = CameraPOV.Rotation.GetForwardVector();
+	const FVector Right   = CameraPOV.Rotation.GetRightVector();
+	const FVector Up      = CameraPOV.Rotation.GetUpVector();
+
+	FVector DeltaMove = (Forward * LocalMove.X + Right * LocalMove.Y) * DeltaTime;
+	DeltaMove.Z += WorldVerticalMove * DeltaTime;
+
+	if (Input.GetKey(VK_MBUTTON))
+	{
+		const float DeltaX = static_cast<float>(Input.MouseDeltaX());
+		const float DeltaY = static_cast<float>(Input.MouseDeltaY());
+		DeltaMove += (Right * (-DeltaX * PanMouseScale * 0.15f)) + (Up * (DeltaY * PanMouseScale * 0.15f));
+	}
+
+	const float ScrollNotches = Input.GetScrollNotches();
+	if (ScrollNotches != 0.0f)
+	{
+		if (Input.GetKey(VK_RBUTTON))
+		{
+			float& MoveSpeed = FEditorSettings::Get().LevelViewportCameraControls.MoveSpeed;
+			MoveSpeed = ScrollNotches < 0.0f ? MoveSpeed * 0.9f : MoveSpeed * 1.1f;
+			MoveSpeed = Clamp(MoveSpeed, 0.001f, 1000.0f);
+		}
+		else
+		{
+			const float ZoomSpeed = Settings ? Settings->LevelViewportCameraControls.ZoomSpeed : 300.f;
+			DeltaMove += Forward * (ScrollNotches * ZoomSpeed * 0.015f);
+		}
+	}
+
+	if (DeltaMove.LengthSquared() > 0.0f)
+	{
+		Actor->AddActorWorldOffset(DeltaMove);
+	}
+
+	float DeltaYaw = 0.0f;
+	float DeltaPitch = 0.0f;
+	const float RotateSensitivity = RenderOptions.CameraRotateSensitivity;
+	const float AngleVelocity = (Settings ? Settings->LevelViewportCameraControls.RotationSpeed : 60.f) * RotateSensitivity;
+
+	if (Input.GetKey(VK_UP))
+		DeltaPitch -= AngleVelocity * DeltaTime;
+	if (Input.GetKey(VK_LEFT))
+		DeltaYaw -= AngleVelocity * DeltaTime;
+	if (Input.GetKey(VK_DOWN))
+		DeltaPitch += AngleVelocity * DeltaTime;
+	if (Input.GetKey(VK_RIGHT))
+		DeltaYaw += AngleVelocity * DeltaTime;
+
+	if (Input.GetKey(VK_RBUTTON))
+	{
+		const float MouseRotationSpeed = 0.15f * RotateSensitivity;
+		DeltaYaw += static_cast<float>(Input.MouseDeltaX()) * MouseRotationSpeed;
+		DeltaPitch += static_cast<float>(Input.MouseDeltaY()) * MouseRotationSpeed;
+	}
+
+	if (DeltaYaw != 0.0f || DeltaPitch != 0.0f)
+	{
+		FRotator ActorRotation = Actor->GetActorRotation();
+		ActorRotation.Yaw += DeltaYaw;
+		ActorRotation.Pitch = Clamp(ActorRotation.Pitch + DeltaPitch, -89.9f, 89.9f);
+		Actor->SetActorRotation(ActorRotation);
+	}
+
+	Camera->GetCameraView(DeltaTime, CameraPOV);
+	ViewTransform.ViewLocation = CameraPOV.Location;
+	ViewTransform.ViewRotation = CameraPOV.Rotation;
+	ViewTransform.FOV = CameraPOV.FOV;
+	ViewTransform.AspectRatio = CameraPOV.AspectRatio;
+	ViewTransform.OrthoZoom = CameraPOV.OrthoWidth;
+	ViewTransform.NearClip = CameraPOV.NearClip;
+	ViewTransform.FarClip = CameraPOV.FarClip;
+	ViewTransform.bIsOrtho = CameraPOV.bIsOrtho;
+	SyncCameraSmoothingTarget();
+}
+
 void FEditorViewportClient::TickInteraction(float DeltaTime)
 {
 	if (!FSlateApplication::Get().DoesClientOwnMouseInput(this)) return;
+
+	if (IsPilotingActor())
+	{
+		return;
+	}
 
 	if (!Gizmo || !GetWorld())
 	{

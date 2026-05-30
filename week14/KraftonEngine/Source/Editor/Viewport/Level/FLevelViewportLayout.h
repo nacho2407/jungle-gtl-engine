@@ -16,6 +16,7 @@ class FWindowsWindow;
 class FRenderer;
 class UWorld;
 class UEditorEngine;
+class UCameraComponent;
 
 // 뷰포트 레이아웃 종류 (12가지, UE 동일)
 enum class EViewportLayout : uint8
@@ -82,6 +83,8 @@ public:
 		DirectionalLight,
 		PointLight,
 		SpotLight,
+		Camera,
+		CineCamera,
 		BoxCollider,
 		SphereCollider,
 		CapsuleCollider,
@@ -100,6 +103,7 @@ public:
 
 	void ResetViewport(UWorld* InWorld);
 	void DestroyAllCameras();
+	void StopAllPiloting(bool bRestoreSavedView = true);
 	void DisableWorldAxisForPIE();
 	void RestoreWorldAxisAfterPIE();
 
@@ -138,6 +142,7 @@ private:
 	bool SubtreeContainsWindow(SWindow* Node, SWindow* TargetWindow) const;
 	void RenderSharedViewportToolbar(float ToolbarLeft, float ToolbarTop, float ToolbarWidth);
 	void RenderViewportSlotToolbar(int32 SlotIndex);
+	void RenderPlacedCameraMenu(FLevelEditorViewportClient* TargetViewportClient);
 	void HandleViewportContextMenuInput(const FPoint& MousePos);
 	void RenderViewportPlaceActorPopup();
 	bool TryComputePlacementLocation(int32 SlotIndex, const FPoint& ClientPos, FVector& OutLocation) const;

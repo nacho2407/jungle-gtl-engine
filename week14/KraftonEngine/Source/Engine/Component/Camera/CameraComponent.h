@@ -28,6 +28,7 @@ public:
 
 	void BeginPlay() override;
 	void EndPlay() override;
+	class UBillboardComponent* EnsureEditorBillboard();
 
 
 	void LookAt(const FVector& Target);

@@ -116,6 +116,13 @@ static bool ShouldCollectProxyForView(const FPrimitiveSceneProxy* Proxy, const F
 	if (Frame.bIsLightView && Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly))
 		return false;
 
+	if (Frame.HiddenEditorOnlyActorForView &&
+		Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly) &&
+		Proxy->GetOwnerActor() == Frame.HiddenEditorOnlyActorForView)
+	{
+		return false;
+	}
+
 	if (!Frame.RenderOptions.ShowFlags.bStaticMesh &&
 		Proxy->HasProxyFlag(EPrimitiveProxyFlags::StaticMesh))
 		return false;
@@ -193,7 +200,7 @@ void FRenderCollector::FilterVisibleProxies(const FFrameContext& Frame, FScene& 
 	}
 
 	// 선택된 Actor의 컴포넌트 디버그 시각화 (빛 등 프록시 없는 Comp 포함)
-	CollectSelectedActorVisuals(Scene);
+	CollectSelectedActorVisuals(Frame, Scene);
 
 	if (OcclusionMut && OcclusionMut->IsInitialized())
 		OcclusionMut->EndGatherAABB();
@@ -202,11 +209,13 @@ void FRenderCollector::FilterVisibleProxies(const FFrameContext& Frame, FScene& 
 // ============================================================
 // CollectSelectedActorVisuals — Actor 단위 디버그 시각화 (빛 등 프록시 없는 Comp 포함)
 // ============================================================
-void FRenderCollector::CollectSelectedActorVisuals(FScene& Scene)
+void FRenderCollector::CollectSelectedActorVisuals(const FFrameContext& Frame, FScene& Scene)
 {
 	for (AActor* Actor : Scene.GetSelectedActors())
 	{
 		if (!Actor) continue;
+		if (Actor == Frame.HiddenEditorOnlyActorForView) continue;
+
 		for (UActorComponent* Comp : Actor->GetComponents())
 		{
 			if (Comp)

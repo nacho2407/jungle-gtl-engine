@@ -6,6 +6,7 @@
 #include "Render/Types/RenderTypes.h"
 
 class UPrimitiveComponent;
+class AActor;
 class FShader;
 class FMeshBuffer;
 class FScene;
@@ -59,6 +60,8 @@ public:
 	uint32                GetProxyId()    const { return ProxyId; }
 	EPrimitiveProxyFlags  GetProxyFlags() const { return ProxyFlags; }
 	bool HasProxyFlag(EPrimitiveProxyFlags F) const { return (ProxyFlags & F) != EPrimitiveProxyFlags::None; }
+	UPrimitiveComponent* GetOwnerComponent() const { return Owner; }
+	AActor* GetOwnerActor() const;
 
 	// --- 가시성 / 선택 / 그림자 ---
 	bool IsVisible()    const { return bVisible; }
