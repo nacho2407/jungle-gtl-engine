@@ -37,6 +37,9 @@ public:
 	const FTransform& GetLocalFrameA() const { return LocalFrameA; }
 	const FTransform& GetLocalFrameB() const { return LocalFrameB; }
 	EAngularConstraintMode GetAngularMode() const { return AngularMode; }
+	float GetSwing1Limit() const { return Swing1Limit; }
+	float GetSwing2Limit() const { return Swing2Limit; }
+	float GetTwistLimit() const { return TwistLimit; }
 	
 private:
 	FName ParentBoneName;

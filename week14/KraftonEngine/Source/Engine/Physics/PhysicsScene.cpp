@@ -1,4 +1,4 @@
-﻿#include "Physics/PhysicsScene.h"
+#include "Physics/PhysicsScene.h"
 #include "Physics/PhysXSDK.h"
 #include "Physics/BodyInstance.h"
 #include "Physics/ConstraintInstance.h"
@@ -7,6 +7,7 @@
 #include "Physics/PhysicsEventCallback.h"
 #include "Physics/PhysicsFilterShader.h"
 #include "Physics/PhysicsQueryFilter.h"
+#include "Physics/PhysicsConstraintTemplate.h"
 
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
@@ -280,6 +281,63 @@ FConstraintInstance* FPhysicsScene::CreateFixedConstraint(FBodyInstance* BodyA, 
 	return Instance;
 }
 
+FConstraintInstance* FPhysicsScene::CreateD6Constraint(FBodyInstance* BodyA, FBodyInstance* BodyB,
+	const FTransform& LocalFrameA, const FTransform& LocalFrameB, EAngularConstraintMode AngularMode,
+	float Swing1LimitDeg, float Swing2LimitDeg, float TwistLimitDeg)
+{
+	if (!BodyA || !BodyB || !BodyA->Body || !BodyB->Body) return nullptr;
+
+	physx::PxPhysics* Physics = FPhysXSDK::Get().GetPhysics();
+
+	physx::PxRigidActor* ActorA = BodyA->Body;
+	physx::PxRigidActor* ActorB = BodyB->Body;
+
+	physx::PxD6Joint* Joint = physx::PxD6JointCreate(*Physics,
+		ActorA, ToPxTransform(LocalFrameA.Location, LocalFrameA.Rotation),
+		ActorB, ToPxTransform(LocalFrameB.Location, LocalFrameB.Rotation));
+
+	if (!Joint) return nullptr;
+
+	// 선형 3축 고정: 두 뼈가 관절 한 점에 붙어 떨어지지 않게.
+	Joint->setMotion(physx::PxD6Axis::eX, physx::PxD6Motion::eLOCKED);
+	Joint->setMotion(physx::PxD6Axis::eY, physx::PxD6Motion::eLOCKED);
+	Joint->setMotion(physx::PxD6Axis::eZ, physx::PxD6Motion::eLOCKED);
+
+	// 각축 모드 → PxD6Motion
+	const physx::PxD6Motion::Enum Motion =
+		(AngularMode == EAngularConstraintMode::Free)   ? physx::PxD6Motion::eFREE   :
+		(AngularMode == EAngularConstraintMode::Locked) ? physx::PxD6Motion::eLOCKED :
+														  physx::PxD6Motion::eLIMITED;
+
+	Joint->setMotion(physx::PxD6Axis::eTWIST,  Motion);
+	Joint->setMotion(physx::PxD6Axis::eSWING1, Motion);
+	Joint->setMotion(physx::PxD6Axis::eSWING2, Motion);
+
+	if (AngularMode == EAngularConstraintMode::Limited)
+	{
+		const float DegToRad = 3.14159265f / 180.0f;
+
+		// Swing: 콘 형태 (Swing1=local Y, Swing2=local Z 반각)
+		Joint->setSwingLimit(physx::PxJointLimitCone(
+			std::max(Swing1LimitDeg, 1.0f) * DegToRad,
+			std::max(Swing2LimitDeg, 1.0f) * DegToRad));
+
+		// Twist: 대칭 범위 [-t, +t]
+		const float TwistRad = std::max(TwistLimitDeg, 1.0f) * DegToRad;
+		Joint->setTwistLimit(physx::PxJointAngularLimitPair(-TwistRad, TwistRad));
+	}
+
+	FConstraintInstance* Instance = new FConstraintInstance();
+	Instance->BodyA = BodyA;
+	Instance->BodyB = BodyB;
+	Instance->LocalFrameA = LocalFrameA;
+	Instance->LocalFrameB = LocalFrameB;
+	Instance->Joint = Joint; // PxD6Joint* -> PxJoint*
+
+	Constraints.push_back(Instance);
+	return Instance;
+}
+
 void FPhysicsScene::DestroyConstraint(FConstraintInstance* Instance)
 {
 	if (!Instance) return;
@@ -350,7 +408,7 @@ bool FPhysicsScene::SweepSphere(const FVector& Start, const FVector& Dir, float 
 		OutHit = FHitResult{};
 		return false;
 	}
-	
+
 	SweepDir.Normalize();
 
 	physx::PxSweepBuffer HitBuffer;
@@ -432,7 +490,7 @@ bool FPhysicsScene::OverlapBox(const FVector& Center, const FVector& HalfExtent,
 	ECollisionChannel TraceChannel, const AActor* IgnoreActor)
 {
 	OutOverlaps.clear();
-	
+
 	if (!Scene || HalfExtent.X <= 0.0f || HalfExtent.Y <= 0.0f || HalfExtent.Z <= 0.0f) return false;
 
 	constexpr physx::PxU32 MaxHits = 64;

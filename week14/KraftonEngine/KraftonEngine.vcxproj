@@ -679,6 +679,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClCompile Include="Source\Engine\Physics\PhysicsShape.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXConversions.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXSDK.cpp" />
+    <ClCompile Include="Source\Engine\Physics\RagdollInstance.cpp" />
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Platform\DirectoryWatcher.cpp" />
     <ClCompile Include="Source\Engine\Platform\Paths.cpp" />
@@ -1102,6 +1103,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Engine\Physics\PhysXConversions.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXInclude.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXSDK.h" />
+    <ClInclude Include="Source\Engine\Physics\RagdollInstance.h" />
     <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h" />
     <ClInclude Include="Source\Engine\Platform\CrashDump.h" />
     <ClInclude Include="Source\Engine\Platform\DirectoryWatcher.h" />
