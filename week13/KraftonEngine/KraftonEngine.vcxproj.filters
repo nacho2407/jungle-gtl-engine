@@ -854,6 +854,9 @@
     <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Util\InlinePropertyRenderer.cpp">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Util\NotificationToast.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
@@ -2039,6 +2042,9 @@
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Util\InlinePropertyRenderer.h">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\NotificationToast.h">

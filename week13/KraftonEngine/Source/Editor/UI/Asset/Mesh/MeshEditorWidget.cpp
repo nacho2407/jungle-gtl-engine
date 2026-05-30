@@ -33,6 +33,7 @@
 #include "UI/Asset/Animation/AnimMontagePropertyPanel.h"
 #include "UI/Util/EditorFileUtils.h"
 #include "Editor/UI/Util/EditorTextureManager.h"
+#include "Editor/UI/Util/InlinePropertyRenderer.h"
 #include "Platform/Paths.h"
 #include "Object/Object.h"
 #include "Core/Logging/Log.h"
@@ -132,30 +133,11 @@ namespace
 			return false;
 		}
 
-		bool bChanged = false;
-
-		ImGui::Text("ParentBone: %s", ConstraintDesc->ParentBoneName.ToString().c_str());
-		ImGui::Text("ChildBone: %s", ConstraintDesc->ChildBoneName.ToString().c_str());
-		bChanged |= ImGui::DragFloat("Twist Limit", &ConstraintDesc->TwistLimitDegrees, 0.25f, 0.0f, 180.0f, "%.2f");
-		bChanged |= ImGui::DragFloat("Swing1 Limit", &ConstraintDesc->Swing1LimitDegrees, 0.25f, 0.0f, 180.0f, "%.2f");
-		bChanged |= ImGui::DragFloat("Swing2 Limit", &ConstraintDesc->Swing2LimitDegrees, 0.25f, 0.0f, 180.0f, "%.2f");
-		bChanged |= ImGui::Checkbox("Enable Collision", &ConstraintDesc->bEnableCollision);
-
-		FVector ParentLocation = ConstraintDesc->ParentFrame.GetLocation();
-		if (ImGui::DragFloat3("ParentFrame Location", &ParentLocation.X, 0.1f, -10000.0f, 10000.0f, "%.2f"))
-		{
-			ConstraintDesc->ParentFrame.Location = ParentLocation;
-			bChanged = true;
-		}
-
-		FVector ChildLocation = ConstraintDesc->ChildFrame.GetLocation();
-		if (ImGui::DragFloat3("ChildFrame Location", &ChildLocation.X, 0.1f, -10000.0f, 10000.0f, "%.2f"))
-		{
-			ConstraintDesc->ChildFrame.Location = ChildLocation;
-			bChanged = true;
-		}
-
-		return bChanged;
+		return FInlinePropertyRenderer::RenderStructProperties(
+			FConstraintInstanceInitDesc::StaticStruct(),
+			ConstraintDesc,
+			PhysicsAsset,
+			"##PhysicsAssetConstraintProps");
 	}
 
 	bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
