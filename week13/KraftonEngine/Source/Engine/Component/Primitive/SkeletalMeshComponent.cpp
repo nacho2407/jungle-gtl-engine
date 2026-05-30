@@ -456,8 +456,13 @@ bool USkeletalMeshComponent::BuildBodyInstanceInitDescFromBodySetup( const UBody
     OutDesc.ObjectType = ECollisionChannel::WorldDynamic;
     OutDesc.ResponseContainer.SetAllChannels(ECollisionResponse::Block);
 
-    OutDesc.Mass = 1.0f;
-    OutDesc.CenterOfMassOffset = FVector::ZeroVector;
+    const FBodySetupPhysicsInfo& PhysicsInfo = BodySetup->GetPhysicsInfo();
+    OutDesc.Mass = BodySetup->CalculateMass();
+    OutDesc.CenterOfMassOffset = PhysicsInfo.CenterOfMassOffset;
+    OutDesc.LinearDamping = PhysicsInfo.LinearDamping;
+    OutDesc.AngularDamping = PhysicsInfo.AngularDamping;
+    OutDesc.bEnableGravity = PhysicsInfo.bEnableGravity;
+    OutDesc.InertiaTensorScale = PhysicsInfo.InertiaTensorScale;
 
     const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
 

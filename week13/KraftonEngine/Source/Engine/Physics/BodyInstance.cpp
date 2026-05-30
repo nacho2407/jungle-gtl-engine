@@ -148,6 +148,13 @@ void FBodyInstance::SetMass(float NewMass)
 		physx::PxVec3 LocalCOM = PhysXConvert::ToPxVec3(CenterOfMassOffset);
 		physx::PxRigidBodyExt::setMassAndUpdateInertia(*Dynamic, Mass, &LocalCOM);
 		Dynamic->setCMassLocalPose(physx::PxTransform(LocalCOM));
+
+		physx::PxVec3 Inertia = Dynamic->getMassSpaceInertiaTensor();
+		Inertia.x *= std::max(InertiaTensorScale.X, 0.001f);
+		Inertia.y *= std::max(InertiaTensorScale.Y, 0.001f);
+		Inertia.z *= std::max(InertiaTensorScale.Z, 0.001f);
+		Dynamic->setMassSpaceInertiaTensor(Inertia);
+
 		WakeUp();
 	}
 }
@@ -217,6 +224,10 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
 
     OutDesc.Mass = Body.Mass > 0.001f ? Body.Mass : 0.001f;
     OutDesc.CenterOfMassOffset = Body.CenterOfMassOffset;
+    OutDesc.LinearDamping = Body.LinearDamping;
+    OutDesc.AngularDamping = Body.AngularDamping;
+    OutDesc.bEnableGravity = Body.bEnableGravity;
+    OutDesc.InertiaTensorScale = Body.InertiaTensorScale;
 
     if (OutDesc.CollisionEnabled == ECollisionEnabled::NoCollision)
     {
