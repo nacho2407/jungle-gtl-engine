@@ -2,13 +2,15 @@
 
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
+#include "Engine/Math/Matrix.h"
+#include "Engine/Math/Quat.h"
 #include "Object/Object.h"
 #include "PhysicsEngine/BoxElem.h"
 #include "PhysicsEngine/SphereElem.h"
 #include "PhysicsEngine/SphylElem.h"
 
 #include <algorithm>
-#include <cctype>
+#include <cmath>
 
 namespace
 {
@@ -17,9 +19,12 @@ struct FBoneShapeFit
 	bool bHasVertices = false;
 	FVector Min = FVector::ZeroVector;
 	FVector Max = FVector::ZeroVector;
+	TArray<FVector> Positions;
 
 	void AddPosition(const FVector& Position)
 	{
+		Positions.push_back(Position);
+
 		if (!bHasVertices)
 		{
 			Min = Position;
@@ -45,6 +50,12 @@ struct FBoneShapeFit
 	{
 		return (Max - Min) * 0.5f;
 	}
+};
+
+struct FShapeFitFrame
+{
+	FTransform ElementTransform;
+	FVector BoxExtent = FVector::ZeroVector;
 };
 
 int32 GetDominantBoneIndex(const FVertexPNCTBW& Vertex)
@@ -107,23 +118,71 @@ TArray<FBoneShapeFit> BuildBoneShapeFits(
 	return Fits;
 }
 
-FString ToLowerString(const FString& Source)
+FMatrix ComputeCovarianceMatrix(const TArray<FVector>& Positions)
 {
-	FString LowerName = Source;
-	std::transform(
-		LowerName.begin(),
-		LowerName.end(),
-		LowerName.begin(),
-		[](unsigned char C) { return static_cast<char>(std::tolower(C)); });
-	return LowerName;
+	if (Positions.empty())
+	{
+		return FMatrix::Identity;
+	}
+
+	FVector Mean = FVector::ZeroVector;
+	for (const FVector& Position : Positions)
+	{
+		Mean += Position;
+	}
+	Mean /= static_cast<float>(Positions.size());
+
+	FMatrix Covariance;
+	for (const FVector& Position : Positions)
+	{
+		const FVector Error = Position - Mean;
+		Covariance.M[0][0] += Error.X * Error.X;
+		Covariance.M[0][1] += Error.X * Error.Y;
+		Covariance.M[0][2] += Error.X * Error.Z;
+		Covariance.M[1][0] += Error.Y * Error.X;
+		Covariance.M[1][1] += Error.Y * Error.Y;
+		Covariance.M[1][2] += Error.Y * Error.Z;
+		Covariance.M[2][0] += Error.Z * Error.X;
+		Covariance.M[2][1] += Error.Z * Error.Y;
+		Covariance.M[2][2] += Error.Z * Error.Z;
+	}
+
+	const float InvCount = 1.0f / static_cast<float>(Positions.size());
+	for (int32 Row = 0; Row < 3; ++Row)
+	{
+		for (int32 Col = 0; Col < 3; ++Col)
+		{
+			Covariance.M[Row][Col] *= InvCount;
+		}
+	}
+
+	Covariance.M[3][3] = 1.0f;
+	return Covariance;
 }
 
-FVector ClampExtent(const FVector& Extent, float MinPrimitiveSize)
+FVector ComputeDominantEigenVector(const FMatrix& Matrix)
 {
-	return FVector(
-		std::max(Extent.X, MinPrimitiveSize),
-		std::max(Extent.Y, MinPrimitiveSize),
-		std::max(Extent.Z, MinPrimitiveSize));
+	FVector Vector = FVector::ZAxisVector;
+	for (int32 Iteration = 0; Iteration < 32; ++Iteration)
+	{
+		const FVector NextVector = Matrix.TransformVector(Vector);
+		const float Length = NextVector.Length();
+		if (Length > 0.0f)
+		{
+			Vector = NextVector / Length;
+		}
+	}
+
+	return Vector.GetSafeNormal(1.0e-6f, FVector::ZAxisVector);
+}
+
+void FindBestAxisVectors(const FVector& AxisZ, FVector& AxisX, FVector& AxisY)
+{
+	const FVector NormalizedZ = AxisZ.GetSafeNormal(1.0e-6f, FVector::ZAxisVector);
+	const FVector UpVector = (std::abs(NormalizedZ.Z) < 0.999f) ? FVector::ZAxisVector : FVector::XAxisVector;
+
+	AxisX = UpVector.Cross(NormalizedZ).GetSafeNormal(1.0e-6f, FVector::XAxisVector);
+	AxisY = NormalizedZ.Cross(AxisX).GetSafeNormal(1.0e-6f, FVector::YAxisVector);
 }
 
 float GetMaxComponent(const FVector& Value)
@@ -134,6 +193,74 @@ float GetMaxComponent(const FVector& Value)
 float GetBoneFitSize(const FBoneShapeFit& Fit)
 {
 	return Fit.bHasVertices ? Fit.GetExtent().Length() : 0.0f;
+}
+
+FTransform MakeRotationOnlyTransform(const FVector& Axis, float AngleRad)
+{
+	return FTransform(
+		FVector::ZeroVector,
+		FQuat::FromAxisAngle(Axis.GetSafeNormal(), AngleRad),
+		FVector::OneVector);
+}
+
+FShapeFitFrame BuildShapeFitFrame(
+	const FVector& FitCenter,
+	const FVector& FitExtent,
+	const TArray<FVector>& FitPositions,
+	const FPhysicsAssetBuildOptions& Options)
+{
+	FShapeFitFrame Frame;
+
+	if (Options.bAutoOrientToBone && !FitPositions.empty())
+	{
+		const FMatrix Covariance = ComputeCovarianceMatrix(FitPositions);
+		const FVector AxisZ = ComputeDominantEigenVector(Covariance);
+		FVector AxisX;
+		FVector AxisY;
+		FindBestAxisVectors(AxisZ, AxisX, AxisY);
+
+		FMatrix ElementMatrix = FMatrix::Identity;
+		ElementMatrix.SetAxes(AxisX, AxisY, AxisZ);
+		Frame.ElementTransform = FTransform(ElementMatrix);
+	}
+
+	bool bHasBounds = false;
+	FVector LocalMin = FVector::ZeroVector;
+	FVector LocalMax = FVector::ZeroVector;
+
+	for (const FVector& Position : FitPositions)
+	{
+		const FVector LocalPosition = Frame.ElementTransform.InverseTransformPositionNoScale(Position);
+		if (!bHasBounds)
+		{
+			LocalMin = LocalPosition;
+			LocalMax = LocalPosition;
+			bHasBounds = true;
+			continue;
+		}
+
+		LocalMin.X = std::min(LocalMin.X, LocalPosition.X);
+		LocalMin.Y = std::min(LocalMin.Y, LocalPosition.Y);
+		LocalMin.Z = std::min(LocalMin.Z, LocalPosition.Z);
+		LocalMax.X = std::max(LocalMax.X, LocalPosition.X);
+		LocalMax.Y = std::max(LocalMax.Y, LocalPosition.Y);
+		LocalMax.Z = std::max(LocalMax.Z, LocalPosition.Z);
+	}
+
+	FVector BoxCenter = FitCenter;
+	Frame.BoxExtent = FitExtent;
+	if (bHasBounds)
+	{
+		BoxCenter = (LocalMin + LocalMax) * 0.5f;
+		Frame.BoxExtent = (LocalMax - LocalMin) * 0.5f;
+	}
+
+	Frame.BoxExtent.X = std::max(Frame.BoxExtent.X, Options.MinPrimitiveSize);
+	Frame.BoxExtent.Y = std::max(Frame.BoxExtent.Y, Options.MinPrimitiveSize);
+	Frame.BoxExtent.Z = std::max(Frame.BoxExtent.Z, Options.MinPrimitiveSize);
+
+	Frame.ElementTransform.Location = Frame.ElementTransform.TransformPositionNoScale(BoxCenter);
+	return Frame;
 }
 }
 
@@ -189,12 +316,11 @@ void FPhysicsAssetBuilder::CreateBodies(
 		}
 
 		BodySetup->BoneName = FName(Bone.Name);
-		AddDefaultShapeForBone(
+		AddFittedShapeForBone(
 			BodySetup,
-			Bone.Name,
 			Fit.GetCenter(),
 			Fit.GetExtent(),
-			true,
+			Fit.Positions,
 			Options);
 
 		BodySetups.push_back(BodySetup);
@@ -236,12 +362,11 @@ void FPhysicsAssetBuilder::CreateBodies(
 	}
 }
 
-void FPhysicsAssetBuilder::AddDefaultShapeForBone(
+void FPhysicsAssetBuilder::AddFittedShapeForBone(
 	UBodySetup* BodySetup,
-	const FString& BoneName,
 	const FVector& FitCenter,
 	const FVector& FitExtent,
-	bool bHasFit,
+	const TArray<FVector>& FitPositions,
 	const FPhysicsAssetBuildOptions& Options)
 {
 	if (!BodySetup)
@@ -249,60 +374,51 @@ void FPhysicsAssetBuilder::AddDefaultShapeForBone(
 		return;
 	}
 
-	const FString LowerName = ToLowerString(BoneName);
-	const FVector SafeExtent = ClampExtent(FitExtent, Options.MinPrimitiveSize);
+	const FShapeFitFrame FitFrame = BuildShapeFitFrame(FitCenter, FitExtent, FitPositions, Options);
+	const FTransform& ElementTransform = FitFrame.ElementTransform;
+	const FVector& BoxExtent = FitFrame.BoxExtent;
 
-	if (LowerName.find("head") != FString::npos)
-	{
-		FKSphereElem Sphere;
-		Sphere.Center = bHasFit ? FitCenter : FVector::ZeroVector;
-		Sphere.Radius = bHasFit
-			? std::max(GetMaxComponent(SafeExtent) * Options.FitPadding, Options.MinPrimitiveSize)
-			: Options.DefaultBodyRadius;
-		BodySetup->GetAggGeom().SphereElems.push_back(Sphere);
-		return;
-	}
-
-	if (LowerName.find("root") != FString::npos ||
-		LowerName.find("pelvis") != FString::npos ||
-		LowerName.find("hip") != FString::npos)
+	if (Options.GeomType == EPhysicsAssetFitGeomType::Box)
 	{
 		FKBoxElem Box;
-		Box.Center = bHasFit ? FitCenter : FVector::ZeroVector;
-		Box.X = bHasFit ? std::max(SafeExtent.X * 2.0f * Options.FitPadding, Options.MinPrimitiveSize) : Options.DefaultBoxSize;
-		Box.Y = bHasFit ? std::max(SafeExtent.Y * 2.0f * Options.FitPadding, Options.MinPrimitiveSize) : Options.DefaultBoxSize;
-		Box.Z = bHasFit ? std::max(SafeExtent.Z * 2.0f * Options.FitPadding, Options.MinPrimitiveSize) : Options.DefaultBoxSize;
+		Box.SetTransform(ElementTransform);
+		Box.X = std::max(BoxExtent.X * 2.0f * Options.FitPadding, Options.MinPrimitiveSize);
+		Box.Y = std::max(BoxExtent.Y * 2.0f * Options.FitPadding, Options.MinPrimitiveSize);
+		Box.Z = std::max(BoxExtent.Z * 2.0f * Options.FitPadding, Options.MinPrimitiveSize);
 		BodySetup->GetAggGeom().BoxElems.push_back(Box);
 		return;
 	}
 
-	FKSphylElem Sphyl;
-	if (!bHasFit)
+	if (Options.GeomType == EPhysicsAssetFitGeomType::Sphere)
 	{
-		Sphyl.Radius = Options.DefaultBodyRadius;
-		Sphyl.Length = Options.DefaultBodyLength;
-		BodySetup->GetAggGeom().SphylElems.push_back(Sphyl);
+		FKSphereElem Sphere;
+		Sphere.Center = ElementTransform.GetLocation();
+		Sphere.Radius = std::max(GetMaxComponent(BoxExtent) * Options.FitPadding, Options.MinPrimitiveSize);
+		BodySetup->GetAggGeom().SphereElems.push_back(Sphere);
 		return;
 	}
 
-	Sphyl.Center = FitCenter;
-	float LongExtent = SafeExtent.Z;
-	float Radius = std::max(SafeExtent.X, SafeExtent.Y);
-
-	if (SafeExtent.X > SafeExtent.Y && SafeExtent.X > SafeExtent.Z)
+	FKSphylElem Sphyl;
+	if (BoxExtent.X > BoxExtent.Z && BoxExtent.X > BoxExtent.Y)
 	{
-		Sphyl.Rotation = FRotator(90.0f, 0.0f, 0.0f);
-		LongExtent = SafeExtent.X;
-		Radius = std::max(SafeExtent.Y, SafeExtent.Z);
+		constexpr float HalfPi = 1.57079632679f;
+		Sphyl.SetTransform(MakeRotationOnlyTransform(FVector::YAxisVector, -HalfPi) * ElementTransform);
+		Sphyl.Radius = std::max(std::max(BoxExtent.Y, BoxExtent.Z) * Options.FitPadding, Options.MinPrimitiveSize);
+		Sphyl.Length = std::max(BoxExtent.X * Options.FitPadding, Options.MinPrimitiveSize);
 	}
-	else if (SafeExtent.Y > SafeExtent.X && SafeExtent.Y > SafeExtent.Z)
+	else if (BoxExtent.Y > BoxExtent.Z && BoxExtent.Y > BoxExtent.X)
 	{
-		Sphyl.Rotation = FRotator(0.0f, 0.0f, -90.0f);
-		LongExtent = SafeExtent.Y;
-		Radius = std::max(SafeExtent.X, SafeExtent.Z);
+		constexpr float HalfPi = 1.57079632679f;
+		Sphyl.SetTransform(MakeRotationOnlyTransform(FVector::XAxisVector, HalfPi) * ElementTransform);
+		Sphyl.Radius = std::max(std::max(BoxExtent.X, BoxExtent.Z) * Options.FitPadding, Options.MinPrimitiveSize);
+		Sphyl.Length = std::max(BoxExtent.Y * Options.FitPadding, Options.MinPrimitiveSize);
+	}
+	else
+	{
+		Sphyl.SetTransform(ElementTransform);
+		Sphyl.Radius = std::max(std::max(BoxExtent.X, BoxExtent.Y) * Options.FitPadding, Options.MinPrimitiveSize);
+		Sphyl.Length = std::max(BoxExtent.Z * Options.FitPadding, Options.MinPrimitiveSize);
 	}
 
-	Sphyl.Radius = std::max(Radius * Options.FitPadding, Options.MinPrimitiveSize);
-	Sphyl.Length = std::max((LongExtent - Sphyl.Radius) * 2.0f * Options.FitPadding, Options.MinPrimitiveSize);
 	BodySetup->GetAggGeom().SphylElems.push_back(Sphyl);
 }

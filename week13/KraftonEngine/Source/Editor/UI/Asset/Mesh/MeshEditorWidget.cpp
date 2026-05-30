@@ -790,16 +790,43 @@ void FMeshEditorWidget::RenderPhysicsAssetBuildOptionsPopup(
 
 	ImGui::Checkbox("Skip Root Body", &PendingPhysicsAssetBuildOptions.bSkipRootBody);
 	ImGui::Checkbox("Use Dominant Bone Weight", &PendingPhysicsAssetBuildOptions.bUseDominantBoneWeight);
+	ImGui::Checkbox("Auto Orient To Bone", &PendingPhysicsAssetBuildOptions.bAutoOrientToBone);
+
+	const auto GetGeomTypeLabel = [](EPhysicsAssetFitGeomType GeomType) -> const char*
+	{
+		switch (GeomType)
+		{
+		case EPhysicsAssetFitGeomType::Box:
+			return "Box";
+		case EPhysicsAssetFitGeomType::Sphere:
+			return "Sphere";
+		case EPhysicsAssetFitGeomType::Sphyl:
+		default:
+			return "Capsule";
+		}
+	};
+
+	if (ImGui::BeginCombo("Primitive Type", GetGeomTypeLabel(PendingPhysicsAssetBuildOptions.GeomType)))
+	{
+		if (ImGui::Selectable("Capsule", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Sphyl))
+		{
+			PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Sphyl;
+		}
+		if (ImGui::Selectable("Box", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Box))
+		{
+			PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Box;
+		}
+		if (ImGui::Selectable("Sphere", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Sphere))
+		{
+			PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Sphere;
+		}
+		ImGui::EndCombo();
+	}
 
 	ImGui::Spacing();
 	ImGui::DragFloat("Min Bone Size", &PendingPhysicsAssetBuildOptions.MinBoneSize, 0.25f, 0.0f, 1000.0f, "%.2f");
 	ImGui::DragFloat("Fit Padding", &PendingPhysicsAssetBuildOptions.FitPadding, 0.001f, 1.0f, 2.0f, "%.3f");
 	ImGui::DragFloat("Min Primitive Size", &PendingPhysicsAssetBuildOptions.MinPrimitiveSize, 0.01f, 0.01f, 1000.0f, "%.2f");
-
-	ImGui::Spacing();
-	ImGui::DragFloat("Default Body Radius", &PendingPhysicsAssetBuildOptions.DefaultBodyRadius, 0.1f, 0.1f, 1000.0f, "%.2f");
-	ImGui::DragFloat("Default Body Length", &PendingPhysicsAssetBuildOptions.DefaultBodyLength, 0.1f, 0.1f, 1000.0f, "%.2f");
-	ImGui::DragFloat("Default Box Size", &PendingPhysicsAssetBuildOptions.DefaultBoxSize, 0.1f, 0.1f, 1000.0f, "%.2f");
 
 	ImGui::Separator();
 
@@ -813,9 +840,6 @@ void FMeshEditorWidget::RenderPhysicsAssetBuildOptionsPopup(
 		PendingPhysicsAssetBuildOptions.MinBoneSize = std::max(0.0f, PendingPhysicsAssetBuildOptions.MinBoneSize);
 		PendingPhysicsAssetBuildOptions.FitPadding = std::max(1.0f, PendingPhysicsAssetBuildOptions.FitPadding);
 		PendingPhysicsAssetBuildOptions.MinPrimitiveSize = std::max(0.01f, PendingPhysicsAssetBuildOptions.MinPrimitiveSize);
-		PendingPhysicsAssetBuildOptions.DefaultBodyRadius = std::max(0.1f, PendingPhysicsAssetBuildOptions.DefaultBodyRadius);
-		PendingPhysicsAssetBuildOptions.DefaultBodyLength = std::max(0.1f, PendingPhysicsAssetBuildOptions.DefaultBodyLength);
-		PendingPhysicsAssetBuildOptions.DefaultBoxSize = std::max(0.1f, PendingPhysicsAssetBuildOptions.DefaultBoxSize);
 
 		UPhysicsAsset* NewAsset = FPhysicsAssetBuilder::CreateFromSkeletalMesh(SkeletalMesh, PendingPhysicsAssetBuildOptions);
 		if (NewAsset)

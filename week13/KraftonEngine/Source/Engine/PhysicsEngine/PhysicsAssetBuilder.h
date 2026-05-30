@@ -1,21 +1,28 @@
 #pragma once
 
+#include "Core/Types/CoreTypes.h"
 #include "Engine/Math/Vector.h"
 #include "PhysicsAsset.h"
 
 class USkeletalMesh;
 
+enum class EPhysicsAssetFitGeomType : uint8
+{
+	Box,
+	Sphyl,
+	Sphere
+};
+
 struct FPhysicsAssetBuildOptions
 {
 	bool bSkipRootBody = false;
 
-	float DefaultBodyRadius = 5.0f;
-	float DefaultBodyLength = 20.0f;
-	float DefaultBoxSize = 10.0f;
+	EPhysicsAssetFitGeomType GeomType = EPhysicsAssetFitGeomType::Sphyl;
 	float MinBoneSize = 20.0f;
 	float MinPrimitiveSize = 0.1f;
 	float FitPadding = 1.01f;
 	bool bUseDominantBoneWeight = true;
+	bool bAutoOrientToBone = true;
 };
 
 class FPhysicsAssetBuilder
@@ -31,11 +38,10 @@ private:
 		USkeletalMesh* SkeletalMesh,
 		const FPhysicsAssetBuildOptions& Options);
 
-	static void AddDefaultShapeForBone(
+	static void AddFittedShapeForBone(
 		UBodySetup* BodySetup,
-		const FString& BoneName,
 		const FVector& FitCenter,
 		const FVector& FitExtent,
-		bool bHasFit,
+		const TArray<FVector>& FitPositions,
 		const FPhysicsAssetBuildOptions& Options);
 };
