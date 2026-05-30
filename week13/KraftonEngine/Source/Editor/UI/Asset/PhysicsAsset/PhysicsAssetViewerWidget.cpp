@@ -119,6 +119,7 @@ void FPhysicsAssetViewerWidget::Close()
 	}
 	ViewportClient.SetPhysicsAssetPickingEnabled(false);
 	ViewportClient.SetOnPhysicsAssetBodyPicked(nullptr);
+	ViewportClient.SetOnPhysicsAssetShapeEdited(nullptr);
 	DestroyPreviewWorld();
 	FAssetEditorWidget::Close();
 	SourceSkeletalMesh = nullptr;
@@ -187,6 +188,19 @@ void FPhysicsAssetViewerWidget::CreatePreviewWorld()
 		UPhysicsAsset* PhysicsAsset = dynamic_cast<UPhysicsAsset*>(EditedObject);
 		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex);
 	});
+	ViewportClient.SetOnPhysicsAssetShapeEdited([this]()
+	{
+		UPhysicsAsset* PhysicsAsset = dynamic_cast<UPhysicsAsset*>(EditedObject);
+		if (SavePhysicsAsset(PhysicsAsset))
+		{
+			ClearDirty();
+		}
+		else if (PhysicsAsset)
+		{
+			UE_LOG("PhysicsAsset shape edit warning: failed to persist shape edit. PhysicsAsset=%s", PhysicsAsset->GetAssetPathFileName().c_str());
+			MarkDirty();
+		}
+	});
 	ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
 	ViewportClient.ResetCameraToPreviousBounds();
 
@@ -198,6 +212,7 @@ void FPhysicsAssetViewerWidget::DestroyPreviewWorld()
 {
 	ViewportClient.SetPhysicsAssetPickingEnabled(false);
 	ViewportClient.SetOnPhysicsAssetBodyPicked(nullptr);
+	ViewportClient.SetOnPhysicsAssetShapeEdited(nullptr);
 
 	if (ViewportClient.IsRenderable())
 	{

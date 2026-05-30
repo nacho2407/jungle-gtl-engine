@@ -56,8 +56,10 @@ void FMeshEditorViewportClient::Release()
 	Gizmo = nullptr;
 	BoneDebugComponent = nullptr;
 	PhysicsAssetDebugComponent = nullptr;
+	PhysicsAssetShapeTarget.Clear();
 	bPhysicsAssetPickingEnabled = false;
 	OnPhysicsAssetBodyPicked = nullptr;
+	OnPhysicsAssetShapeEdited = nullptr;
 
 	bIsRenderable = false;
 
@@ -117,6 +119,7 @@ void FMeshEditorViewportClient::SyncPhysicsAssetDebugComponent(UPhysicsAsset* Ph
 
 	PhysicsAssetDebugComponent->SetTarget(PreviewMeshComponent, PhysicsAsset);
 	PhysicsAssetDebugComponent->SetSelectedBodyIndex(SelectedBodyIndex);
+	SyncPhysicsAssetShapeGizmoTarget(PhysicsAsset, SelectedBodyIndex);
 }
 
 void FMeshEditorViewportClient::SetPhysicsAssetPickingEnabled(bool bInEnabled)
@@ -126,6 +129,11 @@ void FMeshEditorViewportClient::SetPhysicsAssetPickingEnabled(bool bInEnabled)
 	{
 		PhysicsAssetDebugComponent->SetSelectedBodyIndex(-1);
 	}
+	if (!bPhysicsAssetPickingEnabled && IsPhysicsAssetShapeGizmoActive())
+	{
+		PhysicsAssetShapeTarget.Clear();
+		Gizmo->Deactivate();
+	}
 }
 
 void FMeshEditorViewportClient::SetOnPhysicsAssetBodyPicked(TFunction<void(int32)> InCallback)
@@ -133,11 +141,17 @@ void FMeshEditorViewportClient::SetOnPhysicsAssetBodyPicked(TFunction<void(int32
 	OnPhysicsAssetBodyPicked = std::move(InCallback);
 }
 
+void FMeshEditorViewportClient::SetOnPhysicsAssetShapeEdited(TFunction<void()> InCallback)
+{
+	OnPhysicsAssetShapeEdited = std::move(InCallback);
+}
+
 void FMeshEditorViewportClient::NotifyPhysicsAssetBodyPicked(int32 BodyIndex)
 {
 	if (PhysicsAssetDebugComponent)
 	{
 		PhysicsAssetDebugComponent->SetSelectedBodyIndex(BodyIndex);
+		SyncPhysicsAssetShapeGizmoTarget(PhysicsAssetDebugComponent->GetPhysicsAsset(), BodyIndex);
 	}
 
 	if (OnPhysicsAssetBodyPicked)
@@ -483,9 +497,14 @@ void FMeshEditorViewportClient::TickInteraction(float DeltaTime)
 	}
 	else if (Input.GetLeftDragEnd())
 	{
+		const bool bWasHoldingPhysicsAssetShape = Gizmo->IsHolding() && IsPhysicsAssetShapeGizmoActive();
 		if (Gizmo->IsHolding())
 		{
 			Gizmo->DragEnd();
+		}
+		if (bWasHoldingPhysicsAssetShape && OnPhysicsAssetShapeEdited)
+		{
+			OnPhysicsAssetShapeEdited();
 		}
 	}
 	else if (Input.GetKeyUp(VK_LBUTTON))
@@ -534,6 +553,45 @@ void FMeshEditorViewportClient::SyncGizmo()
 	}
 }
 
+void FMeshEditorViewportClient::SyncPhysicsAssetShapeGizmoTarget(UPhysicsAsset* PhysicsAsset, int32 SelectedBodyIndex)
+{
+	if (!Gizmo)
+	{
+		return;
+	}
+
+	if (!bPhysicsAssetPickingEnabled || !PhysicsAssetDebugComponent || !PhysicsAsset || SelectedBodyIndex < 0)
+	{
+		if (IsPhysicsAssetShapeGizmoActive())
+		{
+			PhysicsAssetShapeTarget.Clear();
+			Gizmo->Deactivate();
+		}
+		return;
+	}
+
+	PhysicsAssetShapeTarget.SetShape(PhysicsAssetDebugComponent, SelectedBodyIndex);
+	if (!PhysicsAssetShapeTarget.IsValid())
+	{
+		if (IsPhysicsAssetShapeGizmoActive())
+		{
+			Gizmo->Deactivate();
+		}
+		PhysicsAssetShapeTarget.Clear();
+		return;
+	}
+
+	if (Gizmo->GetTarget() != &PhysicsAssetShapeTarget)
+	{
+		Gizmo->SetTarget(&PhysicsAssetShapeTarget);
+	}
+	else
+	{
+		Gizmo->UpdateGizmoTransform();
+	}
+	ApplyTransformSettingsToGizmo();
+}
+
 void FMeshEditorViewportClient::ApplyTransformSettingsToGizmo()
 {
 	if (!Gizmo) return;
@@ -547,6 +605,11 @@ void FMeshEditorViewportClient::ApplyTransformSettingsToGizmo()
 		Settings.bEnableRotationSnap, Settings.RotationSnapSize,
 		Settings.bEnableScaleSnap, Settings.ScaleSnapSize
 	);
+}
+
+bool FMeshEditorViewportClient::IsPhysicsAssetShapeGizmoActive() const
+{
+	return Gizmo && Gizmo->GetTarget() == &PhysicsAssetShapeTarget;
 }
 
 void FMeshEditorViewportClient::HandleDragStart(const FRay& Ray)

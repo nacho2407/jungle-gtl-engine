@@ -325,6 +325,20 @@ void FMeshEditorWidget::Open(UObject* Object)
 		}
 		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedPhysicsBodyIndex);
 	});
+	ViewportClient.SetOnPhysicsAssetShapeEdited([this]()
+	{
+		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
+		{
+			const FString SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
+			const bool bSavedPhysicsAsset = FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
+			const bool bSavedSkeletalMesh = bSavedPhysicsAsset && FMeshManager::SaveSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
+			if (!bSavedPhysicsAsset || !bSavedSkeletalMesh)
+			{
+				UE_LOG("PhysicsAsset shape edit warning: failed to persist shape edit. SkeletalMesh=%s", SkeletalMeshPath.c_str());
+			}
+		}
+		MarkDirty();
+	});
 	ViewportClient.ResetCameraToPreviousBounds();
 
 	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
@@ -347,6 +361,7 @@ void FMeshEditorWidget::Close()
 	FAssetEditorWidget::Close();
 	ViewportClient.SetPhysicsAssetPickingEnabled(false);
 	ViewportClient.SetOnPhysicsAssetBodyPicked(nullptr);
+	ViewportClient.SetOnPhysicsAssetShapeEdited(nullptr);
 
 	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
 	{
