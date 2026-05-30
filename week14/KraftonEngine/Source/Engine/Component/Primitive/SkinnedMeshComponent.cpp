@@ -308,6 +308,25 @@ bool USkinnedMeshComponent::GetBoneWorldTransformByName(const FString& BoneName,
 	return GetBoneWorldTransformByIndex(BoneIndex, OutTransform);
 }
 
+bool USkinnedMeshComponent::GetBoneWorldMatrixByIndex(int32 BoneIndex, FMatrix& OutMatrix) const
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return false;
+
+	TArray<FMatrix> GlobalMatrices;
+	BuildBoneEditGlobalMatrices(GlobalMatrices);
+
+	OutMatrix = GlobalMatrices[BoneIndex] * GetWorldMatrix();
+	return true;
+}
+
+bool USkinnedMeshComponent::GetBoneWorldMatrixByName(const FString& BoneName, FMatrix& OutMatrix) const
+{
+	int32 BoneIndex = FindBoneIndex(BoneName);
+	if (BoneIndex < 0) return false;
+	return GetBoneWorldMatrixByIndex(BoneIndex, OutMatrix);
+}
+
 bool USkinnedMeshComponent::GetBoneSocketWorldTransform(const FString& BoneName, const FTransform& LocalOffset, FTransform& OutTransform) const
 {
 	int32 BoneIndex = FindBoneIndex(BoneName);

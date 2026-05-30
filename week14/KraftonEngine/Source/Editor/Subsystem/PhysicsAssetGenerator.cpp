@@ -4,6 +4,7 @@
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Physics/BodySetup.h"
 #include "Physics/PhysicsAsset.h"
+#include "Core/Logging/Log.h"
 
 namespace
 {
@@ -75,8 +76,25 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 	}
 	
 	// 본별 도형 피팅
-	const float MinExtent = 0.5f;
-	
+
+	// 최소 두께: 모델 전체 크기에 비례해서 잡는다.
+	// 절대값(예: 0.5)은 m 단위 작은 모델에선 본보다 커서 도형이 거대해진다(이번 버그 원인).
+	FVector ModelMin = Mesh.Vertices[0].Position;
+	FVector ModelMax = Mesh.Vertices[0].Position;
+	for (const FVertexPNCTBW& V : Mesh.Vertices)
+	{
+		ModelMin.X = std::min(ModelMin.X, V.Position.X);
+		ModelMin.Y = std::min(ModelMin.Y, V.Position.Y);
+		ModelMin.Z = std::min(ModelMin.Z, V.Position.Z);
+		ModelMax.X = std::max(ModelMax.X, V.Position.X);
+		ModelMax.Y = std::max(ModelMax.Y, V.Position.Y);
+		ModelMax.Z = std::max(ModelMax.Z, V.Position.Z);
+	}
+	const float ModelSize = (ModelMax - ModelMin).Length();
+	const float MinExtent = std::max(ModelSize * 0.005f, 1.e-4f); // 모델 대각의 0.5%
+
+	int32 LogCount = 0; // 진단용: 처음 몇 개 본만 로그
+
 	for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
 	{
 		const TArray<FVector>& Pts = BoneLocalVerts[BoneIndex];
@@ -99,10 +117,11 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 				Max.X = std::max(Max.X, P.X); Max.Y = std::max(Max.Y, P.Y); Max.Z = std::max(Max.Z, P.Z);
 			}
 		}
-		else // 버텍스 부족 + bCreateBodyForAllBones : 작은 기본 박스
+		else // 버텍스 부족 + bCreateBodyForAllBones : 작은 기본 박스(모델 비례)
 		{
-			Min = FVector(-2.0f, -2.0f, -2.0f);
-			Max = FVector( 2.0f,  2.0f,  2.0f);
+			const float D = ModelSize * 0.01f;
+			Min = FVector(-D, -D, -D);
+			Max = FVector( D,  D,  D);
 		}
 		
 		const FVector Center = (Min + Max) * 0.5f;
@@ -113,6 +132,21 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 		
 		// MinBoneSize 필터 : 가장 긴 축 기준.
 		const float LongestDim = std::max(Extents.X, std::max(Extents.Y, Extents.Z)) * 2.0f;
+
+		if (LogCount < 6 && bHasEnoughVerts)
+		{
+			const FVector RawSample = Pts[0]; // 본로컬 좌표 한 점(스케일 감 잡기용)
+			const FVector InvScale  = Mesh.Bones[BoneIndex].InverseBindPoseMatrix.GetScale();
+			UE_LOG("[PhysGen] [1]Bone=%s verts=%llu | [2]InvBindScale=(%.3f,%.3f,%.3f) | [3]localMin=(%.2f,%.2f,%.2f) max=(%.2f,%.2f,%.2f) sample=(%.2f,%.2f,%.2f) | [4]Extents=(%.2f,%.2f,%.2f) Longest=%.2f",
+				Mesh.Bones[BoneIndex].Name.c_str(),
+				static_cast<unsigned long long>(Pts.size()),
+				InvScale.X, InvScale.Y, InvScale.Z,
+				Min.X, Min.Y, Min.Z, Max.X, Max.Y, Max.Z,
+				RawSample.X, RawSample.Y, RawSample.Z,
+				Extents.X, Extents.Y, Extents.Z, LongestDim);
+			++LogCount;
+		}
+
 		if (LongestDim < Params.MinBoneSize && !Params.bCreateBodyForAllBones)
 		{
 			continue;
@@ -137,13 +171,11 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 		case EPhysicsAssetPrimitiveType::Capsule:
 		default:
 		{
-			int32 Axis = 2;
-				if (Params.bAutoOrientToBone)
-				{
-					Axis = 0;
-					if (Extents.Y > Extents.Data[Axis]) Axis = 1;
-					if (Extents.Z > Extents.Data[Axis]) Axis = 2;
-				}
+			// 캡슐 축은 항상 가장 긴 AABB 축으로 잡는다(본 길이에 맞춰 눕힘).
+				// 축을 Z로 강제하면 길쭉한 본(다리/팔)이 SegHalf<0 이 되어 sphere로 퇴화한다.
+				int32 Axis = 0;
+				if (Extents.Y > Extents.Data[Axis]) Axis = 1;
+				if (Extents.Z > Extents.Data[Axis]) Axis = 2;
 				
 				const float HalfLen = Extents.Data[Axis];
 				const float Radius = (Axis == 0) ? std::max(Extents.Y, Extents.Z)
