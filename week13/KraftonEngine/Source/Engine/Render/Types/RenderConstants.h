@@ -62,7 +62,7 @@ namespace ELightCullingSRVSlot
 namespace ESystemTexSlot
 {
 	constexpr uint32 SceneDepth = 16;          // t16: CopyResource된 Depth (R24_UNORM)
-	constexpr uint32 SceneColor = 17;          // t17: CopyResource된 SceneColor (R8G8B8A8_UNORM)
+	constexpr uint32 SceneColor = 17;          // t17: CopyResource된 HDR SceneColor (R16G16B16A16_FLOAT)
 	constexpr uint32 GBufferNormal = 18;       // t18: GBuffer World Normal (R16G16B16A16_FLOAT)
 	constexpr uint32 Stencil     = 19;         // t19: CopyResource된 Stencil (X24_G8_UINT)
 	constexpr uint32 CullingHeatmap = 20;      // t20: Tile Culling Heatmap (R8G8B8A8_UNORM)
@@ -267,7 +267,16 @@ struct FFXAAConstants
 struct FGammaCorrectionConstants
 {
 	float Gamma;
-	float _pad[3];
+	float Exposure;
+	float _pad[2];
+};
+
+struct FDepthOfFieldConstants
+{
+	FVector4 Params0; // x=FocalDistance, y=Aperture(F-Stop), z=MaxCoCRadius, w=NearClip
+	FVector4 Params1; // x=FarClip, y=InvFullWidth, z=InvFullHeight, w=InvHalfWidth
+	FVector4 Params2; // x=InvHalfHeight, y=ApertureBladeCount, z=BokehThreshold, w=BokehIntensity
+	FVector4 Params3; // x=BokehRadiusScale
 };
 
 

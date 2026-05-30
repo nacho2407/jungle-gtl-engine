@@ -15,13 +15,6 @@ struct FBodyInstance;
 struct FBodyInstanceInitDesc;
 struct FConstraintInstance;
 
-// 물리 백엔드 선택
-enum class EPhysicsBackend : uint8
-{
-	Native,		// Hand-written collision math (O(N²) brute-force)
-	PhysX,		// NVIDIA PhysX 4.1
-};
-
 // ============================================================
 // IPhysicsScene — 물리 시스템 어댑터 인터페이스
 //

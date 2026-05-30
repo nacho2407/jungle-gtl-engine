@@ -2,6 +2,11 @@
 
 #include "Render/Resource/Buffer.h"
 
+namespace
+{
+	constexpr DXGI_FORMAT SceneColorFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+}
+
 FViewport::~FViewport()
 {
 	ReleaseResources();
@@ -93,7 +98,7 @@ bool FViewport::CreateResources()
 	TexDesc.Height = Height;
 	TexDesc.MipLevels = 1;
 	TexDesc.ArraySize = 1;
-	TexDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	TexDesc.Format = SceneColorFormat;
 	TexDesc.SampleDesc.Count = 1;
 	TexDesc.Usage = D3D11_USAGE_DEFAULT;
 	TexDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
@@ -179,7 +184,7 @@ bool FViewport::CreateResources()
 	StencilCopySRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportStencilCopySRV")), "ViewportStencilCopySRV");
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SceneColorCopySRVDesc = {};
-	SceneColorCopySRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	SceneColorCopySRVDesc.Format = SceneColorFormat;
 	SceneColorCopySRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	SceneColorCopySRVDesc.Texture2D.MipLevels = 1;
 	SceneColorCopySRVDesc.Texture2D.MostDetailedMip = 0;
@@ -187,6 +192,47 @@ bool FViewport::CreateResources()
 	hr = Device->CreateShaderResourceView(SceneColorCopyTexture, &SceneColorCopySRVDesc, &SceneColorCopySRV);
 	if (FAILED(hr)) return false;
 	SceneColorCopySRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportSceneColorCopySRV")), "ViewportSceneColorCopySRV");
+
+	// ── DOF half-resolution intermediates (RGB=color, A=CoC) ──
+	D3D11_TEXTURE2D_DESC DOFDesc = {};
+	DOFDesc.Width = Width > 1 ? Width / 2 : 1;
+	DOFDesc.Height = Height > 1 ? Height / 2 : 1;
+	DOFDesc.MipLevels = 1;
+	DOFDesc.ArraySize = 1;
+	DOFDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	DOFDesc.SampleDesc.Count = 1;
+	DOFDesc.Usage = D3D11_USAGE_DEFAULT;
+	DOFDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFColorCoCTexture);
+	if (FAILED(hr)) return false;
+	DOFColorCoCTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFColorCoCTexture")), "ViewportDOFColorCoCTexture");
+	hr = Device->CreateRenderTargetView(DOFColorCoCTexture, nullptr, &DOFColorCoCRTV);
+	if (FAILED(hr)) return false;
+	DOFColorCoCRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFColorCoCRTV")), "ViewportDOFColorCoCRTV");
+	hr = Device->CreateShaderResourceView(DOFColorCoCTexture, nullptr, &DOFColorCoCSRV);
+	if (FAILED(hr)) return false;
+	DOFColorCoCSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFColorCoCSRV")), "ViewportDOFColorCoCSRV");
+
+	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFBlurTexture);
+	if (FAILED(hr)) return false;
+	DOFBlurTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBlurTexture")), "ViewportDOFBlurTexture");
+	hr = Device->CreateRenderTargetView(DOFBlurTexture, nullptr, &DOFBlurRTV);
+	if (FAILED(hr)) return false;
+	DOFBlurRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBlurRTV")), "ViewportDOFBlurRTV");
+	hr = Device->CreateShaderResourceView(DOFBlurTexture, nullptr, &DOFBlurSRV);
+	if (FAILED(hr)) return false;
+	DOFBlurSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBlurSRV")), "ViewportDOFBlurSRV");
+
+	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFBokehTexture);
+	if (FAILED(hr)) return false;
+	DOFBokehTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBokehTexture")), "ViewportDOFBokehTexture");
+	hr = Device->CreateRenderTargetView(DOFBokehTexture, nullptr, &DOFBokehRTV);
+	if (FAILED(hr)) return false;
+	DOFBokehRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBokehRTV")), "ViewportDOFBokehRTV");
+	hr = Device->CreateShaderResourceView(DOFBokehTexture, nullptr, &DOFBokehSRV);
+	if (FAILED(hr)) return false;
+	DOFBokehSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBokehSRV")), "ViewportDOFBokehSRV");
 
 	// ── GBuffer Normal RT (R16G16B16A16_FLOAT — 음수 지원) ──
 	D3D11_TEXTURE2D_DESC NormalDesc = {};
@@ -247,6 +293,15 @@ bool FViewport::CreateResources()
 
 void FViewport::ReleaseResources()
 {
+	if (DOFBokehSRV) { DOFBokehSRV->Release(); DOFBokehSRV = nullptr; }
+	if (DOFBokehRTV) { DOFBokehRTV->Release(); DOFBokehRTV = nullptr; }
+	if (DOFBokehTexture) { DOFBokehTexture->Release(); DOFBokehTexture = nullptr; }
+	if (DOFBlurSRV) { DOFBlurSRV->Release(); DOFBlurSRV = nullptr; }
+	if (DOFBlurRTV) { DOFBlurRTV->Release(); DOFBlurRTV = nullptr; }
+	if (DOFBlurTexture) { DOFBlurTexture->Release(); DOFBlurTexture = nullptr; }
+	if (DOFColorCoCSRV) { DOFColorCoCSRV->Release(); DOFColorCoCSRV = nullptr; }
+	if (DOFColorCoCRTV) { DOFColorCoCRTV->Release(); DOFColorCoCRTV = nullptr; }
+	if (DOFColorCoCTexture) { DOFColorCoCTexture->Release(); DOFColorCoCTexture = nullptr; }
 	if (CullingHeatmapSRV) { CullingHeatmapSRV->Release(); CullingHeatmapSRV = nullptr; }
 	if (CullingHeatmapRTV) { CullingHeatmapRTV->Release(); CullingHeatmapRTV = nullptr; }
 	if (CullingHeatmapTexture) { CullingHeatmapTexture->Release(); CullingHeatmapTexture = nullptr; }

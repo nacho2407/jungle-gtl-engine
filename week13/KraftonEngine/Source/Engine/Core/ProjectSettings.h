@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Core/Singleton.h"
@@ -24,13 +24,6 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 		uint32 MaxSpotAtlasPages   = 4;		// Spot Light Atlas 최대 page 수
 		uint32 MaxPointAtlasPages  = 4;		// Point Light Atlas 최대 page 수
 	};
-
-	// --- Physics ---
-	struct FPhysicsOption
-	{
-		EPhysicsBackend Backend = EPhysicsBackend::Native;
-	};
-
 	// --- Game ---
 	struct FGameOption
 	{
@@ -41,7 +34,6 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 
 public:
 	FShadowOption Shadow;
-	FPhysicsOption Physics;
 	FGameOption Game;
 
 	// --- 직렬화 ---

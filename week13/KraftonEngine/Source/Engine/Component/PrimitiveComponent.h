@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Reflection/ObjectFactory.h"
 #include "Component/SceneComponent.h"
@@ -7,6 +7,7 @@
 #include "Core/Types/CollisionTypes.h"
 #include "Core/Types/EngineTypes.h"
 #include "Core/Delegate.h"
+#include "Physics/BodyInstance.h"
 #include "Render/Types/VertexTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
 
@@ -60,6 +61,8 @@ class UPrimitiveComponent : public USceneComponent
 {
 public:
 	GENERATED_BODY()
+
+	UPrimitiveComponent();
 	~UPrimitiveComponent() override;
 
 	void BeginPlay() override;
@@ -142,6 +145,8 @@ public:
 	bool IsCollisionEnabled() const { return CollisionEnabled != ECollisionEnabled::NoCollision; }
 	UFUNCTION(Pure, Category="Collision")
 	bool IsQueryCollisionEnabled() const;
+	UFUNCTION(Pure, Category = "Collision")
+	bool IsPhysicsCollisionEnabled() const;
 
 	UFUNCTION(Callable, Exec, Category="Collision")
 	void SetCollisionObjectType(ECollisionChannel InChannel);
@@ -165,6 +170,10 @@ public:
 	void SetSimulatePhysics(bool bInSimulate);
 	UFUNCTION(Pure, Category="Physics")
 	bool GetSimulatePhysics() const { return bSimulatePhysics; }
+
+	// --- BodyInstance
+	FBodyInstance& GetBodyInstance() { return BodyInstance; }
+	const FBodyInstance& GetBodyInstance() const { return BodyInstance; }
 
 	// --- Physics Force/Velocity API ---
 	UFUNCTION(Callable, Category="Physics")
@@ -236,6 +245,7 @@ protected:
 	void OnTransformDirty() override;
 	void EnsureWorldAABBUpdated() const;
 
+	void InitializeBodyInstance();
 	// 컴포넌트가 BeginPlay 후에만 PhysicsScene::RebuildBody 호출. 이전이면 skip.
 	void NotifyPhysicsBodyDirty();
 
@@ -244,6 +254,9 @@ protected:
 	mutable FVector WorldAABBMaxLocation;
 	mutable bool bWorldAABBDirty = true;
 	mutable bool bHasValidWorldAABB = false;
+
+	FVector CachedPhysicsWorldScale = FVector::OneVector;
+	bool bHasCachedPhysicsWorldScale = false;
 	// PrimitiveComponent::BeginPlay에서 PhysicsScene::RegisterComponent를 호출한 직후 true가 된다.
 	// setter들이 이 플래그를 보고 PhysicsScene 측 RebuildBody를 호출할지 결정한다.
 	// (BeginPlay 전 InitDefaultComponents 단계에서 setter가 호출돼도 PhysicsScene 호출은 skip되어
@@ -272,6 +285,8 @@ protected:
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Responses", Type=Struct)
 	FCollisionResponseContainer ResponseContainer; // 기본: 전 채널 Block
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
+
+	FBodyInstance BodyInstance;
 
 	FOctree* OctreeNode = nullptr;
 	bool bInOctreeOverflow = false;

@@ -55,6 +55,8 @@ struct FShowFlags
 	bool bDebugDraw = true;
 	bool bOctree = false;
 	bool bFog = true;
+	bool bDepthOfField = false;
+	bool bDOFBokeh = false;
 	bool bFXAA = false;
 	bool bGammaCorrection = true;
 	bool bViewLightCulling = false;
@@ -101,8 +103,18 @@ struct FViewportRenderOptions
 	float EdgeThreshold = 0.125f;
 	float EdgeThresholdMin = 0.0625f;
 
-	// Gamma Correction 전용 설정
+	// Tone Mapping / Gamma Correction settings
 	float Gamma = 2.4f;
+	float Exposure = 1.0f;
+
+	// Depth of Field settings
+	float DOFAperture = 4.0f; // F-Stop
+	float DOFFocalDistance = 10.0f;
+	float DOFMaxCoCRadius = 8.0f;
+	int32 DOFApertureBladeCount = 6;
+	float DOFBokehThreshold = 2.0f;
+	float DOFBokehIntensity = 1.0f;
+	float DOFBokehRadiusScale = 1.0f;
 
 	// Light Culling 뷰모드 전용 설정
 	ELightCullingMode LightCullingMode = ELightCullingMode::Cluster;

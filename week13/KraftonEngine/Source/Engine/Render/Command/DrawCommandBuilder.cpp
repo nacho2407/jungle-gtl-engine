@@ -680,7 +680,7 @@ void FDrawCommandBuilder::BuildEditorLineCommands(EViewMode ViewMode)
 
 // ============================================================
 // BuildPostProcessCommands — Outline, SceneDepth, WorldNormal, FXAA
-// HeightFog는 FogPass(ERenderPass::Fog)로 분리 — AlphaBlend 이전에 실행됨
+// HeightFog는 EarlyPostProcessPass(ERenderPass::EarlyPostProcess)로 분리 — AlphaBlend 이전에 실행됨
 // ============================================================
 void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, const FScene* CollectScene)
 {
@@ -688,16 +688,16 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 	EViewMode ViewMode = Frame.RenderOptions.ViewMode;
 	const FDrawCommandRenderState PPRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::PostProcess, ViewMode);
 
-	// HeightFog — ERenderPass::Fog 패스로 제출 (FogPass::BeginPass에서 depth copy/bind 처리)
+	// HeightFog — ERenderPass::EarlyPostProcess 패스로 제출 (EarlyPostProcessPass::BeginPass에서 depth copy/bind 처리)
 	// FogBuffer(b7)는 UpdateFogBuffer에서 전역 바인딩됨 — 커맨드별 CB 세팅 불필요
 	if (Frame.RenderOptions.ShowFlags.bFog && CollectScene && CollectScene->GetEnvironment().HasFog())
 	{
 		FShader* FogShader = FShaderManager::Get().GetOrCreate(EShaderPath::HeightFog);
 		if (FogShader)
 		{
-			const FDrawCommandRenderState FogRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::Fog, ViewMode);
+			const FDrawCommandRenderState FogRS = PassRenderStateTable->ToDrawCommandState(ERenderPass::EarlyPostProcess, ViewMode);
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();
-			Cmd.InitFullscreenTriangle(FogShader, ERenderPass::Fog, FogRS);
+			Cmd.InitFullscreenTriangle(FogShader, ERenderPass::EarlyPostProcess, FogRS);
 			Cmd.BuildSortKey(0);
 		}
 	}
@@ -852,6 +852,7 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 		{
 			FGammaCorrectionConstants GammaData = {};
 			GammaData.Gamma = Frame.RenderOptions.Gamma;
+			GammaData.Exposure = Frame.RenderOptions.Exposure;
 			GammaCorrectionCB.Update(Ctx, &GammaData, sizeof(FGammaCorrectionConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();

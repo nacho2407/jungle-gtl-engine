@@ -18,6 +18,11 @@ FGammaCorrectionPass::FGammaCorrectionPass()
 bool FGammaCorrectionPass::BeginPass(const FPassContext& Ctx)
 {
 	const FFrameContext& Frame = Ctx.Frame;
+	if (!Frame.RenderOptions.ShowFlags.bGammaCorrection)
+	{
+		return false;
+	}
+
 	if (!Frame.SceneColorCopyTexture || !Frame.ViewportRenderTexture || !Frame.SceneColorCopySRV)
 	{
 		return false;
@@ -26,6 +31,7 @@ bool FGammaCorrectionPass::BeginPass(const FPassContext& Ctx)
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 	FStateCache& Cache = Ctx.Cache;
 
+	DC->OMSetRenderTargets(0, nullptr, nullptr);
 	DC->CopyResource(Frame.SceneColorCopyTexture, Frame.ViewportRenderTexture);
 	DC->OMSetRenderTargets(1, &Cache.RTV, Cache.DSV);
 

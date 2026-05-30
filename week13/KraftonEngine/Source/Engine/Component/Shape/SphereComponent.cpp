@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+﻿// Copyright Epic Games, Inc. All Rights Reserved.
 #include "SphereComponent.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
@@ -15,6 +15,7 @@ void USphereComponent::SetSphereRadius(float InRadius)
 	LocalExtents = FVector(SphereRadius, SphereRadius, SphereRadius);
 	MarkWorldBoundsDirty();
 	MarkRenderTransformDirty();
+	NotifyPhysicsBodyDirty();
 }
 
 float USphereComponent::GetScaledSphereRadius() const
