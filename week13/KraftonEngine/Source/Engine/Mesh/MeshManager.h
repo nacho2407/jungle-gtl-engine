@@ -60,6 +60,7 @@ public:
 
 	static USkeletalMesh* LoadSkeletalMesh(const FString& PathFileName , ID3D11Device* InDevice);
 	static bool           ImportSkeletalMeshAsNew(const FString& SourceFbxPath, ID3D11Device* Device, USkeletalMesh*& OutSkeletalMesh);
+	static bool           SaveSkeletalMesh(USkeletalMesh* SkeletalMesh, const FString& PackagePath = FString());
 	static bool ImportSkeletonAsNew(const FString& SourceFbxPath, USkeleton*& OutSkeleton);
 	static bool           ImportSkeletalMesh(const FSkeletalMeshImportRequest& Request, ID3D11Device* Device, USkeletalMesh*& OutSkeletalMesh);
 	static bool ImportFbxScene(

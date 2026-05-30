@@ -220,6 +220,19 @@ static void ResolvePhysicsAssetForSkeletalMesh(USkeletalMesh* SkeletalMesh)
 		return;
 	}
 
+	const FString ConventionalPhysicsAssetPath =
+		FPhysicsAssetManager::GetPhysicsAssetPackagePath(SkeletalMesh->GetAssetPathFileName());
+	if (IsValidPhysicsAssetPath(ConventionalPhysicsAssetPath) &&
+		std::filesystem::exists(ResolveProjectPath(ConventionalPhysicsAssetPath)))
+	{
+		if (UPhysicsAsset* PhysicsAsset = FPhysicsAssetManager::Get().Load(ConventionalPhysicsAssetPath, SkeletalMesh))
+		{
+			SkeletalMesh->SetPhysicsAsset(PhysicsAsset);
+			SkeletalMesh->SetPhysicsAssetPath(ConventionalPhysicsAssetPath);
+		}
+		return;
+	}
+
 	if (UPhysicsAsset* LegacyPhysicsAsset = SkeletalMesh->GetPhysicsAsset())
 	{
 		LegacyPhysicsAsset->SetOuter(SkeletalMesh);
@@ -513,6 +526,30 @@ static bool SaveSkeletalMeshBinary(USkeletalMesh* SkeletalMesh, const FString& B
 	}
 
 	return Writer.IsValid();
+}
+
+bool FMeshManager::SaveSkeletalMesh(USkeletalMesh* SkeletalMesh, const FString& PackagePath)
+{
+	if (!SkeletalMesh)
+	{
+		return false;
+	}
+
+	const FString BinaryPath = !PackagePath.empty()
+		? NormalizeProjectPath(PackagePath)
+		: NormalizeProjectPath(SkeletalMesh->GetAssetPathFileName());
+	if (BinaryPath.empty() || BinaryPath == "None")
+	{
+		UE_LOG("SkeletalMesh save failed: invalid package path.");
+		return false;
+	}
+
+	const FSkeletalMesh* MeshAsset = SkeletalMesh->GetSkeletalMeshAsset();
+	const FString SourcePath = MeshAsset && !MeshAsset->PathFileName.empty()
+		? MeshAsset->PathFileName
+		: BinaryPath;
+
+	return SaveSkeletalMeshBinary(SkeletalMesh, BinaryPath, SourcePath);
 }
 
 FString FMeshManager::GetStaticMeshBinaryFilePath(const FString& SourcePath)

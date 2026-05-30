@@ -20,6 +20,7 @@ public:
 
     void Serialize(FArchive& Ar) override;
     void AddReferencedObjects(FReferenceCollector& Collector) override;
+	void PostEditProperty(const char* PropertyName) override;
 
     const FString& GetAssetPathFileName() const
     {
@@ -64,6 +65,7 @@ private:
     FSkeletonBinding SkeletonBinding;
     USkeleton*       Skeleton = nullptr;
 
+	UPROPERTY(Edit, Transient, Category="Physics", DisplayName="Physics Asset")
 	UPhysicsAsset* PhysicsAsset = nullptr;
 	FString PhysicsAssetPath = "None";
 };

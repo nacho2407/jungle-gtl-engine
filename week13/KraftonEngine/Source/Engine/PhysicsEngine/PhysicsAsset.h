@@ -3,9 +3,13 @@
 #include "Object/Object.h"
 #include "BodySetup.h"
 
+#include "Source/Engine/PhysicsEngine/PhysicsAsset.generated.h"
+
+UCLASS()
 class UPhysicsAsset : public UObject
 {
 public:
+	GENERATED_BODY()
 	UPhysicsAsset() = default;
 	~UPhysicsAsset() override = default;
 

@@ -6,6 +6,7 @@
 
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
+#include "Mesh/MeshManager.h"
 #include "Runtime/Engine.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Light/DirectionalLightComponent.h"
@@ -34,6 +35,7 @@
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "Platform/Paths.h"
 #include "Object/Object.h"
+#include "Core/Logging/Log.h"
 
 #include <imgui.h>
 #include <algorithm>
@@ -887,7 +889,14 @@ void FMeshEditorWidget::RenderPhysicsAssetBuildOptionsPopup(
 		UPhysicsAsset* NewAsset = FPhysicsAssetBuilder::CreateFromSkeletalMesh(SkeletalMesh, PendingPhysicsAssetBuildOptions);
 		if (NewAsset)
 		{
-			FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMesh->GetAssetPathFileName());
+			const FString SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
+			const bool bSavedPhysicsAsset = FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
+			const bool bSavedSkeletalMesh = bSavedPhysicsAsset && FMeshManager::SaveSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
+			if (!bSavedPhysicsAsset || !bSavedSkeletalMesh)
+			{
+				UE_LOG("PhysicsAsset generate warning: failed to persist PhysicsAsset reference. SkeletalMesh=%s", SkeletalMeshPath.c_str());
+			}
+
 			MarkDirty();
 			ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
 			InOutPhysicsAsset = NewAsset;

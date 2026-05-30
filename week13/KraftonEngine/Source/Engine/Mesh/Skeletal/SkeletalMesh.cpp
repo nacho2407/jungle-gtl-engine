@@ -2,7 +2,10 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Animation/Skeleton/Skeleton.h"
+#include "Mesh/MeshManager.h"
 #include "Object/GarbageCollection.h"
+
+#include <cstring>
 
 namespace
 {
@@ -190,6 +193,31 @@ void USkeletalMesh::SetPhysicsAsset(UPhysicsAsset* InPhysicsAsset)
 		if (IsValidPhysicsAssetPath(AssetPath))
 		{
 			PhysicsAssetPath = AssetPath;
+		}
+	}
+	else
+	{
+		PhysicsAssetPath = "None";
+	}
+}
+
+void USkeletalMesh::PostEditProperty(const char* PropertyName)
+{
+	UObject::PostEditProperty(PropertyName);
+
+	if (!PropertyName)
+	{
+		return;
+	}
+
+	if (std::strcmp(PropertyName, "PhysicsAsset") == 0 ||
+		std::strcmp(PropertyName, "Physics Asset") == 0)
+	{
+		SetPhysicsAsset(PhysicsAsset);
+
+		if (IsValidPhysicsAssetPath(AssetPathFileName))
+		{
+			FMeshManager::SaveSkeletalMesh(this, AssetPathFileName);
 		}
 	}
 }
