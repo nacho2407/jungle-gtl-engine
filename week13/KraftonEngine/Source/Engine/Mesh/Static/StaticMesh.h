@@ -37,6 +37,9 @@ public:
 
 	void SetStaticMeshAsset(FStaticMesh* InMesh);
 	FStaticMesh* GetStaticMeshAsset() const;
+	UBodySetup* GetBodySetup() const { return BodySetup; }
+	UBodySetup* CreateBodySetupIfMissing();
+	void EnsureDefaultBodySetup();
 	void SetStaticMaterials(TArray<FStaticMaterial>&& InMaterials);
 	const TArray<FStaticMaterial>& GetStaticMaterials() const;
 
@@ -62,5 +65,5 @@ private:
 	FLODMeshData AdditionalLODs[3];
 	bool bHasLOD = false;
 
-	UBodySetup* BodySetup;
+	UBodySetup* BodySetup = nullptr;
 };

@@ -4,6 +4,9 @@
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/Shape/SphereComponent.h"
+#include "Component/Primitive/StaticMeshComponent.h"
+#include "Mesh/Static/StaticMesh.h"
+#include "PhysicsEngine/BodySetup.h"
 #include <algorithm>
 
 physx::PxRigidDynamic* FBodyInstance::GetRigidDynamic() const
@@ -211,6 +214,7 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
     OutDesc = FBodyInstanceInitDesc();
 
     FTransform WorldTransform = FTransform::FromMatrixWithScale(Comp->GetWorldMatrix());
+    const FVector WorldScale = WorldTransform.Scale;
     WorldTransform.Scale = FVector::OneVector;
 
     OutDesc.WorldTransform = WorldTransform;
@@ -265,6 +269,74 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
         Shape.CapsuleHalfHeight = HalfHeight;
 
         OutDesc.Shapes.push_back(Shape);
+    }
+    else if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(Comp))
+    {
+        UStaticMesh* Mesh = StaticMeshComp->GetStaticMesh();
+        if (Mesh)
+        {
+            Mesh->EnsureDefaultBodySetup();
+        }
+
+        const UBodySetup* BodySetup = Mesh ? Mesh->GetBodySetup() : nullptr;
+        if (!BodySetup || BodySetup->CollisionReponse == EBodyCollisionResponse::BodyCollision_Disabled)
+        {
+            return false;
+        }
+
+        const FBodySetupPhysicsInfo& PhysicsInfo = BodySetup->GetPhysicsInfo();
+        OutDesc.Mass = BodySetup->CalculateMass(WorldScale);
+        OutDesc.CenterOfMassOffset = PhysicsInfo.CenterOfMassOffset;
+        OutDesc.LinearDamping = PhysicsInfo.LinearDamping;
+        OutDesc.AngularDamping = PhysicsInfo.AngularDamping;
+        OutDesc.bEnableGravity = PhysicsInfo.bEnableGravity;
+        OutDesc.InertiaTensorScale = PhysicsInfo.InertiaTensorScale;
+
+        const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
+
+        for (const FKSphereElem& Sphere : AggGeom.SphereElems)
+        {
+            const FKSphereElem ScaledSphere = Sphere.GetFinalScaled(WorldScale, FTransform());
+
+            FBodyShapeDesc MeshShape;
+            MeshShape.ShapeType = EBodyInstanceShapeType::Sphere;
+            MeshShape.LocalTransform = ScaledSphere.GetTransform();
+            MeshShape.SphereRadius = std::max(ScaledSphere.Radius, 0.001f);
+
+            OutDesc.Shapes.push_back(MeshShape);
+        }
+
+        for (const FKBoxElem& Box : AggGeom.BoxElems)
+        {
+            const FKBoxElem ScaledBox = Box.GetFinalScaled(WorldScale, FTransform());
+
+            FBodyShapeDesc MeshShape;
+            MeshShape.ShapeType = EBodyInstanceShapeType::Box;
+            MeshShape.LocalTransform = ScaledBox.GetTransform();
+            MeshShape.BoxHalfExtent = FVector(
+                std::max(ScaledBox.X * 0.5f, 0.001f),
+                std::max(ScaledBox.Y * 0.5f, 0.001f),
+                std::max(ScaledBox.Z * 0.5f, 0.001f)
+            );
+
+            OutDesc.Shapes.push_back(MeshShape);
+        }
+
+        for (const FKSphylElem& Sphyl : AggGeom.SphylElems)
+        {
+            const FKSphylElem ScaledSphyl = Sphyl.GetFinalScaled(WorldScale, FTransform());
+
+            FBodyShapeDesc MeshShape;
+            MeshShape.ShapeType = EBodyInstanceShapeType::Capsule;
+            MeshShape.LocalTransform = ScaledSphyl.GetTransform();
+            MeshShape.CapsuleRadius = std::max(ScaledSphyl.Radius, 0.001f);
+            MeshShape.CapsuleHalfHeight = std::max(
+                ScaledSphyl.Length * 0.5f + ScaledSphyl.Radius,
+                MeshShape.CapsuleRadius + 0.001f
+            );
+
+            OutDesc.Shapes.push_back(MeshShape);
+        }
     }
 
     return !OutDesc.Shapes.empty();

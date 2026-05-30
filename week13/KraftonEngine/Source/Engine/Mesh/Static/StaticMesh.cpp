@@ -8,6 +8,69 @@
 #include "Engine/Profiling/Stats/MemoryStats.h"
 #include "Mesh/MeshSimplifier.h"
 
+namespace
+{
+	constexpr uint32 StaticMeshBodySetupMagic = 0x42534D53; // S M S B
+	constexpr uint32 StaticMeshBodySetupVersion = 1;
+	constexpr float MinDefaultCollisionExtent = 0.001f;
+
+	void SerializeBodySetup(FArchive& Ar, UStaticMesh* StaticMesh, UBodySetup*& BodySetup)
+	{
+		if (Ar.IsSaving())
+		{
+			uint32 Magic = StaticMeshBodySetupMagic;
+			uint32 Version = StaticMeshBodySetupVersion;
+			bool bHasBodySetup = BodySetup != nullptr;
+
+			Ar << Magic;
+			Ar << Version;
+			Ar << bHasBodySetup;
+
+			if (bHasBodySetup)
+			{
+				BodySetup->Serialize(Ar);
+			}
+			return;
+		}
+
+		if (!Ar.CanSeek() || Ar.IsAtEnd())
+		{
+			return;
+		}
+
+		const int64 BlockStart = Ar.Tell();
+		uint32 Magic = 0;
+		Ar << Magic;
+		if (Magic != StaticMeshBodySetupMagic)
+		{
+			Ar.Seek(BlockStart);
+			return;
+		}
+
+		uint32 Version = 0;
+		Ar << Version;
+		if (Version != StaticMeshBodySetupVersion)
+		{
+			Ar.Seek(BlockStart);
+			return;
+		}
+
+		bool bHasBodySetup = false;
+		Ar << bHasBodySetup;
+		if (!bHasBodySetup)
+		{
+			BodySetup = nullptr;
+			return;
+		}
+
+		BodySetup = UObjectManager::Get().CreateObject<UBodySetup>(StaticMesh);
+		if (BodySetup)
+		{
+			BodySetup->Serialize(Ar);
+		}
+	}
+}
+
 UStaticMesh::~UStaticMesh()
 {
 	if (StaticMeshAsset)
@@ -28,6 +91,8 @@ void UStaticMesh::AddReferencedObjects(FReferenceCollector& Collector)
 	{
 		Collector.AddReferencedObject(MaterialSlot.MaterialInterface);
 	}
+
+	Collector.AddReferencedObject(BodySetup, "UStaticMesh.BodySetup");
 }
 
 void UStaticMesh::Serialize(FArchive& Ar)
@@ -44,6 +109,8 @@ void UStaticMesh::Serialize(FArchive& Ar)
 	// 2. 머티리얼 데이터 직렬화 (필수!)
 	Ar << StaticMaterials;
 
+	SerializeBodySetup(Ar, this, BodySetup);
+
 	// 3. 로딩 시 Section → MaterialIndex 매핑 캐싱 (매 프레임 문자열 비교 방지)
 	if (Ar.IsLoading())
 	{
@@ -59,6 +126,8 @@ void UStaticMesh::Serialize(FArchive& Ar)
 				}
 			}
 		}
+
+		EnsureDefaultBodySetup();
 	}
 }
 
@@ -145,12 +214,60 @@ void UStaticMesh::SetStaticMeshAsset(FStaticMesh* InMesh)
 			}
 		}
 		EnsureMeshTrianglePickingBVHBuilt();
+		EnsureDefaultBodySetup();
 	}
 }
 
 FStaticMesh* UStaticMesh::GetStaticMeshAsset() const
 {
 	return StaticMeshAsset;
+}
+
+UBodySetup* UStaticMesh::CreateBodySetupIfMissing()
+{
+	if (!BodySetup)
+	{
+		BodySetup = UObjectManager::Get().CreateObject<UBodySetup>(this);
+	}
+	return BodySetup;
+}
+
+void UStaticMesh::EnsureDefaultBodySetup()
+{
+	if (!StaticMeshAsset || StaticMeshAsset->Vertices.empty())
+	{
+		return;
+	}
+
+	UBodySetup* Setup = CreateBodySetupIfMissing();
+	if (!Setup)
+	{
+		return;
+	}
+
+	FKAggregateGeom& AggGeom = Setup->GetAggGeom();
+	if (AggGeom.GetElementCount() != 0)
+	{
+		return;
+	}
+
+	if (!StaticMeshAsset->bBoundsValid)
+	{
+		StaticMeshAsset->CacheBounds();
+	}
+
+	if (!StaticMeshAsset->bBoundsValid)
+	{
+		return;
+	}
+
+	FKBoxElem Box;
+	Box.Center = StaticMeshAsset->BoundsCenter;
+	Box.X = std::max(StaticMeshAsset->BoundsExtent.X * 2.0f, MinDefaultCollisionExtent);
+	Box.Y = std::max(StaticMeshAsset->BoundsExtent.Y * 2.0f, MinDefaultCollisionExtent);
+	Box.Z = std::max(StaticMeshAsset->BoundsExtent.Z * 2.0f, MinDefaultCollisionExtent);
+
+	AggGeom.BoxElems.push_back(Box);
 }
 
 void UStaticMesh::SetStaticMaterials(TArray<FStaticMaterial>&& InMaterials)

@@ -51,6 +51,7 @@ void UStaticMeshComponent::SetStaticMesh(UStaticMesh* InMesh)
 	CacheLocalBounds();
 	MarkRenderStateDirty();
 	MarkWorldBoundsDirty();
+	NotifyPhysicsBodyDirty();
 }
 
 void UStaticMeshComponent::AddReferencedObjects(FReferenceCollector& Collector)
