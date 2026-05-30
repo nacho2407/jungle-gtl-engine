@@ -1,9 +1,6 @@
 #include "Render/Proxy/PhysicsAssetSceneProxy.h"
 
 #include "Component/Debug/PhysicsAssetDebugComponent.h"
-#include "Component/Primitive/SkeletalMeshComponent.h"
-#include "Mesh/Skeletal/SkeletalMesh.h"
-#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Object/Object.h"
 #include "Physics/ConstraintInstance.h"
 #include "PhysicsEngine/BodySetup.h"
@@ -36,58 +33,21 @@ USkeletalMeshComponent* FPhysicsAssetSceneProxy::GetTargetSkeletalMeshComponent(
 	return IsValid(DebugComponent) ? DebugComponent->GetTargetSkeletalMeshComponent() : nullptr;
 }
 
-bool FPhysicsAssetSceneProxy::GetPhysicsAssetBoneWorldTransform(const FName& BoneName, FTransform& OutBoneWorldTM) const
-{
-	USkeletalMeshComponent* SMC = GetTargetSkeletalMeshComponent();
-	USkeletalMesh* Mesh = IsValid(SMC) ? SMC->GetSkeletalMesh() : nullptr;
-	FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
-	if (!SMC || !Asset)
-	{
-		return false;
-	}
-
-	const FString BoneNameString = BoneName.ToString();
-	if (BoneNameString.empty())
-	{
-		return false;
-	}
-
-	int32 BoneIndex = -1;
-	for (int32 Index = 0; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
-	{
-		if (Asset->Bones[Index].Name == BoneNameString)
-		{
-			BoneIndex = Index;
-			break;
-		}
-	}
-
-	if (BoneIndex < 0)
-	{
-		return false;
-	}
-
-	TArray<FTransform> ComponentSpaceBoneTransforms;
-	SMC->GetCurrentBoneGlobalTransforms(ComponentSpaceBoneTransforms);
-	if (BoneIndex >= static_cast<int32>(ComponentSpaceBoneTransforms.size()))
-	{
-		return false;
-	}
-
-	const FTransform ComponentToWorldTM(SMC->GetWorldMatrix());
-	OutBoneWorldTM = ComponentSpaceBoneTransforms[BoneIndex] * ComponentToWorldTM;
-	return true;
-}
-
 bool FPhysicsAssetSceneProxy::GetConstraintWorldFrames(
 	const FConstraintInstanceInitDesc& ConstraintDesc,
 	FTransform& OutParentFrame,
 	FTransform& OutChildFrame) const
 {
+	const UPhysicsAssetDebugComponent* DebugComponent = GetPhysicsAssetDebugComponent();
+	if (!IsValid(DebugComponent))
+	{
+		return false;
+	}
+
 	FTransform ParentBoneWorldTM;
 	FTransform ChildBoneWorldTM;
-	if (!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ParentBoneName, ParentBoneWorldTM) ||
-		!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ChildBoneName, ChildBoneWorldTM))
+	if (!DebugComponent->GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ParentBoneName, ParentBoneWorldTM) ||
+		!DebugComponent->GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ChildBoneName, ChildBoneWorldTM))
 	{
 		return false;
 	}
@@ -126,7 +86,7 @@ void FPhysicsAssetSceneProxy::BuildPhysicsAssetSolidMesh(
 		}
 
 		FTransform BoneWorldTM;
-		if (!GetPhysicsAssetBoneWorldTransform(BodySetup->BoneName, BoneWorldTM))
+		if (!DebugComponent->GetPhysicsAssetBoneWorldTransform(BodySetup->BoneName, BoneWorldTM))
 		{
 			continue;
 		}

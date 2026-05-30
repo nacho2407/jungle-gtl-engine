@@ -17,6 +17,7 @@
 #include "Slate/SlateApplication.h"
 
 #include <imgui.h>
+#include <utility>
 
 void FMeshEditorViewportClient::Initialize(ID3D11Device* Device, uint32 Width, uint32 Height)
 {
@@ -55,6 +56,8 @@ void FMeshEditorViewportClient::Release()
 	Gizmo = nullptr;
 	BoneDebugComponent = nullptr;
 	PhysicsAssetDebugComponent = nullptr;
+	bPhysicsAssetPickingEnabled = false;
+	OnPhysicsAssetBodyPicked = nullptr;
 
 	bIsRenderable = false;
 
@@ -114,6 +117,33 @@ void FMeshEditorViewportClient::SyncPhysicsAssetDebugComponent(UPhysicsAsset* Ph
 
 	PhysicsAssetDebugComponent->SetTarget(PreviewMeshComponent, PhysicsAsset);
 	PhysicsAssetDebugComponent->SetSelectedBodyIndex(SelectedBodyIndex);
+}
+
+void FMeshEditorViewportClient::SetPhysicsAssetPickingEnabled(bool bInEnabled)
+{
+	bPhysicsAssetPickingEnabled = bInEnabled;
+	if (!bPhysicsAssetPickingEnabled && PhysicsAssetDebugComponent)
+	{
+		PhysicsAssetDebugComponent->SetSelectedBodyIndex(-1);
+	}
+}
+
+void FMeshEditorViewportClient::SetOnPhysicsAssetBodyPicked(TFunction<void(int32)> InCallback)
+{
+	OnPhysicsAssetBodyPicked = std::move(InCallback);
+}
+
+void FMeshEditorViewportClient::NotifyPhysicsAssetBodyPicked(int32 BodyIndex)
+{
+	if (PhysicsAssetDebugComponent)
+	{
+		PhysicsAssetDebugComponent->SetSelectedBodyIndex(BodyIndex);
+	}
+
+	if (OnPhysicsAssetBodyPicked)
+	{
+		OnPhysicsAssetBodyPicked(BodyIndex);
+	}
 }
 
 void FMeshEditorViewportClient::ResetCameraToPreviousBounds()
@@ -525,5 +555,15 @@ void FMeshEditorViewportClient::HandleDragStart(const FRay& Ray)
 	if (FRayUtils::RaycastComponent(Gizmo, Ray, Hit))
 	{
 		Gizmo->SetPressedOnHandle(true);
+		return;
+	}
+
+	if (bPhysicsAssetPickingEnabled && PhysicsAssetDebugComponent)
+	{
+		FPhysicsAssetDebugHitResult PhysicsHit;
+		const int32 PickedBodyIndex = PhysicsAssetDebugComponent->PickBody(Ray, PhysicsHit)
+			? PhysicsHit.BodyIndex
+			: -1;
+		NotifyPhysicsAssetBodyPicked(PickedBodyIndex);
 	}
 }

@@ -117,6 +117,8 @@ void FPhysicsAssetViewerWidget::Close()
 	{
 		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, -1);
 	}
+	ViewportClient.SetPhysicsAssetPickingEnabled(false);
+	ViewportClient.SetOnPhysicsAssetBodyPicked(nullptr);
 	DestroyPreviewWorld();
 	FAssetEditorWidget::Close();
 	SourceSkeletalMesh = nullptr;
@@ -178,6 +180,13 @@ void FPhysicsAssetViewerWidget::CreatePreviewWorld()
 	ViewportClient.SetPreviewActor(Actor);
 	ViewportClient.SetPreviewMeshComponent(MeshComponent);
 	ViewportClient.CreatePhysicsAssetDebugComponent();
+	ViewportClient.SetPhysicsAssetPickingEnabled(true);
+	ViewportClient.SetOnPhysicsAssetBodyPicked([this](int32 BodyIndex)
+	{
+		SelectedBodyIndex = BodyIndex;
+		UPhysicsAsset* PhysicsAsset = dynamic_cast<UPhysicsAsset*>(EditedObject);
+		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex);
+	});
 	ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
 	ViewportClient.ResetCameraToPreviousBounds();
 
@@ -187,6 +196,9 @@ void FPhysicsAssetViewerWidget::CreatePreviewWorld()
 
 void FPhysicsAssetViewerWidget::DestroyPreviewWorld()
 {
+	ViewportClient.SetPhysicsAssetPickingEnabled(false);
+	ViewportClient.SetOnPhysicsAssetBodyPicked(nullptr);
+
 	if (ViewportClient.IsRenderable())
 	{
 		FSlateApplication::Get().UnregisterViewport(&ViewportClient);

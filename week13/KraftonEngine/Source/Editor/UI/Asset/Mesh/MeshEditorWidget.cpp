@@ -315,6 +315,16 @@ void FMeshEditorWidget::Open(UObject* Object)
 	ViewportClient.CreatePreviewGizmo();
 	ViewportClient.CreateBoneDebugComponent();
 	ViewportClient.CreatePhysicsAssetDebugComponent();
+	ViewportClient.SetOnPhysicsAssetBodyPicked([this](int32 BodyIndex)
+	{
+		SelectedPhysicsBodyIndex = BodyIndex;
+		UPhysicsAsset* PhysicsAsset = nullptr;
+		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
+		{
+			PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
+		}
+		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedPhysicsBodyIndex);
+	});
 	ViewportClient.ResetCameraToPreviousBounds();
 
 	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
@@ -335,6 +345,8 @@ void FMeshEditorWidget::Open(UObject* Object)
 void FMeshEditorWidget::Close()
 {
 	FAssetEditorWidget::Close();
+	ViewportClient.SetPhysicsAssetPickingEnabled(false);
+	ViewportClient.SetOnPhysicsAssetBodyPicked(nullptr);
 
 	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
 	{
@@ -455,6 +467,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	}
 
 	RenderTabBar();
+	ViewportClient.SetPhysicsAssetPickingEnabled(ActiveTab == EMeshEditorTab::PhysicsAsset);
 	ImGui::Separator();
 
 	const float AvailableHeight = ImGui::GetContentRegionAvail().y;

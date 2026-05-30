@@ -21,7 +21,6 @@ public:
 private:
 	UPhysicsAssetDebugComponent* GetPhysicsAssetDebugComponent() const;
 	USkeletalMeshComponent* GetTargetSkeletalMeshComponent() const;
-	bool GetPhysicsAssetBoneWorldTransform(const FName& BoneName, FTransform& OutBoneWorldTM) const;
 	bool GetConstraintWorldFrames(
 		const FConstraintInstanceInitDesc& ConstraintDesc,
 		FTransform& OutParentFrame,
