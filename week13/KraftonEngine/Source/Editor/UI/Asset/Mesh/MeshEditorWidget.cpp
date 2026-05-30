@@ -314,6 +314,31 @@ void FMeshEditorWidget::Open(UObject* Object)
 
 	ViewportClient.CreatePreviewGizmo();
 	ViewportClient.CreateBoneDebugComponent();
+	ViewportClient.CreatePhysicsAssetDebugComponent();
+	ViewportClient.SetOnPhysicsAssetBodyPicked([this](int32 BodyIndex)
+	{
+		SelectedPhysicsBodyIndex = BodyIndex;
+		UPhysicsAsset* PhysicsAsset = nullptr;
+		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
+		{
+			PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
+		}
+		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedPhysicsBodyIndex);
+	});
+	ViewportClient.SetOnPhysicsAssetShapeEdited([this]()
+	{
+		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
+		{
+			const FString SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
+			const bool bSavedPhysicsAsset = FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
+			const bool bSavedSkeletalMesh = bSavedPhysicsAsset && FMeshManager::SaveSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
+			if (!bSavedPhysicsAsset || !bSavedSkeletalMesh)
+			{
+				UE_LOG("PhysicsAsset shape edit warning: failed to persist shape edit. SkeletalMesh=%s", SkeletalMeshPath.c_str());
+			}
+		}
+		MarkDirty();
+	});
 	ViewportClient.ResetCameraToPreviousBounds();
 
 	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
@@ -334,6 +359,9 @@ void FMeshEditorWidget::Open(UObject* Object)
 void FMeshEditorWidget::Close()
 {
 	FAssetEditorWidget::Close();
+	ViewportClient.SetPhysicsAssetPickingEnabled(false);
+	ViewportClient.SetOnPhysicsAssetBodyPicked(nullptr);
+	ViewportClient.SetOnPhysicsAssetShapeEdited(nullptr);
 
 	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
 	{
@@ -454,6 +482,7 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	}
 
 	RenderTabBar();
+	ViewportClient.SetPhysicsAssetPickingEnabled(ActiveTab == EMeshEditorTab::PhysicsAsset);
 	ImGui::Separator();
 
 	const float AvailableHeight = ImGui::GetContentRegionAvail().y;
@@ -782,6 +811,7 @@ void FMeshEditorWidget::RenderPhysicsAssetLayout()
 	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
 	UPhysicsAsset* PhysicsAsset = SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
 	ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
+	ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedPhysicsBodyIndex);
 
 	constexpr float BodyListWidth = 260.0f;
 	constexpr float BodyDetailsWidth = 300.0f;
@@ -925,6 +955,7 @@ void FMeshEditorWidget::RenderPhysicsAssetBuildOptionsPopup(
 			ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
 			InOutPhysicsAsset = NewAsset;
 			SelectedPhysicsBodyIndex = -1;
+			ViewportClient.SyncPhysicsAssetDebugComponent(NewAsset, SelectedPhysicsBodyIndex);
 			ImGui::CloseCurrentPopup();
 		}
 	}
@@ -963,6 +994,7 @@ void FMeshEditorWidget::RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, 
 	{
 		SelectedPhysicsBodyIndex = -1;
 	}
+	ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedPhysicsBodyIndex);
 
 	const FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset)
@@ -1043,6 +1075,7 @@ bool FMeshEditorWidget::RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, U
 	if (ImGui::IsItemClicked())
 	{
 		SelectedPhysicsBodyIndex = BodyIndex;
+		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedPhysicsBodyIndex);
 	}
 
 	if (bOpen && bHasVisibleChildren)

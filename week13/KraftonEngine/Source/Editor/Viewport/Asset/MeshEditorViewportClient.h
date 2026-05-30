@@ -5,8 +5,10 @@
 #include "Editor/Viewport/ViewportCameraTransform.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Editor/Slate/SWindow.h"
+#include "Core/Types/CoreTypes.h"
 #include "Core/Types/RayTypes.h"
 #include "Gizmo/BoneTransformGizmoTarget.h"
+#include "Gizmo/PhysicsAssetShapeGizmoTarget.h"
 #include "Component/Debug/BoneDebugComponent.h"
 #include "Object/GarbageCollection.h"
 
@@ -17,6 +19,8 @@ class FWindowsWindow;
 class UWorld;
 class AActor;
 class USkeletalMesh;
+class UPhysicsAsset;
+class UPhysicsAssetDebugComponent;
 
 class FMeshEditorViewportClient : public FViewportClient, public IEditorPreviewViewportClient, public FGCObject
 {
@@ -29,6 +33,7 @@ public:
 
 	void CreatePreviewGizmo();
 	void CreateBoneDebugComponent();
+	void CreatePhysicsAssetDebugComponent();
 	void ResetCameraToPreviousBounds();
 
 	void SetPreviewWorld(UWorld* InWorld) { PreviewWorld = InWorld; }
@@ -46,6 +51,11 @@ public:
 
 	UGizmoComponent* GetGizmo() const { return Gizmo; }
 	USkeletalMeshComponent* GetPreviewMeshComponent() const { return PreviewMeshComponent; }
+	UPhysicsAssetDebugComponent* GetPhysicsAssetDebugComponent() const { return PhysicsAssetDebugComponent; }
+	void SyncPhysicsAssetDebugComponent(UPhysicsAsset* PhysicsAsset, int32 SelectedBodyIndex);
+	void SetPhysicsAssetPickingEnabled(bool bInEnabled);
+	void SetOnPhysicsAssetBodyPicked(TFunction<void(int32)> InCallback);
+	void SetOnPhysicsAssetShapeEdited(TFunction<void()> InCallback);
 
 	FViewportRenderOptions& GetRenderOptions() override { return RenderOptions; }
 	const FViewportRenderOptions& GetRenderOptions() const override { return RenderOptions; }
@@ -72,8 +82,11 @@ private:
 	void ApplySmoothedCameraLocation(float DeltaTime);
 
 	void SyncGizmo();
+	void SyncPhysicsAssetShapeGizmoTarget(UPhysicsAsset* PhysicsAsset, int32 SelectedBodyIndex);
 
 	void HandleDragStart(const FRay& Ray);
+	void NotifyPhysicsAssetBodyPicked(int32 BodyIndex);
+	bool IsPhysicsAssetShapeGizmoActive() const;
 
 private:
 	USkeletalMesh* SelectedMesh = nullptr;
@@ -84,9 +97,14 @@ private:
 	FViewportRenderOptions RenderOptions;
 
 	FBoneTransformGizmoTarget BoneTarget;
+	FPhysicsAssetShapeGizmoTarget PhysicsAssetShapeTarget;
 	UGizmoComponent* Gizmo = nullptr;
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
 	UBoneDebugComponent* BoneDebugComponent = nullptr;
+	UPhysicsAssetDebugComponent* PhysicsAssetDebugComponent = nullptr;
+	bool bPhysicsAssetPickingEnabled = false;
+	TFunction<void(int32)> OnPhysicsAssetBodyPicked;
+	TFunction<void()> OnPhysicsAssetShapeEdited;
 
 	UWorld* PreviewWorld = nullptr;
 	AActor* PreviewActor = nullptr;
