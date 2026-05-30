@@ -601,8 +601,27 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 		ImGui::Checkbox("Debug Draw", &RenderOptions.ShowFlags.bDebugDraw);
 		ImGui::Checkbox("Octree", &RenderOptions.ShowFlags.bOctree);
 		ImGui::Checkbox("Fog", &RenderOptions.ShowFlags.bFog);
+		ImGui::Checkbox("DepthOfField", &RenderOptions.ShowFlags.bDepthOfField);
+		if (RenderOptions.ShowFlags.bDepthOfField)
+		{
+			ImGui::SliderFloat("Aperture (F-Stop)", &RenderOptions.DOFAperture, 0.7f, 22.0f, "%.2f");
+			ImGui::SliderFloat("Focal Distance", &RenderOptions.DOFFocalDistance, 0.1f, 200.0f, "%.2f");
+			ImGui::SliderFloat("Max CoC Radius", &RenderOptions.DOFMaxCoCRadius, 1.0f, 24.0f, "%.1f");
+			ImGui::SliderInt("Aperture Blades", &RenderOptions.DOFApertureBladeCount, 3, 16);
+			ImGui::Checkbox("Bokeh Enable", &RenderOptions.ShowFlags.bDOFBokeh);
+			if (RenderOptions.ShowFlags.bDOFBokeh)
+			{
+				ImGui::SliderFloat("Bokeh Threshold", &RenderOptions.DOFBokehThreshold, 0.0f, 20.0f, "%.2f");
+				ImGui::SliderFloat("Bokeh Intensity", &RenderOptions.DOFBokehIntensity, 0.0f, 10.0f, "%.2f");
+				ImGui::SliderFloat("Bokeh Radius Scale", &RenderOptions.DOFBokehRadiusScale, 0.1f, 3.0f, "%.2f");
+			}
+		}
 		ImGui::Checkbox("FXAA", &RenderOptions.ShowFlags.bFXAA);
 		ImGui::Checkbox("Gamma Correction", &RenderOptions.ShowFlags.bGammaCorrection);
+		if (RenderOptions.ShowFlags.bGammaCorrection)
+		{
+			ImGui::SliderFloat("Exposure", &RenderOptions.Exposure, 0.0f, 5.0f, "%.2f");
+		}
 		ImGui::Checkbox("View Light Culling", &RenderOptions.ShowFlags.bViewLightCulling);
 		ImGui::Checkbox("Visualize 2.5D Culling", &RenderOptions.ShowFlags.bVisualize25DCulling);
 		ImGui::Checkbox("Show Shadow Frustum", &RenderOptions.ShowFlags.bShowShadowFrustum);
