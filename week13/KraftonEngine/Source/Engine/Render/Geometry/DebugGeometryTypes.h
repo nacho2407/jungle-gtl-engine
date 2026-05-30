@@ -27,11 +27,13 @@ struct FPhysicsDebugSolidMesh
 {
 	TArray<FPhysicsDebugVertex> Vertices;
 	TArray<uint32> Indices;
+	uint64 Revision = 0;
 
 	void Reset()
 	{
 		Vertices.clear();
 		Indices.clear();
+		Revision = 0;
 	}
 
 	bool IsValid() const

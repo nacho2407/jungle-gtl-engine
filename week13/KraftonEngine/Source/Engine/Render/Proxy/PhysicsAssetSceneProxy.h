@@ -26,4 +26,9 @@ private:
 		const FConstraintInstanceInitDesc& ConstraintDesc,
 		FTransform& OutParentFrame,
 		FTransform& OutChildFrame) const;
+
+	mutable FPhysicsDebugSolidMesh CachedSolidMesh;
+	mutable uint64 CachedSolidDebugRevision = 0;
+	mutable uint64 CachedSolidSkinnedRevision = 0;
+	mutable bool bCachedSolidMeshFresh = false;
 };

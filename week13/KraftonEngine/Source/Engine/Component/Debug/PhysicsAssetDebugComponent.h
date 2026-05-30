@@ -50,8 +50,10 @@ public:
 
 	USkeletalMeshComponent* GetTargetSkeletalMeshComponent() const { return TargetSkeletalMeshComponent.Get(); }
 	UPhysicsAsset* GetPhysicsAsset() const { return PhysicsAsset.Get(); }
+	uint64 GetPhysicsAssetDebugRevision() const { return PhysicsAssetDebugRevision; }
 
 	void SetTarget(USkeletalMeshComponent* InTargetSkeletalMeshComponent, UPhysicsAsset* InPhysicsAsset);
+	void MarkPhysicsAssetDebugDirty();
 
 	bool PickBody(const FRay& Ray, FPhysicsAssetDebugHitResult& OutHit) const;
 	bool GetPhysicsAssetBoneWorldTransform(const FName& BoneName, FTransform& OutBoneWorldTM) const;
@@ -70,6 +72,7 @@ public:
 private:
 	TWeakObjectPtr<USkeletalMeshComponent> TargetSkeletalMeshComponent;
 	TWeakObjectPtr<UPhysicsAsset> PhysicsAsset;
+	uint64 PhysicsAssetDebugRevision = 0;
 	int32 SelectedBodyIndex = -1;
 	int32 SelectedConstraintIndex = -1;
 };

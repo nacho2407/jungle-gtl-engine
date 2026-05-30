@@ -21,6 +21,8 @@ void FPhysicsDebugSolidGeometry::Release()
 	IB.Release();
 	Mesh.Reset();
 	DrawVertices.clear();
+	UploadedRevision = static_cast<uint64>(-1);
+	UploadedIndexCount = 0;
 
 	if (Device)
 	{
@@ -51,6 +53,7 @@ void FPhysicsDebugSolidGeometry::AppendMesh(const FPhysicsDebugSolidMesh& InMesh
 	const uint32 BaseVertex = static_cast<uint32>(Mesh.Vertices.size());
 	Mesh.Vertices.insert(Mesh.Vertices.end(), InMesh.Vertices.begin(), InMesh.Vertices.end());
 	DrawVertices.clear();
+	Mesh.Revision = (Mesh.Revision ^ InMesh.Revision) * 1099511628211ull;
 	Mesh.Indices.reserve(Mesh.Indices.size() + InMesh.Indices.size());
 	for (uint32 Index : InMesh.Indices)
 	{
@@ -67,6 +70,14 @@ bool FPhysicsDebugSolidGeometry::UploadBuffers(ID3D11DeviceContext* Context)
 
 	const uint32 VertexCount = static_cast<uint32>(Mesh.Vertices.size());
 	const uint32 IndexCount = static_cast<uint32>(Mesh.Indices.size());
+	if (UploadedRevision == Mesh.Revision &&
+		UploadedIndexCount == IndexCount &&
+		VB.GetBuffer() &&
+		IB.GetBuffer())
+	{
+		return true;
+	}
+
 	DrawVertices.clear();
 	DrawVertices.reserve(VertexCount);
 	for (const FPhysicsDebugVertex& Vertex : Mesh.Vertices)
@@ -87,5 +98,7 @@ bool FPhysicsDebugSolidGeometry::UploadBuffers(ID3D11DeviceContext* Context)
 		return false;
 	}
 
+	UploadedRevision = Mesh.Revision;
+	UploadedIndexCount = IndexCount;
 	return true;
 }

@@ -1,6 +1,7 @@
 #include "Render/Proxy/PhysicsAssetSceneProxy.h"
 
 #include "Component/Debug/PhysicsAssetDebugComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Object/Object.h"
 #include "Physics/ConstraintInstance.h"
 #include "PhysicsEngine/BodySetup.h"
@@ -21,6 +22,14 @@ namespace
 			? Frame.OrthoWidth * ConstraintAxisScreenScale
 			: FVector::Distance(Frame.View.GetInverseFast().GetLocation(), ConstraintLocation) * ConstraintAxisScreenScale;
 		return AxisLength < MinConstraintAxisLength ? MinConstraintAxisLength : AxisLength;
+	}
+
+	uint64 MakeSolidMeshRevision(uint64 DebugRevision, uint64 SkinnedRevision)
+	{
+		uint64 Revision = 1469598103934665603ull;
+		Revision = (Revision ^ DebugRevision) * 1099511628211ull;
+		Revision = (Revision ^ SkinnedRevision) * 1099511628211ull;
+		return Revision;
 	}
 
 	void AddConstraintAxisLine(
@@ -109,6 +118,19 @@ void FPhysicsAssetSceneProxy::BuildPhysicsAssetSolidMesh(
 		return;
 	}
 
+	const USkeletalMeshComponent* TargetComponent = DebugComponent->GetTargetSkeletalMeshComponent();
+	const uint64 DebugRevision = DebugComponent->GetPhysicsAssetDebugRevision();
+	const uint64 SkinnedRevision = IsValid(TargetComponent) ? TargetComponent->GetSkinnedRevision() : 0;
+	if (bCachedSolidMeshFresh &&
+		CachedSolidDebugRevision == DebugRevision &&
+		CachedSolidSkinnedRevision == SkinnedRevision)
+	{
+		OutMesh = CachedSolidMesh;
+		return;
+	}
+
+	CachedSolidMesh.Reset();
+
 	const int32 SelectedBodyIndex = DebugComponent->GetSelectedBodyIndex();
 	const TArray<UBodySetup*>& BodySetups = PhysicsAsset->GetBodySetups();
 	for (int32 BodyIndex = 0; BodyIndex < static_cast<int32>(BodySetups.size()); ++BodyIndex)
@@ -138,7 +160,7 @@ void FPhysicsAssetSceneProxy::BuildPhysicsAssetSolidMesh(
 		{
 			const FVector WorldCenter = BoneWorldTM.TransformPosition(SphereElem.Center * UniformScale);
 			const FTransform SphereWorldTM(WorldCenter, BoneWorldTM.Rotation, FVector::OneVector);
-			FCollisionDebugGeometry::AddSolidSphere(OutMesh, SphereWorldTM, SphereElem.Radius * UniformScale, SolidColor);
+			FCollisionDebugGeometry::AddSolidSphere(CachedSolidMesh, SphereWorldTM, SphereElem.Radius * UniformScale, SolidColor);
 		}
 
 		for (const FKBoxElem& BoxElem : AggGeom.BoxElems)
@@ -149,7 +171,7 @@ void FPhysicsAssetSceneProxy::BuildPhysicsAssetSolidMesh(
 				BoxElem.X * 0.5f * UniformScale,
 				BoxElem.Y * 0.5f * UniformScale,
 				BoxElem.Z * 0.5f * UniformScale);
-			FCollisionDebugGeometry::AddSolidBox(OutMesh, ShapeWorldTM, HalfExtent, SolidColor);
+			FCollisionDebugGeometry::AddSolidBox(CachedSolidMesh, ShapeWorldTM, HalfExtent, SolidColor);
 		}
 
 		for (const FKSphylElem& SphylElem : AggGeom.SphylElems)
@@ -157,7 +179,7 @@ void FPhysicsAssetSceneProxy::BuildPhysicsAssetSolidMesh(
 			FTransform ShapeLocalTM(SphylElem.Center * UniformScale, SphylElem.Rotation);
 			const FTransform ShapeWorldTM = ShapeLocalTM * BoneWorldTM;
 			FCollisionDebugGeometry::AddSolidCapsule(
-				OutMesh,
+				CachedSolidMesh,
 				ShapeWorldTM,
 				SphylElem.Radius * UniformScale,
 				SphylElem.Length * UniformScale,
@@ -168,9 +190,15 @@ void FPhysicsAssetSceneProxy::BuildPhysicsAssetSolidMesh(
 		{
 			FTransform ShapeWorldTM = ConvexElem.GetTransform() * BoneWorldTM;
 			ShapeWorldTM.Scale = ShapeWorldTM.Scale * FVector(UniformScale, UniformScale, UniformScale);
-			FCollisionDebugGeometry::AddSolidConvex(OutMesh, ConvexElem, ShapeWorldTM, SolidColor);
+			FCollisionDebugGeometry::AddSolidConvex(CachedSolidMesh, ConvexElem, ShapeWorldTM, SolidColor);
 		}
 	}
+
+	CachedSolidMesh.Revision = MakeSolidMeshRevision(DebugRevision, SkinnedRevision);
+	CachedSolidDebugRevision = DebugRevision;
+	CachedSolidSkinnedRevision = SkinnedRevision;
+	bCachedSolidMeshFresh = true;
+	OutMesh = CachedSolidMesh;
 }
 
 void FPhysicsAssetSceneProxy::BuildPhysicsAssetConstraintAxisLines(

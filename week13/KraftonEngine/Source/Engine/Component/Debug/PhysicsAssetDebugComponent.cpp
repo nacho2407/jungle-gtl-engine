@@ -337,7 +337,12 @@ void UPhysicsAssetDebugComponent::SetTarget(
 
 	TargetSkeletalMeshComponent = InTargetSkeletalMeshComponent;
 	PhysicsAsset = InPhysicsAsset;
-	MarkRenderStateDirty();
+	MarkPhysicsAssetDebugDirty();
+}
+
+void UPhysicsAssetDebugComponent::MarkPhysicsAssetDebugDirty()
+{
+	++PhysicsAssetDebugRevision;
 }
 
 bool UPhysicsAssetDebugComponent::GetPhysicsAssetBoneWorldTransform(const FName& BoneName, FTransform& OutBoneWorldTM) const
@@ -406,7 +411,7 @@ bool UPhysicsAssetDebugComponent::SyncConstraintFrameLocation(
 	ConstraintDesc.ParentFrame.Location = ParentWorldToLocal.TransformPosition(ConstraintWorldLocation);
 	ConstraintDesc.ChildFrame.Location = ChildWorldToLocal.TransformPosition(ConstraintWorldLocation);
 
-	MarkRenderStateDirty();
+	MarkPhysicsAssetDebugDirty();
 	return true;
 }
 
@@ -523,7 +528,7 @@ void UPhysicsAssetDebugComponent::SetSelectedBodyIndex(int32 InSelectedBodyIndex
 	}
 
 	SelectedBodyIndex = InSelectedBodyIndex;
-	MarkRenderStateDirty();
+	MarkPhysicsAssetDebugDirty();
 }
 
 void UPhysicsAssetDebugComponent::SetSelectedConstraintIndex(int32 InSelectedConstraintIndex)
@@ -534,7 +539,7 @@ void UPhysicsAssetDebugComponent::SetSelectedConstraintIndex(int32 InSelectedCon
 	}
 
 	SelectedConstraintIndex = InSelectedConstraintIndex;
-	MarkRenderStateDirty();
+	MarkPhysicsAssetDebugDirty();
 }
 
 void UPhysicsAssetDebugComponent::AddReferencedObjects(FReferenceCollector& Collector)
