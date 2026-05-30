@@ -1,8 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"C:/Users/jungle/source/repos/Jungle_Week13_Team6/KraftonEngine/ThirdParty/PhysX-4.1/physx/compiler/vc17win64/cmake_install.cmake",
-		"C:/Users/jungle/source/repos/Jungle_Week13_Team6/KraftonEngine/ThirdParty/PhysX-4.1/physx/compiler/vc17win64/sdk_source_bin/cmake_install.cmake"
-	],
-	"Parallel" : false
-}
