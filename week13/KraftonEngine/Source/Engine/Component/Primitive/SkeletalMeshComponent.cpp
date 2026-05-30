@@ -444,6 +444,7 @@ bool USkeletalMeshComponent::BuildBodyInstanceInitDescFromBodySetup( const UBody
     OutDesc = FBodyInstanceInitDesc();
 
     FTransform BodyWorldTransform = FTransform::FromMatrixWithScale(BoneGlobals[BoneIndex] * GetWorldMatrix());
+    const FVector BodyScale = BodyWorldTransform.Scale;
 
     BodyWorldTransform.Scale = FVector::OneVector;
 
@@ -457,7 +458,7 @@ bool USkeletalMeshComponent::BuildBodyInstanceInitDescFromBodySetup( const UBody
     OutDesc.ResponseContainer.SetAllChannels(ECollisionResponse::Block);
 
     const FBodySetupPhysicsInfo& PhysicsInfo = BodySetup->GetPhysicsInfo();
-    OutDesc.Mass = BodySetup->CalculateMass();
+    OutDesc.Mass = BodySetup->CalculateMass(BodyScale);
     OutDesc.CenterOfMassOffset = PhysicsInfo.CenterOfMassOffset;
     OutDesc.LinearDamping = PhysicsInfo.LinearDamping;
     OutDesc.AngularDamping = PhysicsInfo.AngularDamping;
@@ -468,23 +469,27 @@ bool USkeletalMeshComponent::BuildBodyInstanceInitDescFromBodySetup( const UBody
 
     for (const FKSphereElem& Sphere : AggGeom.SphereElems)
     {
+        const FKSphereElem ScaledSphere = Sphere.GetFinalScaled(BodyScale, FTransform());
+
         FBodyShapeDesc Shape;
         Shape.ShapeType = EBodyInstanceShapeType::Sphere;
-        Shape.LocalTransform = Sphere.GetTransform();
-        Shape.SphereRadius = std::max(Sphere.Radius, 0.001f);
+        Shape.LocalTransform = ScaledSphere.GetTransform();
+        Shape.SphereRadius = std::max(ScaledSphere.Radius, 0.001f);
 
         OutDesc.Shapes.push_back(Shape);
     }
 
     for (const FKBoxElem& Box : AggGeom.BoxElems)
     {
+        const FKBoxElem ScaledBox = Box.GetFinalScaled(BodyScale, FTransform());
+
         FBodyShapeDesc Shape;
         Shape.ShapeType = EBodyInstanceShapeType::Box;
-        Shape.LocalTransform = Box.GetTransform();
+        Shape.LocalTransform = ScaledBox.GetTransform();
         Shape.BoxHalfExtent = FVector(
-            std::max(Box.X * 0.5f, 0.001f),
-            std::max(Box.Y * 0.5f, 0.001f),
-            std::max(Box.Z * 0.5f, 0.001f)
+            std::max(ScaledBox.X * 0.5f, 0.001f),
+            std::max(ScaledBox.Y * 0.5f, 0.001f),
+            std::max(ScaledBox.Z * 0.5f, 0.001f)
         );
 
         OutDesc.Shapes.push_back(Shape);
@@ -492,15 +497,17 @@ bool USkeletalMeshComponent::BuildBodyInstanceInitDescFromBodySetup( const UBody
 
     for (const FKSphylElem& Sphyl : AggGeom.SphylElems)
     {
+        const FKSphylElem ScaledSphyl = Sphyl.GetFinalScaled(BodyScale, FTransform());
+
         FBodyShapeDesc Shape;
         Shape.ShapeType = EBodyInstanceShapeType::Capsule;
-        Shape.LocalTransform = Sphyl.GetTransform();
-        Shape.CapsuleRadius = std::max(Sphyl.Radius, 0.001f);
+        Shape.LocalTransform = ScaledSphyl.GetTransform();
+        Shape.CapsuleRadius = std::max(ScaledSphyl.Radius, 0.001f);
 
         // FKSphylElem::Length는 실린더 구간 길이.
         // FBodyShapeDesc::CapsuleHalfHeight는 구 포함 전체 half height.
         Shape.CapsuleHalfHeight = std::max(
-            Sphyl.Length * 0.5f + Sphyl.Radius,
+            ScaledSphyl.Length * 0.5f + ScaledSphyl.Radius,
             Shape.CapsuleRadius + 0.001f
         );
 
@@ -706,9 +713,10 @@ void USkeletalMeshComponent::SyncBonesFromRagdollBodies()
         }
 
         LocalPose[BoneIndex] = FTransform::FromMatrixWithScale(LocalMatrix);
+        LocalPose[BoneIndex].Scale = FTransform::FromMatrixWithScale(OriginalLocalMatrices[BoneIndex]).Scale;
     }
 
-    SetBoneLocalTransforms(LocalPose);
+    SetBoneLocalTransformsDirect(LocalPose);
 }
 
 FBodyInstance* USkeletalMeshComponent::FindRagdollBodyByBoneIndex(int32 BoneIndex) const

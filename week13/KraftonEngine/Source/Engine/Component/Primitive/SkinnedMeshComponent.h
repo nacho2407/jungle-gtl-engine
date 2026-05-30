@@ -106,6 +106,7 @@ protected:
 		TArray<FVector>&     OutNormals
 		) const;
 	void EnsureBoneEditBasePose();
+	void SetBoneLocalTransformsDirect(const TArray<FTransform>& LocalPose);
 	void BuildBoneEditGlobalTransforms(TArray<FTransform>& OutGlobals) const;
 	void BuildBoneEditGlobalMatrices(TArray<FMatrix>& OutGlobals) const;
 
