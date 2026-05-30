@@ -53,6 +53,8 @@ struct FFrameContext
 	ID3D11ShaderResourceView* DOFColorCoCSRV        = nullptr;
 	ID3D11RenderTargetView*   DOFBlurRTV            = nullptr;
 	ID3D11ShaderResourceView* DOFBlurSRV            = nullptr;
+	ID3D11RenderTargetView*   DOFBokehRTV           = nullptr;
+	ID3D11ShaderResourceView* DOFBokehSRV           = nullptr;
 
 	// CopyResource 소스/대상
 	ID3D11Texture2D*          DepthTexture         = nullptr;  // 원본 (CopyResource 소스)
@@ -128,6 +130,8 @@ struct FFrameContext
 		DOFColorCoCSRV          = nullptr;
 		DOFBlurRTV              = nullptr;
 		DOFBlurSRV              = nullptr;
+		DOFBokehRTV             = nullptr;
+		DOFBokehSRV             = nullptr;
 		DepthTexture            = nullptr;
 		DepthCopyTexture        = nullptr;
 		DepthCopySRV            = nullptr;

@@ -41,6 +41,8 @@ public:
 	ID3D11ShaderResourceView* GetDOFColorCoCSRV() const { return DOFColorCoCSRV; }
 	ID3D11RenderTargetView* GetDOFBlurRTV() const { return DOFBlurRTV; }
 	ID3D11ShaderResourceView* GetDOFBlurSRV() const { return DOFBlurSRV; }
+	ID3D11RenderTargetView* GetDOFBokehRTV() const { return DOFBokehRTV; }
+	ID3D11ShaderResourceView* GetDOFBokehSRV() const { return DOFBokehSRV; }
 	ID3D11DepthStencilView* GetDSV() const { return DSV; }
 	ID3D11Texture2D* GetDepthTexture() const { return DepthTexture; }
 
@@ -93,6 +95,9 @@ private:
 	ID3D11Texture2D* DOFBlurTexture = nullptr;
 	ID3D11RenderTargetView* DOFBlurRTV = nullptr;
 	ID3D11ShaderResourceView* DOFBlurSRV = nullptr;
+	ID3D11Texture2D* DOFBokehTexture = nullptr;
+	ID3D11RenderTargetView* DOFBokehRTV = nullptr;
+	ID3D11ShaderResourceView* DOFBokehSRV = nullptr;
 
 	// GBuffer Normal RT — Opaque 패스에서 MRT[1]로 world normal 기록
 	ID3D11Texture2D* NormalTexture = nullptr;

@@ -33,6 +33,7 @@ namespace Key
 	constexpr const char* bOctree = "bOctree";
 	constexpr const char* bFog = "bFog";
 	constexpr const char* bDepthOfField = "bDepthOfField";
+	constexpr const char* bDOFBokeh = "bDOFBokeh";
 	constexpr const char* bFXAA = "bFXAA";
 	constexpr const char* bGammaCorrection = "bGammaCorrection";
 	constexpr const char* bViewLightCulling = "bViewLightCulling";
@@ -56,6 +57,9 @@ namespace Key
 	constexpr const char* DOFFocalDistance = "DOFFocalDistance";
 	constexpr const char* DOFMaxCoCRadius = "DOFMaxCoCRadius";
 	constexpr const char* DOFApertureBladeCount = "DOFApertureBladeCount";
+	constexpr const char* DOFBokehThreshold = "DOFBokehThreshold";
+	constexpr const char* DOFBokehIntensity = "DOFBokehIntensity";
+	constexpr const char* DOFBokehRadiusScale = "DOFBokehRadiusScale";
 	constexpr const char* LightCullingMode = "LightCullingMode";
 	constexpr const char* HeatMapMax = "HeatMapMax";
 	constexpr const char* Enable25DCulling = "Enable25DCulling";
@@ -169,6 +173,7 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::bOctree] = Opts.ShowFlags.bOctree;
 	Obj[Key::bFog] = Opts.ShowFlags.bFog;
 	Obj[Key::bDepthOfField] = Opts.ShowFlags.bDepthOfField;
+	Obj[Key::bDOFBokeh] = Opts.ShowFlags.bDOFBokeh;
 	Obj[Key::bFXAA] = Opts.ShowFlags.bFXAA;
 	Obj[Key::bGammaCorrection] = Opts.ShowFlags.bGammaCorrection;
 	Obj[Key::bViewLightCulling] = Opts.ShowFlags.bViewLightCulling;
@@ -192,6 +197,9 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::DOFFocalDistance] = Opts.DOFFocalDistance;
 	Obj[Key::DOFMaxCoCRadius] = Opts.DOFMaxCoCRadius;
 	Obj[Key::DOFApertureBladeCount] = Opts.DOFApertureBladeCount;
+	Obj[Key::DOFBokehThreshold] = Opts.DOFBokehThreshold;
+	Obj[Key::DOFBokehIntensity] = Opts.DOFBokehIntensity;
+	Obj[Key::DOFBokehRadiusScale] = Opts.DOFBokehRadiusScale;
 	Obj[Key::LightCullingMode] = static_cast<int32>(Opts.LightCullingMode);
 	Obj[Key::HeatMapMax] = Opts.HeatMapMax;
 	Obj[Key::Enable25DCulling] = Opts.Enable25DCulling;
@@ -226,6 +234,8 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.ShowFlags.bFog = Obj[Key::bFog].ToBool();
 	if (Obj.hasKey(Key::bDepthOfField))
 		Opts.ShowFlags.bDepthOfField = Obj[Key::bDepthOfField].ToBool();
+	if (Obj.hasKey(Key::bDOFBokeh))
+		Opts.ShowFlags.bDOFBokeh = Obj[Key::bDOFBokeh].ToBool();
 	if (Obj.hasKey(Key::bFXAA))
 		Opts.ShowFlags.bFXAA = Obj[Key::bFXAA].ToBool();
 	if (Obj.hasKey(Key::bGammaCorrection))
@@ -272,6 +282,12 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.DOFMaxCoCRadius = static_cast<float>(Obj[Key::DOFMaxCoCRadius].ToFloat());
 	if (Obj.hasKey(Key::DOFApertureBladeCount))
 		Opts.DOFApertureBladeCount = std::clamp(static_cast<int32>(Obj[Key::DOFApertureBladeCount].ToInt()), 3, 16);
+	if (Obj.hasKey(Key::DOFBokehThreshold))
+		Opts.DOFBokehThreshold = static_cast<float>(Obj[Key::DOFBokehThreshold].ToFloat());
+	if (Obj.hasKey(Key::DOFBokehIntensity))
+		Opts.DOFBokehIntensity = static_cast<float>(Obj[Key::DOFBokehIntensity].ToFloat());
+	if (Obj.hasKey(Key::DOFBokehRadiusScale))
+		Opts.DOFBokehRadiusScale = static_cast<float>(Obj[Key::DOFBokehRadiusScale].ToFloat());
 	if (Obj.hasKey(Key::LightCullingMode))
 		Opts.LightCullingMode = static_cast<ELightCullingMode>(Obj[Key::LightCullingMode].ToInt());
 	if (Obj.hasKey(Key::HeatMapMax))

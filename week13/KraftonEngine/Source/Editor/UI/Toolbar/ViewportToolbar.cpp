@@ -608,6 +608,13 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 			ImGui::SliderFloat("Focal Distance", &RenderOptions.DOFFocalDistance, 0.1f, 200.0f, "%.2f");
 			ImGui::SliderFloat("Max CoC Radius", &RenderOptions.DOFMaxCoCRadius, 1.0f, 24.0f, "%.1f");
 			ImGui::SliderInt("Aperture Blades", &RenderOptions.DOFApertureBladeCount, 3, 16);
+			ImGui::Checkbox("Bokeh Enable", &RenderOptions.ShowFlags.bDOFBokeh);
+			if (RenderOptions.ShowFlags.bDOFBokeh)
+			{
+				ImGui::SliderFloat("Bokeh Threshold", &RenderOptions.DOFBokehThreshold, 0.0f, 20.0f, "%.2f");
+				ImGui::SliderFloat("Bokeh Intensity", &RenderOptions.DOFBokehIntensity, 0.0f, 10.0f, "%.2f");
+				ImGui::SliderFloat("Bokeh Radius Scale", &RenderOptions.DOFBokehRadiusScale, 0.1f, 3.0f, "%.2f");
+			}
 		}
 		ImGui::Checkbox("FXAA", &RenderOptions.ShowFlags.bFXAA);
 		ImGui::Checkbox("Gamma Correction", &RenderOptions.ShowFlags.bGammaCorrection);

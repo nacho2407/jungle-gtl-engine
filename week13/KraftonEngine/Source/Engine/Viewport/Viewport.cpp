@@ -224,6 +224,16 @@ bool FViewport::CreateResources()
 	if (FAILED(hr)) return false;
 	DOFBlurSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBlurSRV")), "ViewportDOFBlurSRV");
 
+	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFBokehTexture);
+	if (FAILED(hr)) return false;
+	DOFBokehTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBokehTexture")), "ViewportDOFBokehTexture");
+	hr = Device->CreateRenderTargetView(DOFBokehTexture, nullptr, &DOFBokehRTV);
+	if (FAILED(hr)) return false;
+	DOFBokehRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBokehRTV")), "ViewportDOFBokehRTV");
+	hr = Device->CreateShaderResourceView(DOFBokehTexture, nullptr, &DOFBokehSRV);
+	if (FAILED(hr)) return false;
+	DOFBokehSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBokehSRV")), "ViewportDOFBokehSRV");
+
 	// ── GBuffer Normal RT (R16G16B16A16_FLOAT — 음수 지원) ──
 	D3D11_TEXTURE2D_DESC NormalDesc = {};
 	NormalDesc.Width = Width;
@@ -283,6 +293,9 @@ bool FViewport::CreateResources()
 
 void FViewport::ReleaseResources()
 {
+	if (DOFBokehSRV) { DOFBokehSRV->Release(); DOFBokehSRV = nullptr; }
+	if (DOFBokehRTV) { DOFBokehRTV->Release(); DOFBokehRTV = nullptr; }
+	if (DOFBokehTexture) { DOFBokehTexture->Release(); DOFBokehTexture = nullptr; }
 	if (DOFBlurSRV) { DOFBlurSRV->Release(); DOFBlurSRV = nullptr; }
 	if (DOFBlurRTV) { DOFBlurRTV->Release(); DOFBlurRTV = nullptr; }
 	if (DOFBlurTexture) { DOFBlurTexture->Release(); DOFBlurTexture = nullptr; }

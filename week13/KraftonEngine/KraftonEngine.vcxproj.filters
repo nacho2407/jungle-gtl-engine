@@ -765,6 +765,9 @@
     <FxCompile Include="Shaders\PostProcess\DOF\DOFBlur.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\DOF\DOFBokeh.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\PostProcess\DOF\DOFComposite.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>

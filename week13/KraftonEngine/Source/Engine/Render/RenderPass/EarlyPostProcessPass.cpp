@@ -84,7 +84,8 @@ void FEarlyPostProcessPass::ExecuteDepthOfField(const FPassContext& Ctx)
 {
 	const FFrameContext& Frame = Ctx.Frame;
 	if (!Frame.SceneColorCopyTexture || !Frame.ViewportRenderTexture || !Frame.SceneColorCopySRV
-		|| !Frame.DOFColorCoCRTV || !Frame.DOFColorCoCSRV || !Frame.DOFBlurRTV || !Frame.DOFBlurSRV)
+		|| !Frame.DOFColorCoCRTV || !Frame.DOFColorCoCSRV || !Frame.DOFBlurRTV || !Frame.DOFBlurSRV
+		|| !Frame.DOFBokehRTV || !Frame.DOFBokehSRV)
 	{
 		return;
 	}
@@ -108,6 +109,11 @@ void FEarlyPostProcessPass::ExecuteDepthOfField(const FPassContext& Ctx)
 	Constants.Params2 = FVector4(
 		1.0f / HalfHeight,
 		static_cast<float>(std::clamp(Frame.RenderOptions.DOFApertureBladeCount, 3, 16)),
+		std::max(Frame.RenderOptions.DOFBokehThreshold, 0.0f),
+		std::max(Frame.RenderOptions.DOFBokehIntensity, 0.0f));
+	Constants.Params3 = FVector4(
+		std::max(Frame.RenderOptions.DOFBokehRadiusScale, 0.0f),
+		0.0f,
 		0.0f,
 		0.0f);
 	DOFConstantBuffer.Update(DC, &Constants, sizeof(Constants));
@@ -157,6 +163,7 @@ void FEarlyPostProcessPass::ExecuteDepthOfField(const FPassContext& Ctx)
 
 	FShader* DownsampleShader = FShaderManager::Get().GetOrCreate(EShaderPath::DOFDownSampling);
 	FShader* BlurShader = FShaderManager::Get().GetOrCreate(EShaderPath::DOFBlur);
+	FShader* BokehShader = FShaderManager::Get().GetOrCreate(EShaderPath::DOFBokeh);
 	FShader* CompositeShader = FShaderManager::Get().GetOrCreate(EShaderPath::DOFComposite);
 
 	DrawFullscreen(DownsampleShader, Frame.DOFColorCoCRTV, HalfViewport);
@@ -167,11 +174,22 @@ void FEarlyPostProcessPass::ExecuteDepthOfField(const FPassContext& Ctx)
 	DC->PSSetShaderResources(0, 1, &ColorCoCSRV);
 	DrawFullscreen(BlurShader, Frame.DOFBlurRTV, HalfViewport);
 
+	const float ClearBokeh[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	DC->ClearRenderTargetView(Frame.DOFBokehRTV, ClearBokeh);
+	if (Frame.RenderOptions.ShowFlags.bDOFBokeh)
+	{
+		DC->OMSetRenderTargets(0, nullptr, nullptr);
+		DC->PSSetShaderResources(0, 2, NullSRVs);
+		DC->PSSetShaderResources(0, 1, &ColorCoCSRV);
+		DrawFullscreen(BokehShader, Frame.DOFBokehRTV, HalfViewport);
+	}
+
 	DC->OMSetRenderTargets(0, nullptr, nullptr);
 	DC->PSSetShaderResources(0, 2, NullSRVs);
 	DC->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &SceneColorSRV);
 	ID3D11ShaderResourceView* BlurSRV = Frame.DOFBlurSRV;
-	DC->PSSetShaderResources(0, 1, &BlurSRV);
+	ID3D11ShaderResourceView* CompositeSRVs[2] = { BlurSRV, Frame.DOFBokehSRV };
+	DC->PSSetShaderResources(0, 2, CompositeSRVs);
 	DrawFullscreen(CompositeShader, Cache.RTV, FullViewport);
 
 	DC->PSSetShaderResources(0, 2, NullSRVs);

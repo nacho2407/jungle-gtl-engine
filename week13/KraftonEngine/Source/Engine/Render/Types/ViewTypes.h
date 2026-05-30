@@ -56,6 +56,7 @@ struct FShowFlags
 	bool bOctree = false;
 	bool bFog = true;
 	bool bDepthOfField = false;
+	bool bDOFBokeh = false;
 	bool bFXAA = false;
 	bool bGammaCorrection = true;
 	bool bViewLightCulling = false;
@@ -111,6 +112,9 @@ struct FViewportRenderOptions
 	float DOFFocalDistance = 10.0f;
 	float DOFMaxCoCRadius = 8.0f;
 	int32 DOFApertureBladeCount = 6;
+	float DOFBokehThreshold = 2.0f;
+	float DOFBokehIntensity = 1.0f;
+	float DOFBokehRadiusScale = 1.0f;
 
 	// Light Culling 뷰모드 전용 설정
 	ELightCullingMode LightCullingMode = ELightCullingMode::Cluster;

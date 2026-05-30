@@ -5,7 +5,8 @@ cbuffer DOFConstantBuffer : register(b2)
 {
     float4 DOFParams0; // x=FocalDistance, y=Aperture(F-Stop), z=MaxCoCRadius, w=NearClip
     float4 DOFParams1; // x=FarClip, y=InvFullWidth, z=InvFullHeight, w=InvHalfWidth
-    float4 DOFParams2; // x=InvHalfHeight, y=ApertureBladeCount
+    float4 DOFParams2; // x=InvHalfHeight, y=ApertureBladeCount, z=BokehThreshold, w=BokehIntensity
+    float4 DOFParams3; // x=BokehRadiusScale
 };
 
 #define DOFFocalDistance DOFParams0.x
@@ -16,6 +17,9 @@ cbuffer DOFConstantBuffer : register(b2)
 #define DOFInvFullResolution DOFParams1.yz
 #define DOFInvHalfResolution float2(DOFParams1.w, DOFParams2.x)
 #define DOFApertureBladeCount DOFParams2.y
+#define DOFBokehThreshold DOFParams2.z
+#define DOFBokehIntensity DOFParams2.w
+#define DOFBokehRadiusScale DOFParams3.x
 
 float LinearizeSceneDepth(float Depth)
 {
