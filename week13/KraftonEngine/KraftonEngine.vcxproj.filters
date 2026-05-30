@@ -633,6 +633,9 @@
     <FxCompile Include="Shaders\Common\Fog.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Common\DepthOfField.hlsli">
+      <Filter>Shaders\Common</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
       <Filter>Shaders\Common</Filter>
     </FxCompile>
@@ -754,6 +757,18 @@
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\HeightFog.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\DOF\DOFDownSampling.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\DOF\DOFBlur.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\DOF\DOFBokeh.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\DOF\DOFComposite.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\LightCulling.hlsl">
@@ -1394,6 +1409,9 @@
     <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp">
       <Filter>Source\Engine\Gizmo</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Gizmo\PhysicsAssetConstraintGizmoTarget.cpp">
+      <Filter>Source\Engine\Gizmo</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Gizmo\PhysicsAssetShapeGizmoTarget.cpp">
       <Filter>Source\Engine\Gizmo</Filter>
     </ClCompile>
@@ -1763,7 +1781,7 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp">
+    <ClCompile Include="Source\Engine\Render\RenderPass\EarlyPostProcessPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.cpp">
@@ -2669,6 +2687,9 @@
     <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h">
       <Filter>Source\Engine\Gizmo</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Gizmo\PhysicsAssetConstraintGizmoTarget.h">
+      <Filter>Source\Engine\Gizmo</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Gizmo\PhysicsAssetShapeGizmoTarget.h">
       <Filter>Source\Engine\Gizmo</Filter>
     </ClInclude>
@@ -3173,7 +3194,7 @@
     <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\RenderPass\FogPass.h">
+    <ClInclude Include="Source\Engine\Render\RenderPass\EarlyPostProcessPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.h">

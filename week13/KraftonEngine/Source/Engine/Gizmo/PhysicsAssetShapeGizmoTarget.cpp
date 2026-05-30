@@ -366,6 +366,6 @@ void FPhysicsAssetShapeGizmoTarget::MarkShapeChanged() const
 {
 	if (UPhysicsAssetDebugComponent* Component = GetDebugComponent())
 	{
-		Component->MarkRenderStateDirty();
+		Component->MarkPhysicsAssetDebugDirty();
 	}
 }
