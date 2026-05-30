@@ -9,8 +9,10 @@
 
 class AActor;
 class UPrimitiveComponent;
+class FScene;
 class UBodySetup;
 class FPhysicsEventCallback;
+class FPhysXVehicleManager;
 struct FBodyInstance;
 struct FConstraintInstance;
 
@@ -45,13 +47,19 @@ public:
 		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
 		const AActor* IgnoreActor = nullptr);
 
+	void CollectDebugRender(FScene& RenderScene) const;
+
 	physx::PxScene* GetPxScene() const { return Scene; }
+
+	FPhysXVehicleManager* GetVehicleManager() const { return VehicleManager; }
 
 private:
 	physx::PxScene* Scene = nullptr;
 	physx::PxDefaultCpuDispatcher* Dispatcher = nullptr;
 
 	FPhysicsEventCallback* EventCallback = nullptr;
+
+	FPhysXVehicleManager* VehicleManager = nullptr;
 
 	TArray<FBodyInstance*> Bodies;
 	TArray<FConstraintInstance*> Constraints;

@@ -1742,6 +1742,9 @@
     <ClCompile Include="Source\Engine\Physics\PhysicsFilterShader.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsFilterData.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsQueryFilter.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysXVehicleInstance.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\VehicleMovementComponent4W.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -5251,6 +5254,9 @@
     <ClInclude Include="Source\Engine\Physics\PhysicsFilterShader.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsFilterData.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsQueryFilter.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicleManager.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicleInstance.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\VehicleMovementComponent4W.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

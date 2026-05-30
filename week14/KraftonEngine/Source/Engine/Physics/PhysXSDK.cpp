@@ -16,6 +16,10 @@ void FPhysXSDK::Initialize()
 	}
 	
 	DefaultMaterial = Physics->createMaterial(0.5f, 0.5f, 0.6f);
+
+	physx::PxInitVehicleSDK(*Physics);
+	physx::PxVehicleSetBasisVectors(physx::PxVec3(0, 0, 1), physx::PxVec3(1, 0, 0));
+	physx::PxVehicleSetUpdateMode(physx::PxVehicleUpdateMode::eVELOCITY_CHANGE);
 }
 
 void FPhysXSDK::Shutdown()

@@ -9,6 +9,7 @@
 #include "Component/Input/InputComponent.h"
 #include "Animation/Instance/LuaAnimInstance.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
+#include "Component/Movement/VehicleMovementComponent4W.h"
 #include "Component/Camera/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
@@ -922,6 +923,9 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param input Vector\nfunction FloatingPawnMovementComponent:SetMoveInput(input) end")
 		.Method("---@param input Vector\nfunction FloatingPawnMovementComponent:SetLookInput(input) end");
 
+	Lua.new_usertype<UVehicleMovementComponent4W>("VehicleMovementComponent4W");
+	FLuaDocRegistry::Get().Type("VehicleMovementComponent4W");
+
 	Lua.new_usertype<USceneComponent>("SceneComponent",
 		"Location", sol::property(
 		[](USceneComponent& Component)
@@ -1089,6 +1093,9 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("GetFloatingPawnMovement",
 			"---@return FloatingPawnMovementComponent?\nfunction Actor:GetFloatingPawnMovement() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UFloatingPawnMovementComponent>(); })
+		.Method("GetVehicleMovement",
+			"---@return VehicleMovementComponent?\nfunction Actor:GetVehicleMovement() end",
+			[](AActor& Actor) { return Actor.GetComponentByClass<UVehicleMovementComponent4W>(); })
 		.Method("GetCamera",
 			"---@return CameraComponent?\nfunction Actor:GetCamera() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UCameraComponent>(); })

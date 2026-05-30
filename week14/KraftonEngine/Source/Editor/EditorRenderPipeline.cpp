@@ -15,6 +15,7 @@
 #include "Engine/Render/Types/ForwardLightData.h"
 #include "Engine/Render/Types/MinimalViewInfo.h"
 #include "Component/Light/LightComponentBase.h"
+#include "Physics/PhysicsScene.h"
 #include "Core/ProjectSettings.h"
 #include "Math/MathUtils.h"
 
@@ -342,6 +343,14 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 
 		if (Flags.bOctree)
 			Collector.CollectOctreeDebug(World->GetOctree(), Scene);
+
+		if (Flags.bShowCollisionShape)
+		{
+			if (FPhysicsScene* PhysicsScene = World->GetPhysicsScene())
+			{
+				PhysicsScene->CollectDebugRender(Scene);
+			}
+		}
 
 		Collector.CollectDebugDraw(Frame, Scene);
 	}
