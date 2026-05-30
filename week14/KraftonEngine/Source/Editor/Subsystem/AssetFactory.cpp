@@ -15,6 +15,7 @@
 #include "Animation/Skeleton/Skeleton.h"
 #include "Physics/PhysicsAsset.h"  
 #include "Physics/PhysicsAssetManager.h"
+#include "Editor/Subsystem/PhysicsAssetGenerator.h"
 
 #include <filesystem>
 
@@ -167,14 +168,8 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 		return false;
 	}
 
-	USkeleton* Skeleton = SourceMesh->GetSkeleton();
-	if (!Skeleton)
-	{
-		return false;
-	}
-
-	const FReferenceSkeleton& RefSkeleton = Skeleton->GetReferenceSkeleton();
-	if (RefSkeleton.GetNumBones() == 0)
+	FSkeletalMesh* MeshAsset = SourceMesh->GetSkeletalMeshAsset();
+	if (!MeshAsset || MeshAsset->Bones.empty() || MeshAsset->Vertices.empty())
 	{
 		return false;
 	}
@@ -187,33 +182,24 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 
 	const std::filesystem::path AssetPath = BuildUniqueAssetPath(Directory, AssetName, L".uasset");
 
-	int32 RootBoneIndex = 0;
-	for (int32 i = 0; i < RefSkeleton.GetNumBones(); ++i)
-	{
-		if (RefSkeleton.Bones[i].ParentIndex < 0)
-		{
-			RootBoneIndex = i;
-			break;
-		}
-	}
-	const FString& RootBoneName = RefSkeleton.Bones[RootBoneIndex].Name;
-
 	UPhysicsAsset* NewAsset = UObjectManager::Get().CreateObject<UPhysicsAsset>();
 	NewAsset->SetSourcePath(FPaths::ToUtf8(AssetPath.wstring()));
-	
-	// === 1단계 stub ===
-	// root 본 1개에 기본 박스 하나. Params(Min Bone Size / Primitive Type 등)는 받기만 하고 사용하지 않음 — 본 전체 순회 생성은 다음 단계.
-	(void)Params;
-	UBodySetup* Body = NewAsset->CreateBodySetup(FName(RootBoneName));
-	Body->CreateDefaultBox(FVector::ZeroVector, FVector(10.0f, 10.0f, 10.0f));
 
+	GeneratePhysicsAssetBodies(*NewAsset, *MeshAsset, Params);
+
+	if (NewAsset->GetBodySetups().empty())
+	{
+		UObjectManager::Get().DestroyObject(NewAsset);
+		return false;
+	}
+	
 	const bool bSaved = FPhysicsAssetManager::Get().Save(NewAsset);
 	if (!bSaved)
 	{
 		UObjectManager::Get().DestroyObject(NewAsset);
 		return false;
 	}
-
+	
 	OutCreatedPath = FPaths::ToUtf8(AssetPath.wstring());
 	return true;
 }

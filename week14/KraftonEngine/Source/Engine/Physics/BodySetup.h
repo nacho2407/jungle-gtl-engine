@@ -20,6 +20,10 @@ public:
 
 	void CreateDefaultBox(const FVector& Center, const FVector& Extents);
 
+	void AddSphere(const FVector& Center, float Radius);
+	void AddBox(const FVector& Center, const FQuat& Rotation, const FVector& Extents);
+	void AddSphyl(const FVector& Center, const FQuat& Rotation, float Radius, float Length);
+	
 protected:
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Primitives")
 	FKAggregateGeom AggGeom;

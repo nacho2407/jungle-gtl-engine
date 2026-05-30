@@ -1,4 +1,5 @@
 ﻿#pragma once
+
 #include "Core/Types/CoreTypes.h"
 #include "Asset/AssetRegistry.h" 
 
