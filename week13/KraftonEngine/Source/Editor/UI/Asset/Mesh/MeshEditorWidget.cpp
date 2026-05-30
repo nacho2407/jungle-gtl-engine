@@ -6,7 +6,6 @@
 
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
-#include "Editor/EditorEngine.h"
 #include "Runtime/Engine.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Light/DirectionalLightComponent.h"
@@ -260,6 +259,7 @@ void FMeshEditorWidget::Open(UObject* Object)
 	ActiveTab         = EMeshEditorTab::Skeleton;
 	AnimTabState      = FAnimationTabState {};
 	SelectedBoneIndex = -1;
+	SelectedPhysicsBodyIndex = -1;
 }
 
 void FMeshEditorWidget::Close()
@@ -400,6 +400,9 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	case EMeshEditorTab::Animation:
 		RenderAnimationLayout(AvailableHeight);
 		break;
+	case EMeshEditorTab::PhysicsAsset:
+		RenderPhysicsAssetLayout();
+		break;
 	}
 
 	ImGui::End();
@@ -448,6 +451,10 @@ void FMeshEditorWidget::RenderTabBar()
 					Comp->ApplyBoneEditBasePose();
 				}
 			}
+			else if (PreviousTab != ActiveTab && ActiveTab == EMeshEditorTab::PhysicsAsset)
+			{
+				ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
+			}
 		}
 
 		if (bActive || bHovered)
@@ -480,6 +487,7 @@ void FMeshEditorWidget::RenderTabBar()
 	TabButton("Skeleton", L"Skeleton.png", EMeshEditorTab::Skeleton);
 	TabButton("Mesh", L"SkeletalMesh.png", EMeshEditorTab::Mesh);
 	TabButton("Animation", L"Animation.png", EMeshEditorTab::Animation);
+	TabButton("Physics Asset", L"Show_Flag.png", EMeshEditorTab::PhysicsAsset);
 
 	ImGui::NewLine();
 }
@@ -634,7 +642,6 @@ void FMeshEditorWidget::RenderSkeletonLayout()
 	ImGui::BeginChild("BoneDetails", ImVec2(DetailsWidth, 0), true);
 	ImGui::Text("Bone Details");
 	ImGui::Separator();
-	RenderPhysicsAssetPanel(SkeletalMesh);
 
 	if (SkeletalMesh && SelectedBoneIndex != -1)
 	{
@@ -701,18 +708,26 @@ void FMeshEditorWidget::RenderSkeletonLayout()
 // Mesh tab
 // ─────────────────────────────────────────────────────────────────────────────
 
-void FMeshEditorWidget::RenderPhysicsAssetPanel(USkeletalMesh* SkeletalMesh)
+void FMeshEditorWidget::RenderPhysicsAssetLayout()
 {
+	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
+	UPhysicsAsset* PhysicsAsset = SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
+	ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
+
+	constexpr float BodyListWidth = 260.0f;
+	constexpr float BodyDetailsWidth = 300.0f;
+
+	ImGui::BeginChild("PhysicsAssetBodies", ImVec2(BodyListWidth, 0), true);
 	ImGui::TextUnformatted("Physics Asset");
+	ImGui::Separator();
 
 	if (!SkeletalMesh)
 	{
 		ImGui::TextDisabled("No skeletal mesh.");
-		ImGui::Separator();
+		ImGui::EndChild();
 		return;
 	}
 
-	UPhysicsAsset* PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
 	if (PhysicsAsset)
 	{
 		ImGui::Text("Bodies: %zu", PhysicsAsset->GetBodySetups().size());
@@ -724,34 +739,188 @@ void FMeshEditorWidget::RenderPhysicsAssetPanel(USkeletalMesh* SkeletalMesh)
 
 	if (ImGui::Button("Generate Physics Asset"))
 	{
-		UPhysicsAsset* NewAsset = FPhysicsAssetBuilder::CreateFromSkeletalMesh(SkeletalMesh);
-		if (NewAsset)
-		{
-			MarkDirty();
-			ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
-			PhysicsAsset = NewAsset;
-		}
+		PendingPhysicsAssetBuildOptions = FPhysicsAssetBuildOptions {};
+		bOpenPhysicsAssetBuildOptions = true;
 	}
+
+	RenderPhysicsAssetBuildOptionsPopup(SkeletalMesh, PhysicsAsset);
+
+	ImGui::Separator();
+	RenderPhysicsAssetBodyList(PhysicsAsset);
+	ImGui::EndChild();
 
 	ImGui::SameLine();
 
-	const bool bCanOpen = EditorEngine && PhysicsAsset;
-	if (!bCanOpen)
+	ImGui::BeginGroup();
+	const float ViewportWidth = std::max(
+		120.0f,
+		ImGui::GetContentRegionAvail().x - BodyDetailsWidth - ImGui::GetStyle().ItemSpacing.x);
+	const ImVec2 ViewportSize = ImVec2(ViewportWidth, ImGui::GetContentRegionAvail().y);
+	RenderViewportPanel(ViewportSize);
+	ImGui::EndGroup();
+
+	ImGui::SameLine();
+
+	ImGui::BeginChild("PhysicsAssetBodyDetails", ImVec2(BodyDetailsWidth, 0), true);
+	RenderPhysicsAssetBodyDetails(PhysicsAsset);
+	ImGui::EndChild();
+}
+
+void FMeshEditorWidget::RenderPhysicsAssetBuildOptionsPopup(
+	USkeletalMesh* SkeletalMesh,
+	UPhysicsAsset*& InOutPhysicsAsset)
+{
+	const FString PopupId = "Physics Asset Build Options##PhysicsAssetBuildOptions_" + std::to_string(InstanceId);
+
+	if (bOpenPhysicsAssetBuildOptions)
+	{
+		ImGui::OpenPopup(PopupId.c_str());
+		bOpenPhysicsAssetBuildOptions = false;
+	}
+
+	if (!ImGui::BeginPopupModal(PopupId.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		return;
+	}
+
+	ImGui::PushID(PopupId.c_str());
+
+	ImGui::TextUnformatted("Physics Asset Build Options");
+	ImGui::Separator();
+
+	ImGui::Checkbox("Skip Root Body", &PendingPhysicsAssetBuildOptions.bSkipRootBody);
+	ImGui::Checkbox("Use Dominant Bone Weight", &PendingPhysicsAssetBuildOptions.bUseDominantBoneWeight);
+
+	ImGui::Spacing();
+	ImGui::DragFloat("Min Bone Size", &PendingPhysicsAssetBuildOptions.MinBoneSize, 0.25f, 0.0f, 1000.0f, "%.2f");
+	ImGui::DragFloat("Fit Padding", &PendingPhysicsAssetBuildOptions.FitPadding, 0.001f, 1.0f, 2.0f, "%.3f");
+	ImGui::DragFloat("Min Primitive Size", &PendingPhysicsAssetBuildOptions.MinPrimitiveSize, 0.01f, 0.01f, 1000.0f, "%.2f");
+
+	ImGui::Spacing();
+	ImGui::DragFloat("Default Body Radius", &PendingPhysicsAssetBuildOptions.DefaultBodyRadius, 0.1f, 0.1f, 1000.0f, "%.2f");
+	ImGui::DragFloat("Default Body Length", &PendingPhysicsAssetBuildOptions.DefaultBodyLength, 0.1f, 0.1f, 1000.0f, "%.2f");
+	ImGui::DragFloat("Default Box Size", &PendingPhysicsAssetBuildOptions.DefaultBoxSize, 0.1f, 0.1f, 1000.0f, "%.2f");
+
+	ImGui::Separator();
+
+	if (!SkeletalMesh)
 	{
 		ImGui::BeginDisabled();
 	}
 
-	if (ImGui::Button("Open Physics Asset Viewer"))
+	if (ImGui::Button("Generate"))
 	{
-		EditorEngine->OpenAssetEditorForObject(PhysicsAsset);
+		PendingPhysicsAssetBuildOptions.MinBoneSize = std::max(0.0f, PendingPhysicsAssetBuildOptions.MinBoneSize);
+		PendingPhysicsAssetBuildOptions.FitPadding = std::max(1.0f, PendingPhysicsAssetBuildOptions.FitPadding);
+		PendingPhysicsAssetBuildOptions.MinPrimitiveSize = std::max(0.01f, PendingPhysicsAssetBuildOptions.MinPrimitiveSize);
+		PendingPhysicsAssetBuildOptions.DefaultBodyRadius = std::max(0.1f, PendingPhysicsAssetBuildOptions.DefaultBodyRadius);
+		PendingPhysicsAssetBuildOptions.DefaultBodyLength = std::max(0.1f, PendingPhysicsAssetBuildOptions.DefaultBodyLength);
+		PendingPhysicsAssetBuildOptions.DefaultBoxSize = std::max(0.1f, PendingPhysicsAssetBuildOptions.DefaultBoxSize);
+
+		UPhysicsAsset* NewAsset = FPhysicsAssetBuilder::CreateFromSkeletalMesh(SkeletalMesh, PendingPhysicsAssetBuildOptions);
+		if (NewAsset)
+		{
+			MarkDirty();
+			ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
+			InOutPhysicsAsset = NewAsset;
+			SelectedPhysicsBodyIndex = -1;
+			ImGui::CloseCurrentPopup();
+		}
 	}
 
-	if (!bCanOpen)
+	if (!SkeletalMesh)
 	{
 		ImGui::EndDisabled();
 	}
 
+	ImGui::SameLine();
+	if (ImGui::Button("Reset"))
+	{
+		PendingPhysicsAssetBuildOptions = FPhysicsAssetBuildOptions {};
+	}
+
+	ImGui::SameLine();
+	if (ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape))
+	{
+		ImGui::CloseCurrentPopup();
+	}
+
+	ImGui::PopID();
+	ImGui::EndPopup();
+}
+
+void FMeshEditorWidget::RenderPhysicsAssetBodyList(UPhysicsAsset* PhysicsAsset)
+{
+	if (!PhysicsAsset)
+	{
+		ImGui::TextDisabled("No physics asset.");
+		return;
+	}
+
+	const TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetups();
+	if (SelectedPhysicsBodyIndex >= static_cast<int32>(Bodies.size()))
+	{
+		SelectedPhysicsBodyIndex = -1;
+	}
+
+	for (int32 Index = 0; Index < static_cast<int32>(Bodies.size()); ++Index)
+	{
+		const UBodySetup* Body = Bodies[Index];
+		if (!Body)
+		{
+			continue;
+		}
+
+		const FKAggregateGeom& AggGeom = Body->GetAggGeom();
+		FString Label = "[" + std::to_string(Index) + "] ";
+		Label += Body->BoneName.ToString();
+		Label += "  S:";
+		Label += std::to_string(AggGeom.SphereElems.size());
+		Label += " B:";
+		Label += std::to_string(AggGeom.BoxElems.size());
+		Label += " C:";
+		Label += std::to_string(AggGeom.SphylElems.size());
+		Label += " X:";
+		Label += std::to_string(AggGeom.ConvexElems.size());
+
+		if (ImGui::Selectable(Label.c_str(), SelectedPhysicsBodyIndex == Index))
+		{
+			SelectedPhysicsBodyIndex = Index;
+		}
+	}
+}
+
+void FMeshEditorWidget::RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsset)
+{
+	ImGui::TextUnformatted("Body Details");
 	ImGui::Separator();
+
+	if (!PhysicsAsset)
+	{
+		ImGui::TextDisabled("Generate a physics asset first.");
+		return;
+	}
+
+	const TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetups();
+	if (SelectedPhysicsBodyIndex < 0 || SelectedPhysicsBodyIndex >= static_cast<int32>(Bodies.size()))
+	{
+		ImGui::TextDisabled("Select a body.");
+		return;
+	}
+
+	const UBodySetup* Body = Bodies[SelectedPhysicsBodyIndex];
+	if (!Body)
+	{
+		ImGui::TextDisabled("Invalid body.");
+		return;
+	}
+
+	const FKAggregateGeom& AggGeom = Body->GetAggGeom();
+	ImGui::Text("BoneName: %s", Body->BoneName.ToString().c_str());
+	ImGui::Text("SphereElems: %zu", AggGeom.SphereElems.size());
+	ImGui::Text("BoxElems: %zu", AggGeom.BoxElems.size());
+	ImGui::Text("SphylElems: %zu", AggGeom.SphylElems.size());
+	ImGui::Text("ConvexElems: %zu", AggGeom.ConvexElems.size());
 }
 
 void FMeshEditorWidget::RenderMeshLayout()
