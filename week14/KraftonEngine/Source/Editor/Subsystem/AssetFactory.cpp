@@ -12,6 +12,7 @@
 #include "Platform/Paths.h"
 #include "Core/Logging/Log.h"
 
+#include "Mesh/MeshManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"  
 #include "Animation/Skeleton/Skeleton.h"
 #include "Physics/PhysicsAsset.h"  
@@ -230,8 +231,13 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 
 	// 메시가 자기 PhysicsAsset 경로를 기억하게 한다.
 	// 같은 세션에서 메시는 동일 인스턴스(매니저 캐시)라 뷰포트가 즉시 본다.
-	// (세션 간 영속화는 메시 재저장이 필요 — 별도 결정.)
 	SourceMesh->SetPhysicsAssetPath(OutCreatedPath);
+	if (!FMeshManager::SaveSkeletalMeshPackage(SourceMesh))
+	{
+		UE_LOG("PhysicsAsset created but source mesh link save failed. Mesh=%s PhysicsAsset=%s",
+			SourceMesh->GetAssetPathFileName().c_str(),
+			OutCreatedPath.c_str());
+	}
 
 	return true;
 }

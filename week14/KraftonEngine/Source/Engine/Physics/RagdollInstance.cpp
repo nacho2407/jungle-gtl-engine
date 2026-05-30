@@ -164,8 +164,8 @@ void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 
 	TArray<FMatrix> CompGlobal;
 	CompGlobal.resize(NumBones, FMatrix::Identity);
-	TArray<bool> bHasBody;
-	bHasBody.resize(NumBones, false);
+	TArray<bool> bSolved;
+	bSolved.resize(NumBones, false);
 
 	for (int32 i = 0; i < static_cast<int32>(Bodies.size()); ++i)
 	{
@@ -182,12 +182,48 @@ void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 
 		const FTransform BodyWorld = Bodies[i].GetBodyTransform();
 		CompGlobal[BoneIndex] = BodyWorld.ToMatrix() * CompWorldInv;
-		bHasBody[BoneIndex]   = true;
+		bSolved[BoneIndex]    = true;
 	}
 
 	for (int32 b = 0; b < NumBones; ++b)
 	{
-		if (bHasBody[b])
+		if (bSolved[b])
+		{
+			continue;
+		}
+
+		const int32 Parent = Asset->Bones[b].ParentIndex;
+		if (Parent >= 0 && Parent < b && bSolved[Parent])
+		{
+			CompGlobal[b] = InitialLocalPose[b].ToMatrix() * CompGlobal[Parent];
+			bSolved[b]   = true;
+		}
+	}
+
+	// Some FBX files put weighted vertices on a helper bone above the first simulated body
+	// (for example Bip001 -> Pelvis). Infer those ancestors from the solved child body so
+	// helper-weighted triangles do not stay at the bind pose and stretch into long spikes.
+	for (int32 b = NumBones - 1; b >= 0; --b)
+	{
+		if (bSolved[b])
+		{
+			continue;
+		}
+
+		for (int32 Child = b + 1; Child < NumBones; ++Child)
+		{
+			if (Asset->Bones[Child].ParentIndex == b && bSolved[Child])
+			{
+				CompGlobal[b] = InitialLocalPose[Child].ToMatrix().GetInverse() * CompGlobal[Child];
+				bSolved[b]   = true;
+				break;
+			}
+		}
+	}
+
+	for (int32 b = 0; b < NumBones; ++b)
+	{
+		if (bSolved[b])
 		{
 			continue;
 		}
@@ -196,6 +232,7 @@ void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 		CompGlobal[b] = (Parent >= 0 && Parent < b)
 			? InitialLocalPose[b].ToMatrix() * CompGlobal[Parent]
 			: InitialLocalPose[b].ToMatrix();
+		bSolved[b] = true;
 	}
 
 	TArray<FTransform> LocalPose;
