@@ -18,6 +18,7 @@
 #include "Mesh/MeshManager.h"
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
+#include "PhysicsEngine/PhysicsAssetManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "EditorEngine.h"
@@ -434,6 +435,9 @@ void FEditorContentBrowserWidget::RefreshContent()
 					break;
 				case EAssetPackageType::ParticleSystem:
 					Element = std::make_shared<ParticleSystemElement>();
+					break;
+				case EAssetPackageType::PhysicsAsset:
+					Element = std::make_shared<PhysicsAssetElement>();
 					break;
 				case EAssetPackageType::LuaBlueprint:
 					Element = std::make_shared<LuaBlueprintElement>();

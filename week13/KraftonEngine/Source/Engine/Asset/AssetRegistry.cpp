@@ -8,6 +8,7 @@
 #include "Animation/Skeleton/Skeleton.h"
 #include "Animation/Skeleton/SkeletonManager.h"
 #include "Particles/ParticleSystemManager.h"
+#include "PhysicsEngine/PhysicsAssetManager.h"
 #include "LuaBlueprint/LuaBlueprintManager.h"
 #include "Platform/Paths.h"
 
@@ -76,6 +77,11 @@ namespace FAssetRegistry
 		{
 			FParticleSystemManager::Get().RefreshAvailableParticleSystems();
 			return FParticleSystemManager::Get().GetAvailableParticleSystemFiles();
+		}
+		if (std::strcmp(AssetTypeName, "UPhysicsAsset") == 0)
+		{
+			FPhysicsAssetManager::Get().RefreshAvailablePhysicsAssets();
+			return FPhysicsAssetManager::Get().GetAvailablePhysicsAssetFiles();
 		}
 		if (std::strcmp(AssetTypeName, "ULuaBlueprintAsset") == 0)
 		{

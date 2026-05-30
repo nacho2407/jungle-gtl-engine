@@ -27,6 +27,8 @@
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/PhysicsAssetManager.h"
 
 #include <algorithm>
 #include <chrono>
@@ -852,4 +854,32 @@ void ParticleSystemElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	{
 		Context.EditorEngine->OpenAssetEditorForObject(ParticleSystem);
 	}
+}
+
+void PhysicsAssetElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		return;
+	}
+
+	const FString PackagePath = FPaths::ToUtf8(ContentItem.Path.lexically_relative(FPaths::RootDir()).generic_wstring());
+	UPhysicsAsset* PhysicsAsset = FPhysicsAssetManager::Get().Load(PackagePath);
+	if (!PhysicsAsset)
+	{
+		return;
+	}
+
+	const FString& SourceMeshPath = PhysicsAsset->GetSourceSkeletalMeshPath();
+	if (!SourceMeshPath.empty() && SourceMeshPath != "None")
+	{
+		ID3D11Device* Device = Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice();
+		if (USkeletalMesh* SourceMesh = FMeshManager::LoadSkeletalMesh(SourceMeshPath, Device))
+		{
+			PhysicsAsset->SetOuter(SourceMesh);
+			SourceMesh->SetPhysicsAsset(PhysicsAsset);
+		}
+	}
+
+	Context.EditorEngine->OpenAssetEditorForObject(PhysicsAsset);
 }
