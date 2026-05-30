@@ -12,6 +12,7 @@
 #include "Platform/Paths.h"
 #include "Serialization/SceneSaveManager.h"
 #include "Mesh/Static/StaticMesh.h"
+#include "Editor/UI/Dialog/PhysicsAssetCreationDialog.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/Importer/FbxImporter.h"
@@ -693,6 +694,30 @@ void MeshElement::RenderContextMenu(ContentBrowserContext& Context)
 				);
 				Context.bPendingContentRefresh = true;
 				Context.EditorEngine->OpenAssetEditorForObject(Reimported);
+			}
+		}
+
+		if (ImGui::MenuItem("Create Physics Asset..."))
+		{
+			if (Context.EditorEngine)
+			{
+				USkeletalMesh* MeshAsset = FMeshManager::LoadSkeletalMesh(
+					FilePath,
+					Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice()
+				);
+
+				if (MeshAsset)
+				{
+					const FString DirectoryPath = FPaths::ToUtf8(ContentItem.Path.parent_path().wstring());
+					const FString DefaultName = FPaths::ToUtf8(ContentItem.Path.stem().wstring()) + "_PhysicsAsset";
+
+					FPhysicsAssetCreationDialog::Begin(
+						Context.PhysicsAssetDialog,
+						MeshAsset,
+						DirectoryPath,
+						DefaultName
+					);
+				}
 			}
 		}
 	}

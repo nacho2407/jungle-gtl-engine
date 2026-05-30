@@ -40,12 +40,22 @@ class FWindowsBinReader : public FArchive
 {
 private:
 	std::ifstream FileStream;
+	std::streamoff FileSize = 0; // 트레일링 섹션 EOF 판정용 (peek 대신 위치 비교)
 
 public:
 	FWindowsBinReader(const std::string& FilePath)
 	{
 		bIsLoading = true; // 나는 '읽기' 전용이다!
 		FileStream.open(FPaths::ToWide(FilePath), std::ios::binary);
+
+		// 전체 파일 크기를 미리 구해둔다. 끝까지 읽었는지 tellg와 비교만 하면 되니
+		// peek()로 eofbit를 건드려 IsValid()를 깨뜨리는 일이 없다.
+		if (FileStream.is_open())
+		{
+			FileStream.seekg(0, std::ios::end);
+			FileSize = static_cast<std::streamoff>(FileStream.tellg());
+			FileStream.seekg(0, std::ios::beg);
+		}
 	}
 
 	~FWindowsBinReader() override
@@ -54,6 +64,16 @@ public:
 	}
 
 	bool IsValid() const { return FileStream.is_open() && FileStream.good(); }
+
+	// 현재 읽기 위치가 파일 끝에 닿았는지. eofbit를 세우지 않으므로 이후 IsValid()에 영향 없음.
+	bool AtEnd() override
+	{
+		if (!FileStream.is_open() || !FileStream.good())
+		{
+			return true;
+		}
+		return static_cast<std::streamoff>(FileStream.tellg()) >= FileSize;
+	}
 
 	void Serialize(void* Data, size_t Num) override
 	{

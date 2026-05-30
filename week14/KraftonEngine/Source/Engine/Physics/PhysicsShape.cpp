@@ -60,7 +60,7 @@ void FPhysicsShapeFactory::CreateShapesForComponent(physx::PxPhysics& Physics, p
 
 void FPhysicsShapeFactory::CreateShapesFromBodySetup(physx::PxPhysics& Physics, physx::PxMaterial& Material,
 	const UBodySetup& BodySetup, const FVector& Scale, UPrimitiveComponent* UserDataComponent,
-	bool bTrigger, TArray<physx::PxShape*>& OutShapes)
+	bool bTrigger, TArray<physx::PxShape*>& OutShapes, const physx::PxFilterData* FilterDataOverride)
 {
 	if (!BodySetup.HasSimpleCollision()) return;
 
@@ -83,7 +83,7 @@ void FPhysicsShapeFactory::CreateShapesFromBodySetup(physx::PxPhysics& Physics, 
 			Box.Center.Z * AbsScale.Z);
 
 		Shape->setLocalPose(ToPxTransform(LocalCenter, Box.Rotation));
-		ApplyShapeFlags(*Shape, UserDataComponent, bTrigger);
+		ApplyShapeFlags(*Shape, UserDataComponent, bTrigger, FilterDataOverride);
 		OutShapes.push_back(Shape);
 	}
 
@@ -100,7 +100,7 @@ void FPhysicsShapeFactory::CreateShapesFromBodySetup(physx::PxPhysics& Physics, 
 			Sphere.Center.Z * AbsScale.Z);
 
 		Shape->setLocalPose(physx::PxTransform(ToPxVec3(LocalCenter)));
-		ApplyShapeFlags(*Shape, UserDataComponent, bTrigger);
+		ApplyShapeFlags(*Shape, UserDataComponent, bTrigger, FilterDataOverride);
 		OutShapes.push_back(Shape);
 	}
 
@@ -120,12 +120,13 @@ void FPhysicsShapeFactory::CreateShapesFromBodySetup(physx::PxPhysics& Physics, 
 			Sphyl.Center.Y * AbsScale.Y,
 			Sphyl.Center.Z * AbsScale.Z);
 
-		const FQuat CapsuleAxisFix = FQuat::FromAxisAngle(FVector(0.0f, 1.0f, 0.0f), 90.0f);
+		constexpr float CapsuleAxisFixRadians = 1.57079632679f;
+		const FQuat CapsuleAxisFix = FQuat::FromAxisAngle(FVector(0.0f, 1.0f, 0.0f), CapsuleAxisFixRadians);
 
 		const FQuat LocalRot = (Sphyl.Rotation * CapsuleAxisFix).GetNormalized();
 
 		Shape->setLocalPose(ToPxTransform(LocalCenter, LocalRot));
-		ApplyShapeFlags(*Shape, UserDataComponent, bTrigger);
+		ApplyShapeFlags(*Shape, UserDataComponent, bTrigger, FilterDataOverride);
 		OutShapes.push_back(Shape);
 	}
 }
@@ -144,11 +145,17 @@ void FPhysicsShapeFactory::CreateShapesForStaticMeshComponent(physx::PxPhysics& 
 	CreateShapesFromBodySetup(Physics, Material, *BodySetup, Component->GetWorldScale(), Component, bTrigger, OutShapes);
 }
 
-void FPhysicsShapeFactory::ApplyShapeFlags(physx::PxShape& Shape, UPrimitiveComponent* Component, bool bTrigger)
+void FPhysicsShapeFactory::ApplyShapeFlags(physx::PxShape& Shape, UPrimitiveComponent* Component, bool bTrigger,
+	const physx::PxFilterData* FilterDataOverride)
 {
 	Shape.userData = Component;
 
-	if (Component)
+	if (FilterDataOverride)
+	{
+		Shape.setSimulationFilterData(*FilterDataOverride);
+		Shape.setQueryFilterData(*FilterDataOverride);
+	}
+	else if (Component)
 	{
 		const physx::PxFilterData FilterData = MakeFilterData(*Component);
 		Shape.setSimulationFilterData(FilterData);

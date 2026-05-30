@@ -14,6 +14,12 @@
 #include "Collision/Ray/RayUtils.h"
 #include "Settings/EditorSettings.h"
 #include "Slate/SlateApplication.h"
+#include "Physics/PhysicsAssetDebugDraw.h"
+#include "Physics/PhysicsAssetManager.h"
+#include "Physics/PhysicsAsset.h"
+#include "Platform/Paths.h"
+#include "Core/Logging/Log.h"
+#include <filesystem>
 
 #include <imgui.h>
 
@@ -164,6 +170,13 @@ void FMeshEditorViewportClient::Tick(float DeltaTime)
 	TickShortcuts();
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
+}
+
+void FMeshEditorViewportClient::SubmitFrameDebugDraw()
+{
+	// 렌더 단계에서 호출됨(WorldTick 이후). 여기서 추가해야 1프레임 디버그 라인이
+	// 같은 프레임의 CollectDebugDraw에 잡힌다.
+	DrawPreviewPhysicsAsset();
 }
 
 void FMeshEditorViewportClient::SetSelectedBone(USkeletalMesh* Mesh, int32 BoneIndex)
@@ -448,6 +461,20 @@ void FMeshEditorViewportClient::SyncGizmo()
 	else
 	{
 		Gizmo->Deactivate();
+	}
+}
+
+void FMeshEditorViewportClient::DrawPreviewPhysicsAsset()
+{
+	if (!bShowPhysicsAsset || !PreviewWorld || !PreviewMeshComponent)
+	{
+		return;
+	}
+
+	// 컴포넌트 오버라이드 우선, 없으면 메시 기본값(3-B). 매니저 캐시라 매 프레임 호출해도 가볍다.
+	if (UPhysicsAsset* PhysicsAsset = PreviewMeshComponent->GetPhysicsAsset())
+	{
+		DrawPhysicsAssetDebug(PreviewWorld, PhysicsAsset, PreviewMeshComponent);
 	}
 }
 

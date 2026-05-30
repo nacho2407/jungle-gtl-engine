@@ -23,6 +23,10 @@ public:
 
 	inline bool IsLoading() const { return bIsLoading; }
 	inline bool IsSaving() const { return bIsSaving; }
+
+	// 로드 스트림이 끝(EOF)에 도달했는지. 기본은 false; 파일 리더가 override.
+	// 구버전 에셋에 없는 트레일링(버전) 섹션을 안전하게 건너뛰는 데 쓴다.
+	virtual bool AtEnd() { return false; }
 	virtual bool IsObjectReferenceRemapping() const { return false; }
 	virtual UObject* ResolveObjectReference(uint32 /*SourceUUID*/) const { return nullptr; }
 	virtual void AddObjectReferenceFixup(uint32 /*SourceUUID*/, std::function<void(UObject*)> /*Fixup*/) {}

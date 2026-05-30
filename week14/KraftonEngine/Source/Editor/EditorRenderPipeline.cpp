@@ -397,6 +397,8 @@ void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* 
 	Builder.BeginCollect(Frame);
 
 	Collector.Collect(World, Frame, Output);
+	VC->SubmitFrameDebugDraw();
+	Collector.CollectDebugDraw(Frame, Scene);
 	Builder.BuildCommands(Frame, &Scene, Output);
 
 	Renderer.Render(Frame, World, Scene);

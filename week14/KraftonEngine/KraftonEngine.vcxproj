@@ -439,6 +439,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClCompile Include="Source\Editor\Slate\SlateApplication.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\AssetFactory.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
+    <ClCompile Include="Source\Editor\Subsystem\PhysicsAssetGenerator.cpp" />
+    <ClCompile Include="Source\Editor\UI\Dialog\PhysicsAssetCreationDialog.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp" />
@@ -666,6 +668,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClCompile Include="Source\Engine\Physics\BodyInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\BodySetup.cpp" />
     <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsAsset.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsAssetDebugDraw.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsAssetManager.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsConstraintTemplate.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsEventCallback.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsFilterData.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsFilterShader.cpp" />
@@ -674,6 +680,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClCompile Include="Source\Engine\Physics\PhysicsShape.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXConversions.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXSDK.cpp" />
+    <ClCompile Include="Source\Engine\Physics\RagdollInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXVehicleInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp" />
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
@@ -804,6 +811,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Editor\Slate\SlateApplication.h" />
     <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
+    <ClInclude Include="Source\Editor\Subsystem\PhysicsAssetGenerator.h" />
+    <ClInclude Include="Source\Editor\UI\Dialog\PhysicsAssetCreationDialog.h" />
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
     <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h" />
@@ -1083,6 +1092,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Engine\Physics\BodySetup.h" />
     <ClInclude Include="Source\Engine\Physics\BodySetupCore.h" />
     <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsAsset.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsAssetDebugDraw.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsAssetManager.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsConstraintTemplate.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsEventCallback.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsFilterData.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsFilterShader.h" />
@@ -1094,6 +1107,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Engine\Physics\PhysXConversions.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXInclude.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXSDK.h" />
+    <ClInclude Include="Source\Engine\Physics\RagdollInstance.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleInstance.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleManager.h" />
     <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h" />

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include "Component/Primitive/SkinnedMeshComponent.h"
 #include "Animation/AnimationMode.h"
 #include "Object/Ptr/SubclassOf.h"
@@ -10,6 +12,7 @@ class UAnimInstance;
 class UAnimSingleNodeInstance;
 class UAnimSequenceBase;
 class UClass;
+struct FRagdollInstance;
 
 // SkeletalMesh 전용 render proxy만 제공하는 얇은 wrapper.
 // Skinning/bone/material/bounds 상태는 모두 USkinnedMeshComponent가 소유한다.
@@ -18,7 +21,7 @@ class USkeletalMeshComponent : public USkinnedMeshComponent
 {
 public:
 	GENERATED_BODY()
-	USkeletalMeshComponent() = default;
+	USkeletalMeshComponent();
 	~USkeletalMeshComponent() override;
 
     // Render access 섹션: SceneProxy
@@ -30,6 +33,10 @@ public:
     // SingleNode 재생 편의 API.
     void PlayAnimation(UAnimSequenceBase* NewAnimToPlay, bool bLooping);
     void StopAnimation();
+
+	// Ragdoll: PhysicsAsset로 물리 시뮬레이션 on/off.
+	void SetSimulatePhysics(bool bEnable);
+	bool IsSimulatingPhysics() const { return bSimulatingPhysics; }
 
     // Animation 섹션: Mode 에 따라 AnimInstance 의 생성/파기를 컴포넌트가 책임진다.
     //   - None              : AnimInstance 미생성. BoneEdit 만 적용.
@@ -88,4 +95,7 @@ protected:
     TSubclassOf<UAnimInstance> AnimInstanceClass;
     UPROPERTY(Save, Instanced, Category="Animation", DisplayName="Anim Instance", Type=ObjectRef, AllowedClass=UAnimInstance)
     UAnimInstance*             AnimInstance  = nullptr;
+
+	std::unique_ptr<FRagdollInstance> Ragdoll;
+	bool bSimulatingPhysics = false;
 };

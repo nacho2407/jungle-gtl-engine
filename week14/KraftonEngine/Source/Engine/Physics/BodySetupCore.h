@@ -9,6 +9,9 @@ class UBodySetupCore : public UObject
 {
 public:
 	GENERATED_BODY()
+	
+	FName GetBoneName() const {return BoneName;}
+	void SetBoneName(FName InBoneName) {BoneName = InBoneName;}
 
 protected:
 	UPROPERTY(Edit, Save, Category="BodySetup")

@@ -15,6 +15,7 @@ class FPhysicsEventCallback;
 class FPhysXVehicleManager;
 struct FBodyInstance;
 struct FConstraintInstance;
+enum class EAngularConstraintMode : uint8;
 
 class FPhysicsScene
 {
@@ -26,11 +27,14 @@ public:
 	bool CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance);
 	bool CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance, const UBodySetup& BodySetup,
 		const FVector& WorldLocation, const FQuat& WorldRotation, ECollisionChannel ObjectType, ECollisionEnabled CollisionEnabled,
-		const FVector& Scale, bool bGenerateOverlapEvents, bool bSimulatePhysics);
+		const FVector& Scale, bool bGenerateOverlapEvents, bool bSimulatePhysics, uint16 SelfCollisionGroup = 0);
 	void DestroyBody(FBodyInstance& Instance);
 
 	FConstraintInstance* CreateFixedConstraint(FBodyInstance* BodyA, FBodyInstance* BodyB,
 		const FTransform& LocalFrameA, const FTransform& LocalFrameB);
+	FConstraintInstance* CreateD6Constraint(FBodyInstance* BodyA, FBodyInstance* BodyB,
+		const FTransform& LocalFrameA, const FTransform& LocalFrameB, EAngularConstraintMode AngularMode,
+		float Swing1LimitDeg, float Swing2LimitDeg, float TwistLimitDeg);
 	void DestroyConstraint(FConstraintInstance* Instance);
 
 	bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,

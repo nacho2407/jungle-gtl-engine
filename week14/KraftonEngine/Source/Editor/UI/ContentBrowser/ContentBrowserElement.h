@@ -172,6 +172,13 @@ protected:
 	uint32 GetAccentColor() const override { return IM_COL32(180, 130, 255, 255); }
 };
 
+class PhysicsAssetElement final : public ContentBrowserElement
+{
+protected:
+	const char* GetTypeLabel() const override { return "Physics Asset"; }
+	uint32 GetAccentColor() const override { return IM_COL32(100, 190, 210, 255); }
+};
+
 class ParticleSystemElement final : public ContentBrowserElement
 {
 public:

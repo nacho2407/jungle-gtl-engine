@@ -5,9 +5,16 @@
 
 physx::PxFilterData MakeFilterData(const UPrimitiveComponent& Component)
 {
+	return MakeFilterData(Component.GetCollisionObjectType(), Component.GetCollisionResponseContainer(),
+		Component.GetCollisionEnabled(), Component.GetGenerateOverlapEvents());
+}
+
+physx::PxFilterData MakeFilterData(ECollisionChannel ObjectType, const FCollisionResponseContainer& Responses,
+	ECollisionEnabled CollisionEnabled, bool bGenerateOverlapEvents, uint16 SelfCollisionGroup)
+{
 	physx::PxFilterData Data;
 
-	Data.word0 = ObjectTypeBit(Component.GetCollisionObjectType());
+	Data.word0 = ObjectTypeBit(ObjectType);
 
 	Data.word1 = 0;
 	Data.word2 = 0;
@@ -15,7 +22,7 @@ physx::PxFilterData MakeFilterData(const UPrimitiveComponent& Component)
 	for (int32 Index = 0; Index < static_cast<int32>(ECollisionChannel::ActiveCount); ++Index)
 	{
 		const ECollisionChannel Channel = static_cast<ECollisionChannel>(Index);
-		const ECollisionResponse Response = Component.GetCollisionResponseToChannel(Channel);
+		const ECollisionResponse Response = Responses.GetResponse(Channel);
 		const uint32 Bit = ObjectTypeBit(Channel);
 
 		if (Response == ECollisionResponse::Block)
@@ -30,7 +37,7 @@ physx::PxFilterData MakeFilterData(const UPrimitiveComponent& Component)
 
 	Data.word3 = 0;
 
-	switch (Component.GetCollisionEnabled())
+	switch (CollisionEnabled)
 	{
 	case ECollisionEnabled::QueryOnly:
 		Data.word3 |= EPhysicsFilterFlags::QueryOnly;
@@ -45,9 +52,16 @@ physx::PxFilterData MakeFilterData(const UPrimitiveComponent& Component)
 		break;
 	}
 
-	if (Component.GetGenerateOverlapEvents())
+	if (bGenerateOverlapEvents)
 	{
 		Data.word3 |= EPhysicsFilterFlags::GenerateOverlapEvents;
+	}
+
+	if (SelfCollisionGroup != 0)
+	{
+		Data.word3 |= EPhysicsFilterFlags::DisableSelfCollision;
+		Data.word3 |= (static_cast<physx::PxU32>(SelfCollisionGroup) << EPhysicsFilterFlags::SelfCollisionGroupShift)
+			& EPhysicsFilterFlags::SelfCollisionGroupMask;
 	}
 
 	return Data;

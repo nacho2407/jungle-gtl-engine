@@ -27,6 +27,25 @@ namespace
 			HasAny(B.word3, EPhysicsFilterFlags::GenerateOverlapEvents);
 	}
 
+	uint16 GetSelfCollisionGroup(const physx::PxFilterData& Data)
+	{
+		return static_cast<uint16>((Data.word3 & EPhysicsFilterFlags::SelfCollisionGroupMask)
+			>> EPhysicsFilterFlags::SelfCollisionGroupShift);
+	}
+
+	bool ShouldSuppressSelfCollision(const physx::PxFilterData& A, const physx::PxFilterData& B)
+	{
+		if (!HasAny(A.word3, EPhysicsFilterFlags::DisableSelfCollision) ||
+			!HasAny(B.word3, EPhysicsFilterFlags::DisableSelfCollision))
+		{
+			return false;
+		}
+
+		const uint16 GroupA = GetSelfCollisionGroup(A);
+		const uint16 GroupB = GetSelfCollisionGroup(B);
+		return GroupA != 0 && GroupA == GroupB;
+	}
+
 	ECollisionResponse GetPairResponse(const physx::PxFilterData& A, const physx::PxFilterData& B)
 	{
 		const bool ABlocksB = HasAny(A.word1, B.word0);
@@ -59,6 +78,12 @@ physx::PxFilterFlags PhysicsFilterShader(
 	const void* ConstantBlock,
 	physx::PxU32 ConstantBlockSize)
 {
+	if (ShouldSuppressSelfCollision(FilterData0, FilterData1))
+	{
+		PairFlags = physx::PxPairFlags();
+		return physx::PxFilterFlag::eSUPPRESS;
+	}
+
 	const ECollisionResponse Response = GetPairResponse(FilterData0, FilterData1);
 
 	if (Response == ECollisionResponse::Ignore)

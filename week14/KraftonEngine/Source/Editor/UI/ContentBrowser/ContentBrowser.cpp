@@ -270,7 +270,8 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 	ImGui::EndTable();
 
 	RenderFbxImportOptionsPopup();
-
+	RenderPhysicsAssetCreationPopup();
+	
 	ImGui::End();
 }
 
@@ -319,6 +320,38 @@ void FEditorContentBrowserWidget::RenderFbxImportOptionsPopup()
 	else
 	{
 		BrowserContext.FbxImportDialog.Error = "FBX import failed. See the engine log for details.";
+	}
+}
+
+void FEditorContentBrowserWidget::RenderPhysicsAssetCreationPopup()
+{
+	const EPhysicsAssetDialogResult DialogResult = FPhysicsAssetCreationDialog::Render(
+		"Create Physics Asset",
+		BrowserContext.PhysicsAssetDialog
+	);
+
+	if (DialogResult != EPhysicsAssetDialogResult::Submitted)
+	{
+		return;
+	}
+
+	FString OutCreatedPath;
+	const bool bCreated = FAssetFactory::CreatePhysicsAsset(
+		BrowserContext.PhysicsAssetDialog.TargetDirectoryPath,
+		BrowserContext.PhysicsAssetDialog.AssetName,
+		BrowserContext.PhysicsAssetDialog.SourceMesh,
+		BrowserContext.PhysicsAssetDialog.Params,
+		OutCreatedPath
+	);
+
+	if (bCreated)
+	{
+		Refresh();
+		FPhysicsAssetCreationDialog::RequestClose(BrowserContext.PhysicsAssetDialog);
+	}
+	else
+	{
+		BrowserContext.PhysicsAssetDialog.Error = "Failed to create physics asset. See the engine log for details.";
 	}
 }
 
@@ -423,6 +456,9 @@ void FEditorContentBrowserWidget::RefreshContent()
 					break;
 				case EAssetPackageType::Skeleton:
 					Element = std::make_shared<SkeletonElement>();
+					break;
+				case EAssetPackageType::PhysicsAsset:
+					Element = std::make_shared<PhysicsAssetElement>();
 					break;
 				case EAssetPackageType::AnimSequence:
 					Element = std::make_shared<AnimationElement>();

@@ -5,6 +5,7 @@
 #include "Core/Types/CoreTypes.h"
 #include "Object/Reflection/ObjectMacros.h"
 #include "Object/Reflection/UStruct.h"
+#include "Serialization/Archive.h"
 
 #include "Source/Engine/Physics/PhysicsGeometry.generated.h"
 
@@ -86,3 +87,18 @@ struct FKAggregateGeom
 			&& ConvexElems.empty();
 	}
 };
+
+inline FArchive& operator<<(FArchive& Ar, FKConvexElem& Elem)
+{
+	Ar << Elem.VertexData;
+	return Ar;
+}
+
+inline FArchive& operator<<(FArchive& Ar, FKAggregateGeom& Geom)
+{
+	Ar << Geom.SphereElems;
+	Ar << Geom.BoxElems;
+	Ar << Geom.SphylElems;
+	Ar << Geom.ConvexElems;
+	return Ar;
+}

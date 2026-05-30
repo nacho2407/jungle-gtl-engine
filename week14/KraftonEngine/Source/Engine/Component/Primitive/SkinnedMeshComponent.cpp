@@ -171,6 +171,16 @@ USkeletalMesh* USkinnedMeshComponent::GetSkeletalMesh() const
 	return SkeletalMesh;
 }
 
+UPhysicsAsset* USkinnedMeshComponent::GetPhysicsAsset()
+{
+	// per-instance 오버라이드가 있으면 우선, 없으면 메시 기본값으로 폴백.
+	if (PhysicsAssetOverride)
+	{
+		return PhysicsAssetOverride;
+	}
+	return SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
+}
+
 // Bounds 섹션: SkeletalMesh culling은 asset local bounds가 아니라 실제 CPU-skinned vertices를 기준으로 한다.
 void USkinnedMeshComponent::UpdateWorldAABB() const
 {
@@ -306,6 +316,25 @@ bool USkinnedMeshComponent::GetBoneWorldTransformByName(const FString& BoneName,
 	int32 BoneIndex = FindBoneIndex(BoneName);
 	if (BoneIndex < 0) return false;
 	return GetBoneWorldTransformByIndex(BoneIndex, OutTransform);
+}
+
+bool USkinnedMeshComponent::GetBoneWorldMatrixByIndex(int32 BoneIndex, FMatrix& OutMatrix) const
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) return false;
+
+	TArray<FMatrix> GlobalMatrices;
+	BuildBoneEditGlobalMatrices(GlobalMatrices);
+
+	OutMatrix = GlobalMatrices[BoneIndex] * GetWorldMatrix();
+	return true;
+}
+
+bool USkinnedMeshComponent::GetBoneWorldMatrixByName(const FString& BoneName, FMatrix& OutMatrix) const
+{
+	int32 BoneIndex = FindBoneIndex(BoneName);
+	if (BoneIndex < 0) return false;
+	return GetBoneWorldMatrixByIndex(BoneIndex, OutMatrix);
 }
 
 bool USkinnedMeshComponent::GetBoneSocketWorldTransform(const FString& BoneName, const FTransform& LocalOffset, FTransform& OutTransform) const

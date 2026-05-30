@@ -20,6 +20,7 @@ struct FBodyInstance
 	UPrimitiveComponent* OwnerComponent = nullptr;
 	physx::PxRigidActor* Body = nullptr;
 	EBodyInstanceMode Mode = EBodyInstanceMode::Static;
+	bool bSyncOwnerFromPhysics = true;
 
 	bool IsValidBody() const { return Body != nullptr; }
 	bool IsDynamic() const;

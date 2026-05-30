@@ -139,6 +139,7 @@ AActor* FBodyInstance::GetOwnerActor() const
 
 void FBodyInstance::SyncFromPhysics()
 {
+	if (!bSyncOwnerFromPhysics) return;
 	if (!OwnerComponent || !Body) return;
 	if (Mode != EBodyInstanceMode::Dynamic) return;
 
