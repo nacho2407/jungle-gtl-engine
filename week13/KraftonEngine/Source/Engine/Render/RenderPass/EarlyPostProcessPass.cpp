@@ -105,7 +105,11 @@ void FEarlyPostProcessPass::ExecuteDepthOfField(const FPassContext& Ctx)
 		std::max(Frame.RenderOptions.DOFMaxCoCRadius, 0.0f),
 		Frame.NearClip);
 	Constants.Params1 = FVector4(Frame.FarClip, 1.0f / FullWidth, 1.0f / FullHeight, 1.0f / HalfWidth);
-	Constants.Params2 = FVector4(1.0f / HalfHeight, 0.0f, 0.0f, 0.0f);
+	Constants.Params2 = FVector4(
+		1.0f / HalfHeight,
+		static_cast<float>(std::clamp(Frame.RenderOptions.DOFApertureBladeCount, 3, 16)),
+		0.0f,
+		0.0f);
 	DOFConstantBuffer.Update(DC, &Constants, sizeof(Constants));
 
 	ID3D11Buffer* RawDOFCB = DOFConstantBuffer.GetBuffer();

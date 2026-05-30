@@ -110,6 +110,7 @@ struct FViewportRenderOptions
 	float DOFAperture = 4.0f; // F-Stop
 	float DOFFocalDistance = 10.0f;
 	float DOFMaxCoCRadius = 8.0f;
+	int32 DOFApertureBladeCount = 6;
 
 	// Light Culling 뷰모드 전용 설정
 	ELightCullingMode LightCullingMode = ELightCullingMode::Cluster;

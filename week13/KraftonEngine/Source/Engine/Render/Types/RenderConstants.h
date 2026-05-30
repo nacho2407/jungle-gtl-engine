@@ -275,7 +275,7 @@ struct FDepthOfFieldConstants
 {
 	FVector4 Params0; // x=FocalDistance, y=Aperture(F-Stop), z=MaxCoCRadius, w=NearClip
 	FVector4 Params1; // x=FarClip, y=InvFullWidth, z=InvFullHeight, w=InvHalfWidth
-	FVector4 Params2; // x=InvHalfHeight
+	FVector4 Params2; // x=InvHalfHeight, y=ApertureBladeCount
 };
 
 

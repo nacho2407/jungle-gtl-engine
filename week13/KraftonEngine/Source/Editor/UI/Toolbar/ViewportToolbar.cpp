@@ -607,6 +607,7 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 			ImGui::SliderFloat("Aperture (F-Stop)", &RenderOptions.DOFAperture, 0.7f, 22.0f, "%.2f");
 			ImGui::SliderFloat("Focal Distance", &RenderOptions.DOFFocalDistance, 0.1f, 200.0f, "%.2f");
 			ImGui::SliderFloat("Max CoC Radius", &RenderOptions.DOFMaxCoCRadius, 1.0f, 24.0f, "%.1f");
+			ImGui::SliderInt("Aperture Blades", &RenderOptions.DOFApertureBladeCount, 3, 16);
 		}
 		ImGui::Checkbox("FXAA", &RenderOptions.ShowFlags.bFXAA);
 		ImGui::Checkbox("Gamma Correction", &RenderOptions.ShowFlags.bGammaCorrection);

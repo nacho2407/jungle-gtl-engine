@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <filesystem>
+#include <algorithm>
 
 namespace Key
 {
@@ -54,6 +55,7 @@ namespace Key
 	constexpr const char* DOFAperture = "DOFAperture";
 	constexpr const char* DOFFocalDistance = "DOFFocalDistance";
 	constexpr const char* DOFMaxCoCRadius = "DOFMaxCoCRadius";
+	constexpr const char* DOFApertureBladeCount = "DOFApertureBladeCount";
 	constexpr const char* LightCullingMode = "LightCullingMode";
 	constexpr const char* HeatMapMax = "HeatMapMax";
 	constexpr const char* Enable25DCulling = "Enable25DCulling";
@@ -189,6 +191,7 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::DOFAperture] = Opts.DOFAperture;
 	Obj[Key::DOFFocalDistance] = Opts.DOFFocalDistance;
 	Obj[Key::DOFMaxCoCRadius] = Opts.DOFMaxCoCRadius;
+	Obj[Key::DOFApertureBladeCount] = Opts.DOFApertureBladeCount;
 	Obj[Key::LightCullingMode] = static_cast<int32>(Opts.LightCullingMode);
 	Obj[Key::HeatMapMax] = Opts.HeatMapMax;
 	Obj[Key::Enable25DCulling] = Opts.Enable25DCulling;
@@ -267,6 +270,8 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.DOFFocalDistance = static_cast<float>(Obj[Key::DOFFocalDistance].ToFloat());
 	if (Obj.hasKey(Key::DOFMaxCoCRadius))
 		Opts.DOFMaxCoCRadius = static_cast<float>(Obj[Key::DOFMaxCoCRadius].ToFloat());
+	if (Obj.hasKey(Key::DOFApertureBladeCount))
+		Opts.DOFApertureBladeCount = std::clamp(static_cast<int32>(Obj[Key::DOFApertureBladeCount].ToInt()), 3, 16);
 	if (Obj.hasKey(Key::LightCullingMode))
 		Opts.LightCullingMode = static_cast<ELightCullingMode>(Obj[Key::LightCullingMode].ToInt());
 	if (Obj.hasKey(Key::HeatMapMax))
