@@ -4,6 +4,8 @@
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/PhysicsAssetManager.h"
+#include "Core/Logging/Log.h"
 
 #include <imgui.h>
 
@@ -26,7 +28,7 @@ FString BuildPhysicsBodyTreeLabel(const FString& BoneName, int32 BodyIndex, cons
 	return Label;
 }
 
-void RenderConstraintInitDescDetails(const UPhysicsAsset* PhysicsAsset, const UBodySetup* BodySetup)
+bool RenderConstraintInitDescDetails(UPhysicsAsset* PhysicsAsset, const UBodySetup* BodySetup)
 {
 	ImGui::Dummy(ImVec2(0, 6));
 	ImGui::Separator();
@@ -39,20 +41,33 @@ void RenderConstraintInitDescDetails(const UPhysicsAsset* PhysicsAsset, const UB
 	if (!ConstraintDesc)
 	{
 		ImGui::TextDisabled("None");
-		return;
+		return false;
 	}
 
-	const FVector ParentLocation = ConstraintDesc->ParentFrame.GetLocation();
-	const FVector ChildLocation = ConstraintDesc->ChildFrame.GetLocation();
+	bool bChanged = false;
 
 	ImGui::Text("ParentBone: %s", ConstraintDesc->ParentBoneName.ToString().c_str());
 	ImGui::Text("ChildBone: %s", ConstraintDesc->ChildBoneName.ToString().c_str());
-	ImGui::Text("TwistLimit: %.2f", ConstraintDesc->TwistLimitDegrees);
-	ImGui::Text("Swing1Limit: %.2f", ConstraintDesc->Swing1LimitDegrees);
-	ImGui::Text("Swing2Limit: %.2f", ConstraintDesc->Swing2LimitDegrees);
-	ImGui::Text("EnableCollision: %s", ConstraintDesc->bEnableCollision ? "true" : "false");
-	ImGui::Text("ParentFrame Location: %.2f, %.2f, %.2f", ParentLocation.X, ParentLocation.Y, ParentLocation.Z);
-	ImGui::Text("ChildFrame Location: %.2f, %.2f, %.2f", ChildLocation.X, ChildLocation.Y, ChildLocation.Z);
+	bChanged |= ImGui::DragFloat("Twist Limit", &ConstraintDesc->TwistLimitDegrees, 0.25f, 0.0f, 180.0f, "%.2f");
+	bChanged |= ImGui::DragFloat("Swing1 Limit", &ConstraintDesc->Swing1LimitDegrees, 0.25f, 0.0f, 180.0f, "%.2f");
+	bChanged |= ImGui::DragFloat("Swing2 Limit", &ConstraintDesc->Swing2LimitDegrees, 0.25f, 0.0f, 180.0f, "%.2f");
+	bChanged |= ImGui::Checkbox("Enable Collision", &ConstraintDesc->bEnableCollision);
+
+	FVector ParentLocation = ConstraintDesc->ParentFrame.GetLocation();
+	if (ImGui::DragFloat3("ParentFrame Location", &ParentLocation.X, 0.1f, -10000.0f, 10000.0f, "%.2f"))
+	{
+		ConstraintDesc->ParentFrame.Location = ParentLocation;
+		bChanged = true;
+	}
+
+	FVector ChildLocation = ConstraintDesc->ChildFrame.GetLocation();
+	if (ImGui::DragFloat3("ChildFrame Location", &ChildLocation.X, 0.1f, -10000.0f, 10000.0f, "%.2f"))
+	{
+		ConstraintDesc->ChildFrame.Location = ChildLocation;
+		bChanged = true;
+	}
+
+	return bChanged;
 }
 
 bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
@@ -105,6 +120,32 @@ void FPhysicsAssetViewerWidget::AddReferencedObjects(FReferenceCollector& Collec
 {
 	FAssetEditorWidget::AddReferencedObjects(Collector);
 	Collector.AddReferencedObject(SourceSkeletalMesh);
+}
+
+bool FPhysicsAssetViewerWidget::SavePhysicsAsset(UPhysicsAsset* PhysicsAsset)
+{
+	if (!PhysicsAsset)
+	{
+		return false;
+	}
+
+	if (SourceSkeletalMesh)
+	{
+		return FPhysicsAssetManager::Get().SaveForSkeletalMesh(
+			SourceSkeletalMesh,
+			SourceSkeletalMesh->GetAssetPathFileName());
+	}
+
+	const FString& PhysicsAssetPath = PhysicsAsset->GetAssetPathFileName();
+	if (PhysicsAssetPath.empty() || PhysicsAssetPath == "None")
+	{
+		return false;
+	}
+
+	return FPhysicsAssetManager::Get().Save(
+		PhysicsAsset,
+		PhysicsAssetPath,
+		PhysicsAsset->GetSourceSkeletalMeshPath());
 }
 
 void FPhysicsAssetViewerWidget::Render(float DeltaTime)
@@ -291,5 +332,16 @@ void FPhysicsAssetViewerWidget::RenderBodyDetails(UPhysicsAsset* PhysicsAsset)
 	ImGui::Text("BoxElems: %zu", AggGeom.BoxElems.size());
 	ImGui::Text("SphylElems: %zu", AggGeom.SphylElems.size());
 	ImGui::Text("ConvexElems: %zu", AggGeom.ConvexElems.size());
-	RenderConstraintInitDescDetails(PhysicsAsset, Body);
+	if (RenderConstraintInitDescDetails(PhysicsAsset, Body))
+	{
+		if (SavePhysicsAsset(PhysicsAsset))
+		{
+			ClearDirty();
+		}
+		else
+		{
+			UE_LOG("PhysicsAsset constraint edit warning: failed to persist constraint. PhysicsAsset=%s", PhysicsAsset->GetAssetPathFileName().c_str());
+			MarkDirty();
+		}
+	}
 }

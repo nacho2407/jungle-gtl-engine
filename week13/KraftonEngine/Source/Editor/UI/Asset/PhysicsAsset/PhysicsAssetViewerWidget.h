@@ -19,6 +19,7 @@ private:
 	void RenderBodyList(UPhysicsAsset* PhysicsAsset);
 	bool RenderBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex);
 	void RenderBodyDetails(UPhysicsAsset* PhysicsAsset);
+	bool SavePhysicsAsset(UPhysicsAsset* PhysicsAsset);
 
 private:
 	USkeletalMesh* SourceSkeletalMesh = nullptr;
