@@ -5,6 +5,7 @@
 #include "Core/Types/CoreTypes.h"
 
 class FPhysXVehicleInstance;
+class FScene;
 
 class FPhysXVehicleManager
 {
@@ -16,6 +17,8 @@ public:
 	void UnregisterVehicle(FPhysXVehicleInstance* Vehicle);
 
 	void Update(float DeltaTime);
+
+	void CollectDebugRender(FScene& RenderScene) const;
 
 private:
 	void RebuildQueryBuffers();

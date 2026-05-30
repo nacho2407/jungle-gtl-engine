@@ -1,10 +1,9 @@
 ﻿#pragma once
 
 #include "Component/Movement/MovementComponent.h"
+#include "Physics/PhysXVehicleInstance.h"
 
 #include "Source/Engine/Component/Movement/VehicleMovementComponent4W.generated.h"
-
-class FPhysXVehicleInstance;
 
 UCLASS()
 class UVehicleMovementComponent4W : public UMovementComponent
@@ -25,4 +24,7 @@ public:
 
 private:
 	FPhysXVehicleInstance* VehicleInstance = nullptr;
+
+	UPROPERTY(Edit, Save, Category = "Vehicle", DisplayName = "Vehicle Setup", Type = Struct, Struct = FVehiclePhysicsSetup)
+	FVehiclePhysicsSetup VehicleSetup;
 };

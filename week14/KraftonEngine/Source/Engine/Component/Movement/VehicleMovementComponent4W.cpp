@@ -21,7 +21,7 @@ void UVehicleMovementComponent4W::BeginPlay()
 
 				VehicleInstance = new FPhysXVehicleInstance();
 				if (VehicleInstance->Initialize(FPhysXSDK::Get().GetPhysics(), PhysicsScene->GetPxScene(),
-					FPhysXSDK::Get().GetDefaultMaterial(), StartPose))
+					FPhysXSDK::Get().GetDefaultMaterial(), StartPose, VehicleSetup))
 				{
 					VehicleManager->RegisterVehicle(VehicleInstance);
 				}

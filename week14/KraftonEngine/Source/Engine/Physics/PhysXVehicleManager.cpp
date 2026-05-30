@@ -1,8 +1,11 @@
 ﻿#include "Physics/PhysXVehicleManager.h"
 #include "Physics/PhysXVehicleInstance.h"
 #include "Physics/PhysicsFilterData.h"
+#include "Physics/PhysXConversions.h"
 
 #include "Core/Types/CollisionTypes.h"
+#include "Core/Types/EngineTypes.h"
+#include "Render/Scene/FScene.h"
 
 namespace
 {
@@ -105,6 +108,54 @@ void FPhysXVehicleManager::Update(float DeltaTime)
 
 	physx::PxVehicleUpdates(DeltaTime, Gravity, *FrictionPairs, static_cast<physx::PxU32>(PxVehicles.size()),
 		PxVehicles.data(), WheelQueryResults.data());
+}
+
+void FPhysXVehicleManager::CollectDebugRender(FScene& RenderScene) const
+{
+	for (uint32 VehicleIndex = 0; VehicleIndex < static_cast<uint32>(PxVehicles.size()); ++VehicleIndex)
+	{
+		physx::PxVehicleWheels* Vehicle = PxVehicles[VehicleIndex];
+		if (!Vehicle || VehicleIndex >= WheelQueryResults.size()) continue;
+
+		const physx::PxVehicleWheelQueryResult& VehicleQuery = WheelQueryResults[VehicleIndex];
+		const physx::PxU32 WheelCount = VehicleQuery.nbWheelQueryResults;
+
+		for (physx::PxU32 WheelIndex = 0; WheelIndex < WheelCount; ++WheelIndex)
+		{
+			const physx::PxWheelQueryResult& WheelQuery = VehicleQuery.wheelQueryResults[WheelIndex];
+
+			const physx::PxRigidDynamic* Actor = Vehicle->getRigidDynamicActor();
+			if (!Actor) continue;
+
+			const physx::PxTransform ActorPose = Actor->getGlobalPose();
+			const physx::PxTransform WheelWorldPose = ActorPose.transform(WheelQuery.localPose);
+
+			const FVector Center = FromPxVec3(WheelWorldPose.p);
+
+			physx::PxVehicleWheelData WheelData = Vehicle->mWheelsSimData.getWheelData(WheelIndex);
+			const float Radius = WheelData.mRadius;
+
+			const FVector Right = FromPxVec3(WheelWorldPose.q.rotate(physx::PxVec3(0, 1, 0)));
+			const FVector Up = FromPxVec3(WheelWorldPose.q.rotate(physx::PxVec3(0, 0, 1)));
+
+			RenderScene.AddDebugLine(Center - Right * Radius, Center + Right * Radius, FColor(255, 200, 0));
+			RenderScene.AddDebugLine(Center - Up * Radius, Center + Up * Radius, FColor(255, 200, 0));
+
+			const FVector SuspDir = FromPxVec3(ActorPose.q.rotate(physx::PxVec3(0, 0, -1)));
+			const FVector RayStart = Center;
+			const FVector RayEnd = WheelQuery.isInAir ? Center + SuspDir * (Radius + 0.5f)
+				: FromPxVec3(WheelQuery.tireContactPoint);
+
+			RenderScene.AddDebugLine(RayStart, RayEnd, WheelQuery.isInAir ? FColor(255, 80, 80) : FColor(80, 255, 80));
+
+			if (!WheelQuery.isInAir)
+			{
+				const FVector Contact = FromPxVec3(WheelQuery.tireContactPoint);
+				const FVector Normal = FromPxVec3(WheelQuery.tireContactNormal);
+				RenderScene.AddDebugLine(Contact, Contact + Normal * 0.5f, FColor(80, 160, 255));
+			}
+		}
+	}
 }
 
 void FPhysXVehicleManager::RebuildQueryBuffers()

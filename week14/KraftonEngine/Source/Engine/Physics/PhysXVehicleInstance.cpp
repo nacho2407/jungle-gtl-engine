@@ -1,27 +1,24 @@
 ﻿#include "Physics/PhysXVehicleInstance.h"
+#include "Physics/PhysXConversions.h"
 
 #include "Core/Types/CollisionTypes.h"
 #include "Math/MathUtils.h"
 
 bool FPhysXVehicleInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene* Scene,
-	physx::PxMaterial* Material, const physx::PxTransform& StartPose)
+	physx::PxMaterial* Material, const physx::PxTransform& StartPose, const FVehiclePhysicsSetup& Setup)
 {
 	constexpr physx::PxU32 NumWheels = 4;
 
-	const float ChassisMass = 1200.0f;
-	const physx::PxVec3 ChassisDims(2.4f, 1.2f, 0.5f);
-
-	const float WheelMass = 20.0f;
-	const float WheelRadius = 0.35f;
-	const float WheelWidth = 0.25f;
-
-	const physx::PxVec3 WheelCentreOffset[NumWheels] =
+	const FVehicleWheelSetup* WheelSetups[NumWheels] =
 	{
-		physx::PxVec3(0.9f, -0.65f, -0.35f), // front left
-		physx::PxVec3(0.9f,  0.65f, -0.35f), // front right
-		physx::PxVec3(-0.9f, -0.65f, -0.35f), // rear left
-		physx::PxVec3(-0.9f,  0.65f, -0.35f)  // rear right
+		&Setup.FrontLeftWheel,
+		&Setup.FrontRightWheel,
+		&Setup.RearLeftWheel,
+		&Setup.RearRightWheel
 	};
+
+	const float ChassisMass = Setup.ChassisMass;
+	const physx::PxVec3 ChassisDims = physx::PxVec3(Setup.ChassisHalfExtent.X, Setup.ChassisHalfExtent.Y, Setup.ChassisHalfExtent.Z);
 
 	VehicleActor = Physics->createRigidDynamic(StartPose);
 	if (!VehicleActor) return false;
@@ -30,7 +27,7 @@ bool FPhysXVehicleInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene
 
 	for (physx::PxU32 Index = 0; Index < NumWheels; ++Index)
 	{
-		physx::PxShape* WheelShape = Physics->createShape(physx::PxSphereGeometry(WheelRadius), *Material);
+		physx::PxShape* WheelShape = Physics->createShape(physx::PxSphereGeometry(WheelSetups[Index]->Radius), *Material);
 
 		WheelShape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, false);
 		WheelShape->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, false);
@@ -48,28 +45,32 @@ bool FPhysXVehicleInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene
 	VehicleActor->setAngularDamping(0.5f);
 
 	physx::PxTransform CenterOfMassOffset;
-	CenterOfMassOffset.p = physx::PxVec3(0, 0, -0.3f);
+	CenterOfMassOffset.p = ToPxVec3(Setup.CenterOfMassOffset);
 	VehicleActor->setCMassLocalPose(CenterOfMassOffset);
 
 	physx::PxVehicleWheelsSimData* WheelsSimData = physx::PxVehicleWheelsSimData::allocate(NumWheels);
 
+	physx::PxVec3 WheelCentreOffsets[NumWheels];
+	for (physx::PxU32 Index = 0; Index < NumWheels; ++Index)
+	{
+		WheelCentreOffsets[Index] = ToPxVec3(WheelSetups[Index]->Offset);
+	}
+
+	physx::PxF32 SprungMasses[NumWheels];
+
+	physx::PxVehicleComputeSprungMasses(NumWheels, WheelCentreOffsets, ToPxVec3(Setup.CenterOfMassOffset), ChassisMass, 2, SprungMasses);
+
 	for (physx::PxU32 Index = 0; Index < NumWheels; ++Index)
 	{
 		physx::PxVehicleWheelData Wheel;
-		Wheel.mMass = WheelMass;
-		Wheel.mRadius = WheelRadius;
-		Wheel.mWidth = WheelWidth;
-		Wheel.mMOI = 0.5f * WheelMass * WheelRadius * WheelRadius;
-		Wheel.mDampingRate = 0.25f;
-
-		if (Index == 0 || Index == 1)
-		{
-			Wheel.mMaxSteer = physx::PxPi * 0.25f;
-		}
-		else
-		{
-			Wheel.mMaxSteer = 0.0f;
-		}
+		Wheel.mMass = WheelSetups[Index]->Mass;
+		Wheel.mRadius = WheelSetups[Index]->Radius;
+		Wheel.mWidth = WheelSetups[Index]->Width;
+		Wheel.mMOI = 0.5f * WheelSetups[Index]->Mass * WheelSetups[Index]->Radius * WheelSetups[Index]->Radius;
+		Wheel.mDampingRate = WheelSetups[Index]->DampingRate;
+		Wheel.mMaxSteer = WheelSetups[Index]->MaxSteer;
+		Wheel.mMaxBrakeTorque = WheelSetups[Index]->MaxBrakeTorque;
+		Wheel.mMaxHandBrakeTorque = WheelSetups[Index]->MaxHandBrakeTorque;
 
 		WheelsSimData->setWheelData(Index, Wheel);
 
@@ -78,14 +79,20 @@ bool FPhysXVehicleInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene
 		Suspension.mMaxDroop = 0.1f;
 		Suspension.mSpringStrength = 35000.0f;
 		Suspension.mSpringDamperRate = 4500.0f;
-		Suspension.mSprungMass = ChassisMass / 4.0f;
+		Suspension.mSprungMass = SprungMasses[Index];
 		WheelsSimData->setSuspensionData(Index, Suspension);
 
 		physx::PxVehicleTireData Tire;
 		Tire.mType = 0;
 		WheelsSimData->setTireData(Index, Tire);
 
-		WheelsSimData->setWheelCentreOffset(Index, WheelCentreOffset[Index]);
+		const physx::PxVec3 WheelOffset = WheelCentreOffsets[Index];
+
+		const physx::PxVec3 ForceAppPointOffset(WheelOffset.x, WheelOffset.y, -0.3f);
+
+		WheelsSimData->setWheelCentreOffset(Index, WheelCentreOffsets[Index]);
+		WheelsSimData->setSuspForceAppPointOffset(Index, ForceAppPointOffset);
+		WheelsSimData->setTireForceAppPointOffset(Index, ForceAppPointOffset);
 		WheelsSimData->setSuspTravelDirection(Index, physx::PxVec3(0, 0, -1));
 		WheelsSimData->setWheelShapeMapping(Index, Index);
 
@@ -97,15 +104,15 @@ bool FPhysXVehicleInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene
 	physx::PxVehicleDriveSimData4W DriveData;
 
 	physx::PxVehicleEngineData Engine;
-	Engine.mPeakTorque = 500.0f;
-	Engine.mMaxOmega = 600.0f;
+	Engine.mPeakTorque = Setup.EnginePeakTorque;
+	Engine.mMaxOmega = Setup.EngineMaxOmega;
 	DriveData.setEngineData(Engine);
 
 	physx::PxVehicleGearsData Gears;
 	DriveData.setGearsData(Gears);
 
 	physx::PxVehicleClutchData Clutch;
-	Clutch.mStrength = 10.0f;
+	Clutch.mStrength = Setup.ClutchStrength;
 	DriveData.setClutchData(Clutch);
 
 	physx::PxVehicleDifferential4WData Diff;
@@ -114,9 +121,9 @@ bool FPhysXVehicleInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene
 	
 	physx::PxVehicleAckermannGeometryData Ackermann;
 	Ackermann.mAccuracy = 1.0f;
-	Ackermann.mAxleSeparation = 1.8f;
-	Ackermann.mFrontWidth = 1.3f;
-	Ackermann.mRearWidth = 1.3f;
+	Ackermann.mAxleSeparation = 3.0f;
+	Ackermann.mFrontWidth = 2.0f;
+	Ackermann.mRearWidth = 2.0f;
 	DriveData.setAckermannGeometryData(Ackermann);
 
 	Vehicle = physx::PxVehicleDrive4W::allocate(NumWheels);
@@ -158,6 +165,7 @@ void FPhysXVehicleInstance::SetDriveInput(float Throttle, float Brake, float Ste
 	const float ClampedSteer = FMath::Clamp(Steer, -1.0f, 1.0f);
 	Vehicle->mDriveDynData.setAnalogInput(physx::PxVehicleDrive4WControl::eANALOG_INPUT_STEER_LEFT,
 		ClampedSteer < 0.0f ? -ClampedSteer : 0.0f);
+
 	Vehicle->mDriveDynData.setAnalogInput(physx::PxVehicleDrive4WControl::eANALOG_INPUT_STEER_RIGHT,
 		ClampedSteer > 0.0f ? ClampedSteer : 0.0f);
 }

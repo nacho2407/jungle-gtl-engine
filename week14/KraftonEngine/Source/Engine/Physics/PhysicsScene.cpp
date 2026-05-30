@@ -501,4 +501,9 @@ void FPhysicsScene::CollectDebugRender(FScene& RenderScene) const
 		const physx::PxDebugLine& Line = Buffer.getLines()[Index];
 		RenderScene.AddDebugLine(FromPxVec3(Line.pos0), FromPxVec3(Line.pos1), Color);
 	}
+
+	if (VehicleManager)
+	{
+		VehicleManager->CollectDebugRender(RenderScene);
+	}
 }
