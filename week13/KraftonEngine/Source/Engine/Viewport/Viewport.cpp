@@ -214,15 +214,35 @@ bool FViewport::CreateResources()
 	if (FAILED(hr)) return false;
 	DOFColorCoCSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFColorCoCSRV")), "ViewportDOFColorCoCSRV");
 
-	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFBlurTexture);
+	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFPrefilterTexture);
 	if (FAILED(hr)) return false;
-	DOFBlurTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBlurTexture")), "ViewportDOFBlurTexture");
-	hr = Device->CreateRenderTargetView(DOFBlurTexture, nullptr, &DOFBlurRTV);
+	DOFPrefilterTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFPrefilterTexture")), "ViewportDOFPrefilterTexture");
+	hr = Device->CreateRenderTargetView(DOFPrefilterTexture, nullptr, &DOFPrefilterRTV);
 	if (FAILED(hr)) return false;
-	DOFBlurRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBlurRTV")), "ViewportDOFBlurRTV");
-	hr = Device->CreateShaderResourceView(DOFBlurTexture, nullptr, &DOFBlurSRV);
+	DOFPrefilterRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFPrefilterRTV")), "ViewportDOFPrefilterRTV");
+	hr = Device->CreateShaderResourceView(DOFPrefilterTexture, nullptr, &DOFPrefilterSRV);
 	if (FAILED(hr)) return false;
-	DOFBlurSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBlurSRV")), "ViewportDOFBlurSRV");
+	DOFPrefilterSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFPrefilterSRV")), "ViewportDOFPrefilterSRV");
+
+	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFFarBlurTexture);
+	if (FAILED(hr)) return false;
+	DOFFarBlurTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFFarBlurTexture")), "ViewportDOFFarBlurTexture");
+	hr = Device->CreateRenderTargetView(DOFFarBlurTexture, nullptr, &DOFFarBlurRTV);
+	if (FAILED(hr)) return false;
+	DOFFarBlurRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFFarBlurRTV")), "ViewportDOFFarBlurRTV");
+	hr = Device->CreateShaderResourceView(DOFFarBlurTexture, nullptr, &DOFFarBlurSRV);
+	if (FAILED(hr)) return false;
+	DOFFarBlurSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFFarBlurSRV")), "ViewportDOFFarBlurSRV");
+
+	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFNearBlurTexture);
+	if (FAILED(hr)) return false;
+	DOFNearBlurTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFNearBlurTexture")), "ViewportDOFNearBlurTexture");
+	hr = Device->CreateRenderTargetView(DOFNearBlurTexture, nullptr, &DOFNearBlurRTV);
+	if (FAILED(hr)) return false;
+	DOFNearBlurRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFNearBlurRTV")), "ViewportDOFNearBlurRTV");
+	hr = Device->CreateShaderResourceView(DOFNearBlurTexture, nullptr, &DOFNearBlurSRV);
+	if (FAILED(hr)) return false;
+	DOFNearBlurSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFNearBlurSRV")), "ViewportDOFNearBlurSRV");
 
 	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFBokehTexture);
 	if (FAILED(hr)) return false;
@@ -296,9 +316,15 @@ void FViewport::ReleaseResources()
 	if (DOFBokehSRV) { DOFBokehSRV->Release(); DOFBokehSRV = nullptr; }
 	if (DOFBokehRTV) { DOFBokehRTV->Release(); DOFBokehRTV = nullptr; }
 	if (DOFBokehTexture) { DOFBokehTexture->Release(); DOFBokehTexture = nullptr; }
-	if (DOFBlurSRV) { DOFBlurSRV->Release(); DOFBlurSRV = nullptr; }
-	if (DOFBlurRTV) { DOFBlurRTV->Release(); DOFBlurRTV = nullptr; }
-	if (DOFBlurTexture) { DOFBlurTexture->Release(); DOFBlurTexture = nullptr; }
+	if (DOFNearBlurSRV) { DOFNearBlurSRV->Release(); DOFNearBlurSRV = nullptr; }
+	if (DOFNearBlurRTV) { DOFNearBlurRTV->Release(); DOFNearBlurRTV = nullptr; }
+	if (DOFNearBlurTexture) { DOFNearBlurTexture->Release(); DOFNearBlurTexture = nullptr; }
+	if (DOFFarBlurSRV) { DOFFarBlurSRV->Release(); DOFFarBlurSRV = nullptr; }
+	if (DOFFarBlurRTV) { DOFFarBlurRTV->Release(); DOFFarBlurRTV = nullptr; }
+	if (DOFFarBlurTexture) { DOFFarBlurTexture->Release(); DOFFarBlurTexture = nullptr; }
+	if (DOFPrefilterSRV) { DOFPrefilterSRV->Release(); DOFPrefilterSRV = nullptr; }
+	if (DOFPrefilterRTV) { DOFPrefilterRTV->Release(); DOFPrefilterRTV = nullptr; }
+	if (DOFPrefilterTexture) { DOFPrefilterTexture->Release(); DOFPrefilterTexture = nullptr; }
 	if (DOFColorCoCSRV) { DOFColorCoCSRV->Release(); DOFColorCoCSRV = nullptr; }
 	if (DOFColorCoCRTV) { DOFColorCoCRTV->Release(); DOFColorCoCRTV = nullptr; }
 	if (DOFColorCoCTexture) { DOFColorCoCTexture->Release(); DOFColorCoCTexture = nullptr; }
