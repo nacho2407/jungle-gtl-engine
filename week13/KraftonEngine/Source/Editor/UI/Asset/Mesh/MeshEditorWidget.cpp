@@ -8,6 +8,7 @@
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Mesh/MeshManager.h"
 #include "Runtime/Engine.h"
+#include "Component/Debug/PhysicsAssetDebugComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Viewport/Viewport.h"
@@ -117,7 +118,15 @@ namespace
 		return Label;
 	}
 
-	bool RenderConstraintInitDescDetails(UPhysicsAsset* PhysicsAsset, const UBodySetup* BodySetup)
+	bool HasVectorChanged(const FVector& Before, const FVector& After)
+	{
+		return FVector::Distance(Before, After) > 1.0e-4f;
+	}
+
+	bool RenderConstraintInitDescDetails(
+		UPhysicsAsset* PhysicsAsset,
+		const UBodySetup* BodySetup,
+		UPhysicsAssetDebugComponent* DebugComponent)
 	{
 		ImGui::Dummy(ImVec2(0, 6));
 		ImGui::Separator();
@@ -133,11 +142,30 @@ namespace
 			return false;
 		}
 
-		return FInlinePropertyRenderer::RenderStructProperties(
+		const FVector PreviousParentLocation = ConstraintDesc->ParentFrame.Location;
+		const FVector PreviousChildLocation = ConstraintDesc->ChildFrame.Location;
+		const bool bChanged = FInlinePropertyRenderer::RenderStructProperties(
 			FConstraintInstanceInitDesc::StaticStruct(),
 			ConstraintDesc,
 			PhysicsAsset,
 			"##PhysicsAssetConstraintProps");
+		if (!bChanged)
+		{
+			return false;
+		}
+
+		const bool bParentChanged = HasVectorChanged(PreviousParentLocation, ConstraintDesc->ParentFrame.Location);
+		const bool bChildChanged = HasVectorChanged(PreviousChildLocation, ConstraintDesc->ChildFrame.Location);
+		if (DebugComponent && (bParentChanged || bChildChanged))
+		{
+			DebugComponent->SyncConstraintFrameLocation(
+				*ConstraintDesc,
+				bParentChanged
+					? EPhysicsAssetConstraintFrameSide::Parent
+					: EPhysicsAssetConstraintFrameSide::Child);
+		}
+
+		return true;
 	}
 
 	bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
@@ -1124,7 +1152,7 @@ void FMeshEditorWidget::RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsse
 	ImGui::Text("BoxElems: %zu", AggGeom.BoxElems.size());
 	ImGui::Text("SphylElems: %zu", AggGeom.SphylElems.size());
 	ImGui::Text("ConvexElems: %zu", AggGeom.ConvexElems.size());
-	if (RenderConstraintInitDescDetails(PhysicsAsset, Body))
+	if (RenderConstraintInitDescDetails(PhysicsAsset, Body, ViewportClient.GetPhysicsAssetDebugComponent()))
 	{
 		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
 		{

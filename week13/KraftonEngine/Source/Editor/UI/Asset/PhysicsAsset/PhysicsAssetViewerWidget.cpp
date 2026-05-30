@@ -5,6 +5,7 @@
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsAssetManager.h"
+#include "Component/Debug/PhysicsAssetDebugComponent.h"
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Editor/UI/Util/InlinePropertyRenderer.h"
@@ -40,7 +41,15 @@ FString BuildPhysicsBodyTreeLabel(const FString& BoneName, int32 BodyIndex, cons
 	return Label;
 }
 
-bool RenderConstraintInitDescDetails(UPhysicsAsset* PhysicsAsset, const UBodySetup* BodySetup)
+bool HasVectorChanged(const FVector& Before, const FVector& After)
+{
+	return FVector::Distance(Before, After) > 1.0e-4f;
+}
+
+bool RenderConstraintInitDescDetails(
+	UPhysicsAsset* PhysicsAsset,
+	const UBodySetup* BodySetup,
+	UPhysicsAssetDebugComponent* DebugComponent)
 {
 	ImGui::Dummy(ImVec2(0, 6));
 	ImGui::Separator();
@@ -56,11 +65,30 @@ bool RenderConstraintInitDescDetails(UPhysicsAsset* PhysicsAsset, const UBodySet
 		return false;
 	}
 
-	return FInlinePropertyRenderer::RenderStructProperties(
+	const FVector PreviousParentLocation = ConstraintDesc->ParentFrame.Location;
+	const FVector PreviousChildLocation = ConstraintDesc->ChildFrame.Location;
+	const bool bChanged = FInlinePropertyRenderer::RenderStructProperties(
 		FConstraintInstanceInitDesc::StaticStruct(),
 		ConstraintDesc,
 		PhysicsAsset,
 		"##PhysicsAssetViewerConstraintProps");
+	if (!bChanged)
+	{
+		return false;
+	}
+
+	const bool bParentChanged = HasVectorChanged(PreviousParentLocation, ConstraintDesc->ParentFrame.Location);
+	const bool bChildChanged = HasVectorChanged(PreviousChildLocation, ConstraintDesc->ChildFrame.Location);
+	if (DebugComponent && (bParentChanged || bChildChanged))
+	{
+		DebugComponent->SyncConstraintFrameLocation(
+			*ConstraintDesc,
+			bParentChanged
+				? EPhysicsAssetConstraintFrameSide::Parent
+				: EPhysicsAssetConstraintFrameSide::Child);
+	}
+
+	return true;
 }
 
 bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
@@ -488,7 +516,7 @@ void FPhysicsAssetViewerWidget::RenderBodyDetails(UPhysicsAsset* PhysicsAsset)
 	ImGui::Text("BoxElems: %zu", AggGeom.BoxElems.size());
 	ImGui::Text("SphylElems: %zu", AggGeom.SphylElems.size());
 	ImGui::Text("ConvexElems: %zu", AggGeom.ConvexElems.size());
-	if (RenderConstraintInitDescDetails(PhysicsAsset, Body))
+	if (RenderConstraintInitDescDetails(PhysicsAsset, Body, ViewportClient.GetPhysicsAssetDebugComponent()))
 	{
 		if (SavePhysicsAsset(PhysicsAsset))
 		{

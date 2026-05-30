@@ -8,12 +8,19 @@
 
 class UPhysicsAsset;
 class USkeletalMeshComponent;
+struct FConstraintInstanceInitDesc;
 
 enum class EPhysicsAssetDebugHitType : uint8
 {
 	None,
 	Body,
 	Constraint
+};
+
+enum class EPhysicsAssetConstraintFrameSide : uint8
+{
+	Parent,
+	Child
 };
 
 struct FPhysicsAssetDebugHitResult
@@ -48,6 +55,9 @@ public:
 
 	bool PickBody(const FRay& Ray, FPhysicsAssetDebugHitResult& OutHit) const;
 	bool GetPhysicsAssetBoneWorldTransform(const FName& BoneName, FTransform& OutBoneWorldTM) const;
+	bool SyncConstraintFrameLocation(
+		FConstraintInstanceInitDesc& ConstraintDesc,
+		EPhysicsAssetConstraintFrameSide SourceFrameSide);
 
 	int32 GetSelectedBodyIndex() const { return SelectedBodyIndex; }
 	void SetSelectedBodyIndex(int32 InSelectedBodyIndex);

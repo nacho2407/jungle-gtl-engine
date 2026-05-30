@@ -6,6 +6,7 @@
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Object/GarbageCollection.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Physics/ConstraintInstance.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "Render/Proxy/PhysicsAssetSceneProxy.h"
@@ -379,6 +380,33 @@ bool UPhysicsAssetDebugComponent::GetPhysicsAssetBoneWorldTransform(const FName&
 
 	const FTransform ComponentToWorldTM(SMC->GetWorldMatrix());
 	OutBoneWorldTM = ComponentSpaceBoneTransforms[BoneIndex] * ComponentToWorldTM;
+	return true;
+}
+
+bool UPhysicsAssetDebugComponent::SyncConstraintFrameLocation(
+	FConstraintInstanceInitDesc& ConstraintDesc,
+	EPhysicsAssetConstraintFrameSide SourceFrameSide)
+{
+	FTransform ParentBoneWorldTM;
+	FTransform ChildBoneWorldTM;
+	if (!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ParentBoneName, ParentBoneWorldTM) ||
+		!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ChildBoneName, ChildBoneWorldTM))
+	{
+		return false;
+	}
+
+	const FTransform SourceWorldFrame =
+		(SourceFrameSide == EPhysicsAssetConstraintFrameSide::Parent)
+			? ConstraintDesc.ParentFrame * ParentBoneWorldTM
+			: ConstraintDesc.ChildFrame * ChildBoneWorldTM;
+	const FVector ConstraintWorldLocation = SourceWorldFrame.GetLocation();
+
+	const FMatrix ParentWorldToLocal = ParentBoneWorldTM.ToMatrix().GetAffineInverse();
+	const FMatrix ChildWorldToLocal = ChildBoneWorldTM.ToMatrix().GetAffineInverse();
+	ConstraintDesc.ParentFrame.Location = ParentWorldToLocal.TransformPosition(ConstraintWorldLocation);
+	ConstraintDesc.ChildFrame.Location = ChildWorldToLocal.TransformPosition(ConstraintWorldLocation);
+
+	MarkRenderStateDirty();
 	return true;
 }
 
