@@ -145,6 +145,8 @@ public:
 	bool IsCollisionEnabled() const { return CollisionEnabled != ECollisionEnabled::NoCollision; }
 	UFUNCTION(Pure, Category="Collision")
 	bool IsQueryCollisionEnabled() const;
+	UFUNCTION(Pure, Category = "Collision")
+	bool IsPhysicsCollisionEnabled() const;
 
 	UFUNCTION(Callable, Exec, Category="Collision")
 	void SetCollisionObjectType(ECollisionChannel InChannel);
@@ -252,6 +254,9 @@ protected:
 	mutable FVector WorldAABBMaxLocation;
 	mutable bool bWorldAABBDirty = true;
 	mutable bool bHasValidWorldAABB = false;
+
+	FVector CachedPhysicsWorldScale = FVector::OneVector;
+	bool bHasCachedPhysicsWorldScale = false;
 	// PrimitiveComponent::BeginPlay에서 PhysicsScene::RegisterComponent를 호출한 직후 true가 된다.
 	// setter들이 이 플래그를 보고 PhysicsScene 측 RebuildBody를 호출할지 결정한다.
 	// (BeginPlay 전 InitDefaultComponents 단계에서 setter가 호출돼도 PhysicsScene 호출은 skip되어

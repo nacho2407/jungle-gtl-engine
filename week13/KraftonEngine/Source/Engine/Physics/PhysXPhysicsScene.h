@@ -49,6 +49,7 @@ public:
 	void Tick(float DeltaTime) override;
 
 	void AddForce(UPrimitiveComponent* Comp, const FVector& Force) override;
+	void AddImpulse(UPrimitiveComponent* Comp, const FVector& Impulse);
 	void AddForceAtLocation(UPrimitiveComponent* Comp, const FVector& Force, const FVector& WorldLocation) override;
 	void AddTorque(UPrimitiveComponent* Comp, const FVector& Torque) override;
 
@@ -80,29 +81,15 @@ private:
 	physx::PxMaterial* DefaultMaterial = nullptr;
 	FPhysXSimulationCallback* EventCallback = nullptr;
 
-	// Actor 단위 매핑 — 한 액터의 여러 컴포넌트가 같은 PxRigidActor에 shape로 합쳐진다.
-	struct FBodyMapping
-	{
-		AActor* OwnerActor = nullptr;            // 키
-		physx::PxRigidActor* Actor = nullptr;    // PhysX rigid (Dynamic/Static)
-		UPrimitiveComponent* RootComp = nullptr; // 트랜스폼 동기화 기준 (Actor->RootComponent)
-		TArray<UPrimitiveComponent*> Components; // 등록된 컴포넌트들 (shape 1:1 매칭)
-	};
-	std::vector<FBodyMapping> BodyMappings;
+	std::vector<FBodyInstance*> RegisteredBodies;
 
 	bool bSharedPhysXAcquired = false;
 	bool bShutdownComplete = true;
 
 	// 내부 헬퍼
 	void ClearPhysXActorUserData(physx::PxRigidActor* Actor) const;
-	void ReleaseBodyMappings();
-	FBodyMapping* FindMappingByActor(AActor* OwnerActor);
-	const FBodyMapping* FindMappingByActor(AActor* OwnerActor) const;
-	FBodyMapping* FindMappingByComponent(UPrimitiveComponent* Comp);
-	const FBodyMapping* FindMappingByComponent(UPrimitiveComponent* Comp) const;
 
-	// Comp의 geometry를 Mapping의 PxRigidActor에 shape로 추가. 실패 시 nullptr.
-	physx::PxShape* AddShapeForComponent(FBodyMapping& Mapping, UPrimitiveComponent* Comp);
-	// Mapping의 actor에서 Comp에 매칭된 shape를 detach.
-	void DetachShapeForComponent(FBodyMapping& Mapping, UPrimitiveComponent* Comp);
+	void AddRegisteredBody(FBodyInstance* Body);
+	void RemoveRegisteredBody(FBodyInstance* Body);
+	void ReleaseRegisteredBodies();
 };

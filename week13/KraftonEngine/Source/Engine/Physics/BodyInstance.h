@@ -65,7 +65,7 @@ struct FBodyInstance
 	FVector CenterOfMassOffset = FVector::ZeroVector;
 
 	physx::PxRigidActor* RigidActor = nullptr;
-	TArray<physx::PxShape*>Shapes;
+	TArray<physx::PxShape*> Shapes;
 
 	bool IsValidBodyInstance() const { return RigidActor != nullptr; }
 
@@ -82,5 +82,19 @@ struct FBodyInstance
 	void SetLinearVelocity(const FVector& Velocity);
 	FVector GetLinearVelocity() const;
 
+	void AddForceAtLocation(const FVector& Force, const FVector& WorldLocation);
+	void AddTorque(const FVector& Torque);
+
+	void SetAngularVelocity(const FVector& Velocity);
+	FVector GetAngularVelocity() const;
+
+	void SetMass(float NewMass);
+	float GetMass() const;
+
+	void SetCenterOfMass(const FVector& LocalOffset);
+	FVector GetCenterOfMass() const;
+
 	void ClearPhysicsPointers();
 };
+
+bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInstanceInitDesc& OutDesc);

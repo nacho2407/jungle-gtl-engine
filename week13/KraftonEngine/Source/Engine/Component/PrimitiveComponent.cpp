@@ -32,6 +32,13 @@ namespace
 
 		return true;
 	}
+
+	bool IsNearlySameVector(const FVector& A, const FVector& B, float Tolerance = 1.0e-4f)
+	{
+		return std::abs(A.X - B.X) <= Tolerance
+			&& std::abs(A.Y - B.Y) <= Tolerance
+			&& std::abs(A.Z - B.Z) <= Tolerance;
+	}
 }
 
 HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
@@ -58,10 +65,8 @@ void UPrimitiveComponent::BeginPlay()
 	USceneComponent::BeginPlay();
 
 	InitializeBodyInstance();
-	// 직렬화나 InitDefaultComponents에서 CollisionEnabled가 이미 설정된 경우 등록.
-	// 이 시점에 SimulatePhysics/ObjectType/Response/Mass/COM 등 모든 셋업이 끝나있어
-	// PhysX/Native가 정확한 값으로 body를 생성한다.
-	if (IsQueryCollisionEnabled())
+
+	if (IsCollisionEnabled())
 	{
 		if (UWorld* World = GetWorld())
 		{
@@ -72,7 +77,9 @@ void UPrimitiveComponent::BeginPlay()
 		}
 	}
 
-	// flag는 등록 흐름이 끝난 직후에만 true. 이후 setter들이 PhysicsScene::RebuildBody 호출.
+	CachedPhysicsWorldScale = GetWorldScale();
+	bHasCachedPhysicsWorldScale = true;
+
 	bComponentHasBegunPlay = true;
 }
 
@@ -101,6 +108,7 @@ void UPrimitiveComponent::EndPlay()
 
 	DestroyRenderState();
 	bComponentHasBegunPlay = false;
+	bHasCachedPhysicsWorldScale = false;
 
 	USceneComponent::EndPlay();
 }
@@ -125,7 +133,9 @@ void UPrimitiveComponent::RouteComponentDestroyed()
 
     ClearOctreeLocation();
     DestroyRenderState();
-    bComponentHasBegunPlay = false;
+
+	bComponentHasBegunPlay = false;
+	bHasCachedPhysicsWorldScale = false;
 
     USceneComponent::RouteComponentDestroyed();
 }
@@ -237,26 +247,17 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	}
 	else if (strcmp(PropertyName, "CollisionEnabled") == 0 || strcmp(PropertyName, "Collision Enabled") == 0)
 	{
-		// 에디터 property panel 이 enum 값을 직접 바꾼 경우 — 이미 CollisionEnabled 필드는
-		// 갱신된 상태고 setter 를 안 거쳤으니 여기서 Register/Unregister 처리.
-		//
-		// 단 BeginPlay 이전에는 skip — DeserializeProperties 가 GetEditableProperties
-		// 순서대로 프로퍼티를 set 하면서 매번 PostEditProperty 를 부르는데, "Collision
-		// Enabled" 는 그 중에 비교적 앞쪽에 위치해서 ObjectType / Mass / COM / BoxExtent
-		// 같은 다른 프로퍼티들이 아직 default 인 시점에 RegisterComponent 가 발화해버린다.
-		// 결과: 단위 큐브 + mass=1 + WorldStatic 으로 PhysX 본체가 만들어지고, 이후 다른
-		// 프로퍼티 setter 들의 NotifyPhysicsBodyDirty 가 같은 가드에 막혀 no-op 라 영영
-		// 갱신 안 됨. BeginPlay 의 RegisterComponent 한 번에 위임하면 모든 프로퍼티가
-		// 최종 상태인 채로 등록된다 (PIE Duplicate 경로와 동일한 타이밍).
+		BodyInstance.CollisionEnabled = CollisionEnabled;
+
 		if (!bComponentHasBegunPlay) return;
 
 		if (UWorld* World = GetWorld())
 		{
 			if (IPhysicsScene* PS = World->GetPhysicsScene())
 			{
-				if (IsQueryCollisionEnabled())
+				if (IsCollisionEnabled())
 				{
-					PS->RegisterComponent(this);
+					PS->RebuildBody(this);
 				}
 				else
 				{
@@ -264,6 +265,25 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 				}
 			}
 		}
+	}
+	else if (strcmp(PropertyName, "bSimulatePhysics") == 0 || strcmp(PropertyName, "Simulate Physics") == 0)
+	{
+		BodyInstance.bSimulatePhysics = bSimulatePhysics;
+		NotifyPhysicsBodyDirty();
+	}
+	else if (strcmp(PropertyName, "ObjectType") == 0 || strcmp(PropertyName, "Object Type") == 0)
+	{
+		BodyInstance.ObjectType = ObjectType;
+		NotifyPhysicsBodyDirty();
+	}
+	else if (strcmp(PropertyName, "ResponseContainer") == 0 || strcmp(PropertyName, "Collision Responses") == 0)
+	{
+		BodyInstance.ResponseContainer = ResponseContainer;
+		NotifyPhysicsBodyDirty();
+	}
+	else if (strcmp(PropertyName, "bGenerateOverlapEvents") == 0 || strcmp(PropertyName, "Generate Overlap Events") == 0)
+	{
+		// overlap notify 여부만 바뀌는 값이라 body rebuild는 필요 없음.
 	}
 	else if (strcmp(PropertyName, "Mass") == 0 || strcmp(PropertyName, "Mass (kg)") == 0)
 	{
@@ -412,8 +432,27 @@ void UPrimitiveComponent::MarkRenderStateDirty()
 
 void UPrimitiveComponent::OnTransformDirty()
 {
-	// 순수 transform 변경 — local bounds(shape)는 그대로이므로 fast-path를 살린다.
-	// (basis 동일 + translation만 바뀐 경우 UpdateWorldMatrix가 이전 AABB를 평행이동만 적용)
+	// transform 변경 — local bounds(shape)는 그대로이므로 AABB fast-path는 살린다.
+	// 단 PhysX shape geometry는 world scale 변경을 자동 반영하지 않으므로
+	// scale이 바뀐 경우에만 body를 재생성한다. 이동/회전만으로는 rebuild하지 않는다.
+	const bool bShouldCheckPhysicsScale = bComponentHasBegunPlay && IsCollisionEnabled();
+	FVector NewWorldScale = FVector::OneVector;
+
+	if (bShouldCheckPhysicsScale)
+	{
+		NewWorldScale = GetWorldScale();
+		if (!bHasCachedPhysicsWorldScale)
+		{
+			CachedPhysicsWorldScale = NewWorldScale;
+			bHasCachedPhysicsWorldScale = true;
+		}
+		else if (!IsNearlySameVector(CachedPhysicsWorldScale, NewWorldScale))
+		{
+			CachedPhysicsWorldScale = NewWorldScale;
+			NotifyPhysicsBodyDirty();
+		}
+	}
+
 	bWorldAABBDirty = true;
 	MarkRenderTransformDirty();
 }
@@ -453,28 +492,32 @@ void UPrimitiveComponent::InitializeBodyInstance()
 
 void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
 {
-	bool bWasQuery = IsQueryCollisionEnabled();
+	if (CollisionEnabled == InEnabled) return;
+
+	const bool bWasEnabled = IsCollisionEnabled();
+
 	CollisionEnabled = InEnabled;
 	BodyInstance.CollisionEnabled = InEnabled;
-	bool bIsQuery = IsQueryCollisionEnabled();
 
-	// 컴포넌트 BeginPlay 전이면 멤버만 변경. BeginPlay에서 한 번 등록되며 그 시점엔
-	// SimulatePhysics 등 다른 셋업이 모두 완료된 상태.
+	const bool bIsEnabled = IsCollisionEnabled();
+
 	if (!bComponentHasBegunPlay) return;
 
 	UWorld* World = GetWorld();
-	if (!World) return;
+	if (!World || !World->GetPhysicsScene()) return;
 
-	if (bWasQuery != bIsQuery)
+	if (!bWasEnabled && bIsEnabled)
 	{
-		if (bIsQuery)
-			World->GetPhysicsScene()->RegisterComponent(this);
-		else
-			World->GetPhysicsScene()->UnregisterComponent(this);
+		World->GetPhysicsScene()->RegisterComponent(this);
 	}
-	else if (bWasQuery && bIsQuery)
+	else if (bWasEnabled && !bIsEnabled)
 	{
-		// 이미 등록된 상태에서 enabled 종류 변경 (예: QueryOnly ↔ QueryAndPhysics) — 재구성
+		World->GetPhysicsScene()->UnregisterComponent(this);
+	}
+	else if (bWasEnabled && bIsEnabled)
+	{
+		// QueryOnly / PhysicsOnly / QueryAndPhysics 사이 전환은
+		// PhysX shape flag가 달라지므로 재생성.
 		NotifyPhysicsBodyDirty();
 	}
 }
@@ -482,6 +525,12 @@ void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
 bool UPrimitiveComponent::IsQueryCollisionEnabled() const
 {
 	return CollisionEnabled == ECollisionEnabled::QueryOnly
+		|| CollisionEnabled == ECollisionEnabled::QueryAndPhysics;
+}
+
+bool UPrimitiveComponent::IsPhysicsCollisionEnabled() const
+{
+	return CollisionEnabled == ECollisionEnabled::PhysicsOnly
 		|| CollisionEnabled == ECollisionEnabled::QueryAndPhysics;
 }
 
