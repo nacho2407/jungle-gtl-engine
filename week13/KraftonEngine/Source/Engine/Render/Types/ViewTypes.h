@@ -106,7 +106,7 @@ struct FViewportRenderOptions
 	float Gamma = 2.4f;
 
 	// Depth of Field settings
-	float DOFAperture = 4.0f;
+	float DOFAperture = 4.0f; // F-Stop
 	float DOFFocalDistance = 10.0f;
 	float DOFMaxCoCRadius = 8.0f;
 

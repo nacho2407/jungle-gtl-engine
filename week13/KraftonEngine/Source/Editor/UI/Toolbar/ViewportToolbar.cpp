@@ -604,7 +604,7 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 		ImGui::Checkbox("DepthOfField", &RenderOptions.ShowFlags.bDepthOfField);
 		if (RenderOptions.ShowFlags.bDepthOfField)
 		{
-			ImGui::SliderFloat("Aperture", &RenderOptions.DOFAperture, 0.0f, 12.0f, "%.2f");
+			ImGui::SliderFloat("Aperture (F-Stop)", &RenderOptions.DOFAperture, 0.7f, 22.0f, "%.2f");
 			ImGui::SliderFloat("Focal Distance", &RenderOptions.DOFFocalDistance, 0.1f, 200.0f, "%.2f");
 			ImGui::SliderFloat("Max CoC Radius", &RenderOptions.DOFMaxCoCRadius, 1.0f, 24.0f, "%.1f");
 		}

@@ -3,7 +3,7 @@
 
 cbuffer DOFConstantBuffer : register(b2)
 {
-    float4 DOFParams0; // x=FocalDistance, y=Aperture, z=MaxCoCRadius, w=NearClip
+    float4 DOFParams0; // x=FocalDistance, y=Aperture(F-Stop), z=MaxCoCRadius, w=NearClip
     float4 DOFParams1; // x=FarClip, y=InvFullWidth, z=InvFullHeight, w=InvHalfWidth
     float4 DOFParams2; // x=InvHalfHeight
 };
@@ -25,9 +25,10 @@ float CalculateSignedCoC(float Depth)
 {
     float ViewDepth = LinearizeSceneDepth(Depth);
     float FocusDistance = max(DOFFocalDistance, DOFNearClip);
-    float NormalizedDistance = (ViewDepth - FocusDistance) / max(FocusDistance, 0.001f);
-    float Radius = saturate(abs(NormalizedDistance) * max(DOFAperture, 0.0f)) * DOFMaxCoCRadius;
-    return (NormalizedDistance < 0.0f) ? -Radius : Radius;
+    float SignedDistance = ViewDepth - FocusDistance;
+    float FocusRange = FocusDistance * max(DOFAperture, 0.01f);
+    float Radius = saturate(abs(SignedDistance) / max(FocusRange, 0.001f)) * DOFMaxCoCRadius;
+    return (SignedDistance < 0.0f) ? -Radius : Radius;
 }
 
 #endif

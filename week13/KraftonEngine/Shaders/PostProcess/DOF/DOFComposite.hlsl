@@ -11,7 +11,7 @@ PS_Input_UV VS(uint vertexID : SV_VertexID)
 }
 
 float4 PS(PS_Input_UV input) : SV_Target
-{
+{ 
     float2 uv = input.uv;
 
     float4 sharpColor = SceneColorTexture.SampleLevel(LinearClampSampler, uv, 0);
