@@ -12,8 +12,16 @@ namespace
 {
 	const FVector4 DefaultBodyColor(0.1f, 0.7f, 1.0f, 0.22f);
 	const FVector4 SelectedBodyColor(0.0f, 0.95f, 1.0f, 0.48f);
-	const float ConstraintParentAxisLength = 8.0f;
-	const float ConstraintChildAxisLength = 5.5f;
+	const float ConstraintAxisScreenScale = 0.03f;
+	const float MinConstraintAxisLength = 0.01f;
+
+	float ComputeConstraintAxisLength(const FFrameContext& Frame, const FVector& ConstraintLocation)
+	{
+		const float AxisLength = Frame.bIsOrtho
+			? Frame.OrthoWidth * ConstraintAxisScreenScale
+			: FVector::Distance(Frame.View.GetInverseFast().GetLocation(), ConstraintLocation) * ConstraintAxisScreenScale;
+		return AxisLength < MinConstraintAxisLength ? MinConstraintAxisLength : AxisLength;
+	}
 
 	void AddConstraintAxisLine(
 		TArray<FPhysicsDebugLine>& Lines,
@@ -181,12 +189,9 @@ void FPhysicsAssetSceneProxy::BuildPhysicsAssetConstraintAxisLines(
 		return;
 	}
 
-	const FVector4 ParentXColor(1.0f, 0.12f, 0.12f, 1.0f);
-	const FVector4 ParentYColor(0.12f, 1.0f, 0.12f, 1.0f);
-	const FVector4 ParentZColor(0.18f, 0.45f, 1.0f, 1.0f);
-	const FVector4 ChildXColor(0.65f, 0.18f, 0.18f, 1.0f);
-	const FVector4 ChildYColor(0.18f, 0.65f, 0.18f, 1.0f);
-	const FVector4 ChildZColor(0.2f, 0.32f, 0.7f, 1.0f);
+	const FVector4 ConstraintXColor(1.0f, 0.12f, 0.12f, 1.0f);
+	const FVector4 ConstraintYColor(0.12f, 1.0f, 0.12f, 1.0f);
+	const FVector4 ConstraintZColor(0.18f, 0.45f, 1.0f, 1.0f);
 
 	for (const FConstraintInstanceInitDesc& ConstraintDesc : PhysicsAsset->GetConstraintInitDescs())
 	{
@@ -199,23 +204,15 @@ void FPhysicsAssetSceneProxy::BuildPhysicsAssetConstraintAxisLines(
 
 		const FVector ConstraintLocation =
 			(ParentWorldFrame.GetLocation() + ChildWorldFrame.GetLocation()) * 0.5f;
+		const float ConstraintAxisLength = ComputeConstraintAxisLength(Frame, ConstraintLocation);
 
 		AddConstraintFrameAxes(
 			OutLines,
 			ParentWorldFrame,
 			ConstraintLocation,
-			ConstraintParentAxisLength,
-			ParentXColor,
-			ParentYColor,
-			ParentZColor);
-
-		AddConstraintFrameAxes(
-			OutLines,
-			ChildWorldFrame,
-			ConstraintLocation,
-			ConstraintChildAxisLength,
-			ChildXColor,
-			ChildYColor,
-			ChildZColor);
+			ConstraintAxisLength,
+			ConstraintXColor,
+			ConstraintYColor,
+			ConstraintZColor);
 	}
 }
