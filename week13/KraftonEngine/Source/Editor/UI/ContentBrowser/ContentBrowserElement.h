@@ -165,6 +165,16 @@ protected:
 	uint32      GetAccentColor() const override { return IM_COL32(120, 200, 255, 255); }
 };
 
+class PhysicsAssetElement final : public ContentBrowserElement
+{
+public:
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+
+protected:
+	const char* GetTypeLabel() const override { return "Physics Asset"; }
+	uint32      GetAccentColor() const override { return IM_COL32(80, 210, 160, 255); }
+};
+
 class LuaBlueprintElement final : public ContentBrowserElement
 {
 public:

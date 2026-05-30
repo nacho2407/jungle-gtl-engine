@@ -1,16 +1,9 @@
 ﻿#pragma once
 
 #include "Render/Proxy/PrimitiveSceneProxy.h"
-#include "Math/Vector.h"
+#include "Render/Geometry/DebugGeometryTypes.h"
 
 class UShapeComponent;
-
-// 캐싱된 와이어프레임 라인 세그먼트
-struct FWireLine
-{
-	FVector Start;
-	FVector End;
-};
 
 // ============================================================
 // FShapeSceneProxy — Shape 컴포넌트의 와이어프레임 렌더 프록시

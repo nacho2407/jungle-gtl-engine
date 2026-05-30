@@ -3,6 +3,7 @@
 #include "Editor/Viewport/Asset/MeshEditorViewportClient.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 #include "Asset/AssetRegistry.h"
+#include "PhysicsEngine/PhysicsAssetBuilder.h"
 
 struct FSkeletalMesh;
 struct ImDrawList;
@@ -10,8 +11,10 @@ struct ImVec2;
 class UAnimSequence;
 class UAnimMontage;
 class UAnimSingleNodeInstance;
+class UPhysicsAsset;
+class USkeletalMesh;
 
-enum class EMeshEditorTab : uint8 { Skeleton, Mesh, Animation };
+enum class EMeshEditorTab : uint8 { Skeleton, Mesh, Animation, PhysicsAsset };
 
 struct FAnimationTabState
 {
@@ -76,6 +79,11 @@ private:
 	void RenderSkeletonLayout();
 	void RenderMeshLayout();
 	void RenderAnimationLayout(float TotalHeight);
+	void RenderPhysicsAssetLayout();
+	void RenderPhysicsAssetBuildOptionsPopup(USkeletalMesh* SkeletalMesh, UPhysicsAsset*& InOutPhysicsAsset);
+	void RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, UPhysicsAsset* PhysicsAsset);
+	bool RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex);
+	void RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsset);
 
 	// Shared helpers
 	void RenderViewportPanel(ImVec2 Size);
@@ -103,6 +111,9 @@ private:
 	int32 SelectedBoneIndex = -1;
 	float HierarchyWidth    = 250.0f;
 	float DetailsWidth      = 300.0f;
+	int32 SelectedPhysicsBodyIndex = -1;
+	bool bOpenPhysicsAssetBuildOptions = false;
+	FPhysicsAssetBuildOptions PendingPhysicsAssetBuildOptions;
 
 	uint32  InstanceId;
 	FName   PreviewWorldHandle = FName::None;

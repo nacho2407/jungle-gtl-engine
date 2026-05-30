@@ -27,6 +27,7 @@
 #include "Editor/UI/Asset/Animation/AnimGraphEditorWidget.h"
 #include "Editor/UI/Asset/Material/MaterialEditorWidget.h"
 #include "Editor/UI/Asset/LuaBlueprint/LuaBlueprintEditorWidget.h"
+#include "Editor/UI/Asset/PhysicsAsset/PhysicsAssetViewerWidget.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -105,6 +106,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	AssetEditorManager.RegisterEditor<FLuaBlueprintEditorWidget>();
     AssetEditorManager.RegisterEditor<FMaterialEditorWidget>();
 	AssetEditorManager.RegisterEditor<FParticleSystemEditorWidget>();
+	AssetEditorManager.RegisterEditor<FPhysicsAssetViewerWidget>();
 }
 
 void FEditorMainPanel::Release()

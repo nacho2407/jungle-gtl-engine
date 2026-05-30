@@ -20,6 +20,7 @@ public:
 
     void Serialize(FArchive& Ar) override;
     void AddReferencedObjects(FReferenceCollector& Collector) override;
+	void PostEditProperty(const char* PropertyName) override;
 
     const FString& GetAssetPathFileName() const
     {
@@ -42,7 +43,13 @@ public:
     USkeleton* GetSkeleton() const;
 
     void SetSkeletonBinding(const FSkeletonBinding& InBinding);
-    const FSkeletonBinding& GetSkeletonBinding() const { return SkeletonBinding; }
+	const FSkeletonBinding& GetSkeletonBinding() const { return SkeletonBinding; }
+
+	UPhysicsAsset* GetPhysicsAsset() const { return PhysicsAsset; }
+	void SetPhysicsAsset(UPhysicsAsset* InPhysicsAsset);
+
+	const FString& GetPhysicsAssetPath() const { return PhysicsAssetPath; }
+	void SetPhysicsAssetPath(const FString& InPhysicsAssetPath) { PhysicsAssetPath = InPhysicsAssetPath; }
 
 private:
     void CacheSectionMaterialIndices();
@@ -58,5 +65,7 @@ private:
     FSkeletonBinding SkeletonBinding;
     USkeleton*       Skeleton = nullptr;
 
-	UPhysicsAsset* PhysicsAsset;
+	UPROPERTY(Edit, Transient, Category="Physics", DisplayName="Physics Asset")
+	UPhysicsAsset* PhysicsAsset = nullptr;
+	FString PhysicsAssetPath = "None";
 };

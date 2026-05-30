@@ -85,6 +85,9 @@
     <Filter Include="Source\Editor\UI\Asset\Particle">
       <UniqueIdentifier>{ebf11781-61db-1727-e031-70fd890518c6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Asset\PhysicsAsset">
+      <UniqueIdentifier>{0b89d9dd-c10d-4f0c-88ba-99f1339fba31}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
     </Filter>
@@ -784,6 +787,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\PhysicsAsset\PhysicsAssetViewerWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\PhysicsAsset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
@@ -1502,6 +1508,12 @@
     <ClCompile Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.cpp">
       <Filter>Source\Engine\Particles\Velocity</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\BodyInstance.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\NativePhysicsScene.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
@@ -1511,7 +1523,19 @@
     <ClCompile Include="Source\Engine\PhysicsEngine\AggregateGeom.cpp">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\BodySetup.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\PhysicsEngine\BodySetupCore.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAsset.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAssetBuilder.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAssetManager.cpp">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp">
@@ -1568,10 +1592,16 @@
     <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Geometry\CollisionDebugGeometry.cpp">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Geometry\FontGeometry.cpp">
       <Filter>Source\Engine\Render\Geometry</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Geometry\LineGeometry.cpp">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Geometry\PhysicsDebugSolidGeometry.cpp">
       <Filter>Source\Engine\Render\Geometry</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp">
@@ -1938,6 +1968,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\PhysicsAsset\PhysicsAssetViewerWidget.h">
+      <Filter>Source\Editor\UI\Asset\PhysicsAsset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
@@ -2836,6 +2869,12 @@
     <ClInclude Include="Source\Engine\Particles\Velocity\ParticleModuleVelocityBase.h">
       <Filter>Source\Engine\Particles\Velocity</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\BodyInstance.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\IPhysicsScene.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
@@ -2843,6 +2882,9 @@
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysXPhysicsScene.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\PhysXTypeConversions.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\AggregateGeom.h">
@@ -2861,6 +2903,12 @@
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAsset.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAssetBuilder.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAssetManager.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\ShapeElem.h">
@@ -2938,10 +2986,19 @@
     <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h">
       <Filter>Source\Engine\Render\Device</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Geometry\CollisionDebugGeometry.h">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Geometry\DebugGeometryTypes.h">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Geometry\FontGeometry.h">
       <Filter>Source\Engine\Render\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Geometry\LineGeometry.h">
+      <Filter>Source\Engine\Render\Geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Geometry\PhysicsDebugSolidGeometry.h">
       <Filter>Source\Engine\Render\Geometry</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h">
@@ -4921,14 +4978,8 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\PhysXTypeConversions.h" />
-    <ClInclude Include="Source\Engine\Physics\BodyInstance.h" />
-    <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>

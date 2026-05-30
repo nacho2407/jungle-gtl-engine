@@ -34,6 +34,8 @@
 #include "Mesh/MeshManager.h"
 #include "Mesh/Static/StaticMesh.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/PhysicsAssetManager.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "Platform/Paths.h"
 #include "Serialization/MemoryArchive.h"
@@ -2377,6 +2379,50 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 				}
 			}
 
+			break;
+		}
+
+		if (AllowedClass == UPhysicsAsset::StaticClass())
+		{
+			UPhysicsAsset* CurrentPhysicsAsset = Cast<UPhysicsAsset>(Current);
+			Preview = CurrentPhysicsAsset && CurrentPhysicsAsset->GetAssetPathFileName() != "None"
+				? GetStemFromPath(CurrentPhysicsAsset->GetAssetPathFileName())
+				: FString("None");
+
+			if (ImGui::BeginCombo("##PhysicsAssetObject", Preview.c_str()))
+			{
+				const bool bSelectedNone = CurrentPhysicsAsset == nullptr;
+				if (ImGui::Selectable("None", bSelectedNone))
+				{
+					SetObjectValue(nullptr);
+				}
+				if (bSelectedNone)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+
+				USkeletalMesh* SourceSkeletalMesh = Cast<USkeletalMesh>(Prop.Object);
+				const TArray<FAssetListItem>& PhysicsAssetFiles = FAssetRegistry::ListByTypeName("UPhysicsAsset");
+				for (const FAssetListItem& Item : PhysicsAssetFiles)
+				{
+					const bool bSelected = CurrentPhysicsAsset &&
+						CurrentPhysicsAsset->GetAssetPathFileName() == Item.FullPath;
+					if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+					{
+						UPhysicsAsset* Loaded = FPhysicsAssetManager::Get().Load(Item.FullPath, SourceSkeletalMesh);
+						if (Loaded)
+						{
+							SetObjectValue(Loaded);
+						}
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+
+				ImGui::EndCombo();
+			}
 			break;
 		}
 
