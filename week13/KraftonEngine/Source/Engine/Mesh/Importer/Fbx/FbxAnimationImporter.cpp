@@ -1371,6 +1371,18 @@ bool FFbxAnimationImporter::ImportAnimations(
 				BoneIndex].ParentIndex < 0 && HasAnimatedNonSkeletonParent(BoneNode, AnimStack));
 		}
 
+		TArray<FbxNode*> BoneNodesByIndex;
+		BoneNodesByIndex.resize(Context.Bones.size(), nullptr);
+		for (const auto& Pair : Context.BoneNodeToIndex)
+		{
+			FbxNode*    BoneNode  = Pair.first;
+			const int32 BoneIndex = Pair.second;
+			if (BoneNode && BoneIndex >= 0 && BoneIndex < static_cast<int32>(BoneNodesByIndex.size()))
+			{
+				BoneNodesByIndex[BoneIndex] = BoneNode;
+			}
+		}
+
 		for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Context.Bones.size()); ++BoneIndex)
 		{
 			FBoneAnimationTrack& Track = DataModel->BoneAnimationTracks[BoneIndex];
@@ -1449,6 +1461,22 @@ bool FFbxAnimationImporter::ImportAnimations(
 			// 기본값은 미리 계산한 bind/local pose다. FBX node가 있는 animated bone만 아래에서 curve 평가값으로 덮어쓴다.
 			BoneLocalTransforms = BindLocalTransforms;
 
+			TArray<FMatrix> BoneScaleFreeGlobalMatrices;
+			BoneScaleFreeGlobalMatrices.resize(Context.Bones.size(), FMatrix::Identity);
+			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Context.Bones.size()); ++BoneIndex)
+			{
+				FMatrix GlobalMatrix = Context.Bones[BoneIndex].GetReferenceGlobalPose();
+				if (BoneIndex < static_cast<int32>(BoneNodesByIndex.size()))
+				{
+					if (FbxNode* BoneNode = BoneNodesByIndex[BoneIndex])
+					{
+						GlobalMatrix = FFbxTransformUtils::ToEngineMatrix(BoneNode->EvaluateGlobalTransform(Time));
+					}
+				}
+
+				BoneScaleFreeGlobalMatrices[BoneIndex] = FFbxTransformUtils::MakeScaleFreeMatrix(GlobalMatrix);
+			}
+
 			for (const auto& Pair : Context.BoneNodeToIndex)
 			{
 				FbxNode*    BoneNode  = Pair.first;
@@ -1496,11 +1524,28 @@ bool FFbxAnimationImporter::ImportAnimations(
 					}
 				}
 
-				const bool bAbsorbWrapperTransform = Context.Bones[BoneIndex].ParentIndex < 0 && FFbxSceneQuery::HasNonSkeletonWrapperParent(BoneNode);
-				const FbxAMatrix FinalFbxMatrix = bAbsorbWrapperTransform
-					? BoneNode->EvaluateGlobalTransform(Time)
-					: BakeResult.FinalMatrix;
-				BoneLocalTransforms[BoneIndex] = FAnimationRuntime::DecomposeMatrix(FFbxTransformUtils::ToEngineMatrix(FinalFbxMatrix));
+			}
+
+			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Context.Bones.size()); ++BoneIndex)
+			{
+				if (!BoneHasAnimatedCurves[BoneIndex])
+				{
+					continue;
+				}
+
+				FMatrix LocalMatrix = BoneScaleFreeGlobalMatrices[BoneIndex];
+				const int32 ParentIndex = Context.Bones[BoneIndex].ParentIndex;
+				if (ParentIndex >= 0 && ParentIndex < static_cast<int32>(BoneScaleFreeGlobalMatrices.size()))
+				{
+					LocalMatrix =
+						BoneScaleFreeGlobalMatrices[BoneIndex] *
+						BoneScaleFreeGlobalMatrices[ParentIndex].GetAffineInverse();
+				}
+
+				FTransform LocalTransform = FAnimationRuntime::DecomposeMatrix(
+					FFbxTransformUtils::MakeScaleFreeMatrix(LocalMatrix));
+				LocalTransform.Scale = FVector::OneVector;
+				BoneLocalTransforms[BoneIndex] = LocalTransform;
 			}
 
 			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Context.Bones.size()); ++BoneIndex)
