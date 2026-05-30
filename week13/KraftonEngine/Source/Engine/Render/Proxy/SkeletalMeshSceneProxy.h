@@ -1,13 +1,9 @@
 ﻿#pragma once
 
 #include "Render/Proxy/PrimitiveSceneProxy.h"
-#include "Render/Geometry/DebugGeometryTypes.h"
-#include "Math/Transform.h"
-#include "Object/FName.h"
 
 class USkeletalMeshComponent;
 struct FDrawCommandBuffer;
-struct FFrameContext;
 
 class FSkeletalMeshSceneProxy : public FPrimitiveSceneProxy
 {
@@ -22,12 +18,9 @@ public:
 	bool PrepareGpuSkinningDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context, FDrawCommandBuffer& OutBuffer) const;
 	ID3D11ShaderResourceView* GetSkinMatrixSRV(ID3D11Device* Device, ID3D11DeviceContext* Context) const;
 
-	void BuildPhysicsAssetSolidMesh(const FFrameContext& Frame, FPhysicsDebugSolidMesh& OutMesh) const;
-	
 private:
 	void RebuildSectionDraws();
 	USkeletalMeshComponent* GetSkeletalMeshComponent() const;
-	bool GetPhysicsAssetBoneWorldTransform(const FName& BoneName, FTransform& OutBoneWorldTM) const;
 	void ReleaseSkinMatrixBuffer() const;
 	bool UpdateSkinMatrixBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context) const;
 

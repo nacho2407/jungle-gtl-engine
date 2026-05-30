@@ -5,13 +5,24 @@
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsAssetManager.h"
+#include "Component/Light/DirectionalLightComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Editor/UI/Util/InlinePropertyRenderer.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/Light/DirectionalLightActor.h"
+#include "GameFramework/World.h"
 #include "Core/Logging/Log.h"
+#include "Runtime/Engine.h"
+#include "Slate/SlateApplication.h"
+#include "Viewport/Viewport.h"
 
 #include <imgui.h>
+#include <algorithm>
 
 namespace
 {
+uint32 GNextPhysicsAssetViewerInstanceId = 1;
+
 FString BuildPhysicsBodyTreeLabel(const FString& BoneName, int32 BodyIndex, const UBodySetup* BodySetup)
 {
 	FString Label = BoneName;
@@ -78,6 +89,14 @@ bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsA
 }
 }
 
+FPhysicsAssetViewerWidget::FPhysicsAssetViewerWidget()
+	: InstanceId(GNextPhysicsAssetViewerInstanceId++)
+{
+	const FString Id = std::to_string(InstanceId);
+	PreviewWorldHandle = FName("PhysicsAssetViewerPreview_" + Id);
+	WindowIdSuffix = "###PhysicsAssetViewer_" + Id;
+}
+
 bool FPhysicsAssetViewerWidget::CanEdit(UObject* Object) const
 {
 	return dynamic_cast<UPhysicsAsset*>(Object) != nullptr;
@@ -89,19 +108,128 @@ void FPhysicsAssetViewerWidget::Open(UObject* Object)
 	const UPhysicsAsset* PhysicsAsset = dynamic_cast<UPhysicsAsset*>(Object);
 	SourceSkeletalMesh = PhysicsAsset ? PhysicsAsset->GetTypedOuter<USkeletalMesh>() : nullptr;
 	SelectedBodyIndex = -1;
+	CreatePreviewWorld();
 }
 
 void FPhysicsAssetViewerWidget::Close()
 {
+	if (UPhysicsAsset* PhysicsAsset = dynamic_cast<UPhysicsAsset*>(EditedObject))
+	{
+		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, -1);
+	}
+	DestroyPreviewWorld();
 	FAssetEditorWidget::Close();
 	SourceSkeletalMesh = nullptr;
 	SelectedBodyIndex = -1;
+}
+
+void FPhysicsAssetViewerWidget::Tick(float DeltaTime)
+{
+	if (ViewportClient.IsRenderable())
+	{
+		ViewportClient.Tick(DeltaTime);
+	}
+}
+
+void FPhysicsAssetViewerWidget::CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const
+{
+	if (ViewportClient.IsRenderable())
+	{
+		OutClients.push_back(const_cast<FMeshEditorViewportClient*>(&ViewportClient));
+	}
 }
 
 void FPhysicsAssetViewerWidget::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	FAssetEditorWidget::AddReferencedObjects(Collector);
 	Collector.AddReferencedObject(SourceSkeletalMesh);
+	ViewportClient.AddReferencedObjects(Collector);
+}
+
+void FPhysicsAssetViewerWidget::CreatePreviewWorld()
+{
+	if (!SourceSkeletalMesh || ViewportClient.IsRenderable())
+	{
+		return;
+	}
+
+	FWorldContext& WorldContext = GEngine->CreateWorldContext(EWorldType::EditorPreview, PreviewWorldHandle);
+	WorldContext.World->SetWorldType(EWorldType::EditorPreview);
+	WorldContext.World->InitWorld();
+
+	AActor* Actor = WorldContext.World->SpawnActor<AActor>();
+	USkeletalMeshComponent* MeshComponent = Actor->AddComponent<USkeletalMeshComponent>();
+	MeshComponent->SetSkeletalMesh(SourceSkeletalMesh);
+	Actor->SetRootComponent(MeshComponent);
+	Actor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+
+	ADirectionalLightActor* LightActor = WorldContext.World->SpawnActor<ADirectionalLightActor>();
+	LightActor->InitDefaultComponents();
+	LightActor->SetActorRotation(FVector(0.0f, 45.0f, -45.0f));
+	UDirectionalLightComponent* LightComp = LightActor->GetComponentByClass<UDirectionalLightComponent>();
+	if (LightComp)
+	{
+		LightComp->SetShadowBias(0.0f);
+		LightComp->PushToScene();
+	}
+
+	ViewportClient.Initialize(GEngine->GetRenderer().GetFD3DDevice().GetDevice(), 512, 512);
+	ViewportClient.SetPreviewWorld(WorldContext.World);
+	ViewportClient.SetPreviewActor(Actor);
+	ViewportClient.SetPreviewMeshComponent(MeshComponent);
+	ViewportClient.CreatePhysicsAssetDebugComponent();
+	ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
+	ViewportClient.ResetCameraToPreviousBounds();
+
+	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
+	FSlateApplication::Get().RegisterViewport(&ViewportClient);
+}
+
+void FPhysicsAssetViewerWidget::DestroyPreviewWorld()
+{
+	if (ViewportClient.IsRenderable())
+	{
+		FSlateApplication::Get().UnregisterViewport(&ViewportClient);
+	}
+
+	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
+	{
+		FScene& PreviewScene = PreviewWorld->GetScene();
+		GEngine->GetRenderer().GetResources().ReleaseShadowResourcesForScene(&PreviewScene);
+
+		if (PreviewWorldHandle.IsValid())
+		{
+			GEngine->DestroyWorldContext(PreviewWorldHandle);
+		}
+	}
+
+	ViewportClient.Release();
+}
+
+void FPhysicsAssetViewerWidget::RenderViewportPanel(ImVec2 Size)
+{
+	ImVec2 ViewportPos = ImGui::GetCursorScreenPos();
+	ViewportClient.SetViewportRect(ViewportPos.x, ViewportPos.y, Size.x, Size.y);
+
+	FViewport* VP = ViewportClient.GetViewport();
+	if (!VP || Size.x <= 0.0f || Size.y <= 0.0f)
+	{
+		ImGui::Dummy(Size);
+		return;
+	}
+
+	VP->RequestResize(static_cast<uint32>(Size.x), static_cast<uint32>(Size.y));
+
+	if (VP->GetSRV())
+	{
+		ImGui::Image((ImTextureID)VP->GetSRV(), Size);
+	}
+	else
+	{
+		ImGui::Dummy(Size);
+	}
+
+	FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, ImGui::IsItemHovered());
 }
 
 bool FPhysicsAssetViewerWidget::SavePhysicsAsset(UPhysicsAsset* PhysicsAsset)
@@ -167,11 +295,28 @@ void FPhysicsAssetViewerWidget::Render(float DeltaTime)
 		return;
 	}
 
-	ImGui::Columns(2);
+	ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex);
+
+	constexpr float BodyListWidth = 280.0f;
+	constexpr float BodyDetailsWidth = 320.0f;
+	ImGui::BeginChild("PhysicsAssetViewerBodies", ImVec2(BodyListWidth, 0), true);
 	RenderBodyList(PhysicsAsset);
-	ImGui::NextColumn();
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+
+	const float ViewportWidth = std::max(
+		160.0f,
+		ImGui::GetContentRegionAvail().x - BodyDetailsWidth - ImGui::GetStyle().ItemSpacing.x);
+	ImGui::BeginGroup();
+	RenderViewportPanel(ImVec2(ViewportWidth, ImGui::GetContentRegionAvail().y));
+	ImGui::EndGroup();
+
+	ImGui::SameLine();
+
+	ImGui::BeginChild("PhysicsAssetViewerBodyDetails", ImVec2(BodyDetailsWidth, 0), true);
 	RenderBodyDetails(PhysicsAsset);
-	ImGui::Columns(1);
+	ImGui::EndChild();
 
 	ImGui::End();
 
@@ -191,6 +336,7 @@ void FPhysicsAssetViewerWidget::RenderBodyList(UPhysicsAsset* PhysicsAsset)
 	{
 		SelectedBodyIndex = -1;
 	}
+	ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex);
 
 	const FSkeletalMesh* Asset = SourceSkeletalMesh ? SourceSkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset)
@@ -271,6 +417,7 @@ bool FPhysicsAssetViewerWidget::RenderBodyTree(const FSkeletalMesh* Asset, UPhys
 	if (ImGui::IsItemClicked())
 	{
 		SelectedBodyIndex = BodyIndex;
+		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex);
 	}
 
 	if (bOpen && bHasVisibleChildren)

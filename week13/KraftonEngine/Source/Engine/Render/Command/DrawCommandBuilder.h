@@ -10,6 +10,7 @@
 class FPassRenderStateTable;
 class FTextRenderSceneProxy;
 class FSkeletalMeshSceneProxy;
+class FPhysicsAssetSceneProxy;
 class FScene;
 struct FCollectOutput;
 
@@ -45,8 +46,8 @@ private:
 	void BuildProxyCommands(const FFrameContext& Frame, FScene& Scene, const FCollectOutput& Output);
 	void BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, const FCollectOutput& Output);
 	void BuildMeshCommands(FScene& Scene, const FPrimitiveSceneProxy* Proxy);
-	void BuildPhysicsAssetDebugCommands(const FFrameContext& Frame, const FSkeletalMeshSceneProxy& SkeletalProxy);
-	void BuildPhysicsAssetSolidCommand(const FFrameContext& Frame, const FSkeletalMeshSceneProxy& SkeletalProxy);
+	void BuildPhysicsAssetDebugCommands(const FFrameContext& Frame, const FPhysicsAssetSceneProxy& PhysicsAssetProxy);
+	void BuildPhysicsAssetSolidCommand(const FFrameContext& Frame, const FPhysicsAssetSceneProxy& PhysicsAssetProxy);
 	void EmitPhysicsAssetSolidCommand();
 	void BuildSelectionCommands(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume, FScene& Scene);
 

@@ -11,6 +11,7 @@
 #include "Component/Debug/GizmoComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Debug/BoneDebugComponent.h"
+#include "Component/Debug/PhysicsAssetDebugComponent.h"
 #include "Collision/Ray/RayUtils.h"
 #include "Settings/EditorSettings.h"
 #include "Slate/SlateApplication.h"
@@ -33,6 +34,7 @@ void FMeshEditorViewportClient::AddReferencedObjects(FReferenceCollector& Collec
 	Collector.AddReferencedObject(Gizmo);
 	Collector.AddReferencedObject(PreviewMeshComponent);
 	Collector.AddReferencedObject(BoneDebugComponent);
+	Collector.AddReferencedObject(PhysicsAssetDebugComponent);
 	Collector.AddReferencedObject(PreviewWorld);
 	Collector.AddReferencedObject(PreviewActor);
 }
@@ -52,6 +54,7 @@ void FMeshEditorViewportClient::Release()
 	UObjectManager::Get().DestroyObject(Gizmo);
 	Gizmo = nullptr;
 	BoneDebugComponent = nullptr;
+	PhysicsAssetDebugComponent = nullptr;
 
 	bIsRenderable = false;
 
@@ -72,6 +75,45 @@ void FMeshEditorViewportClient::CreateBoneDebugComponent()
 	BoneDebugComponent->SetTargetMeshComponent(PreviewMeshComponent);
 	BoneDebugComponent->SetSelectedBoneIndex(SelectedBoneIndex);
 	BoneDebugComponent->CreateRenderState();
+}
+
+void FMeshEditorViewportClient::CreatePhysicsAssetDebugComponent()
+{
+	if (!PreviewActor)
+	{
+		return;
+	}
+
+	if (!PhysicsAssetDebugComponent)
+	{
+		PhysicsAssetDebugComponent = PreviewActor->AddComponent<UPhysicsAssetDebugComponent>();
+	}
+
+	SyncPhysicsAssetDebugComponent(
+		PreviewMeshComponent && PreviewMeshComponent->GetSkeletalMesh()
+			? PreviewMeshComponent->GetSkeletalMesh()->GetPhysicsAsset()
+			: nullptr,
+		-1);
+	if (PhysicsAssetDebugComponent)
+	{
+		PhysicsAssetDebugComponent->CreateRenderState();
+	}
+}
+
+void FMeshEditorViewportClient::SyncPhysicsAssetDebugComponent(UPhysicsAsset* PhysicsAsset, int32 SelectedBodyIndex)
+{
+	if (!PhysicsAssetDebugComponent && PreviewActor)
+	{
+		PhysicsAssetDebugComponent = PreviewActor->AddComponent<UPhysicsAssetDebugComponent>();
+	}
+
+	if (!PhysicsAssetDebugComponent)
+	{
+		return;
+	}
+
+	PhysicsAssetDebugComponent->SetTarget(PreviewMeshComponent, PhysicsAsset);
+	PhysicsAssetDebugComponent->SetSelectedBodyIndex(SelectedBodyIndex);
 }
 
 void FMeshEditorViewportClient::ResetCameraToPreviousBounds()

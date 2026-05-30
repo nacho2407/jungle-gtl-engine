@@ -9,6 +9,7 @@
 #include "Render/Proxy/ShapeSceneProxy.h"
 #include "Render/Proxy/BoneDebugSceneProxy.h"
 #include "Render/Proxy/SkeletalMeshSceneProxy.h"
+#include "Render/Proxy/PhysicsAssetSceneProxy.h"
 #include "Render/Proxy/ParticleSystemSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/RenderConstants.h"
@@ -411,19 +412,17 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 			ParticleProxy->BuildParticleCommands(CachedDevice, CachedContext, Frame, DrawCommandList, ERenderPass::Opaque);
 			ParticleProxy->BuildParticleCommands(CachedDevice, CachedContext, Frame, DrawCommandList, ERenderPass::AlphaBlend);
 		}
+		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::PhysicsAssetDebug))
+		{
+			const FPhysicsAssetSceneProxy* PhysicsAssetProxy =
+				static_cast<const FPhysicsAssetSceneProxy*>(Proxy);
+			BuildPhysicsAssetDebugCommands(Frame, *PhysicsAssetProxy);
+		}
 		else if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::Decal))
 			BuildDecalCommands(Scene, Proxy, Frame, Output);
 		else
 		{
 			BuildMeshCommands(Scene, Proxy);
-
-			if (Frame.RenderOptions.ShowFlags.bDebugPhysicsAsset &&
-				Proxy->HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh))
-			{
-				const FSkeletalMeshSceneProxy* SkeletalProxy =
-					static_cast<const FSkeletalMeshSceneProxy*>(Proxy);
-				BuildPhysicsAssetDebugCommands(Frame, *SkeletalProxy);
-			}
 		}
 
 		if (Proxy->IsSelected())
@@ -497,17 +496,17 @@ void FDrawCommandBuilder::BuildMeshCommands(FScene& Scene, const FPrimitiveScene
 		BuildCommandForProxy(Scene, *Proxy, ERenderPass::AlphaBlend);
 }
 
-void FDrawCommandBuilder::BuildPhysicsAssetDebugCommands(const FFrameContext& Frame, const FSkeletalMeshSceneProxy& SkeletalProxy)
+void FDrawCommandBuilder::BuildPhysicsAssetDebugCommands(const FFrameContext& Frame, const FPhysicsAssetSceneProxy& PhysicsAssetProxy)
 {
 	if (!Frame.RenderOptions.ShowFlags.bDebugPhysicsAsset)
 	{
 		return;
 	}
 
-	BuildPhysicsAssetSolidCommand(Frame, SkeletalProxy);
+	BuildPhysicsAssetSolidCommand(Frame, PhysicsAssetProxy);
 }
 
-void FDrawCommandBuilder::BuildPhysicsAssetSolidCommand(const FFrameContext& Frame, const FSkeletalMeshSceneProxy& SkeletalProxy)
+void FDrawCommandBuilder::BuildPhysicsAssetSolidCommand(const FFrameContext& Frame, const FPhysicsAssetSceneProxy& PhysicsAssetProxy)
 {
 	if (!Frame.RenderOptions.ShowFlags.bDebugPhysicsAsset)
 	{
@@ -515,7 +514,7 @@ void FDrawCommandBuilder::BuildPhysicsAssetSolidCommand(const FFrameContext& Fra
 	}
 
 	FPhysicsDebugSolidMesh SolidMesh;
-	SkeletalProxy.BuildPhysicsAssetSolidMesh(Frame, SolidMesh);
+	PhysicsAssetProxy.BuildPhysicsAssetSolidMesh(Frame, SolidMesh);
 	if (!SolidMesh.IsValid())
 	{
 		return;
