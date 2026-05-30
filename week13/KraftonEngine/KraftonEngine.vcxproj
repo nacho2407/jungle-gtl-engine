@@ -679,7 +679,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAssetManager.cpp" />
     <ClCompile Include="Source\Engine\Physics\BodyInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
-    <ClCompile Include="Source\Engine\Physics\NativePhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXPhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Platform\DirectoryWatcher.cpp" />
@@ -1141,7 +1140,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Physics\BodyInstance.h" />
     <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h" />
     <ClInclude Include="Source\Engine\Physics\IPhysicsScene.h" />
-    <ClInclude Include="Source\Engine\Physics\NativePhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXPhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXTypeConversions.h" />
     <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h" />
