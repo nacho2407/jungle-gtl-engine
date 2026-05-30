@@ -34,7 +34,7 @@ bool RenderConstraintInitDescDetails(UPhysicsAsset* PhysicsAsset, const UBodySet
 	ImGui::Separator();
 	ImGui::TextUnformatted("Constraint");
 
-	const FConstraintInstanceInitDesc* ConstraintDesc =
+	FConstraintInstanceInitDesc* ConstraintDesc =
 		(PhysicsAsset && BodySetup)
 			? PhysicsAsset->FindConstraintInitDescByChildBoneName(BodySetup->BoneName)
 			: nullptr;
