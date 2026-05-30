@@ -9,7 +9,7 @@
 class FWindowsBinWriter : public FArchive
 {
 private:
-	std::ofstream FileStream;
+	mutable std::ofstream FileStream;
 
 public:
 	FWindowsBinWriter(const std::string& FilePath)
@@ -25,6 +25,15 @@ public:
 
 	// 파일이 정상적으로 열렸는지 확인
 	bool IsValid() const { return FileStream.is_open() && FileStream.good(); }
+	bool CanSeek() const override { return true; }
+	int64 Tell() const override { return FileStream.is_open() ? static_cast<int64>(FileStream.tellp()) : -1; }
+	void Seek(int64 Offset) override
+	{
+		if (FileStream.is_open())
+		{
+			FileStream.seekp(static_cast<std::streamoff>(Offset), std::ios::beg);
+		}
+	}
 
 	void Serialize(void* Data, size_t Num) override
 	{
@@ -54,6 +63,25 @@ public:
 	}
 
 	bool IsValid() const { return FileStream.is_open() && FileStream.good(); }
+	bool CanSeek() const override { return true; }
+	int64 Tell() const override
+	{
+		if (!FileStream.is_open())
+		{
+			return -1;
+		}
+
+		const std::streampos Current = FileStream.tellg();
+		return Current == std::streampos(-1) ? -1 : static_cast<int64>(Current);
+	}
+	void Seek(int64 Offset) override
+	{
+		if (FileStream.is_open())
+		{
+			FileStream.clear();
+			FileStream.seekg(static_cast<std::streamoff>(Offset), std::ios::beg);
+		}
+	}
 	bool IsAtEnd() const override
 	{
 		if (!FileStream.is_open())

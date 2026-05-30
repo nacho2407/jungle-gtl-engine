@@ -71,6 +71,7 @@ struct FKSphylElem : public FKShapeElem
 	float GetScaledRadius(const FVector& Scale3D) const;
 	float GetScaledCylinderLength(const FVector& Scale3D) const;
 	float GetScaledHalfLength(const FVector& Scale3D) const;
+	float GetScaledVolume(const FVector& Scale3D) const;
 
 
 	float GetShortestDistanceToPoint(const FVector& WorldPosition, const FTransform& BodyToWorldTM) const;

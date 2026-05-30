@@ -91,6 +91,30 @@ bool RenderConstraintInitDescDetails(
 	return true;
 }
 
+bool RenderBodyPhysicsInfoDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
+{
+	if (!PhysicsAsset || BodyIndex < 0)
+	{
+		return false;
+	}
+
+	TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetupsMutable();
+	if (BodyIndex >= static_cast<int32>(Bodies.size()) || !Bodies[BodyIndex])
+	{
+		return false;
+	}
+
+	UBodySetup* BodySetup = Bodies[BodyIndex];
+	ImGui::TextUnformatted("Body Physics");
+	ImGui::Text("Calculated Mass: %.4f kg", BodySetup->CalculateMass());
+
+	return FInlinePropertyRenderer::RenderStructProperties(
+		FBodySetupPhysicsInfo::StaticStruct(),
+		&BodySetup->GetPhysicsInfo(),
+		PhysicsAsset,
+		"##PhysicsAssetViewerBodyPhysicsProps");
+}
+
 bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
 {
 	if (!Asset || !PhysicsAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
@@ -543,6 +567,20 @@ void FPhysicsAssetViewerWidget::RenderBodyDetails(UPhysicsAsset* PhysicsAsset)
 		else
 		{
 			UE_LOG("PhysicsAsset constraint edit warning: failed to persist constraint. PhysicsAsset=%s", PhysicsAsset->GetAssetPathFileName().c_str());
+			MarkDirty();
+		}
+		return;
+	}
+
+	if (SelectedConstraintIndex < 0 && RenderBodyPhysicsInfoDetails(PhysicsAsset, SelectedBodyIndex))
+	{
+		if (SavePhysicsAsset(PhysicsAsset))
+		{
+			ClearDirty();
+		}
+		else
+		{
+			UE_LOG("PhysicsAsset body physics edit warning: failed to persist body physics info. PhysicsAsset=%s", PhysicsAsset->GetAssetPathFileName().c_str());
 			MarkDirty();
 		}
 	}

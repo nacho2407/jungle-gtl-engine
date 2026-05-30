@@ -3020,6 +3020,9 @@
     <ClInclude Include="Source\Engine\PhysicsEngine\BodySetupCore.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\BodySetupPhysicsInfo.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\BoxElem.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>

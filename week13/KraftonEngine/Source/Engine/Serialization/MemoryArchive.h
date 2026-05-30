@@ -28,6 +28,19 @@ public:
 
 	const TArray<uint8>& GetBuffer() const { return Buffer; }
 	bool IsAtEnd() const override { return !IsLoading() || Offset >= Buffer.size(); }
+	bool CanSeek() const override { return true; }
+	int64 Tell() const override { return static_cast<int64>(Offset); }
+	void Seek(int64 NewOffset) override
+	{
+		if (NewOffset < 0)
+		{
+			Offset = 0;
+			return;
+		}
+
+		const size_t TargetOffset = static_cast<size_t>(NewOffset);
+		Offset = TargetOffset < Buffer.size() ? TargetOffset : Buffer.size();
+	}
 
 	void Serialize(void* Data, size_t Num) override
 	{
