@@ -27,7 +27,7 @@ public:
 	bool CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance);
 	bool CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance, const UBodySetup& BodySetup,
 		const FVector& WorldLocation, const FQuat& WorldRotation, ECollisionChannel ObjectType, ECollisionEnabled CollisionEnabled,
-		const FVector& Scale, bool bGenerateOverlapEvents, bool bSimulatePhysics);
+		const FVector& Scale, bool bGenerateOverlapEvents, bool bSimulatePhysics, uint16 SelfCollisionGroup = 0);
 	void DestroyBody(FBodyInstance& Instance);
 
 	FConstraintInstance* CreateFixedConstraint(FBodyInstance* BodyA, FBodyInstance* BodyB,

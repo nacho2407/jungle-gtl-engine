@@ -10,9 +10,14 @@
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Math/Matrix.h"
+#include "Core/Logging/Log.h"
+
+#include <cmath>
 
 namespace
 {
+	constexpr int32 MaxRagdollDebugRows = 10;
+
 	FVector ScaleVectorComponentWise(const FVector& Value, const FVector& Scale)
 	{
 		return FVector(Value.X * Scale.X, Value.Y * Scale.Y, Value.Z * Scale.Z);
@@ -23,6 +28,39 @@ namespace
 		FTransform Result = Frame;
 		Result.Location = ScaleVectorComponentWise(Frame.Location, Scale);
 		return Result;
+	}
+
+	uint16 AllocateSelfCollisionGroup()
+	{
+		static uint16 NextGroup = 1;
+
+		const uint16 Group = NextGroup++;
+		if (NextGroup == 0)
+		{
+			NextGroup = 1;
+		}
+		return Group;
+	}
+
+	bool IsFiniteVector(const FVector& Value)
+	{
+		return std::isfinite(Value.X) && std::isfinite(Value.Y) && std::isfinite(Value.Z);
+	}
+
+	bool IsFiniteQuat(const FQuat& Value)
+	{
+		return std::isfinite(Value.X) && std::isfinite(Value.Y) &&
+			std::isfinite(Value.Z) && std::isfinite(Value.W);
+	}
+
+	bool IsFiniteTransform(const FTransform& Value)
+	{
+		return IsFiniteVector(Value.Location) && IsFiniteQuat(Value.Rotation) && IsFiniteVector(Value.Scale);
+	}
+
+	const char* BoolText(bool bValue)
+	{
+		return bValue ? "true" : "false";
 	}
 }
 
@@ -56,6 +94,16 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 	BodyToBoneIndex.reserve(NumSetups);
 
 	TMap<FString, int32> BoneToBody;
+	const uint16 SelfCollisionGroup = AllocateSelfCollisionGroup();
+	int32 BodyLogCount = 0;
+
+	UE_LOG("[RagdollDbg][0] init mesh=%s bones=%d bodySetups=%d constraints=%llu worldScale=(%.3f,%.3f,%.3f) selfCollisionGroup=%u",
+		Mesh->GetAssetPathFileName().c_str(),
+		NumBones,
+		NumSetups,
+		static_cast<unsigned long long>(Asset->GetConstraintTemplates().size()),
+		ComponentWorldScaleAtStart.X, ComponentWorldScaleAtStart.Y, ComponentWorldScaleAtStart.Z,
+		static_cast<unsigned int>(SelfCollisionGroup));
 
 	for (UBodySetup* Setup : BodySetups)
 	{
@@ -76,7 +124,7 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 		const bool bCreated = Scene->CreateBodyFromSetup(MeshComp, Body, *Setup,
 			BoneWorld.Location, BoneWorld.Rotation,
 			ECollisionChannel::Pawn, ECollisionEnabled::QueryAndPhysics,
-			ComponentWorldScaleAtStart, false, true);
+			ComponentWorldScaleAtStart, false, true, SelfCollisionGroup);
 
 		if (!bCreated)
 		{
@@ -84,11 +132,38 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 			continue;
 		}
 
+		Body.SetMass(1.0f);
+		Body.SetLinearDamping(0.05f);
+		Body.SetAngularDamping(0.8f);
+
 		const int32 BodyIndex = static_cast<int32>(Bodies.size()) - 1;
-		BodyToBoneIndex.push_back(MeshComp->FindBoneIndex(BoneName));
+		const int32 BoneIndex = MeshComp->FindBoneIndex(BoneName);
+		BodyToBoneIndex.push_back(BoneIndex);
 		BoneToBody[BoneName] = BodyIndex;
+
+		if (BodyLogCount < MaxRagdollDebugRows)
+		{
+			const FTransform CreatedWorld = Body.GetBodyTransform();
+			const FVector Delta = CreatedWorld.Location - BoneWorld.Location;
+			const FKAggregateGeom& Geom = Setup->GetAggGeom();
+
+			UE_LOG("[RagdollDbg][2] body[%d] bone=%s boneIndex=%d shapes(box=%llu sphere=%llu capsule=%llu) boneWorld=(%.3f,%.3f,%.3f) bodyWorld=(%.3f,%.3f,%.3f) deltaLen=%.5f mass=%.3f finite=%s",
+				BodyIndex,
+				BoneName.c_str(),
+				BoneIndex,
+				static_cast<unsigned long long>(Geom.BoxElems.size()),
+				static_cast<unsigned long long>(Geom.SphereElems.size()),
+				static_cast<unsigned long long>(Geom.SphylElems.size()),
+				BoneWorld.Location.X, BoneWorld.Location.Y, BoneWorld.Location.Z,
+				CreatedWorld.Location.X, CreatedWorld.Location.Y, CreatedWorld.Location.Z,
+				Delta.Length(),
+				Body.GetMass(),
+				BoolText(IsFiniteTransform(CreatedWorld)));
+			++BodyLogCount;
+		}
 	}
 
+	int32 ConstraintLogCount = 0;
 	for (UPhysicsConstraintTemplate* Constraint : Asset->GetConstraintTemplates())
 	{
 		if (!Constraint) continue;
@@ -113,9 +188,23 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 		{
 			Constraints.push_back(Inst);
 		}
+
+		if (ConstraintLogCount < MaxRagdollDebugRows)
+		{
+			UE_LOG("[RagdollDbg][3] constraint[%d] parent=%s child=%s created=%s frameA.loc=(%.3f,%.3f,%.3f) frameB.loc=(%.3f,%.3f,%.3f) swing=(%.1f,%.1f) twist=%.1f",
+				ConstraintLogCount,
+				Constraint->GetParentBoneName().ToString().c_str(),
+				Constraint->GetChildBoneName().ToString().c_str(),
+				BoolText(Inst != nullptr),
+				LocalFrameA.Location.X, LocalFrameA.Location.Y, LocalFrameA.Location.Z,
+				LocalFrameB.Location.X, LocalFrameB.Location.Y, LocalFrameB.Location.Z,
+				Constraint->GetSwing1Limit(), Constraint->GetSwing2Limit(), Constraint->GetTwistLimit());
+			++ConstraintLogCount;
+		}
 	}
 
 	bInitialized = true;
+	DebugSyncFramesRemaining = 3;
 }
 
 void FRagdollInstance::Release(FPhysicsScene* Scene)
@@ -137,6 +226,7 @@ void FRagdollInstance::Release(FPhysicsScene* Scene)
 	BodyToBoneIndex.clear();
 	InitialLocalPose.clear();
 	ComponentWorldScaleAtStart = FVector::OneVector;
+	DebugSyncFramesRemaining = 0;
 	bInitialized = false;
 }
 
@@ -161,6 +251,14 @@ void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 	}
 
 	const FMatrix CompWorldInv = MeshComp->GetWorldMatrix().GetInverse();
+	const FTransform CompWorldNoScale(
+		MeshComp->GetWorldLocation(),
+		MeshComp->GetWorldRotation().ToQuaternion(),
+		FVector::OneVector);
+	const FMatrix CompWorldNoScaleInv = CompWorldNoScale.ToMatrix().GetInverse();
+	const bool bLogSync = DebugSyncFramesRemaining > 0;
+	const int32 DebugFrameIndex = bLogSync ? (4 - DebugSyncFramesRemaining) : 0;
+	int32 BodySyncLogCount = 0;
 
 	TArray<FMatrix> CompGlobal;
 	CompGlobal.resize(NumBones, FMatrix::Identity);
@@ -181,8 +279,25 @@ void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 		}
 
 		const FTransform BodyWorld = Bodies[i].GetBodyTransform();
-		CompGlobal[BoneIndex] = BodyWorld.ToMatrix() * CompWorldInv;
+		FMatrix BodyCompGlobal = BodyWorld.ToMatrix() * CompWorldNoScaleInv;
+		BodyCompGlobal.SetLocation(CompWorldInv.TransformPositionWithW(BodyWorld.Location));
+		CompGlobal[BoneIndex] = BodyCompGlobal;
 		bSolved[BoneIndex]    = true;
+
+		if (bLogSync && BodySyncLogCount < MaxRagdollDebugRows)
+		{
+			const FVector CompLoc = CompGlobal[BoneIndex].GetLocation();
+			const FVector CompScale = CompGlobal[BoneIndex].GetScale();
+			UE_LOG("[RagdollDbg][4] syncBody frame=%d body=%d bone=%s world=(%.3f,%.3f,%.3f) compGlobal=(%.3f,%.3f,%.3f) compScale=(%.3f,%.3f,%.3f) finite=%s",
+				DebugFrameIndex,
+				i,
+				Asset->Bones[BoneIndex].Name.c_str(),
+				BodyWorld.Location.X, BodyWorld.Location.Y, BodyWorld.Location.Z,
+				CompLoc.X, CompLoc.Y, CompLoc.Z,
+				CompScale.X, CompScale.Y, CompScale.Z,
+				BoolText(IsFiniteTransform(BodyWorld)));
+			++BodySyncLogCount;
+		}
 	}
 
 	for (int32 b = 0; b < NumBones; ++b)
@@ -247,6 +362,35 @@ void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 
 		LocalPose[b] = FTransform(Local);
 		LocalPose[b].Scale = InitialLocalPose[b].Scale;
+	}
+
+	if (bLogSync)
+	{
+		int32 LocalSyncLogCount = 0;
+		for (int32 i = 0; i < static_cast<int32>(Bodies.size()) && LocalSyncLogCount < MaxRagdollDebugRows; ++i)
+		{
+			const int32 BoneIndex = BodyToBoneIndex[i];
+			if (BoneIndex < 0 || BoneIndex >= NumBones)
+			{
+				continue;
+			}
+
+			const FTransform& Local = LocalPose[BoneIndex];
+			const FTransform& Initial = InitialLocalPose[BoneIndex];
+			const FVector Delta = Local.Location - Initial.Location;
+
+			UE_LOG("[RagdollDbg][5] syncLocal frame=%d bone=%s localLoc=(%.3f,%.3f,%.3f) initLoc=(%.3f,%.3f,%.3f) deltaLen=%.5f localScale=(%.3f,%.3f,%.3f) finite=%s",
+				DebugFrameIndex,
+				Asset->Bones[BoneIndex].Name.c_str(),
+				Local.Location.X, Local.Location.Y, Local.Location.Z,
+				Initial.Location.X, Initial.Location.Y, Initial.Location.Z,
+				Delta.Length(),
+				Local.Scale.X, Local.Scale.Y, Local.Scale.Z,
+				BoolText(IsFiniteTransform(Local)));
+			++LocalSyncLogCount;
+		}
+
+		--DebugSyncFramesRemaining;
 	}
 
 	MeshComp->SetBoneLocalTransforms(LocalPose);

@@ -5,6 +5,7 @@
 #include "Physics/PhysicsShape.h"
 #include "Physics/PhysXConversions.h"
 #include "Physics/PhysicsEventCallback.h"
+#include "Physics/PhysicsFilterData.h"
 #include "Physics/PhysicsFilterShader.h"
 #include "Physics/PhysicsQueryFilter.h"
 #include "Physics/PhysicsConstraintTemplate.h"
@@ -194,7 +195,7 @@ bool FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& Ou
 
 bool FPhysicsScene::CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance, const UBodySetup& BodySetup,
 	const FVector& WorldLocation, const FQuat& WorldRotation, ECollisionChannel ObjectType, ECollisionEnabled CollisionEnabled,
-	const FVector& Scale, bool bGenerateOverlapEvents, bool bSimulatePhysics)
+	const FVector& Scale, bool bGenerateOverlapEvents, bool bSimulatePhysics, uint16 SelfCollisionGroup)
 {
 	if (!Scene) return false;
 
@@ -229,8 +230,17 @@ bool FPhysicsScene::CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, FBodyIns
 
 	const bool bTrigger = CollisionEnabled == ECollisionEnabled::QueryOnly;
 
+	FCollisionResponseContainer Responses;
+	if (OwnerComp)
+	{
+		Responses = OwnerComp->GetCollisionResponseContainer();
+	}
+	const physx::PxFilterData FilterData = MakeFilterData(ObjectType, Responses,
+		CollisionEnabled, bGenerateOverlapEvents, SelfCollisionGroup);
+
 	TArray<physx::PxShape*> Shapes;
-	FPhysicsShapeFactory::CreateShapesFromBodySetup(*Physics, *DefaultMaterial, BodySetup, Scale, OwnerComp, bTrigger, Shapes);
+	FPhysicsShapeFactory::CreateShapesFromBodySetup(*Physics, *DefaultMaterial, BodySetup,
+		Scale, OwnerComp, bTrigger, Shapes, &FilterData);
 
 	if (Shapes.empty())
 	{

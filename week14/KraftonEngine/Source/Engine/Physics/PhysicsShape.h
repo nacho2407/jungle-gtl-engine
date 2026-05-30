@@ -16,11 +16,12 @@ public:
 		UPrimitiveComponent* Component, bool bTrigger, TArray<physx::PxShape*>& OutShapes);
 	static void CreateShapesFromBodySetup(physx::PxPhysics& Physics, physx::PxMaterial& Material,
 		const UBodySetup& BodySetup, const FVector& Scale, UPrimitiveComponent* UserDataComponent,
-		bool bTrigger, TArray<physx::PxShape*>& OutShapes);
+		bool bTrigger, TArray<physx::PxShape*>& OutShapes, const physx::PxFilterData* FilterDataOverride = nullptr);
 
 private:
 	static void CreateShapesForStaticMeshComponent(physx::PxPhysics& Physics, physx::PxMaterial& Material,
 		UStaticMeshComponent* Component, bool bTrigger, TArray<physx::PxShape*>& OutShapes);
 
-	static void ApplyShapeFlags(physx::PxShape& Shape, UPrimitiveComponent* Component, bool bTrigger);
+	static void ApplyShapeFlags(physx::PxShape& Shape, UPrimitiveComponent* Component, bool bTrigger,
+		const physx::PxFilterData* FilterDataOverride = nullptr);
 };
