@@ -124,8 +124,13 @@ private:
 
     // 이 부분은 전부 아마 Asset에 Constraint관련 정보가 포함되면 변경될 함수들
     // 현재 임시용 함수라 보면 될듯. 완성형 X
-    bool CreateRagdollBodiesFromCurrentPose();
-    bool CreateRagdollConstraintsFromHierarchy();
+    UPhysicsAsset* GetPhysicsAssetForRagdoll() const;
+
+    bool CreateRagdollBodiesFromPhysicsAsset();
+    bool CreateRagdollConstraintsFromPhysicsAsset();
+
+    bool BuildBodyInstanceInitDescFromBodySetup( const UBodySetup* BodySetup, int32 BoneIndex, const TArray<FMatrix>& BoneGlobals, FBodyInstanceInitDesc& OutDesc) const;
+
     void DestroyRagdollBodies();
     void SyncBonesFromRagdollBodies();
 
