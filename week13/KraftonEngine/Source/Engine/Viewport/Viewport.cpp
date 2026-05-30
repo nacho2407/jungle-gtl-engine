@@ -224,6 +224,16 @@ bool FViewport::CreateResources()
 	if (FAILED(hr)) return false;
 	DOFBlurSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBlurSRV")), "ViewportDOFBlurSRV");
 
+	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFNearBlurTexture);
+	if (FAILED(hr)) return false;
+	DOFNearBlurTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFNearBlurTexture")), "ViewportDOFNearBlurTexture");
+	hr = Device->CreateRenderTargetView(DOFNearBlurTexture, nullptr, &DOFNearBlurRTV);
+	if (FAILED(hr)) return false;
+	DOFNearBlurRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFNearBlurRTV")), "ViewportDOFNearBlurRTV");
+	hr = Device->CreateShaderResourceView(DOFNearBlurTexture, nullptr, &DOFNearBlurSRV);
+	if (FAILED(hr)) return false;
+	DOFNearBlurSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFNearBlurSRV")), "ViewportDOFNearBlurSRV");
+
 	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFBokehTexture);
 	if (FAILED(hr)) return false;
 	DOFBokehTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBokehTexture")), "ViewportDOFBokehTexture");
@@ -296,6 +306,9 @@ void FViewport::ReleaseResources()
 	if (DOFBokehSRV) { DOFBokehSRV->Release(); DOFBokehSRV = nullptr; }
 	if (DOFBokehRTV) { DOFBokehRTV->Release(); DOFBokehRTV = nullptr; }
 	if (DOFBokehTexture) { DOFBokehTexture->Release(); DOFBokehTexture = nullptr; }
+	if (DOFNearBlurSRV) { DOFNearBlurSRV->Release(); DOFNearBlurSRV = nullptr; }
+	if (DOFNearBlurRTV) { DOFNearBlurRTV->Release(); DOFNearBlurRTV = nullptr; }
+	if (DOFNearBlurTexture) { DOFNearBlurTexture->Release(); DOFNearBlurTexture = nullptr; }
 	if (DOFBlurSRV) { DOFBlurSRV->Release(); DOFBlurSRV = nullptr; }
 	if (DOFBlurRTV) { DOFBlurRTV->Release(); DOFBlurRTV = nullptr; }
 	if (DOFBlurTexture) { DOFBlurTexture->Release(); DOFBlurTexture = nullptr; }

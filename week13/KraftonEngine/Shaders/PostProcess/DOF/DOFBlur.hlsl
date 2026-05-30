@@ -6,20 +6,6 @@ Texture2D<float4> DOFColorCoCTex : register(t0);
 
 #define MAX_RINGS 4
 static const int SamplesPerRing[MAX_RINGS] = { 6, 10, 14, 18 };
-static const float TWO_PI = 6.28318530f;
-
-float InterleavedGradientNoise(float2 pixel)
-{
-    return frac(52.9829189f * frac(dot(pixel, float2(0.06711056f, 0.00583715f))));
-}
-
-float PolygonBoundaryRadius(float angle, float bladeCount)
-{
-    bladeCount = clamp(bladeCount, 3.0f, 16.0f);
-    float sectorAngle = TWO_PI / bladeCount;
-    float localAngle = frac((angle + sectorAngle * 0.5f) / sectorAngle) * sectorAngle - sectorAngle * 0.5f;
-    return cos(sectorAngle * 0.5f) / max(cos(localAngle), 0.001f);
-}
 
 PS_Input_UV VS(uint vertexID : SV_VertexID)
 {
@@ -66,7 +52,7 @@ float4 PS(PS_Input_UV input) : SV_Target
         [loop]
         for (int s = 0; s < sampleCount; ++s)
         {
-            float angle = (((float)s + sampleJitter) / (float)sampleCount) * TWO_PI;
+            float angle = (((float)s + sampleJitter) / (float)sampleCount) * DOFTwoPi;
             float polygonRadius = lerp(1.0f, PolygonBoundaryRadius(angle, apertureBlades), polygonStrength);
 
             float2 offset;

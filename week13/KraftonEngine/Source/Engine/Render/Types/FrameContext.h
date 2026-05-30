@@ -53,6 +53,10 @@ struct FFrameContext
 	ID3D11ShaderResourceView* DOFColorCoCSRV        = nullptr;
 	ID3D11RenderTargetView*   DOFBlurRTV            = nullptr;
 	ID3D11ShaderResourceView* DOFBlurSRV            = nullptr;
+	ID3D11RenderTargetView*   DOFFarBlurRTV         = nullptr;
+	ID3D11ShaderResourceView* DOFFarBlurSRV         = nullptr;
+	ID3D11RenderTargetView*   DOFNearBlurRTV        = nullptr;
+	ID3D11ShaderResourceView* DOFNearBlurSRV        = nullptr;
 	ID3D11RenderTargetView*   DOFBokehRTV           = nullptr;
 	ID3D11ShaderResourceView* DOFBokehSRV           = nullptr;
 
@@ -130,6 +134,10 @@ struct FFrameContext
 		DOFColorCoCSRV          = nullptr;
 		DOFBlurRTV              = nullptr;
 		DOFBlurSRV              = nullptr;
+		DOFFarBlurRTV           = nullptr;
+		DOFFarBlurSRV           = nullptr;
+		DOFNearBlurRTV          = nullptr;
+		DOFNearBlurSRV          = nullptr;
 		DOFBokehRTV             = nullptr;
 		DOFBokehSRV             = nullptr;
 		DepthTexture            = nullptr;
