@@ -39,6 +39,8 @@ public:
 	ID3D11Texture2D* GetSceneColorCopyTexture() const { return SceneColorCopyTexture; }
 	ID3D11RenderTargetView* GetDOFColorCoCRTV() const { return DOFColorCoCRTV; }
 	ID3D11ShaderResourceView* GetDOFColorCoCSRV() const { return DOFColorCoCSRV; }
+	ID3D11RenderTargetView* GetDOFPrefilterRTV() const { return DOFPrefilterRTV; }
+	ID3D11ShaderResourceView* GetDOFPrefilterSRV() const { return DOFPrefilterSRV; }
 	ID3D11RenderTargetView* GetDOFBlurRTV() const { return DOFBlurRTV; }
 	ID3D11ShaderResourceView* GetDOFBlurSRV() const { return DOFBlurSRV; }
 	ID3D11RenderTargetView* GetDOFFarBlurRTV() const { return DOFBlurRTV; }
@@ -96,6 +98,9 @@ private:
 	ID3D11Texture2D* DOFColorCoCTexture = nullptr;
 	ID3D11RenderTargetView* DOFColorCoCRTV = nullptr;
 	ID3D11ShaderResourceView* DOFColorCoCSRV = nullptr;
+	ID3D11Texture2D* DOFPrefilterTexture = nullptr;
+	ID3D11RenderTargetView* DOFPrefilterRTV = nullptr;
+	ID3D11ShaderResourceView* DOFPrefilterSRV = nullptr;
 	ID3D11Texture2D* DOFBlurTexture = nullptr;
 	ID3D11RenderTargetView* DOFBlurRTV = nullptr;
 	ID3D11ShaderResourceView* DOFBlurSRV = nullptr;

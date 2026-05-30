@@ -43,6 +43,8 @@ void FFrameContext::SetViewportInfo(const FViewport* VP)
 	ViewportRenderTexture   = VP->GetRTTexture();
 	DOFColorCoCRTV          = VP->GetDOFColorCoCRTV();
 	DOFColorCoCSRV          = VP->GetDOFColorCoCSRV();
+	DOFPrefilterRTV         = VP->GetDOFPrefilterRTV();
+	DOFPrefilterSRV         = VP->GetDOFPrefilterSRV();
 	DOFBlurRTV              = VP->GetDOFBlurRTV();
 	DOFBlurSRV              = VP->GetDOFBlurSRV();
 	DOFFarBlurRTV           = VP->GetDOFFarBlurRTV();

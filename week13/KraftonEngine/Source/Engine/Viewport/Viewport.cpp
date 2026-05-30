@@ -214,6 +214,16 @@ bool FViewport::CreateResources()
 	if (FAILED(hr)) return false;
 	DOFColorCoCSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFColorCoCSRV")), "ViewportDOFColorCoCSRV");
 
+	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFPrefilterTexture);
+	if (FAILED(hr)) return false;
+	DOFPrefilterTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFPrefilterTexture")), "ViewportDOFPrefilterTexture");
+	hr = Device->CreateRenderTargetView(DOFPrefilterTexture, nullptr, &DOFPrefilterRTV);
+	if (FAILED(hr)) return false;
+	DOFPrefilterRTV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFPrefilterRTV")), "ViewportDOFPrefilterRTV");
+	hr = Device->CreateShaderResourceView(DOFPrefilterTexture, nullptr, &DOFPrefilterSRV);
+	if (FAILED(hr)) return false;
+	DOFPrefilterSRV->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFPrefilterSRV")), "ViewportDOFPrefilterSRV");
+
 	hr = Device->CreateTexture2D(&DOFDesc, nullptr, &DOFBlurTexture);
 	if (FAILED(hr)) return false;
 	DOFBlurTexture->SetPrivateData(WKPDID_D3DDebugObjectName, static_cast<UINT>(strlen("ViewportDOFBlurTexture")), "ViewportDOFBlurTexture");
@@ -312,6 +322,9 @@ void FViewport::ReleaseResources()
 	if (DOFBlurSRV) { DOFBlurSRV->Release(); DOFBlurSRV = nullptr; }
 	if (DOFBlurRTV) { DOFBlurRTV->Release(); DOFBlurRTV = nullptr; }
 	if (DOFBlurTexture) { DOFBlurTexture->Release(); DOFBlurTexture = nullptr; }
+	if (DOFPrefilterSRV) { DOFPrefilterSRV->Release(); DOFPrefilterSRV = nullptr; }
+	if (DOFPrefilterRTV) { DOFPrefilterRTV->Release(); DOFPrefilterRTV = nullptr; }
+	if (DOFPrefilterTexture) { DOFPrefilterTexture->Release(); DOFPrefilterTexture = nullptr; }
 	if (DOFColorCoCSRV) { DOFColorCoCSRV->Release(); DOFColorCoCSRV = nullptr; }
 	if (DOFColorCoCRTV) { DOFColorCoCRTV->Release(); DOFColorCoCRTV = nullptr; }
 	if (DOFColorCoCTexture) { DOFColorCoCTexture->Release(); DOFColorCoCTexture = nullptr; }
