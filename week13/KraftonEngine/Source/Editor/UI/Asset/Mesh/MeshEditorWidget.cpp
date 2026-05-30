@@ -116,6 +116,35 @@ namespace
 		return Label;
 	}
 
+	void RenderConstraintInitDescDetails(const UPhysicsAsset* PhysicsAsset, const UBodySetup* BodySetup)
+	{
+		ImGui::Dummy(ImVec2(0, 6));
+		ImGui::Separator();
+		ImGui::TextUnformatted("Constraint");
+
+		const FConstraintInstanceInitDesc* ConstraintDesc =
+			(PhysicsAsset && BodySetup)
+				? PhysicsAsset->FindConstraintInitDescByChildBoneName(BodySetup->BoneName)
+				: nullptr;
+		if (!ConstraintDesc)
+		{
+			ImGui::TextDisabled("None");
+			return;
+		}
+
+		const FVector ParentLocation = ConstraintDesc->ParentFrame.GetLocation();
+		const FVector ChildLocation = ConstraintDesc->ChildFrame.GetLocation();
+
+		ImGui::Text("ParentBone: %s", ConstraintDesc->ParentBoneName.ToString().c_str());
+		ImGui::Text("ChildBone: %s", ConstraintDesc->ChildBoneName.ToString().c_str());
+		ImGui::Text("TwistLimit: %.2f", ConstraintDesc->TwistLimitDegrees);
+		ImGui::Text("Swing1Limit: %.2f", ConstraintDesc->Swing1LimitDegrees);
+		ImGui::Text("Swing2Limit: %.2f", ConstraintDesc->Swing2LimitDegrees);
+		ImGui::Text("EnableCollision: %s", ConstraintDesc->bEnableCollision ? "true" : "false");
+		ImGui::Text("ParentFrame Location: %.2f, %.2f, %.2f", ParentLocation.X, ParentLocation.Y, ParentLocation.Z);
+		ImGui::Text("ChildFrame Location: %.2f, %.2f, %.2f", ChildLocation.X, ChildLocation.Y, ChildLocation.Z);
+	}
+
 	bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
 	{
 		if (!Asset || !PhysicsAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
@@ -1067,6 +1096,7 @@ void FMeshEditorWidget::RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsse
 	ImGui::Text("BoxElems: %zu", AggGeom.BoxElems.size());
 	ImGui::Text("SphylElems: %zu", AggGeom.SphylElems.size());
 	ImGui::Text("ConvexElems: %zu", AggGeom.ConvexElems.size());
+	RenderConstraintInitDescDetails(PhysicsAsset, Body);
 }
 
 void FMeshEditorWidget::RenderMeshLayout()
