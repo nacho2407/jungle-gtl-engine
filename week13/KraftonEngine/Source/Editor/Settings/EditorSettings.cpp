@@ -50,6 +50,7 @@ namespace Key
 	constexpr const char* EdgeThreshold = "EdgeThreshold";
 	constexpr const char* EdgeThresholdMin = "EdgeThresholdMin";
 	constexpr const char* Gamma = "Gamma";
+	constexpr const char* Exposure = "Exposure";
 	constexpr const char* DOFAperture = "DOFAperture";
 	constexpr const char* DOFFocalDistance = "DOFFocalDistance";
 	constexpr const char* DOFMaxCoCRadius = "DOFMaxCoCRadius";
@@ -184,6 +185,7 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::EdgeThreshold] = Opts.EdgeThreshold;
 	Obj[Key::EdgeThresholdMin] = Opts.EdgeThresholdMin;
 	Obj[Key::Gamma] = Opts.Gamma;
+	Obj[Key::Exposure] = Opts.Exposure;
 	Obj[Key::DOFAperture] = Opts.DOFAperture;
 	Obj[Key::DOFFocalDistance] = Opts.DOFFocalDistance;
 	Obj[Key::DOFMaxCoCRadius] = Opts.DOFMaxCoCRadius;
@@ -257,6 +259,8 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.EdgeThresholdMin = static_cast<float>(Obj[Key::EdgeThresholdMin].ToFloat());
 	if (Obj.hasKey(Key::Gamma))
 		Opts.Gamma = static_cast<float>(Obj[Key::Gamma].ToFloat());
+	if (Obj.hasKey(Key::Exposure))
+		Opts.Exposure = static_cast<float>(Obj[Key::Exposure].ToFloat());
 	if (Obj.hasKey(Key::DOFAperture))
 		Opts.DOFAperture = static_cast<float>(Obj[Key::DOFAperture].ToFloat());
 	if (Obj.hasKey(Key::DOFFocalDistance))

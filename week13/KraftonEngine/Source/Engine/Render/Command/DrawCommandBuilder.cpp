@@ -852,6 +852,7 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 		{
 			FGammaCorrectionConstants GammaData = {};
 			GammaData.Gamma = Frame.RenderOptions.Gamma;
+			GammaData.Exposure = Frame.RenderOptions.Exposure;
 			GammaCorrectionCB.Update(Ctx, &GammaData, sizeof(FGammaCorrectionConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();

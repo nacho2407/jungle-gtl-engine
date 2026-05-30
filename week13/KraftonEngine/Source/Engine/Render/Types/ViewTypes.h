@@ -102,8 +102,9 @@ struct FViewportRenderOptions
 	float EdgeThreshold = 0.125f;
 	float EdgeThresholdMin = 0.0625f;
 
-	// Gamma Correction 전용 설정
+	// Tone Mapping / Gamma Correction settings
 	float Gamma = 2.4f;
+	float Exposure = 1.0f;
 
 	// Depth of Field settings
 	float DOFAperture = 4.0f; // F-Stop
