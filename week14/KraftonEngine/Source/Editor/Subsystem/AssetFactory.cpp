@@ -211,6 +211,8 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 		return false;
 	}
 	
+	GeneratePhysicsAssetConstraints(*NewAsset, *MeshAsset, Params);
+	
 	const bool bSaved = FPhysicsAssetManager::Get().Save(NewAsset);
 	if (!bSaved)
 	{

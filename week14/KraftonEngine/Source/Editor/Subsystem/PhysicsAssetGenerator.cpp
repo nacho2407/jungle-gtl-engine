@@ -4,6 +4,8 @@
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Physics/BodySetup.h"
 #include "Physics/PhysicsAsset.h"
+#include "Physics/PhysicsConstraintTemplate.h"
+#include "Math/Matrix.h"
 #include "Core/Logging/Log.h"
 
 namespace
@@ -26,6 +28,31 @@ namespace
 		const FVector Axis = Z.Cross(TargetAxis).Normalized();
 		const float   Angle = acosf(std::clamp(Dot, -1.0f, 1.0f)); // 라디안
 		return FQuat::FromAxisAngle(Axis, Angle);
+	}
+	
+	// 본 이름 → 본 인덱스 (FName 비교는 대소문자 무시)
+	int32 FindBoneIndexByName(const FSkeletalMesh& Mesh, FName BoneName)
+	{
+		for (int32 i = 0; i < static_cast<int32>(Mesh.Bones.size()); ++i)
+		{
+			if (FName(Mesh.Bones[i].Name) == BoneName)
+			{
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	// Editor enum → Engine enum
+	EAngularConstraintMode MapAngularMode(EPhysicsAssetConstraintMode In)
+	{
+		switch (In)
+		{
+		case EPhysicsAssetConstraintMode::Free:   return EAngularConstraintMode::Free;
+		case EPhysicsAssetConstraintMode::Locked: return EAngularConstraintMode::Locked;
+		case EPhysicsAssetConstraintMode::Limited:
+		default:                                  return EAngularConstraintMode::Limited;
+		}
 	}
 }
 
@@ -201,5 +228,53 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 			break;
 		}
 		}
+	}
+}
+
+void GeneratePhysicsAssetConstraints(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh, const FPhysicsAssetCreationParams& Params)
+{
+	if (!Params.bCreateConstraints)
+	{
+		return;
+	}
+	
+	const EAngularConstraintMode Mode = MapAngularMode(Params.AngularConstraintMode);
+	
+	for (const UBodySetup* Body : Asset.GetBodySetups())
+	{
+		if (!Body)
+		{
+			continue;
+		}
+		
+		const FName ChildBoneName = Body->GetBoneName();
+		const int32 ChildIdx = FindBoneIndexByName(Mesh, ChildBoneName);
+		if (ChildIdx < 0)
+		{
+			continue;
+		}
+		
+		int32 ParentIdx = Mesh.Bones[ChildIdx].ParentIndex;
+		while (ParentIdx >= 0)
+		{
+			const FName ParentBoneName(Mesh.Bones[ParentIdx].Name);
+			if (Asset.FindBodySetup(ParentBoneName) != nullptr)
+			{
+				break; // 바디 있는 조상 발견
+			}
+			ParentIdx = Mesh.Bones[ParentIdx].ParentIndex;
+		}
+		if (ParentIdx < 0)
+		{
+			continue; // 조상 바디 없음.
+		}
+		
+		const FMatrix ChildGlobal = Mesh.Bones[ChildIdx].GetReferenceGlobalPose();
+		const FMatrix ParentGlobal = Mesh.Bones[ParentIdx].GetReferenceGlobalPose();
+		
+		const FTransform FrameA(ChildGlobal * ParentGlobal.GetInverse()); // 부모 로컬에서 본 조인트
+		const FTransform FrameB; // 자식 로컬 원점 = 조인트 -> Identity
+		
+		Asset.CreateConstraint(FName(Mesh.Bones[ParentIdx].Name), ChildBoneName, FrameA, FrameB, Mode);
 	}
 }

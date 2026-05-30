@@ -24,6 +24,28 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 			Body->Serialize(Ar);
 		}
 	}
+	
+	uint32 NumConstraints = static_cast<uint32>(ConstraintTemplates.size());
+	Ar << NumConstraints;
+
+	if (Ar.IsLoading())
+	{
+		ConstraintTemplates.clear();
+		ConstraintTemplates.reserve(NumConstraints);
+		for (uint32 i = 0; i < NumConstraints; ++i)
+		{
+			UPhysicsConstraintTemplate* Constraint = UObjectManager::Get().CreateObject<UPhysicsConstraintTemplate>(this);
+			Constraint->Serialize(Ar);
+			ConstraintTemplates.push_back(Constraint);
+		}
+	}
+	else
+	{
+		for (UPhysicsConstraintTemplate* Constraint : ConstraintTemplates)
+		{
+			Constraint->Serialize(Ar);
+		}
+	}
 }
 
 void UPhysicsAsset::AddReferencedObjects(FReferenceCollector& Collector)
@@ -32,6 +54,10 @@ void UPhysicsAsset::AddReferencedObjects(FReferenceCollector& Collector)
 	for (UBodySetup* Body : BodySetups)
 	{
 		Collector.AddReferencedObject(Body);
+	}
+	for (UPhysicsConstraintTemplate* Constraint : ConstraintTemplates)
+	{
+		Collector.AddReferencedObject(Constraint);
 	}
 }
 
@@ -61,4 +87,12 @@ UBodySetup* UPhysicsAsset::CreateBodySetup(FName BoneName)
 	Body->SetBoneName(BoneName);
 	BodySetups.push_back(Body);
 	return Body;
+}
+
+UPhysicsConstraintTemplate* UPhysicsAsset::CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode)
+{
+	UPhysicsConstraintTemplate* Constraint = UObjectManager::Get().CreateObject<UPhysicsConstraintTemplate>(this);
+	Constraint->Setup(ParentBone, ChildBone, FrameA, FrameB, Mode);
+	ConstraintTemplates.push_back(Constraint);
+	return Constraint;
 }

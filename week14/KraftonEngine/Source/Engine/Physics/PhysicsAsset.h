@@ -2,6 +2,7 @@
 
 #include "Object/Object.h"
 #include "Physics/BodySetup.h"
+#include "Physics/PhysicsConstraintTemplate.h"
 
 #include "Source/Engine/Physics/PhysicsAsset.generated.h"
 
@@ -26,7 +27,11 @@ public:
 	UBodySetup* FindBodySetup(FName BoneName) const;
 	UBodySetup* CreateBodySetup(FName BoneName);
 	
+	const TArray<UPhysicsConstraintTemplate*>& GetConstraintTemplates() const {return ConstraintTemplates;}
+	UPhysicsConstraintTemplate* CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode);
+	
 private:
 	TArray<UBodySetup*> BodySetups;
+	TArray<UPhysicsConstraintTemplate*> ConstraintTemplates;
 	FString SourcePath;
 };

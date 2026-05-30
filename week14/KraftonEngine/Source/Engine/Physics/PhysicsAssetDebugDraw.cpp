@@ -1,6 +1,7 @@
 #include "PhysicsAssetDebugDraw.h"
 
 #include "Physics/PhysicsAsset.h"
+#include "Physics/PhysicsConstraintTemplate.h"
 #include "Component/Primitive/SkinnedMeshComponent.h"
 #include "Debug/DrawDebugHelpers.h"
 #include "Math/Matrix.h"
@@ -145,6 +146,40 @@ void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
 		}
 	}
 
+	// ── Constraints (바디는 노랑, 조인트는 초록으로 구분) ──
+	const FColor ConstraintColor = FColor::Green();
+
+	for (const UPhysicsConstraintTemplate* Constraint : Asset->GetConstraintTemplates())
+	{
+		if (!Constraint)
+		{
+			continue;
+		}
+
+		FMatrix ParentMat, ChildMat;
+		if (!MeshComp->GetBoneWorldMatrixByName(Constraint->GetParentBoneName().ToString(), ParentMat))
+		{
+			continue;
+		}
+		if (!MeshComp->GetBoneWorldMatrixByName(Constraint->GetChildBoneName().ToString(), ChildMat))
+		{
+			continue;
+		}
+
+		// 조인트 위치 = 부모 본 행렬 × FrameA의 위치 (FrameA는 부모 본 로컬 기준)
+		const FVector JointWorld   = ParentMat.TransformPositionWithW(Constraint->GetLocalFrameA().Location);
+		const FVector ParentOrigin = ParentMat.GetLocation();
+		const FVector ChildOrigin  = ChildMat.GetLocation();
+
+		// 부모 → 조인트 → 자식 연결선
+		DrawDebugLine(World, ParentOrigin, JointWorld, ConstraintColor, PhysicsAssetDebugDrawDuration);
+		DrawDebugLine(World, JointWorld,  ChildOrigin, ConstraintColor, PhysicsAssetDebugDrawDuration);
+
+		// 조인트 위치 마커(3축 십자) — 크기는 부모-자식 거리에 비례
+		const float CrossSize = (ChildOrigin - ParentOrigin).Length() * 0.15f;
+		DrawDebugPoint(World, JointWorld, CrossSize, ConstraintColor, PhysicsAssetDebugDrawDuration);
+	}
+	
 	if (bLog)
 	{
 		bLoggedOnce = true;
