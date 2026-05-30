@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Editor/UI/EditorWidget.h"
 #include "Editor/UI/Panel/EditorPropertyRenderer.h"
@@ -33,6 +33,8 @@ private:
 
 	char RenameBuffer[256] = {};
 	bool bShowDuplicateWarning = false;
+
+	float PendingDetailsScrollY = -1.0f;
 
 	FEditorPropertyRenderer PropertyRenderer;
 };

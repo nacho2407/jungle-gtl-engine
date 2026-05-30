@@ -1,4 +1,4 @@
-#include "Editor/UI/Panel/EditorPropertyWidget.h"
+﻿#include "Editor/UI/Panel/EditorPropertyWidget.h"
 #include "Editor/EditorEngine.h"
 
 #include "ImGui/imgui.h"
@@ -357,6 +357,12 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 	ImGui::BeginChild("##Details", ImVec2(0, ScrollHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 	{
+		if (PendingDetailsScrollY >= 0.0f)
+		{
+			ImGui::SetScrollY(PendingDetailsScrollY);
+			PendingDetailsScrollY = -1.0f;
+		}
+
 		RenderDetails(PrimaryActor, SelectedActors);
 	}
 	ImGui::EndChild();
@@ -901,6 +907,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 					// 변경 시 InitializeAnimation 이 AnimInstance 를 swap 하므로, forward 됐던
 					// AnimInstance 의 prop 들의 ContainerPtr 가 destroyed 인스턴스를 가리키게 된다.
 					// 사용자는 frame 당 1 prop 변경이 일반적이라 UX 영향 거의 없음.
+					PendingDetailsScrollY = ImGui::GetScrollY();
 					bPropsInvalidated = true;
 					ImGui::PopID();
 					break;
