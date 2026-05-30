@@ -6,6 +6,7 @@
 
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
+#include "Editor/EditorEngine.h"
 #include "Runtime/Engine.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Light/DirectionalLightComponent.h"
@@ -23,6 +24,8 @@
 #include "Animation/AnimationManager.h"
 #include "Animation/Sequence/AnimDataModel.h"
 #include "Asset/AssetRegistry.h"
+#include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/PhysicsAssetBuilder.h"
 #include "UI/Asset/Animation/AnimationTransportBar.h"
 #include "UI/Asset/Animation/AnimationTimelinePanel.h"
 #include "UI/Asset/Animation/AnimSequencePropertyPanel.h"
@@ -631,6 +634,7 @@ void FMeshEditorWidget::RenderSkeletonLayout()
 	ImGui::BeginChild("BoneDetails", ImVec2(DetailsWidth, 0), true);
 	ImGui::Text("Bone Details");
 	ImGui::Separator();
+	RenderPhysicsAssetPanel(SkeletalMesh);
 
 	if (SkeletalMesh && SelectedBoneIndex != -1)
 	{
@@ -696,6 +700,59 @@ void FMeshEditorWidget::RenderSkeletonLayout()
 // ─────────────────────────────────────────────────────────────────────────────
 // Mesh tab
 // ─────────────────────────────────────────────────────────────────────────────
+
+void FMeshEditorWidget::RenderPhysicsAssetPanel(USkeletalMesh* SkeletalMesh)
+{
+	ImGui::TextUnformatted("Physics Asset");
+
+	if (!SkeletalMesh)
+	{
+		ImGui::TextDisabled("No skeletal mesh.");
+		ImGui::Separator();
+		return;
+	}
+
+	UPhysicsAsset* PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
+	if (PhysicsAsset)
+	{
+		ImGui::Text("Bodies: %zu", PhysicsAsset->GetBodySetups().size());
+	}
+	else
+	{
+		ImGui::TextDisabled("None");
+	}
+
+	if (ImGui::Button("Generate Physics Asset"))
+	{
+		UPhysicsAsset* NewAsset = FPhysicsAssetBuilder::CreateFromSkeletalMesh(SkeletalMesh);
+		if (NewAsset)
+		{
+			MarkDirty();
+			ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
+			PhysicsAsset = NewAsset;
+		}
+	}
+
+	ImGui::SameLine();
+
+	const bool bCanOpen = EditorEngine && PhysicsAsset;
+	if (!bCanOpen)
+	{
+		ImGui::BeginDisabled();
+	}
+
+	if (ImGui::Button("Open Physics Asset Viewer"))
+	{
+		EditorEngine->OpenAssetEditorForObject(PhysicsAsset);
+	}
+
+	if (!bCanOpen)
+	{
+		ImGui::EndDisabled();
+	}
+
+	ImGui::Separator();
+}
 
 void FMeshEditorWidget::RenderMeshLayout()
 {

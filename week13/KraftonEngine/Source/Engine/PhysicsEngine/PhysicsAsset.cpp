@@ -43,12 +43,26 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 
 	for (uint32 Index = 0; Index < BodySetupCount; ++Index)
 	{
-		UObject* SerializedObject = Ar.IsSaving() ? static_cast<UObject*>(BodySetups[Index]) : nullptr;
-		Ar.SerializeObjectReference(SerializedObject);
+		bool bHasBodySetup = Ar.IsSaving() && BodySetups[Index];
+		Ar << bHasBodySetup;
+
+		if (!bHasBodySetup)
+		{
+			if (Ar.IsLoading())
+			{
+				BodySetups[Index] = nullptr;
+			}
+			continue;
+		}
 
 		if (Ar.IsLoading())
 		{
-			BodySetups[Index] = Cast<UBodySetup>(SerializedObject);
+			BodySetups[Index] = UObjectManager::Get().CreateObject<UBodySetup>(this);
+		}
+
+		if (BodySetups[Index])
+		{
+			BodySetups[Index]->Serialize(Ar);
 		}
 	}
 }

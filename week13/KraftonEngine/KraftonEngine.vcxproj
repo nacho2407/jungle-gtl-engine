@@ -430,6 +430,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorPanels.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorPrivate.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\PhysicsAsset\PhysicsAssetViewerWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
@@ -670,10 +671,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Particles\TypeData\ParticleModuleTypeDataRibbon.cpp" />
     <ClCompile Include="Source\Engine\Particles\Velocity\ParticleModuleVelocity.cpp" />
     <ClCompile Include="Source\Engine\PhysicsEngine\AggregateGeom.cpp" />
+    <ClCompile Include="Source\Engine\PhysicsEngine\BodySetup.cpp" />
     <ClCompile Include="Source\Engine\PhysicsEngine\BodySetupCore.cpp" />
     <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAsset.cpp" />
-    <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsConstraintTemplate.cpp" />
-    <ClCompile Include="Source\Engine\PhysicsEngine\SkeletalBodySetup.cpp" />
+    <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAssetBuilder.cpp" />
     <ClCompile Include="Source\Engine\Physics\BodyInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\NativePhysicsScene.cpp" />
@@ -823,6 +824,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorPrivate.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\PhysicsAsset\PhysicsAssetViewerWidget.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />
@@ -1127,11 +1129,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\PhysicsEngine\BodySetupCore.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\BoxElem.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\ConvexElem.h" />
-    <ClInclude Include="Source\Engine\PhysicsEngine\ConstraintTypes.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAsset.h" />
-    <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsConstraintTemplate.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAssetBuilder.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\ShapeElem.h" />
-    <ClInclude Include="Source\Engine\PhysicsEngine\SkeletalBodySetup.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\SphereElem.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\SphylElem.h" />
     <ClInclude Include="Source\Engine\Physics\BodyInstance.h" />

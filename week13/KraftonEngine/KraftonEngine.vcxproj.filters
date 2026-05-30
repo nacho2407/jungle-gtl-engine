@@ -85,6 +85,9 @@
     <Filter Include="Source\Editor\UI\Asset\Particle">
       <UniqueIdentifier>{ebf11781-61db-1727-e031-70fd890518c6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Asset\PhysicsAsset">
+      <UniqueIdentifier>{0b89d9dd-c10d-4f0c-88ba-99f1339fba31}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
     </Filter>
@@ -784,6 +787,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\PhysicsAsset\PhysicsAssetViewerWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\PhysicsAsset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
@@ -1517,16 +1523,16 @@
     <ClCompile Include="Source\Engine\PhysicsEngine\AggregateGeom.cpp">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\BodySetup.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\PhysicsEngine\BodySetupCore.cpp">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAsset.cpp">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsConstraintTemplate.cpp">
-      <Filter>Source\Engine\PhysicsEngine</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\PhysicsEngine\SkeletalBodySetup.cpp">
+    <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAssetBuilder.cpp">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp">
@@ -1959,6 +1965,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\PhysicsAsset\PhysicsAssetViewerWidget.h">
+      <Filter>Source\Editor\UI\Asset\PhysicsAsset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
@@ -2890,19 +2899,13 @@
     <ClInclude Include="Source\Engine\PhysicsEngine\ConvexElem.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\PhysicsEngine\ConstraintTypes.h">
-      <Filter>Source\Engine\PhysicsEngine</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAsset.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsConstraintTemplate.h">
+    <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAssetBuilder.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\ShapeElem.h">
-      <Filter>Source\Engine\PhysicsEngine</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\PhysicsEngine\SkeletalBodySetup.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\SphereElem.h">
@@ -4969,15 +4972,8 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\PhysXTypeConversions.h" />
-    <ClInclude Include="Source\Engine\Physics\BodyInstance.h" />
-    <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
-  </ItemGroup>
-</Project>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
 </Project>

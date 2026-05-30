@@ -11,6 +11,7 @@
 #include "Materials/MaterialManager.h"
 #include "Asset/AssetPackage.h"
 #include "Object/GarbageCollection.h"
+#include "PhysicsEngine/PhysicsAssetBuilder.h"
 
 #include <algorithm>
 #include <cwctype>
@@ -1036,6 +1037,10 @@ bool FMeshManager::ImportSkeletalMeshAsNew(const FString& SourceFbxPath, ID3D11D
 	SkeletalMesh->SetSkeletalMaterials(std::move(ImportResult.Materials));
 	SkeletalMesh->SetSkeletalMeshAsset(NewMesh.release());
 	SkeletalMesh->SetSkeleton(Skeleton);
+	if (!SkeletalMesh->GetPhysicsAsset())
+	{
+		FPhysicsAssetBuilder::CreateFromSkeletalMesh(SkeletalMesh);
+	}
 
 	if (!SaveSkeletalMeshBinary(SkeletalMesh, PackagePath, SourceFbxPath))
 	{
@@ -1146,6 +1151,10 @@ bool FMeshManager::ImportSkeletalMesh(const FSkeletalMeshImportRequest& Request,
 	SkeletalMesh->SetSkeletalMaterials(std::move(ImportResult.Materials));
 	SkeletalMesh->SetSkeletalMeshAsset(new FSkeletalMesh(std::move(ImportResult.Mesh)));
 	SkeletalMesh->SetSkeleton(TargetSkeleton);
+	if (!SkeletalMesh->GetPhysicsAsset())
+	{
+		FPhysicsAssetBuilder::CreateFromSkeletalMesh(SkeletalMesh);
+	}
 
 	if (!SaveSkeletalMeshBinary(SkeletalMesh, PackagePath, Request.SourceFbxPath))
 	{
@@ -1297,6 +1306,10 @@ bool FMeshManager::ImportFbxScene(
 			SkeletalMesh->SetSkeletalMaterials(std::move(ImportResult.Materials));
 			SkeletalMesh->SetSkeletalMeshAsset(new FSkeletalMesh(std::move(ImportResult.Mesh)));
 			SkeletalMesh->SetSkeleton(EffectiveSkeleton);
+			if (!SkeletalMesh->GetPhysicsAsset())
+			{
+				FPhysicsAssetBuilder::CreateFromSkeletalMesh(SkeletalMesh);
+			}
 
 			if (!SaveSkeletalMeshBinary(SkeletalMesh, PackagePath, Request.SourceFbxPath))
 			{

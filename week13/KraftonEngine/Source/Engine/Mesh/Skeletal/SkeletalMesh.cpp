@@ -41,6 +41,26 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 	Ar << SkeletalMaterials;
 	Ar << SkeletalMeshAsset->MorphTargets;
 
+	bool bHasPhysicsAsset = Ar.IsSaving() && PhysicsAsset;
+	Ar << bHasPhysicsAsset;
+
+	if (Ar.IsLoading())
+	{
+		PhysicsAsset = nullptr;
+		if (bHasPhysicsAsset)
+		{
+			PhysicsAsset = UObjectManager::Get().CreateObject<UPhysicsAsset>(this);
+			if (PhysicsAsset)
+			{
+				PhysicsAsset->Serialize(Ar);
+			}
+		}
+	}
+	else if (bHasPhysicsAsset)
+	{
+		PhysicsAsset->Serialize(Ar);
+	}
+
 	if (Ar.IsLoading())
 	{
 		SkeletalMeshAsset->NormalizeBonePoseData();

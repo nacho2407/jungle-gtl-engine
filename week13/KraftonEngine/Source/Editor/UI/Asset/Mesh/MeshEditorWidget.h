@@ -76,6 +76,7 @@ private:
 	void RenderSkeletonLayout();
 	void RenderMeshLayout();
 	void RenderAnimationLayout(float TotalHeight);
+	void RenderPhysicsAssetPanel(USkeletalMesh* SkeletalMesh);
 
 	// Shared helpers
 	void RenderViewportPanel(ImVec2 Size);
