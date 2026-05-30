@@ -3,8 +3,6 @@
 #include "Physics/PhysXConversions.h"
 #include "Physics/PhysicsFilterData.h"
 
-#include "Core/Logging/Log.h"
-
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/SphereComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
@@ -130,20 +128,6 @@ void FPhysicsShapeFactory::CreateShapesFromBodySetup(physx::PxPhysics& Physics, 
 		Shape->setLocalPose(ToPxTransform(LocalCenter, LocalRot));
 		ApplyShapeFlags(*Shape, UserDataComponent, bTrigger, FilterDataOverride);
 		OutShapes.push_back(Shape);
-
-		if (FilterDataOverride && (FilterDataOverride->word3 & EPhysicsFilterFlags::DisableSelfCollision))
-		{
-			static int32 SphylLogCount = 0;
-			if (SphylLogCount < 8)
-			{
-				UE_LOG("[RagdollDbg][1] shape capsule bone=%s center=(%.3f,%.3f,%.3f) radius=%.3f halfLen=%.3f axisFixRad=%.4f localRot=(%.3f,%.3f,%.3f,%.3f)",
-					BodySetup.GetBoneName().ToString().c_str(),
-					LocalCenter.X, LocalCenter.Y, LocalCenter.Z,
-					Radius, HalfLength, CapsuleAxisFixRadians,
-					LocalRot.X, LocalRot.Y, LocalRot.Z, LocalRot.W);
-				++SphylLogCount;
-			}
-		}
 	}
 }
 

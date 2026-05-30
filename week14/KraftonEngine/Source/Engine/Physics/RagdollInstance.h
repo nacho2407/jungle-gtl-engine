@@ -15,7 +15,6 @@ struct FRagdollInstance
 	TArray<FConstraintInstance*> Constraints;
 	TArray<FTransform> InitialLocalPose;
 	FVector ComponentWorldScaleAtStart = FVector::OneVector;
-	int32 DebugSyncFramesRemaining = 0;
 
 	bool bInitialized = false;
 	bool IsActive() const {return bInitialized;}

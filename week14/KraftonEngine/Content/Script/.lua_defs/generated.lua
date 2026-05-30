@@ -102,6 +102,15 @@ function FloatingPawnMovementComponent:SetMoveInput(input) end
 ---@param input Vector
 function FloatingPawnMovementComponent:SetLookInput(input) end
 
+---@class VehicleMovementComponent4W
+VehicleMovementComponent4W = {}
+
+---@param Throttle number
+---@param Brake number
+---@param Steer number
+---@param bReverse boolean
+function VehicleMovementComponent4W:SetDriveInput(Throttle, Brake, Steer, bReverse) end
+
 ---@class SceneComponent
 ---@field Location Vector
 ---@field Rotation Vector
@@ -225,6 +234,9 @@ function Actor:IsValid() end
 
 ---@return FloatingPawnMovementComponent?
 function Actor:GetFloatingPawnMovement() end
+
+---@return VehicleMovementComponent?
+function Actor:GetVehicleMovement() end
 
 ---@return CameraComponent?
 function Actor:GetCamera() end

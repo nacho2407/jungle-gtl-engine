@@ -433,6 +433,43 @@
               "bTickEnable" : true
             },
             "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "ObjectId" : 16,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
           }],
         "ClassName" : "UDirectionalLightComponent",
         "ObjectId" : 6,
@@ -460,7 +497,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_3_Copy_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 16,
+      "ObjectId" : 17,
       "Properties" : {
         "PendingActorLocation" : [0.702739, 0.969282, 4.212467],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -473,7 +510,7 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "UStaticMeshComponent",
-            "ObjectId" : 18,
+            "ObjectId" : 19,
             "Properties" : {
               "AngularDamping" : 0.010000,
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -508,7 +545,7 @@
             }
           }],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 17,
+        "ObjectId" : 18,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -547,7 +584,7 @@
       "ClassName" : "ASphereActor",
       "Name" : "ASphereActor_0",
       "NonSceneComponents" : [],
-      "ObjectId" : 19,
+      "ObjectId" : 20,
       "Properties" : {
         "PendingActorLocation" : [1.309349, -1.093995, 4.805847],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -560,7 +597,7 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "UStaticMeshComponent",
-            "ObjectId" : 21,
+            "ObjectId" : 22,
             "Properties" : {
               "AngularDamping" : 0.010000,
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -595,7 +632,7 @@
             }
           }],
         "ClassName" : "USphereComponent",
-        "ObjectId" : 20,
+        "ObjectId" : 21,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -634,7 +671,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_7",
       "NonSceneComponents" : [],
-      "ObjectId" : 22,
+      "ObjectId" : 23,
       "Properties" : {
         "PendingActorLocation" : [-0.083692, -4.588433, 5.600770],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -646,7 +683,7 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
-        "ObjectId" : 23,
+        "ObjectId" : 24,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -684,7 +721,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_6",
       "NonSceneComponents" : [],
-      "ObjectId" : 24,
+      "ObjectId" : 25,
       "Properties" : {
         "PendingActorLocation" : [-1.674906, -7.335720, 1.635972],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -696,7 +733,7 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
-        "ObjectId" : 25,
+        "ObjectId" : 26,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -734,7 +771,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_9",
       "NonSceneComponents" : [],
-      "ObjectId" : 26,
+      "ObjectId" : 27,
       "Properties" : {
         "PendingActorLocation" : [2.419528, -0.705917, -7.123424],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -746,12 +783,12 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
-        "ObjectId" : 27,
+        "ObjectId" : 28,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 3,
-          "CollisionPreset" : 4,
+          "CollisionPreset" : 0,
           "LinearDamping" : 0.010000,
           "Mass" : 1.000000,
           "MaterialSlots" : ["Content/Material/Auto/BasicShapeMaterial.mat"],
@@ -784,7 +821,7 @@
       "ClassName" : "ASkeletalMeshActor",
       "Name" : "ASkeletalMeshActor_0",
       "NonSceneComponents" : [],
-      "ObjectId" : 28,
+      "ObjectId" : 29,
       "Properties" : {
         "PendingActorLocation" : [3.768360, 2.664477, -2.603417],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -796,7 +833,7 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "USkeletalMeshComponent",
-        "ObjectId" : 29,
+        "ObjectId" : 30,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "AnimInstance" : {
@@ -850,9 +887,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [9.664289, 3.562321, 0.070975],
+    "Location" : [13.079213, 1.417188, 2.237663],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 19.215103, 187.799911]
+    "Rotation" : [0.000000, 34.815083, 186.000000]
   },
   "Version" : 2,
   "WorldSettings" : {

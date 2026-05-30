@@ -30,11 +30,7 @@ void FBodyInstance::SetMass(float InMass)
 {
 	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
 	{
-		const float SafeMass = std::max(InMass, 0.001f);
-		if (!physx::PxRigidBodyExt::setMassAndUpdateInertia(*Dynamic, SafeMass))
-		{
-			Dynamic->setMass(SafeMass);
-		}
+		Dynamic->setMass(std::max(InMass, 0.001f));
 	}
 }
 
