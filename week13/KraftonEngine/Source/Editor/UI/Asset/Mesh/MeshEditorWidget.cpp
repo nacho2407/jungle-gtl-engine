@@ -25,6 +25,7 @@
 #include "Asset/AssetRegistry.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsAssetBuilder.h"
+#include "PhysicsEngine/PhysicsAssetManager.h"
 #include "UI/Asset/Animation/AnimationTransportBar.h"
 #include "UI/Asset/Animation/AnimationTimelinePanel.h"
 #include "UI/Asset/Animation/AnimSequencePropertyPanel.h"
@@ -886,6 +887,7 @@ void FMeshEditorWidget::RenderPhysicsAssetBuildOptionsPopup(
 		UPhysicsAsset* NewAsset = FPhysicsAssetBuilder::CreateFromSkeletalMesh(SkeletalMesh, PendingPhysicsAssetBuildOptions);
 		if (NewAsset)
 		{
+			FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMesh->GetAssetPathFileName());
 			MarkDirty();
 			ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
 			InOutPhysicsAsset = NewAsset;
