@@ -15,6 +15,7 @@ enum class EPhysicsAssetFitGeomType : uint8
 
 struct FPhysicsAssetBuildOptions
 {
+	// Legacy mode: disables root-first merging and uses direct bone fits only.
 	bool bSkipRootBody = false;
 
 	EPhysicsAssetFitGeomType GeomType = EPhysicsAssetFitGeomType::Sphyl;
