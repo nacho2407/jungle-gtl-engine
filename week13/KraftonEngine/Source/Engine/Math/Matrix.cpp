@@ -522,6 +522,47 @@ FVector FMatrix::GetScale() const
 	return FVector(ScaleX, ScaleY, ScaleZ);
 }
 
+FMatrix FMatrix::GetAffineInverse() const
+{
+	const double A = M[0][0];
+	const double B = M[0][1];
+	const double C = M[0][2];
+	const double D = M[1][0];
+	const double E = M[1][1];
+	const double F = M[1][2];
+	const double G = M[2][0];
+	const double H = M[2][1];
+	const double I = M[2][2];
+
+	const double Det = A * (E * I - F * H) - B * (D * I - F * G) + C * (D * H - E * G);
+	if (std::fabs(Det) < 1.0e-12)
+	{
+		return GetInverse();
+	}
+
+	const double InvDet = 1.0 / Det;
+
+	FMatrix Result = FMatrix::Identity;
+	Result.M[0][0] = static_cast<float>((E * I - F * H) * InvDet);
+	Result.M[0][1] = static_cast<float>((C * H - B * I) * InvDet);
+	Result.M[0][2] = static_cast<float>((B * F - C * E) * InvDet);
+
+	Result.M[1][0] = static_cast<float>((F * G - D * I) * InvDet);
+	Result.M[1][1] = static_cast<float>((A * I - C * G) * InvDet);
+	Result.M[1][2] = static_cast<float>((C * D - A * F) * InvDet);
+
+	Result.M[2][0] = static_cast<float>((D * H - E * G) * InvDet);
+	Result.M[2][1] = static_cast<float>((B * G - A * H) * InvDet);
+	Result.M[2][2] = static_cast<float>((A * E - B * D) * InvDet);
+
+	const FVector Translation = GetLocation();
+	Result.M[3][0] = -(Translation.X * Result.M[0][0] + Translation.Y * Result.M[1][0] + Translation.Z * Result.M[2][0]);
+	Result.M[3][1] = -(Translation.X * Result.M[0][1] + Translation.Y * Result.M[1][1] + Translation.Z * Result.M[2][1]);
+	Result.M[3][2] = -(Translation.X * Result.M[0][2] + Translation.Y * Result.M[1][2] + Translation.Z * Result.M[2][2]);
+
+	return Result;
+}
+
 bool FMatrix::ContainsNaN() const
 {
 	for (int Index = 0; Index < 16; ++Index)

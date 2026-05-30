@@ -28,6 +28,7 @@ struct FTransform
 		: Location(InTranslation), Rotation(InRotation.ToQuaternion()), Scale(1.0f, 1.0f, 1.0f) {}
 
 	FTransform(const FMatrix& Mat);
+	static FTransform FromMatrixWithScale(const FMatrix& Mat);
 
 	FVector GetLocation() const { return Location; }
 	FRotator GetRotator() const { return Rotation.ToRotator(); }

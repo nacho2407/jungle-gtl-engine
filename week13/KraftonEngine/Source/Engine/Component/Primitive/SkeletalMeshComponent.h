@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Component/Primitive/SkinnedMeshComponent.h"
 #include "Animation/AnimationMode.h"
@@ -7,7 +7,8 @@
 #include "Animation/Instance/AnimSingleNodeInstance.h"
 #include "Animation/Sequence/AnimSequenceBase.h"
 #include "Object/Ptr/ObjectPtr.h"
-
+#include "Physics/BodyInstance.h"
+#include "Physics/ConstraintInstance.h"
 #include "Source/Engine/Component/Primitive/SkeletalMeshComponent.generated.h"
 
 class UAnimInstance;
@@ -80,6 +81,22 @@ public:
     UFUNCTION(Pure, Category="Animation")
     UAnimSingleNodeInstance* GetAnimNodeInstance(FName NodeName) const;
 
+    //Ragdoll runtime section.
+    UFUNCTION(Callable, Exec, Category="Physics|Ragdoll")
+    void SetRagdollEnabled(bool bEnabled);
+
+    UFUNCTION(Pure, Category="Physics|Ragdoll")
+    bool IsRagdollEnabled() const { return bRagdollActive; }
+
+    UFUNCTION(Callable, Category="Physics|Ragdoll")
+    void WakeAllRagdollBodies();
+
+    UFUNCTION(Callable, Category="Physics|Ragdoll")
+    void AddImpulseToBone(FName BoneName, const FVector& Impulse);
+
+    const TArray<FBodyInstance*>& GetRagdollBodies() const { return Bodies; }
+    const TArray<FConstraintInstance*>& GetRagdollConstraints() const { return Constraints; }
+
     // Mode/Class/SkeletalMesh 변경 후 일관성 재정렬. SetSkeletalMesh override 안에서 자동 호출됨.
     void InitializeAnimation();
     void ClearAnimInstance();
@@ -95,6 +112,8 @@ protected:
     // 이 경로가 CPU skinning 과 bounds dirty 를 한 번에 처리한다.
     void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
+    void EndPlay() override;
+
     bool EvaluateAnimInstance(float DeltaTime);
 
     void AddReferencedObjects(FReferenceCollector& Collector) override;
@@ -102,6 +121,23 @@ private:
     void LoadAnimationFromPath();
     void CapturePersistentAnimInstanceSettings();
     void ApplyPersistentAnimInstanceSettings(UAnimInstance* Instance);
+
+    // 이 부분은 전부 아마 Asset에 Constraint관련 정보가 포함되면 변경될 함수들
+    // 현재 임시용 함수라 보면 될듯. 완성형 X
+    bool CreateRagdollBodiesFromCurrentPose();
+    bool CreateRagdollConstraintsFromHierarchy();
+    void DestroyRagdollBodies();
+    void SyncBonesFromRagdollBodies();
+
+    FBodyInstance* FindRagdollBodyByBoneIndex(int32 BoneIndex) const;
+    FBodyInstance* FindRagdollBodyByBoneName(FName BoneName) const;
+    int32 FindBoneIndexByName(FName BoneName) const;
+
+    float EstimateRagdollRadiusFromChildren(
+        const FSkeletalMesh& Asset,
+        int32 BoneIndex,
+        const TArray<FMatrix>& Globals
+    );
 
 protected:
     // Animation 런타임 상태.
@@ -117,4 +153,12 @@ protected:
     // Runtime-owned instance. AnimInstanceClass is the persistent/editor-facing identity.
     UPROPERTY(Transient, Instanced, Category="Animation", DisplayName="Anim Instance", Type=ObjectRef, AllowedClass=UAnimInstance)
     TObjectPtr<UAnimInstance>  AnimInstance  = nullptr;
+
+    UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Enable Ragdoll")
+    bool bRagdollEnabled = false;
+
+    //Ragdoll runtime state
+    TArray<FBodyInstance*> Bodies;
+    TArray<FConstraintInstance*> Constraints;
+    bool bRagdollActive = false;
 };

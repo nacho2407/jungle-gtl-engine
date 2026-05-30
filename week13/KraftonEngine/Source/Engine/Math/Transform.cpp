@@ -7,6 +7,19 @@ FTransform::FTransform(const FMatrix& Mat)
 	Scale = Mat.GetScale();
 }
 
+FTransform FTransform::FromMatrixWithScale(const FMatrix& Mat)
+{
+	FTransform Result;
+	Result.Location = Mat.GetLocation();
+	Result.Scale = Mat.GetScale();
+
+	FMatrix RotationMatrix = Mat;
+	RotationMatrix.RemoveScaling();
+
+	Result.Rotation = RotationMatrix.ToQuat().GetNormalized();
+	return Result;
+}
+
 FMatrix FTransform::ToMatrix() const
 {
 	FMatrix translateMatrix = FMatrix::MakeTranslationMatrix(Location);

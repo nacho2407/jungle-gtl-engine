@@ -113,6 +113,8 @@ struct FMatrix {
 	FVector GetLocation() const;
 	FVector GetScale() const;
 
+	FMatrix GetAffineInverse() const;
+
 	// FQuat/FRotator 변환 (구현은 Quat.cpp/Rotator.cpp)
 	struct FQuat ToQuat() const;
 	struct FRotator ToRotator() const;
