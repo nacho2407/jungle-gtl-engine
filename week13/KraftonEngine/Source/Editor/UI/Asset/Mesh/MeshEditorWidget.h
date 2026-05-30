@@ -82,7 +82,7 @@ private:
 	void RenderPhysicsAssetLayout();
 	void RenderPhysicsAssetBuildOptionsPopup(USkeletalMesh* SkeletalMesh, UPhysicsAsset*& InOutPhysicsAsset);
 	void RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, UPhysicsAsset* PhysicsAsset);
-	void RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex);
+	bool RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex);
 	void RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsset);
 
 	// Shared helpers

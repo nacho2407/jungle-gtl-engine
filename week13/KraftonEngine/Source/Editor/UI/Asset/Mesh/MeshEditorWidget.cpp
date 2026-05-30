@@ -99,12 +99,6 @@ namespace
 	FString BuildPhysicsBodyTreeLabel(const FString& BoneName, int32 BodyIndex, const UBodySetup* BodySetup)
 	{
 		FString Label = BoneName;
-		if (!BodySetup)
-		{
-			Label += "  (no body)";
-			return Label;
-		}
-
 		const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
 		Label += "  [Body ";
 		Label += std::to_string(BodyIndex);
@@ -117,6 +111,31 @@ namespace
 		Label += " X:";
 		Label += std::to_string(AggGeom.ConvexElems.size());
 		return Label;
+	}
+
+	bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
+	{
+		if (!Asset || !PhysicsAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
+		{
+			return false;
+		}
+
+		const FBone& Bone = Asset->Bones[BoneIndex];
+		if (PhysicsAsset->FindBodyIndexByBoneName(FName(Bone.Name)) != -1)
+		{
+			return true;
+		}
+
+		for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
+		{
+			if (Asset->Bones[Index].ParentIndex == BoneIndex &&
+				HasPhysicsBodyInSubtree(Asset, PhysicsAsset, Index))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	FMorphTargetCurve& FindOrAddMorphCurve(UAnimSequence* Seq, const FString& MorphTargetName)
@@ -926,11 +945,11 @@ void FMeshEditorWidget::RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, 
 	}
 }
 
-void FMeshEditorWidget::RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
+bool FMeshEditorWidget::RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
 {
 	if (!Asset || !PhysicsAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
 	{
-		return;
+		return false;
 	}
 
 	const FBone& Bone = Asset->Bones[BoneIndex];
@@ -940,12 +959,27 @@ void FMeshEditorWidget::RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, U
 		? Bodies[BodyIndex]
 		: nullptr;
 
-	bool bHasChildren = false;
+	if (!Body)
+	{
+		bool bRenderedAny = false;
+		for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
+		{
+			if (Asset->Bones[Index].ParentIndex == BoneIndex &&
+				RenderPhysicsAssetBodyTree(Asset, PhysicsAsset, Index))
+			{
+				bRenderedAny = true;
+			}
+		}
+		return bRenderedAny;
+	}
+
+	bool bHasVisibleChildren = false;
 	for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
 	{
-		if (Asset->Bones[Index].ParentIndex == BoneIndex)
+		if (Asset->Bones[Index].ParentIndex == BoneIndex &&
+			HasPhysicsBodyInSubtree(Asset, PhysicsAsset, Index))
 		{
-			bHasChildren = true;
+			bHasVisibleChildren = true;
 			break;
 		}
 	}
@@ -960,7 +994,7 @@ void FMeshEditorWidget::RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, U
 		Flags |= ImGuiTreeNodeFlags_Selected;
 	}
 
-	if (!bHasChildren)
+	if (!bHasVisibleChildren)
 	{
 		Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 	}
@@ -969,24 +1003,14 @@ void FMeshEditorWidget::RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, U
 	Label += "##PhysicsBodyBone";
 	Label += std::to_string(BoneIndex);
 
-	if (!Body)
-	{
-		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
-	}
-
 	const bool bOpen = ImGui::TreeNodeEx(Label.c_str(), Flags);
 
-	if (!Body)
-	{
-		ImGui::PopStyleColor();
-	}
-
-	if (Body && ImGui::IsItemClicked())
+	if (ImGui::IsItemClicked())
 	{
 		SelectedPhysicsBodyIndex = BodyIndex;
 	}
 
-	if (bOpen && bHasChildren)
+	if (bOpen && bHasVisibleChildren)
 	{
 		for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
 		{
@@ -997,6 +1021,8 @@ void FMeshEditorWidget::RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, U
 		}
 		ImGui::TreePop();
 	}
+
+	return true;
 }
 
 void FMeshEditorWidget::RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsset)

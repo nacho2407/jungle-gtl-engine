@@ -12,12 +12,6 @@ namespace
 FString BuildPhysicsBodyTreeLabel(const FString& BoneName, int32 BodyIndex, const UBodySetup* BodySetup)
 {
 	FString Label = BoneName;
-	if (!BodySetup)
-	{
-		Label += "  (no body)";
-		return Label;
-	}
-
 	const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
 	Label += "  [Body ";
 	Label += std::to_string(BodyIndex);
@@ -30,6 +24,31 @@ FString BuildPhysicsBodyTreeLabel(const FString& BoneName, int32 BodyIndex, cons
 	Label += " X:";
 	Label += std::to_string(AggGeom.ConvexElems.size());
 	return Label;
+}
+
+bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
+{
+	if (!Asset || !PhysicsAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
+	{
+		return false;
+	}
+
+	const FBone& Bone = Asset->Bones[BoneIndex];
+	if (PhysicsAsset->FindBodyIndexByBoneName(FName(Bone.Name)) != -1)
+	{
+		return true;
+	}
+
+	for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
+	{
+		if (Asset->Bones[Index].ParentIndex == BoneIndex &&
+			HasPhysicsBodyInSubtree(Asset, PhysicsAsset, Index))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 }
 
@@ -137,11 +156,11 @@ void FPhysicsAssetViewerWidget::RenderBodyList(UPhysicsAsset* PhysicsAsset)
 	}
 }
 
-void FPhysicsAssetViewerWidget::RenderBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
+bool FPhysicsAssetViewerWidget::RenderBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
 {
 	if (!Asset || !PhysicsAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
 	{
-		return;
+		return false;
 	}
 
 	const FBone& Bone = Asset->Bones[BoneIndex];
@@ -151,12 +170,27 @@ void FPhysicsAssetViewerWidget::RenderBodyTree(const FSkeletalMesh* Asset, UPhys
 		? Bodies[BodyIndex]
 		: nullptr;
 
-	bool bHasChildren = false;
+	if (!Body)
+	{
+		bool bRenderedAny = false;
+		for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
+		{
+			if (Asset->Bones[Index].ParentIndex == BoneIndex &&
+				RenderBodyTree(Asset, PhysicsAsset, Index))
+			{
+				bRenderedAny = true;
+			}
+		}
+		return bRenderedAny;
+	}
+
+	bool bHasVisibleChildren = false;
 	for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
 	{
-		if (Asset->Bones[Index].ParentIndex == BoneIndex)
+		if (Asset->Bones[Index].ParentIndex == BoneIndex &&
+			HasPhysicsBodyInSubtree(Asset, PhysicsAsset, Index))
 		{
-			bHasChildren = true;
+			bHasVisibleChildren = true;
 			break;
 		}
 	}
@@ -171,7 +205,7 @@ void FPhysicsAssetViewerWidget::RenderBodyTree(const FSkeletalMesh* Asset, UPhys
 		Flags |= ImGuiTreeNodeFlags_Selected;
 	}
 
-	if (!bHasChildren)
+	if (!bHasVisibleChildren)
 	{
 		Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 	}
@@ -180,24 +214,14 @@ void FPhysicsAssetViewerWidget::RenderBodyTree(const FSkeletalMesh* Asset, UPhys
 	Label += "##PhysicsAssetViewerBodyBone";
 	Label += std::to_string(BoneIndex);
 
-	if (!Body)
-	{
-		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
-	}
-
 	const bool bOpen = ImGui::TreeNodeEx(Label.c_str(), Flags);
 
-	if (!Body)
-	{
-		ImGui::PopStyleColor();
-	}
-
-	if (Body && ImGui::IsItemClicked())
+	if (ImGui::IsItemClicked())
 	{
 		SelectedBodyIndex = BodyIndex;
 	}
 
-	if (bOpen && bHasChildren)
+	if (bOpen && bHasVisibleChildren)
 	{
 		for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
 		{
@@ -208,6 +232,8 @@ void FPhysicsAssetViewerWidget::RenderBodyTree(const FSkeletalMesh* Asset, UPhys
 		}
 		ImGui::TreePop();
 	}
+
+	return true;
 }
 
 void FPhysicsAssetViewerWidget::RenderBodyDetails(UPhysicsAsset* PhysicsAsset)

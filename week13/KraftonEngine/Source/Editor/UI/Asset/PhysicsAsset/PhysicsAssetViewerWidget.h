@@ -17,7 +17,7 @@ public:
 
 private:
 	void RenderBodyList(UPhysicsAsset* PhysicsAsset);
-	void RenderBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex);
+	bool RenderBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex);
 	void RenderBodyDetails(UPhysicsAsset* PhysicsAsset);
 
 private:
