@@ -504,15 +504,6 @@ void FDrawCommandBuilder::BuildPhysicsAssetDebugCommands(const FFrameContext& Fr
 		return;
 	}
 
-	TArray<FWireLine> Lines;
-	SkeletalProxy.BuildPhysicsAssetWireLines(Frame, Lines);
-
-	const FVector4 WireColor(0.0f, 1.0f, 0.4f, 1.0f);
-	for (const FWireLine& Line : Lines)
-	{
-		EditorLines.AddLine(Line.Start, Line.End, WireColor);
-	}
-
 	BuildPhysicsAssetSolidCommand(Frame, SkeletalProxy);
 }
 
@@ -545,7 +536,7 @@ void FDrawCommandBuilder::EmitPhysicsAssetSolidCommand()
 	Cmd.Shader = FShaderManager::Get().GetOrCreate(EShaderPath::Editor);
 	Cmd.RenderState = PassRenderStateTable->ToDrawCommandState(ERenderPass::AlphaBlend, CollectViewMode);
 	Cmd.RenderState.Blend = EBlendState::AlphaBlend;
-	Cmd.RenderState.DepthStencil = EDepthStencilState::DepthReadOnly;
+	Cmd.RenderState.DepthStencil = EDepthStencilState::NoDepth;
 	Cmd.RenderState.Rasterizer = ERasterizerState::SolidNoCull;
 	Cmd.RenderState.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 	Cmd.Buffer = {

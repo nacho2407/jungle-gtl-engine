@@ -22,7 +22,6 @@ public:
 	bool PrepareGpuSkinningDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context, FDrawCommandBuffer& OutBuffer) const;
 	ID3D11ShaderResourceView* GetSkinMatrixSRV(ID3D11Device* Device, ID3D11DeviceContext* Context) const;
 
-	void BuildPhysicsAssetWireLines(const FFrameContext& Frame, TArray<FWireLine>& OutLines) const;
 	void BuildPhysicsAssetSolidMesh(const FFrameContext& Frame, FPhysicsDebugSolidMesh& OutMesh) const;
 	
 private:
