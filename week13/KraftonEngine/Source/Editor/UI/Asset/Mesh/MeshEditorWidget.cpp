@@ -96,6 +96,29 @@ namespace
 		return It != GMeshImportDurationsByAssetPath.end() ? It->second : -1.0;
 	}
 
+	FString BuildPhysicsBodyTreeLabel(const FString& BoneName, int32 BodyIndex, const UBodySetup* BodySetup)
+	{
+		FString Label = BoneName;
+		if (!BodySetup)
+		{
+			Label += "  (no body)";
+			return Label;
+		}
+
+		const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
+		Label += "  [Body ";
+		Label += std::to_string(BodyIndex);
+		Label += "] S:";
+		Label += std::to_string(AggGeom.SphereElems.size());
+		Label += " B:";
+		Label += std::to_string(AggGeom.BoxElems.size());
+		Label += " C:";
+		Label += std::to_string(AggGeom.SphylElems.size());
+		Label += " X:";
+		Label += std::to_string(AggGeom.ConvexElems.size());
+		return Label;
+	}
+
 	FMorphTargetCurve& FindOrAddMorphCurve(UAnimSequence* Seq, const FString& MorphTargetName)
 	{
 		TArray<FMorphTargetCurve>& Curves = Seq->GetMutableMorphTargetCurves();
@@ -746,7 +769,7 @@ void FMeshEditorWidget::RenderPhysicsAssetLayout()
 	RenderPhysicsAssetBuildOptionsPopup(SkeletalMesh, PhysicsAsset);
 
 	ImGui::Separator();
-	RenderPhysicsAssetBodyList(PhysicsAsset);
+	RenderPhysicsAssetBodyList(SkeletalMesh, PhysicsAsset);
 	ImGui::EndChild();
 
 	ImGui::SameLine();
@@ -873,7 +896,7 @@ void FMeshEditorWidget::RenderPhysicsAssetBuildOptionsPopup(
 	ImGui::EndPopup();
 }
 
-void FMeshEditorWidget::RenderPhysicsAssetBodyList(UPhysicsAsset* PhysicsAsset)
+void FMeshEditorWidget::RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, UPhysicsAsset* PhysicsAsset)
 {
 	if (!PhysicsAsset)
 	{
@@ -887,30 +910,92 @@ void FMeshEditorWidget::RenderPhysicsAssetBodyList(UPhysicsAsset* PhysicsAsset)
 		SelectedPhysicsBodyIndex = -1;
 	}
 
-	for (int32 Index = 0; Index < static_cast<int32>(Bodies.size()); ++Index)
+	const FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset)
 	{
-		const UBodySetup* Body = Bodies[Index];
-		if (!Body)
-		{
-			continue;
-		}
+		ImGui::TextDisabled("No source skeletal mesh.");
+		return;
+	}
 
-		const FKAggregateGeom& AggGeom = Body->GetAggGeom();
-		FString Label = "[" + std::to_string(Index) + "] ";
-		Label += Body->BoneName.ToString();
-		Label += "  S:";
-		Label += std::to_string(AggGeom.SphereElems.size());
-		Label += " B:";
-		Label += std::to_string(AggGeom.BoxElems.size());
-		Label += " C:";
-		Label += std::to_string(AggGeom.SphylElems.size());
-		Label += " X:";
-		Label += std::to_string(AggGeom.ConvexElems.size());
-
-		if (ImGui::Selectable(Label.c_str(), SelectedPhysicsBodyIndex == Index))
+	for (int32 Index = 0; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
+	{
+		if (Asset->Bones[Index].ParentIndex == -1)
 		{
-			SelectedPhysicsBodyIndex = Index;
+			RenderPhysicsAssetBodyTree(Asset, PhysicsAsset, Index);
 		}
+	}
+}
+
+void FMeshEditorWidget::RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
+{
+	if (!Asset || !PhysicsAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
+	{
+		return;
+	}
+
+	const FBone& Bone = Asset->Bones[BoneIndex];
+	const int32 BodyIndex = PhysicsAsset->FindBodyIndexByBoneName(FName(Bone.Name));
+	const TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetups();
+	const UBodySetup* Body = (BodyIndex >= 0 && BodyIndex < static_cast<int32>(Bodies.size()))
+		? Bodies[BodyIndex]
+		: nullptr;
+
+	bool bHasChildren = false;
+	for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
+	{
+		if (Asset->Bones[Index].ParentIndex == BoneIndex)
+		{
+			bHasChildren = true;
+			break;
+		}
+	}
+
+	ImGuiTreeNodeFlags Flags =
+		ImGuiTreeNodeFlags_OpenOnArrow |
+		ImGuiTreeNodeFlags_SpanAvailWidth |
+		ImGuiTreeNodeFlags_DefaultOpen;
+
+	if (Body && BodyIndex == SelectedPhysicsBodyIndex)
+	{
+		Flags |= ImGuiTreeNodeFlags_Selected;
+	}
+
+	if (!bHasChildren)
+	{
+		Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	}
+
+	FString Label = BuildPhysicsBodyTreeLabel(Bone.Name, BodyIndex, Body);
+	Label += "##PhysicsBodyBone";
+	Label += std::to_string(BoneIndex);
+
+	if (!Body)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+	}
+
+	const bool bOpen = ImGui::TreeNodeEx(Label.c_str(), Flags);
+
+	if (!Body)
+	{
+		ImGui::PopStyleColor();
+	}
+
+	if (Body && ImGui::IsItemClicked())
+	{
+		SelectedPhysicsBodyIndex = BodyIndex;
+	}
+
+	if (bOpen && bHasChildren)
+	{
+		for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
+		{
+			if (Asset->Bones[Index].ParentIndex == BoneIndex)
+			{
+				RenderPhysicsAssetBodyTree(Asset, PhysicsAsset, Index);
+			}
+		}
+		ImGui::TreePop();
 	}
 }
 

@@ -81,7 +81,8 @@ private:
 	void RenderAnimationLayout(float TotalHeight);
 	void RenderPhysicsAssetLayout();
 	void RenderPhysicsAssetBuildOptionsPopup(USkeletalMesh* SkeletalMesh, UPhysicsAsset*& InOutPhysicsAsset);
-	void RenderPhysicsAssetBodyList(UPhysicsAsset* PhysicsAsset);
+	void RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, UPhysicsAsset* PhysicsAsset);
+	void RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex);
 	void RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsset);
 
 	// Shared helpers
