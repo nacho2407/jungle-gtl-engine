@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Editor/UI/Panel/EditorPlayToolbarWidget.h"
@@ -73,6 +73,7 @@ public:
 
 	enum class EViewportPlaceActorType : uint8
 	{
+		EmptyActor,
 		Cube,
 		Sphere,
 		Cylinder,

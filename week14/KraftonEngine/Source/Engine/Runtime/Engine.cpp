@@ -81,6 +81,8 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	FDirectoryWatcher::Get().Initialize();
 	FLuaScriptManager::Initialize();
 	FAudioManager::Get().Initialize();
+
+	FPhysXSDK::Get().Initialize();
 }
 
 void UEngine::Shutdown()

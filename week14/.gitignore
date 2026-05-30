@@ -86,6 +86,7 @@ obj/x86/
 # ThirdParty 하위 bin/ 은 외부 라이브러리 배포본(예: lua51.dll) 이므로 예외.
 **/[Bb]in/*
 !**/ThirdParty/**/[Bb]in/*
+!KraftonEngine/ThirdParty/PhysX/lib/**/*.pdb
 
 # ============================================================
 # 패키징 산출물 (root 의 *Build/ 폴더, 그리고 Game/)

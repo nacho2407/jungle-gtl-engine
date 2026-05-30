@@ -8,10 +8,12 @@
 #include "Physics/PhysicsFilterShader.h"
 #include "Physics/PhysicsQueryFilter.h"
 #include "Physics/PhysicsConstraintTemplate.h"
+#include "Physics/PhysXVehicleManager.h"
 
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "Mesh/Static/StaticMesh.h"
+#include "Render/Scene/FScene.h"
 
 #include <algorithm>
 
@@ -31,8 +33,6 @@ namespace
 
 void FPhysicsScene::Initialize()
 {
-	FPhysXSDK::Get().Initialize();
-
 	physx::PxPhysics* Physics = FPhysXSDK::Get().GetPhysics();
 
 	physx::PxSceneDesc SceneDesc(Physics->getTolerancesScale());
@@ -44,12 +44,29 @@ void FPhysicsScene::Initialize()
 	Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
 	SceneDesc.cpuDispatcher = Dispatcher;
 	SceneDesc.filterShader = PhysicsFilterShader;
+	SceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+	SceneDesc.flags |= physx::PxSceneFlag::eENABLE_CCD;
+	SceneDesc.flags |= physx::PxSceneFlag::eENABLE_PCM;
 
 	Scene = Physics->createScene(SceneDesc);
+
+	Scene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, 1.0f);
+	Scene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
+	Scene->setVisualizationParameter(physx::PxVisualizationParameter::eBODY_AXES, 1.0f);
+
+	VehicleManager = new FPhysXVehicleManager();
+	VehicleManager->Initialize(Physics, Scene, FPhysXSDK::Get().GetDefaultMaterial());
 }
 
 void FPhysicsScene::Shutdown()
 {
+	if (VehicleManager)
+	{
+		VehicleManager->Shutdown();
+		delete VehicleManager;
+		VehicleManager = nullptr;
+	}
+
 	while (!Constraints.empty())
 	{
 		DestroyConstraint(Constraints.back());
@@ -87,6 +104,11 @@ void FPhysicsScene::Shutdown()
 
 void FPhysicsScene::Simulate(float DeltaTime)
 {
+	if (VehicleManager)
+	{
+		VehicleManager->Update(DeltaTime);
+	}
+
 	if (Scene)
 	{
 		Scene->simulate(DeltaTime);
@@ -161,6 +183,8 @@ bool FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& Ou
 
 	OutInstance.Body = Body;
 	Body->userData = &OutInstance;
+
+	Body->setActorFlag(physx::PxActorFlag::eVISUALIZATION, true);
 
 	Scene->addActor(*Body);
 	Bodies.push_back(&OutInstance);
@@ -521,4 +545,23 @@ bool FPhysicsScene::OverlapBox(const FVector& Center, const FVector& HalfExtent,
 	}
 
 	return !OutOverlaps.empty();
+}
+
+void FPhysicsScene::CollectDebugRender(FScene& RenderScene) const
+{
+	if (!Scene) return;
+
+	const physx::PxRenderBuffer& Buffer = Scene->getRenderBuffer();
+
+	const FColor Color = FColor(0, 255, 255);
+	for (physx::PxU32 Index = 0; Index < Buffer.getNbLines(); ++Index)
+	{
+		const physx::PxDebugLine& Line = Buffer.getLines()[Index];
+		RenderScene.AddDebugLine(FromPxVec3(Line.pos0), FromPxVec3(Line.pos1), Color);
+	}
+
+	if (VehicleManager)
+	{
+		VehicleManager->CollectDebugRender(RenderScene);
+	}
 }
