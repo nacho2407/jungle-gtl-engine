@@ -4,6 +4,16 @@
 #include "Animation/Skeleton/Skeleton.h"
 #include "Object/GarbageCollection.h"
 
+namespace
+{
+	constexpr uint32 PhysicsAssetReferenceMagic = 0x50485246; // F R H P
+
+	bool IsValidPhysicsAssetPath(const FString& Path)
+	{
+		return !Path.empty() && Path != "None";
+	}
+}
+
 void USkeletalMesh::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UObject::AddReferencedObjects(Collector);
@@ -41,24 +51,46 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 	Ar << SkeletalMaterials;
 	Ar << SkeletalMeshAsset->MorphTargets;
 
-	bool bHasPhysicsAsset = Ar.IsSaving() && PhysicsAsset;
+	if (Ar.IsSaving() && PhysicsAsset)
+	{
+		const FString& AssetPath = PhysicsAsset->GetAssetPathFileName();
+		if (IsValidPhysicsAssetPath(AssetPath))
+		{
+			PhysicsAssetPath = AssetPath;
+		}
+	}
+
+	bool bHasPhysicsAsset = Ar.IsSaving() && IsValidPhysicsAssetPath(PhysicsAssetPath);
 	Ar << bHasPhysicsAsset;
 
 	if (Ar.IsLoading())
 	{
 		PhysicsAsset = nullptr;
+		PhysicsAssetPath = "None";
 		if (bHasPhysicsAsset)
 		{
-			PhysicsAsset = UObjectManager::Get().CreateObject<UPhysicsAsset>(this);
-			if (PhysicsAsset)
+			uint32 PhysicsAssetMarker = 0;
+			Ar << PhysicsAssetMarker;
+
+			if (PhysicsAssetMarker == PhysicsAssetReferenceMagic)
 			{
-				PhysicsAsset->Serialize(Ar);
+				Ar << PhysicsAssetPath;
+			}
+			else
+			{
+				PhysicsAsset = UObjectManager::Get().CreateObject<UPhysicsAsset>(this);
+				if (PhysicsAsset)
+				{
+					PhysicsAsset->SerializeLegacyEmbedded(Ar, PhysicsAssetMarker);
+				}
 			}
 		}
 	}
 	else if (bHasPhysicsAsset)
 	{
-		PhysicsAsset->Serialize(Ar);
+		uint32 PhysicsAssetMarker = PhysicsAssetReferenceMagic;
+		Ar << PhysicsAssetMarker;
+		Ar << PhysicsAssetPath;
 	}
 
 	if (Ar.IsLoading())
@@ -145,6 +177,21 @@ void USkeletalMesh::SetSkeleton(USkeleton* InSkeleton)
 USkeleton* USkeletalMesh::GetSkeleton() const
 {
 	return Skeleton;
+}
+
+void USkeletalMesh::SetPhysicsAsset(UPhysicsAsset* InPhysicsAsset)
+{
+	PhysicsAsset = InPhysicsAsset;
+
+	if (PhysicsAsset)
+	{
+		PhysicsAsset->SetOuter(this);
+		const FString& AssetPath = PhysicsAsset->GetAssetPathFileName();
+		if (IsValidPhysicsAssetPath(AssetPath))
+		{
+			PhysicsAssetPath = AssetPath;
+		}
+	}
 }
 
 void USkeletalMesh::SetSkeletonBinding(const FSkeletonBinding& InBinding)

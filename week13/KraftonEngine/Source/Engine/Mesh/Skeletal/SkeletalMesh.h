@@ -42,10 +42,13 @@ public:
     USkeleton* GetSkeleton() const;
 
     void SetSkeletonBinding(const FSkeletonBinding& InBinding);
-    const FSkeletonBinding& GetSkeletonBinding() const { return SkeletonBinding; }
+	const FSkeletonBinding& GetSkeletonBinding() const { return SkeletonBinding; }
 
 	UPhysicsAsset* GetPhysicsAsset() const { return PhysicsAsset; }
-	void SetPhysicsAsset(UPhysicsAsset* InPhysicsAsset) { PhysicsAsset = InPhysicsAsset; }
+	void SetPhysicsAsset(UPhysicsAsset* InPhysicsAsset);
+
+	const FString& GetPhysicsAssetPath() const { return PhysicsAssetPath; }
+	void SetPhysicsAssetPath(const FString& InPhysicsAssetPath) { PhysicsAssetPath = InPhysicsAssetPath; }
 
 private:
     void CacheSectionMaterialIndices();
@@ -62,4 +65,5 @@ private:
     USkeleton*       Skeleton = nullptr;
 
 	UPhysicsAsset* PhysicsAsset = nullptr;
+	FString PhysicsAssetPath = "None";
 };

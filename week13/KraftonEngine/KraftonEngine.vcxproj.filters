@@ -1535,6 +1535,9 @@
     <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAssetBuilder.cpp">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\PhysicsEngine\PhysicsAssetManager.cpp">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp">
       <Filter>Source\Engine\Platform</Filter>
     </ClCompile>
@@ -2903,6 +2906,9 @@
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAssetBuilder.h">
+      <Filter>Source\Engine\PhysicsEngine</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAssetManager.h">
       <Filter>Source\Engine\PhysicsEngine</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\PhysicsEngine\ShapeElem.h">
