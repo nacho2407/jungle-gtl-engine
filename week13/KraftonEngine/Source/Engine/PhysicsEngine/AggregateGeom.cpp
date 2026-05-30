@@ -77,6 +77,11 @@ float SignedVolumeOfTriangle(const FVector& A, const FVector& B, const FVector& 
 {
 	return A.Dot(B.Cross(C)) / 6.0f;
 }
+
+float GetBoxVolume(const FVector& Extent)
+{
+	return FMath::Abs(Extent.X * Extent.Y * Extent.Z);
+}
 }
 
 EAggCollisionShape FKSphylElem::StaticShapeType = EAggCollisionShape::Sphyl;
@@ -115,6 +120,13 @@ FKSphereElem FKSphereElem::GetFinalScaled(const FVector& Scale3D, const FTransfo
 	ScaledSphere.Radius *= RadiusScale;
 	ScaledSphere.Center = RelativeTM.TransformPosition(Center) * Scale3D;
 	return ScaledSphere;
+}
+
+float FKSphereElem::GetScaledVolume(const FVector& Scale3D) const
+{
+	const float RadiusScale = Scale3D.GetAbsMin();
+	const float ScaledRadius = Radius * RadiusScale;
+	return (4.0f / 3.0f) * FMath::Pi * ScaledRadius * ScaledRadius * ScaledRadius;
 }
 
 float FKSphereElem::GetShortestDistanceToPoint(const FVector& WorldPosition, const FTransform& BodyToWorldTM) const
@@ -165,6 +177,12 @@ FKBoxElem FKBoxElem::GetFinalScaled(const FVector& Scale3D, const FTransform& Re
 	ScaledBox.SetTransform(GetTransform() * RelativeTM);
 	ScaledBox.Center = ScaledBox.Center * Scale3D;
 	return ScaledBox;
+}
+
+float FKBoxElem::GetScaledVolume(const FVector& Scale3D) const
+{
+	const FVector ScaleAbs = Scale3D.GetAbs();
+	return GetBoxVolume(FVector(X * ScaleAbs.X, Y * ScaleAbs.Y, Z * ScaleAbs.Z));
 }
 
 float FKBoxElem::GetShortestDistanceToPoint(const FVector& WorldPosition, const FTransform& BodyToWorldTM) const
@@ -250,6 +268,15 @@ float FKSphylElem::GetScaledCylinderLength(const FVector& Scale3D) const
 float FKSphylElem::GetScaledHalfLength(const FVector& Scale3D) const
 {
 	return std::max((Length + Radius * 2.0f) * FMath::Abs(Scale3D.Z) * 0.5f, 0.1f);
+}
+
+float FKSphylElem::GetScaledVolume(const FVector& Scale3D) const
+{
+	const float ScaledRadius = GetScaledRadius(Scale3D);
+	const float ScaledLength = GetScaledCylinderLength(Scale3D);
+	const float CylinderVolume = FMath::Pi * ScaledRadius * ScaledRadius * ScaledLength;
+	const float SphereVolume = (4.0f / 3.0f) * FMath::Pi * ScaledRadius * ScaledRadius * ScaledRadius;
+	return CylinderVolume + SphereVolume;
 }
 
 float FKSphylElem::GetShortestDistanceToPoint(const FVector& WorldPosition, const FTransform& BodyToWorldTM) const
@@ -390,4 +417,40 @@ FBoundingBox FKAggregateGeom::CalcAABB(const FTransform& Transform) const
 	}
 
 	return Box;
+}
+
+float FKAggregateGeom::GetScaledVolume(const FVector& Scale3D) const
+{
+	float Volume = 0.0f;
+
+	for (const FKSphereElem& SphereElem : SphereElems)
+	{
+		if (SphereElem.GetContributeToMass())
+		{
+			Volume += SphereElem.GetScaledVolume(Scale3D);
+		}
+	}
+	for (const FKBoxElem& BoxElem : BoxElems)
+	{
+		if (BoxElem.GetContributeToMass())
+		{
+			Volume += BoxElem.GetScaledVolume(Scale3D);
+		}
+	}
+	for (const FKSphylElem& SphylElem : SphylElems)
+	{
+		if (SphylElem.GetContributeToMass())
+		{
+			Volume += SphylElem.GetScaledVolume(Scale3D);
+		}
+	}
+	for (const FKConvexElem& ConvexElem : ConvexElems)
+	{
+		if (ConvexElem.GetContributeToMass())
+		{
+			Volume += ConvexElem.GetScaledVolume(Scale3D * ConvexElem.GetTransform().Scale);
+		}
+	}
+
+	return Volume;
 }

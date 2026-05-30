@@ -49,6 +49,8 @@ struct FKSphereElem : public FKShapeElem
 
 	FKSphereElem GetFinalScaled(const FVector& Scale3D, const FTransform& RelativeTM) const;
 
+	float GetScaledVolume(const FVector& Scale3D) const;
+
 	float GetShortestDistanceToPoint(const FVector& WorldPosition, const FTransform& BodyToWorldTM) const;
 
 	float GetClosestPointAndNormal(const FVector& WorldPosition, const FTransform& BodyToWorldTM, FVector& ClosestWorldPosition, FVector& Normal) const;

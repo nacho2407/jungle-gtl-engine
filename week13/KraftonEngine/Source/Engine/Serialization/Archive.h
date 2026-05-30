@@ -24,6 +24,9 @@ public:
 	inline bool IsLoading() const { return bIsLoading; }
 	inline bool IsSaving() const { return bIsSaving; }
 	virtual bool IsAtEnd() const { return true; }
+	virtual bool CanSeek() const { return false; }
+	virtual int64 Tell() const { return -1; }
+	virtual void Seek(int64 /*Offset*/) {}
 	virtual bool IsObjectReferenceRemapping() const { return false; }
 	virtual UObject* ResolveObjectReference(uint32 /*SourceUUID*/) const { return nullptr; }
 	virtual void AddObjectReferenceFixup(uint32 /*SourceUUID*/, std::function<void(UObject*)> /*Fixup*/) {}

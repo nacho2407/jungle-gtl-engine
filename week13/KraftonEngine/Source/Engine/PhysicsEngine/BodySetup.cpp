@@ -2,8 +2,17 @@
 
 #include "Serialization/Archive.h"
 
+#include <algorithm>
+#include <cmath>
+
 namespace
 {
+constexpr uint32 BodySetupPhysicsInfoMagic = 0x59485042; // B P H Y
+constexpr uint32 BodySetupPhysicsInfoVersion = 1;
+constexpr float DefaultBodyDensityKgPerCubicUnit = 0.001f;
+constexpr float DefaultRaiseMassToPower = 0.75f;
+constexpr float MinBodyMassKg = 0.001f;
+
 void SerializeShapeCommon(FArchive& Ar, FKShapeElem& Elem)
 {
 	Ar << Elem.RestOffset;
@@ -124,6 +133,55 @@ void SerializeAggregateGeom(FArchive& Ar, FKAggregateGeom& AggGeom)
 	SerializeElemArray(Ar, AggGeom.SphylElems, SerializeSphylElem);
 	SerializeElemArray(Ar, AggGeom.ConvexElems, SerializeConvexElem);
 }
+
+void SerializePhysicsInfoPayload(FArchive& Ar, FBodySetupPhysicsInfo& PhysicsInfo)
+{
+	Ar << PhysicsInfo.bOverrideMass;
+	Ar << PhysicsInfo.MassInKgOverride;
+	Ar << PhysicsInfo.MassScale;
+	Ar << PhysicsInfo.CenterOfMassOffset;
+	Ar << PhysicsInfo.LinearDamping;
+	Ar << PhysicsInfo.AngularDamping;
+	Ar << PhysicsInfo.bEnableGravity;
+	Ar << PhysicsInfo.InertiaTensorScale;
+}
+
+void SerializePhysicsInfoBlock(FArchive& Ar, FBodySetupPhysicsInfo& PhysicsInfo)
+{
+	if (Ar.IsSaving())
+	{
+		uint32 Magic = BodySetupPhysicsInfoMagic;
+		uint32 Version = BodySetupPhysicsInfoVersion;
+		Ar << Magic;
+		Ar << Version;
+		SerializePhysicsInfoPayload(Ar, PhysicsInfo);
+		return;
+	}
+
+	if (!Ar.CanSeek() || Ar.IsAtEnd())
+	{
+		return;
+	}
+
+	const int64 BlockStart = Ar.Tell();
+	uint32 Magic = 0;
+	Ar << Magic;
+	if (Magic != BodySetupPhysicsInfoMagic)
+	{
+		Ar.Seek(BlockStart);
+		return;
+	}
+
+	uint32 Version = 0;
+	Ar << Version;
+	if (Version != BodySetupPhysicsInfoVersion)
+	{
+		Ar.Seek(BlockStart);
+		return;
+	}
+
+	SerializePhysicsInfoPayload(Ar, PhysicsInfo);
+}
 }
 
 void UBodySetup::Serialize(FArchive& Ar)
@@ -148,4 +206,23 @@ void UBodySetup::Serialize(FArchive& Ar)
 	}
 
 	SerializeAggregateGeom(Ar, AggGeom);
+	SerializePhysicsInfoBlock(Ar, PhysicsInfo);
+}
+
+float UBodySetup::GetScaledVolume(const FVector& Scale3D) const
+{
+	return AggGeom.GetScaledVolume(Scale3D);
+}
+
+float UBodySetup::CalculateMass(const FVector& Scale3D) const
+{
+	if (PhysicsInfo.bOverrideMass)
+	{
+		return std::max(PhysicsInfo.MassInKgOverride, MinBodyMassKg);
+	}
+
+	const float Volume = GetScaledVolume(Scale3D);
+	const float RawMass = std::max(Volume * DefaultBodyDensityKgPerCubicUnit, MinBodyMassKg);
+	const float RaisedMass = std::pow(RawMass, DefaultRaiseMassToPower);
+	return std::max(RaisedMass * PhysicsInfo.MassScale, MinBodyMassKg);
 }

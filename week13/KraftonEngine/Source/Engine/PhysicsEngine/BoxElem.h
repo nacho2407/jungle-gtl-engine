@@ -72,6 +72,8 @@ struct FKBoxElem : public FKShapeElem
 
 	FKBoxElem GetFinalScaled(const FVector& Scale3D, const FTransform& RelativeTM) const;
 
+	float GetScaledVolume(const FVector& Scale3D) const;
+
 	inline static constexpr EAggCollisionShape StaticShapeType = EAggCollisionShape::Box;
 
 	float GetShortestDistanceToPoint(const FVector& WorldPosition, const FTransform& BodyToWorldTM) const;

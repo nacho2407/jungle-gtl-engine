@@ -168,6 +168,30 @@ namespace
 		return true;
 	}
 
+	bool RenderBodyPhysicsInfoDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
+	{
+		if (!PhysicsAsset || BodyIndex < 0)
+		{
+			return false;
+		}
+
+		TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetupsMutable();
+		if (BodyIndex >= static_cast<int32>(Bodies.size()) || !Bodies[BodyIndex])
+		{
+			return false;
+		}
+
+		UBodySetup* BodySetup = Bodies[BodyIndex];
+		ImGui::TextUnformatted("Body Physics");
+		ImGui::Text("Calculated Mass: %.4f kg", BodySetup->CalculateMass());
+
+		return FInlinePropertyRenderer::RenderStructProperties(
+			FBodySetupPhysicsInfo::StaticStruct(),
+			&BodySetup->GetPhysicsInfo(),
+			PhysicsAsset,
+			"##PhysicsAssetBodyPhysicsProps");
+	}
+
 	bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
 	{
 		if (!Asset || !PhysicsAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
@@ -1190,6 +1214,22 @@ void FMeshEditorWidget::RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsse
 			if (!bSavedPhysicsAsset || !bSavedSkeletalMesh)
 			{
 				UE_LOG("PhysicsAsset constraint edit warning: failed to persist constraint. SkeletalMesh=%s", SkeletalMeshPath.c_str());
+			}
+		}
+		MarkDirty();
+		return;
+	}
+
+	if (SelectedPhysicsConstraintIndex < 0 && RenderBodyPhysicsInfoDetails(PhysicsAsset, SelectedPhysicsBodyIndex))
+	{
+		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
+		{
+			const FString SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
+			const bool bSavedPhysicsAsset = FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
+			const bool bSavedSkeletalMesh = bSavedPhysicsAsset && FMeshManager::SaveSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
+			if (!bSavedPhysicsAsset || !bSavedSkeletalMesh)
+			{
+				UE_LOG("PhysicsAsset body physics edit warning: failed to persist body physics info. SkeletalMesh=%s", SkeletalMeshPath.c_str());
 			}
 		}
 		MarkDirty();

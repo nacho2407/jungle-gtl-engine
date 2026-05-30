@@ -1143,6 +1143,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\PhysicsEngine\AggregateGeom.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\BodySetup.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\BodySetupCore.h" />
+    <ClInclude Include="Source\Engine\PhysicsEngine\BodySetupPhysicsInfo.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\BoxElem.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\ConvexElem.h" />
     <ClInclude Include="Source\Engine\PhysicsEngine\PhysicsAsset.h" />

@@ -234,6 +234,7 @@ struct FKAggregateGeom
 	}
 
 	FBoundingBox CalcAABB(const FTransform& Transform) const;
+	float GetScaledVolume(const FVector& Scale3D = FVector::OneVector) const;
 
 private:
 	static constexpr int32 InvalidIndex = -1;
