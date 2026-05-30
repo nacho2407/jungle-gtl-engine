@@ -39,7 +39,7 @@ public:
 class FWindowsBinReader : public FArchive
 {
 private:
-	std::ifstream FileStream;
+	mutable std::ifstream FileStream;
 
 public:
 	FWindowsBinReader(const std::string& FilePath)
@@ -54,6 +54,24 @@ public:
 	}
 
 	bool IsValid() const { return FileStream.is_open() && FileStream.good(); }
+	bool IsAtEnd() const override
+	{
+		if (!FileStream.is_open())
+		{
+			return true;
+		}
+
+		const std::streampos Current = FileStream.tellg();
+		if (Current == std::streampos(-1))
+		{
+			return true;
+		}
+
+		FileStream.seekg(0, std::ios::end);
+		const std::streampos End = FileStream.tellg();
+		FileStream.seekg(Current);
+		return Current >= End;
+	}
 
 	void Serialize(void* Data, size_t Num) override
 	{

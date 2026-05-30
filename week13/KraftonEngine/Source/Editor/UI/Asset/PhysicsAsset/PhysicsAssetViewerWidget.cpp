@@ -4,6 +4,9 @@
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/PhysicsAsset.h"
+#include "PhysicsEngine/PhysicsAssetManager.h"
+#include "Editor/UI/Util/InlinePropertyRenderer.h"
+#include "Core/Logging/Log.h"
 
 #include <imgui.h>
 
@@ -24,6 +27,29 @@ FString BuildPhysicsBodyTreeLabel(const FString& BoneName, int32 BodyIndex, cons
 	Label += " X:";
 	Label += std::to_string(AggGeom.ConvexElems.size());
 	return Label;
+}
+
+bool RenderConstraintInitDescDetails(UPhysicsAsset* PhysicsAsset, const UBodySetup* BodySetup)
+{
+	ImGui::Dummy(ImVec2(0, 6));
+	ImGui::Separator();
+	ImGui::TextUnformatted("Constraint");
+
+	FConstraintInstanceInitDesc* ConstraintDesc =
+		(PhysicsAsset && BodySetup)
+			? PhysicsAsset->FindConstraintInitDescByChildBoneName(BodySetup->BoneName)
+			: nullptr;
+	if (!ConstraintDesc)
+	{
+		ImGui::TextDisabled("None");
+		return false;
+	}
+
+	return FInlinePropertyRenderer::RenderStructProperties(
+		FConstraintInstanceInitDesc::StaticStruct(),
+		ConstraintDesc,
+		PhysicsAsset,
+		"##PhysicsAssetViewerConstraintProps");
 }
 
 bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
@@ -76,6 +102,32 @@ void FPhysicsAssetViewerWidget::AddReferencedObjects(FReferenceCollector& Collec
 {
 	FAssetEditorWidget::AddReferencedObjects(Collector);
 	Collector.AddReferencedObject(SourceSkeletalMesh);
+}
+
+bool FPhysicsAssetViewerWidget::SavePhysicsAsset(UPhysicsAsset* PhysicsAsset)
+{
+	if (!PhysicsAsset)
+	{
+		return false;
+	}
+
+	if (SourceSkeletalMesh)
+	{
+		return FPhysicsAssetManager::Get().SaveForSkeletalMesh(
+			SourceSkeletalMesh,
+			SourceSkeletalMesh->GetAssetPathFileName());
+	}
+
+	const FString& PhysicsAssetPath = PhysicsAsset->GetAssetPathFileName();
+	if (PhysicsAssetPath.empty() || PhysicsAssetPath == "None")
+	{
+		return false;
+	}
+
+	return FPhysicsAssetManager::Get().Save(
+		PhysicsAsset,
+		PhysicsAssetPath,
+		PhysicsAsset->GetSourceSkeletalMeshPath());
 }
 
 void FPhysicsAssetViewerWidget::Render(float DeltaTime)
@@ -262,4 +314,16 @@ void FPhysicsAssetViewerWidget::RenderBodyDetails(UPhysicsAsset* PhysicsAsset)
 	ImGui::Text("BoxElems: %zu", AggGeom.BoxElems.size());
 	ImGui::Text("SphylElems: %zu", AggGeom.SphylElems.size());
 	ImGui::Text("ConvexElems: %zu", AggGeom.ConvexElems.size());
+	if (RenderConstraintInitDescDetails(PhysicsAsset, Body))
+	{
+		if (SavePhysicsAsset(PhysicsAsset))
+		{
+			ClearDirty();
+		}
+		else
+		{
+			UE_LOG("PhysicsAsset constraint edit warning: failed to persist constraint. PhysicsAsset=%s", PhysicsAsset->GetAssetPathFileName().c_str());
+			MarkDirty();
+		}
+	}
 }

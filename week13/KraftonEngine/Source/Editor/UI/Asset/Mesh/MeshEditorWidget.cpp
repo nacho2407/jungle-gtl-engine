@@ -33,6 +33,7 @@
 #include "UI/Asset/Animation/AnimMontagePropertyPanel.h"
 #include "UI/Util/EditorFileUtils.h"
 #include "Editor/UI/Util/EditorTextureManager.h"
+#include "Editor/UI/Util/InlinePropertyRenderer.h"
 #include "Platform/Paths.h"
 #include "Object/Object.h"
 #include "Core/Logging/Log.h"
@@ -114,6 +115,29 @@ namespace
 		Label += " X:";
 		Label += std::to_string(AggGeom.ConvexElems.size());
 		return Label;
+	}
+
+	bool RenderConstraintInitDescDetails(UPhysicsAsset* PhysicsAsset, const UBodySetup* BodySetup)
+	{
+		ImGui::Dummy(ImVec2(0, 6));
+		ImGui::Separator();
+		ImGui::TextUnformatted("Constraint");
+
+		FConstraintInstanceInitDesc* ConstraintDesc =
+			(PhysicsAsset && BodySetup)
+				? PhysicsAsset->FindConstraintInitDescByChildBoneName(BodySetup->BoneName)
+				: nullptr;
+		if (!ConstraintDesc)
+		{
+			ImGui::TextDisabled("None");
+			return false;
+		}
+
+		return FInlinePropertyRenderer::RenderStructProperties(
+			FConstraintInstanceInitDesc::StaticStruct(),
+			ConstraintDesc,
+			PhysicsAsset,
+			"##PhysicsAssetConstraintProps");
 	}
 
 	bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
@@ -1067,6 +1091,20 @@ void FMeshEditorWidget::RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsse
 	ImGui::Text("BoxElems: %zu", AggGeom.BoxElems.size());
 	ImGui::Text("SphylElems: %zu", AggGeom.SphylElems.size());
 	ImGui::Text("ConvexElems: %zu", AggGeom.ConvexElems.size());
+	if (RenderConstraintInitDescDetails(PhysicsAsset, Body))
+	{
+		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
+		{
+			const FString SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
+			const bool bSavedPhysicsAsset = FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
+			const bool bSavedSkeletalMesh = bSavedPhysicsAsset && FMeshManager::SaveSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
+			if (!bSavedPhysicsAsset || !bSavedSkeletalMesh)
+			{
+				UE_LOG("PhysicsAsset constraint edit warning: failed to persist constraint. SkeletalMesh=%s", SkeletalMeshPath.c_str());
+			}
+		}
+		MarkDirty();
+	}
 }
 
 void FMeshEditorWidget::RenderMeshLayout()

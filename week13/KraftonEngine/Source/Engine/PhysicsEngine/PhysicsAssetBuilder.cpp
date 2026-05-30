@@ -195,6 +195,74 @@ float GetBoneFitSize(const FBoneShapeFit& Fit)
 	return Fit.bHasVertices ? Fit.GetExtent().Length() : 0.0f;
 }
 
+int32 FindBoneIndexByName(const FSkeletalMesh& MeshAsset, const FName& BoneName)
+{
+	for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(MeshAsset.Bones.size()); ++BoneIndex)
+	{
+		if (FName(MeshAsset.Bones[BoneIndex].Name) == BoneName)
+		{
+			return BoneIndex;
+		}
+	}
+
+	return -1;
+}
+
+void BuildConstraintInitDescsForBodies(UPhysicsAsset* PhysicsAsset, const FSkeletalMesh& MeshAsset)
+{
+	TArray<FConstraintInstanceInitDesc>& ConstraintInitDescs = PhysicsAsset->GetConstraintInitDescsMutable();
+	ConstraintInitDescs.clear();
+
+	for (const UBodySetup* ChildBodySetup : PhysicsAsset->GetBodySetups())
+	{
+		if (!ChildBodySetup)
+		{
+			continue;
+		}
+
+		const int32 ChildBoneIndex = FindBoneIndexByName(MeshAsset, ChildBodySetup->BoneName);
+		if (ChildBoneIndex < 0)
+		{
+			continue;
+		}
+
+		int32 ParentBodyBoneIndex = -1;
+		int32 ParentBoneIndex = MeshAsset.Bones[ChildBoneIndex].ParentIndex;
+		while (ParentBoneIndex >= 0 && ParentBoneIndex < static_cast<int32>(MeshAsset.Bones.size()))
+		{
+			const FName ParentBoneName(MeshAsset.Bones[ParentBoneIndex].Name);
+			if (PhysicsAsset->FindBodyIndexByBoneName(ParentBoneName) != -1)
+			{
+				ParentBodyBoneIndex = ParentBoneIndex;
+				break;
+			}
+
+			ParentBoneIndex = MeshAsset.Bones[ParentBoneIndex].ParentIndex;
+		}
+
+		if (ParentBodyBoneIndex < 0)
+		{
+			continue;
+		}
+
+		FConstraintInstanceInitDesc Desc;
+		Desc.ParentBody = nullptr;
+		Desc.ChildBody = nullptr;
+		Desc.ParentBoneName = FName(MeshAsset.Bones[ParentBodyBoneIndex].Name);
+		Desc.ChildBoneName = ChildBodySetup->BoneName;
+		Desc.ParentFrame = FTransform::FromMatrixWithScale(
+			MeshAsset.Bones[ChildBoneIndex].GetReferenceGlobalPose() *
+			MeshAsset.Bones[ParentBodyBoneIndex].GetReferenceGlobalPose().GetAffineInverse());
+		Desc.ChildFrame = FTransform();
+		Desc.TwistLimitDegrees = 45.0f;
+		Desc.Swing1LimitDegrees = 35.0f;
+		Desc.Swing2LimitDegrees = 35.0f;
+		Desc.bEnableCollision = false;
+
+		ConstraintInitDescs.push_back(Desc);
+	}
+}
+
 FTransform MakeRotationOnlyTransform(const FVector& Axis, float AngleRad)
 {
 	return FTransform(
@@ -360,6 +428,8 @@ void FPhysicsAssetBuilder::CreateBodies(
 	{
 		CreateBodyForBone(LargestFitBoneIndex);
 	}
+
+	BuildConstraintInitDescsForBodies(PhysicsAsset, *MeshAsset);
 }
 
 void FPhysicsAssetBuilder::AddFittedShapeForBone(

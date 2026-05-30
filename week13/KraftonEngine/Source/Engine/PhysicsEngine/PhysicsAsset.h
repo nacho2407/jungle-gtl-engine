@@ -2,6 +2,7 @@
 
 #include "Object/Object.h"
 #include "BodySetup.h"
+#include "Physics/ConstraintInstance.h"
 
 #include "Source/Engine/PhysicsEngine/PhysicsAsset.generated.h"
 
@@ -15,6 +16,8 @@ public:
 
 	const TArray<UBodySetup*>& GetBodySetups() const { return BodySetups; }
 	TArray<UBodySetup*>& GetBodySetupsMutable() { return BodySetups; }
+	const TArray<FConstraintInstanceInitDesc>& GetConstraintInitDescs() const { return ConstraintInitDescs; }
+	TArray<FConstraintInstanceInitDesc>& GetConstraintInitDescsMutable() { return ConstraintInitDescs; }
 
 	const FString& GetAssetPathFileName() const { return AssetPathFileName; }
 	void SetAssetPathFileName(const FString& InAssetPathFileName) { AssetPathFileName = InAssetPathFileName; }
@@ -24,6 +27,8 @@ public:
 
 	int32 FindBodyIndexByBoneName(const FName& BoneName) const;
 	UBodySetup* FindBodySetupByBoneName(const FName& BoneName) const;
+	const FConstraintInstanceInitDesc* FindConstraintInitDescByChildBoneName(const FName& ChildBoneName) const;
+	FConstraintInstanceInitDesc* FindConstraintInitDescByChildBoneName(const FName& ChildBoneName);
 
 	void Serialize(FArchive& Ar) override;
 	void SerializeLegacyEmbedded(FArchive& Ar, uint32 SerializedObjectNameLength);
@@ -33,4 +38,5 @@ private:
 	FString AssetPathFileName = "None";
 	FString SourceSkeletalMeshPath = "None";
 	TArray<UBodySetup*> BodySetups;
+	TArray<FConstraintInstanceInitDesc> ConstraintInitDescs;
 };
