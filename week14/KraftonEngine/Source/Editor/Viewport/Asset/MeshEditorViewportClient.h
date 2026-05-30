@@ -16,6 +16,7 @@ class FWindowsWindow;
 class UWorld;
 class AActor;
 class USkeletalMesh;
+class UPhysicsAsset;
 
 class FMeshEditorViewportClient : public FViewportClient, public IEditorPreviewViewportClient
 {
@@ -43,6 +44,14 @@ public:
 	UGizmoComponent* GetGizmo() const { return Gizmo; }
 	USkeletalMeshComponent* GetPreviewMeshComponent() const { return PreviewMeshComponent; }
 
+	bool IsShowPhysicsAsset() const {return bShowPhysicsAsset;}
+	void SetShowPhysicsAsset(bool bInShow)
+	{
+		bShowPhysicsAsset = bInShow;
+		PreviewPhysicsAsset = nullptr;
+		if (bInShow) {bPhysicsAssetLoadAttempted = false;}
+	};
+	
 	FViewportRenderOptions& GetRenderOptions() override { return RenderOptions; }
 	const FViewportRenderOptions& GetRenderOptions() const override { return RenderOptions; }
 
@@ -51,6 +60,7 @@ public:
 	bool GetCameraView(FMinimalViewInfo& OutPOV) const override;
 
 	void Tick(float DeltaTime);
+	void SubmitFrameDebugDraw() override;
 
 	void SetSelectedBone(USkeletalMesh* Mesh, int32 BoneIndex);
 	const FBone* GetSelectedBone() const;
@@ -68,7 +78,8 @@ private:
 	void ApplySmoothedCameraLocation(float DeltaTime);
 
 	void SyncGizmo();
-
+	void DrawPreviewPhysicsAsset();
+	
 	void HandleDragStart(const FRay& Ray);
 
 private:
@@ -83,6 +94,10 @@ private:
 	UGizmoComponent* Gizmo = nullptr;
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
 	UBoneDebugComponent* BoneDebugComponent = nullptr;
+	
+	UPhysicsAsset* PreviewPhysicsAsset = nullptr;
+	bool bShowPhysicsAsset = true;
+	bool bPhysicsAssetLoadAttempted = false;
 
 	UWorld* PreviewWorld = nullptr;
 	AActor* PreviewActor = nullptr;

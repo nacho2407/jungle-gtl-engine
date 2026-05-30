@@ -14,6 +14,12 @@
 #include "Collision/Ray/RayUtils.h"
 #include "Settings/EditorSettings.h"
 #include "Slate/SlateApplication.h"
+#include "Physics/PhysicsAssetDebugDraw.h"
+#include "Physics/PhysicsAssetManager.h"
+#include "Physics/PhysicsAsset.h"
+#include "Platform/Paths.h"
+#include "Core/Logging/Log.h"
+#include <filesystem>
 
 #include <imgui.h>
 
@@ -42,6 +48,9 @@ void FMeshEditorViewportClient::Release()
 	Gizmo = nullptr;
 	BoneDebugComponent = nullptr;
 
+	PreviewPhysicsAsset = nullptr;
+	bPhysicsAssetLoadAttempted = false;
+	
 	bIsRenderable = false;
 
 	SetSelectedBone(nullptr, -1);
@@ -164,6 +173,13 @@ void FMeshEditorViewportClient::Tick(float DeltaTime)
 	TickShortcuts();
 	TickInput(DeltaTime);
 	TickInteraction(DeltaTime);
+}
+
+void FMeshEditorViewportClient::SubmitFrameDebugDraw()
+{
+	// 렌더 단계에서 호출됨(WorldTick 이후). 여기서 추가해야 1프레임 디버그 라인이
+	// 같은 프레임의 CollectDebugDraw에 잡힌다.
+	DrawPreviewPhysicsAsset();
 }
 
 void FMeshEditorViewportClient::SetSelectedBone(USkeletalMesh* Mesh, int32 BoneIndex)
@@ -448,6 +464,58 @@ void FMeshEditorViewportClient::SyncGizmo()
 	else
 	{
 		Gizmo->Deactivate();
+	}
+}
+
+void FMeshEditorViewportClient::DrawPreviewPhysicsAsset()
+{
+	if (!bShowPhysicsAsset || !PreviewWorld || !PreviewMeshComponent)
+	{
+		return;
+	}
+
+	// 최초 1회만 메시 이름 규약으로 PhysicsAsset 로드 시도
+	// <메시>.uasset  →  같은 폴더의 <메시>_PhysicsAsset.uasset
+	if (!bPhysicsAssetLoadAttempted)
+	{
+		bPhysicsAssetLoadAttempted = true;
+
+		if (USkeletalMesh* Mesh = PreviewMeshComponent->GetSkeletalMesh())
+		{
+			const FString& MeshPath = Mesh->GetAssetPathFileName();
+			if (!MeshPath.empty() && MeshPath != "None")
+			{
+				const std::filesystem::path P(FPaths::ToWide(MeshPath));
+				const std::filesystem::path Sibling =
+					P.parent_path() / (P.stem().wstring() + L"_PhysicsAsset.uasset");
+
+				PreviewPhysicsAsset = FPhysicsAssetManager::Get().Load(
+					FPaths::ToUtf8(Sibling.generic_wstring()));
+
+				if (PreviewPhysicsAsset)
+				{
+					UE_LOG(
+						"PhysicsAsset preview loaded. Mesh=%s PhysicsAsset=%s Bodies=%llu",
+						MeshPath.c_str(),
+						FPaths::ToUtf8(Sibling.generic_wstring()).c_str(),
+						static_cast<unsigned long long>(PreviewPhysicsAsset->GetBodySetups().size())
+					);
+				}
+				else
+				{
+					UE_LOG(
+						"PhysicsAsset preview load failed. Mesh=%s ExpectedPhysicsAsset=%s",
+						MeshPath.c_str(),
+						FPaths::ToUtf8(Sibling.generic_wstring()).c_str()
+					);
+				}
+			}
+		}
+	}
+
+	if (PreviewPhysicsAsset)
+	{
+		DrawPhysicsAssetDebug(PreviewWorld, PreviewPhysicsAsset, PreviewMeshComponent);
 	}
 }
 

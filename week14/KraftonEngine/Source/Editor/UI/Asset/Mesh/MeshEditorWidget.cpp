@@ -563,6 +563,12 @@ void FMeshEditorWidget::RenderViewportPanel(ImVec2 Size)
 					true);
 			}
 		}
+		
+		bool bShowPhysicsAsset = ViewportClient.IsShowPhysicsAsset();
+		if (ImGui::Checkbox("Show Physics Asset", &bShowPhysicsAsset))
+		{
+			ViewportClient.SetShowPhysicsAsset(bShowPhysicsAsset);
+		}
 	};
 
 	FViewportToolbar::Render(Context);

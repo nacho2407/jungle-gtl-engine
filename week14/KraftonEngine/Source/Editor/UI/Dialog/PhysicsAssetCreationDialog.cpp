@@ -110,7 +110,6 @@ EPhysicsAssetDialogResult FPhysicsAssetCreationDialog::Render(const char* PopupI
 		}
 		else
 		{
-			ImGui::CloseCurrentPopup();
 			Result = EPhysicsAssetDialogResult::Submitted;
 		}
 	}

@@ -160,7 +160,7 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 					const float Length = SegHalf * 2.0f;
 					
 					FVector AxisDir = FVector::ZAxisVector;
-					if (Axis = 0) AxisDir = FVector::XAxisVector;
+					if (Axis == 0) AxisDir = FVector::XAxisVector;
 					else if (Axis == 1) AxisDir = FVector::YAxisVector;
 					
 					const FQuat Rotation = MakeQuatFromZToAxis(AxisDir);

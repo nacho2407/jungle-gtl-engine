@@ -668,6 +668,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClCompile Include="Source\Engine\Physics\BodySetup.cpp" />
     <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsAsset.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsAssetDebugDraw.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsAssetManager.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsEventCallback.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsFilterData.cpp" />
@@ -1086,6 +1087,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Engine\Physics\BodySetupCore.h" />
     <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsAsset.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsAssetDebugDraw.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsAssetManager.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsEventCallback.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsFilterData.h" />

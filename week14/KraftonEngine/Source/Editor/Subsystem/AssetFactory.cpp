@@ -10,6 +10,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Platform/Paths.h"
+#include "Core/Logging/Log.h"
 
 #include "Mesh/Skeletal/SkeletalMesh.h"  
 #include "Animation/Skeleton/Skeleton.h"
@@ -163,20 +164,30 @@ bool FAssetFactory::CreateParticleSystem(const FString& DirectoryPath, const FSt
 
 bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FString& AssetName, USkeletalMesh* SourceMesh, const FPhysicsAssetCreationParams& Params, FString& OutCreatedPath)
 {
+	OutCreatedPath.clear();
+
 	if (!SourceMesh)
 	{
+		UE_LOG("PhysicsAsset creation failed: source skeletal mesh is null. Directory=%s AssetName=%s", DirectoryPath.c_str(), AssetName.c_str());
 		return false;
 	}
 
 	FSkeletalMesh* MeshAsset = SourceMesh->GetSkeletalMeshAsset();
 	if (!MeshAsset || MeshAsset->Bones.empty() || MeshAsset->Vertices.empty())
 	{
+		UE_LOG(
+			"PhysicsAsset creation failed: source mesh has no usable skeletal data. Mesh=%s Bones=%llu Vertices=%llu",
+			SourceMesh->GetAssetPathFileName().c_str(),
+			static_cast<unsigned long long>(MeshAsset ? MeshAsset->Bones.size() : 0),
+			static_cast<unsigned long long>(MeshAsset ? MeshAsset->Vertices.size() : 0)
+		);
 		return false;
 	}
 
 	const std::filesystem::path Directory(FPaths::ToWide(DirectoryPath));
 	if (!std::filesystem::exists(Directory) || !std::filesystem::is_directory(Directory))
 	{
+		UE_LOG("PhysicsAsset creation failed: target directory is invalid. Directory=%s AssetName=%s", DirectoryPath.c_str(), AssetName.c_str());
 		return false;
 	}
 
@@ -189,6 +200,13 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 
 	if (NewAsset->GetBodySetups().empty())
 	{
+		UE_LOG(
+			"PhysicsAsset creation failed: generator produced no body setups. Mesh=%s AssetName=%s MinBoneSize=%.2f CreateAllBones=%s",
+			SourceMesh->GetAssetPathFileName().c_str(),
+			AssetName.c_str(),
+			static_cast<double>(Params.MinBoneSize),
+			Params.bCreateBodyForAllBones ? "true" : "false"
+		);
 		UObjectManager::Get().DestroyObject(NewAsset);
 		return false;
 	}
@@ -196,10 +214,16 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 	const bool bSaved = FPhysicsAssetManager::Get().Save(NewAsset);
 	if (!bSaved)
 	{
+		UE_LOG("PhysicsAsset creation failed: save failed. Path=%s", FPaths::ToUtf8(AssetPath.wstring()).c_str());
 		UObjectManager::Get().DestroyObject(NewAsset);
 		return false;
 	}
 	
 	OutCreatedPath = FPaths::ToUtf8(AssetPath.wstring());
+	UE_LOG(
+		"PhysicsAsset created. Path=%s Bodies=%llu",
+		OutCreatedPath.c_str(),
+		static_cast<unsigned long long>(NewAsset->GetBodySetups().size())
+	);
 	return true;
 }
