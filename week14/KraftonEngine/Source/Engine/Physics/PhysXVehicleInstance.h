@@ -85,7 +85,7 @@ public:
 		const FVehiclePhysicsSetup& Setup);
 	void Shutdown();
 
-	void SetDriveInput(float Throttle, float Brake, float Steer);
+	void SetDriveInput(float Throttle, float Brake, float Steer, bool bReverse);
 
 	physx::PxVehicleWheels* GetPxVehicle() const { return Vehicle; }
 	physx::PxRigidDynamic* GetActor() const { return VehicleActor; }
@@ -93,4 +93,6 @@ public:
 private:
 	physx::PxRigidDynamic* VehicleActor = nullptr;
 	physx::PxVehicleDrive4W* Vehicle = nullptr;
+
+	bool bIsReverse = false;
 };

@@ -27,7 +27,7 @@ bool FPhysXVehicleInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene
 
 	for (physx::PxU32 Index = 0; Index < NumWheels; ++Index)
 	{
-		physx::PxShape* WheelShape = Physics->createShape(physx::PxSphereGeometry(WheelSetups[Index]->Radius), *Material);
+		physx::PxShape* WheelShape = Physics->createShape(physx::PxSphereGeometry(WheelSetups[Index]->Radius), *Material, true);
 
 		WheelShape->setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, false);
 		WheelShape->setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, false);
@@ -152,17 +152,55 @@ void FPhysXVehicleInstance::Shutdown()
 	}
 }
 
-void FPhysXVehicleInstance::SetDriveInput(float Throttle, float Brake, float Steer)
+void FPhysXVehicleInstance::SetDriveInput(float Throttle, float Brake, float Steer, bool bReverse)
 {
-	if (!Vehicle) return;
+	if (!Vehicle || !VehicleActor) return;
+
+	const physx::PxTransform ActorPose = VehicleActor->getGlobalPose();
+	const physx::PxVec3 Forward = ActorPose.q.rotate(physx::PxVec3(1, 0, 0));
+	const float ForwardSpeed = VehicleActor->getLinearVelocity().dot(Forward);
+
+	constexpr float GearSwitchSpeedThreshold = 0.5f;
+	const bool bCanSwitchGear = std::abs(ForwardSpeed) < GearSwitchSpeedThreshold;
+
+	float AppliedThrottle = FMath::Clamp(Throttle, -1.0f, 1.0f);
+	float AppliedBrake = FMath::Clamp(Brake, 0.0f, 1.0f);
+
+	if (bReverse && !bIsReverse)
+	{
+		if (bCanSwitchGear)
+		{
+			Vehicle->mDriveDynData.forceGearChange(physx::PxVehicleGearsData::eREVERSE);
+			bIsReverse = true;
+		}
+		else
+		{
+			AppliedThrottle = 0.0f;
+			AppliedBrake = 1.0f;
+		}
+	}
+	else if (!bReverse && bIsReverse)
+	{
+		if (bCanSwitchGear)
+		{
+			Vehicle->mDriveDynData.forceGearChange(physx::PxVehicleGearsData::eFIRST);
+			bIsReverse = false;
+		}
+		else
+		{
+			AppliedThrottle = 0.0f;
+			AppliedBrake = 1.0f;
+		}
+	}
 
 	Vehicle->mDriveDynData.setAnalogInput(physx::PxVehicleDrive4WControl::eANALOG_INPUT_ACCEL,
-		FMath::Clamp(Throttle, 0.0f, 1.0f));
+		AppliedThrottle);
 
 	Vehicle->mDriveDynData.setAnalogInput(physx::PxVehicleDrive4WControl::eANALOG_INPUT_BRAKE,
-		FMath::Clamp(Brake, 0.0f, 1.0f));
+		AppliedBrake);
 
 	const float ClampedSteer = FMath::Clamp(Steer, -1.0f, 1.0f);
+
 	Vehicle->mDriveDynData.setAnalogInput(physx::PxVehicleDrive4WControl::eANALOG_INPUT_STEER_LEFT,
 		ClampedSteer < 0.0f ? -ClampedSteer : 0.0f);
 

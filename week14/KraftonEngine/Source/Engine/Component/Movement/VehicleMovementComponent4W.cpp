@@ -79,10 +79,10 @@ void UVehicleMovementComponent4W::Serialize(FArchive& Ar)
 	Super::Serialize(Ar);
 }
 
-void UVehicleMovementComponent4W::SetDriveInput(float Throttle, float Brake, float Steer)
+void UVehicleMovementComponent4W::SetDriveInput(float Throttle, float Brake, float Steer, bool bReverse)
 {
 	if (VehicleInstance)
 	{
-		VehicleInstance->SetDriveInput(Throttle, Brake, Steer);
+		VehicleInstance->SetDriveInput(Throttle, Brake, Steer, bReverse);
 	}
 }

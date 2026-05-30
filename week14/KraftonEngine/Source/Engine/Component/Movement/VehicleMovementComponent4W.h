@@ -20,7 +20,7 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 	UFUNCTION(Lua)
-	void SetDriveInput(float Throttle, float Brake, float Steer);
+	void SetDriveInput(float Throttle, float Brake, float Steer, bool bReverse);
 
 private:
 	FPhysXVehicleInstance* VehicleInstance = nullptr;
