@@ -31,6 +31,13 @@ FMatrix FFbxTransformUtils::ToEngineInverseMatrix(const FbxAMatrix& FbxMat)
 	return ToEngineMatrix(FbxMat.Inverse());
 }
 
+FMatrix FFbxTransformUtils::MakeScaleFreeMatrix(const FMatrix& Matrix)
+{
+	FMatrix Result = Matrix;
+	Result.RemoveScaling();
+	return Result;
+}
+
 double FFbxTransformUtils::GetBasisDeterminant(const FMatrix& Matrix)
 {
 	const double A = Matrix.M[0][0];
