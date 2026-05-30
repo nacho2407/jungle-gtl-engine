@@ -504,6 +504,13 @@ void FDrawCommandBuilder::BuildPhysicsAssetDebugCommands(const FFrameContext& Fr
 	}
 
 	BuildPhysicsAssetSolidCommand(Frame, PhysicsAssetProxy);
+
+	TArray<FPhysicsDebugLine> ConstraintAxisLines;
+	PhysicsAssetProxy.BuildPhysicsAssetConstraintAxisLines(Frame, ConstraintAxisLines);
+	for (const FPhysicsDebugLine& Line : ConstraintAxisLines)
+	{
+		EditorLines.AddLine(Line.Start, Line.End, Line.Color);
+	}
 }
 
 void FDrawCommandBuilder::BuildPhysicsAssetSolidCommand(const FFrameContext& Frame, const FPhysicsAssetSceneProxy& PhysicsAssetProxy)

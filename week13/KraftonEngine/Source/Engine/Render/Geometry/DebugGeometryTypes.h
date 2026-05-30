@@ -9,6 +9,13 @@ struct FWireLine
 	FVector End;
 };
 
+struct FPhysicsDebugLine
+{
+	FVector Start;
+	FVector End;
+	FVector4 Color;
+};
+
 struct FPhysicsDebugVertex
 {
 	FVector Position;

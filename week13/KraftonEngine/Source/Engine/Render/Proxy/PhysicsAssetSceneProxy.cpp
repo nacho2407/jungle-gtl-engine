@@ -12,6 +12,32 @@ namespace
 {
 	const FVector4 DefaultBodyColor(0.1f, 0.7f, 1.0f, 0.22f);
 	const FVector4 SelectedBodyColor(0.0f, 0.95f, 1.0f, 0.48f);
+	const float ConstraintParentAxisLength = 8.0f;
+	const float ConstraintChildAxisLength = 5.5f;
+
+	void AddConstraintAxisLine(
+		TArray<FPhysicsDebugLine>& Lines,
+		const FVector& Origin,
+		const FVector& Axis,
+		float Length,
+		const FVector4& Color)
+	{
+		Lines.push_back(FPhysicsDebugLine{ Origin, Origin + Axis * Length, Color });
+	}
+
+	void AddConstraintFrameAxes(
+		TArray<FPhysicsDebugLine>& Lines,
+		const FTransform& Frame,
+		const FVector& Origin,
+		float Length,
+		const FVector4& XColor,
+		const FVector4& YColor,
+		const FVector4& ZColor)
+	{
+		AddConstraintAxisLine(Lines, Origin, Frame.TransformVectorNoScale(FVector(1.0f, 0.0f, 0.0f)), Length, XColor);
+		AddConstraintAxisLine(Lines, Origin, Frame.TransformVectorNoScale(FVector(0.0f, 1.0f, 0.0f)), Length, YColor);
+		AddConstraintAxisLine(Lines, Origin, Frame.TransformVectorNoScale(FVector(0.0f, 0.0f, 1.0f)), Length, ZColor);
+	}
 }
 
 FPhysicsAssetSceneProxy::FPhysicsAssetSceneProxy(UPhysicsAssetDebugComponent* InComponent)
@@ -136,5 +162,60 @@ void FPhysicsAssetSceneProxy::BuildPhysicsAssetSolidMesh(
 			ShapeWorldTM.Scale = ShapeWorldTM.Scale * FVector(UniformScale, UniformScale, UniformScale);
 			FCollisionDebugGeometry::AddSolidConvex(OutMesh, ConvexElem, ShapeWorldTM, SolidColor);
 		}
+	}
+}
+
+void FPhysicsAssetSceneProxy::BuildPhysicsAssetConstraintAxisLines(
+	const FFrameContext& Frame,
+	TArray<FPhysicsDebugLine>& OutLines) const
+{
+	if (!Frame.RenderOptions.ShowFlags.bDebugPhysicsAsset)
+	{
+		return;
+	}
+
+	const UPhysicsAssetDebugComponent* DebugComponent = GetPhysicsAssetDebugComponent();
+	const UPhysicsAsset* PhysicsAsset = IsValid(DebugComponent) ? DebugComponent->GetPhysicsAsset() : nullptr;
+	if (!PhysicsAsset)
+	{
+		return;
+	}
+
+	const FVector4 ParentXColor(1.0f, 0.12f, 0.12f, 1.0f);
+	const FVector4 ParentYColor(0.12f, 1.0f, 0.12f, 1.0f);
+	const FVector4 ParentZColor(0.18f, 0.45f, 1.0f, 1.0f);
+	const FVector4 ChildXColor(0.65f, 0.18f, 0.18f, 1.0f);
+	const FVector4 ChildYColor(0.18f, 0.65f, 0.18f, 1.0f);
+	const FVector4 ChildZColor(0.2f, 0.32f, 0.7f, 1.0f);
+
+	for (const FConstraintInstanceInitDesc& ConstraintDesc : PhysicsAsset->GetConstraintInitDescs())
+	{
+		FTransform ParentWorldFrame;
+		FTransform ChildWorldFrame;
+		if (!GetConstraintWorldFrames(ConstraintDesc, ParentWorldFrame, ChildWorldFrame))
+		{
+			continue;
+		}
+
+		const FVector ConstraintLocation =
+			(ParentWorldFrame.GetLocation() + ChildWorldFrame.GetLocation()) * 0.5f;
+
+		AddConstraintFrameAxes(
+			OutLines,
+			ParentWorldFrame,
+			ConstraintLocation,
+			ConstraintParentAxisLength,
+			ParentXColor,
+			ParentYColor,
+			ParentZColor);
+
+		AddConstraintFrameAxes(
+			OutLines,
+			ChildWorldFrame,
+			ConstraintLocation,
+			ConstraintChildAxisLength,
+			ChildXColor,
+			ChildYColor,
+			ChildZColor);
 	}
 }

@@ -17,6 +17,7 @@ public:
 	~FPhysicsAssetSceneProxy() override = default;
 
 	void BuildPhysicsAssetSolidMesh(const FFrameContext& Frame, FPhysicsDebugSolidMesh& OutMesh) const;
+	void BuildPhysicsAssetConstraintAxisLines(const FFrameContext& Frame, TArray<FPhysicsDebugLine>& OutLines) const;
 
 private:
 	UPhysicsAssetDebugComponent* GetPhysicsAssetDebugComponent() const;
