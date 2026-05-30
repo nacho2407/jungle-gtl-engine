@@ -6,6 +6,7 @@
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Object/GarbageCollection.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Physics/ConstraintInstance.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "Render/Proxy/PhysicsAssetSceneProxy.h"
@@ -18,6 +19,9 @@ HIDE_FROM_COMPONENT_LIST(UPhysicsAssetDebugComponent)
 
 namespace
 {
+	constexpr float ConstraintPickScreenScale = 0.006f;
+	constexpr float MinConstraintPickRadius = 0.01f;
+
 	struct FLocalRay
 	{
 		FVector Origin = FVector::ZeroVector;
@@ -43,6 +47,18 @@ namespace
 	bool ShouldUseHit(float Distance, const FPhysicsAssetDebugHitResult& CurrentBest)
 	{
 		return Distance >= 0.0f && Distance < CurrentBest.Distance;
+	}
+
+	float ComputeConstraintPickRadius(
+		const FVector& CameraLocation,
+		bool bIsOrtho,
+		float OrthoWidth,
+		const FVector& ConstraintLocation)
+	{
+		const float Radius = bIsOrtho
+			? OrthoWidth * ConstraintPickScreenScale
+			: FVector::Distance(CameraLocation, ConstraintLocation) * ConstraintPickScreenScale;
+		return std::max(Radius, MinConstraintPickRadius);
 	}
 
 	void SetBestHit(
@@ -336,7 +352,12 @@ void UPhysicsAssetDebugComponent::SetTarget(
 
 	TargetSkeletalMeshComponent = InTargetSkeletalMeshComponent;
 	PhysicsAsset = InPhysicsAsset;
-	MarkRenderStateDirty();
+	MarkPhysicsAssetDebugDirty();
+}
+
+void UPhysicsAssetDebugComponent::MarkPhysicsAssetDebugDirty()
+{
+	++PhysicsAssetDebugRevision;
 }
 
 bool UPhysicsAssetDebugComponent::GetPhysicsAssetBoneWorldTransform(const FName& BoneName, FTransform& OutBoneWorldTM) const
@@ -380,6 +401,78 @@ bool UPhysicsAssetDebugComponent::GetPhysicsAssetBoneWorldTransform(const FName&
 	const FTransform ComponentToWorldTM(SMC->GetWorldMatrix());
 	OutBoneWorldTM = ComponentSpaceBoneTransforms[BoneIndex] * ComponentToWorldTM;
 	return true;
+}
+
+bool UPhysicsAssetDebugComponent::GetConstraintWorldFrames(
+	const FConstraintInstanceInitDesc& ConstraintDesc,
+	FTransform& OutParentFrame,
+	FTransform& OutChildFrame) const
+{
+	FTransform ParentBoneWorldTM;
+	FTransform ChildBoneWorldTM;
+	if (!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ParentBoneName, ParentBoneWorldTM) ||
+		!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ChildBoneName, ChildBoneWorldTM))
+	{
+		return false;
+	}
+
+	OutParentFrame = ConstraintDesc.ParentFrame * ParentBoneWorldTM;
+	OutChildFrame = ConstraintDesc.ChildFrame * ChildBoneWorldTM;
+	return true;
+}
+
+bool UPhysicsAssetDebugComponent::GetConstraintWorldLocation(
+	const FConstraintInstanceInitDesc& ConstraintDesc,
+	FVector& OutWorldLocation) const
+{
+	FTransform ParentWorldFrame;
+	FTransform ChildWorldFrame;
+	if (!GetConstraintWorldFrames(ConstraintDesc, ParentWorldFrame, ChildWorldFrame))
+	{
+		return false;
+	}
+
+	OutWorldLocation = (ParentWorldFrame.GetLocation() + ChildWorldFrame.GetLocation()) * 0.5f;
+	return true;
+}
+
+bool UPhysicsAssetDebugComponent::SetConstraintWorldLocation(
+	FConstraintInstanceInitDesc& ConstraintDesc,
+	const FVector& WorldLocation)
+{
+	FTransform ParentBoneWorldTM;
+	FTransform ChildBoneWorldTM;
+	if (!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ParentBoneName, ParentBoneWorldTM) ||
+		!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ChildBoneName, ChildBoneWorldTM))
+	{
+		return false;
+	}
+
+	const FMatrix ParentWorldToLocal = ParentBoneWorldTM.ToMatrix().GetAffineInverse();
+	const FMatrix ChildWorldToLocal = ChildBoneWorldTM.ToMatrix().GetAffineInverse();
+	ConstraintDesc.ParentFrame.Location = ParentWorldToLocal.TransformPosition(WorldLocation);
+	ConstraintDesc.ChildFrame.Location = ChildWorldToLocal.TransformPosition(WorldLocation);
+
+	MarkPhysicsAssetDebugDirty();
+	return true;
+}
+
+bool UPhysicsAssetDebugComponent::SyncConstraintFrameLocation(
+	FConstraintInstanceInitDesc& ConstraintDesc,
+	EPhysicsAssetConstraintFrameSide SourceFrameSide)
+{
+	FTransform ParentWorldFrame;
+	FTransform ChildWorldFrame;
+	if (!GetConstraintWorldFrames(ConstraintDesc, ParentWorldFrame, ChildWorldFrame))
+	{
+		return false;
+	}
+
+	const FTransform SourceWorldFrame =
+		(SourceFrameSide == EPhysicsAssetConstraintFrameSide::Parent)
+			? ParentWorldFrame
+			: ChildWorldFrame;
+	return SetConstraintWorldLocation(ConstraintDesc, SourceWorldFrame.GetLocation());
 }
 
 bool UPhysicsAssetDebugComponent::PickBody(const FRay& Ray, FPhysicsAssetDebugHitResult& OutHit) const
@@ -487,6 +580,63 @@ bool UPhysicsAssetDebugComponent::PickBody(const FRay& Ray, FPhysicsAssetDebugHi
 	return OutHit.Type == EPhysicsAssetDebugHitType::Body;
 }
 
+bool UPhysicsAssetDebugComponent::PickConstraint(
+	const FRay& Ray,
+	const FVector& CameraLocation,
+	bool bIsOrtho,
+	float OrthoWidth,
+	FPhysicsAssetDebugHitResult& OutHit) const
+{
+	OutHit = {};
+
+	const UPhysicsAsset* CurrentPhysicsAsset = PhysicsAsset.Get();
+	if (!CurrentPhysicsAsset || !IsValid(TargetSkeletalMeshComponent.Get()))
+	{
+		return false;
+	}
+
+	const FRay NormalizedRay = MakeNormalizedRay(Ray);
+	if (NormalizedRay.Direction.IsNearlyZero())
+	{
+		return false;
+	}
+
+	const TArray<FConstraintInstanceInitDesc>& ConstraintDescs = CurrentPhysicsAsset->GetConstraintInitDescs();
+	for (int32 ConstraintIndex = 0; ConstraintIndex < static_cast<int32>(ConstraintDescs.size()); ++ConstraintIndex)
+	{
+		const FConstraintInstanceInitDesc& ConstraintDesc = ConstraintDescs[ConstraintIndex];
+		FVector ConstraintLocation = FVector::ZeroVector;
+		if (!GetConstraintWorldLocation(ConstraintDesc, ConstraintLocation))
+		{
+			continue;
+		}
+
+		const float PickRadius = ComputeConstraintPickRadius(
+			CameraLocation,
+			bIsOrtho,
+			OrthoWidth,
+			ConstraintLocation);
+		float Distance = 0.0f;
+		FVector Normal = FVector::ZeroVector;
+		if (!IntersectSphere(NormalizedRay, ConstraintLocation, PickRadius, Distance, Normal) ||
+			!ShouldUseHit(Distance, OutHit))
+		{
+			continue;
+		}
+
+		OutHit.Type = EPhysicsAssetDebugHitType::Constraint;
+		OutHit.ShapeType = EAggCollisionShape::Unknown;
+		OutHit.BodyIndex = CurrentPhysicsAsset->FindBodyIndexByBoneName(ConstraintDesc.ChildBoneName);
+		OutHit.ConstraintIndex = ConstraintIndex;
+		OutHit.ShapeIndex = -1;
+		OutHit.Distance = Distance;
+		OutHit.WorldHitLocation = NormalizedRay.Origin + NormalizedRay.Direction * Distance;
+		OutHit.WorldNormal = Normal.GetSafeNormal();
+	}
+
+	return OutHit.Type == EPhysicsAssetDebugHitType::Constraint;
+}
+
 void UPhysicsAssetDebugComponent::SetSelectedBodyIndex(int32 InSelectedBodyIndex)
 {
 	if (SelectedBodyIndex == InSelectedBodyIndex)
@@ -495,7 +645,7 @@ void UPhysicsAssetDebugComponent::SetSelectedBodyIndex(int32 InSelectedBodyIndex
 	}
 
 	SelectedBodyIndex = InSelectedBodyIndex;
-	MarkRenderStateDirty();
+	MarkPhysicsAssetDebugDirty();
 }
 
 void UPhysicsAssetDebugComponent::SetSelectedConstraintIndex(int32 InSelectedConstraintIndex)
@@ -506,7 +656,7 @@ void UPhysicsAssetDebugComponent::SetSelectedConstraintIndex(int32 InSelectedCon
 	}
 
 	SelectedConstraintIndex = InSelectedConstraintIndex;
-	MarkRenderStateDirty();
+	MarkPhysicsAssetDebugDirty();
 }
 
 void UPhysicsAssetDebugComponent::AddReferencedObjects(FReferenceCollector& Collector)

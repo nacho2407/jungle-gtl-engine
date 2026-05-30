@@ -23,6 +23,8 @@ public:
 private:
 	FPhysicsDebugSolidMesh Mesh;
 	TArray<FVertex> DrawVertices;
+	uint64 UploadedRevision = static_cast<uint64>(-1);
+	uint32 UploadedIndexCount = 0;
 	FDynamicVertexBuffer VB;
 	FDynamicIndexBuffer IB;
 	ID3D11Device* Device = nullptr;

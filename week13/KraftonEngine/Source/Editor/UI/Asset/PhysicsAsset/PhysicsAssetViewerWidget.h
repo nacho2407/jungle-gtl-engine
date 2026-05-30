@@ -38,4 +38,5 @@ private:
 	FString WindowIdSuffix;
 	USkeletalMesh* SourceSkeletalMesh = nullptr;
 	int32 SelectedBodyIndex = -1;
+	int32 SelectedConstraintIndex = -1;
 };

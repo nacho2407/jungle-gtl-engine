@@ -1394,6 +1394,9 @@
     <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp">
       <Filter>Source\Engine\Gizmo</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Gizmo\PhysicsAssetConstraintGizmoTarget.cpp">
+      <Filter>Source\Engine\Gizmo</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Gizmo\PhysicsAssetShapeGizmoTarget.cpp">
       <Filter>Source\Engine\Gizmo</Filter>
     </ClCompile>
@@ -2670,6 +2673,9 @@
       <Filter>Source\Engine\Gizmo</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h">
+      <Filter>Source\Engine\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Gizmo\PhysicsAssetConstraintGizmoTarget.h">
       <Filter>Source\Engine\Gizmo</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Gizmo\PhysicsAssetShapeGizmoTarget.h">

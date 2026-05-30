@@ -86,6 +86,7 @@ private:
 	FLineGeometry  EditorLines;
 	FLineGeometry  GridLines;
 	FLineGeometry  DebugBoneLines;
+	FLineGeometry  PhysicsAssetAxisLines;
 	FFontGeometry  FontGeometry;
 	FPhysicsDebugSolidGeometry PhysicsAssetSolidGeometry;
 

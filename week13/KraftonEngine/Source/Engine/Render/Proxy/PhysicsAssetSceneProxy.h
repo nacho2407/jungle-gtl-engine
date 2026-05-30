@@ -17,12 +17,14 @@ public:
 	~FPhysicsAssetSceneProxy() override = default;
 
 	void BuildPhysicsAssetSolidMesh(const FFrameContext& Frame, FPhysicsDebugSolidMesh& OutMesh) const;
+	void BuildPhysicsAssetConstraintAxisLines(const FFrameContext& Frame, TArray<FPhysicsDebugLine>& OutLines) const;
 
 private:
 	UPhysicsAssetDebugComponent* GetPhysicsAssetDebugComponent() const;
 	USkeletalMeshComponent* GetTargetSkeletalMeshComponent() const;
-	bool GetConstraintWorldFrames(
-		const FConstraintInstanceInitDesc& ConstraintDesc,
-		FTransform& OutParentFrame,
-		FTransform& OutChildFrame) const;
+
+	mutable FPhysicsDebugSolidMesh CachedSolidMesh;
+	mutable uint64 CachedSolidDebugRevision = 0;
+	mutable uint64 CachedSolidSkinnedRevision = 0;
+	mutable bool bCachedSolidMeshFresh = false;
 };

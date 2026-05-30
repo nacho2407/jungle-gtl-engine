@@ -35,6 +35,7 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	EditorLines.Create(InDevice);
 	GridLines.Create(InDevice);
 	DebugBoneLines.Create(InDevice);
+	PhysicsAssetAxisLines.Create(InDevice);
 	FontGeometry.Create(InDevice);
 	PhysicsAssetSolidGeometry.Create(InDevice);
 
@@ -54,6 +55,7 @@ void FDrawCommandBuilder::Release()
 	EditorLines.Release();
 	GridLines.Release();
 	DebugBoneLines.Release();
+	PhysicsAssetAxisLines.Release();
 	FontGeometry.Release();
 	PhysicsAssetSolidGeometry.Release();
 
@@ -96,6 +98,7 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 	EditorLines.Clear();
 	GridLines.Clear();
 	DebugBoneLines.Clear();
+	PhysicsAssetAxisLines.Clear();
 	FontGeometry.Clear();
 	FontGeometry.ClearScreen();
 	PhysicsAssetSolidGeometry.Clear();
@@ -504,6 +507,13 @@ void FDrawCommandBuilder::BuildPhysicsAssetDebugCommands(const FFrameContext& Fr
 	}
 
 	BuildPhysicsAssetSolidCommand(Frame, PhysicsAssetProxy);
+
+	TArray<FPhysicsDebugLine> ConstraintAxisLines;
+	PhysicsAssetProxy.BuildPhysicsAssetConstraintAxisLines(Frame, ConstraintAxisLines);
+	for (const FPhysicsDebugLine& Line : ConstraintAxisLines)
+	{
+		PhysicsAssetAxisLines.AddLine(Line.Start, Line.End, Line.Color);
+	}
 }
 
 void FDrawCommandBuilder::BuildPhysicsAssetSolidCommand(const FFrameContext& Frame, const FPhysicsAssetSceneProxy& PhysicsAssetProxy)
@@ -665,6 +675,7 @@ void FDrawCommandBuilder::BuildEditorLineCommands(EViewMode ViewMode)
 	BoneLinesRS.DepthStencil = EDepthStencilState::NoDepth;
 
 	EmitLineCommand(DebugBoneLines, EditorShader, BoneLinesRS);
+	EmitLineCommand(PhysicsAssetAxisLines, EditorShader, BoneLinesRS);
 }
 
 // ============================================================
