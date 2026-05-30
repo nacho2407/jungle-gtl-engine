@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Reflection/ObjectFactory.h"
 #include "Component/SceneComponent.h"
@@ -7,6 +7,7 @@
 #include "Core/Types/CollisionTypes.h"
 #include "Core/Types/EngineTypes.h"
 #include "Core/Delegate.h"
+#include "Physics/BodyInstance.h"
 #include "Render/Types/VertexTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
 
@@ -60,6 +61,8 @@ class UPrimitiveComponent : public USceneComponent
 {
 public:
 	GENERATED_BODY()
+
+	UPrimitiveComponent();
 	~UPrimitiveComponent() override;
 
 	void BeginPlay() override;
@@ -166,6 +169,10 @@ public:
 	UFUNCTION(Pure, Category="Physics")
 	bool GetSimulatePhysics() const { return bSimulatePhysics; }
 
+	// --- BodyInstance
+	FBodyInstance& GetBodyInstance() { return BodyInstance; }
+	const FBodyInstance& GetBodyInstance() const { return BodyInstance; }
+
 	// --- Physics Force/Velocity API ---
 	UFUNCTION(Callable, Category="Physics")
 	void AddForce(const FVector& Force);
@@ -236,6 +243,7 @@ protected:
 	void OnTransformDirty() override;
 	void EnsureWorldAABBUpdated() const;
 
+	void InitializeBodyInstance();
 	// 컴포넌트가 BeginPlay 후에만 PhysicsScene::RebuildBody 호출. 이전이면 skip.
 	void NotifyPhysicsBodyDirty();
 
@@ -272,6 +280,8 @@ protected:
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Collision Responses", Type=Struct)
 	FCollisionResponseContainer ResponseContainer; // 기본: 전 채널 Block
 	FPrimitiveSceneProxy* SceneProxy = nullptr;
+
+	FBodyInstance BodyInstance;
 
 	FOctree* OctreeNode = nullptr;
 	bool bInOctreeOverflow = false;

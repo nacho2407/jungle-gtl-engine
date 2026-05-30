@@ -1,4 +1,4 @@
-#include "PrimitiveComponent.h"
+﻿#include "PrimitiveComponent.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Core/Types/RayTypes.h"
@@ -36,6 +36,11 @@ namespace
 
 HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
 
+UPrimitiveComponent::UPrimitiveComponent()
+{
+	InitializeBodyInstance();
+}
+
 UPrimitiveComponent::~UPrimitiveComponent()
 {
 	if (UWorld* World = GetWorldEvenIfPendingKill())
@@ -52,6 +57,7 @@ void UPrimitiveComponent::BeginPlay()
 {
 	USceneComponent::BeginPlay();
 
+	InitializeBodyInstance();
 	// 직렬화나 InitDefaultComponents에서 CollisionEnabled가 이미 설정된 경우 등록.
 	// 이 시점에 SimulatePhysics/ObjectType/Response/Mass/COM 등 모든 셋업이 끝나있어
 	// PhysX/Native가 정확한 값으로 body를 생성한다.
@@ -149,7 +155,10 @@ void UPrimitiveComponent::NotifyPhysicsBodyDirty()
 void UPrimitiveComponent::SetSimulatePhysics(bool bInSimulate)
 {
 	if (bSimulatePhysics == bInSimulate) return;
+
 	bSimulatePhysics = bInSimulate;
+	BodyInstance.bSimulatePhysics = bInSimulate;
+
 	NotifyPhysicsBodyDirty();
 }
 
@@ -418,12 +427,35 @@ void UPrimitiveComponent::EnsureWorldAABBUpdated() const
 	}
 }
 
+void UPrimitiveComponent::InitializeBodyInstance()
+{
+	BodyInstance.OwnerComponent = this;
+	BodyInstance.OwnerSkeletalComponent = nullptr;
+
+	// 일반 PrimitiveComponent용
+	BodyInstance.BoneName = FName::None;
+	BodyInstance.BoneIndex = -1;
+
+	// 아직 PhysX Actor를 만든 상태가 아니어야 함
+	BodyInstance.ClearPhysicsPointers();
+
+	// 현재 컴포넌트 설정값을 기본 BodyInstance에도 맞춰둔다.
+	BodyInstance.bSimulatePhysics = bSimulatePhysics;
+	BodyInstance.bKinematic = false;
+	BodyInstance.CollisionEnabled = CollisionEnabled;
+	BodyInstance.ObjectType = ObjectType;
+	BodyInstance.ResponseContainer = ResponseContainer;
+	BodyInstance.Mass = Mass;
+	BodyInstance.CenterOfMassOffset = CenterOfMassOffset;
+}
+
 // --- Collision Channel / Response ---
 
 void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
 {
 	bool bWasQuery = IsQueryCollisionEnabled();
 	CollisionEnabled = InEnabled;
+	BodyInstance.CollisionEnabled = InEnabled;
 	bool bIsQuery = IsQueryCollisionEnabled();
 
 	// 컴포넌트 BeginPlay 전이면 멤버만 변경. BeginPlay에서 한 번 등록되며 그 시점엔
@@ -457,18 +489,21 @@ void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel InChannel)
 {
 	if (ObjectType == InChannel) return;
 	ObjectType = InChannel;
+	BodyInstance.ObjectType = InChannel;
 	NotifyPhysicsBodyDirty();
 }
 
 void UPrimitiveComponent::SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response)
 {
 	ResponseContainer.SetResponse(Channel, Response);
+	BodyInstance.ResponseContainer = ResponseContainer;
 	NotifyPhysicsBodyDirty();
 }
 
 void UPrimitiveComponent::SetCollisionResponseToAllChannels(ECollisionResponse Response)
 {
 	ResponseContainer.SetAllChannels(Response);
+	BodyInstance.ResponseContainer = ResponseContainer;
 	NotifyPhysicsBodyDirty();
 }
 
@@ -543,6 +578,7 @@ void UPrimitiveComponent::SetAngularVelocity(const FVector& Vel)
 void UPrimitiveComponent::SetMass(float NewMass)
 {
 	Mass = NewMass;
+	BodyInstance.Mass = NewMass;
 	if (UWorld* W = GetWorld())
 			if (IPhysicsScene* PS = W->GetPhysicsScene())
 				PS->SetMass(this, NewMass);
@@ -551,6 +587,7 @@ void UPrimitiveComponent::SetMass(float NewMass)
 void UPrimitiveComponent::SetCenterOfMass(const FVector& LocalOffset)
 {
 	CenterOfMassOffset = LocalOffset;
+	BodyInstance.CenterOfMassOffset = LocalOffset;
 	if (UWorld* W = GetWorld())
 			if (IPhysicsScene* PS = W->GetPhysicsScene())
 				PS->SetCenterOfMass(this, LocalOffset);
