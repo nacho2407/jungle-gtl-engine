@@ -30,8 +30,6 @@ namespace
 
 void FPhysicsScene::Initialize()
 {
-	FPhysXSDK::Get().Initialize();
-
 	physx::PxPhysics* Physics = FPhysXSDK::Get().GetPhysics();
 
 	physx::PxSceneDesc SceneDesc(Physics->getTolerancesScale());
@@ -43,6 +41,9 @@ void FPhysicsScene::Initialize()
 	Dispatcher = physx::PxDefaultCpuDispatcherCreate(2);
 	SceneDesc.cpuDispatcher = Dispatcher;
 	SceneDesc.filterShader = PhysicsFilterShader;
+	SceneDesc.flags |= physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+	SceneDesc.flags |= physx::PxSceneFlag::eENABLE_CCD;
+	SceneDesc.flags |= physx::PxSceneFlag::eENABLE_PCM;
 
 	Scene = Physics->createScene(SceneDesc);
 }
