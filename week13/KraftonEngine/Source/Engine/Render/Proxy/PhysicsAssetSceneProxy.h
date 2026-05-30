@@ -22,10 +22,6 @@ public:
 private:
 	UPhysicsAssetDebugComponent* GetPhysicsAssetDebugComponent() const;
 	USkeletalMeshComponent* GetTargetSkeletalMeshComponent() const;
-	bool GetConstraintWorldFrames(
-		const FConstraintInstanceInitDesc& ConstraintDesc,
-		FTransform& OutParentFrame,
-		FTransform& OutChildFrame) const;
 
 	mutable FPhysicsDebugSolidMesh CachedSolidMesh;
 	mutable uint64 CachedSolidDebugRevision = 0;

@@ -8,6 +8,7 @@
 #include "Core/Types/CoreTypes.h"
 #include "Core/Types/RayTypes.h"
 #include "Gizmo/BoneTransformGizmoTarget.h"
+#include "Gizmo/PhysicsAssetConstraintGizmoTarget.h"
 #include "Gizmo/PhysicsAssetShapeGizmoTarget.h"
 #include "Component/Debug/BoneDebugComponent.h"
 #include "Object/GarbageCollection.h"
@@ -52,10 +53,15 @@ public:
 	UGizmoComponent* GetGizmo() const { return Gizmo; }
 	USkeletalMeshComponent* GetPreviewMeshComponent() const { return PreviewMeshComponent; }
 	UPhysicsAssetDebugComponent* GetPhysicsAssetDebugComponent() const { return PhysicsAssetDebugComponent; }
-	void SyncPhysicsAssetDebugComponent(UPhysicsAsset* PhysicsAsset, int32 SelectedBodyIndex);
+	void SyncPhysicsAssetDebugComponent(
+		UPhysicsAsset* PhysicsAsset,
+		int32 SelectedBodyIndex,
+		int32 SelectedConstraintIndex = -1);
 	void SetPhysicsAssetPickingEnabled(bool bInEnabled);
 	void SetOnPhysicsAssetBodyPicked(TFunction<void(int32)> InCallback);
+	void SetOnPhysicsAssetConstraintPicked(TFunction<void(int32, int32)> InCallback);
 	void SetOnPhysicsAssetShapeEdited(TFunction<void()> InCallback);
+	void SetOnPhysicsAssetConstraintEdited(TFunction<void()> InCallback);
 
 	FViewportRenderOptions& GetRenderOptions() override { return RenderOptions; }
 	const FViewportRenderOptions& GetRenderOptions() const override { return RenderOptions; }
@@ -83,10 +89,13 @@ private:
 
 	void SyncGizmo();
 	void SyncPhysicsAssetShapeGizmoTarget(UPhysicsAsset* PhysicsAsset, int32 SelectedBodyIndex);
+	void SyncPhysicsAssetConstraintGizmoTarget(UPhysicsAsset* PhysicsAsset, int32 SelectedConstraintIndex);
 
 	void HandleDragStart(const FRay& Ray);
 	void NotifyPhysicsAssetBodyPicked(int32 BodyIndex);
+	void NotifyPhysicsAssetConstraintPicked(int32 ConstraintIndex, int32 BodyIndex);
 	bool IsPhysicsAssetShapeGizmoActive() const;
+	bool IsPhysicsAssetConstraintGizmoActive() const;
 
 private:
 	USkeletalMesh* SelectedMesh = nullptr;
@@ -98,13 +107,17 @@ private:
 
 	FBoneTransformGizmoTarget BoneTarget;
 	FPhysicsAssetShapeGizmoTarget PhysicsAssetShapeTarget;
+	FPhysicsAssetConstraintGizmoTarget PhysicsAssetConstraintTarget;
 	UGizmoComponent* Gizmo = nullptr;
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
 	UBoneDebugComponent* BoneDebugComponent = nullptr;
 	UPhysicsAssetDebugComponent* PhysicsAssetDebugComponent = nullptr;
 	bool bPhysicsAssetPickingEnabled = false;
+	int32 SelectedPhysicsConstraintIndex = -1;
 	TFunction<void(int32)> OnPhysicsAssetBodyPicked;
+	TFunction<void(int32, int32)> OnPhysicsAssetConstraintPicked;
 	TFunction<void()> OnPhysicsAssetShapeEdited;
+	TFunction<void()> OnPhysicsAssetConstraintEdited;
 
 	UWorld* PreviewWorld = nullptr;
 	AActor* PreviewActor = nullptr;

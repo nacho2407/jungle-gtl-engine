@@ -56,7 +56,23 @@ public:
 	void MarkPhysicsAssetDebugDirty();
 
 	bool PickBody(const FRay& Ray, FPhysicsAssetDebugHitResult& OutHit) const;
+	bool PickConstraint(
+		const FRay& Ray,
+		const FVector& CameraLocation,
+		bool bIsOrtho,
+		float OrthoWidth,
+		FPhysicsAssetDebugHitResult& OutHit) const;
 	bool GetPhysicsAssetBoneWorldTransform(const FName& BoneName, FTransform& OutBoneWorldTM) const;
+	bool GetConstraintWorldFrames(
+		const FConstraintInstanceInitDesc& ConstraintDesc,
+		FTransform& OutParentFrame,
+		FTransform& OutChildFrame) const;
+	bool GetConstraintWorldLocation(
+		const FConstraintInstanceInitDesc& ConstraintDesc,
+		FVector& OutWorldLocation) const;
+	bool SetConstraintWorldLocation(
+		FConstraintInstanceInitDesc& ConstraintDesc,
+		const FVector& WorldLocation);
 	bool SyncConstraintFrameLocation(
 		FConstraintInstanceInitDesc& ConstraintDesc,
 		EPhysicsAssetConstraintFrameSide SourceFrameSide);

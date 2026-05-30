@@ -112,6 +112,7 @@ private:
 	float HierarchyWidth    = 250.0f;
 	float DetailsWidth      = 300.0f;
 	int32 SelectedPhysicsBodyIndex = -1;
+	int32 SelectedPhysicsConstraintIndex = -1;
 	bool bOpenPhysicsAssetBuildOptions = false;
 	FPhysicsAssetBuildOptions PendingPhysicsAssetBuildOptions;
 

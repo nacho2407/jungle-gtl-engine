@@ -57,9 +57,13 @@ void FMeshEditorViewportClient::Release()
 	BoneDebugComponent = nullptr;
 	PhysicsAssetDebugComponent = nullptr;
 	PhysicsAssetShapeTarget.Clear();
+	PhysicsAssetConstraintTarget.Clear();
 	bPhysicsAssetPickingEnabled = false;
+	SelectedPhysicsConstraintIndex = -1;
 	OnPhysicsAssetBodyPicked = nullptr;
+	OnPhysicsAssetConstraintPicked = nullptr;
 	OnPhysicsAssetShapeEdited = nullptr;
+	OnPhysicsAssetConstraintEdited = nullptr;
 
 	bIsRenderable = false;
 
@@ -105,7 +109,10 @@ void FMeshEditorViewportClient::CreatePhysicsAssetDebugComponent()
 	}
 }
 
-void FMeshEditorViewportClient::SyncPhysicsAssetDebugComponent(UPhysicsAsset* PhysicsAsset, int32 SelectedBodyIndex)
+void FMeshEditorViewportClient::SyncPhysicsAssetDebugComponent(
+	UPhysicsAsset* PhysicsAsset,
+	int32 SelectedBodyIndex,
+	int32 SelectedConstraintIndex)
 {
 	if (!PhysicsAssetDebugComponent && PreviewActor)
 	{
@@ -119,7 +126,17 @@ void FMeshEditorViewportClient::SyncPhysicsAssetDebugComponent(UPhysicsAsset* Ph
 
 	PhysicsAssetDebugComponent->SetTarget(PreviewMeshComponent, PhysicsAsset);
 	PhysicsAssetDebugComponent->SetSelectedBodyIndex(SelectedBodyIndex);
-	SyncPhysicsAssetShapeGizmoTarget(PhysicsAsset, SelectedBodyIndex);
+	PhysicsAssetDebugComponent->SetSelectedConstraintIndex(SelectedConstraintIndex);
+	SelectedPhysicsConstraintIndex = SelectedConstraintIndex;
+
+	if (SelectedConstraintIndex >= 0)
+	{
+		SyncPhysicsAssetConstraintGizmoTarget(PhysicsAsset, SelectedConstraintIndex);
+	}
+	else
+	{
+		SyncPhysicsAssetShapeGizmoTarget(PhysicsAsset, SelectedBodyIndex);
+	}
 }
 
 void FMeshEditorViewportClient::SetPhysicsAssetPickingEnabled(bool bInEnabled)
@@ -128,10 +145,13 @@ void FMeshEditorViewportClient::SetPhysicsAssetPickingEnabled(bool bInEnabled)
 	if (!bPhysicsAssetPickingEnabled && PhysicsAssetDebugComponent)
 	{
 		PhysicsAssetDebugComponent->SetSelectedBodyIndex(-1);
+		PhysicsAssetDebugComponent->SetSelectedConstraintIndex(-1);
+		SelectedPhysicsConstraintIndex = -1;
 	}
-	if (!bPhysicsAssetPickingEnabled && IsPhysicsAssetShapeGizmoActive())
+	if (!bPhysicsAssetPickingEnabled && (IsPhysicsAssetShapeGizmoActive() || IsPhysicsAssetConstraintGizmoActive()))
 	{
 		PhysicsAssetShapeTarget.Clear();
+		PhysicsAssetConstraintTarget.Clear();
 		Gizmo->Deactivate();
 	}
 }
@@ -141,9 +161,19 @@ void FMeshEditorViewportClient::SetOnPhysicsAssetBodyPicked(TFunction<void(int32
 	OnPhysicsAssetBodyPicked = std::move(InCallback);
 }
 
+void FMeshEditorViewportClient::SetOnPhysicsAssetConstraintPicked(TFunction<void(int32, int32)> InCallback)
+{
+	OnPhysicsAssetConstraintPicked = std::move(InCallback);
+}
+
 void FMeshEditorViewportClient::SetOnPhysicsAssetShapeEdited(TFunction<void()> InCallback)
 {
 	OnPhysicsAssetShapeEdited = std::move(InCallback);
+}
+
+void FMeshEditorViewportClient::SetOnPhysicsAssetConstraintEdited(TFunction<void()> InCallback)
+{
+	OnPhysicsAssetConstraintEdited = std::move(InCallback);
 }
 
 void FMeshEditorViewportClient::NotifyPhysicsAssetBodyPicked(int32 BodyIndex)
@@ -151,12 +181,30 @@ void FMeshEditorViewportClient::NotifyPhysicsAssetBodyPicked(int32 BodyIndex)
 	if (PhysicsAssetDebugComponent)
 	{
 		PhysicsAssetDebugComponent->SetSelectedBodyIndex(BodyIndex);
+		PhysicsAssetDebugComponent->SetSelectedConstraintIndex(-1);
+		SelectedPhysicsConstraintIndex = -1;
 		SyncPhysicsAssetShapeGizmoTarget(PhysicsAssetDebugComponent->GetPhysicsAsset(), BodyIndex);
 	}
 
 	if (OnPhysicsAssetBodyPicked)
 	{
 		OnPhysicsAssetBodyPicked(BodyIndex);
+	}
+}
+
+void FMeshEditorViewportClient::NotifyPhysicsAssetConstraintPicked(int32 ConstraintIndex, int32 BodyIndex)
+{
+	if (PhysicsAssetDebugComponent)
+	{
+		PhysicsAssetDebugComponent->SetSelectedBodyIndex(BodyIndex);
+		PhysicsAssetDebugComponent->SetSelectedConstraintIndex(ConstraintIndex);
+		SelectedPhysicsConstraintIndex = ConstraintIndex;
+		SyncPhysicsAssetConstraintGizmoTarget(PhysicsAssetDebugComponent->GetPhysicsAsset(), ConstraintIndex);
+	}
+
+	if (OnPhysicsAssetConstraintPicked)
+	{
+		OnPhysicsAssetConstraintPicked(ConstraintIndex, BodyIndex);
 	}
 }
 
@@ -403,7 +451,14 @@ void FMeshEditorViewportClient::TickInput(float DeltaTime)
 
 	if (Input.GetKeyUp(VK_SPACE))
 	{
-		Gizmo->SetNextMode();
+		if (IsPhysicsAssetConstraintGizmoActive())
+		{
+			Gizmo->SetTranslateMode();
+		}
+		else
+		{
+			Gizmo->SetNextMode();
+		}
 	}
 }
 
@@ -498,6 +553,7 @@ void FMeshEditorViewportClient::TickInteraction(float DeltaTime)
 	else if (Input.GetLeftDragEnd())
 	{
 		const bool bWasHoldingPhysicsAssetShape = Gizmo->IsHolding() && IsPhysicsAssetShapeGizmoActive();
+		const bool bWasHoldingPhysicsAssetConstraint = Gizmo->IsHolding() && IsPhysicsAssetConstraintGizmoActive();
 		if (Gizmo->IsHolding())
 		{
 			Gizmo->DragEnd();
@@ -505,6 +561,10 @@ void FMeshEditorViewportClient::TickInteraction(float DeltaTime)
 		if (bWasHoldingPhysicsAssetShape && OnPhysicsAssetShapeEdited)
 		{
 			OnPhysicsAssetShapeEdited();
+		}
+		if (bWasHoldingPhysicsAssetConstraint && OnPhysicsAssetConstraintEdited)
+		{
+			OnPhysicsAssetConstraintEdited();
 		}
 	}
 	else if (Input.GetKeyUp(VK_LBUTTON))
@@ -562,14 +622,16 @@ void FMeshEditorViewportClient::SyncPhysicsAssetShapeGizmoTarget(UPhysicsAsset* 
 
 	if (!bPhysicsAssetPickingEnabled || !PhysicsAssetDebugComponent || !PhysicsAsset || SelectedBodyIndex < 0)
 	{
-		if (IsPhysicsAssetShapeGizmoActive())
+		if (IsPhysicsAssetShapeGizmoActive() || IsPhysicsAssetConstraintGizmoActive())
 		{
 			PhysicsAssetShapeTarget.Clear();
+			PhysicsAssetConstraintTarget.Clear();
 			Gizmo->Deactivate();
 		}
 		return;
 	}
 
+	PhysicsAssetConstraintTarget.Clear();
 	PhysicsAssetShapeTarget.SetShape(PhysicsAssetDebugComponent, SelectedBodyIndex);
 	if (!PhysicsAssetShapeTarget.IsValid())
 	{
@@ -584,6 +646,48 @@ void FMeshEditorViewportClient::SyncPhysicsAssetShapeGizmoTarget(UPhysicsAsset* 
 	if (Gizmo->GetTarget() != &PhysicsAssetShapeTarget)
 	{
 		Gizmo->SetTarget(&PhysicsAssetShapeTarget);
+	}
+	else
+	{
+		Gizmo->UpdateGizmoTransform();
+	}
+	ApplyTransformSettingsToGizmo();
+}
+
+void FMeshEditorViewportClient::SyncPhysicsAssetConstraintGizmoTarget(UPhysicsAsset* PhysicsAsset, int32 SelectedConstraintIndex)
+{
+	if (!Gizmo)
+	{
+		return;
+	}
+
+	if (!bPhysicsAssetPickingEnabled || !PhysicsAssetDebugComponent || !PhysicsAsset || SelectedConstraintIndex < 0)
+	{
+		if (IsPhysicsAssetShapeGizmoActive() || IsPhysicsAssetConstraintGizmoActive())
+		{
+			PhysicsAssetShapeTarget.Clear();
+			PhysicsAssetConstraintTarget.Clear();
+			Gizmo->Deactivate();
+		}
+		return;
+	}
+
+	PhysicsAssetShapeTarget.Clear();
+	PhysicsAssetConstraintTarget.SetConstraint(PhysicsAssetDebugComponent, SelectedConstraintIndex);
+	if (!PhysicsAssetConstraintTarget.IsValid())
+	{
+		if (IsPhysicsAssetConstraintGizmoActive())
+		{
+			Gizmo->Deactivate();
+		}
+		PhysicsAssetConstraintTarget.Clear();
+		return;
+	}
+
+	Gizmo->SetTranslateMode();
+	if (Gizmo->GetTarget() != &PhysicsAssetConstraintTarget)
+	{
+		Gizmo->SetTarget(&PhysicsAssetConstraintTarget);
 	}
 	else
 	{
@@ -612,6 +716,11 @@ bool FMeshEditorViewportClient::IsPhysicsAssetShapeGizmoActive() const
 	return Gizmo && Gizmo->GetTarget() == &PhysicsAssetShapeTarget;
 }
 
+bool FMeshEditorViewportClient::IsPhysicsAssetConstraintGizmoActive() const
+{
+	return Gizmo && Gizmo->GetTarget() == &PhysicsAssetConstraintTarget;
+}
+
 void FMeshEditorViewportClient::HandleDragStart(const FRay& Ray)
 {
 	FHitResult Hit;
@@ -624,6 +733,17 @@ void FMeshEditorViewportClient::HandleDragStart(const FRay& Ray)
 	if (bPhysicsAssetPickingEnabled && PhysicsAssetDebugComponent)
 	{
 		FPhysicsAssetDebugHitResult PhysicsHit;
+		if (PhysicsAssetDebugComponent->PickConstraint(
+				Ray,
+				ViewTransform.ViewLocation,
+				ViewTransform.bIsOrtho,
+				ViewTransform.OrthoZoom,
+				PhysicsHit))
+		{
+			NotifyPhysicsAssetConstraintPicked(PhysicsHit.ConstraintIndex, PhysicsHit.BodyIndex);
+			return;
+		}
+
 		const int32 PickedBodyIndex = PhysicsAssetDebugComponent->PickBody(Ray, PhysicsHit)
 			? PhysicsHit.BodyIndex
 			: -1;

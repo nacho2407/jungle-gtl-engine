@@ -136,6 +136,7 @@ void FPhysicsAssetViewerWidget::Open(UObject* Object)
 	const UPhysicsAsset* PhysicsAsset = dynamic_cast<UPhysicsAsset*>(Object);
 	SourceSkeletalMesh = PhysicsAsset ? PhysicsAsset->GetTypedOuter<USkeletalMesh>() : nullptr;
 	SelectedBodyIndex = -1;
+	SelectedConstraintIndex = -1;
 	CreatePreviewWorld();
 }
 
@@ -143,15 +144,18 @@ void FPhysicsAssetViewerWidget::Close()
 {
 	if (UPhysicsAsset* PhysicsAsset = dynamic_cast<UPhysicsAsset*>(EditedObject))
 	{
-		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, -1);
+		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, -1, -1);
 	}
 	ViewportClient.SetPhysicsAssetPickingEnabled(false);
 	ViewportClient.SetOnPhysicsAssetBodyPicked(nullptr);
+	ViewportClient.SetOnPhysicsAssetConstraintPicked(nullptr);
 	ViewportClient.SetOnPhysicsAssetShapeEdited(nullptr);
+	ViewportClient.SetOnPhysicsAssetConstraintEdited(nullptr);
 	DestroyPreviewWorld();
 	FAssetEditorWidget::Close();
 	SourceSkeletalMesh = nullptr;
 	SelectedBodyIndex = -1;
+	SelectedConstraintIndex = -1;
 }
 
 void FPhysicsAssetViewerWidget::Tick(float DeltaTime)
@@ -213,8 +217,22 @@ void FPhysicsAssetViewerWidget::CreatePreviewWorld()
 	ViewportClient.SetOnPhysicsAssetBodyPicked([this](int32 BodyIndex)
 	{
 		SelectedBodyIndex = BodyIndex;
+		SelectedConstraintIndex = -1;
 		UPhysicsAsset* PhysicsAsset = dynamic_cast<UPhysicsAsset*>(EditedObject);
-		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex);
+		ViewportClient.SyncPhysicsAssetDebugComponent(
+			PhysicsAsset,
+			SelectedBodyIndex,
+			SelectedConstraintIndex);
+	});
+	ViewportClient.SetOnPhysicsAssetConstraintPicked([this](int32 ConstraintIndex, int32 BodyIndex)
+	{
+		SelectedBodyIndex = BodyIndex;
+		SelectedConstraintIndex = ConstraintIndex;
+		UPhysicsAsset* PhysicsAsset = dynamic_cast<UPhysicsAsset*>(EditedObject);
+		ViewportClient.SyncPhysicsAssetDebugComponent(
+			PhysicsAsset,
+			SelectedBodyIndex,
+			SelectedConstraintIndex);
 	});
 	ViewportClient.SetOnPhysicsAssetShapeEdited([this]()
 	{
@@ -229,6 +247,19 @@ void FPhysicsAssetViewerWidget::CreatePreviewWorld()
 			MarkDirty();
 		}
 	});
+	ViewportClient.SetOnPhysicsAssetConstraintEdited([this]()
+	{
+		UPhysicsAsset* PhysicsAsset = dynamic_cast<UPhysicsAsset*>(EditedObject);
+		if (SavePhysicsAsset(PhysicsAsset))
+		{
+			ClearDirty();
+		}
+		else if (PhysicsAsset)
+		{
+			UE_LOG("PhysicsAsset constraint gizmo warning: failed to persist constraint edit. PhysicsAsset=%s", PhysicsAsset->GetAssetPathFileName().c_str());
+			MarkDirty();
+		}
+	});
 	ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
 	ViewportClient.ResetCameraToPreviousBounds();
 
@@ -240,7 +271,9 @@ void FPhysicsAssetViewerWidget::DestroyPreviewWorld()
 {
 	ViewportClient.SetPhysicsAssetPickingEnabled(false);
 	ViewportClient.SetOnPhysicsAssetBodyPicked(nullptr);
+	ViewportClient.SetOnPhysicsAssetConstraintPicked(nullptr);
 	ViewportClient.SetOnPhysicsAssetShapeEdited(nullptr);
+	ViewportClient.SetOnPhysicsAssetConstraintEdited(nullptr);
 
 	if (ViewportClient.IsRenderable())
 	{
@@ -350,7 +383,7 @@ void FPhysicsAssetViewerWidget::Render(float DeltaTime)
 		return;
 	}
 
-	ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex);
+	ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex, SelectedConstraintIndex);
 
 	constexpr float BodyListWidth = 280.0f;
 	constexpr float BodyDetailsWidth = 320.0f;
@@ -390,8 +423,13 @@ void FPhysicsAssetViewerWidget::RenderBodyList(UPhysicsAsset* PhysicsAsset)
 	if (SelectedBodyIndex >= static_cast<int32>(Bodies.size()))
 	{
 		SelectedBodyIndex = -1;
+		SelectedConstraintIndex = -1;
 	}
-	ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex);
+	if (SelectedConstraintIndex >= static_cast<int32>(PhysicsAsset->GetConstraintInitDescs().size()))
+	{
+		SelectedConstraintIndex = -1;
+	}
+	ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex, SelectedConstraintIndex);
 
 	const FSkeletalMesh* Asset = SourceSkeletalMesh ? SourceSkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset)
@@ -472,7 +510,8 @@ bool FPhysicsAssetViewerWidget::RenderBodyTree(const FSkeletalMesh* Asset, UPhys
 	if (ImGui::IsItemClicked())
 	{
 		SelectedBodyIndex = BodyIndex;
-		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex);
+		SelectedConstraintIndex = -1;
+		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex, SelectedConstraintIndex);
 	}
 
 	if (bOpen && bHasVisibleChildren)

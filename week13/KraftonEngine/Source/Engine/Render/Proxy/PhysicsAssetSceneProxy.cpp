@@ -76,30 +76,6 @@ USkeletalMeshComponent* FPhysicsAssetSceneProxy::GetTargetSkeletalMeshComponent(
 	return IsValid(DebugComponent) ? DebugComponent->GetTargetSkeletalMeshComponent() : nullptr;
 }
 
-bool FPhysicsAssetSceneProxy::GetConstraintWorldFrames(
-	const FConstraintInstanceInitDesc& ConstraintDesc,
-	FTransform& OutParentFrame,
-	FTransform& OutChildFrame) const
-{
-	const UPhysicsAssetDebugComponent* DebugComponent = GetPhysicsAssetDebugComponent();
-	if (!IsValid(DebugComponent))
-	{
-		return false;
-	}
-
-	FTransform ParentBoneWorldTM;
-	FTransform ChildBoneWorldTM;
-	if (!DebugComponent->GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ParentBoneName, ParentBoneWorldTM) ||
-		!DebugComponent->GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ChildBoneName, ChildBoneWorldTM))
-	{
-		return false;
-	}
-
-	OutParentFrame = ConstraintDesc.ParentFrame * ParentBoneWorldTM;
-	OutChildFrame = ConstraintDesc.ChildFrame * ChildBoneWorldTM;
-	return true;
-}
-
 void FPhysicsAssetSceneProxy::BuildPhysicsAssetSolidMesh(
 	const FFrameContext& Frame,
 	FPhysicsDebugSolidMesh& OutMesh) const
@@ -220,12 +196,18 @@ void FPhysicsAssetSceneProxy::BuildPhysicsAssetConstraintAxisLines(
 	const FVector4 ConstraintXColor(1.0f, 0.12f, 0.12f, 1.0f);
 	const FVector4 ConstraintYColor(0.12f, 1.0f, 0.12f, 1.0f);
 	const FVector4 ConstraintZColor(0.18f, 0.45f, 1.0f, 1.0f);
+	const FVector4 SelectedConstraintXColor(1.0f, 0.55f, 0.20f, 1.0f);
+	const FVector4 SelectedConstraintYColor(0.55f, 1.0f, 0.35f, 1.0f);
+	const FVector4 SelectedConstraintZColor(0.45f, 0.75f, 1.0f, 1.0f);
 
-	for (const FConstraintInstanceInitDesc& ConstraintDesc : PhysicsAsset->GetConstraintInitDescs())
+	const TArray<FConstraintInstanceInitDesc>& ConstraintDescs = PhysicsAsset->GetConstraintInitDescs();
+	const int32 SelectedConstraintIndex = DebugComponent->GetSelectedConstraintIndex();
+	for (int32 ConstraintIndex = 0; ConstraintIndex < static_cast<int32>(ConstraintDescs.size()); ++ConstraintIndex)
 	{
+		const FConstraintInstanceInitDesc& ConstraintDesc = ConstraintDescs[ConstraintIndex];
 		FTransform ParentWorldFrame;
 		FTransform ChildWorldFrame;
-		if (!GetConstraintWorldFrames(ConstraintDesc, ParentWorldFrame, ChildWorldFrame))
+		if (!DebugComponent->GetConstraintWorldFrames(ConstraintDesc, ParentWorldFrame, ChildWorldFrame))
 		{
 			continue;
 		}
@@ -233,14 +215,15 @@ void FPhysicsAssetSceneProxy::BuildPhysicsAssetConstraintAxisLines(
 		const FVector ConstraintLocation =
 			(ParentWorldFrame.GetLocation() + ChildWorldFrame.GetLocation()) * 0.5f;
 		const float ConstraintAxisLength = ComputeConstraintAxisLength(Frame, ConstraintLocation);
+		const bool bSelectedConstraint = ConstraintIndex == SelectedConstraintIndex;
 
 		AddConstraintFrameAxes(
 			OutLines,
 			ParentWorldFrame,
 			ConstraintLocation,
 			ConstraintAxisLength,
-			ConstraintXColor,
-			ConstraintYColor,
-			ConstraintZColor);
+			bSelectedConstraint ? SelectedConstraintXColor : ConstraintXColor,
+			bSelectedConstraint ? SelectedConstraintYColor : ConstraintYColor,
+			bSelectedConstraint ? SelectedConstraintZColor : ConstraintZColor);
 	}
 }
