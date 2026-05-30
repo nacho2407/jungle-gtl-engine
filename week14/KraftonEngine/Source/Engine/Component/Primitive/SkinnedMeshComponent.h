@@ -10,6 +10,7 @@
 struct FSkeletalMesh;
 class USkeletalMesh;
 class UMaterialInterface;
+class UPhysicsAsset;
 
 // ==================================================================================
 // SkeletalMesh의 런타임 상태를 소유하는 기본 컴포넌트.
@@ -27,6 +28,10 @@ public:
 	// Mesh assignment 섹션: SkeletalMesh 교체 시 필요한 캐시와 dirty 처리를 한 번의 흐름으로 끝낸다.
 	virtual void SetSkeletalMesh(USkeletalMesh* InMesh);
 	USkeletalMesh* GetSkeletalMesh() const;
+
+	// PhysicsAsset 접근: per-instance 오버라이드 우선, 없으면 메시 기본값(USkeletalMesh).
+	void SetPhysicsAssetOverride(UPhysicsAsset* InAsset) { PhysicsAssetOverride = InAsset; }
+	UPhysicsAsset* GetPhysicsAsset();
 
 	// Bounds 섹션: SkeletalMesh는 local asset bounds 대신 실제 skinned vertex 기준으로 culling bounds를 만든다.
 	void UpdateWorldAABB() const override;
@@ -129,6 +134,9 @@ protected:
 	TArray<UMaterialInterface*> OverrideMaterials;
 	UPROPERTY(Edit, Save, EditFixedSize, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
+
+	// PhysicsAsset 오버라이드 (per-instance). nullptr면 메시 기본값 사용. 런타임 전용(직렬화는 나중).
+	UPhysicsAsset* PhysicsAssetOverride = nullptr;
 
 	// BoneEditLocalMatrices is the current evaluated pose. BoneEditBaseLocalMatrices is the
 	// edited animation base pose that survives animation evaluation and is not used as skin bind.

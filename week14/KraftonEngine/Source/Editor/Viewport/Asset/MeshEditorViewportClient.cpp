@@ -48,9 +48,6 @@ void FMeshEditorViewportClient::Release()
 	Gizmo = nullptr;
 	BoneDebugComponent = nullptr;
 
-	PreviewPhysicsAsset = nullptr;
-	bPhysicsAssetLoadAttempted = false;
-	
 	bIsRenderable = false;
 
 	SetSelectedBone(nullptr, -1);
@@ -474,48 +471,10 @@ void FMeshEditorViewportClient::DrawPreviewPhysicsAsset()
 		return;
 	}
 
-	// 최초 1회만 메시 이름 규약으로 PhysicsAsset 로드 시도
-	// <메시>.uasset  →  같은 폴더의 <메시>_PhysicsAsset.uasset
-	if (!bPhysicsAssetLoadAttempted)
+	// 컴포넌트 오버라이드 우선, 없으면 메시 기본값(3-B). 매니저 캐시라 매 프레임 호출해도 가볍다.
+	if (UPhysicsAsset* PhysicsAsset = PreviewMeshComponent->GetPhysicsAsset())
 	{
-		bPhysicsAssetLoadAttempted = true;
-
-		if (USkeletalMesh* Mesh = PreviewMeshComponent->GetSkeletalMesh())
-		{
-			const FString& MeshPath = Mesh->GetAssetPathFileName();
-			if (!MeshPath.empty() && MeshPath != "None")
-			{
-				const std::filesystem::path P(FPaths::ToWide(MeshPath));
-				const std::filesystem::path Sibling =
-					P.parent_path() / (P.stem().wstring() + L"_PhysicsAsset.uasset");
-
-				PreviewPhysicsAsset = FPhysicsAssetManager::Get().Load(
-					FPaths::ToUtf8(Sibling.generic_wstring()));
-
-				if (PreviewPhysicsAsset)
-				{
-					UE_LOG(
-						"PhysicsAsset preview loaded. Mesh=%s PhysicsAsset=%s Bodies=%llu",
-						MeshPath.c_str(),
-						FPaths::ToUtf8(Sibling.generic_wstring()).c_str(),
-						static_cast<unsigned long long>(PreviewPhysicsAsset->GetBodySetups().size())
-					);
-				}
-				else
-				{
-					UE_LOG(
-						"PhysicsAsset preview load failed. Mesh=%s ExpectedPhysicsAsset=%s",
-						MeshPath.c_str(),
-						FPaths::ToUtf8(Sibling.generic_wstring()).c_str()
-					);
-				}
-			}
-		}
-	}
-
-	if (PreviewPhysicsAsset)
-	{
-		DrawPhysicsAssetDebug(PreviewWorld, PreviewPhysicsAsset, PreviewMeshComponent);
+		DrawPhysicsAssetDebug(PreviewWorld, PhysicsAsset, PreviewMeshComponent);
 	}
 }
 

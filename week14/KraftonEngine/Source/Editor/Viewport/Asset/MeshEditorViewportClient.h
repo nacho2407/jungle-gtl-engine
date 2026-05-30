@@ -44,13 +44,8 @@ public:
 	UGizmoComponent* GetGizmo() const { return Gizmo; }
 	USkeletalMeshComponent* GetPreviewMeshComponent() const { return PreviewMeshComponent; }
 
-	bool IsShowPhysicsAsset() const {return bShowPhysicsAsset;}
-	void SetShowPhysicsAsset(bool bInShow)
-	{
-		bShowPhysicsAsset = bInShow;
-		PreviewPhysicsAsset = nullptr;
-		if (bInShow) {bPhysicsAssetLoadAttempted = false;}
-	};
+	bool IsShowPhysicsAsset() const { return bShowPhysicsAsset; }
+	void SetShowPhysicsAsset(bool bInShow) { bShowPhysicsAsset = bInShow; }
 	
 	FViewportRenderOptions& GetRenderOptions() override { return RenderOptions; }
 	const FViewportRenderOptions& GetRenderOptions() const override { return RenderOptions; }
@@ -95,9 +90,7 @@ private:
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
 	UBoneDebugComponent* BoneDebugComponent = nullptr;
 	
-	UPhysicsAsset* PreviewPhysicsAsset = nullptr;
 	bool bShowPhysicsAsset = true;
-	bool bPhysicsAssetLoadAttempted = false;
 
 	UWorld* PreviewWorld = nullptr;
 	AActor* PreviewActor = nullptr;

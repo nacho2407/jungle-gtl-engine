@@ -2,6 +2,8 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Animation/Skeleton/Skeleton.h"
+#include "Physics/PhysicsAsset.h"
+#include "Physics/PhysicsAssetManager.h"
 
 void USkeletalMesh::Serialize(FArchive& Ar)
 {
@@ -26,6 +28,28 @@ void USkeletalMesh::Serialize(FArchive& Ar)
 	Ar << SkeletalMeshAsset->Bones;
 	Ar << SkeletalMaterials;
 	Ar << SkeletalMeshAsset->MorphTargets;
+
+	// ── 트레일링 버전 섹션 (구버전 .uasset 호환) ──
+	// 구버전 파일은 여기서 끝(EOF)이라 AtEnd()가 true → 읽지 않고 기본값 유지.
+	// 앞으로 포맷 확장은 ExtVersion 하나로 관리한다.
+	if (Ar.IsSaving())
+	{
+		uint32 ExtVersion = 1;
+		Ar << ExtVersion;
+		Ar << PhysicsAssetPath;
+	}
+	else
+	{
+		if (!Ar.AtEnd())
+		{
+			uint32 ExtVersion = 0;
+			Ar << ExtVersion;
+			if (ExtVersion >= 1)
+			{
+				Ar << PhysicsAssetPath;
+			}
+		}
+	}
 
 	if (Ar.IsLoading())
 	{
@@ -111,6 +135,22 @@ void USkeletalMesh::SetSkeleton(USkeleton* InSkeleton)
 USkeleton* USkeletalMesh::GetSkeleton() const
 {
 	return Skeleton;
+}
+
+UPhysicsAsset* USkeletalMesh::GetPhysicsAsset()
+{
+	if (CachedPhysicsAsset)
+	{
+		return CachedPhysicsAsset;
+	}
+	if (PhysicsAssetPath.empty() || PhysicsAssetPath == "None")
+	{
+		return nullptr;
+	}
+
+	// 매니저가 캐시/소유하므로 GC는 매니저 쪽에서 보호된다.
+	CachedPhysicsAsset = FPhysicsAssetManager::Get().Load(PhysicsAssetPath);
+	return CachedPhysicsAsset;
 }
 
 void USkeletalMesh::SetSkeletonBinding(const FSkeletonBinding& InBinding)

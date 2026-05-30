@@ -227,5 +227,11 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 		OutCreatedPath.c_str(),
 		static_cast<unsigned long long>(NewAsset->GetBodySetups().size())
 	);
+
+	// 메시가 자기 PhysicsAsset 경로를 기억하게 한다.
+	// 같은 세션에서 메시는 동일 인스턴스(매니저 캐시)라 뷰포트가 즉시 본다.
+	// (세션 간 영속화는 메시 재저장이 필요 — 별도 결정.)
+	SourceMesh->SetPhysicsAssetPath(OutCreatedPath);
+
 	return true;
 }
