@@ -86,7 +86,7 @@
       <UniqueIdentifier>{ebf11781-61db-1727-e031-70fd890518c6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\UI\Asset\PhysicsAsset">
-      <UniqueIdentifier>{0b89d9dd-c10d-4f0c-88ba-99f1339fba31}</UniqueIdentifier>
+      <UniqueIdentifier>{7fc89ace-8c3b-db4b-c8f3-6b734a748efb}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\UI\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
@@ -418,6 +418,78 @@
     <Filter Include="ThirdParty\ImGui">
       <UniqueIdentifier>{5fdcaaee-156a-a40d-82bd-8b77a5a402df}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1">
+      <UniqueIdentifier>{c00a21e7-29fd-2312-5f5a-867ffa12f879}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx">
+      <UniqueIdentifier>{16d8588a-a763-5287-b477-e1f36b8c544d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include">
+      <UniqueIdentifier>{462df4f9-5401-2c0f-0976-9d9f82fb4ea9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\characterkinematic">
+      <UniqueIdentifier>{1fe4eb99-7850-f316-04f3-0a447d6c1c41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\collision">
+      <UniqueIdentifier>{a97a862a-859b-9c86-36f3-6e1ec56df578}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\common">
+      <UniqueIdentifier>{8820a810-0b13-8eab-de21-c986b7c376a2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\common\windows">
+      <UniqueIdentifier>{7ae88fb2-edda-29a6-6133-b6eeef49c06b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\cooking">
+      <UniqueIdentifier>{16219526-1ec4-aec7-8b24-1ef6a8566b21}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\cudamanager">
+      <UniqueIdentifier>{638e6df2-5fed-70a5-2ff2-e4fbe8c7b8e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\extensions">
+      <UniqueIdentifier>{ffb4fafc-d35f-2976-185e-ad45f0eecfe0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\filebuf">
+      <UniqueIdentifier>{02568e89-4bc5-4d16-e708-b215980e3b62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\foundation">
+      <UniqueIdentifier>{a0995cd4-f972-48da-f244-653b8c154e68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\geometry">
+      <UniqueIdentifier>{77d3c35c-0b10-98ba-5c9f-6bb240251280}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\geomutils">
+      <UniqueIdentifier>{64ceed8f-4c8a-0f25-3936-20196ddc9a0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\gpu">
+      <UniqueIdentifier>{7c976ff7-e2fc-00ba-a0e6-891b1a3accd9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\pvd">
+      <UniqueIdentifier>{04a92b77-5d05-d6e1-7bf8-d29ecdd9ac6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\solver">
+      <UniqueIdentifier>{9a2b2cfc-c15a-984c-0a8d-478d81745683}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\task">
+      <UniqueIdentifier>{77c27eac-aec3-289a-bfa6-9568c90f8843}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\physx\include\vehicle">
+      <UniqueIdentifier>{d71a8798-cd1b-600c-3bbe-fcab8f11b45f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\pxshared">
+      <UniqueIdentifier>{a0521e43-9b0c-9aa8-d49f-2e10c28f15c5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\pxshared\include">
+      <UniqueIdentifier>{3a3a2b58-4b7a-8954-7122-9f98a54b8956}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\pxshared\include\foundation">
+      <UniqueIdentifier>{a19ffbc6-bcdf-ab8a-1b8a-c837db166689}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\unix">
+      <UniqueIdentifier>{edc949b7-2599-c286-b471-f26d0788f2a6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\windows">
+      <UniqueIdentifier>{53e81061-e313-0008-ddd4-f2e1b63a8793}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ThirdParty\RmlUi">
       <UniqueIdentifier>{6066d5f1-456c-59ef-100e-ddaf00f74497}</UniqueIdentifier>
     </Filter>
@@ -591,16 +663,34 @@
     <FxCompile Include="Shaders\Editor\Gizmo.hlsl">
       <Filter>Shaders\Editor</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\A9E0216820D68CBA000000CFB18250EC_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\AE6B9452D810D233000000DBA79CC8BC_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\BD78AAE88B260EBC_ParticleSprite.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\DD233DA453A759A600000623DB3018D0_ParticleMesh.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\DDDFE619B008A8BB0000B824223D4600_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\Material_Surface.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\_41AAC49C33C14A5000013C79B41DEE10_ParticleMesh.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Generated\Materials\_628A9F53151EB9DD000131497CDADFC0_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\_7E40EEFEEA0FC6BA0000009F176F7898_ParticleSprite.hlsl">
+      <Filter>Shaders\Generated\Materials</Filter>
+    </FxCompile>
+    <FxCompile Include="Shaders\Generated\Materials\_9493151FA1B327C40000061F4DA5B1B8_ParticleMesh.hlsl">
       <Filter>Shaders\Generated\Materials</Filter>
     </FxCompile>
     <FxCompile Include="Shaders\Geometry\Decal.hlsl">
@@ -1043,6 +1133,9 @@
     <ClCompile Include="Source\Engine\Component\Debug\GizmoComponent.cpp">
       <Filter>Source\Engine\Component\Debug</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Debug\PhysicsAssetDebugComponent.cpp">
+      <Filter>Source\Engine\Component\Debug</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Debug\TemporaryBoneAnimatorComponent.cpp">
       <Filter>Source\Engine\Component\Debug</Filter>
     </ClCompile>
@@ -1299,6 +1392,9 @@
       <Filter>Source\Engine\Gizmo</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp">
+      <Filter>Source\Engine\Gizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Gizmo\PhysicsAssetShapeGizmoTarget.cpp">
       <Filter>Source\Engine\Gizmo</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Input\InputSystem.cpp">
@@ -1634,6 +1730,9 @@
     <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\PhysicsAssetSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
@@ -1869,8 +1968,6 @@
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\BodyInstance.cpp" />
-    <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -2275,6 +2372,9 @@
     <ClInclude Include="Source\Engine\Component\Debug\GizmoComponent.h">
       <Filter>Source\Engine\Component\Debug</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Debug\PhysicsAssetDebugComponent.h">
+      <Filter>Source\Engine\Component\Debug</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Debug\TemporaryBoneAnimatorComponent.h">
       <Filter>Source\Engine\Component\Debug</Filter>
     </ClInclude>
@@ -2570,6 +2670,9 @@
       <Filter>Source\Engine\Gizmo</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h">
+      <Filter>Source\Engine\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Gizmo\PhysicsAssetShapeGizmoTarget.h">
       <Filter>Source\Engine\Gizmo</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Input\InputSystem.h">
@@ -3038,6 +3141,9 @@
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\PhysicsAssetSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.h">
@@ -4230,6 +4336,570 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\lua\include\lualib.h">
       <Filter>ThirdParty\lua\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxActor.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxAggregate.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxArticulation.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxArticulationBase.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxArticulationJoint.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxArticulationJointReducedCoordinate.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxArticulationLink.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxArticulationReducedCoordinate.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxBatchQuery.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxBatchQueryDesc.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxBroadPhase.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxClient.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxConfig.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxConstraint.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxConstraintDesc.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxContact.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxContactModifyCallback.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxDeletionListener.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxFiltering.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxForceMode.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxFoundation.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxImmediateMode.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxLockedData.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxMaterial.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxPhysXConfig.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxPhysics.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxPhysicsAPI.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxPhysicsSerialization.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxPhysicsVersion.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxPruningStructure.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxQueryFiltering.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxQueryReport.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxRigidActor.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxRigidBody.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxRigidDynamic.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxRigidStatic.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxScene.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxSceneDesc.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxSceneLock.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxShape.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxSimulationEventCallback.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxSimulationStatistics.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\PxVisualizationParameter.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\characterkinematic\PxBoxController.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\characterkinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\characterkinematic\PxCapsuleController.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\characterkinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\characterkinematic\PxController.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\characterkinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\characterkinematic\PxControllerBehavior.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\characterkinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\characterkinematic\PxControllerManager.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\characterkinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\characterkinematic\PxControllerObstacles.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\characterkinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\characterkinematic\PxExtended.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\characterkinematic</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\collision\PxCollisionDefs.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\collision</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxBase.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxCollection.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxCoreUtilityTypes.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxMetaData.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxMetaDataFlags.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxPhysXCommonConfig.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxPhysicsInsertionCallback.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxProfileZone.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxRenderBuffer.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxSerialFramework.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxSerializer.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxStringTable.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxTolerancesScale.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\PxTypeInfo.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\common\windows\PxWindowsDelayLoadHook.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\common\windows</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\cooking\PxBVH33MidphaseDesc.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\cooking</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\cooking\PxBVH34MidphaseDesc.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\cooking</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\cooking\PxBVHStructureDesc.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\cooking</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\cooking\PxConvexMeshDesc.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\cooking</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\cooking\PxCooking.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\cooking</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\cooking\PxMidphaseDesc.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\cooking</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\cooking\PxTriangleMeshDesc.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\cooking</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\cooking\Pxc.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\cooking</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\cudamanager\PxCudaContextManager.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\cudamanager</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\cudamanager\PxCudaMemoryManager.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\cudamanager</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxBinaryConverter.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxBroadPhaseExt.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxCollectionExt.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxConstraintExt.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxContactJoint.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxConvexMeshExt.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxD6Joint.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxD6JointCreate.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxDefaultAllocator.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxDefaultCpuDispatcher.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxDefaultErrorCallback.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxDefaultSimulationFilterShader.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxDefaultStreams.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxDistanceJoint.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxExtensionsAPI.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxFixedJoint.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxJoint.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxJointLimit.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxMassProperties.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxPrismaticJoint.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxRaycastCCD.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxRepXSerializer.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxRepXSimpleType.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxRevoluteJoint.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxRigidActorExt.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxRigidBodyExt.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxSceneQueryExt.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxSerialization.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxShapeExt.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxSimpleFactory.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxSmoothNormals.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxSphericalJoint.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxStringTableExt.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\extensions\PxTriangleMeshExt.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\filebuf\PxFileBuf.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\filebuf</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\foundation\PxAssert.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\foundation\PxFoundationConfig.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\foundation\PxMathUtils.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxBVHStructure.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxBoxGeometry.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxCapsuleGeometry.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxConvexMesh.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxConvexMeshGeometry.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxGeometry.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxGeometryHelpers.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxGeometryQuery.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxHeightField.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxHeightFieldDesc.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxHeightFieldFlag.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxHeightFieldGeometry.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxHeightFieldSample.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxMeshQuery.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxMeshScale.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxPlaneGeometry.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxSimpleTriangleMesh.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxSphereGeometry.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxTriangle.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxTriangleMesh.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geometry\PxTriangleMeshGeometry.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geomutils\GuContactBuffer.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geomutils</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\geomutils\GuContactPoint.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\geomutils</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\gpu\PxGpu.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\gpu</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\pvd\PxPvd.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\pvd</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\pvd\PxPvdSceneClient.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\pvd</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\pvd\PxPvdTransport.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\pvd</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\solver\PxSolverDefs.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\solver</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\task\PxCpuDispatcher.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\task</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\task\PxTask.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\task</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\task\PxTaskDefine.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\task</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\task\PxTaskManager.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\task</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleComponents.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleDrive.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleDrive4W.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleDriveNW.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleDriveTank.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleNoDrive.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleSDK.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleShaders.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleTireFriction.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleUpdate.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleUtil.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleUtilControl.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleUtilSetup.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleUtilTelemetry.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\physx\include\vehicle\PxVehicleWheels.h">
+      <Filter>ThirdParty\PhysX-4.1\physx\include\vehicle</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\Px.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxAllocatorCallback.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxBitAndData.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxBounds3.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxErrorCallback.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxErrors.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxFlags.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxIO.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxIntrinsics.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxMat33.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxMat44.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxMath.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxMemory.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxPlane.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxPreprocessor.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxProfiler.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxQuat.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxSharedAssert.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxSimpleTypes.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxStrideIterator.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxTransform.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxUnionCast.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxVec2.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxVec3.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\PxVec4.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\unix\PxUnixIntrinsics.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation\unix</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\PhysX-4.1\pxshared\include\foundation\windows\PxWindowsIntrinsics.h">
+      <Filter>ThirdParty\PhysX-4.1\pxshared\include\foundation\windows</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core.h">
       <Filter>ThirdParty\RmlUi\Include\RmlUi</Filter>
