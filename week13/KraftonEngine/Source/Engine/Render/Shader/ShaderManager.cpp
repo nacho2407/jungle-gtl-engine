@@ -134,7 +134,6 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	GetOrCreate(EShaderPath::HeightFog, StartupError);
 	GetOrCreate(EShaderPath::DOFDownSampling, StartupError);
 	GetOrCreate(EShaderPath::DOFCoCPrefilter, StartupError);
-	GetOrCreate(EShaderPath::DOFBlur, StartupError);
 	GetOrCreate(EShaderPath::DOFBlurFar, StartupError);
 	GetOrCreate(EShaderPath::DOFBlurNear, StartupError);
 	GetOrCreate(EShaderPath::DOFBokeh, StartupError);
