@@ -59,7 +59,7 @@ public:
 		int32 SelectedConstraintIndex = -1);
 	void SetPhysicsAssetPickingEnabled(bool bInEnabled);
 	void SetOnPhysicsAssetBodyPicked(TFunction<void(int32)> InCallback);
-	void SetOnPhysicsAssetConstraintPicked(TFunction<void(int32, int32)> InCallback);
+	void SetOnPhysicsAssetConstraintPicked(TFunction<void(int32)> InCallback);
 	void SetOnPhysicsAssetShapeEdited(TFunction<void()> InCallback);
 	void SetOnPhysicsAssetConstraintEdited(TFunction<void()> InCallback);
 
@@ -93,7 +93,7 @@ private:
 
 	void HandleDragStart(const FRay& Ray);
 	void NotifyPhysicsAssetBodyPicked(int32 BodyIndex);
-	void NotifyPhysicsAssetConstraintPicked(int32 ConstraintIndex, int32 BodyIndex);
+	void NotifyPhysicsAssetConstraintPicked(int32 ConstraintIndex);
 	bool IsPhysicsAssetShapeGizmoActive() const;
 	bool IsPhysicsAssetConstraintGizmoActive() const;
 
@@ -115,7 +115,7 @@ private:
 	bool bPhysicsAssetPickingEnabled = false;
 	int32 SelectedPhysicsConstraintIndex = -1;
 	TFunction<void(int32)> OnPhysicsAssetBodyPicked;
-	TFunction<void(int32, int32)> OnPhysicsAssetConstraintPicked;
+	TFunction<void(int32)> OnPhysicsAssetConstraintPicked;
 	TFunction<void()> OnPhysicsAssetShapeEdited;
 	TFunction<void()> OnPhysicsAssetConstraintEdited;
 

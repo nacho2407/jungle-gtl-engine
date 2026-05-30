@@ -161,7 +161,7 @@ void FMeshEditorViewportClient::SetOnPhysicsAssetBodyPicked(TFunction<void(int32
 	OnPhysicsAssetBodyPicked = std::move(InCallback);
 }
 
-void FMeshEditorViewportClient::SetOnPhysicsAssetConstraintPicked(TFunction<void(int32, int32)> InCallback)
+void FMeshEditorViewportClient::SetOnPhysicsAssetConstraintPicked(TFunction<void(int32)> InCallback)
 {
 	OnPhysicsAssetConstraintPicked = std::move(InCallback);
 }
@@ -192,11 +192,11 @@ void FMeshEditorViewportClient::NotifyPhysicsAssetBodyPicked(int32 BodyIndex)
 	}
 }
 
-void FMeshEditorViewportClient::NotifyPhysicsAssetConstraintPicked(int32 ConstraintIndex, int32 BodyIndex)
+void FMeshEditorViewportClient::NotifyPhysicsAssetConstraintPicked(int32 ConstraintIndex)
 {
 	if (PhysicsAssetDebugComponent)
 	{
-		PhysicsAssetDebugComponent->SetSelectedBodyIndex(BodyIndex);
+		PhysicsAssetDebugComponent->SetSelectedBodyIndex(-1);
 		PhysicsAssetDebugComponent->SetSelectedConstraintIndex(ConstraintIndex);
 		SelectedPhysicsConstraintIndex = ConstraintIndex;
 		SyncPhysicsAssetConstraintGizmoTarget(PhysicsAssetDebugComponent->GetPhysicsAsset(), ConstraintIndex);
@@ -204,7 +204,7 @@ void FMeshEditorViewportClient::NotifyPhysicsAssetConstraintPicked(int32 Constra
 
 	if (OnPhysicsAssetConstraintPicked)
 	{
-		OnPhysicsAssetConstraintPicked(ConstraintIndex, BodyIndex);
+		OnPhysicsAssetConstraintPicked(ConstraintIndex);
 	}
 }
 
@@ -740,7 +740,7 @@ void FMeshEditorViewportClient::HandleDragStart(const FRay& Ray)
 				ViewTransform.OrthoZoom,
 				PhysicsHit))
 		{
-			NotifyPhysicsAssetConstraintPicked(PhysicsHit.ConstraintIndex, PhysicsHit.BodyIndex);
+			NotifyPhysicsAssetConstraintPicked(PhysicsHit.ConstraintIndex);
 			return;
 		}
 
