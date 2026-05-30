@@ -44,6 +44,10 @@ struct FBodyInstanceInitDesc
 
 	float Mass = 1.0f;
 	FVector CenterOfMassOffset = FVector::ZeroVector;
+	float LinearDamping = 0.0f;
+	float AngularDamping = 0.0f;
+	bool bEnableGravity = true;
+	FVector InertiaTensorScale = FVector(1.0f, 1.0f, 1.0f);
 };
 
 struct FBodyInstance
@@ -63,6 +67,10 @@ struct FBodyInstance
 
 	float Mass = 1.0f;
 	FVector CenterOfMassOffset = FVector::ZeroVector;
+	float LinearDamping = 0.0f;
+	float AngularDamping = 0.0f;
+	bool bEnableGravity = true;
+	FVector InertiaTensorScale = FVector(1.0f, 1.0f, 1.0f);
 
 	physx::PxRigidActor* RigidActor = nullptr;
 	TArray<physx::PxShape*> Shapes;

@@ -744,6 +744,10 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 	Body.ResponseContainer = Desc.ResponseContainer;
 	Body.Mass = Desc.Mass;
 	Body.CenterOfMassOffset = Desc.CenterOfMassOffset;
+	Body.LinearDamping = Desc.LinearDamping;
+	Body.AngularDamping = Desc.AngularDamping;
+	Body.bEnableGravity = Desc.bEnableGravity;
+	Body.InertiaTensorScale = Desc.InertiaTensorScale;
 
 	const PxTransform ActorPose = ToPxTransform(Desc.WorldTransform);
 
@@ -869,6 +873,15 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 
 		PxRigidBodyExt::setMassAndUpdateInertia(*Dynamic, MassKg, &LocalCOM);
 		Dynamic->setCMassLocalPose(PxTransform(LocalCOM));
+		Dynamic->setLinearDamping(std::max(Desc.LinearDamping, 0.0f));
+		Dynamic->setAngularDamping(std::max(Desc.AngularDamping, 0.0f));
+		Dynamic->setActorFlag(PxActorFlag::eDISABLE_GRAVITY, !Desc.bEnableGravity);
+
+		PxVec3 Inertia = Dynamic->getMassSpaceInertiaTensor();
+		Inertia.x *= std::max(Desc.InertiaTensorScale.X, 0.001f);
+		Inertia.y *= std::max(Desc.InertiaTensorScale.Y, 0.001f);
+		Inertia.z *= std::max(Desc.InertiaTensorScale.Z, 0.001f);
+		Dynamic->setMassSpaceInertiaTensor(Inertia);
 	}
 
 	Scene->addActor(*Actor);
