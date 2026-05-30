@@ -1,8 +1,8 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "PhysicsConstraintTemplate.h"
-#include "SkeletalBodySetup.h"
+#include "BodySetup.h"
 
 class UPhysicsAsset : public UObject
 {
@@ -10,42 +10,24 @@ public:
 	UPhysicsAsset() = default;
 	~UPhysicsAsset() override = default;
 
-	const TArray<USkeletalBodySetup*>& GetSkeletalBodySetups() const
-	{
-		return SkeletalBodySetups;
-	}
+	const TArray<UBodySetup*>& GetBodySetups() const { return BodySetups; }
 
-	TArray<USkeletalBodySetup*>& GetSkeletalBodySetupsMutable()
-	{
-		return SkeletalBodySetups;
-	}
+	TArray<UBodySetup*>& GetBodySetupsMutable() { return BodySetups; }
 
-	const TArray<UPhysicsConstraintTemplate*>& GetConstraintSetup() const
-	{
-		return ConstraintSetup;
-	}
+	//const TArray<UPhysicsConstraintTemplate*>& GetConstraintSetup() const { return ConstraintSetup; }
 
-	TArray<UPhysicsConstraintTemplate*>& GetConstraintSetupMutable()
-	{
-		return ConstraintSetup;
-	}
+	//TArray<UPhysicsConstraintTemplate*>& GetConstraintSetupMutable() { return ConstraintSetup; }
 
-	const TArray<USkeletalBodySetup*>& GetBodySetups() const
-	{
-		return SkeletalBodySetups;
-	}
+	const TArray<UBodySetup*>& GetBodySetups() { return BodySetups; }
 
-	TArray<USkeletalBodySetup*>& GetBodySetupsMutable()
-	{
-		return SkeletalBodySetups;
-	}
+	TArray<UBodySetup*>& GetBodySetupsMutable() { return BodySetups; }
 
 	int32 FindBodyIndexByBoneName(const FName& BoneName) const;
-	USkeletalBodySetup* FindBodySetupByBoneName(const FName& BoneName) const;
+	UBodySetup* FindBodySetupByBoneName(const FName& BoneName) const;
 
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
-	TArray<USkeletalBodySetup*> SkeletalBodySetups;
-	TArray<UPhysicsConstraintTemplate*> ConstraintSetup;
+	TArray<UBodySetup*> BodySetups;
+	//TArray<UPhysicsConstraintTemplate*> ConstraintSetup;
 };
