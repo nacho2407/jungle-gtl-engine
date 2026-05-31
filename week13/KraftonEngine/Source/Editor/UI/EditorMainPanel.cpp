@@ -180,6 +180,12 @@ void FEditorMainPanel::Render(float DeltaTime)
 		StatWidget.Render(DeltaTime);
 	}
 
+	if (!bHideEditorWindows && Settings.UI.bConsole)
+	{
+		SCOPE_STAT_CAT("ConsoleWidget.Render", "5_UI");
+		ConsoleWidget.Render(DeltaTime);
+	}
+
 	if (!bHideEditorWindows && Settings.UI.bContentBrowser)
 	{
 		SCOPE_STAT_CAT("ContentBrowserWidget.Render", "5_UI");
@@ -206,7 +212,6 @@ void FEditorMainPanel::Render(float DeltaTime)
 	}
 
 	RenderShortcutOverlay();
-	RenderConsoleDrawer(DeltaTime);
 	RenderFooterOverlay(DeltaTime);
 
 	AssetEditorManager.Render(DeltaTime);
@@ -273,6 +278,7 @@ void FEditorMainPanel::RenderMainMenuBar()
 		ImGui::Checkbox("Property", &Settings.UI.bProperty);
 		ImGui::Checkbox("Scene", &Settings.UI.bScene);
 		ImGui::Checkbox("Stat", &Settings.UI.bStat);
+		ImGui::Checkbox("Console", &Settings.UI.bConsole);
 		ImGui::Checkbox("ContentBrowser", &Settings.UI.bContentBrowser);
 		ImGui::Checkbox("Editor Debug", &Settings.UI.bEditorDebug);
 		ImGui::Checkbox("Shadow Map Debug", &Settings.UI.bShadowMapDebug);
@@ -363,7 +369,6 @@ void FEditorMainPanel::RenderShortcutOverlay()
 	ImGui::TextUnformatted("Ctrl+S : Save Scene");
 	ImGui::TextUnformatted("Ctrl+Shift+S : Save Scene As");
 	ImGui::Separator();
-	ImGui::TextUnformatted("` : Focus console input / open console drawer");
 	ImGui::TextUnformatted("F : Focus on selection");
 	ImGui::TextUnformatted("Ctrl + LMB : Multi Picking (Toggle)");
 	ImGui::TextUnformatted("Ctrl + Alt + LMB Drag : Area Selection");
@@ -555,76 +560,6 @@ void FEditorMainPanel::RenderEditorDebugPanel()
 	ImGui::End();
 }
 
-void FEditorMainPanel::RenderConsoleDrawer(float DeltaTime)
-{
-	constexpr float DrawerMaxHeight = 320.0f;
-	constexpr float AnimSpeed = 16.0f;
-
-	const float TargetAnim = bConsoleDrawerVisible ? 1.0f : 0.0f;
-	float Alpha = DeltaTime * AnimSpeed;
-	if (Alpha > 1.0f)
-	{
-		Alpha = 1.0f;
-	}
-	ConsoleDrawerAnim += (TargetAnim - ConsoleDrawerAnim) * Alpha;
-	if (!bConsoleDrawerVisible && ConsoleDrawerAnim < 0.001f)
-	{
-		ConsoleDrawerAnim = 0.0f;
-	}
-	if (ConsoleDrawerAnim <= 0.001f)
-	{
-		return;
-	}
-
-	ImGuiViewport* MainViewport = ImGui::GetMainViewport();
-	if (!MainViewport)
-	{
-		return;
-	}
-
-	const float FooterHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-	const float DrawerHeight = DrawerMaxHeight * ConsoleDrawerAnim;
-	if (DrawerHeight <= 1.0f)
-	{
-		return;
-	}
-
-	const ImVec2 DrawerPos(
-		MainViewport->WorkPos.x,
-		MainViewport->WorkPos.y + MainViewport->WorkSize.y - FooterHeight - DrawerHeight);
-	const ImVec2 DrawerSize(MainViewport->WorkSize.x, DrawerHeight);
-	ImGui::SetNextWindowPos(DrawerPos, ImGuiCond_Always);
-	ImGui::SetNextWindowSize(DrawerSize, ImGuiCond_Always);
-	if (bBringConsoleDrawerToFrontNextFrame)
-	{
-		ImGui::SetNextWindowFocus();
-	}
-
-	ImGuiWindowFlags Flags = ImGuiWindowFlags_NoDecoration
-		| ImGuiWindowFlags_NoDocking
-		| ImGuiWindowFlags_NoSavedSettings
-		| ImGuiWindowFlags_NoMove
-		| ImGuiWindowFlags_NoResize
-		| ImGuiWindowFlags_NoNav
-		| ImGuiWindowFlags_NoFocusOnAppearing;
-
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 8.0f));
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.08f, 0.09f, 0.11f, 0.98f));
-	if (ImGui::Begin("##ConsoleDrawer", nullptr, Flags))
-	{
-		ConsoleWidget.RenderDrawerToolbar();
-		ImGui::Separator();
-		ConsoleWidget.RenderLogContents(0.0f);
-	}
-	ImGui::End();
-	ImGui::PopStyleColor();
-	ImGui::PopStyleVar(3);
-
-	bBringConsoleDrawerToFrontNextFrame = false;
-}
-
 void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
 {
 	(void)DeltaTime;
@@ -655,52 +590,6 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.06f, 0.065f, 0.075f, 0.98f));
 	if (ImGui::Begin("##EditorFooter", nullptr, Flags))
 	{
-		if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent, false))
-		{
-			switch (ConsoleBacktickCycleState)
-			{
-			case 0:
-				ConsoleBacktickCycleState = 1;
-				bConsoleDrawerVisible = false;
-				bFocusConsoleInputNextFrame = true;
-				break;
-			case 1:
-				ConsoleBacktickCycleState = 2;
-				bConsoleDrawerVisible = true;
-				bBringConsoleDrawerToFrontNextFrame = true;
-				bFocusConsoleInputNextFrame = true;
-				break;
-			default:
-				ConsoleBacktickCycleState = 0;
-				bConsoleDrawerVisible = false;
-				bFocusConsoleInputNextFrame = false;
-				bFocusConsoleButtonNextFrame = true;
-				break;
-			}
-		}
-
-		if (bFocusConsoleButtonNextFrame)
-		{
-			ImGui::SetKeyboardFocusHere();
-			bFocusConsoleButtonNextFrame = false;
-		}
-
-		if (ImGui::SmallButton("Console"))
-		{
-			ToggleConsoleDrawer(true);
-		}
-
-		ImGui::SameLine();
-		const bool bDrawerOpen = ConsoleDrawerAnim > 0.5f;
-		const float InputWidth = MainViewport->WorkSize.x * (bDrawerOpen ? 0.35f : 0.175f);
-		ConsoleWidget.RenderInputLine("##FooterConsoleInput", InputWidth, bFocusConsoleInputNextFrame);
-		if (bFocusConsoleInputNextFrame)
-		{
-			ConsoleBacktickCycleState = bConsoleDrawerVisible ? 2 : 1;
-		}
-		bFocusConsoleInputNextFrame = false;
-
-		ImGui::SameLine();
 		ImGui::Text("Domain: %s", EditorEngine && EditorEngine->IsPlayingInEditor() ? "PIE" : "Editor");
 
 		const FString LevelLabel = EditorEngine && EditorEngine->HasCurrentLevelFilePath()
@@ -760,18 +649,6 @@ void FEditorMainPanel::Update()
 		{
 			ImmAssociateContext(hWnd, NULL);
 		}
-	}
-}
-
-void FEditorMainPanel::ToggleConsoleDrawer(bool bFocusInput)
-{
-	bConsoleDrawerVisible = !bConsoleDrawerVisible;
-	bBringConsoleDrawerToFrontNextFrame = bConsoleDrawerVisible;
-	bFocusConsoleInputNextFrame = bConsoleDrawerVisible && bFocusInput;
-	ConsoleBacktickCycleState = bConsoleDrawerVisible ? 2 : 0;
-	if (!bConsoleDrawerVisible)
-	{
-		bFocusConsoleButtonNextFrame = true;
 	}
 }
 
