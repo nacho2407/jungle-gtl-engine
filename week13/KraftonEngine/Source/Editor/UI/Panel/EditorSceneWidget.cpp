@@ -1,9 +1,50 @@
 #include "Editor/UI/Panel/EditorSceneWidget.h"
 
 #include "Editor/EditorEngine.h"
+#include "Editor/Selection/SelectionManager.h"
+#include "Component/ActorComponent.h"
+#include "Component/Debug/GizmoComponent.h"
+#include "Component/SceneComponent.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 
 #include "ImGui/imgui.h"
 #include "Profiling/Stats/Stats.h"
+
+namespace
+{
+	bool ShouldHideInComponentTree(const UActorComponent* Component, bool bShowEditorOnlyComponents)
+	{
+		if (!Component)
+		{
+			return true;
+		}
+
+		return Component->IsHiddenInComponentTree()
+			&& !(bShowEditorOnlyComponents && Component->IsEditorOnlyComponent());
+	}
+
+	const char* GetActorDisplayName(AActor* Actor, FString& OutName)
+	{
+		OutName = Actor->GetFName().ToString();
+		return OutName.empty()
+			? Actor->GetClass()->GetName()
+			: OutName.c_str();
+	}
+
+	const char* GetComponentDisplayName(UActorComponent* Component, FString& OutName)
+	{
+		OutName = Component->GetFName().ToString();
+		const FString TypeName = Component->GetClass()->GetName();
+		const FString DefaultNamePrefix = TypeName + "_";
+		const bool bUseTypeAsLabel = OutName.empty() || OutName == TypeName || OutName.rfind(DefaultNamePrefix, 0) == 0;
+		if (bUseTypeAsLabel)
+		{
+			OutName = TypeName;
+		}
+		return OutName.c_str();
+	}
+}
 
 void FEditorSceneWidget::Initialize(UEditorEngine* InEditorEngine)
 {
@@ -48,43 +89,204 @@ void FEditorSceneWidget::RenderActorOutliner()
 	ImGui::Text("Actors (%d)", static_cast<int32>(ValidActorIndices.size()));
 	ImGui::Separator();
 
-	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
-
 	ImGui::BeginChild("ActorList", ImVec2(0, 0), ImGuiChildFlags_Borders);
 
-	ImGuiListClipper Clipper;
-	Clipper.Begin(static_cast<int>(ValidActorIndices.size()));
-	while (Clipper.Step())
+	for (int32 ActorIndex : ValidActorIndices)
 	{
-		for (int Row = Clipper.DisplayStart; Row < Clipper.DisplayEnd; ++Row)
-		{
-			AActor* Actor = Actors[ValidActorIndices[Row]];
-
-			const FString& StoredName = Actor->GetFName().ToString();
-			const char* DisplayName = StoredName.empty()
-				? Actor->GetClass()->GetName()
-				: StoredName.c_str();
-
-			bool bIsSelected = Selection.IsSelected(Actor);
-			ImGui::PushID(Actor);
-			if (ImGui::Selectable(DisplayName, bIsSelected))
-			{
-				if (ImGui::GetIO().KeyShift)
-				{
-					Selection.SelectRange(Actor, Actors);
-				}
-				else if (ImGui::GetIO().KeyCtrl)
-				{
-					Selection.ToggleSelect(Actor);
-				}
-				else
-				{
-					Selection.Select(Actor);
-				}
-			}
-			ImGui::PopID();
-		}
+		RenderActorNode(Actors[ActorIndex], Actors);
 	}
 
 	ImGui::EndChild();
+}
+
+void FEditorSceneWidget::RenderActorNode(AActor* Actor, const TArray<AActor*>& Actors)
+{
+	if (!IsValid(Actor))
+	{
+		return;
+	}
+
+	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+	FString DisplayNameStorage;
+	const char* DisplayName = GetActorDisplayName(Actor, DisplayNameStorage);
+
+	const bool bActorDetailsSelected = Selection.IsSelected(Actor) && !Selection.IsComponentDetailsSelected();
+	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+	if (bActorDetailsSelected)
+	{
+		Flags |= ImGuiTreeNodeFlags_Selected;
+	}
+
+	if (!Actor->GetRootComponent() && Actor->GetComponents().empty())
+	{
+		Flags |= ImGuiTreeNodeFlags_Leaf;
+	}
+
+	ImGui::PushID(Actor);
+	const bool bOpen = ImGui::TreeNodeEx("##ActorNode", Flags, "%s", DisplayName);
+	if (ImGui::IsItemClicked())
+	{
+		if (ImGui::GetIO().KeyShift)
+		{
+			Selection.SelectRange(Actor, Actors);
+		}
+		else if (ImGui::GetIO().KeyCtrl)
+		{
+			Selection.ToggleSelect(Actor);
+		}
+		else
+		{
+			Selection.SelectActorDetails(Actor);
+		}
+	}
+
+	if (bOpen)
+	{
+		if (USceneComponent* Root = Actor->GetRootComponent())
+		{
+			RenderSceneComponentNode(Root);
+		}
+		RenderNonSceneComponents(Actor);
+		ImGui::TreePop();
+	}
+	ImGui::PopID();
+}
+
+void FEditorSceneWidget::RenderSceneComponentNode(USceneComponent* Comp)
+{
+	if (!IsValid(Comp) || ShouldHideInComponentTree(Comp, bShowEditorOnlyComponents))
+	{
+		return;
+	}
+
+	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+
+	FString Name;
+	GetComponentDisplayName(Comp, Name);
+
+	const auto& Children = Comp->GetChildren();
+	bool bHasVisibleChildren = false;
+	for (USceneComponent* Child : Children)
+	{
+		if (Child && !ShouldHideInComponentTree(Child, bShowEditorOnlyComponents))
+		{
+			bHasVisibleChildren = true;
+			break;
+		}
+	}
+
+	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+	if (!bHasVisibleChildren)
+	{
+		Flags |= ImGuiTreeNodeFlags_Leaf;
+	}
+	if (Selection.GetSelectedActorComponent() == Comp)
+	{
+		Flags |= ImGuiTreeNodeFlags_Selected;
+	}
+
+	const bool bIsRoot = Comp->GetParent() == nullptr;
+	const bool bOpen = ImGui::TreeNodeEx(
+		Comp, Flags, "%s%s (%s)",
+		bIsRoot ? "[Root] " : "",
+		Name.c_str(),
+		Comp->GetClass()->GetName());
+
+	if (ImGui::IsItemClicked())
+	{
+		Selection.SelectActorComponent(Comp);
+	}
+
+	if (ImGui::BeginDragDropSource())
+	{
+		ImGui::SetDragDropPayload("SCENE_COMPONENT_REPARENT", &Comp, sizeof(USceneComponent*));
+		ImGui::Text("Reparent %s", Name.c_str());
+		ImGui::EndDragDropSource();
+	}
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("SCENE_COMPONENT_REPARENT"))
+		{
+			USceneComponent* DraggedComp = *(USceneComponent**)Payload->Data;
+			if (DraggedComp && DraggedComp != Comp)
+			{
+				bool bIsChildOfDragged = false;
+				USceneComponent* Check = Comp;
+				while (Check)
+				{
+					if (Check == DraggedComp)
+					{
+						bIsChildOfDragged = true;
+						break;
+					}
+					Check = Check->GetParent();
+				}
+
+				if (!bIsChildOfDragged)
+				{
+					DraggedComp->SetParent(Comp);
+					if (EditorEngine && EditorEngine->GetGizmo())
+					{
+						EditorEngine->GetGizmo()->UpdateGizmoTransform();
+					}
+				}
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
+
+	if (bOpen)
+	{
+		for (USceneComponent* Child : Children)
+		{
+			RenderSceneComponentNode(Child);
+		}
+		ImGui::TreePop();
+	}
+}
+
+void FEditorSceneWidget::RenderNonSceneComponents(AActor* Actor)
+{
+	if (!IsValid(Actor))
+	{
+		return;
+	}
+
+	TArray<UActorComponent*> NonSceneComponents;
+	for (UActorComponent* Comp : Actor->GetComponents())
+	{
+		if (!Comp || Comp->IsA<USceneComponent>()) continue;
+		if (ShouldHideInComponentTree(Comp, bShowEditorOnlyComponents)) continue;
+		NonSceneComponents.push_back(Comp);
+	}
+
+	if (NonSceneComponents.empty())
+	{
+		return;
+	}
+
+	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+	ImGuiTreeNodeFlags GroupFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+	if (ImGui::TreeNodeEx("##ActorComponents", GroupFlags, "Components"))
+	{
+		for (UActorComponent* Comp : NonSceneComponents)
+		{
+			FString Name;
+			const char* Label = GetComponentDisplayName(Comp, Name);
+
+			ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+			if (Selection.GetSelectedActorComponent() == Comp)
+			{
+				Flags |= ImGuiTreeNodeFlags_Selected;
+			}
+
+			ImGui::TreeNodeEx(Comp, Flags, "%s (%s)", Label, Comp->GetClass()->GetName());
+			if (ImGui::IsItemClicked())
+			{
+				Selection.SelectActorComponent(Comp);
+			}
+		}
+		ImGui::TreePop();
+	}
 }

@@ -6,6 +6,7 @@
 #include <algorithm>
 
 class AActor;
+class UActorComponent;
 class USceneComponent;
 class UGizmoComponent;
 class UWorld;
@@ -26,6 +27,10 @@ public:
 
 	void SelectComponent(USceneComponent* Component);
 	USceneComponent* GetSelectedComponent() const;
+	void SelectActorDetails(AActor* Actor);
+	void SelectActorComponent(UActorComponent* Component);
+	UActorComponent* GetSelectedActorComponent() const;
+	bool IsComponentDetailsSelected() const;
 
 	bool IsSelected(AActor* Actor) const;
 
@@ -48,6 +53,7 @@ private:
 
 	TArray<AActor*> SelectedActors;
 	USceneComponent* SelectedComponent = nullptr;
+	UActorComponent* SelectedActorComponent = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
 	UWorld* World = nullptr;
 	bool bGizmoEnabled = true;

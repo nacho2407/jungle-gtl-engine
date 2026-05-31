@@ -1,5 +1,6 @@
 #include "Editor/UI/Panel/EditorPropertyWidget.h"
 #include "Editor/EditorEngine.h"
+#include "Editor/Selection/SelectionManager.h"
 
 #include "ImGui/imgui.h"
 #include "Component/ActorComponent.h"
@@ -67,17 +68,6 @@ namespace
 	}
 
 
-
-	bool ShouldHideInComponentTree(const UActorComponent* Component, bool bShowEditorOnlyComponents)
-	{
-		if (!Component)
-		{
-			return true;
-		}
-
-		return Component->IsHiddenInComponentTree()
-			&& !(bShowEditorOnlyComponents && Component->IsEditorOnlyComponent());
-	}
 
 	struct FComponentClassGroup
 	{
@@ -567,9 +557,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	AActor* PrimaryActor = Selection.GetPrimarySelection();
 	if (!IsValid(PrimaryActor))
 	{
-		SelectedComponent = nullptr;
 		LastSelectedActor = nullptr;
-		bActorSelected = true;
 		ImGui::Text("No object selected.");
 		ImGui::End();
 		return;
@@ -578,9 +566,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	// Actor 선택이 바뀌면 초기화
 	if (PrimaryActor != LastSelectedActor)
 	{
-		SelectedComponent = nullptr;
 		LastSelectedActor = PrimaryActor;
-		bActorSelected = true;
 		bShowDuplicateWarning = false;
 	}
 
@@ -595,14 +581,13 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		FString PrimaryName = PrimaryActor->GetFName().ToString();
 		if (PrimaryName.empty()) PrimaryName = PrimaryActor->GetClass()->GetName();
 
-		bool bHighlight = bActorSelected;
+		bool bHighlight = !Selection.IsComponentDetailsSelected();
 		if (bHighlight) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
 		ImGui::Text("Name: %s (+%d)", PrimaryName.c_str(), SelectionCount - 1);
 		if (bHighlight) ImGui::PopStyleColor();
 		if (ImGui::IsItemClicked())
 		{
-			bActorSelected = true;
-			SelectedComponent = nullptr;
+			Selection.SelectActorDetails(PrimaryActor);
 		}
 		ImGui::SameLine();
 		char RemoveLabel[64];
@@ -625,7 +610,6 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 			}
 			// GPU Occlusion staging에 남은 dangling proxy 포인터 무효화
 			EditorEngine->InvalidateOcclusionResults();
-			SelectedComponent = nullptr;
 			LastSelectedActor = nullptr;
 			ImGui::End();
 			return;
@@ -639,8 +623,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 		if (ImGui::IsItemClicked())
 		{
-			bActorSelected = true;
-			SelectedComponent = nullptr;
+			Selection.SelectActorDetails(PrimaryActor);
 		}
 		//ImGui::SameLine();
 
@@ -660,8 +643,8 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		ImGui::PopStyleColor();
 	}
 
-	// ========== 고정 영역: Component Tree ==========
-	RenderComponentTree(PrimaryActor);
+	// ========== 고정 영역: Add Component ==========
+	RenderAddComponentMenu(PrimaryActor);
 
 	// ========== 스크롤 영역: Details ==========
 	float ScrollHeight = ImGui::GetContentRegionAvail().y;
@@ -718,7 +701,10 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 {
 	if (!IsValid(PrimaryActor)) return;
 
-	if (bActorSelected)
+	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+	UActorComponent* SelectedComponent = Selection.GetSelectedActorComponent();
+
+	if (!Selection.IsComponentDetailsSelected())
 	{
 		RenderActorProperties(PrimaryActor, SelectedActors);
 	}
@@ -914,7 +900,7 @@ void FEditorPropertyWidget::RenderCallInEditorFunctions(UObject* Object)
 	}
 }
 
-void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
+void FEditorPropertyWidget::RenderAddComponentMenu(AActor* Actor)
 {
 	if (!IsValid(Actor)) return;
 
@@ -1028,184 +1014,13 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 
 	ImGui::Separator();
 
-	USceneComponent* Root = Actor->GetRootComponent();
-
-	static float TreeHeight = 100.0f;
-
-	ImGui::BeginChild("##ComponentTree", ImVec2(0, TreeHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-	{
-		if (Root)
-		{
-			RenderSceneComponentNode(Root);
-		}
-
-		TArray<UActorComponent*> NonSceneComponents;
-		for (UActorComponent* Comp : Actor->GetComponents())
-		{
-			if (!Comp) continue;
-			if (Comp->IsA<USceneComponent>()) continue;
-			if (ShouldHideInComponentTree(Comp, bShowEditorOnlyComponents)) continue;
-			NonSceneComponents.push_back(Comp);
-		}
-
-		if (!NonSceneComponents.empty())
-		{
-			ImGui::Separator();
-		}
-
-		for (UActorComponent* Comp : NonSceneComponents)
-		{
-			FString Name = Comp->GetFName().ToString();
-			const FString TypeName = Comp->GetClass()->GetName();
-			const FString DefaultNamePrefix = TypeName + "_";
-
-			const bool bUseTypeAsLabel = Name.empty() || Name == TypeName || Name.rfind(DefaultNamePrefix, 0) == 0;
-
-			const char* Label = bUseTypeAsLabel ? TypeName.c_str() : Name.c_str();
-
-			ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-
-			if (!bActorSelected && SelectedComponent == Comp)
-			{
-				Flags |= ImGuiTreeNodeFlags_Selected;
-			}
-
-			ImGui::TreeNodeEx(Comp, Flags, "%s", Label);
-		
-			if (ImGui::IsItemClicked())
-			{
-				SelectedComponent = Comp;
-				bActorSelected = false;
-			}
-		}
-	}
-
-	ImGui::EndChild();
-
-	ImGui::InvisibleButton("##TreeResize", ImVec2(-1, 6));
-
-	if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-	{
-		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
-	}
-
-	if (ImGui::IsItemActive())
-	{
-		TreeHeight += ImGui::GetIO().MouseDelta.y;
-		TreeHeight = std::max(TreeHeight, 80.0f);
-	}
-
-	ImVec2 Min = ImGui::GetItemRectMin();
-	ImVec2 Max = ImGui::GetItemRectMax();
-
-	ImU32 Color =
-		ImGui::GetColorU32(
-			ImGui::IsItemHovered()
-			? ImGuiCol_SeparatorHovered
-			: ImGuiCol_Separator
-		);
-
-	ImGui::GetWindowDrawList()->AddLine(
-		ImVec2(Min.x, (Min.y + Max.y) * 0.5f),
-		ImVec2(Max.x, (Min.y + Max.y) * 0.5f),
-		Color,
-		2.0f
-	);
-}
-
-void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
-{
-	if (!Comp) return;
-	if (ShouldHideInComponentTree(Comp, bShowEditorOnlyComponents)) return;
-
-	FString Name = Comp->GetFName().ToString();
-	if (Name.empty()) Name = Comp->GetClass()->GetName();
-
-	const auto& Children = Comp->GetChildren();
-	bool bHasVisibleChildren = false;
-	for (USceneComponent* Child : Children)
-	{
-		if (Child && !ShouldHideInComponentTree(Child, bShowEditorOnlyComponents))
-		{
-			bHasVisibleChildren = true;
-			break;
-		}
-	}
-
-	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
-	if (!bHasVisibleChildren)
-		Flags |= ImGuiTreeNodeFlags_Leaf;
-	if (!bActorSelected && SelectedComponent == Comp)
-		Flags |= ImGuiTreeNodeFlags_Selected;
-
-	bool bIsRoot = (Comp->GetParent() == nullptr);
-	bool bOpen = ImGui::TreeNodeEx(
-		Comp, Flags, "%s%s (%s)",
-		bIsRoot ? "[Root] " : "",
-		Name.c_str(),
-		Comp->GetClass()->GetName()
-	);
-
-	if (ImGui::IsItemClicked())
-	{
-		SelectedComponent = Comp;
-		bActorSelected = false;
-		EditorEngine->GetSelectionManager().SelectComponent(Comp);
-	}
-
-	// 컴포넌트 트리에서 간단하게 드래그 앤 드랍으로 부모-자식 관계 변경 가능하도록 지원
-	if (ImGui::BeginDragDropSource())
-	{
-		ImGui::SetDragDropPayload("SCENE_COMPONENT_REPARENT", &Comp, sizeof(USceneComponent*));
-		ImGui::Text("Reparent %s", Name.c_str());
-		ImGui::EndDragDropSource();
-	}
-
-	if (ImGui::BeginDragDropTarget())
-	{
-		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCENE_COMPONENT_REPARENT"))
-		{
-			USceneComponent* DraggedComp = *(USceneComponent**)payload->Data;
-			if (DraggedComp && DraggedComp != Comp)
-			{
-				// Circular dependency check: Ensure Comp is not a child of DraggedComp
-				bool bIsChildOfDragged = false;
-				USceneComponent* Check = Comp;
-				while (Check)
-				{
-					if (Check == DraggedComp)
-					{
-						bIsChildOfDragged = true;
-						break;
-					}
-					Check = Check->GetParent();
-				}
-
-				if (!bIsChildOfDragged)
-				{
-					DraggedComp->SetParent(Comp);
-					if (EditorEngine && EditorEngine->GetGizmo())
-					{
-						EditorEngine->GetGizmo()->UpdateGizmoTransform();
-					}
-				}
-			}
-		}
-		ImGui::EndDragDropTarget();
-	}
-
-	if (bOpen)
-	{
-		for (USceneComponent* Child : Children)
-		{
-			RenderSceneComponentNode(Child);
-		}
-		ImGui::TreePop();
-	}
 }
 
 void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArray<AActor*>& SelectedActors)
 {
+	UActorComponent* SelectedComponent = EditorEngine
+		? EditorEngine->GetSelectionManager().GetSelectedActorComponent()
+		: nullptr;
 	if (!IsValid(Actor) || !IsValid(SelectedComponent)) return;
 
 	if (SelectedComponent != Actor->GetRootComponent())
@@ -1215,7 +1030,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 			if (SelectedComponent != nullptr)
 			{
 				Actor->RemoveComponent(SelectedComponent);
-				SelectedComponent = nullptr;
+				EditorEngine->GetSelectionManager().SelectActorDetails(Actor);
 				return;
 			}
 		}
@@ -1331,6 +1146,9 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 
 void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors)
 {
+	UActorComponent* SelectedComponent = EditorEngine
+		? EditorEngine->GetSelectionManager().GetSelectedActorComponent()
+		: nullptr;
 	if (!IsValid(SelectedComponent) || SelectedActors.size() < 2) return;
 
 	UClass* CompClass = SelectedComponent->GetClass();
@@ -1381,6 +1199,9 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 
 	UActorComponent* Comp = Actor->AddComponentByClass(ComponentClass);
 	if (!Comp) return;
+	UActorComponent* SelectedComponent = EditorEngine
+		? EditorEngine->GetSelectionManager().GetSelectedActorComponent()
+		: nullptr;
 
 	if (ComponentClass->IsA(USceneComponent::StaticClass()))
 	{
@@ -1410,8 +1231,10 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 		}
 	}
 
-	SelectedComponent = Comp;
-	bActorSelected = false;
+	if (EditorEngine)
+	{
+		EditorEngine->GetSelectionManager().SelectActorComponent(Comp);
+	}
 }
 
 bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
@@ -2127,6 +1950,9 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			Rot->Roll = RotXYZ[0];
 			Rot->Pitch = RotXYZ[1];
 			Rot->Yaw = RotXYZ[2];
+			UActorComponent* SelectedComponent = EditorEngine
+				? EditorEngine->GetSelectionManager().GetSelectedActorComponent()
+				: nullptr;
 			if (IsValid(SelectedComponent) && SelectedComponent->IsA<USceneComponent>())
 			{
 				static_cast<USceneComponent*>(SelectedComponent)->ApplyCachedEditRotator();

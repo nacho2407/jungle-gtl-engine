@@ -32,8 +32,8 @@ public:
 	void SaveToSettings() const;
 	void HideEditorWindows();
 	void ShowEditorWindows();
-	void SetShowEditorOnlyComponents(bool bEnable) { PropertyWidget.SetShowEditorOnlyComponents(bEnable); }
-	bool IsShowingEditorOnlyComponents() const { return PropertyWidget.IsShowingEditorOnlyComponents(); }
+	void SetShowEditorOnlyComponents(bool bEnable) { SceneWidget.SetShowEditorOnlyComponents(bEnable); }
+	bool IsShowingEditorOnlyComponents() const { return SceneWidget.IsShowingEditorOnlyComponents(); }
 	void HideEditorWindowsForPIE();
 	void RestoreEditorWindowsAfterPIE();
 	void RefreshContentBrowser() { ContentBrowserWidget.Refresh(); }

@@ -1,5 +1,6 @@
 #include "Editor/Selection/SelectionManager.h"
 #include "Object/Object.h"
+#include "Component/ActorComponent.h"
 #include "Component/Debug/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
@@ -13,6 +14,16 @@
 USceneComponent* FSelectionManager::GetSelectedComponent() const
 {
     return IsValid(SelectedComponent) ? SelectedComponent : nullptr;
+}
+
+UActorComponent* FSelectionManager::GetSelectedActorComponent() const
+{
+    return IsValid(SelectedActorComponent) ? SelectedActorComponent : nullptr;
+}
+
+bool FSelectionManager::IsComponentDetailsSelected() const
+{
+    return GetSelectedActorComponent() != nullptr;
 }
 
 bool FSelectionManager::IsSelected(AActor* Actor) const
@@ -106,7 +117,7 @@ void FSelectionManager::Select(AActor* Actor)
         return;
     }
 
-    if (SelectedActors.size() == 1 && SelectedActors.front() == Actor && SelectedComponent == RootComponent)
+    if (SelectedActors.size() == 1 && SelectedActors.front() == Actor && SelectedComponent == RootComponent && SelectedActorComponent == nullptr)
     {
         return;
     }
@@ -121,6 +132,7 @@ void FSelectionManager::Select(AActor* Actor)
     SelectedActors.push_back(Actor);
     SetActorProxiesSelected(Actor, true);
     SelectedComponent = RootComponent;
+    SelectedActorComponent = nullptr;
 
     SyncGizmo();
 }
@@ -177,6 +189,7 @@ void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>&
 
     SelectedActors.clear();
     SelectedComponent = nullptr;
+    SelectedActorComponent = nullptr;
 
     for (int32 i = Lo; i <= Hi; ++i)
     {
@@ -208,6 +221,10 @@ void FSelectionManager::ToggleSelect(AActor* Actor)
             SelectedComponent = nullptr;
             PruneInvalidSelection();
         }
+        if (SelectedActorComponent && IsAliveObject(SelectedActorComponent) && SelectedActorComponent->GetOwner() == Actor)
+        {
+            SelectedActorComponent = nullptr;
+        }
     }
     else
     {
@@ -217,6 +234,7 @@ void FSelectionManager::ToggleSelect(AActor* Actor)
         {
             USceneComponent* RootComponent = Actor->GetRootComponent();
             SelectedComponent              = IsValid(RootComponent) ? RootComponent : nullptr;
+            SelectedActorComponent         = nullptr;
         }
     }
     SyncGizmo();
@@ -236,6 +254,10 @@ void FSelectionManager::Deselect(AActor* Actor)
             SelectedComponent = nullptr;
             PruneInvalidSelection();
         }
+        if (SelectedActorComponent && IsAliveObject(SelectedActorComponent) && SelectedActorComponent->GetOwner() == Actor)
+        {
+            SelectedActorComponent = nullptr;
+        }
     }
     SyncGizmo();
 }
@@ -244,7 +266,7 @@ void FSelectionManager::ClearSelection()
 {
     PruneInvalidSelection();
 
-    if (SelectedActors.empty() && SelectedComponent == nullptr)
+    if (SelectedActors.empty() && SelectedComponent == nullptr && SelectedActorComponent == nullptr)
     {
         return;
     }
@@ -256,6 +278,7 @@ void FSelectionManager::ClearSelection()
 
     SelectedActors.clear();
     SelectedComponent = nullptr;
+    SelectedActorComponent = nullptr;
     SyncGizmo();
 }
 
@@ -346,7 +369,7 @@ void FSelectionManager::SelectComponent(USceneComponent* Component)
         return;
     }
 
-    if (SelectedComponent == Target)
+    if (SelectedComponent == Target && SelectedActorComponent == Target)
     {
         return;
     }
@@ -364,7 +387,72 @@ void FSelectionManager::SelectComponent(USceneComponent* Component)
 
     // Select(Owner)는 actor root를 선택 대상으로 잡기 때문에, owner 선택 보장 후
     // 실제 component 선택 대상을 다시 설정합니다.
+    if (IsSelected(Owner))
+    {
+        auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Owner);
+        if (It != SelectedActors.end() && It != SelectedActors.begin())
+        {
+            SelectedActors.erase(It);
+            SelectedActors.insert(SelectedActors.begin(), Owner);
+        }
+    }
+
     SelectedComponent = Target;
+    SelectedActorComponent = Target;
+
+    SyncGizmo();
+}
+
+void FSelectionManager::SelectActorDetails(AActor* Actor)
+{
+    if (!IsValid(Actor))
+    {
+        ClearSelection();
+        return;
+    }
+
+    Select(Actor);
+    SelectedActorComponent = nullptr;
+    SyncGizmo();
+}
+
+void FSelectionManager::SelectActorComponent(UActorComponent* Component)
+{
+    PruneInvalidSelection();
+
+    if (!IsValid(Component))
+    {
+        return;
+    }
+
+    if (USceneComponent* SceneComponent = Cast<USceneComponent>(Component))
+    {
+        SelectComponent(SceneComponent);
+        return;
+    }
+
+    AActor* Owner = Component->GetOwner();
+    if (!IsValid(Owner))
+    {
+        return;
+    }
+
+    if (!IsSelected(Owner))
+    {
+        Select(Owner);
+    }
+    else
+    {
+        auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Owner);
+        if (It != SelectedActors.end() && It != SelectedActors.begin())
+        {
+            SelectedActors.erase(It);
+            SelectedActors.insert(SelectedActors.begin(), Owner);
+        }
+    }
+
+    SelectedActorComponent = Component;
+    SelectedComponent = nullptr;
 
     SyncGizmo();
 }
@@ -445,7 +533,27 @@ void FSelectionManager::PruneInvalidSelection()
         }
     }
 
-    if (!SelectedComponent && !SelectedActors.empty())
+    if (SelectedActorComponent)
+    {
+        AActor* Owner = IsAliveObject(SelectedActorComponent) ? SelectedActorComponent->GetOwner() : nullptr;
+        if (!IsValid(SelectedActorComponent) || !IsValid(Owner))
+        {
+            SelectedActorComponent = nullptr;
+            bSelectionChanged = true;
+        }
+    }
+
+    if (SelectedActorComponent)
+    {
+        AActor* Owner = SelectedActorComponent->GetOwner();
+        if (!IsValid(Owner) || !IsSelected(Owner))
+        {
+            SelectedActorComponent = nullptr;
+            bSelectionChanged = true;
+        }
+    }
+
+    if (!SelectedComponent && !SelectedActorComponent && !SelectedActors.empty())
     {
         for (AActor* Actor : SelectedActors)
         {
