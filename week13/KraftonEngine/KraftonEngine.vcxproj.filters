@@ -881,6 +881,12 @@
     <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Material</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidgetTab.cpp">
+      <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidgetTabs.cpp">
+      <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
     </ClCompile>
@@ -2079,6 +2085,12 @@
       <Filter>Source\Editor\UI\Asset\Material</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidgetTab.h">
+      <Filter>Source\Editor\UI\Asset\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidgetTabs.h">
       <Filter>Source\Editor\UI\Asset\Mesh</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h">

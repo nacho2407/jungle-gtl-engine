@@ -870,16 +870,5 @@ void PhysicsAssetElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 		return;
 	}
 
-	const FString& SourceMeshPath = PhysicsAsset->GetSourceSkeletalMeshPath();
-	if (!SourceMeshPath.empty() && SourceMeshPath != "None")
-	{
-		ID3D11Device* Device = Context.EditorEngine->GetRenderer().GetFD3DDevice().GetDevice();
-		if (USkeletalMesh* SourceMesh = FMeshManager::LoadSkeletalMesh(SourceMeshPath, Device))
-		{
-			PhysicsAsset->SetOuter(SourceMesh);
-			SourceMesh->SetPhysicsAsset(PhysicsAsset);
-		}
-	}
-
 	Context.EditorEngine->OpenAssetEditorForObject(PhysicsAsset);
 }
