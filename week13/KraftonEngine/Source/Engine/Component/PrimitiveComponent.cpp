@@ -154,12 +154,15 @@ void UPrimitiveComponent::BeginDestroy()
 void UPrimitiveComponent::NotifyPhysicsBodyDirty()
 {
 	if (!bComponentHasBegunPlay) return;
+
 	UWorld* World = GetWorld();
 	if (!World) return;
-	if (IPhysicsScene* PS = World->GetPhysicsScene())
-	{
-		PS->RebuildBody(this);
-	}
+
+	IPhysicsScene* PS = World->GetPhysicsScene();
+	if (!PS) return;
+
+	if (IsCollisionEnabled()) PS->RebuildBody(this);
+	else PS->UnregisterComponent(this);
 }
 
 void UPrimitiveComponent::SetSimulatePhysics(bool bInSimulate)
@@ -468,6 +471,8 @@ void UPrimitiveComponent::EnsureWorldAABBUpdated() const
 
 void UPrimitiveComponent::InitializeBodyInstance()
 {
+	if (BodyInstance.IsValidBodyInstance()) return;
+
 	BodyInstance.OwnerComponent = this;
 	BodyInstance.OwnerSkeletalComponent = nullptr;
 
@@ -475,7 +480,6 @@ void UPrimitiveComponent::InitializeBodyInstance()
 	BodyInstance.BoneName = FName::None;
 	BodyInstance.BoneIndex = -1;
 
-	// 아직 PhysX Actor를 만든 상태가 아니어야 함
 	BodyInstance.ClearPhysicsPointers();
 
 	// 현재 컴포넌트 설정값을 기본 BodyInstance에도 맞춰둔다.

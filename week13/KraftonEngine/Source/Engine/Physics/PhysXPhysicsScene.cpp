@@ -1003,109 +1003,20 @@ void FPhysXPhysicsScene::DestroyConstraintInstance(FConstraintInstance& Constrai
 	}
 }
 
-// ============================================================
-// Simulation
-// ============================================================
-
 void FPhysXPhysicsScene::Tick(float DeltaTime)
 {
-	if (bShutdownComplete || !Scene || DeltaTime <= 0.0f) return;
+	if (bShutdownComplete || !Scene || DeltaTime <= 0.0f)
+	{
+		return;
+	}
 
 	constexpr float MaxPhysicsDeltaTime = 0.1f;
-	if (DeltaTime > MaxPhysicsDeltaTime)
-	{
-		DeltaTime = MaxPhysicsDeltaTime;
-	}
+	DeltaTime = std::min(DeltaTime, MaxPhysicsDeltaTime);
 
-	// ── Pre-simulate: Engine → PhysX Transform 동기화 ──
-	//
-	// Static:
-	//   엔진 transform을 PhysX static actor pose로 계속 반영.
-	//
-	// Dynamic:
-	//   일반 상황에서는 PhysX가 주도한다.
-	//   단, 외부에서 Component transform을 크게 teleport한 경우에만 PhysX pose로 반영.
-	//
-	// Kinematic:
-	//   setKinematicTarget 사용.
-	constexpr float TeleportPosThresholdSq = 1.0f;   // 1m 이상 차이 시 teleport
-	constexpr float TeleportRotThreshold = 0.99f;    // 약 8도 이상 차이 시 teleport
-
-	for (FBodyInstance* Body : RegisteredBodies)
-	{
-		if (!Body || !Body->IsValidBodyInstance()) continue;
-
-		UPrimitiveComponent* Comp = Body->OwnerComponent;
-		if (!IsValid(Comp)) continue;
-
-		PxRigidActor* Actor = Body->RigidActor;
-		if (!Actor) continue;
-
-		const PxTransform NewPose = GetPxTransform(Comp);
-
-		if (PxRigidDynamic* Dynamic = Actor->is<PxRigidDynamic>())
-		{
-			if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
-			{
-				Dynamic->setKinematicTarget(NewPose);
-			}
-			else
-			{
-				const PxTransform PxPose = Dynamic->getGlobalPose();
-
-				const PxVec3 DeltaP = NewPose.p - PxPose.p;
-				const float DistSq =
-					DeltaP.x * DeltaP.x +
-					DeltaP.y * DeltaP.y +
-					DeltaP.z * DeltaP.z;
-
-				const float QDot = std::abs(
-					NewPose.q.x * PxPose.q.x +
-					NewPose.q.y * PxPose.q.y +
-					NewPose.q.z * PxPose.q.z +
-					NewPose.q.w * PxPose.q.w
-				);
-
-				if (DistSq > TeleportPosThresholdSq || QDot < TeleportRotThreshold)
-				{
-					// 큰 외부 변경만 teleport.
-					// velocity는 보존해서 자연스러운 시뮬레이션 momentum은 유지.
-					Dynamic->setGlobalPose(NewPose);
-				}
-			}
-		}
-		else if (Actor->is<PxRigidStatic>())
-		{
-			Actor->setGlobalPose(NewPose);
-		}
-	}
-
-	// ── Simulate ──
-	Scene->simulate(DeltaTime);
-	Scene->fetchResults(true);
-
-	// ── Post-simulate: PhysX → Engine Transform 동기화 ──
-	//
-	// 일반 dynamic body만 Component transform으로 되돌린다.
-	// Static은 엔진 transform이 원본이고, Kinematic도 엔진 transform이 원본이다.
-	for (FBodyInstance* Body : RegisteredBodies)
-	{
-		if (!Body || !Body->IsValidBodyInstance()) continue;
-
-		UPrimitiveComponent* Comp = Body->OwnerComponent;
-		if (!IsValid(Comp)) continue;
-
-		PxRigidDynamic* Dynamic = Body->GetRigidDynamic();
-		if (!Dynamic) continue;
-		if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC) continue;
-		if (Dynamic->isSleeping()) continue;
-
-		const PxTransform Pose = Dynamic->getGlobalPose();
-		SetComponentWorldPose(Comp, Pose);
-	}
-
-	// ── Dispatch deferred contact/trigger events ──
-	if (EventCallback) EventCallback->DispatchPendingEvents();
+	SyncEngineToPhysicsBeforeSim();
+	SimulatePhysics(DeltaTime);
+	SyncPhysicsToEngineAfterSim();
+	DispatchPhysicsEvents();
 }
 
 bool FPhysXPhysicsScene::Sweep(const FVector& Start, const FVector& Dir, float MaxDist, const FCollisionShape& Shape, const FQuat& ShapeRot, FHitResult& OutHit, ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
@@ -1450,5 +1361,99 @@ void FPhysXPhysicsScene::ReleaseRegisteredBodies()
 	{
 		if (!Body) continue;
 		DestroyBodyInstance(*Body);
+	}
+}
+
+void FPhysXPhysicsScene::SyncEngineToPhysicsBeforeSim()
+{
+	constexpr float TeleportPosThresholdSq = 1.0f;
+	constexpr float TeleportRotThreshold = 0.99f;
+
+	for (FBodyInstance* Body : RegisteredBodies)
+	{
+		if (!Body || !Body->IsValidBodyInstance()) continue;
+
+		UPrimitiveComponent* Comp = Body->OwnerComponent;
+		if (!IsValid(Comp)) continue;
+
+		PxRigidActor* Actor = Body->RigidActor;
+		if (!Actor) continue;
+
+		const PxTransform NewPose = GetPxTransform(Comp);
+
+		if (PxRigidDynamic* Dynamic = Actor->is<PxRigidDynamic>())
+		{
+			if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
+			{
+				Dynamic->setKinematicTarget(NewPose);
+			}
+			else
+			{
+				const PxTransform PxPose = Dynamic->getGlobalPose();
+
+				const PxVec3 DeltaP = NewPose.p - PxPose.p;
+				const float DistSq =
+					DeltaP.x * DeltaP.x +
+					DeltaP.y * DeltaP.y +
+					DeltaP.z * DeltaP.z;
+
+				const float QDot = std::abs(
+					NewPose.q.x * PxPose.q.x +
+					NewPose.q.y * PxPose.q.y +
+					NewPose.q.z * PxPose.q.z +
+					NewPose.q.w * PxPose.q.w
+				);
+
+				if (DistSq > TeleportPosThresholdSq || QDot < TeleportRotThreshold)
+				{
+					Dynamic->setGlobalPose(NewPose);
+				}
+			}
+		}
+		else if (Actor->is<PxRigidStatic>())
+		{
+			Actor->setGlobalPose(NewPose);
+		}
+	}
+}
+
+void FPhysXPhysicsScene::SimulatePhysics(float DeltaTime)
+{
+	Scene->simulate(DeltaTime);
+	Scene->fetchResults(true);
+}
+
+void FPhysXPhysicsScene::SyncPhysicsToEngineAfterSim()
+{
+	for (FBodyInstance* Body : RegisteredBodies)
+	{
+		if (!Body || !Body->IsValidBodyInstance()) continue;
+
+		UPrimitiveComponent* Comp = Body->OwnerComponent;
+		if (!IsValid(Comp)) continue;
+
+		PxRigidDynamic* Dynamic = Body->GetRigidDynamic();
+		if (!Dynamic) continue;
+
+		if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
+		{
+			continue;
+		}
+
+		if (Dynamic->isSleeping())
+		{
+			continue;
+		}
+
+		const PxTransform Pose = Dynamic->getGlobalPose();
+		SetComponentWorldPose(Comp, Pose);
+	}
+}
+
+void FPhysXPhysicsScene::DispatchPhysicsEvents()
+{
+	if (EventCallback)
+	{
+		EventCallback->DispatchPendingEvents();
 	}
 }

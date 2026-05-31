@@ -92,4 +92,9 @@ private:
 	void AddRegisteredBody(FBodyInstance* Body);
 	void RemoveRegisteredBody(FBodyInstance* Body);
 	void ReleaseRegisteredBodies();
+
+	void SyncEngineToPhysicsBeforeSim();
+	void SimulatePhysics(float DeltaTime);
+	void SyncPhysicsToEngineAfterSim();
+	void DispatchPhysicsEvents();
 };
