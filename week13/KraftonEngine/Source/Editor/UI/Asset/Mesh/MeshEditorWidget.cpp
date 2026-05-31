@@ -977,9 +977,10 @@ void FMeshEditorWidget::RenderPhysicsAssetBuildOptionsPopup(
 	ImGui::TextUnformatted("Physics Asset Build Options");
 	ImGui::Separator();
 
-	ImGui::Checkbox("Skip Root Body", &PendingPhysicsAssetBuildOptions.bSkipRootBody);
 	ImGui::Checkbox("Use Dominant Bone Weight", &PendingPhysicsAssetBuildOptions.bUseDominantBoneWeight);
 	ImGui::Checkbox("Auto Orient To Bone", &PendingPhysicsAssetBuildOptions.bAutoOrientToBone);
+	ImGui::Checkbox("Walk Past Small Bones", &PendingPhysicsAssetBuildOptions.bWalkPastSmall);
+	ImGui::Checkbox("Create Body for All Bones", &PendingPhysicsAssetBuildOptions.bBodyForAll);
 
 	const auto GetGeomTypeLabel = [](EPhysicsAssetFitGeomType GeomType) -> const char*
 	{
@@ -1014,6 +1015,7 @@ void FMeshEditorWidget::RenderPhysicsAssetBuildOptionsPopup(
 
 	ImGui::Spacing();
 	ImGui::DragFloat("Min Bone Size", &PendingPhysicsAssetBuildOptions.MinBoneSize, 0.25f, 0.0f, 1000.0f, "%.2f");
+	ImGui::DragFloat("Min Weld Size", &PendingPhysicsAssetBuildOptions.MinWeldSize, 0.0001f, 0.0f, 1000.0f, "%.4f");
 	ImGui::DragFloat("Fit Padding", &PendingPhysicsAssetBuildOptions.FitPadding, 0.001f, 1.0f, 2.0f, "%.3f");
 	ImGui::DragFloat("Min Primitive Size", &PendingPhysicsAssetBuildOptions.MinPrimitiveSize, 0.01f, 0.01f, 1000.0f, "%.2f");
 
@@ -1027,6 +1029,7 @@ void FMeshEditorWidget::RenderPhysicsAssetBuildOptionsPopup(
 	if (ImGui::Button("Generate"))
 	{
 		PendingPhysicsAssetBuildOptions.MinBoneSize = std::max(0.0f, PendingPhysicsAssetBuildOptions.MinBoneSize);
+		PendingPhysicsAssetBuildOptions.MinWeldSize = std::max(0.0f, PendingPhysicsAssetBuildOptions.MinWeldSize);
 		PendingPhysicsAssetBuildOptions.FitPadding = std::max(1.0f, PendingPhysicsAssetBuildOptions.FitPadding);
 		PendingPhysicsAssetBuildOptions.MinPrimitiveSize = std::max(0.01f, PendingPhysicsAssetBuildOptions.MinPrimitiveSize);
 

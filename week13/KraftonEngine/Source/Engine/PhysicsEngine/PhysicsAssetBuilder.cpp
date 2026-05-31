@@ -200,66 +200,9 @@ bool IsValidBoneIndex(const FSkeletalMesh& MeshAsset, int32 BoneIndex)
 	return BoneIndex >= 0 && BoneIndex < static_cast<int32>(MeshAsset.Bones.size());
 }
 
-int32 FindRootBoneIndex(const FSkeletalMesh& MeshAsset)
-{
-	for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(MeshAsset.Bones.size()); ++BoneIndex)
-	{
-		if (MeshAsset.Bones[BoneIndex].ParentIndex == -1)
-		{
-			return BoneIndex;
-		}
-	}
-
-	return -1;
-}
-
-bool IsDescendantOfBone(const FSkeletalMesh& MeshAsset, int32 BoneIndex, int32 AncestorBoneIndex)
-{
-	int32 CurrentBoneIndex = BoneIndex;
-	while (IsValidBoneIndex(MeshAsset, CurrentBoneIndex))
-	{
-		if (CurrentBoneIndex == AncestorBoneIndex)
-		{
-			return true;
-		}
-
-		CurrentBoneIndex = MeshAsset.Bones[CurrentBoneIndex].ParentIndex;
-	}
-
-	return false;
-}
-
-int32 FindFirstSufficientFitInSubtree(
-	const FSkeletalMesh& MeshAsset,
-	const TArray<FBoneShapeFit>& BoneFits,
-	int32 RootBoneIndex,
-	float MinBoneSize)
-{
-	if (!IsValidBoneIndex(MeshAsset, RootBoneIndex))
-	{
-		return -1;
-	}
-
-	for (int32 BoneIndex = RootBoneIndex; BoneIndex < static_cast<int32>(MeshAsset.Bones.size()); ++BoneIndex)
-	{
-		if (!IsDescendantOfBone(MeshAsset, BoneIndex, RootBoneIndex))
-		{
-			continue;
-		}
-
-		const FBoneShapeFit& Fit = BoneFits[BoneIndex];
-		if (Fit.bHasVertices && GetBoneFitSize(Fit) >= MinBoneSize)
-		{
-			return BoneIndex;
-		}
-	}
-
-	return -1;
-}
-
 FBoneShapeFit TransformFitToBoneSpace(
 	const FSkeletalMesh& MeshAsset,
-	const TArray<FBoneShapeFit>& BoneFits,
+	const FBoneShapeFit& SourceFit,
 	int32 SourceBoneIndex,
 	int32 TargetBoneIndex)
 {
@@ -270,7 +213,6 @@ FBoneShapeFit TransformFitToBoneSpace(
 		return Result;
 	}
 
-	const FBoneShapeFit& SourceFit = BoneFits[SourceBoneIndex];
 	if (!SourceFit.bHasVertices)
 	{
 		return Result;
@@ -291,6 +233,137 @@ FBoneShapeFit TransformFitToBoneSpace(
 	}
 
 	return Result;
+}
+
+FBoneShapeFit TransformFitToBoneSpace(
+	const FSkeletalMesh& MeshAsset,
+	const TArray<FBoneShapeFit>& BoneFits,
+	int32 SourceBoneIndex,
+	int32 TargetBoneIndex)
+{
+	if (!IsValidBoneIndex(MeshAsset, SourceBoneIndex))
+	{
+		return FBoneShapeFit();
+	}
+
+	return TransformFitToBoneSpace(MeshAsset, BoneFits[SourceBoneIndex], SourceBoneIndex, TargetBoneIndex);
+}
+
+void AppendFit(FBoneShapeFit& TargetFit, const FBoneShapeFit& SourceFit)
+{
+	if (!SourceFit.bHasVertices)
+	{
+		return;
+	}
+
+	for (const FVector& Position : SourceFit.Positions)
+	{
+		TargetFit.AddPosition(Position);
+	}
+}
+
+void AppendFitToBoneSpace(
+	const FSkeletalMesh& MeshAsset,
+	FBoneShapeFit& TargetFit,
+	const FBoneShapeFit& SourceFit,
+	int32 SourceBoneIndex,
+	int32 TargetBoneIndex)
+{
+	AppendFit(TargetFit, TransformFitToBoneSpace(MeshAsset, SourceFit, SourceBoneIndex, TargetBoneIndex));
+}
+
+FBoneShapeFit MakeDefaultBoneFit()
+{
+	FBoneShapeFit Fit;
+	Fit.AddPosition(FVector::ZeroVector);
+	return Fit;
+}
+
+struct FUnrealMergedBoneData
+{
+	TArray<FBoneShapeFit> ExtraFits;
+	TArray<float> MergedSizes;
+	int32 ForcedRootBoneIndex = -1;
+};
+
+FUnrealMergedBoneData BuildUnrealMergedBoneData(
+	const FSkeletalMesh& MeshAsset,
+	const TArray<FBoneShapeFit>& BoneFits,
+	const FPhysicsAssetBuildOptions& Options)
+{
+	FUnrealMergedBoneData Data;
+	Data.ExtraFits.resize(MeshAsset.Bones.size());
+	Data.MergedSizes.resize(MeshAsset.Bones.size(), 0.0f);
+
+	for (int32 BoneIndex = static_cast<int32>(MeshAsset.Bones.size()) - 1; BoneIndex >= 0; --BoneIndex)
+	{
+		if (!IsValidBoneIndex(MeshAsset, BoneIndex))
+		{
+			continue;
+		}
+
+		const float MyMergedSize = Data.MergedSizes[BoneIndex] + GetBoneFitSize(BoneFits[BoneIndex]);
+		Data.MergedSizes[BoneIndex] = MyMergedSize;
+
+		if (!Options.bWalkPastSmall || Options.bBodyForAll)
+		{
+			continue;
+		}
+
+		if (MyMergedSize >= Options.MinBoneSize || MyMergedSize < Options.MinWeldSize)
+		{
+			continue;
+		}
+
+		const int32 ParentIndex = MeshAsset.Bones[BoneIndex].ParentIndex;
+		if (!IsValidBoneIndex(MeshAsset, ParentIndex))
+		{
+			continue;
+		}
+
+		Data.MergedSizes[ParentIndex] += MyMergedSize;
+		AppendFitToBoneSpace(
+			MeshAsset,
+			Data.ExtraFits[ParentIndex],
+			BoneFits[BoneIndex],
+			BoneIndex,
+			ParentIndex);
+		AppendFitToBoneSpace(
+			MeshAsset,
+			Data.ExtraFits[ParentIndex],
+			Data.ExtraFits[BoneIndex],
+			BoneIndex,
+			ParentIndex);
+	}
+
+	int32 FirstParentBoneIndex = -1;
+	for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(MeshAsset.Bones.size()); ++BoneIndex)
+	{
+		if (Data.MergedSizes[BoneIndex] <= Options.MinBoneSize)
+		{
+			continue;
+		}
+
+		const int32 ParentBoneIndex = MeshAsset.Bones[BoneIndex].ParentIndex;
+		if (ParentBoneIndex == -1)
+		{
+			break;
+		}
+
+		if (FirstParentBoneIndex == -1)
+		{
+			FirstParentBoneIndex = ParentBoneIndex;
+			continue;
+		}
+
+		if (ParentBoneIndex == FirstParentBoneIndex)
+		{
+			Data.ForcedRootBoneIndex = ParentBoneIndex;
+			break;
+		}
+	}
+
+	return Data;
 }
 
 int32 FindBoneIndexByName(const FSkeletalMesh& MeshAsset, const FName& BoneName)
@@ -462,104 +535,90 @@ void FPhysicsAssetBuilder::CreateBodies(
 	}
 
 	FSkeletalMesh* MeshAsset = SkeletalMesh->GetSkeletalMeshAsset();
-	const TArray<FBoneShapeFit> BoneFits = BuildBoneShapeFits(*MeshAsset, Options);
-
 	TArray<UBodySetup*>& BodySetups = PhysicsAsset->GetBodySetupsMutable();
-	BodySetups.clear();
 
-	int32 LargestFitBoneIndex = -1;
-	float LargestFitBoneSize = -1.0f;
-	int32 RootBodyBoneIndex = -1;
-	int32 RootFitSourceBoneIndex = -1;
-
-	auto CreateBodyFromFit = [&](int32 BodyBoneIndex, const FBoneShapeFit& Fit) -> bool
+	auto PopulateBodies = [&](const FPhysicsAssetBuildOptions& BuildOptions) -> bool
 	{
-		if (!IsValidBoneIndex(*MeshAsset, BodyBoneIndex) || !Fit.bHasVertices)
-		{
-			return false;
-		}
+		BodySetups.clear();
 
-		const FBone& Bone = MeshAsset->Bones[BodyBoneIndex];
-
-		UBodySetup* BodySetup = UObjectManager::Get().CreateObject<UBodySetup>(PhysicsAsset);
-		if (!BodySetup)
-		{
-			return false;
-		}
-
-		BodySetup->BoneName = FName(Bone.Name);
-		AddFittedShapeForBone(
-			BodySetup,
-			Fit.GetCenter(),
-			Fit.GetExtent(),
-			Fit.Positions,
-			Options);
-
-		BodySetups.push_back(BodySetup);
-		return true;
-	};
-
-	auto CreateBodyForBone = [&](int32 BoneIndex) -> bool
-	{
-		return CreateBodyFromFit(BoneIndex, BoneFits[BoneIndex]);
-	};
-
-	if (!Options.bSkipRootBody)
-	{
-		const int32 RootBoneIndex = FindRootBoneIndex(*MeshAsset);
-		const int32 FitSourceBoneIndex = FindFirstSufficientFitInSubtree(
+		const TArray<FBoneShapeFit> BoneFits = BuildBoneShapeFits(*MeshAsset, BuildOptions);
+		const FUnrealMergedBoneData MergedBoneData = BuildUnrealMergedBoneData(
 			*MeshAsset,
 			BoneFits,
-			RootBoneIndex,
-			Options.MinBoneSize);
+			BuildOptions);
 
-		if (FitSourceBoneIndex != -1)
+		auto ShouldMakeBone = [&](int32 BoneIndex) -> bool
 		{
-			const FBoneShapeFit RootFit = TransformFitToBoneSpace(
-				*MeshAsset,
-				BoneFits,
-				FitSourceBoneIndex,
-				RootBoneIndex);
-
-			if (CreateBodyFromFit(RootBoneIndex, RootFit))
+			if (BuildOptions.bBodyForAll)
 			{
-				RootBodyBoneIndex = RootBoneIndex;
-				RootFitSourceBoneIndex = FitSourceBoneIndex;
+				return true;
 			}
-		}
-	}
 
-	for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(MeshAsset->Bones.size()); ++BoneIndex)
+			if (BoneIndex >= 0 && BoneIndex < static_cast<int32>(MergedBoneData.MergedSizes.size()) &&
+				MergedBoneData.MergedSizes[BoneIndex] > BuildOptions.MinBoneSize)
+			{
+				return true;
+			}
+
+			return BoneIndex == MergedBoneData.ForcedRootBoneIndex;
+		};
+
+		auto CreateBodyFromFit = [&](int32 BodyBoneIndex, const FBoneShapeFit& Fit) -> bool
+		{
+			if (!IsValidBoneIndex(*MeshAsset, BodyBoneIndex) || !Fit.bHasVertices)
+			{
+				return false;
+			}
+
+			const FBone& Bone = MeshAsset->Bones[BodyBoneIndex];
+
+			UBodySetup* BodySetup = UObjectManager::Get().CreateObject<UBodySetup>(PhysicsAsset);
+			if (!BodySetup)
+			{
+				return false;
+			}
+
+			BodySetup->BoneName = FName(Bone.Name);
+			AddFittedShapeForBone(
+				BodySetup,
+				Fit.GetCenter(),
+				Fit.GetExtent(),
+				Fit.Positions,
+				BuildOptions);
+
+			BodySetups.push_back(BodySetup);
+			return true;
+		};
+
+		for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(MeshAsset->Bones.size()); ++BoneIndex)
+		{
+			if (!ShouldMakeBone(BoneIndex))
+			{
+				continue;
+			}
+
+			FBoneShapeFit BodyFit = BoneFits[BoneIndex];
+			if (BoneIndex < static_cast<int32>(MergedBoneData.ExtraFits.size()))
+			{
+				AppendFit(BodyFit, MergedBoneData.ExtraFits[BoneIndex]);
+			}
+
+			if (!BodyFit.bHasVertices && BuildOptions.bBodyForAll)
+			{
+				BodyFit = MakeDefaultBoneFit();
+			}
+
+			CreateBodyFromFit(BoneIndex, BodyFit);
+		}
+
+		return !BodySetups.empty();
+	};
+
+	if (!PopulateBodies(Options))
 	{
-		if (BoneIndex == RootBodyBoneIndex || BoneIndex == RootFitSourceBoneIndex)
-		{
-			continue;
-		}
-
-		const FBoneShapeFit& Fit = BoneFits[BoneIndex];
-		if (!Fit.bHasVertices)
-		{
-			continue;
-		}
-
-		const float BoneFitSize = GetBoneFitSize(Fit);
-		if (BoneFitSize > LargestFitBoneSize)
-		{
-			LargestFitBoneIndex = BoneIndex;
-			LargestFitBoneSize = BoneFitSize;
-		}
-
-		if (BoneFitSize < Options.MinBoneSize)
-		{
-			continue;
-		}
-
-		CreateBodyForBone(BoneIndex);
-	}
-
-	if (BodySetups.empty() && LargestFitBoneIndex != -1)
-	{
-		CreateBodyForBone(LargestFitBoneIndex);
+		FPhysicsAssetBuildOptions RetryOptions = Options;
+		RetryOptions.MinBoneSize = 1.0f;
+		PopulateBodies(RetryOptions);
 	}
 
 	BuildConstraintInitDescsForBodies(PhysicsAsset, *MeshAsset);
