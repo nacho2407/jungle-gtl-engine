@@ -11,6 +11,8 @@
 
 #include "Editor/UI/Panel/EditorPanelWidget.h"
 
+class FSelectionManager;
+
 // ============================================================
 // FConsoleLogOutputDevice — ImGui 콘솔에 로그를 출력하는 디바이스
 // FEditorConsoleWidget이 소유하며, Initialize/Shutdown 시 등록/해제한다.
@@ -53,6 +55,7 @@ public:
 	}
 
 private:
+	FSelectionManager* SelectionManager = nullptr;
 	char InputBuf[256]{};
 	static ImVector<char*> History;
 	int32 HistoryPos = -1;

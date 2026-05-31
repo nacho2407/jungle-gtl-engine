@@ -53,23 +53,22 @@ void FEditorSceneWidget::Initialize(UEditorEngine* InEditorEngine)
 
 void FEditorSceneWidget::Render(const FEditorPanelContext& Context)
 {
-	if (!EditorEngine)
+	if (!EditorEngine || !Context.SelectionManager)
 	{
 		return;
 	}
 
-	(void)Context;
 	ImGui::SetNextWindowSize(ImVec2(400.0f, 350.0f), ImGuiCond_Once);
 
 	ImGui::Begin("Scene Manager");
 
 	// 씬 파일 작업은 상단 메뉴로 옮기고, Scene Manager는 액터 목록만 유지한다.
-	RenderActorOutliner();
+	RenderActorOutliner(*Context.SelectionManager);
 
 	ImGui::End();
 }
 
-void FEditorSceneWidget::RenderActorOutliner()
+void FEditorSceneWidget::RenderActorOutliner(FSelectionManager& Selection)
 {
 	SCOPE_STAT_CAT("SceneWidget::ActorOutliner", "5_UI");
 
@@ -93,20 +92,19 @@ void FEditorSceneWidget::RenderActorOutliner()
 
 	for (int32 ActorIndex : ValidActorIndices)
 	{
-		RenderActorNode(Actors[ActorIndex], Actors);
+		RenderActorNode(Actors[ActorIndex], Actors, Selection);
 	}
 
 	ImGui::EndChild();
 }
 
-void FEditorSceneWidget::RenderActorNode(AActor* Actor, const TArray<AActor*>& Actors)
+void FEditorSceneWidget::RenderActorNode(AActor* Actor, const TArray<AActor*>& Actors, FSelectionManager& Selection)
 {
 	if (!IsValid(Actor))
 	{
 		return;
 	}
 
-	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
 	FString DisplayNameStorage;
 	const char* DisplayName = GetActorDisplayName(Actor, DisplayNameStorage);
 
@@ -144,22 +142,20 @@ void FEditorSceneWidget::RenderActorNode(AActor* Actor, const TArray<AActor*>& A
 	{
 		if (USceneComponent* Root = Actor->GetRootComponent())
 		{
-			RenderSceneComponentNode(Root);
+			RenderSceneComponentNode(Root, Selection);
 		}
-		RenderNonSceneComponents(Actor);
+		RenderNonSceneComponents(Actor, Selection);
 		ImGui::TreePop();
 	}
 	ImGui::PopID();
 }
 
-void FEditorSceneWidget::RenderSceneComponentNode(USceneComponent* Comp)
+void FEditorSceneWidget::RenderSceneComponentNode(USceneComponent* Comp, FSelectionManager& Selection)
 {
 	if (!IsValid(Comp) || ShouldHideInComponentTree(Comp, bShowEditorOnlyComponents))
 	{
 		return;
 	}
-
-	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
 
 	FString Name;
 	GetComponentDisplayName(Comp, Name);
@@ -226,9 +222,9 @@ void FEditorSceneWidget::RenderSceneComponentNode(USceneComponent* Comp)
 				if (!bIsChildOfDragged)
 				{
 					DraggedComp->SetParent(Comp);
-					if (EditorEngine && EditorEngine->GetGizmo())
+					if (UGizmoComponent* Gizmo = Selection.GetGizmo())
 					{
-						EditorEngine->GetGizmo()->UpdateGizmoTransform();
+						Gizmo->UpdateGizmoTransform();
 					}
 				}
 			}
@@ -240,13 +236,13 @@ void FEditorSceneWidget::RenderSceneComponentNode(USceneComponent* Comp)
 	{
 		for (USceneComponent* Child : Children)
 		{
-			RenderSceneComponentNode(Child);
+			RenderSceneComponentNode(Child, Selection);
 		}
 		ImGui::TreePop();
 	}
 }
 
-void FEditorSceneWidget::RenderNonSceneComponents(AActor* Actor)
+void FEditorSceneWidget::RenderNonSceneComponents(AActor* Actor, FSelectionManager& Selection)
 {
 	if (!IsValid(Actor))
 	{
@@ -266,7 +262,6 @@ void FEditorSceneWidget::RenderNonSceneComponents(AActor* Actor)
 		return;
 	}
 
-	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
 	ImGuiTreeNodeFlags GroupFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
 	if (ImGui::TreeNodeEx("##ActorComponents", GroupFlags, "Components"))
 	{

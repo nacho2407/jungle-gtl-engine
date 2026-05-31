@@ -7,6 +7,7 @@
 
 class UActorComponent;
 class AActor;
+class FSelectionManager;
 
 class FEditorPropertyWidget : public FEditorPanelWidget
 {
@@ -43,4 +44,5 @@ private:
 	int32 PendingStaticFbxSkinnedMeshPolicy = 0;
 
 	FFbxSceneImportDialogState SkeletalFbxImportDialog;
+	FSelectionManager* SelectionManager = nullptr;
 };

@@ -3,11 +3,13 @@
 #include "Editor/UI/EditorWidget.h"
 
 class FEditorSettings;
+class FSelectionManager;
 class UEditorEngine;
 
 struct FEditorPanelContext
 {
 	UEditorEngine* EditorEngine = nullptr;
+	FSelectionManager* SelectionManager = nullptr;
 	float DeltaTime = 0.0f;
 	const FEditorSettings* Settings = nullptr;
 	bool bHideEditorWindows = false;

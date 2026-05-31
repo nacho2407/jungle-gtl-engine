@@ -12,10 +12,10 @@ public:
 	bool IsShowingEditorOnlyComponents() const { return bShowEditorOnlyComponents; }
 
 private:
-	void RenderActorOutliner();
-	void RenderActorNode(class AActor* Actor, const TArray<AActor*>& Actors);
-	void RenderSceneComponentNode(class USceneComponent* Comp);
-	void RenderNonSceneComponents(class AActor* Actor);
+	void RenderActorOutliner(class FSelectionManager& Selection);
+	void RenderActorNode(class AActor* Actor, const TArray<AActor*>& Actors, class FSelectionManager& Selection);
+	void RenderSceneComponentNode(class USceneComponent* Comp, class FSelectionManager& Selection);
+	void RenderNonSceneComponents(class AActor* Actor, class FSelectionManager& Selection);
 
 	TArray<int32> ValidActorIndices;
 	bool bShowEditorOnlyComponents = false;

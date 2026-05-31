@@ -1,5 +1,6 @@
 #include "Editor/UI/Panel/EditorConsoleWidget.h"
 #include "Editor/EditorEngine.h"
+#include "Editor/Selection/SelectionManager.h"
 #include "Editor/Viewport/Level/LevelEditorViewportClient.h"
 #include "Editor/Viewport/EditorPreviewViewportClient.h"
 #include "Editor/Subsystem/OverlayStatSystem.h"
@@ -635,7 +636,7 @@ void FEditorConsoleWidget::Clear()
 
 void FEditorConsoleWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)Context;
+	SelectionManager = Context.SelectionManager;
 
 	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("Console"))
@@ -955,9 +956,9 @@ bool FEditorConsoleWidget::TryExecReflectedShortcut(const FString& CommandLine)
 
 	TArray<const FFunction*> Candidates;
 	UObject*                 TargetObject = nullptr;
-	if (EditorEngine)
+	if (SelectionManager)
 	{
-		const TArray<AActor*>& SelectedActors = EditorEngine->GetSelectionManager().GetSelectedActors();
+		const TArray<AActor*>& SelectedActors = SelectionManager->GetSelectedActors();
 		if (!SelectedActors.empty())
 		{
 			TargetObject = SelectedActors[0];
@@ -1077,12 +1078,12 @@ void FEditorConsoleWidget::HandleExecReflection(const TArray<FString>& Args)
 
 	if (Mode == "selected")
 	{
-		if (!EditorEngine || EditorEngine->GetSelectionManager().GetSelectedActors().empty())
+		if (!SelectionManager || SelectionManager->GetSelectedActors().empty())
 		{
 			AddLog("[ERROR] No selected actor.\n");
 			return;
 		}
-		Instance         = EditorEngine->GetSelectionManager().GetSelectedActors()[0];
+		Instance         = SelectionManager->GetSelectedActors()[0];
 		FunctionArgIndex = 1;
 	}
 	else if (Mode == "actor")

@@ -156,8 +156,6 @@ namespace
 
 void FEditorAnimationDebugWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)Context;
-
 	ImGui::SetNextWindowSize(ImVec2(420.0f, 540.0f), ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("Animation Debug"))
 	{
@@ -165,8 +163,8 @@ void FEditorAnimationDebugWidget::Render(const FEditorPanelContext& Context)
 		return;
 	}
 
-	AActor* PrimaryActor = EditorEngine
-		? EditorEngine->GetSelectionManager().GetPrimarySelection()
+	AActor* PrimaryActor = Context.SelectionManager
+		? Context.SelectionManager->GetPrimarySelection()
 		: nullptr;
 
 	if (!PrimaryActor)

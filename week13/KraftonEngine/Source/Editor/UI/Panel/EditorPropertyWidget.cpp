@@ -547,13 +547,17 @@ FString FEditorPropertyWidget::OpenFbxFileDialog()
 
 void FEditorPropertyWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)Context;
+	SelectionManager = Context.SelectionManager;
+	if (!SelectionManager)
+	{
+		return;
+	}
 
 	ImGui::SetNextWindowSize(ImVec2(350.0f, 500.0f), ImGuiCond_Once);
 
 	ImGui::Begin("Property Window");
 
-	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+	FSelectionManager& Selection = *SelectionManager;
 	AActor* PrimaryActor = Selection.GetPrimarySelection();
 	if (!IsValid(PrimaryActor))
 	{
@@ -701,7 +705,7 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 {
 	if (!IsValid(PrimaryActor)) return;
 
-	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+	FSelectionManager& Selection = *SelectionManager;
 	UActorComponent* SelectedComponent = Selection.GetSelectedActorComponent();
 
 	if (!Selection.IsComponentDetailsSelected())
@@ -1018,9 +1022,7 @@ void FEditorPropertyWidget::RenderAddComponentMenu(AActor* Actor)
 
 void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArray<AActor*>& SelectedActors)
 {
-	UActorComponent* SelectedComponent = EditorEngine
-		? EditorEngine->GetSelectionManager().GetSelectedActorComponent()
-		: nullptr;
+	UActorComponent* SelectedComponent = SelectionManager ? SelectionManager->GetSelectedActorComponent() : nullptr;
 	if (!IsValid(Actor) || !IsValid(SelectedComponent)) return;
 
 	if (SelectedComponent != Actor->GetRootComponent())
@@ -1030,7 +1032,10 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 			if (SelectedComponent != nullptr)
 			{
 				Actor->RemoveComponent(SelectedComponent);
-				EditorEngine->GetSelectionManager().SelectActorDetails(Actor);
+				if (SelectionManager)
+				{
+					SelectionManager->SelectActorDetails(Actor);
+				}
 				return;
 			}
 		}
@@ -1146,9 +1151,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 
 void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors)
 {
-	UActorComponent* SelectedComponent = EditorEngine
-		? EditorEngine->GetSelectionManager().GetSelectedActorComponent()
-		: nullptr;
+	UActorComponent* SelectedComponent = SelectionManager ? SelectionManager->GetSelectedActorComponent() : nullptr;
 	if (!IsValid(SelectedComponent) || SelectedActors.size() < 2) return;
 
 	UClass* CompClass = SelectedComponent->GetClass();
@@ -1199,9 +1202,7 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 
 	UActorComponent* Comp = Actor->AddComponentByClass(ComponentClass);
 	if (!Comp) return;
-	UActorComponent* SelectedComponent = EditorEngine
-		? EditorEngine->GetSelectionManager().GetSelectedActorComponent()
-		: nullptr;
+	UActorComponent* SelectedComponent = SelectionManager ? SelectionManager->GetSelectedActorComponent() : nullptr;
 
 	if (ComponentClass->IsA(USceneComponent::StaticClass()))
 	{
@@ -1231,9 +1232,9 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 		}
 	}
 
-	if (EditorEngine)
+	if (SelectionManager)
 	{
-		EditorEngine->GetSelectionManager().SelectActorComponent(Comp);
+		SelectionManager->SelectActorComponent(Comp);
 	}
 }
 
@@ -1950,9 +1951,7 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			Rot->Roll = RotXYZ[0];
 			Rot->Pitch = RotXYZ[1];
 			Rot->Yaw = RotXYZ[2];
-			UActorComponent* SelectedComponent = EditorEngine
-				? EditorEngine->GetSelectionManager().GetSelectedActorComponent()
-				: nullptr;
+			UActorComponent* SelectedComponent = SelectionManager ? SelectionManager->GetSelectedActorComponent() : nullptr;
 			if (IsValid(SelectedComponent) && SelectedComponent->IsA<USceneComponent>())
 			{
 				static_cast<USceneComponent*>(SelectedComponent)->ApplyCachedEditRotator();

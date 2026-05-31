@@ -153,6 +153,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	const FEditorSettings& Settings = FEditorSettings::Get();
 	PanelContext.EditorEngine = EditorEngine;
+	PanelContext.SelectionManager = EditorEngine ? &EditorEngine->GetSelectionManager() : nullptr;
 	PanelContext.DeltaTime = DeltaTime;
 	PanelContext.Settings = &Settings;
 	PanelContext.bHideEditorWindows = bHideEditorWindows;
