@@ -2,6 +2,7 @@
 
 #include "Core/Types/CoreTypes.h"
 #include "Engine/Math/Vector.h"
+#include "Math/MathUtils.h"
 #include "PhysicsAsset.h"
 
 class USkeletalMesh;
@@ -15,15 +16,15 @@ enum class EPhysicsAssetFitGeomType : uint8
 
 struct FPhysicsAssetBuildOptions
 {
-	// Legacy mode: disables root-first merging and uses direct bone fits only.
-	bool bSkipRootBody = false;
-
 	EPhysicsAssetFitGeomType GeomType = EPhysicsAssetFitGeomType::Sphyl;
 	float MinBoneSize = 20.0f;
+	float MinWeldSize = FMath::KINDA_SMALL_NUMBER;
 	float MinPrimitiveSize = 0.1f;
 	float FitPadding = 1.01f;
 	bool bUseDominantBoneWeight = true;
 	bool bAutoOrientToBone = true;
+	bool bBodyForAll = false;
+	bool bWalkPastSmall = true;
 };
 
 class FPhysicsAssetBuilder
