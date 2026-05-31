@@ -26,6 +26,13 @@ bool FSelectionManager::IsComponentDetailsSelected() const
     return GetSelectedActorComponent() != nullptr;
 }
 
+bool FSelectionManager::ConsumeNewSelectFlag()
+{
+    const bool bWasNewSelect = bNewSelect;
+    bNewSelect = false;
+    return bWasNewSelect;
+}
+
 bool FSelectionManager::IsSelected(AActor* Actor) const
 {
     if (!IsValid(Actor))
@@ -134,6 +141,7 @@ void FSelectionManager::Select(AActor* Actor)
     SelectedComponent = RootComponent;
     SelectedActorComponent = nullptr;
 
+    MarkNewSelect();
     SyncGizmo();
 }
 
@@ -202,6 +210,7 @@ void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>&
     }
 
     PruneInvalidSelection();
+    MarkNewSelect();
     SyncGizmo();
 }
 
@@ -237,6 +246,7 @@ void FSelectionManager::ToggleSelect(AActor* Actor)
             SelectedActorComponent         = nullptr;
         }
     }
+    MarkNewSelect();
     SyncGizmo();
 }
 
@@ -258,6 +268,7 @@ void FSelectionManager::Deselect(AActor* Actor)
         {
             SelectedActorComponent = nullptr;
         }
+        MarkNewSelect();
     }
     SyncGizmo();
 }
@@ -279,6 +290,7 @@ void FSelectionManager::ClearSelection()
     SelectedActors.clear();
     SelectedComponent = nullptr;
     SelectedActorComponent = nullptr;
+    MarkNewSelect();
     SyncGizmo();
 }
 
@@ -400,6 +412,7 @@ void FSelectionManager::SelectComponent(USceneComponent* Component)
     SelectedComponent = Target;
     SelectedActorComponent = Target;
 
+    MarkNewSelect();
     SyncGizmo();
 }
 
@@ -454,6 +467,7 @@ void FSelectionManager::SelectActorComponent(UActorComponent* Component)
     SelectedActorComponent = Component;
     SelectedComponent = nullptr;
 
+    MarkNewSelect();
     SyncGizmo();
 }
 
@@ -575,6 +589,16 @@ void FSelectionManager::PruneInvalidSelection()
     {
         Gizmo->SetSelectedActors(SelectedActors.empty() ? nullptr : &SelectedActors);
     }
+
+    if (bSelectionChanged)
+    {
+        MarkNewSelect();
+    }
+}
+
+void FSelectionManager::MarkNewSelect()
+{
+    bNewSelect = true;
 }
 
 void FSelectionManager::SyncGizmo()

@@ -31,6 +31,7 @@ public:
 	void SelectActorComponent(UActorComponent* Component);
 	UActorComponent* GetSelectedActorComponent() const;
 	bool IsComponentDetailsSelected() const;
+	bool ConsumeNewSelectFlag();
 
 	bool IsSelected(AActor* Actor) const;
 
@@ -47,6 +48,7 @@ public:
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
+	void MarkNewSelect();
 	void PruneInvalidSelection();
 	void SyncGizmo();
 	void SetActorProxiesSelected(AActor* Actor, bool bSelected);
@@ -57,4 +59,5 @@ private:
 	UGizmoComponent* Gizmo = nullptr;
 	UWorld* World = nullptr;
 	bool bGizmoEnabled = true;
+	bool bNewSelect = true;
 };

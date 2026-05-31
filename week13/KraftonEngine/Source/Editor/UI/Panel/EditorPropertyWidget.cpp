@@ -547,7 +547,9 @@ FString FEditorPropertyWidget::OpenFbxFileDialog()
 
 void FEditorPropertyWidget::Render(const FEditorPanelContext& Context)
 {
-	SelectionManager = Context.SelectionManager;
+	(void)Context;
+
+	SelectionManager = EditorEngine ? &EditorEngine->GetSelectionManager() : nullptr;
 	if (!SelectionManager)
 	{
 		return;

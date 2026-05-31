@@ -163,8 +163,9 @@ void FEditorAnimationDebugWidget::Render(const FEditorPanelContext& Context)
 		return;
 	}
 
-	AActor* PrimaryActor = Context.SelectionManager
-		? Context.SelectionManager->GetPrimarySelection()
+	FSelectionManager* SelectionManager = EditorEngine ? &EditorEngine->GetSelectionManager() : nullptr;
+	AActor* PrimaryActor = SelectionManager
+		? SelectionManager->GetPrimarySelection()
 		: nullptr;
 
 	if (!PrimaryActor)

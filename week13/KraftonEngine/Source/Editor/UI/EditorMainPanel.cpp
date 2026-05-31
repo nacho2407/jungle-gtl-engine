@@ -1,8 +1,10 @@
-#include "Editor/UI/EditorMainPanel.h"
+﻿#include "Editor/UI/EditorMainPanel.h"
 
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
+#include "Editor/Selection/SelectionManager.h"
 #include "Editor/Viewport/Level/LevelEditorViewportClient.h"
+#include "Component/ActorComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -37,25 +39,38 @@
 
 namespace
 {
-struct FDebugPlaceActorOption
-{
-	const char* Label = "";
-	FLevelViewportLayout::EViewportPlaceActorType Type = FLevelViewportLayout::EViewportPlaceActorType::Cube;
-};
+	struct FDebugPlaceActorOption
+	{
+		const char* Label = "";
+		FLevelViewportLayout::EViewportPlaceActorType Type = FLevelViewportLayout::EViewportPlaceActorType::Cube;
+	};
 
-const FDebugPlaceActorOption GDebugPlaceActorOptions[] = {
-	{ "Cube", FLevelViewportLayout::EViewportPlaceActorType::Cube },
-	{ "Sphere", FLevelViewportLayout::EViewportPlaceActorType::Sphere },
-	{ "Cylinder", FLevelViewportLayout::EViewportPlaceActorType::Cylinder },
-	{ "Decal", FLevelViewportLayout::EViewportPlaceActorType::Decal },
-	{ "Height Fog", FLevelViewportLayout::EViewportPlaceActorType::HeightFog },
-	{ "Ambient Light", FLevelViewportLayout::EViewportPlaceActorType::AmbientLight },
-	{ "Directional Light", FLevelViewportLayout::EViewportPlaceActorType::DirectionalLight },
-	{ "Point Light", FLevelViewportLayout::EViewportPlaceActorType::PointLight },
-	{ "Spot Light", FLevelViewportLayout::EViewportPlaceActorType::SpotLight },
-	{ "Character",     FLevelViewportLayout::EViewportPlaceActorType::Character },
-	{ "Lua Character", FLevelViewportLayout::EViewportPlaceActorType::LuaCharacter },
-};
+	const FDebugPlaceActorOption GDebugPlaceActorOptions[] = {
+		{ "Cube", FLevelViewportLayout::EViewportPlaceActorType::Cube },
+		{ "Sphere", FLevelViewportLayout::EViewportPlaceActorType::Sphere },
+		{ "Cylinder", FLevelViewportLayout::EViewportPlaceActorType::Cylinder },
+		{ "Decal", FLevelViewportLayout::EViewportPlaceActorType::Decal },
+		{ "Height Fog", FLevelViewportLayout::EViewportPlaceActorType::HeightFog },
+		{ "Ambient Light", FLevelViewportLayout::EViewportPlaceActorType::AmbientLight },
+		{ "Directional Light", FLevelViewportLayout::EViewportPlaceActorType::DirectionalLight },
+		{ "Point Light", FLevelViewportLayout::EViewportPlaceActorType::PointLight },
+		{ "Spot Light", FLevelViewportLayout::EViewportPlaceActorType::SpotLight },
+		{ "Character",     FLevelViewportLayout::EViewportPlaceActorType::Character },
+		{ "Lua Character", FLevelViewportLayout::EViewportPlaceActorType::LuaCharacter },
+	};
+
+	void SetSelectionDetailTargetFromObject(FSelectionDetailTarget& Target, UObject* Object)
+	{
+		Target.Reset();
+		if (!IsValid(Object))
+		{
+			return;
+		}
+
+		Target.ObjectPtr = Object;
+		Target.StructType = Object->GetClass();
+		Target.ContainerPtr = Object;
+	}
 
 }
 
@@ -80,7 +95,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 
 	ImGuiStyle& Style = ImGui::GetStyle();
 	ImVec4* Colors = Style.Colors;
-	
+
 	Colors[ImGuiCol_FrameBg] = ImVec4(0.14f, 0.14f, 0.14f, 1.0f);
 	Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.20f, 0.20f, 0.20f, 1.0f);
 	Colors[ImGuiCol_FrameBgActive] = ImVec4(0.24f, 0.24f, 0.24f, 1.0f);
@@ -98,14 +113,14 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ProjectSettingsWidget.Initialize(InEditorEngine);
 	WorldSettingsWidget.Initialize(InEditorEngine);
 	AssetEditorManager.Initialize(InEditorEngine);
-    
+
 	AssetEditorManager.RegisterEditor<FFloatCurveEditorWidget>();
 	AssetEditorManager.RegisterEditor<FCameraShakeEditorWidget>();
 	AssetEditorManager.RegisterEditor<FMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FStaticMeshEditorWidget>();
 	AssetEditorManager.RegisterEditor<FAnimGraphEditorWidget>();
 	AssetEditorManager.RegisterEditor<FLuaBlueprintEditorWidget>();
-    AssetEditorManager.RegisterEditor<FMaterialEditorWidget>();
+	AssetEditorManager.RegisterEditor<FMaterialEditorWidget>();
 	AssetEditorManager.RegisterEditor<FParticleSystemEditorWidget>();
 }
 
@@ -153,10 +168,18 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	const FEditorSettings& Settings = FEditorSettings::Get();
 	PanelContext.EditorEngine = EditorEngine;
-	PanelContext.SelectionManager = EditorEngine ? &EditorEngine->GetSelectionManager() : nullptr;
 	PanelContext.DeltaTime = DeltaTime;
 	PanelContext.Settings = &Settings;
 	PanelContext.bHideEditorWindows = bHideEditorWindows;
+	FSelectionManager* SelectionManager = &EditorEngine->GetSelectionManager();
+	if (SelectionManager  && SelectionManager->ConsumeNewSelectFlag())
+	{
+		PanelContext.SelectionDetailTarget.Reset();
+		if (UActorComponent* SelectedComponent = SelectionManager->GetSelectedActorComponent())
+		{
+			SetSelectionDetailTargetFromObject(PanelContext.SelectionDetailTarget, SelectedComponent);
+		}
+	}
 
 	if (!bHideEditorWindows && Settings.UI.bImGUISettings)
 	{
@@ -637,8 +660,8 @@ void FEditorMainPanel::Update()
 	// GuiState 는 ImGui IO 의 충실한 미러 한 곳뿐.
 	// "뷰포트 위면 해제" 핵은 제거 — 입력 소유권은 이제 FSlateApplication 의
 	// ImGui 인지 hover 가 단독으로 결정한다.
-	InputSystem::Get().GetGuiInputState().bUsingMouse     = IO.WantCaptureMouse;
-	InputSystem::Get().GetGuiInputState().bUsingKeyboard  = IO.WantCaptureKeyboard || bShowShortcutOverlay;
+	InputSystem::Get().GetGuiInputState().bUsingMouse = IO.WantCaptureMouse;
+	InputSystem::Get().GetGuiInputState().bUsingKeyboard = IO.WantCaptureKeyboard || bShowShortcutOverlay;
 	InputSystem::Get().GetGuiInputState().bUsingTextInput = IO.WantTextInput;
 
 	// ImGui 사실을 입력 소유권 중재자에 주입

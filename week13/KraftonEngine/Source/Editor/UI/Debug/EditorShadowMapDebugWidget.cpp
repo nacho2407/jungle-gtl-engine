@@ -272,7 +272,8 @@ void EditorShadowMapDebugWidget::Render(const FEditorPanelContext& Context)
 	const FShadowMapResources& SR = Renderer.GetResources().GetShadowResourcesForScene(Scene).Resources;
 	FShadowMapPass* ShadowPass = Renderer.GetPipeline().FindPass<FShadowMapPass>();
 
-	FSelectedLightInfo SelLight = FindSelectedLight(Context.SelectionManager);
+	FSelectionManager* SelectionManager = EditorEngine ? &EditorEngine->GetSelectionManager() : nullptr;
+	FSelectedLightInfo SelLight = FindSelectedLight(SelectionManager);
 
 	// D3D device/context
 	FD3DDevice& D3DDev = Renderer.GetFD3DDevice();

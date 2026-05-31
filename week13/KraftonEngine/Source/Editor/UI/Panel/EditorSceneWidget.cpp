@@ -53,17 +53,21 @@ void FEditorSceneWidget::Initialize(UEditorEngine* InEditorEngine)
 
 void FEditorSceneWidget::Render(const FEditorPanelContext& Context)
 {
-	if (!EditorEngine || !Context.SelectionManager)
+	(void)Context;
+
+	if (!EditorEngine)
 	{
 		return;
 	}
+
+	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
 
 	ImGui::SetNextWindowSize(ImVec2(400.0f, 350.0f), ImGuiCond_Once);
 
 	ImGui::Begin("Scene Manager");
 
 	// 씬 파일 작업은 상단 메뉴로 옮기고, Scene Manager는 액터 목록만 유지한다.
-	RenderActorOutliner(*Context.SelectionManager);
+	RenderActorOutliner(Selection);
 
 	ImGui::End();
 }

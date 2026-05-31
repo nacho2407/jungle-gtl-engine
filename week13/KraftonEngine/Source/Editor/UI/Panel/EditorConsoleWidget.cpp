@@ -636,7 +636,9 @@ void FEditorConsoleWidget::Clear()
 
 void FEditorConsoleWidget::Render(const FEditorPanelContext& Context)
 {
-	SelectionManager = Context.SelectionManager;
+	(void)Context;
+
+	SelectionManager = EditorEngine ? &EditorEngine->GetSelectionManager() : nullptr;
 
 	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("Console"))
