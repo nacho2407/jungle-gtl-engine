@@ -1,53 +1,21 @@
-#include "MeshEditorWidget.h"
+﻿#include "MeshEditorWidget.h"
 
 #ifdef GetCurrentTime
 #undef GetCurrentTime
 #endif
 
-#include "Mesh/Skeletal/SkeletalMesh.h"
-#include "Mesh/Skeletal/SkeletalMeshAsset.h"
-#include "Mesh/MeshManager.h"
-#include "Runtime/Engine.h"
-#include "Component/Debug/PhysicsAssetDebugComponent.h"
-#include "Component/Primitive/SkeletalMeshComponent.h"
+#include "MeshEditorWidgetTab.h"
+#include "MeshEditorWidgetTabs.h"
+
 #include "Component/Light/DirectionalLightComponent.h"
-#include "Viewport/Viewport.h"
-#include "GameFramework/Light/DirectionalLightActor.h"
-#include "GameFramework/Actor/StaticMeshActor.h"
-#include "Settings/EditorSettings.h"
-#include "UI/Toolbar/ViewportToolbar.h"
-#include "Slate/SlateApplication.h"
-#include "Render/Shader/ShaderManager.h"
-#include "Animation/Sequence/AnimSequence.h"
-#include "Animation/Montage/AnimMontage.h"
-#include "Animation/AnimInstance.h"
-#include "Animation/Instance/AnimSingleNodeInstance.h"
-#include "Animation/AnimationManager.h"
-#include "Animation/Sequence/AnimDataModel.h"
-#include "Asset/AssetRegistry.h"
-#include "PhysicsEngine/PhysicsAsset.h"
-#include "PhysicsEngine/PhysicsAssetBuilder.h"
-#include "PhysicsEngine/PhysicsAssetManager.h"
-#include "UI/Asset/Animation/AnimationTransportBar.h"
-#include "UI/Asset/Animation/AnimationTimelinePanel.h"
-#include "UI/Asset/Animation/AnimSequencePropertyPanel.h"
-#include "UI/Asset/Animation/AnimMontagePropertyPanel.h"
-#include "UI/Util/EditorFileUtils.h"
 #include "Editor/UI/Util/EditorTextureManager.h"
-#include "Editor/UI/Util/InlinePropertyRenderer.h"
+#include "GameFramework/Actor/StaticMeshActor.h"
+#include "GameFramework/Light/DirectionalLightActor.h"
 #include "Platform/Paths.h"
-#include "Object/Object.h"
-#include "Core/Logging/Log.h"
+#include "Runtime/Engine.h"
+#include "Slate/SlateApplication.h"
 
 #include <imgui.h>
-#include <algorithm>
-#include <cmath>
-#include <cstdio>
-
-// Paths.h가 끌어오는 Windows.h는 GetCurrentTime을 GetTickCount로 치환한다.
-#ifdef GetCurrentTime
-#undef GetCurrentTime
-#endif
 
 namespace
 {
@@ -58,268 +26,21 @@ namespace
 		return FEditorTextureManager::Get().GetOrLoadIcon(Path);
 	}
 
-	FString FormatMeshStatCount(size_t Value)
-	{
-		FString Result = std::to_string(Value);
-		for (int32 InsertPos = static_cast<int32>(Result.length()) - 3; InsertPos > 0; InsertPos -= 3)
-		{
-			Result.insert(static_cast<size_t>(InsertPos), ",");
-		}
-		return Result;
-	}
-
-	FString FormatMeshStatSeconds(double Seconds)
-	{
-		char Buffer[64] = {};
-		std::snprintf(Buffer, sizeof(Buffer), "%.3f sec", Seconds);
-		return FString(Buffer);
-	}
-
-	FString GetPhysicsAssetSourceMeshPath(const UPhysicsAsset* PhysicsAsset)
-	{
-		if (!PhysicsAsset)
-		{
-			return FString();
-		}
-
-		if (const USkeletalMesh* SourceMesh = PhysicsAsset->GetTypedOuter<USkeletalMesh>())
-		{
-			return SourceMesh->GetAssetPathFileName();
-		}
-
-		return PhysicsAsset->GetSourceSkeletalMeshPath();
-	}
-
-	USkeletalMesh* ResolveSourceMeshForPhysicsAsset(UPhysicsAsset* PhysicsAsset)
-	{
-		if (!PhysicsAsset)
-		{
-			return nullptr;
-		}
-
-		if (USkeletalMesh* SourceMesh = PhysicsAsset->GetTypedOuter<USkeletalMesh>())
-		{
-			SourceMesh->SetPhysicsAsset(PhysicsAsset);
-			return SourceMesh;
-		}
-
-		const FString& SourceMeshPath = PhysicsAsset->GetSourceSkeletalMeshPath();
-		if (SourceMeshPath.empty() || SourceMeshPath == "None")
-		{
-			return nullptr;
-		}
-
-		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-		USkeletalMesh* SourceMesh = FMeshManager::LoadSkeletalMesh(SourceMeshPath, Device);
-		if (!SourceMesh)
-		{
-			return nullptr;
-		}
-
-		PhysicsAsset->SetOuter(SourceMesh);
-		SourceMesh->SetPhysicsAsset(PhysicsAsset);
-		return SourceMesh;
-	}
-
-	bool IsSameSkeletonBindingForAnimationList(const FSkeletonBinding& A, const FSkeletonBinding& B)
-	{
-		return A.SkeletonPath == B.SkeletonPath
-			&& A.SkeletonAssetGuid == B.SkeletonAssetGuid
-			&& A.CompatibilitySignature == B.CompatibilitySignature;
-	}
-
 	TMap<FString, double> GMeshImportDurationsByAssetPath;
-
-	double GetRecordedImportDurationSeconds(const USkeletalMesh* Mesh)
-	{
-		if (!Mesh)
-		{
-			return -1.0;
-		}
-
-		const FString& AssetPath = Mesh->GetAssetPathFileName();
-		if (AssetPath.empty() || AssetPath == "None")
-		{
-			return -1.0;
-		}
-
-		auto It = GMeshImportDurationsByAssetPath.find(AssetPath);
-		return It != GMeshImportDurationsByAssetPath.end() ? It->second : -1.0;
-	}
-
-	FString BuildPhysicsBodyTreeLabel(const FString& BoneName, int32 BodyIndex, const UBodySetup* BodySetup)
-	{
-		FString Label = BoneName;
-		const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
-		Label += "  [Body ";
-		Label += std::to_string(BodyIndex);
-		Label += "] S:";
-		Label += std::to_string(AggGeom.SphereElems.size());
-		Label += " B:";
-		Label += std::to_string(AggGeom.BoxElems.size());
-		Label += " C:";
-		Label += std::to_string(AggGeom.SphylElems.size());
-		Label += " X:";
-		Label += std::to_string(AggGeom.ConvexElems.size());
-		return Label;
-	}
-
-	bool HasVectorChanged(const FVector& Before, const FVector& After)
-	{
-		return FVector::Distance(Before, After) > 1.0e-4f;
-	}
-
-	bool RenderConstraintInitDescDetails(
-		UPhysicsAsset* PhysicsAsset,
-		int32 ConstraintIndex,
-		UPhysicsAssetDebugComponent* DebugComponent)
-	{
-		if (!PhysicsAsset || ConstraintIndex < 0)
-		{
-			return false;
-		}
-
-		TArray<FConstraintInstanceInitDesc>& ConstraintDescs = PhysicsAsset->GetConstraintInitDescsMutable();
-		if (ConstraintIndex >= static_cast<int32>(ConstraintDescs.size()))
-		{
-			return false;
-		}
-
-		FConstraintInstanceInitDesc* ConstraintDesc = &ConstraintDescs[ConstraintIndex];
-		ImGui::TextUnformatted("Constraint");
-
-		const FVector PreviousParentLocation = ConstraintDesc->ParentFrame.Location;
-		const FVector PreviousChildLocation = ConstraintDesc->ChildFrame.Location;
-		const bool bChanged = FInlinePropertyRenderer::RenderStructProperties(
-			FConstraintInstanceInitDesc::StaticStruct(),
-			ConstraintDesc,
-			PhysicsAsset,
-			"##PhysicsAssetConstraintProps");
-		if (!bChanged)
-		{
-			return false;
-		}
-
-		const bool bParentChanged = HasVectorChanged(PreviousParentLocation, ConstraintDesc->ParentFrame.Location);
-		const bool bChildChanged = HasVectorChanged(PreviousChildLocation, ConstraintDesc->ChildFrame.Location);
-		if (DebugComponent && (bParentChanged || bChildChanged))
-		{
-			DebugComponent->SyncConstraintFrameLocation(
-				*ConstraintDesc,
-				bParentChanged
-					? EPhysicsAssetConstraintFrameSide::Parent
-					: EPhysicsAssetConstraintFrameSide::Child);
-		}
-
-		return true;
-	}
-
-	bool RenderBodyPhysicsInfoDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
-	{
-		if (!PhysicsAsset || BodyIndex < 0)
-		{
-			return false;
-		}
-
-		TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetupsMutable();
-		if (BodyIndex >= static_cast<int32>(Bodies.size()) || !Bodies[BodyIndex])
-		{
-			return false;
-		}
-
-		UBodySetup* BodySetup = Bodies[BodyIndex];
-		ImGui::TextUnformatted("Body Physics");
-		ImGui::Text("Calculated Mass: %.4f kg", BodySetup->CalculateMass());
-
-		return FInlinePropertyRenderer::RenderStructProperties(
-			FBodySetupPhysicsInfo::StaticStruct(),
-			&BodySetup->GetPhysicsInfo(),
-			PhysicsAsset,
-			"##PhysicsAssetBodyPhysicsProps");
-	}
-
-	bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
-	{
-		if (!Asset || !PhysicsAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
-		{
-			return false;
-		}
-
-		const FBone& Bone = Asset->Bones[BoneIndex];
-		if (PhysicsAsset->FindBodyIndexByBoneName(FName(Bone.Name)) != -1)
-		{
-			return true;
-		}
-
-		for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
-		{
-			if (Asset->Bones[Index].ParentIndex == BoneIndex &&
-				HasPhysicsBodyInSubtree(Asset, PhysicsAsset, Index))
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	FMorphTargetCurve& FindOrAddMorphCurve(UAnimSequence* Seq, const FString& MorphTargetName)
-	{
-		TArray<FMorphTargetCurve>& Curves = Seq->GetMutableMorphTargetCurves();
-		for (FMorphTargetCurve& Curve : Curves)
-		{
-			if (Curve.MorphTargetName == MorphTargetName)
-			{
-				return Curve;
-			}
-		}
-		FMorphTargetCurve NewCurve;
-		NewCurve.MorphTargetName = MorphTargetName;
-		Curves.push_back(std::move(NewCurve));
-		return Curves.back();
-	}
-
-	void AddOrUpdateMorphCurveKey(FMorphTargetCurve& Curve, float TimeSeconds, float Value)
-	{
-		constexpr float TimeTolerance = 1.0e-4f;
-		for (FRawFloatCurveKey& Key : Curve.Curve.Keys)
-		{
-			if (std::fabs(Key.TimeSeconds - TimeSeconds) <= TimeTolerance)
-			{
-				Key.Value = Value;
-				return;
-			}
-		}
-		FRawFloatCurveKey NewKey;
-		NewKey.TimeSeconds   = TimeSeconds;
-		NewKey.Value         = Value;
-		NewKey.Interpolation = 2;
-		Curve.Curve.Keys.push_back(NewKey);
-		std::sort(
-			Curve.Curve.Keys.begin(),
-			Curve.Curve.Keys.end(),
-			[](const FRawFloatCurveKey& A, const FRawFloatCurveKey& B)
-			{
-				return A.TimeSeconds < B.TimeSeconds;
-			}
-		);
-	}
-
-	EUberLitDefines::ELightingModel GetLightingModelForViewMode(EViewMode ViewMode)
-	{
-		switch (ViewMode)
-		{
-		case EViewMode::Unlit:       return EUberLitDefines::ELightingModel::Unlit;
-		case EViewMode::Lit_Gouraud: return EUberLitDefines::ELightingModel::Gouraud;
-		case EViewMode::Lit_Lambert: return EUberLitDefines::ELightingModel::Lambert;
-		case EViewMode::Lit_Phong:
-		case EViewMode::LightCulling:
-		default:                     return EUberLitDefines::ELightingModel::Phong;
-		}
-	}
 }
 
 static uint32 GNextMeshEditorInstanceId = 0;
+
+FMeshEditorWidget::FMeshEditorWidget()
+	: InstanceId(GNextMeshEditorInstanceId++)
+{
+	const FString Id = std::to_string(InstanceId);
+	PreviewWorldHandle = FName("MeshEditorPreview_" + Id);
+	WindowIdSuffix = "###MeshEditor_" + Id;
+	InitializeTabs();
+}
+
+FMeshEditorWidget::~FMeshEditorWidget() = default;
 
 void FMeshEditorWidget::RecordImportDurationForAsset(const FString& AssetPath, double Seconds)
 {
@@ -341,82 +62,97 @@ void FMeshEditorWidget::ClearImportDurationForAsset(const FString& AssetPath)
 	GMeshImportDurationsByAssetPath.erase(AssetPath);
 }
 
-FMeshEditorWidget::FMeshEditorWidget()
-	: InstanceId(GNextMeshEditorInstanceId++)
+double FMeshEditorWidget::GetRecordedImportDurationForAsset(const FString& AssetPath)
 {
-	const FString Id = std::to_string(InstanceId);
-	PreviewWorldHandle = FName("MeshEditorPreview_" + Id);
-	WindowIdSuffix = "###MeshEditor_" + Id;
+	if (AssetPath.empty() || AssetPath == "None")
+	{
+		return -1.0;
+	}
+
+	auto It = GMeshImportDurationsByAssetPath.find(AssetPath);
+	return It != GMeshImportDurationsByAssetPath.end() ? It->second : -1.0;
 }
 
 bool FMeshEditorWidget::CanEdit(UObject* Object) const
 {
-	return Object && (Object->IsA<USkeletalMesh>() || Object->IsA<UPhysicsAsset>());
+	if (!Object) return false;
+	for (const std::unique_ptr<FMeshEditorWidgetTab>& Tab : Tabs)
+	{
+		if (Tab && Tab->CanEdit(Object))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool FMeshEditorWidget::IsEditingObject(UObject* Object) const
 {
-	if (FAssetEditorWidget::IsEditingObject(Object))
+	if (FAssetEditorWidget::IsEditingObject(Object)) return true;
+	if (!IsOpen() || !Object) return false;
+
+	for (const std::unique_ptr<FMeshEditorWidgetTab>& Tab : Tabs)
 	{
-		return true;
+		if (Tab && Tab->IsEditingObject(Object))
+		{
+			return true;
+		}
 	}
 
-	const USkeletalMesh* CurrentMesh = Cast<USkeletalMesh>(EditedObject);
-	const USkeletalMesh* RequestedMesh = Cast<USkeletalMesh>(Object);
-	const UPhysicsAsset* RequestedPhysicsAsset = Cast<UPhysicsAsset>(Object);
-	if (!IsOpen() || !CurrentMesh || (!RequestedMesh && !RequestedPhysicsAsset))
+	return false;
+}
+
+void FMeshEditorWidget::OnReuseForObject(UObject* Object)
+{
+	for (const std::unique_ptr<FMeshEditorWidgetTab>& Tab : Tabs)
 	{
-		return false;
+		if (Tab && Tab->ShouldActivateOnReuse(Object))
+		{
+			SetActiveTab(Tab->GetType());
+			return;
+		}
 	}
-
-	const FString& CurrentPath = CurrentMesh->GetAssetPathFileName();
-	const FString RequestedPath = RequestedMesh
-		? RequestedMesh->GetAssetPathFileName()
-		: GetPhysicsAssetSourceMeshPath(RequestedPhysicsAsset);
-
-	const bool bMatchesCurrentMesh = !CurrentPath.empty()
-		&& CurrentPath != "None"
-		&& CurrentPath == RequestedPath;
-	if (bMatchesCurrentMesh && RequestedPhysicsAsset)
-	{
-		const_cast<FMeshEditorWidget*>(this)->ActiveTab = EMeshEditorTab::PhysicsAsset;
-	}
-
-	return bMatchesCurrentMesh;
 }
 
 void FMeshEditorWidget::Open(UObject* Object)
 {
 	EMeshEditorTab InitialTab = EMeshEditorTab::Skeleton;
 	UObject* ObjectToEdit = Object;
-	if (UPhysicsAsset* PhysicsAsset = Cast<UPhysicsAsset>(Object))
+	if (!ResolveOpenTarget(Object, ObjectToEdit, InitialTab))
 	{
-		USkeletalMesh* SourceMesh = ResolveSourceMeshForPhysicsAsset(PhysicsAsset);
-		if (!SourceMesh)
-		{
-			UE_LOG("PhysicsAsset editor open failed: source skeletal mesh not found. PhysicsAsset=%s SourceMesh=%s",
-				PhysicsAsset->GetAssetPathFileName().c_str(),
-				PhysicsAsset->GetSourceSkeletalMeshPath().c_str());
-			return;
-		}
-
-		ObjectToEdit = SourceMesh;
-		InitialTab = EMeshEditorTab::PhysicsAsset;
+		return;
 	}
-
 	FAssetEditorWidget::Open(ObjectToEdit);
 
+	CreatePreviewScene();
+	InitializeViewportForPreview();
+	ActivateInitialTab(InitialTab);
+}
+
+bool FMeshEditorWidget::ResolveOpenTarget(UObject* Object, UObject*& OutObjectToEdit, EMeshEditorTab& OutInitialTab) const
+{
+	OutObjectToEdit = nullptr;
+	OutInitialTab = EMeshEditorTab::Skeleton;
+
+	for (const std::unique_ptr<FMeshEditorWidgetTab>& Tab : Tabs)
+	{
+		if (Tab && Tab->ResolveOpenTarget(Object, OutObjectToEdit, OutInitialTab))
+		{
+			return OutObjectToEdit != nullptr;
+		}
+	}
+
+	return false;
+}
+
+void FMeshEditorWidget::CreatePreviewScene()
+{
 	FWorldContext& WorldContext = GEngine->CreateWorldContext(EWorldType::EditorPreview, PreviewWorldHandle);
 	WorldContext.World->SetWorldType(EWorldType::EditorPreview);
 	WorldContext.World->InitWorld();
 
 	AActor* Actor = WorldContext.World->SpawnActor<AActor>();
-	if (USkeletalMesh* Mesh = Cast<USkeletalMesh>(EditedObject))
-	{
-		USkeletalMeshComponent* Comp = Actor->AddComponent<USkeletalMeshComponent>();
-		Comp->SetSkeletalMesh(Mesh);
-		Actor->SetRootComponent(Comp);
-	}
 	Actor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
 
 	ADirectionalLightActor* LightActor = WorldContext.World->SpawnActor<ADirectionalLightActor>();
@@ -431,98 +167,58 @@ void FMeshEditorWidget::Open(UObject* Object)
 	FloorActor->SetActorLocation(FVector(0.0f, 0.0f, -0.05f));
 	FloorActor->SetActorScale(FVector(10.0f, 10.0f, 0.02f));
 
+	ViewportClient.SetPreviewWorld(WorldContext.World);
+	ViewportClient.SetPreviewActor(Actor);
+	for (const std::unique_ptr<FMeshEditorWidgetTab>& Tab : Tabs)
+	{
+		if (Tab)
+		{
+			Tab->OnPreviewActorCreated(Actor);
+		}
+	}
+	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
+}
+
+void FMeshEditorWidget::InitializeViewportForPreview()
+{
 	ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
 
 	ViewportClient.Initialize(GEngine->GetRenderer().GetFD3DDevice().GetDevice(), static_cast<uint32>(ViewportSize.x), static_cast<uint32>(ViewportSize.y));
-	ViewportClient.SetPreviewWorld(WorldContext.World);
-	ViewportClient.SetPreviewActor(Actor);
-	ViewportClient.SetPreviewMeshComponent(Actor->GetComponentByClass<USkeletalMeshComponent>());
 
 	ViewportClient.CreatePreviewGizmo();
-	ViewportClient.CreateBoneDebugComponent();
-	ViewportClient.CreatePhysicsAssetDebugComponent();
-	ViewportClient.SetOnPhysicsAssetBodyPicked([this](int32 BodyIndex)
-	{
-		SelectedPhysicsBodyIndex = BodyIndex;
-		SelectedPhysicsConstraintIndex = -1;
-		UPhysicsAsset* PhysicsAsset = nullptr;
-		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
-		{
-			PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
-		}
-		ViewportClient.SyncPhysicsAssetDebugComponent(
-			PhysicsAsset,
-			SelectedPhysicsBodyIndex,
-			SelectedPhysicsConstraintIndex);
-	});
-	ViewportClient.SetOnPhysicsAssetConstraintPicked([this](int32 ConstraintIndex)
-	{
-		SelectedPhysicsBodyIndex = -1;
-		SelectedPhysicsConstraintIndex = ConstraintIndex;
-		UPhysicsAsset* PhysicsAsset = nullptr;
-		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
-		{
-			PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
-		}
-		ViewportClient.SyncPhysicsAssetDebugComponent(
-			PhysicsAsset,
-			SelectedPhysicsBodyIndex,
-			SelectedPhysicsConstraintIndex);
-	});
-	ViewportClient.SetOnPhysicsAssetShapeEdited([this]()
-	{
-		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
-		{
-			const FString SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
-			const bool bSavedPhysicsAsset = FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
-			const bool bSavedSkeletalMesh = bSavedPhysicsAsset && FMeshManager::SaveSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
-			if (!bSavedPhysicsAsset || !bSavedSkeletalMesh)
-			{
-				UE_LOG("PhysicsAsset shape edit warning: failed to persist shape edit. SkeletalMesh=%s", SkeletalMeshPath.c_str());
-			}
-		}
-		MarkDirty();
-	});
-	ViewportClient.SetOnPhysicsAssetConstraintEdited([this]()
-	{
-		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
-		{
-			const FString SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
-			const bool bSavedPhysicsAsset = FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
-			const bool bSavedSkeletalMesh = bSavedPhysicsAsset && FMeshManager::SaveSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
-			if (!bSavedPhysicsAsset || !bSavedSkeletalMesh)
-			{
-				UE_LOG("PhysicsAsset constraint gizmo warning: failed to persist constraint edit. SkeletalMesh=%s", SkeletalMeshPath.c_str());
-			}
-		}
-		MarkDirty();
-	});
 	ViewportClient.ResetCameraToPreviousBounds();
-
-	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
-
-	ViewportClient.SetSelectedBone(Cast<USkeletalMesh>(EditedObject), -1);
-
 	FSlateApplication::Get().RegisterViewport(&ViewportClient);
+}
 
-	// 디스크의 기존 AnimSequence .uasset 들을 목록에 채워 둔다(런타임 Load/Save 만으론 안 잡힘).
-	FAnimationManager::Get().RefreshAvailableAnimations();
+void FMeshEditorWidget::ActivateInitialTab(EMeshEditorTab InitialTab)
+{
+	ResetTabs();
+	for (const std::unique_ptr<FMeshEditorWidgetTab>& Tab : Tabs)
+	{
+		if (Tab)
+		{
+			Tab->OnEditorOpened();
+		}
+	}
 
-	ActiveTab         = InitialTab;
-	AnimTabState      = FAnimationTabState {};
-	SelectedBoneIndex = -1;
-	SelectedPhysicsBodyIndex = -1;
-	SelectedPhysicsConstraintIndex = -1;
+	ActiveTab = InitialTab;
+	if (FMeshEditorWidgetTab* Active = GetActiveTab())
+	{
+		Active->OnInitialActivated();
+	}
 }
 
 void FMeshEditorWidget::Close()
 {
+	for (const std::unique_ptr<FMeshEditorWidgetTab>& Tab : Tabs)
+	{
+		if (Tab)
+		{
+			Tab->OnEditorClosing();
+		}
+	}
+
 	FAssetEditorWidget::Close();
-	ViewportClient.SetPhysicsAssetPickingEnabled(false);
-	ViewportClient.SetOnPhysicsAssetBodyPicked(nullptr);
-	ViewportClient.SetOnPhysicsAssetConstraintPicked(nullptr);
-	ViewportClient.SetOnPhysicsAssetShapeEdited(nullptr);
-	ViewportClient.SetOnPhysicsAssetConstraintEdited(nullptr);
 
 	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
 	{
@@ -547,29 +243,9 @@ void FMeshEditorWidget::Tick(float DeltaTime)
 		ViewportClient.Tick(DeltaTime);
 	}
 
-	if (ActiveTab == EMeshEditorTab::Animation)
+	if (FMeshEditorWidgetTab* Active = GetActiveTab())
 	{
-		USkeletalMeshComponent* Comp = ViewportClient.GetPreviewMeshComponent();
-		if (!Comp) return;
-		UAnimSingleNodeInstance* NodeInst = Comp->GetAnimNodeInstance(FName::None);
-		if (!NodeInst) return;
-
-		NodeInst->UpdateAnimation(DeltaTime);
-
-		USkeletalMesh* Mesh = Comp->GetSkeletalMesh();
-		if (!Mesh) return;
-		FSkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
-		if (!Asset || Asset->Bones.empty()) return;
-
-		FPoseContext Out;
-		Out.SkeletalMesh = Mesh;
-		Out.Pose.resize(Asset->Bones.size());
-		Out.ResetToRefPose();
-
-		NodeInst->EvaluatePose(Out);
-		ApplyMorphPreviewOverrides(Out.MorphWeights);
-
-		Comp->SetAnimationPose(Out.Pose, Out.MorphWeights);
+		Active->Tick(DeltaTime);
 	}
 }
 
@@ -577,17 +253,14 @@ void FMeshEditorWidget::CollectPreviewViewports(TArray<IEditorPreviewViewportCli
 {
 	if (IsOpen())
 	{
-		OutClients.push_back(const_cast<FMeshEditorViewportClient*>(&ViewportClient));
+		OutClients.push_back(&ViewportClient);
 	}
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Render entry point
-// ─────────────────────────────────────────────────────────────────────────────
-
 void FMeshEditorWidget::Render(float DeltaTime)
 {
-	// 1프레임 지연 close (SRV lifetime issue)
+	(void)DeltaTime;
+
 	if (bPendingClose)
 	{
 		Close();
@@ -599,11 +272,20 @@ void FMeshEditorWidget::Render(float DeltaTime)
 		return;
 	}
 
-	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
-
 	bool bWindowOpen = true;
 	FString VisibleTitle = "Mesh Editor";
-	const FString AssetPath = SkeletalMesh ? SkeletalMesh->GetAssetPathFileName() : FString();
+	FString AssetPath;
+	for (const std::unique_ptr<FMeshEditorWidgetTab>& Tab : Tabs)
+	{
+		if (Tab)
+		{
+			AssetPath = Tab->GetEditorTitleAssetPath();
+			if (!AssetPath.empty())
+			{
+				break;
+			}
+		}
+	}
 	if (!AssetPath.empty())
 	{
 		VisibleTitle += " - ";
@@ -628,7 +310,6 @@ void FMeshEditorWidget::Render(float DeltaTime)
 
 	if (!ImGui::Begin(WindowTitle.c_str(), &bWindowOpen, WindowFlags))
 	{
-		// 접힌 동안엔 hover 를 보고하지 않음
 		ImGui::End();
 		if (!bWindowOpen)
 		{
@@ -643,25 +324,12 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	}
 
 	RenderTabBar();
-	ViewportClient.SetPhysicsAssetPickingEnabled(ActiveTab == EMeshEditorTab::PhysicsAsset);
 	ImGui::Separator();
 
 	const float AvailableHeight = ImGui::GetContentRegionAvail().y;
-
-	switch (ActiveTab)
+	if (FMeshEditorWidgetTab* ActiveTabWidget = GetActiveTab())
 	{
-	case EMeshEditorTab::Skeleton:
-		RenderSkeletonLayout();
-		break;
-	case EMeshEditorTab::Mesh:
-		RenderMeshLayout();
-		break;
-	case EMeshEditorTab::Animation:
-		RenderAnimationLayout(AvailableHeight);
-		break;
-	case EMeshEditorTab::PhysicsAsset:
-		RenderPhysicsAssetLayout();
-		break;
+		ActiveTabWidget->Render(AvailableHeight);
 	}
 
 	ImGui::End();
@@ -672,48 +340,90 @@ void FMeshEditorWidget::Render(float DeltaTime)
 	}
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab bar
-// ─────────────────────────────────────────────────────────────────────────────
+void FMeshEditorWidget::SetActiveTab(EMeshEditorTab Tab)
+{
+	if (ActiveTab == Tab)
+	{
+		return;
+	}
+
+	const EMeshEditorTab PreviousTab = ActiveTab;
+	if (FMeshEditorWidgetTab* Previous = GetActiveTab())
+	{
+		Previous->OnDeactivated(Tab);
+	}
+	ActiveTab = Tab;
+	if (FMeshEditorWidgetTab* Active = GetActiveTab())
+	{
+		Active->OnActivated(PreviousTab);
+	}
+}
+
+void FMeshEditorWidget::InitializeTabs()
+{
+	Tabs.clear();
+	Tabs.push_back(std::make_unique<FMeshEditorSkeletonTab>(*this));
+	Tabs.push_back(std::make_unique<FMeshEditorMeshTab>(*this));
+	Tabs.push_back(std::make_unique<FMeshEditorAnimationTab>(*this));
+	Tabs.push_back(std::make_unique<FMeshEditorPhysicsAssetTab>(*this));
+}
+
+void FMeshEditorWidget::ResetTabs()
+{
+	for (const std::unique_ptr<FMeshEditorWidgetTab>& Tab : Tabs)
+	{
+		Tab->Reset();
+	}
+}
+
+FMeshEditorWidgetTab* FMeshEditorWidget::FindTab(EMeshEditorTab Tab) const
+{
+	for (const std::unique_ptr<FMeshEditorWidgetTab>& Candidate : Tabs)
+	{
+		if (Candidate && Candidate->GetType() == Tab)
+		{
+			return Candidate.get();
+		}
+	}
+	return nullptr;
+}
+
+FMeshEditorWidgetTab* FMeshEditorWidget::GetActiveTab() const
+{
+	return FindTab(ActiveTab);
+}
 
 void FMeshEditorWidget::RenderTabBar()
 {
-	// 언리얼 Persona 모드 툴바: 평평한 버튼 + 선택 시 액센트 밑줄.
 	constexpr float BarHeight = 30.0f;
-	ImDrawList*     DrawList  = ImGui::GetWindowDrawList();
-	const ImVec2    BarPos    = ImGui::GetCursorScreenPos();
-	const float     BarWidth  = ImGui::GetContentRegionAvail().x;
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	const ImVec2 BarPos = ImGui::GetCursorScreenPos();
+	const float BarWidth = ImGui::GetContentRegionAvail().x;
 	DrawList->AddRectFilled(BarPos, ImVec2(BarPos.x + BarWidth, BarPos.y + BarHeight),
-	                        IM_COL32(38, 38, 38, 255));
+		IM_COL32(38, 38, 38, 255));
 
-	auto TabButton = [&](const char* Label, const wchar_t* IconFile, EMeshEditorTab Tab)
+	for (const std::unique_ptr<FMeshEditorWidgetTab>& Tab : Tabs)
 	{
-		const bool      bActive = (ActiveTab == Tab);
-		constexpr float IconSz  = 18.0f;
-		constexpr float PadX    = 14.0f;
-		constexpr float Gap     = 8.0f;
+		if (!Tab)
+		{
+			continue;
+		}
 
-		const ImVec2 Pos    = ImGui::GetCursorScreenPos();
+		const char* Label = Tab->GetLabel();
+		const bool bActive = (ActiveTab == Tab->GetType());
+		constexpr float IconSz = 18.0f;
+		constexpr float PadX = 14.0f;
+		constexpr float Gap = 8.0f;
+
+		const ImVec2 Pos = ImGui::GetCursorScreenPos();
 		const ImVec2 TextSz = ImGui::CalcTextSize(Label);
-		const float  Width  = PadX + IconSz + Gap + TextSz.x + PadX;
+		const float Width = PadX + IconSz + Gap + TextSz.x + PadX;
 
 		ImGui::InvisibleButton(Label, ImVec2(Width, BarHeight));
 		const bool bHovered = ImGui::IsItemHovered();
 		if (ImGui::IsItemClicked())
 		{
-			const EMeshEditorTab PreviousTab = ActiveTab;
-			ActiveTab = Tab;
-			if (PreviousTab != ActiveTab && ActiveTab == EMeshEditorTab::Skeleton)
-			{
-				if (USkeletalMeshComponent* Comp = ViewportClient.GetPreviewMeshComponent())
-				{
-					Comp->ApplyBoneEditBasePose();
-				}
-			}
-			else if (PreviousTab != ActiveTab && ActiveTab == EMeshEditorTab::PhysicsAsset)
-			{
-				ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
-			}
+			SetActiveTab(Tab->GetType());
 		}
 
 		if (bActive || bHovered)
@@ -723,1287 +433,25 @@ void FMeshEditorWidget::RenderTabBar()
 		}
 
 		const float IconY = Pos.y + (BarHeight - IconSz) * 0.5f;
-		if (ID3D11ShaderResourceView* Icon = LoadTabIcon(IconFile))
+		if (ID3D11ShaderResourceView* Icon = LoadTabIcon(Tab->GetIconFileName()))
 		{
 			DrawList->AddImage(reinterpret_cast<ImTextureID>(Icon),
-			                   ImVec2(Pos.x + PadX, IconY),
-			                   ImVec2(Pos.x + PadX + IconSz, IconY + IconSz));
+				ImVec2(Pos.x + PadX, IconY),
+				ImVec2(Pos.x + PadX + IconSz, IconY + IconSz));
 		}
 
 		DrawList->AddText(ImVec2(Pos.x + PadX + IconSz + Gap, Pos.y + (BarHeight - TextSz.y) * 0.5f),
-		                  bActive ? IM_COL32(255, 255, 255, 255) : IM_COL32(190, 190, 190, 255),
-		                  Label);
+			bActive ? IM_COL32(255, 255, 255, 255) : IM_COL32(190, 190, 190, 255),
+			Label);
 
 		if (bActive)
 		{
 			DrawList->AddRectFilled(ImVec2(Pos.x, Pos.y + BarHeight - 2.0f),
-			                        ImVec2(Pos.x + Width, Pos.y + BarHeight),
-			                        IM_COL32(64, 132, 224, 255));
+				ImVec2(Pos.x + Width, Pos.y + BarHeight),
+				IM_COL32(64, 132, 224, 255));
 		}
 		ImGui::SameLine(0.0f, 0.0f);
-	};
-
-	TabButton("Skeleton", L"Skeleton.png", EMeshEditorTab::Skeleton);
-	TabButton("Mesh", L"SkeletalMesh.png", EMeshEditorTab::Mesh);
-	TabButton("Animation", L"Animation.png", EMeshEditorTab::Animation);
-	TabButton("Physics Asset", L"Show_Flag.png", EMeshEditorTab::PhysicsAsset);
+	}
 
 	ImGui::NewLine();
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared: viewport panel
-// ─────────────────────────────────────────────────────────────────────────────
-
-void FMeshEditorWidget::RenderViewportPanel(ImVec2 Size)
-{
-	ImVec2 ViewportPos = ImGui::GetCursorScreenPos();
-	ViewportClient.SetViewportRect(ViewportPos.x, ViewportPos.y, Size.x, Size.y);
-
-	FViewport* VP = ViewportClient.GetViewport();
-	if (!VP || Size.x <= 0 || Size.y <= 0)
-	{
-		ImGui::Dummy(Size);
-		return;
-	}
-
-	VP->RequestResize(static_cast<uint32>(Size.x), static_cast<uint32>(Size.y));
-
-	if (VP->GetSRV())
-	{
-		ImGui::Image((ImTextureID)VP->GetSRV(), Size);
-	}
-	else
-	{
-		ImGui::Dummy(Size);
-	}
-
-	// ImGui가 계산한 hover(다른 창에 가려지면 false)를 입력 소유권 중재에 보고.
-	FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, ImGui::IsItemHovered());
-
-	constexpr float ToolbarHeight = 28.0f;
-	ImDrawList*     DrawList      = ImGui::GetWindowDrawList();
-	DrawList->AddRectFilled(ViewportPos, ImVec2(ViewportPos.x + Size.x, ViewportPos.y + ToolbarHeight), IM_COL32(40, 40, 40, 255));
-
-	FViewportToolbarContext Context;
-	Context.Renderer              = &GEngine->GetRenderer();
-	Context.Gizmo                 = ViewportClient.GetGizmo();
-	Context.Settings              = &FEditorSettings::Get().MeshEditorViewportSettings;
-	Context.RenderOptions         = &ViewportClient.GetRenderOptions();
-	Context.ToolbarLeft           = ViewportPos.x;
-	Context.ToolbarTop            = ViewportPos.y;
-	Context.ToolbarWidth          = Size.x;
-	Context.bReservePlayStopSpace = false;
-	Context.bShowAddActor         = false;
-	Context.OnCoordSystemToggled  = [&]()
-	{
-		FGizmoToolSettings& Settings = FEditorSettings::Get().MeshEditorViewportSettings.Gizmo;
-		Settings.CoordSystem         = (Settings.CoordSystem == EEditorCoordSystem::World) ? EEditorCoordSystem::Local : EEditorCoordSystem::World;
-		ViewportClient.ApplyTransformSettingsToGizmo();
-	};
-	Context.OnSettingsChanged = [&]()
-	{
-		ViewportClient.ApplyTransformSettingsToGizmo();
-	};
-	Context.OnRenderViewModeExtras = [&]()
-	{
-		const EBoneDebugDrawMode CurrentBoneDrawMode = ViewportClient.GetBoneDebugDrawMode();
-		int32                    BoneDrawMode        = static_cast<int32>(CurrentBoneDrawMode);
-		ImGui::Text("Bone Display");
-		ImGui::RadioButton("Selected Bone", &BoneDrawMode, static_cast<int32>(EBoneDebugDrawMode::SelectedOnly));
-		ImGui::RadioButton("All Bones", &BoneDrawMode, static_cast<int32>(EBoneDebugDrawMode::AllBones));
-		if (BoneDrawMode != static_cast<int32>(CurrentBoneDrawMode))
-		{
-			ViewportClient.SetBoneDebugDrawMode(static_cast<EBoneDebugDrawMode>(BoneDrawMode));
-		}
-
-		FViewportRenderOptions& RenderOptions = ViewportClient.GetRenderOptions();
-		bool bWeightBoneHeatMap = RenderOptions.bWeightBoneHeatMap;
-		if (ImGui::Checkbox("Weight Bone HeatMap", &bWeightBoneHeatMap))
-		{
-			RenderOptions.bWeightBoneHeatMap = bWeightBoneHeatMap;
-			RenderOptions.WeightBoneHeatMapBoneIndex = SelectedBoneIndex;
-			if (bWeightBoneHeatMap)
-			{
-				FShaderManager::Get().GetOrCreateUberLitPermutation(
-					GetLightingModelForViewMode(RenderOptions.ViewMode),
-					EUberLitDefines::EVertexFactory::SkeletalMesh,
-					EShaderErrorMode::Notification,
-					true);
-			}
-		}
-	};
-
-	FViewportToolbar::Render(Context);
-	RenderMeshStatsOverlay(DrawList, ViewportPos);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Skeleton tab
-// ─────────────────────────────────────────────────────────────────────────────
-
-void FMeshEditorWidget::RenderSkeletonLayout()
-{
-	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
-
-	// Left: bone hierarchy
-	ImGui::BeginChild("BoneHierarchy", ImVec2(HierarchyWidth, 0), true);
-	ImGui::Text("Bone Hierarchy");
-	ImGui::Separator();
-	if (SkeletalMesh)
-	{
-		const FSkeletalMesh* Asset = SkeletalMesh->GetSkeletalMeshAsset();
-		if (Asset)
-		{
-			for (int32 i = 0; i < static_cast<int32>(Asset->Bones.size()); ++i)
-			{
-				if (Asset->Bones[i].ParentIndex == -1)
-				{
-					RenderBoneTree(Asset, i);
-				}
-			}
-		}
-	}
-	ImGui::EndChild();
-
-	ImGui::SameLine();
-
-	// Splitter
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-	ImGui::Button("##skelSplitter", ImVec2(4.0f, -1.0f));
-	if (ImGui::IsItemActive())
-	{
-		HierarchyWidth += ImGui::GetIO().MouseDelta.x;
-		HierarchyWidth = std::max(100.0f, std::min(HierarchyWidth, ImGui::GetWindowWidth() - DetailsWidth - 100.0f));
-	}
-	if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-	{
-		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
-	}
-	ImGui::PopStyleColor(3);
-
-	ImGui::SameLine();
-
-	// Center: viewport
-	ImGui::BeginGroup();
-	{
-		float  ViewportWidth = ImGui::GetContentRegionAvail().x - DetailsWidth - ImGui::GetStyle().ItemSpacing.x;
-		ImVec2 Size          = ImVec2(ViewportWidth, ImGui::GetContentRegionAvail().y);
-		RenderViewportPanel(Size);
-	}
-	ImGui::EndGroup();
-
-	ImGui::SameLine();
-
-	// Right: bone details
-	ImGui::BeginChild("BoneDetails", ImVec2(DetailsWidth, 0), true);
-	ImGui::Text("Bone Details");
-	ImGui::Separator();
-
-	if (SkeletalMesh && SelectedBoneIndex != -1)
-	{
-		FSkeletalMesh* Asset = SkeletalMesh->GetSkeletalMeshAsset();
-		FBone& Bone = Asset->Bones[SelectedBoneIndex];
-
-		ImGui::Text("Name: %s", Bone.Name.c_str());
-		ImGui::Text("Index: %d", SelectedBoneIndex);
-		ImGui::Dummy(ImVec2(0, 10));
-
-		USkeletalMeshComponent* PreviewMeshComponent = ViewportClient.GetPreviewMeshComponent();
-		FTransform LocalTransform = PreviewMeshComponent
-			? PreviewMeshComponent->GetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex)
-			: FTransform(Bone.GetReferenceLocalPose());
-
-		FVector Location = LocalTransform.Location;
-		if (ImGui::DragFloat3("Location", &Location.X, 0.1f))
-		{
-			LocalTransform.Location = Location;
-			if (PreviewMeshComponent)
-				PreviewMeshComponent->SetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
-			else
-			{
-				Bone.ReferenceLocalPose = LocalTransform.ToMatrix();
-				Bone.SyncLegacyPoseDataFromSeparated();
-			}
-		}
-
-		FVector Rotation = LocalTransform.GetRotator().ToVector();
-		if (ImGui::DragFloat3("Rotation", &Rotation.X, 0.1f))
-		{
-			LocalTransform.SetRotation(FRotator(Rotation));
-			if (PreviewMeshComponent)
-				PreviewMeshComponent->SetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
-			else
-			{
-				Bone.ReferenceLocalPose = LocalTransform.ToMatrix();
-				Bone.SyncLegacyPoseDataFromSeparated();
-			}
-		}
-
-		FVector Scale = LocalTransform.Scale;
-		if (ImGui::DragFloat3("Scale", &Scale.X, 0.1f, 0.01f))
-		{
-			LocalTransform.Scale = Scale;
-			if (PreviewMeshComponent)
-				PreviewMeshComponent->SetBoneEditBaseLocalTransformByIndex(SelectedBoneIndex, LocalTransform);
-			else
-			{
-				Bone.ReferenceLocalPose = LocalTransform.ToMatrix();
-				Bone.SyncLegacyPoseDataFromSeparated();
-			}
-		}
-	}
-	else
-	{
-		ImGui::TextDisabled("Select a bone to edit.");
-	}
-
-	ImGui::EndChild();
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Mesh tab
-// ─────────────────────────────────────────────────────────────────────────────
-
-void FMeshEditorWidget::RenderPhysicsAssetLayout()
-{
-	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
-	UPhysicsAsset* PhysicsAsset = SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
-	ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
-	ViewportClient.SyncPhysicsAssetDebugComponent(
-		PhysicsAsset,
-		SelectedPhysicsBodyIndex,
-		SelectedPhysicsConstraintIndex);
-
-	constexpr float BodyListWidth = 260.0f;
-	constexpr float BodyDetailsWidth = 300.0f;
-
-	ImGui::BeginChild("PhysicsAssetBodies", ImVec2(BodyListWidth, 0), true);
-	ImGui::TextUnformatted("Physics Asset");
-	ImGui::Separator();
-
-	if (!SkeletalMesh)
-	{
-		ImGui::TextDisabled("No skeletal mesh.");
-		ImGui::EndChild();
-		return;
-	}
-
-	if (PhysicsAsset)
-	{
-		ImGui::Text("Bodies: %zu", PhysicsAsset->GetBodySetups().size());
-	}
-	else
-	{
-		ImGui::TextDisabled("None");
-	}
-
-	if (ImGui::Button("Generate Physics Asset"))
-	{
-		PendingPhysicsAssetBuildOptions = FPhysicsAssetBuildOptions {};
-		bOpenPhysicsAssetBuildOptions = true;
-	}
-
-	RenderPhysicsAssetBuildOptionsPopup(SkeletalMesh, PhysicsAsset);
-
-	ImGui::Separator();
-	RenderPhysicsAssetBodyList(SkeletalMesh, PhysicsAsset);
-	ImGui::EndChild();
-
-	ImGui::SameLine();
-
-	ImGui::BeginGroup();
-	const float ViewportWidth = std::max(
-		120.0f,
-		ImGui::GetContentRegionAvail().x - BodyDetailsWidth - ImGui::GetStyle().ItemSpacing.x);
-	const ImVec2 ViewportSize = ImVec2(ViewportWidth, ImGui::GetContentRegionAvail().y);
-	RenderViewportPanel(ViewportSize);
-	ImGui::EndGroup();
-
-	ImGui::SameLine();
-
-	ImGui::BeginChild("PhysicsAssetBodyDetails", ImVec2(BodyDetailsWidth, 0), true);
-	RenderPhysicsAssetBodyDetails(PhysicsAsset);
-	ImGui::EndChild();
-}
-
-void FMeshEditorWidget::RenderPhysicsAssetBuildOptionsPopup(
-	USkeletalMesh* SkeletalMesh,
-	UPhysicsAsset*& InOutPhysicsAsset)
-{
-	const FString PopupId = "Physics Asset Build Options##PhysicsAssetBuildOptions_" + std::to_string(InstanceId);
-
-	if (bOpenPhysicsAssetBuildOptions)
-	{
-		ImGui::OpenPopup(PopupId.c_str());
-		bOpenPhysicsAssetBuildOptions = false;
-	}
-
-	if (!ImGui::BeginPopupModal(PopupId.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		return;
-	}
-
-	ImGui::PushID(PopupId.c_str());
-
-	ImGui::TextUnformatted("Physics Asset Build Options");
-	ImGui::Separator();
-
-	ImGui::Checkbox("Use Dominant Bone Weight", &PendingPhysicsAssetBuildOptions.bUseDominantBoneWeight);
-	ImGui::Checkbox("Auto Orient To Bone", &PendingPhysicsAssetBuildOptions.bAutoOrientToBone);
-	ImGui::Checkbox("Walk Past Small Bones", &PendingPhysicsAssetBuildOptions.bWalkPastSmall);
-	ImGui::Checkbox("Create Body for All Bones", &PendingPhysicsAssetBuildOptions.bBodyForAll);
-
-	const auto GetGeomTypeLabel = [](EPhysicsAssetFitGeomType GeomType) -> const char*
-	{
-		switch (GeomType)
-		{
-		case EPhysicsAssetFitGeomType::Box:
-			return "Box";
-		case EPhysicsAssetFitGeomType::Sphere:
-			return "Sphere";
-		case EPhysicsAssetFitGeomType::Sphyl:
-		default:
-			return "Capsule";
-		}
-	};
-
-	if (ImGui::BeginCombo("Primitive Type", GetGeomTypeLabel(PendingPhysicsAssetBuildOptions.GeomType)))
-	{
-		if (ImGui::Selectable("Capsule", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Sphyl))
-		{
-			PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Sphyl;
-		}
-		if (ImGui::Selectable("Box", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Box))
-		{
-			PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Box;
-		}
-		if (ImGui::Selectable("Sphere", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Sphere))
-		{
-			PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Sphere;
-		}
-		ImGui::EndCombo();
-	}
-
-	ImGui::Spacing();
-	ImGui::DragFloat("Min Bone Size", &PendingPhysicsAssetBuildOptions.MinBoneSize, 0.25f, 0.0f, 1000.0f, "%.2f");
-	ImGui::DragFloat("Min Weld Size", &PendingPhysicsAssetBuildOptions.MinWeldSize, 0.0001f, 0.0f, 1000.0f, "%.4f");
-	ImGui::DragFloat("Fit Padding", &PendingPhysicsAssetBuildOptions.FitPadding, 0.001f, 1.0f, 2.0f, "%.3f");
-	ImGui::DragFloat("Min Primitive Size", &PendingPhysicsAssetBuildOptions.MinPrimitiveSize, 0.01f, 0.01f, 1000.0f, "%.2f");
-
-	ImGui::Separator();
-
-	if (!SkeletalMesh)
-	{
-		ImGui::BeginDisabled();
-	}
-
-	if (ImGui::Button("Generate"))
-	{
-		PendingPhysicsAssetBuildOptions.MinBoneSize = std::max(0.0f, PendingPhysicsAssetBuildOptions.MinBoneSize);
-		PendingPhysicsAssetBuildOptions.MinWeldSize = std::max(0.0f, PendingPhysicsAssetBuildOptions.MinWeldSize);
-		PendingPhysicsAssetBuildOptions.FitPadding = std::max(1.0f, PendingPhysicsAssetBuildOptions.FitPadding);
-		PendingPhysicsAssetBuildOptions.MinPrimitiveSize = std::max(0.01f, PendingPhysicsAssetBuildOptions.MinPrimitiveSize);
-
-		UPhysicsAsset* NewAsset = FPhysicsAssetBuilder::CreateFromSkeletalMesh(SkeletalMesh, PendingPhysicsAssetBuildOptions);
-		if (NewAsset)
-		{
-			const FString SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
-			const bool bSavedPhysicsAsset = FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
-			const bool bSavedSkeletalMesh = bSavedPhysicsAsset && FMeshManager::SaveSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
-			if (!bSavedPhysicsAsset || !bSavedSkeletalMesh)
-			{
-				UE_LOG("PhysicsAsset generate warning: failed to persist PhysicsAsset reference. SkeletalMesh=%s", SkeletalMeshPath.c_str());
-			}
-
-			MarkDirty();
-			ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
-			InOutPhysicsAsset = NewAsset;
-			SelectedPhysicsBodyIndex = -1;
-			SelectedPhysicsConstraintIndex = -1;
-			ViewportClient.SyncPhysicsAssetDebugComponent(
-				NewAsset,
-				SelectedPhysicsBodyIndex,
-				SelectedPhysicsConstraintIndex);
-			ImGui::CloseCurrentPopup();
-		}
-	}
-
-	if (!SkeletalMesh)
-	{
-		ImGui::EndDisabled();
-	}
-
-	ImGui::SameLine();
-	if (ImGui::Button("Reset"))
-	{
-		PendingPhysicsAssetBuildOptions = FPhysicsAssetBuildOptions {};
-	}
-
-	ImGui::SameLine();
-	if (ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape))
-	{
-		ImGui::CloseCurrentPopup();
-	}
-
-	ImGui::PopID();
-	ImGui::EndPopup();
-}
-
-void FMeshEditorWidget::RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, UPhysicsAsset* PhysicsAsset)
-{
-	if (!PhysicsAsset)
-	{
-		ImGui::TextDisabled("No physics asset.");
-		return;
-	}
-
-	const TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetups();
-	if (SelectedPhysicsBodyIndex >= static_cast<int32>(Bodies.size()))
-	{
-		SelectedPhysicsBodyIndex = -1;
-		SelectedPhysicsConstraintIndex = -1;
-	}
-	if (SelectedPhysicsConstraintIndex >= static_cast<int32>(PhysicsAsset->GetConstraintInitDescs().size()))
-	{
-		SelectedPhysicsConstraintIndex = -1;
-	}
-	ViewportClient.SyncPhysicsAssetDebugComponent(
-		PhysicsAsset,
-		SelectedPhysicsBodyIndex,
-		SelectedPhysicsConstraintIndex);
-
-	const FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
-	if (!Asset)
-	{
-		ImGui::TextDisabled("No source skeletal mesh.");
-		return;
-	}
-
-	for (int32 Index = 0; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
-	{
-		if (Asset->Bones[Index].ParentIndex == -1)
-		{
-			RenderPhysicsAssetBodyTree(Asset, PhysicsAsset, Index);
-		}
-	}
-}
-
-bool FMeshEditorWidget::RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
-{
-	if (!Asset || !PhysicsAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
-	{
-		return false;
-	}
-
-	const FBone& Bone = Asset->Bones[BoneIndex];
-	const int32 BodyIndex = PhysicsAsset->FindBodyIndexByBoneName(FName(Bone.Name));
-	const TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetups();
-	const UBodySetup* Body = (BodyIndex >= 0 && BodyIndex < static_cast<int32>(Bodies.size()))
-		? Bodies[BodyIndex]
-		: nullptr;
-
-	if (!Body)
-	{
-		bool bRenderedAny = false;
-		for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
-		{
-			if (Asset->Bones[Index].ParentIndex == BoneIndex &&
-				RenderPhysicsAssetBodyTree(Asset, PhysicsAsset, Index))
-			{
-				bRenderedAny = true;
-			}
-		}
-		return bRenderedAny;
-	}
-
-	bool bHasVisibleChildren = false;
-	for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
-	{
-		if (Asset->Bones[Index].ParentIndex == BoneIndex &&
-			HasPhysicsBodyInSubtree(Asset, PhysicsAsset, Index))
-		{
-			bHasVisibleChildren = true;
-			break;
-		}
-	}
-
-	ImGuiTreeNodeFlags Flags =
-		ImGuiTreeNodeFlags_OpenOnArrow |
-		ImGuiTreeNodeFlags_SpanAvailWidth |
-		ImGuiTreeNodeFlags_DefaultOpen;
-
-	if (Body && BodyIndex == SelectedPhysicsBodyIndex)
-	{
-		Flags |= ImGuiTreeNodeFlags_Selected;
-	}
-
-	if (!bHasVisibleChildren)
-	{
-		Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-	}
-
-	FString Label = BuildPhysicsBodyTreeLabel(Bone.Name, BodyIndex, Body);
-	Label += "##PhysicsBodyBone";
-	Label += std::to_string(BoneIndex);
-
-	const bool bOpen = ImGui::TreeNodeEx(Label.c_str(), Flags);
-
-	if (ImGui::IsItemClicked())
-	{
-		SelectedPhysicsBodyIndex = BodyIndex;
-		SelectedPhysicsConstraintIndex = -1;
-		ViewportClient.SyncPhysicsAssetDebugComponent(
-			PhysicsAsset,
-			SelectedPhysicsBodyIndex,
-			SelectedPhysicsConstraintIndex);
-	}
-
-	if (bOpen && bHasVisibleChildren)
-	{
-		for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
-		{
-			if (Asset->Bones[Index].ParentIndex == BoneIndex)
-			{
-				RenderPhysicsAssetBodyTree(Asset, PhysicsAsset, Index);
-			}
-		}
-		ImGui::TreePop();
-	}
-
-	return true;
-}
-
-void FMeshEditorWidget::RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsset)
-{
-	if (RenderConstraintInitDescDetails(
-			PhysicsAsset,
-			SelectedPhysicsConstraintIndex,
-			ViewportClient.GetPhysicsAssetDebugComponent()))
-	{
-		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
-		{
-			const FString SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
-			const bool bSavedPhysicsAsset = FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
-			const bool bSavedSkeletalMesh = bSavedPhysicsAsset && FMeshManager::SaveSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
-			if (!bSavedPhysicsAsset || !bSavedSkeletalMesh)
-			{
-				UE_LOG("PhysicsAsset constraint edit warning: failed to persist constraint. SkeletalMesh=%s", SkeletalMeshPath.c_str());
-			}
-		}
-		MarkDirty();
-		return;
-	}
-
-	if (SelectedPhysicsConstraintIndex < 0 && RenderBodyPhysicsInfoDetails(PhysicsAsset, SelectedPhysicsBodyIndex))
-	{
-		if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
-		{
-			const FString SkeletalMeshPath = SkeletalMesh->GetAssetPathFileName();
-			const bool bSavedPhysicsAsset = FPhysicsAssetManager::Get().SaveForSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
-			const bool bSavedSkeletalMesh = bSavedPhysicsAsset && FMeshManager::SaveSkeletalMesh(SkeletalMesh, SkeletalMeshPath);
-			if (!bSavedPhysicsAsset || !bSavedSkeletalMesh)
-			{
-				UE_LOG("PhysicsAsset body physics edit warning: failed to persist body physics info. SkeletalMesh=%s", SkeletalMeshPath.c_str());
-			}
-		}
-		MarkDirty();
-	}
-}
-
-void FMeshEditorWidget::RenderMeshLayout()
-{
-	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
-
-	// Left: mesh info
-	const float StatsWidth = 220.0f;
-	ImGui::BeginChild("MeshInfo", ImVec2(StatsWidth, 0), true);
-	ImGui::Text("Mesh Info");
-	ImGui::Separator();
-	if (SkeletalMesh)
-	{
-		const FSkeletalMesh* Asset = SkeletalMesh->GetSkeletalMeshAsset();
-		if (Asset)
-		{
-			ImGui::Text("Vertices:  %s", FormatMeshStatCount(Asset->Vertices.size()).c_str());
-			ImGui::Text("Triangles: %s", FormatMeshStatCount(Asset->Indices.size() / 3).c_str());
-			ImGui::Text("Bones:     %zu", Asset->Bones.size());
-			ImGui::Text("Morphs:    %zu", Asset->MorphTargets.size());
-			USkeletalMeshComponent* PreviewMeshComponent = ViewportClient.GetPreviewMeshComponent();
-			if (!Asset->MorphTargets.empty() && PreviewMeshComponent)
-			{
-				ImGui::Dummy(ImVec2(0, 8));
-				ImGui::Separator();
-				ImGui::TextUnformatted("Morph Preview");
-				if (ImGui::SmallButton("Reset Morphs"))
-				{
-					PreviewMeshComponent->ClearMorphTargetWeights();
-				}
-				for (int32 MorphIndex = 0; MorphIndex < static_cast<int32>(Asset->MorphTargets.size()); ++MorphIndex)
-				{
-					const FMorphTarget& MorphTarget = Asset->MorphTargets[MorphIndex];
-					float               Weight      = PreviewMeshComponent->GetMorphTargetWeightByIndex(MorphIndex);
-					ImGui::PushID(MorphIndex);
-					const char* Label = MorphTarget.Name.empty() ? "Unnamed" : MorphTarget.Name.c_str();
-					if (ImGui::SliderFloat(Label, &Weight, -1.0f, 1.0f, "%.3f"))
-					{
-						PreviewMeshComponent->SetMorphTargetWeightByIndex(MorphIndex, Weight);
-					}
-					if (ImGui::IsItemHovered())
-					{
-						ImGui::SetTooltip("%zu vertex deltas", MorphTarget.Deltas.size());
-					}
-					ImGui::PopID();
-				}
-			}
-			ImGui::Dummy(ImVec2(0, 8));
-			const FString& Path = SkeletalMesh->GetAssetPathFileName();
-			if (!Path.empty() && Path != "None")
-			{
-				ImGui::TextWrapped("Path:\n%s", Path.c_str());
-			}
-		}
-	}
-	ImGui::EndChild();
-
-	ImGui::SameLine();
-
-	// Center: viewport (full remaining width)
-	ImGui::BeginGroup();
-	{
-		ImVec2 Size = ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y);
-		RenderViewportPanel(Size);
-	}
-	ImGui::EndGroup();
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Animation tab
-// ─────────────────────────────────────────────────────────────────────────────
-
-void FMeshEditorWidget::ApplyAnimationToComponent()
-{
-	USkeletalMeshComponent* Comp = ViewportClient.GetPreviewMeshComponent();
-	if (!Comp || !AnimTabState.CurrentSequence)
-	{
-		return;
-	}
-	Comp->PlayAnimation(AnimTabState.CurrentSequence, /*bLooping=*/true);
-	Comp->SetPlaying(false);
-	Comp->SetPlayRate(1.0f);
-	ResetMorphPreviewOverrides();
-}
-
-void FMeshEditorWidget::EnsureMorphPreviewOverrideSize()
-{
-	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
-	FSkeletalMesh* MeshAsset    = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
-	const size_t   MorphCount   = MeshAsset ? MeshAsset->MorphTargets.size() : 0;
-	if (AnimTabState.MorphPreviewWeights.size() != MorphCount)
-	{
-		AnimTabState.MorphPreviewWeights.assign(MorphCount, 0.0f);
-	}
-	if (AnimTabState.MorphPreviewOverrideMask.size() != MorphCount)
-	{
-		AnimTabState.MorphPreviewOverrideMask.assign(MorphCount, 0);
-	}
-}
-
-void FMeshEditorWidget::ResetMorphPreviewOverrides()
-{
-	AnimTabState.MorphPreviewWeights.clear();
-	AnimTabState.MorphPreviewOverrideMask.clear();
-	AnimTabState.bMorphPreviewOverrideEnabled = false;
-}
-
-void FMeshEditorWidget::ApplyMorphPreviewOverrides(TArray<float>& InOutMorphWeights) const
-{
-	if (!AnimTabState.bMorphPreviewOverrideEnabled)
-	{
-		return;
-	}
-	const size_t Count = AnimTabState.MorphPreviewWeights.size();
-	if (Count == 0 || AnimTabState.MorphPreviewOverrideMask.size() != Count)
-	{
-		return;
-	}
-	if (InOutMorphWeights.size() < Count)
-	{
-		InOutMorphWeights.resize(Count, 0.0f);
-	}
-	for (size_t Index = 0; Index < Count; ++Index)
-	{
-		if (AnimTabState.MorphPreviewOverrideMask[Index] != 0)
-		{
-			InOutMorphWeights[Index] = AnimTabState.MorphPreviewWeights[Index];
-		}
-	}
-}
-
-void FMeshEditorWidget::RefreshAnimationPreviewPose()
-{
-	USkeletalMeshComponent* Comp = ViewportClient.GetPreviewMeshComponent();
-	if (!Comp) return;
-	UAnimSingleNodeInstance* NodeInst = Comp->GetAnimNodeInstance(FName::None);
-	if (!NodeInst) return;
-	USkeletalMesh* Mesh = Comp->GetSkeletalMesh();
-	if (!Mesh) return;
-	FSkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
-	if (!Asset || Asset->Bones.empty()) return;
-
-	FPoseContext Out;
-	Out.SkeletalMesh = Mesh;
-	Out.Pose.resize(Asset->Bones.size());
-	Out.ResetToRefPose();
-	NodeInst->EvaluatePose(Out);
-	ApplyMorphPreviewOverrides(Out.MorphWeights);
-	Comp->SetAnimationPose(Out.Pose, Out.MorphWeights);
-}
-
-void FMeshEditorWidget::MarkAnimationListDirty()
-{
-	AnimTabState.bAnimationListDirty = true;
-}
-
-const TArray<FAssetListItem>& FMeshEditorWidget::GetCachedAnimationFilesForCurrentSkeleton()
-{
-	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
-	FSkeletonBinding CurrentBinding;
-
-	if (SkeletalMesh)
-	{
-		CurrentBinding = SkeletalMesh->GetSkeletonBinding();
-	}
-	else
-	{
-		CurrentBinding.Reset();
-	}
-
-	if (AnimTabState.bAnimationListDirty ||
-		!IsSameSkeletonBindingForAnimationList(AnimTabState.CachedAnimationListBinding, CurrentBinding))
-	{
-		AnimTabState.CachedAnimationFiles.clear();
-		AnimTabState.CachedMontageFiles.clear();
-		AnimTabState.CachedAnimationListBinding = CurrentBinding;
-
-		if (SkeletalMesh)
-		{
-			AnimTabState.CachedAnimationFiles = FAssetRegistry::ListAnimationsForSkeleton(CurrentBinding, false);
-			AnimTabState.CachedMontageFiles   = FAssetRegistry::ListMontagesForSkeleton(CurrentBinding, false);
-		}
-
-		AnimTabState.bAnimationListDirty = false;
-	}
-
-	return AnimTabState.CachedAnimationFiles;
-}
-
-const TArray<FAssetListItem>& FMeshEditorWidget::GetCachedMontageFilesForCurrentSkeleton()
-{
-	// Animation 캐시와 같은 dirty/binding key 를 공유. 호출 순서는 animation → montage 가정.
-	GetCachedAnimationFilesForCurrentSkeleton();
-	return AnimTabState.CachedMontageFiles;
-}
-
-void FMeshEditorWidget::RenderAnimationLayout(float TotalHeight)
-{
-	USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject);
-
-	constexpr float TimelineHeight = 210.0f;
-	const float     ContentHeight  = TotalHeight - TimelineHeight - ImGui::GetStyle().ItemSpacing.y * 3.0f;
-
-	// ─── Top: Asset Details | Viewport | Asset Browser (Persona 배치) ───
-
-	// Left: 시퀀스 / 몽타주 디테일 패널 (선택 종류에 따라 분기)
-	ImGui::BeginChild("AssetDetails", ImVec2(AnimTabState.AnimDetailsWidth, ContentHeight), true);
-	if (AnimTabState.bMontageSelected && AnimTabState.CurrentMontage)
-	{
-		USkeletalMeshComponent* Comp = ViewportClient.GetPreviewMeshComponent();
-		UAnimInstance* AnimInst = Comp ? Comp->GetAnimInstance() : nullptr;
-		FAnimMontagePropertyPanel::Render(AnimTabState.CurrentMontage, Comp, AnimInst);
-	}
-	else if (AnimTabState.CurrentSequence)
-	{
-		UAnimSequence* Seq = AnimTabState.CurrentSequence;
-		// Notify entry 가 타임라인에서 선택되어 있으면 Notify 의 UPROPERTY 편집 UI 를 표시.
-		// 아니면 기존 시퀀스 메타 + Root Motion 패널.
-		const int32 NotifyCount = static_cast<int32>(Seq->GetNotifies().size());
-		const bool bShowNotifyDetails =
-			AnimTabState.SelectedNotifyIndex >= 0 &&
-			AnimTabState.SelectedNotifyIndex < NotifyCount;
-		const bool bShowMorphDetails = AnimTabState.SelectedMorphCurveIndex >= 0 && AnimTabState.SelectedMorphCurveIndex
-		< static_cast<int32>(Seq->GetMorphTargetCurves().size());
-
-		if (bShowNotifyDetails)
-		{
-			FAnimationTimelinePanel::RenderNotifyDetails(Seq, AnimTabState.SelectedNotifyIndex);
-		}
-		else if (bShowMorphDetails)
-		{
-			if (FAnimationTimelinePanel::RenderMorphDetails(
-				Seq,
-				SkeletalMesh,
-				AnimTabState.SelectedMorphCurveIndex,
-				AnimTabState.SelectedMorphKeyIndex
-			))
-			{
-				RefreshAnimationPreviewPose();
-			}
-		}
-		else
-		{
-			ImGui::TextUnformatted("Asset Details");
-			ImGui::Separator();
-			ImGui::Text("Name:   %s", Seq->GetName().c_str());
-			ImGui::Text("Length: %.3f s", Seq->GetPlayLength());
-			ImGui::Text("FPS:    %.1f", Seq->GetFrameRate());
-			ImGui::Text("Frames: %d", Seq->GetNumberOfFrames());
-			ImGui::Dummy(ImVec2(0, 6));
-			const FString& Path = Seq->GetAssetPathFileName();
-			if (!Path.empty() && Path != "None")
-			{
-				ImGui::TextWrapped("Path:\n%s", Path.c_str());
-			}
-
-			// AnimSequence property 패널 — root motion 등 편집 가능한 항목.
-			ImGui::Dummy(ImVec2(0, 12));
-			FAnimSequencePropertyPanel::Render(Seq);
-
-			USkeletalMeshComponent* PreviewMeshComponent = ViewportClient.GetPreviewMeshComponent();
-			USkeletalMesh* PreviewMesh = PreviewMeshComponent ? PreviewMeshComponent->GetSkeletalMesh() : SkeletalMesh;
-			FSkeletalMesh* MeshAsset = PreviewMesh ? PreviewMesh->GetSkeletalMeshAsset() : nullptr;
-			if (MeshAsset && !MeshAsset->MorphTargets.empty())
-			{
-				ImGui::Dummy(ImVec2(0, 12));
-				ImGui::Separator();
-				ImGui::TextUnformatted("Morph Preview / Keys");
-				EnsureMorphPreviewOverrideSize();
-				if (ImGui::SmallButton("Clear Morph Preview"))
-				{
-					ResetMorphPreviewOverrides();
-					RefreshAnimationPreviewPose();
-				}
-				for (int32 MorphIndex = 0; MorphIndex < static_cast<int32>(MeshAsset->MorphTargets.size()); ++
-				     MorphIndex)
-				{
-					const FMorphTarget& MorphTarget   = MeshAsset->MorphTargets[MorphIndex];
-					float               CurrentWeight = 0.0f;
-					if (MorphIndex < static_cast<int32>(AnimTabState.MorphPreviewWeights.size()) && AnimTabState.
-						MorphPreviewOverrideMask[MorphIndex] != 0)
-					{
-						CurrentWeight = AnimTabState.MorphPreviewWeights[MorphIndex];
-					}
-					else if (PreviewMeshComponent)
-					{
-						CurrentWeight = PreviewMeshComponent->GetMorphTargetWeightByIndex(MorphIndex);
-					}
-
-					ImGui::PushID(MorphIndex);
-					const char* Label = MorphTarget.Name.empty() ? "Unnamed" : MorphTarget.Name.c_str();
-					if (ImGui::SliderFloat(Label, &CurrentWeight, -1.0f, 1.0f, "%.3f"))
-					{
-						AnimTabState.MorphPreviewWeights[MorphIndex]      = CurrentWeight;
-						AnimTabState.MorphPreviewOverrideMask[MorphIndex] = 1;
-						AnimTabState.bMorphPreviewOverrideEnabled         = true;
-						RefreshAnimationPreviewPose();
-					}
-					ImGui::SameLine();
-					if (ImGui::SmallButton("Key"))
-					{
-						FMorphTargetCurve& Curve = FindOrAddMorphCurve(Seq, MorphTarget.Name);
-						AddOrUpdateMorphCurveKey(
-							Curve,
-							PreviewMeshComponent && PreviewMeshComponent->GetAnimNodeInstance(FName::None)
-							? PreviewMeshComponent->GetAnimNodeInstance(FName::None)->GetCurrentTime() : 0.0f,
-							CurrentWeight
-						);
-						AnimTabState.MorphPreviewOverrideMask[MorphIndex] = 0;
-						bool bAnyOverride                                 = false;
-						for (uint8 Mask : AnimTabState.MorphPreviewOverrideMask)
-						{
-							if (Mask != 0)
-							{
-								bAnyOverride = true;
-								break;
-							}
-						}
-						AnimTabState.bMorphPreviewOverrideEnabled = bAnyOverride;
-						FAnimationManager::Get().SaveAnimationPreservingMetadata(Seq);
-						RefreshAnimationPreviewPose();
-					}
-					ImGui::PopID();
-				}
-			}
-		}
-	}
-	else
-	{
-		ImGui::TextUnformatted("Asset Details");
-		ImGui::Separator();
-		ImGui::TextDisabled("No animation selected.");
-	}
-	ImGui::EndChild();
-
-	ImGui::SameLine();
-
-	// Center: viewport
-	ImGui::BeginGroup();
-	{
-		float  ViewportWidth = ImGui::GetContentRegionAvail().x - AnimTabState.AnimListWidth - ImGui::GetStyle().ItemSpacing.x;
-		ImVec2 Size          = ImVec2(ViewportWidth, ContentHeight);
-		RenderViewportPanel(Size);
-	}
-	ImGui::EndGroup();
-
-	ImGui::SameLine();
-
-	// Right: 에셋 브라우저 (애니메이션 목록)
-	ImGui::BeginChild("AssetBrowser", ImVec2(AnimTabState.AnimListWidth, ContentHeight), true);
-	ImGui::TextUnformatted("Asset Browser");
-	ImGui::Separator();
-
-	if (ImGui::Button("Load...", ImVec2(-1.0f, 0.0f)))
-	{
-		FEditorFileDialogOptions Opts;
-		Opts.Filter                       = L"Animation Files (*.uasset)\0*.uasset\0All Files (*.*)\0*.*\0";
-		Opts.Title                        = L"Load Animation";
-		Opts.bReturnRelativeToProjectRoot = true;
-		FString Path                      = FEditorFileUtils::OpenFileDialog(Opts);
-		if (!Path.empty())
-		{
-			UAnimSequence* Seq = FAnimationManager::Get().LoadAnimation(Path);
-			if (Seq && Seq->IsCompatibleWith(SkeletalMesh))
-			{
-				AnimTabState.CurrentSequence         = Seq;
-				AnimTabState.SelectedAnimIndex       = -1;
-				AnimTabState.SelectedNotifyIndex     = -1;
-				AnimTabState.SelectedMorphCurveIndex = -1;
-				AnimTabState.SelectedMorphKeyIndex   = -1;
-				ApplyAnimationToComponent();
-			}
-		}
-	}
-
-	if (ImGui::Button("Import Animation FBX", ImVec2(-1.0f, 0.0f)))
-	{
-		FEditorFileDialogOptions Opts;
-		Opts.Filter                       = L"FBX Files (*.fbx)\0*.fbx\0All Files (*.*)\0*.*\0";
-		Opts.Title                        = L"Import Animation FBX";
-		Opts.bReturnRelativeToProjectRoot = true;
-		FString Path                      = FEditorFileUtils::OpenFileDialog(Opts);
-		if (!Path.empty())
-		{
-			FFbxImportOptionsDialog::BeginAnimationImport(AnimTabState.AnimationImportDialog, Path);
-		}
-	}
-
-	if (ImGui::Button("+ New Morph Animation", ImVec2(-1.0f, 0.0f)) && SkeletalMesh)
-	{
-		UAnimSequence*  Seq       = UObjectManager::Get().CreateObject<UAnimSequence>();
-		UAnimDataModel* DataModel = UObjectManager::Get().CreateObject<UAnimDataModel>(Seq);
-		DataModel->SetTiming(1.0f, 30.0f, 0);
-		Seq->SetDataModel(DataModel);
-		Seq->SetSkeletonBinding(SkeletalMesh->GetSkeletonBinding());
-		Seq->SetFName(FName("MorphAnimation"));
-		const FString AnimPath = FAnimationManager::GetAnimationPathForSkeleton(
-			SkeletalMesh->GetAssetPathFileName(),
-			"MorphAnimation",
-			SkeletalMesh->GetSkeletonBinding().SkeletonPath
-		);
-		if (FAnimationManager::Get().SaveAnimation(Seq, AnimPath, SkeletalMesh->GetAssetPathFileName()))
-		{
-			AnimTabState.CurrentSequence         = Seq;
-			AnimTabState.SelectedAnimIndex       = -1;
-			AnimTabState.SelectedNotifyIndex     = -1;
-			AnimTabState.SelectedMorphCurveIndex = -1;
-			AnimTabState.SelectedMorphKeyIndex   = -1;
-			ApplyAnimationToComponent();
-			FAnimationManager::Get().RefreshAvailableAnimations();
-			MarkAnimationListDirty();
-		}
-	}
-
-	FAnimationImportRequest      AnimationImportRequest;
-	const EFbxImportDialogResult AnimationImportDialogResult = FFbxImportOptionsDialog::RenderAnimationImportPopup(
-		"Import Animation FBX Options",
-		AnimTabState.AnimationImportDialog,
-		SkeletalMesh ? SkeletalMesh->GetSkeletonBinding().SkeletonPath : FString("None"),
-		AnimationImportRequest
-	);
-
-	if (AnimationImportDialogResult == EFbxImportDialogResult::Submitted)
-	{
-		TArray<UAnimSequence*> ImportedSequences;
-		FAnimationManager::Get().ImportAnimationForSkeleton(AnimationImportRequest, &ImportedSequences);
-		// 임포트 성공/스킵(이미 존재) 무관하게 디스크를 다시 스캔해 목록 갱신.
-		FAnimationManager::Get().RefreshAvailableAnimations();
-		MarkAnimationListDirty();
-		if (!ImportedSequences.empty())
-		{
-			AnimTabState.CurrentSequence         = ImportedSequences[0];
-			AnimTabState.SelectedAnimIndex       = -1;
-			AnimTabState.SelectedNotifyIndex     = -1;
-			AnimTabState.SelectedMorphCurveIndex = -1;
-			AnimTabState.SelectedMorphKeyIndex   = -1;
-			ApplyAnimationToComponent();
-			FFbxImportOptionsDialog::RequestClose(AnimTabState.AnimationImportDialog);
-		}
-		else
-		{
-			AnimTabState.AnimationImportDialog.Error =
-			"No animation was imported. Existing assets may have been skipped.";
-		}
-	}
-
-	ImGui::Separator();
-
-	if (ImGui::SmallButton("Refresh Animation List"))
-	{
-		FAnimationManager::Get().RefreshAvailableAnimations();
-		FAnimationManager::Get().RefreshAvailableMontages();
-		MarkAnimationListDirty();
-	}
-
-	// 디스크 스캔 — montage 목록 초기화 (최초 1회 + Refresh 시).
-	static bool sMontagesScanned = false;
-	if (!sMontagesScanned)
-	{
-		FAnimationManager::Get().RefreshAvailableMontages();
-		sMontagesScanned = true;
-	}
-
-	const TArray<FAssetListItem>& AnimFiles     = GetCachedAnimationFilesForCurrentSkeleton();
-	const TArray<FAssetListItem>& MontageFiles  = GetCachedMontageFilesForCurrentSkeleton();
-
-	// asset 경로의 stem (확장자/디렉토리 제거) — 자동 montage 이름의 source 식별자.
-	auto ExtractStem = [](const FString& Path) -> FString
-	{
-		const size_t LastSlash = Path.find_last_of("/\\");
-		const size_t Start = (LastSlash == FString::npos) ? 0 : LastSlash + 1;
-		const size_t LastDot = Path.find_last_of('.');
-		const size_t End = (LastDot == FString::npos || LastDot < Start) ? Path.size() : LastDot;
-		return Path.substr(Start, End - Start);
-	};
-
-	// + New Montage — 현재 선택된 sequence 가 있으면 source 로 새 montage 생성.
-	// 이름은 sequence 의 asset path stem 사용 (UObject::GetName() 의 자동생성 ObjectName 회피).
-	const bool bCanCreateMontage = (AnimTabState.CurrentSequence != nullptr) && !AnimTabState.bMontageSelected;
-	if (!bCanCreateMontage) ImGui::BeginDisabled();
-	if (ImGui::Button("+ New Montage (from selected sequence)", ImVec2(-1.0f, 0.0f)))
-	{
-		const FString Stem = ExtractStem(AnimTabState.CurrentSequence->GetAssetPathFileName());
-		const FString MontageName = Stem + "_Montage";
-		const FString PackagePath = FString("Content/Montages/") + MontageName + ".uasset";
-		UAnimMontage* Montage = FAnimationManager::Get().CreateMontage(AnimTabState.CurrentSequence, MontageName);
-		if (Montage)
-		{
-			FAnimationManager::Get().SaveMontage(Montage, PackagePath);
-			FAnimationManager::Get().RefreshAvailableMontages();
-			MarkAnimationListDirty();
-			AnimTabState.CurrentMontage    = Montage;
-			AnimTabState.bMontageSelected  = true;
-
-			// 새 montage 의 인덱스 즉시 매핑 — list 의 hilight + 다음 클릭의 일관 동작 보장.
-			// skeleton 필터링된 캐시 기준으로 인덱스를 잡아야 selectable 비교가 맞는다.
-			const TArray<FAssetListItem>& Updated = GetCachedMontageFilesForCurrentSkeleton();
-			AnimTabState.SelectedMontageIndex = -1;
-			for (int32 j = 0; j < static_cast<int32>(Updated.size()); ++j)
-			{
-				if (Updated[j].FullPath == PackagePath)
-				{
-					AnimTabState.SelectedMontageIndex = j;
-					break;
-				}
-			}
-		}
-	}
-	if (!bCanCreateMontage) ImGui::EndDisabled();
-
-	// 통합 리스트 — Sequence + Montage 한 selectable. 알파벳 정렬 (Walking_mixamo_com 옆에
-	// Walking_mixamo_com_Montage 가 자연스럽게 인접). 시각 구분: Montage 는 노랑 + [M] prefix.
-	struct FEntry
-	{
-		FString  DisplayName;
-		FString  FullPath;
-		bool     bIsMontage = false;
-		int32    OriginalIndex = -1;   // AnimFiles 또는 MontageFiles 의 인덱스
-	};
-	TArray<FEntry> Entries;
-	Entries.reserve(AnimFiles.size() + MontageFiles.size());
-	for (int32 i = 0; i < static_cast<int32>(AnimFiles.size());    ++i) Entries.push_back({ AnimFiles[i].DisplayName,    AnimFiles[i].FullPath,    false, i });
-	for (int32 i = 0; i < static_cast<int32>(MontageFiles.size()); ++i) Entries.push_back({ MontageFiles[i].DisplayName, MontageFiles[i].FullPath, true,  i });
-	std::sort(Entries.begin(), Entries.end(),
-		[](const FEntry& A, const FEntry& B) { return A.DisplayName < B.DisplayName; });
-
-	ImGui::TextUnformatted("Animations & Montages");
-	for (const FEntry& E : Entries)
-	{
-		const bool bSelected =
-			E.bIsMontage
-				? (AnimTabState.bMontageSelected && AnimTabState.SelectedMontageIndex == E.OriginalIndex)
-				: (!AnimTabState.bMontageSelected && AnimTabState.SelectedAnimIndex == E.OriginalIndex);
-
-		// 시각 구분 — Montage 는 노랑 톤. Sequence 는 기본 색.
-		const ImU32 Color = E.bIsMontage ? IM_COL32(255, 200, 100, 255) : IM_COL32(255, 255, 255, 255);
-		ImGui::PushStyleColor(ImGuiCol_Text, Color);
-
-		const FString Label = (E.bIsMontage ? "[M] " : "      ") + E.DisplayName;
-		if (ImGui::Selectable(Label.c_str(), bSelected))
-		{
-			if (E.bIsMontage)
-			{
-				AnimTabState.SelectedMontageIndex    = E.OriginalIndex;
-				AnimTabState.bMontageSelected        = true;
-				AnimTabState.SelectedNotifyIndex     = -1;
-				AnimTabState.SelectedMorphCurveIndex = -1;
-				AnimTabState.SelectedMorphKeyIndex   = -1;
-				ResetMorphPreviewOverrides();
-				if (UAnimMontage* M = FAnimationManager::Get().LoadMontage(E.FullPath))
-				{
-					AnimTabState.CurrentMontage = M;
-				}
-			}
-			else
-			{
-				AnimTabState.SelectedAnimIndex       = E.OriginalIndex;
-				AnimTabState.bMontageSelected        = false;
-				AnimTabState.SelectedNotifyIndex     = -1;
-				AnimTabState.SelectedMorphCurveIndex = -1;
-				AnimTabState.SelectedMorphKeyIndex   = -1;
-				if (UAnimSequence* Seq = FAnimationManager::Get().LoadAnimation(E.FullPath))
-				{
-					if (Seq->IsCompatibleWith(SkeletalMesh))
-					{
-						AnimTabState.CurrentSequence = Seq;
-						ApplyAnimationToComponent();
-					}
-				}
-			}
-		}
-		ImGui::PopStyleColor();
-
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("%s\n%s", E.bIsMontage ? "Montage" : "Sequence", E.FullPath.c_str());
-		}
-	}
-	ImGui::EndChild();
-
-	// ─── Bottom: Unreal 시퀀서 패널 ───
-	UAnimSingleNodeInstance* NodeInst = nullptr;
-	USkeletalMeshComponent*  Comp     = ViewportClient.GetPreviewMeshComponent();
-	if (Comp && AnimTabState.CurrentSequence)
-	{
-		NodeInst = Comp->GetAnimNodeInstance(FName::None);
-	}
-
-	// 스페이스바: 재생/정지 토글 (메시 에디터 창 포커스 + 텍스트 입력 중 아닐 때)
-	if (Comp && ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
-	    !ImGui::GetIO().WantTextInput &&
-	    ImGui::IsKeyPressed(ImGuiKey_Space, false))
-	{
-		const bool bPlaying = NodeInst && NodeInst->IsPlaying();
-		Comp->SetPlaying(!bPlaying);
-	}
-
-	FAnimationTimelinePanel::Render(NodeInst, Comp, AnimTabState.CurrentSequence, TimelineHeight,
-		AnimTabState.SelectedNotifyIndex,
-		AnimTabState.SelectedMorphCurveIndex,
-		AnimTabState.SelectedMorphKeyIndex
-	);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Mesh stats overlay
-// ─────────────────────────────────────────────────────────────────────────────
-
-void FMeshEditorWidget::RenderMeshStatsOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos) const
-{
-	if (!DrawList || !EditedObject)
-	{
-		return;
-	}
-
-	size_t VertexCount   = 0;
-	size_t TriangleCount = 0;
-	size_t IndexCount    = 0;
-	double ImportSeconds = -1.0;
-
-	if (const USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(EditedObject))
-	{
-		if (const FSkeletalMesh* Asset = SkeletalMesh->GetSkeletalMeshAsset())
-		{
-			VertexCount   = Asset->Vertices.size();
-			IndexCount    = Asset->Indices.size();
-			TriangleCount = Asset->Indices.size() / 3;
-		}
-		ImportSeconds = GetRecordedImportDurationSeconds(SkeletalMesh);
-	}
-
-	FString Text =
-		"Triangles: " + FormatMeshStatCount(TriangleCount) + "\n" +
-		"Vertices: " + FormatMeshStatCount(VertexCount) + "\n" +
-		"Indices: " + FormatMeshStatCount(IndexCount);
-
-	if (ImportSeconds >= 0.0)
-	{
-		Text += "\nImport Time: " + FormatMeshStatSeconds(ImportSeconds);
-	}
-
-	const ImVec2 TextPos(ViewportPos.x + 8.0f, ViewportPos.y + 36.0f);
-	DrawList->AddText(ImVec2(TextPos.x + 1.0f, TextPos.y + 1.0f), IM_COL32(0, 0, 0, 220), Text.c_str());
-	DrawList->AddText(TextPos, IM_COL32(235, 238, 242, 255), Text.c_str());
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Bone tree (Skeleton tab)
-// ─────────────────────────────────────────────────────────────────────────────
-
-void FMeshEditorWidget::RenderBoneTree(const FSkeletalMesh* Asset, int32 Index)
-{
-	const FBone& Bone = Asset->Bones[Index];
-
-	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
-
-	if (Index == SelectedBoneIndex)
-	{
-		Flags |= ImGuiTreeNodeFlags_Selected;
-	}
-
-	bool bHasChildren = false;
-	for (int32 i = Index + 1; i < static_cast<int32>(Asset->Bones.size()); ++i)
-	{
-		if (Asset->Bones[i].ParentIndex == Index)
-		{
-			bHasChildren = true;
-			break;
-		}
-	}
-
-	if (!bHasChildren)
-	{
-		Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-	}
-
-	bool bOpen = ImGui::TreeNodeEx(Bone.Name.c_str(), Flags);
-
-	if (ImGui::IsItemClicked())
-	{
-		SelectedBoneIndex = Index;
-		ViewportClient.SetSelectedBone(Cast<USkeletalMesh>(EditedObject), Index);
-	}
-
-	if (bOpen && bHasChildren)
-	{
-		for (int32 i = Index + 1; i < static_cast<int32>(Asset->Bones.size()); ++i)
-		{
-			if (Asset->Bones[i].ParentIndex == Index)
-			{
-				RenderBoneTree(Asset, i);
-			}
-		}
-		ImGui::TreePop();
-	}
 }
