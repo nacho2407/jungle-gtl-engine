@@ -74,22 +74,11 @@
 
 namespace PSE
 {
-    static const ImVec4 WindowBg = ImVec4(0.086f, 0.090f, 0.102f, 1.0f);
-    static const ImVec4 PanelBg  = ImVec4(0.122f, 0.128f, 0.145f, 1.0f);
-    static const ImVec4 Border   = ImVec4(0.224f, 0.235f, 0.267f, 1.0f);
-    static const ImVec4 FrameBg  = ImVec4(0.067f, 0.071f, 0.082f, 1.0f);
-
-    static constexpr ImU32 HeaderText = IM_COL32(228, 231, 238, 255);
-    static constexpr ImU32 DimText    = IM_COL32(122, 128, 140, 255);
     static constexpr ImU32 Accent     = IM_COL32(74, 144, 255, 255);
     static constexpr ImU32 AccentSoft = IM_COL32(74, 144, 255, 70);
-    static constexpr ImU32 Border32   = IM_COL32(57, 60, 70, 255);
     static constexpr ImU32 ViewportBg = IM_COL32(17, 18, 22, 255);
     static constexpr ImU32 GridMinor  = IM_COL32(35, 37, 44, 255);
     static constexpr ImU32 GridMajor  = IM_COL32(52, 55, 64, 255);
-
-    static const ImVec4 DimTextV  = ImVec4(0.478f, 0.502f, 0.549f, 1.0f);
-    static const ImVec4 WarnTextV = ImVec4(1.000f, 0.620f, 0.240f, 1.0f);
 }
 
 struct FEmitterModuleEntry

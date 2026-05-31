@@ -359,9 +359,6 @@ void FMeshEditorSkeletonTab::Render(float AvailableHeight)
 
 	ImGui::SameLine();
 
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
 	ImGui::Button("##skelSplitter", ImVec2(4.0f, -1.0f));
 	if (ImGui::IsItemActive())
 	{
@@ -372,8 +369,6 @@ void FMeshEditorSkeletonTab::Render(float AvailableHeight)
 	{
 		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
 	}
-	ImGui::PopStyleColor(3);
-
 	ImGui::SameLine();
 
 	ImGui::BeginGroup();

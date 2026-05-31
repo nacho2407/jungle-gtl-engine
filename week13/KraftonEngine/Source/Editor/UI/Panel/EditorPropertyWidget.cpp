@@ -789,9 +789,6 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 150.0f);
 			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
-			ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImVec4(0.145f, 0.145f, 0.145f, 1.0f));
-
 			for (int32 i = 0; i < (int32)Props.size(); ++i)
 			{
 				ImGui::TableNextRow();
@@ -814,7 +811,6 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 			}
 
 			ImGui::EndTable();
-			ImGui::PopStyleColor(2);
 		}
 	}
 
@@ -1270,15 +1266,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 		bool bInTreeNode = false;
 		if (!Cat.empty())
 		{
-			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.22f, 0.22f, 0.22f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.27f, 0.27f, 0.27f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.30f, 0.30f, 0.30f, 1.0f));
-			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 3.0f));
-
 			bool bOpen = ImGui::CollapsingHeader(Cat.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
-
-			ImGui::PopStyleVar();
-			ImGui::PopStyleColor(3);
 
 			if (!bOpen) continue;
 		}
@@ -1288,9 +1276,6 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 		{
 			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 150.0f);
 			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
-
-			ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImVec4(0.145f, 0.145f, 0.145f, 1.0f));
 
 			for (int32 i = 0; i < (int32)Props.size(); ++i)
 			{
@@ -1332,7 +1317,6 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 			}
 
 			ImGui::EndTable();
-			ImGui::PopStyleColor(2);
 		}
 	}
 
@@ -2079,29 +2063,15 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			break;
 		}
 
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.0f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.07f, 0.07f, 0.07f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.18f, 0.18f, 0.18f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.055f, 0.525f, 1.0f, 1.0f));
-
 		bChanged = ImGui::Checkbox("##Value", Val);
 
-		ImGui::PopStyleColor(3);
-		ImGui::PopStyleVar();
 		break;
 	}
 	case EPropertyType::ByteBool:
 	{
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.0f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.07f, 0.07f, 0.07f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.18f, 0.18f, 0.18f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.055f, 0.525f, 1.0f, 1.0f));
-
 		uint8* Val = static_cast<uint8*>(Prop.GetValuePtr());
 		if (!Val)
 		{
-			ImGui::PopStyleColor(3);
-			ImGui::PopStyleVar();
 			break;
 		}
 
@@ -2112,8 +2082,6 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			bChanged = true;
 		}
 
-		ImGui::PopStyleColor(3);
-		ImGui::PopStyleVar();
 		break;
 	}
 	case EPropertyType::Int:

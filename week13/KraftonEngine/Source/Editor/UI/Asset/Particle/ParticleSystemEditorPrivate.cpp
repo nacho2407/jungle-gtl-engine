@@ -22,16 +22,16 @@
         const float  TextH    = ImGui::GetTextLineHeight();
 
         DrawList->AddRectFilled(ImVec2(Pos.x, Pos.y + 1.0f), ImVec2(Pos.x + 3.0f, Pos.y + TextH), PSE::Accent, 1.0f);
-        DrawList->AddText(ImVec2(Pos.x + 11.0f, Pos.y), PSE::HeaderText, Title);
+        DrawList->AddText(ImVec2(Pos.x + 11.0f, Pos.y), ImGui::GetColorU32(ImGuiCol_Text), Title);
 
         if (Context && Context[0])
         {
             const float ContextW = ImGui::CalcTextSize(Context).x;
-            DrawList->AddText(ImVec2(Pos.x + Width - ContextW, Pos.y + 1.0f), PSE::DimText, Context);
+            DrawList->AddText(ImVec2(Pos.x + Width - ContextW, Pos.y + 1.0f), ImGui::GetColorU32(ImGuiCol_TextDisabled), Context);
         }
 
         const float LineY = Pos.y + TextH + 6.0f;
-        DrawList->AddLine(ImVec2(Pos.x, LineY), ImVec2(Pos.x + Width, LineY), PSE::Border32);
+        DrawList->AddLine(ImVec2(Pos.x, LineY), ImVec2(Pos.x + Width, LineY), ImGui::GetColorU32(ImGuiCol_Border));
         ImGui::Dummy(ImVec2(Width, TextH + 13.0f));
     }
 
@@ -39,15 +39,6 @@
     {
         Width  = (std::max)(Width, 48.0f);
         Height = (std::max)(Height, 48.0f);
-
-        ImGui::PushStyleColor(ImGuiCol_ChildBg, PSE::PanelBg);
-        ImGui::PushStyleColor(ImGuiCol_Border, PSE::Border);
-        ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 1.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 9.0f));
-        // 패널 외곽 레이아웃은 ItemSpacing(0,0)을 쓰지만, 패널 내부 위젯들은
-        // 숨막히지 않도록 일반적인 간격을 다시 켠다.
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 6.0f));
 
         const bool bVisible = ImGui::BeginChild(StrId, ImVec2(Width, Height), true);
         if (bVisible)
@@ -60,8 +51,6 @@
     void EndPanel()
     {
         ImGui::EndChild();
-        ImGui::PopStyleVar(4);
-        ImGui::PopStyleColor(2);
     }
 
     void Splitter(const char* StrId, bool bVertical, float FullExtent, float CrossExtent, float& Ratio)
@@ -85,7 +74,7 @@
         }
 
         ImDrawList*  DrawList = ImGui::GetWindowDrawList();
-        const ImU32  Color    = bActive ? PSE::Accent : (bHovered ? PSE::AccentSoft : PSE::Border32);
+        const ImU32  Color    = bActive ? PSE::Accent : (bHovered ? PSE::AccentSoft : ImGui::GetColorU32(ImGuiCol_Border));
         const ImVec2 Center(Pos.x + Size.x * 0.5f, Pos.y + Size.y * 0.5f);
         for (int32 i = -1; i <= 1; ++i)
         {
@@ -98,7 +87,7 @@
     void CanvasHint(ImDrawList* DrawList, const ImVec2& Min, const ImVec2& Max, const char* Text)
     {
         const ImVec2 Size = ImGui::CalcTextSize(Text);
-        DrawList->AddText(ImVec2((Min.x + Max.x - Size.x) * 0.5f, (Min.y + Max.y - Size.y) * 0.5f), PSE::DimText, Text);
+        DrawList->AddText(ImVec2((Min.x + Max.x - Size.x) * 0.5f, (Min.y + Max.y - Size.y) * 0.5f), ImGui::GetColorU32(ImGuiCol_TextDisabled), Text);
     }
 
     ID3D11ShaderResourceView* LoadToolIcon(const wchar_t* FileName)
@@ -489,15 +478,14 @@ void DrawRawDistributionVector(const char* Label, FRawDistributionVector& Raw, b
         {
             if (!bAllowCurve)
             {
-                ImGui::TextColored(PSE::WarnTextV, "Curve is not supported for this field.");
-                ImGui::TextColored(PSE::DimTextV, "Use Constant or Uniform for initial-only values.");
+                ImGui::Text("Curve is not supported for this field.");
+                ImGui::TextDisabled("Use Constant or Uniform for initial-only values.");
             }
             else
             {
-                ImGui::TextColored(PSE::DimTextV, "Edit in the Curve Editor panel.");
+                ImGui::TextDisabled("Edit in the Curve Editor panel.");
             }
-            ImGui::TextColored(
-                PSE::DimTextV,
+            ImGui::TextDisabled(
                 "Keys: X %d / Y %d / Z %d",
                 static_cast<int32>(Curve->X.Keys.size()),
                 static_cast<int32>(Curve->Y.Keys.size()),
@@ -559,14 +547,14 @@ void DrawRawDistributionFloat(const char* Label, FRawDistributionFloat& Raw, boo
         {
             if (!bAllowCurve)
             {
-                ImGui::TextColored(PSE::WarnTextV, "Curve is not supported for this field.");
-                ImGui::TextColored(PSE::DimTextV, "Use Constant or Uniform for initial-only values.");
+                ImGui::Text("Curve is not supported for this field.");
+                ImGui::TextDisabled("Use Constant or Uniform for initial-only values.");
             }
             else
             {
-                ImGui::TextColored(PSE::DimTextV, "Edit in the Curve Editor panel.");
+                ImGui::TextDisabled("Edit in the Curve Editor panel.");
             }
-            ImGui::TextColored(PSE::DimTextV, "Keys: %d", static_cast<int32>(Curve->Curve.Keys.size()));
+            ImGui::TextDisabled("Keys: %d", static_cast<int32>(Curve->Curve.Keys.size()));
         }
         ImGui::TreePop();
     }
