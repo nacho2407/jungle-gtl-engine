@@ -4,7 +4,6 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/Viewport/Level/LevelEditorViewportClient.h"
-#include "Component/ActorComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -58,19 +57,6 @@ namespace
 		{ "Character",     FLevelViewportLayout::EViewportPlaceActorType::Character },
 		{ "Lua Character", FLevelViewportLayout::EViewportPlaceActorType::LuaCharacter },
 	};
-
-	void SetSelectionDetailTargetFromObject(FSelectionDetailTarget& Target, UObject* Object)
-	{
-		Target.Reset();
-		if (!IsValid(Object))
-		{
-			return;
-		}
-
-		Target.ObjectPtr = Object;
-		Target.StructType = Object->GetClass();
-		Target.ContainerPtr = Object;
-	}
 
 }
 
@@ -168,18 +154,10 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	const FEditorSettings& Settings = FEditorSettings::Get();
 	PanelContext.EditorEngine = EditorEngine;
+	PanelContext.SelectionManager = EditorEngine ? &EditorEngine->GetSelectionManager() : nullptr;
 	PanelContext.DeltaTime = DeltaTime;
 	PanelContext.Settings = &Settings;
 	PanelContext.bHideEditorWindows = bHideEditorWindows;
-	FSelectionManager* SelectionManager = &EditorEngine->GetSelectionManager();
-	if (SelectionManager  && SelectionManager->ConsumeNewSelectFlag())
-	{
-		PanelContext.SelectionDetailTarget.Reset();
-		if (UActorComponent* SelectedComponent = SelectionManager->GetSelectedActorComponent())
-		{
-			SetSelectionDetailTargetFromObject(PanelContext.SelectionDetailTarget, SelectedComponent);
-		}
-	}
 
 	if (!bHideEditorWindows && Settings.UI.bImGUISettings)
 	{
