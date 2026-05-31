@@ -24,6 +24,8 @@ struct ContentBrowserContext final
 	// ContentBrowser::Render 가 다음 프레임 popup 열고 false 로 reset.
 	bool bRenameRequested = false;
 
+	bool bDeleteRequested = false;
+
 	// Shared FBX import options modal state. MeshElement fills this on double-click and
 	// ContentBrowser renders the common modal once per frame.
 	FFbxSceneImportDialogState FbxImportDialog;

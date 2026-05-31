@@ -217,6 +217,70 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		ImGui::EndPopup();
 	}
 
+	static FString sDeleteError;
+	if (BrowserContext.bDeleteRequested)
+	{
+		if (BrowserContext.SelectedElement)
+		{
+			sDeleteError.clear();
+			ImGui::OpenPopup("##DeleteElement");
+		}
+		BrowserContext.bDeleteRequested = false;
+	}
+	if (ImGui::BeginPopupModal("##DeleteElement", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ImGui::TextUnformatted("Delete");
+		ImGui::Separator();
+
+		if (BrowserContext.SelectedElement)
+		{
+			const FContentItem& Item = BrowserContext.SelectedElement->GetContentItem();
+			const FString Name = FPaths::ToUtf8(Item.Name);
+			ImGui::Text("Delete \"%s\"?", Name.c_str());
+			ImGui::TextDisabled(Item.bIsDirectory
+				? "This will delete the folder and everything inside it."
+				: "This will delete the file from disk.");
+		}
+		else
+		{
+			ImGui::TextDisabled("No asset selected");
+		}
+
+		if (!sDeleteError.empty())
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", sDeleteError.c_str());
+		}
+
+		ImGui::BeginDisabled(!BrowserContext.SelectedElement);
+		const bool bDelete = ImGui::Button("Delete");
+		ImGui::EndDisabled();
+
+		ImGui::SameLine();
+		const bool bCancel = ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape);
+
+		if (bDelete && BrowserContext.SelectedElement)
+		{
+			FString Error;
+			if (BrowserContext.SelectedElement->DeleteFromDisk(&Error))
+			{
+				BrowserContext.SelectedElement.reset();
+				Refresh();
+				ImGui::CloseCurrentPopup();
+			}
+			else
+			{
+				sDeleteError = Error;
+			}
+		}
+
+		if (bCancel)
+		{
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+
 	ImGui::SameLine();
 	std::wstring PathText = BrowserContext.CurrentPath;
 	if (BrowserContext.SelectedElement)

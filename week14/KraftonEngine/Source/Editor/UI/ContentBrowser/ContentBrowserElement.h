@@ -43,6 +43,7 @@ public:
 	// 중복이 있으면 false + OutError. 성공 시 ContentItem.Path/Name 갱신 후 true.
 	// 실제 .uasset 안의 AssetPathFileName 등 캐시는 별도로 reload 필요 (다음 refresh).
 	bool RenameTo(const FString& NewStem, FString* OutError = nullptr);
+	bool DeleteFromDisk(FString* OutError = nullptr);
 
 protected:
 	FString EllipsisText(const FString& text, float maxWidth);
