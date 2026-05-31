@@ -75,6 +75,52 @@ namespace
 		return FString(Buffer);
 	}
 
+	FString GetPhysicsAssetSourceMeshPath(const UPhysicsAsset* PhysicsAsset)
+	{
+		if (!PhysicsAsset)
+		{
+			return FString();
+		}
+
+		if (const USkeletalMesh* SourceMesh = PhysicsAsset->GetTypedOuter<USkeletalMesh>())
+		{
+			return SourceMesh->GetAssetPathFileName();
+		}
+
+		return PhysicsAsset->GetSourceSkeletalMeshPath();
+	}
+
+	USkeletalMesh* ResolveSourceMeshForPhysicsAsset(UPhysicsAsset* PhysicsAsset)
+	{
+		if (!PhysicsAsset)
+		{
+			return nullptr;
+		}
+
+		if (USkeletalMesh* SourceMesh = PhysicsAsset->GetTypedOuter<USkeletalMesh>())
+		{
+			SourceMesh->SetPhysicsAsset(PhysicsAsset);
+			return SourceMesh;
+		}
+
+		const FString& SourceMeshPath = PhysicsAsset->GetSourceSkeletalMeshPath();
+		if (SourceMeshPath.empty() || SourceMeshPath == "None")
+		{
+			return nullptr;
+		}
+
+		ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+		USkeletalMesh* SourceMesh = FMeshManager::LoadSkeletalMesh(SourceMeshPath, Device);
+		if (!SourceMesh)
+		{
+			return nullptr;
+		}
+
+		PhysicsAsset->SetOuter(SourceMesh);
+		SourceMesh->SetPhysicsAsset(PhysicsAsset);
+		return SourceMesh;
+	}
+
 	bool IsSameSkeletonBindingForAnimationList(const FSkeletonBinding& A, const FSkeletonBinding& B)
 	{
 		return A.SkeletonPath == B.SkeletonPath
@@ -305,7 +351,7 @@ FMeshEditorWidget::FMeshEditorWidget()
 
 bool FMeshEditorWidget::CanEdit(UObject* Object) const
 {
-	return Object && Object->IsA<USkeletalMesh>();
+	return Object && (Object->IsA<USkeletalMesh>() || Object->IsA<UPhysicsAsset>());
 }
 
 bool FMeshEditorWidget::IsEditingObject(UObject* Object) const
@@ -317,20 +363,48 @@ bool FMeshEditorWidget::IsEditingObject(UObject* Object) const
 
 	const USkeletalMesh* CurrentMesh = Cast<USkeletalMesh>(EditedObject);
 	const USkeletalMesh* RequestedMesh = Cast<USkeletalMesh>(Object);
-	if (!IsOpen() || !CurrentMesh || !RequestedMesh)
+	const UPhysicsAsset* RequestedPhysicsAsset = Cast<UPhysicsAsset>(Object);
+	if (!IsOpen() || !CurrentMesh || (!RequestedMesh && !RequestedPhysicsAsset))
 	{
 		return false;
 	}
 
 	const FString& CurrentPath = CurrentMesh->GetAssetPathFileName();
-	return !CurrentPath.empty()
+	const FString RequestedPath = RequestedMesh
+		? RequestedMesh->GetAssetPathFileName()
+		: GetPhysicsAssetSourceMeshPath(RequestedPhysicsAsset);
+
+	const bool bMatchesCurrentMesh = !CurrentPath.empty()
 		&& CurrentPath != "None"
-		&& CurrentPath == RequestedMesh->GetAssetPathFileName();
+		&& CurrentPath == RequestedPath;
+	if (bMatchesCurrentMesh && RequestedPhysicsAsset)
+	{
+		const_cast<FMeshEditorWidget*>(this)->ActiveTab = EMeshEditorTab::PhysicsAsset;
+	}
+
+	return bMatchesCurrentMesh;
 }
 
 void FMeshEditorWidget::Open(UObject* Object)
 {
-	FAssetEditorWidget::Open(Object);
+	EMeshEditorTab InitialTab = EMeshEditorTab::Skeleton;
+	UObject* ObjectToEdit = Object;
+	if (UPhysicsAsset* PhysicsAsset = Cast<UPhysicsAsset>(Object))
+	{
+		USkeletalMesh* SourceMesh = ResolveSourceMeshForPhysicsAsset(PhysicsAsset);
+		if (!SourceMesh)
+		{
+			UE_LOG("PhysicsAsset editor open failed: source skeletal mesh not found. PhysicsAsset=%s SourceMesh=%s",
+				PhysicsAsset->GetAssetPathFileName().c_str(),
+				PhysicsAsset->GetSourceSkeletalMeshPath().c_str());
+			return;
+		}
+
+		ObjectToEdit = SourceMesh;
+		InitialTab = EMeshEditorTab::PhysicsAsset;
+	}
+
+	FAssetEditorWidget::Open(ObjectToEdit);
 
 	FWorldContext& WorldContext = GEngine->CreateWorldContext(EWorldType::EditorPreview, PreviewWorldHandle);
 	WorldContext.World->SetWorldType(EWorldType::EditorPreview);
@@ -434,7 +508,7 @@ void FMeshEditorWidget::Open(UObject* Object)
 	// 디스크의 기존 AnimSequence .uasset 들을 목록에 채워 둔다(런타임 Load/Save 만으론 안 잡힘).
 	FAnimationManager::Get().RefreshAvailableAnimations();
 
-	ActiveTab         = EMeshEditorTab::Skeleton;
+	ActiveTab         = InitialTab;
 	AnimTabState      = FAnimationTabState {};
 	SelectedBoneIndex = -1;
 	SelectedPhysicsBodyIndex = -1;
