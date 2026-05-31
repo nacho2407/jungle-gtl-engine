@@ -99,6 +99,22 @@ static bool ProjectFileExistsForContentBrowser(const FString& Path)
 	return std::filesystem::exists(FullPath) && std::filesystem::is_regular_file(FullPath);
 }
 
+static bool IsSameOrChildPathForContentBrowser(const std::filesystem::path& Parent, const std::filesystem::path& Child)
+{
+	auto ParentIt = Parent.begin();
+	auto ChildIt = Child.begin();
+
+	for (; ParentIt != Parent.end() && ChildIt != Child.end(); ++ParentIt, ++ChildIt)
+	{
+		if (*ParentIt != *ChildIt)
+		{
+			return false;
+		}
+	}
+
+	return ParentIt == Parent.end();
+}
+
 static bool HasImportedFbxAssetForContentBrowser(const FString& SourceFbxPath)
 {
 	return ProjectFileExistsForContentBrowser(FMeshManager::GetSkeletalMeshBinaryFilePath(SourceFbxPath)) ||
@@ -296,6 +312,96 @@ bool ContentBrowserElement::RenameTo(const FString& NewStem, FString* OutError)
 	return true;
 }
 
+bool ContentBrowserElement::DeleteFromDisk(FString* OutError)
+{
+	auto SetError = [&](const char* Msg) { if (OutError) *OutError = Msg; };
+
+	if (ContentItem.Path.empty())
+	{
+		SetError("Path is empty.");
+		return false;
+	}
+
+	std::error_code Ec;
+	const bool bExists = std::filesystem::exists(ContentItem.Path, Ec);
+	if (Ec)
+	{
+		SetError(Ec.message().c_str());
+		return false;
+	}
+	if (!bExists)
+	{
+		SetError("Path does not exist.");
+		return false;
+	}
+
+	const std::filesystem::path RootPath = std::filesystem::weakly_canonical(std::filesystem::path(FPaths::RootDir()), Ec);
+	if (Ec)
+	{
+		SetError(Ec.message().c_str());
+		return false;
+	}
+
+	const std::filesystem::path TargetPath = std::filesystem::weakly_canonical(ContentItem.Path, Ec);
+	if (Ec)
+	{
+		SetError(Ec.message().c_str());
+		return false;
+	}
+
+	if (TargetPath == RootPath)
+	{
+		SetError("Project root cannot be deleted.");
+		return false;
+	}
+
+	if (!IsSameOrChildPathForContentBrowser(RootPath, TargetPath))
+	{
+		SetError("Path is outside the project root.");
+		return false;
+	}
+
+	const bool bIsDirectory = std::filesystem::is_directory(TargetPath, Ec);
+	if (Ec)
+	{
+		SetError(Ec.message().c_str());
+		return false;
+	}
+
+	if (bIsDirectory)
+	{
+		const uintmax_t RemovedCount = std::filesystem::remove_all(TargetPath, Ec);
+		if (Ec)
+		{
+			SetError(Ec.message().c_str());
+			return false;
+		}
+
+		if (RemovedCount == 0)
+		{
+			SetError("No files were deleted.");
+			return false;
+		}
+
+		return true;
+	}
+
+	const bool bRemoved = std::filesystem::remove(TargetPath, Ec);
+	if (Ec)
+	{
+		SetError(Ec.message().c_str());
+		return false;
+	}
+
+	if (!bRemoved)
+	{
+		SetError("File could not be deleted.");
+		return false;
+	}
+
+	return true;
+}
+
 bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 {
 	FString Name = FPaths::ToUtf8(ContentItem.Name);
@@ -413,6 +519,11 @@ void ContentBrowserElement::Render(ContentBrowserContext& Context)
 		{
 			Context.SelectedElement = shared_from_this();
 			Context.bRenameRequested = true;
+		}
+		if (ImGui::MenuItem("Delete"))
+		{
+			Context.SelectedElement = shared_from_this();
+			Context.bDeleteRequested = true;
 		}
 		ImGui::Separator();
 		RenderContextMenu(Context);
