@@ -545,9 +545,9 @@ FString FEditorPropertyWidget::OpenFbxFileDialog()
 	return FString();
 }
 
-void FEditorPropertyWidget::Render(float DeltaTime)
+void FEditorPropertyWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)DeltaTime;
+	(void)Context;
 
 	ImGui::SetNextWindowSize(ImVec2(350.0f, 500.0f), ImGuiCond_Once);
 

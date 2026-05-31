@@ -633,9 +633,9 @@ void FEditorConsoleWidget::Clear()
 	ConsoleDevice.Clear();
 }
 
-void FEditorConsoleWidget::Render(float DeltaTime)
+void FEditorConsoleWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)DeltaTime;
+	(void)Context;
 
 	ImGui::SetNextWindowSize(ImVec2(800, 600), ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("Console"))

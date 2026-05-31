@@ -9,7 +9,7 @@
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_impl_win32.h"
 
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 
 // ============================================================
 // FConsoleLogOutputDevice — ImGui 콘솔에 로그를 출력하는 디바이스
@@ -33,12 +33,12 @@ private:
 	friend class FEditorConsoleWidget;
 };
 
-class FEditorConsoleWidget : public FEditorWidget
+class FEditorConsoleWidget : public FEditorPanelWidget
 {
 public:
 	static void AddLog(const char* fmt, ...);
 	virtual void Initialize(UEditorEngine* InEditorEngine) override;
-	virtual void Render(float DeltaTime) override;
+	virtual void Render(const FEditorPanelContext& Context) override;
 	virtual void Shutdown();
 
 	void Clear();

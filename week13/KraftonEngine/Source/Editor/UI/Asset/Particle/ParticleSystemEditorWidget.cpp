@@ -134,9 +134,9 @@ void FParticleSystemEditorWidget::Tick(float DeltaTime)
     }
 }
 
-void FParticleSystemEditorWidget::Render(float DeltaTime)
+void FParticleSystemEditorWidget::Render(const FEditorPanelContext& Context)
 {
-    (void)DeltaTime;
+    (void)Context;
 
     if (!IsOpen() || !EditedObject)
     {
@@ -420,4 +420,3 @@ void FParticleSystemEditorWidget::SelectEmitter(int32 EmitterIndex, int32 Module
     SelectedEmitterIndex = EmitterIndex;
     SelectedModuleIndex  = ModuleIndex;
 }
-

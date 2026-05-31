@@ -140,9 +140,9 @@ void FStaticMeshEditorWidget::CollectPreviewViewports(TArray<IEditorPreviewViewp
 	}
 }
 
-void FStaticMeshEditorWidget::Render(float DeltaTime)
+void FStaticMeshEditorWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)DeltaTime;
+	(void)Context;
 
 	if (!IsOpen() || !EditedObject)
 	{

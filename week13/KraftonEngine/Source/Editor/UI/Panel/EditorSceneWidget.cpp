@@ -51,14 +51,14 @@ void FEditorSceneWidget::Initialize(UEditorEngine* InEditorEngine)
 	FEditorWidget::Initialize(InEditorEngine);
 }
 
-void FEditorSceneWidget::Render(float DeltaTime)
+void FEditorSceneWidget::Render(const FEditorPanelContext& Context)
 {
 	if (!EditorEngine)
 	{
 		return;
 	}
 
-	(void)DeltaTime;
+	(void)Context;
 	ImGui::SetNextWindowSize(ImVec2(400.0f, 350.0f), ImGuiCond_Once);
 
 	ImGui::Begin("Scene Manager");

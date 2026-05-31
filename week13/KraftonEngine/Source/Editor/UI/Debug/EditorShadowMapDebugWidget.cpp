@@ -256,8 +256,10 @@ void EditorShadowMapDebugWidget::RenderVizPass(
 
 // ============================================================
 
-void EditorShadowMapDebugWidget::Render(float DeltaTime)
+void EditorShadowMapDebugWidget::Render(const FEditorPanelContext& Context)
 {
+	(void)Context;
+
 	if (!ImGui::Begin("Shadow Map Debug"))
 	{
 		ImGui::End();

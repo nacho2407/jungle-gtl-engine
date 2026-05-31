@@ -1,11 +1,12 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 
-class EditorProjectSettingsWidget
+class EditorProjectSettingsWidget : public FEditorPanelWidget
 {
 public:
-	void Render();
+	void Render(const FEditorPanelContext& Context) override;
 
 	bool bOpen = false;
 };

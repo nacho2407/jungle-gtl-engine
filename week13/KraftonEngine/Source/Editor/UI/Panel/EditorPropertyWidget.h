@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 #include "Object/Object.h"
 #include "Asset/AssetRegistry.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
@@ -8,10 +8,10 @@
 class UActorComponent;
 class AActor;
 
-class FEditorPropertyWidget : public FEditorWidget
+class FEditorPropertyWidget : public FEditorPanelWidget
 {
 public:
-	virtual void Render(float DeltaTime) override;
+	virtual void Render(const FEditorPanelContext& Context) override;
 
 private:
 	void RenameActor(AActor* PrimaryActor);

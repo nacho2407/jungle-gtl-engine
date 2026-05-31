@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 #include "Core/Types/CoreTypes.h"
 
-class FEditorSceneWidget : public FEditorWidget
+class FEditorSceneWidget : public FEditorPanelWidget
 {
 public:
 	virtual void Initialize(UEditorEngine* InEditorEngine) override;
-	virtual void Render(float DeltaTime) override;
+	virtual void Render(const FEditorPanelContext& Context) override;
 	void SetShowEditorOnlyComponents(bool bEnable) { bShowEditorOnlyComponents = bEnable; }
 	bool IsShowingEditorOnlyComponents() const { return bShowEditorOnlyComponents; }
 

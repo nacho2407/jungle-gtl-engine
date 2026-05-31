@@ -1,12 +1,12 @@
 #pragma once
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 #include "ContentItem.h"
 #include <d3d11.h>
 #include <memory>
 #include "ContentBrowserContext.h"
 #include "ContentBrowserElement.h"
 
-class FEditorContentBrowserWidget final : public FEditorWidget
+class FEditorContentBrowserWidget final : public FEditorPanelWidget
 {
 	struct FDirNode
 	{
@@ -16,7 +16,7 @@ class FEditorContentBrowserWidget final : public FEditorWidget
 
 public:
 	void Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice);
-	void Render(float DeltaTime) override;
+	void Render(const FEditorPanelContext& Context) override;
 	void Refresh();
 	void SaveToSettings() const;
 	void SetIconSize(float Size);

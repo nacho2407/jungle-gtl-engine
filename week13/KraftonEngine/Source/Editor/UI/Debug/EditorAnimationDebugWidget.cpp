@@ -154,8 +154,10 @@ namespace
 	}
 }
 
-void FEditorAnimationDebugWidget::Render(float /*DeltaTime*/)
+void FEditorAnimationDebugWidget::Render(const FEditorPanelContext& Context)
 {
+	(void)Context;
+
 	ImGui::SetNextWindowSize(ImVec2(420.0f, 540.0f), ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("Animation Debug"))
 	{

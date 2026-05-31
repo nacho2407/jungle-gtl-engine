@@ -1,15 +1,15 @@
 #pragma once
 
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 #include "Render/Resource/Buffer.h"
 #include "Render/Types/RenderConstants.h"
 #include <d3d11.h>
 
-class EditorShadowMapDebugWidget : public FEditorWidget
+class EditorShadowMapDebugWidget : public FEditorPanelWidget
 {
 public:
 	virtual ~EditorShadowMapDebugWidget() override { ReleaseVizRT(); }
-	virtual void Render(float DeltaTime) override;
+	virtual void Render(const FEditorPanelContext& Context) override;
 
 private:
 	// 0=CSM(t21), 1=SpotAtlas(t22), 2=PointAtlas(t23)

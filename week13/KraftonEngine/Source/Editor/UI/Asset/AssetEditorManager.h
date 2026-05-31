@@ -27,7 +27,7 @@ public:
 	}
 
 	void Tick(float DeltaTime);
-	void Render(float DeltaTime);
+	void Render(const FEditorPanelContext& Context);
 
 	void CloseAll();
 	bool OpenEditorForObject(UObject* Object);

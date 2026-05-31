@@ -2,6 +2,7 @@
 
 #include "Editor/UI/Panel/EditorConsoleWidget.h"
 #include "Editor/UI/Panel/EditorControlWidget.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/UI/Panel/EditorPropertyWidget.h"
 #include "Editor/UI/Panel/EditorSceneWidget.h"
@@ -10,7 +11,7 @@
 #include "Editor/UI/Debug/EditorAnimationDebugWidget.h"
 #include "Editor/UI/Panel/EditorProjectSettingsWidget.h"
 #include "Editor/UI/Panel/EditorWorldSettingsWidget.h"
-#include "Editor/UI/ContentBrowser/ContentBrowser.h"
+#include "Editor/UI/Panel/ContentBrowser/ContentBrowser.h"
 #include "Editor/UI/Asset/AssetEditorManager.h"
 #include "Math/Vector.h"
 
@@ -66,6 +67,7 @@ private:
 	EditorProjectSettingsWidget ProjectSettingsWidget;
 	EditorWorldSettingsWidget WorldSettingsWidget;
 	FAssetEditorManager AssetEditorManager;
+	FEditorPanelContext PanelContext;
 
 	bool bShowWidgetList = false;
 	bool bShowShortcutOverlay = false;

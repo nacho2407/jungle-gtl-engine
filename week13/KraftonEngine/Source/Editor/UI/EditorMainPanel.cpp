@@ -95,7 +95,9 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ContentBrowserWidget.Initialize(InEditorEngine, InRenderer.GetFD3DDevice().GetDevice());
 	ShadowMapDebugWidget.Initialize(InEditorEngine);
 	AnimationDebugWidget.Initialize(InEditorEngine);
-    AssetEditorManager.Initialize(InEditorEngine);
+	ProjectSettingsWidget.Initialize(InEditorEngine);
+	WorldSettingsWidget.Initialize(InEditorEngine);
+	AssetEditorManager.Initialize(InEditorEngine);
     
 	AssetEditorManager.RegisterEditor<FFloatCurveEditorWidget>();
 	AssetEditorManager.RegisterEditor<FCameraShakeEditorWidget>();
@@ -150,6 +152,10 @@ void FEditorMainPanel::Render(float DeltaTime)
 	}
 
 	const FEditorSettings& Settings = FEditorSettings::Get();
+	PanelContext.EditorEngine = EditorEngine;
+	PanelContext.DeltaTime = DeltaTime;
+	PanelContext.Settings = &Settings;
+	PanelContext.bHideEditorWindows = bHideEditorWindows;
 
 	if (!bHideEditorWindows && Settings.UI.bImGUISettings)
 	{
@@ -159,52 +165,52 @@ void FEditorMainPanel::Render(float DeltaTime)
 	if (!bHideEditorWindows && Settings.UI.bControl)
 	{
 		SCOPE_STAT_CAT("ControlWidget.Render", "5_UI");
-		ControlWidget.Render(DeltaTime);
+		ControlWidget.Render(PanelContext);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bProperty)
 	{
 		SCOPE_STAT_CAT("PropertyWidget.Render", "5_UI");
-		PropertyWidget.Render(DeltaTime);
+		PropertyWidget.Render(PanelContext);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bScene)
 	{
 		SCOPE_STAT_CAT("SceneWidget.Render", "5_UI");
-		SceneWidget.Render(DeltaTime);
+		SceneWidget.Render(PanelContext);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bStat)
 	{
 		SCOPE_STAT_CAT("StatWidget.Render", "5_UI");
-		StatWidget.Render(DeltaTime);
+		StatWidget.Render(PanelContext);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bConsole)
 	{
 		SCOPE_STAT_CAT("ConsoleWidget.Render", "5_UI");
-		ConsoleWidget.Render(DeltaTime);
+		ConsoleWidget.Render(PanelContext);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bContentBrowser)
 	{
 		SCOPE_STAT_CAT("ContentBrowserWidget.Render", "5_UI");
-		ContentBrowserWidget.Render(DeltaTime);
+		ContentBrowserWidget.Render(PanelContext);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bShadowMapDebug)
 	{
-		ShadowMapDebugWidget.Render(DeltaTime);
+		ShadowMapDebugWidget.Render(PanelContext);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bAnimationDebug)
 	{
 		SCOPE_STAT_CAT("AnimationDebugWidget.Render", "5_UI");
-		AnimationDebugWidget.Render(DeltaTime);
+		AnimationDebugWidget.Render(PanelContext);
 	}
 
-	ProjectSettingsWidget.Render();
-	WorldSettingsWidget.Render();
+	ProjectSettingsWidget.Render(PanelContext);
+	WorldSettingsWidget.Render(PanelContext);
 
 	if (!bHideEditorWindows)
 	{
@@ -214,7 +220,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 	RenderShortcutOverlay();
 	RenderFooterOverlay(DeltaTime);
 
-	AssetEditorManager.Render(DeltaTime);
+	AssetEditorManager.Render(PanelContext);
 
 	// 토스트 알림 (항상 최상위에 표시)
 	FNotificationToast::Render();
