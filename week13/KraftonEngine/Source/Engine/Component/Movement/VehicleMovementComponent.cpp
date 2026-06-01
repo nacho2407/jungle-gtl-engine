@@ -1,6 +1,7 @@
 ﻿#include "VehicleMovementComponent.h"
 
 #include "Component/PrimitiveComponent.h"
+#include "Component/Primitive/WheelMeshComponent.h"
 #include "Debug/DrawDebugHelpers.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -190,6 +191,7 @@ void UVehicleMovementComponent::AddReferencedObjects(FReferenceCollector& Collec
 {
 	Super::AddReferencedObjects(Collector);
 	Collector.AddReferencedObjects(WheelSceneComponents, "UVehicleMovementComponent.WheelSceneComponents");
+	Collector.AddReferencedObjects(WheelMeshComponents, "UVehicleMovementComponent.WheelMeshComponents");
 }
 
 void UVehicleMovementComponent::SetWheelSceneComponents(const TArray<USceneComponent*>& InWheelSceneComponents)
@@ -200,6 +202,17 @@ void UVehicleMovementComponent::SetWheelSceneComponents(const TArray<USceneCompo
 	for (USceneComponent* WheelComponent : InWheelSceneComponents)
 	{
 		WheelSceneComponents.push_back(WheelComponent);
+	}
+}
+
+void UVehicleMovementComponent::SetWheelMeshComponents(const TArray<UWheelMeshComponent*>& InWheelMeshComponents)
+{
+	WheelMeshComponents.clear();
+	WheelMeshComponents.reserve(InWheelMeshComponents.size());
+
+	for (UWheelMeshComponent* WheelMeshComponent : InWheelMeshComponents)
+	{
+		WheelMeshComponents.push_back(WheelMeshComponent);
 	}
 }
 
@@ -416,6 +429,7 @@ void UVehicleMovementComponent::ApplyKeyboardInput(float DeltaTime)
 	PxVehicleDrive4WRawInputData RawInput;
 	RawInput.setDigitalSteerLeft(Input.GetKey('A'));
 	RawInput.setDigitalSteerRight(Input.GetKey('D'));
+	RawInput.setDigitalHandbrake(Input.GetKey(VK_SPACE));
 
 	if (bReversePressed && ForwardSpeed < 0.5f)
 	{
@@ -456,6 +470,19 @@ void UVehicleMovementComponent::UpdateWheelVisuals()
 		}
 
 		WheelComponent->SetRelativeTransform(ToFTransform(WheelQueryResults[WheelIndex].localPose));
+	}
+
+	const size_t MeshCount = std::min<size_t>(WheelMeshComponents.size(), VehicleWheelCount);
+	for (size_t WheelIndex = 0; WheelIndex < MeshCount; ++WheelIndex)
+	{
+		UWheelMeshComponent* WheelMeshComponent = WheelMeshComponents[WheelIndex].GetValid();
+		if (!WheelMeshComponent)
+		{
+			continue;
+		}
+
+		const PxWheelQueryResult& Query = WheelQueryResults[WheelIndex];
+		WheelMeshComponent->SetSuspensionLoad(Query.suspSpringForce, ToFVector(Query.tireContactNormal), WheelRadius, Query.isInAir);
 	}
 }
 

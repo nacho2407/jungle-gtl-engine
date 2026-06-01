@@ -7,6 +7,7 @@
 class UBoxComponent;
 class USceneComponent;
 class UStaticMeshComponent;
+class UWheelMeshComponent;
 class UVehicleMovementComponent;
 
 UCLASS()
@@ -35,6 +36,6 @@ private:
 	UBoxComponent* ChassisCollision = nullptr;
 	UStaticMeshComponent* ChassisMesh = nullptr;
 	USceneComponent* WheelPivots[4] = {};
-	UStaticMeshComponent* WheelMeshes[4] = {};
+	UWheelMeshComponent* WheelMeshes[4] = {};
 	UVehicleMovementComponent* VehicleMovementComponent = nullptr;
 };

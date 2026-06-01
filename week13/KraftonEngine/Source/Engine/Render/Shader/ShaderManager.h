@@ -195,6 +195,7 @@ namespace EUberLitDefines
 	namespace EntryPoint
 	{
 		inline constexpr const char* StaticMeshVS = "VS_StaticMesh";
+		inline constexpr const char* WheelMeshVS = "VS_WheelMesh";
 		inline constexpr const char* SkeletalMeshVS = "VS_SkeletalMesh";
 		inline constexpr const char* PS = "PS";
 	}
@@ -211,6 +212,7 @@ namespace EUberLitDefines
 	enum class EVertexFactory : uint8
 	{
 		StaticMesh,
+		WheelMesh,
 		SkeletalMesh,
 	};
 
@@ -278,7 +280,9 @@ namespace EUberLitDefines
 	{
 		const char* VSEntryPoint = VertexFactory == EVertexFactory::SkeletalMesh
 			? EntryPoint::SkeletalMeshVS
-			: EntryPoint::StaticMeshVS;
+			: VertexFactory == EVertexFactory::WheelMesh
+				? EntryPoint::WheelMeshVS
+				: EntryPoint::StaticMeshVS;
 		return FShaderKey(EShaderPath::UberLit, GetDefines(LightingModel, VertexFactory, bWeightBoneHeatMap, bFog), VSEntryPoint, EntryPoint::PS);
 	}
 }
