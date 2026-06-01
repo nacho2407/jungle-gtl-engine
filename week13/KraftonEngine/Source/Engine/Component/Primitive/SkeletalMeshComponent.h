@@ -17,6 +17,14 @@ class UAnimSequenceBase;
 class UClass;
 class ULuaAnimInstance;
 
+UENUM()
+enum class ERagdollSelfCollisionMode : uint8
+{
+    DisableAll,
+    DisableParentChild,
+    EnableAll
+};
+
 // SkeletalMesh 전용 render proxy만 제공하는 얇은 wrapper.
 // Skinning/bone/material/bounds 상태는 모두 USkinnedMeshComponent가 소유한다.
 UCLASS()
@@ -124,25 +132,33 @@ private:
 
     // 이 부분은 전부 아마 Asset에 Constraint관련 정보가 포함되면 변경될 함수들
     // 현재 임시용 함수라 보면 될듯. 완성형 X
-    UPhysicsAsset* GetPhysicsAssetForRagdoll() const;
+    UPhysicsAsset* GetPhysicsAssetForRagdoll();
+    bool ValidatePhysicsAssetForRagdoll(UPhysicsAsset* PhysicsAsset, const FSkeletalMesh* Asset) const;
+
+    void EnableRagdollPhysics();
+    void DisableRagdollPhysics();
+    void SetAllRagdollBodiesKinematic(bool bInKinematic);
+    void SetAllRagdollBodiesGravityEnabled(bool bEnableGravity);
+    void SyncComponentToRagdollBody();
+    FBodyInstance* FindRagdollComponentSyncBody() const;
+    void CaptureRagdollComponentSyncOffset();
+    void ClearRagdollComponentSyncState();
 
     bool CreateRagdollBodiesFromPhysicsAsset();
     bool CreateRagdollConstraintsFromPhysicsAsset();
 
+    bool ShouldRagdollIgnoreSameOwner() const;
+    bool ShouldRagdollConstraintEnableCollision() const;
+
     bool BuildBodyInstanceInitDescFromBodySetup( const UBodySetup* BodySetup, int32 BoneIndex, const TArray<FMatrix>& BoneGlobals, FBodyInstanceInitDesc& OutDesc) const;
 
+    void DestroyRagdollConstraints();
     void DestroyRagdollBodies();
     void SyncBonesFromRagdollBodies();
 
     FBodyInstance* FindRagdollBodyByBoneIndex(int32 BoneIndex) const;
     FBodyInstance* FindRagdollBodyByBoneName(FName BoneName) const;
     int32 FindBoneIndexByName(FName BoneName) const;
-
-    float EstimateRagdollRadiusFromChildren(
-        const FSkeletalMesh& Asset,
-        int32 BoneIndex,
-        const TArray<FMatrix>& Globals
-    );
 
 protected:
     // Animation 런타임 상태.
@@ -161,9 +177,16 @@ protected:
 
     UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Enable Ragdoll")
     bool bRagdollEnabled = false;
+    UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Create Ragdoll Constraints")
+    bool bCreateRagdollConstraints = true;
+    UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Self Collision Mode", Enum=ERagdollSelfCollisionMode)
+    ERagdollSelfCollisionMode RagdollSelfCollisionMode = ERagdollSelfCollisionMode::DisableParentChild;
 
     //Ragdoll runtime state
     TArray<FBodyInstance*> Bodies;
     TArray<FConstraintInstance*> Constraints;
     bool bRagdollActive = false;
+    int32 RagdollComponentSyncBoneIndex = -1;
+    FVector RagdollComponentSyncLocalOffset = FVector::ZeroVector;
+    bool bHasRagdollComponentSyncOffset = false;
 };

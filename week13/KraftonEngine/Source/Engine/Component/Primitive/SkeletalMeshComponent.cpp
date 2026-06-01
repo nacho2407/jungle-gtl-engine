@@ -22,6 +22,7 @@
 #include "Serialization/Archive.h"
 #include "GameFramework/World.h"
 #include "Physics/IPhysicsScene.h"
+#include "PhysicsEngine/PhysicsAssetManager.h"
 
 
 #include <algorithm>
@@ -31,38 +32,33 @@
 
 namespace
 {
-    float EstimateRagdollRadiusFromChildren(
-        const FSkeletalMesh& Asset,
-        int32 BoneIndex,
-        const TArray<FMatrix>& Globals
-    )
+    bool ShouldCreateRagdollShape(const FKShapeElem& ShapeElem)
     {
-        float MaxChildDist = 0.0f;
-        const FVector BonePos = Globals[BoneIndex].GetLocation();
+        return ShapeElem.GetCollisionEnabled() != ECollisionEnabled::NoCollision;
+    }
 
-        for (int32 ChildIndex = 0; ChildIndex < static_cast<int32>(Asset.Bones.size()); ++ChildIndex)
-        {
-            if (Asset.Bones[ChildIndex].ParentIndex != BoneIndex)
-            {
-                continue;
-            }
+    FTransform NormalizeConstraintFrame(FTransform Frame)
+    {
+        Frame.Scale = FVector::OneVector;
+        Frame.Rotation.Normalize();
+        return Frame;
+    }
 
-            const float Dist = FVector::Distance(BonePos, Globals[ChildIndex].GetLocation());
-            MaxChildDist = std::max(MaxChildDist, Dist);
-        }
+    FTransform MakeConstraintFrameLocal(const FTransform& JointWorld, const FTransform& BodyWorld)
+    {
+        FTransform LocalFrame = FTransform::FromMatrixWithScale(
+            JointWorld.ToMatrix() * BodyWorld.ToMatrix().GetAffineInverse()
+        );
 
-        if (MaxChildDist <= 0.0f)
-        {
-            return 8.0f;
-        }
-
-        return std::max(4.0f, std::min(MaxChildDist * 0.20f, 18.0f));
+        return NormalizeConstraintFrame(LocalFrame);
     }
 }
 
 USkeletalMeshComponent::~USkeletalMeshComponent()
 {
+    DestroyRagdollConstraints();
     DestroyRagdollBodies();
+    ClearRagdollComponentSyncState();
     ClearAnimInstance();
 }
 
@@ -226,36 +222,201 @@ UAnimSingleNodeInstance* USkeletalMeshComponent::GetAnimNodeInstance(FName NodeN
 
 void USkeletalMeshComponent::SetRagdollEnabled(bool bEnabled)
 {
-    if (bRagdollActive == bEnabled)
+    if (bEnabled) EnableRagdollPhysics();
+    else DisableRagdollPhysics();
+}
+
+void USkeletalMeshComponent::EnableRagdollPhysics()
+{
+    if (bRagdollActive)
     {
-        bRagdollEnabled = bEnabled;
+        bRagdollEnabled = true;
         return;
     }
 
-    if (!bEnabled)
-    {
-        DestroyRagdollBodies();
-        bRagdollActive = false;
-        bRagdollEnabled = false;
-        return;
-    }
-
+    DestroyRagdollConstraints();
     DestroyRagdollBodies();
 
     if (!CreateRagdollBodiesFromPhysicsAsset())
     {
+        DestroyRagdollConstraints();
         DestroyRagdollBodies();
         bRagdollActive = false;
         bRagdollEnabled = false;
+        ClearRagdollComponentSyncState();
+        UE_LOG("EnableRagdollPhysics failed: could not create ragdoll bodies");
         return;
     }
 
-    CreateRagdollConstraintsFromPhysicsAsset();
+    SetAllRagdollBodiesKinematic(false);
+    SetAllRagdollBodiesGravityEnabled(true);
+
+    if (bCreateRagdollConstraints && !CreateRagdollConstraintsFromPhysicsAsset())
+    {
+        UE_LOG("EnableRagdollPhysics warning: no ragdoll constraints created");
+    }
+
+    CaptureRagdollComponentSyncOffset();
 
     bRagdollActive = true;
     bRagdollEnabled = true;
 
     WakeAllRagdollBodies();
+
+    UE_LOG("Ragdoll enabled: Bodies=%zu Constraints=%zu", Bodies.size(), Constraints.size());
+}
+
+void USkeletalMeshComponent::DisableRagdollPhysics()
+{
+    if (!bRagdollActive && !bRagdollEnabled && Bodies.empty() && Constraints.empty())
+    {
+        ClearRagdollComponentSyncState();
+        return;
+    }
+
+    bRagdollActive = false;
+    bRagdollEnabled = false;
+
+    DestroyRagdollConstraints();
+    DestroyRagdollBodies();
+    ClearRagdollComponentSyncState();
+
+    UE_LOG("Ragdoll disabled");
+}
+
+void USkeletalMeshComponent::SetAllRagdollBodiesKinematic(bool bInKinematic)
+{
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (!Body || !Body->IsValidBodyInstance()) continue;
+
+        Body->SetKinematic(bInKinematic);
+
+        UE_LOG("Ragdoll body state: Bone=%s Kinematic=%d",
+            Body->BoneName.ToString().c_str(),
+            bInKinematic ? 1 : 0);
+    }
+}
+
+void USkeletalMeshComponent::SetAllRagdollBodiesGravityEnabled(bool bEnableGravity)
+{
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (!Body || !Body->IsValidBodyInstance()) continue;
+
+        Body->SetGravityEnabled(bEnableGravity);
+    }
+}
+
+void USkeletalMeshComponent::SyncComponentToRagdollBody()
+{
+    if (!bHasRagdollComponentSyncOffset) return;
+
+    FBodyInstance* SyncBody = FindRagdollComponentSyncBody();
+    if (!SyncBody || !SyncBody->IsValidBodyInstance()) return;
+
+    const FTransform BodyWorldTransform = SyncBody->GetBodyTransform();
+    const FVector BodyWorldLocation = BodyWorldTransform.Location;
+
+    FMatrix ComponentWorldNoTranslation = GetWorldMatrix();
+    ComponentWorldNoTranslation.SetLocation(FVector::ZeroVector);
+
+    const FVector WorldOffset = RagdollComponentSyncLocalOffset * ComponentWorldNoTranslation;
+    const FVector NewComponentWorldLocation = BodyWorldLocation - WorldOffset;
+
+    SetWorldLocation(NewComponentWorldLocation);
+}
+
+FBodyInstance* USkeletalMeshComponent::FindRagdollComponentSyncBody() const
+{
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+
+    if (!Asset || Bodies.empty()) return nullptr;
+
+    if (RagdollComponentSyncBoneIndex >= 0)
+    {
+        if (FBodyInstance* CachedBody = FindRagdollBodyByBoneIndex(RagdollComponentSyncBoneIndex))
+        {
+            return CachedBody;
+        }
+    }
+
+    FBodyInstance* BestBody = nullptr;
+    int32 BestDepth = 2147483647;
+
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (!Body || !Body->IsValidBodyInstance())
+        {
+            continue;
+        }
+
+        const int32 BoneIndex = Body->BoneIndex;
+        if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
+        {
+            continue;
+        }
+
+        int32 Depth = 0;
+        int32 ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
+        bool bHasRagdollParent = false;
+
+        while (ParentIndex >= 0 && ParentIndex < static_cast<int32>(Asset->Bones.size()))
+        {
+            ++Depth;
+
+            if (FindRagdollBodyByBoneIndex(ParentIndex))
+            {
+                bHasRagdollParent = true;
+                break;
+            }
+
+            ParentIndex = Asset->Bones[ParentIndex].ParentIndex;
+        }
+
+        if (!bHasRagdollParent && (!BestBody || Depth < BestDepth))
+        {
+            BestBody = Body;
+            BestDepth = Depth;
+        }
+    }
+
+    if (BestBody) return BestBody;
+
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (Body && Body->IsValidBodyInstance())
+        {
+            return Body;
+        }
+    }
+
+    return nullptr;
+}
+
+void USkeletalMeshComponent::CaptureRagdollComponentSyncOffset()
+{
+    FBodyInstance* SyncBody = FindRagdollComponentSyncBody();
+    if (!SyncBody || !SyncBody->IsValidBodyInstance())
+    {
+        ClearRagdollComponentSyncState();
+        return;
+    }
+
+    const FMatrix ComponentWorldInv = GetWorldMatrix().GetAffineInverse();
+    const FMatrix BodyComponentMatrix = SyncBody->GetBodyTransform().ToMatrix() * ComponentWorldInv;
+
+    RagdollComponentSyncBoneIndex = SyncBody->BoneIndex;
+    RagdollComponentSyncLocalOffset = BodyComponentMatrix.GetLocation();
+    bHasRagdollComponentSyncOffset = true;
+}
+
+void USkeletalMeshComponent::ClearRagdollComponentSyncState()
+{
+    RagdollComponentSyncBoneIndex = -1;
+    RagdollComponentSyncLocalOffset = FVector::ZeroVector;
+    bHasRagdollComponentSyncOffset = false;
 }
 
 void USkeletalMeshComponent::WakeAllRagdollBodies()
@@ -328,12 +489,109 @@ void USkeletalMeshComponent::ApplyPersistentAnimInstanceSettings(UAnimInstance* 
     }
 }
 
-UPhysicsAsset* USkeletalMeshComponent::GetPhysicsAssetForRagdoll() const
+UPhysicsAsset* USkeletalMeshComponent::GetPhysicsAssetForRagdoll()
 {
     USkeletalMesh* Mesh = GetSkeletalMesh();
-    if (!Mesh) return nullptr;
+    if (!Mesh)
+    {
+        return nullptr;
+    }
 
-    return Mesh->GetPhysicsAsset();
+    if (UPhysicsAsset* PhysicsAsset = Mesh->GetPhysicsAsset())
+    {
+        return PhysicsAsset;
+    }
+
+    const FString& PhysicsAssetPath = Mesh->GetPhysicsAssetPath();
+    if (!PhysicsAssetPath.empty() && PhysicsAssetPath != "None")
+    {
+        if (UPhysicsAsset* LoadedPhysicsAsset = FPhysicsAssetManager::Get().Load(PhysicsAssetPath, Mesh))
+        {
+            Mesh->SetPhysicsAsset(LoadedPhysicsAsset);
+            return LoadedPhysicsAsset;
+        }
+    }
+
+    return nullptr;
+}
+
+bool USkeletalMeshComponent::ValidatePhysicsAssetForRagdoll(UPhysicsAsset* PhysicsAsset, const FSkeletalMesh* Asset) const
+{
+    if (!PhysicsAsset)
+    {
+        UE_LOG("Ragdoll validation failed: PhysicsAsset is null");
+        return false;
+    }
+
+    if (!Asset || Asset->Bones.empty())
+    {
+        UE_LOG("Ragdoll validation failed: SkeletalMesh asset or bones are empty");
+        return false;
+    }
+
+    const TArray<UBodySetup*>& BodySetups = PhysicsAsset->GetBodySetups();
+    if (BodySetups.empty())
+    {
+        UE_LOG("Ragdoll validation failed: PhysicsAsset has no BodySetups");
+        return false;
+    }
+
+    bool bHasValidBody = false;
+
+    for (const UBodySetup* BodySetup : BodySetups)
+    {
+        if (!BodySetup)
+        {
+            continue;
+        }
+
+        const int32 BoneIndex = FindBoneIndexByName(BodySetup->BoneName);
+        if (BoneIndex < 0)
+        {
+            UE_LOG("Ragdoll validation warning: BodySetup bone not found. Bone=%s",
+                BodySetup->BoneName.ToString().c_str());
+            continue;
+        }
+
+        if (BodySetup->CollisionReponse == EBodyCollisionResponse::BodyCollision_Disabled)
+        {
+            UE_LOG("Ragdoll validation warning: Body collision disabled. Bone=%s",
+                BodySetup->BoneName.ToString().c_str());
+            continue;
+        }
+
+        const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
+        bool bHasShape = false;
+        for (const FKSphereElem& Sphere : AggGeom.SphereElems)
+        {
+            bHasShape = bHasShape || ShouldCreateRagdollShape(Sphere);
+        }
+        for (const FKBoxElem& Box : AggGeom.BoxElems)
+        {
+            bHasShape = bHasShape || ShouldCreateRagdollShape(Box);
+        }
+        for (const FKSphylElem& Sphyl : AggGeom.SphylElems)
+        {
+            bHasShape = bHasShape || ShouldCreateRagdollShape(Sphyl);
+        }
+
+        if (!bHasShape)
+        {
+            UE_LOG("Ragdoll validation warning: BodySetup has no enabled simple shape. Bone=%s",
+                BodySetup->BoneName.ToString().c_str());
+            continue;
+        }
+
+        bHasValidBody = true;
+    }
+
+    if (!bHasValidBody)
+    {
+        UE_LOG("Ragdoll validation failed: no valid body found in PhysicsAsset");
+        return false;
+    }
+
+    return true;
 }
 
 bool USkeletalMeshComponent::CreateRagdollBodiesFromPhysicsAsset()
@@ -341,7 +599,10 @@ bool USkeletalMeshComponent::CreateRagdollBodiesFromPhysicsAsset()
     USkeletalMesh* Mesh = GetSkeletalMesh();
     FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
     UPhysicsAsset* PhysicsAsset = GetPhysicsAssetForRagdoll();
-    if (!Asset || !PhysicsAsset) return false;
+    if (!ValidatePhysicsAssetForRagdoll(PhysicsAsset, Asset))
+    {
+        return false;
+    }
 
     UWorld* World = GetWorld();
     IPhysicsScene* PhysicsScene = World ? World->GetPhysicsScene() : nullptr;
@@ -349,17 +610,33 @@ bool USkeletalMeshComponent::CreateRagdollBodiesFromPhysicsAsset()
 
     TArray<FMatrix> BoneGlobals;
     GetCurrentBoneGlobalMatrices(BoneGlobals);
+    const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
     if (BoneGlobals.size() != Asset->Bones.size()) return false;
 
     const TArray<UBodySetup*>& BodySetups = PhysicsAsset->GetBodySetups();
     Bodies.reserve(BodySetups.size());
+
+    TArray<bool> bCreatedBoneBodies;
+    bCreatedBoneBodies.resize(BoneCount, false);
 
     for (UBodySetup* BodySetup : BodySetups)
     {
         if (!BodySetup) continue;
 
         const int32 BoneIndex = FindBoneIndexByName(BodySetup->BoneName);
-        if (BoneIndex < 0) continue;
+        if (BoneIndex < 0 || BoneIndex >= BoneCount)
+        {
+            UE_LOG("Ragdoll body skipped: invalid bone. Bone=%s",
+                BodySetup->BoneName.ToString().c_str());
+            continue;
+        }
+
+        if (bCreatedBoneBodies[BoneIndex])
+        {
+            UE_LOG("Ragdoll body skipped: duplicate body for bone. Bone=%s",
+                BodySetup->BoneName.ToString().c_str());
+            continue;
+        }
 
         FBodyInstance* Body = new FBodyInstance();
         Body->OwnerComponent = nullptr;
@@ -377,11 +654,26 @@ bool USkeletalMeshComponent::CreateRagdollBodiesFromPhysicsAsset()
         if (PhysicsScene->CreateBodyInstance(*Body, Desc))
         {
             Bodies.push_back(Body);
+            bCreatedBoneBodies[BoneIndex] = true;
         }
         else
         {
             delete Body;
         }
+    }
+
+    UE_LOG("Ragdoll bodies created: %zu", Bodies.size());
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (!Body)
+        {
+            continue;
+        }
+
+        UE_LOG("Ragdoll Body: Bone=%s Index=%d Valid=%d",
+            Body->BoneName.ToString().c_str(),
+            Body->BoneIndex,
+            Body->IsValidBodyInstance() ? 1 : 0);
     }
 
     return !Bodies.empty();
@@ -394,16 +686,50 @@ bool USkeletalMeshComponent::CreateRagdollConstraintsFromPhysicsAsset()
     UWorld* World = GetWorld();
     IPhysicsScene* PhysicsScene = World ? World->GetPhysicsScene() : nullptr;
 
-    if (!PhysicsAsset || !PhysicsScene) return false;
+    if (!PhysicsAsset || !PhysicsScene)
+    {
+        return false;
+    }
+
+    const TArray<FConstraintInstanceInitDesc>& InitDescs = PhysicsAsset->GetConstraintInitDescs();
+    if (InitDescs.empty())
+    {
+        UE_LOG("Ragdoll constraint failed: PhysicsAsset has no ConstraintInitDescs.");
+        return false;
+    }
 
     bool bCreatedAny = false;
 
-    for (const FConstraintInstanceInitDesc& InitDesc : PhysicsAsset->GetConstraintInitDescs())
+    for (const FConstraintInstanceInitDesc& InitDesc : InitDescs)
     {
+        if (InitDesc.ParentBoneName == FName::None ||
+            InitDesc.ChildBoneName == FName::None ||
+            InitDesc.ParentBoneName == InitDesc.ChildBoneName)
+        {
+            UE_LOG("Ragdoll constraint skipped: invalid bone pair. Parent=%s Child=%s",
+                InitDesc.ParentBoneName.ToString().c_str(),
+                InitDesc.ChildBoneName.ToString().c_str());
+            continue;
+        }
+
         FBodyInstance* ParentBody = FindRagdollBodyByBoneName(InitDesc.ParentBoneName);
         FBodyInstance* ChildBody = FindRagdollBodyByBoneName(InitDesc.ChildBoneName);
 
-        if (!ParentBody || !ChildBody) continue;
+        if (!ParentBody || !ChildBody)
+        {
+            UE_LOG("Ragdoll constraint skipped: missing body. Parent=%s Child=%s",
+                InitDesc.ParentBoneName.ToString().c_str(),
+                InitDesc.ChildBoneName.ToString().c_str());
+            continue;
+        }
+
+        if (!ParentBody->IsValidBodyInstance() || !ChildBody->IsValidBodyInstance())
+        {
+            UE_LOG("Ragdoll constraint skipped: invalid body instance. Parent=%s Child=%s",
+                InitDesc.ParentBoneName.ToString().c_str(),
+                InitDesc.ChildBoneName.ToString().c_str());
+            continue;
+        }
 
         FConstraintInstance* Constraint = new FConstraintInstance();
 
@@ -413,33 +739,72 @@ bool USkeletalMeshComponent::CreateRagdollConstraintsFromPhysicsAsset()
         Constraint->ParentBoneName = InitDesc.ParentBoneName;
         Constraint->ChildBoneName = InitDesc.ChildBoneName;
 
-        Constraint->ParentFrame = InitDesc.ParentFrame;
-        Constraint->ChildFrame = InitDesc.ChildFrame;
+        Constraint->ParentFrame = NormalizeConstraintFrame(InitDesc.ParentFrame);
+        Constraint->ChildFrame = NormalizeConstraintFrame(InitDesc.ChildFrame);
 
         Constraint->TwistLimitDegrees = InitDesc.TwistLimitDegrees;
         Constraint->Swing1LimitDegrees = InitDesc.Swing1LimitDegrees;
         Constraint->Swing2LimitDegrees = InitDesc.Swing2LimitDegrees;
-
-        Constraint->bEnableCollision = InitDesc.bEnableCollision;
+        Constraint->bEnableProjection = InitDesc.bEnableProjection;
+        Constraint->ProjectionLinearTolerance = InitDesc.ProjectionLinearTolerance;
+        Constraint->ProjectionAngularToleranceDegrees = InitDesc.ProjectionAngularToleranceDegrees;
+        Constraint->bEnableCollision = ShouldRagdollConstraintEnableCollision();
 
         if (PhysicsScene->CreateConstraintInstance(*Constraint))
         {
             Constraints.push_back(Constraint);
             bCreatedAny = true;
+
+            UE_LOG("Ragdoll constraint created: Parent=%s Child=%s",
+                Constraint->ParentBoneName.ToString().c_str(),
+                Constraint->ChildBoneName.ToString().c_str());
         }
         else
         {
+            UE_LOG("Ragdoll constraint failed: Parent=%s Child=%s",
+                Constraint->ParentBoneName.ToString().c_str(),
+                Constraint->ChildBoneName.ToString().c_str());
+
             delete Constraint;
         }
     }
 
+    UE_LOG("Ragdoll constraints created: %zu", Constraints.size());
+
     return bCreatedAny;
+}
+
+bool USkeletalMeshComponent::ShouldRagdollIgnoreSameOwner() const
+{
+    return RagdollSelfCollisionMode == ERagdollSelfCollisionMode::DisableAll;
+}
+
+bool USkeletalMeshComponent::ShouldRagdollConstraintEnableCollision() const
+{
+    return RagdollSelfCollisionMode == ERagdollSelfCollisionMode::EnableAll;
 }
 
 bool USkeletalMeshComponent::BuildBodyInstanceInitDescFromBodySetup( const UBodySetup* BodySetup, int32 BoneIndex, const TArray<FMatrix>& BoneGlobals, FBodyInstanceInitDesc& OutDesc) const
 {
     if (!BodySetup) return false;
     if (BodySetup->CollisionReponse == EBodyCollisionResponse::BodyCollision_Disabled) return false;
+
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+    if (!Asset)
+    {
+        return false;
+    }
+
+    if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size()))
+    {
+        return false;
+    }
+
+    if (BoneIndex >= static_cast<int32>(BoneGlobals.size()))
+    {
+        return false;
+    }
 
     OutDesc = FBodyInstanceInitDesc();
 
@@ -456,6 +821,7 @@ bool USkeletalMeshComponent::BuildBodyInstanceInitDescFromBodySetup( const UBody
     OutDesc.CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
     OutDesc.ObjectType = ECollisionChannel::WorldDynamic;
     OutDesc.ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+    OutDesc.bIgnoreSameOwner = ShouldRagdollIgnoreSameOwner();
 
     const FBodySetupPhysicsInfo& PhysicsInfo = BodySetup->GetPhysicsInfo();
     OutDesc.Mass = BodySetup->CalculateMass(BodyScale);
@@ -469,6 +835,11 @@ bool USkeletalMeshComponent::BuildBodyInstanceInitDescFromBodySetup( const UBody
 
     for (const FKSphereElem& Sphere : AggGeom.SphereElems)
     {
+        if (!ShouldCreateRagdollShape(Sphere))
+        {
+            continue;
+        }
+
         const FKSphereElem ScaledSphere = Sphere.GetFinalScaled(BodyScale, FTransform());
 
         FBodyShapeDesc Shape;
@@ -481,6 +852,11 @@ bool USkeletalMeshComponent::BuildBodyInstanceInitDescFromBodySetup( const UBody
 
     for (const FKBoxElem& Box : AggGeom.BoxElems)
     {
+        if (!ShouldCreateRagdollShape(Box))
+        {
+            continue;
+        }
+
         const FKBoxElem ScaledBox = Box.GetFinalScaled(BodyScale, FTransform());
 
         FBodyShapeDesc Shape;
@@ -497,6 +873,11 @@ bool USkeletalMeshComponent::BuildBodyInstanceInitDescFromBodySetup( const UBody
 
     for (const FKSphylElem& Sphyl : AggGeom.SphylElems)
     {
+        if (!ShouldCreateRagdollShape(Sphyl))
+        {
+            continue;
+        }
+
         const FKSphylElem ScaledSphyl = Sphyl.GetFinalScaled(BodyScale, FTransform());
 
         FBodyShapeDesc Shape;
@@ -514,10 +895,17 @@ bool USkeletalMeshComponent::BuildBodyInstanceInitDescFromBodySetup( const UBody
         OutDesc.Shapes.push_back(Shape);
     }
 
-    return !OutDesc.Shapes.empty();
+    if (OutDesc.Shapes.empty())
+    {
+        UE_LOG("Ragdoll body skipped: no valid shapes. Bone=%s",
+            BodySetup->BoneName.ToString().c_str());
+        return false;
+    }
+
+    return true;
 }
 
-void USkeletalMeshComponent::DestroyRagdollBodies()
+void USkeletalMeshComponent::DestroyRagdollConstraints()
 {
     UWorld* World = GetWorld();
     IPhysicsScene* PhysicsScene = World ? World->GetPhysicsScene() : nullptr;
@@ -537,6 +925,12 @@ void USkeletalMeshComponent::DestroyRagdollBodies()
         delete Constraint;
     }
     Constraints.clear();
+}
+
+void USkeletalMeshComponent::DestroyRagdollBodies()
+{
+    UWorld* World = GetWorld();
+    IPhysicsScene* PhysicsScene = World ? World->GetPhysicsScene() : nullptr;
 
     for (FBodyInstance* Body : Bodies)
     {
@@ -568,42 +962,10 @@ void USkeletalMeshComponent::SyncBonesFromRagdollBodies()
     const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
 
     TArray<FMatrix> OriginalGlobalMatrices;
-    OriginalGlobalMatrices.resize(BoneCount, FMatrix::Identity);
-
     GetCurrentBoneGlobalMatrices(OriginalGlobalMatrices);
     if (OriginalGlobalMatrices.size() != Asset->Bones.size())
     {
-        OriginalGlobalMatrices.resize(BoneCount, FMatrix::Identity);
-    }
-
-    const FMatrix ComponentWorldInv = GetWorldMatrix().GetAffineInverse();
-
-    TArray<FMatrix> BodyGlobalMatrices;
-    BodyGlobalMatrices.resize(BoneCount, FMatrix::Identity);
-
-    TArray<bool> bHasPhysicsBody;
-    bHasPhysicsBody.resize(BoneCount, false);
-
-    TArray<int32> PhysicsBodyBoneIndices;
-
-    for (FBodyInstance* Body : Bodies)
-    {
-        if (!Body || !Body->IsValidBodyInstance())
-        {
-            continue;
-        }
-
-        if (Body->BoneIndex < 0 || Body->BoneIndex >= BoneCount)
-        {
-            continue;
-        }
-
-        const FMatrix BodyWorld = Body->GetBodyTransform().ToMatrix();
-
-        // world → component local global
-        BodyGlobalMatrices[Body->BoneIndex] = BodyWorld * ComponentWorldInv;
-        bHasPhysicsBody[Body->BoneIndex] = true;
-        PhysicsBodyBoneIndices.push_back(Body->BoneIndex);
+        return;
     }
 
     TArray<FMatrix> OriginalLocalMatrices;
@@ -613,14 +975,44 @@ void USkeletalMeshComponent::SyncBonesFromRagdollBodies()
     {
         const int32 ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
 
-        OriginalLocalMatrices[BoneIndex] = OriginalGlobalMatrices[BoneIndex];
-
         if (ParentIndex >= 0 && ParentIndex < BoneCount)
         {
             OriginalLocalMatrices[BoneIndex] =
                 OriginalGlobalMatrices[BoneIndex] *
                 OriginalGlobalMatrices[ParentIndex].GetAffineInverse();
         }
+        else
+        {
+            OriginalLocalMatrices[BoneIndex] = OriginalGlobalMatrices[BoneIndex];
+        }
+    }
+
+    const FMatrix ComponentWorldInv = GetWorldMatrix().GetAffineInverse();
+
+    TArray<FMatrix> PhysicsGlobalMatrices;
+    PhysicsGlobalMatrices.resize(BoneCount, FMatrix::Identity);
+
+    TArray<bool> bHasPhysicsBody;
+    bHasPhysicsBody.resize(BoneCount, false);
+
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (!Body || !Body->IsValidBodyInstance())
+        {
+            continue;
+        }
+
+        const int32 BoneIndex = Body->BoneIndex;
+        if (BoneIndex < 0 || BoneIndex >= BoneCount)
+        {
+            continue;
+        }
+
+        const FMatrix BodyWorldMatrix = Body->GetBodyTransform().ToMatrix();
+
+        // PhysX world transform -> component-space global bone transform.
+        PhysicsGlobalMatrices[BoneIndex] = BodyWorldMatrix * ComponentWorldInv;
+        bHasPhysicsBody[BoneIndex] = true;
     }
 
     TArray<FMatrix> NewGlobalMatrices;
@@ -635,65 +1027,23 @@ void USkeletalMeshComponent::SyncBonesFromRagdollBodies()
 
         if (bHasPhysicsBody[BoneIndex])
         {
-            NewGlobalMatrices[BoneIndex] = BodyGlobalMatrices[BoneIndex];
+            NewGlobalMatrices[BoneIndex] = PhysicsGlobalMatrices[BoneIndex];
             bDrivenByPhysics[BoneIndex] = true;
+            continue;
         }
-        else if (ParentIndex >= 0 && ParentIndex < BoneCount)
+
+        if (ParentIndex >= 0 && ParentIndex < BoneCount)
         {
-            if (bDrivenByPhysics[ParentIndex])
-            {
-                NewGlobalMatrices[BoneIndex] =
-                    OriginalLocalMatrices[BoneIndex] *
-                    NewGlobalMatrices[ParentIndex];
-                bDrivenByPhysics[BoneIndex] = true;
-            }
-            else
-            {
-                NewGlobalMatrices[BoneIndex] =
-                    OriginalLocalMatrices[BoneIndex] *
-                    NewGlobalMatrices[ParentIndex];
-            }
+            NewGlobalMatrices[BoneIndex] =
+                OriginalLocalMatrices[BoneIndex] *
+                NewGlobalMatrices[ParentIndex];
+
+            bDrivenByPhysics[BoneIndex] = bDrivenByPhysics[ParentIndex];
         }
         else
         {
             NewGlobalMatrices[BoneIndex] = OriginalLocalMatrices[BoneIndex];
-        }
-
-        if (!bDrivenByPhysics[BoneIndex] && !PhysicsBodyBoneIndices.empty())
-        {
-            int32 NearestBodyBoneIndex = -1;
-            float NearestDistSq = 3.402823466e+38F;
-
-            const FVector BoneLocation = OriginalGlobalMatrices[BoneIndex].GetLocation();
-            for (int32 BodyBoneIndex : PhysicsBodyBoneIndices)
-            {
-                if (BodyBoneIndex < 0 || BodyBoneIndex >= BoneCount)
-                {
-                    continue;
-                }
-
-                const FVector BodyLocation = OriginalGlobalMatrices[BodyBoneIndex].GetLocation();
-                const FVector Delta = BoneLocation - BodyLocation;
-                const float DistSq = Delta.X * Delta.X + Delta.Y * Delta.Y + Delta.Z * Delta.Z;
-
-                if (DistSq < NearestDistSq)
-                {
-                    NearestDistSq = DistSq;
-                    NearestBodyBoneIndex = BodyBoneIndex;
-                }
-            }
-
-            if (NearestBodyBoneIndex >= 0)
-            {
-                const FMatrix OffsetFromBody =
-                    OriginalGlobalMatrices[BoneIndex] *
-                    OriginalGlobalMatrices[NearestBodyBoneIndex].GetAffineInverse();
-
-                NewGlobalMatrices[BoneIndex] =
-                    OffsetFromBody *
-                    BodyGlobalMatrices[NearestBodyBoneIndex];
-                bDrivenByPhysics[BoneIndex] = true;
-            }
+            bDrivenByPhysics[BoneIndex] = false;
         }
     }
 
@@ -712,8 +1062,10 @@ void USkeletalMeshComponent::SyncBonesFromRagdollBodies()
                 NewGlobalMatrices[ParentIndex].GetAffineInverse();
         }
 
-        LocalPose[BoneIndex] = FTransform::FromMatrixWithScale(LocalMatrix);
-        LocalPose[BoneIndex].Scale = FTransform::FromMatrixWithScale(OriginalLocalMatrices[BoneIndex]).Scale;
+        FTransform LocalTransform = FTransform::FromMatrixWithScale(LocalMatrix);
+        LocalTransform.Scale = FTransform::FromMatrixWithScale(OriginalLocalMatrices[BoneIndex]).Scale;
+
+        LocalPose[BoneIndex] = LocalTransform;
     }
 
     SetBoneLocalTransformsDirect(LocalPose);
@@ -764,34 +1116,6 @@ int32 USkeletalMeshComponent::FindBoneIndexByName(FName BoneName) const
     }
 
     return -1;
-}
-
-float USkeletalMeshComponent::EstimateRagdollRadiusFromChildren(
-    const FSkeletalMesh& Asset,
-    int32 BoneIndex,
-    const TArray<FMatrix>& Globals
-)
-{
-    float MaxChildDist = 0.0f;
-    const FVector BonePos = Globals[BoneIndex].GetLocation();
-
-    for (int32 ChildIndex = 0; ChildIndex < static_cast<int32>(Asset.Bones.size()); ++ChildIndex)
-    {
-        if (Asset.Bones[ChildIndex].ParentIndex != BoneIndex)
-        {
-            continue;
-        }
-
-        const float Dist = FVector::Distance(BonePos, Globals[ChildIndex].GetLocation());
-        MaxChildDist = std::max(MaxChildDist, Dist);
-    }
-
-    if (MaxChildDist <= 0.0f)
-    {
-        return 8.0f;
-    }
-
-    return std::max(4.0f, std::min(MaxChildDist * 0.20f, 18.0f));
 }
 
 void USkeletalMeshComponent::InitializeAnimation()
@@ -900,6 +1224,7 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
     if (bRagdollActive)
     {
+        SyncComponentToRagdollBody();
         SyncBonesFromRagdollBodies();
         UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
         return;
@@ -916,7 +1241,9 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 void USkeletalMeshComponent::EndPlay()
 {
+    DestroyRagdollConstraints();
     DestroyRagdollBodies();
+    ClearRagdollComponentSyncState();
     Super::EndPlay();
 }
 
@@ -1061,6 +1388,10 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
     Ar << AnimationData.bLooping;
     Ar << AnimationData.bPlaying;
     Ar << bRagdollEnabled;
+    Ar << bCreateRagdollConstraints;
+    uint8 SelfCollisionModeRaw = static_cast<uint8>(RagdollSelfCollisionMode);
+    Ar << SelfCollisionModeRaw;
+    RagdollSelfCollisionMode = static_cast<ERagdollSelfCollisionMode>(SelfCollisionModeRaw);
 
 }
 

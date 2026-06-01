@@ -51,6 +51,7 @@ public:
 
 	// --- 힘/토크 ---
 	virtual void AddForce(UPrimitiveComponent* Comp, const FVector& Force) = 0;
+	virtual void AddImpulse(UPrimitiveComponent* Comp, const FVector& Impulse) = 0;
 	virtual void AddForceAtLocation(UPrimitiveComponent* Comp, const FVector& Force, const FVector& WorldLocation) = 0;
 	virtual void AddTorque(UPrimitiveComponent* Comp, const FVector& Torque) = 0;
 
