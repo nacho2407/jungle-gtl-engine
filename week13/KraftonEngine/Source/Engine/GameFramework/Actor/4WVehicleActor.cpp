@@ -2,6 +2,7 @@
 
 #include "Component/Movement/VehicleMovementComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
+#include "Component/Primitive/WheelMeshComponent.h"
 #include "Component/SceneComponent.h"
 #include "Component/Shape/BoxComponent.h"
 
@@ -74,6 +75,8 @@ void A4WVehicleActor::InitDefaultComponents()
 
 	TArray<USceneComponent*> WheelSceneComponents;
 	WheelSceneComponents.reserve(UVehicleMovementComponent::WheelCount);
+	TArray<UWheelMeshComponent*> WheelMeshComponents;
+	WheelMeshComponents.reserve(UVehicleMovementComponent::WheelCount);
 
 	for (int32 WheelIndex = 0; WheelIndex < UVehicleMovementComponent::WheelCount; ++WheelIndex)
 	{
@@ -82,7 +85,7 @@ void A4WVehicleActor::InitDefaultComponents()
 		WheelPivot->AttachToComponent(ChassisCollision);
 		WheelPivot->SetRelativeLocation(WheelOffsets[WheelIndex]);
 
-		UStaticMeshComponent* WheelMesh = AddComponent<UStaticMeshComponent>();
+		UWheelMeshComponent* WheelMesh = AddComponent<UWheelMeshComponent>();
 		WheelMesh->SetFName(FName(WheelMeshNames[WheelIndex]));
 		WheelMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		WheelMesh->AttachToComponent(WheelPivot);
@@ -90,10 +93,12 @@ void A4WVehicleActor::InitDefaultComponents()
 		WheelPivots[WheelIndex] = WheelPivot;
 		WheelMeshes[WheelIndex] = WheelMesh;
 		WheelSceneComponents.push_back(WheelPivot);
+		WheelMeshComponents.push_back(WheelMesh);
 	}
 
 	VehicleMovementComponent = AddComponent<UVehicleMovementComponent>();
 	VehicleMovementComponent->SetWheelSceneComponents(WheelSceneComponents);
+	VehicleMovementComponent->SetWheelMeshComponents(WheelMeshComponents);
 }
 
 void A4WVehicleActor::OnOwnedComponentRemoved(UActorComponent* Component)
@@ -113,7 +118,7 @@ void A4WVehicleActor::OnOwnedComponentRemoved(UActorComponent* Component)
 		VehicleMovementComponent = nullptr;
 	}
 
-	for (UStaticMeshComponent*& WheelMesh : WheelMeshes)
+	for (UWheelMeshComponent*& WheelMesh : WheelMeshes)
 	{
 		if (Component == WheelMesh)
 		{
@@ -138,12 +143,14 @@ void A4WVehicleActor::RebindComponentReferences()
 	{
 		WheelPivot = nullptr;
 	}
-	for (UStaticMeshComponent*& WheelMesh : WheelMeshes)
+	for (UWheelMeshComponent*& WheelMesh : WheelMeshes)
 	{
 		WheelMesh = nullptr;
 	}
 
 	TArray<USceneComponent*> WheelSceneComponents;
+	TArray<UWheelMeshComponent*> WheelMeshComponents;
+	WheelMeshComponents.resize(UVehicleMovementComponent::WheelCount, nullptr);
 	TArray<UStaticMeshComponent*> LegacyWheelMeshes;
 	if (ChassisCollision)
 	{
@@ -173,9 +180,10 @@ void A4WVehicleActor::RebindComponentReferences()
 
 			for (USceneComponent* GrandChild : Child->GetChildren())
 			{
-				if (UStaticMeshComponent* WheelMesh = Cast<UStaticMeshComponent>(GrandChild))
+				if (UWheelMeshComponent* WheelMesh = Cast<UWheelMeshComponent>(GrandChild))
 				{
 					WheelMeshes[WheelIndex] = WheelMesh;
+					WheelMeshComponents[WheelIndex] = WheelMesh;
 					break;
 				}
 			}
@@ -198,7 +206,6 @@ void A4WVehicleActor::RebindComponentReferences()
 			LegacyWheelMesh->SetRelativeLocation(FVector::ZeroVector);
 
 			WheelPivots[WheelIndex] = WheelPivot;
-			WheelMeshes[WheelIndex] = LegacyWheelMesh;
 			WheelSceneComponents.push_back(WheelPivot);
 		}
 	}
@@ -207,5 +214,6 @@ void A4WVehicleActor::RebindComponentReferences()
 	if (VehicleMovementComponent)
 	{
 		VehicleMovementComponent->SetWheelSceneComponents(WheelSceneComponents);
+		VehicleMovementComponent->SetWheelMeshComponents(WheelMeshComponents);
 	}
 }

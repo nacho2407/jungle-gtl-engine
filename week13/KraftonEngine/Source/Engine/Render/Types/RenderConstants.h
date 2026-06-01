@@ -30,6 +30,11 @@ namespace ECBSlot
 }
 
 // HLSL 라이팅 SRV 슬롯 — 프레임에 1회 바인딩 (Forward Shading)
+namespace ECBSlot
+{
+	constexpr uint32 WheelDeformation = 8; // b8: WheelMesh tire deformation
+}
+
 namespace ELightTexSlot
 {
 	constexpr uint32 AllLights = 8;  // t8:  StructuredBuffer<FLightInfo>
@@ -108,6 +113,13 @@ struct FPerObjectConstants
 struct FBoneHeatMapConstants
 {
 	int32 SelectedBoneIndex = -1;
+	float Pad[3] = { 0.0f, 0.0f, 0.0f };
+};
+
+struct FWheelDeformationConstants
+{
+	FVector4 ContactNormalAndDepth = FVector4(0.0f, 0.0f, 1.0f, 0.0f);
+	float WheelRadius = 0.38f;
 	float Pad[3] = { 0.0f, 0.0f, 0.0f };
 };
 

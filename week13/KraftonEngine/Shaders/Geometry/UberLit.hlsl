@@ -39,6 +39,13 @@ cbuffer PerShader1 : register(b2)
     float3 _pad;
 };
 
+cbuffer WheelDeformationBuffer : register(b8)
+{
+    float4 WheelContactNormalAndDepth;
+    float WheelRadius;
+    float3 WheelDeformationPad;
+};
+
 
 // 머티리얼 확장 파라미터 — 팀원 A CB 시스템 완성 후 b2 확장 예정
 static const float4 g_DefaultEmissive = float4(0, 0, 0, 0);
@@ -100,6 +107,55 @@ UberVS_Output VS_StaticMesh(VS_Input_PNCTT input)
     output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N);
     output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess);
 
+#endif
+
+    return output;
+}
+
+UberVS_Output VS_WheelMesh(VS_Input_PNCTT input)
+{
+    UberVS_Output output;
+
+    float3x3 M = (float3x3) Model;
+    float4 worldPos4 = mul(float4(input.position, 1.0f), Model);
+
+    float deformationDepth = max(WheelContactNormalAndDepth.w, 0.0f);
+    if (deformationDepth > 0.00001f && WheelRadius > 0.00001f)
+    {
+        float3 contactNormal = normalize(WheelContactNormalAndDepth.xyz);
+        float3 wheelCenter = mul(float4(0.0f, 0.0f, 0.0f, 1.0f), Model).xyz;
+        float distanceFromCenter = dot(worldPos4.xyz - wheelCenter, contactNormal);
+        float tireBottom = -WheelRadius;
+        float flattenStart = tireBottom + deformationDepth;
+        float flattenAlpha = saturate((flattenStart - distanceFromCenter) / deformationDepth);
+        worldPos4.xyz += contactNormal * ((tireBottom - distanceFromCenter) * flattenAlpha);
+    }
+
+    output.worldPos = worldPos4.xyz;
+    output.position = mul(mul(worldPos4, View), Projection);
+    output.normal = normalize(mul(input.normal, (float3x3) NormalMatrix));
+    output.color = input.color * SectionColor;
+    output.texcoord = input.texcoord;
+    output.selectedBoneWeight = 0.0f;
+
+    float3 T = normalize(mul(input.tangent.xyz, M));
+    T = normalize(T - output.normal * dot(output.normal, T));
+    output.tangent = float4(T, input.tangent.w);
+
+#if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
+    float3 N = output.normal;
+
+    if (HasNormalMap > 0.5f)
+    {
+        float3 B = normalize(cross(N, T) * input.tangent.w);
+        float3x3 TBN = float3x3(T, B, N);
+        float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+        N = normalize(mul(tangentNormal, TBN));
+    }
+
+    float3 V = normalize(CameraWorldPos - output.worldPos);
+    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N);
+    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess);
 #endif
 
     return output;
