@@ -79,6 +79,40 @@ void FBodyInstance::SetKinematicTarget(const FTransform& WorldTransform)
 	Dynamic->setKinematicTarget(PhysXConvert::ToPxTransform(WorldTransform));
 }
 
+void FBodyInstance::SetKinematic(bool bInKinematic)
+{
+	bKinematic = bInKinematic;
+
+	physx::PxRigidDynamic* Dynamic = GetRigidDynamic();
+	if (!Dynamic) return;
+
+	Dynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, bInKinematic);
+
+	if (bInKinematic)
+	{
+		Dynamic->setKinematicTarget(PhysXConvert::ToPxTransform(GetBodyTransform()));
+	}
+	else
+	{
+		Dynamic->wakeUp();
+	}
+}
+
+void FBodyInstance::SetGravityEnabled(bool bInEnableGravity)
+{
+	bEnableGravity = bInEnableGravity;
+
+	physx::PxRigidDynamic* Dynamic = GetRigidDynamic();
+	if (!Dynamic) return;
+
+	Dynamic->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, !bInEnableGravity);
+
+	if (bInEnableGravity)
+	{
+		Dynamic->wakeUp();
+	}
+}
+
 // 지속적인 힘(dt영향)
 void FBodyInstance::AddForce(const FVector& Force)
 {
@@ -250,6 +284,7 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
     OutDesc.CollisionEnabled = Body.CollisionEnabled;
     OutDesc.ObjectType = Body.ObjectType;
     OutDesc.ResponseContainer = Body.ResponseContainer;
+	OutDesc.bIgnoreSameOwner = Body.bIgnoreSameOwner;
 
     OutDesc.Mass = Body.Mass > 0.001f ? Body.Mass : 0.001f;
     OutDesc.CenterOfMassOffset = Body.CenterOfMassOffset;

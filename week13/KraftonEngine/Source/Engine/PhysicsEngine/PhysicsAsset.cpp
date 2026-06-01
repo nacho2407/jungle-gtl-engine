@@ -6,7 +6,7 @@
 namespace
 {
 	constexpr uint32 ConstraintInitDescMagic = 0x43444943; // C I D C
-	constexpr uint32 ConstraintInitDescVersion = 1;
+	constexpr uint32 ConstraintInitDescVersion = 2;
 
 	void SerializeTransform(FArchive& Ar, FTransform& Transform)
 	{
@@ -67,7 +67,7 @@ namespace
 		}
 	}
 
-	void SerializeConstraintInitDesc(FArchive& Ar, FConstraintInstanceInitDesc& Desc)
+	void SerializeConstraintInitDesc(FArchive& Ar, FConstraintInstanceInitDesc& Desc, uint32 Version)
 	{
 		Ar << Desc.ParentBoneName;
 		Ar << Desc.ChildBoneName;
@@ -77,6 +77,19 @@ namespace
 		Ar << Desc.Swing1LimitDegrees;
 		Ar << Desc.Swing2LimitDegrees;
 		Ar << Desc.bEnableCollision;
+
+		if (Ar.IsSaving() || Version >= 2)
+		{
+			Ar << Desc.bEnableProjection;
+			Ar << Desc.ProjectionLinearTolerance;
+			Ar << Desc.ProjectionAngularToleranceDegrees;
+		}
+		else if (Ar.IsLoading())
+		{
+			Desc.bEnableProjection = true;
+			Desc.ProjectionLinearTolerance = 10.0f;
+			Desc.ProjectionAngularToleranceDegrees = 30.0f;
+		}
 
 		if (Ar.IsLoading())
 		{
@@ -101,7 +114,7 @@ namespace
 			{
 				Desc.ParentBody = nullptr;
 				Desc.ChildBody = nullptr;
-				SerializeConstraintInitDesc(Ar, Desc);
+				SerializeConstraintInitDesc(Ar, Desc, Version);
 			}
 			return;
 		}
@@ -121,7 +134,7 @@ namespace
 
 		uint32 Version = 0;
 		Ar << Version;
-		if (Version != ConstraintInitDescVersion)
+		if (Version > ConstraintInitDescVersion)
 		{
 			return;
 		}
@@ -132,7 +145,7 @@ namespace
 
 		for (FConstraintInstanceInitDesc& Desc : ConstraintInitDescs)
 		{
-			SerializeConstraintInitDesc(Ar, Desc);
+			SerializeConstraintInitDesc(Ar, Desc, Version);
 		}
 	}
 }

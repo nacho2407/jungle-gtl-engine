@@ -429,6 +429,9 @@ void BuildConstraintInitDescsForBodies(UPhysicsAsset* PhysicsAsset, const FSkele
 		Desc.Swing1LimitDegrees = 35.0f;
 		Desc.Swing2LimitDegrees = 35.0f;
 		Desc.bEnableCollision = false;
+		Desc.bEnableProjection = true;
+		Desc.ProjectionLinearTolerance = 10.0f;
+		Desc.ProjectionAngularToleranceDegrees = 30.0f;
 
 		ConstraintInitDescs.push_back(Desc);
 	}

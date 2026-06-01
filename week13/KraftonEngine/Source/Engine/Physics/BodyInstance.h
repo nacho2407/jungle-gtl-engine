@@ -42,6 +42,7 @@ struct FBodyInstanceInitDesc
 	ECollisionEnabled CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
 	ECollisionChannel ObjectType = ECollisionChannel::WorldDynamic;
 	FCollisionResponseContainer ResponseContainer;
+	bool bIgnoreSameOwner = true;
 
 	float Mass = 1.0f;
 	FVector CenterOfMassOffset = FVector::ZeroVector;
@@ -67,6 +68,7 @@ struct FBodyInstance
 	ECollisionEnabled CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
 	ECollisionChannel ObjectType = ECollisionChannel::WorldDynamic;
 	FCollisionResponseContainer ResponseContainer;
+	bool bIgnoreSameOwner = false;
 
 	float Mass = 1.0f;
 	FVector CenterOfMassOffset = FVector::ZeroVector;
@@ -86,6 +88,8 @@ struct FBodyInstance
 	FTransform GetBodyTransform() const;
 	void SetBodyTransform(const FTransform& WorldTransform);
 	void SetKinematicTarget(const FTransform& WorldTransform);
+	void SetKinematic(bool bInKinematic);
+	void SetGravityEnabled(bool bInEnableGravity);
 
 	void AddForce(const FVector& Force);
 	void AddImpulse(const FVector& Impulse);

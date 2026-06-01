@@ -40,6 +40,15 @@ struct FConstraintInstanceInitDesc
 
 	UPROPERTY(Edit, Category="Constraint", DisplayName="Enable Collision")
 	bool bEnableCollision = false;
+
+	UPROPERTY(Edit, Category = "Constraint|Projection", DisplayName = "Enable Projection")
+	bool bEnableProjection = true;
+
+	UPROPERTY(Edit, Category = "Constraint|Projection", DisplayName = "Projection Linear Tolerance", Min = 0.0f, Speed = 0.1f)
+	float ProjectionLinearTolerance = 10.0f;
+
+	UPROPERTY(Edit, Category = "Constraint|Projection", DisplayName = "Projection Angular Tolerance", Min = 0.0f, Max = 180.0f, Speed = 0.25f)
+	float ProjectionAngularToleranceDegrees = 30.0f;
 };
 
 struct FConstraintInstance
@@ -57,6 +66,10 @@ struct FConstraintInstance
 	float Swing1LimitDegrees = 30.0f;
 	float Swing2LimitDegrees = 30.0f;
 
+	float ProjectionLinearTolerance = 10.0f;
+	float ProjectionAngularToleranceDegrees = 30.0f;
+
+	bool bEnableProjection = true;
 	bool bEnableCollision = false;
 
 	physx::PxD6Joint* Joint = nullptr;

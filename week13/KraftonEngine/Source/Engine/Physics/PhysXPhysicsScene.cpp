@@ -113,6 +113,7 @@ namespace
 	}
 }
 static PxDefaultAllocator GPhysXAllocator;
+static constexpr physx::PxU32 FILTER_FLAG_IGNORE_SAME_OWNER = 1u << 31;
 
 // ============================================================
 // PhysX Foundation/Physics 싱글턴
@@ -175,6 +176,11 @@ static void SetupFilterData(PxShape* Shape, const FBodyInstance& Body)
 	Filter.word0 = static_cast<PxU32>(Body.ObjectType);
 	Filter.word1 = 0;
 	Filter.word2 = 0;
+
+	if (Body.bIgnoreSameOwner)
+	{
+		Filter.word2 |= FILTER_FLAG_IGNORE_SAME_OWNER;
+	}
 
 	AActor* Owner = nullptr;
 	if (Body.OwnerComponent)
@@ -480,37 +486,6 @@ static void SetComponentWorldPose(UPrimitiveComponent* Comp, const PxTransform& 
 	}
 }
 
-// ============================================================
-// Collision Filtering
-// ============================================================
-// filterData 레이아웃:
-//   word0 = 자신의 ObjectType (ECollisionChannel)
-//   word1 = Block 비트마스크 (해당 채널에 Block 응답인 비트)
-//   word2 = Overlap 비트마스크 (해당 채널에 Overlap 응답인 비트)
-//   word3 = 소유 액터 UUID — 같은 액터의 두 컴포넌트끼리 충돌을 무시하기 위함
-//           (Native 측 O(N²) 루프의 `if (A->GetOwner() == B->GetOwner()) continue;` 가드와 동일 의미)
-//           Owner가 없거나 UUID가 0이면 가드 미적용.
-
-static void SetupFilterData(PxShape* Shape, UPrimitiveComponent* Comp)
-{
-	PxFilterData Filter;
-	Filter.word0 = static_cast<PxU32>(Comp->GetCollisionObjectType());
-	Filter.word1 = 0;
-	Filter.word2 = 0;
-	AActor* Owner = Comp ? Comp->GetOwner() : nullptr;
-	Filter.word3 = IsValid(Owner) ? Owner->GetUUID() : 0;
-
-	for (int32 Ch = 0; Ch < static_cast<int32>(ECollisionChannel::ActiveCount); ++Ch)
-	{
-		ECollisionResponse R = Comp->GetCollisionResponseToChannel(static_cast<ECollisionChannel>(Ch));
-		if (R == ECollisionResponse::Block)   Filter.word1 |= (1u << Ch);
-		if (R == ECollisionResponse::Overlap) Filter.word2 |= (1u << Ch);
-	}
-
-	Shape->setSimulationFilterData(Filter);
-	Shape->setQueryFilterData(Filter);
-}
-
 // PxFilterShader — 엔진의 채널/응답 매트릭스를 PhysX에서 처리
 // 양쪽 모두 상대 채널에 대해 Block이면 물리 충돌, 한쪽이라도 Overlap이면 트리거, 그 외 무시
 static PxFilterFlags KraftonFilterShader(
@@ -518,10 +493,15 @@ static PxFilterFlags KraftonFilterShader(
 	PxFilterObjectAttributes attributes1, PxFilterData filterData1,
 	PxPairFlags& pairFlags, const void* /*constantBlock*/, PxU32 /*constantBlockSize*/)
 {
-	// 같은 액터(같은 owner UUID)의 두 컴포넌트끼리는 충돌 무시.
-	// Native 측 O(N²) 루프의 same-owner 가드와 동일 의미. 차량 차체-바퀴처럼
-	// 한 액터가 여러 콜라이더를 가질 때 자기끼리 충돌 시뮬레이션되는 문제를 막는다.
-	if (filterData0.word3 != 0 && filterData0.word3 == filterData1.word3)
+	const bool bSameOwner =
+		filterData0.word3 != 0 &&
+		filterData0.word3 == filterData1.word3;
+
+	const bool bIgnoreSameOwner =
+		((filterData0.word2 & FILTER_FLAG_IGNORE_SAME_OWNER) != 0) ||
+		((filterData1.word2 & FILTER_FLAG_IGNORE_SAME_OWNER) != 0);
+
+	if (bSameOwner && bIgnoreSameOwner)
 	{
 		return PxFilterFlag::eKILL;
 	}
@@ -739,6 +719,7 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 	Body.CollisionEnabled = Desc.CollisionEnabled;
 	Body.ObjectType = Desc.ObjectType;
 	Body.ResponseContainer = Desc.ResponseContainer;
+	Body.bIgnoreSameOwner = Desc.bIgnoreSameOwner;
 	Body.Mass = Desc.Mass;
 	Body.CenterOfMassOffset = Desc.CenterOfMassOffset;
 	Body.LinearDamping = Desc.LinearDamping;
@@ -955,11 +936,15 @@ bool FPhysXPhysicsScene::CreateConstraintInstance(FConstraintInstance& Constrain
 	Joint->setMotion(PxD6Axis::eSWING1, PxD6Motion::eLIMITED);
 	Joint->setMotion(PxD6Axis::eSWING2, PxD6Motion::eLIMITED);
 
-	constexpr float DegToRad = 3.14159265358979323846f / 180.0f;
+	auto ClampDegrees = [](float Degrees, float MinDegrees, float MaxDegrees)
+	{
+		return std::max(MinDegrees, std::min(Degrees, MaxDegrees));
+	};
 
-	const float Twist = std::max(Constraint.TwistLimitDegrees, 1.0f) * DegToRad;
-	const float Swing1 = std::max(Constraint.Swing1LimitDegrees, 1.0f) * DegToRad;
-	const float Swing2 = std::max(Constraint.Swing2LimitDegrees, 1.0f) * DegToRad;
+
+	const float Twist = ClampDegrees(Constraint.TwistLimitDegrees, 0.0f, 170.0f) * DEG_TO_RAD;
+	const float Swing1 = ClampDegrees(Constraint.Swing1LimitDegrees, 0.0f, 170.0f) * DEG_TO_RAD;
+	const float Swing2 = ClampDegrees(Constraint.Swing2LimitDegrees, 0.0f, 170.0f) * DEG_TO_RAD;
 
 	// 비틀기 제한
 	Joint->setTwistLimit(PxJointAngularLimitPair(-Twist, Twist));
@@ -972,10 +957,24 @@ bool FPhysXPhysicsScene::CreateConstraintInstance(FConstraintInstance& Constrain
 
 	Joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 
-	// joint가 순간적으로 벌어지게 될때 보정해주는 장치
-	Joint->setProjectionLinearTolerance(0.1f);
-	Joint->setProjectionAngularTolerance(0.25f);
-	Joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+	if (Constraint.bEnableProjection)
+	{
+		// joint가 위치상으로 얼마나 벌어졌을 때 강제 보정할지 정하는 값
+		Joint->setProjectionLinearTolerance(
+			std::max(Constraint.ProjectionLinearTolerance, 0.0f)
+		);
+
+		// joint가 회전상으로 얼마나 틀어졌을 때 강제 보정할지 정하는 값(회전 한계 이상으로 갔을때 되돌려 놓는 값)
+		Joint->setProjectionAngularTolerance(
+			std::max(Constraint.ProjectionAngularToleranceDegrees, 0.0f) * DEG_TO_RAD
+		);
+
+		Joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+	}
+	else
+	{
+		Joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, false);
+	}
 
 	Constraint.Joint = Joint;
 	return true;
