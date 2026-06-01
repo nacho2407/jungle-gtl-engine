@@ -21,6 +21,7 @@ public:
 
 	virtual bool AllowsMultipleInstances() const { return false; }
 	virtual bool IsEditingObject(UObject* Object) const { return IsOpen() && EditedObject == Object; }
+	virtual void OnReuseForObject(UObject* Object) {}
 
 	UObject* GetEditedObject() const { return EditedObject; }
 	bool IsOpen() const { return bOpen; }
