@@ -3,6 +3,7 @@
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
 #include "Object/FName.h"
+#include "Object/Reflection/ObjectMacros.h"
 #include "Render/Types/VertexTypes.h"
 
 /**
@@ -37,6 +38,42 @@ struct FClothBackendStatus
 const char* GetClothBackendName(EClothBackendType Backend);
 
 /**
+ * @brief Cloth 고정점 선택 방식
+ */
+UENUM()
+enum class EClothPinSelectionType : uint8
+{
+	None,
+	ExplicitVertices,
+	TopEdge,
+	BottomEdge,
+	LeftEdge,
+	RightEdge,
+	ActorLocalSphere,
+	ActorLocalBox,
+	ActorLocalRectXZ
+};
+
+/**
+ * @brief Cloth 고정점 적용 방식
+ */
+enum class EClothPinConstraintType : uint8
+{
+	Hard,
+	Soft
+};
+
+/**
+ * @brief Cloth fixed timestep 설정
+ */
+struct FClothTimestepConfig
+{
+	float FixedTimeStep = 1.0f / 60.0f;
+	int32 MaxSubsteps = 4;
+	float MaxAccumulatedTime = 0.25f;
+};
+
+/**
  * @brief Cloth procedural grid와 simulation 입력 기본값
  */
 struct FClothConfig
@@ -45,6 +82,7 @@ struct FClothConfig
 	int32 NumParticlesY = 20;
 	float ParticleSpacing = 10.0f;
 	float BoundsMargin = 1.0f;
+	FClothTimestepConfig Timestep;
 };
 
 /**
@@ -83,24 +121,14 @@ struct FClothRenderData
 };
 
 /**
- * @brief Cloth pin 선택 방식
- */
-enum class EClothPinSelectionType
-{
-	ExplicitVertices,
-	TopRow,
-	BottomRow,
-	LeftColumn,
-	RightColumn
-};
-
-/**
  * @brief Cloth vertex pinning 단위 데이터
  */
 struct FClothPinData
 {
 	uint32 VertexIndex = 0;
 	float Weight = 1.0f;
+	FVector TargetOffset = FVector::ZeroVector;
+	EClothPinConstraintType ConstraintType = EClothPinConstraintType::Hard;
 };
 
 /**
@@ -109,8 +137,16 @@ struct FClothPinData
 struct FClothPinGroupDesc
 {
 	FName Name = FName::None;
-	EClothPinSelectionType SelectionType = EClothPinSelectionType::ExplicitVertices;
+	EClothPinSelectionType SelectionType = EClothPinSelectionType::TopEdge;
 	TArray<FClothPinData> Pins;
+	FVector SelectionCenterActorLocal = FVector::ZeroVector;
+	FVector SelectionBoxExtentActorLocal = FVector(50.0f, 50.0f, 50.0f);
+	FVector SelectionRectMinActorLocalXZ = FVector(-50.0f, 0.0f, -50.0f);
+	FVector SelectionRectMaxActorLocalXZ = FVector(50.0f, 0.0f, 50.0f);
+	FVector TargetOffsetActorLocal = FVector::ZeroVector;
+	float SelectionRadius = 50.0f;
+	float Weight = 1.0f;
+	bool bHardPin = true;
 };
 
 /**
@@ -131,7 +167,10 @@ struct FClothWindConfig
 	bool bEnabled = false;
 	FVector Direction = FVector::ForwardVector;
 	float Strength = 0.0f;
-	float Turbulence = 0.0f;
+	float TurbulenceStrength = 0.0f;
+	float TurbulenceSpatialScale = 100.0f;
+	float TurbulenceTemporalScale = 1.0f;
+	int32 TurbulenceSeed = 1337;
 };
 
 /**
@@ -142,12 +181,15 @@ struct FClothSelfCollisionConfig
 	bool bEnabled = false;
 	float Distance = 2.0f;
 	float Stiffness = 1.0f;
+
+	// NvCloth에서 얼마나 적극적으로 충돌 후보를 솎아낼지
+	float CullScale = 1.0f;
 };
 
 /**
  * @brief Cloth collision primitive 종류
  */
-enum class EClothCollisionPrimitiveType
+enum class EClothCollisionPrimitiveType : uint8
 {
 	Sphere,
 	Capsule,
@@ -163,7 +205,13 @@ struct FClothCollisionPrimitive
 	EClothCollisionPrimitiveType Type = EClothCollisionPrimitiveType::Sphere;
 	FVector Center = FVector::ZeroVector;
 	FVector Axis = FVector::UpVector;
+	FVector CapsuleStart = FVector::ZeroVector;
+	FVector CapsuleEnd = FVector::UpVector;
 	FVector BoxExtent = FVector::OneVector;
+	FVector BoxAxisX = FVector::XAxisVector;
+	FVector BoxAxisY = FVector::YAxisVector;
+	FVector BoxAxisZ = FVector::ZAxisVector;
+	FVector PlanePoint = FVector::ZeroVector;
 	FVector PlaneNormal = FVector::UpVector;
 	float Radius = 1.0f;
 	float HalfHeight = 0.0f;

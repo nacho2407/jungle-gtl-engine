@@ -1,6 +1,7 @@
 #include "Component/Primitive/ClothComponent.h"
 
 #include "Engine/Runtime/Engine.h"
+#include "GameFramework/AActor.h"
 #include "Materials/MaterialManager.h"
 #include "Object/GarbageCollection.h"
 #include "Object/Reflection/ObjectFactory.h"
@@ -19,6 +20,12 @@ namespace
 	constexpr float GDefaultParticleSpacing = 10.0f;
 	constexpr float GNormalTolerance = 1.0e-6f;
 	constexpr float GTangentTolerance = 1.0e-6f;
+	constexpr float GMinFixedTimeStep = 0.001f;
+	constexpr float GMaxFixedTimeStep = 0.1f;
+	constexpr int32 GMinClothSubsteps = 1;
+	constexpr int32 GMaxClothSubsteps = 4;
+	constexpr float GMinAccumulatedTime = 0.016f;
+	constexpr float GMaxAccumulatedTime = 1.0f;
 
 	/**
 	 * @brief 정수 값을 지정된 범위 안으로 보정합니다
@@ -33,6 +40,27 @@ namespace
 	 */
 	int32 ClampInt(int32 Value, int32 MinValue, int32 MaxValue)
 	{
+		return (std::max)(MinValue, (std::min)(Value, MaxValue));
+	}
+
+	/**
+	 * @brief 실수 값을 지정된 범위 안으로 보정합니다
+	 *
+	 * @param Value 보정할 실수 값
+	 *
+	 * @param MinValue 허용 최소값
+	 *
+	 * @param MaxValue 허용 최대값
+	 *
+	 * @return 보정된 실수 값
+	 */
+	float ClampFloat(float Value, float MinValue, float MaxValue)
+	{
+		if (!std::isfinite(Value))
+		{
+			return MinValue;
+		}
+
 		return (std::max)(MinValue, (std::min)(Value, MaxValue));
 	}
 
@@ -52,6 +80,129 @@ namespace
 
 		return Value;
 	}
+
+	/**
+	 * @brief property 이름과 표시 이름 중 하나라도 일치하는지 반환합니다
+	 *
+	 * @param PropertyName 변경된 property 이름
+	 *
+	 * @param InternalName c++ 멤버 이름
+	 *
+	 * @param DisplayName editor 표시 이름
+	 *
+	 * @return property 이름 일치 여부
+	 */
+	bool MatchesPropertyName(const char* PropertyName, const char* InternalName, const char* DisplayName = nullptr)
+	{
+		if (std::strcmp(PropertyName, InternalName) == 0)
+		{
+			return true;
+		}
+
+		return DisplayName && std::strcmp(PropertyName, DisplayName) == 0;
+	}
+
+	/**
+	 * @brief cloth topology property인지 반환합니다
+	 */
+	bool IsClothTopologyProperty(const char* PropertyName)
+	{
+		return MatchesPropertyName(PropertyName, "NumParticlesX", "Num Particles X")
+			|| MatchesPropertyName(PropertyName, "NumParticlesY", "Num Particles Y")
+			|| MatchesPropertyName(PropertyName, "ParticleSpacing", "Particle Spacing");
+	}
+
+	/**
+	 * @brief cloth material property인지 반환합니다
+	 */
+	bool IsClothMaterialProperty(const char* PropertyName)
+	{
+		return MatchesPropertyName(PropertyName, "MaterialSlot", "Material")
+			|| MatchesPropertyName(PropertyName, "Material", "Material");
+	}
+
+	/**
+	 * @brief cloth simulation lifecycle property인지 반환합니다
+	 */
+	bool IsClothSimulationLifecycleProperty(const char* PropertyName)
+	{
+		return MatchesPropertyName(PropertyName, "bEnableSimulation", "Enable Simulation")
+			|| MatchesPropertyName(PropertyName, "FixedTimeStep", "Fixed Time Step")
+			|| MatchesPropertyName(PropertyName, "MaxSubsteps", "Max Substeps")
+			|| MatchesPropertyName(PropertyName, "MaxAccumulatedTime", "Max Accumulated Time");
+	}
+
+	/**
+	 * @brief cloth pin selection property인지 반환합니다
+	 */
+	bool IsClothPinSelectionProperty(const char* PropertyName)
+	{
+		return MatchesPropertyName(PropertyName, "PinningMode", "Pinning Mode")
+			|| MatchesPropertyName(PropertyName, "PinCenterActorLocal", "Pin Center Actor Local")
+			|| MatchesPropertyName(PropertyName, "PinRadius", "Pin Radius")
+			|| MatchesPropertyName(PropertyName, "PinBoxExtentActorLocal", "Pin Box Extent Actor Local")
+			|| MatchesPropertyName(PropertyName, "PinRectMinActorLocalXZ", "Pin Rect Min Actor Local XZ")
+			|| MatchesPropertyName(PropertyName, "PinRectMaxActorLocalXZ", "Pin Rect Max Actor Local XZ");
+	}
+
+	/**
+	 * @brief cloth pin target property인지 반환합니다
+	 */
+	bool IsClothPinTargetProperty(const char* PropertyName)
+	{
+		return MatchesPropertyName(PropertyName, "PinOffsetActorLocal", "Pin Offset Actor Local");
+	}
+
+	/**
+	 * @brief cloth force property인지 반환합니다
+	 */
+	bool IsClothForceProperty(const char* PropertyName)
+	{
+		return MatchesPropertyName(PropertyName, "GravityScale", "Gravity Scale")
+			|| MatchesPropertyName(PropertyName, "Damping", "Damping")
+			|| MatchesPropertyName(PropertyName, "Stiffness", "Stiffness")
+			|| MatchesPropertyName(PropertyName, "bEnableWind", "Enable Wind")
+			|| MatchesPropertyName(PropertyName, "WindDirection", "Wind Direction")
+			|| MatchesPropertyName(PropertyName, "WindStrength", "Wind Strength")
+			|| MatchesPropertyName(PropertyName, "WindTurbulenceStrength", "Wind Turbulence Strength")
+			|| MatchesPropertyName(PropertyName, "WindTurbulenceSpatialScale", "Wind Turbulence Spatial Scale")
+			|| MatchesPropertyName(PropertyName, "WindTurbulenceTemporalScale", "Wind Turbulence Temporal Scale")
+			|| MatchesPropertyName(PropertyName, "WindTurbulenceSeed", "Wind Turbulence Seed")
+			|| MatchesPropertyName(PropertyName, "bEnableSelfCollision", "Enable Self Collision")
+			|| MatchesPropertyName(PropertyName, "SelfCollisionDistance", "Self Collision Distance")
+			|| MatchesPropertyName(PropertyName, "SelfCollisionStiffness", "Self Collision Stiffness")
+			|| MatchesPropertyName(PropertyName, "SelfCollisionCullScale", "Self Collision Cull Scale");
+	}
+
+	/**
+	 * @brief cloth collision property인지 반환합니다
+	 */
+	bool IsClothCollisionProperty(const char* PropertyName)
+	{
+		return MatchesPropertyName(PropertyName, "bEnableSphereCollision", "Enable Sphere Collision")
+			|| MatchesPropertyName(PropertyName, "SphereCenterActorLocal", "Sphere Center Actor Local")
+			|| MatchesPropertyName(PropertyName, "SphereRadius", "Sphere Radius")
+			|| MatchesPropertyName(PropertyName, "bEnablePlaneCollision", "Enable Plane Collision")
+			|| MatchesPropertyName(PropertyName, "PlanePointActorLocal", "Plane Point Actor Local")
+			|| MatchesPropertyName(PropertyName, "PlaneNormalActorLocal", "Plane Normal Actor Local")
+			|| MatchesPropertyName(PropertyName, "bEnableCapsuleCollision", "Enable Capsule Collision")
+			|| MatchesPropertyName(PropertyName, "CapsuleCenterActorLocal", "Capsule Center Actor Local")
+			|| MatchesPropertyName(PropertyName, "CapsuleAxisActorLocal", "Capsule Axis Actor Local")
+			|| MatchesPropertyName(PropertyName, "CapsuleRadius", "Capsule Radius")
+			|| MatchesPropertyName(PropertyName, "CapsuleHalfHeight", "Capsule Half Height")
+			|| MatchesPropertyName(PropertyName, "bEnableBoxCollision", "Enable Box Collision")
+			|| MatchesPropertyName(PropertyName, "BoxCenterActorLocal", "Box Center Actor Local")
+			|| MatchesPropertyName(PropertyName, "BoxExtentActorLocal", "Box Extent Actor Local")
+			|| MatchesPropertyName(PropertyName, "BoxRotationActorLocal", "Box Rotation Actor Local");
+	}
+
+	/**
+	 * @brief cloth editor preview property인지 반환합니다
+	 */
+	bool IsClothEditorPreviewProperty(const char* PropertyName)
+	{
+		return MatchesPropertyName(PropertyName, "bSimulateInEditor", "Simulate In Editor");
+	}
 }
 
 UClothComponent::UClothComponent()
@@ -61,8 +212,6 @@ UClothComponent::UClothComponent()
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.bTickEnabled = true;
 	PrimaryComponentTick.bStartWithTickEnabled = true;
-
-	bClothRebuildDirty = true;
 }
 
 FPrimitiveSceneProxy* UClothComponent::CreateSceneProxy()
@@ -89,12 +238,7 @@ void UClothComponent::PostEditProperty(const char* PropertyName)
 		return;
 	}
 
-	if (std::strcmp(PropertyName, "NumParticlesX") == 0
-		|| std::strcmp(PropertyName, "Num Particles X") == 0
-		|| std::strcmp(PropertyName, "NumParticlesY") == 0
-		|| std::strcmp(PropertyName, "Num Particles Y") == 0
-		|| std::strcmp(PropertyName, "ParticleSpacing") == 0
-		|| std::strcmp(PropertyName, "Particle Spacing") == 0)
+	if (IsClothTopologyProperty(PropertyName))
 	{
 		// 에디터 입력값 보정과 rebuild 병합
 		const FClothConfig Config = MakeClothConfig();
@@ -105,10 +249,51 @@ void UClothComponent::PostEditProperty(const char* PropertyName)
 		return;
 	}
 
-	if (std::strcmp(PropertyName, "MaterialSlot") == 0 || std::strcmp(PropertyName, "Material") == 0)
+	if (IsClothMaterialProperty(PropertyName))
 	{
 		LoadMaterialFromSlot();
 		MarkProxyDirty(EDirtyFlag::Material);
+		return;
+	}
+
+	if (IsClothSimulationLifecycleProperty(PropertyName))
+	{
+		// solver lifecycle에 영향을 주는 값만 simulation rebuild로 분리
+		const FClothConfig Config = MakeClothConfig();
+		FixedTimeStep = Config.Timestep.FixedTimeStep;
+		MaxSubsteps = Config.Timestep.MaxSubsteps;
+		MaxAccumulatedTime = Config.Timestep.MaxAccumulatedTime;
+		MarkClothSimulationRebuildDirty();
+		return;
+	}
+
+	if (IsClothPinSelectionProperty(PropertyName))
+	{
+		MarkClothPinningDirty();
+		return;
+	}
+
+	if (IsClothPinTargetProperty(PropertyName))
+	{
+		MarkClothPinTargetDirty();
+		return;
+	}
+
+	if (IsClothForceProperty(PropertyName))
+	{
+		MarkClothForceDirty();
+		return;
+	}
+
+	if (IsClothCollisionProperty(PropertyName))
+	{
+		MarkClothCollisionDirty();
+		return;
+	}
+
+	if (IsClothEditorPreviewProperty(PropertyName))
+	{
+		MarkClothEditorPreviewDirty();
 	}
 }
 
@@ -196,13 +381,49 @@ UMaterial* UClothComponent::GetMaterial(int32 ElementIndex) const
 
 void UClothComponent::MarkClothRebuildDirty()
 {
-	bClothRebuildDirty = true;
+	bTopologyRebuildDirty = true;
+	MarkClothSimulationRebuildDirty();
 	MarkProxyDirty(EDirtyFlag::Mesh);
+}
+
+void UClothComponent::MarkClothSimulationRebuildDirty()
+{
+	bSimulationRebuildDirty = true;
+	bPinningDirty = true;
+	bPinTargetDirty = true;
+	bForceConfigDirty = true;
+	bCollisionDirty = true;
+}
+
+void UClothComponent::MarkClothPinningDirty()
+{
+	bPinningDirty = true;
+	MarkClothPinTargetDirty();
+}
+
+void UClothComponent::MarkClothPinTargetDirty()
+{
+	bPinTargetDirty = true;
+}
+
+void UClothComponent::MarkClothForceDirty()
+{
+	bForceConfigDirty = true;
+}
+
+void UClothComponent::MarkClothCollisionDirty()
+{
+	bCollisionDirty = true;
+}
+
+void UClothComponent::MarkClothEditorPreviewDirty()
+{
+	bEditorPreviewDirty = true;
 }
 
 void UClothComponent::RebuildClothIfNeeded(bool bNotifyProxyDirty)
 {
-	if (!bClothRebuildDirty)
+	if (!bTopologyRebuildDirty)
 	{
 		return;
 	}
@@ -216,6 +437,9 @@ FClothConfig UClothComponent::MakeClothConfig() const
 	Config.NumParticlesX = ClampInt(NumParticlesX, GMinClothParticlesPerAxis, GMaxClothParticlesPerAxis);
 	Config.NumParticlesY = ClampInt(NumParticlesY, GMinClothParticlesPerAxis, GMaxClothParticlesPerAxis);
 	Config.ParticleSpacing = SanitizeSpacing(ParticleSpacing);
+	Config.Timestep.FixedTimeStep = ClampFloat(FixedTimeStep, GMinFixedTimeStep, GMaxFixedTimeStep);
+	Config.Timestep.MaxSubsteps = ClampInt(MaxSubsteps, GMinClothSubsteps, GMaxClothSubsteps);
+	Config.Timestep.MaxAccumulatedTime = ClampFloat(MaxAccumulatedTime, GMinAccumulatedTime, GMaxAccumulatedTime);
 	return Config;
 }
 
@@ -285,7 +509,8 @@ void UClothComponent::BuildGrid(const FClothConfig& Config, bool bNotifyProxyDir
 	UpdateLocalBoundsFromRenderData(Config);
 	IncrementRenderRevision();
 
-	bClothRebuildDirty = false;
+	bTopologyRebuildDirty = false;
+	MarkClothSimulationRebuildDirty();
 
 	// local shape 변경 전파
 	MarkWorldBoundsDirty();
@@ -451,6 +676,73 @@ void UClothComponent::LoadMaterialFromSlot()
 	{
 		SetMaterial(0, LoadedMaterial);
 	}
+}
+
+FVector UClothComponent::TransformActorLocalPointToComponentLocal(const FVector& ActorLocalPoint) const
+{
+	// owner root가 있으면 actor local을 world로 먼저 올림
+	FVector WorldPoint = ActorLocalPoint;
+	if (AActor* OwnerActor = GetOwner())
+	{
+		if (USceneComponent* RootComponent = OwnerActor->GetRootComponent())
+		{
+			WorldPoint = RootComponent->GetWorldMatrix().TransformPosition(ActorLocalPoint);
+		}
+	}
+
+	// world 위치를 현재 cloth component local로 변환
+	return GetWorldInverseMatrix().TransformPosition(WorldPoint);
+}
+
+FVector UClothComponent::TransformActorLocalVectorToComponentLocal(const FVector& ActorLocalVector) const
+{
+	// vector는 위치와 달리 translation 영향을 받지 않도록 변환
+	FVector WorldVector = ActorLocalVector;
+	if (AActor* OwnerActor = GetOwner())
+	{
+		if (USceneComponent* RootComponent = OwnerActor->GetRootComponent())
+		{
+			WorldVector = RootComponent->GetWorldMatrix().TransformVector(ActorLocalVector);
+		}
+	}
+
+	return GetWorldInverseMatrix().TransformVector(WorldVector);
+}
+
+FVector UClothComponent::TransformActorLocalDirectionToComponentLocal(const FVector& ActorLocalDirection) const
+{
+	// zero 방향 입력은 collision/pin 계산에서 안전한 기본 축으로 보정
+	const FVector ComponentLocalVector = TransformActorLocalVectorToComponentLocal(ActorLocalDirection);
+	return ComponentLocalVector.GetSafeNormal(GNormalTolerance, FVector::UpVector);
+}
+
+void UClothComponent::TransformActorLocalPlaneToComponentLocal(
+	const FVector& ActorLocalPoint,
+	const FVector& ActorLocalNormal,
+	FVector& OutComponentLocalPoint,
+	FVector& OutComponentLocalNormal) const
+{
+	// plane은 한 점과 normal을 서로 다른 변환 규칙으로 처리
+	OutComponentLocalPoint = TransformActorLocalPointToComponentLocal(ActorLocalPoint);
+	OutComponentLocalNormal = TransformActorLocalDirectionToComponentLocal(ActorLocalNormal);
+}
+
+void UClothComponent::TransformActorLocalCapsuleToComponentLocal(
+	const FVector& ActorLocalCenter,
+	const FVector& ActorLocalAxis,
+	float HalfHeight,
+	FVector& OutComponentLocalStart,
+	FVector& OutComponentLocalEnd) const
+{
+	// capsule axis가 비어 있으면 actor local up 기준으로 endpoint 생성
+	const FVector SafeActorLocalAxis = ActorLocalAxis.GetSafeNormal(GNormalTolerance, FVector::UpVector);
+	const float SafeHalfHeight = (std::max)(0.0f, HalfHeight);
+
+	const FVector ActorLocalStart = ActorLocalCenter - SafeActorLocalAxis * SafeHalfHeight;
+	const FVector ActorLocalEnd = ActorLocalCenter + SafeActorLocalAxis * SafeHalfHeight;
+
+	OutComponentLocalStart = TransformActorLocalPointToComponentLocal(ActorLocalStart);
+	OutComponentLocalEnd = TransformActorLocalPointToComponentLocal(ActorLocalEnd);
 }
 
 void UClothComponent::LogBackendStatusOnce()
