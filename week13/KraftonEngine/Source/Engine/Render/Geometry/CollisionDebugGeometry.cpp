@@ -1,6 +1,7 @@
 #include "CollisionDebugGeometry.h"
 
 #include "Math/MathUtils.h"
+#include "PhysicsEngine/BodySetup.h"
 
 #include <cstddef>
 #include <cmath>
@@ -348,5 +349,120 @@ namespace FCollisionDebugGeometry
 			OutMesh.Indices.push_back(BaseIndex + 1);
 			OutMesh.Indices.push_back(BaseIndex + 2);
 		}
+	}
+}
+
+namespace FPhysicsBodyDebugGeometry
+{
+	namespace
+	{
+		void AppendPhysicsLines(TArray<FPhysicsDebugLine>& OutLines, const TArray<FWireLine>& Lines, const FVector4& Color)
+		{
+			for (const FWireLine& Line : Lines)
+			{
+				OutLines.push_back({ Line.Start, Line.End, Color });
+			}
+		}
+	}
+
+	void AddBodySetupWireLines(
+		TArray<FPhysicsDebugLine>& OutLines,
+		const UBodySetup* BodySetup,
+		FTransform BodyWorldTM,
+		const FVector& Scale3D,
+		bool bUseUniformScale,
+		const FVector4& Color)
+	{
+		if (!BodySetup || BodySetup->CollisionReponse == EBodyCollisionResponse::BodyCollision_Disabled)
+		{
+			return;
+		}
+
+		const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
+		if (AggGeom.GetElementCount() == 0)
+		{
+			return;
+		}
+
+		TArray<FWireLine> Lines;
+		BodyWorldTM.Scale = FVector::OneVector;
+
+		if (bUseUniformScale)
+		{
+			const float UniformScale = Scale3D.GetAbsMax();
+
+			for (const FKSphereElem& SphereElem : AggGeom.SphereElems)
+			{
+				const FVector WorldCenter = BodyWorldTM.TransformPosition(SphereElem.Center * UniformScale);
+				FCollisionDebugGeometry::AddWireSphere(Lines, WorldCenter, SphereElem.Radius * UniformScale);
+			}
+
+			for (const FKBoxElem& BoxElem : AggGeom.BoxElems)
+			{
+				const FTransform ShapeWorldTM = FTransform(BoxElem.Center * UniformScale, BoxElem.Rotation) * BodyWorldTM;
+				const FVector HalfExtent(
+					BoxElem.X * 0.5f * UniformScale,
+					BoxElem.Y * 0.5f * UniformScale,
+					BoxElem.Z * 0.5f * UniformScale);
+				FCollisionDebugGeometry::AddWireBox(Lines, ShapeWorldTM, HalfExtent);
+			}
+
+			for (const FKSphylElem& SphylElem : AggGeom.SphylElems)
+			{
+				const FTransform ShapeWorldTM = FTransform(SphylElem.Center * UniformScale, SphylElem.Rotation) * BodyWorldTM;
+				FCollisionDebugGeometry::AddWireCapsule(
+					Lines,
+					ShapeWorldTM,
+					SphylElem.Radius * UniformScale,
+					SphylElem.Length * UniformScale);
+			}
+
+			for (const FKConvexElem& ConvexElem : AggGeom.ConvexElems)
+			{
+				FTransform ShapeWorldTM = ConvexElem.GetTransform() * BodyWorldTM;
+				ShapeWorldTM.Scale = ShapeWorldTM.Scale * FVector(UniformScale, UniformScale, UniformScale);
+				FCollisionDebugGeometry::AddWireConvex(Lines, ConvexElem, ShapeWorldTM);
+			}
+		}
+		else
+		{
+			for (const FKSphereElem& SphereElem : AggGeom.SphereElems)
+			{
+				const FKSphereElem ScaledSphere = SphereElem.GetFinalScaled(Scale3D, FTransform());
+				const FTransform ShapeWorldTM = ScaledSphere.GetTransform() * BodyWorldTM;
+				FCollisionDebugGeometry::AddWireSphere(Lines, ShapeWorldTM.GetLocation(), ScaledSphere.Radius);
+			}
+
+			for (const FKBoxElem& BoxElem : AggGeom.BoxElems)
+			{
+				const FKBoxElem ScaledBox = BoxElem.GetFinalScaled(Scale3D, FTransform());
+				const FTransform ShapeWorldTM = ScaledBox.GetTransform() * BodyWorldTM;
+				const FVector HalfExtent(
+					ScaledBox.X * 0.5f,
+					ScaledBox.Y * 0.5f,
+					ScaledBox.Z * 0.5f);
+				FCollisionDebugGeometry::AddWireBox(Lines, ShapeWorldTM, HalfExtent);
+			}
+
+			for (const FKSphylElem& SphylElem : AggGeom.SphylElems)
+			{
+				const FKSphylElem ScaledSphyl = SphylElem.GetFinalScaled(Scale3D, FTransform());
+				const FTransform ShapeWorldTM = ScaledSphyl.GetTransform() * BodyWorldTM;
+				FCollisionDebugGeometry::AddWireCapsule(
+					Lines,
+					ShapeWorldTM,
+					ScaledSphyl.Radius,
+					ScaledSphyl.Length);
+			}
+
+			for (const FKConvexElem& ConvexElem : AggGeom.ConvexElems)
+			{
+				FTransform ShapeWorldTM = ConvexElem.GetTransform() * BodyWorldTM;
+				ShapeWorldTM.Scale = ShapeWorldTM.Scale * Scale3D;
+				FCollisionDebugGeometry::AddWireConvex(Lines, ConvexElem, ShapeWorldTM);
+			}
+		}
+
+		AppendPhysicsLines(OutLines, Lines, Color);
 	}
 }

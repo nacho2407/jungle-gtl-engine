@@ -46,6 +46,7 @@ private:
 	void BuildProxyCommands(const FFrameContext& Frame, FScene& Scene, const FCollectOutput& Output);
 	void BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, const FCollectOutput& Output);
 	void BuildMeshCommands(FScene& Scene, const FPrimitiveSceneProxy* Proxy);
+	void BuildPhysicsBodyWireCommands(const FFrameContext& Frame, const FPrimitiveSceneProxy& Proxy);
 	void BuildPhysicsAssetDebugCommands(const FFrameContext& Frame, const FPhysicsAssetSceneProxy& PhysicsAssetProxy);
 	void BuildPhysicsAssetSolidCommand(const FFrameContext& Frame, const FPhysicsAssetSceneProxy& PhysicsAssetProxy);
 	void EmitPhysicsAssetSolidCommand();

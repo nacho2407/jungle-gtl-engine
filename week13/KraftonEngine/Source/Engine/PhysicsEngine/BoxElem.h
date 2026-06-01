@@ -3,15 +3,29 @@
 #include "ShapeElem.h"
 #include "Core/Types/EngineTypes.h"
 
+#include "Source/Engine/PhysicsEngine/BoxElem.generated.h"
+
 class FMaterialRenderProxy;
 class FMeshElementCollector;
 
+USTRUCT()
 struct FKBoxElem : public FKShapeElem
 {
+	GENERATED_BODY()
+
+	UPROPERTY(Edit, Save, Category="Box", DisplayName="Center", Type=Vec3, Speed=0.01f)
 	FVector Center;
+
+	UPROPERTY(Edit, Save, Category="Box", DisplayName="Rotation", Type=Rotator, Speed=0.1f)
 	FRotator Rotation;
+
+	UPROPERTY(Edit, Save, Category="Box", DisplayName="X", Min=0.001f, Speed=0.01f)
 	float X;
+
+	UPROPERTY(Edit, Save, Category="Box", DisplayName="Y", Min=0.001f, Speed=0.01f)
 	float Y;
+
+	UPROPERTY(Edit, Save, Category="Box", DisplayName="Z", Min=0.001f, Speed=0.01f)
 	float Z;
 
 	FKBoxElem()

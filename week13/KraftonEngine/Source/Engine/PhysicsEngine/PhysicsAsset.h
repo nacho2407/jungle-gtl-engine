@@ -35,8 +35,15 @@ public:
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 private:
+	UPROPERTY(VisibleAnywhere, Save, Category="Physics Asset", DisplayName="Asset Path")
 	FString AssetPathFileName = "None";
+
+	UPROPERTY(Edit, Save, Category="Physics Asset", DisplayName="Source Skeletal Mesh Path")
 	FString SourceSkeletalMeshPath = "None";
+
+	UPROPERTY(Edit, Save, Category="Physics Asset", DisplayName="Body Setups", Type=Array)
 	TArray<UBodySetup*> BodySetups;
+
+	UPROPERTY(Edit, Save, Category="Physics Asset", DisplayName="Constraint Init Descs", Type=Array)
 	TArray<FConstraintInstanceInitDesc> ConstraintInitDescs;
 };
