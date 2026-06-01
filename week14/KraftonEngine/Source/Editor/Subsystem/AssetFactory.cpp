@@ -197,23 +197,35 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 	NewAsset->SetSourcePath(FPaths::ToUtf8(AssetPath.wstring()));
 	NewAsset->SetPreviewSkeletalMeshPath(SourceMesh->GetAssetPathFileName());
 
-	GeneratePhysicsAssetBodies(*NewAsset, *MeshAsset, Params);
+	FPhysicsAssetCreationParams BodyGenerationParams = Params;
+	bool bRetriedWithLowerMinBoneSize = false;
+	GeneratePhysicsAssetBodies(*NewAsset, *MeshAsset, BodyGenerationParams);
+
+	if (NewAsset->GetBodySetups().empty()
+		&& !Params.bCreateBodyForAllBones
+		&& Params.MinBoneSize > 1.0f)
+	{
+		BodyGenerationParams.MinBoneSize = 1.0f;
+		bRetriedWithLowerMinBoneSize = true;
+		GeneratePhysicsAssetBodies(*NewAsset, *MeshAsset, BodyGenerationParams);
+	}
 
 	if (NewAsset->GetBodySetups().empty())
 	{
 		UE_LOG(
-			"PhysicsAsset creation failed: generator produced no body setups. Mesh=%s AssetName=%s MinBoneSize=%.2f MinWeldSize=%.4f CreateAllBones=%s",
+			"PhysicsAsset creation failed: generator produced no body setups. Mesh=%s AssetName=%s MinBoneSize=%.2f MinWeldSize=%.4f CreateAllBones=%s RetriedMinBoneSize=%s",
 			SourceMesh->GetAssetPathFileName().c_str(),
 			AssetName.c_str(),
 			static_cast<double>(Params.MinBoneSize),
 			static_cast<double>(Params.MinWeldSize),
-			Params.bCreateBodyForAllBones ? "true" : "false"
+			Params.bCreateBodyForAllBones ? "true" : "false",
+			bRetriedWithLowerMinBoneSize ? "1.0" : "false"
 		);
 		UObjectManager::Get().DestroyObject(NewAsset);
 		return false;
 	}
 	
-	GeneratePhysicsAssetConstraints(*NewAsset, *MeshAsset, Params);
+	GeneratePhysicsAssetConstraints(*NewAsset, *MeshAsset, BodyGenerationParams);
 	
 	const bool bSaved = FPhysicsAssetManager::Get().Save(NewAsset);
 	if (!bSaved)
