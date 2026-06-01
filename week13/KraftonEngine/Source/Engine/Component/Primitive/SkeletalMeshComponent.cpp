@@ -244,6 +244,7 @@ void USkeletalMeshComponent::EnableRagdollPhysics()
         bRagdollActive = false;
         bRagdollEnabled = false;
         ClearRagdollComponentSyncState();
+        ClearRagdollComponentMoveState();
         UE_LOG("EnableRagdollPhysics failed: could not create ragdoll bodies");
         return;
     }
@@ -257,6 +258,7 @@ void USkeletalMeshComponent::EnableRagdollPhysics()
     }
 
     CaptureRagdollComponentSyncOffset();
+    CacheRagdollComponentWorldMatrix();
 
     bRagdollActive = true;
     bRagdollEnabled = true;
@@ -271,6 +273,7 @@ void USkeletalMeshComponent::DisableRagdollPhysics()
     if (!bRagdollActive && !bRagdollEnabled && Bodies.empty() && Constraints.empty())
     {
         ClearRagdollComponentSyncState();
+        ClearRagdollComponentMoveState();
         return;
     }
 
@@ -280,6 +283,7 @@ void USkeletalMeshComponent::DisableRagdollPhysics()
     DestroyRagdollConstraints();
     DestroyRagdollBodies();
     ClearRagdollComponentSyncState();
+    ClearRagdollComponentMoveState();
 
     UE_LOG("Ragdoll disabled");
 }
@@ -417,6 +421,55 @@ void USkeletalMeshComponent::ClearRagdollComponentSyncState()
     RagdollComponentSyncBoneIndex = -1;
     RagdollComponentSyncLocalOffset = FVector::ZeroVector;
     bHasRagdollComponentSyncOffset = false;
+}
+
+void USkeletalMeshComponent::CacheRagdollComponentWorldMatrix()
+{
+    LastRagdollComponentWorldMatrix = GetWorldMatrix();
+    bHasLastRagdollComponentWorldMatrix = true;
+}
+
+void USkeletalMeshComponent::ClearRagdollComponentMoveState()
+{
+    LastRagdollComponentWorldMatrix = FMatrix::Identity;
+    bHasLastRagdollComponentWorldMatrix = false;
+}
+
+void USkeletalMeshComponent::ApplyExternalComponentMoveToRagdollBodies()
+{
+    if (!bHasLastRagdollComponentWorldMatrix)
+    {
+        CacheRagdollComponentWorldMatrix();
+        return;
+    }
+
+    const FMatrix CurrentComponentWorldMatrix = GetWorldMatrix();
+    const FVector OldLocation = LastRagdollComponentWorldMatrix.GetLocation();
+    const FVector NewLocation = CurrentComponentWorldMatrix.GetLocation();
+    const FVector Delta = NewLocation - OldLocation;
+
+    if (Delta.IsNearlyZero())
+    {
+        return;
+    }
+
+    MoveAllRagdollBodiesByComponentDelta(Delta);
+}
+
+void USkeletalMeshComponent::MoveAllRagdollBodiesByComponentDelta(const FVector& Delta)
+{
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (!Body || !Body->IsValidBodyInstance())
+        {
+            continue;
+        }
+
+        FTransform BodyTransform = Body->GetBodyTransform();
+        BodyTransform.Location = BodyTransform.Location + Delta;
+        Body->SetBodyTransform(BodyTransform);
+        Body->WakeUp();
+    }
 }
 
 void USkeletalMeshComponent::WakeAllRagdollBodies()
@@ -1224,8 +1277,10 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
     if (bRagdollActive)
     {
+        ApplyExternalComponentMoveToRagdollBodies();
         SyncComponentToRagdollBody();
         SyncBonesFromRagdollBodies();
+        CacheRagdollComponentWorldMatrix();
         UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
         return;
     }
@@ -1244,6 +1299,7 @@ void USkeletalMeshComponent::EndPlay()
     DestroyRagdollConstraints();
     DestroyRagdollBodies();
     ClearRagdollComponentSyncState();
+    ClearRagdollComponentMoveState();
     Super::EndPlay();
 }
 

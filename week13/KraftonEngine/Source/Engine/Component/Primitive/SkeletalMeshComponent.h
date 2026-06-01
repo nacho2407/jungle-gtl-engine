@@ -143,6 +143,10 @@ private:
     FBodyInstance* FindRagdollComponentSyncBody() const;
     void CaptureRagdollComponentSyncOffset();
     void ClearRagdollComponentSyncState();
+    void CacheRagdollComponentWorldMatrix();
+    void ClearRagdollComponentMoveState();
+    void ApplyExternalComponentMoveToRagdollBodies();
+    void MoveAllRagdollBodiesByComponentDelta(const FVector& Delta);
 
     bool CreateRagdollBodiesFromPhysicsAsset();
     bool CreateRagdollConstraintsFromPhysicsAsset();
@@ -189,4 +193,6 @@ protected:
     int32 RagdollComponentSyncBoneIndex = -1;
     FVector RagdollComponentSyncLocalOffset = FVector::ZeroVector;
     bool bHasRagdollComponentSyncOffset = false;
+    FMatrix LastRagdollComponentWorldMatrix = FMatrix::Identity;
+    bool bHasLastRagdollComponentWorldMatrix = false;
 };
