@@ -15,7 +15,7 @@
 #include "Settings/EditorSettings.h"
 #include "Slate/SlateApplication.h"
 #include "UI/Toolbar/ViewportToolbar.h"
-#include "UI/Util/InlinePropertyRenderer.h"
+#include "UI/Util/DetailPropertyRenderer.h"
 #include "Viewport/Viewport.h"
 
 #include <imgui.h>
@@ -776,7 +776,7 @@ void FStaticMeshEditorWidget::RenderAggregateShapeDetails(UStaticMesh* StaticMes
 		break;
 	}
 
-	if (StructType && FInlinePropertyRenderer::RenderStructProperties(StructType, Shape, StaticMesh, "##StaticMeshAggregateShapeProps"))
+	if (StructType && FDetailPropertyRenderer::RenderStructProperties(StructType, Shape, StaticMesh, "##StaticMeshAggregateShapeProps"))
 	{
 		SaveStaticMeshChange("StaticMesh AggregateGeom edit warning");
 		MarkDirty();

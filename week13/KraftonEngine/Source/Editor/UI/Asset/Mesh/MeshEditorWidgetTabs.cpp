@@ -12,7 +12,7 @@
 #include "Animation/Sequence/AnimSequence.h"
 #include "Component/Debug/PhysicsAssetDebugComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
-#include "Editor/UI/Util/InlinePropertyRenderer.h"
+#include "Editor/UI/Util/DetailPropertyRenderer.h"
 #include "GameFramework/AActor.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
@@ -172,7 +172,7 @@ namespace
 
 		const FVector PreviousParentLocation = ConstraintDesc->ParentFrame.Location;
 		const FVector PreviousChildLocation = ConstraintDesc->ChildFrame.Location;
-		const bool bChanged = FInlinePropertyRenderer::RenderStructProperties(
+		const bool bChanged = FDetailPropertyRenderer::RenderStructProperties(
 			FConstraintInstanceInitDesc::StaticStruct(),
 			ConstraintDesc,
 			PhysicsAsset,
@@ -213,7 +213,7 @@ namespace
 		ImGui::TextUnformatted("Body Setup");
 		ImGui::Text("Calculated Mass: %.4f kg", BodySetup->CalculateMass());
 
-		return FInlinePropertyRenderer::RenderStructProperties(
+		return FDetailPropertyRenderer::RenderStructProperties(
 			UBodySetup::StaticClass(),
 			BodySetup,
 			PhysicsAsset,
@@ -228,7 +228,7 @@ namespace
 		}
 
 		ImGui::TextUnformatted("Physics Asset");
-		return FInlinePropertyRenderer::RenderStructProperties(
+		return FDetailPropertyRenderer::RenderStructProperties(
 			UPhysicsAsset::StaticClass(),
 			PhysicsAsset,
 			PhysicsAsset,

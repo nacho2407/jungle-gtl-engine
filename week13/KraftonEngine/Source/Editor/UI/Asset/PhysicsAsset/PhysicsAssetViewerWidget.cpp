@@ -8,7 +8,7 @@
 #include "Component/Debug/PhysicsAssetDebugComponent.h"
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
-#include "Editor/UI/Util/InlinePropertyRenderer.h"
+#include "Editor/UI/Util/DetailPropertyRenderer.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "GameFramework/World.h"
@@ -67,7 +67,7 @@ bool RenderConstraintInitDescDetails(
 
 	const FVector PreviousParentLocation = ConstraintDesc->ParentFrame.Location;
 	const FVector PreviousChildLocation = ConstraintDesc->ChildFrame.Location;
-	const bool bChanged = FInlinePropertyRenderer::RenderStructProperties(
+	const bool bChanged = FDetailPropertyRenderer::RenderStructProperties(
 		FConstraintInstanceInitDesc::StaticStruct(),
 		ConstraintDesc,
 		PhysicsAsset,
@@ -107,7 +107,7 @@ bool RenderBodySetupDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
 	UBodySetup* BodySetup = Bodies[BodyIndex];
 	ImGui::TextUnformatted("Body Setup");
 	ImGui::Text("Calculated Mass: %.4f kg", BodySetup->CalculateMass());
-	return FInlinePropertyRenderer::RenderStructProperties(
+	return FDetailPropertyRenderer::RenderStructProperties(
 		UBodySetup::StaticClass(),
 		BodySetup,
 		PhysicsAsset,
@@ -122,7 +122,7 @@ bool RenderPhysicsAssetDetails(UPhysicsAsset* PhysicsAsset)
 	}
 
 	ImGui::TextUnformatted("Physics Asset");
-	return FInlinePropertyRenderer::RenderStructProperties(
+	return FDetailPropertyRenderer::RenderStructProperties(
 		UPhysicsAsset::StaticClass(),
 		PhysicsAsset,
 		PhysicsAsset,
