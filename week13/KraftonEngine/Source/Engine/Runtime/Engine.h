@@ -5,6 +5,7 @@
 #include "GameFramework/WorldContext.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Render/Pipeline/IRenderPipeline.h"
+#include "Cloth/NvClothContext.h"
 
 #include "Source/Engine/Runtime/Engine.generated.h"
 #include <memory>
@@ -60,6 +61,20 @@ public:
 
 	FRenderer& GetRenderer() { return Renderer; }
 
+	/**
+	 * @brief 엔진이 소유한 Cloth backend context를 반환합니다
+	 *
+	 * @return 엔진이 소유한 Cloth backend context
+	 */
+	FNvClothContext& GetClothContext() { return ClothContext; }
+
+	/**
+	 * @brief 엔진이 소유한 Cloth backend context를 반환합니다
+	 *
+	 * @return 엔진이 소유한 Cloth backend context
+	 */
+	const FNvClothContext& GetClothContext() const { return ClothContext; }
+
 	// Game Viewport Client — PIE/Standalone 용
 	void SetGameViewportClient(UGameViewportClient* InClient) { GameViewportClient = InClient; }
 	UGameViewportClient* GetGameViewportClient() const { return GameViewportClient; }
@@ -83,6 +98,7 @@ protected:
 	UGameViewportClient* GameViewportClient = nullptr;
 
 	FRenderer Renderer;
+	FNvClothContext ClothContext;
 
 private:
 	std::unique_ptr<IRenderPipeline> RenderPipeline;

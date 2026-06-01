@@ -522,6 +522,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Collision\Octree\SpatialPartition.cpp" />
     <ClCompile Include="Source\Engine\Collision\Ray\RayUtils.cpp" />
     <ClCompile Include="Source\Engine\Collision\Ray\RayUtilsSIMD.cpp" />
+    <ClCompile Include="Source\Engine\Cloth\ClothSimulation.cpp" />
+    <ClCompile Include="Source\Engine\Cloth\ClothTypes.cpp" />
+    <ClCompile Include="Source\Engine\Cloth\NvClothContext.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
@@ -939,6 +942,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Collision\Octree\SpatialPartition.h" />
     <ClInclude Include="Source\Engine\Collision\Ray\RayUtils.h" />
     <ClInclude Include="Source\Engine\Collision\Ray\RayUtilsSIMD.h" />
+    <ClInclude Include="Source\Engine\Cloth\ClothBuildConfig.h" />
+    <ClInclude Include="Source\Engine\Cloth\ClothSimulation.h" />
+    <ClInclude Include="Source\Engine\Cloth\ClothTypes.h" />
+    <ClInclude Include="Source\Engine\Cloth\NvClothContext.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
