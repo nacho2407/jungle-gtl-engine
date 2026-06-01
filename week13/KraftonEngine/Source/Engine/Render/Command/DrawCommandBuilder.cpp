@@ -182,6 +182,7 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 	ID3D11DeviceContext* Ctx = CachedContext;
 
 	const bool bSkeletal = Proxy.HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh);
+	const bool bCloth = Proxy.HasProxyFlag(EPrimitiveProxyFlags::Cloth);
 	const bool bWeightBoneHeatMap = bSkeletal && bCollectWeightBoneHeatMap && CollectWeightBoneHeatMapBoneIndex >= 0;
 	const bool bGPUSkinning = bSkeletal && (SkinningModeRuntime::Get() == ESkinningMode::GPU || bWeightBoneHeatMap);
 	const FSkeletalMeshSceneProxy* SkeletalProxy = bSkeletal
@@ -275,6 +276,12 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 			// 섹션별 Material의 RenderPass가 현재 Pass와 일치할 때만 렌더 상태 오버라이드
 			if (Pass == Mat->GetRenderPass())
 				ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
+		}
+
+		if (bCloth && Cmd.RenderState.Rasterizer != ERasterizerState::WireFrame)
+		{
+			// Cloth는 material cull 설정과 무관하게 양면 렌더링
+			Cmd.RenderState.Rasterizer = ERasterizerState::SolidNoCull;
 		}
 
 		if (Pass == ERenderPass::AlphaBlend)

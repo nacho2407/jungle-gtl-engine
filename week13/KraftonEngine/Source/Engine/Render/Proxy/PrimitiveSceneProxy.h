@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Render/Proxy/DirtyFlag.h"
@@ -35,6 +35,7 @@ enum class EPrimitiveProxyFlags : uint16
 	SkeletalMesh      = 1 << 10,
 	Particle          = 1 << 11,
 	PhysicsAssetDebug = 1 << 12,
+	Cloth             = 1 << 13, // Cloth 프록시
 };
 
 inline EPrimitiveProxyFlags  operator|(EPrimitiveProxyFlags A, EPrimitiveProxyFlags B)  { return static_cast<EPrimitiveProxyFlags>(static_cast<uint16>(A) | static_cast<uint16>(B)); }

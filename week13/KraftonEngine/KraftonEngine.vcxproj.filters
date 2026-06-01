@@ -169,6 +169,9 @@
     <Filter Include="Source\Engine\Collision\Ray">
       <UniqueIdentifier>{7e47da66-3e86-e18d-8021-d9b6cd37750b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Cloth">
+      <UniqueIdentifier>{b57d4a15-fb5d-4e44-b7eb-311ed6c62d23}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{22bbd7c0-73bc-1bc4-992f-be08238b1609}</UniqueIdentifier>
     </Filter>
@@ -1130,6 +1133,15 @@
     <ClCompile Include="Source\Engine\Collision\Ray\RayUtilsSIMD.cpp">
       <Filter>Source\Engine\Collision\Ray</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Cloth\ClothSimulation.cpp">
+      <Filter>Source\Engine\Cloth</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Cloth\ClothTypes.cpp">
+      <Filter>Source\Engine\Cloth</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Cloth\NvClothContext.cpp">
+      <Filter>Source\Engine\Cloth</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp">
       <Filter>Source\Engine\Component</Filter>
     </ClCompile>
@@ -1208,7 +1220,13 @@
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\VehicleMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Primitive\BillboardComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\ClothComponent.cpp">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.cpp">
@@ -1359,6 +1377,9 @@
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Actor\StaticMeshActor.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\4WVehicleActor.cpp">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.cpp">
@@ -1743,6 +1764,9 @@
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\ClothSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.cpp">
@@ -2375,6 +2399,18 @@
     <ClInclude Include="Source\Engine\Collision\Ray\RayUtilsSIMD.h">
       <Filter>Source\Engine\Collision\Ray</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Cloth\ClothBuildConfig.h">
+      <Filter>Source\Engine\Cloth</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Cloth\ClothSimulation.h">
+      <Filter>Source\Engine\Cloth</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Cloth\ClothTypes.h">
+      <Filter>Source\Engine\Cloth</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Cloth\NvClothContext.h">
+      <Filter>Source\Engine\Cloth</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\ActorComponent.h">
       <Filter>Source\Engine\Component</Filter>
     </ClInclude>
@@ -2453,7 +2489,13 @@
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\VehicleMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Primitive\BillboardComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\ClothComponent.h">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.h">
@@ -2637,6 +2679,9 @@
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Actor\StaticMeshActor.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\4WVehicleActor.h">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.h">
@@ -3162,6 +3207,9 @@
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\ClothSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.h">
@@ -5693,5 +5741,8 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

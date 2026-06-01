@@ -1,4 +1,4 @@
-﻿#include "Physics/PhysXPhysicsScene.h"
+#include "Physics/PhysXPhysicsScene.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/SphereComponent.h"
@@ -140,6 +140,49 @@ static PxPvdTransport* GSharedPvdTransport = nullptr;
 #endif
 
 static int32 GSharedRefCount = 0;
+static bool GSharedVehicleSDKInitialized = false;
+
+static void ReleaseSharedPhysXResources()
+{
+	if (GSharedVehicleSDKInitialized)
+	{
+		PxCloseVehicleSDK();
+		GSharedVehicleSDKInitialized = false;
+	}
+
+	if (GSharedExtensionsInitialized)
+	{
+		PxCloseExtensions();
+		GSharedExtensionsInitialized = false;
+	}
+
+	if (GSharedPhysics)
+	{
+		GSharedPhysics->release();
+		GSharedPhysics = nullptr;
+	}
+
+#if WITH_PHYSX_PVD
+	if (GSharedPvd)
+	{
+		GSharedPvd->disconnect();
+		GSharedPvd->release();
+		GSharedPvd = nullptr;
+	}
+
+	if (GSharedPvdTransport)
+	{
+		GSharedPvdTransport->release();
+		GSharedPvdTransport = nullptr;
+	}
+#endif
+
+	if (GSharedFoundation)
+	{
+		GSharedFoundation->release();
+		GSharedFoundation = nullptr;
+	}
+}
 
 static bool AcquireSharedPhysX(PxFoundation*& OutFoundation, PxPhysics*& OutPhysics)
 {
@@ -203,24 +246,7 @@ static bool AcquireSharedPhysX(PxFoundation*& OutFoundation, PxPhysics*& OutPhys
 		if (!GSharedPhysics)
 		{
 			UE_LOG("[PhysX] Failed to create shared physics");
-
-#if WITH_PHYSX_PVD
-			if (GSharedPvd)
-			{
-				GSharedPvd->disconnect();
-				GSharedPvd->release();
-				GSharedPvd = nullptr;
-			}
-
-			if (GSharedPvdTransport)
-			{
-				GSharedPvdTransport->release();
-				GSharedPvdTransport = nullptr;
-			}
-#endif
-
-			GSharedFoundation->release();
-			GSharedFoundation = nullptr;
+			ReleaseSharedPhysXResources();
 			return false;
 		}
 
@@ -233,7 +259,19 @@ static bool AcquireSharedPhysX(PxFoundation*& OutFoundation, PxPhysics*& OutPhys
 		if (!GSharedExtensionsInitialized)
 		{
 			UE_LOG("[PhysX] Failed to initialize PhysX extensions");
+			ReleaseSharedPhysXResources();
+			return false;
 		}
+
+		if (!PxInitVehicleSDK(*GSharedPhysics))
+		{
+			UE_LOG("[PhysX] Failed to initialize vehicle SDK");
+			ReleaseSharedPhysXResources();
+			return false;
+		}
+
+		GSharedVehicleSDKInitialized = true;
+		PxVehicleSetBasisVectors(PxVec3(0.0f, 0.0f, 1.0f), PxVec3(1.0f, 0.0f, 0.0f));
 	}
 
 	++GSharedRefCount;
@@ -253,30 +291,7 @@ static void ReleaseSharedPhysX()
 	--GSharedRefCount;
 	if (GSharedRefCount == 0)
 	{
-		if (GSharedExtensionsInitialized)
-		{
-			PxCloseExtensions();
-			GSharedExtensionsInitialized = false;
-		}
-
-		if (GSharedPhysics) { GSharedPhysics->release(); GSharedPhysics = nullptr; }
-
-#if WITH_PHYSX_PVD
-		if (GSharedPvd)
-		{
-			GSharedPvd->disconnect();
-			GSharedPvd->release();
-			GSharedPvd = nullptr;
-		}
-
-		if (GSharedPvdTransport)
-		{
-			GSharedPvdTransport->release();
-			GSharedPvdTransport = nullptr;
-		}
-#endif
-
-		if (GSharedFoundation) { GSharedFoundation->release(); GSharedFoundation = nullptr; }
+		ReleaseSharedPhysXResources();
 	}
 }
 
