@@ -266,26 +266,21 @@ void FEditorSceneWidget::RenderNonSceneComponents(AActor* Actor, FSelectionManag
 		return;
 	}
 
-	ImGuiTreeNodeFlags GroupFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
-	if (ImGui::TreeNodeEx("##ActorComponents", GroupFlags, "Components"))
+	for (UActorComponent* Comp : NonSceneComponents)
 	{
-		for (UActorComponent* Comp : NonSceneComponents)
+		FString Name;
+		const char* Label = GetComponentDisplayName(Comp, Name);
+
+		ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+		if (Selection.GetSelectedActorComponent() == Comp)
 		{
-			FString Name;
-			const char* Label = GetComponentDisplayName(Comp, Name);
-
-			ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
-			if (Selection.GetSelectedActorComponent() == Comp)
-			{
-				Flags |= ImGuiTreeNodeFlags_Selected;
-			}
-
-			ImGui::TreeNodeEx(Comp, Flags, "%s (%s)", Label, Comp->GetClass()->GetName());
-			if (ImGui::IsItemClicked())
-			{
-				Selection.SelectActorComponent(Comp);
-			}
+			Flags |= ImGuiTreeNodeFlags_Selected;
 		}
-		ImGui::TreePop();
+
+		ImGui::TreeNodeEx(Comp, Flags, "%s (%s)", Label, Comp->GetClass()->GetName());
+		if (ImGui::IsItemClicked())
+		{
+			Selection.SelectActorComponent(Comp);
+		}
 	}
 }
