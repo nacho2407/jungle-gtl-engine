@@ -28,7 +28,7 @@ namespace FDetailPropertyRenderer
 	{
 		constexpr float MinPropertyLabelColumnWidth = 80.0f;
 		constexpr float MaxPropertyLabelColumnWidth = 320.0f;
-		constexpr float DetailPropertyIndentWidth = 8.0f;
+		constexpr float DetailPropertyIndentWidth = 16.0f;
 
 		struct FArrayElementContext
 		{
@@ -584,7 +584,6 @@ namespace FDetailPropertyRenderer
 				ImGuiTableFlags_SizingStretchProp |
 				ImGuiTableFlags_BordersInnerV |
 				ImGuiTableFlags_PadOuterX |
-				ImGuiTableFlags_RowBg |
 				ImGuiTableFlags_Resizable |
 				ImGuiTableFlags_NoSavedSettings;
 
