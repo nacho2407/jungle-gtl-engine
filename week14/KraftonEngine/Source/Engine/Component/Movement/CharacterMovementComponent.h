@@ -1,9 +1,12 @@
-#pragma once
+﻿#pragma once
 
-#include "MovementComponent.h"
-#include "Core/Types/CollisionTypes.h"   // FHitResult
+#include "Component/Movement/MovementComponent.h"
+
+#include "Core/Types/CollisionTypes.h"
 #include "Math/Vector.h"
 #include "Math/Transform.h"
+
+#include "Physics/PhysXInclude.h"
 
 // UE 의 EMovementMode minimal subset — 후속 단계에서 NavWalking/Swimming 등 확장.
 enum class EMovementMode : uint8
@@ -31,6 +34,13 @@ public:
 	GENERATED_BODY()
 	UCharacterMovementComponent();
 	~UCharacterMovementComponent() override = default;
+
+	void EndPlay() override;
+
+	bool EnsureController();
+	void ReleaseController();
+
+	void SyncUpdatedComponentFromController();
 
 	// Controller 등 외부에서 매 frame 누적. TickComponent 가 ConsumeInputVector 로 비움.
 	void AddInputVector(const FVector& WorldDirection, float ScaleValue = 1.0f);
@@ -120,4 +130,10 @@ protected:
 
 	// 평면 속도 기준 yaw 를 RotationYawRate * dt 로 lerp. TickComponent 끝에서 적용.
 	void  PhysOrientToMovement(float DeltaTime);
+
+private:
+	physx::PxControllerCollisionFlags MoveController(const FVector& Delta, float DeltaTime);
+
+private:
+	physx::PxController* Controller = nullptr;
 };

@@ -40,6 +40,8 @@ public:
 
 	void GatherClothCollision(const FClothCollisionGatherParams& Params, FClothCollisionData& OutData) const;
 
+	void PrepareCharacterControllers(float DeltaTime);
+
 	bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
 		const AActor* IgnoreActor = nullptr);
@@ -60,6 +62,8 @@ public:
 
 	FPhysXVehicleManager* GetVehicleManager() const { return VehicleManager; }
 
+	physx::PxControllerManager* GetControllerManager() const { return ControllerManager; }
+
 private:
 	physx::PxScene* Scene = nullptr;
 	physx::PxDefaultCpuDispatcher* Dispatcher = nullptr;
@@ -67,6 +71,7 @@ private:
 	FPhysicsEventCallback* EventCallback = nullptr;
 
 	FPhysXVehicleManager* VehicleManager = nullptr;
+	physx::PxControllerManager* ControllerManager = nullptr;
 
 	TArray<FBodyInstance*> Bodies;
 	TArray<FConstraintInstance*> Constraints;

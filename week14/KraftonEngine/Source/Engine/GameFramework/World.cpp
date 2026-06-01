@@ -365,6 +365,11 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 		return;
 	}
 
+	if (TickType == ELevelTick::LEVELTICK_All && PhysicsScene)
+	{
+		PhysicsScene->PrepareCharacterControllers(DeltaTime);
+	}
+
 	TickManager.Tick(this, DeltaTime, TickType);
 
 	if (TickType == ELevelTick::LEVELTICK_All && PhysicsScene)

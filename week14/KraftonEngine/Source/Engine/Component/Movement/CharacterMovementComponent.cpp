@@ -1,8 +1,9 @@
-#include "CharacterMovementComponent.h"
+﻿#include "CharacterMovementComponent.h"
 
 #include "Animation/AnimInstance.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/SceneComponent.h"
+#include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Core/Types/PropertyTypes.h"
 #include "Core/TickFunction.h"
@@ -11,6 +12,11 @@
 #include "GameFramework/World.h"
 #include "Math/Quat.h"
 #include "Math/Rotator.h"
+#include "Physics/BodyInstance.h"
+#include "Physics/PhysicsScene.h"
+#include "Physics/PhysXSDK.h"
+#include "Physics/PhysXConversions.h"
+#include "Physics/PhysicsQueryFilter.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 
@@ -25,6 +31,96 @@ UCharacterMovementComponent::UCharacterMovementComponent()
 	// FTickManager 가 group 순서대로 실행하므로 PrePhysics 가 모두 끝난 뒤 DuringPhysics 가 돈다.
 	PrimaryComponentTick.SetTickGroup(TG_DuringPhysics);
 	PrimaryComponentTick.SetEndTickGroup(TG_DuringPhysics);
+}
+
+void UCharacterMovementComponent::EndPlay()
+{
+	ReleaseController();
+	Super::EndPlay();
+}
+
+bool UCharacterMovementComponent::EnsureController()
+{
+	if (Controller) return true;
+
+	UCapsuleComponent* Capsule = Cast<UCapsuleComponent>(GetUpdatedComponent());
+	if (!Capsule) return false;
+
+	UWorld* World = GetWorld();
+	if (!World || !World->GetPhysicsScene()) return false;
+
+	physx::PxControllerManager* Manager = World->GetPhysicsScene()->GetControllerManager();
+	physx::PxMaterial* Material = FPhysXSDK::Get().GetDefaultMaterial();
+	if (!Manager || !Material) return false;
+
+	const FVector Location = Capsule->GetWorldLocation();
+	const float Radius = Capsule->GetScaledCapsuleRadius();
+	const float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+	const float CylinderHeight = std::max(0.01f, HalfHeight * 2.0f - Radius * 2.0f);
+
+	physx::PxCapsuleControllerDesc Desc;
+	Desc.position = physx::PxExtendedVec3(Location.X, Location.Y, Location.Z);
+	Desc.radius = Radius;
+	Desc.height = CylinderHeight;
+	Desc.upDirection = physx::PxVec3(0.0f, 0.0f, 1.0f);
+	Desc.material = Material;
+	Desc.contactOffset = 0.05f;
+	Desc.stepOffset = 0.4f;
+	Desc.slopeLimit = std::cos(45.0f * DEG_TO_RAD);
+
+	if (!Desc.isValid()) return false;
+
+	Controller = Manager->createController(Desc);
+	return Controller != nullptr;
+}
+
+void UCharacterMovementComponent::ReleaseController()
+{
+	if (Controller)
+	{
+		Controller->release();
+		Controller = nullptr;
+	}
+}
+
+void UCharacterMovementComponent::SyncUpdatedComponentFromController()
+{
+	if (!Controller) return;
+
+	USceneComponent* Updated = GetUpdatedComponent();
+	if (!Updated) return;
+
+	const physx::PxExtendedVec3 Position = Controller->getPosition();
+	Updated->SetWorldLocation(FVector(static_cast<float>(Position.x),
+		static_cast<float>(Position.y), static_cast<float>(Position.z)));
+
+	if (UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(Updated))
+	{
+		if (FBodyInstance* Body = Primitive->GetBodyInstance())
+		{
+			Body->SyncToPhysics();
+		}
+	}
+}
+
+physx::PxControllerCollisionFlags UCharacterMovementComponent::MoveController(
+	const FVector& Delta,
+	float DeltaTime)
+{
+	if (!EnsureController())
+	{
+		return physx::PxControllerCollisionFlags();
+	}
+
+	const physx::PxVec3 Disp(Delta.X, Delta.Y, Delta.Z);
+	FPhysicsRaycastFilterCallback QueryFilter(ECollisionChannel::Pawn, GetOwner());
+
+	physx::PxControllerFilters Filters(nullptr, &QueryFilter, nullptr);
+
+	const physx::PxControllerCollisionFlags Flags = Controller->move(Disp, 0.001f, DeltaTime, Filters);
+
+	SyncUpdatedComponentFromController();
+	return Flags;
 }
 
 void UCharacterMovementComponent::AddInputVector(const FVector& WorldDirection, float ScaleValue)
@@ -89,6 +185,8 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	USceneComponent* Updated = GetUpdatedComponent();
 	if (!Updated) return;
 	if (DeltaTime <= 0.0f) return;
+
+	if (!EnsureController()) return;
 
 	// 매 Tick 회전 적용 상태 reset — 이번 frame 에 root motion 이 yaw 를 적용했는지를
 	// 외부 (Character::Tick) 가 query 할 수 있어야 yaw 충돌 회피 가능.
@@ -260,22 +358,19 @@ void UCharacterMovementComponent::TickWalking(float DeltaTime, const FVector& Ro
 	const FVector XYOffset(
 		Velocity.X * DeltaTime + RootMotionWorldXY.X,
 		Velocity.Y * DeltaTime + RootMotionWorldXY.Y,
-		0.0f);
-	Updated->SetWorldLocation(Updated->GetWorldLocation() + XYOffset);
+		-FloorProbeDistance);
 
-	// Floor 잡혔는지 — 이동 직후 위치에서 다시 trace.
-	FHitResult Floor;
-	if (!TraceFloor(Floor))
+	const auto Flags = MoveController(XYOffset, DeltaTime);
+	const bool bHitDown = Flags.isSet(physx::PxControllerCollisionFlag::eCOLLISION_DOWN);
+
+	if (bHitDown)
 	{
-		// 발 아래 floor 없음 (예: 절벽 끝) → falling 전환.
-		SetMovementMode(EMovementMode::Falling);
-		return;
+		Velocity.Z = 0.0f;
 	}
-
-	// Floor stick — capsule 중심 = floor.Z + HalfHeight.
-	FVector NewLoc = Updated->GetWorldLocation();
-	NewLoc.Z = Floor.WorldHitLocation.Z + GetCapsuleHalfHeight();
-	Updated->SetWorldLocation(NewLoc);
+	else
+	{
+		SetMovementMode(EMovementMode::Falling);
+	}
 }
 
 void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& RootMotionWorldXY)
@@ -290,25 +385,15 @@ void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& Ro
 		Velocity.X * DeltaTime + RootMotionWorldXY.X,
 		Velocity.Y * DeltaTime + RootMotionWorldXY.Y,
 		Velocity.Z * DeltaTime);
-	Updated->SetWorldLocation(Updated->GetWorldLocation() + Offset);
 
-	// 올라가는 중 (점프 arc 상승) 엔 floor 체크 skip — 안 그러면 점프 직후 1 frame 의
-	// 작은 상승 (≈ JumpZVelocity * dt) 이 raycast probe 거리 안에 있어 즉시 착지로 잡힘.
-	// UE 도 동일 — Velocity.Z > 0 이면 ground 안 잡음.
-	if (Velocity.Z > 0.0f) return;
+	const auto Flags = MoveController(Offset, DeltaTime);
+	const bool bHitDown = Flags.isSet(physx::PxControllerCollisionFlag::eCOLLISION_DOWN);
 
-	// 떨어지는 중에만 floor 체크.
-	FHitResult Floor;
-	if (!TraceFloor(Floor)) return;
-
-	// 착지 — capsule Z 보정 + Walking 전환 + Velocity.Z = 0.
-	// raycast 가 hit 했다는 건 capsule bottom 이 floor 위 (또는 약간 안) 에 있다는 뜻.
-	// hit 위치를 floor 표면으로 보고 그 위에 stick.
-	FVector LandLoc = Updated->GetWorldLocation();
-	LandLoc.Z = Floor.WorldHitLocation.Z + GetCapsuleHalfHeight();
-	Updated->SetWorldLocation(LandLoc);
-	Velocity.Z = 0.0f;
-	SetMovementMode(EMovementMode::Walking);
+	if (Velocity.Z <= 0.0f && bHitDown)
+	{
+		Velocity.Z = 0.0f;
+		SetMovementMode(EMovementMode::Walking);
+	}
 }
 
 bool UCharacterMovementComponent::TraceFloor(FHitResult& OutHit) const
