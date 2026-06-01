@@ -1,10 +1,10 @@
 ﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
+#include "Physics/PhysicsAssetEditTypes.h"
 
 class USkeletalMesh;
 
-enum class EPhysicsAssetPrimitiveType   : uint8 { Box, Capsule, Sphere };
 enum class EPhysicsAssetVertexWeighting : uint8 { AnyWeight, DominantWeight };
 enum class EPhysicsAssetConstraintMode  : uint8 { Free, Limited, Locked };
 
