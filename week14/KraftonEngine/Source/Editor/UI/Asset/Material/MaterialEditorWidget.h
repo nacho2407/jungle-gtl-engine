@@ -38,7 +38,7 @@ private:
 	void RenderBloomOverrides(UMaterialInstance* Instance);
 	void RenderShaderParameters(UMaterialInterface* Material);
 	void RenderTextureSection(UMaterialInterface* Material);
-	void SaveMaterialJson();
+	bool SaveMaterialJson();
 
 	void CreateMaterialInstanceAsset(UMaterial* ParentMaterial);
 

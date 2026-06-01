@@ -186,13 +186,15 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	ApplyTextures(Material, JsonData);
 	Material->RebuildCachedSRVs();
 
+	using namespace RenderStateStrings;
+
 	// JSON 데이터에도 현재 상태를 기록 (나중에 저장 시 유지되도록)
-	JsonData[MatKeys::BlendState] = BlendStr.empty() ? "" : BlendStr.c_str();
-	JsonData[MatKeys::DepthStencilState] = DepthStr.empty() ? "" : DepthStr.c_str();
-	JsonData[MatKeys::RasterizerState] = RasterStr.empty() ? "" : RasterStr.c_str();
+	JsonData[MatKeys::RenderPass] = ToString(RenderPassMap, RenderPass);
+	JsonData[MatKeys::BlendState] = ToString(BlendStateMap, BlendState);
+	JsonData[MatKeys::DepthStencilState] = ToString(DepthStencilStateMap, DepthState);
+	JsonData[MatKeys::RasterizerState] = ToString(RasterizerStateMap, RasterState);
 	JsonData[MatKeys::ShadowMode] = ShadowModeToString(ShadowMode);
 
-	JsonData[MatKeys::ShadowMode] = "Opaque";
 	WriteMaterialBloomSettings(JsonData, Material);
 
 	//최종적으로 material 저장

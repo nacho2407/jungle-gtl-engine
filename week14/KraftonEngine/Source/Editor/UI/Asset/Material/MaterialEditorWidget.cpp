@@ -269,6 +269,28 @@ void FMaterialEditorWidget::RenderDetailsPanel(UMaterialInterface* Material)
 		return;
 	}
 	
+	const bool bCanSave = IsDirty();
+
+	if (!bCanSave)
+	{
+		ImGui::BeginDisabled();
+	}
+
+	if (ImGui::Button("Save"))
+	{
+		if (SaveMaterialJson())
+		{
+			ClearDirty();
+		}
+	}
+
+	if (!bCanSave)
+	{
+		ImGui::EndDisabled();
+	}
+
+	ImGui::Separator();
+	
 	if (UMaterial* BaseMaterial = Cast<UMaterial>(Material))
 	{
 		RenderMaterialSettings(BaseMaterial);
@@ -336,7 +358,7 @@ void FMaterialEditorWidget::RenderMaterialSettings(UMaterial* Material)
 			if (bChanged)
 			{
 				Material->PostEditProperty(Prop.GetName());
-				SaveMaterialJson();
+				MarkDirty();
 
 				if (PreviewMeshComponent)
 				{
@@ -422,7 +444,6 @@ void FMaterialEditorWidget::RenderBloomOverrides(UMaterialInstance* Instance)
 	if (bAnyChanged)
 	{
 		MarkDirty();
-		SaveMaterialJson();
 
 		if (PreviewMeshComponent)
 		{
@@ -538,7 +559,6 @@ void FMaterialEditorWidget::RenderShaderParameters(UMaterialInterface* Material)
 		if (bChanged)
 		{
 			MarkDirty();
-			SaveMaterialJson();
 
 			if (PreviewMeshComponent)
 			{
@@ -623,7 +643,6 @@ void FMaterialEditorWidget::RenderTextureSection(UMaterialInterface* Material)
 					CachedJson[MatKeys::Textures][SlotName.c_str()] = NewTexturePath.c_str();
 
 					MarkDirty();
-					SaveMaterialJson();
 
 					if (PreviewMeshComponent)
 					{
@@ -649,7 +668,6 @@ void FMaterialEditorWidget::RenderTextureSection(UMaterialInterface* Material)
 				CachedJson[MatKeys::Textures][SlotName.c_str()] = "";
 
 				MarkDirty();
-				SaveMaterialJson();
 
 				if (PreviewMeshComponent)
 				{
@@ -662,10 +680,10 @@ void FMaterialEditorWidget::RenderTextureSection(UMaterialInterface* Material)
 	}
 }
 
-void FMaterialEditorWidget::SaveMaterialJson()
+bool FMaterialEditorWidget::SaveMaterialJson()
 {
 	UMaterialInterface* Material = Cast<UMaterialInterface>(EditedObject);
-	if (!Material || MaterialPath.empty()) return;
+	if (!Material || MaterialPath.empty()) return false;
 
 	if (CachedJson.IsNull())
 	{
@@ -695,6 +713,13 @@ void FMaterialEditorWidget::SaveMaterialJson()
 			}
 		}
 
+		using namespace RenderStateStrings;
+
+		CachedJson[MatKeys::RenderPass] = ToString(RenderPassMap, BaseMaterial->GetRenderPass());
+		CachedJson[MatKeys::BlendState] = ToString(BlendStateMap, BaseMaterial->GetBlendState());
+		CachedJson[MatKeys::DepthStencilState] = ToString(DepthStencilStateMap, BaseMaterial->GetDepthStencilState());
+		CachedJson[MatKeys::RasterizerState] = ToString(RasterizerStateMap, BaseMaterial->GetRasterizerState());
+
 		const FVector4 EmissiveColor = BaseMaterial->GetEmissiveColor();
 		CachedJson[MatKeys::EmissiveColor] = json::Array(
 			EmissiveColor.X,
@@ -708,10 +733,11 @@ void FMaterialEditorWidget::SaveMaterialJson()
 	std::ofstream File(MaterialPath);
 	if (!File.is_open())
 	{
-		return;
+		return false;
 	}
 
 	File << CachedJson.dump(4);
+	return File.good();
 }
 
 void FMaterialEditorWidget::CreateMaterialInstanceAsset(UMaterial* ParentMaterial)
