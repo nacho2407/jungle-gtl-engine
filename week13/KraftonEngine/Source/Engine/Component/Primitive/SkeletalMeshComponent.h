@@ -16,6 +16,7 @@ class UAnimSingleNodeInstance;
 class UAnimSequenceBase;
 class UClass;
 class ULuaAnimInstance;
+struct FPoseContext;
 
 UENUM()
 enum class ERagdollSelfCollisionMode : uint8
@@ -23,6 +24,16 @@ enum class ERagdollSelfCollisionMode : uint8
     DisableAll,
     DisableParentChild,
     EnableAll
+};
+
+UENUM()
+enum class ESkeletalPhysicsMode : uint8
+{
+    AnimationOnly,
+    FullRagdoll,
+    Recovering,
+    PartialRagdoll,
+    PhysicalAnimation
 };
 
 // SkeletalMesh 전용 render proxy만 제공하는 얇은 wrapper.
@@ -93,6 +104,9 @@ public:
     UFUNCTION(Callable, Exec, Category="Physics|Ragdoll")
     void SetRagdollEnabled(bool bEnabled);
 
+    UFUNCTION(Callable, Category = "Physics|Ragdoll")
+    void EnablePartialRagdollBelow(FName BoneName);
+
     UFUNCTION(Pure, Category="Physics|Ragdoll")
     bool IsRagdollEnabled() const { return bRagdollActive; }
 
@@ -101,6 +115,18 @@ public:
 
     UFUNCTION(Callable, Category="Physics|Ragdoll")
     void AddImpulseToBone(FName BoneName, const FVector& Impulse);
+
+    UFUNCTION(Callable, Category = "Physics|Ragdoll")
+    void SetAllBodiesPhysicsBlendWeight(float InPhysicsBlendWeight);
+
+    UFUNCTION(Callable, Category = "Physics|Ragdoll")
+    void SetAllBodiesBelowPhysicsBlendWeight(FName InBoneName, float InPhysicsBlendWeight, bool bIncludeSelf = true);
+
+    UFUNCTION(Callable, Category = "Physics|Ragdoll")
+    void SetAllBodiesSimulatePhysics(bool bSimulate);
+
+    UFUNCTION(Callable, Category = "Physics|Ragdoll")
+    void SetAllBodiesBelowSimulatePhysics(FName InBoneName, bool bSimulate, bool bIncludeSelf = true);
 
     const TArray<FBodyInstance*>& GetRagdollBodies() const { return Bodies; }
     const TArray<FConstraintInstance*>& GetRagdollConstraints() const { return Constraints; }
@@ -122,6 +148,8 @@ protected:
 
     void EndPlay() override;
 
+    bool EvaluateAnimationPose(float DeltaTime, FPoseContext& OutPose);
+    void ApplyAnimationPose(const FPoseContext& Pose);
     bool EvaluateAnimInstance(float DeltaTime);
 
     void AddReferencedObjects(FReferenceCollector& Collector) override;
@@ -130,13 +158,12 @@ private:
     void CapturePersistentAnimInstanceSettings();
     void ApplyPersistentAnimInstanceSettings(UAnimInstance* Instance);
 
-    // 이 부분은 전부 아마 Asset에 Constraint관련 정보가 포함되면 변경될 함수들
-    // 현재 임시용 함수라 보면 될듯. 완성형 X
     UPhysicsAsset* GetPhysicsAssetForRagdoll();
     bool ValidatePhysicsAssetForRagdoll(UPhysicsAsset* PhysicsAsset, const FSkeletalMesh* Asset) const;
 
     void EnableRagdollPhysics();
     void DisableRagdollPhysics();
+    void SetSkeletalPhysicsMode(ESkeletalPhysicsMode NewMode);
     void SetAllRagdollBodiesKinematic(bool bInKinematic);
     void SetAllRagdollBodiesGravityEnabled(bool bEnableGravity);
     void ForceStopRagdollWithoutRecovery();
@@ -148,6 +175,7 @@ private:
     void ClearRagdollComponentMoveState();
     void ApplyExternalComponentMoveToRagdollBodies();
     void MoveAllRagdollBodiesByComponentDelta(const FVector& Delta);
+    void TickRagdollPhysicsMode(float DeltaTime);
     void StartRagdollRecovery();
     bool TickRagdollRecovery(float DeltaTime);
     void ClearRagdollRecoveryState();
@@ -165,6 +193,22 @@ private:
     void DestroyRagdollConstraints();
     void DestroyRagdollBodies();
     void SyncBonesFromRagdollBodies();
+
+    bool UpdateRagdollActivePose(float DeltaTime);
+    bool BuildRagdollPhysicsLocalPose( const TArray<FTransform>& SourceLocalPose, TArray<FTransform>& OutPhysicsLocalPose, TArray<float>& OutPhysicsWeights) const;
+    bool BuildGlobalMatricesFromLocalPose( const TArray<FTransform>& LocalPose, TArray<FMatrix>& OutGlobalMatrices) const;
+    bool ConvertGlobalMatricesToLocalPose( const TArray<FMatrix>& GlobalMatrices, const TArray<FTransform>& SourceLocalPose, TArray<FTransform>& OutLocalPose) const;
+    void BlendLocalPosesByPhysicsWeight( const TArray<FTransform>& AnimationPose, const TArray<FTransform>& PhysicsPose,
+        const TArray<float>& PhysicsWeights, float GlobalPhysicsWeight, TArray<FTransform>& OutBlendedPose) const;
+
+    void EnsureRagdollPhysicsBlendWeights(float DefaultWeight = 1.0f);
+    bool IsBoneBelow(int32 BoneIndex, int32 RootBoneIndex, bool bIncludeSelf) const;
+    float GetRagdollPhysicsBlendWeightForBone(int32 BoneIndex) const;
+
+    void EnsureRagdollBodySimulateFlags(bool bDefaultSimulate = true);
+    void ApplyRagdollBodySimulationFlags();
+    bool ShouldRagdollBodySimulate(int32 BoneIndex) const;
+    void UpdateKinematicRagdollBodiesFromLocalPose(const TArray<FTransform>& SourceLocalPose);
 
     FBodyInstance* FindRagdollBodyByBoneIndex(int32 BoneIndex) const;
     FBodyInstance* FindRagdollBodyByBoneName(FName BoneName) const;
@@ -193,10 +237,16 @@ protected:
     ERagdollSelfCollisionMode RagdollSelfCollisionMode = ERagdollSelfCollisionMode::DisableParentChild;
     UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Ragdoll Recovery Duration")
     float RagdollRecoveryDuration = 0.35f;
+    UPROPERTY(Edit, Save, Category = "Physics|Ragdoll", DisplayName = "Ragdoll Physics Blend Weight")
+    float RagdollPhysicsBlendWeight = 1.0f;
 
     //Ragdoll runtime state
     TArray<FBodyInstance*> Bodies;
     TArray<FConstraintInstance*> Constraints;
+    TArray<float> PerBoneRagdollPhysicsBlendWeights;
+    TArray<bool> PerBoneRagdollBodySimulateFlags;
+
+    ESkeletalPhysicsMode SkeletalPhysicsMode = ESkeletalPhysicsMode::AnimationOnly;
     bool bRagdollActive = false;
     int32 RagdollComponentSyncBoneIndex = -1;
     FVector RagdollComponentSyncLocalOffset = FVector::ZeroVector;
