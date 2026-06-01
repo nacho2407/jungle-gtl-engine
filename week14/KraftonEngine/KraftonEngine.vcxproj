@@ -440,6 +440,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClCompile Include="Source\Editor\Slate\SlateApplication.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\AssetFactory.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
+    <ClCompile Include="Source\Editor\Subsystem\PhysicsAssetEditingLibrary.cpp" />
     <ClCompile Include="Source\Editor\Subsystem\PhysicsAssetGenerator.cpp" />
     <ClCompile Include="Source\Editor\UI\Dialog\PhysicsAssetCreationDialog.cpp" />
     <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
@@ -815,6 +816,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Editor\Slate\SlateApplication.h" />
     <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
+    <ClInclude Include="Source\Editor\Subsystem\PhysicsAssetEditingLibrary.h" />
     <ClInclude Include="Source\Editor\Subsystem\PhysicsAssetGenerator.h" />
     <ClInclude Include="Source\Editor\UI\Dialog\PhysicsAssetCreationDialog.h" />
     <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
@@ -1100,6 +1102,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsAsset.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsAssetDebugDraw.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsAssetEditTypes.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsAssetManager.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsConstraintTemplate.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsEventCallback.h" />
