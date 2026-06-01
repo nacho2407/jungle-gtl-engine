@@ -172,12 +172,7 @@ UPhysicsAsset* USkeletalMesh::GetPhysicsAsset()
 	{
 		const FString SidecarPath = BuildPhysicsAssetSidecarPath(GetAssetPathFileName());
 		CachedPhysicsAsset = FPhysicsAssetManager::Get().Load(SidecarPath);
-		if (CachedPhysicsAsset)
-		{
-			PhysicsAssetPath = SidecarPath;
-			return CachedPhysicsAsset;
-		}
-		return nullptr;
+		return CachedPhysicsAsset;
 	}
 
 	// 매니저가 캐시/소유하므로 GC는 매니저 쪽에서 보호된다.

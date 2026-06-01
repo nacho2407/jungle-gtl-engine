@@ -54,6 +54,60 @@ namespace
 	{
 		return !Path.empty() && Path != "None";
 	}
+
+	bool BoneSubtreeMatchesFilter(const FSkeletalMesh* MeshAsset, int32 BoneIndex, const FString& Filter)
+	{
+		if (Filter.empty())
+		{
+			return true;
+		}
+		if (!MeshAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(MeshAsset->Bones.size()))
+		{
+			return false;
+		}
+
+		const FBone& Bone = MeshAsset->Bones[BoneIndex];
+		if (Bone.Name.find(Filter) != FString::npos)
+		{
+			return true;
+		}
+
+		for (int32 ChildIndex = 0; ChildIndex < static_cast<int32>(MeshAsset->Bones.size()); ++ChildIndex)
+		{
+			if (MeshAsset->Bones[ChildIndex].ParentIndex == BoneIndex
+				&& BoneSubtreeMatchesFilter(MeshAsset, ChildIndex, Filter))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	void DrawPhysicsPanelHeader(const char* Label)
+	{
+		constexpr float HeaderHeight = 25.0f;
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		const ImVec2 Pos = ImGui::GetCursorScreenPos();
+		const float Width = ImGui::GetContentRegionAvail().x;
+		DrawList->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + HeaderHeight), IM_COL32(36, 36, 36, 255));
+		DrawList->AddText(ImVec2(Pos.x + 8.0f, Pos.y + 5.0f), IM_COL32(220, 220, 220, 255), Label);
+		ImGui::Dummy(ImVec2(Width, HeaderHeight + 5.0f));
+	}
+
+	bool DrawPhysicsSplitter(const char* Id, const ImVec2& Size, bool bVertical)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.35f, 0.35f, 0.35f, 1.0f));
+		ImGui::Button(Id, Size);
+		const bool bActive = ImGui::IsItemActive();
+		if (ImGui::IsItemHovered() || bActive)
+		{
+			ImGui::SetMouseCursor(bVertical ? ImGuiMouseCursor_ResizeEW : ImGuiMouseCursor_ResizeNS);
+		}
+		ImGui::PopStyleColor(3);
+		return bActive;
+	}
 }
 
 FPhysicsAssetEditorWidget::FPhysicsAssetEditorWidget()
@@ -234,59 +288,80 @@ void FPhysicsAssetEditorWidget::Render(float DeltaTime)
 	}
 
 	RenderModeToolbar(PhysicsAsset);
-	ImGui::Separator();
 
+	const ImGuiStyle& Style = ImGui::GetStyle();
+	constexpr float SplitterThickness = 4.0f;
 	const float TotalHeight = ImGui::GetContentRegionAvail().y;
-	ImGui::BeginChild("SkeletonTree", ImVec2(HierarchyWidth, TotalHeight), true);
+	const float TotalWidth = ImGui::GetContentRegionAvail().x;
+
+	float MaxHierarchyWidth = TotalWidth - DetailsWidth - 480.0f;
+	if (MaxHierarchyWidth < 240.0f) MaxHierarchyWidth = 240.0f;
+	HierarchyWidth = Clamp(HierarchyWidth, 240.0f, MaxHierarchyWidth);
+
+	float MaxDetailsWidth = TotalWidth - HierarchyWidth - 480.0f;
+	if (MaxDetailsWidth < 280.0f) MaxDetailsWidth = 280.0f;
+	DetailsWidth = Clamp(DetailsWidth, 280.0f, MaxDetailsWidth);
+
+	ImGui::BeginChild("##PhysicsAssetLeftColumn", ImVec2(HierarchyWidth, TotalHeight), false);
+	float MaxAssetDetailsHeight = TotalHeight - 240.0f;
+	if (MaxAssetDetailsHeight < 96.0f) MaxAssetDetailsHeight = 96.0f;
+	AssetDetailsHeight = Clamp(AssetDetailsHeight, 96.0f, MaxAssetDetailsHeight);
+	ImGui::BeginChild("##PhysicsAssetAssetDetails", ImVec2(0.0f, AssetDetailsHeight), true);
+	RenderAssetDetailsPanel(PhysicsAsset);
+	ImGui::EndChild();
+	if (DrawPhysicsSplitter("##PhysicsAssetLeftHorizontalSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
+	{
+		AssetDetailsHeight += ImGui::GetIO().MouseDelta.y;
+		AssetDetailsHeight = Clamp(AssetDetailsHeight, 96.0f, MaxAssetDetailsHeight);
+	}
+	ImGui::BeginChild("##PhysicsAssetSkeletonTree", ImVec2(0.0f, 0.0f), true);
 	RenderSkeletonTreePanel(PhysicsAsset);
+	ImGui::EndChild();
 	ImGui::EndChild();
 
 	ImGui::SameLine();
 
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-	ImGui::Button("##PhysicsAssetTreeSplitter", ImVec2(4.0f, TotalHeight));
-	if (ImGui::IsItemActive())
+	if (DrawPhysicsSplitter("##PhysicsAssetTreeSplitter", ImVec2(SplitterThickness, TotalHeight), true))
 	{
 		HierarchyWidth += ImGui::GetIO().MouseDelta.x;
-		float MaxHierarchyWidth = ImGui::GetWindowWidth() - DetailsWidth - 320.0f;
-		if (MaxHierarchyWidth < 180.0f) MaxHierarchyWidth = 180.0f;
-		HierarchyWidth = Clamp(HierarchyWidth, 180.0f, MaxHierarchyWidth);
+		float MaxWidth = ImGui::GetWindowWidth() - DetailsWidth - 480.0f;
+		if (MaxWidth < 240.0f) MaxWidth = 240.0f;
+		HierarchyWidth = Clamp(HierarchyWidth, 240.0f, MaxWidth);
 	}
-	if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+
+	ImGui::SameLine();
+
+	float CenterWidth = ImGui::GetContentRegionAvail().x - DetailsWidth - Style.ItemSpacing.x - SplitterThickness;
+	if (CenterWidth < 320.0f) CenterWidth = 320.0f;
+	ImGui::BeginChild("##PhysicsAssetCenterColumn", ImVec2(CenterWidth, TotalHeight), false);
+	const float CenterHeight = ImGui::GetContentRegionAvail().y;
+	const float CenterContentWidth = ImGui::GetContentRegionAvail().x;
+	float MaxListHeight = CenterHeight - 260.0f;
+	if (MaxListHeight < 150.0f) MaxListHeight = 150.0f;
+	ViewportListHeight = Clamp(ViewportListHeight, 150.0f, MaxListHeight);
+	const float ViewportHeight = CenterHeight - ViewportListHeight - SplitterThickness - Style.ItemSpacing.y;
+	RenderViewportPanel(ImVec2(CenterContentWidth, ViewportHeight));
+	if (DrawPhysicsSplitter("##PhysicsAssetViewportListSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
 	{
-		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+		ViewportListHeight -= ImGui::GetIO().MouseDelta.y;
+		ViewportListHeight = Clamp(ViewportListHeight, 150.0f, MaxListHeight);
 	}
-	ImGui::PopStyleColor(3);
+	RenderPhysicsListPanel(PhysicsAsset, ImVec2(CenterContentWidth, ViewportListHeight));
+	ImGui::EndChild();
 
 	ImGui::SameLine();
 
-	const float ViewportWidth = ImGui::GetContentRegionAvail().x - DetailsWidth - ImGui::GetStyle().ItemSpacing.x - 4.0f;
-	RenderViewportPanel(ImVec2(ViewportWidth, TotalHeight));
-
-	ImGui::SameLine();
-
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
-	ImGui::Button("##PhysicsAssetDetailsSplitter", ImVec2(4.0f, TotalHeight));
-	if (ImGui::IsItemActive())
+	if (DrawPhysicsSplitter("##PhysicsAssetDetailsSplitter", ImVec2(SplitterThickness, TotalHeight), true))
 	{
 		DetailsWidth -= ImGui::GetIO().MouseDelta.x;
-		float MaxDetailsWidth = ImGui::GetWindowWidth() - HierarchyWidth - 320.0f;
-		if (MaxDetailsWidth < 240.0f) MaxDetailsWidth = 240.0f;
-		DetailsWidth = Clamp(DetailsWidth, 240.0f, MaxDetailsWidth);
+		float MaxWidth = ImGui::GetWindowWidth() - HierarchyWidth - 480.0f;
+		if (MaxWidth < 280.0f) MaxWidth = 280.0f;
+		DetailsWidth = Clamp(DetailsWidth, 280.0f, MaxWidth);
 	}
-	if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-	{
-		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
-	}
-	ImGui::PopStyleColor(3);
 
 	ImGui::SameLine();
 
-	ImGui::BeginChild("Details", ImVec2(DetailsWidth, TotalHeight), true);
+	ImGui::BeginChild("##PhysicsAssetDetails", ImVec2(DetailsWidth, TotalHeight), true);
 	RenderDetailsPanel(PhysicsAsset);
 	ImGui::EndChild();
 
@@ -306,6 +381,12 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 	const ImVec2 BarPos = ImGui::GetCursorScreenPos();
 	const float BarWidth = ImGui::GetContentRegionAvail().x;
 	DrawList->AddRectFilled(BarPos, ImVec2(BarPos.x + BarWidth, BarPos.y + BarHeight), IM_COL32(38, 38, 38, 255));
+
+	const char* Title = "Physics Asset";
+	const ImVec2 TitleSize = ImGui::CalcTextSize(Title);
+	DrawList->AddText(ImVec2(BarPos.x + 10.0f, BarPos.y + (BarHeight - TitleSize.y) * 0.5f),
+		IM_COL32(235, 235, 235, 255), Title);
+	ImGui::SetCursorScreenPos(ImVec2(BarPos.x + 118.0f, BarPos.y));
 
 	auto ModeButton = [&](const char* Label, EPhysicsAssetEditorMode Mode)
 	{
@@ -366,6 +447,28 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 	ImGui::SetCursorScreenPos(ImVec2(BarPos.x, BarPos.y + BarHeight));
 }
 
+void FPhysicsAssetEditorWidget::RenderAssetDetailsPanel(UPhysicsAsset* Asset)
+{
+	DrawPhysicsPanelHeader("Asset Details");
+
+	if (!Asset)
+	{
+		return;
+	}
+
+	ImGui::TextUnformatted("Physics Asset");
+	ImGui::TextWrapped("%s", IsValidAssetPath(Asset->GetSourcePath()) ? Asset->GetSourcePath().c_str() : "Unsaved");
+	ImGui::Spacing();
+	ImGui::TextUnformatted("Preview Mesh");
+	ImGui::TextWrapped("%s", IsValidAssetPath(Asset->GetPreviewSkeletalMeshPath())
+		? Asset->GetPreviewSkeletalMeshPath().c_str()
+		: "None");
+	ImGui::Spacing();
+	ImGui::Text("Bodies: %llu", static_cast<unsigned long long>(Asset->GetBodySetups().size()));
+	ImGui::SameLine();
+	ImGui::Text("Constraints: %llu", static_cast<unsigned long long>(Asset->GetConstraintTemplates().size()));
+}
+
 void FPhysicsAssetEditorWidget::RenderViewportPanel(ImVec2 Size)
 {
 	if (Size.x <= 1.0f || Size.y <= 1.0f)
@@ -378,6 +481,8 @@ void FPhysicsAssetEditorWidget::RenderViewportPanel(ImVec2 Size)
 	ImVec2 ViewportPos = ImGui::GetCursorScreenPos();
 	ViewportClient.SetViewportRect(ViewportPos.x, ViewportPos.y, Size.x, Size.y);
 
+	constexpr float ToolbarHeight = 28.0f;
+	bool bViewportImageClicked = false;
 	if (FViewport* VP = ViewportClient.GetViewport())
 	{
 		VP->RequestResize(static_cast<uint32>(Size.x), static_cast<uint32>(Size.y));
@@ -385,10 +490,13 @@ void FPhysicsAssetEditorWidget::RenderViewportPanel(ImVec2 Size)
 		{
 			ImGui::Image((ImTextureID)VP->GetSRV(), Size);
 			FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, ImGui::IsItemHovered());
+			const ImVec2 MousePos = ImGui::GetIO().MousePos;
+			bViewportImageClicked = ImGui::IsItemHovered()
+				&& ImGui::IsMouseClicked(ImGuiMouseButton_Left)
+				&& MousePos.y > ViewportPos.y + ToolbarHeight;
 		}
 	}
 
-	constexpr float ToolbarHeight = 28.0f;
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 	DrawList->AddRectFilled(ViewportPos, ImVec2(ViewportPos.x + Size.x, ViewportPos.y + ToolbarHeight), IM_COL32(40, 40, 40, 255));
 
@@ -427,13 +535,148 @@ void FPhysicsAssetEditorWidget::RenderViewportPanel(ImVec2 Size)
 	};
 	FViewportToolbar::Render(Context);
 
+	if (bViewportImageClicked)
+	{
+		HandleViewportSelectionClick();
+	}
+
+	ImGui::EndChild();
+}
+
+void FPhysicsAssetEditorWidget::RenderPhysicsListPanel(UPhysicsAsset* Asset, ImVec2 Size)
+{
+	if (Size.x <= 1.0f || Size.y <= 1.0f)
+	{
+		return;
+	}
+
+	ImGui::BeginChild("##PhysicsAssetListPanel", Size, true);
+	DrawPhysicsPanelHeader("Physics Bodies / Constraints");
+
+	if (!Asset)
+	{
+		ImGui::EndChild();
+		return;
+	}
+
+	ImGui::SetNextItemWidth(-1.0f);
+	ImGui::InputTextWithHint("##PhysicsAssetListFilter", "Search Bodies, Shapes, Constraints", ListFilter, sizeof(ListFilter));
+	const FString Filter = ListFilter;
+
+	if (ImGui::BeginTabBar("##PhysicsAssetListTabs"))
+	{
+		if (ImGui::BeginTabItem("Bodies"))
+		{
+			const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
+			for (int32 BodyIndex = 0; BodyIndex < static_cast<int32>(Bodies.size()); ++BodyIndex)
+			{
+				UBodySetup* Body = Bodies[BodyIndex];
+				if (!Body)
+				{
+					continue;
+				}
+
+				const FString BodyLabel = Body->GetBoneName().ToString();
+				if (!Filter.empty() && BodyLabel.find(Filter) == FString::npos)
+				{
+					continue;
+				}
+
+				ImGui::PushID(BodyIndex);
+				const bool bBodySelected = Selection.Type == EPhysicsAssetEditorSelectionType::Body && Selection.BodyIndex == BodyIndex;
+				ImGuiTreeNodeFlags BodyFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth;
+				if (bBodySelected)
+				{
+					BodyFlags |= ImGuiTreeNodeFlags_Selected;
+				}
+
+				const bool bOpen = ImGui::TreeNodeEx("Body", BodyFlags, "%s", BodyLabel.c_str());
+				if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+				{
+					SelectBody(BodyIndex);
+				}
+
+				if (bOpen)
+				{
+					const EPhysicsAssetShapeType ShapeTypes[] = {
+						EPhysicsAssetShapeType::Sphere,
+						EPhysicsAssetShapeType::Box,
+						EPhysicsAssetShapeType::Sphyl,
+						EPhysicsAssetShapeType::Convex
+					};
+
+					for (EPhysicsAssetShapeType ShapeType : ShapeTypes)
+					{
+						const int32 ShapeCount = Body->GetShapeCount(ShapeType);
+						for (int32 ShapeIndex = 0; ShapeIndex < ShapeCount; ++ShapeIndex)
+						{
+							ImGui::PushID(static_cast<int32>(ShapeType) * 1000 + ShapeIndex);
+							const bool bShapeSelected = Selection.Type == EPhysicsAssetEditorSelectionType::Shape
+								&& Selection.BodyIndex == BodyIndex
+								&& Selection.ShapeType == ShapeType
+								&& Selection.ShapeIndex == ShapeIndex;
+							char Label[64];
+							std::snprintf(Label, sizeof(Label), "%s %d", ShapeTypeLabel(ShapeType), ShapeIndex);
+							if (ImGui::Selectable(Label, bShapeSelected))
+							{
+								SelectShape(BodyIndex, ShapeType, ShapeIndex);
+							}
+							ImGui::PopID();
+						}
+					}
+					ImGui::TreePop();
+				}
+				ImGui::PopID();
+			}
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Constraints"))
+		{
+			const TArray<UPhysicsConstraintTemplate*>& Constraints = Asset->GetConstraintTemplates();
+			for (int32 ConstraintIndex = 0; ConstraintIndex < static_cast<int32>(Constraints.size()); ++ConstraintIndex)
+			{
+				const UPhysicsConstraintTemplate* Constraint = Constraints[ConstraintIndex];
+				if (!Constraint)
+				{
+					continue;
+				}
+
+				FString Label = Constraint->GetParentBoneName().ToString();
+				Label += " -> ";
+				Label += Constraint->GetChildBoneName().ToString();
+				if (!Filter.empty() && Label.find(Filter) == FString::npos)
+				{
+					continue;
+				}
+
+				ImGui::PushID(ConstraintIndex);
+				const bool bSelected = Selection.Type == EPhysicsAssetEditorSelectionType::Constraint
+					&& Selection.ConstraintIndex == ConstraintIndex;
+				if (ImGui::Selectable(Label.c_str(), bSelected))
+				{
+					SelectConstraint(ConstraintIndex);
+				}
+				ImGui::PopID();
+			}
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Profiles"))
+		{
+			ImGui::TextDisabled("Collision and constraint profiles are not implemented yet.");
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
+
 	ImGui::EndChild();
 }
 
 void FPhysicsAssetEditorWidget::RenderSkeletonTreePanel(UPhysicsAsset* Asset)
 {
-	ImGui::TextUnformatted("Skeleton Tree");
-	ImGui::Separator();
+	DrawPhysicsPanelHeader("Skeleton Tree");
 
 	if (!Asset)
 	{
@@ -441,7 +684,7 @@ void FPhysicsAssetEditorWidget::RenderSkeletonTreePanel(UPhysicsAsset* Asset)
 	}
 
 	ImGui::SetNextItemWidth(-1.0f);
-	ImGui::InputTextWithHint("##PhysicsAssetTreeFilter", "Search Skeleton, Bodies, Constraints", TreeFilter, sizeof(TreeFilter));
+	ImGui::InputTextWithHint("##PhysicsAssetTreeFilter", "Search Skeleton", TreeFilter, sizeof(TreeFilter));
 	const FString Filter = TreeFilter;
 
 	if (PreviewMesh && PreviewMesh->GetSkeletalMeshAsset())
@@ -451,109 +694,14 @@ void FPhysicsAssetEditorWidget::RenderSkeletonTreePanel(UPhysicsAsset* Asset)
 		{
 			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(MeshAsset->Bones.size()); ++BoneIndex)
 			{
-				if (MeshAsset->Bones[BoneIndex].ParentIndex == -1)
+				if (MeshAsset->Bones[BoneIndex].ParentIndex == -1
+					&& BoneSubtreeMatchesFilter(MeshAsset, BoneIndex, Filter))
 				{
 					RenderBoneTreeNode(MeshAsset, Asset, BoneIndex);
 				}
 			}
 			ImGui::TreePop();
 		}
-	}
-
-	const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
-	if (ImGui::TreeNodeEx("Bodies", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
-	{
-		for (int32 BodyIndex = 0; BodyIndex < static_cast<int32>(Bodies.size()); ++BodyIndex)
-		{
-			UBodySetup* Body = Bodies[BodyIndex];
-			if (!Body)
-			{
-				continue;
-			}
-
-			ImGui::PushID(BodyIndex);
-			const bool bBodySelected = Selection.Type == EPhysicsAssetEditorSelectionType::Body && Selection.BodyIndex == BodyIndex;
-			const FString BodyLabel = Body->GetBoneName().ToString();
-			if (!Filter.empty() && BodyLabel.find(Filter) == FString::npos)
-			{
-				ImGui::PopID();
-				continue;
-			}
-			ImGuiTreeNodeFlags BodyFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-			if (bBodySelected)
-			{
-				BodyFlags |= ImGuiTreeNodeFlags_Selected;
-			}
-
-			const bool bOpen = ImGui::TreeNodeEx("Body", BodyFlags, "%s", BodyLabel.c_str());
-			if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
-			{
-				SelectBody(BodyIndex);
-			}
-
-			if (bOpen)
-			{
-				const EPhysicsAssetShapeType ShapeTypes[] = {
-					EPhysicsAssetShapeType::Sphere,
-					EPhysicsAssetShapeType::Box,
-					EPhysicsAssetShapeType::Sphyl,
-					EPhysicsAssetShapeType::Convex
-				};
-
-				for (EPhysicsAssetShapeType ShapeType : ShapeTypes)
-				{
-					const int32 ShapeCount = Body->GetShapeCount(ShapeType);
-					for (int32 ShapeIndex = 0; ShapeIndex < ShapeCount; ++ShapeIndex)
-					{
-						ImGui::PushID(static_cast<int32>(ShapeType) * 1000 + ShapeIndex);
-						const bool bShapeSelected = Selection.Type == EPhysicsAssetEditorSelectionType::Shape
-							&& Selection.BodyIndex == BodyIndex
-							&& Selection.ShapeType == ShapeType
-							&& Selection.ShapeIndex == ShapeIndex;
-						char Label[64];
-						std::snprintf(Label, sizeof(Label), "%s %d", ShapeTypeLabel(ShapeType), ShapeIndex);
-						if (ImGui::Selectable(Label, bShapeSelected))
-						{
-							SelectShape(BodyIndex, ShapeType, ShapeIndex);
-						}
-						ImGui::PopID();
-					}
-				}
-				ImGui::TreePop();
-			}
-			ImGui::PopID();
-		}
-		ImGui::TreePop();
-	}
-
-	if (ImGui::TreeNodeEx("Constraints", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
-	{
-		const TArray<UPhysicsConstraintTemplate*>& Constraints = Asset->GetConstraintTemplates();
-		for (int32 ConstraintIndex = 0; ConstraintIndex < static_cast<int32>(Constraints.size()); ++ConstraintIndex)
-		{
-			const UPhysicsConstraintTemplate* Constraint = Constraints[ConstraintIndex];
-			if (!Constraint)
-			{
-				continue;
-			}
-
-			const bool bSelected = Selection.Type == EPhysicsAssetEditorSelectionType::Constraint
-				&& Selection.ConstraintIndex == ConstraintIndex;
-			FString Label = Constraint->GetParentBoneName().ToString();
-			Label += " -> ";
-			Label += Constraint->GetChildBoneName().ToString();
-			if (!Filter.empty() && Label.find(Filter) == FString::npos)
-			{
-				continue;
-			}
-			ImGui::PushID(ConstraintIndex);
-			if (ImGui::Selectable(Label.c_str(), bSelected))
-			{
-				SelectConstraint(ConstraintIndex);
-			}
-			ImGui::PopID();
-		}
-		ImGui::TreePop();
 	}
 }
 
@@ -605,7 +753,8 @@ void FPhysicsAssetEditorWidget::RenderBoneTreeNode(const FSkeletalMesh* MeshAsse
 	{
 		for (int32 ChildIndex = 0; ChildIndex < static_cast<int32>(MeshAsset->Bones.size()); ++ChildIndex)
 		{
-			if (MeshAsset->Bones[ChildIndex].ParentIndex == BoneIndex)
+			if (MeshAsset->Bones[ChildIndex].ParentIndex == BoneIndex
+				&& BoneSubtreeMatchesFilter(MeshAsset, ChildIndex, TreeFilter))
 			{
 				RenderBoneTreeNode(MeshAsset, Asset, ChildIndex);
 			}
@@ -912,11 +1061,30 @@ void FPhysicsAssetEditorWidget::RenderConstraintDetails(UPhysicsAsset* Asset)
 	}
 }
 
+void FPhysicsAssetEditorWidget::HandleViewportSelectionClick()
+{
+	if (ActiveMode == EPhysicsAssetEditorMode::Preview)
+	{
+		return;
+	}
+
+	FPhysicsAssetEditorHitResult Hit;
+	if (ViewportClient.PickBodyShapeAtMouse(Hit))
+	{
+		SelectShape(Hit.BodyIndex, Hit.ShapeType, Hit.ShapeIndex);
+	}
+	else
+	{
+		ClearSelection();
+	}
+}
+
 void FPhysicsAssetEditorWidget::SelectBody(int32 BodyIndex)
 {
 	Selection.Clear();
 	Selection.Type = EPhysicsAssetEditorSelectionType::Body;
 	Selection.BodyIndex = BodyIndex;
+	SyncViewportHighlight();
 }
 
 void FPhysicsAssetEditorWidget::SelectShape(int32 BodyIndex, EPhysicsAssetShapeType ShapeType, int32 ShapeIndex)
@@ -926,6 +1094,7 @@ void FPhysicsAssetEditorWidget::SelectShape(int32 BodyIndex, EPhysicsAssetShapeT
 	Selection.BodyIndex = BodyIndex;
 	Selection.ShapeType = ShapeType;
 	Selection.ShapeIndex = ShapeIndex;
+	SyncViewportHighlight();
 }
 
 void FPhysicsAssetEditorWidget::SelectConstraint(int32 ConstraintIndex)
@@ -933,6 +1102,7 @@ void FPhysicsAssetEditorWidget::SelectConstraint(int32 ConstraintIndex)
 	Selection.Clear();
 	Selection.Type = EPhysicsAssetEditorSelectionType::Constraint;
 	Selection.ConstraintIndex = ConstraintIndex;
+	SyncViewportHighlight();
 }
 
 void FPhysicsAssetEditorWidget::SelectBone(int32 BoneIndex)
@@ -940,11 +1110,32 @@ void FPhysicsAssetEditorWidget::SelectBone(int32 BoneIndex)
 	Selection.Clear();
 	Selection.Type = EPhysicsAssetEditorSelectionType::Bone;
 	Selection.BoneIndex = BoneIndex;
+	SyncViewportHighlight();
 }
 
 void FPhysicsAssetEditorWidget::ClearSelection()
 {
 	Selection.Clear();
+	SyncViewportHighlight();
+}
+
+void FPhysicsAssetEditorWidget::SyncViewportHighlight()
+{
+	switch (Selection.Type)
+	{
+	case EPhysicsAssetEditorSelectionType::Body:
+		ViewportClient.SetHighlightedBody(Selection.BodyIndex);
+		break;
+	case EPhysicsAssetEditorSelectionType::Shape:
+		ViewportClient.SetHighlightedShape(Selection.BodyIndex, Selection.ShapeType, Selection.ShapeIndex);
+		break;
+	case EPhysicsAssetEditorSelectionType::Constraint:
+		ViewportClient.SetHighlightedConstraint(Selection.ConstraintIndex);
+		break;
+	default:
+		ViewportClient.ClearHighlight();
+		break;
+	}
 }
 
 bool FPhysicsAssetEditorWidget::DeleteSelection(UPhysicsAsset* Asset)

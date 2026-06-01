@@ -81,6 +81,21 @@ namespace
 			DrawDebugLine(World, Top, Bot, Color, PhysicsAssetDebugDrawDuration);
 		}
 	}
+
+	bool IsHighlightedShape(const FPhysicsAssetDebugDrawOptions& Options, int32 BodyIndex, EPhysicsAssetShapeType ShapeType, int32 ShapeIndex)
+	{
+		if (Options.HighlightBodyIndex != BodyIndex)
+		{
+			return false;
+		}
+
+		if (Options.HighlightShapeIndex < 0)
+		{
+			return true;
+		}
+
+		return Options.HighlightShapeType == ShapeType && Options.HighlightShapeIndex == ShapeIndex;
+	}
 }
 
 void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
@@ -105,8 +120,10 @@ void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
 
 	if (Options.bDrawBodies)
 	{
-		for (const UBodySetup* Body : Asset->GetBodySetups())
+		const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
+		for (int32 BodyIndex = 0; BodyIndex < static_cast<int32>(Bodies.size()); ++BodyIndex)
 		{
+			const UBodySetup* Body = Bodies[BodyIndex];
 			if (!Body)
 			{
 				continue;
@@ -142,17 +159,29 @@ void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
 				++LogCount;
 			}
 
-			for (const FKSphereElem& S : Geom.SphereElems)
+			for (int32 ShapeIndex = 0; ShapeIndex < static_cast<int32>(Geom.SphereElems.size()); ++ShapeIndex)
 			{
-				DrawSphereElem(World, BoneMatrix, Scale, S.Center, S.Radius, Options.BodyColor);
+				const FKSphereElem& S = Geom.SphereElems[ShapeIndex];
+				const FColor& Color = IsHighlightedShape(Options, BodyIndex, EPhysicsAssetShapeType::Sphere, ShapeIndex)
+					? Options.HighlightColor
+					: Options.BodyColor;
+				DrawSphereElem(World, BoneMatrix, Scale, S.Center, S.Radius, Color);
 			}
-			for (const FKBoxElem& B : Geom.BoxElems)
+			for (int32 ShapeIndex = 0; ShapeIndex < static_cast<int32>(Geom.BoxElems.size()); ++ShapeIndex)
 			{
-				DrawBoxElem(World, BoneMatrix, B.Center, B.Rotation, B.Extents, Options.BodyColor);
+				const FKBoxElem& B = Geom.BoxElems[ShapeIndex];
+				const FColor& Color = IsHighlightedShape(Options, BodyIndex, EPhysicsAssetShapeType::Box, ShapeIndex)
+					? Options.HighlightColor
+					: Options.BodyColor;
+				DrawBoxElem(World, BoneMatrix, B.Center, B.Rotation, B.Extents, Color);
 			}
-			for (const FKSphylElem& C : Geom.SphylElems)
+			for (int32 ShapeIndex = 0; ShapeIndex < static_cast<int32>(Geom.SphylElems.size()); ++ShapeIndex)
 			{
-				DrawSphylElem(World, BoneMatrix, Scale, C.Center, C.Rotation, C.Radius, C.Length, Options.BodyColor);
+				const FKSphylElem& C = Geom.SphylElems[ShapeIndex];
+				const FColor& Color = IsHighlightedShape(Options, BodyIndex, EPhysicsAssetShapeType::Sphyl, ShapeIndex)
+					? Options.HighlightColor
+					: Options.BodyColor;
+				DrawSphylElem(World, BoneMatrix, Scale, C.Center, C.Rotation, C.Radius, C.Length, Color);
 			}
 		}
 	}
@@ -160,8 +189,10 @@ void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
 	// ── Constraints (바디는 노랑, 조인트는 초록으로 구분) ──
 	if (Options.bDrawConstraints)
 	{
-		for (const UPhysicsConstraintTemplate* Constraint : Asset->GetConstraintTemplates())
+		const TArray<UPhysicsConstraintTemplate*>& Constraints = Asset->GetConstraintTemplates();
+		for (int32 ConstraintIndex = 0; ConstraintIndex < static_cast<int32>(Constraints.size()); ++ConstraintIndex)
 		{
+			const UPhysicsConstraintTemplate* Constraint = Constraints[ConstraintIndex];
 			if (!Constraint)
 			{
 				continue;
@@ -181,14 +212,17 @@ void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
 			const FVector JointWorld   = ParentMat.TransformPositionWithW(Constraint->GetLocalFrameA().Location);
 			const FVector ParentOrigin = ParentMat.GetLocation();
 			const FVector ChildOrigin  = ChildMat.GetLocation();
+			const FColor& ConstraintColor = ConstraintIndex == Options.HighlightConstraintIndex
+				? Options.HighlightColor
+				: Options.ConstraintColor;
 
 			// 부모 → 조인트 → 자식 연결선
-			DrawDebugLine(World, ParentOrigin, JointWorld, Options.ConstraintColor, PhysicsAssetDebugDrawDuration);
-			DrawDebugLine(World, JointWorld,  ChildOrigin, Options.ConstraintColor, PhysicsAssetDebugDrawDuration);
+			DrawDebugLine(World, ParentOrigin, JointWorld, ConstraintColor, PhysicsAssetDebugDrawDuration);
+			DrawDebugLine(World, JointWorld,  ChildOrigin, ConstraintColor, PhysicsAssetDebugDrawDuration);
 
 			// 조인트 위치 마커(3축 십자) — 크기는 부모-자식 거리에 비례
 			const float CrossSize = (ChildOrigin - ParentOrigin).Length() * 0.15f;
-			DrawDebugPoint(World, JointWorld, CrossSize, Options.ConstraintColor, PhysicsAssetDebugDrawDuration);
+			DrawDebugPoint(World, JointWorld, CrossSize, ConstraintColor, PhysicsAssetDebugDrawDuration);
 		}
 	}
 	

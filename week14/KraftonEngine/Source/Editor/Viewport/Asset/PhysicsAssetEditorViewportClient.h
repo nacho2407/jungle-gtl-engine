@@ -4,6 +4,8 @@
 #include "Viewport/ViewportClient.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
 #include "Editor/Slate/SWindow.h"
+#include "Core/Types/RayTypes.h"
+#include "Physics/BodySetup.h"
 
 #include <d3d11.h>
 
@@ -11,6 +13,16 @@ class FViewport;
 class UPhysicsAsset;
 class USkeletalMeshComponent;
 class UWorld;
+
+struct FPhysicsAssetEditorHitResult
+{
+	bool bHit = false;
+	int32 BodyIndex = -1;
+	int32 ShapeIndex = -1;
+	EPhysicsAssetShapeType ShapeType = EPhysicsAssetShapeType::Sphere;
+	float Distance = 0.0f;
+	FVector WorldPosition = FVector::ZeroVector;
+};
 
 class FPhysicsAssetEditorViewportClient : public FViewportClient, public IEditorPreviewViewportClient
 {
@@ -28,6 +40,13 @@ public:
 	void SetShowBodies(bool bInShow) { bShowBodies = bInShow; }
 	bool IsShowConstraints() const { return bShowConstraints; }
 	void SetShowConstraints(bool bInShow) { bShowConstraints = bInShow; }
+
+	bool GetMouseRay(FRay& OutRay) const;
+	bool PickBodyShapeAtMouse(FPhysicsAssetEditorHitResult& OutHit) const;
+	void ClearHighlight();
+	void SetHighlightedBody(int32 BodyIndex);
+	void SetHighlightedShape(int32 BodyIndex, EPhysicsAssetShapeType ShapeType, int32 ShapeIndex);
+	void SetHighlightedConstraint(int32 ConstraintIndex);
 
 	bool IsRenderable() const override { return bIsRenderable; }
 	bool IsMouseOverViewport() const override;
@@ -65,6 +84,10 @@ private:
 	bool bShowPreviewMesh = true;
 	bool bShowBodies = true;
 	bool bShowConstraints = true;
+	int32 HighlightBodyIndex = -1;
+	EPhysicsAssetShapeType HighlightShapeType = EPhysicsAssetShapeType::Sphere;
+	int32 HighlightShapeIndex = -1;
+	int32 HighlightConstraintIndex = -1;
 
 	FVector TargetLocation;
 	bool bTargetLocationInitialized = false;

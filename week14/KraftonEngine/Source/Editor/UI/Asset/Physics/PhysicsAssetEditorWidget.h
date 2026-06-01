@@ -30,17 +30,21 @@ public:
 
 private:
 	void RenderModeToolbar(UPhysicsAsset* Asset);
+	void RenderAssetDetailsPanel(UPhysicsAsset* Asset);
 	void RenderViewportPanel(ImVec2 Size);
+	void RenderPhysicsListPanel(UPhysicsAsset* Asset, ImVec2 Size);
 	void RenderSkeletonTreePanel(UPhysicsAsset* Asset);
 	void RenderDetailsPanel(UPhysicsAsset* Asset);
 	void RenderBoneTreeNode(const FSkeletalMesh* MeshAsset, UPhysicsAsset* Asset, int32 BoneIndex);
 	void RenderShapeDetails(UPhysicsAsset* Asset, UBodySetup* Body);
 	void RenderConstraintDetails(UPhysicsAsset* Asset);
+	void HandleViewportSelectionClick();
 	void SelectBody(int32 BodyIndex);
 	void SelectShape(int32 BodyIndex, EPhysicsAssetShapeType ShapeType, int32 ShapeIndex);
 	void SelectConstraint(int32 ConstraintIndex);
 	void SelectBone(int32 BoneIndex);
 	void ClearSelection();
+	void SyncViewportHighlight();
 	bool DeleteSelection(UPhysicsAsset* Asset);
 
 private:
@@ -54,7 +58,10 @@ private:
 
 	float HierarchyWidth = 300.0f;
 	float DetailsWidth = 360.0f;
+	float ViewportListHeight = 220.0f;
+	float AssetDetailsHeight = 128.0f;
 	char TreeFilter[128] = {};
+	char ListFilter[128] = {};
 
 	FName PreviewWorldHandle = FName::None;
 	FString WindowIdSuffix;
