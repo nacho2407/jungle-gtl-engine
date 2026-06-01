@@ -11,6 +11,14 @@
 #include "PhysicsEngine/BodySetup.h"
 #include <algorithm>
 
+namespace
+{
+	bool ShouldCreateBodyShape(const FKShapeElem& ShapeElem)
+	{
+		return ShapeElem.GetCollisionEnabled() != ECollisionEnabled::NoCollision;
+	}
+}
+
 physx::PxRigidDynamic* FBodyInstance::GetRigidDynamic() const
 {
 	return RigidActor ? RigidActor->is<physx::PxRigidDynamic>() : nullptr;
@@ -236,8 +244,8 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
 
     OutDesc.WorldTransform = WorldTransform;
 
-    OutDesc.bSimulatePhysics = Body.bSimulatePhysics;
     OutDesc.bKinematic = Body.bKinematic;
+    OutDesc.bSimulatePhysics = Body.bSimulatePhysics || Body.bKinematic;
 
     OutDesc.CollisionEnabled = Body.CollisionEnabled;
     OutDesc.ObjectType = Body.ObjectType;
@@ -313,6 +321,11 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
 
         for (const FKSphereElem& Sphere : AggGeom.SphereElems)
         {
+            if (!ShouldCreateBodyShape(Sphere))
+            {
+                continue;
+            }
+
             const FKSphereElem ScaledSphere = Sphere.GetFinalScaled(WorldScale, FTransform());
 
             FBodyShapeDesc MeshShape;
@@ -325,6 +338,11 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
 
         for (const FKBoxElem& Box : AggGeom.BoxElems)
         {
+            if (!ShouldCreateBodyShape(Box))
+            {
+                continue;
+            }
+
             const FKBoxElem ScaledBox = Box.GetFinalScaled(WorldScale, FTransform());
 
             FBodyShapeDesc MeshShape;
@@ -341,6 +359,11 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
 
         for (const FKSphylElem& Sphyl : AggGeom.SphylElems)
         {
+            if (!ShouldCreateBodyShape(Sphyl))
+            {
+                continue;
+            }
+
             const FKSphylElem ScaledSphyl = Sphyl.GetFinalScaled(WorldScale, FTransform());
 
             FBodyShapeDesc MeshShape;

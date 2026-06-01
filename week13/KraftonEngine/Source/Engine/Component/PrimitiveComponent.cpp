@@ -175,6 +175,16 @@ void UPrimitiveComponent::SetSimulatePhysics(bool bInSimulate)
 	NotifyPhysicsBodyDirty();
 }
 
+void UPrimitiveComponent::SetKinematicPhysics(bool bInKinematic)
+{
+	if (bKinematicPhysics == bInKinematic) return;
+
+	bKinematicPhysics = bInKinematic;
+	BodyInstance.bKinematic = bInKinematic;
+
+	NotifyPhysicsBodyDirty();
+}
+
 void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
 {
 	if (!SceneProxy) return;
@@ -272,6 +282,11 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	else if (strcmp(PropertyName, "bSimulatePhysics") == 0 || strcmp(PropertyName, "Simulate Physics") == 0)
 	{
 		BodyInstance.bSimulatePhysics = bSimulatePhysics;
+		NotifyPhysicsBodyDirty();
+	}
+	else if (strcmp(PropertyName, "bKinematicPhysics") == 0 || strcmp(PropertyName, "Kinematic Physics") == 0)
+	{
+		BodyInstance.bKinematic = bKinematicPhysics;
 		NotifyPhysicsBodyDirty();
 	}
 	else if (strcmp(PropertyName, "ObjectType") == 0 || strcmp(PropertyName, "Object Type") == 0)
@@ -484,7 +499,7 @@ void UPrimitiveComponent::InitializeBodyInstance()
 
 	// 현재 컴포넌트 설정값을 기본 BodyInstance에도 맞춰둔다.
 	BodyInstance.bSimulatePhysics = bSimulatePhysics;
-	BodyInstance.bKinematic = false;
+	BodyInstance.bKinematic = bKinematicPhysics;
 	BodyInstance.CollisionEnabled = CollisionEnabled;
 	BodyInstance.ObjectType = ObjectType;
 	BodyInstance.ResponseContainer = ResponseContainer;
@@ -582,6 +597,13 @@ void UPrimitiveComponent::AddForce(const FVector& Force)
 	if (UWorld* W = GetWorld())
 			if (IPhysicsScene* PS = W->GetPhysicsScene())
 				PS->AddForce(this, Force);
+}
+
+void UPrimitiveComponent::AddImpulse(const FVector& Impulse)
+{
+	if (UWorld* W = GetWorld())
+			if (IPhysicsScene* PS = W->GetPhysicsScene())
+				PS->AddImpulse(this, Impulse);
 }
 
 void UPrimitiveComponent::AddForceAtLocation(const FVector& Force, const FVector& Location)

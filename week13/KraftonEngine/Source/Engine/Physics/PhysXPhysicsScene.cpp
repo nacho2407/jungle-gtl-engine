@@ -480,17 +480,6 @@ static void SetComponentWorldPose(UPrimitiveComponent* Comp, const PxTransform& 
 	}
 }
 
-// Compound body의 mass와 center-of-mass를 RootComponent의 값으로 갱신.
-// shape 추가/제거 후 inertia 재계산이 필요하므로 RegisterComponent /
-// UnregisterComponent 끝에서 호출된다.
-static void ApplyRootMassAndCOM(PxRigidDynamic* Dyn, UPrimitiveComponent* Root)
-{
-	if (!Dyn || !IsValid(Root)) return;
-	const float MassKg = (Root->GetMass() > 0.0f) ? Root->GetMass() : 1.0f;
-	PxRigidBodyExt::setMassAndUpdateInertia(*Dyn, MassKg);
-	Dyn->setCMassLocalPose(PxTransform(ToPxVec3(Root->GetCenterOfMass())));
-}
-
 // ============================================================
 // Collision Filtering
 // ============================================================
@@ -690,32 +679,6 @@ void FPhysXPhysicsScene::Shutdown()
 	{
 		bSharedPhysXAcquired = false;
 		ReleaseSharedPhysX();
-	}
-}
-
-void FPhysXPhysicsScene::ClearPhysXActorUserData(PxRigidActor* Actor) const
-{
-	if (!Actor)
-	{
-		return;
-	}
-
-	Actor->userData = nullptr;
-
-	const PxU32 NumShapes = Actor->getNbShapes();
-	if (NumShapes == 0)
-	{
-		return;
-	}
-
-	std::vector<PxShape*> Shapes(NumShapes);
-	Actor->getShapes(Shapes.data(), NumShapes);
-	for (PxShape* Shape : Shapes)
-	{
-		if (Shape)
-		{
-			Shape->userData = nullptr;
-		}
 	}
 }
 
@@ -1390,6 +1353,29 @@ void FPhysXPhysicsScene::ReleaseRegisteredBodies()
 	}
 }
 
+FBodyInstance* FPhysXPhysicsScene::FindRegisteredBodyByActor(const PxActor* Actor) const
+{
+	if (!Actor)
+	{
+		return nullptr;
+	}
+
+	for (FBodyInstance* Body : RegisteredBodies)
+	{
+		if (!Body || !Body->IsValidBodyInstance())
+		{
+			continue;
+		}
+
+		if (Body->RigidActor == Actor)
+		{
+			return Body;
+		}
+	}
+
+	return nullptr;
+}
+
 void FPhysXPhysicsScene::SyncEngineToPhysicsBeforeSim()
 {
 	constexpr float TeleportPosThresholdSq = 1.0f;
@@ -1473,12 +1459,7 @@ void FPhysXPhysicsScene::SyncPhysicsToEngineAfterSim()
 			continue;
 		}
 
-		if (Dynamic->isSleeping())
-		{
-			continue;
-		}
-
-		FBodyInstance* Body = GetBodyInstanceFromActor(ActiveActor);
+		FBodyInstance* Body = FindRegisteredBodyByActor(ActiveActor);
 		if (!Body || !Body->IsValidBodyInstance())
 		{
 			continue;

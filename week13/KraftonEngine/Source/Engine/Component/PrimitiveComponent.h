@@ -170,6 +170,10 @@ public:
 	void SetSimulatePhysics(bool bInSimulate);
 	UFUNCTION(Pure, Category="Physics")
 	bool GetSimulatePhysics() const { return bSimulatePhysics; }
+	UFUNCTION(Callable, Exec, Category="Physics")
+	void SetKinematicPhysics(bool bInKinematic);
+	UFUNCTION(Pure, Category="Physics")
+	bool GetKinematicPhysics() const { return bKinematicPhysics; }
 
 	// --- BodyInstance
 	FBodyInstance& GetBodyInstance() { return BodyInstance; }
@@ -178,6 +182,8 @@ public:
 	// --- Physics Force/Velocity API ---
 	UFUNCTION(Callable, Category="Physics")
 	void AddForce(const FVector& Force);
+	UFUNCTION(Callable, Category="Physics")
+	void AddImpulse(const FVector& Impulse);
 	UFUNCTION(Callable, Category="Physics")
 	void AddForceAtLocation(const FVector& Force, const FVector& Location);
 	UFUNCTION(Callable, Category="Physics")
@@ -270,6 +276,8 @@ protected:
 	bool bCastShadowAsTwoSided = false;
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Simulate Physics")
 	bool bSimulatePhysics = false;
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Kinematic Physics")
+	bool bKinematicPhysics = false;
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Generate Overlap Events")
 	bool bGenerateOverlapEvents = false;
 
