@@ -4,9 +4,17 @@
 #include "Engine/Math/Vector.h"
 #include "Core/Types/EngineTypes.h"
 
+#include "Source/Engine/PhysicsEngine/SphereElem.generated.h"
+
+USTRUCT()
 struct FKSphereElem : public FKShapeElem
 {
+	GENERATED_BODY()
+
+	UPROPERTY(Edit, Save, Category="Sphere", DisplayName="Center", Type=Vec3, Speed=0.01f)
 	FVector Center;
+
+	UPROPERTY(Edit, Save, Category="Sphere", DisplayName="Radius", Min=0.001f, Speed=0.01f)
 	float Radius;
 
 	FKSphereElem()

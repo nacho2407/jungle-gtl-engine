@@ -1,6 +1,9 @@
 #include "Editor/UI/Util/InlinePropertyRenderer.h"
 
+#include "Core/Property/ArrayProperty.h"
 #include "Core/Property/NumericProperty.h"
+#include "Core/Property/ObjectProperty.h"
+#include "Core/Property/StructProperty.h"
 #include "Core/Types/PropertyTypes.h"
 #include "ImGui/imgui.h"
 #include "Math/Rotator.h"
@@ -19,6 +22,124 @@ namespace
 	{
 		const char* DisplayName = Prop.GetDisplayName();
 		return DisplayName && *DisplayName ? DisplayName : Prop.GetName();
+	}
+
+	bool RenderPropertyValue(FPropertyValue& Prop, bool bReadOnly);
+
+	bool RenderStructValue(FPropertyValue& Prop)
+	{
+		UStruct* StructType = Prop.GetStructType();
+		void* StructPtr = Prop.GetValuePtr();
+		if (!StructType || !StructPtr)
+		{
+			ImGui::TextDisabled("(no editable properties)");
+			return false;
+		}
+
+		const char* StructName = StructType->GetName() ? StructType->GetName() : "Struct";
+		const bool bOpen = ImGui::TreeNodeEx("##StructValue", ImGuiTreeNodeFlags_DefaultOpen, "%s", StructName);
+		if (!bOpen)
+		{
+			return false;
+		}
+
+		const bool bChanged = FInlinePropertyRenderer::RenderStructProperties(
+			StructType,
+			StructPtr,
+			Prop.Object,
+			"##InlineNestedStructProperties");
+		ImGui::TreePop();
+		return bChanged;
+	}
+
+	bool RenderArrayValue(FPropertyValue& Prop, bool bReadOnly)
+	{
+		const FArrayProperty* ArrayProperty = Prop.Property ? Prop.Property->AsArrayProperty() : nullptr;
+		void* ArrayPtr = Prop.GetValuePtr();
+		const FArrayProperty::FArrayOps* ArrayOps = ArrayProperty ? ArrayProperty->GetArrayOps() : nullptr;
+		const FProperty* InnerProperty = ArrayProperty ? ArrayProperty->GetInnerProperty() : nullptr;
+		if (!ArrayPtr || !ArrayOps || !ArrayOps->GetNum || !ArrayOps->GetElementPtr || !InnerProperty)
+		{
+			ImGui::TextDisabled("(unsupported array)");
+			return false;
+		}
+
+		const size_t Count = ArrayOps->GetNum(ArrayPtr);
+		if (bReadOnly)
+		{
+			ImGui::TextDisabled("Array Elements: %zu", Count);
+			return false;
+		}
+
+		const ImGuiTreeNodeFlags Flags = Count > 0 ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+		const bool bOpen = ImGui::TreeNodeEx("##ArrayValue", Flags, "Array Elements: %zu", Count);
+		if (!bOpen)
+		{
+			return false;
+		}
+
+		bool bAnyChanged = false;
+		for (size_t Index = 0; Index < Count; ++Index)
+		{
+			void* ElementPtr = ArrayOps->GetElementPtr(ArrayPtr, Index);
+			if (!ElementPtr)
+			{
+				continue;
+			}
+
+			ImGui::PushID(static_cast<int>(Index));
+			const bool bElementOpen = ImGui::TreeNodeEx("##ArrayElement", ImGuiTreeNodeFlags_DefaultOpen, "Index [%zu]", Index);
+			if (bElementOpen)
+			{
+				FPropertyValue ElementValue;
+				ElementValue.Object = Prop.Object;
+				ElementValue.Property = InnerProperty;
+				ElementValue.ContainerPtr = ElementPtr;
+
+				bAnyChanged |= RenderPropertyValue(ElementValue, false);
+				ImGui::TreePop();
+			}
+			ImGui::PopID();
+		}
+
+		ImGui::TreePop();
+		return bAnyChanged;
+	}
+
+	bool RenderObjectValue(FPropertyValue& Prop)
+	{
+		const FObjectProperty* ObjectProperty = Prop.Property ? Prop.Property->AsObjectProperty() : nullptr;
+		void* ValuePtr = Prop.GetValuePtr();
+		UObject* Object = ObjectProperty && ValuePtr
+			? ObjectProperty->GetObjectValueFromValuePtr(ValuePtr)
+			: nullptr;
+		if (!Object)
+		{
+			ImGui::TextDisabled("None");
+			return false;
+		}
+
+		UClass* Class = Object->GetClass();
+		const char* ClassName = Class && Class->GetName() ? Class->GetName() : "Object";
+		const FString ObjectName = Object->GetName();
+		const bool bOpen = ImGui::TreeNodeEx(
+			"##ObjectValue",
+			ImGuiTreeNodeFlags_DefaultOpen,
+			"%s: %s",
+			ClassName,
+			ObjectName.c_str());
+		if (!bOpen)
+		{
+			return false;
+		}
+
+		const bool bChanged = FInlinePropertyRenderer::RenderStructProperties(
+			Class,
+			Object,
+			Object,
+			"##InlineObjectProperties");
+		ImGui::TreePop();
+		return bChanged;
 	}
 
 	bool RenderValue(FPropertyValue& Prop)
@@ -141,9 +262,58 @@ namespace
 			}
 			return false;
 		}
+		case EPropertyType::Enum:
+		{
+			const FEnum* EnumType = Prop.GetEnumType();
+			void* ValuePtr = Prop.GetValuePtr();
+			if (!EnumType || !EnumType->GetEntries() || EnumType->GetCount() == 0 || !ValuePtr)
+			{
+				return false;
+			}
+
+			int64 CurrentValue = 0;
+			const uint32 EnumSize = EnumType->GetSize();
+			std::memcpy(&CurrentValue, ValuePtr, std::min<size_t>(EnumSize, sizeof(CurrentValue)));
+			const char* Preview = EnumType->GetNameByValue(CurrentValue);
+			bool bChanged = false;
+			if (ImGui::BeginCombo("##Value", Preview))
+			{
+				for (uint32 Index = 0; Index < EnumType->GetCount(); ++Index)
+				{
+					const int64 EntryValue = EnumType->GetValueAt(Index);
+					const bool bSelected = (CurrentValue == EntryValue);
+					if (ImGui::Selectable(EnumType->GetNameAt(Index), bSelected))
+					{
+						std::memcpy(ValuePtr, &EntryValue, std::min<size_t>(EnumSize, sizeof(EntryValue)));
+						bChanged = true;
+					}
+					if (bSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+			return bChanged;
+		}
 		default:
 			ImGui::TextDisabled("(unsupported type)");
 			return false;
+		}
+	}
+
+	bool RenderPropertyValue(FPropertyValue& Prop, bool bReadOnly)
+	{
+		switch (Prop.GetType())
+		{
+		case EPropertyType::Struct:
+			return bReadOnly ? (RenderStructValue(Prop), false) : RenderStructValue(Prop);
+		case EPropertyType::Array:
+			return RenderArrayValue(Prop, bReadOnly);
+		case EPropertyType::ObjectRef:
+			return bReadOnly ? (RenderObjectValue(Prop), false) : RenderObjectValue(Prop);
+		default:
+			return RenderValue(Prop);
 		}
 	}
 }
@@ -190,14 +360,17 @@ namespace FInlinePropertyRenderer
 				ImGui::TextUnformatted(GetDisplayName(Prop));
 
 				ImGui::TableSetColumnIndex(1);
-				ImGui::SetNextItemWidth(-FLT_MIN);
+				if (Prop.GetType() != EPropertyType::Array && Prop.GetType() != EPropertyType::Struct)
+				{
+					ImGui::SetNextItemWidth(-FLT_MIN);
+				}
 
 				if (bReadOnly)
 				{
 					ImGui::BeginDisabled();
 				}
 
-				const bool bChanged = RenderValue(Prop);
+				const bool bChanged = RenderPropertyValue(Prop, bReadOnly);
 
 				if (bReadOnly)
 				{

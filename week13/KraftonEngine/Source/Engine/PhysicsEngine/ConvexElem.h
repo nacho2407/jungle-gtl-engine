@@ -3,12 +3,22 @@
 #include "ShapeElem.h"
 #include "Core/Types/EngineTypes.h"
 
+#include "Source/Engine/PhysicsEngine/ConvexElem.generated.h"
+
 class FMeshElementCollector;
 
+USTRUCT()
 struct FKConvexElem : public FKShapeElem
 {
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, Save, Category="Convex", DisplayName="Vertex Data", Type=Array)
 	TArray<FVector> VertexData;
+
+	UPROPERTY(VisibleAnywhere, Save, Category="Convex", DisplayName="Index Data", Type=Array)
 	TArray<int32> IndexData;
+
+	UPROPERTY(VisibleAnywhere, Save, Category="Convex", DisplayName="Elem Box", Type=Struct)
 	FBoundingBox ElemBox;
 
 	FKConvexElem()
@@ -47,5 +57,6 @@ struct FKConvexElem : public FKShapeElem
 	inline static constexpr EAggCollisionShape StaticShapeType = EAggCollisionShape::Convex;
 
 private:
+	UPROPERTY(Edit, Save, Category="Convex", DisplayName="Transform", Type=Struct)
 	FTransform Transform;
 };

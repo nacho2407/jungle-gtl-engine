@@ -2,11 +2,23 @@
 #include "Engine/Math/Matrix.h"
 #include "Engine/Math/Rotator.h"
 #include "Engine/Math/Quat.h"
+#include "Object/Reflection/ObjectMacros.h"
+#include "Object/Reflection/UStruct.h"
 
+#include "Source/Engine/Math/Transform.generated.h"
+
+USTRUCT()
 struct FTransform
 {
+	GENERATED_BODY()
+
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Location", Type=Vec3, Speed=0.01f)
 	FVector Location;
+
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Rotation", Type=Vec4, Speed=0.01f)
 	FQuat Rotation;
+
+	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Scale", Type=Vec3, Speed=0.01f)
 	FVector Scale;
 
 	FTransform() : Location(0.0f, 0.0f, 0.0f), Rotation(FQuat::Identity), Scale(1.0f, 1.0f, 1.0f){}

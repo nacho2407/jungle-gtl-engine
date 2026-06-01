@@ -91,7 +91,7 @@ bool RenderConstraintInitDescDetails(
 	return true;
 }
 
-bool RenderBodyPhysicsInfoDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
+bool RenderBodySetupDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
 {
 	if (!PhysicsAsset || BodyIndex < 0)
 	{
@@ -105,14 +105,28 @@ bool RenderBodyPhysicsInfoDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
 	}
 
 	UBodySetup* BodySetup = Bodies[BodyIndex];
-	ImGui::TextUnformatted("Body Physics");
+	ImGui::TextUnformatted("Body Setup");
 	ImGui::Text("Calculated Mass: %.4f kg", BodySetup->CalculateMass());
-
 	return FInlinePropertyRenderer::RenderStructProperties(
-		FBodySetupPhysicsInfo::StaticStruct(),
-		&BodySetup->GetPhysicsInfo(),
+		UBodySetup::StaticClass(),
+		BodySetup,
 		PhysicsAsset,
-		"##PhysicsAssetViewerBodyPhysicsProps");
+		"##PhysicsAssetViewerBodySetupProps");
+}
+
+bool RenderPhysicsAssetDetails(UPhysicsAsset* PhysicsAsset)
+{
+	if (!PhysicsAsset)
+	{
+		return false;
+	}
+
+	ImGui::TextUnformatted("Physics Asset");
+	return FInlinePropertyRenderer::RenderStructProperties(
+		UPhysicsAsset::StaticClass(),
+		PhysicsAsset,
+		PhysicsAsset,
+		"##PhysicsAssetViewerAssetProps");
 }
 
 bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
@@ -443,6 +457,13 @@ void FPhysicsAssetViewerWidget::RenderBodyList(UPhysicsAsset* PhysicsAsset)
 	ImGui::TextUnformatted("Bodies");
 	ImGui::Separator();
 
+	if (ImGui::Selectable("Physics Asset##PhysicsAssetViewerRoot", SelectedBodyIndex < 0 && SelectedConstraintIndex < 0))
+	{
+		SelectedBodyIndex = -1;
+		SelectedConstraintIndex = -1;
+		ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex, SelectedConstraintIndex);
+	}
+
 	const TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetups();
 	if (SelectedBodyIndex >= static_cast<int32>(Bodies.size()))
 	{
@@ -572,16 +593,23 @@ void FPhysicsAssetViewerWidget::RenderBodyDetails(UPhysicsAsset* PhysicsAsset)
 		return;
 	}
 
-	if (SelectedConstraintIndex < 0 && RenderBodyPhysicsInfoDetails(PhysicsAsset, SelectedBodyIndex))
+	if (SelectedConstraintIndex < 0)
 	{
-		if (SavePhysicsAsset(PhysicsAsset))
+		const bool bChanged = SelectedBodyIndex >= 0
+			? RenderBodySetupDetails(PhysicsAsset, SelectedBodyIndex)
+			: RenderPhysicsAssetDetails(PhysicsAsset);
+		if (bChanged)
 		{
-			ClearDirty();
-		}
-		else
-		{
-			UE_LOG("PhysicsAsset body physics edit warning: failed to persist body physics info. PhysicsAsset=%s", PhysicsAsset->GetAssetPathFileName().c_str());
-			MarkDirty();
+			ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex, SelectedConstraintIndex);
+			if (SavePhysicsAsset(PhysicsAsset))
+			{
+				ClearDirty();
+			}
+			else
+			{
+				UE_LOG("PhysicsAsset body edit warning: failed to persist body details. PhysicsAsset=%s", PhysicsAsset->GetAssetPathFileName().c_str());
+				MarkDirty();
+			}
 		}
 	}
 }

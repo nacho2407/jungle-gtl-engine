@@ -169,7 +169,7 @@ namespace
 		return true;
 	}
 
-	bool RenderBodyPhysicsInfoDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
+	bool RenderBodySetupDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
 	{
 		if (!PhysicsAsset || BodyIndex < 0)
 		{
@@ -183,14 +183,29 @@ namespace
 		}
 
 		UBodySetup* BodySetup = Bodies[BodyIndex];
-		ImGui::TextUnformatted("Body Physics");
+		ImGui::TextUnformatted("Body Setup");
 		ImGui::Text("Calculated Mass: %.4f kg", BodySetup->CalculateMass());
 
 		return FInlinePropertyRenderer::RenderStructProperties(
-			FBodySetupPhysicsInfo::StaticStruct(),
-			&BodySetup->GetPhysicsInfo(),
+			UBodySetup::StaticClass(),
+			BodySetup,
 			PhysicsAsset,
-			"##PhysicsAssetBodyPhysicsProps");
+			"##PhysicsAssetBodySetupProps");
+	}
+
+	bool RenderPhysicsAssetDetails(UPhysicsAsset* PhysicsAsset)
+	{
+		if (!PhysicsAsset)
+		{
+			return false;
+		}
+
+		ImGui::TextUnformatted("Physics Asset");
+		return FInlinePropertyRenderer::RenderStructProperties(
+			UPhysicsAsset::StaticClass(),
+			PhysicsAsset,
+			PhysicsAsset,
+			"##PhysicsAssetRootProps");
 	}
 
 	bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
@@ -1473,6 +1488,13 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyList(USkeletalMesh* Skele
 	}
 	SyncDebugComponent(PhysicsAsset);
 
+	if (ImGui::Selectable("Physics Asset##PhysicsAssetRoot", SelectedPhysicsBodyIndex < 0 && SelectedPhysicsConstraintIndex < 0))
+	{
+		SelectedPhysicsBodyIndex = -1;
+		SelectedPhysicsConstraintIndex = -1;
+		SyncDebugComponent(PhysicsAsset);
+	}
+
 	const FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset)
 	{
@@ -1583,10 +1605,17 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyDetails(UPhysicsAsset* Ph
 		return;
 	}
 
-	if (SelectedPhysicsConstraintIndex < 0 && RenderBodyPhysicsInfoDetails(PhysicsAsset, SelectedPhysicsBodyIndex))
+	if (SelectedPhysicsConstraintIndex < 0)
 	{
-		SavePhysicsAssetChange("PhysicsAsset body physics edit warning");
-		MarkDirty();
+		const bool bChanged = SelectedPhysicsBodyIndex >= 0
+			? RenderBodySetupDetails(PhysicsAsset, SelectedPhysicsBodyIndex)
+			: RenderPhysicsAssetDetails(PhysicsAsset);
+		if (bChanged)
+		{
+			SavePhysicsAssetChange("PhysicsAsset body edit warning");
+			MarkDirty();
+			SyncDebugComponent(PhysicsAsset);
+		}
 	}
 }
 

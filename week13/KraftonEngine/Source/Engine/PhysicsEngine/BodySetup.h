@@ -3,9 +3,14 @@
 #include "AggregateGeom.h"
 #include "BodySetupPhysicsInfo.h"
 
+#include "Source/Engine/PhysicsEngine/BodySetup.generated.h"
+
+UCLASS()
 class UBodySetup : public UBodySetupCore
 {
 public:
+	GENERATED_BODY()
+
 	UBodySetup()
 	{
 		PhysicsType = EPhysicsType::PhysType_Default;
@@ -25,6 +30,9 @@ public:
 
 private:
 	// DisplayName = Primitives
+	UPROPERTY(Edit, Save, Category="Body Setup", DisplayName="Aggregate Geometry", Type=Struct)
 	FKAggregateGeom AggGeom;
+
+	UPROPERTY(Edit, Save, Category="Body Setup", DisplayName="Body Physics", Type=Struct)
 	FBodySetupPhysicsInfo PhysicsInfo;
 };
