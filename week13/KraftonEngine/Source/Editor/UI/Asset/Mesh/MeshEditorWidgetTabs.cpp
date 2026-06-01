@@ -1659,6 +1659,10 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyDetails(UPhysicsAsset* Ph
 			SavePhysicsAssetChange("PhysicsAsset body edit warning");
 			MarkDirty();
 			SyncDebugComponent(PhysicsAsset);
+			if (UPhysicsAssetDebugComponent* DebugComponent = GetViewportClient().GetPhysicsAssetDebugComponent())
+			{
+				DebugComponent->MarkPhysicsAssetDebugDirty();
+			}
 		}
 	}
 }

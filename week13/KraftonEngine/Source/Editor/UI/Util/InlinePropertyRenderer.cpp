@@ -55,7 +55,21 @@ namespace
 		return DisplayName && *DisplayName ? DisplayName : Prop.GetName();
 	}
 
-	bool RenderPropertyRow(FPropertyValue& Prop, bool bReadOnly, int32 Depth, const char* OverrideLabel = nullptr);
+	struct FArrayElementContext
+	{
+		const FArrayProperty::FArrayOps* ArrayOps = nullptr;
+		void* ArrayPtr = nullptr;
+		size_t Index = 0;
+		bool bReadOnly = false;
+		bool bDeleted = false;
+	};
+
+	bool RenderPropertyRow(
+		FPropertyValue& Prop,
+		bool bReadOnly,
+		int32 Depth,
+		const char* OverrideLabel = nullptr,
+		FArrayElementContext* ArrayElementContext = nullptr);
 	bool RenderStructRows(UStruct* StructType, void* StructPtr, UObject* Owner, int32 Depth, bool bInheritedReadOnly);
 
 	void RenderIndentedText(const char* Label, int32 Depth)
@@ -106,6 +120,33 @@ namespace
 		return bExpandable && bOpen;
 	}
 
+	bool RenderArrayElementDeleteContextMenu(FArrayElementContext* Context, const char* PopupId)
+	{
+		if (!Context || Context->bDeleted)
+		{
+			return false;
+		}
+
+		bool bDeleted = false;
+		if (ImGui::BeginPopupContextItem(PopupId))
+		{
+			const bool bCanDelete =
+				!Context->bReadOnly &&
+				Context->ArrayOps &&
+				Context->ArrayOps->RemoveAt &&
+				Context->ArrayPtr;
+			if (ImGui::MenuItem("Delete Element", nullptr, false, bCanDelete))
+			{
+				Context->ArrayOps->RemoveAt(Context->ArrayPtr, Context->Index);
+				Context->bDeleted = true;
+				bDeleted = true;
+			}
+			ImGui::EndPopup();
+		}
+
+		return bDeleted;
+	}
+
 	bool RenderStructRows(UStruct* StructType, void* StructPtr, UObject* Owner, int32 Depth, bool bInheritedReadOnly)
 	{
 		bool bAnyChanged = false;
@@ -134,7 +175,12 @@ namespace
 		return bAnyChanged;
 	}
 
-	bool RenderArrayRows(FPropertyValue& Prop, bool bReadOnly, int32 Depth, const char* Label)
+	bool RenderArrayRows(
+		FPropertyValue& Prop,
+		bool bReadOnly,
+		int32 Depth,
+		const char* Label,
+		FArrayElementContext* ArrayElementContext = nullptr)
 	{
 		const FArrayProperty* ArrayProperty = Prop.Property ? Prop.Property->AsArrayProperty() : nullptr;
 		void* ArrayPtr = Prop.GetValuePtr();
@@ -143,17 +189,27 @@ namespace
 		if (!ArrayPtr || !ArrayOps || !ArrayOps->GetNum || !ArrayOps->GetElementPtr || !InnerProperty)
 		{
 			RenderSectionHeader(Label, Depth, false);
-			return false;
+			return RenderArrayElementDeleteContextMenu(ArrayElementContext, "##ArrayElementContext");
 		}
 
 		const size_t Count = ArrayOps->GetNum(ArrayPtr);
 		if (Count == 0)
 		{
 			RenderSectionHeader(Label, Depth, false);
-			return false;
+			return RenderArrayElementDeleteContextMenu(ArrayElementContext, "##ArrayElementContext");
 		}
 
-		if (!RenderSectionHeader(Label, Depth, true))
+		const bool bOpen = RenderSectionHeader(Label, Depth, true);
+		if (RenderArrayElementDeleteContextMenu(ArrayElementContext, "##ArrayElementContext"))
+		{
+			if (bOpen)
+			{
+				ImGui::TreePop();
+			}
+			return true;
+		}
+
+		if (!bOpen)
 		{
 			return false;
 		}
@@ -175,9 +231,21 @@ namespace
 			char ElementLabel[64];
 			std::snprintf(ElementLabel, sizeof(ElementLabel), "Index [%zu]", Index);
 
+			FArrayElementContext ElementContext;
+			ElementContext.ArrayOps = ArrayOps;
+			ElementContext.ArrayPtr = ArrayPtr;
+			ElementContext.Index = Index;
+			ElementContext.bReadOnly = bReadOnly;
+
 			ImGui::PushID(static_cast<int>(Index));
-			bAnyChanged |= RenderPropertyRow(ElementValue, bReadOnly, Depth + 1, ElementLabel);
+			bAnyChanged |= RenderPropertyRow(ElementValue, bReadOnly, Depth + 1, ElementLabel, &ElementContext);
 			ImGui::PopID();
+
+			if (ElementContext.bDeleted)
+			{
+				bAnyChanged = true;
+				break;
+			}
 		}
 
 		ImGui::TreePop();
@@ -361,7 +429,12 @@ namespace
 		return !bReadOnly && bChanged;
 	}
 
-	bool RenderPropertyRow(FPropertyValue& Prop, bool bReadOnly, int32 Depth, const char* OverrideLabel)
+	bool RenderPropertyRow(
+		FPropertyValue& Prop,
+		bool bReadOnly,
+		int32 Depth,
+		const char* OverrideLabel,
+		FArrayElementContext* ArrayElementContext)
 	{
 		const char* Label = OverrideLabel ? OverrideLabel : GetDisplayName(Prop);
 		switch (Prop.GetType())
@@ -373,10 +446,20 @@ namespace
 			if (!StructType || !StructPtr)
 			{
 				RenderSectionHeader(Label, Depth, false);
-				return false;
+				return RenderArrayElementDeleteContextMenu(ArrayElementContext, "##ArrayElementContext");
 			}
 
-			if (!RenderSectionHeader(Label, Depth, true))
+			const bool bOpen = RenderSectionHeader(Label, Depth, true);
+			if (RenderArrayElementDeleteContextMenu(ArrayElementContext, "##ArrayElementContext"))
+			{
+				if (bOpen)
+				{
+					ImGui::TreePop();
+				}
+				return true;
+			}
+
+			if (!bOpen)
 			{
 				return false;
 			}
@@ -386,7 +469,7 @@ namespace
 			return !bReadOnly && bChanged;
 		}
 		case EPropertyType::Array:
-			return RenderArrayRows(Prop, bReadOnly, Depth, Label);
+			return RenderArrayRows(Prop, bReadOnly, Depth, Label, ArrayElementContext);
 		case EPropertyType::ObjectRef:
 		{
 			const FObjectProperty* ObjectProperty = Prop.Property ? Prop.Property->AsObjectProperty() : nullptr;
@@ -400,12 +483,26 @@ namespace
 				ImGui::TableNextRow();
 				ImGui::TableSetColumnIndex(0);
 				RenderIndentedText(Label, Depth);
+				if (RenderArrayElementDeleteContextMenu(ArrayElementContext, "##ArrayElementLabelContext"))
+				{
+					return true;
+				}
 				ImGui::TableSetColumnIndex(1);
 				ImGui::TextDisabled("None");
-				return false;
+				return RenderArrayElementDeleteContextMenu(ArrayElementContext, "##ArrayElementContext");
 			}
 
-			if (!RenderSectionHeader(Label, Depth, true))
+			const bool bOpen = RenderSectionHeader(Label, Depth, true);
+			if (RenderArrayElementDeleteContextMenu(ArrayElementContext, "##ArrayElementContext"))
+			{
+				if (bOpen)
+				{
+					ImGui::TreePop();
+				}
+				return true;
+			}
+
+			if (!bOpen)
 			{
 				return false;
 			}
@@ -419,9 +516,14 @@ namespace
 			ImGui::TableNextRow();
 			ImGui::TableSetColumnIndex(0);
 			RenderIndentedText(Label, Depth);
+			if (RenderArrayElementDeleteContextMenu(ArrayElementContext, "##ArrayElementLabelContext"))
+			{
+				return true;
+			}
 			ImGui::TableSetColumnIndex(1);
 			ImGui::SetNextItemWidth(-FLT_MIN);
-			return RenderPropertyValue(Prop, bReadOnly);
+			const bool bChanged = RenderPropertyValue(Prop, bReadOnly);
+			return RenderArrayElementDeleteContextMenu(ArrayElementContext, "##ArrayElementContext") || bChanged;
 		}
 	}
 }

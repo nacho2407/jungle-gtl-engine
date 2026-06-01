@@ -601,6 +601,10 @@ void FPhysicsAssetViewerWidget::RenderBodyDetails(UPhysicsAsset* PhysicsAsset)
 		if (bChanged)
 		{
 			ViewportClient.SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex, SelectedConstraintIndex);
+			if (UPhysicsAssetDebugComponent* DebugComponent = ViewportClient.GetPhysicsAssetDebugComponent())
+			{
+				DebugComponent->MarkPhysicsAssetDebugDirty();
+			}
 			if (SavePhysicsAsset(PhysicsAsset))
 			{
 				ClearDirty();
