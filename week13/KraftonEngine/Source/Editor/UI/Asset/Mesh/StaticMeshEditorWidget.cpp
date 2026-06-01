@@ -5,12 +5,17 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "GameFramework/Actor/StaticMeshActor.h"
+#include "Core/Logging/Log.h"
+#include "Math/MathUtils.h"
 #include "Mesh/Static/StaticMesh.h"
 #include "Mesh/Static/StaticMeshAsset.h"
+#include "Mesh/MeshManager.h"
+#include "PhysicsEngine/BodySetup.h"
 #include "Runtime/Engine.h"
 #include "Settings/EditorSettings.h"
 #include "Slate/SlateApplication.h"
 #include "UI/Toolbar/ViewportToolbar.h"
+#include "UI/Util/InlinePropertyRenderer.h"
 #include "Viewport/Viewport.h"
 
 #include <imgui.h>
@@ -98,7 +103,16 @@ void FStaticMeshEditorWidget::Open(UObject* Object)
 	ViewportClient.SetPreviewWorld(WorldContext.World);
 	ViewportClient.SetPreviewActor(Actor);
 	ViewportClient.SetPreviewMeshComponent(Actor->GetComponentByClass<UStaticMeshComponent>());
+	ViewportClient.CreatePreviewGizmo();
 	ViewportClient.ResetCameraToPreviewBounds();
+	ViewportClient.SetOnBodySetupShapePicked([this](FBodySetupShapeSelection Selection)
+	{
+		SetSelectedShape(Selection);
+	});
+	ViewportClient.SetOnBodySetupShapeEdited([this]()
+	{
+		OnBodySetupShapeEdited();
+	});
 
 	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
 
@@ -192,48 +206,52 @@ void FStaticMeshEditorWidget::Render(float DeltaTime)
 		FSlateApplication::Get().BringViewportToFront(&ViewportClient);
 	}
 
-	ImGui::BeginGroup();
+	RenderTabBar();
+	ImGui::Separator();
+	if (ActiveTab == EStaticMeshEditorTab::AggregateGeometry)
 	{
-		float AvailableWidth = ImGui::GetContentRegionAvail().x - DetailsWidth - ImGui::GetStyle().ItemSpacing.x;
-		ImVec2 Size = ImVec2(AvailableWidth, ImGui::GetContentRegionAvail().y);
-
-		ImVec2 ViewportPos = ImGui::GetCursorScreenPos();
-		ViewportClient.SetViewportRect(ViewportPos.x, ViewportPos.y, Size.x, Size.y);
-
-		FViewport* VP = ViewportClient.GetViewport();
-		if (VP && Size.x > 0 && Size.y > 0)
-		{
-			VP->RequestResize(static_cast<uint32>(Size.x), static_cast<uint32>(Size.y));
-
-			if (VP->GetSRV())
-			{
-				ImGui::Image((ImTextureID)VP->GetSRV(), Size);
-				// ImGui 인지 hover 를 입력 소유권 중재에 보고.
-				FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, ImGui::IsItemHovered());
-			}
-
-			constexpr float ToolbarHeight = 28.0f;
-
-			ImDrawList* DrawList = ImGui::GetWindowDrawList();
-			DrawList->AddRectFilled(ViewportPos,
-				ImVec2(ViewportPos.x + Size.x, ViewportPos.y + ToolbarHeight),
-				IM_COL32(40, 40, 40, 255));
-
-			FViewportToolbarContext Context;
-			Context.Renderer = &GEngine->GetRenderer();
-			Context.Settings = &FEditorSettings::Get().MeshEditorViewportSettings;
-			Context.RenderOptions = &ViewportClient.GetRenderOptions();
-			Context.ToolbarLeft = ViewportPos.x;
-			Context.ToolbarTop = ViewportPos.y;
-			Context.ToolbarWidth = Size.x;
-			Context.bReservePlayStopSpace = false;
-			Context.bShowAddActor = false;
-			Context.bShowGizmoControls = false;
-
-			FViewportToolbar::Render(Context);
-			RenderMeshStatsOverlay(DrawList, ViewportPos);
-		}
+		RenderAggregateGeometryTab(StaticMesh);
 	}
+	else
+	{
+		RenderViewTab(StaticMesh, DetailsWidth);
+	}
+
+	ImGui::End();
+
+	if (!bWindowOpen)
+	{
+		Close();
+	}
+}
+
+void FStaticMeshEditorWidget::RenderTabBar()
+{
+	if (ImGui::BeginTabBar("StaticMeshEditorTabs"))
+	{
+		if (ImGui::BeginTabItem("View"))
+		{
+			ActiveTab = EStaticMeshEditorTab::View;
+			ViewportClient.SetBodySetupEditingEnabled(false);
+			ViewportClient.GetRenderOptions().ShowFlags.bPhysicsBody = false;
+			ImGui::EndTabItem();
+		}
+		if (ImGui::BeginTabItem("Aggregate Geometry"))
+		{
+			ActiveTab = EStaticMeshEditorTab::AggregateGeometry;
+			ViewportClient.SetBodySetupEditingEnabled(true);
+			ViewportClient.GetRenderOptions().ShowFlags.bPhysicsBody = true;
+			ImGui::EndTabItem();
+		}
+		ImGui::EndTabBar();
+	}
+}
+
+void FStaticMeshEditorWidget::RenderViewTab(UStaticMesh* StaticMesh, float DetailsWidth)
+{
+	ImGui::BeginGroup();
+	const float AvailableWidth = ImGui::GetContentRegionAvail().x - DetailsWidth - ImGui::GetStyle().ItemSpacing.x;
+	RenderViewportPanel(ImVec2(AvailableWidth, ImGui::GetContentRegionAvail().y), false);
 	ImGui::EndGroup();
 
 	ImGui::SameLine();
@@ -243,13 +261,311 @@ void FStaticMeshEditorWidget::Render(float DeltaTime)
 	ImGui::Separator();
 	RenderDetailsPanel(StaticMesh ? StaticMesh->GetStaticMeshAsset() : nullptr);
 	ImGui::EndChild();
+}
 
-	ImGui::End();
+void FStaticMeshEditorWidget::RenderAggregateGeometryTab(UStaticMesh* StaticMesh)
+{
+	constexpr float ShapeListWidth = 220.0f;
+	constexpr float ShapeDetailsWidth = 340.0f;
 
-	if (!bWindowOpen)
+	ImGui::BeginChild("AggregateGeometryShapes", ImVec2(ShapeListWidth, 0), true);
+	RenderAggregateShapeList(StaticMesh);
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+
+	const float ViewportWidth = FMath::Max(
+		160.0f,
+		ImGui::GetContentRegionAvail().x - ShapeDetailsWidth - ImGui::GetStyle().ItemSpacing.x);
+	ImGui::BeginGroup();
+	RenderViewportPanel(ImVec2(ViewportWidth, ImGui::GetContentRegionAvail().y), true);
+	ImGui::EndGroup();
+
+	ImGui::SameLine();
+
+	ImGui::BeginChild("AggregateGeometryShapeDetails", ImVec2(ShapeDetailsWidth, 0), true);
+	RenderAggregateShapeDetails(StaticMesh);
+	ImGui::EndChild();
+}
+
+void FStaticMeshEditorWidget::RenderViewportPanel(ImVec2 Size, bool bShowGizmoControls)
+{
+	ImVec2 ViewportPos = ImGui::GetCursorScreenPos();
+	ViewportClient.SetViewportRect(ViewportPos.x, ViewportPos.y, Size.x, Size.y);
+
+	FViewport* VP = ViewportClient.GetViewport();
+	if (!VP || Size.x <= 0.0f || Size.y <= 0.0f)
 	{
-		Close();
+		ImGui::Dummy(Size);
+		return;
 	}
+
+	VP->RequestResize(static_cast<uint32>(Size.x), static_cast<uint32>(Size.y));
+
+	if (VP->GetSRV())
+	{
+		ImGui::Image((ImTextureID)VP->GetSRV(), Size);
+		FSlateApplication::Get().SetViewportImGuiHovered(&ViewportClient, ImGui::IsItemHovered());
+	}
+	else
+	{
+		ImGui::Dummy(Size);
+	}
+
+	constexpr float ToolbarHeight = 28.0f;
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	DrawList->AddRectFilled(ViewportPos,
+		ImVec2(ViewportPos.x + Size.x, ViewportPos.y + ToolbarHeight),
+		IM_COL32(40, 40, 40, 255));
+
+	FViewportToolbarContext Context;
+	Context.Renderer = &GEngine->GetRenderer();
+	Context.Gizmo = bShowGizmoControls ? ViewportClient.GetGizmo() : nullptr;
+	Context.Settings = &FEditorSettings::Get().MeshEditorViewportSettings;
+	Context.RenderOptions = &ViewportClient.GetRenderOptions();
+	Context.ToolbarLeft = ViewportPos.x;
+	Context.ToolbarTop = ViewportPos.y;
+	Context.ToolbarWidth = Size.x;
+	Context.bReservePlayStopSpace = false;
+	Context.bShowAddActor = false;
+	Context.bShowGizmoControls = bShowGizmoControls;
+	Context.OnCoordSystemToggled = [&]()
+	{
+		FGizmoToolSettings& Settings = FEditorSettings::Get().MeshEditorViewportSettings.Gizmo;
+		Settings.CoordSystem = Settings.CoordSystem == EEditorCoordSystem::World
+			? EEditorCoordSystem::Local
+			: EEditorCoordSystem::World;
+		ViewportClient.ApplyTransformSettingsToGizmo();
+	};
+	Context.OnSettingsChanged = [&]()
+	{
+		ViewportClient.ApplyTransformSettingsToGizmo();
+	};
+
+	FViewportToolbar::Render(Context);
+	RenderMeshStatsOverlay(DrawList, ViewportPos);
+}
+
+void FStaticMeshEditorWidget::RenderAggregateShapeList(UStaticMesh* StaticMesh)
+{
+	ImGui::TextUnformatted("Aggregate Geometry");
+	ImGui::Separator();
+
+	UBodySetup* BodySetup = StaticMesh ? StaticMesh->GetBodySetup() : nullptr;
+	if (!BodySetup)
+	{
+		ImGui::TextDisabled("No BodySetup.");
+	}
+	else
+	{
+		const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
+		for (int32 Index = 0; Index < static_cast<int32>(AggGeom.SphereElems.size()); ++Index)
+		{
+			RenderShapeSelectable("Sphere", { EAggCollisionShape::Sphere, Index });
+		}
+		for (int32 Index = 0; Index < static_cast<int32>(AggGeom.BoxElems.size()); ++Index)
+		{
+			RenderShapeSelectable("Box", { EAggCollisionShape::Box, Index });
+		}
+		for (int32 Index = 0; Index < static_cast<int32>(AggGeom.SphylElems.size()); ++Index)
+		{
+			RenderShapeSelectable("Capsule", { EAggCollisionShape::Sphyl, Index });
+		}
+		for (int32 Index = 0; Index < static_cast<int32>(AggGeom.ConvexElems.size()); ++Index)
+		{
+			RenderShapeSelectable("Convex", { EAggCollisionShape::Convex, Index });
+		}
+	}
+
+	if (ImGui::BeginPopupContextWindow("##StaticMeshAggregateGeometryContext", ImGuiPopupFlags_MouseButtonRight))
+	{
+		RenderAddShapeContextMenu(StaticMesh);
+		ImGui::EndPopup();
+	}
+}
+
+void FStaticMeshEditorWidget::RenderAggregateShapeDetails(UStaticMesh* StaticMesh)
+{
+	FKShapeElem* Shape = GetSelectedShape(StaticMesh);
+	if (!Shape)
+	{
+		ImGui::TextDisabled("Select a shape.");
+		return;
+	}
+
+	ImGui::TextUnformatted("Shape Details");
+	ImGui::Separator();
+
+	UStruct* StructType = nullptr;
+	switch (SelectedShape.Type)
+	{
+	case EAggCollisionShape::Sphere:
+		StructType = FKSphereElem::StaticStruct();
+		break;
+	case EAggCollisionShape::Box:
+		StructType = FKBoxElem::StaticStruct();
+		break;
+	case EAggCollisionShape::Sphyl:
+		StructType = FKSphylElem::StaticStruct();
+		break;
+	case EAggCollisionShape::Convex:
+		StructType = FKConvexElem::StaticStruct();
+		break;
+	default:
+		break;
+	}
+
+	if (StructType && FInlinePropertyRenderer::RenderStructProperties(StructType, Shape, StaticMesh, "##StaticMeshAggregateShapeProps"))
+	{
+		SaveStaticMeshChange("StaticMesh AggregateGeom edit warning");
+		MarkDirty();
+		ViewportClient.MarkBodySetupDebugDirty();
+	}
+}
+
+bool FStaticMeshEditorWidget::RenderAddShapeContextMenu(UStaticMesh* StaticMesh)
+{
+	bool bAdded = false;
+	if (ImGui::MenuItem("Add Sphere"))
+	{
+		AddAggregateShape(StaticMesh, EAggCollisionShape::Sphere);
+		bAdded = true;
+	}
+	if (ImGui::MenuItem("Add Box"))
+	{
+		AddAggregateShape(StaticMesh, EAggCollisionShape::Box);
+		bAdded = true;
+	}
+	if (ImGui::MenuItem("Add Capsule"))
+	{
+		AddAggregateShape(StaticMesh, EAggCollisionShape::Sphyl);
+		bAdded = true;
+	}
+	if (ImGui::MenuItem("Add Convex"))
+	{
+		AddAggregateShape(StaticMesh, EAggCollisionShape::Convex);
+		bAdded = true;
+	}
+	return bAdded;
+}
+
+bool FStaticMeshEditorWidget::RenderShapeSelectable(const char* TypeLabel, FBodySetupShapeSelection Selection)
+{
+	FString Label = TypeLabel;
+	Label += " [";
+	Label += std::to_string(Selection.Index);
+	Label += "]##StaticMeshAggShape";
+	Label += std::to_string(static_cast<int32>(Selection.Type));
+	Label += "_";
+	Label += std::to_string(Selection.Index);
+
+	const bool bSelected = SelectedShape == Selection;
+	if (ImGui::Selectable(Label.c_str(), bSelected))
+	{
+		SetSelectedShape(Selection);
+	}
+	return bSelected;
+}
+
+void FStaticMeshEditorWidget::AddAggregateShape(UStaticMesh* StaticMesh, EAggCollisionShape Type)
+{
+	if (!StaticMesh)
+	{
+		return;
+	}
+
+	UBodySetup* BodySetup = StaticMesh->CreateBodySetupIfMissing();
+	if (!BodySetup)
+	{
+		return;
+	}
+
+	FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
+	FBodySetupShapeSelection NewSelection { Type, 0 };
+	switch (Type)
+	{
+	case EAggCollisionShape::Sphere:
+		AggGeom.SphereElems.push_back(FKSphereElem());
+		NewSelection.Index = static_cast<int32>(AggGeom.SphereElems.size()) - 1;
+		break;
+	case EAggCollisionShape::Box:
+		AggGeom.BoxElems.push_back(FKBoxElem());
+		NewSelection.Index = static_cast<int32>(AggGeom.BoxElems.size()) - 1;
+		break;
+	case EAggCollisionShape::Sphyl:
+		AggGeom.SphylElems.push_back(FKSphylElem());
+		NewSelection.Index = static_cast<int32>(AggGeom.SphylElems.size()) - 1;
+		break;
+	case EAggCollisionShape::Convex:
+	{
+		FKConvexElem ConvexElem;
+		ConvexElem.VertexData = {
+			FVector(-0.5f, -0.5f, -0.5f),
+			FVector(0.5f, -0.5f, -0.5f),
+			FVector(0.5f, 0.5f, -0.5f),
+			FVector(-0.5f, 0.5f, -0.5f),
+			FVector(-0.5f, -0.5f, 0.5f),
+			FVector(0.5f, -0.5f, 0.5f),
+			FVector(0.5f, 0.5f, 0.5f),
+			FVector(-0.5f, 0.5f, 0.5f),
+		};
+		ConvexElem.IndexData = {
+			0, 2, 1, 0, 3, 2,
+			4, 5, 6, 4, 6, 7,
+			0, 1, 5, 0, 5, 4,
+			1, 2, 6, 1, 6, 5,
+			2, 3, 7, 2, 7, 6,
+			3, 0, 4, 3, 4, 7,
+		};
+		ConvexElem.UpdateElemBox();
+		AggGeom.ConvexElems.push_back(ConvexElem);
+		NewSelection.Index = static_cast<int32>(AggGeom.ConvexElems.size()) - 1;
+		break;
+	}
+	default:
+		return;
+	}
+
+	SetSelectedShape(NewSelection);
+	SaveStaticMeshChange("StaticMesh AggregateGeom add warning");
+	MarkDirty();
+	ViewportClient.MarkBodySetupDebugDirty();
+}
+
+FKShapeElem* FStaticMeshEditorWidget::GetSelectedShape(UStaticMesh* StaticMesh) const
+{
+	UBodySetup* BodySetup = StaticMesh ? StaticMesh->GetBodySetup() : nullptr;
+	return BodySetup && SelectedShape.IsValid()
+		? BodySetup->GetAggGeom().GetElement(SelectedShape.Type, SelectedShape.Index)
+		: nullptr;
+}
+
+void FStaticMeshEditorWidget::SetSelectedShape(FBodySetupShapeSelection Selection)
+{
+	SelectedShape = Selection;
+	ViewportClient.SetSelectedBodySetupShape(SelectedShape);
+}
+
+void FStaticMeshEditorWidget::SaveStaticMeshChange(const char* LogPrefix)
+{
+	UStaticMesh* StaticMesh = Cast<UStaticMesh>(EditedObject);
+	if (!StaticMesh)
+	{
+		return;
+	}
+
+	const FString StaticMeshPath = StaticMesh->GetAssetPathFileName();
+	if (!FMeshManager::SaveStaticMesh(StaticMesh, StaticMeshPath))
+	{
+		UE_LOG("%s: failed to persist StaticMesh change. StaticMesh=%s", LogPrefix, StaticMeshPath.c_str());
+	}
+}
+
+void FStaticMeshEditorWidget::OnBodySetupShapeEdited()
+{
+	SaveStaticMeshChange("StaticMesh AggregateGeom gizmo edit warning");
+	MarkDirty();
+	ViewportClient.MarkBodySetupDebugDirty();
 }
 
 void FStaticMeshEditorWidget::RenderMeshStatsOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos) const

@@ -79,7 +79,6 @@ void FStaticMeshSceneProxy::BuildPhysicsBodyWireLines(const FFrameContext& /*Fra
 		return;
 	}
 
-	Mesh->EnsureDefaultBodySetup();
 	const UBodySetup* BodySetup = Mesh->GetBodySetup();
 	if (!BodySetup)
 	{

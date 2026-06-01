@@ -7,6 +7,9 @@
 struct FStaticMesh;
 struct ImDrawList;
 struct ImVec2;
+class UBodySetup;
+class UStaticMesh;
+struct FKShapeElem;
 
 class FStaticMeshEditorWidget : public FAssetEditorWidget
 {
@@ -29,6 +32,26 @@ public:
 private:
 	void RenderMeshStatsOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos) const;
 	void RenderDetailsPanel(FStaticMesh* Asset) const;
+	void RenderTabBar();
+	void RenderViewTab(UStaticMesh* StaticMesh, float DetailsWidth);
+	void RenderAggregateGeometryTab(UStaticMesh* StaticMesh);
+	void RenderViewportPanel(ImVec2 Size, bool bShowGizmoControls);
+	void RenderAggregateShapeList(UStaticMesh* StaticMesh);
+	void RenderAggregateShapeDetails(UStaticMesh* StaticMesh);
+	bool RenderAddShapeContextMenu(UStaticMesh* StaticMesh);
+	bool RenderShapeSelectable(const char* TypeLabel, FBodySetupShapeSelection Selection);
+	void AddAggregateShape(UStaticMesh* StaticMesh, EAggCollisionShape Type);
+	FKShapeElem* GetSelectedShape(UStaticMesh* StaticMesh) const;
+	void SetSelectedShape(FBodySetupShapeSelection Selection);
+	void SaveStaticMeshChange(const char* LogPrefix);
+	void OnBodySetupShapeEdited();
+
+private:
+	enum class EStaticMeshEditorTab : uint8
+	{
+		View,
+		AggregateGeometry,
+	};
 
 private:
 	FStaticMeshEditorViewportClient ViewportClient;
@@ -36,4 +59,6 @@ private:
 	uint32 InstanceId;
 	FName PreviewWorldHandle = FName::None;
 	FString WindowIdSuffix;
+	EStaticMeshEditorTab ActiveTab = EStaticMeshEditorTab::View;
+	FBodySetupShapeSelection SelectedShape;
 };

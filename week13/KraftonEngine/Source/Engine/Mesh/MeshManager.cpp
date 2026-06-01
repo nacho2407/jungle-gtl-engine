@@ -528,6 +528,30 @@ static bool SaveSkeletalMeshBinary(USkeletalMesh* SkeletalMesh, const FString& B
 	return Writer.IsValid();
 }
 
+bool FMeshManager::SaveStaticMesh(UStaticMesh* StaticMesh, const FString& PackagePath)
+{
+	if (!StaticMesh)
+	{
+		return false;
+	}
+
+	const FString BinaryPath = !PackagePath.empty()
+		? NormalizeProjectPath(PackagePath)
+		: NormalizeProjectPath(StaticMesh->GetAssetPathFileName());
+	if (BinaryPath.empty() || BinaryPath == "None")
+	{
+		UE_LOG("StaticMesh save failed: invalid package path.");
+		return false;
+	}
+
+	const FStaticMesh* MeshAsset = StaticMesh->GetStaticMeshAsset();
+	const FString SourcePath = MeshAsset && !MeshAsset->PathFileName.empty()
+		? MeshAsset->PathFileName
+		: BinaryPath;
+
+	return SaveStaticMeshBinary(StaticMesh, BinaryPath, SourcePath);
+}
+
 bool FMeshManager::SaveSkeletalMesh(USkeletalMesh* SkeletalMesh, const FString& PackagePath)
 {
 	if (!SkeletalMesh)
