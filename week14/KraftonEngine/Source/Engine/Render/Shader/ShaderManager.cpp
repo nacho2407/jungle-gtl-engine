@@ -47,6 +47,9 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	GetOrCreate(EShaderPath::BloomExtract, StartupError);
 	GetOrCreate(EShaderPath::BloomBlur, StartupError);
 	GetOrCreate(EShaderPath::BloomComposite, StartupError);
+	GetOrCreate(FShaderKey(EShaderPath::DepthOfField, nullptr, "VS", "PS_Setup"), StartupError);
+	GetOrCreate(FShaderKey(EShaderPath::DepthOfField, nullptr, "VS", "PS_Gather"), StartupError);
+	GetOrCreate(FShaderKey(EShaderPath::DepthOfField, nullptr, "VS", "PS_Recombine"), StartupError);
 	GetOrCreate(EShaderPath::GammaCorrection, StartupError);
 	GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::StaticMesh, StartupError);
 	GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::SkeletalMesh, StartupError);

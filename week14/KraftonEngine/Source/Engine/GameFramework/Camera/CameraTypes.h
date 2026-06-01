@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Core/Types/EngineTypes.h"
@@ -76,4 +76,17 @@ struct FCameraLetterboxState
 	float Amount = 1.0f;
 	float Thickness = 0.12f;
 	FLinearColor Color = FLinearColor::Black();
-};;
+};
+
+struct FCameraDepthOfFieldSettings
+{
+	bool bEnabled = false;
+	float FocusDistance = 10.0f;
+	float FStop = 4.0f;
+	float SensorWidth = 24.576f;
+	int32 GatherRingCount = 3;
+	int32 GatherSamplesPerRing = 8;
+	bool bEnableForeground = true;
+	bool bEnableBackground = true;
+	bool bHalfRes = true;
+};

@@ -34,6 +34,8 @@ struct FFrameContext
 	FVector CameraUp;
 	float NearClip = 0.1f;
 	float FarClip = 1000.0f;
+	float FOV = 3.14159265358979f / 3.0f;
+	float AspectRatio = 16.0f / 9.0f;
 
 	bool  bIsOrtho     = false;
 	bool  bIsLightView = false;
@@ -95,6 +97,7 @@ struct FFrameContext
 	FCameraFadeState CameraFade;
 	FCameraVignetteState CameraVignette;
 	FCameraLetterboxState CameraLetterbox;
+	FCameraDepthOfFieldSettings CameraDepthOfField;
 
 	// Derived helpers
 	bool IsFixedOrtho() const
@@ -143,6 +146,9 @@ struct FFrameContext
 		BloomSRVA               = nullptr;
 		BloomRTVB               = nullptr;
 		BloomSRVB               = nullptr;
+		FOV                     = 3.14159265358979f / 3.0f;
+		AspectRatio             = 16.0f / 9.0f;
+		CameraDepthOfField      = FCameraDepthOfFieldSettings();
 		HiddenEditorOnlyActorForView = nullptr;
 	}
 };

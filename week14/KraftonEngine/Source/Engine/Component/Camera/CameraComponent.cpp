@@ -112,4 +112,5 @@ void UCameraComponent::GetCameraView(float /*DeltaTime*/, FMinimalViewInfo& OutP
 	OutPOV.NearClip    = CameraState.NearZ;
 	OutPOV.FarClip     = CameraState.FarZ;
 	OutPOV.bIsOrtho    = CameraState.bIsOrthogonal;
+	OutPOV.DepthOfField = DepthOfField;
 }

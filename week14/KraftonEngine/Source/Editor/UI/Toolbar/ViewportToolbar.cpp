@@ -637,6 +637,7 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 		ImGui::Checkbox("Fog", &RenderOptions.ShowFlags.bFog);
 		ImGui::Checkbox("FXAA", &RenderOptions.ShowFlags.bFXAA);
 		ImGui::Checkbox("Bloom", &RenderOptions.ShowFlags.bBloom);
+		ImGui::Checkbox("Depth Of Field", &RenderOptions.ShowFlags.bDepthOfField);
 		ImGui::Checkbox("Gamma Correction", &RenderOptions.ShowFlags.bGammaCorrection);
 		ImGui::Checkbox("View Light Culling", &RenderOptions.ShowFlags.bViewLightCulling);
 		ImGui::Checkbox("Visualize 2.5D Culling", &RenderOptions.ShowFlags.bVisualize25DCulling);
@@ -644,6 +645,33 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 		ImGui::Checkbox("Collision", &RenderOptions.ShowFlags.bCollision);
 		ImGui::Checkbox("Show Collision Shape", &RenderOptions.ShowFlags.bShowCollisionShape);
 		ImGui::Checkbox("Particle", &RenderOptions.ShowFlags.bParticle);
+
+		if (RenderOptions.ShowFlags.bDepthOfField)
+		{
+			ImGui::Separator();
+			ImGui::Text("Depth Of Field");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::DragFloat("Focus Distance", &RenderOptions.DofFocusDistance, 0.1f, 0.01f, 10000.0f, "%.2f");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::DragFloat("F-Stop", &RenderOptions.DofFStop, 0.05f, 0.1f, 32.0f, "%.2f");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::DragFloat("Sensor Width", &RenderOptions.DofSensorWidth, 0.1f, 0.1f, 1000.0f, "%.2f");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::SliderInt("Gather Rings", &RenderOptions.DofGatherRingCount, 1, 5);
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::SliderInt("Samples / Ring", &RenderOptions.DofGatherSamplesPerRing, 4, 16);
+			ImGui::Checkbox("Foreground", &RenderOptions.bDofForegroundEnabled);
+			ImGui::Checkbox("Background", &RenderOptions.bDofBackgroundEnabled);
+			ImGui::Checkbox("Half Res", &RenderOptions.bDofHalfRes);
+
+			const char* DebugNames[] = { "Final", "CoC", "Foreground", "Background" };
+			int32 DebugView = static_cast<int32>(RenderOptions.DofDebugView);
+			ImGui::SetNextItemWidth(150.0f);
+			if (ImGui::Combo("Debug", &DebugView, DebugNames, IM_ARRAYSIZE(DebugNames)))
+			{
+				RenderOptions.DofDebugView = static_cast<EDepthOfFieldDebugView>(DebugView);
+			}
+		}
 
 		ImGui::EndPopup();
 	}

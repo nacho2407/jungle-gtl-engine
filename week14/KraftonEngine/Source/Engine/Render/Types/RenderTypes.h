@@ -45,6 +45,7 @@ enum class ERenderPass : uint32
 	SelectionMask,	// 선택 스텐실 마스크
 	EditorLines,	// 디버그 라인 + 그리드 (LINELIST)
 	PostProcess,	// 아웃라인 풀스크린, Fog, SceneDepth
+	DepthOfField,	// SceneDepth 기반 variable-radius bokeh DOF
 	FXAA,			// FXAA 안티앨리어싱 (SceneColor 복사 후 실행)
 	Bloom,
 	GizmoOuter,		// 기즈모 외곽 (깊이 테스트 O)
@@ -69,6 +70,7 @@ inline const char* GetRenderPassName(ERenderPass Pass)
 		"RenderPass::SelectionMask",
 		"RenderPass::EditorLines",
 		"RenderPass::PostProcess",
+		"RenderPass::DepthOfField",
 		"RenderPass::FXAA",
 		"RenderPass::Bloom",
 		"RenderPass::GizmoOuter",
@@ -96,6 +98,7 @@ namespace RenderStateStrings
 		{ "SelectionMask", (int)ERenderPass::SelectionMask },
 		{ "EditorLines",   (int)ERenderPass::EditorLines },
 		{ "PostProcess",   (int)ERenderPass::PostProcess },
+		{ "DepthOfField",  (int)ERenderPass::DepthOfField },
 		{ "FXAA",          (int)ERenderPass::FXAA },
 		{ "Bloom",         (int)ERenderPass::Bloom },
 		{ "GizmoOuter",    (int)ERenderPass::GizmoOuter },
