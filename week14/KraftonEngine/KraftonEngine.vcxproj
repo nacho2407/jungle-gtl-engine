@@ -430,6 +430,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="HighPerformanceGPUHint.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
@@ -607,9 +608,11 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClCompile Include="Source\Engine\GameFramework\Actor\SphereActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\CameraModifier.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeBase.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CineCameraActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.cpp" />
@@ -724,6 +727,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClCompile Include="Source\Engine\Render\RenderPass\AlphaBlendPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\BloomPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\DecalPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\DepthOfFieldPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\EditorLinesPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp" />
@@ -1006,10 +1010,12 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Engine\GameFramework\Actor\SphereActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraModifier.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraShakeBase.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraTypes.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CineCameraActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.h" />
@@ -1158,6 +1164,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
     <ClInclude Include="Source\Engine\Render\RenderPass\AlphaBlendPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\BloomPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\DecalPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\DepthOfFieldPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\EditorLinesPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\FogPass.h" />
@@ -2206,6 +2213,13 @@ xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutD
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\CameraVignette.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\DepthOfField.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>

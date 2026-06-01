@@ -20,6 +20,7 @@
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "GameFramework/AActor.h"
 #include "Lua/LuaScriptManager.h"
+#include "Math/MathUtils.h"
 #include "Math/Rotator.h"
 #include "Materials/MaterialManager.h"
 #include "Mesh/Importer/MeshImportOptions.h"
@@ -72,6 +73,18 @@ namespace
 			return IsTruthyMetadataValue(*Value);
 		}
 		return false;
+	}
+
+	bool MetadataEquals(const FString* Value, const char* Expected)
+	{
+		return Value && Expected && _stricmp(Value->c_str(), Expected) == 0;
+	}
+
+	bool ShouldDisplayRadiansAsDegrees(const FPropertyValue& Prop)
+	{
+		const FString* DisplayUnit = FindPropertyMetadata(Prop, "displayunit");
+		const FString* StorageUnit = FindPropertyMetadata(Prop, "storageunit");
+		return MetadataEquals(DisplayUnit, "Degrees") && MetadataEquals(StorageUnit, "Radians");
 	}
 
 	FString GetAssetTypeMetadata(const FPropertyValue& Prop)
@@ -1373,8 +1386,28 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 		const float Min = NumericProperty ? NumericProperty->GetMin() : Prop.GetMin();
 		const float Max = NumericProperty ? NumericProperty->GetMax() : Prop.GetMax();
 		const float Speed = NumericProperty ? NumericProperty->GetSpeed() : Prop.GetSpeed();
+		const bool bDisplayDegrees = ShouldDisplayRadiansAsDegrees(Prop);
 		ImGui::SetNextItemWidth(ScalarInputWidth);
-		if (Min != 0.0f || Max != 0.0f)
+		if (bDisplayDegrees)
+		{
+			float DisplayVal = Val ? (*Val * RAD_TO_DEG) : 0.0f;
+			const float DisplayMin = Min * RAD_TO_DEG;
+			const float DisplayMax = Max * RAD_TO_DEG;
+			const float DisplaySpeed = Speed * RAD_TO_DEG;
+			if (Min != 0.0f || Max != 0.0f)
+			{
+				bChanged = ImGui::DragFloat("##Value", &DisplayVal, DisplaySpeed, DisplayMin, DisplayMax, "%.2f");
+			}
+			else
+			{
+				bChanged = ImGui::DragFloat("##Value", &DisplayVal, DisplaySpeed, 0.0f, 0.0f, "%.2f");
+			}
+			if (bChanged && Val)
+			{
+				*Val = DisplayVal * DEG_TO_RAD;
+			}
+		}
+		else if (Min != 0.0f || Max != 0.0f)
 		{
 			bChanged = ImGui::DragFloat("##Value", Val, Speed, Min, Max, "%.4f");
 		}

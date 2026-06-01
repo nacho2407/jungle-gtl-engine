@@ -657,6 +657,9 @@
     <FxCompile Include="Shaders\PostProcess\CameraVignette.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\DepthOfField.hlsl">
+      <Filter>Shaders\PostProcess</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\PostProcess\FXAA.hlsl">
       <Filter>Shaders\PostProcess</Filter>
     </FxCompile>
@@ -1223,6 +1226,9 @@
     <ClCompile Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.cpp">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraActor.cpp">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Camera\CameraModifier.cpp">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClCompile>
@@ -1230,6 +1236,9 @@
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.cpp">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CineCameraActor.cpp">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.cpp">
@@ -1517,6 +1526,9 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\BloomPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\RenderPass\DepthOfFieldPass.cpp">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\DecalPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
@@ -1745,6 +1757,7 @@
     <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXVehicleInstance.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\VehicleMovementComponent4W.cpp" />
+    <ClCompile Include="HighPerformanceGPUHint.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -2365,6 +2378,9 @@
     <ClInclude Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.h">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraActor.h">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraModifier.h">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClInclude>
@@ -2375,6 +2391,9 @@
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraTypes.h">
+      <Filter>Source\Engine\GameFramework\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CineCameraActor.h">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.h">
@@ -2750,6 +2769,9 @@
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\BloomPass.h">
+      <Filter>Source\Engine\Render\RenderPass</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\RenderPass\DepthOfFieldPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\DecalPass.h">

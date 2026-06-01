@@ -33,6 +33,7 @@ namespace Key
 	constexpr const char* bFog = "bFog";
 	constexpr const char* bFXAA = "bFXAA";
 	constexpr const char* bBloom = "bBloom";
+	constexpr const char* bDepthOfField = "bDepthOfField";
 	constexpr const char* bGammaCorrection = "bGammaCorrection";
 	constexpr const char* bViewLightCulling = "bViewLightCulling";
 	constexpr const char* bVisualize25DCulling = "bVisualize25DCulling";
@@ -49,6 +50,15 @@ namespace Key
 	constexpr const char* Range = "Range";
 	constexpr const char* EdgeThreshold = "EdgeThreshold";
 	constexpr const char* EdgeThresholdMin = "EdgeThresholdMin";
+	constexpr const char* DofFocusDistance = "DofFocusDistance";
+	constexpr const char* DofFStop = "DofFStop";
+	constexpr const char* DofSensorWidth = "DofSensorWidth";
+	constexpr const char* DofGatherRingCount = "DofGatherRingCount";
+	constexpr const char* DofGatherSamplesPerRing = "DofGatherSamplesPerRing";
+	constexpr const char* bDofForegroundEnabled = "bDofForegroundEnabled";
+	constexpr const char* bDofBackgroundEnabled = "bDofBackgroundEnabled";
+	constexpr const char* bDofHalfRes = "bDofHalfRes";
+	constexpr const char* DofDebugView = "DofDebugView";
 	constexpr const char* Gamma = "Gamma";
 	constexpr const char* LightCullingMode = "LightCullingMode";
 	constexpr const char* HeatMapMax = "HeatMapMax";
@@ -164,6 +174,7 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::bFog] = Opts.ShowFlags.bFog;
 	Obj[Key::bFXAA] = Opts.ShowFlags.bFXAA;
 	Obj[Key::bBloom] = Opts.ShowFlags.bBloom;
+	Obj[Key::bDepthOfField] = Opts.ShowFlags.bDepthOfField;
 	Obj[Key::bGammaCorrection] = Opts.ShowFlags.bGammaCorrection;
 	Obj[Key::bViewLightCulling] = Opts.ShowFlags.bViewLightCulling;
 	Obj[Key::bVisualize25DCulling] = Opts.ShowFlags.bVisualize25DCulling;
@@ -180,6 +191,15 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::Range] = Opts.Range;
 	Obj[Key::EdgeThreshold] = Opts.EdgeThreshold;
 	Obj[Key::EdgeThresholdMin] = Opts.EdgeThresholdMin;
+	Obj[Key::DofFocusDistance] = Opts.DofFocusDistance;
+	Obj[Key::DofFStop] = Opts.DofFStop;
+	Obj[Key::DofSensorWidth] = Opts.DofSensorWidth;
+	Obj[Key::DofGatherRingCount] = Opts.DofGatherRingCount;
+	Obj[Key::DofGatherSamplesPerRing] = Opts.DofGatherSamplesPerRing;
+	Obj[Key::bDofForegroundEnabled] = Opts.bDofForegroundEnabled;
+	Obj[Key::bDofBackgroundEnabled] = Opts.bDofBackgroundEnabled;
+	Obj[Key::bDofHalfRes] = Opts.bDofHalfRes;
+	Obj[Key::DofDebugView] = static_cast<int32>(Opts.DofDebugView);
 	Obj[Key::Gamma] = Opts.Gamma;
 	Obj[Key::LightCullingMode] = static_cast<int32>(Opts.LightCullingMode);
 	Obj[Key::HeatMapMax] = Opts.HeatMapMax;
@@ -217,6 +237,8 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.ShowFlags.bFXAA = Obj[Key::bFXAA].ToBool();
 	if (Obj.hasKey(Key::bBloom))
 		Opts.ShowFlags.bBloom = Obj[Key::bBloom].ToBool();
+	if (Obj.hasKey(Key::bDepthOfField))
+		Opts.ShowFlags.bDepthOfField = Obj[Key::bDepthOfField].ToBool();
 	if (Obj.hasKey(Key::bGammaCorrection))
 		Opts.ShowFlags.bGammaCorrection = Obj[Key::bGammaCorrection].ToBool();
 	if (Obj.hasKey(Key::bViewLightCulling))
@@ -249,6 +271,24 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.EdgeThreshold = static_cast<float>(Obj[Key::EdgeThreshold].ToFloat());
 	if (Obj.hasKey(Key::EdgeThresholdMin))
 		Opts.EdgeThresholdMin = static_cast<float>(Obj[Key::EdgeThresholdMin].ToFloat());
+	if (Obj.hasKey(Key::DofFocusDistance))
+		Opts.DofFocusDistance = static_cast<float>(Obj[Key::DofFocusDistance].ToFloat());
+	if (Obj.hasKey(Key::DofFStop))
+		Opts.DofFStop = static_cast<float>(Obj[Key::DofFStop].ToFloat());
+	if (Obj.hasKey(Key::DofSensorWidth))
+		Opts.DofSensorWidth = static_cast<float>(Obj[Key::DofSensorWidth].ToFloat());
+	if (Obj.hasKey(Key::DofGatherRingCount))
+		Opts.DofGatherRingCount = Obj[Key::DofGatherRingCount].ToInt();
+	if (Obj.hasKey(Key::DofGatherSamplesPerRing))
+		Opts.DofGatherSamplesPerRing = Obj[Key::DofGatherSamplesPerRing].ToInt();
+	if (Obj.hasKey(Key::bDofForegroundEnabled))
+		Opts.bDofForegroundEnabled = Obj[Key::bDofForegroundEnabled].ToBool();
+	if (Obj.hasKey(Key::bDofBackgroundEnabled))
+		Opts.bDofBackgroundEnabled = Obj[Key::bDofBackgroundEnabled].ToBool();
+	if (Obj.hasKey(Key::bDofHalfRes))
+		Opts.bDofHalfRes = Obj[Key::bDofHalfRes].ToBool();
+	if (Obj.hasKey(Key::DofDebugView))
+		Opts.DofDebugView = static_cast<EDepthOfFieldDebugView>(Obj[Key::DofDebugView].ToInt());
 	if (Obj.hasKey(Key::Gamma))
 		Opts.Gamma = static_cast<float>(Obj[Key::Gamma].ToFloat());
 	if (Obj.hasKey(Key::LightCullingMode))

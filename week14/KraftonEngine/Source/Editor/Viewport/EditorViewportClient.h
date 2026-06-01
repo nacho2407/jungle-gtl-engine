@@ -5,6 +5,7 @@
 #include "Render/Types/ViewTypes.h"
 #include "Render/Types/POVProvider.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
+#include "Object/Ptr/WeakObjectPtr.h"
 
 #include "Slate/SWindow.h"
 #include <string>
@@ -22,6 +23,8 @@ class FSelectionManager;
 class FViewport;
 class FOverlayStatSystem;
 struct FMinimalViewInfo;
+class AActor;
+class UCameraComponent;
 
 class FEditorViewportClient : public FViewportClient, public IPOVProvider
 {
@@ -51,7 +54,7 @@ public:
 	// Camera lifecycle (잔여 정리: ViewTransform 이 SoT, 컴포넌트 mirror 제거됨).
 	// CreateCamera/DestroyCamera 는 더 이상 필요 없으나 호출자 기존 흐름 보존 위해 no-op 유지.
 	void CreateCamera() {}
-	void DestroyCamera() {}
+	void DestroyCamera() { StopPilotingActor(false); }
 	void ResetCamera();
 
 	// IPOVProvider — World 가 LOD/render 용 POV 를 pull 할 때 호출.
@@ -60,6 +63,13 @@ public:
 	// Editor 카메라 데이터 SoT. UI 위젯이 이 값을 직접 편집한 뒤 NotifyViewTransformChanged 호출.
 	FViewportCameraTransform& GetViewTransform() { return ViewTransform; }
 	const FViewportCameraTransform& GetViewTransform() const { return ViewTransform; }
+
+	// Actor pilot — UE viewport 의 actor lock / Pilot Selected Actor 대응.
+	void PilotCameraActor(AActor* Actor, UCameraComponent* Camera);
+	void StopPilotingActor(bool bRestoreSavedView = true);
+	bool IsPilotingActor() const;
+	AActor* GetPilotedActor() const;
+	UCameraComponent* GetPilotedCamera() const;
 
 	// Pull 모델에선 World 가 매 GetActivePOV 호출 시 provider 에서 직접 가져와 별 동기화 불필요.
 	// 단, UI 위젯에서 즉각 반영하려는 의도 명시 위해 이름은 보존 (현재 no-op).
@@ -104,10 +114,13 @@ public:
 private:
 	void TickEditorShortcuts();
 	void TickInput(float DeltaTime);
+	void TickPilotedActorInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
 	void HandleDragStart(const FRay& Ray); //픽킹 시작
 	void SyncCameraSmoothingTarget();
 	void ApplySmoothedCameraLocation(float DeltaTime);
+	bool HasValidPilotedCamera() const;
+	void UpdatePilotedCameraValidity();
 
 
 private:
@@ -124,6 +137,11 @@ private:
 
 	// Editor 카메라 데이터 SoT
 	FViewportCameraTransform ViewTransform;
+	FViewportCameraTransform SavedViewTransformBeforePilot;
+	FWeakObjectPtr PilotedActor;
+	FWeakObjectPtr PilotedCamera;
+	bool bHasSavedViewTransformBeforePilot = false;
+	bool bHasPilotedTarget = false;
 
 	float WindowWidth = 1920.f;
 	float WindowHeight = 1080.f;

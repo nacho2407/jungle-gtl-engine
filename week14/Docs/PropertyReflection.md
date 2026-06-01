@@ -55,7 +55,8 @@ float Intensity = 1.0f;
 
 - `Category="..."`: 에디터 Details 패널에서 묶을 카테고리 이름.
 - `DisplayName="..."`: UI에 표시할 이름. 없으면 멤버 이름을 사용한다.
-- `Min=...`, `Max=...`, `Speed=...`: 숫자/벡터/회전값 위젯의 범위와 드래그 속도.
+- `Min=...`, `Max=...`, `Speed=...`: 숫자/벡터/회전값 위젯의 범위와 드래그 속도. `DisplayUnit`/`StorageUnit`을 함께 쓸 때도 저장 단위 기준으로 적는다.
+- `DisplayUnit="..."`, `StorageUnit="..."`: 내부 저장 단위와 UI 표시 단위가 다를 때 사용한다. 현재 float Details 위젯은 `StorageUnit="Radians"` + `DisplayUnit="Degrees"` 조합을 degree 표시/입력으로 변환한다.
 - `Type=...`: C++ 타입만으로 부족할 때만 리플렉션 타입을 명시한다. 일반 필드는 최대한 C++ 타입과 다른 metadata로 추론되게 둔다.
 - `Enum=...`: enum 드롭다운으로 보여줄 `UENUM` 이름.
 - `Struct=...` 또는 `Type=Struct`: 구조체 프로퍼티로 처리할 때 사용한다.
@@ -137,7 +138,7 @@ FRotator RotationRate;
 `Member=...`를 사용하면 실제 필드 전체가 아니라 내부 멤버를 별도 프로퍼티처럼 노출할 수 있다. 이 경우 선언부는 세미콜론만 있어도 되며, `Type`을 명시하는 것이 안전하다.
 
 ```cpp
-UPROPERTY(Edit, Save, Category="Camera", DisplayName="FOV", Member=CameraState.FOV, Type=Float, Min=0.1f, Max=3.14f, Speed=0.01f);
+UPROPERTY(Edit, Save, Category="Camera", DisplayName="FOV (deg)", Member=CameraState.FOV, Type=Float, Min=0.1f, Max=3.14f, Speed=0.01f, DisplayUnit="Degrees", StorageUnit="Radians");
 UPROPERTY(Edit, Save, Category="Camera", DisplayName="Orthographic", Member=CameraState.bIsOrthogonal, Type=Bool);
 FCameraState CameraState;
 ```

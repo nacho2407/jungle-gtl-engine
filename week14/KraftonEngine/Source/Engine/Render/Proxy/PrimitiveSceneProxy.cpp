@@ -26,6 +26,11 @@ FPrimitiveSceneProxy::~FPrimitiveSceneProxy() noexcept
 	}
 }
 
+AActor* FPrimitiveSceneProxy::GetOwnerActor() const
+{
+	return Owner ? Owner->GetOwner() : nullptr;
+}
+
 ERenderPass FPrimitiveSceneProxy::GetRenderPass() const
 {
 	if (!SectionDraws.empty() && SectionDraws[0].Material)

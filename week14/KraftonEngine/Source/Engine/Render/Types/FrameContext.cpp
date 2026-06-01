@@ -19,6 +19,9 @@ void FFrameContext::SetCameraInfo(const FMinimalViewInfo& POV)
 	OrthoWidth = POV.OrthoWidth;
 	NearClip   = POV.NearClip;
 	FarClip    = POV.FarClip;
+	FOV        = POV.FOV;
+	AspectRatio = POV.AspectRatio;
+	CameraDepthOfField = POV.DepthOfField;
 
 	// Per-viewport frustum — used by RenderCollector for inline frustum culling
 	FrustumVolume.UpdateFromMatrix(View * Proj);

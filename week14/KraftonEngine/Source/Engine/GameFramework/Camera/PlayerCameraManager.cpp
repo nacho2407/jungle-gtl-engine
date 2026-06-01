@@ -568,16 +568,34 @@ float APlayerCameraManager::ApplyBlendFunction(float Alpha, FViewTargetTransitio
 
 FMinimalViewInfo APlayerCameraManager::LerpPOV(const FMinimalViewInfo& From, const FMinimalViewInfo& To, float Alpha) const
 {
+	const auto LerpFloat = [Alpha](float A, float B)
+	{
+		return A + (B - A) * Alpha;
+	};
+
 	FMinimalViewInfo Result;
 	Result.Location = From.Location + (To.Location - From.Location) * Alpha;
 	Result.Rotation.Pitch = From.Rotation.Pitch + (To.Rotation.Pitch - From.Rotation.Pitch) * Alpha;
 	Result.Rotation.Yaw = From.Rotation.Yaw + (To.Rotation.Yaw - From.Rotation.Yaw) * Alpha;
 	Result.Rotation.Roll = From.Rotation.Roll + (To.Rotation.Roll - From.Rotation.Roll) * Alpha;
-	Result.FOV = From.FOV + (To.FOV - From.FOV) * Alpha;
-	Result.AspectRatio = From.AspectRatio + (To.AspectRatio - From.AspectRatio) * Alpha;
-	Result.OrthoWidth = From.OrthoWidth + (To.OrthoWidth - From.OrthoWidth) * Alpha;
-	Result.NearClip = From.NearClip + (To.NearClip - From.NearClip) * Alpha;
-	Result.FarClip = From.FarClip + (To.FarClip - From.FarClip) * Alpha;
+	Result.FOV = LerpFloat(From.FOV, To.FOV);
+	Result.AspectRatio = LerpFloat(From.AspectRatio, To.AspectRatio);
+	Result.OrthoWidth = LerpFloat(From.OrthoWidth, To.OrthoWidth);
+	Result.NearClip = LerpFloat(From.NearClip, To.NearClip);
+	Result.FarClip = LerpFloat(From.FarClip, To.FarClip);
 	Result.bIsOrtho = To.bIsOrtho; // 보통 블렌드 중간에 갑자기 바뀌는 경우는 없으므로 To 기준으로.
+
+	const FCameraDepthOfFieldSettings& FromDof = From.DepthOfField;
+	const FCameraDepthOfFieldSettings& ToDof = To.DepthOfField;
+	FCameraDepthOfFieldSettings& ResultDof = Result.DepthOfField;
+	ResultDof.bEnabled = FromDof.bEnabled || ToDof.bEnabled;
+	ResultDof.FocusDistance = LerpFloat(FromDof.FocusDistance, ToDof.FocusDistance);
+	ResultDof.FStop = LerpFloat(FromDof.FStop, ToDof.FStop);
+	ResultDof.SensorWidth = LerpFloat(FromDof.SensorWidth, ToDof.SensorWidth);
+	ResultDof.GatherRingCount = Alpha < 0.5f ? FromDof.GatherRingCount : ToDof.GatherRingCount;
+	ResultDof.GatherSamplesPerRing = Alpha < 0.5f ? FromDof.GatherSamplesPerRing : ToDof.GatherSamplesPerRing;
+	ResultDof.bEnableForeground = Alpha < 0.5f ? FromDof.bEnableForeground : ToDof.bEnableForeground;
+	ResultDof.bEnableBackground = Alpha < 0.5f ? FromDof.bEnableBackground : ToDof.bEnableBackground;
+	ResultDof.bHalfRes = Alpha < 0.5f ? FromDof.bHalfRes : ToDof.bHalfRes;
 	return Result;
 }

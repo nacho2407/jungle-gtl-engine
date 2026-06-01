@@ -15,6 +15,8 @@
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "GameFramework/Light/PointLightActor.h"
 #include "GameFramework/Light/SpotLightActor.h"
+#include "GameFramework/Camera/CameraActor.h"
+#include "GameFramework/Camera/CineCameraActor.h"
 #include "GameFramework/Actor/SkeletalMeshActor.h"
 #include "GameFramework/Pawn/Character.h"
 #include "GameFramework/Pawn/LuaCharacter.h"
@@ -45,6 +47,34 @@
 
 namespace
 {
+	FString GetActorDisplayName(const AActor* Actor)
+	{
+		if (!Actor)
+		{
+			return "None";
+		}
+
+		FString Name = Actor->GetFName().ToString();
+		return Name.empty() ? Actor->GetClass()->GetName() : Name;
+	}
+
+	int32 CountCameraComponents(const AActor* Actor)
+	{
+		if (!Actor)
+		{
+			return 0;
+		}
+
+		int32 Count = 0;
+		for (UActorComponent* Component : Actor->GetComponents())
+		{
+			if (Cast<UCameraComponent>(Component))
+			{
+				++Count;
+			}
+		}
+		return Count;
+	}
 }
 
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
@@ -156,6 +186,8 @@ void FLevelViewportLayout::Initialize(UEditorEngine* InEditor, FWindowsWindow* I
 
 void FLevelViewportLayout::Release()
 {
+	StopAllPiloting(false);
+
 	SSplitter::DestroyTree(RootSplitter);
 	RootSplitter = nullptr;
 	DraggingSplitter = nullptr;
@@ -239,6 +271,17 @@ void FLevelViewportLayout::DestroyAllCameras()
 	for (FEditorViewportClient* VC : AllViewportClients)
 	{
 		VC->DestroyCamera();
+	}
+}
+
+void FLevelViewportLayout::StopAllPiloting(bool bRestoreSavedView)
+{
+	for (FLevelEditorViewportClient* VC : LevelViewportClients)
+	{
+		if (VC)
+		{
+			VC->StopPilotingActor(bRestoreSavedView);
+		}
 	}
 }
 
@@ -1148,8 +1191,106 @@ void FLevelViewportLayout::RenderSharedViewportToolbar(float ToolbarLeft, float 
 			TargetViewportClient->SetViewportType(ViewportType);
 		}
 	};
+	if (TargetViewportClient && TargetViewportClient->IsPilotingActor())
+	{
+		if (AActor* PilotedActor = TargetViewportClient->GetPilotedActor())
+		{
+			Context.ViewportTypeLabelOverride = "Pilot: " + GetActorDisplayName(PilotedActor);
+		}
+		Context.OnStopPiloting = [TargetViewportClient]()
+		{
+			TargetViewportClient->StopPilotingActor(true);
+		};
+	}
+	Context.OnRenderPlacedCameraMenu = [this, TargetViewportClient]()
+	{
+		RenderPlacedCameraMenu(TargetViewportClient);
+	};
 
 	FViewportToolbar::Render(Context);
+}
+
+void FLevelViewportLayout::RenderPlacedCameraMenu(FLevelEditorViewportClient* TargetViewportClient)
+{
+	if (!Editor || !TargetViewportClient)
+	{
+		ImGui::BeginDisabled();
+		ImGui::MenuItem("No Active Viewport");
+		ImGui::EndDisabled();
+		return;
+	}
+
+	UWorld* World = Editor->GetWorld();
+	if (!World)
+	{
+		ImGui::BeginDisabled();
+		ImGui::MenuItem("No World");
+		ImGui::EndDisabled();
+		return;
+	}
+
+	bool bHasCamera = false;
+	for (AActor* Actor : World->GetActors())
+	{
+		if (!Actor || !IsAliveObject(Actor))
+		{
+			continue;
+		}
+
+		const int32 CameraCount = CountCameraComponents(Actor);
+		if (CameraCount <= 0)
+		{
+			continue;
+		}
+
+		const FString ActorName = GetActorDisplayName(Actor);
+		int32 CameraIndex = 0;
+		for (UActorComponent* Component : Actor->GetComponents())
+		{
+			UCameraComponent* Camera = Cast<UCameraComponent>(Component);
+			if (!Camera)
+			{
+				continue;
+			}
+
+			bHasCamera = true;
+			FString Label = ActorName;
+			if (CameraCount > 1)
+			{
+				FString CameraName = Camera->GetName();
+				if (CameraName.empty())
+				{
+					CameraName = "Camera " + std::to_string(CameraIndex + 1);
+				}
+				Label += " / " + CameraName;
+			}
+
+			const bool bSelected =
+				TargetViewportClient->GetPilotedActor() == Actor &&
+				TargetViewportClient->GetPilotedCamera() == Camera;
+
+			ImGui::PushID(Camera);
+			if (ImGui::MenuItem(Label.c_str(), nullptr, bSelected))
+			{
+				SetActiveViewport(TargetViewportClient);
+				TargetViewportClient->PilotCameraActor(Actor, Camera);
+				if (SelectionManager)
+				{
+					SelectionManager->Select(Actor);
+				}
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::PopID();
+			++CameraIndex;
+		}
+	}
+
+	if (!bHasCamera)
+	{
+		ImGui::BeginDisabled();
+		ImGui::MenuItem("No Camera Actors");
+		ImGui::EndDisabled();
+	}
 }
 
 void FLevelViewportLayout::RenderViewportSlotToolbar(int32 SlotIndex)
@@ -1727,6 +1868,8 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 		PlaceActorMenuItem("Directional Light", EViewportPlaceActorType::DirectionalLight);
 		PlaceActorMenuItem("Point Light", EViewportPlaceActorType::PointLight);
 		PlaceActorMenuItem("Spot Light", EViewportPlaceActorType::SpotLight);
+		PlaceActorMenuItem("Camera", EViewportPlaceActorType::Camera);
+		PlaceActorMenuItem("Cine Camera", EViewportPlaceActorType::CineCamera);
 		ImGui::Separator();
 		PlaceActorMenuItem("Box Collider", EViewportPlaceActorType::BoxCollider);
 		PlaceActorMenuItem("Sphere Collider", EViewportPlaceActorType::SphereCollider);
@@ -1951,6 +2094,28 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 	case EViewportPlaceActorType::SpotLight:
 	{
 		ASpotLightActor* Actor = World->SpawnActor<ASpotLightActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+			SpawnLocation.Z += 1.0f;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::Camera:
+	{
+		ACameraActor* Actor = World->SpawnActor<ACameraActor>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+			SpawnLocation.Z += 1.0f;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::CineCamera:
+	{
+		ACineCameraActor* Actor = World->SpawnActor<ACineCameraActor>();
 		if (Actor)
 		{
 			Actor->InitDefaultComponents();
