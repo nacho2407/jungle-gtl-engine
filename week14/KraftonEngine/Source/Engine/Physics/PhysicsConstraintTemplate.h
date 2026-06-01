@@ -41,6 +41,14 @@ public:
 	float GetSwing2Limit() const { return Swing2Limit; }
 	float GetTwistLimit() const { return TwistLimit; }
 	
+	void SetFrames(const FTransform& InFrameA, const FTransform& InFrameB);
+	void SetLocalFrameA(const FTransform& InFrameA);
+	void SetLocalFrameB(const FTransform& InFrameB);
+	
+	void SetAngularMode(EAngularConstraintMode InMode);
+	bool SetAngularLimits(float InSwing1Limit, float InSwing2Limit, float InTwistLimit);
+	bool SetAngularLimit(EAngularConstraintMode InMode, float InSwing1Limit, float InSwing2Limit, float InTwistLimit);
+	
 private:
 	FName ParentBoneName;
 	FName ChildBoneName;
