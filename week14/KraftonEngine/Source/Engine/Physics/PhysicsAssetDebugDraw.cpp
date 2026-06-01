@@ -1,4 +1,4 @@
-#include "PhysicsAssetDebugDraw.h"
+﻿#include "PhysicsAssetDebugDraw.h"
 
 #include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsConstraintTemplate.h"
@@ -11,7 +11,7 @@
 
 namespace
 {
-	constexpr float PhysicsAssetDebugDrawDuration = 0.05f;
+	constexpr float PhysicsAssetDebugDrawDuration = 0.0f;
 
 	// 본 로컬 점 → 월드.
 	// TRS 분해(scale 프레임 손실) 대신 본 월드 행렬 전체로 직접 변환한다.

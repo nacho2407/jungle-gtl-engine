@@ -1,4 +1,4 @@
-#include "Physics/PhysicsScene.h"
+﻿#include "Physics/PhysicsScene.h"
 #include "Physics/PhysXSDK.h"
 #include "Physics/BodyInstance.h"
 #include "Physics/ConstraintInstance.h"
@@ -53,7 +53,6 @@ void FPhysicsScene::Initialize()
 
 	Scene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, 1.0f);
 	Scene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
-	Scene->setVisualizationParameter(physx::PxVisualizationParameter::eBODY_AXES, 1.0f);
 
 	VehicleManager = new FPhysXVehicleManager();
 	VehicleManager->Initialize(Physics, Scene, FPhysXSDK::Get().GetDefaultMaterial());
