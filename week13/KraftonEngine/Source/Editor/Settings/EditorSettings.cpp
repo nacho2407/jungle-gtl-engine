@@ -41,6 +41,7 @@ namespace Key
 	constexpr const char* bShowShadowFrustum = "bShowShadowFrustum";
 	constexpr const char* bCollision = "bCollision";
 	constexpr const char* bShowCollisionShape = "bShowCollisionShape";
+	constexpr const char* bPhysicsBody = "bPhysicsBody";
 	constexpr const char* bDebugPhysicsAsset = "bDebugPhysicsAsset";
 	constexpr const char* GridSpacing = "GridSpacing";
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
@@ -181,6 +182,7 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::bShowShadowFrustum] = Opts.ShowFlags.bShowShadowFrustum;
 	Obj[Key::bCollision] = Opts.ShowFlags.bCollision;
 	Obj[Key::bShowCollisionShape] = Opts.ShowFlags.bShowCollisionShape;
+	Obj[Key::bPhysicsBody] = Opts.ShowFlags.bPhysicsBody;
 	Obj[Key::bDebugPhysicsAsset] = Opts.ShowFlags.bDebugPhysicsAsset;
 	Obj[Key::GridSpacing] = Opts.GridSpacing;
 	Obj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
@@ -250,6 +252,8 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.ShowFlags.bCollision = Obj[Key::bCollision].ToBool();
 	if (Obj.hasKey(Key::bShowCollisionShape))
 		Opts.ShowFlags.bShowCollisionShape = Obj[Key::bShowCollisionShape].ToBool();
+	if (Obj.hasKey(Key::bPhysicsBody))
+		Opts.ShowFlags.bPhysicsBody = Obj[Key::bPhysicsBody].ToBool();
 	if (Obj.hasKey(Key::bDebugPhysicsAsset))
 		Opts.ShowFlags.bDebugPhysicsAsset = Obj[Key::bDebugPhysicsAsset].ToBool();
 	if (Obj.hasKey(Key::GridSpacing))

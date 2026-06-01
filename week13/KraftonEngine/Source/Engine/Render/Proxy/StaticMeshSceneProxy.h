@@ -22,8 +22,9 @@ public:
 	void UpdateLOD(uint32 LODLevel) override;
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
-private:
 	UStaticMeshComponent* GetStaticMeshComponent() const;
+
+private:
 
 	// 모든 LOD의 SectionDraws 재구축
 	void RebuildSectionDraws();
