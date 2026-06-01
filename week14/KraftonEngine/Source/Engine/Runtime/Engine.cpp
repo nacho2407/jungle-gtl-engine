@@ -22,6 +22,7 @@
 #include "Object/ReferenceCollector.h"
 #include "Viewport/GameViewportClient.h"
 #include "Physics/PhysXSDK.h"
+#include "Physics/NvClothSDK.h"
 
 UEngine* GEngine = nullptr;
 
@@ -83,6 +84,7 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	FAudioManager::Get().Initialize();
 
 	FPhysXSDK::Get().Initialize();
+	FNvClothSDK::Get().Initialize();
 }
 
 void UEngine::Shutdown()
@@ -107,6 +109,7 @@ void UEngine::Shutdown()
 	FMeshBufferManager::Get().Release();
 	Renderer.Release();
 
+	FNvClothSDK::Get().Shutdown();
 	FPhysXSDK::Get().Shutdown();
 }
 

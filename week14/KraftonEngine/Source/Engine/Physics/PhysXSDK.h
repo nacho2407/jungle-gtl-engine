@@ -14,6 +14,9 @@ public:
 	physx::PxFoundation* GetFoundation() const { return Foundation; }
 	physx::PxMaterial* GetDefaultMaterial() const { return DefaultMaterial; }
 
+	physx::PxAllocatorCallback* GetAllocatorCallback() { return &Allocator; }
+	physx::PxErrorCallback* GetErrorCallback() { return &ErrorCallback; }
+
 private:
 	physx::PxDefaultAllocator Allocator;
 	physx::PxDefaultErrorCallback ErrorCallback;

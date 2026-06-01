@@ -2,6 +2,7 @@
 
 #include "Physics/PhysicsTypes.h"
 #include "Physics/PhysXInclude.h"
+#include "Physics/ClothCollisionTypes.h"
 
 #include "Core/Types/CoreTypes.h"
 #include "Core/Types/CollisionTypes.h"
@@ -36,6 +37,8 @@ public:
 		const FTransform& LocalFrameA, const FTransform& LocalFrameB, EAngularConstraintMode AngularMode,
 		float Swing1LimitDeg, float Swing2LimitDeg, float TwistLimitDeg);
 	void DestroyConstraint(FConstraintInstance* Instance);
+
+	void GatherClothCollision(const FClothCollisionGatherParams& Params, FClothCollisionData& OutData) const;
 
 	bool Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,

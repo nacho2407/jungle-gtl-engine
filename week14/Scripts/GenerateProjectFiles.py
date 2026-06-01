@@ -66,6 +66,9 @@ HEADER_EXTS = {".h", ".hpp", ".hxx", ".inl"}
 SHADER_EXTS = {".hlsl", ".hlsli"}
 NATVIS_EXTS = {".natvis"}
 NONE_EXTS = {".natstepfilter", ".config"}
+EXCLUDED_SOURCE_PREFIXES = [
+    "ThirdParty\\NvCloth\\",
+]
 
 RC_EXTS = {".rc"}
 
@@ -100,6 +103,7 @@ INCLUDE_PATHS = [
     "ThirdParty\\PhysX\\include",
     "ThirdParty\\PhysX\\include\\PhysX",
     "ThirdParty\\PhysX\\include\\PxShared",
+    "ThirdParty\\NvCloth\\include",
     ".",
 ]
 
@@ -151,6 +155,14 @@ PHYSX_LIBS = [
     "PhysXVehicle_static_64.lib",
 ]
 
+# NvCloth — dynamic link. Uses debug/release import libs and copies the matching DLL.
+NVCLOTH_DEBUG_LIB_DIR = "ThirdParty\\NvCloth\\lib\\debug"
+NVCLOTH_RELEASE_LIB_DIR = "ThirdParty\\NvCloth\\lib\\release"
+NVCLOTH_DEBUG_LIB = "NvClothDEBUG_x64.lib"
+NVCLOTH_RELEASE_LIB = "NvCloth_x64.lib"
+NVCLOTH_DEBUG_DLL = "NvClothDEBUG_x64.dll"
+NVCLOTH_RELEASE_DLL = "NvCloth_x64.dll"
+
 # Additional linker settings
 ADDITIONAL_LIB_DIRS = [
     f"$(ProjectDir){LUA_LIB_DIR}",
@@ -187,6 +199,8 @@ def scan_files(project_dir: Path) -> dict[str, list[str]]:
                 ext = full.suffix.lower()
 
                 if ext in SOURCE_EXTS:
+                    if any(rel_str.startswith(prefix) for prefix in EXCLUDED_SOURCE_PREFIXES):
+                        continue
                     result["ClCompile"].append(rel_str)
                 elif ext in HEADER_EXTS:
                     result["ClInclude"].append(rel_str)
@@ -344,6 +358,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
             library_paths.append(FMOD_LIB_DIR)
             library_paths.append(FBX_DEBUG_LIB_DIR if cfg == "Debug" else FBX_RELEASE_LIB_DIR)
             library_paths.append(PHYSX_DEBUG_LIB_DIR if cfg == "Debug" else PHYSX_RELEASE_LIB_DIR)
+            library_paths.append(NVCLOTH_DEBUG_LIB_DIR if cfg == "Debug" else NVCLOTH_RELEASE_LIB_DIR)
         library_path_value = ";".join(library_paths) + ";$(LibraryPath)" if library_paths else "$(LibraryPath)"
         pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
         ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
@@ -415,6 +430,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
             all_deps.append(FMOD_DEBUG_LIB if cfg == "Debug" else FMOD_RELEASE_LIB)
             all_deps.append(FBX_LIB)
             all_deps.extend(PHYSX_LIBS)
+            all_deps.append(NVCLOTH_DEBUG_LIB if cfg == "Debug" else NVCLOTH_RELEASE_LIB)
         if all_deps:
             ET.SubElement(link, "AdditionalDependencies").text = (
                 ";".join(all_deps) + ";%(AdditionalDependencies)"
@@ -425,6 +441,8 @@ def generate_vcxproj(files: dict[str, list[str]]):
             fmod_dll = FMOD_DEBUG_DLL if cfg == "Debug" else FMOD_RELEASE_DLL
             fbx_lib_dir = FBX_DEBUG_LIB_DIR if cfg == "Debug" else FBX_RELEASE_LIB_DIR
             physx_lib_dir = PHYSX_DEBUG_LIB_DIR if cfg == "Debug" else PHYSX_RELEASE_LIB_DIR
+            nvcloth_lib_dir = NVCLOTH_DEBUG_LIB_DIR if cfg == "Debug" else NVCLOTH_RELEASE_LIB_DIR
+            nvcloth_dll = NVCLOTH_DEBUG_DLL if cfg == "Debug" else NVCLOTH_RELEASE_DLL
             post_build = ET.SubElement(idg, "PostBuildEvent")
             ET.SubElement(post_build, "Command").text = (
                 f'xcopy /Y "$(ProjectDir){rmlui_dir}\\*.dll" "$(OutDir)"\n'
@@ -435,6 +453,7 @@ def generate_vcxproj(files: dict[str, list[str]]):
                 f'xcopy /Y "$(ProjectDir){physx_lib_dir}\\PhysXCommon_64.dll" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){physx_lib_dir}\\PhysXFoundation_64.dll" "$(OutDir)"\n'
                 f'xcopy /Y "$(ProjectDir){physx_lib_dir}\\PhysXCooking_64.dll" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){nvcloth_lib_dir}\\{nvcloth_dll}" "$(OutDir)"\n'
             )
 
         # Reflection codegen — UCLASS/UPROPERTY 매크로가 박힌 헤더로부터
