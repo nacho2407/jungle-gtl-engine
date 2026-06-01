@@ -51,6 +51,8 @@ const FDebugPlaceActorOption GDebugPlaceActorOptions[] = {
 	{ "Directional Light", FLevelViewportLayout::EViewportPlaceActorType::DirectionalLight },
 	{ "Point Light", FLevelViewportLayout::EViewportPlaceActorType::PointLight },
 	{ "Spot Light", FLevelViewportLayout::EViewportPlaceActorType::SpotLight },
+	{ "Camera", FLevelViewportLayout::EViewportPlaceActorType::Camera },
+	{ "Cine Camera", FLevelViewportLayout::EViewportPlaceActorType::CineCamera },
 	{ "Character",     FLevelViewportLayout::EViewportPlaceActorType::Character },
 	{ "Lua Character", FLevelViewportLayout::EViewportPlaceActorType::LuaCharacter },
 };

@@ -1,9 +1,11 @@
 #include "Component/Camera/CameraComponent.h"
+#include "Component/Primitive/BillboardComponent.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "GameFramework/GameMode/PlayerController.h"
 #include "GameFramework/Camera/PlayerCameraManager.h"
+#include "Materials/MaterialManager.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include <cmath>
 
@@ -38,6 +40,38 @@ void UCameraComponent::EndPlay()
 			}
 		}
 	}
+}
+
+UBillboardComponent* UCameraComponent::EnsureEditorBillboard()
+{
+	if (!Owner)
+	{
+		return nullptr;
+	}
+
+	for (USceneComponent* Child : GetChildren())
+	{
+		UBillboardComponent* Billboard = Cast<UBillboardComponent>(Child);
+		if (Billboard && Billboard->IsEditorOnlyComponent())
+		{
+			Billboard->SetAbsoluteScale(true);
+			Billboard->SetHiddenInComponentTree(true);
+			return Billboard;
+		}
+	}
+
+	UBillboardComponent* Billboard = Owner->AddComponent<UBillboardComponent>();
+	if (Billboard)
+	{
+		Billboard->AttachToComponent(this);
+		Billboard->SetAbsoluteScale(true);
+		Billboard->SetEditorOnlyComponent(true);
+		Billboard->SetHiddenInComponentTree(true);
+		auto Material = FMaterialManager::Get().GetOrCreateMaterial("Content/Material/Editor/Camera.mat");
+		Billboard->SetMaterial(Material);
+	}
+
+	return Billboard;
 }
 
 void UCameraComponent::LookAt(const FVector& Target)
@@ -78,4 +112,5 @@ void UCameraComponent::GetCameraView(float /*DeltaTime*/, FMinimalViewInfo& OutP
 	OutPOV.NearClip    = CameraState.NearZ;
 	OutPOV.FarClip     = CameraState.FarZ;
 	OutPOV.bIsOrtho    = CameraState.bIsOrthogonal;
+	OutPOV.DepthOfField = DepthOfField;
 }

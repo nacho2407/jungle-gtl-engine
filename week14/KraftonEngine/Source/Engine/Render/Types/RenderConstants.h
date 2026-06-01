@@ -73,6 +73,9 @@ namespace ESystemTexSlot
 	constexpr uint32 SpotShadowDatas    = 24;  // t24: StructuredBuffer<FSpotShadowDataGPU>
 	constexpr uint32 PointShadowDatas   = 25;  // t25: StructuredBuffer<FPointShadowDataGPU>
 	constexpr uint32 Bloom              = 26;  // t26: Bloom ping-pong texture
+	constexpr uint32 DofSetup           = 27;  // t27: DOF setup color + signed CoC
+	constexpr uint32 DofBackground      = 28;  // t28: DOF background gather result
+	constexpr uint32 DofForeground      = 29;  // t29: DOF foreground gather result
 
 	// 하위 호환용 별칭
 	constexpr uint32 ShadowMap = ShadowMapCSM;
@@ -266,6 +269,24 @@ struct FFXAAConstants
 	float EdgeThreshold;
 	float EdgeThresholdMin;
 	float _pad[2];
+};
+
+struct FDepthOfFieldConstants
+{
+	// xy = source texel size, zw = DOF target texel size
+	FVector4 TexelSize;
+	// x = focus distance, y = CoC scale, z = max foreground radius, w = max background radius
+	FVector4 FocusParams;
+	// x = near clip, y = far clip, z = target/source radius scale, w = gather sharpness
+	FVector4 DepthParams;
+	uint32 GatherRingCount = 3;
+	uint32 GatherSamplesPerRing = 8;
+	uint32 bEnableForeground = 1;
+	uint32 bEnableBackground = 1;
+	uint32 DebugView = 0;
+	uint32 bHalfRes = 1;
+	float SlightFocusRadius = 0.75f;
+	float Pad = 0.0f;
 };
 
 struct FGammaCorrectionConstants

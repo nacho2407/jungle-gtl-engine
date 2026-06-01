@@ -72,6 +72,15 @@ namespace
 		TArray<UClass*> Classes;
 	};
 
+	struct FDeferredPostEditChange
+	{
+		UObject* Object = nullptr;
+		const FProperty* Property = nullptr;
+		FString PropertyName;
+		FString DisplayName;
+		EPropertyType Type = EPropertyType::Bool;
+	};
+
 	void AddComponentClassGroup(TArray<FComponentClassGroup>& Groups, const char* Label, UClass* AnchorClass)
 	{
 		FComponentClassGroup Group;
@@ -85,29 +94,44 @@ namespace
 		return Prop.GetDisplayName();
 	}
 
-	void DispatchPostEditChange(
-		const FPropertyValue& Prop,
-		EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet,
-		int32 ArrayIndex = -1,
-		const FString& PropertyPath = {},
-		const char* OverridePropertyName = nullptr,
-		const char* OverrideDisplayName = nullptr)
+	void QueueDeferredPostEditChange(TArray<FDeferredPostEditChange>& OutChanges, const FPropertyValue& Prop)
 	{
 		if (!Prop.Object)
 		{
 			return;
 		}
 
-		FPropertyChangedEvent Event;
-		Event.Object = Prop.Object;
-		Event.Property = Prop.Property;
-		Event.PropertyName = OverridePropertyName ? OverridePropertyName : Prop.GetName();
-		Event.DisplayName = OverrideDisplayName ? OverrideDisplayName : GetPropertyDisplayName(Prop);
-		Event.PropertyPath = PropertyPath.empty() ? Prop.GetName() : PropertyPath;
-		Event.Type = Prop.GetType();
-		Event.ChangeType = ChangeType;
-		Event.ArrayIndex = ArrayIndex;
-		Prop.Object->PostEditChangeProperty(Event);
+		FDeferredPostEditChange Change;
+		Change.Object = Prop.Object;
+		Change.Property = Prop.Property;
+		Change.PropertyName = Prop.GetName() ? Prop.GetName() : "";
+		Change.DisplayName = GetPropertyDisplayName(Prop) ? GetPropertyDisplayName(Prop) : "";
+		Change.Type = Prop.GetType();
+		OutChanges.push_back(std::move(Change));
+	}
+
+	void FlushDeferredPostEditChanges(TArray<FDeferredPostEditChange>& Changes)
+	{
+		for (const FDeferredPostEditChange& Change : Changes)
+		{
+			if (!Change.Object)
+			{
+				continue;
+			}
+
+			FPropertyChangedEvent Event;
+			Event.Object = Change.Object;
+			Event.Property = Change.Property;
+			Event.PropertyName = Change.PropertyName.c_str();
+			Event.DisplayName = Change.DisplayName.c_str();
+			Event.PropertyPath = Change.PropertyName;
+			Event.Type = Change.Type;
+			Event.ChangeType = EPropertyChangeType::ValueSet;
+			Event.ArrayIndex = -1;
+			Change.Object->PostEditChangeProperty(Event);
+		}
+
+		Changes.clear();
 	}
 
 	bool CopyPropertyValue(const FPropertyValue& SrcValue, FPropertyValue& DstValue)
@@ -219,6 +243,55 @@ namespace
 		}
 
 		return false;
+	}
+
+	void PropagatePropertyChange(
+		UActorComponent* SelectedComponent,
+		const FString& PropName,
+		const TArray<AActor*>& SelectedActors,
+		TArray<FDeferredPostEditChange>& OutDeferredChanges)
+	{
+		if (!SelectedComponent || SelectedActors.size() < 2) return;
+
+		UClass* CompClass = SelectedComponent->GetClass();
+		AActor* PrimaryActor = SelectedActors[0];
+
+		TArray<FPropertyValue> SrcProps;
+		SelectedComponent->GetEditableProperties(SrcProps);
+
+		const FPropertyValue* SrcProp = nullptr;
+		for (const auto& P : SrcProps)
+		{
+			if (P.GetName() == PropName) { SrcProp = &P; break; }
+		}
+		if (!SrcProp) return;
+		FPropertyValue SrcValue = *SrcProp;
+
+		for (AActor* Actor : SelectedActors)
+		{
+			if (!Actor || Actor == PrimaryActor) continue;
+
+			for (UActorComponent* Comp : Actor->GetComponents())
+			{
+				if (!Comp || Comp->GetClass() != CompClass) continue;
+
+				TArray<FPropertyValue> DstProps;
+				Comp->GetEditableProperties(DstProps);
+
+				for (FPropertyValue& DstProp : DstProps)
+				{
+					if (!DstProp.Property || DstProp.GetName() != PropName || DstProp.GetType() != SrcProp->GetType()) continue;
+					if (!DstProp.GetValuePtr() || !SrcValue.GetValuePtr()) continue;
+
+					if (CopyPropertyValue(SrcValue, DstProp))
+					{
+						QueueDeferredPostEditChange(OutDeferredChanges, DstProp);
+					}
+					break;
+				}
+				break; // 같은 타입의 첫 번째 컴포넌트에만 전파
+			}
+		}
 	}
 
 	UClass* FindComponentClassGroupAnchor(UClass* ComponentClass, const TArray<FComponentClassGroup>& Groups)
@@ -464,6 +537,8 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 
 void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
+	(void)SelectedActors;
+
 	if (PrimaryActor->GetRootComponent())
 	{
 		ImGui::Separator();
@@ -472,6 +547,8 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 
 		TArray<FPropertyValue> Props;
 		PrimaryActor->GetEditableProperties(Props);
+		TArray<FDeferredPostEditChange> DeferredChanges;
+		bool bAnyChanged = false;
 
 		if (ImGui::BeginTable("##ActorPropertyTable", 2,
 			ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_PadOuterX | ImGuiTableFlags_RowBg))
@@ -494,15 +571,26 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				ImGui::SetNextItemWidth(-1);
 
 				FEditorPropertyRenderOptions Options;
+				Options.bDispatchChange = false;
 				Options.bUseExternalExpansion = true;
 				Options.bParentExpanded = bPropertyOpen;
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
-				PropertyRenderer.RenderPropertyWidget(Props, i, Options);
+				if (PropertyRenderer.RenderPropertyWidget(Props, i, Options))
+				{
+					bAnyChanged = true;
+					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
+				}
 				ImGui::PopID();
 			}
 
 			ImGui::EndTable();
 			ImGui::PopStyleColor(2);
+		}
+
+		if (bAnyChanged)
+		{
+			PendingDetailsScrollY = ImGui::GetScrollY();
+			FlushDeferredPostEditChanges(DeferredChanges);
 		}
 	}
 }
@@ -837,16 +925,10 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 	}
 
 	bool bAnyChanged = false;
-	// Static mesh path 변경은 SetStaticMesh를 통해 MaterialSlots를 resize 하므로
-	// Props에 들어있던 &MaterialSlots[i] 포인터가 모두 무효화된다. 이후 Materials
-	// 카테고리 등을 더 렌더링하면 dangling pointer 접근 → bad_alloc.
-	// 변경이 발생하면 즉시 외부 루프까지 빠져나와 다음 프레임에 Props를 새로 수집해 렌더한다.
-	bool bPropsInvalidated = false;
+	TArray<FDeferredPostEditChange> DeferredChanges;
 
 	for (const auto& Cat : CategoryOrder)
 	{
-		if (bPropsInvalidated) break;
-
 		// Root 컴포넌트는 Transform 카테고리 스킵
 		if (bIsRoot && Cat == "Transform")
 			continue;
@@ -892,6 +974,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				ImGui::SetNextItemWidth(-1);
 
 				FEditorPropertyRenderOptions Options;
+				Options.bDispatchChange = false;
 				Options.bUseExternalExpansion = true;
 				Options.bParentExpanded = bPropertyOpen;
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
@@ -900,17 +983,8 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				if (bChanged)
 				{
 					bAnyChanged = true;
-					PropagatePropertyChange(Props[i].GetName(), SelectedActors);
-
-					// 모든 변경 후 props 재수집 — 같은 frame 의 후속 prop 들이 dangling pointer 를
-					// 참조하는 케이스 방지. 예: SkeletalMeshComponent 의 AnimationMode/AnimInstanceClass
-					// 변경 시 InitializeAnimation 이 AnimInstance 를 swap 하므로, forward 됐던
-					// AnimInstance 의 prop 들의 ContainerPtr 가 destroyed 인스턴스를 가리키게 된다.
-					// 사용자는 frame 당 1 prop 변경이 일반적이라 UX 영향 거의 없음.
-					PendingDetailsScrollY = ImGui::GetScrollY();
-					bPropsInvalidated = true;
-					ImGui::PopID();
-					break;
+					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
+					PropagatePropertyChange(SelectedComponent, Props[i].GetName(), SelectedActors, DeferredChanges);
 				}
 				ImGui::PopID();
 			}
@@ -920,56 +994,16 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 		}
 	}
 
+	if (bAnyChanged)
+	{
+		PendingDetailsScrollY = ImGui::GetScrollY();
+		FlushDeferredPostEditChanges(DeferredChanges);
+	}
+
 	// 실제 변경이 있었을 때만 Transform dirty 마킹
-	if (bAnyChanged && SelectedComponent->IsA<USceneComponent>())
+	if (bAnyChanged && SelectedComponent && SelectedComponent->IsA<USceneComponent>())
 	{
 		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
-	}
-}
-
-void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors)
-{
-	if (!SelectedComponent || SelectedActors.size() < 2) return;
-
-	UClass* CompClass = SelectedComponent->GetClass();
-	AActor* PrimaryActor = SelectedActors[0];
-
-	// Primary 컴포넌트에서 변경된 프로퍼티의 값 포인터 찾기
-	TArray<FPropertyValue> SrcProps;
-	SelectedComponent->GetEditableProperties(SrcProps);
-
-	const FPropertyValue* SrcProp = nullptr;
-	for (const auto& P : SrcProps)
-	{
-		if (P.GetName() == PropName) { SrcProp = &P; break; }
-	}
-	if (!SrcProp) return;
-	FPropertyValue SrcValue = *SrcProp;
-
-	for (AActor* Actor : SelectedActors)
-	{
-		if (!Actor || Actor == PrimaryActor) continue;
-
-		for (UActorComponent* Comp : Actor->GetComponents())
-		{
-			if (!Comp || Comp->GetClass() != CompClass) continue;
-
-			TArray<FPropertyValue> DstProps;
-			Comp->GetEditableProperties(DstProps);
-
-			for (FPropertyValue& DstProp : DstProps)
-			{
-				if (!DstProp.Property || DstProp.GetName() != PropName || DstProp.GetType() != SrcProp->GetType()) continue;
-				if (!DstProp.GetValuePtr() || !SrcValue.GetValuePtr()) continue;
-
-				if (CopyPropertyValue(SrcValue, DstProp))
-				{
-					DispatchPostEditChange(DstProp);
-				}
-				break;
-			}
-			break; // 같은 타입의 첫 번째 컴포넌트에만 전파
-		}
 	}
 }
 

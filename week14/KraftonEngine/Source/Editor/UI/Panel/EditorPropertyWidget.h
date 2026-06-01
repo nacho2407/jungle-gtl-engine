@@ -22,8 +22,6 @@ private:
 	void RenderComponentProperties(AActor* Actor, const TArray<AActor*>& SelectedActors);
 	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 
-	void PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors);
-
 	void AddComponentToActor(AActor* Actor, UClass* ComponentClass);
 
 	UActorComponent* SelectedComponent = nullptr;

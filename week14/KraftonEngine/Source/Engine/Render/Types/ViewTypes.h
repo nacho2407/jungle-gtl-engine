@@ -22,6 +22,14 @@ enum class ELightCullingMode : uint32
 	Cluster = 2
 };
 
+enum class EDepthOfFieldDebugView : uint32
+{
+	Final = 0,
+	CoC,
+	Foreground,
+	Background
+};
+
 enum class ESkinningMode : uint32
 {
 	CPU = 0,
@@ -57,6 +65,7 @@ struct FShowFlags
 	bool bFog = true;
 	bool bFXAA = false;
 	bool bBloom = false;
+	bool bDepthOfField = false;
 	bool bGammaCorrection = true;
 	bool bViewLightCulling = false;
 	bool bVisualize25DCulling = false;
@@ -100,6 +109,17 @@ struct FViewportRenderOptions
 	// FXAA 전용 설정
 	float EdgeThreshold = 0.125f;
 	float EdgeThresholdMin = 0.0625f;
+
+	// Depth of Field settings
+	float DofFocusDistance = 10.0f;
+	float DofFStop = 4.0f;
+	float DofSensorWidth = 24.576f;
+	int32 DofGatherRingCount = 3;
+	int32 DofGatherSamplesPerRing = 8;
+	bool bDofForegroundEnabled = true;
+	bool bDofBackgroundEnabled = true;
+	bool bDofHalfRes = true;
+	EDepthOfFieldDebugView DofDebugView = EDepthOfFieldDebugView::Final;
 
 	// Gamma Correction 전용 설정
 	float Gamma = 2.4f;

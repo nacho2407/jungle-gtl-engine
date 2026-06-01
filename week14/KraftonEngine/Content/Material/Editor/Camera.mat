@@ -1,0 +1,16 @@
+{
+  "BlendState" : "",
+  "DepthStencilState" : "",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
+  "Origin" : "Editor",
+  "PathFileName" : "Content/Material/Editor/Camera.mat",
+  "RasterizerState" : "",
+  "RenderPass" : "AlphaBlend",
+  "ShaderPath" : "Shaders/UI/Billboard.hlsl",
+  "ShadowMode" : "Opaque",
+  "Textures" : {
+    "DiffuseTexture" : "Content/Editor/ToolIcons/Camera.png"
+  },
+  "bEnableBloom" : false
+}

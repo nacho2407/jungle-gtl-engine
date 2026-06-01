@@ -6,6 +6,7 @@
 #include "Settings/EditorViewportSettings.h"
 #include "Settings/GizmoToolSettings.h"
 
+#include <algorithm>
 #include <imgui.h>
 
 #pragma region Toolbar Icon Helper
@@ -105,7 +106,12 @@ static float CalcRightToolbarWidth(const FViewportToolbarContext& Context)
 
 	if (Context.bShowViewportType)
 	{
-		AddGroup(TextButtonMinWidth);
+		float ViewportTypeWidth = TextButtonMinWidth;
+		if (!Context.ViewportTypeLabelOverride.empty())
+		{
+			ViewportTypeWidth = (std::max)(120.0f, ImGui::CalcTextSize(Context.ViewportTypeLabelOverride.c_str()).x + 20.0f);
+		}
+		AddGroup(ViewportTypeWidth);
 	}
 
 	if (Context.bShowCameraControls)
@@ -375,14 +381,31 @@ void FViewportToolbar::RenderViewportType(const FToolbarRenderState& State)
 		CurrentTypeIndex = 0;
 	}
 
-	ImGui::SetNextItemWidth(90.0f);
-	if (ImGui::Button(ViewportTypeNames[CurrentTypeIndex], ImVec2(90.0f, 0.0f)))
+	const char* ButtonLabel = State.Context.ViewportTypeLabelOverride.empty()
+		? ViewportTypeNames[CurrentTypeIndex]
+		: State.Context.ViewportTypeLabelOverride.c_str();
+	const float ButtonWidth = State.Context.ViewportTypeLabelOverride.empty()
+		? 90.0f
+		: (std::max)(120.0f, ImGui::CalcTextSize(ButtonLabel).x + 20.0f);
+
+	ImGui::SetNextItemWidth(ButtonWidth);
+	if (ImGui::Button(ButtonLabel, ImVec2(ButtonWidth, 0.0f)))
 	{
 		ImGui::OpenPopup("##ViewportTypePopup");
 	}
 
 	if (ImGui::BeginPopup("##ViewportTypePopup"))
 	{
+		if (State.Context.OnStopPiloting)
+		{
+			if (ImGui::MenuItem("Stop Piloting"))
+			{
+				State.Context.OnStopPiloting();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::Separator();
+		}
+
 		for (int32 TypeIndex = 0; TypeIndex < ViewportTypeCount; ++TypeIndex)
 		{
 			const bool bSelected = TypeIndex == CurrentTypeIndex;
@@ -397,6 +420,17 @@ void FViewportToolbar::RenderViewportType(const FToolbarRenderState& State)
 				{
 					RenderOptions.ViewportType = NewType;
 				}
+				ImGui::CloseCurrentPopup();
+			}
+		}
+
+		if (State.Context.OnRenderPlacedCameraMenu)
+		{
+			ImGui::Separator();
+			if (ImGui::BeginMenu("Placed Cameras"))
+			{
+				State.Context.OnRenderPlacedCameraMenu();
+				ImGui::EndMenu();
 			}
 		}
 		ImGui::EndPopup();
@@ -603,6 +637,7 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 		ImGui::Checkbox("Fog", &RenderOptions.ShowFlags.bFog);
 		ImGui::Checkbox("FXAA", &RenderOptions.ShowFlags.bFXAA);
 		ImGui::Checkbox("Bloom", &RenderOptions.ShowFlags.bBloom);
+		ImGui::Checkbox("Depth Of Field", &RenderOptions.ShowFlags.bDepthOfField);
 		ImGui::Checkbox("Gamma Correction", &RenderOptions.ShowFlags.bGammaCorrection);
 		ImGui::Checkbox("View Light Culling", &RenderOptions.ShowFlags.bViewLightCulling);
 		ImGui::Checkbox("Visualize 2.5D Culling", &RenderOptions.ShowFlags.bVisualize25DCulling);
@@ -610,6 +645,33 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 		ImGui::Checkbox("Collision", &RenderOptions.ShowFlags.bCollision);
 		ImGui::Checkbox("Show Collision Shape", &RenderOptions.ShowFlags.bShowCollisionShape);
 		ImGui::Checkbox("Particle", &RenderOptions.ShowFlags.bParticle);
+
+		if (RenderOptions.ShowFlags.bDepthOfField)
+		{
+			ImGui::Separator();
+			ImGui::Text("Depth Of Field");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::DragFloat("Focus Distance", &RenderOptions.DofFocusDistance, 0.1f, 0.01f, 10000.0f, "%.2f");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::DragFloat("F-Stop", &RenderOptions.DofFStop, 0.05f, 0.1f, 32.0f, "%.2f");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::DragFloat("Sensor Width", &RenderOptions.DofSensorWidth, 0.1f, 0.1f, 1000.0f, "%.2f");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::SliderInt("Gather Rings", &RenderOptions.DofGatherRingCount, 1, 5);
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::SliderInt("Samples / Ring", &RenderOptions.DofGatherSamplesPerRing, 4, 16);
+			ImGui::Checkbox("Foreground", &RenderOptions.bDofForegroundEnabled);
+			ImGui::Checkbox("Background", &RenderOptions.bDofBackgroundEnabled);
+			ImGui::Checkbox("Half Res", &RenderOptions.bDofHalfRes);
+
+			const char* DebugNames[] = { "Final", "CoC", "Foreground", "Background" };
+			int32 DebugView = static_cast<int32>(RenderOptions.DofDebugView);
+			ImGui::SetNextItemWidth(150.0f);
+			if (ImGui::Combo("Debug", &DebugView, DebugNames, IM_ARRAYSIZE(DebugNames)))
+			{
+				RenderOptions.DofDebugView = static_cast<EDepthOfFieldDebugView>(DebugView);
+			}
+		}
 
 		ImGui::EndPopup();
 	}

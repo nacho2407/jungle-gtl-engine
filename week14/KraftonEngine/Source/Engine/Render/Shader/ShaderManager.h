@@ -119,6 +119,7 @@ namespace EShaderPath
 	inline constexpr const char* BloomExtract = "Shaders/PostProcess/BloomExtract.hlsl";
 	inline constexpr const char* BloomBlur = "Shaders/PostProcess/BloomBlur.hlsl";
 	inline constexpr const char* BloomComposite = "Shaders/PostProcess/BloomComposite.hlsl";
+	inline constexpr const char* DepthOfField = "Shaders/PostProcess/DepthOfField.hlsl";
 }
 
 namespace EShadowDepthDefines

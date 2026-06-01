@@ -59,10 +59,14 @@ struct FViewportToolbarContext
 	std::function<void()> OnCoordSystemToggled;
 	std::function<void()> OnSettingsChanged;
 	std::function<void()> OnRenderViewModeExtras;
+	std::function<void()> OnStopPiloting;
+	std::function<void()> OnRenderPlacedCameraMenu;
 
 	std::function<void(int32)> OnLayoutSelected;
 	std::function<void()> OnToggleLayout;
 	std::function<void(ELevelViewportType)> OnViewportTypeSelected;
+
+	FString ViewportTypeLabelOverride;
 };
 
 struct FToolbarRenderState

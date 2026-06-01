@@ -287,6 +287,8 @@ private:
 UCLASS()
 class UMaterialInstance : public UMaterialInterface
 {
+	friend class FMaterialManager;
+
 public:
 	GENERATED_BODY()
 	~UMaterialInstance() override;
