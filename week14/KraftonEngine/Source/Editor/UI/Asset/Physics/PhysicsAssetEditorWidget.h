@@ -63,15 +63,16 @@ private:
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
 	AActor* PreviewActor = nullptr;
 
-	float HierarchyWidth = 300.0f;
-	float DetailsWidth = 360.0f;
+	float HierarchyWidth = 380.0f;
+	float DetailsWidth = 380.0f;
 	float ViewportListHeight = 220.0f;
-	float AssetDetailsHeight = 128.0f;
-	float GraphHeight = 180.0f;
-	float ToolsHeight = 260.0f;
+	float AssetDetailsHeight = 150.0f;
+	float GraphHeight = 190.0f;
+	float ToolsHeight = 330.0f;
 	FPhysicsAssetCreationParams BodyCreationParams;
 	char TreeFilter[128] = {};
 	char ListFilter[128] = {};
+	char DetailsFilter[128] = {};
 
 	FName PreviewWorldHandle = FName::None;
 	FString WindowIdSuffix;

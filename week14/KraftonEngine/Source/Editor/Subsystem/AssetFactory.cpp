@@ -202,10 +202,11 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 	if (NewAsset->GetBodySetups().empty())
 	{
 		UE_LOG(
-			"PhysicsAsset creation failed: generator produced no body setups. Mesh=%s AssetName=%s MinBoneSize=%.2f CreateAllBones=%s",
+			"PhysicsAsset creation failed: generator produced no body setups. Mesh=%s AssetName=%s MinBoneSize=%.2f MinWeldSize=%.4f CreateAllBones=%s",
 			SourceMesh->GetAssetPathFileName().c_str(),
 			AssetName.c_str(),
 			static_cast<double>(Params.MinBoneSize),
+			static_cast<double>(Params.MinWeldSize),
 			Params.bCreateBodyForAllBones ? "true" : "false"
 		);
 		UObjectManager::Get().DestroyObject(NewAsset);

@@ -67,6 +67,11 @@ EPhysicsAssetDialogResult FPhysicsAssetCreationDialog::Render(const char* PopupI
 	if (ImGui::CollapsingHeader("Body Creation", ImGuiTreeNodeFlags_DefaultOpen))
 	{
 		ImGui::DragFloat("Min Bone Size", &P.MinBoneSize, 0.5f, 0.0f, 1000.0f);
+		if (ImGui::TreeNodeEx("Advanced"))
+		{
+			ImGui::DragFloat("Min Weld Size", &P.MinWeldSize, 0.0001f, 0.0f, 1000.0f, "%.4f");
+			ImGui::TreePop();
+		}
 
 		static const char* const PrimitiveItems[] = { "Box", "Capsule", "Sphere" };
 		EnumCombo("Primitive Type", P.PrimitiveType, PrimitiveItems, 3);

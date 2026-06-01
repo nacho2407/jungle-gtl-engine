@@ -11,7 +11,8 @@ enum class EPhysicsAssetConstraintMode  : uint8 { Free, Limited, Locked };
 struct FPhysicsAssetCreationParams
 {
 	// Body Creation
-	float MinBoneSize = 10.0f;
+	float MinBoneSize = 20.0f;
+	float MinWeldSize = 1.e-4f;
 	EPhysicsAssetPrimitiveType PrimitiveType = EPhysicsAssetPrimitiveType::Capsule;
 	EPhysicsAssetVertexWeighting VertexWeighting = EPhysicsAssetVertexWeighting::DominantWeight;
 	bool bAutoOrientToBone = true;
