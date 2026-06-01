@@ -17,12 +17,15 @@
 #include <algorithm>
 #include <cfloat>
 #include <cmath>
+#include <cstdio>
 #include <cstring>
 
 namespace
 {
 	constexpr float MinPropertyLabelColumnWidth = 80.0f;
 	constexpr float MaxPropertyLabelColumnWidth = 320.0f;
+	constexpr float ReflectionPropertyIndentWidth = 4.0f;
+	constexpr float ReflectionTreeNodeIndentSpacing = 4.0f;
 
 	float ClampPropertyLabelColumnWidth(float Width)
 	{
@@ -52,35 +55,86 @@ namespace
 		return DisplayName && *DisplayName ? DisplayName : Prop.GetName();
 	}
 
-	bool RenderPropertyValue(FPropertyValue& Prop, bool bReadOnly);
+	bool RenderPropertyRow(FPropertyValue& Prop, bool bReadOnly, int32 Depth, const char* OverrideLabel = nullptr);
+	bool RenderStructRows(UStruct* StructType, void* StructPtr, UObject* Owner, int32 Depth, bool bInheritedReadOnly);
 
-	bool RenderStructValue(FPropertyValue& Prop)
+	void RenderIndentedText(const char* Label, int32 Depth)
 	{
-		UStruct* StructType = Prop.GetStructType();
-		void* StructPtr = Prop.GetValuePtr();
-		if (!StructType || !StructPtr)
+		ImGui::AlignTextToFramePadding();
+		if (Depth > 0)
 		{
-			ImGui::TextDisabled("(no editable properties)");
-			return false;
+			ImGui::Indent(Depth * ReflectionPropertyIndentWidth);
 		}
 
-		const char* StructName = StructType->GetName() ? StructType->GetName() : "Struct";
-		const bool bOpen = ImGui::TreeNodeEx("##StructValue", ImGuiTreeNodeFlags_DefaultOpen, "%s", StructName);
-		if (!bOpen)
-		{
-			return false;
-		}
+		ImGui::TextUnformatted(Label);
 
-		const bool bChanged = FInlinePropertyRenderer::RenderStructProperties(
-			StructType,
-			StructPtr,
-			Prop.Object,
-			"##InlineNestedStructProperties");
-		ImGui::TreePop();
-		return bChanged;
+		if (Depth > 0)
+		{
+			ImGui::Unindent(Depth * ReflectionPropertyIndentWidth);
+		}
 	}
 
-	bool RenderArrayValue(FPropertyValue& Prop, bool bReadOnly)
+	bool RenderSectionHeader(const char* Label, int32 Depth, bool bExpandable)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::AlignTextToFramePadding();
+		if (Depth > 0)
+		{
+			ImGui::Indent(Depth * ReflectionPropertyIndentWidth);
+		}
+
+		ImGuiTreeNodeFlags Flags =
+			ImGuiTreeNodeFlags_SpanAllColumns |
+			ImGuiTreeNodeFlags_LabelSpanAllColumns;
+		if (bExpandable)
+		{
+			Flags |= ImGuiTreeNodeFlags_DefaultOpen;
+		}
+		else
+		{
+			Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+		}
+
+		const bool bOpen = ImGui::TreeNodeEx("##Section", Flags, "%s", Label);
+
+		if (Depth > 0)
+		{
+			ImGui::Unindent(Depth * ReflectionPropertyIndentWidth);
+		}
+
+		return bExpandable && bOpen;
+	}
+
+	bool RenderStructRows(UStruct* StructType, void* StructPtr, UObject* Owner, int32 Depth, bool bInheritedReadOnly)
+	{
+		bool bAnyChanged = false;
+		if (!StructType || !StructPtr)
+		{
+			return false;
+		}
+
+		TArray<const FProperty*> Properties;
+		StructType->GetPropertyRefs(Properties);
+		for (const FProperty* Property : Properties)
+		{
+			if (!Property || !Property->GetValuePtrFor(StructPtr))
+			{
+				continue;
+			}
+
+			FPropertyValue Prop = Property->ToValue(StructPtr, Owner);
+			const bool bReadOnly = bInheritedReadOnly || ((Property->Flags & PF_ReadOnly) != 0);
+
+			ImGui::PushID(Prop.GetName());
+			bAnyChanged |= RenderPropertyRow(Prop, bReadOnly, Depth);
+			ImGui::PopID();
+		}
+
+		return bAnyChanged;
+	}
+
+	bool RenderArrayRows(FPropertyValue& Prop, bool bReadOnly, int32 Depth, const char* Label)
 	{
 		const FArrayProperty* ArrayProperty = Prop.Property ? Prop.Property->AsArrayProperty() : nullptr;
 		void* ArrayPtr = Prop.GetValuePtr();
@@ -88,20 +142,18 @@ namespace
 		const FProperty* InnerProperty = ArrayProperty ? ArrayProperty->GetInnerProperty() : nullptr;
 		if (!ArrayPtr || !ArrayOps || !ArrayOps->GetNum || !ArrayOps->GetElementPtr || !InnerProperty)
 		{
-			ImGui::TextDisabled("(unsupported array)");
+			RenderSectionHeader(Label, Depth, false);
 			return false;
 		}
 
 		const size_t Count = ArrayOps->GetNum(ArrayPtr);
-		if (bReadOnly)
+		if (Count == 0)
 		{
-			ImGui::TextDisabled("Array Elements: %zu", Count);
+			RenderSectionHeader(Label, Depth, false);
 			return false;
 		}
 
-		const ImGuiTreeNodeFlags Flags = Count > 0 ? ImGuiTreeNodeFlags_DefaultOpen : 0;
-		const bool bOpen = ImGui::TreeNodeEx("##ArrayValue", Flags, "Array Elements: %zu", Count);
-		if (!bOpen)
+		if (!RenderSectionHeader(Label, Depth, true))
 		{
 			return false;
 		}
@@ -115,59 +167,21 @@ namespace
 				continue;
 			}
 
-			ImGui::PushID(static_cast<int>(Index));
-			const bool bElementOpen = ImGui::TreeNodeEx("##ArrayElement", ImGuiTreeNodeFlags_DefaultOpen, "Index [%zu]", Index);
-			if (bElementOpen)
-			{
-				FPropertyValue ElementValue;
-				ElementValue.Object = Prop.Object;
-				ElementValue.Property = InnerProperty;
-				ElementValue.ContainerPtr = ElementPtr;
+			FPropertyValue ElementValue;
+			ElementValue.Object = Prop.Object;
+			ElementValue.Property = InnerProperty;
+			ElementValue.ContainerPtr = ElementPtr;
 
-				bAnyChanged |= RenderPropertyValue(ElementValue, false);
-				ImGui::TreePop();
-			}
+			char ElementLabel[64];
+			std::snprintf(ElementLabel, sizeof(ElementLabel), "Index [%zu]", Index);
+
+			ImGui::PushID(static_cast<int>(Index));
+			bAnyChanged |= RenderPropertyRow(ElementValue, bReadOnly, Depth + 1, ElementLabel);
 			ImGui::PopID();
 		}
 
 		ImGui::TreePop();
 		return bAnyChanged;
-	}
-
-	bool RenderObjectValue(FPropertyValue& Prop)
-	{
-		const FObjectProperty* ObjectProperty = Prop.Property ? Prop.Property->AsObjectProperty() : nullptr;
-		void* ValuePtr = Prop.GetValuePtr();
-		UObject* Object = ObjectProperty && ValuePtr
-			? ObjectProperty->GetObjectValueFromValuePtr(ValuePtr)
-			: nullptr;
-		if (!Object)
-		{
-			ImGui::TextDisabled("None");
-			return false;
-		}
-
-		UClass* Class = Object->GetClass();
-		const char* ClassName = Class && Class->GetName() ? Class->GetName() : "Object";
-		const FString ObjectName = Object->GetName();
-		const bool bOpen = ImGui::TreeNodeEx(
-			"##ObjectValue",
-			ImGuiTreeNodeFlags_DefaultOpen,
-			"%s: %s",
-			ClassName,
-			ObjectName.c_str());
-		if (!bOpen)
-		{
-			return false;
-		}
-
-		const bool bChanged = FInlinePropertyRenderer::RenderStructProperties(
-			Class,
-			Object,
-			Object,
-			"##InlineObjectProperties");
-		ImGui::TreePop();
-		return bChanged;
 	}
 
 	bool RenderValue(FPropertyValue& Prop)
@@ -332,16 +346,82 @@ namespace
 
 	bool RenderPropertyValue(FPropertyValue& Prop, bool bReadOnly)
 	{
+		if (bReadOnly)
+		{
+			ImGui::BeginDisabled();
+		}
+
+		const bool bChanged = RenderValue(Prop);
+
+		if (bReadOnly)
+		{
+			ImGui::EndDisabled();
+		}
+
+		return !bReadOnly && bChanged;
+	}
+
+	bool RenderPropertyRow(FPropertyValue& Prop, bool bReadOnly, int32 Depth, const char* OverrideLabel)
+	{
+		const char* Label = OverrideLabel ? OverrideLabel : GetDisplayName(Prop);
 		switch (Prop.GetType())
 		{
 		case EPropertyType::Struct:
-			return bReadOnly ? (RenderStructValue(Prop), false) : RenderStructValue(Prop);
+		{
+			UStruct* StructType = Prop.GetStructType();
+			void* StructPtr = Prop.GetValuePtr();
+			if (!StructType || !StructPtr)
+			{
+				RenderSectionHeader(Label, Depth, false);
+				return false;
+			}
+
+			if (!RenderSectionHeader(Label, Depth, true))
+			{
+				return false;
+			}
+
+			const bool bChanged = RenderStructRows(StructType, StructPtr, Prop.Object, Depth + 1, bReadOnly);
+			ImGui::TreePop();
+			return !bReadOnly && bChanged;
+		}
 		case EPropertyType::Array:
-			return RenderArrayValue(Prop, bReadOnly);
+			return RenderArrayRows(Prop, bReadOnly, Depth, Label);
 		case EPropertyType::ObjectRef:
-			return bReadOnly ? (RenderObjectValue(Prop), false) : RenderObjectValue(Prop);
+		{
+			const FObjectProperty* ObjectProperty = Prop.Property ? Prop.Property->AsObjectProperty() : nullptr;
+			void* ValuePtr = Prop.GetValuePtr();
+			UObject* Object = ObjectProperty && ValuePtr
+				? ObjectProperty->GetObjectValueFromValuePtr(ValuePtr)
+				: nullptr;
+
+			if (!Object)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				RenderIndentedText(Label, Depth);
+				ImGui::TableSetColumnIndex(1);
+				ImGui::TextDisabled("None");
+				return false;
+			}
+
+			if (!RenderSectionHeader(Label, Depth, true))
+			{
+				return false;
+			}
+
+			UClass* Class = Object->GetClass();
+			const bool bChanged = RenderStructRows(Class, Object, Object, Depth + 1, bReadOnly);
+			ImGui::TreePop();
+			return !bReadOnly && bChanged;
+		}
 		default:
-			return RenderValue(Prop);
+			ImGui::TableNextRow();
+			ImGui::TableSetColumnIndex(0);
+			RenderIndentedText(Label, Depth);
+			ImGui::TableSetColumnIndex(1);
+			ImGui::SetNextItemWidth(-FLT_MIN);
+			return RenderPropertyValue(Prop, bReadOnly);
 		}
 	}
 }
@@ -382,43 +462,9 @@ namespace FInlinePropertyRenderer
 				Settings.ReflectionPropertyLabelColumnWidth);
 			ImGui::TableSetupColumn("##value", ImGuiTableColumnFlags_WidthStretch);
 
-			for (const FProperty* Property : Properties)
-			{
-				if (!Property || !Property->GetValuePtrFor(StructPtr))
-				{
-					continue;
-				}
-
-				FPropertyValue Prop = Property->ToValue(StructPtr, Owner);
-				const bool bReadOnly = (Property->Flags & PF_ReadOnly) != 0;
-
-				ImGui::PushID(Prop.GetName());
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-				ImGui::AlignTextToFramePadding();
-				ImGui::TextUnformatted(GetDisplayName(Prop));
-
-				ImGui::TableSetColumnIndex(1);
-				if (Prop.GetType() != EPropertyType::Array && Prop.GetType() != EPropertyType::Struct)
-				{
-					ImGui::SetNextItemWidth(-FLT_MIN);
-				}
-
-				if (bReadOnly)
-				{
-					ImGui::BeginDisabled();
-				}
-
-				const bool bChanged = RenderPropertyValue(Prop, bReadOnly);
-
-				if (bReadOnly)
-				{
-					ImGui::EndDisabled();
-				}
-
-				bAnyChanged |= !bReadOnly && bChanged;
-				ImGui::PopID();
-			}
+			ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ReflectionTreeNodeIndentSpacing);
+			bAnyChanged = RenderStructRows(StructType, StructPtr, Owner, 0, false);
+			ImGui::PopStyleVar();
 
 			float CurrentLabelWidth = 0.0f;
 			if (TryGetResizedColumnWidth(0, CurrentLabelWidth))
