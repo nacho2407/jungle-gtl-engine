@@ -22,6 +22,13 @@ public:
 	void SetViewportRect(float X, float Y, float Width, float Height) { ViewportScreenRect = { X, Y, Width, Height }; }
 	void ResetCameraToPreviewBounds();
 
+	bool IsShowPreviewMesh() const { return bShowPreviewMesh; }
+	void SetShowPreviewMesh(bool bInShow);
+	bool IsShowBodies() const { return bShowBodies; }
+	void SetShowBodies(bool bInShow) { bShowBodies = bInShow; }
+	bool IsShowConstraints() const { return bShowConstraints; }
+	void SetShowConstraints(bool bInShow) { bShowConstraints = bInShow; }
+
 	bool IsRenderable() const override { return bIsRenderable; }
 	bool IsMouseOverViewport() const override;
 
@@ -38,6 +45,10 @@ public:
 	void Tick(float DeltaTime);
 
 private:
+	void TickShortcuts();
+	void TickInput(float DeltaTime);
+	void SyncCameraSmoothingTarget();
+	void ApplySmoothedCameraLocation(float DeltaTime);
 	void DrawPreviewPhysicsAsset();
 
 private:
@@ -51,4 +62,13 @@ private:
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
 
 	bool bIsRenderable = false;
+	bool bShowPreviewMesh = true;
+	bool bShowBodies = true;
+	bool bShowConstraints = true;
+
+	FVector TargetLocation;
+	bool bTargetLocationInitialized = false;
+	FVector LastAppliedCameraLocation;
+	bool bLastAppliedCameraLocationInitialized = false;
+	const float SmoothLocationSpeed = 10.0f;
 };

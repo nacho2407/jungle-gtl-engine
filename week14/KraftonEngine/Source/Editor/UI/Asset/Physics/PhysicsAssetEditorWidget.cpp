@@ -3,16 +3,21 @@
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Editor/Slate/SlateApplication.h"
+#include "Editor/UI/Toolbar/ViewportToolbar.h"
 #include "GameFramework/Actor/StaticMeshActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "GameFramework/World.h"
+#include "Math/MathUtils.h"
+#include "Math/Rotator.h"
 #include "Mesh/MeshManager.h"
+#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Physics/BodySetup.h"
 #include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsAssetManager.h"
 #include "Physics/PhysicsConstraintTemplate.h"
 #include "Runtime/Engine.h"
+#include "Settings/EditorSettings.h"
 #include "Viewport/Viewport.h"
 
 #include <imgui.h>
@@ -188,9 +193,6 @@ void FPhysicsAssetEditorWidget::Render(float DeltaTime)
 		return;
 	}
 
-	static float TreeWidth = 260.0f;
-	static float DetailsWidth = 320.0f;
-
 	FString VisibleTitle = "Physics Asset Editor";
 	if (IsValidAssetPath(PhysicsAsset->GetSourcePath()))
 	{
@@ -231,15 +233,56 @@ void FPhysicsAssetEditorWidget::Render(float DeltaTime)
 		FSlateApplication::Get().BringViewportToFront(&ViewportClient);
 	}
 
+	RenderModeToolbar(PhysicsAsset);
+	ImGui::Separator();
+
 	const float TotalHeight = ImGui::GetContentRegionAvail().y;
-	ImGui::BeginChild("Hierarchy", ImVec2(TreeWidth, TotalHeight), true);
-	RenderBodyTreePanel(PhysicsAsset);
+	ImGui::BeginChild("SkeletonTree", ImVec2(HierarchyWidth, TotalHeight), true);
+	RenderSkeletonTreePanel(PhysicsAsset);
 	ImGui::EndChild();
 
 	ImGui::SameLine();
 
-	const float ViewportWidth = ImGui::GetContentRegionAvail().x - DetailsWidth - ImGui::GetStyle().ItemSpacing.x;
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+	ImGui::Button("##PhysicsAssetTreeSplitter", ImVec2(4.0f, TotalHeight));
+	if (ImGui::IsItemActive())
+	{
+		HierarchyWidth += ImGui::GetIO().MouseDelta.x;
+		float MaxHierarchyWidth = ImGui::GetWindowWidth() - DetailsWidth - 320.0f;
+		if (MaxHierarchyWidth < 180.0f) MaxHierarchyWidth = 180.0f;
+		HierarchyWidth = Clamp(HierarchyWidth, 180.0f, MaxHierarchyWidth);
+	}
+	if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+	{
+		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+	}
+	ImGui::PopStyleColor(3);
+
+	ImGui::SameLine();
+
+	const float ViewportWidth = ImGui::GetContentRegionAvail().x - DetailsWidth - ImGui::GetStyle().ItemSpacing.x - 4.0f;
 	RenderViewportPanel(ImVec2(ViewportWidth, TotalHeight));
+
+	ImGui::SameLine();
+
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+	ImGui::Button("##PhysicsAssetDetailsSplitter", ImVec2(4.0f, TotalHeight));
+	if (ImGui::IsItemActive())
+	{
+		DetailsWidth -= ImGui::GetIO().MouseDelta.x;
+		float MaxDetailsWidth = ImGui::GetWindowWidth() - HierarchyWidth - 320.0f;
+		if (MaxDetailsWidth < 240.0f) MaxDetailsWidth = 240.0f;
+		DetailsWidth = Clamp(DetailsWidth, 240.0f, MaxDetailsWidth);
+	}
+	if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+	{
+		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+	}
+	ImGui::PopStyleColor(3);
 
 	ImGui::SameLine();
 
@@ -254,6 +297,73 @@ void FPhysicsAssetEditorWidget::Render(float DeltaTime)
 		bPendingClose = false;
 		Close();
 	}
+}
+
+void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
+{
+	constexpr float BarHeight = 32.0f;
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	const ImVec2 BarPos = ImGui::GetCursorScreenPos();
+	const float BarWidth = ImGui::GetContentRegionAvail().x;
+	DrawList->AddRectFilled(BarPos, ImVec2(BarPos.x + BarWidth, BarPos.y + BarHeight), IM_COL32(38, 38, 38, 255));
+
+	auto ModeButton = [&](const char* Label, EPhysicsAssetEditorMode Mode)
+	{
+		const bool bActive = ActiveMode == Mode;
+		const ImVec2 Pos = ImGui::GetCursorScreenPos();
+		const ImVec2 TextSize = ImGui::CalcTextSize(Label);
+		const float Width = TextSize.x + 28.0f;
+
+		ImGui::InvisibleButton(Label, ImVec2(Width, BarHeight));
+		if (ImGui::IsItemClicked())
+		{
+			ActiveMode = Mode;
+		}
+
+		if (bActive || ImGui::IsItemHovered())
+		{
+			DrawList->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + BarHeight),
+				bActive ? IM_COL32(44, 44, 44, 255) : IM_COL32(255, 255, 255, 20));
+		}
+
+		DrawList->AddText(ImVec2(Pos.x + 14.0f, Pos.y + (BarHeight - TextSize.y) * 0.5f),
+			bActive ? IM_COL32(255, 255, 255, 255) : IM_COL32(190, 190, 190, 255), Label);
+		if (bActive)
+		{
+			DrawList->AddRectFilled(ImVec2(Pos.x, Pos.y + BarHeight - 2.0f),
+				ImVec2(Pos.x + Width, Pos.y + BarHeight), IM_COL32(64, 132, 224, 255));
+		}
+		ImGui::SameLine(0.0f, 0.0f);
+	};
+
+	ModeButton("Body Mode", EPhysicsAssetEditorMode::Body);
+	ModeButton("Constraint Mode", EPhysicsAssetEditorMode::Constraint);
+	ModeButton("Preview", EPhysicsAssetEditorMode::Preview);
+
+	const float RightStart = BarPos.x + BarWidth - 228.0f;
+	ImGui::SetCursorScreenPos(ImVec2(RightStart, BarPos.y + 4.0f));
+	if (ImGui::Button("Save", ImVec2(64.0f, 24.0f)))
+	{
+		if (FPhysicsAssetManager::Get().Save(Asset))
+		{
+			ClearDirty();
+		}
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Delete", ImVec2(70.0f, 24.0f)))
+	{
+		if (DeleteSelection(Asset))
+		{
+			MarkDirty();
+		}
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Focus", ImVec2(64.0f, 24.0f)))
+	{
+		ViewportClient.ResetCameraToPreviewBounds();
+	}
+
+	ImGui::SetCursorScreenPos(ImVec2(BarPos.x, BarPos.y + BarHeight));
 }
 
 void FPhysicsAssetEditorWidget::RenderViewportPanel(ImVec2 Size)
@@ -278,17 +388,76 @@ void FPhysicsAssetEditorWidget::RenderViewportPanel(ImVec2 Size)
 		}
 	}
 
+	constexpr float ToolbarHeight = 28.0f;
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	DrawList->AddRectFilled(ViewportPos, ImVec2(ViewportPos.x + Size.x, ViewportPos.y + ToolbarHeight), IM_COL32(40, 40, 40, 255));
+
+	FViewportToolbarContext Context;
+	Context.Renderer = &GEngine->GetRenderer();
+	Context.Settings = &FEditorSettings::Get().MeshEditorViewportSettings;
+	Context.RenderOptions = &ViewportClient.GetRenderOptions();
+	Context.ToolbarLeft = ViewportPos.x;
+	Context.ToolbarTop = ViewportPos.y;
+	Context.ToolbarWidth = Size.x;
+	Context.bReservePlayStopSpace = false;
+	Context.bShowAddActor = false;
+	Context.bShowGizmoControls = false;
+	Context.bShowCameraControls = true;
+	Context.bShowViewMode = true;
+	Context.bShowShowFlags = true;
+	Context.OnRenderViewModeExtras = [&]()
+	{
+		bool bShowPreviewMesh = ViewportClient.IsShowPreviewMesh();
+		if (ImGui::Checkbox("Skeletal Mesh", &bShowPreviewMesh))
+		{
+			ViewportClient.SetShowPreviewMesh(bShowPreviewMesh);
+		}
+
+		bool bShowBodies = ViewportClient.IsShowBodies();
+		if (ImGui::Checkbox("Bodies", &bShowBodies))
+		{
+			ViewportClient.SetShowBodies(bShowBodies);
+		}
+
+		bool bShowConstraints = ViewportClient.IsShowConstraints();
+		if (ImGui::Checkbox("Constraints", &bShowConstraints))
+		{
+			ViewportClient.SetShowConstraints(bShowConstraints);
+		}
+	};
+	FViewportToolbar::Render(Context);
+
 	ImGui::EndChild();
 }
 
-void FPhysicsAssetEditorWidget::RenderBodyTreePanel(UPhysicsAsset* Asset)
+void FPhysicsAssetEditorWidget::RenderSkeletonTreePanel(UPhysicsAsset* Asset)
 {
-	ImGui::TextUnformatted("Physics Asset");
+	ImGui::TextUnformatted("Skeleton Tree");
 	ImGui::Separator();
 
 	if (!Asset)
 	{
 		return;
+	}
+
+	ImGui::SetNextItemWidth(-1.0f);
+	ImGui::InputTextWithHint("##PhysicsAssetTreeFilter", "Search Skeleton, Bodies, Constraints", TreeFilter, sizeof(TreeFilter));
+	const FString Filter = TreeFilter;
+
+	if (PreviewMesh && PreviewMesh->GetSkeletalMeshAsset())
+	{
+		const FSkeletalMesh* MeshAsset = PreviewMesh->GetSkeletalMeshAsset();
+		if (ImGui::TreeNodeEx("Skeleton", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
+		{
+			for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(MeshAsset->Bones.size()); ++BoneIndex)
+			{
+				if (MeshAsset->Bones[BoneIndex].ParentIndex == -1)
+				{
+					RenderBoneTreeNode(MeshAsset, Asset, BoneIndex);
+				}
+			}
+			ImGui::TreePop();
+		}
 	}
 
 	const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
@@ -305,6 +474,11 @@ void FPhysicsAssetEditorWidget::RenderBodyTreePanel(UPhysicsAsset* Asset)
 			ImGui::PushID(BodyIndex);
 			const bool bBodySelected = Selection.Type == EPhysicsAssetEditorSelectionType::Body && Selection.BodyIndex == BodyIndex;
 			const FString BodyLabel = Body->GetBoneName().ToString();
+			if (!Filter.empty() && BodyLabel.find(Filter) == FString::npos)
+			{
+				ImGui::PopID();
+				continue;
+			}
 			ImGuiTreeNodeFlags BodyFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 			if (bBodySelected)
 			{
@@ -368,6 +542,10 @@ void FPhysicsAssetEditorWidget::RenderBodyTreePanel(UPhysicsAsset* Asset)
 			FString Label = Constraint->GetParentBoneName().ToString();
 			Label += " -> ";
 			Label += Constraint->GetChildBoneName().ToString();
+			if (!Filter.empty() && Label.find(Filter) == FString::npos)
+			{
+				continue;
+			}
 			ImGui::PushID(ConstraintIndex);
 			if (ImGui::Selectable(Label.c_str(), bSelected))
 			{
@@ -377,6 +555,64 @@ void FPhysicsAssetEditorWidget::RenderBodyTreePanel(UPhysicsAsset* Asset)
 		}
 		ImGui::TreePop();
 	}
+}
+
+void FPhysicsAssetEditorWidget::RenderBoneTreeNode(const FSkeletalMesh* MeshAsset, UPhysicsAsset* Asset, int32 BoneIndex)
+{
+	if (!MeshAsset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(MeshAsset->Bones.size()))
+	{
+		return;
+	}
+
+	const FBone& Bone = MeshAsset->Bones[BoneIndex];
+	const bool bHasBody = Asset && Asset->FindBodyIndex(FName(Bone.Name)) >= 0;
+	const bool bSelected = Selection.Type == EPhysicsAssetEditorSelectionType::Bone && Selection.BoneIndex == BoneIndex;
+
+	bool bHasChild = false;
+	for (const FBone& Candidate : MeshAsset->Bones)
+	{
+		if (Candidate.ParentIndex == BoneIndex)
+		{
+			bHasChild = true;
+			break;
+		}
+	}
+
+	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+	if (!bHasChild)
+	{
+		Flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	}
+	if (bSelected)
+	{
+		Flags |= ImGuiTreeNodeFlags_Selected;
+	}
+
+	FString Label = Bone.Name;
+	if (bHasBody)
+	{
+		Label += "  [Body]";
+	}
+
+	ImGui::PushID(BoneIndex);
+	const bool bOpen = ImGui::TreeNodeEx("Bone", Flags, "%s", Label.c_str());
+	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+	{
+		SelectBone(BoneIndex);
+	}
+
+	if (bHasChild && bOpen)
+	{
+		for (int32 ChildIndex = 0; ChildIndex < static_cast<int32>(MeshAsset->Bones.size()); ++ChildIndex)
+		{
+			if (MeshAsset->Bones[ChildIndex].ParentIndex == BoneIndex)
+			{
+				RenderBoneTreeNode(MeshAsset, Asset, ChildIndex);
+			}
+		}
+		ImGui::TreePop();
+	}
+	ImGui::PopID();
 }
 
 void FPhysicsAssetEditorWidget::RenderDetailsPanel(UPhysicsAsset* Asset)
@@ -389,29 +625,78 @@ void FPhysicsAssetEditorWidget::RenderDetailsPanel(UPhysicsAsset* Asset)
 		return;
 	}
 
-	if (ImGui::Button("Save"))
+	if (ImGui::CollapsingHeader("Asset", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		if (FPhysicsAssetManager::Get().Save(Asset))
+		ImGui::Text("Preview Mesh");
+		ImGui::TextWrapped("%s", Asset->GetPreviewSkeletalMeshPath().c_str());
+		if (!PreviewMesh)
 		{
-			ClearDirty();
+			ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.35f, 1.0f), "Preview mesh is not resolved.");
 		}
-	}
 
-	ImGui::Spacing();
-	ImGui::Text("Preview Mesh: %s", Asset->GetPreviewSkeletalMeshPath().c_str());
-	if (!PreviewMesh)
-	{
-		ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.35f, 1.0f), "Preview mesh is not resolved.");
+		ImGui::Text("Bodies: %llu", static_cast<unsigned long long>(Asset->GetBodySetups().size()));
+		ImGui::Text("Constraints: %llu", static_cast<unsigned long long>(Asset->GetConstraintTemplates().size()));
 	}
-
-	ImGui::Separator();
-	ImGui::Text("Bodies: %llu", static_cast<unsigned long long>(Asset->GetBodySetups().size()));
-	ImGui::Text("Constraints: %llu", static_cast<unsigned long long>(Asset->GetConstraintTemplates().size()));
-	ImGui::Separator();
 
 	if (Selection.Type == EPhysicsAssetEditorSelectionType::None)
 	{
-		ImGui::TextUnformatted("No selection.");
+		ImGui::Spacing();
+		ImGui::TextDisabled("Select a bone, body, shape, or constraint.");
+		return;
+	}
+
+	if (Selection.Type == EPhysicsAssetEditorSelectionType::Bone)
+	{
+		if (!PreviewMesh || !PreviewMesh->GetSkeletalMeshAsset())
+		{
+			return;
+		}
+
+		const FSkeletalMesh* MeshAsset = PreviewMesh->GetSkeletalMeshAsset();
+		if (Selection.BoneIndex < 0 || Selection.BoneIndex >= static_cast<int32>(MeshAsset->Bones.size()))
+		{
+			return;
+		}
+
+		const FBone& Bone = MeshAsset->Bones[Selection.BoneIndex];
+		const FName BoneName(Bone.Name);
+		const int32 ExistingBodyIndex = Asset->FindBodyIndex(BoneName);
+
+		if (ImGui::CollapsingHeader("Bone", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGui::Text("Name: %s", Bone.Name.c_str());
+			ImGui::Text("Index: %d", Selection.BoneIndex);
+			ImGui::Text("Parent: %d", Bone.ParentIndex);
+
+			if (ExistingBodyIndex >= 0)
+			{
+				if (ImGui::Button("Select Body"))
+				{
+					SelectBody(ExistingBodyIndex);
+				}
+			}
+			else if (ImGui::Button("Create Body"))
+			{
+				UBodySetup* Body = Asset->GetOrCreateBodySetup(BoneName);
+				if (Body)
+				{
+					const FVector BoneWorld = Bone.GetReferenceGlobalPose().GetLocation();
+					float BoneLength = 0.35f;
+					for (const FBone& Candidate : MeshAsset->Bones)
+					{
+						if (Candidate.ParentIndex == Selection.BoneIndex)
+						{
+							BoneLength = Clamp((Candidate.GetReferenceGlobalPose().GetLocation() - BoneWorld).Length(), 0.1f, 1000.0f);
+							break;
+						}
+					}
+
+					Body->AddSphyl(FVector::ZeroVector, FQuat::Identity, BoneLength * 0.2f, BoneLength);
+					SelectBody(Asset->FindBodyIndex(BoneName));
+					MarkDirty();
+				}
+			}
+		}
 		return;
 	}
 
@@ -421,36 +706,208 @@ void FPhysicsAssetEditorWidget::RenderDetailsPanel(UPhysicsAsset* Asset)
 		if (Selection.BodyIndex >= 0 && Selection.BodyIndex < static_cast<int32>(Bodies.size()) && Bodies[Selection.BodyIndex])
 		{
 			UBodySetup* Body = Bodies[Selection.BodyIndex];
-			ImGui::Text("Body: %s", Body->GetBoneName().ToString().c_str());
-			ImGui::Text("Spheres: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Sphere));
-			ImGui::Text("Boxes: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Box));
-			ImGui::Text("Capsules: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Sphyl));
-			ImGui::Text("Convex: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Convex));
+			if (ImGui::CollapsingHeader("Body Setup", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				ImGui::Text("Bone: %s", Body->GetBoneName().ToString().c_str());
+				ImGui::Text("Spheres: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Sphere));
+				ImGui::Text("Boxes: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Box));
+				ImGui::Text("Capsules: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Sphyl));
+				ImGui::Text("Convex: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Convex));
+
+				if (ImGui::Button("Add Sphere"))
+				{
+					Body->AddSphere(FVector::ZeroVector, 0.2f);
+					SelectShape(Selection.BodyIndex, EPhysicsAssetShapeType::Sphere, Body->GetShapeCount(EPhysicsAssetShapeType::Sphere) - 1);
+					MarkDirty();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Add Box"))
+				{
+					Body->AddBox(FVector::ZeroVector, FQuat::Identity, FVector(0.2f, 0.2f, 0.2f));
+					SelectShape(Selection.BodyIndex, EPhysicsAssetShapeType::Box, Body->GetShapeCount(EPhysicsAssetShapeType::Box) - 1);
+					MarkDirty();
+				}
+				if (ImGui::Button("Add Capsule"))
+				{
+					Body->AddSphyl(FVector::ZeroVector, FQuat::Identity, 0.15f, 0.5f);
+					SelectShape(Selection.BodyIndex, EPhysicsAssetShapeType::Sphyl, Body->GetShapeCount(EPhysicsAssetShapeType::Sphyl) - 1);
+					MarkDirty();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Delete Body"))
+				{
+					if (Asset->RemoveBodySetupAt(Selection.BodyIndex))
+					{
+						ClearSelection();
+						MarkDirty();
+					}
+				}
+			}
 		}
 		return;
 	}
 
 	if (Selection.Type == EPhysicsAssetEditorSelectionType::Shape)
 	{
-		ImGui::Text("Shape: %s %d", ShapeTypeLabel(Selection.ShapeType), Selection.ShapeIndex);
-		ImGui::Text("Body Index: %d", Selection.BodyIndex);
+		const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
+		if (Selection.BodyIndex >= 0 && Selection.BodyIndex < static_cast<int32>(Bodies.size()) && Bodies[Selection.BodyIndex])
+		{
+			RenderShapeDetails(Asset, Bodies[Selection.BodyIndex]);
+		}
 		return;
 	}
 
 	if (Selection.Type == EPhysicsAssetEditorSelectionType::Constraint)
 	{
-		const TArray<UPhysicsConstraintTemplate*>& Constraints = Asset->GetConstraintTemplates();
-		if (Selection.ConstraintIndex >= 0
-			&& Selection.ConstraintIndex < static_cast<int32>(Constraints.size())
-			&& Constraints[Selection.ConstraintIndex])
+		RenderConstraintDetails(Asset);
+	}
+}
+
+void FPhysicsAssetEditorWidget::RenderShapeDetails(UPhysicsAsset* Asset, UBodySetup* Body)
+{
+	if (!Asset || !Body)
+	{
+		return;
+	}
+
+	FKAggregateGeom& Geom = Body->GetAggGeom();
+	bool bChanged = false;
+
+	if (ImGui::CollapsingHeader("Primitive", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		ImGui::Text("Body: %s", Body->GetBoneName().ToString().c_str());
+		ImGui::Text("Shape: %s %d", ShapeTypeLabel(Selection.ShapeType), Selection.ShapeIndex);
+
+		if (Selection.ShapeType == EPhysicsAssetShapeType::Sphere)
 		{
-			const UPhysicsConstraintTemplate* Constraint = Constraints[Selection.ConstraintIndex];
-			ImGui::Text("Parent: %s", Constraint->GetParentBoneName().ToString().c_str());
-			ImGui::Text("Child: %s", Constraint->GetChildBoneName().ToString().c_str());
-			ImGui::Text("Mode: %s", AngularModeLabel(Constraint->GetAngularMode()));
-			ImGui::Text("Swing 1: %.1f", Constraint->GetSwing1Limit());
-			ImGui::Text("Swing 2: %.1f", Constraint->GetSwing2Limit());
-			ImGui::Text("Twist: %.1f", Constraint->GetTwistLimit());
+			if (Selection.ShapeIndex >= 0 && Selection.ShapeIndex < static_cast<int32>(Geom.SphereElems.size()))
+			{
+				FKSphereElem& Sphere = Geom.SphereElems[Selection.ShapeIndex];
+				bChanged |= ImGui::DragFloat3("Center", &Sphere.Center.X, 0.01f);
+				bChanged |= ImGui::DragFloat("Radius", &Sphere.Radius, 0.01f, 0.001f, 1000.0f);
+				Sphere.Radius = Clamp(Sphere.Radius, 0.001f, 1000.0f);
+			}
+		}
+		else if (Selection.ShapeType == EPhysicsAssetShapeType::Box)
+		{
+			if (Selection.ShapeIndex >= 0 && Selection.ShapeIndex < static_cast<int32>(Geom.BoxElems.size()))
+			{
+				FKBoxElem& Box = Geom.BoxElems[Selection.ShapeIndex];
+				FVector Euler = FRotator::FromQuaternion(Box.Rotation).ToVector();
+				bChanged |= ImGui::DragFloat3("Center", &Box.Center.X, 0.01f);
+				if (ImGui::DragFloat3("Rotation", &Euler.X, 0.25f))
+				{
+					Box.Rotation = FRotator(Euler).ToQuaternion();
+					bChanged = true;
+				}
+				bChanged |= ImGui::DragFloat3("Extents", &Box.Extents.X, 0.01f, 0.001f, 1000.0f);
+				Box.Extents.X = Clamp(Box.Extents.X, 0.001f, 1000.0f);
+				Box.Extents.Y = Clamp(Box.Extents.Y, 0.001f, 1000.0f);
+				Box.Extents.Z = Clamp(Box.Extents.Z, 0.001f, 1000.0f);
+			}
+		}
+		else if (Selection.ShapeType == EPhysicsAssetShapeType::Sphyl)
+		{
+			if (Selection.ShapeIndex >= 0 && Selection.ShapeIndex < static_cast<int32>(Geom.SphylElems.size()))
+			{
+				FKSphylElem& Capsule = Geom.SphylElems[Selection.ShapeIndex];
+				FVector Euler = FRotator::FromQuaternion(Capsule.Rotation).ToVector();
+				bChanged |= ImGui::DragFloat3("Center", &Capsule.Center.X, 0.01f);
+				if (ImGui::DragFloat3("Rotation", &Euler.X, 0.25f))
+				{
+					Capsule.Rotation = FRotator(Euler).ToQuaternion();
+					bChanged = true;
+				}
+				bChanged |= ImGui::DragFloat("Radius", &Capsule.Radius, 0.01f, 0.001f, 1000.0f);
+				bChanged |= ImGui::DragFloat("Length", &Capsule.Length, 0.01f, 0.001f, 1000.0f);
+				Capsule.Radius = Clamp(Capsule.Radius, 0.001f, 1000.0f);
+				Capsule.Length = Clamp(Capsule.Length, 0.001f, 1000.0f);
+			}
+		}
+		else
+		{
+			ImGui::TextDisabled("Convex primitive editing is not implemented yet.");
+		}
+
+		if (ImGui::Button("Delete Shape"))
+		{
+			if (Body->RemoveShape(Selection.ShapeType, Selection.ShapeIndex))
+			{
+				SelectBody(Selection.BodyIndex);
+				MarkDirty();
+				return;
+			}
+		}
+	}
+
+	if (bChanged)
+	{
+		MarkDirty();
+	}
+}
+
+void FPhysicsAssetEditorWidget::RenderConstraintDetails(UPhysicsAsset* Asset)
+{
+	if (!Asset)
+	{
+		return;
+	}
+
+	const TArray<UPhysicsConstraintTemplate*>& Constraints = Asset->GetConstraintTemplates();
+	if (Selection.ConstraintIndex < 0
+		|| Selection.ConstraintIndex >= static_cast<int32>(Constraints.size())
+		|| !Constraints[Selection.ConstraintIndex])
+	{
+		return;
+	}
+
+	UPhysicsConstraintTemplate* Constraint = Constraints[Selection.ConstraintIndex];
+	if (ImGui::CollapsingHeader("Constraint", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		ImGui::Text("Parent: %s", Constraint->GetParentBoneName().ToString().c_str());
+		ImGui::Text("Child: %s", Constraint->GetChildBoneName().ToString().c_str());
+
+		const char* Modes[] = { "Free", "Locked", "Limited" };
+		int32 Mode = static_cast<int32>(Constraint->GetAngularMode());
+		if (ImGui::Combo("Angular Mode", &Mode, Modes, 3))
+		{
+			Constraint->SetAngularMode(static_cast<EAngularConstraintMode>(Mode));
+			MarkDirty();
+		}
+
+		float Swing1 = Constraint->GetSwing1Limit();
+		float Swing2 = Constraint->GetSwing2Limit();
+		float Twist = Constraint->GetTwistLimit();
+		bool bLimitsChanged = false;
+		bLimitsChanged |= ImGui::DragFloat("Swing 1", &Swing1, 0.25f, 0.0f, 180.0f);
+		bLimitsChanged |= ImGui::DragFloat("Swing 2", &Swing2, 0.25f, 0.0f, 180.0f);
+		bLimitsChanged |= ImGui::DragFloat("Twist", &Twist, 0.25f, 0.0f, 180.0f);
+		if (bLimitsChanged)
+		{
+			Constraint->SetAngularLimits(Swing1, Swing2, Twist);
+			MarkDirty();
+		}
+
+		FTransform FrameA = Constraint->GetLocalFrameA();
+		FTransform FrameB = Constraint->GetLocalFrameB();
+		if (ImGui::DragFloat3("Frame A Location", &FrameA.Location.X, 0.01f))
+		{
+			Constraint->SetLocalFrameA(FrameA);
+			MarkDirty();
+		}
+		if (ImGui::DragFloat3("Frame B Location", &FrameB.Location.X, 0.01f))
+		{
+			Constraint->SetLocalFrameB(FrameB);
+			MarkDirty();
+		}
+
+		if (ImGui::Button("Delete Constraint"))
+		{
+			if (Asset->RemoveConstraintAt(Selection.ConstraintIndex))
+			{
+				ClearSelection();
+				MarkDirty();
+			}
 		}
 	}
 }
@@ -478,7 +935,60 @@ void FPhysicsAssetEditorWidget::SelectConstraint(int32 ConstraintIndex)
 	Selection.ConstraintIndex = ConstraintIndex;
 }
 
+void FPhysicsAssetEditorWidget::SelectBone(int32 BoneIndex)
+{
+	Selection.Clear();
+	Selection.Type = EPhysicsAssetEditorSelectionType::Bone;
+	Selection.BoneIndex = BoneIndex;
+}
+
 void FPhysicsAssetEditorWidget::ClearSelection()
 {
 	Selection.Clear();
+}
+
+bool FPhysicsAssetEditorWidget::DeleteSelection(UPhysicsAsset* Asset)
+{
+	if (!Asset)
+	{
+		return false;
+	}
+
+	if (Selection.Type == EPhysicsAssetEditorSelectionType::Body)
+	{
+		const bool bRemoved = Asset->RemoveBodySetupAt(Selection.BodyIndex);
+		if (bRemoved)
+		{
+			ClearSelection();
+		}
+		return bRemoved;
+	}
+
+	if (Selection.Type == EPhysicsAssetEditorSelectionType::Shape)
+	{
+		const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
+		if (Selection.BodyIndex < 0 || Selection.BodyIndex >= static_cast<int32>(Bodies.size()) || !Bodies[Selection.BodyIndex])
+		{
+			return false;
+		}
+
+		const bool bRemoved = Bodies[Selection.BodyIndex]->RemoveShape(Selection.ShapeType, Selection.ShapeIndex);
+		if (bRemoved)
+		{
+			SelectBody(Selection.BodyIndex);
+		}
+		return bRemoved;
+	}
+
+	if (Selection.Type == EPhysicsAssetEditorSelectionType::Constraint)
+	{
+		const bool bRemoved = Asset->RemoveConstraintAt(Selection.ConstraintIndex);
+		if (bRemoved)
+		{
+			ClearSelection();
+		}
+		return bRemoved;
+	}
+
+	return false;
 }

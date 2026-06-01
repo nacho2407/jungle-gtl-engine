@@ -1,9 +1,13 @@
 #include "Editor/Viewport/Asset/PhysicsAssetEditorViewportClient.h"
 
 #include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Input/InputSystem.h"
+#include "Math/MathUtils.h"
 #include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsAssetDebugDraw.h"
 #include "Render/Types/MinimalViewInfo.h"
+#include "Settings/EditorSettings.h"
+#include "Slate/SlateApplication.h"
 #include "Viewport/Viewport.h"
 
 #include <imgui.h>
@@ -40,6 +44,7 @@ void FPhysicsAssetEditorViewportClient::SetPreviewScene(UWorld* InWorld, UPhysic
 	PreviewWorld = InWorld;
 	PhysicsAsset = InAsset;
 	PreviewMeshComponent = InMeshComponent;
+	SetShowPreviewMesh(bShowPreviewMesh);
 }
 
 void FPhysicsAssetEditorViewportClient::ResetCameraToPreviewBounds()
@@ -48,6 +53,10 @@ void FPhysicsAssetEditorViewportClient::ResetCameraToPreviewBounds()
 	{
 		ViewTransform.ViewLocation = FVector(-5.0f, -5.0f, 3.0f);
 		ViewTransform.LookAt(FVector::ZeroVector);
+		TargetLocation = ViewTransform.ViewLocation;
+		LastAppliedCameraLocation = ViewTransform.ViewLocation;
+		bTargetLocationInitialized = true;
+		bLastAppliedCameraLocationInitialized = true;
 		return;
 	}
 
@@ -64,6 +73,20 @@ void FPhysicsAssetEditorViewportClient::ResetCameraToPreviewBounds()
 
 	ViewTransform.ViewLocation = Center - ViewDir * Distance;
 	ViewTransform.LookAt(Center);
+
+	TargetLocation = ViewTransform.ViewLocation;
+	LastAppliedCameraLocation = ViewTransform.ViewLocation;
+	bTargetLocationInitialized = true;
+	bLastAppliedCameraLocationInitialized = true;
+}
+
+void FPhysicsAssetEditorViewportClient::SetShowPreviewMesh(bool bInShow)
+{
+	bShowPreviewMesh = bInShow;
+	if (PreviewMeshComponent)
+	{
+		PreviewMeshComponent->SetVisibility(bShowPreviewMesh);
+	}
 }
 
 bool FPhysicsAssetEditorViewportClient::IsMouseOverViewport() const
@@ -102,15 +125,122 @@ void FPhysicsAssetEditorViewportClient::SubmitFrameDebugDraw()
 
 void FPhysicsAssetEditorViewportClient::Tick(float DeltaTime)
 {
-	(void)DeltaTime;
+	SyncCameraSmoothingTarget();
+	ApplySmoothedCameraLocation(DeltaTime);
+	TickShortcuts();
+	TickInput(DeltaTime);
 }
 
-void FPhysicsAssetEditorViewportClient::DrawPreviewPhysicsAsset()
+void FPhysicsAssetEditorViewportClient::TickShortcuts()
 {
-	if (!PreviewWorld || !PhysicsAsset || !PreviewMeshComponent)
+	if (!FSlateApplication::Get().DoesClientOwnKeyboardInput(this))
 	{
 		return;
 	}
 
-	DrawPhysicsAssetDebug(PreviewWorld, PhysicsAsset, PreviewMeshComponent);
+	if (InputSystem::Get().GetKeyDown('F'))
+	{
+		ResetCameraToPreviewBounds();
+	}
+}
+
+void FPhysicsAssetEditorViewportClient::TickInput(float DeltaTime)
+{
+	if (!FSlateApplication::Get().DoesClientOwnMouseInput(this))
+	{
+		return;
+	}
+	if (ImGui::GetIO().WantTextInput)
+	{
+		return;
+	}
+
+	FViewportCameraControlSettings& ControlSettings = FEditorSettings::Get().MeshEditorViewportSettings.CameraControls;
+	InputSystem& Input = InputSystem::Get();
+
+	FVector LocalMove = FVector::ZeroVector;
+	float WorldVerticalMove = 0.0f;
+	const float CameraSpeed = ControlSettings.MoveSpeed;
+
+	if (Input.GetKey('W')) LocalMove.X += CameraSpeed;
+	if (Input.GetKey('S')) LocalMove.X -= CameraSpeed;
+	if (Input.GetKey('D')) LocalMove.Y += CameraSpeed;
+	if (Input.GetKey('A')) LocalMove.Y -= CameraSpeed;
+	if (Input.GetKey('Q')) WorldVerticalMove -= CameraSpeed;
+	if (Input.GetKey('E')) WorldVerticalMove += CameraSpeed;
+
+	const FVector Forward = ViewTransform.ViewRotation.GetForwardVector();
+	const FVector Right = ViewTransform.ViewRotation.GetRightVector();
+
+	FVector DeltaMove = (Forward * LocalMove.X + Right * LocalMove.Y) * DeltaTime;
+	DeltaMove.Z += WorldVerticalMove * DeltaTime;
+	TargetLocation += DeltaMove;
+
+	if (Input.GetKey(VK_RBUTTON))
+	{
+		const float MouseRotationSpeed = 0.15f * ControlSettings.RotationSpeed;
+		const float DeltaYaw = static_cast<float>(Input.MouseDeltaX()) * MouseRotationSpeed;
+		const float DeltaPitch = static_cast<float>(Input.MouseDeltaY()) * MouseRotationSpeed;
+		ViewTransform.Rotate(DeltaYaw, DeltaPitch);
+	}
+
+	const float ScrollNotches = InputSystem::Get().GetScrollNotches();
+	if (ScrollNotches != 0.0f)
+	{
+		if (InputSystem::Get().GetKey(VK_RBUTTON))
+		{
+			float& MoveSpeed = FEditorSettings::Get().MeshEditorViewportSettings.CameraControls.MoveSpeed;
+			MoveSpeed = ScrollNotches < 0.0f ? MoveSpeed * 0.9f : MoveSpeed * 1.1f;
+			MoveSpeed = Clamp(MoveSpeed, 0.001f, 1000.0f);
+		}
+		else if (ViewTransform.bIsOrtho)
+		{
+			const float NewWidth = ViewTransform.OrthoZoom - ScrollNotches * ControlSettings.ZoomSpeed * DeltaTime;
+			ViewTransform.OrthoZoom = Clamp(NewWidth, 0.1f, 1000.0f);
+		}
+		else
+		{
+			TargetLocation += ViewTransform.ViewRotation.GetForwardVector() * (ScrollNotches * ControlSettings.ZoomSpeed * 0.015f);
+		}
+	}
+}
+
+void FPhysicsAssetEditorViewportClient::SyncCameraSmoothingTarget()
+{
+	const FVector CurrentLocation = ViewTransform.ViewLocation;
+	const bool bCameraMovedExternally = bLastAppliedCameraLocationInitialized
+		&& FVector::DistSquared(CurrentLocation, LastAppliedCameraLocation) > 0.0001f;
+
+	if (!bTargetLocationInitialized || bCameraMovedExternally)
+	{
+		TargetLocation = CurrentLocation;
+		bTargetLocationInitialized = true;
+	}
+
+	LastAppliedCameraLocation = CurrentLocation;
+	bLastAppliedCameraLocationInitialized = true;
+}
+
+void FPhysicsAssetEditorViewportClient::ApplySmoothedCameraLocation(float DeltaTime)
+{
+	const FVector CurrentLocation = ViewTransform.ViewLocation;
+	const float LerpAlpha = Clamp(DeltaTime * SmoothLocationSpeed, 0.0f, 1.0f);
+	const FVector NewLocation = CurrentLocation + (TargetLocation - CurrentLocation) * LerpAlpha;
+	ViewTransform.ViewLocation = NewLocation;
+
+	LastAppliedCameraLocation = NewLocation;
+	bLastAppliedCameraLocationInitialized = true;
+}
+
+void FPhysicsAssetEditorViewportClient::DrawPreviewPhysicsAsset()
+{
+	if (!PreviewWorld || !PhysicsAsset || !PreviewMeshComponent || (!bShowBodies && !bShowConstraints))
+	{
+		return;
+	}
+
+	FPhysicsAssetDebugDrawOptions Options;
+	Options.bDrawBodies = bShowBodies;
+	Options.bDrawConstraints = bShowConstraints;
+	DrawPhysicsAssetDebug(PreviewWorld, PhysicsAsset, PreviewMeshComponent, Options);
 }

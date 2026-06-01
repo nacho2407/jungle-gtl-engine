@@ -7,8 +7,10 @@
 struct ImVec2;
 class AActor;
 class UPhysicsAsset;
+class UBodySetup;
 class USkeletalMesh;
 class USkeletalMeshComponent;
+struct FSkeletalMesh;
 
 class FPhysicsAssetEditorWidget : public FAssetEditorWidget
 {
@@ -27,21 +29,32 @@ public:
 	void Render(float DeltaTime) override;
 
 private:
+	void RenderModeToolbar(UPhysicsAsset* Asset);
 	void RenderViewportPanel(ImVec2 Size);
-	void RenderBodyTreePanel(UPhysicsAsset* Asset);
+	void RenderSkeletonTreePanel(UPhysicsAsset* Asset);
 	void RenderDetailsPanel(UPhysicsAsset* Asset);
+	void RenderBoneTreeNode(const FSkeletalMesh* MeshAsset, UPhysicsAsset* Asset, int32 BoneIndex);
+	void RenderShapeDetails(UPhysicsAsset* Asset, UBodySetup* Body);
+	void RenderConstraintDetails(UPhysicsAsset* Asset);
 	void SelectBody(int32 BodyIndex);
 	void SelectShape(int32 BodyIndex, EPhysicsAssetShapeType ShapeType, int32 ShapeIndex);
 	void SelectConstraint(int32 ConstraintIndex);
+	void SelectBone(int32 BoneIndex);
 	void ClearSelection();
+	bool DeleteSelection(UPhysicsAsset* Asset);
 
 private:
 	FPhysicsAssetEditorViewportClient ViewportClient;
 	FPhysicsAssetEditorSelection Selection;
+	EPhysicsAssetEditorMode ActiveMode = EPhysicsAssetEditorMode::Body;
 
 	USkeletalMesh* PreviewMesh = nullptr;
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
 	AActor* PreviewActor = nullptr;
+
+	float HierarchyWidth = 300.0f;
+	float DetailsWidth = 360.0f;
+	char TreeFilter[128] = {};
 
 	FName PreviewWorldHandle = FName::None;
 	FString WindowIdSuffix;
