@@ -1136,6 +1136,9 @@
     <ClCompile Include="Source\Engine\Component\Primitive\BillboardComponent.cpp">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\ClothComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.cpp">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClCompile>
@@ -1460,7 +1463,13 @@
     <ClCompile Include="Source\Engine\Physics\BodySetup.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\ClothInstance.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\NvClothSDK.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\PhysXConversions.cpp">
@@ -1586,6 +1595,9 @@
     <ClCompile Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\ClothSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
@@ -1628,10 +1640,10 @@
     <ClCompile Include="Source\Engine\Render\RenderPass\BloomPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\RenderPass\DepthOfFieldPass.cpp">
+    <ClCompile Include="Source\Engine\Render\RenderPass\DecalPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\RenderPass\DecalPass.cpp">
+    <ClCompile Include="Source\Engine\Render\RenderPass\DepthOfFieldPass.cpp">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\RenderPass\EditorLinesPass.cpp">
@@ -1845,23 +1857,6 @@
     <ClCompile Include="Intermediate\Generated\LuaBindings.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\PhysicsScene.cpp" />
-    <ClCompile Include="Source\Engine\Physics\BodyInstance.cpp" />
-    <ClCompile Include="Source\Engine\Physics\PhysicsShape.cpp" />
-    <ClCompile Include="Source\Engine\Physics\PhysXConversions.cpp" />
-    <ClCompile Include="Source\Engine\Physics\BodySetup.cpp" />
-    <ClCompile Include="Source\Engine\Physics\PhysXSDK.cpp" />
-    <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
-    <ClCompile Include="Source\Engine\Physics\PhysicsEventCallback.cpp" />
-    <ClCompile Include="Source\Engine\Physics\PhysicsFilterShader.cpp" />
-    <ClCompile Include="Source\Engine\Physics\PhysicsFilterData.cpp" />
-    <ClCompile Include="Source\Engine\Physics\PhysicsQueryFilter.cpp" />
-    <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp" />
-    <ClCompile Include="Source\Engine\Physics\PhysXVehicleInstance.cpp" />
-    <ClCompile Include="Source\Engine\Component\Movement\VehicleMovementComponent4W.cpp" />
-    <ClCompile Include="HighPerformanceGPUHint.cpp" />
-    <ClCompile Include="Source\Engine\Physics\NvClothSDK.cpp" />
-    <ClCompile Include="Source\Engine\Physics\ClothInstance.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -2332,6 +2327,9 @@
     <ClInclude Include="Source\Engine\Component\Primitive\BillboardComponent.h">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\ClothComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.h">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClInclude>
@@ -2761,7 +2759,19 @@
     <ClInclude Include="Source\Engine\Physics\BodySetupCore.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\ClothCollisionTypes.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\ClothInstance.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\NvClothInclude.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\NvClothSDK.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysXConversions.h">
@@ -2914,6 +2924,9 @@
     <ClInclude Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\ClothSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
@@ -2959,10 +2972,10 @@
     <ClInclude Include="Source\Engine\Render\RenderPass\BloomPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\RenderPass\DepthOfFieldPass.h">
+    <ClInclude Include="Source\Engine\Render\RenderPass\DecalPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\RenderPass\DecalPass.h">
+    <ClInclude Include="Source\Engine\Render\RenderPass\DepthOfFieldPass.h">
       <Filter>Source\Engine\Render\RenderPass</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\RenderPass\EditorLinesPass.h">
@@ -5602,9 +5615,6 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\NvClothInclude.h" />
-    <ClInclude Include="Source\Engine\Physics\NvClothSDK.h" />
-    <ClInclude Include="Source\Engine\Physics\ClothInstance.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

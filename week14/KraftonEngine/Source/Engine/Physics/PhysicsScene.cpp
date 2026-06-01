@@ -180,10 +180,18 @@ void FPhysicsScene::Initialize()
 
 	VehicleManager = new FPhysXVehicleManager();
 	VehicleManager->Initialize(Physics, Scene, FPhysXSDK::Get().GetDefaultMaterial());
+
+	ControllerManager = PxCreateControllerManager(*Scene);
 }
 
 void FPhysicsScene::Shutdown()
 {
+	if (ControllerManager)
+	{
+		ControllerManager->release();
+		ControllerManager = nullptr;
+	}
+
 	if (VehicleManager)
 	{
 		VehicleManager->Shutdown();
@@ -560,6 +568,14 @@ void FPhysicsScene::GatherClothCollision(const FClothCollisionGatherParams& Para
 				break;
 			}
 		}
+	}
+}
+
+void FPhysicsScene::PrepareCharacterControllers(float DeltaTime)
+{
+	if (ControllerManager)
+	{
+		ControllerManager->computeInteractions(DeltaTime);
 	}
 }
 

@@ -2,9 +2,11 @@
 
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Component/Shape/BoxComponent.h"
 #include "Editor/Subsystem/PhysicsAssetGenerator.h"
 #include "Editor/Slate/SlateApplication.h"
 #include "Editor/UI/Toolbar/ViewportToolbar.h"
+#include "Core/Types/CollisionTypes.h"
 #include "GameFramework/Actor/StaticMeshActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
 #include "GameFramework/World.h"
@@ -241,10 +243,25 @@ void FPhysicsAssetEditorWidget::Open(UObject* Object)
 	FloorActor->SetActorLocation(FVector(0.0f, 0.0f, -0.05f));
 	FloorActor->SetActorScale(FVector(10.0f, 10.0f, 0.02f));
 
+	AActor* FloorCollisionActor = WorldContext.World->SpawnActor<AActor>();
+	UBoxComponent* FloorCollision = FloorCollisionActor ? FloorCollisionActor->AddComponent<UBoxComponent>() : nullptr;
+	if (FloorCollisionActor && FloorCollision)
+	{
+		FloorCollisionActor->SetRootComponent(FloorCollision);
+		FloorCollision->SetBoxExtent(FVector(10.0f, 10.0f, 0.1f));
+		FloorCollisionActor->SetActorLocation(FVector(0.0f, 0.0f, -0.1f));
+		FloorCollision->SetVisibility(false);
+		FloorCollision->SetCollisionObjectType(ECollisionChannel::WorldStatic);
+		FloorCollision->SetCollisionResponseToAllChannels(ECollisionResponse::Block);
+		FloorCollision->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	}
+
 	ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
 	ViewportClient.Initialize(Device, static_cast<uint32>(ViewportSize.x), static_cast<uint32>(ViewportSize.y));
 	ViewportClient.SetPreviewScene(WorldContext.World, PhysicsAsset, PreviewMeshComponent);
+	ViewportClient.SetSimulatePhysics(false);
 	ViewportClient.ResetCameraToPreviewBounds();
+	bPreviewSimulationActive = false;
 
 	FSlateApplication::Get().RegisterViewport(&ViewportClient);
 }
@@ -252,6 +269,7 @@ void FPhysicsAssetEditorWidget::Open(UObject* Object)
 void FPhysicsAssetEditorWidget::Close()
 {
 	FAssetEditorWidget::Close();
+	StopPreviewSimulation();
 
 	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
 	{
@@ -278,6 +296,109 @@ void FPhysicsAssetEditorWidget::Tick(float DeltaTime)
 	if (ViewportClient.IsRenderable())
 	{
 		ViewportClient.Tick(DeltaTime);
+	}
+	TickPreviewSimulation(DeltaTime);
+}
+
+void FPhysicsAssetEditorWidget::TickPreviewSimulation(float DeltaTime)
+{
+	const bool bShouldSimulate = ViewportClient.IsSimulatingPhysics();
+	UWorld* PreviewWorld = ViewportClient.GetPreviewWorld();
+
+	if (!PreviewWorld || !PreviewMeshComponent)
+	{
+		bPreviewSimulationActive = false;
+		ViewportClient.SetSimulatePhysics(false);
+		return;
+	}
+
+	if (!bShouldSimulate)
+	{
+		StopPreviewSimulation();
+		return;
+	}
+
+	if (!bPreviewSimulationActive)
+	{
+		ViewportClient.SetShowBodies(true);
+		CapturePreviewSimulationStartPose();
+		PreviewMeshComponent->SetVisibility(false);
+		PreviewMeshComponent->SetSimulatePhysics(true);
+		bPreviewSimulationActive = PreviewMeshComponent->IsSimulatingPhysics();
+
+		if (!bPreviewSimulationActive)
+		{
+			PreviewSimulationStartLocalPose.clear();
+			PreviewMeshComponent->SetVisibility(ViewportClient.IsShowPreviewMesh());
+			ViewportClient.SetSimulatePhysics(false);
+			return;
+		}
+	}
+
+	PreviewMeshComponent->SetVisibility(false);
+	const float SimDeltaTime = (std::max)(0.0f, DeltaTime);
+	PreviewWorld->Tick(SimDeltaTime, ELevelTick::LEVELTICK_All);
+	PreviewMeshComponent->SyncSimulatedPhysics();
+}
+
+void FPhysicsAssetEditorWidget::CapturePreviewSimulationStartPose()
+{
+	PreviewSimulationStartLocalPose.clear();
+
+	if (!PreviewMeshComponent)
+	{
+		return;
+	}
+
+	USkeletalMesh* Mesh = PreviewMeshComponent->GetSkeletalMesh();
+	FSkeletalMesh* MeshAsset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+	if (!MeshAsset)
+	{
+		return;
+	}
+
+	const int32 NumBones = static_cast<int32>(MeshAsset->Bones.size());
+	PreviewSimulationStartLocalPose.reserve(NumBones);
+	for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+	{
+		PreviewSimulationStartLocalPose.push_back(PreviewMeshComponent->GetBoneLocalTransformByIndex(BoneIndex));
+	}
+}
+
+void FPhysicsAssetEditorWidget::RestorePreviewSimulationStartPose()
+{
+	if (!PreviewMeshComponent || PreviewSimulationStartLocalPose.empty())
+	{
+		PreviewSimulationStartLocalPose.clear();
+		return;
+	}
+
+	USkeletalMesh* Mesh = PreviewMeshComponent->GetSkeletalMesh();
+	FSkeletalMesh* MeshAsset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+	const int32 NumBones = MeshAsset ? static_cast<int32>(MeshAsset->Bones.size()) : 0;
+	if (NumBones <= 0 || static_cast<int32>(PreviewSimulationStartLocalPose.size()) != NumBones)
+	{
+		PreviewSimulationStartLocalPose.clear();
+		return;
+	}
+
+	PreviewMeshComponent->SetBoneLocalTransforms(PreviewSimulationStartLocalPose);
+	PreviewSimulationStartLocalPose.clear();
+}
+
+void FPhysicsAssetEditorWidget::StopPreviewSimulation()
+{
+	if (PreviewMeshComponent && PreviewMeshComponent->IsSimulatingPhysics())
+	{
+		PreviewMeshComponent->SetSimulatePhysics(false);
+	}
+	RestorePreviewSimulationStartPose();
+
+	bPreviewSimulationActive = false;
+	ViewportClient.SetSimulatePhysics(false);
+	if (PreviewMeshComponent)
+	{
+		PreviewMeshComponent->SetVisibility(ViewportClient.IsShowPreviewMesh());
 	}
 }
 
@@ -545,6 +666,7 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 	ImGui::SameLine();
 	if (DrawSmallToolbarButton("Delete", ImVec2(68.0f, 27.0f)))
 	{
+		StopPreviewSimulation();
 		if (DeleteSelection(Asset))
 		{
 			MarkDirty();
@@ -579,13 +701,22 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 		ViewportClient.SetShowConstraints(bShowConstraints);
 	}
 	ImGui::SameLine();
+	bool bSimulatePhysics = ViewportClient.IsSimulatingPhysics();
+	if (DrawSmallToolbarButton("Simulate", ImVec2(86.0f, 27.0f), bSimulatePhysics))
+	{
+		bSimulatePhysics = !bSimulatePhysics;
+		ViewportClient.SetSimulatePhysics(bSimulatePhysics);
+	}
+	ImGui::SameLine();
 	if (DrawSmallToolbarButton("Reference Pose", ImVec2(116.0f, 27.0f)) && PreviewMeshComponent)
 	{
+		StopPreviewSimulation();
 		PreviewMeshComponent->ResetBoneEditPose();
 	}
 	ImGui::SameLine();
 	if (DrawSmallToolbarButton("Create Asset", ImVec2(104.0f, 27.0f)))
 	{
+		StopPreviewSimulation();
 		RegenerateBodies(Asset);
 	}
 

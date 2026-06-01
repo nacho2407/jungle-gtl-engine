@@ -2,7 +2,6 @@
 
 #include "Physics/BodySetupCore.h"
 #include "Physics/PhysicsGeometry.h"
-
 #include "Source/Engine/Physics/BodySetup.generated.h"
 
 UENUM()
@@ -35,7 +34,7 @@ public:
 	int32 GetShapeCount(EPhysicsAssetShapeType ShapeType) const;
 	bool RemoveShape(EPhysicsAssetShapeType ShapeType, int32 ShapeIndex);
 	void ClearShapes();
-	
+
 protected:
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Primitives")
 	FKAggregateGeom AggGeom;

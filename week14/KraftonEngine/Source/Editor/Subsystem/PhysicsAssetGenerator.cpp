@@ -434,18 +434,13 @@ namespace
 			: (Axis == 1) ? std::max(Extents.X, Extents.Z)
 				: std::max(Extents.X, Extents.Y);
 
-		const float SegHalf = HalfLen - Radius;
-		if (SegHalf <= MinExtent)
-		{
-			Body.AddSphere(Center, std::max(Radius, HalfLen));
-			return;
-		}
-
 		FVector AxisDir = FVector::ZAxisVector;
 		if (Axis == 0) AxisDir = FVector::XAxisVector;
 		else if (Axis == 1) AxisDir = FVector::YAxisVector;
 
-		Body.AddSphyl(Center, MakeQuatFromZToAxis(AxisDir), Radius, SegHalf * 2.0f);
+		const float SegHalf = HalfLen - Radius;
+		const float CapsuleLength = std::max(SegHalf * 2.0f, MinExtent);
+		Body.AddSphyl(Center, MakeQuatFromZToAxis(AxisDir), std::max(Radius, MinExtent), CapsuleLength);
 	}
 
 	void AddBoneOrientedCapsule(UBodySetup& Body, const TArray<FVector>& Pts, const FVector& Axis, float BoneSegmentLength, float MinExtent)
@@ -851,7 +846,7 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 			}
 			else if (DirectChildCount > 1)
 			{
-				Body->AddBox(Center, FQuat::Identity, Extents);
+				AddAxisAlignedCapsule(*Body, Center, Extents, MinExtent);
 			}
 			else
 			{

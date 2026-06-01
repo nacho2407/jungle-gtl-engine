@@ -37,6 +37,7 @@ public:
 	// Ragdoll: PhysicsAsset로 물리 시뮬레이션 on/off.
 	void SetSimulatePhysics(bool bEnable);
 	bool IsSimulatingPhysics() const { return bSimulatingPhysics; }
+	bool SyncSimulatedPhysics();
 
     // Animation 섹션: Mode 에 따라 AnimInstance 의 생성/파기를 컴포넌트가 책임진다.
     //   - None              : AnimInstance 미생성. BoneEdit 만 적용.

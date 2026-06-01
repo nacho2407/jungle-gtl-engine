@@ -24,7 +24,6 @@
 #include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsScene.h"
 #include "GameFramework/World.h"
-#include "Input/InputSystem.h"
 
 #include <algorithm>
 #include <cstring>
@@ -305,19 +304,9 @@ void USkeletalMeshComponent::ClearAnimInstance()
 
 void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
-	// [임시 트리거] R 키로 래그돌 토글 (테스트용 — 나중에 게임 입력으로 교체)
-	if (InputSystem::Get().GetKeyDown('R'))
-	{
-		UE_LOG("Ragdoll toggle key detected. Enable=%s Mesh=%s",
-			bSimulatingPhysics ? "false" : "true",
-			GetSkeletalMesh() ? GetSkeletalMesh()->GetAssetPathFileName().c_str() : "None");
-		SetSimulatePhysics(!bSimulatingPhysics);
-	}
-
 	// 래그돌 활성: 애니 평가 대신 물리 결과를 본 포즈로 역기입
-	if (bSimulatingPhysics && Ragdoll)
+	if (SyncSimulatedPhysics())
 	{
-		Ragdoll->SyncBonesFromBodies(this);
 		UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 		return;
 	}
@@ -328,7 +317,18 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
         return;
     }
 
-    Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+}
+
+bool USkeletalMeshComponent::SyncSimulatedPhysics()
+{
+	if (!bSimulatingPhysics || !Ragdoll)
+	{
+		return false;
+	}
+
+	Ragdoll->SyncBonesFromBodies(this);
+	return true;
 }
 
 void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)

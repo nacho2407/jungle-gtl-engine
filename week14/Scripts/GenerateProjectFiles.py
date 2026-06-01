@@ -153,6 +153,7 @@ PHYSX_LIBS = [
     "PhysXCooking_64.lib",
     "PhysXPvdSDK_static_64.lib",
     "PhysXVehicle_static_64.lib",
+    "PhysXCharacterKinematic_static_64.lib",
 ]
 
 # NvCloth — dynamic link. Uses debug/release import libs and copies the matching DLL.
