@@ -1,4 +1,4 @@
-#include "PhysicsAssetBuilder.h"
+﻿#include "PhysicsAssetBuilder.h"
 
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
@@ -417,8 +417,6 @@ void BuildConstraintInitDescsForBodies(UPhysicsAsset* PhysicsAsset, const FSkele
 		}
 
 		FConstraintInstanceInitDesc Desc;
-		Desc.ParentBody = nullptr;
-		Desc.ChildBody = nullptr;
 		Desc.ParentBoneName = FName(MeshAsset.Bones[ParentBodyBoneIndex].Name);
 		Desc.ChildBoneName = ChildBodySetup->BoneName;
 		Desc.ParentFrame = FTransform::FromMatrixWithScale(
@@ -429,6 +427,9 @@ void BuildConstraintInitDescsForBodies(UPhysicsAsset* PhysicsAsset, const FSkele
 		Desc.Swing1LimitDegrees = 35.0f;
 		Desc.Swing2LimitDegrees = 35.0f;
 		Desc.bEnableCollision = false;
+		Desc.bEnableProjection = true;
+		Desc.ProjectionLinearTolerance = 10.0f;
+		Desc.ProjectionAngularToleranceDegrees = 30.0f;
 
 		ConstraintInitDescs.push_back(Desc);
 	}

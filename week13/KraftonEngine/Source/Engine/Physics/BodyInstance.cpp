@@ -1,6 +1,8 @@
 ﻿#include "BodyInstance.h"
 
 #include "PhysXTypeConversions.h"
+#include "GameFramework/AActor.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/Shape/SphereComponent.h"
@@ -8,6 +10,14 @@
 #include "Mesh/Static/StaticMesh.h"
 #include "PhysicsEngine/BodySetup.h"
 #include <algorithm>
+
+namespace
+{
+	bool ShouldCreateBodyShape(const FKShapeElem& ShapeElem)
+	{
+		return ShapeElem.GetCollisionEnabled() != ECollisionEnabled::NoCollision;
+	}
+}
 
 physx::PxRigidDynamic* FBodyInstance::GetRigidDynamic() const
 {
@@ -17,6 +27,21 @@ physx::PxRigidDynamic* FBodyInstance::GetRigidDynamic() const
 physx::PxRigidStatic* FBodyInstance::GetRigidStatic() const
 {
 	return RigidActor ? RigidActor->is<physx::PxRigidStatic>() : nullptr;
+}
+
+AActor* FBodyInstance::GetOwnerActor() const
+{
+	if (OwnerComponent)
+	{
+		return OwnerComponent->GetOwner();
+	}
+
+	if (OwnerSkeletalComponent)
+	{
+		return OwnerSkeletalComponent->GetOwner();
+	}
+
+	return nullptr;
 }
 
 FTransform FBodyInstance::GetBodyTransform() const
@@ -52,6 +77,40 @@ void FBodyInstance::SetKinematicTarget(const FTransform& WorldTransform)
 	}
 
 	Dynamic->setKinematicTarget(PhysXConvert::ToPxTransform(WorldTransform));
+}
+
+void FBodyInstance::SetKinematic(bool bInKinematic)
+{
+	bKinematic = bInKinematic;
+
+	physx::PxRigidDynamic* Dynamic = GetRigidDynamic();
+	if (!Dynamic) return;
+
+	Dynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, bInKinematic);
+
+	if (bInKinematic)
+	{
+		Dynamic->setKinematicTarget(PhysXConvert::ToPxTransform(GetBodyTransform()));
+	}
+	else
+	{
+		Dynamic->wakeUp();
+	}
+}
+
+void FBodyInstance::SetGravityEnabled(bool bInEnableGravity)
+{
+	bEnableGravity = bInEnableGravity;
+
+	physx::PxRigidDynamic* Dynamic = GetRigidDynamic();
+	if (!Dynamic) return;
+
+	Dynamic->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, !bInEnableGravity);
+
+	if (bInEnableGravity)
+	{
+		Dynamic->wakeUp();
+	}
 }
 
 // 지속적인 힘(dt영향)
@@ -219,12 +278,13 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
 
     OutDesc.WorldTransform = WorldTransform;
 
-    OutDesc.bSimulatePhysics = Body.bSimulatePhysics;
     OutDesc.bKinematic = Body.bKinematic;
+    OutDesc.bSimulatePhysics = Body.bSimulatePhysics || Body.bKinematic;
 
     OutDesc.CollisionEnabled = Body.CollisionEnabled;
     OutDesc.ObjectType = Body.ObjectType;
     OutDesc.ResponseContainer = Body.ResponseContainer;
+	OutDesc.bIgnoreSameOwner = Body.bIgnoreSameOwner;
 
     OutDesc.Mass = Body.Mass > 0.001f ? Body.Mass : 0.001f;
     OutDesc.CenterOfMassOffset = Body.CenterOfMassOffset;
@@ -296,6 +356,11 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
 
         for (const FKSphereElem& Sphere : AggGeom.SphereElems)
         {
+            if (!ShouldCreateBodyShape(Sphere))
+            {
+                continue;
+            }
+
             const FKSphereElem ScaledSphere = Sphere.GetFinalScaled(WorldScale, FTransform());
 
             FBodyShapeDesc MeshShape;
@@ -308,6 +373,11 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
 
         for (const FKBoxElem& Box : AggGeom.BoxElems)
         {
+            if (!ShouldCreateBodyShape(Box))
+            {
+                continue;
+            }
+
             const FKBoxElem ScaledBox = Box.GetFinalScaled(WorldScale, FTransform());
 
             FBodyShapeDesc MeshShape;
@@ -324,6 +394,11 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
 
         for (const FKSphylElem& Sphyl : AggGeom.SphylElems)
         {
+            if (!ShouldCreateBodyShape(Sphyl))
+            {
+                continue;
+            }
+
             const FKSphylElem ScaledSphyl = Sphyl.GetFinalScaled(WorldScale, FTransform());
 
             FBodyShapeDesc MeshShape;

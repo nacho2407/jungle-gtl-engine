@@ -18,6 +18,9 @@
 
 // PhysX headers
 #include <PxPhysicsAPI.h>
+#include <pvd/PxPvd.h>
+#include <pvd/PxPvdTransport.h>
+#include <pvd/PxPvdSceneClient.h>
 
 using namespace physx;
 using namespace PhysXConvert;
@@ -49,6 +52,33 @@ static FPhysXErrorCallback GPhysXErrorCallback;
 
 namespace
 {
+	FBodyInstance* GetBodyInstanceFromActor(const PxActor* Actor)
+	{
+		if (!Actor || !Actor->userData)
+		{
+			return nullptr;
+		}
+
+		return static_cast<FBodyInstance*>(Actor->userData);
+	}
+
+	AActor* GetOwnerActorFromPhysXActor(const PxActor* Actor)
+	{
+		FBodyInstance* Body = GetBodyInstanceFromActor(Actor);
+		return Body ? Body->GetOwnerActor() : nullptr;
+	}
+
+	bool ShouldIgnorePhysXActor(const PxActor* Actor, const AActor* IgnoreActor)
+	{
+		if (!Actor || !IgnoreActor)
+		{
+			return false;
+		}
+
+		AActor* OwnerActor = GetOwnerActorFromPhysXActor(Actor);
+		return OwnerActor == IgnoreActor;
+	}
+
 	bool ResolvePhysXRaycastTarget(const PxRaycastHit& Block, FHitResult& OutHit)
 	{
 		if (Block.shape && Block.shape->userData)
@@ -70,9 +100,9 @@ namespace
 			return true;
 		}
 
-		if (Block.actor && Block.actor->userData)
+		if (Block.actor)
 		{
-			AActor* HitActor = static_cast<AActor*>(Block.actor->userData);
+			AActor* HitActor = GetOwnerActorFromPhysXActor(Block.actor);
 			if (!IsValid(HitActor))
 			{
 				return false;
@@ -86,13 +116,29 @@ namespace
 	}
 }
 static PxDefaultAllocator GPhysXAllocator;
+static constexpr physx::PxU32 FILTER_FLAG_IGNORE_SAME_OWNER = 1u << 31;
+
+#ifndef WITH_PHYSX_PVD
+#define WITH_PHYSX_PVD 1
+#endif
+
+static constexpr const char* PHYSX_PVD_HOST = "127.0.0.1";
+static constexpr int PHYSX_PVD_PORT = 5425;
+static constexpr PxU32 PHYSX_PVD_TIMEOUT_MS = 10;
 
 // ============================================================
-// PhysX Foundation/Physics 싱글턴
+// PhysX Foundation/Physics/PVD 싱글턴
 // PxCreateFoundation은 프로세스당 1회만 허용 — 복수 Scene에서 공유
 // ============================================================
 static PxFoundation* GSharedFoundation = nullptr;
 static PxPhysics* GSharedPhysics = nullptr;
+static bool GSharedExtensionsInitialized = false;
+
+#if WITH_PHYSX_PVD
+static PxPvd* GSharedPvd = nullptr;
+static PxPvdTransport* GSharedPvdTransport = nullptr;
+#endif
+
 static int32 GSharedRefCount = 0;
 
 static bool AcquireSharedPhysX(PxFoundation*& OutFoundation, PxPhysics*& OutPhysics)
@@ -109,13 +155,84 @@ static bool AcquireSharedPhysX(PxFoundation*& OutFoundation, PxPhysics*& OutPhys
 			return false;
 		}
 
+#if WITH_PHYSX_PVD
+		GSharedPvd = PxCreatePvd(*GSharedFoundation);
+		if (GSharedPvd)
+		{
+			GSharedPvdTransport = PxDefaultPvdSocketTransportCreate(
+				PHYSX_PVD_HOST,
+				PHYSX_PVD_PORT,
+				PHYSX_PVD_TIMEOUT_MS
+			);
+
+			if (GSharedPvdTransport)
+			{
+				const bool bConnected = GSharedPvd->connect(
+					*GSharedPvdTransport,
+					PxPvdInstrumentationFlag::eALL
+				);
+
+				UE_LOG(
+					"[PhysX] PVD connect %s (%s:%d)",
+					bConnected ? "succeeded" : "failed",
+					PHYSX_PVD_HOST,
+					PHYSX_PVD_PORT
+				);
+			}
+			else
+			{
+				UE_LOG("[PhysX] Failed to create PVD transport");
+			}
+		}
+		else
+		{
+			UE_LOG("[PhysX] Failed to create PVD");
+		}
+
+		GSharedPhysics = PxCreatePhysics(
+			PX_PHYSICS_VERSION,
+			*GSharedFoundation,
+			PxTolerancesScale(),
+			true,
+			GSharedPvd
+		);
+#else
 		GSharedPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *GSharedFoundation, PxTolerancesScale());
+#endif
+
 		if (!GSharedPhysics)
 		{
 			UE_LOG("[PhysX] Failed to create shared physics");
+
+#if WITH_PHYSX_PVD
+			if (GSharedPvd)
+			{
+				GSharedPvd->disconnect();
+				GSharedPvd->release();
+				GSharedPvd = nullptr;
+			}
+
+			if (GSharedPvdTransport)
+			{
+				GSharedPvdTransport->release();
+				GSharedPvdTransport = nullptr;
+			}
+#endif
+
 			GSharedFoundation->release();
 			GSharedFoundation = nullptr;
 			return false;
+		}
+
+#if WITH_PHYSX_PVD
+		GSharedExtensionsInitialized = PxInitExtensions(*GSharedPhysics, GSharedPvd);
+#else
+		GSharedExtensionsInitialized = PxInitExtensions(*GSharedPhysics, nullptr);
+#endif
+
+		if (!GSharedExtensionsInitialized)
+		{
+			UE_LOG("[PhysX] Failed to initialize PhysX extensions");
 		}
 	}
 
@@ -136,7 +253,29 @@ static void ReleaseSharedPhysX()
 	--GSharedRefCount;
 	if (GSharedRefCount == 0)
 	{
+		if (GSharedExtensionsInitialized)
+		{
+			PxCloseExtensions();
+			GSharedExtensionsInitialized = false;
+		}
+
 		if (GSharedPhysics) { GSharedPhysics->release(); GSharedPhysics = nullptr; }
+
+#if WITH_PHYSX_PVD
+		if (GSharedPvd)
+		{
+			GSharedPvd->disconnect();
+			GSharedPvd->release();
+			GSharedPvd = nullptr;
+		}
+
+		if (GSharedPvdTransport)
+		{
+			GSharedPvdTransport->release();
+			GSharedPvdTransport = nullptr;
+		}
+#endif
+
 		if (GSharedFoundation) { GSharedFoundation->release(); GSharedFoundation = nullptr; }
 	}
 }
@@ -148,6 +287,11 @@ static void SetupFilterData(PxShape* Shape, const FBodyInstance& Body)
 	Filter.word0 = static_cast<PxU32>(Body.ObjectType);
 	Filter.word1 = 0;
 	Filter.word2 = 0;
+
+	if (Body.bIgnoreSameOwner)
+	{
+		Filter.word2 |= FILTER_FLAG_IGNORE_SAME_OWNER;
+	}
 
 	AActor* Owner = nullptr;
 	if (Body.OwnerComponent)
@@ -453,48 +597,6 @@ static void SetComponentWorldPose(UPrimitiveComponent* Comp, const PxTransform& 
 	}
 }
 
-// Compound body의 mass와 center-of-mass를 RootComponent의 값으로 갱신.
-// shape 추가/제거 후 inertia 재계산이 필요하므로 RegisterComponent /
-// UnregisterComponent 끝에서 호출된다.
-static void ApplyRootMassAndCOM(PxRigidDynamic* Dyn, UPrimitiveComponent* Root)
-{
-	if (!Dyn || !IsValid(Root)) return;
-	const float MassKg = (Root->GetMass() > 0.0f) ? Root->GetMass() : 1.0f;
-	PxRigidBodyExt::setMassAndUpdateInertia(*Dyn, MassKg);
-	Dyn->setCMassLocalPose(PxTransform(ToPxVec3(Root->GetCenterOfMass())));
-}
-
-// ============================================================
-// Collision Filtering
-// ============================================================
-// filterData 레이아웃:
-//   word0 = 자신의 ObjectType (ECollisionChannel)
-//   word1 = Block 비트마스크 (해당 채널에 Block 응답인 비트)
-//   word2 = Overlap 비트마스크 (해당 채널에 Overlap 응답인 비트)
-//   word3 = 소유 액터 UUID — 같은 액터의 두 컴포넌트끼리 충돌을 무시하기 위함
-//           (Native 측 O(N²) 루프의 `if (A->GetOwner() == B->GetOwner()) continue;` 가드와 동일 의미)
-//           Owner가 없거나 UUID가 0이면 가드 미적용.
-
-static void SetupFilterData(PxShape* Shape, UPrimitiveComponent* Comp)
-{
-	PxFilterData Filter;
-	Filter.word0 = static_cast<PxU32>(Comp->GetCollisionObjectType());
-	Filter.word1 = 0;
-	Filter.word2 = 0;
-	AActor* Owner = Comp ? Comp->GetOwner() : nullptr;
-	Filter.word3 = IsValid(Owner) ? Owner->GetUUID() : 0;
-
-	for (int32 Ch = 0; Ch < static_cast<int32>(ECollisionChannel::ActiveCount); ++Ch)
-	{
-		ECollisionResponse R = Comp->GetCollisionResponseToChannel(static_cast<ECollisionChannel>(Ch));
-		if (R == ECollisionResponse::Block)   Filter.word1 |= (1u << Ch);
-		if (R == ECollisionResponse::Overlap) Filter.word2 |= (1u << Ch);
-	}
-
-	Shape->setSimulationFilterData(Filter);
-	Shape->setQueryFilterData(Filter);
-}
-
 // PxFilterShader — 엔진의 채널/응답 매트릭스를 PhysX에서 처리
 // 양쪽 모두 상대 채널에 대해 Block이면 물리 충돌, 한쪽이라도 Overlap이면 트리거, 그 외 무시
 static PxFilterFlags KraftonFilterShader(
@@ -502,10 +604,15 @@ static PxFilterFlags KraftonFilterShader(
 	PxFilterObjectAttributes attributes1, PxFilterData filterData1,
 	PxPairFlags& pairFlags, const void* /*constantBlock*/, PxU32 /*constantBlockSize*/)
 {
-	// 같은 액터(같은 owner UUID)의 두 컴포넌트끼리는 충돌 무시.
-	// Native 측 O(N²) 루프의 same-owner 가드와 동일 의미. 차량 차체-바퀴처럼
-	// 한 액터가 여러 콜라이더를 가질 때 자기끼리 충돌 시뮬레이션되는 문제를 막는다.
-	if (filterData0.word3 != 0 && filterData0.word3 == filterData1.word3)
+	const bool bSameOwner =
+		filterData0.word3 != 0 &&
+		filterData0.word3 == filterData1.word3;
+
+	const bool bIgnoreSameOwner =
+		((filterData0.word2 & FILTER_FLAG_IGNORE_SAME_OWNER) != 0) ||
+		((filterData1.word2 & FILTER_FLAG_IGNORE_SAME_OWNER) != 0);
+
+	if (bSameOwner && bIgnoreSameOwner)
 	{
 		return PxFilterFlag::eKILL;
 	}
@@ -576,7 +683,7 @@ void FPhysXPhysicsScene::Initialize(UWorld* InWorld)
 	bSharedPhysXAcquired = true;
 
 	// CPU Dispatcher
-	Dispatcher = PxDefaultCpuDispatcherCreate(2);
+	Dispatcher = PxDefaultCpuDispatcherCreate(4);
 	if (!Dispatcher)
 	{
 		UE_LOG("[PhysX] Failed to create CPU dispatcher");
@@ -593,6 +700,13 @@ void FPhysXPhysicsScene::Initialize(UWorld* InWorld)
 	SceneDesc.cpuDispatcher = Dispatcher;
 	SceneDesc.filterShader = KraftonFilterShader;
 	SceneDesc.simulationEventCallback = EventCallback;
+
+	// Active Actor 사용
+	SceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+	// 안정화 옵션
+	SceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
+	SceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
+
 	Scene = Physics->createScene(SceneDesc);
 
 	if (!Scene)
@@ -601,6 +715,21 @@ void FPhysXPhysicsScene::Initialize(UWorld* InWorld)
 		Shutdown();
 		return;
 	}
+
+#if WITH_PHYSX_PVD
+	if (PxPvdSceneClient* PvdClient = Scene->getScenePvdClient())
+	{
+		PvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, true);
+		PvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_CONTACTS, true);
+		PvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
+
+		UE_LOG("[PhysX] PVD scene flags enabled");
+	}
+	else
+	{
+		UE_LOG("[PhysX] PVD scene client is null");
+	}
+#endif
 
 	// Default material (static friction, dynamic friction, restitution)
 	DefaultMaterial = Physics->createMaterial(0.5f, 0.5f, 0.3f);
@@ -656,32 +785,6 @@ void FPhysXPhysicsScene::Shutdown()
 	{
 		bSharedPhysXAcquired = false;
 		ReleaseSharedPhysX();
-	}
-}
-
-void FPhysXPhysicsScene::ClearPhysXActorUserData(PxRigidActor* Actor) const
-{
-	if (!Actor)
-	{
-		return;
-	}
-
-	Actor->userData = nullptr;
-
-	const PxU32 NumShapes = Actor->getNbShapes();
-	if (NumShapes == 0)
-	{
-		return;
-	}
-
-	std::vector<PxShape*> Shapes(NumShapes);
-	Actor->getShapes(Shapes.data(), NumShapes);
-	for (PxShape* Shape : Shapes)
-	{
-		if (Shape)
-		{
-			Shape->userData = nullptr;
-		}
 	}
 }
 
@@ -742,6 +845,7 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 	Body.CollisionEnabled = Desc.CollisionEnabled;
 	Body.ObjectType = Desc.ObjectType;
 	Body.ResponseContainer = Desc.ResponseContainer;
+	Body.bIgnoreSameOwner = Desc.bIgnoreSameOwner;
 	Body.Mass = Desc.Mass;
 	Body.CenterOfMassOffset = Desc.CenterOfMassOffset;
 	Body.LinearDamping = Desc.LinearDamping;
@@ -773,17 +877,7 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 		}
 	}
 
-	AActor* OwnerActor = nullptr;
-	if (Body.OwnerComponent)
-	{
-		OwnerActor = Body.OwnerComponent->GetOwner();
-	}
-	else if (Body.OwnerSkeletalComponent)
-	{
-		OwnerActor = Body.OwnerSkeletalComponent->GetOwner();
-	}
-
-	Actor->userData = OwnerActor;
+	Actor->userData = &Body;
 
 	// Shape들 Body에 저장
 	for (const FBodyShapeDesc& ShapeDesc : Desc.Shapes)
@@ -968,11 +1062,15 @@ bool FPhysXPhysicsScene::CreateConstraintInstance(FConstraintInstance& Constrain
 	Joint->setMotion(PxD6Axis::eSWING1, PxD6Motion::eLIMITED);
 	Joint->setMotion(PxD6Axis::eSWING2, PxD6Motion::eLIMITED);
 
-	constexpr float DegToRad = 3.14159265358979323846f / 180.0f;
+	auto ClampDegrees = [](float Degrees, float MinDegrees, float MaxDegrees)
+	{
+		return std::max(MinDegrees, std::min(Degrees, MaxDegrees));
+	};
 
-	const float Twist = std::max(Constraint.TwistLimitDegrees, 1.0f) * DegToRad;
-	const float Swing1 = std::max(Constraint.Swing1LimitDegrees, 1.0f) * DegToRad;
-	const float Swing2 = std::max(Constraint.Swing2LimitDegrees, 1.0f) * DegToRad;
+
+	const float Twist = ClampDegrees(Constraint.TwistLimitDegrees, 0.0f, 170.0f) * DEG_TO_RAD;
+	const float Swing1 = ClampDegrees(Constraint.Swing1LimitDegrees, 0.0f, 170.0f) * DEG_TO_RAD;
+	const float Swing2 = ClampDegrees(Constraint.Swing2LimitDegrees, 0.0f, 170.0f) * DEG_TO_RAD;
 
 	// 비틀기 제한
 	Joint->setTwistLimit(PxJointAngularLimitPair(-Twist, Twist));
@@ -985,10 +1083,24 @@ bool FPhysXPhysicsScene::CreateConstraintInstance(FConstraintInstance& Constrain
 
 	Joint->setConstraintFlag(PxConstraintFlag::eVISUALIZATION, true);
 
-	// joint가 순간적으로 벌어지게 될때 보정해주는 장치
-	Joint->setProjectionLinearTolerance(0.1f);
-	Joint->setProjectionAngularTolerance(0.25f);
-	Joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+	if (Constraint.bEnableProjection)
+	{
+		// joint가 위치상으로 얼마나 벌어졌을 때 강제 보정할지 정하는 값
+		Joint->setProjectionLinearTolerance(
+			std::max(Constraint.ProjectionLinearTolerance, 0.0f)
+		);
+
+		// joint가 회전상으로 얼마나 틀어졌을 때 강제 보정할지 정하는 값(회전 한계 이상으로 갔을때 되돌려 놓는 값)
+		Joint->setProjectionAngularTolerance(
+			std::max(Constraint.ProjectionAngularToleranceDegrees, 0.0f) * DEG_TO_RAD
+		);
+
+		Joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, true);
+	}
+	else
+	{
+		Joint->setConstraintFlag(PxConstraintFlag::ePROJECTION, false);
+	}
 
 	Constraint.Joint = Joint;
 	return true;
@@ -1003,109 +1115,20 @@ void FPhysXPhysicsScene::DestroyConstraintInstance(FConstraintInstance& Constrai
 	}
 }
 
-// ============================================================
-// Simulation
-// ============================================================
-
 void FPhysXPhysicsScene::Tick(float DeltaTime)
 {
-	if (bShutdownComplete || !Scene || DeltaTime <= 0.0f) return;
+	if (bShutdownComplete || !Scene || DeltaTime <= 0.0f)
+	{
+		return;
+	}
 
 	constexpr float MaxPhysicsDeltaTime = 0.1f;
-	if (DeltaTime > MaxPhysicsDeltaTime)
-	{
-		DeltaTime = MaxPhysicsDeltaTime;
-	}
+	DeltaTime = std::min(DeltaTime, MaxPhysicsDeltaTime);
 
-	// ── Pre-simulate: Engine → PhysX Transform 동기화 ──
-	//
-	// Static:
-	//   엔진 transform을 PhysX static actor pose로 계속 반영.
-	//
-	// Dynamic:
-	//   일반 상황에서는 PhysX가 주도한다.
-	//   단, 외부에서 Component transform을 크게 teleport한 경우에만 PhysX pose로 반영.
-	//
-	// Kinematic:
-	//   setKinematicTarget 사용.
-	constexpr float TeleportPosThresholdSq = 1.0f;   // 1m 이상 차이 시 teleport
-	constexpr float TeleportRotThreshold = 0.99f;    // 약 8도 이상 차이 시 teleport
-
-	for (FBodyInstance* Body : RegisteredBodies)
-	{
-		if (!Body || !Body->IsValidBodyInstance()) continue;
-
-		UPrimitiveComponent* Comp = Body->OwnerComponent;
-		if (!IsValid(Comp)) continue;
-
-		PxRigidActor* Actor = Body->RigidActor;
-		if (!Actor) continue;
-
-		const PxTransform NewPose = GetPxTransform(Comp);
-
-		if (PxRigidDynamic* Dynamic = Actor->is<PxRigidDynamic>())
-		{
-			if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
-			{
-				Dynamic->setKinematicTarget(NewPose);
-			}
-			else
-			{
-				const PxTransform PxPose = Dynamic->getGlobalPose();
-
-				const PxVec3 DeltaP = NewPose.p - PxPose.p;
-				const float DistSq =
-					DeltaP.x * DeltaP.x +
-					DeltaP.y * DeltaP.y +
-					DeltaP.z * DeltaP.z;
-
-				const float QDot = std::abs(
-					NewPose.q.x * PxPose.q.x +
-					NewPose.q.y * PxPose.q.y +
-					NewPose.q.z * PxPose.q.z +
-					NewPose.q.w * PxPose.q.w
-				);
-
-				if (DistSq > TeleportPosThresholdSq || QDot < TeleportRotThreshold)
-				{
-					// 큰 외부 변경만 teleport.
-					// velocity는 보존해서 자연스러운 시뮬레이션 momentum은 유지.
-					Dynamic->setGlobalPose(NewPose);
-				}
-			}
-		}
-		else if (Actor->is<PxRigidStatic>())
-		{
-			Actor->setGlobalPose(NewPose);
-		}
-	}
-
-	// ── Simulate ──
-	Scene->simulate(DeltaTime);
-	Scene->fetchResults(true);
-
-	// ── Post-simulate: PhysX → Engine Transform 동기화 ──
-	//
-	// 일반 dynamic body만 Component transform으로 되돌린다.
-	// Static은 엔진 transform이 원본이고, Kinematic도 엔진 transform이 원본이다.
-	for (FBodyInstance* Body : RegisteredBodies)
-	{
-		if (!Body || !Body->IsValidBodyInstance()) continue;
-
-		UPrimitiveComponent* Comp = Body->OwnerComponent;
-		if (!IsValid(Comp)) continue;
-
-		PxRigidDynamic* Dynamic = Body->GetRigidDynamic();
-		if (!Dynamic) continue;
-		if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC) continue;
-		if (Dynamic->isSleeping()) continue;
-
-		const PxTransform Pose = Dynamic->getGlobalPose();
-		SetComponentWorldPose(Comp, Pose);
-	}
-
-	// ── Dispatch deferred contact/trigger events ──
-	if (EventCallback) EventCallback->DispatchPendingEvents();
+	SyncEngineToPhysicsBeforeSim();
+	SimulatePhysics(DeltaTime);
+	SyncPhysicsToEngineAfterSim();
+	DispatchPhysicsEvents();
 }
 
 bool FPhysXPhysicsScene::Sweep(const FVector& Start, const FVector& Dir, float MaxDist, const FCollisionShape& Shape, const FQuat& ShapeRot, FHitResult& OutHit, ECollisionChannel TraceChannel, const AActor* IgnoreActor) const
@@ -1124,8 +1147,10 @@ bool FPhysXPhysicsScene::Sweep(const FVector& Start, const FVector& Dir, float M
 		}
 		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* Shape, const PxRigidActor* Actor, PxHitFlags&) override
 		{
-			if (IgnoreActor && Actor && Actor->userData == IgnoreActor)
+			if (ShouldIgnorePhysXActor(Actor, IgnoreActor))
+			{
 				return PxQueryHitType::eNONE;
+			}
 
 			if (Shape)
 			{
@@ -1197,9 +1222,9 @@ bool FPhysXPhysicsScene::Sweep(const FVector& Start, const FVector& Dir, float M
 		OutHit.HitComponent = static_cast<UPrimitiveComponent*>(Block.shape->userData);
 		OutHit.HitActor = OutHit.HitComponent->GetOwner();
 	}
-	else if (Block.actor && Block.actor->userData)
+	else if (Block.actor)
 	{
-		OutHit.HitActor = static_cast<AActor*>(Block.actor->userData);
+		OutHit.HitActor = GetOwnerActorFromPhysXActor(Block.actor);
 	}
 
 	return true;
@@ -1307,7 +1332,7 @@ bool FPhysXPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float
 
 		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* Shape, const PxRigidActor* Actor, PxHitFlags&) override
 		{
-			if (IgnoreActor && Actor && Actor->userData == IgnoreActor)
+			if (ShouldIgnorePhysXActor(Actor, IgnoreActor))
 			{
 				return PxQueryHitType::eNONE;
 			}
@@ -1376,7 +1401,7 @@ bool FPhysXPhysicsScene::RaycastByObjectTypes(const FVector& Start, const FVecto
 
 		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* Shape, const PxRigidActor* Actor, PxHitFlags&) override
 		{
-			if (IgnoreActor && Actor && Actor->userData == IgnoreActor)
+			if (ShouldIgnorePhysXActor(Actor, IgnoreActor))
 			{
 				return PxQueryHitType::eNONE;
 			}
@@ -1450,5 +1475,138 @@ void FPhysXPhysicsScene::ReleaseRegisteredBodies()
 	{
 		if (!Body) continue;
 		DestroyBodyInstance(*Body);
+	}
+}
+
+FBodyInstance* FPhysXPhysicsScene::FindRegisteredBodyByActor(const PxActor* Actor) const
+{
+	if (!Actor)
+	{
+		return nullptr;
+	}
+
+	for (FBodyInstance* Body : RegisteredBodies)
+	{
+		if (!Body || !Body->IsValidBodyInstance())
+		{
+			continue;
+		}
+
+		if (Body->RigidActor == Actor)
+		{
+			return Body;
+		}
+	}
+
+	return nullptr;
+}
+
+void FPhysXPhysicsScene::SyncEngineToPhysicsBeforeSim()
+{
+	constexpr float TeleportPosThresholdSq = 1.0f;
+	constexpr float TeleportRotThreshold = 0.99f;
+
+	for (FBodyInstance* Body : RegisteredBodies)
+	{
+		if (!Body || !Body->IsValidBodyInstance()) continue;
+
+		UPrimitiveComponent* Comp = Body->OwnerComponent;
+		if (!IsValid(Comp)) continue;
+
+		PxRigidActor* Actor = Body->RigidActor;
+		if (!Actor) continue;
+
+		const PxTransform NewPose = GetPxTransform(Comp);
+
+		if (PxRigidDynamic* Dynamic = Actor->is<PxRigidDynamic>())
+		{
+			if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
+			{
+				Dynamic->setKinematicTarget(NewPose);
+			}
+			else
+			{
+				const PxTransform PxPose = Dynamic->getGlobalPose();
+
+				const PxVec3 DeltaP = NewPose.p - PxPose.p;
+				const float DistSq =
+					DeltaP.x * DeltaP.x +
+					DeltaP.y * DeltaP.y +
+					DeltaP.z * DeltaP.z;
+
+				const float QDot = std::abs(
+					NewPose.q.x * PxPose.q.x +
+					NewPose.q.y * PxPose.q.y +
+					NewPose.q.z * PxPose.q.z +
+					NewPose.q.w * PxPose.q.w
+				);
+
+				if (DistSq > TeleportPosThresholdSq || QDot < TeleportRotThreshold)
+				{
+					Dynamic->setGlobalPose(NewPose);
+				}
+			}
+		}
+		else if (Actor->is<PxRigidStatic>())
+		{
+			Actor->setGlobalPose(NewPose);
+		}
+	}
+}
+
+void FPhysXPhysicsScene::SimulatePhysics(float DeltaTime)
+{
+	Scene->simulate(DeltaTime);
+	Scene->fetchResults(true);
+}
+
+void FPhysXPhysicsScene::SyncPhysicsToEngineAfterSim()
+{
+	PxU32 NumActiveActors = 0;
+	PxActor** ActiveActors = Scene->getActiveActors(NumActiveActors);
+
+	for (PxU32 i = 0; i < NumActiveActors; ++i)
+	{
+		PxActor* ActiveActor = ActiveActors[i];
+		if (!ActiveActor)
+		{
+			continue;
+		}
+
+		PxRigidDynamic* Dynamic = ActiveActor->is<PxRigidDynamic>();
+		if (!Dynamic)
+		{
+			continue;
+		}
+
+		if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
+		{
+			continue;
+		}
+
+		FBodyInstance* Body = FindRegisteredBodyByActor(ActiveActor);
+		if (!Body || !Body->IsValidBodyInstance())
+		{
+			continue;
+		}
+
+		// 일반 PrimitiveComponent만 여기서 Component transform sync.
+		// SkeletalMesh ragdoll body는 OwnerSkeletalComponent 쪽이므로 여기서 제외됨.
+		UPrimitiveComponent* Comp = Body->OwnerComponent;
+		if (!IsValid(Comp))
+		{
+			continue;
+		}
+
+		const PxTransform Pose = Dynamic->getGlobalPose();
+		SetComponentWorldPose(Comp, Pose);
+	}
+}
+
+void FPhysXPhysicsScene::DispatchPhysicsEvents()
+{
+	if (EventCallback)
+	{
+		EventCallback->DispatchPendingEvents();
 	}
 }
