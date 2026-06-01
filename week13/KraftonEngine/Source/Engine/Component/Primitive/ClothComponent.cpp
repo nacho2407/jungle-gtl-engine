@@ -200,14 +200,14 @@ void UClothComponent::MarkClothRebuildDirty()
 	MarkProxyDirty(EDirtyFlag::Mesh);
 }
 
-void UClothComponent::RebuildClothIfNeeded()
+void UClothComponent::RebuildClothIfNeeded(bool bNotifyProxyDirty)
 {
 	if (!bClothRebuildDirty)
 	{
 		return;
 	}
 
-	BuildGrid(MakeClothConfig());
+	BuildGrid(MakeClothConfig(), bNotifyProxyDirty);
 }
 
 FClothConfig UClothComponent::MakeClothConfig() const
@@ -219,7 +219,7 @@ FClothConfig UClothComponent::MakeClothConfig() const
 	return Config;
 }
 
-void UClothComponent::BuildGrid(const FClothConfig& Config)
+void UClothComponent::BuildGrid(const FClothConfig& Config, bool bNotifyProxyDirty)
 {
 	// 현재 property에도 보정값 반영
 	NumParticlesX = Config.NumParticlesX;
@@ -241,7 +241,7 @@ void UClothComponent::BuildGrid(const FClothConfig& Config)
 	const float Width = static_cast<float>(NumX - 1) * Config.ParticleSpacing;
 	const float Height = static_cast<float>(NumY - 1) * Config.ParticleSpacing;
 	const float MinX = -Width * 0.5f;
-	const float MinZ = -Height * 0.5f;
+	const float MaxZ = Height * 0.5f;
 
 	for (uint32 Row = 0; Row < NumY; ++Row)
 	{
@@ -252,7 +252,7 @@ void UClothComponent::BuildGrid(const FClothConfig& Config)
 			const float V = NumY > 1 ? 1.0f - static_cast<float>(Row) / static_cast<float>(NumY - 1) : 0.0f;
 
 			FVertexPNCTT& Vertex = RenderData.Vertices[VertexIndex];
-			Vertex.Position = FVector(MinX + static_cast<float>(Col) * Config.ParticleSpacing, 0.0f, MinZ + static_cast<float>(Row) * Config.ParticleSpacing);
+			Vertex.Position = FVector(MinX + static_cast<float>(Col) * Config.ParticleSpacing, 0.0f, MaxZ - static_cast<float>(Row) * Config.ParticleSpacing);
 			Vertex.Normal = FVector::YAxisVector;
 			Vertex.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 			Vertex.UV = FVector2(U, V);
@@ -269,14 +269,14 @@ void UClothComponent::BuildGrid(const FClothConfig& Config)
 			const uint32 V01 = (Row + 1) * NumX + Col;
 			const uint32 V11 = (Row + 1) * NumX + Col + 1;
 
-			// X-Z 평면에서 +Y가 front face가 되도록 winding 고정
+			// Row 0이 높은 Z인 X-Z 평면에서 +Y가 front face가 되도록 winding 고정
 			RenderData.Indices.push_back(V00);
-			RenderData.Indices.push_back(V01);
 			RenderData.Indices.push_back(V10);
+			RenderData.Indices.push_back(V01);
 
 			RenderData.Indices.push_back(V10);
-			RenderData.Indices.push_back(V01);
 			RenderData.Indices.push_back(V11);
+			RenderData.Indices.push_back(V01);
 		}
 	}
 
@@ -289,7 +289,10 @@ void UClothComponent::BuildGrid(const FClothConfig& Config)
 
 	// local shape 변경 전파
 	MarkWorldBoundsDirty();
-	MarkProxyDirty(EDirtyFlag::Mesh);
+	if (bNotifyProxyDirty)
+	{
+		MarkProxyDirty(EDirtyFlag::Mesh);
+	}
 }
 
 void UClothComponent::RecalculateNormalsAndTangents()
@@ -382,6 +385,8 @@ void UClothComponent::RecalculateNormalsAndTangents()
 
 void UClothComponent::UpdateRenderSections()
 {
+	RenderData.Sections.clear();
+
 	FClothRenderSection Section;
 	Section.FirstIndex = 0;
 	Section.IndexCount = static_cast<uint32>(RenderData.Indices.size());

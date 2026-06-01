@@ -57,6 +57,7 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	// 싱글턴 초기화 순서 보장
 	FNamePool::Get();
 	FObjectFactory::Get();
+	FLogManager::Get().Initialize();
 
 	InputSystem::Get().SetOwnerWindow(Window->GetHWND());
 
@@ -90,7 +91,6 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
 	UUIManager::Get().Initialize(Device);
 
-	FLogManager::Get().Initialize();
 	FDirectoryWatcher::Get().Initialize();
 	FLuaScriptManager::Initialize();
 	FAudioManager::Get().Initialize();

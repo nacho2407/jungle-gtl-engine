@@ -53,7 +53,7 @@ void FClothSceneProxy::UpdateMesh()
 	}
 
 	// 초기 등록 또는 property dirty 직후 render data가 비어 있으면 한 번 생성 보장
-	ClothComponent->RebuildClothIfNeeded();
+	ClothComponent->RebuildClothIfNeeded(false);
 
 	const FClothRenderData& RenderData = ClothComponent->GetClothRenderData();
 	CachedVertexCount = static_cast<uint32>(RenderData.Vertices.size());
@@ -73,7 +73,7 @@ bool FClothSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceConte
 	}
 
 	// editor 초기 표시 경로에서 tick보다 draw 준비가 먼저 오는 경우 방어
-	ClothComponent->RebuildClothIfNeeded();
+	ClothComponent->RebuildClothIfNeeded(false);
 
 	const FClothRenderData& RenderData = ClothComponent->GetClothRenderData();
 	const uint32 VertexCount = static_cast<uint32>(RenderData.Vertices.size());

@@ -2,16 +2,10 @@
 
 #include "Cloth/ClothTypes.h"
 
+#include <memory>
+
 struct ID3D11Device;
 struct ID3D11DeviceContext;
-
-namespace nv
-{
-namespace cloth
-{
-class Factory;
-}
-}
 
 /**
  * @brief NvCloth backend 공유 context
@@ -19,7 +13,7 @@ class Factory;
 class FNvClothContext
 {
 public:
-	FNvClothContext() = default;
+	FNvClothContext();
 	~FNvClothContext();
 
 	FNvClothContext(const FNvClothContext&) = delete;
@@ -48,7 +42,14 @@ public:
 	 *
 	 * @return 초기화 시도 여부
 	 */
-	bool IsInitialized() const { return bInitialized; }
+	bool IsInitializeAttempted() const { return bInitializeAttempted; }
+
+	/**
+	 * @brief 현재 Cloth backend 사용 가능 여부를 반환합니다
+	 *
+	 * @return 현재 Cloth backend 사용 가능 여부
+	 */
+	bool IsAvailable() const { return BackendStatus.bAvailable; }
 
 	/**
 	 * @brief 현재 선택된 Cloth backend 종류를 반환합니다
@@ -65,6 +66,8 @@ public:
 	const FClothBackendStatus& GetBackendStatus() const { return BackendStatus; }
 
 private:
+	struct FImpl;
+
 	/**
 	 * @brief NvCloth CPU factory를 생성합니다
 	 *
@@ -78,14 +81,10 @@ private:
 	void ReleaseFactory();
 
 private:
-	// Milestone 2의 DX11 fallback 연결용 렌더 device 참조
-	ID3D11Device* Device = nullptr;
-	ID3D11DeviceContext* DeviceContext = nullptr;
-
-	// NvCloth factory 생명주기 소유권
-	nv::cloth::Factory* Factory = nullptr;
+	// NvCloth 내부 타입 은닉과 factory 생명주기 소유권
+	std::unique_ptr<FImpl> Impl;
 
 	// stat cloth와 로그에서 공유할 backend 상태
 	FClothBackendStatus BackendStatus;
-	bool bInitialized = false;
+	bool bInitializeAttempted = false;
 };

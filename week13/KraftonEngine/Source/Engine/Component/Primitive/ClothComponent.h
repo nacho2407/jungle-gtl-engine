@@ -86,8 +86,10 @@ public:
 
 	/**
 	 * @brief dirty 상태인 cloth grid를 다시 생성합니다
+	 *
+	 * @param bNotifyProxyDirty render proxy에 mesh dirty를 전파할지 여부
 	 */
-	void RebuildClothIfNeeded();
+	void RebuildClothIfNeeded(bool bNotifyProxyDirty = true);
 
 	/**
 	 * @brief cloth CPU render data를 반환합니다
@@ -127,8 +129,10 @@ private:
 	 * @brief 현재 config로 procedural grid를 생성합니다
 	 *
 	 * @param Config grid 생성에 사용할 cloth config
+	 *
+	 * @param bNotifyProxyDirty render proxy에 mesh dirty를 전파할지 여부
 	 */
-	void BuildGrid(const FClothConfig& Config);
+	void BuildGrid(const FClothConfig& Config, bool bNotifyProxyDirty);
 
 	/**
 	 * @brief triangle과 UV 기준으로 normal과 tangent를 다시 계산합니다

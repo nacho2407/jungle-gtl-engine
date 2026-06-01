@@ -74,6 +74,23 @@ static void EnsureNvClothCallbacksInitialized()
 }
 #endif
 
+struct FNvClothContext::FImpl
+{
+	ID3D11Device* Device = nullptr;
+	ID3D11DeviceContext* DeviceContext = nullptr;
+
+#if WITH_NV_CLOTH
+	nv::cloth::Factory* Factory = nullptr;
+#else
+	void* Factory = nullptr;
+#endif
+};
+
+FNvClothContext::FNvClothContext()
+	: Impl(std::make_unique<FImpl>())
+{
+}
+
 FNvClothContext::~FNvClothContext()
 {
 	Shutdown();
@@ -83,9 +100,9 @@ bool FNvClothContext::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* In
 {
 	Shutdown();
 
-	Device = InDevice;
-	DeviceContext = InDeviceContext;
-	bInitialized = true;
+	Impl->Device = InDevice;
+	Impl->DeviceContext = InDeviceContext;
+	bInitializeAttempted = true;
 
 #if WITH_NV_CLOTH
 	EnsureNvClothCallbacksInitialized();
@@ -121,10 +138,10 @@ void FNvClothContext::Shutdown()
 {
 	ReleaseFactory();
 
-	Device = nullptr;
-	DeviceContext = nullptr;
+	Impl->Device = nullptr;
+	Impl->DeviceContext = nullptr;
 	BackendStatus = FClothBackendStatus();
-	bInitialized = false;
+	bInitializeAttempted = false;
 }
 
 bool FNvClothContext::CreateCpuFactory()
@@ -133,8 +150,8 @@ bool FNvClothContext::CreateCpuFactory()
 	ReleaseFactory();
 
 	// Milestone 1 범위: CUDA/DX11 실제 시도는 Milestone 2의 fallback 작업에서 추가
-	Factory = NvClothCreateFactoryCPU();
-	return Factory != nullptr;
+	Impl->Factory = NvClothCreateFactoryCPU();
+	return Impl->Factory != nullptr;
 #else
 	return false;
 #endif
@@ -143,12 +160,12 @@ bool FNvClothContext::CreateCpuFactory()
 void FNvClothContext::ReleaseFactory()
 {
 #if WITH_NV_CLOTH
-	if (Factory)
+	if (Impl->Factory)
 	{
-		NvClothDestroyFactory(Factory);
-		Factory = nullptr;
+		NvClothDestroyFactory(Impl->Factory);
+		Impl->Factory = nullptr;
 	}
 #else
-	Factory = nullptr;
+	Impl->Factory = nullptr;
 #endif
 }
