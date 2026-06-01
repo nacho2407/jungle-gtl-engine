@@ -128,6 +128,19 @@ public:
     UFUNCTION(Callable, Category = "Physics|Ragdoll")
     void SetAllBodiesBelowSimulatePhysics(FName InBoneName, bool bSimulate, bool bIncludeSelf = true);
 
+    UFUNCTION(Callable, Category = "Physics|PhysicalAnimation")
+    bool BeginPhysicalAnimation();
+
+    UFUNCTION(Callable, Category = "Physics|PhysicalAnimation")
+    void EndPhysicalAnimation(bool bUseRecovery = true);
+
+    UFUNCTION(Pure, Category = "Physics|PhysicalAnimation")
+    bool IsPhysicalAnimationActive() const { return SkeletalPhysicsMode == ESkeletalPhysicsMode::PhysicalAnimation; }
+
+    bool EvaluateAnimationPoseOnly(float DeltaTime, FPoseContext& OutPose);
+    bool BuildWorldTransformsFromLocalPose(const TArray<FTransform>& LocalPose, TArray<FTransform>& OutWorldTransforms) const;
+    void TickPhysicalAnimationPose(float DeltaTime);
+
     const TArray<FBodyInstance*>& GetRagdollBodies() const { return Bodies; }
     const TArray<FConstraintInstance*>& GetRagdollConstraints() const { return Constraints; }
 
