@@ -139,6 +139,7 @@ private:
     void DisableRagdollPhysics();
     void SetAllRagdollBodiesKinematic(bool bInKinematic);
     void SetAllRagdollBodiesGravityEnabled(bool bEnableGravity);
+    void ForceStopRagdollWithoutRecovery();
     void SyncComponentToRagdollBody();
     FBodyInstance* FindRagdollComponentSyncBody() const;
     void CaptureRagdollComponentSyncOffset();
@@ -147,6 +148,11 @@ private:
     void ClearRagdollComponentMoveState();
     void ApplyExternalComponentMoveToRagdollBodies();
     void MoveAllRagdollBodiesByComponentDelta(const FVector& Delta);
+    void StartRagdollRecovery();
+    bool TickRagdollRecovery(float DeltaTime);
+    void ClearRagdollRecoveryState();
+    void CaptureCurrentBoneLocalPose(TArray<FTransform>& OutPose) const;
+    FTransform BlendBoneTransform(const FTransform& From, const FTransform& To, float Alpha) const;
 
     bool CreateRagdollBodiesFromPhysicsAsset();
     bool CreateRagdollConstraintsFromPhysicsAsset();
@@ -185,6 +191,8 @@ protected:
     bool bCreateRagdollConstraints = true;
     UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Self Collision Mode", Enum=ERagdollSelfCollisionMode)
     ERagdollSelfCollisionMode RagdollSelfCollisionMode = ERagdollSelfCollisionMode::DisableParentChild;
+    UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Ragdoll Recovery Duration")
+    float RagdollRecoveryDuration = 0.35f;
 
     //Ragdoll runtime state
     TArray<FBodyInstance*> Bodies;
@@ -195,4 +203,7 @@ protected:
     bool bHasRagdollComponentSyncOffset = false;
     FMatrix LastRagdollComponentWorldMatrix = FMatrix::Identity;
     bool bHasLastRagdollComponentWorldMatrix = false;
+    bool bRagdollRecovering = false;
+    float RagdollRecoveryElapsed = 0.0f;
+    TArray<FTransform> RagdollRecoveryStartLocalPose;
 };

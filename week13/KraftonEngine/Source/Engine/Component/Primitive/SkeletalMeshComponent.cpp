@@ -59,6 +59,8 @@ USkeletalMeshComponent::~USkeletalMeshComponent()
     DestroyRagdollConstraints();
     DestroyRagdollBodies();
     ClearRagdollComponentSyncState();
+    ClearRagdollComponentMoveState();
+    ClearRagdollRecoveryState();
     ClearAnimInstance();
 }
 
@@ -69,9 +71,9 @@ FPrimitiveSceneProxy* USkeletalMeshComponent::CreateSceneProxy()
 
 void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 {
-    if (bRagdollActive)
+    if (bRagdollActive || bRagdollRecovering)
     {
-        SetRagdollEnabled(false);
+        ForceStopRagdollWithoutRecovery();
     }
 
     Super::SetSkeletalMesh(InMesh);
@@ -228,6 +230,8 @@ void USkeletalMeshComponent::SetRagdollEnabled(bool bEnabled)
 
 void USkeletalMeshComponent::EnableRagdollPhysics()
 {
+    ClearRagdollRecoveryState();
+
     if (bRagdollActive)
     {
         bRagdollEnabled = true;
@@ -245,6 +249,7 @@ void USkeletalMeshComponent::EnableRagdollPhysics()
         bRagdollEnabled = false;
         ClearRagdollComponentSyncState();
         ClearRagdollComponentMoveState();
+        ClearRagdollRecoveryState();
         UE_LOG("EnableRagdollPhysics failed: could not create ragdoll bodies");
         return;
     }
@@ -274,7 +279,13 @@ void USkeletalMeshComponent::DisableRagdollPhysics()
     {
         ClearRagdollComponentSyncState();
         ClearRagdollComponentMoveState();
+        ClearRagdollRecoveryState();
         return;
+    }
+
+    if (bRagdollActive)
+    {
+        StartRagdollRecovery();
     }
 
     bRagdollActive = false;
@@ -286,6 +297,19 @@ void USkeletalMeshComponent::DisableRagdollPhysics()
     ClearRagdollComponentMoveState();
 
     UE_LOG("Ragdoll disabled");
+}
+
+void USkeletalMeshComponent::ForceStopRagdollWithoutRecovery()
+{
+    bRagdollActive = false;
+    bRagdollEnabled = false;
+
+    DestroyRagdollConstraints();
+    DestroyRagdollBodies();
+
+    ClearRagdollComponentSyncState();
+    ClearRagdollComponentMoveState();
+    ClearRagdollRecoveryState();
 }
 
 void USkeletalMeshComponent::SetAllRagdollBodiesKinematic(bool bInKinematic)
@@ -470,6 +494,126 @@ void USkeletalMeshComponent::MoveAllRagdollBodiesByComponentDelta(const FVector&
         Body->SetBodyTransform(BodyTransform);
         Body->WakeUp();
     }
+}
+
+void USkeletalMeshComponent::StartRagdollRecovery()
+{
+    ClearRagdollRecoveryState();
+
+    if (!bRagdollActive || Bodies.empty())
+    {
+        return;
+    }
+
+    SyncComponentToRagdollBody();
+    SyncBonesFromRagdollBodies();
+    CaptureCurrentBoneLocalPose(RagdollRecoveryStartLocalPose);
+
+    if (RagdollRecoveryStartLocalPose.empty())
+    {
+        ClearRagdollRecoveryState();
+        return;
+    }
+
+    bRagdollRecovering = true;
+    RagdollRecoveryElapsed = 0.0f;
+}
+
+bool USkeletalMeshComponent::TickRagdollRecovery(float DeltaTime)
+{
+    if (!bRagdollRecovering)
+    {
+        return false;
+    }
+
+    if (RagdollRecoveryDuration <= 0.0f)
+    {
+        ClearRagdollRecoveryState();
+        return false;
+    }
+
+    RagdollRecoveryElapsed += DeltaTime;
+
+    const float Alpha = std::clamp(RagdollRecoveryElapsed / RagdollRecoveryDuration, 0.0f, 1.0f);
+    const float SmoothAlpha = Alpha * Alpha * (3.0f - 2.0f * Alpha);
+
+    if (!EvaluateAnimInstance(DeltaTime))
+    {
+        ClearRagdollRecoveryState();
+        return false;
+    }
+
+    if (Alpha >= 1.0f)
+    {
+        ClearRagdollRecoveryState();
+        return true;
+    }
+
+    TArray<FTransform> TargetAnimPose;
+    CaptureCurrentBoneLocalPose(TargetAnimPose);
+
+    if (TargetAnimPose.size() != RagdollRecoveryStartLocalPose.size())
+    {
+        ClearRagdollRecoveryState();
+        return true;
+    }
+
+    TArray<FTransform> BlendedPose;
+    BlendedPose.resize(TargetAnimPose.size());
+
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(TargetAnimPose.size()); ++BoneIndex)
+    {
+        BlendedPose[BoneIndex] = BlendBoneTransform(
+            RagdollRecoveryStartLocalPose[BoneIndex],
+            TargetAnimPose[BoneIndex],
+            SmoothAlpha
+        );
+    }
+
+    SetBoneLocalTransformsDirect(BlendedPose);
+    return true;
+}
+
+void USkeletalMeshComponent::ClearRagdollRecoveryState()
+{
+    bRagdollRecovering = false;
+    RagdollRecoveryElapsed = 0.0f;
+    RagdollRecoveryStartLocalPose.clear();
+}
+
+void USkeletalMeshComponent::CaptureCurrentBoneLocalPose(TArray<FTransform>& OutPose) const
+{
+    OutPose.clear();
+
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+
+    if (!Asset || Asset->Bones.empty())
+    {
+        return;
+    }
+
+    const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
+    OutPose.resize(BoneCount);
+
+    for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+    {
+        OutPose[BoneIndex] = GetBoneLocalTransformByIndex(BoneIndex);
+    }
+}
+
+FTransform USkeletalMeshComponent::BlendBoneTransform(
+    const FTransform& From,
+    const FTransform& To,
+    float Alpha
+) const
+{
+    FTransform Result;
+    Result.Location = FVector::Lerp(From.Location, To.Location, Alpha);
+    Result.Rotation = FQuat::Slerp(From.Rotation, To.Rotation, Alpha);
+    Result.Rotation.Normalize();
+    Result.Scale = FVector::Lerp(From.Scale, To.Scale, Alpha);
+    return Result;
 }
 
 void USkeletalMeshComponent::WakeAllRagdollBodies()
@@ -1285,6 +1429,15 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
         return;
     }
 
+    if (bRagdollRecovering)
+    {
+        if (TickRagdollRecovery(DeltaTime))
+        {
+            UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+            return;
+        }
+    }
+
     if (EvaluateAnimInstance(DeltaTime))
     {
         UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -1300,6 +1453,7 @@ void USkeletalMeshComponent::EndPlay()
     DestroyRagdollBodies();
     ClearRagdollComponentSyncState();
     ClearRagdollComponentMoveState();
+    ClearRagdollRecoveryState();
     Super::EndPlay();
 }
 
@@ -1448,6 +1602,7 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
     uint8 SelfCollisionModeRaw = static_cast<uint8>(RagdollSelfCollisionMode);
     Ar << SelfCollisionModeRaw;
     RagdollSelfCollisionMode = static_cast<ERagdollSelfCollisionMode>(SelfCollisionModeRaw);
+    Ar << RagdollRecoveryDuration;
 
 }
 
