@@ -16,6 +16,7 @@
 #include "GameFramework/Light/PointLightActor.h"
 #include "GameFramework/Light/SpotLightActor.h"
 #include "GameFramework/Actor/SkeletalMeshActor.h"
+#include "GameFramework/AActor.h"
 #include "GameFramework/Pawn/Character.h"
 #include "GameFramework/Pawn/LuaCharacter.h"
 #include "GameFramework/World.h"
@@ -27,6 +28,7 @@
 #include "Platform/Paths.h"
 #include "ImGui/imgui.h"
 #include "Component/Camera/CameraComponent.h"
+#include "Component/SceneComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Component/Debug/GizmoComponent.h"
 #include "Component/Light/LightComponentBase.h"
@@ -1723,6 +1725,8 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 			}
 		};
 
+		PlaceActorMenuItem("Empty Actor", EViewportPlaceActorType::Empty);
+		ImGui::Separator();
 		PlaceActorMenuItem("Cube", EViewportPlaceActorType::Cube);
 		PlaceActorMenuItem("Sphere", EViewportPlaceActorType::Sphere);
 		PlaceActorMenuItem("Cylinder", EViewportPlaceActorType::Cylinder);
@@ -1856,6 +1860,25 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 
 	switch (Type)
 	{
+	case EViewportPlaceActorType::Empty:
+	{
+		AActor* Actor = World->SpawnActor<AActor>();
+		if (Actor)
+		{
+			// 빈 Actor도 선택, 이동, 컴포넌트 부착이 가능하도록 기본 Scene Root를 만든다
+			USceneComponent* Root = Actor->AddComponent<USceneComponent>();
+			if (Root)
+			{
+				Actor->SetRootComponent(Root);
+				SpawnedActor = Actor;
+			}
+			else
+			{
+				World->DestroyActor(Actor);
+			}
+		}
+		break;
+	}
 	case EViewportPlaceActorType::Cube:
 	{
 		AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();

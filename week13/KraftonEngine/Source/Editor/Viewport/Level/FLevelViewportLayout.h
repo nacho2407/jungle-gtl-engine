@@ -73,6 +73,7 @@ public:
 
 	enum class EViewportPlaceActorType : uint8
 	{
+		Empty,
 		Cube,
 		Sphere,
 		Cylinder,
