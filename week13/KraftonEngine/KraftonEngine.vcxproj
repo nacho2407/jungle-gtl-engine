@@ -129,61 +129,65 @@
     <PhysXBinDir Condition="'$(Configuration)'=='Debug'">$(ProjectDir)ThirdParty\PhysX-4.1\physx\bin\win.x86_64.vc142.md\debug</PhysXBinDir>
     <PhysXBinDir Condition="'$(Configuration)'!='Debug'">$(ProjectDir)ThirdParty\PhysX-4.1\physx\bin\win.x86_64.vc142.md\release</PhysXBinDir>
     <PhysXLibraries>PhysX_64.lib;PhysXCommon_64.lib;PhysXCooking_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;PhysXCharacterKinematic_static_64.lib;PhysXVehicle_static_64.lib;PhysXTask_static_64.lib;LowLevel_static_64.lib;LowLevelAABB_static_64.lib;LowLevelDynamics_static_64.lib;SceneQuery_static_64.lib;SimulationController_static_64.lib</PhysXLibraries>
+    <NvClothIncludeDir>ThirdParty\NvCloth\include;ThirdParty\NvCloth\extensions\include</NvClothIncludeDir>
+    <NvClothLibDir>$(ProjectDir)ThirdParty\NvCloth</NvClothLibDir>
+    <NvClothBinDir>$(ProjectDir)ThirdParty\NvCloth</NvClothBinDir>
+    <NvClothLibraries>NvCloth_x64.lib</NvClothLibraries>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;$(IncludePath)</IncludePath>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;$(IncludePath)</IncludePath>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;$(IncludePath)</IncludePath>
-    <LibraryPath>ThirdParty\RmlUi\Debug;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Debug;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\debug;ThirdParty\NvCloth;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;$(IncludePath)</IncludePath>
-    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;$(LibraryPath)</LibraryPath>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;ThirdParty\NvCloth;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;$(IncludePath)</IncludePath>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;$(IncludePath)</IncludePath>
-    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;$(LibraryPath)</LibraryPath>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;ThirdParty\NvCloth;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;$(IncludePath)</IncludePath>
-    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;$(LibraryPath)</LibraryPath>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;ThirdParty\NvCloth;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
     <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
-    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;$(IncludePath)</IncludePath>
-    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;$(LibraryPath)</LibraryPath>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;ThirdParty\NvCloth;$(LibraryPath)</LibraryPath>
     <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -191,7 +195,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -214,7 +218,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -235,7 +239,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -245,13 +249,14 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(PhysXBinDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmodL_vc.lib;libfbxsdk.lib;$(PhysXLibraries);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(PhysXBinDir);$(NvClothLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmodL_vc.lib;libfbxsdk.lib;$(PhysXLibraries);$(NvClothLibraries);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Debug\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmodL.dll" "$(OutDir)"
 xcopy /Y "$(PhysXBinDir)\*.dll" "$(OutDir)"
+xcopy /Y "$(NvClothBinDir)\NvCloth_x64.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
@@ -266,7 +271,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"</
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -276,13 +281,14 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"</
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(PhysXBinDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;$(PhysXLibraries);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(PhysXBinDir);$(NvClothLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;$(PhysXLibraries);$(NvClothLibraries);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
 xcopy /Y "$(PhysXBinDir)\*.dll" "$(OutDir)"
+xcopy /Y "$(NvClothBinDir)\NvCloth_x64.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
@@ -297,7 +303,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WITH_EDITOR=0;WITH_STANDALONE=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -320,7 +326,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=0;WITH_STANDALONE=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -330,13 +336,14 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(PhysXBinDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;$(PhysXLibraries);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(PhysXBinDir);$(NvClothLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;$(PhysXLibraries);$(NvClothLibraries);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
 xcopy /Y "$(PhysXBinDir)\*.dll" "$(OutDir)"
+xcopy /Y "$(NvClothBinDir)\NvCloth_x64.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
@@ -351,7 +358,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;IS_OBJ_VIEWER=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -361,13 +368,14 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(PhysXBinDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;$(PhysXLibraries);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(PhysXBinDir);$(NvClothLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;$(PhysXLibraries);$(NvClothLibraries);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
 xcopy /Y "$(PhysXBinDir)\*.dll" "$(OutDir)"
+xcopy /Y "$(NvClothBinDir)\NvCloth_x64.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
@@ -382,7 +390,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;$(PhysXIncludeDir);$(NvClothIncludeDir);.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>Async</ExceptionHandling>
@@ -392,13 +400,14 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(PhysXBinDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;$(PhysXLibraries);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;$(PhysXBinDir);$(NvClothLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;$(PhysXLibraries);$(NvClothLibraries);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
 xcopy /Y "$(PhysXBinDir)\*.dll" "$(OutDir)"
+xcopy /Y "$(NvClothBinDir)\NvCloth_x64.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
 xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"</Command>
     </PostBuildEvent>
@@ -513,6 +522,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Collision\Octree\SpatialPartition.cpp" />
     <ClCompile Include="Source\Engine\Collision\Ray\RayUtils.cpp" />
     <ClCompile Include="Source\Engine\Collision\Ray\RayUtilsSIMD.cpp" />
+    <ClCompile Include="Source\Engine\Cloth\ClothSimulation.cpp" />
+    <ClCompile Include="Source\Engine\Cloth\ClothTypes.cpp" />
+    <ClCompile Include="Source\Engine\Cloth\NvClothContext.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
@@ -540,6 +552,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\BillboardComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\ClothComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\DecalComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\HeightFogComponent.cpp" />
@@ -718,6 +731,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\ClothSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\GizmoSceneProxy.cpp" />
@@ -930,6 +944,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Collision\Octree\SpatialPartition.h" />
     <ClInclude Include="Source\Engine\Collision\Ray\RayUtils.h" />
     <ClInclude Include="Source\Engine\Collision\Ray\RayUtilsSIMD.h" />
+    <ClInclude Include="Source\Engine\Cloth\ClothBuildConfig.h" />
+    <ClInclude Include="Source\Engine\Cloth\ClothSimulation.h" />
+    <ClInclude Include="Source\Engine\Cloth\ClothTypes.h" />
+    <ClInclude Include="Source\Engine\Cloth\NvClothContext.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
@@ -957,6 +975,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\BillboardComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\ClothComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\DecalComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\HeightFogComponent.h" />
@@ -1193,6 +1212,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Render\Pipeline\Renderer.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\ClothSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h" />
@@ -2468,9 +2488,12 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" />
+    <Import Project="packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets')" />
   </ImportGroup>
   <PropertyGroup>
     <PythonExe Condition="'$(PythonExe)'==''">$(MSBuildProjectDirectory)\..\Scripts\python\python.exe</PythonExe>
@@ -2482,6 +2505,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets'))" />
+    <Error Condition="!Exists('packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets'))" />
   </Target>
 </Project>

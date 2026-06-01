@@ -57,6 +57,7 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	// 싱글턴 초기화 순서 보장
 	FNamePool::Get();
 	FObjectFactory::Get();
+	FLogManager::Get().Initialize();
 
 	InputSystem::Get().SetOwnerWindow(Window->GetHWND());
 
@@ -66,6 +67,12 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	}
 
 	ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
+	ID3D11DeviceContext* DeviceContext = Renderer.GetFD3DDevice().GetDeviceContext();
+
+	{
+		SCOPE_STARTUP_STAT("ClothContext::Init");
+		ClothContext.Initialize(Device, DeviceContext);
+	}
 
 	{
 		SCOPE_STARTUP_STAT("MeshBufferManager::Init");
@@ -84,7 +91,6 @@ void UEngine::Init(FWindowsWindow* InWindow)
 
 	UUIManager::Get().Initialize(Device);
 
-	FLogManager::Get().Initialize();
 	FDirectoryWatcher::Get().Initialize();
 	FLuaScriptManager::Initialize();
 	FAudioManager::Get().Initialize();
@@ -96,6 +102,8 @@ void UEngine::Shutdown()
 	{
 		DestroyWorldContext(WorldList.back().ContextHandle);
 	}
+
+	ClothContext.Shutdown();
 
 	// UI 가 Lua callback (FWidgetClickEventListener::Callback 의 sol::protected_function 등)
 	// 을 보유하므로, 위젯 destroy 시점에 lua_State 가 살아있어야 deref 가 안전.
