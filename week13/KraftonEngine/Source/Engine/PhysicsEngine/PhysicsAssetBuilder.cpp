@@ -1,4 +1,4 @@
-#include "PhysicsAssetBuilder.h"
+﻿#include "PhysicsAssetBuilder.h"
 
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
@@ -417,8 +417,6 @@ void BuildConstraintInitDescsForBodies(UPhysicsAsset* PhysicsAsset, const FSkele
 		}
 
 		FConstraintInstanceInitDesc Desc;
-		Desc.ParentBody = nullptr;
-		Desc.ChildBody = nullptr;
 		Desc.ParentBoneName = FName(MeshAsset.Bones[ParentBodyBoneIndex].Name);
 		Desc.ChildBoneName = ChildBodySetup->BoneName;
 		Desc.ParentFrame = FTransform::FromMatrixWithScale(

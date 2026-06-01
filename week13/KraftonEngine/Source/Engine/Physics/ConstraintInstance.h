@@ -15,9 +15,6 @@ struct FConstraintInstanceInitDesc
 {
 	GENERATED_BODY()
 
-	FBodyInstance* ParentBody = nullptr;
-	FBodyInstance* ChildBody = nullptr;
-
 	UPROPERTY(VisibleAnywhere, Category="Constraint", DisplayName="Parent Bone")
 	FName ParentBoneName = FName::None;
 

@@ -1,4 +1,4 @@
-#include "PhysicsAsset.h"
+﻿#include "PhysicsAsset.h"
 
 #include "Object/GarbageCollection.h"
 #include "Serialization/Archive.h"
@@ -90,12 +90,6 @@ namespace
 			Desc.ProjectionLinearTolerance = 10.0f;
 			Desc.ProjectionAngularToleranceDegrees = 30.0f;
 		}
-
-		if (Ar.IsLoading())
-		{
-			Desc.ParentBody = nullptr;
-			Desc.ChildBody = nullptr;
-		}
 	}
 
 	void SerializeConstraintInitDescs(FArchive& Ar, TArray<FConstraintInstanceInitDesc>& ConstraintInitDescs)
@@ -112,8 +106,6 @@ namespace
 
 			for (FConstraintInstanceInitDesc& Desc : ConstraintInitDescs)
 			{
-				Desc.ParentBody = nullptr;
-				Desc.ChildBody = nullptr;
 				SerializeConstraintInitDesc(Ar, Desc, Version);
 			}
 			return;
