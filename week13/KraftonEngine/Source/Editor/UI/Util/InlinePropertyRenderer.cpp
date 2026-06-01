@@ -5,7 +5,9 @@
 #include "Core/Property/ObjectProperty.h"
 #include "Core/Property/StructProperty.h"
 #include "Core/Types/PropertyTypes.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "ImGui/imgui.h"
+#include "imgui_internal.h"
 #include "Math/Rotator.h"
 #include "Math/Vector.h"
 #include "Object/FName.h"
@@ -14,10 +16,36 @@
 
 #include <algorithm>
 #include <cfloat>
+#include <cmath>
 #include <cstring>
 
 namespace
 {
+	constexpr float MinPropertyLabelColumnWidth = 80.0f;
+	constexpr float MaxPropertyLabelColumnWidth = 320.0f;
+
+	float ClampPropertyLabelColumnWidth(float Width)
+	{
+		return std::clamp(Width, MinPropertyLabelColumnWidth, MaxPropertyLabelColumnWidth);
+	}
+
+	bool TryGetResizedColumnWidth(int ColumnIndex, float& OutWidth)
+	{
+		ImGuiTable* Table = ImGui::GetCurrentTable();
+		if (!Table || ColumnIndex < 0 || ColumnIndex >= Table->ColumnsCount)
+		{
+			return false;
+		}
+
+		if (Table->ResizedColumn != ColumnIndex && Table->LastResizedColumn != ColumnIndex)
+		{
+			return false;
+		}
+
+		OutWidth = Table->Columns[ColumnIndex].WidthGiven;
+		return OutWidth > 0.0f;
+	}
+
 	const char* GetDisplayName(const FPropertyValue& Prop)
 	{
 		const char* DisplayName = Prop.GetDisplayName();
@@ -338,9 +366,20 @@ namespace FInlinePropertyRenderer
 
 		bool bAnyChanged = false;
 		const char* EffectiveTableId = TableId ? TableId : "##InlineStructProperties";
-		if (ImGui::BeginTable(EffectiveTableId, 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV))
+		FEditorSettings& Settings = FEditorSettings::Get();
+		Settings.ReflectionPropertyLabelColumnWidth = ClampPropertyLabelColumnWidth(Settings.ReflectionPropertyLabelColumnWidth);
+
+		const ImGuiTableFlags TableFlags =
+			ImGuiTableFlags_SizingStretchProp |
+			ImGuiTableFlags_BordersInnerV |
+			ImGuiTableFlags_Resizable |
+			ImGuiTableFlags_NoSavedSettings;
+		if (ImGui::BeginTable(EffectiveTableId, 2, TableFlags))
 		{
-			ImGui::TableSetupColumn("##label", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+			ImGui::TableSetupColumn(
+				"##label",
+				ImGuiTableColumnFlags_WidthFixed,
+				Settings.ReflectionPropertyLabelColumnWidth);
 			ImGui::TableSetupColumn("##value", ImGuiTableColumnFlags_WidthStretch);
 
 			for (const FProperty* Property : Properties)
@@ -379,6 +418,16 @@ namespace FInlinePropertyRenderer
 
 				bAnyChanged |= !bReadOnly && bChanged;
 				ImGui::PopID();
+			}
+
+			float CurrentLabelWidth = 0.0f;
+			if (TryGetResizedColumnWidth(0, CurrentLabelWidth))
+			{
+				const float NewLabelWidth = ClampPropertyLabelColumnWidth(CurrentLabelWidth);
+				if (std::fabs(NewLabelWidth - Settings.ReflectionPropertyLabelColumnWidth) > 0.5f)
+				{
+					Settings.ReflectionPropertyLabelColumnWidth = NewLabelWidth;
+				}
 			}
 
 			ImGui::EndTable();
