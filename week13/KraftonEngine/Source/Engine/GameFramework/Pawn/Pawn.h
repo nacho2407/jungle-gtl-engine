@@ -79,11 +79,11 @@ public:
 	// true 면 마우스 따라 mesh 가 즉시 회전 (ThirdPerson 슈터 패턴).
 	// CharacterMovement 의 bOrientRotationToMovement 와 동시 true 면 Movement 가 마지막 우선 —
 	// 보통 둘 중 하나만 켜는 것이 일반적.
-	UPROPERTY(Edit, Save, Category="Pawn", DisplayName="Use Controller Rotation Pitch")
+	UPROPERTY(Edit, Save, Category="Header", DisplayName="Use Controller Rotation Pitch")
 	bool bUseControllerRotationPitch = true;
-	UPROPERTY(Edit, Save, Category="Pawn", DisplayName="Use Controller Rotation Yaw")
+	UPROPERTY(Edit, Save, Category="Header", DisplayName="Use Controller Rotation Yaw")
 	bool bUseControllerRotationYaw   = false;
-	UPROPERTY(Edit, Save, Category="Pawn", DisplayName="Use Controller Rotation Roll")
+	UPROPERTY(Edit, Save, Category="Header", DisplayName="Use Controller Rotation Roll")
 	bool bUseControllerRotationRoll  = false;
 
 protected:
@@ -91,7 +91,7 @@ protected:
 
 	APlayerController* Controller = nullptr;  // 직렬화 제외 — 런타임에 PC가 세팅
 
-	UPROPERTY(Edit, Save, Category="Pawn", DisplayName="Auto Possess Player")
+	UPROPERTY(Edit, Save, Category="Header", DisplayName="Auto Possess Player")
 	bool bAutoPossessPlayer = true;            // 직렬화 — GameMode가 시작 시 자동 Possess할 후보로 사용
 
 	// BeginPlay 가 자동 추가 — 자식의 SetupInputComponent 가 mapping/binding 등록.
