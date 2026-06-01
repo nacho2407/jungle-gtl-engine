@@ -297,6 +297,14 @@ void USkeletalMeshComponent::EnableRagdollPhysics()
     SetAllRagdollBodiesKinematic(false);
     SetAllRagdollBodiesGravityEnabled(true);
 
+	/*// Test용
+	SetAllBodiesSimulatePhysics(false);
+	SetAllBodiesPhysicsBlendWeight(0.0f);
+
+	SetAllBodiesBelowSimulatePhysics("Bip001 Spine", true, true);
+	SetAllBodiesBelowPhysicsBlendWeight("Bip001 Spine", 1.0f, true);
+	// 여기까지*/
+
     if (bCreateRagdollConstraints && !CreateRagdollConstraintsFromPhysicsAsset())
     {
         UE_LOG("EnableRagdollPhysics warning: no ragdoll constraints created");
