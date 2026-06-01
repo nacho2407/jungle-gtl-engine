@@ -4,6 +4,7 @@
 #include "Editor/UI/Asset/AssetEditorWidget.h"
 #include "Editor/UI/Asset/Physics/PhysicsAssetEditorTypes.h"
 #include "Editor/Viewport/Asset/PhysicsAssetEditorViewportClient.h"
+#include "Math/Transform.h"
 
 struct ImDrawList;
 struct ImVec2;
@@ -44,6 +45,10 @@ private:
 	void RenderShapeDetails(UPhysicsAsset* Asset, UBodySetup* Body);
 	void RenderConstraintDetails(UPhysicsAsset* Asset);
 	bool RegenerateBodies(UPhysicsAsset* Asset);
+	void TickPreviewSimulation(float DeltaTime);
+	void CapturePreviewSimulationStartPose();
+	void RestorePreviewSimulationStartPose();
+	void StopPreviewSimulation();
 	void HandleViewportSelectionClick();
 	void SelectBody(int32 BodyIndex);
 	void SelectShape(int32 BodyIndex, EPhysicsAssetShapeType ShapeType, int32 ShapeIndex);
@@ -78,4 +83,6 @@ private:
 	uint32 InstanceId = 0;
 
 	bool bPendingClose = false;
+	bool bPreviewSimulationActive = false;
+	TArray<FTransform> PreviewSimulationStartLocalPose;
 };
