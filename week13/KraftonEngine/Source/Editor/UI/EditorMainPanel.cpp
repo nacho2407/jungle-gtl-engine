@@ -85,6 +85,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ConsoleWidget.Initialize(InEditorEngine);
 	ControlWidget.Initialize(InEditorEngine);
 	PropertyWidget.Initialize(InEditorEngine);
+	ReflectionPropertyWidget.Initialize(InEditorEngine);
 	SceneWidget.Initialize(InEditorEngine);
 	StatWidget.Initialize(InEditorEngine);
 	ContentBrowserWidget.Initialize(InEditorEngine, InRenderer.GetFD3DDevice().GetDevice());
@@ -168,6 +169,9 @@ void FEditorMainPanel::Render(float DeltaTime)
 	{
 		SCOPE_STAT_CAT("PropertyWidget.Render", "5_UI");
 		PropertyWidget.Render(PanelContext);
+
+		SCOPE_STAT_CAT("ReflectionPropertyWidget.Render", "5_UI");
+		ReflectionPropertyWidget.Render(PanelContext);
 	}
 
 	if (!bHideEditorWindows && Settings.UI.bScene)

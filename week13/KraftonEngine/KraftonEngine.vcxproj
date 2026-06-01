@@ -451,6 +451,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorReflectionPropertyWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorSceneWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorStatWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorViewportWidget.cpp" />
@@ -459,6 +460,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Editor\UI\Util\EditorDragSource.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorFileUtils.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\BasicReflectionPropertyRenderer.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\InlinePropertyRenderer.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\NotificationToast.cpp" />
@@ -855,11 +857,14 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorReflectionPropertyWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorSceneWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorStatWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorViewportWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.h" />
     <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h" />
+    <ClInclude Include="Source\Editor\UI\Util\BasicReflectionPropertyRenderer.h" />
+    <ClInclude Include="Source\Editor\UI\Util\DetailPropertyRenderer.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorDragSource.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorFileUtils.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h" />

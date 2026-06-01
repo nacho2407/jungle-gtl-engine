@@ -5,6 +5,7 @@
 #include "Editor/UI/Panel/EditorPanelWidget.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/UI/Panel/EditorPropertyWidget.h"
+#include "Editor/UI/Panel/EditorReflectionPropertyWidget.h"
 #include "Editor/UI/Panel/EditorSceneWidget.h"
 #include "Editor/UI/Panel/EditorStatWidget.h"
 #include "Editor/UI/Debug/EditorShadowMapDebugWidget.h"
@@ -59,6 +60,7 @@ private:
 	FEditorConsoleWidget ConsoleWidget;
 	FEditorControlWidget ControlWidget;
 	FEditorPropertyWidget PropertyWidget;
+	FEditorReflectionPropertyWidget ReflectionPropertyWidget;
 	FEditorSceneWidget SceneWidget;
 	FEditorStatWidget StatWidget;
 	FEditorContentBrowserWidget ContentBrowserWidget;

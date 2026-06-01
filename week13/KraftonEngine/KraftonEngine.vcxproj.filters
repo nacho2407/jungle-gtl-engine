@@ -944,6 +944,9 @@
     <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorReflectionPropertyWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Panel\EditorSceneWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
@@ -966,6 +969,9 @@
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Util\BasicReflectionPropertyRenderer.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp">
@@ -2150,6 +2156,9 @@
     <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyWidget.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorReflectionPropertyWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorSceneWidget.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
@@ -2172,6 +2181,9 @@
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Util\BasicReflectionPropertyRenderer.h">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h">
