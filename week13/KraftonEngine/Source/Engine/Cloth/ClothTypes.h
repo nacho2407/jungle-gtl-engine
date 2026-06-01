@@ -44,7 +44,7 @@ struct FClothConfig
 	int32 NumParticlesX = 20;
 	int32 NumParticlesY = 20;
 	float ParticleSpacing = 10.0f;
-	float BoundsMargin = 5.0f;
+	float BoundsMargin = 1.0f;
 };
 
 /**
