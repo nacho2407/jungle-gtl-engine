@@ -7,6 +7,7 @@
 #include "Core/Property/SoftObjectProperty.h"
 #include "Core/Property/StructProperty.h"
 #include "Core/Types/PropertyTypes.h"
+#include "Asset/AssetRegistry.h"
 #include "Math/Rotator.h"
 #include "Object/FName.h"
 #include "Object/Object.h"
@@ -43,6 +44,13 @@ namespace
 		return std::strcmp(A, B) == 0;
 	}
 
+	const FString* FindMetadataValue(const FPropertyValue& Value, const FString& Key)
+	{
+		const TMap<FString, FString>& Metadata = Value.GetMetadata();
+		auto It = Metadata.find(Key);
+		return It != Metadata.end() ? &It->second : nullptr;
+	}
+
 	const char* GetPropertyName(const FProperty* Property)
 	{
 		return Property && Property->Name ? Property->Name : "";
@@ -74,6 +82,147 @@ namespace
 	bool IsPropertyDisplayName(const FProperty* Property, const char* DisplayName)
 	{
 		return StringEquals(GetPropertyDisplayName(Property), DisplayName);
+	}
+
+	FString NormalizeAssetTypeName(const FString& AssetType)
+	{
+		if (AssetType == "StaticMesh")
+		{
+			return "UStaticMesh";
+		}
+		if (AssetType == "SkeletalMesh")
+		{
+			return "USkeletalMesh";
+		}
+		if (AssetType == "UMaterial")
+		{
+			return "Material";
+		}
+		return AssetType;
+	}
+
+	FString GetAssetPickerType(const FPropertyValue& Value)
+	{
+		if (const FSoftObjectProperty* SoftProperty = Value.Property ? Value.Property->AsSoftObjectProperty() : nullptr)
+		{
+			const char* AssetType = SoftProperty->GetAssetType();
+			if (AssetType && *AssetType)
+			{
+				return NormalizeAssetTypeName(AssetType);
+			}
+
+			const char* AllowedClass = SoftProperty->GetAllowedClass();
+			if (AllowedClass && *AllowedClass)
+			{
+				return NormalizeAssetTypeName(AllowedClass);
+			}
+		}
+
+		if (const FString* AssetType = FindMetadataValue(Value, "assettype"))
+		{
+			return NormalizeAssetTypeName(*AssetType);
+		}
+		if (const FString* AllowedClass = FindMetadataValue(Value, "allowedclass"))
+		{
+			return NormalizeAssetTypeName(*AllowedClass);
+		}
+		return FString();
+	}
+
+	bool IsSupportedAssetPickerType(const FString& AssetType)
+	{
+		return AssetType == "UStaticMesh" ||
+			AssetType == "USkeletalMesh" ||
+			AssetType == "Material" ||
+			AssetType == "UAnimSequence" ||
+			AssetType == "UAnimGraphAsset" ||
+			AssetType == "UParticleSystem" ||
+			AssetType == "UPhysicsAsset" ||
+			AssetType == "ULuaBlueprintAsset" ||
+			AssetType == "LuaAnimScript" ||
+			AssetType == "USkeleton";
+	}
+
+	FString GetSoftObjectPath(const FPropertyValue& Value, void* ValuePtr)
+	{
+		const FSoftObjectProperty* SoftProperty = Value.Property ? Value.Property->AsSoftObjectProperty() : nullptr;
+		return SoftProperty
+			? SoftProperty->GetPathFromValuePtr(ValuePtr)
+			: *static_cast<FString*>(ValuePtr);
+	}
+
+	void SetSoftObjectPath(FPropertyValue& Value, void* ValuePtr, const FString& Path)
+	{
+		const FSoftObjectProperty* SoftProperty = Value.Property ? Value.Property->AsSoftObjectProperty() : nullptr;
+		if (SoftProperty)
+		{
+			SoftProperty->SetPathFromValuePtr(ValuePtr, Path);
+		}
+		else
+		{
+			*static_cast<FString*>(ValuePtr) = Path;
+		}
+	}
+
+	bool RenderSoftObjectPathInput(FPropertyValue& Value, void* ValuePtr)
+	{
+		FString CurrentPath = GetSoftObjectPath(Value, ValuePtr);
+		char Buffer[512];
+		strncpy_s(Buffer, sizeof(Buffer), CurrentPath.c_str(), _TRUNCATE);
+		if (ImGui::InputText("##Value", Buffer, sizeof(Buffer)))
+		{
+			SetSoftObjectPath(Value, ValuePtr, Buffer);
+			return true;
+		}
+		return false;
+	}
+
+	bool RenderSoftObjectAssetPicker(FPropertyValue& Value, void* ValuePtr)
+	{
+		const FString AssetType = GetAssetPickerType(Value);
+		if (!IsSupportedAssetPickerType(AssetType))
+		{
+			return RenderSoftObjectPathInput(Value, ValuePtr);
+		}
+
+		const TArray<FAssetListItem>& Assets = FAssetRegistry::ListByTypeName(AssetType.c_str());
+		if (Assets.empty())
+		{
+			return RenderSoftObjectPathInput(Value, ValuePtr);
+		}
+
+		const FString CurrentPath = GetSoftObjectPath(Value, ValuePtr);
+		const FString Preview = (CurrentPath.empty() || CurrentPath == "None") ? "None" : CurrentPath;
+		bool bChanged = false;
+		if (ImGui::BeginCombo("##Value", Preview.c_str()))
+		{
+			const bool bSelectedNone = CurrentPath.empty() || CurrentPath == "None";
+			if (ImGui::Selectable("None", bSelectedNone))
+			{
+				SetSoftObjectPath(Value, ValuePtr, "None");
+				bChanged = true;
+			}
+			if (bSelectedNone)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			for (const FAssetListItem& Item : Assets)
+			{
+				const bool bSelected = CurrentPath == Item.FullPath;
+				if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+				{
+					SetSoftObjectPath(Value, ValuePtr, Item.FullPath);
+					bChanged = true;
+				}
+				if (bSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+		return bChanged;
 	}
 
 	FString AppendPath(const FString& Prefix, const char* Name)
@@ -1040,24 +1189,7 @@ bool FBasicReflectionPropertyRenderer::RenderLeafValue(FPropertyValue& Value, bo
 	}
 	case EPropertyType::SoftObjectRef:
 	{
-		const FSoftObjectProperty* SoftProperty = Value.Property ? Value.Property->AsSoftObjectProperty() : nullptr;
-		FString CurrentPath = SoftProperty
-			? SoftProperty->GetPathFromValuePtr(ValuePtr)
-			: *static_cast<FString*>(ValuePtr);
-		char Buffer[512];
-		strncpy_s(Buffer, sizeof(Buffer), CurrentPath.c_str(), _TRUNCATE);
-		if (ImGui::InputText("##Value", Buffer, sizeof(Buffer)))
-		{
-			if (SoftProperty)
-			{
-				SoftProperty->SetPathFromValuePtr(ValuePtr, Buffer);
-			}
-			else
-			{
-				*static_cast<FString*>(ValuePtr) = Buffer;
-			}
-			bChanged = true;
-		}
+		bChanged = RenderSoftObjectAssetPicker(Value, ValuePtr);
 		break;
 	}
 	case EPropertyType::ObjectRef:
