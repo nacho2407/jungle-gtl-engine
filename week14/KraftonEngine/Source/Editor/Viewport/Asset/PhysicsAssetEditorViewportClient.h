@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Viewport/EditorPreviewViewportClient.h"
 #include "Viewport/ViewportClient.h"

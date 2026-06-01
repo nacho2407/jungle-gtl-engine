@@ -360,6 +360,43 @@ namespace
 		return Values[Index];
 	}
 
+	float MeasurePointCloudSize(const TArray<FVector>& Pts)
+	{
+		if (Pts.empty())
+		{
+			return 0.0f;
+		}
+
+		FVector Min = Pts[0];
+		FVector Max = Pts[0];
+		for (const FVector& P : Pts)
+		{
+			Min.X = std::min(Min.X, P.X);
+			Min.Y = std::min(Min.Y, P.Y);
+			Min.Z = std::min(Min.Z, P.Z);
+			Max.X = std::max(Max.X, P.X);
+			Max.Y = std::max(Max.Y, P.Y);
+			Max.Z = std::max(Max.Z, P.Z);
+		}
+
+		const FVector Size = Max - Min;
+		return Max3(Size.X, Size.Y, Size.Z);
+	}
+
+	void AppendTransformedVerts(TArray<FVector>& OutVerts, const TArray<FVector>& InVerts, const FMatrix& Transform)
+	{
+		if (InVerts.empty())
+		{
+			return;
+		}
+
+		OutVerts.reserve(OutVerts.size() + InVerts.size());
+		for (const FVector& P : InVerts)
+		{
+			OutVerts.push_back(Transform.TransformPositionWithW(P));
+		}
+	}
+
 	void AddAxisAlignedCapsule(UBodySetup& Body, const FVector& Center, const FVector& Extents, float MinExtent)
 	{
 		int32 Axis = 0;
@@ -549,13 +586,81 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 	const float EffectiveMinBoneSize = Params.MinBoneSize > 0.0f
 		? std::min(Params.MinBoneSize, std::max(ModelSize * 0.08f, MinExtent * 2.0f))
 		: 0.0f;
-	const bool bUseHumanoidBodyFilter = !Params.bCreateBodyForAllBones && LooksLikeHumanoidSkeleton(Mesh);
+	const bool bUseHumanoidBodyFilter = false;
+
+	TArray<TArray<FVector>> BodyLocalVerts = BoneLocalVerts;
+	std::vector<uint8> bMergedIntoParent(static_cast<size_t>(NumBones), 0);
+	if (!Params.bCreateBodyForAllBones && EffectiveMinBoneSize > 0.0f)
+	{
+		for (int32 BoneIndex = NumBones - 1; BoneIndex >= 0; --BoneIndex)
+		{
+			const float MergedSize = MeasurePointCloudSize(BodyLocalVerts[BoneIndex]);
+			if (MergedSize <= 1.e-4f || MergedSize >= EffectiveMinBoneSize)
+			{
+				continue;
+			}
+
+			const int32 ParentIndex = Mesh.Bones[BoneIndex].ParentIndex;
+			if (ParentIndex < 0 || ParentIndex >= NumBones)
+			{
+				continue;
+			}
+
+			const FMatrix BoneLocalToParentLocal =
+				Mesh.Bones[BoneIndex].InverseBindPoseMatrix.GetInverse() * Mesh.Bones[ParentIndex].InverseBindPoseMatrix;
+			AppendTransformedVerts(BodyLocalVerts[ParentIndex], BodyLocalVerts[BoneIndex], BoneLocalToParentLocal);
+			BodyLocalVerts[BoneIndex].clear();
+			bMergedIntoParent[static_cast<size_t>(BoneIndex)] = 1;
+		}
+	}
+
+	TArray<float> BodyCandidateSizes;
+	BodyCandidateSizes.resize(NumBones);
+	for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+	{
+		BodyCandidateSizes[BoneIndex] = MeasurePointCloudSize(BodyLocalVerts[BoneIndex]);
+	}
+
+	std::vector<uint8> bForceMakeBone(static_cast<size_t>(NumBones), 0);
+	if (!Params.bCreateBodyForAllBones)
+	{
+		int32 FirstParentBoneIndex = -1;
+		for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+		{
+			if (bMergedIntoParent[static_cast<size_t>(BoneIndex)]
+				|| BodyCandidateSizes[BoneIndex] <= EffectiveMinBoneSize)
+			{
+				continue;
+			}
+
+			const int32 ParentBoneIndex = Mesh.Bones[BoneIndex].ParentIndex;
+			if (ParentBoneIndex < 0)
+			{
+				break;
+			}
+			if (FirstParentBoneIndex < 0)
+			{
+				FirstParentBoneIndex = ParentBoneIndex;
+				continue;
+			}
+			if (ParentBoneIndex == FirstParentBoneIndex && ParentBoneIndex < NumBones)
+			{
+				bForceMakeBone[static_cast<size_t>(ParentBoneIndex)] = 1;
+				break;
+			}
+		}
+	}
 
 	for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
 	{
-		const TArray<FVector>& Pts = BoneLocalVerts[BoneIndex];
+		const TArray<FVector>& Pts = BodyLocalVerts[BoneIndex];
+		const bool bForcedBody = !Params.bCreateBodyForAllBones && bForceMakeBone[static_cast<size_t>(BoneIndex)] != 0;
 
-		if (IsLeadingSingleChildHelperBone(Mesh, BoneIndex))
+		if (!Params.bCreateBodyForAllBones && IsLeadingSingleChildHelperBone(Mesh, BoneIndex))
+		{
+			continue;
+		}
+		if (!Params.bCreateBodyForAllBones && bMergedIntoParent[static_cast<size_t>(BoneIndex)] && !bForcedBody)
 		{
 			continue;
 		}
@@ -578,7 +683,7 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 			&& !bHasUsableBoneSegment
 			&& FindParentSegmentLocal(Mesh, ReferenceGlobals, BoneIndex, ParentAwayAxis, ParentSegmentLength);
 
-		if (!bHasEnoughVerts && !Params.bCreateBodyForAllBones && !bHasUsableBoneSegment)
+		if (!bHasEnoughVerts && !Params.bCreateBodyForAllBones && !bHasUsableBoneSegment && !bForcedBody)
 		{
 			continue;
 		}
@@ -618,7 +723,7 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 			? std::max(Extents.X, std::max(Extents.Y, Extents.Z)) * 2.0f
 			: BoneSegmentLength;
 
-		if (LongestDim < EffectiveMinBoneSize && !Params.bCreateBodyForAllBones)
+		if (LongestDim < EffectiveMinBoneSize && !Params.bCreateBodyForAllBones && !bForcedBody)
 		{
 			continue;
 		}
@@ -689,7 +794,7 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 
 		auto MeasureBodyCandidate = [&](int32 BoneIndex, FVector* OutBoneAxis, float* OutBoneSegmentLength, int32* OutDirectChildCount) -> float
 		{
-			const TArray<FVector>& Pts = BoneLocalVerts[BoneIndex];
+			const TArray<FVector>& Pts = BodyLocalVerts[BoneIndex];
 			float Score = 0.0f;
 
 			if (Pts.size() >= 4)
@@ -746,7 +851,7 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 				}
 
 				const FString NormalizedBoneName = NormalizeBoneName(Mesh.Bones[BoneIndex].Name);
-				if (!bAllowDetailBones && IsHumanoidDetailBoneName(NormalizedBoneName))
+				if (bUseHumanoidBodyFilter && !bAllowDetailBones && IsHumanoidDetailBoneName(NormalizedBoneName))
 				{
 					continue;
 				}
@@ -820,7 +925,7 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 				return;
 			}
 
-			const TArray<FVector>& Pts = BoneLocalVerts[BoneIndex];
+			const TArray<FVector>& Pts = BodyLocalVerts[BoneIndex];
 			FVector BoneAxis = FVector::ZAxisVector;
 			float BoneSegmentLength = 0.0f;
 			const int32 DirectChildCount = Params.bAutoOrientToBone
