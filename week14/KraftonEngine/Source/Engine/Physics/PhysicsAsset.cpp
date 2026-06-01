@@ -46,6 +46,23 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 			Constraint->Serialize(Ar);
 		}
 	}
+
+	// Trailing extension section. Older physics assets end before this point
+	if (Ar.IsSaving())
+	{
+		uint32 ExtVersion = 1;
+		Ar << ExtVersion;
+		Ar << PreviewSkeletalMeshPath;
+	}
+	else if (!Ar.AtEnd())
+	{
+		uint32 ExtVersion = 0;
+		Ar << ExtVersion;
+		if (ExtVersion >= 1)
+		{
+			Ar << PreviewSkeletalMeshPath;
+		}
+	}
 }
 
 void UPhysicsAsset::AddReferencedObjects(FReferenceCollector& Collector)

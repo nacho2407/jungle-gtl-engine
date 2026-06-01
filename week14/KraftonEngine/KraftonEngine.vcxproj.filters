@@ -73,6 +73,9 @@
     <Filter Include="Source\Editor\UI\Asset\Particle">
       <UniqueIdentifier>{ebf11781-61db-1727-e031-70fd890518c6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Asset\Physics">
+      <UniqueIdentifier>{2fe635d6-4d72-4f21-8c25-e4fc47dca7c2}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
     </Filter>
@@ -773,6 +776,9 @@
     <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Particle</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\Physics\PhysicsAssetEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\Physics</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
     </ClCompile>
@@ -858,6 +864,9 @@
       <Filter>Source\Editor\Viewport\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.cpp">
+      <Filter>Source\Editor\Viewport\Asset</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Viewport\Asset\PhysicsAssetEditorViewportClient.cpp">
       <Filter>Source\Editor\Viewport\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.cpp">
@@ -1837,6 +1846,12 @@
     <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Particle</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Physics\PhysicsAssetEditorTypes.h">
+      <Filter>Source\Editor\UI\Asset\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\Physics\PhysicsAssetEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\Physics</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
     </ClInclude>
@@ -1934,6 +1949,9 @@
       <Filter>Source\Editor\Viewport\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.h">
+      <Filter>Source\Editor\Viewport\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Viewport\Asset\PhysicsAssetEditorViewportClient.h">
       <Filter>Source\Editor\Viewport\Asset</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.h">

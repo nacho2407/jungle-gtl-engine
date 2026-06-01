@@ -196,6 +196,7 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 
 	UPhysicsAsset* NewAsset = UObjectManager::Get().CreateObject<UPhysicsAsset>();
 	NewAsset->SetSourcePath(FPaths::ToUtf8(AssetPath.wstring()));
+	NewAsset->SetPreviewSkeletalMeshPath(SourceMesh->GetAssetPathFileName());
 
 	GeneratePhysicsAssetBodies(*NewAsset, *MeshAsset, Params);
 

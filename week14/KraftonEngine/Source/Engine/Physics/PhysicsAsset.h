@@ -17,12 +17,14 @@ public:
 
 	void SetSourcePath(const FString& InPath) {SourcePath = InPath;}
 	const FString& GetSourcePath() const {return SourcePath;}
+
+	void SetPreviewSkeletalMeshPath(const FString& InPath) { PreviewSkeletalMeshPath = InPath; }
+	const FString& GetPreviewSkeletalMeshPath() const { return PreviewSkeletalMeshPath; }
 	
 	void Serialize(FArchive& Ar) override;
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	
 	const TArray<UBodySetup*>& GetBodySetups() const {return BodySetups;}
-	TArray<UBodySetup*>& GetMutableBodySetups() { return BodySetups; }
 	
 	int32 FindBodyIndex(FName BoneName) const;
 	UBodySetup* FindBodySetup(FName BoneName) const;
@@ -32,7 +34,6 @@ public:
 	bool RemoveBodySetupAt(int32 BodyIndex);
 	
 	const TArray<UPhysicsConstraintTemplate*>& GetConstraintTemplates() const {return ConstraintTemplates;}
-	TArray<UPhysicsConstraintTemplate*>& GetMutableConstraintTemplates() { return ConstraintTemplates; }
 	int32 FindConstraintIndex(FName ParentBone, FName ChildBone) const;
 	UPhysicsConstraintTemplate* CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode);
 	bool RemoveConstraintAt(int32 ConstraintIndex);
@@ -43,4 +44,5 @@ private:
 	TArray<UBodySetup*> BodySetups;
 	TArray<UPhysicsConstraintTemplate*> ConstraintTemplates;
 	FString SourcePath;
+	FString PreviewSkeletalMeshPath = "None";
 };

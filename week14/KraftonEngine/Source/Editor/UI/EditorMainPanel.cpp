@@ -26,6 +26,7 @@
 #include "Editor/UI/Asset/Animation/AnimGraphEditorWidget.h"
 #include "Editor/UI/Asset/Particle/ParticleSystemEditorWidget.h"
 #include "Editor/UI/Asset/Material/MaterialEditorWidget.h"
+#include "Editor/UI/Asset/Physics/PhysicsAssetEditorWidget.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -100,6 +101,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	AssetEditorManager.RegisterEditor<FAnimGraphEditorWidget>();
 	AssetEditorManager.RegisterEditor<FParticleSystemEditorWidget>();
 	AssetEditorManager.RegisterEditor<FMaterialEditorWidget>();
+	AssetEditorManager.RegisterEditor<FPhysicsAssetEditorWidget>();
 }
 
 void FEditorMainPanel::Release()
