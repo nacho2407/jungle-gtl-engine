@@ -4,6 +4,8 @@
 #include "Engine/Math/Transform.h"
 #include "Engine/PhysicsEngine/ConvexElem.h"
 
+class UBodySetup;
+
 namespace FCollisionDebugGeometry
 {
 	void AddWireSphere(TArray<FWireLine>& OutLines, const FVector& Center, float Radius);
@@ -15,4 +17,15 @@ namespace FCollisionDebugGeometry
 	void AddSolidBox(FPhysicsDebugSolidMesh& OutMesh, const FTransform& WorldTM, const FVector& HalfExtent, const FVector4& Color);
 	void AddSolidCapsule(FPhysicsDebugSolidMesh& OutMesh, const FTransform& WorldTM, float Radius, float Length, const FVector4& Color);
 	void AddSolidConvex(FPhysicsDebugSolidMesh& OutMesh, const FKConvexElem& ConvexElem, const FTransform& WorldTM, const FVector4& Color);
+}
+
+namespace FPhysicsBodyDebugGeometry
+{
+	void AddBodySetupWireLines(
+		TArray<FPhysicsDebugLine>& OutLines,
+		const UBodySetup* BodySetup,
+		FTransform BodyWorldTM,
+		const FVector& Scale3D,
+		bool bUseUniformScale,
+		const FVector4& Color);
 }

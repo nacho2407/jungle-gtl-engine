@@ -4,21 +4,26 @@
 #include "ShapeElem.h"
 #include "Core/Types/EngineTypes.h"
 
+#include "Source/Engine/PhysicsEngine/SphylElem.generated.h"
+
 class FMeshElementCollector;
 
+USTRUCT()
 struct FKSphylElem : public FKShapeElem
 {
+	GENERATED_BODY()
 
 
-
+	UPROPERTY(Edit, Save, Category="Capsule", DisplayName="Center", Type=Vec3, Speed=0.01f)
 	FVector Center;
 
-
+	UPROPERTY(Edit, Save, Category="Capsule", DisplayName="Rotation", Type=Rotator, Speed=0.1f)
 	FRotator Rotation;
 
+	UPROPERTY(Edit, Save, Category="Capsule", DisplayName="Radius", Min=0.001f, Speed=0.01f)
 	float Radius;
 
-
+	UPROPERTY(Edit, Save, Category="Capsule", DisplayName="Length", Min=0.001f, Speed=0.01f)
 	float Length;
 
 	FKSphylElem()

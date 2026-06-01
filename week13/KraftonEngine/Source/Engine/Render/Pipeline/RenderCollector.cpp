@@ -118,11 +118,13 @@ static bool ShouldCollectProxyForView(const FPrimitiveSceneProxy* Proxy, const F
 		return false;
 
 	if (!Frame.RenderOptions.ShowFlags.bStaticMesh &&
-		Proxy->HasProxyFlag(EPrimitiveProxyFlags::StaticMesh))
+		Proxy->HasProxyFlag(EPrimitiveProxyFlags::StaticMesh) &&
+		!Frame.RenderOptions.ShowFlags.bPhysicsBody)
 		return false;
 
 	if (!Frame.RenderOptions.ShowFlags.bSkeletalMesh &&
-		Proxy->HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh))
+		Proxy->HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh) &&
+		!Frame.RenderOptions.ShowFlags.bPhysicsBody)
 		return false;
 
 	if (!Frame.RenderOptions.ShowFlags.bParticle &&
