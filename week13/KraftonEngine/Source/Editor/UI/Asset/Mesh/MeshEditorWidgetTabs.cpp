@@ -119,6 +119,33 @@ namespace
 		return Label;
 	}
 
+	bool RenderAddPhysicsBodyShapeMenu(UBodySetup* BodySetup)
+	{
+		if (!BodySetup)
+		{
+			return false;
+		}
+
+		FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
+		if (ImGui::MenuItem("Add Sphere"))
+		{
+			AggGeom.SphereElems.push_back(FKSphereElem());
+			return true;
+		}
+		if (ImGui::MenuItem("Add Box"))
+		{
+			AggGeom.BoxElems.push_back(FKBoxElem());
+			return true;
+		}
+		if (ImGui::MenuItem("Add Capsule"))
+		{
+			AggGeom.SphylElems.push_back(FKSphylElem());
+			return true;
+		}
+
+		return false;
+	}
+
 	bool HasVectorChanged(const FVector& Before, const FVector& After)
 	{
 		return FVector::Distance(Before, After) > 1.0e-4f;
@@ -1576,6 +1603,23 @@ bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyTree(const FSkeletalMesh*
 		SelectedPhysicsBodyIndex = BodyIndex;
 		SelectedPhysicsConstraintIndex = -1;
 		SyncDebugComponent(PhysicsAsset);
+	}
+
+	if (ImGui::BeginPopupContextItem())
+	{
+		TArray<UBodySetup*>& MutableBodies = PhysicsAsset->GetBodySetupsMutable();
+		UBodySetup* MutableBody = (BodyIndex >= 0 && BodyIndex < static_cast<int32>(MutableBodies.size()))
+			? MutableBodies[BodyIndex]
+			: nullptr;
+		if (RenderAddPhysicsBodyShapeMenu(MutableBody))
+		{
+			SelectedPhysicsBodyIndex = BodyIndex;
+			SelectedPhysicsConstraintIndex = -1;
+			SavePhysicsAssetChange("PhysicsAsset body shape add warning");
+			MarkDirty();
+			SyncDebugComponent(PhysicsAsset);
+		}
+		ImGui::EndPopup();
 	}
 
 	if (bOpen && bHasVisibleChildren)
