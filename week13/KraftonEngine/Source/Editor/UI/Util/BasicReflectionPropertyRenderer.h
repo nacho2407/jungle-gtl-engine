@@ -11,6 +11,8 @@
 // 8. ObjectRef는 내부 property로 들어가지 않고 참조 슬롯으로만 그린다.
 // 9. Mesh / Material / PhysicsAsset picker, import, script edit 같은 특수 UI는 넣지 않는다.
 // 10. 멀티 select에서는 선언 owner class + property path + EPropertyType이 같은 property만 렌더링한다.
+// 11. Header category는 항상 최상단에 고정 표시하고 일반 category에서 중복 렌더링하지 않는다.
+// 12. Transform category는 Header 다음 최상단에 Location, Rotation, Scale 순서로 고정 표시하고 일반 category에서 중복 렌더링하지 않는다.
 
 #include "Core/Types/CoreTypes.h"
 #include "Editor/Selection/SelectionManager.h"
@@ -30,6 +32,26 @@ private:
 		const FSelectionDetailTarget& PrimaryTarget,
 		const TArray<FSelectionDetailTarget>& Targets,
 		TArray<FCategoryGroup>& OutCategories) const;
+	bool BuildCompatibleValues(
+		const FProperty* PrimaryProperty,
+		const FSelectionDetailTarget& PrimaryTarget,
+		const TArray<FSelectionDetailTarget>& Targets,
+		TArray<FPropertyValue>& OutValues) const;
+	bool RenderSpecialCategories(
+		const FSelectionDetailTarget& PrimaryTarget,
+		const TArray<FSelectionDetailTarget>& Targets,
+		const char* TableId,
+		bool& bOutRenderedAny);
+	bool RenderHeaderCategory(
+		const FSelectionDetailTarget& PrimaryTarget,
+		const TArray<FSelectionDetailTarget>& Targets,
+		const char* TableId,
+		bool& bOutRenderedAny);
+	bool RenderTransformCategory(
+		const FSelectionDetailTarget& PrimaryTarget,
+		const TArray<FSelectionDetailTarget>& Targets,
+		const char* TableId,
+		bool& bOutRenderedAny);
 	bool RenderCategory(
 		const FCategoryGroup& Category,
 		const FSelectionDetailTarget& PrimaryTarget,

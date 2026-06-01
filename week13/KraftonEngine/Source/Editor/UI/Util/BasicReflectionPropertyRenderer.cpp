@@ -1,4 +1,4 @@
-#include "Editor/UI/Util/BasicReflectionPropertyRenderer.h"
+﻿#include "Editor/UI/Util/BasicReflectionPropertyRenderer.h"
 
 #include "Core/Property/ArrayProperty.h"
 #include "Core/Property/ClassProperty.h"
@@ -52,6 +52,28 @@ namespace
 	{
 		const char* DisplayName = Value.GetDisplayName();
 		return DisplayName && *DisplayName ? DisplayName : Value.GetName();
+	}
+
+	const char* GetPropertyDisplayName(const FProperty* Property)
+	{
+		return Property && Property->DisplayName && *Property->DisplayName
+			? Property->DisplayName
+			: GetPropertyName(Property);
+	}
+
+	bool IsPropertyCategory(const FProperty* Property, const char* Category)
+	{
+		return Property && StringEquals(Property->Category, Category);
+	}
+
+	bool IsSpecialTopLevelCategory(const FProperty* Property)
+	{
+		return IsPropertyCategory(Property, "Header") || IsPropertyCategory(Property, "Transform");
+	}
+
+	bool IsPropertyDisplayName(const FProperty* Property, const char* DisplayName)
+	{
+		return StringEquals(GetPropertyDisplayName(Property), DisplayName);
 	}
 
 	FString AppendPath(const FString& Prefix, const char* Name)
@@ -292,6 +314,23 @@ namespace
 	{
 		return Value.Property && (Value.Property->Flags & PF_ReadOnly) != 0;
 	}
+
+	bool RenderFixedCategoryTableBegin(const FString& TableId)
+	{
+		const ImGuiTableFlags TableFlags =
+			ImGuiTableFlags_BordersInnerV |
+			ImGuiTableFlags_Resizable |
+			ImGuiTableFlags_SizingStretchProp;
+
+		if (!ImGui::BeginTable(TableId.c_str(), 2, TableFlags))
+		{
+			return false;
+		}
+
+		ImGui::TableSetupColumn("0", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+		ImGui::TableSetupColumn("1", ImGuiTableColumnFlags_WidthStretch);
+		return true;
+	}
 }
 
 bool FBasicReflectionPropertyRenderer::Render(const TArray<FSelectionDetailTarget>& Targets, const char* TableId)
@@ -318,13 +357,20 @@ bool FBasicReflectionPropertyRenderer::Render(const TArray<FSelectionDetailTarge
 
 	TArray<FCategoryGroup> Categories;
 	CollectTopLevelCategories(ValidTargets.front(), ValidTargets, Categories);
-	if (Categories.empty())
+	bool bRenderedSpecialCategories = false;
+	bool bAnyChanged = RenderSpecialCategories(
+		ValidTargets.front(),
+		ValidTargets,
+		TableId,
+		bRenderedSpecialCategories
+	);
+
+	if (Categories.empty() && !bRenderedSpecialCategories)
 	{
 		ImGui::TextDisabled("(no editable properties)");
 		return false;
 	}
 
-	bool bAnyChanged = false;
 	for (const FCategoryGroup& Category : Categories)
 	{
 		const char* CategoryName = Category.Category.empty() ? "Default" : Category.Category.c_str();
@@ -355,6 +401,10 @@ void FBasicReflectionPropertyRenderer::CollectTopLevelCategories(
 	PrimaryTarget.StructType->GetPropertyRefs(Properties);
 	for (const FProperty* Property : Properties)
 	{
+		if (IsSpecialTopLevelCategory(Property))
+		{
+			continue;
+		}
 		if (!IsEditorVisibleProperty(Property, PrimaryTarget.ObjectPtr) ||
 			!Property->GetValuePtrFor(PrimaryTarget.ContainerPtr))
 		{
@@ -397,6 +447,215 @@ void FBasicReflectionPropertyRenderer::CollectTopLevelCategories(
 			CategoryIt->Properties.push_back(Property);
 		}
 	}
+}
+
+bool FBasicReflectionPropertyRenderer::BuildCompatibleValues(
+	const FProperty* PrimaryProperty,
+	const FSelectionDetailTarget& PrimaryTarget,
+	const TArray<FSelectionDetailTarget>& Targets,
+	TArray<FPropertyValue>& OutValues) const
+{
+	OutValues.clear();
+	if (!PrimaryProperty || !PrimaryTarget.IsValidTarget() || !PrimaryProperty->GetValuePtrFor(PrimaryTarget.ContainerPtr))
+	{
+		return false;
+	}
+
+	OutValues.push_back(PrimaryProperty->ToValue(PrimaryTarget.ContainerPtr, PrimaryTarget.ObjectPtr));
+	for (size_t TargetIndex = 1; TargetIndex < Targets.size(); ++TargetIndex)
+	{
+		const FSelectionDetailTarget& Target = Targets[TargetIndex];
+		const FProperty* CompatibleProperty = FindCompatibleProperty(Target.StructType, PrimaryProperty, Target.ObjectPtr);
+		if (!CompatibleProperty || !CompatibleProperty->GetValuePtrFor(Target.ContainerPtr))
+		{
+			OutValues.clear();
+			return false;
+		}
+		OutValues.push_back(CompatibleProperty->ToValue(Target.ContainerPtr, Target.ObjectPtr));
+	}
+	return true;
+}
+
+bool FBasicReflectionPropertyRenderer::RenderSpecialCategories(
+	const FSelectionDetailTarget& PrimaryTarget,
+	const TArray<FSelectionDetailTarget>& Targets,
+	const char* TableId,
+	bool& bOutRenderedAny)
+{
+	bOutRenderedAny = false;
+
+	bool bAnyChanged = false;
+	bool bRenderedHeader = false;
+	bAnyChanged |= RenderHeaderCategory(PrimaryTarget, Targets, TableId, bRenderedHeader);
+	if (bRenderedHeader)
+	{
+		bOutRenderedAny = true;
+		ImGui::Separator();
+	}
+
+	bool bRenderedTransform = false;
+	bAnyChanged |= RenderTransformCategory(PrimaryTarget, Targets, TableId, bRenderedTransform);
+	if (bRenderedTransform)
+	{
+		bOutRenderedAny = true;
+	}
+	return bAnyChanged;
+}
+
+bool FBasicReflectionPropertyRenderer::RenderHeaderCategory(
+	const FSelectionDetailTarget& PrimaryTarget,
+	const TArray<FSelectionDetailTarget>& Targets,
+	const char* TableId,
+	bool& bOutRenderedAny)
+{
+	bOutRenderedAny = false;
+	if (!PrimaryTarget.IsValidTarget())
+	{
+		return false;
+	}
+
+	TArray<const FProperty*> HeaderProperties;
+	TArray<const FProperty*> Properties;
+	PrimaryTarget.StructType->GetPropertyRefs(Properties);
+	for (const FProperty* Property : Properties)
+	{
+		if (!IsPropertyCategory(Property, "Header") ||
+			!IsEditorVisibleProperty(Property, PrimaryTarget.ObjectPtr) ||
+			!Property->GetValuePtrFor(PrimaryTarget.ContainerPtr))
+		{
+			continue;
+		}
+		HeaderProperties.push_back(Property);
+	}
+
+	if (HeaderProperties.empty())
+	{
+		return false;
+	}
+
+	const FString HeaderTableId = FString(TableId ? TableId : "##BasicReflectionProperties") + "Header";
+	if (!RenderFixedCategoryTableBegin(HeaderTableId))
+	{
+		return false;
+	}
+
+	bool bAnyChanged = false;
+	for (const FProperty* Property : HeaderProperties)
+	{
+		TArray<FPropertyValue> CompatibleValues;
+		if (!BuildCompatibleValues(Property, PrimaryTarget, Targets, CompatibleValues))
+		{
+			continue;
+		}
+
+		FPropertyValue PrimaryValue = CompatibleValues.front();
+		ImGui::PushID(GetPropertyName(Property));
+		bAnyChanged |= RenderPropertyRow(PrimaryValue, CompatibleValues, GetPropertyName(Property), 0);
+		ImGui::PopID();
+		bOutRenderedAny = true;
+	}
+
+	ImGui::EndTable();
+	return bAnyChanged;
+}
+
+bool FBasicReflectionPropertyRenderer::RenderTransformCategory(
+	const FSelectionDetailTarget& PrimaryTarget,
+	const TArray<FSelectionDetailTarget>& Targets,
+	const char* TableId,
+	bool& bOutRenderedAny)
+{
+	bOutRenderedAny = false;
+	if (!PrimaryTarget.IsValidTarget())
+	{
+		return false;
+	}
+
+	const FProperty* TransformProperties[3] = {};
+	TArray<const FProperty*> Properties;
+	PrimaryTarget.StructType->GetPropertyRefs(Properties);
+	for (const FProperty* Property : Properties)
+	{
+		if (!IsPropertyCategory(Property, "Transform") ||
+			!IsEditorVisibleProperty(Property, PrimaryTarget.ObjectPtr) ||
+			!Property->GetValuePtrFor(PrimaryTarget.ContainerPtr))
+		{
+			continue;
+		}
+
+		if (IsPropertyDisplayName(Property, "Location"))
+		{
+			TransformProperties[0] = Property;
+		}
+		else if (IsPropertyDisplayName(Property, "Rotation"))
+		{
+			TransformProperties[1] = Property;
+		}
+		else if (IsPropertyDisplayName(Property, "Scale"))
+		{
+			TransformProperties[2] = Property;
+		}
+	}
+
+	if (!TransformProperties[0] && !TransformProperties[1] && !TransformProperties[2])
+	{
+		return false;
+	}
+
+	struct FTransformRow
+	{
+		const FProperty* Property = nullptr;
+		TArray<FPropertyValue> CompatibleValues;
+	};
+
+	TArray<FTransformRow> Rows;
+	for (const FProperty* Property : TransformProperties)
+	{
+		if (!Property)
+		{
+			continue;
+		}
+
+		TArray<FPropertyValue> CompatibleValues;
+		if (!BuildCompatibleValues(Property, PrimaryTarget, Targets, CompatibleValues))
+		{
+			continue;
+		}
+
+		FTransformRow Row;
+		Row.Property = Property;
+		Row.CompatibleValues = std::move(CompatibleValues);
+		Rows.push_back(std::move(Row));
+	}
+
+	if (Rows.empty())
+	{
+		return false;
+	}
+
+	bOutRenderedAny = true;
+	if (!ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		return false;
+	}
+
+	const FString TransformTableId = FString(TableId ? TableId : "##BasicReflectionProperties") + "Transform";
+	if (!RenderFixedCategoryTableBegin(TransformTableId))
+	{
+		return false;
+	}
+
+	bool bAnyChanged = false;
+	for (FTransformRow& Row : Rows)
+	{
+		FPropertyValue PrimaryValue = Row.CompatibleValues.front();
+		ImGui::PushID(GetPropertyName(Row.Property));
+		bAnyChanged |= RenderPropertyRow(PrimaryValue, Row.CompatibleValues, GetPropertyName(Row.Property), 0);
+		ImGui::PopID();
+	}
+
+	ImGui::EndTable();
+	return bAnyChanged;
 }
 
 bool FBasicReflectionPropertyRenderer::RenderCategory(
