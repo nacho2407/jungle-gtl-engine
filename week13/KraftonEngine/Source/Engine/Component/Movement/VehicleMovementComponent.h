@@ -7,6 +7,8 @@
 
 #include "Source/Engine/Component/Movement/VehicleMovementComponent.generated.h"
 
+class UWheelMeshComponent;
+
 UCLASS()
 class UVehicleMovementComponent : public UMovementComponent
 {
@@ -26,6 +28,7 @@ public:
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
 	void SetWheelSceneComponents(const TArray<USceneComponent*>& InWheelSceneComponents);
+	void SetWheelMeshComponents(const TArray<UWheelMeshComponent*>& InWheelMeshComponents);
 
 private:
 	bool InitializeVehicle();
@@ -36,6 +39,8 @@ private:
 
 	UPROPERTY(Transient, Category="Vehicle")
 	TArray<TObjectPtr<USceneComponent>> WheelSceneComponents;
+	UPROPERTY(Transient, Category="Vehicle")
+	TArray<TObjectPtr<UWheelMeshComponent>> WheelMeshComponents;
 
 	UPROPERTY(Edit, Save, Category="Vehicle|Debug", DisplayName="Visible")
 	bool bDebugVisualizationVisible = false;

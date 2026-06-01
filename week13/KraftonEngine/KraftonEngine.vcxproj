@@ -561,6 +561,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\StaticMeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\WheelMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Script\LuaBlueprintComponent.cpp" />
@@ -743,6 +744,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Render\Proxy\ShapeSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\WheelMeshSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\SubUVSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\AdditiveDecalPass.cpp" />
@@ -986,6 +988,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\StaticMeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\WheelMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\SubUVComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\TextRenderComponent.h" />
     <ClInclude Include="Source\Engine\Component\Script\LuaBlueprintComponent.h" />
@@ -1227,6 +1230,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Render\Proxy\ShapeSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\WheelMeshSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\SubUVSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\AdditiveDecalPass.h" />
