@@ -22,9 +22,10 @@ public:
 	void UpdateLOD(uint32 LODLevel) override;
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
-	UStaticMeshComponent* GetStaticMeshComponent() const;
+	void BuildPhysicsBodyWireLines(const FFrameContext& Frame, TArray<FPhysicsDebugLine>& OutLines) const override;
 
 private:
+	UStaticMeshComponent* GetStaticMeshComponent() const;
 
 	// 모든 LOD의 SectionDraws 재구축
 	void RebuildSectionDraws();

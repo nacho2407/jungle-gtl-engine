@@ -5,11 +5,15 @@
 #include "Materials/Material.h"
 #include "Object/GarbageCollection.h"
 #include "Object/Object.h"
+#include "PhysicsEngine/BodySetup.h"
+#include "Render/Geometry/CollisionDebugGeometry.h"
 
 #include <algorithm>
 
 namespace
 {
+	const FVector4 PhysicsBodyWireColor(0.2f, 1.0f, 0.45f, 1.0f);
+
 	bool SectionMaterialLess(const FMeshSectionDraw& A, const FMeshSectionDraw& B)
 	{
 		const uintptr_t AMat = reinterpret_cast<uintptr_t>(A.Material);
@@ -66,6 +70,28 @@ void FStaticMeshSceneProxy::AddReferencedObjects(FReferenceCollector& Collector)
 // ============================================================
 // UpdateMesh — 메시 버퍼 + 셰이더 교체 후 SectionDraws 재구축
 // ============================================================
+void FStaticMeshSceneProxy::BuildPhysicsBodyWireLines(const FFrameContext& /*Frame*/, TArray<FPhysicsDebugLine>& OutLines) const
+{
+	UStaticMeshComponent* SMC = GetStaticMeshComponent();
+	UStaticMesh* Mesh = IsValid(SMC) ? SMC->GetStaticMesh() : nullptr;
+	if (!Mesh)
+	{
+		return;
+	}
+
+	Mesh->EnsureDefaultBodySetup();
+	const UBodySetup* BodySetup = Mesh->GetBodySetup();
+	if (!BodySetup)
+	{
+		return;
+	}
+
+	FTransform ComponentWorldTM = FTransform::FromMatrixWithScale(SMC->GetWorldMatrix());
+	const FVector ComponentScale = ComponentWorldTM.Scale;
+	ComponentWorldTM.Scale = FVector::OneVector;
+	FPhysicsBodyDebugGeometry::AddBodySetupWireLines(OutLines, BodySetup, ComponentWorldTM, ComponentScale, false, PhysicsBodyWireColor);
+}
+
 void FStaticMeshSceneProxy::UpdateMesh()
 {
 	if (!HasValidOwner())

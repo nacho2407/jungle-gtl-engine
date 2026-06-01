@@ -17,9 +17,10 @@ public:
 	bool PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context, FDrawCommandBuffer& OutBuffer) const override;
 	bool PrepareGpuSkinningDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context, FDrawCommandBuffer& OutBuffer) const;
 	ID3D11ShaderResourceView* GetSkinMatrixSRV(ID3D11Device* Device, ID3D11DeviceContext* Context) const;
-	USkeletalMeshComponent* GetSkeletalMeshComponent() const;
+	void BuildPhysicsBodyWireLines(const FFrameContext& Frame, TArray<FPhysicsDebugLine>& OutLines) const override;
 
 private:
+	USkeletalMeshComponent* GetSkeletalMeshComponent() const;
 	void RebuildSectionDraws();
 	void ReleaseSkinMatrixBuffer() const;
 	bool UpdateSkinMatrixBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context) const;

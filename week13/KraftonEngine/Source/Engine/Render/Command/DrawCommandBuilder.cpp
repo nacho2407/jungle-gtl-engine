@@ -8,18 +8,9 @@
 #include "Render/Proxy/DecalSceneProxy.h"
 #include "Render/Proxy/ShapeSceneProxy.h"
 #include "Render/Proxy/BoneDebugSceneProxy.h"
-#include "Render/Proxy/StaticMeshSceneProxy.h"
 #include "Render/Proxy/SkeletalMeshSceneProxy.h"
 #include "Render/Proxy/PhysicsAssetSceneProxy.h"
 #include "Render/Proxy/ParticleSystemSceneProxy.h"
-#include "Component/Primitive/StaticMeshComponent.h"
-#include "Component/Primitive/SkeletalMeshComponent.h"
-#include "Mesh/Static/StaticMesh.h"
-#include "Mesh/Skeletal/SkeletalMesh.h"
-#include "Mesh/Skeletal/SkeletalMeshAsset.h"
-#include "PhysicsEngine/BodySetup.h"
-#include "PhysicsEngine/PhysicsAsset.h"
-#include "Render/Geometry/CollisionDebugGeometry.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/RenderPass/PassRenderStateTable.h"
@@ -33,8 +24,6 @@ extern void UpdateProxyLOD(FPrimitiveSceneProxy* Proxy, const FLODUpdateContext&
 
 namespace
 {
-	const FVector4 PhysicsBodyWireColor(0.2f, 1.0f, 0.45f, 1.0f);
-
 	bool IsPhysicsBodyDebugWorld(EWorldType WorldType)
 	{
 		return WorldType == EWorldType::Editor || WorldType == EWorldType::EditorPreview;
@@ -55,138 +44,6 @@ namespace
 		}
 
 		return true;
-	}
-
-	void AppendWireLines(FLineGeometry& OutGeometry, const TArray<FWireLine>& Lines, const FVector4& Color)
-	{
-		for (const FWireLine& Line : Lines)
-		{
-			OutGeometry.AddLine(Line.Start, Line.End, Color);
-		}
-	}
-
-	void AddBodySetupWireGeometry(
-		const UBodySetup* BodySetup,
-		FTransform BodyWorldTM,
-		const FVector& Scale3D,
-		bool bUseUniformScale,
-		FLineGeometry& OutGeometry)
-	{
-		if (!BodySetup || BodySetup->CollisionReponse == EBodyCollisionResponse::BodyCollision_Disabled)
-		{
-			return;
-		}
-
-		const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
-		if (AggGeom.GetElementCount() == 0)
-		{
-			return;
-		}
-
-		TArray<FWireLine> Lines;
-		BodyWorldTM.Scale = FVector::OneVector;
-
-		if (bUseUniformScale)
-		{
-			const float UniformScale = Scale3D.GetAbsMax();
-
-			for (const FKSphereElem& SphereElem : AggGeom.SphereElems)
-			{
-				const FVector WorldCenter = BodyWorldTM.TransformPosition(SphereElem.Center * UniformScale);
-				FCollisionDebugGeometry::AddWireSphere(Lines, WorldCenter, SphereElem.Radius * UniformScale);
-			}
-
-			for (const FKBoxElem& BoxElem : AggGeom.BoxElems)
-			{
-				const FTransform ShapeWorldTM = FTransform(BoxElem.Center * UniformScale, BoxElem.Rotation) * BodyWorldTM;
-				const FVector HalfExtent(
-					BoxElem.X * 0.5f * UniformScale,
-					BoxElem.Y * 0.5f * UniformScale,
-					BoxElem.Z * 0.5f * UniformScale);
-				FCollisionDebugGeometry::AddWireBox(Lines, ShapeWorldTM, HalfExtent);
-			}
-
-			for (const FKSphylElem& SphylElem : AggGeom.SphylElems)
-			{
-				const FTransform ShapeWorldTM = FTransform(SphylElem.Center * UniformScale, SphylElem.Rotation) * BodyWorldTM;
-				FCollisionDebugGeometry::AddWireCapsule(
-					Lines,
-					ShapeWorldTM,
-					SphylElem.Radius * UniformScale,
-					SphylElem.Length * UniformScale);
-			}
-
-			for (const FKConvexElem& ConvexElem : AggGeom.ConvexElems)
-			{
-				FTransform ShapeWorldTM = ConvexElem.GetTransform() * BodyWorldTM;
-				ShapeWorldTM.Scale = ShapeWorldTM.Scale * FVector(UniformScale, UniformScale, UniformScale);
-				FCollisionDebugGeometry::AddWireConvex(Lines, ConvexElem, ShapeWorldTM);
-			}
-		}
-		else
-		{
-			for (const FKSphereElem& SphereElem : AggGeom.SphereElems)
-			{
-				const FKSphereElem ScaledSphere = SphereElem.GetFinalScaled(Scale3D, FTransform());
-				const FTransform ShapeWorldTM = ScaledSphere.GetTransform() * BodyWorldTM;
-				FCollisionDebugGeometry::AddWireSphere(Lines, ShapeWorldTM.GetLocation(), ScaledSphere.Radius);
-			}
-
-			for (const FKBoxElem& BoxElem : AggGeom.BoxElems)
-			{
-				const FKBoxElem ScaledBox = BoxElem.GetFinalScaled(Scale3D, FTransform());
-				const FTransform ShapeWorldTM = ScaledBox.GetTransform() * BodyWorldTM;
-				const FVector HalfExtent(
-					ScaledBox.X * 0.5f,
-					ScaledBox.Y * 0.5f,
-					ScaledBox.Z * 0.5f);
-				FCollisionDebugGeometry::AddWireBox(Lines, ShapeWorldTM, HalfExtent);
-			}
-
-			for (const FKSphylElem& SphylElem : AggGeom.SphylElems)
-			{
-				const FKSphylElem ScaledSphyl = SphylElem.GetFinalScaled(Scale3D, FTransform());
-				const FTransform ShapeWorldTM = ScaledSphyl.GetTransform() * BodyWorldTM;
-				FCollisionDebugGeometry::AddWireCapsule(
-					Lines,
-					ShapeWorldTM,
-					ScaledSphyl.Radius,
-					ScaledSphyl.Length);
-			}
-
-			for (const FKConvexElem& ConvexElem : AggGeom.ConvexElems)
-			{
-				FTransform ShapeWorldTM = ConvexElem.GetTransform() * BodyWorldTM;
-				ShapeWorldTM.Scale = ShapeWorldTM.Scale * Scale3D;
-				FCollisionDebugGeometry::AddWireConvex(Lines, ConvexElem, ShapeWorldTM);
-			}
-		}
-
-		AppendWireLines(OutGeometry, Lines, PhysicsBodyWireColor);
-	}
-
-	int32 FindBoneIndexByName(const FSkeletalMesh* Asset, const FName& BoneName)
-	{
-		if (!Asset)
-		{
-			return -1;
-		}
-
-		const FString BoneNameString = BoneName.ToString();
-		if (BoneNameString.empty())
-		{
-			return -1;
-		}
-
-		for (int32 Index = 0; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
-		{
-			if (Asset->Bones[Index].Name == BoneNameString)
-			{
-				return Index;
-			}
-		}
-
-		return -1;
 	}
 }
 
@@ -613,74 +470,11 @@ void FDrawCommandBuilder::BuildPhysicsBodyWireCommands(const FFrameContext& Fram
 		return;
 	}
 
-	if (Proxy.HasProxyFlag(EPrimitiveProxyFlags::StaticMesh))
+	TArray<FPhysicsDebugLine> PhysicsBodyLines;
+	Proxy.BuildPhysicsBodyWireLines(Frame, PhysicsBodyLines);
+	for (const FPhysicsDebugLine& Line : PhysicsBodyLines)
 	{
-		const FStaticMeshSceneProxy& StaticMeshProxy = static_cast<const FStaticMeshSceneProxy&>(Proxy);
-		UStaticMeshComponent* StaticMeshComponent = StaticMeshProxy.GetStaticMeshComponent();
-		UStaticMesh* StaticMesh = IsValid(StaticMeshComponent) ? StaticMeshComponent->GetStaticMesh() : nullptr;
-		if (!StaticMesh)
-		{
-			return;
-		}
-
-		StaticMesh->EnsureDefaultBodySetup();
-		const UBodySetup* BodySetup = StaticMesh->GetBodySetup();
-		if (!BodySetup)
-		{
-			return;
-		}
-
-		FTransform ComponentWorldTM = FTransform::FromMatrixWithScale(StaticMeshComponent->GetWorldMatrix());
-		const FVector ComponentScale = ComponentWorldTM.Scale;
-		ComponentWorldTM.Scale = FVector::OneVector;
-		AddBodySetupWireGeometry(BodySetup, ComponentWorldTM, ComponentScale, false, EditorLines);
-		return;
-	}
-
-	if (Proxy.HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh))
-	{
-		const FSkeletalMeshSceneProxy& SkeletalMeshProxy = static_cast<const FSkeletalMeshSceneProxy&>(Proxy);
-		USkeletalMeshComponent* SkeletalMeshComponent = SkeletalMeshProxy.GetSkeletalMeshComponent();
-		USkeletalMesh* SkeletalMesh = IsValid(SkeletalMeshComponent) ? SkeletalMeshComponent->GetSkeletalMesh() : nullptr;
-		FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
-		UPhysicsAsset* PhysicsAsset = SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
-		if (!SkeletalMeshComponent || !Asset || !PhysicsAsset)
-		{
-			return;
-		}
-
-		TArray<FTransform> ComponentSpaceBoneTransforms;
-		SkeletalMeshComponent->GetCurrentBoneGlobalTransforms(ComponentSpaceBoneTransforms);
-		if (ComponentSpaceBoneTransforms.empty())
-		{
-			return;
-		}
-
-		const FTransform ComponentToWorldTM(SkeletalMeshComponent->GetWorldMatrix());
-		const TArray<UBodySetup*>& BodySetups = PhysicsAsset->GetBodySetups();
-		for (const UBodySetup* BodySetup : BodySetups)
-		{
-			if (!BodySetup)
-			{
-				continue;
-			}
-
-			const int32 BoneIndex = FindBoneIndexByName(Asset, BodySetup->BoneName);
-			if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(ComponentSpaceBoneTransforms.size()))
-			{
-				continue;
-			}
-
-			FTransform BoneWorldTM = ComponentSpaceBoneTransforms[BoneIndex] * ComponentToWorldTM;
-			const float UniformScale = BoneWorldTM.Scale.GetAbsMax();
-			BoneWorldTM.Scale = FVector::OneVector;
-			AddBodySetupWireGeometry(
-				BodySetup,
-				BoneWorldTM,
-				FVector(UniformScale, UniformScale, UniformScale),
-				true,
-				EditorLines);
-		}
+		EditorLines.AddLine(Line.Start, Line.End, Line.Color);
 	}
 }
 
