@@ -6,8 +6,6 @@
 #include "Asset/AssetRegistry.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 
-#include <string>
-
 class UActorComponent;
 class AActor;
 
@@ -22,9 +20,6 @@ private:
 	void RenderDetails(const FSelectionDetailTarget& PrimaryTarget, const TArray<FSelectionDetailTarget>& SelectedTargets);
 	void RenderTargetProperties(const FSelectionDetailTarget& PrimaryTarget, const TArray<FSelectionDetailTarget>& SelectedTargets);
 	void CollectEditableProperties(const FSelectionDetailTarget& Target, TArray<struct FPropertyValue>& OutProps) const;
-	bool RenderTransformCategory(TArray<struct FPropertyValue>& Props, const std::string& Category, const TArray<FSelectionDetailTarget>& SelectedTargets);
-	bool RenderTransformVectorRow(struct FPropertyValue& Prop, bool bScaleRow);
-	bool DrawTransformScaleLinkToggle();
 	bool RenderPropertyWidget(TArray<struct FPropertyValue>& Props, int32& Index, bool bDispatchChange = true, const FString& PropertyPath = {});
 	bool RenderSoftObjectPropertyWidget(struct FPropertyValue& Prop);
 	bool RenderEnumPropertyWidget(struct FPropertyValue& Prop);
@@ -47,7 +42,6 @@ private:
 	FString PendingStaticMeshImportPath;
 	FString* PendingStaticMeshImportTarget = nullptr;
 	int32 PendingStaticFbxSkinnedMeshPolicy = 0;
-	bool bTransformScaleLinked = false;
 
 	FFbxSceneImportDialogState SkeletalFbxImportDialog;
 	FSelectionManager* SelectionManager = nullptr;
