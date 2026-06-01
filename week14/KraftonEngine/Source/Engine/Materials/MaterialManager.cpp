@@ -280,6 +280,197 @@ UMaterialInterface* FMaterialManager::GetOrCreateMaterialInterface(const FString
 	return GetOrCreateMaterial(GenericPath);
 }
 
+bool FMaterialManager::ReloadMaterial(const FString& MatFilePath)
+{
+	std::filesystem::path Path(FPaths::ToWide(MatFilePath));
+	FString GenericPath = FPaths::ToUtf8(Path.generic_wstring());
+
+	auto It = MaterialCache.find(GenericPath);
+	if (It == MaterialCache.end() || !It->second)
+	{
+		return false;
+	}
+
+	json::JSON JsonData = ReadJsonFile(GenericPath);
+	if (JsonData.IsNull())
+	{
+		return false;
+	}
+
+	FString PathFileName = JsonData[MatKeys::PathFileName].ToString().c_str();
+	if (PathFileName.empty())
+	{
+		PathFileName = GenericPath;
+	}
+
+	FString ShaderPath = JsonData[MatKeys::ShaderPath].ToString().c_str();
+	FString RenderPassStr = JsonData[MatKeys::RenderPass].ToString().c_str();
+	ERenderPass RenderPass = StringToRenderPass(RenderPassStr);
+
+	FString BlendStr = JsonData.hasKey(MatKeys::BlendState) ? JsonData[MatKeys::BlendState].ToString().c_str() : "";
+	FString DepthStr = JsonData.hasKey(MatKeys::DepthStencilState) ? JsonData[MatKeys::DepthStencilState].ToString().c_str() : "";
+	FString RasterStr = JsonData.hasKey(MatKeys::RasterizerState) ? JsonData[MatKeys::RasterizerState].ToString().c_str() : "";
+
+	EBlendState BlendState = StringToBlendState(BlendStr, RenderPass);
+	EDepthStencilState DepthState = StringToDepthStencilState(DepthStr, RenderPass);
+	ERasterizerState RasterState = StringToRasterizerState(RasterStr, RenderPass);
+
+	FString ShadowModeStr = JsonData.hasKey(MatKeys::ShadowMode) ? JsonData[MatKeys::ShadowMode].ToString().c_str() : "Opaque";
+	EMaterialShadowMode ShadowMode = StringToShadowMode(ShadowModeStr);
+
+	FVector4 EmissiveColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	float EmissiveIntensity = 0.0f;
+	bool bEnableBloom = false;
+	if (JsonData.hasKey(MatKeys::EmissiveColor))
+	{
+		EmissiveColor = ReadJsonVector4(JsonData[MatKeys::EmissiveColor], EmissiveColor);
+	}
+	if (JsonData.hasKey(MatKeys::EmissiveIntensity))
+	{
+		EmissiveIntensity = ReadJsonNumber(JsonData[MatKeys::EmissiveIntensity], EmissiveIntensity);
+	}
+	if (JsonData.hasKey(MatKeys::bEnableBloom))
+	{
+		bEnableBloom = ReadJsonBool(JsonData[MatKeys::bEnableBloom], bEnableBloom);
+	}
+
+	FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath);
+	if (!Template)
+	{
+		return false;
+	}
+
+	UMaterial* Material = It->second;
+	for (auto& Pair : Material->ConstantBufferMap)
+	{
+		if (Pair.second)
+		{
+			Pair.second->Release();
+		}
+	}
+	Material->ConstantBufferMap.clear();
+	Material->TextureParameters.clear();
+	for (int32 Slot = 0; Slot < (int32)EMaterialTextureSlot::Max; ++Slot)
+	{
+		Material->CachedSRVs[Slot] = nullptr;
+	}
+
+	Material->PathFileName = PathFileName;
+	Material->Template = Template;
+	Material->TransientShader = nullptr;
+	Material->RenderPass = RenderPass;
+	Material->BlendState = BlendState;
+	Material->DepthStencilState = DepthState;
+	Material->RasterizerState = RasterState;
+	Material->ShadowMode = ShadowMode;
+	Material->EmissiveColor = EmissiveColor;
+	Material->EmissiveIntensity = EmissiveIntensity;
+	Material->bEnableBloom = bEnableBloom;
+	Material->bMaterialBloomCBDirty = true;
+	Material->ConstantBufferMap = CreateConstantBuffers(Template);
+
+	InjectDefaultParameters(JsonData, Template, Material);
+	PurgeStaleParameters(JsonData, Template);
+	ApplyParameters(Material, JsonData);
+	ApplyTextures(Material, JsonData);
+	Material->RebuildCachedSRVs();
+
+	return true;
+}
+
+bool FMaterialManager::ReloadMaterialInstance(const FString& MatInstFilePath)
+{
+	std::filesystem::path Path(FPaths::ToWide(MatInstFilePath));
+	FString GenericPath = FPaths::ToUtf8(Path.generic_wstring());
+
+	auto It = MaterialInstanceCache.find(GenericPath);
+	if (It == MaterialInstanceCache.end() || !It->second)
+	{
+		return false;
+	}
+
+	json::JSON JsonData = ReadJsonFile(GenericPath);
+	if (JsonData.IsNull())
+	{
+		return false;
+	}
+
+	FString ParentMaterialPath = JsonData[MatKeys::ParentMaterial].ToString().c_str();
+	if (ParentMaterialPath.empty())
+	{
+		return false;
+	}
+
+	UMaterial* ParentMaterial = GetOrCreateMaterial(ParentMaterialPath);
+	if (!ParentMaterial)
+	{
+		return false;
+	}
+
+	UMaterialInstance* MaterialInstance = It->second;
+	for (auto& Pair : MaterialInstance->ConstantBufferMap)
+	{
+		if (Pair.second)
+		{
+			Pair.second->Release();
+		}
+	}
+	MaterialInstance->ConstantBufferMap.clear();
+	MaterialInstance->ScalarOverrides.clear();
+	MaterialInstance->Vector3Overrides.clear();
+	MaterialInstance->Vector4Overrides.clear();
+	MaterialInstance->MatrixOverrides.clear();
+	MaterialInstance->TextureOverrides.clear();
+	for (int32 Slot = 0; Slot < (int32)EMaterialTextureSlot::Max; ++Slot)
+	{
+		MaterialInstance->CachedOverrideSRVs[Slot] = nullptr;
+		MaterialInstance->bHasTextureOverride[Slot] = false;
+	}
+
+	MaterialInstance->PathFileName = GenericPath;
+	MaterialInstance->Parent = ParentMaterial;
+	MaterialInstance->ParentPathFileName = ParentMaterialPath;
+	MaterialInstance->bOverrideEmissiveColor = false;
+	MaterialInstance->bOverrideEmissiveIntensity = false;
+	MaterialInstance->bOverrideBloomEnabled = false;
+	MaterialInstance->EmissiveColorOverride = ParentMaterial->GetEmissiveColor();
+	MaterialInstance->EmissiveIntensityOverride = ParentMaterial->GetEmissiveIntensity();
+	MaterialInstance->bBloomEnabledOverride = ParentMaterial->IsBloomEnabled();
+	MaterialInstance->bMaterialBloomCBDirty = true;
+	MaterialInstance->bConstantBufferDirty = true;
+
+	if (ParentMaterial->GetTemplate())
+	{
+		MaterialInstance->ConstantBufferMap = CreateConstantBuffers(ParentMaterial->GetTemplate());
+	}
+	MaterialInstance->CopyParentConstantBuffers();
+
+	ApplyParameters(MaterialInstance, JsonData);
+	ApplyTextures(MaterialInstance, JsonData);
+	ApplyBloomOverrides(MaterialInstance, JsonData);
+
+	return true;
+}
+
+bool FMaterialManager::ReloadMaterialInterface(const FString& AssetPath)
+{
+	if (AssetPath.empty() || AssetPath == "None")
+	{
+		return false;
+	}
+
+	std::filesystem::path Path(FPaths::ToWide(AssetPath));
+	FString GenericPath = FPaths::ToUtf8(Path.generic_wstring());
+	FString Extension = FPaths::ToUtf8(Path.extension().wstring());
+
+	if (Extension == ".matinst")
+	{
+		return ReloadMaterialInstance(GenericPath);
+	}
+
+	return ReloadMaterial(GenericPath);
+}
+
 UMaterial* FMaterialManager::CreateTransientMaterial(ERenderPass InPass, EBlendState InBlend,
 	EDepthStencilState InDepth, ERasterizerState InRaster, FShader* InShader)
 {
@@ -374,6 +565,15 @@ void FMaterialManager::ApplyParameters(UMaterialInterface* Material, json::JSON&
 			else if (Value.length() == 4)
 			{
 				Material->SetVector4Parameter(ParamName, FVector4((float)Value[0].ToFloat(), (float)Value[1].ToFloat(), (float)Value[2].ToFloat(), (float)Value[3].ToFloat()));
+			}
+			else if (Value.length() == 16)
+			{
+				FMatrix MatrixValue;
+				for (int32 i = 0; i < 16; ++i)
+				{
+					MatrixValue.Data[i] = (float)Value[i].ToFloat();
+				}
+				Material->SetMatrixParameter(ParamName, MatrixValue);
 			}
 		}
 		else if (Value.JSONType() == json::JSON::Class::Floating || Value.JSONType() == json::JSON::Class::Integral)

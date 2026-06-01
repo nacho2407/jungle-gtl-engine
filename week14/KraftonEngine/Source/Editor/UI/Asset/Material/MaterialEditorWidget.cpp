@@ -113,6 +113,14 @@ void FMaterialEditorWidget::Open(UObject* Object)
 
 void FMaterialEditorWidget::Close()
 {
+	if (IsDirty())
+	{
+		if (UMaterialInterface* Material = Cast<UMaterialInterface>(EditedObject))
+		{
+			FMaterialManager::Get().ReloadMaterialInterface(Material->GetAssetPathFileName());
+		}
+	}
+
 	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
 	{
 		FScene& PreviewScene = PreviewWorld->GetScene();
@@ -545,8 +553,13 @@ void FMaterialEditorWidget::RenderShaderParameters(UMaterialInterface* Material)
 				if (bRowChanged)
 				{
 					Material->SetMatrixParameter(ParamName, Param);
+					auto MatrixArray = json::Array();
+					for (int32 i = 0; i < 16; ++i)
+					{
+						MatrixArray.append(Param.Data[i]);
+					}
+					CachedJson[MatKeys::Parameters][ParamName] = MatrixArray;
 					bChanged = true;
-					// JSON matrix 저장 포맷이 아직 없으면 일단 저장 생략해도 됩니다.
 				}
 			}
 			break;

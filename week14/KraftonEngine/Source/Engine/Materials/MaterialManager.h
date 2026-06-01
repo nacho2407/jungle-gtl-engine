@@ -70,6 +70,9 @@ public:
 	UMaterialInstance* GetOrCreateMaterialInstance(const FString& MatInstFilePath);
 
 	UMaterialInterface* GetOrCreateMaterialInterface(const FString& AssetPath);
+	bool ReloadMaterial(const FString& MatFilePath);
+	bool ReloadMaterialInstance(const FString& MatInstFilePath);
+	bool ReloadMaterialInterface(const FString& AssetPath);
 	UMaterial* CreateTransientMaterial(ERenderPass InPass, EBlendState InBlend,
 		EDepthStencilState InDepth = EDepthStencilState::Default,
 		ERasterizerState InRaster = ERasterizerState::SolidBackCull,
