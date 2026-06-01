@@ -78,6 +78,7 @@ public:
 	void SetCastShadow(bool bNewCastShadow);
 	bool GetCastShadow() const { return bCastShadow; }
 
+	void SetCastShadowAsTwoSided(bool bNewCastShadowAsTwoSided);
 	bool GetCastShadowAsTwoSided() const { return bCastShadowAsTwoSided; }
 
 	bool GetTranslucentSortPriority() const { return TranslucentSortPriority; }

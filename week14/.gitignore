@@ -87,6 +87,7 @@ obj/x86/
 **/[Bb]in/*
 !**/ThirdParty/**/[Bb]in/*
 !KraftonEngine/ThirdParty/PhysX/lib/**/*.pdb
+!KraftonEngine/ThirdParty/NvCloth/lib/**/*.pdb
 
 # ============================================================
 # 패키징 산출물 (root 의 *Build/ 폴더, 그리고 Game/)

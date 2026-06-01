@@ -11,6 +11,7 @@
 #include "Physics/PhysicsConstraintTemplate.h"
 #include "Physics/PhysXVehicleManager.h"
 
+#include "Core/Logging/Log.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "Mesh/Static/StaticMesh.h"
@@ -20,6 +21,50 @@
 
 namespace
 {
+	FVector ToClothLocalPoint(const FMatrix& WorldToCloth, const physx::PxVec3& WorldPoint)
+	{
+		return WorldToCloth.TransformPositionWithW(FVector(WorldPoint.x, WorldPoint.y, WorldPoint.z));
+	}
+
+	void AppendSphereClothCollision(
+		const physx::PxSphereGeometry& Sphere,
+		const physx::PxTransform& ShapeWorldPose,
+		const FClothCollisionGatherParams& Params,
+		FClothCollisionData& OutData)
+	{
+		FVector LocalCenter = ToClothLocalPoint(Params.WorldToCloth, ShapeWorldPose.p);
+
+		OutData.Spheres.push_back(physx::PxVec4(
+			LocalCenter.X,
+			LocalCenter.Y,
+			LocalCenter.Z,
+			Sphere.radius));
+	}
+
+	static void AppendCapsuleClothCollision(
+		const physx::PxCapsuleGeometry& Capsule,
+		const physx::PxTransform& ShapeWorldPose,
+		const FClothCollisionGatherParams& Params,
+		FClothCollisionData& OutData)
+	{
+		const uint32 BaseIndex = static_cast<uint32>(OutData.Spheres.size());
+
+		const physx::PxVec3 LocalA(Capsule.halfHeight, 0.0f, 0.0f);
+		const physx::PxVec3 LocalB(-Capsule.halfHeight, 0.0f, 0.0f);
+
+		const physx::PxVec3 WorldA = ShapeWorldPose.transform(LocalA);
+		const physx::PxVec3 WorldB = ShapeWorldPose.transform(LocalB);
+
+		FVector ClothA = ToClothLocalPoint(Params.WorldToCloth, WorldA);
+		FVector ClothB = ToClothLocalPoint(Params.WorldToCloth, WorldB);
+
+		OutData.Spheres.push_back(physx::PxVec4(ClothA.X, ClothA.Y, ClothA.Z, Capsule.radius));
+		OutData.Spheres.push_back(physx::PxVec4(ClothB.X, ClothB.Y, ClothB.Z, Capsule.radius));
+
+		OutData.Capsules.push_back(BaseIndex);
+		OutData.Capsules.push_back(BaseIndex + 1);
+	}
+
 	void AppendOverlapHit(const physx::PxOverlapHit& PxHit, TArray<FOverlapResult>& OutOverlaps)
 	{
 		UPrimitiveComponent* Component = GetComponentFromQueryShape(PxHit.shape);
@@ -29,6 +74,85 @@ namespace
 		Result.OverlapComponent = Component;
 		Result.OverlapActor = Component->GetOwner();
 		OutOverlaps.push_back(Result);
+	}
+
+	FBoundingBox ExpandBounds(const FBoundingBox& Bounds, float Padding)
+	{
+		if (!Bounds.IsValid() || Padding <= 0.0f)
+		{
+			return Bounds;
+		}
+
+		const FVector Extent(Padding, Padding, Padding);
+		return FBoundingBox(Bounds.Min - Extent, Bounds.Max + Extent);
+	}
+
+	FVector ToClothLocalVector(const FMatrix& WorldToCloth, const physx::PxVec3& WorldVector)
+	{
+		FVector V = WorldToCloth.TransformVector(FVector(WorldVector.x, WorldVector.y, WorldVector.z));
+		V.Normalize();
+		return V;
+	}
+
+	void AppendPlaneFromWorldPointNormal(
+		const physx::PxVec3& WorldPoint,
+		const physx::PxVec3& WorldNormal,
+		const FClothCollisionGatherParams& Params,
+		FClothCollisionData& OutData)
+	{
+		FVector LocalPoint = ToClothLocalPoint(Params.WorldToCloth, WorldPoint);
+		FVector LocalNormal = ToClothLocalVector(Params.WorldToCloth, WorldNormal);
+
+		const float D = -LocalNormal.Dot(LocalPoint);
+
+		OutData.Planes.push_back(physx::PxVec4(
+			LocalNormal.X,
+			LocalNormal.Y,
+			LocalNormal.Z,
+			D));
+	}
+
+	void AppendBoxClothCollision(
+		const physx::PxBoxGeometry& Box,
+		const physx::PxTransform& ShapeWorldPose,
+		const FClothCollisionGatherParams& Params,
+		FClothCollisionData& OutData)
+	{
+		const uint32 PlaneBaseIndex = static_cast<uint32>(OutData.Planes.size());
+
+		const physx::PxVec3 Extents = Box.halfExtents;
+
+		struct FBoxPlane
+		{
+			physx::PxVec3 LocalNormal;
+			physx::PxVec3 LocalPoint;
+		};
+
+		const FBoxPlane Planes[6] =
+		{
+			{ physx::PxVec3(1.0f,  0.0f,  0.0f), physx::PxVec3(Extents.x, 0.0f, 0.0f) },
+			{ physx::PxVec3(-1.0f,  0.0f,  0.0f), physx::PxVec3(-Extents.x, 0.0f, 0.0f) },
+			{ physx::PxVec3(0.0f,  1.0f,  0.0f), physx::PxVec3(0.0f,  Extents.y, 0.0f) },
+			{ physx::PxVec3(0.0f, -1.0f,  0.0f), physx::PxVec3(0.0f, -Extents.y, 0.0f) },
+			{ physx::PxVec3(0.0f,  0.0f,  1.0f), physx::PxVec3(0.0f, 0.0f,  Extents.z) },
+			{ physx::PxVec3(0.0f,  0.0f, -1.0f), physx::PxVec3(0.0f, 0.0f, -Extents.z) },
+		};
+
+		for (const FBoxPlane& Plane : Planes)
+		{
+			const physx::PxVec3 WorldPoint = ShapeWorldPose.transform(Plane.LocalPoint);
+			const physx::PxVec3 WorldNormal = ShapeWorldPose.rotate(Plane.LocalNormal);
+
+			AppendPlaneFromWorldPointNormal(WorldPoint, WorldNormal, Params, OutData);
+		}
+
+		uint32 ConvexMask = 0;
+		for (uint32 i = 0; i < 6; ++i)
+		{
+			ConvexMask |= 1u << (PlaneBaseIndex + i);
+		}
+
+		OutData.ConvexMasks.push_back(ConvexMask);
 	}
 }
 
@@ -379,6 +503,64 @@ void FPhysicsScene::DestroyConstraint(FConstraintInstance* Instance)
 
 	Instance->Release();
 	delete Instance;
+}
+
+void FPhysicsScene::GatherClothCollision(const FClothCollisionGatherParams& Params, FClothCollisionData& OutData) const
+{
+	OutData.Reset();
+
+	for (FBodyInstance* BodyInstance : Bodies)
+	{
+		if (!BodyInstance || !BodyInstance->Body) continue;
+
+		UPrimitiveComponent* OwnerComp = BodyInstance->OwnerComponent;
+		if (!OwnerComp || OwnerComp == Params.IgnoreComponent) continue;
+
+		if (OwnerComp->GetOwner() == Params.IgnoreActor) continue;
+
+		if (!OwnerComp->IsCollisionEnabled()) continue;
+
+		if (OwnerComp->GetCollisionResponseToChannel(Params.ClothChannel) != ECollisionResponse::Block) continue;
+
+		const FBoundingBox ClothQueryBounds = ExpandBounds(Params.WorldBounds, Params.BoundsPadding);
+		const FBoundingBox BodyBounds = OwnerComp->GetWorldBoundingBox();
+
+		if (ClothQueryBounds.IsValid() && BodyBounds.IsValid() && !ClothQueryBounds.IsIntersected(BodyBounds)) continue;
+
+		physx::PxRigidActor* Actor = BodyInstance->Body;
+
+		const uint32 ShapeCount = Actor->getNbShapes();
+		TArray<physx::PxShape*> Shapes;
+		Shapes.resize(ShapeCount);
+		Actor->getShapes(Shapes.data(), ShapeCount);
+
+		for (physx::PxShape* Shape : Shapes)
+		{
+			if (!Shape) continue;
+
+			const physx::PxTransform ShapeWorldPose = Actor->getGlobalPose() * Shape->getLocalPose();
+
+			physx::PxGeometryHolder Geometry = Shape->getGeometry();
+
+			switch (Geometry.getType())
+			{
+			case physx::PxGeometryType::eSPHERE:
+				AppendSphereClothCollision(Geometry.sphere(), ShapeWorldPose, Params, OutData);
+				break;
+			
+			case physx::PxGeometryType::eCAPSULE:
+				AppendCapsuleClothCollision(Geometry.capsule(), ShapeWorldPose, Params, OutData);
+				break;
+
+			case physx::PxGeometryType::eBOX:
+				AppendBoxClothCollision(Geometry.box(), ShapeWorldPose, Params, OutData);
+				break;
+
+			default:
+				break;
+			}
+		}
+	}
 }
 
 bool FPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,

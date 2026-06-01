@@ -19,6 +19,7 @@
 
 class UCameraComponent;
 class UPrimitiveComponent;
+class UClothComponent;
 class AGameModeBase;
 class AGameStateBase;
 class APlayerController;
@@ -71,10 +72,16 @@ public:
 
 	// GC
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
+
+	// Cloth
+	void RegisterClothComponent(UClothComponent* ClothComp);
+	void UnregisterClothComponent(UClothComponent* ClothComp);
 private:
 	// PlayerCameraManager 갱신 — Slomo / HitStop 등 TimeDilation 의 영향을 받지 않도록
 	// FTimer 의 raw delta 를 직접 사용한다. Tick 의 paused / 정상 흐름 양쪽에서 호출.
 	void TickPlayerCamera() const;
+
+	void TickClothComponents(float DeltaTime);
 
 public:
 
@@ -117,6 +124,8 @@ private:
 	ULevel* PersistentLevel;
 
 	FPhysicsScene* PhysicsScene = nullptr;
+
+	TArray<UClothComponent*> ClothComponents;
 
 	// CameraManager 는 PC 가 owner. Editor 모드에서는 active viewport 가 IPOVProvider 로
 	// 자기 POV 를 노출하면 World 가 pull. 직접 POV cache 는 보유하지 않는다.
