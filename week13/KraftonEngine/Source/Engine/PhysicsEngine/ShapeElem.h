@@ -7,6 +7,7 @@
 #include "Core/Types/CollisionTypes.h"
 #include "Engine/Math/Transform.h"
 
+#include "Source/Engine/PhysicsEngine/ShapeElem.generated.h"
 
 UENUM()
 enum class EAggCollisionShape : uint8
@@ -24,8 +25,11 @@ enum class EAggCollisionShape : uint8
 	Unknown
 };
 
+USTRUCT()
 struct FKShapeElem
 {
+	GENERATED_BODY()
+
 	FKShapeElem()
 		: RestOffset(0.f)
 		, ShapeType(EAggCollisionShape::Unknown)
@@ -81,6 +85,7 @@ struct FKShapeElem
 
 	inline static constexpr EAggCollisionShape StaticShapeType = EAggCollisionShape::Unknown;
 
+	UPROPERTY(Edit, Save, Category="Shape", DisplayName="Rest Offset", Min=0.0f, Speed=0.01f)
 	float RestOffset;
 
 protected:
@@ -94,8 +99,13 @@ protected:
 	}
 
 private:
+	UPROPERTY(Edit, Save, Category="Shape", DisplayName="Name")
 	FName Name;
+
 	EAggCollisionShape ShapeType;
+
+	UPROPERTY(Edit, Save, Category="Shape", DisplayName="Contribute To Mass")
 	bool bContributeToMass = true;
+
 	ECollisionEnabled CollisionEnabled;
 };

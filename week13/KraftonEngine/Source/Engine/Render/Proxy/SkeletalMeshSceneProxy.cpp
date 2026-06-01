@@ -1,13 +1,47 @@
 #include "SkeletalMeshSceneProxy.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Render/Command/DrawCommand.h"
+#include "Render/Geometry/CollisionDebugGeometry.h"
 #include "Runtime/Engine.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Profiling/Time/Timer.h"
 #include "Profiling/Stats/Stats.h"
 #include "Object/Object.h"
+#include "PhysicsEngine/BodySetup.h"
+#include "PhysicsEngine/PhysicsAsset.h"
 
 #include <algorithm>
 #include <cstring>
+
+namespace
+{
+	const FVector4 PhysicsBodyWireColor(0.2f, 1.0f, 0.45f, 1.0f);
+
+	int32 FindBoneIndexByName(const FSkeletalMesh* Asset, const FName& BoneName)
+	{
+		if (!Asset)
+		{
+			return -1;
+		}
+
+		const FString BoneNameString = BoneName.ToString();
+		if (BoneNameString.empty())
+		{
+			return -1;
+		}
+
+		for (int32 Index = 0; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
+		{
+			if (Asset->Bones[Index].Name == BoneNameString)
+			{
+				return Index;
+			}
+		}
+
+		return -1;
+	}
+}
 
 FSkeletalMeshSceneProxy::FSkeletalMeshSceneProxy(USkeletalMeshComponent* InComponent)
 	: FPrimitiveSceneProxy(InComponent)
@@ -117,6 +151,52 @@ ID3D11ShaderResourceView* FSkeletalMeshSceneProxy::GetSkinMatrixSRV(ID3D11Device
 {
 	UpdateSkinMatrixBuffer(Device, Context);
 	return SkinMatrixSRV;
+}
+
+void FSkeletalMeshSceneProxy::BuildPhysicsBodyWireLines(const FFrameContext& /*Frame*/, TArray<FPhysicsDebugLine>& OutLines) const
+{
+	USkeletalMeshComponent* SMC = GetSkeletalMeshComponent();
+	USkeletalMesh* SkeletalMesh = IsValid(SMC) ? SMC->GetSkeletalMesh() : nullptr;
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	UPhysicsAsset* PhysicsAsset = SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
+	if (!SMC || !Asset || !PhysicsAsset)
+	{
+		return;
+	}
+
+	TArray<FTransform> ComponentSpaceBoneTransforms;
+	SMC->GetCurrentBoneGlobalTransforms(ComponentSpaceBoneTransforms);
+	if (ComponentSpaceBoneTransforms.empty())
+	{
+		return;
+	}
+
+	const FTransform ComponentToWorldTM(SMC->GetWorldMatrix());
+	const TArray<UBodySetup*>& BodySetups = PhysicsAsset->GetBodySetups();
+	for (const UBodySetup* BodySetup : BodySetups)
+	{
+		if (!BodySetup)
+		{
+			continue;
+		}
+
+		const int32 BoneIndex = FindBoneIndexByName(Asset, BodySetup->BoneName);
+		if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(ComponentSpaceBoneTransforms.size()))
+		{
+			continue;
+		}
+
+		FTransform BoneWorldTM = ComponentSpaceBoneTransforms[BoneIndex] * ComponentToWorldTM;
+		const float UniformScale = BoneWorldTM.Scale.GetAbsMax();
+		BoneWorldTM.Scale = FVector::OneVector;
+		FPhysicsBodyDebugGeometry::AddBodySetupWireLines(
+			OutLines,
+			BodySetup,
+			BoneWorldTM,
+			FVector(UniformScale, UniformScale, UniformScale),
+			true,
+			PhysicsBodyWireColor);
+	}
 }
 
 void FSkeletalMeshSceneProxy::ReleaseSkinMatrixBuffer() const

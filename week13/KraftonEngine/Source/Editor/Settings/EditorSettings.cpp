@@ -41,6 +41,7 @@ namespace Key
 	constexpr const char* bShowShadowFrustum = "bShowShadowFrustum";
 	constexpr const char* bCollision = "bCollision";
 	constexpr const char* bShowCollisionShape = "bShowCollisionShape";
+	constexpr const char* bPhysicsBody = "bPhysicsBody";
 	constexpr const char* bDebugPhysicsAsset = "bDebugPhysicsAsset";
 	constexpr const char* GridSpacing = "GridSpacing";
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
@@ -88,6 +89,7 @@ namespace Key
 	constexpr const char* ShowEditorDebug = "ShowEditorDebug";
 	constexpr const char* ShowShadowMapDebug = "ShowShadowMapDebug";
 	constexpr const char* ShowAnimationDebug = "ShowAnimationDebug";
+	constexpr const char* ReflectionPropertyLabelColumnWidth = "ReflectionPropertyLabelColumnWidth";
 
 	// Perspective Camera
 	constexpr const char* PerspectiveCamera = "PerspectiveCamera";
@@ -181,6 +183,7 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::bShowShadowFrustum] = Opts.ShowFlags.bShowShadowFrustum;
 	Obj[Key::bCollision] = Opts.ShowFlags.bCollision;
 	Obj[Key::bShowCollisionShape] = Opts.ShowFlags.bShowCollisionShape;
+	Obj[Key::bPhysicsBody] = Opts.ShowFlags.bPhysicsBody;
 	Obj[Key::bDebugPhysicsAsset] = Opts.ShowFlags.bDebugPhysicsAsset;
 	Obj[Key::GridSpacing] = Opts.GridSpacing;
 	Obj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
@@ -250,6 +253,8 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.ShowFlags.bCollision = Obj[Key::bCollision].ToBool();
 	if (Obj.hasKey(Key::bShowCollisionShape))
 		Opts.ShowFlags.bShowCollisionShape = Obj[Key::bShowCollisionShape].ToBool();
+	if (Obj.hasKey(Key::bPhysicsBody))
+		Opts.ShowFlags.bPhysicsBody = Obj[Key::bPhysicsBody].ToBool();
 	if (Obj.hasKey(Key::bDebugPhysicsAsset))
 		Opts.ShowFlags.bDebugPhysicsAsset = Obj[Key::bDebugPhysicsAsset].ToBool();
 	if (Obj.hasKey(Key::GridSpacing))
@@ -389,6 +394,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	WidgetsObj[Key::ShowEditorDebug] = UI.bEditorDebug;
 	WidgetsObj[Key::ShowShadowMapDebug] = UI.bShadowMapDebug;
 	WidgetsObj[Key::ShowAnimationDebug] = UI.bAnimationDebug;
+	WidgetsObj[Key::ReflectionPropertyLabelColumnWidth] = ReflectionPropertyLabelColumnWidth;
 	Root[Key::UIWidgets] = WidgetsObj;
 
 	// Perspective Camera
@@ -528,6 +534,13 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		if (W.hasKey(Key::ShowEditorDebug))    UI.bEditorDebug = W[Key::ShowEditorDebug].ToBool();
 		if (W.hasKey(Key::ShowShadowMapDebug)) UI.bShadowMapDebug = W[Key::ShowShadowMapDebug].ToBool();
 		if (W.hasKey(Key::ShowAnimationDebug)) UI.bAnimationDebug = W[Key::ShowAnimationDebug].ToBool();
+		if (W.hasKey(Key::ReflectionPropertyLabelColumnWidth))
+		{
+			ReflectionPropertyLabelColumnWidth = std::clamp(
+				static_cast<float>(W[Key::ReflectionPropertyLabelColumnWidth].ToFloat()),
+				80.0f,
+				320.0f);
+		}
 	}
 
 	// Perspective Camera

@@ -14,6 +14,7 @@ class UMaterial;
 class FReferenceCollector;
 struct FDrawCommandBuffer;
 struct FFrameContext;
+struct FPhysicsDebugLine;
 
 // ============================================================
 // EPrimitiveProxyFlags — Owner 역참조 없이 프록시 타입/특성 식별
@@ -103,6 +104,7 @@ public:
 	virtual void UpdateMesh();
 	virtual void UpdateLOD(uint32 /*LODLevel*/) {}
 	virtual void UpdatePerViewport(const FFrameContext& /*Frame*/) {}
+	virtual void BuildPhysicsBodyWireLines(const FFrameContext& /*Frame*/, TArray<FPhysicsDebugLine>& /*OutLines*/) const {}
 
 	virtual bool PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context,
 		FDrawCommandBuffer& OutBuffer) const;

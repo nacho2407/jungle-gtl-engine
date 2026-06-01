@@ -9,11 +9,23 @@
 #include "SphylElem.h"
 #include "ConvexElem.h"
 
+#include "Source/Engine/PhysicsEngine/AggregateGeom.generated.h"
+
+USTRUCT()
 struct FKAggregateGeom
 {
+	GENERATED_BODY()
+
+	UPROPERTY(Edit, Save, Category="Aggregate Geometry", DisplayName="Sphere", Type=Array)
 	TArray<FKSphereElem> SphereElems;
+
+	UPROPERTY(Edit, Save, Category="Aggregate Geometry", DisplayName="Box", Type=Array)
 	TArray<FKBoxElem> BoxElems;
+
+	UPROPERTY(Edit, Save, Category="Aggregate Geometry", DisplayName="Capsule", Type=Array)
 	TArray<FKSphylElem> SphylElems;
+
+	UPROPERTY(Edit, Save, Category="Aggregate Geometry", DisplayName="Convex", Type=Array)
 	TArray<FKConvexElem> ConvexElems;
 
 	FKAggregateGeom() = default;
