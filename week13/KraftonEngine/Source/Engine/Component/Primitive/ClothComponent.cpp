@@ -5,6 +5,7 @@
 #include "Object/GarbageCollection.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Render/Proxy/DirtyFlag.h"
+#include "Render/Proxy/ClothSceneProxy.h"
 #include "Core/Logging/Log.h"
 
 #include <algorithm>
@@ -66,8 +67,9 @@ UClothComponent::UClothComponent()
 
 FPrimitiveSceneProxy* UClothComponent::CreateSceneProxy()
 {
-	// Commit 3에서 FClothSceneProxy가 연결되기 전까지 scene proxy 등록 생략
-	return nullptr;
+	// editor viewport에서 tick 전에 proxy가 만들어지는 초기 표시 경로 보장
+	RebuildClothIfNeeded();
+	return new FClothSceneProxy(this);
 }
 
 void UClothComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)

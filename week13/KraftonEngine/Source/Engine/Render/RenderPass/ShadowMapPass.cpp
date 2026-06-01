@@ -1,4 +1,4 @@
-#include "ShadowMapPass.h"
+﻿#include "ShadowMapPass.h"
 #include "RenderPassRegistry.h"
 
 #include "Render/Device/D3DDevice.h"
@@ -733,7 +733,8 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 		}
 
 		// Two-sided shadow: front-cull ↔ no-cull 전환
-		bool bTwoSided = Proxy->CastsShadowAsTwoSided();
+		const bool bTwoSided = Proxy->CastsShadowAsTwoSided()
+			|| Proxy->HasProxyFlag(EPrimitiveProxyFlags::Cloth);
 		if (bTwoSided != bCurrentTwoSided)
 		{
 			bCurrentTwoSided = bTwoSided;
