@@ -51,6 +51,17 @@ namespace
 		return It != Metadata.end() ? &It->second : nullptr;
 	}
 
+	bool IsTruthyMetadataValue(const FString& Value)
+	{
+		return Value.empty() || Value == "true" || Value == "1" || Value == "yes";
+	}
+
+	bool HasTruthyMetadataValue(const FPropertyValue& Value, const FString& Key)
+	{
+		const FString* MetadataValue = FindMetadataValue(Value, Key);
+		return MetadataValue && IsTruthyMetadataValue(*MetadataValue);
+	}
+
 	const char* GetPropertyName(const FProperty* Property)
 	{
 		return Property && Property->Name ? Property->Name : "";
@@ -403,7 +414,11 @@ namespace
 		return false;
 	}
 
-	void DispatchPostEditChange(const FPropertyValue& Value, const FString& PropertyPath)
+	void DispatchPostEditChange(
+		const FPropertyValue& Value,
+		const FString& PropertyPath,
+		EPropertyChangeType ChangeType = EPropertyChangeType::ValueSet,
+		int32 ArrayIndex = -1)
 	{
 		if (!Value.Object)
 		{
@@ -417,8 +432,133 @@ namespace
 		Event.DisplayName = GetPropertyDisplayName(Value);
 		Event.PropertyPath = PropertyPath.empty() ? Value.GetName() : PropertyPath;
 		Event.Type = Value.GetType();
-		Event.ChangeType = EPropertyChangeType::ValueSet;
+		Event.ChangeType = ChangeType;
+		Event.ArrayIndex = ArrayIndex;
 		Value.Object->PostEditChangeProperty(Event);
+	}
+
+	struct FArrayEditTarget
+	{
+		FPropertyValue Value;
+		void* ArrayPtr = nullptr;
+		const FArrayProperty::FArrayOps* Ops = nullptr;
+		size_t Count = 0;
+	};
+
+	bool IsArrayFixedSize(const FPropertyValue& Value)
+	{
+		return HasTruthyMetadataValue(Value, "editfixedsize") ||
+			HasTruthyMetadataValue(Value, "fixedsize");
+	}
+
+	bool TryGetArrayEditTarget(const FPropertyValue& Value, FArrayEditTarget& OutTarget)
+	{
+		const FArrayProperty* ArrayProperty = Value.Property ? Value.Property->AsArrayProperty() : nullptr;
+		void* ArrayPtr = Value.GetValuePtr();
+		const FArrayProperty::FArrayOps* Ops = ArrayProperty ? ArrayProperty->GetArrayOps() : nullptr;
+		if (!ArrayProperty || !ArrayPtr || !Ops || !Ops->GetNum)
+		{
+			return false;
+		}
+
+		OutTarget.Value = Value;
+		OutTarget.ArrayPtr = ArrayPtr;
+		OutTarget.Ops = Ops;
+		OutTarget.Count = Ops->GetNum(ArrayPtr);
+		return true;
+	}
+
+	bool BuildArrayEditTargets(const TArray<FPropertyValue>& CompatibleValues, TArray<FArrayEditTarget>& OutTargets)
+	{
+		OutTargets.clear();
+		for (const FPropertyValue& Value : CompatibleValues)
+		{
+			FArrayEditTarget Target;
+			if (!TryGetArrayEditTarget(Value, Target))
+			{
+				OutTargets.clear();
+				return false;
+			}
+			OutTargets.push_back(Target);
+		}
+		return !OutTargets.empty();
+	}
+
+	bool CanEditArrayStructure(const FArrayEditTarget& Target)
+	{
+		return Target.Value.Property &&
+			(Target.Value.Property->Flags & PF_ReadOnly) == 0 &&
+			!IsArrayFixedSize(Target.Value);
+	}
+
+	bool CanAddToArrays(const TArray<FArrayEditTarget>& Targets)
+	{
+		for (const FArrayEditTarget& Target : Targets)
+		{
+			if (!CanEditArrayStructure(Target) || !Target.Ops->InsertDefault)
+			{
+				return false;
+			}
+		}
+		return !Targets.empty();
+	}
+
+	bool CanRemoveFromArrays(const TArray<FArrayEditTarget>& Targets, size_t Index)
+	{
+		for (const FArrayEditTarget& Target : Targets)
+		{
+			if (!CanEditArrayStructure(Target) || !Target.Ops->RemoveAt || Index >= Target.Count)
+			{
+				return false;
+			}
+		}
+		return !Targets.empty();
+	}
+
+	bool AddArrayElementToTargets(const TArray<FPropertyValue>& CompatibleValues, const FString& PropertyPath)
+	{
+		TArray<FArrayEditTarget> Targets;
+		if (!BuildArrayEditTargets(CompatibleValues, Targets) || !CanAddToArrays(Targets))
+		{
+			return false;
+		}
+
+		for (const FArrayEditTarget& Target : Targets)
+		{
+			const size_t InsertIndex = Target.Count;
+			Target.Ops->InsertDefault(Target.ArrayPtr, InsertIndex);
+			DispatchPostEditChange(
+				Target.Value,
+				AppendArrayIndexPath(PropertyPath, InsertIndex),
+				EPropertyChangeType::ArrayAdd,
+				static_cast<int32>(InsertIndex)
+			);
+		}
+		return true;
+	}
+
+	bool RemoveArrayElementFromTargets(
+		const TArray<FPropertyValue>& CompatibleValues,
+		const FString& PropertyPath,
+		size_t Index)
+	{
+		TArray<FArrayEditTarget> Targets;
+		if (!BuildArrayEditTargets(CompatibleValues, Targets) || !CanRemoveFromArrays(Targets, Index))
+		{
+			return false;
+		}
+
+		for (const FArrayEditTarget& Target : Targets)
+		{
+			Target.Ops->RemoveAt(Target.ArrayPtr, Index);
+			DispatchPostEditChange(
+				Target.Value,
+				AppendArrayIndexPath(PropertyPath, Index),
+				EPropertyChangeType::ArrayRemove,
+				static_cast<int32>(Index)
+			);
+		}
+		return true;
 	}
 
 	void RenderLabelCell(const char* Label, int32 Depth)
@@ -443,6 +583,77 @@ namespace
 		if (Depth > 0)
 		{
 			ImGui::Indent(static_cast<float>(Depth) * PropertyIndentWidth);
+		}
+
+		const ImGuiTreeNodeFlags Flags =
+			ImGuiTreeNodeFlags_DefaultOpen |
+			ImGuiTreeNodeFlags_SpanAvailWidth |
+			ImGuiTreeNodeFlags_FramePadding |
+			ImGuiTreeNodeFlags_NoTreePushOnOpen;
+		const bool bOpen = ImGui::TreeNodeEx("##PropertyTree", Flags, "%s", Label ? Label : "");
+
+		if (Depth > 0)
+		{
+			ImGui::Unindent(static_cast<float>(Depth) * PropertyIndentWidth);
+		}
+		return bOpen;
+	}
+
+	bool RenderArrayRemoveButton(bool bCanRemove)
+	{
+		if (!bCanRemove)
+		{
+			ImGui::BeginDisabled();
+		}
+		const bool bClicked = ImGui::SmallButton("-");
+		if (!bCanRemove)
+		{
+			ImGui::EndDisabled();
+		}
+		ImGui::SameLine();
+		return bCanRemove && bClicked;
+	}
+
+	void RenderLabelCellWithRemoveButton(
+		const char* Label,
+		int32 Depth,
+		bool bShowRemoveButton,
+		bool bCanRemove,
+		bool* bOutRemoveClicked)
+	{
+		ImGui::TableSetColumnIndex(0);
+		ImGui::AlignTextToFramePadding();
+		if (Depth > 0)
+		{
+			ImGui::Indent(static_cast<float>(Depth) * PropertyIndentWidth);
+		}
+		if (bShowRemoveButton && bOutRemoveClicked)
+		{
+			*bOutRemoveClicked = RenderArrayRemoveButton(bCanRemove);
+		}
+		ImGui::TextUnformatted(Label ? Label : "");
+		if (Depth > 0)
+		{
+			ImGui::Unindent(static_cast<float>(Depth) * PropertyIndentWidth);
+		}
+	}
+
+	bool RenderTreeLabelCellWithRemoveButton(
+		const char* Label,
+		int32 Depth,
+		bool bShowRemoveButton,
+		bool bCanRemove,
+		bool* bOutRemoveClicked)
+	{
+		ImGui::TableSetColumnIndex(0);
+		ImGui::AlignTextToFramePadding();
+		if (Depth > 0)
+		{
+			ImGui::Indent(static_cast<float>(Depth) * PropertyIndentWidth);
+		}
+		if (bShowRemoveButton && bOutRemoveClicked)
+		{
+			*bOutRemoveClicked = RenderArrayRemoveButton(bCanRemove);
 		}
 
 		const ImGuiTreeNodeFlags Flags =
@@ -865,14 +1076,30 @@ bool FBasicReflectionPropertyRenderer::RenderPropertyRow(
 	FPropertyValue& PrimaryValue,
 	const TArray<FPropertyValue>& CompatibleValues,
 	const FString& PropertyPath,
-	int32 Depth)
+	int32 Depth,
+	const char* LabelOverride,
+	bool bShowRemoveButton,
+	bool bCanRemove,
+	bool* bOutRemoveClicked)
 {
+	const char* Label = LabelOverride ? LabelOverride : GetPropertyDisplayName(PrimaryValue);
+	if (bOutRemoveClicked)
+	{
+		*bOutRemoveClicked = false;
+	}
+
 	switch (PrimaryValue.GetType())
 	{
 	case EPropertyType::Struct:
 	{
 		ImGui::TableNextRow();
-		const bool bOpen = RenderTreeLabelCell(GetPropertyDisplayName(PrimaryValue), Depth);
+		const bool bOpen = RenderTreeLabelCellWithRemoveButton(
+			Label,
+			Depth,
+			bShowRemoveButton,
+			bCanRemove,
+			bOutRemoveClicked
+		);
 		ImGui::TableSetColumnIndex(1);
 		UStruct* StructType = PrimaryValue.GetStructType();
 		ImGui::TextDisabled("%s", StructType ? StructType->GetName() : "(unsupported struct)");
@@ -881,7 +1108,13 @@ bool FBasicReflectionPropertyRenderer::RenderPropertyRow(
 	case EPropertyType::Array:
 	{
 		ImGui::TableNextRow();
-		const bool bOpen = RenderTreeLabelCell(GetPropertyDisplayName(PrimaryValue), Depth);
+		const bool bOpen = RenderTreeLabelCellWithRemoveButton(
+			Label,
+			Depth,
+			bShowRemoveButton,
+			bCanRemove,
+			bOutRemoveClicked
+		);
 		ImGui::TableSetColumnIndex(1);
 
 		const FArrayProperty* ArrayProperty = PrimaryValue.Property ? PrimaryValue.Property->AsArrayProperty() : nullptr;
@@ -889,6 +1122,23 @@ bool FBasicReflectionPropertyRenderer::RenderPropertyRow(
 		const FArrayProperty::FArrayOps* Ops = ArrayProperty ? ArrayProperty->GetArrayOps() : nullptr;
 		const size_t Count = (ArrayPtr && Ops && Ops->GetNum) ? Ops->GetNum(ArrayPtr) : 0;
 		ImGui::TextDisabled("Array Elements: %zu", Count);
+		ImGui::SameLine();
+		TArray<FArrayEditTarget> ArrayEditTargets;
+		BuildArrayEditTargets(CompatibleValues, ArrayEditTargets);
+		const bool bCanAdd = CanAddToArrays(ArrayEditTargets);
+		if (!bCanAdd)
+		{
+			ImGui::BeginDisabled();
+		}
+		const bool bAddClicked = ImGui::SmallButton("+");
+		if (!bCanAdd)
+		{
+			ImGui::EndDisabled();
+		}
+		if (bCanAdd && bAddClicked && AddArrayElementToTargets(CompatibleValues, PropertyPath))
+		{
+			return true;
+		}
 		return bOpen && RenderArrayChildren(PrimaryValue, CompatibleValues, PropertyPath, Depth + 1);
 	}
 	default:
@@ -896,7 +1146,7 @@ bool FBasicReflectionPropertyRenderer::RenderPropertyRow(
 	}
 
 	ImGui::TableNextRow();
-	RenderLabelCell(GetPropertyDisplayName(PrimaryValue), Depth);
+	RenderLabelCellWithRemoveButton(Label, Depth, bShowRemoveButton, bCanRemove, bOutRemoveClicked);
 	ImGui::TableSetColumnIndex(1);
 	ImGui::SetNextItemWidth(-FLT_MIN);
 
@@ -987,6 +1237,8 @@ bool FBasicReflectionPropertyRenderer::RenderArrayChildren(
 
 	bool bAnyChanged = false;
 	const size_t PrimaryCount = Ops->GetNum(ArrayPtr);
+	TArray<FArrayEditTarget> ArrayEditTargets;
+	BuildArrayEditTargets(CompatibleValues, ArrayEditTargets);
 	for (size_t Index = 0; Index < PrimaryCount; ++Index)
 	{
 		void* ElementPtr = Ops->GetElementPtr(ArrayPtr, Index);
@@ -1041,13 +1293,22 @@ bool FBasicReflectionPropertyRenderer::RenderArrayChildren(
 		char Label[64];
 		std::snprintf(Label, sizeof(Label), "Element %zu", Index);
 		ImGui::PushID(static_cast<int>(Index));
+		bool bRemoveClicked = false;
 		bAnyChanged |= RenderPropertyRow(
 			PrimaryElement,
 			CompatibleElements,
 			AppendArrayIndexPath(PropertyPath, Index),
-			Depth
+			Depth,
+			Label,
+			true,
+			CanRemoveFromArrays(ArrayEditTargets, Index),
+			&bRemoveClicked
 		);
 		ImGui::PopID();
+		if (bRemoveClicked)
+		{
+			return RemoveArrayElementFromTargets(CompatibleValues, PropertyPath, Index) || bAnyChanged;
+		}
 	}
 	return bAnyChanged;
 }

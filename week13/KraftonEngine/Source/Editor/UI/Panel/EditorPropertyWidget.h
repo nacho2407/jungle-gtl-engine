@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Editor/Selection/SelectionManager.h"
 #include "Editor/UI/Panel/EditorPanelWidget.h"
 #include "Object/Object.h"
 #include "Asset/AssetRegistry.h"
@@ -13,13 +12,16 @@ class FEditorPropertyWidget : public FEditorPanelWidget
 {
 public:
 	virtual void Render(const FEditorPanelContext& Context) override;
+	void SetShowEditorOnlyComponents(bool bEnable) { bShowEditorOnlyComponents = bEnable; }
+	bool IsShowingEditorOnlyComponents() const { return bShowEditorOnlyComponents; }
 
 private:
 	void RenameActor(AActor* PrimaryActor);
-	void RenderAddComponentMenu(AActor* Actor);
-	void RenderDetails(const FSelectionDetailTarget& PrimaryTarget, const TArray<FSelectionDetailTarget>& SelectedTargets);
-	void RenderTargetProperties(const FSelectionDetailTarget& PrimaryTarget, const TArray<FSelectionDetailTarget>& SelectedTargets);
-	void CollectEditableProperties(const FSelectionDetailTarget& Target, TArray<struct FPropertyValue>& OutProps) const;
+	void RenderComponentTree(AActor* Actor);
+	void RenderSceneComponentNode(class USceneComponent* Comp);
+	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
+	void RenderComponentProperties(AActor* Actor, const TArray<AActor*>& SelectedActors);
+	void RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
 	bool RenderPropertyWidget(TArray<struct FPropertyValue>& Props, int32& Index, bool bDispatchChange = true, const FString& PropertyPath = {});
 	bool RenderSoftObjectPropertyWidget(struct FPropertyValue& Prop);
 	bool RenderEnumPropertyWidget(struct FPropertyValue& Prop);
@@ -27,7 +29,7 @@ private:
 	bool RenderArrayPropertyWidget(struct FPropertyValue& Prop, bool bDispatchChange, const FString& PropertyPath);
 	void RenderCallInEditorFunctions(UObject* Object);
 
-	void PropagatePropertyChange(const FPropertyValue& SourceProp, const TArray<FSelectionDetailTarget>& SelectedTargets);
+	void PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors);
 
 	void AddComponentToActor(AActor* Actor, UClass* ComponentClass);
 
@@ -35,7 +37,10 @@ private:
 	static FString OpenStaticMeshFileDialog();
 	static FString OpenFbxFileDialog();
 
+	UActorComponent* SelectedComponent = nullptr;
 	AActor* LastSelectedActor = nullptr;
+	bool bActorSelected = true; // true: Actor details, false: Component details
+	bool bShowEditorOnlyComponents = false;
 
 	char RenameBuffer[256] = {};
 	bool bShowDuplicateWarning = false;
@@ -44,5 +49,4 @@ private:
 	int32 PendingStaticFbxSkinnedMeshPolicy = 0;
 
 	FFbxSceneImportDialogState SkeletalFbxImportDialog;
-	FSelectionManager* SelectionManager = nullptr;
 };

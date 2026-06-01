@@ -1,6 +1,5 @@
 #include "Editor/UI/Panel/EditorPropertyWidget.h"
 #include "Editor/EditorEngine.h"
-#include "Editor/Selection/SelectionManager.h"
 
 #include "ImGui/imgui.h"
 #include "Component/ActorComponent.h"
@@ -30,7 +29,6 @@
 #include "Object/Object.h"
 #include "Object/ObjectIterator.h"
 #include "Object/Ptr/SoftObjectPtr.h"
-#include "Object/Reflection/UStruct.h"
 #include "Materials/Material.h"
 #include "Mesh/Importer/MeshImportOptions.h"
 #include "Mesh/MeshManager.h"
@@ -69,6 +67,17 @@ namespace
 	}
 
 
+
+	bool ShouldHideInComponentTree(const UActorComponent* Component, bool bShowEditorOnlyComponents)
+	{
+		if (!Component)
+		{
+			return true;
+		}
+
+		return Component->IsHiddenInComponentTree()
+			&& !(bShowEditorOnlyComponents && Component->IsEditorOnlyComponent());
+	}
 
 	struct FComponentClassGroup
 	{
@@ -548,109 +557,143 @@ FString FEditorPropertyWidget::OpenFbxFileDialog()
 
 void FEditorPropertyWidget::Render(const FEditorPanelContext& Context)
 {
-	SelectionManager = Context.SelectionManager;
-	if (!SelectionManager)
+	if (Context.EditorEngine)
+	{
+		EditorEngine = Context.EditorEngine;
+	}
+
+	if (!EditorEngine)
 	{
 		return;
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(350.0f, 500.0f), ImGuiCond_Once);
+
 	ImGui::Begin("Property Window");
 
-	const FSelectionDetailTarget* PrimaryTarget = SelectionManager->GetPrimaryDetailTarget();
-	if (!PrimaryTarget || !PrimaryTarget->IsValidTarget())
+	FSelectionManager& Selection = Context.SelectionManager ? *Context.SelectionManager : EditorEngine->GetSelectionManager();
+	AActor* PrimaryActor = Selection.GetPrimarySelection();
+	if (!IsValid(PrimaryActor))
 	{
+		SelectedComponent = nullptr;
 		LastSelectedActor = nullptr;
+		bActorSelected = true;
 		ImGui::Text("No object selected.");
 		ImGui::End();
 		return;
 	}
 
-	AActor* PrimaryActor = SelectionManager->GetPrimarySelection();
+	// Actor 선택이 바뀌면 초기화
 	if (PrimaryActor != LastSelectedActor)
 	{
+		SelectedComponent = nullptr;
 		LastSelectedActor = PrimaryActor;
+		bActorSelected = true;
 		bShowDuplicateWarning = false;
 	}
-
-	const TArray<FSelectionDetailTarget>& SelectedTargets = SelectionManager->GetSelectedDetailTargets();
-	const int32 SelectionCount = static_cast<int32>(SelectedTargets.size());
-	UObject* PrimaryObject = PrimaryTarget->ObjectPtr;
-
-	if (AActor* Actor = Cast<AActor>(PrimaryObject))
+	else if (UActorComponent* SelectionComponent = Selection.GetSelectedActorComponent())
 	{
-		if (SelectionCount > 1)
+		if (SelectionComponent->GetOwner() == PrimaryActor)
 		{
-			ImGui::Text("Class: %s", Actor->GetClass()->GetName());
-			FString PrimaryName = Actor->GetFName().ToString();
-			if (PrimaryName.empty()) PrimaryName = Actor->GetClass()->GetName();
-			ImGui::Text("Name: %s (+%d)", PrimaryName.c_str(), SelectionCount - 1);
-
-			ImGui::SameLine();
-			char RemoveLabel[64];
-			snprintf(RemoveLabel, sizeof(RemoveLabel), "Remove %d Objects", SelectionCount);
-			if (ImGui::Button(RemoveLabel))
-			{
-				TArray<AActor*> ToDelete = SelectionManager->GetSelectedActors();
-				SelectionManager->ClearSelection();
-				for (AActor* ActorToDelete : ToDelete)
-				{
-					if (IsValid(ActorToDelete))
-					{
-						UWorld* ActorWorld = ActorToDelete->GetWorld();
-						if (ActorWorld)
-						{
-							ActorWorld->DestroyActor(ActorToDelete);
-						}
-					}
-				}
-				EditorEngine->InvalidateOcclusionResults();
-				LastSelectedActor = nullptr;
-				ImGui::End();
-				return;
-			}
-		}
-		else
-		{
-			ImGui::SetWindowFontScale(1.5f);
-			ImGui::Text("%s", Actor->GetFName().ToString().c_str());
-			ImGui::SetWindowFontScale(1.0f);
+			SelectedComponent = SelectionComponent;
+			bActorSelected = false;
 		}
 	}
-	else if (UActorComponent* Component = Cast<UActorComponent>(PrimaryObject))
-	{
-		FString ComponentName = Component->GetFName().ToString();
-		if (ComponentName.empty()) ComponentName = Component->GetClass()->GetName();
 
+	const TArray<AActor*> SelectedActors = Selection.GetSelectedActors();
+	const int32 SelectionCount = static_cast<int32>(SelectedActors.size());
+
+	// ========== 고정 영역: Actor Info (clickable) ==========
+	if (SelectionCount > 1)
+	{
+		ImGui::Text("Class: %s", PrimaryActor->GetClass()->GetName());
+
+		FString PrimaryName = PrimaryActor->GetFName().ToString();
+		if (PrimaryName.empty()) PrimaryName = PrimaryActor->GetClass()->GetName();
+
+		bool bHighlight = bActorSelected;
+		if (bHighlight) ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.8f, 0.2f, 1.0f));
+		ImGui::Text("Name: %s (+%d)", PrimaryName.c_str(), SelectionCount - 1);
+		if (bHighlight) ImGui::PopStyleColor();
+		if (ImGui::IsItemClicked())
+		{
+			bActorSelected = true;
+			SelectedComponent = nullptr;
+			Selection.SelectActorDetails(PrimaryActor);
+		}
+		ImGui::SameLine();
+		char RemoveLabel[64];
+		snprintf(RemoveLabel, sizeof(RemoveLabel), "Remove %d Objects", SelectionCount);
+		if (ImGui::Button(RemoveLabel))
+		{
+			// 선택 해제를 먼저 수행 (dangling pointer로 Proxy 접근 방지)
+			TArray<AActor*> ToDelete(SelectedActors.begin(), SelectedActors.end());
+			Selection.ClearSelection();
+			for (AActor* Actor : ToDelete)
+			{
+				if (IsValid(Actor))
+				{
+					UWorld* ActorWorld = Actor->GetWorld();
+					if (ActorWorld)
+					{
+						ActorWorld->DestroyActor(Actor);
+					}
+				}
+			}
+			// GPU Occlusion staging에 남은 dangling proxy 포인터 무효화
+			EditorEngine->InvalidateOcclusionResults();
+			SelectedComponent = nullptr;
+			LastSelectedActor = nullptr;
+			ImGui::End();
+			return;
+		}
+	}
+	else
+	{
 		ImGui::SetWindowFontScale(1.5f);
-		ImGui::Text("%s", ComponentName.c_str());
+		ImGui::Text(PrimaryActor->GetFName().ToString().c_str());
 		ImGui::SetWindowFontScale(1.0f);
-		ImGui::TextDisabled("%s", Component->GetClass()->GetName());
+
+		if (ImGui::IsItemClicked())
+		{
+			bActorSelected = true;
+			SelectedComponent = nullptr;
+			Selection.SelectActorDetails(PrimaryActor);
+		}
+		//ImGui::SameLine();
+
+		//ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 70.0f);
+		//ImGui::InputText("##Rename", RenameBuffer, sizeof(RenameBuffer));
+		//ImGui::SameLine();
+		//if (ImGui::Button("Rename"))
+		//{
+		//	RenameActor(PrimaryActor);
+		//}
 	}
 
 	if (bShowDuplicateWarning)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
-		ImGui::Text("Duplicate name is already in use.");
+		ImGui::Text("이미 사용 중인 이름입니다.");
 		ImGui::PopStyleColor();
 	}
 
-	if (IsValid(PrimaryActor))
-	{
-		RenderAddComponentMenu(PrimaryActor);
-	}
+	// ========== 고정 영역: Component Tree ==========
+	RenderComponentTree(PrimaryActor);
 
+	// ========== 스크롤 영역: Details ==========
 	float ScrollHeight = ImGui::GetContentRegionAvail().y;
 	if (ScrollHeight < 50.0f) ScrollHeight = 50.0f;
 
 	ImGui::BeginChild("##Details", ImVec2(0, ScrollHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 	{
-		RenderDetails(*PrimaryTarget, SelectedTargets);
+		RenderDetails(PrimaryActor, SelectedActors);
 	}
 	ImGui::EndChild();
 
 	ImGui::End();
 }
+
 void FEditorPropertyWidget::RenameActor(AActor* PrimaryActor)
 {
 	FString NewName(RenameBuffer);
@@ -689,161 +732,111 @@ void FEditorPropertyWidget::RenameActor(AActor* PrimaryActor)
 	RenameBuffer[0] = '\0';
 }
 
-void FEditorPropertyWidget::RenderDetails(const FSelectionDetailTarget& PrimaryTarget, const TArray<FSelectionDetailTarget>& SelectedTargets)
+void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
-	if (!PrimaryTarget.IsValidTarget())
+	if (!IsValid(PrimaryActor)) return;
+
+	if (bActorSelected)
 	{
-		ImGui::TextDisabled("Select an actor or component to view details.");
-		return;
+		RenderActorProperties(PrimaryActor, SelectedActors);
 	}
-
-	RenderTargetProperties(PrimaryTarget, SelectedTargets);
-}
-
-void FEditorPropertyWidget::CollectEditableProperties(const FSelectionDetailTarget& Target, TArray<FPropertyValue>& OutProps) const
-{
-	OutProps.clear();
-	if (!Target.IsValidTarget())
+	else if (IsValid(SelectedComponent) && SelectedActors.size() >= 2)
 	{
-		return;
-	}
-
-	if (Target.ObjectPtr)
-	{
-		Target.ObjectPtr->PreGetEditableProperties();
-	}
-
-	TArray<const FProperty*> Properties;
-	Target.StructType->GetPropertyRefs(Properties);
-	for (const FProperty* Property : Properties)
-	{
-		if (!Property || (Property->Flags & PF_Edit) == 0)
+		// 다중 선택 시 모든 액터의 타입이 동일한지 검증
+		UClass* PrimaryClass = PrimaryActor->GetClass();
+		bool bAllSameType = true;
+		for (const AActor* Actor : SelectedActors)
 		{
-			continue;
-		}
-		if (Target.ObjectPtr && !Target.ObjectPtr->ShouldExposeProperty(*Property))
-		{
-			continue;
-		}
-		if (!Property->GetValuePtrFor(Target.ContainerPtr))
-		{
-			continue;
-		}
-
-		OutProps.push_back(Property->ToValue(Target.ContainerPtr, Target.ObjectPtr));
-	}
-}
-
-void FEditorPropertyWidget::RenderTargetProperties(const FSelectionDetailTarget& PrimaryTarget, const TArray<FSelectionDetailTarget>& SelectedTargets)
-{
-	TArray<FPropertyValue> Props;
-	CollectEditableProperties(PrimaryTarget, Props);
-
-	UActorComponent* SelectedComponent = Cast<UActorComponent>(PrimaryTarget.ObjectPtr);
-	AActor* OwnerActor = SelectedComponent ? SelectedComponent->GetOwner() : Cast<AActor>(PrimaryTarget.ObjectPtr);
-	if (IsValid(SelectedComponent) && IsValid(OwnerActor) && SelectedComponent != OwnerActor->GetRootComponent())
-	{
-		if (ImGui::Button("Remove"))
-		{
-			OwnerActor->RemoveComponent(SelectedComponent);
-			if (SelectionManager)
+			if (IsValid(Actor) && Actor->GetClass() != PrimaryClass)
 			{
-				SelectionManager->SelectActorDetails(OwnerActor);
-			}
-			return;
-		}
-		ImGui::Separator();
-	}
-
-	bool bIsRootSceneComponent = false;
-	if (USceneComponent* SceneComp = Cast<USceneComponent>(PrimaryTarget.ObjectPtr))
-	{
-		bIsRootSceneComponent = SceneComp->GetParent() == nullptr;
-	}
-
-	TArray<std::string> CategoryOrder;
-	for (const FPropertyValue& Prop : Props)
-	{
-		const char* PropertyCategory = Prop.GetCategory();
-		bool bFound = false;
-		for (const std::string& Category : CategoryOrder)
-		{
-			if (Category == PropertyCategory)
-			{
-				bFound = true;
+				bAllSameType = false;
 				break;
 			}
 		}
-		if (!bFound)
-		{
-			CategoryOrder.push_back(PropertyCategory);
-		}
-	}
 
-	bool bAnyChanged = false;
-	for (const std::string& Category : CategoryOrder)
-	{
-		if (bIsRootSceneComponent && Category == "Transform")
+		if (!bAllSameType)
 		{
-			continue;
-		}
+			ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "Multi-edit unavailable");
+			ImGui::TextWrapped(
+				"Selected actors have different types. "
+				"Multi-component editing requires all selected actors to be the same type.");
 
-		if (!Category.empty())
-		{
-			const bool bOpen = ImGui::CollapsingHeader(Category.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
-			if (!bOpen)
+			ImGui::Spacing();
+			ImGui::TextDisabled("Primary: %s", PrimaryClass->GetName());
+			for (const AActor* Actor : SelectedActors)
 			{
-				continue;
+				if (IsValid(Actor) && Actor->GetClass() != PrimaryClass)
+				{
+					ImGui::TextDisabled("  Mismatch: %s (%s)",
+						Actor->GetFName().ToString().c_str(),
+						Actor->GetClass()->GetName());
+				}
 			}
 		}
+		else
+		{
+			RenderComponentProperties(PrimaryActor, SelectedActors);
+		}
+	}
+	else if (SelectedComponent)
+	{
+		RenderComponentProperties(PrimaryActor, SelectedActors);
+	}
+	else
+	{
+		ImGui::TextDisabled("Select an actor or component to view details.");
+	}
+}
 
-		if (ImGui::BeginTable("##PropertyTable", 2,
-			ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_PadOuterX))
+void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
+{
+	if (!IsValid(PrimaryActor)) return;
+
+	if (PrimaryActor->GetRootComponent())
+	{
+		ImGui::Separator();
+		ImGui::Text("Transform");
+		ImGui::Spacing();
+
+		TArray<FPropertyValue> Props;
+		PrimaryActor->GetEditableProperties(Props);
+
+		if (ImGui::BeginTable("##ActorPropertyTable", 2,
+			ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_PadOuterX | ImGuiTableFlags_RowBg))
 		{
 			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 150.0f);
 			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
-			for (int32 i = 0; i < static_cast<int32>(Props.size()); ++i)
-			{
-				if (Category != Props[i].GetCategory())
-				{
-					continue;
-				}
+			ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImVec4(0.145f, 0.145f, 0.145f, 1.0f));
 
+			for (int32 i = 0; i < (int32)Props.size(); ++i)
+			{
 				ImGui::TableNextRow();
 				ImGui::PushID(i);
 
 				ImGui::TableSetColumnIndex(0);
+
 				ImGui::SetWindowFontScale(0.92f);
+
 				ImGui::AlignTextToFramePadding();
 				ImGui::TextUnformatted(GetPropertyDisplayName(Props[i]));
+
 				ImGui::SetWindowFontScale(1.0f);
 
 				ImGui::TableSetColumnIndex(1);
 				ImGui::SetNextItemWidth(-1);
 
-				const bool bChanged = RenderPropertyWidget(Props, i);
-				if (bChanged)
-				{
-					bAnyChanged = true;
-					PropagatePropertyChange(Props[i], SelectedTargets);
-				}
+				RenderPropertyWidget(Props, i);
 				ImGui::PopID();
 			}
 
 			ImGui::EndTable();
+			ImGui::PopStyleColor(2);
 		}
 	}
 
-	if (PrimaryTarget.ObjectPtr)
-	{
-		RenderCallInEditorFunctions(PrimaryTarget.ObjectPtr);
-	}
-
-	if (bAnyChanged && IsValid(SelectedComponent) && SelectedComponent->IsA<USceneComponent>())
-	{
-		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
-	}
+	RenderCallInEditorFunctions(PrimaryActor);
 }
 
 void FEditorPropertyWidget::RenderCallInEditorFunctions(UObject* Object)
@@ -943,7 +936,7 @@ void FEditorPropertyWidget::RenderCallInEditorFunctions(UObject* Object)
 	}
 }
 
-void FEditorPropertyWidget::RenderAddComponentMenu(AActor* Actor)
+void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 {
 	if (!IsValid(Actor)) return;
 
@@ -1057,62 +1050,372 @@ void FEditorPropertyWidget::RenderAddComponentMenu(AActor* Actor)
 
 	ImGui::Separator();
 
-}
+	USceneComponent* Root = Actor->GetRootComponent();
 
-void FEditorPropertyWidget::PropagatePropertyChange(const FPropertyValue& SourceProp, const TArray<FSelectionDetailTarget>& SelectedTargets)
-{
-	if (!SourceProp.Property || SelectedTargets.size() < 2)
+	static float TreeHeight = 100.0f;
+
+	ImGui::BeginChild("##ComponentTree", ImVec2(0, TreeHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 	{
-		return;
+		if (Root)
+		{
+			RenderSceneComponentNode(Root);
+		}
+
+		TArray<UActorComponent*> NonSceneComponents;
+		for (UActorComponent* Comp : Actor->GetComponents())
+		{
+			if (!Comp) continue;
+			if (Comp->IsA<USceneComponent>()) continue;
+			if (ShouldHideInComponentTree(Comp, bShowEditorOnlyComponents)) continue;
+			NonSceneComponents.push_back(Comp);
+		}
+
+		if (!NonSceneComponents.empty())
+		{
+			ImGui::Separator();
+		}
+
+		for (UActorComponent* Comp : NonSceneComponents)
+		{
+			FString Name = Comp->GetFName().ToString();
+			const FString TypeName = Comp->GetClass()->GetName();
+			const FString DefaultNamePrefix = TypeName + "_";
+
+			const bool bUseTypeAsLabel = Name.empty() || Name == TypeName || Name.rfind(DefaultNamePrefix, 0) == 0;
+
+			const char* Label = bUseTypeAsLabel ? TypeName.c_str() : Name.c_str();
+
+			ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+			if (!bActorSelected && SelectedComponent == Comp)
+			{
+				Flags |= ImGuiTreeNodeFlags_Selected;
+			}
+
+			ImGui::TreeNodeEx(Comp, Flags, "%s", Label);
+
+			if (ImGui::IsItemClicked())
+			{
+				SelectedComponent = Comp;
+				bActorSelected = false;
+				EditorEngine->GetSelectionManager().SelectActorComponent(Comp);
+			}
+		}
 	}
 
-	for (size_t TargetIndex = 1; TargetIndex < SelectedTargets.size(); ++TargetIndex)
+	ImGui::EndChild();
+
+	ImGui::InvisibleButton("##TreeResize", ImVec2(-1, 6));
+
+	if (ImGui::IsItemHovered() || ImGui::IsItemActive())
 	{
-		const FSelectionDetailTarget& Target = SelectedTargets[TargetIndex];
-		if (!Target.IsValidTarget())
+		ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+	}
+
+	if (ImGui::IsItemActive())
+	{
+		TreeHeight += ImGui::GetIO().MouseDelta.y;
+		TreeHeight = std::max(TreeHeight, 80.0f);
+	}
+
+	ImVec2 Min = ImGui::GetItemRectMin();
+	ImVec2 Max = ImGui::GetItemRectMax();
+
+	ImU32 Color =
+		ImGui::GetColorU32(
+			ImGui::IsItemHovered()
+			? ImGuiCol_SeparatorHovered
+			: ImGuiCol_Separator
+		);
+
+	ImGui::GetWindowDrawList()->AddLine(
+		ImVec2(Min.x, (Min.y + Max.y) * 0.5f),
+		ImVec2(Max.x, (Min.y + Max.y) * 0.5f),
+		Color,
+		2.0f
+	);
+}
+
+void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
+{
+	if (!Comp) return;
+	if (ShouldHideInComponentTree(Comp, bShowEditorOnlyComponents)) return;
+
+	FString Name = Comp->GetFName().ToString();
+	if (Name.empty()) Name = Comp->GetClass()->GetName();
+
+	const auto& Children = Comp->GetChildren();
+	bool bHasVisibleChildren = false;
+	for (USceneComponent* Child : Children)
+	{
+		if (Child && !ShouldHideInComponentTree(Child, bShowEditorOnlyComponents))
 		{
-			continue;
+			bHasVisibleChildren = true;
+			break;
 		}
-		if (SourceProp.Object && Target.StructType != SourceProp.Object->GetClass())
+	}
+
+	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_DefaultOpen;
+	if (!bHasVisibleChildren)
+		Flags |= ImGuiTreeNodeFlags_Leaf;
+	if (!bActorSelected && SelectedComponent == Comp)
+		Flags |= ImGuiTreeNodeFlags_Selected;
+
+	bool bIsRoot = (Comp->GetParent() == nullptr);
+	bool bOpen = ImGui::TreeNodeEx(
+		Comp, Flags, "%s%s (%s)",
+		bIsRoot ? "[Root] " : "",
+		Name.c_str(),
+		Comp->GetClass()->GetName()
+	);
+
+	if (ImGui::IsItemClicked())
+	{
+		SelectedComponent = Comp;
+		bActorSelected = false;
+		EditorEngine->GetSelectionManager().SelectActorComponent(Comp);
+	}
+
+	// 컴포넌트 트리에서 간단하게 드래그 앤 드랍으로 부모-자식 관계 변경 가능하도록 지원
+	if (ImGui::BeginDragDropSource())
+	{
+		ImGui::SetDragDropPayload("SCENE_COMPONENT_REPARENT", &Comp, sizeof(USceneComponent*));
+		ImGui::Text("Reparent %s", Name.c_str());
+		ImGui::EndDragDropSource();
+	}
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCENE_COMPONENT_REPARENT"))
 		{
+			USceneComponent* DraggedComp = *(USceneComponent**)payload->Data;
+			if (DraggedComp && DraggedComp != Comp)
+			{
+				// Circular dependency check: Ensure Comp is not a child of DraggedComp
+				bool bIsChildOfDragged = false;
+				USceneComponent* Check = Comp;
+				while (Check)
+				{
+					if (Check == DraggedComp)
+					{
+						bIsChildOfDragged = true;
+						break;
+					}
+					Check = Check->GetParent();
+				}
+
+				if (!bIsChildOfDragged)
+				{
+					DraggedComp->SetParent(Comp);
+					if (EditorEngine && EditorEngine->GetGizmo())
+					{
+						EditorEngine->GetGizmo()->UpdateGizmoTransform();
+					}
+				}
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
+
+	if (bOpen)
+	{
+		for (USceneComponent* Child : Children)
+		{
+			RenderSceneComponentNode(Child);
+		}
+		ImGui::TreePop();
+	}
+}
+
+void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArray<AActor*>& SelectedActors)
+{
+	if (!IsValid(Actor) || !IsValid(SelectedComponent)) return;
+
+	if (SelectedComponent != Actor->GetRootComponent())
+	{
+		if (ImGui::Button("Remove"))
+		{
+			if (SelectedComponent != nullptr)
+			{
+				Actor->RemoveComponent(SelectedComponent);
+				SelectedComponent = nullptr;
+				return;
+			}
+		}
+	}
+
+	ImGui::Separator();
+
+	// reflected property 기반 자동 위젯 렌더링
+	TArray<FPropertyValue> Props;
+	SelectedComponent->GetEditableProperties(Props);
+
+	bool bIsRoot = false;
+	if (SelectedComponent->IsA<USceneComponent>())
+	{
+		USceneComponent* SceneComp = static_cast<USceneComponent*>(SelectedComponent);
+		bIsRoot = (SceneComp->GetParent() == nullptr);
+	}
+
+	// 카테고리 순서 수집 (등장 순 유지)
+	TArray<std::string> CategoryOrder;
+	for (const auto& P : Props)
+	{
+		const char* PropertyCategory = P.GetCategory();
+		bool bFound = false;
+		for (const auto& C : CategoryOrder)
+		{
+			if (C == PropertyCategory) { bFound = true; break; }
+		}
+		if (!bFound) CategoryOrder.push_back(PropertyCategory);
+	}
+
+	bool bAnyChanged = false;
+	// Static mesh path 변경은 SetStaticMesh를 통해 MaterialSlots를 resize 하므로
+	// Props에 들어있던 &MaterialSlots[i] 포인터가 모두 무효화된다. 이후 Materials
+	// 카테고리 등을 더 렌더링하면 dangling pointer 접근 → bad_alloc.
+	// 변경이 발생하면 즉시 외부 루프까지 빠져나와 다음 프레임에 Props를 새로 수집해 렌더한다.
+	bool bPropsInvalidated = false;
+
+	for (const auto& Cat : CategoryOrder)
+	{
+		if (bPropsInvalidated) break;
+
+		// Root 컴포넌트는 Transform 카테고리 스킵
+		if (bIsRoot && Cat == "Transform")
 			continue;
+
+		// 카테고리 헤더 (빈 문자열이면 헤더 없이 렌더)
+		bool bInTreeNode = false;
+		if (!Cat.empty())
+		{
+			ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.22f, 0.22f, 0.22f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.27f, 0.27f, 0.27f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.30f, 0.30f, 0.30f, 1.0f));
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(5.0f, 3.0f));
+
+			bool bOpen = ImGui::CollapsingHeader(Cat.c_str(), ImGuiTreeNodeFlags_DefaultOpen);
+
+			ImGui::PopStyleVar();
+			ImGui::PopStyleColor(3);
+
+			if (!bOpen) continue;
 		}
 
-		TArray<const FProperty*> Properties;
-		Target.StructType->GetPropertyRefs(Properties);
-		const FProperty* DstProperty = nullptr;
-		for (const FProperty* Property : Properties)
+		if (ImGui::BeginTable("##PropertyTable", 2,
+			ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_PadOuterX | ImGuiTableFlags_RowBg))
 		{
-			if (Property && Property->Name && std::strcmp(SourceProp.GetName(), Property->Name) == 0 && Property->GetType() == SourceProp.GetType())
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 150.0f);
+			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+
+			ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImVec4(0.145f, 0.145f, 0.145f, 1.0f));
+
+			for (int32 i = 0; i < (int32)Props.size(); ++i)
 			{
-				DstProperty = Property;
+				if (Cat != Props[i].GetCategory())
+					continue;
+
+				ImGui::TableNextRow();
+				ImGui::PushID(i);
+
+				ImGui::TableSetColumnIndex(0);
+
+				ImGui::SetWindowFontScale(0.92f);
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::TextUnformatted(GetPropertyDisplayName(Props[i]));
+
+				ImGui::SetWindowFontScale(1.0f);
+
+				ImGui::TableSetColumnIndex(1);
+				ImGui::SetNextItemWidth(-1);
+
+				bool bChanged = RenderPropertyWidget(Props, i);
+
+				if (bChanged)
+				{
+					bAnyChanged = true;
+					PropagatePropertyChange(Props[i].GetName(), SelectedActors);
+
+					// 모든 변경 후 props 재수집 — 같은 frame 의 후속 prop 들이 dangling pointer 를
+					// 참조하는 케이스 방지. 예: SkeletalMeshComponent 의 AnimationMode/AnimInstanceClass
+					// 변경 시 InitializeAnimation 이 AnimInstance 를 swap 하므로, forward 됐던
+					// AnimInstance 의 prop 들의 ContainerPtr 가 destroyed 인스턴스를 가리키게 된다.
+					// 사용자는 frame 당 1 prop 변경이 일반적이라 UX 영향 거의 없음.
+					bPropsInvalidated = true;
+					ImGui::PopID();
+					break;
+				}
+				ImGui::PopID();
+			}
+
+			ImGui::EndTable();
+			ImGui::PopStyleColor(2);
+		}
+	}
+
+	RenderCallInEditorFunctions(SelectedComponent);
+
+	// 실제 변경이 있었을 때만 Transform dirty 마킹
+	if (bAnyChanged && IsValid(SelectedComponent) && SelectedComponent->IsA<USceneComponent>())
+	{
+		static_cast<USceneComponent*>(SelectedComponent)->MarkTransformDirty();
+	}
+}
+
+void FEditorPropertyWidget::PropagatePropertyChange(const FString& PropName, const TArray<AActor*>& SelectedActors)
+{
+	if (!IsValid(SelectedComponent) || SelectedActors.size() < 2) return;
+
+	UClass* CompClass = SelectedComponent->GetClass();
+	AActor* PrimaryActor = SelectedActors[0];
+
+	// Primary 컴포넌트에서 변경된 프로퍼티의 값 포인터 찾기
+	TArray<FPropertyValue> SrcProps;
+	SelectedComponent->GetEditableProperties(SrcProps);
+
+	const FPropertyValue* SrcProp = nullptr;
+	for (const auto& P : SrcProps)
+	{
+		if (P.GetName() == PropName) { SrcProp = &P; break; }
+	}
+	if (!SrcProp) return;
+	FPropertyValue SrcValue = *SrcProp;
+
+	for (AActor* Actor : SelectedActors)
+	{
+		if (!IsValid(Actor) || Actor == PrimaryActor) continue;
+
+		for (UActorComponent* Comp : Actor->GetComponents())
+		{
+			if (!Comp || Comp->GetClass() != CompClass) continue;
+
+			TArray<FPropertyValue> DstProps;
+			Comp->GetEditableProperties(DstProps);
+
+			for (FPropertyValue& DstProp : DstProps)
+			{
+				if (!DstProp.Property || DstProp.GetName() != PropName || DstProp.GetType() != SrcProp->GetType()) continue;
+				if (!DstProp.GetValuePtr() || !SrcValue.GetValuePtr()) continue;
+
+				if (CopyPropertyValue(SrcValue, DstProp))
+				{
+					DispatchPostEditChange(DstProp);
+				}
 				break;
 			}
-		}
-
-		if (!DstProperty || !DstProperty->GetValuePtrFor(Target.ContainerPtr))
-		{
-			continue;
-		}
-
-		FPropertyValue DstProp = DstProperty->ToValue(Target.ContainerPtr, Target.ObjectPtr);
-		if (CopyPropertyValue(SourceProp, DstProp))
-		{
-			DispatchPostEditChange(DstProp);
-			if (USceneComponent* SceneComponent = Cast<USceneComponent>(Target.ObjectPtr))
-			{
-				SceneComponent->MarkTransformDirty();
-			}
+			break; // 같은 타입의 첫 번째 컴포넌트에만 전파
 		}
 	}
 }
+
 void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* ComponentClass)
 {
 	if (!IsValid(Actor) || !ComponentClass) return;
 
 	UActorComponent* Comp = Actor->AddComponentByClass(ComponentClass);
 	if (!Comp) return;
-	UActorComponent* SelectedComponent = SelectionManager ? SelectionManager->GetSelectedActorComponent() : nullptr;
 
 	if (ComponentClass->IsA(USceneComponent::StaticClass()))
 	{
@@ -1142,10 +1445,9 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 		}
 	}
 
-	if (SelectionManager)
-	{
-		SelectionManager->SelectActorComponent(Comp);
-	}
+	SelectedComponent = Comp;
+	bActorSelected = false;
+	EditorEngine->GetSelectionManager().SelectActorComponent(Comp);
 }
 
 bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
@@ -1797,15 +2099,29 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			break;
 		}
 
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.07f, 0.07f, 0.07f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.18f, 0.18f, 0.18f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.055f, 0.525f, 1.0f, 1.0f));
+
 		bChanged = ImGui::Checkbox("##Value", Val);
 
+		ImGui::PopStyleColor(3);
+		ImGui::PopStyleVar();
 		break;
 	}
 	case EPropertyType::ByteBool:
 	{
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.07f, 0.07f, 0.07f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.18f, 0.18f, 0.18f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.055f, 0.525f, 1.0f, 1.0f));
+
 		uint8* Val = static_cast<uint8*>(Prop.GetValuePtr());
 		if (!Val)
 		{
+			ImGui::PopStyleColor(3);
+			ImGui::PopStyleVar();
 			break;
 		}
 
@@ -1816,6 +2132,8 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			bChanged = true;
 		}
 
+		ImGui::PopStyleColor(3);
+		ImGui::PopStyleVar();
 		break;
 	}
 	case EPropertyType::Int:
@@ -1861,9 +2179,9 @@ bool FEditorPropertyWidget::RenderPropertyWidget(TArray<FPropertyValue>& Props, 
 			Rot->Roll = RotXYZ[0];
 			Rot->Pitch = RotXYZ[1];
 			Rot->Yaw = RotXYZ[2];
-			if (USceneComponent* SceneComponent = Cast<USceneComponent>(Prop.Object))
+			if (IsValid(SelectedComponent) && SelectedComponent->IsA<USceneComponent>())
 			{
-				SceneComponent->ApplyCachedEditRotator();
+				static_cast<USceneComponent*>(SelectedComponent)->ApplyCachedEditRotator();
 			}
 		}
 		break;

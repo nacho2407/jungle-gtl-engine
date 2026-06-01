@@ -14,6 +14,8 @@
 // 11. Header category는 항상 최상단에 고정 표시하고 일반 category에서 중복 렌더링하지 않는다.
 // 12. Transform category는 Header 다음 최상단에 Location, Rotation, Scale 순서로 고정 표시하고 일반 category에서 중복 렌더링하지 않는다.
 
+// 13. Array 구조 편집은 add/remove만 지원하고 reorder, drag/drop, custom element action은 넣지 않는다.
+
 #include "Core/Types/CoreTypes.h"
 #include "Editor/Selection/SelectionManager.h"
 
@@ -61,7 +63,11 @@ private:
 		FPropertyValue& PrimaryValue,
 		const TArray<FPropertyValue>& CompatibleValues,
 		const FString& PropertyPath,
-		int32 Depth);
+		int32 Depth,
+		const char* LabelOverride = nullptr,
+		bool bShowRemoveButton = false,
+		bool bCanRemove = false,
+		bool* bOutRemoveClicked = nullptr);
 	bool RenderStructChildren(
 		FPropertyValue& PrimaryValue,
 		const TArray<FPropertyValue>& CompatibleValues,
