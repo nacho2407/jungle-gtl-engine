@@ -40,6 +40,8 @@ public:
 	void SetShowBodies(bool bInShow) { bShowBodies = bInShow; }
 	bool IsShowConstraints() const { return bShowConstraints; }
 	void SetShowConstraints(bool bInShow) { bShowConstraints = bInShow; }
+	bool IsSimulatingPhysics() const { return RenderOptions.ShowFlags.bPhysicsAssetSimulation; }
+	void SetSimulatePhysics(bool bInSimulate) { RenderOptions.ShowFlags.bPhysicsAssetSimulation = bInSimulate; }
 
 	bool GetMouseRay(FRay& OutRay) const;
 	bool PickBodyShapeAtMouse(FPhysicsAssetEditorHitResult& OutHit) const;
