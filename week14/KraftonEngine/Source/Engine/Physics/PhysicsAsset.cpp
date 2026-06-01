@@ -1,6 +1,20 @@
 ﻿#include "PhysicsAsset.h"
 #include "Object/ReferenceCollector.h"
 
+#include <algorithm>
+#include <cctype>
+
+namespace
+{
+	FString MakeBodySetupIndexKey(FName BoneName)
+	{
+		FString Key = BoneName.ToString();
+		std::transform(Key.begin(), Key.end(), Key.begin(),
+			[](unsigned char C) { return static_cast<char>(std::tolower(C)); });
+		return Key;
+	}
+}
+
 void UPhysicsAsset::Serialize(FArchive& Ar)
 {
 	uint32 NumBodies = static_cast<uint32>(BodySetups.size());
@@ -46,6 +60,28 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 			Constraint->Serialize(Ar);
 		}
 	}
+
+	// Trailing extension section. Older physics assets end before this point
+	if (Ar.IsSaving())
+	{
+		uint32 ExtVersion = 1;
+		Ar << ExtVersion;
+		Ar << PreviewSkeletalMeshPath;
+	}
+	else if (!Ar.AtEnd())
+	{
+		uint32 ExtVersion = 0;
+		Ar << ExtVersion;
+		if (ExtVersion >= 1)
+		{
+			Ar << PreviewSkeletalMeshPath;
+		}
+	}
+
+	if (Ar.IsLoading())
+	{
+		UpdateBodySetupIndexMap();
+	}
 }
 
 void UPhysicsAsset::AddReferencedObjects(FReferenceCollector& Collector)
@@ -61,8 +97,36 @@ void UPhysicsAsset::AddReferencedObjects(FReferenceCollector& Collector)
 	}
 }
 
+void UPhysicsAsset::UpdateBodySetupIndexMap()
+{
+	BodySetupIndexMap.clear();
+
+	for (int32 Index = 0; Index < static_cast<int32>(BodySetups.size()); ++Index)
+	{
+		const UBodySetup* Body = BodySetups[Index];
+		if (Body && Body->GetBoneName().IsValid() && Body->GetBoneName() != FName::None)
+		{
+			BodySetupIndexMap[MakeBodySetupIndexKey(Body->GetBoneName())] = Index;
+		}
+	}
+}
+
 int32 UPhysicsAsset::FindBodyIndex(FName BoneName) const
 {
+	const auto It = BodySetupIndexMap.find(MakeBodySetupIndexKey(BoneName));
+	if (It != BodySetupIndexMap.end())
+	{
+		const int32 Index = It->second;
+		if (Index >= 0 && Index < static_cast<int32>(BodySetups.size()))
+		{
+			const UBodySetup* Body = BodySetups[Index];
+			if (Body && Body->GetBoneName() == BoneName)
+			{
+				return Index;
+			}
+		}
+	}
+
 	for (int32 Index = 0; Index < static_cast<int32>(BodySetups.size()); ++Index)
 	{
 		const UBodySetup* Body = BodySetups[Index];
@@ -81,11 +145,16 @@ UBodySetup* UPhysicsAsset::FindBodySetup(FName BoneName) const
 	return Index >= 0 ? BodySetups[Index] : nullptr;
 }
 
-UBodySetup* UPhysicsAsset::FindOrCreateBodySetup(FName BoneName)
+UBodySetup* UPhysicsAsset::GetOrCreateBodySetup(FName BoneName)
 {
-	if (UBodySetup* ExistingBody = FindBodySetup(BoneName))
+	if (!BoneName.IsValid() || BoneName == FName::None)
 	{
-		return ExistingBody;
+		return nullptr;
+	}
+
+	if (UBodySetup* Existing = FindBodySetup(BoneName))
+	{
+		return Existing;
 	}
 
 	return CreateBodySetup(BoneName);
@@ -93,25 +162,46 @@ UBodySetup* UPhysicsAsset::FindOrCreateBodySetup(FName BoneName)
 
 UBodySetup* UPhysicsAsset::CreateBodySetup(FName BoneName)
 {
+	if (!BoneName.IsValid() || BoneName == FName::None)
+	{
+		return nullptr;
+	}
+
+	if (UBodySetup* Existing = FindBodySetup(BoneName))
+	{
+		return Existing;
+	}
+
 	UBodySetup* Body = UObjectManager::Get().CreateObject<UBodySetup>(this);
 	Body->SetBoneName(BoneName);
 	BodySetups.push_back(Body);
+	BodySetupIndexMap[MakeBodySetupIndexKey(BoneName)] = static_cast<int32>(BodySetups.size()) - 1;
 	return Body;
 }
 
 bool UPhysicsAsset::RemoveBodySetup(FName BoneName)
 {
-	const int32 Index = FindBodyIndex(BoneName);
-	if (Index < 0)
+	const int32 BodyIndex = FindBodyIndex(BoneName);
+	return RemoveBodySetupAt(BodyIndex);
+}
+
+bool UPhysicsAsset::RemoveBodySetupAt(int32 BodyIndex)
+{
+	if (BodyIndex < 0 || BodyIndex >= static_cast<int32>(BodySetups.size()))
 	{
 		return false;
 	}
 
-	RemoveConstraintsForBone(BoneName);
+	UBodySetup* Body = BodySetups[BodyIndex];
+	const FName BoneName = Body ? Body->GetBoneName() : FName::None;
+	RemoveConstraintsForBody(BoneName);
 
-	UBodySetup* RemovedBody = BodySetups[Index];
-	BodySetups.erase(BodySetups.begin() + Index);
-	UObjectManager::Get().DestroyObject(RemovedBody);
+	BodySetups.erase(BodySetups.begin() + BodyIndex);
+	UpdateBodySetupIndexMap();
+	if (Body)
+	{
+		UObjectManager::Get().DestroyObject(Body);
+	}
 	return true;
 }
 
@@ -120,13 +210,9 @@ int32 UPhysicsAsset::FindConstraintIndex(FName ParentBone, FName ChildBone) cons
 	for (int32 Index = 0; Index < static_cast<int32>(ConstraintTemplates.size()); ++Index)
 	{
 		const UPhysicsConstraintTemplate* Constraint = ConstraintTemplates[Index];
-		if (!Constraint)
-		{
-			continue;
-		}
-
-		if (Constraint->GetParentBoneName() == ParentBone &&
-			Constraint->GetChildBoneName() == ChildBone)
+		if (Constraint
+			&& Constraint->GetParentBoneName() == ParentBone
+			&& Constraint->GetChildBoneName() == ChildBone)
 		{
 			return Index;
 		}
@@ -135,29 +221,33 @@ int32 UPhysicsAsset::FindConstraintIndex(FName ParentBone, FName ChildBone) cons
 	return -1;
 }
 
-UPhysicsConstraintTemplate* UPhysicsAsset::FindConstraint(FName ParentBone, FName ChildBone) const
-{
-	const int32 Index = FindConstraintIndex(ParentBone, ChildBone);
-	return Index >= 0 ? ConstraintTemplates[Index] : nullptr;
-}
-
-bool UPhysicsAsset::HasConstraint(FName ParentBone, FName ChildBone) const
-{
-	return FindConstraintIndex(ParentBone, ChildBone) >= 0;
-}
-
 UPhysicsConstraintTemplate* UPhysicsAsset::CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode)
 {
+	if (!ParentBone.IsValid() || !ChildBone.IsValid() || ParentBone == FName::None || ChildBone == FName::None)
+	{
+		return nullptr;
+	}
+
+	if (ParentBone == ChildBone)
+	{
+		return nullptr;
+	}
+
+	if (!FindBodySetup(ParentBone) || !FindBodySetup(ChildBone))
+	{
+		return nullptr;
+	}
+
+	const int32 ExistingIndex = FindConstraintIndex(ParentBone, ChildBone);
+	if (ExistingIndex >= 0)
+	{
+		return ConstraintTemplates[ExistingIndex];
+	}
+
 	UPhysicsConstraintTemplate* Constraint = UObjectManager::Get().CreateObject<UPhysicsConstraintTemplate>(this);
 	Constraint->Setup(ParentBone, ChildBone, FrameA, FrameB, Mode);
 	ConstraintTemplates.push_back(Constraint);
 	return Constraint;
-}
-
-bool UPhysicsAsset::RemoveConstraint(FName ParentBone, FName ChildBone)
-{
-	const int32 Index = FindConstraintIndex(ParentBone, ChildBone);
-	return RemoveConstraintAt(Index);
 }
 
 bool UPhysicsAsset::RemoveConstraintAt(int32 ConstraintIndex)
@@ -167,33 +257,47 @@ bool UPhysicsAsset::RemoveConstraintAt(int32 ConstraintIndex)
 		return false;
 	}
 
-	UPhysicsConstraintTemplate* RemovedConstraint = ConstraintTemplates[ConstraintIndex];
+	UPhysicsConstraintTemplate* Constraint = ConstraintTemplates[ConstraintIndex];
 	ConstraintTemplates.erase(ConstraintTemplates.begin() + ConstraintIndex);
-	UObjectManager::Get().DestroyObject(RemovedConstraint);
+	if (Constraint)
+	{
+		UObjectManager::Get().DestroyObject(Constraint);
+	}
 	return true;
 }
 
-int32 UPhysicsAsset::RemoveConstraintsForBone(FName BoneName)
+void UPhysicsAsset::RemoveConstraintsForBody(FName BoneName)
 {
-	int32 RemovedCount = 0;
-
 	for (int32 Index = static_cast<int32>(ConstraintTemplates.size()) - 1; Index >= 0; --Index)
 	{
 		const UPhysicsConstraintTemplate* Constraint = ConstraintTemplates[Index];
-		if (!Constraint)
+		if (!Constraint
+			|| Constraint->GetParentBoneName() == BoneName
+			|| Constraint->GetChildBoneName() == BoneName)
 		{
-			continue;
-		}
-
-		if (Constraint->GetParentBoneName() == BoneName ||
-			Constraint->GetChildBoneName() == BoneName)
-		{
-			if (RemoveConstraintAt(Index))
-			{
-				++RemovedCount;
-			}
+			RemoveConstraintAt(Index);
 		}
 	}
+}
 
-	return RemovedCount;
+void UPhysicsAsset::Clear()
+{
+	for (UPhysicsConstraintTemplate* Constraint : ConstraintTemplates)
+	{
+		if (Constraint)
+		{
+			UObjectManager::Get().DestroyObject(Constraint);
+		}
+	}
+	ConstraintTemplates.clear();
+
+	for (UBodySetup* Body : BodySetups)
+	{
+		if (Body)
+		{
+			UObjectManager::Get().DestroyObject(Body);
+		}
+	}
+	BodySetups.clear();
+	BodySetupIndexMap.clear();
 }

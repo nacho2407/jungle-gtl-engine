@@ -175,6 +175,9 @@ protected:
 
 class PhysicsAssetElement final : public ContentBrowserElement
 {
+public:
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+
 protected:
 	const char* GetTypeLabel() const override { return "Physics Asset"; }
 	uint32 GetAccentColor() const override { return IM_COL32(100, 190, 210, 255); }

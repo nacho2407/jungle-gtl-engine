@@ -3,6 +3,7 @@
 #include "Object/ReferenceCollector.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
+#include "Component/Primitive/ClothComponent.h"
 #include "Collision/WorldCollisionQueries.h"
 #include "Engine/Component/Camera/CameraComponent.h"
 #include "Render/Types/LODContext.h"
@@ -364,11 +365,17 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 		return;
 	}
 
+	if (TickType == ELevelTick::LEVELTICK_All && PhysicsScene)
+	{
+		PhysicsScene->PrepareCharacterControllers(DeltaTime);
+	}
+
 	TickManager.Tick(this, DeltaTime, TickType);
 
 	if (TickType == ELevelTick::LEVELTICK_All && PhysicsScene)
 	{
 		PhysicsScene->Simulate(DeltaTime);
+		TickClothComponents(DeltaTime);
 	}
 
 	// 카메라는 물리/액터 Tick 이후 갱신 — 차량 1인칭처럼 physics body 에 붙은 카메라가
@@ -435,4 +442,34 @@ void UWorld::AddReferencedObjects(FReferenceCollector& Collector)
 	UObject::AddReferencedObjects(Collector);
 	Collector.AddReferencedObject(PersistentLevel);
 	Collector.AddReferencedObject(GameMode);
+}
+
+void UWorld::RegisterClothComponent(UClothComponent* Component)
+{
+	if (!Component) return;
+
+	auto It = std::find(ClothComponents.begin(), ClothComponents.end(), Component);
+	if (It == ClothComponents.end())
+	{
+		ClothComponents.push_back(Component);
+	}
+}
+
+void UWorld::UnregisterClothComponent(UClothComponent* Component)
+{
+	auto It = std::find(ClothComponents.begin(), ClothComponents.end(), Component);
+	if (It != ClothComponents.end())
+	{
+		ClothComponents.erase(It);
+	}
+}
+
+void UWorld::TickClothComponents(float DeltaTime)
+{
+	for (UClothComponent* ClothComp : ClothComponents)
+	{
+		if (!ClothComp) continue;
+
+		ClothComp->TickClothPostPhysics(DeltaTime);
+	}
 }

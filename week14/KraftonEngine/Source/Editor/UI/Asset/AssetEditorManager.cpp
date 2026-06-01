@@ -22,8 +22,12 @@ void FAssetEditorManager::Render(float DeltaTime)
 {
 	for (const auto& Editor : OpenEditors)
 	{
-		Editor->Render(DeltaTime);
+		if (Editor && Editor->IsOpen())
+		{
+			Editor->Render(DeltaTime);
+		}
 	}
+	RemoveClosedEditors();
 }
 
 void FAssetEditorManager::CloseAll()

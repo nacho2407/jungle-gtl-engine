@@ -5,31 +5,6 @@
 #include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsAssetManager.h"
 
-namespace
-{
-	FString BuildPhysicsAssetSidecarPath(const FString& MeshAssetPath)
-	{
-		if (MeshAssetPath.empty() || MeshAssetPath == "None")
-		{
-			return "None";
-		}
-
-		const FString Extension = ".uasset";
-		if (MeshAssetPath.size() < Extension.size())
-		{
-			return "None";
-		}
-
-		const size_t ExtensionPos = MeshAssetPath.rfind(Extension);
-		if (ExtensionPos == FString::npos || ExtensionPos + Extension.size() != MeshAssetPath.size())
-		{
-			return "None";
-		}
-
-		return MeshAssetPath.substr(0, ExtensionPos) + "_PhysicsAsset" + Extension;
-	}
-}
-
 void USkeletalMesh::Serialize(FArchive& Ar)
 {
 	if (Ar.IsLoading() && !SkeletalMeshAsset)
@@ -170,13 +145,6 @@ UPhysicsAsset* USkeletalMesh::GetPhysicsAsset()
 	}
 	if (PhysicsAssetPath.empty() || PhysicsAssetPath == "None")
 	{
-		const FString SidecarPath = BuildPhysicsAssetSidecarPath(GetAssetPathFileName());
-		CachedPhysicsAsset = FPhysicsAssetManager::Get().Load(SidecarPath);
-		if (CachedPhysicsAsset)
-		{
-			PhysicsAssetPath = SidecarPath;
-			return CachedPhysicsAsset;
-		}
 		return nullptr;
 	}
 

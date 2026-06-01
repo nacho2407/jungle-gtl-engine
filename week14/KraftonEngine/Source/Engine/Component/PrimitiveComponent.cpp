@@ -96,6 +96,13 @@ void UPrimitiveComponent::SetCastShadow(bool bNewCastShadow)
 	MarkRenderVisibilityDirty();
 }
 
+void UPrimitiveComponent::SetCastShadowAsTwoSided(bool bNewCastShadowAsTwoSided)
+{
+	if (bCastShadowAsTwoSided == bNewCastShadowAsTwoSided) return;
+	bCastShadowAsTwoSided = bNewCastShadowAsTwoSided;
+	MarkRenderVisibilityDirty();
+}
+
 // ============================================================
 // MarkRenderTransformDirty / MarkRenderVisibilityDirty
 //   프록시 dirty + Octree(액터 단위 dirty) + PickingBVH dirty

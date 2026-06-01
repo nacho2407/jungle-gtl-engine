@@ -12,7 +12,6 @@
 #include "Platform/Paths.h"
 #include "Core/Logging/Log.h"
 
-#include "Mesh/MeshManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"  
 #include "Animation/Skeleton/Skeleton.h"
 #include "Physics/PhysicsAsset.h"  
@@ -196,6 +195,7 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 
 	UPhysicsAsset* NewAsset = UObjectManager::Get().CreateObject<UPhysicsAsset>();
 	NewAsset->SetSourcePath(FPaths::ToUtf8(AssetPath.wstring()));
+	NewAsset->SetPreviewSkeletalMeshPath(SourceMesh->GetAssetPathFileName());
 
 	GeneratePhysicsAssetBodies(*NewAsset, *MeshAsset, Params);
 
@@ -228,16 +228,6 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 		OutCreatedPath.c_str(),
 		static_cast<unsigned long long>(NewAsset->GetBodySetups().size())
 	);
-
-	// 메시가 자기 PhysicsAsset 경로를 기억하게 한다.
-	// 같은 세션에서 메시는 동일 인스턴스(매니저 캐시)라 뷰포트가 즉시 본다.
-	SourceMesh->SetPhysicsAssetPath(OutCreatedPath);
-	if (!FMeshManager::SaveSkeletalMeshPackage(SourceMesh))
-	{
-		UE_LOG("PhysicsAsset created but source mesh link save failed. Mesh=%s PhysicsAsset=%s",
-			SourceMesh->GetAssetPathFileName().c_str(),
-			OutCreatedPath.c_str());
-	}
 
 	return true;
 }

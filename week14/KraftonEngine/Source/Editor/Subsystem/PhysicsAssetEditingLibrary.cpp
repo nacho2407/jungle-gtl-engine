@@ -66,6 +66,18 @@ namespace
 		OutReconnect.TwistLimit = Constraint->GetTwistLimit();
 	}
 
+	const UPhysicsConstraintTemplate* FindConstraint(const UPhysicsAsset& Asset, FName ParentBone, FName ChildBone)
+	{
+		const int32 ConstraintIndex = Asset.FindConstraintIndex(ParentBone, ChildBone);
+		const TArray<UPhysicsConstraintTemplate*>& Constraints = Asset.GetConstraintTemplates();
+		if (ConstraintIndex < 0 || ConstraintIndex >= static_cast<int32>(Constraints.size()))
+		{
+			return nullptr;
+		}
+
+		return Constraints[ConstraintIndex];
+	}
+
 	void CreateReferencePoseConstraint(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh, int32 ParentBoneIndex, const FPendingConstraintReconnect& Reconnect)
 	{
 		if (ParentBoneIndex < 0 || ParentBoneIndex >= static_cast<int32>(Mesh.Bones.size()))
@@ -79,7 +91,7 @@ namespace
 		}
 
 		const FName ParentBoneName(Mesh.Bones[ParentBoneIndex].Name);
-		if (Asset.HasConstraint(ParentBoneName, Reconnect.ChildBoneName))
+		if (Asset.FindConstraintIndex(ParentBoneName, Reconnect.ChildBoneName) >= 0)
 		{
 			return;
 		}
@@ -97,11 +109,8 @@ namespace
 			FrameB,
 			Reconnect.AngularMode))
 		{
-			NewConstraint->SetAngularLimit(
-				Reconnect.AngularMode,
-				Reconnect.Swing1Limit,
-				Reconnect.Swing2Limit,
-				Reconnect.TwistLimit);
+			NewConstraint->SetAngularMode(Reconnect.AngularMode);
+			NewConstraint->SetAngularLimits(Reconnect.Swing1Limit, Reconnect.Swing2Limit, Reconnect.TwistLimit);
 		}
 	}
 
@@ -160,7 +169,7 @@ UBodySetup* FPhysicsAssetEditingLibrary::AddPrimitiveToBone(UPhysicsAsset& Asset
 		return nullptr;
 	}
 
-	UBodySetup* Body = Asset.FindOrCreateBodySetup(BoneName);
+	UBodySetup* Body = Asset.GetOrCreateBodySetup(BoneName);
 	if (!Body)
 	{
 		return nullptr;
@@ -216,7 +225,7 @@ bool FPhysicsAssetEditingLibrary::RemoveBodyAndReconnectConstraints(UPhysicsAsse
 		FPendingConstraintReconnect Reconnect;
 		Reconnect.ChildBoneName = ChildBoneName;
 		Reconnect.ChildBoneIndex = ChildBoneIndex;
-		CopyConstraintSettings(Asset.FindConstraint(BoneName, ChildBoneName), Reconnect);
+		CopyConstraintSettings(FindConstraint(Asset, BoneName, ChildBoneName), Reconnect);
 		PendingReconnects.push_back(Reconnect);
 	}
 

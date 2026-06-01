@@ -17,29 +17,34 @@ public:
 
 	void SetSourcePath(const FString& InPath) {SourcePath = InPath;}
 	const FString& GetSourcePath() const {return SourcePath;}
+
+	void SetPreviewSkeletalMeshPath(const FString& InPath) { PreviewSkeletalMeshPath = InPath; }
+	const FString& GetPreviewSkeletalMeshPath() const { return PreviewSkeletalMeshPath; }
 	
 	void Serialize(FArchive& Ar) override;
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 	
 	const TArray<UBodySetup*>& GetBodySetups() const {return BodySetups;}
 	
+	void UpdateBodySetupIndexMap();
 	int32 FindBodyIndex(FName BoneName) const;
 	UBodySetup* FindBodySetup(FName BoneName) const;
-	UBodySetup* FindOrCreateBodySetup(FName BoneName);
+	UBodySetup* GetOrCreateBodySetup(FName BoneName);
 	UBodySetup* CreateBodySetup(FName BoneName);
 	bool RemoveBodySetup(FName BoneName);
+	bool RemoveBodySetupAt(int32 BodyIndex);
 	
 	const TArray<UPhysicsConstraintTemplate*>& GetConstraintTemplates() const {return ConstraintTemplates;}
 	int32 FindConstraintIndex(FName ParentBone, FName ChildBone) const;
-	UPhysicsConstraintTemplate* FindConstraint(FName ParentBone, FName ChildBone) const;
-	bool HasConstraint(FName ParentBone, FName ChildBone) const;
 	UPhysicsConstraintTemplate* CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode);
-	bool RemoveConstraint(FName ParentBone, FName ChildBone);
 	bool RemoveConstraintAt(int32 ConstraintIndex);
-	int32 RemoveConstraintsForBone(FName BoneName);
+	void RemoveConstraintsForBody(FName BoneName);
+	void Clear();
 	
 private:
 	TArray<UBodySetup*> BodySetups;
 	TArray<UPhysicsConstraintTemplate*> ConstraintTemplates;
+	TMap<FString, int32> BodySetupIndexMap;
 	FString SourcePath;
+	FString PreviewSkeletalMeshPath = "None";
 };

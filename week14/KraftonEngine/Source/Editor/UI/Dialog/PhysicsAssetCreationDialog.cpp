@@ -77,6 +77,10 @@ EPhysicsAssetDialogResult FPhysicsAssetCreationDialog::Render(const char* PopupI
 		ImGui::Checkbox("Auto Orient to Bone", &P.bAutoOrientToBone);
 		ImGui::Checkbox("Walk Past Small Bones", &P.bWalkPastSmallBones);
 		ImGui::Checkbox("Create Body for All Bones", &P.bCreateBodyForAllBones);
+		if (P.bCreateBodyForAllBones)
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.72f, 0.32f, 1.0f), "All bones includes cloth/accessory chains.");
+		}
 		ImGui::InputInt("Lod Index", &P.LodIndex);
 	}
 
