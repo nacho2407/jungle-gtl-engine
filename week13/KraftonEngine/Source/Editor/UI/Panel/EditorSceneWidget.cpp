@@ -49,6 +49,7 @@ void FEditorSceneWidget::RenderActorOutliner()
 	ImGui::Separator();
 
 	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+	AActor* ActorToDelete = nullptr;
 
 	ImGui::BeginChild("ActorList", ImVec2(0, 0), ImGuiChildFlags_Borders);
 
@@ -82,9 +83,24 @@ void FEditorSceneWidget::RenderActorOutliner()
 					Selection.Select(Actor);
 				}
 			}
+
+			if (ImGui::BeginPopupContextItem("ActorContextMenu"))
+			{
+				if (ImGui::MenuItem("Delete"))
+				{
+					ActorToDelete = Actor;
+				}
+				ImGui::EndPopup();
+			}
 			ImGui::PopID();
 		}
 	}
 
 	ImGui::EndChild();
+
+	if (ActorToDelete)
+	{
+		Selection.Select(ActorToDelete);
+		Selection.DeleteSelectedActors();
+	}
 }
