@@ -2,7 +2,11 @@
 
 #include "Core/Types/CoreTypes.h"
 #include "Math/Vector.h"
+#include "Object/Reflection/ObjectMacros.h"
+#include "Object/Reflection/UStruct.h"
 #include <cfloat>
+
+#include "Source/Engine/Core/Types/EngineTypes.generated.h"
 
 // ============================================================
 // FColor — RGBA 색상 (0~255 정수 기반, 셰이더 전달 시 Normalized)
@@ -55,9 +59,15 @@ struct FLinearColor
 // ============================================================
 // FBoundingBox — AABB (Axis-Aligned Bounding Box)
 // ============================================================
+USTRUCT()
 struct FBoundingBox
 {
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, Save, Category="Bounding Box", DisplayName="Min", Type=Vec3)
 	FVector Min;
+
+	UPROPERTY(VisibleAnywhere, Save, Category="Bounding Box", DisplayName="Max", Type=Vec3)
 	FVector Max;
 
 	FBoundingBox()

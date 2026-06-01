@@ -12,7 +12,7 @@
 #include "Animation/Sequence/AnimSequence.h"
 #include "Component/Debug/PhysicsAssetDebugComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
-#include "Editor/UI/Util/InlinePropertyRenderer.h"
+#include "Editor/UI/Util/DetailPropertyRenderer.h"
 #include "GameFramework/AActor.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
@@ -119,6 +119,33 @@ namespace
 		return Label;
 	}
 
+	bool RenderAddPhysicsBodyShapeMenu(UBodySetup* BodySetup)
+	{
+		if (!BodySetup)
+		{
+			return false;
+		}
+
+		FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
+		if (ImGui::MenuItem("Add Sphere"))
+		{
+			AggGeom.SphereElems.push_back(FKSphereElem());
+			return true;
+		}
+		if (ImGui::MenuItem("Add Box"))
+		{
+			AggGeom.BoxElems.push_back(FKBoxElem());
+			return true;
+		}
+		if (ImGui::MenuItem("Add Capsule"))
+		{
+			AggGeom.SphylElems.push_back(FKSphylElem());
+			return true;
+		}
+
+		return false;
+	}
+
 	bool HasVectorChanged(const FVector& Before, const FVector& After)
 	{
 		return FVector::Distance(Before, After) > 1.0e-4f;
@@ -145,7 +172,7 @@ namespace
 
 		const FVector PreviousParentLocation = ConstraintDesc->ParentFrame.Location;
 		const FVector PreviousChildLocation = ConstraintDesc->ChildFrame.Location;
-		const bool bChanged = FInlinePropertyRenderer::RenderStructProperties(
+		const bool bChanged = FDetailPropertyRenderer::RenderStructProperties(
 			FConstraintInstanceInitDesc::StaticStruct(),
 			ConstraintDesc,
 			PhysicsAsset,
@@ -169,7 +196,7 @@ namespace
 		return true;
 	}
 
-	bool RenderBodyPhysicsInfoDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
+	bool RenderBodySetupDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
 	{
 		if (!PhysicsAsset || BodyIndex < 0)
 		{
@@ -183,14 +210,29 @@ namespace
 		}
 
 		UBodySetup* BodySetup = Bodies[BodyIndex];
-		ImGui::TextUnformatted("Body Physics");
+		ImGui::TextUnformatted("Body Setup");
 		ImGui::Text("Calculated Mass: %.4f kg", BodySetup->CalculateMass());
 
-		return FInlinePropertyRenderer::RenderStructProperties(
-			FBodySetupPhysicsInfo::StaticStruct(),
-			&BodySetup->GetPhysicsInfo(),
+		return FDetailPropertyRenderer::RenderStructProperties(
+			UBodySetup::StaticClass(),
+			BodySetup,
 			PhysicsAsset,
-			"##PhysicsAssetBodyPhysicsProps");
+			"##PhysicsAssetBodySetupProps");
+	}
+
+	bool RenderPhysicsAssetDetails(UPhysicsAsset* PhysicsAsset)
+	{
+		if (!PhysicsAsset)
+		{
+			return false;
+		}
+
+		ImGui::TextUnformatted("Physics Asset");
+		return FDetailPropertyRenderer::RenderStructProperties(
+			UPhysicsAsset::StaticClass(),
+			PhysicsAsset,
+			PhysicsAsset,
+			"##PhysicsAssetRootProps");
 	}
 
 	bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
@@ -1468,6 +1510,13 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyList(USkeletalMesh* Skele
 	}
 	SyncDebugComponent(PhysicsAsset);
 
+	if (ImGui::Selectable("Physics Asset##PhysicsAssetRoot", SelectedPhysicsBodyIndex < 0 && SelectedPhysicsConstraintIndex < 0))
+	{
+		SelectedPhysicsBodyIndex = -1;
+		SelectedPhysicsConstraintIndex = -1;
+		SyncDebugComponent(PhysicsAsset);
+	}
+
 	const FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset)
 	{
@@ -1551,6 +1600,23 @@ bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyTree(const FSkeletalMesh*
 		SyncDebugComponent(PhysicsAsset);
 	}
 
+	if (ImGui::BeginPopupContextItem())
+	{
+		TArray<UBodySetup*>& MutableBodies = PhysicsAsset->GetBodySetupsMutable();
+		UBodySetup* MutableBody = (BodyIndex >= 0 && BodyIndex < static_cast<int32>(MutableBodies.size()))
+			? MutableBodies[BodyIndex]
+			: nullptr;
+		if (RenderAddPhysicsBodyShapeMenu(MutableBody))
+		{
+			SelectedPhysicsBodyIndex = BodyIndex;
+			SelectedPhysicsConstraintIndex = -1;
+			SavePhysicsAssetChange("PhysicsAsset body shape add warning");
+			MarkDirty();
+			SyncDebugComponent(PhysicsAsset);
+		}
+		ImGui::EndPopup();
+	}
+
 	if (bOpen && bHasVisibleChildren)
 	{
 		for (int32 Index = BoneIndex + 1; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
@@ -1578,10 +1644,21 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyDetails(UPhysicsAsset* Ph
 		return;
 	}
 
-	if (SelectedPhysicsConstraintIndex < 0 && RenderBodyPhysicsInfoDetails(PhysicsAsset, SelectedPhysicsBodyIndex))
+	if (SelectedPhysicsConstraintIndex < 0)
 	{
-		SavePhysicsAssetChange("PhysicsAsset body physics edit warning");
-		MarkDirty();
+		const bool bChanged = SelectedPhysicsBodyIndex >= 0
+			? RenderBodySetupDetails(PhysicsAsset, SelectedPhysicsBodyIndex)
+			: RenderPhysicsAssetDetails(PhysicsAsset);
+		if (bChanged)
+		{
+			SavePhysicsAssetChange("PhysicsAsset body edit warning");
+			MarkDirty();
+			SyncDebugComponent(PhysicsAsset);
+			if (UPhysicsAssetDebugComponent* DebugComponent = GetViewportClient().GetPhysicsAssetDebugComponent())
+			{
+				DebugComponent->MarkPhysicsAssetDebugDirty();
+			}
+		}
 	}
 }
 

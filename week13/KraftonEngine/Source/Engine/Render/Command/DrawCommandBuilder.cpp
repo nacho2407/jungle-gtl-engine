@@ -22,6 +22,31 @@
 // UpdateProxyLOD defined in RenderCollector.cpp (shared)
 extern void UpdateProxyLOD(FPrimitiveSceneProxy* Proxy, const FLODUpdateContext& LODCtx);
 
+namespace
+{
+	bool IsPhysicsBodyDebugWorld(EWorldType WorldType)
+	{
+		return WorldType == EWorldType::Editor || WorldType == EWorldType::EditorPreview;
+	}
+
+	bool ShouldDrawMeshForShowFlags(const FFrameContext& Frame, const FPrimitiveSceneProxy& Proxy)
+	{
+		if (Proxy.HasProxyFlag(EPrimitiveProxyFlags::StaticMesh) &&
+			!Frame.RenderOptions.ShowFlags.bStaticMesh)
+		{
+			return false;
+		}
+
+		if (Proxy.HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh) &&
+			!Frame.RenderOptions.ShowFlags.bSkeletalMesh)
+		{
+			return false;
+		}
+
+		return true;
+	}
+}
+
 // ============================================================
 // Create / Release
 // ============================================================
@@ -378,6 +403,8 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 			continue;
 		}
 
+		BuildPhysicsBodyWireCommands(Frame, *Proxy);
+
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::BoneDebug))
 		{
 			const FBoneDebugSceneProxy* BoneProxy = static_cast<const FBoneDebugSceneProxy*>(Proxy);
@@ -425,11 +452,29 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 			BuildDecalCommands(Scene, Proxy, Frame, Output);
 		else
 		{
-			BuildMeshCommands(Scene, Proxy);
+			if (ShouldDrawMeshForShowFlags(Frame, *Proxy))
+			{
+				BuildMeshCommands(Scene, Proxy);
+			}
 		}
 
 		if (Proxy->IsSelected())
 			BuildSelectionCommands(Proxy, bShowBoundingVolume, Scene);
+	}
+}
+
+void FDrawCommandBuilder::BuildPhysicsBodyWireCommands(const FFrameContext& Frame, const FPrimitiveSceneProxy& Proxy)
+{
+	if (!Frame.RenderOptions.ShowFlags.bPhysicsBody || !IsPhysicsBodyDebugWorld(Frame.WorldType))
+	{
+		return;
+	}
+
+	TArray<FPhysicsDebugLine> PhysicsBodyLines;
+	Proxy.BuildPhysicsBodyWireLines(Frame, PhysicsBodyLines);
+	for (const FPhysicsDebugLine& Line : PhysicsBodyLines)
+	{
+		EditorLines.AddLine(Line.Start, Line.End, Line.Color);
 	}
 }
 

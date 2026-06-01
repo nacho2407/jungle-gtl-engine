@@ -14,6 +14,7 @@ namespace physx
 	class PxScene;
 	class PxDefaultCpuDispatcher;
 	class PxMaterial;
+	class PxActor;
 	class PxRigidActor;
 	class PxShape;
 }
@@ -25,10 +26,10 @@ class FPhysXSimulationCallback;
 //
 // IPhysicsScene 인터페이스를 통해 Native와 교체 가능.
 //
-// 등록 단위는 Actor — 한 액터의 여러 PrimitiveComponent는 하나의
-// PxRigidActor에 compound shape로 합쳐진다. 각 shape의 LocalPose는
-// 액터 RootComponent에 대한 상대 transform. 이로써 차체 Box + 바퀴
-// Sphere 4개처럼 다중 콜라이더가 자연스럽게 한 강체로 동작한다.
+// 등록 단위는 FBodyInstance.
+// 일반 PrimitiveComponent는 자신의 BodyInstance를 통해 PxRigidActor 하나를 가진다.
+// SkeletalMesh ragdoll은 Bone별 FBodyInstance를 별도로 생성하고,
+// 일반 PrimitiveComponent sync 경로와 분리해서 SkeletalMeshComponent에서 Bone pose로 동기화한다.
 // ============================================================
 class FPhysXPhysicsScene : public IPhysicsScene
 {
@@ -49,7 +50,7 @@ public:
 	void Tick(float DeltaTime) override;
 
 	void AddForce(UPrimitiveComponent* Comp, const FVector& Force) override;
-	void AddImpulse(UPrimitiveComponent* Comp, const FVector& Impulse);
+	void AddImpulse(UPrimitiveComponent* Comp, const FVector& Impulse) override;
 	void AddForceAtLocation(UPrimitiveComponent* Comp, const FVector& Force, const FVector& WorldLocation) override;
 	void AddTorque(UPrimitiveComponent* Comp, const FVector& Torque) override;
 
@@ -86,10 +87,14 @@ private:
 	bool bSharedPhysXAcquired = false;
 	bool bShutdownComplete = true;
 
-	// 내부 헬퍼
-	void ClearPhysXActorUserData(physx::PxRigidActor* Actor) const;
-
 	void AddRegisteredBody(FBodyInstance* Body);
 	void RemoveRegisteredBody(FBodyInstance* Body);
 	void ReleaseRegisteredBodies();
+
+	FBodyInstance* FindRegisteredBodyByActor(const physx::PxActor* Actor) const;
+
+	void SyncEngineToPhysicsBeforeSim();
+	void SimulatePhysics(float DeltaTime);
+	void SyncPhysicsToEngineAfterSim();
+	void DispatchPhysicsEvents();
 };

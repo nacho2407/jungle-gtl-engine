@@ -22,6 +22,8 @@ public:
 	void UpdateLOD(uint32 LODLevel) override;
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 
+	void BuildPhysicsBodyWireLines(const FFrameContext& Frame, TArray<FPhysicsDebugLine>& OutLines) const override;
+
 private:
 	UStaticMeshComponent* GetStaticMeshComponent() const;
 
