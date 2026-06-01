@@ -49,6 +49,33 @@ static FPhysXErrorCallback GPhysXErrorCallback;
 
 namespace
 {
+	FBodyInstance* GetBodyInstanceFromActor(const PxActor* Actor)
+	{
+		if (!Actor || !Actor->userData)
+		{
+			return nullptr;
+		}
+
+		return static_cast<FBodyInstance*>(Actor->userData);
+	}
+
+	AActor* GetOwnerActorFromPhysXActor(const PxActor* Actor)
+	{
+		FBodyInstance* Body = GetBodyInstanceFromActor(Actor);
+		return Body ? Body->GetOwnerActor() : nullptr;
+	}
+
+	bool ShouldIgnorePhysXActor(const PxActor* Actor, const AActor* IgnoreActor)
+	{
+		if (!Actor || !IgnoreActor)
+		{
+			return false;
+		}
+
+		AActor* OwnerActor = GetOwnerActorFromPhysXActor(Actor);
+		return OwnerActor == IgnoreActor;
+	}
+
 	bool ResolvePhysXRaycastTarget(const PxRaycastHit& Block, FHitResult& OutHit)
 	{
 		if (Block.shape && Block.shape->userData)
@@ -70,9 +97,9 @@ namespace
 			return true;
 		}
 
-		if (Block.actor && Block.actor->userData)
+		if (Block.actor)
 		{
-			AActor* HitActor = static_cast<AActor*>(Block.actor->userData);
+			AActor* HitActor = GetOwnerActorFromPhysXActor(Block.actor);
 			if (!IsValid(HitActor))
 			{
 				return false;
@@ -576,7 +603,7 @@ void FPhysXPhysicsScene::Initialize(UWorld* InWorld)
 	bSharedPhysXAcquired = true;
 
 	// CPU Dispatcher
-	Dispatcher = PxDefaultCpuDispatcherCreate(2);
+	Dispatcher = PxDefaultCpuDispatcherCreate(4);
 	if (!Dispatcher)
 	{
 		UE_LOG("[PhysX] Failed to create CPU dispatcher");
@@ -593,6 +620,13 @@ void FPhysXPhysicsScene::Initialize(UWorld* InWorld)
 	SceneDesc.cpuDispatcher = Dispatcher;
 	SceneDesc.filterShader = KraftonFilterShader;
 	SceneDesc.simulationEventCallback = EventCallback;
+
+	// Active Actor 사용
+	SceneDesc.flags |= PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+	// 안정화 옵션
+	SceneDesc.flags |= PxSceneFlag::eENABLE_CCD;
+	SceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
+
 	Scene = Physics->createScene(SceneDesc);
 
 	if (!Scene)
@@ -773,17 +807,7 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 		}
 	}
 
-	AActor* OwnerActor = nullptr;
-	if (Body.OwnerComponent)
-	{
-		OwnerActor = Body.OwnerComponent->GetOwner();
-	}
-	else if (Body.OwnerSkeletalComponent)
-	{
-		OwnerActor = Body.OwnerSkeletalComponent->GetOwner();
-	}
-
-	Actor->userData = OwnerActor;
+	Actor->userData = &Body;
 
 	// Shape들 Body에 저장
 	for (const FBodyShapeDesc& ShapeDesc : Desc.Shapes)
@@ -1035,8 +1059,10 @@ bool FPhysXPhysicsScene::Sweep(const FVector& Start, const FVector& Dir, float M
 		}
 		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* Shape, const PxRigidActor* Actor, PxHitFlags&) override
 		{
-			if (IgnoreActor && Actor && Actor->userData == IgnoreActor)
+			if (ShouldIgnorePhysXActor(Actor, IgnoreActor))
+			{
 				return PxQueryHitType::eNONE;
+			}
 
 			if (Shape)
 			{
@@ -1108,9 +1134,9 @@ bool FPhysXPhysicsScene::Sweep(const FVector& Start, const FVector& Dir, float M
 		OutHit.HitComponent = static_cast<UPrimitiveComponent*>(Block.shape->userData);
 		OutHit.HitActor = OutHit.HitComponent->GetOwner();
 	}
-	else if (Block.actor && Block.actor->userData)
+	else if (Block.actor)
 	{
-		OutHit.HitActor = static_cast<AActor*>(Block.actor->userData);
+		OutHit.HitActor = GetOwnerActorFromPhysXActor(Block.actor);
 	}
 
 	return true;
@@ -1218,7 +1244,7 @@ bool FPhysXPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float
 
 		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* Shape, const PxRigidActor* Actor, PxHitFlags&) override
 		{
-			if (IgnoreActor && Actor && Actor->userData == IgnoreActor)
+			if (ShouldIgnorePhysXActor(Actor, IgnoreActor))
 			{
 				return PxQueryHitType::eNONE;
 			}
@@ -1287,7 +1313,7 @@ bool FPhysXPhysicsScene::RaycastByObjectTypes(const FVector& Start, const FVecto
 
 		PxQueryHitType::Enum preFilter(const PxFilterData&, const PxShape* Shape, const PxRigidActor* Actor, PxHitFlags&) override
 		{
-			if (IgnoreActor && Actor && Actor->userData == IgnoreActor)
+			if (ShouldIgnorePhysXActor(Actor, IgnoreActor))
 			{
 				return PxQueryHitType::eNONE;
 			}
@@ -1425,15 +1451,22 @@ void FPhysXPhysicsScene::SimulatePhysics(float DeltaTime)
 
 void FPhysXPhysicsScene::SyncPhysicsToEngineAfterSim()
 {
-	for (FBodyInstance* Body : RegisteredBodies)
+	PxU32 NumActiveActors = 0;
+	PxActor** ActiveActors = Scene->getActiveActors(NumActiveActors);
+
+	for (PxU32 i = 0; i < NumActiveActors; ++i)
 	{
-		if (!Body || !Body->IsValidBodyInstance()) continue;
+		PxActor* ActiveActor = ActiveActors[i];
+		if (!ActiveActor)
+		{
+			continue;
+		}
 
-		UPrimitiveComponent* Comp = Body->OwnerComponent;
-		if (!IsValid(Comp)) continue;
-
-		PxRigidDynamic* Dynamic = Body->GetRigidDynamic();
-		if (!Dynamic) continue;
+		PxRigidDynamic* Dynamic = ActiveActor->is<PxRigidDynamic>();
+		if (!Dynamic)
+		{
+			continue;
+		}
 
 		if (Dynamic->getRigidBodyFlags() & PxRigidBodyFlag::eKINEMATIC)
 		{
@@ -1441,6 +1474,20 @@ void FPhysXPhysicsScene::SyncPhysicsToEngineAfterSim()
 		}
 
 		if (Dynamic->isSleeping())
+		{
+			continue;
+		}
+
+		FBodyInstance* Body = GetBodyInstanceFromActor(ActiveActor);
+		if (!Body || !Body->IsValidBodyInstance())
+		{
+			continue;
+		}
+
+		// 일반 PrimitiveComponent만 여기서 Component transform sync.
+		// SkeletalMesh ragdoll body는 OwnerSkeletalComponent 쪽이므로 여기서 제외됨.
+		UPrimitiveComponent* Comp = Body->OwnerComponent;
+		if (!IsValid(Comp))
 		{
 			continue;
 		}

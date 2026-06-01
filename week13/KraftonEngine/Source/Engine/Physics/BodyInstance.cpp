@@ -1,6 +1,8 @@
 ﻿#include "BodyInstance.h"
 
 #include "PhysXTypeConversions.h"
+#include "GameFramework/AActor.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/Shape/SphereComponent.h"
@@ -17,6 +19,21 @@ physx::PxRigidDynamic* FBodyInstance::GetRigidDynamic() const
 physx::PxRigidStatic* FBodyInstance::GetRigidStatic() const
 {
 	return RigidActor ? RigidActor->is<physx::PxRigidStatic>() : nullptr;
+}
+
+AActor* FBodyInstance::GetOwnerActor() const
+{
+	if (OwnerComponent)
+	{
+		return OwnerComponent->GetOwner();
+	}
+
+	if (OwnerSkeletalComponent)
+	{
+		return OwnerSkeletalComponent->GetOwner();
+	}
+
+	return nullptr;
 }
 
 FTransform FBodyInstance::GetBodyTransform() const

@@ -6,6 +6,7 @@
 #include "Math/Transform.h"
 #include "Object/FName.h"
 
+class AActor;
 class UPrimitiveComponent;
 class USkeletalMeshComponent;
 
@@ -54,6 +55,8 @@ struct FBodyInstance
 {
 	UPrimitiveComponent* OwnerComponent = nullptr;
 	USkeletalMeshComponent* OwnerSkeletalComponent = nullptr;
+
+	AActor* GetOwnerActor() const;
 
 	FName BoneName = FName::None;
 	int32 BoneIndex = -1;
