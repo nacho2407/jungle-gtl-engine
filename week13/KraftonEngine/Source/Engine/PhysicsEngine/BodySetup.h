@@ -30,9 +30,9 @@ public:
 
 private:
 	// DisplayName = Primitives
-	UPROPERTY(Edit, Save, Category="Body Setup", DisplayName="Aggregate Geometry", Type=Struct)
+	UPROPERTY(Edit, Save, Category="Body Shape", DisplayName="Aggregate Geometry", Type=Struct)
 	FKAggregateGeom AggGeom;
 
-	UPROPERTY(Edit, Save, Category="Body Setup", DisplayName="Body Physics", Type=Struct)
+	UPROPERTY(Edit, Save, Category="Physics Info", DisplayName="Body Physics", Type=Struct)
 	FBodySetupPhysicsInfo PhysicsInfo;
 };

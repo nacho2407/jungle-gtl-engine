@@ -12,10 +12,10 @@ struct FKConvexElem : public FKShapeElem
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere, Save, Category="Convex", DisplayName="Vertex Data", Type=Array)
+	UPROPERTY(Save)
 	TArray<FVector> VertexData;
 
-	UPROPERTY(VisibleAnywhere, Save, Category="Convex", DisplayName="Index Data", Type=Array)
+	UPROPERTY(Save)
 	TArray<int32> IndexData;
 
 	UPROPERTY(VisibleAnywhere, Save, Category="Convex", DisplayName="Elem Box", Type=Struct)
