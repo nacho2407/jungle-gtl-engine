@@ -429,6 +429,7 @@ void UVehicleMovementComponent::ApplyKeyboardInput(float DeltaTime)
 	PxVehicleDrive4WRawInputData RawInput;
 	RawInput.setDigitalSteerLeft(Input.GetKey('A'));
 	RawInput.setDigitalSteerRight(Input.GetKey('D'));
+	RawInput.setDigitalHandbrake(Input.GetKey(VK_SPACE));
 
 	if (bReversePressed && ForwardSpeed < 0.5f)
 	{
