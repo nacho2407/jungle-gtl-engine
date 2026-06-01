@@ -1,9 +1,11 @@
 #pragma once
 
+#include "Editor/Subsystem/AssetFactory.h"
 #include "Editor/UI/Asset/AssetEditorWidget.h"
 #include "Editor/UI/Asset/Physics/PhysicsAssetEditorTypes.h"
 #include "Editor/Viewport/Asset/PhysicsAssetEditorViewportClient.h"
 
+struct ImDrawList;
 struct ImVec2;
 class AActor;
 class UPhysicsAsset;
@@ -31,19 +33,24 @@ public:
 private:
 	void RenderModeToolbar(UPhysicsAsset* Asset);
 	void RenderAssetDetailsPanel(UPhysicsAsset* Asset);
-	void RenderViewportPanel(ImVec2 Size);
+	void RenderViewportPanel(UPhysicsAsset* Asset, ImVec2 Size);
+	void RenderSolidBodiesOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos, const ImVec2& ViewportSize, UPhysicsAsset* Asset) const;
 	void RenderPhysicsListPanel(UPhysicsAsset* Asset, ImVec2 Size);
 	void RenderSkeletonTreePanel(UPhysicsAsset* Asset);
+	void RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Size);
 	void RenderDetailsPanel(UPhysicsAsset* Asset);
+	void RenderToolsPanel(UPhysicsAsset* Asset, ImVec2 Size);
 	void RenderBoneTreeNode(const FSkeletalMesh* MeshAsset, UPhysicsAsset* Asset, int32 BoneIndex);
 	void RenderShapeDetails(UPhysicsAsset* Asset, UBodySetup* Body);
 	void RenderConstraintDetails(UPhysicsAsset* Asset);
+	bool RegenerateBodies(UPhysicsAsset* Asset);
 	void HandleViewportSelectionClick();
 	void SelectBody(int32 BodyIndex);
 	void SelectShape(int32 BodyIndex, EPhysicsAssetShapeType ShapeType, int32 ShapeIndex);
 	void SelectConstraint(int32 ConstraintIndex);
 	void SelectBone(int32 BoneIndex);
 	void ClearSelection();
+	void ValidateSelection(UPhysicsAsset* Asset);
 	void SyncViewportHighlight();
 	bool DeleteSelection(UPhysicsAsset* Asset);
 
@@ -60,6 +67,9 @@ private:
 	float DetailsWidth = 360.0f;
 	float ViewportListHeight = 220.0f;
 	float AssetDetailsHeight = 128.0f;
+	float GraphHeight = 180.0f;
+	float ToolsHeight = 260.0f;
+	FPhysicsAssetCreationParams BodyCreationParams;
 	char TreeFilter[128] = {};
 	char ListFilter[128] = {};
 

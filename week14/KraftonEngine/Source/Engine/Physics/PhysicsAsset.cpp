@@ -1,6 +1,20 @@
 ﻿#include "PhysicsAsset.h"
 #include "Object/ReferenceCollector.h"
 
+#include <algorithm>
+#include <cctype>
+
+namespace
+{
+	FString MakeBodySetupIndexKey(FName BoneName)
+	{
+		FString Key = BoneName.ToString();
+		std::transform(Key.begin(), Key.end(), Key.begin(),
+			[](unsigned char C) { return static_cast<char>(std::tolower(C)); });
+		return Key;
+	}
+}
+
 void UPhysicsAsset::Serialize(FArchive& Ar)
 {
 	uint32 NumBodies = static_cast<uint32>(BodySetups.size());
@@ -63,6 +77,11 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 			Ar << PreviewSkeletalMeshPath;
 		}
 	}
+
+	if (Ar.IsLoading())
+	{
+		UpdateBodySetupIndexMap();
+	}
 }
 
 void UPhysicsAsset::AddReferencedObjects(FReferenceCollector& Collector)
@@ -78,8 +97,36 @@ void UPhysicsAsset::AddReferencedObjects(FReferenceCollector& Collector)
 	}
 }
 
+void UPhysicsAsset::UpdateBodySetupIndexMap()
+{
+	BodySetupIndexMap.clear();
+
+	for (int32 Index = 0; Index < static_cast<int32>(BodySetups.size()); ++Index)
+	{
+		const UBodySetup* Body = BodySetups[Index];
+		if (Body && Body->GetBoneName().IsValid() && Body->GetBoneName() != FName::None)
+		{
+			BodySetupIndexMap[MakeBodySetupIndexKey(Body->GetBoneName())] = Index;
+		}
+	}
+}
+
 int32 UPhysicsAsset::FindBodyIndex(FName BoneName) const
 {
+	const auto It = BodySetupIndexMap.find(MakeBodySetupIndexKey(BoneName));
+	if (It != BodySetupIndexMap.end())
+	{
+		const int32 Index = It->second;
+		if (Index >= 0 && Index < static_cast<int32>(BodySetups.size()))
+		{
+			const UBodySetup* Body = BodySetups[Index];
+			if (Body && Body->GetBoneName() == BoneName)
+			{
+				return Index;
+			}
+		}
+	}
+
 	for (int32 Index = 0; Index < static_cast<int32>(BodySetups.size()); ++Index)
 	{
 		const UBodySetup* Body = BodySetups[Index];
@@ -128,6 +175,7 @@ UBodySetup* UPhysicsAsset::CreateBodySetup(FName BoneName)
 	UBodySetup* Body = UObjectManager::Get().CreateObject<UBodySetup>(this);
 	Body->SetBoneName(BoneName);
 	BodySetups.push_back(Body);
+	BodySetupIndexMap[MakeBodySetupIndexKey(BoneName)] = static_cast<int32>(BodySetups.size()) - 1;
 	return Body;
 }
 
@@ -149,6 +197,7 @@ bool UPhysicsAsset::RemoveBodySetupAt(int32 BodyIndex)
 	RemoveConstraintsForBody(BoneName);
 
 	BodySetups.erase(BodySetups.begin() + BodyIndex);
+	UpdateBodySetupIndexMap();
 	if (Body)
 	{
 		UObjectManager::Get().DestroyObject(Body);
@@ -250,4 +299,5 @@ void UPhysicsAsset::Clear()
 		}
 	}
 	BodySetups.clear();
+	BodySetupIndexMap.clear();
 }

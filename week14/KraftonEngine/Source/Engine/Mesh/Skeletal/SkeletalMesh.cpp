@@ -5,31 +5,6 @@
 #include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsAssetManager.h"
 
-namespace
-{
-	FString BuildPhysicsAssetSidecarPath(const FString& MeshAssetPath)
-	{
-		if (MeshAssetPath.empty() || MeshAssetPath == "None")
-		{
-			return "None";
-		}
-
-		const FString Extension = ".uasset";
-		if (MeshAssetPath.size() < Extension.size())
-		{
-			return "None";
-		}
-
-		const size_t ExtensionPos = MeshAssetPath.rfind(Extension);
-		if (ExtensionPos == FString::npos || ExtensionPos + Extension.size() != MeshAssetPath.size())
-		{
-			return "None";
-		}
-
-		return MeshAssetPath.substr(0, ExtensionPos) + "_PhysicsAsset" + Extension;
-	}
-}
-
 void USkeletalMesh::Serialize(FArchive& Ar)
 {
 	if (Ar.IsLoading() && !SkeletalMeshAsset)
@@ -170,9 +145,7 @@ UPhysicsAsset* USkeletalMesh::GetPhysicsAsset()
 	}
 	if (PhysicsAssetPath.empty() || PhysicsAssetPath == "None")
 	{
-		const FString SidecarPath = BuildPhysicsAssetSidecarPath(GetAssetPathFileName());
-		CachedPhysicsAsset = FPhysicsAssetManager::Get().Load(SidecarPath);
-		return CachedPhysicsAsset;
+		return nullptr;
 	}
 
 	// 매니저가 캐시/소유하므로 GC는 매니저 쪽에서 보호된다.

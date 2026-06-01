@@ -2,6 +2,7 @@
 
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Editor/Subsystem/PhysicsAssetGenerator.h"
 #include "Editor/Slate/SlateApplication.h"
 #include "Editor/UI/Toolbar/ViewportToolbar.h"
 #include "GameFramework/Actor/StaticMeshActor.h"
@@ -16,12 +17,16 @@
 #include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsAssetManager.h"
 #include "Physics/PhysicsConstraintTemplate.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "Runtime/Engine.h"
 #include "Settings/EditorSettings.h"
 #include "Viewport/Viewport.h"
 
 #include <imgui.h>
+#include <algorithm>
+#include <cmath>
 #include <cstdio>
+#include <vector>
 
 namespace
 {
@@ -50,9 +55,31 @@ namespace
 		}
 	}
 
+	template<typename TEnum>
+	bool EnumCombo(const char* Label, TEnum& Value, const char* const* Items, int32 Count)
+	{
+		int32 Current = static_cast<int32>(Value);
+		if (ImGui::Combo(Label, &Current, Items, Count))
+		{
+			Value = static_cast<TEnum>(Current);
+			return true;
+		}
+		return false;
+	}
+
 	bool IsValidAssetPath(const FString& Path)
 	{
 		return !Path.empty() && Path != "None";
+	}
+
+	FVector BoneLocalToWorld(const FMatrix& BoneMatrix, const FVector& LocalPoint)
+	{
+		return BoneMatrix.TransformPositionWithW(LocalPoint);
+	}
+
+	FVector ShapeLocalToBoneLocal(const FVector& Center, const FQuat& Rotation, const FVector& ShapeLocalPoint)
+	{
+		return Center + Rotation.RotateVector(ShapeLocalPoint);
 	}
 
 	bool BoneSubtreeMatchesFilter(const FSkeletalMesh* MeshAsset, int32 BoneIndex, const FString& Filter)
@@ -246,6 +273,7 @@ void FPhysicsAssetEditorWidget::Render(float DeltaTime)
 	{
 		return;
 	}
+	ValidateSelection(PhysicsAsset);
 
 	FString VisibleTitle = "Physics Asset Editor";
 	if (IsValidAssetPath(PhysicsAsset->GetSourcePath()))
@@ -303,20 +331,19 @@ void FPhysicsAssetEditorWidget::Render(float DeltaTime)
 	DetailsWidth = Clamp(DetailsWidth, 280.0f, MaxDetailsWidth);
 
 	ImGui::BeginChild("##PhysicsAssetLeftColumn", ImVec2(HierarchyWidth, TotalHeight), false);
-	float MaxAssetDetailsHeight = TotalHeight - 240.0f;
-	if (MaxAssetDetailsHeight < 96.0f) MaxAssetDetailsHeight = 96.0f;
-	AssetDetailsHeight = Clamp(AssetDetailsHeight, 96.0f, MaxAssetDetailsHeight);
-	ImGui::BeginChild("##PhysicsAssetAssetDetails", ImVec2(0.0f, AssetDetailsHeight), true);
-	RenderAssetDetailsPanel(PhysicsAsset);
+	float MaxGraphHeight = TotalHeight - 260.0f;
+	if (MaxGraphHeight < 120.0f) MaxGraphHeight = 120.0f;
+	GraphHeight = Clamp(GraphHeight, 120.0f, MaxGraphHeight);
+	const float SkeletonTreeHeight = TotalHeight - GraphHeight - SplitterThickness - Style.ItemSpacing.y;
+	ImGui::BeginChild("##PhysicsAssetSkeletonTree", ImVec2(0.0f, SkeletonTreeHeight), true);
+	RenderSkeletonTreePanel(PhysicsAsset);
 	ImGui::EndChild();
 	if (DrawPhysicsSplitter("##PhysicsAssetLeftHorizontalSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
 	{
-		AssetDetailsHeight += ImGui::GetIO().MouseDelta.y;
-		AssetDetailsHeight = Clamp(AssetDetailsHeight, 96.0f, MaxAssetDetailsHeight);
+		GraphHeight -= ImGui::GetIO().MouseDelta.y;
+		GraphHeight = Clamp(GraphHeight, 120.0f, MaxGraphHeight);
 	}
-	ImGui::BeginChild("##PhysicsAssetSkeletonTree", ImVec2(0.0f, 0.0f), true);
-	RenderSkeletonTreePanel(PhysicsAsset);
-	ImGui::EndChild();
+	RenderGraphPanel(PhysicsAsset, ImVec2(0.0f, GraphHeight));
 	ImGui::EndChild();
 
 	ImGui::SameLine();
@@ -340,7 +367,7 @@ void FPhysicsAssetEditorWidget::Render(float DeltaTime)
 	if (MaxListHeight < 150.0f) MaxListHeight = 150.0f;
 	ViewportListHeight = Clamp(ViewportListHeight, 150.0f, MaxListHeight);
 	const float ViewportHeight = CenterHeight - ViewportListHeight - SplitterThickness - Style.ItemSpacing.y;
-	RenderViewportPanel(ImVec2(CenterContentWidth, ViewportHeight));
+	RenderViewportPanel(PhysicsAsset, ImVec2(CenterContentWidth, ViewportHeight));
 	if (DrawPhysicsSplitter("##PhysicsAssetViewportListSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
 	{
 		ViewportListHeight -= ImGui::GetIO().MouseDelta.y;
@@ -361,8 +388,20 @@ void FPhysicsAssetEditorWidget::Render(float DeltaTime)
 
 	ImGui::SameLine();
 
-	ImGui::BeginChild("##PhysicsAssetDetails", ImVec2(DetailsWidth, TotalHeight), true);
+	ImGui::BeginChild("##PhysicsAssetRightColumn", ImVec2(DetailsWidth, TotalHeight), false);
+	float MaxToolsHeight = TotalHeight - 260.0f;
+	if (MaxToolsHeight < 160.0f) MaxToolsHeight = 160.0f;
+	ToolsHeight = Clamp(ToolsHeight, 160.0f, MaxToolsHeight);
+	const float DetailsPanelHeight = TotalHeight - ToolsHeight - SplitterThickness - Style.ItemSpacing.y;
+	ImGui::BeginChild("##PhysicsAssetDetails", ImVec2(0.0f, DetailsPanelHeight), true);
 	RenderDetailsPanel(PhysicsAsset);
+	ImGui::EndChild();
+	if (DrawPhysicsSplitter("##PhysicsAssetDetailsToolsSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
+	{
+		ToolsHeight -= ImGui::GetIO().MouseDelta.y;
+		ToolsHeight = Clamp(ToolsHeight, 160.0f, MaxToolsHeight);
+	}
+	RenderToolsPanel(PhysicsAsset, ImVec2(0.0f, ToolsHeight));
 	ImGui::EndChild();
 
 	ImGui::End();
@@ -376,15 +415,18 @@ void FPhysicsAssetEditorWidget::Render(float DeltaTime)
 
 void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 {
-	constexpr float BarHeight = 32.0f;
+	constexpr float RowHeight = 32.0f;
+	constexpr float BarHeight = RowHeight * 2.0f;
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 	const ImVec2 BarPos = ImGui::GetCursorScreenPos();
 	const float BarWidth = ImGui::GetContentRegionAvail().x;
 	DrawList->AddRectFilled(BarPos, ImVec2(BarPos.x + BarWidth, BarPos.y + BarHeight), IM_COL32(38, 38, 38, 255));
+	DrawList->AddRectFilled(ImVec2(BarPos.x, BarPos.y + RowHeight), ImVec2(BarPos.x + BarWidth, BarPos.y + BarHeight), IM_COL32(32, 32, 32, 255));
+	DrawList->AddLine(ImVec2(BarPos.x, BarPos.y + RowHeight), ImVec2(BarPos.x + BarWidth, BarPos.y + RowHeight), IM_COL32(18, 18, 18, 255));
 
 	const char* Title = "Physics Asset";
 	const ImVec2 TitleSize = ImGui::CalcTextSize(Title);
-	DrawList->AddText(ImVec2(BarPos.x + 10.0f, BarPos.y + (BarHeight - TitleSize.y) * 0.5f),
+	DrawList->AddText(ImVec2(BarPos.x + 10.0f, BarPos.y + (RowHeight - TitleSize.y) * 0.5f),
 		IM_COL32(235, 235, 235, 255), Title);
 	ImGui::SetCursorScreenPos(ImVec2(BarPos.x + 118.0f, BarPos.y));
 
@@ -395,7 +437,7 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 		const ImVec2 TextSize = ImGui::CalcTextSize(Label);
 		const float Width = TextSize.x + 28.0f;
 
-		ImGui::InvisibleButton(Label, ImVec2(Width, BarHeight));
+		ImGui::InvisibleButton(Label, ImVec2(Width, RowHeight));
 		if (ImGui::IsItemClicked())
 		{
 			ActiveMode = Mode;
@@ -403,16 +445,16 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 
 		if (bActive || ImGui::IsItemHovered())
 		{
-			DrawList->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + BarHeight),
+			DrawList->AddRectFilled(Pos, ImVec2(Pos.x + Width, Pos.y + RowHeight),
 				bActive ? IM_COL32(44, 44, 44, 255) : IM_COL32(255, 255, 255, 20));
 		}
 
-		DrawList->AddText(ImVec2(Pos.x + 14.0f, Pos.y + (BarHeight - TextSize.y) * 0.5f),
+		DrawList->AddText(ImVec2(Pos.x + 14.0f, Pos.y + (RowHeight - TextSize.y) * 0.5f),
 			bActive ? IM_COL32(255, 255, 255, 255) : IM_COL32(190, 190, 190, 255), Label);
 		if (bActive)
 		{
-			DrawList->AddRectFilled(ImVec2(Pos.x, Pos.y + BarHeight - 2.0f),
-				ImVec2(Pos.x + Width, Pos.y + BarHeight), IM_COL32(64, 132, 224, 255));
+			DrawList->AddRectFilled(ImVec2(Pos.x, Pos.y + RowHeight - 2.0f),
+				ImVec2(Pos.x + Width, Pos.y + RowHeight), IM_COL32(64, 132, 224, 255));
 		}
 		ImGui::SameLine(0.0f, 0.0f);
 	};
@@ -444,6 +486,35 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 		ViewportClient.ResetCameraToPreviewBounds();
 	}
 
+	ImGui::SetCursorScreenPos(ImVec2(BarPos.x + 10.0f, BarPos.y + RowHeight + 4.0f));
+	bool bShowPreviewMesh = ViewportClient.IsShowPreviewMesh();
+	if (ImGui::Checkbox("Preview Mesh", &bShowPreviewMesh))
+	{
+		ViewportClient.SetShowPreviewMesh(bShowPreviewMesh);
+	}
+	ImGui::SameLine();
+	bool bShowBodies = ViewportClient.IsShowBodies();
+	if (ImGui::Checkbox("Bodies", &bShowBodies))
+	{
+		ViewportClient.SetShowBodies(bShowBodies);
+	}
+	ImGui::SameLine();
+	bool bShowConstraints = ViewportClient.IsShowConstraints();
+	if (ImGui::Checkbox("Constraints", &bShowConstraints))
+	{
+		ViewportClient.SetShowConstraints(bShowConstraints);
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Reference Pose", ImVec2(108.0f, 24.0f)) && PreviewMeshComponent)
+	{
+		PreviewMeshComponent->ResetBoneEditPose();
+	}
+	ImGui::SameLine();
+	if (ImGui::Button("Create Asset", ImVec2(96.0f, 24.0f)))
+	{
+		RegenerateBodies(Asset);
+	}
+
 	ImGui::SetCursorScreenPos(ImVec2(BarPos.x, BarPos.y + BarHeight));
 }
 
@@ -469,7 +540,7 @@ void FPhysicsAssetEditorWidget::RenderAssetDetailsPanel(UPhysicsAsset* Asset)
 	ImGui::Text("Constraints: %llu", static_cast<unsigned long long>(Asset->GetConstraintTemplates().size()));
 }
 
-void FPhysicsAssetEditorWidget::RenderViewportPanel(ImVec2 Size)
+void FPhysicsAssetEditorWidget::RenderViewportPanel(UPhysicsAsset* Asset, ImVec2 Size)
 {
 	if (Size.x <= 1.0f || Size.y <= 1.0f)
 	{
@@ -498,6 +569,7 @@ void FPhysicsAssetEditorWidget::RenderViewportPanel(ImVec2 Size)
 	}
 
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	RenderSolidBodiesOverlay(DrawList, ViewportPos, Size, Asset);
 	DrawList->AddRectFilled(ViewportPos, ImVec2(ViewportPos.x + Size.x, ViewportPos.y + ToolbarHeight), IM_COL32(40, 40, 40, 255));
 
 	FViewportToolbarContext Context;
@@ -541,6 +613,296 @@ void FPhysicsAssetEditorWidget::RenderViewportPanel(ImVec2 Size)
 	}
 
 	ImGui::EndChild();
+}
+
+void FPhysicsAssetEditorWidget::RenderSolidBodiesOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos, const ImVec2& ViewportSize, UPhysicsAsset* Asset) const
+{
+	if (!DrawList || !Asset || !PreviewMeshComponent || !ViewportClient.IsShowBodies())
+	{
+		return;
+	}
+	if (ViewportSize.x <= 1.0f || ViewportSize.y <= 1.0f)
+	{
+		return;
+	}
+
+	FMinimalViewInfo POV;
+	if (!ViewportClient.GetCameraView(POV))
+	{
+		return;
+	}
+	POV.AspectRatio = ViewportSize.x / ViewportSize.y;
+
+	const FMatrix View = POV.CalculateViewMatrix();
+	const FMatrix ViewProjection = POV.CalculateViewProjectionMatrix();
+
+	struct FProjectedVertex
+	{
+		ImVec2 Screen;
+		float Depth = 0.0f;
+	};
+
+	struct FProjectedTriangle
+	{
+		ImVec2 A;
+		ImVec2 B;
+		ImVec2 C;
+		float Depth = 0.0f;
+		ImU32 Color = 0;
+	};
+
+	std::vector<FProjectedTriangle> Triangles;
+	Triangles.reserve(2048);
+
+	auto ProjectWorld = [&](const FVector& World, FProjectedVertex& Out) -> bool
+	{
+		const FVector ViewPos = View.TransformPositionWithW(World);
+		if (ViewPos.Z <= POV.NearClip)
+		{
+			return false;
+		}
+
+		const FVector Clip = ViewProjection.TransformPositionWithW(World);
+		if (!std::isfinite(Clip.X) || !std::isfinite(Clip.Y) || !std::isfinite(Clip.Z))
+		{
+			return false;
+		}
+
+		Out.Screen = ImVec2(
+			ViewportPos.x + (Clip.X * 0.5f + 0.5f) * ViewportSize.x,
+			ViewportPos.y + (1.0f - (Clip.Y * 0.5f + 0.5f)) * ViewportSize.y);
+		Out.Depth = ViewPos.Z;
+		return true;
+	};
+
+	auto AddTriangle = [&](const FVector& A, const FVector& B, const FVector& C, ImU32 Color)
+	{
+		constexpr size_t MaxSolidOverlayTriangles = 24000;
+		if (Triangles.size() >= MaxSolidOverlayTriangles)
+		{
+			return;
+		}
+
+		FProjectedVertex PA, PB, PC;
+		if (!ProjectWorld(A, PA) || !ProjectWorld(B, PB) || !ProjectWorld(C, PC))
+		{
+			return;
+		}
+
+		FProjectedTriangle Triangle;
+		Triangle.A = PA.Screen;
+		Triangle.B = PB.Screen;
+		Triangle.C = PC.Screen;
+		Triangle.Depth = (PA.Depth + PB.Depth + PC.Depth) / 3.0f;
+		Triangle.Color = Color;
+		Triangles.push_back(Triangle);
+	};
+
+	auto IsSelectedShape = [&](int32 BodyIndex, EPhysicsAssetShapeType ShapeType, int32 ShapeIndex) -> bool
+	{
+		if (Selection.Type == EPhysicsAssetEditorSelectionType::Body)
+		{
+			return Selection.BodyIndex == BodyIndex;
+		}
+		if (Selection.Type != EPhysicsAssetEditorSelectionType::Shape)
+		{
+			return false;
+		}
+		return Selection.BodyIndex == BodyIndex
+			&& Selection.ShapeType == ShapeType
+			&& Selection.ShapeIndex == ShapeIndex;
+	};
+
+	auto ShapeColor = [&](int32 BodyIndex, EPhysicsAssetShapeType ShapeType, int32 ShapeIndex) -> ImU32
+	{
+		return IsSelectedShape(BodyIndex, ShapeType, ShapeIndex)
+			? IM_COL32(255, 176, 0, 112)
+			: IM_COL32(0, 162, 255, 58);
+	};
+
+	const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
+	const int32 BodyCount = static_cast<int32>(Bodies.size());
+	const bool bLargeAsset = BodyCount > 48;
+	const int32 SphereSlices = bLargeAsset ? 8 : 16;
+	const int32 SphereStacks = bLargeAsset ? 4 : 8;
+	const int32 CapsuleSlices = bLargeAsset ? 8 : 16;
+	const int32 CapsuleHemisphereStacks = bLargeAsset ? 2 : 4;
+
+	auto SpherePoint = [](float Radius, float Theta, float Phi) -> FVector
+	{
+		const float SinTheta = std::sin(Theta);
+		return FVector(
+			Radius * SinTheta * std::cos(Phi),
+			Radius * SinTheta * std::sin(Phi),
+			Radius * std::cos(Theta));
+	};
+
+	for (int32 BodyIndex = 0; BodyIndex < static_cast<int32>(Bodies.size()); ++BodyIndex)
+	{
+		const UBodySetup* Body = Bodies[BodyIndex];
+		if (!Body)
+		{
+			continue;
+		}
+
+		FMatrix BoneMatrix;
+		if (!PreviewMeshComponent->GetBoneWorldMatrixByName(Body->GetBoneName().ToString(), BoneMatrix))
+		{
+			continue;
+		}
+
+		const FKAggregateGeom& Geom = Body->GetAggGeom();
+
+		for (int32 ShapeIndex = 0; ShapeIndex < static_cast<int32>(Geom.SphereElems.size()); ++ShapeIndex)
+		{
+			const FKSphereElem& Sphere = Geom.SphereElems[ShapeIndex];
+			if (Sphere.Radius <= 0.0f)
+			{
+				continue;
+			}
+
+			const ImU32 Color = ShapeColor(BodyIndex, EPhysicsAssetShapeType::Sphere, ShapeIndex);
+			for (int32 Stack = 0; Stack < SphereStacks; ++Stack)
+			{
+				const float Theta0 = FMath::Pi * static_cast<float>(Stack) / static_cast<float>(SphereStacks);
+				const float Theta1 = FMath::Pi * static_cast<float>(Stack + 1) / static_cast<float>(SphereStacks);
+				for (int32 Slice = 0; Slice < SphereSlices; ++Slice)
+				{
+					const float Phi0 = 2.0f * FMath::Pi * static_cast<float>(Slice) / static_cast<float>(SphereSlices);
+					const float Phi1 = 2.0f * FMath::Pi * static_cast<float>(Slice + 1) / static_cast<float>(SphereSlices);
+
+					const FVector P00 = BoneLocalToWorld(BoneMatrix, Sphere.Center + SpherePoint(Sphere.Radius, Theta0, Phi0));
+					const FVector P01 = BoneLocalToWorld(BoneMatrix, Sphere.Center + SpherePoint(Sphere.Radius, Theta0, Phi1));
+					const FVector P10 = BoneLocalToWorld(BoneMatrix, Sphere.Center + SpherePoint(Sphere.Radius, Theta1, Phi0));
+					const FVector P11 = BoneLocalToWorld(BoneMatrix, Sphere.Center + SpherePoint(Sphere.Radius, Theta1, Phi1));
+
+					AddTriangle(P00, P10, P11, Color);
+					AddTriangle(P00, P11, P01, Color);
+				}
+			}
+		}
+
+		for (int32 ShapeIndex = 0; ShapeIndex < static_cast<int32>(Geom.BoxElems.size()); ++ShapeIndex)
+		{
+			const FKBoxElem& Box = Geom.BoxElems[ShapeIndex];
+			if (Box.Extents.X <= 0.0f || Box.Extents.Y <= 0.0f || Box.Extents.Z <= 0.0f)
+			{
+				continue;
+			}
+
+			const FVector Signs[8] = {
+				FVector(-1.0f, -1.0f, -1.0f), FVector( 1.0f, -1.0f, -1.0f),
+				FVector( 1.0f,  1.0f, -1.0f), FVector(-1.0f,  1.0f, -1.0f),
+				FVector(-1.0f, -1.0f,  1.0f), FVector( 1.0f, -1.0f,  1.0f),
+				FVector( 1.0f,  1.0f,  1.0f), FVector(-1.0f,  1.0f,  1.0f)
+			};
+
+			FVector W[8];
+			for (int32 CornerIndex = 0; CornerIndex < 8; ++CornerIndex)
+			{
+				const FVector LocalCorner(
+					Signs[CornerIndex].X * Box.Extents.X,
+					Signs[CornerIndex].Y * Box.Extents.Y,
+					Signs[CornerIndex].Z * Box.Extents.Z);
+				W[CornerIndex] = BoneLocalToWorld(BoneMatrix, ShapeLocalToBoneLocal(Box.Center, Box.Rotation, LocalCorner));
+			}
+
+			const ImU32 Color = ShapeColor(BodyIndex, EPhysicsAssetShapeType::Box, ShapeIndex);
+			const int32 FaceTris[12][3] = {
+				{0, 1, 2}, {0, 2, 3},
+				{4, 6, 5}, {4, 7, 6},
+				{0, 4, 5}, {0, 5, 1},
+				{1, 5, 6}, {1, 6, 2},
+				{2, 6, 7}, {2, 7, 3},
+				{3, 7, 4}, {3, 4, 0}
+			};
+			for (const int32* Tri : FaceTris)
+			{
+				AddTriangle(W[Tri[0]], W[Tri[1]], W[Tri[2]], Color);
+			}
+		}
+
+		for (int32 ShapeIndex = 0; ShapeIndex < static_cast<int32>(Geom.SphylElems.size()); ++ShapeIndex)
+		{
+			const FKSphylElem& Capsule = Geom.SphylElems[ShapeIndex];
+			if (Capsule.Radius <= 0.0f || Capsule.Length <= 0.0f)
+			{
+				continue;
+			}
+
+			const ImU32 Color = ShapeColor(BodyIndex, EPhysicsAssetShapeType::Sphyl, ShapeIndex);
+			const float HalfLength = Capsule.Length * 0.5f;
+
+			auto CapsulePoint = [&](float Radius, float Z, float Phi) -> FVector
+			{
+				const FVector ShapeLocal(Radius * std::cos(Phi), Radius * std::sin(Phi), Z);
+				return BoneLocalToWorld(BoneMatrix, ShapeLocalToBoneLocal(Capsule.Center, Capsule.Rotation, ShapeLocal));
+			};
+
+			for (int32 Slice = 0; Slice < CapsuleSlices; ++Slice)
+			{
+				const float Phi0 = 2.0f * FMath::Pi * static_cast<float>(Slice) / static_cast<float>(CapsuleSlices);
+				const float Phi1 = 2.0f * FMath::Pi * static_cast<float>(Slice + 1) / static_cast<float>(CapsuleSlices);
+
+				const FVector B0 = CapsulePoint(Capsule.Radius, -HalfLength, Phi0);
+				const FVector B1 = CapsulePoint(Capsule.Radius, -HalfLength, Phi1);
+				const FVector T0 = CapsulePoint(Capsule.Radius,  HalfLength, Phi0);
+				const FVector T1 = CapsulePoint(Capsule.Radius,  HalfLength, Phi1);
+				AddTriangle(B0, T0, T1, Color);
+				AddTriangle(B0, T1, B1, Color);
+			}
+
+			for (int32 Stack = 0; Stack < CapsuleHemisphereStacks; ++Stack)
+			{
+				const float Theta0 = (FMath::Pi * 0.5f) * static_cast<float>(Stack) / static_cast<float>(CapsuleHemisphereStacks);
+				const float Theta1 = (FMath::Pi * 0.5f) * static_cast<float>(Stack + 1) / static_cast<float>(CapsuleHemisphereStacks);
+				const float TopR0 = Capsule.Radius * std::cos(Theta0);
+				const float TopR1 = Capsule.Radius * std::cos(Theta1);
+				const float TopZ0 = HalfLength + Capsule.Radius * std::sin(Theta0);
+				const float TopZ1 = HalfLength + Capsule.Radius * std::sin(Theta1);
+				const float BotR0 = Capsule.Radius * std::cos(Theta0);
+				const float BotR1 = Capsule.Radius * std::cos(Theta1);
+				const float BotZ0 = -HalfLength - Capsule.Radius * std::sin(Theta0);
+				const float BotZ1 = -HalfLength - Capsule.Radius * std::sin(Theta1);
+
+				for (int32 Slice = 0; Slice < CapsuleSlices; ++Slice)
+				{
+					const float Phi0 = 2.0f * FMath::Pi * static_cast<float>(Slice) / static_cast<float>(CapsuleSlices);
+					const float Phi1 = 2.0f * FMath::Pi * static_cast<float>(Slice + 1) / static_cast<float>(CapsuleSlices);
+
+					const FVector Top00 = CapsulePoint(TopR0, TopZ0, Phi0);
+					const FVector Top01 = CapsulePoint(TopR0, TopZ0, Phi1);
+					const FVector Top10 = CapsulePoint(TopR1, TopZ1, Phi0);
+					const FVector Top11 = CapsulePoint(TopR1, TopZ1, Phi1);
+					AddTriangle(Top00, Top10, Top11, Color);
+					AddTriangle(Top00, Top11, Top01, Color);
+
+					const FVector Bot00 = CapsulePoint(BotR0, BotZ0, Phi0);
+					const FVector Bot01 = CapsulePoint(BotR0, BotZ0, Phi1);
+					const FVector Bot10 = CapsulePoint(BotR1, BotZ1, Phi0);
+					const FVector Bot11 = CapsulePoint(BotR1, BotZ1, Phi1);
+					AddTriangle(Bot00, Bot11, Bot10, Color);
+					AddTriangle(Bot00, Bot01, Bot11, Color);
+				}
+			}
+		}
+	}
+
+	std::sort(Triangles.begin(), Triangles.end(),
+		[](const FProjectedTriangle& A, const FProjectedTriangle& B)
+		{
+			return A.Depth > B.Depth;
+		});
+
+	DrawList->PushClipRect(ViewportPos, ImVec2(ViewportPos.x + ViewportSize.x, ViewportPos.y + ViewportSize.y), true);
+	const ImDrawListFlags OldDrawListFlags = DrawList->Flags;
+	DrawList->Flags &= ~ImDrawListFlags_AntiAliasedFill;
+	for (const FProjectedTriangle& Triangle : Triangles)
+	{
+		DrawList->AddTriangleFilled(Triangle.A, Triangle.B, Triangle.C, Triangle.Color);
+	}
+	DrawList->Flags = OldDrawListFlags;
+	DrawList->PopClipRect();
 }
 
 void FPhysicsAssetEditorWidget::RenderPhysicsListPanel(UPhysicsAsset* Asset, ImVec2 Size)
@@ -762,6 +1124,123 @@ void FPhysicsAssetEditorWidget::RenderBoneTreeNode(const FSkeletalMesh* MeshAsse
 		ImGui::TreePop();
 	}
 	ImGui::PopID();
+}
+
+void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Size)
+{
+	if (Size.x <= 1.0f || Size.y <= 1.0f)
+	{
+		return;
+	}
+
+	ImGui::BeginChild("##PhysicsAssetGraphPanel", Size, true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
+	DrawPhysicsPanelHeader("Graph");
+
+	const ImVec2 CanvasPos = ImGui::GetCursorScreenPos();
+	const ImVec2 CanvasSize = ImGui::GetContentRegionAvail();
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	DrawList->AddRectFilled(CanvasPos, ImVec2(CanvasPos.x + CanvasSize.x, CanvasPos.y + CanvasSize.y), IM_COL32(24, 24, 24, 255));
+
+	const float GridStep = 24.0f;
+	for (float X = CanvasPos.x; X < CanvasPos.x + CanvasSize.x; X += GridStep)
+	{
+		DrawList->AddLine(ImVec2(X, CanvasPos.y), ImVec2(X, CanvasPos.y + CanvasSize.y), IM_COL32(42, 42, 42, 180));
+	}
+	for (float Y = CanvasPos.y; Y < CanvasPos.y + CanvasSize.y; Y += GridStep)
+	{
+		DrawList->AddLine(ImVec2(CanvasPos.x, Y), ImVec2(CanvasPos.x + CanvasSize.x, Y), IM_COL32(42, 42, 42, 180));
+	}
+
+	const char* Watermark = "PHYSICS";
+	const ImVec2 WatermarkSize = ImGui::CalcTextSize(Watermark);
+	DrawList->AddText(ImVec2(CanvasPos.x + CanvasSize.x - WatermarkSize.x - 10.0f, CanvasPos.y + CanvasSize.y - WatermarkSize.y - 8.0f),
+		IM_COL32(120, 120, 120, 70), Watermark);
+
+	if (!Asset)
+	{
+		ImGui::EndChild();
+		return;
+	}
+
+	const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
+	std::vector<ImVec2> BodyPins(Bodies.size(), ImVec2(0.0f, 0.0f));
+
+	const float BodyNodeWidth = Clamp(CanvasSize.x * 0.42f, 84.0f, 132.0f);
+	const float BodyNodeHeight = 26.0f;
+	const float LeftX = CanvasPos.x + 12.0f;
+	const float RightX = CanvasPos.x + CanvasSize.x - BodyNodeWidth - 12.0f;
+	const float StartY = CanvasPos.y + 14.0f;
+	const float StepY = 36.0f;
+	const int32 MaxVisibleBodies = static_cast<int32>(Clamp((CanvasSize.y - 24.0f) / StepY, 1.0f, 256.0f));
+
+	for (int32 BodyIndex = 0; BodyIndex < static_cast<int32>(Bodies.size()) && BodyIndex < MaxVisibleBodies; ++BodyIndex)
+	{
+		const UBodySetup* Body = Bodies[BodyIndex];
+		if (!Body)
+		{
+			continue;
+		}
+
+		const bool bSelected = Selection.Type == EPhysicsAssetEditorSelectionType::Body && Selection.BodyIndex == BodyIndex;
+		const float X = (BodyIndex % 2 == 0) ? LeftX : RightX;
+		const float Y = StartY + static_cast<float>(BodyIndex / 2) * StepY;
+		const ImVec2 Min(X, Y);
+		const ImVec2 Max(X + BodyNodeWidth, Y + BodyNodeHeight);
+		const ImU32 Color = bSelected ? IM_COL32(142, 196, 104, 255) : IM_COL32(104, 154, 84, 255);
+		DrawList->AddRectFilled(Min, Max, Color, 2.0f);
+		DrawList->AddRect(Min, Max, IM_COL32(210, 235, 180, 220), 2.0f);
+
+		FString Label = Body->GetBoneName().ToString();
+		if (Label.size() > 18)
+		{
+			Label = Label.substr(0, 15) + "...";
+		}
+		DrawList->AddText(ImVec2(Min.x + 7.0f, Min.y + 5.0f), IM_COL32(20, 20, 20, 255), Label.c_str());
+		BodyPins[BodyIndex] = ImVec2((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+
+		ImGui::SetCursorScreenPos(Min);
+		ImGui::PushID(BodyIndex);
+		ImGui::InvisibleButton("##BodyGraphNode", ImVec2(BodyNodeWidth, BodyNodeHeight));
+		if (ImGui::IsItemClicked())
+		{
+			SelectBody(BodyIndex);
+		}
+		ImGui::PopID();
+	}
+
+	const TArray<UPhysicsConstraintTemplate*>& Constraints = Asset->GetConstraintTemplates();
+	for (int32 ConstraintIndex = 0; ConstraintIndex < static_cast<int32>(Constraints.size()); ++ConstraintIndex)
+	{
+		const UPhysicsConstraintTemplate* Constraint = Constraints[ConstraintIndex];
+		if (!Constraint)
+		{
+			continue;
+		}
+
+		const int32 ParentIndex = Asset->FindBodyIndex(Constraint->GetParentBoneName());
+		const int32 ChildIndex = Asset->FindBodyIndex(Constraint->GetChildBoneName());
+		if (ParentIndex < 0 || ChildIndex < 0
+			|| ParentIndex >= static_cast<int32>(BodyPins.size())
+			|| ChildIndex >= static_cast<int32>(BodyPins.size())
+			|| ParentIndex >= MaxVisibleBodies
+			|| ChildIndex >= MaxVisibleBodies)
+		{
+			continue;
+		}
+
+		const ImU32 LineColor = Selection.Type == EPhysicsAssetEditorSelectionType::Constraint && Selection.ConstraintIndex == ConstraintIndex
+			? IM_COL32(255, 210, 96, 255)
+			: IM_COL32(210, 210, 160, 190);
+		DrawList->AddLine(BodyPins[ParentIndex], BodyPins[ChildIndex], LineColor, 2.0f);
+	}
+
+	if (static_cast<int32>(Bodies.size()) > MaxVisibleBodies)
+	{
+		ImGui::SetCursorScreenPos(ImVec2(CanvasPos.x + 10.0f, CanvasPos.y + CanvasSize.y - 22.0f));
+		ImGui::TextDisabled("+ %d more bodies", static_cast<int32>(Bodies.size()) - MaxVisibleBodies);
+	}
+
+	ImGui::EndChild();
 }
 
 void FPhysicsAssetEditorWidget::RenderDetailsPanel(UPhysicsAsset* Asset)
@@ -1061,6 +1540,81 @@ void FPhysicsAssetEditorWidget::RenderConstraintDetails(UPhysicsAsset* Asset)
 	}
 }
 
+void FPhysicsAssetEditorWidget::RenderToolsPanel(UPhysicsAsset* Asset, ImVec2 Size)
+{
+	if (Size.x <= 1.0f || Size.y <= 1.0f)
+	{
+		return;
+	}
+
+	ImGui::BeginChild("##PhysicsAssetToolsPanel", Size, true);
+	if (ImGui::BeginTabBar("##PhysicsAssetRightTabs"))
+	{
+		if (ImGui::BeginTabItem("Tools"))
+		{
+			DrawPhysicsPanelHeader("Body Creation");
+
+			ImGui::DragFloat("Min Bone Size", &BodyCreationParams.MinBoneSize, 0.5f, 0.0f, 1000.0f);
+
+			static const char* const PrimitiveItems[] = { "Box", "Capsule", "Sphere" };
+			EnumCombo("Primitive Type", BodyCreationParams.PrimitiveType, PrimitiveItems, 3);
+
+			static const char* const WeightItems[] = { "Any Weight", "Dominant Weight" };
+			EnumCombo("Vertex Weighting Type", BodyCreationParams.VertexWeighting, WeightItems, 2);
+
+			ImGui::Checkbox("Auto Orient to Bone", &BodyCreationParams.bAutoOrientToBone);
+			ImGui::Checkbox("Walk Past Small Bones", &BodyCreationParams.bWalkPastSmallBones);
+			ImGui::Checkbox("Create Body for All Bones", &BodyCreationParams.bCreateBodyForAllBones);
+			if (BodyCreationParams.bCreateBodyForAllBones)
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.72f, 0.32f, 1.0f), "All bones includes cloth/accessory chains.");
+			}
+			ImGui::InputInt("Lod Index", &BodyCreationParams.LodIndex);
+
+			ImGui::Spacing();
+			DrawPhysicsPanelHeader("Constraint Creation");
+			ImGui::Checkbox("Create Constraints", &BodyCreationParams.bCreateConstraints);
+
+			static const char* const ConstraintItems[] = { "Free", "Limited", "Locked" };
+			EnumCombo("Angular Constraint Mode", BodyCreationParams.AngularConstraintMode, ConstraintItems, 3);
+
+			ImGui::Spacing();
+			if (ImGui::Button("Re-generate Bodies", ImVec2(-1.0f, 26.0f)))
+			{
+				RegenerateBodies(Asset);
+			}
+
+			ImGui::EndTabItem();
+		}
+
+		if (ImGui::BeginTabItem("Profiles"))
+		{
+			DrawPhysicsPanelHeader("Profiles");
+			ImGui::TextDisabled("Collision and constraint profiles are not implemented yet.");
+			ImGui::EndTabItem();
+		}
+
+		ImGui::EndTabBar();
+	}
+	ImGui::EndChild();
+}
+
+bool FPhysicsAssetEditorWidget::RegenerateBodies(UPhysicsAsset* Asset)
+{
+	if (!Asset || !PreviewMesh || !PreviewMesh->GetSkeletalMeshAsset())
+	{
+		return false;
+	}
+
+	Asset->Clear();
+	const FSkeletalMesh* MeshAsset = PreviewMesh->GetSkeletalMeshAsset();
+	GeneratePhysicsAssetBodies(*Asset, *MeshAsset, BodyCreationParams);
+	GeneratePhysicsAssetConstraints(*Asset, *MeshAsset, BodyCreationParams);
+	ClearSelection();
+	MarkDirty();
+	return !Asset->GetBodySetups().empty();
+}
+
 void FPhysicsAssetEditorWidget::HandleViewportSelectionClick()
 {
 	if (ActiveMode == EPhysicsAssetEditorMode::Preview)
@@ -1117,6 +1671,61 @@ void FPhysicsAssetEditorWidget::ClearSelection()
 {
 	Selection.Clear();
 	SyncViewportHighlight();
+}
+
+void FPhysicsAssetEditorWidget::ValidateSelection(UPhysicsAsset* Asset)
+{
+	if (Selection.Type == EPhysicsAssetEditorSelectionType::None)
+	{
+		return;
+	}
+
+	bool bValid = false;
+	if (Asset)
+	{
+		const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
+		const TArray<UPhysicsConstraintTemplate*>& Constraints = Asset->GetConstraintTemplates();
+
+		switch (Selection.Type)
+		{
+		case EPhysicsAssetEditorSelectionType::Body:
+			bValid = Selection.BodyIndex >= 0
+				&& Selection.BodyIndex < static_cast<int32>(Bodies.size())
+				&& Bodies[Selection.BodyIndex] != nullptr;
+			break;
+
+		case EPhysicsAssetEditorSelectionType::Shape:
+			bValid = Selection.BodyIndex >= 0
+				&& Selection.BodyIndex < static_cast<int32>(Bodies.size())
+				&& Bodies[Selection.BodyIndex] != nullptr
+				&& Selection.ShapeIndex >= 0
+				&& Selection.ShapeIndex < Bodies[Selection.BodyIndex]->GetShapeCount(Selection.ShapeType);
+			break;
+
+		case EPhysicsAssetEditorSelectionType::Constraint:
+			bValid = Selection.ConstraintIndex >= 0
+				&& Selection.ConstraintIndex < static_cast<int32>(Constraints.size())
+				&& Constraints[Selection.ConstraintIndex] != nullptr;
+			break;
+
+		case EPhysicsAssetEditorSelectionType::Bone:
+			if (PreviewMesh && PreviewMesh->GetSkeletalMeshAsset())
+			{
+				const FSkeletalMesh* MeshAsset = PreviewMesh->GetSkeletalMeshAsset();
+				bValid = Selection.BoneIndex >= 0
+					&& Selection.BoneIndex < static_cast<int32>(MeshAsset->Bones.size());
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	if (!bValid)
+	{
+		ClearSelection();
+	}
 }
 
 void FPhysicsAssetEditorWidget::SyncViewportHighlight()

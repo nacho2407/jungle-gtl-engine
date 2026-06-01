@@ -26,6 +26,7 @@ public:
 	
 	const TArray<UBodySetup*>& GetBodySetups() const {return BodySetups;}
 	
+	void UpdateBodySetupIndexMap();
 	int32 FindBodyIndex(FName BoneName) const;
 	UBodySetup* FindBodySetup(FName BoneName) const;
 	UBodySetup* GetOrCreateBodySetup(FName BoneName);
@@ -43,6 +44,7 @@ public:
 private:
 	TArray<UBodySetup*> BodySetups;
 	TArray<UPhysicsConstraintTemplate*> ConstraintTemplates;
+	TMap<FString, int32> BodySetupIndexMap;
 	FString SourcePath;
 	FString PreviewSkeletalMeshPath = "None";
 };

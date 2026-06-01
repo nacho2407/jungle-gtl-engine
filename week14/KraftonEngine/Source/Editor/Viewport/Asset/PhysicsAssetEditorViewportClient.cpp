@@ -520,7 +520,7 @@ void FPhysicsAssetEditorViewportClient::DrawPreviewPhysicsAsset()
 	}
 
 	FPhysicsAssetDebugDrawOptions Options;
-	Options.bDrawBodies = bShowBodies;
+	Options.bDrawBodies = false;
 	Options.bDrawConstraints = bShowConstraints;
 	Options.HighlightBodyIndex = HighlightBodyIndex;
 	Options.HighlightShapeType = HighlightShapeType;
