@@ -749,6 +749,12 @@ void FStaticMeshEditorWidget::RenderAggregateShapeDetails(UStaticMesh* StaticMes
 	}
 
 	ImGui::TextUnformatted("Shape Details");
+	ImGui::SameLine();
+	if (ImGui::Button("Delete Selected"))
+	{
+		DeleteSelectedAggregateShape(StaticMesh);
+		return;
+	}
 	ImGui::Separator();
 
 	UStruct* StructType = nullptr;
@@ -800,6 +806,11 @@ bool FStaticMeshEditorWidget::RenderAddShapeContextMenu(UStaticMesh* StaticMesh)
 	{
 		AddAggregateShape(StaticMesh, EAggCollisionShape::Convex);
 		bAdded = true;
+	}
+	ImGui::Separator();
+	if (ImGui::MenuItem("Delete Selected", nullptr, false, GetSelectedShape(StaticMesh) != nullptr))
+	{
+		bAdded = DeleteSelectedAggregateShape(StaticMesh) || bAdded;
 	}
 	return bAdded;
 }
@@ -871,6 +882,62 @@ void FStaticMeshEditorWidget::AddAggregateShape(UStaticMesh* StaticMesh, EAggCol
 	SaveStaticMeshChange("StaticMesh AggregateGeom add warning");
 	MarkDirty();
 	ViewportClient.MarkBodySetupDebugDirty();
+}
+
+bool FStaticMeshEditorWidget::DeleteSelectedAggregateShape(UStaticMesh* StaticMesh)
+{
+	UBodySetup* BodySetup = StaticMesh ? StaticMesh->GetBodySetup() : nullptr;
+	if (!BodySetup || !SelectedShape.IsValid())
+	{
+		return false;
+	}
+
+	FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
+	bool bDeleted = false;
+	switch (SelectedShape.Type)
+	{
+	case EAggCollisionShape::Sphere:
+		if (SelectedShape.Index >= 0 && SelectedShape.Index < static_cast<int32>(AggGeom.SphereElems.size()))
+		{
+			AggGeom.SphereElems.erase(AggGeom.SphereElems.begin() + SelectedShape.Index);
+			bDeleted = true;
+		}
+		break;
+	case EAggCollisionShape::Box:
+		if (SelectedShape.Index >= 0 && SelectedShape.Index < static_cast<int32>(AggGeom.BoxElems.size()))
+		{
+			AggGeom.BoxElems.erase(AggGeom.BoxElems.begin() + SelectedShape.Index);
+			bDeleted = true;
+		}
+		break;
+	case EAggCollisionShape::Sphyl:
+		if (SelectedShape.Index >= 0 && SelectedShape.Index < static_cast<int32>(AggGeom.SphylElems.size()))
+		{
+			AggGeom.SphylElems.erase(AggGeom.SphylElems.begin() + SelectedShape.Index);
+			bDeleted = true;
+		}
+		break;
+	case EAggCollisionShape::Convex:
+		if (SelectedShape.Index >= 0 && SelectedShape.Index < static_cast<int32>(AggGeom.ConvexElems.size()))
+		{
+			AggGeom.ConvexElems.erase(AggGeom.ConvexElems.begin() + SelectedShape.Index);
+			bDeleted = true;
+		}
+		break;
+	default:
+		break;
+	}
+
+	if (!bDeleted)
+	{
+		return false;
+	}
+
+	SetSelectedShape({});
+	SaveStaticMeshChange("StaticMesh AggregateGeom delete warning");
+	MarkDirty();
+	ViewportClient.MarkBodySetupDebugDirty();
+	return true;
 }
 
 FKShapeElem* FStaticMeshEditorWidget::GetSelectedShape(UStaticMesh* StaticMesh) const

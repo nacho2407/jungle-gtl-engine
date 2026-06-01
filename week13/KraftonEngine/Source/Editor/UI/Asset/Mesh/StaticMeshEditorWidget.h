@@ -41,6 +41,7 @@ private:
 	bool RenderAddShapeContextMenu(UStaticMesh* StaticMesh);
 	bool RenderShapeSelectable(const char* TypeLabel, FBodySetupShapeSelection Selection);
 	void AddAggregateShape(UStaticMesh* StaticMesh, EAggCollisionShape Type);
+	bool DeleteSelectedAggregateShape(UStaticMesh* StaticMesh);
 	FKShapeElem* GetSelectedShape(UStaticMesh* StaticMesh) const;
 	void SetSelectedShape(FBodySetupShapeSelection Selection);
 	void SaveStaticMeshChange(const char* LogPrefix);
