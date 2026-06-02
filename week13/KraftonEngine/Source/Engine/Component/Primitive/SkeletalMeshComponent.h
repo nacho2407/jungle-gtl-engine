@@ -208,6 +208,7 @@ protected:
     void DestroyRagdollConstraints();
     void DestroyRagdollBodies();
     void SyncBonesFromRagdollBodies();
+    bool ApplyCurrentAnimationPoseForPhysicsInit();
 
     bool UpdateRagdollActivePose(float DeltaTime);
     bool BuildRagdollPhysicsLocalPose( const TArray<FTransform>& SourceLocalPose, TArray<FTransform>& OutPhysicsLocalPose, TArray<float>& OutPhysicsWeights) const;

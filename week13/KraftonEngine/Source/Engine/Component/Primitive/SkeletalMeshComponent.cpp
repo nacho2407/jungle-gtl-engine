@@ -274,6 +274,8 @@ void USkeletalMeshComponent::EnableRagdollPhysics()
     DestroyRagdollConstraints();
     DestroyRagdollBodies();
 
+    ApplyCurrentAnimationPoseForPhysicsInit();
+
     if (!CreateRagdollBodiesFromPhysicsAsset())
     {
         DestroyRagdollConstraints();
@@ -1228,6 +1230,26 @@ void USkeletalMeshComponent::SyncBonesFromRagdollBodies()
     SetBoneLocalTransformsDirect(PhysicsLocalPose);
 }
 
+bool USkeletalMeshComponent::ApplyCurrentAnimationPoseForPhysicsInit()
+{
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+    if (!Asset || Asset->Bones.empty())
+    {
+        return false;
+    }
+
+    FPoseContext InitialPose;
+    if (!EvaluateAnimationPose(0.0f, InitialPose) ||
+        InitialPose.Pose.size() != Asset->Bones.size())
+    {
+        return false;
+    }
+
+    ApplyAnimationPose(InitialPose);
+    return true;
+}
+
 bool USkeletalMeshComponent::UpdateRagdollActivePose(float DeltaTime)
 {
     USkeletalMesh* Mesh = GetSkeletalMesh();
@@ -1628,6 +1650,8 @@ bool USkeletalMeshComponent::BeginPhysicalAnimation()
         DestroyRagdollConstraints();
         DestroyRagdollBodies();
 
+        ApplyCurrentAnimationPoseForPhysicsInit();
+
         if (!CreateRagdollBodiesFromPhysicsAsset())
         {
             DestroyRagdollConstraints();
@@ -1713,7 +1737,7 @@ bool USkeletalMeshComponent::BuildWorldTransformsFromLocalPose(const TArray<FTra
 void USkeletalMeshComponent::TickPhysicalAnimationPose(float DeltaTime)
 {
     ApplyExternalComponentMoveToRagdollBodies();
-    SyncComponentToRagdollBody();
+    // SyncComponentToRagdollBody();
 
     TArray<FTransform> SourceLocalPose;
     CaptureCurrentBoneLocalPose(SourceLocalPose);

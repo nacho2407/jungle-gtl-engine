@@ -96,8 +96,6 @@ private:
 	void RemoveRegisteredBody(FBodyInstance* Body);
 	void ReleaseRegisteredBodies();
 
-	FBodyInstance* FindRegisteredBodyByActor(const physx::PxActor* Actor) const;
-
 	void SyncEngineToPhysicsBeforeSim();
 	void SimulatePhysics(float DeltaTime);
 	void SyncPhysicsToEngineAfterSim();

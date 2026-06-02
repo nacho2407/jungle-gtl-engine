@@ -307,7 +307,8 @@ void UPhysicalAnimationComponent::ApplyDriveToBody(
         {
             bShouldApplyPositionDrive = true;
         }
-        else if (DriveRootBoneName != FName::None && Body->BoneName == DriveRootBoneName)
+        else if (DriveRootBoneName != FName::None && TargetMesh &&
+            TargetMesh->IsBoneBelowBone(Body->BoneName, DriveRootBoneName, true))
         {
             bShouldApplyPositionDrive = true;
         }
