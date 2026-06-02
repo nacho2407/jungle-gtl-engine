@@ -1,6 +1,8 @@
 ﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
+#include "Math/Vector.h"
+#include "Math/Quat.h"
 #include "Object/Reflection/ObjectMacros.h"
 #include "Object/Reflection/UStruct.h"
 #include "Render/Types/VertexTypes.h"
@@ -59,6 +61,9 @@ struct FClothDesc
 	UPROPERTY(Edit, Save, Category = "Cloth|Simulation", DisplayName = "Angular Drag", Type = Vec3, Speed = 0.001f)
 	FVector AngularDrag = FVector(0.005f, 0.005f, 0.005f);
 
+	UPROPERTY(Edit, Save, Category = "Cloth|Simulation", DisplayName = "Teleport Distance Threshold", Min = 0.0f, Max = 1000.0f, Speed = 0.1f)
+	float TeleportDistanceThreshold = 3.0f;
+
 	UPROPERTY(Edit, Save, Category = "Cloth|Constraint", DisplayName = "Structural Stiffness", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
 	float StructuralStiffness = 1.0f;
 
@@ -100,6 +105,8 @@ class FClothInstance
 {
 public:
 	bool InitializeGrid(const FClothDesc& Desc);
+	bool InitializeMesh(const FClothDesc& Desc, const FMeshDataView& MeshView);
+
 	void Release();
 	void Simulate(float DeltaTime, int32 SubstepCount, float RenderNormalOffset);
 
@@ -107,11 +114,15 @@ public:
 	
 	void UpdateCollision(const FClothCollisionData& CollisionData);
 
+	void SetSimulationSpaceTransform(const FVector& WorldLocation, const FQuat& WorldRotation, bool bTeleport);
+
 	const TArray<FVertexPNCTT>& GetRenderVertices() const { return RenderVertices; }
 	const TArray<uint32>& GetRenderIndices() const { return Triangles; }
 	uint64 GetRenderRevision() const { return RenderRevision; }
 
 private:
+	void UpdateRenderVerticesFromParticles(float RenderNormalOffset);
+
 	nv::cloth::Fabric* Fabric = nullptr;
 	nv::cloth::Cloth* Cloth = nullptr;
 
@@ -129,4 +140,8 @@ private:
 	uint64 RenderRevision = 0;
 	int32 GridWidth = 0;
 	int32 GridHeight = 0;
+
+	TArray<FVector2> SourceUVs;
+	TArray<FVector4> SourceTangents;
+	bool bUseSourceMeshAttributes = false;
 };

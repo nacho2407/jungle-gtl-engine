@@ -14,7 +14,7 @@
         "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
         "ShadowMode" : "Opaque",
         "Textures" : {
-          "DiffuseTexture" : "Content/Texture/toppng.com-vintagesonic1-sonic-ring-gif-301x301.png"
+          "DiffuseTexture" : "Content/Texture/Particle.png"
         },
         "bEnableBloom" : false
       }

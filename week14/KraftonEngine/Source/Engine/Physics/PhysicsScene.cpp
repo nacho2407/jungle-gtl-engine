@@ -522,7 +522,19 @@ void FPhysicsScene::GatherClothCollision(const FClothCollisionGatherParams& Para
 		if (!BodyInstance || !BodyInstance->Body) continue;
 
 		UPrimitiveComponent* OwnerComp = BodyInstance->OwnerComponent;
-		if (!OwnerComp || OwnerComp == Params.IgnoreComponent) continue;
+		if (!OwnerComp) continue;
+
+		bool bIgnoredComponent = OwnerComp == Params.IgnoreComponent;
+		for (const UPrimitiveComponent* IgnoredComponent : Params.IgnoreComponents)
+		{
+			if (OwnerComp == IgnoredComponent)
+			{
+				bIgnoredComponent = true;
+				break;
+			}
+		}
+
+		if (bIgnoredComponent) continue;
 
 		if (OwnerComp->GetOwner() == Params.IgnoreActor) continue;
 
