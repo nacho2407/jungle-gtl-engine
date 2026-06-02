@@ -20,6 +20,8 @@ class FWindowsWindow;
 class UWorld;
 class AActor;
 class USkeletalMesh;
+class USkeletalMeshComponent;
+class USkeletalMeshDebugComponent;
 class UPhysicsAsset;
 class UPhysicsAssetDebugComponent;
 
@@ -39,7 +41,7 @@ public:
 
 	void SetPreviewWorld(UWorld* InWorld) { PreviewWorld = InWorld; }
 	void SetPreviewActor(AActor* InActor) { PreviewActor = InActor; }
-	void SetPreviewMeshComponent(USkeletalMeshComponent* InComp) { PreviewMeshComponent = InComp; }
+	void SetPreviewMeshComponent(USkeletalMeshDebugComponent* InComp);
 	void SetViewportRect(float X, float Y, float Width, float Height) { ViewportScreenRect = { X, Y, Width, Height }; }
 
 	bool IsRenderable() const override { return bIsRenderable; }
@@ -52,6 +54,7 @@ public:
 
 	UGizmoComponent* GetGizmo() const { return Gizmo; }
 	USkeletalMeshComponent* GetPreviewMeshComponent() const { return PreviewMeshComponent; }
+	USkeletalMeshDebugComponent* GetPreviewDebugMeshComponent() const { return PreviewDebugMeshComponent; }
 	UPhysicsAssetDebugComponent* GetPhysicsAssetDebugComponent() const { return PhysicsAssetDebugComponent; }
 	void SyncPhysicsAssetDebugComponent(
 		UPhysicsAsset* PhysicsAsset,
@@ -110,6 +113,7 @@ private:
 	FPhysicsAssetConstraintGizmoTarget PhysicsAssetConstraintTarget;
 	UGizmoComponent* Gizmo = nullptr;
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
+	USkeletalMeshDebugComponent* PreviewDebugMeshComponent = nullptr;
 	UBoneDebugComponent* BoneDebugComponent = nullptr;
 	UPhysicsAssetDebugComponent* PhysicsAssetDebugComponent = nullptr;
 	bool bPhysicsAssetPickingEnabled = false;

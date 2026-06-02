@@ -7,6 +7,7 @@
 #include <memory>
 
 class FMeshEditorWidgetTab;
+class FSelectionManager;
 
 enum class EMeshEditorTab : uint8 { Skeleton, Mesh, Animation, PhysicsAsset };
 
@@ -34,6 +35,7 @@ public:
 
 	FMeshEditorViewportClient* GetViewportClient() { return &ViewportClient; }
 	const FMeshEditorViewportClient* GetViewportClient() const { return &ViewportClient; }
+	FSelectionManager* GetSelectionManager() const { return SelectionManager; }
 
 	uint32 GetInstanceId() const { return InstanceId; }
 	EMeshEditorTab GetActiveTabType() const { return ActiveTab; }
@@ -58,6 +60,7 @@ private:
 
 private:
 	mutable FMeshEditorViewportClient ViewportClient;
+	FSelectionManager* SelectionManager = nullptr;
 
 	EMeshEditorTab ActiveTab = EMeshEditorTab::Skeleton;
 	TArray<std::unique_ptr<FMeshEditorWidgetTab>> Tabs;
