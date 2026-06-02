@@ -27,7 +27,7 @@ public:
 
 	bool AllowsMultipleInstances() const override { return true; }
 
-	void Render(float DeltaTime) override;
+	void Render(const FEditorPanelContext& Context) override;
 
 private:
 	void RenderMeshStatsOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos) const;

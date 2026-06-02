@@ -2,15 +2,17 @@
 
 #include "Editor/UI/Panel/EditorConsoleWidget.h"
 #include "Editor/UI/Panel/EditorControlWidget.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/UI/Panel/EditorPropertyWidget.h"
+#include "Editor/UI/Panel/EditorReflectionPropertyWidget.h"
 #include "Editor/UI/Panel/EditorSceneWidget.h"
 #include "Editor/UI/Panel/EditorStatWidget.h"
 #include "Editor/UI/Debug/EditorShadowMapDebugWidget.h"
 #include "Editor/UI/Debug/EditorAnimationDebugWidget.h"
 #include "Editor/UI/Panel/EditorProjectSettingsWidget.h"
 #include "Editor/UI/Panel/EditorWorldSettingsWidget.h"
-#include "Editor/UI/ContentBrowser/ContentBrowser.h"
+#include "Editor/UI/Panel/ContentBrowser/ContentBrowser.h"
 #include "Editor/UI/Asset/AssetEditorManager.h"
 #include "Math/Vector.h"
 
@@ -32,8 +34,8 @@ public:
 	void SaveToSettings() const;
 	void HideEditorWindows();
 	void ShowEditorWindows();
-	void SetShowEditorOnlyComponents(bool bEnable) { PropertyWidget.SetShowEditorOnlyComponents(bEnable); }
-	bool IsShowingEditorOnlyComponents() const { return PropertyWidget.IsShowingEditorOnlyComponents(); }
+	void SetShowEditorOnlyComponents(bool bEnable) { SceneWidget.SetShowEditorOnlyComponents(bEnable); }
+	bool IsShowingEditorOnlyComponents() const { return SceneWidget.IsShowingEditorOnlyComponents(); }
 	void HideEditorWindowsForPIE();
 	void RestoreEditorWindowsAfterPIE();
 	void RefreshContentBrowser() { ContentBrowserWidget.Refresh(); }
@@ -49,10 +51,8 @@ private:
 	void RenderMainDockSpace(float ReservedBottomHeight);
 	void RenderShortcutOverlay();
 	void RenderEditorDebugPanel();
-	void RenderConsoleDrawer(float DeltaTime);
 	void RenderFooterOverlay(float DeltaTime);
 	void HandleGlobalShortcuts();
-	void ToggleConsoleDrawer(bool bFocusInput);
 	void ProcessPendingDebugActions();
 
 	FWindowsWindow* Window = nullptr;
@@ -60,6 +60,7 @@ private:
 	FEditorConsoleWidget ConsoleWidget;
 	FEditorControlWidget ControlWidget;
 	FEditorPropertyWidget PropertyWidget;
+	FEditorReflectionPropertyWidget ReflectionPropertyWidget;
 	FEditorSceneWidget SceneWidget;
 	FEditorStatWidget StatWidget;
 	FEditorContentBrowserWidget ContentBrowserWidget;
@@ -68,18 +69,13 @@ private:
 	EditorProjectSettingsWidget ProjectSettingsWidget;
 	EditorWorldSettingsWidget WorldSettingsWidget;
 	FAssetEditorManager AssetEditorManager;
+	FEditorPanelContext PanelContext;
 
 	bool bShowWidgetList = false;
 	bool bShowShortcutOverlay = false;
 	bool bHideEditorWindows = false;
 	bool bHasSavedUIVisibility = false;
 	bool bSavedShowWidgetList = false;
-	bool bConsoleDrawerVisible = false;
-	bool bBringConsoleDrawerToFrontNextFrame = false;
-	bool bFocusConsoleInputNextFrame = false;
-	bool bFocusConsoleButtonNextFrame = false;
-	int32 ConsoleBacktickCycleState = 0;
-	float ConsoleDrawerAnim = 0.0f;
 	int32 DebugPlaceActorTypeIndex = 0;
 	int32 DebugGridRows = 10;
 	int32 DebugGridCols = 10;

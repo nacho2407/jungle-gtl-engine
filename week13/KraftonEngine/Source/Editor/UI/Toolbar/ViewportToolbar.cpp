@@ -186,14 +186,11 @@ void FViewportToolbar::BeginToolbar(const FToolbarRenderState& State)
 		State.Context.ToolbarLeft + ButtonPadding + PlayStopOffset,
 		State.Context.ToolbarTop + ButtonPadding));
 
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.15f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 1.0f, 1.0f, 0.3f));
 }
 
 void FViewportToolbar::EndToolbar(const FToolbarRenderState& State)
 {
-	ImGui::PopStyleColor(3);
+	(void)State;
 }
 
 void FViewportToolbar::RenderLeftToolbarSection(const FToolbarRenderState& State)
@@ -261,12 +258,6 @@ void FViewportToolbar::RenderLayoutControls(const FToolbarRenderState& State)
 		{
 			ImGui::PushID(LayoutIndex);
 
-			const bool bSelected = LayoutIndex == State.Context.CurrentLayoutIndex;
-			if (bSelected)
-			{
-				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-			}
-
 			bool bClicked = false;
 			ID3D11ShaderResourceView* LayoutIcon =
 				State.Context.LayoutIcons ? State.Context.LayoutIcons[LayoutIndex] : nullptr;
@@ -281,11 +272,6 @@ void FViewportToolbar::RenderLayoutControls(const FToolbarRenderState& State)
 				char FallbackLabel[8];
 				snprintf(FallbackLabel, sizeof(FallbackLabel), "%d", LayoutIndex);
 				bClicked = ImGui::Button(FallbackLabel, ImVec2(IconSize + 8.0f, IconSize + 8.0f));
-			}
-
-			if (bSelected)
-			{
-				ImGui::PopStyleColor();
 			}
 
 			if (bClicked)
@@ -410,16 +396,7 @@ void FViewportToolbar::RenderGizmoControls(const FToolbarRenderState& State)
 
 	auto DrawGizmoIcon = [&](const char* Id, EToolbarIcon Icon, EGizmoMode TargetMode, const char* FallbackLabel) -> bool
 	{
-		const bool bSelected = (Gizmo->GetMode() == TargetMode);
-		if (bSelected)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-		}
 		const bool bClicked = DrawToolbarIconButton(Id, Icon, FallbackLabel, State.FallbackIconSize, State.MaxIconSize);
-		if (bSelected)
-		{
-			ImGui::PopStyleColor();
-		}
 		return bClicked;
 	};
 
@@ -450,15 +427,9 @@ void FViewportToolbar::RenderCoordSystemButton(const FToolbarRenderState& State)
 {
 	FGizmoToolSettings& Settings = State.GizmoSettings();
 
-	const bool bWorldCoord = Settings.CoordSystem == EEditorCoordSystem::World;
-	if (bWorldCoord)
-	{
-		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-	}
-
 	if (DrawToolbarIconButton("###WorldSpaceIcon",
-		bWorldCoord ? EToolbarIcon::WorldSpace : EToolbarIcon::LocalSpace,
-		bWorldCoord ? "World" : "Local",
+		Settings.CoordSystem == EEditorCoordSystem::World ? EToolbarIcon::WorldSpace : EToolbarIcon::LocalSpace,
+		Settings.CoordSystem == EEditorCoordSystem::World ? "World" : "Local",
 		State.FallbackIconSize,
 		State.MaxIconSize))
 	{
@@ -468,10 +439,6 @@ void FViewportToolbar::RenderCoordSystemButton(const FToolbarRenderState& State)
 		}
 	}
 
-	if (bWorldCoord)
-	{
-		ImGui::PopStyleColor();
-	}
 }
 
 void FViewportToolbar::RenderSnapControls(const FToolbarRenderState& State)
@@ -482,20 +449,9 @@ void FViewportToolbar::RenderSnapControls(const FToolbarRenderState& State)
 	{
 		ImGui::SameLine(0.0f, 6.0f);
 		ImGui::PushID(Id);
-		const bool bWasEnabled = bEnabled;
-		if (bWasEnabled)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.38f, 0.58f, 0.88f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.22f, 0.42f, 0.72f, 1.0f));
-		}
 		if (DrawToolbarIconButton("##SnapToggle", Icon, FallbackLabel, State.FallbackIconSize, State.MaxIconSize))
 		{
 			bEnabled = !bEnabled;
-		}
-		if (bWasEnabled)
-		{
-			ImGui::PopStyleColor(3);
 		}
 		ImGui::SameLine(0.0f, 2.0f);
 		ImGui::SetNextItemWidth(48.0f);

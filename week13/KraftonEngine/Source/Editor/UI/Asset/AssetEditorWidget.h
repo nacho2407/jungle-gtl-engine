@@ -1,11 +1,11 @@
 #pragma once
-#include "UI/EditorWidget.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 #include "Object/GarbageCollection.h"
 
 class UObject;
 class IEditorPreviewViewportClient;
 
-class FAssetEditorWidget : public FEditorWidget
+class FAssetEditorWidget : public FEditorPanelWidget
 {
 public:
 	virtual ~FAssetEditorWidget() = default;

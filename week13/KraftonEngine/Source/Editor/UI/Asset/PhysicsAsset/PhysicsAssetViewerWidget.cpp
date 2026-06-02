@@ -384,9 +384,9 @@ bool FPhysicsAssetViewerWidget::SavePhysicsAsset(UPhysicsAsset* PhysicsAsset)
 		PhysicsAsset->GetSourceSkeletalMeshPath());
 }
 
-void FPhysicsAssetViewerWidget::Render(float DeltaTime)
+void FPhysicsAssetViewerWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)DeltaTime;
+	(void)Context;
 
 	if (!IsOpen() || !EditedObject)
 	{

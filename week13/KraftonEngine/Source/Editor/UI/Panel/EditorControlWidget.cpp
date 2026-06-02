@@ -5,9 +5,9 @@
 #include "ImGui/imgui.h"
 #include "Math/MathUtils.h"
 
-void FEditorControlWidget::Render(float DeltaTime)
+void FEditorControlWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)DeltaTime;
+	(void)Context;
 	if (!EditorEngine)
 	{
 		return;

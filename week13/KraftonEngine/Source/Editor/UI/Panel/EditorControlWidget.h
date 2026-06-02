@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 
-class FEditorControlWidget : public FEditorWidget
+class FEditorControlWidget : public FEditorPanelWidget
 {
 public:
-	virtual void Render(float DeltaTime) override;
+	virtual void Render(const FEditorPanelContext& Context) override;
 };

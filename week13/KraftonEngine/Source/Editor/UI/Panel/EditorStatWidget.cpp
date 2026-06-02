@@ -8,11 +8,10 @@
 #include <algorithm>
 #include <sstream>
 
-void FEditorStatWidget::Render(float DeltaTime)
+void FEditorStatWidget::Render(const FEditorPanelContext& Context)
 {
+	(void)Context;
 #if STATS
-	(void)DeltaTime;
-
 	ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
 	ImGui::SetNextWindowSize(ImVec2(700.0f, 500.0f), ImGuiCond_Once);
 	ImGui::Begin("Stat Profiler");

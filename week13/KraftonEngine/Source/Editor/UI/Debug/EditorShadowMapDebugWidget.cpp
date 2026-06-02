@@ -1,5 +1,6 @@
 #include "Editor/UI/Debug/EditorShadowMapDebugWidget.h"
 #include "Editor/EditorEngine.h"
+#include "Editor/Selection/SelectionManager.h"
 #include "Runtime/Engine.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Render/Resource/RenderResources.h"
@@ -26,18 +27,17 @@ struct FSelectedLightInfo
 	int32 EnvIndex = -1;	// SceneEnvironment 내 인덱스
 };
 
-static FSelectedLightInfo FindSelectedLight()
+static FSelectedLightInfo FindSelectedLight(FSelectionManager* SelectionManager)
 {
 	FSelectedLightInfo Info;
 
-	UEditorEngine* Editor = Cast<UEditorEngine>(GEngine);
-	if (!Editor) return Info;
+	if (!SelectionManager) return Info;
 
 	UWorld* World = GEngine->GetWorld();
 	if (!World) return Info;
 
 	const FSceneEnvironment& Env = World->GetScene().GetEnvironment();
-	FSelectionManager& Sel = Editor->GetSelectionManager();
+	FSelectionManager& Sel = *SelectionManager;
 
 	// 1) SelectedComponent 우선 검사 (댕글링 포인터 방어)
 	if (USceneComponent* SelComp = Sel.GetSelectedComponent())
@@ -256,8 +256,10 @@ void EditorShadowMapDebugWidget::RenderVizPass(
 
 // ============================================================
 
-void EditorShadowMapDebugWidget::Render(float DeltaTime)
+void EditorShadowMapDebugWidget::Render(const FEditorPanelContext& Context)
 {
+	(void)Context;
+
 	if (!ImGui::Begin("Shadow Map Debug"))
 	{
 		ImGui::End();
@@ -270,7 +272,8 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 	const FShadowMapResources& SR = Renderer.GetResources().GetShadowResourcesForScene(Scene).Resources;
 	FShadowMapPass* ShadowPass = Renderer.GetPipeline().FindPass<FShadowMapPass>();
 
-	FSelectedLightInfo SelLight = FindSelectedLight();
+	FSelectionManager* SelectionManager = EditorEngine ? &EditorEngine->GetSelectionManager() : nullptr;
+	FSelectedLightInfo SelLight = FindSelectedLight(SelectionManager);
 
 	// D3D device/context
 	FD3DDevice& D3DDev = Renderer.GetFD3DDevice();

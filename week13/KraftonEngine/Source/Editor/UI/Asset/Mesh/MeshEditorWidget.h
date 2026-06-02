@@ -28,7 +28,7 @@ public:
 
 	bool AllowsMultipleInstances() const override { return true; }
 
-	void Render(float DeltaTime) override;
+	void Render(const FEditorPanelContext& Context) override;
 
 	bool IsMouseOverViewport() const { return IsOpen() && ViewportClient.IsMouseOverViewport(); }
 

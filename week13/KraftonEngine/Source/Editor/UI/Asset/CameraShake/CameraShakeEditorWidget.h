@@ -10,7 +10,7 @@ public:
 
 	virtual void Open(UObject* Object) override;
 
-	virtual void Render(float DeltaTime) override;
+	virtual void Render(const FEditorPanelContext& Context) override;
 
 private:
 	bool bPreviewPlaying = false;

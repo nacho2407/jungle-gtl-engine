@@ -94,6 +94,13 @@ public:
 	{
 		return ViewportLayout.SpawnPlaceActor(Type, Location);
 	}
+	bool CopySelectedActors() { return ViewportLayout.CopySelectedActors(); }
+	bool PasteCopiedActors() { return ViewportLayout.PasteCopiedActors(); }
+	bool CutSelectedActors() { return ViewportLayout.CutSelectedActors(); }
+	bool DuplicateSelectedActors() { return ViewportLayout.DuplicateSelectedActors(); }
+	bool DeleteSelectedActors() { return ViewportLayout.DeleteSelectedActors(); }
+	bool MoveSelectedActorsToView() { return ViewportLayout.MoveSelectedActorsToView(); }
+	bool AlignSelectedActorsWithView() { return ViewportLayout.AlignSelectedActorsWithView(); }
 
 	bool IsMouseOverViewport() const { return ViewportLayout.IsMouseOverViewport(); }
 

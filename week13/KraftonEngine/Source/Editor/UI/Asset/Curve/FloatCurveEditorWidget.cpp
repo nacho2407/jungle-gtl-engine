@@ -41,9 +41,9 @@ void FFloatCurveEditorWidget::FitViewToCurve()
     InlineEditor.FitViewToCurve(CurveAsset->GetCurve());
 }
 
-void FFloatCurveEditorWidget::Render(float DeltaTime)
+void FFloatCurveEditorWidget::Render(const FEditorPanelContext& Context)
 {
-    (void)DeltaTime;
+    (void)Context;
 
     if (!IsOpen() || !EditedObject)
     {

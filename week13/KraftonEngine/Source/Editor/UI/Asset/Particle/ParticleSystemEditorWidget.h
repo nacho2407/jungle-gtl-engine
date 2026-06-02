@@ -22,7 +22,7 @@ public:
     void Open(UObject* Object) override;
     void Close() override;
     void Tick(float DeltaTime) override;
-    void Render(float DeltaTime) override;
+    void Render(const FEditorPanelContext& Context) override;
 
     bool AllowsMultipleInstances() const override { return true; }
 

@@ -18,7 +18,7 @@ public:
 	void Open(UObject* Object) override;
 	void Close() override;
 	void Tick(float DeltaTime) override;
-	void Render(float DeltaTime) override;
+	void Render(const FEditorPanelContext& Context) override;
 	void CollectPreviewViewports(TArray<IEditorPreviewViewportClient*>& OutClients) const override;
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 

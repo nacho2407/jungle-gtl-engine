@@ -81,13 +81,6 @@ void FParticleSystemEditorWidget::RenderMenuBar()
 
 void FParticleSystemEditorWidget::RenderToolbar()
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 4.0f));
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(3.0f, 3.0f));
-    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.12f));
-    ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 1.0f, 1.0f, 0.22f));
-
     constexpr float IconSize = 28.0f;
     // 높이 = WindowPadding y*2 + (icon + FramePadding y*2) + 가로 스크롤바.
     //      = 2*2 + (28 + 2*4) + 14 = 54px.
@@ -109,7 +102,7 @@ void FParticleSystemEditorWidget::RenderToolbar()
             ImGui::GetWindowDrawList()->AddLine(
                 ImVec2(Pos.x + 4.0f, Pos.y + 4.0f),
                 ImVec2(Pos.x + 4.0f, Pos.y + 32.0f),
-                PSE::Border32
+                ImGui::GetColorU32(ImGuiCol_Border)
             );
             ImGui::Dummy(ImVec2(8.0f, 0.0f));
             ImGui::SameLine();
@@ -379,32 +372,28 @@ void FParticleSystemEditorWidget::RenderToolbar()
     }
     ImGui::EndChild();
     ImGui::PopStyleVar(); // WindowPadding
-
-    ImGui::PopStyleColor(3);
-    ImGui::PopStyleVar(3);
 }
 
 void FParticleSystemEditorWidget::RenderStatusBar()
 {
     UParticleSystem* ParticleSystem = GetParticleSystem();
 
-    ImGui::PushStyleColor(ImGuiCol_ChildBg, PSE::FrameBg);
     if (ImGui::BeginChild("##PSEStatusBar", ImVec2(0.0f, 24.0f), false))
     {
         const FString Path = ParticleSystem ? ParticleSystem->GetSourcePath() : FString();
-        ImGui::TextColored(PSE::DimTextV, "%s", Path.empty() ? "Unsaved asset" : Path.c_str());
+        ImGui::TextDisabled("%s", Path.empty() ? "Unsaved asset" : Path.c_str());
 
         ImGui::SameLine();
-        ImGui::TextColored(PSE::DimTextV, "  |  %s", IsDirty() ? "Modified" : "Saved");
+        ImGui::TextDisabled("  |  %s", IsDirty() ? "Modified" : "Saved");
 
         ImGui::SameLine();
         if (SelectedEmitterIndex < 0)
         {
-            ImGui::TextColored(PSE::DimTextV, "  |  Selection: Particle System");
+            ImGui::TextDisabled("  |  Selection: Particle System");
         }
         else if (SelectedModuleIndex < 0)
         {
-            ImGui::TextColored(PSE::DimTextV, "  |  Selection: Emitter %d", SelectedEmitterIndex);
+            ImGui::TextDisabled("  |  Selection: Emitter %d", SelectedEmitterIndex);
         }
         else
         {
@@ -423,14 +412,13 @@ void FParticleSystemEditorWidget::RenderStatusBar()
                 ModuleName = ModuleList[SelectedModuleIndex].Name;
             }
 
-            ImGui::TextColored(PSE::DimTextV, "  |  Selection: Emitter %d > %s", SelectedEmitterIndex, ModuleName);
+            ImGui::TextDisabled("  |  Selection: Emitter %d > %s", SelectedEmitterIndex, ModuleName);
         }
 
         ImGui::SameLine();
-        ImGui::TextColored(PSE::DimTextV, "  |  Sim %.2fs %s", PreviewTime, bSimulating ? "(playing)" : "(paused)");
+        ImGui::TextDisabled("  |  Sim %.2fs %s", PreviewTime, bSimulating ? "(playing)" : "(paused)");
     }
     ImGui::EndChild();
-    ImGui::PopStyleColor();
 }
 
 // -----------------------------------------------------------------------------
@@ -511,21 +499,14 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
     {
         // ── LOD 바 ─────────────────────────────────────────────────────────
         // [LOD 0] [LOD 1] ... [+] [-]  Distance: [ ###### ]
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
         for (int32 L = 0; L < LODCount; ++L)
         {
             char Label[16];
             std::snprintf(Label, sizeof(Label), "LOD %d", L);
-            const bool bActive = (L == SelectedLODIndex);
-            if (bActive)
-            {
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.29f, 0.56f, 1.0f, 0.40f));
-            }
             if (ImGui::SmallButton(Label))
             {
                 SelectLOD(L);
             }
-            if (bActive) ImGui::PopStyleColor();
             ImGui::SameLine();
         }
         if (ImGui::SmallButton("+##addlod"))
@@ -547,7 +528,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
         if (SelectedLODIndex > 0 && ParticleSystem)
         {
             ImGui::SameLine();
-            ImGui::TextColored(PSE::DimTextV, "Distance");
+            ImGui::TextDisabled("Distance");
             ImGui::SameLine();
             ImGui::SetNextItemWidth(100.0f);
             const int32 DistIdx = SelectedLODIndex;
@@ -561,7 +542,6 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                 }
             }
         }
-        ImGui::PopStyleVar();
         ImGui::Separator();
 
         constexpr float ColumnWidth = 178.0f;
@@ -586,8 +566,6 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
 
                 const bool bEmitterSelected = (SelectedEmitterIndex == EmitterIndex);
 
-                ImGui::PushStyleColor(ImGuiCol_Border, bEmitterSelected ? PSE::Accent : PSE::Border32);
-                ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f);
                 ImGui::BeginChild("##EmitterCol", ImVec2(ColumnWidth, 0.0f), true);
                 {
                     UParticleEmitter* Emitter = ParticleSystem->GetEmitters()[EmitterIndex];
@@ -915,12 +893,10 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
 
                         // Selectable 도 RowH 만큼 키우고 텍스트 세로 중앙 정렬 — 아이콘과 baseline 일치.
                         ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.0f, 0.5f));
-                        if (bIsShared) ImGui::PushStyleColor(ImGuiCol_Text, PSE::DimTextV);
                         if (ImGui::Selectable(Entry.Name, bSelected, ImGuiSelectableFlags_AllowOverlap, ImVec2(0.0f, RowH)))
                         {
                             SelectEmitter(EmitterIndex, ModuleIndex);
                         }
-                        if (bIsShared) ImGui::PopStyleColor();
                         ImGui::PopStyleVar();
 
                         // Module row 자체가 drop hover 감지 + drop target — hover 시 다음 프레임에
@@ -1522,7 +1498,7 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                     if (ImGui::BeginPopupContextWindow("##EmitterTypeDataCtx",
                             ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
                     {
-                        ImGui::TextColored(PSE::DimTextV, "Emitter Type");
+                        ImGui::TextDisabled("Emitter Type");
                         ImGui::Separator();
 
                         UParticleLODLevel*           LOD0Probe = Emitter ? Emitter->GetLODLevel(0) : nullptr;
@@ -1553,8 +1529,6 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                     }
                 }
                 ImGui::EndChild();
-                ImGui::PopStyleVar();
-                ImGui::PopStyleColor();
                 ImGui::PopID();
             }
 
@@ -1563,9 +1537,6 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
             {
                 ImGui::SameLine();
             }
-            ImGui::PushStyleColor(ImGuiCol_Border, PSE::Border32);
-            ImGui::PushStyleColor(ImGuiCol_ChildBg, PSE::FrameBg);
-            ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f);
             const float AddColH = (std::max)(ImGui::GetContentRegionAvail().y, 80.0f);
             if (ImGui::BeginChild("##AddEmitterCol", ImVec2(46.0f, AddColH), true))
             {
@@ -1579,8 +1550,6 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(float Width, float Height)
                 }
             }
             ImGui::EndChild();
-            ImGui::PopStyleVar();
-            ImGui::PopStyleColor(2);
 
             // 컬럼 순회 후 한 번에 처리해야 이터레이션 도중 배열 변동을 피할 수 있다.
             if (EmitterToDuplicate >= 0)
@@ -1660,19 +1629,18 @@ void FParticleSystemEditorWidget::RenderPropertiesPanel(float Width, float Heigh
             ImGui::SetNextItemOpen(true, ImGuiCond_Once);
             if (ImGui::CollapsingHeader("Particle System"))
             {
-                ImGui::TextColored(PSE::DimTextV, "Source Path");
+                ImGui::TextDisabled("Source Path");
                 ImGui::TextWrapped(
                     "%s",
                     ParticleSystem && !ParticleSystem->GetSourcePath().empty() ? ParticleSystem->GetSourcePath().c_str()
                     : "(unsaved)"
                 );
 
-                ImGui::TextColored(
-                    PSE::DimTextV,
+                ImGui::TextDisabled(
                     "Emitters: %d",
                     ParticleSystem ? static_cast<int32>(ParticleSystem->GetEmitters().size()) : 0
                 );
-                ImGui::TextColored(PSE::DimTextV, "Status: %s", IsDirty() ? "Modified" : "Saved");
+                ImGui::TextDisabled("Status: %s", IsDirty() ? "Modified" : "Saved");
 
                 // 시스템 단위 필드 — 실제 UParticleSystem UPROPERTY 들과 연결.
                 if (ParticleSystem)
@@ -2127,7 +2095,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("Event"))
         {
-            ImGui::TextColored(PSE::DimTextV, "Event Generator UI is hidden until dispatch path is fully connected.");
+            ImGui::TextDisabled("Event Generator UI is hidden until dispatch path is fully connected.");
         }
     }
     else if (UParticleModuleCollision* Collision = Cast<UParticleModuleCollision>(Module))
@@ -2203,7 +2171,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                     ImGui::EndCombo();
                 }
                 ImGui::SameLine();
-                ImGui::TextColored(PSE::DimTextV, "Section %d", SectionIdx);
+                ImGui::TextDisabled("Section %d", SectionIdx);
 
                 if (SectionIdx < static_cast<int32>(MeshMaterial->MeshMaterials.size()))
                 {
@@ -2289,7 +2257,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                     bChanged = true;
                 }
             }
-            ImGui::TextColored(PSE::DimTextV, "Source Method: Default");
+            ImGui::TextDisabled("Source Method: Default");
 
             DrawRawDistributionFloat("Source Strength", TrailSource->SourceStrength, bChanged, TrailSource);
             bool bLock = TrailSource->bLockSourceStrength;
@@ -2315,7 +2283,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
                 }
                 bChanged |= ImGui::DragFloat3("Offset", TrailSource->SourceOffsetDefaults[OffsetIdx].Data, 0.1f);
                 ImGui::SameLine();
-                ImGui::TextColored(PSE::DimTextV, "#%d", OffsetIdx);
+                ImGui::TextDisabled("#%d", OffsetIdx);
                 ImGui::PopID();
             }
 
@@ -2477,7 +2445,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         if (ImGui::CollapsingHeader("Beam Modifier"))
         {
             (void)BeamModifier;
-            ImGui::TextColored(PSE::DimTextV, "Hidden in the simplified Beam UI. Existing values are preserved.");
+            ImGui::TextDisabled("Hidden in the simplified Beam UI. Existing values are preserved.");
         }
     }
     else if (UParticleModuleTypeDataMesh* MeshT = Cast<UParticleModuleTypeDataMesh>(Module))
@@ -2523,7 +2491,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             }
 
             bool bOM = MeshT->bOverrideMaterial;   if (ImGui::Checkbox("Override Material", &bOM))   { MeshT->bOverrideMaterial  = bOM ? 1 : 0; bChanged = true; }
-            ImGui::TextColored(PSE::DimTextV, "Resolved Mesh: %s", MeshT->Mesh ? "Yes" : "No");
+            ImGui::TextDisabled("Resolved Mesh: %s", MeshT->Mesh ? "Yes" : "No");
         }
     }
     else if (UParticleModuleTypeDataRibbon* RibT = Cast<UParticleModuleTypeDataRibbon>(Module))
@@ -2564,7 +2532,7 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
             int32 Method = static_cast<int32>(BeamT->BeamMethod);
             if (Method > 1)
             {
-                ImGui::TextColored(PSE::DimTextV, "Branch beam method is not supported yet.");
+                ImGui::TextDisabled("Branch beam method is not supported yet.");
             }
             int32 ComboMethod = (Method > 1) ? 0 : Method;
             if (ImGui::Combo("Beam Method", &ComboMethod, "Distance\0Target\0"))
@@ -2591,12 +2559,12 @@ void FParticleSystemEditorWidget::RenderModuleProperties(UParticleModule* Module
         ImGui::SetNextItemOpen(true, ImGuiCond_Once);
         if (ImGui::CollapsingHeader("TypeData"))
         {
-            ImGui::TextColored(PSE::DimTextV, "TypeData modules expose no editable properties yet.");
+            ImGui::TextDisabled("TypeData modules expose no editable properties yet.");
         }
     }
     else
     {
-        ImGui::TextColored(PSE::DimTextV, "No editable properties exposed for this module.");
+        ImGui::TextDisabled("No editable properties exposed for this module.");
     }
 
     if (bChanged || bMaterialDirty)
@@ -2818,12 +2786,6 @@ void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Heig
 
     if (BeginPanel("##PSECurveEditor", "Curve Editor", Width, Height, Context))
     {
-        ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 4.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 2.0f));
-        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.12f));
-        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 1.0f, 1.0f, 0.22f));
-
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2.0f, 2.0f));
         if (ImGui::BeginChild(
             "##PSECurveToolbar",
@@ -2855,21 +2817,15 @@ void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Heig
             }
             ImGui::SameLine();
 
-            const bool bPanActive = (CurveMode == ECurveInteractionMode::Pan);
-            const bool bZoomActive = (CurveMode == ECurveInteractionMode::Zoom);
-            if (bPanActive) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.29f, 0.56f, 1.0f, 0.40f));
             if (IconToolButton("PanMode", LoadToolIcon(L"icon_CurveEditor_Pan_40x.png"), "Pan", "Pan mode", true, CurveIconSize))
             {
                 CurveMode = ECurveInteractionMode::Pan;
             }
-            if (bPanActive) ImGui::PopStyleColor();
             ImGui::SameLine();
-            if (bZoomActive) ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.29f, 0.56f, 1.0f, 0.40f));
             if (IconToolButton("ZoomMode", LoadToolIcon(L"icon_CurveEditor_Zoom_40x.png"), "Zm", "Zoom mode", true, CurveIconSize))
             {
                 CurveMode = ECurveInteractionMode::Zoom;
             }
-            if (bZoomActive) ImGui::PopStyleColor();
             if (ImGui::IsItemHovered())
             {
                 ImGui::SetTooltip("%s", CurveMode == ECurveInteractionMode::Zoom ? "Zoom mode: drag an empty area to zoom into a rectangle. Wheel still zooms around cursor." : "Pan mode: right-drag the graph to pan. Wheel zooms around cursor.");
@@ -2877,7 +2833,7 @@ void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Heig
             ImGui::SameLine();
 
             const ImVec2 SepPos = ImGui::GetCursorScreenPos();
-            ImGui::GetWindowDrawList()->AddLine(ImVec2(SepPos.x + 3.0f, SepPos.y + 3.0f), ImVec2(SepPos.x + 3.0f, SepPos.y + 25.0f), PSE::Border32);
+            ImGui::GetWindowDrawList()->AddLine(ImVec2(SepPos.x + 3.0f, SepPos.y + 3.0f), ImVec2(SepPos.x + 3.0f, SepPos.y + 25.0f), ImGui::GetColorU32(ImGuiCol_Border));
             ImGui::Dummy(ImVec2(7.0f, 0.0f));
             ImGui::SameLine();
 
@@ -2944,7 +2900,7 @@ void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Heig
             ImGui::SameLine();
 
             const ImVec2 SepPos2 = ImGui::GetCursorScreenPos();
-            ImGui::GetWindowDrawList()->AddLine(ImVec2(SepPos2.x + 3.0f, SepPos2.y + 3.0f), ImVec2(SepPos2.x + 3.0f, SepPos2.y + 25.0f), PSE::Border32);
+            ImGui::GetWindowDrawList()->AddLine(ImVec2(SepPos2.x + 3.0f, SepPos2.y + 3.0f), ImVec2(SepPos2.x + 3.0f, SepPos2.y + 25.0f), ImGui::GetColorU32(ImGuiCol_Border));
             ImGui::Dummy(ImVec2(7.0f, 0.0f));
             ImGui::SameLine();
 
@@ -2973,25 +2929,23 @@ void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Heig
         ImGui::EndChild();
         ImGui::PopStyleVar();
 
-        ImGui::PopStyleColor(3);
-        ImGui::PopStyleVar(2);
         ImGui::Spacing();
 
         if (ImGui::BeginChild("##PSECurveTracks", ImVec2(TrackListW, 0.0f), true))
         {
             if (!SelectedEntry)
             {
-                ImGui::TextColored(PSE::DimTextV, "Select a\nmodule");
+                ImGui::TextDisabled("Select a\nmodule");
             }
             else if (Properties.empty())
             {
-                ImGui::TextColored(PSE::DimTextV, "No curve-capable\nproperties");
+                ImGui::TextDisabled("No curve-capable\nproperties");
             }
             else
             {
                 if (!Tracks.empty())
                 {
-                    ImGui::TextColored(PSE::DimTextV, "Active Curves");
+                    ImGui::TextDisabled("Active Curves");
                     for (int32 TrackIndex = 0; TrackIndex < static_cast<int32>(Tracks.size()); ++TrackIndex)
                     {
                         const FParticleCurveTrack& Track = Tracks[TrackIndex];
@@ -3019,7 +2973,7 @@ void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Heig
                     ImGui::Separator();
                 }
 
-                ImGui::TextColored(PSE::DimTextV, "Available Distributions");
+                ImGui::TextDisabled("Available Distributions");
                 for (int32 PropertyIndex = 0; PropertyIndex < static_cast<int32>(Properties.size()); ++PropertyIndex)
                 {
                     FParticleCurveProperty& Property = Properties[PropertyIndex];
@@ -3102,7 +3056,7 @@ void FParticleSystemEditorWidget::RenderCurveEditorPanel(float Width, float Heig
             {
                 ImGui::Text("%s", SelectedTrack->Name.c_str());
                 ImGui::SameLine();
-                ImGui::TextColored(PSE::DimTextV, "(%s)", ParticleCurveDomainName(SelectedTrack->Domain));
+                ImGui::TextDisabled("(%s)", ParticleCurveDomainName(SelectedTrack->Domain));
                 ImGui::Separator();
 
                 const ImVec2 Available = ImGui::GetContentRegionAvail();

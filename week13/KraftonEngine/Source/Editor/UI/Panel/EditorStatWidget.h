@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 #include "Profiling/Stats/Stats.h"
 
-class FEditorStatWidget : public FEditorWidget
+class FEditorStatWidget : public FEditorPanelWidget
 {
 public:
-	void Render(float DeltaTime) override;
+	void Render(const FEditorPanelContext& Context) override;
 
 private:
 	void RenderStatTable(const char* TableID, const TArray<FStatEntry>& Source, int& OutSortColumn, bool& OutSortDescending, float TableHeight = 200.0f);

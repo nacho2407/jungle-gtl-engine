@@ -133,7 +133,7 @@ public:
 	void SetTags(TArray<FName> InTags) { Tags = std::move(InTags); }
 
 	// Tick 필요 여부 — false면 Tick 호출 자체를 건너뜀 (StaticMesh 등)
-	UPROPERTY(Edit, Save, Category="Actor", DisplayName="Needs Tick")
+	UPROPERTY(Edit, Save, Category="Header", DisplayName="Needs Tick")
 	bool bNeedsTick = true;
 	bool bTickInEditor = false;
 
@@ -164,13 +164,13 @@ protected:
 	FRotator PendingActorRotation = FRotator(0, 0, 0);
 	UPROPERTY(Edit, Save, Category="Transform", DisplayName="Scale")
 	FVector PendingActorScale = FVector(1, 1, 1);
-	UPROPERTY(Edit, Save, Category="Actor", DisplayName="Visible")
+	UPROPERTY(Edit, Save, Category="Header", DisplayName="Visible")
 	bool PendingActorVisible = true;
 
 	bool bVisible = true;
 
 	TArray<FName> Tags;
-	UPROPERTY(Edit, Save, Category="Actor", DisplayName="Tags")
+	UPROPERTY(Edit, Save, Category="Header", DisplayName="Tags")
 	FString PendingTagsString;  // 에디터용 — 콤마 구분 직렬화 캐시
 
 	// Runtime-owned component list. Actor keeps components alive through AActor::AddReferencedObjects().

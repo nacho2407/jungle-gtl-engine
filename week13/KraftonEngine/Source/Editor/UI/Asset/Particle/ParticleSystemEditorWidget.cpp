@@ -134,9 +134,9 @@ void FParticleSystemEditorWidget::Tick(float DeltaTime)
     }
 }
 
-void FParticleSystemEditorWidget::Render(float DeltaTime)
+void FParticleSystemEditorWidget::Render(const FEditorPanelContext& Context)
 {
-    (void)DeltaTime;
+    (void)Context;
 
     if (!IsOpen() || !EditedObject)
     {
@@ -158,7 +158,6 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
         ImGui::SetNextWindowFocus();
     }
 
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, PSE::WindowBg);
     // NoScrollbar/NoScrollWithMouse — 에디터는 내부 패널 단위로 스크롤되므로
     // 바깥 윈도우 자체는 스크롤바가 절대 나타나지 않아야 한다.
     ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoScrollbar |
@@ -168,7 +167,6 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
         WindowFlags |= ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse;
     }
     const bool bVisible = ImGui::Begin(FullTitle.c_str(), &bWindowOpen, WindowFlags);
-    ImGui::PopStyleColor();
 
     if (!bVisible)
     {
@@ -359,11 +357,11 @@ void FParticleSystemEditorWidget::Render(float DeltaTime)
     {
         if (UParticleSystem* PS = GetParticleSystem())
         {
-            ImGui::TextColored(PSE::DimTextV, "Asset path:");
+            ImGui::TextDisabled("Asset path:");
             ImGui::TextWrapped("%s", PS->GetSourcePath().c_str());
         }
         ImGui::Separator();
-        ImGui::TextColored(PSE::DimTextV, "(Content Browser focus API not wired — copy the path above for now.)");
+        ImGui::TextDisabled("(Content Browser focus API not wired — copy the path above for now.)");
         if (ImGui::Button("OK")) ImGui::CloseCurrentPopup();
         ImGui::EndPopup();
     }
@@ -422,4 +420,3 @@ void FParticleSystemEditorWidget::SelectEmitter(int32 EmitterIndex, int32 Module
     SelectedEmitterIndex = EmitterIndex;
     SelectedModuleIndex  = ModuleIndex;
 }
-
