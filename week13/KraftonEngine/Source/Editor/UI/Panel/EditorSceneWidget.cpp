@@ -4,6 +4,11 @@
 #include "Editor/Selection/SelectionManager.h"
 #include "Component/ActorComponent.h"
 #include "Component/Debug/GizmoComponent.h"
+#include "Component/Light/LightComponentBase.h"
+#include "Component/Movement/MovementComponent.h"
+#include "Component/PrimitiveComponent.h"
+#include "Component/Primitive/DecalComponent.h"
+#include "Component/Primitive/HeightFogComponent.h"
 #include "Component/SceneComponent.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -11,8 +16,18 @@
 #include "ImGui/imgui.h"
 #include "Profiling/Stats/Stats.h"
 
+#include <algorithm>
+#include <cstring>
+
 namespace
 {
+	struct FComponentClassGroup
+	{
+		const char* Label = nullptr;
+		UClass* AnchorClass = nullptr;
+		TArray<UClass*> Classes;
+	};
+
 	bool ShouldHideInComponentTree(const UActorComponent* Component, bool bShowEditorOnlyComponents)
 	{
 		if (!Component)
@@ -43,6 +58,119 @@ namespace
 			OutName = TypeName;
 		}
 		return OutName.c_str();
+	}
+
+	void AddComponentClassGroup(TArray<FComponentClassGroup>& Groups, const char* Label, UClass* AnchorClass)
+	{
+		FComponentClassGroup Group;
+		Group.Label = Label;
+		Group.AnchorClass = AnchorClass;
+		Groups.push_back(Group);
+	}
+
+	UClass* FindComponentClassGroupAnchor(UClass* ComponentClass, const TArray<FComponentClassGroup>& Groups)
+	{
+		if (!ComponentClass)
+		{
+			return nullptr;
+		}
+
+		for (const FComponentClassGroup& Group : Groups)
+		{
+			if (Group.AnchorClass && ComponentClass->IsA(Group.AnchorClass))
+			{
+				return Group.AnchorClass;
+			}
+		}
+
+		return nullptr;
+	}
+
+	void BuildComponentClassGroups(TArray<FComponentClassGroup>& OutGroups, TArray<UClass*>& OutOtherClasses)
+	{
+		OutGroups.clear();
+		OutOtherClasses.clear();
+
+		TArray<UClass*> ComponentClasses;
+		for (UClass* Cls : UClass::GetAllClasses())
+		{
+			if (Cls && Cls->IsA(UActorComponent::StaticClass()) && !Cls->HasAnyClassFlags(CF_HiddenInComponentList))
+			{
+				ComponentClasses.push_back(Cls);
+			}
+		}
+
+		std::sort(ComponentClasses.begin(), ComponentClasses.end(),
+			[](const UClass* A, const UClass* B)
+			{
+				return std::strcmp(A->GetName(), B->GetName()) < 0;
+			});
+
+		AddComponentClassGroup(OutGroups, "Light", ULightComponentBase::StaticClass());
+		AddComponentClassGroup(OutGroups, "Movement", UMovementComponent::StaticClass());
+		AddComponentClassGroup(OutGroups, "Primitive", UPrimitiveComponent::StaticClass());
+
+		for (UClass* Cls : ComponentClasses)
+		{
+			UClass* AnchorClass = FindComponentClassGroupAnchor(Cls, OutGroups);
+			if (!AnchorClass)
+			{
+				OutOtherClasses.push_back(Cls);
+				continue;
+			}
+
+			for (FComponentClassGroup& Group : OutGroups)
+			{
+				if (Group.AnchorClass == AnchorClass)
+				{
+					Group.Classes.push_back(Cls);
+					break;
+				}
+			}
+		}
+	}
+
+	bool IsComponentInSceneSubtree(USceneComponent* Root, UActorComponent* Component)
+	{
+		if (!IsValid(Root) || !IsValid(Component))
+		{
+			return false;
+		}
+
+		if (Root == Component)
+		{
+			return true;
+		}
+
+		for (USceneComponent* Child : Root->GetChildren())
+		{
+			if (IsComponentInSceneSubtree(Child, Component))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool DoesRemoveAffectSelection(UActorComponent* Component, UActorComponent* SelectedComponent)
+	{
+		if (!IsValid(Component) || !IsValid(SelectedComponent))
+		{
+			return false;
+		}
+
+		if (Component == SelectedComponent)
+		{
+			return true;
+		}
+
+		if (USceneComponent* SceneComponent = Cast<USceneComponent>(Component))
+		{
+			return IsComponentInSceneSubtree(SceneComponent, SelectedComponent);
+		}
+
+		return false;
 	}
 }
 
@@ -141,6 +269,7 @@ void FEditorSceneWidget::RenderActorNode(AActor* Actor, const TArray<AActor*>& A
 			Selection.SelectActorDetails(Actor);
 		}
 	}
+	RenderActorContextMenu(Actor, Selection);
 
 	if (bOpen)
 	{
@@ -196,6 +325,7 @@ void FEditorSceneWidget::RenderSceneComponentNode(USceneComponent* Comp, FSelect
 	{
 		Selection.SelectActorComponent(Comp);
 	}
+	RenderComponentContextMenu(Comp, Selection);
 
 	if (ImGui::BeginDragDropSource())
 	{
@@ -282,5 +412,189 @@ void FEditorSceneWidget::RenderNonSceneComponents(AActor* Actor, FSelectionManag
 		{
 			Selection.SelectActorComponent(Comp);
 		}
+		RenderComponentContextMenu(Comp, Selection);
+	}
+}
+
+void FEditorSceneWidget::RenderActorContextMenu(AActor* Actor, FSelectionManager& Selection)
+{
+	if (!IsValid(Actor))
+	{
+		return;
+	}
+
+	if (ImGui::BeginPopupContextItem())
+	{
+		if (ImGui::BeginMenu("Add Component"))
+		{
+			RenderAddComponentMenu(Actor, nullptr, Selection);
+			ImGui::EndMenu();
+		}
+		ImGui::EndPopup();
+	}
+}
+
+void FEditorSceneWidget::RenderComponentContextMenu(UActorComponent* Component, FSelectionManager& Selection)
+{
+	if (!IsValid(Component))
+	{
+		return;
+	}
+
+	AActor* Actor = Component->GetOwner();
+	if (!IsValid(Actor))
+	{
+		return;
+	}
+
+	if (ImGui::BeginPopupContextItem())
+	{
+		if (USceneComponent* SceneComponent = Cast<USceneComponent>(Component))
+		{
+			if (ImGui::BeginMenu("Add Child Component"))
+			{
+				RenderAddComponentMenu(Actor, SceneComponent, Selection);
+				ImGui::EndMenu();
+			}
+			ImGui::Separator();
+		}
+
+		if (ImGui::MenuItem("Delete Component"))
+		{
+			RemoveComponentFromActor(Component, Selection);
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
+void FEditorSceneWidget::RenderAddComponentMenu(AActor* Actor, USceneComponent* AttachParent, FSelectionManager& Selection)
+{
+	if (!IsValid(Actor))
+	{
+		return;
+	}
+
+	TArray<FComponentClassGroup> ComponentGroups;
+	TArray<UClass*> OtherClasses;
+	BuildComponentClassGroups(ComponentGroups, OtherClasses);
+
+	auto AddComponentClassItem = [&](UClass* Cls)
+	{
+		if (ImGui::MenuItem(Cls->GetName()))
+		{
+			AddComponentToActor(Actor, Cls, AttachParent, Selection);
+			ImGui::CloseCurrentPopup();
+		}
+	};
+
+	for (const FComponentClassGroup& Group : ComponentGroups)
+	{
+		if (Group.Classes.empty())
+		{
+			continue;
+		}
+
+		if (ImGui::BeginMenu(Group.Label))
+		{
+			for (UClass* Cls : Group.Classes)
+			{
+				AddComponentClassItem(Cls);
+			}
+			ImGui::EndMenu();
+		}
+	}
+
+	if (!OtherClasses.empty() && ImGui::BeginMenu("Other"))
+	{
+		for (UClass* Cls : OtherClasses)
+		{
+			AddComponentClassItem(Cls);
+		}
+		ImGui::EndMenu();
+	}
+}
+
+UActorComponent* FEditorSceneWidget::AddComponentToActor(
+	AActor* Actor,
+	UClass* ComponentClass,
+	USceneComponent* AttachParent,
+	FSelectionManager& Selection)
+{
+	if (!IsValid(Actor) || !ComponentClass)
+	{
+		return nullptr;
+	}
+
+	UActorComponent* Component = Actor->AddComponentByClass(ComponentClass);
+	if (!IsValid(Component))
+	{
+		return nullptr;
+	}
+
+	if (USceneComponent* SceneComponent = Cast<USceneComponent>(Component))
+	{
+		if (IsValid(AttachParent))
+		{
+			SceneComponent->AttachToComponent(AttachParent);
+		}
+		else if (USceneComponent* Root = Actor->GetRootComponent())
+		{
+			if (Root != SceneComponent)
+			{
+				SceneComponent->AttachToComponent(Root);
+			}
+		}
+		else
+		{
+			Actor->SetRootComponent(SceneComponent);
+		}
+
+		if (Component->IsA<ULightComponentBase>())
+		{
+			Cast<ULightComponentBase>(Component)->EnsureEditorBillboard();
+		}
+		else if (Component->IsA<UDecalComponent>())
+		{
+			Cast<UDecalComponent>(Component)->EnsureEditorBillboard();
+		}
+		else if (Component->IsA<UHeightFogComponent>())
+		{
+			Cast<UHeightFogComponent>(Component)->EnsureEditorBillboard();
+		}
+	}
+
+	Selection.SelectActorComponent(Component);
+	if (UGizmoComponent* Gizmo = Selection.GetGizmo())
+	{
+		Gizmo->UpdateGizmoTransform();
+	}
+	return Component;
+}
+
+void FEditorSceneWidget::RemoveComponentFromActor(UActorComponent* Component, FSelectionManager& Selection)
+{
+	if (!IsValid(Component))
+	{
+		return;
+	}
+
+	AActor* Actor = Component->GetOwner();
+	if (!IsValid(Actor))
+	{
+		return;
+	}
+
+	UActorComponent* SelectedComponent = Selection.GetSelectedActorComponent();
+	const bool bAffectsSelection = DoesRemoveAffectSelection(Component, SelectedComponent);
+	Actor->RemoveComponent(Component);
+
+	if (bAffectsSelection)
+	{
+		Selection.SelectActorDetails(Actor);
+	}
+	else if (UGizmoComponent* Gizmo = Selection.GetGizmo())
+	{
+		Gizmo->UpdateGizmoTransform();
 	}
 }

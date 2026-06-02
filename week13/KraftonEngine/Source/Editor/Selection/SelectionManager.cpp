@@ -185,14 +185,8 @@ void FSelectionManager::Select(AActor* Actor)
         return;
     }
 
-    USceneComponent* RootComponent = Actor->GetRootComponent();
-    if (!IsValid(RootComponent))
-    {
-        ClearSelection();
-        return;
-    }
-
     const FSelectionDetailTarget* PrimaryTarget = GetPrimaryDetailTarget();
+    USceneComponent* RootComponent = Actor->GetRootComponent();
     if (SelectedDetailTargets.size() == 1 && PrimaryTarget && PrimaryTarget->ObjectPtr == Actor && SelectedComponent == RootComponent)
     {
         return;
