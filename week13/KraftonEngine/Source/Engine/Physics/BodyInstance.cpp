@@ -8,6 +8,8 @@
 #include "Component/Shape/SphereComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "Mesh/Static/StaticMesh.h"
+#include "PhysicsEngine/ConvexElem.h"
+#include "PhysicsEngine/ShapeElem.h"
 #include "PhysicsEngine/BodySetup.h"
 #include <algorithm>
 
@@ -412,6 +414,47 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
 
             OutDesc.Shapes.push_back(MeshShape);
         }
+
+		for (const FKConvexElem& Convex : AggGeom.ConvexElems)
+		{
+			if (Convex.GetCollisionEnabled() == ECollisionEnabled::NoCollision)
+			{
+				continue;
+			}
+
+			if (Convex.VertexData.size() < 4)
+			{
+				continue;
+			}
+
+			FBodyShapeDesc MeshShape;
+			MeshShape.ShapeType = EBodyInstanceShapeType::Convex;
+
+			const FTransform ConvexLocalTM = Convex.GetTransform();
+
+			// Actor의 WorldTransform에서는 Scale을 제거하고 있으므로,
+			// shape local 위치에는 component scale을 반영해야 함.
+			MeshShape.LocalTransform = ConvexLocalTM;
+			MeshShape.LocalTransform.Location = ConvexLocalTM.Location * WorldScale;
+
+			// PxTransform에는 Scale이 없으므로 local transform scale은 제거.
+			// 실제 convex 크기는 PxConvexMeshGeometry의 PxMeshScale로 넘긴다.
+			MeshShape.LocalTransform.Scale = FVector::OneVector;
+
+			const FVector RawScale = ConvexLocalTM.Scale * WorldScale;
+			const FVector AbsScale = RawScale.GetAbs();
+
+			MeshShape.ConvexScale = FVector(
+				std::max(AbsScale.X, 0.001f),
+				std::max(AbsScale.Y, 0.001f),
+				std::max(AbsScale.Z, 0.001f)
+			);
+
+			MeshShape.ConvexVertices = Convex.VertexData;
+			MeshShape.ConvexIndices = Convex.IndexData;
+
+			OutDesc.Shapes.push_back(MeshShape);
+		}
     }
 
     return !OutDesc.Shapes.empty();

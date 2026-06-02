@@ -38,6 +38,7 @@ public:
 	void SetStaticMesh(UStaticMesh* InMesh);
 	UFUNCTION(Pure, Category="Mesh")
 	UStaticMesh* GetStaticMesh() const;
+	static void NotifyStaticMeshBodySetupChanged(UStaticMesh* ChangedMesh);
 
 	UFUNCTION(Callable, Category="Materials")
 	void SetMaterial(int32 ElementIndex, UMaterial* InMaterial);
