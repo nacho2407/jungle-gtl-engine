@@ -259,7 +259,7 @@ void FMeshEditorWidget::CollectPreviewViewports(TArray<IEditorPreviewViewportCli
 
 void FMeshEditorWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)Context;
+	SelectionManager = Context.SelectionManager;
 
 	if (bPendingClose)
 	{

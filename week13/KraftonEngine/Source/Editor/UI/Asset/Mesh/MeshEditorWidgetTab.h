@@ -7,6 +7,7 @@ struct ImVec2;
 class AActor;
 class UObject;
 class USkeletalMesh;
+class FSelectionManager;
 
 class FMeshEditorWidgetTab
 {
@@ -44,6 +45,7 @@ protected:
 	USkeletalMesh* GetSkeletalMesh() const;
 	FMeshEditorViewportClient& GetViewportClient();
 	const FMeshEditorViewportClient& GetViewportClient() const;
+	FSelectionManager* GetSelectionManager() const;
 	uint32 GetOwnerInstanceId() const;
 
 	void MarkDirty();

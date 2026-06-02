@@ -499,6 +499,10 @@ void FSelectionManager::SetWorld(UWorld* InWorld)
 void FSelectionManager::AddReferencedObjects(FReferenceCollector& Collector)
 {
     Collector.AddReferencedObject(Gizmo);
+    for (const FSelectionDetailTarget& Target : SelectedDetailTargets)
+    {
+        Collector.AddReferencedObject(Target.ObjectPtr);
+    }
 }
 
 void FSelectionManager::PruneInvalidSelection()

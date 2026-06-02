@@ -77,6 +77,11 @@ const FMeshEditorViewportClient& FMeshEditorWidgetTab::GetViewportClient() const
 	return *Owner.GetViewportClient();
 }
 
+FSelectionManager* FMeshEditorWidgetTab::GetSelectionManager() const
+{
+	return Owner.GetSelectionManager();
+}
+
 uint32 FMeshEditorWidgetTab::GetOwnerInstanceId() const
 {
 	return Owner.GetInstanceId();

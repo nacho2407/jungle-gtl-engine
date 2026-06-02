@@ -12,7 +12,6 @@
 #include "Animation/Sequence/AnimSequence.h"
 #include "Component/Debug/PhysicsAssetDebugComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
-#include "Editor/UI/Util/DetailPropertyRenderer.h"
 #include "GameFramework/AActor.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
@@ -22,6 +21,7 @@
 #include "PhysicsEngine/PhysicsAssetManager.h"
 #include "Platform/Paths.h"
 #include "Runtime/Engine.h"
+#include "Serialization/MemoryArchive.h"
 #include "UI/Asset/Animation/AnimMontagePropertyPanel.h"
 #include "UI/Asset/Animation/AnimSequencePropertyPanel.h"
 #include "UI/Asset/Animation/AnimationTimelinePanel.h"
@@ -151,88 +151,73 @@ namespace
 		return FVector::Distance(Before, After) > 1.0e-4f;
 	}
 
-	bool RenderConstraintInitDescDetails(
-		UPhysicsAsset* PhysicsAsset,
-		int32 ConstraintIndex,
-		UPhysicsAssetDebugComponent* DebugComponent)
+	void SerializeTransformForSnapshot(FArchive& Ar, const FTransform& Transform)
 	{
-		if (!PhysicsAsset || ConstraintIndex < 0)
-		{
-			return false;
-		}
+		FVector Location = Transform.Location;
+		FVector Scale = Transform.Scale;
+		float RotationX = Transform.Rotation.X;
+		float RotationY = Transform.Rotation.Y;
+		float RotationZ = Transform.Rotation.Z;
+		float RotationW = Transform.Rotation.W;
 
-		TArray<FConstraintInstanceInitDesc>& ConstraintDescs = PhysicsAsset->GetConstraintInitDescsMutable();
-		if (ConstraintIndex >= static_cast<int32>(ConstraintDescs.size()))
-		{
-			return false;
-		}
-
-		FConstraintInstanceInitDesc* ConstraintDesc = &ConstraintDescs[ConstraintIndex];
-		ImGui::TextUnformatted("Constraint");
-
-		const FVector PreviousParentLocation = ConstraintDesc->ParentFrame.Location;
-		const FVector PreviousChildLocation = ConstraintDesc->ChildFrame.Location;
-		const bool bChanged = FDetailPropertyRenderer::RenderStructProperties(
-			FConstraintInstanceInitDesc::StaticStruct(),
-			ConstraintDesc,
-			PhysicsAsset,
-			"##PhysicsAssetConstraintProps");
-		if (!bChanged)
-		{
-			return false;
-		}
-
-		const bool bParentChanged = HasVectorChanged(PreviousParentLocation, ConstraintDesc->ParentFrame.Location);
-		const bool bChildChanged = HasVectorChanged(PreviousChildLocation, ConstraintDesc->ChildFrame.Location);
-		if (DebugComponent && (bParentChanged || bChildChanged))
-		{
-			DebugComponent->SyncConstraintFrameLocation(
-				*ConstraintDesc,
-				bParentChanged
-					? EPhysicsAssetConstraintFrameSide::Parent
-					: EPhysicsAssetConstraintFrameSide::Child);
-		}
-
-		return true;
+		Ar << Location;
+		Ar << RotationX;
+		Ar << RotationY;
+		Ar << RotationZ;
+		Ar << RotationW;
+		Ar << Scale;
 	}
 
-	bool RenderBodySetupDetails(UPhysicsAsset* PhysicsAsset, int32 BodyIndex)
+	TArray<uint8> CaptureObjectSnapshot(UObject* Object)
 	{
-		if (!PhysicsAsset || BodyIndex < 0)
+		if (!Object)
 		{
-			return false;
+			return {};
 		}
 
-		TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetupsMutable();
-		if (BodyIndex >= static_cast<int32>(Bodies.size()) || !Bodies[BodyIndex])
-		{
-			return false;
-		}
-
-		UBodySetup* BodySetup = Bodies[BodyIndex];
-		ImGui::TextUnformatted("Body Setup");
-		ImGui::Text("Calculated Mass: %.4f kg", BodySetup->CalculateMass());
-
-		return FDetailPropertyRenderer::RenderStructProperties(
-			UBodySetup::StaticClass(),
-			BodySetup,
-			PhysicsAsset,
-			"##PhysicsAssetBodySetupProps");
+		FMemoryArchive Archive(true);
+		Object->Serialize(Archive);
+		return Archive.GetBuffer();
 	}
 
-	bool RenderPhysicsAssetDetails(UPhysicsAsset* PhysicsAsset)
+	TArray<uint8> CaptureConstraintSnapshot(const FConstraintInstanceInitDesc* ConstraintDesc)
 	{
-		if (!PhysicsAsset)
+		if (!ConstraintDesc)
 		{
-			return false;
+			return {};
 		}
 
-		ImGui::TextUnformatted("Physics Asset");
-		return FDetailPropertyRenderer::RenderStructProperties(
-			UPhysicsAsset::StaticClass(),
-			PhysicsAsset,
-			PhysicsAsset,
-			"##PhysicsAssetRootProps");
+		FMemoryArchive Archive(true);
+		FName ParentBoneName = ConstraintDesc->ParentBoneName;
+		FName ChildBoneName = ConstraintDesc->ChildBoneName;
+		float TwistLimitDegrees = ConstraintDesc->TwistLimitDegrees;
+		float Swing1LimitDegrees = ConstraintDesc->Swing1LimitDegrees;
+		float Swing2LimitDegrees = ConstraintDesc->Swing2LimitDegrees;
+		bool bEnableCollision = ConstraintDesc->bEnableCollision;
+		bool bEnableProjection = ConstraintDesc->bEnableProjection;
+		float ProjectionLinearTolerance = ConstraintDesc->ProjectionLinearTolerance;
+		float ProjectionAngularToleranceDegrees = ConstraintDesc->ProjectionAngularToleranceDegrees;
+
+		Archive << ParentBoneName;
+		Archive << ChildBoneName;
+		SerializeTransformForSnapshot(Archive, ConstraintDesc->ParentFrame);
+		SerializeTransformForSnapshot(Archive, ConstraintDesc->ChildFrame);
+		Archive << TwistLimitDegrees;
+		Archive << Swing1LimitDegrees;
+		Archive << Swing2LimitDegrees;
+		Archive << bEnableCollision;
+		Archive << bEnableProjection;
+		Archive << ProjectionLinearTolerance;
+		Archive << ProjectionAngularToleranceDegrees;
+
+		return Archive.GetBuffer();
+	}
+
+	bool IsSameDetailTarget(const FSelectionDetailTarget& A, const FSelectionDetailTarget& B)
+	{
+		return A.ObjectPtr == B.ObjectPtr
+			&& A.StructType == B.StructType
+			&& A.ContainerPtr == B.ContainerPtr;
 	}
 
 	bool HasPhysicsBodyInSubtree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex)
@@ -1268,10 +1253,20 @@ bool FMeshEditorPhysicsAssetTab::ResolveOpenTarget(UObject* Object, UObject*& Ou
 
 void FMeshEditorPhysicsAssetTab::Reset()
 {
+	ClearReflectionDetailTarget();
 	SelectedPhysicsBodyIndex = -1;
 	SelectedPhysicsConstraintIndex = -1;
 	bOpenPhysicsAssetBuildOptions = false;
 	PendingPhysicsAssetBuildOptions = FPhysicsAssetBuildOptions {};
+}
+
+void FMeshEditorPhysicsAssetTab::Tick(float DeltaTime)
+{
+	(void)DeltaTime;
+	if (USkeletalMesh* SkeletalMesh = GetSkeletalMesh())
+	{
+		DetectReflectionDetailChanges(SkeletalMesh->GetPhysicsAsset());
+	}
 }
 
 void FMeshEditorPhysicsAssetTab::OnEditorOpened()
@@ -1297,6 +1292,7 @@ void FMeshEditorPhysicsAssetTab::OnEditorOpened()
 
 void FMeshEditorPhysicsAssetTab::OnEditorClosing()
 {
+	ClearReflectionDetailTarget();
 	GetViewportClient().SetPhysicsAssetPickingEnabled(false);
 	GetViewportClient().SetOnPhysicsAssetBodyPicked(nullptr);
 	GetViewportClient().SetOnPhysicsAssetConstraintPicked(nullptr);
@@ -1309,11 +1305,16 @@ void FMeshEditorPhysicsAssetTab::OnActivated(EMeshEditorTab PreviousTab)
 	(void)PreviousTab;
 	GetViewportClient().SetPhysicsAssetPickingEnabled(true);
 	GetViewportClient().GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
+	if (USkeletalMesh* SkeletalMesh = GetSkeletalMesh())
+	{
+		SyncReflectionDetailTarget(SkeletalMesh->GetPhysicsAsset());
+	}
 }
 
 void FMeshEditorPhysicsAssetTab::OnDeactivated(EMeshEditorTab NextTab)
 {
 	(void)NextTab;
+	ClearReflectionDetailTarget();
 	GetViewportClient().SetPhysicsAssetPickingEnabled(false);
 }
 
@@ -1326,7 +1327,6 @@ void FMeshEditorPhysicsAssetTab::Render(float AvailableHeight)
 	SyncDebugComponent(PhysicsAsset);
 
 	constexpr float BodyListWidth = 260.0f;
-	constexpr float BodyDetailsWidth = 300.0f;
 
 	ImGui::BeginChild("PhysicsAssetBodies", ImVec2(BodyListWidth, 0), true);
 	ImGui::TextUnformatted("Physics Asset");
@@ -1336,6 +1336,7 @@ void FMeshEditorPhysicsAssetTab::Render(float AvailableHeight)
 	{
 		ImGui::TextDisabled("No skeletal mesh.");
 		ImGui::EndChild();
+		ClearReflectionDetailTarget();
 		return;
 	}
 
@@ -1359,22 +1360,18 @@ void FMeshEditorPhysicsAssetTab::Render(float AvailableHeight)
 	ImGui::Separator();
 	RenderPhysicsAssetBodyList(SkeletalMesh, PhysicsAsset);
 	ImGui::EndChild();
+	SyncReflectionDetailTarget(PhysicsAsset);
+	DetectReflectionDetailChanges(PhysicsAsset);
 
 	ImGui::SameLine();
 
 	ImGui::BeginGroup();
 	const float ViewportWidth = std::max(
 		120.0f,
-		ImGui::GetContentRegionAvail().x - BodyDetailsWidth - ImGui::GetStyle().ItemSpacing.x);
+		ImGui::GetContentRegionAvail().x);
 	const ImVec2 ViewportSize = ImVec2(ViewportWidth, ImGui::GetContentRegionAvail().y);
 	RenderViewportPanel(ViewportSize);
 	ImGui::EndGroup();
-
-	ImGui::SameLine();
-
-	ImGui::BeginChild("PhysicsAssetBodyDetails", ImVec2(BodyDetailsWidth, 0), true);
-	RenderPhysicsAssetBodyDetails(PhysicsAsset);
-	ImGui::EndChild();
 }
 
 void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBuildOptionsPopup(
@@ -1465,6 +1462,7 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBuildOptionsPopup(
 			SelectedPhysicsBodyIndex = -1;
 			SelectedPhysicsConstraintIndex = -1;
 			SyncDebugComponent(NewAsset);
+			SyncReflectionDetailTarget(NewAsset);
 			ImGui::CloseCurrentPopup();
 		}
 	}
@@ -1495,6 +1493,7 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyList(USkeletalMesh* Skele
 	if (!PhysicsAsset)
 	{
 		ImGui::TextDisabled("No physics asset.");
+		ClearReflectionDetailTarget();
 		return;
 	}
 
@@ -1503,10 +1502,12 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyList(USkeletalMesh* Skele
 	{
 		SelectedPhysicsBodyIndex = -1;
 		SelectedPhysicsConstraintIndex = -1;
+		RefreshReflectionDetailSnapshot(PhysicsAsset);
 	}
 	if (SelectedPhysicsConstraintIndex >= static_cast<int32>(PhysicsAsset->GetConstraintInitDescs().size()))
 	{
 		SelectedPhysicsConstraintIndex = -1;
+		RefreshReflectionDetailSnapshot(PhysicsAsset);
 	}
 	SyncDebugComponent(PhysicsAsset);
 
@@ -1515,6 +1516,7 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyList(USkeletalMesh* Skele
 		SelectedPhysicsBodyIndex = -1;
 		SelectedPhysicsConstraintIndex = -1;
 		SyncDebugComponent(PhysicsAsset);
+		SyncReflectionDetailTarget(PhysicsAsset);
 	}
 
 	const FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
@@ -1598,6 +1600,7 @@ bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyTree(const FSkeletalMesh*
 		SelectedPhysicsBodyIndex = BodyIndex;
 		SelectedPhysicsConstraintIndex = -1;
 		SyncDebugComponent(PhysicsAsset);
+		SyncReflectionDetailTarget(PhysicsAsset);
 	}
 
 	if (ImGui::BeginPopupContextItem())
@@ -1613,6 +1616,8 @@ bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyTree(const FSkeletalMesh*
 			SavePhysicsAssetChange("PhysicsAsset body shape add warning");
 			MarkDirty();
 			SyncDebugComponent(PhysicsAsset);
+			SyncReflectionDetailTarget(PhysicsAsset);
+			RefreshReflectionDetailSnapshot(PhysicsAsset);
 		}
 		ImGui::EndPopup();
 	}
@@ -1632,34 +1637,200 @@ bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyTree(const FSkeletalMesh*
 	return true;
 }
 
-void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsset)
+void FMeshEditorPhysicsAssetTab::SyncReflectionDetailTarget(UPhysicsAsset* PhysicsAsset)
 {
-	if (RenderConstraintInitDescDetails(
-		PhysicsAsset,
-		SelectedPhysicsConstraintIndex,
-		GetViewportClient().GetPhysicsAssetDebugComponent()))
-	{
-		SavePhysicsAssetChange("PhysicsAsset constraint edit warning");
-		MarkDirty();
-		return;
-	}
+	FSelectionDetailTarget Target;
+	EPhysicsAssetDetailTargetType TargetType = EPhysicsAssetDetailTargetType::None;
 
-	if (SelectedPhysicsConstraintIndex < 0)
+	if (PhysicsAsset)
 	{
-		const bool bChanged = SelectedPhysicsBodyIndex >= 0
-			? RenderBodySetupDetails(PhysicsAsset, SelectedPhysicsBodyIndex)
-			: RenderPhysicsAssetDetails(PhysicsAsset);
-		if (bChanged)
+		TArray<FConstraintInstanceInitDesc>& ConstraintDescs = PhysicsAsset->GetConstraintInitDescsMutable();
+		if (SelectedPhysicsConstraintIndex >= 0 &&
+			SelectedPhysicsConstraintIndex < static_cast<int32>(ConstraintDescs.size()))
 		{
-			SavePhysicsAssetChange("PhysicsAsset body edit warning");
-			MarkDirty();
-			SyncDebugComponent(PhysicsAsset);
-			if (UPhysicsAssetDebugComponent* DebugComponent = GetViewportClient().GetPhysicsAssetDebugComponent())
+			Target.ObjectPtr = PhysicsAsset;
+			Target.StructType = FConstraintInstanceInitDesc::StaticStruct();
+			Target.ContainerPtr = &ConstraintDescs[SelectedPhysicsConstraintIndex];
+			TargetType = EPhysicsAssetDetailTargetType::Constraint;
+		}
+		else
+		{
+			TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetupsMutable();
+			if (SelectedPhysicsBodyIndex >= 0 &&
+				SelectedPhysicsBodyIndex < static_cast<int32>(Bodies.size()) &&
+				Bodies[SelectedPhysicsBodyIndex])
 			{
-				DebugComponent->MarkPhysicsAssetDebugDirty();
+				Target = FSelectionDetailTarget::FromObject(Bodies[SelectedPhysicsBodyIndex]);
+				TargetType = EPhysicsAssetDetailTargetType::Body;
+			}
+			else
+			{
+				Target = FSelectionDetailTarget::FromObject(PhysicsAsset);
+				TargetType = EPhysicsAssetDetailTargetType::PhysicsAsset;
 			}
 		}
 	}
+
+	if (!Target.IsValidTarget())
+	{
+		ClearReflectionDetailTarget();
+		return;
+	}
+
+	const bool bTargetChanged =
+		TargetType != ReflectionDetailTargetType ||
+		!IsSameDetailTarget(Target, ReflectionDetailTarget);
+	if (!bTargetChanged)
+	{
+		if (FSelectionManager* SelectionManager = GetSelectionManager())
+		{
+			const FSelectionDetailTarget* PrimaryTarget = SelectionManager->GetPrimaryDetailTarget();
+			if (!PrimaryTarget || !IsSameDetailTarget(*PrimaryTarget, ReflectionDetailTarget))
+			{
+				SelectionManager->SetSingleDetailTarget(ReflectionDetailTarget);
+			}
+		}
+		return;
+	}
+
+	ReflectionDetailTarget = Target;
+	ReflectionDetailTargetType = TargetType;
+	if (FSelectionManager* SelectionManager = GetSelectionManager())
+	{
+		SelectionManager->SetSingleDetailTarget(ReflectionDetailTarget);
+	}
+	RefreshReflectionDetailSnapshot(PhysicsAsset);
+}
+
+void FMeshEditorPhysicsAssetTab::ClearReflectionDetailTarget()
+{
+	if (FSelectionManager* SelectionManager = GetSelectionManager())
+	{
+		if (const FSelectionDetailTarget* PrimaryTarget = SelectionManager->GetPrimaryDetailTarget())
+		{
+			if (IsSameDetailTarget(*PrimaryTarget, ReflectionDetailTarget))
+			{
+				SelectionManager->SetSingleDetailTarget(FSelectionDetailTarget {});
+			}
+		}
+	}
+
+	ReflectionDetailTarget.Reset();
+	ReflectionDetailTargetType = EPhysicsAssetDetailTargetType::None;
+	ReflectionDetailSnapshot.clear();
+	bHasReflectionDetailSnapshot = false;
+	SnapshotConstraintParentLocation = FVector::ZeroVector;
+	SnapshotConstraintChildLocation = FVector::ZeroVector;
+}
+
+void FMeshEditorPhysicsAssetTab::RefreshReflectionDetailSnapshot(UPhysicsAsset* PhysicsAsset)
+{
+	ReflectionDetailSnapshot.clear();
+	bHasReflectionDetailSnapshot = false;
+	SnapshotConstraintParentLocation = FVector::ZeroVector;
+	SnapshotConstraintChildLocation = FVector::ZeroVector;
+
+	switch (ReflectionDetailTargetType)
+	{
+	case EPhysicsAssetDetailTargetType::PhysicsAsset:
+		ReflectionDetailSnapshot = CaptureObjectSnapshot(PhysicsAsset);
+		break;
+	case EPhysicsAssetDetailTargetType::Body:
+		ReflectionDetailSnapshot = CaptureObjectSnapshot(ReflectionDetailTarget.ObjectPtr);
+		break;
+	case EPhysicsAssetDetailTargetType::Constraint:
+	{
+		const FConstraintInstanceInitDesc* ConstraintDesc =
+			static_cast<const FConstraintInstanceInitDesc*>(ReflectionDetailTarget.ContainerPtr);
+		ReflectionDetailSnapshot = CaptureConstraintSnapshot(ConstraintDesc);
+		if (ConstraintDesc)
+		{
+			SnapshotConstraintParentLocation = ConstraintDesc->ParentFrame.Location;
+			SnapshotConstraintChildLocation = ConstraintDesc->ChildFrame.Location;
+		}
+		break;
+	}
+	case EPhysicsAssetDetailTargetType::None:
+	default:
+		break;
+	}
+
+	bHasReflectionDetailSnapshot = ReflectionDetailTarget.IsValidTarget();
+}
+
+void FMeshEditorPhysicsAssetTab::DetectReflectionDetailChanges(UPhysicsAsset* PhysicsAsset)
+{
+	if (!PhysicsAsset || ReflectionDetailTargetType == EPhysicsAssetDetailTargetType::None)
+	{
+		return;
+	}
+
+	if (!ReflectionDetailTarget.IsValidTarget())
+	{
+		ClearReflectionDetailTarget();
+		return;
+	}
+
+	if (!bHasReflectionDetailSnapshot)
+	{
+		RefreshReflectionDetailSnapshot(PhysicsAsset);
+		return;
+	}
+
+	TArray<uint8> CurrentSnapshot;
+	const char* SaveWarning = "PhysicsAsset detail edit warning";
+	FConstraintInstanceInitDesc* ConstraintDesc = nullptr;
+
+	switch (ReflectionDetailTargetType)
+	{
+	case EPhysicsAssetDetailTargetType::PhysicsAsset:
+		CurrentSnapshot = CaptureObjectSnapshot(PhysicsAsset);
+		SaveWarning = "PhysicsAsset root edit warning";
+		break;
+	case EPhysicsAssetDetailTargetType::Body:
+		CurrentSnapshot = CaptureObjectSnapshot(ReflectionDetailTarget.ObjectPtr);
+		SaveWarning = "PhysicsAsset body edit warning";
+		break;
+	case EPhysicsAssetDetailTargetType::Constraint:
+		ConstraintDesc = static_cast<FConstraintInstanceInitDesc*>(ReflectionDetailTarget.ContainerPtr);
+		CurrentSnapshot = CaptureConstraintSnapshot(ConstraintDesc);
+		SaveWarning = "PhysicsAsset constraint edit warning";
+		break;
+	case EPhysicsAssetDetailTargetType::None:
+	default:
+		return;
+	}
+
+	if (CurrentSnapshot == ReflectionDetailSnapshot)
+	{
+		return;
+	}
+
+	if (ConstraintDesc)
+	{
+		const bool bParentChanged = HasVectorChanged(SnapshotConstraintParentLocation, ConstraintDesc->ParentFrame.Location);
+		const bool bChildChanged = HasVectorChanged(SnapshotConstraintChildLocation, ConstraintDesc->ChildFrame.Location);
+		if (UPhysicsAssetDebugComponent* DebugComponent = GetViewportClient().GetPhysicsAssetDebugComponent())
+		{
+			if (bParentChanged || bChildChanged)
+			{
+				DebugComponent->SyncConstraintFrameLocation(
+					*ConstraintDesc,
+					bParentChanged
+						? EPhysicsAssetConstraintFrameSide::Parent
+						: EPhysicsAssetConstraintFrameSide::Child);
+			}
+		}
+	}
+
+	SavePhysicsAssetChange(SaveWarning);
+	MarkDirty();
+	SyncDebugComponent(PhysicsAsset);
+	if (UPhysicsAssetDebugComponent* DebugComponent = GetViewportClient().GetPhysicsAssetDebugComponent())
+	{
+		DebugComponent->MarkPhysicsAssetDebugDirty();
+	}
+	RefreshReflectionDetailSnapshot(PhysicsAsset);
 }
 
 void FMeshEditorPhysicsAssetTab::OnPhysicsAssetBodyPicked(int32 BodyIndex)
@@ -1672,6 +1843,7 @@ void FMeshEditorPhysicsAssetTab::OnPhysicsAssetBodyPicked(int32 BodyIndex)
 		PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
 	}
 	SyncDebugComponent(PhysicsAsset);
+	SyncReflectionDetailTarget(PhysicsAsset);
 }
 
 void FMeshEditorPhysicsAssetTab::OnPhysicsAssetConstraintPicked(int32 ConstraintIndex)
@@ -1684,18 +1856,27 @@ void FMeshEditorPhysicsAssetTab::OnPhysicsAssetConstraintPicked(int32 Constraint
 		PhysicsAsset = SkeletalMesh->GetPhysicsAsset();
 	}
 	SyncDebugComponent(PhysicsAsset);
+	SyncReflectionDetailTarget(PhysicsAsset);
 }
 
 void FMeshEditorPhysicsAssetTab::OnPhysicsAssetShapeEdited()
 {
 	SavePhysicsAssetChange("PhysicsAsset shape edit warning");
 	MarkDirty();
+	if (USkeletalMesh* SkeletalMesh = GetSkeletalMesh())
+	{
+		RefreshReflectionDetailSnapshot(SkeletalMesh->GetPhysicsAsset());
+	}
 }
 
 void FMeshEditorPhysicsAssetTab::OnPhysicsAssetConstraintEdited()
 {
 	SavePhysicsAssetChange("PhysicsAsset constraint gizmo warning");
 	MarkDirty();
+	if (USkeletalMesh* SkeletalMesh = GetSkeletalMesh())
+	{
+		RefreshReflectionDetailSnapshot(SkeletalMesh->GetPhysicsAsset());
+	}
 }
 
 void FMeshEditorPhysicsAssetTab::SavePhysicsAssetChange(const char* LogPrefix)
