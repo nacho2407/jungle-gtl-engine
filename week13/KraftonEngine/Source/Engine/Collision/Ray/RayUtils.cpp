@@ -1,4 +1,4 @@
-#include "Collision/Ray/RayUtils.h"
+﻿#include "Collision/Ray/RayUtils.h"
 #include "Component/PrimitiveComponent.h"
 #include "Object/Object.h"
 #include <cmath>
@@ -64,7 +64,7 @@ bool FRayUtils::IntersectTriangle(const FVector& RayOrigin, const FVector& RayDi
 	FVector pvec = RayDir.Cross(edge2);
 	float det = edge1.Dot(pvec);
 
-	if (std::abs(det) < 0.0001f) return false;
+	if (std::abs(det) < 1.0e-6f) return false;
 
 	float invDet = 1.0f / det;
 	FVector tvec = RayOrigin - V0;
