@@ -1633,7 +1633,7 @@ FBodyInstance* FPhysXPhysicsScene::FindRegisteredBodyByActor(const PxActor* Acto
 
 void FPhysXPhysicsScene::SyncEngineToPhysicsBeforeSim()
 {
-	constexpr float TeleportPosThresholdSq = 1.0f;
+	constexpr float TeleportPosThresholdSq = 0.001f;
 	constexpr float TeleportRotThreshold = 0.99f;
 
 	for (FBodyInstance* Body : RegisteredBodies)
