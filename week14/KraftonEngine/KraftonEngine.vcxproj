@@ -545,6 +545,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
@@ -685,6 +686,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\Physics\PhysXConversions.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXSDK.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXVehicle4WInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysXVehicleTankInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsAsset.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsAssetDebugDraw.cpp" />
@@ -946,6 +948,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\ShapeComponent.h" />
@@ -1125,6 +1128,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Physics\PhysXSDK.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXVehicle4WInstance.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleInstanceBase.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicleTankInstance.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleManager.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsAsset.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsAssetDebugDraw.h" />
