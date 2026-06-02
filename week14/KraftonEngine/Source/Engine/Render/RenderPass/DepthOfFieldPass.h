@@ -28,9 +28,11 @@ private:
 	void ReleaseResources();
 
 private:
-	FRenderTarget SetupTarget;
+	FRenderTarget BackgroundSetupTarget;
+	FRenderTarget ForegroundSetupTarget;
 	FRenderTarget BackgroundTarget;
 	FRenderTarget ForegroundTarget;
+	FRenderTarget ForegroundHoleFillTarget;
 
 	FConstantBuffer DofCB;
 	uint32 TargetWidth = 0;

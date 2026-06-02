@@ -12,8 +12,10 @@ Texture2D<float4> GBufferNormalTexture : register(t18);  // GBuffer World Normal
 Texture2D<uint2>  StencilTexture       : register(t19);  // CopyResource된 Stencil (X24_G8_UINT)
 Texture2D<float4> CullingHeatmapTexture : register(t20); // Tile Culling Heatmap (R8G8B8A8_UNORM)
 Texture2D<float>  SpotLightAtlasTexture : register(t22); // Spotlight atlas (D32_FLOAT)
-Texture2D<float4> DofSetupTexture       : register(t27); // RGB scene color, A signed CoC radius
-Texture2D<float4> DofBackgroundTexture  : register(t28); // RGB blurred background, A coverage
-Texture2D<float4> DofForegroundTexture  : register(t29); // RGB blurred foreground, A coverage
+Texture2D<float4> DofBackgroundSetupTexture : register(t27); // RGB background color, A positive CoC radius
+Texture2D<float4> DofForegroundSetupTexture : register(t28); // RGB foreground color, A positive CoC radius
+Texture2D<float4> DofBackgroundTexture      : register(t29); // RGB blurred background, A coverage
+Texture2D<float4> DofForegroundTexture      : register(t30); // Premultiplied RGB blurred foreground, A opacity
+Texture2D<float4> DofForegroundHoleFillTexture : register(t31); // Premultiplied RGB foreground hole fill, A opacity
 
 #endif // SYSTEM_RESOURCES_HLSL
