@@ -235,6 +235,18 @@ namespace
 
 		OutIndices.push_back(ParticleIndex);
 	}
+
+	/**
+	 * @brief all-pinned 입력으로 simulation resource 생성이 생략된 실패인지 반환합니다
+	 *
+	 * @param FailureDetail simulation resource 생성 실패 사유
+	 *
+	 * @return all-pinned guard 실패 여부
+	 */
+	bool IsAllPinnedBuildFailure(const FString& FailureDetail)
+	{
+		return FailureDetail.find("zero inverse mass") != FString::npos;
+	}
 }
 
 UClothComponent::UClothComponent()
@@ -572,6 +584,7 @@ void UClothComponent::BuildGrid(const FClothConfig& Config, bool bNotifyProxyDir
 	RenderData.Vertices.clear();
 	RenderData.Indices.clear();
 	RenderData.Sections.clear();
+	RestPositionsComponentLocal.clear();
 
 	const uint32 NumX = static_cast<uint32>(Config.NumParticlesX);
 	const uint32 NumY = static_cast<uint32>(Config.NumParticlesY);
@@ -579,6 +592,7 @@ void UClothComponent::BuildGrid(const FClothConfig& Config, bool bNotifyProxyDir
 	const uint32 QuadCount = (NumX - 1) * (NumY - 1);
 
 	RenderData.Vertices.resize(VertexCount);
+	RestPositionsComponentLocal.resize(VertexCount);
 	RenderData.Indices.reserve(static_cast<size_t>(QuadCount) * 6);
 
 	const float Width = static_cast<float>(NumX - 1) * Config.ParticleSpacing;
@@ -595,7 +609,9 @@ void UClothComponent::BuildGrid(const FClothConfig& Config, bool bNotifyProxyDir
 			const float V = NumY > 1 ? 1.0f - static_cast<float>(Row) / static_cast<float>(NumY - 1) : 0.0f;
 
 			FVertexPNCTT& Vertex = RenderData.Vertices[VertexIndex];
-			Vertex.Position = FVector(MinX + static_cast<float>(Col) * Config.ParticleSpacing, 0.0f, MaxZ - static_cast<float>(Row) * Config.ParticleSpacing);
+			const FVector RestPosition(MinX + static_cast<float>(Col) * Config.ParticleSpacing, 0.0f, MaxZ - static_cast<float>(Row) * Config.ParticleSpacing);
+			RestPositionsComponentLocal[VertexIndex] = RestPosition;
+			Vertex.Position = RestPosition;
 			Vertex.Normal = FVector::YAxisVector;
 			Vertex.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 			Vertex.UV = FVector2(U, V);
@@ -645,13 +661,26 @@ FClothSimulationBuildDesc UClothComponent::BuildSimulationDesc(const FClothConfi
 	BuildDesc.Config = Config;
 	BuildDesc.Indices = RenderData.Indices;
 
-	BuildDesc.InitialPositionsComponentLocal.reserve(RenderData.Vertices.size());
-	BuildDesc.InvMasses.resize(RenderData.Vertices.size(), 1.0f);
+	const bool bHasValidRestPositions = RestPositionsComponentLocal.size() == RenderData.Vertices.size();
+	const size_t PositionCount = bHasValidRestPositions ? RestPositionsComponentLocal.size() : RenderData.Vertices.size();
+	BuildDesc.InitialPositionsComponentLocal.reserve(PositionCount);
+	BuildDesc.InvMasses.resize(PositionCount, 1.0f);
 
-	for (const FVertexPNCTT& Vertex : RenderData.Vertices)
+	if (bHasValidRestPositions)
 	{
-		// render data와 simulation data는 모두 component local 기준 유지
-		BuildDesc.InitialPositionsComponentLocal.push_back(Vertex.Position);
+		for (const FVector& RestPosition : RestPositionsComponentLocal)
+		{
+			// simulation resource는 deformed readback이 아닌 procedural rest grid 기준으로 생성
+			BuildDesc.InitialPositionsComponentLocal.push_back(RestPosition);
+		}
+	}
+	else
+	{
+		for (const FVertexPNCTT& Vertex : RenderData.Vertices)
+		{
+			// rest position cache가 아직 준비되지 않은 초기 경로의 보수적 fallback
+			BuildDesc.InitialPositionsComponentLocal.push_back(Vertex.Position);
+		}
 	}
 
 	BuildPinnedParticles(Config, BuildDesc.PinnedIndices, BuildDesc.PinTargetPositionsComponentLocal);
@@ -683,7 +712,16 @@ void UClothComponent::BuildPinnedParticles(
 	const uint32 NumX = static_cast<uint32>(Config.NumParticlesX);
 	const uint32 NumY = static_cast<uint32>(Config.NumParticlesY);
 	const uint32 VertexCount = static_cast<uint32>(RenderData.Vertices.size());
+	const bool bHasValidRestPositions = RestPositionsComponentLocal.size() == RenderData.Vertices.size();
 	const FVector PinOffsetComponentLocal = TransformActorLocalVectorToComponentLocal(PinOffsetActorLocal);
+
+	auto GetBasePosition = [&](uint32 ParticleIndex) -> const FVector&
+	{
+		// pin selection과 target은 simulation으로 변형된 render 위치가 아니라 rest grid 위치 기준
+		return bHasValidRestPositions
+			? RestPositionsComponentLocal[ParticleIndex]
+			: RenderData.Vertices[ParticleIndex].Position;
+	};
 
 	auto AddPinnedParticle = [&](uint32 ParticleIndex)
 	{
@@ -699,8 +737,8 @@ void UClothComponent::BuildPinnedParticles(
 			return;
 		}
 
-		// target은 현재 선택된 rest/render 위치에 actor local offset을 더한 component local 위치
-		OutPinTargetPositionsComponentLocal.push_back(RenderData.Vertices[ParticleIndex].Position + PinOffsetComponentLocal);
+		// target은 rest grid 위치에 actor local offset을 더한 component local 위치
+		OutPinTargetPositionsComponentLocal.push_back(GetBasePosition(ParticleIndex) + PinOffsetComponentLocal);
 	};
 
 	switch (PinningMode)
@@ -741,12 +779,13 @@ void UClothComponent::BuildPinnedParticles(
 	case EClothPinSelectionType::ActorLocalSphere:
 	{
 		const FVector CenterComponentLocal = TransformActorLocalPointToComponentLocal(PinCenterActorLocal);
-		const float Radius = ClampFloat(PinRadius, 0.0f, 10000.0f);
-		const float RadiusSquared = Radius * Radius;
+		const float RadiusActorLocal = ClampFloat(PinRadius, 0.0f, GMaxCollisionLength);
+		const float RadiusComponentLocal = TransformActorLocalLengthToComponentLocal(RadiusActorLocal);
+		const float RadiusSquared = RadiusComponentLocal * RadiusComponentLocal;
 
 		for (uint32 ParticleIndex = 0; ParticleIndex < VertexCount; ++ParticleIndex)
 		{
-			const FVector Delta = RenderData.Vertices[ParticleIndex].Position - CenterComponentLocal;
+			const FVector Delta = GetBasePosition(ParticleIndex) - CenterComponentLocal;
 			if (Delta.Dot(Delta) <= RadiusSquared)
 			{
 				AddPinnedParticle(ParticleIndex);
@@ -771,7 +810,7 @@ void UClothComponent::BuildPinnedParticles(
 
 		for (uint32 ParticleIndex = 0; ParticleIndex < VertexCount; ++ParticleIndex)
 		{
-			const FVector Delta = RenderData.Vertices[ParticleIndex].Position - CenterComponentLocal;
+			const FVector Delta = GetBasePosition(ParticleIndex) - CenterComponentLocal;
 			if (std::abs(Delta.Dot(AxisX)) <= ExtentX
 				&& std::abs(Delta.Dot(AxisY)) <= ExtentY
 				&& std::abs(Delta.Dot(AxisZ)) <= ExtentZ)
@@ -799,7 +838,7 @@ void UClothComponent::BuildPinnedParticles(
 
 		for (uint32 ParticleIndex = 0; ParticleIndex < VertexCount; ++ParticleIndex)
 		{
-			const FVector Delta = RenderData.Vertices[ParticleIndex].Position - CenterComponentLocal;
+			const FVector Delta = GetBasePosition(ParticleIndex) - CenterComponentLocal;
 			if (std::abs(Delta.Dot(AxisX)) <= ExtentX
 				&& std::abs(Delta.Dot(AxisZ)) <= ExtentZ)
 			{
@@ -827,6 +866,7 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 		CachedPinTargetPositionsComponentLocal.clear();
 		CachedCollisionPrimitives.clear();
 		bSimulationRebuildDirty = false;
+		bLastSimulationBuildSkippedByAllPinned = false;
 		bSimulationTickWarningLogged = false;
 		bCollisionUpdateWarningLogged = false;
 		return;
@@ -840,6 +880,7 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 		CachedPinTargetPositionsComponentLocal.clear();
 		CachedCollisionPrimitives.clear();
 		bSimulationRebuildDirty = false;
+		bLastSimulationBuildSkippedByAllPinned = false;
 		bSimulationTickWarningLogged = false;
 		bCollisionUpdateWarningLogged = false;
 		return;
@@ -854,8 +895,10 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 	const FClothSimulationBuildDesc BuildDesc = BuildSimulationDesc(Config);
 	CachedPinnedIndices = BuildDesc.PinnedIndices;
 	CachedPinTargetPositionsComponentLocal = BuildDesc.PinTargetPositionsComponentLocal;
+	bLastSimulationBuildSkippedByAllPinned = false;
 	if (!Simulation.Rebuild(&GEngine->GetClothContext(), BuildDesc))
 	{
+		bLastSimulationBuildSkippedByAllPinned = IsAllPinnedBuildFailure(Simulation.GetLastFailureDetail());
 		UE_LOG("[ClothComponent] Simulation resource unavailable: %s", Simulation.GetLastFailureDetail().c_str());
 	}
 	else
@@ -900,6 +943,17 @@ void UClothComponent::ApplySimulationPinningIfNeeded(const FClothConfig& Config)
 		{
 			UE_LOG("[ClothComponent] Pinning update skipped: %s", Simulation.GetLastFailureDetail().c_str());
 		}
+	}
+	else if (bPinningDirty
+		&& bLastSimulationBuildSkippedByAllPinned
+		&& GEngine
+		&& GEngine->GetClothContext().IsAvailable()
+		&& CachedPinnedIndices.size() < RenderData.Vertices.size())
+	{
+		// all-pinned guard 이후 pin selection이 동적인 particle을 남기면 simulation resource를 즉시 복구
+		bSimulationRebuildDirty = true;
+		RebuildSimulationIfNeeded(Config);
+		return;
 	}
 
 	bPinningDirty = false;

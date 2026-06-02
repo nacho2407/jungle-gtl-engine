@@ -545,6 +545,7 @@ private:
 
 	FClothRenderData RenderData;
 	FClothSimulation Simulation;
+	TArray<FVector> RestPositionsComponentLocal;
 	TArray<FVector> SimulationReadbackPositions;
 	TArray<uint32> CachedPinnedIndices;
 	TArray<FVector> CachedPinTargetPositionsComponentLocal;
@@ -562,4 +563,5 @@ private:
 	bool bBackendStatusLogged = false;
 	bool bSimulationTickWarningLogged = false;
 	bool bCollisionUpdateWarningLogged = false;
+	bool bLastSimulationBuildSkippedByAllPinned = false;
 };
