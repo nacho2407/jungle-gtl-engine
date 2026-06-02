@@ -140,6 +140,7 @@ public:
     bool EvaluateAnimationPoseOnly(float DeltaTime, FPoseContext& OutPose);
     bool BuildWorldTransformsFromLocalPose(const TArray<FTransform>& LocalPose, TArray<FTransform>& OutWorldTransforms) const;
     void TickPhysicalAnimationPose(float DeltaTime);
+    bool IsBoneBelowBone(FName BoneName, FName ParentBoneName, bool bIncludeSelf) const;
 
     const TArray<FBodyInstance*>& GetRagdollBodies() const { return Bodies; }
     const TArray<FConstraintInstance*>& GetRagdollConstraints() const { return Constraints; }

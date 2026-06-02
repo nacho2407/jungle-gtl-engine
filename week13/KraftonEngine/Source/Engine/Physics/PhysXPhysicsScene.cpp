@@ -1,4 +1,4 @@
-#include "Physics/PhysXPhysicsScene.h"
+﻿#include "Physics/PhysXPhysicsScene.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/SphereComponent.h"
@@ -925,7 +925,7 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 			Geom.storeAny(PxCapsuleGeometry(Radius, HalfHeightWithoutCaps));
 
 			// 엔진 Capsule은 Z축 기준, PhysX Capsule은 X축 기준
-			ShapeAxisRot = PxQuat(PxHalfPi, PxVec3(0.0f, 0.0f, 1.0f));
+			ShapeAxisRot = PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f));
 
 			bHasGeom = true;
 			break;

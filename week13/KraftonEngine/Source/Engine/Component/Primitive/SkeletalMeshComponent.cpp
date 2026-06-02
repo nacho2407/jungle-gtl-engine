@@ -1643,7 +1643,10 @@ bool USkeletalMeshComponent::BeginPhysicalAnimation()
 
         if (bCreateRagdollConstraints)
         {
-            CreateRagdollConstraintsFromPhysicsAsset();
+            if (!CreateRagdollConstraintsFromPhysicsAsset())
+            {
+                UE_LOG("BeginPhysicalAnimation warning: constraints were not created");
+            }
         }
 
         CaptureRagdollComponentSyncOffset();
@@ -1728,6 +1731,14 @@ void USkeletalMeshComponent::TickPhysicalAnimationPose(float DeltaTime)
     }
 
     CacheRagdollComponentWorldMatrix();
+}
+
+bool USkeletalMeshComponent::IsBoneBelowBone(FName BoneName, FName ParentBoneName, bool bIncludeSelf) const
+{
+    const int32 BoneIndex = FindBoneIndexByName(BoneName);
+    const int32 ParentBoneIndex = FindBoneIndexByName(ParentBoneName);
+
+    return IsBoneBelow(BoneIndex, ParentBoneIndex, bIncludeSelf);
 }
 
 bool USkeletalMeshComponent::IsBoneBelow(int32 BoneIndex, int32 RootBoneIndex, bool bIncludeSelf) const
@@ -2018,6 +2029,10 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
     {
     case ESkeletalPhysicsMode::FullRagdoll:
     case ESkeletalPhysicsMode::PartialRagdoll:
+        TickRagdollPhysicsMode(DeltaTime);
+        UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+        return;
+
     case ESkeletalPhysicsMode::PhysicalAnimation:
         TickPhysicalAnimationPose(DeltaTime);
         UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
