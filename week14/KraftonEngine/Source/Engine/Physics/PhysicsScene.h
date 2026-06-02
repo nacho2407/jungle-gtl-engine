@@ -35,7 +35,7 @@ public:
 		const FTransform& LocalFrameA, const FTransform& LocalFrameB);
 	FConstraintInstance* CreateD6Constraint(FBodyInstance* BodyA, FBodyInstance* BodyB,
 		const FTransform& LocalFrameA, const FTransform& LocalFrameB, EAngularConstraintMode AngularMode,
-		float Swing1LimitDeg, float Swing2LimitDeg, float TwistLimitDeg);
+		float Swing1LimitDeg, float Swing2LimitDeg, float TwistLimitDeg, bool bDisableCollision);
 	void DestroyConstraint(FConstraintInstance* Instance);
 
 	void GatherClothCollision(const FClothCollisionGatherParams& Params, FClothCollisionData& OutData) const;
