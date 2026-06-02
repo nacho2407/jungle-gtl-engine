@@ -220,6 +220,7 @@ protected:
     void EnsureRagdollPhysicsBlendWeights(float DefaultWeight = 1.0f);
     bool IsBoneBelow(int32 BoneIndex, int32 RootBoneIndex, bool bIncludeSelf) const;
     float GetRagdollPhysicsBlendWeightForBone(int32 BoneIndex) const;
+    bool ShouldFreezeAnimationPoseForFullRagdoll(float GlobalPhysicsWeight) const;
 
     void EnsureRagdollBodySimulateFlags(bool bDefaultSimulate = true);
     void ApplyRagdollBodySimulationFlags();

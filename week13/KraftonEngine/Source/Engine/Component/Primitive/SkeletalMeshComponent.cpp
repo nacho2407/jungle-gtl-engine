@@ -1257,10 +1257,18 @@ bool USkeletalMeshComponent::UpdateRagdollActivePose(float DeltaTime)
 
     if (!Asset || Asset->Bones.empty()) return false;
 
+    const float PhysicsBlendWeight =
+        std::clamp(RagdollPhysicsBlendWeight, 0.0f, 1.0f);
+
     FPoseContext AnimationPoseContext;
-    const bool bHasAnimationPose =
-        EvaluateAnimationPose(DeltaTime, AnimationPoseContext) &&
-        AnimationPoseContext.Pose.size() == Asset->Bones.size();
+    bool bHasAnimationPose = false;
+
+    if (!ShouldFreezeAnimationPoseForFullRagdoll(PhysicsBlendWeight))
+    {
+        bHasAnimationPose =
+            EvaluateAnimationPose(DeltaTime, AnimationPoseContext) &&
+            AnimationPoseContext.Pose.size() == Asset->Bones.size();
+    }
 
     TArray<FTransform> SourceLocalPose;
 
@@ -1287,9 +1295,6 @@ bool USkeletalMeshComponent::UpdateRagdollActivePose(float DeltaTime)
     {
         return false;
     }
-
-    const float PhysicsBlendWeight =
-        std::clamp(RagdollPhysicsBlendWeight, 0.0f, 1.0f);
 
     TArray<FTransform> FinalLocalPose;
 
@@ -1802,6 +1807,50 @@ float USkeletalMeshComponent::GetRagdollPhysicsBlendWeightForBone(int32 BoneInde
     }
 
     return std::clamp(PerBoneRagdollPhysicsBlendWeights[BoneIndex], 0.0f, 1.0f);
+}
+
+bool USkeletalMeshComponent::ShouldFreezeAnimationPoseForFullRagdoll(float GlobalPhysicsWeight) const
+{
+    constexpr float FullWeightThreshold = 1.0f - 0.0001f;
+
+    if (SkeletalPhysicsMode != ESkeletalPhysicsMode::FullRagdoll ||
+        GlobalPhysicsWeight < FullWeightThreshold ||
+        Bodies.empty())
+    {
+        return false;
+    }
+
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+    if (!Asset || Asset->Bones.empty())
+    {
+        return false;
+    }
+
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Asset->Bones.size()); ++BoneIndex)
+    {
+        if (GetRagdollPhysicsBlendWeightForBone(BoneIndex) < FullWeightThreshold)
+        {
+            return false;
+        }
+    }
+
+    bool bHasValidBody = false;
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (!Body || !Body->IsValidBodyInstance())
+        {
+            continue;
+        }
+
+        bHasValidBody = true;
+        if (!ShouldRagdollBodySimulate(Body->BoneIndex))
+        {
+            return false;
+        }
+    }
+
+    return bHasValidBody;
 }
 
 void USkeletalMeshComponent::EnsureRagdollBodySimulateFlags(bool bDefaultSimulate)
