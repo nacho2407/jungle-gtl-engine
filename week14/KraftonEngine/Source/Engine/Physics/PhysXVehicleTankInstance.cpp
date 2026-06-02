@@ -41,6 +41,10 @@ bool FPhysXVehicleTankInstance::Initialize(physx::PxPhysics* Physics, physx::PxS
 	WheelRadius = std::max(0.01f, Setup.WheelRadius);
 	LeftTrackSpeed = 0.0f;
 	RightTrackSpeed = 0.0f;
+	WheelRestLocalZ.assign(WheelCount, 0.0f);
+	WheelRotationAngles.assign(WheelCount, 0.0f);
+	WheelRotationSpeeds.assign(WheelCount, 0.0f);
+	WheelSuspensionOffsets.assign(WheelCount, 0.0f);
 
 	const float ChassisMass = std::max(1.0f, Setup.ChassisMass);
 	const physx::PxVec3 ChassisDims(std::max(0.01f, Setup.ChassisHalfExtent.X),
@@ -108,6 +112,8 @@ bool FPhysXVehicleTankInstance::Initialize(physx::PxPhysics* Physics, physx::PxS
 
 		WheelCentreOffsets[LeftIndex] = physx::PxVec3(WheelX, -TrackHalfWidth, WheelCenterZ);
 		WheelCentreOffsets[RightIndex] = physx::PxVec3(WheelX, TrackHalfWidth, WheelCenterZ);
+		WheelRestLocalZ[LeftIndex] = WheelCenterZ;
+		WheelRestLocalZ[RightIndex] = WheelCenterZ;
 	}
 
 	std::vector<physx::PxF32> SprungMasses(WheelCount);
@@ -205,6 +211,10 @@ void FPhysXVehicleTankInstance::Shutdown()
 	WheelRadius = 0.0f;
 	LeftTrackSpeed = 0.0f;
 	RightTrackSpeed = 0.0f;
+	WheelRestLocalZ.clear();
+	WheelRotationAngles.clear();
+	WheelRotationSpeeds.clear();
+	WheelSuspensionOffsets.clear();
 }
 
 void FPhysXVehicleTankInstance::SetDriveInput(const float Throttle, const float Brake, const float Steer, const bool bReverse)
@@ -266,13 +276,29 @@ void FPhysXVehicleTankInstance::FireRecoil(const float Impulse, const FVector& L
 	physx::PxRigidBodyExt::addForceAtPos(*VehicleActor, RecoilImpulse, WorldFirePoint, physx::PxForceMode::eIMPULSE);
 }
 
-void FPhysXVehicleTankInstance::UpdateVisualState()
+void FPhysXVehicleTankInstance::UpdateVisualState(const physx::PxVehicleWheelQueryResult* WheelQueryResult)
 {
 	if (!Vehicle || WheelCount == 0)
 	{
 		LeftTrackSpeed = 0.0f;
 		RightTrackSpeed = 0.0f;
+		WheelRotationAngles.clear();
+		WheelRotationSpeeds.clear();
+		WheelSuspensionOffsets.clear();
 		return;
+	}
+
+	if (WheelRotationAngles.size() != WheelCount)
+	{
+		WheelRotationAngles.assign(WheelCount, 0.0f);
+	}
+	if (WheelRotationSpeeds.size() != WheelCount)
+	{
+		WheelRotationSpeeds.assign(WheelCount, 0.0f);
+	}
+	if (WheelSuspensionOffsets.size() != WheelCount)
+	{
+		WheelSuspensionOffsets.assign(WheelCount, 0.0f);
 	}
 
 	float LeftSum = 0.0f;
@@ -282,7 +308,21 @@ void FPhysXVehicleTankInstance::UpdateVisualState()
 
 	for (uint32 Index = 0; Index < WheelCount; ++Index)
 	{
-		const float WheelSpeed = Vehicle->mWheelsDynData.getWheelRotationSpeed(Index) * WheelRadius;
+		const float WheelRotationAngle = Vehicle->mWheelsDynData.getWheelRotationAngle(Index);
+		const float WheelRotationSpeed = Vehicle->mWheelsDynData.getWheelRotationSpeed(Index);
+		const float WheelSpeed = WheelRotationSpeed * WheelRadius;
+
+		WheelRotationAngles[Index] = WheelRotationAngle;
+		WheelRotationSpeeds[Index] = WheelRotationSpeed;
+		WheelSuspensionOffsets[Index] = 0.0f;
+
+		if (WheelQueryResult && WheelQueryResult->wheelQueryResults && Index < WheelQueryResult->nbWheelQueryResults)
+		{
+			const physx::PxWheelQueryResult& Query = WheelQueryResult->wheelQueryResults[Index];
+			const float RestZ = Index < WheelRestLocalZ.size() ? WheelRestLocalZ[Index] : Query.localPose.p.z;
+			WheelSuspensionOffsets[Index] = Query.localPose.p.z - RestZ;
+		}
+
 		if ((Index % 2) == 0)
 		{
 			LeftSum += WheelSpeed;
@@ -301,20 +341,30 @@ void FPhysXVehicleTankInstance::UpdateVisualState()
 
 float FPhysXVehicleTankInstance::GetWheelRotationAngle(const uint32 WheelIndex) const
 {
-	if (!Vehicle || WheelIndex >= WheelCount)
+	if (!Vehicle || WheelIndex >= WheelRotationAngles.size())
 	{
 		return 0.0f;
 	}
 
-	return Vehicle->mWheelsDynData.getWheelRotationAngle(WheelIndex);
+	return WheelRotationAngles[WheelIndex];
 }
 
 float FPhysXVehicleTankInstance::GetWheelRotationSpeed(const uint32 WheelIndex) const
 {
-	if (!Vehicle || WheelIndex >= WheelCount)
+	if (!Vehicle || WheelIndex >= WheelRotationSpeeds.size())
 	{
 		return 0.0f;
 	}
 
-	return Vehicle->mWheelsDynData.getWheelRotationSpeed(WheelIndex);
+	return WheelRotationSpeeds[WheelIndex];
+}
+
+float FPhysXVehicleTankInstance::GetWheelSuspensionOffset(const uint32 WheelIndex) const
+{
+	if (!Vehicle || WheelIndex >= WheelSuspensionOffsets.size())
+	{
+		return 0.0f;
+	}
+
+	return WheelSuspensionOffsets[WheelIndex];
 }

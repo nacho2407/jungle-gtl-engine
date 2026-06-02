@@ -579,6 +579,8 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Key["A"] = static_cast<int32>('A');
 	Key["S"] = static_cast<int32>('S');
 	Key["D"] = static_cast<int32>('D');
+	Key["Q"] = static_cast<int32>('Q');
+	Key["E"] = static_cast<int32>('E');
 	Key["R"] = static_cast<int32>('R');
 	Key["Space"] = VK_SPACE;
 	Key["Escape"] = VK_ESCAPE;

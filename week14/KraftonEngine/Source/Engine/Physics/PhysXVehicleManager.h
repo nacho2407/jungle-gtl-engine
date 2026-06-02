@@ -17,6 +17,8 @@ public:
 
 	void Update(float DeltaTime);
 
+	const physx::PxVehicleWheelQueryResult* GetWheelQueryResult(const physx::PxVehicleWheels* Vehicle) const;
+
 	void CollectDebugRender(FScene& RenderScene) const;
 
 private:

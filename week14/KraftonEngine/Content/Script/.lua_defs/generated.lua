@@ -409,6 +409,40 @@ function VehicleMovementComponentTank:SetTrackInput(LeftThrust, RightThrust, Lef
 ---@param LocalDirection Vector
 function VehicleMovementComponentTank:FireRecoil(Impulse, LocalFirePoint, LocalDirection) end
 
+---@param YawInput number
+function VehicleMovementComponentTank:SetTurretInput(YawInput) end
+
+---@param YawDegrees number
+function VehicleMovementComponentTank:SetTurretYaw(YawDegrees) end
+
+---@return number
+function VehicleMovementComponentTank:GetTurretYaw() end
+
+---@return Vector
+function VehicleMovementComponentTank:GetTurretForward() end
+
+---@param Impulse number
+---@param TurretLocalFirePoint Vector
+---@param TurretLocalDirection Vector
+function VehicleMovementComponentTank:FireTurretRecoil(Impulse, TurretLocalFirePoint, TurretLocalDirection) end
+
+---@return number
+function VehicleMovementComponentTank:GetLeftTrackSpeed() end
+
+---@return number
+function VehicleMovementComponentTank:GetRightTrackSpeed() end
+
+---@param WheelIndex integer
+---@return number
+function VehicleMovementComponentTank:GetWheelRotationAngle(WheelIndex) end
+
+---@param WheelIndex integer
+---@return number
+function VehicleMovementComponentTank:GetWheelRotationSpeed(WheelIndex) end
+
+---@return integer
+function VehicleMovementComponentTank:GetWheelCount() end
+
 ---@class AnimNode
 AnimNode = {}
 

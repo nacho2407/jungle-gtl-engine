@@ -30,16 +30,16 @@ struct FTankVehiclePhysicsSetup
 	float LinearDamping = 0.1f;
 
 	UPROPERTY(Edit, Save, Category = "Tank|Chassis", DisplayName = "Angular Damping", Min = 0.0f, Speed = 0.01f)
-	float AngularDamping = 0.9f;
+	float AngularDamping = 0.35f;
 
 	UPROPERTY(Edit, Save, Category = "Tank|Engine", DisplayName = "Engine Peak Torque", Min = 0.0f, Speed = 100.0f)
-	float EnginePeakTorque = 6500.0f;
+	float EnginePeakTorque = 65000.0f;
 
 	UPROPERTY(Edit, Save, Category = "Tank|Engine", DisplayName = "Engine Max Omega", Min = 0.0f, Speed = 10.0f)
-	float EngineMaxOmega = 600.0f;
+	float EngineMaxOmega = 800.0f;
 
 	UPROPERTY(Edit, Save, Category = "Tank|Engine", DisplayName = "Clutch Strength", Min = 0.0f, Speed = 1.0f)
-	float ClutchStrength = 20.0f;
+	float ClutchStrength = 80.0f;
 
 	UPROPERTY(Edit, Save, Category = "Tank|Track", DisplayName = "Track Half Width", Min = 0.01f, Speed = 0.1f)
 	float TrackHalfWidth = 1.35f;
@@ -92,7 +92,7 @@ public:
 	void SetDriveInput(float Throttle, float Brake, float Steer, bool bReverse);
 	void SetTrackInput(float LeftThrust, float RightThrust, float LeftBrake, float RightBrake);
 	void FireRecoil(float Impulse, const FVector& LocalFirePoint, const FVector& LocalDirection);
-	void UpdateVisualState();
+	void UpdateVisualState(const physx::PxVehicleWheelQueryResult* WheelQueryResult = nullptr);
 
 	physx::PxVehicleWheels* GetPxVehicle() const override { return Vehicle; }
 	physx::PxRigidDynamic* GetActor() const override { return VehicleActor; }
@@ -101,6 +101,7 @@ public:
 	float GetRightTrackSpeed() const { return RightTrackSpeed; }
 	float GetWheelRotationAngle(uint32 WheelIndex) const;
 	float GetWheelRotationSpeed(uint32 WheelIndex) const;
+	float GetWheelSuspensionOffset(uint32 WheelIndex) const;
 	uint32 GetWheelCount() const { return WheelCount; }
 
 private:
@@ -111,4 +112,8 @@ private:
 	float WheelRadius = 0.0f;
 	float LeftTrackSpeed = 0.0f;
 	float RightTrackSpeed = 0.0f;
+	TArray<float> WheelRestLocalZ;
+	TArray<float> WheelRotationAngles;
+	TArray<float> WheelRotationSpeeds;
+	TArray<float> WheelSuspensionOffsets;
 };

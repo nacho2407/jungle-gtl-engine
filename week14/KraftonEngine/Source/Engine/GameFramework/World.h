@@ -81,6 +81,8 @@ private:
 	// FTimer 의 raw delta 를 직접 사용한다. Tick 의 paused / 정상 흐름 양쪽에서 호출.
 	void TickPlayerCamera() const;
 
+	void SyncPhysXVehicleComponentsPostPhysics();
+
 	void TickClothComponents(float DeltaTime);
 
 public:

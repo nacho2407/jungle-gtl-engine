@@ -34,6 +34,7 @@ function Tick(dt)
     local brake = 0.0
     local steer = 0.0
     local reverse = false
+    local turretYaw = 0.0
 
     if Input.GetKey(Key.W) then
         throttle = 1.0
@@ -56,8 +57,16 @@ function Tick(dt)
         steer = steer + 1.0
     end
 
+    if Input.GetKey(Key.Q) then
+        turretYaw = turretYaw - 1.0
+    end
+
+    if Input.GetKey(Key.E) then
+        turretYaw = turretYaw + 1.0
+    end
+
     if Input.GetKeyDown(Key.R) then
-        vehicle:FireRecoil(recoilImpulse, recoilFirePoint, recoilDirection)
+        vehicle:FireTurretRecoil(recoilImpulse, recoilFirePoint, recoilDirection)
     end
 
     currentThrottle = approach(currentThrottle, throttle, 3.0, dt)
@@ -65,4 +74,5 @@ function Tick(dt)
     currentSteer = approach(currentSteer, steer, 5.0, dt)
 
     vehicle:SetDriveInput(currentThrottle, currentBrake, currentSteer, reverse)
+    vehicle:SetTurretInput(turretYaw)
 end
