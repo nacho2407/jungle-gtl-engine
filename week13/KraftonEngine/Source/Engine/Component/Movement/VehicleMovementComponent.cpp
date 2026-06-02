@@ -161,6 +161,7 @@ void UVehicleMovementComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	}
 
 	ApplyKeyboardInput(DeltaTime);
+	UpdateBoost(DeltaTime);
 
 	PxVehicleWheels* Vehicles[] = { VehicleDrive };
 	PxVehicleSuspensionRaycasts(
@@ -397,6 +398,9 @@ bool UVehicleMovementComponent::InitializeVehicle()
 
 void UVehicleMovementComponent::ReleaseVehicle()
 {
+	bBoostActive = false;
+	BoostRemainingTime = 0.0f;
+
 	if (SuspensionBatchQuery)
 	{
 		SuspensionBatchQuery->release();
@@ -417,6 +421,42 @@ void UVehicleMovementComponent::ReleaseVehicle()
 
 	VehicleWheelQueryResult.wheelQueryResults = nullptr;
 	VehicleWheelQueryResult.nbWheelQueryResults = 0;
+}
+
+void UVehicleMovementComponent::UpdateBoost(float DeltaTime)
+{
+	const InputSystem& Input = InputSystem::Get();
+	if (!bBoostActive && Input.GetKeyDown(VK_SHIFT))
+	{
+		bBoostActive = true;
+		BoostRemainingTime = std::max(BoostDuration, 0.0f);
+		SetRuntimePeakTorque(EnginePeakTorque * std::max(BoostTorqueMultiplier, 0.0f));
+	}
+
+	if (!bBoostActive)
+	{
+		return;
+	}
+
+	BoostRemainingTime -= DeltaTime;
+	if (BoostRemainingTime <= 0.0f)
+	{
+		bBoostActive = false;
+		BoostRemainingTime = 0.0f;
+		SetRuntimePeakTorque(EnginePeakTorque);
+	}
+}
+
+void UVehicleMovementComponent::SetRuntimePeakTorque(float PeakTorque)
+{
+	if (!VehicleDrive)
+	{
+		return;
+	}
+
+	PxVehicleEngineData Engine = VehicleDrive->mDriveSimData.getEngineData();
+	Engine.mPeakTorque = std::max(PeakTorque, 0.0f);
+	VehicleDrive->mDriveSimData.setEngineData(Engine);
 }
 
 void UVehicleMovementComponent::ApplyKeyboardInput(float DeltaTime)
