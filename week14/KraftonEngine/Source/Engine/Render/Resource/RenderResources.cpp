@@ -978,8 +978,8 @@ void FSystemResources::UnbindSystemTextures(FD3DDevice& Device)
 	// t21~t25: Shadow (CSM/SpotAtlas/PointCube/SpotData/PointData)
 	Ctx->PSSetShaderResources(ESystemTexSlot::ShadowMapCSM, 5, nullSRVs);
 
-	ID3D11ShaderResourceView* nullDofSRVs[3] = {};
-	Ctx->PSSetShaderResources(ESystemTexSlot::DofSetup, 3, nullDofSRVs);
+	ID3D11ShaderResourceView* nullDofSRVs[5] = {};
+	Ctx->PSSetShaderResources(ESystemTexSlot::DofSetup, 5, nullDofSRVs);
 }
 
 // ============================================================

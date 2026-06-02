@@ -13,6 +13,8 @@ public:
 	physx::PxPhysics* GetPhysics() const { return Physics; }
 	physx::PxFoundation* GetFoundation() const { return Foundation; }
 	physx::PxMaterial* GetDefaultMaterial() const { return DefaultMaterial; }
+	
+	physx::PxCooking* GetCooking() const { return Cooking; }
 
 	physx::PxAllocatorCallback* GetAllocatorCallback() { return &Allocator; }
 	physx::PxErrorCallback* GetErrorCallback() { return &ErrorCallback; }
@@ -24,4 +26,6 @@ private:
 	physx::PxFoundation* Foundation = nullptr;
 	physx::PxPhysics* Physics = nullptr;
 	physx::PxMaterial* DefaultMaterial = nullptr;
+
+	physx::PxCooking* Cooking = nullptr;
 };

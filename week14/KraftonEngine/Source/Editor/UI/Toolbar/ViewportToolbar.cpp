@@ -666,9 +666,9 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 			ImGui::SetNextItemWidth(150.0f);
 			ImGui::DragFloat("Sensor Width", &RenderOptions.DofSensorWidth, 0.1f, 0.1f, 1000.0f, "%.2f");
 			ImGui::SetNextItemWidth(150.0f);
-			ImGui::SliderInt("Gather Rings", &RenderOptions.DofGatherRingCount, 1, 5);
+			ImGui::SliderInt("Gather Rings", &RenderOptions.DofGatherRingCount, 1, 10);
 			ImGui::SetNextItemWidth(150.0f);
-			ImGui::SliderInt("Samples / Ring", &RenderOptions.DofGatherSamplesPerRing, 4, 16);
+			ImGui::SliderInt("Samples / Ring", &RenderOptions.DofGatherSamplesPerRing, 4, 32);
 			ImGui::Checkbox("Foreground", &RenderOptions.bDofForegroundEnabled);
 			ImGui::Checkbox("Background", &RenderOptions.bDofBackgroundEnabled);
 			ImGui::Checkbox("Half Res", &RenderOptions.bDofHalfRes);

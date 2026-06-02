@@ -44,7 +44,7 @@ bool FPhysXVehicleInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene
 	VehicleActor->setLinearDamping(0.1f);
 	VehicleActor->setAngularDamping(0.5f);
 
-	physx::PxTransform CenterOfMassOffset;
+	physx::PxTransform CenterOfMassOffset(physx::PxIdentity);
 	CenterOfMassOffset.p = ToPxVec3(Setup.CenterOfMassOffset);
 	VehicleActor->setCMassLocalPose(CenterOfMassOffset);
 

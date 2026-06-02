@@ -1,4 +1,4 @@
-#include "Physics/PhysicsScene.h"
+﻿#include "Physics/PhysicsScene.h"
 #include "Physics/PhysXSDK.h"
 #include "Physics/BodyInstance.h"
 #include "Physics/ConstraintInstance.h"
@@ -371,7 +371,7 @@ bool FPhysicsScene::CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, FBodyIns
 
 	TArray<physx::PxShape*> Shapes;
 	FPhysicsShapeFactory::CreateShapesFromBodySetup(*Physics, *DefaultMaterial, BodySetup,
-		Scale, OwnerComp, bTrigger, Shapes, &FilterData);
+		Scale, OwnerComp, bTrigger, bSimulatePhysics, Shapes, &FilterData);
 
 	if (Shapes.empty())
 	{

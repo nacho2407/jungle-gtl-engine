@@ -1,64 +1,25 @@
 ﻿#include "Component/Primitive/ClothComponent.h"
 
 #include "GameFramework/World.h"
+#include "Materials/MaterialManager.h"
+#include "Materials/Material.h"
 #include "Physics/PhysicsScene.h"
 #include "Render/Proxy/ClothSceneProxy.h"
-
-namespace
-{
-	bool IsClothTopologyProperty(const char* PropName)
-	{
-		return strcmp(PropName, "Width") == 0 ||
-			strcmp(PropName, "Height") == 0 ||
-			strcmp(PropName, "Spacing") == 0 ||
-			strcmp(PropName, "PinMode") == 0 ||
-			strcmp(PropName, "Pin Mode") == 0 ||
-			strcmp(PropName, "bUseTether") == 0 ||
-			strcmp(PropName, "Use Tether") == 0 ||
-			strcmp(PropName, "bUseShear") == 0 ||
-			strcmp(PropName, "Use Shear") == 0 ||
-			strcmp(PropName, "bUseBending") == 0 ||
-			strcmp(PropName, "Use Bending") == 0;
-	}
-
-	bool IsClothRuntimeProperty(const char* PropName)
-	{
-		return strcmp(PropName, "Gravity") == 0 ||
-			strcmp(PropName, "SolverFrequency") == 0 ||
-			strcmp(PropName, "Solver Frequency") == 0 ||
-			strcmp(PropName, "StiffnessFrequency") == 0 ||
-			strcmp(PropName, "Stiffness Frequency") == 0 ||
-			strcmp(PropName, "SubstepCount") == 0 ||
-			strcmp(PropName, "Substep Count") == 0 ||
-			strcmp(PropName, "bEnableCCD") == 0 ||
-			strcmp(PropName, "Enable CCD") == 0 ||
-			strcmp(PropName, "Damping") == 0 ||
-			strcmp(PropName, "LinearDrag") == 0 ||
-			strcmp(PropName, "Linear Drag") == 0 ||
-			strcmp(PropName, "AngularDrag") == 0 ||
-			strcmp(PropName, "Angular Drag") == 0 ||
-			strcmp(PropName, "StructuralStiffness") == 0 ||
-			strcmp(PropName, "Structural Stiffness") == 0 ||
-			strcmp(PropName, "ShearStiffness") == 0 ||
-			strcmp(PropName, "Shear Stiffness") == 0 ||
-			strcmp(PropName, "BendingStiffness") == 0 ||
-			strcmp(PropName, "Bending Stiffness") == 0 ||
-			strcmp(PropName, "bEnableWorldCollision") == 0 ||
-			strcmp(PropName, "Enable World Collision") == 0 ||
-			strcmp(PropName, "CollisionBoundsPadding") == 0 ||
-			strcmp(PropName, "Collision Bounds Padding") == 0 ||
-			strcmp(PropName, "CollisionMassScale") == 0 ||
-			strcmp(PropName, "Collision Mass Scale") == 0 ||
-			strcmp(PropName, "Friction") == 0 ||
-			strcmp(PropName, "RenderNormalOffset") == 0 ||
-			strcmp(PropName, "Render Normal Offset") == 0;
-	}
-}
 
 UClothComponent::UClothComponent()
 {
 	SetCastShadow(true);
 	SetCastShadowAsTwoSided(true);
+
+	if (!MaterialSlot.empty() && MaterialSlot != "None")
+	{
+		UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(MaterialSlot);
+
+		if (LoadedMat)
+		{
+			SetMaterial(LoadedMat);
+		}
+	}
 
 	RebuildCloth(false);
 }
@@ -163,10 +124,27 @@ void UClothComponent::PostEditProperty(const char* PropertyName)
 
 	if (!PropertyName) return;
 
+	if (strcmp(PropertyName, "MaterialSlot") == 0 ||
+		strcmp(PropertyName, "Material") == 0)
+	{
+		if (MaterialSlot.empty() || MaterialSlot == "None")
+		{
+			SetMaterial(nullptr);
+		}
+		else
+		{
+			UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(MaterialSlot);
+
+			if (LoadedMat)
+			{
+				SetMaterial(LoadedMat);
+			}
+		}
+		return;
+	}
+
 	if (strcmp(PropertyName, "ClothDesc") == 0 ||
-		strcmp(PropertyName, "Cloth Setup") == 0 ||
-		IsClothTopologyProperty(PropertyName) ||
-		IsClothRuntimeProperty(PropertyName))
+		strcmp(PropertyName, "Cloth Setup") == 0)
 	{
 		RebuildCloth(true);
 	}
@@ -175,6 +153,21 @@ void UClothComponent::PostEditProperty(const char* PropertyName)
 void UClothComponent::PostDuplicate()
 {
 	UPrimitiveComponent::PostDuplicate();
+
+	if (!MaterialSlot.empty() && MaterialSlot != "None")
+	{
+		UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(MaterialSlot);
+
+		if (LoadedMat)
+		{
+			SetMaterial(LoadedMat);
+		}
+	}
+	else
+	{
+		SetMaterial(nullptr);
+	}
+
 	RebuildCloth(true);
 }
 
@@ -189,4 +182,20 @@ void UClothComponent::RebuildCloth(bool bRecreateRenderState)
 	}
 
 	MarkWorldBoundsDirty();
+}
+
+void UClothComponent::SetMaterial(UMaterialInterface* InMaterial)
+{
+	Material = InMaterial;
+
+	if (Material)
+	{
+		MaterialSlot = Material->GetAssetPathFileName();
+	}
+	else
+	{
+		MaterialSlot = "None";
+	}
+
+	MarkProxyDirty(EDirtyFlag::Material);
 }

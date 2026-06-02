@@ -16,7 +16,7 @@ UClothComponent* FClothSceneProxy::GetClothComponent() const
 	return static_cast<UClothComponent*>(GetOwner());
 }
 
-void FClothSceneProxy::UpdateMesh()
+void FClothSceneProxy::UpdateMaterial()
 {
 	const UClothComponent* ClothComp = GetClothComponent();
 	if (!ClothComp)
@@ -25,23 +25,34 @@ void FClothSceneProxy::UpdateMesh()
 		return;
 	}
 
-	if (!DefaultMaterial)
+	UMaterialInterface* Material = ClothComp->GetMaterial();
+
+	if (!Material)
 	{
-		DefaultMaterial = static_cast<UMaterial*>(
-			FMaterialManager::Get().GetOrCreateMaterial("Content/Material/Editor/ClothDefault.mat"));
+		if (!DefaultMaterial)
+		{
+			DefaultMaterial = FMaterialManager::Get().GetOrCreateMaterial("Content/Material/Editor/ClothDefault.mat");
+		}
+
+		Material = DefaultMaterial;
 	}
 
 	const TArray<uint32>& Indices = ClothComp->GetClothInstance().GetRenderIndices();
 
 	SectionDraws.clear();
-	if (!Indices.empty() && DefaultMaterial)
+	if (!Indices.empty() && Material)
 	{
 		FMeshSectionDraw Draw;
-		Draw.Material = DefaultMaterial;
+		Draw.Material = Material;
 		Draw.FirstIndex = 0;
 		Draw.IndexCount = static_cast<uint32>(Indices.size());
 		SectionDraws.push_back(Draw);
 	}
+}
+
+void FClothSceneProxy::UpdateMesh()
+{
+	UpdateMaterial();
 
 	bBufferNeedsCreate = true;
 	UploadedRevision = 0;

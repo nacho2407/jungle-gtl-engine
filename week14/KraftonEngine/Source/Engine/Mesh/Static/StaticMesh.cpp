@@ -225,6 +225,12 @@ void UStaticMesh::BuildDefaultBodySetupIfNeeded()
 	}
 
 	UBodySetup* Setup = GetOrCreateBodySetup();
+
+	if (Setup && !Setup->HasComplexCollision())
+	{
+		Setup->BuildComplexCollisionFromStaticMesh(*StaticMeshAsset);
+	}
+
 	if (Setup && !Setup->HasSimpleCollision())
 	{
 		Setup->CreateDefaultBox(StaticMeshAsset->BoundsCenter, StaticMeshAsset->BoundsExtent);

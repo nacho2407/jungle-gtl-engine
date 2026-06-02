@@ -14,7 +14,19 @@ void FPhysXSDK::Initialize()
 		Foundation = nullptr;
 		return;
 	}
-	
+
+	physx::PxCookingParams CookingParams(Physics->getTolerancesScale());
+	Cooking = PxCreateCooking(PX_PHYSICS_VERSION, *Foundation, CookingParams);
+
+	if (!Cooking)
+	{
+		Physics->release();
+		Physics = nullptr;
+		Foundation->release();
+		Foundation = nullptr;
+		return;
+	}
+
 	DefaultMaterial = Physics->createMaterial(0.5f, 0.5f, 0.6f);
 
 	physx::PxInitVehicleSDK(*Physics);
@@ -28,6 +40,11 @@ void FPhysXSDK::Shutdown()
 	{
 		DefaultMaterial->release();
 		DefaultMaterial = nullptr;
+	}
+	if (Cooking)
+	{
+		Cooking->release();
+		Cooking = nullptr;
 	}
 	if (Physics)
 	{
