@@ -5,6 +5,7 @@
 #include "Engine/Profiling/Stats/MemoryStats.h"
 #include "Engine/Profiling/Stats/ShadowStats.h"
 #include "Engine/Profiling/Stats/ParticleStats.h"
+#include "Engine/Profiling/Stats/ClothStats.h"
 #include "Engine/Profiling/Stats/Stats.h"
 #include "Engine/Profiling/GPUProfiler.h"
 #include "Slate/SWindow.h"
@@ -331,6 +332,50 @@ void FOverlayStatSystem::BuildParticleLines(TArray<FString>& OutLines) const
 #endif
 }
 
+void FOverlayStatSystem::BuildClothLines(const UEditorEngine& Editor, TArray<FString>& OutLines) const
+{
+#if STATS
+	char Buffer[256] = {};
+
+	OutLines.push_back(FString("--- Cloth ---"));
+
+	const FClothBackendStatus& BackendStatus = Editor.GetClothContext().GetBackendStatus();
+	snprintf(Buffer, sizeof(Buffer), "Backend : %s (%s)",
+		GetClothBackendName(BackendStatus.Backend),
+		BackendStatus.bAvailable ? "available" : "unavailable");
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Components : %u", FClothStats::ComponentCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Particles : %llu  Indices : %llu",
+		static_cast<unsigned long long>(FClothStats::ParticleCount),
+		static_cast<unsigned long long>(FClothStats::IndexCount));
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Pinned : %llu  Collision Primitives : %llu",
+		static_cast<unsigned long long>(FClothStats::PinnedCount),
+		static_cast<unsigned long long>(FClothStats::CollisionPrimitiveCount));
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Steps : %llu  Sim Time : %.3f ms",
+		static_cast<unsigned long long>(FClothStats::SimulationStepCount),
+		FClothStats::SimulationTimeMs);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Vertex Uploads : %u", FClothStats::VertexUploadCount);
+	OutLines.push_back(FString(Buffer));
+
+	if (!BackendStatus.Detail.empty())
+	{
+		snprintf(Buffer, sizeof(Buffer), "Backend Detail : %s", BackendStatus.Detail.c_str());
+		OutLines.push_back(FString(Buffer));
+	}
+#else
+	OutLines.push_back(FString("Cloth stats unavailable (STATS=0)"));
+#endif
+}
+
 void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlayStatLine>& OutLines) const
 {
 	OutLines.clear();
@@ -359,6 +404,10 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	if (bShowParticle)
 	{
 		EstimatedLineCount += 4;
+	}
+	if (bShowCloth)
+	{
+		EstimatedLineCount += 8;
 	}
 	OutLines.reserve(EstimatedLineCount);
 
@@ -409,6 +458,13 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	{
 		Lines.clear();
 		BuildParticleLines(Lines);
+		AppendGroup(Lines);
+	}
+
+	if (bShowCloth)
+	{
+		Lines.clear();
+		BuildClothLines(Editor, Lines);
 		AppendGroup(Lines);
 	}
 }
@@ -523,5 +579,12 @@ void FOverlayStatSystem::RenderImGui(const UEditorEngine& Editor, const FRect& V
 		Lines.clear();
 		BuildParticleLines(Lines);
 		RenderWindow("##StatParticleOverlay", "Stat Particle", ImVec4(0.04f, 0.08f, 0.14f, 0.62f), Lines);
+	}
+
+	if (bShowCloth)
+	{
+		Lines.clear();
+		BuildClothLines(Editor, Lines);
+		RenderWindow("##StatClothOverlay", "Stat Cloth", ImVec4(0.08f, 0.08f, 0.05f, 0.62f), Lines);
 	}
 }

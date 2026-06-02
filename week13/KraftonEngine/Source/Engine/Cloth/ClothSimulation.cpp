@@ -918,6 +918,12 @@ bool FClothSimulation::IsSimulationAvailable() const
 	return bInitialized && bValid && Context && Context->GetBackendStatus().bAvailable;
 }
 
+void FClothSimulation::ResetAccumulator()
+{
+	AccumulatedTime = 0.0f;
+	LastStepCount = 0;
+}
+
 const FClothBackendStatus& FClothSimulation::GetBackendStatus() const
 {
 	static const FClothBackendStatus UnavailableStatus;

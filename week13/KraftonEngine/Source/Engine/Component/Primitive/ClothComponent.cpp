@@ -4,12 +4,14 @@
 #include "GameFramework/AActor.h"
 #include "Materials/MaterialManager.h"
 #include "Object/GarbageCollection.h"
+#include "Profiling/Stats/ClothStats.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Render/Proxy/DirtyFlag.h"
 #include "Render/Proxy/ClothSceneProxy.h"
 #include "Core/Logging/Log.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstring>
 
@@ -246,6 +248,8 @@ UClothComponent::UClothComponent()
 
 FPrimitiveSceneProxy* UClothComponent::CreateSceneProxy()
 {
+	ApplyEditorPreviewPolicy();
+
 	// editor viewport에서 tick 전에 proxy가 만들어지는 초기 표시 경로 보장
 	RebuildClothIfNeeded();
 	return new FClothSceneProxy(this);
@@ -470,6 +474,8 @@ void UClothComponent::MarkClothCollisionDirty()
 void UClothComponent::MarkClothEditorPreviewDirty()
 {
 	bEditorPreviewDirty = true;
+	Simulation.ResetAccumulator();
+	ApplyEditorPreviewPolicy();
 }
 
 void UClothComponent::RebuildClothIfNeeded(bool bNotifyProxyDirty)
@@ -540,6 +546,20 @@ bool UClothComponent::ShouldTickSimulation(ELevelTick TickType) const
 	}
 
 	return TickType == LEVELTICK_All;
+}
+
+void UClothComponent::ApplyEditorPreviewPolicy()
+{
+	if (!bSimulateInEditor)
+	{
+		return;
+	}
+
+	if (AActor* OwnerActor = GetOwner())
+	{
+		// editor preview를 켤 때만 owner tick을 활성화하고, 끌 때는 다른 component 정책을 보존
+		OwnerActor->bTickInEditor = true;
+	}
 }
 
 void UClothComponent::BuildGrid(const FClothConfig& Config, bool bNotifyProxyDirty)
@@ -901,7 +921,20 @@ void UClothComponent::TickSimulationIfNeeded(float DeltaTime, ELevelTick TickTyp
 
 	const FClothSimulationRuntimeConfig RuntimeConfig = MakeSimulationRuntimeConfig(Config);
 	SimulationReadbackPositions.clear();
-	if (!Simulation.Tick(DeltaTime, RuntimeConfig, SimulationReadbackPositions))
+	const auto SimulationStartTime = std::chrono::high_resolution_clock::now();
+	const bool bTickResult = Simulation.Tick(DeltaTime, RuntimeConfig, SimulationReadbackPositions);
+	const auto SimulationEndTime = std::chrono::high_resolution_clock::now();
+	const double SimulationElapsedMs = std::chrono::duration<double, std::milli>(SimulationEndTime - SimulationStartTime).count();
+
+	CLOTH_STATS_RECORD_COMPONENT(
+		Simulation.GetParticleCount(),
+		Simulation.GetIndexCount(),
+		Simulation.GetPinnedCount(),
+		Simulation.GetCollisionPrimitiveCount(),
+		Simulation.GetLastStepCount(),
+		SimulationElapsedMs);
+
+	if (!bTickResult)
 	{
 		if (Simulation.IsSimulationAvailable()
 			&& !Simulation.GetLastFailureDetail().empty()

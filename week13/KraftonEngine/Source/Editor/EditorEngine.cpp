@@ -6,6 +6,7 @@
 #include "Engine/Serialization/SceneSaveManager.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include "Engine/Runtime/EngineInitHooks.h"
+#include "Profiling/Stats/ClothStats.h"
 #include "Component/Camera/CameraComponent.h"
 #include "Component/Debug/GizmoComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
@@ -137,6 +138,9 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 
 void UEditorEngine::Tick(float DeltaTime)
 {
+	CLOTH_STATS_RESET_SIMULATION();
+	CLOTH_STATS_RESET_RENDER();
+
 	// --- PIE 요청 처리 (프레임 경계에서 처리되도록 Tick 선두에서 소비) ---
 	if (bRequestEndPlayMapQueued)
 	{

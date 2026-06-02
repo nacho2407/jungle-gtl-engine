@@ -5,6 +5,7 @@
 #include "Materials/MaterialManager.h"
 #include "Object/GarbageCollection.h"
 #include "Object/Object.h"
+#include "Profiling/Stats/ClothStats.h"
 #include "Render/Command/DrawCommand.h"
 
 #include <algorithm>
@@ -109,6 +110,8 @@ bool FClothSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceConte
 			return false;
 		}
 
+		// revision 변경으로 실제 vertex upload가 성공한 frame만 stat에 반영
+		CLOTH_STATS_ADD_VERTEX_UPLOAD();
 		UploadedRevision = CurrentRevision;
 	}
 

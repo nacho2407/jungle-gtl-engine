@@ -195,6 +195,11 @@ private:
 	bool ShouldTickSimulation(ELevelTick TickType) const;
 
 	/**
+	 * @brief editor preview simulation에 필요한 owner actor tick 정책을 적용합니다
+	 */
+	void ApplyEditorPreviewPolicy();
+
+	/**
 	 * @brief 현재 config로 procedural grid를 생성합니다
 	 *
 	 * @param Config grid 생성에 사용할 cloth config

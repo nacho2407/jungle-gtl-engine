@@ -121,6 +121,18 @@ public:
 	uint32 GetCollisionPrimitiveCount() const { return CollisionPrimitiveCount; }
 
 	/**
+	 * @brief 마지막 simulation tick에서 소비한 fixed step 수를 반환합니다
+	 *
+	 * @return 마지막 simulation tick fixed step 수
+	 */
+	uint32 GetLastStepCount() const { return LastStepCount; }
+
+	/**
+	 * @brief fixed timestep accumulator를 초기화합니다
+	 */
+	void ResetAccumulator();
+
+	/**
 	 * @brief 마지막 simulation resource 생성 실패 사유를 반환합니다
 	 *
 	 * @return 마지막 simulation resource 생성 실패 사유
