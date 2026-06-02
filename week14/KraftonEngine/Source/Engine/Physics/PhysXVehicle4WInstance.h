@@ -1,12 +1,13 @@
-﻿#pragma once
+#pragma once
 
 #include "Physics/PhysXInclude.h"
+#include "Physics/PhysXVehicleInstanceBase.h"
 
 #include "Math/Vector.h"
 #include "Object/Reflection/ObjectMacros.h"
 #include "Object/Reflection/UStruct.h"
 
-#include "Source/Engine/Physics/PhysXVehicleInstance.generated.h"
+#include "Source/Engine/Physics/PhysXVehicle4WInstance.generated.h"
 
 #include <PhysX/vehicle/PxVehicleDrive4W.h>
 #include <PhysX/vehicle/PxVehicleUtilSetup.h>
@@ -77,18 +78,18 @@ struct FVehiclePhysicsSetup
 	FVehicleWheelSetup RearRightWheel;
 };
 
-class FPhysXVehicleInstance
+class FPhysXVehicle4WInstance : public FPhysXVehicleInstanceBase
 {
 public:
 	bool Initialize(physx::PxPhysics* Physics, physx::PxScene* Scene,
 		physx::PxMaterial* Material, const physx::PxTransform& StartPose,
 		const FVehiclePhysicsSetup& Setup);
-	void Shutdown();
+	void Shutdown() override;
 
 	void SetDriveInput(float Throttle, float Brake, float Steer, bool bReverse);
 
-	physx::PxVehicleWheels* GetPxVehicle() const { return Vehicle; }
-	physx::PxRigidDynamic* GetActor() const { return VehicleActor; }
+	physx::PxVehicleWheels* GetPxVehicle() const override { return Vehicle; }
+	physx::PxRigidDynamic* GetActor() const override { return VehicleActor; }
 
 private:
 	physx::PxRigidDynamic* VehicleActor = nullptr;

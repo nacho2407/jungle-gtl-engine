@@ -9,7 +9,7 @@
 #include "Component/Input/InputComponent.h"
 #include "Animation/Instance/LuaAnimInstance.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
-#include "Component/Movement/VehicleMovementComponent4W.h"
+#include "Component/Movement/PhysX/VehicleMovementComponent4W.h"
 #include "Component/Camera/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
@@ -923,8 +923,10 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param input Vector\nfunction FloatingPawnMovementComponent:SetMoveInput(input) end")
 		.Method("---@param input Vector\nfunction FloatingPawnMovementComponent:SetLookInput(input) end");
 
-	Lua.new_usertype<UVehicleMovementComponent4W>("VehicleMovementComponent4W");
-	FLuaDocRegistry::Get().Type("VehicleMovementComponent4W");
+	Lua.new_usertype<UVehicleMovementComponent4W>("VehicleMovementComponent4W",
+		"SetDriveInput", &UVehicleMovementComponent4W::SetDriveInput);
+	FLuaDocRegistry::Get().Type("VehicleMovementComponent4W")
+		.Method("---@param throttle number\n---@param brake number\n---@param steer number\n---@param reverse boolean\nfunction VehicleMovementComponent4W:SetDriveInput(throttle, brake, steer, reverse) end");
 
 	Lua.new_usertype<USceneComponent>("SceneComponent",
 		"Location", sol::property(
@@ -1094,7 +1096,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 			"---@return FloatingPawnMovementComponent?\nfunction Actor:GetFloatingPawnMovement() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UFloatingPawnMovementComponent>(); })
 		.Method("GetVehicleMovement",
-			"---@return VehicleMovementComponent?\nfunction Actor:GetVehicleMovement() end",
+			"---@return VehicleMovementComponent4W?\nfunction Actor:GetVehicleMovement() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UVehicleMovementComponent4W>(); })
 		.Method("GetCamera",
 			"---@return CameraComponent?\nfunction Actor:GetCamera() end",
