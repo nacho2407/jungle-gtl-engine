@@ -41,6 +41,9 @@ namespace Key
 	constexpr const char* bCollision = "bCollision";
 	constexpr const char* bShowCollisionShape = "bShowCollisionShape";
 	constexpr const char* bParticle = "bParticle";
+	constexpr const char* bPhysicsAssetBodies = "bPhysicsAssetBodies";
+	constexpr const char* bPhysicsAssetConstraints = "bPhysicsAssetConstraints";
+	constexpr const char* bPhysicsAssetSkeleton = "bPhysicsAssetSkeleton";
 	constexpr const char* GridSpacing = "GridSpacing";
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
 	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
@@ -182,6 +185,9 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::bCollision] = Opts.ShowFlags.bCollision;
 	Obj[Key::bShowCollisionShape] = Opts.ShowFlags.bShowCollisionShape;
 	Obj[Key::bParticle] = Opts.ShowFlags.bParticle;
+	Obj[Key::bPhysicsAssetBodies] = Opts.ShowFlags.bPhysicsAssetBodies;
+	Obj[Key::bPhysicsAssetConstraints] = Opts.ShowFlags.bPhysicsAssetConstraints;
+	Obj[Key::bPhysicsAssetSkeleton] = Opts.ShowFlags.bPhysicsAssetSkeleton;
 	Obj[Key::GridSpacing] = Opts.GridSpacing;
 	Obj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
 	Obj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
@@ -253,6 +259,12 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.ShowFlags.bShowCollisionShape = Obj[Key::bShowCollisionShape].ToBool();
 	if (Obj.hasKey(Key::bParticle))
 		Opts.ShowFlags.bParticle = Obj[Key::bParticle].ToBool();
+	if (Obj.hasKey(Key::bPhysicsAssetBodies))
+		Opts.ShowFlags.bPhysicsAssetBodies = Obj[Key::bPhysicsAssetBodies].ToBool();
+	if (Obj.hasKey(Key::bPhysicsAssetConstraints))
+		Opts.ShowFlags.bPhysicsAssetConstraints = Obj[Key::bPhysicsAssetConstraints].ToBool();
+	if (Obj.hasKey(Key::bPhysicsAssetSkeleton))
+		Opts.ShowFlags.bPhysicsAssetSkeleton = Obj[Key::bPhysicsAssetSkeleton].ToBool();
 	if (Obj.hasKey(Key::GridSpacing))
 		Opts.GridSpacing = static_cast<float>(Obj[Key::GridSpacing].ToFloat());
 	if (Obj.hasKey(Key::GridHalfLineCount))

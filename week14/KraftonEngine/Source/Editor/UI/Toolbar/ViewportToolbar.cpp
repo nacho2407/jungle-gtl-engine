@@ -646,6 +646,15 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 		ImGui::Checkbox("Show Collision Shape", &RenderOptions.ShowFlags.bShowCollisionShape);
 		ImGui::Checkbox("Particle", &RenderOptions.ShowFlags.bParticle);
 
+		if (State.Context.bShowPhysicsAssetShowFlags)
+		{
+			ImGui::Separator();
+			ImGui::Text("Physics Asset");
+			ImGui::Checkbox("Physics Bodies", &RenderOptions.ShowFlags.bPhysicsAssetBodies);
+			ImGui::Checkbox("Physics Constraints", &RenderOptions.ShowFlags.bPhysicsAssetConstraints);
+			ImGui::Checkbox("Physics Skeleton", &RenderOptions.ShowFlags.bPhysicsAssetSkeleton);
+		}
+
 		if (RenderOptions.ShowFlags.bDepthOfField)
 		{
 			ImGui::Separator();

@@ -36,10 +36,12 @@ public:
 
 	bool IsShowPreviewMesh() const { return bShowPreviewMesh; }
 	void SetShowPreviewMesh(bool bInShow);
-	bool IsShowBodies() const { return bShowBodies; }
-	void SetShowBodies(bool bInShow) { bShowBodies = bInShow; }
-	bool IsShowConstraints() const { return bShowConstraints; }
-	void SetShowConstraints(bool bInShow) { bShowConstraints = bInShow; }
+	bool IsShowBodies() const { return RenderOptions.ShowFlags.bPhysicsAssetBodies; }
+	void SetShowBodies(bool bInShow) { RenderOptions.ShowFlags.bPhysicsAssetBodies = bInShow; }
+	bool IsShowConstraints() const { return RenderOptions.ShowFlags.bPhysicsAssetConstraints; }
+	void SetShowConstraints(bool bInShow) { RenderOptions.ShowFlags.bPhysicsAssetConstraints = bInShow; }
+	bool IsShowSkeleton() const { return RenderOptions.ShowFlags.bPhysicsAssetSkeleton; }
+	void SetShowSkeleton(bool bInShow) { RenderOptions.ShowFlags.bPhysicsAssetSkeleton = bInShow; }
 	bool IsSimulatingPhysics() const { return RenderOptions.ShowFlags.bPhysicsAssetSimulation; }
 	void SetSimulatePhysics(bool bInSimulate) { RenderOptions.ShowFlags.bPhysicsAssetSimulation = bInSimulate; }
 
@@ -70,6 +72,7 @@ private:
 	void TickInput(float DeltaTime);
 	void SyncCameraSmoothingTarget();
 	void ApplySmoothedCameraLocation(float DeltaTime);
+	void DrawPreviewSkeleton();
 	void DrawPreviewPhysicsAsset();
 
 private:
@@ -84,8 +87,6 @@ private:
 
 	bool bIsRenderable = false;
 	bool bShowPreviewMesh = true;
-	bool bShowBodies = true;
-	bool bShowConstraints = true;
 	int32 HighlightBodyIndex = -1;
 	EPhysicsAssetShapeType HighlightShapeType = EPhysicsAssetShapeType::Sphere;
 	int32 HighlightShapeIndex = -1;

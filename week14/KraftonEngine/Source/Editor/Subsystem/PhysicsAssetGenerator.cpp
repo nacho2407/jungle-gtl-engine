@@ -524,6 +524,76 @@ namespace
 
 		Body.AddSphere(Center, Radius);
 	}
+
+	int32 AddReferenceSkeletonFallbackBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh, const TArray<FMatrix>& ReferenceGlobals,
+		const FPhysicsAssetCreationParams& Params, float EffectiveMinBoneSize, float MinExtent, float ModelSize)
+	{
+		const int32 NumBones = static_cast<int32>(Mesh.Bones.size());
+		const float SegmentThreshold = std::max(EffectiveMinBoneSize, MinExtent * 2.0f);
+		int32 CreatedCount = 0;
+		int32 FirstUsableBone = -1;
+
+		for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+		{
+			if (IsExcludedAutoBodyBone(Mesh.Bones[BoneIndex].Name))
+			{
+				continue;
+			}
+
+			if (FirstUsableBone < 0)
+			{
+				FirstUsableBone = BoneIndex;
+			}
+
+			if (IsLeadingSingleChildHelperBone(Mesh, BoneIndex))
+			{
+				continue;
+			}
+
+			FVector BoneAxis = FVector::ZAxisVector;
+			float BoneSegmentLength = 0.0f;
+			const int32 ChildCount = FindChildSegmentLocal(
+				Mesh,
+				ReferenceGlobals,
+				BoneIndex,
+				Params.bWalkPastSmallBones,
+				SegmentThreshold,
+				BoneAxis,
+				BoneSegmentLength);
+
+			if (ChildCount <= 0 || BoneSegmentLength < SegmentThreshold)
+			{
+				continue;
+			}
+
+			if (UBodySetup* Body = Asset.CreateBodySetup(FName(Mesh.Bones[BoneIndex].Name)))
+			{
+				AddBoneSegmentPrimitive(*Body, Params.PrimitiveType, BoneAxis, BoneSegmentLength, MinExtent);
+				++CreatedCount;
+			}
+		}
+
+		if (CreatedCount == 0 && FirstUsableBone >= 0)
+		{
+			FVector Axis = FVector::ZAxisVector;
+			float Length = std::max(ModelSize * 0.1f, MinExtent * 4.0f);
+			FVector ParentAwayAxis = FVector::ZAxisVector;
+			float ParentLength = 0.0f;
+			if (FindParentSegmentLocal(Mesh, ReferenceGlobals, FirstUsableBone, ParentAwayAxis, ParentLength))
+			{
+				Axis = ParentAwayAxis;
+				Length = std::max(ParentLength, Length);
+			}
+
+			if (UBodySetup* Body = Asset.CreateBodySetup(FName(Mesh.Bones[FirstUsableBone].Name)))
+			{
+				AddBoneSegmentPrimitive(*Body, Params.PrimitiveType, Axis, Length, MinExtent);
+				++CreatedCount;
+			}
+		}
+
+		return CreatedCount;
+	}
 	
 	// Editor enum → Engine enum
 	EAngularConstraintMode MapAngularMode(EPhysicsAssetConstraintMode In)
@@ -857,6 +927,10 @@ void GeneratePhysicsAssetBodies(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh,
 		}
 	}
 
+	if (Asset.GetBodySetups().empty() && !Params.bCreateBodyForAllBones)
+	{
+		AddReferenceSkeletonFallbackBodies(Asset, Mesh, ReferenceGlobals, Params, EffectiveMinBoneSize, MinExtent, ModelSize);
+	}
 }
 
 void GeneratePhysicsAssetConstraints(UPhysicsAsset& Asset, const FSkeletalMesh& Mesh, const FPhysicsAssetCreationParams& Params)

@@ -73,6 +73,9 @@ struct FShowFlags
 	bool bCollision = true;
 	bool bShowCollisionShape = false;	// PIE/Game에서 콘솔로 콜리전 shape 와이어프레임 강제 표시
 	bool bParticle = true;
+	bool bPhysicsAssetBodies = true;
+	bool bPhysicsAssetConstraints = true;
+	bool bPhysicsAssetSkeleton = false;
 	bool bPhysicsAssetSimulation = false; // Physics Asset Editor preview simulation toggle
 };
 

@@ -19,6 +19,14 @@ enum class EPhysicsAssetEditorMode : uint8
 	Preview
 };
 
+enum class EPhysicsAssetEditorViewPreset : uint8
+{
+	Skeletal,
+	Bones,
+	Physics,
+	Custom
+};
+
 struct FPhysicsAssetEditorSelection
 {
 	EPhysicsAssetEditorSelectionType Type = EPhysicsAssetEditorSelectionType::None;

@@ -33,7 +33,6 @@ public:
 
 private:
 	void RenderModeToolbar(UPhysicsAsset* Asset);
-	void RenderAssetDetailsPanel(UPhysicsAsset* Asset);
 	void RenderViewportPanel(UPhysicsAsset* Asset, ImVec2 Size);
 	void RenderSolidBodiesOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos, const ImVec2& ViewportSize, UPhysicsAsset* Asset) const;
 	void RenderPhysicsListPanel(UPhysicsAsset* Asset, ImVec2 Size);
@@ -45,6 +44,8 @@ private:
 	void RenderShapeDetails(UPhysicsAsset* Asset, UBodySetup* Body);
 	void RenderConstraintDetails(UPhysicsAsset* Asset);
 	bool RegenerateBodies(UPhysicsAsset* Asset);
+	void SetEditorMode(EPhysicsAssetEditorMode Mode);
+	void ApplyViewPreset(EPhysicsAssetEditorViewPreset Preset);
 	void TickPreviewSimulation(float DeltaTime);
 	void CapturePreviewSimulationStartPose();
 	void RestorePreviewSimulationStartPose();
@@ -63,6 +64,7 @@ private:
 	FPhysicsAssetEditorViewportClient ViewportClient;
 	FPhysicsAssetEditorSelection Selection;
 	EPhysicsAssetEditorMode ActiveMode = EPhysicsAssetEditorMode::Body;
+	EPhysicsAssetEditorViewPreset ActiveViewPreset = EPhysicsAssetEditorViewPreset::Physics;
 
 	USkeletalMesh* PreviewMesh = nullptr;
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
@@ -71,7 +73,6 @@ private:
 	float HierarchyWidth = 380.0f;
 	float DetailsWidth = 380.0f;
 	float ViewportListHeight = 220.0f;
-	float AssetDetailsHeight = 150.0f;
 	float GraphHeight = 190.0f;
 	float ToolsHeight = 330.0f;
 	FPhysicsAssetCreationParams BodyCreationParams;

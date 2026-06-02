@@ -48,6 +48,7 @@ struct FViewportToolbarContext
 	bool bShowCameraControls = true;
 	bool bShowViewMode = true;
 	bool bShowShowFlags = true;
+	bool bShowPhysicsAssetShowFlags = false;
 
 	int32 SlotIndex = 0;
 	ID3D11ShaderResourceView** LayoutIcons = nullptr;

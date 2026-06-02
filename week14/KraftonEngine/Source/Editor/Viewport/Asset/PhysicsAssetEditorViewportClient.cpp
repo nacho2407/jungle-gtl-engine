@@ -1,8 +1,11 @@
 #include "Editor/Viewport/Asset/PhysicsAssetEditorViewportClient.h"
 
 #include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Debug/DrawDebugHelpers.h"
 #include "Input/InputSystem.h"
 #include "Math/MathUtils.h"
+#include "Mesh/Skeletal/SkeletalMesh.h"
+#include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Physics/BodySetup.h"
 #include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsAssetDebugDraw.h"
@@ -400,6 +403,7 @@ bool FPhysicsAssetEditorViewportClient::GetCameraView(FMinimalViewInfo& OutPOV) 
 
 void FPhysicsAssetEditorViewportClient::SubmitFrameDebugDraw()
 {
+	DrawPreviewSkeleton();
 	DrawPreviewPhysicsAsset();
 }
 
@@ -512,16 +516,61 @@ void FPhysicsAssetEditorViewportClient::ApplySmoothedCameraLocation(float DeltaT
 	bLastAppliedCameraLocationInitialized = true;
 }
 
+void FPhysicsAssetEditorViewportClient::DrawPreviewSkeleton()
+{
+	if (!IsShowSkeleton() || !PreviewWorld || !PreviewMeshComponent)
+	{
+		return;
+	}
+
+	const USkeletalMesh* Mesh = PreviewMeshComponent->GetSkeletalMesh();
+	const FSkeletalMesh* MeshAsset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+	if (!MeshAsset)
+	{
+		return;
+	}
+
+	const FColor BoneLineColor(255, 198, 64, 255);
+	const FColor JointColor(64, 180, 255, 255);
+
+	for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(MeshAsset->Bones.size()); ++BoneIndex)
+	{
+		const int32 ParentIndex = MeshAsset->Bones[BoneIndex].ParentIndex;
+		if (ParentIndex < 0 || ParentIndex >= static_cast<int32>(MeshAsset->Bones.size()))
+		{
+			continue;
+		}
+
+		FMatrix ParentMatrix;
+		FMatrix BoneMatrix;
+		if (!PreviewMeshComponent->GetBoneWorldMatrixByIndex(ParentIndex, ParentMatrix)
+			|| !PreviewMeshComponent->GetBoneWorldMatrixByIndex(BoneIndex, BoneMatrix))
+		{
+			continue;
+		}
+
+		const FVector ParentPos = ParentMatrix.GetLocation();
+		const FVector BonePos = BoneMatrix.GetLocation();
+		if (FVector::DistSquared(ParentPos, BonePos) < 1.e-6f)
+		{
+			continue;
+		}
+
+		DrawDebugLine(PreviewWorld, ParentPos, BonePos, BoneLineColor, 0.0f);
+		DrawDebugPoint(PreviewWorld, BonePos, 0.03f, JointColor, 0.0f);
+	}
+}
+
 void FPhysicsAssetEditorViewportClient::DrawPreviewPhysicsAsset()
 {
-	if (!PreviewWorld || !PhysicsAsset || !PreviewMeshComponent || (!bShowBodies && !bShowConstraints))
+	if (!PreviewWorld || !PhysicsAsset || !PreviewMeshComponent || (!IsShowBodies() && !IsShowConstraints()))
 	{
 		return;
 	}
 
 	FPhysicsAssetDebugDrawOptions Options;
 	Options.bDrawBodies = false;
-	Options.bDrawConstraints = bShowConstraints;
+	Options.bDrawConstraints = IsShowConstraints();
 	Options.HighlightBodyIndex = HighlightBodyIndex;
 	Options.HighlightShapeType = HighlightShapeType;
 	Options.HighlightShapeIndex = HighlightShapeIndex;
