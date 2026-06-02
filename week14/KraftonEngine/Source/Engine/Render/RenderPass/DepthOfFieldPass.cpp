@@ -1,4 +1,4 @@
-#include "DepthOfFieldPass.h"
+﻿#include "DepthOfFieldPass.h"
 #include "RenderPassRegistry.h"
 
 #include "Render/Device/D3DDevice.h"
@@ -43,8 +43,11 @@ namespace
 	}
 
 	constexpr float WorldUnitToMillimeters = 1000.0f;
-	constexpr float MaxForegroundRadiusScreenFraction = 0.025f;
+	constexpr float MaxForegroundRadiusScreenFraction = 0.018f;
 	constexpr float MaxBackgroundRadiusScreenFraction = 0.025f;
+	constexpr float ForegroundIntensity = 0.65f;
+	constexpr uint32 MaxGatherRingCount = 10u;
+	constexpr uint32 MaxGatherSamplesPerRing = 32u;
 
 	struct FCompiledDofSettings
 	{
@@ -88,7 +91,8 @@ namespace
 		const float HorizontalTanHalf = (std::max)(std::tan(HorizontalFov * 0.5f), 0.0001f);
 		const float FocalLengthMm = 0.5f * SensorWidthMm / HorizontalTanHalf;
 		const float FocusDistanceMm = (std::max)(Settings.FocusDistance, 0.001f) * WorldUnitToMillimeters;
-		const float FocusMinusFocalMm = (std::max)(FocusDistanceMm - FocalLengthMm, 0.001f);
+		const float MinFocusMinusFocalMm = (std::max)(FocalLengthMm * 0.05f, 0.001f);
+		const float FocusMinusFocalMm = (std::max)(FocusDistanceMm - FocalLengthMm, MinFocusMinusFocalMm);
 		const float InfinityCocDiameterMm = (FocalLengthMm * FocalLengthMm) / (FStop * FocusMinusFocalMm);
 		const float CocRadiusNormalized = (InfinityCocDiameterMm * 0.5f) / SensorWidthMm;
 		return CocRadiusNormalized * static_cast<float>((std::max)(SourceWidth, 1u));
@@ -216,8 +220,9 @@ void FDepthOfFieldPass::Execute(const FPassContext& Ctx)
 	const uint32 DofHeight = bHalfRes ? (std::max)(1u, SourceHeight / 2u) : SourceHeight;
 
 	EnsureResources(Device, DofWidth, DofHeight);
-	if (!SetupTarget.RTV || !SetupTarget.SRV || !BackgroundTarget.RTV || !BackgroundTarget.SRV ||
-		!ForegroundTarget.RTV || !ForegroundTarget.SRV)
+	if (!BackgroundSetupTarget.RTV || !BackgroundSetupTarget.SRV || !ForegroundSetupTarget.RTV || !ForegroundSetupTarget.SRV ||
+		!BackgroundTarget.RTV || !BackgroundTarget.SRV || !ForegroundTarget.RTV || !ForegroundTarget.SRV ||
+		!ForegroundHoleFillTarget.RTV || !ForegroundHoleFillTarget.SRV)
 	{
 		return;
 	}
@@ -228,6 +233,18 @@ void FDepthOfFieldPass::Execute(const FPassContext& Ctx)
 	}
 
 	FDepthOfFieldConstants DofData = {};
+	const float TargetRadiusScale = SourceWidth > 0 ? static_cast<float>(DofWidth) / static_cast<float>(SourceWidth) : 1.0f;
+	const float MaxTargetRadius = (std::max)(CompiledDof.MaxForegroundRadiusPixels, CompiledDof.MaxBackgroundRadiusPixels) * TargetRadiusScale;
+	const uint32 RequestedGatherRingCount = ClampUInt(DofSettings.GatherRingCount, 1u, MaxGatherRingCount);
+	const uint32 RequestedGatherSamplesPerRing = ClampUInt(DofSettings.GatherSamplesPerRing, 4u, MaxGatherSamplesPerRing);
+	const uint32 RadiusDrivenRingCount = ClampUInt(static_cast<int32>(std::ceil(MaxTargetRadius / 4.5f)), 1u, MaxGatherRingCount);
+	const uint32 RadiusDrivenSamplesPerRing = ClampUInt(static_cast<int32>(std::ceil(MaxTargetRadius * 0.65f)), 4u, MaxGatherSamplesPerRing);
+	const uint32 GatherRingCount = (std::max)(RequestedGatherRingCount, RadiusDrivenRingCount);
+	const uint32 GatherSamplesPerRing = (std::max)(RequestedGatherSamplesPerRing, RadiusDrivenSamplesPerRing);
+	const float RingSpacing = MaxTargetRadius / (std::max)(static_cast<float>(GatherRingCount), 1.0f);
+	const float GatherTransitionWidth = (std::max)(RingSpacing * 0.9f, 1.25f);
+	const float GatherSharpness = ClampFloat(1.0f / GatherTransitionWidth, 0.03f, 0.8f);
+
 	DofData.TexelSize = FVector4(
 		SourceWidth > 0 ? 1.0f / static_cast<float>(SourceWidth) : 0.0f,
 		SourceHeight > 0 ? 1.0f / static_cast<float>(SourceHeight) : 0.0f,
@@ -241,21 +258,22 @@ void FDepthOfFieldPass::Execute(const FPassContext& Ctx)
 	DofData.DepthParams = FVector4(
 		(std::max)(Frame.NearClip, 0.001f),
 		(std::max)(Frame.FarClip, Frame.NearClip + 0.001f),
-		SourceWidth > 0 ? static_cast<float>(DofWidth) / static_cast<float>(SourceWidth) : 1.0f,
-		1.0f);
-	DofData.GatherRingCount = ClampUInt(DofSettings.GatherRingCount, 1u, 5u);
-	DofData.GatherSamplesPerRing = ClampUInt(DofSettings.GatherSamplesPerRing, 4u, 16u);
+		TargetRadiusScale,
+		GatherSharpness);
+	DofData.GatherRingCount = GatherRingCount;
+	DofData.GatherSamplesPerRing = GatherSamplesPerRing;
 	DofData.bEnableForeground = DofSettings.bEnableForeground ? 1u : 0u;
 	DofData.bEnableBackground = DofSettings.bEnableBackground ? 1u : 0u;
 	DofData.DebugView = static_cast<uint32>(Frame.RenderOptions.DofDebugView);
 	DofData.bHalfRes = bHalfRes ? 1u : 0u;
 	DofData.SlightFocusRadius = ClampFloat(0.75f, 0.01f, 4.0f);
+	DofData.ForegroundIntensity = ForegroundIntensity;
 	DofCB.Update(DC, &DofData, sizeof(DofData));
 
 	ID3D11Buffer* DofCBRaw = DofCB.GetBuffer();
 	ID3D11ShaderResourceView* NullSRV = nullptr;
 	ID3D11RenderTargetView* NullRTV = nullptr;
-	ID3D11ShaderResourceView* NullDofSRVs[3] = {};
+	ID3D11ShaderResourceView* NullDofSRVs[5] = {};
 
 	Ctx.Resources.SetDepthStencilState(Ctx.Device, EDepthStencilState::NoDepth);
 	Ctx.Resources.SetBlendState(Ctx.Device, EBlendState::Opaque);
@@ -281,9 +299,10 @@ void FDepthOfFieldPass::Execute(const FPassContext& Ctx)
 	SceneViewport.MinDepth = 0.0f;
 	SceneViewport.MaxDepth = 1.0f;
 
-	// 1. Setup: full-res SceneColor + SceneDepth -> DOF processing buffer (RGB + signed CoC).
+	// 1. Setup: full-res SceneColor + SceneDepth -> separated background/foreground DOF setup buffers.
 	DC->RSSetViewports(1, &DofViewport);
-	DC->OMSetRenderTargets(1, &SetupTarget.RTV, nullptr);
+	ID3D11RenderTargetView* SetupRTVs[2] = { BackgroundSetupTarget.RTV, ForegroundSetupTarget.RTV };
+	DC->OMSetRenderTargets(2, SetupRTVs, nullptr);
 	DC->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &Frame.SceneColorCopySRV);
 	DC->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &Frame.DepthCopySRV);
 	SetupShader->Bind(DC);
@@ -291,16 +310,18 @@ void FDepthOfFieldPass::Execute(const FPassContext& Ctx)
 	DC->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &NullSRV);
 	DC->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &NullSRV);
 
-	// 2. Ring gather: separated background and foreground bokeh accumulations.
-	ID3D11RenderTargetView* GatherRTVs[2] = { BackgroundTarget.RTV, ForegroundTarget.RTV };
+	// 2. Ring gather: separated background, foreground, and foreground hole-fill bokeh accumulations.
+	ID3D11RenderTargetView* GatherRTVs[3] = { BackgroundTarget.RTV, ForegroundTarget.RTV, ForegroundHoleFillTarget.RTV };
 	const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	DC->ClearRenderTargetView(BackgroundTarget.RTV, ClearColor);
 	DC->ClearRenderTargetView(ForegroundTarget.RTV, ClearColor);
-	DC->OMSetRenderTargets(2, GatherRTVs, nullptr);
-	DC->PSSetShaderResources(ESystemTexSlot::DofSetup, 1, &SetupTarget.SRV);
+	DC->ClearRenderTargetView(ForegroundHoleFillTarget.RTV, ClearColor);
+	DC->OMSetRenderTargets(3, GatherRTVs, nullptr);
+	DC->PSSetShaderResources(ESystemTexSlot::DofSetup, 1, &BackgroundSetupTarget.SRV);
+	DC->PSSetShaderResources(ESystemTexSlot::DofForegroundSetup, 1, &ForegroundSetupTarget.SRV);
 	GatherShader->Bind(DC);
 	DrawFullscreenTriangle(DC);
-	DC->PSSetShaderResources(ESystemTexSlot::DofSetup, 1, &NullSRV);
+	DC->PSSetShaderResources(ESystemTexSlot::DofSetup, 2, NullDofSRVs);
 	DC->OMSetRenderTargets(1, &NullRTV, nullptr);
 
 	// 3. Recombine: original full-res SceneColor + foreground/background DOF -> viewport SceneColor.
@@ -308,15 +329,17 @@ void FDepthOfFieldPass::Execute(const FPassContext& Ctx)
 	DC->OMSetRenderTargets(1, &Ctx.Cache.RTV, Ctx.Cache.DSV);
 	DC->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &Frame.SceneColorCopySRV);
 	DC->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &Frame.DepthCopySRV);
-	DC->PSSetShaderResources(ESystemTexSlot::DofSetup, 1, &SetupTarget.SRV);
+	DC->PSSetShaderResources(ESystemTexSlot::DofSetup, 1, &BackgroundSetupTarget.SRV);
+	DC->PSSetShaderResources(ESystemTexSlot::DofForegroundSetup, 1, &ForegroundSetupTarget.SRV);
 	DC->PSSetShaderResources(ESystemTexSlot::DofBackground, 1, &BackgroundTarget.SRV);
 	DC->PSSetShaderResources(ESystemTexSlot::DofForeground, 1, &ForegroundTarget.SRV);
+	DC->PSSetShaderResources(ESystemTexSlot::DofForegroundHoleFill, 1, &ForegroundHoleFillTarget.SRV);
 	RecombineShader->Bind(DC);
 	DrawFullscreenTriangle(DC);
 
 	DC->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &NullSRV);
 	DC->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &NullSRV);
-	DC->PSSetShaderResources(ESystemTexSlot::DofSetup, 3, NullDofSRVs);
+	DC->PSSetShaderResources(ESystemTexSlot::DofSetup, 5, NullDofSRVs);
 
 	ID3D11Buffer* NullCB = nullptr;
 	DC->VSSetConstantBuffers(ECBSlot::PerShader0, 1, &NullCB);
@@ -327,18 +350,19 @@ void FDepthOfFieldPass::Execute(const FPassContext& Ctx)
 
 void FDepthOfFieldPass::EndPass(const FPassContext& Ctx)
 {
-	ID3D11ShaderResourceView* NullSRVs[3] = {};
+	ID3D11ShaderResourceView* NullSRVs[5] = {};
 	ID3D11ShaderResourceView* NullSRV = nullptr;
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
 	DC->PSSetShaderResources(ESystemTexSlot::SceneColor, 1, &NullSRV);
 	DC->PSSetShaderResources(ESystemTexSlot::SceneDepth, 1, &NullSRV);
-	DC->PSSetShaderResources(ESystemTexSlot::DofSetup, 3, NullSRVs);
+	DC->PSSetShaderResources(ESystemTexSlot::DofSetup, 5, NullSRVs);
 }
 
 void FDepthOfFieldPass::EnsureResources(ID3D11Device* Device, uint32 Width, uint32 Height)
 {
 	if (TargetWidth == Width && TargetHeight == Height &&
-		SetupTarget.Texture && BackgroundTarget.Texture && ForegroundTarget.Texture)
+		BackgroundSetupTarget.Texture && ForegroundSetupTarget.Texture &&
+		BackgroundTarget.Texture && ForegroundTarget.Texture && ForegroundHoleFillTarget.Texture)
 	{
 		return;
 	}
@@ -347,16 +371,20 @@ void FDepthOfFieldPass::EnsureResources(ID3D11Device* Device, uint32 Width, uint
 	TargetWidth = Width;
 	TargetHeight = Height;
 
-	SetupTarget.Create(Device, Width, Height, "DofSetupTexture");
+	BackgroundSetupTarget.Create(Device, Width, Height, "DofBackgroundSetupTexture");
+	ForegroundSetupTarget.Create(Device, Width, Height, "DofForegroundSetupTexture");
 	BackgroundTarget.Create(Device, Width, Height, "DofBackgroundTexture");
 	ForegroundTarget.Create(Device, Width, Height, "DofForegroundTexture");
+	ForegroundHoleFillTarget.Create(Device, Width, Height, "DofForegroundHoleFillTexture");
 }
 
 void FDepthOfFieldPass::ReleaseResources()
 {
-	SetupTarget.Release();
+	BackgroundSetupTarget.Release();
+	ForegroundSetupTarget.Release();
 	BackgroundTarget.Release();
 	ForegroundTarget.Release();
+	ForegroundHoleFillTarget.Release();
 	DofCB.Release();
 	TargetWidth = 0;
 	TargetHeight = 0;

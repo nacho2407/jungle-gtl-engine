@@ -73,13 +73,16 @@ namespace ESystemTexSlot
 	constexpr uint32 SpotShadowDatas    = 24;  // t24: StructuredBuffer<FSpotShadowDataGPU>
 	constexpr uint32 PointShadowDatas   = 25;  // t25: StructuredBuffer<FPointShadowDataGPU>
 	constexpr uint32 Bloom              = 26;  // t26: Bloom ping-pong texture
-	constexpr uint32 DofSetup           = 27;  // t27: DOF setup color + signed CoC
-	constexpr uint32 DofBackground      = 28;  // t28: DOF background gather result
-	constexpr uint32 DofForeground      = 29;  // t29: DOF foreground gather result
+	constexpr uint32 DofBackgroundSetup = 27;  // t27: DOF background setup color + positive CoC
+	constexpr uint32 DofForegroundSetup = 28;  // t28: DOF foreground setup color + positive CoC
+	constexpr uint32 DofBackground      = 29;  // t29: DOF background gather result
+	constexpr uint32 DofForeground      = 30;  // t30: DOF foreground gather result
+	constexpr uint32 DofForegroundHoleFill = 31;  // t31: DOF foreground hole-fill result
 
 	// 하위 호환용 별칭
 	constexpr uint32 ShadowMap = ShadowMapCSM;
 	constexpr uint32 SpotLightAtlas = ShadowMapSpotAtlas;
+	constexpr uint32 DofSetup = DofBackgroundSetup;
 }
 
 // HLSL 시스템 샘플러 슬롯 — Renderer가 프레임 시작 시 영구 바인딩
@@ -279,14 +282,14 @@ struct FDepthOfFieldConstants
 	FVector4 FocusParams;
 	// x = near clip, y = far clip, z = target/source radius scale, w = gather sharpness
 	FVector4 DepthParams;
-	uint32 GatherRingCount = 3;
-	uint32 GatherSamplesPerRing = 8;
+	uint32 GatherRingCount = 6;
+	uint32 GatherSamplesPerRing = 20;
 	uint32 bEnableForeground = 1;
 	uint32 bEnableBackground = 1;
 	uint32 DebugView = 0;
 	uint32 bHalfRes = 1;
 	float SlightFocusRadius = 0.75f;
-	float Pad = 0.0f;
+	float ForegroundIntensity = 0.65f;
 };
 
 struct FGammaCorrectionConstants

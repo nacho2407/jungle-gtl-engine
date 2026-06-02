@@ -114,8 +114,8 @@ struct FViewportRenderOptions
 	float DofFocusDistance = 10.0f;
 	float DofFStop = 4.0f;
 	float DofSensorWidth = 24.576f;
-	int32 DofGatherRingCount = 3;
-	int32 DofGatherSamplesPerRing = 8;
+	int32 DofGatherRingCount = 6;
+	int32 DofGatherSamplesPerRing = 20;
 	bool bDofForegroundEnabled = true;
 	bool bDofBackgroundEnabled = true;
 	bool bDofHalfRes = true;
