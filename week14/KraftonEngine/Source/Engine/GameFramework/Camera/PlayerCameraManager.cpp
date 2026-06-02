@@ -592,8 +592,8 @@ FMinimalViewInfo APlayerCameraManager::LerpPOV(const FMinimalViewInfo& From, con
 	ResultDof.FocusDistance = LerpFloat(FromDof.FocusDistance, ToDof.FocusDistance);
 	ResultDof.FStop = LerpFloat(FromDof.FStop, ToDof.FStop);
 	ResultDof.SensorWidth = LerpFloat(FromDof.SensorWidth, ToDof.SensorWidth);
-	ResultDof.GatherRingCount = Alpha < 0.5f ? FromDof.GatherRingCount : ToDof.GatherRingCount;
-	ResultDof.GatherSamplesPerRing = Alpha < 0.5f ? FromDof.GatherSamplesPerRing : ToDof.GatherSamplesPerRing;
+	ResultDof.GatherRingCount = (std::max)(FromDof.GatherRingCount, ToDof.GatherRingCount);
+	ResultDof.GatherSamplesPerRing = (std::max)(FromDof.GatherSamplesPerRing, ToDof.GatherSamplesPerRing);
 	ResultDof.bEnableForeground = Alpha < 0.5f ? FromDof.bEnableForeground : ToDof.bEnableForeground;
 	ResultDof.bEnableBackground = Alpha < 0.5f ? FromDof.bEnableBackground : ToDof.bEnableBackground;
 	ResultDof.bHalfRes = Alpha < 0.5f ? FromDof.bHalfRes : ToDof.bHalfRes;

@@ -12,6 +12,7 @@ public:
 	FClothSceneProxy(UClothComponent* InComponent);
 
 public:
+	void UpdateMaterial() override;
 	void UpdateMesh() override;
 
 	bool PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context,

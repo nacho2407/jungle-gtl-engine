@@ -591,20 +591,24 @@ void FMaterialManager::ApplyTextures(UMaterialInterface* Material, json::JSON& J
 	{
 		FString SlotName = Pair.first.c_str();
 		FString TexturePath = Pair.second.ToString().c_str();
-		const bool bIsColorTexture =
-			SlotName == "DiffuseTexture" ||
-			SlotName == "EmissiveTexture" ||
-			SlotName == "Custom0Texture" ||
-			SlotName == "Custom1Texture";
 
-		UTexture2D* Texture = UTexture2D::LoadFromFile(
-			TexturePath,
-			Device,
-			bIsColorTexture ? ETextureColorSpace::SRGB : ETextureColorSpace::Linear);
-		if (Texture)
+		UTexture2D* Texture = nullptr;
+
+		if (!TexturePath.empty() && TexturePath != "None")
 		{
-			Material->SetTextureParameter(SlotName, Texture);
+			const bool bIsColorTexture =
+				SlotName == "DiffuseTexture" ||
+				SlotName == "EmissiveTexture" ||
+				SlotName == "Custom0Texture" ||
+				SlotName == "Custom1Texture";
+
+			Texture = UTexture2D::LoadFromFile(
+				TexturePath,
+				Device,
+				bIsColorTexture ? ETextureColorSpace::SRGB : ETextureColorSpace::Linear);
 		}
+
+		Material->SetTextureParameter(SlotName, Texture);
 	}
 }
 

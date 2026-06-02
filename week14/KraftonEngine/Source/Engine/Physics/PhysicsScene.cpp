@@ -1,4 +1,4 @@
-#include "Physics/PhysicsScene.h"
+﻿#include "Physics/PhysicsScene.h"
 #include "Physics/PhysXSDK.h"
 #include "Physics/BodyInstance.h"
 #include "Physics/ConstraintInstance.h"
@@ -371,7 +371,7 @@ bool FPhysicsScene::CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, FBodyIns
 
 	TArray<physx::PxShape*> Shapes;
 	FPhysicsShapeFactory::CreateShapesFromBodySetup(*Physics, *DefaultMaterial, BodySetup,
-		Scale, OwnerComp, bTrigger, Shapes, &FilterData);
+		Scale, OwnerComp, bTrigger, bSimulatePhysics, Shapes, &FilterData);
 
 	if (Shapes.empty())
 	{
@@ -524,7 +524,19 @@ void FPhysicsScene::GatherClothCollision(const FClothCollisionGatherParams& Para
 		if (!BodyInstance || !BodyInstance->Body) continue;
 
 		UPrimitiveComponent* OwnerComp = BodyInstance->OwnerComponent;
-		if (!OwnerComp || OwnerComp == Params.IgnoreComponent) continue;
+		if (!OwnerComp) continue;
+
+		bool bIgnoredComponent = OwnerComp == Params.IgnoreComponent;
+		for (const UPrimitiveComponent* IgnoredComponent : Params.IgnoreComponents)
+		{
+			if (OwnerComp == IgnoredComponent)
+			{
+				bIgnoredComponent = true;
+				break;
+			}
+		}
+
+		if (bIgnoredComponent) continue;
 
 		if (OwnerComp->GetOwner() == Params.IgnoreActor) continue;
 

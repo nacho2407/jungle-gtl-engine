@@ -16,7 +16,7 @@ public:
 		UPrimitiveComponent* Component, bool bTrigger, TArray<physx::PxShape*>& OutShapes);
 	static void CreateShapesFromBodySetup(physx::PxPhysics& Physics, physx::PxMaterial& Material,
 		const UBodySetup& BodySetup, const FVector& Scale, UPrimitiveComponent* UserDataComponent,
-		bool bTrigger, TArray<physx::PxShape*>& OutShapes, const physx::PxFilterData* FilterDataOverride = nullptr);
+		bool bTrigger, bool bSimulatePhysics, TArray<physx::PxShape*>& OutShapes, const physx::PxFilterData* FilterDataOverride = nullptr);
 
 private:
 	static void CreateShapesForStaticMeshComponent(physx::PxPhysics& Physics, physx::PxMaterial& Material,

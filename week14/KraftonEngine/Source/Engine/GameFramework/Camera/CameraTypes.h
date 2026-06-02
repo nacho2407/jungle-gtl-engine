@@ -84,8 +84,8 @@ struct FCameraDepthOfFieldSettings
 	float FocusDistance = 10.0f;
 	float FStop = 4.0f;
 	float SensorWidth = 24.576f;
-	int32 GatherRingCount = 3;
-	int32 GatherSamplesPerRing = 8;
+	int32 GatherRingCount = 6;
+	int32 GatherSamplesPerRing = 20;
 	bool bEnableForeground = true;
 	bool bEnableBackground = true;
 	bool bHalfRes = true;

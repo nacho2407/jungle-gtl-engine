@@ -68,8 +68,8 @@ private:
 	UPROPERTY(Edit, Save, Category="Depth Of Field", DisplayName="Focus Distance", Member=DepthOfField.FocusDistance, Type=Float, Min=0.01f, Max=100000.0f, Speed=0.1f);
 	UPROPERTY(Edit, Save, Category="Depth Of Field", DisplayName="F-Stop", Member=DepthOfField.FStop, Type=Float, Min=0.1f, Max=32.0f, Speed=0.05f);
 	UPROPERTY(Edit, Save, Category="Depth Of Field", DisplayName="Sensor Width", Member=DepthOfField.SensorWidth, Type=Float, Min=0.1f, Max=1000.0f, Speed=0.1f);
-	UPROPERTY(Edit, Save, Category="Depth Of Field", DisplayName="Gather Rings", Member=DepthOfField.GatherRingCount, Type=Int, Min=1, Max=5, Speed=1.0f);
-	UPROPERTY(Edit, Save, Category="Depth Of Field", DisplayName="Samples Per Ring", Member=DepthOfField.GatherSamplesPerRing, Type=Int, Min=4, Max=16, Speed=1.0f);
+	UPROPERTY(Edit, Save, Category="Depth Of Field", DisplayName="Gather Rings", Member=DepthOfField.GatherRingCount, Type=Int, Min=1, Max=10, Speed=1.0f);
+	UPROPERTY(Edit, Save, Category="Depth Of Field", DisplayName="Samples Per Ring", Member=DepthOfField.GatherSamplesPerRing, Type=Int, Min=4, Max=32, Speed=1.0f);
 	UPROPERTY(Edit, Save, Category="Depth Of Field", DisplayName="Foreground", Member=DepthOfField.bEnableForeground, Type=Bool);
 	UPROPERTY(Edit, Save, Category="Depth Of Field", DisplayName="Background", Member=DepthOfField.bEnableBackground, Type=Bool);
 	UPROPERTY(Edit, Save, Category="Depth Of Field", DisplayName="Half Res", Member=DepthOfField.bHalfRes, Type=Bool);
