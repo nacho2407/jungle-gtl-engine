@@ -59,6 +59,8 @@ USkeletalMeshComponent::~USkeletalMeshComponent()
     DestroyRagdollConstraints();
     DestroyRagdollBodies();
     ClearRagdollComponentSyncState();
+    ClearRagdollComponentMoveState();
+    ClearRagdollRecoveryState();
     ClearAnimInstance();
 }
 
@@ -69,9 +71,9 @@ FPrimitiveSceneProxy* USkeletalMeshComponent::CreateSceneProxy()
 
 void USkeletalMeshComponent::SetSkeletalMesh(USkeletalMesh* InMesh)
 {
-    if (bRagdollActive)
+    if (bRagdollActive || bRagdollRecovering)
     {
-        SetRagdollEnabled(false);
+        ForceStopRagdollWithoutRecovery();
     }
 
     Super::SetSkeletalMesh(InMesh);
@@ -226,11 +228,46 @@ void USkeletalMeshComponent::SetRagdollEnabled(bool bEnabled)
     else DisableRagdollPhysics();
 }
 
+void USkeletalMeshComponent::EnablePartialRagdollBelow(FName BoneName)
+{
+    SetRagdollEnabled(true);
+
+    if (!bRagdollActive || Bodies.empty())
+    {
+        return;
+    }
+
+    SetAllBodiesSimulatePhysics(false);
+    SetAllBodiesBelowSimulatePhysics(BoneName, true);
+
+    SetAllBodiesPhysicsBlendWeight(0.0f);
+    SetAllBodiesBelowPhysicsBlendWeight(BoneName, 1.0f);
+
+    ApplyRagdollBodySimulationFlags();
+    SetSkeletalPhysicsMode(ESkeletalPhysicsMode::PartialRagdoll);
+}
+
+void USkeletalMeshComponent::SetSkeletalPhysicsMode(ESkeletalPhysicsMode NewMode)
+{
+    SkeletalPhysicsMode = NewMode;
+
+    bRagdollActive =
+        NewMode == ESkeletalPhysicsMode::FullRagdoll ||
+        NewMode == ESkeletalPhysicsMode::PartialRagdoll ||
+        NewMode == ESkeletalPhysicsMode::PhysicalAnimation;
+
+    bRagdollRecovering =
+        NewMode == ESkeletalPhysicsMode::Recovering;
+}
+
 void USkeletalMeshComponent::EnableRagdollPhysics()
 {
+    ClearRagdollRecoveryState();
+
     if (bRagdollActive)
     {
         bRagdollEnabled = true;
+        SetSkeletalPhysicsMode(ESkeletalPhysicsMode::FullRagdoll);
         return;
     }
 
@@ -241,15 +278,32 @@ void USkeletalMeshComponent::EnableRagdollPhysics()
     {
         DestroyRagdollConstraints();
         DestroyRagdollBodies();
-        bRagdollActive = false;
+        SetSkeletalPhysicsMode(ESkeletalPhysicsMode::AnimationOnly);
         bRagdollEnabled = false;
         ClearRagdollComponentSyncState();
+        ClearRagdollComponentMoveState();
+        ClearRagdollRecoveryState();
         UE_LOG("EnableRagdollPhysics failed: could not create ragdoll bodies");
         return;
     }
+    // Ragdoll + Animation Blend weight 초기화
+    EnsureRagdollPhysicsBlendWeights(1.0f);
+    SetAllBodiesPhysicsBlendWeight(1.0f);
+
+    // Ragdoll bone별 kinematic, dynamic 초기화
+    EnsureRagdollBodySimulateFlags(true);
+    SetAllBodiesSimulatePhysics(true);
 
     SetAllRagdollBodiesKinematic(false);
     SetAllRagdollBodiesGravityEnabled(true);
+
+	/*// Test용
+	SetAllBodiesSimulatePhysics(false);
+	SetAllBodiesPhysicsBlendWeight(0.0f);
+
+	SetAllBodiesBelowSimulatePhysics("Bip001 Spine", true, true);
+	SetAllBodiesBelowPhysicsBlendWeight("Bip001 Spine", 1.0f, true);
+	// 여기까지*/
 
     if (bCreateRagdollConstraints && !CreateRagdollConstraintsFromPhysicsAsset())
     {
@@ -257,9 +311,10 @@ void USkeletalMeshComponent::EnableRagdollPhysics()
     }
 
     CaptureRagdollComponentSyncOffset();
+    CacheRagdollComponentWorldMatrix();
 
-    bRagdollActive = true;
     bRagdollEnabled = true;
+    SetSkeletalPhysicsMode(ESkeletalPhysicsMode::FullRagdoll);
 
     WakeAllRagdollBodies();
 
@@ -270,8 +325,15 @@ void USkeletalMeshComponent::DisableRagdollPhysics()
 {
     if (!bRagdollActive && !bRagdollEnabled && Bodies.empty() && Constraints.empty())
     {
+        SetSkeletalPhysicsMode(ESkeletalPhysicsMode::AnimationOnly);
         ClearRagdollComponentSyncState();
+        ClearRagdollComponentMoveState();
         return;
+    }
+
+    if (bRagdollActive)
+    {
+        StartRagdollRecovery();
     }
 
     bRagdollActive = false;
@@ -280,8 +342,22 @@ void USkeletalMeshComponent::DisableRagdollPhysics()
     DestroyRagdollConstraints();
     DestroyRagdollBodies();
     ClearRagdollComponentSyncState();
+    ClearRagdollComponentMoveState();
 
     UE_LOG("Ragdoll disabled");
+}
+
+void USkeletalMeshComponent::ForceStopRagdollWithoutRecovery()
+{
+    SetSkeletalPhysicsMode(ESkeletalPhysicsMode::AnimationOnly);
+    bRagdollEnabled = false;
+
+    DestroyRagdollConstraints();
+    DestroyRagdollBodies();
+
+    ClearRagdollComponentSyncState();
+    ClearRagdollComponentMoveState();
+    ClearRagdollRecoveryState();
 }
 
 void USkeletalMeshComponent::SetAllRagdollBodiesKinematic(bool bInKinematic)
@@ -417,6 +493,193 @@ void USkeletalMeshComponent::ClearRagdollComponentSyncState()
     RagdollComponentSyncBoneIndex = -1;
     RagdollComponentSyncLocalOffset = FVector::ZeroVector;
     bHasRagdollComponentSyncOffset = false;
+}
+
+void USkeletalMeshComponent::CacheRagdollComponentWorldMatrix()
+{
+    LastRagdollComponentWorldMatrix = GetWorldMatrix();
+    bHasLastRagdollComponentWorldMatrix = true;
+}
+
+void USkeletalMeshComponent::ClearRagdollComponentMoveState()
+{
+    LastRagdollComponentWorldMatrix = FMatrix::Identity;
+    bHasLastRagdollComponentWorldMatrix = false;
+}
+
+void USkeletalMeshComponent::ApplyExternalComponentMoveToRagdollBodies()
+{
+    if (!bHasLastRagdollComponentWorldMatrix)
+    {
+        CacheRagdollComponentWorldMatrix();
+        return;
+    }
+
+    const FMatrix CurrentComponentWorldMatrix = GetWorldMatrix();
+    const FVector OldLocation = LastRagdollComponentWorldMatrix.GetLocation();
+    const FVector NewLocation = CurrentComponentWorldMatrix.GetLocation();
+    const FVector Delta = NewLocation - OldLocation;
+
+    if (Delta.IsNearlyZero())
+    {
+        return;
+    }
+
+    MoveAllRagdollBodiesByComponentDelta(Delta);
+}
+
+void USkeletalMeshComponent::MoveAllRagdollBodiesByComponentDelta(const FVector& Delta)
+{
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (!Body || !Body->IsValidBodyInstance())
+        {
+            continue;
+        }
+
+        FTransform BodyTransform = Body->GetBodyTransform();
+        BodyTransform.Location = BodyTransform.Location + Delta;
+        Body->SetBodyTransform(BodyTransform);
+        Body->WakeUp();
+    }
+}
+
+void USkeletalMeshComponent::TickRagdollPhysicsMode(float DeltaTime)
+{
+    ApplyExternalComponentMoveToRagdollBodies();
+    SyncComponentToRagdollBody();
+
+    if (!UpdateRagdollActivePose(DeltaTime))
+    {
+        SyncBonesFromRagdollBodies();
+    }
+
+    CacheRagdollComponentWorldMatrix();
+}
+
+void USkeletalMeshComponent::StartRagdollRecovery()
+{
+    ClearRagdollRecoveryState();
+
+    if (!bRagdollActive || Bodies.empty())
+    {
+        SetSkeletalPhysicsMode(ESkeletalPhysicsMode::AnimationOnly);
+        return;
+    }
+
+    SyncComponentToRagdollBody();
+    UpdateRagdollActivePose(0.0f);
+    CaptureCurrentBoneLocalPose(RagdollRecoveryStartLocalPose);
+
+    if (RagdollRecoveryStartLocalPose.empty())
+    {
+        ClearRagdollRecoveryState();
+        SetSkeletalPhysicsMode(ESkeletalPhysicsMode::AnimationOnly);
+        return;
+    }
+
+    RagdollRecoveryElapsed = 0.0f;
+    SetSkeletalPhysicsMode(ESkeletalPhysicsMode::Recovering);
+}
+
+bool USkeletalMeshComponent::TickRagdollRecovery(float DeltaTime)
+{
+    if (!bRagdollRecovering)
+    {
+        return false;
+    }
+
+    if (RagdollRecoveryDuration <= 0.0f)
+    {
+        ClearRagdollRecoveryState();
+        SetSkeletalPhysicsMode(ESkeletalPhysicsMode::AnimationOnly);
+        return false;
+    }
+
+    RagdollRecoveryElapsed += DeltaTime;
+
+    const float Alpha = std::clamp(RagdollRecoveryElapsed / RagdollRecoveryDuration, 0.0f, 1.0f);
+    const float SmoothAlpha = Alpha * Alpha * (3.0f - 2.0f * Alpha);
+
+    FPoseContext TargetAnimPose;
+    if (!EvaluateAnimationPose(DeltaTime, TargetAnimPose))
+    {
+        ClearRagdollRecoveryState();
+        SetSkeletalPhysicsMode(ESkeletalPhysicsMode::AnimationOnly);
+        return false;
+    }
+
+    if (Alpha >= 1.0f)
+    {
+        ApplyAnimationPose(TargetAnimPose);
+        ClearRagdollRecoveryState();
+        SetSkeletalPhysicsMode(ESkeletalPhysicsMode::AnimationOnly);
+        return true;
+    }
+
+    if (TargetAnimPose.Pose.size() != RagdollRecoveryStartLocalPose.size())
+    {
+        ApplyAnimationPose(TargetAnimPose);
+        ClearRagdollRecoveryState();
+        SetSkeletalPhysicsMode(ESkeletalPhysicsMode::AnimationOnly);
+        return true;
+    }
+
+    FPoseContext BlendedPose = TargetAnimPose;
+
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(TargetAnimPose.Pose.size()); ++BoneIndex)
+    {
+        BlendedPose.Pose[BoneIndex] = BlendBoneTransform(
+            RagdollRecoveryStartLocalPose[BoneIndex],
+            TargetAnimPose.Pose[BoneIndex],
+            SmoothAlpha
+        );
+    }
+
+    ApplyAnimationPose(BlendedPose);
+    return true;
+}
+
+void USkeletalMeshComponent::ClearRagdollRecoveryState()
+{
+    bRagdollRecovering = false;
+    RagdollRecoveryElapsed = 0.0f;
+    RagdollRecoveryStartLocalPose.clear();
+}
+
+void USkeletalMeshComponent::CaptureCurrentBoneLocalPose(TArray<FTransform>& OutPose) const
+{
+    OutPose.clear();
+
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+
+    if (!Asset || Asset->Bones.empty())
+    {
+        return;
+    }
+
+    const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
+    OutPose.resize(BoneCount);
+
+    for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+    {
+        OutPose[BoneIndex] = GetBoneLocalTransformByIndex(BoneIndex);
+    }
+}
+
+FTransform USkeletalMeshComponent::BlendBoneTransform(
+    const FTransform& From,
+    const FTransform& To,
+    float Alpha
+) const
+{
+    FTransform Result;
+    Result.Location = FVector::Lerp(From.Location, To.Location, Alpha);
+    Result.Rotation = FQuat::Slerp(From.Rotation, To.Rotation, Alpha);
+    Result.Rotation.Normalize();
+    Result.Scale = FVector::Lerp(From.Scale, To.Scale, Alpha);
+    return Result;
 }
 
 void USkeletalMeshComponent::WakeAllRagdollBodies()
@@ -951,40 +1214,114 @@ void USkeletalMeshComponent::DestroyRagdollBodies()
 
 void USkeletalMeshComponent::SyncBonesFromRagdollBodies()
 {
+    TArray<FTransform> SourceLocalPose;
+    CaptureCurrentBoneLocalPose(SourceLocalPose);
+
+    TArray<FTransform> PhysicsLocalPose;
+    TArray<float> PhysicsWeights;
+
+    if (!BuildRagdollPhysicsLocalPose(SourceLocalPose, PhysicsLocalPose, PhysicsWeights))
+    {
+        return;
+    }
+
+    SetBoneLocalTransformsDirect(PhysicsLocalPose);
+}
+
+bool USkeletalMeshComponent::UpdateRagdollActivePose(float DeltaTime)
+{
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+
+    if (!Asset || Asset->Bones.empty()) return false;
+
+    FPoseContext AnimationPoseContext;
+    const bool bHasAnimationPose =
+        EvaluateAnimationPose(DeltaTime, AnimationPoseContext) &&
+        AnimationPoseContext.Pose.size() == Asset->Bones.size();
+
+    TArray<FTransform> SourceLocalPose;
+
+    if (bHasAnimationPose)
+    {
+        SourceLocalPose = AnimationPoseContext.Pose;
+    }
+    else
+    {
+        CaptureCurrentBoneLocalPose(SourceLocalPose);
+    }
+
+    if (SourceLocalPose.size() != Asset->Bones.size())
+    {
+        return false;
+    }
+
+    UpdateKinematicRagdollBodiesFromLocalPose(SourceLocalPose);
+
+    TArray<FTransform> PhysicsLocalPose;
+    TArray<float> PhysicsWeights;
+
+    if (!BuildRagdollPhysicsLocalPose(SourceLocalPose, PhysicsLocalPose, PhysicsWeights))
+    {
+        return false;
+    }
+
+    const float PhysicsBlendWeight =
+        std::clamp(RagdollPhysicsBlendWeight, 0.0f, 1.0f);
+
+    TArray<FTransform> FinalLocalPose;
+
+    BlendLocalPosesByPhysicsWeight(
+        SourceLocalPose,
+        PhysicsLocalPose,
+        PhysicsWeights,
+        PhysicsBlendWeight,
+        FinalLocalPose
+    );
+
+    if (FinalLocalPose.empty())
+    {
+        return false;
+    }
+
+    if (bHasAnimationPose)
+    {
+        FPoseContext FinalPoseContext = AnimationPoseContext;
+        FinalPoseContext.Pose = FinalLocalPose;
+        ApplyAnimationPose(FinalPoseContext);
+    }
+    else
+    {
+        SetBoneLocalTransformsDirect(FinalLocalPose);
+    }
+
+    return true;
+}
+
+bool USkeletalMeshComponent::BuildRagdollPhysicsLocalPose(const TArray<FTransform>& SourceLocalPose, TArray<FTransform>& OutPhysicsLocalPose, TArray<float>& OutPhysicsWeights) const
+{
+    OutPhysicsLocalPose.clear();
+    OutPhysicsWeights.clear();
+
     USkeletalMesh* Mesh = GetSkeletalMesh();
     FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
 
     if (!Asset || Asset->Bones.empty() || Bodies.empty())
     {
-        return;
+        return false;
     }
 
     const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
 
-    TArray<FMatrix> OriginalGlobalMatrices;
-    GetCurrentBoneGlobalMatrices(OriginalGlobalMatrices);
-    if (OriginalGlobalMatrices.size() != Asset->Bones.size())
+    if (SourceLocalPose.size() != Asset->Bones.size())
     {
-        return;
+        return false;
     }
 
-    TArray<FMatrix> OriginalLocalMatrices;
-    OriginalLocalMatrices.resize(BoneCount, FMatrix::Identity);
-
-    for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+    TArray<FMatrix> SourceGlobalMatrices;
+    if (!BuildGlobalMatricesFromLocalPose(SourceLocalPose, SourceGlobalMatrices))
     {
-        const int32 ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
-
-        if (ParentIndex >= 0 && ParentIndex < BoneCount)
-        {
-            OriginalLocalMatrices[BoneIndex] =
-                OriginalGlobalMatrices[BoneIndex] *
-                OriginalGlobalMatrices[ParentIndex].GetAffineInverse();
-        }
-        else
-        {
-            OriginalLocalMatrices[BoneIndex] = OriginalGlobalMatrices[BoneIndex];
-        }
+        return false;
     }
 
     const FMatrix ComponentWorldInv = GetWorldMatrix().GetAffineInverse();
@@ -1010,16 +1347,17 @@ void USkeletalMeshComponent::SyncBonesFromRagdollBodies()
 
         const FMatrix BodyWorldMatrix = Body->GetBodyTransform().ToMatrix();
 
-        // PhysX world transform -> component-space global bone transform.
-        PhysicsGlobalMatrices[BoneIndex] = BodyWorldMatrix * ComponentWorldInv;
+        // Body world -> component-space global bone transform
+        PhysicsGlobalMatrices[BoneIndex] =
+            BodyWorldMatrix * ComponentWorldInv;
+
         bHasPhysicsBody[BoneIndex] = true;
     }
 
-    TArray<FMatrix> NewGlobalMatrices;
-    NewGlobalMatrices.resize(BoneCount, FMatrix::Identity);
+    TArray<FMatrix> FinalGlobalMatrices;
+    FinalGlobalMatrices.resize(BoneCount, FMatrix::Identity);
 
-    TArray<bool> bDrivenByPhysics;
-    bDrivenByPhysics.resize(BoneCount, false);
+    OutPhysicsWeights.resize(BoneCount, 0.0f);
 
     for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
     {
@@ -1027,48 +1365,501 @@ void USkeletalMeshComponent::SyncBonesFromRagdollBodies()
 
         if (bHasPhysicsBody[BoneIndex])
         {
-            NewGlobalMatrices[BoneIndex] = PhysicsGlobalMatrices[BoneIndex];
-            bDrivenByPhysics[BoneIndex] = true;
+            FinalGlobalMatrices[BoneIndex] = PhysicsGlobalMatrices[BoneIndex];
+            OutPhysicsWeights[BoneIndex] =
+                ShouldRagdollBodySimulate(BoneIndex) ? 1.0f : 0.0f;
             continue;
         }
 
         if (ParentIndex >= 0 && ParentIndex < BoneCount)
         {
-            NewGlobalMatrices[BoneIndex] =
-                OriginalLocalMatrices[BoneIndex] *
-                NewGlobalMatrices[ParentIndex];
+            // 물리 Body가 없는 Bone은 자기 local pose는 Source를 유지하되,
+            // 부모가 물리로 움직였으면 그 부모를 따라가게 한다.
+            FinalGlobalMatrices[BoneIndex] =
+                SourceLocalPose[BoneIndex].ToMatrix() *
+                FinalGlobalMatrices[ParentIndex];
 
-            bDrivenByPhysics[BoneIndex] = bDrivenByPhysics[ParentIndex];
+            // 부모가 physics 영향이면 자식도 physics branch로 본다.
+            OutPhysicsWeights[BoneIndex] = OutPhysicsWeights[ParentIndex];
         }
         else
         {
-            NewGlobalMatrices[BoneIndex] = OriginalLocalMatrices[BoneIndex];
-            bDrivenByPhysics[BoneIndex] = false;
+            FinalGlobalMatrices[BoneIndex] = SourceGlobalMatrices[BoneIndex];
+            OutPhysicsWeights[BoneIndex] = 0.0f;
         }
     }
 
-    TArray<FTransform> LocalPose;
-    LocalPose.resize(BoneCount);
+    return ConvertGlobalMatricesToLocalPose(
+        FinalGlobalMatrices,
+        SourceLocalPose,
+        OutPhysicsLocalPose
+    );
+}
 
+bool USkeletalMeshComponent::BuildGlobalMatricesFromLocalPose(const TArray<FTransform>& LocalPose, TArray<FMatrix>& OutGlobalMatrices) const
+{
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+
+    if (!Asset || Asset->Bones.empty())
+    {
+        return false;
+    }
+
+    const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
+
+    if (LocalPose.size() != Asset->Bones.size())
+    {
+        return false;
+    }
+
+    OutGlobalMatrices.clear();
+    OutGlobalMatrices.resize(BoneCount, FMatrix::Identity);
+    // 모든 bone의 Component기준 위치 저장
+    for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+    {
+        const int32 ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
+        const FMatrix LocalMatrix = LocalPose[BoneIndex].ToMatrix();
+
+        if (ParentIndex >= 0 && ParentIndex < BoneCount)
+        {
+            OutGlobalMatrices[BoneIndex] =
+                LocalMatrix * OutGlobalMatrices[ParentIndex];
+        }
+        else
+        {
+            OutGlobalMatrices[BoneIndex] = LocalMatrix;
+        }
+    }
+
+    return true;
+}
+
+bool USkeletalMeshComponent::ConvertGlobalMatricesToLocalPose(const TArray<FMatrix>& GlobalMatrices, const TArray<FTransform>& SourceLocalPose, TArray<FTransform>& OutLocalPose) const
+{
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+
+    if (!Asset || Asset->Bones.empty())
+    {
+        return false;
+    }
+
+    const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
+
+    if (GlobalMatrices.size() != Asset->Bones.size() ||
+        SourceLocalPose.size() != Asset->Bones.size())
+    {
+        return false;
+    }
+
+    OutLocalPose.clear();
+    OutLocalPose.resize(BoneCount);
+    // Body가 있는 본에 대해서 Physics를 적용시킨 Bone들의 WorldPosition을 Component기준 Global Position으로 변환
     for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
     {
         const int32 ParentIndex = Asset->Bones[BoneIndex].ParentIndex;
 
-        FMatrix LocalMatrix = NewGlobalMatrices[BoneIndex];
+        FMatrix LocalMatrix = GlobalMatrices[BoneIndex];
 
         if (ParentIndex >= 0 && ParentIndex < BoneCount)
         {
-            LocalMatrix = NewGlobalMatrices[BoneIndex] *
-                NewGlobalMatrices[ParentIndex].GetAffineInverse();
+            LocalMatrix =
+                GlobalMatrices[BoneIndex] *
+                GlobalMatrices[ParentIndex].GetAffineInverse();
         }
 
         FTransform LocalTransform = FTransform::FromMatrixWithScale(LocalMatrix);
-        LocalTransform.Scale = FTransform::FromMatrixWithScale(OriginalLocalMatrices[BoneIndex]).Scale;
 
-        LocalPose[BoneIndex] = LocalTransform;
+        // 물리 Body에는 scale이 없으니까 scale은 Source pose 기준으로 유지
+        LocalTransform.Scale = SourceLocalPose[BoneIndex].Scale;
+
+        OutLocalPose[BoneIndex] = LocalTransform;
     }
 
-    SetBoneLocalTransformsDirect(LocalPose);
+    return true;
+}
+
+// PhysicsWeights는 Bone에 Physics Body가 있으면 1, 없으면 0이지만, 부모가 Physics Body이면 자식도 Physics 영향을 받는다고 간주해서 부모로부터 물려받는다.
+// ConfiguredBoneWeight는 설정한 값.(사용자가)
+// ClampedGlobalWeight는 글로벌 값.
+// 이들로 Linear의 Alpha값 계산하여 결정
+void USkeletalMeshComponent::BlendLocalPosesByPhysicsWeight(const TArray<FTransform>& AnimationPose, const TArray<FTransform>& PhysicsPose, const TArray<float>& PhysicsWeights, float GlobalPhysicsWeight, TArray<FTransform>& OutBlendedPose) const
+{
+    OutBlendedPose.clear();
+
+    if (AnimationPose.size() != PhysicsPose.size() ||
+        AnimationPose.size() != PhysicsWeights.size())
+    {
+        return;
+    }
+
+    const float ClampedGlobalWeight = std::clamp(GlobalPhysicsWeight, 0.0f, 1.0f);
+
+    OutBlendedPose.resize(AnimationPose.size());
+
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(AnimationPose.size()); ++BoneIndex)
+    {
+
+        const float ConfiguredBoneWeight = GetRagdollPhysicsBlendWeightForBone(BoneIndex);
+        const float BoneWeight =
+            std::clamp(
+                PhysicsWeights[BoneIndex] *
+                ConfiguredBoneWeight *
+                ClampedGlobalWeight,
+                0.0f,
+                1.0f
+            );
+
+        if (BoneWeight <= 0.0f)
+        {
+            OutBlendedPose[BoneIndex] = AnimationPose[BoneIndex];
+        }
+        else if (BoneWeight >= 1.0f)
+        {
+            OutBlendedPose[BoneIndex] = PhysicsPose[BoneIndex];
+        }
+        else
+        {
+            OutBlendedPose[BoneIndex] = BlendBoneTransform(
+                AnimationPose[BoneIndex],
+                PhysicsPose[BoneIndex],
+                BoneWeight
+            );
+        }
+    }
+}
+
+void USkeletalMeshComponent::EnsureRagdollPhysicsBlendWeights(float DefaultWeight)
+{
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+
+    if (!Asset || Asset->Bones.empty())
+    {
+        PerBoneRagdollPhysicsBlendWeights.clear();
+        return;
+    }
+
+    const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
+
+    if (PerBoneRagdollPhysicsBlendWeights.size() != BoneCount)
+    {
+        PerBoneRagdollPhysicsBlendWeights.clear();
+        PerBoneRagdollPhysicsBlendWeights.resize(BoneCount, std::clamp(DefaultWeight, 0.0f, 1.0f));
+    }
+}
+
+void USkeletalMeshComponent::SetAllBodiesPhysicsBlendWeight(float InPhysicsBlendWeight)
+{
+    EnsureRagdollPhysicsBlendWeights(1.0f);
+
+    const float W = std::clamp(InPhysicsBlendWeight, 0.0f, 1.0f);
+
+    for (float& BoneWeight : PerBoneRagdollPhysicsBlendWeights)
+    {
+        BoneWeight = W;
+    }
+}
+
+void USkeletalMeshComponent::SetAllBodiesBelowPhysicsBlendWeight(FName InBoneName, float InPhysicsBlendWeight, bool bIncludeSelf)
+{
+    EnsureRagdollPhysicsBlendWeights(0.0f);
+
+    const int32 RootBoneIndex = FindBoneIndexByName(InBoneName);
+    if (RootBoneIndex < 0) return;
+
+    const float W = std::clamp(InPhysicsBlendWeight, 0.0f, 1.0f);
+
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(PerBoneRagdollPhysicsBlendWeights.size()); ++BoneIndex)
+    {
+        if (IsBoneBelow(BoneIndex, RootBoneIndex, bIncludeSelf))
+        {
+            PerBoneRagdollPhysicsBlendWeights[BoneIndex] = W;
+        }
+    }
+}
+
+void USkeletalMeshComponent::SetAllBodiesSimulatePhysics(bool bSimulate)
+{
+    EnsureRagdollBodySimulateFlags(bSimulate);
+
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(PerBoneRagdollBodySimulateFlags.size()); ++BoneIndex)
+    {
+        PerBoneRagdollBodySimulateFlags[BoneIndex] = bSimulate;
+    }
+
+    ApplyRagdollBodySimulationFlags();
+}
+
+void USkeletalMeshComponent::SetAllBodiesBelowSimulatePhysics(FName InBoneName, bool bSimulate, bool bIncludeSelf)
+{
+    EnsureRagdollBodySimulateFlags(true);
+
+    const int32 RootBoneIndex = FindBoneIndexByName(InBoneName);
+    if (RootBoneIndex < 0) return;
+
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (!Body || !Body->IsValidBodyInstance()) continue;
+
+        const int32 BoneIndex = Body->BoneIndex;
+
+        if (!IsBoneBelow(BoneIndex, RootBoneIndex, bIncludeSelf))
+        {
+            continue;
+        }
+
+        if (BoneIndex >= 0 && BoneIndex < static_cast<int32>(PerBoneRagdollBodySimulateFlags.size()))
+        {
+            PerBoneRagdollBodySimulateFlags[BoneIndex] = bSimulate;
+        }
+    }
+
+    ApplyRagdollBodySimulationFlags();
+}
+
+bool USkeletalMeshComponent::BeginPhysicalAnimation()
+{
+    ClearRagdollRecoveryState();
+
+    if (!bRagdollActive || Bodies.empty())
+    {
+        DestroyRagdollConstraints();
+        DestroyRagdollBodies();
+
+        if (!CreateRagdollBodiesFromPhysicsAsset())
+        {
+            DestroyRagdollConstraints();
+            DestroyRagdollBodies();
+
+            bRagdollEnabled = false;
+            SetSkeletalPhysicsMode(ESkeletalPhysicsMode::AnimationOnly);
+
+            ClearRagdollComponentSyncState();
+            ClearRagdollComponentMoveState();
+            return false;
+        }
+
+        if (bCreateRagdollConstraints)
+        {
+            CreateRagdollConstraintsFromPhysicsAsset();
+        }
+
+        CaptureRagdollComponentSyncOffset();
+        CacheRagdollComponentWorldMatrix();
+    }
+
+    EnsureRagdollPhysicsBlendWeights(1.0f);
+    SetAllBodiesPhysicsBlendWeight(1.0f);
+
+    EnsureRagdollBodySimulateFlags(true);
+    SetAllBodiesSimulatePhysics(true);
+
+    ApplyRagdollBodySimulationFlags();
+
+    SetAllRagdollBodiesKinematic(false);
+    SetAllRagdollBodiesGravityEnabled(true);
+
+    bRagdollEnabled = true;
+    SetSkeletalPhysicsMode(ESkeletalPhysicsMode::PhysicalAnimation);
+
+    WakeAllRagdollBodies();
+
+    return true;
+}
+
+void USkeletalMeshComponent::EndPhysicalAnimation(bool bUseRecovery)
+{
+    if (bUseRecovery) DisableRagdollPhysics();
+    else ForceStopRagdollWithoutRecovery();
+}
+
+bool USkeletalMeshComponent::EvaluateAnimationPoseOnly(float DeltaTime, FPoseContext& OutPose)
+{
+    return EvaluateAnimationPose(DeltaTime, OutPose);
+}
+
+bool USkeletalMeshComponent::BuildWorldTransformsFromLocalPose(const TArray<FTransform>& LocalPose, TArray<FTransform>& OutWorldTransforms) const
+{
+    OutWorldTransforms.clear();
+
+    TArray<FMatrix> ComponentSpaceMatrices;
+    if (!BuildGlobalMatricesFromLocalPose(LocalPose, ComponentSpaceMatrices))
+    {
+        return false;
+    }
+
+    const FMatrix ComponentWorld = GetWorldMatrix();
+
+    OutWorldTransforms.resize(ComponentSpaceMatrices.size());
+
+    for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(ComponentSpaceMatrices.size()); ++BoneIndex)
+    {
+        const FMatrix BoneWorldMatrix = ComponentSpaceMatrices[BoneIndex] * ComponentWorld;
+
+        FTransform BoneWorld = FTransform::FromMatrixWithScale(BoneWorldMatrix);
+        BoneWorld.Scale = FVector::OneVector;
+
+        OutWorldTransforms[BoneIndex] = BoneWorld;
+    }
+
+    return true;
+}
+
+void USkeletalMeshComponent::TickPhysicalAnimationPose(float DeltaTime)
+{
+    ApplyExternalComponentMoveToRagdollBodies();
+    SyncComponentToRagdollBody();
+
+    TArray<FTransform> SourceLocalPose;
+    CaptureCurrentBoneLocalPose(SourceLocalPose);
+
+    TArray<FTransform> PhysicsLocalPose;
+    TArray<float> PhysicsWeights;
+
+    if (BuildRagdollPhysicsLocalPose(SourceLocalPose, PhysicsLocalPose, PhysicsWeights))
+    {
+        SetBoneLocalTransformsDirect(PhysicsLocalPose);
+    }
+    else
+    {
+        SyncBonesFromRagdollBodies();
+    }
+
+    CacheRagdollComponentWorldMatrix();
+}
+
+bool USkeletalMeshComponent::IsBoneBelow(int32 BoneIndex, int32 RootBoneIndex, bool bIncludeSelf) const
+{
+    if (BoneIndex < 0 || RootBoneIndex < 0) return false;
+    if (bIncludeSelf && BoneIndex == RootBoneIndex) return true;
+
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+    if (!Asset || Asset->Bones.empty()) return false;
+
+    const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
+    if (BoneIndex >= BoneCount || RootBoneIndex >= BoneCount) return false;
+
+    if (bIncludeSelf && BoneIndex == RootBoneIndex) return true;
+
+    int32 Current = BoneIndex;
+
+    while (Current >= 0 && Current < static_cast<int32>(Asset->Bones.size()))
+    {
+        Current = Asset->Bones[Current].ParentIndex;
+
+        if (Current == RootBoneIndex)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+float USkeletalMeshComponent::GetRagdollPhysicsBlendWeightForBone(int32 BoneIndex) const
+{
+    if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(PerBoneRagdollPhysicsBlendWeights.size()))
+    {
+        return 1.0f;
+    }
+
+    return std::clamp(PerBoneRagdollPhysicsBlendWeights[BoneIndex], 0.0f, 1.0f);
+}
+
+void USkeletalMeshComponent::EnsureRagdollBodySimulateFlags(bool bDefaultSimulate)
+{
+    USkeletalMesh* Mesh = GetSkeletalMesh();
+    FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+
+    if (!Asset || Asset->Bones.empty())
+    {
+        PerBoneRagdollBodySimulateFlags.clear();
+        return;
+    }
+
+    const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
+
+    if (PerBoneRagdollBodySimulateFlags.size() != BoneCount)
+    {
+        PerBoneRagdollBodySimulateFlags.clear();
+        PerBoneRagdollBodySimulateFlags.resize(BoneCount, bDefaultSimulate);
+    }
+}
+
+void USkeletalMeshComponent::ApplyRagdollBodySimulationFlags()
+{
+    EnsureRagdollBodySimulateFlags(true);
+
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (!Body || !Body->IsValidBodyInstance())
+        {
+            continue;
+        }
+
+        const int32 BoneIndex = Body->BoneIndex;
+        const bool bShouldSimulate = ShouldRagdollBodySimulate(BoneIndex);
+
+        Body->SetKinematic(!bShouldSimulate);
+        Body->SetGravityEnabled(bShouldSimulate);
+
+        if (bShouldSimulate)
+        {
+            Body->WakeUp();
+        }
+    }
+}
+
+bool USkeletalMeshComponent::ShouldRagdollBodySimulate(int32 BoneIndex) const
+{
+    if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(PerBoneRagdollBodySimulateFlags.size()))
+    {
+        return true;
+    }
+
+    return PerBoneRagdollBodySimulateFlags[BoneIndex];
+}
+
+void USkeletalMeshComponent::UpdateKinematicRagdollBodiesFromLocalPose(const TArray<FTransform>& SourceLocalPose)
+{
+    if (Bodies.empty()) return;
+
+    TArray<FMatrix> SourceGlobalMatrices;
+    if (!BuildGlobalMatricesFromLocalPose(SourceLocalPose, SourceGlobalMatrices))
+    {
+        return;
+    }
+
+    const FMatrix ComponentWorld = GetWorldMatrix();
+
+    for (FBodyInstance* Body : Bodies)
+    {
+        if (!Body || !Body->IsValidBodyInstance())
+        {
+            continue;
+        }
+
+        const int32 BoneIndex = Body->BoneIndex;
+        if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(SourceGlobalMatrices.size()))
+        {
+            continue;
+        }
+
+        if (ShouldRagdollBodySimulate(BoneIndex))
+        {
+            continue;
+        }
+
+        const FMatrix BodyWorldMatrix = SourceGlobalMatrices[BoneIndex] * ComponentWorld;
+        FTransform BodyWorldTransform = FTransform::FromMatrixWithScale(BodyWorldMatrix);
+
+        BodyWorldTransform.Scale = FVector(1.0f, 1.0f, 1.0f);
+
+        Body->SetBodyTransform(BodyWorldTransform);
+    }
 }
 
 FBodyInstance* USkeletalMeshComponent::FindRagdollBodyByBoneIndex(int32 BoneIndex) const
@@ -1217,17 +2008,33 @@ void USkeletalMeshComponent::ClearAnimInstance()
 
 void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
-    if (bRagdollEnabled != bRagdollActive)
+    if (bRagdollEnabled != bRagdollActive &&
+        SkeletalPhysicsMode == ESkeletalPhysicsMode::AnimationOnly)
     {
         SetRagdollEnabled(bRagdollEnabled);
     }
 
-    if (bRagdollActive)
+    switch (SkeletalPhysicsMode)
     {
-        SyncComponentToRagdollBody();
-        SyncBonesFromRagdollBodies();
+    case ESkeletalPhysicsMode::FullRagdoll:
+    case ESkeletalPhysicsMode::PartialRagdoll:
+    case ESkeletalPhysicsMode::PhysicalAnimation:
+        TickPhysicalAnimationPose(DeltaTime);
         UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
         return;
+
+    case ESkeletalPhysicsMode::Recovering:
+        if (TickRagdollRecovery(DeltaTime))
+        {
+            UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+            return;
+        }
+
+        break;
+
+    case ESkeletalPhysicsMode::AnimationOnly:
+    default:
+        break;
     }
 
     if (EvaluateAnimInstance(DeltaTime))
@@ -1244,6 +2051,8 @@ void USkeletalMeshComponent::EndPlay()
     DestroyRagdollConstraints();
     DestroyRagdollBodies();
     ClearRagdollComponentSyncState();
+    ClearRagdollComponentMoveState();
+    ClearRagdollRecoveryState();
     Super::EndPlay();
 }
 
@@ -1392,10 +2201,12 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
     uint8 SelfCollisionModeRaw = static_cast<uint8>(RagdollSelfCollisionMode);
     Ar << SelfCollisionModeRaw;
     RagdollSelfCollisionMode = static_cast<ERagdollSelfCollisionMode>(SelfCollisionModeRaw);
+    Ar << RagdollRecoveryDuration;
+    Ar << RagdollPhysicsBlendWeight;
 
 }
 
-bool USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
+bool USkeletalMeshComponent::EvaluateAnimationPose(float DeltaTime, FPoseContext& OutPose)
 {
     if (!AnimInstance) return false;
 
@@ -1424,13 +2235,33 @@ bool USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
     // 소비되지 않아 in-place 로 보인다. ACharacter 외 케이스에서 root motion 이 필요해지면
     // 별도 소비 경로가 추가되어야 한다.
 
-    FPoseContext Out;
-    Out.SkeletalMesh = Mesh;
-    Out.Pose.resize(Asset->Bones.size());
-    Out.ResetToRefPose();
-    AnimInstance->EvaluatePose(Out);
+    OutPose.SkeletalMesh = Mesh;
+    OutPose.Pose.resize(Asset->Bones.size());
+    OutPose.ResetToRefPose();
+    AnimInstance->EvaluatePose(OutPose);
 
-    SetAnimationPose(Out.Pose, Out.MorphWeights);
+    return true;
+}
+
+void USkeletalMeshComponent::ApplyAnimationPose(const FPoseContext& Pose)
+{
+    if (!Pose.IsValid())
+    {
+        return;
+    }
+
+    SetAnimationPose(Pose.Pose, Pose.MorphWeights);
+}
+
+bool USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
+{
+    FPoseContext OutPose;
+    if (!EvaluateAnimationPose(DeltaTime, OutPose))
+    {
+        return false;
+    }
+
+    ApplyAnimationPose(OutPose);
     return true;
 }
 

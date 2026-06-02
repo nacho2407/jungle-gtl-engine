@@ -1250,6 +1250,9 @@
     <ClCompile Include="Source\Engine\Component\Primitive\StaticMeshComponent.cpp">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Primitive\WheelMeshComponent.cpp">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Primitive\SubUVComponent.cpp">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClCompile>
@@ -1368,6 +1371,9 @@
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\PhysicalAnimationActor.cpp">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.cpp">
@@ -1796,6 +1802,9 @@
     <ClCompile Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Render\Proxy\WheelMeshSceneProxy.cpp">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Proxy\SubUVSceneProxy.cpp">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClCompile>
@@ -2019,6 +2028,7 @@
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Physics\PhysicalAnimationComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -2519,6 +2529,9 @@
     <ClInclude Include="Source\Engine\Component\Primitive\StaticMeshComponent.h">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Primitive\WheelMeshComponent.h">
+      <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Primitive\SubUVComponent.h">
       <Filter>Source\Engine\Component\Primitive</Filter>
     </ClInclude>
@@ -2670,6 +2683,9 @@
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\PhysicalAnimationActor.h">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.h">
@@ -3240,6 +3256,9 @@
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.h">
+      <Filter>Source\Engine\Render\Proxy</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Proxy\WheelMeshSceneProxy.h">
       <Filter>Source\Engine\Render\Proxy</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Proxy\SubUVSceneProxy.h">
@@ -5738,6 +5757,7 @@
     <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp">
       <Filter>ThirdParty\sol2\include\sol\utility</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Physics\PhysicalAnimationComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="KraftonEngine.rc" />

@@ -13,6 +13,7 @@ class FScene;
 class UMaterial;
 class FReferenceCollector;
 struct FDrawCommandBuffer;
+struct FDrawCommand;
 struct FFrameContext;
 struct FPhysicsDebugLine;
 
@@ -36,6 +37,7 @@ enum class EPrimitiveProxyFlags : uint16
 	Particle          = 1 << 11,
 	PhysicsAssetDebug = 1 << 12,
 	Cloth             = 1 << 13, // Cloth 프록시
+	WheelMesh         = 1 << 14,
 };
 
 inline EPrimitiveProxyFlags  operator|(EPrimitiveProxyFlags A, EPrimitiveProxyFlags B)  { return static_cast<EPrimitiveProxyFlags>(static_cast<uint16>(A) | static_cast<uint16>(B)); }
@@ -108,6 +110,11 @@ public:
 
 	virtual bool PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context,
 		FDrawCommandBuffer& OutBuffer) const;
+	virtual void ApplyDrawCommandOverrides(
+		ID3D11Device* /*Device*/,
+		ID3D11DeviceContext* /*Context*/,
+		ERenderPass /*Pass*/,
+		FDrawCommand& /*Command*/) const {}
 
 protected:
 	// ================================================================

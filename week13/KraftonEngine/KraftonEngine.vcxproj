@@ -527,6 +527,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Cloth\NvClothContext.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Physics\PhysicalAnimationComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
@@ -561,6 +562,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\StaticMeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\WheelMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\TextRenderComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Script\LuaBlueprintComponent.cpp" />
@@ -601,6 +603,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\GameFramework\Actor\DecalActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\HeightFogActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\PhysicalAnimationActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\SphereActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\StaticMeshActor.cpp" />
@@ -743,6 +746,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClCompile Include="Source\Engine\Render\Proxy\ShapeSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\WheelMeshSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\SubUVSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.cpp" />
     <ClCompile Include="Source\Engine\Render\RenderPass\AdditiveDecalPass.cpp" />
@@ -952,6 +956,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Cloth\NvClothContext.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Physics\PhysicalAnimationComponent.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\ShapeComponent.h" />
@@ -986,6 +991,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\StaticMeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\WheelMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\SubUVComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\TextRenderComponent.h" />
     <ClInclude Include="Source\Engine\Component\Script\LuaBlueprintComponent.h" />
@@ -1037,6 +1043,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\GameFramework\Actor\DecalActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\HeightFogActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\PhysicalAnimationActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\SphereActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\StaticMeshActor.h" />
@@ -1227,6 +1234,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     <ClInclude Include="Source\Engine\Render\Proxy\ShapeSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\WheelMeshSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\SubUVSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.h" />
     <ClInclude Include="Source\Engine\Render\RenderPass\AdditiveDecalPass.h" />

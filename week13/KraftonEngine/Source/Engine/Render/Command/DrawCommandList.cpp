@@ -269,6 +269,13 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 		Cache.Bindings.BoneHeatMapCB = Cmd.Bindings.BoneHeatMapCB;
 	}
 
+	if (bForce || Cmd.Bindings.WheelDeformationCB != Cache.Bindings.WheelDeformationCB)
+	{
+		ID3D11Buffer* RawCB = Cmd.Bindings.WheelDeformationCB ? Cmd.Bindings.WheelDeformationCB->GetBuffer() : nullptr;
+		Ctx->VSSetConstantBuffers(ECBSlot::WheelDeformation, 1, &RawCB);
+		Cache.Bindings.WheelDeformationCB = Cmd.Bindings.WheelDeformationCB;
+	}
+
 	// --- SRV (t0 ~ t7) 바인딩 ---
 	for (int i = 0; i < (int)EMaterialTextureSlot::Max; i++)
 	{

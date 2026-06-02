@@ -3,6 +3,7 @@
 #include "Engine/Runtime/ActorPlacementRegistry.h"
 #include "Engine/Runtime/EngineInitHooks.h"
 #include "GameFramework/Actor/4WVehicleActor.h"
+#include "GameFramework/Actor/PhysicalAnimationActor.h"
 #include "GameFramework/World.h"
 
 // ============================================================
@@ -14,6 +15,19 @@
 // ============================================================
 void RegisterGameActorPlacements()
 {
+	FActorPlacementRegistry::Get().RegisterEntry(
+		"Physical Animation Actor",
+		[](UWorld* World, const FVector& Location) -> AActor*
+		{
+			APhysicalAnimationActor* Actor = World ? World->SpawnActor<APhysicalAnimationActor>() : nullptr;
+			if (Actor)
+			{
+				Actor->InitDefaultComponents();
+				Actor->SetActorLocation(Location);
+			}
+			return Actor;
+		});
+
 	FActorPlacementRegistry::Get().RegisterEntry(
 		"4W Vehicle",
 		[](UWorld* World, const FVector& Location) -> AActor*
