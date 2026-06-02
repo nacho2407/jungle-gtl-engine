@@ -1,17 +1,20 @@
 {
-  "BlendState" : "Opaque",
-  "DepthStencilState" : "Default",
-  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-  "EmissiveIntensity" : 0.000000,
-  "Parameters" : {
-    "HasNormalMap" : 0.000000,
-    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-    "_pad" : [0.000000, 0.000000, 0.000000]
-  },
-  "PathFileName" : "Content/Material/Cloth/ClothDefault.mat",
-  "RasterizerState" : "SolidNoCull",
-  "RenderPass" : "Opaque",
-  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
-  "ShadowMode" : "Opaque",
-  "bEnableBloom" : false
-}
+        "BlendState" : "Opaque",
+        "DepthStencilState" : "Default",
+        "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+        "EmissiveIntensity" : 0.000000,
+        "Parameters" : {
+          "HasNormalMap" : 0.000000,
+          "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "_pad" : [0.000000, 0.000000, 0.000000]
+        },
+        "PathFileName" : "Content/Material/Editor/ClothDefault.mat",
+        "RasterizerState" : "SolidNoCull",
+        "RenderPass" : "Opaque",
+        "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+        "ShadowMode" : "Opaque",
+        "Textures" : {
+          "DiffuseTexture" : "Content/Texture/toppng.com-vintagesonic1-sonic-ring-gif-301x301.png"
+        },
+        "bEnableBloom" : false
+      }
