@@ -208,6 +208,7 @@ protected:
     void DestroyRagdollConstraints();
     void DestroyRagdollBodies();
     void SyncBonesFromRagdollBodies();
+    bool ApplyCurrentAnimationPoseForPhysicsInit();
 
     bool UpdateRagdollActivePose(float DeltaTime);
     bool BuildRagdollPhysicsLocalPose( const TArray<FTransform>& SourceLocalPose, TArray<FTransform>& OutPhysicsLocalPose, TArray<float>& OutPhysicsWeights) const;
@@ -219,6 +220,7 @@ protected:
     void EnsureRagdollPhysicsBlendWeights(float DefaultWeight = 1.0f);
     bool IsBoneBelow(int32 BoneIndex, int32 RootBoneIndex, bool bIncludeSelf) const;
     float GetRagdollPhysicsBlendWeightForBone(int32 BoneIndex) const;
+    bool ShouldFreezeAnimationPoseForFullRagdoll(float GlobalPhysicsWeight) const;
 
     void EnsureRagdollBodySimulateFlags(bool bDefaultSimulate = true);
     void ApplyRagdollBodySimulationFlags();

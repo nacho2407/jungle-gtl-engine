@@ -1608,29 +1608,6 @@ void FPhysXPhysicsScene::ReleaseRegisteredBodies()
 	}
 }
 
-FBodyInstance* FPhysXPhysicsScene::FindRegisteredBodyByActor(const PxActor* Actor) const
-{
-	if (!Actor)
-	{
-		return nullptr;
-	}
-
-	for (FBodyInstance* Body : RegisteredBodies)
-	{
-		if (!Body || !Body->IsValidBodyInstance())
-		{
-			continue;
-		}
-
-		if (Body->RigidActor == Actor)
-		{
-			return Body;
-		}
-	}
-
-	return nullptr;
-}
-
 void FPhysXPhysicsScene::SyncEngineToPhysicsBeforeSim()
 {
 	constexpr float TeleportPosThresholdSq = 0.001f;
@@ -1714,7 +1691,7 @@ void FPhysXPhysicsScene::SyncPhysicsToEngineAfterSim()
 			continue;
 		}
 
-		FBodyInstance* Body = FindRegisteredBodyByActor(ActiveActor);
+		FBodyInstance* Body = GetBodyInstanceFromActor(ActiveActor);
 		if (!Body || !Body->IsValidBodyInstance())
 		{
 			continue;

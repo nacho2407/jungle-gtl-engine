@@ -57,6 +57,8 @@ public:
 
     UPhysicalAnimationComponent();
 
+    void BeginPlay() override;
+
     UFUNCTION(Callable, Category = "Physics|PhysicalAnimation")
     void SetSkeletalMeshComponent(USkeletalMeshComponent* InMesh);
 

@@ -17,6 +17,16 @@ UPhysicalAnimationComponent::UPhysicalAnimationComponent()
     PrimaryComponentTick.bTickEnabled = false;
 }
 
+void UPhysicalAnimationComponent::BeginPlay()
+{
+    Super::BeginPlay();
+
+    if (bPhysicalAnimationEnabled)
+    {
+        ActivatePhysicalAnimation();
+    }
+}
+
 void UPhysicalAnimationComponent::SetSkeletalMeshComponent(USkeletalMeshComponent* InMesh)
 {
     TargetMesh = InMesh;
@@ -307,7 +317,8 @@ void UPhysicalAnimationComponent::ApplyDriveToBody(
         {
             bShouldApplyPositionDrive = true;
         }
-        else if (DriveRootBoneName != FName::None && Body->BoneName == DriveRootBoneName)
+        else if (DriveRootBoneName != FName::None && TargetMesh &&
+            TargetMesh->IsBoneBelowBone(Body->BoneName, DriveRootBoneName, true))
         {
             bShouldApplyPositionDrive = true;
         }
