@@ -410,10 +410,15 @@ bool UPhysicsAssetDebugComponent::GetConstraintWorldFrames(
 {
 	FTransform ParentBoneWorldTM;
 	FTransform ChildBoneWorldTM;
-	if (!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ParentBoneName, ParentBoneWorldTM) ||
-		!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ChildBoneName, ChildBoneWorldTM))
+	if (!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ChildBoneName, ChildBoneWorldTM))
 	{
 		return false;
+	}
+
+	if (ConstraintDesc.ParentBoneName == FName::None ||
+		!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ParentBoneName, ParentBoneWorldTM))
+	{
+		ParentBoneWorldTM = ChildBoneWorldTM;
 	}
 
 	OutParentFrame = ConstraintDesc.ParentFrame * ParentBoneWorldTM;
@@ -442,10 +447,15 @@ bool UPhysicsAssetDebugComponent::SetConstraintWorldLocation(
 {
 	FTransform ParentBoneWorldTM;
 	FTransform ChildBoneWorldTM;
-	if (!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ParentBoneName, ParentBoneWorldTM) ||
-		!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ChildBoneName, ChildBoneWorldTM))
+	if (!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ChildBoneName, ChildBoneWorldTM))
 	{
 		return false;
+	}
+
+	if (ConstraintDesc.ParentBoneName == FName::None ||
+		!GetPhysicsAssetBoneWorldTransform(ConstraintDesc.ParentBoneName, ParentBoneWorldTM))
+	{
+		ParentBoneWorldTM = ChildBoneWorldTM;
 	}
 
 	const FMatrix ParentWorldToLocal = ParentBoneWorldTM.ToMatrix().GetAffineInverse();

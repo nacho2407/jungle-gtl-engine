@@ -19,9 +19,11 @@
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Object/Object.h"
+#include "Input/InputSystem.h"
 #include "Physics/IPhysicsScene.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsAssetManager.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "Platform/Paths.h"
 #include "Runtime/Engine.h"
 #include "Serialization/MemoryArchive.h"
@@ -30,6 +32,7 @@
 #include "UI/Asset/Animation/AnimSequencePropertyPanel.h"
 #include "UI/Asset/Animation/AnimationTimelinePanel.h"
 #include "UI/Util/EditorFileUtils.h"
+#include "Viewport/Viewport.h"
 #include "Core/Logging/Log.h"
 
 #include <imgui.h>
@@ -148,6 +151,65 @@ namespace
 		}
 
 		return false;
+	}
+
+	int32 FindBoneIndexByName(const FSkeletalMesh* Asset, const FName& BoneName)
+	{
+		if (!Asset || !BoneName.IsValid())
+		{
+			return -1;
+		}
+
+		for (int32 Index = 0; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
+		{
+			if (FName(Asset->Bones[Index].Name) == BoneName)
+			{
+				return Index;
+			}
+		}
+
+		return -1;
+	}
+
+	int32 FindConstraintIndexByChildBoneName(const UPhysicsAsset* PhysicsAsset, const FName& ChildBoneName)
+	{
+		if (!PhysicsAsset || !ChildBoneName.IsValid())
+		{
+			return -1;
+		}
+
+		const TArray<FConstraintInstanceInitDesc>& ConstraintDescs = PhysicsAsset->GetConstraintInitDescs();
+		for (int32 Index = 0; Index < static_cast<int32>(ConstraintDescs.size()); ++Index)
+		{
+			if (ConstraintDescs[Index].ChildBoneName == ChildBoneName)
+			{
+				return Index;
+			}
+		}
+
+		return -1;
+	}
+
+	int32 FindNearestParentPhysicsBodyBoneIndex(const FSkeletalMesh* Asset, const UPhysicsAsset* PhysicsAsset, int32 ChildBoneIndex)
+	{
+		if (!Asset || !PhysicsAsset || ChildBoneIndex < 0 || ChildBoneIndex >= static_cast<int32>(Asset->Bones.size()))
+		{
+			return -1;
+		}
+
+		int32 ParentBoneIndex = Asset->Bones[ChildBoneIndex].ParentIndex;
+		while (ParentBoneIndex >= 0 && ParentBoneIndex < static_cast<int32>(Asset->Bones.size()))
+		{
+			const FName ParentBoneName(Asset->Bones[ParentBoneIndex].Name);
+			if (PhysicsAsset->FindBodyIndexByBoneName(ParentBoneName) != -1)
+			{
+				return ParentBoneIndex;
+			}
+
+			ParentBoneIndex = Asset->Bones[ParentBoneIndex].ParentIndex;
+		}
+
+		return -1;
 	}
 
 	bool HasVectorChanged(const FVector& Before, const FVector& After)
@@ -1623,6 +1685,7 @@ void FMeshEditorPhysicsAssetTab::Render(float AvailableHeight)
 	(void)AvailableHeight;
 	USkeletalMesh* SkeletalMesh = GetSkeletalMesh();
 	UPhysicsAsset* PhysicsAsset = SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
+	const FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
 	GetViewportClient().GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
 	SyncDebugComponent(PhysicsAsset);
 
@@ -1672,7 +1735,14 @@ void FMeshEditorPhysicsAssetTab::Render(float AvailableHeight)
 	const ImVec2 ViewportSize = ImVec2(ViewportWidth, ImGui::GetContentRegionAvail().y);
 	const ImVec2 ViewportPos = ImGui::GetCursorScreenPos();
 	RenderViewportPanel(ViewportSize);
-	if (RenderPhysicsAssetBuildOptionsOverlay(ViewportPos, ViewportSize, SkeletalMesh, PhysicsAsset))
+	const bool bBuildOverlayHovered = RenderPhysicsAssetBuildOptionsOverlay(ViewportPos, ViewportSize, SkeletalMesh, PhysicsAsset);
+	const bool bViewportContextHovered = RenderPhysicsAssetViewportContextMenu(
+		ViewportPos,
+		ViewportSize,
+		Asset,
+		PhysicsAsset,
+		bBuildOverlayHovered);
+	if (bBuildOverlayHovered || bViewportContextHovered)
 	{
 		FSlateApplication::Get().SetViewportImGuiHovered(&GetViewportClient(), false);
 	}
@@ -1852,6 +1922,60 @@ bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBuildOptionsOverlay(
 	return bHovered;
 }
 
+bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetViewportContextMenu(
+	const ImVec2& ViewportPos,
+	const ImVec2& ViewportSize,
+	const FSkeletalMesh* Asset,
+	UPhysicsAsset* PhysicsAsset,
+	bool bSuppressOpen)
+{
+	const FString PopupId = "PhysicsAssetViewportContext##" + std::to_string(GetOwnerInstanceId());
+	const ImVec2 MousePos = ImGui::GetIO().MousePos;
+	const bool bMouseInViewport =
+		MousePos.x >= ViewportPos.x && MousePos.x <= ViewportPos.x + ViewportSize.x &&
+		MousePos.y >= ViewportPos.y && MousePos.y <= ViewportPos.y + ViewportSize.y;
+
+	const bool bRightClickReleased =
+		ImGui::IsMouseReleased(ImGuiMouseButton_Right) &&
+		!InputSystem::Get().GetRightDragging() &&
+		!InputSystem::Get().GetRightDragEnd();
+
+	if (!bSuppressOpen && bMouseInViewport && bRightClickReleased)
+	{
+		ViewportContextPhysicsBodyIndex = PickPhysicsAssetBodyAtMouse(ViewportPos, ViewportSize);
+		if (ViewportContextPhysicsBodyIndex >= 0)
+		{
+			SelectedPhysicsBodyIndex = ViewportContextPhysicsBodyIndex;
+			SelectedPhysicsConstraintIndex = -1;
+			SyncDebugComponent(PhysicsAsset);
+			SyncReflectionDetailTarget(PhysicsAsset);
+		}
+		ImGui::OpenPopup(PopupId.c_str());
+	}
+
+	bool bHovered = false;
+	if (ImGui::BeginPopup(PopupId.c_str()))
+	{
+		bHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
+		const bool bCanCreate = CanCreateConstraintForBody(PhysicsAsset, Asset, ViewportContextPhysicsBodyIndex);
+		if (!bCanCreate)
+		{
+			ImGui::BeginDisabled();
+		}
+		if (ImGui::MenuItem("Create Constraint"))
+		{
+			CreateConstraintForBody(PhysicsAsset, Asset, ViewportContextPhysicsBodyIndex);
+		}
+		if (!bCanCreate)
+		{
+			ImGui::EndDisabled();
+		}
+		ImGui::EndPopup();
+	}
+
+	return bHovered;
+}
+
 void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, UPhysicsAsset* PhysicsAsset)
 {
 	if (!PhysicsAsset)
@@ -1973,6 +2097,20 @@ bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyTree(const FSkeletalMesh*
 		UBodySetup* MutableBody = (BodyIndex >= 0 && BodyIndex < static_cast<int32>(MutableBodies.size()))
 			? MutableBodies[BodyIndex]
 			: nullptr;
+		const bool bCanCreateConstraint = CanCreateConstraintForBody(PhysicsAsset, Asset, BodyIndex);
+		if (!bCanCreateConstraint)
+		{
+			ImGui::BeginDisabled();
+		}
+		if (ImGui::MenuItem("Create Constraint"))
+		{
+			CreateConstraintForBody(PhysicsAsset, Asset, BodyIndex);
+		}
+		if (!bCanCreateConstraint)
+		{
+			ImGui::EndDisabled();
+		}
+		ImGui::Separator();
 		if (RenderAddPhysicsBodyShapeMenu(MutableBody))
 		{
 			if (RagdollPanel)
@@ -2003,6 +2141,134 @@ bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyTree(const FSkeletalMesh*
 	}
 
 	return true;
+}
+
+bool FMeshEditorPhysicsAssetTab::CanCreateConstraintForBody(UPhysicsAsset* PhysicsAsset, const FSkeletalMesh* Asset, int32 ChildBodyIndex) const
+{
+	if (!PhysicsAsset || !Asset || ChildBodyIndex < 0)
+	{
+		return false;
+	}
+
+	const TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetups();
+	if (ChildBodyIndex >= static_cast<int32>(Bodies.size()) || !Bodies[ChildBodyIndex])
+	{
+		return false;
+	}
+
+	const FName ChildBoneName = Bodies[ChildBodyIndex]->BoneName;
+	const int32 ChildBoneIndex = FindBoneIndexByName(Asset, ChildBoneName);
+	if (ChildBoneIndex < 0)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool FMeshEditorPhysicsAssetTab::CreateConstraintForBody(UPhysicsAsset* PhysicsAsset, const FSkeletalMesh* Asset, int32 ChildBodyIndex)
+{
+	if (!PhysicsAsset || !Asset || ChildBodyIndex < 0)
+	{
+		return false;
+	}
+
+	const TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetups();
+	if (ChildBodyIndex >= static_cast<int32>(Bodies.size()) || !Bodies[ChildBodyIndex])
+	{
+		return false;
+	}
+
+	const FName ChildBoneName = Bodies[ChildBodyIndex]->BoneName;
+	const int32 ChildBoneIndex = FindBoneIndexByName(Asset, ChildBoneName);
+	if (ChildBoneIndex < 0)
+	{
+		return false;
+	}
+
+	const int32 ExistingConstraintIndex = FindConstraintIndexByChildBoneName(PhysicsAsset, ChildBoneName);
+	if (ExistingConstraintIndex >= 0)
+	{
+		SelectedPhysicsBodyIndex = -1;
+		SelectedPhysicsConstraintIndex = ExistingConstraintIndex;
+		SyncDebugComponent(PhysicsAsset);
+		SyncReflectionDetailTarget(PhysicsAsset);
+		RefreshReflectionDetailSnapshot(PhysicsAsset);
+		return true;
+	}
+
+	if (RagdollPanel)
+	{
+		RagdollPanel->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+	}
+
+	const int32 ParentBodyBoneIndex = FindNearestParentPhysicsBodyBoneIndex(Asset, PhysicsAsset, ChildBoneIndex);
+	FConstraintInstanceInitDesc Desc;
+	Desc.ChildBoneName = ChildBoneName;
+	if (ParentBodyBoneIndex >= 0)
+	{
+		Desc.ParentBoneName = FName(Asset->Bones[ParentBodyBoneIndex].Name);
+		Desc.ParentFrame = FTransform::FromMatrixWithScale(
+			Asset->Bones[ChildBoneIndex].GetReferenceGlobalPose() *
+			Asset->Bones[ParentBodyBoneIndex].GetReferenceGlobalPose().GetAffineInverse());
+	}
+	else
+	{
+		Desc.ParentBoneName = FName::None;
+		Desc.ParentFrame = FTransform();
+	}
+	Desc.ChildFrame = FTransform();
+	Desc.TwistLimitDegrees = 45.0f;
+	Desc.Swing1LimitDegrees = 35.0f;
+	Desc.Swing2LimitDegrees = 35.0f;
+	Desc.bEnableCollision = false;
+	Desc.bEnableProjection = true;
+	Desc.ProjectionLinearTolerance = 10.0f;
+	Desc.ProjectionAngularToleranceDegrees = 30.0f;
+
+	TArray<FConstraintInstanceInitDesc>& ConstraintDescs = PhysicsAsset->GetConstraintInitDescsMutable();
+	const int32 NewConstraintIndex = static_cast<int32>(ConstraintDescs.size());
+	ConstraintDescs.push_back(Desc);
+
+	SelectedPhysicsBodyIndex = -1;
+	SelectedPhysicsConstraintIndex = NewConstraintIndex;
+	SavePhysicsAssetChange("PhysicsAsset constraint create warning");
+	MarkDirty();
+	SyncDebugComponent(PhysicsAsset);
+	SyncReflectionDetailTarget(PhysicsAsset);
+	RefreshReflectionDetailSnapshot(PhysicsAsset);
+	return true;
+}
+
+int32 FMeshEditorPhysicsAssetTab::PickPhysicsAssetBodyAtMouse(const ImVec2& ViewportPos, const ImVec2& ViewportSize) const
+{
+	const FMeshEditorViewportClient& ViewportClient = GetViewportClient();
+	const UPhysicsAssetDebugComponent* DebugComponent = ViewportClient.GetPhysicsAssetDebugComponent();
+	const FViewport* Viewport = ViewportClient.GetViewport();
+	if (!DebugComponent || !Viewport || ViewportSize.x <= 0.0f || ViewportSize.y <= 0.0f)
+	{
+		return -1;
+	}
+
+	const ImVec2 MousePos = ImGui::GetIO().MousePos;
+	const float LocalMouseX = MousePos.x - ViewportPos.x;
+	const float LocalMouseY = MousePos.y - ViewportPos.y;
+	const float ViewportWidth = static_cast<float>(Viewport->GetWidth());
+	const float ViewportHeight = static_cast<float>(Viewport->GetHeight());
+	if (LocalMouseX < 0.0f || LocalMouseY < 0.0f || LocalMouseX > ViewportWidth || LocalMouseY > ViewportHeight)
+	{
+		return -1;
+	}
+
+	FMinimalViewInfo POV;
+	if (!ViewportClient.GetCameraView(POV))
+	{
+		return -1;
+	}
+
+	const FRay Ray = POV.DeprojectScreenToWorld(LocalMouseX, LocalMouseY, ViewportWidth, ViewportHeight);
+	FPhysicsAssetDebugHitResult Hit;
+	return DebugComponent->PickBody(Ray, Hit) ? Hit.BodyIndex : -1;
 }
 
 void FMeshEditorPhysicsAssetTab::SyncReflectionDetailTarget(UPhysicsAsset* PhysicsAsset)

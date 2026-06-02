@@ -15,10 +15,10 @@ struct FConstraintInstanceInitDesc
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere, Category="Constraint", DisplayName="Parent Bone")
+	UPROPERTY(Edit, Category="Constraint", DisplayName="Parent Bone")
 	FName ParentBoneName = FName::None;
 
-	UPROPERTY(VisibleAnywhere, Category="Constraint", DisplayName="Child Bone")
+	UPROPERTY(Edit, Category="Constraint", DisplayName="Child Bone")
 	FName ChildBoneName = FName::None;
 
 	FTransform ParentFrame;

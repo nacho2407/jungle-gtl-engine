@@ -158,8 +158,17 @@ private:
 		const ImVec2& ViewportSize,
 		USkeletalMesh* SkeletalMesh,
 		UPhysicsAsset*& InOutPhysicsAsset);
+	bool RenderPhysicsAssetViewportContextMenu(
+		const ImVec2& ViewportPos,
+		const ImVec2& ViewportSize,
+		const FSkeletalMesh* Asset,
+		UPhysicsAsset* PhysicsAsset,
+		bool bSuppressOpen);
 	void RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, UPhysicsAsset* PhysicsAsset);
 	bool RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex);
+	bool CanCreateConstraintForBody(UPhysicsAsset* PhysicsAsset, const FSkeletalMesh* Asset, int32 ChildBodyIndex) const;
+	bool CreateConstraintForBody(UPhysicsAsset* PhysicsAsset, const FSkeletalMesh* Asset, int32 ChildBodyIndex);
+	int32 PickPhysicsAssetBodyAtMouse(const ImVec2& ViewportPos, const ImVec2& ViewportSize) const;
 	void SyncReflectionDetailTarget(UPhysicsAsset* PhysicsAsset);
 	void ClearReflectionDetailTarget();
 	void RefreshReflectionDetailSnapshot(UPhysicsAsset* PhysicsAsset);
@@ -170,6 +179,7 @@ private:
 private:
 	int32 SelectedPhysicsBodyIndex = -1;
 	int32 SelectedPhysicsConstraintIndex = -1;
+	int32 ViewportContextPhysicsBodyIndex = -1;
 	EPhysicsAssetDetailTargetType ReflectionDetailTargetType = EPhysicsAssetDetailTargetType::None;
 	FSelectionDetailTarget ReflectionDetailTarget;
 	TArray<uint8> ReflectionDetailSnapshot;
