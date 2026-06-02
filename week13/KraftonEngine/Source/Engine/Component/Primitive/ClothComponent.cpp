@@ -1,4 +1,4 @@
-#include "Component/Primitive/ClothComponent.h"
+﻿#include "Component/Primitive/ClothComponent.h"
 
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/AActor.h"
@@ -227,6 +227,7 @@ void UClothComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 	LogBackendStatusOnce();
 	RebuildClothIfNeeded();
+	Simulation.Tick(DeltaTime);
 }
 
 void UClothComponent::PostEditProperty(const char* PropertyName)
@@ -301,8 +302,15 @@ void UClothComponent::PostDuplicate()
 {
 	UMeshComponent::PostDuplicate();
 
+	Simulation.Shutdown();
 	LoadMaterialFromSlot();
 	MarkClothRebuildDirty();
+}
+
+void UClothComponent::RouteComponentDestroyed()
+{
+	Simulation.Shutdown();
+	UMeshComponent::RouteComponentDestroyed();
 }
 
 void UClothComponent::AddReferencedObjects(FReferenceCollector& Collector)
@@ -423,12 +431,14 @@ void UClothComponent::MarkClothEditorPreviewDirty()
 
 void UClothComponent::RebuildClothIfNeeded(bool bNotifyProxyDirty)
 {
-	if (!bTopologyRebuildDirty)
+	const FClothConfig Config = MakeClothConfig();
+
+	if (bTopologyRebuildDirty)
 	{
-		return;
+		BuildGrid(Config, bNotifyProxyDirty);
 	}
 
-	BuildGrid(MakeClothConfig(), bNotifyProxyDirty);
+	RebuildSimulationIfNeeded(Config);
 }
 
 FClothConfig UClothComponent::MakeClothConfig() const
@@ -518,6 +528,78 @@ void UClothComponent::BuildGrid(const FClothConfig& Config, bool bNotifyProxyDir
 	{
 		MarkProxyDirty(EDirtyFlag::Mesh);
 	}
+}
+
+FClothSimulationBuildDesc UClothComponent::BuildSimulationDesc(const FClothConfig& Config) const
+{
+	FClothSimulationBuildDesc BuildDesc;
+	BuildDesc.Config = Config;
+	BuildDesc.Indices = RenderData.Indices;
+
+	BuildDesc.InitialPositionsComponentLocal.reserve(RenderData.Vertices.size());
+	BuildDesc.InvMasses.resize(RenderData.Vertices.size(), 1.0f);
+
+	for (const FVertexPNCTT& Vertex : RenderData.Vertices)
+	{
+		// render data와 simulation data는 모두 component local 기준 유지
+		BuildDesc.InitialPositionsComponentLocal.push_back(Vertex.Position);
+	}
+
+	if (PinningMode == EClothPinSelectionType::TopEdge)
+	{
+		const uint32 NumX = static_cast<uint32>(Config.NumParticlesX);
+		const uint32 PinCount = (std::min)(NumX, static_cast<uint32>(BuildDesc.InvMasses.size()));
+
+		for (uint32 Col = 0; Col < PinCount; ++Col)
+		{
+			// commit 4에서 actor local pinning으로 교체할 임시 top edge hard pin
+			BuildDesc.InvMasses[Col] = 0.0f;
+			BuildDesc.PinnedIndices.push_back(Col);
+		}
+	}
+
+	return BuildDesc;
+}
+
+void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
+{
+	if (!bSimulationRebuildDirty)
+	{
+		return;
+	}
+
+	if (!bEnableSimulation)
+	{
+		// simulation off 상태에서는 static grid render만 유지
+		Simulation.Shutdown();
+		bSimulationRebuildDirty = false;
+		return;
+	}
+
+	if (!RenderData.IsValid())
+	{
+		Simulation.Shutdown();
+		bSimulationRebuildDirty = false;
+		return;
+	}
+
+	if (!GEngine)
+	{
+		// engine context가 아직 없으면 다음 tick에서 다시 시도
+		return;
+	}
+
+	const FClothSimulationBuildDesc BuildDesc = BuildSimulationDesc(Config);
+	if (!Simulation.Rebuild(&GEngine->GetClothContext(), BuildDesc))
+	{
+		UE_LOG("[ClothComponent] Simulation resource unavailable: %s", Simulation.GetLastFailureDetail().c_str());
+	}
+
+	bSimulationRebuildDirty = false;
+	bPinningDirty = false;
+	bPinTargetDirty = false;
+	bForceConfigDirty = false;
+	bCollisionDirty = false;
 }
 
 void UClothComponent::RecalculateNormalsAndTangents()

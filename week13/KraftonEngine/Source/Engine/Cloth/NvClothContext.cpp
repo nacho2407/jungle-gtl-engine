@@ -527,3 +527,8 @@ void FNvClothContext::ReleaseFactory()
 	Impl->Factory = nullptr;
 #endif
 }
+
+void* FNvClothContext::GetFactoryHandle() const
+{
+	return Impl ? Impl->Factory : nullptr;
+}

@@ -121,6 +121,31 @@ struct FClothRenderData
 };
 
 /**
+ * @brief Cloth simulation resource 생성 입력
+ */
+struct FClothSimulationBuildDesc
+{
+	TArray<FVector> InitialPositionsComponentLocal;
+	TArray<uint32> Indices;
+	TArray<float> InvMasses;
+	TArray<uint32> PinnedIndices;
+	FClothConfig Config;
+
+	/**
+	 * @brief simulation build 입력 유효 여부를 반환합니다
+	 *
+	 * @return simulation build 입력 유효 여부
+	 */
+	bool IsValid() const
+	{
+		return !InitialPositionsComponentLocal.empty()
+			&& Indices.size() >= 3
+			&& (Indices.size() % 3) == 0
+			&& (InvMasses.empty() || InvMasses.size() == InitialPositionsComponentLocal.size());
+	}
+};
+
+/**
  * @brief Cloth vertex pinning 단위 데이터
  */
 struct FClothPinData

@@ -1,5 +1,6 @@
-#pragma once
+﻿#pragma once
 
+#include "Cloth/ClothSimulation.h"
 #include "Cloth/ClothTypes.h"
 #include "Component/MeshComponent.h"
 #include "Math/Rotator.h"
@@ -42,6 +43,11 @@ public:
 	 * @brief duplication 이후 저장된 asset 참조와 render data를 복원합니다
 	 */
 	void PostDuplicate() override;
+
+	/**
+	 * @brief component 제거 경로에서 cloth simulation resource를 해제합니다
+	 */
+	void RouteComponentDestroyed() override;
 
 	/**
 	 * @brief GC reference collector에 runtime material 참조를 추가합니다
@@ -164,6 +170,22 @@ private:
 	 * @param bNotifyProxyDirty render proxy에 mesh dirty를 전파할지 여부
 	 */
 	void BuildGrid(const FClothConfig& Config, bool bNotifyProxyDirty);
+
+	/**
+	 * @brief 현재 render data를 simulation build 입력으로 변환합니다
+	 *
+	 * @param Config simulation build 입력에 포함할 cloth config
+	 *
+	 * @return simulation resource 생성 입력
+	 */
+	FClothSimulationBuildDesc BuildSimulationDesc(const FClothConfig& Config) const;
+
+	/**
+	 * @brief dirty 상태인 cloth simulation resource를 다시 생성합니다
+	 *
+	 * @param Config simulation build 입력에 포함할 cloth config
+	 */
+	void RebuildSimulationIfNeeded(const FClothConfig& Config);
 
 	/**
 	 * @brief triangle과 UV 기준으로 normal과 tangent를 다시 계산합니다
@@ -401,6 +423,7 @@ private:
 	TObjectPtr<UMaterial> Material = nullptr;
 
 	FClothRenderData RenderData;
+	FClothSimulation Simulation;
 	FVector CachedLocalCenter = FVector::ZeroVector;
 	FVector CachedLocalExtent = FVector(0.5f, 0.5f, 0.5f);
 	bool bHasValidLocalBounds = false;
