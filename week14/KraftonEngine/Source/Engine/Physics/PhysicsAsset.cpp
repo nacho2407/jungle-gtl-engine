@@ -1,4 +1,4 @@
-﻿#include "PhysicsAsset.h"
+#include "PhysicsAsset.h"
 #include "Object/ReferenceCollector.h"
 
 #include <algorithm>
@@ -64,6 +64,22 @@ namespace
 			SerializeItem(Ar, Item);
 		}
 	}
+
+	FString MakeCollisionDisablePairKey(FName BodyA, FName BodyB)
+	{
+		FString KeyA = MakeBodySetupIndexKey(BodyA);
+		FString KeyB = MakeBodySetupIndexKey(BodyB);
+		if (KeyB < KeyA)
+		{
+			std::swap(KeyA, KeyB);
+		}
+		return KeyA + "|" + KeyB;
+	}
+
+	bool IsUsablePairName(FName BoneName)
+	{
+		return BoneName.IsValid() && BoneName != FName::None;
+	}
 }
 
 void UPhysicsAsset::Serialize(FArchive& Ar)
@@ -123,7 +139,7 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 	// Trailing extension section. Older physics assets end before this point
 	if (Ar.IsSaving())
 	{
-		uint32 ExtVersion = 2;
+		uint32 ExtVersion = 3;
 		Ar << ExtVersion;
 		Ar << PreviewSkeletalMeshPath;
 		SerializeExtensionArray(Ar, BodyProfiles, SerializeBodyProfile);
@@ -138,12 +154,56 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 		{
 			Ar << PreviewSkeletalMeshPath;
 		}
-		if (ExtVersion >= 2)
+		if (ExtVersion >= 3)
 		{
 			SerializeExtensionArray(Ar, BodyProfiles, SerializeBodyProfile);
 			SerializeExtensionArray(Ar, DisabledCollisionPairs, SerializeDisabledCollisionPair);
 			SerializeExtensionArray(Ar, GraphNodePositions, SerializeGraphNodePosition);
 		}
+		else if (ExtVersion == 2)
+		{
+			uint32 FirstVal = 0;
+			Ar << FirstVal;
+			if (Ar.AtEnd())
+			{
+				DisabledCollisionPairs.clear();
+				DisabledCollisionPairs.reserve(FirstVal);
+				for (uint32 i = 0; i < FirstVal; ++i)
+				{
+					FName BodyA, BodyB;
+					Ar << BodyA;
+					Ar << BodyB;
+					if (IsUsablePairName(BodyA) && IsUsablePairName(BodyB) && BodyA != BodyB)
+					{
+						DisabledCollisionPairs.push_back(FPhysicsAssetCollisionDisablePair{ BodyA, BodyB });
+					}
+				}
+			}
+			else
+			{
+				BodyProfiles.clear();
+				BodyProfiles.resize(FirstVal);
+				for (FPhysicsAssetBodyProfileData& Profile : BodyProfiles)
+				{
+					SerializeBodyProfile(Ar, Profile);
+				}
+
+				SerializeExtensionArray(Ar, DisabledCollisionPairs, SerializeDisabledCollisionPair);
+				SerializeExtensionArray(Ar, GraphNodePositions, SerializeGraphNodePosition);
+			}
+		}
+		else
+		{
+			BodyProfiles.clear();
+			DisabledCollisionPairs.clear();
+			GraphNodePositions.clear();
+		}
+	}
+	else if (Ar.IsLoading())
+	{
+		BodyProfiles.clear();
+		DisabledCollisionPairs.clear();
+		GraphNodePositions.clear();
 	}
 
 	if (Ar.IsLoading())
@@ -264,6 +324,7 @@ bool UPhysicsAsset::RemoveBodySetupAt(int32 BodyIndex)
 	UBodySetup* Body = BodySetups[BodyIndex];
 	const FName BoneName = Body ? Body->GetBoneName() : FName::None;
 	RemoveConstraintsForBody(BoneName);
+	RemoveCollisionDisablePairsForBody(BoneName);
 
 	BodySetups.erase(BodySetups.begin() + BodyIndex);
 	UpdateBodySetupIndexMap();
@@ -291,7 +352,7 @@ int32 UPhysicsAsset::FindConstraintIndex(FName ParentBone, FName ChildBone) cons
 	return -1;
 }
 
-UPhysicsConstraintTemplate* UPhysicsAsset::CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode)
+UPhysicsConstraintTemplate* UPhysicsAsset::CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode, bool bDisableCollision)
 {
 	if (!ParentBone.IsValid() || !ChildBone.IsValid() || ParentBone == FName::None || ChildBone == FName::None)
 	{
@@ -311,12 +372,14 @@ UPhysicsConstraintTemplate* UPhysicsAsset::CreateConstraint(FName ParentBone, FN
 	const int32 ExistingIndex = FindConstraintIndex(ParentBone, ChildBone);
 	if (ExistingIndex >= 0)
 	{
+		SetCollisionDisabled(ParentBone, ChildBone, bDisableCollision);
 		return ConstraintTemplates[ExistingIndex];
 	}
 
 	UPhysicsConstraintTemplate* Constraint = UObjectManager::Get().CreateObject<UPhysicsConstraintTemplate>(this);
 	Constraint->Setup(ParentBone, ChildBone, FrameA, FrameB, Mode);
 	ConstraintTemplates.push_back(Constraint);
+	SetCollisionDisabled(ParentBone, ChildBone, bDisableCollision);
 	return Constraint;
 }
 
@@ -328,11 +391,14 @@ bool UPhysicsAsset::RemoveConstraintAt(int32 ConstraintIndex)
 	}
 
 	UPhysicsConstraintTemplate* Constraint = ConstraintTemplates[ConstraintIndex];
+	const FName ParentBone = Constraint ? Constraint->GetParentBoneName() : FName::None;
+	const FName ChildBone = Constraint ? Constraint->GetChildBoneName() : FName::None;
 	ConstraintTemplates.erase(ConstraintTemplates.begin() + ConstraintIndex);
 	if (Constraint)
 	{
 		UObjectManager::Get().DestroyObject(Constraint);
 	}
+	SetCollisionDisabled(ParentBone, ChildBone, false);
 	return true;
 }
 
@@ -423,24 +489,32 @@ void UPhysicsAsset::SetBodyPhysicalMaterialPath(FName BoneName, const FString& I
 	Profile->PhysicalMaterialPath = InPath.empty() ? "None" : InPath;
 }
 
-bool UPhysicsAsset::IsCollisionDisabled(FName BoneA, FName BoneB) const
+int32 UPhysicsAsset::FindCollisionDisablePairIndex(FName BoneA, FName BoneB) const
 {
 	if (!IsValidPhysicsBoneName(BoneA) || !IsValidPhysicsBoneName(BoneB) || BoneA == BoneB)
 	{
-		return false;
+		return -1;
 	}
 
-	NormalizeBonePair(BoneA, BoneB);
 	const FString KeyA = MakeBodySetupIndexKey(BoneA);
 	const FString KeyB = MakeBodySetupIndexKey(BoneB);
-	for (const FPhysicsAssetCollisionDisablePair& Pair : DisabledCollisionPairs)
+	for (int32 Index = 0; Index < static_cast<int32>(DisabledCollisionPairs.size()); ++Index)
 	{
-		if (MakeBodySetupIndexKey(Pair.BoneA) == KeyA && MakeBodySetupIndexKey(Pair.BoneB) == KeyB)
+		const FPhysicsAssetCollisionDisablePair& Pair = DisabledCollisionPairs[Index];
+		const FString PairKeyA = MakeBodySetupIndexKey(Pair.BoneA);
+		const FString PairKeyB = MakeBodySetupIndexKey(Pair.BoneB);
+		if ((PairKeyA == KeyA && PairKeyB == KeyB) || (PairKeyA == KeyB && PairKeyB == KeyA))
 		{
-			return true;
+			return Index;
 		}
 	}
-	return false;
+
+	return -1;
+}
+
+bool UPhysicsAsset::IsCollisionDisabled(FName BoneA, FName BoneB) const
+{
+	return FindCollisionDisablePairIndex(BoneA, BoneB) >= 0;
 }
 
 void UPhysicsAsset::SetCollisionDisabled(FName BoneA, FName BoneB, bool bDisabled)
@@ -450,24 +524,17 @@ void UPhysicsAsset::SetCollisionDisabled(FName BoneA, FName BoneB, bool bDisable
 		return;
 	}
 
-	NormalizeBonePair(BoneA, BoneB);
-	const FString KeyA = MakeBodySetupIndexKey(BoneA);
-	const FString KeyB = MakeBodySetupIndexKey(BoneB);
-	for (auto It = DisabledCollisionPairs.begin(); It != DisabledCollisionPairs.end(); ++It)
-	{
-		if (MakeBodySetupIndexKey(It->BoneA) == KeyA && MakeBodySetupIndexKey(It->BoneB) == KeyB)
-		{
-			if (!bDisabled)
-			{
-				DisabledCollisionPairs.erase(It);
-			}
-			return;
-		}
-	}
-
+	const int32 ExistingIndex = FindCollisionDisablePairIndex(BoneA, BoneB);
 	if (bDisabled)
 	{
-		DisabledCollisionPairs.push_back(FPhysicsAssetCollisionDisablePair{ BoneA, BoneB });
+		if (ExistingIndex < 0)
+		{
+			DisabledCollisionPairs.push_back(FPhysicsAssetCollisionDisablePair{ BoneA, BoneB });
+		}
+	}
+	else if (ExistingIndex >= 0)
+	{
+		DisabledCollisionPairs.erase(DisabledCollisionPairs.begin() + ExistingIndex);
 	}
 }
 
@@ -550,6 +617,11 @@ void UPhysicsAsset::RemoveEditorDataForBody(FName BoneName)
 			++It;
 		}
 	}
+}
+
+void UPhysicsAsset::RemoveCollisionDisablePairsForBody(FName BoneName)
+{
+	RemoveEditorDataForBody(BoneName);
 }
 
 void UPhysicsAsset::Clear()

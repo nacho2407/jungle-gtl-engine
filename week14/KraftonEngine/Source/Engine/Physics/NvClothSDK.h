@@ -15,6 +15,8 @@ public:
 	}
 };
 
+typedef struct CUctx_st* CUcontext;
+
 class FNvClothSDK : public TSingleton<FNvClothSDK>
 {
 	friend class TSingleton<FNvClothSDK>;
@@ -26,9 +28,15 @@ public:
 	nv::cloth::Solver* GetSolver() const { return Solver; }
 
 private:
+	bool TryInitializeCuda();
+	void ShutdownCuda();
+
+private:
 	FNvClothAssertHandler AssertHandler;
 
 	nv::cloth::Factory* Factory = nullptr;
 	nv::cloth::Solver* Solver = nullptr;
 
+	CUcontext CudaContext = nullptr;
+	bool bUsingCuda = false;
 };

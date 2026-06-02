@@ -35,4 +35,5 @@ struct FClothCollisionGatherParams
 
 	const AActor* IgnoreActor = nullptr;
 	const UPrimitiveComponent* IgnoreComponent = nullptr;
+	TArray<const UPrimitiveComponent*> IgnoreComponents;
 };

@@ -96,6 +96,115 @@ namespace
 
 		return Options.HighlightShapeType == ShapeType && Options.HighlightShapeIndex == ShapeIndex;
 	}
+
+	void DrawConstraintVisuals(UWorld* World, const UPhysicsConstraintTemplate* Constraint,
+		const FMatrix& ParentMat, const FMatrix& ChildMat, const FColor& ConstraintColor)
+	{
+		const FVector JointWorld   = ParentMat.TransformPositionWithW(Constraint->GetLocalFrameA().Location);
+		const FQuat JointRot       = ParentMat.ToQuat() * Constraint->GetLocalFrameA().Rotation;
+
+		const FVector DirX = JointRot.RotateVector(FVector::XAxisVector);
+		const FVector DirY = JointRot.RotateVector(FVector::YAxisVector);
+		const FVector DirZ = JointRot.RotateVector(FVector::ZAxisVector);
+
+		const FVector ParentOrigin = ParentMat.GetLocation();
+		const FVector ChildOrigin  = ChildMat.GetLocation();
+		const float Dist = (ChildOrigin - ParentOrigin).Length();
+
+		const float VisualScale = (Dist > 1.e-4f) ? Dist : 20.0f;
+		const float ConeLength  = VisualScale * 0.25f;
+		const float AxisLength  = ConeLength * 0.6f;
+
+		// 1. Draw joint axes (tripod): X = Red, Y = Green, Z = Blue
+		DrawDebugLine(World, JointWorld, JointWorld + DirX * AxisLength, FColor::Red(), PhysicsAssetDebugDrawDuration);
+		DrawDebugLine(World, JointWorld, JointWorld + DirY * AxisLength, FColor::Green(), PhysicsAssetDebugDrawDuration);
+		DrawDebugLine(World, JointWorld, JointWorld + DirZ * AxisLength, FColor::Blue(), PhysicsAssetDebugDrawDuration);
+
+		const EAngularConstraintMode Mode = Constraint->GetAngularMode();
+
+		if (Mode == EAngularConstraintMode::Limited)
+		{
+			// 2. Draw Swing Cone / Funnel
+			const float Swing1Rad = Constraint->GetSwing1Limit() * (3.14159265f / 180.0f);
+			const float Swing2Rad = Constraint->GetSwing2Limit() * (3.14159265f / 180.0f);
+
+			const float Ry = ConeLength * std::tan(std::min(Swing2Rad, 1.5f));
+			const float Rz = ConeLength * std::tan(std::min(Swing1Rad, 1.5f));
+
+			constexpr int32 Segments = 24;
+			FVector PrevPoint;
+			bool bFirst = true;
+
+			for (int32 i = 0; i <= Segments; ++i)
+			{
+				const float Theta = (static_cast<float>(i) / Segments) * 2.0f * 3.14159265f;
+				const FVector Offset = DirX * ConeLength + DirY * (Ry * std::cos(Theta)) + DirZ * (Rz * std::sin(Theta));
+				const FVector P = JointWorld + Offset;
+
+				if (!bFirst)
+				{
+					DrawDebugLine(World, PrevPoint, P, ConstraintColor, PhysicsAssetDebugDrawDuration);
+				}
+				PrevPoint = P;
+				bFirst = false;
+
+				if (i % 3 == 0)
+				{
+					DrawDebugLine(World, JointWorld, P, ConstraintColor, PhysicsAssetDebugDrawDuration);
+				}
+			}
+
+			// 3. Draw Twist Sector (pie-slice) around local X
+			const float TwistRad = Constraint->GetTwistLimit() * (3.14159265f / 180.0f);
+			const float TwistRadius = ConeLength * 0.4f;
+			const FVector CenterOffset = JointWorld + DirX * (ConeLength * 0.1f);
+
+			constexpr int32 TwistSegments = 16;
+			FVector PrevTwist;
+			bFirst = true;
+
+			for (int32 i = 0; i <= TwistSegments; ++i)
+			{
+				const float T = static_cast<float>(i) / TwistSegments;
+				const float Angle = -TwistRad + T * 2.0f * TwistRad;
+
+				const FVector Offset = DirY * (TwistRadius * std::cos(Angle)) + DirZ * (TwistRadius * std::sin(Angle));
+				const FVector P = CenterOffset + Offset;
+
+				if (!bFirst)
+				{
+					DrawDebugLine(World, PrevTwist, P, FColor::Yellow(), PhysicsAssetDebugDrawDuration);
+				}
+				PrevTwist = P;
+				bFirst = false;
+
+				if (i == 0 || i == TwistSegments)
+				{
+					DrawDebugLine(World, CenterOffset, P, FColor::Yellow(), PhysicsAssetDebugDrawDuration);
+				}
+			}
+		}
+		else if (Mode == EAngularConstraintMode::Locked)
+		{
+			const float LockRadius = ConeLength * 0.15f;
+			constexpr int32 Segments = 16;
+			FVector PrevPoint;
+			bool bFirst = true;
+			for (int32 i = 0; i <= Segments; ++i)
+			{
+				const float Theta = (static_cast<float>(i) / Segments) * 2.0f * 3.14159265f;
+				const FVector P = JointWorld + (DirY * std::cos(Theta) + DirZ * std::sin(Theta)) * LockRadius;
+				if (!bFirst)
+				{
+					DrawDebugLine(World, PrevPoint, P, ConstraintColor, PhysicsAssetDebugDrawDuration);
+				}
+				PrevPoint = P;
+				bFirst = false;
+			}
+			DrawDebugLine(World, JointWorld - DirY * LockRadius, JointWorld + DirY * LockRadius, ConstraintColor, PhysicsAssetDebugDrawDuration);
+			DrawDebugLine(World, JointWorld - DirZ * LockRadius, JointWorld + DirZ * LockRadius, ConstraintColor, PhysicsAssetDebugDrawDuration);
+		}
+	}
 }
 
 void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
@@ -226,9 +335,8 @@ void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
 			DrawDebugLine(World, ParentOrigin, JointWorld, ConstraintColor, PhysicsAssetDebugDrawDuration);
 			DrawDebugLine(World, JointWorld,  ChildOrigin, ConstraintColor, PhysicsAssetDebugDrawDuration);
 
-			// 조인트 위치 마커(3축 십자) — 크기는 부모-자식 거리에 비례
-			const float CrossSize = (ChildOrigin - ParentOrigin).Length() * 0.15f;
-			DrawDebugPoint(World, JointWorld, CrossSize, ConstraintColor, PhysicsAssetDebugDrawDuration);
+			// 각도 한계 및 조인트 로컬 축 시각화 (깔대기/콘 형태)
+			DrawConstraintVisuals(World, Constraint, ParentMat, ChildMat, ConstraintColor);
 		}
 	}
 	

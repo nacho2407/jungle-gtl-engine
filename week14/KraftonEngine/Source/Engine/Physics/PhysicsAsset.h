@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Object/Object.h"
 #include "Physics/BodySetup.h"
@@ -58,7 +58,7 @@ public:
 	
 	const TArray<UPhysicsConstraintTemplate*>& GetConstraintTemplates() const {return ConstraintTemplates;}
 	int32 FindConstraintIndex(FName ParentBone, FName ChildBone) const;
-	UPhysicsConstraintTemplate* CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode);
+	UPhysicsConstraintTemplate* CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode, bool bDisableCollision = true);
 	bool RemoveConstraintAt(int32 ConstraintIndex);
 	void RemoveConstraintsForBody(FName BoneName);
 
@@ -71,6 +71,9 @@ public:
 	bool GetGraphNodePosition(FName BoneName, float& OutX, float& OutY) const;
 	void SetGraphNodePosition(FName BoneName, float X, float Y);
 
+	const TArray<FPhysicsAssetCollisionDisablePair>& GetCollisionDisablePairs() const { return DisabledCollisionPairs; }
+	int32 FindCollisionDisablePairIndex(FName BoneA, FName BoneB) const;
+	void RemoveCollisionDisablePairsForBody(FName BoneName);
 	void Clear();
 	
 private:

@@ -219,7 +219,7 @@ struct UberPS_Output
 // =============================================================================
 // Pixel Shader
 // =============================================================================
-UberPS_Output PS(UberVS_Output input)
+UberPS_Output PS(UberVS_Output input, bool isFrontFace : SV_IsFrontFace)
 {
     UberPS_Output output;
 
@@ -228,6 +228,7 @@ UberPS_Output PS(UberVS_Output input)
         texColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
     float4 baseColor = texColor * input.color;
+    float faceSign = isFrontFace ? 1.0f : -1.0f;
 
 #if defined(WEIGHT_BONE_HEATMAP) && WEIGHT_BONE_HEATMAP
 float Heat = saturate(input.selectedBoneWeight);
@@ -245,12 +246,12 @@ HeatColor = lerp(HeatColor, float3(1.0f, 1.0f, 0.0f),  t3);
 HeatColor = lerp(HeatColor, float3(1.0f, 0.05f, 0.0f), t4);
 
 output.Color = float4(HeatColor, 1.f);
-output.Normal = float4(normalize(input.normal), 1.0f);
+output.Normal = float4(normalize(input.normal) * faceSign, 1.0f);
 output.Culling = float4(0, 0, 0, 0);
 return output;
 #endif
 
-    float3 N = normalize(input.normal);
+    float3 N = normalize(input.normal) * faceSign;
 
 #if !defined(LIGHTING_MODEL_GOURAUD)
     if (HasNormalMap >= 0.5)
@@ -280,8 +281,16 @@ return output;
 
 #if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
     // Gouraud: VS에서 정점 단위로 계산 → PS에서 보간된 값 사용
-    diffuse  = input.litDiffuse;
-    specular = input.litSpecular;
+    if (isFrontFace)
+    {
+        diffuse  = input.litDiffuse;
+        specular = input.litSpecular;
+    }
+    else
+    {
+        diffuse = AccumulateDiffuse(input.worldPos, N, input.position);
+        specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess, input.position);
+    }
 
 #elif defined(LIGHTING_MODEL_LAMBERT) && LIGHTING_MODEL_LAMBERT
     diffuse = AccumulateDiffuse(input.worldPos, N, input.position);

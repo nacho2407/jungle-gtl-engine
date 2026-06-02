@@ -1,5 +1,6 @@
 ﻿#include "Physics/PhysXVehicleManager.h"
-#include "Physics/PhysXVehicleInstance.h"
+#include "Physics/ClothCollisionGeometryUtils.h"
+#include "Physics/ClothCollisionTypes.h"
 #include "Physics/PhysicsFilterData.h"
 #include "Physics/PhysXConversions.h"
 
@@ -7,8 +8,36 @@
 #include "Core/Types/EngineTypes.h"
 #include "Render/Scene/FScene.h"
 
+#include <PhysX/geometry/PxGeometryQuery.h>
+
+#include <algorithm>
+
 namespace
 {
+	bool PxBoundsIntersects(const physx::PxBounds3& A, const FBoundingBox& B)
+	{
+		if (!B.IsValid())
+		{
+			return true;
+		}
+
+		return A.minimum.x <= B.Max.X && A.maximum.x >= B.Min.X
+			&& A.minimum.y <= B.Max.Y && A.maximum.y >= B.Min.Y
+			&& A.minimum.z <= B.Max.Z && A.maximum.z >= B.Min.Z;
+	}
+
+	bool ShouldIncludeVehicleShapeForCloth(const physx::PxShape& Shape, const FClothCollisionGatherParams& Params)
+	{
+		if (!Shape.getFlags().isSet(physx::PxShapeFlag::eSIMULATION_SHAPE))
+		{
+			return false;
+		}
+
+		const physx::PxFilterData FilterData = Shape.getSimulationFilterData();
+		const uint32 ClothChannelBit = ObjectTypeBit(Params.ClothChannel);
+		return (FilterData.word1 & ClothChannelBit) != 0;
+	}
+
 	physx::PxQueryHitType::Enum VehicleSuspensionHitFilter(physx::PxFilterData QueryFilterData,
 		physx::PxFilterData ShapeFilterData, const void* ConstantBlock, physx::PxU32 ConstantBlockSize,
 		physx::PxHitFlags& QueryFlags)
@@ -59,7 +88,6 @@ void FPhysXVehicleManager::Shutdown()
 		BatchQuery = nullptr;
 	}
 	Vehicles.clear();
-	PxVehicles.clear();
 	WheelQueryResults.clear();
 	RaycastResults.clear();
 	Physics = nullptr;
@@ -67,13 +95,14 @@ void FPhysXVehicleManager::Shutdown()
 	DefaultMaterial = nullptr;
 }
 
-void FPhysXVehicleManager::RegisterVehicle(FPhysXVehicleInstance* Vehicle)
+void FPhysXVehicleManager::RegisterVehicle(physx::PxVehicleWheels* Vehicle)
 {
 	if (!Vehicle) return;
+	if (std::find(Vehicles.begin(), Vehicles.end(), Vehicle) != Vehicles.end()) return;
 	Vehicles.push_back(Vehicle);
 }
 
-void FPhysXVehicleManager::UnregisterVehicle(FPhysXVehicleInstance* Vehicle)
+void FPhysXVehicleManager::UnregisterVehicle(physx::PxVehicleWheels* Vehicle)
 {
 	if (!Vehicle) return;
 	Vehicles.erase(std::remove(Vehicles.begin(), Vehicles.end(), Vehicle), Vehicles.end());
@@ -83,38 +112,80 @@ void FPhysXVehicleManager::Update(float DeltaTime)
 {
 	if (!Scene || !FrictionPairs || Vehicles.empty()) return;
 
-	PxVehicles.clear();
-
-	for (FPhysXVehicleInstance* VehicleInstance : Vehicles)
-	{
-		if (!VehicleInstance) continue;
-
-		physx::PxVehicleWheels* Vehicle = VehicleInstance->GetPxVehicle();
-		if (!Vehicle) continue;
-
-		PxVehicles.push_back(Vehicle);
-	}
-
-	if (PxVehicles.empty()) return;
-
 	RebuildQueryBuffers();
 
 	if (!BatchQuery) return;
 
-	physx::PxVehicleSuspensionRaycasts(BatchQuery, static_cast<physx::PxU32>(PxVehicles.size()),
-		PxVehicles.data(), static_cast<physx::PxU32>(RaycastResults.size()), RaycastResults.data());
+	physx::PxVehicleSuspensionRaycasts(BatchQuery, static_cast<physx::PxU32>(Vehicles.size()),
+		Vehicles.data(), static_cast<physx::PxU32>(RaycastResults.size()), RaycastResults.data());
 
 	const physx::PxVec3 Gravity = Scene->getGravity();
 
-	physx::PxVehicleUpdates(DeltaTime, Gravity, *FrictionPairs, static_cast<physx::PxU32>(PxVehicles.size()),
-		PxVehicles.data(), WheelQueryResults.data());
+	physx::PxVehicleUpdates(DeltaTime, Gravity, *FrictionPairs, static_cast<physx::PxU32>(Vehicles.size()),
+		Vehicles.data(), WheelQueryResults.data());
+}
+
+void FPhysXVehicleManager::GatherClothCollision(
+	const FClothCollisionGatherParams& Params,
+	FClothCollisionData& OutCollisionData) const
+{
+	const FBoundingBox ClothQueryBounds = Params.BoundsPadding > 0.0f && Params.WorldBounds.IsValid()
+		? FBoundingBox(
+			Params.WorldBounds.Min - FVector(Params.BoundsPadding, Params.BoundsPadding, Params.BoundsPadding),
+			Params.WorldBounds.Max + FVector(Params.BoundsPadding, Params.BoundsPadding, Params.BoundsPadding))
+		: Params.WorldBounds;
+
+	for (physx::PxVehicleWheels* Vehicle : Vehicles)
+	{
+		if (!Vehicle)
+		{
+			continue;
+		}
+
+		physx::PxRigidDynamic* Actor = Vehicle->getRigidDynamicActor();
+		if (!Actor)
+		{
+			continue;
+		}
+
+		const uint32 ShapeCount = Actor->getNbShapes();
+		if (ShapeCount == 0)
+		{
+			continue;
+		}
+
+		TArray<physx::PxShape*> Shapes;
+		Shapes.resize(ShapeCount);
+		Actor->getShapes(Shapes.data(), ShapeCount);
+
+		const physx::PxTransform ActorPose = Actor->getGlobalPose();
+
+		for (physx::PxShape* Shape : Shapes)
+		{
+			if (!Shape || !ShouldIncludeVehicleShapeForCloth(*Shape, Params))
+			{
+				continue;
+			}
+
+			const physx::PxTransform ShapeWorldPose = ActorPose * Shape->getLocalPose();
+			const physx::PxBounds3 ShapeBounds = physx::PxGeometryQuery::getWorldBounds(
+				Shape->getGeometry().any(),
+				ShapeWorldPose);
+			if (!PxBoundsIntersects(ShapeBounds, ClothQueryBounds))
+			{
+				continue;
+			}
+
+			AppendShapeClothCollision(*Shape, ShapeWorldPose, Params, OutCollisionData);
+		}
+	}
 }
 
 void FPhysXVehicleManager::CollectDebugRender(FScene& RenderScene) const
 {
-	for (uint32 VehicleIndex = 0; VehicleIndex < static_cast<uint32>(PxVehicles.size()); ++VehicleIndex)
+	for (uint32 VehicleIndex = 0; VehicleIndex < static_cast<uint32>(Vehicles.size()); ++VehicleIndex)
 	{
-		physx::PxVehicleWheels* Vehicle = PxVehicles[VehicleIndex];
+		physx::PxVehicleWheels* Vehicle = Vehicles[VehicleIndex];
 		if (!Vehicle || VehicleIndex >= WheelQueryResults.size()) continue;
 
 		const physx::PxVehicleWheelQueryResult& VehicleQuery = WheelQueryResults[VehicleIndex];
@@ -162,7 +233,7 @@ void FPhysXVehicleManager::RebuildQueryBuffers()
 {
 	physx::PxU32 TotalWheelCount = 0;
 
-	for (physx::PxVehicleWheels* Vehicle : PxVehicles)
+	for (physx::PxVehicleWheels* Vehicle : Vehicles)
 	{
 		TotalWheelCount += Vehicle->mWheelsSimData.getNbWheels();
 	}
@@ -171,7 +242,7 @@ void FPhysXVehicleManager::RebuildQueryBuffers()
 
 	RaycastResults.resize(TotalWheelCount);
 	RaycastHitBuffer.resize(TotalWheelCount);
-	WheelQueryResults.resize(PxVehicles.size());
+	WheelQueryResults.resize(Vehicles.size());
 	WheelQueryResultStorage.resize(TotalWheelCount);
 
 	if (BatchQuery)
@@ -189,9 +260,9 @@ void FPhysXVehicleManager::RebuildQueryBuffers()
 	BatchQuery = Scene ? Scene->createBatchQuery(QueryDesc) : nullptr;
 
 	physx::PxU32 WheelOffset = 0;
-	for (uint32 Index = 0; Index < static_cast<uint32>(PxVehicles.size()); ++Index)
+	for (uint32 Index = 0; Index < static_cast<uint32>(Vehicles.size()); ++Index)
 	{
-		const physx::PxU32 WheelCount = PxVehicles[Index]->mWheelsSimData.getNbWheels();
+		const physx::PxU32 WheelCount = Vehicles[Index]->mWheelsSimData.getNbWheels();
 
 		WheelQueryResults[Index].nbWheelQueryResults = WheelCount;
 		WheelQueryResults[Index].wheelQueryResults = WheelQueryResultStorage.data() + WheelOffset;

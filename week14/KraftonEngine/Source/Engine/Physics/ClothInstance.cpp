@@ -1,5 +1,10 @@
 ﻿#include "Physics/ClothInstance.h"
+
+#include "Mesh/Static/StaticMeshAsset.h"
 #include "Physics/NvClothSDK.h"
+#include "Physics/PhysXConversions.h"
+
+#include <cfloat>
 
 bool FClothInstance::InitializeGrid(const FClothDesc& Desc)
 {
@@ -19,6 +24,10 @@ bool FClothInstance::InitializeGrid(const FClothDesc& Desc)
 	GridHeight = Desc.Height;
 	RenderVertices.clear();
 	RenderRevision = 0;
+
+	SourceUVs.clear();
+	SourceTangents.clear();
+	bUseSourceMeshAttributes = false;
 
 	auto IsPinned = [&](int32 x, int32 y)
 	{
@@ -210,6 +219,205 @@ bool FClothInstance::InitializeGrid(const FClothDesc& Desc)
 
 	FNvClothSDK::Get().GetSolver()->addCloth(Cloth);
 
+	UpdateRenderVerticesFromParticles(Desc.RenderNormalOffset);
+
+	return true;
+}
+
+bool FClothInstance::InitializeMesh(const FClothDesc& Desc, const FMeshDataView& MeshView)
+{
+	Release();
+
+	Particles.clear();
+	PhaseIndices.clear();
+	Sets.clear();
+	RestValues.clear();
+	StiffnessValues.clear();
+	Indices.clear();
+	Anchors.clear();
+	TetherLengths.clear();
+	Triangles.clear();
+	RenderVertices.clear();
+	SourceUVs.clear();
+	SourceTangents.clear();
+
+	RenderRevision = 0;
+	GridWidth = 0;
+	GridHeight = 0;
+	bUseSourceMeshAttributes = true;
+
+	if (!MeshView.IsValid() || MeshView.VertexCount == 0 || MeshView.IndexCount < 3) return false;
+
+	SourceUVs.resize(MeshView.VertexCount, FVector2(0.0f, 0.0f));
+	SourceTangents.resize(MeshView.VertexCount, FVector4(1.0f, 0.0f, 0.0f, 1.0f));
+
+	float MaxZ = -FLT_MAX;
+	for (uint32 i = 0; i < MeshView.VertexCount; ++i)
+	{
+		const FVector& P = MeshView.GetPosition(i);
+		MaxZ = std::max(MaxZ, P.Z);
+	}
+
+	const float PinThreshold = Desc.Spacing;
+
+	for (uint32 i = 0; i < MeshView.VertexCount; ++i)
+	{
+		const FNormalVertex& V = MeshView.GetVertex<FNormalVertex>(i);
+		const bool bPinned = Desc.PinMode != EClothPinMode::None && V.pos.Z >= MaxZ - PinThreshold;
+
+		const float InvMass = bPinned ? 0.0f : 1.0f;
+
+		Particles.push_back(physx::PxVec4(V.pos.X + Desc.InitialOffset.X,
+			V.pos.Y + Desc.InitialOffset.Y,
+			V.pos.Z + Desc.InitialOffset.Z,
+			InvMass));
+
+		SourceUVs[i] = V.tex;
+		SourceTangents[i] = V.tangent;
+	}
+
+	Triangles.reserve(MeshView.IndexCount);
+	for (uint32 i = 0; i + 2 < MeshView.IndexCount; i += 3)
+	{
+		const uint32 I0 = MeshView.IndexData[i + 0];
+		const uint32 I1 = MeshView.IndexData[i + 1];
+		const uint32 I2 = MeshView.IndexData[i + 2];
+
+		if (I0 < MeshView.VertexCount && I1 < MeshView.VertexCount && I2 < MeshView.VertexCount &&
+			I0 != I1 && I1 != I2 && I2 != I0)
+		{
+			Triangles.push_back(I0);
+			Triangles.push_back(I1);
+			Triangles.push_back(I2);
+		}
+	}
+
+	constexpr int32 MeshConstraintSetCount = 8;
+	TArray<uint32> SetIndices[MeshConstraintSetCount];
+	TArray<float> SetRestValues[MeshConstraintSetCount];
+	TSet<uint32> UsedParticlesPerSet[MeshConstraintSetCount];
+
+	auto AddConstraintToSet = [&](int32 SetIndex, uint32 A, uint32 B)
+	{
+		if (A == B || A >= Particles.size() || B >= Particles.size()) return;
+
+		SetIndices[SetIndex].push_back(A);
+		SetIndices[SetIndex].push_back(B);
+
+		const physx::PxVec4& PA = Particles[A];
+		const physx::PxVec4& PB = Particles[B];
+
+		const float Dx = PA.x - PB.x;
+		const float Dy = PA.y - PB.y;
+		const float Dz = PA.z - PB.z;
+		SetRestValues[SetIndex].push_back(std::sqrt(Dx * Dx + Dy * Dy + Dz * Dz));
+	};
+
+	auto AddConstraintToBestSet = [&](uint32 A, uint32 B)
+	{
+		if (A == B || A >= Particles.size() || B >= Particles.size()) return;
+
+		int32 BestSet = -1;
+		for (int32 SetIndex = 0; SetIndex < MeshConstraintSetCount; ++SetIndex)
+		{
+			const bool bUsesA = UsedParticlesPerSet[SetIndex].find(A) != UsedParticlesPerSet[SetIndex].end();
+			const bool bUsesB = UsedParticlesPerSet[SetIndex].find(B) != UsedParticlesPerSet[SetIndex].end();
+			if (!bUsesA && !bUsesB)
+			{
+				BestSet = SetIndex;
+				break;
+			}
+		}
+
+		if (BestSet < 0)
+		{
+			BestSet = 0;
+			for (int32 SetIndex = 1; SetIndex < MeshConstraintSetCount; ++SetIndex)
+			{
+				if (SetIndices[SetIndex].size() < SetIndices[BestSet].size())
+				{
+					BestSet = SetIndex;
+				}
+			}
+		}
+
+		AddConstraintToSet(BestSet, A, B);
+		UsedParticlesPerSet[BestSet].insert(A);
+		UsedParticlesPerSet[BestSet].insert(B);
+	};
+
+	TSet<uint64> UniqueEdges;
+
+	auto AddEdge = [&](uint32 A, uint32 B)
+	{
+		if (A > B) std::swap(A, B);
+
+		const uint64 Key = (static_cast<uint64>(A) << 32) | B;
+		if (UniqueEdges.insert(Key).second)
+		{
+			AddConstraintToBestSet(A, B);
+		}
+	};
+	for (uint32 i = 0; i + 2 < Triangles.size(); i += 3)
+	{
+		const uint32 I0 = Triangles[i + 0];
+		const uint32 I1 = Triangles[i + 1];
+		const uint32 I2 = Triangles[i + 2];
+
+		AddEdge(I0, I1);
+		AddEdge(I1, I2);
+		AddEdge(I2, I0);
+	}
+
+	for (int32 SetIndex = 0; SetIndex < MeshConstraintSetCount; ++SetIndex)
+	{
+		Indices.insert(Indices.end(), SetIndices[SetIndex].begin(), SetIndices[SetIndex].end());
+		RestValues.insert(RestValues.end(), SetRestValues[SetIndex].begin(), SetRestValues[SetIndex].end());
+
+		Sets.push_back(static_cast<uint32>(RestValues.size()));
+		PhaseIndices.push_back(static_cast<uint32>(SetIndex));
+	}
+
+	if (RestValues.empty())
+	{
+		return false;
+	}
+
+	auto MakeRange = [](auto& Array)
+	{
+		using T = typename std::remove_reference_t<decltype(Array)>::value_type;
+		return nv::cloth::Range<T>(Array.data(), Array.data() + Array.size());
+	};
+
+	nv::cloth::Factory* Factory = FNvClothSDK::Get().GetFactory();
+	if (!Factory) return false;
+
+	Fabric = Factory->createFabric(
+		static_cast<uint32>(Particles.size()),
+		MakeRange(PhaseIndices),
+		MakeRange(Sets),
+		MakeRange(RestValues),
+		MakeRange(StiffnessValues),
+		MakeRange(Indices),
+		MakeRange(Anchors),
+		MakeRange(TetherLengths),
+		MakeRange(Triangles));
+
+	if (!Fabric) return false;
+
+	Cloth = Factory->createCloth(MakeRange(Particles), *Fabric);
+	if (!Cloth) return false;
+
+	ApplySimulationSettings(Desc);
+	UpdateCollision(FClothCollisionData());
+
+	if (nv::cloth::Solver* Solver = FNvClothSDK::Get().GetSolver())
+	{
+		Solver->addCloth(Cloth);
+	}
+
+	UpdateRenderVerticesFromParticles(Desc.RenderNormalOffset);
+
 	return true;
 }
 
@@ -235,29 +443,9 @@ void FClothInstance::Release()
 	}
 }
 
-void FClothInstance::Simulate(float DeltaTime, int32 SubstepCount, float RenderNormalOffset)
+void FClothInstance::UpdateRenderVerticesFromParticles(float RenderNormalOffset)
 {
-	nv::cloth::Solver* Solver = FNvClothSDK::Get().GetSolver();
-	if (!Solver || !Cloth) return;
-
-	DeltaTime = std::min(DeltaTime, 1.0f / 60.0f);
-	SubstepCount = std::max(1, SubstepCount);
-
-	const float StepDeltaTime = DeltaTime / static_cast<float>(SubstepCount);
-
-	for (int32 Step = 0; Step < SubstepCount; ++Step)
-	{
-		if (Solver->beginSimulation(StepDeltaTime))
-		{
-			const int32 ChunkCount = Solver->getSimulationChunkCount();
-			for (int32 i = 0; i < ChunkCount; ++i)
-			{
-				Solver->simulateChunk(i);
-			}
-			Solver->endSimulation();
-		}
-	}
-
+	if (!Cloth) return;
 
 	auto Current = Cloth->getCurrentParticles();
 
@@ -270,8 +458,17 @@ void FClothInstance::Simulate(float DeltaTime, int32 SubstepCount, float RenderN
 
 		V.Position = FVector(P.x, P.y, P.z);
 		V.Color = FVector4(1, 1, 1, 1);
-		V.UV = FVector2(GridWidth > 1 ? float(i % GridWidth) / float(GridWidth - 1) : 0.0f,
-			GridHeight > 1 ? float(i / GridWidth) / float(GridHeight - 1) : 0.0f);
+
+		if (bUseSourceMeshAttributes && i < SourceUVs.size())
+		{
+			V.UV = SourceUVs[i];
+		}
+		else
+		{
+			V.UV = FVector2(
+				GridWidth > 1 ? float(i % GridWidth) / float(GridWidth - 1) : 0.0f,
+				GridHeight > 1 ? float(i / GridWidth) / float(GridHeight - 1) : 0.0f);
+		}
 	}
 
 	TArray<FVector> NormalSums;
@@ -312,33 +509,45 @@ void FClothInstance::Simulate(float DeltaTime, int32 SubstepCount, float RenderN
 		}
 	}
 
-	auto GetIndex = [this](int32 X, int32 Y)
+	if (bUseSourceMeshAttributes)
 	{
-		return Y * GridWidth + X;
-	};
-
-	for (int32 y = 0; y < GridHeight; ++y)
-	{
-		for (int32 x = 0; x < GridWidth; ++x)
+		for (int32 i = 0; i < RenderVertices.size(); ++i)
 		{
-			const int32 i = GetIndex(x, y);
+			RenderVertices[i].Tangent = i < SourceTangents.size()
+				? SourceTangents[i]
+				: FVector4(1.0f, 0.0f, 0.0f, 1.0f);
+		}
+	}
+	else
+	{
+		auto GetIndex = [this](int32 X, int32 Y)
+		{
+			return Y * GridWidth + X;
+		};
 
-			const int32 x0 = std::max(0, x - 1);
-			const int32 x1 = std::min(GridWidth - 1, x + 1);
-
-			FVector Tangent = RenderVertices[GetIndex(x1, y)].Position -
-				RenderVertices[GetIndex(x0, y)].Position;
-
-			if (Tangent.LengthSquared() > 1.0e-8f)
+		for (int32 y = 0; y < GridHeight; ++y)
+		{
+			for (int32 x = 0; x < GridWidth; ++x)
 			{
-				Tangent.Normalize();
-			}
-			else
-			{
-				Tangent = FVector(1, 0, 0);
-			}
+				const int32 i = GetIndex(x, y);
 
-			RenderVertices[i].Tangent = FVector4(Tangent.X, Tangent.Y, Tangent.Z, 1.0f);
+				const int32 x0 = std::max(0, x - 1);
+				const int32 x1 = std::min(GridWidth - 1, x + 1);
+
+				FVector Tangent = RenderVertices[GetIndex(x1, y)].Position -
+					RenderVertices[GetIndex(x0, y)].Position;
+
+				if (Tangent.LengthSquared() > 1.0e-8f)
+				{
+					Tangent.Normalize();
+				}
+				else
+				{
+					Tangent = FVector(1, 0, 0);
+				}
+
+				RenderVertices[i].Tangent = FVector4(Tangent.X, Tangent.Y, Tangent.Z, 1.0f);
+			}
 		}
 	}
 
@@ -351,6 +560,32 @@ void FClothInstance::Simulate(float DeltaTime, int32 SubstepCount, float RenderN
 	}
 
 	++RenderRevision;
+}
+
+void FClothInstance::Simulate(float DeltaTime, int32 SubstepCount, float RenderNormalOffset)
+{
+	nv::cloth::Solver* Solver = FNvClothSDK::Get().GetSolver();
+	if (!Solver || !Cloth) return;
+
+	DeltaTime = std::min(DeltaTime, 1.0f / 60.0f);
+	SubstepCount = std::max(1, SubstepCount);
+
+	const float StepDeltaTime = DeltaTime / static_cast<float>(SubstepCount);
+
+	for (int32 Step = 0; Step < SubstepCount; ++Step)
+	{
+		if (Solver->beginSimulation(StepDeltaTime))
+		{
+			const int32 ChunkCount = Solver->getSimulationChunkCount();
+			for (int32 i = 0; i < ChunkCount; ++i)
+			{
+				Solver->simulateChunk(i);
+			}
+			Solver->endSimulation();
+		}
+	}
+
+	UpdateRenderVerticesFromParticles(RenderNormalOffset);
 }
 
 void FClothInstance::ApplySimulationSettings(const FClothDesc& Desc)
@@ -439,4 +674,22 @@ void FClothInstance::UpdateCollision(const FClothCollisionData& Data)
 		Data.ConvexMasks.data() + Data.ConvexMasks.size()),
 		0,
 		0);
+}
+
+void FClothInstance::SetSimulationSpaceTransform(const FVector& WorldLocation, const FQuat& WorldRotation, bool bTeleport)
+{
+	if (!Cloth) return;
+
+	const physx::PxVec3 PxLocation = ToPxVec3(WorldLocation);
+	const physx::PxQuat PxRotation = ToPxQuat(WorldRotation);
+
+	if (bTeleport)
+	{
+		Cloth->teleportToLocation(PxLocation, PxRotation);
+		Cloth->clearInertia();
+		return;
+	}
+
+	Cloth->setTranslation(PxLocation);
+	Cloth->setRotation(PxRotation);
 }

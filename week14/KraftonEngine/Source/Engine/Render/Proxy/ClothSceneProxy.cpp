@@ -55,7 +55,7 @@ void FClothSceneProxy::UpdateMesh()
 	UpdateMaterial();
 
 	bBufferNeedsCreate = true;
-	UploadedRevision = 0;
+	UploadedRevision = static_cast<uint64>(-1);
 }
 
 bool FClothSceneProxy::PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context, FDrawCommandBuffer& OutBuffer) const

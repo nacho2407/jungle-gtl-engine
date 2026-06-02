@@ -24,18 +24,6 @@ namespace
 		Result.Location = ScaleVectorComponentWise(Frame.Location, Scale);
 		return Result;
 	}
-
-	uint16 AllocateSelfCollisionGroup()
-	{
-		static uint16 NextGroup = 1;
-
-		const uint16 Group = NextGroup++;
-		if (NextGroup == 0)
-		{
-			NextGroup = 1;
-		}
-		return Group;
-	}
 }
 
 void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* MeshComp, FPhysicsScene* Scene)
@@ -68,7 +56,6 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 	BodyToBoneIndex.reserve(NumSetups);
 
 	TMap<FString, int32> BoneToBody;
-	const uint16 SelfCollisionGroup = AllocateSelfCollisionGroup();
 
 	for (UBodySetup* Setup : BodySetups)
 	{
@@ -93,7 +80,7 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 		const bool bCreated = Scene->CreateBodyFromSetup(MeshComp, Body, *Setup,
 			BoneWorld.Location, BoneWorld.Rotation,
 			ECollisionChannel::Pawn, ECollisionEnabled::QueryAndPhysics,
-			ComponentWorldScaleAtStart, false, true, SelfCollisionGroup);
+			ComponentWorldScaleAtStart, false, true);
 
 		if (!bCreated)
 		{
@@ -119,12 +106,14 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 
 		const FTransform LocalFrameA = ScaleConstraintFrame(Constraint->GetLocalFrameA(), ComponentWorldScaleAtStart);
 		const FTransform LocalFrameB = ScaleConstraintFrame(Constraint->GetLocalFrameB(), ComponentWorldScaleAtStart);
+		const bool bDisableCollision = Asset->IsCollisionDisabled(Constraint->GetParentBoneName(), Constraint->GetChildBoneName());
 
 		FConstraintInstance* Inst = Scene->CreateD6Constraint(
 			&Bodies[ItParent->second], &Bodies[ItChild->second],
 			LocalFrameA, LocalFrameB,
 			Constraint->GetAngularMode(),
-			Constraint->GetSwing1Limit(), Constraint->GetSwing2Limit(), Constraint->GetTwistLimit());
+			Constraint->GetSwing1Limit(), Constraint->GetSwing2Limit(), Constraint->GetTwistLimit(),
+			bDisableCollision);
 
 		if (Inst)
 		{

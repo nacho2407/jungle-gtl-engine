@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Physics/PhysicsAssetEditTypes.h"
@@ -16,12 +16,14 @@ struct FPhysicsAssetCreationParams
 	EPhysicsAssetPrimitiveType PrimitiveType = EPhysicsAssetPrimitiveType::Capsule;
 	EPhysicsAssetVertexWeighting VertexWeighting = EPhysicsAssetVertexWeighting::DominantWeight;
 	bool bAutoOrientToBone = true;
+	bool bFilterSecondaryBones = true;
 	bool bWalkPastSmallBones = true;
 	bool bCreateBodyForAllBones = false;
 	int32 LodIndex = 0;
 	
 	// Constraint Creation
 	bool bCreateConstraints = true;
+	bool bDisableCollisionBetweenConstrainedBodies = true;
 	EPhysicsAssetConstraintMode AngularConstraintMode = EPhysicsAssetConstraintMode::Limited;
 };
 
