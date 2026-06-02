@@ -5,6 +5,8 @@
 #include "Core/Types/PropertyTypes.h"
 #include "Engine/Platform/Paths.h"
 #include "Collision/Ray/RayUtils.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/WorldContext.h"
 #include "Mesh/Static/StaticMeshAsset.h"
 #include "Engine/Runtime/Engine.h"
 #include "Object/GarbageCollection.h"
@@ -94,6 +96,49 @@ void UStaticMeshComponent::CacheLocalBounds()
 UStaticMesh* UStaticMeshComponent::GetStaticMesh() const
 {
 	return StaticMesh;
+}
+
+void UStaticMeshComponent::NotifyStaticMeshBodySetupChanged(UStaticMesh* ChangedMesh)
+{
+	if (!ChangedMesh || !GEngine)
+	{
+		return;
+	}
+
+	for (FWorldContext& WorldContext : GEngine->GetWorldList())
+	{
+		UWorld* World = WorldContext.World;
+		if (!World)
+		{
+			continue;
+		}
+
+		for (AActor* Actor : World->GetActors())
+		{
+			if (!IsValid(Actor))
+			{
+				continue;
+			}
+
+			for (UActorComponent* ActorComp : Actor->GetComponents())
+			{
+				UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(ActorComp);
+				if (!IsValid(StaticMeshComp))
+				{
+					continue;
+				}
+
+				if (StaticMeshComp->GetStaticMesh() != ChangedMesh)
+				{
+					continue;
+				}
+
+				StaticMeshComp->CacheLocalBounds();
+				StaticMeshComp->MarkWorldBoundsDirty();
+				StaticMeshComp->NotifyPhysicsBodyDirty();
+			}
+		}
+	}
 }
 
 void UStaticMeshComponent::SetMaterial(int32 ElementIndex, UMaterial* InMaterial)

@@ -21,6 +21,7 @@
 #include <pvd/PxPvd.h>
 #include <pvd/PxPvdTransport.h>
 #include <pvd/PxPvdSceneClient.h>
+#include <cooking/PxCooking.h>
 
 using namespace physx;
 using namespace PhysXConvert;
@@ -113,6 +114,50 @@ namespace
 		}
 
 		return false;
+	}
+
+	bool CreateConvexGeometry(
+		PxPhysics* Physics, PxCooking* Cooking, const FBodyShapeDesc& ShapeDesc,
+		PxConvexMesh*& OutConvexMesh, PxConvexMeshGeometry& OutGeometry)
+	{
+		OutConvexMesh = nullptr;
+		if (!Physics || !Cooking) return false;
+		if (ShapeDesc.ConvexVertices.size() < 4) return false;
+
+		PxConvexMeshDesc ConvexDesc;
+		ConvexDesc.points.count = static_cast<PxU32>(ShapeDesc.ConvexVertices.size());
+		ConvexDesc.points.stride = sizeof(FVector);
+		ConvexDesc.points.data = ShapeDesc.ConvexVertices.data();
+		ConvexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
+		ConvexDesc.vertexLimit = 255;
+
+		OutConvexMesh = Cooking->createConvexMesh(
+			ConvexDesc,
+			Physics->getPhysicsInsertionCallback()
+		);
+
+		if (!OutConvexMesh) return false;
+
+		const FVector AbsScale = ShapeDesc.ConvexScale.GetAbs();
+
+		const PxMeshScale MeshScale(
+			PxVec3(
+				std::max(AbsScale.X, 0.001f),
+				std::max(AbsScale.Y, 0.001f),
+				std::max(AbsScale.Z, 0.001f)
+			),
+			PxQuat(PxIdentity)
+		);
+
+		OutGeometry = PxConvexMeshGeometry(OutConvexMesh, MeshScale);
+		if (!OutGeometry.isValid())
+		{
+			OutConvexMesh->release();
+			OutConvexMesh = nullptr;
+			return false;
+		}
+
+		return true;
 	}
 }
 static PxDefaultAllocator GPhysXAllocator;
@@ -697,6 +742,16 @@ void FPhysXPhysicsScene::Initialize(UWorld* InWorld)
 	}
 	bSharedPhysXAcquired = true;
 
+	// Convex cooking
+	PxCookingParams CookingParams(Physics->getTolerancesScale());
+	Cooking = PxCreateCooking(PX_PHYSICS_VERSION, *Foundation, CookingParams);
+	if (!Cooking)
+	{
+		UE_LOG("[PhysX] Failed to create Cooking");
+		Shutdown();
+		return;
+	}
+
 	// CPU Dispatcher
 	Dispatcher = PxDefaultCpuDispatcherCreate(4);
 	if (!Dispatcher)
@@ -778,6 +833,12 @@ void FPhysXPhysicsScene::Shutdown()
 	{
 		DefaultMaterial->release();
 		DefaultMaterial = nullptr;
+	}
+
+	if (Cooking)
+	{
+		Cooking->release();
+		Cooking = nullptr;
 	}
 
 	if (EventCallback)
@@ -901,6 +962,8 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 		bool bHasGeom = false;
 		PxQuat ShapeAxisRot = PxQuat(PxIdentity);
 
+		PxConvexMesh* TempConvexMesh = nullptr;
+
 		switch (ShapeDesc.ShapeType)
 		{
 		case EBodyInstanceShapeType::Sphere:
@@ -931,20 +994,45 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 			break;
 		}
 
+		case EBodyInstanceShapeType::Convex:
+		{
+			PxConvexMeshGeometry ConvexGeometry;
+			if (!CreateConvexGeometry(Physics, Cooking, ShapeDesc, TempConvexMesh, ConvexGeometry))
+			{
+				break;
+			}
+
+			Geom.storeAny(ConvexGeometry);
+			bHasGeom = true;
+			break;
+		}
+
 		default:
 			break;
 		}
 
 		if (!bHasGeom)
 		{
+			if (TempConvexMesh)
+			{
+				TempConvexMesh->release();
+				TempConvexMesh = nullptr;
+			}
 			continue;
 		}
 
 		PxShape* Shape = PxRigidActorExt::createExclusiveShape(*Actor, Geom.any(), *DefaultMaterial);
+		if (TempConvexMesh)
+		{
+			TempConvexMesh->release();
+			TempConvexMesh = nullptr;
+		}
+
 		if (!Shape)
 		{
 			continue;
 		}
+
 
 		PxTransform LocalPose = ToPxTransform(ShapeDesc.LocalTransform);
 		LocalPose.q = LocalPose.q * ShapeAxisRot;
@@ -1184,24 +1272,51 @@ bool FPhysXPhysicsScene::Sweep(const FVector& Start, const FVector& Dir, float M
 	// FCollisionShape → PxGeometry 변환
 	// GeometryHolder로 스택에 geometry 보관 (Sphere / Capsule / Box 지원)
 	PxGeometryHolder GeomHolder;
+	PxQuat PxShapeQuat = ToPxQuat(ShapeRot);
+
 	switch (Shape.ShapeType)
 	{
 	case ECollisionShape::Sphere:
-		GeomHolder.storeAny(PxSphereGeometry(Shape.GetSphereRadius()));
+	{
+		GeomHolder.storeAny(PxSphereGeometry(
+			std::max(Shape.GetSphereRadius(), 0.001f)
+		));
 		break;
+	}
+
 	case ECollisionShape::Capsule:
-		// PhysX capsule: halfHeight는 구 제외 실린더 절반 높이
-		GeomHolder.storeAny(PxCapsuleGeometry(Shape.GetCapsuleRadius(),
-			Shape.GetCapsuleHalfHeight() - Shape.GetCapsuleRadius()));
+	{
+		const float Radius = std::max(Shape.GetCapsuleRadius(), 0.001f);
+		const float CapsuleHalfHeight = std::max(Shape.GetCapsuleHalfHeight(), Radius + 0.001f);
+
+		// Engine capsule half height: 구 포함.
+		// PhysX capsule half height: 구 제외 실린더 half length.
+		const float HalfHeightWithoutCaps =
+			std::max(CapsuleHalfHeight - Radius, 0.001f);
+
+		GeomHolder.storeAny(PxCapsuleGeometry(Radius, HalfHeightWithoutCaps));
+
+		// Sweep query도 body 생성과 같은 축 보정을 적용해야 함.
+		PxShapeQuat = PxShapeQuat * PxQuat(-PxHalfPi, PxVec3(0.0f, 1.0f, 0.0f));
 		break;
+	}
+
 	case ECollisionShape::Box:
-		GeomHolder.storeAny(PxBoxGeometry(ToPxVec3(Shape.GetExtent())));
+	{
+		const FVector Extent = Shape.GetExtent();
+		GeomHolder.storeAny(PxBoxGeometry(
+			std::max(Extent.X, 0.001f),
+			std::max(Extent.Y, 0.001f),
+			std::max(Extent.Z, 0.001f)
+		));
 		break;
+	}
+
 	default:
 		return false;
 	}
 
-	const PxTransform PxStartPose(ToPxVec3(Start), ToPxQuat(ShapeRot));
+	const PxTransform PxStartPose(ToPxVec3(Start), PxShapeQuat);
 	const PxVec3 PxDir = ToPxVec3(Dir);
 
 	PxSweepBuffer Hit;
@@ -1518,7 +1633,7 @@ FBodyInstance* FPhysXPhysicsScene::FindRegisteredBodyByActor(const PxActor* Acto
 
 void FPhysXPhysicsScene::SyncEngineToPhysicsBeforeSim()
 {
-	constexpr float TeleportPosThresholdSq = 1.0f;
+	constexpr float TeleportPosThresholdSq = 0.001f;
 	constexpr float TeleportRotThreshold = 0.99f;
 
 	for (FBodyInstance* Body : RegisteredBodies)
