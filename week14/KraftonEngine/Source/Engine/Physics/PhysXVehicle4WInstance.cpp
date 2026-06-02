@@ -1,10 +1,11 @@
-﻿#include "Physics/PhysXVehicleInstance.h"
+#include "Physics/PhysXVehicle4WInstance.h"
+
 #include "Physics/PhysXConversions.h"
 
 #include "Core/Types/CollisionTypes.h"
 #include "Math/MathUtils.h"
 
-bool FPhysXVehicleInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene* Scene,
+bool FPhysXVehicle4WInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene* Scene,
 	physx::PxMaterial* Material, const physx::PxTransform& StartPose, const FVehiclePhysicsSetup& Setup)
 {
 	constexpr physx::PxU32 NumWheels = 4;
@@ -118,7 +119,7 @@ bool FPhysXVehicleInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene
 	physx::PxVehicleDifferential4WData Diff;
 	Diff.mType = physx::PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
 	DriveData.setDiffData(Diff);
-	
+
 	physx::PxVehicleAckermannGeometryData Ackermann;
 	Ackermann.mAccuracy = 1.0f;
 	Ackermann.mAxleSeparation = 3.0f;
@@ -137,7 +138,7 @@ bool FPhysXVehicleInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene
 	return true;
 }
 
-void FPhysXVehicleInstance::Shutdown()
+void FPhysXVehicle4WInstance::Shutdown()
 {
 	if (Vehicle)
 	{
@@ -152,7 +153,7 @@ void FPhysXVehicleInstance::Shutdown()
 	}
 }
 
-void FPhysXVehicleInstance::SetDriveInput(float Throttle, float Brake, float Steer, bool bReverse)
+void FPhysXVehicle4WInstance::SetDriveInput(float Throttle, float Brake, float Steer, bool bReverse)
 {
 	if (!Vehicle || !VehicleActor) return;
 
