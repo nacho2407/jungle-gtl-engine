@@ -46,6 +46,7 @@ public:
 
 	// Ragdoll: PhysicsAsset로 물리 시뮬레이션 on/off.
 	void SetSimulatePhysics(bool bEnable);
+	void StartRagdollWithVelocity(const FVector& InitialLinearVelocity);
 	bool IsSimulatingPhysics() const { return bSimulatingPhysics; }
 	bool SyncSimulatedPhysics();
 	

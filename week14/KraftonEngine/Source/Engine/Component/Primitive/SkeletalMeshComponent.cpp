@@ -650,6 +650,17 @@ void USkeletalMeshComponent::SetPhysicsBlendWeight(float InWeight)
 	PhysicsBlendWeight = std::clamp(InWeight, 0.0f, 1.0f);
 }
 
+void USkeletalMeshComponent::StartRagdollWithVelocity(const FVector& InitialLinearVelocity)
+{
+	if (bSimulatingPhysics)
+	{
+		return;
+	}
+
+	ComponentLinearVelocity = InitialLinearVelocity;
+	SetSimulatePhysics(true);
+}
+
 void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 {
 	if (bEnable == bSimulatingPhysics)
