@@ -122,6 +122,65 @@ namespace
 			&& Value.compare(Value.size() - TokenLength, TokenLength, Token) == 0;
 	}
 
+	bool IsAlphaNumeric(char C)
+	{
+		return std::isalnum(static_cast<unsigned char>(C)) != 0;
+	}
+
+	bool IsLower(char C)
+	{
+		return std::islower(static_cast<unsigned char>(C)) != 0;
+	}
+
+	bool IsUpper(char C)
+	{
+		return std::isupper(static_cast<unsigned char>(C)) != 0;
+	}
+
+	bool IsDigit(char C)
+	{
+		return std::isdigit(static_cast<unsigned char>(C)) != 0;
+	}
+
+	bool ContainsBoneToken(const FString& BoneName, const char* Token)
+	{
+		const size_t TokenLength = std::strlen(Token);
+		if (TokenLength == 0)
+		{
+			return false;
+		}
+
+		FString LowerName;
+		LowerName.reserve(BoneName.size());
+		for (char C : BoneName)
+		{
+			LowerName.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(C))));
+		}
+
+		const FString LowerToken(Token);
+		size_t FoundIndex = LowerName.find(LowerToken);
+		while (FoundIndex != FString::npos)
+		{
+			const size_t EndIndex = FoundIndex + TokenLength;
+			const bool bStartBoundary = FoundIndex == 0
+				|| !IsAlphaNumeric(BoneName[FoundIndex - 1])
+				|| (IsLower(BoneName[FoundIndex - 1]) && IsUpper(BoneName[FoundIndex]));
+			const bool bEndBoundary = EndIndex >= BoneName.size()
+				|| !IsAlphaNumeric(BoneName[EndIndex])
+				|| IsDigit(BoneName[EndIndex])
+				|| (IsLower(BoneName[EndIndex - 1]) && IsUpper(BoneName[EndIndex]));
+
+			if (bStartBoundary && bEndBoundary)
+			{
+				return true;
+			}
+
+			FoundIndex = LowerName.find(LowerToken, FoundIndex + 1);
+		}
+
+		return false;
+	}
+
 	bool IsHumanoidBodyBoneName(const FString& BoneName)
 	{
 		const FString Name = NormalizeBoneName(BoneName);
@@ -151,7 +210,7 @@ namespace
 			|| ContainsText(Name, "foot");
 	}
 
-	bool IsSecondaryBoneName(const FString& BoneName)
+	bool IsBodyFitHelperBoneName(const FString& BoneName)
 	{
 		const FString Name = NormalizeBoneName(BoneName);
 		return EndsWithText(Name, "end")
@@ -162,18 +221,24 @@ namespace
 			|| ContainsText(Name, "ring")
 			|| ContainsText(Name, "pinky")
 			|| ContainsText(Name, "little")
-			// || ContainsText(Name, "toe")
+			|| ContainsText(Name, "toe")
 			|| ContainsText(Name, "twist")
 			|| ContainsText(Name, "roll")
-			|| ContainsText(Name, "skirt")
+			|| ContainsText(Name, "wrist")
+			|| ContainsText(Name, "sleeve");
+	}
+
+	bool IsDecorativeSecondaryBoneName(const FString& BoneName)
+	{
+		const FString Name = NormalizeBoneName(BoneName);
+		return ContainsText(Name, "skirt")
 			|| ContainsText(Name, "cloth")
 			|| ContainsText(Name, "dress")
 			|| ContainsText(Name, "hair")
 			|| ContainsText(Name, "ribbon")
 			|| ContainsText(Name, "accessory")
-			|| ContainsText(Name, "sleeve")
 			|| ContainsText(Name, "breast")
-			|| ContainsText(Name, "ear")
+			|| ContainsBoneToken(BoneName, "ear")
 			|| ContainsText(Name, "eye")
 			|| ContainsText(Name, "hat")
 			|| ContainsText(Name, "width")
@@ -182,6 +247,47 @@ namespace
 			|| StartsWithText(Name, "dm")
 			|| StartsWithText(Name, "szy")
 			|| StartsWithText(BoneName, "F_");
+	}
+
+	bool IsSecondaryBoneName(const FString& BoneName)
+	{
+		return IsBodyFitHelperBoneName(BoneName) || IsDecorativeSecondaryBoneName(BoneName);
+	}
+
+	bool IsHumanoidBodyCandidateBoneName(const FString& BoneName)
+	{
+		return IsHumanoidBodyBoneName(BoneName)
+			&& !IsBodyFitHelperBoneName(BoneName)
+			&& !IsDecorativeSecondaryBoneName(BoneName);
+	}
+
+	bool IsMajorHumanoidBodyBoneName(const FString& BoneName)
+	{
+		if (!IsHumanoidBodyCandidateBoneName(BoneName))
+		{
+			return false;
+		}
+
+		const FString Name = NormalizeBoneName(BoneName);
+		return ContainsText(Name, "pelvis")
+			|| ContainsText(Name, "hips")
+			|| ContainsText(Name, "spine")
+			|| ContainsText(Name, "chest")
+			|| ContainsText(Name, "abdomen")
+			|| ContainsText(Name, "head")
+			|| ContainsText(Name, "upperarm")
+			|| ContainsText(Name, "lowerarm")
+			|| ContainsText(Name, "forearm")
+			|| ContainsText(Name, "elbow")
+			|| ContainsText(Name, "arm")
+			|| ContainsText(Name, "thigh")
+			|| ContainsText(Name, "calf")
+			|| ContainsText(Name, "shin")
+			|| ContainsText(Name, "upleg")
+			|| ContainsText(Name, "leg")
+			|| ContainsText(Name, "knee")
+			|| ContainsText(Name, "ankle")
+			|| ContainsText(Name, "foot");
 	}
 
 	bool LooksLikeHumanoidSkeleton(const FSkeletalMesh& Mesh)
@@ -222,10 +328,10 @@ namespace
 		return -1;
 	}
 
-	int32 FindMergeParentIndex(const FSkeletalMesh& Mesh, const TArray<bool>& bIgnoreBone, int32 BoneIndex)
+	int32 FindMergeParentIndex(const FSkeletalMesh& Mesh, const TArray<bool>& bCanCreateBody, int32 BoneIndex)
 	{
 		int32 ParentIndex = Mesh.Bones[BoneIndex].ParentIndex;
-		while (IsValidBoneIndex(Mesh, ParentIndex) && bIgnoreBone[ParentIndex])
+		while (IsValidBoneIndex(Mesh, ParentIndex) && !bCanCreateBody[ParentIndex])
 		{
 			ParentIndex = Mesh.Bones[ParentIndex].ParentIndex;
 		}
@@ -592,12 +698,12 @@ namespace
 		}
 	}
 
-	int32 FindForcedRootBoneIndex(const FSkeletalMesh& Mesh, const TArray<float>& MergedSizes, const TArray<bool>& bIgnoreBone, float MinBoneSize)
+	int32 FindForcedRootBoneIndex(const FSkeletalMesh& Mesh, const TArray<float>& MergedSizes, const TArray<bool>& bCanCreateBody, float MinBoneSize)
 	{
 		int32 FirstParentBoneIndex = -1;
 		for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(MergedSizes.size()); ++BoneIndex)
 		{
-			if (bIgnoreBone[BoneIndex] || MergedSizes[BoneIndex] <= MinBoneSize)
+			if (!bCanCreateBody[BoneIndex] || MergedSizes[BoneIndex] <= MinBoneSize)
 			{
 				continue;
 			}
@@ -607,7 +713,7 @@ namespace
 			{
 				break;
 			}
-			if (bIgnoreBone[ParentBoneIndex])
+			if (!bCanCreateBody[ParentBoneIndex])
 			{
 				continue;
 			}
@@ -624,15 +730,26 @@ namespace
 		return -1;
 	}
 
-	bool ShouldMakeBone(bool bCreateBodyForAllBones, float MinBoneSize, const TArray<float>& MergedSizes, const TArray<bool>& bIgnoreBone, int32 ForcedRootBoneIndex, int32 BoneIndex)
+	bool ShouldMakeBone(
+		bool bCreateBodyForAllBones,
+		float MinBoneSize,
+		const TArray<float>& MergedSizes,
+		const TArray<bool>& bCanCreateBody,
+		const TArray<bool>& bForceMakeBody,
+		int32 ForcedRootBoneIndex,
+		int32 BoneIndex)
 	{
 		if (bCreateBodyForAllBones)
 		{
 			return true;
 		}
-		if (bIgnoreBone[BoneIndex])
+		if (!bCanCreateBody[BoneIndex])
 		{
 			return false;
+		}
+		if (bForceMakeBody[BoneIndex] && MergedSizes[BoneIndex] > KINDA_SMALL_NUMBER)
+		{
+			return true;
 		}
 		if (MergedSizes[BoneIndex] > MinBoneSize)
 		{
@@ -654,8 +771,12 @@ namespace
 		const float EffectiveMinWeldSize = ResolveCreationSize(Params.MinWeldSize, MeshLongDimension);
 		const float EffectiveMinPrimSize = CalcEffectiveMinPrimSize(MeshLongDimension);
 
-		TArray<bool> bIgnoreBone;
-		bIgnoreBone.resize(NumBones, false);
+		TArray<bool> bCanCreateBody;
+		bCanCreateBody.resize(NumBones, true);
+		TArray<bool> bContributesToBodyFit;
+		bContributesToBodyFit.resize(NumBones, true);
+		TArray<bool> bForceMakeBody;
+		bForceMakeBody.resize(NumBones, false);
 		const bool bUseSecondaryBoneFilter = Params.bFilterSecondaryBones
 			&& !Params.bCreateBodyForAllBones
 			&& LooksLikeHumanoidSkeleton(Mesh);
@@ -664,7 +785,13 @@ namespace
 			for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
 			{
 				const FString& BoneName = Mesh.Bones[BoneIndex].Name;
-				bIgnoreBone[BoneIndex] = IsSecondaryBoneName(BoneName) || !IsHumanoidBodyBoneName(BoneName);
+				const bool bDecorative = IsDecorativeSecondaryBoneName(BoneName);
+				const bool bFitHelper = IsBodyFitHelperBoneName(BoneName) && !bDecorative;
+				const bool bBodyCandidate = IsHumanoidBodyCandidateBoneName(BoneName);
+
+				bCanCreateBody[BoneIndex] = bBodyCandidate;
+				bContributesToBodyFit[BoneIndex] = bBodyCandidate || bFitHelper;
+				bForceMakeBody[BoneIndex] = bBodyCandidate && IsMajorHumanoidBodyBoneName(BoneName);
 			}
 		}
 
@@ -684,15 +811,21 @@ namespace
 
 		for (int32 BoneIndex = NumBones - 1; BoneIndex >= 0; --BoneIndex)
 		{
-			if (bIgnoreBone[BoneIndex])
+			if (!bContributesToBodyFit[BoneIndex])
 			{
 				continue;
 			}
 
 			const float MyMergedSize = MergedSizes[BoneIndex] += CalcBoneInfoLength(Infos[BoneIndex]);
-			if (MyMergedSize < EffectiveMinBoneSize && MyMergedSize >= EffectiveMinWeldSize)
+			const bool bMustMergeToBodyParent = !bCanCreateBody[BoneIndex];
+			const bool bShouldMergeBySize = !Params.bCreateBodyForAllBones
+				&& !bForceMakeBody[BoneIndex]
+				&& MyMergedSize < EffectiveMinBoneSize
+				&& MyMergedSize >= EffectiveMinWeldSize;
+
+			if (bMustMergeToBodyParent || bShouldMergeBySize)
 			{
-				const int32 ParentIndex = FindMergeParentIndex(Mesh, bIgnoreBone, BoneIndex);
+				const int32 ParentIndex = FindMergeParentIndex(Mesh, bCanCreateBody, BoneIndex);
 				if (!IsValidBoneIndex(Mesh, ParentIndex))
 				{
 					continue;
@@ -720,11 +853,18 @@ namespace
 
 		const int32 ForcedRootBoneIndex = Params.bCreateBodyForAllBones
 			? -1
-			: FindForcedRootBoneIndex(Mesh, MergedSizes, bIgnoreBone, EffectiveMinBoneSize);
+			: FindForcedRootBoneIndex(Mesh, MergedSizes, bCanCreateBody, EffectiveMinBoneSize);
 
 		for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
 		{
-			if (!ShouldMakeBone(Params.bCreateBodyForAllBones, EffectiveMinBoneSize, MergedSizes, bIgnoreBone, ForcedRootBoneIndex, BoneIndex))
+			if (!ShouldMakeBone(
+				Params.bCreateBodyForAllBones,
+				EffectiveMinBoneSize,
+				MergedSizes,
+				bCanCreateBody,
+				bForceMakeBody,
+				ForcedRootBoneIndex,
+				BoneIndex))
 			{
 				continue;
 			}
