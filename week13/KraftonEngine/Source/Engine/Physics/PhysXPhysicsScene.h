@@ -17,6 +17,7 @@ namespace physx
 	class PxActor;
 	class PxRigidActor;
 	class PxShape;
+	class PxCooking;
 }
 
 class FPhysXSimulationCallback;
@@ -80,6 +81,7 @@ private:
 	// PhysX core objects
 	physx::PxFoundation* Foundation = nullptr;
 	physx::PxPhysics* Physics = nullptr;
+	physx::PxCooking* Cooking = nullptr;
 	physx::PxScene* Scene = nullptr;
 	physx::PxDefaultCpuDispatcher* Dispatcher = nullptr;
 	physx::PxMaterial* DefaultMaterial = nullptr;

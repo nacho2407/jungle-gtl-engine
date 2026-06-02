@@ -781,6 +781,7 @@ void FStaticMeshEditorWidget::RenderAggregateShapeDetails(UStaticMesh* StaticMes
 		SaveStaticMeshChange("StaticMesh AggregateGeom edit warning");
 		MarkDirty();
 		ViewportClient.MarkBodySetupDebugDirty();
+		UStaticMeshComponent::NotifyStaticMeshBodySetupChanged(StaticMesh);
 	}
 }
 
@@ -882,6 +883,7 @@ void FStaticMeshEditorWidget::AddAggregateShape(UStaticMesh* StaticMesh, EAggCol
 	SaveStaticMeshChange("StaticMesh AggregateGeom add warning");
 	MarkDirty();
 	ViewportClient.MarkBodySetupDebugDirty();
+	UStaticMeshComponent::NotifyStaticMeshBodySetupChanged(StaticMesh);
 }
 
 bool FStaticMeshEditorWidget::DeleteSelectedAggregateShape(UStaticMesh* StaticMesh)
@@ -937,6 +939,7 @@ bool FStaticMeshEditorWidget::DeleteSelectedAggregateShape(UStaticMesh* StaticMe
 	SaveStaticMeshChange("StaticMesh AggregateGeom delete warning");
 	MarkDirty();
 	ViewportClient.MarkBodySetupDebugDirty();
+	UStaticMeshComponent::NotifyStaticMeshBodySetupChanged(StaticMesh);
 	return true;
 }
 
@@ -971,9 +974,12 @@ void FStaticMeshEditorWidget::SaveStaticMeshChange(const char* LogPrefix)
 
 void FStaticMeshEditorWidget::OnBodySetupShapeEdited()
 {
+	UStaticMesh* StaticMesh = Cast<UStaticMesh>(EditedObject);
+
 	SaveStaticMeshChange("StaticMesh AggregateGeom gizmo edit warning");
 	MarkDirty();
 	ViewportClient.MarkBodySetupDebugDirty();
+	UStaticMeshComponent::NotifyStaticMeshBodySetupChanged(StaticMesh);
 }
 
 void FStaticMeshEditorWidget::RenderMeshStatsOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos) const
