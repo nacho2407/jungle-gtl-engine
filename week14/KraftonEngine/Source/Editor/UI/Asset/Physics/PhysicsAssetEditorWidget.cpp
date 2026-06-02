@@ -1693,7 +1693,6 @@ void FPhysicsAssetEditorWidget::RenderToolsPanel(UPhysicsAsset* Asset, ImVec2 Si
 			EnumCombo("Vertex Weighting Type", BodyCreationParams.VertexWeighting, WeightItems, 2);
 
 			ImGui::Checkbox("Auto Orient to Bone", &BodyCreationParams.bAutoOrientToBone);
-			ImGui::Checkbox("Walk Past Small Bones", &BodyCreationParams.bWalkPastSmallBones);
 			ImGui::Checkbox("Create Body for All Bones", &BodyCreationParams.bCreateBodyForAllBones);
 			if (BodyCreationParams.bCreateBodyForAllBones)
 			{

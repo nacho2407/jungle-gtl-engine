@@ -75,7 +75,6 @@ EPhysicsAssetDialogResult FPhysicsAssetCreationDialog::Render(const char* PopupI
 		EnumCombo("Vertex Weighting Type", P.VertexWeighting, WeightItems, 2);
 
 		ImGui::Checkbox("Auto Orient to Bone", &P.bAutoOrientToBone);
-		ImGui::Checkbox("Walk Past Small Bones", &P.bWalkPastSmallBones);
 		ImGui::Checkbox("Create Body for All Bones", &P.bCreateBodyForAllBones);
 		if (P.bCreateBodyForAllBones)
 		{

@@ -6,6 +6,12 @@
 
 #include "Source/Engine/Physics/PhysicsAsset.generated.h"
 
+struct FPhysicsAssetCollisionDisablePair
+{
+	FName BodyA;
+	FName BodyB;
+};
+
 UCLASS()
 class UPhysicsAsset : public UObject
 {
@@ -36,14 +42,21 @@ public:
 	
 	const TArray<UPhysicsConstraintTemplate*>& GetConstraintTemplates() const {return ConstraintTemplates;}
 	int32 FindConstraintIndex(FName ParentBone, FName ChildBone) const;
-	UPhysicsConstraintTemplate* CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode);
+	UPhysicsConstraintTemplate* CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode, bool bDisableCollision = true);
 	bool RemoveConstraintAt(int32 ConstraintIndex);
 	void RemoveConstraintsForBody(FName BoneName);
+
+	const TArray<FPhysicsAssetCollisionDisablePair>& GetCollisionDisablePairs() const { return CollisionDisablePairs; }
+	int32 FindCollisionDisablePairIndex(FName BodyA, FName BodyB) const;
+	bool IsCollisionDisabled(FName BodyA, FName BodyB) const;
+	void SetCollisionDisabled(FName BodyA, FName BodyB, bool bDisabled);
+	void RemoveCollisionDisablePairsForBody(FName BoneName);
 	void Clear();
 	
 private:
 	TArray<UBodySetup*> BodySetups;
 	TArray<UPhysicsConstraintTemplate*> ConstraintTemplates;
+	TArray<FPhysicsAssetCollisionDisablePair> CollisionDisablePairs;
 	TMap<FString, int32> BodySetupIndexMap;
 	FString SourcePath;
 	FString PreviewSkeletalMeshPath = "None";

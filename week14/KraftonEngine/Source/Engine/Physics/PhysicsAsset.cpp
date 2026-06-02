@@ -13,6 +13,22 @@ namespace
 			[](unsigned char C) { return static_cast<char>(std::tolower(C)); });
 		return Key;
 	}
+
+	FString MakeCollisionDisablePairKey(FName BodyA, FName BodyB)
+	{
+		FString KeyA = MakeBodySetupIndexKey(BodyA);
+		FString KeyB = MakeBodySetupIndexKey(BodyB);
+		if (KeyB < KeyA)
+		{
+			std::swap(KeyA, KeyB);
+		}
+		return KeyA + "|" + KeyB;
+	}
+
+	bool IsUsablePairName(FName BoneName)
+	{
+		return BoneName.IsValid() && BoneName != FName::None;
+	}
 }
 
 void UPhysicsAsset::Serialize(FArchive& Ar)
@@ -64,9 +80,17 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 	// Trailing extension section. Older physics assets end before this point
 	if (Ar.IsSaving())
 	{
-		uint32 ExtVersion = 1;
+		uint32 ExtVersion = 2;
 		Ar << ExtVersion;
 		Ar << PreviewSkeletalMeshPath;
+
+		uint32 NumCollisionDisablePairs = static_cast<uint32>(CollisionDisablePairs.size());
+		Ar << NumCollisionDisablePairs;
+		for (FPhysicsAssetCollisionDisablePair& Pair : CollisionDisablePairs)
+		{
+			Ar << Pair.BodyA;
+			Ar << Pair.BodyB;
+		}
 	}
 	else if (!Ar.AtEnd())
 	{
@@ -76,6 +100,31 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 		{
 			Ar << PreviewSkeletalMeshPath;
 		}
+		if (ExtVersion >= 2)
+		{
+			uint32 NumCollisionDisablePairs = 0;
+			Ar << NumCollisionDisablePairs;
+			CollisionDisablePairs.clear();
+			CollisionDisablePairs.reserve(NumCollisionDisablePairs);
+			for (uint32 i = 0; i < NumCollisionDisablePairs; ++i)
+			{
+				FPhysicsAssetCollisionDisablePair Pair;
+				Ar << Pair.BodyA;
+				Ar << Pair.BodyB;
+				if (IsUsablePairName(Pair.BodyA) && IsUsablePairName(Pair.BodyB) && Pair.BodyA != Pair.BodyB)
+				{
+					CollisionDisablePairs.push_back(Pair);
+				}
+			}
+		}
+		else
+		{
+			CollisionDisablePairs.clear();
+		}
+	}
+	else if (Ar.IsLoading())
+	{
+		CollisionDisablePairs.clear();
 	}
 
 	if (Ar.IsLoading())
@@ -195,6 +244,7 @@ bool UPhysicsAsset::RemoveBodySetupAt(int32 BodyIndex)
 	UBodySetup* Body = BodySetups[BodyIndex];
 	const FName BoneName = Body ? Body->GetBoneName() : FName::None;
 	RemoveConstraintsForBody(BoneName);
+	RemoveCollisionDisablePairsForBody(BoneName);
 
 	BodySetups.erase(BodySetups.begin() + BodyIndex);
 	UpdateBodySetupIndexMap();
@@ -221,7 +271,7 @@ int32 UPhysicsAsset::FindConstraintIndex(FName ParentBone, FName ChildBone) cons
 	return -1;
 }
 
-UPhysicsConstraintTemplate* UPhysicsAsset::CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode)
+UPhysicsConstraintTemplate* UPhysicsAsset::CreateConstraint(FName ParentBone, FName ChildBone, const FTransform& FrameA, const FTransform& FrameB, EAngularConstraintMode Mode, bool bDisableCollision)
 {
 	if (!ParentBone.IsValid() || !ChildBone.IsValid() || ParentBone == FName::None || ChildBone == FName::None)
 	{
@@ -241,12 +291,14 @@ UPhysicsConstraintTemplate* UPhysicsAsset::CreateConstraint(FName ParentBone, FN
 	const int32 ExistingIndex = FindConstraintIndex(ParentBone, ChildBone);
 	if (ExistingIndex >= 0)
 	{
+		SetCollisionDisabled(ParentBone, ChildBone, bDisableCollision);
 		return ConstraintTemplates[ExistingIndex];
 	}
 
 	UPhysicsConstraintTemplate* Constraint = UObjectManager::Get().CreateObject<UPhysicsConstraintTemplate>(this);
 	Constraint->Setup(ParentBone, ChildBone, FrameA, FrameB, Mode);
 	ConstraintTemplates.push_back(Constraint);
+	SetCollisionDisabled(ParentBone, ChildBone, bDisableCollision);
 	return Constraint;
 }
 
@@ -258,11 +310,14 @@ bool UPhysicsAsset::RemoveConstraintAt(int32 ConstraintIndex)
 	}
 
 	UPhysicsConstraintTemplate* Constraint = ConstraintTemplates[ConstraintIndex];
+	const FName ParentBone = Constraint ? Constraint->GetParentBoneName() : FName::None;
+	const FName ChildBone = Constraint ? Constraint->GetChildBoneName() : FName::None;
 	ConstraintTemplates.erase(ConstraintTemplates.begin() + ConstraintIndex);
 	if (Constraint)
 	{
 		UObjectManager::Get().DestroyObject(Constraint);
 	}
+	SetCollisionDisabled(ParentBone, ChildBone, false);
 	return true;
 }
 
@@ -278,6 +333,72 @@ void UPhysicsAsset::RemoveConstraintsForBody(FName BoneName)
 			RemoveConstraintAt(Index);
 		}
 	}
+}
+
+int32 UPhysicsAsset::FindCollisionDisablePairIndex(FName BodyA, FName BodyB) const
+{
+	if (!IsUsablePairName(BodyA) || !IsUsablePairName(BodyB) || BodyA == BodyB)
+	{
+		return -1;
+	}
+
+	const FString TargetKey = MakeCollisionDisablePairKey(BodyA, BodyB);
+	for (int32 Index = 0; Index < static_cast<int32>(CollisionDisablePairs.size()); ++Index)
+	{
+		const FPhysicsAssetCollisionDisablePair& Pair = CollisionDisablePairs[Index];
+		if (MakeCollisionDisablePairKey(Pair.BodyA, Pair.BodyB) == TargetKey)
+		{
+			return Index;
+		}
+	}
+
+	return -1;
+}
+
+bool UPhysicsAsset::IsCollisionDisabled(FName BodyA, FName BodyB) const
+{
+	return FindCollisionDisablePairIndex(BodyA, BodyB) >= 0;
+}
+
+void UPhysicsAsset::SetCollisionDisabled(FName BodyA, FName BodyB, bool bDisabled)
+{
+	if (!IsUsablePairName(BodyA) || !IsUsablePairName(BodyB) || BodyA == BodyB)
+	{
+		return;
+	}
+
+	const int32 ExistingIndex = FindCollisionDisablePairIndex(BodyA, BodyB);
+	if (bDisabled)
+	{
+		if (ExistingIndex < 0)
+		{
+			CollisionDisablePairs.push_back({ BodyA, BodyB });
+		}
+		return;
+	}
+
+	if (ExistingIndex >= 0)
+	{
+		CollisionDisablePairs.erase(CollisionDisablePairs.begin() + ExistingIndex);
+	}
+}
+
+void UPhysicsAsset::RemoveCollisionDisablePairsForBody(FName BoneName)
+{
+	if (!IsUsablePairName(BoneName))
+	{
+		return;
+	}
+
+	CollisionDisablePairs.erase(
+		std::remove_if(
+			CollisionDisablePairs.begin(),
+			CollisionDisablePairs.end(),
+			[BoneName](const FPhysicsAssetCollisionDisablePair& Pair)
+			{
+				return Pair.BodyA == BoneName || Pair.BodyB == BoneName;
+			}),
+		CollisionDisablePairs.end());
 }
 
 void UPhysicsAsset::Clear()
@@ -299,5 +420,6 @@ void UPhysicsAsset::Clear()
 		}
 	}
 	BodySetups.clear();
+	CollisionDisablePairs.clear();
 	BodySetupIndexMap.clear();
 }

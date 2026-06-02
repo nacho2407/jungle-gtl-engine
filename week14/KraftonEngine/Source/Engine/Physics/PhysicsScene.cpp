@@ -448,7 +448,7 @@ FConstraintInstance* FPhysicsScene::CreateFixedConstraint(FBodyInstance* BodyA, 
 
 FConstraintInstance* FPhysicsScene::CreateD6Constraint(FBodyInstance* BodyA, FBodyInstance* BodyB,
 	const FTransform& LocalFrameA, const FTransform& LocalFrameB, EAngularConstraintMode AngularMode,
-	float Swing1LimitDeg, float Swing2LimitDeg, float TwistLimitDeg)
+	float Swing1LimitDeg, float Swing2LimitDeg, float TwistLimitDeg, bool bDisableCollision)
 {
 	if (!BodyA || !BodyB || !BodyA->Body || !BodyB->Body) return nullptr;
 
@@ -462,6 +462,8 @@ FConstraintInstance* FPhysicsScene::CreateD6Constraint(FBodyInstance* BodyA, FBo
 		ActorB, ToPxTransform(LocalFrameB.Location, LocalFrameB.Rotation));
 
 	if (!Joint) return nullptr;
+
+	Joint->setConstraintFlag(physx::PxConstraintFlag::eCOLLISION_ENABLED, !bDisableCollision);
 
 	// 선형 3축 고정: 두 뼈가 관절 한 점에 붙어 떨어지지 않게.
 	Joint->setMotion(physx::PxD6Axis::eX, physx::PxD6Motion::eLOCKED);

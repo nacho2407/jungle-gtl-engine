@@ -12,15 +12,17 @@ struct FPhysicsAssetCreationParams
 {
 	// Body Creation
 	float MinBoneSize = 10.0f;
+	float MinWeldSize = 0.0f;
 	EPhysicsAssetPrimitiveType PrimitiveType = EPhysicsAssetPrimitiveType::Capsule;
 	EPhysicsAssetVertexWeighting VertexWeighting = EPhysicsAssetVertexWeighting::DominantWeight;
 	bool bAutoOrientToBone = true;
-	bool bWalkPastSmallBones = true;
+	bool bFilterSecondaryBones = true;
 	bool bCreateBodyForAllBones = false;
 	int32 LodIndex = 0;
 	
 	// Constraint Creation
 	bool bCreateConstraints = true;
+	bool bDisableCollisionBetweenConstrainedBodies = true;
 	EPhysicsAssetConstraintMode AngularConstraintMode = EPhysicsAssetConstraintMode::Limited;
 };
 
