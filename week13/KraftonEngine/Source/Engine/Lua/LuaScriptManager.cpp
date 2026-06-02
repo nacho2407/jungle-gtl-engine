@@ -1821,6 +1821,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Key["S"] = static_cast<int32>('S');
 	Key["D"] = static_cast<int32>('D');
 	Key["R"] = static_cast<int32>('R');
+	Key["Shift"] = VK_SHIFT;
 	Key["Space"] = VK_SPACE;
 	Key["Escape"] = VK_ESCAPE;
 	Key["F1"] = VK_F1;
@@ -2452,6 +2453,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"SetAngularVelocity", &UPrimitiveComponent::SetAngularVelocity,
 		"GetMass", &UPrimitiveComponent::GetMass,
 		"SetMass", &UPrimitiveComponent::SetMass,
+		"SetVisibility", &UPrimitiveComponent::SetVisibility,
+		"IsVisible", &UPrimitiveComponent::IsVisible,
 		"GetGenerateOverlapEvents", &UPrimitiveComponent::GetGenerateOverlapEvents);
 
 	// 메시 에셋 경로로 컴포넌트 식별 가능하게 노출. 자동 생성된 FName ("UStaticMeshComponent_41")
@@ -2592,6 +2595,21 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 			}
 		}
 		return nullptr;
+	},
+
+		"GetPrimitiveComponents", [](AActor& Actor, sol::this_state State)
+	{
+		sol::state_view L(State);
+		sol::table Result = L.create_table();
+		int32 Index = 1;
+		for (UPrimitiveComponent* Component : Actor.GetPrimitiveComponents())
+		{
+			if (IsValid(Component))
+			{
+				Result[Index++] = Component;
+			}
+		}
+		return Result;
 	},
 
 		"GetComponentByName", [](AActor& Actor, const FString& ComponentName) -> USceneComponent*
