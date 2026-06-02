@@ -555,15 +555,23 @@ FString FEditorPropertyWidget::OpenFbxFileDialog()
 	return FString();
 }
 
-void FEditorPropertyWidget::Render(float DeltaTime)
+void FEditorPropertyWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)DeltaTime;
+	if (Context.EditorEngine)
+	{
+		EditorEngine = Context.EditorEngine;
+	}
+
+	if (!EditorEngine)
+	{
+		return;
+	}
 
 	ImGui::SetNextWindowSize(ImVec2(350.0f, 500.0f), ImGuiCond_Once);
 
 	ImGui::Begin("Property Window");
 
-	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+	FSelectionManager& Selection = Context.SelectionManager ? *Context.SelectionManager : EditorEngine->GetSelectionManager();
 	AActor* PrimaryActor = Selection.GetPrimarySelection();
 	if (!IsValid(PrimaryActor))
 	{
@@ -583,8 +591,16 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		bActorSelected = true;
 		bShowDuplicateWarning = false;
 	}
+	else if (UActorComponent* SelectionComponent = Selection.GetSelectedActorComponent())
+	{
+		if (SelectionComponent->GetOwner() == PrimaryActor)
+		{
+			SelectedComponent = SelectionComponent;
+			bActorSelected = false;
+		}
+	}
 
-	const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
+	const TArray<AActor*> SelectedActors = Selection.GetSelectedActors();
 	const int32 SelectionCount = static_cast<int32>(SelectedActors.size());
 
 	// ========== 고정 영역: Actor Info (clickable) ==========
@@ -603,6 +619,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		{
 			bActorSelected = true;
 			SelectedComponent = nullptr;
+			Selection.SelectActorDetails(PrimaryActor);
 		}
 		ImGui::SameLine();
 		char RemoveLabel[64];
@@ -641,6 +658,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		{
 			bActorSelected = true;
 			SelectedComponent = nullptr;
+			Selection.SelectActorDetails(PrimaryActor);
 		}
 		//ImGui::SameLine();
 
@@ -1075,11 +1093,12 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 			}
 
 			ImGui::TreeNodeEx(Comp, Flags, "%s", Label);
-		
+
 			if (ImGui::IsItemClicked())
 			{
 				SelectedComponent = Comp;
 				bActorSelected = false;
+				EditorEngine->GetSelectionManager().SelectActorComponent(Comp);
 			}
 		}
 	}
@@ -1154,7 +1173,7 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 	{
 		SelectedComponent = Comp;
 		bActorSelected = false;
-		EditorEngine->GetSelectionManager().SelectComponent(Comp);
+		EditorEngine->GetSelectionManager().SelectActorComponent(Comp);
 	}
 
 	// 컴포넌트 트리에서 간단하게 드래그 앤 드랍으로 부모-자식 관계 변경 가능하도록 지원
@@ -1301,7 +1320,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				ImGui::PushID(i);
 
 				ImGui::TableSetColumnIndex(0);
-				
+
 				ImGui::SetWindowFontScale(0.92f);
 
 				ImGui::AlignTextToFramePadding();
@@ -1428,6 +1447,7 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 
 	SelectedComponent = Comp;
 	bActorSelected = false;
+	EditorEngine->GetSelectionManager().SelectActorComponent(Comp);
 }
 
 bool FEditorPropertyWidget::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)

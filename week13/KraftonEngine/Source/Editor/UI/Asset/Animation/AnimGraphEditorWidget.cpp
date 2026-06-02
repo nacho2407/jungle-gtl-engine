@@ -581,9 +581,9 @@ void FAnimGraphEditorWidget::DestroyContext()
 	}
 }
 
-void FAnimGraphEditorWidget::Render(float DeltaTime)
+void FAnimGraphEditorWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)DeltaTime;
+	(void)Context;
 	if (!IsOpen() || !EditedObject || !NodeEditorContext)
 	{
 		return;

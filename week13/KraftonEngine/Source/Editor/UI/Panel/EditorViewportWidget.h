@@ -1,14 +1,14 @@
 #pragma once
 
-#include "Editor/UI/EditorWidget.h"
+#include "Editor/UI/Panel/EditorPanelWidget.h"
 #include <string>
 
 class FLevelEditorViewportClient;
 
-class FEditorViewportWidget : public FEditorWidget
+class FEditorViewportWidget : public FEditorPanelWidget
 {
 public:
-	void Render(float DeltaTime) override;
+	void Render(const FEditorPanelContext& Context) override;
 
 	void SetViewportClient(FLevelEditorViewportClient* InClient) { ViewportClient = InClient; }
 	void SetIndex(int32 InIndex);

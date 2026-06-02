@@ -8,7 +8,7 @@
 #include "Platform/Paths.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Texture/Texture2D.h"
-#include "UI/ContentBrowser/ContentItem.h"
+#include "UI/Panel/ContentBrowser/ContentItem.h"
 #include "UI/Util/EditorFileUtils.h"
 
 #include "imgui.h"
@@ -331,9 +331,9 @@ void FMaterialEditorWidget::DestroyContext()
 	}
 }
 
-void FMaterialEditorWidget::Render(float DeltaTime)
+void FMaterialEditorWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)DeltaTime;
+	(void)Context;
 	if (!IsOpen() || !EditedObject || !NodeEditorContext) return;
 
 	UMaterial* Material = static_cast<UMaterial*>(EditedObject);

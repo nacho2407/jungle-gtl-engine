@@ -257,9 +257,9 @@ void FMeshEditorWidget::CollectPreviewViewports(TArray<IEditorPreviewViewportCli
 	}
 }
 
-void FMeshEditorWidget::Render(float DeltaTime)
+void FMeshEditorWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)DeltaTime;
+	(void)Context;
 
 	if (bPendingClose)
 	{

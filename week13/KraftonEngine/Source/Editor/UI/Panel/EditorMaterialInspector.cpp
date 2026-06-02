@@ -1,7 +1,7 @@
-ï»¿#include "EditorMaterialInspector.h"
+#include "EditorMaterialInspector.h"
 #include "Materials/MaterialManager.h"
 #include "Resource/ResourceManager.h"
-#include "Editor/UI/ContentBrowser/ContentItem.h"
+#include "Editor/UI/Panel/ContentBrowser/ContentItem.h"
 #include "SimpleJSON/json.hpp"
 #include "Engine/Materials/Material.h"
 #include "Engine/Runtime/Engine.h"
@@ -59,7 +59,7 @@ void FEditorMaterialInspector::RenderShaderParameter()
 		
 		switch (Info->Size)
 		{
-			case sizeof(float) : // 4ë°”ì´íŠ¸ - Scalar
+			case sizeof(float) : // 4¹ÙÀÌÆ® - Scalar
 			{
 				float Param;
 				bool bIsValid = CachedMaterial->GetScalarParameter(ParamName, Param);
@@ -67,7 +67,7 @@ void FEditorMaterialInspector::RenderShaderParameter()
 				CachedMaterial->SetScalarParameter(ParamName, Param);
 				break;
 			}
-			case sizeof(float) * 3: // 12ë°”ì´íŠ¸ - Vector3
+			case sizeof(float) * 3: // 12¹ÙÀÌÆ® - Vector3
 			{
 				FVector Param;
 				bool bIsValid = CachedMaterial->GetVector3Parameter(ParamName, Param);
@@ -75,7 +75,7 @@ void FEditorMaterialInspector::RenderShaderParameter()
 				CachedMaterial->SetVector3Parameter(ParamName, Param);
 				break;
 			}
-			case sizeof(float) * 4: // 16ë°”ì´íŠ¸ - Vector4
+			case sizeof(float) * 4: // 16¹ÙÀÌÆ® - Vector4
 			{
 				FVector4 Param;
 				bool bIsValid = CachedMaterial->GetVector4Parameter(ParamName, Param);
@@ -83,7 +83,7 @@ void FEditorMaterialInspector::RenderShaderParameter()
 				CachedMaterial->SetVector4Parameter(ParamName, Param);
 				break;
 			}
-			case sizeof(float) * 16: // 64ë°”ì´íŠ¸ - Matrix
+			case sizeof(float) * 16: // 64¹ÙÀÌÆ® - Matrix
 			{
 				FMatrix Param;
 				bool bIsValid = CachedMaterial->GetMatrixParameter(ParamName, Param);
@@ -95,7 +95,7 @@ void FEditorMaterialInspector::RenderShaderParameter()
 				break;
 			}
 			default:
-				break; // uint, bool ë“± íŠ¹ìˆ˜ ì¼€ì´ìŠ¤ëŠ” ë³„ë„ ì²˜ë¦¬ í•„ìš”
+				break; // uint, bool µî Æ¯¼ö ÄÉÀÌ½º´Â º°µµ Ã³¸® ÇÊ¿ä
 		}
 	}
 

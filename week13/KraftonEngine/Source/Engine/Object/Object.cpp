@@ -5,6 +5,8 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Object/GarbageCollection.h"
 #include "GameFramework/WorldContext.h"
+#include "Core/Property/NameProperty.h"
+#include "Core/Property/NumericProperty.h"
 
 TArray<UObject*> GUObjectArray;
 TSet<UObject*>   GUObjectSet;
@@ -161,7 +163,34 @@ void UObject::PostEditChangeProperty(const FPropertyChangedEvent& Event)
 
 void UObject::RegisterProperties(UStruct* Class)
 {
-	(void)Class;
+	if (!Class)
+	{
+		return;
+	}
+
+	Class->AddProperty(new FNameProperty(
+		"ObjectName",
+		"Header",
+		PF_Edit | PF_Save,
+		offsetof(UObject, ObjectName),
+		sizeof(static_cast<UObject*>(nullptr)->ObjectName),
+		"Name",
+		{{"category", "Header"}, {"displayname", "Name"}, {"edit", "true"}, {"member", "ObjectName"}, {"save", "true"}},
+		"UObject"
+	));
+	Class->AddProperty(new FIntProperty(
+		"UUID",
+		"Header",
+		PF_Edit | PF_ReadOnly,
+		offsetof(UObject, UUID),
+		sizeof(static_cast<UObject*>(nullptr)->UUID),
+		0.0f,
+		0.0f,
+		0.1f,
+		"UUID",
+		{{"category", "Header"}, {"displayname", "UUID"}, {"member", "UUID"}, {"readonly", "true"}, {"visibleanywhere", "true"}},
+		"UObject"
+	));
 }
 
 void UObject::RegisterFunctions(UStruct* Class)

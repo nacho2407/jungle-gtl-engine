@@ -38,10 +38,6 @@ void FEditorPlayToolbarWidget::Render(float Width)
 
 	const bool bPlaying = Editor->IsPlayingInEditor();
 
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.15f));
-	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 1.0f, 1.0f, 0.3f));
-
 	auto DrawIconButton = [&](const char* Id, ID3D11ShaderResourceView* Icon, const char* FallbackLabel, bool bDisabled) -> bool
 	{
 		if (bDisabled)
@@ -79,8 +75,6 @@ void FEditorPlayToolbarWidget::Render(float Width)
 	{
 		Editor->RequestEndPlayMap();
 	}
-
-	ImGui::PopStyleColor(3);
 
 	// 다음 콘텐츠는 툴바 아래로 이어지도록 커서 복원
 	ImGui::SetCursorScreenPos(ImVec2(CursorStart.x, CursorStart.y + ToolbarHeight));

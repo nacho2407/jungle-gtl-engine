@@ -41,9 +41,9 @@ private:
 	UPROPERTY(Edit, Save, Category="Physics Asset", DisplayName="Source Skeletal Mesh Path")
 	FString SourceSkeletalMeshPath = "None";
 
-	UPROPERTY(Edit, Save, Category="Physics Asset", DisplayName="Body Setups", Type=Array)
+	UPROPERTY(Save)
 	TArray<UBodySetup*> BodySetups;
 
-	UPROPERTY(Edit, Save, Category="Physics Asset", DisplayName="Constraint Init Descs", Type=Array)
+	UPROPERTY(Save)
 	TArray<FConstraintInstanceInitDesc> ConstraintInitDescs;
 };

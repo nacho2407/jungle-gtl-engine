@@ -154,7 +154,7 @@ namespace
 	}
 }
 
-void FEditorAnimationDebugWidget::Render(float /*DeltaTime*/)
+void FEditorAnimationDebugWidget::Render(const FEditorPanelContext& Context)
 {
 	ImGui::SetNextWindowSize(ImVec2(420.0f, 540.0f), ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("Animation Debug"))
@@ -163,8 +163,9 @@ void FEditorAnimationDebugWidget::Render(float /*DeltaTime*/)
 		return;
 	}
 
-	AActor* PrimaryActor = EditorEngine
-		? EditorEngine->GetSelectionManager().GetPrimarySelection()
+	FSelectionManager* SelectionManager = EditorEngine ? &EditorEngine->GetSelectionManager() : nullptr;
+	AActor* PrimaryActor = SelectionManager
+		? SelectionManager->GetPrimarySelection()
 		: nullptr;
 
 	if (!PrimaryActor)

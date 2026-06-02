@@ -25,14 +25,10 @@ namespace
 		return FEditorTextureManager::Get().GetOrLoadIcon(Path);
 	}
 
-	// 아이콘 트랜스포트 버튼. bActive면 언리얼처럼 파란 하이라이트 배경을 깐다.
+	// 아이콘 트랜스포트 버튼. 색상은 전역 ImGui 스타일을 따른다.
 	bool IconButton(const char* Id, const wchar_t* FileName, const char* Fallback, bool bActive)
 	{
-		ImGui::PushStyleColor(ImGuiCol_Button, bActive
-			? ImVec4(0.20f, 0.45f, 0.85f, 1.0f) : ImVec4(0.0f, 0.0f, 0.0f, 0.0f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.15f));
-		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 1.0f, 1.0f, 0.30f));
-
+		(void)bActive;
 		bool bClicked;
 		if (ID3D11ShaderResourceView* Icon = LoadToolIcon(FileName))
 		{
@@ -43,7 +39,6 @@ namespace
 			bClicked = ImGui::Button(Fallback, ImVec2(IconExtent + 8.0f, IconExtent + 8.0f));
 		}
 
-		ImGui::PopStyleColor(3);
 		return bClicked;
 	}
 }

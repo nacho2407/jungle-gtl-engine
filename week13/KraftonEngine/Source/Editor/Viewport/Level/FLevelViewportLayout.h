@@ -7,6 +7,7 @@
 
 class SSplitter;
 struct FVector;
+struct FRotator;
 class AActor;
 class FLevelEditorViewportClient;
 class FEditorViewportClient;
@@ -95,6 +96,14 @@ public:
 	};
 
 	AActor* SpawnPlaceActor(EViewportPlaceActorType Type, const FVector& Location);
+	bool CopySelectedActors();
+	bool PasteCopiedActors();
+	bool CutSelectedActors();
+	bool DuplicateSelectedActors();
+	bool DeleteSelectedActors();
+	bool MoveSelectedActorsToView();
+	bool AlignSelectedActorsWithView();
+	bool HasActorClipboard() const { return !ActorClipboard.empty(); }
 
 	void SetActiveViewport(FLevelEditorViewportClient* InClient);
 	FLevelEditorViewportClient* GetActiveViewport() const { return ActiveViewportClient; }
@@ -107,6 +116,13 @@ public:
 	static int32 GetSlotCount(EViewportLayout Layout);
 
 private:
+	enum class EViewportContextPopupMode : uint8
+	{
+		None,
+		ActorContext,
+		PlaceActor,
+	};
+
 	struct FViewportContextMenuState
 	{
 		bool bTrackingRightClick[MaxViewportSlots] = {};
@@ -116,6 +132,7 @@ private:
 		int32 PendingSpawnSlot = -1;
 		FPoint PendingPopupPos = {};
 		FPoint PendingSpawnPos = {};
+		EViewportContextPopupMode PendingPopupMode = EViewportContextPopupMode::None;
 	};
 
 	enum class EViewportLayoutTransition : uint8
@@ -140,9 +157,16 @@ private:
 	void RenderSharedViewportToolbar(float ToolbarLeft, float ToolbarTop, float ToolbarWidth);
 	void RenderViewportSlotToolbar(int32 SlotIndex);
 	void HandleViewportContextMenuInput(const FPoint& MousePos);
+	void RenderViewportContextPopup();
 	void RenderViewportPlaceActorPopup();
+	void RenderViewportActorContextPopup();
+	void RenderPlaceActorMenuItems(int32 SpawnSlot, const FPoint& SpawnPos);
 	bool TryComputePlacementLocation(int32 SlotIndex, const FPoint& ClientPos, FVector& OutLocation) const;
 	AActor* SpawnActorFromViewportMenu(EViewportPlaceActorType Type, const FVector& Location);
+	void ClearActorClipboard();
+	void SelectActors(const TArray<AActor*>& Actors);
+	FVector GetActiveViewLocation() const;
+	FRotator GetActiveViewRotation() const;
 
 	// 아이콘 텍스처
 	void LoadLayoutIcons(ID3D11Device* Device);
@@ -180,6 +204,7 @@ private:
 	// 뷰포트 상단 Play/Stop 툴바
 	FEditorPlayToolbarWidget PlayToolbar;
 	FViewportContextMenuState ContextMenuState;
+	TArray<AActor*> ActorClipboard;
 	bool bHasSavedWorldAxisVisibility = false;
 	bool SavedWorldAxisVisibility[MaxViewportSlots] = {};
 	bool SavedGridVisibility[MaxViewportSlots] = {};

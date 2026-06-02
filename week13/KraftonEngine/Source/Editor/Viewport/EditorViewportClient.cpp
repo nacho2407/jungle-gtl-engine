@@ -30,49 +30,6 @@ UWorld* FEditorViewportClient::GetWorld() const
 #include "ImGui/imgui.h"
 #include "Component/Light/LightComponentBase.h"
 
-namespace
-{
-	bool IsActorNameInUse(UWorld* World, const FString& CandidateName)
-	{
-		if (!World)
-		{
-			return false;
-		}
-
-		const FName CandidateFName(CandidateName);
-		for (AActor* Actor : World->GetActors())
-		{
-			if (IsValid(Actor) && Actor->GetFName() == CandidateFName)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	FString MakeUniqueDuplicateActorName(UWorld* World, const AActor* SourceActor)
-	{
-		FString BaseName = SourceActor ? SourceActor->GetFName().ToString() : FString();
-		if (BaseName.empty() && SourceActor)
-		{
-			BaseName = SourceActor->GetClass()->GetName();
-		}
-		if (BaseName.empty())
-		{
-			BaseName = "Actor";
-		}
-
-		FString Candidate = BaseName + "_Copy";
-		int32 Suffix = 2;
-		while (IsActorNameInUse(World, Candidate))
-		{
-			Candidate = BaseName + "_Copy_" + std::to_string(Suffix++);
-		}
-		return Candidate;
-	}
-}
-
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
 	Window = InWindow;
@@ -315,17 +272,57 @@ void FEditorViewportClient::TickEditorShortcuts()
 	// 키보드 소유권과 UpdateInputOwner 의 WantTextInput 해제로 게이팅 일원화됨.
 	if (SelectionManager && InputSystem::Get().GetKeyDown(VK_DELETE))
 	{
-		SelectionManager->DeleteSelectedActors();
+		EditorEngine->DeleteSelectedActors();
 		return;
 	}
 
-	if (!InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('X'))
+	const bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
+	const bool bShiftHeld = InputSystem::Get().GetKey(VK_SHIFT);
+	const bool bAltHeld = InputSystem::Get().GetKey(VK_MENU);
+
+	if (bCtrlHeld && InputSystem::Get().GetKeyDown('X'))
+	{
+		EditorEngine->CutSelectedActors();
+		return;
+	}
+
+	if (bCtrlHeld && InputSystem::Get().GetKeyDown('C'))
+	{
+		EditorEngine->CopySelectedActors();
+		return;
+	}
+
+	if (bCtrlHeld && InputSystem::Get().GetKeyDown('V'))
+	{
+		EditorEngine->PasteCopiedActors();
+		return;
+	}
+
+	if (bCtrlHeld && InputSystem::Get().GetKeyDown('D'))
+	{
+		EditorEngine->DuplicateSelectedActors();
+		return;
+	}
+
+	if (bCtrlHeld && bAltHeld && InputSystem::Get().GetKeyDown('F'))
+	{
+		EditorEngine->MoveSelectedActorsToView();
+		return;
+	}
+
+	if (bCtrlHeld && bShiftHeld && InputSystem::Get().GetKeyDown('F'))
+	{
+		EditorEngine->AlignSelectedActorsWithView();
+		return;
+	}
+
+	if (!bCtrlHeld && InputSystem::Get().GetKeyDown('X'))
 	{
 		EditorEngine->ToggleCoordSystem();
 		return;
 	}
 
-	if (SelectionManager && InputSystem::Get().GetKeyDown('F'))
+	if (SelectionManager && !bCtrlHeld && InputSystem::Get().GetKeyDown('F'))
 	{
 		AActor* Selected = SelectionManager->GetPrimarySelection();
 		if (Selected)
@@ -360,39 +357,6 @@ void FEditorViewportClient::TickEditorShortcuts()
 		}
 	}
 
-	if (SelectionManager && InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('D'))
-	{
-		const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
-		if (!ToDuplicate.empty())
-		{
-			const FVector DuplicateOffsetStep(0.1f, 0.1f, 0.1f);
-			TArray<AActor*> NewSelection;
-			int32 DuplicateIndex = 0;
-			for (AActor* Src : ToDuplicate)
-			{
-				if (!Src) continue;
-				UWorld* SourceWorld = Src->GetWorld();
-				const FString DuplicateName = MakeUniqueDuplicateActorName(SourceWorld, Src);
-				AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
-				if (Dup)
-				{
-					Dup->SetFName(FName(DuplicateName));
-					Dup->AddActorWorldOffset(DuplicateOffsetStep * static_cast<float>(DuplicateIndex + 1));
-					NewSelection.push_back(Dup);
-					++DuplicateIndex;
-				}
-			}
-			SelectionManager->ClearSelection();
-			for (AActor* Actor : NewSelection)
-			{
-				SelectionManager->ToggleSelect(Actor);
-			}
-			if (EditorEngine->GetGizmo())
-			{
-				EditorEngine->GetGizmo()->UpdateGizmoTransform();
-			}
-		}
-	}
 }
 
 void FEditorViewportClient::SetLightViewOverride(ULightComponentBase* Light)

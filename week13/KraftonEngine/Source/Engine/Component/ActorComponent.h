@@ -82,17 +82,17 @@ protected:
 	
 	// Non-owning back-reference. Actor owns this component through AActor::OwnedComponents.
 	TWeakObjectPtr<AActor> Owner;
-	UPROPERTY(Edit, Save, Category="Component", DisplayName="bTickEnable")
+	UPROPERTY(Edit, Save, Category="Header", DisplayName="bTickEnable")
 	bool bTickEnable = true;
 	bool bComponentDestroyRouted = false;
 
 private:
-	UPROPERTY(Edit, Save, Category="Component", DisplayName="bEditorOnly")
+	UPROPERTY(Edit, Save, Category="Header", DisplayName="bEditorOnly")
 	bool bEditorOnly = false;
-	UPROPERTY(Edit, Save, Category="Component", DisplayName="bIsActive")
+	UPROPERTY(Edit, Save, Category="Header", DisplayName="bIsActive")
 	bool bIsActive = true;
-	UPROPERTY(Edit, Save, Category="Component", DisplayName="bAutoActivate")
+	UPROPERTY(Edit, Save, Category="Header", DisplayName="bAutoActivate")
 	bool bAutoActivate = true;
-	UPROPERTY(Save, Category="Component", DisplayName="Hidden In Component Tree")
+	UPROPERTY(Save, Category="Header", DisplayName="Hidden In Component Tree")
 	bool bHiddenInComponentTree = false;
 };

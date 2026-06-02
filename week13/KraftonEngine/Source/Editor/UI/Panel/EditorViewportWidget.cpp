@@ -18,9 +18,9 @@ void FEditorViewportWidget::SetIndex(int32 InIndex)
 	}
 }
 
-void FEditorViewportWidget::Render(float DeltaTime)
+void FEditorViewportWidget::Render(const FEditorPanelContext& Context)
 {
-	(void)DeltaTime;
+	(void)Context;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	ImGui::Begin(WindowName.c_str(), nullptr, ImGuiWindowFlags_MenuBar);

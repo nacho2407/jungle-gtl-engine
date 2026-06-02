@@ -1068,8 +1068,10 @@ void FLuaBlueprintEditorWidget::Close()
     FAssetEditorWidget::Close();
 }
 
-void FLuaBlueprintEditorWidget::Render(float /*DeltaTime*/)
+void FLuaBlueprintEditorWidget::Render(const FEditorPanelContext& Context)
 {
+	(void)Context;
+
     ULuaBlueprintAsset* Blueprint = GetBlueprint();
     if (!Blueprint)
     {

@@ -5,8 +5,10 @@
 #include "Object/Reflection/UClass.h"
 #include "ImGui/imgui.h"
 
-void EditorProjectSettingsWidget::Render()
+void EditorProjectSettingsWidget::Render(const FEditorPanelContext& Context)
 {
+	(void)Context;
+
 	if (!bOpen) return;
 
 	ImGui::SetNextWindowSize(ImVec2(360, 200), ImGuiCond_FirstUseEver);

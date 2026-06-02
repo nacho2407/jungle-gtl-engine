@@ -4,7 +4,7 @@
 #include "CameraShake/CameraShakeAsset.h"
 #include "CameraShake/CameraShakeManager.h"
 #include "Editor/EditorEngine.h"
-#include "Editor/UI/ContentBrowser/ContentItem.h"
+#include "Editor/UI/Panel/ContentBrowser/ContentItem.h"
 #include "FloatCurve/FloatCurveAsset.h"
 #include "FloatCurve/FloatCurveManager.h"
 #include "Object/Object.h"
@@ -359,8 +359,10 @@ void FCameraShakeEditorWidget::Open(UObject* Object)
 	ClearDirty();
 }
 
-void FCameraShakeEditorWidget::Render(float DeltaTime)
+void FCameraShakeEditorWidget::Render(const FEditorPanelContext& Context)
 {
+	const float DeltaTime = Context.DeltaTime;
+
 	if (!IsOpen() || !EditedObject)
 	{
 		return;

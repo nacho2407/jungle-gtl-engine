@@ -18,11 +18,11 @@ void FAssetEditorManager::Tick(float DeltaTime)
 	RemoveClosedEditors();
 }
 
-void FAssetEditorManager::Render(float DeltaTime)
+void FAssetEditorManager::Render(const FEditorPanelContext& Context)
 {
 	for (const auto& Editor : OpenEditors)
 	{
-		Editor->Render(DeltaTime);
+		Editor->Render(Context);
 	}
 }
 

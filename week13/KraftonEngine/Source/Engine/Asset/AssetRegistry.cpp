@@ -7,6 +7,7 @@
 #include "Animation/Montage/AnimMontage.h"
 #include "Animation/Skeleton/Skeleton.h"
 #include "Animation/Skeleton/SkeletonManager.h"
+#include "Materials/MaterialManager.h"
 #include "Particles/ParticleSystemManager.h"
 #include "PhysicsEngine/PhysicsAssetManager.h"
 #include "LuaBlueprint/LuaBlueprintManager.h"
@@ -22,6 +23,19 @@ namespace FAssetRegistry
 		static const TArray<FAssetListItem> Empty;
 		if (!AssetTypeName) return Empty;
 
+		if (std::strcmp(AssetTypeName, "StaticMesh") == 0)
+		{
+			AssetTypeName = "UStaticMesh";
+		}
+		else if (std::strcmp(AssetTypeName, "SkeletalMesh") == 0)
+		{
+			AssetTypeName = "USkeletalMesh";
+		}
+		else if (std::strcmp(AssetTypeName, "UMaterial") == 0)
+		{
+			AssetTypeName = "Material";
+		}
+
 		if (std::strcmp(AssetTypeName, "UStaticMesh") == 0)
 		{
 			return FMeshManager::GetAvailableStaticMeshFiles();
@@ -29,6 +43,22 @@ namespace FAssetRegistry
 		if (std::strcmp(AssetTypeName, "USkeletalMesh") == 0)
 		{
 			return FMeshManager::GetAvailableSkeletalMeshFiles();
+		}
+		if (std::strcmp(AssetTypeName, "Material") == 0)
+		{
+			static TArray<FAssetListItem> MaterialFiles;
+			MaterialFiles.clear();
+
+			FMaterialManager::Get().ScanMaterialAssets();
+			const TArray<FMaterialAssetListItem>& SourceFiles = FMaterialManager::Get().GetAvailableMaterialFiles();
+			for (const FMaterialAssetListItem& SourceItem : SourceFiles)
+			{
+				FAssetListItem Item;
+				Item.DisplayName = SourceItem.DisplayName;
+				Item.FullPath = SourceItem.FullPath;
+				MaterialFiles.push_back(Item);
+			}
+			return MaterialFiles;
 		}
         if (std::strcmp(AssetTypeName, "USkeleton") == 0)
         {

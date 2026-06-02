@@ -22,7 +22,7 @@ public:
 	bool CanEdit(UObject* Object) const override;
 	void Open(UObject* Object) override;
 	void Close() override;
-	void Render(float DeltaTime) override;
+	void Render(const FEditorPanelContext& Context) override;
 
 private:
 	void EnsureContext();

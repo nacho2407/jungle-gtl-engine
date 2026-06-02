@@ -131,7 +131,7 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	Refresh();
 }
 
-void FEditorContentBrowserWidget::Render(float DeltaTime)
+void FEditorContentBrowserWidget::Render(const FEditorPanelContext& Context)
 {
 	if (!ImGui::Begin("ContentBrowser"))
 	{
@@ -139,7 +139,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		return;
 	}
 
-	(void)DeltaTime;
+	(void)Context;
 
 	if (BrowserContext.bPendingContentRefresh)
 	{

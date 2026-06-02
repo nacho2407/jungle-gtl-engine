@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Intermediate">
@@ -88,7 +88,7 @@
     <Filter Include="Source\Editor\UI\Asset\PhysicsAsset">
       <UniqueIdentifier>{7fc89ace-8c3b-db4b-c8f3-6b734a748efb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Editor\UI\ContentBrowser">
+    <Filter Include="Source\Editor\UI\Panel\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\UI\Debug">
@@ -911,14 +911,14 @@
     <ClCompile Include="Source\Editor\UI\Asset\PhysicsAsset\PhysicsAssetViewerWidget.cpp">
       <Filter>Source\Editor\UI\Asset\PhysicsAsset</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp">
-      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    <ClCompile Include="Source\Editor\UI\Panel\ContentBrowser\ContentBrowser.cpp">
+      <Filter>Source\Editor\UI\Panel\ContentBrowser</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp">
-      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    <ClCompile Include="Source\Editor\UI\Panel\ContentBrowser\ContentBrowserElement.cpp">
+      <Filter>Source\Editor\UI\Panel\ContentBrowser</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp">
-      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    <ClCompile Include="Source\Editor\UI\Panel\ContentBrowser\EditorPrefabWidget.cpp">
+      <Filter>Source\Editor\UI\Panel\ContentBrowser</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Debug\EditorAnimationDebugWidget.cpp">
       <Filter>Source\Editor\UI\Debug</Filter>
@@ -947,6 +947,9 @@
     <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorReflectionPropertyWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Panel\EditorSceneWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
@@ -969,6 +972,9 @@
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Util\BasicReflectionPropertyRenderer.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp">
@@ -2139,20 +2145,20 @@
     <ClInclude Include="Source\Editor\UI\Asset\PhysicsAsset\PhysicsAssetViewerWidget.h">
       <Filter>Source\Editor\UI\Asset\PhysicsAsset</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h">
-      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    <ClInclude Include="Source\Editor\UI\Panel\ContentBrowser\ContentBrowser.h">
+      <Filter>Source\Editor\UI\Panel\ContentBrowser</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h">
-      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    <ClInclude Include="Source\Editor\UI\Panel\ContentBrowser\ContentBrowserContext.h">
+      <Filter>Source\Editor\UI\Panel\ContentBrowser</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h">
-      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    <ClInclude Include="Source\Editor\UI\Panel\ContentBrowser\ContentBrowserElement.h">
+      <Filter>Source\Editor\UI\Panel\ContentBrowser</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentItem.h">
-      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    <ClInclude Include="Source\Editor\UI\Panel\ContentBrowser\ContentItem.h">
+      <Filter>Source\Editor\UI\Panel\ContentBrowser</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.h">
-      <Filter>Source\Editor\UI\ContentBrowser</Filter>
+    <ClInclude Include="Source\Editor\UI\Panel\ContentBrowser\EditorPrefabWidget.h">
+      <Filter>Source\Editor\UI\Panel\ContentBrowser</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Debug\EditorAnimationDebugWidget.h">
       <Filter>Source\Editor\UI\Debug</Filter>
@@ -2172,6 +2178,9 @@
     <ClInclude Include="Source\Editor\UI\Panel\EditorMaterialInspector.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPanelWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
@@ -2179,6 +2188,9 @@
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorReflectionPropertyWidget.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorSceneWidget.h">
@@ -2203,6 +2215,9 @@
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h">
+      <Filter>Source\Editor\UI\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Util\BasicReflectionPropertyRenderer.h">
       <Filter>Source\Editor\UI\Util</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h">
