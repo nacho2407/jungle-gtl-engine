@@ -6,8 +6,8 @@
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsAssetManager.h"
 #include "Component/Debug/PhysicsAssetDebugComponent.h"
+#include "Component/Debug/SkeletalMeshDebugComponent.h"
 #include "Component/Light/DirectionalLightComponent.h"
-#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Editor/UI/Util/DetailPropertyRenderer.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
@@ -231,7 +231,7 @@ void FPhysicsAssetViewerWidget::CreatePreviewWorld()
 	WorldContext.World->InitWorld();
 
 	AActor* Actor = WorldContext.World->SpawnActor<AActor>();
-	USkeletalMeshComponent* MeshComponent = Actor->AddComponent<USkeletalMeshComponent>();
+	USkeletalMeshDebugComponent* MeshComponent = Actor->AddComponent<USkeletalMeshDebugComponent>();
 	MeshComponent->SetSkeletalMesh(SourceSkeletalMesh);
 	Actor->SetRootComponent(MeshComponent);
 	Actor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
@@ -250,6 +250,7 @@ void FPhysicsAssetViewerWidget::CreatePreviewWorld()
 	ViewportClient.SetPreviewWorld(WorldContext.World);
 	ViewportClient.SetPreviewActor(Actor);
 	ViewportClient.SetPreviewMeshComponent(MeshComponent);
+	ViewportClient.CreatePreviewGizmo();
 	ViewportClient.CreatePhysicsAssetDebugComponent();
 	ViewportClient.SetPhysicsAssetPickingEnabled(true);
 	ViewportClient.SetOnPhysicsAssetBodyPicked([this](int32 BodyIndex)

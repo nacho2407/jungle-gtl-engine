@@ -46,6 +46,7 @@ public:
 	bool IsComponentDetailsSelected() const;
 	const FSelectionDetailTarget* GetPrimaryDetailTarget() const;
 	const TArray<FSelectionDetailTarget>& GetSelectedDetailTargets() const { return SelectedDetailTargets; }
+	void SetSingleDetailTarget(const FSelectionDetailTarget& Target);
 
 	bool IsSelected(AActor* Actor) const;
 
@@ -64,7 +65,6 @@ public:
 private:
 	void PruneInvalidSelection();
 	void SyncGizmo();
-	void SetSingleDetailTarget(const FSelectionDetailTarget& Target);
 	void AddActorDetailTarget(AActor* Actor);
 	void RefreshDerivedSelection();
 	void RefreshGizmoSelectedActors();

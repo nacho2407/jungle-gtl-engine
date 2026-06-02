@@ -9,6 +9,7 @@
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
 #include "Component/Debug/GizmoComponent.h"
+#include "Component/Debug/SkeletalMeshDebugComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Debug/BoneDebugComponent.h"
 #include "Component/Debug/PhysicsAssetDebugComponent.h"
@@ -40,6 +41,25 @@ void FMeshEditorViewportClient::AddReferencedObjects(FReferenceCollector& Collec
 	Collector.AddReferencedObject(PreviewActor);
 }
 
+void FMeshEditorViewportClient::SetPreviewMeshComponent(USkeletalMeshDebugComponent* InComp)
+{
+	PreviewDebugMeshComponent = InComp;
+	PreviewMeshComponent = InComp;
+
+	if (BoneDebugComponent)
+	{
+		BoneDebugComponent->SetTargetMeshComponent(PreviewMeshComponent);
+	}
+
+	if (PhysicsAssetDebugComponent)
+	{
+		UPhysicsAsset* PhysicsAsset = PhysicsAssetDebugComponent->GetPhysicsAsset();
+		const int32 SelectedBodyIndex = PhysicsAssetDebugComponent->GetSelectedBodyIndex();
+		const int32 SelectedConstraintIndex = PhysicsAssetDebugComponent->GetSelectedConstraintIndex();
+		SyncPhysicsAssetDebugComponent(PhysicsAsset, SelectedBodyIndex, SelectedConstraintIndex);
+	}
+}
+
 void FMeshEditorViewportClient::Release()
 {
 	if (Viewport)
@@ -51,6 +71,8 @@ void FMeshEditorViewportClient::Release()
 
 	PreviewWorld = nullptr;
 	PreviewActor = nullptr;
+	PreviewDebugMeshComponent = nullptr;
+	PreviewMeshComponent = nullptr;
 
 	UObjectManager::Get().DestroyObject(Gizmo);
 	Gizmo = nullptr;
@@ -148,7 +170,7 @@ void FMeshEditorViewportClient::SetPhysicsAssetPickingEnabled(bool bInEnabled)
 		PhysicsAssetDebugComponent->SetSelectedConstraintIndex(-1);
 		SelectedPhysicsConstraintIndex = -1;
 	}
-	if (!bPhysicsAssetPickingEnabled && (IsPhysicsAssetShapeGizmoActive() || IsPhysicsAssetConstraintGizmoActive()))
+	if (!bPhysicsAssetPickingEnabled && Gizmo && (IsPhysicsAssetShapeGizmoActive() || IsPhysicsAssetConstraintGizmoActive()))
 	{
 		PhysicsAssetShapeTarget.Clear();
 		PhysicsAssetConstraintTarget.Clear();
@@ -210,11 +232,14 @@ void FMeshEditorViewportClient::NotifyPhysicsAssetConstraintPicked(int32 Constra
 
 void FMeshEditorViewportClient::ResetCameraToPreviousBounds()
 {
-	if (!PreviewActor)
+	if (!PreviewActor || !PreviewMeshComponent)
 	{
 		ViewTransform.ViewLocation = FVector(-5.0f, -5.0f, 3.0f);
 		ViewTransform.LookAt(FVector::ZeroVector);
 		TargetLocation = ViewTransform.ViewLocation;
+		LastAppliedCameraLocation = ViewTransform.ViewLocation;
+		bTargetLocationInitialized = true;
+		bLastAppliedCameraLocationInitialized = true;
 		return;
 	}
 
@@ -451,6 +476,11 @@ void FMeshEditorViewportClient::TickInput(float DeltaTime)
 
 	if (Input.GetKeyUp(VK_SPACE))
 	{
+		if (!Gizmo)
+		{
+			return;
+		}
+
 		if (IsPhysicsAssetConstraintGizmoActive())
 		{
 			Gizmo->SetTranslateMode();
@@ -724,7 +754,7 @@ bool FMeshEditorViewportClient::IsPhysicsAssetConstraintGizmoActive() const
 void FMeshEditorViewportClient::HandleDragStart(const FRay& Ray)
 {
 	FHitResult Hit;
-	if (FRayUtils::RaycastComponent(Gizmo, Ray, Hit))
+	if (Gizmo && FRayUtils::RaycastComponent(Gizmo, Ray, Hit))
 	{
 		Gizmo->SetPressedOnHandle(true);
 		return;

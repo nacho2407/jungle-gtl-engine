@@ -2,12 +2,17 @@
 
 #include "MeshEditorWidgetTab.h"
 #include "Asset/AssetRegistry.h"
+#include "Editor/Selection/SelectionManager.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
+#include "Math/Vector.h"
 #include "PhysicsEngine/PhysicsAssetBuilder.h"
+
+#include <memory>
 
 class UAnimMontage;
 class UAnimSequence;
 class UPhysicsAsset;
+class FPhysicsAssetRagdollPanel;
 struct FSkeletalMesh;
 
 struct FAnimationTabState
@@ -52,7 +57,6 @@ public:
 
 	void Render(float AvailableHeight) override;
 	void Reset() override;
-	void OnPreviewActorCreated(AActor* Actor) override;
 	void OnEditorOpened() override;
 	void OnActivated(EMeshEditorTab PreviousTab) override;
 
@@ -116,6 +120,7 @@ class FMeshEditorPhysicsAssetTab : public FMeshEditorWidgetTab
 {
 public:
 	explicit FMeshEditorPhysicsAssetTab(FMeshEditorWidget& InOwner);
+	~FMeshEditorPhysicsAssetTab() override;
 
 	EMeshEditorTab GetType() const override { return EMeshEditorTab::PhysicsAsset; }
 	const char* GetLabel() const override { return "Physics Asset"; }
@@ -127,6 +132,7 @@ public:
 	bool ResolveOpenTarget(UObject* Object, UObject*& OutObjectToEdit, EMeshEditorTab& OutInitialTab) const override;
 
 	void Render(float AvailableHeight) override;
+	void Tick(float DeltaTime) override;
 	void Reset() override;
 	void OnEditorOpened() override;
 	void OnEditorClosing() override;
@@ -139,16 +145,47 @@ public:
 	void OnPhysicsAssetConstraintEdited() override;
 
 private:
-	void RenderPhysicsAssetBuildOptionsPopup(USkeletalMesh* SkeletalMesh, UPhysicsAsset*& InOutPhysicsAsset);
+	enum class EPhysicsAssetDetailTargetType : uint8
+	{
+		None,
+		PhysicsAsset,
+		Body,
+		Constraint
+	};
+
+	bool RenderPhysicsAssetBuildOptionsOverlay(
+		const ImVec2& ViewportPos,
+		const ImVec2& ViewportSize,
+		USkeletalMesh* SkeletalMesh,
+		UPhysicsAsset*& InOutPhysicsAsset);
+	bool RenderPhysicsAssetViewportContextMenu(
+		const ImVec2& ViewportPos,
+		const ImVec2& ViewportSize,
+		const FSkeletalMesh* Asset,
+		UPhysicsAsset* PhysicsAsset,
+		bool bSuppressOpen);
 	void RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, UPhysicsAsset* PhysicsAsset);
 	bool RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex);
-	void RenderPhysicsAssetBodyDetails(UPhysicsAsset* PhysicsAsset);
+	bool CanCreateConstraintForBody(UPhysicsAsset* PhysicsAsset, const FSkeletalMesh* Asset, int32 ChildBodyIndex) const;
+	bool CreateConstraintForBody(UPhysicsAsset* PhysicsAsset, const FSkeletalMesh* Asset, int32 ChildBodyIndex);
+	int32 PickPhysicsAssetBodyAtMouse(const ImVec2& ViewportPos, const ImVec2& ViewportSize) const;
+	void SyncReflectionDetailTarget(UPhysicsAsset* PhysicsAsset);
+	void ClearReflectionDetailTarget();
+	void RefreshReflectionDetailSnapshot(UPhysicsAsset* PhysicsAsset);
+	void DetectReflectionDetailChanges(UPhysicsAsset* PhysicsAsset);
 	void SavePhysicsAssetChange(const char* LogPrefix);
 	void SyncDebugComponent(UPhysicsAsset* PhysicsAsset);
 
 private:
 	int32 SelectedPhysicsBodyIndex = -1;
 	int32 SelectedPhysicsConstraintIndex = -1;
-	bool bOpenPhysicsAssetBuildOptions = false;
+	int32 ViewportContextPhysicsBodyIndex = -1;
+	EPhysicsAssetDetailTargetType ReflectionDetailTargetType = EPhysicsAssetDetailTargetType::None;
+	FSelectionDetailTarget ReflectionDetailTarget;
+	TArray<uint8> ReflectionDetailSnapshot;
+	bool bHasReflectionDetailSnapshot = false;
+	FVector SnapshotConstraintParentLocation = FVector::ZeroVector;
+	FVector SnapshotConstraintChildLocation = FVector::ZeroVector;
 	FPhysicsAssetBuildOptions PendingPhysicsAssetBuildOptions;
+	std::unique_ptr<FPhysicsAssetRagdollPanel> RagdollPanel;
 };

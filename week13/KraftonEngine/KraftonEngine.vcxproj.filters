@@ -1181,6 +1181,9 @@
     <ClCompile Include="Source\Engine\Component\Debug\PhysicsAssetDebugComponent.cpp">
       <Filter>Source\Engine\Component\Debug</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Debug\SkeletalMeshDebugComponent.cpp">
+      <Filter>Source\Engine\Component\Debug</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Debug\TemporaryBoneAnimatorComponent.cpp">
       <Filter>Source\Engine\Component\Debug</Filter>
     </ClCompile>
@@ -2467,6 +2470,9 @@
       <Filter>Source\Engine\Component\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Debug\PhysicsAssetDebugComponent.h">
+      <Filter>Source\Engine\Component\Debug</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Debug\SkeletalMeshDebugComponent.h">
       <Filter>Source\Engine\Component\Debug</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Debug\TemporaryBoneAnimatorComponent.h">
