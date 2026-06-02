@@ -7,6 +7,7 @@ struct ImVec2;
 class AActor;
 class UObject;
 class USkeletalMesh;
+class USkeletalMeshDebugComponent;
 class FSelectionManager;
 
 class FMeshEditorWidgetTab
@@ -28,7 +29,7 @@ public:
 	virtual void Render(float AvailableHeight) = 0;
 	virtual void Tick(float DeltaTime) {}
 	virtual void Reset() {}
-	virtual void OnPreviewActorCreated(AActor* Actor) {}
+	virtual void OnPreviewActorCreated(AActor* Actor);
 	virtual void OnEditorOpened() {}
 	virtual void OnEditorClosing() {}
 	virtual void OnInitialActivated() { OnActivated(GetType()); }
@@ -40,9 +41,13 @@ public:
 	virtual void OnPhysicsAssetShapeEdited() {}
 	virtual void OnPhysicsAssetConstraintEdited() {}
 
+	void ActivatePreviewMeshComponent();
+	void DeactivatePreviewMeshComponent();
+
 protected:
 	UObject* GetEditedObject() const;
 	USkeletalMesh* GetSkeletalMesh() const;
+	USkeletalMeshDebugComponent* GetTabPreviewMeshComponent() const { return PreviewMeshComponent; }
 	FMeshEditorViewportClient& GetViewportClient();
 	const FMeshEditorViewportClient& GetViewportClient() const;
 	FSelectionManager* GetSelectionManager() const;
@@ -56,4 +61,5 @@ protected:
 
 protected:
 	FMeshEditorWidget& Owner;
+	USkeletalMeshDebugComponent* PreviewMeshComponent = nullptr;
 };

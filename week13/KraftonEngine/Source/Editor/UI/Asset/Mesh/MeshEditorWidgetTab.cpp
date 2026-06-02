@@ -1,6 +1,8 @@
 #include "MeshEditorWidgetTab.h"
 
+#include "Component/Debug/SkeletalMeshDebugComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
+#include "GameFramework/AActor.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Object/Object.h"
@@ -111,6 +113,52 @@ FString FMeshEditorWidgetTab::GetEditorTitleAssetPath() const
 {
 	const USkeletalMesh* SkeletalMesh = GetSkeletalMesh();
 	return SkeletalMesh ? SkeletalMesh->GetAssetPathFileName() : FString();
+}
+
+void FMeshEditorWidgetTab::OnPreviewActorCreated(AActor* Actor)
+{
+	if (!Actor)
+	{
+		return;
+	}
+
+	USkeletalMesh* Mesh = GetSkeletalMesh();
+	if (!Mesh)
+	{
+		return;
+	}
+
+	PreviewMeshComponent = Actor->AddComponent<USkeletalMeshDebugComponent>();
+	if (!PreviewMeshComponent)
+	{
+		return;
+	}
+
+	PreviewMeshComponent->SetSkeletalMesh(Mesh);
+	PreviewMeshComponent->SetVisibility(false);
+	if (!Actor->GetRootComponent())
+	{
+		Actor->SetRootComponent(PreviewMeshComponent);
+	}
+}
+
+void FMeshEditorWidgetTab::ActivatePreviewMeshComponent()
+{
+	if (!PreviewMeshComponent)
+	{
+		return;
+	}
+
+	PreviewMeshComponent->SetVisibility(true);
+	GetViewportClient().SetPreviewMeshComponent(PreviewMeshComponent);
+}
+
+void FMeshEditorWidgetTab::DeactivatePreviewMeshComponent()
+{
+	if (PreviewMeshComponent)
+	{
+		PreviewMeshComponent->SetVisibility(false);
+	}
 }
 
 void FMeshEditorWidgetTab::RenderViewportPanel(ImVec2 Size)

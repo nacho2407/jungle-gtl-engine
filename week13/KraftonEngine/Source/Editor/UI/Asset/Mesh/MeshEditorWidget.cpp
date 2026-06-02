@@ -8,9 +8,12 @@
 #include "MeshEditorWidgetTabs.h"
 
 #include "Component/Light/DirectionalLightComponent.h"
+#include "Component/Primitive/StaticMeshComponent.h"
+#include "Core/Types/CollisionTypes.h"
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "GameFramework/Actor/StaticMeshActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
+#include "Physics/IPhysicsScene.h"
 #include "Platform/Paths.h"
 #include "Runtime/Engine.h"
 #include "Slate/SlateApplication.h"
@@ -166,6 +169,18 @@ void FMeshEditorWidget::CreatePreviewScene()
 	FloorActor->InitDefaultComponents("Content/Data/BasicShape/Cube.OBJ");
 	FloorActor->SetActorLocation(FVector(0.0f, 0.0f, -0.05f));
 	FloorActor->SetActorScale(FVector(10.0f, 10.0f, 0.02f));
+	if (UStaticMeshComponent* FloorComponent = FloorActor->GetComponentByClass<UStaticMeshComponent>())
+	{
+		FloorComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		FloorComponent->SetCollisionObjectType(ECollisionChannel::WorldStatic);
+		FloorComponent->SetCollisionResponseToAllChannels(ECollisionResponse::Block);
+		FloorComponent->SetSimulatePhysics(false);
+
+		if (IPhysicsScene* PhysicsScene = WorldContext.World->GetPhysicsScene())
+		{
+			PhysicsScene->RegisterComponent(FloorComponent);
+		}
+	}
 
 	ViewportClient.SetPreviewWorld(WorldContext.World);
 	ViewportClient.SetPreviewActor(Actor);
@@ -186,13 +201,19 @@ void FMeshEditorWidget::InitializeViewportForPreview()
 	ViewportClient.Initialize(GEngine->GetRenderer().GetFD3DDevice().GetDevice(), static_cast<uint32>(ViewportSize.x), static_cast<uint32>(ViewportSize.y));
 
 	ViewportClient.CreatePreviewGizmo();
-	ViewportClient.ResetCameraToPreviousBounds();
 	FSlateApplication::Get().RegisterViewport(&ViewportClient);
 }
 
 void FMeshEditorWidget::ActivateInitialTab(EMeshEditorTab InitialTab)
 {
 	ResetTabs();
+	ActiveTab = InitialTab;
+	if (FMeshEditorWidgetTab* Active = GetActiveTab())
+	{
+		Active->ActivatePreviewMeshComponent();
+		ViewportClient.ResetCameraToPreviousBounds();
+	}
+
 	for (const std::unique_ptr<FMeshEditorWidgetTab>& Tab : Tabs)
 	{
 		if (Tab)
@@ -201,7 +222,6 @@ void FMeshEditorWidget::ActivateInitialTab(EMeshEditorTab InitialTab)
 		}
 	}
 
-	ActiveTab = InitialTab;
 	if (FMeshEditorWidgetTab* Active = GetActiveTab())
 	{
 		Active->OnInitialActivated();
@@ -351,10 +371,12 @@ void FMeshEditorWidget::SetActiveTab(EMeshEditorTab Tab)
 	if (FMeshEditorWidgetTab* Previous = GetActiveTab())
 	{
 		Previous->OnDeactivated(Tab);
+		Previous->DeactivatePreviewMeshComponent();
 	}
 	ActiveTab = Tab;
 	if (FMeshEditorWidgetTab* Active = GetActiveTab())
 	{
+		Active->ActivatePreviewMeshComponent();
 		Active->OnActivated(PreviousTab);
 	}
 }
