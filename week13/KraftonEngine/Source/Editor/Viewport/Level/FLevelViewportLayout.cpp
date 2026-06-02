@@ -45,6 +45,56 @@
 
 namespace
 {
+	bool IsActorNameInUse(UWorld* World, const FString& CandidateName)
+	{
+		if (!World)
+		{
+			return false;
+		}
+
+		const FName CandidateFName(CandidateName);
+		for (AActor* Actor : World->GetActors())
+		{
+			if (IsValid(Actor) && Actor->GetFName() == CandidateFName)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	FString MakeUniqueDuplicateActorName(UWorld* World, const AActor* SourceActor)
+	{
+		FString BaseName = SourceActor ? SourceActor->GetFName().ToString() : FString();
+		if (BaseName.empty() && SourceActor)
+		{
+			BaseName = SourceActor->GetClass()->GetName();
+		}
+		if (BaseName.empty())
+		{
+			BaseName = "Actor";
+		}
+
+		FString Candidate = BaseName + "_Copy";
+		int32 Suffix = 2;
+		while (IsActorNameInUse(World, Candidate))
+		{
+			Candidate = BaseName + "_Copy_" + std::to_string(Suffix++);
+		}
+		return Candidate;
+	}
+
+	void UpdateGizmoAfterActorCommand(FSelectionManager* SelectionManager)
+	{
+		if (SelectionManager)
+		{
+			if (UGizmoComponent* Gizmo = SelectionManager->GetGizmo())
+			{
+				Gizmo->UpdateGizmoTransform();
+			}
+		}
+	}
 }
 
 // ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
@@ -156,6 +206,8 @@ void FLevelViewportLayout::Initialize(UEditorEngine* InEditor, FWindowsWindow* I
 
 void FLevelViewportLayout::Release()
 {
+	ClearActorClipboard();
+
 	SSplitter::DestroyTree(RootSplitter);
 	RootSplitter = nullptr;
 	DraggingSplitter = nullptr;
@@ -1054,7 +1106,7 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 		}
 	}
 
-	RenderViewportPlaceActorPopup();
+	RenderViewportContextPopup();
 
 	ImGui::End();
 	ImGui::PopStyleVar();
@@ -1098,6 +1150,7 @@ void FLevelViewportLayout::RenderSharedViewportToolbar(float ToolbarLeft, float 
 	Context.OnAddActorClicked = [&]()
 	{
 		const FPoint MousePos = { ImGui::GetIO().MousePos.x, ImGui::GetIO().MousePos.y };
+		ContextMenuState.PendingPopupMode = EViewportContextPopupMode::PlaceActor;
 		ContextMenuState.PendingPopupPos = MousePos;
 		ContextMenuState.PendingPopupSlot = 0;
 		ContextMenuState.PendingSpawnSlot = 0;
@@ -1596,6 +1649,7 @@ void FLevelViewportLayout::HandleViewportContextMenuInput(const FPoint& MousePos
 			ContextMenuState.RightClickTravelSq[i] = 0.0f;
 		}
 		ContextMenuState.PendingPopupSlot = -1;
+		ContextMenuState.PendingPopupMode = EViewportContextPopupMode::None;
 		return;
 	}
 
@@ -1666,6 +1720,7 @@ void FLevelViewportLayout::HandleViewportContextMenuInput(const FPoint& MousePos
 			ContextMenuState.PendingSpawnSlot = i;
 			ContextMenuState.PendingPopupPos = MousePos;
 			ContextMenuState.PendingSpawnPos = ContextMenuState.RightClickPressPos[i];
+			ContextMenuState.PendingPopupMode = EViewportContextPopupMode::ActorContext;
 		}
 
 		ContextMenuState.bTrackingRightClick[i] = false;
@@ -1673,16 +1728,15 @@ void FLevelViewportLayout::HandleViewportContextMenuInput(const FPoint& MousePos
 	}
 }
 
-void FLevelViewportLayout::RenderViewportPlaceActorPopup()
+void FLevelViewportLayout::RenderViewportContextPopup()
 {
-	constexpr const char* PopupId = "##ViewportPlaceActorPopup";
+	constexpr const char* PlaceActorPopupId = "##ViewportPlaceActorPopup";
+	constexpr const char* ActorContextPopupId = "##ViewportActorContextPopup";
 
-	// PIE 중엔 popup 자체를 열지도, 이전에 열려있던 것을 그리지도 않는다.
-	// (HandleViewportContextMenuInput 가 PendingPopupSlot 입력을 막아주지만 PIE 진입 직전
-	// 프레임에 이미 PendingPopupSlot 이 세팅돼 있던 케이스를 여기서 한 번 더 확실히 차단.)
 	if (Editor && Editor->IsPlayingInEditor())
 	{
 		ContextMenuState.PendingPopupSlot = -1;
+		ContextMenuState.PendingPopupMode = EViewportContextPopupMode::None;
 		return;
 	}
 
@@ -1694,73 +1748,35 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 		}
 
 		ImGui::SetNextWindowPos(ImVec2(ContextMenuState.PendingPopupPos.X, ContextMenuState.PendingPopupPos.Y));
-		ImGui::OpenPopup(PopupId);
+		ImGui::OpenPopup(ContextMenuState.PendingPopupMode == EViewportContextPopupMode::PlaceActor
+			? PlaceActorPopupId
+			: ActorContextPopupId);
 		ContextMenuState.PendingPopupSlot = -1;
+		ContextMenuState.PendingPopupMode = EViewportContextPopupMode::None;
 	}
 
+	RenderViewportPlaceActorPopup();
+	RenderViewportActorContextPopup();
+}
+
+void FLevelViewportLayout::RenderViewportPlaceActorPopup()
+{
+	constexpr const char* PopupId = "##ViewportPlaceActorPopup";
+	constexpr ImVec2 ContextMenuPadding(14.0f, 8.0f);
+
+	// PIE 중엔 popup 자체를 열지도, 이전에 열려있던 것을 그리지도 않는다.
+	// (HandleViewportContextMenuInput 가 PendingPopupSlot 입력을 막아주지만 PIE 진입 직전
+	// 프레임에 이미 PendingPopupSlot 이 세팅돼 있던 케이스를 여기서 한 번 더 확실히 차단.)
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ContextMenuPadding);
 	if (!ImGui::BeginPopup(PopupId))
 	{
+		ImGui::PopStyleVar();
 		return;
 	}
 
 	if (ImGui::BeginMenu("Place Actor"))
 	{
-		// 기존 Control Panel의 spawn 기능을 뷰포트 기준 배치 메뉴로 옮긴다.
-		const FPoint SpawnPos = ContextMenuState.PendingSpawnPos;
-		const int32 SpawnSlot = ContextMenuState.PendingSpawnSlot;
-
-		auto PlaceActorMenuItem = [&](const char* Label, EViewportPlaceActorType Type)
-		{
-			if (!ImGui::MenuItem(Label))
-			{
-				return;
-			}
-
-			FVector Location(0.0f, 0.0f, 0.0f);
-			if (TryComputePlacementLocation(SpawnSlot, SpawnPos, Location))
-			{
-				SpawnActorFromViewportMenu(Type, Location);
-			}
-		};
-
-		PlaceActorMenuItem("Cube", EViewportPlaceActorType::Cube);
-		PlaceActorMenuItem("Sphere", EViewportPlaceActorType::Sphere);
-		PlaceActorMenuItem("Cylinder", EViewportPlaceActorType::Cylinder);
-		PlaceActorMenuItem("Decal", EViewportPlaceActorType::Decal);
-		PlaceActorMenuItem("Height Fog", EViewportPlaceActorType::HeightFog);
-		PlaceActorMenuItem("Ambient Light", EViewportPlaceActorType::AmbientLight);
-		PlaceActorMenuItem("Directional Light", EViewportPlaceActorType::DirectionalLight);
-		PlaceActorMenuItem("Point Light", EViewportPlaceActorType::PointLight);
-		PlaceActorMenuItem("Spot Light", EViewportPlaceActorType::SpotLight);
-		ImGui::Separator();
-		PlaceActorMenuItem("Box Collider", EViewportPlaceActorType::BoxCollider);
-		PlaceActorMenuItem("Sphere Collider", EViewportPlaceActorType::SphereCollider);
-		PlaceActorMenuItem("Capsule Collider", EViewportPlaceActorType::CapsuleCollider);
-		PlaceActorMenuItem("Trigger Volume", EViewportPlaceActorType::TriggerVolume);
-		PlaceActorMenuItem("Skeletal Mesh Actor", EViewportPlaceActorType::SkeletalMesh);
-		PlaceActorMenuItem("Character",           EViewportPlaceActorType::Character);
-		PlaceActorMenuItem("Lua Character",       EViewportPlaceActorType::LuaCharacter);
-
-		// Game 모듈이 등록한 액터들 (예: ACarPawn). 등록 순서대로 표시.
-		const auto& RegistryEntries = FActorPlacementRegistry::Get().GetEntries();
-		if (!RegistryEntries.empty())
-		{
-			ImGui::Separator();
-			for (size_t i = 0; i < RegistryEntries.size(); ++i)
-			{
-				const auto& Entry = RegistryEntries[i];
-				if (!ImGui::MenuItem(Entry.Label.c_str())) continue;
-				FVector Location(0.0f, 0.0f, 0.0f);
-				if (TryComputePlacementLocation(SpawnSlot, SpawnPos, Location))
-				{
-					if (UWorld* W = Editor ? Editor->GetWorld() : nullptr)
-					{
-						Entry.SpawnFn(W, Location);
-					}
-				}
-			}
-		}
-
+		RenderPlaceActorMenuItems(ContextMenuState.PendingSpawnSlot, ContextMenuState.PendingSpawnPos);
 		ImGui::EndMenu();
 	}
 
@@ -1780,6 +1796,350 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 	}
 
 	ImGui::EndPopup();
+	ImGui::PopStyleVar();
+}
+
+void FLevelViewportLayout::RenderPlaceActorMenuItems(int32 SpawnSlot, const FPoint& SpawnPos)
+{
+	auto PlaceActorMenuItem = [&](const char* Label, EViewportPlaceActorType Type)
+	{
+		if (!ImGui::MenuItem(Label))
+		{
+			return;
+		}
+
+		FVector Location(0.0f, 0.0f, 0.0f);
+		if (TryComputePlacementLocation(SpawnSlot, SpawnPos, Location))
+		{
+			SpawnActorFromViewportMenu(Type, Location);
+		}
+	};
+
+	PlaceActorMenuItem("Cube", EViewportPlaceActorType::Cube);
+	PlaceActorMenuItem("Sphere", EViewportPlaceActorType::Sphere);
+	PlaceActorMenuItem("Cylinder", EViewportPlaceActorType::Cylinder);
+	PlaceActorMenuItem("Decal", EViewportPlaceActorType::Decal);
+	PlaceActorMenuItem("Height Fog", EViewportPlaceActorType::HeightFog);
+	PlaceActorMenuItem("Ambient Light", EViewportPlaceActorType::AmbientLight);
+	PlaceActorMenuItem("Directional Light", EViewportPlaceActorType::DirectionalLight);
+	PlaceActorMenuItem("Point Light", EViewportPlaceActorType::PointLight);
+	PlaceActorMenuItem("Spot Light", EViewportPlaceActorType::SpotLight);
+	ImGui::Separator();
+	PlaceActorMenuItem("Box Collider", EViewportPlaceActorType::BoxCollider);
+	PlaceActorMenuItem("Sphere Collider", EViewportPlaceActorType::SphereCollider);
+	PlaceActorMenuItem("Capsule Collider", EViewportPlaceActorType::CapsuleCollider);
+	PlaceActorMenuItem("Trigger Volume", EViewportPlaceActorType::TriggerVolume);
+	PlaceActorMenuItem("Skeletal Mesh Actor", EViewportPlaceActorType::SkeletalMesh);
+	PlaceActorMenuItem("Character", EViewportPlaceActorType::Character);
+	PlaceActorMenuItem("Lua Character", EViewportPlaceActorType::LuaCharacter);
+
+	const auto& RegistryEntries = FActorPlacementRegistry::Get().GetEntries();
+	if (!RegistryEntries.empty())
+	{
+		ImGui::Separator();
+		for (size_t i = 0; i < RegistryEntries.size(); ++i)
+		{
+			const auto& Entry = RegistryEntries[i];
+			if (!ImGui::MenuItem(Entry.Label.c_str()))
+			{
+				continue;
+			}
+
+			FVector Location(0.0f, 0.0f, 0.0f);
+			if (TryComputePlacementLocation(SpawnSlot, SpawnPos, Location))
+			{
+				if (UWorld* World = Editor ? Editor->GetWorld() : nullptr)
+				{
+					Entry.SpawnFn(World, Location);
+				}
+			}
+		}
+	}
+}
+
+void FLevelViewportLayout::RenderViewportActorContextPopup()
+{
+	constexpr const char* PopupId = "##ViewportActorContextPopup";
+	constexpr ImVec2 ContextMenuPadding(14.0f, 8.0f);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ContextMenuPadding);
+	if (!ImGui::BeginPopup(PopupId))
+	{
+		ImGui::PopStyleVar();
+		return;
+	}
+
+	const bool bHasSelection = SelectionManager && !SelectionManager->GetSelectedActors().empty();
+	const bool bCanPaste = HasActorClipboard();
+
+	if (ImGui::BeginMenu("Place Actor"))
+	{
+		RenderPlaceActorMenuItems(ContextMenuState.PendingSpawnSlot, ContextMenuState.PendingSpawnPos);
+		ImGui::EndMenu();
+	}
+	ImGui::Separator();
+
+	if (!bHasSelection) ImGui::BeginDisabled();
+	if (ImGui::MenuItem("Cut", "Ctrl+X")) CutSelectedActors();
+	if (ImGui::MenuItem("Copy", "Ctrl+C")) CopySelectedActors();
+	if (!bHasSelection) ImGui::EndDisabled();
+
+	if (!bCanPaste) ImGui::BeginDisabled();
+	if (ImGui::MenuItem("Paste", "Ctrl+V")) PasteCopiedActors();
+	if (!bCanPaste) ImGui::EndDisabled();
+
+	if (!bHasSelection) ImGui::BeginDisabled();
+	if (ImGui::MenuItem("Duplicate", "Ctrl+D")) DuplicateSelectedActors();
+	if (ImGui::MenuItem("Delete", "Del")) DeleteSelectedActors();
+	ImGui::Separator();
+	if (ImGui::MenuItem("Move to View", "Ctrl+Alt+F")) MoveSelectedActorsToView();
+	if (ImGui::MenuItem("Align with View", "Ctrl+Shift+F")) AlignSelectedActorsWithView();
+	if (!bHasSelection) ImGui::EndDisabled();
+
+	ImGui::EndPopup();
+	ImGui::PopStyleVar();
+}
+
+void FLevelViewportLayout::ClearActorClipboard()
+{
+	for (AActor* Actor : ActorClipboard)
+	{
+		if (IsAliveObject(Actor))
+		{
+			Actor->RemoveFromRoot();
+			Actor->RouteActorDestroyed();
+			UObjectManager::Get().DestroyObject(Actor);
+		}
+	}
+	ActorClipboard.clear();
+}
+
+void FLevelViewportLayout::SelectActors(const TArray<AActor*>& Actors)
+{
+	if (!SelectionManager)
+	{
+		return;
+	}
+
+	SelectionManager->ClearSelection();
+	for (AActor* Actor : Actors)
+	{
+		if (IsValid(Actor))
+		{
+			SelectionManager->ToggleSelect(Actor);
+		}
+	}
+	UpdateGizmoAfterActorCommand(SelectionManager);
+}
+
+FVector FLevelViewportLayout::GetActiveViewLocation() const
+{
+	FLevelEditorViewportClient* ViewportClient = ActiveViewportClient;
+	if (!ViewportClient && !LevelViewportClients.empty())
+	{
+		ViewportClient = LevelViewportClients[0];
+	}
+	return ViewportClient ? ViewportClient->GetViewTransform().ViewLocation : FVector(0.0f, 0.0f, 0.0f);
+}
+
+FRotator FLevelViewportLayout::GetActiveViewRotation() const
+{
+	FLevelEditorViewportClient* ViewportClient = ActiveViewportClient;
+	if (!ViewportClient && !LevelViewportClients.empty())
+	{
+		ViewportClient = LevelViewportClients[0];
+	}
+	return ViewportClient ? ViewportClient->GetViewTransform().ViewRotation : FRotator();
+}
+
+bool FLevelViewportLayout::CopySelectedActors()
+{
+	if (!SelectionManager)
+	{
+		return false;
+	}
+
+	const TArray<AActor*> SelectedActors = SelectionManager->GetSelectedActors();
+	if (SelectedActors.empty())
+	{
+		return false;
+	}
+
+	ClearActorClipboard();
+	for (AActor* Actor : SelectedActors)
+	{
+		if (!IsValid(Actor))
+		{
+			continue;
+		}
+
+		if (AActor* Snapshot = Cast<AActor>(Actor->Duplicate(Editor)))
+		{
+			Snapshot->SetFName(Actor->GetFName());
+			Snapshot->AddToRoot();
+			ActorClipboard.push_back(Snapshot);
+		}
+	}
+
+	return !ActorClipboard.empty();
+}
+
+bool FLevelViewportLayout::PasteCopiedActors()
+{
+	if (!Editor || ActorClipboard.empty())
+	{
+		return false;
+	}
+
+	UWorld* World = Editor->GetWorld();
+	if (!World)
+	{
+		return false;
+	}
+
+	const FVector PasteOffsetStep(0.1f, 0.1f, 0.1f);
+	TArray<AActor*> NewSelection;
+	int32 PasteIndex = 0;
+	for (AActor* Snapshot : ActorClipboard)
+	{
+		if (!IsValid(Snapshot))
+		{
+			continue;
+		}
+
+		AActor* PastedActor = Cast<AActor>(Snapshot->Duplicate(World));
+		if (!PastedActor)
+		{
+			continue;
+		}
+
+		PastedActor->SetFName(FName(MakeUniqueDuplicateActorName(World, Snapshot)));
+		PastedActor->AddActorWorldOffset(PasteOffsetStep * static_cast<float>(PasteIndex + 1));
+		NewSelection.push_back(PastedActor);
+		++PasteIndex;
+	}
+
+	SelectActors(NewSelection);
+	return !NewSelection.empty();
+}
+
+bool FLevelViewportLayout::CutSelectedActors()
+{
+	if (!CopySelectedActors())
+	{
+		return false;
+	}
+	return DeleteSelectedActors();
+}
+
+bool FLevelViewportLayout::DuplicateSelectedActors()
+{
+	if (!SelectionManager)
+	{
+		return false;
+	}
+
+	UWorld* World = Editor ? Editor->GetWorld() : nullptr;
+	const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
+	if (!World || ToDuplicate.empty())
+	{
+		return false;
+	}
+
+	const FVector DuplicateOffsetStep(0.1f, 0.1f, 0.1f);
+	TArray<AActor*> NewSelection;
+	int32 DuplicateIndex = 0;
+	for (AActor* Src : ToDuplicate)
+	{
+		if (!IsValid(Src))
+		{
+			continue;
+		}
+
+		const FString DuplicateName = MakeUniqueDuplicateActorName(World, Src);
+		AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
+		if (!Dup)
+		{
+			continue;
+		}
+
+		Dup->SetFName(FName(DuplicateName));
+		Dup->AddActorWorldOffset(DuplicateOffsetStep * static_cast<float>(DuplicateIndex + 1));
+		NewSelection.push_back(Dup);
+		++DuplicateIndex;
+	}
+
+	SelectActors(NewSelection);
+	return !NewSelection.empty();
+}
+
+bool FLevelViewportLayout::DeleteSelectedActors()
+{
+	if (!SelectionManager || SelectionManager->IsEmpty())
+	{
+		return false;
+	}
+	return SelectionManager->DeleteSelectedActors() > 0;
+}
+
+bool FLevelViewportLayout::MoveSelectedActorsToView()
+{
+	if (!SelectionManager)
+	{
+		return false;
+	}
+
+	const TArray<AActor*> SelectedActors = SelectionManager->GetSelectedActors();
+	if (SelectedActors.empty() || !IsValid(SelectedActors[0]))
+	{
+		return false;
+	}
+
+	const FVector CameraLocation = GetActiveViewLocation();
+	const FVector Delta = CameraLocation - SelectedActors[0]->GetActorLocation();
+	for (AActor* Actor : SelectedActors)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->SetActorLocation(Actor->GetActorLocation() + Delta);
+		}
+	}
+
+	UpdateGizmoAfterActorCommand(SelectionManager);
+	return true;
+}
+
+bool FLevelViewportLayout::AlignSelectedActorsWithView()
+{
+	if (!SelectionManager)
+	{
+		return false;
+	}
+
+	const TArray<AActor*> SelectedActors = SelectionManager->GetSelectedActors();
+	if (SelectedActors.empty() || !IsValid(SelectedActors[0]))
+	{
+		return false;
+	}
+
+	const FVector CameraLocation = GetActiveViewLocation();
+	const FRotator CameraRotation = GetActiveViewRotation();
+	const FVector LocationDelta = CameraLocation - SelectedActors[0]->GetActorLocation();
+	const FRotator RotationDelta = CameraRotation - SelectedActors[0]->GetActorRotation();
+
+	for (AActor* Actor : SelectedActors)
+	{
+		if (!IsValid(Actor))
+		{
+			continue;
+		}
+
+		Actor->SetActorLocation(Actor->GetActorLocation() + LocationDelta);
+		Actor->SetActorRotation((Actor->GetActorRotation() + RotationDelta).GetNormalized());
+	}
+
+	UpdateGizmoAfterActorCommand(SelectionManager);
+	return true;
 }
 
 bool FLevelViewportLayout::TryComputePlacementLocation(int32 SlotIndex, const FPoint& ClientPos, FVector& OutLocation) const
