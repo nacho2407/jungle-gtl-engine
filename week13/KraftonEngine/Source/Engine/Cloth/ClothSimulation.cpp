@@ -30,6 +30,71 @@ constexpr int32 GMinSubstepCount = 1;
 constexpr int32 GMaxSubstepCount = 4;
 constexpr uint32 GMaxNvClothConvexPlanes = 32;
 
+/**
+ * @brief 유효한 고유 hard pin particle 수를 계산합니다
+ *
+ * @param PinnedIndices hard pin으로 선택된 particle index 배열
+ *
+ * @param ParticleCount simulation particle 수
+ *
+ * @return 유효한 고유 hard pin particle 수
+ */
+uint32 CountUniqueValidPinnedParticles(const TArray<uint32>& PinnedIndices, uint32 ParticleCount)
+{
+	if (ParticleCount == 0 || PinnedIndices.empty())
+	{
+		return 0;
+	}
+
+	TArray<uint8> PinMask;
+	PinMask.resize(ParticleCount, 0);
+
+	uint32 UniquePinnedCount = 0;
+	for (uint32 ParticleIndex : PinnedIndices)
+	{
+		if (ParticleIndex >= ParticleCount)
+		{
+			continue;
+		}
+
+		if (PinMask[ParticleIndex] != 0)
+		{
+			continue;
+		}
+
+		// 중복 pin index를 제외한 실제 hard pin 개수
+		PinMask[ParticleIndex] = 1;
+		++UniquePinnedCount;
+	}
+
+	return UniquePinnedCount;
+}
+
+/**
+ * @brief 움직일 수 있는 particle inverse mass 존재 여부를 반환합니다
+ *
+ * @param InvMasses particle inverse mass 배열
+ *
+ * @return dynamic particle inverse mass 존재 여부
+ */
+bool HasDynamicParticleInvMass(const TArray<float>& InvMasses)
+{
+	if (InvMasses.empty())
+	{
+		return true;
+	}
+
+	for (float InvMass : InvMasses)
+	{
+		if (std::isfinite(InvMass) && InvMass > GVectorTolerance)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 #if WITH_NV_CLOTH
 /**
  * @brief engine vector를 physx vector로 변환합니다
@@ -266,6 +331,23 @@ bool FClothSimulation::Rebuild(FNvClothContext* InContext, const FClothSimulatio
 	if (!BuildDesc.IsValid())
 	{
 		return SetBuildFailure("cloth simulation build desc is invalid");
+	}
+
+	const uint32 BuildParticleCount = static_cast<uint32>(BuildDesc.InitialPositionsComponentLocal.size());
+	const uint32 BuildIndexCount = static_cast<uint32>(BuildDesc.Indices.size());
+	const uint32 BuildPinnedCount = CountUniqueValidPinnedParticles(BuildDesc.PinnedIndices, BuildParticleCount);
+	if (!HasDynamicParticleInvMass(BuildDesc.InvMasses))
+	{
+		// NvCloth fabric cooker는 모든 particle inverse mass가 0인 입력에서 빈 내부 배열을 참조할 수 있음
+		ParticleCount = BuildParticleCount;
+		IndexCount = BuildIndexCount;
+		PinnedCount = BuildPinnedCount > 0 ? BuildPinnedCount : BuildParticleCount;
+		LastFailureDetail = "NvCloth fabric cooking skipped because all particles have zero inverse mass";
+		UE_LOG("[ClothSimulation] Resource skipped: particles=%u indices=%u pinned=%u reason=all particles have zero inverse mass",
+			ParticleCount,
+			IndexCount,
+			PinnedCount);
+		return false;
 	}
 
 #if WITH_NV_CLOTH
