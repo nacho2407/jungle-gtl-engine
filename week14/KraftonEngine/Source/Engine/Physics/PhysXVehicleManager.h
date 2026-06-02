@@ -5,6 +5,8 @@
 #include "Core/Types/CoreTypes.h"
 
 class FScene;
+struct FClothCollisionGatherParams;
+struct FClothCollisionData;
 
 class FPhysXVehicleManager
 {
@@ -16,6 +18,8 @@ public:
 	void UnregisterVehicle(physx::PxVehicleWheels* Vehicle);
 
 	void Update(float DeltaTime);
+
+	void GatherClothCollision(const FClothCollisionGatherParams& Params, FClothCollisionData& OutCollisionData) const;
 
 	void CollectDebugRender(FScene& RenderScene) const;
 

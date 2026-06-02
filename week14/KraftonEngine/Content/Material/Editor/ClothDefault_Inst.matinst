@@ -1,0 +1,13 @@
+{
+        "Parameters" : {
+
+        },
+        "ParentMaterial" : "Content/Material/Editor/ClothDefault.mat",
+        "PathFileName" : "Content/Material/Editor/ClothDefault_Inst.matinst",
+        "Textures" : {
+          "DiffuseTexture" : "Content/Texture/Auto/Samba Dancing (10)/e.0.png"
+        },
+        "bOverrideEmissiveColor" : false,
+        "bOverrideEmissiveIntensity" : false,
+        "bOverrideEnableBloom" : false
+      }

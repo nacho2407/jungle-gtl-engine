@@ -1,9 +1,171 @@
 #include "Physics/PhysXVehicle4WInstance.h"
 
+#include "Physics/PhysicsFilterData.h"
 #include "Physics/PhysXConversions.h"
 
 #include "Core/Types/CollisionTypes.h"
 #include "Math/MathUtils.h"
+
+namespace
+{
+	struct FResolvedVehicleCollisionSettings
+	{
+		ECollisionEnabled CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ECollisionChannel ObjectType = ECollisionChannel::WorldDynamic;
+		FCollisionResponseContainer ResponseContainer;
+		bool bGenerateOverlapEvents = false;
+	};
+
+	FResolvedVehicleCollisionSettings ResolveVehicleCollisionSettings(const FVehiclePhysicsSetup& Setup)
+	{
+		FResolvedVehicleCollisionSettings Settings;
+
+		if (Setup.CollisionPreset == ECollisionPreset::Custom)
+		{
+			Settings.CollisionEnabled = Setup.CollisionEnabled;
+			Settings.ObjectType = Setup.ObjectType;
+			Settings.ResponseContainer = Setup.ResponseContainer;
+			Settings.bGenerateOverlapEvents = Setup.bGenerateOverlapEvents;
+			return Settings;
+		}
+
+		switch (Setup.CollisionPreset)
+		{
+		case ECollisionPreset::NoCollision:
+			Settings.CollisionEnabled = ECollisionEnabled::NoCollision;
+			Settings.ObjectType = ECollisionChannel::WorldStatic;
+			Settings.ResponseContainer.SetAllChannels(ECollisionResponse::Ignore);
+			Settings.bGenerateOverlapEvents = false;
+			break;
+
+		case ECollisionPreset::BlockAll:
+			Settings.CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+			Settings.ObjectType = ECollisionChannel::WorldStatic;
+			Settings.ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+			Settings.bGenerateOverlapEvents = false;
+			break;
+
+		case ECollisionPreset::OverlapAll:
+			Settings.CollisionEnabled = ECollisionEnabled::QueryOnly;
+			Settings.ObjectType = ECollisionChannel::WorldDynamic;
+			Settings.ResponseContainer.SetAllChannels(ECollisionResponse::Overlap);
+			Settings.bGenerateOverlapEvents = true;
+			break;
+
+		case ECollisionPreset::WorldStatic:
+			Settings.CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+			Settings.ObjectType = ECollisionChannel::WorldStatic;
+			Settings.ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+			Settings.bGenerateOverlapEvents = false;
+			break;
+
+		case ECollisionPreset::WorldDynamic:
+		case ECollisionPreset::PhysicsActor:
+			Settings.CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+			Settings.ObjectType = ECollisionChannel::WorldDynamic;
+			Settings.ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+			Settings.bGenerateOverlapEvents = false;
+			break;
+
+		case ECollisionPreset::Trigger:
+			Settings.CollisionEnabled = ECollisionEnabled::QueryOnly;
+			Settings.ObjectType = ECollisionChannel::Trigger;
+			Settings.ResponseContainer.SetAllChannels(ECollisionResponse::Overlap);
+			Settings.bGenerateOverlapEvents = true;
+			break;
+
+		case ECollisionPreset::Pawn:
+			Settings.CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+			Settings.ObjectType = ECollisionChannel::Pawn;
+			Settings.ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+			Settings.ResponseContainer.SetResponse(ECollisionChannel::Trigger, ECollisionResponse::Overlap);
+			Settings.bGenerateOverlapEvents = true;
+			break;
+
+		case ECollisionPreset::Custom:
+		default:
+			break;
+		}
+
+		return Settings;
+	}
+
+	void ApplyVehicleCollisionToShape(physx::PxShape& Shape, const FVehiclePhysicsSetup& Setup)
+	{
+		const FResolvedVehicleCollisionSettings CollisionSettings = ResolveVehicleCollisionSettings(Setup);
+		const physx::PxFilterData FilterData = MakeFilterData(
+			CollisionSettings.ObjectType,
+			CollisionSettings.ResponseContainer,
+			CollisionSettings.CollisionEnabled,
+			CollisionSettings.bGenerateOverlapEvents);
+
+		Shape.setSimulationFilterData(FilterData);
+		Shape.setQueryFilterData(FilterData);
+
+		switch (CollisionSettings.CollisionEnabled)
+		{
+		case ECollisionEnabled::NoCollision:
+			Shape.setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, false);
+			Shape.setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, false);
+			Shape.setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, false);
+			break;
+
+		case ECollisionEnabled::QueryOnly:
+			Shape.setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, false);
+			Shape.setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, true);
+			Shape.setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, true);
+			break;
+
+		case ECollisionEnabled::PhysicsOnly:
+			Shape.setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, true);
+			Shape.setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, false);
+			Shape.setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, false);
+			break;
+
+		case ECollisionEnabled::QueryAndPhysics:
+			Shape.setFlag(physx::PxShapeFlag::eSIMULATION_SHAPE, true);
+			Shape.setFlag(physx::PxShapeFlag::eSCENE_QUERY_SHAPE, true);
+			Shape.setFlag(physx::PxShapeFlag::eTRIGGER_SHAPE, false);
+			break;
+		}
+	}
+
+	physx::PxVehicleDifferential4WData::Enum ToPxDifferentialType(EVehicleDifferential4WType Type)
+	{
+		switch (Type)
+		{
+		case EVehicleDifferential4WType::LimitedSlipFrontDrive:
+			return physx::PxVehicleDifferential4WData::eDIFF_TYPE_LS_FRONTWD;
+		case EVehicleDifferential4WType::LimitedSlipRearDrive:
+			return physx::PxVehicleDifferential4WData::eDIFF_TYPE_LS_REARWD;
+		case EVehicleDifferential4WType::Open4W:
+			return physx::PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_4WD;
+		case EVehicleDifferential4WType::OpenFrontDrive:
+			return physx::PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_FRONTWD;
+		case EVehicleDifferential4WType::OpenRearDrive:
+			return physx::PxVehicleDifferential4WData::eDIFF_TYPE_OPEN_REARWD;
+		case EVehicleDifferential4WType::LimitedSlip4W:
+		default:
+			return physx::PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
+		}
+	}
+
+	void ComputeAckermannGeometryFromWheelOffsets(const physx::PxVec3 WheelCentreOffsets[4],
+		float& OutAxleSeparation, float& OutFrontWidth, float& OutRearWidth)
+	{
+		const physx::PxVec3& FrontLeft = WheelCentreOffsets[physx::PxVehicleDrive4WWheelOrder::eFRONT_LEFT];
+		const physx::PxVec3& FrontRight = WheelCentreOffsets[physx::PxVehicleDrive4WWheelOrder::eFRONT_RIGHT];
+		const physx::PxVec3& RearLeft = WheelCentreOffsets[physx::PxVehicleDrive4WWheelOrder::eREAR_LEFT];
+		const physx::PxVec3& RearRight = WheelCentreOffsets[physx::PxVehicleDrive4WWheelOrder::eREAR_RIGHT];
+
+		const float FrontX = (FrontLeft.x + FrontRight.x) * 0.5f;
+		const float RearX = (RearLeft.x + RearRight.x) * 0.5f;
+
+		OutAxleSeparation = std::abs(FrontX - RearX);
+		OutFrontWidth = std::abs(FrontLeft.y - FrontRight.y);
+		OutRearWidth = std::abs(RearLeft.y - RearRight.y);
+	}
+}
 
 bool FPhysXVehicle4WInstance::Initialize(physx::PxPhysics* Physics, physx::PxScene* Scene,
 	physx::PxMaterial* Material, const physx::PxTransform& StartPose, const FVehiclePhysicsSetup& Setup)
@@ -37,13 +199,15 @@ bool FPhysXVehicle4WInstance::Initialize(physx::PxPhysics* Physics, physx::PxSce
 	}
 
 	physx::PxShape* ChassisShape = Physics->createShape(physx::PxBoxGeometry(ChassisDims), *Material);
+	if (!ChassisShape) return false;
 
+	ApplyVehicleCollisionToShape(*ChassisShape, Setup);
 	VehicleActor->attachShape(*ChassisShape);
 	ChassisShape->release();
 
 	physx::PxRigidBodyExt::setMassAndUpdateInertia(*VehicleActor, ChassisMass);
-	VehicleActor->setLinearDamping(0.1f);
-	VehicleActor->setAngularDamping(0.5f);
+	VehicleActor->setLinearDamping(Setup.LinearDamping);
+	VehicleActor->setAngularDamping(Setup.AngularDamping);
 
 	physx::PxTransform CenterOfMassOffset(physx::PxIdentity);
 	CenterOfMassOffset.p = ToPxVec3(Setup.CenterOfMassOffset);
@@ -76,10 +240,10 @@ bool FPhysXVehicle4WInstance::Initialize(physx::PxPhysics* Physics, physx::PxSce
 		WheelsSimData->setWheelData(Index, Wheel);
 
 		physx::PxVehicleSuspensionData Suspension;
-		Suspension.mMaxCompression = 0.3f;
-		Suspension.mMaxDroop = 0.1f;
-		Suspension.mSpringStrength = 35000.0f;
-		Suspension.mSpringDamperRate = 4500.0f;
+		Suspension.mMaxCompression = WheelSetups[Index]->SuspensionMaxCompression;
+		Suspension.mMaxDroop = WheelSetups[Index]->SuspensionMaxDroop;
+		Suspension.mSpringStrength = WheelSetups[Index]->SuspensionSpringStrength;
+		Suspension.mSpringDamperRate = WheelSetups[Index]->SuspensionSpringDamperRate;
 		Suspension.mSprungMass = SprungMasses[Index];
 		WheelsSimData->setSuspensionData(Index, Suspension);
 
@@ -89,7 +253,7 @@ bool FPhysXVehicle4WInstance::Initialize(physx::PxPhysics* Physics, physx::PxSce
 
 		const physx::PxVec3 WheelOffset = WheelCentreOffsets[Index];
 
-		const physx::PxVec3 ForceAppPointOffset(WheelOffset.x, WheelOffset.y, -0.3f);
+		const physx::PxVec3 ForceAppPointOffset(WheelOffset.x, WheelOffset.y, Setup.ForceAppPointZOffset);
 
 		WheelsSimData->setWheelCentreOffset(Index, WheelCentreOffsets[Index]);
 		WheelsSimData->setSuspForceAppPointOffset(Index, ForceAppPointOffset);
@@ -117,20 +281,25 @@ bool FPhysXVehicle4WInstance::Initialize(physx::PxPhysics* Physics, physx::PxSce
 	DriveData.setClutchData(Clutch);
 
 	physx::PxVehicleDifferential4WData Diff;
-	Diff.mType = physx::PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
+	Diff.mType = ToPxDifferentialType(Setup.DifferentialType);
 	DriveData.setDiffData(Diff);
 
 	physx::PxVehicleAckermannGeometryData Ackermann;
-	Ackermann.mAccuracy = 1.0f;
-	Ackermann.mAxleSeparation = 3.0f;
-	Ackermann.mFrontWidth = 2.0f;
-	Ackermann.mRearWidth = 2.0f;
+	Ackermann.mAccuracy = Setup.AckermannAccuracy;
+	Ackermann.mAxleSeparation = Setup.AckermannAxleSeparation;
+	Ackermann.mFrontWidth = Setup.AckermannFrontWidth;
+	Ackermann.mRearWidth = Setup.AckermannRearWidth;
+	if (Setup.bAutoAckermannFromWheelOffsets)
+	{
+		ComputeAckermannGeometryFromWheelOffsets(WheelCentreOffsets,
+			Ackermann.mAxleSeparation, Ackermann.mFrontWidth, Ackermann.mRearWidth);
+	}
 	DriveData.setAckermannGeometryData(Ackermann);
 
 	Vehicle = physx::PxVehicleDrive4W::allocate(NumWheels);
 	Vehicle->setup(Physics, VehicleActor, *WheelsSimData, DriveData, NumWheels - 4);
 	Vehicle->setToRestState();
-	Vehicle->mDriveDynData.setUseAutoGears(true);
+	Vehicle->mDriveDynData.setUseAutoGears(Setup.bUseAutoGears);
 
 	WheelsSimData->free();
 

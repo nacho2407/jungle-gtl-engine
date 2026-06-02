@@ -583,6 +583,11 @@ void FPhysicsScene::GatherClothCollision(const FClothCollisionGatherParams& Para
 			}
 		}
 	}
+
+	if (VehicleManager)
+	{
+		VehicleManager->GatherClothCollision(Params, OutData);
+	}
 }
 
 void FPhysicsScene::PrepareCharacterControllers(float DeltaTime)

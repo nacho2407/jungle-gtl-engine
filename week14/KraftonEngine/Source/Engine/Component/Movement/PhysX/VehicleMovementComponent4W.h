@@ -5,6 +5,8 @@
 
 #include "Source/Engine/Component/Movement/PhysX/VehicleMovementComponent4W.generated.h"
 
+class FScene;
+
 UCLASS()
 class UVehicleMovementComponent4W : public UPhysXVehicleMovementComponent
 {
@@ -17,6 +19,8 @@ public:
 	UFUNCTION(Lua)
 	void SetDriveInput(float Throttle, float Brake, float Steer, bool bReverse) const;
 
+	void ContributeSelectedVisuals(FScene& Scene) const override;
+
 protected:
 	bool CreateVehicleInstance(physx::PxPhysics* Physics, physx::PxScene* Scene, physx::PxMaterial* Material, const physx::PxTransform& StartPose) override;
 	void DestroyVehicleInstance() override;
@@ -28,4 +32,7 @@ private:
 
 	UPROPERTY(Edit, Save, Category = "Vehicle", DisplayName = "Vehicle Setup", Type = Struct, Struct = FVehiclePhysicsSetup)
 	FVehiclePhysicsSetup VehicleSetup;
+
+	UPROPERTY(Edit, Save, Category = "Vehicle|Debug", DisplayName = "Show Vehicle Shape")
+	bool bShowVehicleShape = true;
 };

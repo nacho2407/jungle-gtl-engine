@@ -1,4 +1,6 @@
 ﻿#include "Physics/PhysXVehicleManager.h"
+#include "Physics/ClothCollisionGeometryUtils.h"
+#include "Physics/ClothCollisionTypes.h"
 #include "Physics/PhysicsFilterData.h"
 #include "Physics/PhysXConversions.h"
 
@@ -6,10 +8,36 @@
 #include "Core/Types/EngineTypes.h"
 #include "Render/Scene/FScene.h"
 
+#include <PhysX/geometry/PxGeometryQuery.h>
+
 #include <algorithm>
 
 namespace
 {
+	bool PxBoundsIntersects(const physx::PxBounds3& A, const FBoundingBox& B)
+	{
+		if (!B.IsValid())
+		{
+			return true;
+		}
+
+		return A.minimum.x <= B.Max.X && A.maximum.x >= B.Min.X
+			&& A.minimum.y <= B.Max.Y && A.maximum.y >= B.Min.Y
+			&& A.minimum.z <= B.Max.Z && A.maximum.z >= B.Min.Z;
+	}
+
+	bool ShouldIncludeVehicleShapeForCloth(const physx::PxShape& Shape, const FClothCollisionGatherParams& Params)
+	{
+		if (!Shape.getFlags().isSet(physx::PxShapeFlag::eSIMULATION_SHAPE))
+		{
+			return false;
+		}
+
+		const physx::PxFilterData FilterData = Shape.getSimulationFilterData();
+		const uint32 ClothChannelBit = ObjectTypeBit(Params.ClothChannel);
+		return (FilterData.word1 & ClothChannelBit) != 0;
+	}
+
 	physx::PxQueryHitType::Enum VehicleSuspensionHitFilter(physx::PxFilterData QueryFilterData,
 		physx::PxFilterData ShapeFilterData, const void* ConstantBlock, physx::PxU32 ConstantBlockSize,
 		physx::PxHitFlags& QueryFlags)
@@ -95,6 +123,62 @@ void FPhysXVehicleManager::Update(float DeltaTime)
 
 	physx::PxVehicleUpdates(DeltaTime, Gravity, *FrictionPairs, static_cast<physx::PxU32>(Vehicles.size()),
 		Vehicles.data(), WheelQueryResults.data());
+}
+
+void FPhysXVehicleManager::GatherClothCollision(
+	const FClothCollisionGatherParams& Params,
+	FClothCollisionData& OutCollisionData) const
+{
+	const FBoundingBox ClothQueryBounds = Params.BoundsPadding > 0.0f && Params.WorldBounds.IsValid()
+		? FBoundingBox(
+			Params.WorldBounds.Min - FVector(Params.BoundsPadding, Params.BoundsPadding, Params.BoundsPadding),
+			Params.WorldBounds.Max + FVector(Params.BoundsPadding, Params.BoundsPadding, Params.BoundsPadding))
+		: Params.WorldBounds;
+
+	for (physx::PxVehicleWheels* Vehicle : Vehicles)
+	{
+		if (!Vehicle)
+		{
+			continue;
+		}
+
+		physx::PxRigidDynamic* Actor = Vehicle->getRigidDynamicActor();
+		if (!Actor)
+		{
+			continue;
+		}
+
+		const uint32 ShapeCount = Actor->getNbShapes();
+		if (ShapeCount == 0)
+		{
+			continue;
+		}
+
+		TArray<physx::PxShape*> Shapes;
+		Shapes.resize(ShapeCount);
+		Actor->getShapes(Shapes.data(), ShapeCount);
+
+		const physx::PxTransform ActorPose = Actor->getGlobalPose();
+
+		for (physx::PxShape* Shape : Shapes)
+		{
+			if (!Shape || !ShouldIncludeVehicleShapeForCloth(*Shape, Params))
+			{
+				continue;
+			}
+
+			const physx::PxTransform ShapeWorldPose = ActorPose * Shape->getLocalPose();
+			const physx::PxBounds3 ShapeBounds = physx::PxGeometryQuery::getWorldBounds(
+				Shape->getGeometry().any(),
+				ShapeWorldPose);
+			if (!PxBoundsIntersects(ShapeBounds, ClothQueryBounds))
+			{
+				continue;
+			}
+
+			AppendShapeClothCollision(*Shape, ShapeWorldPose, Params, OutCollisionData);
+		}
+	}
 }
 
 void FPhysXVehicleManager::CollectDebugRender(FScene& RenderScene) const

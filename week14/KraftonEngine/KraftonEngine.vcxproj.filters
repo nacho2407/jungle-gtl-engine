@@ -1466,6 +1466,9 @@
     <ClCompile Include="Source\Engine\Physics\BodySetup.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\ClothCollisionGeometryUtils.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\ClothInstance.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
@@ -2763,6 +2766,9 @@
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\BodySetupCore.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\ClothCollisionGeometryUtils.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\ClothCollisionTypes.h">

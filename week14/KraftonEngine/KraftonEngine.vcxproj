@@ -679,6 +679,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\BodyInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\BodySetup.cpp" />
+    <ClCompile Include="Source\Engine\Physics\ClothCollisionGeometryUtils.cpp" />
     <ClCompile Include="Source\Engine\Physics\ClothInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\NvClothSDK.cpp" />
@@ -1115,6 +1116,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Physics\BodyInstance.h" />
     <ClInclude Include="Source\Engine\Physics\BodySetup.h" />
     <ClInclude Include="Source\Engine\Physics\BodySetupCore.h" />
+    <ClInclude Include="Source\Engine\Physics\ClothCollisionGeometryUtils.h" />
     <ClInclude Include="Source\Engine\Physics\ClothCollisionTypes.h" />
     <ClInclude Include="Source\Engine\Physics\ClothInstance.h" />
     <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h" />
