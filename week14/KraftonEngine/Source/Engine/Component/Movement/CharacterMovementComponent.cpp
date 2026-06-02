@@ -41,10 +41,25 @@ void UCharacterMovementComponent::EndPlay()
 
 bool UCharacterMovementComponent::EnsureController()
 {
-	if (Controller) return true;
-
 	UCapsuleComponent* Capsule = Cast<UCapsuleComponent>(GetUpdatedComponent());
 	if (!Capsule) return false;
+
+	const float Radius = Capsule->GetScaledCapsuleRadius();
+	const float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+
+	const bool bControllerShapeChanged = ControllerUpdatedComponent != Capsule ||
+		std::fabs(CachedControllerRadius - Radius) > FMath::Epsilon ||
+		std::fabs(CachedControllerHalfHeight - HalfHeight) > FMath::Epsilon ||
+		std::fabs(CachedControllerContactOffset - ControllerContactOffset) > FMath::Epsilon ||
+		std::fabs(CachedMaxStepHeight - MaxStepHeight) > FMath::Epsilon ||
+		std::fabs(CachedWalkableSlopeAngle - WalkableSlopeAngle) > FMath::Epsilon;
+
+	if (Controller && !bControllerShapeChanged) return true;
+
+	if (Controller)
+	{
+		ReleaseController();
+	}
 
 	UWorld* World = GetWorld();
 	if (!World || !World->GetPhysicsScene()) return false;
@@ -54,8 +69,6 @@ bool UCharacterMovementComponent::EnsureController()
 	if (!Manager || !Material) return false;
 
 	const FVector Location = Capsule->GetWorldLocation();
-	const float Radius = Capsule->GetScaledCapsuleRadius();
-	const float HalfHeight = Capsule->GetScaledCapsuleHalfHeight();
 	const float CylinderHeight = std::max(0.01f, HalfHeight * 2.0f - Radius * 2.0f);
 
 	physx::PxCapsuleControllerDesc Desc;
@@ -64,14 +77,26 @@ bool UCharacterMovementComponent::EnsureController()
 	Desc.height = CylinderHeight;
 	Desc.upDirection = physx::PxVec3(0.0f, 0.0f, 1.0f);
 	Desc.material = Material;
-	Desc.contactOffset = 0.05f;
-	Desc.stepOffset = 0.4f;
-	Desc.slopeLimit = std::cos(45.0f * DEG_TO_RAD);
+	Desc.contactOffset = ControllerContactOffset;
+	Desc.stepOffset = MaxStepHeight;
+	Desc.slopeLimit = std::cos(WalkableSlopeAngle * FMath::DegToRad);
 
 	if (!Desc.isValid()) return false;
 
 	Controller = Manager->createController(Desc);
-	return Controller != nullptr;
+
+	if (Controller)
+	{
+		ControllerUpdatedComponent = Capsule;
+		CachedControllerRadius = Radius;
+		CachedControllerHalfHeight = HalfHeight;
+		CachedControllerContactOffset = ControllerContactOffset;
+		CachedMaxStepHeight = MaxStepHeight;
+		CachedWalkableSlopeAngle = WalkableSlopeAngle;
+		return true;
+	}
+
+	return false;
 }
 
 void UCharacterMovementComponent::ReleaseController()
@@ -81,6 +106,13 @@ void UCharacterMovementComponent::ReleaseController()
 		Controller->release();
 		Controller = nullptr;
 	}
+
+	ControllerUpdatedComponent = nullptr;
+	CachedControllerRadius = 0.0f;
+	CachedControllerHalfHeight = 0.0f;
+	CachedControllerContactOffset = 0.0f;
+	CachedMaxStepHeight = 0.0f;
+	CachedWalkableSlopeAngle = 0.0f;
 }
 
 void UCharacterMovementComponent::SyncUpdatedComponentFromController()
@@ -103,13 +135,36 @@ void UCharacterMovementComponent::SyncUpdatedComponentFromController()
 	}
 }
 
-physx::PxControllerCollisionFlags UCharacterMovementComponent::MoveController(
+void UCharacterMovementComponent::SyncControllerToUpdatedComponentIfNeeded()
+{
+	if (!Controller) return;
+
+	USceneComponent* Updated = GetUpdatedComponent();
+	if (!Updated) return;
+
+	const FVector UpdatedLocation = Updated->GetWorldLocation();
+
+	const physx::PxExtendedVec3 ControllerPosition = Controller->getPosition();
+	const FVector ControllerLocation(
+		static_cast<float>(ControllerPosition.x),
+		static_cast<float>(ControllerPosition.y),
+		static_cast<float>(ControllerPosition.z));
+
+	const float MaxDistanceSq = ControllerSyncTeleportDistance * ControllerSyncTeleportDistance;
+	if (FVector::DistSquared(UpdatedLocation, ControllerLocation) <= MaxDistanceSq) return;
+
+	Controller->setPosition(physx::PxExtendedVec3(UpdatedLocation.X, UpdatedLocation.Y, UpdatedLocation.Z));
+
+	GroundMissFrames = 0;
+}
+
+FControllerMoveResult UCharacterMovementComponent::MoveController(
 	const FVector& Delta,
 	float DeltaTime)
 {
 	if (!EnsureController())
 	{
-		return physx::PxControllerCollisionFlags();
+		return FControllerMoveResult();
 	}
 
 	const physx::PxVec3 Disp(Delta.X, Delta.Y, Delta.Z);
@@ -117,10 +172,12 @@ physx::PxControllerCollisionFlags UCharacterMovementComponent::MoveController(
 
 	physx::PxControllerFilters Filters(nullptr, &QueryFilter, nullptr);
 
-	const physx::PxControllerCollisionFlags Flags = Controller->move(Disp, 0.001f, DeltaTime, Filters);
+	const physx::PxControllerCollisionFlags Flags = Controller->move(Disp, ControllerMinMoveDistance, DeltaTime, Filters);
+	FControllerMoveResult Result;
+	Result.bHitDown = Flags.isSet(physx::PxControllerCollisionFlag::eCOLLISION_DOWN);
 
 	SyncUpdatedComponentFromController();
-	return Flags;
+	return Result;
 }
 
 void UCharacterMovementComponent::AddInputVector(const FVector& WorldDirection, float ScaleValue)
@@ -187,6 +244,8 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	if (DeltaTime <= 0.0f) return;
 
 	if (!EnsureController()) return;
+
+	SyncControllerToUpdatedComponentIfNeeded();
 
 	// 매 Tick 회전 적용 상태 reset — 이번 frame 에 root motion 이 yaw 를 적용했는지를
 	// 외부 (Character::Tick) 가 query 할 수 있어야 yaw 충돌 회피 가능.
@@ -344,6 +403,7 @@ void UCharacterMovementComponent::TickWalking(float DeltaTime, const FVector& Ro
 	if (bWantsJump)
 	{
 		bWantsJump = false;
+		GroundMissFrames = 0;
 		Velocity.Z = JumpZVelocity;
 		SetMovementMode(EMovementMode::Falling);
 		// XY 이동은 Falling 분기로 위임 — 한 frame 안 mode 전환이라 즉시 falling tick.
@@ -360,16 +420,22 @@ void UCharacterMovementComponent::TickWalking(float DeltaTime, const FVector& Ro
 		Velocity.Y * DeltaTime + RootMotionWorldXY.Y,
 		-FloorProbeDistance);
 
-	const auto Flags = MoveController(XYOffset, DeltaTime);
-	const bool bHitDown = Flags.isSet(physx::PxControllerCollisionFlag::eCOLLISION_DOWN);
+	const FControllerMoveResult Result = MoveController(XYOffset, DeltaTime);
+	const bool bHitDown = Result.bHitDown;
 
 	if (bHitDown)
 	{
+		GroundMissFrames = 0;
 		Velocity.Z = 0.0f;
 	}
 	else
 	{
-		SetMovementMode(EMovementMode::Falling);
+		++GroundMissFrames;
+		if (GroundMissFrames > GroundMissToleranceFrames)
+		{
+			GroundMissFrames = 0;
+			SetMovementMode(EMovementMode::Falling);
+		}
 	}
 }
 
@@ -386,49 +452,15 @@ void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& Ro
 		Velocity.Y * DeltaTime + RootMotionWorldXY.Y,
 		Velocity.Z * DeltaTime);
 
-	const auto Flags = MoveController(Offset, DeltaTime);
-	const bool bHitDown = Flags.isSet(physx::PxControllerCollisionFlag::eCOLLISION_DOWN);
+	const FControllerMoveResult Result = MoveController(Offset, DeltaTime);
+	const bool bHitDown = Result.bHitDown;
 
 	if (Velocity.Z <= 0.0f && bHitDown)
 	{
+		GroundMissFrames = 0;
 		Velocity.Z = 0.0f;
 		SetMovementMode(EMovementMode::Walking);
 	}
-}
-
-bool UCharacterMovementComponent::TraceFloor(FHitResult& OutHit) const
-{
-	USceneComponent* Updated = GetUpdatedComponent();
-	if (!Updated) return false;
-	AActor* Owner = GetOwner();
-	if (!Owner) return false;
-	UWorld* World = Owner->GetWorld();
-	if (!World) return false;
-
-	const float HalfHeight = GetCapsuleHalfHeight();
-	if (HalfHeight <= 0.0f) return false;   // capsule 아니면 floor 의미 없음
-
-	// capsule 중심에서 down — bottom 까지 HalfHeight + 약간의 probe.
-	const FVector  Start = Updated->GetWorldLocation();
-	const FVector  Dir(0.0f, 0.0f, -1.0f);
-	const float    MaxDist = HalfHeight + FloorProbeDistance;
-
-	// 바닥은 WorldStatic ObjectType 만 후보로 본다. 채널 raycast (응답=Block) 시맨틱으로 가면
-	// 다이내믹/폰도 기본 응답이 Block 이라 바닥으로 잘못 잡힌다. ObjectType 마스크는
-	// shape의 ObjectType 자체를 검사하므로 다이내믹 박스 위 / 다른 폰 머리 위에서도 바닥으로
-	// 인식되지 않는다.
-	return World->PhysicsRaycastByObjectTypes(Start, Dir, MaxDist, OutHit,
-		ObjectTypeBit(ECollisionChannel::WorldStatic), Owner);
-}
-
-float UCharacterMovementComponent::GetCapsuleHalfHeight() const
-{
-	// UpdatedComponent 가 capsule 이라야 의미 있음 — 다른 shape 면 0.
-	if (UCapsuleComponent* Cap = Cast<UCapsuleComponent>(GetUpdatedComponent()))
-	{
-		return Cap->GetScaledCapsuleHalfHeight();
-	}
-	return 0.0f;
 }
 
 void UCharacterMovementComponent::Serialize(FArchive& Ar)
@@ -442,4 +474,10 @@ void UCharacterMovementComponent::Serialize(FArchive& Ar)
 	Ar << JumpZVelocity;
 	Ar << bOrientRotationToMovement;
 	Ar << RotationYawRate;
+	Ar << ControllerContactOffset;
+	Ar << MaxStepHeight;
+	Ar << WalkableSlopeAngle;
+	Ar << ControllerMinMoveDistance;
+	Ar << GroundMissToleranceFrames;
+	Ar << ControllerSyncTeleportDistance;
 }
