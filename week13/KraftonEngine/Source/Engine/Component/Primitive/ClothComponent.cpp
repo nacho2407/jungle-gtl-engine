@@ -30,6 +30,8 @@ namespace
 	constexpr float GMaxGravityScale = 10.0f;
 	constexpr float GMaxWindStrength = 10000.0f;
 	constexpr float GMaxSelfCollisionDistance = 1000.0f;
+	constexpr float GMaxCollisionLength = 10000.0f;
+	constexpr float GMinBoxCollisionExtent = 0.001f;
 
 	/**
 	 * @brief 정수 값을 지정된 범위 안으로 보정합니다
@@ -341,6 +343,7 @@ void UClothComponent::PostDuplicate()
 
 	Simulation.Shutdown();
 	SimulationReadbackPositions.clear();
+	CachedCollisionPrimitives.clear();
 	LoadMaterialFromSlot();
 	MarkClothRebuildDirty();
 }
@@ -349,6 +352,7 @@ void UClothComponent::RouteComponentDestroyed()
 {
 	Simulation.Shutdown();
 	SimulationReadbackPositions.clear();
+	CachedCollisionPrimitives.clear();
 	UMeshComponent::RouteComponentDestroyed();
 }
 
@@ -801,8 +805,10 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 		SimulationReadbackPositions.clear();
 		CachedPinnedIndices.clear();
 		CachedPinTargetPositionsComponentLocal.clear();
+		CachedCollisionPrimitives.clear();
 		bSimulationRebuildDirty = false;
 		bSimulationTickWarningLogged = false;
+		bCollisionUpdateWarningLogged = false;
 		return;
 	}
 
@@ -812,8 +818,10 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 		SimulationReadbackPositions.clear();
 		CachedPinnedIndices.clear();
 		CachedPinTargetPositionsComponentLocal.clear();
+		CachedCollisionPrimitives.clear();
 		bSimulationRebuildDirty = false;
 		bSimulationTickWarningLogged = false;
+		bCollisionUpdateWarningLogged = false;
 		return;
 	}
 
@@ -833,6 +841,7 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 	else
 	{
 		bSimulationTickWarningLogged = false;
+		bCollisionUpdateWarningLogged = false;
 	}
 
 	bSimulationRebuildDirty = false;
@@ -888,6 +897,8 @@ void UClothComponent::TickSimulationIfNeeded(float DeltaTime, ELevelTick TickTyp
 		return;
 	}
 
+	UpdateSimulationCollisionPrimitives();
+
 	const FClothSimulationRuntimeConfig RuntimeConfig = MakeSimulationRuntimeConfig(Config);
 	SimulationReadbackPositions.clear();
 	if (!Simulation.Tick(DeltaTime, RuntimeConfig, SimulationReadbackPositions))
@@ -908,6 +919,133 @@ void UClothComponent::TickSimulationIfNeeded(float DeltaTime, ELevelTick TickTyp
 		bEditorPreviewDirty = false;
 		bSimulationTickWarningLogged = false;
 	}
+}
+
+void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollisionPrimitive>& OutPrimitives) const
+{
+	OutPrimitives.clear();
+
+	if (bEnableSphereCollision)
+	{
+		const float SafeRadiusActorLocal = ClampFloat(SphereRadius, 0.0f, GMaxCollisionLength);
+		const float RadiusComponentLocal = TransformActorLocalLengthToComponentLocal(SafeRadiusActorLocal);
+		if (RadiusComponentLocal > GNormalTolerance)
+		{
+			FClothCollisionPrimitive Primitive;
+			Primitive.Type = EClothCollisionPrimitiveType::Sphere;
+			Primitive.Center = TransformActorLocalPointToComponentLocal(SphereCenterActorLocal);
+			Primitive.Radius = RadiusComponentLocal;
+			OutPrimitives.push_back(Primitive);
+		}
+	}
+
+	if (bEnablePlaneCollision)
+	{
+		FVector PlanePointComponentLocal = FVector::ZeroVector;
+		FVector PlaneNormalComponentLocal = FVector::UpVector;
+		TransformActorLocalPlaneToComponentLocal(
+			PlanePointActorLocal,
+			PlaneNormalActorLocal,
+			PlanePointComponentLocal,
+			PlaneNormalComponentLocal);
+
+		FClothCollisionPrimitive Primitive;
+		Primitive.Type = EClothCollisionPrimitiveType::Plane;
+		Primitive.PlanePoint = PlanePointComponentLocal;
+		Primitive.PlaneNormal = PlaneNormalComponentLocal.GetSafeNormal(GNormalTolerance, FVector::UpVector);
+		Primitive.PlaneDistance = Primitive.PlaneNormal.Dot(Primitive.PlanePoint);
+		OutPrimitives.push_back(Primitive);
+	}
+
+	if (bEnableCapsuleCollision)
+	{
+		const float SafeRadiusActorLocal = ClampFloat(CapsuleRadius, 0.0f, GMaxCollisionLength);
+		const float RadiusComponentLocal = TransformActorLocalLengthToComponentLocal(SafeRadiusActorLocal);
+		if (RadiusComponentLocal > GNormalTolerance)
+		{
+			FVector CapsuleStartComponentLocal = FVector::ZeroVector;
+			FVector CapsuleEndComponentLocal = FVector::ZeroVector;
+			const float SafeHalfHeightActorLocal = ClampFloat(CapsuleHalfHeight, 0.0f, GMaxCollisionLength);
+			TransformActorLocalCapsuleToComponentLocal(
+				CapsuleCenterActorLocal,
+				CapsuleAxisActorLocal,
+				SafeHalfHeightActorLocal,
+				CapsuleStartComponentLocal,
+				CapsuleEndComponentLocal);
+
+			const FVector Segment = CapsuleEndComponentLocal - CapsuleStartComponentLocal;
+			if (Segment.Length() <= GNormalTolerance)
+			{
+				// half height가 0이면 capsule 대신 같은 중심의 sphere로 안전하게 전달
+				FClothCollisionPrimitive Primitive;
+				Primitive.Type = EClothCollisionPrimitiveType::Sphere;
+				Primitive.Center = TransformActorLocalPointToComponentLocal(CapsuleCenterActorLocal);
+				Primitive.Radius = RadiusComponentLocal;
+				OutPrimitives.push_back(Primitive);
+			}
+			else
+			{
+				FClothCollisionPrimitive Primitive;
+				Primitive.Type = EClothCollisionPrimitiveType::Capsule;
+				Primitive.CapsuleStart = CapsuleStartComponentLocal;
+				Primitive.CapsuleEnd = CapsuleEndComponentLocal;
+				Primitive.Center = (CapsuleStartComponentLocal + CapsuleEndComponentLocal) * 0.5f;
+				Primitive.Axis = Segment.GetSafeNormal(GNormalTolerance, FVector::UpVector);
+				Primitive.HalfHeight = Segment.Length() * 0.5f;
+				Primitive.Radius = RadiusComponentLocal;
+				OutPrimitives.push_back(Primitive);
+			}
+		}
+	}
+
+	if (bEnableBoxCollision)
+	{
+		const FVector SafeExtentActorLocal(
+			ClampFloat(std::abs(BoxExtentActorLocal.X), GMinBoxCollisionExtent, GMaxCollisionLength),
+			ClampFloat(std::abs(BoxExtentActorLocal.Y), GMinBoxCollisionExtent, GMaxCollisionLength),
+			ClampFloat(std::abs(BoxExtentActorLocal.Z), GMinBoxCollisionExtent, GMaxCollisionLength));
+
+		const FVector ActorLocalAxisX = BoxRotationActorLocal.GetForwardVector();
+		const FVector ActorLocalAxisY = BoxRotationActorLocal.GetRightVector();
+		const FVector ActorLocalAxisZ = BoxRotationActorLocal.GetUpVector();
+		const FVector ExtentXVector = TransformActorLocalVectorToComponentLocal(ActorLocalAxisX * SafeExtentActorLocal.X);
+		const FVector ExtentYVector = TransformActorLocalVectorToComponentLocal(ActorLocalAxisY * SafeExtentActorLocal.Y);
+		const FVector ExtentZVector = TransformActorLocalVectorToComponentLocal(ActorLocalAxisZ * SafeExtentActorLocal.Z);
+		const float ExtentX = (std::max)(ExtentXVector.Length(), GMinBoxCollisionExtent);
+		const float ExtentY = (std::max)(ExtentYVector.Length(), GMinBoxCollisionExtent);
+		const float ExtentZ = (std::max)(ExtentZVector.Length(), GMinBoxCollisionExtent);
+
+		FClothCollisionPrimitive Primitive;
+		Primitive.Type = EClothCollisionPrimitiveType::Box;
+		Primitive.Center = TransformActorLocalPointToComponentLocal(BoxCenterActorLocal);
+		Primitive.BoxExtent = FVector(ExtentX, ExtentY, ExtentZ);
+		Primitive.BoxAxisX = ExtentXVector.GetSafeNormal(GNormalTolerance, FVector::XAxisVector);
+		Primitive.BoxAxisY = ExtentYVector.GetSafeNormal(GNormalTolerance, FVector::YAxisVector);
+		Primitive.BoxAxisZ = ExtentZVector.GetSafeNormal(GNormalTolerance, FVector::ZAxisVector);
+		OutPrimitives.push_back(Primitive);
+	}
+}
+
+void UClothComponent::UpdateSimulationCollisionPrimitives()
+{
+	BuildCollisionPrimitivesComponentLocal(CachedCollisionPrimitives);
+
+	if (!Simulation.UpdateCollisionPrimitives(CachedCollisionPrimitives))
+	{
+		if (Simulation.IsSimulationAvailable()
+			&& !Simulation.GetLastFailureDetail().empty()
+			&& !bCollisionUpdateWarningLogged)
+		{
+			bCollisionUpdateWarningLogged = true;
+			UE_LOG("[ClothComponent] Collision update skipped: %s", Simulation.GetLastFailureDetail().c_str());
+		}
+
+		bCollisionDirty = true;
+		return;
+	}
+
+	bCollisionDirty = false;
+	bCollisionUpdateWarningLogged = false;
 }
 
 bool UClothComponent::ApplySimulationPositionsToRenderData(
@@ -1174,6 +1312,22 @@ void UClothComponent::TransformActorLocalCapsuleToComponentLocal(
 
 	OutComponentLocalStart = TransformActorLocalPointToComponentLocal(ActorLocalStart);
 	OutComponentLocalEnd = TransformActorLocalPointToComponentLocal(ActorLocalEnd);
+}
+
+float UClothComponent::TransformActorLocalLengthToComponentLocal(float ActorLocalLength) const
+{
+	const float SafeLength = ClampFloat(ActorLocalLength, 0.0f, GMaxCollisionLength);
+	if (SafeLength <= GNormalTolerance)
+	{
+		return 0.0f;
+	}
+
+	const float LengthX = TransformActorLocalVectorToComponentLocal(FVector(SafeLength, 0.0f, 0.0f)).Length();
+	const float LengthY = TransformActorLocalVectorToComponentLocal(FVector(0.0f, SafeLength, 0.0f)).Length();
+	const float LengthZ = TransformActorLocalVectorToComponentLocal(FVector(0.0f, 0.0f, SafeLength)).Length();
+
+	// non-uniform scale에서는 sphere/capsule이 작아져 통과하지 않도록 가장 큰 축 길이를 사용
+	return (std::max)(LengthX, (std::max)(LengthY, LengthZ));
 }
 
 void UClothComponent::LogBackendStatusOnce()

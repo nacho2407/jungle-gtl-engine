@@ -149,6 +149,13 @@ public:
 	 */
 	uint32 GetPinnedCount() const { return static_cast<uint32>(CachedPinnedIndices.size()); }
 
+	/**
+	 * @brief 현재 simulation에 적용된 collision primitive 수를 반환합니다
+	 *
+	 * @return 현재 collision primitive 수
+	 */
+	uint32 GetCollisionPrimitiveCount() const { return Simulation.GetCollisionPrimitiveCount(); }
+
 protected:
 	/**
 	 * @brief component tick에서 dirty rebuild와 backend status 로그를 처리합니다
@@ -243,6 +250,18 @@ private:
 	 * @param Config bounds와 timestep 보정값을 제공하는 cloth config
 	 */
 	void TickSimulationIfNeeded(float DeltaTime, ELevelTick TickType, const FClothConfig& Config);
+
+	/**
+	 * @brief 현재 actor local collision property를 component local primitive 배열로 변환합니다
+	 *
+	 * @param OutPrimitives component local 기준 collision primitive 배열
+	 */
+	void BuildCollisionPrimitivesComponentLocal(TArray<FClothCollisionPrimitive>& OutPrimitives) const;
+
+	/**
+	 * @brief 현재 collision primitive snapshot을 simulation에 반영합니다
+	 */
+	void UpdateSimulationCollisionPrimitives();
 
 	/**
 	 * @brief simulation readback 위치를 render data에 반영합니다
@@ -371,15 +390,24 @@ private:
 		FVector& OutComponentLocalStart,
 		FVector& OutComponentLocalEnd) const;
 
+	/**
+	 * @brief actor local 길이를 component local 보수적 길이로 변환합니다
+	 *
+	 * @param ActorLocalLength actor local 기준 길이
+	 *
+	 * @return component local 기준 보수적 길이
+	 */
+	float TransformActorLocalLengthToComponentLocal(float ActorLocalLength) const;
+
 private:
-	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles X", Min=2.0f, Max=256.0f, Speed=1.0f)
+	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles X", Min=2.0f, Max=2048.0f, Speed=1.0f)
 	int32 NumParticlesX = 20;
 
-	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles Y", Min=2.0f, Max=256.0f, Speed=1.0f)
+	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles Y", Min=2.0f, Max=2048.0f, Speed=1.0f)
 	int32 NumParticlesY = 20;
 
-	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Particle Spacing", Min=0.1f, Max=1000.0f, Speed=1.0f)
-	float ParticleSpacing = 10.0f;
+	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Particle Spacing", Min=0.001f, Max=1000.0f, Speed=0.1f)
+	float ParticleSpacing = 1.0f;
 
 	UPROPERTY(Edit, Save, Category="Cloth|Simulation", DisplayName="Enable Simulation")
 	bool bEnableSimulation = true;
@@ -515,6 +543,7 @@ private:
 	TArray<FVector> SimulationReadbackPositions;
 	TArray<uint32> CachedPinnedIndices;
 	TArray<FVector> CachedPinTargetPositionsComponentLocal;
+	TArray<FClothCollisionPrimitive> CachedCollisionPrimitives;
 	FVector CachedLocalCenter = FVector::ZeroVector;
 	FVector CachedLocalExtent = FVector(0.5f, 0.5f, 0.5f);
 	bool bHasValidLocalBounds = false;
@@ -527,4 +556,5 @@ private:
 	bool bEditorPreviewDirty = true;
 	bool bBackendStatusLogged = false;
 	bool bSimulationTickWarningLogged = false;
+	bool bCollisionUpdateWarningLogged = false;
 };

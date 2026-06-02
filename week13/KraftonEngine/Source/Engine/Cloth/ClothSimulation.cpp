@@ -28,6 +28,7 @@ constexpr float GMinFixedStep = 0.001f;
 constexpr float GMaxFixedStep = 0.1f;
 constexpr int32 GMinSubstepCount = 1;
 constexpr int32 GMaxSubstepCount = 4;
+constexpr uint32 GMaxNvClothConvexPlanes = 32;
 
 #if WITH_NV_CLOTH
 /**
@@ -66,6 +67,83 @@ FVector ToFVectorPosition(const physx::PxVec4& Particle)
 physx::PxVec4 ToPxParticle(const FVector& Vector, float InvMass)
 {
 	return physx::PxVec4(Vector.X, Vector.Y, Vector.Z, InvMass);
+}
+
+/**
+ * @brief engine sphere 값을 NvCloth sphere 값으로 변환합니다
+ *
+ * @param Center component local 기준 sphere 중심
+ *
+ * @param Radius sphere 반지름
+ *
+ * @return NvCloth sphere 값
+ */
+physx::PxVec4 ToPxSphere(const FVector& Center, float Radius)
+{
+	return physx::PxVec4(Center.X, Center.Y, Center.Z, Radius);
+}
+
+/**
+ * @brief engine plane 값을 NvCloth plane 값으로 변환합니다
+ *
+ * @param Normal component local 기준 단위 plane normal
+ *
+ * @param Distance normal dot point 형식의 plane 거리
+ *
+ * @return NvCloth plane 값
+ */
+physx::PxVec4 ToPxPlane(const FVector& Normal, float Distance)
+{
+	// NvCloth plane은 ax + by + cz + d = 0 형식이므로 d는 -normal dot point
+	return physx::PxVec4(Normal.X, Normal.Y, Normal.Z, -Distance);
+}
+
+/**
+ * @brief std vector 기반 배열을 NvCloth range로 변환합니다
+ *
+ * @param Values range로 전달할 값 배열
+ *
+ * @return NvCloth const range
+ */
+template <typename ValueType>
+nv::cloth::Range<const ValueType> MakeNvConstRange(const TArray<ValueType>& Values)
+{
+	if (Values.empty())
+	{
+		return nv::cloth::Range<const ValueType>();
+	}
+
+	return nv::cloth::Range<const ValueType>(Values.data(), Values.data() + Values.size());
+}
+
+/**
+ * @brief plane 배열에 convex mask bit를 함께 추가합니다
+ *
+ * @param Normal component local 기준 단위 plane normal
+ *
+ * @param Distance normal dot point 형식의 plane 거리
+ *
+ * @param OutPlanes NvCloth plane 배열
+ *
+ * @param OutMask convex mask 값
+ *
+ * @return plane 추가 성공 여부
+ */
+bool AppendCollisionPlane(
+	const FVector& Normal,
+	float Distance,
+	TArray<physx::PxVec4>& OutPlanes,
+	uint32& OutMask)
+{
+	if (OutPlanes.size() >= GMaxNvClothConvexPlanes)
+	{
+		return false;
+	}
+
+	const uint32 PlaneIndex = static_cast<uint32>(OutPlanes.size());
+	OutPlanes.push_back(ToPxPlane(Normal, Distance));
+	OutMask |= (1u << PlaneIndex);
+	return true;
 }
 #endif
 
@@ -258,7 +336,7 @@ bool FClothSimulation::Rebuild(FNvClothContext* InContext, const FClothSimulatio
 		return SetBuildFailure("NvCloth solver creation failed");
 	}
 
-	// 이번 commit은 resource lifecycle 확인이 목적이므로 실제 simulation step은 다음 commit에서 연결
+	// cloth instance를 solver에 등록해 이후 fixed timestep simulation에서 처리
 	Impl->Solver->addCloth(Impl->Cloth);
 
 	ParticleCount = static_cast<uint32>(BuildDesc.InitialPositionsComponentLocal.size());
@@ -400,6 +478,143 @@ bool FClothSimulation::ApplyPinning(
 #endif
 }
 
+bool FClothSimulation::UpdateCollisionPrimitives(const TArray<FClothCollisionPrimitive>& CollisionPrimitives)
+{
+	CollisionPrimitiveCount = 0;
+	LastFailureDetail.clear();
+
+	if (!IsSimulationAvailable())
+	{
+		LastFailureDetail = "cloth simulation is unavailable for collision update";
+		return false;
+	}
+
+#if WITH_NV_CLOTH
+	if (!Impl || !Impl->Cloth)
+	{
+		LastFailureDetail = "NvCloth cloth instance is null";
+		return false;
+	}
+
+	TArray<physx::PxVec4> Spheres;
+	TArray<uint32_t> Capsules;
+	TArray<physx::PxVec4> Planes;
+	TArray<uint32_t> ConvexMasks;
+	uint32 AppliedPrimitiveCount = 0;
+
+	for (const FClothCollisionPrimitive& Primitive : CollisionPrimitives)
+	{
+		switch (Primitive.Type)
+		{
+		case EClothCollisionPrimitiveType::Sphere:
+		{
+			const float Radius = (std::max)(0.0f, Primitive.Radius);
+			if (Radius <= GVectorTolerance)
+			{
+				break;
+			}
+
+			// NvCloth sphere는 center xyz와 radius w를 한 값으로 전달
+			Spheres.push_back(ToPxSphere(Primitive.Center, Radius));
+			++AppliedPrimitiveCount;
+			break;
+		}
+
+		case EClothCollisionPrimitiveType::Capsule:
+		{
+			const float Radius = (std::max)(0.0f, Primitive.Radius);
+			if (Radius <= GVectorTolerance)
+			{
+				break;
+			}
+
+			const FVector Segment = Primitive.CapsuleEnd - Primitive.CapsuleStart;
+			if (Segment.Length() <= GVectorTolerance)
+			{
+				// 축 길이가 없는 capsule은 sphere collision으로 안전하게 축소
+				Spheres.push_back(ToPxSphere(Primitive.Center, Radius));
+				++AppliedPrimitiveCount;
+				break;
+			}
+
+			const uint32 FirstSphereIndex = static_cast<uint32>(Spheres.size());
+			Spheres.push_back(ToPxSphere(Primitive.CapsuleStart, Radius));
+			Spheres.push_back(ToPxSphere(Primitive.CapsuleEnd, Radius));
+			Capsules.push_back(FirstSphereIndex);
+			Capsules.push_back(FirstSphereIndex + 1);
+			++AppliedPrimitiveCount;
+			break;
+		}
+
+		case EClothCollisionPrimitiveType::Plane:
+		{
+			const FVector PlaneNormal = Primitive.PlaneNormal.GetSafeNormal(GVectorTolerance, FVector::UpVector);
+			const float PlaneDistance = PlaneNormal.Dot(Primitive.PlanePoint);
+			uint32 PlaneMask = 0;
+			if (!AppendCollisionPlane(PlaneNormal, PlaneDistance, Planes, PlaneMask))
+			{
+				ClearCollisionPrimitives();
+				LastFailureDetail = "NvCloth supports at most 32 collision planes per convex mask set";
+				return false;
+			}
+
+			// 단일 plane도 convex mask를 통해 활성화해야 NvCloth collision에 반영됨
+			ConvexMasks.push_back(PlaneMask);
+			++AppliedPrimitiveCount;
+			break;
+		}
+
+		case EClothCollisionPrimitiveType::Box:
+		{
+			const FVector AxisX = Primitive.BoxAxisX.GetSafeNormal(GVectorTolerance, FVector::XAxisVector);
+			const FVector AxisY = Primitive.BoxAxisY.GetSafeNormal(GVectorTolerance, FVector::YAxisVector);
+			const FVector AxisZ = Primitive.BoxAxisZ.GetSafeNormal(GVectorTolerance, FVector::ZAxisVector);
+			const FVector Extent = Primitive.BoxExtent.GetAbs();
+			if (Extent.X <= GVectorTolerance || Extent.Y <= GVectorTolerance || Extent.Z <= GVectorTolerance)
+			{
+				break;
+			}
+
+			uint32 BoxMask = 0;
+			const bool bAppendedBoxPlanes =
+				AppendCollisionPlane(AxisX, AxisX.Dot(Primitive.Center + AxisX * Extent.X), Planes, BoxMask)
+				&& AppendCollisionPlane(-AxisX, (-AxisX).Dot(Primitive.Center - AxisX * Extent.X), Planes, BoxMask)
+				&& AppendCollisionPlane(AxisY, AxisY.Dot(Primitive.Center + AxisY * Extent.Y), Planes, BoxMask)
+				&& AppendCollisionPlane(-AxisY, (-AxisY).Dot(Primitive.Center - AxisY * Extent.Y), Planes, BoxMask)
+				&& AppendCollisionPlane(AxisZ, AxisZ.Dot(Primitive.Center + AxisZ * Extent.Z), Planes, BoxMask)
+				&& AppendCollisionPlane(-AxisZ, (-AxisZ).Dot(Primitive.Center - AxisZ * Extent.Z), Planes, BoxMask);
+
+			if (!bAppendedBoxPlanes)
+			{
+				ClearCollisionPrimitives();
+				LastFailureDetail = "NvCloth box collision fallback exceeded 32 plane mask bits";
+				return false;
+			}
+
+			// NvCloth에는 box 직접 primitive가 없어서 6개 plane을 하나의 convex로 묶음
+			ConvexMasks.push_back(BoxMask);
+			++AppliedPrimitiveCount;
+			break;
+		}
+		}
+	}
+
+	// 기존 collision이 stale 상태로 남지 않도록 매 update마다 전체 range를 교체
+	ClearCollisionPrimitives();
+	Impl->Cloth->setSpheres(MakeNvConstRange(Spheres), 0, 0);
+	Impl->Cloth->setCapsules(MakeNvConstRange(Capsules), 0, 0);
+	Impl->Cloth->setPlanes(MakeNvConstRange(Planes), 0, 0);
+	Impl->Cloth->setConvexes(MakeNvConstRange(ConvexMasks), 0, 0);
+
+	CollisionPrimitiveCount = AppliedPrimitiveCount;
+	LastFailureDetail.clear();
+	return true;
+#else
+	LastFailureDetail = "WITH_NV_CLOTH is disabled";
+	return false;
+#endif
+}
+
 void FClothSimulation::Shutdown()
 {
 	if (Impl)
@@ -413,9 +628,11 @@ void FClothSimulation::Shutdown()
 	ParticleCount = 0;
 	IndexCount = 0;
 	PinnedCount = 0;
+	CollisionPrimitiveCount = 0;
 	AccumulatedTime = 0.0f;
 	SimulationTime = 0.0f;
 	LastStepCount = 0;
+	bSelfCollisionCullScaleWarningLogged = false;
 }
 
 bool FClothSimulation::Tick(
@@ -535,7 +752,13 @@ void FClothSimulation::ApplyRuntimeConfig(const FClothSimulationRuntimeConfig& R
 	{
 		Impl->Cloth->setSelfCollisionDistance((std::max)(0.0f, RuntimeConfig.SelfCollision.Distance));
 		Impl->Cloth->setSelfCollisionStiffness(ClampFloat(RuntimeConfig.SelfCollision.Stiffness, 0.0f, 1.0f));
-		// NvCloth 1.1 public header에는 self collision cull scale setter가 없어서 distance/stiffness만 반영
+
+		if (!bSelfCollisionCullScaleWarningLogged
+			&& std::abs(RuntimeConfig.SelfCollision.CullScale - 1.0f) > GVectorTolerance)
+		{
+			bSelfCollisionCullScaleWarningLogged = true;
+			UE_LOG("[ClothSimulation] Self collision cull scale is reserved; NvCloth public API exposes self collision indices instead of a direct cull scale setter");
+		}
 	}
 	else
 	{
@@ -667,6 +890,29 @@ bool FClothSimulation::ReadCurrentPositions(TArray<FVector>& OutPositionsCompone
 #endif
 }
 
+bool FClothSimulation::ClearCollisionPrimitives()
+{
+	CollisionPrimitiveCount = 0;
+
+#if WITH_NV_CLOTH
+	if (!Impl || !Impl->Cloth)
+	{
+		LastFailureDetail = "NvCloth cloth instance is null";
+		return false;
+	}
+
+	// capsule/convex가 sphere/plane index를 참조하므로 참조 primitive를 지우기 전에 먼저 제거
+	Impl->Cloth->setCapsules(nv::cloth::Range<const uint32_t>(), 0, Impl->Cloth->getNumCapsules());
+	Impl->Cloth->setConvexes(nv::cloth::Range<const uint32_t>(), 0, Impl->Cloth->getNumConvexes());
+	Impl->Cloth->setPlanes(nv::cloth::Range<const physx::PxVec4>(), 0, Impl->Cloth->getNumPlanes());
+	Impl->Cloth->setSpheres(nv::cloth::Range<const physx::PxVec4>(), 0, Impl->Cloth->getNumSpheres());
+	return true;
+#else
+	LastFailureDetail = "WITH_NV_CLOTH is disabled";
+	return false;
+#endif
+}
+
 bool FClothSimulation::IsSimulationAvailable() const
 {
 	return bInitialized && bValid && Context && Context->GetBackendStatus().bAvailable;
@@ -692,8 +938,10 @@ bool FClothSimulation::SetBuildFailure(const FString& FailureDetail)
 	ParticleCount = 0;
 	IndexCount = 0;
 	PinnedCount = 0;
+	CollisionPrimitiveCount = 0;
 	AccumulatedTime = 0.0f;
 	SimulationTime = 0.0f;
 	LastStepCount = 0;
+	bSelfCollisionCullScaleWarningLogged = false;
 	return false;
 }

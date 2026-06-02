@@ -56,6 +56,15 @@ public:
 		const TArray<FVector>& PinTargetPositionsComponentLocal);
 
 	/**
+	 * @brief component local collision primitive를 NvCloth collision data로 갱신합니다
+	 *
+	 * @param CollisionPrimitives component local 기준 collision primitive 배열
+	 *
+	 * @return collision primitive 갱신 성공 여부
+	 */
+	bool UpdateCollisionPrimitives(const TArray<FClothCollisionPrimitive>& CollisionPrimitives);
+
+	/**
 	 * @brief simulation 상태를 종료합니다
 	 */
 	void Shutdown();
@@ -103,6 +112,13 @@ public:
 	 * @return 현재 hard pin particle 수
 	 */
 	uint32 GetPinnedCount() const { return PinnedCount; }
+
+	/**
+	 * @brief 마지막으로 적용된 collision primitive 수를 반환합니다
+	 *
+	 * @return 마지막 collision primitive snapshot 크기
+	 */
+	uint32 GetCollisionPrimitiveCount() const { return CollisionPrimitiveCount; }
 
 	/**
 	 * @brief 마지막 simulation resource 생성 실패 사유를 반환합니다
@@ -154,6 +170,13 @@ private:
 	bool ReadCurrentPositions(TArray<FVector>& OutPositionsComponentLocal);
 
 	/**
+	 * @brief NvCloth collision primitive를 모두 제거합니다
+	 *
+	 * @return collision primitive 제거 성공 여부
+	 */
+	bool ClearCollisionPrimitives();
+
+	/**
 	 * @brief simulation resource 생성 실패 상태를 기록합니다
 	 *
 	 * @param FailureDetail simulation resource 생성 실패 사유
@@ -172,9 +195,11 @@ private:
 	uint32 ParticleCount = 0;
 	uint32 IndexCount = 0;
 	uint32 PinnedCount = 0;
+	uint32 CollisionPrimitiveCount = 0;
 	float AccumulatedTime = 0.0f;
 	float SimulationTime = 0.0f;
 	uint32 LastStepCount = 0;
 	bool bInitialized = false;
 	bool bValid = false;
+	bool bSelfCollisionCullScaleWarningLogged = false;
 };
