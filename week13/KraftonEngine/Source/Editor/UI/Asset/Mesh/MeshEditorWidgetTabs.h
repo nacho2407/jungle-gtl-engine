@@ -12,7 +12,7 @@
 class UAnimMontage;
 class UAnimSequence;
 class UPhysicsAsset;
-class FPhysicsAssetRagdollOverlay;
+class FPhysicsAssetRagdollPanel;
 struct FSkeletalMesh;
 
 struct FAnimationTabState
@@ -153,7 +153,11 @@ private:
 		Constraint
 	};
 
-	void RenderPhysicsAssetBuildOptionsPopup(USkeletalMesh* SkeletalMesh, UPhysicsAsset*& InOutPhysicsAsset);
+	bool RenderPhysicsAssetBuildOptionsOverlay(
+		const ImVec2& ViewportPos,
+		const ImVec2& ViewportSize,
+		USkeletalMesh* SkeletalMesh,
+		UPhysicsAsset*& InOutPhysicsAsset);
 	void RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, UPhysicsAsset* PhysicsAsset);
 	bool RenderPhysicsAssetBodyTree(const FSkeletalMesh* Asset, UPhysicsAsset* PhysicsAsset, int32 BoneIndex);
 	void SyncReflectionDetailTarget(UPhysicsAsset* PhysicsAsset);
@@ -172,7 +176,6 @@ private:
 	bool bHasReflectionDetailSnapshot = false;
 	FVector SnapshotConstraintParentLocation = FVector::ZeroVector;
 	FVector SnapshotConstraintChildLocation = FVector::ZeroVector;
-	bool bOpenPhysicsAssetBuildOptions = false;
 	FPhysicsAssetBuildOptions PendingPhysicsAssetBuildOptions;
-	std::unique_ptr<FPhysicsAssetRagdollOverlay> RagdollOverlay;
+	std::unique_ptr<FPhysicsAssetRagdollPanel> RagdollPanel;
 };

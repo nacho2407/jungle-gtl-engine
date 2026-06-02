@@ -300,7 +300,7 @@ namespace
 	}
 }
 
-class FPhysicsAssetRagdollOverlay
+class FPhysicsAssetRagdollPanel
 {
 public:
 	void Reset()
@@ -317,6 +317,7 @@ public:
 		if (MeshComponent)
 		{
 			MeshComponent->StopRagdollPreviewSimulation();
+			RestoreInitialPose(MeshComponent);
 		}
 		bSimulationActive = false;
 		bPaused = false;
@@ -347,47 +348,9 @@ public:
 		MeshComponent->TickRagdollPreviewSimulation(DeltaTime);
 	}
 
-	bool Render(
-		const ImVec2& ViewportPos,
-		const ImVec2& ViewportSize,
-		USkeletalMeshDebugComponent* MeshComponent,
-		UPhysicsAsset* PhysicsAsset,
-		int32 SelectedBodyIndex,
-		uint32 OwnerInstanceId)
+	void Render(USkeletalMeshDebugComponent* MeshComponent, UPhysicsAsset* PhysicsAsset, int32 SelectedBodyIndex)
 	{
-		constexpr float OverlayWidth = 232.0f;
-		constexpr float Padding = 8.0f;
-		const float ClampedWidth = std::max(180.0f, std::min(OverlayWidth, ViewportSize.x - Padding * 2.0f));
-		const ImVec2 OverlayPos(
-			std::max(ViewportPos.x + Padding, ViewportPos.x + ViewportSize.x - ClampedWidth - Padding),
-			ViewportPos.y + 36.0f);
-
-		const FString WindowId = "Ragdoll##PhysicsAssetRagdollOverlay_" + std::to_string(OwnerInstanceId);
-		ImGui::SetNextWindowPos(OverlayPos, ImGuiCond_Always);
-		ImGui::SetNextWindowSize(ImVec2(ClampedWidth, 0.0f), ImGuiCond_Always);
-
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 4.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
-		ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(22, 24, 28, 225));
-		ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(255, 255, 255, 50));
-
-		const ImGuiWindowFlags Flags =
-			ImGuiWindowFlags_NoDecoration |
-			ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoSavedSettings |
-			ImGuiWindowFlags_AlwaysAutoResize;
-
-		bool bHovered = false;
-		if (ImGui::Begin(WindowId.c_str(), nullptr, Flags))
-		{
-			bHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
-			RenderContents(MeshComponent, PhysicsAsset, SelectedBodyIndex);
-		}
-		ImGui::End();
-
-		ImGui::PopStyleColor(2);
-		ImGui::PopStyleVar(2);
-		return bHovered;
+		RenderContents(MeshComponent, PhysicsAsset, SelectedBodyIndex);
 	}
 
 	bool IsActive() const { return bSimulationActive; }
@@ -429,20 +392,6 @@ private:
 			bPaused = !bPaused;
 		}
 		if (!bSimulationActive)
-		{
-			ImGui::EndDisabled();
-		}
-
-		ImGui::SameLine();
-		if (InitialLocalPose.empty())
-		{
-			ImGui::BeginDisabled();
-		}
-		if (ImGui::Button("Reset", ImVec2(64.0f, 0.0f)))
-		{
-			ResetPose(MeshComponent);
-		}
-		if (InitialLocalPose.empty())
 		{
 			ImGui::EndDisabled();
 		}
@@ -553,14 +502,13 @@ private:
 		bPaused = false;
 	}
 
-	void ResetPose(USkeletalMeshDebugComponent* MeshComponent)
+	void RestoreInitialPose(USkeletalMeshDebugComponent* MeshComponent)
 	{
 		if (!MeshComponent || InitialLocalPose.empty() || !bHasInitialRelativeTransform)
 		{
 			return;
 		}
 
-		Stop(MeshComponent);
 		MeshComponent->SetRelativeTransform(InitialRelativeTransform);
 		MeshComponent->SetRagdollPreviewLocalPose(InitialLocalPose);
 	}
@@ -1537,7 +1485,7 @@ void FMeshEditorAnimationTab::Render(float AvailableHeight)
 
 FMeshEditorPhysicsAssetTab::FMeshEditorPhysicsAssetTab(FMeshEditorWidget& InOwner)
 	: FMeshEditorWidgetTab(InOwner)
-	, RagdollOverlay(std::make_unique<FPhysicsAssetRagdollOverlay>())
+	, RagdollPanel(std::make_unique<FPhysicsAssetRagdollPanel>())
 {
 }
 
@@ -1591,22 +1539,21 @@ bool FMeshEditorPhysicsAssetTab::ResolveOpenTarget(UObject* Object, UObject*& Ou
 
 void FMeshEditorPhysicsAssetTab::Reset()
 {
-	if (RagdollOverlay)
+	if (RagdollPanel)
 	{
-		RagdollOverlay->Reset();
+		RagdollPanel->Reset();
 	}
 	ClearReflectionDetailTarget();
 	SelectedPhysicsBodyIndex = -1;
 	SelectedPhysicsConstraintIndex = -1;
-	bOpenPhysicsAssetBuildOptions = false;
 	PendingPhysicsAssetBuildOptions = FPhysicsAssetBuildOptions {};
 }
 
 void FMeshEditorPhysicsAssetTab::Tick(float DeltaTime)
 {
-	if (RagdollOverlay)
+	if (RagdollPanel)
 	{
-		RagdollOverlay->Tick(DeltaTime, GetViewportClient().GetPreviewDebugMeshComponent());
+		RagdollPanel->Tick(DeltaTime, GetViewportClient().GetPreviewDebugMeshComponent());
 	}
 	if (USkeletalMesh* SkeletalMesh = GetSkeletalMesh())
 	{
@@ -1637,9 +1584,9 @@ void FMeshEditorPhysicsAssetTab::OnEditorOpened()
 
 void FMeshEditorPhysicsAssetTab::OnEditorClosing()
 {
-	if (RagdollOverlay)
+	if (RagdollPanel)
 	{
-		RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+		RagdollPanel->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
 	}
 	ClearReflectionDetailTarget();
 	GetViewportClient().SetPhysicsAssetPickingEnabled(false);
@@ -1663,9 +1610,9 @@ void FMeshEditorPhysicsAssetTab::OnActivated(EMeshEditorTab PreviousTab)
 void FMeshEditorPhysicsAssetTab::OnDeactivated(EMeshEditorTab NextTab)
 {
 	(void)NextTab;
-	if (RagdollOverlay)
+	if (RagdollPanel)
 	{
-		RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+		RagdollPanel->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
 	}
 	ClearReflectionDetailTarget();
 	GetViewportClient().SetPhysicsAssetPickingEnabled(false);
@@ -1702,15 +1649,15 @@ void FMeshEditorPhysicsAssetTab::Render(float AvailableHeight)
 		ImGui::TextDisabled("None");
 	}
 
-	if (ImGui::Button("Generate Physics Asset"))
-	{
-		PendingPhysicsAssetBuildOptions = FPhysicsAssetBuildOptions {};
-		bOpenPhysicsAssetBuildOptions = true;
-	}
-
-	RenderPhysicsAssetBuildOptionsPopup(SkeletalMesh, PhysicsAsset);
-
 	ImGui::Separator();
+	if (RagdollPanel)
+	{
+		RagdollPanel->Render(
+			GetViewportClient().GetPreviewDebugMeshComponent(),
+			PhysicsAsset,
+			SelectedPhysicsBodyIndex);
+		ImGui::Separator();
+	}
 	RenderPhysicsAssetBodyList(SkeletalMesh, PhysicsAsset);
 	ImGui::EndChild();
 	SyncReflectionDetailTarget(PhysicsAsset);
@@ -1725,49 +1672,54 @@ void FMeshEditorPhysicsAssetTab::Render(float AvailableHeight)
 	const ImVec2 ViewportSize = ImVec2(ViewportWidth, ImGui::GetContentRegionAvail().y);
 	const ImVec2 ViewportPos = ImGui::GetCursorScreenPos();
 	RenderViewportPanel(ViewportSize);
-	if (RagdollOverlay)
+	if (RenderPhysicsAssetBuildOptionsOverlay(ViewportPos, ViewportSize, SkeletalMesh, PhysicsAsset))
 	{
-		const bool bRagdollOverlayHovered = RagdollOverlay->Render(
-			ViewportPos,
-			ViewportSize,
-			GetViewportClient().GetPreviewDebugMeshComponent(),
-			PhysicsAsset,
-			SelectedPhysicsBodyIndex,
-			GetOwnerInstanceId());
-		if (bRagdollOverlayHovered)
-		{
-			FSlateApplication::Get().SetViewportImGuiHovered(&GetViewportClient(), false);
-		}
+		FSlateApplication::Get().SetViewportImGuiHovered(&GetViewportClient(), false);
 	}
 	ImGui::EndGroup();
 }
 
-void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBuildOptionsPopup(
+bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBuildOptionsOverlay(
+	const ImVec2& ViewportPos,
+	const ImVec2& ViewportSize,
 	USkeletalMesh* SkeletalMesh,
 	UPhysicsAsset*& InOutPhysicsAsset)
 {
-	const FString PopupId = "Physics Asset Build Options##PhysicsAssetBuildOptions_" + std::to_string(GetOwnerInstanceId());
+	constexpr float OverlayWidth = 300.0f;
+	constexpr float Padding = 8.0f;
+	const float ClampedWidth = std::max(1.0f, std::min(OverlayWidth, ViewportSize.x - Padding * 2.0f));
+	const ImVec2 OverlayPos(ViewportPos.x + ViewportSize.x - Padding, ViewportPos.y + ViewportSize.y - Padding);
+	const FString WindowId = "Physics Asset Build Options##PhysicsAssetBuildOptionsOverlay_" + std::to_string(GetOwnerInstanceId());
 
-	if (bOpenPhysicsAssetBuildOptions)
+	ImGui::SetNextWindowPos(OverlayPos, ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+	ImGui::SetNextWindowSize(ImVec2(ClampedWidth, 0.0f), ImGuiCond_Always);
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 4.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(22, 24, 28, 225));
+	ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(255, 255, 255, 50));
+
+	const ImGuiWindowFlags Flags =
+		ImGuiWindowFlags_NoDecoration |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_AlwaysAutoResize;
+
+	bool bHovered = false;
+	if (!ImGui::Begin(WindowId.c_str(), nullptr, Flags))
 	{
-		ImGui::OpenPopup(PopupId.c_str());
-		bOpenPhysicsAssetBuildOptions = false;
+		ImGui::End();
+		ImGui::PopStyleColor(2);
+		ImGui::PopStyleVar(2);
+		return false;
 	}
 
-	if (!ImGui::BeginPopupModal(PopupId.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-	{
-		return;
-	}
+	bHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
 
-	ImGui::PushID(PopupId.c_str());
+	ImGui::PushID(WindowId.c_str());
 
 	ImGui::TextUnformatted("Physics Asset Build Options");
 	ImGui::Separator();
-
-	ImGui::Checkbox("Use Dominant Bone Weight", &PendingPhysicsAssetBuildOptions.bUseDominantBoneWeight);
-	ImGui::Checkbox("Auto Orient To Bone", &PendingPhysicsAssetBuildOptions.bAutoOrientToBone);
-	ImGui::Checkbox("Walk Past Small Bones", &PendingPhysicsAssetBuildOptions.bWalkPastSmall);
-	ImGui::Checkbox("Create Body for All Bones", &PendingPhysicsAssetBuildOptions.bBodyForAll);
 
 	const auto GetGeomTypeLabel = [](EPhysicsAssetFitGeomType GeomType) -> const char*
 	{
@@ -1783,28 +1735,78 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBuildOptionsPopup(
 		}
 	};
 
-	if (ImGui::BeginCombo("Primitive Type", GetGeomTypeLabel(PendingPhysicsAssetBuildOptions.GeomType)))
+	const auto BeginOptionRow = [](const char* Label)
 	{
-		if (ImGui::Selectable("Capsule", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Sphyl))
-		{
-			PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Sphyl;
-		}
-		if (ImGui::Selectable("Box", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Box))
-		{
-			PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Box;
-		}
-		if (ImGui::Selectable("Sphere", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Sphere))
-		{
-			PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Sphere;
-		}
-		ImGui::EndCombo();
-	}
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(Label);
+		ImGui::TableSetColumnIndex(1);
+		ImGui::PushItemWidth(-1.0f);
+	};
+	const auto EndOptionRow = []()
+	{
+		ImGui::PopItemWidth();
+	};
 
-	ImGui::Spacing();
-	ImGui::DragFloat("Min Bone Size", &PendingPhysicsAssetBuildOptions.MinBoneSize, 0.25f, 0.0f, 1000.0f, "%.2f");
-	ImGui::DragFloat("Min Weld Size", &PendingPhysicsAssetBuildOptions.MinWeldSize, 0.0001f, 0.0f, 1000.0f, "%.4f");
-	ImGui::DragFloat("Fit Padding", &PendingPhysicsAssetBuildOptions.FitPadding, 0.001f, 1.0f, 2.0f, "%.3f");
-	ImGui::DragFloat("Min Primitive Size", &PendingPhysicsAssetBuildOptions.MinPrimitiveSize, 0.01f, 0.01f, 1000.0f, "%.2f");
+	if (ImGui::BeginTable("##PhysicsAssetBuildOptionTable", 2, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV))
+	{
+		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 142.0f);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+
+		BeginOptionRow("Use Dominant Bone Weight");
+		ImGui::Checkbox("##UseDominantBoneWeight", &PendingPhysicsAssetBuildOptions.bUseDominantBoneWeight);
+		EndOptionRow();
+
+		BeginOptionRow("Auto Orient To Bone");
+		ImGui::Checkbox("##AutoOrientToBone", &PendingPhysicsAssetBuildOptions.bAutoOrientToBone);
+		EndOptionRow();
+
+		BeginOptionRow("Walk Past Small Bones");
+		ImGui::Checkbox("##WalkPastSmallBones", &PendingPhysicsAssetBuildOptions.bWalkPastSmall);
+		EndOptionRow();
+
+		BeginOptionRow("Create Body For All Bones");
+		ImGui::Checkbox("##CreateBodyForAllBones", &PendingPhysicsAssetBuildOptions.bBodyForAll);
+		EndOptionRow();
+
+		BeginOptionRow("Primitive Type");
+		if (ImGui::BeginCombo("##PrimitiveType", GetGeomTypeLabel(PendingPhysicsAssetBuildOptions.GeomType)))
+		{
+			if (ImGui::Selectable("Capsule", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Sphyl))
+			{
+				PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Sphyl;
+			}
+			if (ImGui::Selectable("Box", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Box))
+			{
+				PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Box;
+			}
+			if (ImGui::Selectable("Sphere", PendingPhysicsAssetBuildOptions.GeomType == EPhysicsAssetFitGeomType::Sphere))
+			{
+				PendingPhysicsAssetBuildOptions.GeomType = EPhysicsAssetFitGeomType::Sphere;
+			}
+			ImGui::EndCombo();
+		}
+		EndOptionRow();
+
+		BeginOptionRow("Min Bone Size");
+		ImGui::DragFloat("##MinBoneSize", &PendingPhysicsAssetBuildOptions.MinBoneSize, 0.25f, 0.0f, 1000.0f, "%.2f");
+		EndOptionRow();
+
+		BeginOptionRow("Min Weld Size");
+		ImGui::DragFloat("##MinWeldSize", &PendingPhysicsAssetBuildOptions.MinWeldSize, 0.0001f, 0.0f, 1000.0f, "%.4f");
+		EndOptionRow();
+
+		BeginOptionRow("Fit Padding");
+		ImGui::DragFloat("##FitPadding", &PendingPhysicsAssetBuildOptions.FitPadding, 0.001f, 1.0f, 2.0f, "%.3f");
+		EndOptionRow();
+
+		BeginOptionRow("Min Primitive Size");
+		ImGui::DragFloat("##MinPrimitiveSize", &PendingPhysicsAssetBuildOptions.MinPrimitiveSize, 0.01f, 0.01f, 1000.0f, "%.2f");
+		EndOptionRow();
+
+		ImGui::EndTable();
+	}
 
 	ImGui::Separator();
 
@@ -1813,11 +1815,11 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBuildOptionsPopup(
 		ImGui::BeginDisabled();
 	}
 
-	if (ImGui::Button("Generate"))
+	if (ImGui::Button("Generate", ImVec2(-1.0f, 0.0f)))
 	{
-		if (RagdollOverlay)
+		if (RagdollPanel)
 		{
-			RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+			RagdollPanel->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
 		}
 		PendingPhysicsAssetBuildOptions.MinBoneSize = std::max(0.0f, PendingPhysicsAssetBuildOptions.MinBoneSize);
 		PendingPhysicsAssetBuildOptions.MinWeldSize = std::max(0.0f, PendingPhysicsAssetBuildOptions.MinWeldSize);
@@ -1835,7 +1837,6 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBuildOptionsPopup(
 			SelectedPhysicsConstraintIndex = -1;
 			SyncDebugComponent(NewAsset);
 			SyncReflectionDetailTarget(NewAsset);
-			ImGui::CloseCurrentPopup();
 		}
 	}
 
@@ -1844,20 +1845,11 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBuildOptionsPopup(
 		ImGui::EndDisabled();
 	}
 
-	ImGui::SameLine();
-	if (ImGui::Button("Reset"))
-	{
-		PendingPhysicsAssetBuildOptions = FPhysicsAssetBuildOptions {};
-	}
-
-	ImGui::SameLine();
-	if (ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape))
-	{
-		ImGui::CloseCurrentPopup();
-	}
-
 	ImGui::PopID();
-	ImGui::EndPopup();
+	ImGui::End();
+	ImGui::PopStyleColor(2);
+	ImGui::PopStyleVar(2);
+	return bHovered;
 }
 
 void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyList(USkeletalMesh* SkeletalMesh, UPhysicsAsset* PhysicsAsset)
@@ -1983,9 +1975,9 @@ bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyTree(const FSkeletalMesh*
 			: nullptr;
 		if (RenderAddPhysicsBodyShapeMenu(MutableBody))
 		{
-			if (RagdollOverlay)
+			if (RagdollPanel)
 			{
-				RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+				RagdollPanel->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
 			}
 			SelectedPhysicsBodyIndex = BodyIndex;
 			SelectedPhysicsConstraintIndex = -1;
@@ -2182,9 +2174,9 @@ void FMeshEditorPhysicsAssetTab::DetectReflectionDetailChanges(UPhysicsAsset* Ph
 		return;
 	}
 
-	if (RagdollOverlay)
+	if (RagdollPanel)
 	{
-		RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+		RagdollPanel->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
 	}
 
 	if (ConstraintDesc)
@@ -2242,9 +2234,9 @@ void FMeshEditorPhysicsAssetTab::OnPhysicsAssetConstraintPicked(int32 Constraint
 
 void FMeshEditorPhysicsAssetTab::OnPhysicsAssetShapeEdited()
 {
-	if (RagdollOverlay)
+	if (RagdollPanel)
 	{
-		RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+		RagdollPanel->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
 	}
 	SavePhysicsAssetChange("PhysicsAsset shape edit warning");
 	MarkDirty();
@@ -2256,9 +2248,9 @@ void FMeshEditorPhysicsAssetTab::OnPhysicsAssetShapeEdited()
 
 void FMeshEditorPhysicsAssetTab::OnPhysicsAssetConstraintEdited()
 {
-	if (RagdollOverlay)
+	if (RagdollPanel)
 	{
-		RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+		RagdollPanel->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
 	}
 	SavePhysicsAssetChange("PhysicsAsset constraint gizmo warning");
 	MarkDirty();
