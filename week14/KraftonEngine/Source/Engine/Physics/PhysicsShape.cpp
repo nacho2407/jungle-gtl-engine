@@ -2,11 +2,51 @@
 #include "Physics/BodySetup.h"
 #include "Physics/PhysXConversions.h"
 #include "Physics/PhysicsFilterData.h"
+#include "Physics/PhysXSDK.h"
 
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/SphereComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
+
+namespace
+{
+	physx::PxTriangleMesh* GetOrCreateTriangleMesh(physx::PxPhysics& Physics, const UBodySetup& BodySetup)
+	{
+		if (physx::PxTriangleMesh* Cached = BodySetup.GetCookedTriangleMesh())
+		{
+			return Cached;
+		}
+
+		physx::PxCooking* Cooking = FPhysXSDK::Get().GetCooking();
+		if (!Cooking || !BodySetup.HasComplexCollision()) return nullptr;
+
+		const TArray<FVector>& Vertices = BodySetup.GetComplexCollisionVertices();
+		const TArray<uint32>& Indices = BodySetup.GetComplexCollisionIndices();
+
+		if (Vertices.empty() || Indices.size() < 3 || (Indices.size() % 3) != 0) return nullptr;
+
+		physx::PxTriangleMeshDesc Desc;
+		Desc.points.count = static_cast<physx::PxU32>(Vertices.size());
+		Desc.points.stride = sizeof(FVector);
+		Desc.points.data = Vertices.data();
+
+		Desc.triangles.count = static_cast<physx::PxU32>(Indices.size() / 3);
+		Desc.triangles.stride = sizeof(uint32) * 3;
+		Desc.triangles.data = Indices.data();
+
+		physx::PxDefaultMemoryOutputStream WriteBuffer;
+		if (!Cooking->cookTriangleMesh(Desc, WriteBuffer)) return nullptr;
+
+		physx::PxDefaultMemoryInputData ReadBuffer(WriteBuffer.getData(), WriteBuffer.getSize());
+
+		physx::PxTriangleMesh* TriangleMesh = Physics.createTriangleMesh(ReadBuffer);
+		if (!TriangleMesh) return nullptr;
+
+		BodySetup.SetCookedTriangleMesh(TriangleMesh);
+		return TriangleMesh;
+	}
+}
 
 void FPhysicsShapeFactory::CreateShapesForComponent(physx::PxPhysics& Physics, physx::PxMaterial& Material,
 	UPrimitiveComponent* Component, bool bTrigger, TArray<physx::PxShape*>& OutShapes)
@@ -60,12 +100,35 @@ void FPhysicsShapeFactory::CreateShapesForComponent(physx::PxPhysics& Physics, p
 
 void FPhysicsShapeFactory::CreateShapesFromBodySetup(physx::PxPhysics& Physics, physx::PxMaterial& Material,
 	const UBodySetup& BodySetup, const FVector& Scale, UPrimitiveComponent* UserDataComponent,
-	bool bTrigger, TArray<physx::PxShape*>& OutShapes, const physx::PxFilterData* FilterDataOverride)
+	bool bTrigger, bool bSimulatePhysics, TArray<physx::PxShape*>& OutShapes, const physx::PxFilterData* FilterDataOverride)
 {
+	if (!BodySetup.HasSimpleCollision() && !BodySetup.HasComplexCollision()) return;
+
+	const FVector AbsScale(std::abs(Scale.X), std::abs(Scale.Y), std::abs(Scale.Z));
+
+	if (!bTrigger && !bSimulatePhysics && BodySetup.HasComplexCollision())
+	{
+		if (physx::PxTriangleMesh* TriangleMesh = GetOrCreateTriangleMesh(Physics, BodySetup))
+		{
+			physx::PxTriangleMeshGeometry Geometry(TriangleMesh, physx::PxMeshScale(ToPxVec3(AbsScale)));
+
+			if (Geometry.isValid())
+			{
+				physx::PxShape* Shape = Physics.createShape(Geometry, Material);
+				if (Shape)
+				{
+					ApplyShapeFlags(*Shape, UserDataComponent, bTrigger, FilterDataOverride);
+					OutShapes.push_back(Shape);
+
+					return;
+				}
+			}
+		}
+	}
+
 	if (!BodySetup.HasSimpleCollision()) return;
 
 	const FKAggregateGeom& AggGeom = BodySetup.GetAggGeom();
-	const FVector AbsScale(std::abs(Scale.X), std::abs(Scale.Y), std::abs(Scale.Z));
 
 	for (const FKBoxElem& Box : AggGeom.BoxElems)
 	{
@@ -142,7 +205,8 @@ void FPhysicsShapeFactory::CreateShapesForStaticMeshComponent(physx::PxPhysics& 
 	UBodySetup* BodySetup = StaticMesh->GetBodySetup();
 	if (!BodySetup) return;
 
-	CreateShapesFromBodySetup(Physics, Material, *BodySetup, Component->GetWorldScale(), Component, bTrigger, OutShapes);
+	CreateShapesFromBodySetup(Physics, Material, *BodySetup, Component->GetWorldScale(), Component,
+		bTrigger, Component->IsSimulatingPhysics(), OutShapes);
 }
 
 void FPhysicsShapeFactory::ApplyShapeFlags(physx::PxShape& Shape, UPrimitiveComponent* Component, bool bTrigger,

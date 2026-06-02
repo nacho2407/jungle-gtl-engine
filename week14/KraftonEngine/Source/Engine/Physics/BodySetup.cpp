@@ -1,5 +1,17 @@
 ﻿#include "Physics/BodySetup.h"
+
+#include "Mesh/Static/StaticMeshAsset.h"
+#include "Physics/PhysXInclude.h"
 #include "Serialization/Archive.h"
+
+UBodySetup::~UBodySetup()
+{
+	if (CookedTriangleMesh)
+	{
+		CookedTriangleMesh->release();
+		CookedTriangleMesh = nullptr;
+	}
+}
 
 void UBodySetup::Serialize(FArchive& Ar)
 {
@@ -102,4 +114,48 @@ void UBodySetup::ClearShapes()
 	AggGeom.BoxElems.clear();
 	AggGeom.SphylElems.clear();
 	AggGeom.ConvexElems.clear();
+}
+
+void UBodySetup::BuildComplexCollisionFromStaticMesh(const FStaticMesh& Mesh)
+{
+	if (CookedTriangleMesh)
+	{
+		CookedTriangleMesh->release();
+		CookedTriangleMesh = nullptr;
+	}
+
+	ComplexCollisionVertices.clear();
+	ComplexCollisionIndices.clear();
+
+	if (Mesh.Vertices.empty() || Mesh.Indices.size() < 3) return;
+
+	ComplexCollisionVertices.reserve(Mesh.Vertices.size());
+	for (const FNormalVertex& Vertex : Mesh.Vertices)
+	{
+		ComplexCollisionVertices.push_back(Vertex.pos);
+	}
+
+	ComplexCollisionIndices.reserve(Mesh.Indices.size());
+	for (uint32 Index : Mesh.Indices)
+	{
+		if (Index >= static_cast<uint32>(ComplexCollisionVertices.size()))
+		{
+			ComplexCollisionVertices.clear();
+			ComplexCollisionIndices.clear();
+			return;
+		}
+
+		ComplexCollisionIndices.push_back(Index);
+	}
+}
+void UBodySetup::SetCookedTriangleMesh(physx::PxTriangleMesh* InMesh) const
+{
+	if (CookedTriangleMesh == InMesh) return;
+
+	if (CookedTriangleMesh)
+	{
+		CookedTriangleMesh->release();
+	}
+
+	CookedTriangleMesh = InMesh;
 }
