@@ -4,6 +4,7 @@
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
 #include "Engine/Platform/DirectoryWatcher.h"
+#include "Profiling/Stats/ClothStats.h"
 #include "Profiling/Stats/Stats.h"
 #include "Profiling/StartupProfiler.h"
 #include "Engine/Input/InputSystem.h"
@@ -151,6 +152,8 @@ void UEngine::Tick(float DeltaTime)
 	FNotificationManager::Get().Tick(DeltaTime);
 	InputSystem::Get().Tick();
 	FAudioManager::Get().Tick();
+	CLOTH_STATS_RESET_SIMULATION();
+	CLOTH_STATS_RESET_RENDER();
 	WorldTick(DeltaTime);
     FGarbageCollector::Get().CollectGarbage();
 	Render(DeltaTime);

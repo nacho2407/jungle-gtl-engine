@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Cloth/ClothTypes.h"
 
@@ -6,12 +6,15 @@
 
 struct ID3D11Device;
 struct ID3D11DeviceContext;
+class FClothSimulation;
 
 /**
  * @brief NvCloth backend 공유 context
  */
 class FNvClothContext
 {
+	friend class FClothSimulation;
+
 public:
 	FNvClothContext();
 	~FNvClothContext();
@@ -69,16 +72,43 @@ private:
 	struct FImpl;
 
 	/**
+	 * @brief NvCloth CUDA factory를 생성합니다
+	 *
+	 * @param OutFailureDetail factory 생성 실패 사유
+	 *
+	 * @return NvCloth CUDA factory 생성 성공 여부
+	 */
+	bool CreateCudaFactory(FString& OutFailureDetail);
+
+	/**
+	 * @brief NvCloth DX11 factory를 생성합니다
+	 *
+	 * @param OutFailureDetail factory 생성 실패 사유
+	 *
+	 * @return NvCloth DX11 factory 생성 성공 여부
+	 */
+	bool CreateDxFactory(FString& OutFailureDetail);
+
+	/**
 	 * @brief NvCloth CPU factory를 생성합니다
+	 *
+	 * @param OutFailureDetail factory 생성 실패 사유
 	 *
 	 * @return NvCloth CPU factory 생성 성공 여부
 	 */
-	bool CreateCpuFactory();
+	bool CreateCpuFactory(FString& OutFailureDetail);
 
 	/**
 	 * @brief 현재 보유 중인 NvCloth factory를 해제합니다
 	 */
 	void ReleaseFactory();
+
+	/**
+	 * @brief simulation resource 생성에 사용할 내부 factory handle을 반환합니다
+	 *
+	 * @return 내부 NvCloth factory handle
+	 */
+	void* GetFactoryHandle() const;
 
 private:
 	// NvCloth 내부 타입 은닉과 factory 생명주기 소유권

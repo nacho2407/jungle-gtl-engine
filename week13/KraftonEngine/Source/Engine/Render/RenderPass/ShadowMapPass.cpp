@@ -732,9 +732,8 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 			BoundSkinMatrixSRV = SkinMatrixSRV;
 		}
 
-		// Two-sided shadow: front-cull ↔ no-cull 전환
-		const bool bTwoSided = Proxy->CastsShadowAsTwoSided()
-			|| Proxy->HasProxyFlag(EPrimitiveProxyFlags::Cloth);
+		// two-sided shadow 옵션이 켜진 caster만 shadow map에 양면 기록
+		const bool bTwoSided = Proxy->CastsShadowAsTwoSided();
 		if (bTwoSided != bCurrentTwoSided)
 		{
 			bCurrentTwoSided = bTwoSided;

@@ -228,7 +228,7 @@ struct UberPS_Output
 // =============================================================================
 // Pixel Shader
 // =============================================================================
-UberPS_Output PS(UberVS_Output input)
+UberPS_Output PS(UberVS_Output input, bool bIsFrontFace : SV_IsFrontFace)
 {
     UberPS_Output output;
 
@@ -274,6 +274,12 @@ return output;
         N = normalize(mul(tangentNormal, TBN));
     }
 #endif
+
+    // no-cull 양면 렌더링에서 뒷면은 조명 기준 normal을 반대로 사용
+    if (!bIsFrontFace)
+    {
+        N = -N;
+    }
 
     float3 V = normalize(CameraWorldPos - input.worldPos);
 

@@ -1721,6 +1721,9 @@
     <ClCompile Include="Source\Engine\Profiling\StartupProfiler.cpp">
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Profiling\Stats\ClothStats.cpp">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Profiling\Stats\MemoryStats.cpp">
       <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClCompile>
@@ -3173,6 +3176,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\StartupProfiler.h">
       <Filter>Source\Engine\Profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Profiling\Stats\ClothStats.h">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\Stats\MemoryStats.h">
       <Filter>Source\Engine\Profiling\Stats</Filter>
