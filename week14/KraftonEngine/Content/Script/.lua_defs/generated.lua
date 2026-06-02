@@ -376,6 +376,18 @@ function World.FindActorsByTag(tag) end
 ---@class SkeletalMeshComponent: PrimitiveComponent
 SkeletalMeshComponent = {}
 
+---@param enabled boolean
+function SkeletalMeshComponent:SetSimulatePhysics(enabled) end
+
+---@return boolean
+function SkeletalMeshComponent:IsSimulatingPhysics() end
+
+---@param weight number
+function SkeletalMeshComponent:SetPhysicsBlendWeight(weight) end
+
+---@return number
+function SkeletalMeshComponent:GetPhysicsBlendWeight() end
+
 ---@param boneName string
 ---@param localOffset Vector
 ---@return Vector

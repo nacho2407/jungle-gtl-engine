@@ -181,6 +181,9 @@
     <Filter Include="Source\Engine\Component\Primitive">
       <UniqueIdentifier>{57bc4de3-ad9b-789f-c9a3-f7282f3fe720}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component\Ragdoll">
+      <UniqueIdentifier>{8c297b19-3f27-0895-294e-d909850476ba}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component\Script">
       <UniqueIdentifier>{b17c02e8-fa1d-b877-30dd-94123cc6c2aa}</UniqueIdentifier>
     </Filter>
@@ -1165,6 +1168,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Primitive\TextRenderComponent.cpp">
       <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Ragdoll\RagdollHitReactionComponent.cpp">
+      <Filter>Source\Engine\Component\Ragdoll</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Script\LuaScriptComponent.cpp">
       <Filter>Source\Engine\Component\Script</Filter>
@@ -2362,6 +2368,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Primitive\TextRenderComponent.h">
       <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Ragdoll\RagdollHitReactionComponent.h">
+      <Filter>Source\Engine\Component\Ragdoll</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Script\LuaScriptComponent.h">
       <Filter>Source\Engine\Component\Script</Filter>

@@ -579,6 +579,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\Component\Primitive\StaticMeshComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\SubUVComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\TextRenderComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Ragdoll\RagdollHitReactionComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Script\LuaScriptComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Shape\BoxComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp" />
@@ -981,6 +982,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Component\Primitive\StaticMeshComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\SubUVComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\TextRenderComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Ragdoll\RagdollHitReactionComponent.h" />
     <ClInclude Include="Source\Engine\Component\Script\LuaScriptComponent.h" />
     <ClInclude Include="Source\Engine\Component\Shape\BoxComponent.h" />
     <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h" />

@@ -107,3 +107,30 @@ void FAnimationRuntime::BlendTwoPosesTogether(
 		Out.MorphWeights[MorphIndex] = AV + (BV - AV) * Alpha;
 	}
 }
+
+void FAnimationRuntime::BlendTwoPosesPerBone(const FPoseContext& A, const FPoseContext& B, const TArray<float>& BoneWeights, FPoseContext& Out)
+{
+	const size_t N = std::min(A.Pose.size(), B.Pose.size()); // 두 pose 중 더 작은 bone 개수까지만 섞기 (혹시라도)
+	
+	Out.SkeletalMesh = A.SkeletalMesh ? A.SkeletalMesh : B.SkeletalMesh;
+	Out.Pose.resize(N);
+	
+	for (size_t i=0; i < N; ++i)
+	{
+		const float RawWeight = i < BoneWeights.size() ? BoneWeights[i] : 0.0f;
+		const float Weight = std::clamp(RawWeight, 0.0f, 1.0f);
+		
+		const FTransform& Anim = A.Pose[i];
+		const FTransform& Physics = B.Pose[i];
+		
+		FTransform Result;
+		Result.Location = Anim.Location + (Physics.Location - Anim.Location) * Weight;
+		Result.Rotation = FQuat::Slerp(Anim.Rotation.GetNormalized(), Physics.Rotation.GetNormalized(), Weight).GetNormalized();
+	
+		Result.Scale = Anim.Scale;
+		
+		Out.Pose[i] = Result;
+	}
+	
+	Out.MorphWeights = A.MorphWeights;
+}

@@ -1258,6 +1258,26 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	Lua.new_usertype<USkeletalMeshComponent>("SkeletalMeshComponent",
 		sol::base_classes, sol::bases<USkinnedMeshComponent, UPrimitiveComponent, USceneComponent>(),
 
+		"SetSimulatePhysics", [](USkeletalMeshComponent& C, bool bEnable)
+	{
+		C.SetSimulatePhysics(bEnable);
+	},
+
+		"IsSimulatingPhysics", [](USkeletalMeshComponent& C)
+	{
+		return C.IsSimulatingPhysics();
+	},
+
+		"SetPhysicsBlendWeight", [](USkeletalMeshComponent& C, float InWeight)
+	{
+		C.SetPhysicsBlendWeight(InWeight);
+	},
+
+		"GetPhysicsBlendWeight", [](USkeletalMeshComponent& C)
+	{
+		return C.GetPhysicsBlendWeight();
+	},
+
 		"GetBoneSocketLocation", [](USkeletalMeshComponent& C, const FString& BoneName, const FVector& LocalOffset)
 	{
 		FTransform SocketWorld;
@@ -1288,6 +1308,10 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	);
 
 	FLuaDocRegistry::Get().Type("SkeletalMeshComponent", "PrimitiveComponent")
+		.Method("---@param enabled boolean\nfunction SkeletalMeshComponent:SetSimulatePhysics(enabled) end")
+		.Method("---@return boolean\nfunction SkeletalMeshComponent:IsSimulatingPhysics() end")
+		.Method("---@param weight number\nfunction SkeletalMeshComponent:SetPhysicsBlendWeight(weight) end")
+		.Method("---@return number\nfunction SkeletalMeshComponent:GetPhysicsBlendWeight() end")
 		.Method("---@param boneName string\n---@param localOffset Vector\n---@return Vector\nfunction SkeletalMeshComponent:GetBoneSocketLocation(boneName, localOffset) end")
 		.Method("---@param boneName string\n---@param localOffset Vector\n---@return Vector\nfunction SkeletalMeshComponent:GetBoneSocketRotation(boneName, localOffset) end");
 

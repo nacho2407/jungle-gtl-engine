@@ -2,8 +2,40 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
 #include "Animation/Skeleton/Skeleton.h"
+#include "Core/Logging/Log.h"
+#include "Platform/Paths.h"
 #include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsAssetManager.h"
+
+#include <filesystem>
+
+namespace
+{
+	bool IsValidPhysicsAssetPath(const FString& Path)
+	{
+		return !Path.empty() && Path != "None";
+	}
+
+	FString BuildDefaultPhysicsAssetPath(const FString& SkeletalMeshPath)
+	{
+		if (SkeletalMeshPath.empty() || SkeletalMeshPath == "None")
+		{
+			return "None";
+		}
+
+		const FString RelativeMeshPath = FPaths::MakeProjectRelative(SkeletalMeshPath);
+		const std::filesystem::path MeshPath(FPaths::ToWide(RelativeMeshPath));
+		if (MeshPath.extension().empty())
+		{
+			return "None";
+		}
+
+		const std::wstring CandidateFileName =
+			MeshPath.stem().wstring() + L"_PhysicsAsset" + MeshPath.extension().wstring();
+		const std::filesystem::path CandidatePath = MeshPath.parent_path() / CandidateFileName;
+		return FPaths::ToUtf8(CandidatePath.generic_wstring());
+	}
+}
 
 void USkeletalMesh::Serialize(FArchive& Ar)
 {
@@ -143,13 +175,33 @@ UPhysicsAsset* USkeletalMesh::GetPhysicsAsset()
 	{
 		return CachedPhysicsAsset;
 	}
-	if (PhysicsAssetPath.empty() || PhysicsAssetPath == "None")
+	if (IsValidPhysicsAssetPath(PhysicsAssetPath))
+	{
+		CachedPhysicsAsset = FPhysicsAssetManager::Get().Load(PhysicsAssetPath);
+		if (CachedPhysicsAsset)
+		{
+			return CachedPhysicsAsset;
+		}
+	}
+
+	// 매니저가 캐시/소유하므로 GC는 매니저 쪽에서 보호된다.
+	const FString DefaultPhysicsAssetPath = BuildDefaultPhysicsAssetPath(AssetPathFileName);
+	if (!IsValidPhysicsAssetPath(DefaultPhysicsAssetPath) || DefaultPhysicsAssetPath == PhysicsAssetPath)
 	{
 		return nullptr;
 	}
 
-	// 매니저가 캐시/소유하므로 GC는 매니저 쪽에서 보호된다.
-	CachedPhysicsAsset = FPhysicsAssetManager::Get().Load(PhysicsAssetPath);
+	CachedPhysicsAsset = FPhysicsAssetManager::Get().Load(DefaultPhysicsAssetPath);
+	if (CachedPhysicsAsset)
+	{
+		PhysicsAssetPath = DefaultPhysicsAssetPath;
+		UE_LOG(
+			"SkeletalMesh resolved default PhysicsAsset. Mesh=%s PhysicsAsset=%s",
+			AssetPathFileName.c_str(),
+			PhysicsAssetPath.c_str()
+		);
+	}
+
 	return CachedPhysicsAsset;
 }
 
