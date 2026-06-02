@@ -34,6 +34,8 @@ private:
 	bool InitializeVehicle();
 	void ReleaseVehicle();
 	void ApplyKeyboardInput(float DeltaTime);
+	void UpdateBoost(float DeltaTime);
+	void SetRuntimePeakTorque(float PeakTorque);
 	void UpdateWheelVisuals();
 	void DrawDebugVehicle() const;
 
@@ -94,6 +96,11 @@ private:
 	UPROPERTY(Edit, Save, Category="Vehicle|Engine", DisplayName="Torque Curve 3 Torque", Min=0.0f, Max=1.0f, Speed=0.01f)
 	float EngineTorqueCurve3Torque = 0.2f;
 
+	UPROPERTY(Edit, Save, Category="Vehicle|Boost", DisplayName="Duration", Min=0.0f, Max=60.0f, Speed=0.1f)
+	float BoostDuration = 1.5f;
+	UPROPERTY(Edit, Save, Category="Vehicle|Boost", DisplayName="Torque Multiplier", Min=0.0f, Max=100.0f, Speed=0.1f)
+	float BoostTorqueMultiplier = 2.0f;
+
 	UPROPERTY(Edit, Save, Category="Vehicle|Transmission", DisplayName="Gear Ratio Count", Min=3.0f, Max=7.0f, Speed=1.0f)
 	int32 GearRatioCount = 7;
 	UPROPERTY(Edit, Save, Category="Vehicle|Transmission", DisplayName="Use Auto Gears")
@@ -115,4 +122,7 @@ private:
 	physx::PxRaycastHit SuspensionRaycastHits[WheelCount];
 	physx::PxWheelQueryResult WheelQueryResults[WheelCount];
 	physx::PxVehicleWheelQueryResult VehicleWheelQueryResult{};
+
+	bool bBoostActive = false;
+	float BoostRemainingTime = 0.0f;
 };

@@ -36,7 +36,8 @@ cbuffer PerShader1 : register(b2)
 {
     float4 SectionColor;
     float HasNormalMap;
-    float3 _pad;
+    float AlphaCutoff;
+    float2 _pad;
 };
 
 cbuffer WheelDeformationBuffer : register(b8)
@@ -232,6 +233,7 @@ UberPS_Output PS(UberVS_Output input)
     UberPS_Output output;
 
     float4 texColor = DiffuseTexture.Sample(LinearWrapSampler, input.texcoord);
+    clip(texColor.a - AlphaCutoff);
     float4 baseColor = (texColor.a < 0.001f)
         ? input.color           // 텍스처 없음: SectionColor(=input.color)만 사용
         : texColor * input.color; // 텍스처 있음: 텍스처 색상 × SectionColor

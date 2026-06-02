@@ -1,0 +1,19 @@
+{
+  "BlendState" : "",
+  "DepthStencilState" : "",
+  "Origin" : "ObjImport",
+  "Parameters" : {
+    "HasNormalMap" : 1.000000,
+    "AlphaCutoff" : 0.500000,
+    "SectionColor" : [0.222000, 0.272000, 0.197000, 1.000000],
+    "_pad" : [0.000000, 0.000000]
+  },
+  "PathFileName" : "Content/Material/Auto/Leafs_Mat.mat",
+  "RasterizerState" : "",
+  "RenderPass" : "",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "Textures" : {
+    "DiffuseTexture" : "Content/Data/RacingMap/textures/Leafs_Mat_baseColor.png",
+    "NormalTexture" : "Content/Data/RacingMap/textures/Leafs_Mat_normal.png"
+  }
+}
