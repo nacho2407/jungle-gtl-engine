@@ -122,6 +122,17 @@ void FBodyInstance::SetLinearVelocity(const FVector& Velocity)
 	}
 }
 
+void FBodyInstance::SetAngularVelocity(const FVector& AngularVelocity)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		if (Mode == EBodyInstanceMode::Dynamic)
+		{
+			Dynamic->setAngularVelocity(ToPxVec3(AngularVelocity));
+		}
+	}
+}
+
 FVector FBodyInstance::GetLinearVelocity() const
 {
 	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)

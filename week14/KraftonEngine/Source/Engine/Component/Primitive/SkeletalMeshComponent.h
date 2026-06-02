@@ -8,12 +8,21 @@
 
 #include "Source/Engine/Component/Primitive/SkeletalMeshComponent.generated.h"
 
+#include "Math/Transform.h"
+
 class UAnimInstance;
 class UAnimSingleNodeInstance;
 class UAnimSequenceBase;
 class UClass;
 struct FRagdollInstance;
 struct FPoseContext;
+
+enum class ERagdollRecoveryFacing : uint8
+{
+	Unknown,
+	FaceUp,
+	FaceDown
+};
 
 // SkeletalMesh 전용 render proxy만 제공하는 얇은 wrapper.
 // Skinning/bone/material/bounds 상태는 모두 USkinnedMeshComponent가 소유한다.
@@ -91,7 +100,20 @@ protected:
 
 private:
     void LoadAnimationFromPath();
+	
+	void UpdateComponentLinearVelocity(float DeltaTime);
+	
+	void FollowRagdollAnchor();
+	void BeginRagdollRecovery();
+	bool ApplyRagdollRecoveryBlend(float DeltaTime, const FPoseContext& AnimPose);
+	void ClearRagdollRecovery();
 
+	ERagdollRecoveryFacing DetermineRagdollRecoveryFacing(const TArray<FTransform>& LocalPose) const;
+	const char* GetRagdollRecoveryFacingName(ERagdollRecoveryFacing Facing) const;
+	
+	FString GetRagdollGetUpAnimationPath(ERagdollRecoveryFacing Facing) const;
+	void TryPlayRagdollGetUpAnimation(ERagdollRecoveryFacing Facing);
+	
 protected:
     // Animation 런타임 상태.
     UPROPERTY(Edit, Save, Category="Animation", DisplayName="Animation Mode", Enum=EAnimationMode)
@@ -108,4 +130,23 @@ protected:
 	
 	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Physics Blend Weight")
 	float PhysicsBlendWeight = 1.0f;
+	
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Ragdoll Recovery Blend Duration")
+	float RagdollRecoveryBlendDuration = 0.35f;
+
+	TArray<FTransform> RagdollRecoveryStartPose;
+	float RagdollRecoveryElapsed = 0.0f;
+	bool bRecoveringFromRagdoll = false;
+
+	ERagdollRecoveryFacing LastRagdollRecoveryFacing = ERagdollRecoveryFacing::Unknown;
+	
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Face Up Get Up Animation", AssetType="UAnimSequence")
+	FSoftObjectPtr RagdollFaceUpGetUpAnimationPath = "Content/Data/hirasawa-yui/Standing Up_mixamo_com.uasset";
+
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Face Down Get Up Animation", AssetType="UAnimSequence")
+	FSoftObjectPtr RagdollFaceDownGetUpAnimationPath = "Content/Data/hirasawa-yui/Getting Up_mixamo_com.uasset";
+	
+	FVector LastComponentWorldLocation = FVector::ZeroVector;
+	FVector ComponentLinearVelocity = FVector::ZeroVector;
+	bool bHasLastComponentWorldLocation = false;
 };

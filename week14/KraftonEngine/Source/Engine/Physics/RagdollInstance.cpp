@@ -11,6 +11,8 @@
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Math/Matrix.h"
 
+#include <string>
+
 namespace
 {
 	FVector ScaleVectorComponentWise(const FVector& Value, const FVector& Scale)
@@ -24,9 +26,59 @@ namespace
 		Result.Location = ScaleVectorComponentWise(Frame.Location, Scale);
 		return Result;
 	}
+	
+	bool ContainsText(const FString& Text, const char* Pattern)
+	{
+		return Text.find(Pattern) != std::string::npos;
+	}
+
+	int32 GetEntryAngularVelocityTargetScore(const FString& BoneName)
+	{
+		if (ContainsText(BoneName, "Pelvis") || ContainsText(BoneName, "pelvis")
+			|| ContainsText(BoneName, "Hips") || ContainsText(BoneName, "hips"))
+		{
+			return 3;
+		}
+
+		if (ContainsText(BoneName, "Spine") || ContainsText(BoneName, "spine"))
+		{
+			return 2;
+		}
+
+		if (ContainsText(BoneName, "Root") || ContainsText(BoneName, "root"))
+		{
+			return 1;
+		}
+
+		return 0;
+	}
+
+	FVector ComputeEntryAngularVelocity(const FVector& InitialLinearVelocity)
+	{
+		FVector HorizontalVelocity(InitialLinearVelocity.X, InitialLinearVelocity.Y, 0.0f);
+
+		FVector FallDirection = FVector::ForwardVector;
+		if (HorizontalVelocity.Length() > 1.0f)
+		{
+			FallDirection = HorizontalVelocity.Normalized();
+		}
+
+		FVector FallAxis = FVector::UpVector.Cross(FallDirection);
+		if (FallAxis.Length() <= 1.e-3f)
+		{
+			FallAxis = FVector::RightVector;
+		}
+		else
+		{
+			FallAxis.Normalize();
+		}
+
+		constexpr float EntryAngularSpeed = 4.0f;
+		return FallAxis * EntryAngularSpeed;
+	}
 }
 
-void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* MeshComp, FPhysicsScene* Scene)
+void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* MeshComp, FPhysicsScene* Scene, const FVector& InitialLinearVelocity)
 {
 	if (bInitialized || !Asset || !MeshComp || !Scene)
 	{
@@ -56,6 +108,10 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 	BodyToBoneIndex.reserve(NumSetups);
 
 	TMap<FString, int32> BoneToBody;
+	
+	const FVector EntryAngularVelocity = ComputeEntryAngularVelocity(InitialLinearVelocity);
+	int32 EntryAngularVelocityBodyIndex = -1;
+	int32 EntryAngularVelocityBodyScore = -1;
 
 	for (UBodySetup* Setup : BodySetups)
 	{
@@ -83,10 +139,26 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 			Bodies.pop_back();
 			continue;
 		}
+		
+		Body.SetLinearVelocity(InitialLinearVelocity);
 
 		const int32 BodyIndex = static_cast<int32>(Bodies.size()) - 1;
 		BodyToBoneIndex.push_back(MeshComp->FindBoneIndex(BoneName));
 		BoneToBody[BoneName] = BodyIndex;
+		
+		const int32 BodyScore = GetEntryAngularVelocityTargetScore(BoneName);
+		if (EntryAngularVelocityBodyIndex < 0 || BodyScore > EntryAngularVelocityBodyScore)
+		{
+			EntryAngularVelocityBodyIndex = BodyIndex;
+			EntryAngularVelocityBodyScore = BodyScore;
+		}
+	}
+	
+	AnchorBodyIndex = EntryAngularVelocityBodyIndex;
+	
+	if (EntryAngularVelocityBodyIndex >= 0 && EntryAngularVelocityBodyIndex < static_cast<int32>(Bodies.size()))
+	{
+		Bodies[EntryAngularVelocityBodyIndex].SetAngularVelocity(EntryAngularVelocity);
 	}
 
 	for (UPhysicsConstraintTemplate* Constraint : Asset->GetConstraintTemplates())
@@ -139,7 +211,30 @@ void FRagdollInstance::Release(FPhysicsScene* Scene)
 	BodyToBoneIndex.clear();
 	InitialLocalPose.clear();
 	ComponentWorldScaleAtStart = FVector::OneVector;
+	AnchorBodyIndex = -1;
 	bInitialized = false;
+}
+
+bool FRagdollInstance::GetAnchorWorldLocation(FVector& OutWorldLocation) const
+{
+	if (!bInitialized)
+	{
+		return false;
+	}
+
+	if (AnchorBodyIndex < 0 || AnchorBodyIndex >= static_cast<int32>(Bodies.size()))
+	{
+		return false;
+	}
+
+	const FBodyInstance& AnchorBody = Bodies[AnchorBodyIndex];
+	if (!AnchorBody.IsValidBody())
+	{
+		return false;
+	}
+
+	OutWorldLocation = AnchorBody.GetBodyTransform().Location;
+	return true;
 }
 
 bool FRagdollInstance::BuildLocalPoseFromBodies(USkeletalMeshComponent* MeshComp, TArray<FTransform>& OutLocalPose) const

@@ -42,6 +42,8 @@ struct FBodyInstance
 	
 	void SetLinearVelocity(const FVector& Velocity);
 	FVector GetLinearVelocity() const;
+	
+	void SetAngularVelocity(const FVector& AngularVelocity);
 
 	AActor* GetOwnerActor() const;
 	void SyncFromPhysics();

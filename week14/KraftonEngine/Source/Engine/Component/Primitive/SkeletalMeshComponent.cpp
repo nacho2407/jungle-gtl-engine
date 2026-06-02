@@ -29,6 +29,86 @@
 #include <algorithm>
 #include <cstring>
 
+namespace
+{
+	bool ContainsBoneText(const FString& Text, const char* Pattern)
+	{
+		return Text.find(Pattern) != std::string::npos;
+	}
+
+	int32 GetRecoveryFacingBoneScore(const FString& BoneName)
+	{
+		if (ContainsBoneText(BoneName, "Spine2") || ContainsBoneText(BoneName, "spine2")
+			|| ContainsBoneText(BoneName, "Chest") || ContainsBoneText(BoneName, "chest"))
+		{
+			return 4;
+		}
+
+		if (ContainsBoneText(BoneName, "Spine1") || ContainsBoneText(BoneName, "spine1")
+			|| ContainsBoneText(BoneName, "Spine") || ContainsBoneText(BoneName, "spine"))
+		{
+			return 3;
+		}
+
+		if (ContainsBoneText(BoneName, "Pelvis") || ContainsBoneText(BoneName, "pelvis")
+			|| ContainsBoneText(BoneName, "Hips") || ContainsBoneText(BoneName, "hips"))
+		{
+			return 2;
+		}
+
+		if (ContainsBoneText(BoneName, "Root") || ContainsBoneText(BoneName, "root"))
+		{
+			return 1;
+		}
+
+		return 0;
+	}
+
+	int32 FindBestRecoveryFacingBoneIndex(const FSkeletalMesh& Mesh)
+	{
+		int32 BestBoneIndex = -1;
+		int32 BestScore = 0;
+
+		for (int32 BoneIndex = 0; BoneIndex < static_cast<int32>(Mesh.Bones.size()); ++BoneIndex)
+		{
+			const int32 Score = GetRecoveryFacingBoneScore(Mesh.Bones[BoneIndex].Name);
+			if (Score > BestScore)
+			{
+				BestScore = Score;
+				BestBoneIndex = BoneIndex;
+			}
+		}
+
+		return BestBoneIndex;
+	}
+
+	FMatrix BuildComponentSpaceBoneMatrix(
+		const FSkeletalMesh& Mesh,
+		const TArray<FTransform>& LocalPose,
+		int32 TargetBoneIndex)
+	{
+		TArray<FMatrix> ComponentSpaceMatrices;
+		ComponentSpaceMatrices.resize(LocalPose.size(), FMatrix::Identity);
+
+		for (int32 BoneIndex = 0; BoneIndex <= TargetBoneIndex; ++BoneIndex)
+		{
+			const FMatrix LocalMatrix = LocalPose[BoneIndex].ToMatrix();
+			const int32 ParentIndex = Mesh.Bones[BoneIndex].ParentIndex;
+
+			if (ParentIndex >= 0 && ParentIndex < BoneIndex)
+			{
+				ComponentSpaceMatrices[BoneIndex] = LocalMatrix * ComponentSpaceMatrices[ParentIndex];
+			}
+			else
+			{
+				ComponentSpaceMatrices[BoneIndex] = LocalMatrix;
+			}
+		}
+
+		return ComponentSpaceMatrices[TargetBoneIndex];
+	}
+}
+
 USkeletalMeshComponent::USkeletalMeshComponent() = default;
 
 USkeletalMeshComponent::~USkeletalMeshComponent()
@@ -303,13 +383,208 @@ void USkeletalMeshComponent::ClearAnimInstance()
     }
 }
 
+void USkeletalMeshComponent::UpdateComponentLinearVelocity(float DeltaTime)
+{
+	const FVector CurrentLocation = GetWorldLocation();
+
+	if (bHasLastComponentWorldLocation && DeltaTime > 0.0f)
+	{
+		ComponentLinearVelocity = (CurrentLocation - LastComponentWorldLocation) / DeltaTime;
+	}
+	else
+	{
+		ComponentLinearVelocity = FVector::ZeroVector;
+	}
+
+	LastComponentWorldLocation = CurrentLocation;
+	bHasLastComponentWorldLocation = true;
+}
+
+void USkeletalMeshComponent::FollowRagdollAnchor()
+{
+	if (!bSimulatingPhysics || !Ragdoll)
+	{
+		return;
+	}
+
+	FVector AnchorWorldLocation;
+	if (!Ragdoll->GetAnchorWorldLocation(AnchorWorldLocation))
+	{
+		return;
+	}
+
+	SetWorldLocation(AnchorWorldLocation);
+}
+
+void USkeletalMeshComponent::ClearRagdollRecovery()
+{
+	RagdollRecoveryStartPose.clear();
+	RagdollRecoveryElapsed = 0.0f;
+	bRecoveringFromRagdoll = false;
+}
+
+ERagdollRecoveryFacing USkeletalMeshComponent::DetermineRagdollRecoveryFacing(const TArray<FTransform>& LocalPose) const
+{
+	USkeletalMesh* Mesh = GetSkeletalMesh();
+	FSkeletalMesh* MeshAsset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+	if (!MeshAsset || LocalPose.empty() || LocalPose.size() != MeshAsset->Bones.size())
+	{
+		return ERagdollRecoveryFacing::Unknown;
+	}
+
+	const int32 FacingBoneIndex = FindBestRecoveryFacingBoneIndex(*MeshAsset);
+	if (FacingBoneIndex < 0 || FacingBoneIndex >= static_cast<int32>(LocalPose.size()))
+	{
+		return ERagdollRecoveryFacing::Unknown;
+	}
+
+	const FMatrix ComponentSpaceBoneMatrix =
+		BuildComponentSpaceBoneMatrix(*MeshAsset, LocalPose, FacingBoneIndex);
+
+	const FMatrix BoneWorldMatrix = ComponentSpaceBoneMatrix * GetWorldMatrix();
+	FVector BodyUp = BoneWorldMatrix.TransformVector(FVector::UpVector);
+
+	if (BodyUp.Length() <= 1.e-3f)
+	{
+		return ERagdollRecoveryFacing::Unknown;
+	}
+
+	BodyUp.Normalize();
+
+	const float UpDot = BodyUp.Dot(FVector::UpVector);
+	return UpDot >= 0.0f
+		? ERagdollRecoveryFacing::FaceUp
+		: ERagdollRecoveryFacing::FaceDown;
+}
+
+const char* USkeletalMeshComponent::GetRagdollRecoveryFacingName(ERagdollRecoveryFacing Facing) const
+{
+	switch (Facing)
+	{
+	case ERagdollRecoveryFacing::FaceUp:
+		return "FaceUp";
+	case ERagdollRecoveryFacing::FaceDown:
+		return "FaceDown";
+	default:
+		return "Unknown";
+	}
+}
+
+FString USkeletalMeshComponent::GetRagdollGetUpAnimationPath(ERagdollRecoveryFacing Facing) const
+{
+	switch (Facing)
+	{
+	case ERagdollRecoveryFacing::FaceUp:
+		return RagdollFaceUpGetUpAnimationPath.ToString();
+	case ERagdollRecoveryFacing::FaceDown:
+		return RagdollFaceDownGetUpAnimationPath.ToString();
+	default:
+		return "None";
+	}
+}
+
+void USkeletalMeshComponent::TryPlayRagdollGetUpAnimation(ERagdollRecoveryFacing Facing)
+{
+	const FString AnimPath = GetRagdollGetUpAnimationPath(Facing);
+	if (AnimPath.empty() || AnimPath == "None")
+	{
+		UE_LOG(
+			"Ragdoll get-up animation not set. Facing=%s",
+			GetRagdollRecoveryFacingName(Facing)
+		);
+		return;
+	}
+
+	UAnimSequence* GetUpAnimation = FAnimationManager::Get().LoadAnimation(AnimPath);
+	if (!GetUpAnimation)
+	{
+		UE_LOG("Ragdoll get-up animation load failed. Path=%s", AnimPath.c_str());
+		return;
+	}
+
+	PlayAnimation(GetUpAnimation, false);
+}
+
+void USkeletalMeshComponent::BeginRagdollRecovery()
+{
+	ClearRagdollRecovery();
+
+	if (!Ragdoll)
+	{
+		return;
+	}
+
+	FollowRagdollAnchor();
+
+	if (Ragdoll->BuildLocalPoseFromBodies(this, RagdollRecoveryStartPose))
+	{
+		bRecoveringFromRagdoll = !RagdollRecoveryStartPose.empty();
+		LastRagdollRecoveryFacing = DetermineRagdollRecoveryFacing(RagdollRecoveryStartPose);
+
+		UE_LOG(
+			"Ragdoll recovery facing: %s",
+			GetRagdollRecoveryFacingName(LastRagdollRecoveryFacing)
+		);
+		
+		TryPlayRagdollGetUpAnimation(LastRagdollRecoveryFacing);
+	}
+}
+
+bool USkeletalMeshComponent::ApplyRagdollRecoveryBlend(float DeltaTime, const FPoseContext& AnimPose)
+{
+	if (!bRecoveringFromRagdoll || !AnimPose.IsValid())
+	{
+		return false;
+	}
+
+	if (RagdollRecoveryStartPose.size() != AnimPose.Pose.size())
+	{
+		ClearRagdollRecovery();
+		return false;
+	}
+
+	RagdollRecoveryElapsed += DeltaTime;
+
+	const float Duration = std::max(RagdollRecoveryBlendDuration, 0.0f);
+	const float Alpha = Duration > 0.0f
+		? std::clamp(RagdollRecoveryElapsed / Duration, 0.0f, 1.0f)
+		: 1.0f;
+
+	FPoseContext RagdollPose;
+	RagdollPose.SkeletalMesh = AnimPose.SkeletalMesh;
+	RagdollPose.Pose = RagdollRecoveryStartPose;
+
+	TArray<float> BoneWeights;
+	BoneWeights.assign(AnimPose.Pose.size(), Alpha);
+
+	FPoseContext FinalPose;
+	FAnimationRuntime::BlendTwoPosesPerBone(
+		RagdollPose,
+		AnimPose,
+		BoneWeights,
+		FinalPose);
+
+	ApplyPoseToMesh(FinalPose);
+
+	if (Alpha >= 1.0f)
+	{
+		ClearRagdollRecovery();
+	}
+
+	return true;
+}
+
 void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
+	UpdateComponentLinearVelocity(DeltaTime);
+
 	FPoseContext AnimPose;
 	const bool bHasAnimPose = EvaluateAnimInstanceToPose(DeltaTime, AnimPose);
 
 	if (bSimulatingPhysics && Ragdoll)
 	{
+		FollowRagdollAnchor();
+		
 		TArray<FTransform> PhysicsLocalPose;
 		if (Ragdoll->BuildLocalPoseFromBodies(this, PhysicsLocalPose))
 		{
@@ -343,13 +618,19 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		}
 	}
 	
+	if (bHasAnimPose && ApplyRagdollRecoveryBlend(DeltaTime, AnimPose))
+	{
+		UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+		return;
+	}
+
 	if (bHasAnimPose)
 	{
 		ApplyPoseToMesh(AnimPose);
 		UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 		return;
 	}
-	
+
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
@@ -386,6 +667,8 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 
 	if (bEnable)
 	{
+		ClearRagdollRecovery();
+		
 		UPhysicsAsset* Asset = GetPhysicsAsset(); // 3-B: 오버라이드 ?? 메시 기본
 		if (!Asset)
 		{
@@ -399,7 +682,7 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 		{
 			Ragdoll = std::make_unique<FRagdollInstance>();
 		}
-		Ragdoll->Initialize(Asset, this, Scene);
+		Ragdoll->Initialize(Asset, this, Scene, ComponentLinearVelocity);
 		bSimulatingPhysics = Ragdoll->IsActive();
 		if (!bSimulatingPhysics)
 		{
@@ -412,6 +695,7 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 	{
 		if (Ragdoll)
 		{
+			BeginRagdollRecovery();
 			Ragdoll->Release(Scene);
 		}
 		bSimulatingPhysics = false;
