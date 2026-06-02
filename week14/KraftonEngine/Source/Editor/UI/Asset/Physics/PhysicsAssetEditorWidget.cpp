@@ -349,6 +349,7 @@ void FPhysicsAssetEditorWidget::Open(UObject* Object)
 	ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
 	ViewportClient.Initialize(Device, static_cast<uint32>(ViewportSize.x), static_cast<uint32>(ViewportSize.y));
 	ViewportClient.SetPreviewScene(WorldContext.World, PhysicsAsset, PreviewMeshComponent);
+	ViewportClient.CreatePreviewGizmo();
 	ApplyViewPreset(ActiveViewPreset);
 	ViewportClient.SetSimulatePhysics(false);
 	ViewportClient.ResetCameraToPreviewBounds();
@@ -362,19 +363,20 @@ void FPhysicsAssetEditorWidget::Close()
 	FAssetEditorWidget::Close();
 	StopPreviewSimulation();
 
-	if (UWorld* PreviewWorld = ViewportClient.GetPreviewWorld())
+	UWorld* PreviewWorld = ViewportClient.GetPreviewWorld();
+	if (PreviewWorld)
 	{
 		FScene& PreviewScene = PreviewWorld->GetScene();
 		GEngine->GetRenderer().GetResources().ReleaseShadowResourcesForScene(&PreviewScene);
-
-		if (PreviewWorldHandle.IsValid())
-		{
-			GEngine->DestroyWorldContext(PreviewWorldHandle);
-		}
 	}
 
 	FSlateApplication::Get().UnregisterViewport(&ViewportClient);
 	ViewportClient.Release();
+
+	if (PreviewWorldHandle.IsValid())
+	{
+		GEngine->DestroyWorldContext(PreviewWorldHandle);
+	}
 
 	PreviewMesh = nullptr;
 	PreviewMeshComponent = nullptr;
@@ -387,6 +389,10 @@ void FPhysicsAssetEditorWidget::Tick(float DeltaTime)
 	if (ViewportClient.IsRenderable())
 	{
 		ViewportClient.Tick(DeltaTime);
+		if (ViewportClient.ConsumeGizmoEdited())
+		{
+			MarkDirty();
+		}
 	}
 	TickPreviewSimulation(DeltaTime);
 }
@@ -947,6 +953,7 @@ void FPhysicsAssetEditorWidget::RenderViewportPanel(UPhysicsAsset* Asset, ImVec2
 
 	FViewportToolbarContext Context;
 	Context.Renderer = &GEngine->GetRenderer();
+	Context.Gizmo = ViewportClient.GetGizmo();
 	Context.Settings = &FEditorSettings::Get().MeshEditorViewportSettings;
 	Context.RenderOptions = &ViewportClient.GetRenderOptions();
 	Context.ToolbarLeft = ViewportPos.x;
@@ -954,11 +961,23 @@ void FPhysicsAssetEditorWidget::RenderViewportPanel(UPhysicsAsset* Asset, ImVec2
 	Context.ToolbarWidth = Size.x;
 	Context.bReservePlayStopSpace = false;
 	Context.bShowAddActor = false;
-	Context.bShowGizmoControls = false;
+	Context.bShowGizmoControls = true;
 	Context.bShowCameraControls = true;
 	Context.bShowViewMode = true;
 	Context.bShowShowFlags = true;
 	Context.bShowPhysicsAssetShowFlags = true;
+	Context.OnCoordSystemToggled = [&]()
+	{
+		FGizmoToolSettings& Settings = FEditorSettings::Get().MeshEditorViewportSettings.Gizmo;
+		Settings.CoordSystem = (Settings.CoordSystem == EEditorCoordSystem::World)
+			? EEditorCoordSystem::Local
+			: EEditorCoordSystem::World;
+		ViewportClient.ApplyTransformSettingsToGizmo();
+	};
+	Context.OnSettingsChanged = [&]()
+	{
+		ViewportClient.ApplyTransformSettingsToGizmo();
+	};
 	Context.OnRenderViewModeExtras = [&]()
 	{
 		ImGui::TextUnformatted("Physics Asset View");
@@ -1448,6 +1467,10 @@ void FPhysicsAssetEditorWidget::RenderSkeletonTreePanel(UPhysicsAsset* Asset)
 
 	if (DrawSmallToolbarButton("+##SkeletonTreeAdd", ImVec2(34.0f, 24.0f), true))
 	{
+		if (Selection.Type == EPhysicsAssetEditorSelectionType::Bone)
+		{
+			CreateBodyForBone(Asset, Selection.BoneIndex);
+		}
 	}
 	ImGui::SameLine();
 	const float AvailableSearchWidth = ImGui::GetContentRegionAvail().x - 30.0f;
@@ -1723,20 +1746,7 @@ void FPhysicsAssetEditorWidget::RenderDetailsPanel(UPhysicsAsset* Asset)
 			}
 			else if (ImGui::Button("Create Body"))
 			{
-				FPhysicsAssetBodyShapeDesc ShapeDesc;
-				if (MakeDefaultBoneShapeDesc(*MeshAsset, Selection.BoneIndex, BodyCreationParams.PrimitiveType, ShapeDesc))
-				{
-					if (UBodySetup* Body = FPhysicsAssetEditingLibrary::AddPrimitiveToBone(
-						*Asset,
-						*MeshAsset,
-						BoneName,
-						ShapeDesc,
-						MapAngularMode(BodyCreationParams.AngularConstraintMode)))
-					{
-						SelectBody(Asset->FindBodyIndex(Body->GetBoneName()));
-						MarkDirty();
-					}
-				}
+				CreateBodyForBone(Asset, Selection.BoneIndex);
 			}
 		}
 		return;
@@ -1948,7 +1958,7 @@ void FPhysicsAssetEditorWidget::RenderConstraintDetails(UPhysicsAsset* Asset)
 		ImGui::Text("Parent: %s", Constraint->GetParentBoneName().ToString().c_str());
 		ImGui::Text("Child: %s", Constraint->GetChildBoneName().ToString().c_str());
 
-		const char* Modes[] = { "Free", "Locked", "Limited" };
+		const char* Modes[] = { "Free", "Limited", "Locked" };
 		int32 Mode = static_cast<int32>(Constraint->GetAngularMode());
 		if (ImGui::Combo("Angular Mode", &Mode, Modes, 3))
 		{
@@ -1976,8 +1986,22 @@ void FPhysicsAssetEditorWidget::RenderConstraintDetails(UPhysicsAsset* Asset)
 			Constraint->SetLocalFrameA(FrameA);
 			MarkDirty();
 		}
+		FVector FrameAEuler = FRotator::FromQuaternion(FrameA.Rotation).ToVector();
+		if (ImGui::DragFloat3("Frame A Rotation", &FrameAEuler.X, 0.25f))
+		{
+			FrameA.Rotation = FRotator(FrameAEuler).ToQuaternion();
+			Constraint->SetLocalFrameA(FrameA);
+			MarkDirty();
+		}
 		if (ImGui::DragFloat3("Frame B Location", &FrameB.Location.X, 0.01f))
 		{
+			Constraint->SetLocalFrameB(FrameB);
+			MarkDirty();
+		}
+		FVector FrameBEuler = FRotator::FromQuaternion(FrameB.Rotation).ToVector();
+		if (ImGui::DragFloat3("Frame B Rotation", &FrameBEuler.X, 0.25f))
+		{
+			FrameB.Rotation = FRotator(FrameBEuler).ToQuaternion();
 			Constraint->SetLocalFrameB(FrameB);
 			MarkDirty();
 		}
@@ -1991,6 +2015,42 @@ void FPhysicsAssetEditorWidget::RenderConstraintDetails(UPhysicsAsset* Asset)
 			}
 		}
 	}
+}
+
+bool FPhysicsAssetEditorWidget::CreateBodyForBone(UPhysicsAsset* Asset, int32 BoneIndex)
+{
+	if (!Asset || !PreviewMesh || !PreviewMesh->GetSkeletalMeshAsset())
+	{
+		return false;
+	}
+
+	const FSkeletalMesh* MeshAsset = PreviewMesh->GetSkeletalMeshAsset();
+	if (BoneIndex < 0 || BoneIndex >= static_cast<int32>(MeshAsset->Bones.size()))
+	{
+		return false;
+	}
+
+	const FName BoneName(MeshAsset->Bones[BoneIndex].Name);
+	FPhysicsAssetBodyShapeDesc ShapeDesc;
+	if (!MakeDefaultBoneShapeDesc(*MeshAsset, BoneIndex, BodyCreationParams.PrimitiveType, ShapeDesc))
+	{
+		return false;
+	}
+
+	UBodySetup* Body = FPhysicsAssetEditingLibrary::AddPrimitiveToBone(
+		*Asset,
+		*MeshAsset,
+		BoneName,
+		ShapeDesc,
+		MapAngularMode(BodyCreationParams.AngularConstraintMode));
+	if (!Body)
+	{
+		return false;
+	}
+
+	SelectBody(Asset->FindBodyIndex(Body->GetBoneName()));
+	MarkDirty();
+	return true;
 }
 
 void FPhysicsAssetEditorWidget::RenderToolsPanel(UPhysicsAsset* Asset, ImVec2 Size)
@@ -2143,6 +2203,24 @@ void FPhysicsAssetEditorWidget::HandleViewportSelectionClick()
 	{
 		return;
 	}
+	if (ViewportClient.IsGizmoHolding() || ViewportClient.IsGizmoHandleAtMouse())
+	{
+		return;
+	}
+
+	if (ActiveMode == EPhysicsAssetEditorMode::Constraint)
+	{
+		int32 ConstraintIndex = -1;
+		if (ViewportClient.PickConstraintAtMouse(ConstraintIndex))
+		{
+			SelectConstraint(ConstraintIndex);
+		}
+		else
+		{
+			ClearSelection();
+		}
+		return;
+	}
 
 	FPhysicsAssetEditorHitResult Hit;
 	if (ViewportClient.PickBodyShapeAtMouse(Hit))
@@ -2256,15 +2334,19 @@ void FPhysicsAssetEditorWidget::SyncViewportHighlight()
 	{
 	case EPhysicsAssetEditorSelectionType::Body:
 		ViewportClient.SetHighlightedBody(Selection.BodyIndex);
+		ViewportClient.SetGizmoBodySelection(Selection.BodyIndex);
 		break;
 	case EPhysicsAssetEditorSelectionType::Shape:
 		ViewportClient.SetHighlightedShape(Selection.BodyIndex, Selection.ShapeType, Selection.ShapeIndex);
+		ViewportClient.SetGizmoShapeSelection(Selection.BodyIndex, Selection.ShapeType, Selection.ShapeIndex);
 		break;
 	case EPhysicsAssetEditorSelectionType::Constraint:
 		ViewportClient.SetHighlightedConstraint(Selection.ConstraintIndex);
+		ViewportClient.SetGizmoConstraintSelection(Selection.ConstraintIndex);
 		break;
 	default:
 		ViewportClient.ClearHighlight();
+		ViewportClient.ClearGizmoSelection();
 		break;
 	}
 }

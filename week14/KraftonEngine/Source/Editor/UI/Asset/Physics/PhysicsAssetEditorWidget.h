@@ -43,6 +43,7 @@ private:
 	void RenderBoneTreeNode(const FSkeletalMesh* MeshAsset, UPhysicsAsset* Asset, int32 BoneIndex);
 	void RenderShapeDetails(UPhysicsAsset* Asset, UBodySetup* Body);
 	void RenderConstraintDetails(UPhysicsAsset* Asset);
+	bool CreateBodyForBone(UPhysicsAsset* Asset, int32 BoneIndex);
 	bool RegenerateBodies(UPhysicsAsset* Asset);
 	void SetEditorMode(EPhysicsAssetEditorMode Mode);
 	void ApplyViewPreset(EPhysicsAssetEditorViewPreset Preset);
