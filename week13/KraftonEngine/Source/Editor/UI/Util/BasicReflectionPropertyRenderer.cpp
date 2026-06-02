@@ -196,17 +196,12 @@ namespace
 			return RenderSoftObjectPathInput(Value, ValuePtr);
 		}
 
-		const TArray<FAssetListItem>& Assets = FAssetRegistry::ListByTypeName(AssetType.c_str());
-		if (Assets.empty())
-		{
-			return RenderSoftObjectPathInput(Value, ValuePtr);
-		}
-
 		const FString CurrentPath = GetSoftObjectPath(Value, ValuePtr);
 		const FString Preview = (CurrentPath.empty() || CurrentPath == "None") ? "None" : CurrentPath;
 		bool bChanged = false;
 		if (ImGui::BeginCombo("##Value", Preview.c_str()))
 		{
+			const TArray<FAssetListItem>& Assets = FAssetRegistry::ListByTypeName(AssetType.c_str());
 			const bool bSelectedNone = CurrentPath.empty() || CurrentPath == "None";
 			if (ImGui::Selectable("None", bSelectedNone))
 			{
@@ -216,6 +211,11 @@ namespace
 			if (bSelectedNone)
 			{
 				ImGui::SetItemDefaultFocus();
+			}
+
+			if (Assets.empty())
+			{
+				ImGui::TextDisabled("(no assets)");
 			}
 
 			for (const FAssetListItem& Item : Assets)
