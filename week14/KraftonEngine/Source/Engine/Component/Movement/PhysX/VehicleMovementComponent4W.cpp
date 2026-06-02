@@ -1,5 +1,6 @@
 ﻿#include "VehicleMovementComponent4W.h"
 
+#include "Component/Primitive/StaticMeshComponent.h"
 #include "GameFramework/AActor.h"
 #include "Render/Scene/FScene.h"
 
@@ -132,6 +133,36 @@ void UVehicleMovementComponent4W::SetDriveInput(const float Throttle, const floa
 	{
 		VehicleInstance->SetDriveInput(Throttle, Brake, Steer, bReverse);
 	}
+
+	ApplyWheelMeshSteer(Steer);
+}
+
+void UVehicleMovementComponent4W::ApplyWheelMeshSteer(const float Steer) const
+{
+	const float ClampedSteer = FMath::Clamp(Steer, -1.0f, 1.0f);
+
+	ApplySingleWheelMeshSteer(FrontLeftWheelMesh, FrontLeftWheelBaseRotation, bHasFrontLeftWheelBaseRotation, ClampedSteer);
+	ApplySingleWheelMeshSteer(FrontRightWheelMesh, FrontRightWheelBaseRotation, bHasFrontRightWheelBaseRotation, ClampedSteer);
+}
+
+void UVehicleMovementComponent4W::ApplySingleWheelMeshSteer(
+	UStaticMeshComponent* WheelMesh,
+	FRotator& CachedBaseRotation,
+	bool& bHasCachedBaseRotation,
+	const float Steer) const
+{
+	if (!WheelMesh)
+	{
+		return;
+	}
+
+	if (!bHasCachedBaseRotation)
+	{
+		CachedBaseRotation = WheelMesh->GetRelativeRotation();
+		bHasCachedBaseRotation = true;
+	}
+
+	WheelMesh->SetRelativeRotation(CachedBaseRotation + VisualSteerRotationScale * Steer);
 }
 
 bool UVehicleMovementComponent4W::CreateVehicleInstance(physx::PxPhysics* Physics, physx::PxScene* Scene,
