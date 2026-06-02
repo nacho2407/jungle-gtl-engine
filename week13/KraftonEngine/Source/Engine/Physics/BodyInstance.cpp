@@ -288,6 +288,9 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
     OutDesc.ResponseContainer = Body.ResponseContainer;
 	OutDesc.bIgnoreSameOwner = Body.bIgnoreSameOwner;
 
+    Body.Mass = Comp->GetMass();
+    Body.CenterOfMassOffset = Comp->GetCenterOfMass();
+
     OutDesc.Mass = Body.Mass > 0.001f ? Body.Mass : 0.001f;
     OutDesc.CenterOfMassOffset = Body.CenterOfMassOffset;
     OutDesc.LinearDamping = Body.LinearDamping;
