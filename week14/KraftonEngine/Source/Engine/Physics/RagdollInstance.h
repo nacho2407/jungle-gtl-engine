@@ -22,5 +22,6 @@ struct FRagdollInstance
 	void Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* MeshComp, FPhysicsScene* Scene);
 	void Release(FPhysicsScene* Scene);
 
+	bool BuildLocalPoseFromBodies(USkeletalMeshComponent* MeshComp, TArray<FTransform>& OutLocalPose) const;
 	void SyncBonesFromBodies(USkeletalMeshComponent* MeshComp); // 시뮬레이션 결과(바디 월드)를 본 포즈로 역기입. 매 틱 호출
 };

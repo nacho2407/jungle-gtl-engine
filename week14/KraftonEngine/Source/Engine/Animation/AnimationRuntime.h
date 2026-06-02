@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Core/Types/CoreTypes.h"
 #include "Math/Transform.h"
 
 struct FPoseContext;
@@ -18,6 +19,18 @@ namespace FAnimationRuntime
 		const FPoseContext& A,
 		const FPoseContext& B,
 		float Alpha,
+		FPoseContext& Out);
+	
+	// 본별 weight 로 두 pose 를 보간한다.
+	// BoneWeights[i] == 0 → A pose, 1 → B pose.
+	// BoneWeights 가 비어 있거나 특정 bone weight 가 없으면 0 으로 보고 A pose 를 유지한다.
+	//
+	// Ragdoll blend 에서는 A = animation pose, B = physics pose 로 사용한다.
+	// Morph target 은 bone별 물리 weight 와 직접 대응되지 않으므로 A 쪽 값을 유지한다.
+	void BlendTwoPosesPerBone(
+		const FPoseContext& A,
+		const FPoseContext& B,
+		const TArray<float>& BoneWeights,
 		FPoseContext& Out);
 
 	// 본 로컬 행렬 → FTransform 분해. row-major 가정. row 별 scale 을 제거한 뒤 회전을 추출.

@@ -142,94 +142,96 @@ void FRagdollInstance::Release(FPhysicsScene* Scene)
 	bInitialized = false;
 }
 
-void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
+bool FRagdollInstance::BuildLocalPoseFromBodies(USkeletalMeshComponent* MeshComp, TArray<FTransform>& OutLocalPose) const
 {
+	OutLocalPose.clear();
+	
 	if (!bInitialized || !MeshComp)
 	{
-		return;
+		return false;
 	}
 
 	USkeletalMesh* Mesh  = MeshComp->GetSkeletalMesh();
 	FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
 	if (!Asset)
 	{
-		return;
+		return false;
 	}
 
 	const int32 NumBones = static_cast<int32>(Asset->Bones.size());
 	if (NumBones == 0 || static_cast<int32>(InitialLocalPose.size()) != NumBones)
 	{
-		return;
+		return false;
 	}
-
+	
 	const FMatrix CompWorldInv = MeshComp->GetWorldMatrix().GetInverse();
-	const FTransform CompWorldNoScale(
-		MeshComp->GetWorldLocation(),
-		MeshComp->GetWorldRotation().ToQuaternion(),
-		FVector::OneVector);
+	const FTransform CompWorldNoScale(MeshComp->GetWorldLocation(), MeshComp->GetWorldRotation().ToQuaternion(), FVector::OneVector);
 	const FMatrix CompWorldNoScaleInv = CompWorldNoScale.ToMatrix().GetInverse();
-
+	
 	TArray<FMatrix> CompGlobal;
 	CompGlobal.resize(NumBones, FMatrix::Identity);
+	
 	TArray<bool> bSolved;
 	bSolved.resize(NumBones, false);
-
-	for (int32 i = 0; i < static_cast<int32>(Bodies.size()); ++i)
+	
+	// body의 world transform -> 메시 컴포넌트 기준 transform
+	for (int32 i=0; i < static_cast<int32>(Bodies.size()); ++i)
 	{
 		if (!Bodies[i].IsValidBody())
 		{
 			continue;
 		}
-
+		
 		const int32 BoneIndex = BodyToBoneIndex[i];
 		if (BoneIndex < 0 || BoneIndex >= NumBones)
 		{
 			continue;
 		}
-
+		
 		const FTransform BodyWorld = Bodies[i].GetBodyTransform();
+		
 		FMatrix BodyCompGlobal = BodyWorld.ToMatrix() * CompWorldNoScaleInv;
 		BodyCompGlobal.SetLocation(CompWorldInv.TransformPositionWithW(BodyWorld.Location));
+		
 		CompGlobal[BoneIndex] = BodyCompGlobal;
-		bSolved[BoneIndex]    = true;
+		bSolved[BoneIndex] = true;
 	}
-
-	for (int32 b = 0; b < NumBones; ++b)
+	
+	// 물리 바디 없어 아직 계산되지 않은 본을, 부모 본 transform을 이용해서 채움.
+	for (int32 b=0; b < NumBones; ++b)
 	{
 		if (bSolved[b])
 		{
 			continue;
 		}
-
+		
 		const int32 Parent = Asset->Bones[b].ParentIndex;
 		if (Parent >= 0 && Parent < b && bSolved[Parent])
 		{
 			CompGlobal[b] = InitialLocalPose[b].ToMatrix() * CompGlobal[Parent];
-			bSolved[b]   = true;
+			bSolved[b] = true;
 		}
 	}
-
-	// Some FBX files put weighted vertices on a helper bone above the first simulated body
-	// (for example Bip001 -> Pelvis). Infer those ancestors from the solved child body so
-	// helper-weighted triangles do not stay at the bind pose and stretch into long spikes.
-	for (int32 b = NumBones - 1; b >= 0; --b)
+	
+	// 자식으로부터 부모를 거꾸로 추정
+	for (int32 b=NumBones-1; b >= 0; --b)
 	{
 		if (bSolved[b])
 		{
 			continue;
 		}
-
+		
 		for (int32 Child = b + 1; Child < NumBones; ++Child)
 		{
 			if (Asset->Bones[Child].ParentIndex == b && bSolved[Child])
 			{
 				CompGlobal[b] = InitialLocalPose[Child].ToMatrix().GetInverse() * CompGlobal[Child];
-				bSolved[b]   = true;
+				bSolved[b] = true;
 				break;
 			}
 		}
 	}
-
+	
 	for (int32 b = 0; b < NumBones; ++b)
 	{
 		if (bSolved[b])
@@ -241,22 +243,32 @@ void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 		CompGlobal[b] = (Parent >= 0 && Parent < b)
 			? InitialLocalPose[b].ToMatrix() * CompGlobal[Parent]
 			: InitialLocalPose[b].ToMatrix();
+
 		bSolved[b] = true;
 	}
 
-	TArray<FTransform> LocalPose;
-	LocalPose.resize(NumBones);
-
-	for (int32 b = 0; b < NumBones; ++b)
+	OutLocalPose.resize(NumBones);
+	
+	// CompGlobal 배열을 본 로컬 포즈 OutLocalPose로 변환
+	for (int32 b=0; b < NumBones; ++b)
 	{
 		const int32 Parent = Asset->Bones[b].ParentIndex;
 		const FMatrix Local = (Parent >= 0)
 			? CompGlobal[b] * CompGlobal[Parent].GetInverse()
 			: CompGlobal[b];
 
-		LocalPose[b] = FTransform(Local);
-		LocalPose[b].Scale = InitialLocalPose[b].Scale;
+		OutLocalPose[b] = FTransform(Local);
+		OutLocalPose[b].Scale = InitialLocalPose[b].Scale;
 	}
+	
+	return true;
+}
 
-	MeshComp->SetBoneLocalTransforms(LocalPose);
+void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
+{
+	TArray<FTransform> LocalPose;
+	if (BuildLocalPoseFromBodies(MeshComp, LocalPose))
+	{
+		MeshComp->SetBoneLocalTransforms(LocalPose);
+	}
 }

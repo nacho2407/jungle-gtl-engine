@@ -820,7 +820,18 @@
     }, {
       "ClassName" : "ASkeletalMeshActor",
       "Name" : "ASkeletalMeshActor_0",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "ObjectId" : 31,
+          "Properties" : {
+            "ScriptFile" : "TestBBB_RagdollToggle.lua",
+            "bAutoActivate" : true,
+            "bEditorOnly" : false,
+            "bHiddenInComponentTree" : false,
+            "bIsActive" : true,
+            "bTickEnable" : true
+          }
+        }],
       "ObjectId" : 29,
       "Properties" : {
         "PendingActorLocation" : [3.768360, 2.664477, -2.603417],
@@ -841,12 +852,12 @@
           },
           "AnimInstanceClass" : "UCharacterAnimInstance",
           "AnimationData" : {
-            "AnimToPlayPath" : "None",
+            "AnimToPlayPath" : "Content/Data/hirasawa-yui/Walking_mixamo_com.uasset",
             "PlayRate" : 1.000000,
             "bLooping" : true,
             "bPlaying" : true
           },
-          "AnimationMode" : 0,
+          "AnimationMode" : 1,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 5,

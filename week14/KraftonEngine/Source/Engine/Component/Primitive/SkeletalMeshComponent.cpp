@@ -3,6 +3,7 @@
 
 #include "Animation/AnimationManager.h"
 #include "Animation/AnimInstance.h"
+#include "Animation/AnimationRuntime.h"
 #include "Animation/Sequence/AnimSequence.h"
 #include "Animation/Sequence/AnimSequenceBase.h"
 #include "Animation/Instance/AnimSingleNodeInstance.h"
@@ -304,19 +305,51 @@ void USkeletalMeshComponent::ClearAnimInstance()
 
 void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
-	// 래그돌 활성: 애니 평가 대신 물리 결과를 본 포즈로 역기입
-	if (SyncSimulatedPhysics())
+	FPoseContext AnimPose;
+	const bool bHasAnimPose = EvaluateAnimInstanceToPose(DeltaTime, AnimPose);
+
+	if (bSimulatingPhysics && Ragdoll)
 	{
+		TArray<FTransform> PhysicsLocalPose;
+		if (Ragdoll->BuildLocalPoseFromBodies(this, PhysicsLocalPose))
+		{
+			if (bHasAnimPose)
+			{
+				USkeletalMesh* Mesh = GetSkeletalMesh();
+				
+				FPoseContext PhysicsPose;
+				PhysicsPose.SkeletalMesh = Mesh;
+				PhysicsPose.Pose = PhysicsLocalPose;
+
+				TArray<float> BoneWeights;
+				BoneWeights.assign(PhysicsPose.Pose.size(), PhysicsBlendWeight);
+				
+				FPoseContext FinalPose;
+				FAnimationRuntime::BlendTwoPosesPerBone(
+					AnimPose,
+					PhysicsPose,
+					BoneWeights,
+					FinalPose);
+
+				ApplyPoseToMesh(FinalPose);
+			}
+			else
+			{
+				SetBoneLocalTransforms(PhysicsLocalPose);
+			}
+			
+			UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+			return;
+		}
+	}
+	
+	if (bHasAnimPose)
+	{
+		ApplyPoseToMesh(AnimPose);
 		UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 		return;
 	}
-
-    if (EvaluateAnimInstance(DeltaTime))
-    {
-        UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
-        return;
-    }
-
+	
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
@@ -329,6 +362,11 @@ bool USkeletalMeshComponent::SyncSimulatedPhysics()
 
 	Ragdoll->SyncBonesFromBodies(this);
 	return true;
+}
+
+void USkeletalMeshComponent::SetPhysicsBlendWeight(float InWeight)
+{
+	PhysicsBlendWeight = std::clamp(InWeight, 0.0f, 1.0f);
 }
 
 void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
@@ -482,41 +520,59 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
 
 }
 
+// 애니메이션 업데이트라고, 결과 포즈를 OutPose에 담음.
+bool USkeletalMeshComponent::EvaluateAnimInstanceToPose(float DeltaTime, FPoseContext& OutPose)
+{
+	OutPose.SkeletalMesh = nullptr;
+	OutPose.Pose.clear();
+	OutPose.MorphWeights.clear();
+
+	if (!AnimInstance) return false;
+
+	USkeletalMesh* Mesh = GetSkeletalMesh();
+	if (!Mesh) return false;
+
+	FSkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
+	if (!Asset || Asset->Bones.empty()) return false;
+
+	if (UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
+	{
+		if (!CanUseAnimation(SingleNode->GetAnimationAsset()))
+		{
+			SingleNode->SetAnimationAsset(nullptr);
+			return false;
+		}
+	}
+
+	AnimInstance->UpdateAnimation(DeltaTime);
+
+	OutPose.SkeletalMesh = Mesh;
+	OutPose.Pose.resize(Asset->Bones.size());
+	OutPose.ResetToRefPose();
+
+	AnimInstance->EvaluatePose(OutPose);
+	return true;
+}
+
+// 이미 계산된 pose를 실제 mesh에 적용.
+void USkeletalMeshComponent::ApplyPoseToMesh(const FPoseContext& Pose)
+{
+	if (!Pose.IsValid())
+	{
+		return;
+	}
+
+	SetAnimationPose(Pose.Pose, Pose.MorphWeights);
+}
+
 bool USkeletalMeshComponent::EvaluateAnimInstance(float DeltaTime)
 {
-    if (!AnimInstance) return false;
+	FPoseContext AnimPose;
+	if (!EvaluateAnimInstanceToPose(DeltaTime, AnimPose))
+	{
+		return false;
+	}
 
-    USkeletalMesh* Mesh = GetSkeletalMesh();
-    if (!Mesh) return false;
-    FSkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
-    if (!Asset || Asset->Bones.empty()) return false;
-
-    if (UAnimSingleNodeInstance* SingleNode = Cast<UAnimSingleNodeInstance>(AnimInstance))
-    {
-        if (!CanUseAnimation(SingleNode->GetAnimationAsset()))
-        {
-            SingleNode->SetAnimationAsset(nullptr);
-            return false;
-        }
-    }
-
-    AnimInstance->UpdateAnimation(DeltaTime);
-
-    // Root motion 적용은 UCharacterMovementComponent 가 책임.
-    // CMC::TickComponent (TG_DuringPhysics) 가 매 frame 이 AnimInstance->ConsumeRootMotion 으로
-    // 누적값을 가져가 capsule 이동 / 회전에 반영한다 (sweep / floor stick 통과).
-    // Mesh 는 actor transform 을 직접 만지지 않는다 — UE 본가 패턴.
-    //
-    // 주의: CMC 가 없는 actor 에 root motion 켠 anim 을 붙이면 누적값이 anywhere 도
-    // 소비되지 않아 in-place 로 보인다. ACharacter 외 케이스에서 root motion 이 필요해지면
-    // 별도 소비 경로가 추가되어야 한다.
-
-    FPoseContext Out;
-    Out.SkeletalMesh = Mesh;
-    Out.Pose.resize(Asset->Bones.size());
-    Out.ResetToRefPose();
-    AnimInstance->EvaluatePose(Out);
-
-    SetAnimationPose(Out.Pose, Out.MorphWeights);
-    return true;
+	ApplyPoseToMesh(AnimPose);
+	return true;
 }

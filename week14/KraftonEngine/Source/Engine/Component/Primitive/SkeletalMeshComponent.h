@@ -13,6 +13,7 @@ class UAnimSingleNodeInstance;
 class UAnimSequenceBase;
 class UClass;
 struct FRagdollInstance;
+struct FPoseContext;
 
 // SkeletalMesh 전용 render proxy만 제공하는 얇은 wrapper.
 // Skinning/bone/material/bounds 상태는 모두 USkinnedMeshComponent가 소유한다.
@@ -38,6 +39,9 @@ public:
 	void SetSimulatePhysics(bool bEnable);
 	bool IsSimulatingPhysics() const { return bSimulatingPhysics; }
 	bool SyncSimulatedPhysics();
+	
+	void SetPhysicsBlendWeight(float InWeight);
+	float GetPhysicsBlendWeight() const {return PhysicsBlendWeight;}
 
     // Animation 섹션: Mode 에 따라 AnimInstance 의 생성/파기를 컴포넌트가 책임진다.
     //   - None              : AnimInstance 미생성. BoneEdit 만 적용.
@@ -81,6 +85,8 @@ protected:
     // 이 경로가 CPU skinning 과 bounds dirty 를 한 번에 처리한다.
     void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
+	bool EvaluateAnimInstanceToPose(float DeltaTime, FPoseContext& OutPose);
+	void ApplyPoseToMesh(const FPoseContext& Pose);
     bool EvaluateAnimInstance(float DeltaTime);
 
 private:
@@ -99,4 +105,7 @@ protected:
 
 	std::unique_ptr<FRagdollInstance> Ragdoll;
 	bool bSimulatingPhysics = false;
+	
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Physics Blend Weight")
+	float PhysicsBlendWeight = 1.0f;
 };
