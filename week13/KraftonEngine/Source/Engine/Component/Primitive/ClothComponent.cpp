@@ -203,6 +203,23 @@ namespace
 	{
 		return MatchesPropertyName(PropertyName, "bSimulateInEditor", "Simulate In Editor");
 	}
+
+	/**
+	 * @brief 지정된 particle index를 중복 없이 추가합니다
+	 *
+	 * @param OutIndices hard pin index 배열
+	 *
+	 * @param ParticleIndex 추가할 particle index
+	 */
+	void AddUniquePinnedIndex(TArray<uint32>& OutIndices, uint32 ParticleIndex)
+	{
+		if (std::find(OutIndices.begin(), OutIndices.end(), ParticleIndex) != OutIndices.end())
+		{
+			return;
+		}
+
+		OutIndices.push_back(ParticleIndex);
+	}
 }
 
 UClothComponent::UClothComponent()
@@ -439,6 +456,7 @@ void UClothComponent::RebuildClothIfNeeded(bool bNotifyProxyDirty)
 	}
 
 	RebuildSimulationIfNeeded(Config);
+	ApplySimulationPinningIfNeeded(Config);
 }
 
 FClothConfig UClothComponent::MakeClothConfig() const
@@ -545,20 +563,161 @@ FClothSimulationBuildDesc UClothComponent::BuildSimulationDesc(const FClothConfi
 		BuildDesc.InitialPositionsComponentLocal.push_back(Vertex.Position);
 	}
 
-	if (PinningMode == EClothPinSelectionType::TopEdge)
+	BuildPinnedParticles(Config, BuildDesc.PinnedIndices, BuildDesc.PinTargetPositionsComponentLocal);
+	for (uint32 PinnedIndex : BuildDesc.PinnedIndices)
 	{
-		const uint32 NumX = static_cast<uint32>(Config.NumParticlesX);
-		const uint32 PinCount = (std::min)(NumX, static_cast<uint32>(BuildDesc.InvMasses.size()));
-
-		for (uint32 Col = 0; Col < PinCount; ++Col)
+		if (PinnedIndex < BuildDesc.InvMasses.size())
 		{
-			// commit 4에서 actor local pinning으로 교체할 임시 top edge hard pin
-			BuildDesc.InvMasses[Col] = 0.0f;
-			BuildDesc.PinnedIndices.push_back(Col);
+			// hard pin은 inverse mass 0으로 solver에 전달
+			BuildDesc.InvMasses[PinnedIndex] = 0.0f;
 		}
 	}
 
 	return BuildDesc;
+}
+
+void UClothComponent::BuildPinnedParticles(
+	const FClothConfig& Config,
+	TArray<uint32>& OutPinnedIndices,
+	TArray<FVector>& OutPinTargetPositionsComponentLocal) const
+{
+	OutPinnedIndices.clear();
+	OutPinTargetPositionsComponentLocal.clear();
+
+	if (RenderData.Vertices.empty())
+	{
+		return;
+	}
+
+	const uint32 NumX = static_cast<uint32>(Config.NumParticlesX);
+	const uint32 NumY = static_cast<uint32>(Config.NumParticlesY);
+	const uint32 VertexCount = static_cast<uint32>(RenderData.Vertices.size());
+	const FVector PinOffsetComponentLocal = TransformActorLocalVectorToComponentLocal(PinOffsetActorLocal);
+
+	auto AddPinnedParticle = [&](uint32 ParticleIndex)
+	{
+		if (ParticleIndex >= VertexCount)
+		{
+			return;
+		}
+
+		const size_t PreviousCount = OutPinnedIndices.size();
+		AddUniquePinnedIndex(OutPinnedIndices, ParticleIndex);
+		if (OutPinnedIndices.size() == PreviousCount)
+		{
+			return;
+		}
+
+		// target은 현재 선택된 rest/render 위치에 actor local offset을 더한 component local 위치
+		OutPinTargetPositionsComponentLocal.push_back(RenderData.Vertices[ParticleIndex].Position + PinOffsetComponentLocal);
+	};
+
+	switch (PinningMode)
+	{
+	case EClothPinSelectionType::None:
+	case EClothPinSelectionType::ExplicitVertices:
+		// explicit vertex 목록은 아직 editor property로 제공하지 않으므로 빈 selection 유지
+		break;
+
+	case EClothPinSelectionType::TopEdge:
+		for (uint32 Col = 0; Col < NumX; ++Col)
+		{
+			AddPinnedParticle(Col);
+		}
+		break;
+
+	case EClothPinSelectionType::BottomEdge:
+		for (uint32 Col = 0; Col < NumX; ++Col)
+		{
+			AddPinnedParticle((NumY - 1) * NumX + Col);
+		}
+		break;
+
+	case EClothPinSelectionType::LeftEdge:
+		for (uint32 Row = 0; Row < NumY; ++Row)
+		{
+			AddPinnedParticle(Row * NumX);
+		}
+		break;
+
+	case EClothPinSelectionType::RightEdge:
+		for (uint32 Row = 0; Row < NumY; ++Row)
+		{
+			AddPinnedParticle(Row * NumX + (NumX - 1));
+		}
+		break;
+
+	case EClothPinSelectionType::ActorLocalSphere:
+	{
+		const FVector CenterComponentLocal = TransformActorLocalPointToComponentLocal(PinCenterActorLocal);
+		const float Radius = ClampFloat(PinRadius, 0.0f, 10000.0f);
+		const float RadiusSquared = Radius * Radius;
+
+		for (uint32 ParticleIndex = 0; ParticleIndex < VertexCount; ++ParticleIndex)
+		{
+			const FVector Delta = RenderData.Vertices[ParticleIndex].Position - CenterComponentLocal;
+			if (Delta.Dot(Delta) <= RadiusSquared)
+			{
+				AddPinnedParticle(ParticleIndex);
+			}
+		}
+		break;
+	}
+
+	case EClothPinSelectionType::ActorLocalBox:
+	{
+		const FVector CenterComponentLocal = TransformActorLocalPointToComponentLocal(PinCenterActorLocal);
+		const FVector SafeExtent = PinBoxExtentActorLocal.GetAbs();
+		const FVector ExtentXVector = TransformActorLocalVectorToComponentLocal(FVector(SafeExtent.X, 0.0f, 0.0f));
+		const FVector ExtentYVector = TransformActorLocalVectorToComponentLocal(FVector(0.0f, SafeExtent.Y, 0.0f));
+		const FVector ExtentZVector = TransformActorLocalVectorToComponentLocal(FVector(0.0f, 0.0f, SafeExtent.Z));
+		const float ExtentX = ExtentXVector.Length();
+		const float ExtentY = ExtentYVector.Length();
+		const float ExtentZ = ExtentZVector.Length();
+		const FVector AxisX = ExtentXVector.GetSafeNormal(GNormalTolerance, FVector::XAxisVector);
+		const FVector AxisY = ExtentYVector.GetSafeNormal(GNormalTolerance, FVector::YAxisVector);
+		const FVector AxisZ = ExtentZVector.GetSafeNormal(GNormalTolerance, FVector::ZAxisVector);
+
+		for (uint32 ParticleIndex = 0; ParticleIndex < VertexCount; ++ParticleIndex)
+		{
+			const FVector Delta = RenderData.Vertices[ParticleIndex].Position - CenterComponentLocal;
+			if (std::abs(Delta.Dot(AxisX)) <= ExtentX
+				&& std::abs(Delta.Dot(AxisY)) <= ExtentY
+				&& std::abs(Delta.Dot(AxisZ)) <= ExtentZ)
+			{
+				AddPinnedParticle(ParticleIndex);
+			}
+		}
+		break;
+	}
+
+	case EClothPinSelectionType::ActorLocalRectXZ:
+	{
+		const float MinX = (std::min)(PinRectMinActorLocalXZ.X, PinRectMaxActorLocalXZ.X);
+		const float MaxX = (std::max)(PinRectMinActorLocalXZ.X, PinRectMaxActorLocalXZ.X);
+		const float MinZ = (std::min)(PinRectMinActorLocalXZ.Z, PinRectMaxActorLocalXZ.Z);
+		const float MaxZ = (std::max)(PinRectMinActorLocalXZ.Z, PinRectMaxActorLocalXZ.Z);
+		const FVector RectCenterActorLocal((MinX + MaxX) * 0.5f, 0.0f, (MinZ + MaxZ) * 0.5f);
+		const FVector CenterComponentLocal = TransformActorLocalPointToComponentLocal(RectCenterActorLocal);
+		const FVector ExtentXVector = TransformActorLocalVectorToComponentLocal(FVector((MaxX - MinX) * 0.5f, 0.0f, 0.0f));
+		const FVector ExtentZVector = TransformActorLocalVectorToComponentLocal(FVector(0.0f, 0.0f, (MaxZ - MinZ) * 0.5f));
+		const float ExtentX = ExtentXVector.Length();
+		const float ExtentZ = ExtentZVector.Length();
+		const FVector AxisX = ExtentXVector.GetSafeNormal(GNormalTolerance, FVector::XAxisVector);
+		const FVector AxisZ = ExtentZVector.GetSafeNormal(GNormalTolerance, FVector::ZAxisVector);
+
+		for (uint32 ParticleIndex = 0; ParticleIndex < VertexCount; ++ParticleIndex)
+		{
+			const FVector Delta = RenderData.Vertices[ParticleIndex].Position - CenterComponentLocal;
+			if (std::abs(Delta.Dot(AxisX)) <= ExtentX
+				&& std::abs(Delta.Dot(AxisZ)) <= ExtentZ)
+			{
+				AddPinnedParticle(ParticleIndex);
+			}
+		}
+		break;
+	}
+	}
 }
 
 void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
@@ -572,6 +731,8 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 	{
 		// simulation off 상태에서는 static grid render만 유지
 		Simulation.Shutdown();
+		CachedPinnedIndices.clear();
+		CachedPinTargetPositionsComponentLocal.clear();
 		bSimulationRebuildDirty = false;
 		return;
 	}
@@ -579,6 +740,8 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 	if (!RenderData.IsValid())
 	{
 		Simulation.Shutdown();
+		CachedPinnedIndices.clear();
+		CachedPinTargetPositionsComponentLocal.clear();
 		bSimulationRebuildDirty = false;
 		return;
 	}
@@ -590,6 +753,8 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 	}
 
 	const FClothSimulationBuildDesc BuildDesc = BuildSimulationDesc(Config);
+	CachedPinnedIndices = BuildDesc.PinnedIndices;
+	CachedPinTargetPositionsComponentLocal = BuildDesc.PinTargetPositionsComponentLocal;
 	if (!Simulation.Rebuild(&GEngine->GetClothContext(), BuildDesc))
 	{
 		UE_LOG("[ClothComponent] Simulation resource unavailable: %s", Simulation.GetLastFailureDetail().c_str());
@@ -600,6 +765,41 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 	bPinTargetDirty = false;
 	bForceConfigDirty = false;
 	bCollisionDirty = false;
+}
+
+void UClothComponent::ApplySimulationPinningIfNeeded(const FClothConfig& Config)
+{
+	if (!bPinningDirty && !bPinTargetDirty)
+	{
+		return;
+	}
+
+	if (bSimulationRebuildDirty)
+	{
+		// simulation rebuild가 남아 있으면 rebuild 입력에서 pinning을 함께 처리
+		return;
+	}
+
+	if (!bEnableSimulation || !RenderData.IsValid())
+	{
+		CachedPinnedIndices.clear();
+		CachedPinTargetPositionsComponentLocal.clear();
+		bPinningDirty = false;
+		bPinTargetDirty = false;
+		return;
+	}
+
+	BuildPinnedParticles(Config, CachedPinnedIndices, CachedPinTargetPositionsComponentLocal);
+	if (Simulation.IsSimulationAvailable())
+	{
+		if (!Simulation.ApplyPinning(CachedPinnedIndices, CachedPinTargetPositionsComponentLocal))
+		{
+			UE_LOG("[ClothComponent] Pinning update skipped: %s", Simulation.GetLastFailureDetail().c_str());
+		}
+	}
+
+	bPinningDirty = false;
+	bPinTargetDirty = false;
 }
 
 void UClothComponent::RecalculateNormalsAndTangents()

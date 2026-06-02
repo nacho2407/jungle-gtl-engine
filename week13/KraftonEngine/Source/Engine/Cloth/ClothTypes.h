@@ -129,6 +129,7 @@ struct FClothSimulationBuildDesc
 	TArray<uint32> Indices;
 	TArray<float> InvMasses;
 	TArray<uint32> PinnedIndices;
+	TArray<FVector> PinTargetPositionsComponentLocal;
 	FClothConfig Config;
 
 	/**
@@ -141,7 +142,9 @@ struct FClothSimulationBuildDesc
 		return !InitialPositionsComponentLocal.empty()
 			&& Indices.size() >= 3
 			&& (Indices.size() % 3) == 0
-			&& (InvMasses.empty() || InvMasses.size() == InitialPositionsComponentLocal.size());
+			&& (InvMasses.empty() || InvMasses.size() == InitialPositionsComponentLocal.size())
+			&& (PinTargetPositionsComponentLocal.empty()
+				|| PinTargetPositionsComponentLocal.size() == PinnedIndices.size());
 	}
 };
 

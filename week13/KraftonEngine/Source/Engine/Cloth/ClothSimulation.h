@@ -43,6 +43,19 @@ public:
 	bool Rebuild(FNvClothContext* InContext, const FClothSimulationBuildDesc& BuildDesc);
 
 	/**
+	 * @brief hard pin particle의 위치와 inverse mass를 갱신합니다
+	 *
+	 * @param PinnedIndices hard pin으로 고정할 particle index 배열
+	 *
+	 * @param PinTargetPositionsComponentLocal pinned particle의 component local 목표 위치 배열
+	 *
+	 * @return pinning 갱신 성공 여부
+	 */
+	bool ApplyPinning(
+		const TArray<uint32>& PinnedIndices,
+		const TArray<FVector>& PinTargetPositionsComponentLocal);
+
+	/**
 	 * @brief simulation 상태를 종료합니다
 	 */
 	void Shutdown();
@@ -74,6 +87,13 @@ public:
 	 * @return 현재 simulation index 수
 	 */
 	uint32 GetIndexCount() const { return IndexCount; }
+
+	/**
+	 * @brief 현재 hard pin particle 수를 반환합니다
+	 *
+	 * @return 현재 hard pin particle 수
+	 */
+	uint32 GetPinnedCount() const { return PinnedCount; }
 
 	/**
 	 * @brief 마지막 simulation resource 생성 실패 사유를 반환합니다
@@ -110,6 +130,7 @@ private:
 	FString LastFailureDetail;
 	uint32 ParticleCount = 0;
 	uint32 IndexCount = 0;
+	uint32 PinnedCount = 0;
 	bool bInitialized = false;
 	bool bValid = false;
 };

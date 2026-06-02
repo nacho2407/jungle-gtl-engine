@@ -209,13 +209,137 @@ bool FClothSimulation::Rebuild(FNvClothContext* InContext, const FClothSimulatio
 	bInitialized = true;
 	bValid = true;
 
+	if (!ApplyPinning(BuildDesc.PinnedIndices, BuildDesc.PinTargetPositionsComponentLocal))
+	{
+		Impl->ReleaseResources();
+		return SetBuildFailure("NvCloth pinning setup failed");
+	}
+
 	UE_LOG("[ClothSimulation] Resource initialized: particles=%u indices=%u pinned=%u",
 		ParticleCount,
 		IndexCount,
-		static_cast<uint32>(BuildDesc.PinnedIndices.size()));
+		PinnedCount);
 	return true;
 #else
 	return SetBuildFailure("WITH_NV_CLOTH is disabled");
+#endif
+}
+
+bool FClothSimulation::ApplyPinning(
+	const TArray<uint32>& PinnedIndices,
+	const TArray<FVector>& PinTargetPositionsComponentLocal)
+{
+	PinnedCount = 0;
+
+	const bool bHasTargetPositions = !PinTargetPositionsComponentLocal.empty();
+	if (bHasTargetPositions && PinTargetPositionsComponentLocal.size() != PinnedIndices.size())
+	{
+		LastFailureDetail = "cloth pin target count does not match pinned index count";
+		return false;
+	}
+
+	if (!IsSimulationAvailable())
+	{
+		LastFailureDetail = "cloth simulation is unavailable for pinning";
+		return false;
+	}
+
+#if WITH_NV_CLOTH
+	if (!Impl || !Impl->Cloth)
+	{
+		LastFailureDetail = "NvCloth cloth instance is null";
+		return false;
+	}
+
+	TArray<uint8> PinMask;
+	TArray<FVector> TargetPositions;
+	PinMask.resize(ParticleCount, 0);
+	TargetPositions.resize(ParticleCount, FVector::ZeroVector);
+
+	for (uint32 PinIndex = 0; PinIndex < PinnedIndices.size(); ++PinIndex)
+	{
+		const uint32 ParticleIndex = PinnedIndices[PinIndex];
+		if (ParticleIndex >= ParticleCount)
+		{
+			LastFailureDetail = "cloth pinned particle index is out of range";
+			return false;
+		}
+
+		if (PinMask[ParticleIndex] != 0)
+		{
+			continue;
+		}
+
+		// 같은 particle이 중복으로 들어와도 첫 target만 유지해 deterministic하게 처리
+		PinMask[ParticleIndex] = 1;
+		TargetPositions[ParticleIndex] = bHasTargetPositions
+			? PinTargetPositionsComponentLocal[PinIndex]
+			: FVector::ZeroVector;
+		++PinnedCount;
+	}
+
+	{
+		nv::cloth::MappedRange<physx::PxVec4> Particles = Impl->Cloth->getCurrentParticles();
+		if (Particles.size() < ParticleCount)
+		{
+			LastFailureDetail = "current particle range is smaller than simulation particle count";
+			return false;
+		}
+
+		for (uint32 ParticleIndex = 0; ParticleIndex < ParticleCount; ++ParticleIndex)
+		{
+			// unpinned particle은 다시 움직일 수 있도록 inverse mass를 복원
+			Particles[ParticleIndex].w = GDefaultParticleInvMass;
+
+			if (PinMask[ParticleIndex] != 0)
+			{
+				// hard pin은 inverse mass 0으로 표현하고, target이 있으면 위치도 함께 고정
+				if (bHasTargetPositions)
+				{
+					const FVector& TargetPosition = TargetPositions[ParticleIndex];
+					Particles[ParticleIndex] = ToPxParticle(TargetPosition, 0.0f);
+				}
+				else
+				{
+					Particles[ParticleIndex].w = 0.0f;
+				}
+			}
+		}
+	}
+
+	{
+		nv::cloth::MappedRange<physx::PxVec4> Particles = Impl->Cloth->getPreviousParticles();
+		if (Particles.size() < ParticleCount)
+		{
+			LastFailureDetail = "previous particle range is smaller than simulation particle count";
+			return false;
+		}
+
+		for (uint32 ParticleIndex = 0; ParticleIndex < ParticleCount; ++ParticleIndex)
+		{
+			// target 변경 직후 불필요한 속도가 생기지 않도록 previous particle도 같이 갱신
+			Particles[ParticleIndex].w = GDefaultParticleInvMass;
+
+			if (PinMask[ParticleIndex] != 0)
+			{
+				if (bHasTargetPositions)
+				{
+					const FVector& TargetPosition = TargetPositions[ParticleIndex];
+					Particles[ParticleIndex] = ToPxParticle(TargetPosition, 0.0f);
+				}
+				else
+				{
+					Particles[ParticleIndex].w = 0.0f;
+				}
+			}
+		}
+	}
+
+	LastFailureDetail.clear();
+	return true;
+#else
+	LastFailureDetail = "WITH_NV_CLOTH is disabled";
+	return false;
 #endif
 }
 
@@ -231,6 +355,7 @@ void FClothSimulation::Shutdown()
 	bValid = false;
 	ParticleCount = 0;
 	IndexCount = 0;
+	PinnedCount = 0;
 }
 
 void FClothSimulation::Tick(float DeltaTime)
@@ -268,5 +393,6 @@ bool FClothSimulation::SetBuildFailure(const FString& FailureDetail)
 	bValid = false;
 	ParticleCount = 0;
 	IndexCount = 0;
+	PinnedCount = 0;
 	return false;
 }

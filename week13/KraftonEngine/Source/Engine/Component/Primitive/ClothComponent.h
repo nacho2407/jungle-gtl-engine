@@ -142,6 +142,13 @@ public:
 	 */
 	uint64 GetRenderRevision() const { return RenderData.Revision; }
 
+	/**
+	 * @brief 현재 hard pin으로 선택된 particle 수를 반환합니다
+	 *
+	 * @return 현재 hard pin particle 수
+	 */
+	uint32 GetPinnedCount() const { return static_cast<uint32>(CachedPinnedIndices.size()); }
+
 protected:
 	/**
 	 * @brief component tick에서 dirty rebuild와 backend status 로그를 처리합니다
@@ -181,11 +188,32 @@ private:
 	FClothSimulationBuildDesc BuildSimulationDesc(const FClothConfig& Config) const;
 
 	/**
+	 * @brief 현재 property 기준 hard pin particle과 target 위치를 계산합니다
+	 *
+	 * @param Config pin index 계산에 사용할 cloth config
+	 *
+	 * @param OutPinnedIndices 계산된 hard pin particle index 배열
+	 *
+	 * @param OutPinTargetPositionsComponentLocal 계산된 component local target 위치 배열
+	 */
+	void BuildPinnedParticles(
+		const FClothConfig& Config,
+		TArray<uint32>& OutPinnedIndices,
+		TArray<FVector>& OutPinTargetPositionsComponentLocal) const;
+
+	/**
 	 * @brief dirty 상태인 cloth simulation resource를 다시 생성합니다
 	 *
 	 * @param Config simulation build 입력에 포함할 cloth config
 	 */
 	void RebuildSimulationIfNeeded(const FClothConfig& Config);
+
+	/**
+	 * @brief dirty 상태인 hard pin 정보를 기존 simulation resource에 반영합니다
+	 *
+	 * @param Config pin index 계산에 사용할 cloth config
+	 */
+	void ApplySimulationPinningIfNeeded(const FClothConfig& Config);
 
 	/**
 	 * @brief triangle과 UV 기준으로 normal과 tangent를 다시 계산합니다
@@ -424,6 +452,8 @@ private:
 
 	FClothRenderData RenderData;
 	FClothSimulation Simulation;
+	TArray<uint32> CachedPinnedIndices;
+	TArray<FVector> CachedPinTargetPositionsComponentLocal;
 	FVector CachedLocalCenter = FVector::ZeroVector;
 	FVector CachedLocalExtent = FVector(0.5f, 0.5f, 0.5f);
 	bool bHasValidLocalBounds = false;
