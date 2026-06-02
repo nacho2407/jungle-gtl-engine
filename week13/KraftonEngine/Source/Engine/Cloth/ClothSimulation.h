@@ -64,8 +64,17 @@ public:
 	 * @brief simulation을 한 프레임 진행합니다
 	 *
 	 * @param DeltaTime simulation에 사용할 프레임 시간
+	 *
+	 * @param RuntimeConfig simulation step에 적용할 runtime 설정
+	 *
+	 * @param OutPositionsComponentLocal simulation 결과 particle 위치 배열
+	 *
+	 * @return simulation 결과 위치 갱신 여부
 	 */
-	void Tick(float DeltaTime);
+	bool Tick(
+		float DeltaTime,
+		const FClothSimulationRuntimeConfig& RuntimeConfig,
+		TArray<FVector>& OutPositionsComponentLocal);
 
 	/**
 	 * @brief simulation 사용 가능 여부를 반환합니다
@@ -113,6 +122,38 @@ private:
 	struct FImpl;
 
 	/**
+	 * @brief runtime 설정을 NvCloth cloth instance에 반영합니다
+	 *
+	 * @param RuntimeConfig simulation step에 적용할 runtime 설정
+	 */
+	void ApplyRuntimeConfig(const FClothSimulationRuntimeConfig& RuntimeConfig);
+
+	/**
+	 * @brief turbulence particle acceleration을 갱신합니다
+	 *
+	 * @param RuntimeConfig simulation step에 적용할 runtime 설정
+	 */
+	void ApplyTurbulenceAcceleration(const FClothSimulationRuntimeConfig& RuntimeConfig);
+
+	/**
+	 * @brief NvCloth solver를 지정된 step만큼 진행합니다
+	 *
+	 * @param FixedStep solver에 전달할 fixed delta time
+	 *
+	 * @return solver step 성공 여부
+	 */
+	bool SimulateStep(float FixedStep);
+
+	/**
+	 * @brief 현재 particle 위치를 component local 배열로 읽어옵니다
+	 *
+	 * @param OutPositionsComponentLocal 읽어온 particle 위치 배열
+	 *
+	 * @return particle 위치 readback 성공 여부
+	 */
+	bool ReadCurrentPositions(TArray<FVector>& OutPositionsComponentLocal);
+
+	/**
 	 * @brief simulation resource 생성 실패 상태를 기록합니다
 	 *
 	 * @param FailureDetail simulation resource 생성 실패 사유
@@ -131,6 +172,9 @@ private:
 	uint32 ParticleCount = 0;
 	uint32 IndexCount = 0;
 	uint32 PinnedCount = 0;
+	float AccumulatedTime = 0.0f;
+	float SimulationTime = 0.0f;
+	uint32 LastStepCount = 0;
 	bool bInitialized = false;
 	bool bValid = false;
 };

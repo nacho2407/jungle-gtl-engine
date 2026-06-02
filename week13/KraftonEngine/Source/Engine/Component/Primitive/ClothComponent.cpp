@@ -26,6 +26,10 @@ namespace
 	constexpr int32 GMaxClothSubsteps = 4;
 	constexpr float GMinAccumulatedTime = 0.016f;
 	constexpr float GMaxAccumulatedTime = 1.0f;
+	constexpr float GDefaultGravityAcceleration = 980.0f;
+	constexpr float GMaxGravityScale = 10.0f;
+	constexpr float GMaxWindStrength = 10000.0f;
+	constexpr float GMaxSelfCollisionDistance = 1000.0f;
 
 	/**
 	 * @brief 정수 값을 지정된 범위 안으로 보정합니다
@@ -126,8 +130,15 @@ namespace
 	 */
 	bool IsClothSimulationLifecycleProperty(const char* PropertyName)
 	{
-		return MatchesPropertyName(PropertyName, "bEnableSimulation", "Enable Simulation")
-			|| MatchesPropertyName(PropertyName, "FixedTimeStep", "Fixed Time Step")
+		return MatchesPropertyName(PropertyName, "bEnableSimulation", "Enable Simulation");
+	}
+
+	/**
+	 * @brief cloth timestep property인지 반환합니다
+	 */
+	bool IsClothTimestepProperty(const char* PropertyName)
+	{
+		return MatchesPropertyName(PropertyName, "FixedTimeStep", "Fixed Time Step")
 			|| MatchesPropertyName(PropertyName, "MaxSubsteps", "Max Substeps")
 			|| MatchesPropertyName(PropertyName, "MaxAccumulatedTime", "Max Accumulated Time");
 	}
@@ -244,7 +255,9 @@ void UClothComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 
 	LogBackendStatusOnce();
 	RebuildClothIfNeeded();
-	Simulation.Tick(DeltaTime);
+
+	const FClothConfig Config = MakeClothConfig();
+	TickSimulationIfNeeded(DeltaTime, TickType, Config);
 }
 
 void UClothComponent::PostEditProperty(const char* PropertyName)
@@ -276,12 +289,19 @@ void UClothComponent::PostEditProperty(const char* PropertyName)
 
 	if (IsClothSimulationLifecycleProperty(PropertyName))
 	{
-		// solver lifecycle에 영향을 주는 값만 simulation rebuild로 분리
+		// simulation enable 변경은 resource 생명주기 자체를 바꾸므로 rebuild로 처리
+		MarkClothSimulationRebuildDirty();
+		return;
+	}
+
+	if (IsClothTimestepProperty(PropertyName))
+	{
+		// fixed timestep 값은 fabric rebuild 없이 다음 simulation tick에서 live update
 		const FClothConfig Config = MakeClothConfig();
 		FixedTimeStep = Config.Timestep.FixedTimeStep;
 		MaxSubsteps = Config.Timestep.MaxSubsteps;
 		MaxAccumulatedTime = Config.Timestep.MaxAccumulatedTime;
-		MarkClothSimulationRebuildDirty();
+		MarkClothForceDirty();
 		return;
 	}
 
@@ -320,6 +340,7 @@ void UClothComponent::PostDuplicate()
 	UMeshComponent::PostDuplicate();
 
 	Simulation.Shutdown();
+	SimulationReadbackPositions.clear();
 	LoadMaterialFromSlot();
 	MarkClothRebuildDirty();
 }
@@ -327,6 +348,7 @@ void UClothComponent::PostDuplicate()
 void UClothComponent::RouteComponentDestroyed()
 {
 	Simulation.Shutdown();
+	SimulationReadbackPositions.clear();
 	UMeshComponent::RouteComponentDestroyed();
 }
 
@@ -469,6 +491,51 @@ FClothConfig UClothComponent::MakeClothConfig() const
 	Config.Timestep.MaxSubsteps = ClampInt(MaxSubsteps, GMinClothSubsteps, GMaxClothSubsteps);
 	Config.Timestep.MaxAccumulatedTime = ClampFloat(MaxAccumulatedTime, GMinAccumulatedTime, GMaxAccumulatedTime);
 	return Config;
+}
+
+FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const FClothConfig& Config) const
+{
+	FClothSimulationRuntimeConfig RuntimeConfig;
+	RuntimeConfig.Timestep = Config.Timestep;
+
+	const float SafeGravityScale = ClampFloat(GravityScale, 0.0f, GMaxGravityScale);
+	RuntimeConfig.GravityAccelerationComponentLocal =
+		TransformWorldDirectionToComponentLocal(FVector::DownVector) * (GDefaultGravityAcceleration * SafeGravityScale);
+
+	RuntimeConfig.Damping = ClampFloat(Damping, 0.0f, 1.0f);
+	RuntimeConfig.Stiffness = ClampFloat(Stiffness, 0.0f, 1.0f);
+
+	// wind direction property는 world 기준으로 해석한 뒤 component local simulation 공간으로 변환
+	const FVector SafeWindDirectionWorld = WindDirection.GetSafeNormal(GNormalTolerance, FVector::ForwardVector);
+	RuntimeConfig.Wind.bEnabled = bEnableWind;
+	RuntimeConfig.Wind.Direction = TransformWorldDirectionToComponentLocal(SafeWindDirectionWorld);
+	RuntimeConfig.Wind.Strength = ClampFloat(WindStrength, 0.0f, GMaxWindStrength);
+	RuntimeConfig.Wind.TurbulenceStrength = ClampFloat(WindTurbulenceStrength, 0.0f, GMaxWindStrength);
+	RuntimeConfig.Wind.TurbulenceSpatialScale = ClampFloat(WindTurbulenceSpatialScale, 0.001f, 10000.0f);
+	RuntimeConfig.Wind.TurbulenceTemporalScale = ClampFloat(WindTurbulenceTemporalScale, 0.0f, 100.0f);
+	RuntimeConfig.Wind.TurbulenceSeed = WindTurbulenceSeed;
+
+	RuntimeConfig.SelfCollision.bEnabled = bEnableSelfCollision;
+	RuntimeConfig.SelfCollision.Distance = ClampFloat(SelfCollisionDistance, 0.0f, GMaxSelfCollisionDistance);
+	RuntimeConfig.SelfCollision.Stiffness = ClampFloat(SelfCollisionStiffness, 0.0f, 1.0f);
+	RuntimeConfig.SelfCollision.CullScale = ClampFloat(SelfCollisionCullScale, 0.0f, 10.0f);
+
+	return RuntimeConfig;
+}
+
+bool UClothComponent::ShouldTickSimulation(ELevelTick TickType) const
+{
+	if (!bEnableSimulation || !RenderData.IsValid() || !Simulation.IsSimulationAvailable())
+	{
+		return false;
+	}
+
+	if (TickType == LEVELTICK_ViewportsOnly)
+	{
+		return bSimulateInEditor;
+	}
+
+	return TickType == LEVELTICK_All;
 }
 
 void UClothComponent::BuildGrid(const FClothConfig& Config, bool bNotifyProxyDirty)
@@ -731,18 +798,22 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 	{
 		// simulation off 상태에서는 static grid render만 유지
 		Simulation.Shutdown();
+		SimulationReadbackPositions.clear();
 		CachedPinnedIndices.clear();
 		CachedPinTargetPositionsComponentLocal.clear();
 		bSimulationRebuildDirty = false;
+		bSimulationTickWarningLogged = false;
 		return;
 	}
 
 	if (!RenderData.IsValid())
 	{
 		Simulation.Shutdown();
+		SimulationReadbackPositions.clear();
 		CachedPinnedIndices.clear();
 		CachedPinTargetPositionsComponentLocal.clear();
 		bSimulationRebuildDirty = false;
+		bSimulationTickWarningLogged = false;
 		return;
 	}
 
@@ -758,6 +829,10 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 	if (!Simulation.Rebuild(&GEngine->GetClothContext(), BuildDesc))
 	{
 		UE_LOG("[ClothComponent] Simulation resource unavailable: %s", Simulation.GetLastFailureDetail().c_str());
+	}
+	else
+	{
+		bSimulationTickWarningLogged = false;
 	}
 
 	bSimulationRebuildDirty = false;
@@ -800,6 +875,68 @@ void UClothComponent::ApplySimulationPinningIfNeeded(const FClothConfig& Config)
 
 	bPinningDirty = false;
 	bPinTargetDirty = false;
+}
+
+void UClothComponent::TickSimulationIfNeeded(float DeltaTime, ELevelTick TickType, const FClothConfig& Config)
+{
+	if (!ShouldTickSimulation(TickType))
+	{
+		if (TickType == LEVELTICK_ViewportsOnly)
+		{
+			bEditorPreviewDirty = false;
+		}
+		return;
+	}
+
+	const FClothSimulationRuntimeConfig RuntimeConfig = MakeSimulationRuntimeConfig(Config);
+	SimulationReadbackPositions.clear();
+	if (!Simulation.Tick(DeltaTime, RuntimeConfig, SimulationReadbackPositions))
+	{
+		if (Simulation.IsSimulationAvailable()
+			&& !Simulation.GetLastFailureDetail().empty()
+			&& !bSimulationTickWarningLogged)
+		{
+			bSimulationTickWarningLogged = true;
+			UE_LOG("[ClothComponent] Simulation tick skipped: %s", Simulation.GetLastFailureDetail().c_str());
+		}
+		return;
+	}
+
+	if (ApplySimulationPositionsToRenderData(Config, SimulationReadbackPositions))
+	{
+		bForceConfigDirty = false;
+		bEditorPreviewDirty = false;
+		bSimulationTickWarningLogged = false;
+	}
+}
+
+bool UClothComponent::ApplySimulationPositionsToRenderData(
+	const FClothConfig& Config,
+	const TArray<FVector>& PositionsComponentLocal)
+{
+	if (PositionsComponentLocal.size() != RenderData.Vertices.size())
+	{
+		if (!bSimulationTickWarningLogged)
+		{
+			bSimulationTickWarningLogged = true;
+			UE_LOG("[ClothComponent] Simulation readback size mismatch: positions=%u vertices=%u",
+				static_cast<uint32>(PositionsComponentLocal.size()),
+				static_cast<uint32>(RenderData.Vertices.size()));
+		}
+		return false;
+	}
+
+	for (uint32 VertexIndex = 0; VertexIndex < RenderData.Vertices.size(); ++VertexIndex)
+	{
+		// simulation particle와 render vertex는 procedural grid에서 1:1 mapping 유지
+		RenderData.Vertices[VertexIndex].Position = PositionsComponentLocal[VertexIndex];
+	}
+
+	RecalculateNormalsAndTangents();
+	UpdateLocalBoundsFromRenderData(Config);
+	IncrementRenderRevision();
+	MarkWorldBoundsDirty();
+	return true;
 }
 
 void UClothComponent::RecalculateNormalsAndTangents()
@@ -996,6 +1133,18 @@ FVector UClothComponent::TransformActorLocalDirectionToComponentLocal(const FVec
 	// zero 방향 입력은 collision/pin 계산에서 안전한 기본 축으로 보정
 	const FVector ComponentLocalVector = TransformActorLocalVectorToComponentLocal(ActorLocalDirection);
 	return ComponentLocalVector.GetSafeNormal(GNormalTolerance, FVector::UpVector);
+}
+
+FVector UClothComponent::TransformWorldVectorToComponentLocal(const FVector& WorldVector) const
+{
+	// world 기준 vector를 component local simulation 공간으로 변환
+	return GetWorldInverseMatrix().TransformVector(WorldVector);
+}
+
+FVector UClothComponent::TransformWorldDirectionToComponentLocal(const FVector& WorldDirection) const
+{
+	const FVector ComponentLocalVector = TransformWorldVectorToComponentLocal(WorldDirection);
+	return ComponentLocalVector.GetSafeNormal(GNormalTolerance, FVector::DownVector);
 }
 
 void UClothComponent::TransformActorLocalPlaneToComponentLocal(

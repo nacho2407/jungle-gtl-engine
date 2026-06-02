@@ -4,6 +4,9 @@
 #include "Cloth/NvClothContext.h"
 #include "Core/Logging/Log.h"
 
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <string>
 
 #if WITH_NV_CLOTH
@@ -20,6 +23,11 @@
 namespace
 {
 constexpr float GDefaultParticleInvMass = 1.0f;
+constexpr float GVectorTolerance = 1.0e-6f;
+constexpr float GMinFixedStep = 0.001f;
+constexpr float GMaxFixedStep = 0.1f;
+constexpr int32 GMinSubstepCount = 1;
+constexpr int32 GMaxSubstepCount = 4;
 
 #if WITH_NV_CLOTH
 /**
@@ -32,6 +40,18 @@ constexpr float GDefaultParticleInvMass = 1.0f;
 physx::PxVec3 ToPxVec3(const FVector& Vector)
 {
 	return physx::PxVec3(Vector.X, Vector.Y, Vector.Z);
+}
+
+/**
+ * @brief NvCloth particle 위치를 engine vector로 변환합니다
+ *
+ * @param Particle 변환할 NvCloth particle
+ *
+ * @return 변환된 engine vector
+ */
+FVector ToFVectorPosition(const physx::PxVec4& Particle)
+{
+	return FVector(Particle.x, Particle.y, Particle.z);
 }
 
 /**
@@ -48,6 +68,43 @@ physx::PxVec4 ToPxParticle(const FVector& Vector, float InvMass)
 	return physx::PxVec4(Vector.X, Vector.Y, Vector.Z, InvMass);
 }
 #endif
+
+/**
+ * @brief 실수 값을 지정된 범위 안으로 보정합니다
+ *
+ * @param Value 보정할 실수 값
+ *
+ * @param MinValue 허용 최소값
+ *
+ * @param MaxValue 허용 최대값
+ *
+ * @return 보정된 실수 값
+ */
+float ClampFloat(float Value, float MinValue, float MaxValue)
+{
+	if (!std::isfinite(Value))
+	{
+		return MinValue;
+	}
+
+	return (std::max)(MinValue, (std::min)(Value, MaxValue));
+}
+
+/**
+ * @brief 정수 값을 지정된 범위 안으로 보정합니다
+ *
+ * @param Value 보정할 정수 값
+ *
+ * @param MinValue 허용 최소값
+ *
+ * @param MaxValue 허용 최대값
+ *
+ * @return 보정된 정수 값
+ */
+int32 ClampInt(int32 Value, int32 MinValue, int32 MaxValue)
+{
+	return (std::max)(MinValue, (std::min)(Value, MaxValue));
+}
 }
 
 struct FClothSimulation::FImpl
@@ -356,17 +413,258 @@ void FClothSimulation::Shutdown()
 	ParticleCount = 0;
 	IndexCount = 0;
 	PinnedCount = 0;
+	AccumulatedTime = 0.0f;
+	SimulationTime = 0.0f;
+	LastStepCount = 0;
 }
 
-void FClothSimulation::Tick(float DeltaTime)
+bool FClothSimulation::Tick(
+	float DeltaTime,
+	const FClothSimulationRuntimeConfig& RuntimeConfig,
+	TArray<FVector>& OutPositionsComponentLocal)
 {
-	(void)DeltaTime;
+	OutPositionsComponentLocal.clear();
+	LastStepCount = 0;
+	LastFailureDetail.clear();
 
-	// commit 3 범위: 실제 solver 진행 없이 resource 연결 상태만 유지
 	if (!IsSimulationAvailable())
+	{
+		AccumulatedTime = 0.0f;
+		return false;
+	}
+
+	if (!std::isfinite(DeltaTime) || DeltaTime <= 0.0f)
+	{
+		return false;
+	}
+
+	const float FixedStep = ClampFloat(RuntimeConfig.Timestep.FixedTimeStep, GMinFixedStep, GMaxFixedStep);
+	const uint32 MaxSubsteps = static_cast<uint32>(ClampInt(RuntimeConfig.Timestep.MaxSubsteps, GMinSubstepCount, GMaxSubstepCount));
+	const float MaxAccumulatedTime = (std::max)(FixedStep, RuntimeConfig.Timestep.MaxAccumulatedTime);
+	AccumulatedTime = (std::min)(AccumulatedTime + DeltaTime, MaxAccumulatedTime);
+
+	bool bSimulatedAnyStep = false;
+	while (AccumulatedTime + GVectorTolerance >= FixedStep && LastStepCount < MaxSubsteps)
+	{
+		// live property 변경이 다음 solver step에 바로 들어가도록 매 step 전에 반영
+		ApplyRuntimeConfig(RuntimeConfig);
+		ApplyTurbulenceAcceleration(RuntimeConfig);
+
+		if (!SimulateStep(FixedStep))
+		{
+			return false;
+		}
+
+		AccumulatedTime -= FixedStep;
+		SimulationTime += FixedStep;
+		++LastStepCount;
+		bSimulatedAnyStep = true;
+	}
+
+	if (!bSimulatedAnyStep)
+	{
+		return false;
+	}
+
+	return ReadCurrentPositions(OutPositionsComponentLocal);
+}
+
+void FClothSimulation::ApplyRuntimeConfig(const FClothSimulationRuntimeConfig& RuntimeConfig)
+{
+#if WITH_NV_CLOTH
+	if (!Impl || !Impl->Cloth)
 	{
 		return;
 	}
+
+	const float Damping = ClampFloat(RuntimeConfig.Damping, 0.0f, 1.0f);
+	const float Stiffness = ClampFloat(RuntimeConfig.Stiffness, 0.0f, 1.0f);
+	const float FixedStep = ClampFloat(RuntimeConfig.Timestep.FixedTimeStep, GMinFixedStep, GMaxFixedStep);
+	const float SolverFrequency = (std::max)(1.0f, 1.0f / FixedStep);
+
+	// component local simulation 공간 기준 중력과 solver parameter 갱신
+	Impl->Cloth->setGravity(ToPxVec3(RuntimeConfig.GravityAccelerationComponentLocal));
+	Impl->Cloth->setDamping(physx::PxVec3(Damping, Damping, Damping));
+	Impl->Cloth->setSolverFrequency(SolverFrequency);
+	Impl->Cloth->setStiffnessFrequency(SolverFrequency);
+	Impl->Cloth->setTetherConstraintStiffness(Stiffness);
+	Impl->Cloth->setTetherConstraintScale(Stiffness > 0.0f ? 1.0f : 0.0f);
+
+	if (Impl->Fabric)
+	{
+		const uint32 PhaseCount = Impl->Fabric->getNumPhases();
+		TArray<nv::cloth::PhaseConfig> PhaseConfigs;
+		PhaseConfigs.reserve(PhaseCount);
+
+		for (uint32 PhaseIndex = 0; PhaseIndex < PhaseCount; ++PhaseIndex)
+		{
+			nv::cloth::PhaseConfig PhaseConfig(static_cast<uint16_t>(PhaseIndex));
+			PhaseConfig.mStiffness = Stiffness;
+			PhaseConfig.mStiffnessMultiplier = 1.0f;
+			PhaseConfig.mCompressionLimit = 1.0f;
+			PhaseConfig.mStretchLimit = 1.0f;
+			PhaseConfigs.push_back(PhaseConfig);
+		}
+
+		if (!PhaseConfigs.empty())
+		{
+			Impl->Cloth->setPhaseConfig(
+				nv::cloth::Range<const nv::cloth::PhaseConfig>(
+					PhaseConfigs.data(),
+					PhaseConfigs.data() + PhaseConfigs.size()));
+		}
+	}
+
+	if (RuntimeConfig.Wind.bEnabled && RuntimeConfig.Wind.Strength > 0.0f)
+	{
+		const FVector WindDirection = RuntimeConfig.Wind.Direction.GetSafeNormal(GVectorTolerance, FVector::ForwardVector);
+		const FVector WindVelocity = WindDirection * RuntimeConfig.Wind.Strength;
+		Impl->Cloth->setWindVelocity(ToPxVec3(WindVelocity));
+		Impl->Cloth->setDragCoefficient(0.5f);
+		Impl->Cloth->setLiftCoefficient(0.05f);
+		Impl->Cloth->setFluidDensity(1.0f);
+	}
+	else
+	{
+		Impl->Cloth->setWindVelocity(physx::PxVec3(0.0f, 0.0f, 0.0f));
+		Impl->Cloth->setDragCoefficient(0.0f);
+		Impl->Cloth->setLiftCoefficient(0.0f);
+	}
+
+	if (RuntimeConfig.SelfCollision.bEnabled && RuntimeConfig.SelfCollision.Distance > 0.0f)
+	{
+		Impl->Cloth->setSelfCollisionDistance((std::max)(0.0f, RuntimeConfig.SelfCollision.Distance));
+		Impl->Cloth->setSelfCollisionStiffness(ClampFloat(RuntimeConfig.SelfCollision.Stiffness, 0.0f, 1.0f));
+		// NvCloth 1.1 public header에는 self collision cull scale setter가 없어서 distance/stiffness만 반영
+	}
+	else
+	{
+		Impl->Cloth->setSelfCollisionDistance(0.0f);
+		Impl->Cloth->setSelfCollisionStiffness(0.0f);
+	}
+#else
+	(void)RuntimeConfig;
+#endif
+}
+
+void FClothSimulation::ApplyTurbulenceAcceleration(const FClothSimulationRuntimeConfig& RuntimeConfig)
+{
+#if WITH_NV_CLOTH
+	if (!Impl || !Impl->Cloth)
+	{
+		return;
+	}
+
+	if (!RuntimeConfig.Wind.bEnabled || RuntimeConfig.Wind.TurbulenceStrength <= 0.0f)
+	{
+		Impl->Cloth->clearParticleAccelerations();
+		return;
+	}
+
+	nv::cloth::Range<physx::PxVec4> Accelerations = Impl->Cloth->getParticleAccelerations();
+	if (Accelerations.size() < ParticleCount)
+	{
+		// backend별 particle acceleration range가 제공되지 않으면 turbulence만 안전하게 비활성화
+		Impl->Cloth->clearParticleAccelerations();
+		return;
+	}
+
+	const nv::cloth::MappedRange<const physx::PxVec4> Particles = nv::cloth::readCurrentParticles(*Impl->Cloth);
+	if (Particles.size() < ParticleCount)
+	{
+		Impl->Cloth->clearParticleAccelerations();
+		return;
+	}
+
+	const float SpatialScale = (std::max)(1.0e-3f, RuntimeConfig.Wind.TurbulenceSpatialScale);
+	const float TemporalScale = (std::max)(0.0f, RuntimeConfig.Wind.TurbulenceTemporalScale);
+	const float Strength = (std::max)(0.0f, RuntimeConfig.Wind.TurbulenceStrength);
+	const float Seed = static_cast<float>(RuntimeConfig.Wind.TurbulenceSeed) * 0.017f;
+	const float TimePhase = SimulationTime * TemporalScale;
+
+	for (uint32 ParticleIndex = 0; ParticleIndex < ParticleCount; ++ParticleIndex)
+	{
+		const FVector Position = ToFVectorPosition(Particles[ParticleIndex]);
+		const float BasePhase = (Position.X * 0.071f + Position.Y * 0.113f + Position.Z * 0.173f) / SpatialScale + TimePhase + Seed;
+
+		// 단순 deterministic noise 기반 particle별 turbulence acceleration
+		const FVector Noise(
+			static_cast<float>(std::sin(BasePhase)),
+			static_cast<float>(std::sin(BasePhase * 1.37f + 2.11f)),
+			static_cast<float>(std::sin(BasePhase * 1.91f + 4.23f)));
+		const FVector Acceleration = Noise * Strength;
+		Accelerations[ParticleIndex] = physx::PxVec4(Acceleration.X, Acceleration.Y, Acceleration.Z, 0.0f);
+	}
+#else
+	(void)RuntimeConfig;
+#endif
+}
+
+bool FClothSimulation::SimulateStep(float FixedStep)
+{
+#if WITH_NV_CLOTH
+	if (!Impl || !Impl->Solver)
+	{
+		LastFailureDetail = "NvCloth solver is null";
+		return false;
+	}
+
+	if (!Impl->Solver->beginSimulation(FixedStep))
+	{
+		return false;
+	}
+
+	const int ChunkCount = Impl->Solver->getSimulationChunkCount();
+	for (int ChunkIndex = 0; ChunkIndex < ChunkCount; ++ChunkIndex)
+	{
+		Impl->Solver->simulateChunk(ChunkIndex);
+	}
+
+	Impl->Solver->endSimulation();
+	if (Impl->Solver->hasError())
+	{
+		bValid = false;
+		LastFailureDetail = "NvCloth solver reported an unrecoverable error";
+		return false;
+	}
+
+	return true;
+#else
+	(void)FixedStep;
+	LastFailureDetail = "WITH_NV_CLOTH is disabled";
+	return false;
+#endif
+}
+
+bool FClothSimulation::ReadCurrentPositions(TArray<FVector>& OutPositionsComponentLocal)
+{
+	OutPositionsComponentLocal.clear();
+
+#if WITH_NV_CLOTH
+	if (!Impl || !Impl->Cloth)
+	{
+		LastFailureDetail = "NvCloth cloth instance is null";
+		return false;
+	}
+
+	const nv::cloth::MappedRange<const physx::PxVec4> Particles = nv::cloth::readCurrentParticles(*Impl->Cloth);
+	if (Particles.size() < ParticleCount)
+	{
+		LastFailureDetail = "current particle range is smaller than simulation particle count";
+		return false;
+	}
+
+	OutPositionsComponentLocal.reserve(ParticleCount);
+	for (uint32 ParticleIndex = 0; ParticleIndex < ParticleCount; ++ParticleIndex)
+	{
+		OutPositionsComponentLocal.push_back(ToFVectorPosition(Particles[ParticleIndex]));
+	}
+
+	return true;
+#else
+	LastFailureDetail = "WITH_NV_CLOTH is disabled";
+	return false;
+#endif
 }
 
 bool FClothSimulation::IsSimulationAvailable() const
@@ -394,5 +692,8 @@ bool FClothSimulation::SetBuildFailure(const FString& FailureDetail)
 	ParticleCount = 0;
 	IndexCount = 0;
 	PinnedCount = 0;
+	AccumulatedTime = 0.0f;
+	SimulationTime = 0.0f;
+	LastStepCount = 0;
 	return false;
 }

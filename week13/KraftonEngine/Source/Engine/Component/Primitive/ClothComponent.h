@@ -170,6 +170,24 @@ private:
 	FClothConfig MakeClothConfig() const;
 
 	/**
+	 * @brief 현재 property와 transform 기준 runtime simulation 설정을 생성합니다
+	 *
+	 * @param Config timestep 보정값을 제공하는 cloth config
+	 *
+	 * @return runtime simulation 설정
+	 */
+	FClothSimulationRuntimeConfig MakeSimulationRuntimeConfig(const FClothConfig& Config) const;
+
+	/**
+	 * @brief 현재 tick에서 simulation을 진행해야 하는지 반환합니다
+	 *
+	 * @param TickType level tick 종류
+	 *
+	 * @return simulation tick 허용 여부
+	 */
+	bool ShouldTickSimulation(ELevelTick TickType) const;
+
+	/**
 	 * @brief 현재 config로 procedural grid를 생성합니다
 	 *
 	 * @param Config grid 생성에 사용할 cloth config
@@ -214,6 +232,30 @@ private:
 	 * @param Config pin index 계산에 사용할 cloth config
 	 */
 	void ApplySimulationPinningIfNeeded(const FClothConfig& Config);
+
+	/**
+	 * @brief cloth simulation을 진행하고 render data에 결과를 반영합니다
+	 *
+	 * @param DeltaTime 프레임 delta time
+	 *
+	 * @param TickType level tick 종류
+	 *
+	 * @param Config bounds와 timestep 보정값을 제공하는 cloth config
+	 */
+	void TickSimulationIfNeeded(float DeltaTime, ELevelTick TickType, const FClothConfig& Config);
+
+	/**
+	 * @brief simulation readback 위치를 render data에 반영합니다
+	 *
+	 * @param Config bounds margin을 제공하는 cloth config
+	 *
+	 * @param PositionsComponentLocal component local 기준 simulation 위치 배열
+	 *
+	 * @return render data 갱신 성공 여부
+	 */
+	bool ApplySimulationPositionsToRenderData(
+		const FClothConfig& Config,
+		const TArray<FVector>& PositionsComponentLocal);
 
 	/**
 	 * @brief triangle과 UV 기준으로 normal과 tangent를 다시 계산합니다
@@ -273,6 +315,24 @@ private:
 	 * @return component local 기준 단위 방향
 	 */
 	FVector TransformActorLocalDirectionToComponentLocal(const FVector& ActorLocalDirection) const;
+
+	/**
+	 * @brief world vector를 component local vector로 변환합니다
+	 *
+	 * @param WorldVector world 기준 vector
+	 *
+	 * @return component local 기준 vector
+	 */
+	FVector TransformWorldVectorToComponentLocal(const FVector& WorldVector) const;
+
+	/**
+	 * @brief world 방향을 component local 단위 방향으로 변환합니다
+	 *
+	 * @param WorldDirection world 기준 방향
+	 *
+	 * @return component local 기준 단위 방향
+	 */
+	FVector TransformWorldDirectionToComponentLocal(const FVector& WorldDirection) const;
 
 	/**
 	 * @brief actor local plane을 component local plane으로 변환합니다
@@ -452,6 +512,7 @@ private:
 
 	FClothRenderData RenderData;
 	FClothSimulation Simulation;
+	TArray<FVector> SimulationReadbackPositions;
 	TArray<uint32> CachedPinnedIndices;
 	TArray<FVector> CachedPinTargetPositionsComponentLocal;
 	FVector CachedLocalCenter = FVector::ZeroVector;
@@ -465,4 +526,5 @@ private:
 	bool bCollisionDirty = true;
 	bool bEditorPreviewDirty = true;
 	bool bBackendStatusLogged = false;
+	bool bSimulationTickWarningLogged = false;
 };

@@ -215,6 +215,19 @@ struct FClothSelfCollisionConfig
 };
 
 /**
+ * @brief Cloth runtime simulation 설정 묶음
+ */
+struct FClothSimulationRuntimeConfig
+{
+	FClothTimestepConfig Timestep;
+	FVector GravityAccelerationComponentLocal = FVector(0.0f, 0.0f, -980.0f);
+	float Damping = 0.1f;
+	float Stiffness = 1.0f;
+	FClothWindConfig Wind;
+	FClothSelfCollisionConfig SelfCollision;
+};
+
+/**
  * @brief Cloth collision primitive 종류
  */
 enum class EClothCollisionPrimitiveType : uint8
