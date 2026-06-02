@@ -19,6 +19,18 @@ void UBodySetup::Serialize(FArchive& Ar)
 	Ar << AggGeom;
 }
 
+void UBodySetup::SerializeComplexCollision(FArchive& Ar)
+{
+	Ar << ComplexCollisionVertices;
+	Ar << ComplexCollisionIndices;
+
+	if (Ar.IsLoading() && CookedTriangleMesh)
+	{
+		CookedTriangleMesh->release();
+		CookedTriangleMesh = nullptr;
+	}
+}
+
 void UBodySetup::CreateDefaultBox(const FVector& Center, const FVector& Extents)
 {
 	AggGeom.BoxElems.clear();

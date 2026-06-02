@@ -5,15 +5,25 @@
 #include "Editor/UI/Asset/Physics/PhysicsAssetEditorTypes.h"
 #include "Editor/Viewport/Asset/PhysicsAssetEditorViewportClient.h"
 #include "Math/Transform.h"
+#include "Physics/PhysicsConstraintTemplate.h"
 
 struct ImDrawList;
 struct ImVec2;
 class AActor;
 class UPhysicsAsset;
 class UBodySetup;
+class UPhysicsConstraintTemplate;
 class USkeletalMesh;
 class USkeletalMeshComponent;
 struct FSkeletalMesh;
+
+namespace ax
+{
+	namespace NodeEditor
+	{
+		struct EditorContext;
+	}
+}
 
 class FPhysicsAssetEditorWidget : public FAssetEditorWidget
 {
@@ -60,6 +70,13 @@ private:
 	void ValidateSelection(UPhysicsAsset* Asset);
 	void SyncViewportHighlight();
 	bool DeleteSelection(UPhysicsAsset* Asset);
+	bool GetSelectedBodyBoneName(UPhysicsAsset* Asset, FName& OutBoneName) const;
+	bool SetSelectedCollisionEnabled(UPhysicsAsset* Asset, bool bEnabled);
+	bool SetSelectedPhysicalMaterialPath(UPhysicsAsset* Asset, const FString& Path);
+	bool ApplyConstraintPreset(UPhysicsAsset* Asset, int32 ConstraintIndex, EAngularConstraintMode Mode, float Swing1, float Swing2, float Twist);
+	UPhysicsConstraintTemplate* CreateConstraintBetweenBodies(UPhysicsAsset* Asset, int32 ParentBodyIndex, int32 ChildBodyIndex);
+	void EnsureGraphEditorContext();
+	void DestroyGraphEditorContext();
 
 private:
 	FPhysicsAssetEditorViewportClient ViewportClient;
@@ -88,4 +105,6 @@ private:
 	bool bPendingClose = false;
 	bool bPreviewSimulationActive = false;
 	TArray<FTransform> PreviewSimulationStartLocalPose;
+	ax::NodeEditor::EditorContext* GraphEditorContext = nullptr;
+	bool bGraphPositionsPushed = false;
 };

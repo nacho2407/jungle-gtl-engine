@@ -35,6 +35,41 @@ void UStaticMesh::Serialize(FArchive& Ar)
 	// 2. 머티리얼 데이터 직렬화 (필수!)
 	Ar << StaticMaterials;
 
+	if (Ar.IsSaving())
+	{
+		BuildDefaultBodySetupIfNeeded();
+
+		uint32 ExtVersion = 1;
+		Ar << ExtVersion;
+
+		bool bHasBodySetup = BodySetup != nullptr;
+		Ar << bHasBodySetup;
+		if (bHasBodySetup)
+		{
+			BodySetup->Serialize(Ar);
+			BodySetup->SerializeComplexCollision(Ar);
+		}
+	}
+	else if (!Ar.AtEnd())
+	{
+		uint32 ExtVersion = 0;
+		Ar << ExtVersion;
+		if (ExtVersion >= 1)
+		{
+			bool bHasBodySetup = false;
+			Ar << bHasBodySetup;
+			if (bHasBodySetup)
+			{
+				if (!BodySetup)
+				{
+					BodySetup = UObjectManager::Get().CreateObject<UBodySetup>(this);
+				}
+				BodySetup->Serialize(Ar);
+				BodySetup->SerializeComplexCollision(Ar);
+			}
+		}
+	}
+
 	// 3. 로딩 시 Section → MaterialIndex 매핑 캐싱 (매 프레임 문자열 비교 방지)
 	if (Ar.IsLoading())
 	{

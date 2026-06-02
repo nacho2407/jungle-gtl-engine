@@ -30,6 +30,7 @@ public:
 	~UBodySetup() override;
 	
 	void Serialize(FArchive& Ar) override; 
+	void SerializeComplexCollision(FArchive& Ar);
 
 	FKAggregateGeom& GetAggGeom() { return AggGeom; }
 	const FKAggregateGeom& GetAggGeom() const { return AggGeom; }

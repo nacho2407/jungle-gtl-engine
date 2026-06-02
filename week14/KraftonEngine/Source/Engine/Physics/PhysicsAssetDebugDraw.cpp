@@ -138,6 +138,9 @@ void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
 
 			const float            Scale = AverageScale(BoneMatrix);
 			const FKAggregateGeom& Geom  = Body->GetAggGeom();
+			const FColor ProfileBodyColor = Asset->IsBodyCollisionEnabled(Body->GetBoneName())
+				? Options.BodyColor
+				: FColor(128, 128, 128);
 
 			if (bLog && LogCount < 6)
 			{
@@ -164,7 +167,7 @@ void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
 				const FKSphereElem& S = Geom.SphereElems[ShapeIndex];
 				const FColor& Color = IsHighlightedShape(Options, BodyIndex, EPhysicsAssetShapeType::Sphere, ShapeIndex)
 					? Options.HighlightColor
-					: Options.BodyColor;
+					: ProfileBodyColor;
 				DrawSphereElem(World, BoneMatrix, Scale, S.Center, S.Radius, Color);
 			}
 			for (int32 ShapeIndex = 0; ShapeIndex < static_cast<int32>(Geom.BoxElems.size()); ++ShapeIndex)
@@ -172,7 +175,7 @@ void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
 				const FKBoxElem& B = Geom.BoxElems[ShapeIndex];
 				const FColor& Color = IsHighlightedShape(Options, BodyIndex, EPhysicsAssetShapeType::Box, ShapeIndex)
 					? Options.HighlightColor
-					: Options.BodyColor;
+					: ProfileBodyColor;
 				DrawBoxElem(World, BoneMatrix, B.Center, B.Rotation, B.Extents, Color);
 			}
 			for (int32 ShapeIndex = 0; ShapeIndex < static_cast<int32>(Geom.SphylElems.size()); ++ShapeIndex)
@@ -180,7 +183,7 @@ void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
 				const FKSphylElem& C = Geom.SphylElems[ShapeIndex];
 				const FColor& Color = IsHighlightedShape(Options, BodyIndex, EPhysicsAssetShapeType::Sphyl, ShapeIndex)
 					? Options.HighlightColor
-					: Options.BodyColor;
+					: ProfileBodyColor;
 				DrawSphylElem(World, BoneMatrix, Scale, C.Center, C.Rotation, C.Radius, C.Length, Color);
 			}
 		}
@@ -212,9 +215,12 @@ void DrawPhysicsAssetDebug(UWorld* World, const UPhysicsAsset* Asset,
 			const FVector JointWorld   = ParentMat.TransformPositionWithW(Constraint->GetLocalFrameA().Location);
 			const FVector ParentOrigin = ParentMat.GetLocation();
 			const FVector ChildOrigin  = ChildMat.GetLocation();
+			const FColor ProfileConstraintColor = Asset->IsCollisionDisabled(Constraint->GetParentBoneName(), Constraint->GetChildBoneName())
+				? FColor(255, 72, 48)
+				: Options.ConstraintColor;
 			const FColor& ConstraintColor = ConstraintIndex == Options.HighlightConstraintIndex
 				? Options.HighlightColor
-				: Options.ConstraintColor;
+				: ProfileConstraintColor;
 
 			// 부모 → 조인트 → 자식 연결선
 			DrawDebugLine(World, ParentOrigin, JointWorld, ConstraintColor, PhysicsAssetDebugDrawDuration);

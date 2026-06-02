@@ -73,6 +73,10 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 	for (UBodySetup* Setup : BodySetups)
 	{
 		if (!Setup) continue;
+		if (!Asset->IsBodyCollisionEnabled(Setup->GetBoneName()))
+		{
+			continue;
+		}
 
 		const FString BoneName = Setup->GetBoneName().ToString();
 
