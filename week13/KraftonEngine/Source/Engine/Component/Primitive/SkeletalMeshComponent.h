@@ -172,6 +172,7 @@ private:
     void CapturePersistentAnimInstanceSettings();
     void ApplyPersistentAnimInstanceSettings(UAnimInstance* Instance);
 
+protected:
     UPhysicsAsset* GetPhysicsAssetForRagdoll();
     bool ValidatePhysicsAssetForRagdoll(UPhysicsAsset* PhysicsAsset, const FSkeletalMesh* Asset) const;
 

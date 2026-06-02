@@ -11,17 +11,21 @@
 #include "Animation/Sequence/AnimDataModel.h"
 #include "Animation/Sequence/AnimSequence.h"
 #include "Component/Debug/PhysicsAssetDebugComponent.h"
+#include "Component/Debug/SkeletalMeshDebugComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Object/Object.h"
+#include "Physics/IPhysicsScene.h"
 #include "PhysicsEngine/PhysicsAsset.h"
 #include "PhysicsEngine/PhysicsAssetManager.h"
 #include "Platform/Paths.h"
 #include "Runtime/Engine.h"
 #include "Serialization/MemoryArchive.h"
+#include "Slate/SlateApplication.h"
 #include "UI/Asset/Animation/AnimMontagePropertyPanel.h"
 #include "UI/Asset/Animation/AnimSequencePropertyPanel.h"
 #include "UI/Asset/Animation/AnimationTimelinePanel.h"
@@ -296,6 +300,353 @@ namespace
 	}
 }
 
+class FPhysicsAssetRagdollOverlay
+{
+public:
+	void Reset()
+	{
+		Stop(nullptr);
+		InitialLocalPose.clear();
+		InitialRelativeTransform = FTransform();
+		bHasInitialRelativeTransform = false;
+		bPaused = false;
+	}
+
+	void Stop(USkeletalMeshDebugComponent* MeshComponent)
+	{
+		if (MeshComponent)
+		{
+			MeshComponent->StopRagdollPreviewSimulation();
+		}
+		bSimulationActive = false;
+		bPaused = false;
+	}
+
+	void Tick(float DeltaTime, USkeletalMeshDebugComponent* MeshComponent)
+	{
+		if (!bSimulationActive || bPaused || !MeshComponent)
+		{
+			return;
+		}
+
+		if (!MeshComponent->IsRagdollEnabled())
+		{
+			bSimulationActive = false;
+			bPaused = false;
+			return;
+		}
+
+		if (UWorld* World = MeshComponent->GetWorld())
+		{
+			if (IPhysicsScene* PhysicsScene = World->GetPhysicsScene())
+			{
+				PhysicsScene->Tick(DeltaTime);
+			}
+		}
+
+		MeshComponent->TickRagdollPreviewSimulation(DeltaTime);
+	}
+
+	bool Render(
+		const ImVec2& ViewportPos,
+		const ImVec2& ViewportSize,
+		USkeletalMeshDebugComponent* MeshComponent,
+		UPhysicsAsset* PhysicsAsset,
+		int32 SelectedBodyIndex,
+		uint32 OwnerInstanceId)
+	{
+		constexpr float OverlayWidth = 232.0f;
+		constexpr float Padding = 8.0f;
+		const float ClampedWidth = std::max(180.0f, std::min(OverlayWidth, ViewportSize.x - Padding * 2.0f));
+		const ImVec2 OverlayPos(
+			std::max(ViewportPos.x + Padding, ViewportPos.x + ViewportSize.x - ClampedWidth - Padding),
+			ViewportPos.y + 36.0f);
+
+		const FString WindowId = "Ragdoll##PhysicsAssetRagdollOverlay_" + std::to_string(OwnerInstanceId);
+		ImGui::SetNextWindowPos(OverlayPos, ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(ClampedWidth, 0.0f), ImGuiCond_Always);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 4.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(8.0f, 8.0f));
+		ImGui::PushStyleColor(ImGuiCol_WindowBg, IM_COL32(22, 24, 28, 225));
+		ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(255, 255, 255, 50));
+
+		const ImGuiWindowFlags Flags =
+			ImGuiWindowFlags_NoDecoration |
+			ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoSavedSettings |
+			ImGuiWindowFlags_AlwaysAutoResize;
+
+		bool bHovered = false;
+		if (ImGui::Begin(WindowId.c_str(), nullptr, Flags))
+		{
+			bHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
+			RenderContents(MeshComponent, PhysicsAsset, SelectedBodyIndex);
+		}
+		ImGui::End();
+
+		ImGui::PopStyleColor(2);
+		ImGui::PopStyleVar(2);
+		return bHovered;
+	}
+
+	bool IsActive() const { return bSimulationActive; }
+
+private:
+	void RenderContents(USkeletalMeshDebugComponent* MeshComponent, UPhysicsAsset* PhysicsAsset, int32 SelectedBodyIndex)
+	{
+		ImGui::TextUnformatted("Ragdoll");
+		ImGui::Separator();
+
+		const bool bCanPlay = MeshComponent && PhysicsAsset;
+		if (!bSimulationActive)
+		{
+			if (!bCanPlay)
+			{
+				ImGui::BeginDisabled();
+			}
+			if (ImGui::Button("Play", ImVec2(64.0f, 0.0f)))
+			{
+				Start(MeshComponent, PhysicsAsset);
+			}
+			if (!bCanPlay)
+			{
+				ImGui::EndDisabled();
+			}
+		}
+		else if (ImGui::Button("Stop", ImVec2(64.0f, 0.0f)))
+		{
+			Stop(MeshComponent);
+		}
+
+		ImGui::SameLine();
+		if (!bSimulationActive)
+		{
+			ImGui::BeginDisabled();
+		}
+		if (ImGui::Button(bPaused ? "Resume" : "Pause", ImVec2(72.0f, 0.0f)))
+		{
+			bPaused = !bPaused;
+		}
+		if (!bSimulationActive)
+		{
+			ImGui::EndDisabled();
+		}
+
+		ImGui::SameLine();
+		if (InitialLocalPose.empty())
+		{
+			ImGui::BeginDisabled();
+		}
+		if (ImGui::Button("Reset", ImVec2(64.0f, 0.0f)))
+		{
+			ResetPose(MeshComponent);
+		}
+		if (InitialLocalPose.empty())
+		{
+			ImGui::EndDisabled();
+		}
+
+		if (ImGui::Checkbox("Gravity", &bGravityEnabled))
+		{
+			if (MeshComponent)
+			{
+				MeshComponent->SetRagdollGravityEnabled(bGravityEnabled);
+			}
+		}
+
+		ImGui::SameLine();
+		if (ImGui::Checkbox("Constraints", &bCreateConstraints))
+		{
+			if (MeshComponent)
+			{
+				MeshComponent->SetRagdollCreateConstraints(bCreateConstraints);
+			}
+		}
+
+		if (ImGui::BeginCombo("Self Collision", GetSelfCollisionModeLabel(SelfCollisionMode)))
+		{
+			RenderSelfCollisionModeOption("Disable All", ERagdollSelfCollisionMode::DisableAll, MeshComponent);
+			RenderSelfCollisionModeOption("No Parent/Child", ERagdollSelfCollisionMode::DisableParentChild, MeshComponent);
+			RenderSelfCollisionModeOption("Enable All", ERagdollSelfCollisionMode::EnableAll, MeshComponent);
+			ImGui::EndCombo();
+		}
+
+		if (ImGui::SliderFloat("Blend", &BlendWeight, 0.0f, 1.0f, "%.2f"))
+		{
+			if (MeshComponent)
+			{
+				MeshComponent->SetRagdollGlobalPhysicsBlendWeight(BlendWeight);
+			}
+		}
+
+		if (!bSimulationActive)
+		{
+			ImGui::BeginDisabled();
+		}
+
+		if (ImGui::Button("Sim All", ImVec2(96.0f, 0.0f)) && MeshComponent)
+		{
+			MeshComponent->SetAllBodiesSimulatePhysics(true);
+			MeshComponent->SetAllBodiesPhysicsBlendWeight(1.0f);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Kin All", ImVec2(96.0f, 0.0f)) && MeshComponent)
+		{
+			MeshComponent->SetAllBodiesSimulatePhysics(false);
+			MeshComponent->SetAllBodiesPhysicsBlendWeight(0.0f);
+		}
+
+		const FName SelectedBoneName = GetSelectedBodyBoneName(PhysicsAsset, SelectedBodyIndex);
+		const bool bHasSelectedBody = SelectedBoneName.IsValid();
+		if (!bHasSelectedBody)
+		{
+			ImGui::BeginDisabled();
+		}
+
+		ImGui::Checkbox("Include Selected", &bIncludeSelectedSelf);
+		if (ImGui::Button("Sim Selected", ImVec2(96.0f, 0.0f)) && MeshComponent && bHasSelectedBody)
+		{
+			MeshComponent->SetAllBodiesBelowSimulatePhysics(SelectedBoneName, true, bIncludeSelectedSelf);
+			MeshComponent->SetAllBodiesBelowPhysicsBlendWeight(SelectedBoneName, 1.0f, bIncludeSelectedSelf);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Kin Selected", ImVec2(96.0f, 0.0f)) && MeshComponent && bHasSelectedBody)
+		{
+			MeshComponent->SetAllBodiesBelowSimulatePhysics(SelectedBoneName, false, bIncludeSelectedSelf);
+			MeshComponent->SetAllBodiesBelowPhysicsBlendWeight(SelectedBoneName, 0.0f, bIncludeSelectedSelf);
+		}
+
+		if (!bHasSelectedBody)
+		{
+			ImGui::EndDisabled();
+		}
+		if (!bSimulationActive)
+		{
+			ImGui::EndDisabled();
+		}
+	}
+
+	void Start(USkeletalMeshDebugComponent* MeshComponent, UPhysicsAsset* PhysicsAsset)
+	{
+		if (!MeshComponent || !PhysicsAsset)
+		{
+			return;
+		}
+
+		CaptureInitialPose(MeshComponent);
+
+		if (USkeletalMesh* Mesh = MeshComponent->GetSkeletalMesh())
+		{
+			Mesh->SetPhysicsAsset(PhysicsAsset);
+		}
+
+		MeshComponent->SetRagdollCreateConstraints(bCreateConstraints);
+		MeshComponent->SetRagdollSelfCollisionMode(SelfCollisionMode);
+		MeshComponent->SetRagdollGlobalPhysicsBlendWeight(BlendWeight);
+		MeshComponent->SetRagdollGravityEnabled(bGravityEnabled);
+		MeshComponent->SetRagdollEnabled(true);
+		MeshComponent->SetRagdollGravityEnabled(bGravityEnabled);
+		MeshComponent->SetRagdollGlobalPhysicsBlendWeight(BlendWeight);
+
+		bSimulationActive = MeshComponent->IsRagdollEnabled();
+		bPaused = false;
+	}
+
+	void ResetPose(USkeletalMeshDebugComponent* MeshComponent)
+	{
+		if (!MeshComponent || InitialLocalPose.empty() || !bHasInitialRelativeTransform)
+		{
+			return;
+		}
+
+		Stop(MeshComponent);
+		MeshComponent->SetRelativeTransform(InitialRelativeTransform);
+		MeshComponent->SetRagdollPreviewLocalPose(InitialLocalPose);
+	}
+
+	void CaptureInitialPose(USkeletalMeshDebugComponent* MeshComponent)
+	{
+		InitialLocalPose.clear();
+		InitialRelativeTransform = FTransform();
+		bHasInitialRelativeTransform = false;
+
+		USkeletalMesh* Mesh = MeshComponent ? MeshComponent->GetSkeletalMesh() : nullptr;
+		const FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+		if (!Asset)
+		{
+			return;
+		}
+
+		InitialRelativeTransform = MeshComponent->GetRelativeTransform();
+		bHasInitialRelativeTransform = true;
+
+		const int32 BoneCount = static_cast<int32>(Asset->Bones.size());
+		InitialLocalPose.reserve(BoneCount);
+		for (int32 BoneIndex = 0; BoneIndex < BoneCount; ++BoneIndex)
+		{
+			InitialLocalPose.push_back(MeshComponent->GetBoneLocalTransformByIndex(BoneIndex));
+		}
+	}
+
+	static FName GetSelectedBodyBoneName(UPhysicsAsset* PhysicsAsset, int32 SelectedBodyIndex)
+	{
+		if (!PhysicsAsset || SelectedBodyIndex < 0)
+		{
+			return FName::None;
+		}
+
+		const TArray<UBodySetup*>& Bodies = PhysicsAsset->GetBodySetups();
+		if (SelectedBodyIndex >= static_cast<int32>(Bodies.size()) || !Bodies[SelectedBodyIndex])
+		{
+			return FName::None;
+		}
+
+		return Bodies[SelectedBodyIndex]->BoneName;
+	}
+
+	static const char* GetSelfCollisionModeLabel(ERagdollSelfCollisionMode Mode)
+	{
+		switch (Mode)
+		{
+		case ERagdollSelfCollisionMode::DisableAll:
+			return "Disable All";
+		case ERagdollSelfCollisionMode::EnableAll:
+			return "Enable All";
+		case ERagdollSelfCollisionMode::DisableParentChild:
+		default:
+			return "No Parent/Child";
+		}
+	}
+
+	void RenderSelfCollisionModeOption(
+		const char* Label,
+		ERagdollSelfCollisionMode Mode,
+		USkeletalMeshDebugComponent* MeshComponent)
+	{
+		if (ImGui::Selectable(Label, SelfCollisionMode == Mode))
+		{
+			SelfCollisionMode = Mode;
+			if (MeshComponent)
+			{
+				MeshComponent->SetRagdollSelfCollisionMode(SelfCollisionMode);
+			}
+		}
+	}
+
+private:
+	bool bSimulationActive = false;
+	bool bPaused = false;
+	bool bGravityEnabled = true;
+	bool bCreateConstraints = true;
+	bool bIncludeSelectedSelf = true;
+	float BlendWeight = 1.0f;
+	ERagdollSelfCollisionMode SelfCollisionMode = ERagdollSelfCollisionMode::DisableParentChild;
+	TArray<FTransform> InitialLocalPose;
+	FTransform InitialRelativeTransform;
+	bool bHasInitialRelativeTransform = false;
+};
+
 FMeshEditorSkeletonTab::FMeshEditorSkeletonTab(FMeshEditorWidget& InOwner)
 	: FMeshEditorWidgetTab(InOwner)
 {
@@ -326,22 +677,6 @@ bool FMeshEditorSkeletonTab::ResolveOpenTarget(UObject* Object, UObject*& OutObj
 void FMeshEditorSkeletonTab::Reset()
 {
 	SelectedBoneIndex = -1;
-}
-
-void FMeshEditorSkeletonTab::OnPreviewActorCreated(AActor* Actor)
-{
-	if (!Actor)
-	{
-		return;
-	}
-
-	if (USkeletalMesh* Mesh = GetSkeletalMesh())
-	{
-		USkeletalMeshComponent* Comp = Actor->AddComponent<USkeletalMeshComponent>();
-		Comp->SetSkeletalMesh(Mesh);
-		Actor->SetRootComponent(Comp);
-		GetViewportClient().SetPreviewMeshComponent(Comp);
-	}
 }
 
 void FMeshEditorSkeletonTab::OnEditorOpened()
@@ -1202,8 +1537,11 @@ void FMeshEditorAnimationTab::Render(float AvailableHeight)
 
 FMeshEditorPhysicsAssetTab::FMeshEditorPhysicsAssetTab(FMeshEditorWidget& InOwner)
 	: FMeshEditorWidgetTab(InOwner)
+	, RagdollOverlay(std::make_unique<FPhysicsAssetRagdollOverlay>())
 {
 }
+
+FMeshEditorPhysicsAssetTab::~FMeshEditorPhysicsAssetTab() = default;
 
 bool FMeshEditorPhysicsAssetTab::CanEdit(UObject* Object) const
 {
@@ -1253,6 +1591,10 @@ bool FMeshEditorPhysicsAssetTab::ResolveOpenTarget(UObject* Object, UObject*& Ou
 
 void FMeshEditorPhysicsAssetTab::Reset()
 {
+	if (RagdollOverlay)
+	{
+		RagdollOverlay->Reset();
+	}
 	ClearReflectionDetailTarget();
 	SelectedPhysicsBodyIndex = -1;
 	SelectedPhysicsConstraintIndex = -1;
@@ -1262,7 +1604,10 @@ void FMeshEditorPhysicsAssetTab::Reset()
 
 void FMeshEditorPhysicsAssetTab::Tick(float DeltaTime)
 {
-	(void)DeltaTime;
+	if (RagdollOverlay)
+	{
+		RagdollOverlay->Tick(DeltaTime, GetViewportClient().GetPreviewDebugMeshComponent());
+	}
 	if (USkeletalMesh* SkeletalMesh = GetSkeletalMesh())
 	{
 		DetectReflectionDetailChanges(SkeletalMesh->GetPhysicsAsset());
@@ -1292,6 +1637,10 @@ void FMeshEditorPhysicsAssetTab::OnEditorOpened()
 
 void FMeshEditorPhysicsAssetTab::OnEditorClosing()
 {
+	if (RagdollOverlay)
+	{
+		RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+	}
 	ClearReflectionDetailTarget();
 	GetViewportClient().SetPhysicsAssetPickingEnabled(false);
 	GetViewportClient().SetOnPhysicsAssetBodyPicked(nullptr);
@@ -1314,6 +1663,10 @@ void FMeshEditorPhysicsAssetTab::OnActivated(EMeshEditorTab PreviousTab)
 void FMeshEditorPhysicsAssetTab::OnDeactivated(EMeshEditorTab NextTab)
 {
 	(void)NextTab;
+	if (RagdollOverlay)
+	{
+		RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+	}
 	ClearReflectionDetailTarget();
 	GetViewportClient().SetPhysicsAssetPickingEnabled(false);
 }
@@ -1370,7 +1723,22 @@ void FMeshEditorPhysicsAssetTab::Render(float AvailableHeight)
 		120.0f,
 		ImGui::GetContentRegionAvail().x);
 	const ImVec2 ViewportSize = ImVec2(ViewportWidth, ImGui::GetContentRegionAvail().y);
+	const ImVec2 ViewportPos = ImGui::GetCursorScreenPos();
 	RenderViewportPanel(ViewportSize);
+	if (RagdollOverlay)
+	{
+		const bool bRagdollOverlayHovered = RagdollOverlay->Render(
+			ViewportPos,
+			ViewportSize,
+			GetViewportClient().GetPreviewDebugMeshComponent(),
+			PhysicsAsset,
+			SelectedPhysicsBodyIndex,
+			GetOwnerInstanceId());
+		if (bRagdollOverlayHovered)
+		{
+			FSlateApplication::Get().SetViewportImGuiHovered(&GetViewportClient(), false);
+		}
+	}
 	ImGui::EndGroup();
 }
 
@@ -1447,6 +1815,10 @@ void FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBuildOptionsPopup(
 
 	if (ImGui::Button("Generate"))
 	{
+		if (RagdollOverlay)
+		{
+			RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+		}
 		PendingPhysicsAssetBuildOptions.MinBoneSize = std::max(0.0f, PendingPhysicsAssetBuildOptions.MinBoneSize);
 		PendingPhysicsAssetBuildOptions.MinWeldSize = std::max(0.0f, PendingPhysicsAssetBuildOptions.MinWeldSize);
 		PendingPhysicsAssetBuildOptions.FitPadding = std::max(1.0f, PendingPhysicsAssetBuildOptions.FitPadding);
@@ -1611,6 +1983,10 @@ bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBodyTree(const FSkeletalMesh*
 			: nullptr;
 		if (RenderAddPhysicsBodyShapeMenu(MutableBody))
 		{
+			if (RagdollOverlay)
+			{
+				RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+			}
 			SelectedPhysicsBodyIndex = BodyIndex;
 			SelectedPhysicsConstraintIndex = -1;
 			SavePhysicsAssetChange("PhysicsAsset body shape add warning");
@@ -1806,6 +2182,11 @@ void FMeshEditorPhysicsAssetTab::DetectReflectionDetailChanges(UPhysicsAsset* Ph
 		return;
 	}
 
+	if (RagdollOverlay)
+	{
+		RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+	}
+
 	if (ConstraintDesc)
 	{
 		const bool bParentChanged = HasVectorChanged(SnapshotConstraintParentLocation, ConstraintDesc->ParentFrame.Location);
@@ -1861,6 +2242,10 @@ void FMeshEditorPhysicsAssetTab::OnPhysicsAssetConstraintPicked(int32 Constraint
 
 void FMeshEditorPhysicsAssetTab::OnPhysicsAssetShapeEdited()
 {
+	if (RagdollOverlay)
+	{
+		RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+	}
 	SavePhysicsAssetChange("PhysicsAsset shape edit warning");
 	MarkDirty();
 	if (USkeletalMesh* SkeletalMesh = GetSkeletalMesh())
@@ -1871,6 +2256,10 @@ void FMeshEditorPhysicsAssetTab::OnPhysicsAssetShapeEdited()
 
 void FMeshEditorPhysicsAssetTab::OnPhysicsAssetConstraintEdited()
 {
+	if (RagdollOverlay)
+	{
+		RagdollOverlay->Stop(GetViewportClient().GetPreviewDebugMeshComponent());
+	}
 	SavePhysicsAssetChange("PhysicsAsset constraint gizmo warning");
 	MarkDirty();
 	if (USkeletalMesh* SkeletalMesh = GetSkeletalMesh())

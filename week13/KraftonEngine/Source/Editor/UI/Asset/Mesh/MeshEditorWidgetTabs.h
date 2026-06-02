@@ -7,9 +7,12 @@
 #include "Math/Vector.h"
 #include "PhysicsEngine/PhysicsAssetBuilder.h"
 
+#include <memory>
+
 class UAnimMontage;
 class UAnimSequence;
 class UPhysicsAsset;
+class FPhysicsAssetRagdollOverlay;
 struct FSkeletalMesh;
 
 struct FAnimationTabState
@@ -54,7 +57,6 @@ public:
 
 	void Render(float AvailableHeight) override;
 	void Reset() override;
-	void OnPreviewActorCreated(AActor* Actor) override;
 	void OnEditorOpened() override;
 	void OnActivated(EMeshEditorTab PreviousTab) override;
 
@@ -118,6 +120,7 @@ class FMeshEditorPhysicsAssetTab : public FMeshEditorWidgetTab
 {
 public:
 	explicit FMeshEditorPhysicsAssetTab(FMeshEditorWidget& InOwner);
+	~FMeshEditorPhysicsAssetTab() override;
 
 	EMeshEditorTab GetType() const override { return EMeshEditorTab::PhysicsAsset; }
 	const char* GetLabel() const override { return "Physics Asset"; }
@@ -171,4 +174,5 @@ private:
 	FVector SnapshotConstraintChildLocation = FVector::ZeroVector;
 	bool bOpenPhysicsAssetBuildOptions = false;
 	FPhysicsAssetBuildOptions PendingPhysicsAssetBuildOptions;
+	std::unique_ptr<FPhysicsAssetRagdollOverlay> RagdollOverlay;
 };
