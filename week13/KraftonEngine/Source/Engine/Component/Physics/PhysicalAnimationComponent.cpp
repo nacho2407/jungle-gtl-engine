@@ -17,6 +17,16 @@ UPhysicalAnimationComponent::UPhysicalAnimationComponent()
     PrimaryComponentTick.bTickEnabled = false;
 }
 
+void UPhysicalAnimationComponent::BeginPlay()
+{
+    Super::BeginPlay();
+
+    if (bPhysicalAnimationEnabled)
+    {
+        ActivatePhysicalAnimation();
+    }
+}
+
 void UPhysicalAnimationComponent::SetSkeletalMeshComponent(USkeletalMeshComponent* InMesh)
 {
     TargetMesh = InMesh;

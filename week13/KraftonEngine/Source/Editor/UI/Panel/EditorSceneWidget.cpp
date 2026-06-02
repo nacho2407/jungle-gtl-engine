@@ -6,6 +6,7 @@
 #include "Component/Debug/GizmoComponent.h"
 #include "Component/Light/LightComponentBase.h"
 #include "Component/Movement/MovementComponent.h"
+#include "Component/Physics/PhysicalAnimationComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/DecalComponent.h"
 #include "Component/Primitive/HeightFogComponent.h"
@@ -108,6 +109,7 @@ namespace
 
 		AddComponentClassGroup(OutGroups, "Light", ULightComponentBase::StaticClass());
 		AddComponentClassGroup(OutGroups, "Movement", UMovementComponent::StaticClass());
+		AddComponentClassGroup(OutGroups, "Physics", UPhysicalAnimationComponent::StaticClass());
 		AddComponentClassGroup(OutGroups, "Primitive", UPrimitiveComponent::StaticClass());
 
 		for (UClass* Cls : ComponentClasses)
