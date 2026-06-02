@@ -135,14 +135,16 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 // ============================================================
 // SelectEffectiveShader — ViewMode에 따른 UberLit 셰이더 변형 선택
 // ============================================================
-FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode, bool bUseSkeletalVertexFactory, bool bWeightBoneHeatMap, bool bFog)
+FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode, bool bUseSkeletalVertexFactory, bool bUseWheelVertexFactory, bool bWeightBoneHeatMap, bool bFog)
 {
-	if (ProxyShader != FShaderManager::Get().GetOrCreate(EShaderPath::UberLit))
+	if (!bUseWheelVertexFactory && ProxyShader != FShaderManager::Get().GetOrCreate(EShaderPath::UberLit))
 		return ProxyShader;
 
 	const EUberLitDefines::EVertexFactory VertexFactory = bUseSkeletalVertexFactory
 		? EUberLitDefines::EVertexFactory::SkeletalMesh
-		: EUberLitDefines::EVertexFactory::StaticMesh;
+		: bUseWheelVertexFactory
+			? EUberLitDefines::EVertexFactory::WheelMesh
+			: EUberLitDefines::EVertexFactory::StaticMesh;
 
 	switch (ViewMode)
 	{
@@ -156,7 +158,7 @@ FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewM
 	case EViewMode::LightCulling:
 		return FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Phong, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap, bFog);
 	default:
-		return (bUseSkeletalVertexFactory || bFog)
+		return (bUseSkeletalVertexFactory || bUseWheelVertexFactory || bFog)
 			? FShaderManager::Get().GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel::Default, VertexFactory, EShaderErrorMode::Notification, bWeightBoneHeatMap, bFog)
 			: ProxyShader;
 	}
@@ -182,6 +184,8 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 	ID3D11DeviceContext* Ctx = CachedContext;
 
 	const bool bSkeletal = Proxy.HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh);
+	const bool bCloth = Proxy.HasProxyFlag(EPrimitiveProxyFlags::Cloth);
+	const bool bWheelMesh = Proxy.HasProxyFlag(EPrimitiveProxyFlags::WheelMesh);
 	const bool bWeightBoneHeatMap = bSkeletal && bCollectWeightBoneHeatMap && CollectWeightBoneHeatMapBoneIndex >= 0;
 	const bool bGPUSkinning = bSkeletal && (SkinningModeRuntime::Get() == ESkinningMode::GPU || bWeightBoneHeatMap);
 	const FSkeletalMeshSceneProxy* SkeletalProxy = bSkeletal
@@ -240,7 +244,7 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 		FShader* SectionShader = (Section.Material && Section.Material->GetShader())
 			? Section.Material->GetShader()
 			: Proxy.GetShader();
-		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, bGPUSkinning, bWeightBoneHeatMap, bSectionIsTranslucent);
+		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, bGPUSkinning, bWheelMesh, bWeightBoneHeatMap, bSectionIsTranslucent);
 
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Pass = Pass;
@@ -276,6 +280,14 @@ void FDrawCommandBuilder::BuildCommandForProxy(FScene& Scene, const FPrimitiveSc
 			if (Pass == Mat->GetRenderPass())
 				ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
 		}
+
+		if (bCloth && Cmd.RenderState.Rasterizer != ERasterizerState::WireFrame)
+		{
+			// Cloth는 material cull 설정과 무관하게 양면 렌더링
+			Cmd.RenderState.Rasterizer = ERasterizerState::SolidNoCull;
+		}
+
+		Proxy.ApplyDrawCommandOverrides(CachedDevice, Ctx, Pass, Cmd);
 
 		if (Pass == ERenderPass::AlphaBlend)
 		{

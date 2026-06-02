@@ -1,5 +1,6 @@
 ﻿#include "GameFramework/World.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Component/Physics/PhysicalAnimationComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "Engine/Component/Camera/CameraComponent.h"
@@ -406,6 +407,28 @@ void UWorld::BeginPlay()
 	// E.2/3: AutoPossessDefaultCamera 는 PC 의 BeginPlay 가 처리.
 }
 
+void UWorld::TickPhysicalAnimationComponentsPrePhysics(float DeltaTime)
+{
+	for (AActor* Actor : GetActors())
+	{
+		if (!IsValid(Actor))
+		{
+			continue;
+		}
+
+		for (UActorComponent* Component : Actor->GetComponents())
+		{
+			UPhysicalAnimationComponent* PhysicalAnimation = Cast<UPhysicalAnimationComponent>(Component);
+			if (!PhysicalAnimation)
+			{
+				continue;
+			}
+
+			PhysicalAnimation->PrePhysicsTick(DeltaTime);
+		}
+	}
+}
+
 void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 {
 	{
@@ -431,6 +454,8 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 
 	if (bHasBegunPlay && PhysicsScene)
 	{
+		TickPhysicalAnimationComponentsPrePhysics(DeltaTime);
+
 		SCOPE_STAT_CAT("PhysicsScene", "1_WorldTick");
 		PhysicsScene->Tick(DeltaTime);
 	}

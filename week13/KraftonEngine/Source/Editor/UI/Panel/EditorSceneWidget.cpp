@@ -430,6 +430,12 @@ void FEditorSceneWidget::RenderActorContextMenu(AActor* Actor, FSelectionManager
 			RenderAddComponentMenu(Actor, nullptr, Selection);
 			ImGui::EndMenu();
 		}
+		ImGui::Separator();
+		if (ImGui::MenuItem("Delete Actor"))
+		{
+			Selection.Select(Actor);
+			Selection.DeleteSelectedActors();
+		}
 		ImGui::EndPopup();
 	}
 }

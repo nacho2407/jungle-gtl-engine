@@ -71,6 +71,9 @@ public:
 	bool RaycastByObjectTypes(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 		uint32 ObjectTypeMask, const AActor* IgnoreActor = nullptr) const override;
 
+	physx::PxScene* GetPxScene() const { return Scene; }
+	physx::PxMaterial* GetDefaultMaterial() const { return DefaultMaterial; }
+
 private:
 	UWorld* World = nullptr;
 
