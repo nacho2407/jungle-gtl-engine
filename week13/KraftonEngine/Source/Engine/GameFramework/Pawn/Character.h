@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Pawn/Pawn.h"
 #include "Component/Shape/CapsuleComponent.h"
@@ -43,6 +43,10 @@ public:
 	UFUNCTION(Callable, Exec, Category="Character|Movement")
 	void Jump();
 
+	// 시연용 - 추후 삭제
+	UFUNCTION(Callable, Exec, Category="Character|Ragdoll")
+	void EnterFullRagdoll();
+
 	UFUNCTION(Pure, Category="Character|Components")
 	UCapsuleComponent*           GetCapsuleComponent()  const { return CapsuleComponent; }
 	UFUNCTION(Pure, Category="Character|Components")
@@ -75,4 +79,5 @@ protected:
 	UCapsuleComponent*           CapsuleComponent  = nullptr;
 	USkeletalMeshComponent*      Mesh              = nullptr;
 	UCharacterMovementComponent* CharacterMovement = nullptr;
+	float InitialRagdollVelocityClampTimeRemaining = 0.0f;
 };

@@ -17,6 +17,7 @@
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/Pawn/Character.h"
 #include "GameFramework/Pawn/Pawn.h"
 #include "GameFramework/GameMode/PlayerController.h"
 #include "GameFramework/Camera/PlayerCameraManager.h"
@@ -2625,6 +2626,16 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		return nullptr;
 	},
 
+		"AsPawn", [](AActor& Actor) -> APawn*
+	{
+		return Cast<APawn>(&Actor);
+	},
+
+		"AsCharacter", [](AActor& Actor) -> ACharacter*
+	{
+		return Cast<ACharacter>(&Actor);
+	},
+
 		"UUID", sol::property([](AActor& Actor)
 	{
 		return Actor.GetUUID();
@@ -2642,6 +2653,13 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"SetAutoPossessPlayer", &APawn::SetAutoPossessPlayer,
 		"GetAutoPossessPlayer", &APawn::GetAutoPossessPlayer,
 		"GetInputComponent", &APawn::GetInputComponent);
+
+	Lua.new_usertype<ACharacter>("Character",
+		sol::base_classes,
+		sol::bases<APawn, AActor, UObject>(),
+		"AddMovementInput", &ACharacter::AddMovementInput,
+		"Jump", &ACharacter::Jump,
+		"EnterFullRagdoll", &ACharacter::EnterFullRagdoll);
 
 	// UInputComponent — Pawn::GetInputComponent 로 얻어 lua 에서 직접 매핑/binding 추가 가능.
 	// 예 (BeginPlay 안):

@@ -39,6 +39,7 @@
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
           "bEditorOnly" : false,
+          "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
           "bHiddenInComponentTree" : false,
           "bIsActive" : true,
@@ -88,6 +89,7 @@
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
               "bEditorOnly" : true,
+              "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
               "bHiddenInComponentTree" : true,
               "bIsActive" : true,
@@ -123,6 +125,7 @@
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
               "bEditorOnly" : true,
+              "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
               "bHiddenInComponentTree" : true,
               "bIsActive" : true,
@@ -158,6 +161,7 @@
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
               "bEditorOnly" : true,
+              "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
               "bHiddenInComponentTree" : true,
               "bIsActive" : true,
@@ -193,6 +197,7 @@
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
               "bEditorOnly" : true,
+              "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
               "bHiddenInComponentTree" : true,
               "bIsActive" : true,
@@ -228,6 +233,7 @@
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
               "bEditorOnly" : true,
+              "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
               "bHiddenInComponentTree" : true,
               "bIsActive" : true,
@@ -263,6 +269,7 @@
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
               "bEditorOnly" : true,
+              "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
               "bHiddenInComponentTree" : true,
               "bIsActive" : true,
@@ -298,6 +305,7 @@
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
               "bEditorOnly" : true,
+              "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
               "bHiddenInComponentTree" : true,
               "bIsActive" : true,
@@ -333,6 +341,43 @@
               "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
               "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bKinematicPhysics" : false,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "ObjectId" : 14,
+            "Properties" : {
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
+              "ObjectName" : "UBillboardComponent_141",
+              "ObjectType" : [0, 0, 0, 0, 0, 0, 0, 0],
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[1]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[2]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[3]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[4]" : [2, 0, 0, 0, 0, 0, 0, 0]
+              },
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
               "bHiddenInComponentTree" : true,
               "bIsActive" : true,
@@ -371,7 +416,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 14,
+      "ObjectId" : 15,
       "Properties" : {
         "ObjectName" : "ABoxActor_1",
         "PendingActorLocation" : [57.616024, 145.178055, 12.456444],
@@ -384,7 +429,7 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 15,
+        "ObjectId" : 16,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -408,6 +453,7 @@
           "bCastShadowAsTwoSided" : false,
           "bDrawOnlyIfSelected" : false,
           "bEditorOnly" : false,
+          "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
           "bHiddenInComponentTree" : false,
           "bIsActive" : true,
@@ -422,7 +468,7 @@
       "Name" : "ALuaCharacter_1",
       "NonSceneComponents" : [{
           "ClassName" : "UCharacterMovementComponent",
-          "ObjectId" : 21,
+          "ObjectId" : 22,
           "Properties" : {
             "BrakingFriction" : 8.000000,
             "FloorProbeDistance" : 0.100000,
@@ -442,7 +488,7 @@
           }
         }, {
           "ClassName" : "ULuaScriptComponent",
-          "ObjectId" : 22,
+          "ObjectId" : 23,
           "Properties" : {
             "ObjectName" : "ULuaScriptComponent_1",
             "ScriptFile" : "ULevel_9_ALuaCharacter_1.lua",
@@ -454,7 +500,7 @@
           }
         }, {
           "ClassName" : "UPhysicalAnimationComponent",
-          "ObjectId" : 23,
+          "ObjectId" : 24,
           "Properties" : {
             "DriveRootBoneName" : "Bone",
             "DriveStrengthScale" : 1.000000,
@@ -463,7 +509,7 @@
             "ObjectName" : "UPhysicalAnimationComponent_13",
             "PerBoneDriveSettings" : [{
                 "BoneName" : "Bone.018",
-                "MaxForce" : 1.300000,
+                "MaxForce" : 3.000000,
                 "MaxTorque" : 0.000000,
                 "PositionDamping" : 0.000000,
                 "PositionStrength" : 3.000000,
@@ -473,7 +519,7 @@
                 "bDriveRotation" : false
               }, {
                 "BoneName" : "Bone.014",
-                "MaxForce" : 1.300000,
+                "MaxForce" : 3.000000,
                 "MaxTorque" : 0.000000,
                 "PositionDamping" : 0.000000,
                 "PositionStrength" : 2.600000,
@@ -482,7 +528,7 @@
                 "bDrivePosition" : true,
                 "bDriveRotation" : false
               }],
-            "PositionDamping" : 0.100000,
+            "PositionDamping" : 0.400000,
             "PositionStrength" : 0.400000,
             "RotationDamping" : 0.000000,
             "RotationStrength" : 0.030000,
@@ -498,10 +544,10 @@
             "bTickEnable" : false
           }
         }],
-      "ObjectId" : 16,
+      "ObjectId" : 17,
       "Properties" : {
         "ObjectName" : "ALuaCharacter_1",
-        "PendingActorLocation" : [49.995056, 151.197296, 16.067257],
+        "PendingActorLocation" : [49.995056, 151.197296, 17.067257],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
         "PendingActorScale" : [1.000000, 1.000000, 1.000000],
         "PendingActorVisible" : true,
@@ -516,7 +562,7 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "USkeletalMeshComponent",
-            "ObjectId" : 18,
+            "ObjectId" : 19,
             "Properties" : {
               "AnimInstanceClass" : "ULuaAnimInstance",
               "AnimationData" : {
@@ -538,8 +584,8 @@
               "RagdollPhysicsBlendWeight" : 1.000000,
               "RagdollRecoveryDuration" : 0.350000,
               "RagdollSelfCollisionMode" : [0, 0, 0, 0, 0, 0, 0, 0],
-              "RelativeTransform.Location" : [0.978783, 0.000000, -3.303164],
-              "RelativeTransform.Scale" : [3.000000, 3.000000, 3.000000],
+              "RelativeTransform.Location" : [0.978783, 0.000000, -2.638347],
+              "RelativeTransform.Scale" : [1.500000, 1.500000, 1.500000],
               "ResponseContainer" : {
                 "Responses[0]" : [0, 0, 0, 0, 0, 0, 0, 0],
                 "Responses[1]" : [0, 0, 0, 0, 0, 0, 0, 0],
@@ -553,12 +599,14 @@
               "bCastShadowAsTwoSided" : false,
               "bCreateRagdollConstraints" : true,
               "bEditorOnly" : false,
+              "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
               "bHiddenInComponentTree" : false,
               "bIsActive" : true,
               "bIsVisible" : true,
               "bKinematicPhysics" : false,
               "bRagdollEnabled" : true,
+              "bRagdollGravityEnabled" : true,
               "bSimulatePhysics" : false,
               "bTickEnable" : true
             }
@@ -566,7 +614,7 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UCameraComponent",
-                "ObjectId" : 20,
+                "ObjectId" : 21,
                 "Properties" : {
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
                   "CameraState.FOV" : 1.047198,
@@ -585,7 +633,7 @@
                 }
               }],
             "ClassName" : "USpringArmComponent",
-            "ObjectId" : 19,
+            "ObjectId" : 20,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CameraLagMaxDistance" : 0.000000,
@@ -610,7 +658,7 @@
             }
           }],
         "ClassName" : "UCapsuleComponent",
-        "ObjectId" : 17,
+        "ObjectId" : 18,
         "Properties" : {
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CapsuleHalfHeight" : 3.000000,
@@ -620,7 +668,7 @@
           "Mass" : 1.000000,
           "ObjectName" : "UCapsuleComponent_1",
           "ObjectType" : [1, 0, 0, 0, 0, 0, 0, 0],
-          "RelativeTransform.Location" : [49.995056, 151.197296, 16.067257],
+          "RelativeTransform.Location" : [49.995056, 151.197296, 17.067257],
           "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
           "ResponseContainer" : {
             "Responses[0]" : [2, 0, 0, 0, 0, 0, 0, 0],
@@ -635,6 +683,7 @@
           "bCastShadowAsTwoSided" : false,
           "bDrawOnlyIfSelected" : false,
           "bEditorOnly" : false,
+          "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
           "bHiddenInComponentTree" : false,
           "bIsActive" : true,
@@ -648,7 +697,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_7",
       "NonSceneComponents" : [],
-      "ObjectId" : 24,
+      "ObjectId" : 25,
       "Properties" : {
         "ObjectName" : "ABoxActor_7",
         "PendingActorLocation" : [70.343185, 164.093674, 14.472232],
@@ -662,7 +711,7 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "USkeletalMeshComponent",
-            "ObjectId" : 26,
+            "ObjectId" : 27,
             "Properties" : {
               "AnimInstanceClass" : "None",
               "AnimationData" : {
@@ -699,18 +748,20 @@
               "bCastShadowAsTwoSided" : false,
               "bCreateRagdollConstraints" : true,
               "bEditorOnly" : false,
+              "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
               "bHiddenInComponentTree" : false,
               "bIsActive" : true,
               "bIsVisible" : true,
               "bKinematicPhysics" : false,
               "bRagdollEnabled" : false,
+              "bRagdollGravityEnabled" : true,
               "bSimulatePhysics" : false,
               "bTickEnable" : true
             }
           }],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 25,
+        "ObjectId" : 26,
         "Properties" : {
           "BoxExtent" : [3.000000, 3.000000, 3.000000],
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -734,11 +785,124 @@
           "bCastShadowAsTwoSided" : false,
           "bDrawOnlyIfSelected" : false,
           "bEditorOnly" : false,
+          "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
           "bHiddenInComponentTree" : false,
           "bIsActive" : true,
           "bIsVisible" : true,
           "bKinematicPhysics" : false,
+          "bSimulatePhysics" : true,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "APhysicalAnimationActor",
+      "Name" : "APhysicalAnimationActor_1",
+      "NonSceneComponents" : [{
+          "ClassName" : "UPhysicalAnimationComponent",
+          "ObjectId" : 30,
+          "Properties" : {
+            "DriveRootBoneName" : "Bone",
+            "DriveStrengthScale" : 1.000000,
+            "MaxForce" : 0.400000,
+            "MaxTorque" : 0.080000,
+            "ObjectName" : "UPhysicalAnimationComponent_1",
+            "PerBoneDriveSettings" : [{
+                "BoneName" : "Bone.018",
+                "MaxForce" : 1.300000,
+                "MaxTorque" : 0.000000,
+                "PositionDamping" : 0.000000,
+                "PositionStrength" : 3.000000,
+                "RotationDamping" : 0.000000,
+                "RotationStrength" : 0.000000,
+                "bDrivePosition" : true,
+                "bDriveRotation" : false
+              }, {
+                "BoneName" : "Bone.014",
+                "MaxForce" : 1.300000,
+                "MaxTorque" : 0.000000,
+                "PositionDamping" : 0.000000,
+                "PositionStrength" : 2.600000,
+                "RotationDamping" : 0.000000,
+                "RotationStrength" : 0.000000,
+                "bDrivePosition" : true,
+                "bDriveRotation" : false
+              }],
+            "PositionDamping" : 0.400000,
+            "PositionStrength" : 0.400000,
+            "RotationDamping" : 0.000000,
+            "RotationStrength" : 0.030000,
+            "bAutoActivate" : true,
+            "bAutoFindTargetMesh" : true,
+            "bDebugDraw" : false,
+            "bDrivePosition" : true,
+            "bDriveRotation" : true,
+            "bEditorOnly" : false,
+            "bHiddenInComponentTree" : false,
+            "bIsActive" : true,
+            "bPhysicalAnimationEnabled" : true,
+            "bTickEnable" : false
+          }
+        }],
+      "ObjectId" : 28,
+      "Properties" : {
+        "ObjectName" : "APhysicalAnimationActor_1",
+        "PendingActorLocation" : [40.616180, 156.559128, 12.246021],
+        "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
+        "PendingActorScale" : [1.000000, 1.000000, 1.000000],
+        "PendingActorVisible" : true,
+        "PendingTagsString" : "",
+        "bAutoActivatePhysicalAnimation" : true,
+        "bNeedsTick" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "USkeletalMeshComponent",
+        "ObjectId" : 29,
+        "Properties" : {
+          "AnimInstanceClass" : "UCharacterAnimInstance",
+          "AnimationData" : {
+            "AnimToPlay" : null,
+            "AnimToPlayPath" : "Content/Data/HumanFallFlat/Idle_mixamo_com.uasset",
+            "PlayRate" : 1.000000,
+            "bLooping" : true,
+            "bPlaying" : true
+          },
+          "AnimationMode" : [1, 0, 0, 0, 0, 0, 0, 0],
+          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
+          "CollisionEnabled" : [3, 0, 0, 0, 0, 0, 0, 0],
+          "LuaAnimScriptFile" : "",
+          "Mass" : 1.000000,
+          "MaterialSlots" : ["None"],
+          "ObjectName" : "USkeletalMeshComponent_12",
+          "ObjectType" : [1, 0, 0, 0, 0, 0, 0, 0],
+          "RagdollPhysicsBlendWeight" : 1.000000,
+          "RagdollRecoveryDuration" : 0.350000,
+          "RagdollSelfCollisionMode" : [0, 0, 0, 0, 0, 0, 0, 0],
+          "RelativeTransform.Location" : [40.616180, 156.559128, 12.246021],
+          "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+          "ResponseContainer" : {
+            "Responses[0]" : [2, 0, 0, 0, 0, 0, 0, 0],
+            "Responses[1]" : [2, 0, 0, 0, 0, 0, 0, 0],
+            "Responses[2]" : [2, 0, 0, 0, 0, 0, 0, 0],
+            "Responses[3]" : [2, 0, 0, 0, 0, 0, 0, 0],
+            "Responses[4]" : [2, 0, 0, 0, 0, 0, 0, 0]
+          },
+          "SkeletalMeshPath" : "Content/Data/HumanFallFlat/Idle_SkeletalMesh.uasset",
+          "bAutoActivate" : true,
+          "bCastShadow" : true,
+          "bCastShadowAsTwoSided" : false,
+          "bCreateRagdollConstraints" : true,
+          "bEditorOnly" : false,
+          "bEnableGravity" : true,
+          "bGenerateOverlapEvents" : false,
+          "bHiddenInComponentTree" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bKinematicPhysics" : false,
+          "bRagdollEnabled" : false,
+          "bRagdollGravityEnabled" : true,
           "bSimulatePhysics" : true,
           "bTickEnable" : true
         }
@@ -752,9 +916,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [47.333694, 161.263168, 25.089857],
+    "Location" : [35.221981, 154.253418, 22.496086],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 35.265099, 1002.305725]
+    "Rotation" : [0.000000, 28.215078, 1085.259155]
   },
   "Version" : 2,
   "WorldSettings" : {
