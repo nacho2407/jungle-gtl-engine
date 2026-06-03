@@ -12,6 +12,7 @@
 
 class FPrimitiveSceneProxy;
 class UMaterial;
+class USkeletalMeshComponent;
 
 /**
  * @brief 절차적 cloth grid component
@@ -276,6 +277,37 @@ private:
 	void BuildCollisionPrimitivesComponentLocal(TArray<FClothCollisionPrimitive>& OutPrimitives) const;
 
 	/**
+	 * @brief body collision source로 사용할 skeletal mesh component를 반환합니다
+	 *
+	 * @return 선택된 skeletal mesh component 또는 nullptr
+	 */
+	USkeletalMeshComponent* ResolveBodyCollisionSource() const;
+
+	/**
+	 * @brief world 기준 body collision primitive 배열을 component local 배열에 추가합니다
+	 *
+	 * @param BodyWorldPrimitives world 기준 body collision primitive 배열
+	 *
+	 * @param OutPrimitives component local 기준 collision primitive 배열
+	 *
+	 * @return 실제 추가된 body collision primitive 수
+	 */
+	uint32 AppendBodyCollisionPrimitivesComponentLocal(
+		const TArray<FClothCollisionPrimitive>& BodyWorldPrimitives,
+		TArray<FClothCollisionPrimitive>& OutPrimitives) const;
+
+	/**
+	 * @brief world 기준 collision primitive를 component local primitive로 변환합니다
+	 *
+	 * @param WorldPrimitive world 기준 collision primitive
+	 *
+	 * @param OutComponentLocalPrimitive component local 기준 collision primitive
+	 */
+	void ConvertWorldCollisionPrimitiveToComponentLocal(
+		const FClothCollisionPrimitive& WorldPrimitive,
+		FClothCollisionPrimitive& OutComponentLocalPrimitive) const;
+
+	/**
 	 * @brief 현재 collision primitive snapshot을 simulation에 반영합니다
 	 */
 	void UpdateSimulationCollisionPrimitives();
@@ -362,6 +394,15 @@ private:
 	FVector TransformWorldVectorToComponentLocal(const FVector& WorldVector) const;
 
 	/**
+	 * @brief world 위치를 component local 위치로 변환합니다
+	 *
+	 * @param WorldPoint world 기준 위치
+	 *
+	 * @return component local 기준 위치
+	 */
+	FVector TransformWorldPointToComponentLocal(const FVector& WorldPoint) const;
+
+	/**
 	 * @brief world 방향을 component local 단위 방향으로 변환합니다
 	 *
 	 * @param WorldDirection world 기준 방향
@@ -369,6 +410,15 @@ private:
 	 * @return component local 기준 단위 방향
 	 */
 	FVector TransformWorldDirectionToComponentLocal(const FVector& WorldDirection) const;
+
+	/**
+	 * @brief world 길이를 component local 보수적 길이로 변환합니다
+	 *
+	 * @param WorldLength world 기준 길이
+	 *
+	 * @return component local 기준 보수적 길이
+	 */
+	float TransformWorldLengthToComponentLocal(float WorldLength) const;
 
 	/**
 	 * @brief actor local plane을 component local plane으로 변환합니다
@@ -585,6 +635,18 @@ private:
 	UPROPERTY(Edit, Save, Category="Cloth|Collision", DisplayName="Box Rotation Actor Local", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FRotator BoxRotationActorLocal = FRotator(0.0f, 0.0f, 0.0f);
 
+	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Enable Body Collision")
+	bool bEnableBodyCollision = false;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Auto Find Owner Skeletal Mesh")
+	bool bAutoFindOwnerSkeletalMeshCollision = true;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Collision Source Component Name")
+	FName CollisionSourceComponentName = FName::None;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Max Body Collision Primitives", Min=0.0f, Max=128.0f, Speed=1.0f)
+	int32 MaxBodyCollisionPrimitives = 64;
+
 	UPROPERTY(Edit, Save, Category="Cloth|Editor", DisplayName="Simulate In Editor")
 	bool bSimulateInEditor = false;
 
@@ -601,6 +663,8 @@ private:
 	TArray<uint32> CachedPinnedIndices;
 	TArray<FVector> CachedPinTargetPositionsComponentLocal;
 	TArray<FClothCollisionPrimitive> CachedCollisionPrimitives;
+	uint32 CachedIndependentCollisionPrimitiveCount = 0;
+	uint32 CachedBodyCollisionPrimitiveCount = 0;
 	mutable FVector CachedFinalWindVelocityWorld = FVector::ZeroVector;
 	mutable FVector CachedOwnerMotionDeltaWorld = FVector::ZeroVector;
 	FTransform PreviousClothWorldTransform;

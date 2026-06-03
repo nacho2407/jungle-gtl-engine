@@ -2269,6 +2269,31 @@ void USkeletalMeshComponent::PostDuplicate()
     }
 }
 
+void USkeletalMeshComponent::AppendClothCollisionPrimitives(TArray<FClothCollisionPrimitive>& OutPrimitives) const
+{
+    if (!bRagdollActive || Bodies.empty())
+    {
+        return;
+    }
+
+    for (const FBodyInstance* Body : Bodies)
+    {
+        if (!Body || !Body->IsValidBodyInstance())
+        {
+            continue;
+        }
+
+        // body 내부의 PhysX shape 접근은 FBodyInstance 변환 계층에만 위임
+        Body->AppendClothCollisionPrimitives(OutPrimitives);
+    }
+}
+
+void USkeletalMeshComponent::GetClothCollisionPrimitives(TArray<FClothCollisionPrimitive>& OutPrimitives) const
+{
+    OutPrimitives.clear();
+    AppendClothCollisionPrimitives(OutPrimitives);
+}
+
 void USkeletalMeshComponent::Serialize(FArchive& Ar)
 {
     if (Ar.IsSaving())

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Math/Transform.h"
@@ -267,11 +267,22 @@ enum class EClothCollisionPrimitiveType : uint8
 };
 
 /**
+ * @brief Cloth collision primitive 출처
+ */
+enum class EClothCollisionPrimitiveSource : uint8
+{
+	Unknown,
+	Independent,
+	Body
+};
+
+/**
  * @brief Cloth collision bridge용 primitive 초안
  */
 struct FClothCollisionPrimitive
 {
 	EClothCollisionPrimitiveType Type = EClothCollisionPrimitiveType::Sphere;
+	EClothCollisionPrimitiveSource Source = EClothCollisionPrimitiveSource::Unknown;
 	FVector Center = FVector::ZeroVector;
 	FVector Axis = FVector::UpVector;
 	FVector CapsuleStart = FVector::ZeroVector;

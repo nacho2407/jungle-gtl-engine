@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <PxRigidActor.h>
 
+#include "Cloth/ClothTypes.h"
 #include "Core/Types/CoreTypes.h"
 #include "Core/Types/CollisionTypes.h"
 #include "Math/Transform.h"
@@ -113,6 +114,13 @@ struct FBodyInstance
 
 	void SetCenterOfMass(const FVector& LocalOffset);
 	FVector GetCenterOfMass() const;
+
+	/**
+	 * @brief body shape snapshot을 cloth collision primitive 배열에 추가합니다
+	 *
+	 * @param OutPrimitives world 기준 cloth collision primitive 배열
+	 */
+	void AppendClothCollisionPrimitives(TArray<FClothCollisionPrimitive>& OutPrimitives) const;
 
 	void ClearPhysicsPointers();
 };

@@ -150,6 +150,20 @@ public:
     const TArray<FBodyInstance*>& GetRagdollBodies() const { return Bodies; }
     const TArray<FConstraintInstance*>& GetRagdollConstraints() const { return Constraints; }
 
+    /**
+     * @brief ragdoll body snapshot을 cloth collision primitive 배열에 추가합니다
+     *
+     * @param OutPrimitives world 기준 cloth collision primitive 배열
+     */
+    void AppendClothCollisionPrimitives(TArray<FClothCollisionPrimitive>& OutPrimitives) const;
+
+    /**
+     * @brief ragdoll body snapshot을 cloth collision primitive 배열로 반환합니다
+     *
+     * @param OutPrimitives world 기준 cloth collision primitive 배열
+     */
+    void GetClothCollisionPrimitives(TArray<FClothCollisionPrimitive>& OutPrimitives) const;
+
     // Mode/Class/SkeletalMesh 변경 후 일관성 재정렬. SetSkeletalMesh override 안에서 자동 호출됨.
     void InitializeAnimation();
     void ClearAnimInstance();

@@ -1,5 +1,6 @@
 ﻿#include "Component/Primitive/ClothComponent.h"
 
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -36,6 +37,8 @@ namespace
 	constexpr float GMaxSelfCollisionDistance = 1000.0f;
 	constexpr float GMaxCollisionLength = 10000.0f;
 	constexpr float GMinBoxCollisionExtent = 0.001f;
+	constexpr int32 GMinBodyCollisionPrimitiveCount = 0;
+	constexpr int32 GMaxBodyCollisionPrimitiveCount = 128;
 
 	/**
 	 * @brief 정수 값을 지정된 범위 안으로 보정합니다
@@ -245,7 +248,11 @@ namespace
 			|| MatchesPropertyName(PropertyName, "bEnableBoxCollision", "Enable Box Collision")
 			|| MatchesPropertyName(PropertyName, "BoxCenterActorLocal", "Box Center Actor Local")
 			|| MatchesPropertyName(PropertyName, "BoxExtentActorLocal", "Box Extent Actor Local")
-			|| MatchesPropertyName(PropertyName, "BoxRotationActorLocal", "Box Rotation Actor Local");
+			|| MatchesPropertyName(PropertyName, "BoxRotationActorLocal", "Box Rotation Actor Local")
+			|| MatchesPropertyName(PropertyName, "bEnableBodyCollision", "Enable Body Collision")
+			|| MatchesPropertyName(PropertyName, "bAutoFindOwnerSkeletalMeshCollision", "Auto Find Owner Skeletal Mesh")
+			|| MatchesPropertyName(PropertyName, "CollisionSourceComponentName", "Collision Source Component Name")
+			|| MatchesPropertyName(PropertyName, "MaxBodyCollisionPrimitives", "Max Body Collision Primitives");
 	}
 
 	/**
@@ -397,6 +404,8 @@ void UClothComponent::PostDuplicate()
 	Simulation.Shutdown();
 	SimulationReadbackPositions.clear();
 	CachedCollisionPrimitives.clear();
+	CachedIndependentCollisionPrimitiveCount = 0;
+	CachedBodyCollisionPrimitiveCount = 0;
 	ResetOwnerMotionCache();
 	LoadMaterialFromSlot();
 	MarkClothRebuildDirty();
@@ -407,6 +416,8 @@ void UClothComponent::RouteComponentDestroyed()
 	Simulation.Shutdown();
 	SimulationReadbackPositions.clear();
 	CachedCollisionPrimitives.clear();
+	CachedIndependentCollisionPrimitiveCount = 0;
+	CachedBodyCollisionPrimitiveCount = 0;
 	ResetOwnerMotionCache();
 	UMeshComponent::RouteComponentDestroyed();
 }
@@ -1021,6 +1032,8 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 		CachedPinnedIndices.clear();
 		CachedPinTargetPositionsComponentLocal.clear();
 		CachedCollisionPrimitives.clear();
+		CachedIndependentCollisionPrimitiveCount = 0;
+		CachedBodyCollisionPrimitiveCount = 0;
 		ResetOwnerMotionCache();
 		bSimulationRebuildDirty = false;
 		bLastSimulationBuildSkippedByAllPinned = false;
@@ -1036,6 +1049,8 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 		CachedPinnedIndices.clear();
 		CachedPinTargetPositionsComponentLocal.clear();
 		CachedCollisionPrimitives.clear();
+		CachedIndependentCollisionPrimitiveCount = 0;
+		CachedBodyCollisionPrimitiveCount = 0;
 		ResetOwnerMotionCache();
 		bSimulationRebuildDirty = false;
 		bLastSimulationBuildSkippedByAllPinned = false;
@@ -1181,6 +1196,7 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 		{
 			FClothCollisionPrimitive Primitive;
 			Primitive.Type = EClothCollisionPrimitiveType::Sphere;
+			Primitive.Source = EClothCollisionPrimitiveSource::Independent;
 			Primitive.Center = TransformActorLocalPointToComponentLocal(SphereCenterActorLocal);
 			Primitive.Radius = RadiusComponentLocal;
 			OutPrimitives.push_back(Primitive);
@@ -1199,6 +1215,7 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 
 		FClothCollisionPrimitive Primitive;
 		Primitive.Type = EClothCollisionPrimitiveType::Plane;
+		Primitive.Source = EClothCollisionPrimitiveSource::Independent;
 		Primitive.PlanePoint = PlanePointComponentLocal;
 		Primitive.PlaneNormal = PlaneNormalComponentLocal.GetSafeNormal(GNormalTolerance, FVector::UpVector);
 		Primitive.PlaneDistance = Primitive.PlaneNormal.Dot(Primitive.PlanePoint);
@@ -1227,6 +1244,7 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 				// half height가 0이면 capsule 대신 같은 중심의 sphere로 안전하게 전달
 				FClothCollisionPrimitive Primitive;
 				Primitive.Type = EClothCollisionPrimitiveType::Sphere;
+				Primitive.Source = EClothCollisionPrimitiveSource::Independent;
 				Primitive.Center = TransformActorLocalPointToComponentLocal(CapsuleCenterActorLocal);
 				Primitive.Radius = RadiusComponentLocal;
 				OutPrimitives.push_back(Primitive);
@@ -1235,6 +1253,7 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 			{
 				FClothCollisionPrimitive Primitive;
 				Primitive.Type = EClothCollisionPrimitiveType::Capsule;
+				Primitive.Source = EClothCollisionPrimitiveSource::Independent;
 				Primitive.CapsuleStart = CapsuleStartComponentLocal;
 				Primitive.CapsuleEnd = CapsuleEndComponentLocal;
 				Primitive.Center = (CapsuleStartComponentLocal + CapsuleEndComponentLocal) * 0.5f;
@@ -1265,6 +1284,7 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 
 		FClothCollisionPrimitive Primitive;
 		Primitive.Type = EClothCollisionPrimitiveType::Box;
+		Primitive.Source = EClothCollisionPrimitiveSource::Independent;
 		Primitive.Center = TransformActorLocalPointToComponentLocal(BoxCenterActorLocal);
 		Primitive.BoxExtent = FVector(ExtentX, ExtentY, ExtentZ);
 		Primitive.BoxAxisX = ExtentXVector.GetSafeNormal(GNormalTolerance, FVector::XAxisVector);
@@ -1274,9 +1294,154 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 	}
 }
 
+USkeletalMeshComponent* UClothComponent::ResolveBodyCollisionSource() const
+{
+	AActor* OwnerActor = GetOwner();
+	if (!IsValid(OwnerActor))
+	{
+		return nullptr;
+	}
+
+	const bool bHasRequestedSourceName =
+		CollisionSourceComponentName.IsValid()
+		&& CollisionSourceComponentName != FName::None;
+	const TArray<UActorComponent*> OwnerComponents = OwnerActor->GetComponents();
+	for (UActorComponent* Component : OwnerComponents)
+	{
+		USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(Component);
+		if (!IsValid(SkeletalMeshComponent))
+		{
+			continue;
+		}
+
+		if (bHasRequestedSourceName)
+		{
+			// 이름이 지정된 경우에는 명시 선택된 skeletal mesh만 body collision source로 사용
+			if (SkeletalMeshComponent->GetFName() == CollisionSourceComponentName)
+			{
+				return SkeletalMeshComponent;
+			}
+
+			continue;
+		}
+
+		if (bAutoFindOwnerSkeletalMeshCollision)
+		{
+			// 명시 이름이 없으면 owner component 순서상 첫 번째 skeletal mesh를 기본값으로 사용
+			return SkeletalMeshComponent;
+		}
+	}
+
+	return nullptr;
+}
+
+uint32 UClothComponent::AppendBodyCollisionPrimitivesComponentLocal(
+	const TArray<FClothCollisionPrimitive>& BodyWorldPrimitives,
+	TArray<FClothCollisionPrimitive>& OutPrimitives) const
+{
+	const int32 SafeMaxBodyPrimitiveCount = ClampInt(
+		MaxBodyCollisionPrimitives,
+		GMinBodyCollisionPrimitiveCount,
+		GMaxBodyCollisionPrimitiveCount);
+	if (SafeMaxBodyPrimitiveCount <= 0 || BodyWorldPrimitives.empty())
+	{
+		return 0;
+	}
+
+	uint32 AppendedPrimitiveCount = 0;
+	for (const FClothCollisionPrimitive& WorldPrimitive : BodyWorldPrimitives)
+	{
+		if (AppendedPrimitiveCount >= static_cast<uint32>(SafeMaxBodyPrimitiveCount))
+		{
+			break;
+		}
+
+		FClothCollisionPrimitive ComponentLocalPrimitive;
+		ConvertWorldCollisionPrimitiveToComponentLocal(WorldPrimitive, ComponentLocalPrimitive);
+		ComponentLocalPrimitive.Source = EClothCollisionPrimitiveSource::Body;
+		OutPrimitives.push_back(ComponentLocalPrimitive);
+		++AppendedPrimitiveCount;
+	}
+
+	return AppendedPrimitiveCount;
+}
+
+void UClothComponent::ConvertWorldCollisionPrimitiveToComponentLocal(
+	const FClothCollisionPrimitive& WorldPrimitive,
+	FClothCollisionPrimitive& OutComponentLocalPrimitive) const
+{
+	OutComponentLocalPrimitive = WorldPrimitive;
+	OutComponentLocalPrimitive.Source = EClothCollisionPrimitiveSource::Body;
+
+	switch (WorldPrimitive.Type)
+	{
+	case EClothCollisionPrimitiveType::Sphere:
+		OutComponentLocalPrimitive.Center = TransformWorldPointToComponentLocal(WorldPrimitive.Center);
+		OutComponentLocalPrimitive.Radius = TransformWorldLengthToComponentLocal(WorldPrimitive.Radius);
+		break;
+
+	case EClothCollisionPrimitiveType::Capsule:
+	{
+		OutComponentLocalPrimitive.CapsuleStart = TransformWorldPointToComponentLocal(WorldPrimitive.CapsuleStart);
+		OutComponentLocalPrimitive.CapsuleEnd = TransformWorldPointToComponentLocal(WorldPrimitive.CapsuleEnd);
+
+		const FVector Segment = OutComponentLocalPrimitive.CapsuleEnd - OutComponentLocalPrimitive.CapsuleStart;
+		OutComponentLocalPrimitive.Center =
+			(OutComponentLocalPrimitive.CapsuleStart + OutComponentLocalPrimitive.CapsuleEnd) * 0.5f;
+		OutComponentLocalPrimitive.Axis = Segment.GetSafeNormal(GNormalTolerance, FVector::UpVector);
+		OutComponentLocalPrimitive.HalfHeight = Segment.Length() * 0.5f;
+		OutComponentLocalPrimitive.Radius = TransformWorldLengthToComponentLocal(WorldPrimitive.Radius);
+		break;
+	}
+
+	case EClothCollisionPrimitiveType::Box:
+	{
+		const FVector SafeWorldExtent = WorldPrimitive.BoxExtent.GetAbs();
+		const FVector ExtentXVector = TransformWorldVectorToComponentLocal(
+			WorldPrimitive.BoxAxisX.GetSafeNormal(GNormalTolerance, FVector::XAxisVector) * SafeWorldExtent.X);
+		const FVector ExtentYVector = TransformWorldVectorToComponentLocal(
+			WorldPrimitive.BoxAxisY.GetSafeNormal(GNormalTolerance, FVector::YAxisVector) * SafeWorldExtent.Y);
+		const FVector ExtentZVector = TransformWorldVectorToComponentLocal(
+			WorldPrimitive.BoxAxisZ.GetSafeNormal(GNormalTolerance, FVector::ZAxisVector) * SafeWorldExtent.Z);
+
+		OutComponentLocalPrimitive.Center = TransformWorldPointToComponentLocal(WorldPrimitive.Center);
+		OutComponentLocalPrimitive.BoxExtent = FVector(
+			(std::max)(ExtentXVector.Length(), GMinBoxCollisionExtent),
+			(std::max)(ExtentYVector.Length(), GMinBoxCollisionExtent),
+			(std::max)(ExtentZVector.Length(), GMinBoxCollisionExtent));
+		OutComponentLocalPrimitive.BoxAxisX = ExtentXVector.GetSafeNormal(GNormalTolerance, FVector::XAxisVector);
+		OutComponentLocalPrimitive.BoxAxisY = ExtentYVector.GetSafeNormal(GNormalTolerance, FVector::YAxisVector);
+		OutComponentLocalPrimitive.BoxAxisZ = ExtentZVector.GetSafeNormal(GNormalTolerance, FVector::ZAxisVector);
+		break;
+	}
+
+	case EClothCollisionPrimitiveType::Plane:
+		OutComponentLocalPrimitive.PlanePoint = TransformWorldPointToComponentLocal(WorldPrimitive.PlanePoint);
+		OutComponentLocalPrimitive.PlaneNormal =
+			TransformWorldDirectionToComponentLocal(WorldPrimitive.PlaneNormal);
+		OutComponentLocalPrimitive.PlaneDistance =
+			OutComponentLocalPrimitive.PlaneNormal.Dot(OutComponentLocalPrimitive.PlanePoint);
+		break;
+	}
+}
+
 void UClothComponent::UpdateSimulationCollisionPrimitives()
 {
 	BuildCollisionPrimitivesComponentLocal(CachedCollisionPrimitives);
+	CachedIndependentCollisionPrimitiveCount = static_cast<uint32>(CachedCollisionPrimitives.size());
+	CachedBodyCollisionPrimitiveCount = 0;
+
+	if (bEnableBodyCollision)
+	{
+		// body collision은 매 update마다 현재 skeletal mesh ragdoll body snapshot을 가져와 병합
+		if (USkeletalMeshComponent* CollisionSourceComponent = ResolveBodyCollisionSource())
+		{
+			TArray<FClothCollisionPrimitive> BodyWorldPrimitives;
+			CollisionSourceComponent->GetClothCollisionPrimitives(BodyWorldPrimitives);
+			CachedBodyCollisionPrimitiveCount =
+				AppendBodyCollisionPrimitivesComponentLocal(BodyWorldPrimitives, CachedCollisionPrimitives);
+		}
+	}
 
 	if (!Simulation.UpdateCollisionPrimitives(CachedCollisionPrimitives))
 	{
@@ -1527,10 +1692,32 @@ FVector UClothComponent::TransformWorldVectorToComponentLocal(const FVector& Wor
 	return GetWorldInverseMatrix().TransformVector(WorldVector);
 }
 
+FVector UClothComponent::TransformWorldPointToComponentLocal(const FVector& WorldPoint) const
+{
+	// world 기준 위치를 component local simulation 공간으로 변환
+	return GetWorldInverseMatrix().TransformPosition(WorldPoint);
+}
+
 FVector UClothComponent::TransformWorldDirectionToComponentLocal(const FVector& WorldDirection) const
 {
 	const FVector ComponentLocalVector = TransformWorldVectorToComponentLocal(WorldDirection);
 	return ComponentLocalVector.GetSafeNormal(GNormalTolerance, FVector::DownVector);
+}
+
+float UClothComponent::TransformWorldLengthToComponentLocal(float WorldLength) const
+{
+	const float SafeLength = ClampFloat(WorldLength, 0.0f, GMaxCollisionLength);
+	if (SafeLength <= GNormalTolerance)
+	{
+		return 0.0f;
+	}
+
+	const float LengthX = TransformWorldVectorToComponentLocal(FVector(SafeLength, 0.0f, 0.0f)).Length();
+	const float LengthY = TransformWorldVectorToComponentLocal(FVector(0.0f, SafeLength, 0.0f)).Length();
+	const float LengthZ = TransformWorldVectorToComponentLocal(FVector(0.0f, 0.0f, SafeLength)).Length();
+
+	// non-uniform scale에서는 sphere/capsule이 작아져 통과하지 않도록 가장 큰 축 길이를 사용
+	return (std::max)(LengthX, (std::max)(LengthY, LengthZ));
 }
 
 void UClothComponent::TransformActorLocalPlaneToComponentLocal(

@@ -675,24 +675,39 @@ bool FClothSimulation::UpdateCollisionPrimitives(const TArray<FClothCollisionPri
 				break;
 			}
 
+			const size_t PlaneStartCount = Planes.size();
+			const bool bHasBoxPlaneBudget = PlaneStartCount + 6 <= GMaxNvClothConvexPlanes;
 			uint32 BoxMask = 0;
-			const bool bAppendedBoxPlanes =
-				AppendCollisionPlane(AxisX, AxisX.Dot(Primitive.Center + AxisX * Extent.X), Planes, BoxMask)
-				&& AppendCollisionPlane(-AxisX, (-AxisX).Dot(Primitive.Center - AxisX * Extent.X), Planes, BoxMask)
-				&& AppendCollisionPlane(AxisY, AxisY.Dot(Primitive.Center + AxisY * Extent.Y), Planes, BoxMask)
-				&& AppendCollisionPlane(-AxisY, (-AxisY).Dot(Primitive.Center - AxisY * Extent.Y), Planes, BoxMask)
-				&& AppendCollisionPlane(AxisZ, AxisZ.Dot(Primitive.Center + AxisZ * Extent.Z), Planes, BoxMask)
-				&& AppendCollisionPlane(-AxisZ, (-AxisZ).Dot(Primitive.Center - AxisZ * Extent.Z), Planes, BoxMask);
-
-			if (!bAppendedBoxPlanes)
+			bool bAppendedBoxPlanes = false;
+			if (bHasBoxPlaneBudget)
 			{
-				ClearCollisionPrimitives();
-				LastFailureDetail = "NvCloth box collision fallback exceeded 32 plane mask bits";
-				return false;
+				bAppendedBoxPlanes =
+					AppendCollisionPlane(AxisX, AxisX.Dot(Primitive.Center + AxisX * Extent.X), Planes, BoxMask)
+					&& AppendCollisionPlane(-AxisX, (-AxisX).Dot(Primitive.Center - AxisX * Extent.X), Planes, BoxMask)
+					&& AppendCollisionPlane(AxisY, AxisY.Dot(Primitive.Center + AxisY * Extent.Y), Planes, BoxMask)
+					&& AppendCollisionPlane(-AxisY, (-AxisY).Dot(Primitive.Center - AxisY * Extent.Y), Planes, BoxMask)
+					&& AppendCollisionPlane(AxisZ, AxisZ.Dot(Primitive.Center + AxisZ * Extent.Z), Planes, BoxMask)
+					&& AppendCollisionPlane(-AxisZ, (-AxisZ).Dot(Primitive.Center - AxisZ * Extent.Z), Planes, BoxMask);
 			}
 
-			// NvCloth에는 box 직접 primitive가 없어서 6개 plane을 하나의 convex로 묶음
-			ConvexMasks.push_back(BoxMask);
+			if (bAppendedBoxPlanes)
+			{
+				// NvCloth에는 box 직접 primitive가 없어서 6개 plane을 하나의 convex로 묶음
+				ConvexMasks.push_back(BoxMask);
+			}
+			else
+			{
+				// plane 예산을 넘는 box는 전체 collision update 실패 대신 보수적인 sphere로 축소
+				Planes.resize(PlaneStartCount);
+				const float FallbackRadius = Extent.Length();
+				if (FallbackRadius <= GVectorTolerance)
+				{
+					break;
+				}
+
+				Spheres.push_back(ToPxSphere(Primitive.Center, FallbackRadius));
+			}
+
 			++AppliedPrimitiveCount;
 			break;
 		}
