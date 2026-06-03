@@ -56,6 +56,31 @@ enum class EClothPinSelectionType : uint8
 };
 
 /**
+ * @brief Cloth 고정점 선택 debug shape 종류
+ */
+enum class EClothPinSelectionDebugShapeType : uint8
+{
+	None,
+	Sphere,
+	Box,
+	RectXZ
+};
+
+/**
+ * @brief Cloth 고정점 선택 영역 debug shape
+ */
+struct FClothPinSelectionDebugShape
+{
+	EClothPinSelectionDebugShapeType Type = EClothPinSelectionDebugShapeType::None;
+	FVector Center = FVector::ZeroVector;
+	FVector AxisX = FVector::XAxisVector;
+	FVector AxisY = FVector::YAxisVector;
+	FVector AxisZ = FVector::ZAxisVector;
+	FVector Extent = FVector::ZeroVector;
+	float Radius = 0.0f;
+};
+
+/**
  * @brief Cloth 고정점 적용 방식
  */
 enum class EClothPinConstraintType : uint8
@@ -169,11 +194,11 @@ struct FClothPinGroupDesc
 	EClothPinSelectionType SelectionType = EClothPinSelectionType::TopEdge;
 	TArray<FClothPinData> Pins;
 	FVector SelectionCenterActorLocal = FVector::ZeroVector;
-	FVector SelectionBoxExtentActorLocal = FVector(50.0f, 50.0f, 50.0f);
-	FVector SelectionRectMinActorLocalXZ = FVector(-50.0f, 0.0f, -50.0f);
-	FVector SelectionRectMaxActorLocalXZ = FVector(50.0f, 0.0f, 50.0f);
+	FVector SelectionBoxExtentActorLocal = FVector(1.0f, 1.0f, 1.0f);
+	FVector SelectionRectMinActorLocalXZ = FVector(-1.0f, 0.0f, -1.0f);
+	FVector SelectionRectMaxActorLocalXZ = FVector(1.0f, 0.0f, 1.0f);
 	FVector TargetOffsetActorLocal = FVector::ZeroVector;
-	float SelectionRadius = 50.0f;
+	float SelectionRadius = 1.0f;
 	float Weight = 1.0f;
 	bool bHardPin = true;
 };

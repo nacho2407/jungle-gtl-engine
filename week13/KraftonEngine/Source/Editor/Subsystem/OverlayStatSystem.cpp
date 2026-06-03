@@ -358,6 +358,16 @@ void FOverlayStatSystem::BuildClothLines(const UEditorEngine& Editor, TArray<FSt
 		static_cast<unsigned long long>(FClothStats::CollisionPrimitiveCount));
 	OutLines.push_back(FString(Buffer));
 
+	snprintf(Buffer, sizeof(Buffer), "Collision Sources : Independent %llu  Body %llu",
+		static_cast<unsigned long long>(FClothStats::IndependentCollisionPrimitiveCount),
+		static_cast<unsigned long long>(FClothStats::BodyCollisionPrimitiveCount));
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Applied : Global Wind %u  Owner Motion %u",
+		FClothStats::GlobalWindAppliedComponentCount,
+		FClothStats::OwnerMotionInertiaAppliedComponentCount);
+	OutLines.push_back(FString(Buffer));
+
 	snprintf(Buffer, sizeof(Buffer), "Steps : %llu  Sim Time : %.3f ms",
 		static_cast<unsigned long long>(FClothStats::SimulationStepCount),
 		FClothStats::SimulationTimeMs);

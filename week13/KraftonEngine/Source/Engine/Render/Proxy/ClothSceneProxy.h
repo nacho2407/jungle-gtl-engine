@@ -47,6 +47,15 @@ public:
 	bool PrepareDrawBuffer(ID3D11Device* Device, ID3D11DeviceContext* Context, FDrawCommandBuffer& OutBuffer) const override;
 
 	/**
+	 * @brief cloth debug 표시용 line 배열을 생성합니다
+	 *
+	 * @param Frame 현재 frame context
+	 *
+	 * @param OutLines world 기준 debug line 배열
+	 */
+	void BuildClothDebugLines(const FFrameContext& Frame, TArray<FPhysicsDebugLine>& OutLines) const;
+
+	/**
 	 * @brief GC reference collector에 proxy material 참조를 추가합니다
 	 *
 	 * @param Collector object reference collector

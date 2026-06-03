@@ -43,6 +43,7 @@ namespace Key
 	constexpr const char* bShowCollisionShape = "bShowCollisionShape";
 	constexpr const char* bPhysicsBody = "bPhysicsBody";
 	constexpr const char* bDebugPhysicsAsset = "bDebugPhysicsAsset";
+	constexpr const char* bDebugCloth = "bDebugCloth";
 	constexpr const char* GridSpacing = "GridSpacing";
 	constexpr const char* GridHalfLineCount = "GridHalfLineCount";
 	constexpr const char* CameraMoveSensitivity = "CameraMoveSensitivity";
@@ -186,6 +187,7 @@ json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
 	Obj[Key::bShowCollisionShape] = Opts.ShowFlags.bShowCollisionShape;
 	Obj[Key::bPhysicsBody] = Opts.ShowFlags.bPhysicsBody;
 	Obj[Key::bDebugPhysicsAsset] = Opts.ShowFlags.bDebugPhysicsAsset;
+	Obj[Key::bDebugCloth] = Opts.ShowFlags.bDebugCloth;
 	Obj[Key::GridSpacing] = Opts.GridSpacing;
 	Obj[Key::GridHalfLineCount] = Opts.GridHalfLineCount;
 	Obj[Key::CameraMoveSensitivity] = Opts.CameraMoveSensitivity;
@@ -258,6 +260,8 @@ void LoadRenderOptions(json::JSON Obj, FViewportRenderOptions& Opts)
 		Opts.ShowFlags.bPhysicsBody = Obj[Key::bPhysicsBody].ToBool();
 	if (Obj.hasKey(Key::bDebugPhysicsAsset))
 		Opts.ShowFlags.bDebugPhysicsAsset = Obj[Key::bDebugPhysicsAsset].ToBool();
+	if (Obj.hasKey(Key::bDebugCloth))
+		Opts.ShowFlags.bDebugCloth = Obj[Key::bDebugCloth].ToBool();
 	if (Obj.hasKey(Key::GridSpacing))
 		Opts.GridSpacing = static_cast<float>(Obj[Key::GridSpacing].ToFloat());
 	if (Obj.hasKey(Key::GridHalfLineCount))

@@ -538,9 +538,61 @@ void UClothComponent::MarkClothCollisionDirty()
 void UClothComponent::MarkClothEditorPreviewDirty()
 {
 	bEditorPreviewDirty = true;
+
+	if (!bSimulateInEditor)
+	{
+		// editor preview off 시점의 즉시 rest pose 복원
+		ResetEditorPreviewSimulationState(MakeClothConfig());
+		return;
+	}
+
 	Simulation.ResetAccumulator();
 	ResetOwnerMotionCache();
 	ApplyEditorPreviewPolicy();
+}
+
+void UClothComponent::ResetEditorPreviewSimulationState(const FClothConfig& Config)
+{
+	// 이전 editor preview simulation resource와 readback 폐기
+	Simulation.Shutdown();
+	SimulationReadbackPositions.clear();
+
+	// rest position cache가 유효하지 않으면 procedural grid 재생성으로 안전하게 복원
+	if (!RestoreRenderDataToRestPositions(Config))
+	{
+		BuildGrid(Config, true);
+	}
+
+	// 다음 editor preview 시작 시 rest pose 기준 simulation resource 재생성
+	MarkClothSimulationRebuildDirty();
+	CachedFinalWindVelocityWorld = FVector::ZeroVector;
+	bGlobalWindAppliedLastTick = false;
+	ResetOwnerMotionCache();
+	bLastSimulationBuildSkippedByAllPinned = false;
+	bSimulationTickWarningLogged = false;
+	bCollisionUpdateWarningLogged = false;
+	bEditorPreviewDirty = false;
+}
+
+bool UClothComponent::RestoreRenderDataToRestPositions(const FClothConfig& Config)
+{
+	if (!RenderData.IsValid() || RestPositionsComponentLocal.size() != RenderData.Vertices.size())
+	{
+		return false;
+	}
+
+	for (size_t VertexIndex = 0; VertexIndex < RenderData.Vertices.size(); ++VertexIndex)
+	{
+		// simulation 변형 위치를 procedural rest position으로 복원
+		RenderData.Vertices[VertexIndex].Position = RestPositionsComponentLocal[VertexIndex];
+	}
+
+	RecalculateNormalsAndTangents();
+	UpdateLocalBoundsFromRenderData(Config);
+	IncrementRenderRevision();
+	MarkWorldBoundsDirty();
+	MarkProxyDirty(EDirtyFlag::Mesh);
+	return true;
 }
 
 void UClothComponent::ResetOwnerMotionCache()
@@ -1021,6 +1073,84 @@ void UClothComponent::BuildPinnedParticles(
 	}
 }
 
+bool UClothComponent::BuildPinSelectionDebugShape(FClothPinSelectionDebugShape& OutShape) const
+{
+	OutShape = FClothPinSelectionDebugShape();
+
+	switch (PinningMode)
+	{
+	case EClothPinSelectionType::ActorLocalSphere:
+	{
+		// actor local sphere pin 선택 영역의 component local snapshot
+		const float RadiusActorLocal = ClampFloat(PinRadius, 0.0f, GMaxCollisionLength);
+		const float RadiusComponentLocal = TransformActorLocalLengthToComponentLocal(RadiusActorLocal);
+		if (RadiusComponentLocal <= GNormalTolerance)
+		{
+			return false;
+		}
+
+		OutShape.Type = EClothPinSelectionDebugShapeType::Sphere;
+		OutShape.Center = TransformActorLocalPointToComponentLocal(PinCenterActorLocal);
+		OutShape.Radius = RadiusComponentLocal;
+		return true;
+	}
+
+	case EClothPinSelectionType::ActorLocalBox:
+	{
+		// actor local box pin 선택 영역의 component local oriented box
+		const FVector CenterComponentLocal = TransformActorLocalPointToComponentLocal(PinCenterActorLocal);
+		const FVector SafeExtent = PinBoxExtentActorLocal.GetAbs();
+		const FVector ExtentXVector = TransformActorLocalVectorToComponentLocal(FVector(SafeExtent.X, 0.0f, 0.0f));
+		const FVector ExtentYVector = TransformActorLocalVectorToComponentLocal(FVector(0.0f, SafeExtent.Y, 0.0f));
+		const FVector ExtentZVector = TransformActorLocalVectorToComponentLocal(FVector(0.0f, 0.0f, SafeExtent.Z));
+		const float ExtentX = ExtentXVector.Length();
+		const float ExtentY = ExtentYVector.Length();
+		const float ExtentZ = ExtentZVector.Length();
+		if (ExtentX <= GNormalTolerance && ExtentY <= GNormalTolerance && ExtentZ <= GNormalTolerance)
+		{
+			return false;
+		}
+
+		OutShape.Type = EClothPinSelectionDebugShapeType::Box;
+		OutShape.Center = CenterComponentLocal;
+		OutShape.AxisX = ExtentXVector.GetSafeNormal(GNormalTolerance, FVector::XAxisVector);
+		OutShape.AxisY = ExtentYVector.GetSafeNormal(GNormalTolerance, FVector::YAxisVector);
+		OutShape.AxisZ = ExtentZVector.GetSafeNormal(GNormalTolerance, FVector::ZAxisVector);
+		OutShape.Extent = FVector(ExtentX, ExtentY, ExtentZ);
+		return true;
+	}
+
+	case EClothPinSelectionType::ActorLocalRectXZ:
+	{
+		// actor local xz rectangle pin 선택 영역의 component local rectangle
+		const float MinX = (std::min)(PinRectMinActorLocalXZ.X, PinRectMaxActorLocalXZ.X);
+		const float MaxX = (std::max)(PinRectMinActorLocalXZ.X, PinRectMaxActorLocalXZ.X);
+		const float MinZ = (std::min)(PinRectMinActorLocalXZ.Z, PinRectMaxActorLocalXZ.Z);
+		const float MaxZ = (std::max)(PinRectMinActorLocalXZ.Z, PinRectMaxActorLocalXZ.Z);
+		const FVector RectCenterActorLocal((MinX + MaxX) * 0.5f, 0.0f, (MinZ + MaxZ) * 0.5f);
+		const FVector CenterComponentLocal = TransformActorLocalPointToComponentLocal(RectCenterActorLocal);
+		const FVector ExtentXVector = TransformActorLocalVectorToComponentLocal(FVector((MaxX - MinX) * 0.5f, 0.0f, 0.0f));
+		const FVector ExtentZVector = TransformActorLocalVectorToComponentLocal(FVector(0.0f, 0.0f, (MaxZ - MinZ) * 0.5f));
+		const float ExtentX = ExtentXVector.Length();
+		const float ExtentZ = ExtentZVector.Length();
+		if (ExtentX <= GNormalTolerance && ExtentZ <= GNormalTolerance)
+		{
+			return false;
+		}
+
+		OutShape.Type = EClothPinSelectionDebugShapeType::RectXZ;
+		OutShape.Center = CenterComponentLocal;
+		OutShape.AxisX = ExtentXVector.GetSafeNormal(GNormalTolerance, FVector::XAxisVector);
+		OutShape.AxisZ = ExtentZVector.GetSafeNormal(GNormalTolerance, FVector::ZAxisVector);
+		OutShape.Extent = FVector(ExtentX, 0.0f, ExtentZ);
+		return true;
+	}
+
+	default:
+		return false;
+	}
+}
+
 void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 {
 	if (!bSimulationRebuildDirty)
@@ -1165,6 +1295,10 @@ void UClothComponent::TickSimulationIfNeeded(float DeltaTime, ELevelTick TickTyp
 		Simulation.GetIndexCount(),
 		Simulation.GetPinnedCount(),
 		Simulation.GetCollisionPrimitiveCount(),
+		CachedIndependentCollisionPrimitiveCount,
+		CachedBodyCollisionPrimitiveCount,
+		bGlobalWindAppliedLastTick,
+		bOwnerMotionInertiaAppliedLastTick,
 		Simulation.GetLastStepCount(),
 		SimulationElapsedMs);
 

@@ -152,11 +152,76 @@ public:
 	uint32 GetPinnedCount() const { return static_cast<uint32>(CachedPinnedIndices.size()); }
 
 	/**
+	 * @brief 현재 hard pin으로 선택된 particle index 배열을 반환합니다
+	 *
+	 * @return 현재 hard pin particle index 배열
+	 */
+	const TArray<uint32>& GetCachedPinnedIndices() const { return CachedPinnedIndices; }
+
+	/**
+	 * @brief 현재 actor local hard pin 선택 영역 debug shape를 생성합니다
+	 *
+	 * @param OutShape 생성된 component local 기준 debug shape
+	 *
+	 * @return debug shape 생성 여부
+	 */
+	bool BuildPinSelectionDebugShape(FClothPinSelectionDebugShape& OutShape) const;
+
+	/**
 	 * @brief 현재 simulation에 적용된 collision primitive 수를 반환합니다
 	 *
 	 * @return 현재 collision primitive 수
 	 */
 	uint32 GetCollisionPrimitiveCount() const { return Simulation.GetCollisionPrimitiveCount(); }
+
+	/**
+	 * @brief 현재 debug 표시용 collision primitive snapshot을 반환합니다
+	 *
+	 * @return component local 기준 collision primitive snapshot
+	 */
+	const TArray<FClothCollisionPrimitive>& GetCachedCollisionPrimitives() const { return CachedCollisionPrimitives; }
+
+	/**
+	 * @brief 현재 independent collision primitive 수를 반환합니다
+	 *
+	 * @return 현재 independent collision primitive 수
+	 */
+	uint32 GetCachedIndependentCollisionPrimitiveCount() const { return CachedIndependentCollisionPrimitiveCount; }
+
+	/**
+	 * @brief 현재 body collision primitive 수를 반환합니다
+	 *
+	 * @return 현재 body collision primitive 수
+	 */
+	uint32 GetCachedBodyCollisionPrimitiveCount() const { return CachedBodyCollisionPrimitiveCount; }
+
+	/**
+	 * @brief 최근 tick에서 계산된 최종 wind vector를 반환합니다
+	 *
+	 * @return world 기준 최종 wind vector
+	 */
+	FVector GetCachedFinalWindVelocityWorld() const { return CachedFinalWindVelocityWorld; }
+
+	/**
+	 * @brief 최근 tick에서 계산된 owner motion delta를 반환합니다
+	 *
+	 * @return world 기준 owner motion delta
+	 */
+	FVector GetCachedOwnerMotionDeltaWorld() const { return CachedOwnerMotionDeltaWorld; }
+
+	/**
+	 * @brief 최근 tick에서 global wind 적용 여부를 반환합니다
+	 *
+	 * @return global wind 적용 여부
+	 */
+	bool WasGlobalWindAppliedLastTick() const { return bGlobalWindAppliedLastTick; }
+
+	/**
+	 * @brief 최근 tick에서 owner motion inertia 적용 여부를 반환합니다
+	 *
+	 * @return owner motion inertia 적용 여부
+	 */
+	bool WasOwnerMotionInertiaAppliedLastTick() const { return bOwnerMotionInertiaAppliedLastTick; }
 
 protected:
 	/**
@@ -212,6 +277,22 @@ private:
 	 * @brief editor preview simulation에 필요한 owner actor tick 정책을 적용합니다
 	 */
 	void ApplyEditorPreviewPolicy();
+
+	/**
+	 * @brief editor preview simulation 결과를 rest pose로 되돌립니다
+	 *
+	 * @param Config bounds 갱신에 사용할 cloth config
+	 */
+	void ResetEditorPreviewSimulationState(const FClothConfig& Config);
+
+	/**
+	 * @brief render data 위치를 rest position cache 기준으로 복원합니다
+	 *
+	 * @param Config bounds 갱신에 사용할 cloth config
+	 *
+	 * @return rest position 복원 성공 여부
+	 */
+	bool RestoreRenderDataToRestPositions(const FClothConfig& Config);
 
 	/**
 	 * @brief 현재 config로 procedural grid를 생성합니다

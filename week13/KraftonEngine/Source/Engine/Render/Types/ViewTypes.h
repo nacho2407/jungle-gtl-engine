@@ -66,6 +66,7 @@ struct FShowFlags
 	bool bShowCollisionShape = false;	// PIE/Game에서 콘솔로 콜리전 shape 와이어프레임 강제 표시
 	bool bPhysicsBody = false;
 	bool bDebugPhysicsAsset = false;
+	bool bDebugCloth = false;
 	bool bParticle = true;
 };
 
