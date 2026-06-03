@@ -18,6 +18,17 @@ namespace
 	{
 		return Prefix + std::to_string(Index);
 	}
+
+	float Clamp01(const float Value)
+	{
+		return FMath::Clamp(Value, 0.0f, 1.0f);
+	}
+
+	float SmoothStep(const float Alpha)
+	{
+		const float T = Clamp01(Alpha);
+		return T * T * (3.0f - 2.0f * T);
+	}
 }
 
 void UVehicleMovementComponentTank::SetDriveInput(const float Throttle, const float Brake, const float Steer, const bool bReverse) const
@@ -94,6 +105,20 @@ void UVehicleMovementComponentTank::FireTurretRecoil(const float Impulse,
 	}
 }
 
+void UVehicleMovementComponentTank::FireMainGun()
+{
+	bBarrelRecoilActive = true;
+	BarrelRecoilElapsed = 0.0f;
+	ApplyBarrelVisual();
+
+	if (MainGunSetup.bApplyChassisRecoil && MainGunSetup.ChassisRecoilImpulse > 0.0f)
+	{
+		FireTurretRecoil(MainGunSetup.ChassisRecoilImpulse,
+			MainGunSetup.TurretLocalFirePoint,
+			MainGunSetup.TurretLocalFireDirection);
+	}
+}
+
 void UVehicleMovementComponentTank::BeginPlay()
 {
 	UPhysXVehicleMovementComponent::BeginPlay();
@@ -105,6 +130,7 @@ void UVehicleMovementComponentTank::TickComponent(const float DeltaTime, const E
 {
 	UPhysXVehicleMovementComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	UpdateTurretYaw(DeltaTime);
+	UpdateBarrelRecoil(DeltaTime);
 }
 
 void UVehicleMovementComponentTank::SyncFromPhysics()
@@ -128,6 +154,7 @@ void UVehicleMovementComponentTank::SyncFromPhysics()
 	VehicleInstance->UpdateVisualState(WheelQueryResult);
 	ApplyWheelVisuals();
 	ApplyTurretVisual();
+	ApplyBarrelVisual();
 }
 
 float UVehicleMovementComponentTank::GetLeftTrackSpeed() const
@@ -213,6 +240,11 @@ void UVehicleMovementComponentTank::RebuildVisualBindings()
 	{
 		BindTurretVisualByName(VisualSetup.TurretComponentName);
 	}
+
+	if (VisualSetup.bAutoBindBarrelVisual)
+	{
+		BindBarrelVisualByName(VisualSetup.BarrelComponentName);
+	}
 }
 
 void UVehicleMovementComponentTank::BindWheelVisualByName(const FString& ComponentName, const uint32 WheelIndex)
@@ -252,6 +284,24 @@ void UVehicleMovementComponentTank::BindTurretVisualByName(const FString& Compon
 	TurretVisualComponent = Component;
 	InitialTurretRelativeRotation = Component->GetRelativeQuat();
 	ApplyTurretVisual();
+}
+
+void UVehicleMovementComponentTank::BindBarrelVisualByName(const FString& ComponentName)
+{
+	if (ComponentName.empty())
+	{
+		return;
+	}
+
+	USceneComponent* Component = FindOwnerSceneComponentByName(ComponentName);
+	if (!Component)
+	{
+		return;
+	}
+
+	BarrelVisualComponent = Component;
+	InitialBarrelRelativeLocation = Component->GetRelativeLocation();
+	ApplyBarrelVisual();
 }
 
 USceneComponent* UVehicleMovementComponentTank::FindOwnerSceneComponentByName(const FString& ComponentName) const
@@ -322,12 +372,32 @@ void UVehicleMovementComponentTank::ApplyTurretVisual()
 	TurretVisualComponent->SetRelativeRotation((InitialTurretRelativeRotation * GetTurretYawRotation()).GetNormalized());
 }
 
+void UVehicleMovementComponentTank::ApplyBarrelVisual()
+{
+	if (!VisualSetup.bAutoBindBarrelVisual || !IsAliveObject(BarrelVisualComponent))
+	{
+		return;
+	}
+
+	const FVector RelativeLocation = InitialBarrelRelativeLocation + GetBarrelRecoilAxis() * GetBarrelRecoilOffset();
+	BarrelVisualComponent->SetRelativeLocation(RelativeLocation);
+}
+
 void UVehicleMovementComponentTank::ClearVisualBindings()
 {
+	if (IsAliveObject(BarrelVisualComponent))
+	{
+		BarrelVisualComponent->SetRelativeLocation(InitialBarrelRelativeLocation);
+	}
+
 	WheelVisualBindings.clear();
 	TurretVisualComponent = nullptr;
 	InitialTurretRelativeRotation = FQuat::Identity;
+	BarrelVisualComponent = nullptr;
+	InitialBarrelRelativeLocation = FVector::ZeroVector;
 	TurretYawInput = 0.0f;
+	BarrelRecoilElapsed = 0.0f;
+	bBarrelRecoilActive = false;
 }
 
 void UVehicleMovementComponentTank::UpdateTurretYaw(const float DeltaTime)
@@ -338,6 +408,32 @@ void UVehicleMovementComponentTank::UpdateTurretYaw(const float DeltaTime)
 	}
 
 	TurretYawDegrees = ClampTurretYaw(TurretYawDegrees + TurretYawInput * VisualSetup.TurretYawSpeedDegPerSecond * DeltaTime);
+}
+
+void UVehicleMovementComponentTank::UpdateBarrelRecoil(const float DeltaTime)
+{
+	if (!bBarrelRecoilActive)
+	{
+		return;
+	}
+
+	const float KickTime = std::max(MainGunSetup.BarrelKickTime, 0.0f);
+	const float ReturnTime = std::max(MainGunSetup.BarrelReturnTime, 0.0f);
+	const float TotalTime = KickTime + ReturnTime;
+	if (TotalTime <= FMath::Epsilon)
+	{
+		bBarrelRecoilActive = false;
+		BarrelRecoilElapsed = 0.0f;
+		ApplyBarrelVisual();
+		return;
+	}
+
+	BarrelRecoilElapsed += std::max(DeltaTime, 0.0f);
+	if (BarrelRecoilElapsed >= TotalTime)
+	{
+		bBarrelRecoilActive = false;
+		BarrelRecoilElapsed = 0.0f;
+	}
 }
 
 float UVehicleMovementComponentTank::ClampTurretYaw(const float YawDegrees) const
@@ -363,6 +459,57 @@ FVector UVehicleMovementComponentTank::GetTurretYawAxis() const
 	if (Axis.IsNearlyZero())
 	{
 		Axis = FVector::UpVector;
+	}
+	else
+	{
+		Axis.Normalize();
+	}
+
+	return Axis;
+}
+
+float UVehicleMovementComponentTank::GetBarrelRecoilOffset() const
+{
+	const float Distance = std::max(MainGunSetup.BarrelRecoilDistance, 0.0f);
+	if (!bBarrelRecoilActive || Distance <= FMath::Epsilon)
+	{
+		return 0.0f;
+	}
+
+	const float KickTime = std::max(MainGunSetup.BarrelKickTime, 0.0f);
+	const float ReturnTime = std::max(MainGunSetup.BarrelReturnTime, 0.0f);
+
+	if (KickTime <= FMath::Epsilon)
+	{
+		if (ReturnTime <= FMath::Epsilon)
+		{
+			return 0.0f;
+		}
+
+		const float ReturnAlpha = SmoothStep(BarrelRecoilElapsed / ReturnTime);
+		return Distance * (1.0f - ReturnAlpha);
+	}
+
+	if (BarrelRecoilElapsed < KickTime)
+	{
+		return Distance * SmoothStep(BarrelRecoilElapsed / KickTime);
+	}
+
+	if (ReturnTime <= FMath::Epsilon)
+	{
+		return 0.0f;
+	}
+
+	const float ReturnAlpha = SmoothStep((BarrelRecoilElapsed - KickTime) / ReturnTime);
+	return Distance * (1.0f - ReturnAlpha);
+}
+
+FVector UVehicleMovementComponentTank::GetBarrelRecoilAxis() const
+{
+	FVector Axis = VisualSetup.BarrelRecoilAxis;
+	if (Axis.IsNearlyZero())
+	{
+		Axis = FVector::BackwardVector;
 	}
 	else
 	{

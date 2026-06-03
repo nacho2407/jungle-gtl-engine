@@ -426,6 +426,8 @@ function VehicleMovementComponentTank:GetTurretForward() end
 ---@param TurretLocalDirection Vector
 function VehicleMovementComponentTank:FireTurretRecoil(Impulse, TurretLocalFirePoint, TurretLocalDirection) end
 
+function VehicleMovementComponentTank:FireMainGun() end
+
 ---@return number
 function VehicleMovementComponentTank:GetLeftTrackSpeed() end
 

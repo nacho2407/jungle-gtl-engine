@@ -1,0 +1,18 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
+  "Origin" : "FbxImport",
+  "Parameters" : {
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [0.144150, 0.157434, 0.095749, 1.000000],
+    "_pad" : [0.000000, 0.000000, 0.000000]
+  },
+  "PathFileName" : "Content/Material/Auto/ Main Green.001.mat",
+  "RasterizerState" : "SolidBackCull",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "ShadowMode" : "Opaque",
+  "bEnableBloom" : false
+}

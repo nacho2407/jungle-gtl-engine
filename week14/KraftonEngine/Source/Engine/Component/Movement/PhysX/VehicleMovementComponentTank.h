@@ -54,6 +54,42 @@ struct FTankVehicleVisualSetup
 
 	UPROPERTY(Edit, Save, Category = "Tank|Visual", DisplayName = "Max Turret Yaw", Speed = 1.0f)
 	float MaxTurretYawDegrees = 180.0f;
+
+	UPROPERTY(Edit, Save, Category = "Tank|Visual", DisplayName = "Auto Bind Barrel Visual")
+	bool bAutoBindBarrelVisual = true;
+
+	UPROPERTY(Edit, Save, Category = "Tank|Visual", DisplayName = "Barrel Component Name")
+	FString BarrelComponentName = "TankBarrel";
+
+	UPROPERTY(Edit, Save, Category = "Tank|Visual", DisplayName = "Barrel Recoil Axis", Type = Vec3, Speed = 0.01f)
+	FVector BarrelRecoilAxis = FVector::BackwardVector;
+};
+
+USTRUCT()
+struct FTankMainGunSetup
+{
+	GENERATED_BODY()
+
+	UPROPERTY(Edit, Save, Category = "Tank|MainGun", DisplayName = "Barrel Recoil Distance", Min = 0.0f, Speed = 0.01f)
+	float BarrelRecoilDistance = 0.45f;
+
+	UPROPERTY(Edit, Save, Category = "Tank|MainGun", DisplayName = "Barrel Kick Time", Min = 0.0f, Speed = 0.01f)
+	float BarrelKickTime = 0.06f;
+
+	UPROPERTY(Edit, Save, Category = "Tank|MainGun", DisplayName = "Barrel Return Time", Min = 0.0f, Speed = 0.01f)
+	float BarrelReturnTime = 0.32f;
+
+	UPROPERTY(Edit, Save, Category = "Tank|MainGun", DisplayName = "Apply Chassis Recoil")
+	bool bApplyChassisRecoil = true;
+
+	UPROPERTY(Edit, Save, Category = "Tank|MainGun", DisplayName = "Chassis Recoil Impulse", Min = 0.0f, Speed = 1000.0f)
+	float ChassisRecoilImpulse = 40000.0f;
+
+	UPROPERTY(Edit, Save, Category = "Tank|MainGun", DisplayName = "Turret Local Fire Point", Type = Vec3, Speed = 0.1f)
+	FVector TurretLocalFirePoint = FVector(2.4f, 0.0f, 0.0f);
+
+	UPROPERTY(Edit, Save, Category = "Tank|MainGun", DisplayName = "Turret Local Fire Direction", Type = Vec3, Speed = 0.01f)
+	FVector TurretLocalFireDirection = FVector::ForwardVector;
 };
 
 UCLASS()
@@ -88,6 +124,9 @@ public:
 
 	UFUNCTION(Lua)
 	void FireTurretRecoil(float Impulse, FVector TurretLocalFirePoint, FVector TurretLocalDirection) const;
+
+	UFUNCTION(Lua)
+	void FireMainGun();
 
 	void BeginPlay() override;
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
@@ -126,14 +165,19 @@ private:
 	void RebuildVisualBindings();
 	void BindWheelVisualByName(const FString& ComponentName, uint32 WheelIndex);
 	void BindTurretVisualByName(const FString& ComponentName);
+	void BindBarrelVisualByName(const FString& ComponentName);
 	USceneComponent* FindOwnerSceneComponentByName(const FString& ComponentName) const;
 	void ApplyWheelVisuals();
 	void ApplyTurretVisual();
+	void ApplyBarrelVisual();
 	void ClearVisualBindings();
 	void UpdateTurretYaw(float DeltaTime);
+	void UpdateBarrelRecoil(float DeltaTime);
 	float ClampTurretYaw(float YawDegrees) const;
 	FQuat GetTurretYawRotation() const;
 	FVector GetTurretYawAxis() const;
+	float GetBarrelRecoilOffset() const;
+	FVector GetBarrelRecoilAxis() const;
 	bool GetTurretLocalFireTransform(FVector TurretLocalPoint, FVector TurretLocalDirection,
 		FVector& OutVehicleLocalPoint, FVector& OutVehicleLocalDirection) const;
 
@@ -141,12 +185,19 @@ private:
 	TArray<FWheelVisualBinding> WheelVisualBindings;
 	USceneComponent* TurretVisualComponent = nullptr;
 	FQuat InitialTurretRelativeRotation;
+	USceneComponent* BarrelVisualComponent = nullptr;
+	FVector InitialBarrelRelativeLocation = FVector::ZeroVector;
 	float TurretYawInput = 0.0f;
 	float TurretYawDegrees = 0.0f;
+	float BarrelRecoilElapsed = 0.0f;
+	bool bBarrelRecoilActive = false;
 
 	UPROPERTY(Edit, Save, Category = "Tank", DisplayName = "Tank Setup", Type = Struct, Struct = FTankVehiclePhysicsSetup)
 	FTankVehiclePhysicsSetup TankSetup;
 
 	UPROPERTY(Edit, Save, Category = "Tank", DisplayName = "Visual Setup", Type = Struct, Struct = FTankVehicleVisualSetup)
 	FTankVehicleVisualSetup VisualSetup;
+
+	UPROPERTY(Edit, Save, Category = "Tank", DisplayName = "Main Gun Setup", Type = Struct, Struct = FTankMainGunSetup)
+	FTankMainGunSetup MainGunSetup;
 };

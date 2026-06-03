@@ -4,10 +4,6 @@ local currentThrottle = 0.0
 local currentBrake = 0.0
 local currentSteer = 0.0
 
-local recoilImpulse = 250000.0
-local recoilFirePoint = Vector.new(2.4, 0.0, 1.1)
-local recoilDirection = Vector.Forward()
-
 local function approach(current, target, speed, dt)
     if current < target then
         return math.min(current + speed * dt, target)
@@ -66,7 +62,7 @@ function Tick(dt)
     end
 
     if Input.GetKeyDown(Key.R) then
-        vehicle:FireTurretRecoil(recoilImpulse, recoilFirePoint, recoilDirection)
+        vehicle:FireMainGun()
     end
 
     currentThrottle = approach(currentThrottle, throttle, 3.0, dt)
