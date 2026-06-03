@@ -70,6 +70,24 @@ void UPhysicalAnimationComponent::DeactivatePhysicalAnimation(bool bUseRecovery)
     UE_LOG("PhysicalAnimation deactivated");
 }
 
+void UPhysicalAnimationComponent::StopDrivingKeepRagdoll()
+{
+    bPhysicalAnimationEnabled = false;
+
+    ClearPhysicalAnimationRuntimeData();
+    AutoFindTargetMeshIfNeeded();
+
+    if (TargetMesh)
+    {
+        TargetMesh->SetRagdollEnabled(true);
+        TargetMesh->SetAllBodiesSimulatePhysics(true);
+        TargetMesh->SetAllBodiesPhysicsBlendWeight(1.0f);
+        TargetMesh->WakeAllRagdollBodies();
+    }
+
+    UE_LOG("PhysicalAnimation driving stopped; ragdoll kept active");
+}
+
 void UPhysicalAnimationComponent::AutoFindTargetMeshIfNeeded()
 {
     if (TargetMesh || !bAutoFindTargetMesh) return;

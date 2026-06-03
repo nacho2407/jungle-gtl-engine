@@ -70,6 +70,9 @@ public:
     void DeactivatePhysicalAnimation(bool bUseRecovery = true);
 
     UFUNCTION(Callable, Category = "Physics|PhysicalAnimation")
+    void StopDrivingKeepRagdoll();
+
+    UFUNCTION(Callable, Category = "Physics|PhysicalAnimation")
     void PrePhysicsTick(float DeltaTime);
 
     UFUNCTION(Pure, Category = "Physics|PhysicalAnimation")

@@ -43,6 +43,9 @@ public:
 	UFUNCTION(Callable, Exec, Category="Character|Movement")
 	void Jump();
 
+	UFUNCTION(Callable, Exec, Category="Character|Ragdoll")
+	void EnterFullRagdoll();
+
 	UFUNCTION(Pure, Category="Character|Components")
 	UCapsuleComponent*           GetCapsuleComponent()  const { return CapsuleComponent; }
 	UFUNCTION(Pure, Category="Character|Components")

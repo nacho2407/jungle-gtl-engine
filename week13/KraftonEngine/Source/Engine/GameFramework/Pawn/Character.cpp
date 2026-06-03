@@ -3,7 +3,9 @@
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/Input/InputComponent.h"
 #include "Component/Movement/CharacterMovementComponent.h"
+#include "Component/Physics/PhysicalAnimationComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Component/ShapeComponent.h"
 #include "Input/InputSystem.h"
 #include "Math/Rotator.h"
 #include "Mesh/MeshManager.h"
@@ -69,6 +71,48 @@ void ACharacter::Jump()
 	if (CharacterMovement)
 	{
 		CharacterMovement->Jump();
+	}
+}
+
+void ACharacter::EnterFullRagdoll()
+{
+	RefreshCharacterComponents();
+
+	if (InputComponent)
+	{
+		InputComponent->ClearBindings();
+	}
+
+	if (CharacterMovement)
+	{
+		CharacterMovement->Deactivate();
+		CharacterMovement->SetComponentTickEnabled(false);
+	}
+
+	for (UActorComponent* Component : GetComponents())
+	{
+		UShapeComponent* ShapeComponent = Cast<UShapeComponent>(Component);
+		if (!ShapeComponent)
+		{
+			continue;
+		}
+
+		ShapeComponent->SetSimulatePhysics(false);
+		ShapeComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	if (UPhysicalAnimationComponent* PhysicalAnimation = GetComponentByClass<UPhysicalAnimationComponent>())
+	{
+		PhysicalAnimation->StopDrivingKeepRagdoll();
+	}
+
+	if (Mesh)
+	{
+		Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		Mesh->SetRagdollEnabled(true);
+		Mesh->SetAllBodiesSimulatePhysics(true);
+		Mesh->SetAllBodiesPhysicsBlendWeight(1.0f);
+		Mesh->WakeAllRagdollBodies();
 	}
 }
 
