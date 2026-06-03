@@ -170,7 +170,10 @@ void FEditorMainPanel::Render(float DeltaTime)
 	{
 		SCOPE_STAT_CAT("PropertyWidget.Render", "5_UI");
 		PropertyWidget.Render(PanelContext);
+	}
 
+	if (!bHideEditorWindows && Settings.UI.bReflectionProperty)
+	{
 		SCOPE_STAT_CAT("ReflectionPropertyWidget.Render", "5_UI");
 		ReflectionPropertyWidget.Render(PanelContext);
 	}
@@ -283,6 +286,7 @@ void FEditorMainPanel::RenderMainMenuBar()
 	{
 		ImGui::Checkbox("Control", &Settings.UI.bControl);
 		ImGui::Checkbox("Property", &Settings.UI.bProperty);
+		ImGui::Checkbox("Reflection Property", &Settings.UI.bReflectionProperty);
 		ImGui::Checkbox("Scene", &Settings.UI.bScene);
 		ImGui::Checkbox("Stat", &Settings.UI.bStat);
 		ImGui::Checkbox("Console", &Settings.UI.bConsole);
@@ -756,6 +760,7 @@ void FEditorMainPanel::HideEditorWindows()
 	Settings.UI.bConsole = false;
 	Settings.UI.bControl = false;
 	Settings.UI.bProperty = false;
+	Settings.UI.bReflectionProperty = false;
 	Settings.UI.bScene = false;
 	Settings.UI.bStat = false;
 	Settings.UI.bContentBrowser = false;
