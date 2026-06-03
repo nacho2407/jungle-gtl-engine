@@ -75,6 +75,28 @@ namespace
 	}
 
 	/**
+	 * @brief 두 world rotation 사이의 최단 회전 각도를 degree로 반환합니다
+	 *
+	 * @param PreviousRotation 이전 world rotation
+	 *
+	 * @param CurrentRotation 현재 world rotation
+	 *
+	 * @return 두 rotation 사이의 최단 각도
+	 */
+	float ComputeRotationDeltaDegrees(const FQuat& PreviousRotation, const FQuat& CurrentRotation)
+	{
+		const FQuat SafePreviousRotation = PreviousRotation.GetNormalized();
+		const FQuat SafeCurrentRotation = CurrentRotation.GetNormalized();
+		const float RotationDot = std::abs(
+			SafePreviousRotation.X * SafeCurrentRotation.X
+			+ SafePreviousRotation.Y * SafeCurrentRotation.Y
+			+ SafePreviousRotation.Z * SafeCurrentRotation.Z
+			+ SafePreviousRotation.W * SafeCurrentRotation.W);
+		const float ClampedDot = ClampFloat(RotationDot, 0.0f, 1.0f);
+		return 2.0f * std::acos(ClampedDot) * RAD_TO_DEG;
+	}
+
+	/**
 	 * @brief 유한한 양수 spacing 값을 반환합니다
 	 *
 	 * @param Value 보정할 spacing 값
@@ -192,6 +214,12 @@ namespace
 			|| MatchesPropertyName(PropertyName, "WindDragCoefficient", "Wind Drag Coefficient")
 			|| MatchesPropertyName(PropertyName, "WindLiftCoefficient", "Wind Lift Coefficient")
 			|| MatchesPropertyName(PropertyName, "WindFluidDensity", "Wind Fluid Density")
+			|| MatchesPropertyName(PropertyName, "bEnableOwnerMotionInertia", "Enable Owner Motion Inertia")
+			|| MatchesPropertyName(PropertyName, "OwnerLinearInertiaResponse", "Linear Inertia Response")
+			|| MatchesPropertyName(PropertyName, "OwnerAngularInertiaResponse", "Angular Inertia Response")
+			|| MatchesPropertyName(PropertyName, "OwnerCentrifugalInertiaResponse", "Centrifugal Inertia Response")
+			|| MatchesPropertyName(PropertyName, "OwnerMotionTeleportDistance", "Owner Motion Teleport Distance")
+			|| MatchesPropertyName(PropertyName, "OwnerMotionTeleportAngleDegrees", "Owner Motion Teleport Angle")
 			|| MatchesPropertyName(PropertyName, "bEnableSelfCollision", "Enable Self Collision")
 			|| MatchesPropertyName(PropertyName, "SelfCollisionDistance", "Self Collision Distance")
 			|| MatchesPropertyName(PropertyName, "SelfCollisionStiffness", "Self Collision Stiffness")
@@ -369,6 +397,7 @@ void UClothComponent::PostDuplicate()
 	Simulation.Shutdown();
 	SimulationReadbackPositions.clear();
 	CachedCollisionPrimitives.clear();
+	ResetOwnerMotionCache();
 	LoadMaterialFromSlot();
 	MarkClothRebuildDirty();
 }
@@ -378,6 +407,7 @@ void UClothComponent::RouteComponentDestroyed()
 	Simulation.Shutdown();
 	SimulationReadbackPositions.clear();
 	CachedCollisionPrimitives.clear();
+	ResetOwnerMotionCache();
 	UMeshComponent::RouteComponentDestroyed();
 }
 
@@ -496,7 +526,32 @@ void UClothComponent::MarkClothEditorPreviewDirty()
 {
 	bEditorPreviewDirty = true;
 	Simulation.ResetAccumulator();
+	ResetOwnerMotionCache();
 	ApplyEditorPreviewPolicy();
+}
+
+void UClothComponent::ResetOwnerMotionCache()
+{
+	PreviousClothWorldTransform = FTransform();
+	bHasPreviousClothWorldTransform = false;
+	CachedOwnerMotionDeltaWorld = FVector::ZeroVector;
+	bOwnerMotionInertiaAppliedLastTick = false;
+}
+
+void UClothComponent::StoreOwnerMotionCache(const FClothSimulationRuntimeConfig& RuntimeConfig)
+{
+	PreviousClothWorldTransform = RuntimeConfig.LocalSpaceMotion.CurrentWorldTransform;
+	bHasPreviousClothWorldTransform = true;
+
+	// 실제 fixed step이 소비된 tick만 inertia 적용으로 기록
+	bOwnerMotionInertiaAppliedLastTick =
+		RuntimeConfig.LocalSpaceMotion.bEnabled
+		&& RuntimeConfig.LocalSpaceMotion.bHasPreviousTransform
+		&& !RuntimeConfig.LocalSpaceMotion.bTeleport
+		&& Simulation.GetLastStepCount() > 0
+		&& (RuntimeConfig.LocalSpaceMotion.LinearInertia > GNormalTolerance
+			|| RuntimeConfig.LocalSpaceMotion.AngularInertia > GNormalTolerance
+			|| RuntimeConfig.LocalSpaceMotion.CentrifugalInertia > GNormalTolerance);
 }
 
 void UClothComponent::RebuildClothIfNeeded(bool bNotifyProxyDirty)
@@ -607,6 +662,41 @@ FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const
 	RuntimeConfig.SelfCollision.Distance = ClampFloat(SelfCollisionDistance, 0.0f, GMaxSelfCollisionDistance);
 	RuntimeConfig.SelfCollision.Stiffness = ClampFloat(SelfCollisionStiffness, 0.0f, 1.0f);
 	RuntimeConfig.SelfCollision.CullScale = ClampFloat(SelfCollisionCullScale, 0.0f, 10.0f);
+
+	const FTransform CurrentClothWorldTransform = FTransform::FromMatrixWithScale(GetWorldMatrix());
+	const float SafeTeleportDistance = ClampFloat(OwnerMotionTeleportDistance, 0.0f, 100000.0f);
+	const float SafeTeleportAngleDegrees = ClampFloat(OwnerMotionTeleportAngleDegrees, 0.0f, 180.0f);
+
+	RuntimeConfig.LocalSpaceMotion.bEnabled = bEnableOwnerMotionInertia;
+	RuntimeConfig.LocalSpaceMotion.bHasPreviousTransform = bHasPreviousClothWorldTransform;
+	RuntimeConfig.LocalSpaceMotion.PreviousWorldTransform = PreviousClothWorldTransform;
+	RuntimeConfig.LocalSpaceMotion.CurrentWorldTransform = CurrentClothWorldTransform;
+	RuntimeConfig.LocalSpaceMotion.LinearInertia = ClampFloat(OwnerLinearInertiaResponse, 0.0f, 1.0f);
+	RuntimeConfig.LocalSpaceMotion.AngularInertia = ClampFloat(OwnerAngularInertiaResponse, 0.0f, 1.0f);
+	RuntimeConfig.LocalSpaceMotion.CentrifugalInertia = ClampFloat(OwnerCentrifugalInertiaResponse, 0.0f, 1.0f);
+	RuntimeConfig.LocalSpaceMotion.TeleportDistance = SafeTeleportDistance;
+	RuntimeConfig.LocalSpaceMotion.TeleportAngleDegrees = SafeTeleportAngleDegrees;
+
+	CachedOwnerMotionDeltaWorld = FVector::ZeroVector;
+	bOwnerMotionInertiaAppliedLastTick = false;
+	if (bHasPreviousClothWorldTransform)
+	{
+		// component world transform 변화량 기준의 owner motion 판정
+		const FVector DeltaLocationWorld = CurrentClothWorldTransform.Location - PreviousClothWorldTransform.Location;
+		const float DeltaDistance = DeltaLocationWorld.Length();
+		const float DeltaAngleDegrees = ComputeRotationDeltaDegrees(
+			PreviousClothWorldTransform.Rotation,
+			CurrentClothWorldTransform.Rotation);
+
+		RuntimeConfig.LocalSpaceMotion.bTeleport =
+			DeltaDistance > SafeTeleportDistance
+			|| DeltaAngleDegrees > SafeTeleportAngleDegrees;
+
+		if (bEnableOwnerMotionInertia && !RuntimeConfig.LocalSpaceMotion.bTeleport)
+		{
+			CachedOwnerMotionDeltaWorld = DeltaLocationWorld;
+		}
+	}
 
 	return RuntimeConfig;
 }
@@ -931,6 +1021,7 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 		CachedPinnedIndices.clear();
 		CachedPinTargetPositionsComponentLocal.clear();
 		CachedCollisionPrimitives.clear();
+		ResetOwnerMotionCache();
 		bSimulationRebuildDirty = false;
 		bLastSimulationBuildSkippedByAllPinned = false;
 		bSimulationTickWarningLogged = false;
@@ -945,6 +1036,7 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 		CachedPinnedIndices.clear();
 		CachedPinTargetPositionsComponentLocal.clear();
 		CachedCollisionPrimitives.clear();
+		ResetOwnerMotionCache();
 		bSimulationRebuildDirty = false;
 		bLastSimulationBuildSkippedByAllPinned = false;
 		bSimulationTickWarningLogged = false;
@@ -962,6 +1054,7 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 	CachedPinnedIndices = BuildDesc.PinnedIndices;
 	CachedPinTargetPositionsComponentLocal = BuildDesc.PinTargetPositionsComponentLocal;
 	bLastSimulationBuildSkippedByAllPinned = false;
+	ResetOwnerMotionCache();
 	if (!Simulation.Rebuild(&GEngine->GetClothContext(), BuildDesc))
 	{
 		bLastSimulationBuildSkippedByAllPinned = IsAllPinnedBuildFailure(Simulation.GetLastFailureDetail());
@@ -1034,6 +1127,7 @@ void UClothComponent::TickSimulationIfNeeded(float DeltaTime, ELevelTick TickTyp
 		{
 			bEditorPreviewDirty = false;
 		}
+		ResetOwnerMotionCache();
 		return;
 	}
 
@@ -1045,6 +1139,7 @@ void UClothComponent::TickSimulationIfNeeded(float DeltaTime, ELevelTick TickTyp
 	const bool bTickResult = Simulation.Tick(DeltaTime, RuntimeConfig, SimulationReadbackPositions);
 	const auto SimulationEndTime = std::chrono::high_resolution_clock::now();
 	const double SimulationElapsedMs = std::chrono::duration<double, std::milli>(SimulationEndTime - SimulationStartTime).count();
+	StoreOwnerMotionCache(RuntimeConfig);
 
 	CLOTH_STATS_RECORD_COMPONENT(
 		Simulation.GetParticleCount(),

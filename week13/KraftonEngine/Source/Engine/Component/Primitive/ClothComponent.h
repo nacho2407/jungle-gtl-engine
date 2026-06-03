@@ -186,6 +186,18 @@ private:
 	FClothSimulationRuntimeConfig MakeSimulationRuntimeConfig(const FClothConfig& Config) const;
 
 	/**
+	 * @brief owner motion inertia cache를 초기화합니다
+	 */
+	void ResetOwnerMotionCache();
+
+	/**
+	 * @brief 현재 runtime config 기준 owner motion inertia cache를 저장합니다
+	 *
+	 * @param RuntimeConfig 이번 tick에 사용한 runtime 설정
+	 */
+	void StoreOwnerMotionCache(const FClothSimulationRuntimeConfig& RuntimeConfig);
+
+	/**
 	 * @brief 현재 tick에서 simulation을 진행해야 하는지 반환합니다
 	 *
 	 * @param TickType level tick 종류
@@ -498,6 +510,24 @@ private:
 	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Wind Fluid Density", Min=0.0f, Max=10.0f, Speed=0.01f)
 	float WindFluidDensity = 1.0f;
 
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Enable Owner Motion Inertia")
+	bool bEnableOwnerMotionInertia = true;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Linear Inertia Response", Min=0.0f, Max=1.0f, Speed=0.01f)
+	float OwnerLinearInertiaResponse = 0.35f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Angular Inertia Response", Min=0.0f, Max=1.0f, Speed=0.01f)
+	float OwnerAngularInertiaResponse = 0.15f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Centrifugal Inertia Response", Min=0.0f, Max=1.0f, Speed=0.01f)
+	float OwnerCentrifugalInertiaResponse = 0.15f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Owner Motion Teleport Distance", Min=0.0f, Max=100000.0f, Speed=1.0f)
+	float OwnerMotionTeleportDistance = 300.0f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Owner Motion Teleport Angle", Min=0.0f, Max=180.0f, Speed=1.0f)
+	float OwnerMotionTeleportAngleDegrees = 45.0f;
+
 	UPROPERTY(Edit, Save, Category="Cloth|Self Collision", DisplayName="Enable Self Collision")
 	bool bEnableSelfCollision = false;
 
@@ -572,10 +602,14 @@ private:
 	TArray<FVector> CachedPinTargetPositionsComponentLocal;
 	TArray<FClothCollisionPrimitive> CachedCollisionPrimitives;
 	mutable FVector CachedFinalWindVelocityWorld = FVector::ZeroVector;
+	mutable FVector CachedOwnerMotionDeltaWorld = FVector::ZeroVector;
+	FTransform PreviousClothWorldTransform;
 	FVector CachedLocalCenter = FVector::ZeroVector;
 	FVector CachedLocalExtent = FVector(0.5f, 0.5f, 0.5f);
 	bool bHasValidLocalBounds = false;
 	mutable bool bGlobalWindAppliedLastTick = false;
+	bool bHasPreviousClothWorldTransform = false;
+	mutable bool bOwnerMotionInertiaAppliedLastTick = false;
 	bool bTopologyRebuildDirty = true;
 	bool bSimulationRebuildDirty = true;
 	bool bPinningDirty = true;

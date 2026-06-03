@@ -109,6 +109,24 @@ physx::PxVec3 ToPxVec3(const FVector& Vector)
 }
 
 /**
+ * @brief engine quaternion을 physx quaternion으로 변환합니다
+ *
+ * @param Quat 변환할 engine quaternion
+ *
+ * @return 변환된 physx quaternion
+ */
+physx::PxQuat ToPxQuat(const FQuat& Quat)
+{
+	FQuat NormalizedQuat = Quat;
+	NormalizedQuat.Normalize();
+	return physx::PxQuat(
+		NormalizedQuat.X,
+		NormalizedQuat.Y,
+		NormalizedQuat.Z,
+		NormalizedQuat.W);
+}
+
+/**
  * @brief NvCloth particle 위치를 engine vector로 변환합니다
  *
  * @param Particle 변환할 NvCloth particle
@@ -742,6 +760,9 @@ bool FClothSimulation::Tick(
 	const float MaxAccumulatedTime = (std::max)(FixedStep, RuntimeConfig.Timestep.MaxAccumulatedTime);
 	AccumulatedTime = (std::min)(AccumulatedTime + DeltaTime, MaxAccumulatedTime);
 
+	// NvCloth local-space frame은 fixed step이 없는 frame에서도 최신 world transform으로 유지
+	ApplyLocalSpaceMotion(RuntimeConfig.LocalSpaceMotion);
+
 	bool bSimulatedAnyStep = false;
 	while (AccumulatedTime + GVectorTolerance >= FixedStep && LastStepCount < MaxSubsteps)
 	{
@@ -850,6 +871,58 @@ void FClothSimulation::ApplyRuntimeConfig(const FClothSimulationRuntimeConfig& R
 	}
 #else
 	(void)RuntimeConfig;
+#endif
+}
+
+void FClothSimulation::ApplyLocalSpaceMotion(const FClothLocalSpaceMotionConfig& MotionConfig)
+{
+#if WITH_NV_CLOTH
+	if (!Impl || !Impl->Cloth)
+	{
+		return;
+	}
+
+	const physx::PxVec3 CurrentTranslation = ToPxVec3(MotionConfig.CurrentWorldTransform.Location);
+	const physx::PxQuat CurrentRotation = ToPxQuat(MotionConfig.CurrentWorldTransform.Rotation);
+
+	auto SetZeroInertia = [this]()
+	{
+		Impl->Cloth->setLinearInertia(physx::PxVec3(0.0f, 0.0f, 0.0f));
+		Impl->Cloth->setAngularInertia(physx::PxVec3(0.0f, 0.0f, 0.0f));
+		Impl->Cloth->setCentrifugalInertia(physx::PxVec3(0.0f, 0.0f, 0.0f));
+	};
+
+	if (!MotionConfig.bEnabled)
+	{
+		// 비활성 상태에서도 frame transform은 최신값으로 유지해 재활성화 순간의 큰 delta 방지
+		SetZeroInertia();
+		Impl->Cloth->setTranslation(CurrentTranslation);
+		Impl->Cloth->setRotation(CurrentRotation);
+		Impl->Cloth->clearInertia();
+		return;
+	}
+
+	if (!MotionConfig.bHasPreviousTransform || MotionConfig.bTeleport)
+	{
+		// 최초 frame 또는 teleport는 흔들림 없이 local-space frame만 이동
+		SetZeroInertia();
+		Impl->Cloth->teleportToLocation(CurrentTranslation, CurrentRotation);
+		Impl->Cloth->clearInertia();
+		return;
+	}
+
+	const float LinearInertia = ClampFloat(MotionConfig.LinearInertia, 0.0f, 1.0f);
+	const float AngularInertia = ClampFloat(MotionConfig.AngularInertia, 0.0f, 1.0f);
+	const float CentrifugalInertia = ClampFloat(MotionConfig.CentrifugalInertia, 0.0f, 1.0f);
+
+	// NvCloth가 이전 local-space frame과 현재 frame 차이로 관성 force를 계산
+	Impl->Cloth->setLinearInertia(physx::PxVec3(LinearInertia, LinearInertia, LinearInertia));
+	Impl->Cloth->setAngularInertia(physx::PxVec3(AngularInertia, AngularInertia, AngularInertia));
+	Impl->Cloth->setCentrifugalInertia(physx::PxVec3(CentrifugalInertia, CentrifugalInertia, CentrifugalInertia));
+	Impl->Cloth->setTranslation(CurrentTranslation);
+	Impl->Cloth->setRotation(CurrentRotation);
+#else
+	(void)MotionConfig;
 #endif
 }
 

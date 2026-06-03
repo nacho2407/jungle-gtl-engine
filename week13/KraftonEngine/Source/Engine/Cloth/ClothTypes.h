@@ -1,6 +1,7 @@
-﻿#pragma once
+#pragma once
 
 #include "Core/Types/CoreTypes.h"
+#include "Math/Transform.h"
 #include "Math/Vector.h"
 #include "Object/FName.h"
 #include "Object/Reflection/ObjectMacros.h"
@@ -224,6 +225,23 @@ struct FClothSelfCollisionConfig
 };
 
 /**
+ * @brief component world transform 기반 NvCloth local-space motion 설정
+ */
+struct FClothLocalSpaceMotionConfig
+{
+	bool bEnabled = false;
+	bool bHasPreviousTransform = false;
+	bool bTeleport = false;
+	FTransform PreviousWorldTransform;
+	FTransform CurrentWorldTransform;
+	float LinearInertia = 0.35f;
+	float AngularInertia = 0.15f;
+	float CentrifugalInertia = 0.15f;
+	float TeleportDistance = 300.0f;
+	float TeleportAngleDegrees = 45.0f;
+};
+
+/**
  * @brief Cloth runtime simulation 설정 묶음
  */
 struct FClothSimulationRuntimeConfig
@@ -234,6 +252,7 @@ struct FClothSimulationRuntimeConfig
 	float Stiffness = 1.0f;
 	FClothWindConfig Wind;
 	FClothSelfCollisionConfig SelfCollision;
+	FClothLocalSpaceMotionConfig LocalSpaceMotion;
 };
 
 /**
