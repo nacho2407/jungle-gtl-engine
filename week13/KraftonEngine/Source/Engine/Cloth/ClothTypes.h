@@ -244,9 +244,6 @@ struct FClothSelfCollisionConfig
 	bool bEnabled = false;
 	float Distance = 2.0f;
 	float Stiffness = 1.0f;
-
-	// NvCloth에서 얼마나 적극적으로 충돌 후보를 솎아낼지
-	float CullScale = 1.0f;
 };
 
 /**

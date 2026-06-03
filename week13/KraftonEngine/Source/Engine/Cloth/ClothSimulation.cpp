@@ -747,7 +747,6 @@ void FClothSimulation::Shutdown()
 	AccumulatedTime = 0.0f;
 	SimulationTime = 0.0f;
 	LastStepCount = 0;
-	bSelfCollisionCullScaleWarningLogged = false;
 }
 
 bool FClothSimulation::Tick(
@@ -775,9 +774,14 @@ bool FClothSimulation::Tick(
 	const float MaxAccumulatedTime = (std::max)(FixedStep, RuntimeConfig.Timestep.MaxAccumulatedTime);
 	AccumulatedTime = (std::min)(AccumulatedTime + DeltaTime, MaxAccumulatedTime);
 
-	// NvCloth local-space frame은 fixed step이 없는 frame에서도 최신 world transform으로 유지
-	ApplyLocalSpaceMotion(RuntimeConfig.LocalSpaceMotion);
+	if (AccumulatedTime + GVectorTolerance < FixedStep)
+	{
+		// fixed step이 없는 frame은 NvCloth local-space frame을 소비하지 않고 누적 이동량 보존
+		return false;
+	}
 
+	// 실제 solver step 직전에만 최신 world transform을 NvCloth local-space motion으로 반영
+	ApplyLocalSpaceMotion(RuntimeConfig.LocalSpaceMotion);
 	bool bSimulatedAnyStep = false;
 	while (AccumulatedTime + GVectorTolerance >= FixedStep && LastStepCount < MaxSubsteps)
 	{
@@ -871,13 +875,6 @@ void FClothSimulation::ApplyRuntimeConfig(const FClothSimulationRuntimeConfig& R
 	{
 		Impl->Cloth->setSelfCollisionDistance((std::max)(0.0f, RuntimeConfig.SelfCollision.Distance));
 		Impl->Cloth->setSelfCollisionStiffness(ClampFloat(RuntimeConfig.SelfCollision.Stiffness, 0.0f, 1.0f));
-
-		if (!bSelfCollisionCullScaleWarningLogged
-			&& std::abs(RuntimeConfig.SelfCollision.CullScale - 1.0f) > GVectorTolerance)
-		{
-			bSelfCollisionCullScaleWarningLogged = true;
-			UE_LOG("[ClothSimulation] Self collision cull scale is reserved; NvCloth public API exposes self collision indices instead of a direct cull scale setter");
-		}
 	}
 	else
 	{
@@ -1121,6 +1118,5 @@ bool FClothSimulation::SetBuildFailure(const FString& FailureDetail)
 	AccumulatedTime = 0.0f;
 	SimulationTime = 0.0f;
 	LastStepCount = 0;
-	bSelfCollisionCullScaleWarningLogged = false;
 	return false;
 }

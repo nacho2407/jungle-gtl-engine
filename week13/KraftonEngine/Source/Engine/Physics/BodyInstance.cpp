@@ -306,6 +306,15 @@ void FBodyInstance::AppendClothCollisionPrimitives(TArray<FClothCollisionPrimiti
 			continue;
 		}
 
+		const physx::PxShapeFlags ShapeFlags = Shape->getFlags();
+		const bool bSimulationShape = ShapeFlags & physx::PxShapeFlag::eSIMULATION_SHAPE;
+		const bool bTriggerShape = ShapeFlags & physx::PxShapeFlag::eTRIGGER_SHAPE;
+		if (!bSimulationShape || bTriggerShape)
+		{
+			// cloth body collision은 실제 physics simulation shape만 snapshot에 포함
+			continue;
+		}
+
 		const physx::PxGeometryHolder Geometry = Shape->getGeometry();
 		const physx::PxTransform ShapePose = ActorPose * Shape->getLocalPose();
 		switch (Geometry.getType())

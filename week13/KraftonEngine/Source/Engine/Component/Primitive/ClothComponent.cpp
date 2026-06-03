@@ -229,8 +229,7 @@ namespace
 			|| MatchesPropertyName(PropertyName, "OwnerMotionTeleportAngleDegrees", "Owner Motion Teleport Angle")
 			|| MatchesPropertyName(PropertyName, "bEnableSelfCollision", "Enable Self Collision")
 			|| MatchesPropertyName(PropertyName, "SelfCollisionDistance", "Self Collision Distance")
-			|| MatchesPropertyName(PropertyName, "SelfCollisionStiffness", "Self Collision Stiffness")
-			|| MatchesPropertyName(PropertyName, "SelfCollisionCullScale", "Self Collision Cull Scale");
+			|| MatchesPropertyName(PropertyName, "SelfCollisionStiffness", "Self Collision Stiffness");
 	}
 
 	/**
@@ -608,15 +607,20 @@ void UClothComponent::ResetOwnerMotionCache()
 
 void UClothComponent::StoreOwnerMotionCache(const FClothSimulationRuntimeConfig& RuntimeConfig)
 {
-	PreviousClothWorldTransform = RuntimeConfig.LocalSpaceMotion.CurrentWorldTransform;
-	bHasPreviousClothWorldTransform = true;
+	const bool bConsumedSimulationStep = Simulation.GetLastStepCount() > 0;
+	if (!bHasPreviousClothWorldTransform || bConsumedSimulationStep)
+	{
+		// 최초 기준 transform 또는 실제 fixed step에서 소비된 transform만 previous cache로 저장
+		PreviousClothWorldTransform = RuntimeConfig.LocalSpaceMotion.CurrentWorldTransform;
+		bHasPreviousClothWorldTransform = true;
+	}
 
 	// 실제 fixed step이 소비된 tick만 inertia 적용으로 기록
 	bOwnerMotionInertiaAppliedLastTick =
 		RuntimeConfig.LocalSpaceMotion.bEnabled
 		&& RuntimeConfig.LocalSpaceMotion.bHasPreviousTransform
 		&& !RuntimeConfig.LocalSpaceMotion.bTeleport
-		&& Simulation.GetLastStepCount() > 0
+		&& bConsumedSimulationStep
 		&& (RuntimeConfig.LocalSpaceMotion.LinearInertia > GNormalTolerance
 			|| RuntimeConfig.LocalSpaceMotion.AngularInertia > GNormalTolerance
 			|| RuntimeConfig.LocalSpaceMotion.CentrifugalInertia > GNormalTolerance);
@@ -751,7 +755,6 @@ FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const
 	RuntimeConfig.SelfCollision.bEnabled = bEnableSelfCollision;
 	RuntimeConfig.SelfCollision.Distance = ClampFloat(SelfCollisionDistance, 0.0f, GMaxSelfCollisionDistance);
 	RuntimeConfig.SelfCollision.Stiffness = ClampFloat(SelfCollisionStiffness, 0.0f, 1.0f);
-	RuntimeConfig.SelfCollision.CullScale = ClampFloat(SelfCollisionCullScale, 0.0f, 10.0f);
 
 	const float SafeTeleportDistance = ClampFloat(OwnerMotionTeleportDistance, 0.0f, 100000.0f);
 	const float SafeTeleportAngleDegrees = ClampFloat(OwnerMotionTeleportAngleDegrees, 0.0f, 180.0f);
@@ -1499,7 +1502,7 @@ UPrimitiveComponent* UClothComponent::ResolveBodyCollisionSource() const
 		CollisionSourceComponentName.IsValid()
 		&& CollisionSourceComponentName != FName::None;
 	const TArray<UActorComponent*> OwnerComponents = OwnerActor->GetComponents();
-	UPrimitiveComponent* FirstPrimitiveBodySource = nullptr;
+	TArray<UPrimitiveComponent*> PrimitiveBodySources;
 	for (UActorComponent* Component : OwnerComponents)
 	{
 		UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
@@ -1526,18 +1529,32 @@ UPrimitiveComponent* UClothComponent::ResolveBodyCollisionSource() const
 
 		if (USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(PrimitiveComponent))
 		{
-			// 기존 계획과 호환되도록 skeletal mesh가 있으면 첫 번째 skeletal mesh를 우선 source로 사용
-			return SkeletalMeshComponent;
+			// skeletal mesh 우선순위 유지와 ragdoll 비활성 empty snapshot 건너뛰기
+			if (CanBuildBodyCollisionPrimitivesWorld(SkeletalMeshComponent))
+			{
+				return SkeletalMeshComponent;
+			}
+
+			continue;
 		}
 
-		if (!FirstPrimitiveBodySource && PrimitiveComponent->GetBodyInstance().IsValidBodyInstance())
+		if (PrimitiveComponent->GetBodyInstance().IsValidBodyInstance())
 		{
-			// skeletal mesh가 없을 때 차량 chassis 같은 일반 primitive body를 fallback source로 사용
-			FirstPrimitiveBodySource = PrimitiveComponent;
+			// skeletal mesh 후보가 모두 비어 있을 때 확인할 일반 primitive fallback 후보
+			PrimitiveBodySources.push_back(PrimitiveComponent);
 		}
 	}
 
-	return FirstPrimitiveBodySource;
+	for (UPrimitiveComponent* PrimitiveBodySource : PrimitiveBodySources)
+	{
+		// 일반 primitive body도 실제 cloth collision snapshot을 만들 수 있을 때만 source로 선택
+		if (CanBuildBodyCollisionPrimitivesWorld(PrimitiveBodySource))
+		{
+			return PrimitiveBodySource;
+		}
+	}
+
+	return nullptr;
 }
 
 void UClothComponent::BuildBodyCollisionPrimitivesWorld(
@@ -1559,6 +1576,14 @@ void UClothComponent::BuildBodyCollisionPrimitivesWorld(
 
 	// 일반 primitive component는 자기 BodyInstance 하나를 cloth collision snapshot으로 변환
 	SourceComponent->GetBodyInstance().AppendClothCollisionPrimitives(OutPrimitives);
+}
+
+bool UClothComponent::CanBuildBodyCollisionPrimitivesWorld(const UPrimitiveComponent* SourceComponent) const
+{
+	// source 선택 검증용 임시 snapshot
+	TArray<FClothCollisionPrimitive> TestPrimitives;
+	BuildBodyCollisionPrimitivesWorld(SourceComponent, TestPrimitives);
+	return !TestPrimitives.empty();
 }
 
 uint32 UClothComponent::AppendBodyCollisionPrimitivesComponentLocal(

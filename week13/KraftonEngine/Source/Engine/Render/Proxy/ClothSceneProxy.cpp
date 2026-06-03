@@ -468,9 +468,7 @@ void FClothSceneProxy::BuildClothDebugLines(const FFrameContext& Frame, TArray<F
 		return;
 	}
 
-	// editor 초기 표시 경로에서 debug 표시가 mesh 준비보다 먼저 오는 경우 방어
-	ClothComponent->RebuildClothIfNeeded(false);
-
+	// debug line 생성 경로에서는 component 상태를 변경하지 않고 현재 snapshot만 읽음
 	const FClothRenderData& RenderData = ClothComponent->GetClothRenderData();
 	if (!RenderData.IsValid())
 	{

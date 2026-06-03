@@ -272,6 +272,8 @@ private:
 	 * @brief 현재 runtime config 기준 owner motion inertia cache를 저장합니다
 	 *
 	 * @param RuntimeConfig 이번 tick에 사용한 runtime 설정
+	 *
+	 * @details 최초 기준 transform 또는 실제 fixed simulation step이 소비된 transform만 previous cache로 저장합니다
 	 */
 	void StoreOwnerMotionCache(const FClothSimulationRuntimeConfig& RuntimeConfig);
 
@@ -373,6 +375,8 @@ private:
 	 * @brief body collision source로 사용할 primitive component를 반환합니다
 	 *
 	 * @return 선택된 primitive component 또는 nullptr
+	 *
+	 * @details 명시 source name은 그대로 반환하고, 자동 탐색은 실제 primitive snapshot을 만들 수 있는 source만 선택합니다
 	 */
 	UPrimitiveComponent* ResolveBodyCollisionSource() const;
 
@@ -386,6 +390,15 @@ private:
 	void BuildBodyCollisionPrimitivesWorld(
 		const UPrimitiveComponent* SourceComponent,
 		TArray<FClothCollisionPrimitive>& OutPrimitives) const;
+
+	/**
+	 * @brief body collision source가 world 기준 primitive snapshot을 생성할 수 있는지 확인합니다
+	 *
+	 * @param SourceComponent 확인할 body collision source primitive component
+	 *
+	 * @return primitive snapshot 생성 가능 여부
+	 */
+	bool CanBuildBodyCollisionPrimitivesWorld(const UPrimitiveComponent* SourceComponent) const;
 
 	/**
 	 * @brief world 기준 body collision primitive 배열을 component local 배열에 추가합니다
@@ -571,10 +584,10 @@ private:
 	float TransformActorLocalLengthToComponentLocal(float ActorLocalLength) const;
 
 private:
-	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles X", Min=2.0f, Max=2048.0f, Speed=1.0f)
+	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles X", Min=2.0f, Max=2556.0f, Speed=1.0f)
 	int32 NumParticlesX = 20;
 
-	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles Y", Min=2.0f, Max=2048.0f, Speed=1.0f)
+	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles Y", Min=2.0f, Max=256.0f, Speed=1.0f)
 	int32 NumParticlesY = 20;
 
 	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Particle Spacing", Min=0.001f, Max=1000.0f, Speed=0.1f)
@@ -719,9 +732,6 @@ private:
 
 	UPROPERTY(Edit, Save, Category="Cloth|Self Collision", DisplayName="Self Collision Stiffness", Min=0.0f, Max=1.0f, Speed=0.01f)
 	float SelfCollisionStiffness = 1.0f;
-
-	UPROPERTY(Edit, Save, Category="Cloth|Self Collision", DisplayName="Self Collision Cull Scale", Min=0.0f, Max=10.0f, Speed=0.01f)
-	float SelfCollisionCullScale = 1.0f;
 
 	UPROPERTY(Edit, Save, Category="Cloth|Collision", DisplayName="Enable Sphere Collision")
 	bool bEnableSphereCollision = false;

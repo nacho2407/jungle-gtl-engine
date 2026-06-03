@@ -220,5 +220,4 @@ private:
 	uint32 LastStepCount = 0;
 	bool bInitialized = false;
 	bool bValid = false;
-	bool bSelfCollisionCullScaleWarningLogged = false;
 };
