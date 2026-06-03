@@ -454,10 +454,14 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 
 	if (bHasBegunPlay && PhysicsScene)
 	{
-		TickPhysicalAnimationComponentsPrePhysics(DeltaTime);
-
 		SCOPE_STAT_CAT("PhysicsScene", "1_WorldTick");
-		PhysicsScene->Tick(DeltaTime);
+		PhysicsScene->Tick(
+			DeltaTime,
+			[this](float FixedDeltaTime)
+			{
+				TickPhysicalAnimationComponentsPrePhysics(FixedDeltaTime);
+			}
+		);
 	}
 
 	TickManager.Tick(this, DeltaTime, TickType);
