@@ -459,6 +459,18 @@ private:
 	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Enable Wind")
 	bool bEnableWind = false;
 
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Use Global Wind")
+	bool bUseGlobalWind = true;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Global Wind Response", Min=0.0f, Max=10.0f, Speed=0.05f)
+	float GlobalWindResponse = 1.0f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Local Wind Scale", Min=0.0f, Max=10.0f, Speed=0.05f)
+	float LocalWindScale = 1.0f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Turbulence Response", Min=0.0f, Max=10.0f, Speed=0.05f)
+	float TurbulenceResponse = 1.0f;
+
 	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Wind Direction", Type=Vec3, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FVector WindDirection = FVector::ForwardVector;
 
@@ -476,6 +488,15 @@ private:
 
 	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Wind Turbulence Seed", Min=0.0f, Max=1000000.0f, Speed=1.0f)
 	int32 WindTurbulenceSeed = 1337;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Wind Drag Coefficient", Min=0.0f, Max=10.0f, Speed=0.01f)
+	float WindDragCoefficient = 0.5f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Wind Lift Coefficient", Min=0.0f, Max=10.0f, Speed=0.01f)
+	float WindLiftCoefficient = 0.05f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Wind Fluid Density", Min=0.0f, Max=10.0f, Speed=0.01f)
+	float WindFluidDensity = 1.0f;
 
 	UPROPERTY(Edit, Save, Category="Cloth|Self Collision", DisplayName="Enable Self Collision")
 	bool bEnableSelfCollision = false;
@@ -550,9 +571,11 @@ private:
 	TArray<uint32> CachedPinnedIndices;
 	TArray<FVector> CachedPinTargetPositionsComponentLocal;
 	TArray<FClothCollisionPrimitive> CachedCollisionPrimitives;
+	mutable FVector CachedFinalWindVelocityWorld = FVector::ZeroVector;
 	FVector CachedLocalCenter = FVector::ZeroVector;
 	FVector CachedLocalExtent = FVector(0.5f, 0.5f, 0.5f);
 	bool bHasValidLocalBounds = false;
+	mutable bool bGlobalWindAppliedLastTick = false;
 	bool bTopologyRebuildDirty = true;
 	bool bSimulationRebuildDirty = true;
 	bool bPinningDirty = true;

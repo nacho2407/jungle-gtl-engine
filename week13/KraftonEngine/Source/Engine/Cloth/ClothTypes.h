@@ -199,6 +199,15 @@ struct FClothWindConfig
 	float TurbulenceSpatialScale = 100.0f;
 	float TurbulenceTemporalScale = 1.0f;
 	int32 TurbulenceSeed = 1337;
+
+	// NvCloth wind drag 반응 계수
+	float DragCoefficient = 0.5f;
+
+	// NvCloth wind lift 반응 계수
+	float LiftCoefficient = 0.05f;
+
+	// NvCloth wind 유체 밀도
+	float FluidDensity = 1.0f;
 };
 
 /**

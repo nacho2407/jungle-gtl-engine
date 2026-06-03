@@ -819,15 +819,16 @@ void FClothSimulation::ApplyRuntimeConfig(const FClothSimulationRuntimeConfig& R
 		const FVector WindDirection = RuntimeConfig.Wind.Direction.GetSafeNormal(GVectorTolerance, FVector::ForwardVector);
 		const FVector WindVelocity = WindDirection * RuntimeConfig.Wind.Strength;
 		Impl->Cloth->setWindVelocity(ToPxVec3(WindVelocity));
-		Impl->Cloth->setDragCoefficient(0.5f);
-		Impl->Cloth->setLiftCoefficient(0.05f);
-		Impl->Cloth->setFluidDensity(1.0f);
+		Impl->Cloth->setDragCoefficient(ClampFloat(RuntimeConfig.Wind.DragCoefficient, 0.0f, 10.0f));
+		Impl->Cloth->setLiftCoefficient(ClampFloat(RuntimeConfig.Wind.LiftCoefficient, 0.0f, 10.0f));
+		Impl->Cloth->setFluidDensity(ClampFloat(RuntimeConfig.Wind.FluidDensity, 0.0f, 10.0f));
 	}
 	else
 	{
 		Impl->Cloth->setWindVelocity(physx::PxVec3(0.0f, 0.0f, 0.0f));
 		Impl->Cloth->setDragCoefficient(0.0f);
 		Impl->Cloth->setLiftCoefficient(0.0f);
+		Impl->Cloth->setFluidDensity(0.0f);
 	}
 
 	if (RuntimeConfig.SelfCollision.bEnabled && RuntimeConfig.SelfCollision.Distance > 0.0f)

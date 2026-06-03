@@ -2,6 +2,8 @@
 
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
+#include "GameFramework/WorldSettings.h"
 #include "Materials/MaterialManager.h"
 #include "Object/GarbageCollection.h"
 #include "Profiling/Stats/ClothStats.h"
@@ -177,12 +179,19 @@ namespace
 			|| MatchesPropertyName(PropertyName, "Damping", "Damping")
 			|| MatchesPropertyName(PropertyName, "Stiffness", "Stiffness")
 			|| MatchesPropertyName(PropertyName, "bEnableWind", "Enable Wind")
+			|| MatchesPropertyName(PropertyName, "bUseGlobalWind", "Use Global Wind")
+			|| MatchesPropertyName(PropertyName, "GlobalWindResponse", "Global Wind Response")
+			|| MatchesPropertyName(PropertyName, "LocalWindScale", "Local Wind Scale")
+			|| MatchesPropertyName(PropertyName, "TurbulenceResponse", "Turbulence Response")
 			|| MatchesPropertyName(PropertyName, "WindDirection", "Wind Direction")
 			|| MatchesPropertyName(PropertyName, "WindStrength", "Wind Strength")
 			|| MatchesPropertyName(PropertyName, "WindTurbulenceStrength", "Wind Turbulence Strength")
 			|| MatchesPropertyName(PropertyName, "WindTurbulenceSpatialScale", "Wind Turbulence Spatial Scale")
 			|| MatchesPropertyName(PropertyName, "WindTurbulenceTemporalScale", "Wind Turbulence Temporal Scale")
 			|| MatchesPropertyName(PropertyName, "WindTurbulenceSeed", "Wind Turbulence Seed")
+			|| MatchesPropertyName(PropertyName, "WindDragCoefficient", "Wind Drag Coefficient")
+			|| MatchesPropertyName(PropertyName, "WindLiftCoefficient", "Wind Lift Coefficient")
+			|| MatchesPropertyName(PropertyName, "WindFluidDensity", "Wind Fluid Density")
 			|| MatchesPropertyName(PropertyName, "bEnableSelfCollision", "Enable Self Collision")
 			|| MatchesPropertyName(PropertyName, "SelfCollisionDistance", "Self Collision Distance")
 			|| MatchesPropertyName(PropertyName, "SelfCollisionStiffness", "Self Collision Stiffness")
@@ -527,15 +536,72 @@ FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const
 	RuntimeConfig.Damping = ClampFloat(Damping, 0.0f, 1.0f);
 	RuntimeConfig.Stiffness = ClampFloat(Stiffness, 0.0f, 1.0f);
 
-	// wind direction property는 world 기준으로 해석한 뒤 component local simulation 공간으로 변환
-	const FVector SafeWindDirectionWorld = WindDirection.GetSafeNormal(GNormalTolerance, FVector::ForwardVector);
-	RuntimeConfig.Wind.bEnabled = bEnableWind;
-	RuntimeConfig.Wind.Direction = TransformWorldDirectionToComponentLocal(SafeWindDirectionWorld);
-	RuntimeConfig.Wind.Strength = ClampFloat(WindStrength, 0.0f, GMaxWindStrength);
-	RuntimeConfig.Wind.TurbulenceStrength = ClampFloat(WindTurbulenceStrength, 0.0f, GMaxWindStrength);
-	RuntimeConfig.Wind.TurbulenceSpatialScale = ClampFloat(WindTurbulenceSpatialScale, 0.001f, 10000.0f);
-	RuntimeConfig.Wind.TurbulenceTemporalScale = ClampFloat(WindTurbulenceTemporalScale, 0.0f, 100.0f);
-	RuntimeConfig.Wind.TurbulenceSeed = WindTurbulenceSeed;
+	// bEnableWind는 이 component가 wind를 받을지 결정하는 master switch
+	FVector FinalWindVelocityWorld = FVector::ZeroVector;
+	float FinalTurbulenceStrength = 0.0f;
+	float FinalTurbulenceSpatialScale = ClampFloat(WindTurbulenceSpatialScale, 0.001f, 10000.0f);
+	float FinalTurbulenceTemporalScale = ClampFloat(WindTurbulenceTemporalScale, 0.0f, 100.0f);
+	int32 FinalTurbulenceSeed = WindTurbulenceSeed;
+	bool bGlobalWindApplied = false;
+
+	if (bEnableWind)
+	{
+		const float SafeGlobalResponse = ClampFloat(GlobalWindResponse, 0.0f, 10.0f);
+		const float SafeLocalScale = ClampFloat(LocalWindScale, 0.0f, 10.0f);
+		const float SafeTurbulenceResponse = ClampFloat(TurbulenceResponse, 0.0f, 10.0f);
+
+		if (bUseGlobalWind)
+		{
+			if (const UWorld* World = GetWorld())
+			{
+				const FWorldClothWindSettings& GlobalWind = World->GetWorldSettings().ClothWind;
+				if (GlobalWind.bEnabled)
+				{
+					// world settings wind는 world 기준 velocity로 먼저 합성
+					const FVector GlobalDirectionWorld = GlobalWind.Direction.GetSafeNormal(GNormalTolerance, FVector::ForwardVector);
+					const float GlobalStrength = ClampFloat(GlobalWind.Strength, 0.0f, GMaxWindStrength) * SafeGlobalResponse;
+					const float GlobalTurbulenceStrength =
+						ClampFloat(GlobalWind.TurbulenceStrength, 0.0f, GMaxWindStrength)
+						* SafeGlobalResponse
+						* SafeTurbulenceResponse;
+
+					FinalWindVelocityWorld += GlobalDirectionWorld * GlobalStrength;
+					FinalTurbulenceStrength += GlobalTurbulenceStrength;
+					FinalTurbulenceSpatialScale = ClampFloat(GlobalWind.TurbulenceSpatialScale, 0.001f, 10000.0f);
+					FinalTurbulenceTemporalScale = ClampFloat(GlobalWind.TurbulenceTemporalScale, 0.0f, 100.0f);
+					FinalTurbulenceSeed = GlobalWind.TurbulenceSeed;
+					bGlobalWindApplied = GlobalStrength > GNormalTolerance || GlobalTurbulenceStrength > GNormalTolerance;
+				}
+			}
+		}
+
+		// 기존 component local wind property는 world 기준 local wind source로 유지
+		const FVector LocalWindDirectionWorld = WindDirection.GetSafeNormal(GNormalTolerance, FVector::ForwardVector);
+		const float LocalWindStrength = ClampFloat(WindStrength, 0.0f, GMaxWindStrength) * SafeLocalScale;
+		const float LocalTurbulenceStrength =
+			ClampFloat(WindTurbulenceStrength, 0.0f, GMaxWindStrength)
+			* SafeLocalScale
+			* SafeTurbulenceResponse;
+
+		FinalWindVelocityWorld += LocalWindDirectionWorld * LocalWindStrength;
+		FinalTurbulenceStrength += LocalTurbulenceStrength;
+	}
+
+	const float FinalWindSpeed = FinalWindVelocityWorld.Length();
+	RuntimeConfig.Wind.bEnabled = bEnableWind && (FinalWindSpeed > GNormalTolerance || FinalTurbulenceStrength > GNormalTolerance);
+	RuntimeConfig.Wind.Direction =
+		TransformWorldDirectionToComponentLocal(FinalWindVelocityWorld.GetSafeNormal(GNormalTolerance, FVector::ForwardVector));
+	RuntimeConfig.Wind.Strength = FinalWindSpeed;
+	RuntimeConfig.Wind.TurbulenceStrength = ClampFloat(FinalTurbulenceStrength, 0.0f, GMaxWindStrength);
+	RuntimeConfig.Wind.TurbulenceSpatialScale = FinalTurbulenceSpatialScale;
+	RuntimeConfig.Wind.TurbulenceTemporalScale = FinalTurbulenceTemporalScale;
+	RuntimeConfig.Wind.TurbulenceSeed = FinalTurbulenceSeed;
+	RuntimeConfig.Wind.DragCoefficient = ClampFloat(WindDragCoefficient, 0.0f, 10.0f);
+	RuntimeConfig.Wind.LiftCoefficient = ClampFloat(WindLiftCoefficient, 0.0f, 10.0f);
+	RuntimeConfig.Wind.FluidDensity = ClampFloat(WindFluidDensity, 0.0f, 10.0f);
+
+	CachedFinalWindVelocityWorld = RuntimeConfig.Wind.bEnabled ? FinalWindVelocityWorld : FVector::ZeroVector;
+	bGlobalWindAppliedLastTick = RuntimeConfig.Wind.bEnabled && bGlobalWindApplied;
 
 	RuntimeConfig.SelfCollision.bEnabled = bEnableSelfCollision;
 	RuntimeConfig.SelfCollision.Distance = ClampFloat(SelfCollisionDistance, 0.0f, GMaxSelfCollisionDistance);

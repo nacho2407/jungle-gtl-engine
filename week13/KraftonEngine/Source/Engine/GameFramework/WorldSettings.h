@@ -1,6 +1,34 @@
 #pragma once
 
 #include "Core/Types/CoreTypes.h"
+#include "Math/Vector.h"
+
+/**
+ * @brief scene 단위 cloth wind 설정
+ */
+struct FWorldClothWindSettings
+{
+	// scene 전체 cloth wind 사용 여부
+	bool bEnabled = false;
+
+	// world 기준 wind 방향
+	FVector Direction = FVector::ForwardVector;
+
+	// world 기준 wind 세기
+	float Strength = 0.0f;
+
+	// 절차적 turbulence 세기
+	float TurbulenceStrength = 0.0f;
+
+	// 절차적 turbulence 공간 스케일
+	float TurbulenceSpatialScale = 100.0f;
+
+	// 절차적 turbulence 시간 스케일
+	float TurbulenceTemporalScale = 1.0f;
+
+	// 절차적 turbulence seed
+	int32 TurbulenceSeed = 1337;
+};
 
 // ============================================================
 // FWorldSettings — UWorld 단위 (= Scene 파일 단위) 의 게임 설정.
@@ -17,4 +45,7 @@ struct FWorldSettings
 	// 비우면 ProjectSettings.GameModeClassName 또는 코드 default 가 fallback.
 	// 채우면 LoadSceneFromPath 가 UClass::FindByName 으로 resolve.
 	FString GameModeClassName;
+
+	// scene 전체 cloth component에 공유되는 wind 설정
+	FWorldClothWindSettings ClothWind;
 };
