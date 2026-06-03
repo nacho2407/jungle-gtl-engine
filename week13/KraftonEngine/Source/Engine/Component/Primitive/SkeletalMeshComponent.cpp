@@ -228,6 +228,12 @@ void USkeletalMeshComponent::SetRagdollEnabled(bool bEnabled)
     else DisableRagdollPhysics();
 }
 
+void USkeletalMeshComponent::SetRagdollGravityEnabled(bool bEnableGravity)
+{
+    bRagdollGravityEnabled = bEnableGravity;
+    ApplyRagdollBodySimulationFlags();
+}
+
 void USkeletalMeshComponent::EnablePartialRagdollBelow(FName BoneName)
 {
     SetRagdollEnabled(true);
@@ -297,7 +303,7 @@ void USkeletalMeshComponent::EnableRagdollPhysics()
     SetAllBodiesSimulatePhysics(true);
 
     SetAllRagdollBodiesKinematic(false);
-    SetAllRagdollBodiesGravityEnabled(true);
+    SetAllRagdollBodiesGravityEnabled(bRagdollGravityEnabled);
 
 	/*// Test용
 	SetAllBodiesSimulatePhysics(false);
@@ -1691,7 +1697,7 @@ bool USkeletalMeshComponent::BeginPhysicalAnimation()
     ApplyRagdollBodySimulationFlags();
 
     SetAllRagdollBodiesKinematic(false);
-    SetAllRagdollBodiesGravityEnabled(true);
+    SetAllRagdollBodiesGravityEnabled(bRagdollGravityEnabled);
 
     bRagdollEnabled = true;
     SetSkeletalPhysicsMode(ESkeletalPhysicsMode::PhysicalAnimation);
@@ -1888,7 +1894,7 @@ void USkeletalMeshComponent::ApplyRagdollBodySimulationFlags()
         const bool bShouldSimulate = ShouldRagdollBodySimulate(BoneIndex);
 
         Body->SetKinematic(!bShouldSimulate);
-        Body->SetGravityEnabled(bShouldSimulate);
+        Body->SetGravityEnabled(bShouldSimulate && bRagdollGravityEnabled);
 
         if (bShouldSimulate)
         {
@@ -2232,6 +2238,11 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
     {
         SetRagdollEnabled(bRagdollEnabled);
     }
+    else if (std::strcmp(PropertyName, "bRagdollGravityEnabled") == 0 ||
+        std::strcmp(PropertyName, "Enable Ragdoll Gravity") == 0)
+    {
+        SetRagdollGravityEnabled(bRagdollGravityEnabled);
+    }
 
     // AnimInstance 자체 properties 는 자식이 자체 PostEdit 처리. 컴포넌트는 dispatch 만.
     // 컴포넌트가 인식한 이름과 겹치지 않는 한 무해 (자식이 모르는 이름은 no-op).
@@ -2291,6 +2302,7 @@ void USkeletalMeshComponent::Serialize(FArchive& Ar)
     RagdollSelfCollisionMode = static_cast<ERagdollSelfCollisionMode>(SelfCollisionModeRaw);
     Ar << RagdollRecoveryDuration;
     Ar << RagdollPhysicsBlendWeight;
+    Ar << bRagdollGravityEnabled;
 
 }
 

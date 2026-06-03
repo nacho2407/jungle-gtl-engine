@@ -185,6 +185,14 @@ void UPrimitiveComponent::SetKinematicPhysics(bool bInKinematic)
 	NotifyPhysicsBodyDirty();
 }
 
+void UPrimitiveComponent::SetEnableGravity(bool bInEnableGravity)
+{
+	if (bEnableGravity == bInEnableGravity && BodyInstance.bEnableGravity == bInEnableGravity) return;
+
+	bEnableGravity = bInEnableGravity;
+	BodyInstance.SetGravityEnabled(bInEnableGravity);
+}
+
 void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
 {
 	if (!SceneProxy) return;
@@ -288,6 +296,10 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 	{
 		BodyInstance.bKinematic = bKinematicPhysics;
 		NotifyPhysicsBodyDirty();
+	}
+	else if (strcmp(PropertyName, "bEnableGravity") == 0 || strcmp(PropertyName, "Enable Gravity") == 0)
+	{
+		SetEnableGravity(bEnableGravity);
 	}
 	else if (strcmp(PropertyName, "ObjectType") == 0 || strcmp(PropertyName, "Object Type") == 0)
 	{
@@ -505,6 +517,7 @@ void UPrimitiveComponent::InitializeBodyInstance()
 	BodyInstance.ResponseContainer = ResponseContainer;
 	BodyInstance.Mass = Mass;
 	BodyInstance.CenterOfMassOffset = CenterOfMassOffset;
+	BodyInstance.bEnableGravity = bEnableGravity;
 }
 
 // --- Collision Channel / Response ---
