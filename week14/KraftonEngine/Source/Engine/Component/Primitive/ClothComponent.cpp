@@ -107,7 +107,7 @@ void UClothComponent::EndPlay()
 	}
 }
 
-void UClothComponent::TickClothPostPhysics(float DeltaTime)
+void UClothComponent::PrepareClothSimulation()
 {
 	{
 		SCOPE_STAT_CAT("Cloth_BoneAttachment", "Cloth");
@@ -131,7 +131,6 @@ void UClothComponent::TickClothPostPhysics(float DeltaTime)
 		SCOPE_STAT_CAT("Cloth_WorldCollision", "Cloth");
 		UpdateClothWorldCollision();
 	}
-	ClothInstance.Simulate(DeltaTime, ClothDesc.SubstepCount, ClothDesc.RenderNormalOffset);
 
 	if (ClothInstance.IsInitialized())
 	{
@@ -140,7 +139,11 @@ void UClothComponent::TickClothPostPhysics(float DeltaTime)
 			ClothInstance.GetTriangleCount(),
 			static_cast<uint32>((std::max)(1, ClothDesc.SubstepCount)));
 	}
+}
 
+void UClothComponent::FinalizeClothSimulation()
+{
+	ClothInstance.UpdateRenderData(ClothDesc.RenderNormalOffset);
 	MarkWorldBoundsDirty();
 }
 

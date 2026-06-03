@@ -569,28 +569,10 @@ void FClothInstance::Simulate(float DeltaTime, int32 SubstepCount, float RenderN
 {
 	SCOPE_STAT_CAT("Cloth_Simulate", "Cloth");
 
-	nv::cloth::Solver* Solver = FNvClothSDK::Get().GetSolver();
-	if (!Solver || !Cloth) return;
+	if (!Cloth) return;
 
-	DeltaTime = std::min(DeltaTime, 1.0f / 60.0f);
-	SubstepCount = std::max(1, SubstepCount);
-
-	const float StepDeltaTime = DeltaTime / static_cast<float>(SubstepCount);
-
-	for (int32 Step = 0; Step < SubstepCount; ++Step)
-	{
-		if (Solver->beginSimulation(StepDeltaTime))
-		{
-			const int32 ChunkCount = Solver->getSimulationChunkCount();
-			for (int32 i = 0; i < ChunkCount; ++i)
-			{
-				Solver->simulateChunk(i);
-			}
-			Solver->endSimulation();
-		}
-	}
-
-	UpdateRenderVerticesFromParticles(RenderNormalOffset);
+	SimulateSolver(DeltaTime, SubstepCount);
+	UpdateRenderData(RenderNormalOffset);
 }
 
 void FClothInstance::ApplySimulationSettings(const FClothDesc& Desc)
@@ -681,6 +663,37 @@ void FClothInstance::UpdateCollision(const FClothCollisionData& Data)
 		Data.ConvexMasks.data() + Data.ConvexMasks.size()),
 		0,
 		0);
+}
+
+void FClothInstance::UpdateRenderData(float RenderNormalOffset)
+{
+	if (!Cloth) return;
+
+	UpdateRenderVerticesFromParticles(RenderNormalOffset);
+}
+
+void FClothInstance::SimulateSolver(float DeltaTime, int32 SubstepCount)
+{
+	nv::cloth::Solver* Solver = FNvClothSDK::Get().GetSolver();
+	if (!Solver) return;
+	if (DeltaTime <= 0.0f) return;
+
+	SubstepCount = std::max(1, SubstepCount);
+
+	const float StepDeltaTime = DeltaTime / static_cast<float>(SubstepCount);
+
+	for (int32 Step = 0; Step < SubstepCount; ++Step)
+	{
+		if (Solver->beginSimulation(StepDeltaTime))
+		{
+			const int32 ChunkCount = Solver->getSimulationChunkCount();
+			for (int32 i = 0; i < ChunkCount; ++i)
+			{
+				Solver->simulateChunk(i);
+			}
+			Solver->endSimulation();
+		}
+	}
 }
 
 void FClothInstance::SetSimulationSpaceTransform(const FVector& WorldLocation, const FQuat& WorldRotation, bool bTeleport)

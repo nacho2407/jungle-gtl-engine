@@ -162,6 +162,11 @@ namespace
 
 void FPhysicsScene::Initialize()
 {
+	const auto& PhysicsSettings = FProjectSettings::Get().Physics;
+	FixedTimeStep = max(PhysicsSettings.FixedTimeStep, 1.0f / 240.0f);
+	MaxSubSteps = max(PhysicsSettings.MaxSubSteps, 1);
+	MaxAccumulatedTime = max(PhysicsSettings.MaxAccumulatedTime, FixedTimeStep);
+
 	physx::PxPhysics* Physics = FPhysXSDK::Get().GetPhysics();
 
 	physx::PxSceneDesc SceneDesc(Physics->getTolerancesScale());
@@ -249,32 +254,31 @@ void FPhysicsScene::Shutdown()
 	}
 }
 
-void FPhysicsScene::Simulate(float DeltaTime)
+void FPhysicsScene::Simulate(float DeltaTime, const std::function<void(float)>& PostStepCallback)
 {
-	if (VehicleManager)
+	if (DeltaTime <= 0.0f) return;
+
+	AccumulatedTime += min(DeltaTime, MaxAccumulatedTime);
+
+	int32 StepCount = 0;
+	while (AccumulatedTime >= FixedTimeStep && StepCount < MaxSubSteps)
 	{
-		SCOPE_STAT_CAT("PhysX_VehicleUpdate", "PhysX");
-		VehicleManager->Update(DeltaTime);
+		StepSimulation(FixedTimeStep);
+
+		SyncBodiesFromPhysics();
+
+		if (PostStepCallback)
+		{
+			PostStepCallback(FixedTimeStep);
+		}
+
+		AccumulatedTime -= FixedTimeStep;
+		++StepCount;
 	}
 
-	if (Scene)
+	if (StepCount >= MaxSubSteps)
 	{
-		{
-			SCOPE_STAT_CAT("PhysX_SimulateFetch", "PhysX");
-			Scene->simulate(DeltaTime);
-			Scene->fetchResults(true);
-		}
-
-		{
-			SCOPE_STAT_CAT("PhysX_BodySync", "PhysX");
-			for (FBodyInstance* Body : Bodies)
-			{
-				if (Body)
-				{
-					Body->SyncFromPhysics();
-				}
-			}
-		}
+		AccumulatedTime = 0.0f;
 	}
 
 #if STATS
@@ -864,5 +868,36 @@ void FPhysicsScene::CollectDebugRender(FScene& RenderScene) const
 	if (VehicleManager)
 	{
 		VehicleManager->CollectDebugRender(RenderScene);
+	}
+}
+
+void FPhysicsScene::StepSimulation(float FixedDeltaTime)
+{
+	PrepareCharacterControllers(FixedDeltaTime);
+
+	if (VehicleManager)
+	{
+		SCOPE_STAT_CAT("PhysX_VehicleUpdate", "PhysX");
+		VehicleManager->Update(FixedDeltaTime);
+	}
+
+	if (Scene)
+	{
+		SCOPE_STAT_CAT("PhysX_SimulateFetch", "PhysX");
+		Scene->simulate(FixedDeltaTime);
+		Scene->fetchResults(true);
+	}
+}
+
+void FPhysicsScene::SyncBodiesFromPhysics()
+{
+	SCOPE_STAT_CAT("PhysX_BodySync", "PhysX");
+
+	for (FBodyInstance* Body : Bodies)
+	{
+		if (Body)
+		{
+			Body->SyncFromPhysics();
+		}
 	}
 }

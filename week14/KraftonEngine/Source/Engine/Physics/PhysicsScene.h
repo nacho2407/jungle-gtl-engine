@@ -8,6 +8,8 @@
 #include "Core/Types/CollisionTypes.h"
 #include "Math/Transform.h"
 
+#include <functional>
+
 class AActor;
 class UPrimitiveComponent;
 class FScene;
@@ -23,7 +25,7 @@ class FPhysicsScene
 public:
 	void Initialize();
 	void Shutdown();
-	void Simulate(float DeltaTime);
+	void Simulate(float DeltaTime, const std::function<void(float)>& PostStepCallback = nullptr);
 
 	bool CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance);
 	bool CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance, const UBodySetup& BodySetup,
@@ -65,6 +67,16 @@ public:
 	physx::PxControllerManager* GetControllerManager() const { return ControllerManager; }
 
 private:
+	void StepSimulation(float FixedDeltaTime);
+
+	void SyncBodiesFromPhysics();
+
+private:
+	float FixedTimeStep = 1.0f / 60.0f;
+	float AccumulatedTime = 0.0f;
+	float MaxAccumulatedTime = 0.25f;
+	int32 MaxSubSteps = 4;
+
 	physx::PxScene* Scene = nullptr;
 	physx::PxDefaultCpuDispatcher* Dispatcher = nullptr;
 

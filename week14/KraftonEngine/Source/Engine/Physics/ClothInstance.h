@@ -113,6 +113,9 @@ public:
 	void ApplySimulationSettings(const FClothDesc& Desc);
 	
 	void UpdateCollision(const FClothCollisionData& CollisionData);
+	void UpdateRenderData(float RenderNormalOffset);
+
+	static void SimulateSolver(float DeltaTime, int32 SubstepCount);
 
 	void SetSimulationSpaceTransform(const FVector& WorldLocation, const FQuat& WorldRotation, bool bTeleport);
 

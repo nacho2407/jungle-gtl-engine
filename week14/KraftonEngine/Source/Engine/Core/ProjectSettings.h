@@ -38,6 +38,10 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 		bool bPvdTransmitContacts = false;
 		bool bPvdTransmitSceneQueries = false;
 		bool bPvdTransmitConstraints = false;
+
+		float FixedTimeStep = 1.0f / 60.0f;
+		int32 MaxSubSteps = 4;
+		float MaxAccumulatedTime = 0.25f;
 	};
 
 	struct FDiagnosticsOption

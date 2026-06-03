@@ -23,6 +23,9 @@ namespace PSKey
 	constexpr const char* bPvdTransmitContacts = "bPvdTransmitContacts";
 	constexpr const char* bPvdTransmitSceneQueries = "bPvdTransmitSceneQueries";
 	constexpr const char* bPvdTransmitConstraints = "bPvdTransmitConstraints";
+	constexpr const char* FixedTimeStep = "FixedTimeStep";
+	constexpr const char* MaxSubSteps = "MaxSubSteps";
+	constexpr const char* MaxAccumulatedTime = "MaxAccumulatedTime";
 
 	constexpr const char* DiagnosticsSection = "Diagnostics";
 	constexpr const char* CrashDumpShareDir = "CrashDumpShareDir";
@@ -53,6 +56,9 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 	PhysicsObj[PSKey::bPvdTransmitContacts] = Physics.bPvdTransmitContacts;
 	PhysicsObj[PSKey::bPvdTransmitSceneQueries] = Physics.bPvdTransmitSceneQueries;
 	PhysicsObj[PSKey::bPvdTransmitConstraints] = Physics.bPvdTransmitConstraints;
+	PhysicsObj[PSKey::FixedTimeStep] = Physics.FixedTimeStep;
+	PhysicsObj[PSKey::MaxSubSteps] = static_cast<int>(Physics.MaxSubSteps);
+	PhysicsObj[PSKey::MaxAccumulatedTime] = Physics.MaxAccumulatedTime;
 	Root[PSKey::PhysicsSection] = PhysicsObj;
 
 	JSON DiagnosticsObj = Object();
@@ -101,6 +107,12 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 			Physics.bPvdTransmitSceneQueries = P[PSKey::bPvdTransmitSceneQueries].ToBool();
 		if (P.hasKey(PSKey::bPvdTransmitConstraints))
 			Physics.bPvdTransmitConstraints = P[PSKey::bPvdTransmitConstraints].ToBool();
+		if (P.hasKey(PSKey::FixedTimeStep))
+			Physics.FixedTimeStep = static_cast<float>(P[PSKey::FixedTimeStep].ToFloat());
+		if (P.hasKey(PSKey::MaxSubSteps))
+			Physics.MaxSubSteps = static_cast<int32>(P[PSKey::MaxSubSteps].ToInt());
+		if (P.hasKey(PSKey::MaxAccumulatedTime))
+			Physics.MaxAccumulatedTime = static_cast<float>(P[PSKey::MaxAccumulatedTime].ToFloat());
 	}
 
 	if (Root.hasKey(PSKey::DiagnosticsSection))

@@ -368,17 +368,14 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 
 	if (TickType == ELevelTick::LEVELTICK_All && PhysicsScene)
 	{
-		PhysicsScene->PrepareCharacterControllers(DeltaTime);
+		PhysicsScene->Simulate(DeltaTime, [this](float FixedDeltaTime)
+		{
+			SyncPhysXVehicleComponentsPostPhysics();
+			TickClothComponentsFixed(FixedDeltaTime);
+		});
 	}
 
 	TickManager.Tick(this, DeltaTime, TickType);
-
-	if (TickType == ELevelTick::LEVELTICK_All && PhysicsScene)
-	{
-		PhysicsScene->Simulate(DeltaTime);
-		SyncPhysXVehicleComponentsPostPhysics();
-		TickClothComponents(DeltaTime);
-	}
 
 	// 카메라는 물리/액터 Tick 이후 갱신 — 차량 1인칭처럼 physics body 에 붙은 카메라가
 	// 같은 프레임의 최신 transform 으로 POV cache 를 채운다.
@@ -486,12 +483,27 @@ void UWorld::UnregisterClothComponent(UClothComponent* Component)
 	}
 }
 
-void UWorld::TickClothComponents(float DeltaTime)
+void UWorld::TickClothComponentsFixed(float FixedDeltaTime)
 {
+	int32 MaxClothSubstepCount = 1;
+
 	for (UClothComponent* ClothComp : ClothComponents)
 	{
 		if (!ClothComp) continue;
 
-		ClothComp->TickClothPostPhysics(DeltaTime);
+		ClothComp->PrepareClothSimulation();
+
+		// 필요하면 getter 추가해서 ClothDesc.SubstepCount를 가져오거나,
+		// 우선 전역값 1~2로 통일.
+		MaxClothSubstepCount = std::max(MaxClothSubstepCount, ClothComp->GetClothSubstepCount());
+	}
+
+	FClothInstance::SimulateSolver(FixedDeltaTime, MaxClothSubstepCount);
+
+	for (UClothComponent* ClothComp : ClothComponents)
+	{
+		if (!ClothComp) continue;
+
+		ClothComp->FinalizeClothSimulation();
 	}
 }

@@ -83,7 +83,7 @@ private:
 
 	void SyncPhysXVehicleComponentsPostPhysics();
 
-	void TickClothComponents(float DeltaTime);
+	void TickClothComponentsFixed(float FixedDeltaTime);
 
 public:
 

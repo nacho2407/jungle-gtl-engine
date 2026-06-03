@@ -25,8 +25,10 @@ public:
 	void BeginPlay() override;
 	void EndPlay() override;
 	
-	void TickClothPostPhysics(float DeltaTime);
 	void UpdateWorldAABB() const override;
+
+	void PrepareClothSimulation();
+	void FinalizeClothSimulation();
 
 	void UpdateClothWorldCollision();
 	void UpdateBoneAttachment();
@@ -45,6 +47,8 @@ public:
 	UMaterialInterface* GetMaterial() const { return Material; }
 
 	const FClothInstance& GetClothInstance() const { return ClothInstance; }
+
+	int32 GetClothSubstepCount() const { return ClothDesc.SubstepCount; }
 
 private:
 	UPROPERTY(Edit, Save, Category = "Cloth|Mesh", DisplayName = "Cloth Mesh", AssetType = "StaticMesh")
