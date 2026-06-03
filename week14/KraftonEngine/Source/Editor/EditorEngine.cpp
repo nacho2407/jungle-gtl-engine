@@ -114,7 +114,6 @@ void UEditorEngine::Init(FWindowsWindow* InWindow)
 
 	// 에디터 전용 초기화
 	FEditorSettings::Get().LoadFromFile(FEditorSettings::GetDefaultSettingsPath());
-	FProjectSettings::Get().LoadFromFile(FProjectSettings::GetDefaultPath());
 	FEditorTextureManager::Get().Initialize(Renderer.GetFD3DDevice().GetDevice());
 	FEditorMeshThumbnailManager::Get().Initialize(Renderer.GetFD3DDevice().GetDevice());
 	FEditorMaterialThumbnailManager::Get().Initialize(Renderer.GetFD3DDevice().GetDevice());
