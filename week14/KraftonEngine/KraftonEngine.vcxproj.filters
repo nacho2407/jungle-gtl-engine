@@ -1127,6 +1127,9 @@
     <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\PendulumMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
@@ -1491,6 +1494,9 @@
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\PhysXVehicle4WInstance.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\PhysXVehicleTankInstance.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp">
@@ -2327,6 +2333,9 @@
     <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\PendulumMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
@@ -2808,6 +2817,9 @@
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleInstanceBase.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicleTankInstance.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleManager.h">

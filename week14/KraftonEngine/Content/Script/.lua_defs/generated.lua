@@ -244,6 +244,9 @@ function Actor:GetFloatingPawnMovement() end
 ---@return VehicleMovementComponent4W?
 function Actor:GetVehicleMovement() end
 
+---@return VehicleMovementComponentTank?
+function Actor:GetTankVehicleMovement() end
+
 ---@return CameraComponent?
 function Actor:GetCamera() end
 
@@ -397,6 +400,62 @@ function SkeletalMeshComponent:GetBoneSocketLocation(boneName, localOffset) end
 ---@param localOffset Vector
 ---@return Vector
 function SkeletalMeshComponent:GetBoneSocketRotation(boneName, localOffset) end
+
+---@class VehicleMovementComponentTank
+VehicleMovementComponentTank = {}
+
+---@param Throttle number
+---@param Brake number
+---@param Steer number
+---@param bReverse boolean
+function VehicleMovementComponentTank:SetDriveInput(Throttle, Brake, Steer, bReverse) end
+
+---@param LeftThrust number
+---@param RightThrust number
+---@param LeftBrake number
+---@param RightBrake number
+function VehicleMovementComponentTank:SetTrackInput(LeftThrust, RightThrust, LeftBrake, RightBrake) end
+
+---@param Impulse number
+---@param LocalFirePoint Vector
+---@param LocalDirection Vector
+function VehicleMovementComponentTank:FireRecoil(Impulse, LocalFirePoint, LocalDirection) end
+
+---@param YawInput number
+function VehicleMovementComponentTank:SetTurretInput(YawInput) end
+
+---@param YawDegrees number
+function VehicleMovementComponentTank:SetTurretYaw(YawDegrees) end
+
+---@return number
+function VehicleMovementComponentTank:GetTurretYaw() end
+
+---@return Vector
+function VehicleMovementComponentTank:GetTurretForward() end
+
+---@param Impulse number
+---@param TurretLocalFirePoint Vector
+---@param TurretLocalDirection Vector
+function VehicleMovementComponentTank:FireTurretRecoil(Impulse, TurretLocalFirePoint, TurretLocalDirection) end
+
+function VehicleMovementComponentTank:FireMainGun() end
+
+---@return number
+function VehicleMovementComponentTank:GetLeftTrackSpeed() end
+
+---@return number
+function VehicleMovementComponentTank:GetRightTrackSpeed() end
+
+---@param WheelIndex integer
+---@return number
+function VehicleMovementComponentTank:GetWheelRotationAngle(WheelIndex) end
+
+---@param WheelIndex integer
+---@return number
+function VehicleMovementComponentTank:GetWheelRotationSpeed(WheelIndex) end
+
+---@return integer
+function VehicleMovementComponentTank:GetWheelCount() end
 
 ---@class AnimNode
 AnimNode = {}

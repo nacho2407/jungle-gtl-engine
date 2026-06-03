@@ -20,6 +20,7 @@ public:
 	void Update(float DeltaTime);
 
 	void GatherClothCollision(const FClothCollisionGatherParams& Params, FClothCollisionData& OutCollisionData) const;
+	const physx::PxVehicleWheelQueryResult* GetWheelQueryResult(const physx::PxVehicleWheels* Vehicle) const;
 
 	void CollectDebugRender(FScene& RenderScene) const;
 

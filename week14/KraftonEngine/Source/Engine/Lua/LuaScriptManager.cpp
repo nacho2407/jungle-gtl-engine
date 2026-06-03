@@ -10,6 +10,7 @@
 #include "Animation/Instance/LuaAnimInstance.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/Movement/PhysX/VehicleMovementComponent4W.h"
+#include "Component/Movement/PhysX/VehicleMovementComponentTank.h"
 #include "Component/Camera/CameraComponent.h"
 #include "Component/PrimitiveComponent.h"
 #include "Component/SceneComponent.h"
@@ -578,6 +579,8 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Key["A"] = static_cast<int32>('A');
 	Key["S"] = static_cast<int32>('S');
 	Key["D"] = static_cast<int32>('D');
+	Key["Q"] = static_cast<int32>('Q');
+	Key["E"] = static_cast<int32>('E');
 	Key["R"] = static_cast<int32>('R');
 	Key["Space"] = VK_SPACE;
 	Key["Escape"] = VK_ESCAPE;
@@ -928,6 +931,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	FLuaDocRegistry::Get().Type("VehicleMovementComponent4W")
 		.Method("---@param throttle number\n---@param brake number\n---@param steer number\n---@param reverse boolean\nfunction VehicleMovementComponent4W:SetDriveInput(throttle, brake, steer, reverse) end");
 
+	Lua.new_usertype<UVehicleMovementComponentTank>("VehicleMovementComponentTank");
+
 	Lua.new_usertype<USceneComponent>("SceneComponent",
 		"Location", sol::property(
 		[](USceneComponent& Component)
@@ -1098,6 +1103,9 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("GetVehicleMovement",
 			"---@return VehicleMovementComponent4W?\nfunction Actor:GetVehicleMovement() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UVehicleMovementComponent4W>(); })
+		.Method("GetTankVehicleMovement",
+			"---@return VehicleMovementComponentTank?\nfunction Actor:GetTankVehicleMovement() end",
+			[](AActor& Actor) { return Actor.GetComponentByClass<UVehicleMovementComponentTank>(); })
 		.Method("GetCamera",
 			"---@return CameraComponent?\nfunction Actor:GetCamera() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UCameraComponent>(); })

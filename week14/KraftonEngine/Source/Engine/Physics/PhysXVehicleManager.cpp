@@ -181,6 +181,25 @@ void FPhysXVehicleManager::GatherClothCollision(
 	}
 }
 
+const physx::PxVehicleWheelQueryResult* FPhysXVehicleManager::GetWheelQueryResult(const physx::PxVehicleWheels* Vehicle) const
+{
+	if (!Vehicle)
+	{
+		return nullptr;
+	}
+
+	for (uint32 Index = 0; Index < static_cast<uint32>(Vehicles.size()); ++Index)
+	{
+		if (Vehicles[Index] == Vehicle && Index < WheelQueryResults.size())
+		{
+			const physx::PxVehicleWheelQueryResult& Result = WheelQueryResults[Index];
+			return Result.wheelQueryResults ? &Result : nullptr;
+		}
+	}
+
+	return nullptr;
+}
+
 void FPhysXVehicleManager::CollectDebugRender(FScene& RenderScene) const
 {
 	for (uint32 VehicleIndex = 0; VehicleIndex < static_cast<uint32>(Vehicles.size()); ++VehicleIndex)
