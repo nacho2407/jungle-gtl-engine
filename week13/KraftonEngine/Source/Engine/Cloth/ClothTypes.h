@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
+#include "Math/Transform.h"
 #include "Math/Vector.h"
 #include "Object/FName.h"
 #include "Object/Reflection/ObjectMacros.h"
@@ -52,6 +53,31 @@ enum class EClothPinSelectionType : uint8
 	ActorLocalSphere,
 	ActorLocalBox,
 	ActorLocalRectXZ
+};
+
+/**
+ * @brief Cloth 고정점 선택 debug shape 종류
+ */
+enum class EClothPinSelectionDebugShapeType : uint8
+{
+	None,
+	Sphere,
+	Box,
+	RectXZ
+};
+
+/**
+ * @brief Cloth 고정점 선택 영역 debug shape
+ */
+struct FClothPinSelectionDebugShape
+{
+	EClothPinSelectionDebugShapeType Type = EClothPinSelectionDebugShapeType::None;
+	FVector Center = FVector::ZeroVector;
+	FVector AxisX = FVector::XAxisVector;
+	FVector AxisY = FVector::YAxisVector;
+	FVector AxisZ = FVector::ZAxisVector;
+	FVector Extent = FVector::ZeroVector;
+	float Radius = 0.0f;
 };
 
 /**
@@ -168,11 +194,11 @@ struct FClothPinGroupDesc
 	EClothPinSelectionType SelectionType = EClothPinSelectionType::TopEdge;
 	TArray<FClothPinData> Pins;
 	FVector SelectionCenterActorLocal = FVector::ZeroVector;
-	FVector SelectionBoxExtentActorLocal = FVector(50.0f, 50.0f, 50.0f);
-	FVector SelectionRectMinActorLocalXZ = FVector(-50.0f, 0.0f, -50.0f);
-	FVector SelectionRectMaxActorLocalXZ = FVector(50.0f, 0.0f, 50.0f);
+	FVector SelectionBoxExtentActorLocal = FVector(1.0f, 1.0f, 1.0f);
+	FVector SelectionRectMinActorLocalXZ = FVector(-1.0f, 0.0f, -1.0f);
+	FVector SelectionRectMaxActorLocalXZ = FVector(1.0f, 0.0f, 1.0f);
 	FVector TargetOffsetActorLocal = FVector::ZeroVector;
-	float SelectionRadius = 50.0f;
+	float SelectionRadius = 1.0f;
 	float Weight = 1.0f;
 	bool bHardPin = true;
 };
@@ -199,6 +225,15 @@ struct FClothWindConfig
 	float TurbulenceSpatialScale = 100.0f;
 	float TurbulenceTemporalScale = 1.0f;
 	int32 TurbulenceSeed = 1337;
+
+	// NvCloth wind drag 반응 계수
+	float DragCoefficient = 0.5f;
+
+	// NvCloth wind lift 반응 계수
+	float LiftCoefficient = 0.05f;
+
+	// NvCloth wind 유체 밀도
+	float FluidDensity = 1.0f;
 };
 
 /**
@@ -209,9 +244,23 @@ struct FClothSelfCollisionConfig
 	bool bEnabled = false;
 	float Distance = 2.0f;
 	float Stiffness = 1.0f;
+};
 
-	// NvCloth에서 얼마나 적극적으로 충돌 후보를 솎아낼지
-	float CullScale = 1.0f;
+/**
+ * @brief component world transform 기반 NvCloth local-space motion 설정
+ */
+struct FClothLocalSpaceMotionConfig
+{
+	bool bEnabled = false;
+	bool bHasPreviousTransform = false;
+	bool bTeleport = false;
+	FTransform PreviousWorldTransform;
+	FTransform CurrentWorldTransform;
+	float LinearInertia = 0.35f;
+	float AngularInertia = 0.15f;
+	float CentrifugalInertia = 0.15f;
+	float TeleportDistance = 300.0f;
+	float TeleportAngleDegrees = 45.0f;
 };
 
 /**
@@ -220,11 +269,12 @@ struct FClothSelfCollisionConfig
 struct FClothSimulationRuntimeConfig
 {
 	FClothTimestepConfig Timestep;
-	FVector GravityAccelerationComponentLocal = FVector(0.0f, 0.0f, -980.0f);
+	FVector GravityAccelerationWorld = FVector(0.0f, 0.0f, -980.0f);
 	float Damping = 0.1f;
 	float Stiffness = 1.0f;
 	FClothWindConfig Wind;
 	FClothSelfCollisionConfig SelfCollision;
+	FClothLocalSpaceMotionConfig LocalSpaceMotion;
 };
 
 /**
@@ -239,11 +289,22 @@ enum class EClothCollisionPrimitiveType : uint8
 };
 
 /**
+ * @brief Cloth collision primitive 출처
+ */
+enum class EClothCollisionPrimitiveSource : uint8
+{
+	Unknown,
+	Independent,
+	Body
+};
+
+/**
  * @brief Cloth collision bridge용 primitive 초안
  */
 struct FClothCollisionPrimitive
 {
 	EClothCollisionPrimitiveType Type = EClothCollisionPrimitiveType::Sphere;
+	EClothCollisionPrimitiveSource Source = EClothCollisionPrimitiveSource::Unknown;
 	FVector Center = FVector::ZeroVector;
 	FVector Axis = FVector::UpVector;
 	FVector CapsuleStart = FVector::ZeroVector;

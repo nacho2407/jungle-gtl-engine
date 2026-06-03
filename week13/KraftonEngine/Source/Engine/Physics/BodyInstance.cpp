@@ -2,6 +2,7 @@
 
 #include "PhysXTypeConversions.h"
 #include "GameFramework/AActor.h"
+#include "Core/Logging/Log.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
@@ -15,9 +16,42 @@
 
 namespace
 {
+	constexpr float GClothBodyCollisionMinExtent = 0.001f;
+
 	bool ShouldCreateBodyShape(const FKShapeElem& ShapeElem)
 	{
 		return ShapeElem.GetCollisionEnabled() != ECollisionEnabled::NoCollision;
+	}
+
+	/**
+	 * @brief PhysX geometry type warning을 제한적으로 기록합니다
+	 *
+	 * @param GeometryType 지원하지 않는 PhysX geometry type
+	 */
+	void LogUnsupportedClothBodyGeometryOnce(physx::PxGeometryType::Enum GeometryType)
+	{
+		static bool bLoggedUnsupportedGeometry = false;
+		if (bLoggedUnsupportedGeometry)
+		{
+			return;
+		}
+
+		bLoggedUnsupportedGeometry = true;
+		UE_LOG("[BodyInstance] Unsupported cloth body collision geometry skipped: type=%d", static_cast<int32>(GeometryType));
+	}
+
+	/**
+	 * @brief PhysX transform의 지정 축을 engine vector로 변환합니다
+	 *
+	 * @param Pose 축 방향을 가진 PhysX transform
+	 *
+	 * @param Axis 기준 축 vector
+	 *
+	 * @return world 기준 단위 축 방향
+	 */
+	FVector GetShapeWorldAxis(const physx::PxTransform& Pose, const physx::PxVec3& Axis)
+	{
+		return PhysXConvert::ToFVector(Pose.q.rotate(Axis)).GetSafeNormal(GClothBodyCollisionMinExtent, FVector::UpVector);
 	}
 }
 
@@ -255,6 +289,112 @@ FVector FBodyInstance::GetCenterOfMass() const
 	}
 
 	return CenterOfMassOffset;
+}
+
+void FBodyInstance::AppendClothCollisionPrimitives(TArray<FClothCollisionPrimitive>& OutPrimitives) const
+{
+	if (!IsValidBodyInstance() || !RigidActor || Shapes.empty())
+	{
+		return;
+	}
+
+	const physx::PxTransform ActorPose = RigidActor->getGlobalPose();
+	for (physx::PxShape* Shape : Shapes)
+	{
+		if (!Shape)
+		{
+			continue;
+		}
+
+		const physx::PxShapeFlags ShapeFlags = Shape->getFlags();
+		const bool bSimulationShape = ShapeFlags & physx::PxShapeFlag::eSIMULATION_SHAPE;
+		const bool bTriggerShape = ShapeFlags & physx::PxShapeFlag::eTRIGGER_SHAPE;
+		if (!bSimulationShape || bTriggerShape)
+		{
+			// cloth body collision은 실제 physics simulation shape만 snapshot에 포함
+			continue;
+		}
+
+		const physx::PxGeometryHolder Geometry = Shape->getGeometry();
+		const physx::PxTransform ShapePose = ActorPose * Shape->getLocalPose();
+		switch (Geometry.getType())
+		{
+		case physx::PxGeometryType::eSPHERE:
+		{
+			const physx::PxSphereGeometry& Sphere = Geometry.sphere();
+			if (Sphere.radius <= GClothBodyCollisionMinExtent)
+			{
+				continue;
+			}
+
+			// PhysX sphere 중심은 shape pose 위치와 같음
+			FClothCollisionPrimitive Primitive;
+			Primitive.Type = EClothCollisionPrimitiveType::Sphere;
+			Primitive.Source = EClothCollisionPrimitiveSource::Body;
+			Primitive.Center = PhysXConvert::ToFVector(ShapePose.p);
+			Primitive.Radius = Sphere.radius;
+			OutPrimitives.push_back(Primitive);
+			break;
+		}
+
+		case physx::PxGeometryType::eBOX:
+		{
+			const physx::PxBoxGeometry& Box = Geometry.box();
+			if (Box.halfExtents.x <= GClothBodyCollisionMinExtent
+				|| Box.halfExtents.y <= GClothBodyCollisionMinExtent
+				|| Box.halfExtents.z <= GClothBodyCollisionMinExtent)
+			{
+				continue;
+			}
+
+			// PhysX box half extent와 shape pose 축을 world 기준으로 snapshot화
+			FClothCollisionPrimitive Primitive;
+			Primitive.Type = EClothCollisionPrimitiveType::Box;
+			Primitive.Source = EClothCollisionPrimitiveSource::Body;
+			Primitive.Center = PhysXConvert::ToFVector(ShapePose.p);
+			Primitive.BoxExtent = FVector(Box.halfExtents.x, Box.halfExtents.y, Box.halfExtents.z);
+			Primitive.BoxAxisX = GetShapeWorldAxis(ShapePose, physx::PxVec3(1.0f, 0.0f, 0.0f));
+			Primitive.BoxAxisY = GetShapeWorldAxis(ShapePose, physx::PxVec3(0.0f, 1.0f, 0.0f));
+			Primitive.BoxAxisZ = GetShapeWorldAxis(ShapePose, physx::PxVec3(0.0f, 0.0f, 1.0f));
+			OutPrimitives.push_back(Primitive);
+			break;
+		}
+
+		case physx::PxGeometryType::eCAPSULE:
+		{
+			const physx::PxCapsuleGeometry& Capsule = Geometry.capsule();
+			if (Capsule.radius <= GClothBodyCollisionMinExtent)
+			{
+				continue;
+			}
+
+			// PhysX capsule은 x축 기준이며 halfHeight는 sphere center 간 절반 거리
+			const FVector Center = PhysXConvert::ToFVector(ShapePose.p);
+			const FVector Axis = GetShapeWorldAxis(ShapePose, physx::PxVec3(1.0f, 0.0f, 0.0f));
+			const float SegmentHalfHeight = (std::max)(0.0f, Capsule.halfHeight);
+
+			FClothCollisionPrimitive Primitive;
+			Primitive.Type = EClothCollisionPrimitiveType::Capsule;
+			Primitive.Source = EClothCollisionPrimitiveSource::Body;
+			Primitive.Center = Center;
+			Primitive.Axis = Axis;
+			Primitive.CapsuleStart = Center - Axis * SegmentHalfHeight;
+			Primitive.CapsuleEnd = Center + Axis * SegmentHalfHeight;
+			Primitive.Radius = Capsule.radius;
+			Primitive.HalfHeight = SegmentHalfHeight;
+			OutPrimitives.push_back(Primitive);
+			break;
+		}
+
+		case physx::PxGeometryType::eCONVEXMESH:
+			LogUnsupportedClothBodyGeometryOnce(Geometry.getType());
+			break;
+
+		default:
+			LogUnsupportedClothBodyGeometryOnce(Geometry.getType());
+			break;
+		}
+	}
 }
 
 void FBodyInstance::ClearPhysicsPointers()

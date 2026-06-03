@@ -11,6 +11,7 @@
 #include "Render/Proxy/SkeletalMeshSceneProxy.h"
 #include "Render/Proxy/PhysicsAssetSceneProxy.h"
 #include "Render/Proxy/ParticleSystemSceneProxy.h"
+#include "Render/Proxy/ClothSceneProxy.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/RenderConstants.h"
 #include "Render/RenderPass/PassRenderStateTable.h"
@@ -422,6 +423,7 @@ void FDrawCommandBuilder::BuildProxyCommands(const FFrameContext& Frame, FScene&
 		}
 
 		BuildPhysicsBodyWireCommands(Frame, *Proxy);
+		BuildClothDebugWireCommands(Frame, *Proxy);
 
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::BoneDebug))
 		{
@@ -491,6 +493,22 @@ void FDrawCommandBuilder::BuildPhysicsBodyWireCommands(const FFrameContext& Fram
 	TArray<FPhysicsDebugLine> PhysicsBodyLines;
 	Proxy.BuildPhysicsBodyWireLines(Frame, PhysicsBodyLines);
 	for (const FPhysicsDebugLine& Line : PhysicsBodyLines)
+	{
+		EditorLines.AddLine(Line.Start, Line.End, Line.Color);
+	}
+}
+
+void FDrawCommandBuilder::BuildClothDebugWireCommands(const FFrameContext& Frame, const FPrimitiveSceneProxy& Proxy)
+{
+	if (!Frame.RenderOptions.ShowFlags.bDebugCloth || !Proxy.HasProxyFlag(EPrimitiveProxyFlags::Cloth))
+	{
+		return;
+	}
+
+	const FClothSceneProxy& ClothProxy = static_cast<const FClothSceneProxy&>(Proxy);
+	TArray<FPhysicsDebugLine> ClothDebugLines;
+	ClothProxy.BuildClothDebugLines(Frame, ClothDebugLines);
+	for (const FPhysicsDebugLine& Line : ClothDebugLines)
 	{
 		EditorLines.AddLine(Line.Start, Line.End, Line.Color);
 	}

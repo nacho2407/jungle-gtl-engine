@@ -56,6 +56,14 @@ namespace SceneKeys
 	static constexpr const char* ContextHandle = "ContextHandle";
 	static constexpr const char* WorldSettings = "WorldSettings";
 	static constexpr const char* GameMode = "GameMode";  // legacy / WorldSettings 내부 키
+	static constexpr const char* ClothWind = "ClothWind";
+	static constexpr const char* Enabled = "Enabled";
+	static constexpr const char* Direction = "Direction";
+	static constexpr const char* Strength = "Strength";
+	static constexpr const char* TurbulenceStrength = "TurbulenceStrength";
+	static constexpr const char* TurbulenceSpatialScale = "TurbulenceSpatialScale";
+	static constexpr const char* TurbulenceTemporalScale = "TurbulenceTemporalScale";
+	static constexpr const char* TurbulenceSeed = "TurbulenceSeed";
 	static constexpr const char* Actors = "Actors";
 	static constexpr const char* RootComponent = "RootComponent";
 	static constexpr const char* NonSceneComponents = "NonSceneComponents";
@@ -320,6 +328,18 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 		const FWorldSettings& WS = World->GetWorldSettings();
 		JSON WSObj = json::Object();
 		WSObj[SceneKeys::GameMode] = WS.GameModeClassName;
+
+		// scene 단위 cloth wind 설정
+		JSON ClothWindObj = json::Object();
+		ClothWindObj[SceneKeys::Enabled] = WS.ClothWind.bEnabled;
+		WriteVec3(ClothWindObj, SceneKeys::Direction, WS.ClothWind.Direction);
+		ClothWindObj[SceneKeys::Strength] = static_cast<double>(WS.ClothWind.Strength);
+		ClothWindObj[SceneKeys::TurbulenceStrength] = static_cast<double>(WS.ClothWind.TurbulenceStrength);
+		ClothWindObj[SceneKeys::TurbulenceSpatialScale] = static_cast<double>(WS.ClothWind.TurbulenceSpatialScale);
+		ClothWindObj[SceneKeys::TurbulenceTemporalScale] = static_cast<double>(WS.ClothWind.TurbulenceTemporalScale);
+		ClothWindObj[SceneKeys::TurbulenceSeed] = WS.ClothWind.TurbulenceSeed;
+		WSObj[SceneKeys::ClothWind] = ClothWindObj;
+
 		w[SceneKeys::WorldSettings] = WSObj;
 	}
 
@@ -499,6 +519,41 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 		if (WSObj.hasKey(SceneKeys::GameMode))
 		{
 			WorldSettings.GameModeClassName = WSObj[SceneKeys::GameMode].ToString();
+		}
+
+		if (WSObj.hasKey(SceneKeys::ClothWind))
+		{
+			JSON& ClothWindObj = WSObj[SceneKeys::ClothWind];
+
+			// 기존 scene에 없는 key는 FWorldClothWindSettings 기본값 유지
+			if (ClothWindObj.hasKey(SceneKeys::Enabled))
+			{
+				WorldSettings.ClothWind.bEnabled = ClothWindObj[SceneKeys::Enabled].ToBool();
+			}
+			if (ClothWindObj.hasKey(SceneKeys::Direction))
+			{
+				WorldSettings.ClothWind.Direction = ReadVec3(ClothWindObj[SceneKeys::Direction]);
+			}
+			if (ClothWindObj.hasKey(SceneKeys::Strength))
+			{
+				WorldSettings.ClothWind.Strength = static_cast<float>(ClothWindObj[SceneKeys::Strength].ToFloat());
+			}
+			if (ClothWindObj.hasKey(SceneKeys::TurbulenceStrength))
+			{
+				WorldSettings.ClothWind.TurbulenceStrength = static_cast<float>(ClothWindObj[SceneKeys::TurbulenceStrength].ToFloat());
+			}
+			if (ClothWindObj.hasKey(SceneKeys::TurbulenceSpatialScale))
+			{
+				WorldSettings.ClothWind.TurbulenceSpatialScale = static_cast<float>(ClothWindObj[SceneKeys::TurbulenceSpatialScale].ToFloat());
+			}
+			if (ClothWindObj.hasKey(SceneKeys::TurbulenceTemporalScale))
+			{
+				WorldSettings.ClothWind.TurbulenceTemporalScale = static_cast<float>(ClothWindObj[SceneKeys::TurbulenceTemporalScale].ToFloat());
+			}
+			if (ClothWindObj.hasKey(SceneKeys::TurbulenceSeed))
+			{
+				WorldSettings.ClothWind.TurbulenceSeed = ClothWindObj[SceneKeys::TurbulenceSeed].ToInt();
+			}
 		}
 	}
 	else if (root.hasKey(SceneKeys::GameMode))

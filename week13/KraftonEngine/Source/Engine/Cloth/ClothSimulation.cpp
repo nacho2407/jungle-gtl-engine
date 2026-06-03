@@ -109,6 +109,24 @@ physx::PxVec3 ToPxVec3(const FVector& Vector)
 }
 
 /**
+ * @brief engine quaternion을 physx quaternion으로 변환합니다
+ *
+ * @param Quat 변환할 engine quaternion
+ *
+ * @return 변환된 physx quaternion
+ */
+physx::PxQuat ToPxQuat(const FQuat& Quat)
+{
+	FQuat NormalizedQuat = Quat;
+	NormalizedQuat.Normalize();
+	return physx::PxQuat(
+		NormalizedQuat.X,
+		NormalizedQuat.Y,
+		NormalizedQuat.Z,
+		NormalizedQuat.W);
+}
+
+/**
  * @brief NvCloth particle 위치를 engine vector로 변환합니다
  *
  * @param Particle 변환할 NvCloth particle
@@ -657,24 +675,39 @@ bool FClothSimulation::UpdateCollisionPrimitives(const TArray<FClothCollisionPri
 				break;
 			}
 
+			const size_t PlaneStartCount = Planes.size();
+			const bool bHasBoxPlaneBudget = PlaneStartCount + 6 <= GMaxNvClothConvexPlanes;
 			uint32 BoxMask = 0;
-			const bool bAppendedBoxPlanes =
-				AppendCollisionPlane(AxisX, AxisX.Dot(Primitive.Center + AxisX * Extent.X), Planes, BoxMask)
-				&& AppendCollisionPlane(-AxisX, (-AxisX).Dot(Primitive.Center - AxisX * Extent.X), Planes, BoxMask)
-				&& AppendCollisionPlane(AxisY, AxisY.Dot(Primitive.Center + AxisY * Extent.Y), Planes, BoxMask)
-				&& AppendCollisionPlane(-AxisY, (-AxisY).Dot(Primitive.Center - AxisY * Extent.Y), Planes, BoxMask)
-				&& AppendCollisionPlane(AxisZ, AxisZ.Dot(Primitive.Center + AxisZ * Extent.Z), Planes, BoxMask)
-				&& AppendCollisionPlane(-AxisZ, (-AxisZ).Dot(Primitive.Center - AxisZ * Extent.Z), Planes, BoxMask);
-
-			if (!bAppendedBoxPlanes)
+			bool bAppendedBoxPlanes = false;
+			if (bHasBoxPlaneBudget)
 			{
-				ClearCollisionPrimitives();
-				LastFailureDetail = "NvCloth box collision fallback exceeded 32 plane mask bits";
-				return false;
+				bAppendedBoxPlanes =
+					AppendCollisionPlane(AxisX, AxisX.Dot(Primitive.Center + AxisX * Extent.X), Planes, BoxMask)
+					&& AppendCollisionPlane(-AxisX, (-AxisX).Dot(Primitive.Center - AxisX * Extent.X), Planes, BoxMask)
+					&& AppendCollisionPlane(AxisY, AxisY.Dot(Primitive.Center + AxisY * Extent.Y), Planes, BoxMask)
+					&& AppendCollisionPlane(-AxisY, (-AxisY).Dot(Primitive.Center - AxisY * Extent.Y), Planes, BoxMask)
+					&& AppendCollisionPlane(AxisZ, AxisZ.Dot(Primitive.Center + AxisZ * Extent.Z), Planes, BoxMask)
+					&& AppendCollisionPlane(-AxisZ, (-AxisZ).Dot(Primitive.Center - AxisZ * Extent.Z), Planes, BoxMask);
 			}
 
-			// NvCloth에는 box 직접 primitive가 없어서 6개 plane을 하나의 convex로 묶음
-			ConvexMasks.push_back(BoxMask);
+			if (bAppendedBoxPlanes)
+			{
+				// NvCloth에는 box 직접 primitive가 없어서 6개 plane을 하나의 convex로 묶음
+				ConvexMasks.push_back(BoxMask);
+			}
+			else
+			{
+				// plane 예산을 넘는 box는 전체 collision update 실패 대신 보수적인 sphere로 축소
+				Planes.resize(PlaneStartCount);
+				const float FallbackRadius = Extent.Length();
+				if (FallbackRadius <= GVectorTolerance)
+				{
+					break;
+				}
+
+				Spheres.push_back(ToPxSphere(Primitive.Center, FallbackRadius));
+			}
+
 			++AppliedPrimitiveCount;
 			break;
 		}
@@ -714,7 +747,6 @@ void FClothSimulation::Shutdown()
 	AccumulatedTime = 0.0f;
 	SimulationTime = 0.0f;
 	LastStepCount = 0;
-	bSelfCollisionCullScaleWarningLogged = false;
 }
 
 bool FClothSimulation::Tick(
@@ -742,6 +774,14 @@ bool FClothSimulation::Tick(
 	const float MaxAccumulatedTime = (std::max)(FixedStep, RuntimeConfig.Timestep.MaxAccumulatedTime);
 	AccumulatedTime = (std::min)(AccumulatedTime + DeltaTime, MaxAccumulatedTime);
 
+	if (AccumulatedTime + GVectorTolerance < FixedStep)
+	{
+		// fixed step이 없는 frame은 NvCloth local-space frame을 소비하지 않고 누적 이동량 보존
+		return false;
+	}
+
+	// 실제 solver step 직전에만 최신 world transform을 NvCloth local-space motion으로 반영
+	ApplyLocalSpaceMotion(RuntimeConfig.LocalSpaceMotion);
 	bool bSimulatedAnyStep = false;
 	while (AccumulatedTime + GVectorTolerance >= FixedStep && LastStepCount < MaxSubsteps)
 	{
@@ -781,8 +821,8 @@ void FClothSimulation::ApplyRuntimeConfig(const FClothSimulationRuntimeConfig& R
 	const float FixedStep = ClampFloat(RuntimeConfig.Timestep.FixedTimeStep, GMinFixedStep, GMaxFixedStep);
 	const float SolverFrequency = (std::max)(1.0f, 1.0f / FixedStep);
 
-	// component local simulation 공간 기준 중력과 solver parameter 갱신
-	Impl->Cloth->setGravity(ToPxVec3(RuntimeConfig.GravityAccelerationComponentLocal));
+	// NvCloth global gravity와 solver parameter 갱신
+	Impl->Cloth->setGravity(ToPxVec3(RuntimeConfig.GravityAccelerationWorld));
 	Impl->Cloth->setDamping(physx::PxVec3(Damping, Damping, Damping));
 	Impl->Cloth->setSolverFrequency(SolverFrequency);
 	Impl->Cloth->setStiffnessFrequency(SolverFrequency);
@@ -819,28 +859,22 @@ void FClothSimulation::ApplyRuntimeConfig(const FClothSimulationRuntimeConfig& R
 		const FVector WindDirection = RuntimeConfig.Wind.Direction.GetSafeNormal(GVectorTolerance, FVector::ForwardVector);
 		const FVector WindVelocity = WindDirection * RuntimeConfig.Wind.Strength;
 		Impl->Cloth->setWindVelocity(ToPxVec3(WindVelocity));
-		Impl->Cloth->setDragCoefficient(0.5f);
-		Impl->Cloth->setLiftCoefficient(0.05f);
-		Impl->Cloth->setFluidDensity(1.0f);
+		Impl->Cloth->setDragCoefficient(ClampFloat(RuntimeConfig.Wind.DragCoefficient, 0.0f, 10.0f));
+		Impl->Cloth->setLiftCoefficient(ClampFloat(RuntimeConfig.Wind.LiftCoefficient, 0.0f, 10.0f));
+		Impl->Cloth->setFluidDensity(ClampFloat(RuntimeConfig.Wind.FluidDensity, 0.0f, 10.0f));
 	}
 	else
 	{
 		Impl->Cloth->setWindVelocity(physx::PxVec3(0.0f, 0.0f, 0.0f));
 		Impl->Cloth->setDragCoefficient(0.0f);
 		Impl->Cloth->setLiftCoefficient(0.0f);
+		Impl->Cloth->setFluidDensity(0.0f);
 	}
 
 	if (RuntimeConfig.SelfCollision.bEnabled && RuntimeConfig.SelfCollision.Distance > 0.0f)
 	{
 		Impl->Cloth->setSelfCollisionDistance((std::max)(0.0f, RuntimeConfig.SelfCollision.Distance));
 		Impl->Cloth->setSelfCollisionStiffness(ClampFloat(RuntimeConfig.SelfCollision.Stiffness, 0.0f, 1.0f));
-
-		if (!bSelfCollisionCullScaleWarningLogged
-			&& std::abs(RuntimeConfig.SelfCollision.CullScale - 1.0f) > GVectorTolerance)
-		{
-			bSelfCollisionCullScaleWarningLogged = true;
-			UE_LOG("[ClothSimulation] Self collision cull scale is reserved; NvCloth public API exposes self collision indices instead of a direct cull scale setter");
-		}
 	}
 	else
 	{
@@ -849,6 +883,60 @@ void FClothSimulation::ApplyRuntimeConfig(const FClothSimulationRuntimeConfig& R
 	}
 #else
 	(void)RuntimeConfig;
+#endif
+}
+
+void FClothSimulation::ApplyLocalSpaceMotion(const FClothLocalSpaceMotionConfig& MotionConfig)
+{
+#if WITH_NV_CLOTH
+	if (!Impl || !Impl->Cloth)
+	{
+		return;
+	}
+
+	const physx::PxVec3 CurrentTranslation = ToPxVec3(MotionConfig.CurrentWorldTransform.Location);
+	const physx::PxQuat CurrentRotation = ToPxQuat(MotionConfig.CurrentWorldTransform.Rotation);
+
+	auto SetZeroInertia = [this]()
+	{
+		Impl->Cloth->setLinearInertia(physx::PxVec3(0.0f, 0.0f, 0.0f));
+		Impl->Cloth->setAngularInertia(physx::PxVec3(0.0f, 0.0f, 0.0f));
+		Impl->Cloth->setCentrifugalInertia(physx::PxVec3(0.0f, 0.0f, 0.0f));
+	};
+
+	if (!MotionConfig.bEnabled)
+	{
+		// 비활성 상태에서도 frame transform은 최신값으로 유지해 재활성화 순간의 큰 delta 방지
+		SetZeroInertia();
+		Impl->Cloth->setTranslation(CurrentTranslation);
+		Impl->Cloth->setRotation(CurrentRotation);
+		Impl->Cloth->clearInertia();
+		return;
+	}
+
+	if (!MotionConfig.bHasPreviousTransform || MotionConfig.bTeleport)
+	{
+		// 최초 frame 또는 teleport는 흔들림 없이 local-space frame만 이동
+		SetZeroInertia();
+		Impl->Cloth->teleportToLocation(CurrentTranslation, CurrentRotation);
+		Impl->Cloth->clearInertia();
+		return;
+	}
+
+	// 1.0 초과 값은 실제 물리보다 강한 게임용 local-space 관성 반응
+	constexpr float MaxOwnerMotionInertiaResponse = 3.0f;
+	const float LinearInertia = ClampFloat(MotionConfig.LinearInertia, 0.0f, MaxOwnerMotionInertiaResponse);
+	const float AngularInertia = ClampFloat(MotionConfig.AngularInertia, 0.0f, MaxOwnerMotionInertiaResponse);
+	const float CentrifugalInertia = ClampFloat(MotionConfig.CentrifugalInertia, 0.0f, MaxOwnerMotionInertiaResponse);
+
+	// NvCloth가 이전 local-space frame과 현재 frame 차이로 관성 force를 계산
+	Impl->Cloth->setLinearInertia(physx::PxVec3(LinearInertia, LinearInertia, LinearInertia));
+	Impl->Cloth->setAngularInertia(physx::PxVec3(AngularInertia, AngularInertia, AngularInertia));
+	Impl->Cloth->setCentrifugalInertia(physx::PxVec3(CentrifugalInertia, CentrifugalInertia, CentrifugalInertia));
+	Impl->Cloth->setTranslation(CurrentTranslation);
+	Impl->Cloth->setRotation(CurrentRotation);
+#else
+	(void)MotionConfig;
 #endif
 }
 
@@ -1030,6 +1118,5 @@ bool FClothSimulation::SetBuildFailure(const FString& FailureDetail)
 	AccumulatedTime = 0.0f;
 	SimulationTime = 0.0f;
 	LastStepCount = 0;
-	bSelfCollisionCullScaleWarningLogged = false;
 	return false;
 }

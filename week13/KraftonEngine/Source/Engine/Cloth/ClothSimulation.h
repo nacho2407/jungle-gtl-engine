@@ -157,6 +157,13 @@ private:
 	void ApplyRuntimeConfig(const FClothSimulationRuntimeConfig& RuntimeConfig);
 
 	/**
+	 * @brief component world transform 변화 기반 local-space motion을 NvCloth에 반영합니다
+	 *
+	 * @param MotionConfig local-space motion 적용 설정
+	 */
+	void ApplyLocalSpaceMotion(const FClothLocalSpaceMotionConfig& MotionConfig);
+
+	/**
 	 * @brief turbulence particle acceleration을 갱신합니다
 	 *
 	 * @param RuntimeConfig simulation step에 적용할 runtime 설정
@@ -213,5 +220,4 @@ private:
 	uint32 LastStepCount = 0;
 	bool bInitialized = false;
 	bool bValid = false;
-	bool bSelfCollisionCullScaleWarningLogged = false;
 };

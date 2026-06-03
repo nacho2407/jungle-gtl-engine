@@ -585,6 +585,7 @@ void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
 		ImGui::Checkbox("Show Collision Shape", &RenderOptions.ShowFlags.bShowCollisionShape);
 		ImGui::Checkbox("PhysicsBody", &RenderOptions.ShowFlags.bPhysicsBody);
 		ImGui::Checkbox("Debug PhysicsAsset", &RenderOptions.ShowFlags.bDebugPhysicsAsset);
+		ImGui::Checkbox("Debug Cloth", &RenderOptions.ShowFlags.bDebugCloth);
 		ImGui::Checkbox("Particle", &RenderOptions.ShowFlags.bParticle);
 
 		ImGui::EndPopup();

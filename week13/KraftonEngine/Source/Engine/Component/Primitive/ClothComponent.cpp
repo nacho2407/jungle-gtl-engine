@@ -1,7 +1,11 @@
 ﻿#include "Component/Primitive/ClothComponent.h"
 
+#include "Component/PrimitiveComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
+#include "GameFramework/WorldSettings.h"
 #include "Materials/MaterialManager.h"
 #include "Object/GarbageCollection.h"
 #include "Profiling/Stats/ClothStats.h"
@@ -34,6 +38,8 @@ namespace
 	constexpr float GMaxSelfCollisionDistance = 1000.0f;
 	constexpr float GMaxCollisionLength = 10000.0f;
 	constexpr float GMinBoxCollisionExtent = 0.001f;
+	constexpr int32 GMinBodyCollisionPrimitiveCount = 0;
+	constexpr int32 GMaxBodyCollisionPrimitiveCount = 128;
 
 	/**
 	 * @brief 정수 값을 지정된 범위 안으로 보정합니다
@@ -70,6 +76,28 @@ namespace
 		}
 
 		return (std::max)(MinValue, (std::min)(Value, MaxValue));
+	}
+
+	/**
+	 * @brief 두 world rotation 사이의 최단 회전 각도를 degree로 반환합니다
+	 *
+	 * @param PreviousRotation 이전 world rotation
+	 *
+	 * @param CurrentRotation 현재 world rotation
+	 *
+	 * @return 두 rotation 사이의 최단 각도
+	 */
+	float ComputeRotationDeltaDegrees(const FQuat& PreviousRotation, const FQuat& CurrentRotation)
+	{
+		const FQuat SafePreviousRotation = PreviousRotation.GetNormalized();
+		const FQuat SafeCurrentRotation = CurrentRotation.GetNormalized();
+		const float RotationDot = std::abs(
+			SafePreviousRotation.X * SafeCurrentRotation.X
+			+ SafePreviousRotation.Y * SafeCurrentRotation.Y
+			+ SafePreviousRotation.Z * SafeCurrentRotation.Z
+			+ SafePreviousRotation.W * SafeCurrentRotation.W);
+		const float ClampedDot = ClampFloat(RotationDot, 0.0f, 1.0f);
+		return 2.0f * std::acos(ClampedDot) * RAD_TO_DEG;
 	}
 
 	/**
@@ -177,16 +205,31 @@ namespace
 			|| MatchesPropertyName(PropertyName, "Damping", "Damping")
 			|| MatchesPropertyName(PropertyName, "Stiffness", "Stiffness")
 			|| MatchesPropertyName(PropertyName, "bEnableWind", "Enable Wind")
+			|| MatchesPropertyName(PropertyName, "bUseGlobalWind", "Use Global Wind")
+			|| MatchesPropertyName(PropertyName, "GlobalWindResponse", "Global Wind Response")
+			|| MatchesPropertyName(PropertyName, "LocalWindScale", "Local Wind Scale")
+			|| MatchesPropertyName(PropertyName, "TurbulenceResponse", "Turbulence Response")
 			|| MatchesPropertyName(PropertyName, "WindDirection", "Wind Direction")
 			|| MatchesPropertyName(PropertyName, "WindStrength", "Wind Strength")
 			|| MatchesPropertyName(PropertyName, "WindTurbulenceStrength", "Wind Turbulence Strength")
 			|| MatchesPropertyName(PropertyName, "WindTurbulenceSpatialScale", "Wind Turbulence Spatial Scale")
 			|| MatchesPropertyName(PropertyName, "WindTurbulenceTemporalScale", "Wind Turbulence Temporal Scale")
 			|| MatchesPropertyName(PropertyName, "WindTurbulenceSeed", "Wind Turbulence Seed")
+			|| MatchesPropertyName(PropertyName, "WindDragCoefficient", "Wind Drag Coefficient")
+			|| MatchesPropertyName(PropertyName, "WindLiftCoefficient", "Wind Lift Coefficient")
+			|| MatchesPropertyName(PropertyName, "WindFluidDensity", "Wind Fluid Density")
+			|| MatchesPropertyName(PropertyName, "bEnableOwnerMotionInertia", "Enable Owner Motion Inertia")
+			|| MatchesPropertyName(PropertyName, "bEnableOwnerMotionWind", "Enable Owner Motion Wind")
+			|| MatchesPropertyName(PropertyName, "OwnerMotionWindResponse", "Owner Motion Wind Response")
+			|| MatchesPropertyName(PropertyName, "OwnerMotionWindMaxSpeed", "Owner Motion Wind Max Speed")
+			|| MatchesPropertyName(PropertyName, "OwnerLinearInertiaResponse", "Linear Inertia Response")
+			|| MatchesPropertyName(PropertyName, "OwnerAngularInertiaResponse", "Angular Inertia Response")
+			|| MatchesPropertyName(PropertyName, "OwnerCentrifugalInertiaResponse", "Centrifugal Inertia Response")
+			|| MatchesPropertyName(PropertyName, "OwnerMotionTeleportDistance", "Owner Motion Teleport Distance")
+			|| MatchesPropertyName(PropertyName, "OwnerMotionTeleportAngleDegrees", "Owner Motion Teleport Angle")
 			|| MatchesPropertyName(PropertyName, "bEnableSelfCollision", "Enable Self Collision")
 			|| MatchesPropertyName(PropertyName, "SelfCollisionDistance", "Self Collision Distance")
-			|| MatchesPropertyName(PropertyName, "SelfCollisionStiffness", "Self Collision Stiffness")
-			|| MatchesPropertyName(PropertyName, "SelfCollisionCullScale", "Self Collision Cull Scale");
+			|| MatchesPropertyName(PropertyName, "SelfCollisionStiffness", "Self Collision Stiffness");
 	}
 
 	/**
@@ -208,7 +251,12 @@ namespace
 			|| MatchesPropertyName(PropertyName, "bEnableBoxCollision", "Enable Box Collision")
 			|| MatchesPropertyName(PropertyName, "BoxCenterActorLocal", "Box Center Actor Local")
 			|| MatchesPropertyName(PropertyName, "BoxExtentActorLocal", "Box Extent Actor Local")
-			|| MatchesPropertyName(PropertyName, "BoxRotationActorLocal", "Box Rotation Actor Local");
+			|| MatchesPropertyName(PropertyName, "BoxRotationActorLocal", "Box Rotation Actor Local")
+			|| MatchesPropertyName(PropertyName, "bEnableBodyCollision", "Enable Body Collision")
+			|| MatchesPropertyName(PropertyName, "bAutoFindOwnerBodyCollision", "Auto Find Owner Body Collision")
+			|| MatchesPropertyName(PropertyName, "bAutoFindOwnerSkeletalMeshCollision", "Auto Find Owner Skeletal Mesh")
+			|| MatchesPropertyName(PropertyName, "CollisionSourceComponentName", "Collision Source Component Name")
+			|| MatchesPropertyName(PropertyName, "MaxBodyCollisionPrimitives", "Max Body Collision Primitives");
 	}
 
 	/**
@@ -360,6 +408,9 @@ void UClothComponent::PostDuplicate()
 	Simulation.Shutdown();
 	SimulationReadbackPositions.clear();
 	CachedCollisionPrimitives.clear();
+	CachedIndependentCollisionPrimitiveCount = 0;
+	CachedBodyCollisionPrimitiveCount = 0;
+	ResetOwnerMotionCache();
 	LoadMaterialFromSlot();
 	MarkClothRebuildDirty();
 }
@@ -369,6 +420,9 @@ void UClothComponent::RouteComponentDestroyed()
 	Simulation.Shutdown();
 	SimulationReadbackPositions.clear();
 	CachedCollisionPrimitives.clear();
+	CachedIndependentCollisionPrimitiveCount = 0;
+	CachedBodyCollisionPrimitiveCount = 0;
+	ResetOwnerMotionCache();
 	UMeshComponent::RouteComponentDestroyed();
 }
 
@@ -486,8 +540,90 @@ void UClothComponent::MarkClothCollisionDirty()
 void UClothComponent::MarkClothEditorPreviewDirty()
 {
 	bEditorPreviewDirty = true;
+
+	if (!bSimulateInEditor)
+	{
+		// editor preview off 시점의 즉시 rest pose 복원
+		ResetEditorPreviewSimulationState(MakeClothConfig());
+		return;
+	}
+
 	Simulation.ResetAccumulator();
+	ResetOwnerMotionCache();
 	ApplyEditorPreviewPolicy();
+}
+
+void UClothComponent::ResetEditorPreviewSimulationState(const FClothConfig& Config)
+{
+	// 이전 editor preview simulation resource와 readback 폐기
+	Simulation.Shutdown();
+	SimulationReadbackPositions.clear();
+
+	// rest position cache가 유효하지 않으면 procedural grid 재생성으로 안전하게 복원
+	if (!RestoreRenderDataToRestPositions(Config))
+	{
+		BuildGrid(Config, true);
+	}
+
+	// 다음 editor preview 시작 시 rest pose 기준 simulation resource 재생성
+	MarkClothSimulationRebuildDirty();
+	CachedFinalWindVelocityWorld = FVector::ZeroVector;
+	bGlobalWindAppliedLastTick = false;
+	ResetOwnerMotionCache();
+	bLastSimulationBuildSkippedByAllPinned = false;
+	bSimulationTickWarningLogged = false;
+	bCollisionUpdateWarningLogged = false;
+	bEditorPreviewDirty = false;
+}
+
+bool UClothComponent::RestoreRenderDataToRestPositions(const FClothConfig& Config)
+{
+	if (!RenderData.IsValid() || RestPositionsComponentLocal.size() != RenderData.Vertices.size())
+	{
+		return false;
+	}
+
+	for (size_t VertexIndex = 0; VertexIndex < RenderData.Vertices.size(); ++VertexIndex)
+	{
+		// simulation 변형 위치를 procedural rest position으로 복원
+		RenderData.Vertices[VertexIndex].Position = RestPositionsComponentLocal[VertexIndex];
+	}
+
+	RecalculateNormalsAndTangents();
+	UpdateLocalBoundsFromRenderData(Config);
+	IncrementRenderRevision();
+	MarkWorldBoundsDirty();
+	MarkProxyDirty(EDirtyFlag::Mesh);
+	return true;
+}
+
+void UClothComponent::ResetOwnerMotionCache()
+{
+	PreviousClothWorldTransform = FTransform();
+	bHasPreviousClothWorldTransform = false;
+	CachedOwnerMotionDeltaWorld = FVector::ZeroVector;
+	bOwnerMotionInertiaAppliedLastTick = false;
+}
+
+void UClothComponent::StoreOwnerMotionCache(const FClothSimulationRuntimeConfig& RuntimeConfig)
+{
+	const bool bConsumedSimulationStep = Simulation.GetLastStepCount() > 0;
+	if (!bHasPreviousClothWorldTransform || bConsumedSimulationStep)
+	{
+		// 최초 기준 transform 또는 실제 fixed step에서 소비된 transform만 previous cache로 저장
+		PreviousClothWorldTransform = RuntimeConfig.LocalSpaceMotion.CurrentWorldTransform;
+		bHasPreviousClothWorldTransform = true;
+	}
+
+	// 실제 fixed step이 소비된 tick만 inertia 적용으로 기록
+	bOwnerMotionInertiaAppliedLastTick =
+		RuntimeConfig.LocalSpaceMotion.bEnabled
+		&& RuntimeConfig.LocalSpaceMotion.bHasPreviousTransform
+		&& !RuntimeConfig.LocalSpaceMotion.bTeleport
+		&& bConsumedSimulationStep
+		&& (RuntimeConfig.LocalSpaceMotion.LinearInertia > GNormalTolerance
+			|| RuntimeConfig.LocalSpaceMotion.AngularInertia > GNormalTolerance
+			|| RuntimeConfig.LocalSpaceMotion.CentrifugalInertia > GNormalTolerance);
 }
 
 void UClothComponent::RebuildClothIfNeeded(bool bNotifyProxyDirty)
@@ -515,34 +651,179 @@ FClothConfig UClothComponent::MakeClothConfig() const
 	return Config;
 }
 
-FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const FClothConfig& Config) const
+FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const FClothConfig& Config, float DeltaTime) const
 {
 	FClothSimulationRuntimeConfig RuntimeConfig;
 	RuntimeConfig.Timestep = Config.Timestep;
+	const FTransform CurrentClothWorldTransform = FTransform::FromMatrixWithScale(GetWorldMatrix());
 
 	const float SafeGravityScale = ClampFloat(GravityScale, 0.0f, GMaxGravityScale);
-	RuntimeConfig.GravityAccelerationComponentLocal =
-		TransformWorldDirectionToComponentLocal(FVector::DownVector) * (GDefaultGravityAcceleration * SafeGravityScale);
+	// NvCloth setGravity는 global coordinates를 기대하므로 world -z 중력 그대로 전달
+	RuntimeConfig.GravityAccelerationWorld =
+		FVector::DownVector * (GDefaultGravityAcceleration * SafeGravityScale);
 
 	RuntimeConfig.Damping = ClampFloat(Damping, 0.0f, 1.0f);
 	RuntimeConfig.Stiffness = ClampFloat(Stiffness, 0.0f, 1.0f);
 
-	// wind direction property는 world 기준으로 해석한 뒤 component local simulation 공간으로 변환
-	const FVector SafeWindDirectionWorld = WindDirection.GetSafeNormal(GNormalTolerance, FVector::ForwardVector);
-	RuntimeConfig.Wind.bEnabled = bEnableWind;
-	RuntimeConfig.Wind.Direction = TransformWorldDirectionToComponentLocal(SafeWindDirectionWorld);
-	RuntimeConfig.Wind.Strength = ClampFloat(WindStrength, 0.0f, GMaxWindStrength);
-	RuntimeConfig.Wind.TurbulenceStrength = ClampFloat(WindTurbulenceStrength, 0.0f, GMaxWindStrength);
-	RuntimeConfig.Wind.TurbulenceSpatialScale = ClampFloat(WindTurbulenceSpatialScale, 0.001f, 10000.0f);
-	RuntimeConfig.Wind.TurbulenceTemporalScale = ClampFloat(WindTurbulenceTemporalScale, 0.0f, 100.0f);
-	RuntimeConfig.Wind.TurbulenceSeed = WindTurbulenceSeed;
+	// bEnableWind는 이 component가 wind를 받을지 결정하는 master switch
+	FVector FinalWindVelocityWorld = FVector::ZeroVector;
+	float FinalTurbulenceStrength = 0.0f;
+	float FinalTurbulenceSpatialScale = ClampFloat(WindTurbulenceSpatialScale, 0.001f, 10000.0f);
+	float FinalTurbulenceTemporalScale = ClampFloat(WindTurbulenceTemporalScale, 0.0f, 100.0f);
+	int32 FinalTurbulenceSeed = WindTurbulenceSeed;
+	bool bGlobalWindApplied = false;
+
+	if (bEnableWind)
+	{
+		const float SafeGlobalResponse = ClampFloat(GlobalWindResponse, 0.0f, 10.0f);
+		const float SafeLocalScale = ClampFloat(LocalWindScale, 0.0f, 10.0f);
+		const float SafeTurbulenceResponse = ClampFloat(TurbulenceResponse, 0.0f, 10.0f);
+
+		if (bUseGlobalWind)
+		{
+			if (const UWorld* World = GetWorld())
+			{
+				const FWorldClothWindSettings& GlobalWind = World->GetWorldSettings().ClothWind;
+				if (GlobalWind.bEnabled)
+				{
+					// world settings wind는 world 기준 velocity로 먼저 합성
+					const FVector GlobalDirectionWorld = GlobalWind.Direction.GetSafeNormal(GNormalTolerance, FVector::ForwardVector);
+					const float GlobalStrength = ClampFloat(GlobalWind.Strength, 0.0f, GMaxWindStrength) * SafeGlobalResponse;
+					const float GlobalTurbulenceStrength =
+						ClampFloat(GlobalWind.TurbulenceStrength, 0.0f, GMaxWindStrength)
+						* SafeGlobalResponse
+						* SafeTurbulenceResponse;
+
+					FinalWindVelocityWorld += GlobalDirectionWorld * GlobalStrength;
+					FinalTurbulenceStrength += GlobalTurbulenceStrength;
+					FinalTurbulenceSpatialScale = ClampFloat(GlobalWind.TurbulenceSpatialScale, 0.001f, 10000.0f);
+					FinalTurbulenceTemporalScale = ClampFloat(GlobalWind.TurbulenceTemporalScale, 0.0f, 100.0f);
+					FinalTurbulenceSeed = GlobalWind.TurbulenceSeed;
+					bGlobalWindApplied = GlobalStrength > GNormalTolerance || GlobalTurbulenceStrength > GNormalTolerance;
+				}
+			}
+		}
+
+		// 기존 component local wind property는 world 기준 local wind source로 유지
+		const FVector LocalWindDirectionWorld = WindDirection.GetSafeNormal(GNormalTolerance, FVector::ForwardVector);
+		const float LocalWindStrength = ClampFloat(WindStrength, 0.0f, GMaxWindStrength) * SafeLocalScale;
+		const float LocalTurbulenceStrength =
+			ClampFloat(WindTurbulenceStrength, 0.0f, GMaxWindStrength)
+			* SafeLocalScale
+			* SafeTurbulenceResponse;
+
+		FinalWindVelocityWorld += LocalWindDirectionWorld * LocalWindStrength;
+		FinalTurbulenceStrength += LocalTurbulenceStrength;
+	}
+
+	if (bEnableOwnerMotionWind)
+	{
+		// owner 이동 속도로 생기는 apparent wind를 기존 wind source와 world 기준으로 합성
+		const FVector OwnerVelocityWorld = ComputeOwnerMotionVelocityWorld(CurrentClothWorldTransform, DeltaTime);
+		const float SafeOwnerMotionWindResponse = ClampFloat(OwnerMotionWindResponse, 0.0f, 10.0f);
+		const float SafeOwnerMotionWindMaxSpeed = ClampFloat(OwnerMotionWindMaxSpeed, 0.0f, 100000.0f);
+		FVector OwnerMotionWindVelocityWorld = OwnerVelocityWorld * -SafeOwnerMotionWindResponse;
+		const float OwnerMotionWindSpeed = OwnerMotionWindVelocityWorld.Length();
+		if (OwnerMotionWindSpeed > GNormalTolerance && SafeOwnerMotionWindMaxSpeed > GNormalTolerance)
+		{
+			if (OwnerMotionWindSpeed > SafeOwnerMotionWindMaxSpeed)
+			{
+				OwnerMotionWindVelocityWorld =
+					OwnerMotionWindVelocityWorld * (SafeOwnerMotionWindMaxSpeed / OwnerMotionWindSpeed);
+			}
+
+			FinalWindVelocityWorld += OwnerMotionWindVelocityWorld;
+		}
+	}
+
+	const float FinalWindSpeed = FinalWindVelocityWorld.Length();
+	RuntimeConfig.Wind.bEnabled = FinalWindSpeed > GNormalTolerance || FinalTurbulenceStrength > GNormalTolerance;
+	// NvCloth setWindVelocity는 global coordinates를 기대하므로 world 방향 그대로 전달
+	RuntimeConfig.Wind.Direction = FinalWindVelocityWorld.GetSafeNormal(GNormalTolerance, FVector::ForwardVector);
+	RuntimeConfig.Wind.Strength = FinalWindSpeed;
+	RuntimeConfig.Wind.TurbulenceStrength = ClampFloat(FinalTurbulenceStrength, 0.0f, GMaxWindStrength);
+	RuntimeConfig.Wind.TurbulenceSpatialScale = FinalTurbulenceSpatialScale;
+	RuntimeConfig.Wind.TurbulenceTemporalScale = FinalTurbulenceTemporalScale;
+	RuntimeConfig.Wind.TurbulenceSeed = FinalTurbulenceSeed;
+	RuntimeConfig.Wind.DragCoefficient = ClampFloat(WindDragCoefficient, 0.0f, 10.0f);
+	RuntimeConfig.Wind.LiftCoefficient = ClampFloat(WindLiftCoefficient, 0.0f, 10.0f);
+	RuntimeConfig.Wind.FluidDensity = ClampFloat(WindFluidDensity, 0.0f, 10.0f);
+
+	CachedFinalWindVelocityWorld = RuntimeConfig.Wind.bEnabled ? FinalWindVelocityWorld : FVector::ZeroVector;
+	bGlobalWindAppliedLastTick = RuntimeConfig.Wind.bEnabled && bGlobalWindApplied;
 
 	RuntimeConfig.SelfCollision.bEnabled = bEnableSelfCollision;
 	RuntimeConfig.SelfCollision.Distance = ClampFloat(SelfCollisionDistance, 0.0f, GMaxSelfCollisionDistance);
 	RuntimeConfig.SelfCollision.Stiffness = ClampFloat(SelfCollisionStiffness, 0.0f, 1.0f);
-	RuntimeConfig.SelfCollision.CullScale = ClampFloat(SelfCollisionCullScale, 0.0f, 10.0f);
+
+	const float SafeTeleportDistance = ClampFloat(OwnerMotionTeleportDistance, 0.0f, 100000.0f);
+	const float SafeTeleportAngleDegrees = ClampFloat(OwnerMotionTeleportAngleDegrees, 0.0f, 180.0f);
+
+	RuntimeConfig.LocalSpaceMotion.bEnabled = bEnableOwnerMotionInertia;
+	RuntimeConfig.LocalSpaceMotion.bHasPreviousTransform = bHasPreviousClothWorldTransform;
+	RuntimeConfig.LocalSpaceMotion.PreviousWorldTransform = PreviousClothWorldTransform;
+	RuntimeConfig.LocalSpaceMotion.CurrentWorldTransform = CurrentClothWorldTransform;
+	// 1.0 초과 값은 실제 물리보다 강한 게임용 owner motion 반응
+	constexpr float MaxOwnerMotionInertiaResponse = 3.0f;
+	RuntimeConfig.LocalSpaceMotion.LinearInertia = ClampFloat(OwnerLinearInertiaResponse, 0.0f, MaxOwnerMotionInertiaResponse);
+	RuntimeConfig.LocalSpaceMotion.AngularInertia = ClampFloat(OwnerAngularInertiaResponse, 0.0f, MaxOwnerMotionInertiaResponse);
+	RuntimeConfig.LocalSpaceMotion.CentrifugalInertia = ClampFloat(OwnerCentrifugalInertiaResponse, 0.0f, MaxOwnerMotionInertiaResponse);
+	RuntimeConfig.LocalSpaceMotion.TeleportDistance = SafeTeleportDistance;
+	RuntimeConfig.LocalSpaceMotion.TeleportAngleDegrees = SafeTeleportAngleDegrees;
+
+	CachedOwnerMotionDeltaWorld = FVector::ZeroVector;
+	bOwnerMotionInertiaAppliedLastTick = false;
+	if (bHasPreviousClothWorldTransform)
+	{
+		// component world transform 변화량 기준의 owner motion 판정
+		const FVector DeltaLocationWorld = CurrentClothWorldTransform.Location - PreviousClothWorldTransform.Location;
+		const float DeltaDistance = DeltaLocationWorld.Length();
+		const float DeltaAngleDegrees = ComputeRotationDeltaDegrees(
+			PreviousClothWorldTransform.Rotation,
+			CurrentClothWorldTransform.Rotation);
+
+		RuntimeConfig.LocalSpaceMotion.bTeleport =
+			DeltaDistance > SafeTeleportDistance
+			|| DeltaAngleDegrees > SafeTeleportAngleDegrees;
+
+		if (bEnableOwnerMotionInertia && !RuntimeConfig.LocalSpaceMotion.bTeleport)
+		{
+			CachedOwnerMotionDeltaWorld = DeltaLocationWorld;
+		}
+	}
 
 	return RuntimeConfig;
+}
+
+FVector UClothComponent::ComputeOwnerMotionVelocityWorld(
+	const FTransform& CurrentClothWorldTransform,
+	float DeltaTime) const
+{
+	if (AActor* OwnerActor = GetOwner())
+	{
+		if (const UPrimitiveComponent* RootPrimitive = Cast<UPrimitiveComponent>(OwnerActor->GetRootComponent()))
+		{
+			// physics body가 제공하는 실제 선형 속도 방향을 그대로 사용
+			const FVector PhysicsVelocityWorld = RootPrimitive->GetLinearVelocity();
+			if (PhysicsVelocityWorld.Length() > GNormalTolerance)
+			{
+				return PhysicsVelocityWorld;
+			}
+		}
+	}
+
+	if (bHasPreviousClothWorldTransform && std::isfinite(DeltaTime) && DeltaTime > GNormalTolerance)
+	{
+		// physics velocity가 없거나 0이면 transform delta의 방향과 크기로 editor/kinematic 이동 추정
+		const FVector DeltaVelocityWorld =
+			(CurrentClothWorldTransform.Location - PreviousClothWorldTransform.Location) / DeltaTime;
+		if (DeltaVelocityWorld.Length() > GNormalTolerance)
+		{
+			return DeltaVelocityWorld;
+		}
+	}
+
+	return FVector::ZeroVector;
 }
 
 bool UClothComponent::ShouldTickSimulation(ELevelTick TickType) const
@@ -850,6 +1131,84 @@ void UClothComponent::BuildPinnedParticles(
 	}
 }
 
+bool UClothComponent::BuildPinSelectionDebugShape(FClothPinSelectionDebugShape& OutShape) const
+{
+	OutShape = FClothPinSelectionDebugShape();
+
+	switch (PinningMode)
+	{
+	case EClothPinSelectionType::ActorLocalSphere:
+	{
+		// actor local sphere pin 선택 영역의 component local snapshot
+		const float RadiusActorLocal = ClampFloat(PinRadius, 0.0f, GMaxCollisionLength);
+		const float RadiusComponentLocal = TransformActorLocalLengthToComponentLocal(RadiusActorLocal);
+		if (RadiusComponentLocal <= GNormalTolerance)
+		{
+			return false;
+		}
+
+		OutShape.Type = EClothPinSelectionDebugShapeType::Sphere;
+		OutShape.Center = TransformActorLocalPointToComponentLocal(PinCenterActorLocal);
+		OutShape.Radius = RadiusComponentLocal;
+		return true;
+	}
+
+	case EClothPinSelectionType::ActorLocalBox:
+	{
+		// actor local box pin 선택 영역의 component local oriented box
+		const FVector CenterComponentLocal = TransformActorLocalPointToComponentLocal(PinCenterActorLocal);
+		const FVector SafeExtent = PinBoxExtentActorLocal.GetAbs();
+		const FVector ExtentXVector = TransformActorLocalVectorToComponentLocal(FVector(SafeExtent.X, 0.0f, 0.0f));
+		const FVector ExtentYVector = TransformActorLocalVectorToComponentLocal(FVector(0.0f, SafeExtent.Y, 0.0f));
+		const FVector ExtentZVector = TransformActorLocalVectorToComponentLocal(FVector(0.0f, 0.0f, SafeExtent.Z));
+		const float ExtentX = ExtentXVector.Length();
+		const float ExtentY = ExtentYVector.Length();
+		const float ExtentZ = ExtentZVector.Length();
+		if (ExtentX <= GNormalTolerance && ExtentY <= GNormalTolerance && ExtentZ <= GNormalTolerance)
+		{
+			return false;
+		}
+
+		OutShape.Type = EClothPinSelectionDebugShapeType::Box;
+		OutShape.Center = CenterComponentLocal;
+		OutShape.AxisX = ExtentXVector.GetSafeNormal(GNormalTolerance, FVector::XAxisVector);
+		OutShape.AxisY = ExtentYVector.GetSafeNormal(GNormalTolerance, FVector::YAxisVector);
+		OutShape.AxisZ = ExtentZVector.GetSafeNormal(GNormalTolerance, FVector::ZAxisVector);
+		OutShape.Extent = FVector(ExtentX, ExtentY, ExtentZ);
+		return true;
+	}
+
+	case EClothPinSelectionType::ActorLocalRectXZ:
+	{
+		// actor local xz rectangle pin 선택 영역의 component local rectangle
+		const float MinX = (std::min)(PinRectMinActorLocalXZ.X, PinRectMaxActorLocalXZ.X);
+		const float MaxX = (std::max)(PinRectMinActorLocalXZ.X, PinRectMaxActorLocalXZ.X);
+		const float MinZ = (std::min)(PinRectMinActorLocalXZ.Z, PinRectMaxActorLocalXZ.Z);
+		const float MaxZ = (std::max)(PinRectMinActorLocalXZ.Z, PinRectMaxActorLocalXZ.Z);
+		const FVector RectCenterActorLocal((MinX + MaxX) * 0.5f, 0.0f, (MinZ + MaxZ) * 0.5f);
+		const FVector CenterComponentLocal = TransformActorLocalPointToComponentLocal(RectCenterActorLocal);
+		const FVector ExtentXVector = TransformActorLocalVectorToComponentLocal(FVector((MaxX - MinX) * 0.5f, 0.0f, 0.0f));
+		const FVector ExtentZVector = TransformActorLocalVectorToComponentLocal(FVector(0.0f, 0.0f, (MaxZ - MinZ) * 0.5f));
+		const float ExtentX = ExtentXVector.Length();
+		const float ExtentZ = ExtentZVector.Length();
+		if (ExtentX <= GNormalTolerance && ExtentZ <= GNormalTolerance)
+		{
+			return false;
+		}
+
+		OutShape.Type = EClothPinSelectionDebugShapeType::RectXZ;
+		OutShape.Center = CenterComponentLocal;
+		OutShape.AxisX = ExtentXVector.GetSafeNormal(GNormalTolerance, FVector::XAxisVector);
+		OutShape.AxisZ = ExtentZVector.GetSafeNormal(GNormalTolerance, FVector::ZAxisVector);
+		OutShape.Extent = FVector(ExtentX, 0.0f, ExtentZ);
+		return true;
+	}
+
+	default:
+		return false;
+	}
+}
+
 void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 {
 	if (!bSimulationRebuildDirty)
@@ -865,6 +1224,9 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 		CachedPinnedIndices.clear();
 		CachedPinTargetPositionsComponentLocal.clear();
 		CachedCollisionPrimitives.clear();
+		CachedIndependentCollisionPrimitiveCount = 0;
+		CachedBodyCollisionPrimitiveCount = 0;
+		ResetOwnerMotionCache();
 		bSimulationRebuildDirty = false;
 		bLastSimulationBuildSkippedByAllPinned = false;
 		bSimulationTickWarningLogged = false;
@@ -879,6 +1241,9 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 		CachedPinnedIndices.clear();
 		CachedPinTargetPositionsComponentLocal.clear();
 		CachedCollisionPrimitives.clear();
+		CachedIndependentCollisionPrimitiveCount = 0;
+		CachedBodyCollisionPrimitiveCount = 0;
+		ResetOwnerMotionCache();
 		bSimulationRebuildDirty = false;
 		bLastSimulationBuildSkippedByAllPinned = false;
 		bSimulationTickWarningLogged = false;
@@ -896,6 +1261,7 @@ void UClothComponent::RebuildSimulationIfNeeded(const FClothConfig& Config)
 	CachedPinnedIndices = BuildDesc.PinnedIndices;
 	CachedPinTargetPositionsComponentLocal = BuildDesc.PinTargetPositionsComponentLocal;
 	bLastSimulationBuildSkippedByAllPinned = false;
+	ResetOwnerMotionCache();
 	if (!Simulation.Rebuild(&GEngine->GetClothContext(), BuildDesc))
 	{
 		bLastSimulationBuildSkippedByAllPinned = IsAllPinnedBuildFailure(Simulation.GetLastFailureDetail());
@@ -968,23 +1334,29 @@ void UClothComponent::TickSimulationIfNeeded(float DeltaTime, ELevelTick TickTyp
 		{
 			bEditorPreviewDirty = false;
 		}
+		ResetOwnerMotionCache();
 		return;
 	}
 
 	UpdateSimulationCollisionPrimitives();
 
-	const FClothSimulationRuntimeConfig RuntimeConfig = MakeSimulationRuntimeConfig(Config);
+	const FClothSimulationRuntimeConfig RuntimeConfig = MakeSimulationRuntimeConfig(Config, DeltaTime);
 	SimulationReadbackPositions.clear();
 	const auto SimulationStartTime = std::chrono::high_resolution_clock::now();
 	const bool bTickResult = Simulation.Tick(DeltaTime, RuntimeConfig, SimulationReadbackPositions);
 	const auto SimulationEndTime = std::chrono::high_resolution_clock::now();
 	const double SimulationElapsedMs = std::chrono::duration<double, std::milli>(SimulationEndTime - SimulationStartTime).count();
+	StoreOwnerMotionCache(RuntimeConfig);
 
 	CLOTH_STATS_RECORD_COMPONENT(
 		Simulation.GetParticleCount(),
 		Simulation.GetIndexCount(),
 		Simulation.GetPinnedCount(),
 		Simulation.GetCollisionPrimitiveCount(),
+		CachedIndependentCollisionPrimitiveCount,
+		CachedBodyCollisionPrimitiveCount,
+		bGlobalWindAppliedLastTick,
+		bOwnerMotionInertiaAppliedLastTick,
 		Simulation.GetLastStepCount(),
 		SimulationElapsedMs);
 
@@ -1020,6 +1392,7 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 		{
 			FClothCollisionPrimitive Primitive;
 			Primitive.Type = EClothCollisionPrimitiveType::Sphere;
+			Primitive.Source = EClothCollisionPrimitiveSource::Independent;
 			Primitive.Center = TransformActorLocalPointToComponentLocal(SphereCenterActorLocal);
 			Primitive.Radius = RadiusComponentLocal;
 			OutPrimitives.push_back(Primitive);
@@ -1038,6 +1411,7 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 
 		FClothCollisionPrimitive Primitive;
 		Primitive.Type = EClothCollisionPrimitiveType::Plane;
+		Primitive.Source = EClothCollisionPrimitiveSource::Independent;
 		Primitive.PlanePoint = PlanePointComponentLocal;
 		Primitive.PlaneNormal = PlaneNormalComponentLocal.GetSafeNormal(GNormalTolerance, FVector::UpVector);
 		Primitive.PlaneDistance = Primitive.PlaneNormal.Dot(Primitive.PlanePoint);
@@ -1066,6 +1440,7 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 				// half height가 0이면 capsule 대신 같은 중심의 sphere로 안전하게 전달
 				FClothCollisionPrimitive Primitive;
 				Primitive.Type = EClothCollisionPrimitiveType::Sphere;
+				Primitive.Source = EClothCollisionPrimitiveSource::Independent;
 				Primitive.Center = TransformActorLocalPointToComponentLocal(CapsuleCenterActorLocal);
 				Primitive.Radius = RadiusComponentLocal;
 				OutPrimitives.push_back(Primitive);
@@ -1074,6 +1449,7 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 			{
 				FClothCollisionPrimitive Primitive;
 				Primitive.Type = EClothCollisionPrimitiveType::Capsule;
+				Primitive.Source = EClothCollisionPrimitiveSource::Independent;
 				Primitive.CapsuleStart = CapsuleStartComponentLocal;
 				Primitive.CapsuleEnd = CapsuleEndComponentLocal;
 				Primitive.Center = (CapsuleStartComponentLocal + CapsuleEndComponentLocal) * 0.5f;
@@ -1104,6 +1480,7 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 
 		FClothCollisionPrimitive Primitive;
 		Primitive.Type = EClothCollisionPrimitiveType::Box;
+		Primitive.Source = EClothCollisionPrimitiveSource::Independent;
 		Primitive.Center = TransformActorLocalPointToComponentLocal(BoxCenterActorLocal);
 		Primitive.BoxExtent = FVector(ExtentX, ExtentY, ExtentZ);
 		Primitive.BoxAxisX = ExtentXVector.GetSafeNormal(GNormalTolerance, FVector::XAxisVector);
@@ -1113,9 +1490,209 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 	}
 }
 
+UPrimitiveComponent* UClothComponent::ResolveBodyCollisionSource() const
+{
+	AActor* OwnerActor = GetOwner();
+	if (!IsValid(OwnerActor))
+	{
+		return nullptr;
+	}
+
+	const bool bHasRequestedSourceName =
+		CollisionSourceComponentName.IsValid()
+		&& CollisionSourceComponentName != FName::None;
+	const TArray<UActorComponent*> OwnerComponents = OwnerActor->GetComponents();
+	TArray<UPrimitiveComponent*> PrimitiveBodySources;
+	for (UActorComponent* Component : OwnerComponents)
+	{
+		UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
+		if (!IsValid(PrimitiveComponent) || PrimitiveComponent == this)
+		{
+			continue;
+		}
+
+		if (bHasRequestedSourceName)
+		{
+			// 이름이 지정된 경우에는 component 종류와 무관하게 명시 선택된 primitive를 source로 사용
+			if (PrimitiveComponent->GetFName() == CollisionSourceComponentName)
+			{
+				return PrimitiveComponent;
+			}
+
+			continue;
+		}
+
+		if (!bAutoFindOwnerBodyCollision)
+		{
+			continue;
+		}
+
+		if (USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(PrimitiveComponent))
+		{
+			// skeletal mesh 우선순위 유지와 ragdoll 비활성 empty snapshot 건너뛰기
+			if (CanBuildBodyCollisionPrimitivesWorld(SkeletalMeshComponent))
+			{
+				return SkeletalMeshComponent;
+			}
+
+			continue;
+		}
+
+		if (PrimitiveComponent->GetBodyInstance().IsValidBodyInstance())
+		{
+			// skeletal mesh 후보가 모두 비어 있을 때 확인할 일반 primitive fallback 후보
+			PrimitiveBodySources.push_back(PrimitiveComponent);
+		}
+	}
+
+	for (UPrimitiveComponent* PrimitiveBodySource : PrimitiveBodySources)
+	{
+		// 일반 primitive body도 실제 cloth collision snapshot을 만들 수 있을 때만 source로 선택
+		if (CanBuildBodyCollisionPrimitivesWorld(PrimitiveBodySource))
+		{
+			return PrimitiveBodySource;
+		}
+	}
+
+	return nullptr;
+}
+
+void UClothComponent::BuildBodyCollisionPrimitivesWorld(
+	const UPrimitiveComponent* SourceComponent,
+	TArray<FClothCollisionPrimitive>& OutPrimitives) const
+{
+	OutPrimitives.clear();
+	if (!IsValid(SourceComponent))
+	{
+		return;
+	}
+
+	if (const USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(SourceComponent))
+	{
+		// skeletal mesh는 ragdoll body 배열 전체를 cloth collision snapshot으로 변환
+		SkeletalMeshComponent->GetClothCollisionPrimitives(OutPrimitives);
+		return;
+	}
+
+	// 일반 primitive component는 자기 BodyInstance 하나를 cloth collision snapshot으로 변환
+	SourceComponent->GetBodyInstance().AppendClothCollisionPrimitives(OutPrimitives);
+}
+
+bool UClothComponent::CanBuildBodyCollisionPrimitivesWorld(const UPrimitiveComponent* SourceComponent) const
+{
+	// source 선택 검증용 임시 snapshot
+	TArray<FClothCollisionPrimitive> TestPrimitives;
+	BuildBodyCollisionPrimitivesWorld(SourceComponent, TestPrimitives);
+	return !TestPrimitives.empty();
+}
+
+uint32 UClothComponent::AppendBodyCollisionPrimitivesComponentLocal(
+	const TArray<FClothCollisionPrimitive>& BodyWorldPrimitives,
+	TArray<FClothCollisionPrimitive>& OutPrimitives) const
+{
+	const int32 SafeMaxBodyPrimitiveCount = ClampInt(
+		MaxBodyCollisionPrimitives,
+		GMinBodyCollisionPrimitiveCount,
+		GMaxBodyCollisionPrimitiveCount);
+	if (SafeMaxBodyPrimitiveCount <= 0 || BodyWorldPrimitives.empty())
+	{
+		return 0;
+	}
+
+	uint32 AppendedPrimitiveCount = 0;
+	for (const FClothCollisionPrimitive& WorldPrimitive : BodyWorldPrimitives)
+	{
+		if (AppendedPrimitiveCount >= static_cast<uint32>(SafeMaxBodyPrimitiveCount))
+		{
+			break;
+		}
+
+		FClothCollisionPrimitive ComponentLocalPrimitive;
+		ConvertWorldCollisionPrimitiveToComponentLocal(WorldPrimitive, ComponentLocalPrimitive);
+		ComponentLocalPrimitive.Source = EClothCollisionPrimitiveSource::Body;
+		OutPrimitives.push_back(ComponentLocalPrimitive);
+		++AppendedPrimitiveCount;
+	}
+
+	return AppendedPrimitiveCount;
+}
+
+void UClothComponent::ConvertWorldCollisionPrimitiveToComponentLocal(
+	const FClothCollisionPrimitive& WorldPrimitive,
+	FClothCollisionPrimitive& OutComponentLocalPrimitive) const
+{
+	OutComponentLocalPrimitive = WorldPrimitive;
+	OutComponentLocalPrimitive.Source = EClothCollisionPrimitiveSource::Body;
+
+	switch (WorldPrimitive.Type)
+	{
+	case EClothCollisionPrimitiveType::Sphere:
+		OutComponentLocalPrimitive.Center = TransformWorldPointToComponentLocal(WorldPrimitive.Center);
+		OutComponentLocalPrimitive.Radius = TransformWorldLengthToComponentLocal(WorldPrimitive.Radius);
+		break;
+
+	case EClothCollisionPrimitiveType::Capsule:
+	{
+		OutComponentLocalPrimitive.CapsuleStart = TransformWorldPointToComponentLocal(WorldPrimitive.CapsuleStart);
+		OutComponentLocalPrimitive.CapsuleEnd = TransformWorldPointToComponentLocal(WorldPrimitive.CapsuleEnd);
+
+		const FVector Segment = OutComponentLocalPrimitive.CapsuleEnd - OutComponentLocalPrimitive.CapsuleStart;
+		OutComponentLocalPrimitive.Center =
+			(OutComponentLocalPrimitive.CapsuleStart + OutComponentLocalPrimitive.CapsuleEnd) * 0.5f;
+		OutComponentLocalPrimitive.Axis = Segment.GetSafeNormal(GNormalTolerance, FVector::UpVector);
+		OutComponentLocalPrimitive.HalfHeight = Segment.Length() * 0.5f;
+		OutComponentLocalPrimitive.Radius = TransformWorldLengthToComponentLocal(WorldPrimitive.Radius);
+		break;
+	}
+
+	case EClothCollisionPrimitiveType::Box:
+	{
+		const FVector SafeWorldExtent = WorldPrimitive.BoxExtent.GetAbs();
+		const FVector ExtentXVector = TransformWorldVectorToComponentLocal(
+			WorldPrimitive.BoxAxisX.GetSafeNormal(GNormalTolerance, FVector::XAxisVector) * SafeWorldExtent.X);
+		const FVector ExtentYVector = TransformWorldVectorToComponentLocal(
+			WorldPrimitive.BoxAxisY.GetSafeNormal(GNormalTolerance, FVector::YAxisVector) * SafeWorldExtent.Y);
+		const FVector ExtentZVector = TransformWorldVectorToComponentLocal(
+			WorldPrimitive.BoxAxisZ.GetSafeNormal(GNormalTolerance, FVector::ZAxisVector) * SafeWorldExtent.Z);
+
+		OutComponentLocalPrimitive.Center = TransformWorldPointToComponentLocal(WorldPrimitive.Center);
+		OutComponentLocalPrimitive.BoxExtent = FVector(
+			(std::max)(ExtentXVector.Length(), GMinBoxCollisionExtent),
+			(std::max)(ExtentYVector.Length(), GMinBoxCollisionExtent),
+			(std::max)(ExtentZVector.Length(), GMinBoxCollisionExtent));
+		OutComponentLocalPrimitive.BoxAxisX = ExtentXVector.GetSafeNormal(GNormalTolerance, FVector::XAxisVector);
+		OutComponentLocalPrimitive.BoxAxisY = ExtentYVector.GetSafeNormal(GNormalTolerance, FVector::YAxisVector);
+		OutComponentLocalPrimitive.BoxAxisZ = ExtentZVector.GetSafeNormal(GNormalTolerance, FVector::ZAxisVector);
+		break;
+	}
+
+	case EClothCollisionPrimitiveType::Plane:
+		OutComponentLocalPrimitive.PlanePoint = TransformWorldPointToComponentLocal(WorldPrimitive.PlanePoint);
+		OutComponentLocalPrimitive.PlaneNormal =
+			TransformWorldDirectionToComponentLocal(WorldPrimitive.PlaneNormal);
+		OutComponentLocalPrimitive.PlaneDistance =
+			OutComponentLocalPrimitive.PlaneNormal.Dot(OutComponentLocalPrimitive.PlanePoint);
+		break;
+	}
+}
+
 void UClothComponent::UpdateSimulationCollisionPrimitives()
 {
 	BuildCollisionPrimitivesComponentLocal(CachedCollisionPrimitives);
+	CachedIndependentCollisionPrimitiveCount = static_cast<uint32>(CachedCollisionPrimitives.size());
+	CachedBodyCollisionPrimitiveCount = 0;
+
+	if (bEnableBodyCollision)
+	{
+		// body collision은 매 update마다 현재 source body snapshot을 가져와 병합
+		if (UPrimitiveComponent* CollisionSourceComponent = ResolveBodyCollisionSource())
+		{
+			TArray<FClothCollisionPrimitive> BodyWorldPrimitives;
+			BuildBodyCollisionPrimitivesWorld(CollisionSourceComponent, BodyWorldPrimitives);
+			CachedBodyCollisionPrimitiveCount =
+				AppendBodyCollisionPrimitivesComponentLocal(BodyWorldPrimitives, CachedCollisionPrimitives);
+		}
+	}
 
 	if (!Simulation.UpdateCollisionPrimitives(CachedCollisionPrimitives))
 	{
@@ -1366,10 +1943,32 @@ FVector UClothComponent::TransformWorldVectorToComponentLocal(const FVector& Wor
 	return GetWorldInverseMatrix().TransformVector(WorldVector);
 }
 
+FVector UClothComponent::TransformWorldPointToComponentLocal(const FVector& WorldPoint) const
+{
+	// world 기준 위치를 component local simulation 공간으로 변환
+	return GetWorldInverseMatrix().TransformPosition(WorldPoint);
+}
+
 FVector UClothComponent::TransformWorldDirectionToComponentLocal(const FVector& WorldDirection) const
 {
 	const FVector ComponentLocalVector = TransformWorldVectorToComponentLocal(WorldDirection);
 	return ComponentLocalVector.GetSafeNormal(GNormalTolerance, FVector::DownVector);
+}
+
+float UClothComponent::TransformWorldLengthToComponentLocal(float WorldLength) const
+{
+	const float SafeLength = ClampFloat(WorldLength, 0.0f, GMaxCollisionLength);
+	if (SafeLength <= GNormalTolerance)
+	{
+		return 0.0f;
+	}
+
+	const float LengthX = TransformWorldVectorToComponentLocal(FVector(SafeLength, 0.0f, 0.0f)).Length();
+	const float LengthY = TransformWorldVectorToComponentLocal(FVector(0.0f, SafeLength, 0.0f)).Length();
+	const float LengthZ = TransformWorldVectorToComponentLocal(FVector(0.0f, 0.0f, SafeLength)).Length();
+
+	// non-uniform scale에서는 sphere/capsule이 작아져 통과하지 않도록 가장 큰 축 길이를 사용
+	return (std::max)(LengthX, (std::max)(LengthY, LengthZ));
 }
 
 void UClothComponent::TransformActorLocalPlaneToComponentLocal(

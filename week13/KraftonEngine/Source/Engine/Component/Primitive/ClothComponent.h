@@ -12,6 +12,8 @@
 
 class FPrimitiveSceneProxy;
 class UMaterial;
+class UPrimitiveComponent;
+class USkeletalMeshComponent;
 
 /**
  * @brief 절차적 cloth grid component
@@ -150,11 +152,76 @@ public:
 	uint32 GetPinnedCount() const { return static_cast<uint32>(CachedPinnedIndices.size()); }
 
 	/**
+	 * @brief 현재 hard pin으로 선택된 particle index 배열을 반환합니다
+	 *
+	 * @return 현재 hard pin particle index 배열
+	 */
+	const TArray<uint32>& GetCachedPinnedIndices() const { return CachedPinnedIndices; }
+
+	/**
+	 * @brief 현재 actor local hard pin 선택 영역 debug shape를 생성합니다
+	 *
+	 * @param OutShape 생성된 component local 기준 debug shape
+	 *
+	 * @return debug shape 생성 여부
+	 */
+	bool BuildPinSelectionDebugShape(FClothPinSelectionDebugShape& OutShape) const;
+
+	/**
 	 * @brief 현재 simulation에 적용된 collision primitive 수를 반환합니다
 	 *
 	 * @return 현재 collision primitive 수
 	 */
 	uint32 GetCollisionPrimitiveCount() const { return Simulation.GetCollisionPrimitiveCount(); }
+
+	/**
+	 * @brief 현재 debug 표시용 collision primitive snapshot을 반환합니다
+	 *
+	 * @return component local 기준 collision primitive snapshot
+	 */
+	const TArray<FClothCollisionPrimitive>& GetCachedCollisionPrimitives() const { return CachedCollisionPrimitives; }
+
+	/**
+	 * @brief 현재 independent collision primitive 수를 반환합니다
+	 *
+	 * @return 현재 independent collision primitive 수
+	 */
+	uint32 GetCachedIndependentCollisionPrimitiveCount() const { return CachedIndependentCollisionPrimitiveCount; }
+
+	/**
+	 * @brief 현재 body collision primitive 수를 반환합니다
+	 *
+	 * @return 현재 body collision primitive 수
+	 */
+	uint32 GetCachedBodyCollisionPrimitiveCount() const { return CachedBodyCollisionPrimitiveCount; }
+
+	/**
+	 * @brief 최근 tick에서 계산된 최종 wind vector를 반환합니다
+	 *
+	 * @return world 기준 최종 wind vector
+	 */
+	FVector GetCachedFinalWindVelocityWorld() const { return CachedFinalWindVelocityWorld; }
+
+	/**
+	 * @brief 최근 tick에서 계산된 owner motion delta를 반환합니다
+	 *
+	 * @return world 기준 owner motion delta
+	 */
+	FVector GetCachedOwnerMotionDeltaWorld() const { return CachedOwnerMotionDeltaWorld; }
+
+	/**
+	 * @brief 최근 tick에서 global wind 적용 여부를 반환합니다
+	 *
+	 * @return global wind 적용 여부
+	 */
+	bool WasGlobalWindAppliedLastTick() const { return bGlobalWindAppliedLastTick; }
+
+	/**
+	 * @brief 최근 tick에서 owner motion inertia 적용 여부를 반환합니다
+	 *
+	 * @return owner motion inertia 적용 여부
+	 */
+	bool WasOwnerMotionInertiaAppliedLastTick() const { return bOwnerMotionInertiaAppliedLastTick; }
 
 protected:
 	/**
@@ -183,7 +250,32 @@ private:
 	 *
 	 * @return runtime simulation 설정
 	 */
-	FClothSimulationRuntimeConfig MakeSimulationRuntimeConfig(const FClothConfig& Config) const;
+	FClothSimulationRuntimeConfig MakeSimulationRuntimeConfig(const FClothConfig& Config, float DeltaTime) const;
+
+	/**
+	 * @brief owner 실제 이동 속도를 world 기준으로 계산합니다
+	 *
+	 * @param CurrentClothWorldTransform 현재 cloth world transform
+	 *
+	 * @param DeltaTime 프레임 delta time
+	 *
+	 * @return world 기준 owner 실제 이동 속도
+	 */
+	FVector ComputeOwnerMotionVelocityWorld(const FTransform& CurrentClothWorldTransform, float DeltaTime) const;
+
+	/**
+	 * @brief owner motion inertia cache를 초기화합니다
+	 */
+	void ResetOwnerMotionCache();
+
+	/**
+	 * @brief 현재 runtime config 기준 owner motion inertia cache를 저장합니다
+	 *
+	 * @param RuntimeConfig 이번 tick에 사용한 runtime 설정
+	 *
+	 * @details 최초 기준 transform 또는 실제 fixed simulation step이 소비된 transform만 previous cache로 저장합니다
+	 */
+	void StoreOwnerMotionCache(const FClothSimulationRuntimeConfig& RuntimeConfig);
 
 	/**
 	 * @brief 현재 tick에서 simulation을 진행해야 하는지 반환합니다
@@ -198,6 +290,22 @@ private:
 	 * @brief editor preview simulation에 필요한 owner actor tick 정책을 적용합니다
 	 */
 	void ApplyEditorPreviewPolicy();
+
+	/**
+	 * @brief editor preview simulation 결과를 rest pose로 되돌립니다
+	 *
+	 * @param Config bounds 갱신에 사용할 cloth config
+	 */
+	void ResetEditorPreviewSimulationState(const FClothConfig& Config);
+
+	/**
+	 * @brief render data 위치를 rest position cache 기준으로 복원합니다
+	 *
+	 * @param Config bounds 갱신에 사용할 cloth config
+	 *
+	 * @return rest position 복원 성공 여부
+	 */
+	bool RestoreRenderDataToRestPositions(const FClothConfig& Config);
 
 	/**
 	 * @brief 현재 config로 procedural grid를 생성합니다
@@ -262,6 +370,59 @@ private:
 	 * @param OutPrimitives component local 기준 collision primitive 배열
 	 */
 	void BuildCollisionPrimitivesComponentLocal(TArray<FClothCollisionPrimitive>& OutPrimitives) const;
+
+	/**
+	 * @brief body collision source로 사용할 primitive component를 반환합니다
+	 *
+	 * @return 선택된 primitive component 또는 nullptr
+	 *
+	 * @details 명시 source name은 그대로 반환하고, 자동 탐색은 실제 primitive snapshot을 만들 수 있는 source만 선택합니다
+	 */
+	UPrimitiveComponent* ResolveBodyCollisionSource() const;
+
+	/**
+	 * @brief body collision source component의 world 기준 primitive snapshot을 생성합니다
+	 *
+	 * @param SourceComponent body collision source primitive component
+	 *
+	 * @param OutPrimitives world 기준 body collision primitive 배열
+	 */
+	void BuildBodyCollisionPrimitivesWorld(
+		const UPrimitiveComponent* SourceComponent,
+		TArray<FClothCollisionPrimitive>& OutPrimitives) const;
+
+	/**
+	 * @brief body collision source가 world 기준 primitive snapshot을 생성할 수 있는지 확인합니다
+	 *
+	 * @param SourceComponent 확인할 body collision source primitive component
+	 *
+	 * @return primitive snapshot 생성 가능 여부
+	 */
+	bool CanBuildBodyCollisionPrimitivesWorld(const UPrimitiveComponent* SourceComponent) const;
+
+	/**
+	 * @brief world 기준 body collision primitive 배열을 component local 배열에 추가합니다
+	 *
+	 * @param BodyWorldPrimitives world 기준 body collision primitive 배열
+	 *
+	 * @param OutPrimitives component local 기준 collision primitive 배열
+	 *
+	 * @return 실제 추가된 body collision primitive 수
+	 */
+	uint32 AppendBodyCollisionPrimitivesComponentLocal(
+		const TArray<FClothCollisionPrimitive>& BodyWorldPrimitives,
+		TArray<FClothCollisionPrimitive>& OutPrimitives) const;
+
+	/**
+	 * @brief world 기준 collision primitive를 component local primitive로 변환합니다
+	 *
+	 * @param WorldPrimitive world 기준 collision primitive
+	 *
+	 * @param OutComponentLocalPrimitive component local 기준 collision primitive
+	 */
+	void ConvertWorldCollisionPrimitiveToComponentLocal(
+		const FClothCollisionPrimitive& WorldPrimitive,
+		FClothCollisionPrimitive& OutComponentLocalPrimitive) const;
 
 	/**
 	 * @brief 현재 collision primitive snapshot을 simulation에 반영합니다
@@ -350,6 +511,15 @@ private:
 	FVector TransformWorldVectorToComponentLocal(const FVector& WorldVector) const;
 
 	/**
+	 * @brief world 위치를 component local 위치로 변환합니다
+	 *
+	 * @param WorldPoint world 기준 위치
+	 *
+	 * @return component local 기준 위치
+	 */
+	FVector TransformWorldPointToComponentLocal(const FVector& WorldPoint) const;
+
+	/**
 	 * @brief world 방향을 component local 단위 방향으로 변환합니다
 	 *
 	 * @param WorldDirection world 기준 방향
@@ -357,6 +527,15 @@ private:
 	 * @return component local 기준 단위 방향
 	 */
 	FVector TransformWorldDirectionToComponentLocal(const FVector& WorldDirection) const;
+
+	/**
+	 * @brief world 길이를 component local 보수적 길이로 변환합니다
+	 *
+	 * @param WorldLength world 기준 길이
+	 *
+	 * @return component local 기준 보수적 길이
+	 */
+	float TransformWorldLengthToComponentLocal(float WorldLength) const;
 
 	/**
 	 * @brief actor local plane을 component local plane으로 변환합니다
@@ -405,10 +584,10 @@ private:
 	float TransformActorLocalLengthToComponentLocal(float ActorLocalLength) const;
 
 private:
-	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles X", Min=2.0f, Max=2048.0f, Speed=1.0f)
+	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles X", Min=2.0f, Max=256.0f, Speed=1.0f)
 	int32 NumParticlesX = 20;
 
-	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles Y", Min=2.0f, Max=2048.0f, Speed=1.0f)
+	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles Y", Min=2.0f, Max=256.0f, Speed=1.0f)
 	int32 NumParticlesY = 20;
 
 	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Particle Spacing", Min=0.001f, Max=1000.0f, Speed=0.1f)
@@ -459,6 +638,18 @@ private:
 	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Enable Wind")
 	bool bEnableWind = false;
 
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Use Global Wind")
+	bool bUseGlobalWind = true;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Global Wind Response", Min=0.0f, Max=10.0f, Speed=0.05f)
+	float GlobalWindResponse = 1.0f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Local Wind Scale", Min=0.0f, Max=10.0f, Speed=0.05f)
+	float LocalWindScale = 1.0f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Turbulence Response", Min=0.0f, Max=10.0f, Speed=0.05f)
+	float TurbulenceResponse = 1.0f;
+
 	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Wind Direction", Type=Vec3, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FVector WindDirection = FVector::ForwardVector;
 
@@ -477,6 +668,62 @@ private:
 	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Wind Turbulence Seed", Min=0.0f, Max=1000000.0f, Speed=1.0f)
 	int32 WindTurbulenceSeed = 1337;
 
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Wind Drag Coefficient", Min=0.0f, Max=10.0f, Speed=0.01f)
+	float WindDragCoefficient = 0.5f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Wind Lift Coefficient", Min=0.0f, Max=10.0f, Speed=0.01f)
+	float WindLiftCoefficient = 0.05f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Wind", DisplayName="Wind Fluid Density", Min=0.0f, Max=10.0f, Speed=0.01f)
+	float WindFluidDensity = 1.0f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Enable Owner Motion Inertia")
+	bool bEnableOwnerMotionInertia = true;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Enable Owner Motion Wind")
+	bool bEnableOwnerMotionWind = true;
+
+	/**
+	 * @brief owner 이동 속도에 비례한 역방향 wind 반응 계수
+	 *
+	 * @details 1.0은 owner 이동 속도와 같은 크기의 역방향 wind이며, 1.0 초과 값은 게임용 과장 반응입니다
+	 */
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Owner Motion Wind Response", Min=0.0f, Max=10.0f, Speed=0.05f)
+	float OwnerMotionWindResponse = 1.0f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Owner Motion Wind Max Speed", Min=0.0f, Max=100000.0f, Speed=10.0f)
+	float OwnerMotionWindMaxSpeed = 3000.0f;
+
+	/**
+	 * @brief owner 이동에 대한 선형 관성 반응 계수
+	 *
+	 * @details 1.0은 NvCloth 기준 물리값이며, 1.0 초과 값은 게임용 과장 반응입니다
+	 */
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Linear Inertia Response", Min=0.0f, Max=3.0f, Speed=0.01f)
+	float OwnerLinearInertiaResponse = 0.35f;
+
+	/**
+	 * @brief owner 이동에 대한 각 관성 반응 계수
+	 *
+	 * @details 1.0은 NvCloth 기준 물리값이며, 1.0 초과 값은 게임용 과장 반응입니다
+	 */
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Angular Inertia Response", Min=0.0f, Max=3.0f, Speed=0.01f)
+	float OwnerAngularInertiaResponse = 0.15f;
+
+	/**
+	 * @brief owner 이동에 대한 원심 관성 반응 계수
+	 *
+	 * @details 1.0은 NvCloth 기준 물리값이며, 1.0 초과 값은 게임용 과장 반응입니다
+	 */
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Centrifugal Inertia Response", Min=0.0f, Max=3.0f, Speed=0.01f)
+	float OwnerCentrifugalInertiaResponse = 0.15f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Owner Motion Teleport Distance", Min=0.0f, Max=100000.0f, Speed=1.0f)
+	float OwnerMotionTeleportDistance = 300.0f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Owner Motion Teleport Angle", Min=0.0f, Max=180.0f, Speed=1.0f)
+	float OwnerMotionTeleportAngleDegrees = 45.0f;
+
 	UPROPERTY(Edit, Save, Category="Cloth|Self Collision", DisplayName="Enable Self Collision")
 	bool bEnableSelfCollision = false;
 
@@ -485,9 +732,6 @@ private:
 
 	UPROPERTY(Edit, Save, Category="Cloth|Self Collision", DisplayName="Self Collision Stiffness", Min=0.0f, Max=1.0f, Speed=0.01f)
 	float SelfCollisionStiffness = 1.0f;
-
-	UPROPERTY(Edit, Save, Category="Cloth|Self Collision", DisplayName="Self Collision Cull Scale", Min=0.0f, Max=10.0f, Speed=0.01f)
-	float SelfCollisionCullScale = 1.0f;
 
 	UPROPERTY(Edit, Save, Category="Cloth|Collision", DisplayName="Enable Sphere Collision")
 	bool bEnableSphereCollision = false;
@@ -534,6 +778,18 @@ private:
 	UPROPERTY(Edit, Save, Category="Cloth|Collision", DisplayName="Box Rotation Actor Local", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
 	FRotator BoxRotationActorLocal = FRotator(0.0f, 0.0f, 0.0f);
 
+	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Enable Body Collision")
+	bool bEnableBodyCollision = false;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Auto Find Owner Body Collision")
+	bool bAutoFindOwnerBodyCollision = true;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Collision Source Component Name")
+	FName CollisionSourceComponentName = FName::None;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Max Body Collision Primitives", Min=0.0f, Max=128.0f, Speed=1.0f)
+	int32 MaxBodyCollisionPrimitives = 64;
+
 	UPROPERTY(Edit, Save, Category="Cloth|Editor", DisplayName="Simulate In Editor")
 	bool bSimulateInEditor = false;
 
@@ -550,9 +806,17 @@ private:
 	TArray<uint32> CachedPinnedIndices;
 	TArray<FVector> CachedPinTargetPositionsComponentLocal;
 	TArray<FClothCollisionPrimitive> CachedCollisionPrimitives;
+	uint32 CachedIndependentCollisionPrimitiveCount = 0;
+	uint32 CachedBodyCollisionPrimitiveCount = 0;
+	mutable FVector CachedFinalWindVelocityWorld = FVector::ZeroVector;
+	mutable FVector CachedOwnerMotionDeltaWorld = FVector::ZeroVector;
+	FTransform PreviousClothWorldTransform;
 	FVector CachedLocalCenter = FVector::ZeroVector;
 	FVector CachedLocalExtent = FVector(0.5f, 0.5f, 0.5f);
 	bool bHasValidLocalBounds = false;
+	mutable bool bGlobalWindAppliedLastTick = false;
+	bool bHasPreviousClothWorldTransform = false;
+	mutable bool bOwnerMotionInertiaAppliedLastTick = false;
 	bool bTopologyRebuildDirty = true;
 	bool bSimulationRebuildDirty = true;
 	bool bPinningDirty = true;
