@@ -796,43 +796,31 @@ FVector UClothComponent::ComputeOwnerMotionVelocityWorld(
 	const FTransform& CurrentClothWorldTransform,
 	float DeltaTime) const
 {
-	// owner가 없을 때도 cloth transform 기준 forward로 보수적인 fallback 가능
-	FVector OwnerForwardWorld = CurrentClothWorldTransform.Rotation.GetForwardVector()
-		.GetSafeNormal(GNormalTolerance, FVector::ForwardVector);
-	float OwnerSpeed = 0.0f;
-
 	if (AActor* OwnerActor = GetOwner())
 	{
-		if (const USceneComponent* RootComponent = OwnerActor->GetRootComponent())
+		if (const UPrimitiveComponent* RootPrimitive = Cast<UPrimitiveComponent>(OwnerActor->GetRootComponent()))
 		{
-			// wind 방향 고정을 막기 위한 현재 owner/root forward 축
-			OwnerForwardWorld = RootComponent->GetForwardVector()
-				.GetSafeNormal(GNormalTolerance, OwnerForwardWorld);
-
-			if (const UPrimitiveComponent* RootPrimitive = Cast<UPrimitiveComponent>(RootComponent))
+			// physics body가 제공하는 실제 선형 속도 방향을 그대로 사용
+			const FVector PhysicsVelocityWorld = RootPrimitive->GetLinearVelocity();
+			if (PhysicsVelocityWorld.Length() > GNormalTolerance)
 			{
-				// physics body의 실제 선형 속도는 방향 대신 크기만 사용
-				const FVector PhysicsVelocityWorld = RootPrimitive->GetLinearVelocity();
-				OwnerSpeed = PhysicsVelocityWorld.Length();
+				return PhysicsVelocityWorld;
 			}
 		}
 	}
 
-	if (OwnerSpeed <= GNormalTolerance && bHasPreviousClothWorldTransform && std::isfinite(DeltaTime) && DeltaTime > GNormalTolerance)
+	if (bHasPreviousClothWorldTransform && std::isfinite(DeltaTime) && DeltaTime > GNormalTolerance)
 	{
-		// physics velocity가 없거나 0이면 transform delta 거리로 editor/kinematic 이동 속도 추정
+		// physics velocity가 없거나 0이면 transform delta의 방향과 크기로 editor/kinematic 이동 추정
 		const FVector DeltaVelocityWorld =
 			(CurrentClothWorldTransform.Location - PreviousClothWorldTransform.Location) / DeltaTime;
-		OwnerSpeed = DeltaVelocityWorld.Length();
+		if (DeltaVelocityWorld.Length() > GNormalTolerance)
+		{
+			return DeltaVelocityWorld;
+		}
 	}
 
-	if (OwnerSpeed <= GNormalTolerance)
-	{
-		return FVector::ZeroVector;
-	}
-
-	// 방향은 매 tick 현재 owner/root forward 기준으로 재구성
-	return OwnerForwardWorld * OwnerSpeed;
+	return FVector::ZeroVector;
 }
 
 bool UClothComponent::ShouldTickSimulation(ELevelTick TickType) const

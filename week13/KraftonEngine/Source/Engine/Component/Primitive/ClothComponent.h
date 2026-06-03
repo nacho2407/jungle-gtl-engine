@@ -253,13 +253,13 @@ private:
 	FClothSimulationRuntimeConfig MakeSimulationRuntimeConfig(const FClothConfig& Config, float DeltaTime) const;
 
 	/**
-	 * @brief owner/root forward 기준 이동 속도를 world 기준으로 계산합니다
+	 * @brief owner 실제 이동 속도를 world 기준으로 계산합니다
 	 *
 	 * @param CurrentClothWorldTransform 현재 cloth world transform
 	 *
 	 * @param DeltaTime 프레임 delta time
 	 *
-	 * @return world 기준 owner/root forward 방향 이동 속도
+	 * @return world 기준 owner 실제 이동 속도
 	 */
 	FVector ComputeOwnerMotionVelocityWorld(const FTransform& CurrentClothWorldTransform, float DeltaTime) const;
 
