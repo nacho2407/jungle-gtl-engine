@@ -150,12 +150,12 @@ namespace
 		AddDebugLine(OutLines, Corners[3], Corners[7], Color);
 	}
 
-	void AddPinnedMarker(
+	void AddParticleMarker(
 		TArray<FPhysicsDebugLine>& OutLines,
 		const FVector& Position,
 		const FVector4& Color)
 	{
-		// pinned particle 위치 확인용 작은 wire sphere
+		// particle 위치 확인용 작은 wire sphere
 		TArray<FWireLine> WireLines;
 		FCollisionDebugGeometry::AddWireSphere(WireLines, Position, GClothPinnedMarkerSize);
 		AppendWireLines(OutLines, WireLines, Color);
@@ -482,7 +482,8 @@ void FClothSceneProxy::BuildClothDebugLines(const FFrameContext& Frame, TArray<F
 	const FVector BoundsCenter = Bounds.GetCenter();
 
 	const FVector4 BoundsColor(1.0f, 1.0f, 1.0f, 0.9f);
-	const FVector4 PinnedColor(1.0f, 0.95f, 0.1f, 1.0f);
+	const FVector4 ParticleColor(1.0f, 0.95f, 0.1f, 1.0f);
+	const FVector4 PinnedColor(1.0f, 0.05f, 0.05f, 1.0f);
 	const FVector4 PinSelectionColor(0.45f, 1.0f, 0.2f, 1.0f);
 	const FVector4 WindColor(0.2f, 0.45f, 1.0f, 1.0f);
 	const FVector4 OwnerMotionColor(1.0f, 0.15f, 1.0f, 1.0f);
@@ -515,7 +516,14 @@ void FClothSceneProxy::BuildClothDebugLines(const FFrameContext& Frame, TArray<F
 		AddPinSelectionDebugShapeLines(OutLines, WorldMatrix, PinSelectionShape, PinSelectionColor);
 	}
 
-	// hard pin particle 위치 표시
+	// 전체 cloth particle 위치를 노란 wire sphere로 표시
+	for (const auto& Vertex : RenderData.Vertices)
+	{
+		const FVector WorldPosition = WorldMatrix.TransformPositionWithW(Vertex.Position);
+		AddParticleMarker(OutLines, WorldPosition, ParticleColor);
+	}
+
+	// hard pin particle 위치를 빨간 wire sphere로 강조 표시
 	for (uint32 PinnedIndex : ClothComponent->GetCachedPinnedIndices())
 	{
 		if (PinnedIndex >= RenderData.Vertices.size())
@@ -524,7 +532,7 @@ void FClothSceneProxy::BuildClothDebugLines(const FFrameContext& Frame, TArray<F
 		}
 
 		const FVector WorldPosition = WorldMatrix.TransformPositionWithW(RenderData.Vertices[PinnedIndex].Position);
-		AddPinnedMarker(OutLines, WorldPosition, PinnedColor);
+		AddParticleMarker(OutLines, WorldPosition, PinnedColor);
 	}
 
 	// bounds와 milestone 3 vector cache 표시
