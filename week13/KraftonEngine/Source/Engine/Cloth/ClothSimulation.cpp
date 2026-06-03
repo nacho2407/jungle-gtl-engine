@@ -926,9 +926,11 @@ void FClothSimulation::ApplyLocalSpaceMotion(const FClothLocalSpaceMotionConfig&
 		return;
 	}
 
-	const float LinearInertia = ClampFloat(MotionConfig.LinearInertia, 0.0f, 1.0f);
-	const float AngularInertia = ClampFloat(MotionConfig.AngularInertia, 0.0f, 1.0f);
-	const float CentrifugalInertia = ClampFloat(MotionConfig.CentrifugalInertia, 0.0f, 1.0f);
+	// 1.0 초과 값은 실제 물리보다 강한 게임용 local-space 관성 반응
+	constexpr float MaxOwnerMotionInertiaResponse = 3.0f;
+	const float LinearInertia = ClampFloat(MotionConfig.LinearInertia, 0.0f, MaxOwnerMotionInertiaResponse);
+	const float AngularInertia = ClampFloat(MotionConfig.AngularInertia, 0.0f, MaxOwnerMotionInertiaResponse);
+	const float CentrifugalInertia = ClampFloat(MotionConfig.CentrifugalInertia, 0.0f, MaxOwnerMotionInertiaResponse);
 
 	// NvCloth가 이전 local-space frame과 현재 frame 차이로 관성 force를 계산
 	Impl->Cloth->setLinearInertia(physx::PxVec3(LinearInertia, LinearInertia, LinearInertia));

@@ -1,5 +1,6 @@
 ﻿#include "Component/Primitive/ClothComponent.h"
 
+#include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Engine/Runtime/Engine.h"
 #include "GameFramework/AActor.h"
@@ -250,6 +251,7 @@ namespace
 			|| MatchesPropertyName(PropertyName, "BoxExtentActorLocal", "Box Extent Actor Local")
 			|| MatchesPropertyName(PropertyName, "BoxRotationActorLocal", "Box Rotation Actor Local")
 			|| MatchesPropertyName(PropertyName, "bEnableBodyCollision", "Enable Body Collision")
+			|| MatchesPropertyName(PropertyName, "bAutoFindOwnerBodyCollision", "Auto Find Owner Body Collision")
 			|| MatchesPropertyName(PropertyName, "bAutoFindOwnerSkeletalMeshCollision", "Auto Find Owner Skeletal Mesh")
 			|| MatchesPropertyName(PropertyName, "CollisionSourceComponentName", "Collision Source Component Name")
 			|| MatchesPropertyName(PropertyName, "MaxBodyCollisionPrimitives", "Max Body Collision Primitives");
@@ -682,9 +684,11 @@ FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const
 	RuntimeConfig.LocalSpaceMotion.bHasPreviousTransform = bHasPreviousClothWorldTransform;
 	RuntimeConfig.LocalSpaceMotion.PreviousWorldTransform = PreviousClothWorldTransform;
 	RuntimeConfig.LocalSpaceMotion.CurrentWorldTransform = CurrentClothWorldTransform;
-	RuntimeConfig.LocalSpaceMotion.LinearInertia = ClampFloat(OwnerLinearInertiaResponse, 0.0f, 1.0f);
-	RuntimeConfig.LocalSpaceMotion.AngularInertia = ClampFloat(OwnerAngularInertiaResponse, 0.0f, 1.0f);
-	RuntimeConfig.LocalSpaceMotion.CentrifugalInertia = ClampFloat(OwnerCentrifugalInertiaResponse, 0.0f, 1.0f);
+	// 1.0 초과 값은 실제 물리보다 강한 게임용 owner motion 반응
+	constexpr float MaxOwnerMotionInertiaResponse = 3.0f;
+	RuntimeConfig.LocalSpaceMotion.LinearInertia = ClampFloat(OwnerLinearInertiaResponse, 0.0f, MaxOwnerMotionInertiaResponse);
+	RuntimeConfig.LocalSpaceMotion.AngularInertia = ClampFloat(OwnerAngularInertiaResponse, 0.0f, MaxOwnerMotionInertiaResponse);
+	RuntimeConfig.LocalSpaceMotion.CentrifugalInertia = ClampFloat(OwnerCentrifugalInertiaResponse, 0.0f, MaxOwnerMotionInertiaResponse);
 	RuntimeConfig.LocalSpaceMotion.TeleportDistance = SafeTeleportDistance;
 	RuntimeConfig.LocalSpaceMotion.TeleportAngleDegrees = SafeTeleportAngleDegrees;
 
@@ -1294,7 +1298,7 @@ void UClothComponent::BuildCollisionPrimitivesComponentLocal(TArray<FClothCollis
 	}
 }
 
-USkeletalMeshComponent* UClothComponent::ResolveBodyCollisionSource() const
+UPrimitiveComponent* UClothComponent::ResolveBodyCollisionSource() const
 {
 	AActor* OwnerActor = GetOwner();
 	if (!IsValid(OwnerActor))
@@ -1306,33 +1310,66 @@ USkeletalMeshComponent* UClothComponent::ResolveBodyCollisionSource() const
 		CollisionSourceComponentName.IsValid()
 		&& CollisionSourceComponentName != FName::None;
 	const TArray<UActorComponent*> OwnerComponents = OwnerActor->GetComponents();
+	UPrimitiveComponent* FirstPrimitiveBodySource = nullptr;
 	for (UActorComponent* Component : OwnerComponents)
 	{
-		USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(Component);
-		if (!IsValid(SkeletalMeshComponent))
+		UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Component);
+		if (!IsValid(PrimitiveComponent) || PrimitiveComponent == this)
 		{
 			continue;
 		}
 
 		if (bHasRequestedSourceName)
 		{
-			// 이름이 지정된 경우에는 명시 선택된 skeletal mesh만 body collision source로 사용
-			if (SkeletalMeshComponent->GetFName() == CollisionSourceComponentName)
+			// 이름이 지정된 경우에는 component 종류와 무관하게 명시 선택된 primitive를 source로 사용
+			if (PrimitiveComponent->GetFName() == CollisionSourceComponentName)
 			{
-				return SkeletalMeshComponent;
+				return PrimitiveComponent;
 			}
 
 			continue;
 		}
 
-		if (bAutoFindOwnerSkeletalMeshCollision)
+		if (!bAutoFindOwnerBodyCollision)
 		{
-			// 명시 이름이 없으면 owner component 순서상 첫 번째 skeletal mesh를 기본값으로 사용
+			continue;
+		}
+
+		if (USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(PrimitiveComponent))
+		{
+			// 기존 계획과 호환되도록 skeletal mesh가 있으면 첫 번째 skeletal mesh를 우선 source로 사용
 			return SkeletalMeshComponent;
+		}
+
+		if (!FirstPrimitiveBodySource && PrimitiveComponent->GetBodyInstance().IsValidBodyInstance())
+		{
+			// skeletal mesh가 없을 때 차량 chassis 같은 일반 primitive body를 fallback source로 사용
+			FirstPrimitiveBodySource = PrimitiveComponent;
 		}
 	}
 
-	return nullptr;
+	return FirstPrimitiveBodySource;
+}
+
+void UClothComponent::BuildBodyCollisionPrimitivesWorld(
+	const UPrimitiveComponent* SourceComponent,
+	TArray<FClothCollisionPrimitive>& OutPrimitives) const
+{
+	OutPrimitives.clear();
+	if (!IsValid(SourceComponent))
+	{
+		return;
+	}
+
+	if (const USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(SourceComponent))
+	{
+		// skeletal mesh는 ragdoll body 배열 전체를 cloth collision snapshot으로 변환
+		SkeletalMeshComponent->GetClothCollisionPrimitives(OutPrimitives);
+		return;
+	}
+
+	// 일반 primitive component는 자기 BodyInstance 하나를 cloth collision snapshot으로 변환
+	SourceComponent->GetBodyInstance().AppendClothCollisionPrimitives(OutPrimitives);
 }
 
 uint32 UClothComponent::AppendBodyCollisionPrimitivesComponentLocal(
@@ -1433,11 +1470,11 @@ void UClothComponent::UpdateSimulationCollisionPrimitives()
 
 	if (bEnableBodyCollision)
 	{
-		// body collision은 매 update마다 현재 skeletal mesh ragdoll body snapshot을 가져와 병합
-		if (USkeletalMeshComponent* CollisionSourceComponent = ResolveBodyCollisionSource())
+		// body collision은 매 update마다 현재 source body snapshot을 가져와 병합
+		if (UPrimitiveComponent* CollisionSourceComponent = ResolveBodyCollisionSource())
 		{
 			TArray<FClothCollisionPrimitive> BodyWorldPrimitives;
-			CollisionSourceComponent->GetClothCollisionPrimitives(BodyWorldPrimitives);
+			BuildBodyCollisionPrimitivesWorld(CollisionSourceComponent, BodyWorldPrimitives);
 			CachedBodyCollisionPrimitiveCount =
 				AppendBodyCollisionPrimitivesComponentLocal(BodyWorldPrimitives, CachedCollisionPrimitives);
 		}

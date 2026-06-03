@@ -12,6 +12,7 @@
 
 class FPrimitiveSceneProxy;
 class UMaterial;
+class UPrimitiveComponent;
 class USkeletalMeshComponent;
 
 /**
@@ -277,11 +278,22 @@ private:
 	void BuildCollisionPrimitivesComponentLocal(TArray<FClothCollisionPrimitive>& OutPrimitives) const;
 
 	/**
-	 * @brief body collision source로 사용할 skeletal mesh component를 반환합니다
+	 * @brief body collision source로 사용할 primitive component를 반환합니다
 	 *
-	 * @return 선택된 skeletal mesh component 또는 nullptr
+	 * @return 선택된 primitive component 또는 nullptr
 	 */
-	USkeletalMeshComponent* ResolveBodyCollisionSource() const;
+	UPrimitiveComponent* ResolveBodyCollisionSource() const;
+
+	/**
+	 * @brief body collision source component의 world 기준 primitive snapshot을 생성합니다
+	 *
+	 * @param SourceComponent body collision source primitive component
+	 *
+	 * @param OutPrimitives world 기준 body collision primitive 배열
+	 */
+	void BuildBodyCollisionPrimitivesWorld(
+		const UPrimitiveComponent* SourceComponent,
+		TArray<FClothCollisionPrimitive>& OutPrimitives) const;
 
 	/**
 	 * @brief world 기준 body collision primitive 배열을 component local 배열에 추가합니다
@@ -563,13 +575,28 @@ private:
 	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Enable Owner Motion Inertia")
 	bool bEnableOwnerMotionInertia = true;
 
-	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Linear Inertia Response", Min=0.0f, Max=1.0f, Speed=0.01f)
+	/**
+	 * @brief owner 이동에 대한 선형 관성 반응 계수
+	 *
+	 * @details 1.0은 NvCloth 기준 물리값이며, 1.0 초과 값은 게임용 과장 반응입니다
+	 */
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Linear Inertia Response", Min=0.0f, Max=3.0f, Speed=0.01f)
 	float OwnerLinearInertiaResponse = 0.35f;
 
-	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Angular Inertia Response", Min=0.0f, Max=1.0f, Speed=0.01f)
+	/**
+	 * @brief owner 이동에 대한 각 관성 반응 계수
+	 *
+	 * @details 1.0은 NvCloth 기준 물리값이며, 1.0 초과 값은 게임용 과장 반응입니다
+	 */
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Angular Inertia Response", Min=0.0f, Max=3.0f, Speed=0.01f)
 	float OwnerAngularInertiaResponse = 0.15f;
 
-	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Centrifugal Inertia Response", Min=0.0f, Max=1.0f, Speed=0.01f)
+	/**
+	 * @brief owner 이동에 대한 원심 관성 반응 계수
+	 *
+	 * @details 1.0은 NvCloth 기준 물리값이며, 1.0 초과 값은 게임용 과장 반응입니다
+	 */
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Centrifugal Inertia Response", Min=0.0f, Max=3.0f, Speed=0.01f)
 	float OwnerCentrifugalInertiaResponse = 0.15f;
 
 	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Owner Motion Teleport Distance", Min=0.0f, Max=100000.0f, Speed=1.0f)
@@ -638,8 +665,8 @@ private:
 	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Enable Body Collision")
 	bool bEnableBodyCollision = false;
 
-	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Auto Find Owner Skeletal Mesh")
-	bool bAutoFindOwnerSkeletalMeshCollision = true;
+	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Auto Find Owner Body Collision")
+	bool bAutoFindOwnerBodyCollision = true;
 
 	UPROPERTY(Edit, Save, Category="Cloth|Body Collision", DisplayName="Collision Source Component Name")
 	FName CollisionSourceComponentName = FName::None;
