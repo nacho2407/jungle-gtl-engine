@@ -584,7 +584,7 @@ private:
 	float TransformActorLocalLengthToComponentLocal(float ActorLocalLength) const;
 
 private:
-	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles X", Min=2.0f, Max=2556.0f, Speed=1.0f)
+	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles X", Min=2.0f, Max=256.0f, Speed=1.0f)
 	int32 NumParticlesX = 20;
 
 	UPROPERTY(Edit, Save, Category="Cloth", DisplayName="Num Particles Y", Min=2.0f, Max=256.0f, Speed=1.0f)
