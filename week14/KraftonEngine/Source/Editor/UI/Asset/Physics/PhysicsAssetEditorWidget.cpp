@@ -1992,6 +1992,7 @@ void FPhysicsAssetEditorWidget::RenderViewportPanel(UPhysicsAsset* Asset, ImVec2
 		}
 	};
 	FViewportToolbar::Render(Context);
+	RenderGizmoForegroundOverlay(DrawList, ViewportPos, Size, ToolbarHeight);
 
 	if (bViewportImageClicked)
 	{
@@ -2108,12 +2109,12 @@ void FPhysicsAssetEditorWidget::RenderSolidBodiesOverlay(ImDrawList* DrawList, c
 			&& !Asset->IsBodyCollisionEnabled(ShapeBodies[BodyIndex]->GetBoneName()))
 		{
 			return IsSelectedShape(BodyIndex, ShapeType, ShapeIndex)
-				? IM_COL32(255, 92, 32, 132)
-				: IM_COL32(130, 130, 130, 46);
+				? IM_COL32(255, 92, 32, 96)
+				: IM_COL32(130, 130, 130, 30);
 		}
 		return IsSelectedShape(BodyIndex, ShapeType, ShapeIndex)
-			? IM_COL32(255, 118, 0, 168)
-			: IM_COL32(0, 162, 255, 76);
+			? IM_COL32(255, 118, 0, 122)
+			: IM_COL32(0, 162, 255, 48);
 	};
 
 	const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();

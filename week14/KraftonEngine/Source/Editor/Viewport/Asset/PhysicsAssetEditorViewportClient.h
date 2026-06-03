@@ -139,6 +139,7 @@ private:
 	void TickInteraction(float DeltaTime);
 	void SyncCameraSmoothingTarget();
 	void ApplySmoothedCameraLocation(float DeltaTime);
+	uint32 ComputeGizmoAxisMask() const;
 	void DrawPreviewSkeleton();
 	void DrawPreviewPhysicsAsset();
 	void HandleDragStart(const FRay& Ray);
@@ -154,6 +155,8 @@ private:
 	USkeletalMeshComponent* PreviewMeshComponent = nullptr;
 	UGizmoComponent* Gizmo = nullptr;
 	FPhysicsAssetEditorGizmoTarget GizmoTarget;
+	bool bGizmoTargetsShape = false;
+	EPhysicsAssetShapeType GizmoTargetShapeType = EPhysicsAssetShapeType::Sphere;
 
 	bool bIsRenderable = false;
 	bool bShowPreviewMesh = true;

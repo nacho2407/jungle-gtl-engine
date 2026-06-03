@@ -1200,7 +1200,7 @@ void FPhysicsAssetEditorViewportClient::TickInteraction(float DeltaTime)
 
 	Gizmo->UpdateGizmoTransform();
 	Gizmo->ApplyScreenSpaceScaling(ViewTransform.ViewLocation, ViewTransform.bIsOrtho, ViewTransform.OrthoZoom);
-	Gizmo->SetAxisMask(UGizmoComponent::ComputeAxisMask(RenderOptions.ViewportType, Gizmo->GetMode()));
+	Gizmo->SetAxisMask(ComputeGizmoAxisMask());
 
 	FRay Ray;
 	if (!GetMouseRay(Ray))
@@ -1266,6 +1266,45 @@ void FPhysicsAssetEditorViewportClient::ApplySmoothedCameraLocation(float DeltaT
 
 	LastAppliedCameraLocation = NewLocation;
 	bLastAppliedCameraLocationInitialized = true;
+}
+
+uint32 FPhysicsAssetEditorViewportClient::ComputeGizmoAxisMask() const
+{
+	if (!Gizmo)
+	{
+		return 0x7;
+	}
+
+	const uint32 BaseAxisMask = UGizmoComponent::ComputeAxisMask(RenderOptions.ViewportType, Gizmo->GetMode());
+	uint32 AxisMask = BaseAxisMask;
+	auto FirstAvailableAxisMask = [](uint32 Mask) -> uint32
+	{
+		if (Mask & 0x1) return 0x1;
+		if (Mask & 0x2) return 0x2;
+		if (Mask & 0x4) return 0x4;
+		return 0x1;
+	};
+
+	if (Gizmo->GetMode() == EGizmoMode::Scale && bGizmoTargetsShape)
+	{
+		switch (GizmoTargetShapeType)
+		{
+		case EPhysicsAssetShapeType::Sphere:
+			AxisMask = FirstAvailableAxisMask(BaseAxisMask); // Radius is a single scalar.
+			break;
+		case EPhysicsAssetShapeType::Sphyl:
+			AxisMask = BaseAxisMask & 0x5; // X edits radius, Z edits length. Y would duplicate radius.
+			if (AxisMask == 0)
+			{
+				AxisMask = FirstAvailableAxisMask(BaseAxisMask);
+			}
+			break;
+		default:
+			break;
+		}
+	}
+
+	return AxisMask != 0 ? AxisMask : 0x1;
 }
 
 void FPhysicsAssetEditorViewportClient::DrawPreviewSkeleton()
@@ -1342,6 +1381,7 @@ void FPhysicsAssetEditorViewportClient::ApplyTransformSettingsToGizmo()
 	const FGizmoToolSettings& Settings = FEditorSettings::Get().MeshEditorViewportSettings.Gizmo;
 	const bool bForceLocalForScale = Gizmo->GetMode() == EGizmoMode::Scale;
 	Gizmo->SetWorldSpace(bForceLocalForScale ? false : Settings.CoordSystem == EEditorCoordSystem::World);
+	Gizmo->SetAxisMask(ComputeGizmoAxisMask());
 	Gizmo->SetSnapSettings(
 		Settings.bEnableTranslationSnap, Settings.TranslationSnapSize,
 		Settings.bEnableRotationSnap, Settings.RotationSnapSize,
@@ -1404,6 +1444,8 @@ void FPhysicsAssetEditorViewportClient::SetGizmoShapeSelection(int32 BodyIndex, 
 	}
 
 	GizmoTarget.SetShape(PreviewMeshComponent, Bodies[BodyIndex], InShapeType, InShapeIndex);
+	bGizmoTargetsShape = true;
+	GizmoTargetShapeType = InShapeType;
 	Gizmo->SetTarget(&GizmoTarget);
 	ApplyTransformSettingsToGizmo();
 }
@@ -1424,6 +1466,8 @@ void FPhysicsAssetEditorViewportClient::SetGizmoConstraintSelection(int32 Constr
 	}
 
 	GizmoTarget.SetConstraint(PreviewMeshComponent, Constraints[ConstraintIndex]);
+	bGizmoTargetsShape = false;
+	GizmoTargetShapeType = EPhysicsAssetShapeType::Sphere;
 	Gizmo->SetTarget(&GizmoTarget);
 	ApplyTransformSettingsToGizmo();
 }
@@ -1431,6 +1475,8 @@ void FPhysicsAssetEditorViewportClient::SetGizmoConstraintSelection(int32 Constr
 void FPhysicsAssetEditorViewportClient::ClearGizmoSelection()
 {
 	GizmoTarget.Clear();
+	bGizmoTargetsShape = false;
+	GizmoTargetShapeType = EPhysicsAssetShapeType::Sphere;
 	if (Gizmo)
 	{
 		Gizmo->Deactivate();
