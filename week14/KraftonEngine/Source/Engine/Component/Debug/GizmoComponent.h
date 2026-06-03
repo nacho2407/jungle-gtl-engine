@@ -67,6 +67,8 @@ public:
 	void ApplyScreenSpaceScaling(const FVector& CameraLocation, bool bIsOrtho = false, float OrthoWidth = 10.0f);
 	void SetWorldSpace(bool bWorldSpace);
 	bool IsWorldSpace() const { return bIsWorldSpace; }
+	void SetSceneRenderingEnabled(bool bEnabled);
+	bool IsSceneRenderingEnabled() const { return bSceneRenderingEnabled; }
 	void SetSnapSettings(bool bTranslationEnabled, float InTranslationSnapSize,
 		bool bRotationEnabled, float InRotationSnapSizeDegrees,
 		bool bScaleEnabled, float InScaleSnapSize);
@@ -122,6 +124,7 @@ private:
 	bool bIsFirstFrameOfDrag = true;
 	bool bIsHolding = false;
 	bool bIsWorldSpace = true;
+	bool bSceneRenderingEnabled = true;
 	bool bPressedOnHandle = false;
 	bool bTranslationSnapEnabled = false;
 	bool bRotationSnapEnabled = false;

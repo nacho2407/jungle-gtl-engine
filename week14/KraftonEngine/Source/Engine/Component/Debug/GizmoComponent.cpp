@@ -21,6 +21,7 @@ FPrimitiveSceneProxy* UGizmoComponent::CreateSceneProxy()
 
 void UGizmoComponent::CreateRenderState()
 {
+	if (!bSceneRenderingEnabled) return;
 	if (SceneProxy) return;
 
 	FScene* Scene = RegisteredScene;
@@ -663,6 +664,24 @@ void UGizmoComponent::SetWorldSpace(bool bWorldSpace)
 {
 	bIsWorldSpace = bWorldSpace;
 	UpdateGizmoTransform();
+}
+
+void UGizmoComponent::SetSceneRenderingEnabled(bool bEnabled)
+{
+	if (bSceneRenderingEnabled == bEnabled)
+	{
+		return;
+	}
+
+	bSceneRenderingEnabled = bEnabled;
+	if (bSceneRenderingEnabled)
+	{
+		CreateRenderState();
+	}
+	else
+	{
+		DestroyRenderState();
+	}
 }
 
 void UGizmoComponent::SetSnapSettings(bool bTranslationEnabled, float InTranslationSnapSize,

@@ -769,7 +769,7 @@ void FPhysicsAssetEditorViewportClient::CreatePreviewGizmo()
 
 	Gizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
 	Gizmo->SetScene(&PreviewWorld->GetScene());
-	Gizmo->CreateRenderState();
+	Gizmo->SetSceneRenderingEnabled(false);
 	Gizmo->Deactivate();
 	ApplyTransformSettingsToGizmo();
 }

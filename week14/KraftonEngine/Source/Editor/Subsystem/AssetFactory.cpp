@@ -14,7 +14,6 @@
 #include "Platform/Paths.h"
 #include "Core/Logging/Log.h"
 
-#include "Mesh/MeshManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"  
 #include "Animation/Skeleton/Skeleton.h"
 #include "Physics/PhysicsAsset.h"  
@@ -264,27 +263,10 @@ bool FAssetFactory::CreatePhysicsAsset(const FString& DirectoryPath, const FStri
 	}
 	
 	OutCreatedPath = FPaths::ToUtf8(AssetPath.wstring());
-	SourceMesh->SetPhysicsAssetPath(OutCreatedPath);
-	if (!FMeshManager::SaveSkeletalMeshPackage(SourceMesh))
-	{
-		UE_LOG(
-			"PhysicsAsset created, but failed to save skeletal mesh link. Mesh=%s PhysicsAsset=%s",
-			SourceMesh->GetAssetPathFileName().c_str(),
-			OutCreatedPath.c_str()
-		);
-	}
-	else
-	{
-		UE_LOG(
-			"PhysicsAsset linked to skeletal mesh. Mesh=%s PhysicsAsset=%s",
-			SourceMesh->GetAssetPathFileName().c_str(),
-			OutCreatedPath.c_str()
-		);
-	}
-
 	UE_LOG(
-		"PhysicsAsset created. Path=%s Bodies=%llu",
+		"PhysicsAsset created. Path=%s PreviewMesh=%s Bodies=%llu",
 		OutCreatedPath.c_str(),
+		SourceMesh->GetAssetPathFileName().c_str(),
 		static_cast<unsigned long long>(NewAsset->GetBodySetups().size())
 	);
 

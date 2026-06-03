@@ -194,11 +194,10 @@ UPhysicsAsset* USkeletalMesh::GetPhysicsAsset()
 	CachedPhysicsAsset = FPhysicsAssetManager::Get().Load(DefaultPhysicsAssetPath);
 	if (CachedPhysicsAsset)
 	{
-		PhysicsAssetPath = DefaultPhysicsAssetPath;
 		UE_LOG(
 			"SkeletalMesh resolved default PhysicsAsset. Mesh=%s PhysicsAsset=%s",
 			AssetPathFileName.c_str(),
-			PhysicsAssetPath.c_str()
+			DefaultPhysicsAssetPath.c_str()
 		);
 	}
 

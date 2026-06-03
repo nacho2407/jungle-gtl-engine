@@ -169,6 +169,87 @@ namespace
 		}
 	}
 
+	struct FPhysicsAssetPrimitiveSnapshot
+	{
+		FVector Center = FVector::ZeroVector;
+		FQuat Rotation = FQuat::Identity;
+		FVector BoxExtents = FVector(0.25f, 0.25f, 0.25f);
+		float SphereRadius = 0.25f;
+		float CapsuleRadius = 0.1f;
+		float CapsuleLength = 0.3f;
+	};
+
+	float Max3(float A, float B, float C)
+	{
+		return (std::max)(A, (std::max)(B, C));
+	}
+
+	bool CapturePrimitiveSnapshot(
+		const UBodySetup* Body,
+		EPhysicsAssetShapeType ShapeType,
+		int32 ShapeIndex,
+		FPhysicsAssetPrimitiveSnapshot& OutSnapshot)
+	{
+		if (!Body || ShapeIndex < 0)
+		{
+			return false;
+		}
+
+		constexpr float MinShapeSize = 0.001f;
+		const FKAggregateGeom& Geom = Body->GetAggGeom();
+		switch (ShapeType)
+		{
+		case EPhysicsAssetShapeType::Sphere:
+		{
+			if (ShapeIndex >= static_cast<int32>(Geom.SphereElems.size())) return false;
+			const FKSphereElem& Sphere = Geom.SphereElems[ShapeIndex];
+			const float Radius = Clamp(Sphere.Radius, MinShapeSize, 1000.0f);
+			OutSnapshot.Center = Sphere.Center;
+			OutSnapshot.Rotation = FQuat::Identity;
+			OutSnapshot.SphereRadius = Radius;
+			OutSnapshot.BoxExtents = FVector(Radius, Radius, Radius);
+			OutSnapshot.CapsuleRadius = Radius;
+			OutSnapshot.CapsuleLength = (std::max)(Radius * 2.0f, MinShapeSize);
+			return true;
+		}
+		case EPhysicsAssetShapeType::Box:
+		{
+			if (ShapeIndex >= static_cast<int32>(Geom.BoxElems.size())) return false;
+			const FKBoxElem& Box = Geom.BoxElems[ShapeIndex];
+			const FVector Extents(
+				Clamp(Box.Extents.X, MinShapeSize, 1000.0f),
+				Clamp(Box.Extents.Y, MinShapeSize, 1000.0f),
+				Clamp(Box.Extents.Z, MinShapeSize, 1000.0f));
+			const float Radius = Clamp((std::max)(Extents.X, Extents.Y), MinShapeSize, 1000.0f);
+			const float TotalLength = Extents.Z * 2.0f;
+			OutSnapshot.Center = Box.Center;
+			OutSnapshot.Rotation = Box.Rotation.GetNormalized();
+			OutSnapshot.SphereRadius = Clamp(Max3(Extents.X, Extents.Y, Extents.Z), MinShapeSize, 1000.0f);
+			OutSnapshot.BoxExtents = Extents;
+			OutSnapshot.CapsuleRadius = Radius;
+			OutSnapshot.CapsuleLength = Clamp(TotalLength - Radius * 2.0f, MinShapeSize, 1000.0f);
+			return true;
+		}
+		case EPhysicsAssetShapeType::Sphyl:
+		{
+			if (ShapeIndex >= static_cast<int32>(Geom.SphylElems.size())) return false;
+			const FKSphylElem& Capsule = Geom.SphylElems[ShapeIndex];
+			const float Radius = Clamp(Capsule.Radius, MinShapeSize, 1000.0f);
+			const float Length = Clamp(Capsule.Length, MinShapeSize, 1000.0f);
+			const float HalfTotalLength = Length * 0.5f + Radius;
+			OutSnapshot.Center = Capsule.Center;
+			OutSnapshot.Rotation = Capsule.Rotation.GetNormalized();
+			OutSnapshot.SphereRadius = Clamp((std::max)(Radius, HalfTotalLength), MinShapeSize, 1000.0f);
+			OutSnapshot.BoxExtents = FVector(Radius, Radius, HalfTotalLength);
+			OutSnapshot.CapsuleRadius = Radius;
+			OutSnapshot.CapsuleLength = Length;
+			return true;
+		}
+		default:
+			return false;
+		}
+	}
+
 	template<typename TEnum>
 	bool EnumCombo(const char* Label, TEnum& Value, const char* const* Items, int32 Count)
 	{
@@ -816,7 +897,6 @@ void FPhysicsAssetEditorWidget::TickPreviewSimulation(float DeltaTime)
 
 	if (!bPreviewSimulationActive)
 	{
-		ViewportClient.SetShowBodies(true);
 		CapturePreviewSimulationStartPose();
 		PreviewMeshComponent->SetVisibility(ViewportClient.IsShowPreviewMesh());
 		PreviewMeshComponent->SetSimulatePhysics(true);
@@ -2691,7 +2771,6 @@ void FPhysicsAssetEditorWidget::RenderGizmoForegroundOverlay(ImDrawList* DrawLis
 
 	auto DrawScreenLine = [&](const ImVec2& A, const ImVec2& B, ImU32 Color, float Thickness)
 	{
-		DrawList->AddLine(A, B, IM_COL32(0, 0, 0, 230), Thickness + 2.5f);
 		DrawList->AddLine(A, B, Color, Thickness);
 	};
 
@@ -2742,8 +2821,7 @@ void FPhysicsAssetEditorWidget::RenderGizmoForegroundOverlay(ImDrawList* DrawLis
 	auto DrawScaleBox = [&](const ImVec2& End, ImU32 Color)
 	{
 		const float Half = 5.5f;
-		DrawList->AddRectFilled(ImVec2(End.x - Half - 1.5f, End.y - Half - 1.5f), ImVec2(End.x + Half + 1.5f, End.y + Half + 1.5f), IM_COL32(0, 0, 0, 230));
-		DrawList->AddRectFilled(ImVec2(End.x - Half, End.y - Half), ImVec2(End.x + Half, End.y + Half), Color);
+		DrawList->AddRectFilled(ImVec2(End.x - Half, End.y - Half), ImVec2(End.x + Half, End.y + Half), Color, 1.5f);
 	};
 
 	auto DrawTranslateCone = [&](const FVector& Tip, const FVector& AxisDir, float AxisScale, ImU32 Color, float Thickness)
@@ -2773,11 +2851,8 @@ void FPhysicsAssetEditorWidget::RenderGizmoForegroundOverlay(ImDrawList* DrawLis
 				+ BasisB * (std::sin(Angle) * ConeRadius);
 			DrawWorldTriangle(Tip, PrevEdge, Edge, Color);
 			DrawWorldTriangle(BaseCenter, Edge, PrevEdge, Color);
-			DrawWorldLine(PrevEdge, Edge, Color, Thickness * 0.55f);
 			PrevEdge = Edge;
 		}
-		DrawWorldLine(Tip, BaseCenter + BasisA * ConeRadius, Color, Thickness * 0.65f);
-		DrawWorldLine(Tip, BaseCenter - BasisA * ConeRadius, Color, Thickness * 0.65f);
 	};
 
 	const FVector Center = Gizmo->GetWorldLocation();
@@ -4045,13 +4120,65 @@ void FPhysicsAssetEditorWidget::RenderDetailsPanel(UPhysicsAsset* Asset)
 
 			if (ImGui::CollapsingHeader("Body Setup", ImGuiTreeNodeFlags_DefaultOpen))
 			{
+				const int32 NumSpheres = Body->GetShapeCount(EPhysicsAssetShapeType::Sphere);
+				const int32 NumBoxes = Body->GetShapeCount(EPhysicsAssetShapeType::Box);
+				const int32 NumCapsules = Body->GetShapeCount(EPhysicsAssetShapeType::Sphyl);
+				const int32 NumConvex = Body->GetShapeCount(EPhysicsAssetShapeType::Convex);
+				const int32 NumSimpleShapes = NumSpheres + NumBoxes + NumCapsules;
+				EPhysicsAssetShapeType SingleShapeType = EPhysicsAssetShapeType::Sphere;
+				int32 SingleShapeIndex = -1;
+				if (NumSimpleShapes == 1 && NumConvex == 0)
+				{
+					if (NumSpheres == 1)
+					{
+						SingleShapeType = EPhysicsAssetShapeType::Sphere;
+						SingleShapeIndex = 0;
+					}
+					else if (NumBoxes == 1)
+					{
+						SingleShapeType = EPhysicsAssetShapeType::Box;
+						SingleShapeIndex = 0;
+					}
+					else
+					{
+						SingleShapeType = EPhysicsAssetShapeType::Sphyl;
+						SingleShapeIndex = 0;
+					}
+				}
+
 				if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsBodySetupTable"))
 				{
 					DrawDetailsTextRow("Bone Name", BoneName.ToString(), Filter);
-					DrawDetailsTextRow("Spheres", std::to_string(Body->GetShapeCount(EPhysicsAssetShapeType::Sphere)), Filter);
-					DrawDetailsTextRow("Boxes", std::to_string(Body->GetShapeCount(EPhysicsAssetShapeType::Box)), Filter);
-					DrawDetailsTextRow("Capsules", std::to_string(Body->GetShapeCount(EPhysicsAssetShapeType::Sphyl)), Filter);
-					DrawDetailsTextRow("Convex", std::to_string(Body->GetShapeCount(EPhysicsAssetShapeType::Convex)), Filter);
+					if (SingleShapeIndex >= 0)
+					{
+						int32 ShapeTypeValue = SingleShapeType == EPhysicsAssetShapeType::Sphere ? 0
+							: SingleShapeType == EPhysicsAssetShapeType::Box ? 1
+							: 2;
+						const char* ShapeTypeItems[] = { "Sphere", "Box", "Capsule" };
+						if (DrawDetailsEnumRow("Type", ShapeTypeValue, ShapeTypeItems, 3, Filter))
+						{
+							const EPhysicsAssetShapeType NewShapeType = ShapeTypeValue == 0
+								? EPhysicsAssetShapeType::Sphere
+								: ShapeTypeValue == 1
+									? EPhysicsAssetShapeType::Box
+									: EPhysicsAssetShapeType::Sphyl;
+							SelectShape(Selection.BodyIndex, SingleShapeType, SingleShapeIndex);
+							if (ConvertSelectedShape(Body, NewShapeType))
+							{
+								MarkDirty();
+								EndPhysicsDetailsTable();
+								return;
+							}
+						}
+					}
+					else
+					{
+						DrawDetailsTextRow("Type", NumSimpleShapes > 1 || NumConvex > 0 ? "Multiple" : "None", Filter);
+					}
+					DrawDetailsTextRow("Spheres", std::to_string(NumSpheres), Filter);
+					DrawDetailsTextRow("Boxes", std::to_string(NumBoxes), Filter);
+					DrawDetailsTextRow("Capsules", std::to_string(NumCapsules), Filter);
+					DrawDetailsTextRow("Convex", std::to_string(NumConvex), Filter);
 					EndPhysicsDetailsTable();
 				}
 
@@ -4120,6 +4247,25 @@ void FPhysicsAssetEditorWidget::RenderShapeDetails(UPhysicsAsset* Asset, UBodySe
 		{
 			DrawDetailsTextRow("Body", Body->GetBoneName().ToString(), Filter);
 			DrawDetailsTextRow("Shape", FString(ShapeTypeLabel(Selection.ShapeType)) + " " + std::to_string(Selection.ShapeIndex), Filter);
+			int32 ShapeTypeValue = Selection.ShapeType == EPhysicsAssetShapeType::Sphere ? 0
+				: Selection.ShapeType == EPhysicsAssetShapeType::Box ? 1
+				: Selection.ShapeType == EPhysicsAssetShapeType::Sphyl ? 2
+				: -1;
+			const char* ShapeTypeItems[] = { "Sphere", "Box", "Capsule" };
+			if (ShapeTypeValue >= 0 && DrawDetailsEnumRow("Type", ShapeTypeValue, ShapeTypeItems, 3, Filter))
+			{
+				const EPhysicsAssetShapeType NewShapeType = ShapeTypeValue == 0
+					? EPhysicsAssetShapeType::Sphere
+					: ShapeTypeValue == 1
+						? EPhysicsAssetShapeType::Box
+						: EPhysicsAssetShapeType::Sphyl;
+				if (ConvertSelectedShape(Body, NewShapeType))
+				{
+					MarkDirty();
+					EndPhysicsDetailsTable();
+					return;
+				}
+			}
 
 			bool bCollisionEnabled = Asset->IsBodyCollisionEnabled(Body->GetBoneName());
 			if (DrawDetailsBoolRow("Body Collision Enabled", bCollisionEnabled, Filter))
@@ -4259,6 +4405,53 @@ void FPhysicsAssetEditorWidget::RenderShapeDetails(UPhysicsAsset* Asset, UBodySe
 	{
 		MarkDirty();
 	}
+}
+
+bool FPhysicsAssetEditorWidget::ConvertSelectedShape(UBodySetup* Body, EPhysicsAssetShapeType NewShapeType)
+{
+	if (!Body || Selection.Type != EPhysicsAssetEditorSelectionType::Shape)
+	{
+		return false;
+	}
+	if (Selection.ShapeType == NewShapeType)
+	{
+		return false;
+	}
+	if (NewShapeType != EPhysicsAssetShapeType::Sphere
+		&& NewShapeType != EPhysicsAssetShapeType::Box
+		&& NewShapeType != EPhysicsAssetShapeType::Sphyl)
+	{
+		return false;
+	}
+
+	FPhysicsAssetPrimitiveSnapshot Snapshot;
+	if (!CapturePrimitiveSnapshot(Body, Selection.ShapeType, Selection.ShapeIndex, Snapshot))
+	{
+		return false;
+	}
+
+	if (!Body->RemoveShape(Selection.ShapeType, Selection.ShapeIndex))
+	{
+		return false;
+	}
+
+	switch (NewShapeType)
+	{
+	case EPhysicsAssetShapeType::Sphere:
+		Body->AddSphere(Snapshot.Center, Snapshot.SphereRadius);
+		break;
+	case EPhysicsAssetShapeType::Box:
+		Body->AddBox(Snapshot.Center, Snapshot.Rotation, Snapshot.BoxExtents);
+		break;
+	case EPhysicsAssetShapeType::Sphyl:
+		Body->AddSphyl(Snapshot.Center, Snapshot.Rotation, Snapshot.CapsuleRadius, Snapshot.CapsuleLength);
+		break;
+	default:
+		return false;
+	}
+
+	SelectShape(Selection.BodyIndex, NewShapeType, Body->GetShapeCount(NewShapeType) - 1);
+	return true;
 }
 
 void FPhysicsAssetEditorWidget::RenderConstraintDetails(UPhysicsAsset* Asset)
