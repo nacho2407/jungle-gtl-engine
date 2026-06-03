@@ -49,6 +49,7 @@ public:
 	void DestroyConstraintInstance(FConstraintInstance& Constraint) override;
 
 	void Tick(float DeltaTime) override;
+	void Tick(float DeltaTime, const FPrePhysicsSubstepCallback& PrePhysicsSubstep) override;
 
 	void AddForce(UPrimitiveComponent* Comp, const FVector& Force) override;
 	void AddImpulse(UPrimitiveComponent* Comp, const FVector& Impulse) override;
@@ -91,6 +92,11 @@ private:
 
 	bool bSharedPhysXAcquired = false;
 	bool bShutdownComplete = true;
+
+	float FixedPhysicsDeltaTime = 1.0f / 60.0f;
+	float AccumulatedPhysicsTime = 0.0f;
+	float MaxPhysicsFrameDeltaTime = 0.25f;
+	int32 MaxPhysicsSubSteps = 4;
 
 	void AddRegisteredBody(FBodyInstance* Body);
 	void RemoveRegisteredBody(FBodyInstance* Body);

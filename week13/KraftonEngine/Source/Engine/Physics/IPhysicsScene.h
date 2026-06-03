@@ -6,6 +6,8 @@
 #include "Core/Types/RayTypes.h"
 #include "Core/Types/CollisionTypes.h"
 
+#include <functional>
+
 class UWorld;
 class AActor;
 class UPrimitiveComponent;
@@ -14,6 +16,8 @@ struct FCollisionShape;
 struct FBodyInstance;
 struct FBodyInstanceInitDesc;
 struct FConstraintInstance;
+
+using FPrePhysicsSubstepCallback = std::function<void(float)>;
 
 // ============================================================
 // IPhysicsScene — 물리 시스템 어댑터 인터페이스
@@ -48,6 +52,11 @@ public:
 
 	// --- 시뮬레이션 ---
 	virtual void Tick(float DeltaTime) = 0;
+	virtual void Tick(float DeltaTime, const FPrePhysicsSubstepCallback& PrePhysicsSubstep)
+	{
+		(void)PrePhysicsSubstep;
+		Tick(DeltaTime);
+	}
 
 	// --- 힘/토크 ---
 	virtual void AddForce(UPrimitiveComponent* Comp, const FVector& Force) = 0;

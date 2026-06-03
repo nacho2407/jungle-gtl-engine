@@ -1220,16 +1220,50 @@ void FPhysXPhysicsScene::DestroyConstraintInstance(FConstraintInstance& Constrai
 
 void FPhysXPhysicsScene::Tick(float DeltaTime)
 {
+	Tick(DeltaTime, FPrePhysicsSubstepCallback());
+}
+
+void FPhysXPhysicsScene::Tick(float DeltaTime, const FPrePhysicsSubstepCallback& PrePhysicsSubstep)
+{
 	if (bShutdownComplete || !Scene || DeltaTime <= 0.0f)
 	{
 		return;
 	}
 
-	constexpr float MaxPhysicsDeltaTime = 0.1f;
-	DeltaTime = std::min(DeltaTime, MaxPhysicsDeltaTime);
+	DeltaTime = std::min(DeltaTime, MaxPhysicsFrameDeltaTime);
+	AccumulatedPhysicsTime += DeltaTime;
+
+	const float MaxAccumulatedTime = FixedPhysicsDeltaTime * static_cast<float>(MaxPhysicsSubSteps);
+	if (AccumulatedPhysicsTime > MaxAccumulatedTime)
+	{
+		AccumulatedPhysicsTime = MaxAccumulatedTime;
+	}
+
+	if (AccumulatedPhysicsTime < FixedPhysicsDeltaTime)
+	{
+		return;
+	}
 
 	SyncEngineToPhysicsBeforeSim();
-	SimulatePhysics(DeltaTime);
+
+	int32 StepCount = 0;
+	while (AccumulatedPhysicsTime >= FixedPhysicsDeltaTime && StepCount < MaxPhysicsSubSteps)
+	{
+		if (PrePhysicsSubstep)
+		{
+			PrePhysicsSubstep(FixedPhysicsDeltaTime);
+		}
+
+		SimulatePhysics(FixedPhysicsDeltaTime);
+		AccumulatedPhysicsTime -= FixedPhysicsDeltaTime;
+		++StepCount;
+	}
+
+	if (AccumulatedPhysicsTime < 0.0f)
+	{
+		AccumulatedPhysicsTime = 0.0f;
+	}
+
 	SyncPhysicsToEngineAfterSim();
 	DispatchPhysicsEvents();
 }
