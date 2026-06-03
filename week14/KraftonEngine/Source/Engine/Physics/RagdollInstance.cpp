@@ -10,6 +10,7 @@
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Math/Matrix.h"
+#include "Profiling/Stats/Stats.h"
 
 #include <string>
 
@@ -80,6 +81,8 @@ namespace
 
 void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* MeshComp, FPhysicsScene* Scene, const FVector& InitialLinearVelocity)
 {
+	SCOPE_STAT_CAT("Ragdoll_Initialize", "Ragdoll");
+
 	if (bInitialized || !Asset || !MeshComp || !Scene)
 	{
 		return;
@@ -194,6 +197,8 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 
 void FRagdollInstance::Release(FPhysicsScene* Scene)
 {
+	SCOPE_STAT_CAT("Ragdoll_Release", "Ragdoll");
+
 	if (Scene)
 	{
 		for (FConstraintInstance* Inst : Constraints)
@@ -239,6 +244,8 @@ bool FRagdollInstance::GetAnchorWorldLocation(FVector& OutWorldLocation) const
 
 bool FRagdollInstance::BuildLocalPoseFromBodies(USkeletalMeshComponent* MeshComp, TArray<FTransform>& OutLocalPose) const
 {
+	SCOPE_STAT_CAT("Ragdoll_BuildLocalPose", "Ragdoll");
+
 	OutLocalPose.clear();
 	
 	if (!bInitialized || !MeshComp)
@@ -361,6 +368,8 @@ bool FRagdollInstance::BuildLocalPoseFromBodies(USkeletalMeshComponent* MeshComp
 
 void FRagdollInstance::SyncBonesFromBodies(USkeletalMeshComponent* MeshComp)
 {
+	SCOPE_STAT_CAT("Ragdoll_SyncBones", "Ragdoll");
+
 	TArray<FTransform> LocalPose;
 	if (BuildLocalPoseFromBodies(MeshComp, LocalPose))
 	{

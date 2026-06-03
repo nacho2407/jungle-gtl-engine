@@ -24,6 +24,7 @@
 #include "Viewport/GameViewportClient.h"
 #include "Physics/PhysXSDK.h"
 #include "Physics/NvClothSDK.h"
+#include "Profiling/Stats/PhysicsStats.h"
 
 UEngine* GEngine = nullptr;
 
@@ -177,6 +178,7 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
 void UEngine::WorldTick(float DeltaTime)
 {
 	SCOPE_STAT_CAT("UEngine::WorldTick", "1_WorldTick");
+	PHYSICS_STATS_RESET();
 
 	// PIE 활성 시 Editor 월드는 sleep (UE 동작과 동일).
 	// culling/octree/visibility 갱신을 건너뛰어 50k+ 환경에서 비용 2배를 방지.

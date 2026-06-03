@@ -19,6 +19,8 @@ struct FRagdollInstance
 
 	bool bInitialized = false;
 	bool IsActive() const {return bInitialized;}
+	uint32 GetBodyCount() const { return static_cast<uint32>(Bodies.size()); }
+	uint32 GetConstraintCount() const { return static_cast<uint32>(Constraints.size()); }
 
 	void Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* MeshComp, FPhysicsScene* Scene, const FVector& InitialLinearVelocity);
 	void Release(FPhysicsScene* Scene);

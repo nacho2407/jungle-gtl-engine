@@ -119,6 +119,9 @@ public:
 	const TArray<FVertexPNCTT>& GetRenderVertices() const { return RenderVertices; }
 	const TArray<uint32>& GetRenderIndices() const { return Triangles; }
 	uint64 GetRenderRevision() const { return RenderRevision; }
+	bool IsInitialized() const { return Cloth != nullptr; }
+	uint32 GetParticleCount() const { return static_cast<uint32>(Particles.size()); }
+	uint32 GetTriangleCount() const { return static_cast<uint32>(Triangles.size() / 3); }
 
 private:
 	void UpdateRenderVerticesFromParticles(float RenderNormalOffset);

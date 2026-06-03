@@ -25,6 +25,8 @@
 #include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsScene.h"
 #include "GameFramework/World.h"
+#include "Profiling/Stats/PhysicsStats.h"
+#include "Profiling/Stats/Stats.h"
 
 #include <algorithm>
 #include <cstring>
@@ -537,6 +539,8 @@ bool USkeletalMeshComponent::ApplyRagdollRecoveryBlend(float DeltaTime, const FP
 		return false;
 	}
 
+	SCOPE_STAT_CAT("Ragdoll_RecoveryBlend", "Ragdoll");
+
 	if (RagdollRecoveryStartPose.size() != AnimPose.Pose.size())
 	{
 		ClearRagdollRecovery();
@@ -583,6 +587,8 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 
 	if (bSimulatingPhysics && Ragdoll)
 	{
+		PHYSICS_STATS_RECORD_RAGDOLL_ACTIVE(Ragdoll->GetBodyCount(), Ragdoll->GetConstraintCount());
+
 		FollowRagdollAnchor();
 		
 		TArray<FTransform> PhysicsLocalPose;
@@ -673,6 +679,10 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 	if (!Scene)
 	{
 		UE_LOG("Ragdoll toggle skipped: PhysicsScene not available.");
+		if (bEnable)
+		{
+			PHYSICS_STATS_RECORD_RAGDOLL_START(false);
+		}
 		return; // 물리 씬 없음(예: 에디터 프리뷰) → 래그돌 불가
 	}
 
@@ -686,6 +696,7 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 			USkeletalMesh* Mesh = GetSkeletalMesh();
 			UE_LOG("Ragdoll enable skipped: PhysicsAsset not found. Mesh=%s",
 				Mesh ? Mesh->GetAssetPathFileName().c_str() : "None");
+			PHYSICS_STATS_RECORD_RAGDOLL_START(false);
 			return; // PhysicsAsset 링크 없음
 		}
 
@@ -695,6 +706,7 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 		}
 		Ragdoll->Initialize(Asset, this, Scene, ComponentLinearVelocity);
 		bSimulatingPhysics = Ragdoll->IsActive();
+		PHYSICS_STATS_RECORD_RAGDOLL_START(bSimulatingPhysics);
 		if (!bSimulatingPhysics)
 		{
 			UE_LOG("Ragdoll enable failed: instance did not initialize. Mesh=%s PhysicsAsset=%s",

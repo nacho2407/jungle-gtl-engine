@@ -21,6 +21,7 @@ public:
 
 	void GatherClothCollision(const FClothCollisionGatherParams& Params, FClothCollisionData& OutCollisionData) const;
 	const physx::PxVehicleWheelQueryResult* GetWheelQueryResult(const physx::PxVehicleWheels* Vehicle) const;
+	uint32 GetVehicleCount() const { return static_cast<uint32>(Vehicles.size()); }
 
 	void CollectDebugRender(FScene& RenderScene) const;
 

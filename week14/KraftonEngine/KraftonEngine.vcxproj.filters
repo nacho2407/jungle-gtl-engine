@@ -1559,6 +1559,9 @@
     <ClCompile Include="Source\Engine\Profiling\Stats\MemoryStats.cpp">
       <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Profiling\Stats\PhysicsStats.cpp">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Profiling\Stats\ShadowStats.cpp">
       <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClCompile>
@@ -2895,6 +2898,9 @@
       <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\Stats\ParticleStats.h">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Profiling\Stats\PhysicsStats.h">
       <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\Stats\ShadowStats.h">
