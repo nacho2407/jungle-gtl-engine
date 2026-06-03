@@ -45,6 +45,8 @@ private:
 	void RenderModeToolbar(UPhysicsAsset* Asset);
 	void RenderViewportPanel(UPhysicsAsset* Asset, ImVec2 Size);
 	void RenderSolidBodiesOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos, const ImVec2& ViewportSize, UPhysicsAsset* Asset) const;
+	void RenderConstraintOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos, const ImVec2& ViewportSize, UPhysicsAsset* Asset) const;
+	void RenderGizmoForegroundOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos, const ImVec2& ViewportSize, float ToolbarHeight) const;
 	void RenderPhysicsListPanel(UPhysicsAsset* Asset, ImVec2 Size);
 	void RenderSkeletonTreePanel(UPhysicsAsset* Asset);
 	void RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Size);
@@ -61,12 +63,16 @@ private:
 	void CapturePreviewSimulationStartPose();
 	void RestorePreviewSimulationStartPose();
 	void StopPreviewSimulation();
+	bool ReloadPreviewMeshFromAsset(UPhysicsAsset* Asset);
 	void HandleViewportSelectionClick();
-	void SelectBody(int32 BodyIndex);
+	void SelectBody(int32 BodyIndex, bool bFromGraph = false);
 	void SelectShape(int32 BodyIndex, EPhysicsAssetShapeType ShapeType, int32 ShapeIndex);
-	void SelectConstraint(int32 ConstraintIndex);
+	void SelectConstraint(int32 ConstraintIndex, bool bFromGraph = false);
 	void SelectBone(int32 BoneIndex);
 	void ClearSelection();
+	void ClearGraphEditorSelection();
+	void RequestGraphEditorSelectionSync();
+	void SyncGraphEditorSelectionToSelection();
 	void ValidateSelection(UPhysicsAsset* Asset);
 	void SyncViewportHighlight();
 	bool DeleteSelection(UPhysicsAsset* Asset);
@@ -91,7 +97,7 @@ private:
 	float HierarchyWidth = 380.0f;
 	float DetailsWidth = 380.0f;
 	float ViewportListHeight = 220.0f;
-	float GraphHeight = 190.0f;
+	float GraphHeight = 260.0f;
 	float ToolsHeight = 330.0f;
 	FPhysicsAssetCreationParams BodyCreationParams;
 	char TreeFilter[128] = {};
@@ -107,4 +113,7 @@ private:
 	TArray<FTransform> PreviewSimulationStartLocalPose;
 	ax::NodeEditor::EditorContext* GraphEditorContext = nullptr;
 	bool bGraphPositionsPushed = false;
+	bool bSelectionOriginatedFromGraph = false;
+	bool bPendingGraphSelectionSync = false;
+	bool bSuppressNextGraphSelectionEvent = false;
 };

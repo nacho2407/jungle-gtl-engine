@@ -1,4 +1,4 @@
-#include "Editor/Viewport/Asset/PhysicsAssetEditorViewportClient.h"
+﻿#include "Editor/Viewport/Asset/PhysicsAssetEditorViewportClient.h"
 
 #include "Collision/Ray/RayUtils.h"
 #include "Component/Debug/GizmoComponent.h"
@@ -224,6 +224,97 @@ namespace
 		const FVector PointOnSegment = SegmentA + V * SegmentT;
 		OutRayT = RayT;
 		return FVector::DistSquared(PointOnRay, PointOnSegment);
+	}
+
+	bool IntersectRayTriangle(const FRay& Ray, const FVector& A, const FVector& B, const FVector& C, float& OutRayT)
+	{
+		constexpr float Epsilon = 1.e-6f;
+		const FVector Edge1 = B - A;
+		const FVector Edge2 = C - A;
+		const FVector P = Ray.Direction.Cross(Edge2);
+		const float Det = Edge1.Dot(P);
+		if (std::fabs(Det) <= Epsilon)
+		{
+			return false;
+		}
+
+		const float InvDet = 1.0f / Det;
+		const FVector T = Ray.Origin - A;
+		const float U = T.Dot(P) * InvDet;
+		if (U < 0.0f || U > 1.0f)
+		{
+			return false;
+		}
+
+		const FVector Q = T.Cross(Edge1);
+		const float V = Ray.Direction.Dot(Q) * InvDet;
+		if (V < 0.0f || U + V > 1.0f)
+		{
+			return false;
+		}
+
+		const float RayT = Edge2.Dot(Q) * InvDet;
+		if (RayT < 0.0f)
+		{
+			return false;
+		}
+
+		OutRayT = RayT;
+		return true;
+	}
+
+	bool IntersectRayConstraintCone(
+		const FRay& Ray,
+		const FVector& JointWorld,
+		const FVector& DirX,
+		const FVector& DirY,
+		const FVector& DirZ,
+		float ConeLength,
+		float Swing1Limit,
+		float Swing2Limit,
+		float& OutRayT)
+	{
+		const float Swing1Rad = Swing1Limit * (FMath::Pi / 180.0f);
+		const float Swing2Rad = Swing2Limit * (FMath::Pi / 180.0f);
+		const float ClampedSwing1 = LocalMin(Swing1Rad, 1.35f);
+		const float ClampedSwing2 = LocalMin(Swing2Rad, 1.35f);
+		const float RadiusY = LocalMin(ConeLength * std::tan(ClampedSwing2), ConeLength * 1.05f);
+		const float RadiusZ = LocalMin(ConeLength * std::tan(ClampedSwing1), ConeLength * 1.05f);
+		if (RadiusY <= 1.e-6f && RadiusZ <= 1.e-6f)
+		{
+			return false;
+		}
+
+		bool bHit = false;
+		float BestRayT = FLT_MAX;
+		const FVector ConeCenter = JointWorld + DirX * ConeLength;
+		constexpr int32 ConeSegments = 32;
+		FVector PrevEdge;
+		bool bHasPrevEdge = false;
+		for (int32 Segment = 0; Segment <= ConeSegments; ++Segment)
+		{
+			const float T = static_cast<float>(Segment) / static_cast<float>(ConeSegments);
+			const float Angle = T * 2.0f * FMath::Pi;
+			const FVector Edge = ConeCenter
+				+ DirY * (std::cos(Angle) * RadiusY)
+				+ DirZ * (std::sin(Angle) * RadiusZ);
+
+			if (bHasPrevEdge)
+			{
+				float RayT = 0.0f;
+				if (IntersectRayTriangle(Ray, JointWorld, PrevEdge, Edge, RayT) && RayT < BestRayT)
+				{
+					BestRayT = RayT;
+					bHit = true;
+				}
+			}
+
+			PrevEdge = Edge;
+			bHasPrevEdge = true;
+		}
+
+		OutRayT = BestRayT;
+		return bHit;
 	}
 
 	float DominantScaleDelta(const FVector& Delta)
@@ -633,7 +724,8 @@ void FPhysicsAssetEditorViewportClient::Initialize(ID3D11Device* Device, uint32 
 	Viewport->SetClient(this);
 
 	RenderOptions.ShowFlags.bDebugDraw = true;
-	RenderOptions.ShowFlags.bShowCollisionShape = true;
+	RenderOptions.ShowFlags.bCollision = false;
+	RenderOptions.ShowFlags.bShowCollisionShape = false;
 	bIsRenderable = true;
 }
 
@@ -886,7 +978,9 @@ bool FPhysicsAssetEditorViewportClient::PickConstraintAtMouse(int32& OutConstrai
 		const FVector ChildOrigin = ChildMat.GetLocation();
 		const FVector JointWorld = ParentMat.TransformPositionWithW(Constraint->GetLocalFrameA().Location);
 		const float SegmentLength = LocalMax((JointWorld - ParentOrigin).Length(), (ChildOrigin - JointWorld).Length());
-		const float PickRadius = LocalMax(SegmentLength * 0.045f, 0.025f);
+		const bool bHighlighted = ConstraintIndex == HighlightConstraintIndex;
+		const float PickScale = bHighlighted ? 1.5f : 1.0f;
+		const float PickRadius = LocalMax(SegmentLength * 0.045f * PickScale, 0.025f * PickScale);
 		const float PickRadiusSq = PickRadius * PickRadius;
 
 		float RayT0 = 0.0f;
@@ -896,9 +990,40 @@ bool FPhysicsAssetEditorViewportClient::PickConstraintAtMouse(int32& OutConstrai
 		const float RayT = DistSq0 <= DistSq1 ? RayT0 : RayT1;
 		const float DistSq = LocalMin(DistSq0, DistSq1);
 
-		if (DistSq <= PickRadiusSq && RayT < BestRayT)
+		bool bHitConstraint = DistSq <= PickRadiusSq;
+		float ConstraintRayT = RayT;
+		if (Constraint->GetAngularMode() == EAngularConstraintMode::Limited)
 		{
-			BestRayT = RayT;
+			const FQuat JointRot = ParentMat.ToQuat() * Constraint->GetLocalFrameA().Rotation;
+			const FVector DirX = JointRot.RotateVector(FVector::XAxisVector).Normalized();
+			const FVector DirY = JointRot.RotateVector(FVector::YAxisVector).Normalized();
+			const FVector DirZ = JointRot.RotateVector(FVector::ZAxisVector).Normalized();
+			const float BoneDistance = (ChildOrigin - ParentOrigin).Length();
+			const float ConeLength = LocalClamp(BoneDistance * 0.12f * PickScale, 0.035f * PickScale, 0.16f * PickScale);
+
+			float ConeRayT = 0.0f;
+			if (IntersectRayConstraintCone(
+				WorldRay,
+				JointWorld,
+				DirX,
+				DirY,
+				DirZ,
+				ConeLength,
+				Constraint->GetSwing1Limit(),
+				Constraint->GetSwing2Limit(),
+				ConeRayT))
+			{
+				bHitConstraint = true;
+				if (ConeRayT < ConstraintRayT || DistSq > PickRadiusSq)
+				{
+					ConstraintRayT = ConeRayT;
+				}
+			}
+		}
+
+		if (bHitConstraint && ConstraintRayT < BestRayT)
+		{
+			BestRayT = ConstraintRayT;
 			OutConstraintIndex = ConstraintIndex;
 		}
 	}
@@ -1314,19 +1439,9 @@ void FPhysicsAssetEditorViewportClient::ClearGizmoSelection()
 
 void FPhysicsAssetEditorViewportClient::DrawPreviewPhysicsAsset()
 {
-	if (!PreviewWorld || !PhysicsAsset || !PreviewMeshComponent || (!IsShowBodies() && !IsShowConstraints()))
-	{
-		return;
-	}
-
-	FPhysicsAssetDebugDrawOptions Options;
-	Options.bDrawBodies = IsShowBodies();
-	Options.bDrawConstraints = IsShowConstraints();
-	Options.HighlightBodyIndex = HighlightBodyIndex;
-	Options.HighlightShapeType = HighlightShapeType;
-	Options.HighlightShapeIndex = HighlightShapeIndex;
-	Options.HighlightConstraintIndex = HighlightConstraintIndex;
-	DrawPhysicsAssetDebug(PreviewWorld, PhysicsAsset, PreviewMeshComponent, Options);
+	// Physics Asset Editor draws bodies as solid translucent editor overlays and constraints
+	// as a top-layer funnel overlay. Scene debug wire would double-draw bodies and hide the
+	// constraint readout behind the solid overlay.
 }
 
 void FPhysicsAssetEditorViewportClient::HandleDragStart(const FRay& Ray)

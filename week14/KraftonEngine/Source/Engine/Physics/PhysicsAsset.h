@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Object/Object.h"
 #include "Physics/BodySetup.h"
@@ -10,6 +10,11 @@ struct FPhysicsAssetBodyProfileData
 {
 	FName BoneName = FName::None;
 	bool bCollisionEnabled = true;
+	bool bEnableGravity = true;
+	bool bConsiderForBounds = true;
+	float Mass = 1.0f;
+	float LinearDamping = 0.01f;
+	float AngularDamping = 0.01f;
 	FString PhysicalMaterialPath = "None";
 };
 
@@ -64,6 +69,16 @@ public:
 
 	bool IsBodyCollisionEnabled(FName BoneName) const;
 	void SetBodyCollisionEnabled(FName BoneName, bool bEnabled);
+	bool IsBodyGravityEnabled(FName BoneName) const;
+	void SetBodyGravityEnabled(FName BoneName, bool bEnabled);
+	bool IsBodyConsideredForBounds(FName BoneName) const;
+	void SetBodyConsideredForBounds(FName BoneName, bool bEnabled);
+	float GetBodyMass(FName BoneName) const;
+	void SetBodyMass(FName BoneName, float InMass);
+	float GetBodyLinearDamping(FName BoneName) const;
+	void SetBodyLinearDamping(FName BoneName, float InDamping);
+	float GetBodyAngularDamping(FName BoneName) const;
+	void SetBodyAngularDamping(FName BoneName, float InDamping);
 	const FString& GetBodyPhysicalMaterialPath(FName BoneName) const;
 	void SetBodyPhysicalMaterialPath(FName BoneName, const FString& InPath);
 	bool IsCollisionDisabled(FName BoneA, FName BoneB) const;

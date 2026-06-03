@@ -27,10 +27,18 @@ namespace
 		return BoneName.IsValid() && BoneName != FName::None;
 	}
 
-	void SerializeBodyProfile(FArchive& Ar, FPhysicsAssetBodyProfileData& Profile)
+	void SerializeBodyProfile(FArchive& Ar, FPhysicsAssetBodyProfileData& Profile, uint32 ExtVersion)
 	{
 		Ar << Profile.BoneName;
 		Ar << Profile.bCollisionEnabled;
+		if (ExtVersion >= 4)
+		{
+			Ar << Profile.bEnableGravity;
+			Ar << Profile.bConsiderForBounds;
+			Ar << Profile.Mass;
+			Ar << Profile.LinearDamping;
+			Ar << Profile.AngularDamping;
+		}
 		Ar << Profile.PhysicalMaterialPath;
 	}
 
@@ -139,10 +147,13 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 	// Trailing extension section. Older physics assets end before this point
 	if (Ar.IsSaving())
 	{
-		uint32 ExtVersion = 3;
+		uint32 ExtVersion = 4;
 		Ar << ExtVersion;
 		Ar << PreviewSkeletalMeshPath;
-		SerializeExtensionArray(Ar, BodyProfiles, SerializeBodyProfile);
+		SerializeExtensionArray(Ar, BodyProfiles, [ExtVersion](FArchive& ProfileAr, FPhysicsAssetBodyProfileData& Profile)
+		{
+			SerializeBodyProfile(ProfileAr, Profile, ExtVersion);
+		});
 		SerializeExtensionArray(Ar, DisabledCollisionPairs, SerializeDisabledCollisionPair);
 		SerializeExtensionArray(Ar, GraphNodePositions, SerializeGraphNodePosition);
 	}
@@ -156,7 +167,10 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 		}
 		if (ExtVersion >= 3)
 		{
-			SerializeExtensionArray(Ar, BodyProfiles, SerializeBodyProfile);
+			SerializeExtensionArray(Ar, BodyProfiles, [ExtVersion](FArchive& ProfileAr, FPhysicsAssetBodyProfileData& Profile)
+			{
+				SerializeBodyProfile(ProfileAr, Profile, ExtVersion);
+			});
 			SerializeExtensionArray(Ar, DisabledCollisionPairs, SerializeDisabledCollisionPair);
 			SerializeExtensionArray(Ar, GraphNodePositions, SerializeGraphNodePosition);
 		}
@@ -185,7 +199,7 @@ void UPhysicsAsset::Serialize(FArchive& Ar)
 				BodyProfiles.resize(FirstVal);
 				for (FPhysicsAssetBodyProfileData& Profile : BodyProfiles)
 				{
-					SerializeBodyProfile(Ar, Profile);
+					SerializeBodyProfile(Ar, Profile, ExtVersion);
 				}
 
 				SerializeExtensionArray(Ar, DisabledCollisionPairs, SerializeDisabledCollisionPair);
@@ -463,6 +477,121 @@ void UPhysicsAsset::SetBodyCollisionEnabled(FName BoneName, bool bEnabled)
 		Profile->BoneName = BoneName;
 	}
 	Profile->bCollisionEnabled = bEnabled;
+}
+
+bool UPhysicsAsset::IsBodyGravityEnabled(FName BoneName) const
+{
+	const FPhysicsAssetBodyProfileData* Profile = FindBodyProfile(BoneName);
+	return !Profile || Profile->bEnableGravity;
+}
+
+void UPhysicsAsset::SetBodyGravityEnabled(FName BoneName, bool bEnabled)
+{
+	if (!IsValidPhysicsBoneName(BoneName))
+	{
+		return;
+	}
+
+	FPhysicsAssetBodyProfileData* Profile = FindMutableBodyProfile(BoneName);
+	if (!Profile)
+	{
+		BodyProfiles.push_back(FPhysicsAssetBodyProfileData{});
+		Profile = &BodyProfiles.back();
+		Profile->BoneName = BoneName;
+	}
+	Profile->bEnableGravity = bEnabled;
+}
+
+bool UPhysicsAsset::IsBodyConsideredForBounds(FName BoneName) const
+{
+	const FPhysicsAssetBodyProfileData* Profile = FindBodyProfile(BoneName);
+	return !Profile || Profile->bConsiderForBounds;
+}
+
+void UPhysicsAsset::SetBodyConsideredForBounds(FName BoneName, bool bEnabled)
+{
+	if (!IsValidPhysicsBoneName(BoneName))
+	{
+		return;
+	}
+
+	FPhysicsAssetBodyProfileData* Profile = FindMutableBodyProfile(BoneName);
+	if (!Profile)
+	{
+		BodyProfiles.push_back(FPhysicsAssetBodyProfileData{});
+		Profile = &BodyProfiles.back();
+		Profile->BoneName = BoneName;
+	}
+	Profile->bConsiderForBounds = bEnabled;
+}
+
+float UPhysicsAsset::GetBodyMass(FName BoneName) const
+{
+	const FPhysicsAssetBodyProfileData* Profile = FindBodyProfile(BoneName);
+	return Profile ? Profile->Mass : 1.0f;
+}
+
+void UPhysicsAsset::SetBodyMass(FName BoneName, float InMass)
+{
+	if (!IsValidPhysicsBoneName(BoneName))
+	{
+		return;
+	}
+
+	FPhysicsAssetBodyProfileData* Profile = FindMutableBodyProfile(BoneName);
+	if (!Profile)
+	{
+		BodyProfiles.push_back(FPhysicsAssetBodyProfileData{});
+		Profile = &BodyProfiles.back();
+		Profile->BoneName = BoneName;
+	}
+	Profile->Mass = std::max(InMass, 0.001f);
+}
+
+float UPhysicsAsset::GetBodyLinearDamping(FName BoneName) const
+{
+	const FPhysicsAssetBodyProfileData* Profile = FindBodyProfile(BoneName);
+	return Profile ? Profile->LinearDamping : 0.01f;
+}
+
+void UPhysicsAsset::SetBodyLinearDamping(FName BoneName, float InDamping)
+{
+	if (!IsValidPhysicsBoneName(BoneName))
+	{
+		return;
+	}
+
+	FPhysicsAssetBodyProfileData* Profile = FindMutableBodyProfile(BoneName);
+	if (!Profile)
+	{
+		BodyProfiles.push_back(FPhysicsAssetBodyProfileData{});
+		Profile = &BodyProfiles.back();
+		Profile->BoneName = BoneName;
+	}
+	Profile->LinearDamping = std::max(InDamping, 0.0f);
+}
+
+float UPhysicsAsset::GetBodyAngularDamping(FName BoneName) const
+{
+	const FPhysicsAssetBodyProfileData* Profile = FindBodyProfile(BoneName);
+	return Profile ? Profile->AngularDamping : 0.01f;
+}
+
+void UPhysicsAsset::SetBodyAngularDamping(FName BoneName, float InDamping)
+{
+	if (!IsValidPhysicsBoneName(BoneName))
+	{
+		return;
+	}
+
+	FPhysicsAssetBodyProfileData* Profile = FindMutableBodyProfile(BoneName);
+	if (!Profile)
+	{
+		BodyProfiles.push_back(FPhysicsAssetBodyProfileData{});
+		Profile = &BodyProfiles.back();
+		Profile->BoneName = BoneName;
+	}
+	Profile->AngularDamping = std::max(InDamping, 0.0f);
 }
 
 const FString& UPhysicsAsset::GetBodyPhysicalMaterialPath(FName BoneName) const

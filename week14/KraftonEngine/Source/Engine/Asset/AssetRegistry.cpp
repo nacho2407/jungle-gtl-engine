@@ -8,6 +8,7 @@
 #include "Animation/Skeleton/SkeletonManager.h"
 #include "Platform/Paths.h"
 #include "Particles/ParticleSystemManager.h"
+#include "Physics/PhysicalMaterialManager.h"
 
 #include <cstring>
 #include <filesystem>
@@ -48,6 +49,11 @@ namespace FAssetRegistry
 		{
 			FParticleSystemManager::Get().RefreshAvailableParticleSystems();
 			return FParticleSystemManager::Get().GetAvailableParticleSystemFiles();
+		}
+		if (std::strcmp(AssetTypeName, "UPhysicalMaterial") == 0)
+		{
+			FPhysicalMaterialManager::Get().RefreshAvailablePhysicalMaterials();
+			return FPhysicalMaterialManager::Get().GetAvailablePhysicalMaterialFiles();
 		}
 		if (std::strcmp(AssetTypeName, "LuaAnimScript") == 0)
 		{

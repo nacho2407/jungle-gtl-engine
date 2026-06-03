@@ -34,6 +34,7 @@ public:
 	static bool CreateCameraShake(const FString& DirectoryPath, const FString& AssetName, FString& OutCreatedPath);
 	static bool CreateAnimGraph(const FString& DirectoryPath, const FString& AssetName, FString& OutCreatedPath);
 	static bool CreateParticleSystem(const FString& DirectoryPath, const FString& AssetName, FString& OutCreatedPath);
+	static bool CreatePhysicalMaterial(const FString& DirectoryPath, const FString& AssetName, FString& OutCreatedPath);
 	
 	static bool CreatePhysicsAsset(const FString& DirectoryPath, const FString& AssetName, USkeletalMesh* SourceMesh, const FPhysicsAssetCreationParams& Params, FString& OutCreatedPath);
 };

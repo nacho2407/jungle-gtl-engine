@@ -1,8 +1,12 @@
 ﻿#include "Editor/UI/Asset/Physics/PhysicsAssetEditorWidget.h"
 
+#include "Component/Debug/GizmoComponent.h"
 #include "Component/Light/DirectionalLightComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Shape/BoxComponent.h"
+#include "Animation/AnimationManager.h"
+#include "Animation/Sequence/AnimSequence.h"
+#include "Asset/AssetRegistry.h"
 #include "Editor/Subsystem/PhysicsAssetEditingLibrary.h"
 #include "Editor/Subsystem/PhysicsAssetGenerator.h"
 #include "Editor/Slate/SlateApplication.h"
@@ -42,6 +46,10 @@ namespace
 	constexpr uint32 PhysicsGraphInputPinBase = 100000u;
 	constexpr uint32 PhysicsGraphOutputPinBase = 200000u;
 	constexpr uint32 PhysicsGraphLinkBase = 300000u;
+	constexpr uint32 PhysicsGraphConstraintNodeBase = 400000u;
+	constexpr uint32 PhysicsGraphConstraintInputPinBase = 500000u;
+	constexpr uint32 PhysicsGraphConstraintOutputPinBase = 600000u;
+	constexpr uint32 PhysicsGraphIdRange = 90000u;
 
 	inline ed::NodeId ToPhysicsGraphNodeId(int32 BodyIndex)
 	{
@@ -60,7 +68,27 @@ namespace
 
 	inline ed::LinkId ToPhysicsGraphLinkId(int32 ConstraintIndex)
 	{
-		return static_cast<ed::LinkId>(PhysicsGraphLinkBase + static_cast<uint32>(ConstraintIndex));
+		return static_cast<ed::LinkId>(PhysicsGraphLinkBase + static_cast<uint32>(ConstraintIndex) * 2u);
+	}
+
+	inline ed::LinkId ToPhysicsGraphLinkedBodyLinkId(int32 ConstraintIndex)
+	{
+		return static_cast<ed::LinkId>(PhysicsGraphLinkBase + static_cast<uint32>(ConstraintIndex) * 2u + 1u);
+	}
+
+	inline ed::NodeId ToPhysicsGraphConstraintNodeId(int32 ConstraintIndex)
+	{
+		return static_cast<ed::NodeId>(PhysicsGraphConstraintNodeBase + static_cast<uint32>(ConstraintIndex));
+	}
+
+	inline ed::PinId ToPhysicsGraphConstraintInputPinId(int32 ConstraintIndex)
+	{
+		return static_cast<ed::PinId>(PhysicsGraphConstraintInputPinBase + static_cast<uint32>(ConstraintIndex));
+	}
+
+	inline ed::PinId ToPhysicsGraphConstraintOutputPinId(int32 ConstraintIndex)
+	{
+		return static_cast<ed::PinId>(PhysicsGraphConstraintOutputPinBase + static_cast<uint32>(ConstraintIndex));
 	}
 
 	inline uint32 PhysicsGraphNodeIdToU32(ed::NodeId Id)
@@ -81,18 +109,28 @@ namespace
 	int32 PhysicsGraphNodeIdToBodyIndex(ed::NodeId Id)
 	{
 		const uint32 Raw = PhysicsGraphNodeIdToU32(Id);
-		return Raw >= PhysicsGraphNodeBase ? static_cast<int32>(Raw - PhysicsGraphNodeBase) : -1;
+		return Raw >= PhysicsGraphNodeBase && Raw < PhysicsGraphNodeBase + PhysicsGraphIdRange
+			? static_cast<int32>(Raw - PhysicsGraphNodeBase)
+			: -1;
+	}
+
+	int32 PhysicsGraphNodeIdToConstraintIndex(ed::NodeId Id)
+	{
+		const uint32 Raw = PhysicsGraphNodeIdToU32(Id);
+		return Raw >= PhysicsGraphConstraintNodeBase && Raw < PhysicsGraphConstraintNodeBase + PhysicsGraphIdRange
+			? static_cast<int32>(Raw - PhysicsGraphConstraintNodeBase)
+			: -1;
 	}
 
 	int32 PhysicsGraphPinIdToBodyIndex(ed::PinId Id, bool& bOutIsOutputPin)
 	{
 		const uint32 Raw = PhysicsGraphPinIdToU32(Id);
-		if (Raw >= PhysicsGraphOutputPinBase && Raw < PhysicsGraphOutputPinBase + 90000u)
+		if (Raw >= PhysicsGraphOutputPinBase && Raw < PhysicsGraphOutputPinBase + PhysicsGraphIdRange)
 		{
 			bOutIsOutputPin = true;
 			return static_cast<int32>(Raw - PhysicsGraphOutputPinBase);
 		}
-		if (Raw >= PhysicsGraphInputPinBase && Raw < PhysicsGraphInputPinBase + 90000u)
+		if (Raw >= PhysicsGraphInputPinBase && Raw < PhysicsGraphInputPinBase + PhysicsGraphIdRange)
 		{
 			bOutIsOutputPin = false;
 			return static_cast<int32>(Raw - PhysicsGraphInputPinBase);
@@ -103,7 +141,9 @@ namespace
 	int32 PhysicsGraphLinkIdToConstraintIndex(ed::LinkId Id)
 	{
 		const uint32 Raw = PhysicsGraphLinkIdToU32(Id);
-		return Raw >= PhysicsGraphLinkBase ? static_cast<int32>(Raw - PhysicsGraphLinkBase) : -1;
+		return Raw >= PhysicsGraphLinkBase && Raw < PhysicsGraphLinkBase + PhysicsGraphIdRange * 2u
+			? static_cast<int32>((Raw - PhysicsGraphLinkBase) / 2u)
+			: -1;
 	}
 
 	const char* ShapeTypeLabel(EPhysicsAssetShapeType ShapeType)
@@ -144,6 +184,77 @@ namespace
 	bool IsValidAssetPath(const FString& Path)
 	{
 		return !Path.empty() && Path != "None";
+	}
+
+	const TArray<FAssetListItem>& CollectPhysicalMaterialOptions()
+	{
+		return FAssetRegistry::ListByTypeName("UPhysicalMaterial");
+	}
+
+	FString MakePhysicalMaterialDisplayName(const FString& Path)
+	{
+		if (!IsValidAssetPath(Path))
+		{
+			return "None";
+		}
+
+		const TArray<FAssetListItem>& MaterialOptions = CollectPhysicalMaterialOptions();
+		for (const FAssetListItem& Item : MaterialOptions)
+		{
+			if (Item.FullPath == Path)
+			{
+				return Item.DisplayName.empty() ? Item.FullPath : Item.DisplayName;
+			}
+		}
+
+		const size_t Slash = Path.find_last_of("/\\");
+		FString Name = Slash == FString::npos ? Path : Path.substr(Slash + 1);
+		const size_t Dot = Name.find_last_of('.');
+		if (Dot != FString::npos)
+		{
+			Name = Name.substr(0, Dot);
+		}
+		return Name.empty() ? Path : Name;
+	}
+
+	bool DrawPhysicalMaterialPickerOptions(const FString& CurrentPath, FString& OutSelectedPath)
+	{
+		bool bSelected = false;
+
+		if (ImGui::Selectable("None", CurrentPath == "None"))
+		{
+			OutSelectedPath = "None";
+			bSelected = true;
+		}
+
+		const TArray<FAssetListItem>& MaterialOptions = CollectPhysicalMaterialOptions();
+		if (MaterialOptions.empty())
+		{
+			ImGui::Separator();
+			ImGui::TextDisabled("No UPhysicalMaterial assets found.");
+			return bSelected;
+		}
+
+		ImGui::Separator();
+		ImGui::TextDisabled("UPhysicalMaterial Assets");
+		for (const FAssetListItem& Item : MaterialOptions)
+		{
+			const FString& MaterialPath = Item.FullPath;
+			const FString Label = Item.DisplayName.empty() ? Item.FullPath : Item.DisplayName;
+			ImGui::PushID(MaterialPath.c_str());
+			if (ImGui::Selectable(Label.c_str(), CurrentPath == MaterialPath))
+			{
+				OutSelectedPath = MaterialPath;
+				bSelected = true;
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("%s", MaterialPath.c_str());
+			}
+			ImGui::PopID();
+		}
+
+		return bSelected;
 	}
 
 	FString MakeAssetTabName(const FString& SourcePath)
@@ -314,6 +425,174 @@ namespace
 		return bPressed;
 	}
 
+	FString ToLowerCopy(FString Value)
+	{
+		std::transform(Value.begin(), Value.end(), Value.begin(),
+			[](unsigned char C) { return static_cast<char>(std::tolower(C)); });
+		return Value;
+	}
+
+	bool DetailFilterMatches(const FString& Filter, const FString& Label)
+	{
+		if (Filter.empty())
+		{
+			return true;
+		}
+		return ToLowerCopy(Label).find(ToLowerCopy(Filter)) != FString::npos;
+	}
+
+	bool BeginPhysicsDetailsTable(const char* Id)
+	{
+		const ImGuiTableFlags Flags =
+			ImGuiTableFlags_SizingStretchProp |
+			ImGuiTableFlags_BordersInnerV |
+			ImGuiTableFlags_PadOuterX |
+			ImGuiTableFlags_RowBg;
+		if (!ImGui::BeginTable(Id, 2, Flags))
+		{
+			return false;
+		}
+
+		ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 168.0f);
+		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+		ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImVec4(0.145f, 0.145f, 0.145f, 1.0f));
+		return true;
+	}
+
+	void EndPhysicsDetailsTable()
+	{
+		ImGui::EndTable();
+		ImGui::PopStyleColor(2);
+	}
+
+	void DrawDetailsLabel(const char* Label)
+	{
+		ImGui::AlignTextToFramePadding();
+		ImGui::Indent(ImGui::GetTreeNodeToLabelSpacing());
+		ImGui::TextUnformatted(Label);
+		ImGui::Unindent(ImGui::GetTreeNodeToLabelSpacing());
+	}
+
+	void DrawDetailsTextRow(const char* Label, const FString& Value, const FString& Filter)
+	{
+		if (!DetailFilterMatches(Filter, Label))
+		{
+			return;
+		}
+
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		DrawDetailsLabel(Label);
+		ImGui::TableSetColumnIndex(1);
+		ImGui::TextWrapped("%s", Value.c_str());
+	}
+
+	bool DrawDetailsStringRow(const char* Label, FString& Value, const FString& Filter)
+	{
+		if (!DetailFilterMatches(Filter, Label))
+		{
+			return false;
+		}
+
+		char Buffer[512] = {};
+		std::snprintf(Buffer, sizeof(Buffer), "%s", Value.c_str());
+
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		DrawDetailsLabel(Label);
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::PushID(Label);
+		const bool bChanged = ImGui::InputText("##Value", Buffer, sizeof(Buffer));
+		ImGui::PopID();
+		if (bChanged)
+		{
+			Value = Buffer;
+		}
+		return bChanged;
+	}
+
+	bool DrawDetailsBoolRow(const char* Label, bool& Value, const FString& Filter)
+	{
+		if (!DetailFilterMatches(Filter, Label))
+		{
+			return false;
+		}
+
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		DrawDetailsLabel(Label);
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::PushID(Label);
+		const bool bChanged = ImGui::Checkbox("##Value", &Value);
+		ImGui::PopID();
+		return bChanged;
+	}
+
+	bool DrawDetailsFloatRow(const char* Label, float& Value, float Speed, float Min, float Max, const FString& Filter)
+	{
+		if (!DetailFilterMatches(Filter, Label))
+		{
+			return false;
+		}
+
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		DrawDetailsLabel(Label);
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::PushID(Label);
+		bool bChanged = false;
+		if (Min != 0.0f || Max != 0.0f)
+		{
+			bChanged = ImGui::DragFloat("##Value", &Value, Speed, Min, Max, "%.4f");
+		}
+		else
+		{
+			bChanged = ImGui::DragFloat("##Value", &Value, Speed);
+		}
+		ImGui::PopID();
+		return bChanged;
+	}
+
+	bool DrawDetailsVec3Row(const char* Label, FVector& Value, float Speed, const FString& Filter)
+	{
+		if (!DetailFilterMatches(Filter, Label))
+		{
+			return false;
+		}
+
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		DrawDetailsLabel(Label);
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::PushID(Label);
+		const bool bChanged = ImGui::DragFloat3("##Value", &Value.X, Speed);
+		ImGui::PopID();
+		return bChanged;
+	}
+
+	bool DrawDetailsEnumRow(const char* Label, int32& Value, const char* const* Items, int32 Count, const FString& Filter)
+	{
+		if (!DetailFilterMatches(Filter, Label))
+		{
+			return false;
+		}
+
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		DrawDetailsLabel(Label);
+		ImGui::TableSetColumnIndex(1);
+		ImGui::SetNextItemWidth(-1.0f);
+		ImGui::PushID(Label);
+		const bool bChanged = ImGui::Combo("##Value", &Value, Items, Count);
+		ImGui::PopID();
+		return bChanged;
+	}
+
 	bool DrawPhysicsSplitter(const char* Id, const ImVec2& Size, bool bVertical)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
@@ -431,6 +710,52 @@ void FPhysicsAssetEditorWidget::Open(UObject* Object)
 	FSlateApplication::Get().RegisterViewport(&ViewportClient);
 }
 
+bool FPhysicsAssetEditorWidget::ReloadPreviewMeshFromAsset(UPhysicsAsset* Asset)
+{
+	if (!Asset || !PreviewActor)
+	{
+		return false;
+	}
+
+	StopPreviewSimulation();
+
+	USkeletalMesh* NewPreviewMesh = nullptr;
+	ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
+	if (IsValidAssetPath(Asset->GetPreviewSkeletalMeshPath()))
+	{
+		NewPreviewMesh = FMeshManager::LoadSkeletalMesh(Asset->GetPreviewSkeletalMeshPath(), Device);
+	}
+
+	if (!NewPreviewMesh)
+	{
+		if (PreviewMeshComponent)
+		{
+			PreviewMeshComponent->SetVisibility(false);
+		}
+		PreviewMesh = nullptr;
+		PreviewMeshComponent = nullptr;
+		ViewportClient.SetPreviewScene(ViewportClient.GetPreviewWorld(), Asset, nullptr);
+		ClearSelection();
+		return false;
+	}
+
+	PreviewMesh = NewPreviewMesh;
+	if (!PreviewMeshComponent)
+	{
+		PreviewMeshComponent = PreviewActor->AddComponent<USkeletalMeshComponent>();
+		PreviewActor->SetRootComponent(PreviewMeshComponent);
+	}
+
+	PreviewMeshComponent->SetSkeletalMesh(PreviewMesh);
+	PreviewMeshComponent->SetPhysicsAssetOverride(Asset);
+	PreviewMeshComponent->SetVisibility(ViewportClient.IsShowPreviewMesh());
+	ViewportClient.SetPreviewScene(ViewportClient.GetPreviewWorld(), Asset, PreviewMeshComponent);
+	ViewportClient.ResetCameraToPreviewBounds();
+	ClearSelection();
+	bGraphPositionsPushed = false;
+	return true;
+}
+
 void FPhysicsAssetEditorWidget::Close()
 {
 	FAssetEditorWidget::Close();
@@ -493,7 +818,7 @@ void FPhysicsAssetEditorWidget::TickPreviewSimulation(float DeltaTime)
 	{
 		ViewportClient.SetShowBodies(true);
 		CapturePreviewSimulationStartPose();
-		PreviewMeshComponent->SetVisibility(false);
+		PreviewMeshComponent->SetVisibility(ViewportClient.IsShowPreviewMesh());
 		PreviewMeshComponent->SetSimulatePhysics(true);
 		bPreviewSimulationActive = PreviewMeshComponent->IsSimulatingPhysics();
 
@@ -506,7 +831,7 @@ void FPhysicsAssetEditorWidget::TickPreviewSimulation(float DeltaTime)
 		}
 	}
 
-	PreviewMeshComponent->SetVisibility(false);
+	PreviewMeshComponent->SetVisibility(ViewportClient.IsShowPreviewMesh());
 	const float SimDeltaTime = (std::max)(0.0f, DeltaTime);
 	PreviewWorld->Tick(SimDeltaTime, ELevelTick::LEVELTICK_All);
 	PreviewMeshComponent->SyncSimulatedPhysics();
@@ -595,6 +920,67 @@ void FPhysicsAssetEditorWidget::DestroyGraphEditorContext()
 	ed::DestroyEditor(GraphEditorContext);
 	GraphEditorContext = nullptr;
 	bGraphPositionsPushed = false;
+	bSelectionOriginatedFromGraph = false;
+	bPendingGraphSelectionSync = false;
+	bSuppressNextGraphSelectionEvent = false;
+}
+
+void FPhysicsAssetEditorWidget::ClearGraphEditorSelection()
+{
+	if (!GraphEditorContext)
+	{
+		return;
+	}
+
+	ed::EditorContext* PreviousContext = ed::GetCurrentEditor();
+	ed::SetCurrentEditor(GraphEditorContext);
+	ed::ClearSelection();
+	ed::SetCurrentEditor(PreviousContext);
+	bPendingGraphSelectionSync = false;
+	bSuppressNextGraphSelectionEvent = false;
+}
+
+void FPhysicsAssetEditorWidget::RequestGraphEditorSelectionSync()
+{
+	bPendingGraphSelectionSync = true;
+}
+
+void FPhysicsAssetEditorWidget::SyncGraphEditorSelectionToSelection()
+{
+	if (!GraphEditorContext)
+	{
+		bPendingGraphSelectionSync = false;
+		return;
+	}
+
+	ed::EditorContext* PreviousContext = ed::GetCurrentEditor();
+	ed::SetCurrentEditor(GraphEditorContext);
+	ed::ClearSelection();
+
+	switch (Selection.Type)
+	{
+	case EPhysicsAssetEditorSelectionType::Body:
+	case EPhysicsAssetEditorSelectionType::Shape:
+		if (Selection.BodyIndex >= 0)
+		{
+			ed::SelectNode(ToPhysicsGraphNodeId(Selection.BodyIndex));
+		}
+		break;
+	case EPhysicsAssetEditorSelectionType::Constraint:
+		if (Selection.ConstraintIndex >= 0)
+		{
+			ed::SelectNode(ToPhysicsGraphConstraintNodeId(Selection.ConstraintIndex));
+			ed::SelectLink(ToPhysicsGraphLinkId(Selection.ConstraintIndex), true);
+			ed::SelectLink(ToPhysicsGraphLinkedBodyLinkId(Selection.ConstraintIndex), true);
+		}
+		break;
+	default:
+		break;
+	}
+
+	ed::SetCurrentEditor(PreviousContext);
+	bPendingGraphSelectionSync = false;
+	bSuppressNextGraphSelectionEvent = true;
 }
 
 bool FPhysicsAssetEditorWidget::GetSelectedBodyBoneName(UPhysicsAsset* Asset, FName& OutBoneName) const
@@ -892,6 +1278,8 @@ void FPhysicsAssetEditorWidget::Render(float DeltaTime)
 	constexpr float SplitterThickness = 4.0f;
 	const float TotalHeight = ImGui::GetContentRegionAvail().y;
 	const float TotalWidth = ImGui::GetContentRegionAvail().x;
+	constexpr float MinSkeletonTreeHeight = 120.0f;
+	constexpr float MinGraphPanelHeight = 220.0f;
 
 	float MaxHierarchyWidth = TotalWidth - DetailsWidth - 520.0f;
 	if (MaxHierarchyWidth < 240.0f) MaxHierarchyWidth = 240.0f;
@@ -904,18 +1292,31 @@ void FPhysicsAssetEditorWidget::Render(float DeltaTime)
 	DetailsWidth = Clamp(DetailsWidth, 320.0f, MaxDetailsWidth);
 
 	ImGui::BeginChild("##PhysicsAssetLeftColumn", ImVec2(HierarchyWidth, TotalHeight), false);
-	float MaxGraphHeight = TotalHeight - 150.0f - SplitterThickness - Style.ItemSpacing.y;
-	if (MaxGraphHeight < 120.0f) MaxGraphHeight = 120.0f;
-	GraphHeight = Clamp(GraphHeight, 120.0f, MaxGraphHeight);
-	float SkeletonTreeHeight = TotalHeight - GraphHeight - SplitterThickness - Style.ItemSpacing.y;
-	if (SkeletonTreeHeight < 120.0f) SkeletonTreeHeight = 120.0f;
+	const float LeftSplitterGap = SplitterThickness + Style.ItemSpacing.y;
+	const float LeftContentHeight = (std::max)(0.0f, TotalHeight - LeftSplitterGap);
+	float SkeletonTreeHeight = 0.0f;
+	if (LeftContentHeight <= MinSkeletonTreeHeight + MinGraphPanelHeight)
+	{
+		GraphHeight = (std::max)(140.0f, LeftContentHeight * 0.45f);
+		GraphHeight = (std::min)(GraphHeight, (std::max)(0.0f, LeftContentHeight - 60.0f));
+		SkeletonTreeHeight = (std::max)(0.0f, LeftContentHeight - GraphHeight);
+	}
+	else
+	{
+		const float MaxGraphHeight = LeftContentHeight - MinSkeletonTreeHeight;
+		GraphHeight = Clamp(GraphHeight, MinGraphPanelHeight, MaxGraphHeight);
+		SkeletonTreeHeight = LeftContentHeight - GraphHeight;
+	}
 	ImGui::BeginChild("##PhysicsAssetSkeletonTree", ImVec2(0.0f, SkeletonTreeHeight), true);
 	RenderSkeletonTreePanel(PhysicsAsset);
 	ImGui::EndChild();
 	if (DrawPhysicsSplitter("##PhysicsAssetLeftHorizontalSplitter", ImVec2(ImGui::GetContentRegionAvail().x, SplitterThickness), false))
 	{
 		GraphHeight -= ImGui::GetIO().MouseDelta.y;
-		GraphHeight = Clamp(GraphHeight, 120.0f, MaxGraphHeight);
+		const float MaxGraphHeight = LeftContentHeight > MinSkeletonTreeHeight
+			? LeftContentHeight - MinSkeletonTreeHeight
+			: LeftContentHeight;
+		GraphHeight = Clamp(GraphHeight, (std::min)(MinGraphPanelHeight, LeftContentHeight), MaxGraphHeight);
 	}
 	RenderGraphPanel(PhysicsAsset, ImVec2(0.0f, GraphHeight));
 	ImGui::EndChild();
@@ -1052,6 +1453,45 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 		AdvanceToolbar(Width);
 		return bPressed;
 	};
+	auto DrawToolbarDropdownButton = [&](const char* Label, const char* Id, float Width, bool bActive = false)
+	{
+		if (!HasToolbarRoom(Width))
+		{
+			return false;
+		}
+
+		ImGui::SetCursorScreenPos(ImVec2(CursorX, CursorY));
+		ImGui::PushID(Id);
+		const ImVec2 Size(Width, ButtonHeight);
+		const bool bPressed = ImGui::InvisibleButton("##DropdownButton", Size);
+		const bool bHovered = ImGui::IsItemHovered();
+		const bool bHeld = ImGui::IsItemActive();
+		const ImVec2 Min = ImGui::GetItemRectMin();
+		const ImVec2 Max = ImGui::GetItemRectMax();
+		ImDrawList* ButtonDrawList = ImGui::GetWindowDrawList();
+
+		const ImU32 FillColor = bActive
+			? (bHeld ? IM_COL32(20, 72, 148, 255) : (bHovered ? IM_COL32(36, 107, 204, 255) : IM_COL32(26, 87, 174, 255)))
+			: (bHeld ? IM_COL32(79, 79, 79, 255) : (bHovered ? IM_COL32(66, 66, 66, 255) : IM_COL32(49, 49, 49, 255)));
+		ButtonDrawList->AddRectFilled(Min, Max, FillColor, 2.0f);
+		ButtonDrawList->AddRect(Min, Max, IM_COL32(12, 12, 12, 255), 2.0f);
+
+		const float ArrowRegionWidth = 24.0f;
+		const float SplitX = Max.x - ArrowRegionWidth;
+		ButtonDrawList->AddLine(ImVec2(SplitX, Min.y + 4.0f), ImVec2(SplitX, Max.y - 4.0f), IM_COL32(18, 18, 18, 180));
+		ButtonDrawList->AddText(ImVec2(Min.x + 10.0f, Min.y + 6.0f), IM_COL32(230, 230, 230, 255), Label);
+
+		const float ArrowCenterX = SplitX + ArrowRegionWidth * 0.5f;
+		const float ArrowCenterY = Min.y + Size.y * 0.5f + 1.0f;
+		ButtonDrawList->AddTriangleFilled(
+			ImVec2(ArrowCenterX - 4.0f, ArrowCenterY - 2.0f),
+			ImVec2(ArrowCenterX + 4.0f, ArrowCenterY - 2.0f),
+			ImVec2(ArrowCenterX, ArrowCenterY + 3.0f),
+			IM_COL32(220, 220, 220, 255));
+		ImGui::PopID();
+		AdvanceToolbar(Width);
+		return bPressed;
+	};
 	auto DrawDisabledToolbarButton = [&](const char* Label, float Width)
 	{
 		if (!HasToolbarRoom(Width))
@@ -1072,6 +1512,22 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 			return false;
 		}
 		return DrawToolbarButton(Label, Width, bActive);
+	};
+	auto DrawMaybeToolbarDropdownButton = [&](const char* Label, const char* Id, float Width, bool bEnabled, bool bActive = false)
+	{
+		if (!HasToolbarRoom(Width))
+		{
+			return false;
+		}
+		if (!bEnabled)
+		{
+			ImGui::SetCursorScreenPos(ImVec2(CursorX, CursorY));
+			ImGui::BeginDisabled();
+			DrawToolbarDropdownButton(Label, Id, Width, bActive);
+			ImGui::EndDisabled();
+			return false;
+		}
+		return DrawToolbarDropdownButton(Label, Id, Width, bActive);
 	};
 	auto ModeButton = [&](const char* Label, EPhysicsAssetEditorMode Mode, float Width)
 	{
@@ -1105,13 +1561,116 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 	}
 
 	bool bShowPreviewMesh = ViewportClient.IsShowPreviewMesh();
-	if (DrawToolbarButton("Preview Mesh v##ToolbarPreviewMesh", 126.0f, bShowPreviewMesh))
+	if (DrawToolbarDropdownButton("Preview Mesh", "ToolbarPreviewMesh", 126.0f, bShowPreviewMesh))
 	{
-		bShowPreviewMesh = !bShowPreviewMesh;
-		ViewportClient.SetShowPreviewMesh(bShowPreviewMesh);
-		ActiveViewPreset = EPhysicsAssetEditorViewPreset::Custom;
+		ImGui::OpenPopup("##PhysicsAssetPreviewMeshPopup");
 	}
-	DrawDisabledToolbarButton("Preview Animation v##ToolbarPreviewAnimation", 148.0f);
+	if (ImGui::BeginPopup("##PhysicsAssetPreviewMeshPopup"))
+	{
+		ImGui::TextUnformatted("Physics Asset View");
+		if (ImGui::MenuItem("Skeletal##ToolbarViewPresetSkeletal", nullptr, ActiveViewPreset == EPhysicsAssetEditorViewPreset::Skeletal))
+		{
+			ApplyViewPreset(EPhysicsAssetEditorViewPreset::Skeletal);
+		}
+		if (ImGui::MenuItem("Bones##ToolbarViewPresetBones", nullptr, ActiveViewPreset == EPhysicsAssetEditorViewPreset::Bones))
+		{
+			ApplyViewPreset(EPhysicsAssetEditorViewPreset::Bones);
+		}
+		if (ImGui::MenuItem("Physics##ToolbarViewPresetPhysics", nullptr, ActiveViewPreset == EPhysicsAssetEditorViewPreset::Physics))
+		{
+			ApplyViewPreset(EPhysicsAssetEditorViewPreset::Physics);
+		}
+		ImGui::Separator();
+
+		bShowPreviewMesh = ViewportClient.IsShowPreviewMesh();
+		if (ImGui::Checkbox("Skeletal Mesh##ToolbarShowPreviewMesh", &bShowPreviewMesh))
+		{
+			ViewportClient.SetShowPreviewMesh(bShowPreviewMesh);
+			ActiveViewPreset = EPhysicsAssetEditorViewPreset::Custom;
+		}
+		bool bShowSkeleton = ViewportClient.IsShowSkeleton();
+		if (ImGui::Checkbox("Bones##ToolbarShowSkeleton", &bShowSkeleton))
+		{
+			ViewportClient.SetShowSkeleton(bShowSkeleton);
+			ActiveViewPreset = EPhysicsAssetEditorViewPreset::Custom;
+		}
+		bool bShowBodies = ViewportClient.IsShowBodies();
+		if (ImGui::Checkbox("Bodies##ToolbarShowBodies", &bShowBodies))
+		{
+			ViewportClient.SetShowBodies(bShowBodies);
+			ActiveViewPreset = EPhysicsAssetEditorViewPreset::Custom;
+		}
+		bool bShowConstraints = ViewportClient.IsShowConstraints();
+		if (ImGui::Checkbox("Constraints##ToolbarShowConstraints", &bShowConstraints))
+		{
+			ViewportClient.SetShowConstraints(bShowConstraints);
+			ActiveViewPreset = EPhysicsAssetEditorViewPreset::Custom;
+		}
+		ImGui::EndPopup();
+	}
+
+	FString CurrentPreviewAnimationPath = "None";
+	if (PreviewMeshComponent)
+	{
+		CurrentPreviewAnimationPath = PreviewMeshComponent->GetAnimationData().AnimToPlayPath.ToString();
+	}
+	const bool bHasPreviewAnimation = IsValidAssetPath(CurrentPreviewAnimationPath);
+	if (DrawMaybeToolbarDropdownButton("Preview Animation", "ToolbarPreviewAnimation", 148.0f, PreviewMeshComponent != nullptr, bHasPreviewAnimation))
+	{
+		ImGui::OpenPopup("##PhysicsAssetPreviewAnimationPopup");
+	}
+	if (ImGui::BeginPopup("##PhysicsAssetPreviewAnimationPopup"))
+	{
+		if (ImGui::Selectable("None", !bHasPreviewAnimation))
+		{
+			StopPreviewSimulation();
+			if (PreviewMeshComponent)
+			{
+				PreviewMeshComponent->SetAnimationMode(EAnimationMode::None);
+				PreviewMeshComponent->ResetBoneEditPose();
+				PreviewMeshComponent->SetVisibility(ViewportClient.IsShowPreviewMesh());
+			}
+		}
+
+		TArray<FAssetListItem> AnimationItems;
+		if (PreviewMesh)
+		{
+			AnimationItems = FAssetRegistry::ListAnimationsForSkeleton(PreviewMesh->GetSkeletonBinding(), false);
+		}
+		else
+		{
+			AnimationItems = FAssetRegistry::ListByTypeName("UAnimSequence");
+		}
+
+		if (!AnimationItems.empty())
+		{
+			ImGui::Separator();
+		}
+		for (const FAssetListItem& Item : AnimationItems)
+		{
+			const bool bSelected = CurrentPreviewAnimationPath == Item.FullPath;
+			if (ImGui::Selectable(Item.DisplayName.c_str(), bSelected))
+			{
+				StopPreviewSimulation();
+				UAnimSequence* Sequence = FAnimationManager::Get().LoadAnimation(Item.FullPath);
+				if (Sequence && PreviewMeshComponent && PreviewMeshComponent->CanUseAnimation(Sequence))
+				{
+					PreviewMeshComponent->PlayAnimation(Sequence, true);
+					PreviewMeshComponent->SetVisibility(ViewportClient.IsShowPreviewMesh());
+					SetEditorMode(EPhysicsAssetEditorMode::Preview);
+				}
+			}
+			if (bSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		if (AnimationItems.empty())
+		{
+			ImGui::TextDisabled("No compatible animations.");
+		}
+		ImGui::EndPopup();
+	}
 	DrawSeparator();
 
 	if (DrawToolbarButton("Reference Pose##ToolbarReferencePose", 116.0f) && PreviewMeshComponent)
@@ -1119,11 +1678,63 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 		StopPreviewSimulation();
 		PreviewMeshComponent->ResetBoneEditPose();
 	}
-	if (DrawToolbarButton("Create Asset v##ToolbarCreateAsset", 118.0f))
+	if (DrawMaybeToolbarDropdownButton("Create Asset", "ToolbarCreateAsset", 118.0f, Asset != nullptr))
 	{
-		StopPreviewSimulation();
-		SetEditorMode(EPhysicsAssetEditorMode::Body);
-		RegenerateBodies(Asset);
+		ImGui::OpenPopup("##PhysicsAssetCreateAssetPopup");
+	}
+	if (ImGui::BeginPopup("##PhysicsAssetCreateAssetPopup"))
+	{
+		if (ImGui::MenuItem("Re-generate Bodies##ToolbarRegenerateBodies"))
+		{
+			StopPreviewSimulation();
+			SetEditorMode(EPhysicsAssetEditorMode::Body);
+			RegenerateBodies(Asset);
+		}
+
+		const FSkeletalMesh* MeshAsset = PreviewMesh ? PreviewMesh->GetSkeletalMeshAsset() : nullptr;
+		const bool bCanCreateBodyFromBone = Asset
+			&& MeshAsset
+			&& Selection.Type == EPhysicsAssetEditorSelectionType::Bone
+			&& Selection.BoneIndex >= 0
+			&& Selection.BoneIndex < static_cast<int32>(MeshAsset->Bones.size())
+			&& Asset->FindBodyIndex(FName(MeshAsset->Bones[Selection.BoneIndex].Name)) < 0;
+		if (ImGui::MenuItem("Create Body For Selected Bone##ToolbarCreateBodyFromBone", nullptr, false, bCanCreateBodyFromBone))
+		{
+			StopPreviewSimulation();
+			SetEditorMode(EPhysicsAssetEditorMode::Body);
+			CreateBodyForBone(Asset, Selection.BoneIndex);
+		}
+
+		const bool bHasBodySelectionForShape = Asset
+			&& (Selection.Type == EPhysicsAssetEditorSelectionType::Body || Selection.Type == EPhysicsAssetEditorSelectionType::Shape)
+			&& Selection.BodyIndex >= 0
+			&& Selection.BodyIndex < static_cast<int32>(Asset->GetBodySetups().size())
+			&& Asset->GetBodySetups()[Selection.BodyIndex] != nullptr;
+		if (ImGui::BeginMenu("Add Primitive To Selected Body##ToolbarAddPrimitive", bHasBodySelectionForShape))
+		{
+			UBodySetup* Body = Asset->GetBodySetups()[Selection.BodyIndex];
+			if (ImGui::MenuItem("Sphere##ToolbarAddSphere"))
+			{
+				Body->AddSphere(FVector::ZeroVector, 0.2f);
+				SelectShape(Selection.BodyIndex, EPhysicsAssetShapeType::Sphere, Body->GetShapeCount(EPhysicsAssetShapeType::Sphere) - 1);
+				MarkDirty();
+			}
+			if (ImGui::MenuItem("Box##ToolbarAddBox"))
+			{
+				Body->AddBox(FVector::ZeroVector, FQuat::Identity, FVector(0.2f, 0.2f, 0.2f));
+				SelectShape(Selection.BodyIndex, EPhysicsAssetShapeType::Box, Body->GetShapeCount(EPhysicsAssetShapeType::Box) - 1);
+				MarkDirty();
+			}
+			if (ImGui::MenuItem("Capsule##ToolbarAddCapsule"))
+			{
+				Body->AddSphyl(FVector::ZeroVector, FQuat::Identity, 0.15f, 0.5f);
+				SelectShape(Selection.BodyIndex, EPhysicsAssetShapeType::Sphyl, Body->GetShapeCount(EPhysicsAssetShapeType::Sphyl) - 1);
+				MarkDirty();
+			}
+			ImGui::EndMenu();
+		}
+
+		ImGui::EndPopup();
 	}
 	DrawSeparator();
 
@@ -1150,7 +1761,7 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 		}
 	}
 	static char ToolbarPhysicalMaterialPath[260] = {};
-	if (DrawMaybeToolbarButton("Physical Material v##ToolbarPhysicalMaterial", 136.0f, bHasBodySelection))
+	if (DrawMaybeToolbarDropdownButton("Physical Material", "ToolbarPhysicalMaterial", 136.0f, bHasBodySelection))
 	{
 		std::snprintf(ToolbarPhysicalMaterialPath, sizeof(ToolbarPhysicalMaterialPath), "%s",
 			Asset->GetBodyPhysicalMaterialPath(SelectedBodyBoneName).c_str());
@@ -1158,25 +1769,34 @@ void FPhysicsAssetEditorWidget::RenderModeToolbar(UPhysicsAsset* Asset)
 	}
 	if (ImGui::BeginPopup("##PhysicsAssetPhysicalMaterialPopup"))
 	{
-		ImGui::TextUnformatted("Physical Material");
-		ImGui::SetNextItemWidth(260.0f);
-		ImGui::InputText("##ToolbarPhysicalMaterialPath", ToolbarPhysicalMaterialPath, sizeof(ToolbarPhysicalMaterialPath));
-		if (ImGui::Button("Apply", ImVec2(82.0f, 24.0f)))
+		ImGui::Text("Body: %s", SelectedBodyBoneName.ToString().c_str());
+		ImGui::Text("Current: %s", Asset->GetBodyPhysicalMaterialPath(SelectedBodyBoneName).c_str());
+		ImGui::Separator();
+
+		const FString CurrentMaterialPath = Asset->GetBodyPhysicalMaterialPath(SelectedBodyBoneName);
+		FString SelectedMaterialPath;
+		if (DrawPhysicalMaterialPickerOptions(CurrentMaterialPath, SelectedMaterialPath))
 		{
-			if (SetSelectedPhysicalMaterialPath(Asset, FString(ToolbarPhysicalMaterialPath)))
+			if (SetSelectedPhysicalMaterialPath(Asset, SelectedMaterialPath))
 			{
 				MarkDirty();
 			}
 			ImGui::CloseCurrentPopup();
 		}
-		ImGui::SameLine();
-		if (ImGui::Button("None", ImVec2(72.0f, 24.0f)))
+
+		if (ImGui::BeginMenu("Advanced Object Path"))
 		{
-			if (SetSelectedPhysicalMaterialPath(Asset, "None"))
+			ImGui::SetNextItemWidth(260.0f);
+			ImGui::InputText("##ToolbarPhysicalMaterialPath", ToolbarPhysicalMaterialPath, sizeof(ToolbarPhysicalMaterialPath));
+			if (ImGui::Button("Use Path", ImVec2(92.0f, 24.0f)))
 			{
-				MarkDirty();
+				if (SetSelectedPhysicalMaterialPath(Asset, FString(ToolbarPhysicalMaterialPath)))
+				{
+					MarkDirty();
+				}
+				ImGui::CloseCurrentPopup();
 			}
-			ImGui::CloseCurrentPopup();
+			ImGui::EndMenu();
 		}
 		ImGui::EndPopup();
 	}
@@ -1296,6 +1916,7 @@ void FPhysicsAssetEditorWidget::RenderViewportPanel(UPhysicsAsset* Asset, ImVec2
 
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 	RenderSolidBodiesOverlay(DrawList, ViewportPos, Size, Asset);
+	RenderConstraintOverlay(DrawList, ViewportPos, Size, Asset);
 	DrawList->AddRectFilled(ViewportPos, ImVec2(ViewportPos.x + Size.x, ViewportPos.y + ToolbarHeight), IM_COL32(40, 40, 40, 255));
 
 	FViewportToolbarContext Context;
@@ -1487,12 +2108,12 @@ void FPhysicsAssetEditorWidget::RenderSolidBodiesOverlay(ImDrawList* DrawList, c
 			&& !Asset->IsBodyCollisionEnabled(ShapeBodies[BodyIndex]->GetBoneName()))
 		{
 			return IsSelectedShape(BodyIndex, ShapeType, ShapeIndex)
-				? IM_COL32(255, 128, 72, 116)
+				? IM_COL32(255, 92, 32, 132)
 				: IM_COL32(130, 130, 130, 46);
 		}
 		return IsSelectedShape(BodyIndex, ShapeType, ShapeIndex)
-			? IM_COL32(255, 176, 0, 140)
-			: IM_COL32(0, 162, 255, 86);
+			? IM_COL32(255, 118, 0, 168)
+			: IM_COL32(0, 162, 255, 76);
 	};
 
 	const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
@@ -1677,6 +2298,562 @@ void FPhysicsAssetEditorWidget::RenderSolidBodiesOverlay(ImDrawList* DrawList, c
 		DrawList->AddTriangleFilled(Triangle.A, Triangle.B, Triangle.C, Triangle.Color);
 	}
 	DrawList->Flags = OldDrawListFlags;
+	DrawList->PopClipRect();
+}
+
+void FPhysicsAssetEditorWidget::RenderConstraintOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos, const ImVec2& ViewportSize, UPhysicsAsset* Asset) const
+{
+	if (!DrawList || !Asset || !PreviewMeshComponent || !ViewportClient.IsShowConstraints())
+	{
+		return;
+	}
+	if (ViewportSize.x <= 1.0f || ViewportSize.y <= 1.0f)
+	{
+		return;
+	}
+
+	FMinimalViewInfo POV;
+	if (!ViewportClient.GetCameraView(POV))
+	{
+		return;
+	}
+	POV.AspectRatio = ViewportSize.x / ViewportSize.y;
+
+	const FMatrix View = POV.CalculateViewMatrix();
+	const FMatrix ViewProjection = POV.CalculateViewProjectionMatrix();
+
+	auto ProjectWorld = [&](const FVector& World, ImVec2& OutScreen) -> bool
+	{
+		const FVector ViewPos = View.TransformPositionWithW(World);
+		if (ViewPos.Z <= POV.NearClip)
+		{
+			return false;
+		}
+
+		const FVector Clip = ViewProjection.TransformPositionWithW(World);
+		if (!std::isfinite(Clip.X) || !std::isfinite(Clip.Y) || !std::isfinite(Clip.Z))
+		{
+			return false;
+		}
+
+		OutScreen = ImVec2(
+			ViewportPos.x + (Clip.X * 0.5f + 0.5f) * ViewportSize.x,
+			ViewportPos.y + (1.0f - (Clip.Y * 0.5f + 0.5f)) * ViewportSize.y);
+		return true;
+	};
+
+	auto DrawWorldLine = [&](const FVector& A, const FVector& B, ImU32 Color, float Thickness, bool bHalo)
+	{
+		ImVec2 PA;
+		ImVec2 PB;
+		if (!ProjectWorld(A, PA) || !ProjectWorld(B, PB))
+		{
+			return;
+		}
+		if (bHalo)
+		{
+			DrawList->AddLine(PA, PB, IM_COL32(0, 0, 0, 150), Thickness + 2.0f);
+		}
+		DrawList->AddLine(PA, PB, Color, Thickness);
+	};
+
+	auto DrawWorldConvexPolygon = [&](const std::vector<FVector>& WorldPoints, ImU32 Color)
+	{
+		std::vector<ImVec2> ScreenPoints;
+		ScreenPoints.reserve(WorldPoints.size());
+		for (const FVector& WorldPoint : WorldPoints)
+		{
+			ImVec2 ScreenPoint;
+			if (!ProjectWorld(WorldPoint, ScreenPoint))
+			{
+				return;
+			}
+			ScreenPoints.push_back(ScreenPoint);
+		}
+		if (ScreenPoints.size() < 3)
+		{
+			return;
+		}
+		DrawList->AddConvexPolyFilled(ScreenPoints.data(), static_cast<int32>(ScreenPoints.size()), Color);
+	};
+
+	auto DrawWorldConvexHull = [&](const std::vector<FVector>& WorldPoints, ImU32 Color)
+	{
+		std::vector<ImVec2> Points;
+		Points.reserve(WorldPoints.size());
+		for (const FVector& WorldPoint : WorldPoints)
+		{
+			ImVec2 ScreenPoint;
+			if (!ProjectWorld(WorldPoint, ScreenPoint))
+			{
+				return;
+			}
+			Points.push_back(ScreenPoint);
+		}
+		if (Points.size() < 3)
+		{
+			return;
+		}
+
+		std::sort(Points.begin(), Points.end(), [](const ImVec2& A, const ImVec2& B)
+		{
+			return A.x == B.x ? A.y < B.y : A.x < B.x;
+		});
+
+		auto Cross2D = [](const ImVec2& O, const ImVec2& A, const ImVec2& B) -> float
+		{
+			return (A.x - O.x) * (B.y - O.y) - (A.y - O.y) * (B.x - O.x);
+		};
+
+		std::vector<ImVec2> Hull;
+		Hull.reserve(Points.size() * 2);
+		for (const ImVec2& Point : Points)
+		{
+			while (Hull.size() >= 2 && Cross2D(Hull[Hull.size() - 2], Hull[Hull.size() - 1], Point) <= 0.01f)
+			{
+				Hull.pop_back();
+			}
+			Hull.push_back(Point);
+		}
+		const size_t LowerCount = Hull.size();
+		for (int32 Index = static_cast<int32>(Points.size()) - 2; Index >= 0; --Index)
+		{
+			const ImVec2& Point = Points[Index];
+			while (Hull.size() > LowerCount && Cross2D(Hull[Hull.size() - 2], Hull[Hull.size() - 1], Point) <= 0.01f)
+			{
+				Hull.pop_back();
+			}
+			Hull.push_back(Point);
+		}
+		if (!Hull.empty())
+		{
+			Hull.pop_back();
+		}
+		if (Hull.size() >= 3)
+		{
+			DrawList->AddConvexPolyFilled(Hull.data(), static_cast<int32>(Hull.size()), Color);
+		}
+	};
+
+	auto DrawWorldCircle = [&](const FVector& Center, const FVector& AxisA, const FVector& AxisB, float RadiusA, float RadiusB, ImU32 Color, float Thickness, bool bHalo)
+	{
+		constexpr int32 Segments = 40;
+		FVector PrevPoint = Center + AxisA * RadiusA;
+		for (int32 Segment = 1; Segment <= Segments; ++Segment)
+		{
+			const float T = static_cast<float>(Segment) / static_cast<float>(Segments);
+			const float Angle = T * 2.0f * FMath::Pi;
+			const FVector Point = Center
+				+ AxisA * (std::cos(Angle) * RadiusA)
+				+ AxisB * (std::sin(Angle) * RadiusB);
+			DrawWorldLine(PrevPoint, Point, Color, Thickness, bHalo);
+			PrevPoint = Point;
+		}
+	};
+
+	auto DrawWorldAxis = [&](const FVector& Origin, const FVector& Axis, const FVector& SideA, const FVector& SideB, float Length, ImU32 Color, float Thickness, bool bHalo)
+	{
+		const FVector End = Origin + Axis * Length;
+		const float HeadLength = Length * 0.22f;
+		const float HeadWidth = Length * 0.08f;
+		DrawWorldLine(Origin, End, Color, Thickness, bHalo);
+		DrawWorldLine(End, End - Axis * HeadLength + SideA * HeadWidth, Color, Thickness, bHalo);
+		DrawWorldLine(End, End - Axis * HeadLength - SideA * HeadWidth, Color, Thickness, bHalo);
+		DrawWorldLine(End, End - Axis * HeadLength + SideB * HeadWidth, Color, Thickness, bHalo);
+		DrawWorldLine(End, End - Axis * HeadLength - SideB * HeadWidth, Color, Thickness, bHalo);
+	};
+
+	auto DrawWorldFilledArcFan = [&](const FVector& Center, const FVector& AxisForward, const FVector& AxisSide, float Length, float HalfAngleRad, ImU32 Color)
+	{
+		const float ClampedHalfAngle = (std::min)(HalfAngleRad, 1.35f);
+		constexpr int32 Segments = 24;
+		std::vector<FVector> Points;
+		Points.reserve(Segments + 2);
+		Points.push_back(Center);
+		for (int32 Segment = 0; Segment <= Segments; ++Segment)
+		{
+			const float T = static_cast<float>(Segment) / static_cast<float>(Segments);
+			const float Angle = -ClampedHalfAngle + T * ClampedHalfAngle * 2.0f;
+			const FVector Point = Center
+				+ AxisForward * (std::cos(Angle) * Length)
+				+ AxisSide * (std::sin(Angle) * Length);
+			Points.push_back(Point);
+		}
+		DrawWorldConvexPolygon(Points, Color);
+	};
+
+	auto DrawWorldFilledDisc = [&](const FVector& Center, const FVector& AxisA, const FVector& AxisB, float RadiusA, float RadiusB, ImU32 Color)
+	{
+		constexpr int32 Segments = 32;
+		std::vector<FVector> Points;
+		Points.reserve(Segments);
+		for (int32 Segment = 0; Segment < Segments; ++Segment)
+		{
+			const float T = static_cast<float>(Segment) / static_cast<float>(Segments);
+			const float Angle = T * 2.0f * FMath::Pi;
+			const FVector Point = Center
+				+ AxisA * (std::cos(Angle) * RadiusA)
+				+ AxisB * (std::sin(Angle) * RadiusB);
+			Points.push_back(Point);
+		}
+		DrawWorldConvexPolygon(Points, Color);
+	};
+
+	DrawList->PushClipRect(ViewportPos, ImVec2(ViewportPos.x + ViewportSize.x, ViewportPos.y + ViewportSize.y), true);
+
+	const TArray<UPhysicsConstraintTemplate*>& Constraints = Asset->GetConstraintTemplates();
+	for (int32 ConstraintIndex = 0; ConstraintIndex < static_cast<int32>(Constraints.size()); ++ConstraintIndex)
+	{
+		const UPhysicsConstraintTemplate* Constraint = Constraints[ConstraintIndex];
+		if (!Constraint)
+		{
+			continue;
+		}
+
+		FMatrix ParentMat;
+		FMatrix ChildMat;
+		if (!PreviewMeshComponent->GetBoneWorldMatrixByName(Constraint->GetParentBoneName().ToString(), ParentMat)
+			|| !PreviewMeshComponent->GetBoneWorldMatrixByName(Constraint->GetChildBoneName().ToString(), ChildMat))
+		{
+			continue;
+		}
+
+		const FVector JointWorld = ParentMat.TransformPositionWithW(Constraint->GetLocalFrameA().Location);
+		const FQuat JointRot = ParentMat.ToQuat() * Constraint->GetLocalFrameA().Rotation;
+		const FVector DirX = JointRot.RotateVector(FVector::XAxisVector).Normalized();
+		const FVector DirY = JointRot.RotateVector(FVector::YAxisVector).Normalized();
+		const FVector DirZ = JointRot.RotateVector(FVector::ZAxisVector).Normalized();
+
+		const FVector ParentOrigin = ParentMat.GetLocation();
+		const FVector ChildOrigin = ChildMat.GetLocation();
+		const float Dist = (ChildOrigin - ParentOrigin).Length();
+		const bool bSelected = Selection.Type == EPhysicsAssetEditorSelectionType::Constraint
+			&& Selection.ConstraintIndex == ConstraintIndex;
+		const float VisualScale = bSelected ? 1.38f : 1.0f;
+		const float ConeLength = Clamp(Dist * 0.10f * VisualScale, 0.03f * VisualScale, 0.13f * VisualScale);
+		const ImU32 LimitFillColor = bSelected
+			? IM_COL32(172, 255, 56, 150)
+			: IM_COL32(172, 255, 56, 95);
+		const ImU32 TwistFillColor = bSelected
+			? IM_COL32(255, 70, 50, 165)
+			: IM_COL32(255, 80, 56, 105);
+		const ImU32 LockedFillColor = bSelected
+			? IM_COL32(255, 202, 48, 160)
+			: IM_COL32(255, 202, 48, 95);
+		const ImU32 FreeFillColor = bSelected
+			? IM_COL32(110, 190, 255, 125)
+			: IM_COL32(110, 190, 255, 70);
+		const bool bCollisionDisabled = Asset->IsCollisionDisabled(Constraint->GetParentBoneName(), Constraint->GetChildBoneName());
+		const ImU32 LinkColor = bSelected
+			? IM_COL32(255, 210, 60, 255)
+			: (bCollisionDisabled ? IM_COL32(255, 85, 60, 190) : IM_COL32(235, 210, 75, 180));
+		const ImU32 LimitOutlineColor = bSelected
+			? IM_COL32(255, 238, 80, 255)
+			: IM_COL32(255, 226, 75, 210);
+		const float GuideThickness = bSelected ? 2.25f : 1.35f;
+
+		DrawWorldLine(ParentOrigin, JointWorld, LinkColor, GuideThickness, bSelected);
+		DrawWorldLine(JointWorld, ChildOrigin, LinkColor, GuideThickness, bSelected);
+
+		const EAngularConstraintMode Mode = Constraint->GetAngularMode();
+		if (Mode == EAngularConstraintMode::Limited)
+		{
+			const float Swing1Rad = Constraint->GetSwing1Limit() * (FMath::Pi / 180.0f);
+			const float Swing2Rad = Constraint->GetSwing2Limit() * (FMath::Pi / 180.0f);
+			const float ClampedSwing1 = (std::min)(Swing1Rad, 1.35f);
+			const float ClampedSwing2 = (std::min)(Swing2Rad, 1.35f);
+			const float RadiusY = (std::min)(ConeLength * std::tan(ClampedSwing2), ConeLength * 1.05f);
+			const float RadiusZ = (std::min)(ConeLength * std::tan(ClampedSwing1), ConeLength * 1.05f);
+			const FVector ConeCenter = JointWorld + DirX * ConeLength;
+
+			constexpr int32 ConeSegments = 32;
+			std::vector<FVector> ConeSurfacePoints;
+			ConeSurfacePoints.reserve(ConeSegments + 1);
+			ConeSurfacePoints.push_back(JointWorld);
+			for (int32 Segment = 0; Segment < ConeSegments; ++Segment)
+			{
+				const float T = static_cast<float>(Segment) / static_cast<float>(ConeSegments);
+				const float Angle = T * 2.0f * FMath::Pi;
+				const FVector Edge = ConeCenter
+					+ DirY * (std::cos(Angle) * RadiusY)
+					+ DirZ * (std::sin(Angle) * RadiusZ);
+				ConeSurfacePoints.push_back(Edge);
+			}
+			DrawWorldConvexHull(ConeSurfacePoints, LimitFillColor);
+
+			DrawWorldCircle(ConeCenter, DirY, DirZ, RadiusY, RadiusZ, LimitOutlineColor, GuideThickness, bSelected);
+
+			const float TwistRad = Constraint->GetTwistLimit() * (FMath::Pi / 180.0f);
+			const float TwistRadius = ConeLength;
+			const FVector TwistCenter = JointWorld + DirX * (ConeLength * 0.10f);
+			DrawWorldFilledArcFan(TwistCenter, DirY, DirZ, TwistRadius, TwistRad, TwistFillColor);
+		}
+		else if (Mode == EAngularConstraintMode::Locked)
+		{
+			const float Radius = ConeLength * 0.24f;
+			DrawWorldFilledDisc(JointWorld, DirY, DirZ, Radius, Radius, LockedFillColor);
+			DrawWorldCircle(JointWorld, DirY, DirZ, Radius, Radius, LimitOutlineColor, GuideThickness, bSelected);
+			DrawWorldLine(JointWorld - DirY * Radius, JointWorld + DirY * Radius, LimitOutlineColor, GuideThickness, bSelected);
+			DrawWorldLine(JointWorld - DirZ * Radius, JointWorld + DirZ * Radius, LimitOutlineColor, GuideThickness, bSelected);
+		}
+		else
+		{
+			const float Radius = ConeLength * 0.5f;
+			DrawWorldFilledDisc(JointWorld, DirY, DirZ, Radius, Radius, FreeFillColor);
+			DrawWorldFilledDisc(JointWorld, DirX, DirZ, Radius, Radius, FreeFillColor);
+			DrawWorldFilledDisc(JointWorld, DirX, DirY, Radius, Radius, FreeFillColor);
+			DrawWorldCircle(JointWorld, DirY, DirZ, Radius, Radius, LimitOutlineColor, GuideThickness, bSelected);
+			DrawWorldCircle(JointWorld, DirX, DirZ, Radius, Radius, LimitOutlineColor, GuideThickness, bSelected);
+			DrawWorldCircle(JointWorld, DirX, DirY, Radius, Radius, LimitOutlineColor, GuideThickness, bSelected);
+		}
+
+		const float AxisLength = ConeLength * (bSelected ? 1.35f : 0.92f);
+		const float AxisThickness = bSelected ? 2.1f : 1.25f;
+		DrawWorldAxis(JointWorld, DirX, DirY, DirZ, AxisLength, bSelected ? IM_COL32(255, 80, 70, 255) : IM_COL32(255, 80, 70, 190), AxisThickness, bSelected);
+		DrawWorldAxis(JointWorld, DirY, DirX, DirZ, AxisLength, bSelected ? IM_COL32(84, 255, 64, 255) : IM_COL32(84, 255, 64, 190), AxisThickness, bSelected);
+		DrawWorldAxis(JointWorld, DirZ, DirX, DirY, AxisLength, bSelected ? IM_COL32(78, 150, 255, 245) : IM_COL32(78, 150, 255, 175), AxisThickness, bSelected);
+
+		if (bSelected)
+		{
+			const FVector ChildFrameWorld = ChildMat.TransformPositionWithW(Constraint->GetLocalFrameB().Location);
+			const FQuat ChildFrameRot = ChildMat.ToQuat() * Constraint->GetLocalFrameB().Rotation;
+			const FVector ChildDirX = ChildFrameRot.RotateVector(FVector::XAxisVector).Normalized();
+			const FVector ChildDirY = ChildFrameRot.RotateVector(FVector::YAxisVector).Normalized();
+			const FVector ChildDirZ = ChildFrameRot.RotateVector(FVector::ZAxisVector).Normalized();
+			const float ChildAxisLength = AxisLength * 0.65f;
+			DrawWorldLine(JointWorld, ChildFrameWorld, IM_COL32(255, 255, 255, 120), 1.0f, false);
+			DrawWorldAxis(ChildFrameWorld, ChildDirX, ChildDirY, ChildDirZ, ChildAxisLength, IM_COL32(255, 110, 92, 190), 1.3f, false);
+			DrawWorldAxis(ChildFrameWorld, ChildDirY, ChildDirX, ChildDirZ, ChildAxisLength, IM_COL32(112, 255, 92, 190), 1.3f, false);
+			DrawWorldAxis(ChildFrameWorld, ChildDirZ, ChildDirX, ChildDirY, ChildAxisLength, IM_COL32(118, 176, 255, 180), 1.3f, false);
+		}
+	}
+
+	DrawList->PopClipRect();
+}
+
+void FPhysicsAssetEditorWidget::RenderGizmoForegroundOverlay(ImDrawList* DrawList, const ImVec2& ViewportPos, const ImVec2& ViewportSize, float ToolbarHeight) const
+{
+	UGizmoComponent* Gizmo = ViewportClient.GetGizmo();
+	if (!DrawList || !Gizmo || !Gizmo->HasTarget() || ViewportClient.IsSimulatingPhysics())
+	{
+		return;
+	}
+	if (ViewportSize.x <= 1.0f || ViewportSize.y <= 1.0f)
+	{
+		return;
+	}
+
+	FMinimalViewInfo POV;
+	if (!ViewportClient.GetCameraView(POV))
+	{
+		return;
+	}
+	POV.AspectRatio = ViewportSize.x / ViewportSize.y;
+
+	const FMatrix View = POV.CalculateViewMatrix();
+	const FMatrix ViewProjection = POV.CalculateViewProjectionMatrix();
+
+	auto ProjectWorld = [&](const FVector& World, ImVec2& OutScreen) -> bool
+	{
+		const FVector ViewPos = View.TransformPositionWithW(World);
+		if (ViewPos.Z <= POV.NearClip)
+		{
+			return false;
+		}
+
+		const FVector Clip = ViewProjection.TransformPositionWithW(World);
+		if (!std::isfinite(Clip.X) || !std::isfinite(Clip.Y) || !std::isfinite(Clip.Z))
+		{
+			return false;
+		}
+
+		OutScreen = ImVec2(
+			ViewportPos.x + (Clip.X * 0.5f + 0.5f) * ViewportSize.x,
+			ViewportPos.y + (1.0f - (Clip.Y * 0.5f + 0.5f)) * ViewportSize.y);
+		return true;
+	};
+
+	auto AxisColor = [&](int32 Axis) -> ImU32
+	{
+		if (Gizmo->GetSelectedAxis() == Axis)
+		{
+			return IM_COL32(255, 220, 72, 255);
+		}
+		switch (Axis)
+		{
+			case 0: return IM_COL32(255, 76, 76, 255);
+			case 1: return IM_COL32(72, 230, 72, 255);
+			case 2: return IM_COL32(76, 128, 255, 255);
+			default: return IM_COL32(230, 230, 230, 255);
+		}
+	};
+
+	auto DrawScreenLine = [&](const ImVec2& A, const ImVec2& B, ImU32 Color, float Thickness)
+	{
+		DrawList->AddLine(A, B, IM_COL32(0, 0, 0, 230), Thickness + 2.5f);
+		DrawList->AddLine(A, B, Color, Thickness);
+	};
+
+	auto DrawWorldLine = [&](const FVector& A, const FVector& B, ImU32 Color, float Thickness)
+	{
+		ImVec2 PA;
+		ImVec2 PB;
+		if (!ProjectWorld(A, PA) || !ProjectWorld(B, PB))
+		{
+			return;
+		}
+		DrawScreenLine(PA, PB, Color, Thickness);
+	};
+
+	auto DrawWorldTriangle = [&](const FVector& A, const FVector& B, const FVector& C, ImU32 Color)
+	{
+		ImVec2 PA;
+		ImVec2 PB;
+		ImVec2 PC;
+		if (!ProjectWorld(A, PA) || !ProjectWorld(B, PB) || !ProjectWorld(C, PC))
+		{
+			return;
+		}
+		DrawList->AddTriangleFilled(PA, PB, PC, Color);
+	};
+
+	auto DrawRotateRing = [&](const FVector& Center, const FVector& AxisA, const FVector& AxisB, float Radius, ImU32 Color, float Thickness)
+	{
+		constexpr int32 Segments = 72;
+		FVector PrevPoint;
+		bool bHasPrev = false;
+		for (int32 Segment = 0; Segment <= Segments; ++Segment)
+		{
+			const float T = static_cast<float>(Segment) / static_cast<float>(Segments);
+			const float Angle = T * 2.0f * FMath::Pi;
+			const FVector Point = Center
+				+ AxisA * (std::cos(Angle) * Radius)
+				+ AxisB * (std::sin(Angle) * Radius);
+			if (bHasPrev)
+			{
+				DrawWorldLine(PrevPoint, Point, Color, Thickness);
+			}
+			PrevPoint = Point;
+			bHasPrev = true;
+		}
+	};
+
+	auto DrawScaleBox = [&](const ImVec2& End, ImU32 Color)
+	{
+		const float Half = 5.5f;
+		DrawList->AddRectFilled(ImVec2(End.x - Half - 1.5f, End.y - Half - 1.5f), ImVec2(End.x + Half + 1.5f, End.y + Half + 1.5f), IM_COL32(0, 0, 0, 230));
+		DrawList->AddRectFilled(ImVec2(End.x - Half, End.y - Half), ImVec2(End.x + Half, End.y + Half), Color);
+	};
+
+	auto DrawTranslateCone = [&](const FVector& Tip, const FVector& AxisDir, float AxisScale, ImU32 Color, float Thickness)
+	{
+		const float ConeLength = AxisScale * 0.18f;
+		const float ConeRadius = AxisScale * 0.075f;
+		const FVector BaseCenter = Tip - AxisDir * ConeLength;
+		FVector BasisA = AxisDir.Cross(POV.Rotation.GetForwardVector()).Normalized();
+		if (BasisA.Length() <= 1.e-4f)
+		{
+			BasisA = AxisDir.Cross(FVector::UpVector).Normalized();
+		}
+		if (BasisA.Length() <= 1.e-4f)
+		{
+			BasisA = AxisDir.Cross(FVector::RightVector).Normalized();
+		}
+		const FVector BasisB = AxisDir.Cross(BasisA).Normalized();
+
+		constexpr int32 ConeSegments = 18;
+		FVector PrevEdge = BaseCenter + BasisA * ConeRadius;
+		for (int32 Segment = 1; Segment <= ConeSegments; ++Segment)
+		{
+			const float T = static_cast<float>(Segment) / static_cast<float>(ConeSegments);
+			const float Angle = T * 2.0f * FMath::Pi;
+			const FVector Edge = BaseCenter
+				+ BasisA * (std::cos(Angle) * ConeRadius)
+				+ BasisB * (std::sin(Angle) * ConeRadius);
+			DrawWorldTriangle(Tip, PrevEdge, Edge, Color);
+			DrawWorldTriangle(BaseCenter, Edge, PrevEdge, Color);
+			DrawWorldLine(PrevEdge, Edge, Color, Thickness * 0.55f);
+			PrevEdge = Edge;
+		}
+		DrawWorldLine(Tip, BaseCenter + BasisA * ConeRadius, Color, Thickness * 0.65f);
+		DrawWorldLine(Tip, BaseCenter - BasisA * ConeRadius, Color, Thickness * 0.65f);
+	};
+
+	const FVector Center = Gizmo->GetWorldLocation();
+	const float Scale = Gizmo->ComputeScreenSpaceScale(POV.Location, POV.bIsOrtho, POV.OrthoWidth);
+	const uint32 AxisMask = Gizmo->GetAxisMask();
+	const EGizmoMode Mode = Gizmo->GetMode();
+
+	DrawList->PushClipRect(
+		ImVec2(ViewportPos.x, ViewportPos.y + ToolbarHeight),
+		ImVec2(ViewportPos.x + ViewportSize.x, ViewportPos.y + ViewportSize.y),
+		true);
+
+	ImVec2 CenterScreen;
+	if (ProjectWorld(Center, CenterScreen))
+	{
+		DrawList->AddCircleFilled(CenterScreen, 5.5f, IM_COL32(0, 0, 0, 230), 18);
+		DrawList->AddCircleFilled(CenterScreen, 3.3f, IM_COL32(235, 235, 235, 255), 18);
+	}
+
+	if (Mode == EGizmoMode::Rotate)
+	{
+		const FVector AxisX = Gizmo->GetVectorForAxis(0).Normalized();
+		const FVector AxisY = Gizmo->GetVectorForAxis(1).Normalized();
+		const FVector AxisZ = Gizmo->GetVectorForAxis(2).Normalized();
+		const FVector RingAxes[3][2] = {
+			{ AxisY, AxisZ },
+			{ AxisX, AxisZ },
+			{ AxisX, AxisY }
+		};
+		for (int32 Axis = 0; Axis < 3; ++Axis)
+		{
+			if ((AxisMask & (1u << Axis)) == 0)
+			{
+				continue;
+			}
+			DrawRotateRing(Center, RingAxes[Axis][0], RingAxes[Axis][1], Scale, AxisColor(Axis), Gizmo->GetSelectedAxis() == Axis ? 3.4f : 2.4f);
+		}
+	}
+	else
+	{
+		const bool bScaleHandle = Mode == EGizmoMode::Scale;
+		for (int32 Axis = 0; Axis < 3; ++Axis)
+		{
+			if ((AxisMask & (1u << Axis)) == 0)
+			{
+				continue;
+			}
+
+			const FVector AxisDir = Gizmo->GetVectorForAxis(Axis).Normalized();
+			const FVector End = Center + AxisDir * Scale;
+			ImVec2 StartScreen;
+			ImVec2 EndScreen;
+			if (!ProjectWorld(Center, StartScreen) || !ProjectWorld(End, EndScreen))
+			{
+				continue;
+			}
+
+			const ImU32 Color = AxisColor(Axis);
+			const float Thickness = Gizmo->GetSelectedAxis() == Axis ? 4.2f : 3.2f;
+			if (bScaleHandle)
+			{
+				DrawScreenLine(StartScreen, EndScreen, Color, Thickness);
+				DrawScaleBox(EndScreen, Color);
+			}
+			else
+			{
+				const FVector StemEnd = End - AxisDir * (Scale * 0.18f);
+				ImVec2 StemEndScreen;
+				if (ProjectWorld(StemEnd, StemEndScreen))
+				{
+					DrawScreenLine(StartScreen, StemEndScreen, Color, Thickness);
+				}
+				DrawTranslateCone(End, AxisDir, Scale, Color, Thickness);
+			}
+		}
+	}
+
 	DrawList->PopClipRect();
 }
 
@@ -1958,7 +3135,7 @@ void FPhysicsAssetEditorWidget::RenderBoneTreeNode(const FSkeletalMesh* MeshAsse
 
 void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Size)
 {
-	if (Size.x <= 1.0f || Size.y <= 1.0f)
+	if (Size.y <= 1.0f)
 	{
 		return;
 	}
@@ -1983,68 +3160,221 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 	const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
 	const TArray<UPhysicsConstraintTemplate*>& Constraints = Asset->GetConstraintTemplates();
 	const FSkeletalMesh* MeshAsset = PreviewMesh ? PreviewMesh->GetSkeletalMeshAsset() : nullptr;
+	bool bSelectionDrivenGraph = Selection.Type != EPhysicsAssetEditorSelectionType::None && !bSelectionOriginatedFromGraph;
+
+	std::vector<int32> RootBodyIndices;
+	std::vector<int32> GraphBodyIndices;
+	std::vector<int32> GraphConstraintIndices;
+
+	auto AddUniqueIndex = [](std::vector<int32>& Values, int32 Index)
+	{
+		if (Index >= 0 && std::find(Values.begin(), Values.end(), Index) == Values.end())
+		{
+			Values.push_back(Index);
+		}
+	};
+
+	auto HasIndex = [](const std::vector<int32>& Values, int32 Index) -> bool
+	{
+		return std::find(Values.begin(), Values.end(), Index) != Values.end();
+	};
+
+	auto AddBodyByBone = [&](FName BoneName) -> int32
+	{
+		const int32 BodyIndex = Asset->FindBodyIndex(BoneName);
+		if (BodyIndex >= 0)
+		{
+			AddUniqueIndex(GraphBodyIndices, BodyIndex);
+		}
+		return BodyIndex;
+	};
+
+	auto AddConstraintAndBodies = [&](int32 ConstraintIndex)
+	{
+		if (ConstraintIndex < 0 || ConstraintIndex >= static_cast<int32>(Constraints.size()) || !Constraints[ConstraintIndex])
+		{
+			return;
+		}
+
+		AddUniqueIndex(GraphConstraintIndices, ConstraintIndex);
+		AddBodyByBone(Constraints[ConstraintIndex]->GetParentBoneName());
+		AddBodyByBone(Constraints[ConstraintIndex]->GetChildBoneName());
+	};
+
+	if (bSelectionDrivenGraph)
+	{
+		if (Selection.Type == EPhysicsAssetEditorSelectionType::Body || Selection.Type == EPhysicsAssetEditorSelectionType::Shape)
+		{
+			AddUniqueIndex(RootBodyIndices, Selection.BodyIndex);
+			AddUniqueIndex(GraphBodyIndices, Selection.BodyIndex);
+		}
+		else if (Selection.Type == EPhysicsAssetEditorSelectionType::Bone && MeshAsset
+			&& Selection.BoneIndex >= 0 && Selection.BoneIndex < static_cast<int32>(MeshAsset->Bones.size()))
+		{
+			const int32 BodyIndex = Asset->FindBodyIndex(FName(MeshAsset->Bones[Selection.BoneIndex].Name));
+			AddUniqueIndex(RootBodyIndices, BodyIndex);
+			AddUniqueIndex(GraphBodyIndices, BodyIndex);
+		}
+		else if (Selection.Type == EPhysicsAssetEditorSelectionType::Constraint)
+		{
+			AddConstraintAndBodies(Selection.ConstraintIndex);
+			if (Selection.ConstraintIndex >= 0 && Selection.ConstraintIndex < static_cast<int32>(Constraints.size()) && Constraints[Selection.ConstraintIndex])
+			{
+				AddUniqueIndex(RootBodyIndices, Asset->FindBodyIndex(Constraints[Selection.ConstraintIndex]->GetParentBoneName()));
+			}
+		}
+
+		if (!RootBodyIndices.empty())
+		{
+			const std::vector<int32> InitialRoots = RootBodyIndices;
+			for (int32 RootBodyIndex : InitialRoots)
+			{
+				if (RootBodyIndex < 0 || RootBodyIndex >= static_cast<int32>(Bodies.size()) || !Bodies[RootBodyIndex])
+				{
+					continue;
+				}
+
+				const FName RootBoneName = Bodies[RootBodyIndex]->GetBoneName();
+				for (int32 ConstraintIndex = 0; ConstraintIndex < static_cast<int32>(Constraints.size()); ++ConstraintIndex)
+				{
+					const UPhysicsConstraintTemplate* Constraint = Constraints[ConstraintIndex];
+					if (!Constraint)
+					{
+						continue;
+					}
+
+					if (Constraint->GetParentBoneName() == RootBoneName)
+					{
+						AddUniqueIndex(GraphConstraintIndices, ConstraintIndex);
+						AddBodyByBone(Constraint->GetChildBoneName());
+					}
+					else if (Constraint->GetChildBoneName() == RootBoneName)
+					{
+						AddUniqueIndex(GraphConstraintIndices, ConstraintIndex);
+						AddBodyByBone(Constraint->GetParentBoneName());
+					}
+				}
+			}
+		}
+	}
+
+	if (GraphBodyIndices.empty() && GraphConstraintIndices.empty())
+	{
+		bSelectionDrivenGraph = false;
+		for (int32 BodyIndex = 0; BodyIndex < static_cast<int32>(Bodies.size()); ++BodyIndex)
+		{
+			AddUniqueIndex(GraphBodyIndices, BodyIndex);
+		}
+		for (int32 ConstraintIndex = 0; ConstraintIndex < static_cast<int32>(Constraints.size()); ++ConstraintIndex)
+		{
+			AddUniqueIndex(GraphConstraintIndices, ConstraintIndex);
+		}
+	}
+
+	if (GraphBodyIndices.empty() && GraphConstraintIndices.empty())
+	{
+		ImGui::TextDisabled("No physics bodies or constraints.");
+		ImGui::EndChild();
+		return;
+	}
+
+	const float GraphCanvasWidth = (std::max)(ImGui::GetContentRegionAvail().x, 240.0f);
+	const float SelectionGraphRootX = 24.0f;
+	const float SelectionGraphConstraintX = (std::max)(118.0f, (std::min)(GraphCanvasWidth * 0.42f, 210.0f));
+	const float SelectionGraphLinkedX = (std::max)(220.0f, (std::min)(GraphCanvasWidth - 130.0f, 360.0f));
 
 	ed::SetCurrentEditor(GraphEditorContext);
 	ed::Begin("PhysicsAssetGraphCanvas");
 
+	bool bNavigateToGraphContent = false;
 	if (!bGraphPositionsPushed)
 	{
-		std::vector<int32> RowsByDepth;
-		for (int32 BodyIndex = 0; BodyIndex < static_cast<int32>(Bodies.size()); ++BodyIndex)
+		if (bSelectionDrivenGraph)
 		{
-			const UBodySetup* Body = Bodies[BodyIndex];
-			if (!Body)
+			int32 RootRow = 0;
+			int32 LinkedRow = 0;
+			for (int32 BodyIndex : GraphBodyIndices)
 			{
-				continue;
+				const bool bIsRoot = HasIndex(RootBodyIndices, BodyIndex);
+				ed::SetNodePosition(ToPhysicsGraphNodeId(BodyIndex), ImVec2(
+					bIsRoot ? SelectionGraphRootX : SelectionGraphLinkedX,
+					40.0f + static_cast<float>(bIsRoot ? RootRow++ : LinkedRow++) * 92.0f));
 			}
 
-			float SavedX = 0.0f;
-			float SavedY = 0.0f;
-			if (Asset->GetGraphNodePosition(Body->GetBoneName(), SavedX, SavedY))
+			for (int32 Index = 0; Index < static_cast<int32>(GraphConstraintIndices.size()); ++Index)
 			{
-				ed::SetNodePosition(ToPhysicsGraphNodeId(BodyIndex), ImVec2(SavedX, SavedY));
-				continue;
+				ed::SetNodePosition(ToPhysicsGraphConstraintNodeId(GraphConstraintIndices[Index]), ImVec2(
+					SelectionGraphConstraintX,
+					40.0f + static_cast<float>(Index) * 74.0f));
 			}
-
-			int32 Depth = 0;
-			if (MeshAsset)
+		}
+		else
+		{
+			std::vector<int32> RowsByDepth;
+			for (int32 BodyIndex : GraphBodyIndices)
 			{
-				int32 BoneIndex = -1;
-				for (int32 Index = 0; Index < static_cast<int32>(MeshAsset->Bones.size()); ++Index)
+				const UBodySetup* Body = (BodyIndex >= 0 && BodyIndex < static_cast<int32>(Bodies.size())) ? Bodies[BodyIndex] : nullptr;
+				if (!Body)
 				{
-					if (MeshAsset->Bones[Index].Name == Body->GetBoneName().ToString())
+					continue;
+				}
+
+				float SavedX = 0.0f;
+				float SavedY = 0.0f;
+				if (Asset->GetGraphNodePosition(Body->GetBoneName(), SavedX, SavedY))
+				{
+					ed::SetNodePosition(ToPhysicsGraphNodeId(BodyIndex), ImVec2(SavedX, SavedY));
+					continue;
+				}
+
+				int32 Depth = 0;
+				if (MeshAsset)
+				{
+					int32 BoneIndex = -1;
+					for (int32 Index = 0; Index < static_cast<int32>(MeshAsset->Bones.size()); ++Index)
 					{
-						BoneIndex = Index;
-						break;
+						if (MeshAsset->Bones[Index].Name == Body->GetBoneName().ToString())
+						{
+							BoneIndex = Index;
+							break;
+						}
 					}
+					for (int32 Walk = BoneIndex; Walk >= 0 && Walk < static_cast<int32>(MeshAsset->Bones.size()); Walk = MeshAsset->Bones[Walk].ParentIndex)
+					{
+						++Depth;
+					}
+					Depth = (std::max)(0, Depth - 1);
 				}
-				for (int32 Walk = BoneIndex; Walk >= 0 && Walk < static_cast<int32>(MeshAsset->Bones.size()); Walk = MeshAsset->Bones[Walk].ParentIndex)
+				else
 				{
-					++Depth;
+					Depth = BodyIndex % 2;
 				}
-				Depth = (std::max)(0, Depth - 1);
-			}
-			else
-			{
-				Depth = BodyIndex % 2;
+
+				if (Depth >= static_cast<int32>(RowsByDepth.size()))
+				{
+					RowsByDepth.resize(Depth + 1, 0);
+				}
+
+				const int32 Row = RowsByDepth[Depth]++;
+				ed::SetNodePosition(ToPhysicsGraphNodeId(BodyIndex), ImVec2(
+					40.0f + static_cast<float>(Depth) * 210.0f,
+					40.0f + static_cast<float>(Row) * 92.0f));
 			}
 
-			if (Depth >= static_cast<int32>(RowsByDepth.size()))
+			for (int32 Index = 0; Index < static_cast<int32>(GraphConstraintIndices.size()); ++Index)
 			{
-				RowsByDepth.resize(Depth + 1, 0);
+				ed::SetNodePosition(ToPhysicsGraphConstraintNodeId(GraphConstraintIndices[Index]), ImVec2(
+					260.0f,
+					40.0f + static_cast<float>(Index) * 74.0f));
 			}
-
-			const int32 Row = RowsByDepth[Depth]++;
-			ed::SetNodePosition(ToPhysicsGraphNodeId(BodyIndex), ImVec2(
-				40.0f + static_cast<float>(Depth) * 210.0f,
-				40.0f + static_cast<float>(Row) * 92.0f));
 		}
 		bGraphPositionsPushed = true;
+		bNavigateToGraphContent = true;
 	}
 
-	for (int32 BodyIndex = 0; BodyIndex < static_cast<int32>(Bodies.size()); ++BodyIndex)
+	for (int32 BodyIndex : GraphBodyIndices)
 	{
-		const UBodySetup* Body = Bodies[BodyIndex];
+		const UBodySetup* Body = (BodyIndex >= 0 && BodyIndex < static_cast<int32>(Bodies.size())) ? Bodies[BodyIndex] : nullptr;
 		if (!Body)
 		{
 			continue;
@@ -2056,10 +3386,12 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 			+ Body->GetShapeCount(EPhysicsAssetShapeType::Sphyl)
 			+ Body->GetShapeCount(EPhysicsAssetShapeType::Convex);
 		const bool bCollisionEnabled = Asset->IsBodyCollisionEnabled(Body->GetBoneName());
+		const bool bSelectedBody = (Selection.Type == EPhysicsAssetEditorSelectionType::Body || Selection.Type == EPhysicsAssetEditorSelectionType::Shape)
+			&& Selection.BodyIndex == BodyIndex;
 
 		ed::BeginNode(ToPhysicsGraphNodeId(BodyIndex));
 			ImGui::PushID(BodyIndex);
-			ImGui::TextColored(ImVec4(0.55f, 0.82f, 0.42f, 1.0f), "Body");
+			ImGui::TextColored(bSelectedBody ? ImVec4(1.0f, 0.73f, 0.25f, 1.0f) : ImVec4(0.55f, 0.82f, 0.42f, 1.0f), "Body");
 			ImGui::SameLine();
 			ImGui::TextUnformatted(Body->GetBoneName().ToString().c_str());
 			if (!bCollisionEnabled)
@@ -2082,7 +3414,41 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 		ed::EndNode();
 	}
 
-	for (int32 ConstraintIndex = 0; ConstraintIndex < static_cast<int32>(Constraints.size()); ++ConstraintIndex)
+	for (int32 ConstraintIndex : GraphConstraintIndices)
+	{
+		const UPhysicsConstraintTemplate* Constraint = Constraints[ConstraintIndex];
+		if (!Constraint)
+		{
+			continue;
+		}
+
+		const bool bCollisionDisabled = Asset->IsCollisionDisabled(Constraint->GetParentBoneName(), Constraint->GetChildBoneName());
+		const bool bSelectedConstraint = Selection.Type == EPhysicsAssetEditorSelectionType::Constraint
+			&& Selection.ConstraintIndex == ConstraintIndex;
+
+		ed::BeginNode(ToPhysicsGraphConstraintNodeId(ConstraintIndex));
+			ImGui::PushID(PhysicsGraphConstraintNodeBase + static_cast<uint32>(ConstraintIndex));
+			ImGui::TextColored(bSelectedConstraint ? ImVec4(1.0f, 0.73f, 0.25f, 1.0f) : ImVec4(0.84f, 0.78f, 0.46f, 1.0f), "Constraint");
+			ImGui::Separator();
+			ed::BeginPin(ToPhysicsGraphConstraintInputPinId(ConstraintIndex), ed::PinKind::Input);
+				ImGui::TextUnformatted("< Joint");
+			ed::EndPin();
+			ImGui::SameLine();
+			ImGui::Dummy(ImVec2(14.0f, 1.0f));
+			ImGui::SameLine();
+			ed::BeginPin(ToPhysicsGraphConstraintOutputPinId(ConstraintIndex), ed::PinKind::Output);
+				ImGui::TextUnformatted("Body >");
+			ed::EndPin();
+			ImGui::Text("%s", AngularModeLabel(Constraint->GetAngularMode()));
+			if (bCollisionDisabled)
+			{
+				ImGui::TextColored(ImVec4(0.95f, 0.46f, 0.34f, 1.0f), "Collision Disabled");
+			}
+			ImGui::PopID();
+		ed::EndNode();
+	}
+
+	for (int32 ConstraintIndex : GraphConstraintIndices)
 	{
 		const UPhysicsConstraintTemplate* Constraint = Constraints[ConstraintIndex];
 		if (!Constraint)
@@ -2092,19 +3458,42 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 
 		const int32 ParentIndex = Asset->FindBodyIndex(Constraint->GetParentBoneName());
 		const int32 ChildIndex = Asset->FindBodyIndex(Constraint->GetChildBoneName());
-		if (ParentIndex < 0 || ChildIndex < 0)
+		if (ParentIndex < 0 || ChildIndex < 0 || !HasIndex(GraphBodyIndices, ParentIndex) || !HasIndex(GraphBodyIndices, ChildIndex))
 		{
 			continue;
+		}
+
+		int32 SourceBodyIndex = ParentIndex;
+		int32 TargetBodyIndex = ChildIndex;
+		if (bSelectionDrivenGraph && HasIndex(RootBodyIndices, ChildIndex) && !HasIndex(RootBodyIndices, ParentIndex))
+		{
+			SourceBodyIndex = ChildIndex;
+			TargetBodyIndex = ParentIndex;
 		}
 
 		const ImVec4 LinkColor = Asset->IsCollisionDisabled(Constraint->GetParentBoneName(), Constraint->GetChildBoneName())
 			? ImVec4(0.95f, 0.38f, 0.30f, 1.0f)
 			: ImVec4(0.85f, 0.78f, 0.44f, 1.0f);
 		ed::Link(ToPhysicsGraphLinkId(ConstraintIndex),
-			ToPhysicsGraphOutputPinId(ParentIndex),
-			ToPhysicsGraphInputPinId(ChildIndex),
+			ToPhysicsGraphOutputPinId(SourceBodyIndex),
+			ToPhysicsGraphConstraintInputPinId(ConstraintIndex),
 			LinkColor,
 			Selection.Type == EPhysicsAssetEditorSelectionType::Constraint && Selection.ConstraintIndex == ConstraintIndex ? 3.0f : 1.6f);
+		ed::Link(ToPhysicsGraphLinkedBodyLinkId(ConstraintIndex),
+			ToPhysicsGraphConstraintOutputPinId(ConstraintIndex),
+			ToPhysicsGraphInputPinId(TargetBodyIndex),
+			LinkColor,
+			Selection.Type == EPhysicsAssetEditorSelectionType::Constraint && Selection.ConstraintIndex == ConstraintIndex ? 3.0f : 1.6f);
+	}
+
+	if (bPendingGraphSelectionSync)
+	{
+		SyncGraphEditorSelectionToSelection();
+	}
+
+	if (bNavigateToGraphContent)
+	{
+		ed::NavigateToContent(0.0f);
 	}
 
 	if (ed::BeginCreate())
@@ -2141,7 +3530,8 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 						UPhysicsConstraintTemplate* NewConstraint = CreateConstraintBetweenBodies(Asset, ParentBodyIndex, ChildBodyIndex);
 						if (NewConstraint)
 						{
-							SelectConstraint(static_cast<int32>(Asset->GetConstraintTemplates().size()) - 1);
+							SelectConstraint(static_cast<int32>(Asset->GetConstraintTemplates().size()) - 1, true);
+							bGraphPositionsPushed = false;
 							MarkDirty();
 						}
 					}
@@ -2177,7 +3567,15 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 		{
 			if (ed::AcceptDeletedItem())
 			{
-				BodyDeletes.push_back(PhysicsGraphNodeIdToBodyIndex(DeletedNode));
+				const int32 ConstraintIndex = PhysicsGraphNodeIdToConstraintIndex(DeletedNode);
+				if (ConstraintIndex >= 0)
+				{
+					ConstraintDeletes.push_back(ConstraintIndex);
+				}
+				else
+				{
+					BodyDeletes.push_back(PhysicsGraphNodeIdToBodyIndex(DeletedNode));
+				}
 			}
 		}
 	}
@@ -2203,7 +3601,7 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 	{
 		if (BodyIndex >= 0 && BodyIndex < static_cast<int32>(Asset->GetBodySetups().size()))
 		{
-			SelectBody(BodyIndex);
+			SelectBody(BodyIndex, true);
 			if (DeleteSelection(Asset))
 			{
 				bGraphPositionsPushed = false;
@@ -2214,7 +3612,12 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 
 	const bool bGraphHasUserFocus = ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)
 		|| ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows);
-	if (bGraphHasUserFocus)
+	const bool bGraphSelectionChanged = ed::HasSelectionChanged();
+	if (bSuppressNextGraphSelectionEvent)
+	{
+		bSuppressNextGraphSelectionEvent = false;
+	}
+	else if (bGraphHasUserFocus && bGraphSelectionChanged)
 	{
 		ed::LinkId SelectedLinks[1];
 		const int32 SelectedLinkCount = ed::GetSelectedLinks(SelectedLinks, 1);
@@ -2223,7 +3626,7 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 			const int32 ConstraintIndex = PhysicsGraphLinkIdToConstraintIndex(SelectedLinks[0]);
 			if (ConstraintIndex >= 0 && ConstraintIndex < static_cast<int32>(Asset->GetConstraintTemplates().size()))
 			{
-				SelectConstraint(ConstraintIndex);
+				SelectConstraint(ConstraintIndex, true);
 			}
 		}
 		else
@@ -2232,31 +3635,42 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 			const int32 SelectedNodeCount = ed::GetSelectedNodes(SelectedNodes, 1);
 			if (SelectedNodeCount > 0)
 			{
-				const int32 BodyIndex = PhysicsGraphNodeIdToBodyIndex(SelectedNodes[0]);
-				if (BodyIndex >= 0 && BodyIndex < static_cast<int32>(Bodies.size()))
+				const int32 ConstraintIndex = PhysicsGraphNodeIdToConstraintIndex(SelectedNodes[0]);
+				if (ConstraintIndex >= 0 && ConstraintIndex < static_cast<int32>(Asset->GetConstraintTemplates().size()))
 				{
-					SelectBody(BodyIndex);
+					SelectConstraint(ConstraintIndex, true);
+				}
+				else
+				{
+					const int32 BodyIndex = PhysicsGraphNodeIdToBodyIndex(SelectedNodes[0]);
+					if (BodyIndex >= 0 && BodyIndex < static_cast<int32>(Bodies.size()))
+					{
+						SelectBody(BodyIndex, true);
+					}
 				}
 			}
 		}
 	}
 
-	for (int32 BodyIndex = 0; BodyIndex < static_cast<int32>(Bodies.size()); ++BodyIndex)
+	if (!bSelectionDrivenGraph)
 	{
-		const UBodySetup* Body = Bodies[BodyIndex];
-		if (!Body)
+		for (int32 BodyIndex : GraphBodyIndices)
 		{
-			continue;
+			const UBodySetup* Body = (BodyIndex >= 0 && BodyIndex < static_cast<int32>(Bodies.size())) ? Bodies[BodyIndex] : nullptr;
+			if (!Body)
+			{
+				continue;
+			}
+			const ImVec2 NodePos = ed::GetNodePosition(ToPhysicsGraphNodeId(BodyIndex));
+			float OldX = 0.0f;
+			float OldY = 0.0f;
+			if (Asset->GetGraphNodePosition(Body->GetBoneName(), OldX, OldY)
+				&& (std::fabs(OldX - NodePos.x) > 0.5f || std::fabs(OldY - NodePos.y) > 0.5f))
+			{
+				MarkDirty();
+			}
+			Asset->SetGraphNodePosition(Body->GetBoneName(), NodePos.x, NodePos.y);
 		}
-		const ImVec2 NodePos = ed::GetNodePosition(ToPhysicsGraphNodeId(BodyIndex));
-		float OldX = 0.0f;
-		float OldY = 0.0f;
-		if (Asset->GetGraphNodePosition(Body->GetBoneName(), OldX, OldY)
-			&& (std::fabs(OldX - NodePos.x) > 0.5f || std::fabs(OldY - NodePos.y) > 0.5f))
-		{
-			MarkDirty();
-		}
-		Asset->SetGraphNodePosition(Body->GetBoneName(), NodePos.x, NodePos.y);
 	}
 
 	ed::NodeId ContextNodeId = 0;
@@ -2280,7 +3694,7 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 		const int32 BodyIndex = PhysicsGraphNodeIdToBodyIndex(ContextNodeId);
 		if (BodyIndex >= 0 && BodyIndex < static_cast<int32>(Asset->GetBodySetups().size()))
 		{
-			SelectBody(BodyIndex);
+			SelectBody(BodyIndex, true);
 			const UBodySetup* Body = Asset->GetBodySetups()[BodyIndex];
 			const bool bCollisionEnabled = Body && Asset->IsBodyCollisionEnabled(Body->GetBoneName());
 			if (ImGui::MenuItem("Enable Collision", nullptr, bCollisionEnabled, !bCollisionEnabled))
@@ -2303,6 +3717,36 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 				}
 			}
 		}
+		else
+		{
+			const int32 ConstraintIndex = PhysicsGraphNodeIdToConstraintIndex(ContextNodeId);
+			if (ConstraintIndex >= 0 && ConstraintIndex < static_cast<int32>(Asset->GetConstraintTemplates().size()))
+			{
+				SelectConstraint(ConstraintIndex, true);
+				const UPhysicsConstraintTemplate* Constraint = Asset->GetConstraintTemplates()[ConstraintIndex];
+				const bool bCollisionDisabled = Constraint
+					&& Asset->IsCollisionDisabled(Constraint->GetParentBoneName(), Constraint->GetChildBoneName());
+				if (ImGui::MenuItem("Disable Collision Between Bodies", nullptr, bCollisionDisabled, !bCollisionDisabled))
+				{
+					SetSelectedCollisionEnabled(Asset, false);
+					MarkDirty();
+				}
+				if (ImGui::MenuItem("Enable Collision Between Bodies", nullptr, !bCollisionDisabled, bCollisionDisabled))
+				{
+					SetSelectedCollisionEnabled(Asset, true);
+					MarkDirty();
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Delete Constraint"))
+				{
+					if (Asset->RemoveConstraintAt(ConstraintIndex))
+					{
+						ClearSelection();
+						MarkDirty();
+					}
+				}
+			}
+		}
 		ImGui::EndPopup();
 	}
 
@@ -2311,7 +3755,7 @@ void FPhysicsAssetEditorWidget::RenderGraphPanel(UPhysicsAsset* Asset, ImVec2 Si
 		const int32 ConstraintIndex = PhysicsGraphLinkIdToConstraintIndex(ContextLinkId);
 		if (ConstraintIndex >= 0 && ConstraintIndex < static_cast<int32>(Asset->GetConstraintTemplates().size()))
 		{
-			SelectConstraint(ConstraintIndex);
+			SelectConstraint(ConstraintIndex, true);
 			const UPhysicsConstraintTemplate* Constraint = Asset->GetConstraintTemplates()[ConstraintIndex];
 			const bool bCollisionDisabled = Constraint
 				&& Asset->IsCollisionDisabled(Constraint->GetParentBoneName(), Constraint->GetChildBoneName());
@@ -2372,28 +3816,61 @@ void FPhysicsAssetEditorWidget::RenderDetailsPanel(UPhysicsAsset* Asset)
 		return;
 	}
 
-	if (Selection.Type == EPhysicsAssetEditorSelectionType::None)
+	const FString Filter = DetailsFilter;
+
+	if (ImGui::CollapsingHeader("Asset", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		if (ImGui::CollapsingHeader("Asset", ImGuiTreeNodeFlags_DefaultOpen))
+		bool bAssetChanged = false;
+		if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsAssetTable"))
 		{
-			ImGui::Text("Physics Asset");
-			ImGui::TextWrapped("%s", IsValidAssetPath(Asset->GetSourcePath()) ? Asset->GetSourcePath().c_str() : "Unsaved");
-			ImGui::Spacing();
-			ImGui::Text("Preview Mesh");
-			ImGui::TextWrapped("%s", Asset->GetPreviewSkeletalMeshPath().c_str());
-			if (!PreviewMesh)
+			DrawDetailsTextRow("Physics Asset", IsValidAssetPath(Asset->GetSourcePath()) ? Asset->GetSourcePath() : "Unsaved", Filter);
+
+			FString PreviewMeshPath = Asset->GetPreviewSkeletalMeshPath();
+			if (DrawDetailsStringRow("Preview Mesh", PreviewMeshPath, Filter))
 			{
-				ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.35f, 1.0f), "Preview mesh is not resolved.");
+				if (PreviewMeshPath.empty())
+				{
+					PreviewMeshPath = "None";
+				}
+				Asset->SetPreviewSkeletalMeshPath(PreviewMeshPath);
+				bAssetChanged = true;
 			}
 
-			ImGui::Text("Bodies: %llu", static_cast<unsigned long long>(Asset->GetBodySetups().size()));
-			ImGui::Text("Constraints: %llu", static_cast<unsigned long long>(Asset->GetConstraintTemplates().size()));
+			DrawDetailsTextRow("Bodies", std::to_string(Asset->GetBodySetups().size()), Filter);
+			DrawDetailsTextRow("Constraints", std::to_string(Asset->GetConstraintTemplates().size()), Filter);
+			DrawDetailsTextRow("Disabled Collision Pairs", std::to_string(Asset->GetDisabledCollisionPairs().size()), Filter);
+			EndPhysicsDetailsTable();
 		}
 
+		if (!PreviewMesh)
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.35f, 1.0f), "Preview mesh is not resolved.");
+		}
+		if (ImGui::Button("Apply Preview Mesh##PhysicsAssetDetailsApplyPreviewMesh"))
+		{
+			ReloadPreviewMeshFromAsset(Asset);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Clear Preview Mesh##PhysicsAssetDetailsClearPreviewMesh"))
+		{
+			Asset->SetPreviewSkeletalMeshPath("None");
+			ReloadPreviewMeshFromAsset(Asset);
+			MarkDirty();
+		}
+		if (bAssetChanged)
+		{
+			MarkDirty();
+		}
+	}
+
+	if (Selection.Type == EPhysicsAssetEditorSelectionType::None)
+	{
 		ImGui::Spacing();
 		ImGui::TextDisabled("Select a bone, body, shape, or constraint.");
 		return;
 	}
+
+	ImGui::Spacing();
 
 	if (Selection.Type == EPhysicsAssetEditorSelectionType::Bone)
 	{
@@ -2414,9 +3891,14 @@ void FPhysicsAssetEditorWidget::RenderDetailsPanel(UPhysicsAsset* Asset)
 
 		if (ImGui::CollapsingHeader("Bone", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			ImGui::Text("Name: %s", Bone.Name.c_str());
-			ImGui::Text("Index: %d", Selection.BoneIndex);
-			ImGui::Text("Parent: %d", Bone.ParentIndex);
+			if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsBoneTable"))
+			{
+				DrawDetailsTextRow("Name", Bone.Name, Filter);
+				DrawDetailsTextRow("Index", std::to_string(Selection.BoneIndex), Filter);
+				DrawDetailsTextRow("Parent Index", std::to_string(Bone.ParentIndex), Filter);
+				DrawDetailsTextRow("Has Body", ExistingBodyIndex >= 0 ? "True" : "False", Filter);
+				EndPhysicsDetailsTable();
+			}
 
 			if (ExistingBodyIndex >= 0)
 			{
@@ -2440,6 +3922,7 @@ void FPhysicsAssetEditorWidget::RenderDetailsPanel(UPhysicsAsset* Asset)
 		{
 			UBodySetup* Body = Bodies[Selection.BodyIndex];
 			const FSkeletalMesh* MeshAsset = PreviewMesh ? PreviewMesh->GetSkeletalMeshAsset() : nullptr;
+			const FName BoneName = Body->GetBoneName();
 			auto AddShapeToSelectedBody = [&](const FPhysicsAssetBodyShapeDesc& ShapeDesc, EPhysicsAssetShapeType ShapeType)
 			{
 				UBodySetup* EditedBody = nullptr;
@@ -2479,41 +3962,96 @@ void FPhysicsAssetEditorWidget::RenderDetailsPanel(UPhysicsAsset* Asset)
 				}
 			};
 
+			if (ImGui::CollapsingHeader("Physics", ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				bool bChanged = false;
+				if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsBodyPhysicsTable"))
+				{
+					bool bCollisionEnabled = Asset->IsBodyCollisionEnabled(BoneName);
+					if (DrawDetailsBoolRow("Collision Enabled", bCollisionEnabled, Filter))
+					{
+						Asset->SetBodyCollisionEnabled(BoneName, bCollisionEnabled);
+						bChanged = true;
+					}
+
+					bool bEnableGravity = Asset->IsBodyGravityEnabled(BoneName);
+					if (DrawDetailsBoolRow("Enable Gravity", bEnableGravity, Filter))
+					{
+						Asset->SetBodyGravityEnabled(BoneName, bEnableGravity);
+						bChanged = true;
+					}
+
+					bool bConsiderForBounds = Asset->IsBodyConsideredForBounds(BoneName);
+					if (DrawDetailsBoolRow("Consider For Bounds", bConsiderForBounds, Filter))
+					{
+						Asset->SetBodyConsideredForBounds(BoneName, bConsiderForBounds);
+						bChanged = true;
+					}
+
+					float Mass = Asset->GetBodyMass(BoneName);
+					if (DrawDetailsFloatRow("Mass (kg)", Mass, 0.1f, 0.001f, 100000.0f, Filter))
+					{
+						Asset->SetBodyMass(BoneName, Mass);
+						bChanged = true;
+					}
+
+					float LinearDamping = Asset->GetBodyLinearDamping(BoneName);
+					if (DrawDetailsFloatRow("Linear Damping", LinearDamping, 0.01f, 0.0f, 1000.0f, Filter))
+					{
+						Asset->SetBodyLinearDamping(BoneName, LinearDamping);
+						bChanged = true;
+					}
+
+					float AngularDamping = Asset->GetBodyAngularDamping(BoneName);
+					if (DrawDetailsFloatRow("Angular Damping", AngularDamping, 0.01f, 0.0f, 1000.0f, Filter))
+					{
+						Asset->SetBodyAngularDamping(BoneName, AngularDamping);
+						bChanged = true;
+					}
+
+					EndPhysicsDetailsTable();
+				}
+
+				ImGui::TextUnformatted("Physical Material");
+				const FString CurrentMaterialPath = Asset->GetBodyPhysicalMaterialPath(BoneName);
+				const FString CurrentMaterialLabel = MakePhysicalMaterialDisplayName(CurrentMaterialPath);
+				ImGui::SetNextItemWidth(-1.0f);
+				if (ImGui::BeginCombo("##BodyPhysicalMaterialDetails", CurrentMaterialLabel.c_str()))
+				{
+					FString SelectedMaterialPath;
+					if (DrawPhysicalMaterialPickerOptions(CurrentMaterialPath, SelectedMaterialPath))
+					{
+						Asset->SetBodyPhysicalMaterialPath(BoneName, SelectedMaterialPath);
+						bChanged = true;
+					}
+					if (IsValidAssetPath(CurrentMaterialPath))
+					{
+						ImGui::Separator();
+						ImGui::TextDisabled("%s", CurrentMaterialPath.c_str());
+						if (ImGui::IsItemHovered())
+						{
+							ImGui::SetTooltip("Current asset reference");
+						}
+					}
+					ImGui::EndCombo();
+				}
+
+				if (bChanged)
+				{
+					MarkDirty();
+				}
+			}
+
 			if (ImGui::CollapsingHeader("Body Setup", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				ImGui::Text("Bone: %s", Body->GetBoneName().ToString().c_str());
-				ImGui::Text("Spheres: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Sphere));
-				ImGui::Text("Boxes: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Box));
-				ImGui::Text("Capsules: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Sphyl));
-				ImGui::Text("Convex: %d", Body->GetShapeCount(EPhysicsAssetShapeType::Convex));
-
-				bool bCollisionEnabled = Asset->IsBodyCollisionEnabled(Body->GetBoneName());
-				if (ImGui::Checkbox("Collision Enabled", &bCollisionEnabled))
+				if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsBodySetupTable"))
 				{
-					Asset->SetBodyCollisionEnabled(Body->GetBoneName(), bCollisionEnabled);
-					MarkDirty();
-				}
-
-				static FName EditingMaterialBone = FName::None;
-				static char EditingMaterialPath[260] = {};
-				if (EditingMaterialBone != Body->GetBoneName())
-				{
-					EditingMaterialBone = Body->GetBoneName();
-					std::snprintf(EditingMaterialPath, sizeof(EditingMaterialPath), "%s",
-						Asset->GetBodyPhysicalMaterialPath(Body->GetBoneName()).c_str());
-				}
-				ImGui::SetNextItemWidth(-72.0f);
-				if (ImGui::InputText("Physical Material", EditingMaterialPath, sizeof(EditingMaterialPath)))
-				{
-					Asset->SetBodyPhysicalMaterialPath(Body->GetBoneName(), FString(EditingMaterialPath));
-					MarkDirty();
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("None##BodyPhysicalMaterial"))
-				{
-					std::snprintf(EditingMaterialPath, sizeof(EditingMaterialPath), "%s", "None");
-					Asset->SetBodyPhysicalMaterialPath(Body->GetBoneName(), "None");
-					MarkDirty();
+					DrawDetailsTextRow("Bone Name", BoneName.ToString(), Filter);
+					DrawDetailsTextRow("Spheres", std::to_string(Body->GetShapeCount(EPhysicsAssetShapeType::Sphere)), Filter);
+					DrawDetailsTextRow("Boxes", std::to_string(Body->GetShapeCount(EPhysicsAssetShapeType::Box)), Filter);
+					DrawDetailsTextRow("Capsules", std::to_string(Body->GetShapeCount(EPhysicsAssetShapeType::Sphyl)), Filter);
+					DrawDetailsTextRow("Convex", std::to_string(Body->GetShapeCount(EPhysicsAssetShapeType::Convex)), Filter);
+					EndPhysicsDetailsTable();
 				}
 
 				if (ImGui::Button("Add Sphere"))
@@ -2573,17 +4111,22 @@ void FPhysicsAssetEditorWidget::RenderShapeDetails(UPhysicsAsset* Asset, UBodySe
 
 	FKAggregateGeom& Geom = Body->GetAggGeom();
 	bool bChanged = false;
+	const FString Filter = DetailsFilter;
 
 	if (ImGui::CollapsingHeader("Primitive", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::Text("Body: %s", Body->GetBoneName().ToString().c_str());
-		ImGui::Text("Shape: %s %d", ShapeTypeLabel(Selection.ShapeType), Selection.ShapeIndex);
-
-		bool bCollisionEnabled = Asset->IsBodyCollisionEnabled(Body->GetBoneName());
-		if (ImGui::Checkbox("Body Collision Enabled", &bCollisionEnabled))
+		if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsPrimitiveInfoTable"))
 		{
-			Asset->SetBodyCollisionEnabled(Body->GetBoneName(), bCollisionEnabled);
-			MarkDirty();
+			DrawDetailsTextRow("Body", Body->GetBoneName().ToString(), Filter);
+			DrawDetailsTextRow("Shape", FString(ShapeTypeLabel(Selection.ShapeType)) + " " + std::to_string(Selection.ShapeIndex), Filter);
+
+			bool bCollisionEnabled = Asset->IsBodyCollisionEnabled(Body->GetBoneName());
+			if (DrawDetailsBoolRow("Body Collision Enabled", bCollisionEnabled, Filter))
+			{
+				Asset->SetBodyCollisionEnabled(Body->GetBoneName(), bCollisionEnabled);
+				bChanged = true;
+			}
+			EndPhysicsDetailsTable();
 		}
 
 		if (Selection.ShapeType == EPhysicsAssetShapeType::Sphere)
@@ -2591,8 +4134,12 @@ void FPhysicsAssetEditorWidget::RenderShapeDetails(UPhysicsAsset* Asset, UBodySe
 			if (Selection.ShapeIndex >= 0 && Selection.ShapeIndex < static_cast<int32>(Geom.SphereElems.size()))
 			{
 				FKSphereElem& Sphere = Geom.SphereElems[Selection.ShapeIndex];
-				bChanged |= ImGui::DragFloat3("Center", &Sphere.Center.X, 0.01f);
-				bChanged |= ImGui::DragFloat("Radius", &Sphere.Radius, 0.01f, 0.001f, 1000.0f);
+				if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsSphereTable"))
+				{
+					bChanged |= DrawDetailsVec3Row("Center", Sphere.Center, 0.01f, Filter);
+					bChanged |= DrawDetailsFloatRow("Radius", Sphere.Radius, 0.01f, 0.001f, 1000.0f, Filter);
+					EndPhysicsDetailsTable();
+				}
 				Sphere.Radius = Clamp(Sphere.Radius, 0.001f, 1000.0f);
 			}
 		}
@@ -2602,13 +4149,17 @@ void FPhysicsAssetEditorWidget::RenderShapeDetails(UPhysicsAsset* Asset, UBodySe
 			{
 				FKBoxElem& Box = Geom.BoxElems[Selection.ShapeIndex];
 				FVector Euler = FRotator::FromQuaternion(Box.Rotation).ToVector();
-				bChanged |= ImGui::DragFloat3("Center", &Box.Center.X, 0.01f);
-				if (ImGui::DragFloat3("Rotation", &Euler.X, 0.25f))
+				if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsBoxTable"))
 				{
-					Box.Rotation = FRotator(Euler).ToQuaternion();
-					bChanged = true;
+					bChanged |= DrawDetailsVec3Row("Center", Box.Center, 0.01f, Filter);
+					if (DrawDetailsVec3Row("Rotation", Euler, 0.25f, Filter))
+					{
+						Box.Rotation = FRotator(Euler).ToQuaternion();
+						bChanged = true;
+					}
+					bChanged |= DrawDetailsVec3Row("Extents", Box.Extents, 0.01f, Filter);
+					EndPhysicsDetailsTable();
 				}
-				bChanged |= ImGui::DragFloat3("Extents", &Box.Extents.X, 0.01f, 0.001f, 1000.0f);
 				Box.Extents.X = Clamp(Box.Extents.X, 0.001f, 1000.0f);
 				Box.Extents.Y = Clamp(Box.Extents.Y, 0.001f, 1000.0f);
 				Box.Extents.Z = Clamp(Box.Extents.Z, 0.001f, 1000.0f);
@@ -2620,14 +4171,18 @@ void FPhysicsAssetEditorWidget::RenderShapeDetails(UPhysicsAsset* Asset, UBodySe
 			{
 				FKSphylElem& Capsule = Geom.SphylElems[Selection.ShapeIndex];
 				FVector Euler = FRotator::FromQuaternion(Capsule.Rotation).ToVector();
-				bChanged |= ImGui::DragFloat3("Center", &Capsule.Center.X, 0.01f);
-				if (ImGui::DragFloat3("Rotation", &Euler.X, 0.25f))
+				if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsCapsuleTable"))
 				{
-					Capsule.Rotation = FRotator(Euler).ToQuaternion();
-					bChanged = true;
+					bChanged |= DrawDetailsVec3Row("Center", Capsule.Center, 0.01f, Filter);
+					if (DrawDetailsVec3Row("Rotation", Euler, 0.25f, Filter))
+					{
+						Capsule.Rotation = FRotator(Euler).ToQuaternion();
+						bChanged = true;
+					}
+					bChanged |= DrawDetailsFloatRow("Radius", Capsule.Radius, 0.01f, 0.001f, 1000.0f, Filter);
+					bChanged |= DrawDetailsFloatRow("Length", Capsule.Length, 0.01f, 0.001f, 1000.0f, Filter);
+					EndPhysicsDetailsTable();
 				}
-				bChanged |= ImGui::DragFloat("Radius", &Capsule.Radius, 0.01f, 0.001f, 1000.0f);
-				bChanged |= ImGui::DragFloat("Length", &Capsule.Length, 0.01f, 0.001f, 1000.0f);
 				Capsule.Radius = Clamp(Capsule.Radius, 0.001f, 1000.0f);
 				Capsule.Length = Clamp(Capsule.Length, 0.001f, 1000.0f);
 			}
@@ -2637,7 +4192,11 @@ void FPhysicsAssetEditorWidget::RenderShapeDetails(UPhysicsAsset* Asset, UBodySe
 			if (Selection.ShapeIndex >= 0 && Selection.ShapeIndex < static_cast<int32>(Geom.ConvexElems.size()))
 			{
 				FKConvexElem& Convex = Geom.ConvexElems[Selection.ShapeIndex];
-				ImGui::Text("Vertices: %llu", static_cast<unsigned long long>(Convex.VertexData.size()));
+				if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsConvexTable"))
+				{
+					DrawDetailsTextRow("Vertices", std::to_string(Convex.VertexData.size()), Filter);
+					EndPhysicsDetailsTable();
+				}
 				if (!Convex.VertexData.empty())
 				{
 					FVector Min = Convex.VertexData[0];
@@ -2654,17 +4213,21 @@ void FPhysicsAssetEditorWidget::RenderShapeDetails(UPhysicsAsset* Asset, UBodySe
 
 					FVector Center = (Min + Max) * 0.5f;
 					const FVector Extents = (Max - Min) * 0.5f;
-					if (ImGui::DragFloat3("Center", &Center.X, 0.01f))
+					if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsConvexBoundsTable"))
 					{
-						const FVector OldCenter = (Min + Max) * 0.5f;
-						const FVector Delta = Center - OldCenter;
-						for (FVector& Vertex : Convex.VertexData)
+						if (DrawDetailsVec3Row("Center", Center, 0.01f, Filter))
 						{
-							Vertex += Delta;
+							const FVector OldCenter = (Min + Max) * 0.5f;
+							const FVector Delta = Center - OldCenter;
+							for (FVector& Vertex : Convex.VertexData)
+							{
+								Vertex += Delta;
+							}
+							bChanged = true;
 						}
-						bChanged = true;
+						DrawDetailsTextRow("Extents", FString(std::to_string(Extents.X) + " " + std::to_string(Extents.Y) + " " + std::to_string(Extents.Z)), Filter);
+						EndPhysicsDetailsTable();
 					}
-					ImGui::Text("Extents: %.3f %.3f %.3f", Extents.X, Extents.Y, Extents.Z);
 
 					float UniformScale = 1.0f;
 					if (ImGui::DragFloat("Scale Delta", &UniformScale, 0.01f, 0.01f, 100.0f))
@@ -2713,23 +4276,51 @@ void FPhysicsAssetEditorWidget::RenderConstraintDetails(UPhysicsAsset* Asset)
 	}
 
 	UPhysicsConstraintTemplate* Constraint = Constraints[Selection.ConstraintIndex];
+	const FString Filter = DetailsFilter;
 	if (ImGui::CollapsingHeader("Constraint", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::Text("Parent: %s", Constraint->GetParentBoneName().ToString().c_str());
-		ImGui::Text("Child: %s", Constraint->GetChildBoneName().ToString().c_str());
-
-		bool bDisableCollision = Asset->IsCollisionDisabled(Constraint->GetParentBoneName(), Constraint->GetChildBoneName());
-		if (ImGui::Checkbox("Disable Collision Between Bodies", &bDisableCollision))
+		bool bChanged = false;
+		if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsConstraintTable"))
 		{
-			Asset->SetCollisionDisabled(Constraint->GetParentBoneName(), Constraint->GetChildBoneName(), bDisableCollision);
-			MarkDirty();
+			DrawDetailsTextRow("Parent Bone", Constraint->GetParentBoneName().ToString(), Filter);
+			DrawDetailsTextRow("Child Bone", Constraint->GetChildBoneName().ToString(), Filter);
+
+			bool bDisableCollision = Asset->IsCollisionDisabled(Constraint->GetParentBoneName(), Constraint->GetChildBoneName());
+			if (DrawDetailsBoolRow("Disable Collision Between Bodies", bDisableCollision, Filter))
+			{
+				Asset->SetCollisionDisabled(Constraint->GetParentBoneName(), Constraint->GetChildBoneName(), bDisableCollision);
+				bChanged = true;
+			}
+
+			const char* Modes[] = { "Free", "Limited", "Locked" };
+			int32 Mode = static_cast<int32>(Constraint->GetAngularMode());
+			if (DrawDetailsEnumRow("Angular Mode", Mode, Modes, 3, Filter))
+			{
+				Constraint->SetAngularMode(static_cast<EAngularConstraintMode>(Mode));
+				bChanged = true;
+			}
+
+			float Swing1 = Constraint->GetSwing1Limit();
+			float Swing2 = Constraint->GetSwing2Limit();
+			float Twist = Constraint->GetTwistLimit();
+			bool bLimitsChanged = false;
+			bLimitsChanged |= DrawDetailsFloatRow("Swing 1 Limit", Swing1, 0.25f, 0.0f, 180.0f, Filter);
+			bLimitsChanged |= DrawDetailsFloatRow("Swing 2 Limit", Swing2, 0.25f, 0.0f, 180.0f, Filter);
+			bLimitsChanged |= DrawDetailsFloatRow("Twist Limit", Twist, 0.25f, 0.0f, 180.0f, Filter);
+			if (bLimitsChanged)
+			{
+				Constraint->SetAngularLimits(Swing1, Swing2, Twist);
+				bChanged = true;
+			}
+
+			EndPhysicsDetailsTable();
 		}
 
 		if (ImGui::Button("Ball & Socket"))
 		{
 			if (ApplyConstraintPreset(Asset, Selection.ConstraintIndex, EAngularConstraintMode::Limited, 45.0f, 45.0f, 180.0f))
 			{
-				MarkDirty();
+				bChanged = true;
 			}
 		}
 		ImGui::SameLine();
@@ -2737,7 +4328,7 @@ void FPhysicsAssetEditorWidget::RenderConstraintDetails(UPhysicsAsset* Asset)
 		{
 			if (ApplyConstraintPreset(Asset, Selection.ConstraintIndex, EAngularConstraintMode::Limited, 0.0f, 0.0f, 90.0f))
 			{
-				MarkDirty();
+				bChanged = true;
 			}
 		}
 		ImGui::SameLine();
@@ -2745,56 +4336,43 @@ void FPhysicsAssetEditorWidget::RenderConstraintDetails(UPhysicsAsset* Asset)
 		{
 			if (ApplyConstraintPreset(Asset, Selection.ConstraintIndex, EAngularConstraintMode::Locked, 0.0f, 0.0f, 0.0f))
 			{
-				MarkDirty();
+				bChanged = true;
 			}
 		}
 
-		const char* Modes[] = { "Free", "Limited", "Locked" };
-		int32 Mode = static_cast<int32>(Constraint->GetAngularMode());
-		if (ImGui::Combo("Angular Mode", &Mode, Modes, 3))
+		if (ImGui::CollapsingHeader("Constraint Frames", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			Constraint->SetAngularMode(static_cast<EAngularConstraintMode>(Mode));
-			MarkDirty();
-		}
+			FTransform FrameA = Constraint->GetLocalFrameA();
+			FTransform FrameB = Constraint->GetLocalFrameB();
+			FVector FrameAEuler = FRotator::FromQuaternion(FrameA.Rotation).ToVector();
+			FVector FrameBEuler = FRotator::FromQuaternion(FrameB.Rotation).ToVector();
 
-		float Swing1 = Constraint->GetSwing1Limit();
-		float Swing2 = Constraint->GetSwing2Limit();
-		float Twist = Constraint->GetTwistLimit();
-		bool bLimitsChanged = false;
-		bLimitsChanged |= ImGui::DragFloat("Swing 1", &Swing1, 0.25f, 0.0f, 180.0f);
-		bLimitsChanged |= ImGui::DragFloat("Swing 2", &Swing2, 0.25f, 0.0f, 180.0f);
-		bLimitsChanged |= ImGui::DragFloat("Twist", &Twist, 0.25f, 0.0f, 180.0f);
-		if (bLimitsChanged)
-		{
-			Constraint->SetAngularLimits(Swing1, Swing2, Twist);
-			MarkDirty();
-		}
-
-		FTransform FrameA = Constraint->GetLocalFrameA();
-		FTransform FrameB = Constraint->GetLocalFrameB();
-		if (ImGui::DragFloat3("Frame A Location", &FrameA.Location.X, 0.01f))
-		{
-			Constraint->SetLocalFrameA(FrameA);
-			MarkDirty();
-		}
-		FVector FrameAEuler = FRotator::FromQuaternion(FrameA.Rotation).ToVector();
-		if (ImGui::DragFloat3("Frame A Rotation", &FrameAEuler.X, 0.25f))
-		{
-			FrameA.Rotation = FRotator(FrameAEuler).ToQuaternion();
-			Constraint->SetLocalFrameA(FrameA);
-			MarkDirty();
-		}
-		if (ImGui::DragFloat3("Frame B Location", &FrameB.Location.X, 0.01f))
-		{
-			Constraint->SetLocalFrameB(FrameB);
-			MarkDirty();
-		}
-		FVector FrameBEuler = FRotator::FromQuaternion(FrameB.Rotation).ToVector();
-		if (ImGui::DragFloat3("Frame B Rotation", &FrameBEuler.X, 0.25f))
-		{
-			FrameB.Rotation = FRotator(FrameBEuler).ToQuaternion();
-			Constraint->SetLocalFrameB(FrameB);
-			MarkDirty();
+			if (BeginPhysicsDetailsTable("##PhysicsAssetDetailsConstraintFramesTable"))
+			{
+				if (DrawDetailsVec3Row("Frame A Location", FrameA.Location, 0.01f, Filter))
+				{
+					Constraint->SetLocalFrameA(FrameA);
+					bChanged = true;
+				}
+				if (DrawDetailsVec3Row("Frame A Rotation", FrameAEuler, 0.25f, Filter))
+				{
+					FrameA.Rotation = FRotator(FrameAEuler).ToQuaternion();
+					Constraint->SetLocalFrameA(FrameA);
+					bChanged = true;
+				}
+				if (DrawDetailsVec3Row("Frame B Location", FrameB.Location, 0.01f, Filter))
+				{
+					Constraint->SetLocalFrameB(FrameB);
+					bChanged = true;
+				}
+				if (DrawDetailsVec3Row("Frame B Rotation", FrameBEuler, 0.25f, Filter))
+				{
+					FrameB.Rotation = FRotator(FrameBEuler).ToQuaternion();
+					Constraint->SetLocalFrameB(FrameB);
+					bChanged = true;
+				}
+				EndPhysicsDetailsTable();
+			}
 		}
 
 		if (ImGui::Button("Delete Constraint"))
@@ -2804,6 +4382,11 @@ void FPhysicsAssetEditorWidget::RenderConstraintDetails(UPhysicsAsset* Asset)
 				ClearSelection();
 				MarkDirty();
 			}
+		}
+
+		if (bChanged)
+		{
+			MarkDirty();
 		}
 	}
 }
@@ -2847,7 +4430,7 @@ bool FPhysicsAssetEditorWidget::CreateBodyForBone(UPhysicsAsset* Asset, int32 Bo
 
 void FPhysicsAssetEditorWidget::RenderToolsPanel(UPhysicsAsset* Asset, ImVec2 Size)
 {
-	if (Size.x <= 1.0f || Size.y <= 1.0f)
+	if (Size.y <= 1.0f)
 	{
 		return;
 	}
@@ -2893,6 +4476,119 @@ void FPhysicsAssetEditorWidget::RenderToolsPanel(UPhysicsAsset* Asset, ImVec2 Si
 				RegenerateBodies(Asset);
 			}
 
+			ImGui::Spacing();
+			DrawPhysicsPanelHeader("Selection");
+			if (Selection.Type == EPhysicsAssetEditorSelectionType::Bone)
+			{
+				const FSkeletalMesh* MeshAsset = PreviewMesh ? PreviewMesh->GetSkeletalMeshAsset() : nullptr;
+				if (MeshAsset
+					&& Selection.BoneIndex >= 0
+					&& Selection.BoneIndex < static_cast<int32>(MeshAsset->Bones.size()))
+				{
+					const FName BoneName(MeshAsset->Bones[Selection.BoneIndex].Name);
+					const int32 ExistingBodyIndex = Asset->FindBodyIndex(BoneName);
+					if (ExistingBodyIndex >= 0)
+					{
+						if (ImGui::Button("Select Existing Body##ToolsSelectBody", ImVec2(-1.0f, 24.0f)))
+						{
+							SelectBody(ExistingBodyIndex);
+						}
+					}
+					else if (ImGui::Button("Create Body For Selected Bone##ToolsCreateBody", ImVec2(-1.0f, 24.0f)))
+					{
+						CreateBodyForBone(Asset, Selection.BoneIndex);
+					}
+				}
+				else
+				{
+					ImGui::TextDisabled("Selected bone is invalid.");
+				}
+			}
+			else if (Selection.Type == EPhysicsAssetEditorSelectionType::Body)
+			{
+				const TArray<UBodySetup*>& Bodies = Asset->GetBodySetups();
+				UBodySetup* Body = (Selection.BodyIndex >= 0 && Selection.BodyIndex < static_cast<int32>(Bodies.size()))
+					? Bodies[Selection.BodyIndex]
+					: nullptr;
+				if (Body)
+				{
+					if (ImGui::Button("Add Sphere##ToolsAddSphere", ImVec2(-1.0f, 24.0f)))
+					{
+						Body->AddSphere(FVector::ZeroVector, 0.2f);
+						SelectShape(Selection.BodyIndex, EPhysicsAssetShapeType::Sphere, Body->GetShapeCount(EPhysicsAssetShapeType::Sphere) - 1);
+						MarkDirty();
+					}
+					if (ImGui::Button("Add Box##ToolsAddBox", ImVec2(-1.0f, 24.0f)))
+					{
+						Body->AddBox(FVector::ZeroVector, FQuat::Identity, FVector(0.2f, 0.2f, 0.2f));
+						SelectShape(Selection.BodyIndex, EPhysicsAssetShapeType::Box, Body->GetShapeCount(EPhysicsAssetShapeType::Box) - 1);
+						MarkDirty();
+					}
+					if (ImGui::Button("Add Capsule##ToolsAddCapsule", ImVec2(-1.0f, 24.0f)))
+					{
+						Body->AddSphyl(FVector::ZeroVector, FQuat::Identity, 0.15f, 0.5f);
+						SelectShape(Selection.BodyIndex, EPhysicsAssetShapeType::Sphyl, Body->GetShapeCount(EPhysicsAssetShapeType::Sphyl) - 1);
+						MarkDirty();
+					}
+					if (ImGui::Button("Delete Body##ToolsDeleteBody", ImVec2(-1.0f, 24.0f)))
+					{
+						if (DeleteSelection(Asset))
+						{
+							MarkDirty();
+						}
+					}
+				}
+			}
+			else if (Selection.Type == EPhysicsAssetEditorSelectionType::Shape)
+			{
+				if (ImGui::Button("Delete Shape##ToolsDeleteShape", ImVec2(-1.0f, 24.0f)))
+				{
+					if (DeleteSelection(Asset))
+					{
+						MarkDirty();
+					}
+				}
+				if (ImGui::Button("Select Owning Body##ToolsSelectOwningBody", ImVec2(-1.0f, 24.0f)))
+				{
+					SelectBody(Selection.BodyIndex);
+				}
+			}
+			else if (Selection.Type == EPhysicsAssetEditorSelectionType::Constraint)
+			{
+				if (ImGui::Button("Ball & Socket##ToolsBallSocket", ImVec2(-1.0f, 24.0f)))
+				{
+					if (ApplyConstraintPreset(Asset, Selection.ConstraintIndex, EAngularConstraintMode::Limited, 45.0f, 45.0f, 180.0f))
+					{
+						MarkDirty();
+					}
+				}
+				if (ImGui::Button("Hinge##ToolsHinge", ImVec2(-1.0f, 24.0f)))
+				{
+					if (ApplyConstraintPreset(Asset, Selection.ConstraintIndex, EAngularConstraintMode::Limited, 0.0f, 0.0f, 90.0f))
+					{
+						MarkDirty();
+					}
+				}
+				if (ImGui::Button("Fixed##ToolsFixed", ImVec2(-1.0f, 24.0f)))
+				{
+					if (ApplyConstraintPreset(Asset, Selection.ConstraintIndex, EAngularConstraintMode::Locked, 0.0f, 0.0f, 0.0f))
+					{
+						MarkDirty();
+					}
+				}
+				if (ImGui::Button("Delete Constraint##ToolsDeleteConstraint", ImVec2(-1.0f, 24.0f)))
+				{
+					if (DeleteSelection(Asset))
+					{
+						MarkDirty();
+					}
+				}
+			}
+			else
+			{
+				ImGui::TextDisabled("Select a bone, body, shape, or constraint.");
+			}
+
 			ImGui::EndTabItem();
 		}
 
@@ -2910,18 +4606,27 @@ void FPhysicsAssetEditorWidget::RenderToolsPanel(UPhysicsAsset* Asset, ImVec2 Si
 					MarkDirty();
 				}
 				ImGui::Text("Physical Material");
-				static FName ProfileMaterialBone = FName::None;
-				static char ProfileMaterialPath[260] = {};
-				if (ProfileMaterialBone != SelectedBoneName)
+				const FString CurrentMaterialPath = Asset->GetBodyPhysicalMaterialPath(SelectedBoneName);
+				const FString CurrentMaterialLabel = MakePhysicalMaterialDisplayName(CurrentMaterialPath);
+				ImGui::SetNextItemWidth(-1.0f);
+				if (ImGui::BeginCombo("##ProfilePhysicalMaterial", CurrentMaterialLabel.c_str()))
 				{
-					ProfileMaterialBone = SelectedBoneName;
-					std::snprintf(ProfileMaterialPath, sizeof(ProfileMaterialPath), "%s",
-						Asset->GetBodyPhysicalMaterialPath(SelectedBoneName).c_str());
-				}
-				if (ImGui::InputText("##ProfilePhysicalMaterial", ProfileMaterialPath, sizeof(ProfileMaterialPath)))
-				{
-					Asset->SetBodyPhysicalMaterialPath(SelectedBoneName, FString(ProfileMaterialPath));
-					MarkDirty();
+					FString SelectedMaterialPath;
+					if (DrawPhysicalMaterialPickerOptions(CurrentMaterialPath, SelectedMaterialPath))
+					{
+						Asset->SetBodyPhysicalMaterialPath(SelectedBoneName, SelectedMaterialPath);
+						MarkDirty();
+					}
+					if (IsValidAssetPath(CurrentMaterialPath))
+					{
+						ImGui::Separator();
+						ImGui::TextDisabled("%s", CurrentMaterialPath.c_str());
+						if (ImGui::IsItemHovered())
+						{
+							ImGui::SetTooltip("Current asset reference");
+						}
+					}
+					ImGui::EndCombo();
 				}
 			}
 			else if (Selection.Type == EPhysicsAssetEditorSelectionType::Constraint)
@@ -3090,43 +4795,132 @@ void FPhysicsAssetEditorWidget::HandleViewportSelectionClick()
 	}
 }
 
-void FPhysicsAssetEditorWidget::SelectBody(int32 BodyIndex)
+void FPhysicsAssetEditorWidget::SelectBody(int32 BodyIndex, bool bFromGraph)
 {
+	const bool bWasSelectionDrivenGraph = Selection.Type != EPhysicsAssetEditorSelectionType::None && !bSelectionOriginatedFromGraph;
+	if (Selection.Type == EPhysicsAssetEditorSelectionType::Body && Selection.BodyIndex == BodyIndex)
+	{
+		if (!bFromGraph)
+		{
+			RequestGraphEditorSelectionSync();
+		}
+		if (bSelectionOriginatedFromGraph != bFromGraph)
+		{
+			bSelectionOriginatedFromGraph = bFromGraph;
+			if (!bFromGraph)
+			{
+				RequestGraphEditorSelectionSync();
+				bGraphPositionsPushed = false;
+			}
+			else if (bWasSelectionDrivenGraph)
+			{
+				bGraphPositionsPushed = false;
+			}
+		}
+		return;
+	}
 	Selection.Clear();
 	Selection.Type = EPhysicsAssetEditorSelectionType::Body;
 	Selection.BodyIndex = BodyIndex;
+	bSelectionOriginatedFromGraph = bFromGraph;
+	if (!bFromGraph)
+	{
+		RequestGraphEditorSelectionSync();
+		bGraphPositionsPushed = false;
+	}
+	else if (bWasSelectionDrivenGraph)
+	{
+		bGraphPositionsPushed = false;
+	}
 	SyncViewportHighlight();
 }
 
 void FPhysicsAssetEditorWidget::SelectShape(int32 BodyIndex, EPhysicsAssetShapeType ShapeType, int32 ShapeIndex)
 {
+	if (Selection.Type == EPhysicsAssetEditorSelectionType::Shape
+		&& Selection.BodyIndex == BodyIndex
+		&& Selection.ShapeType == ShapeType
+		&& Selection.ShapeIndex == ShapeIndex)
+	{
+		RequestGraphEditorSelectionSync();
+		return;
+	}
 	Selection.Clear();
 	Selection.Type = EPhysicsAssetEditorSelectionType::Shape;
 	Selection.BodyIndex = BodyIndex;
 	Selection.ShapeType = ShapeType;
 	Selection.ShapeIndex = ShapeIndex;
+	bSelectionOriginatedFromGraph = false;
+	RequestGraphEditorSelectionSync();
+	bGraphPositionsPushed = false;
 	SyncViewportHighlight();
 }
 
-void FPhysicsAssetEditorWidget::SelectConstraint(int32 ConstraintIndex)
+void FPhysicsAssetEditorWidget::SelectConstraint(int32 ConstraintIndex, bool bFromGraph)
 {
+	const bool bWasSelectionDrivenGraph = Selection.Type != EPhysicsAssetEditorSelectionType::None && !bSelectionOriginatedFromGraph;
+	if (Selection.Type == EPhysicsAssetEditorSelectionType::Constraint && Selection.ConstraintIndex == ConstraintIndex)
+	{
+		if (!bFromGraph)
+		{
+			RequestGraphEditorSelectionSync();
+		}
+		if (bSelectionOriginatedFromGraph != bFromGraph)
+		{
+			bSelectionOriginatedFromGraph = bFromGraph;
+			if (!bFromGraph)
+			{
+				RequestGraphEditorSelectionSync();
+				bGraphPositionsPushed = false;
+			}
+			else if (bWasSelectionDrivenGraph)
+			{
+				bGraphPositionsPushed = false;
+			}
+		}
+		return;
+	}
 	Selection.Clear();
 	Selection.Type = EPhysicsAssetEditorSelectionType::Constraint;
 	Selection.ConstraintIndex = ConstraintIndex;
+	bSelectionOriginatedFromGraph = bFromGraph;
+	if (!bFromGraph)
+	{
+		RequestGraphEditorSelectionSync();
+		bGraphPositionsPushed = false;
+	}
+	else if (bWasSelectionDrivenGraph)
+	{
+		bGraphPositionsPushed = false;
+	}
 	SyncViewportHighlight();
 }
 
 void FPhysicsAssetEditorWidget::SelectBone(int32 BoneIndex)
 {
+	if (Selection.Type == EPhysicsAssetEditorSelectionType::Bone && Selection.BoneIndex == BoneIndex)
+	{
+		return;
+	}
 	Selection.Clear();
 	Selection.Type = EPhysicsAssetEditorSelectionType::Bone;
 	Selection.BoneIndex = BoneIndex;
+	bSelectionOriginatedFromGraph = false;
+	ClearGraphEditorSelection();
+	bGraphPositionsPushed = false;
 	SyncViewportHighlight();
 }
 
 void FPhysicsAssetEditorWidget::ClearSelection()
 {
+	if (Selection.Type == EPhysicsAssetEditorSelectionType::None)
+	{
+		return;
+	}
 	Selection.Clear();
+	bSelectionOriginatedFromGraph = false;
+	ClearGraphEditorSelection();
+	bGraphPositionsPushed = false;
 	SyncViewportHighlight();
 }
 

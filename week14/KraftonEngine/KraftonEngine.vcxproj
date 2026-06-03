@@ -687,6 +687,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\Physics\PhysXSDK.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXVehicle4WInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicalMaterial.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicalMaterialManager.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsAsset.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsAssetDebugDraw.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsAssetManager.cpp" />
@@ -1128,6 +1130,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Physics\PhysXVehicle4WInstance.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleInstanceBase.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleManager.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicalMaterial.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicalMaterialManager.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsAsset.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsAssetDebugDraw.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsAssetEditTypes.h" />

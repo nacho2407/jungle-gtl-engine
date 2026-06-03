@@ -10,6 +10,7 @@
 #include "Animation/Skeleton/SkeletonManager.h"
 #include "Particles/ParticleSystemManager.h"
 #include "Physics/PhysicsAssetManager.h"    
+#include "Physics/PhysicalMaterialManager.h"
 
 void FGarbageCollector::CollectGarbage()
 {
@@ -34,6 +35,7 @@ void FGarbageCollector::CollectGarbage()
 	FSkeletonManager::Get().AddReferencedObjects(Collector);
 	FParticleSystemManager::Get().AddReferencedObjects(Collector);
 	FPhysicsAssetManager::Get().AddReferencedObjects(Collector);
+	FPhysicalMaterialManager::Get().AddReferencedObjects(Collector);
 
 	FGCReferenceRegistry::AddReferencedObjects(Collector);
 

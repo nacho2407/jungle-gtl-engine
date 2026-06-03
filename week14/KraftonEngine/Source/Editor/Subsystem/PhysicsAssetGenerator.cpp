@@ -186,6 +186,9 @@ namespace
 		const FString Name = NormalizeBoneName(BoneName);
 		return ContainsText(Name, "pelvis")
 			|| ContainsText(Name, "hips")
+			|| ContainsText(Name, "hip")
+			|| ContainsText(Name, "base")
+			|| ContainsText(Name, "waist")
 			|| ContainsText(Name, "spine")
 			|| ContainsText(Name, "chest")
 			|| ContainsText(Name, "abdomen")
@@ -271,6 +274,9 @@ namespace
 		const FString Name = NormalizeBoneName(BoneName);
 		return ContainsText(Name, "pelvis")
 			|| ContainsText(Name, "hips")
+			|| ContainsText(Name, "hip")
+			|| ContainsText(Name, "base")
+			|| ContainsText(Name, "waist")
 			|| ContainsText(Name, "spine")
 			|| ContainsText(Name, "chest")
 			|| ContainsText(Name, "abdomen")
@@ -301,14 +307,89 @@ namespace
 		for (const FBone& Bone : Mesh.Bones)
 		{
 			const FString Name = NormalizeBoneName(Bone.Name);
-			bHasHips |= ContainsText(Name, "pelvis") || ContainsText(Name, "hips");
-			bHasSpine |= ContainsText(Name, "spine") || ContainsText(Name, "chest");
+			bHasHips |= ContainsText(Name, "pelvis") || ContainsText(Name, "hips") || ContainsText(Name, "hip")
+				|| ContainsText(Name, "base") || ContainsText(Name, "waist");
+			bHasSpine |= ContainsText(Name, "spine") || ContainsText(Name, "chest") || ContainsText(Name, "abdomen");
 			bHasHead |= ContainsText(Name, "head");
 			bHasArm |= ContainsText(Name, "upperarm") || ContainsText(Name, "lowerarm") || ContainsText(Name, "forearm") || ContainsText(Name, "arm");
-			bHasLeg |= ContainsText(Name, "thigh") || ContainsText(Name, "calf") || ContainsText(Name, "shin") || ContainsText(Name, "upleg") || ContainsText(Name, "leg");
+			bHasLeg |= ContainsText(Name, "thigh") || ContainsText(Name, "calf") || ContainsText(Name, "shin")
+				|| ContainsText(Name, "upleg") || ContainsText(Name, "leg") || ContainsText(Name, "foot");
 		}
 
 		return bHasHips && bHasSpine && bHasHead && bHasArm && bHasLeg;
+	}
+
+	bool IsVehicleWheelBoneName(const FString& BoneName)
+	{
+		const FString Name = NormalizeBoneName(BoneName);
+		return ContainsText(Name, "wheel")
+			|| ContainsText(Name, "tire")
+			|| ContainsText(Name, "tyre")
+			|| ContainsText(Name, "whl");
+	}
+
+	bool IsVehicleChassisBoneName(const FString& BoneName)
+	{
+		const FString Name = NormalizeBoneName(BoneName);
+		return Name == "root"
+			|| ContainsText(Name, "chassis")
+			|| ContainsText(Name, "vehicle")
+			|| ContainsText(Name, "carbody")
+			|| ContainsText(Name, "body")
+			|| ContainsText(Name, "hull");
+	}
+
+	bool IsVehicleSuspensionBoneName(const FString& BoneName)
+	{
+		const FString Name = NormalizeBoneName(BoneName);
+		return ContainsText(Name, "axle")
+			|| ContainsText(Name, "susp")
+			|| ContainsText(Name, "strut")
+			|| ContainsText(Name, "steer");
+	}
+
+	bool IsVehicleBodyCandidateBoneName(const FString& BoneName)
+	{
+		return IsVehicleWheelBoneName(BoneName)
+			|| IsVehicleChassisBoneName(BoneName)
+			|| IsVehicleSuspensionBoneName(BoneName);
+	}
+
+	bool LooksLikeVehicleSkeleton(const FSkeletalMesh& Mesh)
+	{
+		int32 WheelBoneCount = 0;
+		int32 SuspensionBoneCount = 0;
+		bool bHasChassis = false;
+
+		for (const FBone& Bone : Mesh.Bones)
+		{
+			if (IsVehicleWheelBoneName(Bone.Name))
+			{
+				++WheelBoneCount;
+			}
+			if (IsVehicleSuspensionBoneName(Bone.Name))
+			{
+				++SuspensionBoneCount;
+			}
+			bHasChassis |= IsVehicleChassisBoneName(Bone.Name);
+		}
+
+		return WheelBoneCount >= 2
+			|| (WheelBoneCount >= 1 && bHasChassis)
+			|| (bHasChassis && SuspensionBoneCount >= 2);
+	}
+
+	EPhysicsAssetPrimitiveType SelectVehiclePrimitiveType(const FString& BoneName, EPhysicsAssetPrimitiveType RequestedType)
+	{
+		if (IsVehicleChassisBoneName(BoneName))
+		{
+			return EPhysicsAssetPrimitiveType::Box;
+		}
+		if (IsVehicleWheelBoneName(BoneName))
+		{
+			return EPhysicsAssetPrimitiveType::Capsule;
+		}
+		return RequestedType;
 	}
 
 	bool IsValidBoneIndex(const FSkeletalMesh& Mesh, int32 BoneIndex)
@@ -1067,6 +1148,107 @@ namespace
 		}
 	}
 
+	bool AddMeshBoundsBoxForBone(UBodySetup& Body, const FSkeletalMesh& Mesh, int32 BoneIndex, float MinExtent)
+	{
+		if (!IsValidBoneIndex(Mesh, BoneIndex) || Mesh.Vertices.empty())
+		{
+			return false;
+		}
+
+		const FMatrix MeshToBone = GetBoneMeshToLocalMatrix(Mesh, BoneIndex);
+		FVector Min = MeshToBone.TransformPositionWithW(Mesh.Vertices[0].Position);
+		FVector Max = Min;
+		for (const FVertexPNCTBW& Vertex : Mesh.Vertices)
+		{
+			const FVector Local = MeshToBone.TransformPositionWithW(Vertex.Position);
+			Min.X = std::min(Min.X, Local.X);
+			Min.Y = std::min(Min.Y, Local.Y);
+			Min.Z = std::min(Min.Z, Local.Z);
+			Max.X = std::max(Max.X, Local.X);
+			Max.Y = std::max(Max.Y, Local.Y);
+			Max.Z = std::max(Max.Z, Local.Z);
+		}
+
+		FVector Extent = (Max - Min) * 0.5f;
+		Extent.X = std::max(Extent.X, MinExtent * 2.0f);
+		Extent.Y = std::max(Extent.Y, MinExtent * 2.0f);
+		Extent.Z = std::max(Extent.Z, MinExtent * 2.0f);
+
+		Body.ClearShapes();
+		Body.AddBox((Min + Max) * 0.5f, FQuat::Identity, Extent * ShapeSizePadding);
+		return Body.HasSimpleCollision();
+	}
+
+	bool AddVehicleWheelPrimitive(UBodySetup& Body, float ModelSize, float MinExtent)
+	{
+		const float Radius = ClampFloat(ModelSize * 0.045f, MinExtent * 2.0f, ModelSize * 0.12f);
+		const float Width = std::max(Radius * 0.65f, MinExtent * 2.0f);
+
+		Body.ClearShapes();
+		Body.AddSphyl(FVector::ZeroVector, MakeQuatFromZToAxis(FVector::YAxisVector), Radius, Width);
+		return Body.HasSimpleCollision();
+	}
+
+	bool AddReferenceBodyPrimitive(UBodySetup& Body, const FSkeletalMesh& Mesh, const TArray<FMatrix>& ReferenceGlobals,
+		int32 BoneIndex, EPhysicsAssetPrimitiveType PrimitiveType, const FPhysicsAssetCreationParams& Params,
+		float EffectiveMinBoneSize, float MinExtent, float ModelSize)
+	{
+		FVector BoneAxis = FVector::ZAxisVector;
+		float BoneSegmentLength = 0.0f;
+		const float SegmentThreshold = std::max(EffectiveMinBoneSize, MinExtent * 2.0f);
+		const int32 ChildCount = FindChildSegmentLocal(
+			Mesh,
+			ReferenceGlobals,
+			BoneIndex,
+			Params.bWalkPastSmallBones,
+			SegmentThreshold,
+			BoneAxis,
+			BoneSegmentLength);
+
+		if (ChildCount <= 0 || BoneSegmentLength < MinExtent * 2.0f)
+		{
+			if (!FindParentSegmentLocal(Mesh, ReferenceGlobals, BoneIndex, BoneAxis, BoneSegmentLength))
+			{
+				BoneAxis = FVector::ZAxisVector;
+				BoneSegmentLength = std::max(ModelSize * 0.08f, MinExtent * 4.0f);
+			}
+		}
+
+		Body.ClearShapes();
+		AddBoneSegmentPrimitive(
+			Body,
+			PrimitiveType,
+			BoneAxis,
+			std::max(BoneSegmentLength, MinExtent * 4.0f),
+			MinExtent);
+		return Body.HasSimpleCollision();
+	}
+
+	bool AddVehicleReferencePrimitive(UBodySetup& Body, const FSkeletalMesh& Mesh, const TArray<FMatrix>& ReferenceGlobals,
+		int32 BoneIndex, EPhysicsAssetPrimitiveType PrimitiveType, const FPhysicsAssetCreationParams& Params,
+		float EffectiveMinBoneSize, float MinExtent, float ModelSize)
+	{
+		const FString& BoneName = Mesh.Bones[BoneIndex].Name;
+		if (IsVehicleChassisBoneName(BoneName) && AddMeshBoundsBoxForBone(Body, Mesh, BoneIndex, MinExtent))
+		{
+			return true;
+		}
+		if (IsVehicleWheelBoneName(BoneName) && AddVehicleWheelPrimitive(Body, ModelSize, MinExtent))
+		{
+			return true;
+		}
+		return AddReferenceBodyPrimitive(
+			Body,
+			Mesh,
+			ReferenceGlobals,
+			BoneIndex,
+			PrimitiveType,
+			Params,
+			EffectiveMinBoneSize,
+			MinExtent,
+			ModelSize);
+	}
+
 	int32 FindForcedRootBoneIndex(const FSkeletalMesh& Mesh, const TArray<float>& MergedSizes, const TArray<bool>& bCanCreateBody, float MinBoneSize)
 	{
 		int32 FirstParentBoneIndex = -1;
@@ -1216,8 +1398,10 @@ namespace
 		bContributesToBodyFit.resize(NumBones, true);
 		TArray<bool> bForceMakeBody;
 		bForceMakeBody.resize(NumBones, false);
+		const bool bLooksLikeVehicle = LooksLikeVehicleSkeleton(Mesh);
 		const bool bUseSecondaryBoneFilter = Params.bFilterSecondaryBones
 			&& !Params.bCreateBodyForAllBones
+			&& !bLooksLikeVehicle
 			&& LooksLikeHumanoidSkeleton(Mesh);
 		if (bUseSecondaryBoneFilter)
 		{
@@ -1233,9 +1417,26 @@ namespace
 				bForceMakeBody[BoneIndex] = bBodyCandidate && IsMajorHumanoidBodyBoneName(BoneName);
 			}
 		}
+		else if (bLooksLikeVehicle && !Params.bCreateBodyForAllBones)
+		{
+			for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+			{
+				const FString& BoneName = Mesh.Bones[BoneIndex].Name;
+				const bool bVehicleCandidate = IsVehicleBodyCandidateBoneName(BoneName);
+				bCanCreateBody[BoneIndex] = bVehicleCandidate;
+				bContributesToBodyFit[BoneIndex] = true;
+				bForceMakeBody[BoneIndex] = bVehicleCandidate;
+			}
+		}
 
 		TArray<FBoneVertInfo> Infos;
 		CalcBoneVertInfos(Mesh, Infos, Params.VertexWeighting == EPhysicsAssetVertexWeighting::DominantWeight);
+
+		TArray<FMatrix> ReferenceGlobals;
+		if (bLooksLikeVehicle)
+		{
+			BuildReferenceGlobalMatrices(Mesh, ReferenceGlobals);
+		}
 
 		TArray<float> MergedSizes;
 		MergedSizes.resize(NumBones, 0.0f);
@@ -1290,6 +1491,18 @@ namespace
 			}
 		}
 
+		if (bLooksLikeVehicle)
+		{
+			const float ForcedVehicleSize = std::max(EffectiveMinBoneSize + KINDA_SMALL_NUMBER, EffectiveMinPrimSize * 4.0f);
+			for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+			{
+				if (bForceMakeBody[BoneIndex] && MergedSizes[BoneIndex] <= KINDA_SMALL_NUMBER)
+				{
+					MergedSizes[BoneIndex] = ForcedVehicleSize;
+				}
+			}
+		}
+
 		const int32 ForcedRootBoneIndex = Params.bCreateBodyForAllBones
 			? -1
 			: FindForcedRootBoneIndex(Mesh, MergedSizes, bCanCreateBody, EffectiveMinBoneSize);
@@ -1328,7 +1541,28 @@ namespace
 				continue;
 			}
 
-			AddCollisionFromBoneInfo(*Body, Params.PrimitiveType, BodyInfo, Params.bAutoOrientToBone, EffectiveMinPrimSize);
+			const EPhysicsAssetPrimitiveType PrimitiveType = bLooksLikeVehicle
+				? SelectVehiclePrimitiveType(Mesh.Bones[BoneIndex].Name, Params.PrimitiveType)
+				: Params.PrimitiveType;
+
+			if (bLooksLikeVehicle && BodyInfo.Positions.empty())
+			{
+				AddVehicleReferencePrimitive(
+					*Body,
+					Mesh,
+					ReferenceGlobals,
+					BoneIndex,
+					PrimitiveType,
+					Params,
+					EffectiveMinBoneSize,
+					EffectiveMinPrimSize,
+					MeshLongDimension);
+			}
+			else
+			{
+				AddCollisionFromBoneInfo(*Body, PrimitiveType, BodyInfo, Params.bAutoOrientToBone, EffectiveMinPrimSize);
+			}
+
 			if (!Body->HasSimpleCollision())
 			{
 				Asset.RemoveBodySetup(Body->GetBoneName());

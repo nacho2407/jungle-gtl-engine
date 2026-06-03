@@ -89,6 +89,10 @@ void FRagdollInstance::Initialize(UPhysicsAsset* Asset, USkeletalMeshComponent* 
 		}
 
 		const int32 BodyIndex = static_cast<int32>(Bodies.size()) - 1;
+		Body.SetGravityEnabled(Asset->IsBodyGravityEnabled(Setup->GetBoneName()));
+		Body.SetMass(Asset->GetBodyMass(Setup->GetBoneName()));
+		Body.SetLinearDamping(Asset->GetBodyLinearDamping(Setup->GetBoneName()));
+		Body.SetAngularDamping(Asset->GetBodyAngularDamping(Setup->GetBoneName()));
 		BodyToBoneIndex.push_back(MeshComp->FindBoneIndex(BoneName));
 		BoneToBody[BoneName] = BodyIndex;
 	}
