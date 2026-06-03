@@ -5,13 +5,51 @@
 #include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/Physics/PhysicalAnimationComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
-#include "Component/ShapeComponent.h"
 #include "Input/InputSystem.h"
 #include "Math/Rotator.h"
 #include "Mesh/MeshManager.h"
+#include "Physics/BodyInstance.h"
 #include "Runtime/Engine.h"
 
 #include <algorithm>
+
+namespace
+{
+	constexpr float InitialRagdollVelocityClampDuration = 0.30f;
+	constexpr float InitialRagdollMaxLinearSpeed = 8.0f;
+	constexpr float InitialRagdollMaxAngularSpeed = 12.0f;
+
+	FVector ClampVectorLength(const FVector& Value, float MaxLength)
+	{
+		const float Length = Value.Length();
+		if (Length <= MaxLength || Length <= 0.0001f)
+		{
+			return Value;
+		}
+
+		return Value * (MaxLength / Length);
+	}
+
+	void ClampRagdollBodyVelocities(USkeletalMeshComponent* Mesh)
+	{
+		if (!Mesh)
+		{
+			return;
+		}
+
+		for (FBodyInstance* Body : Mesh->GetRagdollBodies())
+		{
+			if (!Body || !Body->IsValidBodyInstance())
+			{
+				continue;
+			}
+
+			Body->SetLinearVelocity(ClampVectorLength(Body->GetLinearVelocity(), InitialRagdollMaxLinearSpeed));
+			Body->SetAngularVelocity(ClampVectorLength(Body->GetAngularVelocity(), InitialRagdollMaxAngularSpeed));
+		}
+	}
+}
+
 void ACharacter::InitDefaultComponents(const FString& SkeletalMeshFileName)
 {
 	// 1) Capsule — Root. CharacterMovement 의 UpdatedComponent 가 이걸 가리킴.
@@ -89,16 +127,9 @@ void ACharacter::EnterFullRagdoll()
 		CharacterMovement->SetComponentTickEnabled(false);
 	}
 
-	for (UActorComponent* Component : GetComponents())
+	if (CapsuleComponent)
 	{
-		UShapeComponent* ShapeComponent = Cast<UShapeComponent>(Component);
-		if (!ShapeComponent)
-		{
-			continue;
-		}
-
-		ShapeComponent->SetSimulatePhysics(false);
-		ShapeComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		CapsuleComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 
 	if (UPhysicalAnimationComponent* PhysicalAnimation = GetComponentByClass<UPhysicalAnimationComponent>())
@@ -112,8 +143,12 @@ void ACharacter::EnterFullRagdoll()
 		Mesh->SetRagdollEnabled(true);
 		Mesh->SetAllBodiesSimulatePhysics(true);
 		Mesh->SetAllBodiesPhysicsBlendWeight(1.0f);
+		ClampRagdollBodyVelocities(Mesh);
 		Mesh->WakeAllRagdollBodies();
 	}
+
+	bAutoInputMouseLook = false;
+	InitialRagdollVelocityClampTimeRemaining = InitialRagdollVelocityClampDuration;
 }
 
 void ACharacter::SetupInputComponent()
@@ -155,6 +190,13 @@ void ACharacter::SetupInputComponent()
 void ACharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (InitialRagdollVelocityClampTimeRemaining > 0.0f)
+	{
+		ClampRagdollBodyVelocities(Mesh);
+		InitialRagdollVelocityClampTimeRemaining =
+			(std::max)(0.0f, InitialRagdollVelocityClampTimeRemaining - DeltaTime);
+	}
 
 	if (bAutoInputMouseLook)
 	{

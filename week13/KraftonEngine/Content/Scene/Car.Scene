@@ -806,6 +806,42 @@
               "bTickEnable" : true
             },
             "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "ObjectId" : 26,
+            "Properties" : {
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
+              "ObjectName" : "UBillboardComponent_457",
+              "ObjectType" : [0, 0, 0, 0, 0, 0, 0, 0],
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[1]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[2]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[3]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[4]" : [2, 0, 0, 0, 0, 0, 0, 0]
+              },
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bKinematicPhysics" : false,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
           }],
         "ClassName" : "UDirectionalLightComponent",
         "ObjectId" : 3,
@@ -834,7 +870,7 @@
       "ClassName" : "ASphereActor",
       "Name" : "ASphereActor_0",
       "NonSceneComponents" : [],
-      "ObjectId" : 26,
+      "ObjectId" : 27,
       "Properties" : {
         "ObjectName" : "ASphereActor_0",
         "PendingActorLocation" : [-11.307158, -9.261929, -12.541658],
@@ -848,7 +884,7 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "UStaticMeshComponent",
-            "ObjectId" : 28,
+            "ObjectId" : 29,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -882,7 +918,7 @@
             }
           }],
         "ClassName" : "USphereComponent",
-        "ObjectId" : 27,
+        "ObjectId" : 28,
         "Properties" : {
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -920,7 +956,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_13",
       "NonSceneComponents" : [],
-      "ObjectId" : 29,
+      "ObjectId" : 30,
       "Properties" : {
         "ObjectName" : "ABoxActor_13",
         "PendingActorLocation" : [43.944946, -15.066742, 0.282362],
@@ -934,7 +970,7 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "UStaticMeshComponent",
-            "ObjectId" : 31,
+            "ObjectId" : 32,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -968,7 +1004,7 @@
             }
           }],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 30,
+        "ObjectId" : 31,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
           "CachedEditRotator" : [-17.422831, -81.728043, -0.000030],
@@ -1007,7 +1043,7 @@
       "Name" : "A4WVehicleActor_1",
       "NonSceneComponents" : [{
           "ClassName" : "UVehicleMovementComponent",
-          "ObjectId" : 47,
+          "ObjectId" : 48,
           "Properties" : {
             "AckermannAccuracy" : 1.000000,
             "BoostDuration" : 2.000000,
@@ -1050,7 +1086,7 @@
           }
         }, {
           "ClassName" : "ULuaScriptComponent",
-          "ObjectId" : 48,
+          "ObjectId" : 49,
           "Properties" : {
             "ObjectName" : "ULuaScriptComponent_25",
             "ScriptFile" : "CarRibbonVisibility.lua",
@@ -1061,7 +1097,7 @@
             "bTickEnable" : true
           }
         }],
-      "ObjectId" : 32,
+      "ObjectId" : 33,
       "Properties" : {
         "ObjectName" : "A4WVehicleActor_1",
         "PendingActorLocation" : [24.610405, 32.246284, 26.845108],
@@ -1076,7 +1112,7 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UParticleSystemComponent",
-                "ObjectId" : 35,
+                "ObjectId" : 36,
                 "Properties" : {
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -1111,7 +1147,7 @@
               }, {
                 "Children" : [],
                 "ClassName" : "UParticleSystemComponent",
-                "ObjectId" : 36,
+                "ObjectId" : 37,
                 "Properties" : {
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -1145,7 +1181,7 @@
                 }
               }],
             "ClassName" : "UStaticMeshComponent",
-            "ObjectId" : 34,
+            "ObjectId" : 35,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -1181,7 +1217,7 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UWheelMeshComponent",
-                "ObjectId" : 38,
+                "ObjectId" : 39,
                 "Properties" : {
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -1218,7 +1254,7 @@
                 }
               }],
             "ClassName" : "USceneComponent",
-            "ObjectId" : 37,
+            "ObjectId" : 38,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "ObjectName" : "USceneComponent_36",
@@ -1234,7 +1270,7 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UWheelMeshComponent",
-                "ObjectId" : 40,
+                "ObjectId" : 41,
                 "Properties" : {
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -1271,7 +1307,7 @@
                 }
               }],
             "ClassName" : "USceneComponent",
-            "ObjectId" : 39,
+            "ObjectId" : 40,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "ObjectName" : "USceneComponent_37",
@@ -1287,7 +1323,7 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UWheelMeshComponent",
-                "ObjectId" : 42,
+                "ObjectId" : 43,
                 "Properties" : {
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -1324,7 +1360,7 @@
                 }
               }],
             "ClassName" : "USceneComponent",
-            "ObjectId" : 41,
+            "ObjectId" : 42,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "ObjectName" : "USceneComponent_38",
@@ -1340,7 +1376,7 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UWheelMeshComponent",
-                "ObjectId" : 44,
+                "ObjectId" : 45,
                 "Properties" : {
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -1377,7 +1413,7 @@
                 }
               }],
             "ClassName" : "USceneComponent",
-            "ObjectId" : 43,
+            "ObjectId" : 44,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "ObjectName" : "USceneComponent_39",
@@ -1393,7 +1429,7 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UCameraComponent",
-                "ObjectId" : 46,
+                "ObjectId" : 47,
                 "Properties" : {
                   "CachedEditRotator" : [19.999998, 0.000000, 0.000000],
                   "CameraState.FOV" : 1.047198,
@@ -1412,7 +1448,7 @@
                 }
               }],
             "ClassName" : "USpringArmComponent",
-            "ObjectId" : 45,
+            "ObjectId" : 46,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CameraLagMaxDistance" : 0.000000,
@@ -1437,7 +1473,7 @@
             }
           }],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 33,
+        "ObjectId" : 34,
         "Properties" : {
           "BoxExtent" : [1.650000, 0.800000, 0.450000],
           "CachedEditRotator" : [0.000000, -62.238628, 0.000000],
@@ -1475,7 +1511,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_37",
       "NonSceneComponents" : [],
-      "ObjectId" : 49,
+      "ObjectId" : 50,
       "Properties" : {
         "ObjectName" : "ABoxActor_37",
         "PendingActorLocation" : [24.183384, -112.678078, -0.154886],
@@ -1489,7 +1525,7 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "UStaticMeshComponent",
-            "ObjectId" : 51,
+            "ObjectId" : 52,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -1523,7 +1559,7 @@
             }
           }],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 50,
+        "ObjectId" : 51,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
           "CachedEditRotator" : [-0.000000, 60.475681, 0.000000],
@@ -1561,7 +1597,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_16",
       "NonSceneComponents" : [],
-      "ObjectId" : 52,
+      "ObjectId" : 53,
       "Properties" : {
         "ObjectName" : "ABoxActor_16",
         "PendingActorLocation" : [250.381897, 1.800385, 58.844479],
@@ -1574,7 +1610,7 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 53,
+        "ObjectId" : 54,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -1612,7 +1648,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_16_Copy",
       "NonSceneComponents" : [],
-      "ObjectId" : 54,
+      "ObjectId" : 55,
       "Properties" : {
         "ObjectName" : "ABoxActor_16_Copy",
         "PendingActorLocation" : [30.481903, 215.900391, 58.944477],
@@ -1625,7 +1661,7 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 55,
+        "ObjectId" : 56,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
           "CachedEditRotator" : [-0.000000, 58.999985, 0.000002],
@@ -1663,7 +1699,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_16_Copy_Copy",
       "NonSceneComponents" : [],
-      "ObjectId" : 56,
+      "ObjectId" : 57,
       "Properties" : {
         "ObjectName" : "ABoxActor_16_Copy_Copy",
         "PendingActorLocation" : [30.581903, -222.999603, 59.044476],
@@ -1676,7 +1712,7 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 57,
+        "ObjectId" : 58,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
           "CachedEditRotator" : [-0.000000, 58.999985, 0.000002],
@@ -1714,7 +1750,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_16_Copy_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 58,
+      "ObjectId" : 59,
       "Properties" : {
         "ObjectName" : "ABoxActor_16_Copy_2",
         "PendingActorLocation" : [-200.518097, 1.900385, 58.944477],
@@ -1727,7 +1763,7 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 59,
+        "ObjectId" : 60,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -1765,7 +1801,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_7",
       "NonSceneComponents" : [],
-      "ObjectId" : 60,
+      "ObjectId" : 61,
       "Properties" : {
         "ObjectName" : "AStaticMeshActor_7",
         "PendingActorLocation" : [0.000000, 0.000000, 0.100000],
@@ -1778,7 +1814,7 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
-        "ObjectId" : 61,
+        "ObjectId" : 62,
         "Properties" : {
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
@@ -1815,7 +1851,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_38",
       "NonSceneComponents" : [],
-      "ObjectId" : 62,
+      "ObjectId" : 63,
       "Properties" : {
         "ObjectName" : "ABoxActor_38",
         "PendingActorLocation" : [0.000000, 0.000000, -0.900000],
@@ -1828,7 +1864,7 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 63,
+        "ObjectId" : 64,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -1867,7 +1903,7 @@
       "Name" : "ALuaCharacter_1",
       "NonSceneComponents" : [{
           "ClassName" : "UCharacterMovementComponent",
-          "ObjectId" : 69,
+          "ObjectId" : 70,
           "Properties" : {
             "BrakingFriction" : 8.000000,
             "FloorProbeDistance" : 0.100000,
@@ -1887,7 +1923,7 @@
           }
         }, {
           "ClassName" : "ULuaScriptComponent",
-          "ObjectId" : 70,
+          "ObjectId" : 71,
           "Properties" : {
             "ObjectName" : "ULuaScriptComponent_1",
             "ScriptFile" : "Car_ALuaCharacter_1.lua",
@@ -1899,12 +1935,12 @@
           }
         }, {
           "ClassName" : "UPhysicalAnimationComponent",
-          "ObjectId" : 71,
+          "ObjectId" : 72,
           "Properties" : {
             "DriveRootBoneName" : "Bone",
             "DriveStrengthScale" : 1.000000,
-            "MaxForce" : 0.400000,
-            "MaxTorque" : 0.080000,
+            "MaxForce" : 49.299999,
+            "MaxTorque" : 10.480000,
             "ObjectName" : "UPhysicalAnimationComponent_13",
             "PerBoneDriveSettings" : [{
                 "BoneName" : "Bone.018",
@@ -1927,10 +1963,10 @@
                 "bDrivePosition" : true,
                 "bDriveRotation" : false
               }],
-            "PositionDamping" : 0.400000,
-            "PositionStrength" : 0.400000,
-            "RotationDamping" : 0.000000,
-            "RotationStrength" : 0.030000,
+            "PositionDamping" : 28.200001,
+            "PositionStrength" : 37.700001,
+            "RotationDamping" : 1.000000,
+            "RotationStrength" : 9.530000,
             "bAutoActivate" : true,
             "bAutoFindTargetMesh" : true,
             "bDebugDraw" : false,
@@ -1943,10 +1979,10 @@
             "bTickEnable" : false
           }
         }],
-      "ObjectId" : 64,
+      "ObjectId" : 65,
       "Properties" : {
         "ObjectName" : "ALuaCharacter_1",
-        "PendingActorLocation" : [49.995056, 32.934982, 16.980797],
+        "PendingActorLocation" : [49.995056, 32.934982, 2.089356],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
         "PendingActorScale" : [1.000000, 1.000000, 1.000000],
         "PendingActorVisible" : true,
@@ -1961,7 +1997,7 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "USkeletalMeshComponent",
-            "ObjectId" : 66,
+            "ObjectId" : 67,
             "Properties" : {
               "AnimInstanceClass" : "ULuaAnimInstance",
               "AnimationData" : {
@@ -2013,7 +2049,7 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UCameraComponent",
-                "ObjectId" : 68,
+                "ObjectId" : 69,
                 "Properties" : {
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
                   "CameraState.FOV" : 1.047198,
@@ -2032,7 +2068,7 @@
                 }
               }],
             "ClassName" : "USpringArmComponent",
-            "ObjectId" : 67,
+            "ObjectId" : 68,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CameraLagMaxDistance" : 0.000000,
@@ -2057,7 +2093,7 @@
             }
           }],
         "ClassName" : "UCapsuleComponent",
-        "ObjectId" : 65,
+        "ObjectId" : 66,
         "Properties" : {
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CapsuleHalfHeight" : 2.010000,
@@ -2067,7 +2103,7 @@
           "Mass" : 1.000000,
           "ObjectName" : "UCapsuleComponent_1",
           "ObjectType" : [1, 0, 0, 0, 0, 0, 0, 0],
-          "RelativeTransform.Location" : [49.995056, 32.934982, 16.980797],
+          "RelativeTransform.Location" : [49.995056, 32.934982, 2.089356],
           "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
           "ResponseContainer" : {
             "Responses[0]" : [2, 0, 0, 0, 0, 0, 0, 0],
@@ -2101,9 +2137,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [30.823542, 52.293995, 15.335357],
+    "Location" : [39.542068, 45.217346, 11.268147],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 13.515324, 1730.793091]
+    "Rotation" : [0.000000, 16.965315, 1747.743530]
   },
   "Version" : 2,
   "WorldSettings" : {

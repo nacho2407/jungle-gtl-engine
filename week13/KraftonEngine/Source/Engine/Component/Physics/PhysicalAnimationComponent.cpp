@@ -362,22 +362,23 @@ void UPhysicalAnimationComponent::ApplyLinearDrive(
 {
     (void)DeltaTime;
 
-    const float EffectiveMaxForce = Settings.MaxForce * DriveStrengthScale;
-
-    if (!Body || EffectiveMaxForce <= 0.0f)
+    if (!Body || Settings.MaxForce <= 0.0f)
     {
         return;
     }
 
     const FTransform CurrentWorld = Body->GetBodyTransform();
+    const float BodyMass = std::max(Body->GetMass(), 0.001f);
 
     FVector Error = TargetWorld.Location - CurrentWorld.Location;
     FVector Velocity = Body->GetLinearVelocity();
 
     const float EffectivePositionStrength = Settings.PositionStrength * DriveStrengthScale;
     const float EffectivePositionDamping = Settings.PositionDamping * DriveStrengthScale;
+    const float EffectiveMaxForce = Settings.MaxForce * BodyMass * DriveStrengthScale;
 
-    FVector Force = Error * EffectivePositionStrength - Velocity * EffectivePositionDamping;
+    FVector DesiredAcceleration = Error * EffectivePositionStrength - Velocity * EffectivePositionDamping;
+    FVector Force = DesiredAcceleration * BodyMass;
 
     const float ForceSize = Force.Length();
     if (ForceSize > EffectiveMaxForce && ForceSize > FMath::KINDA_SMALL_NUMBER)
@@ -396,22 +397,23 @@ void UPhysicalAnimationComponent::ApplyAngularDrive(
 {
     (void)DeltaTime;
 
-    const float EffectiveMaxTorque = Settings.MaxTorque * DriveStrengthScale;
-
-    if (!Body || EffectiveMaxTorque <= 0.0f)
+    if (!Body || Settings.MaxTorque <= 0.0f)
     {
         return;
     }
 
     const FTransform CurrentWorld = Body->GetBodyTransform();
+    const float BodyMass = std::max(Body->GetMass(), 0.001f);
 
     FVector RotationError = ComputeRotationError(CurrentWorld.Rotation,TargetWorld.Rotation);
     FVector AngularVelocity = Body->GetAngularVelocity();
 
     const float EffectiveRotationStrength = Settings.RotationStrength * DriveStrengthScale;
     const float EffectiveRotationDamping = Settings.RotationDamping * DriveStrengthScale;
+    const float EffectiveMaxTorque = Settings.MaxTorque * BodyMass * DriveStrengthScale;
 
-    FVector Torque = RotationError * EffectiveRotationStrength - AngularVelocity * EffectiveRotationDamping;
+    FVector DesiredAngularAcceleration = RotationError * EffectiveRotationStrength - AngularVelocity * EffectiveRotationDamping;
+    FVector Torque = DesiredAngularAcceleration * BodyMass;
 
     const float TorqueSize = Torque.Length();
     if (TorqueSize > EffectiveMaxTorque && TorqueSize > FMath::KINDA_SMALL_NUMBER)
