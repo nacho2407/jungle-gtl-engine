@@ -174,6 +174,10 @@ public:
 	void SetKinematicPhysics(bool bInKinematic);
 	UFUNCTION(Pure, Category="Physics")
 	bool GetKinematicPhysics() const { return bKinematicPhysics; }
+	UFUNCTION(Callable, Exec, Category="Physics")
+	void SetEnableGravity(bool bInEnableGravity);
+	UFUNCTION(Pure, Category="Physics")
+	bool IsGravityEnabled() const { return bEnableGravity; }
 
 	// --- BodyInstance
 	FBodyInstance& GetBodyInstance() { return BodyInstance; }
@@ -278,6 +282,8 @@ protected:
 	bool bSimulatePhysics = false;
 	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Kinematic Physics")
 	bool bKinematicPhysics = false;
+	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Enable Gravity")
+	bool bEnableGravity = true;
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Generate Overlap Events")
 	bool bGenerateOverlapEvents = false;
 

@@ -25,7 +25,7 @@ void USkeletalMeshDebugComponent::SetRagdollPreviewLocalPose(const TArray<FTrans
 void USkeletalMeshDebugComponent::SetRagdollGravityEnabled(bool bEnableGravity)
 {
 	bPreviewRagdollGravityEnabled = bEnableGravity;
-	SetAllRagdollBodiesGravityEnabled(bPreviewRagdollGravityEnabled);
+	USkeletalMeshComponent::SetRagdollGravityEnabled(bPreviewRagdollGravityEnabled);
 }
 
 void USkeletalMeshDebugComponent::SetRagdollCreateConstraints(bool bCreateConstraints)

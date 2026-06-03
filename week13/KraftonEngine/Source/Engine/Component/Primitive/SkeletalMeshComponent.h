@@ -128,6 +128,11 @@ public:
     UFUNCTION(Callable, Category = "Physics|Ragdoll")
     void SetAllBodiesBelowSimulatePhysics(FName InBoneName, bool bSimulate, bool bIncludeSelf = true);
 
+    UFUNCTION(Callable, Exec, Category = "Physics|Ragdoll")
+    void SetRagdollGravityEnabled(bool bEnableGravity);
+    UFUNCTION(Pure, Category = "Physics|Ragdoll")
+    bool IsRagdollGravityEnabled() const { return bRagdollGravityEnabled; }
+
     UFUNCTION(Callable, Category = "Physics|PhysicalAnimation")
     bool BeginPhysicalAnimation();
 
@@ -248,6 +253,8 @@ protected:
 
     UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Enable Ragdoll")
     bool bRagdollEnabled = false;
+    UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Enable Ragdoll Gravity")
+    bool bRagdollGravityEnabled = true;
     UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Create Ragdoll Constraints")
     bool bCreateRagdollConstraints = true;
     UPROPERTY(Edit, Save, Category="Physics|Ragdoll", DisplayName="Self Collision Mode", Enum=ERagdollSelfCollisionMode)

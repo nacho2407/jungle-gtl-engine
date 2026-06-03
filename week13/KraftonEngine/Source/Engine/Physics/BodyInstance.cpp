@@ -354,7 +354,6 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
         OutDesc.CenterOfMassOffset = PhysicsInfo.CenterOfMassOffset;
         OutDesc.LinearDamping = PhysicsInfo.LinearDamping;
         OutDesc.AngularDamping = PhysicsInfo.AngularDamping;
-        OutDesc.bEnableGravity = PhysicsInfo.bEnableGravity;
         OutDesc.InertiaTensorScale = PhysicsInfo.InertiaTensorScale;
 
         const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
@@ -459,6 +458,8 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
 			OutDesc.Shapes.push_back(MeshShape);
 		}
     }
+
+    OutDesc.bEnableGravity = Body.bEnableGravity;
 
     return !OutDesc.Shapes.empty();
 }
