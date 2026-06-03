@@ -1,4 +1,4 @@
-#include "MeshEditorWidgetTabs.h"
+﻿#include "MeshEditorWidgetTabs.h"
 
 #ifdef GetCurrentTime
 #undef GetCurrentTime
@@ -483,59 +483,59 @@ private:
 			ImGui::EndCombo();
 		}
 
-		if (ImGui::SliderFloat("Blend", &BlendWeight, 0.0f, 1.0f, "%.2f"))
-		{
-			if (MeshComponent)
-			{
-				MeshComponent->SetRagdollGlobalPhysicsBlendWeight(BlendWeight);
-			}
-		}
+		//if (ImGui::SliderFloat("Blend", &BlendWeight, 0.0f, 1.0f, "%.2f"))
+		//{
+		//	if (MeshComponent)
+		//	{
+		//		MeshComponent->SetRagdollGlobalPhysicsBlendWeight(BlendWeight);
+		//	}
+		//}
 
-		if (!bSimulationActive)
-		{
-			ImGui::BeginDisabled();
-		}
+		//if (!bSimulationActive)
+		//{
+		//	ImGui::BeginDisabled();
+		//}
 
-		if (ImGui::Button("Sim All", ImVec2(96.0f, 0.0f)) && MeshComponent)
-		{
-			MeshComponent->SetAllBodiesSimulatePhysics(true);
-			MeshComponent->SetAllBodiesPhysicsBlendWeight(1.0f);
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Kin All", ImVec2(96.0f, 0.0f)) && MeshComponent)
-		{
-			MeshComponent->SetAllBodiesSimulatePhysics(false);
-			MeshComponent->SetAllBodiesPhysicsBlendWeight(0.0f);
-		}
+		//if (ImGui::Button("Sim All", ImVec2(96.0f, 0.0f)) && MeshComponent)
+		//{
+		//	MeshComponent->SetAllBodiesSimulatePhysics(true);
+		//	MeshComponent->SetAllBodiesPhysicsBlendWeight(1.0f);
+		//}
+		//ImGui::SameLine();
+		//if (ImGui::Button("Kin All", ImVec2(96.0f, 0.0f)) && MeshComponent)
+		//{
+		//	MeshComponent->SetAllBodiesSimulatePhysics(false);
+		//	MeshComponent->SetAllBodiesPhysicsBlendWeight(0.0f);
+		//}
 
-		const FName SelectedBoneName = GetSelectedBodyBoneName(PhysicsAsset, SelectedBodyIndex);
-		const bool bHasSelectedBody = SelectedBoneName.IsValid();
-		if (!bHasSelectedBody)
-		{
-			ImGui::BeginDisabled();
-		}
+		//const FName SelectedBoneName = GetSelectedBodyBoneName(PhysicsAsset, SelectedBodyIndex);
+		//const bool bHasSelectedBody = SelectedBoneName.IsValid();
+		//if (!bHasSelectedBody)
+		//{
+		//	ImGui::BeginDisabled();
+		//}
 
-		ImGui::Checkbox("Include Selected", &bIncludeSelectedSelf);
-		if (ImGui::Button("Sim Selected", ImVec2(96.0f, 0.0f)) && MeshComponent && bHasSelectedBody)
-		{
-			MeshComponent->SetAllBodiesBelowSimulatePhysics(SelectedBoneName, true, bIncludeSelectedSelf);
-			MeshComponent->SetAllBodiesBelowPhysicsBlendWeight(SelectedBoneName, 1.0f, bIncludeSelectedSelf);
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Kin Selected", ImVec2(96.0f, 0.0f)) && MeshComponent && bHasSelectedBody)
-		{
-			MeshComponent->SetAllBodiesBelowSimulatePhysics(SelectedBoneName, false, bIncludeSelectedSelf);
-			MeshComponent->SetAllBodiesBelowPhysicsBlendWeight(SelectedBoneName, 0.0f, bIncludeSelectedSelf);
-		}
+		//ImGui::Checkbox("Include Selected", &bIncludeSelectedSelf);
+		//if (ImGui::Button("Sim Selected", ImVec2(96.0f, 0.0f)) && MeshComponent && bHasSelectedBody)
+		//{
+		//	MeshComponent->SetAllBodiesBelowSimulatePhysics(SelectedBoneName, true, bIncludeSelectedSelf);
+		//	MeshComponent->SetAllBodiesBelowPhysicsBlendWeight(SelectedBoneName, 1.0f, bIncludeSelectedSelf);
+		//}
+		//ImGui::SameLine();
+		//if (ImGui::Button("Kin Selected", ImVec2(96.0f, 0.0f)) && MeshComponent && bHasSelectedBody)
+		//{
+		//	MeshComponent->SetAllBodiesBelowSimulatePhysics(SelectedBoneName, false, bIncludeSelectedSelf);
+		//	MeshComponent->SetAllBodiesBelowPhysicsBlendWeight(SelectedBoneName, 0.0f, bIncludeSelectedSelf);
+		//}
 
-		if (!bHasSelectedBody)
-		{
-			ImGui::EndDisabled();
-		}
-		if (!bSimulationActive)
-		{
-			ImGui::EndDisabled();
-		}
+		//if (!bHasSelectedBody)
+		//{
+		//	ImGui::EndDisabled();
+		//}
+		//if (!bSimulationActive)
+		//{
+		//	ImGui::EndDisabled();
+		//}
 	}
 
 	void Start(USkeletalMeshDebugComponent* MeshComponent, UPhysicsAsset* PhysicsAsset)
@@ -1662,7 +1662,6 @@ void FMeshEditorPhysicsAssetTab::OnActivated(EMeshEditorTab PreviousTab)
 {
 	(void)PreviousTab;
 	GetViewportClient().SetPhysicsAssetPickingEnabled(true);
-	GetViewportClient().GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
 	if (USkeletalMesh* SkeletalMesh = GetSkeletalMesh())
 	{
 		SyncReflectionDetailTarget(SkeletalMesh->GetPhysicsAsset());
@@ -1686,7 +1685,6 @@ void FMeshEditorPhysicsAssetTab::Render(float AvailableHeight)
 	USkeletalMesh* SkeletalMesh = GetSkeletalMesh();
 	UPhysicsAsset* PhysicsAsset = SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
 	const FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
-	GetViewportClient().GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
 	SyncDebugComponent(PhysicsAsset);
 
 	constexpr float BodyListWidth = 260.0f;
@@ -1901,7 +1899,6 @@ bool FMeshEditorPhysicsAssetTab::RenderPhysicsAssetBuildOptionsOverlay(
 		{
 			SavePhysicsAssetChange("PhysicsAsset generate warning");
 			MarkDirty();
-			GetViewportClient().GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
 			InOutPhysicsAsset = NewAsset;
 			SelectedPhysicsBodyIndex = -1;
 			SelectedPhysicsConstraintIndex = -1;

@@ -299,8 +299,7 @@ void FPhysicsAssetViewerWidget::CreatePreviewWorld()
 			MarkDirty();
 		}
 	});
-	ViewportClient.GetRenderOptions().ShowFlags.bDebugPhysicsAsset = true;
-	ViewportClient.ResetCameraToPreviousBounds();
+    ViewportClient.ResetCameraToPreviousBounds();
 
 	WorldContext.World->SetEditorPOVProvider(&ViewportClient);
 	FSlateApplication::Get().RegisterViewport(&ViewportClient);
