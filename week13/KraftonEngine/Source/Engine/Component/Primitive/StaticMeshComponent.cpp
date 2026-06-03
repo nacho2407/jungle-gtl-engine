@@ -331,6 +331,11 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 		MarkWorldBoundsDirty();
 	}
 
+	if (strcmp(PropertyName, "bUseMeshTriangleCollision") == 0 || strcmp(PropertyName, "Use Mesh Triangle Collision") == 0)
+	{
+		NotifyPhysicsBodyDirty();
+	}
+
 	if (strncmp(PropertyName, "Element ", 8) == 0)
 	{
 		// "Element 0"에서 8번째 인덱스부터 시작하는 숫자를 정수로 변환

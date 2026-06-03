@@ -38,6 +38,7 @@ public:
 	void SetStaticMesh(UStaticMesh* InMesh);
 	UFUNCTION(Pure, Category="Mesh")
 	UStaticMesh* GetStaticMesh() const;
+	bool ShouldUseMeshTriangleCollision() const { return bUseMeshTriangleCollision; }
 	static void NotifyStaticMeshBodySetupChanged(UStaticMesh* ChangedMesh);
 
 	UFUNCTION(Callable, Category="Materials")
@@ -63,6 +64,8 @@ private:
 	TObjectPtr<UStaticMesh> StaticMesh;
 	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Static Mesh", AssetType="StaticMesh")
 	FSoftObjectPtr StaticMeshPath = "None";
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Use Mesh Triangle Collision")
+	bool bUseMeshTriangleCollision = false;
 	// Runtime loaded material references. Persistent material identity is stored in MaterialSlots.
 	UPROPERTY(Transient, Category="Materials")
 	TArray<TObjectPtr<UMaterial>> OverrideMaterials;

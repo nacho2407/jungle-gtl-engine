@@ -17,7 +17,8 @@ enum class EBodyInstanceShapeType : uint8
 	Sphere,
 	Box,
 	Capsule,
-	Convex
+	Convex,
+	TriangleMesh
 };
 
 struct FBodyShapeDesc
@@ -34,6 +35,9 @@ struct FBodyShapeDesc
 	TArray<FVector> ConvexVertices;
 	TArray<int32> ConvexIndices;
 	FVector ConvexScale = FVector::OneVector;
+
+	TArray<FVector> TriangleVertices;
+	TArray<uint32> TriangleIndices;
 };
 
 // FBodyInscane를 만들 때 필요한 초기화 정보
