@@ -46,6 +46,7 @@ public:
 		bool bConsole = true;
 		bool bControl = true;
 		bool bProperty = true;
+		bool bReflectionProperty = true;
 		bool bScene = true;
 		bool bStat = false;
 		bool bContentBrowser = true;

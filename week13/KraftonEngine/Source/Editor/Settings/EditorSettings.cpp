@@ -82,6 +82,7 @@ namespace Key
 	constexpr const char* ShowConsole = "ShowConsole";
 	constexpr const char* ShowControlPanel = "ShowControlPanel";
 	constexpr const char* ShowPropertyWindow = "ShowPropertyWindow";
+	constexpr const char* ShowReflectionPropertyWindow = "ShowReflectionPropertyWindow";
 	constexpr const char* ShowSceneManager = "ShowSceneManager";
 	constexpr const char* ShowStatProfiler = "ShowStatProfiler";
 	constexpr const char* ShowContentBrowser = "ShowContentBrowser";
@@ -387,6 +388,7 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	WidgetsObj[Key::ShowConsole] = UI.bConsole;
 	WidgetsObj[Key::ShowControlPanel] = UI.bControl;
 	WidgetsObj[Key::ShowPropertyWindow] = UI.bProperty;
+	WidgetsObj[Key::ShowReflectionPropertyWindow] = UI.bReflectionProperty;
 	WidgetsObj[Key::ShowSceneManager] = UI.bScene;
 	WidgetsObj[Key::ShowStatProfiler] = UI.bStat;
 	WidgetsObj[Key::ShowContentBrowser] = UI.bContentBrowser;
@@ -527,6 +529,7 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		if (W.hasKey(Key::ShowConsole))        UI.bConsole = W[Key::ShowConsole].ToBool();
 		if (W.hasKey(Key::ShowControlPanel))   UI.bControl = W[Key::ShowControlPanel].ToBool();
 		if (W.hasKey(Key::ShowPropertyWindow)) UI.bProperty = W[Key::ShowPropertyWindow].ToBool();
+		if (W.hasKey(Key::ShowReflectionPropertyWindow)) UI.bReflectionProperty = W[Key::ShowReflectionPropertyWindow].ToBool();
 		if (W.hasKey(Key::ShowSceneManager))   UI.bScene = W[Key::ShowSceneManager].ToBool();
 		if (W.hasKey(Key::ShowStatProfiler))   UI.bStat = W[Key::ShowStatProfiler].ToBool();
 		if (W.hasKey(Key::ShowContentBrowser)) UI.bContentBrowser = W[Key::ShowContentBrowser].ToBool();
