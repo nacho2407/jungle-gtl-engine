@@ -12,6 +12,8 @@
 #include "Physics/PhysXVehicleManager.h"
 
 #include "Core/Logging/Log.h"
+#include "Core/ProjectSettings.h"
+
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "Mesh/Static/StaticMesh.h"
@@ -174,6 +176,17 @@ void FPhysicsScene::Initialize()
 	SceneDesc.flags |= physx::PxSceneFlag::eENABLE_PCM;
 
 	Scene = Physics->createScene(SceneDesc);
+
+	if (physx::PxPvdSceneClient* PvdClient = Scene->getScenePvdClient())
+	{
+		PvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONTACTS, FProjectSettings::Get().Physics.bPvdTransmitContacts);
+		PvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, FProjectSettings::Get().Physics.bPvdTransmitSceneQueries);
+		PvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, FProjectSettings::Get().Physics.bPvdTransmitConstraints);
+	}
+	else
+	{
+		UE_LOG("PVD scene client: NULL");
+	}
 
 	Scene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, 1.0f);
 	Scene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
@@ -486,11 +499,11 @@ FConstraintInstance* FPhysicsScene::CreateD6Constraint(FBodyInstance* BodyA, FBo
 
 		// Swing: 콘 형태 (Swing1=local Y, Swing2=local Z 반각)
 		Joint->setSwingLimit(physx::PxJointLimitCone(
-			std::max(Swing1LimitDeg, 1.0f) * DegToRad,
-			std::max(Swing2LimitDeg, 1.0f) * DegToRad));
+			max(Swing1LimitDeg, 1.0f) * DegToRad,
+			max(Swing2LimitDeg, 1.0f) * DegToRad));
 
 		// Twist: 대칭 범위 [-t, +t]
-		const float TwistRad = std::max(TwistLimitDeg, 1.0f) * DegToRad;
+		const float TwistRad = max(TwistLimitDeg, 1.0f) * DegToRad;
 		Joint->setTwistLimit(physx::PxJointAngularLimitPair(-TwistRad, TwistRad));
 	}
 

@@ -3,6 +3,7 @@
 #include "Platform/Paths.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
+#include "Core/ProjectSettings.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include "Profiling/Stats/Stats.h"
 #include "Profiling/StartupProfiler.h"
@@ -53,6 +54,8 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	FObjectFactory::Get();
 
 	InputSystem::Get().SetOwnerWindow(Window->GetHWND());
+
+	FProjectSettings::Get().LoadFromFile(FProjectSettings::GetDefaultPath());
 
 	{
 		SCOPE_STARTUP_STAT("Renderer::Create");

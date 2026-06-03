@@ -19,6 +19,8 @@ public:
 	physx::PxAllocatorCallback* GetAllocatorCallback() { return &Allocator; }
 	physx::PxErrorCallback* GetErrorCallback() { return &ErrorCallback; }
 
+	physx::PxPvd* GetPvd() const { return Pvd; }
+
 private:
 	physx::PxDefaultAllocator Allocator;
 	physx::PxDefaultErrorCallback ErrorCallback;
@@ -28,4 +30,7 @@ private:
 	physx::PxMaterial* DefaultMaterial = nullptr;
 
 	physx::PxCooking* Cooking = nullptr;
+
+	physx::PxPvd* Pvd = nullptr;
+	physx::PxPvdTransport* PvdTransport = nullptr;
 };

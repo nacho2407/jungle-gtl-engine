@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Core/Singleton.h"
@@ -32,6 +32,14 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 		                            // 잘못된 이름이거나 AGameModeBase 파생이 아니면 디폴트 fallback.
 	};
 
+	struct FPhysicsOption
+	{
+		bool bEnablePvd = false;
+		bool bPvdTransmitContacts = false;
+		bool bPvdTransmitSceneQueries = false;
+		bool bPvdTransmitConstraints = false;
+	};
+
 	struct FDiagnosticsOption
 	{
 		FString CrashDumpShareDir;
@@ -40,6 +48,7 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 public:
 	FShadowOption Shadow;
 	FGameOption Game;
+	FPhysicsOption Physics;
 	FDiagnosticsOption Diagnostics;
 
 	// --- 직렬화 ---
