@@ -1,5 +1,7 @@
 #include "BodySetup.h"
 
+#include "Component/Primitive/StaticMeshComponent.h"
+#include "Mesh/Static/StaticMesh.h"
 #include "Serialization/Archive.h"
 
 #include <algorithm>
@@ -9,6 +11,8 @@ namespace
 {
 constexpr uint32 BodySetupPhysicsInfoMagic = 0x59485042; // B P H Y
 constexpr uint32 BodySetupPhysicsInfoVersion = 1;
+constexpr uint32 BodySetupTriangleCollisionMagic = 0x4C4F4354; // T C O L
+constexpr uint32 BodySetupTriangleCollisionVersion = 1;
 constexpr float DefaultBodyDensityKgPerCubicUnit = 0.001f;
 constexpr float DefaultRaiseMassToPower = 0.75f;
 constexpr float MinBodyMassKg = 0.001f;
@@ -182,6 +186,43 @@ void SerializePhysicsInfoBlock(FArchive& Ar, FBodySetupPhysicsInfo& PhysicsInfo)
 
 	SerializePhysicsInfoPayload(Ar, PhysicsInfo);
 }
+
+void SerializeTriangleCollisionBlock(FArchive& Ar, bool& bUseMeshTriangleCollision)
+{
+	if (Ar.IsSaving())
+	{
+		uint32 Magic = BodySetupTriangleCollisionMagic;
+		uint32 Version = BodySetupTriangleCollisionVersion;
+		Ar << Magic;
+		Ar << Version;
+		Ar << bUseMeshTriangleCollision;
+		return;
+	}
+
+	if (!Ar.CanSeek() || Ar.IsAtEnd())
+	{
+		return;
+	}
+
+	const int64 BlockStart = Ar.Tell();
+	uint32 Magic = 0;
+	Ar << Magic;
+	if (Magic != BodySetupTriangleCollisionMagic)
+	{
+		Ar.Seek(BlockStart);
+		return;
+	}
+
+	uint32 Version = 0;
+	Ar << Version;
+	if (Version != BodySetupTriangleCollisionVersion)
+	{
+		Ar.Seek(BlockStart);
+		return;
+	}
+
+	Ar << bUseMeshTriangleCollision;
+}
 }
 
 void UBodySetup::Serialize(FArchive& Ar)
@@ -207,6 +248,17 @@ void UBodySetup::Serialize(FArchive& Ar)
 
 	SerializeAggregateGeom(Ar, AggGeom);
 	SerializePhysicsInfoBlock(Ar, PhysicsInfo);
+	SerializeTriangleCollisionBlock(Ar, bUseMeshTriangleCollision);
+}
+
+void UBodySetup::PostEditProperty(const char* PropertyName)
+{
+	UObject::PostEditProperty(PropertyName);
+
+	if (UStaticMesh* StaticMesh = GetTypedOuter<UStaticMesh>())
+	{
+		UStaticMeshComponent::NotifyStaticMeshBodySetupChanged(StaticMesh);
+	}
 }
 
 float UBodySetup::GetScaledVolume(const FVector& Scale3D) const

@@ -22,11 +22,13 @@ public:
 	FKAggregateGeom& GetAggGeom() { return AggGeom; }
 	const FBodySetupPhysicsInfo& GetPhysicsInfo() const { return PhysicsInfo; }
 	FBodySetupPhysicsInfo& GetPhysicsInfo() { return PhysicsInfo; }
+	bool ShouldUseMeshTriangleCollision() const { return bUseMeshTriangleCollision; }
 
 	float GetScaledVolume(const FVector& Scale3D = FVector::OneVector) const;
 	float CalculateMass(const FVector& Scale3D = FVector::OneVector) const;
 
 	void Serialize(FArchive& Ar) override;
+	void PostEditProperty(const char* PropertyName) override;
 
 private:
 	// DisplayName = Primitives
@@ -35,4 +37,7 @@ private:
 
 	UPROPERTY(Edit, Save, Category="Physics Info", DisplayName="Body Physics", Type=Struct)
 	FBodySetupPhysicsInfo PhysicsInfo;
+
+	UPROPERTY(Edit, Save, Category="Body Shape", DisplayName="Use Mesh Triangle Collision")
+	bool bUseMeshTriangleCollision = false;
 };

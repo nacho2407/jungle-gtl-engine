@@ -1,4 +1,4 @@
-﻿#include "BodyInstance.h"
+#include "BodyInstance.h"
 
 #include "PhysXTypeConversions.h"
 #include "GameFramework/AActor.h"
@@ -355,6 +355,32 @@ bool BuildBodyInstanceInitDescFromPrimitive(UPrimitiveComponent* Comp, FBodyInst
         OutDesc.LinearDamping = PhysicsInfo.LinearDamping;
         OutDesc.AngularDamping = PhysicsInfo.AngularDamping;
         OutDesc.InertiaTensorScale = PhysicsInfo.InertiaTensorScale;
+
+		const bool bUseMeshTriangleCollision =
+			StaticMeshComp->ShouldUseMeshTriangleCollision()
+			|| BodySetup->ShouldUseMeshTriangleCollision();
+		if (bUseMeshTriangleCollision && !OutDesc.bSimulatePhysics && Mesh->GetStaticMeshAsset())
+		{
+			const FStaticMesh* StaticMeshAsset = Mesh->GetStaticMeshAsset();
+			if (StaticMeshAsset->Vertices.size() >= 3 && StaticMeshAsset->Indices.size() >= 3)
+			{
+				FBodyShapeDesc MeshShape;
+				MeshShape.ShapeType = EBodyInstanceShapeType::TriangleMesh;
+				MeshShape.LocalTransform = FTransform();
+				MeshShape.TriangleVertices.reserve(StaticMeshAsset->Vertices.size());
+				for (const FNormalVertex& Vertex : StaticMeshAsset->Vertices)
+				{
+					MeshShape.TriangleVertices.push_back(FVector(
+						Vertex.pos.X * WorldScale.X,
+						Vertex.pos.Y * WorldScale.Y,
+						Vertex.pos.Z * WorldScale.Z
+					));
+				}
+				MeshShape.TriangleIndices = StaticMeshAsset->Indices;
+				OutDesc.Shapes.push_back(MeshShape);
+				return !OutDesc.Shapes.empty();
+			}
+		}
 
         const FKAggregateGeom& AggGeom = BodySetup->GetAggGeom();
 

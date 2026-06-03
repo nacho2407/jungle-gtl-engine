@@ -159,6 +159,44 @@ namespace
 
 		return true;
 	}
+
+	bool CreateTriangleMeshGeometry(
+		PxPhysics* Physics, PxCooking* Cooking, const FBodyShapeDesc& ShapeDesc,
+		PxTriangleMesh*& OutTriangleMesh, PxTriangleMeshGeometry& OutGeometry)
+	{
+		OutTriangleMesh = nullptr;
+		if (!Physics || !Cooking) return false;
+		if (ShapeDesc.TriangleVertices.size() < 3 || ShapeDesc.TriangleIndices.size() < 3) return false;
+
+		PxTriangleMeshDesc TriangleMeshDesc;
+		TriangleMeshDesc.points.count = static_cast<PxU32>(ShapeDesc.TriangleVertices.size());
+		TriangleMeshDesc.points.stride = sizeof(FVector);
+		TriangleMeshDesc.points.data = ShapeDesc.TriangleVertices.data();
+		TriangleMeshDesc.triangles.count = static_cast<PxU32>(ShapeDesc.TriangleIndices.size() / 3);
+		TriangleMeshDesc.triangles.stride = sizeof(uint32) * 3;
+		TriangleMeshDesc.triangles.data = ShapeDesc.TriangleIndices.data();
+
+		if (!TriangleMeshDesc.isValid())
+		{
+			return false;
+		}
+
+		OutTriangleMesh = Cooking->createTriangleMesh(
+			TriangleMeshDesc,
+			Physics->getPhysicsInsertionCallback()
+		);
+		if (!OutTriangleMesh) return false;
+
+		OutGeometry = PxTriangleMeshGeometry(OutTriangleMesh);
+		if (!OutGeometry.isValid())
+		{
+			OutTriangleMesh->release();
+			OutTriangleMesh = nullptr;
+			return false;
+		}
+
+		return true;
+	}
 }
 static PxDefaultAllocator GPhysXAllocator;
 static constexpr physx::PxU32 FILTER_FLAG_IGNORE_SAME_OWNER = 1u << 31;
@@ -963,6 +1001,7 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 		PxQuat ShapeAxisRot = PxQuat(PxIdentity);
 
 		PxConvexMesh* TempConvexMesh = nullptr;
+		PxTriangleMesh* TempTriangleMesh = nullptr;
 
 		switch (ShapeDesc.ShapeType)
 		{
@@ -1007,6 +1046,19 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 			break;
 		}
 
+		case EBodyInstanceShapeType::TriangleMesh:
+		{
+			PxTriangleMeshGeometry TriangleMeshGeometry;
+			if (!CreateTriangleMeshGeometry(Physics, Cooking, ShapeDesc, TempTriangleMesh, TriangleMeshGeometry))
+			{
+				break;
+			}
+
+			Geom.storeAny(TriangleMeshGeometry);
+			bHasGeom = true;
+			break;
+		}
+
 		default:
 			break;
 		}
@@ -1018,6 +1070,11 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 				TempConvexMesh->release();
 				TempConvexMesh = nullptr;
 			}
+			if (TempTriangleMesh)
+			{
+				TempTriangleMesh->release();
+				TempTriangleMesh = nullptr;
+			}
 			continue;
 		}
 
@@ -1026,6 +1083,11 @@ bool FPhysXPhysicsScene::CreateBodyInstance(FBodyInstance& Body, const FBodyInst
 		{
 			TempConvexMesh->release();
 			TempConvexMesh = nullptr;
+		}
+		if (TempTriangleMesh)
+		{
+			TempTriangleMesh->release();
+			TempTriangleMesh = nullptr;
 		}
 
 		if (!Shape)
