@@ -256,6 +256,12 @@ void FEditorConsoleWidget::RegisterDiagnosticsCommands()
 		"Diagnostics", "stat skinning", "Shows the skinning CPU overlay stat.");
 	RegisterCommand("stat particles", [this](const TArray<FString>& Args) { HandleStatParticles(Args); },
 		"Diagnostics", "stat particles", "Shows the particle overlay stat.");
+	RegisterCommand("stat physx", [this](const TArray<FString>& Args) { HandleStatPhysX(Args); },
+		"Diagnostics", "stat physx", "Shows the PhysX overlay stat.");
+	RegisterCommand("stat ragdoll", [this](const TArray<FString>& Args) { HandleStatRagdoll(Args); },
+		"Diagnostics", "stat ragdoll", "Shows the ragdoll overlay stat.");
+	RegisterCommand("stat cloth", [this](const TArray<FString>& Args) { HandleStatCloth(Args); },
+		"Diagnostics", "stat cloth", "Shows the cloth overlay stat.");
 	RegisterCommand("stat none", [this](const TArray<FString>& Args) { HandleStatNone(Args); },
 		"Diagnostics", "stat none", "Hides all overlay stats.");
 	RegisterCommand("cause crash", [this](const TArray<FString>& Args) { HandleCauseCrash(Args); },
@@ -974,6 +980,42 @@ void FEditorConsoleWidget::HandleStatParticles(const TArray<FString>& Args)
 	}
 	const bool bEnabled = EditorEngine->GetOverlayStatSystem().ToggleParticles();
 	AddLog("Overlay stat %s: particles\n", bEnabled ? "enabled" : "disabled");
+}
+
+void FEditorConsoleWidget::HandleStatPhysX(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+	const bool bEnabled = EditorEngine->GetOverlayStatSystem().TogglePhysX();
+	AddLog("Overlay stat %s: physx\n", bEnabled ? "enabled" : "disabled");
+}
+
+void FEditorConsoleWidget::HandleStatRagdoll(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+	const bool bEnabled = EditorEngine->GetOverlayStatSystem().ToggleRagdoll();
+	AddLog("Overlay stat %s: ragdoll\n", bEnabled ? "enabled" : "disabled");
+}
+
+void FEditorConsoleWidget::HandleStatCloth(const TArray<FString>& Args)
+{
+	(void)Args;
+	if (!EditorEngine)
+	{
+		AddLog("[ERROR] EditorEngine is null.\n");
+		return;
+	}
+	const bool bEnabled = EditorEngine->GetOverlayStatSystem().ToggleCloth();
+	AddLog("Overlay stat %s: cloth\n", bEnabled ? "enabled" : "disabled");
 }
 
 void FEditorConsoleWidget::HandleStatNone(const TArray<FString>& Args)

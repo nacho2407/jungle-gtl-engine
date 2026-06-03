@@ -3,6 +3,7 @@
 #include "Platform/Paths.h"
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
+#include "Core/ProjectSettings.h"
 #include "Engine/Platform/DirectoryWatcher.h"
 #include "Profiling/Stats/Stats.h"
 #include "Profiling/StartupProfiler.h"
@@ -23,6 +24,7 @@
 #include "Viewport/GameViewportClient.h"
 #include "Physics/PhysXSDK.h"
 #include "Physics/NvClothSDK.h"
+#include "Profiling/Stats/PhysicsStats.h"
 
 UEngine* GEngine = nullptr;
 
@@ -53,6 +55,8 @@ void UEngine::Init(FWindowsWindow* InWindow)
 	FObjectFactory::Get();
 
 	InputSystem::Get().SetOwnerWindow(Window->GetHWND());
+
+	FProjectSettings::Get().LoadFromFile(FProjectSettings::GetDefaultPath());
 
 	{
 		SCOPE_STARTUP_STAT("Renderer::Create");
@@ -174,6 +178,7 @@ void UEngine::OnWindowResized(uint32 Width, uint32 Height)
 void UEngine::WorldTick(float DeltaTime)
 {
 	SCOPE_STAT_CAT("UEngine::WorldTick", "1_WorldTick");
+	PHYSICS_STATS_RESET();
 
 	// PIE 활성 시 Editor 월드는 sleep (UE 동작과 동일).
 	// culling/octree/visibility 갱신을 건너뛰어 50k+ 환경에서 비용 2배를 방지.

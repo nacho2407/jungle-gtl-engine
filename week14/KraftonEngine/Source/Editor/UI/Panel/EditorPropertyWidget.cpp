@@ -94,6 +94,77 @@ namespace
 		return Prop.GetDisplayName();
 	}
 
+	FString TrimActorName(const FString& Name)
+	{
+		constexpr const char* Whitespace = " \t\r\n";
+		const FString::size_type First = Name.find_first_not_of(Whitespace);
+		if (First == FString::npos)
+		{
+			return FString();
+		}
+
+		const FString::size_type Last = Name.find_last_not_of(Whitespace);
+		return Name.substr(First, Last - First + 1);
+	}
+
+	void CopyActorNameToBuffer(AActor* Actor, char* Buffer, size_t BufferSize)
+	{
+		if (!Actor || !Buffer || BufferSize == 0)
+		{
+			return;
+		}
+
+		strncpy_s(Buffer, BufferSize, Actor->GetFName().ToString().c_str(), _TRUNCATE);
+	}
+
+	void CopyObjectNameToBuffer(const UObject* Object, char* Buffer, size_t BufferSize)
+	{
+		if (!Object || !Buffer || BufferSize == 0)
+		{
+			return;
+		}
+
+		strncpy_s(Buffer, BufferSize, Object->GetFName().ToString().c_str(), _TRUNCATE);
+	}
+
+	bool IsActorNameInUse(UWorld* World, AActor* ExcludedActor, const FString& CandidateName)
+	{
+		if (!World || CandidateName.empty())
+		{
+			return false;
+		}
+
+		const FName CandidateFName(CandidateName);
+		for (AActor* Actor : World->GetActors())
+		{
+			if (Actor && Actor != ExcludedActor && Actor->GetFName() == CandidateFName)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	bool IsComponentNameInUse(const AActor* OwnerActor, const UActorComponent* ExcludedComponent, const FString& CandidateName)
+	{
+		if (!OwnerActor || CandidateName.empty())
+		{
+			return false;
+		}
+
+		const FName CandidateFName(CandidateName);
+		for (const UActorComponent* Component : OwnerActor->GetComponents())
+		{
+			if (Component && Component != ExcludedComponent && Component->GetFName() == CandidateFName)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	void QueueDeferredPostEditChange(TArray<FDeferredPostEditChange>& OutChanges, const FPropertyValue& Prop)
 	{
 		if (!Prop.Object)
@@ -333,8 +404,11 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	if (!PrimaryActor)
 	{
 		SelectedComponent = nullptr;
+		LastRenameComponent = nullptr;
 		LastSelectedActor = nullptr;
 		bActorSelected = true;
+		ComponentRenameBuffer[0] = '\0';
+		ComponentRenameWarning.clear();
 		ImGui::Text("No object selected.");
 		ImGui::End();
 		return;
@@ -344,9 +418,13 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	if (PrimaryActor != LastSelectedActor)
 	{
 		SelectedComponent = nullptr;
+		LastRenameComponent = nullptr;
 		LastSelectedActor = PrimaryActor;
 		bActorSelected = true;
-		bShowDuplicateWarning = false;
+		RenameWarning.clear();
+		ComponentRenameBuffer[0] = '\0';
+		ComponentRenameWarning.clear();
+		CopyActorNameToBuffer(PrimaryActor, RenameBuffer, sizeof(RenameBuffer));
 	}
 
 	const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
@@ -368,6 +446,9 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		{
 			bActorSelected = true;
 			SelectedComponent = nullptr;
+			LastRenameComponent = nullptr;
+			ComponentRenameBuffer[0] = '\0';
+			ComponentRenameWarning.clear();
 		}
 		ImGui::SameLine();
 		char RemoveLabel[64];
@@ -387,6 +468,9 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 			// GPU Occlusion staging에 남은 dangling proxy 포인터 무효화
 			EditorEngine->InvalidateOcclusionResults();
 			SelectedComponent = nullptr;
+			LastRenameComponent = nullptr;
+			ComponentRenameBuffer[0] = '\0';
+			ComponentRenameWarning.clear();
 			LastSelectedActor = nullptr;
 			ImGui::End();
 			return;
@@ -402,22 +486,29 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		{
 			bActorSelected = true;
 			SelectedComponent = nullptr;
+			LastRenameComponent = nullptr;
+			ComponentRenameBuffer[0] = '\0';
+			ComponentRenameWarning.clear();
 		}
-		//ImGui::SameLine();
-
-		//ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 70.0f);
-		//ImGui::InputText("##Rename", RenameBuffer, sizeof(RenameBuffer));
-		//ImGui::SameLine();
-		//if (ImGui::Button("Rename"))
-		//{
-		//	RenameActor(PrimaryActor);
-		//}
 	}
 
-	if (bShowDuplicateWarning)
+	ImGui::TextUnformatted("Name");
+	ImGui::SameLine();
+	const float RenameButtonWidth = 72.0f;
+	ImGui::SetNextItemWidth(std::max(80.0f, ImGui::GetContentRegionAvail().x - RenameButtonWidth - ImGui::GetStyle().ItemSpacing.x));
+	const bool bRenameByEnter = ImGui::InputText("##ActorRename", RenameBuffer, sizeof(RenameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
+	const bool bRenameByFocusLoss = ImGui::IsItemDeactivatedAfterEdit();
+	ImGui::SameLine();
+	const bool bRenameByButton = ImGui::Button("Rename", ImVec2(RenameButtonWidth, 0.0f));
+	if (bRenameByEnter || bRenameByFocusLoss || bRenameByButton)
+	{
+		RenameActor(PrimaryActor);
+	}
+
+	if (!RenameWarning.empty())
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
-		ImGui::Text("이미 사용 중인 이름입니다.");
+		ImGui::Text("%s", RenameWarning.c_str());
 		ImGui::PopStyleColor();
 	}
 
@@ -445,40 +536,77 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 
 void FEditorPropertyWidget::RenameActor(AActor* PrimaryActor)
 {
-	FString NewName(RenameBuffer);
+	if (!PrimaryActor)
+	{
+		return;
+	}
+
+	FString NewName = TrimActorName(FString(RenameBuffer));
 	FString CurrentName = PrimaryActor->GetFName().ToString();
+	RenameWarning.clear();
+
+	if (NewName.empty())
+	{
+		RenameWarning = "Actor name cannot be empty.";
+		CopyActorNameToBuffer(PrimaryActor, RenameBuffer, sizeof(RenameBuffer));
+		return;
+	}
 
 	// 현재 이름과 동일하면 스킵
 	if (NewName == CurrentName)
 	{
-		RenameBuffer[0] = '\0';
+		CopyActorNameToBuffer(PrimaryActor, RenameBuffer, sizeof(RenameBuffer));
 		return;
 	}
-		
-	// 월드의 모든 Actor를 순회하며 중복 이름 체크
-	bShowDuplicateWarning = false;
-	UWorld* World = EditorEngine->GetWorld();
-	if (World)
+
+	UWorld* World = PrimaryActor->GetWorld();
+	if (!World && EditorEngine)
 	{
-		for (AActor* Actor : World->GetActors()) 
-		{
-			if (Actor == PrimaryActor) continue;
-			if (Actor->GetFName().ToString() == NewName)
-			{
-				bShowDuplicateWarning = true;
-				break;
-			}
-		}
+		World = EditorEngine->GetWorld();
 	}
 
-	if (!bShowDuplicateWarning)
+	if (IsActorNameInUse(World, PrimaryActor, NewName))
 	{
-		PrimaryActor->SetFName(FName(NewName));
-		strncpy_s(RenameBuffer, sizeof(RenameBuffer),
-			NewName.c_str(), _TRUNCATE);
+		RenameWarning = "Actor name already exists.";
+		return;
 	}
 
-	RenameBuffer[0] = '\0';
+	PrimaryActor->SetFName(FName(NewName));
+	CopyActorNameToBuffer(PrimaryActor, RenameBuffer, sizeof(RenameBuffer));
+}
+
+void FEditorPropertyWidget::RenameComponent(AActor* OwnerActor, UActorComponent* Component)
+{
+	if (!OwnerActor || !Component)
+	{
+		return;
+	}
+
+	FString NewName = TrimActorName(FString(ComponentRenameBuffer));
+	FString CurrentName = Component->GetFName().ToString();
+	ComponentRenameWarning.clear();
+
+	if (NewName.empty())
+	{
+		ComponentRenameWarning = "Component name cannot be empty.";
+		CopyObjectNameToBuffer(Component, ComponentRenameBuffer, sizeof(ComponentRenameBuffer));
+		return;
+	}
+
+	if (NewName == CurrentName)
+	{
+		CopyObjectNameToBuffer(Component, ComponentRenameBuffer, sizeof(ComponentRenameBuffer));
+		return;
+	}
+
+	if (IsComponentNameInUse(OwnerActor, Component, NewName))
+	{
+		ComponentRenameWarning = "Component name already exists in this actor.";
+		return;
+	}
+
+	Component->SetFName(FName(NewName));
+	CopyObjectNameToBuffer(Component, ComponentRenameBuffer, sizeof(ComponentRenameBuffer));
 }
 
 void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
@@ -656,6 +784,9 @@ void FEditorPropertyWidget::RenderComponentTree(AActor* Actor)
 			return strcmp(A->GetName(), B->GetName()) < 0;
 		});
 
+	ImGui::Spacing();
+	ImGui::Separator();
+	ImGui::TextUnformatted("Components");
 	ImGui::SameLine();
 
 	if (ImGui::Button("Add"))
@@ -885,6 +1016,39 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 
 void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArray<AActor*>& SelectedActors)
 {
+	if (!Actor || !SelectedComponent)
+	{
+		return;
+	}
+
+	if (SelectedComponent != LastRenameComponent)
+	{
+		LastRenameComponent = SelectedComponent;
+		ComponentRenameWarning.clear();
+		CopyObjectNameToBuffer(SelectedComponent, ComponentRenameBuffer, sizeof(ComponentRenameBuffer));
+	}
+
+	ImGui::TextUnformatted("Name");
+	ImGui::SameLine();
+	const float RenameButtonWidth = 72.0f;
+	ImGui::SetNextItemWidth(std::max(80.0f, ImGui::GetContentRegionAvail().x - RenameButtonWidth - ImGui::GetStyle().ItemSpacing.x));
+	const bool bRenameByEnter = ImGui::InputText("##ComponentRename", ComponentRenameBuffer,
+		sizeof(ComponentRenameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
+	const bool bRenameByFocusLoss = ImGui::IsItemDeactivatedAfterEdit();
+	ImGui::SameLine();
+	const bool bRenameByButton = ImGui::Button("Rename##Component", ImVec2(RenameButtonWidth, 0.0f));
+	if (bRenameByEnter || bRenameByFocusLoss || bRenameByButton)
+	{
+		RenameComponent(Actor, SelectedComponent);
+	}
+
+	if (!ComponentRenameWarning.empty())
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+		ImGui::Text("%s", ComponentRenameWarning.c_str());
+		ImGui::PopStyleColor();
+	}
+
 	if (SelectedComponent != Actor->GetRootComponent())
 	{
 		if (ImGui::Button("Remove"))
@@ -893,6 +1057,9 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 			{
 				Actor->RemoveComponent(SelectedComponent);
 				SelectedComponent = nullptr;
+				LastRenameComponent = nullptr;
+				ComponentRenameBuffer[0] = '\0';
+				ComponentRenameWarning.clear();
 				return;
 			}
 		}

@@ -16,6 +16,7 @@ public:
 
 private:
 	void RenameActor(AActor* PrimaryActor);
+	void RenameComponent(AActor* OwnerActor, UActorComponent* Component);
 	void RenderComponentTree(AActor* Actor);
 	void RenderSceneComponentNode(class USceneComponent* Comp);
 	void RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors);
@@ -30,7 +31,10 @@ private:
 	bool bShowEditorOnlyComponents = false;
 
 	char RenameBuffer[256] = {};
-	bool bShowDuplicateWarning = false;
+	FString RenameWarning;
+	char ComponentRenameBuffer[256] = {};
+	FString ComponentRenameWarning;
+	UActorComponent* LastRenameComponent = nullptr;
 
 	float PendingDetailsScrollY = -1.0f;
 

@@ -10,6 +10,8 @@
 #include "Mesh/Static/StaticMeshAsset.h"
 #include "Mesh/MeshManager.h"
 #include "Physics/PhysicsScene.h"
+#include "Profiling/Stats/PhysicsStats.h"
+#include "Profiling/Stats/Stats.h"
 #include "Render/Proxy/ClothSceneProxy.h"
 #include "Runtime/Engine.h"
 
@@ -107,7 +109,10 @@ void UClothComponent::EndPlay()
 
 void UClothComponent::TickClothPostPhysics(float DeltaTime)
 {
-	UpdateBoneAttachment();
+	{
+		SCOPE_STAT_CAT("Cloth_BoneAttachment", "Cloth");
+		UpdateBoneAttachment();
+	}
 
 	const FMatrix& WorldMatrix = GetWorldMatrix();
 	const FVector CurrentLocation = WorldMatrix.GetLocation();
@@ -122,8 +127,19 @@ void UClothComponent::TickClothPostPhysics(float DeltaTime)
 	PreviousSimulationRotation = CurrentRotation;
 	bHasPreviousSimulationTransform = true;
 
-	UpdateClothWorldCollision();
+	{
+		SCOPE_STAT_CAT("Cloth_WorldCollision", "Cloth");
+		UpdateClothWorldCollision();
+	}
 	ClothInstance.Simulate(DeltaTime, ClothDesc.SubstepCount, ClothDesc.RenderNormalOffset);
+
+	if (ClothInstance.IsInitialized())
+	{
+		PHYSICS_STATS_RECORD_CLOTH_ACTIVE(
+			ClothInstance.GetParticleCount(),
+			ClothInstance.GetTriangleCount(),
+			static_cast<uint32>((std::max)(1, ClothDesc.SubstepCount)));
+	}
 
 	MarkWorldBoundsDirty();
 }
@@ -193,6 +209,11 @@ void UClothComponent::UpdateClothWorldCollision()
 	World->GetPhysicsScene()->GatherClothCollision(Params, CollisionData);
 
 	ClothInstance.UpdateCollision(CollisionData);
+	PHYSICS_STATS_RECORD_CLOTH_COLLISION(
+		static_cast<uint32>(CollisionData.Spheres.size()),
+		static_cast<uint32>(CollisionData.Capsules.size() / 2),
+		static_cast<uint32>(CollisionData.Planes.size()),
+		static_cast<uint32>(CollisionData.ConvexMasks.size()));
 }
 
 void UClothComponent::UpdateBoneAttachment()

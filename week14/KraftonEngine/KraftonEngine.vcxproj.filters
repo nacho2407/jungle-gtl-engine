@@ -181,6 +181,9 @@
     <Filter Include="Source\Engine\Component\Primitive">
       <UniqueIdentifier>{57bc4de3-ad9b-789f-c9a3-f7282f3fe720}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component\Ragdoll">
+      <UniqueIdentifier>{8c297b19-3f27-0895-294e-d909850476ba}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component\Script">
       <UniqueIdentifier>{b17c02e8-fa1d-b877-30dd-94123cc6c2aa}</UniqueIdentifier>
     </Filter>
@@ -1124,6 +1127,9 @@
     <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.cpp">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\PendulumMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
@@ -1165,6 +1171,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Primitive\TextRenderComponent.cpp">
       <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Ragdoll\RagdollHitReactionComponent.cpp">
+      <Filter>Source\Engine\Component\Ragdoll</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Script\LuaScriptComponent.cpp">
       <Filter>Source\Engine\Component\Script</Filter>
@@ -1487,6 +1496,9 @@
     <ClCompile Include="Source\Engine\Physics\PhysXVehicle4WInstance.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\PhysXVehicleTankInstance.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
@@ -1551,6 +1563,9 @@
       <Filter>Source\Engine\Profiling</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Profiling\Stats\MemoryStats.cpp">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Profiling\Stats\PhysicsStats.cpp">
       <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Profiling\Stats\ShadowStats.cpp">
@@ -2327,6 +2342,9 @@
     <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.h">
+      <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\PendulumMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
@@ -2368,6 +2386,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Primitive\TextRenderComponent.h">
       <Filter>Source\Engine\Component\Primitive</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Ragdoll\RagdollHitReactionComponent.h">
+      <Filter>Source\Engine\Component\Ragdoll</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Script\LuaScriptComponent.h">
       <Filter>Source\Engine\Component\Script</Filter>
@@ -2807,6 +2828,9 @@
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleInstanceBase.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicleTankInstance.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleManager.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
@@ -2886,6 +2910,9 @@
       <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\Stats\ParticleStats.h">
+      <Filter>Source\Engine\Profiling\Stats</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Profiling\Stats\PhysicsStats.h">
       <Filter>Source\Engine\Profiling\Stats</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Profiling\Stats\ShadowStats.h">

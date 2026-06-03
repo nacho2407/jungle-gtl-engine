@@ -17,6 +17,8 @@ public:
 	void EndPlay() override;
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
+	virtual void SyncFromPhysics();
+
 protected:
 	virtual bool CreateVehicleInstance(physx::PxPhysics* Physics, physx::PxScene* Scene, physx::PxMaterial* Material, const physx::PxTransform& StartPose);
 	virtual void DestroyVehicleInstance() {}

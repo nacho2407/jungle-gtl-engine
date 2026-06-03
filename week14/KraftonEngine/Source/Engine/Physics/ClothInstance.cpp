@@ -3,6 +3,7 @@
 #include "Mesh/Static/StaticMeshAsset.h"
 #include "Physics/NvClothSDK.h"
 #include "Physics/PhysXConversions.h"
+#include "Profiling/Stats/Stats.h"
 
 #include <cfloat>
 
@@ -445,6 +446,8 @@ void FClothInstance::Release()
 
 void FClothInstance::UpdateRenderVerticesFromParticles(float RenderNormalOffset)
 {
+	SCOPE_STAT_CAT("Cloth_RenderVertexUpdate", "Cloth");
+
 	if (!Cloth) return;
 
 	auto Current = Cloth->getCurrentParticles();
@@ -564,6 +567,8 @@ void FClothInstance::UpdateRenderVerticesFromParticles(float RenderNormalOffset)
 
 void FClothInstance::Simulate(float DeltaTime, int32 SubstepCount, float RenderNormalOffset)
 {
+	SCOPE_STAT_CAT("Cloth_Simulate", "Cloth");
+
 	nv::cloth::Solver* Solver = FNvClothSDK::Get().GetSolver();
 	if (!Solver || !Cloth) return;
 
@@ -633,6 +638,8 @@ void FClothInstance::ApplySimulationSettings(const FClothDesc& Desc)
 
 void FClothInstance::UpdateCollision(const FClothCollisionData& Data)
 {
+	SCOPE_STAT_CAT("Cloth_UpdateCollision", "Cloth");
+
 	if (!Cloth) return;
 
 	// capsules는 spheres를 참조하므로 먼저 제거

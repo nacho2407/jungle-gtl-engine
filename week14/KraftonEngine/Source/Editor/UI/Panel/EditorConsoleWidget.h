@@ -113,6 +113,9 @@ private:
 	void HandleStatShadow(const TArray<FString>& Args);
 	void HandleStatSkinning(const TArray<FString>& Args);
 	void HandleStatParticles(const TArray<FString>& Args);
+	void HandleStatPhysX(const TArray<FString>& Args);
+	void HandleStatRagdoll(const TArray<FString>& Args);
+	void HandleStatCloth(const TArray<FString>& Args);
 	void HandleStatNone(const TArray<FString>& Args);
 	void HandleCauseCrash(const TArray<FString>& Args);
 	void HandleCSMResolution(const TArray<FString>& Args);

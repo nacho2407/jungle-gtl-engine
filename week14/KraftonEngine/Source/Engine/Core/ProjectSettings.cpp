@@ -18,6 +18,12 @@ namespace PSKey
 	constexpr const char* StartLevelName = "StartLevelName";
 	constexpr const char* GameModeClassName = "GameModeClassName";
 
+	constexpr const char* PhysicsSection = "Physics";
+	constexpr const char* bEnablePvd = "bEnablePvd";
+	constexpr const char* bPvdTransmitContacts = "bPvdTransmitContacts";
+	constexpr const char* bPvdTransmitSceneQueries = "bPvdTransmitSceneQueries";
+	constexpr const char* bPvdTransmitConstraints = "bPvdTransmitConstraints";
+
 	constexpr const char* DiagnosticsSection = "Diagnostics";
 	constexpr const char* CrashDumpShareDir = "CrashDumpShareDir";
 }
@@ -41,6 +47,13 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 	GameObj[PSKey::StartLevelName] = Game.StartLevelName;
 	GameObj[PSKey::GameModeClassName] = Game.GameModeClassName;
 	Root[PSKey::GameSection] = GameObj;
+
+	JSON PhysicsObj = Object();
+	PhysicsObj[PSKey::bEnablePvd] = Physics.bEnablePvd;
+	PhysicsObj[PSKey::bPvdTransmitContacts] = Physics.bPvdTransmitContacts;
+	PhysicsObj[PSKey::bPvdTransmitSceneQueries] = Physics.bPvdTransmitSceneQueries;
+	PhysicsObj[PSKey::bPvdTransmitConstraints] = Physics.bPvdTransmitConstraints;
+	Root[PSKey::PhysicsSection] = PhysicsObj;
 
 	JSON DiagnosticsObj = Object();
 	DiagnosticsObj[PSKey::CrashDumpShareDir] = Diagnostics.CrashDumpShareDir;
@@ -75,6 +88,19 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 			Game.StartLevelName = G[PSKey::StartLevelName].ToString();
 		if (G.hasKey(PSKey::GameModeClassName))
 			Game.GameModeClassName = G[PSKey::GameModeClassName].ToString();
+	}
+
+	if (Root.hasKey(PSKey::PhysicsSection))
+	{
+		JSON P = Root[PSKey::PhysicsSection];
+		if (P.hasKey(PSKey::bEnablePvd))
+			Physics.bEnablePvd = P[PSKey::bEnablePvd].ToBool();
+		if (P.hasKey(PSKey::bPvdTransmitContacts))
+			Physics.bPvdTransmitContacts = P[PSKey::bPvdTransmitContacts].ToBool();
+		if (P.hasKey(PSKey::bPvdTransmitSceneQueries))
+			Physics.bPvdTransmitSceneQueries = P[PSKey::bPvdTransmitSceneQueries].ToBool();
+		if (P.hasKey(PSKey::bPvdTransmitConstraints))
+			Physics.bPvdTransmitConstraints = P[PSKey::bPvdTransmitConstraints].ToBool();
 	}
 
 	if (Root.hasKey(PSKey::DiagnosticsSection))

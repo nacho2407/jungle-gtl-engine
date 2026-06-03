@@ -12,6 +12,10 @@
 #include "Physics/PhysXVehicleManager.h"
 
 #include "Core/Logging/Log.h"
+#include "Core/ProjectSettings.h"
+#include "Profiling/Stats/PhysicsStats.h"
+#include "Profiling/Stats/Stats.h"
+
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "Mesh/Static/StaticMesh.h"
@@ -175,6 +179,17 @@ void FPhysicsScene::Initialize()
 
 	Scene = Physics->createScene(SceneDesc);
 
+	if (physx::PxPvdSceneClient* PvdClient = Scene->getScenePvdClient())
+	{
+		PvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONTACTS, FProjectSettings::Get().Physics.bPvdTransmitContacts);
+		PvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, FProjectSettings::Get().Physics.bPvdTransmitSceneQueries);
+		PvdClient->setScenePvdFlag(physx::PxPvdSceneFlag::eTRANSMIT_CONSTRAINTS, FProjectSettings::Get().Physics.bPvdTransmitConstraints);
+	}
+	else
+	{
+		UE_LOG("PVD scene client: NULL");
+	}
+
 	Scene->setVisualizationParameter(physx::PxVisualizationParameter::eSCALE, 1.0f);
 	Scene->setVisualizationParameter(physx::PxVisualizationParameter::eCOLLISION_SHAPES, 1.0f);
 
@@ -238,22 +253,70 @@ void FPhysicsScene::Simulate(float DeltaTime)
 {
 	if (VehicleManager)
 	{
+		SCOPE_STAT_CAT("PhysX_VehicleUpdate", "PhysX");
 		VehicleManager->Update(DeltaTime);
 	}
 
 	if (Scene)
 	{
-		Scene->simulate(DeltaTime);
-		Scene->fetchResults(true);
-
-		for (FBodyInstance* Body : Bodies)
 		{
-			if (Body)
+			SCOPE_STAT_CAT("PhysX_SimulateFetch", "PhysX");
+			Scene->simulate(DeltaTime);
+			Scene->fetchResults(true);
+		}
+
+		{
+			SCOPE_STAT_CAT("PhysX_BodySync", "PhysX");
+			for (FBodyInstance* Body : Bodies)
 			{
-				Body->SyncFromPhysics();
+				if (Body)
+				{
+					Body->SyncFromPhysics();
+				}
 			}
 		}
 	}
+
+#if STATS
+	uint32 BodyCount = 0;
+	uint32 StaticBodyCount = 0;
+	uint32 DynamicBodyCount = 0;
+	for (const FBodyInstance* Body : Bodies)
+	{
+		if (!Body || !Body->Body)
+		{
+			continue;
+		}
+
+		++BodyCount;
+		if (Body->Mode == EBodyInstanceMode::Static)
+		{
+			++StaticBodyCount;
+		}
+		else
+		{
+			++DynamicBodyCount;
+		}
+	}
+
+	physx::PxU32 ActiveActorCount = 0;
+	if (Scene)
+	{
+		Scene->getActiveActors(ActiveActorCount);
+	}
+
+	const uint32 VehicleCount = VehicleManager ? VehicleManager->GetVehicleCount() : 0;
+	const uint32 ControllerCount = ControllerManager ? static_cast<uint32>(ControllerManager->getNbControllers()) : 0;
+
+	PHYSICS_STATS_RECORD_PHYSX_SCENE(
+		BodyCount,
+		StaticBodyCount,
+		DynamicBodyCount,
+		static_cast<uint32>(Constraints.size()),
+		static_cast<uint32>(ActiveActorCount),
+		VehicleCount,
+		ControllerCount);
+#endif
 }
 
 bool FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& OutInstance)
@@ -486,11 +549,11 @@ FConstraintInstance* FPhysicsScene::CreateD6Constraint(FBodyInstance* BodyA, FBo
 
 		// Swing: 콘 형태 (Swing1=local Y, Swing2=local Z 반각)
 		Joint->setSwingLimit(physx::PxJointLimitCone(
-			std::max(Swing1LimitDeg, 1.0f) * DegToRad,
-			std::max(Swing2LimitDeg, 1.0f) * DegToRad));
+			max(Swing1LimitDeg, 1.0f) * DegToRad,
+			max(Swing2LimitDeg, 1.0f) * DegToRad));
 
 		// Twist: 대칭 범위 [-t, +t]
-		const float TwistRad = std::max(TwistLimitDeg, 1.0f) * DegToRad;
+		const float TwistRad = max(TwistLimitDeg, 1.0f) * DegToRad;
 		Joint->setTwistLimit(physx::PxJointAngularLimitPair(-TwistRad, TwistRad));
 	}
 
@@ -517,6 +580,8 @@ void FPhysicsScene::DestroyConstraint(FConstraintInstance* Instance)
 
 void FPhysicsScene::GatherClothCollision(const FClothCollisionGatherParams& Params, FClothCollisionData& OutData) const
 {
+	SCOPE_STAT_CAT("Cloth_CollisionGather", "Cloth");
+
 	OutData.Reset();
 
 	for (FBodyInstance* BodyInstance : Bodies)
@@ -592,6 +657,8 @@ void FPhysicsScene::GatherClothCollision(const FClothCollisionGatherParams& Para
 
 void FPhysicsScene::PrepareCharacterControllers(float DeltaTime)
 {
+	SCOPE_STAT_CAT("PhysX_PrepareCCT", "PhysX");
+
 	if (ControllerManager)
 	{
 		ControllerManager->computeInteractions(DeltaTime);
@@ -601,6 +668,8 @@ void FPhysicsScene::PrepareCharacterControllers(float DeltaTime)
 bool FPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
 	ECollisionChannel TraceChannel, const AActor* IgnoreActor)
 {
+	SCOPE_STAT_CAT("PhysX_Raycast", "PhysX");
+
 	if (!Scene || MaxDist <= 0.0f) return false;
 
 	FVector RayDir = Dir;
@@ -646,6 +715,8 @@ bool FPhysicsScene::Raycast(const FVector& Start, const FVector& Dir, float MaxD
 bool FPhysicsScene::SweepSphere(const FVector& Start, const FVector& Dir, float MaxDist, float Radius, FHitResult& OutHit,
 	ECollisionChannel TraceChannel, const AActor* IgnoreActor)
 {
+	SCOPE_STAT_CAT("PhysX_SweepSphere", "PhysX");
+
 	if (!Scene || MaxDist <= 0.0f || Radius <= 0.0f)
 	{
 		OutHit = FHitResult{};
@@ -702,6 +773,8 @@ bool FPhysicsScene::SweepSphere(const FVector& Start, const FVector& Dir, float 
 bool FPhysicsScene::OverlapSphere(const FVector& Center, float Radius, TArray<FOverlapResult>& OutOverlaps,
 	ECollisionChannel TraceChannel, const AActor* IgnoreActor)
 {
+	SCOPE_STAT_CAT("PhysX_OverlapSphere", "PhysX");
+
 	OutOverlaps.clear();
 
 	if (!Scene || Radius <= 0.0f) return false;
@@ -739,6 +812,8 @@ bool FPhysicsScene::OverlapSphere(const FVector& Center, float Radius, TArray<FO
 bool FPhysicsScene::OverlapBox(const FVector& Center, const FVector& HalfExtent, TArray<FOverlapResult>& OutOverlaps,
 	ECollisionChannel TraceChannel, const AActor* IgnoreActor)
 {
+	SCOPE_STAT_CAT("PhysX_OverlapBox", "PhysX");
+
 	OutOverlaps.clear();
 
 	if (!Scene || HalfExtent.X <= 0.0f || HalfExtent.Y <= 0.0f || HalfExtent.Z <= 0.0f) return false;

@@ -1,4 +1,4 @@
-#include "Engine/Runtime/GameEngine.h"
+﻿#include "Engine/Runtime/GameEngine.h"
 
 #include "Engine/Runtime/GameRenderPipeline.h"
 #include "Engine/Runtime/EngineInitHooks.h"
@@ -22,8 +22,6 @@ void UGameEngine::Init(FWindowsWindow* InWindow)
 	// 모듈 .cpp 들이 static initializer 로 등록해 둔 init 함수들 일괄 실행.
 	// (Lua 바인딩, ActorPlacement 등록 등) — EditorEngine::Init 와 동일 경로.
 	FEngineInitHooks::RunAll();
-
-	FProjectSettings::Get().LoadFromFile(FProjectSettings::GetDefaultPath());
 
 	StandaloneViewport = new FViewport();
 	StandaloneViewport->Initialize(

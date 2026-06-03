@@ -81,7 +81,10 @@ void UPhysXVehicleMovementComponent::TickComponent(float DeltaTime, ELevelTick T
 	FActorComponentTickFunction& ThisTickFunction)
 {
 	UMovementComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+}
 
+void UPhysXVehicleMovementComponent::SyncFromPhysics()
+{
 	AActor* OwnerActor = GetOwner();
 	physx::PxRigidDynamic* VehicleActor = GetVehicleActor();
 	if (!OwnerActor || !VehicleActor)

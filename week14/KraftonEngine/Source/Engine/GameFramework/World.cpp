@@ -4,6 +4,7 @@
 #include "Component/PrimitiveComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
 #include "Component/Primitive/ClothComponent.h"
+#include "Component/Movement/PhysX/PhysXVehicleMovementComponent.h"
 #include "Collision/WorldCollisionQueries.h"
 #include "Engine/Component/Camera/CameraComponent.h"
 #include "Render/Types/LODContext.h"
@@ -375,12 +376,33 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 	if (TickType == ELevelTick::LEVELTICK_All && PhysicsScene)
 	{
 		PhysicsScene->Simulate(DeltaTime);
+		SyncPhysXVehicleComponentsPostPhysics();
 		TickClothComponents(DeltaTime);
 	}
 
 	// 카메라는 물리/액터 Tick 이후 갱신 — 차량 1인칭처럼 physics body 에 붙은 카메라가
 	// 같은 프레임의 최신 transform 으로 POV cache 를 채운다.
 	TickPlayerCamera();
+}
+
+void UWorld::SyncPhysXVehicleComponentsPostPhysics()
+{
+	for (AActor* Actor : GetActors())
+	{
+		if (!Actor)
+		{
+			continue;
+		}
+
+		for (UActorComponent* Component : Actor->GetComponents())
+		{
+			UPhysXVehicleMovementComponent* VehicleComponent = Cast<UPhysXVehicleMovementComponent>(Component);
+			if (VehicleComponent)
+			{
+				VehicleComponent->SyncFromPhysics();
+			}
+		}
+	}
 }
 
 void UWorld::TickPlayerCamera() const

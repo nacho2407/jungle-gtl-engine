@@ -14,7 +14,7 @@
         "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
         "ShadowMode" : "Opaque",
         "Textures" : {
-          "DiffuseTexture" : ""
+          "DiffuseTexture" : "Content/Texture/UN.png"
         },
         "bEnableBloom" : false
       }

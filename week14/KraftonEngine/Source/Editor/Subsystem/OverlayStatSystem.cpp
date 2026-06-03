@@ -3,6 +3,7 @@
 #include "Editor/EditorEngine.h"
 #include "Engine/Profiling/Time/Timer.h"
 #include "Engine/Profiling/Stats/MemoryStats.h"
+#include "Engine/Profiling/Stats/PhysicsStats.h"
 #include "Engine/Profiling/Stats/ShadowStats.h"
 #include "Engine/Profiling/Stats/Stats.h"
 #include "Engine/Profiling/GPUProfiler.h"
@@ -28,6 +29,41 @@ static int FormatBytes(char* Buffer, int32 BufferSize, const char* Label, uint64
 	if (KB >= 1.0)
 		return snprintf(Buffer, BufferSize, "%s : %.2f KB", Label, KB);
 	return snprintf(Buffer, BufferSize, "%s : %llu B", Label, static_cast<unsigned long long>(Bytes));
+}
+
+static const FStatEntry* FindLiveStatEntry(const TArray<FStatEntry>& Snapshot, const char* Category, const char* Name)
+{
+	for (const FStatEntry& Entry : Snapshot)
+	{
+		if (Entry.CallCount == 0 || !Entry.Category || !Entry.Name)
+		{
+			continue;
+		}
+		if (strcmp(Entry.Category, Category) == 0 && strcmp(Entry.Name, Name) == 0)
+		{
+			return &Entry;
+		}
+	}
+	return nullptr;
+}
+
+static bool AppendTimingLine(TArray<FString>& OutLines, const TArray<FStatEntry>& Snapshot,
+	const char* Label, const char* Category, const char* Name)
+{
+	const FStatEntry* Entry = FindLiveStatEntry(Snapshot, Category, Name);
+	if (!Entry)
+	{
+		return false;
+	}
+
+	char Buffer[160] = {};
+	snprintf(Buffer, sizeof(Buffer), "%s : %.3f ms  avg %.3f  calls %u",
+		Label,
+		Entry->LastTime * 1000.0,
+		Entry->AvgTime * 1000.0,
+		Entry->CallCount);
+	OutLines.push_back(FString(Buffer));
+	return true;
 }
 
 void FOverlayStatSystem::AppendLine(TArray<FOverlayStatLine>& OutLines, float Y, const FString& Text) const
@@ -332,6 +368,137 @@ void FOverlayStatSystem::BuildParticleLines(const UEditorEngine& Editor,TArray<F
 	OutLines.push_back(Buffer);
 }
 
+void FOverlayStatSystem::BuildPhysXLines(TArray<FString>& OutLines) const
+{
+#if STATS
+	char Buffer[160] = {};
+
+	OutLines.push_back(FString("--- PhysX ---"));
+
+	snprintf(Buffer, sizeof(Buffer), "Scenes : %u", FPhysicsStats::PhysXSceneCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Bodies : %u total  %u static  %u dynamic",
+		FPhysicsStats::PhysXBodyCount,
+		FPhysicsStats::PhysXStaticBodyCount,
+		FPhysicsStats::PhysXDynamicBodyCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Constraints : %u", FPhysicsStats::PhysXConstraintCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Active Actors : %u", FPhysicsStats::PhysXActiveActorCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Vehicles : %u", FPhysicsStats::PhysXVehicleCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Controllers : %u", FPhysicsStats::PhysXControllerCount);
+	OutLines.push_back(FString(Buffer));
+
+	OutLines.push_back(FString("--- Timing ---"));
+	const TArray<FStatEntry>& CPUSnapshot = FStatManager::Get().GetSnapshot();
+	bool bHasTiming = false;
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Prepare CCT", "PhysX", "PhysX_PrepareCCT");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Vehicle Update", "PhysX", "PhysX_VehicleUpdate");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Simulate/Fetch", "PhysX", "PhysX_SimulateFetch");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Body Sync", "PhysX", "PhysX_BodySync");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Raycast", "PhysX", "PhysX_Raycast");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Sweep Sphere", "PhysX", "PhysX_SweepSphere");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Overlap Sphere", "PhysX", "PhysX_OverlapSphere");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Overlap Box", "PhysX", "PhysX_OverlapBox");
+	if (!bHasTiming)
+	{
+		OutLines.push_back(FString("No PhysX timing this frame"));
+	}
+#else
+	OutLines.push_back(FString("PhysX stats unavailable (STATS=0)"));
+#endif
+}
+
+void FOverlayStatSystem::BuildRagdollLines(TArray<FString>& OutLines) const
+{
+#if STATS
+	char Buffer[160] = {};
+
+	OutLines.push_back(FString("--- Ragdoll ---"));
+
+	snprintf(Buffer, sizeof(Buffer), "Active Ragdolls : %u", FPhysicsStats::ActiveRagdollCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Bodies : %u", FPhysicsStats::RagdollBodyCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Constraints : %u", FPhysicsStats::RagdollConstraintCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Starts : %u attempts  %u success  %u fail",
+		FPhysicsStats::RagdollStartAttemptCount,
+		FPhysicsStats::RagdollStartSuccessCount,
+		FPhysicsStats::RagdollStartFailCount);
+	OutLines.push_back(FString(Buffer));
+
+	OutLines.push_back(FString("--- Timing ---"));
+	const TArray<FStatEntry>& CPUSnapshot = FStatManager::Get().GetSnapshot();
+	bool bHasTiming = false;
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Initialize", "Ragdoll", "Ragdoll_Initialize");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Release", "Ragdoll", "Ragdoll_Release");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Build Local Pose", "Ragdoll", "Ragdoll_BuildLocalPose");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Sync Bones", "Ragdoll", "Ragdoll_SyncBones");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Recovery Blend", "Ragdoll", "Ragdoll_RecoveryBlend");
+	if (!bHasTiming)
+	{
+		OutLines.push_back(FString("No ragdoll timing this frame"));
+	}
+#else
+	OutLines.push_back(FString("Ragdoll stats unavailable (STATS=0)"));
+#endif
+}
+
+void FOverlayStatSystem::BuildClothLines(TArray<FString>& OutLines) const
+{
+#if STATS
+	char Buffer[160] = {};
+
+	OutLines.push_back(FString("--- Cloth ---"));
+
+	snprintf(Buffer, sizeof(Buffer), "Active Cloth : %u", FPhysicsStats::ActiveClothCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Particles : %u", FPhysicsStats::ClothParticleCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Triangles : %u", FPhysicsStats::ClothTriangleCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Substeps : %u", FPhysicsStats::ClothSubstepCount);
+	OutLines.push_back(FString(Buffer));
+
+	snprintf(Buffer, sizeof(Buffer), "Collision : spheres %u  capsules %u  planes %u  convex %u",
+		FPhysicsStats::ClothCollisionSphereCount,
+		FPhysicsStats::ClothCollisionCapsuleCount,
+		FPhysicsStats::ClothCollisionPlaneCount,
+		FPhysicsStats::ClothCollisionConvexCount);
+	OutLines.push_back(FString(Buffer));
+
+	OutLines.push_back(FString("--- Timing ---"));
+	const TArray<FStatEntry>& CPUSnapshot = FStatManager::Get().GetSnapshot();
+	bool bHasTiming = false;
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Bone Attachment", "Cloth", "Cloth_BoneAttachment");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "World Collision", "Cloth", "Cloth_WorldCollision");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Collision Gather", "Cloth", "Cloth_CollisionGather");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Update Collision", "Cloth", "Cloth_UpdateCollision");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Simulate", "Cloth", "Cloth_Simulate");
+	bHasTiming |= AppendTimingLine(OutLines, CPUSnapshot, "Render Vertices", "Cloth", "Cloth_RenderVertexUpdate");
+	if (!bHasTiming)
+	{
+		OutLines.push_back(FString("No cloth timing this frame"));
+	}
+#else
+	OutLines.push_back(FString("Cloth stats unavailable (STATS=0)"));
+#endif
+}
+
 void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlayStatLine>& OutLines) const
 {
 	OutLines.clear();
@@ -356,6 +523,22 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	if (bShowSkinning)
 	{
 		EstimatedLineCount += 4;
+	}
+	if (bShowParticles)
+	{
+		EstimatedLineCount += 7;
+	}
+	if (bShowPhysX)
+	{
+		EstimatedLineCount += 16;
+	}
+	if (bShowRagdoll)
+	{
+		EstimatedLineCount += 10;
+	}
+	if (bShowCloth)
+	{
+		EstimatedLineCount += 12;
 	}
 	OutLines.reserve(EstimatedLineCount);
 
@@ -399,6 +582,34 @@ void FOverlayStatSystem::BuildLines(const UEditorEngine& Editor, TArray<FOverlay
 	{
 		Lines.clear();
 		BuildSkinningLines(Lines);
+		AppendGroup(Lines);
+	}
+
+	if (bShowParticles)
+	{
+		Lines.clear();
+		BuildParticleLines(Editor, Lines);
+		AppendGroup(Lines);
+	}
+
+	if (bShowPhysX)
+	{
+		Lines.clear();
+		BuildPhysXLines(Lines);
+		AppendGroup(Lines);
+	}
+
+	if (bShowRagdoll)
+	{
+		Lines.clear();
+		BuildRagdollLines(Lines);
+		AppendGroup(Lines);
+	}
+
+	if (bShowCloth)
+	{
+		Lines.clear();
+		BuildClothLines(Lines);
 		AppendGroup(Lines);
 	}
 }
@@ -513,5 +724,26 @@ void FOverlayStatSystem::RenderImGui(const UEditorEngine& Editor, const FRect& V
 		Lines.clear();
 		BuildParticleLines(Editor, Lines);
 		RenderWindow("##StatParticlesOverlay", "Stat Particles", ImVec4(0.08f, 0.08f, 0.03f, 0.62f), Lines);
+	}
+
+	if (bShowPhysX)
+	{
+		Lines.clear();
+		BuildPhysXLines(Lines);
+		RenderWindow("##StatPhysXOverlay", "Stat PhysX", ImVec4(0.04f, 0.07f, 0.10f, 0.62f), Lines);
+	}
+
+	if (bShowRagdoll)
+	{
+		Lines.clear();
+		BuildRagdollLines(Lines);
+		RenderWindow("##StatRagdollOverlay", "Stat Ragdoll", ImVec4(0.10f, 0.05f, 0.04f, 0.62f), Lines);
+	}
+
+	if (bShowCloth)
+	{
+		Lines.clear();
+		BuildClothLines(Lines);
+		RenderWindow("##StatClothOverlay", "Stat Cloth", ImVec4(0.04f, 0.08f, 0.07f, 0.62f), Lines);
 	}
 }
