@@ -272,7 +272,7 @@ struct FClothLocalSpaceMotionConfig
 struct FClothSimulationRuntimeConfig
 {
 	FClothTimestepConfig Timestep;
-	FVector GravityAccelerationComponentLocal = FVector(0.0f, 0.0f, -980.0f);
+	FVector GravityAccelerationWorld = FVector(0.0f, 0.0f, -980.0f);
 	float Damping = 0.1f;
 	float Stiffness = 1.0f;
 	FClothWindConfig Wind;

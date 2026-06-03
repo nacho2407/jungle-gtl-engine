@@ -19,7 +19,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 4,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -55,7 +55,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 5,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -91,7 +91,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 6,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -127,7 +127,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 7,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -163,7 +163,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 8,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -199,7 +199,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 9,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -235,7 +235,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 10,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -271,7 +271,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 11,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -307,7 +307,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 12,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -343,7 +343,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 13,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -379,7 +379,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 14,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -415,7 +415,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 15,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -451,7 +451,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 16,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -487,7 +487,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 17,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -523,7 +523,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 18,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -559,7 +559,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 19,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -595,7 +595,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 20,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -631,7 +631,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 21,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -667,7 +667,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 22,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -703,7 +703,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 23,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -739,7 +739,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 24,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -775,7 +775,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 25,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -811,7 +811,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 26,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -847,7 +847,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 27,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -883,7 +883,7 @@
             "ClassName" : "UBillboardComponent",
             "ObjectId" : 28,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -914,11 +914,47 @@
               "bTickEnable" : true
             },
             "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "ObjectId" : 29,
+            "Properties" : {
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
+              "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
+              "ObjectName" : "UBillboardComponent_151",
+              "ObjectType" : [0, 0, 0, 0, 0, 0, 0, 0],
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[1]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[2]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[3]" : [2, 0, 0, 0, 0, 0, 0, 0],
+                "Responses[4]" : [2, 0, 0, 0, 0, 0, 0, 0]
+              },
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bKinematicPhysics" : false,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
           }],
         "ClassName" : "UDirectionalLightComponent",
         "ObjectId" : 3,
         "Properties" : {
-          "CachedEditRotator" : [45.000004, -45.000004, 0.000000],
+          "CachedEditRotator" : [45.000000, -45.000000, 0.000000],
           "Intensity" : 1.000000,
           "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
           "ObjectName" : "UDirectionalLightComponent_1",
@@ -942,7 +978,7 @@
       "ClassName" : "ASphereActor",
       "Name" : "ASphereActor_0",
       "NonSceneComponents" : [],
-      "ObjectId" : 29,
+      "ObjectId" : 30,
       "Properties" : {
         "ObjectName" : "ASphereActor_0",
         "PendingActorLocation" : [-11.307158, -9.261929, -12.541658],
@@ -956,9 +992,9 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "UStaticMeshComponent",
-            "ObjectId" : 31,
+            "ObjectId" : 32,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -990,9 +1026,9 @@
             }
           }],
         "ClassName" : "USphereComponent",
-        "ObjectId" : 30,
+        "ObjectId" : 31,
         "Properties" : {
-          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : [3, 0, 0, 0, 0, 0, 0, 0],
           "Mass" : 1.000000,
@@ -1028,7 +1064,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_13",
       "NonSceneComponents" : [],
-      "ObjectId" : 32,
+      "ObjectId" : 33,
       "Properties" : {
         "ObjectName" : "ABoxActor_13",
         "PendingActorLocation" : [43.944946, -15.066742, 0.282362],
@@ -1042,9 +1078,9 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "UStaticMeshComponent",
-            "ObjectId" : 34,
+            "ObjectId" : 35,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -1076,10 +1112,10 @@
             }
           }],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 33,
+        "ObjectId" : 34,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
-          "CachedEditRotator" : [-17.422829, -81.728050, -0.000028],
+          "CachedEditRotator" : [-17.422821, -81.728050, -0.000031],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : [3, 0, 0, 0, 0, 0, 0, 0],
           "Mass" : 1.000000,
@@ -1115,7 +1151,7 @@
       "Name" : "A4WVehicleActor_1",
       "NonSceneComponents" : [{
           "ClassName" : "UVehicleMovementComponent",
-          "ObjectId" : 52,
+          "ObjectId" : 53,
           "Properties" : {
             "AckermannAccuracy" : 1.000000,
             "BoostDuration" : 2.000000,
@@ -1158,7 +1194,7 @@
           }
         }, {
           "ClassName" : "ULuaScriptComponent",
-          "ObjectId" : 53,
+          "ObjectId" : 54,
           "Properties" : {
             "ObjectName" : "ULuaScriptComponent_1",
             "ScriptFile" : "CarRibbonVisibility.lua",
@@ -1169,7 +1205,7 @@
             "bTickEnable" : true
           }
         }],
-      "ObjectId" : 35,
+      "ObjectId" : 36,
       "Properties" : {
         "ObjectName" : "A4WVehicleActor_1",
         "PendingActorLocation" : [24.610405, 32.246284, 26.845108],
@@ -1184,9 +1220,9 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UParticleSystemComponent",
-                "ObjectId" : 38,
+                "ObjectId" : 39,
                 "Properties" : {
-                  "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                  "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
                   "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
                   "EmitterMaterialSlots" : ["None"],
@@ -1219,9 +1255,9 @@
               }, {
                 "Children" : [],
                 "ClassName" : "UParticleSystemComponent",
-                "ObjectId" : 39,
+                "ObjectId" : 40,
                 "Properties" : {
-                  "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                  "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
                   "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
                   "EmitterMaterialSlots" : ["None"],
@@ -1253,9 +1289,9 @@
                 }
               }],
             "ClassName" : "UStaticMeshComponent",
-            "ObjectId" : 37,
+            "ObjectId" : 38,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -1289,9 +1325,9 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UWheelMeshComponent",
-                "ObjectId" : 41,
+                "ObjectId" : 42,
                 "Properties" : {
-                  "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                  "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
                   "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
                   "Mass" : 1.000000,
@@ -1326,9 +1362,9 @@
                 }
               }],
             "ClassName" : "USceneComponent",
-            "ObjectId" : 40,
+            "ObjectId" : 41,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "ObjectName" : "USceneComponent_0",
               "RelativeTransform.Location" : [1.450000, 0.900000, -0.450000],
               "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
@@ -1342,9 +1378,9 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UWheelMeshComponent",
-                "ObjectId" : 43,
+                "ObjectId" : 44,
                 "Properties" : {
-                  "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                  "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
                   "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
                   "Mass" : 1.000000,
@@ -1379,9 +1415,9 @@
                 }
               }],
             "ClassName" : "USceneComponent",
-            "ObjectId" : 42,
+            "ObjectId" : 43,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "ObjectName" : "USceneComponent_1",
               "RelativeTransform.Location" : [1.450000, -0.900000, -0.450000],
               "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
@@ -1395,9 +1431,9 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UWheelMeshComponent",
-                "ObjectId" : 45,
+                "ObjectId" : 46,
                 "Properties" : {
-                  "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                  "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
                   "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
                   "Mass" : 1.000000,
@@ -1432,9 +1468,9 @@
                 }
               }],
             "ClassName" : "USceneComponent",
-            "ObjectId" : 44,
+            "ObjectId" : 45,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "ObjectName" : "USceneComponent_2",
               "RelativeTransform.Location" : [-1.450000, 0.900000, -0.450000],
               "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
@@ -1448,9 +1484,9 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UWheelMeshComponent",
-                "ObjectId" : 47,
+                "ObjectId" : 48,
                 "Properties" : {
-                  "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                  "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
                   "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
                   "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
                   "Mass" : 1.000000,
@@ -1485,9 +1521,9 @@
                 }
               }],
             "ClassName" : "USceneComponent",
-            "ObjectId" : 46,
+            "ObjectId" : 47,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "ObjectName" : "USceneComponent_3",
               "RelativeTransform.Location" : [-1.450000, -0.900000, -0.450000],
               "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
@@ -1501,9 +1537,9 @@
             "Children" : [{
                 "Children" : [],
                 "ClassName" : "UCameraComponent",
-                "ObjectId" : 49,
+                "ObjectId" : 50,
                 "Properties" : {
-                  "CachedEditRotator" : [19.999998, 0.000000, 0.000000],
+                  "CachedEditRotator" : [20.000000, 0.000000, 0.000000],
                   "CameraState.FOV" : 1.047198,
                   "CameraState.FarZ" : 1000.000000,
                   "CameraState.NearZ" : 0.100000,
@@ -1520,9 +1556,9 @@
                 }
               }],
             "ClassName" : "USpringArmComponent",
-            "ObjectId" : 48,
+            "ObjectId" : 49,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CameraLagMaxDistance" : 0.000000,
               "CameraLagSpeed" : 10.000000,
               "CameraRotationLagSpeed" : 10.000000,
@@ -1546,16 +1582,16 @@
           }, {
             "Children" : [],
             "ClassName" : "UStaticMeshComponent",
-            "ObjectId" : 50,
+            "ObjectId" : 51,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
               "MaterialSlots" : ["Content/Material/Auto/BasicShapeMaterial.mat"],
               "ObjectName" : "UStaticMeshComponent_53",
               "ObjectType" : [0, 0, 0, 0, 0, 0, 0, 0],
-              "RelativeTransform.Location" : [1.350685, 0.019000, 1.000000],
+              "RelativeTransform.Location" : [-1.949000, 0.019000, 0.800000],
               "RelativeTransform.Scale" : [0.082756, 0.076999, 1.000000],
               "ResponseContainer" : {
                 "Responses[0]" : [2, 0, 0, 0, 0, 0, 0, 0],
@@ -1581,12 +1617,12 @@
           }, {
             "Children" : [],
             "ClassName" : "UClothComponent",
-            "ObjectId" : 51,
+            "ObjectId" : 52,
             "Properties" : {
               "BoxCenterActorLocal" : [0.000000, 0.000000, 0.000000],
               "BoxExtentActorLocal" : [25.000000, 25.000000, 25.000000],
               "BoxRotationActorLocal" : [0.000000, 0.000000, 0.000000],
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CapsuleAxisActorLocal" : [0.000000, 0.000000, 1.000000],
               "CapsuleCenterActorLocal" : [0.000000, 0.000000, 0.000000],
               "CapsuleHalfHeight" : 50.000000,
@@ -1613,6 +1649,8 @@
               "OwnerLinearInertiaResponse" : 0.350000,
               "OwnerMotionTeleportAngleDegrees" : 45.000000,
               "OwnerMotionTeleportDistance" : 300.000000,
+              "OwnerMotionWindMaxSpeed" : 3000.000000,
+              "OwnerMotionWindResponse" : 10.000000,
               "ParticleSpacing" : 0.100000,
               "PinBoxExtentActorLocal" : [50.000000, 50.000000, 50.000000],
               "PinCenterActorLocal" : [0.000000, 0.000000, 0.000000],
@@ -1623,7 +1661,7 @@
               "PinningMode" : [5, 0, 0, 0, 0, 0, 0, 0],
               "PlaneNormalActorLocal" : [0.000000, 0.000000, 1.000000],
               "PlanePointActorLocal" : [0.000000, 0.000000, -100.000000],
-              "RelativeTransform.Location" : [0.500000, 0.000000, 1.500000],
+              "RelativeTransform.Location" : [-2.900000, 0.000000, 1.300000],
               "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
               "ResponseContainer" : {
                 "Responses[0]" : [2, 0, 0, 0, 0, 0, 0, 0],
@@ -1633,7 +1671,7 @@
                 "Responses[4]" : [2, 0, 0, 0, 0, 0, 0, 0]
               },
               "SelfCollisionCullScale" : 1.000000,
-              "SelfCollisionDistance" : 2.000000,
+              "SelfCollisionDistance" : 0.100000,
               "SelfCollisionStiffness" : 1.000000,
               "SphereCenterActorLocal" : [0.000000, 0.000000, -50.000000],
               "SphereRadius" : 25.000000,
@@ -1658,11 +1696,12 @@
               "bEnableCapsuleCollision" : false,
               "bEnableGravity" : true,
               "bEnableOwnerMotionInertia" : true,
+              "bEnableOwnerMotionWind" : true,
               "bEnablePlaneCollision" : false,
-              "bEnableSelfCollision" : false,
+              "bEnableSelfCollision" : true,
               "bEnableSimulation" : true,
               "bEnableSphereCollision" : false,
-              "bEnableWind" : true,
+              "bEnableWind" : false,
               "bGenerateOverlapEvents" : false,
               "bHiddenInComponentTree" : false,
               "bIsActive" : true,
@@ -1675,10 +1714,10 @@
             }
           }],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 36,
+        "ObjectId" : 37,
         "Properties" : {
           "BoxExtent" : [1.650000, 0.800000, 0.450000],
-          "CachedEditRotator" : [0.000000, -62.238628, 0.000000],
+          "CachedEditRotator" : [0.000000, -62.238632, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, -0.300000],
           "CollisionEnabled" : [3, 0, 0, 0, 0, 0, 0, 0],
           "Mass" : 1200.000000,
@@ -1713,7 +1752,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_37",
       "NonSceneComponents" : [],
-      "ObjectId" : 54,
+      "ObjectId" : 55,
       "Properties" : {
         "ObjectName" : "ABoxActor_37",
         "PendingActorLocation" : [24.183384, -112.678078, -0.154886],
@@ -1727,9 +1766,9 @@
         "Children" : [{
             "Children" : [],
             "ClassName" : "UStaticMeshComponent",
-            "ObjectId" : 56,
+            "ObjectId" : 57,
             "Properties" : {
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
               "Mass" : 1.000000,
@@ -1761,10 +1800,10 @@
             }
           }],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 55,
+        "ObjectId" : 56,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
-          "CachedEditRotator" : [-0.000000, 60.475681, 0.000000],
+          "CachedEditRotator" : [0.000000, 60.475677, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : [3, 0, 0, 0, 0, 0, 0, 0],
           "Mass" : 1.000000,
@@ -1799,7 +1838,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_16",
       "NonSceneComponents" : [],
-      "ObjectId" : 57,
+      "ObjectId" : 58,
       "Properties" : {
         "ObjectName" : "ABoxActor_16",
         "PendingActorLocation" : [250.381897, 1.800385, 58.844479],
@@ -1812,10 +1851,10 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 58,
+        "ObjectId" : 59,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
-          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : [3, 0, 0, 0, 0, 0, 0, 0],
           "Mass" : 1.000000,
@@ -1850,7 +1889,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_16_Copy",
       "NonSceneComponents" : [],
-      "ObjectId" : 59,
+      "ObjectId" : 60,
       "Properties" : {
         "ObjectName" : "ABoxActor_16_Copy",
         "PendingActorLocation" : [30.481903, 215.900391, 58.944477],
@@ -1863,10 +1902,10 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 60,
+        "ObjectId" : 61,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
-          "CachedEditRotator" : [-0.000000, 58.999985, 0.000002],
+          "CachedEditRotator" : [0.000000, 58.999985, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : [3, 0, 0, 0, 0, 0, 0, 0],
           "Mass" : 1.000000,
@@ -1901,7 +1940,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_16_Copy_Copy",
       "NonSceneComponents" : [],
-      "ObjectId" : 61,
+      "ObjectId" : 62,
       "Properties" : {
         "ObjectName" : "ABoxActor_16_Copy_Copy",
         "PendingActorLocation" : [30.581903, -222.999603, 59.044476],
@@ -1914,10 +1953,10 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 62,
+        "ObjectId" : 63,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
-          "CachedEditRotator" : [-0.000000, 58.999985, 0.000002],
+          "CachedEditRotator" : [0.000000, 58.999985, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : [3, 0, 0, 0, 0, 0, 0, 0],
           "Mass" : 1.000000,
@@ -1952,7 +1991,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_16_Copy_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 63,
+      "ObjectId" : 64,
       "Properties" : {
         "ObjectName" : "ABoxActor_16_Copy_2",
         "PendingActorLocation" : [-200.518097, 1.900385, 58.944477],
@@ -1965,10 +2004,10 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 64,
+        "ObjectId" : 65,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
-          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : [3, 0, 0, 0, 0, 0, 0, 0],
           "Mass" : 1.000000,
@@ -2003,7 +2042,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_7",
       "NonSceneComponents" : [],
-      "ObjectId" : 65,
+      "ObjectId" : 66,
       "Properties" : {
         "ObjectName" : "AStaticMeshActor_7",
         "PendingActorLocation" : [-45.000000, 0.000000, 0.100000],
@@ -2016,9 +2055,9 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
-        "ObjectId" : 66,
+        "ObjectId" : 67,
         "Properties" : {
-          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : [0, 0, 0, 0, 0, 0, 0, 0],
           "Mass" : 1.000000,
@@ -2053,7 +2092,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "ABoxActor_38",
       "NonSceneComponents" : [],
-      "ObjectId" : 67,
+      "ObjectId" : 68,
       "Properties" : {
         "ObjectName" : "ABoxActor_38",
         "PendingActorLocation" : [0.000000, 0.000000, -0.900000],
@@ -2066,10 +2105,10 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "UBoxComponent",
-        "ObjectId" : 68,
+        "ObjectId" : 69,
         "Properties" : {
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
-          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
           "CenterOfMassOffset" : [0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : [3, 0, 0, 0, 0, 0, 0, 0],
           "Mass" : 1.000000,
@@ -2109,15 +2148,15 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [31.517149, 32.651722, 28.550674],
+    "Location" : [25.797909, 38.331993, 29.694366],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 20.115461, 2004.120972]
+    "Rotation" : [0.000000, 30.165451, 2043.426880]
   },
   "Version" : 2,
   "WorldSettings" : {
     "ClothWind" : {
       "Direction" : [1.000000, 0.000000, 0.000000],
-      "Enabled" : true,
+      "Enabled" : false,
       "Strength" : 50.000000,
       "TurbulenceSeed" : 1337,
       "TurbulenceSpatialScale" : 100.000000,

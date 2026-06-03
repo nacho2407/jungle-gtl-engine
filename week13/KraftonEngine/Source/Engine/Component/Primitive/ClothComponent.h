@@ -250,7 +250,18 @@ private:
 	 *
 	 * @return runtime simulation 설정
 	 */
-	FClothSimulationRuntimeConfig MakeSimulationRuntimeConfig(const FClothConfig& Config) const;
+	FClothSimulationRuntimeConfig MakeSimulationRuntimeConfig(const FClothConfig& Config, float DeltaTime) const;
+
+	/**
+	 * @brief owner/root forward 기준 이동 속도를 world 기준으로 계산합니다
+	 *
+	 * @param CurrentClothWorldTransform 현재 cloth world transform
+	 *
+	 * @param DeltaTime 프레임 delta time
+	 *
+	 * @return world 기준 owner/root forward 방향 이동 속도
+	 */
+	FVector ComputeOwnerMotionVelocityWorld(const FTransform& CurrentClothWorldTransform, float DeltaTime) const;
 
 	/**
 	 * @brief owner motion inertia cache를 초기화합니다
@@ -655,6 +666,20 @@ private:
 
 	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Enable Owner Motion Inertia")
 	bool bEnableOwnerMotionInertia = true;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Enable Owner Motion Wind")
+	bool bEnableOwnerMotionWind = true;
+
+	/**
+	 * @brief owner 이동 속도에 비례한 역방향 wind 반응 계수
+	 *
+	 * @details 1.0은 owner 이동 속도와 같은 크기의 역방향 wind이며, 1.0 초과 값은 게임용 과장 반응입니다
+	 */
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Owner Motion Wind Response", Min=0.0f, Max=10.0f, Speed=0.05f)
+	float OwnerMotionWindResponse = 1.0f;
+
+	UPROPERTY(Edit, Save, Category="Cloth|Owner Motion", DisplayName="Owner Motion Wind Max Speed", Min=0.0f, Max=100000.0f, Speed=10.0f)
+	float OwnerMotionWindMaxSpeed = 3000.0f;
 
 	/**
 	 * @brief owner 이동에 대한 선형 관성 반응 계수

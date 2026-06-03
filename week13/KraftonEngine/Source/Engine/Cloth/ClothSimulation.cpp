@@ -817,8 +817,8 @@ void FClothSimulation::ApplyRuntimeConfig(const FClothSimulationRuntimeConfig& R
 	const float FixedStep = ClampFloat(RuntimeConfig.Timestep.FixedTimeStep, GMinFixedStep, GMaxFixedStep);
 	const float SolverFrequency = (std::max)(1.0f, 1.0f / FixedStep);
 
-	// component local simulation 공간 기준 중력과 solver parameter 갱신
-	Impl->Cloth->setGravity(ToPxVec3(RuntimeConfig.GravityAccelerationComponentLocal));
+	// NvCloth global gravity와 solver parameter 갱신
+	Impl->Cloth->setGravity(ToPxVec3(RuntimeConfig.GravityAccelerationWorld));
 	Impl->Cloth->setDamping(physx::PxVec3(Damping, Damping, Damping));
 	Impl->Cloth->setSolverFrequency(SolverFrequency);
 	Impl->Cloth->setStiffnessFrequency(SolverFrequency);

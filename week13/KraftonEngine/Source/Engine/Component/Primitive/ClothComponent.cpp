@@ -219,6 +219,9 @@ namespace
 			|| MatchesPropertyName(PropertyName, "WindLiftCoefficient", "Wind Lift Coefficient")
 			|| MatchesPropertyName(PropertyName, "WindFluidDensity", "Wind Fluid Density")
 			|| MatchesPropertyName(PropertyName, "bEnableOwnerMotionInertia", "Enable Owner Motion Inertia")
+			|| MatchesPropertyName(PropertyName, "bEnableOwnerMotionWind", "Enable Owner Motion Wind")
+			|| MatchesPropertyName(PropertyName, "OwnerMotionWindResponse", "Owner Motion Wind Response")
+			|| MatchesPropertyName(PropertyName, "OwnerMotionWindMaxSpeed", "Owner Motion Wind Max Speed")
 			|| MatchesPropertyName(PropertyName, "OwnerLinearInertiaResponse", "Linear Inertia Response")
 			|| MatchesPropertyName(PropertyName, "OwnerAngularInertiaResponse", "Angular Inertia Response")
 			|| MatchesPropertyName(PropertyName, "OwnerCentrifugalInertiaResponse", "Centrifugal Inertia Response")
@@ -644,14 +647,16 @@ FClothConfig UClothComponent::MakeClothConfig() const
 	return Config;
 }
 
-FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const FClothConfig& Config) const
+FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const FClothConfig& Config, float DeltaTime) const
 {
 	FClothSimulationRuntimeConfig RuntimeConfig;
 	RuntimeConfig.Timestep = Config.Timestep;
+	const FTransform CurrentClothWorldTransform = FTransform::FromMatrixWithScale(GetWorldMatrix());
 
 	const float SafeGravityScale = ClampFloat(GravityScale, 0.0f, GMaxGravityScale);
-	RuntimeConfig.GravityAccelerationComponentLocal =
-		TransformWorldDirectionToComponentLocal(FVector::DownVector) * (GDefaultGravityAcceleration * SafeGravityScale);
+	// NvCloth setGravity는 global coordinates를 기대하므로 world -z 중력 그대로 전달
+	RuntimeConfig.GravityAccelerationWorld =
+		FVector::DownVector * (GDefaultGravityAcceleration * SafeGravityScale);
 
 	RuntimeConfig.Damping = ClampFloat(Damping, 0.0f, 1.0f);
 	RuntimeConfig.Stiffness = ClampFloat(Stiffness, 0.0f, 1.0f);
@@ -707,10 +712,30 @@ FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const
 		FinalTurbulenceStrength += LocalTurbulenceStrength;
 	}
 
+	if (bEnableOwnerMotionWind)
+	{
+		// owner 이동 속도로 생기는 apparent wind를 기존 wind source와 world 기준으로 합성
+		const FVector OwnerVelocityWorld = ComputeOwnerMotionVelocityWorld(CurrentClothWorldTransform, DeltaTime);
+		const float SafeOwnerMotionWindResponse = ClampFloat(OwnerMotionWindResponse, 0.0f, 10.0f);
+		const float SafeOwnerMotionWindMaxSpeed = ClampFloat(OwnerMotionWindMaxSpeed, 0.0f, 100000.0f);
+		FVector OwnerMotionWindVelocityWorld = OwnerVelocityWorld * -SafeOwnerMotionWindResponse;
+		const float OwnerMotionWindSpeed = OwnerMotionWindVelocityWorld.Length();
+		if (OwnerMotionWindSpeed > GNormalTolerance && SafeOwnerMotionWindMaxSpeed > GNormalTolerance)
+		{
+			if (OwnerMotionWindSpeed > SafeOwnerMotionWindMaxSpeed)
+			{
+				OwnerMotionWindVelocityWorld =
+					OwnerMotionWindVelocityWorld * (SafeOwnerMotionWindMaxSpeed / OwnerMotionWindSpeed);
+			}
+
+			FinalWindVelocityWorld += OwnerMotionWindVelocityWorld;
+		}
+	}
+
 	const float FinalWindSpeed = FinalWindVelocityWorld.Length();
-	RuntimeConfig.Wind.bEnabled = bEnableWind && (FinalWindSpeed > GNormalTolerance || FinalTurbulenceStrength > GNormalTolerance);
-	RuntimeConfig.Wind.Direction =
-		TransformWorldDirectionToComponentLocal(FinalWindVelocityWorld.GetSafeNormal(GNormalTolerance, FVector::ForwardVector));
+	RuntimeConfig.Wind.bEnabled = FinalWindSpeed > GNormalTolerance || FinalTurbulenceStrength > GNormalTolerance;
+	// NvCloth setWindVelocity는 global coordinates를 기대하므로 world 방향 그대로 전달
+	RuntimeConfig.Wind.Direction = FinalWindVelocityWorld.GetSafeNormal(GNormalTolerance, FVector::ForwardVector);
 	RuntimeConfig.Wind.Strength = FinalWindSpeed;
 	RuntimeConfig.Wind.TurbulenceStrength = ClampFloat(FinalTurbulenceStrength, 0.0f, GMaxWindStrength);
 	RuntimeConfig.Wind.TurbulenceSpatialScale = FinalTurbulenceSpatialScale;
@@ -728,7 +753,6 @@ FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const
 	RuntimeConfig.SelfCollision.Stiffness = ClampFloat(SelfCollisionStiffness, 0.0f, 1.0f);
 	RuntimeConfig.SelfCollision.CullScale = ClampFloat(SelfCollisionCullScale, 0.0f, 10.0f);
 
-	const FTransform CurrentClothWorldTransform = FTransform::FromMatrixWithScale(GetWorldMatrix());
 	const float SafeTeleportDistance = ClampFloat(OwnerMotionTeleportDistance, 0.0f, 100000.0f);
 	const float SafeTeleportAngleDegrees = ClampFloat(OwnerMotionTeleportAngleDegrees, 0.0f, 180.0f);
 
@@ -766,6 +790,49 @@ FClothSimulationRuntimeConfig UClothComponent::MakeSimulationRuntimeConfig(const
 	}
 
 	return RuntimeConfig;
+}
+
+FVector UClothComponent::ComputeOwnerMotionVelocityWorld(
+	const FTransform& CurrentClothWorldTransform,
+	float DeltaTime) const
+{
+	// owner가 없을 때도 cloth transform 기준 forward로 보수적인 fallback 가능
+	FVector OwnerForwardWorld = CurrentClothWorldTransform.Rotation.GetForwardVector()
+		.GetSafeNormal(GNormalTolerance, FVector::ForwardVector);
+	float OwnerSpeed = 0.0f;
+
+	if (AActor* OwnerActor = GetOwner())
+	{
+		if (const USceneComponent* RootComponent = OwnerActor->GetRootComponent())
+		{
+			// wind 방향 고정을 막기 위한 현재 owner/root forward 축
+			OwnerForwardWorld = RootComponent->GetForwardVector()
+				.GetSafeNormal(GNormalTolerance, OwnerForwardWorld);
+
+			if (const UPrimitiveComponent* RootPrimitive = Cast<UPrimitiveComponent>(RootComponent))
+			{
+				// physics body의 실제 선형 속도는 방향 대신 크기만 사용
+				const FVector PhysicsVelocityWorld = RootPrimitive->GetLinearVelocity();
+				OwnerSpeed = PhysicsVelocityWorld.Length();
+			}
+		}
+	}
+
+	if (OwnerSpeed <= GNormalTolerance && bHasPreviousClothWorldTransform && std::isfinite(DeltaTime) && DeltaTime > GNormalTolerance)
+	{
+		// physics velocity가 없거나 0이면 transform delta 거리로 editor/kinematic 이동 속도 추정
+		const FVector DeltaVelocityWorld =
+			(CurrentClothWorldTransform.Location - PreviousClothWorldTransform.Location) / DeltaTime;
+		OwnerSpeed = DeltaVelocityWorld.Length();
+	}
+
+	if (OwnerSpeed <= GNormalTolerance)
+	{
+		return FVector::ZeroVector;
+	}
+
+	// 방향은 매 tick 현재 owner/root forward 기준으로 재구성
+	return OwnerForwardWorld * OwnerSpeed;
 }
 
 bool UClothComponent::ShouldTickSimulation(ELevelTick TickType) const
@@ -1282,7 +1349,7 @@ void UClothComponent::TickSimulationIfNeeded(float DeltaTime, ELevelTick TickTyp
 
 	UpdateSimulationCollisionPrimitives();
 
-	const FClothSimulationRuntimeConfig RuntimeConfig = MakeSimulationRuntimeConfig(Config);
+	const FClothSimulationRuntimeConfig RuntimeConfig = MakeSimulationRuntimeConfig(Config, DeltaTime);
 	SimulationReadbackPositions.clear();
 	const auto SimulationStartTime = std::chrono::high_resolution_clock::now();
 	const bool bTickResult = Simulation.Tick(DeltaTime, RuntimeConfig, SimulationReadbackPositions);
