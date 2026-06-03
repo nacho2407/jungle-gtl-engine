@@ -1,4 +1,4 @@
-#include "SpatialPartition.h"
+﻿#include "SpatialPartition.h"
 
 #include "Collision/Octree/Octree.h"
 #include "Collision/Ray/RayUtils.h"
@@ -49,7 +49,7 @@ void FSpatialPartition::ClearQueuedActorFlags()
 {
 	for (AActor* Actor : DirtyActors)
 	{
-		if (Actor)
+		if (IsAliveObject(Actor))
 		{
 			Actor->SetQueuedForPartitionUpdate(false);
 		}
