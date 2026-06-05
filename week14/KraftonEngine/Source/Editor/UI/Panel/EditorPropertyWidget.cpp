@@ -1349,6 +1349,51 @@ void FEditorPropertyWidget::RecordDetailsPropertyUndoChange(
 	}
 }
 
+void FEditorPropertyWidget::CacheDetailsPropertyUndoStartIfInteracting(
+	const TArray<UObject*>& TargetObjects)
+{
+	if (!EditorEngine || TargetObjects.empty() || !PendingDetailsUndoBeforeSnapshots.empty())
+	{
+		return;
+	}
+
+	const ImVec2 ValueMin = ImGui::GetCursorScreenPos();
+	const ImVec2 ValueMax(
+		ValueMin.x + ImGui::GetContentRegionAvail().x,
+		ValueMin.y + ImGui::GetFrameHeightWithSpacing());
+	if (!ImGui::IsMouseClicked(ImGuiMouseButton_Left) || !ImGui::IsMouseHoveringRect(ValueMin, ValueMax, true))
+	{
+		return;
+	}
+
+	TArray<uint32> TargetUUIDs = MakeObjectUUIDList(TargetObjects);
+	if (TargetUUIDs.empty())
+	{
+		return;
+	}
+
+	PendingDetailsUndoTargetUUIDs = std::move(TargetUUIDs);
+	PendingDetailsUndoBeforeSnapshots = CaptureObjectPropertySnapshots(TargetObjects);
+}
+
+TArray<FEditorObjectPropertySnapshot> FEditorPropertyWidget::ConsumeDetailsPropertyUndoStart(
+	const TArray<UObject*>& TargetObjects)
+{
+	TArray<uint32> TargetUUIDs = MakeObjectUUIDList(TargetObjects);
+	if (!PendingDetailsUndoBeforeSnapshots.empty() &&
+		AreObjectUUIDListsEqual(PendingDetailsUndoTargetUUIDs, TargetUUIDs))
+	{
+		TArray<FEditorObjectPropertySnapshot> Result = std::move(PendingDetailsUndoBeforeSnapshots);
+		PendingDetailsUndoTargetUUIDs.clear();
+		PendingDetailsUndoBeforeSnapshots.clear();
+		return Result;
+	}
+
+	PendingDetailsUndoTargetUUIDs.clear();
+	PendingDetailsUndoBeforeSnapshots.clear();
+	return CaptureObjectPropertySnapshots(TargetObjects);
+}
+
 void FEditorPropertyWidget::CommitActiveDetailsPropertyUndo()
 {
 	if (!EditorEngine || !ActivePropertyUndoTransaction.bActive)
@@ -1506,10 +1551,11 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				Options.bParentExpanded = bPropertyOpen;
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
 				TArray<UObject*> UndoTargets = CollectActorPropertyUndoTargets(PrimaryActor, SelectedActors, Props[i]);
-				TArray<FEditorObjectPropertySnapshot> UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
 				const FTransformPropertySnapshot TransformBefore = CaptureTransformPropertySnapshot(Props[i]);
+				CacheDetailsPropertyUndoStartIfInteracting(UndoTargets);
 				if (PropertyRenderer.RenderPropertyWidget(Props, i, Options))
 				{
+					TArray<FEditorObjectPropertySnapshot> UndoBefore = ConsumeDetailsPropertyUndoStart(UndoTargets);
 					const FTransformPropertyDelta TransformDelta = BuildTransformPropertyDelta(TransformBefore, Props[i]);
 					bAnyChanged = true;
 					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
@@ -1965,12 +2011,13 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				Options.bParentExpanded = bPropertyOpen;
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
 				TArray<UObject*> UndoTargets = CollectComponentPropertyUndoTargets(SelectedComponent, Props[i], SelectedActors);
-				TArray<FEditorObjectPropertySnapshot> UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
 				const FTransformPropertySnapshot TransformBefore = CaptureTransformPropertySnapshot(Props[i]);
+				CacheDetailsPropertyUndoStartIfInteracting(UndoTargets);
 				bool bChanged = PropertyRenderer.RenderPropertyWidget(Props, i, Options);
 
 				if (bChanged)
 				{
+					TArray<FEditorObjectPropertySnapshot> UndoBefore = ConsumeDetailsPropertyUndoStart(UndoTargets);
 					const FTransformPropertyDelta TransformDelta = BuildTransformPropertyDelta(TransformBefore, Props[i]);
 					bAnyChanged = true;
 					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
