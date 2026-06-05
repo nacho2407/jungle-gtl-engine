@@ -186,8 +186,12 @@ protected:
 	bool           bLastWallRunStatusHasHit = false;
 	mutable int32  WallRunDiagnosticsFrameCounter = 0;
 
-	// Jump() 가 set, TickWalking 이 consume. edge-triggered 라 동일 프레임 다중 호출도 1회 점프.
+	// Jump() 가 set, TickWalking/TickFalling 이 consume. edge-triggered 라 동일 프레임 다중 호출도 1회 점프.
 	bool          bWantsJump       = false;
+
+	// 남은 점프 횟수. 착지 시 MaxJumpCount 로 reset, 점프 1회 사용 시 1 감소.
+	// 첫 frame 은 Falling 으로 시작하므로 0 — 초기 낙하 중 공짜 점프 방지.
+	int32         JumpsRemaining   = 0;
 
 	int32 GroundMissFrames = 0;
 
@@ -227,7 +231,9 @@ public:
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Floor Probe Distance", Min = 0.0f, Max = 5.0f, Speed = 0.01f)
 	float FloorProbeDistance = 0.1f;     // capsule HalfHeight 아래 추가 probe 거리
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Jump Z Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
-	float JumpZVelocity = 6.0f;     // m/s — Jump 시 Velocity.Z 에 박는 값
+	float JumpZVelocity = 7.5f;     // m/s — Jump 시 Velocity.Z 에 박는 값. (~2.87m apex with g=9.8)
+	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Jump Count", Min = 1, Max = 5, Speed = 1)
+	int32 MaxJumpCount = 2;         // 지상 점프 1회 + 공중 점프 (MaxJumpCount - 1) 회.
 
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Orient Rotation To Movement")
 	bool  bOrientRotationToMovement = true;

@@ -843,9 +843,16 @@ void UCharacterMovementComponent::DrawWallRunDistanceDebug() const
 
 void UCharacterMovementComponent::Jump()
 {
-	// Walking 중에만 점프 허용 — 공중 다단 점프 막음. (필요 시 자식 override.)
-	if (MovementMode != EMovementMode::Walking) return;
-	bWantsJump = true;
+	// Walking: 항상 1회. Falling: JumpsRemaining 이 남아 있을 때만 (더블/멀티 점프).
+	// edge-triggered — bWantsJump 만 set, 실제 적용은 Tick 분기에서 consume.
+	if (MovementMode == EMovementMode::Walking)
+	{
+		bWantsJump = true;
+	}
+	else if (MovementMode == EMovementMode::Falling && JumpsRemaining > 0)
+	{
+		bWantsJump = true;
+	}
 }
 
 void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
@@ -1057,6 +1064,8 @@ void UCharacterMovementComponent::TickWalking(float DeltaTime, const FVector& Ro
 		bWantsJump = false;
 		GroundMissFrames = 0;
 		Velocity.Z = JumpZVelocity;
+		// 지상 점프 1회 소비 — 남은 공중 점프 수는 MaxJumpCount - 1.
+		JumpsRemaining = MaxJumpCount - 1;
 		SetMovementMode(EMovementMode::Falling);
 		// XY 이동은 Falling 분기로 위임 — 한 frame 안 mode 전환이라 즉시 falling tick.
 		TickFalling(DeltaTime, RootMotionWorldXY);
@@ -1083,6 +1092,8 @@ void UCharacterMovementComponent::TickWalking(float DeltaTime, const FVector& Ro
 	else if (Result.bHitDown && Result.bHasFloorProbeHit)
 	{
 		GroundMissFrames = 0;
+		// 걷다가 떨어진 경우 — 지상 점프 1회는 암묵적으로 소비된 것으로 간주 (TF2 식).
+		JumpsRemaining = MaxJumpCount - 1;
 		SetMovementMode(EMovementMode::Falling);
 	}
 	else
@@ -1091,6 +1102,7 @@ void UCharacterMovementComponent::TickWalking(float DeltaTime, const FVector& Ro
 		if (GroundMissFrames > GroundMissToleranceFrames)
 		{
 			GroundMissFrames = 0;
+			JumpsRemaining = MaxJumpCount - 1;
 			SetMovementMode(EMovementMode::Falling);
 		}
 	}
@@ -1099,6 +1111,14 @@ void UCharacterMovementComponent::TickWalking(float DeltaTime, const FVector& Ro
 void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& RootMotionWorldXY)
 {
 	USceneComponent* Updated = GetUpdatedComponent();
+
+	// 공중 점프 소비 — gravity 전에 Z 를 박아야 같은 frame 에 즉시 상승 시작.
+	if (bWantsJump && JumpsRemaining > 0)
+	{
+		bWantsJump = false;
+		--JumpsRemaining;
+		Velocity.Z = JumpZVelocity;
+	}
 
 	// Gravity — Z 만. (양수 Gravity → -Z 가속)
 	Velocity.Z -= Gravity * DeltaTime;
@@ -1116,6 +1136,8 @@ void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& Ro
 	{
 		GroundMissFrames = 0;
 		Velocity.Z = 0.0f;
+		// 착지 — 점프 카운트 완전 회복.
+		JumpsRemaining = MaxJumpCount;
 		SetMovementMode(EMovementMode::Walking);
 	}
 }
@@ -1866,6 +1888,7 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 		WallRunElapsedTime = 0.0f;
 		bWallRunOnRightSide = false;
 		Velocity.Z = 0.0f;
+		JumpsRemaining = MaxJumpCount;
 		SetMovementMode(EMovementMode::Walking);
 	}
 }
@@ -1879,6 +1902,7 @@ void UCharacterMovementComponent::Serialize(FArchive& Ar)
 	Ar << Gravity;
 	Ar << FloorProbeDistance;
 	Ar << JumpZVelocity;
+	Ar << MaxJumpCount;
 	Ar << bOrientRotationToMovement;
 	Ar << RotationYawRate;
 	Ar << ControllerContactOffset;
