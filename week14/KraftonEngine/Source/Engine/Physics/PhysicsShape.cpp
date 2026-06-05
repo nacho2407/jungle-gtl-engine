@@ -102,7 +102,11 @@ void FPhysicsShapeFactory::CreateShapesForComponent(physx::PxPhysics& Physics, p
 	}
 	else if (USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(Component))
 	{
-		// V1 hitscan용 loose AABB-derived box. PhysicsAsset 기반 per-bone 충돌은 추후.
+		// PhysicsAsset 있으면 per-bone hitbox (FHitboxInstance) 가 query 를 담당.
+		// 컴포넌트 자체 body 는 shape 없이 release 되게 둔다.
+		if (SkelComp->GetPhysicsAsset()) return;
+
+		// PhysicsAsset 없을 때만 fallback: loose AABB-derived box.
 		const FBoundingBox WorldBox = SkelComp->GetWorldBoundingBox();
 		const FVector Size = WorldBox.Max - WorldBox.Min;
 		if (Size.X <= 0.0f || Size.Y <= 0.0f || Size.Z <= 0.0f) return;

@@ -708,6 +708,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\Physics\PhysicsQueryFilter.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsShape.cpp" />
+    <ClCompile Include="Source\Engine\Physics\HitboxInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\RagdollInstance.cpp" />
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Platform\DirectoryWatcher.cpp" />
@@ -1163,6 +1164,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Physics\PhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsShape.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsTypes.h" />
+    <ClInclude Include="Source\Engine\Physics\HitboxInstance.h" />
     <ClInclude Include="Source\Engine\Physics\RagdollInstance.h" />
     <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h" />
     <ClInclude Include="Source\Engine\Platform\CrashDump.h" />
