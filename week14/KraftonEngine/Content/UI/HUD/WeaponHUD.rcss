@@ -42,12 +42,16 @@ body {
 
 .weapon-hud-separator {
 	position: absolute;
-	left: 224.00px;
-	top: 20.00px;
-	width: 2px;
-	height: 48px;
-	background-color: #ffffff;
-	opacity: 0.8;
+	left: 219.00px;
+	top: 25.00px;
+	width: 16px;
+	height: 36px;
+	font-size: 28px;
+	font-weight: bold;
+	line-height: 36px;
+	text-align: center;
+	color: #ffffff;
+	opacity: 0.65;
 }
 
 .weapon-hud-current-ammo {
@@ -63,10 +67,10 @@ body {
 	color: #FFFFFF;
 }
 
-.weapon-hud-reserve-ammo {
+.weapon-hud-magazine-ammo {
 	position: absolute;
-	left: 234.00px;
-	top: 40.00px;
+	left: 238.00px;
+	top: 32.00px;
 	width: 61.00px;
 	height: 32px;
 	font-size: 24px;
