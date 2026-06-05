@@ -379,6 +379,11 @@ function World.FindActorsByTag(tag) end
 ---@class SkeletalMeshComponent: PrimitiveComponent
 SkeletalMeshComponent = {}
 
+---@param animationPath string
+---@param looping? boolean
+---@return boolean
+function SkeletalMeshComponent:PlayAnimationByPath(animationPath, looping) end
+
 ---@param enabled boolean
 function SkeletalMeshComponent:SetSimulatePhysics(enabled) end
 

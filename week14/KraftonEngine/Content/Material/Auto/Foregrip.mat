@@ -1,0 +1,21 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
+  "Origin" : "FbxImport",
+  "Parameters" : {
+    "HasNormalMap" : 1.000000,
+    "SectionColor" : [0.223529, 0.223529, 0.223529, 1.000000],
+    "_pad" : [0.000000, 0.000000, 0.000000]
+  },
+  "PathFileName" : "Content/Material/Auto/Foregrip.mat",
+  "RasterizerState" : "SolidBackCull",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "ShadowMode" : "Opaque",
+  "Textures" : {
+    "NormalTexture" : "C:/Users/jungle/Downloads/FPSArm/Test1/Test1.fbm/foregrip_normal.tga"
+  },
+  "bEnableBloom" : false
+}

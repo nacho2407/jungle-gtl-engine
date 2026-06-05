@@ -4,6 +4,8 @@
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
 #include "Audio/AudioManager.h"
+#include "Animation/AnimationManager.h"
+#include "Animation/Sequence/AnimSequence.h"
 #include "Component/Input/ActionComponent.h"
 #include "Component/Script/LuaScriptComponent.h"
 #include "Component/Input/InputComponent.h"
@@ -1266,6 +1268,25 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	Lua.new_usertype<USkeletalMeshComponent>("SkeletalMeshComponent",
 		sol::base_classes, sol::bases<USkinnedMeshComponent, UPrimitiveComponent, USceneComponent>(),
 
+		"PlayAnimationByPath", [](USkeletalMeshComponent& C, const FString& AnimationPath, sol::optional<bool> bLooping)
+	{
+		if (AnimationPath.empty() || AnimationPath == "None")
+		{
+			UE_LOG("[Lua] PlayAnimationByPath skipped: empty animation path.");
+			return false;
+		}
+
+		UAnimSequence* Sequence = FAnimationManager::Get().LoadAnimation(AnimationPath);
+		if (!Sequence)
+		{
+			UE_LOG("[Lua] PlayAnimationByPath failed to load: %s", AnimationPath.c_str());
+			return false;
+		}
+
+		C.PlayAnimation(Sequence, bLooping.value_or(false));
+		return true;
+	},
+
 		"SetSimulatePhysics", [](USkeletalMeshComponent& C, bool bEnable)
 	{
 		C.SetSimulatePhysics(bEnable);
@@ -1316,6 +1337,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	);
 
 	FLuaDocRegistry::Get().Type("SkeletalMeshComponent", "PrimitiveComponent")
+		.Method("---@param animationPath string\n---@param looping? boolean\n---@return boolean\nfunction SkeletalMeshComponent:PlayAnimationByPath(animationPath, looping) end")
 		.Method("---@param enabled boolean\nfunction SkeletalMeshComponent:SetSimulatePhysics(enabled) end")
 		.Method("---@return boolean\nfunction SkeletalMeshComponent:IsSimulatingPhysics() end")
 		.Method("---@param weight number\nfunction SkeletalMeshComponent:SetPhysicsBlendWeight(weight) end")
