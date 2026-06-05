@@ -240,7 +240,7 @@ void ULuaAnimInstance::InstallBindings()
 			if (!Owner) return "";
 			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
 			if (!Move) return "";
-			return Move->IsFalling() ? "Falling" : "Walking";
+			return Move->GetMovementModeName();
 		});
 
 	// is_owner_falling — 편의 bool. Jump/Fall 전이 condition 에 자연.
@@ -252,6 +252,17 @@ void ULuaAnimInstance::InstallBindings()
 			if (!Owner) return false;
 			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
 			return Move ? Move->IsFalling() : false;
+		});
+
+	// is_owner_wall_running — 벽타기 전용 애니메이션 전이 condition 을 단순하게 쓰기 위한 편의 bool.
+	Anim.set_function("is_owner_wall_running",
+		[this]() -> bool
+		{
+			if (!OwningComponent) return false;
+			AActor* Owner = OwningComponent->GetOwner();
+			if (!Owner) return false;
+			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
+			return Move ? Move->IsWallRunning() : false;
 		});
 
 	// Slot 인자는 sol::object — None/missing 이면 FName::None (→ 내부에서 DefaultMontageSlot resolve).

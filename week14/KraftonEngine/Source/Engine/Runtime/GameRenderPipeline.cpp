@@ -74,6 +74,7 @@ void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	CollectCommands(Scene, Renderer, Output);
 
 	Renderer.Render(Frame, World, *Scene);
+	Scene->ClearFrameData();
 
 	Renderer.BeginFrame();
 	Renderer.BlitToBackBuffer(VP->GetSRV());

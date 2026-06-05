@@ -3,6 +3,7 @@
 #include "Component/Movement/MovementComponent.h"
 
 #include "Core/Types/CollisionTypes.h"
+#include "Core/Types/EngineTypes.h"
 #include "Math/Vector.h"
 #include "Math/Transform.h"
 
@@ -11,11 +12,12 @@ enum class EMovementMode : uint8
 {
 	Walking,    // floor 위 — 평면 이동 + floor stick, Velocity.Z = 0.
 	Falling,    // 공중 — gravity 적용, air control 만.
+	WallRunning // 벽 위 — 벽 normal 기반 진행 방향 + 약한 중력 + 벽 부착력.
 };
 
 // Walking:
 //   input/root-motion XY + small downward probe -> PhysX CCT move.
-//   eCOLLISION_DOWN keeps Walking; short misses are tolerated by GroundMissToleranceFrames.
+//   Walking is kept only when a follow-up floor probe confirms a walkable normal.
 // Falling:
 //   gravity -> PhysX CCT move.
 //   downward hit switches back to Walking.
@@ -32,6 +34,9 @@ namespace physx
 struct FControllerMoveResult
 {
 	bool bHitDown = false;
+	bool bHasFloorProbeHit = false;
+	bool bHasWalkableFloor = false;
+	FHitResult FloorHit;
 };
 
 UCLASS()
@@ -70,6 +75,8 @@ public:
 	EMovementMode  GetMovementMode() const { return MovementMode; }
 	bool           IsWalking() const { return MovementMode == EMovementMode::Walking; }
 	bool           IsFalling() const { return MovementMode == EMovementMode::Falling; }
+	bool           IsWallRunning() const { return MovementMode == EMovementMode::WallRunning; }
+	const char*    GetMovementModeName() const;
 
 	// UMovementComponent:
 	void Serialize(FArchive& Ar) override;
@@ -83,11 +90,66 @@ protected:
 	// XY 적용 단계에 합산되고 floor stick / gravity 는 mode 가 자체 결정.
 	void  TickWalking(float DeltaTime, const FVector& RootMotionWorldXY);
 	void  TickFalling(float DeltaTime, const FVector& RootMotionWorldXY);
+	void  TickWallRunning(float DeltaTime, const FVector& RootMotionWorldXY);
+	bool  FindFloor(FHitResult& OutFloorHit) const;
+	bool  IsWalkableFloorHit(const FHitResult& Hit) const;
+
+	// 벽타기 진입/유지에 필요한 벽 후보 검사.
+	bool  FindWallRunSurface(FHitResult& OutHit, bool& bOutRightSide) const;
+	void  BuildWallRunSweepCandidates(bool bRightSide, TArray<FVector>& OutCandidates) const;
+	bool  SweepWallRunSide(bool bRightSide, FHitResult& OutHit) const;
+	bool  SweepWallRunDirection(const FVector& Direction, FHitResult& OutHit) const;
+	bool  SweepWallRunStaticMeshes(const FVector& Start, const FVector& Direction, FHitResult& OutHit) const;
+	bool  SweepWallRunStaticMeshBounds(const FVector& Start, const FVector& Direction, FHitResult& OutHit) const;
+	bool  IsRunnableWall(const FVector& WallNormal) const;
+	bool  TryStartWallRun();
+	void  StartWallRun(const FHitResult& WallHit, bool bRightSide);
+	void  EndWallRun();
+	FVector ComputeWallRunDirection(const FVector& WallNormal) const;
+
+	enum class EWallRunStatus : uint8
+	{
+		NotFalling,
+		Disabled,
+		NoUpdatedComponent,
+		NoController,
+		NoWall,
+		LowSpeed,
+		BadNormal,
+		BadDirection,
+		Active,
+		EndedTimeLimit,
+		EndedNoWall,
+		EndedBadNormal,
+		EndedBadDirection,
+		Landed
+	};
+
+	void        SetWallRunStatus(EWallRunStatus NewStatus, const FHitResult* Hit = nullptr);
+	const char* GetWallRunStatusName(EWallRunStatus Status) const;
+	void        DrawWallRunStatusText() const;
+	void        DrawWallRunDistanceDebug() const;
+	bool        ShouldEmitWallRunDiagnostics() const;
+	void        LogWallRunStatus(EWallRunStatus Status, const FHitResult* Hit) const;
+	float       GetWallRunCapsuleRadius() const;
+	FVector     GetWallRunSweepStart(const FVector& Direction) const;
+	float       GetWallRunAlongSpeed(const FVector& WallNormal) const;
 
 	FVector       AccumulatedInput = FVector(0.0f, 0.0f, 0.0f);
 	FVector       Velocity         = FVector(0.0f, 0.0f, 0.0f);
 	// 시작 시 floor 잡힐 때까지 Falling — 첫 frame TickFalling 이 raycast 후 자동 Walking 전환.
 	EMovementMode MovementMode     = EMovementMode::Falling;
+
+	// 현재 벽타기 대상 벽 정보 — 벽 점프/이동/종료 판정이 같은 벽 기준으로 계산되도록 보존.
+	FVector       WallRunNormal     = FVector::ZeroVector;
+	FVector       WallRunDirection  = FVector::ZeroVector;
+	float         WallRunElapsedTime = 0.0f;
+	bool          bWallRunOnRightSide = false;
+
+	EWallRunStatus LastWallRunStatus = EWallRunStatus::NotFalling;
+	FHitResult     LastWallRunStatusHit;
+	bool           bLastWallRunStatusHasHit = false;
+	mutable int32  WallRunDiagnosticsFrameCounter = 0;
 
 	// Jump() 가 set, TickWalking 이 consume. edge-triggered 라 동일 프레임 다중 호출도 1회 점프.
 	bool          bWantsJump       = false;
@@ -136,6 +198,39 @@ public:
 	bool  bOrientRotationToMovement = true;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Rotation Yaw Rate", Min = 0.0f, Max = 3600.0f, Speed = 5.0f)
 	float RotationYawRate = 540.0f;   // deg/sec
+
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Enable Wall Run")
+	bool bEnableWallRun = true;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Check Distance", Min = 0.0f, Max = 5.0f, Speed = 0.05f)
+	float WallCheckDistance = 0.35f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Check Sphere Radius", Min = 0.01f, Max = 1.0f, Speed = 0.01f)
+	float WallCheckSphereRadius = 0.12f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Runnable Wall Up Dot", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
+	float RunnableWallUpDot = 0.2f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Min Wall Run Start Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float MinWallRunStartSpeed = 3.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Min Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float WallRunMinSpeed = 5.5f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Max Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float WallRunMaxSpeed = 9.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Acceleration", Min = 0.0f, Max = 200.0f, Speed = 0.5f)
+	float WallRunAcceleration = 8.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Gravity Scale", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
+	float WallRunGravityScale = 0.25f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Wall Run Slide Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float MaxWallRunSlideSpeed = 2.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Stick Acceleration", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float WallStickAcceleration = 4.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Wall Run Time", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
+	float MaxWallRunTime = 1.5f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Show Wall Run Status Text")
+	bool bShowWallRunStatusText = true;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Log Wall Run Diagnostics")
+	bool bLogWallRunDiagnostics = true;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Wall Run Diagnostics Interval", Min = 1, Max = 120, Speed = 1)
+	int32 WallRunDiagnosticsInterval = 15;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Draw Wall Run Distance")
+	bool bDrawWallRunDistanceDebug = true;
 
 private:
 	physx::PxController* Controller = nullptr;
