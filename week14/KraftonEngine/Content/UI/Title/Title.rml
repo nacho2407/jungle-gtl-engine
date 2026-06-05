@@ -19,5 +19,19 @@
 </head>
 
 <body>
+    <div id="text_1"
+         class="ui-text"
+         data-ui-editor="text"
+         style="left: 119.00px; top: 80.00px; width: 200.00px; height: 40.00px; font-size: 24.00px; font-weight: bold;">
+        New Text
+    </div>
+
+    <div id="text_2"
+         class="ui-text"
+         data-ui-editor="text"
+         style="left: 120.00px; top: 400.00px; width: 200.00px; height: 40.00px; font-size: 24.00px; font-weight: normal;">
+        Hello
+    </div>
+
 </body>
 </rml>

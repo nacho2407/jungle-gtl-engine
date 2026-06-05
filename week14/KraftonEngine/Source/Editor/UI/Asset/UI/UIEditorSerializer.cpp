@@ -212,6 +212,10 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 		Element.Height = ExtractStyleFloat(Style, "height", Element.Height);
 		Element.FontSize = ExtractStyleFloat(Style, "font-size", Element.FontSize);
 		Element.FontWeight = ExtractStyleString(Style, "font-weight", Element.FontWeight);
+		if (Element.FontWeight == "black")
+		{
+			Element.FontWeight = "900";
+		}
 
 		OutDocument.TextElements.push_back(std::move(Element));
 	}
@@ -258,7 +262,9 @@ FString FUIEditorSerializer::BuildRml(const FUIEditorDocument& Document)
 			Width,
 			Height,
 			FontSize,
-			Element.FontWeight == "bold" ? "bold" : "normal"
+			(Element.FontWeight == "900" || Element.FontWeight == "black")
+				? "900"
+				: Element.FontWeight == "bold" ? "bold" : "normal"
 		);
 
 		Out << "    <div id=\"" << EncodeXml(Element.Id) << "\"\n";

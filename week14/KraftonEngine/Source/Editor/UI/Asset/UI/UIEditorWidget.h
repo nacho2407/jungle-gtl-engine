@@ -24,8 +24,9 @@ private:
 	void RenderStatusBar();
 
 	void AddTextElement();
-	bool Save();
-	void RefreshPreview();
+	bool Save(bool bShowNotification = true);
+	void RefreshPreview(bool bShowNotification = true);
+	void TickAutoRefresh();
 	void ShowPreview();
 	void HidePreview();
 	void MarkDirty();
@@ -38,5 +39,8 @@ private:
 	int32 SelectedElementIndex = -1;
 	bool bOpen = false;
 	bool bDirty = false;
+	bool bAutoRefresh = true;
+	int32 AutoRefreshIntervalFrames = 30;
+	int32 AutoRefreshFrameCounter = 0;
 	FString StatusText;
 };

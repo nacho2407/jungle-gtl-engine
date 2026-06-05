@@ -91,6 +91,7 @@ void FUIEditorWidget::Open(const std::filesystem::path& InPath)
 
 	SelectedElementIndex = Document.TextElements.empty() ? -1 : 0;
 	bDirty = false;
+	AutoRefreshFrameCounter = 0;
 	bOpen = true;
 	StatusText = "Loaded";
 }
@@ -100,6 +101,7 @@ void FUIEditorWidget::Close()
 	HidePreview();
 	bOpen = false;
 	bDirty = false;
+	AutoRefreshFrameCounter = 0;
 	SelectedElementIndex = -1;
 	Document = FUIEditorDocument {};
 	StatusText.clear();
@@ -146,6 +148,7 @@ void FUIEditorWidget::Render(float DeltaTime)
 	ImGui::Separator();
 	RenderPreviewControls();
 	RenderStatusBar();
+	TickAutoRefresh();
 
 	ImGui::End();
 
@@ -165,13 +168,13 @@ void FUIEditorWidget::RenderToolbar()
 	ImGui::SameLine();
 	if (ImGui::Button("Save"))
 	{
-		Save();
+		Save(true);
 	}
 
 	ImGui::SameLine();
 	if (ImGui::Button("Refresh"))
 	{
-		RefreshPreview();
+		RefreshPreview(true);
 	}
 
 	ImGui::SameLine();
@@ -251,11 +254,21 @@ void FUIEditorWidget::RenderInspector()
 		MarkDirty();
 	}
 
-	const char* Weights[] = { "normal", "bold" };
-	int CurrentWeight = Element.FontWeight == "bold" ? 1 : 0;
-	if (ImGui::Combo("Font Weight", &CurrentWeight, Weights, IM_ARRAYSIZE(Weights)))
+	const char* WeightLabels[] = { "normal", "bold", "black" };
+	const char* WeightValues[] = { "normal", "bold", "900" };
+	int CurrentWeight = 0;
+	if (Element.FontWeight == "bold")
 	{
-		Element.FontWeight = Weights[CurrentWeight];
+		CurrentWeight = 1;
+	}
+	else if (Element.FontWeight == "900" || Element.FontWeight == "black")
+	{
+		CurrentWeight = 2;
+	}
+
+	if (ImGui::Combo("Font Weight", &CurrentWeight, WeightLabels, IM_ARRAYSIZE(WeightLabels)))
+	{
+		Element.FontWeight = WeightValues[CurrentWeight];
 		MarkDirty();
 	}
 }
@@ -279,6 +292,20 @@ void FUIEditorWidget::RenderPreviewControls()
 
 	ImGui::SameLine();
 	ImGui::TextDisabled("Preview uses the game viewport.");
+
+	ImGui::SameLine();
+	ImGui::Checkbox("Auto Refresh", &bAutoRefresh);
+
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(96.0f);
+	if (ImGui::DragInt("Frames", &AutoRefreshIntervalFrames, 1.0f, 1, 600))
+	{
+		if (AutoRefreshIntervalFrames < 1)
+		{
+			AutoRefreshIntervalFrames = 1;
+		}
+		AutoRefreshFrameCounter = 0;
+	}
 }
 
 void FUIEditorWidget::RenderStatusBar()
@@ -306,33 +333,42 @@ void FUIEditorWidget::AddTextElement()
 	StatusText = "Text element added.";
 }
 
-bool FUIEditorWidget::Save()
+bool FUIEditorWidget::Save(bool bShowNotification)
 {
 	FString Error;
 	if (!Validate(&Error))
 	{
 		StatusText = "Save failed: " + Error;
-		FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Error, 4.0f);
+		if (bShowNotification)
+		{
+			FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Error, 4.0f);
+		}
 		return false;
 	}
 
 	if (!FUIEditorSerializer::Save(Document, &Error))
 	{
 		StatusText = "Save failed: " + Error;
-		FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Error, 4.0f);
+		if (bShowNotification)
+		{
+			FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Error, 4.0f);
+		}
 		return false;
 	}
 
 	Document.bDirty = false;
 	bDirty = false;
 	StatusText = "Saved";
-	FNotificationManager::Get().AddNotification("RML saved.", ENotificationType::Success, 2.0f);
+	if (bShowNotification)
+	{
+		FNotificationManager::Get().AddNotification("RML saved.", ENotificationType::Success, 2.0f);
+	}
 	return true;
 }
 
-void FUIEditorWidget::RefreshPreview()
+void FUIEditorWidget::RefreshPreview(bool bShowNotification)
 {
-	if (!Save())
+	if (!Save(bShowNotification))
 	{
 		return;
 	}
@@ -343,17 +379,41 @@ void FUIEditorWidget::RefreshPreview()
 		char Buffer[96];
 		std::snprintf(Buffer, sizeof(Buffer), "RML refreshed: %d widget(s).", ReloadedCount);
 		StatusText = Buffer;
-		FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Success, 2.5f);
+		if (bShowNotification)
+		{
+			FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Success, 2.5f);
+		}
 		return;
 	}
 
 	StatusText = "Saved. No matching viewport widget to reload.";
-	FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Info, 3.0f);
+	if (bShowNotification)
+	{
+		FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Info, 3.0f);
+	}
+}
+
+void FUIEditorWidget::TickAutoRefresh()
+{
+	if (!bAutoRefresh || !bDirty)
+	{
+		AutoRefreshFrameCounter = 0;
+		return;
+	}
+
+	++AutoRefreshFrameCounter;
+	if (AutoRefreshFrameCounter < AutoRefreshIntervalFrames)
+	{
+		return;
+	}
+
+	AutoRefreshFrameCounter = 0;
+	RefreshPreview(false);
 }
 
 void FUIEditorWidget::ShowPreview()
 {
-	if (!Save())
+	if (!Save(true))
 	{
 		return;
 	}
@@ -387,6 +447,7 @@ void FUIEditorWidget::MarkDirty()
 {
 	Document.bDirty = true;
 	bDirty = true;
+	AutoRefreshFrameCounter = 0;
 }
 
 bool FUIEditorWidget::Validate(FString* OutError) const
