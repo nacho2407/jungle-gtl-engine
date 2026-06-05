@@ -231,7 +231,8 @@ private:
 public:
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Walk Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float MaxWalkSpeed = 8.0f;     // m/s — 기존 6.0f 기준 1.5배
-	float SprintSpeedMultiplier = 1.8f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Sprint Speed Multiplier", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float SprintSpeedMultiplier = 1.5f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Acceleration", Min = 0.0f, Max = 200.0f, Speed = 0.5f)
 	float MaxAcceleration = 20.0f;    // m/s^2
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Braking Friction", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
@@ -241,7 +242,7 @@ public:
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Floor Probe Distance", Min = 0.0f, Max = 5.0f, Speed = 0.01f)
 	float FloorProbeDistance = 0.1f;     // capsule HalfHeight 아래 추가 probe 거리
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Jump Z Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
-	float JumpZVelocity = 7.5f;     // m/s — Jump 시 Velocity.Z 에 박는 값. (~2.87m apex with g=9.8)
+	float JumpZVelocity = 8.0f;     // m/s — Jump 시 Velocity.Z 에 박는 값. (~2.87m apex with g=9.8)
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Jump Count", Min = 1, Max = 5, Speed = 1)
 	int32 MaxJumpCount = 2;         // 지상 점프 1회 + 공중 점프 (MaxJumpCount - 1) 회.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Falling Slide Speed", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
@@ -250,7 +251,7 @@ public:
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Out Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
 	float WallJumpOutVelocity = 8.0f;     // m/s — 벽 normal 방향 푸시.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Up Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
-	float WallJumpUpVelocity = 6.0f;      // m/s — 위쪽 임펄스.
+	float WallJumpUpVelocity = 7.5f;      // m/s — 위쪽 임펄스.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Forward Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
 	float WallJumpForwardVelocity = 3.0f; // m/s — 벽 진행 방향 보너스 (모멘텀 보존).
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Reattach Cooldown", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
@@ -274,11 +275,11 @@ public:
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Min Wall Run Start Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float MinWallRunStartSpeed = 3.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Min Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float WallRunMinSpeed = 9.0f;
+	float WallRunMinSpeed = 8.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Max Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float WallRunMaxSpeed = 18.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Acceleration", Min = 0.0f, Max = 200.0f, Speed = 0.5f)
-	float WallRunAcceleration = 24.0f;
+	float WallRunAcceleration = 15.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Gravity Scale", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
 	float WallRunGravityScale = 0.25f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Wall Run Slide Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
