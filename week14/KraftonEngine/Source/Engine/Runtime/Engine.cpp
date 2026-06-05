@@ -26,6 +26,8 @@
 #include "Physics/NvClothSDK.h"
 #include "Profiling/Stats/PhysicsStats.h"
 
+#include <windows.h>
+
 UEngine* GEngine = nullptr;
 
 namespace
@@ -137,6 +139,11 @@ void UEngine::Tick(float DeltaTime)
 	FAudioManager::Get().Tick();
 	WorldTick(DeltaTime);
 	Render(DeltaTime);
+}
+
+void UEngine::RequestExit()
+{
+	PostQuitMessage(0);
 }
 
 void UEngine::AddReferencedObjects(FReferenceCollector& Collector)

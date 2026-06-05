@@ -8,7 +8,10 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/PIE/PIETypes.h"
+#include <filesystem>
+#include "Editor/Undo/EditorUndoManager.h"
 #include <optional>
+#include <memory>
 #if STATS
 #include "Editor/EditorRenderPipeline.h"
 #endif
@@ -57,6 +60,7 @@ public:
 	const FString& GetCurrentLevelFilePath() const { return CurrentLevelFilePath; }
 	void RefreshContentBrowser() { MainPanel.RefreshContentBrowser(); }
 	void OpenAssetEditorForObject(UObject* Object) { MainPanel.OpenAssetEditorForObject(Object); }
+	void OpenUIEditor(const std::filesystem::path& Path) { MainPanel.OpenUIEditor(Path); }
 	void SetContentBrowserIconSize(float Size) { MainPanel.SetContentBrowserIconSize(Size); }
 	float GetContentBrowserIconSize() const { return MainPanel.GetContentBrowserIconSize(); }
 	void HideEditorWindows() { MainPanel.HideEditorWindows(); }
@@ -66,6 +70,50 @@ public:
 	bool IsWorldCoordSystem() const { return FEditorSettings::Get().LevelViewportSettings[0].Gizmo.CoordSystem == EEditorCoordSystem::World; }
 	void ToggleCoordSystem();
 	void ApplyTransformSettingsToGizmo();
+
+	/**
+	 * @brief 마지막 에디터 편집 명령을 되돌립니다.
+	 *
+	 * @return undo 실행 여부
+	 */
+	bool Undo();
+
+	/**
+	 * @brief 마지막 undo 명령을 다시 실행합니다.
+	 *
+	 * @return redo 실행 여부
+	 */
+	bool Redo();
+
+	bool CanUndo() const { return UndoManager.CanUndo(); }
+	bool CanRedo() const { return UndoManager.CanRedo(); }
+	bool IsApplyingUndoRedo() const { return UndoManager.IsApplying(); }
+
+	/**
+	 * @brief 이미 실행된 에디터 편집 명령을 undo stack에 등록합니다.
+	 *
+	 * @param Command 등록할 undo command
+	 */
+	void PushExecutedUndoCommand(std::unique_ptr<IEditorUndoCommand> Command);
+
+	/**
+	 * @brief 선택된 actor들을 undo 기록과 함께 삭제합니다.
+	 *
+	 * @return 삭제된 actor 수
+	 */
+	int32 DeleteSelectedActorsWithUndo();
+
+	/**
+	 * @brief 선택된 actor들을 undo 기록과 함께 복제합니다.
+	 *
+	 * @return 복제된 actor 수
+	 */
+	int32 DuplicateSelectedActorsWithUndo();
+
+	/**
+	 * @brief 모든 undo/redo 기록을 비웁니다.
+	 */
+	void ClearUndoHistory();
 
 	// GPU Occlusion readback 스테이징 데이터 무효화 — 액터 삭제 시 dangling proxy 방지
 	void InvalidateOcclusionResults() { if (auto* P = GetRenderPipeline()) P->OnSceneCleared(); }
@@ -134,6 +182,7 @@ public:
 	// 에디터 화면으로 복귀. UE 의 Stop Play 와 동일 의미로 매핑 (PIE 중간에 다른 scene 으로
 	// 점프하는 의미가 모호하므로). InScenePath 는 무시.
 	void RequestTransitionToScene(const FString& InScenePath) override;
+	void RequestExit() override;
 
 	//GC
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
@@ -155,6 +204,7 @@ private:
 	FEditorMainPanel MainPanel;
 	FLevelViewportLayout ViewportLayout;
 	FOverlayStatSystem OverlayStatSystem;
+	FEditorUndoManager UndoManager;
 
 	// PIE 요청 단일 슬롯 (UE TOptional<FRequestPlaySessionParams>).
 	std::optional<FRequestPlaySessionParams> PlaySessionRequest;

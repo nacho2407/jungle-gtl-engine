@@ -18,6 +18,12 @@ public:
 	void SelectRange(AActor* ClickedActor, const TArray<AActor*>& ActorList);
 	void ToggleSelect(AActor* Actor);
 	void Deselect(AActor* Actor);
+	/**
+	 * @brief 현재 editor world의 모든 valid actor 선택
+	 *
+	 * @return 선택된 actor 수
+	 */
+	int32 SelectAllActors();
 	void ClearSelection();
 	int32 DeleteSelectedActors();
 	void Tick();
@@ -36,6 +42,29 @@ public:
 	}
 
 	const TArray<AActor*>& GetSelectedActors() const { return SelectedActors; }
+
+	/**
+	 * @brief 선택된 actor들의 UUID 목록 반환
+	 *
+	 * @return 선택된 actor들의 UUID 목록
+	 */
+	TArray<uint32> GetSelectedActorUUIDs() const;
+
+	/**
+	 * @brief 선택된 component UUID 반환
+	 *
+	 * @return 선택된 component UUID. 선택된 component가 없으면 0
+	 */
+	uint32 GetSelectedComponentUUID() const;
+
+	/**
+	 * @brief UUID 목록을 이용해 actor/component 선택 상태를 복원합니다.
+	 *
+	 * @param ActorUUIDs 선택할 actor UUID 목록
+	 *
+	 * @param ComponentUUID 선택할 component UUID. 0이면 primary actor root component 사용
+	 */
+	void RestoreSelectionByUUIDs(const TArray<uint32>& ActorUUIDs, uint32 ComponentUUID);
 	bool IsEmpty() const { return SelectedActors.empty(); }
 
 	UGizmoComponent* GetGizmo() const { return Gizmo; }

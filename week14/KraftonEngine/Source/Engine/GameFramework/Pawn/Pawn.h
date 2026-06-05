@@ -18,7 +18,7 @@ class UInputComponent;
 // Input 통합:
 //   - BeginPlay 가 자동으로 UInputComponent 부착 + SetupInputComponent() 호출.
 //   - 자식이 SetupInputComponent override 안에서 BindAxis/BindAction 호출.
-//   - Lua: obj:AsPawn():GetInputComponent():BindAction(...) 패턴.
+//   - Lua: obj:GetInputComponent():BindAction(...) 패턴.
 // ============================================================
 UCLASS()
 class APawn : public AActor

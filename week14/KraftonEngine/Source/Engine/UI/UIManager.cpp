@@ -20,6 +20,7 @@
 #undef GetFirstChild
 #endif
 #include <RmlUi/Core.h>
+#include <RmlUi/Core/Factory.h>
 
 #include <algorithm>
 #include <chrono>
@@ -76,6 +77,15 @@ namespace
 	Rml::String ToRmlPath(const std::filesystem::path& Path)
 	{
 		return FPaths::ToUtf8(Path.generic_wstring());
+	}
+
+	void LoadRmlFontFace(const FString& Path, Rml::Style::FontWeight Weight)
+	{
+		const std::filesystem::path FontPath = ToProjectPath(Path);
+		if (!Rml::LoadFontFace(ToRmlPath(FontPath), "Pretendard", Rml::Style::FontStyle::Normal, Weight))
+		{
+			UE_LOG("[RmlUi] Failed to load font: %s", Path.c_str());
+		}
 	}
 }
 
@@ -571,11 +581,9 @@ void UUIManager::Initialize(ID3D11Device* InDevice)
 		UE_LOG("[RmlUi] Failed to create GameViewport context.");
 	}
 
-	const std::filesystem::path FontPath = ToProjectPath("Content/Font/Maplestory Bold.ttf");
-	if (!Rml::LoadFontFace(ToRmlPath(FontPath), "Maplestory", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Bold))
-	{
-		UE_LOG("[RmlUi] Failed to load font: Content/Font/Maplestory Bold.ttf");
-	}
+	LoadRmlFontFace("Content/Font/Pretendard-Regular.ttf", Rml::Style::FontWeight::Normal);
+	LoadRmlFontFace("Content/Font/Pretendard-Bold.ttf", Rml::Style::FontWeight::Bold);
+	LoadRmlFontFace("Content/Font/Pretendard-Black.ttf", static_cast<Rml::Style::FontWeight>(900));
 }
 
 void UUIManager::Shutdown()
@@ -671,6 +679,64 @@ void UUIManager::RemoveFromViewportImmediate(UUserWidget* Widget)
 	{
 		Widget->MarkRemovedFromViewport();
 	}
+}
+
+bool UUIManager::ReloadDocument(UUserWidget* Widget)
+{
+	if (!Widget)
+	{
+		return false;
+	}
+
+	const bool bWasInViewport = Widget->IsInViewport();
+	CloseDocument(Widget);
+
+	if (!bWasInViewport)
+	{
+		return true;
+	}
+
+	return LoadDocument(Widget);
+}
+
+void UUIManager::ClearRmlCaches()
+{
+	if (!bRmlInitialized)
+	{
+		return;
+	}
+
+	Rml::Factory::ClearStyleSheetCache();
+	Rml::Factory::ClearTemplateCache();
+}
+
+int32 UUIManager::ReloadDocumentsByPath(const FString& DocumentPath)
+{
+	int32 ReloadedCount = 0;
+
+	ClearRmlCaches();
+
+	const std::filesystem::path TargetPath = ToProjectPath(DocumentPath).lexically_normal();
+	for (UUserWidget* Widget : ViewportWidgets)
+	{
+		if (!Widget)
+		{
+			continue;
+		}
+
+		const std::filesystem::path WidgetPath = ToProjectPath(Widget->GetDocumentPath()).lexically_normal();
+		if (WidgetPath != TargetPath)
+		{
+			continue;
+		}
+
+		if (ReloadDocument(Widget))
+		{
+			++ReloadedCount;
+		}
+	}
+
+	return ReloadedCount;
 }
 
 void UUIManager::ClearViewport()

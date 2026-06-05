@@ -1,6 +1,90 @@
 #pragma once
 #include <windows.h>
 #include "Core/Singleton.h"
+#include "Core/Types/CoreTypes.h"
+
+/**
+* @brief 엔진 전역 입력 코드 상수 모음
+*
+* @details 0~255 영역은 기존 Win32 VK 코드를 그대로 사용하고, 256 이상 영역은
+* 게임패드 버튼과 아날로그 축을 위한 엔진 가상 코드로 사용합니다.
+*/
+namespace InputCodes
+{
+    constexpr int KeyboardMouseCodeCount = 256;
+
+    constexpr int MaxGamepads = 4;
+
+    constexpr int GamepadButtonBase = 0x100;
+    constexpr int GamepadButtonCount = 16;
+
+    constexpr int GamepadA = GamepadButtonBase + 0;
+    constexpr int GamepadB = GamepadButtonBase + 1;
+    constexpr int GamepadX = GamepadButtonBase + 2;
+    constexpr int GamepadY = GamepadButtonBase + 3;
+    constexpr int GamepadLeftShoulder = GamepadButtonBase + 4;
+    constexpr int GamepadRightShoulder = GamepadButtonBase + 5;
+    constexpr int GamepadBack = GamepadButtonBase + 6;
+    constexpr int GamepadStart = GamepadButtonBase + 7;
+    constexpr int GamepadLeftThumb = GamepadButtonBase + 8;
+    constexpr int GamepadRightThumb = GamepadButtonBase + 9;
+    constexpr int GamepadDPadUp = GamepadButtonBase + 10;
+    constexpr int GamepadDPadDown = GamepadButtonBase + 11;
+    constexpr int GamepadDPadLeft = GamepadButtonBase + 12;
+    constexpr int GamepadDPadRight = GamepadButtonBase + 13;
+    constexpr int GamepadLeftTrigger = GamepadButtonBase + 14;
+    constexpr int GamepadRightTrigger = GamepadButtonBase + 15;
+
+    constexpr int GamepadAxisBase = 0x200;
+    constexpr int GamepadAxisCount = 6;
+
+    constexpr int GamepadLeftX = GamepadAxisBase + 0;
+    constexpr int GamepadLeftY = GamepadAxisBase + 1;
+    constexpr int GamepadRightX = GamepadAxisBase + 2;
+    constexpr int GamepadRightY = GamepadAxisBase + 3;
+    constexpr int GamepadLeftTriggerAxis = GamepadAxisBase + 4;
+    constexpr int GamepadRightTriggerAxis = GamepadAxisBase + 5;
+
+    /**
+    * @brief Win32 키보드/마우스 코드 여부를 반환합니다.
+    *
+    * @param InputCode 판정할 입력 코드
+    *
+    * @return 0~255 VK 영역에 포함되면 true
+    */
+    constexpr bool IsKeyboardMouseCode(int InputCode)
+    {
+        return InputCode >= 0 && InputCode < KeyboardMouseCodeCount;
+    }
+
+    /**
+    * @brief 게임패드 버튼 코드에서 버튼 인덱스를 계산합니다.
+    *
+    * @param InputCode 판정할 입력 코드
+    *
+    * @return 버튼 인덱스. 유효하지 않으면 -1
+    */
+    constexpr int GetGamepadButtonIndex(int InputCode)
+    {
+        return (InputCode >= GamepadButtonBase && InputCode < GamepadButtonBase + GamepadButtonCount)
+            ? InputCode - GamepadButtonBase
+            : -1;
+    }
+
+    /**
+    * @brief 게임패드 축 코드에서 축 인덱스를 계산합니다.
+    *
+    * @param InputCode 판정할 입력 코드
+    *
+    * @return 축 인덱스. 유효하지 않으면 -1
+    */
+    constexpr int GetGamepadAxisIndex(int InputCode)
+    {
+        return (InputCode >= GamepadAxisBase && InputCode < GamepadAxisBase + GamepadAxisCount)
+            ? InputCode - GamepadAxisBase
+            : -1;
+    }
+}
 
 struct FGuiInputState
 {
@@ -9,6 +93,21 @@ struct FGuiInputState
     bool bUsingTextInput = false;
 };
 
+/**
+* @brief 단일 게임패드의 한 프레임 입력 스냅샷
+*/
+struct FGamepadInputSnapshot
+{
+    bool bConnected = false;
+    bool ButtonDown[InputCodes::GamepadButtonCount] = {};
+    bool ButtonPressed[InputCodes::GamepadButtonCount] = {};
+    bool ButtonReleased[InputCodes::GamepadButtonCount] = {};
+    float AxisValues[InputCodes::GamepadAxisCount] = {};
+};
+
+/**
+* @brief 입력 시스템의 한 프레임 불변 스냅샷
+*/
 struct FInputSystemSnapshot
 {
     bool KeyDown[256] = {};
@@ -52,9 +151,64 @@ struct FInputSystemSnapshot
     bool bGuiUsingTextInput = false;
     bool bWindowFocused = true;
 
-    bool IsDown(int VK) const { return KeyDown[VK]; }
-    bool WasPressed(int VK) const { return KeyPressed[VK]; }
-    bool WasReleased(int VK) const { return KeyReleased[VK]; }
+    FGamepadInputSnapshot Gamepads[InputCodes::MaxGamepads] = {};
+    int PrimaryGamepadIndex = 0;
+
+    /**
+    * @brief 입력 코드가 현재 눌려 있는지 반환합니다.
+    *
+    * @param InputCode Win32 VK 코드 또는 InputCodes 게임패드 가상 코드
+    *
+    * @return 현재 눌림 상태
+    */
+    bool IsDown(int InputCode) const;
+
+    /**
+    * @brief 입력 코드가 이번 프레임에 눌렸는지 반환합니다.
+    *
+    * @param InputCode Win32 VK 코드 또는 InputCodes 게임패드 버튼 가상 코드
+    *
+    * @return 이번 프레임 눌림 edge 상태
+    */
+    bool WasPressed(int InputCode) const;
+
+    /**
+    * @brief 입력 코드가 이번 프레임에 해제되었는지 반환합니다.
+    *
+    * @param InputCode Win32 VK 코드 또는 InputCodes 게임패드 버튼 가상 코드
+    *
+    * @return 이번 프레임 해제 edge 상태
+    */
+    bool WasReleased(int InputCode) const;
+
+    /**
+    * @brief 입력 코드를 축 값으로 평가합니다.
+    *
+    * @param InputCode Win32 VK 코드, 게임패드 버튼 코드 또는 게임패드 축 코드
+    *
+    * @return 키/버튼은 눌림 시 1.0, 해제 시 0.0. 게임패드 축은 정규화된 축 값
+    */
+    float GetAxisValue(int InputCode) const;
+
+    /**
+    * @brief 지정 게임패드의 축 값을 반환합니다.
+    *
+    * @param GamepadIndex XInput 게임패드 인덱스. -1이면 primary 게임패드 인덱스
+    *
+    * @param AxisCode InputCodes 게임패드 축 코드
+    *
+    * @return 정규화된 축 값. 유효하지 않으면 0.0
+    */
+    float GetGamepadAxisValue(int GamepadIndex, int AxisCode) const;
+
+    /**
+    * @brief 지정 게임패드의 연결 여부를 반환합니다.
+    *
+    * @param GamepadIndex XInput 게임패드 인덱스
+    *
+    * @return 연결되어 있으면 true
+    */
+    bool IsGamepadConnected(int GamepadIndex = -1) const;
 };
 
 class InputSystem : public TSingleton<InputSystem>
@@ -77,9 +231,12 @@ public:
     bool IsWindowFocused() const { return bWindowFocused; }
 
     // Keyboard
-    bool GetKeyDown(int VK) const { return CurrentStates[VK] && !PrevStates[VK]; }
-    bool GetKey(int VK) const { return CurrentStates[VK]; }
-    bool GetKeyUp(int VK) const { return !CurrentStates[VK] && PrevStates[VK]; }
+    bool GetKeyDown(int InputCode) const;
+    bool GetKey(int InputCode) const;
+    bool GetKeyUp(int InputCode) const;
+    float GetAxisValue(int InputCode) const;
+    float GetGamepadAxisValue(int GamepadIndex, int AxisCode) const;
+    bool IsGamepadConnected(int GamepadIndex = -1) const;
 
     // Mouse position
     POINT GetMousePos() const { return MousePos; }
@@ -133,8 +290,18 @@ public:
     bool IsGuiUsingTextInput() const { return GuiState.bUsingTextInput; }
 
 private:
+    struct FGamepadRuntimeState
+    {
+        bool bConnected = false;
+        bool ButtonDown[InputCodes::GamepadButtonCount] = {};
+        bool PrevButtonDown[InputCodes::GamepadButtonCount] = {};
+        float AxisValues[InputCodes::GamepadAxisCount] = {};
+    };
+
     bool CurrentStates[256] = { false };
     bool PrevStates[256] = { false };
+    FGamepadRuntimeState Gamepads[InputCodes::MaxGamepads] = {};
+    int PrimaryGamepadIndex = 0;
 
     // Mouse members
     POINT MousePos = { 0, 0 };
@@ -179,6 +346,8 @@ private:
     void FilterDragThreshold(
         bool& bCandidate, bool& bDragging, bool& bJustStarted,
         const POINT& MouseDownPos, POINT& DragStartPos);
+    void PollGamepads();
+    void ResetGamepadInputState();
     void UpdateCurrentSnapshot();
     void ResetDragState();
 };

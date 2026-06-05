@@ -31,49 +31,6 @@ UWorld* FEditorViewportClient::GetWorld() const
 #include "Component/Camera/CameraComponent.h"
 #include "Component/Light/LightComponentBase.h"
 
-namespace
-{
-	bool IsActorNameInUse(UWorld* World, const FString& CandidateName)
-	{
-		if (!World)
-		{
-			return false;
-		}
-
-		const FName CandidateFName(CandidateName);
-		for (AActor* Actor : World->GetActors())
-		{
-			if (Actor && Actor->GetFName() == CandidateFName)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	FString MakeUniqueDuplicateActorName(UWorld* World, const AActor* SourceActor)
-	{
-		FString BaseName = SourceActor ? SourceActor->GetFName().ToString() : FString();
-		if (BaseName.empty() && SourceActor)
-		{
-			BaseName = SourceActor->GetClass()->GetName();
-		}
-		if (BaseName.empty())
-		{
-			BaseName = "Actor";
-		}
-
-		FString Candidate = BaseName + "_Copy";
-		int32 Suffix = 2;
-		while (IsActorNameInUse(World, Candidate))
-		{
-			Candidate = BaseName + "_Copy_" + std::to_string(Suffix++);
-		}
-		return Candidate;
-	}
-}
-
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
 	Window = InWindow;
@@ -442,14 +399,9 @@ void FEditorViewportClient::TickEditorShortcuts()
 		EditorEngine->RequestEndPlayMap();
 	}
 
-	// 키보드 소유권과 UpdateInputOwner 의 WantTextInput 해제로 게이팅 일원화됨.
-	if (SelectionManager && InputSystem::Get().GetKeyDown(VK_DELETE))
-	{
-		SelectionManager->DeleteSelectedActors();
-		return;
-	}
+	const bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
 
-	if (!InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('X'))
+	if (!bCtrlHeld && InputSystem::Get().GetKeyDown('X'))
 	{
 		EditorEngine->ToggleCoordSystem();
 		return;
@@ -490,39 +442,6 @@ void FEditorViewportClient::TickEditorShortcuts()
 		}
 	}
 
-	if (SelectionManager && InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('D'))
-	{
-		const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
-		if (!ToDuplicate.empty())
-		{
-			const FVector DuplicateOffsetStep(0.1f, 0.1f, 0.1f);
-			TArray<AActor*> NewSelection;
-			int32 DuplicateIndex = 0;
-			for (AActor* Src : ToDuplicate)
-			{
-				if (!Src) continue;
-				UWorld* SourceWorld = Src->GetWorld();
-				const FString DuplicateName = MakeUniqueDuplicateActorName(SourceWorld, Src);
-				AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
-				if (Dup)
-				{
-					Dup->SetFName(FName(DuplicateName));
-					Dup->AddActorWorldOffset(DuplicateOffsetStep * static_cast<float>(DuplicateIndex + 1));
-					NewSelection.push_back(Dup);
-					++DuplicateIndex;
-				}
-			}
-			SelectionManager->ClearSelection();
-			for (AActor* Actor : NewSelection)
-			{
-				SelectionManager->ToggleSelect(Actor);
-			}
-			if (EditorEngine->GetGizmo())
-			{
-				EditorEngine->GetGizmo()->UpdateGizmoTransform();
-			}
-		}
-	}
 }
 
 void FEditorViewportClient::SetLightViewOverride(ULightComponentBase* Light)
@@ -896,6 +815,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 			//	눌려있고, Holding되지 않았다면 다음 Loop부터 드래그 업데이트 시작
 			if (Gizmo->IsPressedOnHandle() && !Gizmo->IsHolding())
 			{
+				BeginGizmoUndoTransaction();
 				Gizmo->SetHolding(true);
 			}
 
@@ -954,15 +874,57 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		}
 		else
 		{
+			EndGizmoUndoTransaction();
 			Gizmo->DragEnd();
 		}
 	}
 	else if (Input.GetKeyUp(VK_LBUTTON))
 	{
 		// 드래그 threshold 미달로 DragEnd가 호출되지 않는 경우 처리
+		ResetGizmoUndoTransaction();
 		Gizmo->SetPressedOnHandle(false);
 		bIsMarqueeSelecting = false;
 	}
+}
+
+void FEditorViewportClient::BeginGizmoUndoTransaction()
+{
+	if (bGizmoUndoTransactionActive || !SelectionManager)
+	{
+		return;
+	}
+
+	GizmoUndoSelection = CaptureEditorSelection(SelectionManager);
+	GizmoUndoBefore = CaptureSelectedComponentTransforms(SelectionManager);
+	bGizmoUndoTransactionActive = !GizmoUndoBefore.empty();
+}
+
+void FEditorViewportClient::EndGizmoUndoTransaction()
+{
+	if (!bGizmoUndoTransactionActive || !SelectionManager)
+	{
+		ResetGizmoUndoTransaction();
+		return;
+	}
+
+	TArray<FEditorComponentTransformSnapshot> After = CaptureSelectedComponentTransforms(SelectionManager);
+	if (UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine))
+	{
+		EditorEngine->PushExecutedUndoCommand(MakeTransformUndoCommand(
+			GizmoUndoBefore,
+			After,
+			GizmoUndoSelection,
+			"Transform Actors"));
+	}
+
+	ResetGizmoUndoTransaction();
+}
+
+void FEditorViewportClient::ResetGizmoUndoTransaction()
+{
+	bGizmoUndoTransactionActive = false;
+	GizmoUndoBefore.clear();
+	GizmoUndoSelection = FEditorSelectionSnapshot();
 }
 
 /**

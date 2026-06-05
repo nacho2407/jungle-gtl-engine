@@ -29,14 +29,10 @@ void UGameViewportClient::EndGameSession()
 
 void UGameViewportClient::ProcessInput(const FInputSystemSnapshot& Snapshot, float /*DeltaTime*/)
 {
-	// snapshot 저장은 호출이 들어온 매 프레임 항상 — possess off 인 동안에도 마지막 폴링값을
-	// 보관해 둔다 (구 standalone ProcessInput 동작). possess 토글 시점의 "snapshot clear"
-	// 는 SetInputPossessed 가 책임 (ProcessInput 호출이 끊겨도 즉시 비워짐).
-	SetGameInputSnapshot(Snapshot);
-
 	// 비포커스 — raw mouse / 커서 캡처 해제하고 입력 누적 리셋.
 	if (!Snapshot.bWindowFocused)
 	{
+		ClearGameInputSnapshot();
 		InputSystem::Get().SetUseRawMouse(false);
 		SetCursorCaptured(false);
 		ResetInputState();
@@ -46,10 +42,14 @@ void UGameViewportClient::ProcessInput(const FInputSystemSnapshot& Snapshot, flo
 	// possess off — 게임 입력 라우팅이 꺼진 상태. 커서는 풀어준다 (메뉴 진입 직후 등).
 	if (!bInputPossessed)
 	{
+		ClearGameInputSnapshot();
 		InputSystem::Get().SetUseRawMouse(false);
 		SetCursorCaptured(false);
 		return;
 	}
+
+	// active game input snapshot 저장 — possess on 상태에서만 Lua/게임 입력용으로 보관.
+	SetGameInputSnapshot(Snapshot);
 
 	// possess on 이라도 UI widget 이 마우스를 요구하면 시스템 커서 보이고 raw mouse 해제.
 	// 게임 입력 라우팅 (Lua 폴링) 은 그대로 — 일시정지/모달 케이스에서 게임 입력까지 끊고

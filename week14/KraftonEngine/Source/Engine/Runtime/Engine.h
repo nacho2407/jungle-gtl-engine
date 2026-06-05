@@ -35,6 +35,7 @@ public:
 	// 에디터 화면으로 복귀하는 것으로 매핑한다 (PIE 안에서의 scene 교체 의미가 모호하므로).
 	// 기본은 no-op — 서브클래스(UGameEngine / UEditorEngine) 에서 적절히 override.
 	virtual void RequestTransitionToScene(const FString& /*InScenePath*/) {}
+	virtual void RequestExit();
 
 	// World context management
 	FWorldContext& CreateWorldContext(EWorldType Type, const FName& Handle, const FString& Name = "");

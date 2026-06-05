@@ -1,0 +1,110 @@
+body {
+	margin: 0px;
+	width: 100%;
+	height: 100%;
+	font-family: Pretendard;
+	color: #f5f2ee;
+}
+
+#quit-dialog-screen {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	overflow: visible;
+}
+
+.title-quit-panel {
+	top: 50%;
+	margin-top: -160px;
+}
+
+#quit-confirm-content {
+	width: 760px;
+	height: 240px;
+}
+
+#quit-warning-icon-frame {
+	position: absolute;
+	left: 0.00px;
+	top: 0.00px;
+	width: 200.00px;
+	height: 200.00px;
+	overflow: visible;
+}
+
+#quit-warning-icon {
+	position: absolute;
+	left: 30.00%;
+	top: 30.00%;
+	width: 100.00%;
+	height: 100.00%;
+	image-fit: contain;
+}
+
+#quit-choice-axis {
+	position: absolute;
+	left: 0.00%;
+	top: 20.00%;
+	width: 100.00%;
+	height: 100.00%;
+	overflow: visible;
+}
+
+#quit-question {
+	position: absolute;
+	left: 0.00px;
+	top: 0px;
+	width: 100%;
+	height: 42px;
+	text-align: center;
+	font-size: 36px;
+	font-weight: 700;
+	line-height: 42px;
+	color: #ffffff;
+	white-space: nowrap;
+}
+
+#quit-options {
+	position: absolute;
+	left: -10.00%;
+	top: 0.00%;
+	width: 100.00%;
+	height: 72.00%;
+	margin-top: 0px;
+	margin-left: 0px;
+	margin-right: 0px;
+}
+
+.quit-confirm-option {
+	position: absolute;
+	left: 0px;
+	width: 100%;
+	height: 28px;
+}
+
+.quit-confirm-option .hover-image-label {
+	left: 0px;
+	width: 100%;
+	text-align: center;
+	font-size: 22px;
+	font-weight: 400;
+	line-height: 28px;
+}
+
+#cancel-quit-button {
+	top: 50.00%;
+	position: absolute;
+	left: 50.00%;
+	width: 25.00%;
+	height: 13.00%;
+}
+
+#confirm-quit-button {
+	top: 66.00%;
+	position: absolute;
+	left: 50.00%;
+	width: 25.00%;
+	height: 13.00%;
+}

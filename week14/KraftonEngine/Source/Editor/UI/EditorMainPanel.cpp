@@ -137,6 +137,9 @@ void DrawDebugVectorLine(const char* Label, const FVector& Value)
 	ImGui::Text("%s: %.2f, %.2f, %.2f", Label, Value.X, Value.Y, Value.Z);
 }
 
+constexpr float GEditorShortcutRepeatInitialDelay = 0.35f;
+constexpr float GEditorShortcutRepeatInterval = 0.08f;
+
 }
 
 void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, UEditorEngine* InEditorEngine)
@@ -294,6 +297,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 	RenderFooterOverlay(DeltaTime);
 
 	AssetEditorManager.Render(DeltaTime);
+	UIEditorWidget.Render(DeltaTime);
 
 	// 토스트 알림 (항상 최상위에 표시)
 	FNotificationToast::Render();
@@ -446,7 +450,12 @@ void FEditorMainPanel::RenderShortcutOverlay()
 	ImGui::TextUnformatted("Ctrl+O : Open Scene");
 	ImGui::TextUnformatted("Ctrl+S : Save Scene");
 	ImGui::TextUnformatted("Ctrl+Shift+S : Save Scene As");
+	ImGui::TextUnformatted("Ctrl+A : Select All Actors");
+	ImGui::TextUnformatted("Ctrl+D : Duplicate Selected Actors");
+	ImGui::TextUnformatted("Ctrl+Z : Undo");
+	ImGui::TextUnformatted("Ctrl+Y / Ctrl+Shift+Z : Redo");
 	ImGui::Separator();
+	ImGui::TextUnformatted("Delete : Delete Selected Actor / Component");
 	ImGui::TextUnformatted("` : Focus console input / open console drawer");
 	ImGui::TextUnformatted("F : Focus on selection");
 	ImGui::TextUnformatted("Ctrl + LMB : Multi Picking (Toggle)");
@@ -896,9 +905,9 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
 	ImGui::PopStyleVar(2);
 }
 
-void FEditorMainPanel::Update()
+void FEditorMainPanel::Update(float DeltaTime)
 {
-	HandleGlobalShortcuts();
+	HandleGlobalShortcuts(DeltaTime);
 	ProcessPendingDebugActions();
 
 	ImGuiIO& IO = ImGui::GetIO();
@@ -973,37 +982,88 @@ void FEditorMainPanel::ProcessPendingDebugActions()
 	FEditorConsoleWidget::AddLog("Grid cleared: %d actors\n", DestroyedCount);
 }
 
-void FEditorMainPanel::HandleGlobalShortcuts()
+void FEditorMainPanel::HandleGlobalShortcuts(float DeltaTime)
 {
 	if (!EditorEngine)
 	{
+		ResetGlobalShortcutRepeat();
 		return;
 	}
 	if (EditorEngine->IsPIEPossessedMode())
 	{
+		ResetGlobalShortcutRepeat();
 		return;
 	}
 
 	ImGuiIO& IO = ImGui::GetIO();
 	if (IO.WantTextInput)
 	{
+		ResetGlobalShortcutRepeat();
 		return;
 	}
 
 	InputSystem& Input = InputSystem::Get();
+	if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown(VK_DELETE))
+	{
+		// Delete는 전역 단축키로 처리해 마우스가 UI 패널 위에 있어도 선택 대상 삭제가 동작하게 합니다.
+		PropertyWidget.FlushPendingDetailsUndoTransaction();
+		if (!PropertyWidget.DeleteSelectedComponentWithUndo())
+		{
+			EditorEngine->DeleteSelectedActorsWithUndo();
+		}
+		ResetGlobalShortcutRepeat();
+		return;
+	}
+
 	if (!Input.GetKey(VK_CONTROL))
 	{
+		ResetGlobalShortcutRepeat();
 		return;
 	}
 
 	const bool bShift = Input.GetKey(VK_SHIFT);
-	if (Input.GetKeyDown('N'))
+	if (!EditorEngine->IsPlayingInEditor() && ConsumeGlobalShortcutPressOrRepeat('Z', DeltaTime))
+	{
+		// Details 패널에서 막 끝난 속성 변경이 있으면 undo 실행 전에 먼저 stack에 확정합니다.
+		PropertyWidget.FlushPendingDetailsUndoTransaction();
+		if (bShift)
+		{
+			EditorEngine->Redo();
+		}
+		else
+		{
+			EditorEngine->Undo();
+		}
+	}
+	else if (!EditorEngine->IsPlayingInEditor() && ConsumeGlobalShortcutPressOrRepeat('Y', DeltaTime))
+	{
+		// Ctrl+Y도 같은 전역 경로에서 처리해 viewport focus 여부와 무관하게 동작하게 합니다.
+		PropertyWidget.FlushPendingDetailsUndoTransaction();
+		EditorEngine->Redo();
+	}
+	else if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown('D'))
+	{
+		// 복제도 전역 단축키에서 처리해 마우스가 UI 패널 위에 있어도 동작하게 합니다.
+		PropertyWidget.FlushPendingDetailsUndoTransaction();
+		EditorEngine->DuplicateSelectedActorsWithUndo();
+		ResetGlobalShortcutRepeat();
+	}
+	else if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown('A'))
+	{
+		// Details 패널 편집 직후의 pending undo를 먼저 확정한 뒤 선택 상태를 교체합니다.
+		PropertyWidget.FlushPendingDetailsUndoTransaction();
+		EditorEngine->GetSelectionManager().SelectAllActors();
+		ResetGlobalShortcutRepeat();
+	}
+	else if (Input.GetKeyDown('N'))
 	{
 		EditorEngine->NewScene();
+		ResetGlobalShortcutRepeat();
 	}
 	else if (Input.GetKeyDown('O'))
 	{
 		EditorEngine->LoadSceneWithDialog();
+		ResetGlobalShortcutRepeat();
 	}
 	else if (Input.GetKeyDown('S'))
 	{
@@ -1015,7 +1075,57 @@ void FEditorMainPanel::HandleGlobalShortcuts()
 		{
 			EditorEngine->SaveScene();
 		}
+		ResetGlobalShortcutRepeat();
 	}
+}
+
+bool FEditorMainPanel::ConsumeGlobalShortcutPressOrRepeat(int32 KeyCode, float DeltaTime)
+{
+	InputSystem& Input = InputSystem::Get();
+	if (Input.GetKeyDown(KeyCode))
+	{
+		// 최초 key down 프레임은 즉시 실행하고 이후 반복 입력 타이머를 준비합니다.
+		RepeatingShortcutKey = KeyCode;
+		RepeatingShortcutElapsed = 0.0f;
+		RepeatingShortcutNextFireTime = GEditorShortcutRepeatInitialDelay;
+		return true;
+	}
+
+	if (!Input.GetKey(KeyCode))
+	{
+		if (RepeatingShortcutKey == KeyCode)
+		{
+			ResetGlobalShortcutRepeat();
+		}
+		return false;
+	}
+
+	if (RepeatingShortcutKey != KeyCode)
+	{
+		// key down edge 없이 이미 눌린 키는 반복 입력으로 시작하지 않습니다.
+		return false;
+	}
+
+	// 최초 지연 후 일정 간격으로 반복 실행합니다.
+	RepeatingShortcutElapsed += DeltaTime;
+	if (RepeatingShortcutElapsed < RepeatingShortcutNextFireTime)
+	{
+		return false;
+	}
+
+	do
+	{
+		RepeatingShortcutNextFireTime += GEditorShortcutRepeatInterval;
+	} while (RepeatingShortcutElapsed >= RepeatingShortcutNextFireTime);
+
+	return true;
+}
+
+void FEditorMainPanel::ResetGlobalShortcutRepeat()
+{
+	RepeatingShortcutKey = 0;
+	RepeatingShortcutElapsed = 0.0f;
+	RepeatingShortcutNextFireTime = 0.0f;
 }
 
 void FEditorMainPanel::HideEditorWindows()
@@ -1073,4 +1183,9 @@ void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
 void FEditorMainPanel::OpenAssetEditorForObject(UObject* Object)
 {
 	AssetEditorManager.OpenEditorForObject(Object);
+}
+
+void FEditorMainPanel::OpenUIEditor(const std::filesystem::path& Path)
+{
+	UIEditorWidget.Open(Path);
 }

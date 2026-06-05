@@ -31,6 +31,7 @@
 #include "Lua/LuaScriptManager.h"
 #include "Object/GarbageCollector.h"
 #include "Object/Object.h"
+#include "Editor/Undo/EditorUndoCommand.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -84,6 +85,106 @@ FGCObjectStats GatherGCObjectStats()
 	}
 
 	return Stats;
+}
+
+/**
+ * @brief 지정한 actor 이름이 월드 안에서 이미 사용 중인지 확인합니다.
+ */
+bool IsActorNameInUse(UWorld* World, const FString& CandidateName)
+{
+	if (!World)
+	{
+		return false;
+	}
+
+	const FName CandidateFName(CandidateName);
+	for (AActor* Actor : World->GetActors())
+	{
+		if (Actor && Actor->GetFName() == CandidateFName)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * @brief 문자 하나가 10진 숫자인지 확인합니다.
+ */
+bool IsDecimalDigit(char Character)
+{
+	return Character >= '0' && Character <= '9';
+}
+
+/**
+ * @brief 이름 끝의 _숫자 suffix를 base name과 다음 번호로 분리합니다.
+ */
+bool TryParseTrailingNumericSuffix(const FString& Name, FString& OutBaseName, int32& OutNextIndex)
+{
+	const FString::size_type UnderscorePos = Name.find_last_of('_');
+	if (UnderscorePos == FString::npos || UnderscorePos == 0 || UnderscorePos + 1 >= Name.size())
+	{
+		return false;
+	}
+
+	int32 ParsedIndex = 0;
+	for (FString::size_type Index = UnderscorePos + 1; Index < Name.size(); ++Index)
+	{
+		const char Character = Name[Index];
+		if (!IsDecimalDigit(Character))
+		{
+			return false;
+		}
+
+		// 비정상적으로 긴 suffix는 숫자 suffix로 취급하지 않아 overflow를 피합니다.
+		if (ParsedIndex > 214748364)
+		{
+			return false;
+		}
+		ParsedIndex = ParsedIndex * 10 + static_cast<int32>(Character - '0');
+	}
+
+	OutBaseName = Name.substr(0, UnderscorePos);
+	OutNextIndex = ParsedIndex + 1;
+	if (OutNextIndex < 1)
+	{
+		OutNextIndex = 1;
+	}
+	return true;
+}
+
+/**
+ * @brief 복제 actor에 사용할 Unity 스타일 고유 이름을 생성합니다.
+ */
+FString MakeUniqueDuplicateActorName(UWorld* World, const AActor* SourceActor)
+{
+	FString BaseName = SourceActor ? SourceActor->GetFName().ToString() : FString();
+	if (BaseName.empty() && SourceActor)
+	{
+		BaseName = SourceActor->GetClass()->GetName();
+	}
+	if (BaseName.empty())
+	{
+		BaseName = "Actor";
+	}
+
+	int32 Suffix = 1;
+	FString ParsedBaseName;
+	int32 ParsedNextIndex = 1;
+	if (TryParseTrailingNumericSuffix(BaseName, ParsedBaseName, ParsedNextIndex))
+	{
+		// Unity 스타일로 기존 _숫자 suffix는 누적하지 않고 같은 base의 다음 번호를 사용합니다.
+		BaseName = ParsedBaseName;
+		Suffix = ParsedNextIndex;
+	}
+
+	FString Candidate = BaseName + "_" + std::to_string(Suffix++);
+	while (IsActorNameInUse(World, Candidate))
+	{
+		Candidate = BaseName + "_" + std::to_string(Suffix++);
+	}
+	return Candidate;
 }
 }
 
@@ -194,7 +295,7 @@ void UEditorEngine::Tick(float DeltaTime)
 	FDirectoryWatcher::Get().ProcessChanges();
 	FNotificationManager::Get().Tick(DeltaTime);
 	InputSystem::Get().Tick();
-	MainPanel.Update();
+	MainPanel.Update(DeltaTime);
 	InputSystem::Get().RefreshSnapshot();
 
 	FSlateApplication::Get().UpdateInputOwner();
@@ -322,6 +423,131 @@ void UEditorEngine::ApplyTransformSettingsToGizmo()
 		Settings.bEnableScaleSnap, Settings.ScaleSnapSize);
 }
 
+bool UEditorEngine::Undo()
+{
+	if (IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	return UndoManager.Undo(this);
+}
+
+bool UEditorEngine::Redo()
+{
+	if (IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	return UndoManager.Redo(this);
+}
+
+void UEditorEngine::PushExecutedUndoCommand(std::unique_ptr<IEditorUndoCommand> Command)
+{
+	if (IsPlayingInEditor() || UndoManager.IsApplying())
+	{
+		return;
+	}
+
+	UndoManager.PushExecutedCommand(std::move(Command));
+}
+
+int32 UEditorEngine::DeleteSelectedActorsWithUndo()
+{
+	if (IsPlayingInEditor() || SelectionManager.IsEmpty())
+	{
+		return 0;
+	}
+
+	// 삭제 전 actor snapshot과 selection snapshot을 먼저 기록해야 즉시 destroy 이후에도 복원할 수 있습니다.
+	const TArray<AActor*> ActorsToDelete = SelectionManager.GetSelectedActors();
+	const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&SelectionManager);
+	const FEditorSelectionSnapshot SelectionAfter;
+	std::unique_ptr<IEditorUndoCommand> Command = MakeActorDeleteUndoCommand(
+		ActorsToDelete,
+		SelectionBefore,
+		SelectionAfter,
+		"Delete Actors");
+
+	const int32 DeletedCount = SelectionManager.DeleteSelectedActors();
+	if (DeletedCount > 0)
+	{
+		PushExecutedUndoCommand(std::move(Command));
+		InvalidateOcclusionResults();
+	}
+
+	return DeletedCount;
+}
+
+int32 UEditorEngine::DuplicateSelectedActorsWithUndo()
+{
+	if (IsPlayingInEditor() || SelectionManager.IsEmpty())
+	{
+		return 0;
+	}
+
+	const TArray<AActor*> ToDuplicate = SelectionManager.GetSelectedActors();
+	if (ToDuplicate.empty())
+	{
+		return 0;
+	}
+
+	const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&SelectionManager);
+	const FVector DuplicateOffsetStep(0.1f, 0.1f, 0.1f);
+	TArray<AActor*> NewSelection;
+	int32 DuplicateIndex = 0;
+	for (AActor* Src : ToDuplicate)
+	{
+		if (!Src)
+		{
+			continue;
+		}
+
+		UWorld* SourceWorld = Src->GetWorld();
+		const FString DuplicateName = MakeUniqueDuplicateActorName(SourceWorld, Src);
+		AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
+		if (!Dup)
+		{
+			continue;
+		}
+
+		// 복제 직후 고유 이름과 약간의 위치 offset을 부여해 원본과 겹치지 않게 합니다.
+		Dup->SetFName(FName(DuplicateName));
+		Dup->AddActorWorldOffset(DuplicateOffsetStep * static_cast<float>(DuplicateIndex + 1));
+		NewSelection.push_back(Dup);
+		++DuplicateIndex;
+	}
+
+	if (NewSelection.empty())
+	{
+		return 0;
+	}
+
+	SelectionManager.ClearSelection();
+	for (AActor* Actor : NewSelection)
+	{
+		SelectionManager.ToggleSelect(Actor);
+	}
+	if (UGizmoComponent* Gizmo = GetGizmo())
+	{
+		Gizmo->UpdateGizmoTransform();
+	}
+
+	PushExecutedUndoCommand(MakeActorCreateUndoCommand(
+		NewSelection,
+		SelectionBefore,
+		CaptureEditorSelection(&SelectionManager),
+		"Duplicate Actors"));
+
+	return static_cast<int32>(NewSelection.size());
+}
+
+void UEditorEngine::ClearUndoHistory()
+{
+	UndoManager.Clear();
+}
+
 // ─── PIE (Play In Editor) ────────────────────────────────
 // UE 패턴 요약: Request는 단일 슬롯(std::optional)에 저장만 하고 즉시 실행하지 않는다.
 // 실제 StartPIE는 다음 Tick 선두의 StartQueuedPlaySessionRequest에서 일어난다.
@@ -352,6 +578,17 @@ void UEditorEngine::RequestTransitionToScene(const FString& /*InScenePath*/)
 	// PIE 중이면 세션 종료(에디터 복귀)로 매핑. PIE 가 아닌 상태(에디터 직접)에서 호출되면
 	// 아무 의미 없으므로 no-op.
 	RequestEndPlayMap();
+}
+
+void UEditorEngine::RequestExit()
+{
+	if (IsPlayingInEditor())
+	{
+		RequestEndPlayMap();
+		return;
+	}
+
+	UEngine::RequestExit();
 }
 
 void UEditorEngine::StartQueuedPlaySessionRequest()
@@ -683,6 +920,7 @@ void UEditorEngine::LoadStartLevel()
 void UEditorEngine::ClearScene()
 {
 	StopPlayInEditorImmediate();
+	ClearUndoHistory();
 	ViewportLayout.StopAllPiloting(false);
 	SelectionManager.ClearSelection();
 	SelectionManager.SetWorld(nullptr);
