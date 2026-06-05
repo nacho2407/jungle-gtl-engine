@@ -139,6 +139,7 @@ protected:
 	bool  TryStartWallRun();
 	void  StartWallRun(const FHitResult& WallHit, bool bRightSide);
 	void  EndWallRun();
+	void  PerformWallJump();
 	FVector ComputeWallRunDirection(const FVector& WallNormal) const;
 
 	enum class EWallRunStatus : uint8
@@ -180,6 +181,11 @@ protected:
 	FVector       WallRunDirection  = FVector::ZeroVector;
 	float         WallRunElapsedTime = 0.0f;
 	bool          bWallRunOnRightSide = false;
+
+	// Wall-jump 직후 같은 벽에 즉시 재부착되는 핑퐁을 막기 위한 상태.
+	// Timer 가 양수인 동안 normal 이 LastWallJumpNormal 과 가까운 벽 후보는 TryStartWallRun 에서 거절.
+	FVector       LastWallJumpNormal = FVector::ZeroVector;
+	float         WallJumpReattachTimer = 0.0f;
 
 	EWallRunStatus LastWallRunStatus = EWallRunStatus::NotFalling;
 	FHitResult     LastWallRunStatusHit;
@@ -234,6 +240,19 @@ public:
 	float JumpZVelocity = 7.5f;     // m/s — Jump 시 Velocity.Z 에 박는 값. (~2.87m apex with g=9.8)
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Jump Count", Min = 1, Max = 5, Speed = 1)
 	int32 MaxJumpCount = 2;         // 지상 점프 1회 + 공중 점프 (MaxJumpCount - 1) 회.
+	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Falling Slide Speed", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
+	float MaxFallingSlideSpeed = 4.0f;  // m/s — Falling 중 걸을 수 없는 슬로프에 닿아 있을 때 Z 속도 누적 상한.
+
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Out Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
+	float WallJumpOutVelocity = 8.0f;     // m/s — 벽 normal 방향 푸시.
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Up Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
+	float WallJumpUpVelocity = 6.0f;      // m/s — 위쪽 임펄스.
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Forward Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
+	float WallJumpForwardVelocity = 3.0f; // m/s — 벽 진행 방향 보너스 (모멘텀 보존).
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Reattach Cooldown", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
+	float WallJumpReattachCooldown = 0.25f; // s — 같은 벽 즉시 재진입 방지.
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Reattach Normal Dot", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
+	float WallJumpReattachNormalDot = 0.9f; // 마지막 wall-jump normal 과 |dot| 이 이 값 이상이면 "같은 벽" 으로 보고 쿨다운 동안 거절.
 
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Orient Rotation To Movement")
 	bool  bOrientRotationToMovement = true;

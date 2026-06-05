@@ -844,12 +844,17 @@ void UCharacterMovementComponent::DrawWallRunDistanceDebug() const
 void UCharacterMovementComponent::Jump()
 {
 	// Walking: 항상 1회. Falling: JumpsRemaining 이 남아 있을 때만 (더블/멀티 점프).
+	// WallRunning: 항상 1회 — TickWallRunning 가 wall-jump 임펄스로 변환해 소비.
 	// edge-triggered — bWantsJump 만 set, 실제 적용은 Tick 분기에서 consume.
 	if (MovementMode == EMovementMode::Walking)
 	{
 		bWantsJump = true;
 	}
 	else if (MovementMode == EMovementMode::Falling && JumpsRemaining > 0)
+	{
+		bWantsJump = true;
+	}
+	else if (MovementMode == EMovementMode::WallRunning)
 	{
 		bWantsJump = true;
 	}
@@ -870,6 +875,16 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	if (DeltaTime <= 0.0f) return;
 
 	++WallRunDiagnosticsFrameCounter;
+
+	// Wall-jump 재진입 쿨다운 타이머 감쇠. 0 이하가 되면 TryStartWallRun 의 게이트는 자동 통과.
+	if (WallJumpReattachTimer > 0.0f)
+	{
+		WallJumpReattachTimer = std::max(0.0f, WallJumpReattachTimer - DeltaTime);
+		if (WallJumpReattachTimer <= 0.0f)
+		{
+			LastWallJumpNormal = FVector::ZeroVector;
+		}
+	}
 
 	if (!EnsureController())
 	{
@@ -1139,6 +1154,16 @@ void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& Ro
 		// 착지 — 점프 카운트 완전 회복.
 		JumpsRemaining = MaxJumpCount;
 		SetMovementMode(EMovementMode::Walking);
+	}
+	else if (Result.bHitDown && !bHasWalkableFloor)
+	{
+		// 아래쪽 접촉은 있지만 걸을 수 없는 면 (가파른 슬로프) — PhysX 가 물리적으론 막아주는데
+		// 우리가 추적하는 Velocity.Z 는 매 frame -g*dt 가 무한 누적되어 Speed 폭주 + 비현실적인
+		// 슬라이드 가속을 유발. 슬라이드 터미널 속도로 clamp 해서 안정화.
+		if (Velocity.Z < -MaxFallingSlideSpeed)
+		{
+			Velocity.Z = -MaxFallingSlideSpeed;
+		}
 	}
 }
 
@@ -1621,10 +1646,17 @@ bool UCharacterMovementComponent::IsRunnableWall(const FVector& WallNormal) cons
 	if (WallNormal.IsNearlyZero()) return false;
 
 	const FVector Normal = WallNormal.Normalized();
-	const float UpDot = Normal.Dot(FVector::UpVector);
+	const float AbsUpDot = std::fabs(Normal.Dot(FVector::UpVector));
 
-	// 벽타기는 거의 수직인 면만 허용 — 바닥/경사/천장 오작동 방지.
-	return std::fabs(UpDot) <= RunnableWallUpDot;
+	// 1차: 명시 threshold — 거의 수직 면. 보통 RunnableWallUpDot 가 작게 잡혀 있어
+	//      45°~78° 사이의 "가파르지만 완전 수직은 아닌" 슬로프는 여기서 잘려나간다.
+	if (AbsUpDot <= RunnableWallUpDot) return true;
+
+	// 2차: walkable 의 여집합. WalkableSlopeAngle 보다 가파른 면은 PhysX 가 floor 로 안 잡고
+	//      Falling 이 유지되므로, 같은 면을 wall-run 후보로 받아주지 않으면 "걷지도 못하고
+	//      벽타기도 안 되는" 사각지대가 생긴다. 천장 (UpDot < 0) 까지 같은 식으로 메운다.
+	const float WalkableLimit = std::cos(WalkableSlopeAngle * FMath::DegToRad);
+	return AbsUpDot < WalkableLimit;
 }
 
 FVector UCharacterMovementComponent::ComputeWallRunDirection(const FVector& WallNormal) const
@@ -1679,6 +1711,18 @@ bool UCharacterMovementComponent::TryStartWallRun()
 	{
 		SetWallRunStatus(EWallRunStatus::BadNormal, &WallHit);
 		return false;
+	}
+
+	// Wall-jump 쿨다운 동안 같은 normal 의 벽 후보는 거절 — 핑퐁 방지.
+	// 반대편 벽 (normal 반대) 은 dot 가 음수라 |dot| 비교로 부호 무시.
+	if (WallJumpReattachTimer > 0.0f && !LastWallJumpNormal.IsNearlyZero())
+	{
+		const FVector CurrentNormal = WallNormal.Normalized();
+		if (std::fabs(CurrentNormal.Dot(LastWallJumpNormal)) >= WallJumpReattachNormalDot)
+		{
+			SetWallRunStatus(EWallRunStatus::BadNormal, &WallHit);
+			return false;
+		}
 	}
 
 	const FVector RunDirection = ComputeWallRunDirection(WallNormal);
@@ -1769,9 +1813,54 @@ void UCharacterMovementComponent::EndWallRun()
 	}
 }
 
+void UCharacterMovementComponent::PerformWallJump()
+{
+	// 현재 wall-run 의 normal/direction 을 임펄스 기준으로 사용 — EndWallRun 이 비우기 전에 캐싱.
+	const FVector JumpNormal    = !WallRunNormal.IsNearlyZero()    ? WallRunNormal.Normalized()    : FVector::UpVector;
+	const FVector JumpDirection = !WallRunDirection.IsNearlyZero() ? WallRunDirection.Normalized() : FVector::ZeroVector;
+
+	// 세 성분 합성: 벽에서 밀려나기 + 위 + 진행 방향 보너스.
+	const FVector NewVelocity =
+		JumpNormal    * WallJumpOutVelocity +
+		FVector::UpVector * WallJumpUpVelocity +
+		JumpDirection * WallJumpForwardVelocity;
+
+	Velocity = NewVelocity;
+
+	// 같은 벽 즉시 재진입 방지용 상태 기록.
+	LastWallJumpNormal      = JumpNormal;
+	WallJumpReattachTimer   = WallJumpReattachCooldown;
+
+	// 에어 점프 카운트 리필 — wall-jump 후에도 더블점프 1회 더 가능 (TF2 콤보 느낌).
+	JumpsRemaining = std::max(JumpsRemaining, MaxJumpCount - 1);
+
+	if (bLogWallRunDiagnostics && ShouldEmitWallRunDiagnostics())
+	{
+		UE_LOG(
+			"[WallJump] outV=%.2f upV=%.2f fwdV=%.2f normal=(%.2f,%.2f,%.2f) dir=(%.2f,%.2f,%.2f) jumpsRemaining=%d",
+			WallJumpOutVelocity,
+			WallJumpUpVelocity,
+			WallJumpForwardVelocity,
+			JumpNormal.X, JumpNormal.Y, JumpNormal.Z,
+			JumpDirection.X, JumpDirection.Y, JumpDirection.Z,
+			JumpsRemaining);
+	}
+
+	EndWallRun();
+}
+
 void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector& RootMotionWorldXY, const FVector& Input)
 {
 	WallRunElapsedTime += DeltaTime;
+
+	// 점프 의도가 있으면 wall-jump 임펄스로 변환하고 즉시 Falling 으로 — 이번 frame 의
+	// gravity/벽 sweep 은 건너뛴다. 같은 frame 안 mode 전환이므로 다음 frame TickFalling 이 받음.
+	if (bWantsJump)
+	{
+		bWantsJump = false;
+		PerformWallJump();
+		return;
+	}
 
 	if (MaxWallRunTime > 0.0f && WallRunElapsedTime > MaxWallRunTime)
 	{
@@ -1903,6 +1992,12 @@ void UCharacterMovementComponent::Serialize(FArchive& Ar)
 	Ar << FloorProbeDistance;
 	Ar << JumpZVelocity;
 	Ar << MaxJumpCount;
+	Ar << MaxFallingSlideSpeed;
+	Ar << WallJumpOutVelocity;
+	Ar << WallJumpUpVelocity;
+	Ar << WallJumpForwardVelocity;
+	Ar << WallJumpReattachCooldown;
+	Ar << WallJumpReattachNormalDot;
 	Ar << bOrientRotationToMovement;
 	Ar << RotationYawRate;
 	Ar << ControllerContactOffset;
