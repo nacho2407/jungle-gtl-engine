@@ -3,6 +3,7 @@
 #include "Component/Camera/CameraComponent.h"
 #include "Engine/Input/InputSystem.h"
 #include "Math/MathUtils.h"
+#include "Runtime/Engine.h"
 #include "UI/UIManager.h"
 #include "Core/Logging/Log.h"
 
@@ -66,6 +67,34 @@ void UGameViewportClient::ProcessInput(const FInputSystemSnapshot& Snapshot, flo
 	SetCursorCaptured(true);
 }
 
+FInputSystemSnapshot UGameViewportClient::MakePossessedInputSnapshot() const
+{
+	const FInputSystemSnapshot Snapshot = InputSystem::Get().MakeSnapshot();
+
+	// 게임 입력 possession이 풀렸거나 윈도우 포커스가 없으면 gameplay 소비자에게 빈 입력을 제공.
+	if (!bInputPossessed || !Snapshot.bWindowFocused)
+	{
+		return FInputSystemSnapshot{};
+	}
+
+	return Snapshot;
+}
+
+FInputSystemSnapshot UGameViewportClient::MakeCurrentGameInputSnapshot()
+{
+	// PIE/Standalone처럼 GameViewportClient가 존재하는 경우는 항상 possession 정책을 따른다.
+	if (GEngine)
+	{
+		if (UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient())
+		{
+			return GameViewportClient->MakePossessedInputSnapshot();
+		}
+	}
+
+	// 에디터 preview 등 게임 viewport가 없는 경로는 기존 전역 입력 동작을 유지한다.
+	return InputSystem::Get().MakeSnapshot();
+}
+
 void UGameViewportClient::SetInputPossessed(bool bPossessed)
 {
 	if (bInputPossessed == bPossessed)
@@ -84,6 +113,8 @@ void UGameViewportClient::SetInputPossessed(bool bPossessed)
 	if (!bPossessed)
 	{
 		ClearGameInputSnapshot();
+		InputSystem::Get().SetUseRawMouse(false);
+		SetCursorCaptured(false);
 	}
 }
 
