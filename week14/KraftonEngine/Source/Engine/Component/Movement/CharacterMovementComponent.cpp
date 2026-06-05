@@ -34,6 +34,8 @@
 
 namespace
 {
+	constexpr float MinWallRunInputAlong = 0.1f;
+
 	FBoundingBox ExpandBounds(const FBoundingBox& Bounds, float Amount)
 	{
 		if (!Bounds.IsValid() || Amount <= 0.0f)
@@ -655,6 +657,42 @@ void UCharacterMovementComponent::LogWallRunStatus(EWallRunStatus Status, const 
 		ComponentName.c_str());
 }
 
+FWallRunDebugSnapshot UCharacterMovementComponent::GetWallRunDebugSnapshot() const
+{
+	FWallRunDebugSnapshot Snapshot;
+	const FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
+	const bool bHasHit = bLastWallRunStatusHasHit && LastWallRunStatusHit.bHit;
+	const FVector Normal = bHasHit ? GetHitNormal(LastWallRunStatusHit) : FVector::ZeroVector;
+	const float UpDot = Normal.IsNearlyZero() ? 0.0f : Normal.Normalized().Dot(FVector::UpVector);
+
+	Snapshot.MovementModeName = GetMovementModeName();
+	Snapshot.StatusName = GetWallRunStatusName(LastWallRunStatus);
+	Snapshot.Velocity = Velocity;
+	Snapshot.WallNormal = WallRunNormal;
+	Snapshot.WallDirection = WallRunDirection;
+	Snapshot.HitNormal = Normal;
+	Snapshot.Speed = Velocity.Length();
+	Snapshot.PlanarSpeed = PlanarVelocity.Length();
+	Snapshot.AlongWallSpeed = bHasHit ? GetWallRunAlongSpeed(Normal) : 0.0f;
+	Snapshot.MinStartSpeed = MinWallRunStartSpeed;
+	Snapshot.WallCheckDistance = WallCheckDistance;
+	Snapshot.WallCheckSphereRadius = WallCheckSphereRadius;
+	Snapshot.WallRunElapsedTime = WallRunElapsedTime;
+	Snapshot.MaxWallRunTime = MaxWallRunTime;
+	Snapshot.HitDistance = HitDistanceOrMiss(bHasHit, LastWallRunStatusHit);
+	Snapshot.HitUpDot = UpDot;
+	Snapshot.bWallRunEnabled = bEnableWallRun;
+	Snapshot.bIsWallRunning = MovementMode == EMovementMode::WallRunning;
+	Snapshot.bHasHit = bHasHit;
+	Snapshot.bOnRightSide = bWallRunOnRightSide;
+	Snapshot.bDrawDistanceDebug = bDrawWallRunDistanceDebug;
+	Snapshot.bLogDiagnostics = bLogWallRunDiagnostics;
+	Snapshot.bLegacyScreenText = bShowWallRunStatusText;
+	Snapshot.HitActorName = GetHitActorName(LastWallRunStatusHit);
+	Snapshot.HitComponentName = GetHitComponentName(LastWallRunStatusHit);
+	return Snapshot;
+}
+
 void UCharacterMovementComponent::DrawWallRunStatusText() const
 {
 	if (!bShowWallRunStatusText)
@@ -668,43 +706,33 @@ void UCharacterMovementComponent::DrawWallRunStatusText() const
 		return;
 	}
 
-	const FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
-	const float PlanarSpeed = PlanarVelocity.Length();
-	const bool bHasHit = bLastWallRunStatusHasHit && LastWallRunStatusHit.bHit;
-	const FVector Normal = bHasHit ? GetHitNormal(LastWallRunStatusHit) : FVector::ZeroVector;
-	const float UpDot = Normal.IsNearlyZero() ? 0.0f : Normal.Normalized().Dot(FVector::UpVector);
-	const float AlongWallSpeed = bHasHit ? GetWallRunAlongSpeed(Normal) : 0.0f;
-	const FString ActorName = GetHitActorName(LastWallRunStatusHit);
+	const FWallRunDebugSnapshot Snapshot = GetWallRunDebugSnapshot();
 
 	char Line0[160];
-	std::snprintf(
-		Line0,
-		sizeof(Line0),
-		"WALLRUN: %s",
-		GetWallRunStatusName(LastWallRunStatus));
+	std::snprintf(Line0, sizeof(Line0), "WALLRUN: %s", Snapshot.StatusName);
 
 	char Line1[256];
 	std::snprintf(
 		Line1,
 		sizeof(Line1),
 		"mode=%s speed=%.2f along=%.2f/%.2f check=%.2f radius=%.2f side=%s",
-		GetMovementModeName(),
-		PlanarSpeed,
-		AlongWallSpeed,
-		MinWallRunStartSpeed,
-		WallCheckDistance,
-		WallCheckSphereRadius,
-		bWallRunOnRightSide ? "R" : "L");
+		Snapshot.MovementModeName,
+		Snapshot.PlanarSpeed,
+		Snapshot.AlongWallSpeed,
+		Snapshot.MinStartSpeed,
+		Snapshot.WallCheckDistance,
+		Snapshot.WallCheckSphereRadius,
+		Snapshot.bOnRightSide ? "R" : "L");
 
 	char Line2[256];
 	std::snprintf(
 		Line2,
 		sizeof(Line2),
 		"hit=%s dist=%.2f upDot=%.2f actor=%s",
-		BoolText(bHasHit),
-		HitDistanceOrMiss(bHasHit, LastWallRunStatusHit),
-		UpDot,
-		ActorName.c_str());
+		BoolText(Snapshot.bHasHit),
+		Snapshot.HitDistance,
+		Snapshot.HitUpDot,
+		Snapshot.HitActorName.c_str());
 
 	FScene& Scene = World->GetScene();
 	Scene.AddOverlayText(FString(Line0), FVector2(24.0f, 78.0f), 0.90f);
@@ -756,6 +784,20 @@ float UCharacterMovementComponent::GetWallRunAlongSpeed(const FVector& WallNorma
 	}
 
 	return std::fabs(PlanarVelocity.Dot(RunDirection));
+}
+
+float UCharacterMovementComponent::GetWallRunInputAlong(const FVector& Input, const FVector& RunDirection) const
+{
+	FVector PlanarInput(Input.X, Input.Y, 0.0f);
+	FVector PlanarRunDirection(RunDirection.X, RunDirection.Y, 0.0f);
+	if (PlanarInput.IsNearlyZero() || PlanarRunDirection.IsNearlyZero())
+	{
+		return 0.0f;
+	}
+
+	PlanarInput.Normalize();
+	PlanarRunDirection.Normalize();
+	return PlanarInput.Dot(PlanarRunDirection);
 }
 
 void UCharacterMovementComponent::DrawWallRunDistanceDebug() const
@@ -891,7 +933,7 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	}
 	else if (MovementMode == EMovementMode::WallRunning)
 	{
-		TickWallRunning(DeltaTime, RootMotionWorldXY);
+		TickWallRunning(DeltaTime, RootMotionWorldXY, Input);
 	}
 	else
 	{
@@ -966,6 +1008,12 @@ void UCharacterMovementComponent::PhysOrientToMovement(float DeltaTime)
 
 void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, float DeltaTime)
 {
+	if (MovementMode == EMovementMode::WallRunning)
+	{
+		// WallRunning input은 벽 접선 방향으로 투영해서 TickWallRunning 에서만 처리한다.
+		return;
+	}
+
 	const float InputLen = Input.Length();
 	if (InputLen > 0.0f)
 	{
@@ -989,12 +1037,6 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 	}
 
 	// MaxWalkSpeed 클램프 (평면 속도만).
-	// WallRunning 은 자체 속도 보상/상한을 TickWallRunning 에서 처리하므로 걷기 상한으로 자르지 않는다.
-	if (MovementMode == EMovementMode::WallRunning)
-	{
-		return;
-	}
-
 	FVector V2D(Velocity.X, Velocity.Y, 0.0f);
 	const float Speed2D = V2D.Length();
 	if (Speed2D > MaxWalkSpeed)
@@ -1677,7 +1719,7 @@ void UCharacterMovementComponent::StartWallRun(const FHitResult& WallHit, bool b
 
 	const FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
 	const float ExistingForwardSpeed = std::fabs(PlanarVelocity.Dot(WallRunDirection));
-	const float StartSpeed = std::max(ExistingForwardSpeed, WallRunMinSpeed);
+	const float StartSpeed = FMath::Clamp(ExistingForwardSpeed, 0.0f, WallRunMaxSpeed);
 
 	Velocity.X = WallRunDirection.X * StartSpeed;
 	Velocity.Y = WallRunDirection.Y * StartSpeed;
@@ -1705,7 +1747,7 @@ void UCharacterMovementComponent::EndWallRun()
 	}
 }
 
-void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector& RootMotionWorldXY)
+void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector& RootMotionWorldXY, const FVector& Input)
 {
 	WallRunElapsedTime += DeltaTime;
 
@@ -1750,21 +1792,52 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 		return;
 	}
 
+	float InputAlongWall = GetWallRunInputAlong(Input, WallRunDirection);
+	if (std::fabs(InputAlongWall) < MinWallRunInputAlong)
+	{
+		if (ShouldEmitWallRunDiagnostics())
+		{
+			UE_LOG(
+				"[WallRunInput] reject=NoAlongInput input=(%.2f,%.2f,%.2f) runDir=(%.2f,%.2f,%.2f) normal=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
+				Input.X,
+				Input.Y,
+				Input.Z,
+				WallRunDirection.X,
+				WallRunDirection.Y,
+				WallRunDirection.Z,
+				WallRunNormal.X,
+				WallRunNormal.Y,
+				WallRunNormal.Z,
+				WallHit.Distance,
+				GetHitActorName(WallHit).c_str(),
+				GetHitComponentName(WallHit).c_str());
+		}
+
+		SetWallRunStatus(EWallRunStatus::EndedBadDirection, &WallHit);
+		EndWallRun();
+		return;
+	}
+
+	if (InputAlongWall < 0.0f)
+	{
+		WallRunDirection = WallRunDirection * -1.0f;
+		InputAlongWall = -InputAlongWall;
+	}
+
 	SetWallRunStatus(EWallRunStatus::Active, &WallHit);
 
-	// 벽 normal 방향 성분 제거 후, 벽 접선 방향으로 속도 보상/상한 적용.
+	// 벽 normal 방향 성분 제거 후, 입력이 실린 벽 접선 방향으로만 속도를 갱신한다.
 	Velocity = Velocity - WallRunNormal * Velocity.Dot(WallRunNormal);
 
 	const FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
 	float ForwardSpeed = PlanarVelocity.Dot(WallRunDirection);
 	if (ForwardSpeed < 0.0f)
 	{
-		ForwardSpeed = PlanarVelocity.Length();
+		ForwardSpeed = 0.0f;
 	}
 
-	float NewForwardSpeed = std::max(ForwardSpeed, WallRunMinSpeed);
-	NewForwardSpeed += WallRunAcceleration * DeltaTime;
-	NewForwardSpeed = FMath::Clamp(NewForwardSpeed, WallRunMinSpeed, WallRunMaxSpeed);
+	float NewForwardSpeed = ForwardSpeed + WallRunAcceleration * InputAlongWall * DeltaTime;
+	NewForwardSpeed = FMath::Clamp(NewForwardSpeed, 0.0f, WallRunMaxSpeed);
 
 	Velocity.X = WallRunDirection.X * NewForwardSpeed;
 	Velocity.Y = WallRunDirection.Y * NewForwardSpeed;

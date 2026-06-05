@@ -39,6 +39,39 @@ struct FControllerMoveResult
 	FHitResult FloorHit;
 };
 
+struct FWallRunDebugSnapshot
+{
+	const char* MovementModeName = "";
+	const char* StatusName = "";
+
+	FVector Velocity = FVector::ZeroVector;
+	FVector WallNormal = FVector::ZeroVector;
+	FVector WallDirection = FVector::ZeroVector;
+	FVector HitNormal = FVector::ZeroVector;
+
+	float Speed = 0.0f;
+	float PlanarSpeed = 0.0f;
+	float AlongWallSpeed = 0.0f;
+	float MinStartSpeed = 0.0f;
+	float WallCheckDistance = 0.0f;
+	float WallCheckSphereRadius = 0.0f;
+	float WallRunElapsedTime = 0.0f;
+	float MaxWallRunTime = 0.0f;
+	float HitDistance = -1.0f;
+	float HitUpDot = 0.0f;
+
+	bool bWallRunEnabled = false;
+	bool bIsWallRunning = false;
+	bool bHasHit = false;
+	bool bOnRightSide = false;
+	bool bDrawDistanceDebug = false;
+	bool bLogDiagnostics = false;
+	bool bLegacyScreenText = false;
+
+	FString HitActorName;
+	FString HitComponentName;
+};
+
 UCLASS()
 class UCharacterMovementComponent : public UMovementComponent
 {
@@ -77,6 +110,7 @@ public:
 	bool           IsFalling() const { return MovementMode == EMovementMode::Falling; }
 	bool           IsWallRunning() const { return MovementMode == EMovementMode::WallRunning; }
 	const char*    GetMovementModeName() const;
+	FWallRunDebugSnapshot GetWallRunDebugSnapshot() const;
 
 	// UMovementComponent:
 	void Serialize(FArchive& Ar) override;
@@ -90,7 +124,7 @@ protected:
 	// XY 적용 단계에 합산되고 floor stick / gravity 는 mode 가 자체 결정.
 	void  TickWalking(float DeltaTime, const FVector& RootMotionWorldXY);
 	void  TickFalling(float DeltaTime, const FVector& RootMotionWorldXY);
-	void  TickWallRunning(float DeltaTime, const FVector& RootMotionWorldXY);
+	void  TickWallRunning(float DeltaTime, const FVector& RootMotionWorldXY, const FVector& Input);
 	bool  FindFloor(FHitResult& OutFloorHit) const;
 	bool  IsWalkableFloorHit(const FHitResult& Hit) const;
 
@@ -134,6 +168,7 @@ protected:
 	float       GetWallRunCapsuleRadius() const;
 	FVector     GetWallRunSweepStart(const FVector& Direction) const;
 	float       GetWallRunAlongSpeed(const FVector& WallNormal) const;
+	float       GetWallRunInputAlong(const FVector& Input, const FVector& RunDirection) const;
 
 	FVector       AccumulatedInput = FVector(0.0f, 0.0f, 0.0f);
 	FVector       Velocity         = FVector(0.0f, 0.0f, 0.0f);
@@ -209,7 +244,7 @@ public:
 	float RunnableWallUpDot = 0.2f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Min Wall Run Start Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float MinWallRunStartSpeed = 3.0f;
-	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Min Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Min Speed (Legacy)", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float WallRunMinSpeed = 5.5f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Max Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float WallRunMaxSpeed = 9.0f;
@@ -223,8 +258,8 @@ public:
 	float WallStickAcceleration = 4.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Wall Run Time", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
 	float MaxWallRunTime = 1.5f;
-	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Show Wall Run Status Text")
-	bool bShowWallRunStatusText = true;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Legacy Screen Status Text")
+	bool bShowWallRunStatusText = false;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Log Wall Run Diagnostics")
 	bool bLogWallRunDiagnostics = true;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Wall Run Diagnostics Interval", Min = 1, Max = 120, Speed = 1)

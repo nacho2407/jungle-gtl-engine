@@ -3363,7 +3363,7 @@
             "bIsActive" : true,
             "bLogWallRunDiagnostics" : true,
             "bOrientRotationToMovement" : false,
-            "bShowWallRunStatusText" : true,
+            "bShowWallRunStatusText" : false,
             "bTickEnable" : true
           }
         }, {
