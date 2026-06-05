@@ -74,10 +74,20 @@ private:
 	{
 		FString CommandName;
 		FString DisplayText;
+		FString LowerDisplayText;
+	};
+
+	struct FCompletionEntry
+	{
+		FString CommandName;
+		FString DisplayText;
+		FString LowerDisplayText;
 	};
 
 	TMap<FString, FConsoleCommand> Commands;
+	TArray<FCompletionEntry> CompletionEntries;
 	TArray<FCompletionCandidate> CompletionCandidates;
+	FString LastCompletionInput;
 
 	void RegisterCommand(const FString& Name, CommandFn Fn, const FString& Category, const FString& Usage, const FString& Description);
 	void RegisterDefaultCommands();

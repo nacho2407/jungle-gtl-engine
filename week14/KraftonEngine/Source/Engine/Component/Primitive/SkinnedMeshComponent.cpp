@@ -64,6 +64,49 @@ namespace
 			SafeScaleDivide(Numerator.Z, Denominator.Z));
 	}
 
+	inline void AccumulateAffineTransformedVector(
+		const FMatrix& M,
+		const FVector& V,
+		float Weight,
+		FVector& Out)
+	{
+		// FMatrix::TransformVector() is implemented out-of-line. CPU skinning calls it for
+		// every vertex influence, so keeping the affine multiply local avoids millions of
+		// tiny function calls in editor/game builds.
+		Out.X += (V.X * M.M[0][0] + V.Y * M.M[1][0] + V.Z * M.M[2][0]) * Weight;
+		Out.Y += (V.X * M.M[0][1] + V.Y * M.M[1][1] + V.Z * M.M[2][1]) * Weight;
+		Out.Z += (V.X * M.M[0][2] + V.Y * M.M[1][2] + V.Z * M.M[2][2]) * Weight;
+	}
+
+	inline void AccumulateAffineTransformedPosition(
+		const FMatrix& M,
+		const FVector& V,
+		float Weight,
+		FVector& Out)
+	{
+		// Skin matrices are affine matrices. The old path used TransformPositionWithW(),
+		// which checks/divides W for projection matrices. That branch is unnecessary for
+		// skeletal skinning and shows up heavily in CPU profiles.
+		Out.X += (V.X * M.M[0][0] + V.Y * M.M[1][0] + V.Z * M.M[2][0] + M.M[3][0]) * Weight;
+		Out.Y += (V.X * M.M[0][1] + V.Y * M.M[1][1] + V.Z * M.M[2][1] + M.M[3][1]) * Weight;
+		Out.Z += (V.X * M.M[0][2] + V.Y * M.M[1][2] + V.Z * M.M[2][2] + M.M[3][2]) * Weight;
+	}
+
+	inline bool NormalizeIfNotNearlyZero(FVector& V)
+	{
+		const float SizeSq = V.X * V.X + V.Y * V.Y + V.Z * V.Z;
+		if (SizeSq <= 1.0e-12f)
+		{
+			return false;
+		}
+
+		const float InvSize = 1.0f / std::sqrt(SizeSq);
+		V.X *= InvSize;
+		V.Y *= InvSize;
+		V.Z *= InvSize;
+		return true;
+	}
+
 	FMatrix GetAffineInverseForBoneEdit(const FMatrix& Matrix)
 	{
 		const double A = Matrix.M[0][0];
@@ -1029,19 +1072,37 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 	TArray<FMatrix> SkinMatrices;
 	BuildSkinMatrices(SkinMatrices);
 
+	if (SkinMatrices.empty())
+	{
+		++SkinnedRevision;
+		return;
+	}
+
+	const uint32 VertexCount = static_cast<uint32>(Asset->Vertices.size());
+	const int32 ValidBoneCount = std::min(
+		static_cast<int32>(Asset->Bones.size()),
+		static_cast<int32>(SkinMatrices.size()));
+
+	const bool bHasActiveMorph = HasActiveMorphTargets();
 	TArray<FVector> MorphedPositions;
 	TArray<FVector> MorphedNormals;
-	BuildMorphedVertexData(*Asset, MorphedPositions, MorphedNormals);
-	const bool bUseMorphedVertexData = MorphedPositions.size() == Asset->Vertices.size();
+	if (bHasActiveMorph)
+	{
+		BuildMorphedVertexData(*Asset, MorphedPositions, MorphedNormals);
+	}
+	const bool bUseMorphedVertexData =
+		MorphedPositions.size() == Asset->Vertices.size() &&
+		MorphedNormals.size() == Asset->Vertices.size();
 
 	auto SkinVertexRange = [&](uint32 VertexStart, uint32 VertexEnd)
 		{
-			VertexEnd = std::min<uint32>(VertexEnd, (uint32)Asset->Vertices.size());
+			VertexEnd = std::min<uint32>(VertexEnd, VertexCount);
 			for (uint32 i = VertexStart; i < VertexEnd; ++i)
 			{
 				const FVertexPNCTBW& Src            = Asset->Vertices[i];
 				const FVector        SourcePosition = bUseMorphedVertexData ? MorphedPositions[i] : Src.Position;
 				const FVector        SourceNormal   = bUseMorphedVertexData ? MorphedNormals[i] : Src.Normal;
+				const FVector        SourceTangent  = FVector(Src.Tangent.X, Src.Tangent.Y, Src.Tangent.Z);
 				FVertexPNCTT&        Dst            = SkinnedVertices[i];
 
 				FVector SkinnedPos = FVector::ZeroVector;
@@ -1050,20 +1111,20 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 				float AccumWeight = 0.0f;
 
 				// 현재 vertex format은 최대 4개 bone influence를 갖는다.
+				// Inner loop에서는 out-of-line FVector/FMatrix helper 호출을 피한다.
 				for (int32 k = 0; k < 4; ++k)
 				{
 					const int32 BoneIndex = Src.BoneIndices[k];
 					const float Weight = Src.BoneWeights[k];
 
 					if (Weight <= 0.0f) continue;
-					if (BoneIndex < 0 || BoneIndex >= (int32)Asset->Bones.size()) continue;
+					if (BoneIndex < 0 || BoneIndex >= ValidBoneCount) continue;
 
 					const FMatrix& M = SkinMatrices[BoneIndex];
-
-					SkinnedPos     += M.TransformPositionWithW(SourcePosition) * Weight;
-					SkinnedNormal  += M.TransformVector(SourceNormal) * Weight;
-					SkinnedTangent += M.TransformVector(FVector(Src.Tangent.X, Src.Tangent.Y, Src.Tangent.Z)) * Weight;
-					AccumWeight    += Weight;
+					AccumulateAffineTransformedPosition(M, SourcePosition, Weight, SkinnedPos);
+					AccumulateAffineTransformedVector(M, SourceNormal, Weight, SkinnedNormal);
+					AccumulateAffineTransformedVector(M, SourceTangent, Weight, SkinnedTangent);
+					AccumWeight += Weight;
 				}
 
 				if (AccumWeight <= 0.0f)
@@ -1071,22 +1132,11 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 					// weight가 없는 vertex도 사라지지 않게 bind-space 원본을 그대로 사용한다.
 					SkinnedPos     = SourcePosition;
 					SkinnedNormal  = SourceNormal;
-					SkinnedTangent = FVector(Src.Tangent.X, Src.Tangent.Y, Src.Tangent.Z);
-					if (!SkinnedNormal.IsNearlyZero())
-					{
-						SkinnedNormal.Normalize();
-					}
-				}
-				else if (!SkinnedNormal.IsNearlyZero())
-				{
-					SkinnedNormal.Normalize();
+					SkinnedTangent = SourceTangent;
 				}
 
-				if (!SkinnedTangent.IsNearlyZero())
-				{
-					SkinnedTangent.Normalize();
-				}
-				else
+				NormalizeIfNotNearlyZero(SkinnedNormal);
+				if (!NormalizeIfNotNearlyZero(SkinnedTangent))
 				{
 					// tangent가 0이면 shader 입력 안정성을 위해 기본 축을 넣는다.
 					SkinnedTangent = FVector(1.0f, 0.0f, 0.0f);
@@ -1111,7 +1161,7 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 		}
 		else
 		{
-			SkinVertexRange(0, (uint32)Asset->Vertices.size());
+			SkinVertexRange(0, VertexCount);
 		}
 		};
 
