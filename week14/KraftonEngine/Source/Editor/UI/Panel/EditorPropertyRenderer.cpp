@@ -100,6 +100,89 @@ namespace
 		return {};
 	}
 
+	/**
+	* @brief Property asset preview texture의 원본 크기를 조회합니다.
+	*/
+	bool GetTextureSizeForPropertyPreview(ID3D11ShaderResourceView* Texture, ImVec2& OutSize)
+	{
+		OutSize = ImVec2(0.0f, 0.0f);
+		if (!Texture)
+		{
+			return false;
+		}
+
+		// SRV가 참조하는 실제 texture resource 조회
+		ID3D11Resource* Resource = nullptr;
+		Texture->GetResource(&Resource);
+		if (!Resource)
+		{
+			return false;
+		}
+
+		// 2D texture인 경우에만 원본 가로/세로 크기 확인
+		ID3D11Texture2D* Texture2D = nullptr;
+		const HRESULT Result = Resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&Texture2D));
+		Resource->Release();
+
+		if (FAILED(Result) || !Texture2D)
+		{
+			return false;
+		}
+
+		D3D11_TEXTURE2D_DESC Desc {};
+		Texture2D->GetDesc(&Desc);
+		Texture2D->Release();
+
+		if (Desc.Width == 0 || Desc.Height == 0)
+		{
+			return false;
+		}
+
+		OutSize = ImVec2(static_cast<float>(Desc.Width), static_cast<float>(Desc.Height));
+		return true;
+	}
+
+	/**
+	* @brief Property asset preview texture를 지정된 slot 안에 원본 비율로 출력합니다.
+	*/
+	void DrawPropertyPreviewImageAspectFit(ID3D11ShaderResourceView* Texture, const ImVec2& SlotSize)
+	{
+		// 기존 thumbnail 클릭 동작을 유지하기 위한 고정 크기 hit area
+		ImGui::InvisibleButton("##AssetPreview", SlotSize);
+
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		if (!DrawList || !Texture)
+		{
+			return;
+		}
+
+		const ImVec2 BoundsMin = ImGui::GetItemRectMin();
+		const ImVec2 BoundsMax = ImGui::GetItemRectMax();
+		const ImVec2 BoundsSize(BoundsMax.x - BoundsMin.x, BoundsMax.y - BoundsMin.y);
+		if (BoundsSize.x <= 0.0f || BoundsSize.y <= 0.0f)
+		{
+			return;
+		}
+
+		ImVec2 TextureSize;
+		if (!GetTextureSizeForPropertyPreview(Texture, TextureSize) || TextureSize.x <= 0.0f || TextureSize.y <= 0.0f)
+		{
+			// 크기 조회 실패 시 기존 stretch 출력으로 fallback
+			DrawList->AddImage((ImTextureID)Texture, BoundsMin, BoundsMax);
+			return;
+		}
+
+		// 원본 비율 유지 후 preview slot 안에 최대 크기로 중앙 배치
+		const float Scale = (std::min)(BoundsSize.x / TextureSize.x, BoundsSize.y / TextureSize.y);
+		const ImVec2 ImageSize(TextureSize.x * Scale, TextureSize.y * Scale);
+		const ImVec2 ImageMin(
+			BoundsMin.x + (BoundsSize.x - ImageSize.x) * 0.5f,
+			BoundsMin.y + (BoundsSize.y - ImageSize.y) * 0.5f);
+		const ImVec2 ImageMax(ImageMin.x + ImageSize.x, ImageMin.y + ImageSize.y);
+
+		DrawList->AddImage((ImTextureID)Texture, ImageMin, ImageMax);
+	}
+
 	UClass* GetAllowedClassMetadata(const FPropertyValue& Prop)
 	{
 		if (const FString* AllowedClass = FindPropertyMetadata(Prop, "allowedclass"))
@@ -1265,7 +1348,7 @@ bool FEditorPropertyRenderer::RenderAssetReferenceField(const FPropertyAssetFiel
 
 	if (Thumb)
 	{
-		ImGui::Image((ImTextureID)Thumb, ImVec2(ThumbSize, ThumbSize));
+		DrawPropertyPreviewImageAspectFit(Thumb, ImVec2(ThumbSize, ThumbSize));
 	}
 	else
 	{
