@@ -489,6 +489,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\NotificationToast.cpp" />
+    <ClCompile Include="Source\Editor\Undo\EditorUndoCommand.cpp" />
+    <ClCompile Include="Source\Editor\Undo\EditorUndoManager.cpp" />
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
     <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp" />
     <ClCompile Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.cpp" />
@@ -883,6 +885,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h" />
     <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h" />
     <ClInclude Include="Source\Editor\UI\Util\NotificationToast.h" />
+    <ClInclude Include="Source\Editor\Undo\EditorUndoCommand.h" />
+    <ClInclude Include="Source\Editor\Undo\EditorUndoManager.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorPreviewViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />

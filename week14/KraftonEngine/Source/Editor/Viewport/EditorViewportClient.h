@@ -6,6 +6,7 @@
 #include "Render/Types/POVProvider.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
 #include "Object/Ptr/WeakObjectPtr.h"
+#include "Editor/Undo/EditorUndoCommand.h"
 
 #include "Slate/SWindow.h"
 #include <string>
@@ -117,6 +118,22 @@ private:
 	void TickPilotedActorInput(float DeltaTime);
 	void TickInteraction(float DeltaTime);
 	void HandleDragStart(const FRay& Ray); //픽킹 시작
+
+	/**
+	 * @brief gizmo drag undo transaction을 시작합니다.
+	 */
+	void BeginGizmoUndoTransaction();
+
+	/**
+	 * @brief gizmo drag undo transaction을 종료하고 변경 command를 기록합니다.
+	 */
+	void EndGizmoUndoTransaction();
+
+	/**
+	 * @brief 진행 중인 gizmo drag undo transaction을 폐기합니다.
+	 */
+	void ResetGizmoUndoTransaction();
+
 	void SyncCameraSmoothingTarget();
 	void ApplySmoothedCameraLocation(float DeltaTime);
 	bool HasValidPilotedCamera() const;
@@ -170,4 +187,9 @@ private:
 	FVector LastAppliedCameraLocation;
 	bool bLastAppliedCameraLocationInitialized = false;
 	const float SmoothLocationSpeed = 10.0f;
+
+	// Gizmo transform undo transaction
+	bool bGizmoUndoTransactionActive = false;
+	FEditorSelectionSnapshot GizmoUndoSelection;
+	TArray<FEditorComponentTransformSnapshot> GizmoUndoBefore;
 };

@@ -31,6 +31,7 @@
 #include "Lua/LuaScriptManager.h"
 #include "Object/GarbageCollector.h"
 #include "Object/Object.h"
+#include "Editor/Undo/EditorUndoCommand.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -320,6 +321,68 @@ void UEditorEngine::ApplyTransformSettingsToGizmo()
 		Settings.bEnableTranslationSnap, Settings.TranslationSnapSize,
 		Settings.bEnableRotationSnap, Settings.RotationSnapSize,
 		Settings.bEnableScaleSnap, Settings.ScaleSnapSize);
+}
+
+bool UEditorEngine::Undo()
+{
+	if (IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	return UndoManager.Undo(this);
+}
+
+bool UEditorEngine::Redo()
+{
+	if (IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	return UndoManager.Redo(this);
+}
+
+void UEditorEngine::PushExecutedUndoCommand(std::unique_ptr<IEditorUndoCommand> Command)
+{
+	if (IsPlayingInEditor() || UndoManager.IsApplying())
+	{
+		return;
+	}
+
+	UndoManager.PushExecutedCommand(std::move(Command));
+}
+
+int32 UEditorEngine::DeleteSelectedActorsWithUndo()
+{
+	if (IsPlayingInEditor() || SelectionManager.IsEmpty())
+	{
+		return 0;
+	}
+
+	// 삭제 전 actor snapshot과 selection snapshot을 먼저 기록해야 즉시 destroy 이후에도 복원할 수 있습니다.
+	const TArray<AActor*> ActorsToDelete = SelectionManager.GetSelectedActors();
+	const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&SelectionManager);
+	const FEditorSelectionSnapshot SelectionAfter;
+	std::unique_ptr<IEditorUndoCommand> Command = MakeActorDeleteUndoCommand(
+		ActorsToDelete,
+		SelectionBefore,
+		SelectionAfter,
+		"Delete Actors");
+
+	const int32 DeletedCount = SelectionManager.DeleteSelectedActors();
+	if (DeletedCount > 0)
+	{
+		PushExecutedUndoCommand(std::move(Command));
+		InvalidateOcclusionResults();
+	}
+
+	return DeletedCount;
+}
+
+void UEditorEngine::ClearUndoHistory()
+{
+	UndoManager.Clear();
 }
 
 // ─── PIE (Play In Editor) ────────────────────────────────
@@ -683,6 +746,7 @@ void UEditorEngine::LoadStartLevel()
 void UEditorEngine::ClearScene()
 {
 	StopPlayInEditorImmediate();
+	ClearUndoHistory();
 	ViewportLayout.StopAllPiloting(false);
 	SelectionManager.ClearSelection();
 	SelectionManager.SetWorld(nullptr);

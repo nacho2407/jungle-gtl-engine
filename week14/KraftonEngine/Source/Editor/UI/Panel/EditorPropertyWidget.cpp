@@ -35,6 +35,7 @@
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "Platform/Paths.h"
+#include "Engine/Serialization/SceneSaveManager.h"
 #include "Serialization/MemoryArchive.h"
 
 #include <Windows.h>
@@ -65,6 +66,41 @@ namespace
 			&& !(bShowEditorOnlyComponents && Component->IsEditorOnlyComponent());
 	}
 
+	bool DoesActorOwnComponent(AActor* Actor, const UActorComponent* Component)
+	{
+		if (!Actor || !IsValid(Component) || Component->GetOwner() != Actor)
+		{
+			return false;
+		}
+
+		for (UActorComponent* OwnedComponent : Actor->GetComponents())
+		{
+			if (OwnedComponent == Component)
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	FString MakeComponentStructureDebugName(const char* Prefix, UActorComponent* Component)
+	{
+		const char* SafePrefix = Prefix ? Prefix : "Edit Component Structure";
+		if (!IsValid(Component))
+		{
+			return FString(SafePrefix);
+		}
+
+		FString Name = Component->GetFName().ToString();
+		if (Name.empty())
+		{
+			Name = Component->GetClass()->GetName();
+		}
+
+		return FString(SafePrefix) + ": " + Name;
+	}
+
 	struct FComponentClassGroup
 	{
 		const char* Label = nullptr;
@@ -80,6 +116,101 @@ namespace
 		FString DisplayName;
 		EPropertyType Type = EPropertyType::Bool;
 	};
+
+	void AddUniqueObject(TArray<UObject*>& Objects, UObject* Object)
+	{
+		if (!IsValid(Object))
+		{
+			return;
+		}
+
+		for (UObject* Existing : Objects)
+		{
+			if (Existing == Object)
+			{
+				return;
+			}
+		}
+
+		Objects.push_back(Object);
+	}
+
+	TArray<UObject*> MakeSingleObjectTargetList(UObject* Object)
+	{
+		TArray<UObject*> Objects;
+		AddUniqueObject(Objects, Object);
+		return Objects;
+	}
+
+	TArray<uint32> MakeObjectUUIDList(const TArray<UObject*>& Objects)
+	{
+		TArray<uint32> UUIDs;
+		for (UObject* Object : Objects)
+		{
+			if (!IsValid(Object) || Object->GetUUID() == 0)
+			{
+				continue;
+			}
+
+			bool bAlreadyAdded = false;
+			for (uint32 ExistingUUID : UUIDs)
+			{
+				if (ExistingUUID == Object->GetUUID())
+				{
+					bAlreadyAdded = true;
+					break;
+				}
+			}
+			if (!bAlreadyAdded)
+			{
+				UUIDs.push_back(Object->GetUUID());
+			}
+		}
+		return UUIDs;
+	}
+
+	bool AreObjectUUIDListsEqual(const TArray<uint32>& A, const TArray<uint32>& B)
+	{
+		if (A.size() != B.size())
+		{
+			return false;
+		}
+
+		for (size_t Index = 0; Index < A.size(); ++Index)
+		{
+			if (A[Index] != B[Index])
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	TArray<UObject*> ResolveObjectsByUUIDs(const TArray<uint32>& UUIDs)
+	{
+		TArray<UObject*> Objects;
+		for (uint32 UUID : UUIDs)
+		{
+			if (UUID == 0)
+			{
+				continue;
+			}
+
+			UObject* Object = UObjectManager::Get().FindByUUID(UUID);
+			AddUniqueObject(Objects, Object);
+		}
+		return Objects;
+	}
+
+	FString MakeDetailsPropertyDebugName(const char* Prefix, const FPropertyValue& Prop)
+	{
+		const char* DisplayName = FEditorPropertyRenderer::GetPropertyDisplayName(Prop);
+		const char* PropertyName = Prop.GetName();
+		const char* Label = DisplayName ? DisplayName : (PropertyName ? PropertyName : "Property");
+		return FString(Prefix ? Prefix : "Edit Property")
+			+ ": "
+			+ FString(Label);
+	}
 
 	void AddComponentClassGroup(TArray<FComponentClassGroup>& Groups, const char* Label, UClass* AnchorClass)
 	{
@@ -316,6 +447,76 @@ namespace
 		return false;
 	}
 
+	bool HasCompatibleEditableProperty(UActorComponent* Component, const FPropertyValue& SourceProp)
+	{
+		if (!Component || !SourceProp.Property || !SourceProp.GetName())
+		{
+			return false;
+		}
+
+		TArray<FPropertyValue> Props;
+		Component->GetEditableProperties(Props);
+		for (const FPropertyValue& Prop : Props)
+		{
+			if (!Prop.Property || !Prop.GetName())
+			{
+				continue;
+			}
+
+			if (std::strcmp(Prop.GetName(), SourceProp.GetName()) == 0
+				&& Prop.GetType() == SourceProp.GetType()
+				&& Prop.GetValuePtr())
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	TArray<UObject*> CollectComponentPropertyUndoTargets(
+		UActorComponent* SelectedComponent,
+		const FPropertyValue& SourceProp,
+		const TArray<AActor*>& SelectedActors)
+	{
+		TArray<UObject*> Targets;
+		AddUniqueObject(Targets, SelectedComponent);
+
+		if (!SelectedComponent || SelectedActors.size() < 2)
+		{
+			return Targets;
+		}
+
+		UClass* ComponentClass = SelectedComponent->GetClass();
+		AActor* PrimaryActor = SelectedActors[0];
+
+		for (AActor* Actor : SelectedActors)
+		{
+			if (!Actor || Actor == PrimaryActor)
+			{
+				continue;
+			}
+
+			for (UActorComponent* Component : Actor->GetComponents())
+			{
+				if (!Component || Component->GetClass() != ComponentClass)
+				{
+					continue;
+				}
+
+				// PropagatePropertyChange가 같은 타입의 첫 번째 compatible component에만 값을 복사하므로
+				// undo 대상도 동일한 규칙으로 수집합니다.
+				if (HasCompatibleEditableProperty(Component, SourceProp))
+				{
+					AddUniqueObject(Targets, Component);
+				}
+				break;
+			}
+		}
+
+		return Targets;
+	}
+
 	void PropagatePropertyChange(
 		UActorComponent* SelectedComponent,
 		const FString& PropName,
@@ -403,12 +604,15 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	AActor* PrimaryActor = Selection.GetPrimarySelection();
 	if (!PrimaryActor)
 	{
+		CommitActiveDetailsPropertyUndoIfIdle();
 		SelectedComponent = nullptr;
 		LastRenameComponent = nullptr;
 		LastSelectedActor = nullptr;
 		bActorSelected = true;
 		ComponentRenameBuffer[0] = '\0';
 		ComponentRenameWarning.clear();
+		LastObservedActorName = FName();
+		LastObservedComponentName = FName();
 		ImGui::Text("No object selected.");
 		ImGui::End();
 		return;
@@ -425,7 +629,10 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		ComponentRenameBuffer[0] = '\0';
 		ComponentRenameWarning.clear();
 		CopyActorNameToBuffer(PrimaryActor, RenameBuffer, sizeof(RenameBuffer));
+		LastObservedActorName = PrimaryActor->GetFName();
+		LastObservedComponentName = FName();
 	}
+	SyncSelectedComponentAfterStructureChange(PrimaryActor);
 
 	const TArray<AActor*>& SelectedActors = Selection.GetSelectedActors();
 	const int32 SelectionCount = static_cast<int32>(SelectedActors.size());
@@ -455,23 +662,16 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 		snprintf(RemoveLabel, sizeof(RemoveLabel), "Remove %d Objects", SelectionCount);
 		if (ImGui::Button(RemoveLabel))
 		{
-			// 선택 해제를 먼저 수행 (dangling pointer로 Proxy 접근 방지)
-			TArray<AActor*> ToDelete(SelectedActors.begin(), SelectedActors.end());
-			Selection.ClearSelection();
-			for (AActor* Actor : ToDelete)
-			{
-				if (Actor && Actor->GetWorld())
-				{
-					Actor->GetWorld()->DestroyActor(Actor);
-				}
-			}
-			// GPU Occlusion staging에 남은 dangling proxy 포인터 무효화
-			EditorEngine->InvalidateOcclusionResults();
+			// 삭제 전 진행 중인 속성 트랜잭션을 먼저 닫아 undo 순서를 보존합니다.
+			CommitActiveDetailsPropertyUndo();
+			EditorEngine->DeleteSelectedActorsWithUndo();
 			SelectedComponent = nullptr;
 			LastRenameComponent = nullptr;
 			ComponentRenameBuffer[0] = '\0';
 			ComponentRenameWarning.clear();
 			LastSelectedActor = nullptr;
+			LastObservedActorName = FName();
+			LastObservedComponentName = FName();
 			ImGui::End();
 			return;
 		}
@@ -498,12 +698,14 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	ImGui::SetNextItemWidth(std::max(80.0f, ImGui::GetContentRegionAvail().x - RenameButtonWidth - ImGui::GetStyle().ItemSpacing.x));
 	const bool bRenameByEnter = ImGui::InputText("##ActorRename", RenameBuffer, sizeof(RenameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
 	const bool bRenameByFocusLoss = ImGui::IsItemDeactivatedAfterEdit();
+	const bool bActorRenameActive = ImGui::IsItemActive();
 	ImGui::SameLine();
 	const bool bRenameByButton = ImGui::Button("Rename", ImVec2(RenameButtonWidth, 0.0f));
 	if (bRenameByEnter || bRenameByFocusLoss || bRenameByButton)
 	{
 		RenameActor(PrimaryActor);
 	}
+	SyncActorRenameBufferIfNeeded(PrimaryActor, bActorRenameActive);
 
 	if (!RenameWarning.empty())
 	{
@@ -532,6 +734,7 @@ void FEditorPropertyWidget::Render(float DeltaTime)
 	ImGui::EndChild();
 
 	ImGui::End();
+	CommitActiveDetailsPropertyUndoIfIdle();
 }
 
 void FEditorPropertyWidget::RenameActor(AActor* PrimaryActor)
@@ -571,8 +774,25 @@ void FEditorPropertyWidget::RenameActor(AActor* PrimaryActor)
 		return;
 	}
 
+	const FName BeforeName = PrimaryActor->GetFName();
+	FEditorSelectionSnapshot Selection;
+	if (EditorEngine)
+	{
+		Selection = CaptureEditorSelection(&EditorEngine->GetSelectionManager());
+	}
 	PrimaryActor->SetFName(FName(NewName));
+	if (EditorEngine)
+	{
+		EditorEngine->PushExecutedUndoCommand(MakeObjectRenameUndoCommand(
+			PrimaryActor,
+			BeforeName,
+			PrimaryActor->GetFName(),
+			Selection,
+			"Rename Actor"));
+	}
+
 	CopyActorNameToBuffer(PrimaryActor, RenameBuffer, sizeof(RenameBuffer));
+	LastObservedActorName = PrimaryActor->GetFName();
 }
 
 void FEditorPropertyWidget::RenameComponent(AActor* OwnerActor, UActorComponent* Component)
@@ -605,8 +825,25 @@ void FEditorPropertyWidget::RenameComponent(AActor* OwnerActor, UActorComponent*
 		return;
 	}
 
+	const FName BeforeName = Component->GetFName();
+	FEditorSelectionSnapshot Selection;
+	if (EditorEngine)
+	{
+		Selection = CaptureEditorSelection(&EditorEngine->GetSelectionManager());
+	}
 	Component->SetFName(FName(NewName));
+	if (EditorEngine)
+	{
+		EditorEngine->PushExecutedUndoCommand(MakeObjectRenameUndoCommand(
+			Component,
+			BeforeName,
+			Component->GetFName(),
+			Selection,
+			"Rename Component"));
+	}
+
 	CopyObjectNameToBuffer(Component, ComponentRenameBuffer, sizeof(ComponentRenameBuffer));
+	LastObservedComponentName = Component->GetFName();
 }
 
 void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
@@ -663,6 +900,171 @@ void FEditorPropertyWidget::RenderDetails(AActor* PrimaryActor, const TArray<AAc
 	}
 }
 
+void FEditorPropertyWidget::FlushPendingDetailsUndoTransaction()
+{
+	CommitActiveDetailsPropertyUndo();
+}
+
+void FEditorPropertyWidget::RecordDetailsPropertyUndoChange(
+	const TArray<FEditorObjectPropertySnapshot>& BeforeSnapshots,
+	const TArray<UObject*>& TargetObjects,
+	const FString& DebugName)
+{
+	if (!EditorEngine || BeforeSnapshots.empty() || TargetObjects.empty())
+	{
+		return;
+	}
+
+	const FEditorSelectionSnapshot Selection = CaptureEditorSelection(&EditorEngine->GetSelectionManager());
+	const TArray<uint32> TargetUUIDs = MakeObjectUUIDList(TargetObjects);
+	if (TargetUUIDs.empty())
+	{
+		return;
+	}
+
+	// 모든 Details 속성 변경은 일단 트랜잭션으로 열어 둡니다.
+	// 체크박스/콤보처럼 즉시 끝나는 편집도 PostEditChangeProperty flush 이후에 after 스냅샷을 잡아야
+	// PostEditProperty가 함께 수정한 보조 속성까지 undo 스냅샷에 반영됩니다.
+	if (!ActivePropertyUndoTransaction.bActive)
+	{
+		ActivePropertyUndoTransaction.bActive = true;
+		ActivePropertyUndoTransaction.TargetObjectUUIDs = TargetUUIDs;
+		ActivePropertyUndoTransaction.BeforeSnapshots = BeforeSnapshots;
+		ActivePropertyUndoTransaction.Selection = Selection;
+		ActivePropertyUndoTransaction.DebugName = DebugName;
+		return;
+	}
+
+	if (!AreObjectUUIDListsEqual(ActivePropertyUndoTransaction.TargetObjectUUIDs, TargetUUIDs))
+	{
+		// 예외적으로 다른 객체 편집이 시작되면 기존 트랜잭션을 먼저 닫고 새 대상으로 시작합니다.
+		CommitActiveDetailsPropertyUndo();
+		ActivePropertyUndoTransaction.bActive = true;
+		ActivePropertyUndoTransaction.TargetObjectUUIDs = TargetUUIDs;
+		ActivePropertyUndoTransaction.BeforeSnapshots = BeforeSnapshots;
+		ActivePropertyUndoTransaction.Selection = Selection;
+		ActivePropertyUndoTransaction.DebugName = DebugName;
+	}
+}
+
+void FEditorPropertyWidget::CommitActiveDetailsPropertyUndo()
+{
+	if (!EditorEngine || !ActivePropertyUndoTransaction.bActive)
+	{
+		return;
+	}
+
+	// UUID 기준으로 after 스냅샷 대상을 다시 찾으면 undo/redo 적용 중 포인터 교체에도 안전합니다.
+	TArray<UObject*> TargetObjects = ResolveObjectsByUUIDs(ActivePropertyUndoTransaction.TargetObjectUUIDs);
+	TArray<FEditorObjectPropertySnapshot> AfterSnapshots = CaptureObjectPropertySnapshots(TargetObjects);
+
+	EditorEngine->PushExecutedUndoCommand(MakeObjectPropertyUndoCommand(
+		ActivePropertyUndoTransaction.BeforeSnapshots,
+		AfterSnapshots,
+		ActivePropertyUndoTransaction.Selection,
+		ActivePropertyUndoTransaction.DebugName));
+
+	ActivePropertyUndoTransaction = FDetailsPropertyUndoTransaction();
+}
+
+void FEditorPropertyWidget::CommitActiveDetailsPropertyUndoIfIdle()
+{
+	if (ActivePropertyUndoTransaction.bActive && !ImGui::IsAnyItemActive())
+	{
+		CommitActiveDetailsPropertyUndo();
+	}
+}
+
+void FEditorPropertyWidget::SyncActorRenameBufferIfNeeded(AActor* Actor, bool bRenameInputActive)
+{
+	if (!Actor || bRenameInputActive)
+	{
+		return;
+	}
+
+	const FName CurrentName = Actor->GetFName();
+	if (CurrentName != LastObservedActorName)
+	{
+		LastObservedActorName = CurrentName;
+		CopyActorNameToBuffer(Actor, RenameBuffer, sizeof(RenameBuffer));
+	}
+}
+
+void FEditorPropertyWidget::SyncComponentRenameBufferIfNeeded(UActorComponent* Component, bool bRenameInputActive)
+{
+	if (!Component || bRenameInputActive)
+	{
+		return;
+	}
+
+	const FName CurrentName = Component->GetFName();
+	if (CurrentName != LastObservedComponentName)
+	{
+		LastObservedComponentName = CurrentName;
+		CopyObjectNameToBuffer(Component, ComponentRenameBuffer, sizeof(ComponentRenameBuffer));
+	}
+}
+
+void FEditorPropertyWidget::RecordActorStructureUndoChange(
+	AActor* Actor,
+	json::JSON BeforeActorJSON,
+	const FEditorSelectionSnapshot& SelectionBefore,
+	const FString& DebugName)
+{
+	if (!EditorEngine || !Actor)
+	{
+		return;
+	}
+
+	// 구조 변경 후 actor snapshot과 selection을 함께 기록해 undo/redo 시 Details 선택 상태까지 되돌립니다.
+	EditorEngine->PushExecutedUndoCommand(MakeActorStructureUndoCommand(
+		Actor,
+		std::move(BeforeActorJSON),
+		FSceneSaveManager::SerializeActorForEditorUndo(Actor),
+		SelectionBefore,
+		CaptureEditorSelection(&EditorEngine->GetSelectionManager()),
+		DebugName));
+}
+
+bool FEditorPropertyWidget::IsSelectedComponentOwnedByActor(AActor* Actor) const
+{
+	return DoesActorOwnComponent(Actor, SelectedComponent);
+}
+
+void FEditorPropertyWidget::SyncSelectedComponentAfterStructureChange(AActor* Actor)
+{
+	if (!Actor || IsSelectedComponentOwnedByActor(Actor))
+	{
+		return;
+	}
+
+	// undo/redo가 component를 destroy/recreate하면 Details가 들고 있던 raw pointer는 더 이상 유효하지 않습니다.
+	// selection manager가 root가 아닌 scene component를 복원했다면 Details도 그 component를 보여주고,
+	// 그렇지 않으면 actor Details로 fallback합니다.
+	USceneComponent* SelectionComponent = EditorEngine
+		? EditorEngine->GetSelectionManager().GetSelectedComponent()
+		: nullptr;
+	if (SelectionComponent
+		&& SelectionComponent != Actor->GetRootComponent()
+		&& DoesActorOwnComponent(Actor, SelectionComponent))
+	{
+		SelectedComponent = SelectionComponent;
+		bActorSelected = false;
+		LastRenameComponent = nullptr;
+		ComponentRenameWarning.clear();
+		CopyObjectNameToBuffer(SelectedComponent, ComponentRenameBuffer, sizeof(ComponentRenameBuffer));
+		LastObservedComponentName = SelectedComponent->GetFName();
+		return;
+	}
+
+	SelectedComponent = nullptr;
+	bActorSelected = true;
+	LastRenameComponent = nullptr;
+	ComponentRenameBuffer[0] = '\0';
+	ComponentRenameWarning.clear();
+	LastObservedComponentName = FName();
+}
+
 void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
 	(void)SelectedActors;
@@ -703,10 +1105,16 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				Options.bUseExternalExpansion = true;
 				Options.bParentExpanded = bPropertyOpen;
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
+				TArray<UObject*> UndoTargets = MakeSingleObjectTargetList(PrimaryActor);
+				TArray<FEditorObjectPropertySnapshot> UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
 				if (PropertyRenderer.RenderPropertyWidget(Props, i, Options))
 				{
 					bAnyChanged = true;
 					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
+					RecordDetailsPropertyUndoChange(
+						UndoBefore,
+						UndoTargets,
+						MakeDetailsPropertyDebugName("Edit Actor Property", Props[i]));
 				}
 				ImGui::PopID();
 			}
@@ -993,11 +1401,23 @@ void FEditorPropertyWidget::RenderSceneComponentNode(USceneComponent* Comp)
 
 				if (!bIsChildOfDragged)
 				{
+					CommitActiveDetailsPropertyUndo();
+					AActor* OwnerActor = Comp->GetOwner();
+					const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&EditorEngine->GetSelectionManager());
+					json::JSON BeforeActorJSON = FSceneSaveManager::SerializeActorForEditorUndo(OwnerActor);
+					const FString DebugName = MakeComponentStructureDebugName("Reparent Component", DraggedComp);
+
 					DraggedComp->SetParent(Comp);
 					if (EditorEngine && EditorEngine->GetGizmo())
 					{
 						EditorEngine->GetGizmo()->UpdateGizmoTransform();
 					}
+
+					RecordActorStructureUndoChange(
+						OwnerActor,
+						std::move(BeforeActorJSON),
+						SelectionBefore,
+						DebugName);
 				}
 			}
 		}
@@ -1026,6 +1446,7 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 		LastRenameComponent = SelectedComponent;
 		ComponentRenameWarning.clear();
 		CopyObjectNameToBuffer(SelectedComponent, ComponentRenameBuffer, sizeof(ComponentRenameBuffer));
+		LastObservedComponentName = SelectedComponent->GetFName();
 	}
 
 	ImGui::TextUnformatted("Name");
@@ -1035,12 +1456,14 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 	const bool bRenameByEnter = ImGui::InputText("##ComponentRename", ComponentRenameBuffer,
 		sizeof(ComponentRenameBuffer), ImGuiInputTextFlags_EnterReturnsTrue);
 	const bool bRenameByFocusLoss = ImGui::IsItemDeactivatedAfterEdit();
+	const bool bComponentRenameActive = ImGui::IsItemActive();
 	ImGui::SameLine();
 	const bool bRenameByButton = ImGui::Button("Rename##Component", ImVec2(RenameButtonWidth, 0.0f));
 	if (bRenameByEnter || bRenameByFocusLoss || bRenameByButton)
 	{
 		RenameComponent(Actor, SelectedComponent);
 	}
+	SyncComponentRenameBufferIfNeeded(SelectedComponent, bComponentRenameActive);
 
 	if (!ComponentRenameWarning.empty())
 	{
@@ -1055,11 +1478,33 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 		{
 			if (SelectedComponent != nullptr)
 			{
-				Actor->RemoveComponent(SelectedComponent);
+				CommitActiveDetailsPropertyUndo();
+				UActorComponent* ComponentToRemove = SelectedComponent;
+				if (!DoesActorOwnComponent(Actor, ComponentToRemove))
+				{
+					SyncSelectedComponentAfterStructureChange(Actor);
+					return;
+				}
+
+				const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&EditorEngine->GetSelectionManager());
+				json::JSON BeforeActorJSON = FSceneSaveManager::SerializeActorForEditorUndo(Actor);
+				const FString DebugName = MakeComponentStructureDebugName("Remove Component", ComponentToRemove);
+
+				// 삭제될 component를 selection/gizmo가 물고 있지 않도록 먼저 actor 선택 상태로 되돌립니다.
+				EditorEngine->GetSelectionManager().Select(Actor);
+				Actor->RemoveComponent(ComponentToRemove);
 				SelectedComponent = nullptr;
 				LastRenameComponent = nullptr;
 				ComponentRenameBuffer[0] = '\0';
 				ComponentRenameWarning.clear();
+				LastObservedComponentName = FName();
+				bActorSelected = true;
+
+				RecordActorStructureUndoChange(
+					Actor,
+					std::move(BeforeActorJSON),
+					SelectionBefore,
+					DebugName);
 				return;
 			}
 		}
@@ -1145,6 +1590,8 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				Options.bUseExternalExpansion = true;
 				Options.bParentExpanded = bPropertyOpen;
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
+				TArray<UObject*> UndoTargets = CollectComponentPropertyUndoTargets(SelectedComponent, Props[i], SelectedActors);
+				TArray<FEditorObjectPropertySnapshot> UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
 				bool bChanged = PropertyRenderer.RenderPropertyWidget(Props, i, Options);
 
 				if (bChanged)
@@ -1152,6 +1599,10 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 					bAnyChanged = true;
 					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
 					PropagatePropertyChange(SelectedComponent, Props[i].GetName(), SelectedActors, DeferredChanges);
+					RecordDetailsPropertyUndoChange(
+						UndoBefore,
+						UndoTargets,
+						MakeDetailsPropertyDebugName("Edit Component Property", Props[i]));
 				}
 				ImGui::PopID();
 			}
@@ -1178,6 +1629,11 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 {
 	if (!Actor || !ComponentClass) return;
 
+	// component 구조 변경 전에 진행 중인 속성 transaction을 먼저 닫아 undo 순서를 보존합니다.
+	CommitActiveDetailsPropertyUndo();
+	const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&EditorEngine->GetSelectionManager());
+	json::JSON BeforeActorJSON = FSceneSaveManager::SerializeActorForEditorUndo(Actor);
+
 	UActorComponent* Comp = Actor->AddComponentByClass(ComponentClass);
 	if (!Comp) return;
 
@@ -1185,10 +1641,13 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 	{
 		USceneComponent* Root = Actor->GetRootComponent();
 		USceneComponent* SceneComp = Cast<USceneComponent>(Comp);
+		USceneComponent* AttachParent = DoesActorOwnComponent(Actor, SelectedComponent)
+			? Cast<USceneComponent>(SelectedComponent)
+			: nullptr;
 
-		if (SelectedComponent && SelectedComponent->IsA<USceneComponent>())
+		if (AttachParent)
 		{
-			SceneComp->AttachToComponent(Cast<USceneComponent>(SelectedComponent));
+			SceneComp->AttachToComponent(AttachParent);
 		}
 		else
 		{
@@ -1207,8 +1666,27 @@ void FEditorPropertyWidget::AddComponentToActor(AActor* Actor, UClass* Component
 		{
 			Cast<UHeightFogComponent>(Comp)->EnsureEditorBillboard();
 		}
+
+		if (SceneComp)
+		{
+			EditorEngine->GetSelectionManager().SelectComponent(SceneComp);
+		}
+	}
+	else
+	{
+		EditorEngine->GetSelectionManager().Select(Actor);
 	}
 
 	SelectedComponent = Comp;
 	bActorSelected = false;
+	LastRenameComponent = nullptr;
+	ComponentRenameWarning.clear();
+	CopyObjectNameToBuffer(SelectedComponent, ComponentRenameBuffer, sizeof(ComponentRenameBuffer));
+	LastObservedComponentName = SelectedComponent->GetFName();
+
+	RecordActorStructureUndoChange(
+		Actor,
+		std::move(BeforeActorJSON),
+		SelectionBefore,
+		MakeComponentStructureDebugName("Add Component", Comp));
 }

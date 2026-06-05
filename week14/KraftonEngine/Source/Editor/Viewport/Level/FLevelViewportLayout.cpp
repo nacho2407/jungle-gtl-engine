@@ -6,6 +6,7 @@
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "Core/ProjectSettings.h"
 #include "Editor/Selection/SelectionManager.h"
+#include "Editor/Undo/EditorUndoCommand.h"
 #include "Engine/Platform/WindowsWindow.h"
 #include "Engine/Input/InputSystem.h"
 #include "GameFramework/Actor/DecalActor.h"
@@ -1888,16 +1889,27 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 			{
 				const auto& Entry = RegistryEntries[i];
 				if (!ImGui::MenuItem(Entry.Label.c_str())) continue;
-				FVector Location(0.0f, 0.0f, 0.0f);
-				if (TryComputePlacementLocation(SpawnSlot, SpawnPos, Location))
-				{
-					if (UWorld* W = Editor ? Editor->GetWorld() : nullptr)
+					FVector Location(0.0f, 0.0f, 0.0f);
+					if (TryComputePlacementLocation(SpawnSlot, SpawnPos, Location))
 					{
-						Entry.SpawnFn(W, Location);
+						if (UWorld* W = Editor ? Editor->GetWorld() : nullptr)
+						{
+							const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(SelectionManager);
+							AActor* SpawnedActor = Entry.SpawnFn(W, Location);
+							if (SpawnedActor && Editor)
+							{
+								TArray<AActor*> CreatedActors;
+								CreatedActors.push_back(SpawnedActor);
+								Editor->PushExecutedUndoCommand(MakeActorCreateUndoCommand(
+									CreatedActors,
+									SelectionBefore,
+									CaptureEditorSelection(SelectionManager),
+									"Place Actor"));
+							}
+						}
 					}
 				}
 			}
-		}
 
 		ImGui::EndMenu();
 	}
@@ -1989,6 +2001,7 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		return nullptr;
 	}
 
+	const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(SelectionManager);
 	AActor* SpawnedActor = nullptr;
 	FVector SpawnLocation = Location;
 
@@ -2213,6 +2226,14 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 	{
 		SelectionManager->Select(SpawnedActor);
 	}
+
+	TArray<AActor*> CreatedActors;
+	CreatedActors.push_back(SpawnedActor);
+	Editor->PushExecutedUndoCommand(MakeActorCreateUndoCommand(
+		CreatedActors,
+		SelectionBefore,
+		CaptureEditorSelection(SelectionManager),
+		"Place Actor"));
 
 	return SpawnedActor;
 }
