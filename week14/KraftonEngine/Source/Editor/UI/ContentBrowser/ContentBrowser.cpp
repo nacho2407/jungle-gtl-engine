@@ -496,6 +496,10 @@ void FEditorContentBrowserWidget::RefreshContent()
 			Element = std::make_shared<ImageElement>();
 			Icon = FEditorTextureManager::Get().GetOrLoadThumbnail(FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring()));
 		}
+		else if (Extension == ".rml")
+		{
+			Element = std::make_shared<RmlElement>();
+		}
 		else if (Extension == ".uasset")
 		{
 			FString PackagePath = FPaths::ToUtf8(Content.Path.lexically_relative(FPaths::RootDir()).generic_wstring());

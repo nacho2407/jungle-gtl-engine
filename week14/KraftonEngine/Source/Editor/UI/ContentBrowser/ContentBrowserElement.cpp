@@ -101,6 +101,25 @@ static bool ProjectFileExistsForContentBrowser(const FString& Path)
 	return std::filesystem::exists(FullPath) && std::filesystem::is_regular_file(FullPath);
 }
 
+static void OpenContentItemInFileExplorer(const FContentItem& Item)
+{
+	if (Item.Path.empty())
+	{
+		return;
+	}
+
+	std::error_code Ec;
+	const bool bIsDirectory = std::filesystem::is_directory(Item.Path, Ec);
+	if (!Ec && bIsDirectory)
+	{
+		ShellExecuteW(nullptr, L"open", Item.Path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		return;
+	}
+
+	const std::wstring Parameters = L"/select,\"" + Item.Path.wstring() + L"\"";
+	ShellExecuteW(nullptr, L"open", L"explorer.exe", Parameters.c_str(), nullptr, SW_SHOWNORMAL);
+}
+
 static bool IsSameOrChildPathForContentBrowser(const std::filesystem::path& Parent, const std::filesystem::path& Child)
 {
 	auto ParentIt = Parent.begin();
@@ -526,6 +545,11 @@ void ContentBrowserElement::Render(ContentBrowserContext& Context)
 		{
 			Context.SelectedElement = shared_from_this();
 			Context.bDeleteRequested = true;
+		}
+		if (ImGui::MenuItem("Open In File Explorer"))
+		{
+			Context.SelectedElement = shared_from_this();
+			OpenContentItemInFileExplorer(ContentItem);
 		}
 		ImGui::Separator();
 		RenderContextMenu(Context);
@@ -983,6 +1007,17 @@ void ParticleSystemElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	{
 		Context.EditorEngine->OpenAssetEditorForObject(Particle);
 	}
+}
+
+void RmlElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		ShellExecuteW(nullptr, L"open", ContentItem.Path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		return;
+	}
+
+	Context.EditorEngine->OpenUIEditor(ContentItem.Path);
 }
 
 void MaterialElement::OnDoubleLeftClicked(ContentBrowserContext& Context)

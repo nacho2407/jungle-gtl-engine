@@ -76,6 +76,9 @@
     <Filter Include="Source\Editor\UI\Asset\Physics">
       <UniqueIdentifier>{2fe635d6-4d72-4f21-8c25-e4fc47dca7c2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\UI\Asset\UI">
+      <UniqueIdentifier>{0b147c75-c9da-4f75-a8a9-bb6f8fb810d2}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\UI\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
     </Filter>
@@ -820,6 +823,15 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Asset\Physics\PhysicsAssetEditorWidget.cpp">
       <Filter>Source\Editor\UI\Asset\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\UI\UIEditorDocument.cpp">
+      <Filter>Source\Editor\UI\Asset\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\UI\UIEditorSerializer.cpp">
+      <Filter>Source\Editor\UI\Asset\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Asset\UI\UIEditorWidget.cpp">
+      <Filter>Source\Editor\UI\Asset\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>
@@ -1993,6 +2005,15 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Asset\Physics\PhysicsAssetEditorWidget.h">
       <Filter>Source\Editor\UI\Asset\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\UI\UIEditorDocument.h">
+      <Filter>Source\Editor\UI\Asset\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\UI\UIEditorSerializer.h">
+      <Filter>Source\Editor\UI\Asset\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Asset\UI\UIEditorWidget.h">
+      <Filter>Source\Editor\UI\Asset\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h">
       <Filter>Source\Editor\UI\ContentBrowser</Filter>

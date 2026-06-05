@@ -8,6 +8,7 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/PIE/PIETypes.h"
+#include <filesystem>
 #include "Editor/Undo/EditorUndoManager.h"
 #include <optional>
 #include <memory>
@@ -59,6 +60,7 @@ public:
 	const FString& GetCurrentLevelFilePath() const { return CurrentLevelFilePath; }
 	void RefreshContentBrowser() { MainPanel.RefreshContentBrowser(); }
 	void OpenAssetEditorForObject(UObject* Object) { MainPanel.OpenAssetEditorForObject(Object); }
+	void OpenUIEditor(const std::filesystem::path& Path) { MainPanel.OpenUIEditor(Path); }
 	void SetContentBrowserIconSize(float Size) { MainPanel.SetContentBrowserIconSize(Size); }
 	float GetContentBrowserIconSize() const { return MainPanel.GetContentBrowserIconSize(); }
 	void HideEditorWindows() { MainPanel.HideEditorWindows(); }
@@ -173,6 +175,7 @@ public:
 	// 에디터 화면으로 복귀. UE 의 Stop Play 와 동일 의미로 매핑 (PIE 중간에 다른 scene 으로
 	// 점프하는 의미가 모호하므로). InScenePath 는 무시.
 	void RequestTransitionToScene(const FString& InScenePath) override;
+	void RequestExit() override;
 
 	//GC
 	void AddReferencedObjects(FReferenceCollector& Collector) override;

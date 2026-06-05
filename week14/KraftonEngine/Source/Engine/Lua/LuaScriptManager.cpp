@@ -43,7 +43,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
-#include <windows.h>  // PostQuitMessage
+#include <windows.h>
 
 #include "Intermediate/Generated/LuaBindings.generated.h"
 
@@ -583,8 +583,10 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	});
 	Engine.set_function("Exit", []()
 	{
-		// WM_QUIT — FEngineLoop::Run 이 PumpMessages 에서 잡고 정상 shutdown.
-		PostQuitMessage(0);
+		if (GEngine)
+		{
+			GEngine->RequestExit();
+		}
 	});
 	Engine.set_function("SetOnEscape", [](sol::protected_function Callback)
 	{

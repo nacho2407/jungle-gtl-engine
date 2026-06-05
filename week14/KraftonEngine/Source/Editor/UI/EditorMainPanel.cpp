@@ -209,6 +209,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 	RenderFooterOverlay(DeltaTime);
 
 	AssetEditorManager.Render(DeltaTime);
+	UIEditorWidget.Render(DeltaTime);
 
 	// 토스트 알림 (항상 최상위에 표시)
 	FNotificationToast::Render();
@@ -934,4 +935,9 @@ void FEditorMainPanel::RestoreEditorWindowsAfterPIE()
 void FEditorMainPanel::OpenAssetEditorForObject(UObject* Object)
 {
 	AssetEditorManager.OpenEditorForObject(Object);
+}
+
+void FEditorMainPanel::OpenUIEditor(const std::filesystem::path& Path)
+{
+	UIEditorWidget.Open(Path);
 }

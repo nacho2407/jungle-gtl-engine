@@ -92,6 +92,9 @@ public:
 	UUserWidget* CreateWidget(APlayerController* OwningPlayer, const FString& DocumentPath);
 	void AddToViewport(UUserWidget* Widget, int32 ZOrder);
 	void RemoveFromViewport(UUserWidget* Widget);
+	bool ReloadDocument(UUserWidget* Widget);
+	int32 ReloadDocumentsByPath(const FString& DocumentPath);
+	void ClearRmlCaches();
 	// PIE end / TransitionToScene 같은 라이프사이클 경계 — viewport 만 비우고 widget UObject
 	// 는 유지 (Lua 가 캐시한 핸들이 valid 한 채로 다음 세션에 재사용되도록).
 	void ClearViewport();
