@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "Core/Types/CoreTypes.h"
 #include "Editor/UI/Asset/UI/UIEditorDocument.h"

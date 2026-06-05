@@ -684,7 +684,8 @@ bool FUIEditorSerializer::Save(FUIEditorDocument& Document, FString* OutError)
 		return false;
 	}
 
-	return Load(Document.SourcePath, Document, OutError);
+	const std::filesystem::path ReloadPath = Document.SourcePath;
+	return Load(ReloadPath, Document, OutError);
 }
 
 bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEditorDocument& OutDocument, FString* OutError)

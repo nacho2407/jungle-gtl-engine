@@ -6,6 +6,18 @@ body {
 	color: #f5f2ee;
 }
 
+@keyframes menu-hover-blink {
+	0% {
+		color: #ffffff;
+	}
+	50% {
+		color: #bdbdbd;
+	}
+	100% {
+		color: #ffffff;
+	}
+}
+
 #title-screen {
 	position: absolute;
 	left: 0px;
@@ -22,6 +34,7 @@ body {
 	top: 0px;
 	width: 100%;
 	height: 100%;
+	image-fit: cover;
 }
 
 #shade {
@@ -35,18 +48,19 @@ body {
 
 #main-menu {
 	position: absolute;
-	left: 92px;
-	top: 245px;
-	width: 930px;
+	left: 7.2%;
+	top: 22.7%;
+	width: 72.7%;
+	height: 50.0%;
 }
 
 #game-title {
-	margin-bottom: 58px;
 	font-size: 104px;
 	font-weight: 900;
 	line-height: 112px;
 	letter-spacing: 0px;
 	color: #ffffff;
+	white-space: nowrap;
 }
 
 .menu-block {
@@ -54,21 +68,61 @@ body {
 }
 
 .menu-primary {
-	margin-bottom: 20px;
 	font-size: 54px;
 	font-weight: 700;
 	line-height: 62px;
-	color: #f5f2ee;
+	color: #b8b8b8;
+	white-space: nowrap;
 }
 
 .menu-primary:hover {
 	color: #ffffff;
-	text-shadow: 0px 0px 12px #d71920;
+	animation-name: menu-hover-blink;
+	animation-duration: 0.58s;
+	animation-iteration-count: infinite;
+	animation-direction: alternate;
+	animation-timing-function: ease-in-out;
+	text-shadow: none;
 }
 
 #start-actions {
 	display: block;
 	margin-top: 8px;
+}
+
+.menu-node {
+	color: #f5f2ee;
+}
+
+.menu-child {
+	font-size: 34px;
+	font-weight: 400;
+	line-height: 40px;
+	color: #b8b8b8;
+	white-space: nowrap;
+}
+
+.menu-child:hover {
+	color: #ffffff;
+	animation-name: menu-hover-blink;
+	animation-duration: 0.46s;
+	animation-iteration-count: infinite;
+	animation-direction: alternate;
+	animation-timing-function: ease-in-out;
+	text-shadow: none;
+}
+
+#quit-button {
+	padding-left: 10px;
+	padding-right: 18px;
+	line-height: 32px;
+}
+
+#quit-button:hover {
+	color: #111111;
+	background-color: #d0d0d0;
+	animation-name: none;
+	text-shadow: none;
 }
 
 .menu-secondary {
@@ -82,7 +136,7 @@ body {
 
 .menu-secondary:hover {
 	color: #ffffff;
-	text-shadow: 0px 0px 8px #d71920;
+	text-shadow: none;
 }
 
 .quit-link {
