@@ -579,32 +579,6 @@ namespace
 		}
 	}
 
-	bool HasClassToken(const FAttributeSpan* ClassAttribute, const FString& ClassToken)
-	{
-		if (!ClassAttribute)
-		{
-			return false;
-		}
-
-		std::istringstream Tokens(ClassAttribute->Value);
-		FString Token;
-		while (Tokens >> Token)
-		{
-			if (EqualsIgnoreCase(Token, ClassToken))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-
-	bool IsKnownTemplateElement(const FAttributeSpan* ClassAttribute)
-	{
-		return HasClassToken(ClassAttribute, "hover-image-button") ||
-			HasClassToken(ClassAttribute, "dialogue-box") ||
-			HasClassToken(ClassAttribute, "dialogue-layer");
-	}
-
 	int32 FindMatchingEndTag(const FString& Source, const FString& TagName, int32 SearchStart)
 	{
 		const FString LowerTag = ToLowerCopy(TagName);
@@ -768,9 +742,8 @@ namespace
 		return Result;
 	}
 
-	FCssRuleInfo FindCssIdRule(const FUIEditorDocument& Document, const FString& Id)
+	FCssRuleInfo FindCssRule(const FUIEditorDocument& Document, const FString& Selector)
 	{
-		const FString Selector = "#" + Id;
 		for (int32 StyleSheetIndex = 0; StyleSheetIndex < static_cast<int32>(Document.StyleSheets.size()); ++StyleSheetIndex)
 		{
 			const FString& Css = Document.StyleSheets[StyleSheetIndex].CurrentSource;
@@ -805,12 +778,47 @@ namespace
 		return {};
 	}
 
+	FCssRuleInfo FindCssIdRule(const FUIEditorDocument& Document, const FString& Id)
+	{
+		return FindCssRule(Document, "#" + Id);
+	}
+
+	FCssRuleInfo FindCssClassRule(const FUIEditorDocument& Document, const FString& ClassName)
+	{
+		return FindCssRule(Document, "." + ClassName);
+	}
+
 	void ApplyCssStyleIfMissing(FUIEditorTextElement& Element, FStyleValueSpan& InlineSpan, const FStyleValueSpan& CssSpan)
 	{
 		(void)Element;
 		if (!InlineSpan.bExistsInSource && CssSpan.bExistsInSource)
 		{
 			InlineSpan = CssSpan;
+		}
+	}
+
+	void ApplyCssRuleStylesIfMissing(FUIEditorTextElement& Element, const FUIEditorDocument& Document, const FCssRuleInfo& CssRule)
+	{
+		if (CssRule.StyleSheetIndex < 0 || CssRule.StyleSheetIndex >= static_cast<int32>(Document.StyleSheets.size()))
+		{
+			return;
+		}
+
+		const FString& Css = Document.StyleSheets[CssRule.StyleSheetIndex].CurrentSource;
+		ApplyCssStyleIfMissing(Element, Element.PositionStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "position", CssRule.StyleSheetIndex));
+		ApplyCssStyleIfMissing(Element, Element.LeftStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "left", CssRule.StyleSheetIndex));
+		ApplyCssStyleIfMissing(Element, Element.TopStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "top", CssRule.StyleSheetIndex));
+		ApplyCssStyleIfMissing(Element, Element.WidthStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "width", CssRule.StyleSheetIndex));
+		ApplyCssStyleIfMissing(Element, Element.HeightStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "height", CssRule.StyleSheetIndex));
+		ApplyCssStyleIfMissing(Element, Element.FontSizeStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "font-size", CssRule.StyleSheetIndex));
+		ApplyCssStyleIfMissing(Element, Element.FontWeightStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "font-weight", CssRule.StyleSheetIndex));
+		ApplyCssStyleIfMissing(Element, Element.TextAlignStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "text-align", CssRule.StyleSheetIndex));
+		ApplyCssStyleIfMissing(Element, Element.ColorStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "color", CssRule.StyleSheetIndex));
+
+		if (Element.CssRuleStyleSheetIndex < 0)
+		{
+			Element.CssRuleStyleSheetIndex = CssRule.StyleSheetIndex;
+			Element.CssRuleInsertPos = CssRule.InsertPos;
 		}
 	}
 
@@ -1505,16 +1513,8 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 
 		const FAttributeSpan* ClassAttribute = FindAttribute(Attributes, "class");
 		const FAttributeSpan* StyleAttribute = FindAttribute(Attributes, "style");
-		const FAttributeSpan* UIEditorAttribute = FindAttribute(Attributes, "data-ui-editor");
 		const FString InnerSource = bSelfClosing ? FString {} : Rml.substr(TagEnd, CloseTagBegin - TagEnd);
 		const bool bHasChildElements = InnerSource.find('<') != FString::npos;
-		const bool bExplicitTextElement = UIEditorAttribute && EqualsIgnoreCase(UIEditorAttribute->Value, "text");
-		const bool bKnownTemplateElement = IsKnownTemplateElement(ClassAttribute);
-		if (bHasChildElements && !bKnownTemplateElement)
-		{
-			Cursor = TagEnd;
-			continue;
-		}
 
 		FUIEditorTextElement Element;
 		Element.TagName = ToLowerCopy(TagName);
@@ -1526,7 +1526,7 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 		Element.ElementRange = { TagBegin, CloseTagEnd };
 		Element.InnerTextRange = bHasChildElements ? FSourceRange {} : FSourceRange { TagEnd, CloseTagBegin };
 		Element.StyleAttributeValueRange = StyleAttribute ? StyleAttribute->ValueRange : FSourceRange {};
-		Element.bCanEditText = !bSelfClosing && (!bHasChildElements || bExplicitTextElement);
+		Element.bCanEditText = !bSelfClosing && !bHasChildElements;
 
 		Element.PositionStyle = ParseStyleProperty(Rml, StyleAttribute, "position");
 		Element.LeftStyle = ParseStyleProperty(Rml, StyleAttribute, "left");
@@ -1541,18 +1541,16 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 		const FCssRuleInfo CssRule = FindCssIdRule(OutDocument, Element.Id);
 		Element.CssRuleStyleSheetIndex = CssRule.StyleSheetIndex;
 		Element.CssRuleInsertPos = CssRule.InsertPos;
-		if (CssRule.StyleSheetIndex >= 0 && CssRule.StyleSheetIndex < static_cast<int32>(OutDocument.StyleSheets.size()))
+		ApplyCssRuleStylesIfMissing(Element, OutDocument, CssRule);
+
+		if (ClassAttribute)
 		{
-			const FString& Css = OutDocument.StyleSheets[CssRule.StyleSheetIndex].CurrentSource;
-			ApplyCssStyleIfMissing(Element, Element.PositionStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "position", CssRule.StyleSheetIndex));
-			ApplyCssStyleIfMissing(Element, Element.LeftStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "left", CssRule.StyleSheetIndex));
-			ApplyCssStyleIfMissing(Element, Element.TopStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "top", CssRule.StyleSheetIndex));
-			ApplyCssStyleIfMissing(Element, Element.WidthStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "width", CssRule.StyleSheetIndex));
-			ApplyCssStyleIfMissing(Element, Element.HeightStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "height", CssRule.StyleSheetIndex));
-			ApplyCssStyleIfMissing(Element, Element.FontSizeStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "font-size", CssRule.StyleSheetIndex));
-			ApplyCssStyleIfMissing(Element, Element.FontWeightStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "font-weight", CssRule.StyleSheetIndex));
-			ApplyCssStyleIfMissing(Element, Element.TextAlignStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "text-align", CssRule.StyleSheetIndex));
-			ApplyCssStyleIfMissing(Element, Element.ColorStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "color", CssRule.StyleSheetIndex));
+			std::istringstream ClassTokens(ClassAttribute->Value);
+			FString ClassToken;
+			while (ClassTokens >> ClassToken)
+			{
+				ApplyCssRuleStylesIfMissing(Element, OutDocument, FindCssClassRule(OutDocument, ClassToken));
+			}
 		}
 
 		Element.X = ParseStyleFloat(Element.LeftStyle, Element.X);
