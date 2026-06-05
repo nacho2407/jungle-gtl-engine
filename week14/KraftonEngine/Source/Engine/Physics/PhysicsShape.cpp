@@ -8,6 +8,10 @@
 #include "Component/Shape/SphereComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/Primitive/StaticMeshComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Core/Types/EngineTypes.h"
+#include "Math/Quat.h"
+#include "Math/Rotator.h"
 
 namespace
 {
@@ -94,6 +98,35 @@ void FPhysicsShapeFactory::CreateShapesForComponent(physx::PxPhysics& Physics, p
 	{
 		CreateShapesForStaticMeshComponent(Physics, Material, StaticMeshComp,
 			bTrigger, OutShapes);
+		return;
+	}
+	else if (USkeletalMeshComponent* SkelComp = Cast<USkeletalMeshComponent>(Component))
+	{
+		// PhysicsAsset 있으면 per-bone hitbox (FHitboxInstance) 가 query 를 담당.
+		// 컴포넌트 자체 body 는 shape 없이 release 되게 둔다.
+		if (SkelComp->GetPhysicsAsset()) return;
+
+		// PhysicsAsset 없을 때만 fallback: loose AABB-derived box.
+		const FBoundingBox WorldBox = SkelComp->GetWorldBoundingBox();
+		const FVector Size = WorldBox.Max - WorldBox.Min;
+		if (Size.X <= 0.0f || Size.Y <= 0.0f || Size.Z <= 0.0f) return;
+
+		const FVector WorldCenter = (WorldBox.Min + WorldBox.Max) * 0.5f;
+		const FVector HalfExtents = Size * 0.5f;
+
+		const FVector BodyLoc = SkelComp->GetWorldLocation();
+		const FQuat   BodyRot = SkelComp->GetWorldRotation().ToQuaternion();
+		const FQuat   InvRot  = BodyRot.Inverse();
+		const FVector LocalCenter = InvRot.RotateVector(WorldCenter - BodyLoc);
+
+		physx::PxShape* Shape = Physics.createShape(
+			physx::PxBoxGeometry(HalfExtents.X, HalfExtents.Y, HalfExtents.Z), Material);
+		if (Shape)
+		{
+			Shape->setLocalPose(physx::PxTransform(ToPxVec3(LocalCenter)));
+			ApplyShapeFlags(*Shape, Component, bTrigger);
+			OutShapes.push_back(Shape);
+		}
 		return;
 	}
 }

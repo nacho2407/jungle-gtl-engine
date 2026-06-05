@@ -32,6 +32,7 @@
 #include "GameFramework/Camera/SequenceCameraShake.h"
 #include "GameFramework/GameMode/GameplayStatics.h"
 #include "GameFramework/World.h"
+#include "Debug/DrawDebugHelpers.h"
 #include "Object/Reflection/UClass.h"
 #include "Platform/Paths.h"
 #include "Math/Transform.h"
@@ -1370,14 +1371,67 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		}
 		return Result;
 	});
+	World.set_function("RaycastSkeletalMesh",
+		[](const FVector& Start, const FVector& Dir, float MaxDist,
+		   sol::optional<AActor*> IgnoreActor) -> sol::object
+	{
+		if (!GEngine || !GEngine->GetWorld()) return sol::lua_nil;
+		FHitResult Hit;
+		const bool bHit = GEngine->GetWorld()->PhysicsRaycast(
+			Start, Dir, MaxDist, Hit,
+			ECollisionChannel::SkeletalMesh,
+			IgnoreActor.value_or(nullptr));
+		if (!bHit) return sol::lua_nil;
+		return sol::make_object(FLuaScriptManager::GetState(), Hit);
+	});
+	World.set_function("RaycastWorldStatic",
+		[](const FVector& Start, const FVector& Dir, float MaxDist,
+		   sol::optional<AActor*> IgnoreActor) -> sol::object
+	{
+		if (!GEngine || !GEngine->GetWorld()) return sol::lua_nil;
+		FHitResult Hit;
+		const bool bHit = GEngine->GetWorld()->PhysicsRaycast(
+			Start, Dir, MaxDist, Hit,
+			ECollisionChannel::WorldStatic,
+			IgnoreActor.value_or(nullptr));
+		if (!bHit) return sol::lua_nil;
+		return sol::make_object(FLuaScriptManager::GetState(), Hit);
+	});
 
 	FLuaDocRegistry::Get().Type("WorldLib")
 		.Method("---@param className string\n---@return Actor?\nfunction World.SpawnActor(className) end")
 		.Method("---@param actorName string\n---@return Actor?\nfunction World.FindActorByName(actorName) end")
 		.Method("---@param className string\n---@return Actor?\nfunction World.FindFirstActorByClass(className) end")
 		.Method("---@param tag string\n---@return Actor?\nfunction World.FindFirstActorByTag(tag) end")
-		.Method("---@param tag string\n---@return Actor[]\nfunction World.FindActorsByTag(tag) end");
+		.Method("---@param tag string\n---@return Actor[]\nfunction World.FindActorsByTag(tag) end")
+		.Method("---@param start Vector\n---@param dir Vector\n---@param maxDist number\n---@param ignoreActor? Actor\n---@return HitResult?\nfunction World.RaycastSkeletalMesh(start, dir, maxDist, ignoreActor) end")
+		.Method("---@param start Vector\n---@param dir Vector\n---@param maxDist number\n---@param ignoreActor? Actor\n---@return HitResult?\nfunction World.RaycastWorldStatic(start, dir, maxDist, ignoreActor) end");
 	FLuaDocRegistry::Get().Global("World", "WorldLib");
+
+	sol::table Debug = Lua.create_named_table("Debug");
+	Debug.set_function("DrawLine",
+		[](const FVector& A, const FVector& B,
+		   int R, int G, int Bcol, sol::optional<float> Duration)
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		DrawDebugLine(GEngine->GetWorld(), A, B,
+			FColor(R, G, Bcol), Duration.value_or(0.0f));
+	});
+	Debug.set_function("DrawSphere",
+		[](const FVector& Center, float Radius,
+		   int R, int G, int Bcol, sol::optional<float> Duration,
+		   sol::optional<int> Segments)
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		DrawDebugSphere(GEngine->GetWorld(), Center, Radius,
+			Segments.value_or(12),
+			FColor(R, G, Bcol), Duration.value_or(0.0f));
+	});
+
+	FLuaDocRegistry::Get().Type("DebugLib")
+		.Method("---@param a Vector\n---@param b Vector\n---@param r integer\n---@param g integer\n---@param b_ integer\n---@param duration? number\nfunction Debug.DrawLine(a, b, r, g, b_, duration) end")
+		.Method("---@param center Vector\n---@param radius number\n---@param r integer\n---@param g integer\n---@param b integer\n---@param duration? number\n---@param segments? integer\nfunction Debug.DrawSphere(center, radius, r, g, b, duration, segments) end");
+	FLuaDocRegistry::Get().Global("Debug", "DebugLib");
 
 	Lua.new_usertype<USkeletalMeshComponent>("SkeletalMeshComponent",
 		sol::base_classes, sol::bases<USkinnedMeshComponent, UPrimitiveComponent, USceneComponent>(),

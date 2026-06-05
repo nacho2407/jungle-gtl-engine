@@ -384,6 +384,40 @@ function World.FindFirstActorByTag(tag) end
 ---@return Actor[]
 function World.FindActorsByTag(tag) end
 
+---@param start Vector
+---@param dir Vector
+---@param maxDist number
+---@param ignoreActor? Actor
+---@return HitResult?
+function World.RaycastSkeletalMesh(start, dir, maxDist, ignoreActor) end
+
+---@param start Vector
+---@param dir Vector
+---@param maxDist number
+---@param ignoreActor? Actor
+---@return HitResult?
+function World.RaycastWorldStatic(start, dir, maxDist, ignoreActor) end
+
+---@class DebugLib
+DebugLib = {}
+
+---@param a Vector
+---@param b Vector
+---@param r integer
+---@param g integer
+---@param b_ integer
+---@param duration? number
+function Debug.DrawLine(a, b, r, g, b_, duration) end
+
+---@param center Vector
+---@param radius number
+---@param r integer
+---@param g integer
+---@param b integer
+---@param duration? number
+---@param segments? integer
+function Debug.DrawSphere(center, radius, r, g, b, duration, segments) end
+
 ---@class SkeletalMeshComponent: PrimitiveComponent
 SkeletalMeshComponent = {}
 
@@ -578,6 +612,9 @@ function Anim.blend_list_set_active(blendList, index) end
 
 ---@type WorldLib
 World = World
+
+---@type DebugLib
+Debug = Debug
 
 ---@type Actor
 obj = obj

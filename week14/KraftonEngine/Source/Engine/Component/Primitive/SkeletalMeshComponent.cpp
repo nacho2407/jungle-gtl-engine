@@ -22,6 +22,7 @@
 #include "Serialization/Archive.h"
 
 #include "Physics/RagdollInstance.h"
+#include "Physics/HitboxInstance.h"
 #include "Physics/PhysicsAsset.h"
 #include "Physics/PhysicsScene.h"
 #include "GameFramework/World.h"
@@ -111,7 +112,10 @@ namespace
 	}
 }
 
-USkeletalMeshComponent::USkeletalMeshComponent() = default;
+USkeletalMeshComponent::USkeletalMeshComponent()
+{
+	SetCollisionPreset(ECollisionPreset::SkeletalMesh);
+}
 
 USkeletalMeshComponent::~USkeletalMeshComponent()
 {
@@ -120,7 +124,34 @@ USkeletalMeshComponent::~USkeletalMeshComponent()
         SetSimulatePhysics(false);
     }
 
+    ReleaseHitboxes();
     ClearAnimInstance();
+}
+
+void USkeletalMeshComponent::EnsureHitboxesInitialized()
+{
+    if (Hitboxes && Hitboxes->IsActive()) return;
+    if (bSimulatingPhysics) return; // ragdoll 중엔 hitbox 불필요
+    if (GetCollisionEnabled() == ECollisionEnabled::NoCollision) return;
+
+    UPhysicsAsset* Asset = GetPhysicsAsset();
+    if (!Asset) return;
+
+    UWorld* World = GetWorld();
+    FPhysicsScene* Scene = World ? World->GetPhysicsScene() : nullptr;
+    if (!Scene) return;
+
+    if (!Hitboxes) Hitboxes = std::make_unique<FHitboxInstance>();
+    Hitboxes->Initialize(Asset, this, Scene);
+}
+
+void USkeletalMeshComponent::ReleaseHitboxes()
+{
+    if (!Hitboxes || !Hitboxes->IsActive()) return;
+
+    UWorld* World = GetWorld();
+    FPhysicsScene* Scene = World ? World->GetPhysicsScene() : nullptr;
+    Hitboxes->Release(Scene);
 }
 
 FPrimitiveSceneProxy* USkeletalMeshComponent::CreateSceneProxy()
@@ -582,6 +613,17 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 {
 	UpdateComponentLinearVelocity(DeltaTime);
 
+	// Hitbox lifecycle — ragdoll 이 아닌 동안 PhysicsAsset 으로 per-bone kinematic body 유지.
+	// 직전 프레임의 본 transform 으로 sync — 1프레임 lag 은 hitscan 정밀도에 무영향.
+	if (!bSimulatingPhysics)
+	{
+		EnsureHitboxesInitialized();
+		if (Hitboxes && Hitboxes->IsActive())
+		{
+			Hitboxes->SyncBodiesFromBones(this);
+		}
+	}
+
 	FPoseContext AnimPose;
 	const bool bHasAnimPose = EvaluateAnimInstanceToPose(DeltaTime, AnimPose);
 
@@ -689,7 +731,8 @@ void USkeletalMeshComponent::SetSimulatePhysics(bool bEnable)
 	if (bEnable)
 	{
 		ClearRagdollRecovery();
-		
+		ReleaseHitboxes();
+
 		UPhysicsAsset* Asset = GetPhysicsAsset(); // 3-B: 오버라이드 ?? 메시 기본
 		if (!Asset)
 		{

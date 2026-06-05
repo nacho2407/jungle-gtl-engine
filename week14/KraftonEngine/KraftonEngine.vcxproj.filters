@@ -1559,6 +1559,9 @@
     <ClCompile Include="Source\Engine\Physics\PhysicsShape.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\HitboxInstance.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\RagdollInstance.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
@@ -2910,6 +2913,9 @@
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysicsTypes.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\HitboxInstance.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\RagdollInstance.h">
