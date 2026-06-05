@@ -386,7 +386,10 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	using namespace json;
 
 	JSON Root = Object();
-	Root[Key::SkinningMode] = static_cast<int32>(SkinningModeRuntime::Get());
+	// CPU skinning is a heavy debug fallback. Do not persist an accidental
+	// console/editor toggle as the next session default, because that makes all
+	// animated skeletal meshes run per-vertex skinning on the game thread.
+	Root[Key::SkinningMode] = static_cast<int32>(ESkinningMode::GPU);
 
 	// Viewport
 	JSON Viewport = SaveCameraControls(LevelViewportCameraControls);
@@ -649,8 +652,9 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		LoadGizmoSettings(MeshEditorTransformObj, MeshEditorViewportSettings.Gizmo);
 	}
 
-	if (bLoadedSkinningMode)
-	{
-		SkinningModeRuntime::Set(LoadedSkinningMode);
-	}
+	// Keep editor/game startup on GPU skinning. CPU skinning can still be enabled
+	// explicitly for the current session with the console command: skinning cpu.
+	// Old settings files may contain SkinningMode=CPU; restoring that here causes
+	// the level viewport and PIE to spend most of their frame in UpdateCPUSkinning.
+	SkinningModeRuntime::Set(ESkinningMode::GPU);
 }

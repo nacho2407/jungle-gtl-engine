@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Component/Light/LightComponent.h"
 
 
@@ -9,6 +9,9 @@ class UPointLightComponent : public ULightComponent
 {
 public:
 	GENERATED_BODY()
+
+	UPointLightComponent();
+
 	virtual ELightComponentType GetLightType() const override { return ELightComponentType::Point; }
 	virtual void ContributeSelectedVisuals(FScene& Scene) const override;
 	virtual void PushToScene() override;

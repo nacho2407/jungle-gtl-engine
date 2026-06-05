@@ -8,9 +8,9 @@
         <div id="weapon-hud-panel" class="weapon-hud-panel" data-ui-editor="img">
             <img id="weapon-hud-panel-image" class="weapon-hud-panel-image" src="WeaponHudCutPanel.png"/>
             <img id="weapon-hud-rifle-image" class="weapon-hud-rifle-image" src="WeaponHudRifle.png" data-ui-editor="img"/>
-            <div id="weapon-hud-separator" class="weapon-hud-separator"></div>
+            <div id="weapon-hud-separator" class="weapon-hud-separator" data-ui-editor="text">|</div>
             <div id="weapon-hud-current-ammo" class="weapon-hud-current-ammo" data-ui-editor="text">25</div>
-            <div id="weapon-hud-reserve-ammo" class="weapon-hud-reserve-ammo" data-ui-editor="text">60</div>
+            <div id="weapon-hud-magazine-ammo" class="weapon-hud-magazine-ammo" data-ui-editor="text">25</div>
         </div>
     </div>
 </body>

@@ -11,11 +11,38 @@ local MUZZLE_FWD_OFFSET = 0.4   -- 카메라 앞 0.4m 지점을 머즐로 간주
 
 local MAX_RANGE        = 200.0
 local FIRE_INTERVAL    = 0.12
+local MAGAZINE_SIZE    = 50
+local RELOAD_DURATION  = 1.1
 
 local MAX_HITS_FOR_FULL_RED = 8
 
 local fireCooldown = 0.0
+local reloadTimer  = 0.0
+local currentAmmo  = MAGAZINE_SIZE
+local isReloading  = false
 local hitCounts    = {}
+
+local function update_weapon_hud()
+    if weaponHudWidget == nil then return end
+
+    weaponHudWidget:SetText("weapon-hud-current-ammo", tostring(currentAmmo))
+    weaponHudWidget:SetText("weapon-hud-magazine-ammo", tostring(MAGAZINE_SIZE))
+end
+
+local function finish_reload()
+    currentAmmo = MAGAZINE_SIZE
+    reloadTimer = 0.0
+    isReloading = false
+    update_weapon_hud()
+end
+
+local function start_reload()
+    if arms == nil or isReloading or currentAmmo >= MAGAZINE_SIZE then return end
+
+    isReloading = true
+    reloadTimer = RELOAD_DURATION
+    arms:PlayAnimationByPath(RELOAD_ANIM_PATH, false)
+end
 
 local function lerp_red(t)
     if t > 1.0 then t = 1.0 end
@@ -36,6 +63,14 @@ end
 
 local function try_shoot()
     if camera == nil or arms == nil then return end
+    if isReloading then return end
+    if currentAmmo <= 0 then
+        start_reload()
+        return
+    end
+
+    currentAmmo = currentAmmo - 1
+    update_weapon_hud()
 
     arms:PlayAnimationByPath(SHOOT_ANIM_PATH, false)
 
@@ -87,10 +122,15 @@ end
 function BeginPlay()
     arms   = obj:GetSkeletalMesh()
     camera = obj:GetCamera()
+    currentAmmo = MAGAZINE_SIZE
+    reloadTimer = 0.0
+    isReloading = false
+    fireCooldown = 0.0
 
     weaponHudWidget = UI.CreateWidget("Content/UI/HUD/WeaponHUD.rml")
     if weaponHudWidget ~= nil then
         weaponHudWidget:AddToViewportZ(80)
+        update_weapon_hud()
     end
 end
 
@@ -108,8 +148,15 @@ function Tick(dt)
         fireCooldown = fireCooldown - dt
     end
 
+    if isReloading then
+        reloadTimer = reloadTimer - dt
+        if reloadTimer <= 0 then
+            finish_reload()
+        end
+    end
+
     if Input.GetKeyDown(Key.R) then
-        arms:PlayAnimationByPath(RELOAD_ANIM_PATH, false)
+        start_reload()
     end
 
     if Input.GetKey(Key.MouseLeft) and fireCooldown <= 0 then

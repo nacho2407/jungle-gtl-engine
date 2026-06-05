@@ -190,6 +190,10 @@ void FEditorConsoleWidget::AddLog(const char* fmt, ...)
 void FEditorConsoleWidget::Initialize(UEditorEngine* InEditorEngine)
 {
 	FEditorWidget::Initialize(InEditorEngine);
+	Commands.clear();
+	CompletionEntries.clear();
+	CompletionCandidates.clear();
+	LastCompletionInput.clear();
 
 	// 에디터 콘솔을 로그 출력 디바이스로 등록
 	FLogManager::Get().AddOutputDevice(&ConsoleDevice);
@@ -396,15 +400,14 @@ void FEditorConsoleWidget::RenderCompletionCandidates()
 	DrawList->AddRectFilled(PanelMin, PanelMax, IM_COL32(18, 22, 28, 210), 4.0f);
 	DrawList->AddRect(PanelMin, PanelMax, IM_COL32(80, 92, 110, 170), 4.0f);
 
-	const FString Prefix = TrimLeft(ToLower(InputBuf));
+	const FString Prefix = LastCompletionInput;
 	const ImU32 PrefixColor = IM_COL32(120, 132, 150, 255);
 	const ImU32 SuffixColor = IM_COL32(210, 225, 245, 255);
 	float Y = PanelMin.y + PanelPaddingY;
 
 	for (const FCompletionCandidate& Candidate : CompletionCandidates)
 	{
-		const FString LowerDisplayText = ToLower(Candidate.DisplayText);
-		const size_t PrefixLength = (Prefix.size() <= LowerDisplayText.size() && StartsWith(LowerDisplayText, Prefix)) ? Prefix.size() : 0;
+		const size_t PrefixLength = (Prefix.size() <= Candidate.LowerDisplayText.size() && StartsWith(Candidate.LowerDisplayText, Prefix)) ? Prefix.size() : 0;
 		const FString PrefixText = Candidate.DisplayText.substr(0, PrefixLength);
 		const FString SuffixText = Candidate.DisplayText.substr(PrefixLength);
 		const ImVec2 TextPos(PanelMin.x + PanelPaddingX, Y);
@@ -439,6 +442,7 @@ void FEditorConsoleWidget::RenderInputLine(const char* Label, float Width, bool 
 		ExecCommand(InputBuf);
 		strcpy_s(InputBuf, "");
 		CompletionCandidates.clear();
+		LastCompletionInput.clear();
 		bReclaimFocus = true;
 	}
 	else
@@ -466,32 +470,40 @@ const char* FEditorConsoleWidget::GetLatestLogMessage() const
 
 void FEditorConsoleWidget::RegisterCommand(const FString& Name, CommandFn Fn, const FString& Category, const FString& Usage, const FString& Description)
 {
-	Commands[ToLower(Name)] = { Fn, Category, Usage, Description };
+	const FString LowerName = ToLower(Name);
+	Commands[LowerName] = { Fn, Category, Usage, Description };
+	for (const FString& Variant : BuildUsageVariants(LowerName, Usage))
+	{
+		CompletionEntries.push_back({ LowerName, Variant, ToLower(Variant) });
+	}
+	LastCompletionInput.clear();
 }
 
 void FEditorConsoleWidget::UpdateCompletionCandidates()
 {
+	const FString LowerInput = TrimLeft(ToLower(InputBuf));
+	if (LowerInput == LastCompletionInput)
+	{
+		return;
+	}
+	LastCompletionInput = LowerInput;
 	CompletionCandidates = GetCompletionCandidates(InputBuf);
 }
 
 TArray<FEditorConsoleWidget::FCompletionCandidate> FEditorConsoleWidget::GetCompletionCandidates(const FString& Input) const
 {
-	FString LowerInput = TrimLeft(ToLower(Input));
+	const FString LowerInput = TrimLeft(ToLower(Input));
 	if (LowerInput.empty())
 	{
 		return {};
 	}
 
 	TArray<FCompletionCandidate> Candidates;
-	for (const auto& Pair : Commands)
+	for (const FCompletionEntry& Entry : CompletionEntries)
 	{
-		const FString& Name = Pair.first;
-		for (const FString& Variant : BuildUsageVariants(Name, Pair.second.Usage))
+		if (StartsWith(Entry.LowerDisplayText, LowerInput))
 		{
-			if (StartsWith(ToLower(Variant), LowerInput))
-			{
-				Candidates.push_back({ Name, Variant });
-			}
+			Candidates.push_back({ Entry.CommandName, Entry.DisplayText, Entry.LowerDisplayText });
 		}
 	}
 
