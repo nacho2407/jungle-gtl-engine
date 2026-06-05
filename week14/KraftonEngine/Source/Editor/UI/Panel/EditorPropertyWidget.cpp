@@ -55,6 +55,40 @@
 
 namespace
 {
+	constexpr float PropertyNameColumnMinWidth = 90.0f;
+	constexpr float PropertyNameColumnMaxDefaultWidth = 275.0f;
+	constexpr float PropertyNameColumnDefaultRatio = 0.45f;
+
+	/**
+	* @brief Details 패널 폭에 맞춘 속성 이름 컬럼 기본 폭을 계산합니다.
+	*/
+	float GetDetailsPropertyNameColumnWidth()
+	{
+		const float AvailableWidth = ImGui::GetContentRegionAvail().x;
+		if (AvailableWidth <= 0.0f)
+		{
+			return PropertyNameColumnMaxDefaultWidth;
+		}
+
+		// 값 입력 영역 최소 확보
+		const float MaxWidthByPanel = std::max(PropertyNameColumnMinWidth, AvailableWidth - PropertyNameColumnMinWidth);
+		const float MaxWidth = std::min(PropertyNameColumnMaxDefaultWidth, MaxWidthByPanel);
+		const float TargetWidth = AvailableWidth * PropertyNameColumnDefaultRatio;
+		return std::clamp(TargetWidth, PropertyNameColumnMinWidth, MaxWidth);
+	}
+
+	/**
+	* @brief Details 속성 테이블 공통 flag 집합을 반환합니다.
+	*/
+	ImGuiTableFlags GetDetailsPropertyTableFlags()
+	{
+		return ImGuiTableFlags_SizingStretchProp
+			| ImGuiTableFlags_BordersInnerV
+			| ImGuiTableFlags_PadOuterX
+			| ImGuiTableFlags_RowBg
+			| ImGuiTableFlags_Resizable;
+	}
+
 	bool ShouldHideInComponentTree(const UActorComponent* Component, bool bShowEditorOnlyComponents)
 	{
 		if (!Component)
@@ -1446,10 +1480,10 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		TArray<FDeferredPostEditChange> DeferredChanges;
 		bool bAnyChanged = false;
 
-		if (ImGui::BeginTable("##ActorPropertyTable", 2,
-			ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_PadOuterX | ImGuiTableFlags_RowBg))
+		const float NameColumnWidth = GetDetailsPropertyNameColumnWidth();
+		if (ImGui::BeginTable("##ActorPropertyTable", 2, GetDetailsPropertyTableFlags()))
 		{
-			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 275.0f);
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, NameColumnWidth);
 			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
 			ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
@@ -1902,10 +1936,10 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 			if (!bOpen) continue;
 		}
 
-		if (ImGui::BeginTable("##PropertyTable", 2,
-			ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_PadOuterX | ImGuiTableFlags_RowBg))
+		const float NameColumnWidth = GetDetailsPropertyNameColumnWidth();
+		if (ImGui::BeginTable("##PropertyTable", 2, GetDetailsPropertyTableFlags()))
 		{
-			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 275.0f);
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, NameColumnWidth);
 			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
 			ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
