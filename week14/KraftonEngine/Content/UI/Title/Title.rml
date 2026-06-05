@@ -24,11 +24,11 @@
                 </div>
             </div>
 
-            <div id="settings-button" class="hover-image-button" style="position: absolute; left: 10.00px; top: 245.00px; width: 190.00px; height: 40.00px;">
+            <div id="settings-button" class="hover-image-button" style="position: absolute; left: 10.00px; top: 250.00px; width: 190.00px; height: 40.00px;">
                 <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
                 <div class="hover-image-label menu-primary">SETTINGS</div>
             </div>
-            <div id="credits-button" class="hover-image-button" style="position: absolute; left: 8.00px; top: 300.00px; width: 170.00px; height: 40.00px;">
+            <div id="credits-button" class="hover-image-button" style="position: absolute; left: 8.00px; top: 305.00px; width: 170.00px; height: 40.00px;">
                 <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
                 <div class="hover-image-label menu-primary">CREDITS</div>
             </div>

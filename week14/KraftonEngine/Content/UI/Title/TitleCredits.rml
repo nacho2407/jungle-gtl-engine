@@ -8,7 +8,9 @@
     <div id="credits-screen" class="popup-screen">
         <div id="credits-panel" class="popup-panel credits-panel" style="position: absolute; left: 50.00%; top: 50.00%; width: 980.00px; height: 620.00px; margin-left: -490.00px; margin-top: -310.00px;">
             <div id="credits-title" class="popup-title credits-title" data-ui-editor="text">CREDITS</div>
-            <div id="credits-close-button" class="credits-close-button" data-ui-editor="text">X</div>
+            <div id="credits-close-button" class="credits-close-button">
+                <img id="credits-close-icon" class="popup-close-icon" src="../Common/CloseX.png"/>
+            </div>
             <div id="credits-title-separator" class="popup-separator credits-title-separator"></div>
 
             <div id="credits-content" class="popup-content credits-content">

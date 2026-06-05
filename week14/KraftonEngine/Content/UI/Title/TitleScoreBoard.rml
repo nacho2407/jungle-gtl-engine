@@ -8,7 +8,9 @@
     <div id="scoreboard-screen" class="popup-screen">
         <div id="scoreboard-panel" class="popup-panel scoreboard-panel" style="position: absolute; left: 50.00%; top: 50.00%; width: 860.00px; height: 560.00px; margin-left: -430.00px; margin-top: -280.00px;">
             <div id="scoreboard-title" class="popup-title scoreboard-title" data-ui-editor="text">SCOREBOARD</div>
-            <div id="scoreboard-close-button" class="scoreboard-close-button" data-ui-editor="text">X</div>
+            <div id="scoreboard-close-button" class="scoreboard-close-button">
+                <img id="scoreboard-close-icon" class="popup-close-icon" src="../Common/CloseX.png"/>
+            </div>
             <div id="scoreboard-title-separator" class="popup-separator scoreboard-title-separator"></div>
 
             <div id="scoreboard-content" class="popup-content scoreboard-content">

@@ -20,16 +20,23 @@
 	top: 42px;
 	width: 34px;
 	height: 34px;
-	font-size: 24px;
-	font-weight: 400;
-	line-height: 34px;
-	text-align: center;
-	color: #b0b0b0;
 }
 
 .credits-close-button:hover {
-	color: #ffffff;
 	background-color: #ffffff29;
+}
+
+.credits-close-button:hover .popup-close-icon {
+	opacity: 1;
+}
+
+.popup-close-icon {
+	position: absolute;
+	left: 7px;
+	top: 7px;
+	width: 20px;
+	height: 20px;
+	opacity: 0.7;
 }
 
 .credits-title-separator {
