@@ -827,6 +827,9 @@ void UUIManager::CloseDocument(UUserWidget* Widget)
 
 void UUIManager::Render(const FPassContext& Ctx)
 {
+	LastViewportWidth = Ctx.Frame.ViewportWidth;
+	LastViewportHeight = Ctx.Frame.ViewportHeight;
+
 	if (!RmlContext || !RenderInterface || ViewportWidgets.empty() || Ctx.Frame.ViewportWidth <= 0.0f || Ctx.Frame.ViewportHeight <= 0.0f)
 	{
 		return;

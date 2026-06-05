@@ -6,7 +6,7 @@
 </head>
 <body>
     <div id="title-screen">
-        <img id="title-background" src="Title.png" style="position: absolute; left: 0.00%; top: 0.00%; width: 100.00%; height: 100.00%;"/>
+        <img id="title-background" src="Title.png" style="position: absolute; left: 0.00px; top: 0.00px; width: 100.00%; height: 100.00%;"/>
         <div id="shade"></div>
 
         <div id="main-menu">
@@ -32,7 +32,7 @@
                 <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
                 <div class="hover-image-label menu-primary">CREDITS</div>
             </div>
-            <div id="quit-button" class="hover-image-button quit-link" style="position: absolute; left: 10.00px; top: 340.00px; width: 72.00px; height: 26.00px;">
+            <div id="quit-button" class="hover-image-button quit-link" style="position: absolute; left: 10.00px; top: 340.00px; width: 66.00px; height: 26.00px;">
                 <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
                 <div class="hover-image-label menu-primary">QUIT</div>
             </div>

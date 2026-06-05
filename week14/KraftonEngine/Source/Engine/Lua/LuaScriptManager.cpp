@@ -53,10 +53,32 @@ std::mutex FLuaScriptManager::ComponentMutex;
 TArray<ULuaScriptComponent*> FLuaScriptManager::RegisteredComponents;
 TArray<ULuaAnimInstance*>    FLuaScriptManager::RegisteredAnimInstances;
 FSubscriptionID FLuaScriptManager::WatchSub = 0;
+float FLuaScriptManager::RuntimeGamma = 2.4f;
+float FLuaScriptManager::RuntimeMouseSensitivity = 0.2f;
 
 void FLuaScriptManager::SetOnEscapePressed(sol::protected_function Callback)
 {
 	OnEscapePressedCallback = std::move(Callback);
+}
+
+float FLuaScriptManager::GetRuntimeGamma()
+{
+	return RuntimeGamma;
+}
+
+void FLuaScriptManager::SetRuntimeGamma(float InGamma)
+{
+	RuntimeGamma = std::clamp(InGamma, 1.0f, 3.0f);
+}
+
+float FLuaScriptManager::GetRuntimeMouseSensitivity()
+{
+	return RuntimeMouseSensitivity;
+}
+
+void FLuaScriptManager::SetRuntimeMouseSensitivity(float InSensitivity)
+{
+	RuntimeMouseSensitivity = std::clamp(InSensitivity, 0.01f, 10.0f);
 }
 
 void FLuaScriptManager::RegisterComponent(ULuaScriptComponent* Component)
@@ -529,6 +551,8 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		});
 		Input.set_function("GetMouseDeltaX", []() { return GetLuaInputSnapshot().MouseDeltaX; });
 		Input.set_function("GetMouseDeltaY", []() { return GetLuaInputSnapshot().MouseDeltaY; });
+		Input.set_function("GetMouseClientX", []() { return InputSystem::Get().GetMouseClientPos().x; });
+		Input.set_function("GetMouseClientY", []() { return InputSystem::Get().GetMouseClientPos().y; });
 	}
 
 	// Engine — 게임 일시정지 / 종료.
@@ -570,6 +594,15 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		Result["Width"] = 0.0f;
 		Result["Height"] = 0.0f;
 
+		const float UiViewportWidth = UUIManager::Get().GetViewportWidth();
+		const float UiViewportHeight = UUIManager::Get().GetViewportHeight();
+		if (UiViewportWidth > 0.0f && UiViewportHeight > 0.0f)
+		{
+			Result["Width"] = UiViewportWidth;
+			Result["Height"] = UiViewportHeight;
+			return Result;
+		}
+
 		if (GEngine)
 		{
 			if (FWindowsWindow* Window = GEngine->GetWindow())
@@ -581,11 +614,34 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 
 		return Result;
 	});
+	Engine.set_function("GetGamma", []()
+	{
+		return FLuaScriptManager::GetRuntimeGamma();
+	});
+	Engine.set_function("SetGamma", [](float Value)
+	{
+		FLuaScriptManager::SetRuntimeGamma(Value);
+	});
+	Engine.set_function("GetMouseSensitivity", []()
+	{
+		return FLuaScriptManager::GetRuntimeMouseSensitivity();
+	});
+	Engine.set_function("SetMouseSensitivity", [](float Value)
+	{
+		FLuaScriptManager::SetRuntimeMouseSensitivity(Value);
+	});
 	Engine.set_function("Exit", []()
 	{
 		if (GEngine)
 		{
 			GEngine->RequestExit();
+		}
+	});
+	Engine.set_function("TransitionToScene", [](const FString& ScenePath)
+	{
+		if (GEngine)
+		{
+			GEngine->RequestTransitionToScene(ScenePath);
 		}
 	});
 	Engine.set_function("SetOnEscape", [](sol::protected_function Callback)
@@ -1433,6 +1489,10 @@ void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)
 		"bind_click", [](UUserWidget& Widget, const FString& ElementId, sol::protected_function Callback)
 	{
 		Widget.BindClick(ElementId, Callback);
+	},
+		"bind_event", [](UUserWidget& Widget, const FString& ElementId, const FString& EventName, sol::protected_function Callback)
+	{
+		Widget.BindEvent(ElementId, EventName, Callback);
 	},
 		"SetText", &UUserWidget::SetText,
 		"set_text", &UUserWidget::SetText,

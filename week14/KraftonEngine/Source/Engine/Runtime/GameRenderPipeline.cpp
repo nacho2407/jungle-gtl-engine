@@ -8,6 +8,7 @@
 #include "Component/Camera/CineCameraComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Input/InputSystem.h"
+#include "Lua/LuaScriptManager.h"
 #include "Viewport/Viewport.h"
 #include "Math/MathUtils.h"
 
@@ -63,6 +64,8 @@ void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 	FViewportRenderOptions Opts;
 	Opts.ViewMode = EViewMode::Lit_Phong;
+	Opts.ShowFlags.bGammaCorrection = true;
+	Opts.Gamma = FLuaScriptManager::GetRuntimeGamma();
 	Frame.SetRenderOptions(Opts);
 
 	FScene* Scene = &World->GetScene();

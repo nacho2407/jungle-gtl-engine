@@ -1,0 +1,104 @@
+<rml>
+<head>
+    <title>Title Settings</title>
+    <link type="text/rcss" href="../Common/MenuHoverButton.rcss"/>
+    <link type="text/rcss" href="TitleSettings.rcss"/>
+</head>
+<body>
+    <div id="settings-screen" class="settings-screen">
+        <div id="settings-title" class="settings-title" data-ui-editor="text">SETTINGS</div>
+        <div id="settings-title-rule" class="settings-title-rule"></div>
+
+        <div id="settings-left-panel" class="settings-panel settings-left-panel">
+            <div id="settings-gameplay-title" class="settings-section-title" data-ui-editor="text">GAMEPLAY</div>
+            <div id="settings-gameplay-rule" class="settings-section-rule"></div>
+            <div id="settings-gamma-row" class="settings-row">
+                <div id="settings-gamma-label" class="settings-label" data-ui-editor="text">Gamma</div>
+                <div id="settings-gamma-minus" class="settings-step-button settings-step-minus" data-ui-editor="text">-</div>
+                <div id="settings-gamma-slider" class="settings-slider">
+                    <div id="settings-gamma-track" class="settings-slider-track"></div>
+                    <div id="settings-gamma-fill" class="settings-slider-fill settings-gamma-fill"></div>
+                    <div id="settings-gamma-handle" class="settings-slider-handle settings-gamma-handle"></div>
+                </div>
+                <div id="settings-gamma-plus" class="settings-step-button settings-step-plus" data-ui-editor="text">+</div>
+                <div id="settings-gamma-value" class="settings-value" data-ui-editor="text">1.00</div>
+            </div>
+
+            <div id="settings-audio-title" class="settings-section-title settings-audio-title" data-ui-editor="text">AUDIO</div>
+            <div id="settings-audio-rule" class="settings-section-rule settings-audio-rule"></div>
+            <div id="settings-bgm-row" class="settings-row settings-bgm-row">
+                <div id="settings-bgm-label" class="settings-label" data-ui-editor="text">BGM Volume</div>
+                <div id="settings-bgm-minus" class="settings-step-button settings-step-minus" data-ui-editor="text">-</div>
+                <div id="settings-bgm-slider" class="settings-slider">
+                    <div id="settings-bgm-track" class="settings-slider-track"></div>
+                    <div id="settings-bgm-fill" class="settings-slider-fill settings-bgm-fill"></div>
+                    <div id="settings-bgm-handle" class="settings-slider-handle settings-bgm-handle"></div>
+                </div>
+                <div id="settings-bgm-plus" class="settings-step-button settings-step-plus" data-ui-editor="text">+</div>
+                <div id="settings-bgm-value" class="settings-value" data-ui-editor="text">80</div>
+            </div>
+            <div id="settings-sfx-row" class="settings-row settings-sfx-row">
+                <div id="settings-sfx-label" class="settings-label" data-ui-editor="text">SFX Volume</div>
+                <div id="settings-sfx-minus" class="settings-step-button settings-step-minus" data-ui-editor="text">-</div>
+                <div id="settings-sfx-slider" class="settings-slider">
+                    <div id="settings-sfx-track" class="settings-slider-track"></div>
+                    <div id="settings-sfx-fill" class="settings-slider-fill settings-sfx-fill"></div>
+                    <div id="settings-sfx-handle" class="settings-slider-handle settings-sfx-handle"></div>
+                </div>
+                <div id="settings-sfx-plus" class="settings-step-button settings-step-plus" data-ui-editor="text">+</div>
+                <div id="settings-sfx-value" class="settings-value" data-ui-editor="text">80</div>
+            </div>
+            <div id="settings-voice-row" class="settings-row settings-voice-row">
+                <div id="settings-voice-label" class="settings-label" data-ui-editor="text">Voice Volume</div>
+                <div id="settings-voice-minus" class="settings-step-button settings-step-minus" data-ui-editor="text">-</div>
+                <div id="settings-voice-slider" class="settings-slider">
+                    <div id="settings-voice-track" class="settings-slider-track"></div>
+                    <div id="settings-voice-fill" class="settings-slider-fill settings-voice-fill"></div>
+                    <div id="settings-voice-handle" class="settings-slider-handle settings-voice-handle"></div>
+                </div>
+                <div id="settings-voice-plus" class="settings-step-button settings-step-plus" data-ui-editor="text">+</div>
+                <div id="settings-voice-value" class="settings-value" data-ui-editor="text">80</div>
+            </div>
+
+            <div id="settings-controls-title" class="settings-section-title settings-controls-title" data-ui-editor="text">CONTROLS</div>
+            <div id="settings-controls-rule" class="settings-section-rule settings-controls-rule"></div>
+            <div id="settings-mouse-row" class="settings-row settings-mouse-row">
+                <div id="settings-mouse-label" class="settings-label" data-ui-editor="text">Mouse Sensitivity</div>
+                <div id="settings-mouse-minus" class="settings-step-button settings-step-minus" data-ui-editor="text">-</div>
+                <div id="settings-mouse-slider" class="settings-slider">
+                    <div id="settings-mouse-track" class="settings-slider-track"></div>
+                    <div id="settings-mouse-fill" class="settings-slider-fill settings-mouse-fill"></div>
+                    <div id="settings-mouse-handle" class="settings-slider-handle settings-mouse-handle"></div>
+                </div>
+                <div id="settings-mouse-plus" class="settings-step-button settings-step-plus" data-ui-editor="text">+</div>
+                <div id="settings-mouse-value" class="settings-value" data-ui-editor="text">1.10</div>
+            </div>
+            <div id="settings-toggle-zoom-row" class="settings-row settings-toggle-zoom-row">
+                <div id="settings-toggle-zoom-label" class="settings-label" data-ui-editor="text">Zoom</div>
+                <div id="settings-toggle-zoom-value" class="settings-option-value" data-ui-editor="text">Hold</div>
+            </div>
+            <div id="settings-toggle-sprint-row" class="settings-row settings-toggle-sprint-row">
+                <div id="settings-toggle-sprint-label" class="settings-label" data-ui-editor="text">Sprint</div>
+                <div id="settings-toggle-sprint-value" class="settings-option-value" data-ui-editor="text">Toggle</div>
+            </div>
+        </div>
+
+        <div id="settings-help-panel" class="settings-panel settings-help-panel">
+            <div id="settings-help-title" class="settings-help-title" data-ui-editor="text">GAME SETTINGS</div>
+            <div id="settings-help-body" class="settings-help-body" data-ui-editor="text">Adjust visual brightness, audio mix, and mouse feel before starting the campaign.</div>
+            <div id="settings-help-note" class="settings-help-note" data-ui-editor="text">Use - and + to adjust sliders. Click Zoom or Sprint to switch between Hold and Toggle.</div>
+        </div>
+
+        <div id="settings-footer-actions" class="settings-footer-actions">
+            <div id="settings-back-button" class="hover-image-button settings-footer-button">
+                <img id="settings-back-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="settings-back-label" class="hover-image-label" data-ui-editor="text">Back</div>
+            </div>
+            <div id="settings-restore-button" class="hover-image-button settings-footer-button settings-restore-button">
+                <img id="settings-restore-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="settings-restore-label" class="hover-image-label" data-ui-editor="text">Restore Defaults</div>
+            </div>
+        </div>
+    </div>
+</body>
+</rml>

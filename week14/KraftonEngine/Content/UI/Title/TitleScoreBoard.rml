@@ -1,32 +1,70 @@
 <rml>
 <head>
     <title>Title ScoreBoard</title>
-    <link type="text/rcss" href="../Common/FullWidthContentBox.rcss.bak"/>
-    <link type="text/rcss" href="TitleScoreBoard.rcss.bak"/>
+    <link type="text/rcss" href="../Common/Popup.rcss"/>
+    <link type="text/rcss" href="TitleScoreBoard.rcss"/>
 </head>
 <body>
-    <div id="scoreboard-screen">
-        <div id="stat-panel" class="full-width-content-box title-stat-panel">
-            <div id="stat-panel-content" class="full-width-content-box-content">
-                <div class="panel-title">Scoreboard</div>
-                <div class="scoreboard">
-                    <div class="score-row score-header">
-                        <div>Name</div>
-                        <div>Stage</div>
-                        <div>Time</div>
+    <div id="scoreboard-screen" class="popup-screen">
+        <div id="scoreboard-panel" class="popup-panel scoreboard-panel" style="position: absolute; left: 50.00%; top: 50.00%; width: 860.00px; height: 560.00px; margin-left: -430.00px; margin-top: -280.00px;">
+            <div id="scoreboard-title" class="popup-title scoreboard-title" data-ui-editor="text">SCOREBOARD</div>
+            <div id="scoreboard-close-button" class="scoreboard-close-button" data-ui-editor="text">X</div>
+            <div id="scoreboard-title-separator" class="popup-separator scoreboard-title-separator"></div>
+
+            <div id="scoreboard-content" class="popup-content scoreboard-content">
+                <div id="scoreboard-header-row" class="score-row score-header" style="position: absolute; left: 0.00px; top: 0.00px; width: 764.00px; height: 34.00px;">
+                    <div id="scoreboard-header-name" class="score-cell score-name" data-ui-editor="text">Name</div>
+                    <div id="scoreboard-header-score" class="score-cell score-score" data-ui-editor="text">Score</div>
+                    <div id="scoreboard-header-time" class="score-cell score-time" data-ui-editor="text">Time</div>
+                </div>
+                <div id="scoreboard-separator-01" class="score-separator" style="position: absolute; left: 0.00px; top: 44.00px; width: 764.00px; height: 1.00px;"></div>
+
+                <div id="scoreboard-rows-group" class="scoreboard-rows-group" style="position: absolute; left: 0.00px; top: 58.00px; width: 764.00px; height: 344.00px;">
+                    <div id="scoreboard-row-01" class="score-row" style="position: absolute; left: 0.00px; top: 0.00px; width: 764.00px; height: 36.00px;">
+                        <div id="scoreboard-name-01" class="score-cell score-name" data-ui-editor="text">Empty Slot</div>
+                        <div id="scoreboard-score-01" class="score-cell score-score" data-ui-editor="text">000000</div>
+                        <div id="scoreboard-time-01" class="score-cell score-time" data-ui-editor="text">--:--</div>
                     </div>
-                    <div class="score-row">
-                        <div>Empty Slot</div>
-                        <div>-</div>
-                        <div>--:--</div>
+                    <div id="scoreboard-row-02" class="score-row" style="position: absolute; left: 0.00px; top: 42.00px; width: 764.00px; height: 36.00px;">
+                        <div id="scoreboard-name-02" class="score-cell score-name" data-ui-editor="text">Empty Slot</div>
+                        <div id="scoreboard-score-02" class="score-cell score-score" data-ui-editor="text">000000</div>
+                        <div id="scoreboard-time-02" class="score-cell score-time" data-ui-editor="text">--:--</div>
                     </div>
-                    <div class="score-row">
-                        <div>Empty Slot</div>
-                        <div>-</div>
-                        <div>--:--</div>
+                    <div id="scoreboard-row-03" class="score-row" style="position: absolute; left: 0.00px; top: 84.00px; width: 764.00px; height: 36.00px;">
+                        <div id="scoreboard-name-03" class="score-cell score-name" data-ui-editor="text">Empty Slot</div>
+                        <div id="scoreboard-score-03" class="score-cell score-score" data-ui-editor="text">000000</div>
+                        <div id="scoreboard-time-03" class="score-cell score-time" data-ui-editor="text">--:--</div>
+                    </div>
+                    <div id="scoreboard-row-04" class="score-row" style="position: absolute; left: 0.00px; top: 126.00px; width: 764.00px; height: 36.00px;">
+                        <div id="scoreboard-name-04" class="score-cell score-name" data-ui-editor="text">Empty Slot</div>
+                        <div id="scoreboard-score-04" class="score-cell score-score" data-ui-editor="text">000000</div>
+                        <div id="scoreboard-time-04" class="score-cell score-time" data-ui-editor="text">--:--</div>
+                    </div>
+                    <div id="scoreboard-row-05" class="score-row" style="position: absolute; left: 0.00px; top: 168.00px; width: 764.00px; height: 36.00px;">
+                        <div id="scoreboard-name-05" class="score-cell score-name" data-ui-editor="text">Empty Slot</div>
+                        <div id="scoreboard-score-05" class="score-cell score-score" data-ui-editor="text">000000</div>
+                        <div id="scoreboard-time-05" class="score-cell score-time" data-ui-editor="text">--:--</div>
+                    </div>
+                    <div id="scoreboard-row-06" class="score-row" style="position: absolute; left: 0.00px; top: 210.00px; width: 764.00px; height: 36.00px;">
+                        <div id="scoreboard-name-06" class="score-cell score-name" data-ui-editor="text">Empty Slot</div>
+                        <div id="scoreboard-score-06" class="score-cell score-score" data-ui-editor="text">000000</div>
+                        <div id="scoreboard-time-06" class="score-cell score-time" data-ui-editor="text">--:--</div>
+                    </div>
+                    <div id="scoreboard-row-07" class="score-row" style="position: absolute; left: 0.00px; top: 252.00px; width: 764.00px; height: 36.00px;">
+                        <div id="scoreboard-name-07" class="score-cell score-name" data-ui-editor="text">Empty Slot</div>
+                        <div id="scoreboard-score-07" class="score-cell score-score" data-ui-editor="text">000000</div>
+                        <div id="scoreboard-time-07" class="score-cell score-time" data-ui-editor="text">--:--</div>
+                    </div>
+                    <div id="scoreboard-row-08" class="score-row" style="position: absolute; left: 0.00px; top: 294.00px; width: 764.00px; height: 36.00px;">
+                        
+                        
+                        
                     </div>
                 </div>
             </div>
+
+            
+            <div id="scoreboard-footer-text" class="scoreboard-footer-text" data-ui-editor="text">ARCHIVE / BEST CLEAR RECORDS</div>
         </div>
     </div>
 </body>
