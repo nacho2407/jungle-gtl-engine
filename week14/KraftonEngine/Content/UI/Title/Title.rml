@@ -65,24 +65,6 @@
                 </div>
             </div>
         </div>
-
-        <div id="quit-panel" class="full-width-content-box full-width-content-box-screen-center title-quit-panel hidden">
-            <div id="quit-confirm-content" class="full-width-content-box-content">
-                <img id="quit-warning-icon" src="WarningIcon.png"/>
-                <div id="quit-question">ARE YOU SURE YOU WANT TO QUIT?</div>
-                
-                <div id="quit-options">
-                    <div id="cancel-quit-button" class="hover-image-button quit-confirm-option">
-                        <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
-                        <div class="hover-image-label">CANCEL</div>
-                    </div>
-                    <div id="confirm-quit-button" class="hover-image-button quit-confirm-option">
-                        <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
-                        <div class="hover-image-label">QUIT</div>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </body>
 </rml>

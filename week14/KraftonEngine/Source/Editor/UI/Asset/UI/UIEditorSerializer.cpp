@@ -1,4 +1,5 @@
 #include "Editor/UI/Asset/UI/UIEditorSerializer.h"
+#include "Platform/Paths.h"
 
 #include <algorithm>
 #include <cctype>
@@ -26,6 +27,14 @@ namespace
 		FSourceRange FullRange;
 		FSourceRange ValueRange;
 		char QuoteChar = '"';
+	};
+
+	struct FCssRuleInfo
+	{
+		int32 StyleSheetIndex = -1;
+		int32 RuleBegin = -1;
+		int32 RuleEnd = -1;
+		int32 InsertPos = -1;
 	};
 
 	void SetUIEditorError(FString* OutError, const FString& Error)
@@ -133,6 +142,36 @@ namespace
 			return false;
 		}
 		return true;
+	}
+
+	bool EndsWithIgnoreCase(const FString& Value, const FString& Suffix)
+	{
+		if (Suffix.size() > Value.size())
+		{
+			return false;
+		}
+		return ToLowerCopy(Value.substr(Value.size() - Suffix.size())) == ToLowerCopy(Suffix);
+	}
+
+	std::filesystem::path ResolveLinkedPath(const std::filesystem::path& DocumentPath, const FString& Href)
+	{
+		std::filesystem::path LinkedPath(FPaths::ToWide(Href));
+		if (LinkedPath.is_relative())
+		{
+			LinkedPath = DocumentPath.parent_path() / LinkedPath;
+		}
+		return LinkedPath.lexically_normal();
+	}
+
+	FString MakeRelativeHref(const std::filesystem::path& DocumentPath, const std::filesystem::path& LinkedPath)
+	{
+		std::error_code Ec;
+		std::filesystem::path Relative = std::filesystem::relative(LinkedPath, DocumentPath.parent_path(), Ec);
+		if (Ec)
+		{
+			Relative = LinkedPath;
+		}
+		return FPaths::ToUtf8(Relative.generic_wstring());
 	}
 
 	bool BackupFile(const std::filesystem::path& Path, FString* OutError)
@@ -373,6 +412,116 @@ namespace
 		return nullptr;
 	}
 
+	bool PrepareLinkedStyleSheets(const std::filesystem::path& DocumentPath, FString& Rml, FUIEditorDocument& Document, FString* OutError)
+	{
+		TArray<FTextPatch> Patches;
+		int32 Cursor = 0;
+		while (Cursor < static_cast<int32>(Rml.size()))
+		{
+			const size_t Found = Rml.find('<', static_cast<size_t>(Cursor));
+			if (Found == FString::npos)
+			{
+				break;
+			}
+
+			const int32 TagBegin = static_cast<int32>(Found);
+			FString TagName;
+			int32 TagEnd = -1;
+			bool bSelfClosing = false;
+			if (!ParseStartTag(Rml, TagBegin, TagName, TagEnd, bSelfClosing))
+			{
+				Cursor = TagBegin + 1;
+				continue;
+			}
+
+			if (!EqualsIgnoreCase(TagName, "link"))
+			{
+				Cursor = TagEnd;
+				continue;
+			}
+
+			const TArray<FAttributeSpan> Attributes = ParseAttributes(Rml, TagBegin, TagEnd, TagName);
+			const FAttributeSpan* HrefAttribute = FindAttribute(Attributes, "href");
+			if (!HrefAttribute || HrefAttribute->Value.empty())
+			{
+				Cursor = TagEnd;
+				continue;
+			}
+
+			FString Href = HrefAttribute->Value;
+			if (!EndsWithIgnoreCase(Href, ".rcss") && !EndsWithIgnoreCase(Href, ".rcss.bak"))
+			{
+				Cursor = TagEnd;
+				continue;
+			}
+
+			std::filesystem::path DraftPath = ResolveLinkedPath(DocumentPath, Href);
+			std::filesystem::path SourcePath = DraftPath;
+			if (EndsWithIgnoreCase(FPaths::ToUtf8(SourcePath.generic_wstring()), ".bak"))
+			{
+				FString SourceUtf8 = FPaths::ToUtf8(SourcePath.wstring());
+				SourceUtf8.resize(SourceUtf8.size() - 4);
+				SourcePath = std::filesystem::path(FPaths::ToWide(SourceUtf8));
+			}
+			else
+			{
+				DraftPath = SourcePath.wstring() + L".bak";
+				const FString DraftHref = MakeRelativeHref(DocumentPath, DraftPath);
+				Patches.push_back({ HrefAttribute->ValueRange.Begin, HrefAttribute->ValueRange.End, DraftHref });
+			}
+
+			FString CssSource;
+			if (std::filesystem::exists(DraftPath))
+			{
+				if (!ReadTextFile(DraftPath, CssSource, OutError))
+				{
+					return false;
+				}
+			}
+			else if (std::filesystem::exists(SourcePath))
+			{
+				if (!ReadTextFile(SourcePath, CssSource, OutError) || !WriteTextFile(DraftPath, CssSource, OutError))
+				{
+					return false;
+				}
+			}
+			else
+			{
+				CssSource.clear();
+				if (!WriteTextFile(DraftPath, CssSource, OutError))
+				{
+					return false;
+				}
+			}
+
+			bool bAlreadyAdded = false;
+			for (const FUIEditorStyleSheet& StyleSheet : Document.StyleSheets)
+			{
+				if (StyleSheet.DraftPath == DraftPath)
+				{
+					bAlreadyAdded = true;
+					break;
+				}
+			}
+			if (!bAlreadyAdded)
+			{
+				FUIEditorStyleSheet StyleSheet;
+				StyleSheet.SourcePath = SourcePath;
+				StyleSheet.DraftPath = DraftPath;
+				StyleSheet.CurrentSource = CssSource;
+				Document.StyleSheets.push_back(std::move(StyleSheet));
+			}
+
+			Cursor = TagEnd;
+		}
+
+		if (!Patches.empty())
+		{
+			ApplyPatchesDescending(Rml, Patches);
+		}
+		return true;
+	}
+
 	bool HasClassToken(const FAttributeSpan* ClassAttribute, const FString& ClassToken)
 	{
 		if (!ClassAttribute)
@@ -506,6 +655,106 @@ namespace
 		}
 
 		return Result;
+	}
+
+	FStyleValueSpan ParseCssRuleProperty(const FString& Source, int32 RuleBegin, int32 RuleEnd, const FString& PropertyName, int32 StyleSheetIndex)
+	{
+		FStyleValueSpan Result;
+		Result.PropertyName = PropertyName;
+		Result.StyleSheetIndex = StyleSheetIndex;
+		if (RuleBegin < 0 || RuleEnd <= RuleBegin || RuleEnd > static_cast<int32>(Source.size()))
+		{
+			return Result;
+		}
+
+		FString RuleSource = Source.substr(RuleBegin, RuleEnd - RuleBegin);
+		FString LowerRule = ToLowerCopy(RuleSource);
+		FString LowerProperty = ToLowerCopy(PropertyName);
+		size_t Pos = 0;
+		while ((Pos = LowerRule.find(LowerProperty, Pos)) != FString::npos)
+		{
+			const bool bLeftBoundary = Pos == 0 || LowerRule[Pos - 1] == ';' || LowerRule[Pos - 1] == '{' || std::isspace(static_cast<unsigned char>(LowerRule[Pos - 1]));
+			size_t AfterName = Pos + LowerProperty.size();
+			while (AfterName < LowerRule.size() && std::isspace(static_cast<unsigned char>(LowerRule[AfterName])))
+			{
+				++AfterName;
+			}
+			if (!bLeftBoundary || AfterName >= LowerRule.size() || LowerRule[AfterName] != ':')
+			{
+				Pos = AfterName;
+				continue;
+			}
+
+			size_t ValueBegin = AfterName + 1;
+			while (ValueBegin < LowerRule.size() && std::isspace(static_cast<unsigned char>(LowerRule[ValueBegin])))
+			{
+				++ValueBegin;
+			}
+
+			size_t ValueEnd = ValueBegin;
+			while (ValueEnd < LowerRule.size() && LowerRule[ValueEnd] != ';' && LowerRule[ValueEnd] != '}')
+			{
+				++ValueEnd;
+			}
+			while (ValueEnd > ValueBegin && std::isspace(static_cast<unsigned char>(LowerRule[ValueEnd - 1])))
+			{
+				--ValueEnd;
+			}
+
+			Result.bExistsInSource = true;
+			Result.ValueRange.Begin = RuleBegin + static_cast<int32>(ValueBegin);
+			Result.ValueRange.End = RuleBegin + static_cast<int32>(ValueEnd);
+			Result.OriginalValue = Source.substr(Result.ValueRange.Begin, Result.ValueRange.End - Result.ValueRange.Begin);
+			return Result;
+		}
+
+		return Result;
+	}
+
+	FCssRuleInfo FindCssIdRule(const FUIEditorDocument& Document, const FString& Id)
+	{
+		const FString Selector = "#" + Id;
+		for (int32 StyleSheetIndex = 0; StyleSheetIndex < static_cast<int32>(Document.StyleSheets.size()); ++StyleSheetIndex)
+		{
+			const FString& Css = Document.StyleSheets[StyleSheetIndex].CurrentSource;
+			size_t Search = 0;
+			while ((Search = Css.find(Selector, Search)) != FString::npos)
+			{
+				const size_t BraceOpen = Css.find('{', Search + Selector.size());
+				if (BraceOpen == FString::npos)
+				{
+					break;
+				}
+				const FString Between = Css.substr(Search + Selector.size(), BraceOpen - (Search + Selector.size()));
+				if (Between.find_first_not_of(" \t\r\n") != FString::npos)
+				{
+					Search = Search + Selector.size();
+					continue;
+				}
+				const size_t BraceClose = Css.find('}', BraceOpen + 1);
+				if (BraceClose == FString::npos)
+				{
+					break;
+				}
+
+				FCssRuleInfo Info;
+				Info.StyleSheetIndex = StyleSheetIndex;
+				Info.RuleBegin = static_cast<int32>(BraceOpen + 1);
+				Info.RuleEnd = static_cast<int32>(BraceClose);
+				Info.InsertPos = static_cast<int32>(BraceClose);
+				return Info;
+			}
+		}
+		return {};
+	}
+
+	void ApplyCssStyleIfMissing(FUIEditorTextElement& Element, FStyleValueSpan& InlineSpan, const FStyleValueSpan& CssSpan)
+	{
+		(void)Element;
+		if (!InlineSpan.bExistsInSource && CssSpan.bExistsInSource)
+		{
+			InlineSpan = CssSpan;
+		}
 	}
 
 	float ParseStyleFloat(const FStyleValueSpan& Span, float DefaultValue)
@@ -699,6 +948,16 @@ namespace
 		return FontWeight == "bold" ? "bold" : "normal";
 	}
 
+	FString FormatTextAlign(const FString& TextAlign)
+	{
+		const FString Lower = ToLowerCopy(TextAlign);
+		if (Lower == "center" || Lower == "right")
+		{
+			return Lower;
+		}
+		return "left";
+	}
+
 	FString BuildStyleText(const FUIEditorTextElement& Element)
 	{
 		const char* LayoutUnit = Element.bUsePercentLayout ? "%" : "px";
@@ -714,6 +973,7 @@ namespace
 		Out << "height: " << FormatFloatValue(Height, LayoutUnit) << "; ";
 		Out << "font-size: " << FormatFloatValue(FontSize, "px") << "; ";
 		Out << "font-weight: " << FormatFontWeight(Element.FontWeight) << "; ";
+		Out << "text-align: " << FormatTextAlign(Element.TextAlign) << "; ";
 		Out << "color: " << FormatCssColor(Element.Color) << ";";
 		return Out.str();
 	}
@@ -731,6 +991,61 @@ namespace
 		Out << "width: " << FormatFloatValue(Width, LayoutUnit) << "; ";
 		Out << "height: " << FormatFloatValue(Height, LayoutUnit) << ";";
 		return Out.str();
+	}
+
+	bool HasDirtyLayoutProperty(const FUIEditorTextElement& Element)
+	{
+		return Element.bXDirty || Element.bYDirty || Element.bWidthDirty || Element.bHeightDirty;
+	}
+
+	FString BuildDirtyStyleText(const FUIEditorTextElement& Element)
+	{
+		const char* LayoutUnit = Element.bUsePercentLayout ? "%" : "px";
+		std::ostringstream Out;
+
+		if (HasDirtyLayoutProperty(Element) && !Element.PositionStyle.bExistsInSource)
+		{
+			Out << "position: absolute; ";
+		}
+		if (Element.bXDirty)
+		{
+			Out << "left: " << FormatFloatValue(Element.X, LayoutUnit) << "; ";
+		}
+		if (Element.bYDirty)
+		{
+			Out << "top: " << FormatFloatValue(Element.Y, LayoutUnit) << "; ";
+		}
+		if (Element.bWidthDirty)
+		{
+			Out << "width: " << FormatFloatValue((std::max)(1.0f, Element.Width), LayoutUnit) << "; ";
+		}
+		if (Element.bHeightDirty)
+		{
+			Out << "height: " << FormatFloatValue((std::max)(1.0f, Element.Height), LayoutUnit) << "; ";
+		}
+		if (Element.bCanEditText && Element.bFontSizeDirty)
+		{
+			Out << "font-size: " << FormatFloatValue((std::max)(1.0f, Element.FontSize), "px") << "; ";
+		}
+		if (Element.bCanEditText && Element.bFontWeightDirty)
+		{
+			Out << "font-weight: " << FormatFontWeight(Element.FontWeight) << "; ";
+		}
+		if (Element.bCanEditText && Element.bTextAlignDirty)
+		{
+			Out << "text-align: " << FormatTextAlign(Element.TextAlign) << "; ";
+		}
+		if (Element.bCanEditText && Element.bColorDirty)
+		{
+			Out << "color: " << FormatCssColor(Element.Color) << "; ";
+		}
+
+		FString Result = Out.str();
+		while (!Result.empty() && std::isspace(static_cast<unsigned char>(Result.back())))
+		{
+			Result.pop_back();
+		}
+		return Result;
 	}
 
 	int32 FindStyleInsertPosition(const FString& Source, const FUIEditorTextElement& Element)
@@ -753,9 +1068,36 @@ namespace
 
 	void AddStyleValuePatchOrAppend(const FUIEditorTextElement& Element, const FStyleValueSpan& Span, const FString& Value, TArray<FTextPatch>& Patches, TArray<FString>& MissingProperties)
 	{
+		(void)Element;
 		if (Span.bExistsInSource && Span.ValueRange.IsValid())
 		{
 			Patches.push_back({ Span.ValueRange.Begin, Span.ValueRange.End, Value });
+		}
+		else
+		{
+			MissingProperties.push_back(Span.PropertyName + ": " + Value);
+		}
+	}
+
+	void AddStyleValuePatchOrAppend(
+		const FUIEditorTextElement& Element,
+		const FStyleValueSpan& Span,
+		const FString& Value,
+		TArray<FTextPatch>& RmlPatches,
+		TArray<TArray<FTextPatch>>& CssPatches,
+		TArray<FString>& MissingProperties)
+	{
+		(void)Element;
+		if (Span.bExistsInSource && Span.ValueRange.IsValid())
+		{
+			if (Span.StyleSheetIndex >= 0 && Span.StyleSheetIndex < static_cast<int32>(CssPatches.size()))
+			{
+				CssPatches[Span.StyleSheetIndex].push_back({ Span.ValueRange.Begin, Span.ValueRange.End, Value });
+			}
+			else
+			{
+				RmlPatches.push_back({ Span.ValueRange.Begin, Span.ValueRange.End, Value });
+			}
 		}
 		else
 		{
@@ -830,6 +1172,14 @@ bool FUIEditorSerializer::Load(const std::filesystem::path& Path, FUIEditorDocum
 	OutDocument = FUIEditorDocument {};
 	OutDocument.SourcePath = Path;
 	OutDocument.DraftPath = DraftPath;
+	if (!PrepareLinkedStyleSheets(Path, Rml, OutDocument, OutError))
+	{
+		return false;
+	}
+	if (!WriteTextFile(DraftPath, Rml, OutError))
+	{
+		return false;
+	}
 	OutDocument.OriginalSource = Rml;
 	OutDocument.CurrentSource = Rml;
 	OutDocument.bDirty = false;
@@ -851,6 +1201,8 @@ bool FUIEditorSerializer::SaveDraft(FUIEditorDocument& Document, FString* OutErr
 
 	FString Source = Document.CurrentSource.empty() ? Document.OriginalSource : Document.CurrentSource;
 	TArray<FTextPatch> Patches;
+	TArray<TArray<FTextPatch>> CssPatches;
+	CssPatches.resize(Document.StyleSheets.size());
 
 	for (const FSourceRange& DeletedRange : Document.DeletedElementRanges)
 	{
@@ -881,27 +1233,62 @@ bool FUIEditorSerializer::SaveDraft(FUIEditorDocument& Document, FString* OutErr
 
 		if (!Element.StyleAttributeValueRange.IsValid())
 		{
-			const int32 InsertPos = FindStyleInsertPosition(Source, Element);
-			const FString StyleText = Element.bCanEditText ? BuildStyleText(Element) : BuildLayoutStyleText(Element);
-			Patches.push_back({ InsertPos, InsertPos, " style=\"" + StyleText + "\"" });
+			const FString StyleText = BuildDirtyStyleText(Element);
+			if (!StyleText.empty())
+			{
+				if (Element.CssRuleStyleSheetIndex >= 0 && Element.CssRuleStyleSheetIndex < static_cast<int32>(CssPatches.size()) && Element.CssRuleInsertPos >= 0)
+				{
+					CssPatches[Element.CssRuleStyleSheetIndex].push_back({ Element.CssRuleInsertPos, Element.CssRuleInsertPos, " " + StyleText });
+				}
+				else
+				{
+					const int32 InsertPos = FindStyleInsertPosition(Source, Element);
+					Patches.push_back({ InsertPos, InsertPos, " style=\"" + StyleText + "\"" });
+				}
+			}
 			continue;
 		}
 
 		const char* LayoutUnit = Element.bUsePercentLayout ? "%" : "px";
 		TArray<FString> MissingProperties;
-		if (!Element.PositionStyle.bExistsInSource)
+		if (HasDirtyLayoutProperty(Element) && !Element.PositionStyle.bExistsInSource)
 		{
 			MissingProperties.push_back("position: absolute");
 		}
-		AddStyleValuePatchOrAppend(Element, Element.LeftStyle, FormatFloatValue(Element.X, LayoutUnit), Patches, MissingProperties);
-		AddStyleValuePatchOrAppend(Element, Element.TopStyle, FormatFloatValue(Element.Y, LayoutUnit), Patches, MissingProperties);
-		AddStyleValuePatchOrAppend(Element, Element.WidthStyle, FormatFloatValue((std::max)(1.0f, Element.Width), LayoutUnit), Patches, MissingProperties);
-		AddStyleValuePatchOrAppend(Element, Element.HeightStyle, FormatFloatValue((std::max)(1.0f, Element.Height), LayoutUnit), Patches, MissingProperties);
+		if (Element.bXDirty)
+		{
+			AddStyleValuePatchOrAppend(Element, Element.LeftStyle, FormatFloatValue(Element.X, LayoutUnit), Patches, CssPatches, MissingProperties);
+		}
+		if (Element.bYDirty)
+		{
+			AddStyleValuePatchOrAppend(Element, Element.TopStyle, FormatFloatValue(Element.Y, LayoutUnit), Patches, CssPatches, MissingProperties);
+		}
+		if (Element.bWidthDirty)
+		{
+			AddStyleValuePatchOrAppend(Element, Element.WidthStyle, FormatFloatValue((std::max)(1.0f, Element.Width), LayoutUnit), Patches, CssPatches, MissingProperties);
+		}
+		if (Element.bHeightDirty)
+		{
+			AddStyleValuePatchOrAppend(Element, Element.HeightStyle, FormatFloatValue((std::max)(1.0f, Element.Height), LayoutUnit), Patches, CssPatches, MissingProperties);
+		}
 		if (Element.bCanEditText)
 		{
-			AddStyleValuePatchOrAppend(Element, Element.FontSizeStyle, FormatFloatValue((std::max)(1.0f, Element.FontSize), "px"), Patches, MissingProperties);
-			AddStyleValuePatchOrAppend(Element, Element.FontWeightStyle, FormatFontWeight(Element.FontWeight), Patches, MissingProperties);
-			AddStyleValuePatchOrAppend(Element, Element.ColorStyle, FormatCssColor(Element.Color), Patches, MissingProperties);
+			if (Element.bFontSizeDirty)
+			{
+				AddStyleValuePatchOrAppend(Element, Element.FontSizeStyle, FormatFloatValue((std::max)(1.0f, Element.FontSize), "px"), Patches, CssPatches, MissingProperties);
+			}
+			if (Element.bFontWeightDirty)
+			{
+				AddStyleValuePatchOrAppend(Element, Element.FontWeightStyle, FormatFontWeight(Element.FontWeight), Patches, CssPatches, MissingProperties);
+			}
+			if (Element.bTextAlignDirty)
+			{
+				AddStyleValuePatchOrAppend(Element, Element.TextAlignStyle, FormatTextAlign(Element.TextAlign), Patches, CssPatches, MissingProperties);
+			}
+			if (Element.bColorDirty)
+			{
+				AddStyleValuePatchOrAppend(Element, Element.ColorStyle, FormatCssColor(Element.Color), Patches, CssPatches, MissingProperties);
+			}
 		}
 
 		if (!MissingProperties.empty())
@@ -917,11 +1304,32 @@ bool FUIEditorSerializer::SaveDraft(FUIEditorDocument& Document, FString* OutErr
 			{
 				AppendStyle << " " << Property << ";";
 			}
-			Patches.push_back({ Element.StyleAttributeValueRange.End, Element.StyleAttributeValueRange.End, AppendStyle.str() });
+			if (Element.CssRuleStyleSheetIndex >= 0 && Element.CssRuleStyleSheetIndex < static_cast<int32>(CssPatches.size()) && Element.CssRuleInsertPos >= 0)
+			{
+				CssPatches[Element.CssRuleStyleSheetIndex].push_back({ Element.CssRuleInsertPos, Element.CssRuleInsertPos, AppendStyle.str() });
+			}
+			else
+			{
+				Patches.push_back({ Element.StyleAttributeValueRange.End, Element.StyleAttributeValueRange.End, AppendStyle.str() });
+			}
 		}
 	}
 
 	ApplyPatchesDescending(Source, Patches);
+
+	for (int32 StyleSheetIndex = 0; StyleSheetIndex < static_cast<int32>(Document.StyleSheets.size()); ++StyleSheetIndex)
+	{
+		if (CssPatches[StyleSheetIndex].empty())
+		{
+			continue;
+		}
+		FString CssSource = Document.StyleSheets[StyleSheetIndex].CurrentSource;
+		ApplyPatchesDescending(CssSource, CssPatches[StyleSheetIndex]);
+		if (!WriteTextFile(Document.StyleSheets[StyleSheetIndex].DraftPath, CssSource, OutError))
+		{
+			return false;
+		}
+	}
 
 	if (!WriteTextFile(Document.DraftPath, Source, OutError))
 	{
@@ -957,6 +1365,24 @@ bool FUIEditorSerializer::Commit(FUIEditorDocument& Document, FString* OutError)
 	if (!WriteTextFile(Document.SourcePath, DraftSource, OutError))
 	{
 		return false;
+	}
+
+	for (const FUIEditorStyleSheet& StyleSheet : Document.StyleSheets)
+	{
+		if (StyleSheet.SourcePath.empty() || StyleSheet.DraftPath.empty())
+		{
+			continue;
+		}
+
+		FString DraftCss;
+		if (!ReadTextFile(StyleSheet.DraftPath, DraftCss, OutError))
+		{
+			return false;
+		}
+		if (!WriteTextFile(StyleSheet.SourcePath, DraftCss, OutError))
+		{
+			return false;
+		}
 	}
 
 	return Load(Document.SourcePath, Document, OutError);
@@ -996,6 +1422,12 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 		const TArray<FAttributeSpan> Attributes = ParseAttributes(Rml, TagBegin, TagEnd, TagName);
 		const FAttributeSpan* IdAttribute = FindAttribute(Attributes, "id");
 		if (!IdAttribute || IdAttribute->Value.empty())
+		{
+			Cursor = TagEnd;
+			continue;
+		}
+		const FAttributeSpan* SkipEditorAttribute = FindAttribute(Attributes, "data-ui-editor-skip");
+		if (SkipEditorAttribute && EqualsIgnoreCase(TrimCopy(SkipEditorAttribute->Value), "true"))
 		{
 			Cursor = TagEnd;
 			continue;
@@ -1052,7 +1484,25 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 		Element.HeightStyle = ParseStyleProperty(Rml, StyleAttribute, "height");
 		Element.FontSizeStyle = ParseStyleProperty(Rml, StyleAttribute, "font-size");
 		Element.FontWeightStyle = ParseStyleProperty(Rml, StyleAttribute, "font-weight");
+		Element.TextAlignStyle = ParseStyleProperty(Rml, StyleAttribute, "text-align");
 		Element.ColorStyle = ParseStyleProperty(Rml, StyleAttribute, "color");
+
+		const FCssRuleInfo CssRule = FindCssIdRule(OutDocument, Element.Id);
+		Element.CssRuleStyleSheetIndex = CssRule.StyleSheetIndex;
+		Element.CssRuleInsertPos = CssRule.InsertPos;
+		if (CssRule.StyleSheetIndex >= 0 && CssRule.StyleSheetIndex < static_cast<int32>(OutDocument.StyleSheets.size()))
+		{
+			const FString& Css = OutDocument.StyleSheets[CssRule.StyleSheetIndex].CurrentSource;
+			ApplyCssStyleIfMissing(Element, Element.PositionStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "position", CssRule.StyleSheetIndex));
+			ApplyCssStyleIfMissing(Element, Element.LeftStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "left", CssRule.StyleSheetIndex));
+			ApplyCssStyleIfMissing(Element, Element.TopStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "top", CssRule.StyleSheetIndex));
+			ApplyCssStyleIfMissing(Element, Element.WidthStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "width", CssRule.StyleSheetIndex));
+			ApplyCssStyleIfMissing(Element, Element.HeightStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "height", CssRule.StyleSheetIndex));
+			ApplyCssStyleIfMissing(Element, Element.FontSizeStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "font-size", CssRule.StyleSheetIndex));
+			ApplyCssStyleIfMissing(Element, Element.FontWeightStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "font-weight", CssRule.StyleSheetIndex));
+			ApplyCssStyleIfMissing(Element, Element.TextAlignStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "text-align", CssRule.StyleSheetIndex));
+			ApplyCssStyleIfMissing(Element, Element.ColorStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "color", CssRule.StyleSheetIndex));
+		}
 
 		Element.X = ParseStyleFloat(Element.LeftStyle, Element.X);
 		Element.Y = ParseStyleFloat(Element.TopStyle, Element.Y);
@@ -1066,6 +1516,10 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 			{
 				Element.FontWeight = "900";
 			}
+		}
+		if (Element.TextAlignStyle.bExistsInSource)
+		{
+			Element.TextAlign = FormatTextAlign(TrimCopy(Element.TextAlignStyle.OriginalValue));
 		}
 		if (Element.ColorStyle.bExistsInSource)
 		{

@@ -317,6 +317,10 @@ void FUIEditorWidget::RenderInspector()
 			Element.Width = std::clamp(Element.Width, 1.0f, 100.0f);
 			Element.Height = std::clamp(Element.Height, 1.0f, 100.0f);
 		}
+		Element.bXDirty = true;
+		Element.bYDirty = true;
+		Element.bWidthDirty = true;
+		Element.bHeightDirty = true;
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}
@@ -329,27 +333,32 @@ void FUIEditorWidget::RenderInspector()
 
 	if (ImGui::DragFloat("X", &Element.X, PositionSpeed, 0.0f, PositionMax, ValueFormat))
 	{
+		Element.bXDirty = true;
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}
 	if (ImGui::DragFloat("Y", &Element.Y, PositionSpeed, 0.0f, PositionMax, ValueFormat))
 	{
+		Element.bYDirty = true;
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}
 	if (ImGui::DragFloat("Width", &Element.Width, SizeSpeed, 1.0f, SizeMax, ValueFormat))
 	{
+		Element.bWidthDirty = true;
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}
 	if (ImGui::DragFloat("Height", &Element.Height, SizeSpeed, 1.0f, SizeMax, ValueFormat))
 	{
+		Element.bHeightDirty = true;
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}
 	ImGui::BeginDisabled(!Element.bCanEditText);
 	if (ImGui::DragFloat("Font Size", &Element.FontSize, 1.0f, 1.0f, 200.0f))
 	{
+		Element.bFontSizeDirty = true;
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}
@@ -369,12 +378,34 @@ void FUIEditorWidget::RenderInspector()
 	if (ImGui::Combo("Font Weight", &CurrentWeight, WeightLabels, IM_ARRAYSIZE(WeightLabels)))
 	{
 		Element.FontWeight = WeightValues[CurrentWeight];
+		Element.bFontWeightDirty = true;
+		Element.bStyleDirty = true;
+		MarkDirty();
+	}
+
+	const char* AlignLabels[] = { "left", "center", "right" };
+	const char* AlignValues[] = { "left", "center", "right" };
+	int CurrentAlign = 0;
+	if (Element.TextAlign == "center")
+	{
+		CurrentAlign = 1;
+	}
+	else if (Element.TextAlign == "right")
+	{
+		CurrentAlign = 2;
+	}
+
+	if (ImGui::Combo("Text Align", &CurrentAlign, AlignLabels, IM_ARRAYSIZE(AlignLabels)))
+	{
+		Element.TextAlign = AlignValues[CurrentAlign];
+		Element.bTextAlignDirty = true;
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}
 
 	if (ImGui::ColorEdit4("Color", Element.Color, ImGuiColorEditFlags_AlphaPreviewHalf))
 	{
+		Element.bColorDirty = true;
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}

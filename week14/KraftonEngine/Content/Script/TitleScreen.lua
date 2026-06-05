@@ -1,6 +1,8 @@
 local widget = nil
+local quitWidget = nil
 local statVisible = false
 local quitVisible = false
+local show_quit_panel = nil
 
 local function set_visible(elementId, visible)
     if widget == nil then
@@ -13,19 +15,32 @@ end
 local function show_stat_panel(visible)
     statVisible = visible
     if visible then
-        quitVisible = false
-        set_visible("quit-panel", false)
+        show_quit_panel(false)
     end
     set_visible("stat-panel", visible)
 end
 
-local function show_quit_panel(visible)
+show_quit_panel = function(visible)
     quitVisible = visible
     if visible then
         statVisible = false
         set_visible("stat-panel", false)
+        if quitWidget ~= nil and not quitWidget:IsInViewport() then
+            quitWidget:AddToViewportZ(200)
+        end
+    elseif quitWidget ~= nil and quitWidget:IsInViewport() then
+        quitWidget:RemoveFromParent()
     end
-    set_visible("quit-panel", visible)
+end
+
+local function bind_quit_dialog_clicks()
+    quitWidget:bind_click("cancel-quit-button", function()
+        show_quit_panel(false)
+    end)
+
+    quitWidget:bind_click("confirm-quit-button", function()
+        Engine.Exit()
+    end)
 end
 
 local function bind_clicks()
@@ -35,14 +50,6 @@ local function bind_clicks()
 
     widget:bind_click("quit-button", function()
         show_quit_panel(true)
-    end)
-
-    widget:bind_click("cancel-quit-button", function()
-        show_quit_panel(false)
-    end)
-
-    widget:bind_click("confirm-quit-button", function()
-        Engine.Exit()
     end)
 
     widget:bind_click("new-game-button", function()
@@ -68,6 +75,10 @@ function BeginPlay()
     bind_clicks()
     widget:AddToViewportZ(100)
 
+    quitWidget = UI.CreateWidget("Content/UI/Title/TitleQuitDialog.rml")
+    quitWidget:SetWantsMouse(true)
+    bind_quit_dialog_clicks()
+
     show_stat_panel(false)
     show_quit_panel(false)
 
@@ -83,6 +94,11 @@ function BeginPlay()
 end
 
 function EndPlay()
+    if quitWidget ~= nil and quitWidget:IsInViewport() then
+        quitWidget:RemoveFromParent()
+    end
+    quitWidget = nil
+
     if widget ~= nil and widget:IsInViewport() then
         widget:RemoveFromParent()
     end

@@ -1,0 +1,31 @@
+<rml>
+<head>
+    <title>Title Quit Dialog</title>
+    <link type="text/rcss" href="../Common/MenuHoverButton.rcss"/>
+    <link type="text/rcss" href="../Common/FullWidthContentBox.rcss"/>
+    <link type="text/rcss" href="TitleQuitDialog.rcss"/>
+</head>
+<body>
+    <div id="quit-dialog-screen">
+        <div id="quit-panel" class="full-width-content-box full-width-content-box-screen-center title-quit-panel">
+            <div id="quit-confirm-content" class="full-width-content-box-content">
+                <img id="quit-warning-icon" src="WarningIcon.png"/>
+                <div id="quit-choice-axis" class="dialogue-layer">
+                    <div id="quit-question" data-ui-editor="text">ARE YOU SURE YOU WANT TO QUIT?</div>
+
+                    <div id="quit-options" class="dialogue-layer quit-button-axis">
+                        <div id="cancel-quit-button" class="hover-image-button quit-confirm-option" data-ui-editor-skip="true">
+                            <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                            <div id="cancel-quit-label" class="hover-image-label" data-ui-editor-skip="true">CANCEL</div>
+                        </div>
+                        <div id="confirm-quit-button" class="hover-image-button quit-confirm-option" data-ui-editor-skip="true">
+                            <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                            <div id="confirm-quit-label" class="hover-image-label" data-ui-editor-skip="true">QUIT ANYWAY</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</rml>
