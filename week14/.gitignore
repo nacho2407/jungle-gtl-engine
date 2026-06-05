@@ -3,6 +3,10 @@ CLAUDE.md
 DEVLOG.md
 .claude/
 
+# Codex Agent Files
+.codex/
+AGENTS.md
+
 # ============================================================
 # Visual Studio — user/cache
 # ============================================================
