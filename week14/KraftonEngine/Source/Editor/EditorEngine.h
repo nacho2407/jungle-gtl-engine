@@ -65,6 +65,7 @@ public:
 	float GetContentBrowserIconSize() const { return MainPanel.GetContentBrowserIconSize(); }
 	void HideEditorWindows() { MainPanel.HideEditorWindows(); }
 	void ShowEditorWindows() { MainPanel.ShowEditorWindows(); }
+	bool AreEditorWindowsHidden() const { return MainPanel.AreEditorWindowsHidden(); }
 	void SetShowEditorOnlyComponents(bool bEnable) { MainPanel.SetShowEditorOnlyComponents(bEnable); }
 	bool IsShowingEditorOnlyComponents() const { return MainPanel.IsShowingEditorOnlyComponents(); }
 	bool IsWorldCoordSystem() const { return FEditorSettings::Get().LevelViewportSettings[0].Gizmo.CoordSystem == EEditorCoordSystem::World; }

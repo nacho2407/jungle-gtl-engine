@@ -37,6 +37,7 @@ public:
 	void SaveToSettings() const;
 	void HideEditorWindows();
 	void ShowEditorWindows();
+	bool AreEditorWindowsHidden() const { return bHideEditorWindows; }
 	void SetShowEditorOnlyComponents(bool bEnable) { PropertyWidget.SetShowEditorOnlyComponents(bEnable); }
 	bool IsShowingEditorOnlyComponents() const { return PropertyWidget.IsShowingEditorOnlyComponents(); }
 	void HideEditorWindowsForPIE();
