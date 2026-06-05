@@ -1506,10 +1506,24 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				Options.bParentExpanded = bPropertyOpen;
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
 				TArray<UObject*> UndoTargets = CollectActorPropertyUndoTargets(PrimaryActor, SelectedActors, Props[i]);
-				TArray<FEditorObjectPropertySnapshot> UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
+				TArray<FEditorObjectPropertySnapshot> UndoBefore;
+				bool bUndoBeforeCaptured = false;
+				Options.OnBeforePropertyMutate = [&]()
+					{
+						// 실제 값 변경 직전에만 무거운 JSON snapshot을 생성합니다.
+						if (!bUndoBeforeCaptured)
+						{
+							UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
+							bUndoBeforeCaptured = true;
+						}
+					};
 				const FTransformPropertySnapshot TransformBefore = CaptureTransformPropertySnapshot(Props[i]);
 				if (PropertyRenderer.RenderPropertyWidget(Props, i, Options))
 				{
+					if (!bUndoBeforeCaptured)
+					{
+						UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
+					}
 					const FTransformPropertyDelta TransformDelta = BuildTransformPropertyDelta(TransformBefore, Props[i]);
 					bAnyChanged = true;
 					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
@@ -1965,12 +1979,26 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				Options.bParentExpanded = bPropertyOpen;
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
 				TArray<UObject*> UndoTargets = CollectComponentPropertyUndoTargets(SelectedComponent, Props[i], SelectedActors);
-				TArray<FEditorObjectPropertySnapshot> UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
+				TArray<FEditorObjectPropertySnapshot> UndoBefore;
+				bool bUndoBeforeCaptured = false;
+				Options.OnBeforePropertyMutate = [&]()
+					{
+						// 실제 값 변경 직전에만 무거운 JSON snapshot을 생성합니다.
+						if (!bUndoBeforeCaptured)
+						{
+							UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
+							bUndoBeforeCaptured = true;
+						}
+					};
 				const FTransformPropertySnapshot TransformBefore = CaptureTransformPropertySnapshot(Props[i]);
 				bool bChanged = PropertyRenderer.RenderPropertyWidget(Props, i, Options);
 
 				if (bChanged)
 				{
+					if (!bUndoBeforeCaptured)
+					{
+						UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
+					}
 					const FTransformPropertyDelta TransformDelta = BuildTransformPropertyDelta(TransformBefore, Props[i]);
 					bAnyChanged = true;
 					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
