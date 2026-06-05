@@ -52,6 +52,63 @@ public:
 
 	static TArray<FString> GetSceneFileList();
 
+	/**
+	 * @brief 에디터 undo용 actor 스냅샷 JSON 생성
+	 *
+	 * @param Actor 스냅샷을 생성할 actor
+	 *
+	 * @return actor와 하위 component 상태를 담은 JSON 객체
+	 *
+	 * @details 일반 scene save와 달리 undo/redo에서 같은 대상을 다시 찾을 수 있도록 runtime UUID를 함께 기록합니다.
+	 */
+	static json::JSON SerializeActorForEditorUndo(AActor* Actor);
+
+	/**
+	 * @brief 에디터 undo용 actor 스냅샷 JSON 복원
+	 *
+	 * @param World actor를 복원할 world
+	 *
+	 * @param ActorJSON SerializeActorForEditorUndo가 생성한 actor JSON 객체
+	 *
+	 * @return 복원된 actor. 실패하면 nullptr 반환
+	 *
+	 * @details Runtime UUID가 기록된 snapshot이면 actor와 component의 UUID를 기존 값으로 되살립니다.
+	 */
+	static AActor* DeserializeActorForEditorUndo(UWorld* World, json::JSON ActorJSON);
+
+	/**
+	 * @brief 에디터 undo용 actor 스냅샷을 기존 actor에 적용합니다.
+	 *
+	 * @param Actor 스냅샷을 적용할 기존 actor
+	 *
+	 * @param ActorJSON SerializeActorForEditorUndo가 생성한 actor JSON 객체
+	 *
+	 * @details Actor 객체 자체는 유지하고 하위 component 구조와 저장 대상 속성만 snapshot 상태로 재구성합니다.
+	 */
+	static void ApplyActorSnapshotForEditorUndo(AActor* Actor, json::JSON ActorJSON);
+
+	/**
+	 * @brief 에디터 undo용 객체 속성 스냅샷 JSON 생성
+	 *
+	 * @param Object 스냅샷을 생성할 객체
+	 *
+	 * @return 객체의 저장 대상 속성 상태를 담은 JSON 객체
+	 *
+	 * @details Details 패널 속성 undo/redo에서 같은 객체의 속성만 되돌릴 수 있도록 runtime UUID와 객체 참조 map을 함께 기록합니다.
+	 */
+	static json::JSON SerializeObjectPropertiesForEditorUndo(UObject* Object);
+
+	/**
+	 * @brief 에디터 undo용 객체 속성 스냅샷 JSON 복원
+	 *
+	 * @param Object 속성을 복원할 객체
+	 *
+	 * @param ObjectJSON SerializeObjectPropertiesForEditorUndo가 생성한 object property JSON 객체
+	 *
+	 * @details 스냅샷에 들어 있는 PF_Save 속성을 복원하고 각 속성의 PostEditChangeProperty를 호출합니다.
+	 */
+	static void DeserializeObjectPropertiesForEditorUndo(UObject* Object, json::JSON ObjectJSON);
+
 	struct FSceneSaveContext
 	{
 		TMap<const UObject*, uint32> ObjectToId;

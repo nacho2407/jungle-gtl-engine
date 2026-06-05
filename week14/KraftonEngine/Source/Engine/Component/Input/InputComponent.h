@@ -3,24 +3,24 @@
 #include "Component/ActorComponent.h"
 #include "Core/Types/CoreTypes.h"
 
-// UE 의 EInputEvent 의 minimal subset — Repeat/DoubleClick 등은 후속.
+/**
+* @brief 입력 action edge 종류
+*/
 enum class EInputEvent : uint8
 {
 	Pressed,
 	Released,
 };
 
-// UE 의 UInputComponent 패턴 minimal:
-//   - Axis mapping: 이름과 키(VKey)+scale 묶음. 같은 이름에 여러 키 가능 (e.g. MoveForward = W(+1), S(-1)).
-//   - Action mapping: 이름과 키. 같은 이름에 여러 키 가능 (e.g. Jump = Space, Gamepad A).
-//   - BindAxis: 매 frame 합산된 axis value(float) 로 callback.
-//   - BindAction: 키 edge (Pressed/Released) 일 때만 callback.
-//
-// APawn 자식이 SetupInputComponent override 안에서 AddXxxMapping + BindXxx 호출하는 게 통상 패턴.
-// Lua 도 sol2 binding 으로 동일 API 사용 가능.
-
 #include "Source/Engine/Component/Input/InputComponent.generated.h"
 
+/**
+* @brief Pawn 입력 mapping과 delegate binding을 관리하는 컴포넌트
+*
+* @details Axis mapping은 이름과 입력 코드, scale을 묶어 매 프레임 합산합니다.
+* Action mapping은 이름과 입력 코드를 묶고 Pressed/Released edge에서 callback을 호출합니다.
+* 입력 코드는 Win32 VK 코드와 InputCodes 게임패드 가상 코드를 함께 사용할 수 있습니다.
+*/
 UCLASS()
 class UInputComponent : public UActorComponent
 {
@@ -29,22 +29,66 @@ public:
 	UInputComponent() = default;
 	~UInputComponent() override = default;
 
-	// 매핑 — 코드 또는 ProjectSettings(.ini) 가 호출. 같은 이름에 여러 키 가능.
-	void AddAxisMapping(const FString& Name, int VKey, float Scale = 1.0f);
-	void AddActionMapping(const FString& Name, int VKey);
+	/**
+	* @brief axis mapping을 추가합니다.
+	*
+	* @param Name axis mapping 이름
+	*
+	* @param InputCode Win32 VK 코드 또는 InputCodes 게임패드 가상 코드
+	*
+	* @param Scale 입력 값에 곱할 배율
+	*/
+	void AddAxisMapping(const FString& Name, int InputCode, float Scale = 1.0f);
 
-	// Binding — Pawn 자식이 SetupInputComponent 안에서 호출.
+	/**
+	* @brief action mapping을 추가합니다.
+	*
+	* @param Name action mapping 이름
+	*
+	* @param InputCode Win32 VK 코드 또는 InputCodes 게임패드 버튼 가상 코드
+	*/
+	void AddActionMapping(const FString& Name, int InputCode);
+
+	/**
+	* @brief axis delegate를 등록합니다.
+	*
+	* @param Name axis mapping 이름
+	*
+	* @param Callback 합산된 axis 값을 받는 callback
+	*/
 	void BindAxis(const FString& Name, TFunction<void(float)> Callback);
+
+	/**
+	* @brief action delegate를 등록합니다.
+	*
+	* @param Name action mapping 이름
+	*
+	* @param Event 호출할 입력 edge 종류
+	*
+	* @param Callback 입력 edge 발생 시 호출할 callback
+	*/
 	void BindAction(const FString& Name, EInputEvent Event, TFunction<void()> Callback);
 
-	// 등록된 binding 전부 제거 — SetupInputComponent 재호출 전 호출.
+	/**
+	* @brief 등록된 delegate binding을 모두 제거합니다.
+	*/
 	void ClearBindings();
+
+	/**
+	* @brief 등록된 입력 mapping을 모두 제거합니다.
+	*/
+	void ClearMappings();
+
+	/**
+	* @brief 등록된 입력 mapping과 delegate binding을 모두 제거합니다.
+	*/
+	void ClearAllMappingsAndBindings();
 
 	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
 
 private:
-	struct FAxisMapping   { FString Name; int VKey = 0; float Scale = 1.0f; };
-	struct FActionMapping { FString Name; int VKey = 0; };
+	struct FAxisMapping   { FString Name; int InputCode = 0; float Scale = 1.0f; };
+	struct FActionMapping { FString Name; int InputCode = 0; };
 	struct FAxisBinding   { FString Name; TFunction<void(float)> Callback; };
 	struct FActionBinding { FString Name; EInputEvent Event = EInputEvent::Pressed; TFunction<void()> Callback; };
 

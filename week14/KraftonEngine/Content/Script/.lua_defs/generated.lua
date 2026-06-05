@@ -253,6 +253,9 @@ function Actor:GetCamera() end
 ---@return ActionComponent?
 function Actor:GetActionComponent() end
 
+---@return InputComponent?
+function Actor:GetInputComponent() end
+
 ---@return PrimitiveComponent?
 function Actor:GetRootPrimitiveComponent() end
 
@@ -336,7 +339,8 @@ InputComponent = {}
 
 ---@param name string
 ---@param key integer
-function InputComponent:AddAxisMapping(name, key) end
+---@param scale? number
+function InputComponent:AddAxisMapping(name, key, scale) end
 
 ---@param name string
 ---@param key integer
@@ -352,6 +356,10 @@ function InputComponent:BindAxis(name, callback) end
 function InputComponent:BindAction(name, event, callback) end
 
 function InputComponent:ClearBindings() end
+
+function InputComponent:ClearMappings() end
+
+function InputComponent:ClearAllMappingsAndBindings() end
 
 ---@class WorldLib
 WorldLib = {}
@@ -378,6 +386,11 @@ function World.FindActorsByTag(tag) end
 
 ---@class SkeletalMeshComponent: PrimitiveComponent
 SkeletalMeshComponent = {}
+
+---@param animationPath string
+---@param looping? boolean
+---@return boolean
+function SkeletalMeshComponent:PlayAnimationByPath(animationPath, looping) end
 
 ---@param enabled boolean
 function SkeletalMeshComponent:SetSimulatePhysics(enabled) end

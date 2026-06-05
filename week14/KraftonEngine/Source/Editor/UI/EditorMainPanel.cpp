@@ -361,6 +361,9 @@ void FEditorMainPanel::RenderShortcutOverlay()
 	ImGui::TextUnformatted("Ctrl+O : Open Scene");
 	ImGui::TextUnformatted("Ctrl+S : Save Scene");
 	ImGui::TextUnformatted("Ctrl+Shift+S : Save Scene As");
+	ImGui::TextUnformatted("Ctrl+A : Select All Actors");
+	ImGui::TextUnformatted("Ctrl+Z : Undo");
+	ImGui::TextUnformatted("Ctrl+Y / Ctrl+Shift+Z : Redo");
 	ImGui::Separator();
 	ImGui::TextUnformatted("` : Focus console input / open console drawer");
 	ImGui::TextUnformatted("F : Focus on selection");
@@ -831,7 +834,32 @@ void FEditorMainPanel::HandleGlobalShortcuts()
 	}
 
 	const bool bShift = Input.GetKey(VK_SHIFT);
-	if (Input.GetKeyDown('N'))
+	if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown('Z'))
+	{
+		// Details 패널에서 막 끝난 속성 변경이 있으면 undo 실행 전에 먼저 stack에 확정합니다.
+		PropertyWidget.FlushPendingDetailsUndoTransaction();
+		if (bShift)
+		{
+			EditorEngine->Redo();
+		}
+		else
+		{
+			EditorEngine->Undo();
+		}
+	}
+	else if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown('Y'))
+	{
+		// Ctrl+Y도 같은 전역 경로에서 처리해 viewport focus 여부와 무관하게 동작하게 합니다.
+		PropertyWidget.FlushPendingDetailsUndoTransaction();
+		EditorEngine->Redo();
+	}
+	else if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown('A'))
+	{
+		// Details 패널 편집 직후의 pending undo를 먼저 확정한 뒤 선택 상태를 교체합니다.
+		PropertyWidget.FlushPendingDetailsUndoTransaction();
+		EditorEngine->GetSelectionManager().SelectAllActors();
+	}
+	else if (Input.GetKeyDown('N'))
 	{
 		EditorEngine->NewScene();
 	}

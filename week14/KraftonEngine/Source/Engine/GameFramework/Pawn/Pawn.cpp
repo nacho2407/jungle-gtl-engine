@@ -10,10 +10,10 @@
 
 void APawn::BeginPlay()
 {
-	Super::BeginPlay();
-
-	// Input 자동 부착 + 자식 setup. PostDuplicate 후에도 BeginPlay 가 다시 호출되므로
-	// 중복 add 방지 위해 GetComponentByClass 로 기존 인스턴스 우선 회수.
+	// Input 자동 부착 + 자식 setup. AActor::BeginPlay 안에서 LuaScriptComponent::BeginPlay가
+	// 먼저 호출될 수 있으므로, Lua BeginPlay에서 obj:GetInputComponent()를 안정적으로
+	// 사용할 수 있게 Super::BeginPlay보다 앞에서 입력 컴포넌트를 준비한다.
+	// PostDuplicate 후에도 BeginPlay가 다시 호출되므로 중복 add 방지를 위해 기존 인스턴스 우선 회수.
 	if (!InputComponent)
 	{
 		InputComponent = GetComponentByClass<UInputComponent>();
@@ -23,6 +23,8 @@ void APawn::BeginPlay()
 		}
 	}
 	SetupInputComponent();
+
+	Super::BeginPlay();
 }
 
 void APawn::PossessedBy(APlayerController* PC)
