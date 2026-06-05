@@ -86,6 +86,106 @@ FGCObjectStats GatherGCObjectStats()
 
 	return Stats;
 }
+
+/**
+ * @brief 지정한 actor 이름이 월드 안에서 이미 사용 중인지 확인합니다.
+ */
+bool IsActorNameInUse(UWorld* World, const FString& CandidateName)
+{
+	if (!World)
+	{
+		return false;
+	}
+
+	const FName CandidateFName(CandidateName);
+	for (AActor* Actor : World->GetActors())
+	{
+		if (Actor && Actor->GetFName() == CandidateFName)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * @brief 문자 하나가 10진 숫자인지 확인합니다.
+ */
+bool IsDecimalDigit(char Character)
+{
+	return Character >= '0' && Character <= '9';
+}
+
+/**
+ * @brief 이름 끝의 _숫자 suffix를 base name과 다음 번호로 분리합니다.
+ */
+bool TryParseTrailingNumericSuffix(const FString& Name, FString& OutBaseName, int32& OutNextIndex)
+{
+	const FString::size_type UnderscorePos = Name.find_last_of('_');
+	if (UnderscorePos == FString::npos || UnderscorePos == 0 || UnderscorePos + 1 >= Name.size())
+	{
+		return false;
+	}
+
+	int32 ParsedIndex = 0;
+	for (FString::size_type Index = UnderscorePos + 1; Index < Name.size(); ++Index)
+	{
+		const char Character = Name[Index];
+		if (!IsDecimalDigit(Character))
+		{
+			return false;
+		}
+
+		// 비정상적으로 긴 suffix는 숫자 suffix로 취급하지 않아 overflow를 피합니다.
+		if (ParsedIndex > 214748364)
+		{
+			return false;
+		}
+		ParsedIndex = ParsedIndex * 10 + static_cast<int32>(Character - '0');
+	}
+
+	OutBaseName = Name.substr(0, UnderscorePos);
+	OutNextIndex = ParsedIndex + 1;
+	if (OutNextIndex < 1)
+	{
+		OutNextIndex = 1;
+	}
+	return true;
+}
+
+/**
+ * @brief 복제 actor에 사용할 Unity 스타일 고유 이름을 생성합니다.
+ */
+FString MakeUniqueDuplicateActorName(UWorld* World, const AActor* SourceActor)
+{
+	FString BaseName = SourceActor ? SourceActor->GetFName().ToString() : FString();
+	if (BaseName.empty() && SourceActor)
+	{
+		BaseName = SourceActor->GetClass()->GetName();
+	}
+	if (BaseName.empty())
+	{
+		BaseName = "Actor";
+	}
+
+	int32 Suffix = 1;
+	FString ParsedBaseName;
+	int32 ParsedNextIndex = 1;
+	if (TryParseTrailingNumericSuffix(BaseName, ParsedBaseName, ParsedNextIndex))
+	{
+		// Unity 스타일로 기존 _숫자 suffix는 누적하지 않고 같은 base의 다음 번호를 사용합니다.
+		BaseName = ParsedBaseName;
+		Suffix = ParsedNextIndex;
+	}
+
+	FString Candidate = BaseName + "_" + std::to_string(Suffix++);
+	while (IsActorNameInUse(World, Candidate))
+	{
+		Candidate = BaseName + "_" + std::to_string(Suffix++);
+	}
+	return Candidate;
+}
 }
 
 void UEditorEngine::Init(FWindowsWindow* InWindow)
@@ -195,7 +295,7 @@ void UEditorEngine::Tick(float DeltaTime)
 	FDirectoryWatcher::Get().ProcessChanges();
 	FNotificationManager::Get().Tick(DeltaTime);
 	InputSystem::Get().Tick();
-	MainPanel.Update();
+	MainPanel.Update(DeltaTime);
 	InputSystem::Get().RefreshSnapshot();
 
 	FSlateApplication::Get().UpdateInputOwner();
@@ -378,6 +478,69 @@ int32 UEditorEngine::DeleteSelectedActorsWithUndo()
 	}
 
 	return DeletedCount;
+}
+
+int32 UEditorEngine::DuplicateSelectedActorsWithUndo()
+{
+	if (IsPlayingInEditor() || SelectionManager.IsEmpty())
+	{
+		return 0;
+	}
+
+	const TArray<AActor*> ToDuplicate = SelectionManager.GetSelectedActors();
+	if (ToDuplicate.empty())
+	{
+		return 0;
+	}
+
+	const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&SelectionManager);
+	const FVector DuplicateOffsetStep(0.1f, 0.1f, 0.1f);
+	TArray<AActor*> NewSelection;
+	int32 DuplicateIndex = 0;
+	for (AActor* Src : ToDuplicate)
+	{
+		if (!Src)
+		{
+			continue;
+		}
+
+		UWorld* SourceWorld = Src->GetWorld();
+		const FString DuplicateName = MakeUniqueDuplicateActorName(SourceWorld, Src);
+		AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
+		if (!Dup)
+		{
+			continue;
+		}
+
+		// 복제 직후 고유 이름과 약간의 위치 offset을 부여해 원본과 겹치지 않게 합니다.
+		Dup->SetFName(FName(DuplicateName));
+		Dup->AddActorWorldOffset(DuplicateOffsetStep * static_cast<float>(DuplicateIndex + 1));
+		NewSelection.push_back(Dup);
+		++DuplicateIndex;
+	}
+
+	if (NewSelection.empty())
+	{
+		return 0;
+	}
+
+	SelectionManager.ClearSelection();
+	for (AActor* Actor : NewSelection)
+	{
+		SelectionManager.ToggleSelect(Actor);
+	}
+	if (UGizmoComponent* Gizmo = GetGizmo())
+	{
+		Gizmo->UpdateGizmoTransform();
+	}
+
+	PushExecutedUndoCommand(MakeActorCreateUndoCommand(
+		NewSelection,
+		SelectionBefore,
+		CaptureEditorSelection(&SelectionManager),
+		"Duplicate Actors"));
+
+	return static_cast<int32>(NewSelection.size());
 }
 
 void UEditorEngine::ClearUndoHistory()

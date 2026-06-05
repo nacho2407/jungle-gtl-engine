@@ -31,49 +31,6 @@ UWorld* FEditorViewportClient::GetWorld() const
 #include "Component/Camera/CameraComponent.h"
 #include "Component/Light/LightComponentBase.h"
 
-namespace
-{
-	bool IsActorNameInUse(UWorld* World, const FString& CandidateName)
-	{
-		if (!World)
-		{
-			return false;
-		}
-
-		const FName CandidateFName(CandidateName);
-		for (AActor* Actor : World->GetActors())
-		{
-			if (Actor && Actor->GetFName() == CandidateFName)
-			{
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	FString MakeUniqueDuplicateActorName(UWorld* World, const AActor* SourceActor)
-	{
-		FString BaseName = SourceActor ? SourceActor->GetFName().ToString() : FString();
-		if (BaseName.empty() && SourceActor)
-		{
-			BaseName = SourceActor->GetClass()->GetName();
-		}
-		if (BaseName.empty())
-		{
-			BaseName = "Actor";
-		}
-
-		FString Candidate = BaseName + "_Copy";
-		int32 Suffix = 2;
-		while (IsActorNameInUse(World, Candidate))
-		{
-			Candidate = BaseName + "_Copy_" + std::to_string(Suffix++);
-		}
-		return Candidate;
-	}
-}
-
 void FEditorViewportClient::Initialize(FWindowsWindow* InWindow)
 {
 	Window = InWindow;
@@ -492,49 +449,6 @@ void FEditorViewportClient::TickEditorShortcuts()
 		}
 	}
 
-	if (SelectionManager && bCtrlHeld && InputSystem::Get().GetKeyDown('D'))
-	{
-		const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
-		if (!ToDuplicate.empty())
-		{
-			const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(SelectionManager);
-			const FVector DuplicateOffsetStep(0.1f, 0.1f, 0.1f);
-			TArray<AActor*> NewSelection;
-			int32 DuplicateIndex = 0;
-			for (AActor* Src : ToDuplicate)
-			{
-				if (!Src) continue;
-				UWorld* SourceWorld = Src->GetWorld();
-				const FString DuplicateName = MakeUniqueDuplicateActorName(SourceWorld, Src);
-				AActor* Dup = Cast<AActor>(Src->Duplicate(nullptr));
-				if (Dup)
-				{
-					Dup->SetFName(FName(DuplicateName));
-					Dup->AddActorWorldOffset(DuplicateOffsetStep * static_cast<float>(DuplicateIndex + 1));
-					NewSelection.push_back(Dup);
-					++DuplicateIndex;
-				}
-			}
-			SelectionManager->ClearSelection();
-			for (AActor* Actor : NewSelection)
-			{
-				SelectionManager->ToggleSelect(Actor);
-			}
-			if (EditorEngine->GetGizmo())
-			{
-				EditorEngine->GetGizmo()->UpdateGizmoTransform();
-			}
-
-			if (!NewSelection.empty())
-			{
-				EditorEngine->PushExecutedUndoCommand(MakeActorCreateUndoCommand(
-					NewSelection,
-					SelectionBefore,
-					CaptureEditorSelection(SelectionManager),
-					"Duplicate Actors"));
-			}
-		}
-	}
 }
 
 void FEditorViewportClient::SetLightViewOverride(ULightComponentBase* Light)

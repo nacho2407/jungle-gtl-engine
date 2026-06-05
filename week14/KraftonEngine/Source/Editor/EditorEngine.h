@@ -104,6 +104,13 @@ public:
 	int32 DeleteSelectedActorsWithUndo();
 
 	/**
+	 * @brief 선택된 actor들을 undo 기록과 함께 복제합니다.
+	 *
+	 * @return 복제된 actor 수
+	 */
+	int32 DuplicateSelectedActorsWithUndo();
+
+	/**
 	 * @brief 모든 undo/redo 기록을 비웁니다.
 	 */
 	void ClearUndoHistory();
