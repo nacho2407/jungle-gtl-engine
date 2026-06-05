@@ -121,6 +121,9 @@ private:
 	ID3D11Device*        CachedDevice  = nullptr;
 	ID3D11DeviceContext* CachedContext = nullptr;
 
+	// SelectEffectiveShader는 섹션마다 호출되므로 기본 UberLit 포인터 비교도 캐시한다.
+	FShader* CachedUberLitShader = nullptr;
+
 	// 프레임마다 Camera 정보 캐시
 	FVector CollectCameraPosition;
 	FVector CollectCameraForward;

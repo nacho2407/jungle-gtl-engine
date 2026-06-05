@@ -30,6 +30,7 @@ void FDrawCommandBuilder::Create(ID3D11Device* InDevice, ID3D11DeviceContext* In
 	CachedDevice = InDevice;
 	CachedContext = InContext;
 	PassRenderStateTable = InPassRenderStateTable;
+	CachedUberLitShader = FShaderManager::Get().GetOrCreate(EShaderPath::UberLit);
 
 	EditorLines.Create(InDevice);
 	GridLines.Create(InDevice);
@@ -75,6 +76,7 @@ void FDrawCommandBuilder::Release()
 	CameraVignetteCB.Release();
 	CameraLetterboxCB.Release();
 	BoneHeatMapCB.Release();
+	CachedUberLitShader = nullptr;
 }
 
 // ============================================================
@@ -109,7 +111,12 @@ void FDrawCommandBuilder::BeginCollect(const FFrameContext& Frame)
 FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode,
 	bool bUseSkeletalVertexFactory, bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap, bool bApplyFog)
 {
-	if (ProxyShader != FShaderManager::Get().GetOrCreate(EShaderPath::UberLit))
+	if (!CachedUberLitShader)
+	{
+		CachedUberLitShader = FShaderManager::Get().GetOrCreate(EShaderPath::UberLit);
+	}
+
+	if (ProxyShader != CachedUberLitShader)
 		return ProxyShader;
 
 	const EUberLitDefines::EVertexFactory VertexFactory =
