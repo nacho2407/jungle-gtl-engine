@@ -168,6 +168,43 @@ void FSelectionManager::Deselect(AActor* Actor)
 	SyncGizmo();
 }
 
+int32 FSelectionManager::SelectAllActors()
+{
+	if (!World)
+	{
+		return 0;
+	}
+
+	// 기존 선택 프록시 해제
+	for (AActor* Prev : SelectedActors)
+	{
+		SetActorProxiesSelected(Prev, false);
+	}
+	SelectedActors.clear();
+	SelectedComponent = nullptr;
+
+	// 현재 editor world에 속한 valid actor만 선택 대상에 포함
+	for (AActor* Actor : World->GetActors())
+	{
+		if (!IsValid(Actor) || Actor->GetWorld() != World)
+		{
+			continue;
+		}
+
+		SelectedActors.push_back(Actor);
+		SetActorProxiesSelected(Actor, true);
+	}
+
+	// primary selection의 root component를 기즈모 기준으로 사용
+	if (!SelectedActors.empty())
+	{
+		SelectedComponent = SelectedActors.front()->GetRootComponent();
+	}
+
+	SyncGizmo();
+	return static_cast<int32>(SelectedActors.size());
+}
+
 void FSelectionManager::ClearSelection()
 {
 	if (SelectedActors.empty() && SelectedComponent == nullptr)

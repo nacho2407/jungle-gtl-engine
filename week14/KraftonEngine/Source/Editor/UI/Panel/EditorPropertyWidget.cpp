@@ -135,13 +135,6 @@ namespace
 		Objects.push_back(Object);
 	}
 
-	TArray<UObject*> MakeSingleObjectTargetList(UObject* Object)
-	{
-		TArray<UObject*> Objects;
-		AddUniqueObject(Objects, Object);
-		return Objects;
-	}
-
 	TArray<uint32> MakeObjectUUIDList(const TArray<UObject*>& Objects)
 	{
 		TArray<uint32> UUIDs;
@@ -447,6 +440,215 @@ namespace
 		return false;
 	}
 
+	enum class EDetailsTransformPropertyKind
+	{
+		None,
+		Location,
+		Rotation,
+		Scale
+	};
+
+	struct FTransformPropertySnapshot
+	{
+		bool bValid = false;
+		EDetailsTransformPropertyKind Kind = EDetailsTransformPropertyKind::None;
+		EPropertyType Type = EPropertyType::Bool;
+		FVector VectorValue = FVector::ZeroVector;
+		FRotator RotatorValue = FRotator::ZeroRotator;
+	};
+
+	struct FTransformPropertyDelta
+	{
+		bool bValid = false;
+		EDetailsTransformPropertyKind Kind = EDetailsTransformPropertyKind::None;
+		EPropertyType Type = EPropertyType::Bool;
+		FVector VectorDelta = FVector::ZeroVector;
+		FRotator RotatorDelta = FRotator::ZeroRotator;
+	};
+
+	bool IsCStringEqual(const char* Lhs, const char* Rhs)
+	{
+		return Lhs && Rhs && std::strcmp(Lhs, Rhs) == 0;
+	}
+
+	bool DoesCStringContain(const char* Text, const char* Token)
+	{
+		return Text && Token && std::strstr(Text, Token) != nullptr;
+	}
+
+	EDetailsTransformPropertyKind GetTransformPropertyKind(const FPropertyValue& Prop)
+	{
+		const char* Category = Prop.GetCategory();
+		if (!IsCStringEqual(Category, "Transform"))
+		{
+			return EDetailsTransformPropertyKind::None;
+		}
+
+		const char* DisplayName = GetPropertyDisplayName(Prop);
+		const char* PropertyName = Prop.GetName();
+		if (IsCStringEqual(DisplayName, "Location") || DoesCStringContain(PropertyName, "Location"))
+		{
+			return EDetailsTransformPropertyKind::Location;
+		}
+		if (IsCStringEqual(DisplayName, "Rotation")
+			|| DoesCStringContain(PropertyName, "Rotation")
+			|| DoesCStringContain(PropertyName, "CachedEditRotator"))
+		{
+			return EDetailsTransformPropertyKind::Rotation;
+		}
+		if (IsCStringEqual(DisplayName, "Scale") || DoesCStringContain(PropertyName, "Scale"))
+		{
+			return EDetailsTransformPropertyKind::Scale;
+		}
+
+		return EDetailsTransformPropertyKind::None;
+	}
+
+	bool IsTransformDeltaProperty(const FPropertyValue& Prop)
+	{
+		const EDetailsTransformPropertyKind Kind = GetTransformPropertyKind(Prop);
+		if (Kind == EDetailsTransformPropertyKind::None)
+		{
+			return false;
+		}
+
+		if (Kind == EDetailsTransformPropertyKind::Rotation)
+		{
+			return Prop.GetType() == EPropertyType::Rotator || Prop.GetType() == EPropertyType::Vec3;
+		}
+
+		return Prop.GetType() == EPropertyType::Vec3;
+	}
+
+	FTransformPropertySnapshot CaptureTransformPropertySnapshot(const FPropertyValue& Prop)
+	{
+		FTransformPropertySnapshot Snapshot;
+		if (!IsTransformDeltaProperty(Prop))
+		{
+			return Snapshot;
+		}
+
+		void* ValuePtr = Prop.GetValuePtr();
+		if (!ValuePtr)
+		{
+			return Snapshot;
+		}
+
+		Snapshot.bValid = true;
+		Snapshot.Kind = GetTransformPropertyKind(Prop);
+		Snapshot.Type = Prop.GetType();
+		if (Snapshot.Type == EPropertyType::Rotator)
+		{
+			Snapshot.RotatorValue = *static_cast<FRotator*>(ValuePtr);
+		}
+		else
+		{
+			Snapshot.VectorValue = *static_cast<FVector*>(ValuePtr);
+		}
+
+		return Snapshot;
+	}
+
+	bool IsTransformDeltaZero(const FTransformPropertyDelta& Delta)
+	{
+		if (!Delta.bValid)
+		{
+			return true;
+		}
+
+		if (Delta.Type == EPropertyType::Rotator)
+		{
+			return Delta.RotatorDelta.IsNearlyZero();
+		}
+
+		return Delta.VectorDelta.IsNearlyZero();
+	}
+
+	FTransformPropertyDelta BuildTransformPropertyDelta(
+		const FTransformPropertySnapshot& Before,
+		const FPropertyValue& AfterProp)
+	{
+		FTransformPropertyDelta Delta;
+		if (!Before.bValid)
+		{
+			return Delta;
+		}
+
+		const FTransformPropertySnapshot After = CaptureTransformPropertySnapshot(AfterProp);
+		if (!After.bValid || After.Kind != Before.Kind || After.Type != Before.Type)
+		{
+			return Delta;
+		}
+
+		Delta.bValid = true;
+		Delta.Kind = Before.Kind;
+		Delta.Type = Before.Type;
+		if (Delta.Type == EPropertyType::Rotator)
+		{
+			Delta.RotatorDelta = After.RotatorValue - Before.RotatorValue;
+		}
+		else
+		{
+			Delta.VectorDelta = After.VectorValue - Before.VectorValue;
+		}
+
+		if (IsTransformDeltaZero(Delta))
+		{
+			Delta.bValid = false;
+		}
+		return Delta;
+	}
+
+	bool IsCompatibleEditableProperty(const FPropertyValue& CandidateProp, const FPropertyValue& SourceProp)
+	{
+		const char* SourceName = SourceProp.GetName();
+		if (!CandidateProp.Property || !CandidateProp.GetName() || !CandidateProp.GetValuePtr() || !SourceName)
+		{
+			return false;
+		}
+
+		if (IsTransformDeltaProperty(SourceProp))
+		{
+			return IsTransformDeltaProperty(CandidateProp)
+				&& GetTransformPropertyKind(CandidateProp) == GetTransformPropertyKind(SourceProp)
+				&& CandidateProp.GetType() == SourceProp.GetType();
+		}
+
+		return std::strcmp(CandidateProp.GetName(), SourceProp.GetName()) == 0
+			&& CandidateProp.GetType() == SourceProp.GetType();
+	}
+
+	bool ApplyTransformDeltaToProperty(FPropertyValue& DstProp, const FTransformPropertyDelta& Delta)
+	{
+		if (!Delta.bValid || !IsTransformDeltaProperty(DstProp))
+		{
+			return false;
+		}
+
+		if (GetTransformPropertyKind(DstProp) != Delta.Kind || DstProp.GetType() != Delta.Type)
+		{
+			return false;
+		}
+
+		void* ValuePtr = DstProp.GetValuePtr();
+		if (!ValuePtr)
+		{
+			return false;
+		}
+
+		// 다중 선택 transform 편집은 primary의 절대값이 아니라 사용자가 입력한 변화량만 전파합니다.
+		if (Delta.Type == EPropertyType::Rotator)
+		{
+			*static_cast<FRotator*>(ValuePtr) += Delta.RotatorDelta;
+		}
+		else
+		{
+			*static_cast<FVector*>(ValuePtr) += Delta.VectorDelta;
+		}
+
+		return true;
+	}
+
 	bool HasCompatibleEditableProperty(UActorComponent* Component, const FPropertyValue& SourceProp)
 	{
 		if (!Component || !SourceProp.Property || !SourceProp.GetName())
@@ -463,15 +665,62 @@ namespace
 				continue;
 			}
 
-			if (std::strcmp(Prop.GetName(), SourceProp.GetName()) == 0
-				&& Prop.GetType() == SourceProp.GetType()
-				&& Prop.GetValuePtr())
+			if (IsCompatibleEditableProperty(Prop, SourceProp))
 			{
 				return true;
 			}
 		}
 
 		return false;
+	}
+
+	bool HasCompatibleActorEditableProperty(AActor* Actor, const FPropertyValue& SourceProp)
+	{
+		if (!Actor || !SourceProp.Property || !SourceProp.GetName())
+		{
+			return false;
+		}
+
+		TArray<FPropertyValue> Props;
+		Actor->GetEditableProperties(Props);
+		for (const FPropertyValue& Prop : Props)
+		{
+			if (IsCompatibleEditableProperty(Prop, SourceProp))
+			{
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	TArray<UObject*> CollectActorPropertyUndoTargets(
+		AActor* PrimaryActor,
+		const TArray<AActor*>& SelectedActors,
+		const FPropertyValue& SourceProp)
+	{
+		TArray<UObject*> Targets;
+		AddUniqueObject(Targets, PrimaryActor);
+
+		if (!PrimaryActor || SelectedActors.size() < 2 || !IsTransformDeltaProperty(SourceProp))
+		{
+			return Targets;
+		}
+
+		for (AActor* Actor : SelectedActors)
+		{
+			if (!Actor || Actor == PrimaryActor)
+			{
+				continue;
+			}
+
+			if (HasCompatibleActorEditableProperty(Actor, SourceProp))
+			{
+				AddUniqueObject(Targets, Actor);
+			}
+		}
+
+		return Targets;
 	}
 
 	TArray<UObject*> CollectComponentPropertyUndoTargets(
@@ -504,7 +753,7 @@ namespace
 					continue;
 				}
 
-				// PropagatePropertyChange가 같은 타입의 첫 번째 compatible component에만 값을 복사하므로
+				// PropagatePropertyChange가 같은 타입의 첫 번째 compatible component에만 값을 전파하므로
 				// undo 대상도 동일한 규칙으로 수집합니다.
 				if (HasCompatibleEditableProperty(Component, SourceProp))
 				{
@@ -519,7 +768,8 @@ namespace
 
 	void PropagatePropertyChange(
 		UActorComponent* SelectedComponent,
-		const FString& PropName,
+		const FPropertyValue& SourceProp,
+		const FTransformPropertyDelta* TransformDelta,
 		const TArray<AActor*>& SelectedActors,
 		TArray<FDeferredPostEditChange>& OutDeferredChanges)
 	{
@@ -527,17 +777,12 @@ namespace
 
 		UClass* CompClass = SelectedComponent->GetClass();
 		AActor* PrimaryActor = SelectedActors[0];
-
-		TArray<FPropertyValue> SrcProps;
-		SelectedComponent->GetEditableProperties(SrcProps);
-
-		const FPropertyValue* SrcProp = nullptr;
-		for (const auto& P : SrcProps)
+		FPropertyValue SrcValue = SourceProp;
+		const bool bUseTransformDelta = IsTransformDeltaProperty(SourceProp);
+		if (bUseTransformDelta && (!TransformDelta || !TransformDelta->bValid))
 		{
-			if (P.GetName() == PropName) { SrcProp = &P; break; }
+			return;
 		}
-		if (!SrcProp) return;
-		FPropertyValue SrcValue = *SrcProp;
 
 		for (AActor* Actor : SelectedActors)
 		{
@@ -552,16 +797,62 @@ namespace
 
 				for (FPropertyValue& DstProp : DstProps)
 				{
-					if (!DstProp.Property || DstProp.GetName() != PropName || DstProp.GetType() != SrcProp->GetType()) continue;
-					if (!DstProp.GetValuePtr() || !SrcValue.GetValuePtr()) continue;
+					if (!IsCompatibleEditableProperty(DstProp, SourceProp)) continue;
 
-					if (CopyPropertyValue(SrcValue, DstProp))
+					bool bApplied = false;
+					if (bUseTransformDelta)
+					{
+						bApplied = ApplyTransformDeltaToProperty(DstProp, *TransformDelta);
+					}
+					else if (SrcValue.GetValuePtr())
+					{
+						bApplied = CopyPropertyValue(SrcValue, DstProp);
+					}
+
+					if (bApplied)
 					{
 						QueueDeferredPostEditChange(OutDeferredChanges, DstProp);
 					}
 					break;
 				}
 				break; // 같은 타입의 첫 번째 컴포넌트에만 전파
+			}
+		}
+	}
+
+	void PropagateActorTransformPropertyChange(
+		AActor* PrimaryActor,
+		const FPropertyValue& SourceProp,
+		const FTransformPropertyDelta& TransformDelta,
+		const TArray<AActor*>& SelectedActors,
+		TArray<FDeferredPostEditChange>& OutDeferredChanges)
+	{
+		if (!PrimaryActor || !TransformDelta.bValid || SelectedActors.size() < 2)
+		{
+			return;
+		}
+
+		for (AActor* Actor : SelectedActors)
+		{
+			if (!Actor || Actor == PrimaryActor)
+			{
+				continue;
+			}
+
+			TArray<FPropertyValue> Props;
+			Actor->GetEditableProperties(Props);
+			for (FPropertyValue& DstProp : Props)
+			{
+				if (!IsCompatibleEditableProperty(DstProp, SourceProp))
+				{
+					continue;
+				}
+
+				if (ApplyTransformDeltaToProperty(DstProp, TransformDelta))
+				{
+					QueueDeferredPostEditChange(OutDeferredChanges, DstProp);
+				}
+				break;
 			}
 		}
 	}
@@ -1067,8 +1358,6 @@ void FEditorPropertyWidget::SyncSelectedComponentAfterStructureChange(AActor* Ac
 
 void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TArray<AActor*>& SelectedActors)
 {
-	(void)SelectedActors;
-
 	if (PrimaryActor->GetRootComponent())
 	{
 		ImGui::Separator();
@@ -1105,12 +1394,15 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 				Options.bUseExternalExpansion = true;
 				Options.bParentExpanded = bPropertyOpen;
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
-				TArray<UObject*> UndoTargets = MakeSingleObjectTargetList(PrimaryActor);
+				TArray<UObject*> UndoTargets = CollectActorPropertyUndoTargets(PrimaryActor, SelectedActors, Props[i]);
 				TArray<FEditorObjectPropertySnapshot> UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
+				const FTransformPropertySnapshot TransformBefore = CaptureTransformPropertySnapshot(Props[i]);
 				if (PropertyRenderer.RenderPropertyWidget(Props, i, Options))
 				{
+					const FTransformPropertyDelta TransformDelta = BuildTransformPropertyDelta(TransformBefore, Props[i]);
 					bAnyChanged = true;
 					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
+					PropagateActorTransformPropertyChange(PrimaryActor, Props[i], TransformDelta, SelectedActors, DeferredChanges);
 					RecordDetailsPropertyUndoChange(
 						UndoBefore,
 						UndoTargets,
@@ -1592,13 +1884,20 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 				Options.EditedSceneComponent = Cast<USceneComponent>(SelectedComponent);
 				TArray<UObject*> UndoTargets = CollectComponentPropertyUndoTargets(SelectedComponent, Props[i], SelectedActors);
 				TArray<FEditorObjectPropertySnapshot> UndoBefore = CaptureObjectPropertySnapshots(UndoTargets);
+				const FTransformPropertySnapshot TransformBefore = CaptureTransformPropertySnapshot(Props[i]);
 				bool bChanged = PropertyRenderer.RenderPropertyWidget(Props, i, Options);
 
 				if (bChanged)
 				{
+					const FTransformPropertyDelta TransformDelta = BuildTransformPropertyDelta(TransformBefore, Props[i]);
 					bAnyChanged = true;
 					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
-					PropagatePropertyChange(SelectedComponent, Props[i].GetName(), SelectedActors, DeferredChanges);
+					PropagatePropertyChange(
+						SelectedComponent,
+						Props[i],
+						TransformDelta.bValid ? &TransformDelta : nullptr,
+						SelectedActors,
+						DeferredChanges);
 					RecordDetailsPropertyUndoChange(
 						UndoBefore,
 						UndoTargets,
