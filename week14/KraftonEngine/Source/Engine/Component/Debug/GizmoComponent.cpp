@@ -51,6 +51,14 @@ void UGizmoComponent::DestroyRenderState()
 }
 
 #include <cmath>
+
+namespace
+{
+	constexpr float AngularDragPlaneParallelTolerance = 1.0e-6f;
+	constexpr float AngularDragDirectionMinLengthSquared = 1.0e-8f;
+	constexpr float AngularDragMinDeltaRadians = 1.0e-5f;
+}
+
 UGizmoComponent::UGizmoComponent()
 {
 	MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::TransGizmo);
@@ -89,8 +97,15 @@ void UGizmoComponent::SetHolding(bool bHold)
 	bIsHolding = bHold;
 	if (bHold)
 	{
-		// Restart snap accumulation for each new gizmo drag so the first step is stable.
+		// 새 기즈모 드래그 기준 초기화
+		bIsFirstFrameOfDrag = true;
 		ResetSnapAccumulation();
+		ResetAngularDragBasis();
+	}
+	else
+	{
+		// 드래그 종료 후 이전 회전 평면 잔여 상태 제거
+		ResetAngularDragBasis();
 	}
 }
 
@@ -252,6 +267,50 @@ void UGizmoComponent::ResetSnapAccumulation()
 	LastAppliedSnappedDragAmount = 0.0f;
 }
 
+void UGizmoComponent::ResetAngularDragBasis()
+{
+	// 회전 드래그 시작 시점에 캡처한 기준 평면 상태 제거
+	bAngularDragBasisValid = false;
+	AngularDragPivotLocation = FVector::ZeroVector;
+	AngularDragAxisVector = FVector::ZeroVector;
+	LastAngularDragDirection = FVector::ZeroVector;
+}
+
+bool UGizmoComponent::TryGetAngularDragDirection(const FRay& Ray, FVector& OutDirection) const
+{
+	OutDirection = FVector::ZeroVector;
+	if (!bAngularDragBasisValid)
+	{
+		return false;
+	}
+
+	// 드래그 시작 시점의 축을 normal로 쓰는 고정 회전 평면과 ray의 교차점 계산
+	const float Denom = Ray.Direction.Dot(AngularDragAxisVector);
+	if (std::abs(Denom) < AngularDragPlaneParallelTolerance)
+	{
+		return false;
+	}
+
+	const float DistanceToPlane = (AngularDragPivotLocation - Ray.Origin).Dot(AngularDragAxisVector) / Denom;
+	if (DistanceToPlane <= 0.0f)
+	{
+		return false;
+	}
+
+	const FVector CurrentIntersectionLocation = Ray.Origin + (Ray.Direction * DistanceToPlane);
+	FVector CurrentDirection = CurrentIntersectionLocation - AngularDragPivotLocation;
+	const float DirectionLengthSquared = CurrentDirection.LengthSquared();
+	if (DirectionLengthSquared < AngularDragDirectionMinLengthSquared)
+	{
+		return false;
+	}
+
+	// 반지름 크기는 회전량 계산에 불필요하므로 방향만 정규화
+	CurrentDirection /= std::sqrt(DirectionLengthSquared);
+	OutDirection = CurrentDirection;
+	return true;
+}
+
 bool UGizmoComponent::HasMultipleSelectedActorTargets() const
 {
 	if (!AllSelectedActors)
@@ -380,7 +439,10 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 {
 	if (!Target || !Target->IsValid()) return;
 
-	FVector Axis = bIsWorldSpace ? GetVectorForAxis(SelectedAxis) : GetLocalAxisVector(SelectedAxis);
+	// World 회전은 드래그 시작 시점의 축을 우선 사용해 회전 중 기즈모 transform 변화에 흔들리지 않게 합니다.
+	FVector Axis = bIsWorldSpace
+		? (bAngularDragBasisValid ? AngularDragAxisVector : GetVectorForAxis(SelectedAxis))
+		: GetLocalAxisVector(SelectedAxis);
 	FQuat DeltaQuat = FQuat::FromAxisAngle(Axis, DragAmount);
 	if (!RotateSelectedActorTargets(DeltaQuat))
 	{
@@ -558,36 +620,46 @@ void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
 
 void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
 {
-	FVector AxisVector = GetVectorForAxis(SelectedAxis);
-	FVector PlaneNormal = AxisVector;
-
-	float Denom = Ray.Direction.Dot(PlaneNormal);
-	if (std::abs(Denom) < 1e-6f) return;
-
-	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).Dot(PlaneNormal) / Denom;
-	FVector CurrentIntersectionLocation = Ray.Origin + (Ray.Direction * DistanceToPlane);
-
 	if (bIsFirstFrameOfDrag)
 	{
-		LastIntersectionLocation = CurrentIntersectionLocation;
+		// 회전 시작 순간의 pivot/axis를 고정해 이후 frame의 target 회전 변화가 계산 기준을 흔들지 못하게 합니다.
+		AngularDragPivotLocation = GetWorldLocation();
+		AngularDragAxisVector = GetVectorForAxis(SelectedAxis).Normalized();
+		if (AngularDragAxisVector.LengthSquared() < AngularDragDirectionMinLengthSquared)
+		{
+			ResetAngularDragBasis();
+			return;
+		}
+
+		bAngularDragBasisValid = true;
+		if (!TryGetAngularDragDirection(Ray, LastAngularDragDirection))
+		{
+			ResetAngularDragBasis();
+			return;
+		}
+
 		bIsFirstFrameOfDrag = false;
 		return;
 	}
 
-	FVector CenterToLast = (LastIntersectionLocation - GetWorldLocation()).Normalized();
-	FVector CenterToCurrent = (CurrentIntersectionLocation - GetWorldLocation()).Normalized();
+	FVector CurrentAngularDragDirection;
+	if (!TryGetAngularDragDirection(Ray, CurrentAngularDragDirection))
+	{
+		return;
+	}
 
-	float DotProduct = Clamp(CenterToLast.Dot(CenterToCurrent), -1.0f, 1.0f);
-	float AngleRadians = std::acos(DotProduct);
+	// atan2 기반 signed angle 계산으로 아주 작은 회전과 부호 판정을 안정화합니다.
+	const float CosAngle = Clamp(LastAngularDragDirection.Dot(CurrentAngularDragDirection), -1.0f, 1.0f);
+	const float SignedSinAngle = LastAngularDragDirection.Cross(CurrentAngularDragDirection).Dot(AngularDragAxisVector);
+	const float DeltaAngle = std::atan2(SignedSinAngle, CosAngle);
+	LastAngularDragDirection = CurrentAngularDragDirection;
 
-	FVector CrossProduct = CenterToLast.Cross(CenterToCurrent);
-	float Sign = (CrossProduct.Dot(AxisVector) >= 0.0f) ? 1.0f : -1.0f;
-
-	float DeltaAngle = Sign * AngleRadians;
+	if (std::abs(DeltaAngle) < AngularDragMinDeltaRadians)
+	{
+		return;
+	}
 
 	HandleDrag(DeltaAngle);
-
-	LastIntersectionLocation = CurrentIntersectionLocation;
 }
 
 void UGizmoComponent::UpdateHoveredAxis(int Index)
@@ -627,8 +699,9 @@ void UGizmoComponent::UpdateDrag(const FRay& Ray)
 void UGizmoComponent::DragEnd()
 {
 	bIsFirstFrameOfDrag = true;
-	// Clear leftover snap state so the next drag starts from zero.
+	// 다음 드래그가 이전 snap/회전 평면 상태를 이어받지 않도록 초기화
 	ResetSnapAccumulation();
+	ResetAngularDragBasis();
 	SetHolding(false);
 	SetPressedOnHandle(false);
 }
@@ -641,6 +714,14 @@ void UGizmoComponent::SetNextMode()
 
 void UGizmoComponent::UpdateGizmoMode(EGizmoMode NewMode)
 {
+	if (CurMode != NewMode)
+	{
+		// 드래그 중 모드가 바뀌는 예외 상황에서도 이전 회전 기준 제거
+		bIsFirstFrameOfDrag = true;
+		ResetSnapAccumulation();
+		ResetAngularDragBasis();
+	}
+
 	CurMode = NewMode;
 	UpdateGizmoTransform();
 }
@@ -785,6 +866,9 @@ void UGizmoComponent::Deactivate()
 		SetHolding(false);
 	}
 
+	bIsFirstFrameOfDrag = true;
+	ResetSnapAccumulation();
+	ResetAngularDragBasis();
 	Target = nullptr;
 	ComponentTarget.SetComponent(nullptr);
 	AllSelectedActors = nullptr;
