@@ -222,35 +222,79 @@ void FUIEditorWidget::RenderInspector()
 
 	FUIEditorTextElement& Element = Document.TextElements[SelectedElementIndex];
 
-	if (InputFString("Id", Element.Id))
+	if (ImGui::Button("Delete Text Element"))
 	{
-		MarkDirty();
-		StatusText = "Id changed. Lua/C++ bindings may need the same id.";
+		DeleteSelectedTextElement();
+		return;
 	}
 
-	if (InputFStringMultiline("Text", Element.Text, ImVec2(-1.0f, 86.0f)))
+	ImGui::Separator();
+
+	ImGui::BeginDisabled();
+	InputFString("Id", Element.Id);
+	ImGui::EndDisabled();
+
+	if (!Element.ClassName.empty())
 	{
+		ImGui::BeginDisabled();
+		InputFString("Class", Element.ClassName);
+		ImGui::EndDisabled();
+	}
+
+	ImGui::BeginDisabled(!Element.bCanEditText);
+	const bool bTextChanged = InputFStringMultiline("Text", Element.Text, ImVec2(-1.0f, 86.0f));
+	ImGui::EndDisabled();
+	if (bTextChanged)
+	{
+		Element.bTextDirty = true;
 		MarkDirty();
 	}
 
-	if (ImGui::DragFloat("X", &Element.X, 1.0f))
+	const char* LayoutLabels[] = { "px", "%" };
+	int LayoutMode = Element.bUsePercentLayout ? 1 : 0;
+	if (ImGui::Combo("Layout Unit", &LayoutMode, LayoutLabels, IM_ARRAYSIZE(LayoutLabels)))
 	{
+		Element.bUsePercentLayout = LayoutMode == 1;
+		if (Element.bUsePercentLayout)
+		{
+			Element.X = std::clamp(Element.X, 0.0f, 100.0f);
+			Element.Y = std::clamp(Element.Y, 0.0f, 100.0f);
+			Element.Width = std::clamp(Element.Width, 1.0f, 100.0f);
+			Element.Height = std::clamp(Element.Height, 1.0f, 100.0f);
+		}
+		Element.bStyleDirty = true;
 		MarkDirty();
 	}
-	if (ImGui::DragFloat("Y", &Element.Y, 1.0f))
+
+	const float PositionSpeed = Element.bUsePercentLayout ? 0.1f : 1.0f;
+	const float SizeSpeed = Element.bUsePercentLayout ? 0.1f : 1.0f;
+	const float PositionMax = Element.bUsePercentLayout ? 100.0f : 4096.0f;
+	const float SizeMax = Element.bUsePercentLayout ? 100.0f : 4096.0f;
+	const char* ValueFormat = Element.bUsePercentLayout ? "%.2f" : "%.1f";
+
+	if (ImGui::DragFloat("X", &Element.X, PositionSpeed, 0.0f, PositionMax, ValueFormat))
 	{
+		Element.bStyleDirty = true;
 		MarkDirty();
 	}
-	if (ImGui::DragFloat("Width", &Element.Width, 1.0f, 1.0f, 4096.0f))
+	if (ImGui::DragFloat("Y", &Element.Y, PositionSpeed, 0.0f, PositionMax, ValueFormat))
 	{
+		Element.bStyleDirty = true;
 		MarkDirty();
 	}
-	if (ImGui::DragFloat("Height", &Element.Height, 1.0f, 1.0f, 4096.0f))
+	if (ImGui::DragFloat("Width", &Element.Width, SizeSpeed, 1.0f, SizeMax, ValueFormat))
 	{
+		Element.bStyleDirty = true;
+		MarkDirty();
+	}
+	if (ImGui::DragFloat("Height", &Element.Height, SizeSpeed, 1.0f, SizeMax, ValueFormat))
+	{
+		Element.bStyleDirty = true;
 		MarkDirty();
 	}
 	if (ImGui::DragFloat("Font Size", &Element.FontSize, 1.0f, 1.0f, 200.0f))
 	{
+		Element.bStyleDirty = true;
 		MarkDirty();
 	}
 
@@ -269,6 +313,7 @@ void FUIEditorWidget::RenderInspector()
 	if (ImGui::Combo("Font Weight", &CurrentWeight, WeightLabels, IM_ARRAYSIZE(WeightLabels)))
 	{
 		Element.FontWeight = WeightValues[CurrentWeight];
+		Element.bStyleDirty = true;
 		MarkDirty();
 	}
 }
@@ -322,15 +367,47 @@ void FUIEditorWidget::RenderStatusBar()
 void FUIEditorWidget::AddTextElement()
 {
 	FUIEditorTextElement Element;
+	Element.TagName = "div";
 	Element.Id = MakeUniqueTextId(Document);
 	Element.Text = "New Text";
 	Element.X = 120.0f;
 	Element.Y = 80.0f + static_cast<float>(Document.TextElements.size()) * 44.0f;
+	Element.bTextDirty = true;
+	Element.bStyleDirty = true;
+	Element.bPendingInsert = true;
 
 	Document.TextElements.push_back(std::move(Element));
 	SelectedElementIndex = static_cast<int32>(Document.TextElements.size()) - 1;
 	MarkDirty();
 	StatusText = "Text element added.";
+}
+
+void FUIEditorWidget::DeleteSelectedTextElement()
+{
+	if (SelectedElementIndex < 0 || SelectedElementIndex >= static_cast<int32>(Document.TextElements.size()))
+	{
+		return;
+	}
+
+	const FUIEditorTextElement& Element = Document.TextElements[SelectedElementIndex];
+	const FString DeletedId = Element.Id;
+	if (!Element.bPendingInsert && Element.ElementRange.IsValid())
+	{
+		Document.DeletedElementRanges.push_back(Element.ElementRange);
+	}
+
+	Document.TextElements.erase(Document.TextElements.begin() + SelectedElementIndex);
+	if (Document.TextElements.empty())
+	{
+		SelectedElementIndex = -1;
+	}
+	else if (SelectedElementIndex >= static_cast<int32>(Document.TextElements.size()))
+	{
+		SelectedElementIndex = static_cast<int32>(Document.TextElements.size()) - 1;
+	}
+
+	MarkDirty();
+	StatusText = "Text element deleted: " + DeletedId;
 }
 
 bool FUIEditorWidget::Save(bool bShowNotification)

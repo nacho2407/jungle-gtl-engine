@@ -4,7 +4,8 @@
       "Name" : "TitleScreenActor",
       "NonSceneComponents" : [{
           "ClassName" : "ULuaScriptComponent",
-          "ObjectId" : 3,
+          "Name" : "ULuaScriptComponent_3",
+          "ObjectId" : 4,
           "Properties" : {
             "ScriptFile" : "TitleScreen.lua",
             "bAutoActivate" : true,
@@ -17,7 +18,7 @@
       "ObjectId" : 2,
       "Properties" : {
         "PendingActorLocation" : [0.000000, 0.000000, 0.000000],
-        "PendingActorRotation" : [0.000000, 0.000000, 0.000000],
+        "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
         "PendingActorScale" : [1.000000, 1.000000, 1.000000],
         "PendingActorVisible" : true,
         "PendingTagsString" : "",
@@ -26,9 +27,10 @@
       "RootComponent" : {
         "Children" : [],
         "ClassName" : "USceneComponent",
-        "ObjectId" : 4,
+        "Name" : "USceneComponent_1",
+        "ObjectId" : 3,
         "Properties" : {
-          "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
+          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
           "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
           "bAutoActivate" : true,
@@ -47,7 +49,7 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [0.000000, 0.000000, 0.000000],
+    "Location" : [-4.500000, 0.000000, 0.000000],
     "NearClip" : 0.100000,
     "Rotation" : [0.000000, 0.000000, 0.000000]
   },

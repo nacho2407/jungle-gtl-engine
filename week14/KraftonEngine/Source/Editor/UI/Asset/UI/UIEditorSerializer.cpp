@@ -1,23 +1,51 @@
 #include "Editor/UI/Asset/UI/UIEditorSerializer.h"
 
-#include "Platform/Paths.h"
-
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <filesystem>
 #include <fstream>
-#include <regex>
+#include <iomanip>
 #include <sstream>
 
 namespace
 {
+	struct FTextPatch
+	{
+		int32 Begin = 0;
+		int32 End = 0;
+		FString Replacement;
+	};
+
+	struct FAttributeSpan
+	{
+		FString Name;
+		FString Value;
+		FSourceRange FullRange;
+		FSourceRange ValueRange;
+		char QuoteChar = '"';
+	};
+
 	void SetUIEditorError(FString* OutError, const FString& Error)
 	{
 		if (OutError)
 		{
 			*OutError = Error;
 		}
+	}
+
+	FString ToLowerCopy(FString Value)
+	{
+		std::transform(Value.begin(), Value.end(), Value.begin(),
+			[](unsigned char C) { return static_cast<char>(std::tolower(C)); });
+		return Value;
+	}
+
+	bool EqualsIgnoreCase(const FString& A, const FString& B)
+	{
+		return ToLowerCopy(A) == ToLowerCopy(B);
 	}
 
 	FString TrimCopy(FString Value)
@@ -107,40 +135,438 @@ namespace
 		return true;
 	}
 
-	FString ExtractAttribute(const FString& Tag, const char* AttributeName)
+	bool BackupFile(const std::filesystem::path& Path, FString* OutError)
 	{
-		const FString Pattern = FString(AttributeName) + R"rml(\s*=\s*"([^"]*)")rml";
-		const std::regex Regex(Pattern, std::regex::icase);
-		std::smatch Match;
-		if (std::regex_search(Tag, Match, Regex) && Match.size() > 1)
+		if (!std::filesystem::exists(Path))
 		{
-			return DecodeXml(Match[1].str());
+			return true;
 		}
-		return {};
+
+		std::error_code Ec;
+		const std::filesystem::path BackupPath = Path.wstring() + L".bak";
+		std::filesystem::copy_file(Path, BackupPath, std::filesystem::copy_options::overwrite_existing, Ec);
+		if (Ec)
+		{
+			SetUIEditorError(OutError, "Failed to create RML backup: " + Ec.message());
+			return false;
+		}
+		return true;
 	}
 
-	float ExtractStyleFloat(const FString& Style, const char* PropertyName, float DefaultValue)
+	void ApplyPatchesDescending(FString& Source, TArray<FTextPatch>& Patches)
 	{
-		const FString Pattern = FString(PropertyName) + R"(\s*:\s*([-+]?[0-9]*\.?[0-9]+))";
-		const std::regex Regex(Pattern, std::regex::icase);
-		std::smatch Match;
-		if (std::regex_search(Style, Match, Regex) && Match.size() > 1)
+		std::sort(Patches.begin(), Patches.end(),
+			[](const FTextPatch& A, const FTextPatch& B)
+			{
+				return A.Begin > B.Begin;
+			});
+
+		for (const FTextPatch& Patch : Patches)
 		{
-			return std::stof(Match[1].str());
+			if (Patch.Begin < 0 || Patch.End < Patch.Begin || Patch.End > static_cast<int32>(Source.size()))
+			{
+				continue;
+			}
+			Source.replace(Source.begin() + Patch.Begin, Source.begin() + Patch.End, Patch.Replacement);
 		}
-		return DefaultValue;
 	}
 
-	FString ExtractStyleString(const FString& Style, const char* PropertyName, const FString& DefaultValue)
+	int32 FindCaseInsensitive(const FString& Source, const FString& Needle, int32 Start = 0)
 	{
-		const FString Pattern = FString(PropertyName) + R"rml(\s*:\s*([^;"]+))rml";
-		const std::regex Regex(Pattern, std::regex::icase);
-		std::smatch Match;
-		if (std::regex_search(Style, Match, Regex) && Match.size() > 1)
+		if (Needle.empty() || Start < 0 || Start >= static_cast<int32>(Source.size()))
 		{
-			return TrimCopy(Match[1].str());
+			return -1;
 		}
-		return DefaultValue;
+
+		const FString LowerSource = ToLowerCopy(Source);
+		const FString LowerNeedle = ToLowerCopy(Needle);
+		const size_t Pos = LowerSource.find(LowerNeedle, static_cast<size_t>(Start));
+		return Pos == FString::npos ? -1 : static_cast<int32>(Pos);
+	}
+
+	bool IsNameChar(char C)
+	{
+		return std::isalnum(static_cast<unsigned char>(C)) || C == '-' || C == '_' || C == ':';
+	}
+
+	bool IsEditableTag(const FString& TagName)
+	{
+		const FString Lower = ToLowerCopy(TagName);
+		return Lower == "div" || Lower == "span" || Lower == "button" || Lower == "p";
+	}
+
+	bool IsBlockedTag(const FString& TagName)
+	{
+		const FString Lower = ToLowerCopy(TagName);
+		return Lower == "style" || Lower == "script" || Lower == "head" || Lower == "body" || Lower == "link";
+	}
+
+	bool ParseStartTag(const FString& Source, int32 TagBegin, FString& OutTagName, int32& OutTagEnd, bool& bOutSelfClosing)
+	{
+		if (TagBegin < 0 || TagBegin >= static_cast<int32>(Source.size()) || Source[TagBegin] != '<')
+		{
+			return false;
+		}
+
+		if (TagBegin + 1 >= static_cast<int32>(Source.size()))
+		{
+			return false;
+		}
+
+		const char Next = Source[TagBegin + 1];
+		if (Next == '/' || Next == '!' || Next == '?')
+		{
+			return false;
+		}
+
+		int32 Cursor = TagBegin + 1;
+		while (Cursor < static_cast<int32>(Source.size()) && std::isspace(static_cast<unsigned char>(Source[Cursor])))
+		{
+			++Cursor;
+		}
+
+		const int32 NameBegin = Cursor;
+		while (Cursor < static_cast<int32>(Source.size()) && IsNameChar(Source[Cursor]))
+		{
+			++Cursor;
+		}
+
+		if (Cursor <= NameBegin)
+		{
+			return false;
+		}
+
+		OutTagName = Source.substr(NameBegin, Cursor - NameBegin);
+
+		char Quote = '\0';
+		for (; Cursor < static_cast<int32>(Source.size()); ++Cursor)
+		{
+			const char C = Source[Cursor];
+			if (Quote != '\0')
+			{
+				if (C == Quote)
+				{
+					Quote = '\0';
+				}
+				continue;
+			}
+			if (C == '"' || C == '\'')
+			{
+				Quote = C;
+				continue;
+			}
+			if (C == '>')
+			{
+				OutTagEnd = Cursor + 1;
+				int32 Probe = Cursor - 1;
+				while (Probe > TagBegin && std::isspace(static_cast<unsigned char>(Source[Probe])))
+				{
+					--Probe;
+				}
+				bOutSelfClosing = Probe > TagBegin && Source[Probe] == '/';
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	TArray<FAttributeSpan> ParseAttributes(const FString& Source, int32 TagBegin, int32 TagEnd, const FString& TagName)
+	{
+		TArray<FAttributeSpan> Attributes;
+		int32 Cursor = TagBegin + 1 + static_cast<int32>(TagName.size());
+
+		while (Cursor < TagEnd - 1)
+		{
+			while (Cursor < TagEnd - 1 && std::isspace(static_cast<unsigned char>(Source[Cursor])))
+			{
+				++Cursor;
+			}
+			if (Cursor >= TagEnd - 1 || Source[Cursor] == '/' || Source[Cursor] == '>')
+			{
+				break;
+			}
+
+			const int32 NameBegin = Cursor;
+			while (Cursor < TagEnd - 1 && IsNameChar(Source[Cursor]))
+			{
+				++Cursor;
+			}
+			if (Cursor <= NameBegin)
+			{
+				++Cursor;
+				continue;
+			}
+
+			FAttributeSpan Attribute;
+			Attribute.Name = Source.substr(NameBegin, Cursor - NameBegin);
+			Attribute.FullRange.Begin = NameBegin;
+
+			while (Cursor < TagEnd - 1 && std::isspace(static_cast<unsigned char>(Source[Cursor])))
+			{
+				++Cursor;
+			}
+
+			if (Cursor >= TagEnd - 1 || Source[Cursor] != '=')
+			{
+				Attribute.FullRange.End = Cursor;
+				Attributes.push_back(Attribute);
+				continue;
+			}
+			++Cursor;
+
+			while (Cursor < TagEnd - 1 && std::isspace(static_cast<unsigned char>(Source[Cursor])))
+			{
+				++Cursor;
+			}
+
+			if (Cursor < TagEnd - 1 && (Source[Cursor] == '"' || Source[Cursor] == '\''))
+			{
+				Attribute.QuoteChar = Source[Cursor];
+				++Cursor;
+				Attribute.ValueRange.Begin = Cursor;
+				while (Cursor < TagEnd - 1 && Source[Cursor] != Attribute.QuoteChar)
+				{
+					++Cursor;
+				}
+				Attribute.ValueRange.End = Cursor;
+				Attribute.Value = Source.substr(Attribute.ValueRange.Begin, Attribute.ValueRange.End - Attribute.ValueRange.Begin);
+				if (Cursor < TagEnd - 1)
+				{
+					++Cursor;
+				}
+				Attribute.FullRange.End = Cursor;
+			}
+			else
+			{
+				Attribute.ValueRange.Begin = Cursor;
+				while (Cursor < TagEnd - 1 && !std::isspace(static_cast<unsigned char>(Source[Cursor])) && Source[Cursor] != '>')
+				{
+					++Cursor;
+				}
+				Attribute.ValueRange.End = Cursor;
+				Attribute.Value = Source.substr(Attribute.ValueRange.Begin, Attribute.ValueRange.End - Attribute.ValueRange.Begin);
+				Attribute.FullRange.End = Cursor;
+			}
+
+			Attributes.push_back(Attribute);
+		}
+
+		return Attributes;
+	}
+
+	const FAttributeSpan* FindAttribute(const TArray<FAttributeSpan>& Attributes, const FString& Name)
+	{
+		for (const FAttributeSpan& Attribute : Attributes)
+		{
+			if (EqualsIgnoreCase(Attribute.Name, Name))
+			{
+				return &Attribute;
+			}
+		}
+		return nullptr;
+	}
+
+	int32 FindMatchingEndTag(const FString& Source, const FString& TagName, int32 SearchStart)
+	{
+		const FString LowerTag = ToLowerCopy(TagName);
+		int32 Depth = 1;
+		int32 Cursor = SearchStart;
+
+		while (Cursor >= 0 && Cursor < static_cast<int32>(Source.size()))
+		{
+			const size_t Pos = Source.find('<', static_cast<size_t>(Cursor));
+			if (Pos == FString::npos)
+			{
+				return -1;
+			}
+
+			Cursor = static_cast<int32>(Pos);
+			if (Cursor + 1 < static_cast<int32>(Source.size()) && Source[Cursor + 1] == '/')
+			{
+				int32 NameBegin = Cursor + 2;
+				while (NameBegin < static_cast<int32>(Source.size()) && std::isspace(static_cast<unsigned char>(Source[NameBegin])))
+				{
+					++NameBegin;
+				}
+				int32 NameEnd = NameBegin;
+				while (NameEnd < static_cast<int32>(Source.size()) && IsNameChar(Source[NameEnd]))
+				{
+					++NameEnd;
+				}
+				if (ToLowerCopy(Source.substr(NameBegin, NameEnd - NameBegin)) == LowerTag)
+				{
+					--Depth;
+					if (Depth == 0)
+					{
+						return Cursor;
+					}
+				}
+			}
+			else
+			{
+				FString ChildTagName;
+				int32 ChildTagEnd = -1;
+				bool bSelfClosing = false;
+				if (ParseStartTag(Source, Cursor, ChildTagName, ChildTagEnd, bSelfClosing) &&
+					ToLowerCopy(ChildTagName) == LowerTag &&
+					!bSelfClosing)
+				{
+					++Depth;
+					Cursor = ChildTagEnd;
+					continue;
+				}
+			}
+
+			++Cursor;
+		}
+
+		return -1;
+	}
+
+	FStyleValueSpan ParseStyleProperty(const FString& Source, const FAttributeSpan* StyleAttribute, const FString& PropertyName)
+	{
+		FStyleValueSpan Result;
+		Result.PropertyName = PropertyName;
+		if (!StyleAttribute || !StyleAttribute->ValueRange.IsValid())
+		{
+			return Result;
+		}
+
+		FString LowerStyle = ToLowerCopy(StyleAttribute->Value);
+		FString LowerProperty = ToLowerCopy(PropertyName);
+		size_t Pos = 0;
+		while ((Pos = LowerStyle.find(LowerProperty, Pos)) != FString::npos)
+		{
+			const bool bLeftBoundary = Pos == 0 || LowerStyle[Pos - 1] == ';' || std::isspace(static_cast<unsigned char>(LowerStyle[Pos - 1]));
+			size_t AfterName = Pos + LowerProperty.size();
+			while (AfterName < LowerStyle.size() && std::isspace(static_cast<unsigned char>(LowerStyle[AfterName])))
+			{
+				++AfterName;
+			}
+			if (!bLeftBoundary || AfterName >= LowerStyle.size() || LowerStyle[AfterName] != ':')
+			{
+				Pos = AfterName;
+				continue;
+			}
+
+			size_t ValueBegin = AfterName + 1;
+			while (ValueBegin < LowerStyle.size() && std::isspace(static_cast<unsigned char>(LowerStyle[ValueBegin])))
+			{
+				++ValueBegin;
+			}
+
+			size_t ValueEnd = ValueBegin;
+			while (ValueEnd < LowerStyle.size() && LowerStyle[ValueEnd] != ';')
+			{
+				++ValueEnd;
+			}
+			while (ValueEnd > ValueBegin && std::isspace(static_cast<unsigned char>(LowerStyle[ValueEnd - 1])))
+			{
+				--ValueEnd;
+			}
+
+			Result.bExistsInSource = true;
+			Result.ValueRange.Begin = StyleAttribute->ValueRange.Begin + static_cast<int32>(ValueBegin);
+			Result.ValueRange.End = StyleAttribute->ValueRange.Begin + static_cast<int32>(ValueEnd);
+			Result.OriginalValue = Source.substr(Result.ValueRange.Begin, Result.ValueRange.End - Result.ValueRange.Begin);
+			return Result;
+		}
+
+		return Result;
+	}
+
+	float ParseStyleFloat(const FStyleValueSpan& Span, float DefaultValue)
+	{
+		if (!Span.bExistsInSource)
+		{
+			return DefaultValue;
+		}
+		try
+		{
+			return std::stof(Span.OriginalValue);
+		}
+		catch (...)
+		{
+			return DefaultValue;
+		}
+	}
+
+	bool IsPercentStyle(const FStyleValueSpan& Span)
+	{
+		return Span.bExistsInSource && Span.OriginalValue.find('%') != FString::npos;
+	}
+
+	FString FormatFloatValue(float Value, const char* Unit)
+	{
+		char Buffer[64];
+		std::snprintf(Buffer, sizeof(Buffer), "%.2f%s", Value, Unit);
+		return Buffer;
+	}
+
+	FString FormatFontWeight(const FString& FontWeight)
+	{
+		if (FontWeight == "900" || FontWeight == "black")
+		{
+			return "900";
+		}
+		return FontWeight == "bold" ? "bold" : "normal";
+	}
+
+	FString BuildStyleText(const FUIEditorTextElement& Element)
+	{
+		const char* LayoutUnit = Element.bUsePercentLayout ? "%" : "px";
+		const float Width = (std::max)(1.0f, Element.Width);
+		const float Height = (std::max)(1.0f, Element.Height);
+		const float FontSize = (std::max)(1.0f, Element.FontSize);
+
+		std::ostringstream Out;
+		Out << "position: absolute; ";
+		Out << "left: " << FormatFloatValue(Element.X, LayoutUnit) << "; ";
+		Out << "top: " << FormatFloatValue(Element.Y, LayoutUnit) << "; ";
+		Out << "width: " << FormatFloatValue(Width, LayoutUnit) << "; ";
+		Out << "height: " << FormatFloatValue(Height, LayoutUnit) << "; ";
+		Out << "font-size: " << FormatFloatValue(FontSize, "px") << "; ";
+		Out << "font-weight: " << FormatFontWeight(Element.FontWeight) << ";";
+		return Out.str();
+	}
+
+	void AddStyleValuePatchOrAppend(const FUIEditorTextElement& Element, const FStyleValueSpan& Span, const FString& Value, TArray<FTextPatch>& Patches, TArray<FString>& MissingProperties)
+	{
+		if (Span.bExistsInSource && Span.ValueRange.IsValid())
+		{
+			Patches.push_back({ Span.ValueRange.Begin, Span.ValueRange.End, Value });
+		}
+		else
+		{
+			MissingProperties.push_back(Span.PropertyName + ": " + Value);
+		}
+	}
+
+	int32 FindBodyInsertPosition(const FString& Source)
+	{
+		int32 InsertPos = FindCaseInsensitive(Source, "</body>");
+		if (InsertPos >= 0)
+		{
+			return InsertPos;
+		}
+		InsertPos = FindCaseInsensitive(Source, "</rml>");
+		if (InsertPos >= 0)
+		{
+			return InsertPos;
+		}
+		return static_cast<int32>(Source.size());
+	}
+
+	FString BuildInsertedElementHtml(const FUIEditorTextElement& Element)
+	{
+		std::ostringstream Out;
+		Out << "\n    <div id=\"" << EncodeXml(Element.Id) << "\" data-ui-editor=\"text\" style=\"";
+		Out << BuildStyleText(Element);
+		Out << "\">";
+		Out << EncodeXml(Element.Text);
+		Out << "</div>\n";
+		return Out.str();
 	}
 }
 
@@ -156,18 +582,23 @@ bool FUIEditorSerializer::Load(const std::filesystem::path& Path, FUIEditorDocum
 	}
 	else
 	{
-		Rml = BuildRml(OutDocument);
+		Rml = "<rml>\n<head>\n    <title>New UI</title>\n</head>\n<body>\n</body>\n</rml>\n";
+		if (!WriteTextFile(Path, Rml, OutError))
+		{
+			return false;
+		}
 	}
 
 	OutDocument = FUIEditorDocument {};
 	OutDocument.SourcePath = Path;
-	OutDocument.OriginalRml = Rml;
+	OutDocument.OriginalSource = Rml;
+	OutDocument.CurrentSource = Rml;
 	OutDocument.bDirty = false;
 
 	return ParseEditableTextElements(Rml, OutDocument, OutError);
 }
 
-bool FUIEditorSerializer::Save(const FUIEditorDocument& Document, FString* OutError)
+bool FUIEditorSerializer::Save(FUIEditorDocument& Document, FString* OutError)
 {
 	if (Document.SourcePath.empty())
 	{
@@ -175,107 +606,192 @@ bool FUIEditorSerializer::Save(const FUIEditorDocument& Document, FString* OutEr
 		return false;
 	}
 
-	return WriteTextFile(Document.SourcePath, BuildRml(Document), OutError);
+	FString Source = Document.CurrentSource.empty() ? Document.OriginalSource : Document.CurrentSource;
+	TArray<FTextPatch> Patches;
+
+	for (const FSourceRange& DeletedRange : Document.DeletedElementRanges)
+	{
+		if (DeletedRange.IsValid())
+		{
+			Patches.push_back({ DeletedRange.Begin, DeletedRange.End, "" });
+		}
+	}
+
+	for (const FUIEditorTextElement& Element : Document.TextElements)
+	{
+		if (Element.bPendingInsert)
+		{
+			const int32 InsertPos = FindBodyInsertPosition(Source);
+			Patches.push_back({ InsertPos, InsertPos, BuildInsertedElementHtml(Element) });
+			continue;
+		}
+
+		if (Element.bTextDirty && Element.bCanEditText && Element.InnerTextRange.IsValid())
+		{
+			Patches.push_back({ Element.InnerTextRange.Begin, Element.InnerTextRange.End, EncodeXml(Element.Text) });
+		}
+
+		if (!Element.bStyleDirty)
+		{
+			continue;
+		}
+
+		if (!Element.StyleAttributeValueRange.IsValid())
+		{
+			const int32 InsertPos = Element.OpenTagRange.End - 1;
+			Patches.push_back({ InsertPos, InsertPos, " style=\"" + BuildStyleText(Element) + "\"" });
+			continue;
+		}
+
+		const char* LayoutUnit = Element.bUsePercentLayout ? "%" : "px";
+		TArray<FString> MissingProperties;
+		if (!Element.PositionStyle.bExistsInSource)
+		{
+			MissingProperties.push_back("position: absolute");
+		}
+		AddStyleValuePatchOrAppend(Element, Element.LeftStyle, FormatFloatValue(Element.X, LayoutUnit), Patches, MissingProperties);
+		AddStyleValuePatchOrAppend(Element, Element.TopStyle, FormatFloatValue(Element.Y, LayoutUnit), Patches, MissingProperties);
+		AddStyleValuePatchOrAppend(Element, Element.WidthStyle, FormatFloatValue((std::max)(1.0f, Element.Width), LayoutUnit), Patches, MissingProperties);
+		AddStyleValuePatchOrAppend(Element, Element.HeightStyle, FormatFloatValue((std::max)(1.0f, Element.Height), LayoutUnit), Patches, MissingProperties);
+		AddStyleValuePatchOrAppend(Element, Element.FontSizeStyle, FormatFloatValue((std::max)(1.0f, Element.FontSize), "px"), Patches, MissingProperties);
+		AddStyleValuePatchOrAppend(Element, Element.FontWeightStyle, FormatFontWeight(Element.FontWeight), Patches, MissingProperties);
+
+		if (!MissingProperties.empty())
+		{
+			std::ostringstream AppendStyle;
+			const bool bNeedsSeparator = Element.StyleAttributeValueRange.End > Element.StyleAttributeValueRange.Begin &&
+				Source[Element.StyleAttributeValueRange.End - 1] != ';';
+			if (bNeedsSeparator)
+			{
+				AppendStyle << ";";
+			}
+			for (const FString& Property : MissingProperties)
+			{
+				AppendStyle << " " << Property << ";";
+			}
+			Patches.push_back({ Element.StyleAttributeValueRange.End, Element.StyleAttributeValueRange.End, AppendStyle.str() });
+		}
+	}
+
+	ApplyPatchesDescending(Source, Patches);
+
+	if (!BackupFile(Document.SourcePath, OutError))
+	{
+		return false;
+	}
+	if (!WriteTextFile(Document.SourcePath, Source, OutError))
+	{
+		return false;
+	}
+
+	return Load(Document.SourcePath, Document, OutError);
 }
 
 bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEditorDocument& OutDocument, FString* OutError)
 {
 	(void)OutError;
 
-	const std::regex DivRegex(R"(<div\b(?=[^>]*\bdata-ui-editor\s*=\s*"text")[^>]*>[\s\S]*?</div>)", std::regex::icase);
-	auto Begin = std::sregex_iterator(Rml.begin(), Rml.end(), DivRegex);
-	auto End = std::sregex_iterator();
+	OutDocument.TextElements.clear();
 
-	for (auto It = Begin; It != End; ++It)
+	int32 Cursor = 0;
+	while (Cursor < static_cast<int32>(Rml.size()))
 	{
-		const FString Block = It->str();
-		const size_t TagEnd = Block.find('>');
-		if (TagEnd == FString::npos)
+		const size_t Found = Rml.find('<', static_cast<size_t>(Cursor));
+		if (Found == FString::npos)
 		{
+			break;
+		}
+
+		const int32 TagBegin = static_cast<int32>(Found);
+		FString TagName;
+		int32 TagEnd = -1;
+		bool bSelfClosing = false;
+		if (!ParseStartTag(Rml, TagBegin, TagName, TagEnd, bSelfClosing))
+		{
+			Cursor = TagBegin + 1;
 			continue;
 		}
 
-		const FString OpenTag = Block.substr(0, TagEnd + 1);
-		const size_t CloseTag = Block.rfind("</div>");
-		const FString InnerText = CloseTag != FString::npos && CloseTag > TagEnd
-			? Block.substr(TagEnd + 1, CloseTag - TagEnd - 1)
-			: FString {};
-
-		FUIEditorTextElement Element;
-		Element.Id = ExtractAttribute(OpenTag, "id");
-		Element.Text = DecodeXml(TrimCopy(InnerText));
-
-		const FString Style = ExtractAttribute(OpenTag, "style");
-		Element.X = ExtractStyleFloat(Style, "left", Element.X);
-		Element.Y = ExtractStyleFloat(Style, "top", Element.Y);
-		Element.Width = ExtractStyleFloat(Style, "width", Element.Width);
-		Element.Height = ExtractStyleFloat(Style, "height", Element.Height);
-		Element.FontSize = ExtractStyleFloat(Style, "font-size", Element.FontSize);
-		Element.FontWeight = ExtractStyleString(Style, "font-weight", Element.FontWeight);
-		if (Element.FontWeight == "black")
+		if (bSelfClosing || IsBlockedTag(TagName) || !IsEditableTag(TagName))
 		{
-			Element.FontWeight = "900";
+			Cursor = TagEnd;
+			continue;
 		}
 
+		const TArray<FAttributeSpan> Attributes = ParseAttributes(Rml, TagBegin, TagEnd, TagName);
+		const FAttributeSpan* IdAttribute = FindAttribute(Attributes, "id");
+		if (!IdAttribute || IdAttribute->Value.empty())
+		{
+			Cursor = TagEnd;
+			continue;
+		}
+
+		const int32 CloseTagBegin = FindMatchingEndTag(Rml, TagName, TagEnd);
+		if (CloseTagBegin < 0)
+		{
+			Cursor = TagEnd;
+			continue;
+		}
+		size_t CloseTagEndPos = Rml.find('>', static_cast<size_t>(CloseTagBegin));
+		if (CloseTagEndPos == FString::npos)
+		{
+			Cursor = TagEnd;
+			continue;
+		}
+		const int32 CloseTagEnd = static_cast<int32>(CloseTagEndPos) + 1;
+
+		const FString InnerSource = Rml.substr(TagEnd, CloseTagBegin - TagEnd);
+		if (InnerSource.find('<') != FString::npos)
+		{
+			Cursor = TagEnd;
+			continue;
+		}
+
+		const FAttributeSpan* ClassAttribute = FindAttribute(Attributes, "class");
+		const FAttributeSpan* StyleAttribute = FindAttribute(Attributes, "style");
+
+		FUIEditorTextElement Element;
+		Element.TagName = ToLowerCopy(TagName);
+		Element.Id = DecodeXml(IdAttribute->Value);
+		Element.ClassName = ClassAttribute ? DecodeXml(ClassAttribute->Value) : FString {};
+		Element.Text = DecodeXml(TrimCopy(InnerSource));
+		Element.OpenTagRange = { TagBegin, TagEnd };
+		Element.ElementRange = { TagBegin, CloseTagEnd };
+		Element.InnerTextRange = { TagEnd, CloseTagBegin };
+		Element.StyleAttributeValueRange = StyleAttribute ? StyleAttribute->ValueRange : FSourceRange {};
+		Element.bCanEditText = true;
+
+		Element.PositionStyle = ParseStyleProperty(Rml, StyleAttribute, "position");
+		Element.LeftStyle = ParseStyleProperty(Rml, StyleAttribute, "left");
+		Element.TopStyle = ParseStyleProperty(Rml, StyleAttribute, "top");
+		Element.WidthStyle = ParseStyleProperty(Rml, StyleAttribute, "width");
+		Element.HeightStyle = ParseStyleProperty(Rml, StyleAttribute, "height");
+		Element.FontSizeStyle = ParseStyleProperty(Rml, StyleAttribute, "font-size");
+		Element.FontWeightStyle = ParseStyleProperty(Rml, StyleAttribute, "font-weight");
+
+		Element.X = ParseStyleFloat(Element.LeftStyle, Element.X);
+		Element.Y = ParseStyleFloat(Element.TopStyle, Element.Y);
+		Element.Width = ParseStyleFloat(Element.WidthStyle, Element.Width);
+		Element.Height = ParseStyleFloat(Element.HeightStyle, Element.Height);
+		Element.FontSize = ParseStyleFloat(Element.FontSizeStyle, Element.FontSize);
+		if (Element.FontWeightStyle.bExistsInSource)
+		{
+			Element.FontWeight = TrimCopy(Element.FontWeightStyle.OriginalValue);
+			if (Element.FontWeight == "black")
+			{
+				Element.FontWeight = "900";
+			}
+		}
+		Element.bUsePercentLayout =
+			IsPercentStyle(Element.LeftStyle) &&
+			IsPercentStyle(Element.TopStyle) &&
+			IsPercentStyle(Element.WidthStyle) &&
+			IsPercentStyle(Element.HeightStyle);
+
 		OutDocument.TextElements.push_back(std::move(Element));
+		Cursor = TagEnd;
 	}
 
+	OutDocument.bDirty = false;
 	return true;
-}
-
-FString FUIEditorSerializer::BuildRml(const FUIEditorDocument& Document)
-{
-	std::ostringstream Out;
-	Out << "<rml>\n";
-	Out << "<head>\n";
-	Out << "    <title>Generated UI</title>\n";
-	Out << "    <style>\n";
-	Out << "        body\n";
-	Out << "        {\n";
-	Out << "            width: 100%;\n";
-	Out << "            height: 100%;\n";
-	Out << "            margin: 0px;\n";
-	Out << "        }\n\n";
-	Out << "        .ui-text\n";
-	Out << "        {\n";
-	Out << "            position: absolute;\n";
-	Out << "            color: white;\n";
-	Out << "            font-family: Pretendard;\n";
-	Out << "        }\n";
-	Out << "    </style>\n";
-	Out << "</head>\n\n";
-	Out << "<body>\n";
-
-	for (const FUIEditorTextElement& Element : Document.TextElements)
-	{
-		const float Width = (std::max)(1.0f, Element.Width);
-		const float Height = (std::max)(1.0f, Element.Height);
-		const float FontSize = (std::max)(1.0f, Element.FontSize);
-
-		char StyleBuffer[256];
-		std::snprintf(
-			StyleBuffer,
-			sizeof(StyleBuffer),
-			"left: %.2fpx; top: %.2fpx; width: %.2fpx; height: %.2fpx; font-size: %.2fpx; font-weight: %s;",
-			Element.X,
-			Element.Y,
-			Width,
-			Height,
-			FontSize,
-			(Element.FontWeight == "900" || Element.FontWeight == "black")
-				? "900"
-				: Element.FontWeight == "bold" ? "bold" : "normal"
-		);
-
-		Out << "    <div id=\"" << EncodeXml(Element.Id) << "\"\n";
-		Out << "         class=\"ui-text\"\n";
-		Out << "         data-ui-editor=\"text\"\n";
-		Out << "         style=\"" << StyleBuffer << "\">\n";
-		Out << "        " << EncodeXml(Element.Text) << "\n";
-		Out << "    </div>\n\n";
-	}
-
-	Out << "</body>\n";
-	Out << "</rml>\n";
-	return Out.str();
 }

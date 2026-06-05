@@ -8,7 +8,6 @@
             height: 100%;
             margin: 0px;
         }
-
         .ui-text
         {
             position: absolute;
@@ -16,22 +15,66 @@
             font-family: Pretendard;
         }
     </style>
+    <title>FRACTURE LINE</title>
+    <link type="text/rcss" href="Title.rcss"/>
 </head>
-
 <body>
     <div id="text_1"
          class="ui-text"
          data-ui-editor="text"
-         style="left: 119.00px; top: 80.00px; width: 200.00px; height: 40.00px; font-size: 24.00px; font-weight: bold;">
-        New Text
+         style="left: 50.00px; top: 260.00px; width: 600.00px; height: 40.00px; font-size: 72.00px; font-weight: 900;">
+        FRACTION LINE
     </div>
-
+    <div id="title-screen">
+        <img id="title-background" src="Title.png"/>
+        <div id="shade"></div>
+        <div id="main-menu">
+            <div id="game-title">FRACTURE LINE</div>
+            <div class="menu-block">
+                <div id="new-game-button" class="menu-primary">New Game</div>
+                <div id="continue-button" class="menu-primary">Continue</div>
+                <div id="settings-button" class="menu-primary">Settings</div>
+            </div>
+            <div id="start-actions">
+                <div id="credits-button" class="menu-secondary">Credits</div>
+                <div id="quit-button" class="menu-secondary quit-link">Quit</div>
+            </div>
+        </div>
+        <div id="stat-button">
+            <img id="stat-icon" src="StatIcon.png"/>
+        </div>
+        <div id="stat-panel" class="overlay-panel hidden">
+            <div class="panel-title">Scoreboard</div>
+            <div class="scoreboard">
+                <div class="score-row score-header">
+                    <div>Name</div>
+                    <div>Stage</div>
+                    <div>Time</div>
+                </div>
+                <div class="score-row">
+                    <div>Empty Slot</div>
+                    <div>-</div>
+                    <div>--:--</div>
+                </div>
+                <div class="score-row">
+                    <div>Empty Slot</div>
+                    <div>-</div>
+                    <div>--:--</div>
+                </div>
+            </div>
+        </div>
     <div id="text_2"
          class="ui-text"
          data-ui-editor="text"
          style="left: 120.00px; top: 400.00px; width: 200.00px; height: 40.00px; font-size: 24.00px; font-weight: normal;">
         Hello
+        <div id="quit-panel" class="overlay-panel hidden">
+            <div id="quit-question">Quit game?</div>
+            <div id="quit-options">
+                <div id="confirm-quit-button" class="dialog-option">Yes</div>
+                <div id="cancel-quit-button" class="dialog-option selected">No</div>
+            </div>
+        </div>
     </div>
-
 </body>
 </rml>

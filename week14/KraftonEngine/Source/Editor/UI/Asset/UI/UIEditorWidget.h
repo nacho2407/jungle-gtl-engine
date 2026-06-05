@@ -24,6 +24,7 @@ private:
 	void RenderStatusBar();
 
 	void AddTextElement();
+	void DeleteSelectedTextElement();
 	bool Save(bool bShowNotification = true);
 	void RefreshPreview(bool bShowNotification = true);
 	void TickAutoRefresh();
