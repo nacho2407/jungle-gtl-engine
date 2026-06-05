@@ -807,7 +807,9 @@ namespace
 		const FString& Css = Document.StyleSheets[CssRule.StyleSheetIndex].CurrentSource;
 		ApplyCssStyleIfMissing(Element, Element.PositionStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "position", CssRule.StyleSheetIndex));
 		ApplyCssStyleIfMissing(Element, Element.LeftStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "left", CssRule.StyleSheetIndex));
+		ApplyCssStyleIfMissing(Element, Element.RightStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "right", CssRule.StyleSheetIndex));
 		ApplyCssStyleIfMissing(Element, Element.TopStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "top", CssRule.StyleSheetIndex));
+		ApplyCssStyleIfMissing(Element, Element.BottomStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "bottom", CssRule.StyleSheetIndex));
 		ApplyCssStyleIfMissing(Element, Element.WidthStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "width", CssRule.StyleSheetIndex));
 		ApplyCssStyleIfMissing(Element, Element.HeightStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "height", CssRule.StyleSheetIndex));
 		ApplyCssStyleIfMissing(Element, Element.FontSizeStyle, ParseCssRuleProperty(Css, CssRule.RuleBegin, CssRule.RuleEnd, "font-size", CssRule.StyleSheetIndex));
@@ -1032,8 +1034,8 @@ namespace
 
 		std::ostringstream Out;
 		Out << "position: absolute; ";
-		Out << "left: " << FormatFloatValue(Element.X, LayoutUnit) << "; ";
-		Out << "top: " << FormatFloatValue(Element.Y, LayoutUnit) << "; ";
+		Out << (Element.HorizontalAnchor == "right" ? "right: " : "left: ") << FormatFloatValue(Element.X, LayoutUnit) << "; ";
+		Out << (Element.VerticalAnchor == "bottom" ? "bottom: " : "top: ") << FormatFloatValue(Element.Y, LayoutUnit) << "; ";
 		Out << "width: " << FormatFloatValue(Width, LayoutUnit) << "; ";
 		Out << "height: " << FormatFloatValue(Height, LayoutUnit) << "; ";
 		Out << "font-size: " << FormatFloatValue(FontSize, "px") << "; ";
@@ -1051,8 +1053,8 @@ namespace
 
 		std::ostringstream Out;
 		Out << "position: absolute; ";
-		Out << "left: " << FormatFloatValue(Element.X, LayoutUnit) << "; ";
-		Out << "top: " << FormatFloatValue(Element.Y, LayoutUnit) << "; ";
+		Out << (Element.HorizontalAnchor == "right" ? "right: " : "left: ") << FormatFloatValue(Element.X, LayoutUnit) << "; ";
+		Out << (Element.VerticalAnchor == "bottom" ? "bottom: " : "top: ") << FormatFloatValue(Element.Y, LayoutUnit) << "; ";
 		Out << "width: " << FormatFloatValue(Width, LayoutUnit) << "; ";
 		Out << "height: " << FormatFloatValue(Height, LayoutUnit) << ";";
 		return Out.str();
@@ -1074,11 +1076,11 @@ namespace
 		}
 		if (Element.bXDirty)
 		{
-			Out << "left: " << FormatFloatValue(Element.X, LayoutUnit) << "; ";
+			Out << (Element.HorizontalAnchor == "right" ? "right: " : "left: ") << FormatFloatValue(Element.X, LayoutUnit) << "; ";
 		}
 		if (Element.bYDirty)
 		{
-			Out << "top: " << FormatFloatValue(Element.Y, LayoutUnit) << "; ";
+			Out << (Element.VerticalAnchor == "bottom" ? "bottom: " : "top: ") << FormatFloatValue(Element.Y, LayoutUnit) << "; ";
 		}
 		if (Element.bWidthDirty)
 		{
@@ -1315,11 +1317,41 @@ bool FUIEditorSerializer::SaveDraft(FUIEditorDocument& Document, FString* OutErr
 		}
 		if (Element.bXDirty)
 		{
-			AddStyleValuePatchOrAppend(Element, Element.LeftStyle, FormatFloatValue(Element.X, LayoutUnit), Patches, CssPatches, MissingProperties);
+			if (Element.HorizontalAnchor == "right")
+			{
+				AddStyleValuePatchOrAppend(Element, Element.RightStyle, FormatFloatValue(Element.X, LayoutUnit), Patches, CssPatches, MissingProperties);
+				if (Element.LeftStyle.bExistsInSource)
+				{
+					AddStyleValuePatchOrAppend(Element, Element.LeftStyle, "auto", Patches, CssPatches, MissingProperties);
+				}
+			}
+			else
+			{
+				AddStyleValuePatchOrAppend(Element, Element.LeftStyle, FormatFloatValue(Element.X, LayoutUnit), Patches, CssPatches, MissingProperties);
+				if (Element.RightStyle.bExistsInSource)
+				{
+					AddStyleValuePatchOrAppend(Element, Element.RightStyle, "auto", Patches, CssPatches, MissingProperties);
+				}
+			}
 		}
 		if (Element.bYDirty)
 		{
-			AddStyleValuePatchOrAppend(Element, Element.TopStyle, FormatFloatValue(Element.Y, LayoutUnit), Patches, CssPatches, MissingProperties);
+			if (Element.VerticalAnchor == "bottom")
+			{
+				AddStyleValuePatchOrAppend(Element, Element.BottomStyle, FormatFloatValue(Element.Y, LayoutUnit), Patches, CssPatches, MissingProperties);
+				if (Element.TopStyle.bExistsInSource)
+				{
+					AddStyleValuePatchOrAppend(Element, Element.TopStyle, "auto", Patches, CssPatches, MissingProperties);
+				}
+			}
+			else
+			{
+				AddStyleValuePatchOrAppend(Element, Element.TopStyle, FormatFloatValue(Element.Y, LayoutUnit), Patches, CssPatches, MissingProperties);
+				if (Element.BottomStyle.bExistsInSource)
+				{
+					AddStyleValuePatchOrAppend(Element, Element.BottomStyle, "auto", Patches, CssPatches, MissingProperties);
+				}
+			}
 		}
 		if (Element.bWidthDirty)
 		{
@@ -1530,7 +1562,9 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 
 		Element.PositionStyle = ParseStyleProperty(Rml, StyleAttribute, "position");
 		Element.LeftStyle = ParseStyleProperty(Rml, StyleAttribute, "left");
+		Element.RightStyle = ParseStyleProperty(Rml, StyleAttribute, "right");
 		Element.TopStyle = ParseStyleProperty(Rml, StyleAttribute, "top");
+		Element.BottomStyle = ParseStyleProperty(Rml, StyleAttribute, "bottom");
 		Element.WidthStyle = ParseStyleProperty(Rml, StyleAttribute, "width");
 		Element.HeightStyle = ParseStyleProperty(Rml, StyleAttribute, "height");
 		Element.FontSizeStyle = ParseStyleProperty(Rml, StyleAttribute, "font-size");
@@ -1553,8 +1587,26 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 			}
 		}
 
-		Element.X = ParseStyleFloat(Element.LeftStyle, Element.X);
-		Element.Y = ParseStyleFloat(Element.TopStyle, Element.Y);
+		if (Element.RightStyle.bExistsInSource && ToLowerCopy(TrimCopy(Element.RightStyle.OriginalValue)) != "auto")
+		{
+			Element.HorizontalAnchor = "right";
+			Element.X = ParseStyleFloat(Element.RightStyle, Element.X);
+		}
+		else
+		{
+			Element.HorizontalAnchor = "left";
+			Element.X = ParseStyleFloat(Element.LeftStyle, Element.X);
+		}
+		if (Element.BottomStyle.bExistsInSource && ToLowerCopy(TrimCopy(Element.BottomStyle.OriginalValue)) != "auto")
+		{
+			Element.VerticalAnchor = "bottom";
+			Element.Y = ParseStyleFloat(Element.BottomStyle, Element.Y);
+		}
+		else
+		{
+			Element.VerticalAnchor = "top";
+			Element.Y = ParseStyleFloat(Element.TopStyle, Element.Y);
+		}
 		Element.Width = ParseStyleFloat(Element.WidthStyle, Element.Width);
 		Element.Height = ParseStyleFloat(Element.HeightStyle, Element.Height);
 		Element.FontSize = ParseStyleFloat(Element.FontSizeStyle, Element.FontSize);
@@ -1575,8 +1627,8 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 			ParseCssColor(Element.ColorStyle.OriginalValue, Element.Color);
 		}
 		Element.bUsePercentLayout =
-			IsPercentStyle(Element.LeftStyle) &&
-			IsPercentStyle(Element.TopStyle) &&
+			IsPercentStyle(Element.HorizontalAnchor == "right" ? Element.RightStyle : Element.LeftStyle) &&
+			IsPercentStyle(Element.VerticalAnchor == "bottom" ? Element.BottomStyle : Element.TopStyle) &&
 			IsPercentStyle(Element.WidthStyle) &&
 			IsPercentStyle(Element.HeightStyle);
 

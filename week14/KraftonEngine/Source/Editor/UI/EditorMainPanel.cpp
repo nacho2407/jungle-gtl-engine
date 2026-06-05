@@ -30,6 +30,7 @@
 #include "Editor/UI/Asset/Physics/PhysicsAssetEditorWidget.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <random>
@@ -62,6 +63,27 @@ const FDebugPlaceActorOption GDebugPlaceActorOptions[] = {
 const char* BoolText(bool bValue)
 {
 	return bValue ? "Y" : "N";
+}
+
+FString SanitizeFooterLogMessage(const char* Message)
+{
+	if (!Message || Message[0] == '\0')
+	{
+		return "";
+	}
+
+	FString Result = Message;
+	const size_t FirstLineBreak = Result.find_first_of("\r\n");
+	if (FirstLineBreak != FString::npos)
+	{
+		Result.resize(FirstLineBreak);
+	}
+
+	while (!Result.empty() && std::isspace(static_cast<unsigned char>(Result.back())))
+	{
+		Result.pop_back();
+	}
+	return Result;
 }
 
 ImVec4 GetWallRunStatusColor(const char* Status)
@@ -829,6 +851,8 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.06f, 0.065f, 0.075f, 0.98f));
 	if (ImGui::Begin("##EditorFooter", nullptr, Flags))
 	{
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 3.5f);
+
 		if (ImGui::IsKeyPressed(ImGuiKey_GraveAccent, false))
 		{
 			switch (ConsoleBacktickCycleState)
@@ -868,6 +892,7 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
 		const bool bDrawerOpen = ConsoleDrawerAnim > 0.5f;
 		const float InputWidth = MainViewport->WorkSize.x * (bDrawerOpen ? 0.35f : 0.175f);
 		ConsoleWidget.RenderInputLine("##FooterConsoleInput", InputWidth, bFocusConsoleInputNextFrame);
+		const bool bFooterConsoleInputActive = ImGui::IsItemActive() || ImGui::IsItemFocused();
 		if (bFocusConsoleInputNextFrame)
 		{
 			ConsoleBacktickCycleState = bConsoleDrawerVisible ? 2 : 1;
@@ -876,6 +901,8 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
 
 		ImGui::SameLine();
 		ImGui::Text("Domain: %s", EditorEngine && EditorEngine->IsPlayingInEditor() ? "PIE" : "Editor");
+		const ImVec2 DomainTextMin = ImGui::GetItemRectMin();
+		const ImVec2 DomainTextMax = ImGui::GetItemRectMax();
 
 		const FString LevelLabel = EditorEngine && EditorEngine->HasCurrentLevelFilePath()
 			? FString("Level: ") + EditorEngine->GetCurrentLevelFilePath()
@@ -883,18 +910,22 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
 		const float LevelWidth = ImGui::CalcTextSize(LevelLabel.c_str()).x;
 		const float LevelX = MainViewport->WorkSize.x - ImGui::GetStyle().WindowPadding.x - LevelWidth;
 
-		const char* LatestLog = ConsoleWidget.GetLatestLogMessage();
-		if (LatestLog && LatestLog[0] != '\0')
+		const FString LatestLog = SanitizeFooterLogMessage(ConsoleWidget.GetLatestLogMessage());
+		if (!bFooterConsoleInputActive && !LatestLog.empty())
 		{
-			const float LogWidth = ImGui::CalcTextSize(LatestLog).x;
-			float LogX = LevelX - 16.0f - LogWidth;
-			const float MinLogX = ImGui::GetCursorPosX() + 8.0f;
-			if (LogX < MinLogX)
+			const ImVec2 WindowPos = ImGui::GetWindowPos();
+			const float LogMinX = DomainTextMax.x + 16.0f;
+			const float LogMaxX = WindowPos.x + LevelX - 16.0f;
+			if (LogMaxX > LogMinX + 24.0f)
 			{
-				LogX = MinLogX;
+				ImDrawList* DrawList = ImGui::GetWindowDrawList();
+				const ImVec2 ClipMin(LogMinX, FooterPos.y);
+				const ImVec2 ClipMax(LogMaxX, FooterPos.y + FooterHeight);
+				const ImVec2 TextPos(LogMinX, DomainTextMin.y);
+				DrawList->PushClipRect(ClipMin, ClipMax, true);
+				DrawList->AddText(TextPos, ImGui::GetColorU32(ImGuiCol_TextDisabled), LatestLog.c_str());
+				DrawList->PopClipRect();
 			}
-			ImGui::SameLine(LogX);
-			ImGui::TextUnformatted(LatestLog);
 		}
 
 		ImGui::SameLine(LevelX);

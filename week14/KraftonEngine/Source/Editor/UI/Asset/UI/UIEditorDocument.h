@@ -44,6 +44,8 @@ struct FUIEditorTextElement
 	float Width = 200.0f;
 	float Height = 40.0f;
 	bool bUsePercentLayout = false;
+	FString HorizontalAnchor = "left";
+	FString VerticalAnchor = "top";
 
 	float FontSize = 24.0f;
 	FString FontWeight = "normal";
@@ -56,8 +58,10 @@ struct FUIEditorTextElement
 	FSourceRange StyleAttributeValueRange;
 
 	FStyleValueSpan LeftStyle;
+	FStyleValueSpan RightStyle;
 	FStyleValueSpan PositionStyle;
 	FStyleValueSpan TopStyle;
+	FStyleValueSpan BottomStyle;
 	FStyleValueSpan WidthStyle;
 	FStyleValueSpan HeightStyle;
 	FStyleValueSpan FontSizeStyle;

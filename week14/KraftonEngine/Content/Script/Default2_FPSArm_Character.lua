@@ -1,5 +1,6 @@
 local arms   = nil
 local camera = nil
+local weaponHudWidget = nil
 
 local SHOOT_ANIM_PATH  = "Content/Data/FPSArm/Test1/Test1_Armature_Armature_Arms_FPS_Anim_OneShot.uasset"
 local RELOAD_ANIM_PATH = "Content/Data/FPSArm/Test1/Test1_Armature_Armature_Arms_FPS_Anim_Reload_Fast.uasset"
@@ -86,9 +87,18 @@ end
 function BeginPlay()
     arms   = obj:GetSkeletalMesh()
     camera = obj:GetCamera()
+
+    weaponHudWidget = UI.CreateWidget("Content/UI/HUD/WeaponHUD.rml")
+    if weaponHudWidget ~= nil then
+        weaponHudWidget:AddToViewportZ(80)
+    end
 end
 
 function EndPlay()
+    if weaponHudWidget ~= nil and weaponHudWidget:IsInViewport() then
+        weaponHudWidget:RemoveFromParent()
+    end
+    weaponHudWidget = nil
 end
 
 function Tick(dt)
