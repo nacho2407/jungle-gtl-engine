@@ -104,6 +104,9 @@ public:
 
 	const FVector& GetVelocity() const { return Velocity; }
 	float          GetSpeed()    const { return Velocity.Length(); }
+	float          GetMaxWalkSpeed() const { return bWantsSprint ? MaxWalkSpeed * SprintSpeedMultiplier : MaxWalkSpeed; }
+	void           SetSprinting(bool bEnable) { bWantsSprint = bEnable; }
+	bool           IsSprinting() const { return bWantsSprint; }
 
 	EMovementMode  GetMovementMode() const { return MovementMode; }
 	bool           IsWalking() const { return MovementMode == EMovementMode::Walking; }
@@ -227,7 +230,8 @@ private:
 
 public:
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Walk Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float MaxWalkSpeed = 6.0f;     // m/s — Idle/Walk threshold 기준 정도
+	float MaxWalkSpeed = 8.0f;     // m/s — 기존 6.0f 기준 1.5배
+	float SprintSpeedMultiplier = 1.8f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Acceleration", Min = 0.0f, Max = 200.0f, Speed = 0.5f)
 	float MaxAcceleration = 20.0f;    // m/s^2
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Braking Friction", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
@@ -269,12 +273,12 @@ public:
 	float RunnableWallUpDot = 0.2f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Min Wall Run Start Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float MinWallRunStartSpeed = 3.0f;
-	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Min Speed (Legacy)", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float WallRunMinSpeed = 5.5f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Min Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float WallRunMinSpeed = 9.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Max Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float WallRunMaxSpeed = 9.0f;
+	float WallRunMaxSpeed = 18.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Acceleration", Min = 0.0f, Max = 200.0f, Speed = 0.5f)
-	float WallRunAcceleration = 8.0f;
+	float WallRunAcceleration = 24.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Gravity Scale", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
 	float WallRunGravityScale = 0.25f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Wall Run Slide Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
@@ -310,6 +314,7 @@ private:
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|Controller", DisplayName = "Controller Sync Teleport Distance", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float ControllerSyncTeleportDistance = 1.0f;
 
+	bool bWantsSprint = false;
 	USceneComponent* ControllerUpdatedComponent = nullptr;
 	float CachedControllerRadius = 0.0f;
 	float CachedControllerHalfHeight = 0.0f;

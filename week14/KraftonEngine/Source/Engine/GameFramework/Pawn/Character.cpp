@@ -46,6 +46,7 @@ void ACharacter::AddMovementInput(const FVector& WorldDirection, float ScaleValu
 {
 	if (CharacterMovement)
 	{
+		CharacterMovement->SetSprinting(InputSystem::Get().GetKey(VK_SHIFT));
 		CharacterMovement->AddInputVector(WorldDirection, ScaleValue);
 	}
 }
@@ -97,6 +98,11 @@ void ACharacter::SetupInputComponent()
 void ACharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (CharacterMovement)
+	{
+		CharacterMovement->SetSprinting(InputSystem::Get().GetKey(VK_SHIFT));
+	}
 
 	if (bAutoInputMouseLook)
 	{
