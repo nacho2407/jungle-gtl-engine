@@ -1,0 +1,32 @@
+<rml>
+<head>
+    <title>Title Credits</title>
+    <link type="text/rcss" href="../Common/Popup.rcss"/>
+    <link type="text/rcss" href="TitleCredits.rcss"/>
+</head>
+<body>
+    <div id="credits-screen" class="popup-screen">
+        <div id="credits-panel" class="popup-panel credits-panel" style="position: absolute; left: 50.00%; top: 50.00%; width: 980.00px; height: 620.00px; margin-left: -490.00px; margin-top: -310.00px;">
+            <div id="credits-title" class="popup-title credits-title" data-ui-editor="text">CREDITS</div>
+            <div id="credits-close-button" class="credits-close-button">
+                <img id="credits-close-icon" class="popup-close-icon" src="../Common/CloseX.png"/>
+            </div>
+            <div id="credits-title-separator" class="popup-separator credits-title-separator"></div>
+
+            <div id="credits-content" class="popup-content credits-content">
+                <div id="credits-development-label" class="credits-section-label" data-ui-editor="text">Development</div>
+                <div id="credits-team-name" class="credits-team-name" data-ui-editor="text">Needs More Sleep</div>
+
+                <div id="credits-member-01" class="credits-member" data-ui-editor="text">전현길 | UI/UX Programming, Sound Design, Scenario &amp; Cinematics</div>
+                <div id="credits-member-02" class="credits-member" data-ui-editor="text">장민준 | Engine &amp; Editor Enhancement, Level Design, Enemy AI</div>
+                <div id="credits-member-03" class="credits-member" data-ui-editor="text">김효범 | Character Control &amp; Action Programming, Asset Management</div>
+
+                <div id="credits-special-label" class="credits-section-label credits-special-label" data-ui-editor="text">Special Thanks</div>
+                <div id="credits-special-name" class="credits-special-name" data-ui-editor="text">Krafton Jungle Game Tech Lab</div>
+            </div>
+
+            <div id="credits-footer-text" class="credits-footer-text" data-ui-editor="text">AND YOU</div>
+        </div>
+    </div>
+</body>
+</rml>

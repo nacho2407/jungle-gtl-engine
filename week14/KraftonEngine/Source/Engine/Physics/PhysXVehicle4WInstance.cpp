@@ -82,6 +82,14 @@ namespace
 			Settings.bGenerateOverlapEvents = true;
 			break;
 
+		case ECollisionPreset::SkeletalMesh:
+			Settings.CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+			Settings.ObjectType = ECollisionChannel::SkeletalMesh;
+			Settings.ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+			Settings.ResponseContainer.SetResponse(ECollisionChannel::Trigger, ECollisionResponse::Overlap);
+			Settings.bGenerateOverlapEvents = true;
+			break;
+
 		case ECollisionPreset::Custom:
 		default:
 			break;

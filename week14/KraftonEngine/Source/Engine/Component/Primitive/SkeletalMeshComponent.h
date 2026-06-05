@@ -15,6 +15,7 @@ class UAnimSingleNodeInstance;
 class UAnimSequenceBase;
 class UClass;
 struct FRagdollInstance;
+struct FHitboxInstance;
 struct FPoseContext;
 
 enum class ERagdollRecoveryFacing : uint8
@@ -127,7 +128,11 @@ protected:
     UAnimInstance*             AnimInstance  = nullptr;
 
 	std::unique_ptr<FRagdollInstance> Ragdoll;
+	std::unique_ptr<FHitboxInstance> Hitboxes;
 	bool bSimulatingPhysics = false;
+
+	void EnsureHitboxesInitialized();
+	void ReleaseHitboxes();
 	
 	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Physics Blend Weight")
 	float PhysicsBlendWeight = 1.0f;

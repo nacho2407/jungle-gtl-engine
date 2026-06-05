@@ -27,6 +27,11 @@ public:
 
 	static FInputSystemSnapshot GetLuaInputSnapshot();
 
+	static float GetRuntimeGamma();
+	static void SetRuntimeGamma(float InGamma);
+	static float GetRuntimeMouseSensitivity();
+	static void SetRuntimeMouseSensitivity(float InSensitivity);
+
 	// World pause 와 무관하게 매 frame 발화되는 ESC 콜백. UIManager 가 등록하면 메뉴 토글이
 	// pause 도중에도 동작한다 (component-tick 은 World pause 시 멈추므로 거기엔 못 둠).
 	static void SetOnEscapePressed(sol::protected_function Callback);
@@ -62,4 +67,6 @@ private:
 	static TArray<ULuaScriptComponent*> RegisteredComponents;
 	static TArray<ULuaAnimInstance*>    RegisteredAnimInstances;
 	static FSubscriptionID WatchSub;
+	static float RuntimeGamma;
+	static float RuntimeMouseSensitivity;
 };
