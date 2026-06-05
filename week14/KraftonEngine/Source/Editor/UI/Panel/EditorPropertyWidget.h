@@ -34,6 +34,13 @@ public:
 	 */
 	void FlushPendingDetailsUndoTransaction();
 
+	/**
+	 * @brief 선택된 non-root component를 undo 기록과 함께 삭제합니다.
+	 *
+	 * @return component 삭제 실행 여부
+	 */
+	bool DeleteSelectedComponentWithUndo();
+
 private:
 	void RenameActor(AActor* PrimaryActor);
 	void RenameComponent(AActor* OwnerActor, UActorComponent* Component);

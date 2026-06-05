@@ -55,6 +55,40 @@
 
 namespace
 {
+	constexpr float PropertyNameColumnMinWidth = 90.0f;
+	constexpr float PropertyNameColumnMaxDefaultWidth = 275.0f;
+	constexpr float PropertyNameColumnDefaultRatio = 0.45f;
+
+	/**
+	* @brief Details 패널 폭에 맞춘 속성 이름 컬럼 기본 폭을 계산합니다.
+	*/
+	float GetDetailsPropertyNameColumnWidth()
+	{
+		const float AvailableWidth = ImGui::GetContentRegionAvail().x;
+		if (AvailableWidth <= 0.0f)
+		{
+			return PropertyNameColumnMaxDefaultWidth;
+		}
+
+		// 값 입력 영역 최소 확보
+		const float MaxWidthByPanel = std::max(PropertyNameColumnMinWidth, AvailableWidth - PropertyNameColumnMinWidth);
+		const float MaxWidth = std::min(PropertyNameColumnMaxDefaultWidth, MaxWidthByPanel);
+		const float TargetWidth = AvailableWidth * PropertyNameColumnDefaultRatio;
+		return std::clamp(TargetWidth, PropertyNameColumnMinWidth, MaxWidth);
+	}
+
+	/**
+	* @brief Details 속성 테이블 공통 flag 집합을 반환합니다.
+	*/
+	ImGuiTableFlags GetDetailsPropertyTableFlags()
+	{
+		return ImGuiTableFlags_SizingStretchProp
+			| ImGuiTableFlags_BordersInnerV
+			| ImGuiTableFlags_PadOuterX
+			| ImGuiTableFlags_RowBg
+			| ImGuiTableFlags_Resizable;
+	}
+
 	bool ShouldHideInComponentTree(const UActorComponent* Component, bool bShowEditorOnlyComponents)
 	{
 		if (!Component)
@@ -709,15 +743,13 @@ namespace
 
 		for (AActor* Actor : SelectedActors)
 		{
-			if (!Actor || Actor == PrimaryActor)
+			if (!Actor || Actor == PrimaryActor || !Actor->GetRootComponent())
 			{
 				continue;
 			}
 
-			if (HasCompatibleActorEditableProperty(Actor, SourceProp))
-			{
-				AddUniqueObject(Targets, Actor);
-			}
+			// actor transform은 모든 actor가 공유하는 편집 개념이므로 class/property matching 대신 root transform 기준으로 수집합니다.
+			AddUniqueObject(Targets, Actor);
 		}
 
 		return Targets;
@@ -820,12 +852,46 @@ namespace
 		}
 	}
 
+	bool ApplyActorTransformDelta(AActor* Actor, const FTransformPropertyDelta& TransformDelta)
+	{
+		if (!Actor || !Actor->GetRootComponent() || !TransformDelta.bValid)
+		{
+			return false;
+		}
+
+		// Details의 다중 actor transform 편집은 reflected pending property 대신 actor transform API로 직접 반영합니다.
+		// 이렇게 해야 actor class나 root component class와 관계없이 static mesh actor 등도 동일한 delta를 받습니다.
+		switch (TransformDelta.Kind)
+		{
+		case EDetailsTransformPropertyKind::Location:
+			Actor->SetActorLocation(Actor->GetActorLocation() + TransformDelta.VectorDelta);
+			return true;
+		case EDetailsTransformPropertyKind::Rotation:
+			if (TransformDelta.Type == EPropertyType::Rotator)
+			{
+				Actor->SetActorRotation(Actor->GetActorRotation() + TransformDelta.RotatorDelta);
+				return true;
+			}
+			Actor->SetActorRotation(Actor->GetActorRotation() + FRotator(TransformDelta.VectorDelta));
+			return true;
+		case EDetailsTransformPropertyKind::Scale:
+		{
+			FVector NewScale = Actor->GetActorScale() + TransformDelta.VectorDelta;
+			if (NewScale.X < 0.001f) NewScale.X = 0.001f;
+			if (NewScale.Y < 0.001f) NewScale.Y = 0.001f;
+			if (NewScale.Z < 0.001f) NewScale.Z = 0.001f;
+			Actor->SetActorScale(NewScale);
+			return true;
+		}
+		default:
+			return false;
+		}
+	}
+
 	void PropagateActorTransformPropertyChange(
 		AActor* PrimaryActor,
-		const FPropertyValue& SourceProp,
 		const FTransformPropertyDelta& TransformDelta,
-		const TArray<AActor*>& SelectedActors,
-		TArray<FDeferredPostEditChange>& OutDeferredChanges)
+		const TArray<AActor*>& SelectedActors)
 	{
 		if (!PrimaryActor || !TransformDelta.bValid || SelectedActors.size() < 2)
 		{
@@ -839,21 +905,7 @@ namespace
 				continue;
 			}
 
-			TArray<FPropertyValue> Props;
-			Actor->GetEditableProperties(Props);
-			for (FPropertyValue& DstProp : Props)
-			{
-				if (!IsCompatibleEditableProperty(DstProp, SourceProp))
-				{
-					continue;
-				}
-
-				if (ApplyTransformDeltaToProperty(DstProp, TransformDelta))
-				{
-					QueueDeferredPostEditChange(OutDeferredChanges, DstProp);
-				}
-				break;
-			}
+			ApplyActorTransformDelta(Actor, TransformDelta);
 		}
 	}
 
@@ -1196,6 +1248,65 @@ void FEditorPropertyWidget::FlushPendingDetailsUndoTransaction()
 	CommitActiveDetailsPropertyUndo();
 }
 
+bool FEditorPropertyWidget::DeleteSelectedComponentWithUndo()
+{
+	if (!EditorEngine || EditorEngine->IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	FSelectionManager& SelectionManager = EditorEngine->GetSelectionManager();
+	AActor* Actor = SelectionManager.GetPrimarySelection();
+	if (!Actor)
+	{
+		return false;
+	}
+
+	// 뷰포트에서 component를 선택한 직후에도 Details 내부 선택 상태가 같은 대상을 가리키도록 동기화합니다.
+	if (USceneComponent* SelectionComponent = SelectionManager.GetSelectedComponent())
+	{
+		if (SelectionComponent != Actor->GetRootComponent()
+			&& DoesActorOwnComponent(Actor, SelectionComponent))
+		{
+			SelectedComponent = SelectionComponent;
+			bActorSelected = false;
+			LastSelectedActor = Actor;
+		}
+	}
+
+	UActorComponent* ComponentToRemove = SelectedComponent;
+	if (!ComponentToRemove
+		|| ComponentToRemove == Actor->GetRootComponent()
+		|| !DoesActorOwnComponent(Actor, ComponentToRemove))
+	{
+		SyncSelectedComponentAfterStructureChange(Actor);
+		return false;
+	}
+
+	// 삭제 전 진행 중인 속성 트랜잭션을 먼저 닫아 undo 순서를 보존합니다.
+	CommitActiveDetailsPropertyUndo();
+	const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&SelectionManager);
+	json::JSON BeforeActorJSON = FSceneSaveManager::SerializeActorForEditorUndo(Actor);
+	const FString DebugName = MakeComponentStructureDebugName("Remove Component", ComponentToRemove);
+
+	// 삭제될 component를 selection/gizmo가 물고 있지 않도록 먼저 actor 선택 상태로 되돌립니다.
+	SelectionManager.Select(Actor);
+	Actor->RemoveComponent(ComponentToRemove);
+	SelectedComponent = nullptr;
+	LastRenameComponent = nullptr;
+	ComponentRenameBuffer[0] = '\0';
+	ComponentRenameWarning.clear();
+	LastObservedComponentName = FName();
+	bActorSelected = true;
+
+	RecordActorStructureUndoChange(
+		Actor,
+		std::move(BeforeActorJSON),
+		SelectionBefore,
+		DebugName);
+	return true;
+}
+
 void FEditorPropertyWidget::RecordDetailsPropertyUndoChange(
 	const TArray<FEditorObjectPropertySnapshot>& BeforeSnapshots,
 	const TArray<UObject*>& TargetObjects,
@@ -1369,10 +1480,10 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 		TArray<FDeferredPostEditChange> DeferredChanges;
 		bool bAnyChanged = false;
 
-		if (ImGui::BeginTable("##ActorPropertyTable", 2,
-			ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_PadOuterX | ImGuiTableFlags_RowBg))
+		const float NameColumnWidth = GetDetailsPropertyNameColumnWidth();
+		if (ImGui::BeginTable("##ActorPropertyTable", 2, GetDetailsPropertyTableFlags()))
 		{
-			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 275.0f);
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, NameColumnWidth);
 			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
 			ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
@@ -1402,7 +1513,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 					const FTransformPropertyDelta TransformDelta = BuildTransformPropertyDelta(TransformBefore, Props[i]);
 					bAnyChanged = true;
 					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
-					PropagateActorTransformPropertyChange(PrimaryActor, Props[i], TransformDelta, SelectedActors, DeferredChanges);
+					PropagateActorTransformPropertyChange(PrimaryActor, TransformDelta, SelectedActors);
 					RecordDetailsPropertyUndoChange(
 						UndoBefore,
 						UndoTargets,
@@ -1768,37 +1879,8 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 	{
 		if (ImGui::Button("Remove"))
 		{
-			if (SelectedComponent != nullptr)
-			{
-				CommitActiveDetailsPropertyUndo();
-				UActorComponent* ComponentToRemove = SelectedComponent;
-				if (!DoesActorOwnComponent(Actor, ComponentToRemove))
-				{
-					SyncSelectedComponentAfterStructureChange(Actor);
-					return;
-				}
-
-				const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&EditorEngine->GetSelectionManager());
-				json::JSON BeforeActorJSON = FSceneSaveManager::SerializeActorForEditorUndo(Actor);
-				const FString DebugName = MakeComponentStructureDebugName("Remove Component", ComponentToRemove);
-
-				// 삭제될 component를 selection/gizmo가 물고 있지 않도록 먼저 actor 선택 상태로 되돌립니다.
-				EditorEngine->GetSelectionManager().Select(Actor);
-				Actor->RemoveComponent(ComponentToRemove);
-				SelectedComponent = nullptr;
-				LastRenameComponent = nullptr;
-				ComponentRenameBuffer[0] = '\0';
-				ComponentRenameWarning.clear();
-				LastObservedComponentName = FName();
-				bActorSelected = true;
-
-				RecordActorStructureUndoChange(
-					Actor,
-					std::move(BeforeActorJSON),
-					SelectionBefore,
-					DebugName);
-				return;
-			}
+			DeleteSelectedComponentWithUndo();
+			return;
 		}
 	}
 
@@ -1854,10 +1936,10 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 			if (!bOpen) continue;
 		}
 
-		if (ImGui::BeginTable("##PropertyTable", 2,
-			ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_PadOuterX | ImGuiTableFlags_RowBg))
+		const float NameColumnWidth = GetDetailsPropertyNameColumnWidth();
+		if (ImGui::BeginTable("##PropertyTable", 2, GetDetailsPropertyTableFlags()))
 		{
-			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 275.0f);
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, NameColumnWidth);
 			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
 			ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));

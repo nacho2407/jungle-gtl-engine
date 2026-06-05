@@ -102,12 +102,30 @@ private:
 	bool HasMultipleSelectedActorTargets() const;
 	FVector GetTargetPivotLocation() const;
 	bool TranslateSelectedActorTargets(const FVector& Delta);
+	bool RotateSelectedActorTargets(const FQuat& DeltaQuat);
+	bool ScaleSelectedActorTargets(const FVector& Delta);
 	void TranslateTarget(float DragAmount);
 	void RotateTarget(float DragAmount);
 	void ScaleTarget(float DragAmount);
 
 	void UpdateLinearDrag(const FRay& Ray);
 	void UpdateAngularDrag(const FRay& Ray);
+
+	/**
+	* @brief 회전 드래그 기준 평면 상태를 초기화합니다.
+	*/
+	void ResetAngularDragBasis();
+
+	/**
+	* @brief 고정된 회전 드래그 평면 위의 현재 마우스 방향 계산
+	*
+	* @param Ray 현재 마우스 위치에서 디프로젝트한 world ray
+	*
+	* @param OutDirection 회전 pivot에서 현재 교차점으로 향하는 정규화 방향 벡터
+	*
+	* @return 유효한 교차 방향 계산 여부
+	*/
+	bool TryGetAngularDragDirection(const FRay& Ray, FVector& OutDirection) const;
 
 private:
 	IGizmoTransformTarget* Target = nullptr;
@@ -116,12 +134,16 @@ private:
 	const TArray<AActor*>* AllSelectedActors = nullptr;
 	EGizmoMode CurMode = EGizmoMode::Translate;
 	FVector LastIntersectionLocation;
+	FVector AngularDragPivotLocation = FVector::ZeroVector;
+	FVector AngularDragAxisVector = FVector::ZeroVector;
+	FVector LastAngularDragDirection = FVector::ZeroVector;
 	const float AxisLength = 1.0f;
 	float Radius = 0.1f;
 	const float ScaleSensitivity = 1.0f;
 	static constexpr float GizmoScreenScale = 0.15f; // 화면 대비 기즈모 크기 비율
 	int32 SelectedAxis = -1;
 	bool bIsFirstFrameOfDrag = true;
+	bool bAngularDragBasisValid = false;
 	bool bIsHolding = false;
 	bool bIsWorldSpace = true;
 	bool bSceneRenderingEnabled = true;
