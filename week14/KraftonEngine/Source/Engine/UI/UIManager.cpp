@@ -20,6 +20,7 @@
 #undef GetFirstChild
 #endif
 #include <RmlUi/Core.h>
+#include <RmlUi/Core/Factory.h>
 
 #include <algorithm>
 #include <chrono>
@@ -698,9 +699,22 @@ bool UUIManager::ReloadDocument(UUserWidget* Widget)
 	return LoadDocument(Widget);
 }
 
+void UUIManager::ClearRmlCaches()
+{
+	if (!bRmlInitialized)
+	{
+		return;
+	}
+
+	Rml::Factory::ClearStyleSheetCache();
+	Rml::Factory::ClearTemplateCache();
+}
+
 int32 UUIManager::ReloadDocumentsByPath(const FString& DocumentPath)
 {
 	int32 ReloadedCount = 0;
+
+	ClearRmlCaches();
 
 	const std::filesystem::path TargetPath = ToProjectPath(DocumentPath).lexically_normal();
 	for (UUserWidget* Widget : ViewportWidgets)

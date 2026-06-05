@@ -33,6 +33,7 @@ private:
 	void MarkDirty();
 	bool Validate(FString* OutError) const;
 	FString GetDocumentPathString() const;
+	FString GetDraftPathString() const;
 
 private:
 	FUIEditorDocument Document;

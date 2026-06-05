@@ -29,6 +29,7 @@ struct FUIEditorTextElement
 	FString Id;
 	FString ClassName;
 	FString Text;
+	bool bSelfClosing = false;
 
 	float X = 0.0f;
 	float Y = 0.0f;
@@ -63,6 +64,7 @@ struct FUIEditorTextElement
 struct FUIEditorDocument
 {
 	std::filesystem::path SourcePath;
+	std::filesystem::path DraftPath;
 	TArray<FUIEditorTextElement> TextElements;
 	TArray<FSourceRange> DeletedElementRanges;
 	FString OriginalSource;

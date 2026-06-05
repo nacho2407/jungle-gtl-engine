@@ -2,11 +2,12 @@
 <head>
     <title>FRACTURE LINE</title>
     <link type="text/rcss" href="../Common/MenuHoverButton.rcss"/>
+    <link type="text/rcss" href="../Common/FullWidthContentBox.rcss"/>
     <link type="text/rcss" href="Title.rcss"/>
 </head>
 <body>
     <div id="title-screen">
-        <img id="title-background" src="Title.png"/>
+        <img id="title-background" src="Title.png" style="position: absolute; left: 0.00%; top: 0.00%; width: 100.00%; height: 100.00%;"/>
         <div id="shade"></div>
 
         <div id="main-menu">
@@ -24,15 +25,15 @@
                 </div>
             </div>
 
-            <div id="settings-button" class="hover-image-button" style="position: absolute; left: 10.00px; top: 245.00px; width: 190.00px; height: 39.00px;">
+            <div id="settings-button" class="hover-image-button" style="position: absolute; left: 10.00px; top: 245.00px; width: 190.00px; height: 40.00px;">
                 <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
                 <div class="hover-image-label menu-primary">SETTINGS</div>
             </div>
-            <div id="credits-button" class="hover-image-button" style="position: absolute; left: 8.00px; top: 300.00px; width: 170.00px; height: 39.00px;">
+            <div id="credits-button" class="hover-image-button" style="position: absolute; left: 8.00px; top: 300.00px; width: 170.00px; height: 40.00px;">
                 <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
                 <div class="hover-image-label menu-primary">CREDITS</div>
             </div>
-            <div id="quit-button" class="hover-image-button quit-link" style="position: absolute; left: 10.00px; top: 340.00px; width: 70.00px; height: 28.00px;">
+            <div id="quit-button" class="hover-image-button quit-link" style="position: absolute; left: 10.00px; top: 340.00px; width: 72.00px; height: 26.00px;">
                 <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
                 <div class="hover-image-label menu-primary">QUIT</div>
             </div>
@@ -42,32 +43,44 @@
             <img id="stat-icon" src="StatIcon.png"/>
         </div>
 
-        <div id="stat-panel" class="overlay-panel hidden">
-            <div class="panel-title">Scoreboard</div>
-            <div class="scoreboard">
-                <div class="score-row score-header">
-                    <div>Name</div>
-                    <div>Stage</div>
-                    <div>Time</div>
-                </div>
-                <div class="score-row">
-                    <div>Empty Slot</div>
-                    <div>-</div>
-                    <div>--:--</div>
-                </div>
-                <div class="score-row">
-                    <div>Empty Slot</div>
-                    <div>-</div>
-                    <div>--:--</div>
+        <div id="stat-panel" class="full-width-content-box title-stat-panel hidden">
+            <div id="stat-panel-content" class="full-width-content-box-content">
+                <div class="panel-title">Scoreboard</div>
+                <div class="scoreboard">
+                    <div class="score-row score-header">
+                        <div>Name</div>
+                        <div>Stage</div>
+                        <div>Time</div>
+                    </div>
+                    <div class="score-row">
+                        <div>Empty Slot</div>
+                        <div>-</div>
+                        <div>--:--</div>
+                    </div>
+                    <div class="score-row">
+                        <div>Empty Slot</div>
+                        <div>-</div>
+                        <div>--:--</div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="quit-panel" class="overlay-panel hidden">
-            <div id="quit-question" style="position: absolute; left: 0.00px; top: 0.00px; width: 200.00px; height: 40.00px; font-size: 24.00px; font-weight: normal; color: #FFFFFF;">Quit game?</div>
-            <div id="quit-options">
-                <div id="confirm-quit-button" class="dialog-option">Yes</div>
-                <div id="cancel-quit-button" class="dialog-option selected">No</div>
+        <div id="quit-panel" class="full-width-content-box full-width-content-box-screen-center title-quit-panel hidden">
+            <div id="quit-confirm-content" class="full-width-content-box-content">
+                <img id="quit-warning-icon" src="WarningIcon.png"/>
+                <div id="quit-question">ARE YOU SURE YOU WANT TO QUIT?</div>
+                
+                <div id="quit-options">
+                    <div id="cancel-quit-button" class="hover-image-button quit-confirm-option">
+                        <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                        <div class="hover-image-label">CANCEL</div>
+                    </div>
+                    <div id="confirm-quit-button" class="hover-image-button quit-confirm-option">
+                        <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                        <div class="hover-image-label">QUIT</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

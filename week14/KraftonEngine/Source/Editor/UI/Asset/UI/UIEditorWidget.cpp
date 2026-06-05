@@ -77,6 +77,61 @@ namespace
 
 		return "text";
 	}
+
+	bool SyncDraftFromNewerSource(const FUIEditorDocument& Document, FString* OutError)
+	{
+		if (Document.SourcePath.empty() || Document.DraftPath.empty())
+		{
+			return true;
+		}
+
+		try
+		{
+			if (!std::filesystem::exists(Document.SourcePath))
+			{
+				return true;
+			}
+
+			bool bShouldCopySource = !std::filesystem::exists(Document.DraftPath);
+			if (!bShouldCopySource)
+			{
+				bShouldCopySource = std::filesystem::last_write_time(Document.SourcePath) > std::filesystem::last_write_time(Document.DraftPath);
+			}
+
+			if (bShouldCopySource)
+			{
+				std::filesystem::copy_file(Document.SourcePath, Document.DraftPath, std::filesystem::copy_options::overwrite_existing);
+			}
+		}
+		catch (const std::filesystem::filesystem_error& Error)
+		{
+			if (OutError)
+			{
+				*OutError = "Failed to sync RML draft: " + FString(Error.what());
+			}
+			return false;
+		}
+
+		return true;
+	}
+
+	void RestoreSelectionById(const FString& SelectedId, FUIEditorDocument& Document, int32& SelectedElementIndex)
+	{
+		SelectedElementIndex = Document.TextElements.empty() ? -1 : 0;
+		if (SelectedId.empty())
+		{
+			return;
+		}
+
+		for (int32 Index = 0; Index < static_cast<int32>(Document.TextElements.size()); ++Index)
+		{
+			if (Document.TextElements[Index].Id == SelectedId)
+			{
+				SelectedElementIndex = Index;
+				return;
+			}
+		}
+	}
 }
 
 void FUIEditorWidget::Open(const std::filesystem::path& InPath)
@@ -180,7 +235,7 @@ void FUIEditorWidget::RenderToolbar()
 	ImGui::SameLine();
 	if (ImGui::Button("Open External"))
 	{
-		ShellExecuteW(nullptr, L"open", Document.SourcePath.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		ShellExecuteW(nullptr, L"open", Document.DraftPath.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 	}
 
 	ImGui::SameLine();
@@ -364,11 +419,12 @@ void FUIEditorWidget::RenderPreviewControls()
 void FUIEditorWidget::RenderStatusBar()
 {
 	const FString PathText = FPaths::ToUtf8(Document.SourcePath.wstring());
-	ImGui::TextDisabled("Path: %s", PathText.c_str());
+	const FString DraftPathText = FPaths::ToUtf8(Document.DraftPath.wstring());
+	ImGui::TextDisabled("Source: %s", PathText.c_str());
+	ImGui::TextDisabled("Draft: %s", DraftPathText.c_str());
 	if (!StatusText.empty())
 	{
-		ImGui::SameLine();
-		ImGui::TextDisabled("| %s", StatusText.c_str());
+		ImGui::TextDisabled("Status: %s", StatusText.c_str());
 	}
 }
 
@@ -431,7 +487,7 @@ bool FUIEditorWidget::Save(bool bShowNotification)
 		return false;
 	}
 
-	if (!FUIEditorSerializer::Save(Document, &Error))
+	if (!FUIEditorSerializer::Commit(Document, &Error))
 	{
 		StatusText = "Save failed: " + Error;
 		if (bShowNotification)
@@ -446,23 +502,83 @@ bool FUIEditorWidget::Save(bool bShowNotification)
 	StatusText = "Saved";
 	if (bShowNotification)
 	{
-		FNotificationManager::Get().AddNotification("RML saved.", ENotificationType::Success, 2.0f);
+		FNotificationManager::Get().AddNotification("RML saved to source.", ENotificationType::Success, 2.0f);
 	}
 	return true;
 }
 
 void FUIEditorWidget::RefreshPreview(bool bShowNotification)
 {
-	if (!Save(bShowNotification))
+	FString Error;
+	bool bReloadedEditorDocument = false;
+	if (bDirty)
 	{
+		if (!Validate(&Error))
+		{
+			StatusText = "Refresh failed: " + Error;
+			if (bShowNotification)
+			{
+				FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Error, 4.0f);
+			}
+			return;
+		}
+
+		if (!FUIEditorSerializer::SaveDraft(Document, &Error))
+		{
+			StatusText = "Refresh failed: " + Error;
+			if (bShowNotification)
+			{
+				FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Error, 4.0f);
+			}
+			return;
+		}
+	}
+	else
+	{
+		const std::filesystem::path SourcePath = Document.SourcePath;
+		const FString SelectedId =
+			SelectedElementIndex >= 0 && SelectedElementIndex < static_cast<int32>(Document.TextElements.size())
+				? Document.TextElements[SelectedElementIndex].Id
+				: FString {};
+
+		if (!SyncDraftFromNewerSource(Document, &Error) || !FUIEditorSerializer::Load(SourcePath, Document, &Error))
+		{
+			StatusText = "Refresh failed: " + Error;
+			if (bShowNotification)
+			{
+				FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Error, 4.0f);
+			}
+			return;
+		}
+
+		RestoreSelectionById(SelectedId, Document, SelectedElementIndex);
+		bReloadedEditorDocument = true;
+	}
+
+	if (!Validate(&Error))
+	{
+		StatusText = "Refresh failed: " + Error;
+		if (bShowNotification)
+		{
+			FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Error, 4.0f);
+		}
 		return;
 	}
 
-	const int32 ReloadedCount = UUIManager::Get().ReloadDocumentsByPath(GetDocumentPathString());
+	Document.bDirty = false;
+	bDirty = false;
+
+	UUIManager::Get().ClearRmlCaches();
+	int32 ReloadedCount = UUIManager::Get().ReloadDocumentsByPath(GetDraftPathString());
+	const FString SourcePathString = GetDocumentPathString();
+	if (SourcePathString != GetDraftPathString())
+	{
+		ReloadedCount += UUIManager::Get().ReloadDocumentsByPath(SourcePathString);
+	}
 	if (ReloadedCount > 0)
 	{
 		char Buffer[96];
-		std::snprintf(Buffer, sizeof(Buffer), "RML refreshed: %d widget(s).", ReloadedCount);
+		std::snprintf(Buffer, sizeof(Buffer), "%s refreshed: %d widget(s).", bReloadedEditorDocument ? "Disk" : "Draft", ReloadedCount);
 		StatusText = Buffer;
 		if (bShowNotification)
 		{
@@ -471,7 +587,7 @@ void FUIEditorWidget::RefreshPreview(bool bShowNotification)
 		return;
 	}
 
-	StatusText = "Saved. No matching viewport widget to reload.";
+	StatusText = "Draft saved. No matching preview widget to reload.";
 	if (bShowNotification)
 	{
 		FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Info, 3.0f);
@@ -498,14 +614,27 @@ void FUIEditorWidget::TickAutoRefresh()
 
 void FUIEditorWidget::ShowPreview()
 {
-	if (!Save(true))
+	FString Error;
+	if (!Validate(&Error))
 	{
+		StatusText = "Preview failed: " + Error;
+		FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Error, 4.0f);
 		return;
 	}
 
+	if (!FUIEditorSerializer::SaveDraft(Document, &Error))
+	{
+		StatusText = "Preview failed: " + Error;
+		FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Error, 4.0f);
+		return;
+	}
+
+	Document.bDirty = false;
+	bDirty = false;
+
 	if (!PreviewWidget)
 	{
-		PreviewWidget = UUIManager::Get().CreateWidget(nullptr, GetDocumentPathString());
+		PreviewWidget = UUIManager::Get().CreateWidget(nullptr, GetDraftPathString());
 		if (PreviewWidget)
 		{
 			PreviewWidget->SetWantsMouse(false);
@@ -567,4 +696,9 @@ bool FUIEditorWidget::Validate(FString* OutError) const
 FString FUIEditorWidget::GetDocumentPathString() const
 {
 	return FPaths::ToUtf8(Document.SourcePath.wstring());
+}
+
+FString FUIEditorWidget::GetDraftPathString() const
+{
+	return FPaths::ToUtf8(Document.DraftPath.wstring());
 }

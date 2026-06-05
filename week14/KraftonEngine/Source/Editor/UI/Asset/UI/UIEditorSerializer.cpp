@@ -192,7 +192,13 @@ namespace
 	bool IsEditableTag(const FString& TagName)
 	{
 		const FString Lower = ToLowerCopy(TagName);
-		return Lower == "div" || Lower == "span" || Lower == "button" || Lower == "p";
+		return Lower == "div" || Lower == "span" || Lower == "button" || Lower == "p" || Lower == "img";
+	}
+
+	bool IsSelfClosingEditableTag(const FString& TagName)
+	{
+		const FString Lower = ToLowerCopy(TagName);
+		return Lower == "img";
 	}
 
 	bool IsBlockedTag(const FString& TagName)
@@ -727,6 +733,24 @@ namespace
 		return Out.str();
 	}
 
+	int32 FindStyleInsertPosition(const FString& Source, const FUIEditorTextElement& Element)
+	{
+		int32 InsertPos = Element.OpenTagRange.End - 1;
+		if (Element.bSelfClosing)
+		{
+			int32 Probe = InsertPos - 1;
+			while (Probe > Element.OpenTagRange.Begin && std::isspace(static_cast<unsigned char>(Source[Probe])))
+			{
+				--Probe;
+			}
+			if (Probe > Element.OpenTagRange.Begin && Source[Probe] == '/')
+			{
+				InsertPos = Probe;
+			}
+		}
+		return InsertPos;
+	}
+
 	void AddStyleValuePatchOrAppend(const FUIEditorTextElement& Element, const FStyleValueSpan& Span, const FString& Value, TArray<FTextPatch>& Patches, TArray<FString>& MissingProperties)
 	{
 		if (Span.bExistsInSource && Span.ValueRange.IsValid())
@@ -769,17 +793,35 @@ namespace
 bool FUIEditorSerializer::Load(const std::filesystem::path& Path, FUIEditorDocument& OutDocument, FString* OutError)
 {
 	FString Rml;
+	FString SourceRml;
 	if (std::filesystem::exists(Path))
 	{
-		if (!ReadTextFile(Path, Rml, OutError))
+		if (!ReadTextFile(Path, SourceRml, OutError))
 		{
 			return false;
 		}
 	}
 	else
 	{
-		Rml = "<rml>\n<head>\n    <title>New UI</title>\n</head>\n<body>\n</body>\n</rml>\n";
-		if (!WriteTextFile(Path, Rml, OutError))
+		SourceRml = "<rml>\n<head>\n    <title>New UI</title>\n</head>\n<body>\n</body>\n</rml>\n";
+		if (!WriteTextFile(Path, SourceRml, OutError))
+		{
+			return false;
+		}
+	}
+
+	const std::filesystem::path DraftPath = Path.wstring() + L".bak";
+	if (std::filesystem::exists(DraftPath))
+	{
+		if (!ReadTextFile(DraftPath, Rml, OutError))
+		{
+			return false;
+		}
+	}
+	else
+	{
+		Rml = SourceRml;
+		if (!WriteTextFile(DraftPath, Rml, OutError))
 		{
 			return false;
 		}
@@ -787,6 +829,7 @@ bool FUIEditorSerializer::Load(const std::filesystem::path& Path, FUIEditorDocum
 
 	OutDocument = FUIEditorDocument {};
 	OutDocument.SourcePath = Path;
+	OutDocument.DraftPath = DraftPath;
 	OutDocument.OriginalSource = Rml;
 	OutDocument.CurrentSource = Rml;
 	OutDocument.bDirty = false;
@@ -794,12 +837,16 @@ bool FUIEditorSerializer::Load(const std::filesystem::path& Path, FUIEditorDocum
 	return ParseEditableTextElements(Rml, OutDocument, OutError);
 }
 
-bool FUIEditorSerializer::Save(FUIEditorDocument& Document, FString* OutError)
+bool FUIEditorSerializer::SaveDraft(FUIEditorDocument& Document, FString* OutError)
 {
 	if (Document.SourcePath.empty())
 	{
 		SetUIEditorError(OutError, "RML source path is empty.");
 		return false;
+	}
+	if (Document.DraftPath.empty())
+	{
+		Document.DraftPath = Document.SourcePath.wstring() + L".bak";
 	}
 
 	FString Source = Document.CurrentSource.empty() ? Document.OriginalSource : Document.CurrentSource;
@@ -834,7 +881,7 @@ bool FUIEditorSerializer::Save(FUIEditorDocument& Document, FString* OutError)
 
 		if (!Element.StyleAttributeValueRange.IsValid())
 		{
-			const int32 InsertPos = Element.OpenTagRange.End - 1;
+			const int32 InsertPos = FindStyleInsertPosition(Source, Element);
 			const FString StyleText = Element.bCanEditText ? BuildStyleText(Element) : BuildLayoutStyleText(Element);
 			Patches.push_back({ InsertPos, InsertPos, " style=\"" + StyleText + "\"" });
 			continue;
@@ -876,17 +923,43 @@ bool FUIEditorSerializer::Save(FUIEditorDocument& Document, FString* OutError)
 
 	ApplyPatchesDescending(Source, Patches);
 
-	if (!BackupFile(Document.SourcePath, OutError))
-	{
-		return false;
-	}
-	if (!WriteTextFile(Document.SourcePath, Source, OutError))
+	if (!WriteTextFile(Document.DraftPath, Source, OutError))
 	{
 		return false;
 	}
 
 	const std::filesystem::path ReloadPath = Document.SourcePath;
 	return Load(ReloadPath, Document, OutError);
+}
+
+bool FUIEditorSerializer::Commit(FUIEditorDocument& Document, FString* OutError)
+{
+	if (!SaveDraft(Document, OutError))
+	{
+		return false;
+	}
+	if (Document.SourcePath.empty())
+	{
+		SetUIEditorError(OutError, "RML source path is empty.");
+		return false;
+	}
+	if (Document.DraftPath.empty())
+	{
+		SetUIEditorError(OutError, "RML draft path is empty.");
+		return false;
+	}
+
+	FString DraftSource;
+	if (!ReadTextFile(Document.DraftPath, DraftSource, OutError))
+	{
+		return false;
+	}
+	if (!WriteTextFile(Document.SourcePath, DraftSource, OutError))
+	{
+		return false;
+	}
+
+	return Load(Document.SourcePath, Document, OutError);
 }
 
 bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEditorDocument& OutDocument, FString* OutError)
@@ -914,7 +987,7 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 			continue;
 		}
 
-		if (bSelfClosing || IsBlockedTag(TagName) || !IsEditableTag(TagName))
+		if (IsBlockedTag(TagName) || !IsEditableTag(TagName) || (bSelfClosing && !IsSelfClosingEditableTag(TagName)))
 		{
 			Cursor = TagEnd;
 			continue;
@@ -928,24 +1001,29 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 			continue;
 		}
 
-		const int32 CloseTagBegin = FindMatchingEndTag(Rml, TagName, TagEnd);
-		if (CloseTagBegin < 0)
+		int32 CloseTagBegin = TagEnd;
+		int32 CloseTagEnd = TagEnd;
+		if (!bSelfClosing)
 		{
-			Cursor = TagEnd;
-			continue;
+			CloseTagBegin = FindMatchingEndTag(Rml, TagName, TagEnd);
+			if (CloseTagBegin < 0)
+			{
+				Cursor = TagEnd;
+				continue;
+			}
+			size_t CloseTagEndPos = Rml.find('>', static_cast<size_t>(CloseTagBegin));
+			if (CloseTagEndPos == FString::npos)
+			{
+				Cursor = TagEnd;
+				continue;
+			}
+			CloseTagEnd = static_cast<int32>(CloseTagEndPos) + 1;
 		}
-		size_t CloseTagEndPos = Rml.find('>', static_cast<size_t>(CloseTagBegin));
-		if (CloseTagEndPos == FString::npos)
-		{
-			Cursor = TagEnd;
-			continue;
-		}
-		const int32 CloseTagEnd = static_cast<int32>(CloseTagEndPos) + 1;
 
 		const FAttributeSpan* ClassAttribute = FindAttribute(Attributes, "class");
 		const FAttributeSpan* StyleAttribute = FindAttribute(Attributes, "style");
 		const FAttributeSpan* UIEditorAttribute = FindAttribute(Attributes, "data-ui-editor");
-		const FString InnerSource = Rml.substr(TagEnd, CloseTagBegin - TagEnd);
+		const FString InnerSource = bSelfClosing ? FString {} : Rml.substr(TagEnd, CloseTagBegin - TagEnd);
 		const bool bHasChildElements = InnerSource.find('<') != FString::npos;
 		const bool bExplicitTextElement = UIEditorAttribute && EqualsIgnoreCase(UIEditorAttribute->Value, "text");
 		const bool bKnownTemplateElement = IsKnownTemplateElement(ClassAttribute);
@@ -959,12 +1037,13 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 		Element.TagName = ToLowerCopy(TagName);
 		Element.Id = DecodeXml(IdAttribute->Value);
 		Element.ClassName = ClassAttribute ? DecodeXml(ClassAttribute->Value) : FString {};
+		Element.bSelfClosing = bSelfClosing;
 		Element.Text = bHasChildElements ? FString {} : DecodeXml(TrimCopy(InnerSource));
 		Element.OpenTagRange = { TagBegin, TagEnd };
 		Element.ElementRange = { TagBegin, CloseTagEnd };
 		Element.InnerTextRange = bHasChildElements ? FSourceRange {} : FSourceRange { TagEnd, CloseTagBegin };
 		Element.StyleAttributeValueRange = StyleAttribute ? StyleAttribute->ValueRange : FSourceRange {};
-		Element.bCanEditText = !bHasChildElements || bExplicitTextElement;
+		Element.bCanEditText = !bSelfClosing && (!bHasChildElements || bExplicitTextElement);
 
 		Element.PositionStyle = ParseStyleProperty(Rml, StyleAttribute, "position");
 		Element.LeftStyle = ParseStyleProperty(Rml, StyleAttribute, "left");

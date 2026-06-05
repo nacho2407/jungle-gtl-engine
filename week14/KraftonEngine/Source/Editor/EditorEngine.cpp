@@ -354,6 +354,17 @@ void UEditorEngine::RequestTransitionToScene(const FString& /*InScenePath*/)
 	RequestEndPlayMap();
 }
 
+void UEditorEngine::RequestExit()
+{
+	if (IsPlayingInEditor())
+	{
+		RequestEndPlayMap();
+		return;
+	}
+
+	UEngine::RequestExit();
+}
+
 void UEditorEngine::StartQueuedPlaySessionRequest()
 {
 	if (!PlaySessionRequest.has_value())
