@@ -8,6 +8,7 @@
 #include "Component/Camera/CineCameraComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Input/InputSystem.h"
+#include "Lua/LuaScriptManager.h"
 #include "Viewport/Viewport.h"
 #include "Math/MathUtils.h"
 
@@ -28,6 +29,23 @@ namespace
 		}
 
 		POV.AspectRatio = (ViewportWidth / ViewportHeight) / VisibleHeightScale;
+	}
+
+	void UpdateFrameCursorFromInput(FFrameContext& Frame)
+	{
+		const POINT MousePos = InputSystem::Get().GetMouseClientPos();
+		if (MousePos.x >= 0 && MousePos.y >= 0
+			&& MousePos.x < static_cast<LONG>(Frame.ViewportWidth)
+			&& MousePos.y < static_cast<LONG>(Frame.ViewportHeight))
+		{
+			Frame.CursorViewportX = static_cast<uint32>(MousePos.x);
+			Frame.CursorViewportY = static_cast<uint32>(MousePos.y);
+		}
+		else
+		{
+			Frame.CursorViewportX = UINT32_MAX;
+			Frame.CursorViewportY = UINT32_MAX;
+		}
 	}
 }
 
@@ -51,23 +69,54 @@ void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 	UWorld* World = Game->GetWorld();
 	FViewport* VP = Game->GetStandaloneViewport();
-	FMinimalViewInfo POV;
-	if (!World || !VP || !World->GetActivePOV(POV))
+	if (!VP)
 	{
 		Renderer.BeginFrame();
 		Renderer.EndFrame();
 		return;
 	}
 
-	Frame.WorldType = World->GetWorldType();
-
 	FViewportRenderOptions Opts;
 	Opts.ViewMode = EViewMode::Lit_Phong;
+	Opts.ShowFlags.bGammaCorrection = true;
+	Opts.Gamma = FLuaScriptManager::GetRuntimeGamma();
 	Frame.SetRenderOptions(Opts);
+
+	PrepareViewport(VP, Ctx);
+
+	FMinimalViewInfo POV;
+	if (!World || !World->GetActivePOV(POV))
+	{
+		Frame.ClearViewportResources();
+		Frame.SetViewportInfo(VP);
+		Frame.WorldType = World ? World->GetWorldType() : EWorldType::Game;
+		Frame.SetRenderOptions(Opts);
+		UpdateFrameCursorFromInput(Frame);
+
+		FScene* Scene = World ? &World->GetScene() : nullptr;
+		Builder.BeginCollect(Frame);
+		FCollectOutput EmptyOutput;
+		Builder.BuildCommands(Frame, Scene, EmptyOutput);
+
+		if (Scene)
+		{
+			Renderer.Render(Frame, World, *Scene);
+			Renderer.BeginFrame();
+			Renderer.BlitToBackBuffer(VP->GetSRV());
+			Renderer.EndFrame();
+		}
+		else
+		{
+			Renderer.BeginFrame();
+			Renderer.EndFrame();
+		}
+		return;
+	}
+
+	Frame.WorldType = World->GetWorldType();
 
 	FScene* Scene = &World->GetScene();
 
-	PrepareViewport(VP, Ctx);
 	BuildFrame(VP, POV, Scene, World);
 
 	FCollectOutput Output;
@@ -141,19 +190,7 @@ void FGameRenderPipeline::BuildFrame(FViewport* VP, const FMinimalViewInfo& POV,
 	ApplyLetterboxAspect(RenderPOV, Frame.CameraLetterbox, Frame.ViewportWidth, Frame.ViewportHeight);
 	Frame.SetCameraInfo(RenderPOV);
 
-	const POINT MousePos = InputSystem::Get().GetMouseClientPos();
-	if (MousePos.x >= 0 && MousePos.y >= 0
-		&& MousePos.x < static_cast<LONG>(Frame.ViewportWidth)
-		&& MousePos.y < static_cast<LONG>(Frame.ViewportHeight))
-	{
-		Frame.CursorViewportX = static_cast<uint32>(MousePos.x);
-		Frame.CursorViewportY = static_cast<uint32>(MousePos.y);
-	}
-	else
-	{
-		Frame.CursorViewportX = UINT32_MAX;
-		Frame.CursorViewportY = UINT32_MAX;
-	}
+	UpdateFrameCursorFromInput(Frame);
 }
 
 void FGameRenderPipeline::CollectCommands(FScene* Scene, FRenderer& Renderer, FCollectOutput& Output)

@@ -254,9 +254,11 @@ void FUIEditorWidget::RenderElementList()
 	ImGui::TextUnformatted("Elements");
 	ImGui::Separator();
 
+	ImGui::BeginChild("##RmlUIEditorElementsScroll", ImVec2(0.0f, 0.0f), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 	if (Document.TextElements.empty())
 	{
 		ImGui::TextDisabled("No editable text elements.");
+		ImGui::EndChild();
 		return;
 	}
 
@@ -269,6 +271,7 @@ void FUIEditorWidget::RenderElementList()
 			SelectedElementIndex = Index;
 		}
 	}
+	ImGui::EndChild();
 }
 
 void FUIEditorWidget::RenderInspector()

@@ -16,6 +16,7 @@
 
 class APlayerController;
 class FWidgetClickEventListener;
+class FWidgetEventListener;
 namespace Rml { class ElementDocument; }
 
 class FWidgetClickEventListener final : public Rml::EventListener
@@ -49,6 +50,27 @@ private:
 	sol::protected_function Callback;
 };
 
+class FWidgetEventListener final : public Rml::EventListener
+{
+public:
+	FWidgetEventListener(FString InElementId, FString InEventName, sol::protected_function InCallback)
+		: ElementId(std::move(InElementId))
+		, EventName(std::move(InEventName))
+		, Callback(std::move(InCallback))
+	{
+	}
+
+	void ProcessEvent(Rml::Event& Event) override;
+
+	const FString& GetElementId() const { return ElementId; }
+	const FString& GetEventName() const { return EventName; }
+
+private:
+	FString ElementId;
+	FString EventName;
+	sol::protected_function Callback;
+};
+
 UCLASS()
 class UUserWidget : public UObject
 {
@@ -61,6 +83,7 @@ public:
 	void AddToViewport(int32 InZOrder = 0);
 	void RemoveFromParent();
 	void BindClick(const FString& ElementId, sol::protected_function Callback);
+	void BindEvent(const FString& ElementId, const FString& EventName, sol::protected_function Callback);
 	void RegisterEventListeners();
 	void ClearEventListeners();
 	void SetText(const FString& ElementId, const FString& Text);
@@ -85,11 +108,20 @@ public:
 	void ClearDocument() { Document = nullptr; bDocumentLoaded = false; }
 
 private:
+	struct FWidgetEventBinding
+	{
+		FString ElementId;
+		FString EventName;
+		sol::protected_function Callback;
+	};
+
 	APlayerController* OwningPlayer = nullptr;
 	Rml::ElementDocument* Document = nullptr;
 	FString DocumentPath;
 	TArray<std::pair<FString, sol::protected_function>> PendingClickBindings;
 	TArray<FWidgetClickEventListener*> ClickListeners;
+	TArray<FWidgetEventBinding> PendingEventBindings;
+	TArray<FWidgetEventListener*> EventListeners;
 	int32 ZOrder = 0;
 	bool bInViewport = false;
 	bool bDocumentLoaded = false;

@@ -1,0 +1,49 @@
+<rml>
+<head>
+    <title>Common Popup</title>
+    <link type="text/rcss" href="Popup.rcss"/>
+</head>
+<body>
+    <div id="popup-screen" class="popup-screen">
+        <div id="popup-panel" class="popup-panel" style="position: absolute; left: 50.00%; top: 50.00%; width: 860.00px; height: 560.00px; margin-left: -430.00px; margin-top: -280.00px;">
+            <div id="popup-title" class="popup-title" data-ui-editor="text">POPUP TITLE</div>
+            <div id="popup-title-separator" class="popup-separator"></div>
+
+            <div id="popup-content" class="popup-content">
+                <div id="popup-header-row" class="popup-row popup-header">
+                    <div id="popup-header-name" class="popup-cell popup-name" data-ui-editor="text">Name</div>
+                    <div id="popup-header-value" class="popup-cell popup-value" data-ui-editor="text">Value</div>
+                    <div id="popup-header-state" class="popup-cell popup-state" data-ui-editor="text">State</div>
+                </div>
+                <div id="popup-separator-01" class="popup-row-separator"></div>
+
+                <div id="popup-rows-group" class="popup-rows-group">
+                    <div id="popup-row-01" class="popup-row">
+                        <div id="popup-name-01" class="popup-cell popup-name" data-ui-editor="text">Item</div>
+                        <div id="popup-value-01" class="popup-cell popup-value" data-ui-editor="text">000000</div>
+                        <div id="popup-state-01" class="popup-cell popup-state" data-ui-editor="text">--:--</div>
+                    </div>
+                    <div id="popup-row-02" class="popup-row">
+                        <div id="popup-name-02" class="popup-cell popup-name" data-ui-editor="text">Item</div>
+                        <div id="popup-value-02" class="popup-cell popup-value" data-ui-editor="text">000000</div>
+                        <div id="popup-state-02" class="popup-cell popup-state" data-ui-editor="text">--:--</div>
+                    </div>
+                    <div id="popup-row-03" class="popup-row">
+                        <div id="popup-name-03" class="popup-cell popup-name" data-ui-editor="text">Item</div>
+                        <div id="popup-value-03" class="popup-cell popup-value" data-ui-editor="text">000000</div>
+                        <div id="popup-state-03" class="popup-cell popup-state" data-ui-editor="text">--:--</div>
+                    </div>
+                    <div id="popup-row-04" class="popup-row">
+                        <div id="popup-name-04" class="popup-cell popup-name" data-ui-editor="text">Item</div>
+                        <div id="popup-value-04" class="popup-cell popup-value" data-ui-editor="text">000000</div>
+                        <div id="popup-state-04" class="popup-cell popup-state" data-ui-editor="text">--:--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="popup-footer-separator" class="popup-separator popup-footer-separator"></div>
+            <div id="popup-footer-text" class="popup-footer-text" data-ui-editor="text">COMMON POPUP TEMPLATE</div>
+        </div>
+    </div>
+</body>
+</rml>
