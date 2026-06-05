@@ -35,7 +35,10 @@ namespace
 		const bool HasShaders = std::filesystem::exists(Path / L"Shaders", Error);
 		Error.clear();
 		const bool HasContent = std::filesystem::exists(Path / L"Content", Error);
-		return HasSettings || (HasShaders && HasContent);
+		// Shaders/ 는 반드시 — FShaderInclude 가 RootDir()+Shaders/ 로만 풀기 때문에
+		// Shaders 없는 디렉터리를 root 로 잡으면 #include 가 즉시 깨진다.
+		// (Bin/Debug 에 Settings/Content 만 복사된 상태에서 root 로 오인되던 케이스를 막음.)
+		return HasShaders && (HasSettings || HasContent);
 	}
 
 	void AppendRootCandidates(std::vector<std::filesystem::path>& Candidates, std::filesystem::path Start)

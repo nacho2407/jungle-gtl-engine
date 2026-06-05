@@ -3,6 +3,7 @@
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Viewport/Level/LevelEditorViewportClient.h"
+#include "Component/Movement/CharacterMovementComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -30,6 +31,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <random>
 #include <utility>
 
@@ -56,6 +58,87 @@ const FDebugPlaceActorOption GDebugPlaceActorOptions[] = {
 	{ "Character",     FLevelViewportLayout::EViewportPlaceActorType::Character },
 	{ "Lua Character", FLevelViewportLayout::EViewportPlaceActorType::LuaCharacter },
 };
+
+const char* BoolText(bool bValue)
+{
+	return bValue ? "Y" : "N";
+}
+
+ImVec4 GetWallRunStatusColor(const char* Status)
+{
+	if (!Status)
+	{
+		return ImVec4(0.75f, 0.75f, 0.75f, 1.0f);
+	}
+	if (std::strcmp(Status, "ACTIVE") == 0)
+	{
+		return ImVec4(0.20f, 1.0f, 0.42f, 1.0f);
+	}
+	if (std::strncmp(Status, "NO_", 3) == 0 ||
+		std::strncmp(Status, "BAD_", 4) == 0 ||
+		std::strncmp(Status, "ENDED_", 6) == 0)
+	{
+		return ImVec4(1.0f, 0.28f, 0.22f, 1.0f);
+	}
+	if (std::strcmp(Status, "LOW_SPEED") == 0 || std::strcmp(Status, "NOT_FALLING") == 0)
+	{
+		return ImVec4(1.0f, 0.78f, 0.22f, 1.0f);
+	}
+	return ImVec4(0.85f, 0.85f, 0.85f, 1.0f);
+}
+
+UCharacterMovementComponent* FindWallRunDebugMovement(UEditorEngine* EditorEngine, AActor*& OutActor)
+{
+	OutActor = nullptr;
+	if (!EditorEngine)
+	{
+		return nullptr;
+	}
+
+	auto TryActor = [&](AActor* Actor) -> UCharacterMovementComponent*
+	{
+		if (!Actor || !IsAliveObject(Actor))
+		{
+			return nullptr;
+		}
+
+		if (UCharacterMovementComponent* Movement = Actor->GetComponentByClass<UCharacterMovementComponent>())
+		{
+			OutActor = Actor;
+			return Movement;
+		}
+		return nullptr;
+	};
+
+	if (UCharacterMovementComponent* Movement = TryActor(EditorEngine->GetSelectionManager().GetPrimarySelection()))
+	{
+		return Movement;
+	}
+
+	UWorld* World = EditorEngine->GetWorld();
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	for (AActor* Actor : World->GetActors())
+	{
+		if (UCharacterMovementComponent* Movement = TryActor(Actor))
+		{
+			return Movement;
+		}
+	}
+
+	return nullptr;
+}
+
+void DrawDebugVectorLine(const char* Label, const FVector& Value)
+{
+	ImGui::Text("%s: %.2f, %.2f, %.2f", Label, Value.X, Value.Y, Value.Z);
+}
+
+constexpr float GEditorShortcutRepeatInitialDelay = 0.35f;
+constexpr float GEditorShortcutRepeatInterval = 0.08f;
 
 }
 
@@ -196,6 +279,11 @@ void FEditorMainPanel::Render(float DeltaTime)
 		AnimationDebugWidget.Render(DeltaTime);
 	}
 
+	if (Settings.UI.bWallRunDebug)
+	{
+		RenderWallRunDebugWindow();
+	}
+
 	ProjectSettingsWidget.Render();
 	WorldSettingsWidget.Render();
 
@@ -277,6 +365,7 @@ void FEditorMainPanel::RenderMainMenuBar()
 		ImGui::Checkbox("Editor Debug", &Settings.UI.bEditorDebug);
 		ImGui::Checkbox("Shadow Map Debug", &Settings.UI.bShadowMapDebug);
 		ImGui::Checkbox("Animation Debug", &Settings.UI.bAnimationDebug);
+		ImGui::Checkbox("Wall Run Debug", &Settings.UI.bWallRunDebug);
 		ImGui::Checkbox("IMGUI_Setting", &Settings.UI.bImGUISettings);
 		ImGui::EndPopup();
 	}
@@ -362,9 +451,11 @@ void FEditorMainPanel::RenderShortcutOverlay()
 	ImGui::TextUnformatted("Ctrl+S : Save Scene");
 	ImGui::TextUnformatted("Ctrl+Shift+S : Save Scene As");
 	ImGui::TextUnformatted("Ctrl+A : Select All Actors");
+	ImGui::TextUnformatted("Ctrl+D : Duplicate Selected Actors");
 	ImGui::TextUnformatted("Ctrl+Z : Undo");
 	ImGui::TextUnformatted("Ctrl+Y / Ctrl+Shift+Z : Redo");
 	ImGui::Separator();
+	ImGui::TextUnformatted("Delete : Delete Selected Actor / Component");
 	ImGui::TextUnformatted("` : Focus console input / open console drawer");
 	ImGui::TextUnformatted("F : Focus on selection");
 	ImGui::TextUnformatted("Ctrl + LMB : Multi Picking (Toggle)");
@@ -557,6 +648,87 @@ void FEditorMainPanel::RenderEditorDebugPanel()
 	ImGui::End();
 }
 
+void FEditorMainPanel::RenderWallRunDebugWindow()
+{
+	FEditorSettings& Settings = FEditorSettings::Get();
+
+	ImGui::SetNextWindowSize(ImVec2(460.0f, 360.0f), ImGuiCond_FirstUseEver);
+	if (!ImGui::Begin("Wall Run Debug", &Settings.UI.bWallRunDebug))
+	{
+		ImGui::End();
+		return;
+	}
+
+	AActor* TargetActor = nullptr;
+	UCharacterMovementComponent* Movement = FindWallRunDebugMovement(EditorEngine, TargetActor);
+	if (!Movement)
+	{
+		ImGui::TextDisabled("No CharacterMovementComponent found.");
+		ImGui::TextDisabled("Select a character or run a scene with a character.");
+		ImGui::End();
+		return;
+	}
+
+	FWallRunDebugSnapshot Snapshot = Movement->GetWallRunDebugSnapshot();
+
+	ImGui::Text("Target: %s", TargetActor ? TargetActor->GetName().c_str() : "(none)");
+	ImGui::Text("Mode: %s", Snapshot.MovementModeName);
+	ImGui::SameLine();
+	ImGui::TextColored(GetWallRunStatusColor(Snapshot.StatusName), "Status: %s", Snapshot.StatusName);
+	ImGui::Separator();
+
+	ImGui::Checkbox("Enable Wall Run", &Movement->bEnableWallRun);
+	ImGui::Checkbox("Draw Distance Ring", &Movement->bDrawWallRunDistanceDebug);
+	ImGui::Checkbox("UE_LOG Diagnostics", &Movement->bLogWallRunDiagnostics);
+	ImGui::Checkbox("Legacy Screen Text", &Movement->bShowWallRunStatusText);
+
+	ImGui::Separator();
+	ImGui::Text("Speed: %.2f   Planar: %.2f   Along: %.2f / %.2f",
+		Snapshot.Speed,
+		Snapshot.PlanarSpeed,
+		Snapshot.AlongWallSpeed,
+		Snapshot.MinStartSpeed);
+	ImGui::Text("Check Distance: %.2f   Sphere Radius: %.2f",
+		Snapshot.WallCheckDistance,
+		Snapshot.WallCheckSphereRadius);
+	ImGui::Text("Elapsed: %.2f / %.2f   Side: %s",
+		Snapshot.WallRunElapsedTime,
+		Snapshot.MaxWallRunTime,
+		Snapshot.bOnRightSide ? "Right" : "Left");
+
+	if (Snapshot.bHasHit)
+	{
+		ImGui::Text("Hit: Y   Distance: %.2f   UpDot: %.2f",
+			Snapshot.HitDistance,
+			Snapshot.HitUpDot);
+		ImGui::Text("Actor: %s", Snapshot.HitActorName.c_str());
+		ImGui::Text("Component: %s", Snapshot.HitComponentName.c_str());
+	}
+	else
+	{
+		ImGui::TextDisabled("Hit: N");
+	}
+
+	if (ImGui::CollapsingHeader("Vectors", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		DrawDebugVectorLine("Velocity", Snapshot.Velocity);
+		DrawDebugVectorLine("Wall Normal", Snapshot.WallNormal);
+		DrawDebugVectorLine("Wall Direction", Snapshot.WallDirection);
+		DrawDebugVectorLine("Hit Normal", Snapshot.HitNormal);
+	}
+
+	if (ImGui::CollapsingHeader("Runtime Flags"))
+	{
+		ImGui::Text("WallRunEnabled: %s", BoolText(Snapshot.bWallRunEnabled));
+		ImGui::Text("IsWallRunning: %s", BoolText(Snapshot.bIsWallRunning));
+		ImGui::Text("DrawDistanceDebug: %s", BoolText(Snapshot.bDrawDistanceDebug));
+		ImGui::Text("LogDiagnostics: %s", BoolText(Snapshot.bLogDiagnostics));
+		ImGui::Text("LegacyScreenText: %s", BoolText(Snapshot.bLegacyScreenText));
+	}
+
+	ImGui::End();
+}
+
 void FEditorMainPanel::RenderConsoleDrawer(float DeltaTime)
 {
 	constexpr float DrawerMaxHeight = 320.0f;
@@ -733,9 +905,9 @@ void FEditorMainPanel::RenderFooterOverlay(float DeltaTime)
 	ImGui::PopStyleVar(2);
 }
 
-void FEditorMainPanel::Update()
+void FEditorMainPanel::Update(float DeltaTime)
 {
-	HandleGlobalShortcuts();
+	HandleGlobalShortcuts(DeltaTime);
 	ProcessPendingDebugActions();
 
 	ImGuiIO& IO = ImGui::GetIO();
@@ -810,31 +982,47 @@ void FEditorMainPanel::ProcessPendingDebugActions()
 	FEditorConsoleWidget::AddLog("Grid cleared: %d actors\n", DestroyedCount);
 }
 
-void FEditorMainPanel::HandleGlobalShortcuts()
+void FEditorMainPanel::HandleGlobalShortcuts(float DeltaTime)
 {
 	if (!EditorEngine)
 	{
+		ResetGlobalShortcutRepeat();
 		return;
 	}
 	if (EditorEngine->IsPIEPossessedMode())
 	{
+		ResetGlobalShortcutRepeat();
 		return;
 	}
 
 	ImGuiIO& IO = ImGui::GetIO();
 	if (IO.WantTextInput)
 	{
+		ResetGlobalShortcutRepeat();
 		return;
 	}
 
 	InputSystem& Input = InputSystem::Get();
+	if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown(VK_DELETE))
+	{
+		// Delete는 전역 단축키로 처리해 마우스가 UI 패널 위에 있어도 선택 대상 삭제가 동작하게 합니다.
+		PropertyWidget.FlushPendingDetailsUndoTransaction();
+		if (!PropertyWidget.DeleteSelectedComponentWithUndo())
+		{
+			EditorEngine->DeleteSelectedActorsWithUndo();
+		}
+		ResetGlobalShortcutRepeat();
+		return;
+	}
+
 	if (!Input.GetKey(VK_CONTROL))
 	{
+		ResetGlobalShortcutRepeat();
 		return;
 	}
 
 	const bool bShift = Input.GetKey(VK_SHIFT);
-	if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown('Z'))
+	if (!EditorEngine->IsPlayingInEditor() && ConsumeGlobalShortcutPressOrRepeat('Z', DeltaTime))
 	{
 		// Details 패널에서 막 끝난 속성 변경이 있으면 undo 실행 전에 먼저 stack에 확정합니다.
 		PropertyWidget.FlushPendingDetailsUndoTransaction();
@@ -847,25 +1035,35 @@ void FEditorMainPanel::HandleGlobalShortcuts()
 			EditorEngine->Undo();
 		}
 	}
-	else if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown('Y'))
+	else if (!EditorEngine->IsPlayingInEditor() && ConsumeGlobalShortcutPressOrRepeat('Y', DeltaTime))
 	{
 		// Ctrl+Y도 같은 전역 경로에서 처리해 viewport focus 여부와 무관하게 동작하게 합니다.
 		PropertyWidget.FlushPendingDetailsUndoTransaction();
 		EditorEngine->Redo();
+	}
+	else if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown('D'))
+	{
+		// 복제도 전역 단축키에서 처리해 마우스가 UI 패널 위에 있어도 동작하게 합니다.
+		PropertyWidget.FlushPendingDetailsUndoTransaction();
+		EditorEngine->DuplicateSelectedActorsWithUndo();
+		ResetGlobalShortcutRepeat();
 	}
 	else if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown('A'))
 	{
 		// Details 패널 편집 직후의 pending undo를 먼저 확정한 뒤 선택 상태를 교체합니다.
 		PropertyWidget.FlushPendingDetailsUndoTransaction();
 		EditorEngine->GetSelectionManager().SelectAllActors();
+		ResetGlobalShortcutRepeat();
 	}
 	else if (Input.GetKeyDown('N'))
 	{
 		EditorEngine->NewScene();
+		ResetGlobalShortcutRepeat();
 	}
 	else if (Input.GetKeyDown('O'))
 	{
 		EditorEngine->LoadSceneWithDialog();
+		ResetGlobalShortcutRepeat();
 	}
 	else if (Input.GetKeyDown('S'))
 	{
@@ -877,7 +1075,57 @@ void FEditorMainPanel::HandleGlobalShortcuts()
 		{
 			EditorEngine->SaveScene();
 		}
+		ResetGlobalShortcutRepeat();
 	}
+}
+
+bool FEditorMainPanel::ConsumeGlobalShortcutPressOrRepeat(int32 KeyCode, float DeltaTime)
+{
+	InputSystem& Input = InputSystem::Get();
+	if (Input.GetKeyDown(KeyCode))
+	{
+		// 최초 key down 프레임은 즉시 실행하고 이후 반복 입력 타이머를 준비합니다.
+		RepeatingShortcutKey = KeyCode;
+		RepeatingShortcutElapsed = 0.0f;
+		RepeatingShortcutNextFireTime = GEditorShortcutRepeatInitialDelay;
+		return true;
+	}
+
+	if (!Input.GetKey(KeyCode))
+	{
+		if (RepeatingShortcutKey == KeyCode)
+		{
+			ResetGlobalShortcutRepeat();
+		}
+		return false;
+	}
+
+	if (RepeatingShortcutKey != KeyCode)
+	{
+		// key down edge 없이 이미 눌린 키는 반복 입력으로 시작하지 않습니다.
+		return false;
+	}
+
+	// 최초 지연 후 일정 간격으로 반복 실행합니다.
+	RepeatingShortcutElapsed += DeltaTime;
+	if (RepeatingShortcutElapsed < RepeatingShortcutNextFireTime)
+	{
+		return false;
+	}
+
+	do
+	{
+		RepeatingShortcutNextFireTime += GEditorShortcutRepeatInterval;
+	} while (RepeatingShortcutElapsed >= RepeatingShortcutNextFireTime);
+
+	return true;
+}
+
+void FEditorMainPanel::ResetGlobalShortcutRepeat()
+{
+	RepeatingShortcutKey = 0;
+	RepeatingShortcutElapsed = 0.0f;
+	RepeatingShortcutNextFireTime = 0.0f;
 }
 
 void FEditorMainPanel::HideEditorWindows()

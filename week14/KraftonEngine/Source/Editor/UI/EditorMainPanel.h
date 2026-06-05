@@ -33,7 +33,7 @@ public:
 
 	void TickAssetEditors(float DeltaTime);
 	void Render(float DeltaTime);
-	void Update();
+	void Update(float DeltaTime);
 	void SaveToSettings() const;
 	void HideEditorWindows();
 	void ShowEditorWindows();
@@ -60,9 +60,33 @@ private:
 	void RenderMainDockSpace(float ReservedBottomHeight);
 	void RenderShortcutOverlay();
 	void RenderEditorDebugPanel();
+	void RenderWallRunDebugWindow();
 	void RenderConsoleDrawer(float DeltaTime);
 	void RenderFooterOverlay(float DeltaTime);
-	void HandleGlobalShortcuts();
+
+	/**
+	 * @brief 에디터 전역 단축키를 처리합니다.
+	 *
+	 * @param DeltaTime 현재 프레임 경과 시간
+	 */
+	void HandleGlobalShortcuts(float DeltaTime);
+
+	/**
+	 * @brief 전역 단축키의 최초 입력 또는 반복 입력을 소비합니다.
+	 *
+	 * @param KeyCode 반복 처리할 virtual key code
+	 *
+	 * @param DeltaTime 현재 프레임 경과 시간
+	 *
+	 * @return 단축키 실행 여부
+	 */
+	bool ConsumeGlobalShortcutPressOrRepeat(int32 KeyCode, float DeltaTime);
+
+	/**
+	 * @brief 전역 단축키 반복 입력 상태를 초기화합니다.
+	 */
+	void ResetGlobalShortcutRepeat();
+
 	void ToggleConsoleDrawer(bool bFocusInput);
 	void ProcessPendingDebugActions();
 
@@ -108,5 +132,8 @@ private:
 	float DebugJitterZ = 0.0f;
 	TArray<AActor*> DebugLastSpawnedActors;
 	bool bPendingClearLastBatch = false;
+	int32 RepeatingShortcutKey = 0;
+	float RepeatingShortcutElapsed = 0.0f;
+	float RepeatingShortcutNextFireTime = 0.0f;
 	FEditorSettings::FUIVisibility SavedUIVisibility{};
 };

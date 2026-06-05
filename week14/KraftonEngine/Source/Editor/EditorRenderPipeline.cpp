@@ -21,6 +21,41 @@
 
 namespace
 {
+	void ApplyViewportResizeIfNeeded(FLevelEditorViewportClient* VC, FViewport* VP)
+	{
+		if (!VC || !VP)
+		{
+			return;
+		}
+
+		if (VP->ApplyPendingResize())
+		{
+			// 에디터 뷰포트 카메라의 aspect ratio는 viewport client가 관리합니다.
+			VC->NotifyViewportResized(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
+		}
+	}
+
+	void SyncGameCameraAspectToViewport(APlayerCameraManager* CamManager, FViewport* VP, FMinimalViewInfo& InOutPOV)
+	{
+		if (!CamManager || !VP || VP->GetWidth() == 0 || VP->GetHeight() == 0)
+		{
+			return;
+		}
+
+		const int32 ViewportWidth = static_cast<int32>(VP->GetWidth());
+		const int32 ViewportHeight = static_cast<int32>(VP->GetHeight());
+		const float ViewportAspect = static_cast<float>(ViewportWidth) / static_cast<float>(ViewportHeight);
+
+		// PIE 렌더는 editor pipeline을 타므로 standalone GameRenderPipeline처럼 게임 카메라 resize를 직접 보장합니다.
+		if (UCameraComponent* ActiveCamera = CamManager->GetActiveCamera())
+		{
+			ActiveCamera->OnResize(ViewportWidth, ViewportHeight);
+		}
+
+		// CameraCachePOV는 WorldTick에서 이미 만들어졌을 수 있으므로 이번 프레임 POV도 즉시 보정합니다.
+		InOutPOV.AspectRatio = ViewportAspect;
+	}
+
 	void ApplyLetterboxAspect(FMinimalViewInfo& POV, const FCameraLetterboxState& Letterbox, float ViewportWidth, float ViewportHeight)
 	{
 		if (!Letterbox.bEnabled || Letterbox.Amount <= 0.0f || ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
@@ -144,6 +179,9 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 	UWorld* World = Editor->GetWorld();
 	if (!World) return;
 
+	// POV 산출 전에 지연 리사이즈를 적용해야 PIE 게임 카메라 aspect가 최신 RT 크기를 봅니다.
+	ApplyViewportResizeIfNeeded(VC, VP);
+
 	// ── 카메라 POV 통화 결정 ──────────────────────────────────────
 	// 기본은 viewport 자체 카메라. PIE possessed 모드의 게임 뷰포트만 게임 ActiveCamera 사용.
 	FMinimalViewInfo POV;
@@ -168,6 +206,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 			if (APlayerCameraManager* CamManager = PC->GetPlayerCameraManager())
 			{
 				CamManager->GetCameraCachePOV(POV);
+				SyncGameCameraAspectToViewport(CamManager, VP, POV);
 			}
 		}
 	}
@@ -202,6 +241,8 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 			Frame.View, Frame.Proj,
 			VP->GetWidth(), VP->GetHeight());
 	}
+
+	Scene.ClearFrameData();
 }
 
 // ============================================================
@@ -209,11 +250,7 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 // ============================================================
 void FEditorRenderPipeline::PrepareViewport(FLevelEditorViewportClient* VC, FViewport* VP, ID3D11DeviceContext* Ctx)
 {
-	if (VP->ApplyPendingResize())
-	{
-		// 컴포넌트 OnResize 는 viewport client 가 책임진다. 파이프라인은 컴포넌트를 모름.
-		VC->NotifyViewportResized(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
-	}
+	ApplyViewportResizeIfNeeded(VC, VP);
 	VP->BeginRender(Ctx);
 }
 
@@ -326,7 +363,6 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 	SCOPE_STAT_CAT("Collector", "3_Collect");
 
 	FScene& Scene = World->GetScene();
-	Scene.ClearFrameData();
 
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
 	Builder.BeginCollect(Frame);
@@ -397,7 +433,6 @@ void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* 
 	Frame.SetRenderOptions(VC->GetRenderOptions());
 
 	FScene& Scene = World->GetScene();
-	Scene.ClearFrameData();
 
 	FCollectOutput Output;
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
@@ -409,4 +444,5 @@ void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* 
 	Builder.BuildCommands(Frame, &Scene, Output);
 
 	Renderer.Render(Frame, World, Scene);
+	Scene.ClearFrameData();
 }

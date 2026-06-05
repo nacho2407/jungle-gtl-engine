@@ -85,6 +85,76 @@ static void DrawDetailRow(const char* Label, const FString& Value)
 	}
 }
 
+static bool GetTextureSizeForContentBrowser(ID3D11ShaderResourceView* Texture, ImVec2& OutSize)
+{
+	OutSize = ImVec2(0.0f, 0.0f);
+	if (!Texture)
+	{
+		return false;
+	}
+
+	// SRV가 참조하는 실제 texture resource 조회
+	ID3D11Resource* Resource = nullptr;
+	Texture->GetResource(&Resource);
+	if (!Resource)
+	{
+		return false;
+	}
+
+	ID3D11Texture2D* Texture2D = nullptr;
+	const HRESULT Result = Resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&Texture2D));
+	Resource->Release();
+
+	if (FAILED(Result) || !Texture2D)
+	{
+		return false;
+	}
+
+	D3D11_TEXTURE2D_DESC Desc {};
+	Texture2D->GetDesc(&Desc);
+	Texture2D->Release();
+
+	if (Desc.Width == 0 || Desc.Height == 0)
+	{
+		return false;
+	}
+
+	OutSize = ImVec2(static_cast<float>(Desc.Width), static_cast<float>(Desc.Height));
+	return true;
+}
+
+static void DrawContentBrowserImageAspectFit(ImDrawList* DrawList, ID3D11ShaderResourceView* Texture, const ImVec2& BoundsMin, const ImVec2& BoundsMax)
+{
+	if (!DrawList || !Texture)
+	{
+		return;
+	}
+
+	const ImVec2 BoundsSize(BoundsMax.x - BoundsMin.x, BoundsMax.y - BoundsMin.y);
+	if (BoundsSize.x <= 0.0f || BoundsSize.y <= 0.0f)
+	{
+		return;
+	}
+
+	ImVec2 TextureSize;
+	if (!GetTextureSizeForContentBrowser(Texture, TextureSize) || TextureSize.x <= 0.0f || TextureSize.y <= 0.0f)
+	{
+		// 크기 조회 실패 시 기존 stretch 출력으로 fallback
+		DrawList->AddImage(Texture, BoundsMin, BoundsMax);
+		return;
+	}
+
+	// 원본 비율 유지 후 카드 icon 영역 안에 최대 크기로 중앙 배치
+	const float Scale = (std::min)(BoundsSize.x / TextureSize.x, BoundsSize.y / TextureSize.y);
+	const ImVec2 ImageSize(TextureSize.x * Scale, TextureSize.y * Scale);
+	const ImVec2 ImageMin(
+		BoundsMin.x + (BoundsSize.x - ImageSize.x) * 0.5f,
+		BoundsMin.y + (BoundsSize.y - ImageSize.y) * 0.5f);
+	const ImVec2 ImageMax(ImageMin.x + ImageSize.x, ImageMin.y + ImageSize.y);
+
+	DrawList->AddImage(Texture, ImageMin, ImageMax);
+}
+
 static std::filesystem::path ResolveProjectPathForContentBrowser(const FString& Path)
 {
 	std::filesystem::path FullPath(FPaths::ToWide(Path));
@@ -498,7 +568,7 @@ bool ContentBrowserElement::RenderSelectSpace(ContentBrowserContext& Context)
 
 		if (DrawIcon && IconMax.y > IconMin.y)
 		{
-			DrawList->AddImage(DrawIcon, IconMin, IconMax);
+			DrawContentBrowserImageAspectFit(DrawList, DrawIcon, IconMin, IconMax);
 		}
 	}
 
