@@ -369,6 +369,7 @@ void FEditorMainPanel::RenderShortcutOverlay()
 	ImGui::TextUnformatted("Ctrl+Z : Undo");
 	ImGui::TextUnformatted("Ctrl+Y / Ctrl+Shift+Z : Redo");
 	ImGui::Separator();
+	ImGui::TextUnformatted("Delete : Delete Selected Actor / Component");
 	ImGui::TextUnformatted("` : Focus console input / open console drawer");
 	ImGui::TextUnformatted("F : Focus on selection");
 	ImGui::TextUnformatted("Ctrl + LMB : Multi Picking (Toggle)");
@@ -835,6 +836,18 @@ void FEditorMainPanel::HandleGlobalShortcuts(float DeltaTime)
 	}
 
 	InputSystem& Input = InputSystem::Get();
+	if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown(VK_DELETE))
+	{
+		// Delete는 전역 단축키로 처리해 마우스가 UI 패널 위에 있어도 선택 대상 삭제가 동작하게 합니다.
+		PropertyWidget.FlushPendingDetailsUndoTransaction();
+		if (!PropertyWidget.DeleteSelectedComponentWithUndo())
+		{
+			EditorEngine->DeleteSelectedActorsWithUndo();
+		}
+		ResetGlobalShortcutRepeat();
+		return;
+	}
+
 	if (!Input.GetKey(VK_CONTROL))
 	{
 		ResetGlobalShortcutRepeat();

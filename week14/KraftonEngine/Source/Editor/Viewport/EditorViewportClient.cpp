@@ -401,13 +401,6 @@ void FEditorViewportClient::TickEditorShortcuts()
 
 	const bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
 
-	// 키보드 소유권과 UpdateInputOwner 의 WantTextInput 해제로 게이팅 일원화됨.
-	if (SelectionManager && InputSystem::Get().GetKeyDown(VK_DELETE))
-	{
-		EditorEngine->DeleteSelectedActorsWithUndo();
-		return;
-	}
-
 	if (!bCtrlHeld && InputSystem::Get().GetKeyDown('X'))
 	{
 		EditorEngine->ToggleCoordSystem();

@@ -1214,6 +1214,65 @@ void FEditorPropertyWidget::FlushPendingDetailsUndoTransaction()
 	CommitActiveDetailsPropertyUndo();
 }
 
+bool FEditorPropertyWidget::DeleteSelectedComponentWithUndo()
+{
+	if (!EditorEngine || EditorEngine->IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	FSelectionManager& SelectionManager = EditorEngine->GetSelectionManager();
+	AActor* Actor = SelectionManager.GetPrimarySelection();
+	if (!Actor)
+	{
+		return false;
+	}
+
+	// 뷰포트에서 component를 선택한 직후에도 Details 내부 선택 상태가 같은 대상을 가리키도록 동기화합니다.
+	if (USceneComponent* SelectionComponent = SelectionManager.GetSelectedComponent())
+	{
+		if (SelectionComponent != Actor->GetRootComponent()
+			&& DoesActorOwnComponent(Actor, SelectionComponent))
+		{
+			SelectedComponent = SelectionComponent;
+			bActorSelected = false;
+			LastSelectedActor = Actor;
+		}
+	}
+
+	UActorComponent* ComponentToRemove = SelectedComponent;
+	if (!ComponentToRemove
+		|| ComponentToRemove == Actor->GetRootComponent()
+		|| !DoesActorOwnComponent(Actor, ComponentToRemove))
+	{
+		SyncSelectedComponentAfterStructureChange(Actor);
+		return false;
+	}
+
+	// 삭제 전 진행 중인 속성 트랜잭션을 먼저 닫아 undo 순서를 보존합니다.
+	CommitActiveDetailsPropertyUndo();
+	const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&SelectionManager);
+	json::JSON BeforeActorJSON = FSceneSaveManager::SerializeActorForEditorUndo(Actor);
+	const FString DebugName = MakeComponentStructureDebugName("Remove Component", ComponentToRemove);
+
+	// 삭제될 component를 selection/gizmo가 물고 있지 않도록 먼저 actor 선택 상태로 되돌립니다.
+	SelectionManager.Select(Actor);
+	Actor->RemoveComponent(ComponentToRemove);
+	SelectedComponent = nullptr;
+	LastRenameComponent = nullptr;
+	ComponentRenameBuffer[0] = '\0';
+	ComponentRenameWarning.clear();
+	LastObservedComponentName = FName();
+	bActorSelected = true;
+
+	RecordActorStructureUndoChange(
+		Actor,
+		std::move(BeforeActorJSON),
+		SelectionBefore,
+		DebugName);
+	return true;
+}
+
 void FEditorPropertyWidget::RecordDetailsPropertyUndoChange(
 	const TArray<FEditorObjectPropertySnapshot>& BeforeSnapshots,
 	const TArray<UObject*>& TargetObjects,
@@ -1786,37 +1845,8 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 	{
 		if (ImGui::Button("Remove"))
 		{
-			if (SelectedComponent != nullptr)
-			{
-				CommitActiveDetailsPropertyUndo();
-				UActorComponent* ComponentToRemove = SelectedComponent;
-				if (!DoesActorOwnComponent(Actor, ComponentToRemove))
-				{
-					SyncSelectedComponentAfterStructureChange(Actor);
-					return;
-				}
-
-				const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&EditorEngine->GetSelectionManager());
-				json::JSON BeforeActorJSON = FSceneSaveManager::SerializeActorForEditorUndo(Actor);
-				const FString DebugName = MakeComponentStructureDebugName("Remove Component", ComponentToRemove);
-
-				// 삭제될 component를 selection/gizmo가 물고 있지 않도록 먼저 actor 선택 상태로 되돌립니다.
-				EditorEngine->GetSelectionManager().Select(Actor);
-				Actor->RemoveComponent(ComponentToRemove);
-				SelectedComponent = nullptr;
-				LastRenameComponent = nullptr;
-				ComponentRenameBuffer[0] = '\0';
-				ComponentRenameWarning.clear();
-				LastObservedComponentName = FName();
-				bActorSelected = true;
-
-				RecordActorStructureUndoChange(
-					Actor,
-					std::move(BeforeActorJSON),
-					SelectionBefore,
-					DebugName);
-				return;
-			}
+			DeleteSelectedComponentWithUndo();
+			return;
 		}
 	}
 
