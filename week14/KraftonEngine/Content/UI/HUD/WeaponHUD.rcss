@@ -1,0 +1,77 @@
+body {
+	margin: 0px;
+	width: 100%;
+	height: 100%;
+	font-family: Pretendard;
+	color: #ffffff;
+}
+
+#weapon-hud-root {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+.weapon-hud-panel {
+	position: absolute;
+	right: 48px;
+	bottom: 42px;
+	width: 100.00%;
+	height: 84.00%;
+ left: 76.00%; top: 85.60%;}
+
+.weapon-hud-panel-image {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 300px;
+	height: 84px;
+	opacity: 0.85;
+}
+
+.weapon-hud-rifle-image {
+	position: absolute;
+	left: 15.00px;
+	top: 21.00px;
+	width: 140.00px;
+	height: 45.00px;
+	opacity: 0.9;
+}
+
+.weapon-hud-separator {
+	position: absolute;
+	left: 224.00px;
+	top: 20.00px;
+	width: 2px;
+	height: 48px;
+	background-color: #ffffff;
+	opacity: 0.8;
+}
+
+.weapon-hud-current-ammo {
+	position: absolute;
+	left: 168.00px;
+	top: 22.00px;
+	width: 46px;
+	height: 42px;
+	font-size: 37.00px;
+	font-weight: bold;
+	line-height: 42px;
+	text-align: right;
+	color: #FFFFFF;
+}
+
+.weapon-hud-reserve-ammo {
+	position: absolute;
+	left: 234.00px;
+	top: 40.00px;
+	width: 61.00px;
+	height: 32px;
+	font-size: 24px;
+	font-weight: bold;
+	line-height: 32px;
+	text-align: left;
+	color: #7B7B7B;
+}

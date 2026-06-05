@@ -335,19 +335,41 @@ void FUIEditorWidget::RenderInspector()
 		MarkDirty();
 	}
 
+	const char* HorizontalAnchorLabels[] = { "Left", "Right" };
+	int HorizontalAnchorIndex = Element.HorizontalAnchor == "right" ? 1 : 0;
+	if (ImGui::Combo("Horizontal Anchor", &HorizontalAnchorIndex, HorizontalAnchorLabels, IM_ARRAYSIZE(HorizontalAnchorLabels)))
+	{
+		Element.HorizontalAnchor = HorizontalAnchorIndex == 1 ? "right" : "left";
+		Element.bXDirty = true;
+		Element.bStyleDirty = true;
+		MarkDirty();
+	}
+
+	const char* VerticalAnchorLabels[] = { "Top", "Bottom" };
+	int VerticalAnchorIndex = Element.VerticalAnchor == "bottom" ? 1 : 0;
+	if (ImGui::Combo("Vertical Anchor", &VerticalAnchorIndex, VerticalAnchorLabels, IM_ARRAYSIZE(VerticalAnchorLabels)))
+	{
+		Element.VerticalAnchor = VerticalAnchorIndex == 1 ? "bottom" : "top";
+		Element.bYDirty = true;
+		Element.bStyleDirty = true;
+		MarkDirty();
+	}
+
 	const float PositionSpeed = Element.bUsePercentLayout ? 0.1f : 1.0f;
 	const float SizeSpeed = Element.bUsePercentLayout ? 0.1f : 1.0f;
 	const float PositionMax = Element.bUsePercentLayout ? 100.0f : 4096.0f;
 	const float SizeMax = Element.bUsePercentLayout ? 100.0f : 4096.0f;
 	const char* ValueFormat = Element.bUsePercentLayout ? "%.2f" : "%.1f";
 
-	if (ImGui::DragFloat("X", &Element.X, PositionSpeed, 0.0f, PositionMax, ValueFormat))
+	const char* XLabel = Element.HorizontalAnchor == "right" ? "X Offset From Right" : "X Offset From Left";
+	const char* YLabel = Element.VerticalAnchor == "bottom" ? "Y Offset From Bottom" : "Y Offset From Top";
+	if (ImGui::DragFloat(XLabel, &Element.X, PositionSpeed, 0.0f, PositionMax, ValueFormat))
 	{
 		Element.bXDirty = true;
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}
-	if (ImGui::DragFloat("Y", &Element.Y, PositionSpeed, 0.0f, PositionMax, ValueFormat))
+	if (ImGui::DragFloat(YLabel, &Element.Y, PositionSpeed, 0.0f, PositionMax, ValueFormat))
 	{
 		Element.bYDirty = true;
 		Element.bStyleDirty = true;
