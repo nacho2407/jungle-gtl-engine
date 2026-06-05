@@ -102,6 +102,8 @@ private:
 	bool HasMultipleSelectedActorTargets() const;
 	FVector GetTargetPivotLocation() const;
 	bool TranslateSelectedActorTargets(const FVector& Delta);
+	bool RotateSelectedActorTargets(const FQuat& DeltaQuat);
+	bool ScaleSelectedActorTargets(const FVector& Delta);
 	void TranslateTarget(float DragAmount);
 	void RotateTarget(float DragAmount);
 	void ScaleTarget(float DragAmount);

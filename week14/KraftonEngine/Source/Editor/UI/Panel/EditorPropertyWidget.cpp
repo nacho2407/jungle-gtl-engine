@@ -709,15 +709,13 @@ namespace
 
 		for (AActor* Actor : SelectedActors)
 		{
-			if (!Actor || Actor == PrimaryActor)
+			if (!Actor || Actor == PrimaryActor || !Actor->GetRootComponent())
 			{
 				continue;
 			}
 
-			if (HasCompatibleActorEditableProperty(Actor, SourceProp))
-			{
-				AddUniqueObject(Targets, Actor);
-			}
+			// actor transform은 모든 actor가 공유하는 편집 개념이므로 class/property matching 대신 root transform 기준으로 수집합니다.
+			AddUniqueObject(Targets, Actor);
 		}
 
 		return Targets;
@@ -820,12 +818,46 @@ namespace
 		}
 	}
 
+	bool ApplyActorTransformDelta(AActor* Actor, const FTransformPropertyDelta& TransformDelta)
+	{
+		if (!Actor || !Actor->GetRootComponent() || !TransformDelta.bValid)
+		{
+			return false;
+		}
+
+		// Details의 다중 actor transform 편집은 reflected pending property 대신 actor transform API로 직접 반영합니다.
+		// 이렇게 해야 actor class나 root component class와 관계없이 static mesh actor 등도 동일한 delta를 받습니다.
+		switch (TransformDelta.Kind)
+		{
+		case EDetailsTransformPropertyKind::Location:
+			Actor->SetActorLocation(Actor->GetActorLocation() + TransformDelta.VectorDelta);
+			return true;
+		case EDetailsTransformPropertyKind::Rotation:
+			if (TransformDelta.Type == EPropertyType::Rotator)
+			{
+				Actor->SetActorRotation(Actor->GetActorRotation() + TransformDelta.RotatorDelta);
+				return true;
+			}
+			Actor->SetActorRotation(Actor->GetActorRotation() + FRotator(TransformDelta.VectorDelta));
+			return true;
+		case EDetailsTransformPropertyKind::Scale:
+		{
+			FVector NewScale = Actor->GetActorScale() + TransformDelta.VectorDelta;
+			if (NewScale.X < 0.001f) NewScale.X = 0.001f;
+			if (NewScale.Y < 0.001f) NewScale.Y = 0.001f;
+			if (NewScale.Z < 0.001f) NewScale.Z = 0.001f;
+			Actor->SetActorScale(NewScale);
+			return true;
+		}
+		default:
+			return false;
+		}
+	}
+
 	void PropagateActorTransformPropertyChange(
 		AActor* PrimaryActor,
-		const FPropertyValue& SourceProp,
 		const FTransformPropertyDelta& TransformDelta,
-		const TArray<AActor*>& SelectedActors,
-		TArray<FDeferredPostEditChange>& OutDeferredChanges)
+		const TArray<AActor*>& SelectedActors)
 	{
 		if (!PrimaryActor || !TransformDelta.bValid || SelectedActors.size() < 2)
 		{
@@ -839,21 +871,7 @@ namespace
 				continue;
 			}
 
-			TArray<FPropertyValue> Props;
-			Actor->GetEditableProperties(Props);
-			for (FPropertyValue& DstProp : Props)
-			{
-				if (!IsCompatibleEditableProperty(DstProp, SourceProp))
-				{
-					continue;
-				}
-
-				if (ApplyTransformDeltaToProperty(DstProp, TransformDelta))
-				{
-					QueueDeferredPostEditChange(OutDeferredChanges, DstProp);
-				}
-				break;
-			}
+			ApplyActorTransformDelta(Actor, TransformDelta);
 		}
 	}
 
@@ -1402,7 +1420,7 @@ void FEditorPropertyWidget::RenderActorProperties(AActor* PrimaryActor, const TA
 					const FTransformPropertyDelta TransformDelta = BuildTransformPropertyDelta(TransformBefore, Props[i]);
 					bAnyChanged = true;
 					QueueDeferredPostEditChange(DeferredChanges, Props[i]);
-					PropagateActorTransformPropertyChange(PrimaryActor, Props[i], TransformDelta, SelectedActors, DeferredChanges);
+					PropagateActorTransformPropertyChange(PrimaryActor, TransformDelta, SelectedActors);
 					RecordDetailsPropertyUndoChange(
 						UndoBefore,
 						UndoTargets,

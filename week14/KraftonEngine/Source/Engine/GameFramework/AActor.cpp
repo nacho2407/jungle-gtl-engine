@@ -268,6 +268,8 @@ FVector AActor::GetActorScale() const
 
 void AActor::SetActorScale(const FVector& NewScale)
 {
+	PendingActorScale = NewScale;
+
 	if (RootComponent)
 	{
 		RootComponent->SetRelativeScale(NewScale);

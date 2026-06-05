@@ -316,6 +316,54 @@ bool UGizmoComponent::TranslateSelectedActorTargets(const FVector& Delta)
 	return true;
 }
 
+bool UGizmoComponent::RotateSelectedActorTargets(const FQuat& DeltaQuat)
+{
+	if (!HasMultipleSelectedActorTargets())
+	{
+		return false;
+	}
+
+	// 다중 선택 회전은 primary target만이 아니라 선택된 모든 actor root에 동일한 회전 delta를 적용합니다.
+	for (AActor* Actor : *AllSelectedActors)
+	{
+		if (Actor && Actor->GetRootComponent())
+		{
+			USceneComponent* RootComponent = Actor->GetRootComponent();
+			FQuat CurrentRotation = RootComponent->GetRelativeQuat();
+			FQuat NewRotation = bIsWorldSpace
+				? DeltaQuat * CurrentRotation
+				: CurrentRotation * DeltaQuat;
+			RootComponent->SetRelativeRotation(NewRotation);
+		}
+	}
+
+	return true;
+}
+
+bool UGizmoComponent::ScaleSelectedActorTargets(const FVector& Delta)
+{
+	if (!HasMultipleSelectedActorTargets())
+	{
+		return false;
+	}
+
+	// 다중 선택 scale도 translate와 동일하게 각 actor의 기존 scale에 delta만 더합니다.
+	for (AActor* Actor : *AllSelectedActors)
+	{
+		if (Actor && Actor->GetRootComponent())
+		{
+			USceneComponent* RootComponent = Actor->GetRootComponent();
+			FVector NewScale = RootComponent->GetRelativeScale() + Delta;
+			if (NewScale.X < 0.001f) NewScale.X = 0.001f;
+			if (NewScale.Y < 0.001f) NewScale.Y = 0.001f;
+			if (NewScale.Z < 0.001f) NewScale.Z = 0.001f;
+			RootComponent->SetRelativeScale(NewScale);
+		}
+	}
+
+	return true;
+}
+
 void UGizmoComponent::TranslateTarget(float DragAmount)
 {
 	if (!Target) return;
@@ -334,7 +382,10 @@ void UGizmoComponent::RotateTarget(float DragAmount)
 
 	FVector Axis = bIsWorldSpace ? GetVectorForAxis(SelectedAxis) : GetLocalAxisVector(SelectedAxis);
 	FQuat DeltaQuat = FQuat::FromAxisAngle(Axis, DragAmount);
-	Target->AddWorldRotation(DeltaQuat, bIsWorldSpace);
+	if (!RotateSelectedActorTargets(DeltaQuat))
+	{
+		Target->AddWorldRotation(DeltaQuat, bIsWorldSpace);
+	}
 }
 
 void UGizmoComponent::ScaleTarget(float DragAmount)
@@ -348,7 +399,10 @@ void UGizmoComponent::ScaleTarget(float DragAmount)
 	if (SelectedAxis == 1) Delta.Y = ScaleDelta;
 	if (SelectedAxis == 2) Delta.Z = ScaleDelta;
 
-	Target->AddScaleDelta(Delta);
+	if (!ScaleSelectedActorTargets(Delta))
+	{
+		Target->AddScaleDelta(Delta);
+	}
 }
 
 bool UGizmoComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
