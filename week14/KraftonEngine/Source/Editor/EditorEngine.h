@@ -8,6 +8,7 @@
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/PIE/PIETypes.h"
+#include <filesystem>
 #include <optional>
 #if STATS
 #include "Editor/EditorRenderPipeline.h"
@@ -57,6 +58,7 @@ public:
 	const FString& GetCurrentLevelFilePath() const { return CurrentLevelFilePath; }
 	void RefreshContentBrowser() { MainPanel.RefreshContentBrowser(); }
 	void OpenAssetEditorForObject(UObject* Object) { MainPanel.OpenAssetEditorForObject(Object); }
+	void OpenUIEditor(const std::filesystem::path& Path) { MainPanel.OpenUIEditor(Path); }
 	void SetContentBrowserIconSize(float Size) { MainPanel.SetContentBrowserIconSize(Size); }
 	float GetContentBrowserIconSize() const { return MainPanel.GetContentBrowserIconSize(); }
 	void HideEditorWindows() { MainPanel.HideEditorWindows(); }

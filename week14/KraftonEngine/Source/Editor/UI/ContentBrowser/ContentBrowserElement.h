@@ -210,6 +210,16 @@ protected:
 	uint32 GetAccentColor() const override { return IM_COL32(120, 190, 255, 255); }
 };
 
+class RmlElement final : public ContentBrowserElement
+{
+public:
+	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
+
+protected:
+	const char* GetTypeLabel() const override { return "RML UI"; }
+	uint32 GetAccentColor() const override { return IM_COL32(120, 210, 255, 255); }
+};
+
 #include "Editor/UI/Panel/EditorMaterialInspector.h"
 class MaterialElement final : public ContentBrowserElement
 {

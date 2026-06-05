@@ -463,6 +463,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Asset\Physics\PhysicsAssetEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\UI\UIEditorDocument.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\UI\UIEditorSerializer.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\UI\UIEditorWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
     <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
@@ -855,6 +858,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Physics\PhysicsAssetEditorTypes.h" />
     <ClInclude Include="Source\Editor\UI\Asset\Physics\PhysicsAssetEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\UI\UIEditorDocument.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\UI\UIEditorSerializer.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\UI\UIEditorWidget.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
     <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />

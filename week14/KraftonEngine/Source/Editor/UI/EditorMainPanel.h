@@ -12,9 +12,12 @@
 #include "Editor/UI/Panel/EditorWorldSettingsWidget.h"
 #include "Editor/UI/ContentBrowser/ContentBrowser.h"
 #include "Editor/UI/Asset/AssetEditorManager.h"
+#include "Editor/UI/Asset/UI/UIEditorWidget.h"
 #include "Editor/UI/Util/EditorMaterialThumbnailManager.h"
 #include "Editor/UI/Util/EditorMeshThumbnailManager.h"
 #include "Math/Vector.h"
+
+#include <filesystem>
 
 class AActor;
 class FRenderer;
@@ -43,6 +46,7 @@ public:
 	float GetContentBrowserIconSize() const { return ContentBrowserWidget.GetIconSize(); }
 
 	void OpenAssetEditorForObject(UObject* Object);
+	void OpenUIEditor(const std::filesystem::path& Path);
 	void CollectAssetEditorPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const
 	{
 		AssetEditorManager.CollectPreviewViewportClients(OutClients);
@@ -75,6 +79,7 @@ private:
 	EditorProjectSettingsWidget ProjectSettingsWidget;
 	EditorWorldSettingsWidget WorldSettingsWidget;
 	FAssetEditorManager AssetEditorManager;
+	FUIEditorWidget UIEditorWidget;
 
 	bool bShowWidgetList = false;
 	bool bShowShortcutOverlay = false;

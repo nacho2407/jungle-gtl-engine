@@ -985,6 +985,17 @@ void ParticleSystemElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	}
 }
 
+void RmlElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
+{
+	if (!Context.EditorEngine)
+	{
+		ShellExecuteW(nullptr, L"open", ContentItem.Path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		return;
+	}
+
+	Context.EditorEngine->OpenUIEditor(ContentItem.Path);
+}
+
 void MaterialElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 {
 	if (!Context.EditorEngine)
