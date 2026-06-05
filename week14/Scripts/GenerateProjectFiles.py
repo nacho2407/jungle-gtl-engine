@@ -170,6 +170,7 @@ ADDITIONAL_LIB_DIRS = [
 ]
 ADDITIONAL_DEPENDENCIES = [
     LUA_LIB,
+    "xinput.lib",
 ]
 
 # NuGet packages (id, version) — restored via packages.config

@@ -168,6 +168,43 @@ void FSelectionManager::Deselect(AActor* Actor)
 	SyncGizmo();
 }
 
+int32 FSelectionManager::SelectAllActors()
+{
+	if (!World)
+	{
+		return 0;
+	}
+
+	// 기존 선택 프록시 해제
+	for (AActor* Prev : SelectedActors)
+	{
+		SetActorProxiesSelected(Prev, false);
+	}
+	SelectedActors.clear();
+	SelectedComponent = nullptr;
+
+	// 현재 editor world에 속한 valid actor만 선택 대상에 포함
+	for (AActor* Actor : World->GetActors())
+	{
+		if (!IsValid(Actor) || Actor->GetWorld() != World)
+		{
+			continue;
+		}
+
+		SelectedActors.push_back(Actor);
+		SetActorProxiesSelected(Actor, true);
+	}
+
+	// primary selection의 root component를 기즈모 기준으로 사용
+	if (!SelectedActors.empty())
+	{
+		SelectedComponent = SelectedActors.front()->GetRootComponent();
+	}
+
+	SyncGizmo();
+	return static_cast<int32>(SelectedActors.size());
+}
+
 void FSelectionManager::ClearSelection()
 {
 	if (SelectedActors.empty() && SelectedComponent == nullptr)
@@ -180,6 +217,70 @@ void FSelectionManager::ClearSelection()
 
 	SelectedActors.clear();
 	SelectedComponent = nullptr;
+	SyncGizmo();
+}
+
+TArray<uint32> FSelectionManager::GetSelectedActorUUIDs() const
+{
+	TArray<uint32> ActorUUIDs;
+	for (AActor* Actor : SelectedActors)
+	{
+		if (Actor)
+		{
+			ActorUUIDs.push_back(Actor->GetUUID());
+		}
+	}
+	return ActorUUIDs;
+}
+
+uint32 FSelectionManager::GetSelectedComponentUUID() const
+{
+	return SelectedComponent ? SelectedComponent->GetUUID() : 0;
+}
+
+void FSelectionManager::RestoreSelectionByUUIDs(const TArray<uint32>& ActorUUIDs, uint32 ComponentUUID)
+{
+	// 기존 선택 프록시를 먼저 해제해 복원 대상과 stale 대상이 섞이지 않도록 합니다.
+	for (AActor* Prev : SelectedActors)
+	{
+		SetActorProxiesSelected(Prev, false);
+	}
+	SelectedActors.clear();
+	SelectedComponent = nullptr;
+
+	for (uint32 ActorUUID : ActorUUIDs)
+	{
+		AActor* Actor = Cast<AActor>(UObjectManager::Get().FindByUUID(ActorUUID));
+		if (!Actor || (World && Actor->GetWorld() != World))
+		{
+			continue;
+		}
+
+		if (std::find(SelectedActors.begin(), SelectedActors.end(), Actor) != SelectedActors.end())
+		{
+			continue;
+		}
+
+		SelectedActors.push_back(Actor);
+		SetActorProxiesSelected(Actor, true);
+	}
+
+	if (ComponentUUID != 0)
+	{
+		USceneComponent* Component = Cast<USceneComponent>(UObjectManager::Get().FindByUUID(ComponentUUID));
+		AActor* Owner = Component ? Component->GetOwner() : nullptr;
+		if (Owner && std::find(SelectedActors.begin(), SelectedActors.end(), Owner) != SelectedActors.end())
+		{
+			SelectedComponent = Component;
+		}
+	}
+
+	// component snapshot이 유효하지 않으면 primary actor의 root를 fallback target으로 사용합니다.
+	if (!SelectedComponent && !SelectedActors.empty())
+	{
+		SelectedComponent = SelectedActors.front()->GetRootComponent();
+	}
+
 	SyncGizmo();
 }
 

@@ -64,6 +64,8 @@ namespace SceneKeys
 	static constexpr const char* Children = "Children";
 	static constexpr const char* HiddenInComponentTree = "bHiddenInComponentTree";
 	static constexpr const char* ObjectId = "ObjectId";
+	static constexpr const char* RuntimeUUID = "RuntimeUUID";
+	static constexpr const char* EditorUndoObjectReferences = "EditorUndoObjectReferences";
 }
 
 class FSceneJsonSaveArchive : public FJsonArchive
@@ -207,6 +209,199 @@ static void EnsureEditorBillboardMetadata(UActorComponent* Comp)
 	{
 		CameraComponent->EnsureEditorBillboard();
 	}
+}
+
+/**
+ * @brief 에디터 undo actor snapshot 적용 전에 기존 component 구조를 비웁니다.
+ */
+static void ClearActorComponentsForEditorUndo(AActor* Actor)
+{
+	if (!Actor)
+	{
+		return;
+	}
+
+	// AActor 소멸자와 같은 방식으로 component 목록이 비워질 때까지 뒤에서 제거합니다.
+	// SceneComponent 제거는 자식 component까지 재귀적으로 OwnedComponents에서 제거하므로
+	// 매 반복마다 최신 목록을 다시 조회해야 iterator invalidation을 피할 수 있습니다.
+	while (!Actor->GetComponents().empty())
+	{
+		UActorComponent* Component = Actor->GetComponents().back();
+		Actor->RemoveComponent(Component);
+	}
+}
+
+/**
+ * @brief 에디터 undo snapshot에 runtime UUID를 기록합니다.
+ */
+static void WriteEditorUndoRuntimeUUID(json::JSON& Node, const UObject* Object)
+{
+	if (!Object)
+	{
+		return;
+	}
+
+	Node[SceneKeys::RuntimeUUID] = static_cast<int>(Object->GetUUID());
+}
+
+/**
+ * @brief 에디터 undo snapshot의 runtime UUID를 객체에 복원합니다.
+ */
+static void RestoreEditorUndoRuntimeUUID(json::JSON& Node, UObject* Object)
+{
+	if (!Object || !Node.hasKey(SceneKeys::RuntimeUUID))
+	{
+		return;
+	}
+
+	const uint32 RuntimeUUID = static_cast<uint32>(Node[SceneKeys::RuntimeUUID].ToInt());
+	if (RuntimeUUID != 0)
+	{
+		Object->SetUUID(RuntimeUUID);
+	}
+}
+
+/**
+ * @brief scene component subtree JSON에 runtime UUID를 재귀적으로 기록합니다.
+ */
+static void AnnotateSceneComponentRuntimeUUIDs(USceneComponent* Comp, json::JSON& Node)
+{
+	if (!Comp)
+	{
+		return;
+	}
+
+	WriteEditorUndoRuntimeUUID(Node, Comp);
+	if (!Node.hasKey(SceneKeys::Children))
+	{
+		return;
+	}
+
+	const TArray<USceneComponent*>& Children = Comp->GetChildren();
+	int32 ChildIndex = 0;
+	for (auto& ChildJSON : Node[SceneKeys::Children].ArrayRange())
+	{
+		if (ChildIndex < static_cast<int32>(Children.size()))
+		{
+			AnnotateSceneComponentRuntimeUUIDs(Children[ChildIndex], ChildJSON);
+		}
+		++ChildIndex;
+	}
+}
+
+/**
+ * @brief actor JSON에 actor/component runtime UUID를 기록합니다.
+ */
+static void AnnotateActorRuntimeUUIDs(AActor* Actor, json::JSON& ActorJSON)
+{
+	if (!Actor)
+	{
+		return;
+	}
+
+	WriteEditorUndoRuntimeUUID(ActorJSON, Actor);
+	if (Actor->GetRootComponent() && ActorJSON.hasKey(SceneKeys::RootComponent))
+	{
+		AnnotateSceneComponentRuntimeUUIDs(Actor->GetRootComponent(), ActorJSON[SceneKeys::RootComponent]);
+	}
+
+	if (!ActorJSON.hasKey(SceneKeys::NonSceneComponents))
+	{
+		return;
+	}
+
+	int32 NonSceneIndex = 0;
+	for (UActorComponent* Comp : Actor->GetComponents())
+	{
+		if (!Comp || Comp->IsA<USceneComponent>())
+		{
+			continue;
+		}
+
+		if (NonSceneIndex < static_cast<int32>(ActorJSON[SceneKeys::NonSceneComponents].size()))
+		{
+			WriteEditorUndoRuntimeUUID(ActorJSON[SceneKeys::NonSceneComponents][static_cast<unsigned>(NonSceneIndex)], Comp);
+		}
+		++NonSceneIndex;
+	}
+}
+
+/**
+ * @brief undo 스냅샷 내 객체 참조 복원용 ObjectId/UUID 매핑 생성
+ */
+static json::JSON SerializeEditorUndoObjectReferenceMap(const FSceneSaveManager::FSceneSaveContext& Context)
+{
+	json::JSON References = json::Array();
+	for (const auto& Entry : Context.ObjectToId)
+	{
+		const UObject* Object = Entry.first;
+		const uint32 ObjectId = Entry.second;
+		if (!Object || ObjectId == 0)
+		{
+			continue;
+		}
+
+		json::JSON Reference = json::Object();
+		Reference[SceneKeys::ObjectId] = static_cast<int>(ObjectId);
+		Reference[SceneKeys::RuntimeUUID] = static_cast<int>(Object->GetUUID());
+		References.append(Reference);
+	}
+	return References;
+}
+
+/**
+ * @brief undo snapshot의 ObjectId/UUID 매핑을 load context에 등록합니다.
+ */
+static void RegisterEditorUndoObjectReferenceMap(
+	json::JSON& ActorJSON,
+	FSceneSaveManager::FSceneLoadContext& Context)
+{
+	if (!ActorJSON.hasKey(SceneKeys::EditorUndoObjectReferences))
+	{
+		return;
+	}
+
+	for (auto& ReferenceJSON : ActorJSON[SceneKeys::EditorUndoObjectReferences].ArrayRange())
+	{
+		if (!ReferenceJSON.hasKey(SceneKeys::ObjectId) || !ReferenceJSON.hasKey(SceneKeys::RuntimeUUID))
+		{
+			continue;
+		}
+
+		const uint32 ObjectId = static_cast<uint32>(ReferenceJSON[SceneKeys::ObjectId].ToInt());
+		const uint32 RuntimeUUID = static_cast<uint32>(ReferenceJSON[SceneKeys::RuntimeUUID].ToInt());
+		UObject* Object = RuntimeUUID != 0 ? UObjectManager::Get().FindByUUID(RuntimeUUID) : nullptr;
+		if (ObjectId != 0 && Object)
+		{
+			Context.ObjectById[ObjectId] = Object;
+		}
+	}
+}
+
+/**
+ * @brief undo용 객체가 속한 world 검색
+ */
+static UWorld* GetEditorUndoObjectWorld(UObject* Object)
+{
+	if (!Object)
+	{
+		return nullptr;
+	}
+
+	if (AActor* Actor = Cast<AActor>(Object))
+	{
+		return Actor->GetWorld();
+	}
+
+	if (UActorComponent* Component = Cast<UActorComponent>(Object))
+	{
+		if (AActor* Owner = Component->GetOwner())
+		{
+			return Owner->GetWorld();
+		}
+	}
+
+	return Object->GetTypedOuter<UWorld>();
 }
 
 static const char* WorldTypeToString(EWorldType Type)
@@ -409,6 +604,89 @@ json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj, FSceneSaveContex
 	return Props;
 }
 
+json::JSON FSceneSaveManager::SerializeActorForEditorUndo(AActor* Actor)
+{
+	if (!Actor)
+	{
+		return json::JSON();
+	}
+
+	FSceneSaveContext Context;
+	if (UWorld* World = Actor->GetWorld())
+	{
+		// 외부 actor/component 참조도 ObjectId로 직렬화될 수 있도록 world 전체 object id를 준비합니다.
+		CollectWorldObjectIds(World, Context);
+	}
+	else
+	{
+		CollectActorObjectIds(Actor, Context);
+	}
+
+	json::JSON ActorJSON = SerializeActor(Actor, Context);
+	AnnotateActorRuntimeUUIDs(Actor, ActorJSON);
+	ActorJSON[SceneKeys::EditorUndoObjectReferences] = SerializeEditorUndoObjectReferenceMap(Context);
+	return ActorJSON;
+}
+
+json::JSON FSceneSaveManager::SerializeObjectPropertiesForEditorUndo(UObject* Object)
+{
+	if (!Object)
+	{
+		return json::JSON();
+	}
+
+	FSceneSaveContext Context;
+
+	// Details 속성은 actor/component 참조를 자주 담으므로 객체가 속한 world 전체를
+	// 같은 ObjectId context에 먼저 등록해 JSON archive의 객체 참조를 보존합니다.
+	if (UWorld* World = GetEditorUndoObjectWorld(Object))
+	{
+		CollectWorldObjectIds(World, Context);
+	}
+	else if (AActor* Actor = Cast<AActor>(Object))
+	{
+		CollectActorObjectIds(Actor, Context);
+	}
+	else if (UActorComponent* Component = Cast<UActorComponent>(Object))
+	{
+		if (AActor* Owner = Component->GetOwner())
+		{
+			CollectActorObjectIds(Owner, Context);
+		}
+	}
+
+	json::JSON ObjectJSON = json::Object();
+	ObjectJSON[SceneKeys::ClassName] = Object->GetClass()->GetName();
+	ObjectJSON[SceneKeys::ObjectId] = static_cast<int>(Context.RegisterSceneObject(Object));
+	WriteEditorUndoRuntimeUUID(ObjectJSON, Object);
+	ObjectJSON[SceneKeys::Properties] = SerializeProperties(Object, Context);
+	ObjectJSON[SceneKeys::EditorUndoObjectReferences] = SerializeEditorUndoObjectReferenceMap(Context);
+	return ObjectJSON;
+}
+
+void FSceneSaveManager::DeserializeObjectPropertiesForEditorUndo(UObject* Object, json::JSON ObjectJSON)
+{
+	using json::JSON;
+	if (!Object || ObjectJSON.JSONType() == JSON::Class::Null)
+	{
+		return;
+	}
+
+	if (!ObjectJSON.hasKey(SceneKeys::Properties))
+	{
+		return;
+	}
+
+	FSceneLoadContext LoadContextState;
+	RegisterEditorUndoObjectReferenceMap(ObjectJSON, LoadContextState);
+	LoadContextState.RegisterLoadedObject(ObjectJSON, Object);
+
+	// Runtime UUID는 command의 대상 검색 기준이므로 보통 이미 같지만,
+	// 스냅샷에 명시된 값이 있으면 동일성을 유지하도록 한 번 더 보정합니다.
+	RestoreEditorUndoRuntimeUUID(ObjectJSON, Object);
+	DeserializeProperties(Object, ObjectJSON[SceneKeys::Properties], LoadContextState);
+}
+
 // ---- Camera helpers ----
 
 json::JSON FSceneSaveManager::SerializeCamera(const FMinimalViewInfo* POV)
@@ -535,6 +813,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 			if (!ActorObj || !ActorObj->IsA<AActor>()) continue;
 			AActor* Actor = static_cast<AActor*>(ActorObj);
 			LoadContextState.RegisterLoadedObject(ActorJSON, Actor);
+			RestoreEditorUndoRuntimeUUID(ActorJSON, Actor);
 			World->AddActor(Actor);
 
 			if (ActorJSON.hasKey(SceneKeys::Name)) {
@@ -563,6 +842,7 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 
 					UActorComponent* Comp = static_cast<UActorComponent*>(CompObj);
 					LoadContextState.RegisterLoadedObject(CompJSON, Comp);
+					RestoreEditorUndoRuntimeUUID(CompJSON, Comp);
 					if (CompJSON.hasKey(SceneKeys::Name)) {
 						Comp->SetFName(FName(CompJSON[SceneKeys::Name].ToString()));
 					}
@@ -603,6 +883,213 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 	OutWorldContext.ContextHandle = FName(ContextHandle);
 }
 
+AActor* FSceneSaveManager::DeserializeActorForEditorUndo(UWorld* World, json::JSON ActorJSON)
+{
+	using json::JSON;
+	if (!World || ActorJSON.JSONType() == JSON::Class::Null)
+	{
+		return nullptr;
+	}
+
+	if (ActorJSON.hasKey(SceneKeys::RuntimeUUID))
+	{
+		const uint32 RuntimeUUID = static_cast<uint32>(ActorJSON[SceneKeys::RuntimeUUID].ToInt());
+		if (RuntimeUUID != 0)
+		{
+			if (AActor* ExistingActor = Cast<AActor>(UObjectManager::Get().FindByUUID(RuntimeUUID)))
+			{
+				if (ExistingActor->GetWorld() == World)
+				{
+					return ExistingActor;
+				}
+			}
+		}
+	}
+
+	string ActorClass = ActorJSON[SceneKeys::ClassName].ToString();
+	if (ActorClass.empty())
+	{
+		return nullptr;
+	}
+
+	UObject* ActorObj = FObjectFactory::Get().Create(ActorClass, World);
+	AActor* Actor = Cast<AActor>(ActorObj);
+	if (!Actor)
+	{
+		if (ActorObj)
+		{
+			UObjectManager::Get().DestroyObject(ActorObj);
+		}
+		return nullptr;
+	}
+
+	FSceneLoadContext LoadContextState;
+	RegisterEditorUndoObjectReferenceMap(ActorJSON, LoadContextState);
+	LoadContextState.RegisterLoadedObject(ActorJSON, Actor);
+	RestoreEditorUndoRuntimeUUID(ActorJSON, Actor);
+	World->AddActor(Actor);
+
+	if (ActorJSON.hasKey(SceneKeys::Name))
+	{
+		Actor->SetFName(FName(ActorJSON[SceneKeys::Name].ToString()));
+	}
+
+	if (ActorJSON.hasKey(SceneKeys::RootComponent))
+	{
+		JSON& RootJSON = ActorJSON[SceneKeys::RootComponent];
+		USceneComponent* Root = DeserializeSceneComponentTree(RootJSON, Actor, LoadContextState);
+		if (Root)
+		{
+			Actor->SetRootComponent(Root);
+		}
+	}
+
+	if (ActorJSON.hasKey(SceneKeys::Properties))
+	{
+		LoadContextState.QueueProperties(Actor, ActorJSON[SceneKeys::Properties]);
+	}
+
+	if (ActorJSON.hasKey(SceneKeys::NonSceneComponents))
+	{
+		for (auto& CompJSON : ActorJSON[SceneKeys::NonSceneComponents].ArrayRange())
+		{
+			string CompClass = CompJSON[SceneKeys::ClassName].ToString();
+			UObject* CompObj = FObjectFactory::Get().Create(CompClass, Actor);
+			UActorComponent* Comp = Cast<UActorComponent>(CompObj);
+			if (!Comp)
+			{
+				if (CompObj)
+				{
+					UObjectManager::Get().DestroyObject(CompObj);
+				}
+				continue;
+			}
+
+			LoadContextState.RegisterLoadedObject(CompJSON, Comp);
+			RestoreEditorUndoRuntimeUUID(CompJSON, Comp);
+			if (CompJSON.hasKey(SceneKeys::Name))
+			{
+				Comp->SetFName(FName(CompJSON[SceneKeys::Name].ToString()));
+			}
+			Actor->RegisterComponent(Comp);
+
+			if (CompJSON.hasKey(SceneKeys::Properties))
+			{
+				LoadContextState.QueueProperties(Comp, CompJSON[SceneKeys::Properties]);
+			}
+			DeserializeComponentEditorMetadata(Comp, CompJSON);
+		}
+	}
+
+	for (FPendingPropertyLoad& Pending : LoadContextState.PendingProperties)
+	{
+		if (Pending.Object && Pending.Properties)
+		{
+			DeserializeProperties(Pending.Object, *Pending.Properties, LoadContextState);
+		}
+	}
+
+	World->RemoveActorToOctree(Actor);
+	World->InsertActorToOctree(Actor);
+	World->BuildWorldPrimitivePickingBVHNow();
+	return Actor;
+}
+
+void FSceneSaveManager::ApplyActorSnapshotForEditorUndo(AActor* Actor, json::JSON ActorJSON)
+{
+	using json::JSON;
+	if (!Actor || ActorJSON.JSONType() == JSON::Class::Null)
+	{
+		return;
+	}
+
+	UWorld* World = Actor->GetWorld();
+	if (World)
+	{
+		// 기존 component proxy가 octree에 남아 있지 않도록 actor 단위 partition 항목을 먼저 제거합니다.
+		World->BeginDeferredPickingBVHUpdate();
+		World->RemoveActorToOctree(Actor);
+	}
+
+	// 기존 actor 객체는 유지하고 component 구조만 snapshot 기준으로 다시 구성합니다.
+	ClearActorComponentsForEditorUndo(Actor);
+
+	FSceneLoadContext LoadContextState;
+	RegisterEditorUndoObjectReferenceMap(ActorJSON, LoadContextState);
+	LoadContextState.RegisterLoadedObject(ActorJSON, Actor);
+	RestoreEditorUndoRuntimeUUID(ActorJSON, Actor);
+
+	if (ActorJSON.hasKey(SceneKeys::Name))
+	{
+		Actor->SetFName(FName(ActorJSON[SceneKeys::Name].ToString()));
+	}
+
+	if (ActorJSON.hasKey(SceneKeys::RootComponent))
+	{
+		JSON& RootJSON = ActorJSON[SceneKeys::RootComponent];
+		USceneComponent* Root = DeserializeSceneComponentTree(RootJSON, Actor, LoadContextState);
+		if (Root)
+		{
+			Actor->SetRootComponent(Root);
+		}
+	}
+
+	if (ActorJSON.hasKey(SceneKeys::Properties))
+	{
+		LoadContextState.QueueProperties(Actor, ActorJSON[SceneKeys::Properties]);
+	}
+
+	if (ActorJSON.hasKey(SceneKeys::NonSceneComponents))
+	{
+		for (auto& CompJSON : ActorJSON[SceneKeys::NonSceneComponents].ArrayRange())
+		{
+			string CompClass = CompJSON[SceneKeys::ClassName].ToString();
+			UObject* CompObj = FObjectFactory::Get().Create(CompClass, Actor);
+			UActorComponent* Comp = Cast<UActorComponent>(CompObj);
+			if (!Comp)
+			{
+				if (CompObj)
+				{
+					UObjectManager::Get().DestroyObject(CompObj);
+				}
+				continue;
+			}
+
+			LoadContextState.RegisterLoadedObject(CompJSON, Comp);
+			RestoreEditorUndoRuntimeUUID(CompJSON, Comp);
+			if (CompJSON.hasKey(SceneKeys::Name))
+			{
+				Comp->SetFName(FName(CompJSON[SceneKeys::Name].ToString()));
+			}
+			Actor->RegisterComponent(Comp);
+
+			if (CompJSON.hasKey(SceneKeys::Properties))
+			{
+				LoadContextState.QueueProperties(Comp, CompJSON[SceneKeys::Properties]);
+			}
+			DeserializeComponentEditorMetadata(Comp, CompJSON);
+		}
+	}
+
+	for (FPendingPropertyLoad& Pending : LoadContextState.PendingProperties)
+	{
+		if (Pending.Object && Pending.Properties)
+		{
+			DeserializeProperties(Pending.Object, *Pending.Properties, LoadContextState);
+		}
+	}
+
+	// actor subclass가 들고 있는 component raw pointer를 새 component 인스턴스로 다시 연결합니다.
+	Actor->PostDuplicate();
+
+	if (World)
+	{
+		World->InsertActorToOctree(Actor);
+		World->MarkWorldPrimitivePickingBVHDirty();
+		World->EndDeferredPickingBVHUpdate();
+	}
+}
+
 USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner, FSceneLoadContext& Context)
 {
 	string ClassName = Node[SceneKeys::ClassName].ToString();
@@ -611,6 +1098,7 @@ USceneComponent* FSceneSaveManager::DeserializeSceneComponentTree(json::JSON& No
 
 	USceneComponent* Comp = static_cast<USceneComponent*>(Obj);
 	Context.RegisterLoadedObject(Node, Comp);
+	RestoreEditorUndoRuntimeUUID(Node, Comp);
 	if (Node.hasKey(SceneKeys::Name)) {
 		Comp->SetFName(FName(Node[SceneKeys::Name].ToString()));
 	}

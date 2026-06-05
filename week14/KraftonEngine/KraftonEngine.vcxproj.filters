@@ -94,6 +94,9 @@
     <Filter Include="Source\Editor\UI\Util">
       <UniqueIdentifier>{5e482c7a-c7f9-9f9a-0119-c73c233f67d3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Undo">
+      <UniqueIdentifier>{626bf2b5-01dd-cd0b-dd13-160dc77ec1c8}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\Viewport">
       <UniqueIdentifier>{42b90bf1-e993-e912-0e50-58d7095d5e8c}</UniqueIdentifier>
     </Filter>
@@ -895,6 +898,12 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Util\NotificationToast.cpp">
       <Filter>Source\Editor\UI\Util</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Undo\EditorUndoCommand.cpp">
+      <Filter>Source\Editor\Undo</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Undo\EditorUndoManager.cpp">
+      <Filter>Source\Editor\Undo</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Editor\Viewport</Filter>
@@ -2068,6 +2077,12 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Util\NotificationToast.h">
       <Filter>Source\Editor\UI\Util</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Undo\EditorUndoCommand.h">
+      <Filter>Source\Editor\Undo</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Undo\EditorUndoManager.h">
+      <Filter>Source\Editor\Undo</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\EditorPreviewViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>

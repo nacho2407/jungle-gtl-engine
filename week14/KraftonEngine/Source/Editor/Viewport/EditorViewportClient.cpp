@@ -442,14 +442,16 @@ void FEditorViewportClient::TickEditorShortcuts()
 		EditorEngine->RequestEndPlayMap();
 	}
 
+	const bool bCtrlHeld = InputSystem::Get().GetKey(VK_CONTROL);
+
 	// 키보드 소유권과 UpdateInputOwner 의 WantTextInput 해제로 게이팅 일원화됨.
 	if (SelectionManager && InputSystem::Get().GetKeyDown(VK_DELETE))
 	{
-		SelectionManager->DeleteSelectedActors();
+		EditorEngine->DeleteSelectedActorsWithUndo();
 		return;
 	}
 
-	if (!InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('X'))
+	if (!bCtrlHeld && InputSystem::Get().GetKeyDown('X'))
 	{
 		EditorEngine->ToggleCoordSystem();
 		return;
@@ -490,11 +492,12 @@ void FEditorViewportClient::TickEditorShortcuts()
 		}
 	}
 
-	if (SelectionManager && InputSystem::Get().GetKey(VK_CONTROL) && InputSystem::Get().GetKeyDown('D'))
+	if (SelectionManager && bCtrlHeld && InputSystem::Get().GetKeyDown('D'))
 	{
 		const TArray<AActor*> ToDuplicate = SelectionManager->GetSelectedActors();
 		if (!ToDuplicate.empty())
 		{
+			const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(SelectionManager);
 			const FVector DuplicateOffsetStep(0.1f, 0.1f, 0.1f);
 			TArray<AActor*> NewSelection;
 			int32 DuplicateIndex = 0;
@@ -520,6 +523,15 @@ void FEditorViewportClient::TickEditorShortcuts()
 			if (EditorEngine->GetGizmo())
 			{
 				EditorEngine->GetGizmo()->UpdateGizmoTransform();
+			}
+
+			if (!NewSelection.empty())
+			{
+				EditorEngine->PushExecutedUndoCommand(MakeActorCreateUndoCommand(
+					NewSelection,
+					SelectionBefore,
+					CaptureEditorSelection(SelectionManager),
+					"Duplicate Actors"));
 			}
 		}
 	}
@@ -896,6 +908,7 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 			//	눌려있고, Holding되지 않았다면 다음 Loop부터 드래그 업데이트 시작
 			if (Gizmo->IsPressedOnHandle() && !Gizmo->IsHolding())
 			{
+				BeginGizmoUndoTransaction();
 				Gizmo->SetHolding(true);
 			}
 
@@ -954,15 +967,57 @@ void FEditorViewportClient::TickInteraction(float DeltaTime)
 		}
 		else
 		{
+			EndGizmoUndoTransaction();
 			Gizmo->DragEnd();
 		}
 	}
 	else if (Input.GetKeyUp(VK_LBUTTON))
 	{
 		// 드래그 threshold 미달로 DragEnd가 호출되지 않는 경우 처리
+		ResetGizmoUndoTransaction();
 		Gizmo->SetPressedOnHandle(false);
 		bIsMarqueeSelecting = false;
 	}
+}
+
+void FEditorViewportClient::BeginGizmoUndoTransaction()
+{
+	if (bGizmoUndoTransactionActive || !SelectionManager)
+	{
+		return;
+	}
+
+	GizmoUndoSelection = CaptureEditorSelection(SelectionManager);
+	GizmoUndoBefore = CaptureSelectedComponentTransforms(SelectionManager);
+	bGizmoUndoTransactionActive = !GizmoUndoBefore.empty();
+}
+
+void FEditorViewportClient::EndGizmoUndoTransaction()
+{
+	if (!bGizmoUndoTransactionActive || !SelectionManager)
+	{
+		ResetGizmoUndoTransaction();
+		return;
+	}
+
+	TArray<FEditorComponentTransformSnapshot> After = CaptureSelectedComponentTransforms(SelectionManager);
+	if (UEditorEngine* EditorEngine = Cast<UEditorEngine>(GEngine))
+	{
+		EditorEngine->PushExecutedUndoCommand(MakeTransformUndoCommand(
+			GizmoUndoBefore,
+			After,
+			GizmoUndoSelection,
+			"Transform Actors"));
+	}
+
+	ResetGizmoUndoTransaction();
+}
+
+void FEditorViewportClient::ResetGizmoUndoTransaction()
+{
+	bGizmoUndoTransactionActive = false;
+	GizmoUndoBefore.clear();
+	GizmoUndoSelection = FEditorSelectionSnapshot();
 }
 
 /**

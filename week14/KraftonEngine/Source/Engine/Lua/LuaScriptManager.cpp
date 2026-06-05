@@ -461,8 +461,14 @@ FInputSystemSnapshot FLuaScriptManager::GetLuaInputSnapshot()
 	{
 		if (UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient())
 		{
-			FInputSystemSnapshot Snapshot = GameViewportClient->GetGameInputSnapshot();
-			return Snapshot;
+			// 게임 입력 possess가 꺼져 있으면 Lua polling도 즉시 빈 입력을 보도록 차단.
+			// possess가 켜져 있는 동안에는 현재 프레임 InputSystem snapshot을 직접 사용해
+			// Standalone에서 GameViewportClient::ProcessInput 이전에 Lua Tick이 실행되는
+			// 1프레임 지연을 피한다.
+			if (!GameViewportClient->IsPossessed())
+			{
+				return FInputSystemSnapshot{};
+			}
 		}
 	}
 
@@ -512,6 +518,15 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		Input.set_function("GetKeyDown", [](int VK) { return GetLuaInputSnapshot().WasPressed(VK); });
 		Input.set_function("GetKey", [](int VK) { return GetLuaInputSnapshot().IsDown(VK); });
 		Input.set_function("GetKeyUp", [](int VK) { return GetLuaInputSnapshot().WasReleased(VK); });
+		Input.set_function("GetAxis", [](int InputCode) { return GetLuaInputSnapshot().GetAxisValue(InputCode); });
+		Input.set_function("GetGamepadAxis", [](int GamepadIndex, int AxisCode)
+		{
+			return GetLuaInputSnapshot().GetGamepadAxisValue(GamepadIndex, AxisCode);
+		});
+		Input.set_function("IsGamepadConnected", [](sol::optional<int> GamepadIndex)
+		{
+			return GetLuaInputSnapshot().IsGamepadConnected(GamepadIndex.value_or(-1));
+		});
 		Input.set_function("GetMouseDeltaX", []() { return GetLuaInputSnapshot().MouseDeltaX; });
 		Input.set_function("GetMouseDeltaY", []() { return GetLuaInputSnapshot().MouseDeltaY; });
 	}
@@ -594,6 +609,35 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Key["F6"] = VK_F6;
 	Key["F7"] = VK_F7;
 	Key["F8"] = VK_F8;
+	Key["MouseLeft"] = VK_LBUTTON;
+	Key["MouseRight"] = VK_RBUTTON;
+	Key["MouseMiddle"] = VK_MBUTTON;
+	Key["MouseXButton1"] = VK_XBUTTON1;
+	Key["MouseXButton2"] = VK_XBUTTON2;
+	Key["GamepadA"] = InputCodes::GamepadA;
+	Key["GamepadB"] = InputCodes::GamepadB;
+	Key["GamepadX"] = InputCodes::GamepadX;
+	Key["GamepadY"] = InputCodes::GamepadY;
+	Key["GamepadLeftShoulder"] = InputCodes::GamepadLeftShoulder;
+	Key["GamepadRightShoulder"] = InputCodes::GamepadRightShoulder;
+	Key["GamepadBack"] = InputCodes::GamepadBack;
+	Key["GamepadStart"] = InputCodes::GamepadStart;
+	Key["GamepadLeftThumb"] = InputCodes::GamepadLeftThumb;
+	Key["GamepadRightThumb"] = InputCodes::GamepadRightThumb;
+	Key["GamepadDPadUp"] = InputCodes::GamepadDPadUp;
+	Key["GamepadDPadDown"] = InputCodes::GamepadDPadDown;
+	Key["GamepadDPadLeft"] = InputCodes::GamepadDPadLeft;
+	Key["GamepadDPadRight"] = InputCodes::GamepadDPadRight;
+	Key["GamepadLeftTrigger"] = InputCodes::GamepadLeftTrigger;
+	Key["GamepadRightTrigger"] = InputCodes::GamepadRightTrigger;
+
+	sol::table Axis = Lua.create_named_table("Axis");
+	Axis["GamepadLeftX"] = InputCodes::GamepadLeftX;
+	Axis["GamepadLeftY"] = InputCodes::GamepadLeftY;
+	Axis["GamepadRightX"] = InputCodes::GamepadRightX;
+	Axis["GamepadRightY"] = InputCodes::GamepadRightY;
+	Axis["GamepadLeftTrigger"] = InputCodes::GamepadLeftTriggerAxis;
+	Axis["GamepadRightTrigger"] = InputCodes::GamepadRightTriggerAxis;
 
 	sol::table CameraManager = Lua.create_named_table("CameraManager");
 	CameraManager.set_function("ToggleActorCamera", [](const FString& ActorName, sol::optional<float> BlendTime)
@@ -1114,6 +1158,9 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("GetActionComponent",
 			"---@return ActionComponent?\nfunction Actor:GetActionComponent() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UActionComponent>(); })
+		.Method("GetInputComponent",
+			"---@return InputComponent?\nfunction Actor:GetInputComponent() end",
+			[](AActor& Actor) { return Actor.GetComponentByClass<UInputComponent>(); })
 		.Method("GetRootPrimitiveComponent",
 			"---@return PrimitiveComponent?\nfunction Actor:GetRootPrimitiveComponent() end",
 			[](AActor& Actor) -> UPrimitiveComponent* { return Cast<UPrimitiveComponent>(Actor.GetRootComponent()); })
@@ -1170,11 +1217,15 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 
 	// UInputComponent — Pawn::GetInputComponent 로 얻어 lua 에서 직접 매핑/binding 추가 가능.
 	// 예 (BeginPlay 안):
-	//   local input = obj:AsPawn():GetInputComponent()
+	//   local input = obj:GetInputComponent()
+	//   input:ClearAllMappingsAndBindings()
 	//   input:AddActionMapping("Jump", 0x20)   -- VK_SPACE = 0x20
 	//   input:BindAction("Jump", "Pressed", function() print("jump!") end)
 	Lua.new_usertype<UInputComponent>("InputComponent",
-		"AddAxisMapping",   &UInputComponent::AddAxisMapping,
+		"AddAxisMapping", [](UInputComponent& Self, const FString& Name, int InputCode, sol::optional<float> Scale)
+		{
+			Self.AddAxisMapping(Name, InputCode, Scale.value_or(1.0f));
+		},
 		"AddActionMapping", &UInputComponent::AddActionMapping,
 		"BindAxis", [](UInputComponent& Self, const FString& Name, sol::protected_function Cb)
 		{
@@ -1193,14 +1244,18 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 				if (!R.valid()) { sol::error e = R; UE_LOG("[Lua] BindAction cb error: %s", e.what()); }
 			});
 		},
-		"ClearBindings", &UInputComponent::ClearBindings);
+		"ClearBindings", &UInputComponent::ClearBindings,
+		"ClearMappings", &UInputComponent::ClearMappings,
+		"ClearAllMappingsAndBindings", &UInputComponent::ClearAllMappingsAndBindings);
 
 	FLuaDocRegistry::Get().Type("InputComponent")
-		.Method("---@param name string\n---@param key integer\nfunction InputComponent:AddAxisMapping(name, key) end")
+		.Method("---@param name string\n---@param key integer\n---@param scale? number\nfunction InputComponent:AddAxisMapping(name, key, scale) end")
 		.Method("---@param name string\n---@param key integer\nfunction InputComponent:AddActionMapping(name, key) end")
 		.Method("---@param name string\n---@param callback fun(value: number)\nfunction InputComponent:BindAxis(name, callback) end")
 		.Method("---@param name string\n---@param event 'Pressed'|'Released'\n---@param callback fun()\nfunction InputComponent:BindAction(name, event, callback) end")
-		.Method("function InputComponent:ClearBindings() end");
+		.Method("function InputComponent:ClearBindings() end")
+		.Method("function InputComponent:ClearMappings() end")
+		.Method("function InputComponent:ClearAllMappingsAndBindings() end");
 
 	// --- World binding — 런타임 액터 spawn 용 (Engine 일반 기능) ---
 	sol::table World = Lua.create_named_table("World");
