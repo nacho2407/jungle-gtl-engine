@@ -1,0 +1,36 @@
+.hover-image-button {
+	position: absolute;
+	overflow: visible;
+}
+
+.hover-image-box {
+	display: none;
+	position: absolute;
+	left: 0px;
+	top: -5%;
+	width: 100%;
+	height: 110%;
+	image-fit: fill;
+}
+
+.hover-image-label {
+	position: absolute;
+	left: 10px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	color: #858585;
+	line-height: 100%;
+	white-space: nowrap;
+	text-shadow: none;
+}
+
+.hover-image-button:hover .hover-image-box {
+	display: block;
+}
+
+.hover-image-button:hover .hover-image-label {
+	color: #111111;
+	animation-name: none;
+	text-shadow: none;
+}

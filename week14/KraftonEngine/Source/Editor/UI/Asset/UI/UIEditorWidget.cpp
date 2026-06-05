@@ -222,7 +222,7 @@ void FUIEditorWidget::RenderInspector()
 
 	FUIEditorTextElement& Element = Document.TextElements[SelectedElementIndex];
 
-	if (ImGui::Button("Delete Text Element"))
+	if (ImGui::Button(Element.bCanEditText ? "Delete Text Element" : "Delete Element"))
 	{
 		DeleteSelectedTextElement();
 		return;
@@ -292,6 +292,7 @@ void FUIEditorWidget::RenderInspector()
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}
+	ImGui::BeginDisabled(!Element.bCanEditText);
 	if (ImGui::DragFloat("Font Size", &Element.FontSize, 1.0f, 1.0f, 200.0f))
 	{
 		Element.bStyleDirty = true;
@@ -316,6 +317,13 @@ void FUIEditorWidget::RenderInspector()
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}
+
+	if (ImGui::ColorEdit4("Color", Element.Color, ImGuiColorEditFlags_AlphaPreviewHalf))
+	{
+		Element.bStyleDirty = true;
+		MarkDirty();
+	}
+	ImGui::EndDisabled();
 }
 
 void FUIEditorWidget::RenderPreviewControls()

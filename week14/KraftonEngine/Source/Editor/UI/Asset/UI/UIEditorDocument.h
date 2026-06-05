@@ -38,6 +38,7 @@ struct FUIEditorTextElement
 
 	float FontSize = 24.0f;
 	FString FontWeight = "normal";
+	float Color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
 	FSourceRange OpenTagRange;
 	FSourceRange ElementRange;
@@ -51,6 +52,7 @@ struct FUIEditorTextElement
 	FStyleValueSpan HeightStyle;
 	FStyleValueSpan FontSizeStyle;
 	FStyleValueSpan FontWeightStyle;
+	FStyleValueSpan ColorStyle;
 
 	bool bCanEditText = true;
 	bool bTextDirty = false;

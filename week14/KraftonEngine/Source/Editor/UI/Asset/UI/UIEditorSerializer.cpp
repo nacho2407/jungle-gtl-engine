@@ -367,6 +367,32 @@ namespace
 		return nullptr;
 	}
 
+	bool HasClassToken(const FAttributeSpan* ClassAttribute, const FString& ClassToken)
+	{
+		if (!ClassAttribute)
+		{
+			return false;
+		}
+
+		std::istringstream Tokens(ClassAttribute->Value);
+		FString Token;
+		while (Tokens >> Token)
+		{
+			if (EqualsIgnoreCase(Token, ClassToken))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool IsKnownTemplateElement(const FAttributeSpan* ClassAttribute)
+	{
+		return HasClassToken(ClassAttribute, "hover-image-button") ||
+			HasClassToken(ClassAttribute, "dialogue-box") ||
+			HasClassToken(ClassAttribute, "dialogue-layer");
+	}
+
 	int32 FindMatchingEndTag(const FString& Source, const FString& TagName, int32 SearchStart)
 	{
 		const FString LowerTag = ToLowerCopy(TagName);
@@ -497,6 +523,160 @@ namespace
 		return Span.bExistsInSource && Span.OriginalValue.find('%') != FString::npos;
 	}
 
+	int HexDigitValue(char C)
+	{
+		if (C >= '0' && C <= '9') return C - '0';
+		if (C >= 'a' && C <= 'f') return 10 + C - 'a';
+		if (C >= 'A' && C <= 'F') return 10 + C - 'A';
+		return -1;
+	}
+
+	bool ParseHexByte(const FString& Value, size_t Offset, int& OutByte)
+	{
+		if (Offset + 1 >= Value.size())
+		{
+			return false;
+		}
+
+		const int High = HexDigitValue(Value[Offset]);
+		const int Low = HexDigitValue(Value[Offset + 1]);
+		if (High < 0 || Low < 0)
+		{
+			return false;
+		}
+
+		OutByte = High * 16 + Low;
+		return true;
+	}
+
+	bool ParseCssColor(const FString& CssColor, float OutColor[4])
+	{
+		const FString Value = TrimCopy(CssColor);
+		const FString Lower = ToLowerCopy(Value);
+		OutColor[0] = 1.0f;
+		OutColor[1] = 1.0f;
+		OutColor[2] = 1.0f;
+		OutColor[3] = 1.0f;
+
+		if (Lower == "white")
+		{
+			return true;
+		}
+		if (Lower == "black")
+		{
+			OutColor[0] = 0.0f;
+			OutColor[1] = 0.0f;
+			OutColor[2] = 0.0f;
+			return true;
+		}
+		if (Lower == "transparent")
+		{
+			OutColor[3] = 0.0f;
+			return true;
+		}
+
+		if (Value.size() == 4 && Value[0] == '#')
+		{
+			const int R = HexDigitValue(Value[1]);
+			const int G = HexDigitValue(Value[2]);
+			const int B = HexDigitValue(Value[3]);
+			if (R < 0 || G < 0 || B < 0)
+			{
+				return false;
+			}
+			OutColor[0] = static_cast<float>(R * 17) / 255.0f;
+			OutColor[1] = static_cast<float>(G * 17) / 255.0f;
+			OutColor[2] = static_cast<float>(B * 17) / 255.0f;
+			return true;
+		}
+
+		if ((Value.size() == 7 || Value.size() == 9) && Value[0] == '#')
+		{
+			int R = 255;
+			int G = 255;
+			int B = 255;
+			int A = 255;
+			if (!ParseHexByte(Value, 1, R) || !ParseHexByte(Value, 3, G) || !ParseHexByte(Value, 5, B))
+			{
+				return false;
+			}
+			if (Value.size() == 9 && !ParseHexByte(Value, 7, A))
+			{
+				return false;
+			}
+			OutColor[0] = static_cast<float>(R) / 255.0f;
+			OutColor[1] = static_cast<float>(G) / 255.0f;
+			OutColor[2] = static_cast<float>(B) / 255.0f;
+			OutColor[3] = static_cast<float>(A) / 255.0f;
+			return true;
+		}
+
+		const bool bRgb = Lower.rfind("rgb(", 0) == 0 || Lower.rfind("rgba(", 0) == 0;
+		if (bRgb)
+		{
+			const size_t Open = Value.find('(');
+			const size_t Close = Value.find(')', Open == FString::npos ? 0 : Open);
+			if (Open == FString::npos || Close == FString::npos || Close <= Open)
+			{
+				return false;
+			}
+
+			FString Inner = Value.substr(Open + 1, Close - Open - 1);
+			TArray<float> Components;
+			size_t Start = 0;
+			while (Start < Inner.size())
+			{
+				const size_t Comma = Inner.find(',', Start);
+				const FString Token = TrimCopy(Inner.substr(Start, Comma == FString::npos ? FString::npos : Comma - Start));
+				try
+				{
+					Components.push_back(std::stof(Token));
+				}
+				catch (...)
+				{
+					return false;
+				}
+
+				if (Comma == FString::npos)
+				{
+					break;
+				}
+				Start = Comma + 1;
+			}
+
+			if (Components.size() < 3)
+			{
+				return false;
+			}
+
+			OutColor[0] = std::clamp(Components[0] / 255.0f, 0.0f, 1.0f);
+			OutColor[1] = std::clamp(Components[1] / 255.0f, 0.0f, 1.0f);
+			OutColor[2] = std::clamp(Components[2] / 255.0f, 0.0f, 1.0f);
+			OutColor[3] = Components.size() > 3 ? std::clamp(Components[3], 0.0f, 1.0f) : 1.0f;
+			return true;
+		}
+
+		return false;
+	}
+
+	FString FormatCssColor(const float Color[4])
+	{
+		const int R = static_cast<int>(std::clamp(Color[0], 0.0f, 1.0f) * 255.0f + 0.5f);
+		const int G = static_cast<int>(std::clamp(Color[1], 0.0f, 1.0f) * 255.0f + 0.5f);
+		const int B = static_cast<int>(std::clamp(Color[2], 0.0f, 1.0f) * 255.0f + 0.5f);
+		const float A = std::clamp(Color[3], 0.0f, 1.0f);
+
+		char Buffer[64];
+		if (A < 0.999f)
+		{
+			std::snprintf(Buffer, sizeof(Buffer), "rgba(%d, %d, %d, %.3f)", R, G, B, A);
+			return Buffer;
+		}
+
+		std::snprintf(Buffer, sizeof(Buffer), "#%02X%02X%02X", R, G, B);
+		return Buffer;
+	}
+
 	FString FormatFloatValue(float Value, const char* Unit)
 	{
 		char Buffer[64];
@@ -527,7 +707,23 @@ namespace
 		Out << "width: " << FormatFloatValue(Width, LayoutUnit) << "; ";
 		Out << "height: " << FormatFloatValue(Height, LayoutUnit) << "; ";
 		Out << "font-size: " << FormatFloatValue(FontSize, "px") << "; ";
-		Out << "font-weight: " << FormatFontWeight(Element.FontWeight) << ";";
+		Out << "font-weight: " << FormatFontWeight(Element.FontWeight) << "; ";
+		Out << "color: " << FormatCssColor(Element.Color) << ";";
+		return Out.str();
+	}
+
+	FString BuildLayoutStyleText(const FUIEditorTextElement& Element)
+	{
+		const char* LayoutUnit = Element.bUsePercentLayout ? "%" : "px";
+		const float Width = (std::max)(1.0f, Element.Width);
+		const float Height = (std::max)(1.0f, Element.Height);
+
+		std::ostringstream Out;
+		Out << "position: absolute; ";
+		Out << "left: " << FormatFloatValue(Element.X, LayoutUnit) << "; ";
+		Out << "top: " << FormatFloatValue(Element.Y, LayoutUnit) << "; ";
+		Out << "width: " << FormatFloatValue(Width, LayoutUnit) << "; ";
+		Out << "height: " << FormatFloatValue(Height, LayoutUnit) << ";";
 		return Out.str();
 	}
 
@@ -639,7 +835,8 @@ bool FUIEditorSerializer::Save(FUIEditorDocument& Document, FString* OutError)
 		if (!Element.StyleAttributeValueRange.IsValid())
 		{
 			const int32 InsertPos = Element.OpenTagRange.End - 1;
-			Patches.push_back({ InsertPos, InsertPos, " style=\"" + BuildStyleText(Element) + "\"" });
+			const FString StyleText = Element.bCanEditText ? BuildStyleText(Element) : BuildLayoutStyleText(Element);
+			Patches.push_back({ InsertPos, InsertPos, " style=\"" + StyleText + "\"" });
 			continue;
 		}
 
@@ -653,8 +850,12 @@ bool FUIEditorSerializer::Save(FUIEditorDocument& Document, FString* OutError)
 		AddStyleValuePatchOrAppend(Element, Element.TopStyle, FormatFloatValue(Element.Y, LayoutUnit), Patches, MissingProperties);
 		AddStyleValuePatchOrAppend(Element, Element.WidthStyle, FormatFloatValue((std::max)(1.0f, Element.Width), LayoutUnit), Patches, MissingProperties);
 		AddStyleValuePatchOrAppend(Element, Element.HeightStyle, FormatFloatValue((std::max)(1.0f, Element.Height), LayoutUnit), Patches, MissingProperties);
-		AddStyleValuePatchOrAppend(Element, Element.FontSizeStyle, FormatFloatValue((std::max)(1.0f, Element.FontSize), "px"), Patches, MissingProperties);
-		AddStyleValuePatchOrAppend(Element, Element.FontWeightStyle, FormatFontWeight(Element.FontWeight), Patches, MissingProperties);
+		if (Element.bCanEditText)
+		{
+			AddStyleValuePatchOrAppend(Element, Element.FontSizeStyle, FormatFloatValue((std::max)(1.0f, Element.FontSize), "px"), Patches, MissingProperties);
+			AddStyleValuePatchOrAppend(Element, Element.FontWeightStyle, FormatFontWeight(Element.FontWeight), Patches, MissingProperties);
+			AddStyleValuePatchOrAppend(Element, Element.ColorStyle, FormatCssColor(Element.Color), Patches, MissingProperties);
+		}
 
 		if (!MissingProperties.empty())
 		{
@@ -741,26 +942,29 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 		}
 		const int32 CloseTagEnd = static_cast<int32>(CloseTagEndPos) + 1;
 
+		const FAttributeSpan* ClassAttribute = FindAttribute(Attributes, "class");
+		const FAttributeSpan* StyleAttribute = FindAttribute(Attributes, "style");
+		const FAttributeSpan* UIEditorAttribute = FindAttribute(Attributes, "data-ui-editor");
 		const FString InnerSource = Rml.substr(TagEnd, CloseTagBegin - TagEnd);
-		if (InnerSource.find('<') != FString::npos)
+		const bool bHasChildElements = InnerSource.find('<') != FString::npos;
+		const bool bExplicitTextElement = UIEditorAttribute && EqualsIgnoreCase(UIEditorAttribute->Value, "text");
+		const bool bKnownTemplateElement = IsKnownTemplateElement(ClassAttribute);
+		if (bHasChildElements && !bKnownTemplateElement)
 		{
 			Cursor = TagEnd;
 			continue;
 		}
 
-		const FAttributeSpan* ClassAttribute = FindAttribute(Attributes, "class");
-		const FAttributeSpan* StyleAttribute = FindAttribute(Attributes, "style");
-
 		FUIEditorTextElement Element;
 		Element.TagName = ToLowerCopy(TagName);
 		Element.Id = DecodeXml(IdAttribute->Value);
 		Element.ClassName = ClassAttribute ? DecodeXml(ClassAttribute->Value) : FString {};
-		Element.Text = DecodeXml(TrimCopy(InnerSource));
+		Element.Text = bHasChildElements ? FString {} : DecodeXml(TrimCopy(InnerSource));
 		Element.OpenTagRange = { TagBegin, TagEnd };
 		Element.ElementRange = { TagBegin, CloseTagEnd };
-		Element.InnerTextRange = { TagEnd, CloseTagBegin };
+		Element.InnerTextRange = bHasChildElements ? FSourceRange {} : FSourceRange { TagEnd, CloseTagBegin };
 		Element.StyleAttributeValueRange = StyleAttribute ? StyleAttribute->ValueRange : FSourceRange {};
-		Element.bCanEditText = true;
+		Element.bCanEditText = !bHasChildElements || bExplicitTextElement;
 
 		Element.PositionStyle = ParseStyleProperty(Rml, StyleAttribute, "position");
 		Element.LeftStyle = ParseStyleProperty(Rml, StyleAttribute, "left");
@@ -769,6 +973,7 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 		Element.HeightStyle = ParseStyleProperty(Rml, StyleAttribute, "height");
 		Element.FontSizeStyle = ParseStyleProperty(Rml, StyleAttribute, "font-size");
 		Element.FontWeightStyle = ParseStyleProperty(Rml, StyleAttribute, "font-weight");
+		Element.ColorStyle = ParseStyleProperty(Rml, StyleAttribute, "color");
 
 		Element.X = ParseStyleFloat(Element.LeftStyle, Element.X);
 		Element.Y = ParseStyleFloat(Element.TopStyle, Element.Y);
@@ -782,6 +987,10 @@ bool FUIEditorSerializer::ParseEditableTextElements(const FString& Rml, FUIEdito
 			{
 				Element.FontWeight = "900";
 			}
+		}
+		if (Element.ColorStyle.bExistsInSource)
+		{
+			ParseCssColor(Element.ColorStyle.OriginalValue, Element.Color);
 		}
 		Element.bUsePercentLayout =
 			IsPercentStyle(Element.LeftStyle) &&

@@ -11,7 +11,7 @@ body {
 		color: #ffffff;
 	}
 	50% {
-		color: #bdbdbd;
+		color: #707070;
 	}
 	100% {
 		color: #ffffff;
@@ -59,7 +59,7 @@ body {
 	font-weight: 900;
 	line-height: 112px;
 	letter-spacing: 0px;
-	color: #ffffff;
+	color: #FAFAFA;
 	white-space: nowrap;
 }
 
@@ -70,9 +70,10 @@ body {
 .menu-primary {
 	font-size: 54px;
 	font-weight: 700;
-	line-height: 62px;
-	color: #b8b8b8;
+	line-height: 100%;
+	color: #858585;
 	white-space: nowrap;
+	overflow: visible;
 }
 
 .menu-primary:hover {
@@ -92,14 +93,16 @@ body {
 
 .menu-node {
 	color: #f5f2ee;
+	overflow: visible;
 }
 
 .menu-child {
 	font-size: 34px;
 	font-weight: 400;
-	line-height: 40px;
-	color: #b8b8b8;
+	line-height: 100%;
+	color: #858585;
 	white-space: nowrap;
+	overflow: visible;
 }
 
 .menu-child:hover {
@@ -112,17 +115,55 @@ body {
 	text-shadow: none;
 }
 
-#quit-button {
-	padding-left: 10px;
-	padding-right: 18px;
-	line-height: 32px;
+#new-game-button {
+	width: 150px;
+	height: 34px;
 }
 
-#quit-button:hover {
-	color: #111111;
-	background-color: #d0d0d0;
-	animation-name: none;
-	text-shadow: none;
+#new-game-button .hover-image-label {
+	font-size: 24px;
+	font-weight: 400;
+}
+
+#continue-button {
+	width: 150px;
+	height: 34px;
+}
+
+#continue-button .hover-image-label {
+	font-size: 24px;
+	font-weight: 400;
+}
+
+#settings-button {
+	width: 170px;
+	height: 44px;
+}
+
+#settings-button .hover-image-label {
+	font-size: 36px;
+	font-weight: 700;
+}
+
+#credits-button {
+	width: 150px;
+	height: 44px;
+}
+
+#credits-button .hover-image-label {
+	font-size: 36px;
+	font-weight: 700;
+}
+
+#quit-button {
+	width: 80px;
+	height: 34px;
+	line-height: 100%;
+}
+
+#quit-button .hover-image-label {
+	font-size: 24px;
+	font-weight: 400;
 }
 
 .menu-secondary {
