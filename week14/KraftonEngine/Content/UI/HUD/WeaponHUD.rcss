@@ -33,8 +33,8 @@ body {
 
 .weapon-hud-rifle-image {
 	position: absolute;
-	left: 15.00px;
-	top: 21.00px;
+	left: 18.00px;
+	top: 18.00px;
 	width: 140.00px;
 	height: 45.00px;
 	opacity: 0.9;
@@ -56,8 +56,8 @@ body {
 
 .weapon-hud-current-ammo {
 	position: absolute;
-	left: 168.00px;
-	top: 22.00px;
+	left: 170.00px;
+	top: 20.00px;
 	width: 46px;
 	height: 42px;
 	font-size: 37.00px;
@@ -65,11 +65,11 @@ body {
 	line-height: 42px;
 	text-align: right;
 	color: #FFFFFF;
-}
+ bottom: auto;}
 
 .weapon-hud-magazine-ammo {
 	position: absolute;
-	left: 238.00px;
+	left: 237.00px;
 	top: 32.00px;
 	width: 61.00px;
 	height: 32px;
