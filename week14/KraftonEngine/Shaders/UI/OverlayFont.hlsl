@@ -18,5 +18,5 @@ float4 PS(PS_Input_Tex input) : SV_TARGET
     if (col.r < 0.1f)
         discard;
 
-    return float4(0.6f, 1.0f, 1.0f, col.r);
+    return float4(1.0f, 0.05f, 0.05f, col.r);
 }

@@ -3,6 +3,7 @@
 #include "Editor/EditorEngine.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/Viewport/Level/LevelEditorViewportClient.h"
+#include "Component/Movement/CharacterMovementComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
@@ -30,6 +31,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstring>
 #include <random>
 #include <utility>
 
@@ -56,6 +58,84 @@ const FDebugPlaceActorOption GDebugPlaceActorOptions[] = {
 	{ "Character",     FLevelViewportLayout::EViewportPlaceActorType::Character },
 	{ "Lua Character", FLevelViewportLayout::EViewportPlaceActorType::LuaCharacter },
 };
+
+const char* BoolText(bool bValue)
+{
+	return bValue ? "Y" : "N";
+}
+
+ImVec4 GetWallRunStatusColor(const char* Status)
+{
+	if (!Status)
+	{
+		return ImVec4(0.75f, 0.75f, 0.75f, 1.0f);
+	}
+	if (std::strcmp(Status, "ACTIVE") == 0)
+	{
+		return ImVec4(0.20f, 1.0f, 0.42f, 1.0f);
+	}
+	if (std::strncmp(Status, "NO_", 3) == 0 ||
+		std::strncmp(Status, "BAD_", 4) == 0 ||
+		std::strncmp(Status, "ENDED_", 6) == 0)
+	{
+		return ImVec4(1.0f, 0.28f, 0.22f, 1.0f);
+	}
+	if (std::strcmp(Status, "LOW_SPEED") == 0 || std::strcmp(Status, "NOT_FALLING") == 0)
+	{
+		return ImVec4(1.0f, 0.78f, 0.22f, 1.0f);
+	}
+	return ImVec4(0.85f, 0.85f, 0.85f, 1.0f);
+}
+
+UCharacterMovementComponent* FindWallRunDebugMovement(UEditorEngine* EditorEngine, AActor*& OutActor)
+{
+	OutActor = nullptr;
+	if (!EditorEngine)
+	{
+		return nullptr;
+	}
+
+	auto TryActor = [&](AActor* Actor) -> UCharacterMovementComponent*
+	{
+		if (!Actor || !IsAliveObject(Actor))
+		{
+			return nullptr;
+		}
+
+		if (UCharacterMovementComponent* Movement = Actor->GetComponentByClass<UCharacterMovementComponent>())
+		{
+			OutActor = Actor;
+			return Movement;
+		}
+		return nullptr;
+	};
+
+	if (UCharacterMovementComponent* Movement = TryActor(EditorEngine->GetSelectionManager().GetPrimarySelection()))
+	{
+		return Movement;
+	}
+
+	UWorld* World = EditorEngine->GetWorld();
+	if (!World)
+	{
+		return nullptr;
+	}
+
+	for (AActor* Actor : World->GetActors())
+	{
+		if (UCharacterMovementComponent* Movement = TryActor(Actor))
+		{
+			return Movement;
+		}
+	}
+
+	return nullptr;
+}
+
+void DrawDebugVectorLine(const char* Label, const FVector& Value)
+{
+	ImGui::Text("%s: %.2f, %.2f, %.2f", Label, Value.X, Value.Y, Value.Z);
+}
 
 constexpr float GEditorShortcutRepeatInitialDelay = 0.35f;
 constexpr float GEditorShortcutRepeatInterval = 0.08f;
@@ -199,6 +279,11 @@ void FEditorMainPanel::Render(float DeltaTime)
 		AnimationDebugWidget.Render(DeltaTime);
 	}
 
+	if (Settings.UI.bWallRunDebug)
+	{
+		RenderWallRunDebugWindow();
+	}
+
 	ProjectSettingsWidget.Render();
 	WorldSettingsWidget.Render();
 
@@ -280,6 +365,7 @@ void FEditorMainPanel::RenderMainMenuBar()
 		ImGui::Checkbox("Editor Debug", &Settings.UI.bEditorDebug);
 		ImGui::Checkbox("Shadow Map Debug", &Settings.UI.bShadowMapDebug);
 		ImGui::Checkbox("Animation Debug", &Settings.UI.bAnimationDebug);
+		ImGui::Checkbox("Wall Run Debug", &Settings.UI.bWallRunDebug);
 		ImGui::Checkbox("IMGUI_Setting", &Settings.UI.bImGUISettings);
 		ImGui::EndPopup();
 	}
@@ -557,6 +643,87 @@ void FEditorMainPanel::RenderEditorDebugPanel()
 		{
 			bPendingClearLastBatch = true;
 		}
+	}
+
+	ImGui::End();
+}
+
+void FEditorMainPanel::RenderWallRunDebugWindow()
+{
+	FEditorSettings& Settings = FEditorSettings::Get();
+
+	ImGui::SetNextWindowSize(ImVec2(460.0f, 360.0f), ImGuiCond_FirstUseEver);
+	if (!ImGui::Begin("Wall Run Debug", &Settings.UI.bWallRunDebug))
+	{
+		ImGui::End();
+		return;
+	}
+
+	AActor* TargetActor = nullptr;
+	UCharacterMovementComponent* Movement = FindWallRunDebugMovement(EditorEngine, TargetActor);
+	if (!Movement)
+	{
+		ImGui::TextDisabled("No CharacterMovementComponent found.");
+		ImGui::TextDisabled("Select a character or run a scene with a character.");
+		ImGui::End();
+		return;
+	}
+
+	FWallRunDebugSnapshot Snapshot = Movement->GetWallRunDebugSnapshot();
+
+	ImGui::Text("Target: %s", TargetActor ? TargetActor->GetName().c_str() : "(none)");
+	ImGui::Text("Mode: %s", Snapshot.MovementModeName);
+	ImGui::SameLine();
+	ImGui::TextColored(GetWallRunStatusColor(Snapshot.StatusName), "Status: %s", Snapshot.StatusName);
+	ImGui::Separator();
+
+	ImGui::Checkbox("Enable Wall Run", &Movement->bEnableWallRun);
+	ImGui::Checkbox("Draw Distance Ring", &Movement->bDrawWallRunDistanceDebug);
+	ImGui::Checkbox("UE_LOG Diagnostics", &Movement->bLogWallRunDiagnostics);
+	ImGui::Checkbox("Legacy Screen Text", &Movement->bShowWallRunStatusText);
+
+	ImGui::Separator();
+	ImGui::Text("Speed: %.2f   Planar: %.2f   Along: %.2f / %.2f",
+		Snapshot.Speed,
+		Snapshot.PlanarSpeed,
+		Snapshot.AlongWallSpeed,
+		Snapshot.MinStartSpeed);
+	ImGui::Text("Check Distance: %.2f   Sphere Radius: %.2f",
+		Snapshot.WallCheckDistance,
+		Snapshot.WallCheckSphereRadius);
+	ImGui::Text("Elapsed: %.2f / %.2f   Side: %s",
+		Snapshot.WallRunElapsedTime,
+		Snapshot.MaxWallRunTime,
+		Snapshot.bOnRightSide ? "Right" : "Left");
+
+	if (Snapshot.bHasHit)
+	{
+		ImGui::Text("Hit: Y   Distance: %.2f   UpDot: %.2f",
+			Snapshot.HitDistance,
+			Snapshot.HitUpDot);
+		ImGui::Text("Actor: %s", Snapshot.HitActorName.c_str());
+		ImGui::Text("Component: %s", Snapshot.HitComponentName.c_str());
+	}
+	else
+	{
+		ImGui::TextDisabled("Hit: N");
+	}
+
+	if (ImGui::CollapsingHeader("Vectors", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		DrawDebugVectorLine("Velocity", Snapshot.Velocity);
+		DrawDebugVectorLine("Wall Normal", Snapshot.WallNormal);
+		DrawDebugVectorLine("Wall Direction", Snapshot.WallDirection);
+		DrawDebugVectorLine("Hit Normal", Snapshot.HitNormal);
+	}
+
+	if (ImGui::CollapsingHeader("Runtime Flags"))
+	{
+		ImGui::Text("WallRunEnabled: %s", BoolText(Snapshot.bWallRunEnabled));
+		ImGui::Text("IsWallRunning: %s", BoolText(Snapshot.bIsWallRunning));
+		ImGui::Text("DrawDistanceDebug: %s", BoolText(Snapshot.bDrawDistanceDebug));
+		ImGui::Text("LogDiagnostics: %s", BoolText(Snapshot.bLogDiagnostics));
+		ImGui::Text("LegacyScreenText: %s", BoolText(Snapshot.bLegacyScreenText));
 	}
 
 	ImGui::End();

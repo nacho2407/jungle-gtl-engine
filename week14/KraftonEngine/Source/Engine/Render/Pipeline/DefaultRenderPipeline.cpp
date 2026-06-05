@@ -35,7 +35,6 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 		Frame.SetRenderOptions(Opts);
 
 		Scene = &World->GetScene();
-		Scene->ClearFrameData();
 
 		Builder.BeginCollect(Frame);
 		FCollectOutput Output;
@@ -52,5 +51,9 @@ void FDefaultRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 
 	Renderer.BeginFrame();
 	Renderer.Render(Frame, World, *Scene);
+	if (Scene)
+	{
+		Scene->ClearFrameData();
+	}
 	Renderer.EndFrame();
 }

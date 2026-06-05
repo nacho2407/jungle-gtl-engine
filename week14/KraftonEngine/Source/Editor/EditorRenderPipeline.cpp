@@ -241,6 +241,8 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 			Frame.View, Frame.Proj,
 			VP->GetWidth(), VP->GetHeight());
 	}
+
+	Scene.ClearFrameData();
 }
 
 // ============================================================
@@ -361,7 +363,6 @@ void FEditorRenderPipeline::CollectCommands(FLevelEditorViewportClient* VC, UWor
 	SCOPE_STAT_CAT("Collector", "3_Collect");
 
 	FScene& Scene = World->GetScene();
-	Scene.ClearFrameData();
 
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
 	Builder.BeginCollect(Frame);
@@ -432,7 +433,6 @@ void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* 
 	Frame.SetRenderOptions(VC->GetRenderOptions());
 
 	FScene& Scene = World->GetScene();
-	Scene.ClearFrameData();
 
 	FCollectOutput Output;
 	FDrawCommandBuilder& Builder = Renderer.GetBuilder();
@@ -444,4 +444,5 @@ void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* 
 	Builder.BuildCommands(Frame, &Scene, Output);
 
 	Renderer.Render(Frame, World, Scene);
+	Scene.ClearFrameData();
 }

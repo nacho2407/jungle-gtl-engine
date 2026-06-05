@@ -60,6 +60,7 @@ private:
 	void RenderMainDockSpace(float ReservedBottomHeight);
 	void RenderShortcutOverlay();
 	void RenderEditorDebugPanel();
+	void RenderWallRunDebugWindow();
 	void RenderConsoleDrawer(float DeltaTime);
 	void RenderFooterOverlay(float DeltaTime);
 
