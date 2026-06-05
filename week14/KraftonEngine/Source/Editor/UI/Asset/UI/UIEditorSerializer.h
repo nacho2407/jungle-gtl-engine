@@ -8,7 +8,7 @@
 class FUIEditorSerializer
 {
 public:
-	static bool Load(const std::filesystem::path& Path, FUIEditorDocument& OutDocument, FString* OutError = nullptr);
+	static bool Load(const std::filesystem::path& Path, FUIEditorDocument& OutDocument, FString* OutError = nullptr, bool bForceSourceReload = false);
 	static bool SaveDraft(FUIEditorDocument& Document, FString* OutError = nullptr);
 	static bool Commit(FUIEditorDocument& Document, FString* OutError = nullptr);
 

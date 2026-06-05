@@ -1,30 +1,29 @@
 local widget = nil
 local quitWidget = nil
+local statWidget = nil
 local statVisible = false
 local quitVisible = false
 local show_quit_panel = nil
-
-local function set_visible(elementId, visible)
-    if widget == nil then
-        return
-    end
-
-    widget:SetProperty(elementId, "display", visible and "block" or "none")
-end
 
 local function show_stat_panel(visible)
     statVisible = visible
     if visible then
         show_quit_panel(false)
+        if statWidget ~= nil and not statWidget:IsInViewport() then
+            statWidget:AddToViewportZ(150)
+        end
+    elseif statWidget ~= nil and statWidget:IsInViewport() then
+        statWidget:RemoveFromParent()
     end
-    set_visible("stat-panel", visible)
 end
 
 show_quit_panel = function(visible)
     quitVisible = visible
     if visible then
         statVisible = false
-        set_visible("stat-panel", false)
+        if statWidget ~= nil and statWidget:IsInViewport() then
+            statWidget:RemoveFromParent()
+        end
         if quitWidget ~= nil and not quitWidget:IsInViewport() then
             quitWidget:AddToViewportZ(200)
         end
@@ -79,6 +78,8 @@ function BeginPlay()
     quitWidget:SetWantsMouse(true)
     bind_quit_dialog_clicks()
 
+    statWidget = UI.CreateWidget("Content/UI/Title/TitleScoreBoard.rml")
+
     show_stat_panel(false)
     show_quit_panel(false)
 
@@ -98,6 +99,11 @@ function EndPlay()
         quitWidget:RemoveFromParent()
     end
     quitWidget = nil
+
+    if statWidget ~= nil and statWidget:IsInViewport() then
+        statWidget:RemoveFromParent()
+    end
+    statWidget = nil
 
     if widget ~= nil and widget:IsInViewport() then
         widget:RemoveFromParent()

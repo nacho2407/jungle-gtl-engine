@@ -412,7 +412,7 @@ namespace
 		return nullptr;
 	}
 
-	bool PrepareLinkedStyleSheets(const std::filesystem::path& DocumentPath, FString& Rml, FUIEditorDocument& Document, FString* OutError)
+	bool PrepareLinkedStyleSheets(const std::filesystem::path& DocumentPath, FString& Rml, FUIEditorDocument& Document, FString* OutError, bool bForceSourceReload)
 	{
 		TArray<FTextPatch> Patches;
 		int32 Cursor = 0;
@@ -471,7 +471,14 @@ namespace
 			}
 
 			FString CssSource;
-			if (std::filesystem::exists(DraftPath))
+			if (bForceSourceReload && std::filesystem::exists(SourcePath))
+			{
+				if (!ReadTextFile(SourcePath, CssSource, OutError) || !WriteTextFile(DraftPath, CssSource, OutError))
+				{
+					return false;
+				}
+			}
+			else if (std::filesystem::exists(DraftPath))
 			{
 				if (!ReadTextFile(DraftPath, CssSource, OutError))
 				{
@@ -520,6 +527,56 @@ namespace
 			ApplyPatchesDescending(Rml, Patches);
 		}
 		return true;
+	}
+
+	void RestoreSourceStyleSheetLinks(const std::filesystem::path& DocumentPath, FString& Rml)
+	{
+		TArray<FTextPatch> Patches;
+		int32 Cursor = 0;
+		while (Cursor < static_cast<int32>(Rml.size()))
+		{
+			const size_t Found = Rml.find('<', static_cast<size_t>(Cursor));
+			if (Found == FString::npos)
+			{
+				break;
+			}
+
+			const int32 TagBegin = static_cast<int32>(Found);
+			FString TagName;
+			int32 TagEnd = -1;
+			bool bSelfClosing = false;
+			if (!ParseStartTag(Rml, TagBegin, TagName, TagEnd, bSelfClosing))
+			{
+				Cursor = TagBegin + 1;
+				continue;
+			}
+
+			if (!EqualsIgnoreCase(TagName, "link"))
+			{
+				Cursor = TagEnd;
+				continue;
+			}
+
+			const TArray<FAttributeSpan> Attributes = ParseAttributes(Rml, TagBegin, TagEnd, TagName);
+			const FAttributeSpan* HrefAttribute = FindAttribute(Attributes, "href");
+			if (!HrefAttribute || !EndsWithIgnoreCase(HrefAttribute->Value, ".rcss.bak"))
+			{
+				Cursor = TagEnd;
+				continue;
+			}
+
+			const std::filesystem::path DraftPath = ResolveLinkedPath(DocumentPath, HrefAttribute->Value);
+			FString SourceUtf8 = FPaths::ToUtf8(DraftPath.wstring());
+			SourceUtf8.resize(SourceUtf8.size() - 4);
+			const std::filesystem::path SourcePath(FPaths::ToWide(SourceUtf8));
+			Patches.push_back({ HrefAttribute->ValueRange.Begin, HrefAttribute->ValueRange.End, MakeRelativeHref(DocumentPath, SourcePath) });
+			Cursor = TagEnd;
+		}
+
+		if (!Patches.empty())
+		{
+			ApplyPatchesDescending(Rml, Patches);
+		}
 	}
 
 	bool HasClassToken(const FAttributeSpan* ClassAttribute, const FString& ClassToken)
@@ -1132,7 +1189,7 @@ namespace
 	}
 }
 
-bool FUIEditorSerializer::Load(const std::filesystem::path& Path, FUIEditorDocument& OutDocument, FString* OutError)
+bool FUIEditorSerializer::Load(const std::filesystem::path& Path, FUIEditorDocument& OutDocument, FString* OutError, bool bForceSourceReload)
 {
 	FString Rml;
 	FString SourceRml;
@@ -1153,7 +1210,7 @@ bool FUIEditorSerializer::Load(const std::filesystem::path& Path, FUIEditorDocum
 	}
 
 	const std::filesystem::path DraftPath = Path.wstring() + L".bak";
-	if (std::filesystem::exists(DraftPath))
+	if (!bForceSourceReload && std::filesystem::exists(DraftPath))
 	{
 		if (!ReadTextFile(DraftPath, Rml, OutError))
 		{
@@ -1172,7 +1229,7 @@ bool FUIEditorSerializer::Load(const std::filesystem::path& Path, FUIEditorDocum
 	OutDocument = FUIEditorDocument {};
 	OutDocument.SourcePath = Path;
 	OutDocument.DraftPath = DraftPath;
-	if (!PrepareLinkedStyleSheets(Path, Rml, OutDocument, OutError))
+	if (!PrepareLinkedStyleSheets(Path, Rml, OutDocument, OutError, bForceSourceReload))
 	{
 		return false;
 	}
@@ -1231,20 +1288,13 @@ bool FUIEditorSerializer::SaveDraft(FUIEditorDocument& Document, FString* OutErr
 			continue;
 		}
 
-		if (!Element.StyleAttributeValueRange.IsValid())
+		if (!Element.StyleAttributeValueRange.IsValid() && Element.CssRuleStyleSheetIndex < 0)
 		{
 			const FString StyleText = BuildDirtyStyleText(Element);
 			if (!StyleText.empty())
 			{
-				if (Element.CssRuleStyleSheetIndex >= 0 && Element.CssRuleStyleSheetIndex < static_cast<int32>(CssPatches.size()) && Element.CssRuleInsertPos >= 0)
-				{
-					CssPatches[Element.CssRuleStyleSheetIndex].push_back({ Element.CssRuleInsertPos, Element.CssRuleInsertPos, " " + StyleText });
-				}
-				else
-				{
-					const int32 InsertPos = FindStyleInsertPosition(Source, Element);
-					Patches.push_back({ InsertPos, InsertPos, " style=\"" + StyleText + "\"" });
-				}
+				const int32 InsertPos = FindStyleInsertPosition(Source, Element);
+				Patches.push_back({ InsertPos, InsertPos, " style=\"" + StyleText + "\"" });
 			}
 			continue;
 		}
@@ -1362,6 +1412,7 @@ bool FUIEditorSerializer::Commit(FUIEditorDocument& Document, FString* OutError)
 	{
 		return false;
 	}
+	RestoreSourceStyleSheetLinks(Document.SourcePath, DraftSource);
 	if (!WriteTextFile(Document.SourcePath, DraftSource, OutError))
 	{
 		return false;

@@ -5,13 +5,13 @@
 
 @keyframes hover-image-box-blink {
 	0% {
-		opacity: 1.0;
+		opacity: 0.95;
 	}
 	50% {
-		opacity: 0.58;
+		opacity: 0.38;
 	}
 	100% {
-		opacity: 1.0;
+		opacity: 0.95;
 	}
 }
 
@@ -39,7 +39,7 @@
 }
 
 .hover-image-button:hover .hover-image-box {
-	opacity: 1.0;
+	opacity: 0.95;
 	animation-name: hover-image-box-blink;
 	animation-duration: 0.58s;
 	animation-iteration-count: infinite;

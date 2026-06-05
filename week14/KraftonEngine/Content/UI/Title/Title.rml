@@ -2,7 +2,6 @@
 <head>
     <title>FRACTURE LINE</title>
     <link type="text/rcss" href="../Common/MenuHoverButton.rcss"/>
-    <link type="text/rcss" href="../Common/FullWidthContentBox.rcss"/>
     <link type="text/rcss" href="Title.rcss"/>
 </head>
 <body>
@@ -41,29 +40,6 @@
 
         <div id="stat-button">
             <img id="stat-icon" src="StatIcon.png"/>
-        </div>
-
-        <div id="stat-panel" class="full-width-content-box title-stat-panel hidden">
-            <div id="stat-panel-content" class="full-width-content-box-content">
-                <div class="panel-title">Scoreboard</div>
-                <div class="scoreboard">
-                    <div class="score-row score-header">
-                        <div>Name</div>
-                        <div>Stage</div>
-                        <div>Time</div>
-                    </div>
-                    <div class="score-row">
-                        <div>Empty Slot</div>
-                        <div>-</div>
-                        <div>--:--</div>
-                    </div>
-                    <div class="score-row">
-                        <div>Empty Slot</div>
-                        <div>-</div>
-                        <div>--:--</div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 </body>

@@ -136,8 +136,15 @@ namespace
 
 void FUIEditorWidget::Open(const std::filesystem::path& InPath)
 {
+	HidePreview();
+	Document = FUIEditorDocument {};
+	SelectedElementIndex = -1;
+	bDirty = false;
+	AutoRefreshFrameCounter = 0;
+	StatusText.clear();
+
 	FString Error;
-	if (!FUIEditorSerializer::Load(InPath, Document, &Error))
+	if (!FUIEditorSerializer::Load(InPath, Document, &Error, true))
 	{
 		StatusText = "Load failed: " + Error;
 		FNotificationManager::Get().AddNotification(StatusText, ENotificationType::Error, 4.0f);

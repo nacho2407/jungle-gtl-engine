@@ -143,6 +143,11 @@ body {
 #settings-button .hover-image-label {
 	font-size: 36px;
 	font-weight: 700;
+	opacity: 0.58;
+}
+
+#settings-button:hover .hover-image-label {
+	opacity: 1.0;
 }
 
 #credits-button {
@@ -153,6 +158,11 @@ body {
 #credits-button .hover-image-label {
 	font-size: 36px;
 	font-weight: 700;
+	opacity: 0.58;
+}
+
+#credits-button:hover .hover-image-label {
+	opacity: 1.0;
 }
 
 #quit-button {
@@ -164,6 +174,11 @@ body {
 #quit-button .hover-image-label {
 	font-size: 24px;
 	font-weight: 400;
+	opacity: 0.58;
+}
+
+#quit-button:hover .hover-image-label {
+	opacity: 1.0;
 }
 
 .menu-secondary {
@@ -200,55 +215,4 @@ body {
 
 #stat-button:hover {
 	opacity: 0.82;
-}
-
-.title-stat-panel {
-	top: 352px;
-}
-
-#stat-panel-content {
-	width: 760px;
-}
-
-.hidden {
-	display: none;
-}
-
-.panel-title {
-	margin-top: 0px;
-	text-align: center;
-	font-size: 38px;
-	font-weight: 700;
-	line-height: 48px;
-	color: #f5f2ee;
-}
-
-.scoreboard {
-	margin-top: 44px;
-	margin-left: auto;
-	margin-right: auto;
-	width: 760px;
-}
-
-.score-row {
-	display: flex;
-	height: 48px;
-	font-size: 24px;
-	font-weight: 400;
-	line-height: 48px;
-	border-bottom: 1px #3a3a3a;
-}
-
-.score-row div {
-	width: 110px;
-}
-
-.score-row div:first-child {
-	width: 430px;
-}
-
-.score-header {
-	font-weight: 700;
-	color: #ffffff;
-	background-color: rgba(255, 255, 255, 0.12);
 }
