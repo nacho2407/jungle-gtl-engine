@@ -2,12 +2,15 @@ local widget = nil
 local quitWidget = nil
 local statWidget = nil
 local settingsWidget = nil
+local creditsWidget = nil
 local statVisible = false
 local quitVisible = false
 local settingsVisible = false
+local creditsVisible = false
 local show_stat_panel = nil
 local show_quit_panel = nil
 local show_settings_panel = nil
+local show_credits_panel = nil
 local lastViewportWidth = 0
 local lastViewportHeight = 0
 local settingsState = {
@@ -245,6 +248,7 @@ show_stat_panel = function(visible)
     if visible then
         show_quit_panel(false)
         show_settings_panel(false)
+        show_credits_panel(false)
         if statWidget ~= nil and not statWidget:IsInViewport() then
             statWidget:AddToViewportZ(150)
         end
@@ -258,11 +262,15 @@ show_quit_panel = function(visible)
     if visible then
         statVisible = false
         settingsVisible = false
+        creditsVisible = false
         if statWidget ~= nil and statWidget:IsInViewport() then
             statWidget:RemoveFromParent()
         end
         if settingsWidget ~= nil and settingsWidget:IsInViewport() then
             settingsWidget:RemoveFromParent()
+        end
+        if creditsWidget ~= nil and creditsWidget:IsInViewport() then
+            creditsWidget:RemoveFromParent()
         end
         if quitWidget ~= nil and not quitWidget:IsInViewport() then
             quitWidget:AddToViewportZ(200)
@@ -277,6 +285,7 @@ show_settings_panel = function(visible)
     if visible then
         sync_settings_from_engine()
         show_quit_panel(false)
+        show_credits_panel(false)
         statVisible = false
         if statWidget ~= nil and statWidget:IsInViewport() then
             statWidget:RemoveFromParent()
@@ -287,6 +296,23 @@ show_settings_panel = function(visible)
         apply_settings_to_ui()
     elseif settingsWidget ~= nil and settingsWidget:IsInViewport() then
         settingsWidget:RemoveFromParent()
+    end
+end
+
+show_credits_panel = function(visible)
+    creditsVisible = visible
+    if visible then
+        show_quit_panel(false)
+        show_settings_panel(false)
+        statVisible = false
+        if statWidget ~= nil and statWidget:IsInViewport() then
+            statWidget:RemoveFromParent()
+        end
+        if creditsWidget ~= nil and not creditsWidget:IsInViewport() then
+            creditsWidget:AddToViewportZ(150)
+        end
+    elseif creditsWidget ~= nil and creditsWidget:IsInViewport() then
+        creditsWidget:RemoveFromParent()
     end
 end
 
@@ -384,6 +410,12 @@ local function bind_settings_dialog_clicks()
     end)
 end
 
+local function bind_credits_dialog_clicks()
+    creditsWidget:bind_click("credits-close-button", function()
+        show_credits_panel(false)
+    end)
+end
+
 local function bind_clicks()
     widget:bind_click("stat-button", function()
         show_stat_panel(not statVisible)
@@ -406,7 +438,7 @@ local function bind_clicks()
     end)
 
     widget:bind_click("credits-button", function()
-        print("[Title] Credits selected")
+        show_credits_panel(true)
     end)
 end
 
@@ -431,8 +463,13 @@ function BeginPlay()
     sync_settings_from_engine()
     apply_settings_to_ui()
 
+    creditsWidget = UI.CreateWidget("Content/UI/Title/TitleCredits.rml")
+    creditsWidget:SetWantsMouse(true)
+    bind_credits_dialog_clicks()
+
     show_stat_panel(false)
     show_settings_panel(false)
+    show_credits_panel(false)
     show_quit_panel(false)
 
     Engine.SetOnEscape(function()
@@ -440,6 +477,8 @@ function BeginPlay()
             show_quit_panel(false)
         elseif settingsVisible then
             show_settings_panel(false)
+        elseif creditsVisible then
+            show_credits_panel(false)
         elseif statVisible then
             show_stat_panel(false)
         else
@@ -463,6 +502,11 @@ function EndPlay()
         settingsWidget:RemoveFromParent()
     end
     settingsWidget = nil
+
+    if creditsWidget ~= nil and creditsWidget:IsInViewport() then
+        creditsWidget:RemoveFromParent()
+    end
+    creditsWidget = nil
 
     if widget ~= nil and widget:IsInViewport() then
         widget:RemoveFromParent()

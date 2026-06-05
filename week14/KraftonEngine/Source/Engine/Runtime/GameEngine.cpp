@@ -6,6 +6,7 @@
 #include "Lua/LuaScriptManager.h"
 #include "Profiling/Time/Timer.h"
 #include <windows.h>  // VK_ESCAPE
+#include <filesystem>
 #include "Viewport/Viewport.h"
 #include "Viewport/GameViewportClient.h"
 #include "Serialization/SceneSaveManager.h"
@@ -119,17 +120,31 @@ FString UGameEngine::ResolveSceneFilePath(const FString& InNameOrPath) const
 
 void UGameEngine::LoadStartLevel()
 {
-	const FString& StartLevel = FProjectSettings::Get().Game.StartLevelName;
+	FString StartLevel = FProjectSettings::Get().Game.StartLevelName;
 	if (StartLevel.empty())
 	{
-		UE_LOG("[GameEngine] No StartLevelName set in ProjectSettings");
-		return;
+		StartLevel = "Title";
+		UE_LOG("[GameEngine] No StartLevelName set in ProjectSettings. Fallback to %s.Scene",
+			StartLevel.c_str());
 	}
 
-	const FString FilePath = ResolveSceneFilePath(StartLevel);
+	FString FilePath = ResolveSceneFilePath(StartLevel);
+	if (!std::filesystem::exists(std::filesystem::path(FPaths::ToWide(FilePath))))
+	{
+		UE_LOG("[GameEngine] Start scene file not found: %s", FilePath.c_str());
+
+		if (StartLevel != "Title")
+		{
+			StartLevel = "Title";
+			FilePath = ResolveSceneFilePath(StartLevel);
+			UE_LOG("[GameEngine] Try fallback start scene: %s", FilePath.c_str());
+		}
+	}
+
 	if (!LoadSceneFromPath(FilePath))
 	{
-		UE_LOG("Failed to load start level: %s", StartLevel.c_str());
+		UE_LOG("[GameEngine] Failed to load start level: %s (%s)",
+			StartLevel.c_str(), FilePath.c_str());
 	}
 }
 

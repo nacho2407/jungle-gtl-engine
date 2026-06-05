@@ -1,5 +1,6 @@
 ﻿#include "Engine/Platform/Paths.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <vector>
 
@@ -37,21 +38,45 @@ namespace
 		return HasSettings || (HasShaders && HasContent);
 	}
 
+	void AppendRootCandidates(std::vector<std::filesystem::path>& Candidates, std::filesystem::path Start)
+	{
+		std::error_code Error;
+		Start = std::filesystem::absolute(Start, Error);
+		if (Error)
+		{
+			Start.clear();
+		}
+
+		for (std::filesystem::path Current = Start; !Current.empty();)
+		{
+			Current = Current.lexically_normal();
+			if (std::find(Candidates.begin(), Candidates.end(), Current) == Candidates.end())
+			{
+				Candidates.push_back(Current);
+			}
+
+			const std::filesystem::path Parent = Current.parent_path();
+			if (Parent.empty() || Parent == Current)
+			{
+				break;
+			}
+			Current = Parent;
+		}
+	}
+
 	std::filesystem::path ResolveProjectRoot(const std::filesystem::path& ExeDir)
 	{
 		std::vector<std::filesystem::path> Candidates;
 		if (!ExeDir.empty())
 		{
-			Candidates.push_back(ExeDir);
-			Candidates.push_back(ExeDir.parent_path());
+			AppendRootCandidates(Candidates, ExeDir);
 		}
 
 		std::error_code Error;
 		const std::filesystem::path CurrentPath = std::filesystem::current_path(Error);
-		if (!Error)
+		if (!Error && !CurrentPath.empty())
 		{
-			Candidates.push_back(CurrentPath);
-			Candidates.push_back(CurrentPath.parent_path());
+			AppendRootCandidates(Candidates, CurrentPath);
 		}
 
 		for (const std::filesystem::path& Candidate : Candidates)

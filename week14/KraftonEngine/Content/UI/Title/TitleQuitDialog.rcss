@@ -36,7 +36,7 @@ body {
 
 #quit-warning-icon {
 	position: absolute;
-	left: 30.00%;
+	left: 100.00%;
 	top: 30.00%;
 	width: 100.00%;
 	height: 100.00%;

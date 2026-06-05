@@ -104,7 +104,7 @@ body {
 	width: 720px;
 	height: 36px;
 	color: #c8c8c8;
-}
+ top: 48.00px;}
 
 .settings-row:hover {
 	background-color: #ffffff1F;
@@ -155,7 +155,7 @@ body {
 .settings-value {
 	position: absolute;
 	left: 650px;
-	top: 0px;
+	top: 0.00px;
 	width: 58px;
 	height: 36px;
 	font-size: 21px;

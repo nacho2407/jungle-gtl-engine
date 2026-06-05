@@ -17,6 +17,7 @@ void EditorProjectSettingsWidget::Render()
 	}
 
 	FProjectSettings& PS = FProjectSettings::Get();
+	bool bSettingsChanged = false;
 
 	if (ImGui::CollapsingHeader("Game", ImGuiTreeNodeFlags_DefaultOpen))
 	{
@@ -42,6 +43,7 @@ void EditorProjectSettingsWidget::Render()
 				if (ImGui::Selectable(SceneFiles[i].c_str(), bSelected))
 				{
 					PS.Game.StartLevelName = SceneFiles[i];
+					bSettingsChanged = true;
 				}
 				if (bSelected)
 					ImGui::SetItemDefaultFocus();
@@ -79,6 +81,7 @@ void EditorProjectSettingsWidget::Render()
 				if (ImGui::Selectable(Label, bSelected))
 				{
 					PS.Game.GameModeClassName = (i == 0) ? FString() : FString(GameModeClasses[i]->GetName());
+					bSettingsChanged = true;
 				}
 				if (bSelected)
 					ImGui::SetItemDefaultFocus();
@@ -118,6 +121,11 @@ void EditorProjectSettingsWidget::Render()
 			if (ImGui::SliderInt("Max Point Atlas Pages", &pointPages, 1, 16))
 				PS.Shadow.MaxPointAtlasPages = static_cast<uint32>(pointPages);
 		}
+	}
+
+	if (bSettingsChanged)
+	{
+		PS.SaveToFile(FProjectSettings::GetDefaultPath());
 	}
 
 	ImGui::End();
