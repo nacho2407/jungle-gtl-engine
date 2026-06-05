@@ -196,7 +196,8 @@ void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
 		strcmp(PropertyName, "WorldDynamic") == 0 ||
 		strcmp(PropertyName, "Pawn") == 0 ||
 		strcmp(PropertyName, "Projectile") == 0 ||
-		strcmp(PropertyName, "Trigger") == 0)
+		strcmp(PropertyName, "Trigger") == 0 ||
+		strcmp(PropertyName, "SkeletalMesh") == 0)
 	{
 		if (BodyInstance.IsValidBody())
 		{
@@ -639,6 +640,14 @@ void UPrimitiveComponent::SetCollisionPreset(ECollisionPreset InPreset)
 	case ECollisionPreset::Pawn:
 		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
 		ObjectType = ECollisionChannel::Pawn;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		ResponseContainer.SetResponse(ECollisionChannel::Trigger, ECollisionResponse::Overlap);
+		bGenerateOverlapEvents = true;
+		break;
+
+	case ECollisionPreset::SkeletalMesh:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::SkeletalMesh;
 		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
 		ResponseContainer.SetResponse(ECollisionChannel::Trigger, ECollisionResponse::Overlap);
 		bGenerateOverlapEvents = true;

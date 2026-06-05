@@ -111,7 +111,10 @@ namespace
 	}
 }
 
-USkeletalMeshComponent::USkeletalMeshComponent() = default;
+USkeletalMeshComponent::USkeletalMeshComponent()
+{
+	SetCollisionPreset(ECollisionPreset::SkeletalMesh);
+}
 
 USkeletalMeshComponent::~USkeletalMeshComponent()
 {

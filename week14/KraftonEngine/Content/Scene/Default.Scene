@@ -34,7 +34,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -72,7 +73,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -110,7 +112,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -148,7 +151,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -186,7 +190,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -224,7 +229,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -262,7 +268,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -300,7 +307,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -338,7 +346,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -376,7 +385,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -414,7 +424,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -452,7 +463,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -490,7 +502,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -528,7 +541,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -566,7 +580,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -604,7 +619,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -642,7 +658,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -680,7 +697,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -718,7 +736,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -756,7 +775,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -794,7 +814,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -832,7 +853,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -870,7 +892,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -908,7 +931,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -946,7 +970,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -984,7 +1009,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1022,7 +1048,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1060,7 +1087,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1098,7 +1126,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1136,7 +1165,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1174,7 +1204,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1212,7 +1243,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1250,7 +1282,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1288,7 +1321,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1326,7 +1360,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1364,7 +1399,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1402,7 +1438,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1440,7 +1477,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1478,7 +1516,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1516,7 +1555,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1554,7 +1594,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1592,7 +1633,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1630,7 +1672,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1668,7 +1711,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1706,7 +1750,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1744,7 +1789,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1782,7 +1828,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1820,7 +1867,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1858,7 +1906,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1896,7 +1945,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1934,7 +1984,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -1972,7 +2023,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2010,7 +2062,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2048,7 +2101,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2086,7 +2140,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2124,7 +2179,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2162,7 +2218,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2200,7 +2257,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2238,7 +2296,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2276,7 +2335,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2314,7 +2374,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2352,7 +2413,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2390,7 +2452,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2428,7 +2491,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2466,7 +2530,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2504,7 +2569,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2542,7 +2608,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2580,7 +2647,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2618,7 +2686,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2656,7 +2725,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2694,7 +2764,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2732,7 +2803,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2770,7 +2842,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2808,7 +2881,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2846,7 +2920,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2884,7 +2959,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2922,7 +2998,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2960,7 +3037,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -2998,7 +3076,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -3036,7 +3115,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -3074,7 +3154,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -3112,7 +3193,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -3150,7 +3232,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -3188,7 +3271,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -3226,7 +3310,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -3264,7 +3349,164 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_86",
+            "ObjectId" : 90,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_87",
+            "ObjectId" : 91,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_88",
+            "ObjectId" : 92,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_89",
+            "ObjectId" : 93,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -3309,9 +3551,9 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_24",
       "NonSceneComponents" : [],
-      "ObjectId" : 90,
+      "ObjectId" : 94,
       "Properties" : {
-        "PendingActorLocation" : [22.705898, 18.888695, -10.333282],
+        "PendingActorLocation" : [21.864321, 18.888695, -10.333282],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
         "PendingActorScale" : [32.822895, 21.104145, 1.000000],
         "PendingActorVisible" : true,
@@ -3322,7 +3564,7 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_44",
-        "ObjectId" : 91,
+        "ObjectId" : 95,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3332,14 +3574,15 @@
           "Mass" : 1.000000,
           "MaterialSlots" : ["Content/Material/Auto/BasicShapeMaterial.mat"],
           "ObjectType" : 0,
-          "RelativeTransform.Location" : [22.705898, 18.888695, -10.333282],
+          "RelativeTransform.Location" : [21.864321, 18.888695, -10.333282],
           "RelativeTransform.Scale" : [32.822895, 21.104145, 1.000000],
           "ResponseContainer" : {
             "Responses[0]" : 2,
             "Responses[1]" : 2,
             "Responses[2]" : 2,
             "Responses[3]" : 2,
-            "Responses[4]" : 2
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
           },
           "StaticMeshPath" : "Content/Data/BasicShape/Cube_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
@@ -3362,7 +3605,7 @@
       "NonSceneComponents" : [{
           "ClassName" : "UCharacterMovementComponent",
           "Name" : "UCharacterMovementComponent_2",
-          "ObjectId" : 105,
+          "ObjectId" : 113,
           "Properties" : {
             "BrakingFriction" : 8.000000,
             "ControllerContactOffset" : 0.050000,
@@ -3383,7 +3626,7 @@
             "RotationYawRate" : 540.000000,
             "RunnableWallUpDot" : 0.200000,
             "UpdatedComponent" : {
-              "ObjectId" : 93
+              "ObjectId" : 97
             },
             "WalkableSlopeAngle" : 45.000000,
             "WallCheckDistance" : 0.350000,
@@ -3414,7 +3657,7 @@
         }, {
           "ClassName" : "ULuaScriptComponent",
           "Name" : "ULuaScriptComponent_6",
-          "ObjectId" : 106,
+          "ObjectId" : 114,
           "Properties" : {
             "ScriptFile" : "Default2_FPSArm_Character.lua",
             "bAutoActivate" : true,
@@ -3424,7 +3667,7 @@
             "bTickEnable" : true
           }
         }],
-      "ObjectId" : 92,
+      "ObjectId" : 96,
       "Properties" : {
         "PendingActorLocation" : [18.709415, 7.467245, -5.930814],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -3442,7 +3685,7 @@
             "Children" : [],
             "ClassName" : "USkeletalMeshComponent",
             "Name" : "USkeletalMeshComponent_5",
-            "ObjectId" : 94,
+            "ObjectId" : 98,
             "Properties" : {
               "AngularDamping" : 0.010000,
               "AnimInstance" : {
@@ -3474,7 +3717,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "SkeletalMeshPath" : "Content/Data/FPSArm/Test1/Test1_SkeletalMesh.uasset",
               "TranslucentSortPriority" : 0,
@@ -3496,7 +3740,7 @@
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
                     "Name" : "UBillboardComponent_203",
-                    "ObjectId" : 97,
+                    "ObjectId" : 101,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
                       "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3513,7 +3757,8 @@
                         "Responses[1]" : 2,
                         "Responses[2]" : 2,
                         "Responses[3]" : 2,
-                        "Responses[4]" : 2
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
                       },
                       "TranslucentSortPriority" : 0,
                       "bAutoActivate" : true,
@@ -3534,7 +3779,7 @@
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
                     "Name" : "UBillboardComponent_205",
-                    "ObjectId" : 98,
+                    "ObjectId" : 102,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
                       "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3551,7 +3796,8 @@
                         "Responses[1]" : 2,
                         "Responses[2]" : 2,
                         "Responses[3]" : 2,
-                        "Responses[4]" : 2
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
                       },
                       "TranslucentSortPriority" : 0,
                       "bAutoActivate" : true,
@@ -3572,7 +3818,7 @@
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
                     "Name" : "UBillboardComponent_207",
-                    "ObjectId" : 99,
+                    "ObjectId" : 103,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
                       "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3589,7 +3835,8 @@
                         "Responses[1]" : 2,
                         "Responses[2]" : 2,
                         "Responses[3]" : 2,
-                        "Responses[4]" : 2
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
                       },
                       "TranslucentSortPriority" : 0,
                       "bAutoActivate" : true,
@@ -3610,7 +3857,7 @@
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
                     "Name" : "UBillboardComponent_85",
-                    "ObjectId" : 100,
+                    "ObjectId" : 104,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
                       "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3627,7 +3874,8 @@
                         "Responses[1]" : 2,
                         "Responses[2]" : 2,
                         "Responses[3]" : 2,
-                        "Responses[4]" : 2
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
                       },
                       "TranslucentSortPriority" : 0,
                       "bAutoActivate" : true,
@@ -3648,7 +3896,7 @@
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
                     "Name" : "UBillboardComponent_87",
-                    "ObjectId" : 101,
+                    "ObjectId" : 105,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
                       "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3665,7 +3913,8 @@
                         "Responses[1]" : 2,
                         "Responses[2]" : 2,
                         "Responses[3]" : 2,
-                        "Responses[4]" : 2
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
                       },
                       "TranslucentSortPriority" : 0,
                       "bAutoActivate" : true,
@@ -3686,7 +3935,7 @@
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
                     "Name" : "UBillboardComponent_89",
-                    "ObjectId" : 102,
+                    "ObjectId" : 106,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
                       "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3703,7 +3952,8 @@
                         "Responses[1]" : 2,
                         "Responses[2]" : 2,
                         "Responses[3]" : 2,
-                        "Responses[4]" : 2
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
                       },
                       "TranslucentSortPriority" : 0,
                       "bAutoActivate" : true,
@@ -3724,7 +3974,7 @@
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
                     "Name" : "UBillboardComponent_91",
-                    "ObjectId" : 103,
+                    "ObjectId" : 107,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
                       "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3741,7 +3991,8 @@
                         "Responses[1]" : 2,
                         "Responses[2]" : 2,
                         "Responses[3]" : 2,
-                        "Responses[4]" : 2
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
                       },
                       "TranslucentSortPriority" : 0,
                       "bAutoActivate" : true,
@@ -3762,7 +4013,7 @@
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
                     "Name" : "UBillboardComponent_93",
-                    "ObjectId" : 104,
+                    "ObjectId" : 108,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
                       "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3779,7 +4030,164 @@
                         "Responses[1]" : 2,
                         "Responses[2]" : 2,
                         "Responses[3]" : 2,
-                        "Responses[4]" : 2
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
+                      },
+                      "TranslucentSortPriority" : 0,
+                      "bAutoActivate" : true,
+                      "bCastShadow" : true,
+                      "bCastShadowAsTwoSided" : false,
+                      "bEditorOnly" : true,
+                      "bEnableGravity" : true,
+                      "bGenerateOverlapEvents" : false,
+                      "bHiddenInComponentTree" : true,
+                      "bIsActive" : true,
+                      "bIsBillboard" : true,
+                      "bIsVisible" : true,
+                      "bSimulatePhysics" : false,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }, {
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Name" : "UBillboardComponent_95",
+                    "ObjectId" : 109,
+                    "Properties" : {
+                      "AngularDamping" : 0.010000,
+                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                      "CollisionEnabled" : 0,
+                      "CollisionPreset" : 0,
+                      "LinearDamping" : 0.010000,
+                      "Mass" : 1.000000,
+                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                      "ObjectType" : 0,
+                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                      "ResponseContainer" : {
+                        "Responses[0]" : 2,
+                        "Responses[1]" : 2,
+                        "Responses[2]" : 2,
+                        "Responses[3]" : 2,
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
+                      },
+                      "TranslucentSortPriority" : 0,
+                      "bAutoActivate" : true,
+                      "bCastShadow" : true,
+                      "bCastShadowAsTwoSided" : false,
+                      "bEditorOnly" : true,
+                      "bEnableGravity" : true,
+                      "bGenerateOverlapEvents" : false,
+                      "bHiddenInComponentTree" : true,
+                      "bIsActive" : true,
+                      "bIsBillboard" : true,
+                      "bIsVisible" : true,
+                      "bSimulatePhysics" : false,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }, {
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Name" : "UBillboardComponent_97",
+                    "ObjectId" : 110,
+                    "Properties" : {
+                      "AngularDamping" : 0.010000,
+                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                      "CollisionEnabled" : 0,
+                      "CollisionPreset" : 0,
+                      "LinearDamping" : 0.010000,
+                      "Mass" : 1.000000,
+                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                      "ObjectType" : 0,
+                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                      "ResponseContainer" : {
+                        "Responses[0]" : 2,
+                        "Responses[1]" : 2,
+                        "Responses[2]" : 2,
+                        "Responses[3]" : 2,
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
+                      },
+                      "TranslucentSortPriority" : 0,
+                      "bAutoActivate" : true,
+                      "bCastShadow" : true,
+                      "bCastShadowAsTwoSided" : false,
+                      "bEditorOnly" : true,
+                      "bEnableGravity" : true,
+                      "bGenerateOverlapEvents" : false,
+                      "bHiddenInComponentTree" : true,
+                      "bIsActive" : true,
+                      "bIsBillboard" : true,
+                      "bIsVisible" : true,
+                      "bSimulatePhysics" : false,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }, {
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Name" : "UBillboardComponent_99",
+                    "ObjectId" : 111,
+                    "Properties" : {
+                      "AngularDamping" : 0.010000,
+                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                      "CollisionEnabled" : 0,
+                      "CollisionPreset" : 0,
+                      "LinearDamping" : 0.010000,
+                      "Mass" : 1.000000,
+                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                      "ObjectType" : 0,
+                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                      "ResponseContainer" : {
+                        "Responses[0]" : 2,
+                        "Responses[1]" : 2,
+                        "Responses[2]" : 2,
+                        "Responses[3]" : 2,
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
+                      },
+                      "TranslucentSortPriority" : 0,
+                      "bAutoActivate" : true,
+                      "bCastShadow" : true,
+                      "bCastShadowAsTwoSided" : false,
+                      "bEditorOnly" : true,
+                      "bEnableGravity" : true,
+                      "bGenerateOverlapEvents" : false,
+                      "bHiddenInComponentTree" : true,
+                      "bIsActive" : true,
+                      "bIsBillboard" : true,
+                      "bIsVisible" : true,
+                      "bSimulatePhysics" : false,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }, {
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Name" : "UBillboardComponent_101",
+                    "ObjectId" : 112,
+                    "Properties" : {
+                      "AngularDamping" : 0.010000,
+                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                      "CollisionEnabled" : 0,
+                      "CollisionPreset" : 0,
+                      "LinearDamping" : 0.010000,
+                      "Mass" : 1.000000,
+                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                      "ObjectType" : 0,
+                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                      "ResponseContainer" : {
+                        "Responses[0]" : 2,
+                        "Responses[1]" : 2,
+                        "Responses[2]" : 2,
+                        "Responses[3]" : 2,
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
                       },
                       "TranslucentSortPriority" : 0,
                       "bAutoActivate" : true,
@@ -3799,7 +4207,7 @@
                   }],
                 "ClassName" : "UCameraComponent",
                 "Name" : "UCameraComponent_2",
-                "ObjectId" : 96,
+                "ObjectId" : 100,
                 "Properties" : {
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
                   "CameraState.FOV" : 1.570796,
@@ -3827,7 +4235,7 @@
               }],
             "ClassName" : "USpringArmComponent",
             "Name" : "USpringArmComponent_2",
-            "ObjectId" : 95,
+            "ObjectId" : 99,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CameraLagMaxDistance" : 0.000000,
@@ -3852,7 +4260,7 @@
           }],
         "ClassName" : "UCapsuleComponent",
         "Name" : "UCapsuleComponent_2",
-        "ObjectId" : 93,
+        "ObjectId" : 97,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3870,7 +4278,8 @@
             "Responses[1]" : 2,
             "Responses[2]" : 2,
             "Responses[3]" : 2,
-            "Responses[4]" : 2
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
           },
           "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
           "TranslucentSortPriority" : 0,
@@ -3892,9 +4301,9 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_24_Copy",
       "NonSceneComponents" : [],
-      "ObjectId" : 107,
+      "ObjectId" : 115,
       "Properties" : {
-        "PendingActorLocation" : [22.805899, -2.124273, -0.504943],
+        "PendingActorLocation" : [22.805899, -2.124273, 1.381982],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
         "PendingActorScale" : [30.195343, 1.000000, 14.296917],
         "PendingActorVisible" : true,
@@ -3905,7 +4314,7 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_44",
-        "ObjectId" : 108,
+        "ObjectId" : 116,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3915,14 +4324,15 @@
           "Mass" : 1.000000,
           "MaterialSlots" : ["Content/Material/Auto/BasicShapeMaterial.mat"],
           "ObjectType" : 0,
-          "RelativeTransform.Location" : [22.805899, -2.124273, -0.504943],
+          "RelativeTransform.Location" : [22.805899, -2.124273, 1.381982],
           "RelativeTransform.Scale" : [30.195343, 1.000000, 14.296917],
           "ResponseContainer" : {
             "Responses[0]" : 2,
             "Responses[1]" : 2,
             "Responses[2]" : 2,
             "Responses[3]" : 2,
-            "Responses[4]" : 2
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
           },
           "StaticMeshPath" : "Content/Data/BasicShape/Cube_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
@@ -3943,11 +4353,11 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_24_Copy_Copy",
       "NonSceneComponents" : [],
-      "ObjectId" : 109,
+      "ObjectId" : 117,
       "Properties" : {
-        "PendingActorLocation" : [-8.310883, 5.603113, -11.108440],
-        "PendingActorRotation" : [-10.158749, 0.000000, 0.000000],
-        "PendingActorScale" : [1.306091, 21.104145, 27.851305],
+        "PendingActorLocation" : [-8.310883, 5.603113, -6.385809],
+        "PendingActorRotation" : [-10.158748, 0.000000, 0.000000],
+        "PendingActorScale" : [1.306091, 21.104145, 16.500000],
         "PendingActorVisible" : true,
         "PendingTagsString" : "",
         "bNeedsTick" : true
@@ -3956,24 +4366,25 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_44",
-        "ObjectId" : 110,
+        "ObjectId" : 118,
         "Properties" : {
           "AngularDamping" : 0.010000,
-          "CachedEditRotator" : [-10.158749, 0.000000, 0.000000],
+          "CachedEditRotator" : [-10.158748, 0.000000, 0.000000],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
           "LinearDamping" : 0.010000,
           "Mass" : 1.000000,
           "MaterialSlots" : ["Content/Material/Auto/BasicShapeMaterial.mat"],
           "ObjectType" : 0,
-          "RelativeTransform.Location" : [-8.310883, 5.603113, -11.108440],
-          "RelativeTransform.Scale" : [1.306091, 21.104145, 27.851305],
+          "RelativeTransform.Location" : [-8.310883, 5.603113, -6.385809],
+          "RelativeTransform.Scale" : [1.306091, 21.104145, 16.500000],
           "ResponseContainer" : {
             "Responses[0]" : 2,
             "Responses[1]" : 2,
             "Responses[2]" : 2,
             "Responses[3]" : 2,
-            "Responses[4]" : 2
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
           },
           "StaticMeshPath" : "Content/Data/BasicShape/Cube_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
@@ -3994,7 +4405,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_24_Copy_Copy_Copy",
       "NonSceneComponents" : [],
-      "ObjectId" : 111,
+      "ObjectId" : 119,
       "Properties" : {
         "PendingActorLocation" : [4.420294, 25.777065, -10.424187],
         "PendingActorRotation" : [-0.000000, 0.000000, -55.625000],
@@ -4007,7 +4418,7 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_44",
-        "ObjectId" : 112,
+        "ObjectId" : 120,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, -55.625000],
@@ -4024,7 +4435,8 @@
             "Responses[1]" : 2,
             "Responses[2]" : 2,
             "Responses[3]" : 2,
-            "Responses[4]" : 2
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
           },
           "StaticMeshPath" : "Content/Data/BasicShape/Cube_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
@@ -4045,9 +4457,9 @@
       "ClassName" : "APointLightActor",
       "Name" : "APointLightActor_0",
       "NonSceneComponents" : [],
-      "ObjectId" : 113,
+      "ObjectId" : 121,
       "Properties" : {
-        "PendingActorLocation" : [1.567826, 15.141945, -7.350185],
+        "PendingActorLocation" : [1.567826, 15.141945, -2.167798],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
         "PendingActorScale" : [1.000000, 1.000000, 1.000000],
         "PendingActorVisible" : true,
@@ -4059,7 +4471,7 @@
             "Children" : [],
             "ClassName" : "UBillboardComponent",
             "Name" : "UBillboardComponent_87",
-            "ObjectId" : 115,
+            "ObjectId" : 123,
             "Properties" : {
               "AngularDamping" : 0.010000,
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -4076,7 +4488,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -4097,7 +4510,7 @@
             "Children" : [],
             "ClassName" : "UBillboardComponent",
             "Name" : "UBillboardComponent_89",
-            "ObjectId" : 116,
+            "ObjectId" : 124,
             "Properties" : {
               "AngularDamping" : 0.010000,
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -4114,7 +4527,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -4135,7 +4549,7 @@
             "Children" : [],
             "ClassName" : "UBillboardComponent",
             "Name" : "UBillboardComponent_92",
-            "ObjectId" : 117,
+            "ObjectId" : 125,
             "Properties" : {
               "AngularDamping" : 0.010000,
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -4152,7 +4566,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -4173,7 +4588,7 @@
             "Children" : [],
             "ClassName" : "UBillboardComponent",
             "Name" : "UBillboardComponent_95",
-            "ObjectId" : 118,
+            "ObjectId" : 126,
             "Properties" : {
               "AngularDamping" : 0.010000,
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -4190,7 +4605,8 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -4211,7 +4627,7 @@
             "Children" : [],
             "ClassName" : "UBillboardComponent",
             "Name" : "UBillboardComponent_98",
-            "ObjectId" : 119,
+            "ObjectId" : 127,
             "Properties" : {
               "AngularDamping" : 0.010000,
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -4228,7 +4644,164 @@
                 "Responses[1]" : 2,
                 "Responses[2]" : 2,
                 "Responses[3]" : 2,
-                "Responses[4]" : 2
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_101",
+            "ObjectId" : 128,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_104",
+            "ObjectId" : 129,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_107",
+            "ObjectId" : 130,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_110",
+            "ObjectId" : 131,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
               },
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
@@ -4248,14 +4821,14 @@
           }],
         "ClassName" : "UPointLightComponent",
         "Name" : "UPointLightComponent_0",
-        "ObjectId" : 114,
+        "ObjectId" : 122,
         "Properties" : {
           "AttenuationRadius" : 22.730000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "Intensity" : 1.000000,
           "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
           "LightFalloffExponent" : 1.000000,
-          "RelativeTransform.Location" : [1.567826, 15.141945, -7.350185],
+          "RelativeTransform.Location" : [1.567826, 15.141945, -2.167798],
           "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
           "ShadowBias" : -0.000100,
           "ShadowNormalBias" : -0.002000,
@@ -4275,7 +4848,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_24_Copy_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 120,
+      "ObjectId" : 132,
       "Properties" : {
         "PendingActorLocation" : [75.773781, -2.024273, -0.404943],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -4288,7 +4861,7 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_44",
-        "ObjectId" : 121,
+        "ObjectId" : 133,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -4305,7 +4878,8 @@
             "Responses[1]" : 2,
             "Responses[2]" : 2,
             "Responses[3]" : 2,
-            "Responses[4]" : 2
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
           },
           "StaticMeshPath" : "Content/Data/BasicShape/Cube_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
@@ -4326,7 +4900,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_24_Copy_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 122,
+      "ObjectId" : 134,
       "Properties" : {
         "PendingActorLocation" : [126.951645, -1.924273, -0.304943],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -4339,7 +4913,7 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_44",
-        "ObjectId" : 123,
+        "ObjectId" : 135,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -4356,7 +4930,8 @@
             "Responses[1]" : 2,
             "Responses[2]" : 2,
             "Responses[3]" : 2,
-            "Responses[4]" : 2
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
           },
           "StaticMeshPath" : "Content/Data/BasicShape/Cube_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
@@ -4377,7 +4952,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "AStaticMeshActor_24_Copy_3",
       "NonSceneComponents" : [],
-      "ObjectId" : 124,
+      "ObjectId" : 136,
       "Properties" : {
         "PendingActorLocation" : [98.525803, 7.914663, -0.204943],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -4390,7 +4965,7 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_44",
-        "ObjectId" : 125,
+        "ObjectId" : 137,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -4407,7 +4982,525 @@
             "Responses[1]" : 2,
             "Responses[2]" : 2,
             "Responses[3]" : 2,
-            "Responses[4]" : 2
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
+          },
+          "StaticMeshPath" : "Content/Data/BasicShape/Cube_StaticMesh.uasset",
+          "TranslucentSortPriority" : 0,
+          "bAutoActivate" : true,
+          "bCastShadow" : true,
+          "bCastShadowAsTwoSided" : false,
+          "bEditorOnly" : false,
+          "bEnableGravity" : true,
+          "bGenerateOverlapEvents" : false,
+          "bHiddenInComponentTree" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "APointLightActor",
+      "Name" : "APointLightActor_1",
+      "NonSceneComponents" : [],
+      "ObjectId" : 138,
+      "Properties" : {
+        "PendingActorLocation" : [-2.549122, 15.183073, 13.624810],
+        "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
+        "PendingActorScale" : [1.000000, 1.000000, 1.000000],
+        "PendingActorVisible" : true,
+        "PendingTagsString" : "",
+        "bNeedsTick" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_87",
+            "ObjectId" : 140,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_89",
+            "ObjectId" : 141,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_92",
+            "ObjectId" : 142,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_95",
+            "ObjectId" : 143,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_98",
+            "ObjectId" : 144,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_101",
+            "ObjectId" : 145,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_111",
+            "ObjectId" : 146,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_115",
+            "ObjectId" : 147,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_119",
+            "ObjectId" : 148,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/PointLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }],
+        "ClassName" : "UPointLightComponent",
+        "Name" : "UPointLightComponent_0",
+        "ObjectId" : 139,
+        "Properties" : {
+          "AttenuationRadius" : 22.730000,
+          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "Intensity" : 1.000000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "LightFalloffExponent" : 1.000000,
+          "RelativeTransform.Location" : [-2.549122, 15.183073, 13.624810],
+          "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : -0.000100,
+          "ShadowNormalBias" : -0.002000,
+          "ShadowResolutionScale" : 4.000000,
+          "ShadowSharpen" : 0.670000,
+          "ShadowSlopeBias" : 0.000100,
+          "bAutoActivate" : true,
+          "bCastShadows" : true,
+          "bEditorOnly" : false,
+          "bHiddenInComponentTree" : false,
+          "bIsActive" : true,
+          "bTickEnable" : true,
+          "bVisible" : true
+        }
+      }
+    }, {
+      "ClassName" : "ASkeletalMeshActor",
+      "Name" : "ASkeletalMeshActor_0",
+      "NonSceneComponents" : [],
+      "ObjectId" : 149,
+      "Properties" : {
+        "PendingActorLocation" : [46.841446, 10.872187, -8.151096],
+        "PendingActorRotation" : [0.000000, -69.587257, 0.000000],
+        "PendingActorScale" : [3.000000, 3.000000, 3.000000],
+        "PendingActorVisible" : true,
+        "PendingTagsString" : "",
+        "bNeedsTick" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "USkeletalMeshComponent",
+        "Name" : "USkeletalMeshComponent_2",
+        "ObjectId" : 150,
+        "Properties" : {
+          "AngularDamping" : 0.010000,
+          "AnimInstance" : {
+            "ClassName" : "UCharacterAnimInstance",
+            "Properties" : {
+              "AutoPeriodSec" : 6.000000,
+              "AutoSpeedAmp" : 15.000000,
+              "RootMotionMode" : 1,
+              "SpeedThreshold" : 10.000000,
+              "bAutoDriveSpeed" : true
+            }
+          },
+          "AnimInstanceClass" : "UCharacterAnimInstance",
+          "AnimationData" : {
+            "AnimToPlayPath" : "None",
+            "PlayRate" : 1.000000,
+            "bLooping" : true,
+            "bPlaying" : true
+          },
+          "AnimationMode" : 2,
+          "CachedEditRotator" : [0.000000, -69.587257, 0.000000],
+          "CollisionEnabled" : 3,
+          "CollisionPreset" : 0,
+          "LinearDamping" : 0.010000,
+          "Mass" : 1.000000,
+          "MaterialSlots" : ["Content/Material/Auto/KON001_Hirasawa_Yui.003.mat", "Content/Material/Auto/KON001_Hirasawa_Yui_eye.003.mat", "Content/Material/Auto/KON001_Hirasawa_Yui_face.003.mat"],
+          "ObjectType" : 5,
+          "PhysicsBlendWeight" : 1.000000,
+          "RagdollFaceDownGetUpAnimationPath" : "Content/Data/hirasawa-yui/Getting Up_mixamo_com.uasset",
+          "RagdollFaceUpGetUpAnimationPath" : "Content/Data/hirasawa-yui/Standing Up_mixamo_com.uasset",
+          "RagdollRecoveryBlendDuration" : 0.350000,
+          "RelativeTransform.Location" : [46.841446, 10.872187, -8.151096],
+          "RelativeTransform.Scale" : [3.000000, 3.000000, 3.000000],
+          "ResponseContainer" : {
+            "Responses[0]" : 2,
+            "Responses[1]" : 2,
+            "Responses[2]" : 2,
+            "Responses[3]" : 2,
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
+          },
+          "SkeletalMeshPath" : "Content/Data/hirasawa-yui/yui_SkeletalMesh.uasset",
+          "TranslucentSortPriority" : 0,
+          "bAutoActivate" : true,
+          "bCastShadow" : true,
+          "bCastShadowAsTwoSided" : false,
+          "bEditorOnly" : false,
+          "bEnableGravity" : true,
+          "bGenerateOverlapEvents" : false,
+          "bHiddenInComponentTree" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnable" : true
+        }
+      }
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "AStaticMeshActor_24_Copy_4",
+      "NonSceneComponents" : [],
+      "ObjectId" : 151,
+      "Properties" : {
+        "PendingActorLocation" : [45.224621, 10.110153, -9.743273],
+        "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
+        "PendingActorScale" : [1.000000, 5.000000, 4.221345],
+        "PendingActorVisible" : true,
+        "PendingTagsString" : "",
+        "bNeedsTick" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Name" : "UStaticMeshComponent_44",
+        "ObjectId" : 152,
+        "Properties" : {
+          "AngularDamping" : 0.010000,
+          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "CollisionEnabled" : 3,
+          "CollisionPreset" : 0,
+          "LinearDamping" : 0.010000,
+          "Mass" : 1.000000,
+          "MaterialSlots" : ["Content/Material/Auto/BasicShapeMaterial.mat"],
+          "ObjectType" : 0,
+          "RelativeTransform.Location" : [45.224621, 10.110153, -9.743273],
+          "RelativeTransform.Scale" : [1.000000, 5.000000, 4.221345],
+          "ResponseContainer" : {
+            "Responses[0]" : 2,
+            "Responses[1]" : 2,
+            "Responses[2]" : 2,
+            "Responses[3]" : 2,
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
           },
           "StaticMeshPath" : "Content/Data/BasicShape/Cube_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
@@ -4433,9 +5526,9 @@
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
     "FarClip" : 1000.000000,
-    "Location" : [59.789837, 6.151033, 35.425518],
+    "Location" : [31.979172, 4.588544, -5.611556],
     "NearClip" : 0.100000,
-    "Rotation" : [0.000000, 31.099806, 362.402893]
+    "Rotation" : [0.000000, 17.599802, 28.802765]
   },
   "Version" : 2,
   "WorldSettings" : {

@@ -21,9 +21,10 @@ enum class ECollisionChannel : uint8
 	Pawn = 2,
 	Projectile = 3,
 	Trigger = 4,
+	SkeletalMesh = 5,
 	// 필요 시 확장 (ActiveCount, MAX 갱신)
 
-	ActiveCount = 5, // 에디터/드롭다운에 노출되는 실질 채널 수
+	ActiveCount = 6, // 에디터/드롭다운에 노출되는 실질 채널 수
 	MAX = 16         // 응답 테이블 최대 슬롯 수
 };
 
@@ -74,6 +75,7 @@ enum class ECollisionPreset : uint8
 	PhysicsActor,
 	Trigger,
 	Pawn,
+	SkeletalMesh,
 
 	COUNT
 };
@@ -91,6 +93,7 @@ struct FCollisionResponseContainer
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Pawn", Member=Responses[2], Enum=ECollisionResponse);
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Projectile", Member=Responses[3], Enum=ECollisionResponse);
 	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Trigger", Member=Responses[4], Enum=ECollisionResponse);
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="SkeletalMesh", Member=Responses[5], Enum=ECollisionResponse);
 
 	ECollisionResponse Responses[static_cast<int32>(ECollisionChannel::MAX)];
 
