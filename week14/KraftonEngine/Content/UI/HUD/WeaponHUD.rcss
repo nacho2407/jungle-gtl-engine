@@ -76,6 +76,15 @@ body {
 	opacity: 0.0;
 }
 
+.crosshair-hit-marker {
+	position: absolute;
+	left: 32px;
+	top: 32px;
+	width: 64px;
+	height: 64px;
+	opacity: 0.0;
+}
+
 .crosshair-kill-marker {
 	position: absolute;
 	left: 16px;

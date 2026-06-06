@@ -18,6 +18,7 @@
             <img id="crosshair-bottom-red" class="crosshair-part crosshair-bottom" src="Crosshair/CrosshairBottomRed.png"/>
             <img id="crosshair-dot-red" class="crosshair-dot" src="Crosshair/CrosshairDotRed.png"/>
 
+            <img id="crosshair-hit-marker" class="crosshair-hit-marker" src="Crosshair/CrosshairHitMarkerWhite.png"/>
             <img id="crosshair-kill-marker" class="crosshair-kill-marker" src="Crosshair/CrosshairKillMarker.png"/>
         </div>
     </div>

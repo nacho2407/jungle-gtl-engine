@@ -27,6 +27,7 @@ local CROSSHAIR_BASE_RIGHT  = 80
 local CROSSHAIR_BASE_TOP    = 16
 local CROSSHAIR_BASE_BOTTOM = 80
 local CROSSHAIR_SPREAD_PX   = 34
+local HIT_MARKER_DURATION   = 0.12
 local KILL_MARKER_DURATION  = 0.22
 
 local MAX_HITS_FOR_FULL_RED = 8
@@ -42,6 +43,7 @@ local currentAmmo  = MAGAZINE_SIZE
 local isReloading  = false
 local hitCounts    = {}
 local weaponSpread = 0.0
+local hitMarkerTimer = 0.0
 local killMarkerTimer = 0.0
 local currentHealth = MAX_HEALTH
 local isInvincible = false
@@ -316,16 +318,30 @@ local function update_crosshair()
     end
     set_crosshair_color(isTargeted)
 
+    local hitOpacity = 0.0
+    if hitMarkerTimer > 0.0 then
+        hitOpacity = hitMarkerTimer / HIT_MARKER_DURATION
+        if hitOpacity > 1.0 then hitOpacity = 1.0 end
+        hitOpacity = hitOpacity * 0.9
+    end
+
     local killOpacity = 0.0
     if killMarkerTimer > 0.0 then
         killOpacity = killMarkerTimer / KILL_MARKER_DURATION
         if killOpacity > 1.0 then killOpacity = 1.0 end
         killOpacity = killOpacity * 0.9
     end
+    weaponHudWidget:SetProperty("crosshair-hit-marker", "opacity", string.format("%.2f", hitOpacity))
     weaponHudWidget:SetProperty("crosshair-kill-marker", "opacity", string.format("%.2f", killOpacity))
 end
 
+local function trigger_hit_marker()
+    hitMarkerTimer = HIT_MARKER_DURATION
+    update_crosshair()
+end
+
 local function trigger_kill_marker()
+    hitMarkerTimer = 0.0
     killMarkerTimer = KILL_MARKER_DURATION
     update_crosshair()
 end
@@ -363,6 +379,10 @@ local function register_hit(hitActor, hitLoc)
 
     if n == MAX_HITS_FOR_FULL_RED then
         trigger_kill_marker()
+    elseif n < MAX_HITS_FOR_FULL_RED then
+        trigger_hit_marker()
+    else
+        return
     end
 end
 
@@ -462,6 +482,7 @@ function BeginPlay()
     isReloading = false
     fireCooldown = 0.0
     weaponSpread = 0.0
+    hitMarkerTimer = 0.0
     killMarkerTimer = 0.0
     DamagePostProcess.Initialize()
     DamagePostProcess.Reset()
@@ -526,6 +547,11 @@ function Tick(dt)
 
     if Input.GetKey(Key.MouseRight) then
         weaponSpread = 0.0
+    end
+
+    if hitMarkerTimer > 0.0 then
+        hitMarkerTimer = hitMarkerTimer - dt
+        if hitMarkerTimer < 0.0 then hitMarkerTimer = 0.0 end
     end
 
     if killMarkerTimer > 0.0 then
