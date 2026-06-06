@@ -11,8 +11,6 @@
 #include "Viewport/GameViewportClient.h"
 #include "Serialization/SceneSaveManager.h"
 #include "GameFramework/World.h"
-#include "GameFramework/GameMode/GameModeBase.h"
-#include "Object/Reflection/UClass.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Logging/Log.h"
 
@@ -221,30 +219,6 @@ bool UGameEngine::LoadSceneFromPath(const FString& InScenePath)
 
 	LoadContext.WorldType = EWorldType::Game;
 	LoadContext.World->SetWorldType(EWorldType::Game);
-
-	// GameMode 주입 — World::BeginPlay 가 이걸 보고 GameMode/GameState/PC 를 spawn 한다.
-	// 우선순위: World->WorldSettings.GameModeClassName (scene 파일이 지정) →
-	// ProjectSettings.GameModeClassName → AGameModeBase fallback (game-specific 기본 클래스 없음).
-	UClass* GMClass = nullptr;
-	const FString& SceneGMName = LoadContext.World->GetWorldSettings().GameModeClassName;
-	if (!SceneGMName.empty())
-	{
-		UClass* Found = UClass::FindByName(SceneGMName.c_str());
-		if (Found && Found->IsA(AGameModeBase::StaticClass()))
-		{
-			GMClass = Found;
-		}
-		else
-		{
-			UE_LOG("[GameEngine] WorldSettings.GameMode = '%s' 가 알 수 없는 클래스 — ProjectSettings 로 fallback",
-				SceneGMName.c_str());
-		}
-	}
-	if (!GMClass)
-	{
-		GMClass = AGameModeBase::ResolveClassFromProjectSettings(AGameModeBase::StaticClass());
-	}
-	LoadContext.World->SetGameModeClass(GMClass);
 
 	WorldList.push_back(LoadContext);
 	SetActiveWorld(LoadContext.ContextHandle);

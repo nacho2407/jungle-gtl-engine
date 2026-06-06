@@ -56,6 +56,7 @@ const FDebugPlaceActorOption GDebugPlaceActorOptions[] = {
 	{ "Spot Light", FLevelViewportLayout::EViewportPlaceActorType::SpotLight },
 	{ "Camera", FLevelViewportLayout::EViewportPlaceActorType::Camera },
 	{ "Cine Camera", FLevelViewportLayout::EViewportPlaceActorType::CineCamera },
+	{ "Player Start", FLevelViewportLayout::EViewportPlaceActorType::PlayerStart },
 	{ "Character",     FLevelViewportLayout::EViewportPlaceActorType::Character },
 	{ "Lua Character", FLevelViewportLayout::EViewportPlaceActorType::LuaCharacter },
 };
@@ -200,6 +201,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ContentBrowserWidget.Initialize(InEditorEngine, InRenderer.GetFD3DDevice().GetDevice());
 	ShadowMapDebugWidget.Initialize(InEditorEngine);
 	AnimationDebugWidget.Initialize(InEditorEngine);
+	GameBuildWidget.Initialize(InEditorEngine);
 
 	AssetEditorManager.RegisterEditor<FFloatCurveEditorWidget>();
 	AssetEditorManager.RegisterEditor<FCameraShakeEditorWidget>();
@@ -214,6 +216,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 void FEditorMainPanel::Release()
 {
 	AssetEditorManager.CloseAll();
+	GameBuildWidget.Shutdown();
 	ConsoleWidget.Shutdown();
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -308,6 +311,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 
 	ProjectSettingsWidget.Render();
 	WorldSettingsWidget.Render();
+	GameBuildWidget.Render(DeltaTime);
 
 	if (!bHideEditorWindows)
 	{
@@ -394,6 +398,15 @@ void FEditorMainPanel::RenderMainMenuBar()
 	else
 	{
 		bShowWidgetList = false;
+	}
+
+	if (ImGui::BeginMenu("Build"))
+	{
+		if (ImGui::MenuItem("Game Build..."))
+		{
+			GameBuildWidget.Open();
+		}
+		ImGui::EndMenu();
 	}
 
 	if (ImGui::MenuItem("Project Settings"))

@@ -34,6 +34,9 @@
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{879fdc11-4e44-c448-2bbf-5fd281dc244f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Build">
+      <UniqueIdentifier>{99f90e79-3e47-54fe-5a2f-a1e1dc6a70c6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\PIE">
       <UniqueIdentifier>{1485fbd8-4084-14c8-cd14-33798c9651d4}</UniqueIdentifier>
     </Filter>
@@ -74,10 +77,10 @@
       <UniqueIdentifier>{ebf11781-61db-1727-e031-70fd890518c6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\UI\Asset\Physics">
-      <UniqueIdentifier>{2fe635d6-4d72-4f21-8c25-e4fc47dca7c2}</UniqueIdentifier>
+      <UniqueIdentifier>{a9510143-b9c8-a4a8-aa42-31438e50f6bb}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\UI\Asset\UI">
-      <UniqueIdentifier>{0b147c75-c9da-4f75-a8a9-bb6f8fb810d2}</UniqueIdentifier>
+      <UniqueIdentifier>{e89c6925-b13b-4e0a-437c-d620cfa23724}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Editor\UI\ContentBrowser">
       <UniqueIdentifier>{09a2ea7f-e891-b580-bef0-471bcd9b5d4b}</UniqueIdentifier>
@@ -181,6 +184,9 @@
     <Filter Include="Source\Engine\Component\Movement">
       <UniqueIdentifier>{9d062af4-b676-61f1-319e-efb1ba670c12}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Component\Movement\PhysX">
+      <UniqueIdentifier>{d4d37167-1e75-a507-b599-e31753f22e42}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component\Particle">
       <UniqueIdentifier>{35416e1f-359c-3d0d-7186-922fdee6933f}</UniqueIdentifier>
     </Filter>
@@ -211,6 +217,9 @@
     <Filter Include="Source\Engine\Debug">
       <UniqueIdentifier>{94a820a1-1cf9-b142-f9b6-735eff25a3ee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Editor">
+      <UniqueIdentifier>{44bbe43f-5fca-630d-107c-c9e9c26cf3ef}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\FloatCurve">
       <UniqueIdentifier>{de49fb56-b8a9-9a15-719d-7136fdb8ccd8}</UniqueIdentifier>
     </Filter>
@@ -225,6 +234,9 @@
     </Filter>
     <Filter Include="Source\Engine\GameFramework\GameMode">
       <UniqueIdentifier>{5dad4861-14c8-9475-5500-063e7861367c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GameFramework\Gameplay">
+      <UniqueIdentifier>{abeb927d-b6e1-edc3-add3-b7421cf227a4}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\GameFramework\Light">
       <UniqueIdentifier>{b016779b-d84f-ba95-e8ed-4e352a91130a}</UniqueIdentifier>
@@ -752,6 +764,9 @@
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp">
       <Filter>Source\Editor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Build\EditorGameBuilder.cpp">
+      <Filter>Source\Editor\Build</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp">
       <Filter>Source\Editor\Selection</Filter>
     </ClCompile>
@@ -771,6 +786,9 @@
       <Filter>Source\Editor\Subsystem</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp">
+      <Filter>Source\Editor\Subsystem</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Subsystem\PhysicsAssetEditingLibrary.cpp">
       <Filter>Source\Editor\Subsystem</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Subsystem\PhysicsAssetGenerator.cpp">
@@ -858,6 +876,9 @@
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Panel\EditorControlWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorGameBuildWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Panel\EditorMaterialInspector.cpp">
@@ -1142,15 +1163,6 @@
     <ClCompile Include="Source\Engine\Component\Movement\MovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.cpp">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.cpp">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.cpp">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\PendulumMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClCompile>
@@ -1159,6 +1171,15 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp">
       <Filter>Source\Engine\Component\Movement</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.cpp">
+      <Filter>Source\Engine\Component\Movement\PhysX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.cpp">
+      <Filter>Source\Engine\Component\Movement\PhysX</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.cpp">
+      <Filter>Source\Engine\Component\Movement\PhysX</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp">
       <Filter>Source\Engine\Component\Particle</Filter>
@@ -1298,6 +1319,9 @@
     <ClCompile Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.cpp">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\PlayerStart.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.cpp">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
@@ -1334,17 +1358,17 @@
     <ClCompile Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.cpp">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameModeBase.cpp">
-      <Filter>Source\Engine\GameFramework\GameMode</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameStateBase.cpp">
-      <Filter>Source\Engine\GameFramework\GameMode</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\GameMode\GameplayStatics.cpp">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\LuaPlayerController.cpp">
       <Filter>Source\Engine\GameFramework\GameMode</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\GameMode\PlayerController.cpp">
       <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Gameplay\GameplayRuntime.cpp">
+      <Filter>Source\Engine\GameFramework\Gameplay</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Light\AmbientLightActor.cpp">
       <Filter>Source\Engine\GameFramework\Light</Filter>
@@ -1505,6 +1529,9 @@
     <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Physics\HitboxInstance.cpp">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Physics\NvClothSDK.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
@@ -1517,10 +1544,10 @@
     <ClCompile Include="Source\Engine\Physics\PhysXVehicle4WInstance.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\PhysXVehicleTankInstance.cpp">
+    <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp">
+    <ClCompile Include="Source\Engine\Physics\PhysXVehicleTankInstance.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\PhysicalMaterial.cpp">
@@ -1557,9 +1584,6 @@
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\PhysicsShape.cpp">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Physics\HitboxInstance.cpp">
       <Filter>Source\Engine\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Physics\RagdollInstance.cpp">
@@ -1916,6 +1940,9 @@
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Build\EditorGameBuilder.h">
+      <Filter>Source\Editor\Build</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\PIE\PIETypes.h">
       <Filter>Source\Editor\PIE</Filter>
     </ClInclude>
@@ -1950,6 +1977,9 @@
       <Filter>Source\Editor\Subsystem</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h">
+      <Filter>Source\Editor\Subsystem</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Subsystem\PhysicsAssetEditingLibrary.h">
       <Filter>Source\Editor\Subsystem</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Subsystem\PhysicsAssetGenerator.h">
@@ -2049,6 +2079,9 @@
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorControlWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorGameBuildWidget.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorMaterialInspector.h">
@@ -2375,15 +2408,6 @@
     <ClInclude Include="Source\Engine\Component\Movement\MovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.h">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.h">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.h">
-      <Filter>Source\Engine\Component\Movement</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\PendulumMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
     </ClInclude>
@@ -2392,6 +2416,15 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h">
       <Filter>Source\Engine\Component\Movement</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.h">
+      <Filter>Source\Engine\Component\Movement\PhysX</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.h">
+      <Filter>Source\Engine\Component\Movement\PhysX</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.h">
+      <Filter>Source\Engine\Component\Movement\PhysX</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h">
       <Filter>Source\Engine\Component\Particle</Filter>
@@ -2525,6 +2558,9 @@
     <ClInclude Include="Source\Engine\Debug\DrawDebugHelpers.h">
       <Filter>Source\Engine\Debug</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Editor\SceneOutlinerState.h">
+      <Filter>Source\Engine\Editor</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveAsset.h">
       <Filter>Source\Engine\FloatCurve</Filter>
     </ClInclude>
@@ -2559,6 +2595,9 @@
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\PlayerStart.h">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.h">
@@ -2600,17 +2639,17 @@
     <ClInclude Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.h">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameModeBase.h">
-      <Filter>Source\Engine\GameFramework\GameMode</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameStateBase.h">
-      <Filter>Source\Engine\GameFramework\GameMode</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\GameMode\GameplayStatics.h">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\LuaPlayerController.h">
       <Filter>Source\Engine\GameFramework\GameMode</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\GameMode\PlayerController.h">
       <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Gameplay\GameplayRuntime.h">
+      <Filter>Source\Engine\GameFramework\Gameplay</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Light\AmbientLightActor.h">
       <Filter>Source\Engine\GameFramework\Light</Filter>
@@ -2846,6 +2885,9 @@
     <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\HitboxInstance.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Physics\NvClothInclude.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
@@ -2867,10 +2909,10 @@
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleInstanceBase.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\PhysXVehicleTankInstance.h">
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicleManager.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\PhysXVehicleManager.h">
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicleTankInstance.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysicalMaterial.h">
@@ -2883,6 +2925,9 @@
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysicsAssetDebugDraw.h">
+      <Filter>Source\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Physics\PhysicsAssetEditTypes.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysicsAssetManager.h">
@@ -2913,9 +2958,6 @@
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\PhysicsTypes.h">
-      <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Physics\HitboxInstance.h">
       <Filter>Source\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\RagdollInstance.h">

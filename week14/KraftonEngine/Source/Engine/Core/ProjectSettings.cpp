@@ -1,5 +1,6 @@
 ﻿#include "Core/ProjectSettings.h"
 #include "SimpleJSON/json.hpp"
+#include "Core/Logging/Log.h"
 
 #include <fstream>
 #include <filesystem>
@@ -17,6 +18,15 @@ namespace PSKey
 	constexpr const char* GameSection = "Game";
 	constexpr const char* StartLevelName = "StartLevelName";
 	constexpr const char* GameModeClassName = "GameModeClassName";
+	constexpr const char* GameplayPreset = "GameplayPreset";
+	constexpr const char* DirectorModule = "DirectorModule";
+	constexpr const char* PlayerControllerClassName = "PlayerControllerClassName";
+	constexpr const char* DefaultPawnClassName = "DefaultPawnClassName";
+	constexpr const char* DefaultPawnScript = "DefaultPawnScript";
+	constexpr const char* DefaultPawnMeshPath = "DefaultPawnMeshPath";
+	constexpr const char* DefaultPlayerStartTag = "DefaultPlayerStartTag";
+	constexpr const char* bUsePlacedAutoPossessPawn = "bUsePlacedAutoPossessPawn";
+	constexpr const char* bSpawnDefaultPawnIfMissing = "bSpawnDefaultPawnIfMissing";
 
 	constexpr const char* PhysicsSection = "Physics";
 	constexpr const char* bEnablePvd = "bEnablePvd";
@@ -48,7 +58,16 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 
 	JSON GameObj = Object();
 	GameObj[PSKey::StartLevelName] = Game.StartLevelName;
-	GameObj[PSKey::GameModeClassName] = Game.GameModeClassName;
+	JSON GameplayPresetObj = Object();
+	GameplayPresetObj[PSKey::DirectorModule] = Game.GameplayPreset.DirectorModule;
+	GameplayPresetObj[PSKey::PlayerControllerClassName] = Game.GameplayPreset.PlayerControllerClassName;
+	GameplayPresetObj[PSKey::DefaultPawnClassName] = Game.GameplayPreset.DefaultPawnClassName;
+	GameplayPresetObj[PSKey::DefaultPawnScript] = Game.GameplayPreset.DefaultPawnScript;
+	GameplayPresetObj[PSKey::DefaultPawnMeshPath] = Game.GameplayPreset.DefaultPawnMeshPath;
+	GameplayPresetObj[PSKey::DefaultPlayerStartTag] = Game.GameplayPreset.DefaultPlayerStartTag;
+	GameplayPresetObj[PSKey::bUsePlacedAutoPossessPawn] = Game.GameplayPreset.bUsePlacedAutoPossessPawn;
+	GameplayPresetObj[PSKey::bSpawnDefaultPawnIfMissing] = Game.GameplayPreset.bSpawnDefaultPawnIfMissing;
+	GameObj[PSKey::GameplayPreset] = GameplayPresetObj;
 	Root[PSKey::GameSection] = GameObj;
 
 	JSON PhysicsObj = Object();
@@ -93,7 +112,30 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 		if (G.hasKey(PSKey::StartLevelName))
 			Game.StartLevelName = G[PSKey::StartLevelName].ToString();
 		if (G.hasKey(PSKey::GameModeClassName))
-			Game.GameModeClassName = G[PSKey::GameModeClassName].ToString();
+		{
+			UE_LOG("[ProjectSettings] Legacy GameModeClassName '%s' ignored. GameplayPreset is used instead.",
+				G[PSKey::GameModeClassName].ToString().c_str());
+		}
+		if (G.hasKey(PSKey::GameplayPreset))
+		{
+			JSON Preset = G[PSKey::GameplayPreset];
+			if (Preset.hasKey(PSKey::DirectorModule))
+				Game.GameplayPreset.DirectorModule = Preset[PSKey::DirectorModule].ToString();
+			if (Preset.hasKey(PSKey::PlayerControllerClassName))
+				Game.GameplayPreset.PlayerControllerClassName = Preset[PSKey::PlayerControllerClassName].ToString();
+			if (Preset.hasKey(PSKey::DefaultPawnClassName))
+				Game.GameplayPreset.DefaultPawnClassName = Preset[PSKey::DefaultPawnClassName].ToString();
+			if (Preset.hasKey(PSKey::DefaultPawnScript))
+				Game.GameplayPreset.DefaultPawnScript = Preset[PSKey::DefaultPawnScript].ToString();
+			if (Preset.hasKey(PSKey::DefaultPawnMeshPath))
+				Game.GameplayPreset.DefaultPawnMeshPath = Preset[PSKey::DefaultPawnMeshPath].ToString();
+			if (Preset.hasKey(PSKey::DefaultPlayerStartTag))
+				Game.GameplayPreset.DefaultPlayerStartTag = Preset[PSKey::DefaultPlayerStartTag].ToString();
+			if (Preset.hasKey(PSKey::bUsePlacedAutoPossessPawn))
+				Game.GameplayPreset.bUsePlacedAutoPossessPawn = Preset[PSKey::bUsePlacedAutoPossessPawn].ToBool();
+			if (Preset.hasKey(PSKey::bSpawnDefaultPawnIfMissing))
+				Game.GameplayPreset.bSpawnDefaultPawnIfMissing = Preset[PSKey::bSpawnDefaultPawnIfMissing].ToBool();
+		}
 	}
 
 	if (Root.hasKey(PSKey::PhysicsSection))
