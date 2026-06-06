@@ -1,15 +1,69 @@
-﻿#include "Editor/UI/Panel/EditorProjectSettingsWidget.h"
+#include "Editor/UI/Panel/EditorProjectSettingsWidget.h"
 #include "Core/ProjectSettings.h"
-#include "Serialization/SceneSaveManager.h"
-#include "GameFramework/GameMode/GameModeBase.h"
+#include "GameFramework/GameMode/PlayerController.h"
+#include "GameFramework/Pawn/Pawn.h"
 #include "Object/Reflection/UClass.h"
+#include "Serialization/SceneSaveManager.h"
 #include "ImGui/imgui.h"
+
+#include <algorithm>
+#include <cstdio>
+
+namespace
+{
+bool InputFString(const char* Label, FString& Value, size_t BufferSize = 256)
+{
+	char Buffer[512] = {};
+	const size_t SafeBufferSize = (std::min)(BufferSize, sizeof(Buffer));
+	std::snprintf(Buffer, SafeBufferSize, "%s", Value.c_str());
+	if (ImGui::InputText(Label, Buffer, SafeBufferSize))
+	{
+		Value = Buffer;
+		return true;
+	}
+	return false;
+}
+
+bool ClassNameCombo(const char* Label, UClass* RequiredBaseClass, FString& InOutClassName, const char* FallbackLabel)
+{
+	TArray<UClass*> Classes;
+	for (UClass* Class : UClass::GetAllClasses())
+	{
+		if (Class && (!RequiredBaseClass || Class->IsA(RequiredBaseClass)))
+		{
+			Classes.push_back(Class);
+		}
+	}
+
+	const char* Preview = InOutClassName.empty() ? FallbackLabel : InOutClassName.c_str();
+	bool bChanged = false;
+	if (ImGui::BeginCombo(Label, Preview))
+	{
+		for (UClass* Class : Classes)
+		{
+			const char* ClassName = Class ? Class->GetName() : "";
+			const bool bSelected = InOutClassName == ClassName;
+			if (ImGui::Selectable(ClassName, bSelected))
+			{
+				InOutClassName = ClassName;
+				bChanged = true;
+			}
+			if (bSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+		}
+		ImGui::EndCombo();
+	}
+	return bChanged;
+}
+}
 
 void EditorProjectSettingsWidget::Render()
 {
 	if (!bOpen) return;
 
-	ImGui::SetNextWindowSize(ImVec2(360, 200), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(520, 440), ImGuiCond_FirstUseEver);
 	if (!ImGui::Begin("Project Settings", &bOpen))
 	{
 		ImGui::End();
@@ -21,7 +75,7 @@ void EditorProjectSettingsWidget::Render()
 
 	if (ImGui::CollapsingHeader("Game", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		// Scene 파일 목록을 콤보박스로 표시
+		// 시작 scene 파일 목록 표시
 		TArray<FString> SceneFiles = FSceneSaveManager::GetSceneFileList();
 
 		int CurrentIdx = -1;
@@ -46,80 +100,85 @@ void EditorProjectSettingsWidget::Render()
 					bSettingsChanged = true;
 				}
 				if (bSelected)
-					ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
-
-		// GameMode 클래스 — UClass 레지스트리에서 AGameModeBase 파생만 필터링.
-		// 첫 항목은 "(Default)"로, 빈 문자열에 매핑 — GameEngine이 코드 디폴트 사용.
-		TArray<UClass*> GameModeClasses;
-		GameModeClasses.push_back(nullptr); // sentinel for "(Default)"
-		for (UClass* C : UClass::GetAllClasses())
-		{
-			if (C && C->IsA(AGameModeBase::StaticClass()))
-				GameModeClasses.push_back(C);
-		}
-
-		int GMIdx = 0;
-		for (int i = 1; i < static_cast<int>(GameModeClasses.size()); ++i)
-		{
-			if (PS.Game.GameModeClassName == GameModeClasses[i]->GetName())
-			{
-				GMIdx = i;
-				break;
-			}
-		}
-
-		const char* GMPreview = (GMIdx == 0) ? "(Default)" : GameModeClasses[GMIdx]->GetName();
-		if (ImGui::BeginCombo("GameMode Class", GMPreview))
-		{
-			for (int i = 0; i < static_cast<int>(GameModeClasses.size()); ++i)
-			{
-				const char* Label = (i == 0) ? "(Default)" : GameModeClasses[i]->GetName();
-				bool bSelected = (i == GMIdx);
-				if (ImGui::Selectable(Label, bSelected))
 				{
-					PS.Game.GameModeClassName = (i == 0) ? FString() : FString(GameModeClasses[i]->GetName());
-					bSettingsChanged = true;
-				}
-				if (bSelected)
 					ImGui::SetItemDefaultFocus();
+				}
 			}
 			ImGui::EndCombo();
 		}
-		ImGui::TextDisabled("Requires scene reload to take effect.");
+
+		ImGui::Separator();
+		ImGui::TextUnformatted("Gameplay Preset");
+
+		auto& Preset = PS.Game.GameplayPreset;
+		bSettingsChanged |= InputFString("Director Module", Preset.DirectorModule);
+		bSettingsChanged |= ClassNameCombo(
+			"Player Controller Class",
+			APlayerController::StaticClass(),
+			Preset.PlayerControllerClassName,
+			"ALuaPlayerController");
+		bSettingsChanged |= ClassNameCombo(
+			"Default Pawn Class",
+			APawn::StaticClass(),
+			Preset.DefaultPawnClassName,
+			"ALuaCharacter");
+		bSettingsChanged |= InputFString("Default Pawn Script", Preset.DefaultPawnScript);
+		bSettingsChanged |= InputFString("Default Pawn Mesh", Preset.DefaultPawnMeshPath, 512);
+		bSettingsChanged |= InputFString("Default Player Start Tag", Preset.DefaultPlayerStartTag);
+		bSettingsChanged |= ImGui::Checkbox("Use Placed Auto Possess Pawn", &Preset.bUsePlacedAutoPossessPawn);
+		bSettingsChanged |= ImGui::Checkbox("Spawn Default Pawn If Missing", &Preset.bSpawnDefaultPawnIfMissing);
+		ImGui::TextDisabled("Gameplay preset is applied on the next PIE or standalone scene start.");
 	}
 
 	if (ImGui::CollapsingHeader("Shadow", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::Checkbox("Shadows", &PS.Shadow.bEnabled);
+		if (ImGui::Checkbox("Shadows", &PS.Shadow.bEnabled))
+		{
+			bSettingsChanged = true;
+		}
 		if (PS.Shadow.bEnabled)
 		{
-			// Resolution 선택지 (power of 2)
+			// Shadow map 해상도 선택지
 			static const int kResOptions[] = { 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
 			static const char* kResLabels[] = { "64", "128", "256", "512", "1024", "2048", "4096", "8192" };
 			constexpr int kNumRes = 8;
 
-			auto ResCombo = [](const char* label, uint32& value) {
-				int cur = 0;
+			auto ResCombo = [](const char* Label, uint32& Value)
+			{
+				int Current = 0;
 				for (int i = 0; i < kNumRes; ++i)
-					if (kResOptions[i] == static_cast<int>(value)) { cur = i; break; }
-				if (ImGui::Combo(label, &cur, kResLabels, kNumRes))
-					value = static_cast<uint32>(kResOptions[cur]);
+				{
+					if (kResOptions[i] == static_cast<int>(Value))
+					{
+						Current = i;
+						break;
+					}
+				}
+				if (ImGui::Combo(Label, &Current, kResLabels, kNumRes))
+				{
+					Value = static_cast<uint32>(kResOptions[Current]);
+					return true;
+				}
+				return false;
 			};
 
-			ResCombo("CSM Resolution", PS.Shadow.CSMResolution);
-			ResCombo("Spot Atlas Resolution", PS.Shadow.SpotAtlasResolution);
-			ResCombo("Point Atlas Resolution", PS.Shadow.PointAtlasResolution);
+			bSettingsChanged |= ResCombo("CSM Resolution", PS.Shadow.CSMResolution);
+			bSettingsChanged |= ResCombo("Spot Atlas Resolution", PS.Shadow.SpotAtlasResolution);
+			bSettingsChanged |= ResCombo("Point Atlas Resolution", PS.Shadow.PointAtlasResolution);
 
-			int spotPages = static_cast<int>(PS.Shadow.MaxSpotAtlasPages);
-			if (ImGui::SliderInt("Max Spot Atlas Pages", &spotPages, 1, 16))
-				PS.Shadow.MaxSpotAtlasPages = static_cast<uint32>(spotPages);
+			int SpotPages = static_cast<int>(PS.Shadow.MaxSpotAtlasPages);
+			if (ImGui::SliderInt("Max Spot Atlas Pages", &SpotPages, 1, 16))
+			{
+				PS.Shadow.MaxSpotAtlasPages = static_cast<uint32>(SpotPages);
+				bSettingsChanged = true;
+			}
 
-			int pointPages = static_cast<int>(PS.Shadow.MaxPointAtlasPages);
-			if (ImGui::SliderInt("Max Point Atlas Pages", &pointPages, 1, 16))
-				PS.Shadow.MaxPointAtlasPages = static_cast<uint32>(pointPages);
+			int PointPages = static_cast<int>(PS.Shadow.MaxPointAtlasPages);
+			if (ImGui::SliderInt("Max Point Atlas Pages", &PointPages, 1, 16))
+			{
+				PS.Shadow.MaxPointAtlasPages = static_cast<uint32>(PointPages);
+				bSettingsChanged = true;
+			}
 		}
 	}
 

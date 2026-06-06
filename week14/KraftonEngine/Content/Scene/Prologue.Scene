@@ -54,8 +54,5 @@
     "Rotation" : [0.000000, 0.000000, 0.000000]
   },
   "Version" : 2,
-  "WorldSettings" : {
-    "GameMode" : ""
-  },
   "WorldType" : "Editor"
 }

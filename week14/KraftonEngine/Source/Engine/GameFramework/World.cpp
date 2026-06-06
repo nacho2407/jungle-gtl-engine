@@ -9,8 +9,7 @@
 #include "Engine/Component/Camera/CameraComponent.h"
 #include "Render/Types/LODContext.h"
 #include "Core/ProjectSettings.h"
-#include "GameFramework/GameMode/GameModeBase.h"
-#include "GameFramework/GameMode/GameStateBase.h"
+#include "GameFramework/Gameplay/GameplayRuntime.h"
 #include "GameFramework/GameMode/PlayerController.h"
 #include "GameFramework/Camera/PlayerCameraManager.h"
 #include "Object/Reflection/UClass.h"
@@ -20,6 +19,8 @@
 #include "Physics/PhysicsScene.h"
 
 #include <algorithm>
+
+UWorld::UWorld() = default;
 
 UWorld::~UWorld()
 {
@@ -41,7 +42,7 @@ UObject* UWorld::Duplicate(UObject* NewOuter) const
 		return nullptr;
 	}
 	NewWorld->SetOuter(NewOuter);
-	NewWorld->WorldSettings = WorldSettings;  // 씬 단위 설정 (GameMode 등) 복제
+	NewWorld->WorldSettings = WorldSettings;  // 씬 단위 설정 복제
 	NewWorld->InitWorld(); // Partition/VisibleSet 초기화 — 이거 없으면 복제 액터가 렌더링되지 않음
 
 	for (AActor* Src : GetActors())
@@ -102,14 +103,9 @@ AActor* UWorld::SpawnActorByClass(UClass* Class)
 	return Actor;
 }
 
-AGameStateBase* UWorld::GetGameState() const
-{
-	return GameMode ? GameMode->GetGameState() : nullptr;
-}
-
 APlayerController* UWorld::GetFirstPlayerController() const
 {
-	return GameMode ? GameMode->GetPlayerController() : nullptr;
+	return GameplayRuntime ? GameplayRuntime->GetPlayerController() : nullptr;
 }
 
 // PC 의 PlayerCameraManager 우선, fallback 으로 IPOVProvider pull.
@@ -325,27 +321,17 @@ void UWorld::BeginPlay()
 {
 	bHasBegunPlay = true;
 
-	// GameMode spawn — Editor 월드에서는 생성하지 않는다.
-	// Level::BeginPlay 이전에 spawn하면 그 루프에서 GameMode/GameState도 BeginPlay된다.
-	if (WorldType != EWorldType::Editor && GameModeClass)
-	{
-		AActor* Spawned = SpawnActorByClass(GameModeClass);
-		GameMode = Cast<AGameModeBase>(Spawned);
-	}
-
 	if (PersistentLevel)
 	{
 		PersistentLevel->BeginPlay();
 	}
 
-	// 모든 액터 BeginPlay 완료 후 매치 시작 — 페이즈 변경 브로드캐스트가
-	// 이때 모든 리스너에게 안전하게 도달한다.
-	if (GameMode)
+	// GameplayRuntime 시작 — 모든 배치 actor BeginPlay 이후 PlayerController/Pawn/Director를 연결합니다.
+	if (WorldType == EWorldType::Game || WorldType == EWorldType::PIE)
 	{
-		GameMode->StartMatch();
+		GameplayRuntime = std::make_unique<FGameplayRuntime>();
+		GameplayRuntime->StartWorld(this);
 	}
-
-	// E.2/3: AutoPossessDefaultCamera 는 PC 의 BeginPlay 가 처리.
 }
 
 void UWorld::Tick(float DeltaTime, ELevelTick TickType)
@@ -357,7 +343,7 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 
 	Scene.GetDebugDrawQueue().Tick(DeltaTime);
 
-	// bPaused 동안 PhysicsScene + TickManager skip — GameMode 타이머, Lua Tick, 차량
+	// bPaused 동안 PhysicsScene + TickManager skip — Lua Tick, 차량
 	// 이동, PhysX 시뮬레이션 모두 정지. Render / UI / Input poll 은 호출자 (UEngine::Tick)
 	// 가 따로 돌리므로 영향 없음 → 메뉴/인트로 위에서 화면 보이고 클릭 가능.
 	if (bPaused)
@@ -376,6 +362,11 @@ void UWorld::Tick(float DeltaTime, ELevelTick TickType)
 	}
 
 	TickManager.Tick(this, DeltaTime, TickType);
+
+	if ((TickType == ELevelTick::LEVELTICK_All || TickType == ELevelTick::LEVELTICK_TimeOnly) && GameplayRuntime)
+	{
+		GameplayRuntime->Tick(DeltaTime);
+	}
 
 	// 카메라는 물리/액터 Tick 이후 갱신 — 차량 1인칭처럼 physics body 에 붙은 카메라가
 	// 같은 프레임의 최신 transform 으로 POV cache 를 채운다.
@@ -420,9 +411,10 @@ void UWorld::TickPlayerCamera() const
 
 void UWorld::EndPlay()
 {
-	if (GameMode)
+	if (GameplayRuntime)
 	{
-		GameMode->EndMatch();
+		GameplayRuntime->EndWorld();
+		GameplayRuntime.reset();
 	}
 
 	bHasBegunPlay = false;
@@ -448,7 +440,6 @@ void UWorld::EndPlay()
 
 	PersistentLevel->Clear();
 
-	GameMode = nullptr; // 액터 리스트가 비워지면서 dangling 되므로 명시적으로 해제
 	MarkWorldPrimitivePickingBVHDirty();
 
 	// PersistentLevel은 CreateObject로 생성되었으므로 DestroyObject로 해제해야 alloc count가 맞음
@@ -460,7 +451,6 @@ void UWorld::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UObject::AddReferencedObjects(Collector);
 	Collector.AddReferencedObject(PersistentLevel);
-	Collector.AddReferencedObject(GameMode);
 }
 
 void UWorld::RegisterClothComponent(UClothComponent* Component)

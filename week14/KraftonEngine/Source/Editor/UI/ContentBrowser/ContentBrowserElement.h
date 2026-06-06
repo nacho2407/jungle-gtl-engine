@@ -14,6 +14,12 @@ public:
 	virtual ~ContentBrowserElement() = default;
 	bool RenderSelectSpace(ContentBrowserContext& Context);
 	virtual void Render(ContentBrowserContext& Context);
+	/**
+	 * @brief Content Browser 리스트 모드의 한 행을 렌더링합니다
+	 *
+	 * @param Context Content Browser 렌더링 컨텍스트
+	 */
+	virtual void RenderListRow(ContentBrowserContext& Context);
 	virtual void RenderDetail();
 
 	virtual void RenderContextMenu(ContentBrowserContext& Context) {}

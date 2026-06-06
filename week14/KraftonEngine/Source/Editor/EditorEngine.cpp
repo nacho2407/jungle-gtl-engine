@@ -11,7 +11,6 @@
 #include "Render/Types/MinimalViewInfo.h"
 #include "Editor/Viewport/ViewportCameraTransform.h"
 #include "GameFramework/World.h"
-#include "GameFramework/GameMode/GameModeBase.h"
 #include "Viewport/GameViewportClient.h"
 #include "UI/UIManager.h"
 #include "Editor/Slate/SlateApplication.h"
@@ -32,6 +31,7 @@
 #include "Object/GarbageCollector.h"
 #include "Object/Object.h"
 #include "Editor/Undo/EditorUndoCommand.h"
+#include "Profiling/Time/Timer.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -330,6 +330,7 @@ void UEditorEngine::Tick(float DeltaTime)
 	WorldTick(DeltaTime);
 	Render(DeltaTime);
 	SelectionManager.Tick();
+	ProcessPendingPIESceneTransition();
 
 	if (bAutoGCEnabled)
 	{
@@ -642,6 +643,28 @@ bool UEditorEngine::TogglePIEInputCapture()
 	return true;
 }
 
+bool UEditorEngine::TogglePIEViewportFullscreen()
+{
+	if (!IsPlayingInEditor())
+	{
+		bPIEViewportFullscreen = false;
+		return false;
+	}
+
+	bPIEViewportFullscreen = !bPIEViewportFullscreen;
+	if (!bPIEViewportFullscreen)
+	{
+		// 전체화면에서 돌아오는 즉시 PIE 입력 clip rect를 원래 게임 뷰포트로 복원합니다.
+		if (const UGameViewportClient* PIEViewportClient = GetGameViewportClient())
+		{
+			SyncGameViewportPIEControlState(PIEViewportClient->IsPossessed());
+		}
+	}
+
+	InputSystem::Get().ResetTransientState();
+	return true;
+}
+
 FLevelEditorViewportClient* UEditorEngine::GetPIEGameViewportClient() const
 {
 	if (!IsPlayingInEditor())
@@ -694,11 +717,15 @@ bool UEditorEngine::IsPIEInputCaptured() const
 	return PIEViewportClient && PIEViewportClient->IsPossessed();
 }
 
-void UEditorEngine::RequestTransitionToScene(const FString& /*InScenePath*/)
+void UEditorEngine::RequestTransitionToScene(const FString& InScenePath)
 {
-	// PIE 중이면 세션 종료(에디터 복귀)로 매핑. PIE 가 아닌 상태(에디터 직접)에서 호출되면
-	// 아무 의미 없으므로 no-op.
-	RequestEndPlayMap();
+	if (!IsPlayingInEditor())
+	{
+		return;
+	}
+
+	PendingPIEScenePath = InScenePath;
+	bPendingPIESceneTransition = true;
 }
 
 void UEditorEngine::RequestExit()
@@ -825,14 +852,6 @@ void UEditorEngine::StartPlayInEditorSession(const FRequestPlaySessionParams& Pa
 	//MainPanel.HideEditorWindowsForPIE(); //PIE 중에는 에디터 패널을 숨김.
 	//ViewportLayout.DisableWorldAxisForPIE(); //PIE 중에는 월드 축 렌더링을 비활성화.
 
-	// PIE 월드에도 ProjectSettings의 GameMode 클래스 적용.
-	// Editor 모듈은 Game-specific 디폴트를 알 수 없으므로, ProjectSettings에
-	// 지정된 경우에만 GameMode가 spawn된다. 비어있으면 미생성 (회귀 안전).
-	if (UClass* GMClass = AGameModeBase::ResolveClassFromProjectSettings(nullptr))
-	{
-		PIEWorld->SetGameModeClass(GMClass);
-	}
-
 	// 7) BeginPlay 트리거 — 모든 등록/바인딩이 끝난 다음 첫 Tick 이전에 호출.
 	//    UWorld::BeginPlay가 bHasBegunPlay를 먼저 세팅하므로 BeginPlay 도중
 	//    SpawnActor로 만든 신규 액터도 자동으로 BeginPlay된다.
@@ -922,6 +941,7 @@ void UEditorEngine::EndPlayMap()
 
 	PlayInEditorSessionInfo.reset();
 	PIEControlMode = EPIEControlMode::Possessed;
+	bPIEViewportFullscreen = false;
 	InputSystem::Get().ResetCaptureStateForPIEEnd();
 }
 
@@ -1069,6 +1089,126 @@ void UEditorEngine::LoadStartLevel()
 	{
 		// 로드 실패 시 빈 씬으로 복구
 		NewScene();
+	}
+}
+
+FString UEditorEngine::ResolveSceneFilePath(const FString& InNameOrPath) const
+{
+	std::filesystem::path Input(FPaths::ToWide(InNameOrPath));
+	const std::wstring Ext = Input.has_extension() ? Input.extension().wstring() : L"";
+	if (Input.is_absolute() && std::filesystem::exists(Input))
+	{
+		return InNameOrPath;
+	}
+
+	std::filesystem::path Resolved = std::filesystem::path(FSceneSaveManager::GetSceneDirectory()) / Input;
+	if (Ext.empty())
+	{
+		Resolved += FSceneSaveManager::SceneExtension;
+	}
+	return FPaths::ToUtf8(Resolved.wstring());
+}
+
+void UEditorEngine::ProcessPendingPIESceneTransition()
+{
+	if (!bPendingPIESceneTransition)
+	{
+		return;
+	}
+
+	bPendingPIESceneTransition = false;
+	const FString ScenePath = std::move(PendingPIEScenePath);
+	PendingPIEScenePath.clear();
+
+	if (!IsPlayingInEditor() || !PlayInEditorSessionInfo.has_value())
+	{
+		return;
+	}
+
+	const FString FilePath = ResolveSceneFilePath(ScenePath);
+	if (!std::filesystem::exists(std::filesystem::path(FPaths::ToWide(FilePath))))
+	{
+		UE_LOG("[EditorEngine] PIE TransitionToScene failed. Scene file not found: %s", FilePath.c_str());
+		return;
+	}
+
+	const bool bWasPossessedMode = PIEControlMode == EPIEControlMode::Possessed;
+	const FName PreviousActiveWorldHandle = PlayInEditorSessionInfo->PreviousActiveWorldHandle;
+
+	if (UGameViewportClient* PIEViewportClient = GetGameViewportClient())
+	{
+		PIEViewportClient->EndGameSession();
+	}
+	UUIManager::Get().ClearViewport();
+
+	SetActiveWorld(PreviousActiveWorldHandle);
+	SelectionManager.ClearSelection();
+	SelectionManager.SetWorld(GetWorld());
+	DestroyWorldContext(FName("PIE"));
+	FLuaScriptManager::FireWorldReset();
+
+	if (IRenderPipeline* Pipeline = GetRenderPipeline())
+	{
+		Pipeline->OnSceneCleared();
+	}
+
+	FWorldContext LoadContext;
+	FPerspectiveCameraData CameraData;
+	const EWorldType PIEType = EWorldType::PIE;
+	FSceneSaveManager::LoadSceneFromJSON(FilePath, LoadContext, CameraData, &PIEType);
+	if (!LoadContext.World)
+	{
+		UE_LOG("[EditorEngine] PIE TransitionToScene failed to load: %s", FilePath.c_str());
+		EndPlayMap();
+		return;
+	}
+
+	LoadContext.WorldType = EWorldType::PIE;
+	LoadContext.ContextHandle = FName("PIE");
+	LoadContext.ContextName = GetFileStem(FilePath);
+	LoadContext.World->SetWorldType(EWorldType::PIE);
+	WorldList.push_back(LoadContext);
+	SetActiveWorld(FName("PIE"));
+
+	UWorld* PIEWorld = LoadContext.World;
+	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+	{
+		PIEWorld->SetEditorPOVProvider(ActiveVC);
+	}
+
+	SelectionManager.ClearSelection();
+	SelectionManager.SetWorld(PIEWorld);
+
+	if (!GetGameViewportClient())
+	{
+		UGameViewportClient* PIEViewportClient = UObjectManager::Get().CreateObject<UGameViewportClient>();
+		SetGameViewportClient(PIEViewportClient);
+	}
+	if (UGameViewportClient* PIEViewportClient = GetGameViewportClient())
+	{
+		if (Window)
+		{
+			PIEViewportClient->SetOwnerWindow(Window->GetHWND());
+		}
+
+		FViewport* InitialViewport = nullptr;
+		if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+		{
+			InitialViewport = ActiveVC->GetViewport();
+			PIEViewportClient->SetCursorClipRect(ActiveVC->GetViewportScreenRect());
+		}
+		PIEViewportClient->BeginGameSession(InitialViewport);
+	}
+
+	PIEControlMode = bWasPossessedMode ? EPIEControlMode::Possessed : EPIEControlMode::Ejected;
+	SyncGameViewportPIEControlState(bWasPossessedMode);
+	InputSystem::Get().ResetTransientState();
+
+	PIEWorld->BeginPlay();
+
+	if (FTimer* Timer = GetTimer())
+	{
+		Timer->Initialize();
 	}
 }
 

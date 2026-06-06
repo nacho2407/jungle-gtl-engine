@@ -285,24 +285,37 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		ImGui::EndPopup();
 	}
 
-	ImGui::SameLine();
 	std::wstring PathText = BrowserContext.CurrentPath;
 	if (BrowserContext.SelectedElement)
+	{
 		PathText += L"/" + BrowserContext.SelectedElement->GetFileName();
+	}
 
+	ImGui::TextUnformatted("View");
 	ImGui::SameLine();
+	if (ImGui::RadioButton("Grid", BrowserContext.ViewMode == EContentBrowserViewMode::Grid))
+	{
+		BrowserContext.ViewMode = EContentBrowserViewMode::Grid;
+	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("List", BrowserContext.ViewMode == EContentBrowserViewMode::List))
+	{
+		BrowserContext.ViewMode = EContentBrowserViewMode::List;
+	}
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", FPaths::ToUtf8(PathText).c_str());
+
 	int Size = static_cast<int>(BrowserContext.ContentSize.x);
 	BrowserContext.ContentSize = ImVec2(static_cast<float>(Size), static_cast<float>(Size));
 
-	if (!ImGui::BeginTable("ContentBrowserLayout", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
+	if (!ImGui::BeginTable("ContentBrowserLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
 	{
 		ImGui::End();
 		return;
 	}
 
 	ImGui::TableSetupColumn("Directory", ImGuiTableColumnFlags_WidthFixed, 250.0f);
-	ImGui::TableSetupColumn("Content", ImGuiTableColumnFlags_WidthStretch);
-	ImGui::TableSetupColumn("Details", ImGuiTableColumnFlags_WidthFixed, 260.0f);
+	ImGui::TableSetupColumn("Browser", ImGuiTableColumnFlags_WidthStretch);
 
 	ImGui::TableNextColumn();
 	{
@@ -314,13 +327,22 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 
 	ImGui::TableNextColumn();
 	{
-		ImGui::BeginChild("ContentArea", ImVec2(0, 0), true);
+		const float AvailableHeight = ImGui::GetContentRegionAvail().y;
+		const float SpacingY = ImGui::GetStyle().ItemSpacing.y;
+		const float MinContentHeight = 80.0f;
+		const float MinDetailsHeight = 64.0f;
+		float DetailsHeight = (std::min)(180.0f, (std::max)(96.0f, AvailableHeight * 0.28f));
+		float ContentHeight = AvailableHeight - DetailsHeight - SpacingY;
+		if (ContentHeight < MinContentHeight)
+		{
+			// 창 높이가 작을 때도 content와 detail이 모두 남도록 비율 기반으로 축소합니다.
+			ContentHeight = (std::max)(40.0f, AvailableHeight - MinDetailsHeight - SpacingY);
+		}
+
+		ImGui::BeginChild("ContentArea", ImVec2(0, ContentHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 		DrawContents();
 		ImGui::EndChild();
-	}
 
-	ImGui::TableNextColumn();
-	{
 		ImGui::BeginChild("DetailsPanel", ImVec2(0, 0), true);
 
 		if (BrowserContext.SelectedElement)
@@ -627,38 +649,51 @@ void FEditorContentBrowserWidget::DrawContents()
 {
 	int ElementCount = static_cast<int>(CachedBrowserElements.size());
 
-	const float ContentWidth = ImGui::GetContentRegionAvail().x;
-	const float ItemWidth = BrowserContext.ContentSize.x;
-	const float ItemHeight = BrowserContext.ContentSize.y;
-
-	int ColumnCount = static_cast<int>(ContentWidth / ItemWidth);
-	if (ColumnCount < 1)
+	if (BrowserContext.ViewMode == EContentBrowserViewMode::List)
 	{
-		ColumnCount = 1;
+		for (int i = 0; i < ElementCount; ++i)
+		{
+			CachedBrowserElements[i]->RenderListRow(BrowserContext);
+		}
 	}
-
-	float GapSize = 0.0f;
-	if (ColumnCount > 1)
+	else
 	{
-		GapSize = (ContentWidth - ItemWidth * ColumnCount) / (ColumnCount);
+		const float ContentWidth = ImGui::GetContentRegionAvail().x;
+		const float ItemWidth = BrowserContext.ContentSize.x;
+		const float ItemHeight = BrowserContext.ContentSize.y;
+		const ImVec2 ItemSpacing = ImGui::GetStyle().ItemSpacing;
+		const float SpacingX = ItemSpacing.x;
+		const float SpacingY = ItemSpacing.y;
+
+		// 세로 스크롤바와 무관하게 고정 간격 기준으로 열 수를 계산합니다.
+		int ColumnCount = static_cast<int>((ContentWidth + SpacingX) / (ItemWidth + SpacingX));
+		if (ColumnCount < 1)
+		{
+			ColumnCount = 1;
+		}
+
+		ImVec2 StartPos = ImGui::GetCursorPos();
+		const float GridWidth = ColumnCount * ItemWidth + (ColumnCount - 1) * SpacingX;
+		const float LeftPadding = (std::max)(0.0f, (ContentWidth - GridWidth) * 0.5f);
+
+		for (int i = 0; i < ElementCount; ++i)
+		{
+			int Column = i % ColumnCount;
+			int Row = i / ColumnCount;
+
+			float X = StartPos.x + LeftPadding + Column * (ItemWidth + SpacingX);
+			float Y = StartPos.y + Row * (ItemHeight + SpacingY);
+
+			ImGui::SetCursorPos(ImVec2(X, Y));
+			CachedBrowserElements[i]->Render(BrowserContext);
+		}
+
+		int RowCount = (ElementCount + ColumnCount - 1) / ColumnCount;
+		const float ContentHeight = RowCount > 0
+			? RowCount * ItemHeight + (RowCount - 1) * SpacingY
+			: 0.0f;
+		ImGui::SetCursorPos(ImVec2(StartPos.x, StartPos.y + ContentHeight));
 	}
-
-	ImVec2 StartPos = ImGui::GetCursorPos();
-
-	for (int i = 0; i < ElementCount; ++i)
-	{
-		int Column = i % ColumnCount;
-		int Row = i / ColumnCount;
-
-		float X = StartPos.x + Column * (ItemWidth + GapSize);
-		float Y = StartPos.y + Row * (ItemHeight + GapSize * 2.f);
-
-		ImGui::SetCursorPos(ImVec2(X, Y));
-		CachedBrowserElements[i]->Render(BrowserContext);
-	}
-
-	int RowCount = (ElementCount + ColumnCount - 1) / ColumnCount;
-	ImGui::SetCursorPos(ImVec2(StartPos.x, StartPos.y + RowCount * ItemHeight));
 
 	if (ImGui::BeginPopupContextWindow("##ContentBrowserBackgroundContext", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 	{

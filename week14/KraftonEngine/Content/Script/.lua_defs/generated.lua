@@ -361,6 +361,9 @@ Pawn = {}
 ---@return boolean
 function Pawn:IsPossessed() end
 
+---@return PlayerController?
+function Pawn:GetController() end
+
 ---@param enabled boolean
 function Pawn:SetAutoPossessPlayer(enabled) end
 
@@ -369,6 +372,44 @@ function Pawn:GetAutoPossessPlayer() end
 
 ---@return InputComponent?
 function Pawn:GetInputComponent() end
+
+---@class PlayerController: Actor
+PlayerController = {}
+
+---@return Pawn?
+function PlayerController:GetPossessedPawn() end
+
+---@param pawn Pawn
+function PlayerController:Possess(pawn) end
+
+function PlayerController:UnPossess() end
+
+---@return PlayerCameraManager?
+function PlayerController:GetPlayerCameraManager() end
+
+---@param viewTarget Actor
+---@param blendTime? number
+function PlayerController:SetViewTargetWithBlend(viewTarget, blendTime) end
+
+---@class PlayerCameraManager: Actor
+PlayerCameraManager = {}
+
+---@return CameraComponent?
+function PlayerCameraManager:GetActiveCamera() end
+
+---@return CameraComponent?
+function PlayerCameraManager:GetPossessedCamera() end
+
+---@return Actor?
+function PlayerCameraManager:GetViewTarget() end
+
+---@return Actor?
+function PlayerCameraManager:GetPendingViewTarget() end
+
+---@param actor string|Actor
+---@param blendTime? number
+---@return boolean
+function PlayerCameraManager:ToggleActiveCameraForActor(actor, blendTime) end
 
 ---@class InputComponent
 InputComponent = {}
