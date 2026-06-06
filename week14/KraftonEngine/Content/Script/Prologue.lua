@@ -8,6 +8,7 @@ local activeEntry = nil
 local skipHoldTime = 0.0
 local voiceManifest = nil
 local voiceEntries = nil
+local voiceEntriesById = nil
 local loadedVoiceKeys = {}
 
 local SKIP_HOLD_DURATION = 3.0
@@ -86,6 +87,7 @@ end
 local function load_voice_manifest(moduleName)
     voiceManifest = nil
     voiceEntries = nil
+    voiceEntriesById = nil
     loadedVoiceKeys = {}
 
     local ok, result = pcall(require, moduleName)
@@ -95,17 +97,35 @@ local function load_voice_manifest(moduleName)
 
     voiceManifest = result
     voiceEntries = {}
+    voiceEntriesById = result.by_id or {}
     for _, voiceEntry in ipairs(result.entries) do
         if voiceEntry.index ~= nil then
             voiceEntries[voiceEntry.index] = voiceEntry
         end
+        if voiceEntry.id ~= nil then
+            voiceEntriesById[voiceEntry.id] = voiceEntry
+        end
     end
 end
 
-local function play_dialogue_voice(index)
+local function get_dialogue_entry_id(entry, index)
+    if entry ~= nil and entry.id ~= nil then
+        return entry.id
+    end
+    return string.format("%s_%04d", story.id or "Dialogue", index)
+end
+
+local function play_dialogue_voice(entry, index)
     if voiceEntries == nil or AudioManager == nil then return end
 
-    local voiceEntry = voiceEntries[index]
+    local entryId = get_dialogue_entry_id(entry, index)
+    local voiceEntry = nil
+    if voiceEntriesById ~= nil then
+        voiceEntry = voiceEntriesById[entryId]
+    end
+    if voiceEntry == nil then
+        voiceEntry = voiceEntries[index]
+    end
     if voiceEntry == nil or voiceEntry.key == nil or voiceEntry.path == nil then return end
 
     if not loadedVoiceKeys[voiceEntry.key] then
@@ -159,7 +179,7 @@ local function show_next_entry()
     entryDuration = activeEntry.duration or story.default_duration or 3.4
     fadeInDuration = activeEntry.fade_in or story.default_fade_in or 0.7
     apply_entry(activeEntry)
-    play_dialogue_voice(currentIndex)
+    play_dialogue_voice(activeEntry, currentIndex)
 end
 
 local function should_advance_dialogue()
@@ -213,6 +233,7 @@ function EndPlay()
     story = nil
     voiceManifest = nil
     voiceEntries = nil
+    voiceEntriesById = nil
     loadedVoiceKeys = {}
 end
 
