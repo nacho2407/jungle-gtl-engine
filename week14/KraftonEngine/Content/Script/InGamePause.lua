@@ -53,6 +53,12 @@ local pauseDefaultDescription = {
 
 local pauseDescriptions = {
     {
+        id = "pause-resume-button",
+        title = "RESUME",
+        body = "Close the pause menu and return to the current game.",
+        note = "You can also press the pause key again.",
+    },
+    {
         id = "pause-restart-button",
         title = "RESTART",
         body = "Restart the current playable scene from the beginning.",
@@ -343,6 +349,10 @@ local function bind_pause_menu()
         { title = "pause-help-title", body = "pause-help-body", note = "pause-help-note" },
         pauseDefaultDescription,
         pauseDescriptions)
+
+    pauseWidget:bind_click("pause-resume-button", function()
+        close_all()
+    end)
 
     pauseWidget:bind_click("pause-restart-button", function()
         transition_to(RESTART_SCENE)

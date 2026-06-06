@@ -44,7 +44,7 @@ body {
 	left: 96px;
 	top: 170px;
 	width: 620px;
-	height: 290px;
+	height: 354px;
 }
 
 .pause-button {
@@ -55,18 +55,23 @@ body {
 	height: 42px;
 }
 
-.pause-settings-button {
+.pause-restart-button {
 	top: 64px;
 	width: 270px;
 }
 
-.pause-main-menu-button {
+.pause-settings-button {
 	top: 128px;
+	width: 270px;
+}
+
+.pause-main-menu-button {
+	top: 192px;
 	width: 520px;
 }
 
 .pause-quit-button {
-	top: 192px;
+	top: 256px;
 	width: 190px;
 }
 

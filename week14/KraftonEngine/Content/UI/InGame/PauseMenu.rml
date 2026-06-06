@@ -11,7 +11,11 @@
         <div id="pause-title-rule" class="pause-title-rule"></div>
 
         <div id="pause-left-actions" class="pause-left-actions">
-            <div id="pause-restart-button" class="hover-image-button pause-button">
+            <div id="pause-resume-button" class="hover-image-button pause-button">
+                <img id="pause-resume-box" class="hover-image-box pause-button-frame" src="../Common/HoverCutBox.png" data-ui-editor="img"/>
+                <div id="pause-resume-label" class="hover-image-label" data-ui-editor="text">RESUME</div>
+            </div>
+            <div id="pause-restart-button" class="hover-image-button pause-button pause-restart-button">
                 <img id="pause-restart-box" class="hover-image-box pause-button-frame" src="../Common/HoverCutBox.png" data-ui-editor="img"/>
                 <div id="pause-restart-label" class="hover-image-label" data-ui-editor="text">Restart</div>
             </div>
