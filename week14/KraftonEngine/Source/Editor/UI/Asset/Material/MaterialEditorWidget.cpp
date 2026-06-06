@@ -217,10 +217,12 @@ void FMaterialEditorWidget::Open(UObject* Object)
 	UStaticMesh* SphereMesh = LoadMaterialPreviewSphereMesh(Device);
 	Comp->SetStaticMesh(SphereMesh);
 	Comp->SetMaterial(0, Material);
+	Comp->SetNeverCullForRendering(true);
 
 	Actor->SetRootComponent(Comp);
 	Actor->SetActorLocation(FVector::ZeroVector);
 	WorldContext.World->UpdateActorInOctree(Actor);
+	WorldContext.World->GetPartition().FlushPrimitive();
 
 	PreviewMeshComponent = Comp;
 

@@ -10,9 +10,13 @@ local voiceManifest = nil
 local voiceEntries = nil
 local voiceEntriesById = nil
 local loadedVoiceKeys = {}
+local pendingAdvance = false
+local pendingSceneSkip = false
+local currentVoiceDuration = 0.0
 
 local SKIP_HOLD_DURATION = 3.0
 local SKIP_RING_FRAMES = 24
+local VOICE_END_PADDING = 0.25
 local DIALOGUE_BOX_WIDTH = 980.0
 local DIALOGUE_BOX_HEIGHT = 48.0
 local DIALOGUE_LINE_HEIGHT = 48.0
@@ -84,6 +88,10 @@ local function go_to_next_scene()
     end
 end
 
+local function is_waiting_for_voice_end()
+    return currentVoiceDuration > 0.0 and entryTime < currentVoiceDuration + VOICE_END_PADDING
+end
+
 local function load_voice_manifest(moduleName)
     voiceManifest = nil
     voiceEntries = nil
@@ -116,7 +124,7 @@ local function get_dialogue_entry_id(entry, index)
 end
 
 local function play_dialogue_voice(entry, index)
-    if voiceEntries == nil or AudioManager == nil then return end
+    if voiceEntries == nil or AudioManager == nil then return nil end
 
     local entryId = get_dialogue_entry_id(entry, index)
     local voiceEntry = nil
@@ -126,15 +134,16 @@ local function play_dialogue_voice(entry, index)
     if voiceEntry == nil then
         voiceEntry = voiceEntries[index]
     end
-    if voiceEntry == nil or voiceEntry.key == nil or voiceEntry.path == nil then return end
+    if voiceEntry == nil or voiceEntry.key == nil or voiceEntry.path == nil then return nil end
 
     if not loadedVoiceKeys[voiceEntry.key] then
         local loaded = AudioManager.Load(voiceEntry.key, voiceEntry.path, false)
-        if not loaded then return end
+        if not loaded then return nil end
         loadedVoiceKeys[voiceEntry.key] = true
     end
 
     AudioManager.Play(voiceEntry.key, voiceEntry.volume or 1.0)
+    return voiceEntry
 end
 
 local function apply_entry(entry)
@@ -178,8 +187,15 @@ local function show_next_entry()
     entryTime = 0.0
     entryDuration = activeEntry.duration or story.default_duration or 3.4
     fadeInDuration = activeEntry.fade_in or story.default_fade_in or 0.7
+    pendingAdvance = false
+    pendingSceneSkip = false
+    currentVoiceDuration = 0.0
     apply_entry(activeEntry)
-    play_dialogue_voice(activeEntry, currentIndex)
+    local voiceEntry = play_dialogue_voice(activeEntry, currentIndex)
+    if voiceEntry ~= nil and voiceEntry.duration ~= nil and voiceEntry.duration > 0.0 then
+        currentVoiceDuration = voiceEntry.duration
+        entryDuration = currentVoiceDuration + VOICE_END_PADDING
+    end
 end
 
 local function should_advance_dialogue()
@@ -197,7 +213,11 @@ local function update_scene_skip(dt)
         local progress = clamp(skipHoldTime / SKIP_HOLD_DURATION, 0.0, 1.0)
         update_skip_ring(progress)
         if skipHoldTime >= SKIP_HOLD_DURATION then
-            go_to_next_scene()
+            if is_waiting_for_voice_end() then
+                pendingSceneSkip = true
+            else
+                go_to_next_scene()
+            end
             return true
         end
     else
@@ -213,6 +233,9 @@ local function play_story(moduleName)
     load_voice_manifest("Dialogue/Generated/" .. (story.id or "Prologue") .. ".voices")
     currentIndex = 0
     activeEntry = nil
+    pendingAdvance = false
+    pendingSceneSkip = false
+    currentVoiceDuration = 0.0
     show_next_entry()
 end
 
@@ -235,6 +258,9 @@ function EndPlay()
     voiceEntries = nil
     voiceEntriesById = nil
     loadedVoiceKeys = {}
+    pendingAdvance = false
+    pendingSceneSkip = false
+    currentVoiceDuration = 0.0
 end
 
 function Tick(dt)
@@ -242,13 +268,13 @@ function Tick(dt)
         return
     end
 
-    if update_scene_skip(dt) then
-        return
-    end
-
     if should_advance_dialogue() then
-        show_next_entry()
-        return
+        if is_waiting_for_voice_end() then
+            pendingAdvance = true
+        else
+            show_next_entry()
+            return
+        end
     end
 
     entryTime = entryTime + dt
@@ -257,6 +283,15 @@ function Tick(dt)
         alpha = clamp(entryTime / fadeInDuration, 0.0, 1.0)
     end
     cutsceneWidget:SetProperty("dialogue-box", "opacity", string.format("%.2f", alpha))
+
+    if update_scene_skip(dt) then
+        return
+    end
+
+    if pendingSceneSkip and entryTime >= entryDuration then
+        go_to_next_scene()
+        return
+    end
 
     if entryTime >= entryDuration then
         show_next_entry()

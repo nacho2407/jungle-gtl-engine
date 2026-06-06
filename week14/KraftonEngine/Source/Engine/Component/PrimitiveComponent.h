@@ -83,6 +83,9 @@ public:
 
 	bool GetTranslucentSortPriority() const { return TranslucentSortPriority; }
 
+	void SetNeverCullForRendering(bool bInNeverCull) { bNeverCullForRendering = bInNeverCull; MarkRenderStateDirty(); }
+	bool IsNeverCullForRendering() const { return bNeverCullForRendering; }
+
 	// 월드 공간 AABB를 FBoundingBox로 반환
 	FBoundingBox GetWorldBoundingBox() const;
 	void MarkWorldBoundsDirty();
@@ -229,6 +232,7 @@ protected:
 	bool bCastShadowAsTwoSided = false;
 	UPROPERTY(Edit, Save, Category="Rendering", DisplayName="Translucent Sort Priority")
 	int32 TranslucentSortPriority = 0;
+	bool bNeverCullForRendering = false;
 
 	UPROPERTY(Edit, Save, Category="Physics", DisplayName="Simulate Physics")
 	bool bSimulatePhysics = false;
