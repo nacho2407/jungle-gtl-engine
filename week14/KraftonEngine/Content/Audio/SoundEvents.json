@@ -1,0 +1,27 @@
+{
+  "player.footstep.default": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": ["Foot1.mp3"],
+    "volumeMin": 0.75,
+    "volumeMax": 0.95,
+    "pitchMin": 0.96,
+    "pitchMax": 1.04,
+    "minDistance": 120.0,
+    "maxDistance": 1800.0,
+    "attenuation": "inverse",
+    "cooldown": 0.08,
+    "maxInstances": 4
+  },
+  "ui.hover": {
+    "bus": "UI",
+    "spatial": false,
+    "clips": ["Foot1.mp3"],
+    "volumeMin": 0.25,
+    "volumeMax": 0.35,
+    "pitchMin": 1.15,
+    "pitchMax": 1.25,
+    "cooldown": 0.03,
+    "maxInstances": 4
+  }
+}

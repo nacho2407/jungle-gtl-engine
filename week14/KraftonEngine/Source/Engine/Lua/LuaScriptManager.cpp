@@ -908,6 +908,22 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	{
 		return FAudioManager::Get().IsLoopPlaying(LoopName);
 	});
+	AudioManager.set_function("PlayEvent", [](const FString& EventName)
+	{
+		return FAudioManager::Get().PlayEvent(EventName);
+	});
+	AudioManager.set_function("PlayEventAt", [](const FString& EventName, float X, float Y, float Z)
+	{
+		return FAudioManager::Get().PlayEventAt(EventName, FVector(X, Y, Z));
+	});
+	AudioManager.set_function("SetBusVolume", [](const FString& BusName, float Volume)
+	{
+		FAudioManager::Get().SetBusVolume(BusName, Volume);
+	});
+	AudioManager.set_function("GetBusVolume", [](const FString& BusName)
+	{
+		return FAudioManager::Get().GetBusVolume(BusName);
+	});
 
 	Lua.set_function("LoadAudio", [](const FString& SoundName, const FString& Path, sol::optional<bool> bLoop)
 	{

@@ -7,19 +7,23 @@ FAssetEditorManager::~FAssetEditorManager() = default;
 
 void FAssetEditorManager::Tick(float DeltaTime)
 {
+	bIsDispatchingEditors = true;
 	for (const auto& Editor : OpenEditors)
 	{
-		if (Editor->IsOpen())
+		if (Editor && Editor->IsOpen())
 		{
 			Editor->Tick(DeltaTime);
 		}
 	}
+	bIsDispatchingEditors = false;
 
 	RemoveClosedEditors();
+	ProcessPendingOpenRequests();
 }
 
 void FAssetEditorManager::Render(float DeltaTime)
 {
+	bIsDispatchingEditors = true;
 	for (const auto& Editor : OpenEditors)
 	{
 		if (Editor && Editor->IsOpen())
@@ -27,7 +31,10 @@ void FAssetEditorManager::Render(float DeltaTime)
 			Editor->Render(DeltaTime);
 		}
 	}
+	bIsDispatchingEditors = false;
+
 	RemoveClosedEditors();
+	ProcessPendingOpenRequests();
 }
 
 void FAssetEditorManager::CloseAll()
@@ -43,6 +50,25 @@ void FAssetEditorManager::CloseAll()
 }
 
 bool FAssetEditorManager::OpenEditorForObject(UObject* Object)
+{
+	if (!Object)
+	{
+		return false;
+	}
+
+	if (bIsDispatchingEditors)
+	{
+		if (std::find(PendingOpenObjects.begin(), PendingOpenObjects.end(), Object) == PendingOpenObjects.end())
+		{
+			PendingOpenObjects.push_back(Object);
+		}
+		return true;
+	}
+
+	return OpenEditorForObjectImmediate(Object);
+}
+
+bool FAssetEditorManager::OpenEditorForObjectImmediate(UObject* Object)
 {
 	RemoveClosedEditors();
 
@@ -117,7 +143,10 @@ void FAssetEditorManager::CollectPreviewViewportClients(TArray<IEditorPreviewVie
 {
 	for (const auto& Editor : OpenEditors)
 	{
-		Editor->CollectPreviewViewports(OutClients);
+		if (Editor && Editor->IsOpen())
+		{
+			Editor->CollectPreviewViewports(OutClients);
+		}
 	}
 }
 
@@ -145,4 +174,23 @@ void FAssetEditorManager::RemoveClosedEditors()
 			return !Editor || !Editor->IsOpen();
 		}),
 	OpenEditors.end());
+}
+
+void FAssetEditorManager::ProcessPendingOpenRequests()
+{
+	if (PendingOpenObjects.empty())
+	{
+		return;
+	}
+
+	TArray<UObject*> Requests;
+	Requests.swap(PendingOpenObjects);
+
+	for (UObject* Object : Requests)
+	{
+		if (Object)
+		{
+			OpenEditorForObjectImmediate(Object);
+		}
+	}
 }

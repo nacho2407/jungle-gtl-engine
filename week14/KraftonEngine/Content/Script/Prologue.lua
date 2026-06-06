@@ -6,6 +6,9 @@ local entryDuration = 0.0
 local fadeInDuration = 0.7
 local activeEntry = nil
 local skipHoldTime = 0.0
+local voiceManifest = nil
+local voiceEntries = nil
+local loadedVoiceKeys = {}
 
 local SKIP_HOLD_DURATION = 3.0
 local SKIP_RING_FRAMES = 24
@@ -80,6 +83,40 @@ local function go_to_next_scene()
     end
 end
 
+local function load_voice_manifest(moduleName)
+    voiceManifest = nil
+    voiceEntries = nil
+    loadedVoiceKeys = {}
+
+    local ok, result = pcall(require, moduleName)
+    if not ok or result == nil or result.entries == nil then
+        return
+    end
+
+    voiceManifest = result
+    voiceEntries = {}
+    for _, voiceEntry in ipairs(result.entries) do
+        if voiceEntry.index ~= nil then
+            voiceEntries[voiceEntry.index] = voiceEntry
+        end
+    end
+end
+
+local function play_dialogue_voice(index)
+    if voiceEntries == nil or AudioManager == nil then return end
+
+    local voiceEntry = voiceEntries[index]
+    if voiceEntry == nil or voiceEntry.key == nil or voiceEntry.path == nil then return end
+
+    if not loadedVoiceKeys[voiceEntry.key] then
+        local loaded = AudioManager.Load(voiceEntry.key, voiceEntry.path, false)
+        if not loaded then return end
+        loadedVoiceKeys[voiceEntry.key] = true
+    end
+
+    AudioManager.Play(voiceEntry.key, voiceEntry.volume or 1.0)
+end
+
 local function apply_entry(entry)
     if cutsceneWidget == nil or entry == nil then
         return
@@ -122,6 +159,7 @@ local function show_next_entry()
     entryDuration = activeEntry.duration or story.default_duration or 3.4
     fadeInDuration = activeEntry.fade_in or story.default_fade_in or 0.7
     apply_entry(activeEntry)
+    play_dialogue_voice(currentIndex)
 end
 
 local function should_advance_dialogue()
@@ -152,6 +190,7 @@ end
 
 local function play_story(moduleName)
     story = require(moduleName)
+    load_voice_manifest("Dialogue/Generated/" .. (story.id or "Prologue") .. ".voices")
     currentIndex = 0
     activeEntry = nil
     show_next_entry()
@@ -172,6 +211,9 @@ function EndPlay()
     end
     cutsceneWidget = nil
     story = nil
+    voiceManifest = nil
+    voiceEntries = nil
+    loadedVoiceKeys = {}
 end
 
 function Tick(dt)
