@@ -24,6 +24,7 @@ class FOverlayStatSystem;
 class AActor;
 class UGameViewportClient;
 class IEditorPreviewViewportClient;
+class FViewport;
 struct FPerspectiveCameraData;
 
 UCLASS()
@@ -164,6 +165,27 @@ public:
 	bool HasPlaySessionRequest() const { return PlaySessionRequest.has_value(); }
 
 	void RequestEndPlayMap();
+	/**
+	 * @brief F5 단축키 입력으로 PIE 시작 또는 종료를 요청합니다.
+	 */
+	void TogglePlayInEditorShortcut();
+
+	/**
+	 * @brief F5 키 상태를 소비해 PIE 시작 또는 종료를 한 번만 토글합니다.
+	 *
+	 * @param bF5Down 현재 F5 키 눌림 상태
+	 *
+	 * @return F5 입력 소비 여부
+	 */
+	bool ConsumePlayInEditorShortcut(bool bF5Down);
+
+	/**
+	 * @brief PIE 게임 카메라는 유지한 채 게임 입력 캡처만 토글합니다.
+	 *
+	 * @return 토글 처리 여부
+	 */
+	bool TogglePIEInputCapture();
+
 	bool IsPlayingInEditor() const { return PlayInEditorSessionInfo.has_value(); }
 	enum class EPIEControlMode : uint8
 	{
@@ -174,6 +196,29 @@ public:
 	bool IsPIEPossessedMode() const { return IsPlayingInEditor() && PIEControlMode == EPIEControlMode::Possessed; }
 	bool IsPIEEjectedMode() const { return IsPlayingInEditor() && PIEControlMode == EPIEControlMode::Ejected; }
 	bool TogglePIEControlMode();
+
+	/**
+	 * @brief 현재 고정된 PIE 게임 뷰포트 client를 반환합니다.
+	 *
+	 * @return 현재 PIE 게임 뷰포트 client. PIE가 아니거나 뷰포트가 유효하지 않으면 nullptr
+	 */
+	FLevelEditorViewportClient* GetPIEGameViewportClient() const;
+
+	/**
+	 * @brief 지정한 viewport가 현재 PIE 게임 뷰포트인지 확인합니다.
+	 *
+	 * @param Viewport 판정할 viewport
+	 *
+	 * @return 현재 PIE 게임 뷰포트이면 true
+	 */
+	bool IsPIEGameViewport(const FViewport* Viewport) const;
+
+	/**
+	 * @brief PIE 게임 입력 캡처가 현재 켜져 있는지 확인합니다.
+	 *
+	 * @return PIE 중이고 GameViewportClient가 입력 possession 상태이면 true
+	 */
+	bool IsPIEInputCaptured() const;
 
 	// 즉시 동기 종료 — Save / NewScene / Load 등 에디터 월드를 만지는 작업 직전에 호출.
 	// PIE 중이 아니면 no-op.
@@ -195,6 +240,7 @@ private:
 	void EndPlayMap();
 	bool EnterPIEPossessedMode();
 	bool EnterPIEEjectedMode();
+	FLevelEditorViewportClient* ResolvePIEGameViewportClient() const;
 	void SyncGameViewportPIEControlState(bool bPossessedMode);
 	void LoadStartLevel();
 	bool FindSceneViewportPOV(struct FMinimalViewInfo& OutPOV) const;
@@ -214,6 +260,10 @@ private:
 	// 종료 요청 지연 플래그. Tick 선두에서 확인 후 EndPlayMap 호출.
 	bool bRequestEndPlayMapQueued = false;
 	EPIEControlMode PIEControlMode = EPIEControlMode::Possessed;
+	/**
+	 * @brief F5 키 hold 중 PIE 토글 재실행 차단 latch
+	 */
+	bool bPIEPlayShortcutConsumedWhileHeld = false;
 	FString CurrentLevelFilePath;
 	bool bAutoGCEnabled = false;
 	float GCIntervalSeconds = 1.0f;

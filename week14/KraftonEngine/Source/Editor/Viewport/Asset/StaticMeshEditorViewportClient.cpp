@@ -17,6 +17,9 @@ void FStaticMeshEditorViewportClient::Initialize(ID3D11Device* Device, uint32 Wi
 	Viewport->Initialize(Device, Width, Height);
 	Viewport->SetClient(this);
 
+	// 초기 render target 크기와 카메라 projection aspect 동기화
+	NotifyViewportResized(static_cast<int32>(Width), static_cast<int32>(Height));
+
 	bIsRenderable = true;
 }
 

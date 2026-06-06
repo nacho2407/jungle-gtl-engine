@@ -72,6 +72,54 @@ namespace
 
 		POV.AspectRatio = (ViewportWidth / ViewportHeight) / VisibleHeightScale;
 	}
+
+	/**
+	* @brief 뷰포트 렌더 타깃 초기화 색상 배열을 생성합니다.
+	*/
+	void BuildViewportClearColor(const FLinearColor& BackgroundColor, float OutClearColor[4])
+	{
+		// 렌더 타깃 초기화 색상은 0~1 범위 RGB와 불투명 alpha로 고정
+		OutClearColor[0] = FMath::Clamp(BackgroundColor.R, 0.0f, 1.0f);
+		OutClearColor[1] = FMath::Clamp(BackgroundColor.G, 0.0f, 1.0f);
+		OutClearColor[2] = FMath::Clamp(BackgroundColor.B, 0.0f, 1.0f);
+		OutClearColor[3] = 1.0f;
+	}
+
+	/**
+	* @brief PIE 실행 뷰포트에서 숨길 에디터/디버그 전용 show flag를 비활성화합니다.
+	*/
+	void ApplyPIEViewportShowFlagOverride(FShowFlags& ShowFlags)
+	{
+		// 에디터 보조 표시
+		ShowFlags.bGrid = false;
+		ShowFlags.bWorldAxis = false;
+		ShowFlags.bGizmo = false;
+		ShowFlags.bBillboardText = false;
+		ShowFlags.bBoundingVolume = false;
+		ShowFlags.bOctree = false;
+		ShowFlags.bShowShadowFrustum = false;
+
+		// PIE 게임 화면을 가리는 디버그 표시
+		ShowFlags.bDebugDraw = false;
+		ShowFlags.bViewLightCulling = false;
+		ShowFlags.bVisualize25DCulling = false;
+		ShowFlags.bCollision = false;
+		ShowFlags.bShowCollisionShape = false;
+
+		// Physics Asset Editor 전용 표시
+		ShowFlags.bPhysicsAssetBodies = false;
+		ShowFlags.bPhysicsAssetConstraints = false;
+		ShowFlags.bPhysicsAssetSkeleton = false;
+		ShowFlags.bPhysicsAssetSimulation = false;
+	}
+
+	/**
+	* @brief 지정 뷰포트가 현재 PIE 게임 뷰포트인지 확인합니다.
+	*/
+	bool IsPIEGameViewport(const UEditorEngine* Editor, const FViewport* Viewport)
+	{
+		return Editor && Editor->IsPIEGameViewport(Viewport);
+	}
 }
 
 FEditorRenderPipeline::FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer)
@@ -251,7 +299,10 @@ void FEditorRenderPipeline::RenderViewport(FLevelEditorViewportClient* VC, FRend
 void FEditorRenderPipeline::PrepareViewport(FLevelEditorViewportClient* VC, FViewport* VP, ID3D11DeviceContext* Ctx)
 {
 	ApplyViewportResizeIfNeeded(VC, VP);
-	VP->BeginRender(Ctx);
+
+	float ClearColor[4];
+	BuildViewportClearColor(Editor->GetSettings().ViewportBackgroundColor, ClearColor);
+	VP->BeginRender(Ctx, ClearColor);
 }
 
 // ============================================================
@@ -333,6 +384,11 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMi
 	{
 		RenderOptions.ShowFlags.bGizmo = false;
 		Frame.HiddenEditorOnlyActorForView = VC->GetPilotedActor();
+	}
+	if (IsPIEGameViewport(Editor, VP))
+	{
+		// 실제 뷰포트 설정값은 그대로 두고 이번 렌더 프레임 복사본에만 PIE 전용 override 적용
+		ApplyPIEViewportShowFlagOverride(RenderOptions.ShowFlags);
 	}
 	Frame.SetRenderOptions(RenderOptions);
 	Frame.OcclusionCulling = &GetOcclusionForViewport(VC);
@@ -418,7 +474,9 @@ void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* 
 		VC->NotifyViewportResized(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
 	}
 
-	const float ClearColor[4] = { 0.12f, 0.12f, 0.13f, 1.0f };
+	const FViewportRenderOptions RenderOptions = VC->GetRenderOptions();
+	float ClearColor[4];
+	BuildViewportClearColor(Editor->GetSettings().ViewportBackgroundColor, ClearColor);
 	VP->BeginRender(Ctx, ClearColor);
 
 	FMinimalViewInfo POV;
@@ -430,7 +488,7 @@ void FEditorRenderPipeline::RenderPreviewViewport(IEditorPreviewViewportClient* 
 	Frame.WorldType = World->GetWorldType();
 	Frame.HiddenEditorOnlyActorForView = nullptr;
 
-	Frame.SetRenderOptions(VC->GetRenderOptions());
+	Frame.SetRenderOptions(RenderOptions);
 
 	FScene& Scene = World->GetScene();
 

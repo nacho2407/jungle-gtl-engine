@@ -46,6 +46,15 @@ namespace
 	constexpr float StructChildIndentWidth = 16.0f;
 	constexpr float ScalarInputWidth = 124.0f;
 
+	void InvokeBeforePropertyMutate(const FEditorPropertyRenderOptions& Options)
+	{
+		// Details undo용 before snapshot은 실제 값 변경 직전에만 지연 생성합니다.
+		if (Options.OnBeforePropertyMutate)
+		{
+			Options.OnBeforePropertyMutate();
+		}
+	}
+
 	bool IsFbxFilePath(const FString& Path)
 	{
 		std::filesystem::path FilePath(FPaths::ToWide(Path));
@@ -98,6 +107,89 @@ namespace
 			return *AllowedClass;
 		}
 		return {};
+	}
+
+	/**
+	* @brief Property asset preview texture의 원본 크기를 조회합니다.
+	*/
+	bool GetTextureSizeForPropertyPreview(ID3D11ShaderResourceView* Texture, ImVec2& OutSize)
+	{
+		OutSize = ImVec2(0.0f, 0.0f);
+		if (!Texture)
+		{
+			return false;
+		}
+
+		// SRV가 참조하는 실제 texture resource 조회
+		ID3D11Resource* Resource = nullptr;
+		Texture->GetResource(&Resource);
+		if (!Resource)
+		{
+			return false;
+		}
+
+		// 2D texture인 경우에만 원본 가로/세로 크기 확인
+		ID3D11Texture2D* Texture2D = nullptr;
+		const HRESULT Result = Resource->QueryInterface(__uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&Texture2D));
+		Resource->Release();
+
+		if (FAILED(Result) || !Texture2D)
+		{
+			return false;
+		}
+
+		D3D11_TEXTURE2D_DESC Desc {};
+		Texture2D->GetDesc(&Desc);
+		Texture2D->Release();
+
+		if (Desc.Width == 0 || Desc.Height == 0)
+		{
+			return false;
+		}
+
+		OutSize = ImVec2(static_cast<float>(Desc.Width), static_cast<float>(Desc.Height));
+		return true;
+	}
+
+	/**
+	* @brief Property asset preview texture를 지정된 slot 안에 원본 비율로 출력합니다.
+	*/
+	void DrawPropertyPreviewImageAspectFit(ID3D11ShaderResourceView* Texture, const ImVec2& SlotSize)
+	{
+		// 기존 thumbnail 클릭 동작을 유지하기 위한 고정 크기 hit area
+		ImGui::InvisibleButton("##AssetPreview", SlotSize);
+
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		if (!DrawList || !Texture)
+		{
+			return;
+		}
+
+		const ImVec2 BoundsMin = ImGui::GetItemRectMin();
+		const ImVec2 BoundsMax = ImGui::GetItemRectMax();
+		const ImVec2 BoundsSize(BoundsMax.x - BoundsMin.x, BoundsMax.y - BoundsMin.y);
+		if (BoundsSize.x <= 0.0f || BoundsSize.y <= 0.0f)
+		{
+			return;
+		}
+
+		ImVec2 TextureSize;
+		if (!GetTextureSizeForPropertyPreview(Texture, TextureSize) || TextureSize.x <= 0.0f || TextureSize.y <= 0.0f)
+		{
+			// 크기 조회 실패 시 기존 stretch 출력으로 fallback
+			DrawList->AddImage((ImTextureID)Texture, BoundsMin, BoundsMax);
+			return;
+		}
+
+		// 원본 비율 유지 후 preview slot 안에 최대 크기로 중앙 배치
+		const float Scale = (std::min)(BoundsSize.x / TextureSize.x, BoundsSize.y / TextureSize.y);
+		const ImVec2 ImageSize(TextureSize.x * Scale, TextureSize.y * Scale);
+		const ImVec2 ImageMin(
+			BoundsMin.x + (BoundsSize.x - ImageSize.x) * 0.5f,
+			BoundsMin.y + (BoundsSize.y - ImageSize.y) * 0.5f);
+		const ImVec2 ImageMax(ImageMin.x + ImageSize.x, ImageMin.y + ImageSize.y);
+
+		DrawList->AddImage((ImTextureID)Texture, ImageMin, ImageMax);
 	}
 
 	UClass* GetAllowedClassMetadata(const FPropertyValue& Prop)
@@ -227,7 +319,7 @@ namespace
 		return RemoveExtension(FileName);
 	}
 
-	bool RenderClassPropertyWidget(FPropertyValue& Prop)
+	bool RenderClassPropertyWidget(FPropertyValue& Prop, const FEditorPropertyRenderOptions& Options)
 	{
 		const FClassProperty* ClassProperty = Prop.Property ? Prop.Property->AsClassProperty() : nullptr;
 		if (!ClassProperty || !Prop.GetValuePtr())
@@ -245,6 +337,7 @@ namespace
 			const bool bSelectedNone = CurrentClass == nullptr;
 			if (ImGui::Selectable("None", bSelectedNone))
 			{
+				InvokeBeforePropertyMutate(Options);
 				ClassProperty->SetClassValue(Prop.ContainerPtr, nullptr);
 				bChanged = true;
 			}
@@ -268,6 +361,7 @@ namespace
 				const bool bSelected = Candidate == CurrentClass;
 				if (ImGui::Selectable(Candidate->GetName(), bSelected))
 				{
+					InvokeBeforePropertyMutate(Options);
 					ClassProperty->SetClassValue(Prop.ContainerPtr, Candidate);
 					bChanged = true;
 				}
@@ -353,7 +447,7 @@ namespace
 		ImGui::SetWindowFontScale(1.0f);
 	}
 
-	bool RenderVectorComponentRows(float* Values, float Speed, int32 IndentLevel)
+	bool RenderVectorComponentRows(float* Values, float Speed, int32 IndentLevel, const FEditorPropertyRenderOptions& Options)
 	{
 		if (!Values)
 		{
@@ -371,7 +465,13 @@ namespace
 
 			ImGui::TableSetColumnIndex(1);
 			ImGui::SetNextItemWidth(ScalarInputWidth);
-			bChanged |= ImGui::DragFloat("##ComponentValue", &Values[ComponentIndex], Speed);
+			float ComponentValue = Values[ComponentIndex];
+			if (ImGui::DragFloat("##ComponentValue", &ComponentValue, Speed))
+			{
+				InvokeBeforePropertyMutate(Options);
+				Values[ComponentIndex] = ComponentValue;
+				bChanged = true;
+			}
 			ImGui::PopID();
 		}
 
@@ -488,7 +588,7 @@ FString FEditorPropertyRenderer::OpenFbxFileDialog()
 	return {};
 }
 
-bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Prop)
+bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Prop, const FEditorPropertyRenderOptions& Options)
 {
 	bool bChanged = false;
 	void* ValuePtr = Prop.GetValuePtr();
@@ -503,6 +603,7 @@ bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Pro
 	FString CurrentPath = SoftProperty ? SoftProperty->GetPath(Prop.ContainerPtr) : *Val;
 	auto SetPath = [&](const FString& NewPath)
 	{
+		InvokeBeforePropertyMutate(Options);
 		if (SoftProperty)
 		{
 			SoftProperty->SetPath(Prop.ContainerPtr, NewPath);
@@ -981,15 +1082,16 @@ bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Pro
 
 		if (ImGui::Button("Import"))
 		{
-			FImportOptions Options = FImportOptions::Default();
-			Options.StaticFbxSkinnedMeshPolicy = PendingStaticFbxSkinnedMeshPolicy == 1
+			FImportOptions ImportOptions = FImportOptions::Default();
+			ImportOptions.StaticFbxSkinnedMeshPolicy = PendingStaticFbxSkinnedMeshPolicy == 1
 				? EStaticFbxSkinnedMeshPolicy::ImportBindPoseAsStatic
 				: EStaticFbxSkinnedMeshPolicy::Skip;
 
 			ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
-			UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(PendingStaticMeshImportPath, Options, Device);
+			UStaticMesh* Loaded = FMeshManager::LoadStaticMesh(PendingStaticMeshImportPath, ImportOptions, Device);
 			if (Loaded && PendingStaticMeshImportTarget)
 			{
+				InvokeBeforePropertyMutate(Options);
 				*PendingStaticMeshImportTarget = FMeshManager::GetStaticMeshBinaryFilePath(PendingStaticMeshImportPath);
 				bChanged = true;
 			}
@@ -1012,7 +1114,7 @@ bool FEditorPropertyRenderer::RenderSoftObjectPropertyWidget(FPropertyValue& Pro
 	return bChanged;
 }
 
-bool FEditorPropertyRenderer::RenderEnumPropertyWidget(FPropertyValue& Prop)
+bool FEditorPropertyRenderer::RenderEnumPropertyWidget(FPropertyValue& Prop, const FEditorPropertyRenderOptions& Options)
 {
 	const FEnum* EnumType = Prop.GetEnumType();
 	if (!EnumType || !EnumType->GetNames() || EnumType->GetCount() == 0 || !Prop.GetValuePtr())
@@ -1036,6 +1138,7 @@ bool FEditorPropertyRenderer::RenderEnumPropertyWidget(FPropertyValue& Prop)
 			if (ImGui::Selectable(EnumNames[i], bSelected))
 			{
 				int32 NewVal = (int32)i;
+				InvokeBeforePropertyMutate(Options);
 				memcpy(Prop.GetValuePtr(), &NewVal, EnumSize);
 				bChanged = true;
 			}
@@ -1130,6 +1233,7 @@ bool FEditorPropertyRenderer::RenderArrayPropertyWidget(FPropertyValue& Prop, FE
 		ImGui::SameLine();
 		if (ImGui::SmallButton("+"))
 		{
+			InvokeBeforePropertyMutate(Options);
 			Ops->InsertDefault(ArrayPtr, Num);
 			bChanged = true;
 			if (Options.bDispatchChange)
@@ -1162,6 +1266,7 @@ bool FEditorPropertyRenderer::RenderArrayPropertyWidget(FPropertyValue& Prop, FE
 			bool bRemovedElement = false;
 			if (!bEditFixedSize && Ops->RemoveAt && ImGui::Button("-"))
 			{
+				InvokeBeforePropertyMutate(Options);
 				Ops->RemoveAt(ArrayPtr, static_cast<size_t>(ElemIdx));
 				bChanged = true;
 				bRemovedElement = true;
@@ -1265,7 +1370,7 @@ bool FEditorPropertyRenderer::RenderAssetReferenceField(const FPropertyAssetFiel
 
 	if (Thumb)
 	{
-		ImGui::Image((ImTextureID)Thumb, ImVec2(ThumbSize, ThumbSize));
+		DrawPropertyPreviewImageAspectFit(Thumb, ImVec2(ThumbSize, ThumbSize));
 	}
 	else
 	{
@@ -1336,7 +1441,13 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.18f, 0.18f, 0.18f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.055f, 0.525f, 1.0f, 1.0f));
 
-		bChanged = ImGui::Checkbox("##Value", Val);
+		bool NewValue = *Val;
+		if (ImGui::Checkbox("##Value", &NewValue))
+		{
+			InvokeBeforePropertyMutate(Options);
+			*Val = NewValue;
+			bChanged = true;
+		}
 
 		ImGui::PopStyleColor(3);
 		ImGui::PopStyleVar();
@@ -1353,6 +1464,7 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 		bool bVal = (*Val != 0);
 		if (ImGui::Checkbox("##Value", &bVal))
 		{
+			InvokeBeforePropertyMutate(Options);
 			*Val = bVal ? 1 : 0;
 			bChanged = true;
 		}
@@ -1369,13 +1481,19 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 		const float Max = NumericProperty ? NumericProperty->GetMax() : Prop.GetMax();
 		const float Speed = NumericProperty ? NumericProperty->GetSpeed() : Prop.GetSpeed();
 		ImGui::SetNextItemWidth(ScalarInputWidth);
+		int32 NewValue = Val ? *Val : 0;
 		if (Min != 0.0f || Max != 0.0f)
 		{
-			bChanged = ImGui::DragInt("##Value", Val, Speed, (int32)Min, (int32)Max);
+			bChanged = ImGui::DragInt("##Value", &NewValue, Speed, (int32)Min, (int32)Max);
 		}
 		else
 		{
-			bChanged = ImGui::DragInt("##Value", Val, Speed);
+			bChanged = ImGui::DragInt("##Value", &NewValue, Speed);
+		}
+		if (bChanged && Val)
+		{
+			InvokeBeforePropertyMutate(Options);
+			*Val = NewValue;
 		}
 		break;
 	}
@@ -1404,26 +1522,48 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 			}
 			if (bChanged && Val)
 			{
+				InvokeBeforePropertyMutate(Options);
 				*Val = DisplayVal * DEG_TO_RAD;
 			}
 		}
-		else if (Min != 0.0f || Max != 0.0f)
-		{
-			bChanged = ImGui::DragFloat("##Value", Val, Speed, Min, Max, "%.4f");
-		}
 		else
 		{
-			bChanged = ImGui::DragFloat("##Value", Val, Speed);
+			float NewValue = Val ? *Val : 0.0f;
+			if (Min != 0.0f || Max != 0.0f)
+			{
+				bChanged = ImGui::DragFloat("##Value", &NewValue, Speed, Min, Max, "%.4f");
+			}
+			else
+			{
+				bChanged = ImGui::DragFloat("##Value", &NewValue, Speed);
+			}
+			if (bChanged && Val)
+			{
+				InvokeBeforePropertyMutate(Options);
+				*Val = NewValue;
+			}
 		}
 		break;
 	}
 	case EPropertyType::Vec3:
 	{
 		float* Val = static_cast<float*>(Prop.GetValuePtr());
-		bChanged = ImGui::DragFloat3("##Value", Val, Prop.GetSpeed());
+		float NewValue[3] = {
+			Val ? Val[0] : 0.0f,
+			Val ? Val[1] : 0.0f,
+			Val ? Val[2] : 0.0f
+		};
+		bChanged = ImGui::DragFloat3("##Value", NewValue, Prop.GetSpeed());
 		if (!Options.bUseExternalExpansion || Options.bParentExpanded)
 		{
-			bChanged |= RenderVectorComponentRows(Val, Prop.GetSpeed(), Options.IndentLevel);
+			bChanged |= RenderVectorComponentRows(NewValue, Prop.GetSpeed(), Options.IndentLevel, Options);
+		}
+		if (bChanged && Val)
+		{
+			InvokeBeforePropertyMutate(Options);
+			Val[0] = NewValue[0];
+			Val[1] = NewValue[1];
+			Val[2] = NewValue[2];
 		}
 		break;
 	}
@@ -1434,6 +1574,7 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 		bChanged = ImGui::DragFloat3("##Value", RotXYZ, Prop.GetSpeed());
 		if (bChanged)
 		{
+			InvokeBeforePropertyMutate(Options);
 			Rot->Roll = RotXYZ[0];
 			Rot->Pitch = RotXYZ[1];
 			Rot->Yaw = RotXYZ[2];
@@ -1447,13 +1588,41 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 	case EPropertyType::Vec4:
 	{
 		float* Val = static_cast<float*>(Prop.GetValuePtr());
-		bChanged = ImGui::DragFloat4("##Value", Val, Prop.GetSpeed());
+		float NewValue[4] = {
+			Val ? Val[0] : 0.0f,
+			Val ? Val[1] : 0.0f,
+			Val ? Val[2] : 0.0f,
+			Val ? Val[3] : 0.0f
+		};
+		bChanged = ImGui::DragFloat4("##Value", NewValue, Prop.GetSpeed());
+		if (bChanged && Val)
+		{
+			InvokeBeforePropertyMutate(Options);
+			Val[0] = NewValue[0];
+			Val[1] = NewValue[1];
+			Val[2] = NewValue[2];
+			Val[3] = NewValue[3];
+		}
 		break;
 	}
 	case EPropertyType::Color4:
 	{
 		float* Val = static_cast<float*>(Prop.GetValuePtr());
-		bChanged = ImGui::ColorEdit4("##Value", Val);
+		float NewValue[4] = {
+			Val ? Val[0] : 0.0f,
+			Val ? Val[1] : 0.0f,
+			Val ? Val[2] : 0.0f,
+			Val ? Val[3] : 0.0f
+		};
+		bChanged = ImGui::ColorEdit4("##Value", NewValue);
+		if (bChanged && Val)
+		{
+			InvokeBeforePropertyMutate(Options);
+			Val[0] = NewValue[0];
+			Val[1] = NewValue[1];
+			Val[2] = NewValue[2];
+			Val[3] = NewValue[3];
+		}
 		break;
 	}
 	case EPropertyType::String:
@@ -1468,6 +1637,7 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 		strncpy_s(Buf, sizeof(Buf), Val->c_str(), _TRUNCATE);
 		if (ImGui::InputText("##Value", Buf, sizeof(Buf)))
 		{
+			InvokeBeforePropertyMutate(Options);
 			*Val = Buf;
 			bChanged = true;
 		}
@@ -1475,7 +1645,7 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 	}
 	case EPropertyType::ClassRef:
 	{
-		bChanged = RenderClassPropertyWidget(Prop);
+		bChanged = RenderClassPropertyWidget(Prop, Options);
 		break;
 	}
 	case EPropertyType::ObjectRef:
@@ -1488,6 +1658,7 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 
 		auto SetObjectValue = [&](UObject* Object)
 		{
+			InvokeBeforePropertyMutate(Options);
 			ObjectValueProperty->SetObjectValue(Prop.ContainerPtr, Object);
 			bChanged = true;
 		};
@@ -1742,7 +1913,7 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 	}
 	case EPropertyType::SoftObjectRef:
 	{
-		bChanged = RenderSoftObjectPropertyWidget(Prop);
+		bChanged = RenderSoftObjectPropertyWidget(Prop, Options);
 		break;
 	}
 	case EPropertyType::Array:
@@ -1785,6 +1956,7 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 					bool bSelected = (Current == Name);
 					if (ImGui::Selectable(Name.c_str(), bSelected))
 					{
+						InvokeBeforePropertyMutate(Options);
 						*Val = FName(Name);
 						bChanged = true;
 					}
@@ -1802,6 +1974,7 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 			strncpy_s(Buf, sizeof(Buf), Current.c_str(), _TRUNCATE);
 			if (ImGui::InputText("##Value", Buf, sizeof(Buf)))
 			{
+				InvokeBeforePropertyMutate(Options);
 				*Val = FName(Buf);
 				bChanged = true;
 			}
@@ -1810,7 +1983,7 @@ bool FEditorPropertyRenderer::RenderPropertyWidget(TArray<FPropertyValue>& Props
 	}
 	case EPropertyType::Enum:
 	{
-		bChanged = RenderEnumPropertyWidget(Prop);
+		bChanged = RenderEnumPropertyWidget(Prop, Options);
 		break;
 	}
 	case EPropertyType::Struct:

@@ -4,6 +4,7 @@
 #include "Editor/Viewport/Level/LevelEditorViewportClient.h"
 #include "Editor/Settings/EditorSettings.h"
 #include "Editor/UI/Util/EditorTextureManager.h"
+#include "Editor/UI/ContentBrowser/ContentItem.h"
 #include "Core/ProjectSettings.h"
 #include "Editor/Selection/SelectionManager.h"
 #include "Editor/Undo/EditorUndoCommand.h"
@@ -34,6 +35,7 @@
 #include "Component/Debug/GizmoComponent.h"
 #include "Component/Light/LightComponentBase.h"
 #include "UI/Toolbar/ViewportToolbar.h"
+#include "Engine/Serialization/SceneSaveManager.h"
 
 #include "GameFramework/Actor/StaticMeshActor.h"
 #include "GameFramework/Actor/BoxActor.h"
@@ -939,6 +941,50 @@ void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 				AStaticMeshActor* NewActor = Cast<AStaticMeshActor>(FObjectFactory::Get().Create(AStaticMeshActor::StaticClass()->GetName(), Editor->GetWorld()));
 				NewActor->InitDefaultComponents(FPaths::ToUtf8(ContentItem.Path));
 				Editor->GetWorld()->AddActor(NewActor);
+			}
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("PrefabContentItem"))
+			{
+				FContentItem ContentItem = *reinterpret_cast<const FContentItem*>(payload->Data);
+				if (Editor && Editor->GetWorld())
+				{
+					FVector PlacementLocation = FVector::ZeroVector;
+					const ImVec2 MousePos = ImGui::GetMousePos();
+					const int32 SlotIndex = GetActiveViewportSlotIndex();
+					if (!TryComputePlacementLocation(SlotIndex, FPoint{ MousePos.x, MousePos.y }, PlacementLocation))
+					{
+						FMinimalViewInfo POV;
+						if (Editor->GetActiveViewportPOV(POV))
+						{
+							PlacementLocation = POV.Location + POV.Rotation.GetForwardVector() * 10.0f;
+						}
+					}
+
+					const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(SelectionManager);
+					TArray<AActor*> CreatedActors;
+					const FString FilePath = FPaths::ToUtf8(ContentItem.Path.wstring());
+					if (FSceneSaveManager::InstantiatePrefabFromJSON(
+							FilePath,
+							Editor->GetWorld(),
+							PlacementLocation,
+							CreatedActors,
+							Editor->GetWorld()->GetEditorOutlinerState()))
+					{
+						if (SelectionManager)
+						{
+							SelectionManager->ClearSelection();
+							for (AActor* Actor : CreatedActors)
+							{
+								SelectionManager->ToggleSelect(Actor);
+							}
+						}
+
+						Editor->PushExecutedUndoCommand(MakeActorCreateUndoCommand(
+							CreatedActors,
+							SelectionBefore,
+							CaptureEditorSelection(SelectionManager),
+							"Place Prefab"));
+					}
+				}
 			}
 			ImGui::EndDragDropTarget();
 		}

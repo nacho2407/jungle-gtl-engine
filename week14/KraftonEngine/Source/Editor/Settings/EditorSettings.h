@@ -3,6 +3,7 @@
 #include "EditorViewportSettings.h"
 #include "GizmoToolSettings.h"
 #include "Core/Types/CoreTypes.h"
+#include "Core/Types/EngineTypes.h"
 #include "Platform/Paths.h"
 #include "Core/Singleton.h"
 #include "Math/Vector.h"
@@ -14,6 +15,16 @@ class FEditorSettings : public TSingleton<FEditorSettings>
 	friend class TSingleton<FEditorSettings>;
 
 public:
+	/**
+	* @brief 기본 뷰포트 배경색을 반환합니다.
+	*
+	* @return 기본 뷰포트 배경색
+	*/
+	static FLinearColor GetDefaultViewportBackgroundColor()
+	{
+		return FLinearColor(0.12f, 0.12f, 0.13f, 1.0f);
+	}
+
 	// Viewport
 	FVector InitViewPos = FVector(10, 0, 5);
 	FVector InitLookAt = FVector(0, 0, 0);
@@ -33,6 +44,10 @@ public:
 	FViewportCameraControlSettings LevelViewportCameraControls;
 	FEditorViewportSettings LevelViewportSettings[4];
 	FEditorViewportSettings MeshEditorViewportSettings;
+	/**
+	* @brief 모든 에디터 뷰포트 공용 초기화 배경색
+	*/
+	FLinearColor ViewportBackgroundColor = GetDefaultViewportBackgroundColor();
 
 	// File paths
 	FString EditorStartLevel;  // 비어있으면 빈 씬, 씬 파일명(확장자 제외)이면 자동 로드

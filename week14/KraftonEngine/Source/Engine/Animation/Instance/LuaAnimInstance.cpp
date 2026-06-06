@@ -16,13 +16,13 @@
 #include "Core/Logging/Log.h"
 #include "Core/Types/PropertyTypes.h"
 #include "GameFramework/AActor.h"
-#include "Input/InputSystem.h"
 #include "Lua/LuaScriptManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Object/Object.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Serialization/Archive.h"
+#include "Viewport/GameViewportClient.h"
 
 #include <Windows.h>
 
@@ -455,15 +455,15 @@ void ULuaAnimInstance::InstallBindings()
 	// ── Input edge detection — lua FSM/montage trigger 용 ──
 	//   GetKeyDown == "이번 frame 에서 새로 눌림". 매 frame 호출 안전.
 	Anim.set_function("is_left_mouse_pressed",
-		[]() -> bool { return InputSystem::Get().GetKeyDown(VK_LBUTTON); });
+		[]() -> bool { return UGameViewportClient::MakeCurrentGameInputSnapshot().WasPressed(VK_LBUTTON); });
 	Anim.set_function("is_left_mouse_down",
-		[]() -> bool { return InputSystem::Get().GetKey(VK_LBUTTON); });
+		[]() -> bool { return UGameViewportClient::MakeCurrentGameInputSnapshot().IsDown(VK_LBUTTON); });
 	Anim.set_function("is_right_mouse_pressed",
-		[]() -> bool { return InputSystem::Get().GetKeyDown(VK_RBUTTON); });
+		[]() -> bool { return UGameViewportClient::MakeCurrentGameInputSnapshot().WasPressed(VK_RBUTTON); });
 	Anim.set_function("is_key_pressed",
-		[](int VK) -> bool { return InputSystem::Get().GetKeyDown(VK); });
+		[](int VK) -> bool { return UGameViewportClient::MakeCurrentGameInputSnapshot().WasPressed(VK); });
 	Anim.set_function("is_key_down",
-		[](int VK) -> bool { return InputSystem::Get().GetKey(VK); });
+		[](int VK) -> bool { return UGameViewportClient::MakeCurrentGameInputSnapshot().IsDown(VK); });
 
 	// ── AnimGraph build API (Phase 1.6b) — sub-state-machine / 임의 트리 표현 ──
 	// 노드는 UAnimInstance::MakeNode 가 OwnedNodes 에 push 후 raw 반환 — lifetime 은 C++ 가 관리.
