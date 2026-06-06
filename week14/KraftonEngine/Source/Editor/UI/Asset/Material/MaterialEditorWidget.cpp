@@ -603,6 +603,10 @@ void FMaterialEditorWidget::RenderTextureSection(UMaterialInterface* Material)
 	}
 
 	TMap<FString, UTexture2D*>* Textures = LayoutOwner->GetTexture();
+	if (Textures->find("DiffuseTexture") == Textures->end())
+	{
+		(*Textures)["DiffuseTexture"] = nullptr;
+	}
 
 	for (auto& Pair : *Textures)
 	{
@@ -612,7 +616,7 @@ void FMaterialEditorWidget::RenderTextureSection(UMaterialInterface* Material)
 		Material->GetTextureParameter(SlotName, Texture);
 
 		ImGui::PushID(SlotName.c_str());
-		ImGui::TextUnformatted(SlotName.c_str());
+		ImGui::TextUnformatted(SlotName == "DiffuseTexture" ? "Diffuse Texture" : SlotName.c_str());
 
 		if (Texture && Texture->GetSRV())
 		{
@@ -620,7 +624,19 @@ void FMaterialEditorWidget::RenderTextureSection(UMaterialInterface* Material)
 		}
 		else
 		{
-			ImGui::Button("None", ImVec2(100, 100));
+			ImGui::Button("##TextureDropTarget", ImVec2(100, 100));
+
+			const ImVec2 Min = ImGui::GetItemRectMin();
+			const ImVec2 Max = ImGui::GetItemRectMax();
+			const char* GuideText = "Drag PNG\nhere";
+			const ImVec2 TextSize = ImGui::CalcTextSize(GuideText);
+			const ImVec2 TextPos(
+				Min.x + (Max.x - Min.x - TextSize.x) * 0.5f,
+				Min.y + (Max.y - Min.y - TextSize.y) * 0.5f);
+			ImGui::GetWindowDrawList()->AddText(
+				TextPos,
+				ImGui::GetColorU32(ImGuiCol_TextDisabled),
+				GuideText);
 		}
 
 		if (ImGui::BeginDragDropTarget())
