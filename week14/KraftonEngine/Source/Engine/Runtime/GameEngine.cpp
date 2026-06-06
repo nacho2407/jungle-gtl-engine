@@ -5,7 +5,7 @@
 #include "Engine/Platform/WindowsWindow.h"
 #include "Lua/LuaScriptManager.h"
 #include "Profiling/Time/Timer.h"
-#include <windows.h>  // VK_ESCAPE
+#include <windows.h>  // VK_ESCAPE, VK_PAUSE
 #include <filesystem>
 #include "Viewport/Viewport.h"
 #include "Viewport/GameViewportClient.h"
@@ -13,6 +13,7 @@
 #include "GameFramework/World.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Logging/Log.h"
+#include "UI/UIManager.h"
 
 void UGameEngine::Init(FWindowsWindow* InWindow)
 {
@@ -72,9 +73,9 @@ void UGameEngine::Tick(float DeltaTime)
 		GameViewportClient->ProcessInput(InputSnapshot, DeltaTime);
 	}
 
-	// ESC 는 World pause 와 무관하게 동작해야 함 (메뉴 토글 자체가 pause 토글이라
+	// ESC / Pause 는 World pause 와 무관하게 동작해야 함 (메뉴 토글 자체가 pause 토글이라
 	// component-tick 에 두면 닫는 키 입력을 못 잡는다). 등록된 Lua 콜백을 직접 호출.
-	if (InputSnapshot.WasPressed(VK_ESCAPE))
+	if (InputSnapshot.WasPressed(VK_ESCAPE) || InputSnapshot.WasPressed(VK_PAUSE))
 	{
 		FLuaScriptManager::FireOnEscapePressed();
 	}
@@ -166,6 +167,10 @@ void UGameEngine::ProcessPendingTransition()
 	// Lua 에서 "Map" 같은 이름만 넘겨도 동작하도록 SceneDir/Map.Scene 으로 풀어준다.
 	const FString FilePath = ResolveSceneFilePath(ScenePath);
 
+	// 씬 전환 시 이전 씬의 RmlUi 위젯이 viewport 에 남아 있으면 WantsMouse 상태가
+	// 다음 게임 씬까지 이어져 raw mouse / cursor capture 를 계속 풀어버린다.
+	UUIManager::Get().ClearViewport();
+
 	// 기존 active world 파괴 — EndPlay → 액터/컴포넌트 destruct → PhysicsScene unique_ptr 해제.
 	const FName OldHandle = GetActiveWorldHandle();
 	DestroyWorldContext(OldHandle);
@@ -179,6 +184,11 @@ void UGameEngine::ProcessPendingTransition()
 	{
 		UE_LOG("[GameEngine] TransitionToScene failed: %s", FilePath.c_str());
 		return;
+	}
+
+	if (GameViewportClient)
+	{
+		GameViewportClient->SetInputPossessed(true);
 	}
 
 	// BeginPlay — UEngine::BeginPlay 와 동일 흐름.

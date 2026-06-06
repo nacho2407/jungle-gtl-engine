@@ -49,12 +49,7 @@ public:
 
 	void OpenAssetEditorForObject(UObject* Object);
 	void OpenUIEditor(const std::filesystem::path& Path);
-	void CollectAssetEditorPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const
-	{
-		AssetEditorManager.CollectPreviewViewportClients(OutClients);
-		FEditorMeshThumbnailManager::Get().CollectPreviewViewports(OutClients);
-		FEditorMaterialThumbnailManager::Get().CollectPreviewViewports(OutClients);
-	}
+	void CollectAssetEditorPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const;
 	bool IsMouseOverAssetEditorPreviewViewport() const { return AssetEditorManager.IsMouseOverAnyEditorViewport(); }
 
 private:

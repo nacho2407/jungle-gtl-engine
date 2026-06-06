@@ -102,6 +102,27 @@ function FloatingPawnMovementComponent:SetMoveInput(input) end
 ---@param input Vector
 function FloatingPawnMovementComponent:SetLookInput(input) end
 
+---@class CharacterMovementComponent
+CharacterMovementComponent = {}
+
+---@return number
+function CharacterMovementComponent:GetMaxWalkSpeed() end
+
+---@param value number
+function CharacterMovementComponent:SetMaxWalkSpeed(value) end
+
+---@return number
+function CharacterMovementComponent:GetSprintSpeedMultiplier() end
+
+---@param value number
+function CharacterMovementComponent:SetSprintSpeedMultiplier(value) end
+
+---@return number
+function CharacterMovementComponent:GetWallRunMaxSpeed() end
+
+---@param value number
+function CharacterMovementComponent:SetWallRunMaxSpeed(value) end
+
 ---@class VehicleMovementComponent4W
 VehicleMovementComponent4W = {}
 
@@ -240,6 +261,9 @@ function Actor:IsValid() end
 
 ---@return FloatingPawnMovementComponent?
 function Actor:GetFloatingPawnMovement() end
+
+---@return CharacterMovementComponent?
+function Actor:GetCharacterMovement() end
 
 ---@return VehicleMovementComponent4W?
 function Actor:GetVehicleMovement() end
@@ -554,6 +578,9 @@ AnimLib = {}
 ---@return number
 function Anim.get_owner_speed() end
 
+---@return integer
+function Anim.get_owner_uuid() end
+
 ---@return string
 function Anim.get_owner_movement_mode() end
 
@@ -594,6 +621,10 @@ function Anim.is_right_mouse_pressed() end
 ---@param key integer
 ---@return boolean
 function Anim.is_key_pressed(key) end
+
+---@param key integer
+---@return boolean
+function Anim.is_key_down(key) end
 
 ---@param name? string
 ---@return AnimNode

@@ -12,6 +12,15 @@
 #include "Viewport/GameViewportClient.h"
 
 #include <algorithm>
+
+namespace
+{
+	bool IsCrouchKeyDown(const InputSystem& Input)
+	{
+		return Input.GetKey(VK_CONTROL) || Input.GetKey(VK_LCONTROL) || Input.GetKey(VK_RCONTROL);
+	}
+}
+
 void ACharacter::InitDefaultComponents(const FString& SkeletalMeshFileName)
 {
 	// 1) Capsule — Root. CharacterMovement 의 UpdatedComponent 가 이걸 가리킴.
@@ -47,7 +56,9 @@ void ACharacter::AddMovementInput(const FVector& WorldDirection, float ScaleValu
 {
 	if (CharacterMovement)
 	{
-		CharacterMovement->SetSprinting(InputSystem::Get().GetKey(VK_SHIFT));
+		const InputSystem& Input = InputSystem::Get();
+		CharacterMovement->SetCrouching(IsCrouchKeyDown(Input));
+		CharacterMovement->SetSprinting(Input.GetKey(VK_SHIFT));
 		CharacterMovement->AddInputVector(WorldDirection, ScaleValue);
 	}
 }
@@ -102,7 +113,9 @@ void ACharacter::Tick(float DeltaTime)
 
 	if (CharacterMovement)
 	{
-		CharacterMovement->SetSprinting(InputSystem::Get().GetKey(VK_SHIFT));
+		const InputSystem& Input = InputSystem::Get();
+		CharacterMovement->SetCrouching(IsCrouchKeyDown(Input));
+		CharacterMovement->SetSprinting(Input.GetKey(VK_SHIFT));
 	}
 
 	if (bAutoInputMouseLook)

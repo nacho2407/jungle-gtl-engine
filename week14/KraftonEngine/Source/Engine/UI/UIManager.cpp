@@ -23,8 +23,10 @@
 #include <RmlUi/Core/Factory.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <filesystem>
+#include <cmath>
 #include <memory>
 
 namespace
@@ -87,6 +89,17 @@ namespace
 			UE_LOG("[RmlUi] Failed to load font: %s", Path.c_str());
 		}
 	}
+
+	Rml::String ReplaceFileName(const Rml::String& Source, const Rml::String& FileName)
+	{
+		const size_t Slash = Source.find_last_of("/\\");
+		if (Slash == Rml::String::npos)
+		{
+			return FileName;
+		}
+		return Source.substr(0, Slash + 1) + FileName;
+	}
+
 }
 
 double FRmlSystemInterface::GetElapsedTime()
@@ -112,7 +125,9 @@ void FRmlSystemInterface::JoinPath(Rml::String& TranslatedPath, const Rml::Strin
 bool FRmlSystemInterface::LogMessage(Rml::Log::Type Type, const Rml::String& Message)
 {
 	UE_LOG("[RmlUi] %s", Message.c_str());
-	return Type != Rml::Log::LT_ASSERT;
+	// RmlUi returns false from LogMessage as a request to break into the debugger.
+	// In PIE, malformed/experimental UI should be reported without stopping the whole editor.
+	return true;
 }
 
 // FRmlFileInterfaceWide — 모든 RmlUi 파일 열기를 wide API 로 우회. 한글 경로의 디렉토리
@@ -679,6 +694,10 @@ void UUIManager::RemoveFromViewportImmediate(UUserWidget* Widget)
 	{
 		Widget->MarkRemovedFromViewport();
 	}
+	if (ViewportWidgets.empty())
+	{
+		InputSystem::Get().SetGuiMouseCapture(false);
+	}
 }
 
 bool UUIManager::ReloadDocument(UUserWidget* Widget)
@@ -741,6 +760,8 @@ int32 UUIManager::ReloadDocumentsByPath(const FString& DocumentPath)
 
 void UUIManager::ClearViewport()
 {
+	InputSystem::Get().SetGuiMouseCapture(false);
+
 	// 위젯을 viewport 에서만 떼고 UObject 자체는 유지. UUIManager 는 widgets 의 owner —
 	// 같은 Lua VM 안의 widgets[] 테이블이 그대로 살아있고, PIE 재시작 / TransitionToScene
 	// 후 UIManager.Init re-entry 경로가 동일 위젯을 재사용한다 (위젯 destroy 시 Lua 측
@@ -832,6 +853,7 @@ void UUIManager::Render(const FPassContext& Ctx)
 
 	if (!RmlContext || !RenderInterface || ViewportWidgets.empty() || Ctx.Frame.ViewportWidth <= 0.0f || Ctx.Frame.ViewportHeight <= 0.0f)
 	{
+		InputSystem::Get().SetGuiMouseCapture(false);
 		return;
 	}
 
@@ -841,6 +863,7 @@ void UUIManager::Render(const FPassContext& Ctx)
 	});
 
 	ProcessInput(Ctx.Frame);
+	UpdateMenuHoverButtonFrames();
 	FlushDeferredViewportRemovals();
 	if (ViewportWidgets.empty())
 	{
@@ -877,6 +900,8 @@ void UUIManager::ProcessInput(const FFrameContext& Frame)
 		MouseY = MousePos.y;
 	}
 
+	Input.SetGuiMouseCapture(false);
+
 	bDispatchingRmlEvents = true;
 	RmlContext->ProcessMouseMove(MouseX, MouseY, KeyModifierState);
 	if (Input.GetKeyDown(VK_LBUTTON))
@@ -888,6 +913,75 @@ void UUIManager::ProcessInput(const FFrameContext& Frame)
 		RmlContext->ProcessMouseButtonUp(0, KeyModifierState);
 	}
 	bDispatchingRmlEvents = false;
+}
+
+void UUIManager::UpdateMenuHoverButtonFrames()
+{
+	if (!RmlContext)
+	{
+		return;
+	}
+
+	constexpr double BlinkPeriodSeconds = 0.5;
+	constexpr int32 BlinkFrameCount = 16;
+	static constexpr std::array<const char*, BlinkFrameCount> BlinkFrameFiles = {
+		"HoverCutBoxBlink00.png",
+		"HoverCutBoxBlink01.png",
+		"HoverCutBoxBlink02.png",
+		"HoverCutBoxBlink03.png",
+		"HoverCutBoxBlink04.png",
+		"HoverCutBoxBlink05.png",
+		"HoverCutBoxBlink06.png",
+		"HoverCutBoxBlink07.png",
+		"HoverCutBoxBlink08.png",
+		"HoverCutBoxBlink09.png",
+		"HoverCutBoxBlink10.png",
+		"HoverCutBoxBlink11.png",
+		"HoverCutBoxBlink12.png",
+		"HoverCutBoxBlink13.png",
+		"HoverCutBoxBlink14.png",
+		"HoverCutBoxBlink15.png",
+	};
+
+	const double Now = SystemInterface ? SystemInterface->GetElapsedTime() : 0.0;
+	const double CycleTime = std::fmod(Now, BlinkPeriodSeconds);
+	const int32 FrameIndex = static_cast<int32>((CycleTime / BlinkPeriodSeconds) * BlinkFrameCount) % BlinkFrameCount;
+
+	for (int DocumentIndex = 0; DocumentIndex < RmlContext->GetNumDocuments(); ++DocumentIndex)
+	{
+		Rml::ElementDocument* Document = RmlContext->GetDocument(DocumentIndex);
+		if (!Document)
+		{
+			continue;
+		}
+
+		Rml::ElementList Boxes;
+		Document->GetElementsByClassName(Boxes, "hover-image-box");
+		for (Rml::Element* Box : Boxes)
+		{
+			if (!Box)
+			{
+				continue;
+			}
+
+			const Rml::String CurrentSrc = Box->GetAttribute<Rml::String>("src", "");
+			if (CurrentSrc.empty())
+			{
+				continue;
+			}
+
+			Rml::Element* Button = Box->GetParentNode();
+			const bool bHovered = Button && Button->IsClassSet("hover-image-button") && Button->IsPseudoClassSet("hover");
+			const Rml::String TargetSrc = bHovered
+				? ReplaceFileName(CurrentSrc, BlinkFrameFiles[FrameIndex])
+				: ReplaceFileName(CurrentSrc, "HoverCutBox.png");
+
+			if (CurrentSrc != TargetSrc)
+			{
+				Box->SetAttribute("src", TargetSrc);
+			}
+		}
+	}
 }
 
 void UUIManager::FlushDeferredViewportRemovals()

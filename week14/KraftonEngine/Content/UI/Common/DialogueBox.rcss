@@ -8,40 +8,43 @@
 }
 
 .dialogue-box {
-	display: inline-block;
 	position: absolute;
 	left: 20px;
 	bottom: 22px;
-	width: auto;
-	height: auto;
-	padding: 14px 48px;
-	background-color: rgba(16, 16, 16, 0.58);
+	width: 980px;
+	height: 48px;
+	padding: 0px;
+	background-color: #000000F0;
 	border-width: 0px;
 	overflow: visible;
 }
 
 .dialogue-text {
-	display: inline-block;
-	width: auto;
-	height: auto;
+	position: absolute;
+	left: 16px;
+	top: 0px;
+	width: 948px;
+	height: 48px;
 	font-family: Pretendard;
-	font-size: 18px;
+	font-size: 22px;
 	font-weight: 700;
-	line-height: 26px;
+	line-height: 48px;
 	color: #ffffff;
 	white-space: nowrap;
+	text-align: left;
 	text-shadow: none;
 }
 
 .dialogue-box.compact {
-	padding: 10px 28px;
+	height: 42px;
 }
 
 .dialogue-box.large {
-	padding: 18px 56px;
+	height: 56px;
 }
 
 .dialogue-box.large .dialogue-text {
-	font-size: 22px;
-	line-height: 30px;
+	height: 56px;
+	font-size: 26px;
+	line-height: 56px;
 }

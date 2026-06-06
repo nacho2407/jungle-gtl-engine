@@ -278,6 +278,21 @@ void UEditorEngine::OnWindowResized(uint32 Width, uint32 Height)
 	// FViewport RT는 SSplitter 레이아웃에서 지연 리사이즈로 처리됨
 }
 
+bool UEditorEngine::ShouldRenderViewportClient(const FLevelEditorViewportClient* ViewportClient) const
+{
+	if (!ViewportLayout.ShouldRenderViewportClient(ViewportClient))
+	{
+		return false;
+	}
+
+	if (IsPlayingInEditor())
+	{
+		return ViewportClient == ViewportLayout.GetActiveViewport();
+	}
+
+	return true;
+}
+
 void UEditorEngine::Tick(float DeltaTime)
 {
 	// --- PIE 요청 처리 (프레임 경계에서 처리되도록 Tick 선두에서 소비) ---
@@ -305,9 +320,12 @@ void UEditorEngine::Tick(float DeltaTime)
 		VC->Tick(DeltaTime);
 	}
 
-	MainPanel.TickAssetEditors(DeltaTime);
-	FEditorMeshThumbnailManager::Get().Tick(DeltaTime);
-	FEditorMaterialThumbnailManager::Get().Tick(DeltaTime);
+	if (!IsPlayingInEditor())
+	{
+		MainPanel.TickAssetEditors(DeltaTime);
+		FEditorMeshThumbnailManager::Get().Tick(DeltaTime);
+		FEditorMaterialThumbnailManager::Get().Tick(DeltaTime);
+	}
 
 	WorldTick(DeltaTime);
 	Render(DeltaTime);

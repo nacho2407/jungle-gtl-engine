@@ -2,6 +2,7 @@
 <head>
     <title>Title Settings</title>
     <link type="text/rcss" href="../Common/MenuHoverButton.rcss"/>
+    <link type="text/rcss" href="../Common/HoverDescription.rcss"/>
     <link type="text/rcss" href="TitleSettings.rcss"/>
 </head>
 <body>
@@ -83,10 +84,10 @@
             </div>
         </div>
 
-        <div id="settings-help-panel" class="settings-panel settings-help-panel">
-            <div id="settings-help-title" class="settings-help-title" data-ui-editor="text">GAME SETTINGS</div>
-            <div id="settings-help-body" class="settings-help-body" data-ui-editor="text">Adjust visual brightness, audio mix, and mouse feel before starting the campaign.</div>
-            <div id="settings-help-note" class="settings-help-note" data-ui-editor="text">Use - and + to adjust sliders. Click Zoom or Sprint to switch between Hold and Toggle.</div>
+        <div id="settings-help-panel" class="settings-panel hover-description-panel settings-help-panel">
+            <div id="settings-help-title" class="hover-description-title settings-help-title" data-ui-editor="text">GAME SETTINGS</div>
+            <div id="settings-help-body" class="hover-description-body settings-help-body" data-ui-editor="text">Adjust visual brightness, audio mix, and mouse feel before starting the campaign.</div>
+            <div id="settings-help-note" class="hover-description-note settings-help-note" data-ui-editor="text">Use - and + to adjust sliders. Click Zoom or Sprint to switch between Hold and Toggle.</div>
         </div>
 
         <div id="settings-footer-actions" class="settings-footer-actions">

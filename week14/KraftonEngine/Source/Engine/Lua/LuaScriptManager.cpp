@@ -10,6 +10,7 @@
 #include "Component/Script/LuaScriptComponent.h"
 #include "Component/Input/InputComponent.h"
 #include "Animation/Instance/LuaAnimInstance.h"
+#include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/Movement/FloatingPawnMovementComponent.h"
 #include "Component/Movement/PhysX/VehicleMovementComponent4W.h"
 #include "Component/Movement/PhysX/VehicleMovementComponentTank.h"
@@ -566,6 +567,7 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 	FLuaDocRegistry::Get().Type("AnimNode");
 	FLuaDocRegistry::Get().Type("AnimLib")
 		.Method("---@return number\nfunction Anim.get_owner_speed() end")
+		.Method("---@return integer\nfunction Anim.get_owner_uuid() end")
 		.Method("---@return string\nfunction Anim.get_owner_movement_mode() end")
 		.Method("---@return boolean\nfunction Anim.is_owner_falling() end")
 		.Method("---@return boolean\nfunction Anim.is_owner_wall_running() end")
@@ -577,6 +579,7 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 		.Method("---@return boolean\nfunction Anim.is_left_mouse_down() end")
 		.Method("---@return boolean\nfunction Anim.is_right_mouse_pressed() end")
 		.Method("---@param key integer\n---@return boolean\nfunction Anim.is_key_pressed(key) end")
+		.Method("---@param key integer\n---@return boolean\nfunction Anim.is_key_down(key) end")
 		.Method("---@param name? string\n---@return AnimNode\nfunction Anim.create_state_machine(name) end")
 		.Method("---@param path string\n---@param rate number\n---@param loop boolean\n---@return AnimNode\nfunction Anim.create_sequence_player(path, rate, loop) end")
 		.Method("---@param stateMachine AnimNode\n---@param name string\n---@param subGraph AnimNode\nfunction Anim.sm_add_state(stateMachine, name, subGraph) end")
@@ -873,6 +876,14 @@ Engine.IsPaused = Game.IsPaused
 	Key["E"] = static_cast<int32>('E');
 	Key["R"] = static_cast<int32>('R');
 	Key["Space"] = VK_SPACE;
+	Key["Enter"] = VK_RETURN;
+	Key["Ctrl"] = VK_CONTROL;
+	Key["Control"] = VK_CONTROL;
+	Key["LeftCtrl"] = VK_LCONTROL;
+	Key["RightCtrl"] = VK_RCONTROL;
+	Key["Shift"] = VK_SHIFT;
+	Key["LeftShift"] = VK_LSHIFT;
+	Key["RightShift"] = VK_RSHIFT;
 	Key["Escape"] = VK_ESCAPE;
 	Key["F1"] = VK_F1;
 	Key["F2"] = VK_F2;
@@ -882,6 +893,10 @@ Engine.IsPaused = Game.IsPaused
 	Key["F6"] = VK_F6;
 	Key["F7"] = VK_F7;
 	Key["F8"] = VK_F8;
+	Key["F9"] = VK_F9;
+	Key["F10"] = VK_F10;
+	Key["F11"] = VK_F11;
+	Key["F12"] = VK_F12;
 	Key["MouseLeft"] = VK_LBUTTON;
 	Key["MouseRight"] = VK_RBUTTON;
 	Key["MouseMiddle"] = VK_MBUTTON;
@@ -1003,26 +1018,6 @@ Engine.IsPaused = Game.IsPaused
 		if (Manager)
 		{
 			Manager->StartCameraFade(1.0f, 0.0f, Duration, FLinearColor::Black(), false, true);
-		}
-	});
-	CameraManager.set_function("SetVignette", [](float Intensity, float Radius, float Softness)
-	{
-		if (!GEngine || !GEngine->GetWorld()) return;
-		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
-		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
-		if (Manager)
-		{
-			Manager->SetCameraVignette(Intensity, Radius, Softness, FLinearColor::Black());
-		}
-	});
-	CameraManager.set_function("ClearVignette", []()
-	{
-		if (!GEngine || !GEngine->GetWorld()) return;
-		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
-		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
-		if (Manager)
-		{
-			Manager->ClearCameraVignette();
 		}
 	});
 	CameraManager.set_function("SetViewTargetWithBlend", [](AActor* Target, float BlendTime)
@@ -1245,6 +1240,40 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param input Vector\nfunction FloatingPawnMovementComponent:SetMoveInput(input) end")
 		.Method("---@param input Vector\nfunction FloatingPawnMovementComponent:SetLookInput(input) end");
 
+	Lua.new_usertype<UCharacterMovementComponent>("CharacterMovementComponent",
+		"GetMaxWalkSpeed", [](UCharacterMovementComponent& Component)
+		{
+			return Component.MaxWalkSpeed;
+		},
+		"SetMaxWalkSpeed", [](UCharacterMovementComponent& Component, float Value)
+		{
+			Component.MaxWalkSpeed = (std::max)(0.0f, Value);
+		},
+		"GetSprintSpeedMultiplier", [](UCharacterMovementComponent& Component)
+		{
+			return Component.SprintSpeedMultiplier;
+		},
+		"SetSprintSpeedMultiplier", [](UCharacterMovementComponent& Component, float Value)
+		{
+			Component.SprintSpeedMultiplier = (std::max)(0.0f, Value);
+		},
+		"GetWallRunMaxSpeed", [](UCharacterMovementComponent& Component)
+		{
+			return Component.WallRunMaxSpeed;
+		},
+		"SetWallRunMaxSpeed", [](UCharacterMovementComponent& Component, float Value)
+		{
+			Component.WallRunMaxSpeed = (std::max)(0.0f, Value);
+		});
+
+	FLuaDocRegistry::Get().Type("CharacterMovementComponent")
+		.Method("---@return number\nfunction CharacterMovementComponent:GetMaxWalkSpeed() end")
+		.Method("---@param value number\nfunction CharacterMovementComponent:SetMaxWalkSpeed(value) end")
+		.Method("---@return number\nfunction CharacterMovementComponent:GetSprintSpeedMultiplier() end")
+		.Method("---@param value number\nfunction CharacterMovementComponent:SetSprintSpeedMultiplier(value) end")
+		.Method("---@return number\nfunction CharacterMovementComponent:GetWallRunMaxSpeed() end")
+		.Method("---@param value number\nfunction CharacterMovementComponent:SetWallRunMaxSpeed(value) end");
+
 	Lua.new_usertype<UVehicleMovementComponent4W>("VehicleMovementComponent4W",
 		"SetDriveInput", &UVehicleMovementComponent4W::SetDriveInput);
 	FLuaDocRegistry::Get().Type("VehicleMovementComponent4W")
@@ -1419,6 +1448,9 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("GetFloatingPawnMovement",
 			"---@return FloatingPawnMovementComponent?\nfunction Actor:GetFloatingPawnMovement() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UFloatingPawnMovementComponent>(); })
+		.Method("GetCharacterMovement",
+			"---@return CharacterMovementComponent?\nfunction Actor:GetCharacterMovement() end",
+			[](AActor& Actor) { return Actor.GetComponentByClass<UCharacterMovementComponent>(); })
 		.Method("GetVehicleMovement",
 			"---@return VehicleMovementComponent4W?\nfunction Actor:GetVehicleMovement() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UVehicleMovementComponent4W>(); })

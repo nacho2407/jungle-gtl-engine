@@ -10,9 +10,11 @@
 #include "Particles/ParticleSystem.h"
 #include "Physics/PhysicalMaterial.h"
 #include "Physics/PhysicalMaterialManager.h"
+#include "Materials/MaterialManager.h"
 #include "Object/Reflection/ObjectFactory.h"
 #include "Platform/Paths.h"
 #include "Core/Logging/Log.h"
+#include "SimpleJSON/json.hpp"
 
 #include "Mesh/Skeletal/SkeletalMesh.h"  
 #include "Animation/Skeleton/Skeleton.h"
@@ -21,6 +23,7 @@
 #include "Editor/Subsystem/PhysicsAssetGenerator.h"
 
 #include <filesystem>
+#include <fstream>
 
 namespace
 {
@@ -161,6 +164,52 @@ bool FAssetFactory::CreateParticleSystem(const FString& DirectoryPath, const FSt
 	}
 
 	OutCreatedPath = FPaths::ToUtf8(AssetPath.wstring());
+	return true;
+}
+
+bool FAssetFactory::CreateMaterial(const FString& DirectoryPath, const FString& AssetName, FString& OutCreatedPath)
+{
+	const std::filesystem::path Directory(FPaths::ToWide(DirectoryPath));
+	if (!std::filesystem::exists(Directory) || !std::filesystem::is_directory(Directory))
+	{
+		return false;
+	}
+
+	const std::filesystem::path AssetPath = BuildUniqueAssetPath(Directory, AssetName, L".mat");
+	const std::filesystem::path ProjectRoot = FPaths::RootDir();
+	const FString RelativePath = FPaths::ToUtf8(AssetPath.lexically_relative(ProjectRoot).generic_wstring());
+
+	json::JSON JsonData;
+	JsonData[MatKeys::PathFileName] = RelativePath.c_str();
+	JsonData[MatKeys::ShaderPath] = "Shaders/Geometry/UberLit.hlsl";
+	JsonData[MatKeys::RenderPass] = "Opaque";
+	JsonData[MatKeys::BlendState] = "Opaque";
+	JsonData[MatKeys::DepthStencilState] = "Default";
+	JsonData[MatKeys::RasterizerState] = "SolidBackCull";
+	JsonData[MatKeys::ShadowMode] = "Opaque";
+	JsonData[MatKeys::EmissiveColor] = json::Array(1.0f, 1.0f, 1.0f, 1.0f);
+	JsonData[MatKeys::EmissiveIntensity] = 0.0f;
+	JsonData[MatKeys::bEnableBloom] = false;
+	JsonData[MatKeys::Parameters] = json::JSON::Make(json::JSON::Class::Object);
+	JsonData[MatKeys::Parameters]["HasNormalMap"] = 0.0f;
+	JsonData[MatKeys::Parameters]["SectionColor"] = json::Array(1.0f, 1.0f, 1.0f, 1.0f);
+	JsonData[MatKeys::Parameters]["_pad"] = json::Array(0.0f, 0.0f, 0.0f);
+	JsonData[MatKeys::Textures] = json::JSON::Make(json::JSON::Class::Object);
+	JsonData[MatKeys::Textures]["DiffuseTexture"] = "";
+
+	std::ofstream File(AssetPath);
+	if (!File.is_open())
+	{
+		return false;
+	}
+
+	File << JsonData.dump(4);
+	if (!File.good())
+	{
+		return false;
+	}
+
+	OutCreatedPath = RelativePath;
 	return true;
 }
 

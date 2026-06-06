@@ -15,6 +15,7 @@
 #include "Particles/ParticleSystem.h"
 #include "Particles/ParticleSystemManager.h"
 #include "Physics/PhysicalMaterialManager.h"
+#include "Materials/MaterialManager.h"
 #include "Mesh/MeshManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
@@ -718,6 +719,22 @@ void FEditorContentBrowserWidget::DrawContents()
 						if (UParticleSystem* ParticleAsset = FParticleSystemManager::Get().Load(CreatedPath))
 						{
 							BrowserContext.EditorEngine->OpenAssetEditorForObject(ParticleAsset);
+						}
+					}
+				}
+			}
+			if (ImGui::MenuItem("Material"))
+			{
+				FString CreatedPath;
+				if (FAssetFactory::CreateMaterial(FPaths::ToUtf8(BrowserContext.CurrentPath), "NewMaterial", CreatedPath))
+				{
+					FMaterialManager::Get().ScanMaterialAssets();
+					Refresh();
+					if (BrowserContext.EditorEngine)
+					{
+						if (UMaterialInterface* Material = FMaterialManager::Get().GetOrCreateMaterialInterface(CreatedPath))
+						{
+							BrowserContext.EditorEngine->OpenAssetEditorForObject(Material);
 						}
 					}
 				}

@@ -117,6 +117,7 @@ private:
 	bool LoadDocument(UUserWidget* Widget);
 	void CloseDocument(UUserWidget* Widget);
 	void ProcessInput(const FFrameContext& Frame);
+	void UpdateMenuHoverButtonFrames();
 	void RemoveFromViewportImmediate(UUserWidget* Widget);
 	void FlushDeferredViewportRemovals();
 

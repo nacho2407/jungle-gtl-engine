@@ -1,3 +1,5 @@
+local HoverDescription = require("HoverDescription")
+
 local widget = nil
 local quitWidget = nil
 local statWidget = nil
@@ -39,6 +41,69 @@ local settingSliders = {
     sfx = { value = "settings-sfx-value", fill = "settings-sfx-fill", handle = "settings-sfx-handle", min = 0, max = 100, step = 0.01, format = "%.2f" },
     voice = { value = "settings-voice-value", fill = "settings-voice-fill", handle = "settings-voice-handle", min = 0, max = 100, step = 0.01, format = "%.2f" },
     mouse = { value = "settings-mouse-value", fill = "settings-mouse-fill", handle = "settings-mouse-handle", min = 0.01, max = 3.00, step = 0.01, format = "%.2f" },
+}
+
+local settingsDefaultDescription = {
+    title = "GAME SETTINGS",
+    body = "Adjust visual brightness, audio mix, and mouse feel before starting the campaign.",
+    note = "Use - and +, drag a slider, or click toggle rows.",
+}
+
+local settingsDescriptions = {
+    {
+        id = "settings-gamma-row",
+        title = "GAMMA",
+        body = "Adjust screen brightness to keep dark scenes readable without washing out highlights.",
+        note = "Range: 1.00 to 3.00.",
+    },
+    {
+        id = "settings-bgm-row",
+        title = "BGM VOLUME",
+        body = "Control background music volume.",
+        note = "This value is prepared for audio mix control.",
+    },
+    {
+        id = "settings-sfx-row",
+        title = "SFX VOLUME",
+        body = "Control weapon, impact, movement, and interface sound effects.",
+        note = "This value is prepared for audio mix control.",
+    },
+    {
+        id = "settings-voice-row",
+        title = "VOICE VOLUME",
+        body = "Control dialogue and voice playback volume.",
+        note = "This value is prepared for story and combat voice lines.",
+    },
+    {
+        id = "settings-mouse-row",
+        title = "MOUSE SENSITIVITY",
+        body = "Adjust camera turn speed for mouse input.",
+        note = "The value is applied to the current engine mouse sensitivity.",
+    },
+    {
+        id = "settings-toggle-zoom-row",
+        title = "ZOOM",
+        body = "Choose whether zoom input should be held or toggled.",
+        note = "GUI only for now.",
+    },
+    {
+        id = "settings-toggle-sprint-row",
+        title = "SPRINT",
+        body = "Choose whether sprint input should be held or toggled.",
+        note = "GUI only for now.",
+    },
+    {
+        id = "settings-back-button",
+        title = "BACK",
+        body = "Close settings and return to the title screen.",
+        note = "Current settings remain applied.",
+    },
+    {
+        id = "settings-restore-button",
+        title = "RESTORE DEFAULTS",
+        body = "Restore settings to the values captured when this settings panel opened.",
+        note = "Gamma and mouse sensitivity are applied immediately.",
+    },
 }
 
 local settingsSliderWidth = 220.0
@@ -189,13 +254,13 @@ local function restore_default_settings()
     apply_settings_to_ui()
 end
 
-local function start_default_scene()
+local function start_prologue_scene()
     show_stat_panel(false)
     show_settings_panel(false)
     show_quit_panel(false)
 
     if Engine.TransitionToScene ~= nil then
-        Engine.TransitionToScene("Default.Scene")
+        Engine.TransitionToScene("Prologue.Scene")
     else
         print("[Title] Engine.TransitionToScene is not available")
     end
@@ -333,6 +398,12 @@ local function bind_stat_dialog_clicks()
 end
 
 local function bind_settings_dialog_clicks()
+    HoverDescription.Bind(
+        settingsWidget,
+        { title = "settings-help-title", body = "settings-help-body", note = "settings-help-note" },
+        settingsDefaultDescription,
+        settingsDescriptions)
+
     settingsWidget:bind_click("settings-back-button", function()
         show_settings_panel(false)
     end)
@@ -426,11 +497,11 @@ local function bind_clicks()
     end)
 
     widget:bind_click("new-game-button", function()
-        start_default_scene()
+        start_prologue_scene()
     end)
 
     widget:bind_click("continue-button", function()
-        start_default_scene()
+        start_prologue_scene()
     end)
 
     widget:bind_click("settings-button", function()
