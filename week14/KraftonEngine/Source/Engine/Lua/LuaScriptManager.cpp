@@ -1137,7 +1137,15 @@ Engine.IsPaused = Game.IsPaused
 	});
 	AudioManager.set_function("Play", [](const FString& SoundName, float Volume)
 	{
-		FAudioManager::Get().PlayAudio(SoundName, Volume);
+		return FAudioManager::Get().PlayAudio(SoundName, Volume);
+	});
+	AudioManager.set_function("PlayOneShot", [](const FString& EventName)
+	{
+		return FAudioManager::Get().PlayOneShot(EventName);
+	});
+	AudioManager.set_function("PlayOneShotAt", [](const FString& EventName, float X, float Y, float Z)
+	{
+		return FAudioManager::Get().PlayOneShotAt(EventName, FVector(X, Y, Z));
 	});
 	AudioManager.set_function("PlayBGM", [](const FString& SoundName, float Volume)
 	{
@@ -1149,7 +1157,11 @@ Engine.IsPaused = Game.IsPaused
 	});
 	AudioManager.set_function("PlayLoop", [](const FString& SoundName, const FString& LoopName, sol::optional<float> Volume, sol::optional<float> Pitch)
 	{
-		FAudioManager::Get().PlayLoop(SoundName, LoopName, Volume.value_or(1.0f), Pitch.value_or(1.0f));
+		return FAudioManager::Get().PlayLoop(SoundName, LoopName, Volume.value_or(1.0f), Pitch.value_or(1.0f));
+	});
+	AudioManager.set_function("SetLoopState", [](const FString& LoopName, const FString& SoundName, bool bShouldPlay, sol::optional<float> Volume, sol::optional<float> Pitch)
+	{
+		return FAudioManager::Get().SetLoopState(LoopName, SoundName, bShouldPlay, Volume.value_or(1.0f), Pitch.value_or(1.0f));
 	});
 	AudioManager.set_function("StopLoop", [](const FString& LoopName)
 	{

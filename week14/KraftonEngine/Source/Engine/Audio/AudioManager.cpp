@@ -355,24 +355,24 @@ bool FAudioManager::LoadAudio(const FString& Key, const FString& Path, bool bLoo
 	return true;
 }
 
-void FAudioManager::PlayAudio(const FString& Key, float Volume)
+bool FAudioManager::PlayAudio(const FString& Key, float Volume)
 {
 	if (!Impl->bInitialized || !Impl->LoadedSounds.contains(Key))
 	{
-		return;
+		return false;
 	}
 
 	FLoadedSound& Entry = Impl->LoadedSounds[Key];
 	if (!Entry.Sound)
 	{
-		return;
+		return false;
 	}
 
 	ma_sound_stop(Entry.Sound);
 	ma_sound_seek_to_pcm_frame(Entry.Sound, 0);
 	ma_sound_set_volume(Entry.Sound, std::max(0.0f, Volume));
 	ma_sound_set_looping(Entry.Sound, Entry.bLoop ? MA_TRUE : MA_FALSE);
-	ma_sound_start(Entry.Sound);
+	return ma_sound_start(Entry.Sound) == MA_SUCCESS;
 }
 
 void FAudioManager::PlayBGM(const FString& Key, float Volume)
@@ -414,18 +414,18 @@ void FAudioManager::StopBGM()
 	Impl->BGMPlayback = FLoadedSound();
 }
 
-void FAudioManager::PlayLoop(const FString& Key, const FString& LoopName, float Volume, float Pitch)
+bool FAudioManager::PlayLoop(const FString& Key, const FString& LoopName, float Volume, float Pitch)
 {
 	if (!Impl->bInitialized || LoopName.empty() || !Impl->LoadedSounds.contains(Key))
 	{
-		return;
+		return false;
 	}
 
 	if (Impl->LoopSounds.contains(LoopName))
 	{
 		SetLoopVolume(LoopName, Volume);
 		SetLoopPitch(LoopName, Pitch);
-		return;
+		return true;
 	}
 
 	const FLoadedSound& Source = Impl->LoadedSounds[Key];
@@ -434,14 +434,36 @@ void FAudioManager::PlayLoop(const FString& Key, const FString& LoopName, float 
 	if (ma_sound_init_from_file_w(&Impl->Engine, FullPath.c_str(), MA_SOUND_FLAG_NO_SPATIALIZATION | MA_SOUND_FLAG_LOOPING, &Impl->SFXGroup, nullptr, Sound) != MA_SUCCESS)
 	{
 		delete Sound;
-		return;
+		return false;
 	}
 
 	ma_sound_set_looping(Sound, MA_TRUE);
 	ma_sound_set_volume(Sound, Clamp01(Volume));
 	ma_sound_set_pitch(Sound, std::clamp(Pitch, 0.1f, 3.0f));
-	ma_sound_start(Sound);
+	if (ma_sound_start(Sound) != MA_SUCCESS)
+	{
+		ma_sound_uninit(Sound);
+		delete Sound;
+		return false;
+	}
 	Impl->LoopSounds[LoopName] = FLoadedSound{ Source.Path, true, Sound };
+	return true;
+}
+
+bool FAudioManager::SetLoopState(const FString& LoopName, const FString& Key, bool bShouldPlay, float Volume, float Pitch)
+{
+	if (LoopName.empty())
+	{
+		return false;
+	}
+
+	if (bShouldPlay)
+	{
+		return PlayLoop(Key, LoopName, Volume, Pitch);
+	}
+
+	StopLoop(LoopName);
+	return true;
 }
 
 void FAudioManager::StopLoop(const FString& LoopName)
@@ -526,6 +548,16 @@ void FAudioManager::SetBusVolume(const FString& BusName, float Volume)
 float FAudioManager::GetBusVolume(const FString& BusName) const
 {
 	return *Impl->GetBusVolumePtr(ParseBus(BusName));
+}
+
+bool FAudioManager::PlayOneShot(const FString& EventName)
+{
+	return PlayEvent(EventName);
+}
+
+bool FAudioManager::PlayOneShotAt(const FString& EventName, const FVector& Position)
+{
+	return PlayEventAt(EventName, Position);
 }
 
 bool FAudioManager::PlayEvent(const FString& EventName)

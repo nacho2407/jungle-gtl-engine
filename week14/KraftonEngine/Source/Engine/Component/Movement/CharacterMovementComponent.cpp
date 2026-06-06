@@ -684,7 +684,7 @@ void UCharacterMovementComponent::SetMovementMode(EMovementMode NewMode)
 	{
 		if (bEnableBuiltInMovementAudio)
 		{
-			FAudioManager::Get().StopLoop("PlayerWallRunRub");
+			FAudioManager::Get().SetLoopState("PlayerWallRunRub", "WallRunRub", false);
 		}
 		WallRunStepDistance = 0.0f;
 	}
@@ -744,7 +744,7 @@ void UCharacterMovementComponent::UpdateSprintFootstepAudio(float DeltaTime)
 	SprintFootstepDistance = std::fmod(SprintFootstepDistance, StrideDistance);
 	if (bEnableBuiltInMovementAudio)
 	{
-		FAudioManager::Get().PlayEventAt(bSprint ? "player.run.step" : "player.walk.step", Updated->GetWorldLocation());
+		FAudioManager::Get().PlayOneShotAt(bSprint ? "player.run.step" : "player.walk.step", Updated->GetWorldLocation());
 	}
 }
 
@@ -777,9 +777,13 @@ void UCharacterMovementComponent::UpdateSlideAudio(float DeltaTime)
 		SlideStepDistance = 0.0f;
 		if (bEnableBuiltInMovementAudio)
 		{
-			FAudioManager::Get().PlayEventAt("player.slide.start", Updated->GetWorldLocation());
-			FAudioManager::Get().PlayLoop("SlideLoop", "PlayerSlideLoop", 0.50f, 1.0f);
+			FAudioManager::Get().PlayOneShotAt("player.slide.start", Updated->GetWorldLocation());
 		}
+	}
+
+	if (bEnableBuiltInMovementAudio)
+	{
+		FAudioManager::Get().SetLoopState("PlayerSlideLoop", "SlideLoop", true, 0.50f, 1.0f);
 	}
 
 	SlideStepDistance += PlanarSpeed * DeltaTime;
@@ -788,7 +792,7 @@ void UCharacterMovementComponent::UpdateSlideAudio(float DeltaTime)
 		SlideStepDistance = std::fmod(SlideStepDistance, SlideStepStrideDistance);
 		if (bEnableBuiltInMovementAudio)
 		{
-			FAudioManager::Get().PlayEventAt("player.slide.rub", Updated->GetWorldLocation());
+			FAudioManager::Get().PlayOneShotAt("player.slide.rub", Updated->GetWorldLocation());
 		}
 	}
 }
@@ -804,9 +808,8 @@ void UCharacterMovementComponent::StopSlideAudio()
 	SlideStepDistance = 0.0f;
 	if (bEnableBuiltInMovementAudio)
 	{
-		FAudioManager::Get().StopEvent("player.slide.start");
-		FAudioManager::Get().StopLoop("PlayerSlideLoop");
-		FAudioManager::Get().PlayEvent("player.slide.end");
+		FAudioManager::Get().SetLoopState("PlayerSlideLoop", "SlideLoop", false);
+		FAudioManager::Get().PlayOneShot("player.slide.end");
 	}
 }
 
@@ -820,11 +823,11 @@ void UCharacterMovementComponent::PlayLandingAudio(float DownSpeed)
 	FAudioManager::Get().StopEvent("player.jump.jet");
 	if (DownSpeed >= HeavyLandDownSpeed)
 	{
-		FAudioManager::Get().PlayEvent("player.land.heavy");
+		FAudioManager::Get().PlayOneShot("player.land.heavy");
 	}
 	else
 	{
-		FAudioManager::Get().PlayEvent("player.land");
+		FAudioManager::Get().PlayOneShot("player.land");
 	}
 }
 
@@ -1379,7 +1382,7 @@ void UCharacterMovementComponent::TickWalking(float DeltaTime, const FVector& Ro
 		Velocity.Z = JumpZVelocity;
 		if (bEnableBuiltInMovementAudio)
 		{
-			FAudioManager::Get().PlayEvent("player.jump");
+			FAudioManager::Get().PlayOneShot("player.jump");
 		}
 		// 지상 점프 1회 소비 — 남은 공중 점프 수는 MaxJumpCount - 1.
 		JumpsRemaining = MaxJumpCount - 1;
@@ -1437,8 +1440,8 @@ void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& Ro
 		Velocity.Z = JumpZVelocity;
 		if (bEnableBuiltInMovementAudio)
 		{
-			FAudioManager::Get().PlayEvent("player.double_jump");
-			FAudioManager::Get().PlayEvent("player.jump.jet");
+			FAudioManager::Get().PlayOneShot("player.double_jump");
+			FAudioManager::Get().PlayOneShot("player.jump.jet");
 			FAudioManager::Get().FadeOutEvent("player.jump.jet", 420.0f);
 		}
 	}
@@ -2130,7 +2133,7 @@ void UCharacterMovementComponent::EndWallRun()
 {
 	if (bEnableBuiltInMovementAudio)
 	{
-		FAudioManager::Get().StopLoop("PlayerWallRunRub");
+		FAudioManager::Get().SetLoopState("PlayerWallRunRub", "WallRunRub", false);
 	}
 
 	WallRunNormal = FVector::ZeroVector;
@@ -2183,9 +2186,9 @@ void UCharacterMovementComponent::PerformWallJump()
 void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector& RootMotionWorldXY, const FVector& Input)
 {
 	WallRunElapsedTime += DeltaTime;
-	if (bEnableBuiltInMovementAudio && WallRunElapsedTime >= WallRunLoopStartDelay && !FAudioManager::Get().IsLoopPlaying("PlayerWallRunRub"))
+	if (bEnableBuiltInMovementAudio && WallRunElapsedTime >= WallRunLoopStartDelay)
 	{
-		FAudioManager::Get().PlayLoop("WallRunRub", "PlayerWallRunRub", 0.48f, 1.0f);
+		FAudioManager::Get().SetLoopState("PlayerWallRunRub", "WallRunRub", true, 0.48f, 1.0f);
 	}
 
 	const FVector WallPlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
@@ -2195,7 +2198,7 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 		WallRunStepDistance = std::fmod(WallRunStepDistance, WallRunStepStrideDistance);
 		if (bEnableBuiltInMovementAudio)
 		{
-			FAudioManager::Get().PlayEvent("player.wallrun.step");
+			FAudioManager::Get().PlayOneShot("player.wallrun.step");
 		}
 	}
 

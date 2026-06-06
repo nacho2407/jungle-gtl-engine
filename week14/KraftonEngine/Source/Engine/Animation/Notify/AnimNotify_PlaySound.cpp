@@ -35,7 +35,7 @@ void UAnimNotify_PlaySound::Notify(USkeletalMeshComponent* MeshComp, UAnimSequen
 		}
 
 		const FVector Position = MeshComp ? MeshComp->GetWorldLocation() : FVector::ZeroVector;
-		FAudioManager::Get().PlayEventAt("player.footstep.default", Position);
+		FAudioManager::Get().PlayOneShotAt("player.footstep.default", Position);
 		return;
 	}
 

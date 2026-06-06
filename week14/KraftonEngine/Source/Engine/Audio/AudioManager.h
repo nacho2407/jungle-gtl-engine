@@ -15,12 +15,15 @@ public:
 	void Tick();
 
 	bool LoadAudio(const FString& Key, const FString& Path, bool bLoop = false);
-	void PlayAudio(const FString& Key, float Volume = 1.0f);
+	bool PlayAudio(const FString& Key, float Volume = 1.0f);
+	bool PlayOneShot(const FString& EventName);
+	bool PlayOneShotAt(const FString& EventName, const FVector& Position);
 	void PlayBGM(const FString& Key, float Volume = 1.0f);
 	void StopBGM();
-	void PlayLoop(const FString& Key, const FString& LoopName, float Volume = 1.0f, float Pitch = 1.0f);
+	bool PlayLoop(const FString& Key, const FString& LoopName, float Volume = 1.0f, float Pitch = 1.0f);
 	void StopLoop(const FString& LoopName);
 	void StopAllLoops();
+	bool SetLoopState(const FString& LoopName, const FString& Key, bool bShouldPlay, float Volume = 1.0f, float Pitch = 1.0f);
 	void SetLoopVolume(const FString& LoopName, float Volume);
 	void SetLoopPitch(const FString& LoopName, float Pitch);
 	bool IsLoopPlaying(const FString& LoopName);

@@ -4,6 +4,7 @@ local initialized = false
 local environmentPlaying = false
 local weaponFireLoopPlaying = false
 local weaponFireLoopKey = nil
+local weaponFireFallbackShotPlaying = false
 local slideLoopPlaying = false
 local wallRunRubPlaying = false
 
@@ -33,8 +34,12 @@ local function can_audio()
     return AudioManager ~= nil
 end
 
-local function play_event(eventName)
-    if can_audio() and AudioManager.PlayEvent ~= nil then
+local function play_one_shot(eventName)
+    if not can_audio() then return false end
+    if AudioManager.PlayOneShot ~= nil then
+        return AudioManager.PlayOneShot(eventName)
+    end
+    if AudioManager.PlayEvent ~= nil then
         return AudioManager.PlayEvent(eventName)
     end
     return false
@@ -48,14 +53,30 @@ end
 
 local function play_loop(key, loopName, volume, pitch)
     if can_audio() and AudioManager.PlayLoop ~= nil then
-        AudioManager.PlayLoop(key, loopName, volume or 1.0, pitch or 1.0)
+        return AudioManager.PlayLoop(key, loopName, volume or 1.0, pitch or 1.0)
     end
+    return false
 end
 
 local function stop_loop(loopName)
     if can_audio() and AudioManager.StopLoop ~= nil then
         AudioManager.StopLoop(loopName)
     end
+end
+
+local function set_loop_state(loopName, key, shouldPlay, volume, pitch)
+    if not can_audio() then return false end
+
+    if AudioManager.SetLoopState ~= nil then
+        return AudioManager.SetLoopState(loopName, key or "", shouldPlay == true, volume or 1.0, pitch or 1.0)
+    end
+
+    if shouldPlay then
+        return play_loop(key, loopName, volume, pitch)
+    end
+
+    stop_loop(loopName)
+    return true
 end
 
 local function stop_event(eventName)
@@ -103,7 +124,7 @@ function GameAudio.Initialize()
 end
 
 function GameAudio.Shutdown()
-    GameAudio.StopWeaponFireLoop()
+    GameAudio.StopWeaponFireLoop(false)
     GameAudio.StopSlideLoop(false)
     GameAudio.StopWallRunRub()
 
@@ -116,11 +137,11 @@ function GameAudio.Shutdown()
 end
 
 function GameAudio.PlayEvent(eventName)
-    return play_event(eventName)
+    return play_one_shot(eventName)
 end
 
 function GameAudio.PlayDoubleJumpJet()
-    if play_event("player.jump.jet") then
+    if play_one_shot("player.jump.jet") then
         fade_out_event("player.jump.jet", 420.0)
     end
 end
@@ -139,38 +160,44 @@ end
 
 function GameAudio.StartWeaponFireLoop()
     GameAudio.Initialize()
-    if weaponFireLoopPlaying then return end
-
-    weaponFireLoopKey = "WeaponFireLoop" .. tostring(math.random(1, 3))
-    play_loop(weaponFireLoopKey, "PlayerWeaponFireLoop", 0.86, 1.0)
-    weaponFireLoopPlaying = true
+    if weaponFireLoopPlaying then
+        return true
+    end
+    if weaponFireLoopKey == nil then
+        weaponFireLoopKey = "WeaponFireLoop" .. tostring(math.random(1, 3))
+    end
+    weaponFireLoopPlaying = set_loop_state("PlayerWeaponFireLoop", weaponFireLoopKey, true, 0.86, 1.0)
+    return weaponFireLoopPlaying
 end
 
-function GameAudio.StopWeaponFireLoop()
-    stop_loop("PlayerWeaponFireLoop")
+function GameAudio.StopWeaponFireLoop(playTail)
+    local wasFiring = weaponFireLoopPlaying or weaponFireFallbackShotPlaying
+
+    set_loop_state("PlayerWeaponFireLoop", weaponFireLoopKey or "", false)
     weaponFireLoopPlaying = false
     weaponFireLoopKey = nil
+    weaponFireFallbackShotPlaying = false
+
+    if wasFiring and playTail ~= false then
+        play_one_shot("weapon.fire.tail")
+    end
 end
 
 function GameAudio.StartSlideLoop()
     GameAudio.Initialize()
-    if slideLoopPlaying then return end
-
-    play_loop("SlideLoop", "PlayerSlideLoop", 0.50, 1.0)
-    slideLoopPlaying = true
+    slideLoopPlaying = set_loop_state("PlayerSlideLoop", "SlideLoop", true, 0.50, 1.0)
 end
 
 function GameAudio.StopSlideLoop(playEndSound)
     local wasActive = slideLoopPlaying or movementState.wasSliding
 
-    stop_event("player.slide.start")
-    stop_loop("PlayerSlideLoop")
+    set_loop_state("PlayerSlideLoop", "SlideLoop", false)
     slideLoopPlaying = false
     movementState.slideDistance = 0.0
     movementState.wasSliding = false
 
     if wasActive and playEndSound ~= false then
-        play_event("player.slide.end")
+        play_one_shot("player.slide.end")
     end
 end
 
@@ -182,16 +209,11 @@ end
 
 function GameAudio.StartWallRunRub()
     GameAudio.Initialize()
-    if wallRunRubPlaying then return end
-
-    play_loop("WallRunRub", "PlayerWallRunRub", 0.48, 1.0)
-    wallRunRubPlaying = true
+    wallRunRubPlaying = set_loop_state("PlayerWallRunRub", "WallRunRub", true, 0.48, 1.0)
 end
 
 function GameAudio.StopWallRunRub()
-    if not wallRunRubPlaying then return end
-
-    stop_loop("PlayerWallRunRub")
+    set_loop_state("PlayerWallRunRub", "WallRunRub", false)
     wallRunRubPlaying = false
 end
 
@@ -206,16 +228,27 @@ function GameAudio.UpdateWallRunState(isWallRunning)
 end
 
 function GameAudio.UpdateWeaponFireState(isAiming, isFiring)
-    if not isFiring then
+    -- Weapon fire is an automatic-fire state, not a per-bullet one-shot spam.
+    -- Keep one loop alive while the trigger is held and stop it as soon as firing is not valid.
+    if isFiring then
+        GameAudio.StartWeaponFireLoop()
+    else
         GameAudio.StopWeaponFireLoop()
     end
 end
 
 function GameAudio.NotifyShotFired(isAiming)
-    play_event("weapon.fire")
+    -- The sustained weapon sound is owned by UpdateWeaponFireState().
+    -- This callback exists for the gameplay shot event; do not spawn another transient
+    -- sound every 0.12s, because that stacks long gunshot clips indefinitely.
+    if weaponFireLoopPlaying then return end
 
-    if isAiming then
-        GameAudio.StartWeaponFireLoop()
+    if GameAudio.StartWeaponFireLoop() then return end
+
+    -- Fallback for cases where the loop asset is unavailable. Play one short event once
+    -- per held trigger instead of creating a new instance for every bullet.
+    if not weaponFireFallbackShotPlaying then
+        weaponFireFallbackShotPlaying = play_one_shot("weapon.fire")
     end
 end
 
@@ -244,10 +277,10 @@ function GameAudio.UpdateMovement(movement, dt)
 
     if Input ~= nil and Input.GetKeyDown ~= nil and Key ~= nil and Input.GetKeyDown(Key.Space) then
         if isFalling then
-            play_event("player.double_jump")
+            play_one_shot("player.double_jump")
             GameAudio.PlayDoubleJumpJet()
         elseif isWalking or isWallRunning then
-            play_event("player.jump")
+            play_one_shot("player.jump")
         end
     end
 
@@ -261,9 +294,9 @@ function GameAudio.UpdateMovement(movement, dt)
 
     if movementState.wasFalling and isWalking then
         if movementState.lastFallDownSpeed >= HEAVY_LAND_DOWN_SPEED then
-            play_event("player.land.heavy")
+            play_one_shot("player.land.heavy")
         else
-            play_event("player.land")
+            play_one_shot("player.land")
         end
         movementState.lastFallDownSpeed = 0.0
     end
@@ -271,14 +304,14 @@ function GameAudio.UpdateMovement(movement, dt)
     if isSliding then
         if not movementState.wasSliding then
             movementState.slideDistance = 0.0
-            play_event("player.slide.start")
-            GameAudio.StartSlideLoop()
+            play_one_shot("player.slide.start")
         end
+        GameAudio.StartSlideLoop()
 
         movementState.slideDistance = movementState.slideDistance + speed * dt
         if movementState.slideDistance >= SLIDE_STRIDE_DISTANCE then
             movementState.slideDistance = movementState.slideDistance % SLIDE_STRIDE_DISTANCE
-            play_event("player.slide.rub")
+            play_one_shot("player.slide.rub")
         end
     elseif movementState.wasSliding then
         GameAudio.UpdateSlideState(false)
@@ -299,7 +332,7 @@ function GameAudio.UpdateMovement(movement, dt)
         movementState.wallrunStepTimer = movementState.wallrunStepTimer + dt
         if movementState.wallrunStepTimer >= WALLRUN_STEP_INTERVAL then
             movementState.wallrunStepTimer = movementState.wallrunStepTimer % WALLRUN_STEP_INTERVAL
-            play_event("player.wallrun.step")
+            play_one_shot("player.wallrun.step")
         end
     elseif movementState.wasWallRunning then
         GameAudio.UpdateWallRunState(false)
@@ -310,14 +343,14 @@ function GameAudio.UpdateMovement(movement, dt)
         movementState.runStepTimer = movementState.runStepTimer + dt
         if movementState.runStepTimer >= RUN_STEP_INTERVAL then
             movementState.runStepTimer = movementState.runStepTimer % RUN_STEP_INTERVAL
-            play_event("player.run.step")
+            play_one_shot("player.run.step")
         end
     elseif isWalking and not isSliding and speed >= WALK_MIN_SPEED then
         movementState.runStepTimer = 0.0
         movementState.footstepDistance = movementState.footstepDistance + speed * dt
         if movementState.footstepDistance >= WALK_STRIDE_DISTANCE then
             movementState.footstepDistance = movementState.footstepDistance % WALK_STRIDE_DISTANCE
-            play_event("player.walk.step")
+            play_one_shot("player.walk.step")
         end
     else
         movementState.footstepDistance = 0.0

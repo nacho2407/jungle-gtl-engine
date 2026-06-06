@@ -422,15 +422,42 @@
     "cooldown": 0.02,
     "maxInstances": 6
   },
+  "weapon.fire.tail": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Weapon/Fire/FireTail1.wav",
+      "Weapon/Fire/FireTail2.wav",
+      "Weapon/Fire/FireTail3.wav",
+      "Weapon/Fire/FireTail4.wav"
+    ],
+    "volumeMin": 0.78,
+    "volumeMax": 0.92,
+    "pitchMin": 0.98,
+    "pitchMax": 1.02,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
   "ui.hover": {
     "bus": "UI",
     "spatial": false,
-    "clips": ["Foot1.mp3"],
-    "volumeMin": 0.25,
-    "volumeMax": 0.35,
-    "pitchMin": 1.15,
-    "pitchMax": 1.25,
+    "clips": ["UI/Hover.wav"],
+    "volumeMin": 0.70,
+    "volumeMax": 0.82,
+    "pitchMin": 0.98,
+    "pitchMax": 1.02,
     "cooldown": 0.03,
+    "maxInstances": 4
+  },
+  "ui.click": {
+    "bus": "UI",
+    "spatial": false,
+    "clips": ["UI/Click.wav"],
+    "volumeMin": 0.78,
+    "volumeMax": 0.90,
+    "pitchMin": 0.98,
+    "pitchMax": 1.02,
+    "cooldown": 0.02,
     "maxInstances": 4
   }
 }
