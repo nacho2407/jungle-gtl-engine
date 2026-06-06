@@ -20,7 +20,7 @@ set ELEVENLABS_API_KEY=your_api_key_here
 ## Generate
 
 ```bat
-GenerateDialogueVoices.bat KraftonEngine\Content\Script\Dialogue\Prologue.dialogue.lua Tools\DialogueVoiceGenerator\voice_map.json
+GenerateDialogueVoices.bat KraftonEngine\Content\Script\Dialogue\Prologue.dialogue.lua Scripts\Tools\DialogueVoiceGenerator\voice_map.json
 ```
 
 `voice_map.json` can enable only selected speakers. The default setup uses the

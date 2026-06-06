@@ -2,7 +2,14 @@
   "player.footstep.default": {
     "bus": "SFX",
     "spatial": true,
-    "clips": ["Foot1.mp3"],
+    "clips": [
+      "Footstep_01.wav",
+      "Footstep_02.wav",
+      "Footstep_03.wav",
+      "Footstep_04.wav",
+      "Footstep_05.wav",
+      "Footstep_06.wav"
+    ],
     "volumeMin": 0.75,
     "volumeMax": 0.95,
     "pitchMin": 0.96,

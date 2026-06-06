@@ -8,7 +8,7 @@ set "VOICE_MAP=%~2"
 set "EXTRA_ARGS=%~3"
 
 if "%DIALOGUE_FILE%"=="" set "DIALOGUE_FILE=KraftonEngine\Content\Script\Dialogue\Prologue.dialogue.lua"
-if "%VOICE_MAP%"=="" set "VOICE_MAP=Tools\DialogueVoiceGenerator\voice_map.json"
+if "%VOICE_MAP%"=="" set "VOICE_MAP=Scripts\Tools\DialogueVoiceGenerator\voice_map.json"
 if "%EXTRA_ARGS%"=="" set "EXTRA_ARGS=--overwrite"
 
 set "PYTHON=py -3"
@@ -43,9 +43,9 @@ if "%ELEVENLABS_API_KEY%"=="" (
 )
 
 if not exist "%PROJECT_ROOT%\%VOICE_MAP%" (
-    if exist "%PROJECT_ROOT%\Tools\DialogueVoiceGenerator\voice_map.example.json" (
-        copy "%PROJECT_ROOT%\Tools\DialogueVoiceGenerator\voice_map.example.json" "%PROJECT_ROOT%\Tools\DialogueVoiceGenerator\voice_map.json" >nul
-        echo Created Tools\DialogueVoiceGenerator\voice_map.json from example.
+    if exist "%PROJECT_ROOT%\Scripts\Tools\DialogueVoiceGenerator\voice_map.example.json" (
+        copy "%PROJECT_ROOT%\Scripts\Tools\DialogueVoiceGenerator\voice_map.example.json" "%PROJECT_ROOT%\Scripts\Tools\DialogueVoiceGenerator\voice_map.json" >nul
+        echo Created Scripts\Tools\DialogueVoiceGenerator\voice_map.json from example.
         echo Fill voice_id values before real generation.
     )
 )
@@ -68,7 +68,7 @@ echo Dialogue: %DIALOGUE_FILE%
 echo Voice map: %VOICE_MAP%
 echo.
 
-%PYTHON% "%PROJECT_ROOT%\Tools\DialogueVoiceGenerator\generate_dialogue_voices.py" "%PROJECT_ROOT%\%DIALOGUE_FILE%" "%PROJECT_ROOT%\%VOICE_MAP%" --project-root "%PROJECT_ROOT%" %EXTRA_ARGS%
+%PYTHON% "%PROJECT_ROOT%\Scripts\Tools\DialogueVoiceGenerator\generate_dialogue_voices.py" "%PROJECT_ROOT%\%DIALOGUE_FILE%" "%PROJECT_ROOT%\%VOICE_MAP%" --project-root "%PROJECT_ROOT%" %EXTRA_ARGS%
 if errorlevel 1 (
     echo.
     echo Dialogue voice generation failed.

@@ -1,5 +1,6 @@
 ﻿#include "CharacterMovementComponent.h"
 
+#include "Audio/AudioManager.h"
 #include "Animation/AnimInstance.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/SceneComponent.h"
@@ -35,6 +36,9 @@
 namespace
 {
 	constexpr float MinWallRunInputAlong = 0.1f;
+	constexpr float SprintFootstepMinSpeed = 1.0f;
+	constexpr float SprintFootstepStrideDistance = 2.6f;
+	constexpr float SprintFootstepInitialDistanceRatio = 0.45f;
 
 	FBoundingBox ExpandBounds(const FBoundingBox& Bounds, float Amount)
 	{
@@ -661,8 +665,59 @@ bool UCharacterMovementComponent::ConsumePendingRootMotion(FTransform& OutLocalD
 void UCharacterMovementComponent::SetMovementMode(EMovementMode NewMode)
 {
 	if (MovementMode == NewMode) return;
+	if (MovementMode == EMovementMode::WallRunning && NewMode != EMovementMode::WallRunning)
+	{
+		FAudioManager::Get().StopLoop("PlayerWallRunRub");
+	}
 	MovementMode = NewMode;
+	if (MovementMode != EMovementMode::Walking)
+	{
+		ResetSprintFootstepAudio();
+	}
 	// 추후 OnMovementModeChanged delegate 위치.
+}
+
+void UCharacterMovementComponent::ResetSprintFootstepAudio()
+{
+	SprintFootstepDistance = 0.0f;
+}
+
+void UCharacterMovementComponent::UpdateSprintFootstepAudio(float DeltaTime)
+{
+	if (!IsSprinting() || DeltaTime <= 0.0f)
+	{
+		ResetSprintFootstepAudio();
+		return;
+	}
+
+	USceneComponent* Updated = GetUpdatedComponent();
+	if (!Updated)
+	{
+		ResetSprintFootstepAudio();
+		return;
+	}
+
+	const FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
+	const float PlanarSpeed = PlanarVelocity.Length();
+	if (PlanarSpeed < SprintFootstepMinSpeed)
+	{
+		ResetSprintFootstepAudio();
+		return;
+	}
+
+	if (SprintFootstepDistance <= 0.0f)
+	{
+		SprintFootstepDistance = SprintFootstepStrideDistance * SprintFootstepInitialDistanceRatio;
+	}
+
+	SprintFootstepDistance += PlanarSpeed * DeltaTime;
+	if (SprintFootstepDistance < SprintFootstepStrideDistance)
+	{
+		return;
+	}
+
+	SprintFootstepDistance = std::fmod(SprintFootstepDistance, SprintFootstepStrideDistance);
+	FAudioManager::Get().PlayEventAt("player.footstep.default", Updated->GetWorldLocation());
 }
 
 const char* UCharacterMovementComponent::GetMovementModeName() const
@@ -1086,6 +1141,8 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	{
 		TickFalling(DeltaTime, RootMotionWorldXY);
 	}
+
+	UpdateSprintFootstepAudio(DeltaTime);
 
 	// 5) Root motion yaw 적용. yaw 만 추출 — root motion 의 pitch/roll 은 캐릭터 capsule
 	//    회전에 일반적으로 의미 없음 (UE 도 yaw 만 적용).
@@ -1924,11 +1981,14 @@ void UCharacterMovementComponent::StartWallRun(const FHitResult& WallHit, bool b
 	}
 
 	SetMovementMode(EMovementMode::WallRunning);
+	FAudioManager::Get().PlayLoop("WallRunRub", "PlayerWallRunRub", 0.45f, 1.0f);
 	SetWallRunStatus(EWallRunStatus::Active, &WallHit);
 }
 
 void UCharacterMovementComponent::EndWallRun()
 {
+	FAudioManager::Get().StopLoop("PlayerWallRunRub");
+
 	WallRunNormal = FVector::ZeroVector;
 	WallRunDirection = FVector::ZeroVector;
 	WallRunElapsedTime = 0.0f;

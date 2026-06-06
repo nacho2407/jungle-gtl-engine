@@ -1,7 +1,10 @@
-#include "AnimNotify_PlaySound.h"
+﻿#include "AnimNotify_PlaySound.h"
 
 #include "Audio/AudioManager.h"
+#include "Component/Movement/CharacterMovementComponent.h"
+#include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Core/Logging/Log.h"
+#include "GameFramework/Pawn/Character.h"
 
 namespace
 {
@@ -11,9 +14,30 @@ namespace
 	static TSet<FString> GLoadedPlaySoundPaths;
 }
 
-void UAnimNotify_PlaySound::Notify(USkeletalMeshComponent* /*MeshComp*/, UAnimSequenceBase* /*Anim*/)
+void UAnimNotify_PlaySound::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* /*Anim*/)
 {
 	if (SoundPath.empty()) return;
+
+	if (SoundPath == "Foot1.mp3" || SoundPath == "player.footstep.default")
+	{
+		if (MeshComp)
+		{
+			if (ACharacter* Character = Cast<ACharacter>(MeshComp->GetOwner()))
+			{
+				if (UCharacterMovementComponent* Movement = Character->GetCharacterMovement())
+				{
+					if (Movement->IsSprinting())
+					{
+						return;
+					}
+				}
+			}
+		}
+
+		const FVector Position = MeshComp ? MeshComp->GetWorldLocation() : FVector::ZeroVector;
+		FAudioManager::Get().PlayEventAt("player.footstep.default", Position);
+		return;
+	}
 
 	// 캐시 key — path 자체. "AnimNotify:" prefix 로 게임 측 pre-loaded key 들과 namespace 분리.
 	const FString Key = FString("AnimNotify:") + SoundPath;

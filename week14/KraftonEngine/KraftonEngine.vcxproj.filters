@@ -34,9 +34,6 @@
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{879fdc11-4e44-c448-2bbf-5fd281dc244f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source\Editor\Build">
-      <UniqueIdentifier>{99f90e79-3e47-54fe-5a2f-a1e1dc6a70c6}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source\Editor\PIE">
       <UniqueIdentifier>{1485fbd8-4084-14c8-cd14-33798c9651d4}</UniqueIdentifier>
     </Filter>
@@ -517,9 +514,6 @@
     <Filter Include="ThirdParty\SimpleJSON">
       <UniqueIdentifier>{b5b63371-405e-e009-4e4e-e3b5a25ee7bd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ThirdParty\miniaudio">
-      <UniqueIdentifier>{415e9332-d5f3-49b1-b882-e8eb4c0c7ab1}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ThirdParty\fbx">
       <UniqueIdentifier>{4b5ee33e-f32f-8d72-1cef-4e4f43664fdf}</UniqueIdentifier>
     </Filter>
@@ -591,6 +585,9 @@
     </Filter>
     <Filter Include="ThirdParty\lua\include">
       <UniqueIdentifier>{a1666483-99d9-a14b-123a-fb0f4ff4fd58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty\miniaudio">
+      <UniqueIdentifier>{675200d3-e8a7-1335-2c7b-2b469a8118b6}</UniqueIdentifier>
     </Filter>
     <Filter Include="ThirdParty\sol2">
       <UniqueIdentifier>{1b8ce1bd-cdc9-e609-8022-e114e291285f}</UniqueIdentifier>
@@ -759,9 +756,6 @@
     <FxCompile Include="Shaders\UI\SubUV.hlsl">
       <Filter>Shaders\UI</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\PostProcess\CameraDesaturation.hlsl">
-      <Filter>Shaders\PostProcess</Filter>
-    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -769,9 +763,6 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp">
       <Filter>Source\Editor</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\Build\EditorGameBuilder.cpp">
-      <Filter>Source\Editor\Build</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp">
       <Filter>Source\Editor\Selection</Filter>
@@ -1945,9 +1936,6 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h">
       <Filter>Source\Editor</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Build\EditorGameBuilder.h">
-      <Filter>Source\Editor\Build</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\PIE\PIETypes.h">
       <Filter>Source\Editor\PIE</Filter>
@@ -3350,9 +3338,6 @@
     <ClInclude Include="ThirdParty\stb_image.h">
       <Filter>ThirdParty</Filter>
     </ClInclude>
-    <ClInclude Include="ThirdParty\miniaudio\miniaudio.h">
-      <Filter>ThirdParty\miniaudio</Filter>
-    </ClInclude>
     <ClInclude Include="ThirdParty\fbx\include\fbxsdk.h">
       <Filter>ThirdParty\fbx\include</Filter>
     </ClInclude>
@@ -4288,6 +4273,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\lua\include\lualib.h">
       <Filter>ThirdParty\lua\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\miniaudio\miniaudio.h">
+      <Filter>ThirdParty\miniaudio</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\NvCloth\include\foundation\Px.h">
       <Filter>ThirdParty\NvCloth\include\foundation</Filter>

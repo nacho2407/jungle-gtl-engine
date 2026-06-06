@@ -645,6 +645,7 @@ void FAudioManager::LoadDefaultAudios()
 	LoadAudio("MeteorBoom", "meteor_boom.mp3");
 	LoadAudio("MeteorFall", "meteor_fall.mp3");
 	LoadAudio("Whoosh", "whoosh.mp3");
+	LoadAudio("WallRunRub", "WallRunRub.mp3", true);
 }
 
 void FAudioManager::LoadSoundEvents()

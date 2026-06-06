@@ -178,6 +178,8 @@ protected:
 	FVector     GetWallRunSweepStart(const FVector& Direction) const;
 	float       GetWallRunAlongSpeed(const FVector& WallNormal) const;
 	float       GetWallRunInputAlong(const FVector& Input, const FVector& RunDirection) const;
+	void        UpdateSprintFootstepAudio(float DeltaTime);
+	void        ResetSprintFootstepAudio();
 
 	FVector       AccumulatedInput = FVector(0.0f, 0.0f, 0.0f);
 	FVector       Velocity         = FVector(0.0f, 0.0f, 0.0f);
@@ -220,6 +222,8 @@ protected:
 	// 직전 TickComponent 에서 root motion yaw 가 실제 적용됐는지 (외부 query 용 — Character 의 yaw 가드).
 	// 매 Tick 시작에 reset 후 yaw 적용 시 true.
 	bool          bAppliedRootMotionYawThisFrame = false;
+
+	float         SprintFootstepDistance = 0.0f;
 
 	// 평면 속도 기준 yaw 를 RotationYawRate * dt 로 lerp. TickComponent 끝에서 적용.
 	void  PhysOrientToMovement(float DeltaTime);

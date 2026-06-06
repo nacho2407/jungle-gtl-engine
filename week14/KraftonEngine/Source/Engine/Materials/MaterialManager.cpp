@@ -67,6 +67,17 @@ namespace
 		JsonData[MatKeys::EmissiveIntensity] = Material->GetEmissiveIntensity();
 		JsonData[MatKeys::bEnableBloom] = Material->IsBloomEnabled();
 	}
+
+	std::filesystem::path ResolveMaterialJsonPath(const FString& FilePath)
+	{
+		std::filesystem::path Path(FPaths::ToWide(FilePath));
+		if (!Path.is_absolute())
+		{
+			Path = std::filesystem::path(FPaths::RootDir()) / Path;
+		}
+
+		return Path.lexically_normal();
+	}
 }
 
 void FMaterialManager::ScanMaterialAssets()
@@ -552,7 +563,7 @@ void FMaterialManager::DestroyTransientMaterial(UMaterial* Material)
 
 json::JSON FMaterialManager::ReadJsonFile(const FString& FilePath) const
 {
-	std::ifstream File(FPaths::ToWide(FilePath).c_str());
+	std::ifstream File(ResolveMaterialJsonPath(FilePath));
 	if (!File.is_open()) return json::JSON(); // Null JSON 반환
 
 	std::stringstream Buffer;
@@ -803,7 +814,7 @@ const char* FMaterialManager::ShadowModeToString(EMaterialShadowMode Mode) const
 
 void FMaterialManager::SaveToJSON(json::JSON& JsonData, const FString& MatFilePath)
 {
-	std::ofstream File(FPaths::ToWide(MatFilePath));
+	std::ofstream File(ResolveMaterialJsonPath(MatFilePath));
 	File << JsonData.dump();
 }
 
