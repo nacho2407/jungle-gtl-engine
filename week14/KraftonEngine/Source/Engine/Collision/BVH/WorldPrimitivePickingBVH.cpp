@@ -105,7 +105,7 @@ void FWorldPrimitivePickingBVH::EnsureBuilt(const TArray<AActor*>& Actors)
  * @param OutActor 교차된 프리미티브를 소유한 액터 포인터 (반환용)
  * @return 교차한 액터가 있으면 true, 없으면 false를 반환합니다.
  */
-bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
+bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor, const AActor* IgnoreActor) const
 {
 	struct FTraversalEntry
 	{
@@ -225,6 +225,11 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				}
 
 				const FLeaf& Leaf = Leaves[PrimitiveEntries[EntryIndex].NodeIndex];
+				if (Leaf.Owner == IgnoreActor)
+				{
+					continue;
+				}
+
 				FHitResult CandidateHit{};
 				bool bHit = false;
 

@@ -2,7 +2,8 @@
 
 #include "Core/Singleton.h"
 #include "Core/Types/CoreTypes.h"
-#include <fmod.hpp>
+#include "Math/Vector.h"
+#include <memory>
 
 class FAudioManager : public TSingleton<FAudioManager>
 {
@@ -25,19 +26,22 @@ public:
 	bool IsLoopPlaying(const FString& LoopName);
 
 	void SetMasterVolume(float Volume);
+	void SetBusVolume(const FString& BusName, float Volume);
+	float GetBusVolume(const FString& BusName) const;
+	bool PlayEvent(const FString& EventName);
+	bool PlayEventAt(const FString& EventName, const FVector& Position);
+	void SetListenerTransform(const FVector& Position, const FVector& Forward, const FVector& Up);
 
 private:
 	void LoadDefaultAudios();
-	FMOD::Channel* FindPlayingLoopChannel(const FString& LoopName);
+	void LoadSoundEvents();
+	void UpdateListenerFromWorld();
+	void CleanupTransientSounds();
 
 private:
-	FAudioManager() = default;
-	~FAudioManager() = default;
+	FAudioManager();
+	~FAudioManager();
 
-	FMOD::System* System = nullptr;
-	FMOD::ChannelGroup* MasterGroup = nullptr;
-	FMOD::Channel* BGMChannel = nullptr;
-
-	TMap<FString, FMOD::Sound*> Audios;
-	TMap<FString, FMOD::Channel*> LoopChannels;
+	struct FImpl;
+	std::unique_ptr<FImpl> Impl;
 };

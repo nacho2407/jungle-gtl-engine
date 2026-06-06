@@ -1,0 +1,16 @@
+{
+        "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+        "EmissiveIntensity" : 9.000000,
+        "Parameters" : {
+          "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+        },
+        "ParentMaterial" : "Content/Material/Editor/DefaultParticleSprite.mat",
+        "PathFileName" : "Content/Material/Auto/00_EnergyBullet.matinst",
+        "Textures" : {
+          "DiffuseTexture" : "Content/Texture/Beam_SoftCore_512x64.png"
+        },
+        "bEnableBloom" : true,
+        "bOverrideEmissiveColor" : true,
+        "bOverrideEmissiveIntensity" : true,
+        "bOverrideEnableBloom" : true
+      }

@@ -14,5 +14,8 @@
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "ShadowMode" : "Opaque",
+  "Textures" : {
+
+  },
   "bEnableBloom" : false
 }

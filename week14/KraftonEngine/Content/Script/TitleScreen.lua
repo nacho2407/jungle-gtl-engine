@@ -60,19 +60,19 @@ local settingsDescriptions = {
         id = "settings-bgm-row",
         title = "BGM VOLUME",
         body = "Control background music volume.",
-        note = "This value is prepared for audio mix control.",
+        note = "This value is applied to the BGM audio bus immediately.",
     },
     {
         id = "settings-sfx-row",
         title = "SFX VOLUME",
         body = "Control weapon, impact, movement, and interface sound effects.",
-        note = "This value is prepared for audio mix control.",
+        note = "This value is applied to the SFX and UI audio buses immediately.",
     },
     {
         id = "settings-voice-row",
         title = "VOICE VOLUME",
         body = "Control dialogue and voice playback volume.",
-        note = "This value is prepared for story and combat voice lines.",
+        note = "This value is applied to the Voice audio bus immediately.",
     },
     {
         id = "settings-mouse-row",
@@ -139,6 +139,14 @@ local function sync_settings_from_engine()
             settingsDefaults.mouse = settingsState.mouse
         end
     end
+    if AudioManager ~= nil and AudioManager.GetBusVolume ~= nil then
+        settingsState.bgm = clamp(AudioManager.GetBusVolume("BGM") * 100.0, settingSliders.bgm.min, settingSliders.bgm.max)
+        settingsState.sfx = clamp(AudioManager.GetBusVolume("SFX") * 100.0, settingSliders.sfx.min, settingSliders.sfx.max)
+        settingsState.voice = clamp(AudioManager.GetBusVolume("Voice") * 100.0, settingSliders.voice.min, settingSliders.voice.max)
+        settingsDefaults.bgm = settingsState.bgm
+        settingsDefaults.sfx = settingsState.sfx
+        settingsDefaults.voice = settingsState.voice
+    end
 end
 
 local function apply_setting_slider(name)
@@ -170,6 +178,12 @@ local function apply_setting_slider(name)
         Engine.SetGamma(value)
     elseif name == "mouse" and Engine ~= nil and Engine.SetMouseSensitivity ~= nil then
         Engine.SetMouseSensitivity(value)
+    elseif name == "bgm" and AudioManager ~= nil and AudioManager.SetBusVolume ~= nil then
+        AudioManager.SetBusVolume("BGM", value / 100.0)
+    elseif name == "sfx" and AudioManager ~= nil and AudioManager.SetBusVolume ~= nil then
+        AudioManager.SetBusVolume("SFX", value / 100.0)
+    elseif name == "voice" and AudioManager ~= nil and AudioManager.SetBusVolume ~= nil then
+        AudioManager.SetBusVolume("Voice", value / 100.0)
     end
 end
 

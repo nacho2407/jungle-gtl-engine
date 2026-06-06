@@ -126,6 +126,10 @@ void FStaticMeshSceneProxy::RebuildSectionDraws()
 				else if (Slots[i].MaterialInterface)
 					Draw.Material = Slots[i].MaterialInterface;
 			}
+			else if (!Overrides.empty() && Overrides[0])
+			{
+				Draw.Material = Overrides[0];
+			}
 
 			LODData[lod].SectionDraws.push_back(Draw);
 		}

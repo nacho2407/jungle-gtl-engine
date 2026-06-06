@@ -31,6 +31,8 @@ public:
 
 	static float GetRuntimeGamma();
 	static void SetRuntimeGamma(float InGamma);
+	static float GetRuntimeSaturation();
+	static void SetRuntimeSaturation(float InSaturation);
 	static float GetRuntimeMouseSensitivity();
 	static void SetRuntimeMouseSensitivity(float InSensitivity);
 
@@ -83,5 +85,6 @@ private:
 	static TArray<ULuaAnimInstance*>    RegisteredAnimInstances;
 	static FSubscriptionID WatchSub;
 	static float RuntimeGamma;
+	static float RuntimeSaturation;
 	static float RuntimeMouseSensitivity;
 };

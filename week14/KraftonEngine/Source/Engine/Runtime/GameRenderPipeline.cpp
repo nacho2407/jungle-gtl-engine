@@ -80,6 +80,7 @@ void FGameRenderPipeline::Execute(float DeltaTime, FRenderer& Renderer)
 	Opts.ViewMode = EViewMode::Lit_Phong;
 	Opts.ShowFlags.bGammaCorrection = true;
 	Opts.Gamma = FLuaScriptManager::GetRuntimeGamma();
+	Opts.Saturation = FLuaScriptManager::GetRuntimeSaturation();
 	Frame.SetRenderOptions(Opts);
 
 	PrepareViewport(VP, Ctx);

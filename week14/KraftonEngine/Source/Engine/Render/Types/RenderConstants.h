@@ -295,7 +295,8 @@ struct FDepthOfFieldConstants
 struct FGammaCorrectionConstants
 {
 	float Gamma;
-	float _pad[3];
+	float Saturation;
+	float _pad[2];
 };
 
 

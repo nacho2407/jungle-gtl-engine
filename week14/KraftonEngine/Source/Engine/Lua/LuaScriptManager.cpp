@@ -35,6 +35,7 @@
 #include "GameFramework/World.h"
 #include "Debug/DrawDebugHelpers.h"
 #include "Object/Reflection/UClass.h"
+#include "Render/Scene/FScene.h"
 #include "Platform/Paths.h"
 #include "Core/ProjectSettings.h"
 #include "Math/Transform.h"
@@ -125,6 +126,7 @@ TArray<ULuaScriptComponent*> FLuaScriptManager::RegisteredComponents;
 TArray<ULuaAnimInstance*>    FLuaScriptManager::RegisteredAnimInstances;
 FSubscriptionID FLuaScriptManager::WatchSub = 0;
 float FLuaScriptManager::RuntimeGamma = 2.4f;
+float FLuaScriptManager::RuntimeSaturation = 1.0f;
 float FLuaScriptManager::RuntimeMouseSensitivity = 0.2f;
 
 void FLuaScriptManager::SetOnEscapePressed(sol::protected_function Callback)
@@ -140,6 +142,16 @@ float FLuaScriptManager::GetRuntimeGamma()
 void FLuaScriptManager::SetRuntimeGamma(float InGamma)
 {
 	RuntimeGamma = std::clamp(InGamma, 1.0f, 3.0f);
+}
+
+float FLuaScriptManager::GetRuntimeSaturation()
+{
+	return RuntimeSaturation;
+}
+
+void FLuaScriptManager::SetRuntimeSaturation(float InSaturation)
+{
+	RuntimeSaturation = std::clamp(InSaturation, 0.0f, 1.0f);
 }
 
 float FLuaScriptManager::GetRuntimeMouseSensitivity()
@@ -762,6 +774,14 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	{
 		FLuaScriptManager::SetRuntimeGamma(Value);
 	});
+	Engine.set_function("GetPostProcessSaturation", []()
+	{
+		return FLuaScriptManager::GetRuntimeSaturation();
+	});
+	Engine.set_function("SetPostProcessSaturation", [](float Value)
+	{
+		FLuaScriptManager::SetRuntimeSaturation(Value);
+	});
 	Engine.set_function("GetMouseSensitivity", []()
 	{
 		return FLuaScriptManager::GetRuntimeMouseSensitivity();
@@ -1151,6 +1171,22 @@ Engine.IsPaused = Game.IsPaused
 	{
 		return FAudioManager::Get().IsLoopPlaying(LoopName);
 	});
+	AudioManager.set_function("PlayEvent", [](const FString& EventName)
+	{
+		return FAudioManager::Get().PlayEvent(EventName);
+	});
+	AudioManager.set_function("PlayEventAt", [](const FString& EventName, float X, float Y, float Z)
+	{
+		return FAudioManager::Get().PlayEventAt(EventName, FVector(X, Y, Z));
+	});
+	AudioManager.set_function("SetBusVolume", [](const FString& BusName, float Volume)
+	{
+		FAudioManager::Get().SetBusVolume(BusName, Volume);
+	});
+	AudioManager.set_function("GetBusVolume", [](const FString& BusName)
+	{
+		return FAudioManager::Get().GetBusVolume(BusName);
+	});
 
 	Lua.set_function("LoadAudio", [](const FString& SoundName, const FString& Path, sol::optional<bool> bLoop)
 	{
@@ -1388,6 +1424,22 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@return Vector\nfunction SceneComponent:GetRotation() end")
 		.Method("---@param rotation Vector\nfunction SceneComponent:SetRotation(rotation) end");
 
+	Lua.new_usertype<UPrimitiveComponent>("PrimitiveComponent",
+		sol::base_classes, sol::bases<USceneComponent>(),
+		"SetOutline", [](UPrimitiveComponent& Component, bool bEnabled)
+		{
+			AActor* OwnerActor = Component.GetOwner();
+			UWorld* World = OwnerActor ? OwnerActor->GetWorld() : nullptr;
+			if (!World)
+			{
+				return;
+			}
+			World->GetScene().SetProxyOutlineOnly(Component.GetSceneProxy(), bEnabled);
+		});
+
+	FLuaDocRegistry::Get().Type("PrimitiveComponent", "SceneComponent")
+		.Method("---@param enabled boolean\nfunction PrimitiveComponent:SetOutline(enabled) end");
+
 	// 메시 에셋 경로로 컴포넌트 식별 가능하게 노출. 자동 생성된 FName ("UStaticMeshComponent_41")
 	// 은 월드 초기화 순서에 따라 카운터가 달라져 빌드별로 매칭이 깨질 수 있다. 메시 경로는
 	// 씬 파일에 명시 저장되므로 deterministic.
@@ -1510,9 +1562,30 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("GetSkeletalMesh",
 			"---@return SkeletalMeshComponent?\nfunction Actor:GetSkeletalMesh() end",
 			[](AActor& Actor) -> USkeletalMeshComponent* { return Actor.GetComponentByClass<USkeletalMeshComponent>(); })
+		.Method("GetStaticMesh",
+			"---@return StaticMeshComponent?\nfunction Actor:GetStaticMesh() end",
+			[](AActor& Actor) -> UStaticMeshComponent* { return Actor.GetComponentByClass<UStaticMeshComponent>(); })
 		.Method("GetParticleSystem",
 			"---@return ParticleSystemComponent?\nfunction Actor:GetParticleSystem() end",
 			[](AActor& Actor) -> UParticleSystemComponent* { return Actor.GetComponentByClass<UParticleSystemComponent>(); })
+		.Method("SetOutline",
+			"---@param enabled boolean\nfunction Actor:SetOutline(enabled) end",
+			[](AActor& Actor, bool bEnabled)
+			{
+				UWorld* World = Actor.GetWorld();
+				if (!World)
+				{
+					return;
+				}
+				for (UPrimitiveComponent* PrimitiveComponent : Actor.GetPrimitiveComponents())
+				{
+					if (!PrimitiveComponent)
+					{
+						continue;
+					}
+					World->GetScene().SetProxyOutlineOnly(PrimitiveComponent->GetSceneProxy(), bEnabled);
+				}
+			})
 		.Method("GetPrimitiveComponentByName",
 			"---@param name string\n---@return PrimitiveComponent?\nfunction Actor:GetPrimitiveComponentByName(name) end",
 			[](AActor& Actor, const FString& ComponentName) -> UPrimitiveComponent*
@@ -1720,6 +1793,21 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		if (!bHit) return sol::lua_nil;
 		return sol::make_object(FLuaScriptManager::GetState(), Hit);
 	});
+	World.set_function("RaycastPrimitive",
+		[](const FVector& Start, const FVector& Dir, float MaxDist,
+		   sol::optional<AActor*> IgnoreActor) -> sol::object
+	{
+		if (!GEngine || !GEngine->GetWorld()) return sol::lua_nil;
+		FRay Ray;
+		Ray.Origin = Start;
+		Ray.Direction = Dir;
+		FHitResult Hit;
+		AActor* HitActor = nullptr;
+		const bool bHit = GEngine->GetWorld()->RaycastPrimitives(Ray, Hit, HitActor, IgnoreActor.value_or(nullptr));
+		if (!bHit || Hit.Distance > MaxDist) return sol::lua_nil;
+		Hit.HitActor = HitActor;
+		return sol::make_object(FLuaScriptManager::GetState(), Hit);
+	});
 
 	FLuaDocRegistry::Get().Type("WorldLib")
 		.Method("---@param className string\n---@return Actor?\nfunction World.SpawnActor(className) end")
@@ -1728,7 +1816,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param tag string\n---@return Actor?\nfunction World.FindFirstActorByTag(tag) end")
 		.Method("---@param tag string\n---@return Actor[]\nfunction World.FindActorsByTag(tag) end")
 		.Method("---@param start Vector\n---@param dir Vector\n---@param maxDist number\n---@param ignoreActor? Actor\n---@return HitResult?\nfunction World.RaycastSkeletalMesh(start, dir, maxDist, ignoreActor) end")
-		.Method("---@param start Vector\n---@param dir Vector\n---@param maxDist number\n---@param ignoreActor? Actor\n---@return HitResult?\nfunction World.RaycastWorldStatic(start, dir, maxDist, ignoreActor) end");
+		.Method("---@param start Vector\n---@param dir Vector\n---@param maxDist number\n---@param ignoreActor? Actor\n---@return HitResult?\nfunction World.RaycastWorldStatic(start, dir, maxDist, ignoreActor) end")
+		.Method("---@param start Vector\n---@param dir Vector\n---@param maxDist number\n---@param ignoreActor? Actor\n---@return HitResult?\nfunction World.RaycastPrimitive(start, dir, maxDist, ignoreActor) end");
 	FLuaDocRegistry::Get().Global("World", "WorldLib");
 
 	sol::table Debug = Lua.create_named_table("Debug");
@@ -1876,6 +1965,8 @@ void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)
 		"set_text", &UUserWidget::SetText,
 		"SetProperty", &UUserWidget::SetProperty,
 		"set_property", &UUserWidget::SetProperty,
+		"SetAttribute", &UUserWidget::SetAttribute,
+		"set_attribute", &UUserWidget::SetAttribute,
 		"SetWantsMouse", &UUserWidget::SetWantsMouse,
 		"WantsMouse", &UUserWidget::WantsMouse);
 

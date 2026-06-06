@@ -32,5 +32,6 @@
             <div id="weapon-hud-magazine-ammo" class="weapon-hud-magazine-ammo" data-ui-editor="text">25</div>
         </div>
     </div>
+
 </body>
 </rml>
