@@ -484,7 +484,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Editor\UI\Panel\EditorSceneWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorStatWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorViewportWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Toolbar\ViewportToolbar.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorDragSource.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorFileUtils.cpp" />
@@ -887,7 +886,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Editor\UI\Panel\EditorSceneWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorStatWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorViewportWidget.h" />
-    <ClInclude Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.h" />
     <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorDragSource.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorFileUtils.h" />

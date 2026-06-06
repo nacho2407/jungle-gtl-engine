@@ -908,9 +908,6 @@
     <ClCompile Include="Source\Editor\UI\Panel\EditorViewportWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.cpp">
-      <Filter>Source\Editor\UI\Panel</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Toolbar\ViewportToolbar.cpp">
       <Filter>Source\Editor\UI\Toolbar</Filter>
     </ClCompile>
@@ -2109,9 +2106,6 @@
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorViewportWidget.h">
-      <Filter>Source\Editor\UI\Panel</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h">

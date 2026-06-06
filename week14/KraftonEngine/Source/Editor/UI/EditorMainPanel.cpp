@@ -329,7 +329,6 @@ void FEditorMainPanel::Render(float DeltaTime)
 	}
 
 	ProjectSettingsWidget.Render();
-	WorldSettingsWidget.Render();
 	GameBuildWidget.Render(DeltaTime);
 
 	if (!bHideEditorWindows)
@@ -431,11 +430,6 @@ void FEditorMainPanel::RenderMainMenuBar()
 	if (ImGui::MenuItem("Project Settings"))
 	{
 		ProjectSettingsWidget.bOpen = true;
-	}
-
-	if (ImGui::MenuItem("World Settings"))
-	{
-		WorldSettingsWidget.bOpen = true;
 	}
 
 	if (ImGui::MenuItem("Shortcut"))

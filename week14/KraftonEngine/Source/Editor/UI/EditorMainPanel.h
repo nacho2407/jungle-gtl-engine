@@ -9,7 +9,6 @@
 #include "Editor/UI/Debug/EditorShadowMapDebugWidget.h"
 #include "Editor/UI/Debug/EditorAnimationDebugWidget.h"
 #include "Editor/UI/Panel/EditorProjectSettingsWidget.h"
-#include "Editor/UI/Panel/EditorWorldSettingsWidget.h"
 #include "Editor/UI/Panel/EditorGameBuildWidget.h"
 #include "Editor/UI/ContentBrowser/ContentBrowser.h"
 #include "Editor/UI/Asset/AssetEditorManager.h"
@@ -98,7 +97,6 @@ private:
 	EditorShadowMapDebugWidget ShadowMapDebugWidget;
 	FEditorAnimationDebugWidget AnimationDebugWidget;
 	EditorProjectSettingsWidget ProjectSettingsWidget;
-	EditorWorldSettingsWidget WorldSettingsWidget;
 	FEditorGameBuildWidget GameBuildWidget;
 	FAssetEditorManager AssetEditorManager;
 	FUIEditorWidget UIEditorWidget;
