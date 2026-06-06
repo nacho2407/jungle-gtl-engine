@@ -21,6 +21,8 @@
 #include "Serialization/JsonArchive.h"
 #include "Profiling/Time/PlatformTime.h"
 
+#include <algorithm>
+
 // ---- JSON vector helpers ---------------------------------------------------
 
 static void WriteVec3(json::JSON& Obj, const char* Key, const FVector& V)
@@ -66,6 +68,12 @@ namespace SceneKeys
 	static constexpr const char* ObjectId = "ObjectId";
 	static constexpr const char* RuntimeUUID = "RuntimeUUID";
 	static constexpr const char* EditorUndoObjectReferences = "EditorUndoObjectReferences";
+	static constexpr const char* EditorOutliner = "EditorOutliner";
+	static constexpr const char* Groups = "Groups";
+	static constexpr const char* GroupId = "GroupId";
+	static constexpr const char* ActorObjectIds = "ActorObjectIds";
+	static constexpr const char* Expanded = "Expanded";
+	static constexpr const char* Origin = "Origin";
 }
 
 class FSceneJsonSaveArchive : public FJsonArchive
@@ -453,6 +461,227 @@ void FSceneSaveManager::SaveSceneAsJSON(const string& InSceneName, FWorldContext
 	}
 }
 
+bool FSceneSaveManager::SavePrefabAsJSON(
+	const FString& FilePath,
+	const TArray<AActor*>& Actors,
+	const FSceneOutlinerState& OutlinerState)
+{
+	using namespace json;
+	if (FilePath.empty() || Actors.empty())
+	{
+		return false;
+	}
+
+	TArray<AActor*> ValidActors;
+	for (AActor* Actor : Actors)
+	{
+		if (Actor)
+		{
+			ValidActors.push_back(Actor);
+		}
+	}
+
+	if (ValidActors.empty())
+	{
+		return false;
+	}
+
+	FVector MinLocation = ValidActors.front()->GetActorLocation();
+	FVector MaxLocation = MinLocation;
+	for (AActor* Actor : ValidActors)
+	{
+		const FVector Location = Actor->GetActorLocation();
+		MinLocation.X = (std::min)(MinLocation.X, Location.X);
+		MinLocation.Y = (std::min)(MinLocation.Y, Location.Y);
+		MinLocation.Z = (std::min)(MinLocation.Z, Location.Z);
+		MaxLocation.X = (std::max)(MaxLocation.X, Location.X);
+		MaxLocation.Y = (std::max)(MaxLocation.Y, Location.Y);
+		MaxLocation.Z = (std::max)(MaxLocation.Z, Location.Z);
+	}
+	const FVector Origin = (MinLocation + MaxLocation) * 0.5f;
+
+	FSceneSaveContext SaveContext;
+	for (AActor* Actor : ValidActors)
+	{
+		CollectActorObjectIds(Actor, SaveContext);
+	}
+
+	JSON Root = json::Object();
+	Root[SceneKeys::Version] = 1;
+	Root[SceneKeys::ClassName] = "Prefab";
+	WriteVec3(Root, SceneKeys::Origin, Origin);
+
+	JSON ActorArray = json::Array();
+	for (AActor* Actor : ValidActors)
+	{
+		ActorArray.append(SerializeActor(Actor, SaveContext));
+	}
+	Root[SceneKeys::Actors] = ActorArray;
+
+	JSON OutlinerJSON = SerializePrefabOutliner(ValidActors, OutlinerState, SaveContext);
+	if (OutlinerJSON.size() > 0)
+	{
+		Root[SceneKeys::EditorOutliner] = OutlinerJSON;
+	}
+
+	const std::filesystem::path Destination(FPaths::ToWide(FilePath));
+	std::filesystem::create_directories(Destination.parent_path());
+
+	std::ofstream File(Destination);
+	if (!File.is_open())
+	{
+		return false;
+	}
+
+	File << Root.dump();
+	File.flush();
+	File.close();
+	return true;
+}
+
+bool FSceneSaveManager::InstantiatePrefabFromJSON(
+	const FString& FilePath,
+	UWorld* World,
+	const FVector& PlacementLocation,
+	TArray<AActor*>& OutCreatedActors,
+	FSceneOutlinerState& OutlinerState)
+{
+	using json::JSON;
+	OutCreatedActors.clear();
+	if (FilePath.empty() || !World)
+	{
+		return false;
+	}
+
+	std::ifstream File(std::filesystem::path(FPaths::ToWide(FilePath)));
+	if (!File.is_open())
+	{
+		return false;
+	}
+
+	string FileContent((std::istreambuf_iterator<char>(File)), std::istreambuf_iterator<char>());
+	JSON Root = JSON::Load(FileContent);
+	if (!Root.hasKey(SceneKeys::Actors))
+	{
+		return false;
+	}
+
+	FVector Origin = FVector::ZeroVector;
+	if (Root.hasKey(SceneKeys::Origin))
+	{
+		Origin = ReadVec3(Root[SceneKeys::Origin]);
+	}
+	const FVector PlacementOffset = PlacementLocation - Origin;
+
+	FSceneLoadContext LoadContextState;
+	World->BeginDeferredPickingBVHUpdate();
+
+	for (auto& ActorJSON : Root[SceneKeys::Actors].ArrayRange())
+	{
+		string ActorClass = ActorJSON[SceneKeys::ClassName].ToString();
+		if (ActorClass.empty())
+		{
+			continue;
+		}
+
+		UObject* ActorObj = FObjectFactory::Get().Create(ActorClass, World);
+		AActor* Actor = Cast<AActor>(ActorObj);
+		if (!Actor)
+		{
+			if (ActorObj)
+			{
+				UObjectManager::Get().DestroyObject(ActorObj);
+			}
+			continue;
+		}
+
+		LoadContextState.RegisterLoadedObject(ActorJSON, Actor);
+		World->AddActor(Actor);
+		OutCreatedActors.push_back(Actor);
+
+		if (ActorJSON.hasKey(SceneKeys::Name))
+		{
+			Actor->SetFName(FName(ActorJSON[SceneKeys::Name].ToString()));
+		}
+
+		if (ActorJSON.hasKey(SceneKeys::RootComponent))
+		{
+			JSON& RootJSON = ActorJSON[SceneKeys::RootComponent];
+			USceneComponent* RootComponent = DeserializeSceneComponentTree(RootJSON, Actor, LoadContextState);
+			if (RootComponent)
+			{
+				Actor->SetRootComponent(RootComponent);
+			}
+		}
+
+		if (ActorJSON.hasKey(SceneKeys::Properties))
+		{
+			LoadContextState.QueueProperties(Actor, ActorJSON[SceneKeys::Properties]);
+		}
+
+		if (ActorJSON.hasKey(SceneKeys::NonSceneComponents))
+		{
+			for (auto& CompJSON : ActorJSON[SceneKeys::NonSceneComponents].ArrayRange())
+			{
+				string CompClass = CompJSON[SceneKeys::ClassName].ToString();
+				UObject* CompObj = FObjectFactory::Get().Create(CompClass, Actor);
+				UActorComponent* Comp = Cast<UActorComponent>(CompObj);
+				if (!Comp)
+				{
+					if (CompObj)
+					{
+						UObjectManager::Get().DestroyObject(CompObj);
+					}
+					continue;
+				}
+
+				LoadContextState.RegisterLoadedObject(CompJSON, Comp);
+				if (CompJSON.hasKey(SceneKeys::Name))
+				{
+					Comp->SetFName(FName(CompJSON[SceneKeys::Name].ToString()));
+				}
+				Actor->RegisterComponent(Comp);
+
+				if (CompJSON.hasKey(SceneKeys::Properties))
+				{
+					LoadContextState.QueueProperties(Comp, CompJSON[SceneKeys::Properties]);
+				}
+				DeserializeComponentEditorMetadata(Comp, CompJSON);
+			}
+		}
+	}
+
+	for (FPendingPropertyLoad& Pending : LoadContextState.PendingProperties)
+	{
+		if (Pending.Object && Pending.Properties)
+		{
+			DeserializeProperties(Pending.Object, *Pending.Properties, LoadContextState);
+		}
+	}
+
+	for (AActor* Actor : OutCreatedActors)
+	{
+		if (!Actor)
+		{
+			continue;
+		}
+
+		Actor->AddActorWorldOffset(PlacementOffset);
+		World->RemoveActorToOctree(Actor);
+		World->InsertActorToOctree(Actor);
+	}
+
+	World->EndDeferredPickingBVHUpdate();
+	World->BuildWorldPrimitivePickingBVHNow();
+
+	if (Root.hasKey(SceneKeys::EditorOutliner))
+	{
+		DeserializePrefabOutliner(Root[SceneKeys::EditorOutliner], LoadContextState, OutlinerState);
+	}
+
+	return !OutCreatedActors.empty();
+}
+
 void FSceneSaveManager::CollectWorldObjectIds(UWorld* World, FSceneSaveContext& Context)
 {
 	if (!World)
@@ -531,6 +760,13 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 	}
 	w[SceneKeys::Actors] = Actors;
 
+	// ---- Editor-only outliner groups ----
+	JSON EditorOutliner = SerializeEditorOutliner(World, Context);
+	if (EditorOutliner.size() > 0)
+	{
+		w[SceneKeys::EditorOutliner] = EditorOutliner;
+	}
+
 	// ---- Perspective camera ----
 	JSON cam = SerializeCamera(PerspectivePOV);
 	if (cam.size() > 0) {
@@ -602,6 +838,110 @@ json::JSON FSceneSaveManager::SerializeProperties(UObject* Obj, FSceneSaveContex
 	FSceneJsonSaveArchive Ar(Props, Context);
 	Obj->SerializeProperties(Ar, PF_Save);
 	return Props;
+}
+
+json::JSON FSceneSaveManager::SerializeEditorOutliner(UWorld* World, FSceneSaveContext& Context)
+{
+	using namespace json;
+	JSON Outliner = json::Object();
+	if (!World)
+	{
+		return Outliner;
+	}
+
+	JSON Groups = json::Array();
+	const FSceneOutlinerState& OutlinerState = World->GetEditorOutlinerState();
+	for (const FSceneOutlinerGroup& Group : OutlinerState.Groups)
+	{
+		JSON ActorObjectIds = json::Array();
+		for (uint32 ActorUUID : Group.ActorUUIDs)
+		{
+			AActor* Actor = Cast<AActor>(UObjectManager::Get().FindByUUID(ActorUUID));
+			if (!Actor || Actor->GetWorld() != World)
+			{
+				continue;
+			}
+
+			const uint32 ObjectId = Context.FindObjectId(Actor);
+			if (ObjectId != 0)
+			{
+				ActorObjectIds.append(static_cast<int>(ObjectId));
+			}
+		}
+
+		if (ActorObjectIds.size() == 0)
+		{
+			continue;
+		}
+
+		JSON GroupJSON = json::Object();
+		GroupJSON[SceneKeys::GroupId] = static_cast<int>(Group.GroupId);
+		GroupJSON[SceneKeys::Name] = Group.Name;
+		GroupJSON[SceneKeys::Expanded] = Group.bExpanded;
+		GroupJSON[SceneKeys::ActorObjectIds] = ActorObjectIds;
+		Groups.append(GroupJSON);
+	}
+
+	if (Groups.size() > 0)
+	{
+		Outliner[SceneKeys::Groups] = Groups;
+	}
+	return Outliner;
+}
+
+json::JSON FSceneSaveManager::SerializePrefabOutliner(
+	const TArray<AActor*>& Actors,
+	const FSceneOutlinerState& OutlinerState,
+	FSceneSaveContext& Context)
+{
+	using namespace json;
+	JSON Outliner = json::Object();
+
+	TArray<uint32> SelectedActorUUIDs;
+	for (AActor* Actor : Actors)
+	{
+		if (Actor)
+		{
+			SelectedActorUUIDs.push_back(Actor->GetUUID());
+		}
+	}
+
+	JSON Groups = json::Array();
+	for (const FSceneOutlinerGroup& SourceGroup : OutlinerState.Groups)
+	{
+		JSON ActorObjectIds = json::Array();
+		for (uint32 ActorUUID : SourceGroup.ActorUUIDs)
+		{
+			if (std::find(SelectedActorUUIDs.begin(), SelectedActorUUIDs.end(), ActorUUID) == SelectedActorUUIDs.end())
+			{
+				continue;
+			}
+
+			AActor* Actor = Cast<AActor>(UObjectManager::Get().FindByUUID(ActorUUID));
+			const uint32 ObjectId = Context.FindObjectId(Actor);
+			if (ObjectId != 0)
+			{
+				ActorObjectIds.append(static_cast<int>(ObjectId));
+			}
+		}
+
+		if (ActorObjectIds.size() == 0)
+		{
+			continue;
+		}
+
+		JSON GroupJSON = json::Object();
+		GroupJSON[SceneKeys::Name] = SourceGroup.Name;
+		GroupJSON[SceneKeys::Expanded] = SourceGroup.bExpanded;
+		GroupJSON[SceneKeys::ActorObjectIds] = ActorObjectIds;
+		Groups.append(GroupJSON);
+	}
+
+	if (Groups.size() > 0)
+	{
+		Outliner[SceneKeys::Groups] = Groups;
+	}
+	return Outliner;
 }
 
 json::JSON FSceneSaveManager::SerializeActorForEditorUndo(AActor* Actor)
@@ -866,6 +1206,11 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 		}
 	}
 
+	if (root.hasKey(SceneKeys::EditorOutliner))
+	{
+		DeserializeEditorOutliner(root[SceneKeys::EditorOutliner], World, LoadContextState);
+	}
+
 	for (AActor* Actor : World->GetActors())
 	{
 		if (!Actor)
@@ -881,6 +1226,103 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 	OutWorldContext.World = World;
 	OutWorldContext.ContextName = ContextName;
 	OutWorldContext.ContextHandle = FName(ContextHandle);
+}
+
+void FSceneSaveManager::DeserializeEditorOutliner(json::JSON& Node, UWorld* World, FSceneLoadContext& Context)
+{
+	using json::JSON;
+	if (!World || Node.JSONType() == JSON::Class::Null)
+	{
+		return;
+	}
+
+	FSceneOutlinerState& OutlinerState = World->GetEditorOutlinerState();
+	OutlinerState.Clear();
+
+	if (!Node.hasKey(SceneKeys::Groups))
+	{
+		return;
+	}
+
+	uint32 MaxGroupId = 0;
+	for (auto& GroupJSON : Node[SceneKeys::Groups].ArrayRange())
+	{
+		FSceneOutlinerGroup Group;
+		Group.GroupId = GroupJSON.hasKey(SceneKeys::GroupId)
+			? static_cast<uint32>(GroupJSON[SceneKeys::GroupId].ToInt())
+			: OutlinerState.NextGroupId++;
+		Group.Name = GroupJSON.hasKey(SceneKeys::Name)
+			? GroupJSON[SceneKeys::Name].ToString()
+			: FSceneOutlinerState::MakeDefaultGroupName(Group.GroupId);
+		Group.bExpanded = GroupJSON.hasKey(SceneKeys::Expanded)
+			? GroupJSON[SceneKeys::Expanded].ToBool()
+			: true;
+
+		if (GroupJSON.hasKey(SceneKeys::ActorObjectIds))
+		{
+			for (auto& ActorIdJSON : GroupJSON[SceneKeys::ActorObjectIds].ArrayRange())
+			{
+				const uint32 ObjectId = static_cast<uint32>(ActorIdJSON.ToInt());
+				AActor* Actor = Cast<AActor>(Context.FindObjectById(ObjectId));
+				if (Actor && Actor->GetWorld() == World)
+				{
+					Group.ActorUUIDs.push_back(Actor->GetUUID());
+				}
+			}
+		}
+
+		if (!Group.ActorUUIDs.empty())
+		{
+			MaxGroupId = (std::max)(MaxGroupId, Group.GroupId);
+			OutlinerState.Groups.push_back(std::move(Group));
+		}
+	}
+
+	OutlinerState.NextGroupId = (std::max)(OutlinerState.NextGroupId, MaxGroupId + 1);
+}
+
+void FSceneSaveManager::DeserializePrefabOutliner(
+	json::JSON& Node,
+	FSceneLoadContext& Context,
+	FSceneOutlinerState& OutlinerState)
+{
+	using json::JSON;
+	if (Node.JSONType() == JSON::Class::Null || !Node.hasKey(SceneKeys::Groups))
+	{
+		return;
+	}
+
+	for (auto& GroupJSON : Node[SceneKeys::Groups].ArrayRange())
+	{
+		TArray<uint32> ActorUUIDs;
+		if (GroupJSON.hasKey(SceneKeys::ActorObjectIds))
+		{
+			for (auto& ActorIdJSON : GroupJSON[SceneKeys::ActorObjectIds].ArrayRange())
+			{
+				const uint32 ObjectId = static_cast<uint32>(ActorIdJSON.ToInt());
+				if (AActor* Actor = Cast<AActor>(Context.FindObjectById(ObjectId)))
+				{
+					ActorUUIDs.push_back(Actor->GetUUID());
+				}
+			}
+		}
+
+		if (ActorUUIDs.empty())
+		{
+			continue;
+		}
+
+		const FString GroupName = GroupJSON.hasKey(SceneKeys::Name)
+			? GroupJSON[SceneKeys::Name].ToString()
+			: FString();
+		const uint32 NewGroupId = OutlinerState.CreateGroup(GroupName, ActorUUIDs);
+		if (FSceneOutlinerGroup* NewGroup = OutlinerState.FindGroup(NewGroupId))
+		{
+			NewGroup->bExpanded = GroupJSON.hasKey(SceneKeys::Expanded)
+				? GroupJSON[SceneKeys::Expanded].ToBool()
+				: true;
+		}
+	}
 }
 
 AActor* FSceneSaveManager::DeserializeActorForEditorUndo(UWorld* World, json::JSON ActorJSON)

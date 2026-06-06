@@ -481,22 +481,7 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 
 FInputSystemSnapshot FLuaScriptManager::GetLuaInputSnapshot()
 {
-	if (GEngine)
-	{
-		if (UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient())
-		{
-			// 게임 입력 possess가 꺼져 있으면 Lua polling도 즉시 빈 입력을 보도록 차단.
-			// possess가 켜져 있는 동안에는 현재 프레임 InputSystem snapshot을 직접 사용해
-			// Standalone에서 GameViewportClient::ProcessInput 이전에 Lua Tick이 실행되는
-			// 1프레임 지연을 피한다.
-			if (!GameViewportClient->IsPossessed())
-			{
-				return FInputSystemSnapshot{};
-			}
-		}
-	}
-
-	return InputSystem::Get().MakeSnapshot();
+	return UGameViewportClient::MakeCurrentGameInputSnapshot();
 }
 
 void FLuaScriptManager::RegisterLuaHelpers(sol::state& Lua)

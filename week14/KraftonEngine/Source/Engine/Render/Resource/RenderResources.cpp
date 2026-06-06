@@ -387,89 +387,107 @@ void FShadowMapResources::EnsurePointAtlas(ID3D11Device* Device, uint32 AtlasSiz
 {
 	if (InPageCount == 0) return;
 
-	if (Point.Resolution == AtlasSize && Point.PageCount == InPageCount
-		&& Point.DataCapacity == MaxLights && Point.Texture)
+	const bool bTextureCapacityValid =
+		Point.Texture
+		&& Point.SRV
+		&& Point.Resolution == AtlasSize
+		&& Point.PageCount >= InPageCount
+		&& Point.DSVs.size() >= InPageCount;
+	const bool bDataCapacityValid =
+		Point.DataBuffer
+		&& Point.DataSRV
+		&& Point.DataCapacity >= MaxLights;
+
+	// 카메라 frustum 변화로 필요한 page/light 수가 줄어든 경우에는 기존 capacity를 재사용합니다.
+	if (bTextureCapacityValid && bDataCapacityValid)
 		return;
-	if (Point.FailedResolution == AtlasSize && Point.FailedPageCount == InPageCount) return;
 
-	// 기존 리소스 해제 (Normal + VSM 동시 해제 — PageCount/Resolution 변경 시 VSM 불일치 방지)
-	ReleaseViewArray(Point.DSVs);
-	ReleaseCOM(Point.SRV);
-	ReleaseCOM(Point.Texture);
-	Point.Resolution = 0;
-	Point.PageCount  = 0;
-
-	ReleaseCOM(Point.DataSRV);
-	ReleaseCOM(Point.DataBuffer);
-	Point.DataCapacity = 0;
-
-	Point.ReleaseVSM();
+	if (!bTextureCapacityValid && Point.FailedResolution == AtlasSize && Point.FailedPageCount == InPageCount) return;
 
 	if (AtlasSize == 0 || MaxLights == 0)
 		return;
 
-	Point.Resolution = AtlasSize;
-	Point.PageCount  = InPageCount;
-
-	// Texture2DArray atlas (R32_TYPELESS — depth + SRV)
-	D3D11_TEXTURE2D_DESC TexDesc = {};
-	TexDesc.Width            = AtlasSize;
-	TexDesc.Height           = AtlasSize;
-	TexDesc.MipLevels        = 1;
-	TexDesc.ArraySize        = InPageCount;
-	TexDesc.Format           = DXGI_FORMAT_R32_TYPELESS;
-	TexDesc.SampleDesc.Count = 1;
-	TexDesc.Usage            = D3D11_USAGE_DEFAULT;
-	TexDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-
-	if (FAILED(Device->CreateTexture2D(&TexDesc, nullptr, &Point.Texture)))
+	if (!bTextureCapacityValid)
 	{
-		NotifyShadowAllocFailed("Point", "Depth", AtlasSize, InPageCount, 4);
-		Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount;
-		return;
-	}
-	Point.FailedResolution = 0; Point.FailedPageCount = 0;
+		// atlas 크기가 커지거나 해상도가 바뀐 경우에만 큰 GPU texture를 다시 만듭니다.
+		ReleaseViewArray(Point.DSVs);
+		ReleaseCOM(Point.SRV);
+		ReleaseCOM(Point.Texture);
+		Point.Resolution = 0;
+		Point.PageCount = 0;
 
-	// Per-page DSV
-	Point.DSVs.resize(InPageCount, nullptr);
-	for (uint32 i = 0; i < InPageCount; ++i)
+		// normal atlas page 수가 바뀌면 VSM page 배열도 맞지 않으므로 함께 폐기합니다.
+		Point.ReleaseVSM();
+
+		Point.Resolution = AtlasSize;
+		Point.PageCount = InPageCount;
+
+		// Texture2DArray atlas (R32_TYPELESS — depth + SRV)
+		D3D11_TEXTURE2D_DESC TexDesc = {};
+		TexDesc.Width = AtlasSize;
+		TexDesc.Height = AtlasSize;
+		TexDesc.MipLevels = 1;
+		TexDesc.ArraySize = InPageCount;
+		TexDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+		TexDesc.SampleDesc.Count = 1;
+		TexDesc.Usage = D3D11_USAGE_DEFAULT;
+		TexDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+
+		if (FAILED(Device->CreateTexture2D(&TexDesc, nullptr, &Point.Texture)))
+		{
+			NotifyShadowAllocFailed("Point", "Depth", AtlasSize, InPageCount, 4);
+			Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount;
+			return;
+		}
+		Point.FailedResolution = 0; Point.FailedPageCount = 0;
+
+		// Per-page DSV
+		Point.DSVs.resize(InPageCount, nullptr);
+		for (uint32 i = 0; i < InPageCount; ++i)
+		{
+			D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
+			DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
+			DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
+			DSVDesc.Texture2DArray.MipSlice = 0;
+			DSVDesc.Texture2DArray.FirstArraySlice = i;
+			DSVDesc.Texture2DArray.ArraySize = 1;
+			Device->CreateDepthStencilView(Point.Texture, &DSVDesc, &Point.DSVs[i]);
+		}
+
+		// SRV — 전체 array
+		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+		SRVDesc.Format = DXGI_FORMAT_R32_FLOAT;
+		SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
+		SRVDesc.Texture2DArray.MostDetailedMip = 0;
+		SRVDesc.Texture2DArray.MipLevels = 1;
+		SRVDesc.Texture2DArray.FirstArraySlice = 0;
+		SRVDesc.Texture2DArray.ArraySize = InPageCount;
+		Device->CreateShaderResourceView(Point.Texture, &SRVDesc, &Point.SRV);
+	}
+
+	if (!bDataCapacityValid)
 	{
-		D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
-		DSVDesc.Format = DXGI_FORMAT_D32_FLOAT;
-		DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2DARRAY;
-		DSVDesc.Texture2DArray.MipSlice        = 0;
-		DSVDesc.Texture2DArray.FirstArraySlice = i;
-		DSVDesc.Texture2DArray.ArraySize       = 1;
-		Device->CreateDepthStencilView(Point.Texture, &DSVDesc, &Point.DSVs[i]);
+		// visible light 수 증가만으로는 atlas texture를 건드리지 않고 light data buffer만 확장합니다.
+		ReleaseCOM(Point.DataSRV);
+		ReleaseCOM(Point.DataBuffer);
+		Point.DataCapacity = MaxLights;
+
+		// StructuredBuffer<FPointShadowDataGPU>
+		D3D11_BUFFER_DESC BufferDesc = {};
+		BufferDesc.ByteWidth = sizeof(FPointShadowDataGPU) * MaxLights;
+		BufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		BufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		BufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		BufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		BufferDesc.StructureByteStride = sizeof(FPointShadowDataGPU);
+		Device->CreateBuffer(&BufferDesc, nullptr, &Point.DataBuffer);
+
+		D3D11_SHADER_RESOURCE_VIEW_DESC BufSRVDesc = {};
+		BufSRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+		BufSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+		BufSRVDesc.Buffer.NumElements = MaxLights;
+		Device->CreateShaderResourceView(Point.DataBuffer, &BufSRVDesc, &Point.DataSRV);
 	}
-
-	// SRV — 전체 array
-	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-	SRVDesc.Format                           = DXGI_FORMAT_R32_FLOAT;
-	SRVDesc.ViewDimension                    = D3D11_SRV_DIMENSION_TEXTURE2DARRAY;
-	SRVDesc.Texture2DArray.MostDetailedMip   = 0;
-	SRVDesc.Texture2DArray.MipLevels         = 1;
-	SRVDesc.Texture2DArray.FirstArraySlice   = 0;
-	SRVDesc.Texture2DArray.ArraySize         = InPageCount;
-	Device->CreateShaderResourceView(Point.Texture, &SRVDesc, &Point.SRV);
-
-	// StructuredBuffer<FPointShadowDataGPU>
-	Point.DataCapacity = MaxLights;
-
-	D3D11_BUFFER_DESC BufferDesc = {};
-	BufferDesc.ByteWidth           = sizeof(FPointShadowDataGPU) * MaxLights;
-	BufferDesc.Usage               = D3D11_USAGE_DYNAMIC;
-	BufferDesc.BindFlags           = D3D11_BIND_SHADER_RESOURCE;
-	BufferDesc.CPUAccessFlags      = D3D11_CPU_ACCESS_WRITE;
-	BufferDesc.MiscFlags           = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-	BufferDesc.StructureByteStride = sizeof(FPointShadowDataGPU);
-	Device->CreateBuffer(&BufferDesc, nullptr, &Point.DataBuffer);
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC BufSRVDesc = {};
-	BufSRVDesc.Format             = DXGI_FORMAT_UNKNOWN;
-	BufSRVDesc.ViewDimension      = D3D11_SRV_DIMENSION_BUFFER;
-	BufSRVDesc.Buffer.NumElements = MaxLights;
-	Device->CreateShaderResourceView(Point.DataBuffer, &BufSRVDesc, &Point.DataSRV);
 }
 
 // ============================================================
@@ -679,9 +697,26 @@ void FShadowMapResources::EnsureSpotAtlas_VSM(ID3D11Device* Device, uint32 InRes
 void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 AtlasSize, uint32 InPageCount)
 {
 	if (InPageCount == 0) return;
-	if (Point.Resolution == AtlasSize && Point.PageCount == InPageCount && Point.VSMTexture)
+
+	const uint32 PageCountToAllocate =
+		Point.Texture && Point.Resolution == AtlasSize && Point.PageCount >= InPageCount
+		? Point.PageCount
+		: InPageCount;
+
+	const bool bVSMCapacityValid =
+		Point.Resolution == AtlasSize
+		&& Point.PageCount >= InPageCount
+		&& Point.VSMTexture
+		&& Point.VSMDepthTexture
+		&& Point.VSMBlurTemp
+		&& Point.VSMRTVs.size() >= InPageCount
+		&& Point.VSMDSVs.size() >= InPageCount
+		&& Point.VSMBlurTempRTVs.size() >= InPageCount;
+
+	// normal atlas와 같은 page capacity를 기준으로 VSM 리소스를 유지합니다.
+	if (bVSMCapacityValid)
 		return;
-	if (Point.FailedResolution == AtlasSize && Point.FailedPageCount == InPageCount) return;
+	if (Point.FailedResolution == AtlasSize && Point.FailedPageCount == PageCountToAllocate) return;
 
 	Point.ReleaseVSM();
 
@@ -692,15 +727,15 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	MomentDesc.Width            = AtlasSize;
 	MomentDesc.Height           = AtlasSize;
 	MomentDesc.MipLevels        = 1;
-	MomentDesc.ArraySize        = InPageCount;
+	MomentDesc.ArraySize        = PageCountToAllocate;
 	MomentDesc.Format           = DXGI_FORMAT_R32G32_FLOAT;
 	MomentDesc.SampleDesc.Count = 1;
 	MomentDesc.Usage            = D3D11_USAGE_DEFAULT;
 	MomentDesc.BindFlags        = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
 	if (FAILED(Device->CreateTexture2D(&MomentDesc, nullptr, &Point.VSMTexture)))
 	{
-		NotifyShadowAllocFailed("Point", "VSM Moment", AtlasSize, InPageCount, 8);
-		Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount;
+		NotifyShadowAllocFailed("Point", "VSM Moment", AtlasSize, PageCountToAllocate, 8);
+		Point.FailedResolution = AtlasSize; Point.FailedPageCount = PageCountToAllocate;
 		return;
 	}
 
@@ -709,24 +744,24 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	DepthDesc.Width            = AtlasSize;
 	DepthDesc.Height           = AtlasSize;
 	DepthDesc.MipLevels        = 1;
-	DepthDesc.ArraySize        = InPageCount;
+	DepthDesc.ArraySize        = PageCountToAllocate;
 	DepthDesc.Format           = DXGI_FORMAT_D32_FLOAT;
 	DepthDesc.SampleDesc.Count = 1;
 	DepthDesc.Usage            = D3D11_USAGE_DEFAULT;
 	DepthDesc.BindFlags        = D3D11_BIND_DEPTH_STENCIL;
 	if (FAILED(Device->CreateTexture2D(&DepthDesc, nullptr, &Point.VSMDepthTexture)))
 	{
-		NotifyShadowAllocFailed("Point", "VSM Depth", AtlasSize, InPageCount, 4);
+		NotifyShadowAllocFailed("Point", "VSM Depth", AtlasSize, PageCountToAllocate, 4);
 		Point.VSMTexture->Release(); Point.VSMTexture = nullptr;
-		Point.FailedResolution = AtlasSize; Point.FailedPageCount = InPageCount;
+		Point.FailedResolution = AtlasSize; Point.FailedPageCount = PageCountToAllocate;
 		return;
 	}
 	Point.FailedResolution = 0; Point.FailedPageCount = 0;
 
 	// Per-page RTV + DSV
-	Point.VSMRTVs.resize(InPageCount, nullptr);
-	Point.VSMDSVs.resize(InPageCount, nullptr);
-	for (uint32 i = 0; i < InPageCount; ++i)
+	Point.VSMRTVs.resize(PageCountToAllocate, nullptr);
+	Point.VSMDSVs.resize(PageCountToAllocate, nullptr);
+	for (uint32 i = 0; i < PageCountToAllocate; ++i)
 	{
 		D3D11_RENDER_TARGET_VIEW_DESC RTVDesc = {};
 		RTVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;
@@ -752,7 +787,7 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	SRVDesc.Texture2DArray.MostDetailedMip = 0;
 	SRVDesc.Texture2DArray.MipLevels       = 1;
 	SRVDesc.Texture2DArray.FirstArraySlice = 0;
-	SRVDesc.Texture2DArray.ArraySize       = InPageCount;
+	SRVDesc.Texture2DArray.ArraySize       = PageCountToAllocate;
 	Device->CreateShaderResourceView(Point.VSMTexture, &SRVDesc, &Point.VSMSRV);
 
 	// Blur temp texture
@@ -760,8 +795,8 @@ void FShadowMapResources::EnsurePointAtlas_VSM(ID3D11Device* Device, uint32 Atla
 	if (FAILED(Device->CreateTexture2D(&BlurTempDesc, nullptr, &Point.VSMBlurTemp)))
 		return;
 
-	Point.VSMBlurTempRTVs.resize(InPageCount, nullptr);
-	for (uint32 i = 0; i < InPageCount; ++i)
+	Point.VSMBlurTempRTVs.resize(PageCountToAllocate, nullptr);
+	for (uint32 i = 0; i < PageCountToAllocate; ++i)
 	{
 		D3D11_RENDER_TARGET_VIEW_DESC RTVDesc = {};
 		RTVDesc.Format = DXGI_FORMAT_R32G32_FLOAT;

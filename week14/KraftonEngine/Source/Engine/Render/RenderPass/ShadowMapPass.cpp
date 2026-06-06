@@ -622,9 +622,10 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 			pointUsed += area;
 		}
 	}
-	else if (Res.Point.IsValid())
+	else
 	{
-		Res.Point.Release();
+		// 카메라 frustum 밖으로 point shadow light가 잠시 빠져도 atlas를 유지합니다.
+		// 다음 프레임에 다시 보일 때 큰 GPU texture를 재생성하면 순간 프레임 드랍이 생길 수 있습니다.
 	}
 }
 

@@ -7,6 +7,7 @@
 #include "GameFramework/WorldContext.h"
 #include "Math/Vector.h"
 #include "Core/Types/PropertyTypes.h"
+#include "Engine/Editor/SceneOutlinerState.h"
 
 // Forward declarations
 class UObject;
@@ -51,6 +52,45 @@ public:
 	static void LoadSceneFromJSON(const string& filepath, FWorldContext& OutWorldContext, FPerspectiveCameraData& OutCam, const EWorldType* OverrideWorldType = nullptr);
 
 	static TArray<FString> GetSceneFileList();
+
+	/**
+	 * @brief 선택된 actor 목록을 prefab JSON 파일로 저장합니다
+	 *
+	 * @param FilePath prefab을 저장할 전체 파일 경로
+	 *
+	 * @param Actors prefab에 포함할 actor 목록
+	 *
+	 * @param OutlinerState actor 그룹 정보를 읽을 Scene Manager 상태
+	 *
+	 * @return 저장에 성공하면 true
+	 *
+	 * @details prefab은 actor 참조형 asset이 아니라 scene actor JSON을 복사해 저장하는 가벼운 템플릿입니다
+	 */
+	static bool SavePrefabAsJSON(const FString& FilePath, const TArray<AActor*>& Actors, const FSceneOutlinerState& OutlinerState);
+
+	/**
+	 * @brief prefab JSON 파일을 현재 world에 복사본 actor들로 배치합니다
+	 *
+	 * @param FilePath 로드할 prefab 전체 파일 경로
+	 *
+	 * @param World actor를 생성할 world
+	 *
+	 * @param PlacementLocation prefab 원점을 맞출 배치 위치
+	 *
+	 * @param OutCreatedActors 생성된 actor 목록
+	 *
+	 * @param OutlinerState 복원할 그룹을 추가할 Scene Manager 상태
+	 *
+	 * @return 하나 이상의 actor 생성에 성공하면 true
+	 *
+	 * @details prefab 내부 actor/component 참조는 같은 prefab에서 생성된 객체끼리만 복원됩니다
+	 */
+	static bool InstantiatePrefabFromJSON(
+		const FString& FilePath,
+		UWorld* World,
+		const FVector& PlacementLocation,
+		TArray<AActor*>& OutCreatedActors,
+		FSceneOutlinerState& OutlinerState);
 
 	/**
 	 * @brief 에디터 undo용 actor 스냅샷 JSON 생성
@@ -143,6 +183,8 @@ private:
 	static json::JSON SerializeActor(AActor* Actor, FSceneSaveContext& Context);
 	static json::JSON SerializeSceneComponentTree(USceneComponent* Comp, FSceneSaveContext& Context);
 	static json::JSON SerializeProperties(UObject* Obj, FSceneSaveContext& Context);
+	static json::JSON SerializeEditorOutliner(UWorld* World, FSceneSaveContext& Context);
+	static json::JSON SerializePrefabOutliner(const TArray<AActor*>& Actors, const FSceneOutlinerState& OutlinerState, FSceneSaveContext& Context);
 
 	// ---- Camera ----
 	static json::JSON SerializeCamera(const FMinimalViewInfo* POV);
@@ -151,6 +193,8 @@ private:
 	// ---- Deserialization helpers ----
 	static USceneComponent* DeserializeSceneComponentTree(json::JSON& Node, AActor* Owner, FSceneLoadContext& Context);
 	static void DeserializeProperties(UObject* Obj, json::JSON& PropsJSON, FSceneLoadContext& Context);
+	static void DeserializeEditorOutliner(json::JSON& Node, UWorld* World, FSceneLoadContext& Context);
+	static void DeserializePrefabOutliner(json::JSON& Node, FSceneLoadContext& Context, FSceneOutlinerState& OutlinerState);
 
 	static string GetCurrentTimeStamp();
 };

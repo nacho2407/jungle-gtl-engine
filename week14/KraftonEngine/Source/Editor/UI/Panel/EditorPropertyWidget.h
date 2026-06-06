@@ -66,12 +66,6 @@ private:
 		const TArray<UObject*>& TargetObjects,
 		const FString& DebugName);
 
-	void CacheDetailsPropertyUndoStartIfInteracting(
-		const TArray<UObject*>& TargetObjects);
-
-	TArray<FEditorObjectPropertySnapshot> ConsumeDetailsPropertyUndoStart(
-		const TArray<UObject*>& TargetObjects);
-
 	/**
 	 * @brief 진행 중인 Details 속성 undo 트랜잭션을 즉시 확정합니다.
 	 */
@@ -150,6 +144,4 @@ private:
 
 	FEditorPropertyRenderer PropertyRenderer;
 	FDetailsPropertyUndoTransaction ActivePropertyUndoTransaction;
-	TArray<uint32> PendingDetailsUndoTargetUUIDs;
-	TArray<FEditorObjectPropertySnapshot> PendingDetailsUndoBeforeSnapshots;
 };
