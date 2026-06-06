@@ -25,7 +25,7 @@
                 <div id="credits-special-name" class="credits-special-name" data-ui-editor="text">Krafton Jungle Game Tech Lab</div>
             </div>
 
-            <div id="credits-footer-text" class="credits-footer-text" data-ui-editor="text">AND YOU</div>
+            <div id="credits-footer-text" class="credits-footer-text" data-ui-editor="text">AND.. YOU</div>
         </div>
     </div>
 </body>

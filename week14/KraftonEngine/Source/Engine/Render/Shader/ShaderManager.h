@@ -135,6 +135,7 @@ namespace EShadowDepthDefines
 	{
 		StaticMesh,
 		SkeletalMesh,
+		Count,
 	};
 
 	// StaticMesh: 매크로 없음 (기본 경로)
@@ -170,6 +171,7 @@ namespace EUberLitDefines
 		Gouraud,
 		Lambert,
 		Phong,
+		Count,
 	};
 
 	enum class EVertexFactory : uint8
@@ -177,6 +179,7 @@ namespace EUberLitDefines
 		StaticMesh,
 		SkeletalMesh,
 		InstancedStaticMesh,
+		Count,
 	};
 
 	inline const D3D_SHADER_MACRO Default[] = { {"LIGHTING_MODEL_PHONG", "1"}, {nullptr, nullptr} };
@@ -316,9 +319,22 @@ private:
 	void RebuildIncludeDependents();
 	static TArray<D3D_SHADER_MACRO> CopyDefines(const D3D_SHADER_MACRO* Defines);
 
+	static constexpr int32 UberLitLightingModelCount = static_cast<int32>(EUberLitDefines::ELightingModel::Count);
+	static constexpr int32 UberLitVertexFactoryCount = static_cast<int32>(EUberLitDefines::EVertexFactory::Count);
+	static constexpr int32 UberLitBoolCount = 2;
+	static constexpr int32 ShadowDepthVertexFactoryCount = static_cast<int32>(EShadowDepthDefines::EVertexFactory::Count);
+
+	void ResetFastShaderPointerCaches();
+
 	ID3D11Device* CachedDevice = nullptr;
 	TMap<FShaderKey, FShaderCacheEntry> ShaderCache;
 	TMap<FCSKey, FCSCacheEntry> CSCache;
+
+	// DrawCommand collect 경로는 섹션마다 같은 shader permutation을 반복 조회한다.
+	// unordered_map + FShaderKey 생성 비용을 피하기 위해 고정 permutation은 포인터 배열로 바로 반환한다.
+	FShader* UberLitPermutationCache[UberLitLightingModelCount][UberLitVertexFactoryCount][UberLitBoolCount][UberLitBoolCount] = {};
+	FShader* ShadowDepthPermutationCache[ShadowDepthVertexFactoryCount] = {};
+
 	bool bIsInitialized = false;
 
 	// include 파일 → 이를 사용하는 셰이더 키 역매핑

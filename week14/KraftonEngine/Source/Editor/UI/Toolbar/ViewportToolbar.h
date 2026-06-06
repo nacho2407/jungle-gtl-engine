@@ -42,6 +42,8 @@ struct FViewportToolbarContext
 	bool bReservePlayStopSpace = false;
 
 	bool bShowLayoutControls = false;
+	bool bShowWindowVisibilityControls = false;
+	bool bEditorWindowsHidden = false;
 	bool bShowViewportType = false;
 	bool bShowAddActor = false;
 	bool bShowGizmoControls = true;
@@ -57,6 +59,7 @@ struct FViewportToolbarContext
 	int32 ToggleLayoutIndex = -1;
 
 	std::function<void()> OnAddActorClicked;
+	std::function<void()> OnToggleWindowsClicked;
 	std::function<void()> OnCoordSystemToggled;
 	std::function<void()> OnSettingsChanged;
 	std::function<void()> OnRenderViewModeExtras;
@@ -104,6 +107,7 @@ private:
 	static void RenderRightToolbarSection(const FToolbarRenderState& State);
 
 	static void RenderLayoutControls(const FToolbarRenderState& State);
+	static void RenderWindowVisibilityControls(const FToolbarRenderState& State);
 	static void RenderAddActor(const FToolbarRenderState& State);
 	static void RenderViewportType(const FToolbarRenderState& State);
 

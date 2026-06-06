@@ -135,6 +135,54 @@ static bool DrawToolbarIconButton(const char* Id, EToolbarIcon Icon, const char*
 	const ImVec2 IconSize = GetToolbarIconRenderSize(Icon, FallbackSize, MaxIconSize);
 	return ImGui::ImageButton(Id, reinterpret_cast<ImTextureID>(IconSRV), IconSize);
 }
+
+static bool DrawWindowVisibilityIconButton(const char* Id, const char* Tooltip, bool bShowVariant, float IconSize)
+{
+	const ImVec2 ButtonSize(IconSize + 8.0f, IconSize + 8.0f);
+	const bool bClicked = ImGui::InvisibleButton(Id, ButtonSize);
+	const bool bHovered = ImGui::IsItemHovered();
+	const bool bActive = ImGui::IsItemActive();
+
+	const ImVec2 Min = ImGui::GetItemRectMin();
+	const ImVec2 Max = ImGui::GetItemRectMax();
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	const ImU32 BgColor = ImGui::GetColorU32(bActive ? ImGuiCol_ButtonActive : (bHovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button));
+	DrawList->AddRectFilled(Min, Max, BgColor, 3.0f);
+
+	const ImU32 MainColor = IM_COL32(225, 232, 242, 255);
+	const ImU32 MutedColor = IM_COL32(125, 137, 154, 255);
+	const ImU32 AccentColor = bShowVariant ? IM_COL32(102, 188, 255, 255) : IM_COL32(255, 118, 118, 255);
+
+	const float X = Min.x + 4.0f;
+	const float Y = Min.y + 5.0f;
+	const ImVec2 BackMin(X + 2.0f, Y + 1.0f);
+	const ImVec2 BackMax(X + IconSize - 2.0f, Y + IconSize - 5.0f);
+	const ImVec2 FrontMin(X + 5.0f, Y + 4.0f);
+	const ImVec2 FrontMax(X + IconSize + 1.0f, Y + IconSize - 1.0f);
+
+	DrawList->AddRect(BackMin, BackMax, MutedColor, 1.0f, 0, 1.4f);
+	DrawList->AddRect(FrontMin, FrontMax, MainColor, 1.0f, 0, 1.4f);
+	DrawList->AddLine(ImVec2(FrontMin.x + 1.0f, FrontMin.y + 4.0f), ImVec2(FrontMax.x - 1.0f, FrontMin.y + 4.0f), MutedColor, 1.0f);
+
+	if (bShowVariant)
+	{
+		DrawList->AddLine(ImVec2(FrontMin.x + 5.0f, FrontMax.y - 5.0f), ImVec2(FrontMin.x + 8.0f, FrontMax.y - 2.0f), AccentColor, 1.8f);
+		DrawList->AddLine(ImVec2(FrontMin.x + 8.0f, FrontMax.y - 2.0f), ImVec2(FrontMax.x - 3.0f, FrontMin.y + 3.0f), AccentColor, 1.8f);
+	}
+	else
+	{
+		DrawList->AddLine(ImVec2(FrontMin.x + 3.0f, FrontMin.y + 3.0f), ImVec2(FrontMax.x - 3.0f, FrontMax.y - 3.0f), AccentColor, 1.8f);
+		DrawList->AddLine(ImVec2(FrontMax.x - 3.0f, FrontMin.y + 3.0f), ImVec2(FrontMin.x + 3.0f, FrontMax.y - 3.0f), AccentColor, 1.8f);
+	}
+
+	if (bHovered && Tooltip)
+	{
+		ImGui::SetTooltip("%s", Tooltip);
+	}
+
+	return bClicked;
+}
 #pragma endregion
 
 #pragma region LeftRight Section Helper
@@ -260,6 +308,11 @@ void FViewportToolbar::RenderLeftToolbarSection(const FToolbarRenderState& State
 	if (State.Context.bShowAddActor)
 	{
 		RenderAddActor(State);
+	}
+
+	if (State.Context.bShowWindowVisibilityControls)
+	{
+		RenderWindowVisibilityControls(State);
 	}
 
 	if (State.Context.bShowGizmoControls)
@@ -406,6 +459,21 @@ void FViewportToolbar::RenderAddActor(const FToolbarRenderState& State)
 		if (State.Context.OnAddActorClicked)
 		{
 			State.Context.OnAddActorClicked();
+		}
+	}
+
+	ImGui::SameLine(0, State.GroupSpacing);
+}
+
+void FViewportToolbar::RenderWindowVisibilityControls(const FToolbarRenderState& State)
+{
+	const bool bHidden = State.Context.bEditorWindowsHidden;
+	const char* Tooltip = bHidden ? "Show Windows" : "Hide Windows";
+	if (DrawWindowVisibilityIconButton("###ToggleEditorWindowsIcon", Tooltip, bHidden, State.MaxIconSize))
+	{
+		if (State.Context.OnToggleWindowsClicked)
+		{
+			State.Context.OnToggleWindowsClicked();
 		}
 	}
 

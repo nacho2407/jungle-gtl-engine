@@ -1061,11 +1061,12 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 	// MaxWalkSpeed 클램프 (평면 속도만).
 	FVector V2D(Velocity.X, Velocity.Y, 0.0f);
 	const float Speed2D = V2D.Length();
-	if (Speed2D > MaxWalkSpeed)
+	const float CurrentMaxWalkSpeed = GetMaxWalkSpeed();
+	if (Speed2D > CurrentMaxWalkSpeed)
 	{
 		const FVector Dir = V2D * (1.0f / Speed2D);
-		Velocity.X = Dir.X * MaxWalkSpeed;
-		Velocity.Y = Dir.Y * MaxWalkSpeed;
+		Velocity.X = Dir.X * CurrentMaxWalkSpeed;
+		Velocity.Y = Dir.Y * CurrentMaxWalkSpeed;
 	}
 }
 
@@ -1785,7 +1786,8 @@ void UCharacterMovementComponent::StartWallRun(const FHitResult& WallHit, bool b
 
 	const FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
 	const float ExistingForwardSpeed = std::fabs(PlanarVelocity.Dot(WallRunDirection));
-	const float StartSpeed = FMath::Clamp(ExistingForwardSpeed, 0.0f, WallRunMaxSpeed);
+	const float MinRunSpeed = (std::min)(WallRunMinSpeed, WallRunMaxSpeed);
+	const float StartSpeed = FMath::Clamp((std::max)(ExistingForwardSpeed, MinRunSpeed), 0.0f, WallRunMaxSpeed);
 
 	Velocity.X = WallRunDirection.X * StartSpeed;
 	Velocity.Y = WallRunDirection.Y * StartSpeed;
@@ -1947,8 +1949,10 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 		ForwardSpeed = 0.0f;
 	}
 
-	float NewForwardSpeed = ForwardSpeed + WallRunAcceleration * InputAlongWall * DeltaTime;
-	NewForwardSpeed = FMath::Clamp(NewForwardSpeed, 0.0f, WallRunMaxSpeed);
+	const float MinRunSpeed = (std::min)(WallRunMinSpeed, WallRunMaxSpeed);
+	const float Accel = WallRunAcceleration * InputAlongWall * DeltaTime;
+	float NewForwardSpeed = ForwardSpeed + Accel;
+	NewForwardSpeed = FMath::Clamp(NewForwardSpeed, MinRunSpeed, WallRunMaxSpeed);
 
 	Velocity.X = WallRunDirection.X * NewForwardSpeed;
 	Velocity.Y = WallRunDirection.Y * NewForwardSpeed;

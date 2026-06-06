@@ -1126,6 +1126,8 @@ void FLevelViewportLayout::RenderSharedViewportToolbar(float ToolbarLeft, float 
 	Context.ToolbarWidth = ToolbarWidth;
 	Context.bReservePlayStopSpace = true;
 	Context.bShowAddActor = true;
+	Context.bShowWindowVisibilityControls = true;
+	Context.bEditorWindowsHidden = Editor && Editor->AreEditorWindowsHidden();
 	Context.bShowLayoutControls = true;
 	Context.bShowViewportType = true;
 	Context.bShowViewMode = true;
@@ -1162,6 +1164,22 @@ void FLevelViewportLayout::RenderSharedViewportToolbar(float ToolbarLeft, float 
 		if (Editor)
 		{
 			Editor->ToggleCoordSystem();
+		}
+	};
+	Context.OnToggleWindowsClicked = [&]()
+	{
+		if (!Editor)
+		{
+			return;
+		}
+
+		if (Editor->AreEditorWindowsHidden())
+		{
+			Editor->ShowEditorWindows();
+		}
+		else
+		{
+			Editor->HideEditorWindows();
 		}
 	};
 	Context.OnSettingsChanged = [&]()

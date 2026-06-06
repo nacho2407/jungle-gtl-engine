@@ -3,18 +3,18 @@ body {
 	width: 100%;
 	height: 100%;
 	font-family: Pretendard;
-	color: #f5f2ee;
+	color: #f5f2eeE6;
 }
 
 @keyframes menu-hover-blink {
 	0% {
-		color: #ffffff;
+		color: #ffffffE6;
 	}
 	50% {
-		color: #707070;
+		color: #707070E6;
 	}
 	100% {
-		color: #ffffff;
+		color: #ffffffE6;
 	}
 }
 
@@ -43,7 +43,7 @@ body {
 	top: 0px;
 	width: 100%;
 	height: 100%;
-	background-color: #00000066;
+	background-color: #00000000;
 }
 
 #main-menu {
@@ -59,7 +59,7 @@ body {
 	font-weight: 900;
 	line-height: 112px;
 	letter-spacing: 0px;
-	color: #FAFAFA;
+	color: #FAFAFAE6;
 	white-space: nowrap;
 }
 
@@ -71,13 +71,13 @@ body {
 	font-size: 54px;
 	font-weight: 700;
 	line-height: 100%;
-	color: #858585;
+	color: #858585E6;
 	white-space: nowrap;
 	overflow: visible;
 }
 
 .menu-primary:hover {
-	color: #ffffff;
+	color: #ffffffE6;
 	animation-name: menu-hover-blink;
 	animation-duration: 0.58s;
 	animation-iteration-count: infinite;
@@ -92,7 +92,7 @@ body {
 }
 
 .menu-node {
-	color: #f5f2ee;
+	color: #f5f2eeE6;
 	overflow: visible;
 }
 
@@ -100,13 +100,13 @@ body {
 	font-size: 34px;
 	font-weight: 400;
 	line-height: 100%;
-	color: #858585;
+	color: #858585E6;
 	white-space: nowrap;
 	overflow: visible;
 }
 
 .menu-child:hover {
-	color: #ffffff;
+	color: #ffffffE6;
 	animation-name: menu-hover-blink;
 	animation-duration: 0.46s;
 	animation-iteration-count: infinite;
@@ -143,11 +143,6 @@ body {
 #settings-button .hover-image-label {
 	font-size: 36px;
 	font-weight: 700;
-	opacity: 0.58;
-}
-
-#settings-button:hover .hover-image-label {
-	opacity: 1.0;
 }
 
 #credits-button {
@@ -158,11 +153,6 @@ body {
 #credits-button .hover-image-label {
 	font-size: 36px;
 	font-weight: 700;
-	opacity: 0.58;
-}
-
-#credits-button:hover .hover-image-label {
-	opacity: 1.0;
 }
 
 #quit-button {
@@ -174,11 +164,6 @@ body {
 #quit-button .hover-image-label {
 	font-size: 24px;
 	font-weight: 400;
-	opacity: 0.58;
-}
-
-#quit-button:hover .hover-image-label {
-	opacity: 1.0;
 }
 
 .menu-secondary {
@@ -187,11 +172,11 @@ body {
 	font-size: 28px;
 	font-weight: 400;
 	line-height: 34px;
-	color: #f5f2ee;
+	color: #f5f2eeE6;
 }
 
 .menu-secondary:hover {
-	color: #ffffff;
+	color: #ffffffE6;
 	text-shadow: none;
 }
 

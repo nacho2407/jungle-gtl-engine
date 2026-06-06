@@ -20,6 +20,28 @@ TArray<D3D_SHADER_MACRO> FShaderManager::CopyDefines(const D3D_SHADER_MACRO* Def
 	return Result;
 }
 
+void FShaderManager::ResetFastShaderPointerCaches()
+{
+	for (auto& LightingArray : UberLitPermutationCache)
+	{
+		for (auto& VertexFactoryArray : LightingArray)
+		{
+			for (auto& HeatArray : VertexFactoryArray)
+			{
+				for (FShader*& Shader : HeatArray)
+				{
+					Shader = nullptr;
+				}
+			}
+		}
+	}
+
+	for (FShader*& Shader : ShadowDepthPermutationCache)
+	{
+		Shader = nullptr;
+	}
+}
+
 // ============================================================
 // Initialize — 시스템 셰이더 사전 컴파일 + 파일 감시 구독
 // ============================================================
@@ -27,6 +49,7 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 {
 	if (bIsInitialized) return;
 	CachedDevice = InDevice;
+	ResetFastShaderPointerCaches();
 
 	// 단순 셰이더 (매크로 없음) — 첫 시작이므로 MessageBox로 에러 표시
 	constexpr EShaderErrorMode StartupError = EShaderErrorMode::MessageBox;
@@ -92,6 +115,7 @@ void FShaderManager::Release()
 	CSCache.clear();
 	IncludeDependents.clear();
 	CSIncludeDependents.clear();
+	ResetFastShaderPointerCaches();
 
 	CachedDevice = nullptr;
 	bIsInitialized = false;
@@ -169,18 +193,54 @@ FShader* FShaderManager::PreCompile(const FShaderKey& Key, const D3D_SHADER_MACR
 
 FShader* FShaderManager::GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory VF, EShaderErrorMode ErrorMode)
 {
+	const int32 VFIndex = static_cast<int32>(VF);
+	if (VFIndex >= 0 && VFIndex < ShadowDepthVertexFactoryCount)
+	{
+		if (FShader* Cached = ShadowDepthPermutationCache[VFIndex])
+		{
+			return Cached;
+		}
+	}
+
 	const D3D_SHADER_MACRO* Defines =
 		(VF == EShadowDepthDefines::EVertexFactory::SkeletalMesh)
 		? EShadowDepthDefines::SkeletalMesh
 		: EShadowDepthDefines::StaticMesh;
-	return PreCompile(EShadowDepthDefines::MakePermutationKey(VF), Defines, ErrorMode);
+	FShader* Shader = PreCompile(EShadowDepthDefines::MakePermutationKey(VF), Defines, ErrorMode);
+
+	if (VFIndex >= 0 && VFIndex < ShadowDepthVertexFactoryCount)
+	{
+		ShadowDepthPermutationCache[VFIndex] = Shader;
+	}
+	return Shader;
 }
 
 FShader* FShaderManager::GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel,
 	EUberLitDefines::EVertexFactory VertexFactory, EShaderErrorMode ErrorMode, bool bWeightBoneHeatMap, bool bApplyFog)
 {
+	const int32 LIndex = static_cast<int32>(LightingModel);
+	const int32 VFIndex = static_cast<int32>(VertexFactory);
+	const int32 HeatIndex = bWeightBoneHeatMap ? 1 : 0;
+	const int32 FogIndex = bApplyFog ? 1 : 0;
+
+	if (LIndex >= 0 && LIndex < UberLitLightingModelCount &&
+		VFIndex >= 0 && VFIndex < UberLitVertexFactoryCount)
+	{
+		if (FShader* Cached = UberLitPermutationCache[LIndex][VFIndex][HeatIndex][FogIndex])
+		{
+			return Cached;
+		}
+	}
+
 	const D3D_SHADER_MACRO* Defines = EUberLitDefines::GetDefines(LightingModel, VertexFactory, bWeightBoneHeatMap, bApplyFog);
-	return PreCompile(EUberLitDefines::MakePermutationKey(LightingModel, VertexFactory, bWeightBoneHeatMap, bApplyFog), Defines, ErrorMode);
+	FShader* Shader = PreCompile(EUberLitDefines::MakePermutationKey(LightingModel, VertexFactory, bWeightBoneHeatMap, bApplyFog), Defines, ErrorMode);
+
+	if (LIndex >= 0 && LIndex < UberLitLightingModelCount &&
+		VFIndex >= 0 && VFIndex < UberLitVertexFactoryCount)
+	{
+		UberLitPermutationCache[LIndex][VFIndex][HeatIndex][FogIndex] = Shader;
+	}
+	return Shader;
 }
 
 // ============================================================
