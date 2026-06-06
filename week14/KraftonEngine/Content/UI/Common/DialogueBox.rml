@@ -1,0 +1,13 @@
+<rml>
+<head>
+    <title>Common Dialogue Box</title>
+    <link type="text/rcss" href="DialogueBox.rcss"/>
+</head>
+<body>
+    <div id="dialogue-layer" class="dialogue-layer">
+        <div id="dialogue-box" class="dialogue-box" style="position: absolute; left: 20.00px; bottom: 22.00px; width: 980.00px; height: 48.00px;">
+            <div id="dialogue-line" class="dialogue-text" data-ui-editor="text" style="position: absolute; left: 16.00px; top: 0.00px; width: 948.00px; height: 48.00px; font-size: 22.00px; font-weight: 700; line-height: 48.00px; text-align: left; color: #ffffff;">DRAKE: Dialogue preview text.</div>
+        </div>
+    </div>
+</body>
+</rml>

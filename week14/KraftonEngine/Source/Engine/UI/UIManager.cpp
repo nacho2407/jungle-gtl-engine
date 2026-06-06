@@ -88,27 +88,6 @@ namespace
 		}
 	}
 
-	bool IsPointInsideElementBox(Rml::Element* Element, int MouseX, int MouseY)
-	{
-		if (!Element)
-		{
-			return false;
-		}
-
-		const float Left = Element->GetAbsoluteLeft();
-		const float Top = Element->GetAbsoluteTop();
-		const float Width = Element->GetOffsetWidth();
-		const float Height = Element->GetOffsetHeight();
-		if (Width <= 0.0f || Height <= 0.0f)
-		{
-			return false;
-		}
-
-		return static_cast<float>(MouseX) >= Left
-			&& static_cast<float>(MouseX) < Left + Width
-			&& static_cast<float>(MouseY) >= Top
-			&& static_cast<float>(MouseY) < Top + Height;
-	}
 }
 
 double FRmlSystemInterface::GetElapsedTime()
@@ -912,7 +891,6 @@ void UUIManager::ProcessInput(const FFrameContext& Frame)
 
 	bDispatchingRmlEvents = true;
 	RmlContext->ProcessMouseMove(MouseX, MouseY, KeyModifierState);
-	Input.SetGuiMouseCapture(IsMouseInsideMouseCaptureArea(MouseX, MouseY));
 	if (Input.GetKeyDown(VK_LBUTTON))
 	{
 		RmlContext->ProcessMouseButtonDown(0, KeyModifierState);
@@ -922,32 +900,6 @@ void UUIManager::ProcessInput(const FFrameContext& Frame)
 		RmlContext->ProcessMouseButtonUp(0, KeyModifierState);
 	}
 	bDispatchingRmlEvents = false;
-}
-
-bool UUIManager::IsMouseInsideMouseCaptureArea(int MouseX, int MouseY) const
-{
-	for (auto It = ViewportWidgets.rbegin(); It != ViewportWidgets.rend(); ++It)
-	{
-		const UUserWidget* Widget = *It;
-		if (!Widget || !Widget->IsInViewport() || !Widget->WantsMouse())
-		{
-			continue;
-		}
-
-		Rml::ElementDocument* Document = Widget->GetDocument();
-		if (!Document)
-		{
-			continue;
-		}
-
-		Rml::Element* DebugWindow = Document->GetElementById("debug-window");
-		if (IsPointInsideElementBox(DebugWindow, MouseX, MouseY))
-		{
-			return true;
-		}
-	}
-
-	return false;
 }
 
 void UUIManager::FlushDeferredViewportRemovals()

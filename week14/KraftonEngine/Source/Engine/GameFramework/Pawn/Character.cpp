@@ -107,21 +107,18 @@ void ACharacter::Tick(float DeltaTime)
 	if (bAutoInputMouseLook)
 	{
 		const InputSystem& In = InputSystem::Get();
-		if (!In.IsGuiUsingMouse())
+		const int DX = In.MouseDeltaX();
+		const int DY = In.MouseDeltaY();
+		if (DX != 0 || DY != 0)
 		{
-			const int DX = In.MouseDeltaX();
-			const int DY = In.MouseDeltaY();
-			if (DX != 0 || DY != 0)
-			{
-				// APawn::ControlRotation 누적. SpringArm 이 bUsePawnControlRotation 통해 이걸 사용.
-				// capsule 회전은 옵션 (bUseControllerRotationYaw 등) — 아래 ApplyControllerRotationToRoot 가 처리.
-				FRotator Rot = GetControlRotation();
-				const float EffectiveMouseSensitivity = FLuaScriptManager::GetRuntimeMouseSensitivity();
-				Rot.Yaw   += static_cast<float>(DX) * EffectiveMouseSensitivity;
-				Rot.Pitch += static_cast<float>(DY) * EffectiveMouseSensitivity;
-				Rot.Pitch  = std::clamp(Rot.Pitch, MinCameraPitch, MaxCameraPitch);
-				SetControlRotation(Rot);
-			}
+			// APawn::ControlRotation 누적. SpringArm 이 bUsePawnControlRotation 통해 이걸 사용.
+			// capsule 회전은 옵션 (bUseControllerRotationYaw 등) — 아래 ApplyControllerRotationToRoot 가 처리.
+			FRotator Rot = GetControlRotation();
+			const float EffectiveMouseSensitivity = FLuaScriptManager::GetRuntimeMouseSensitivity();
+			Rot.Yaw   += static_cast<float>(DX) * EffectiveMouseSensitivity;
+			Rot.Pitch += static_cast<float>(DY) * EffectiveMouseSensitivity;
+			Rot.Pitch  = std::clamp(Rot.Pitch, MinCameraPitch, MaxCameraPitch);
+			SetControlRotation(Rot);
 		}
 	}
 

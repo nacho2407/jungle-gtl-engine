@@ -1,0 +1,32 @@
+<rml>
+<head>
+    <title>In Game Pause</title>
+    <link type="text/rcss" href="../Common/MenuHoverButton.rcss"/>
+    <link type="text/rcss" href="PauseMenu.rcss"/>
+</head>
+<body>
+    <div id="pause-screen" class="pause-screen">
+        <div id="pause-title" class="pause-title" data-ui-editor="text">PAUSED</div>
+        <div id="pause-title-rule" class="pause-title-rule"></div>
+
+        <div id="pause-left-actions" class="pause-left-actions">
+            <div id="pause-restart-button" class="hover-image-button pause-button">
+                <img id="pause-restart-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="pause-restart-label" class="hover-image-label" data-ui-editor="text">Restart</div>
+            </div>
+            <div id="pause-settings-button" class="hover-image-button pause-button pause-settings-button">
+                <img id="pause-settings-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="pause-settings-label" class="hover-image-label" data-ui-editor="text">SETTINGS</div>
+            </div>
+            <div id="pause-main-menu-button" class="hover-image-button pause-button pause-main-menu-button">
+                <img id="pause-main-menu-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="pause-main-menu-label" class="hover-image-label" data-ui-editor="text">Return to Main Menu</div>
+            </div>
+            <div id="pause-quit-button" class="hover-image-button pause-button pause-quit-button">
+                <img id="pause-quit-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="pause-quit-label" class="hover-image-label" data-ui-editor="text">Quit</div>
+            </div>
+        </div>
+    </div>
+</body>
+</rml>

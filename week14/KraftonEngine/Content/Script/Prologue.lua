@@ -9,7 +9,11 @@ local skipHoldTime = 0.0
 
 local SKIP_HOLD_DURATION = 3.0
 local SKIP_RING_FRAMES = 24
-local DIALOGUE_FONT_SCALE = 0.5
+local DIALOGUE_BOX_WIDTH = 980.0
+local DIALOGUE_BOX_HEIGHT = 48.0
+local DIALOGUE_LINE_HEIGHT = 48.0
+local DIALOGUE_TEXT_LEFT = 16.0
+local DIALOGUE_DEFAULT_FONT_SIZE = 18.0
 
 local function px(value)
     return string.format("%.2fpx", value)
@@ -21,52 +25,6 @@ local function clamp(value, minValue, maxValue)
     return value
 end
 
-local function utf8_visual_units(value)
-    local units = 0.0
-    local i = 1
-    local length = string.len(value or "")
-    while i <= length do
-        local byte = string.byte(value, i)
-        local codepoint = 0
-        if byte == nil then
-            break
-        elseif byte < 0x80 then
-            codepoint = byte
-            i = i + 1
-        elseif byte < 0xE0 then
-            local b2 = string.byte(value, i + 1) or 0
-            codepoint = (byte - 0xC0) * 0x40 + (b2 - 0x80)
-            i = i + 2
-        elseif byte < 0xF0 then
-            local b2 = string.byte(value, i + 1) or 0
-            local b3 = string.byte(value, i + 2) or 0
-            codepoint = (byte - 0xE0) * 0x1000 + (b2 - 0x80) * 0x40 + (b3 - 0x80)
-            i = i + 3
-        else
-            local b2 = string.byte(value, i + 1) or 0
-            local b3 = string.byte(value, i + 2) or 0
-            local b4 = string.byte(value, i + 3) or 0
-            codepoint = (byte - 0xF0) * 0x40000 + (b2 - 0x80) * 0x1000 + (b3 - 0x80) * 0x40 + (b4 - 0x80)
-            i = i + 4
-        end
-
-        if codepoint >= 0xAC00 and codepoint <= 0xD7A3 then
-            units = units + 1.0
-        elseif codepoint >= 0x1100 and codepoint <= 0x11FF then
-            units = units + 1.0
-        elseif codepoint >= 0x3130 and codepoint <= 0x318F then
-            units = units + 1.0
-        elseif codepoint >= 0x2E80 and codepoint <= 0x9FFF then
-            units = units + 1.0
-        elseif codepoint == 0x20 then
-            units = units + 0.33
-        else
-            units = units + 0.58
-        end
-    end
-    return units
-end
-
 local function get_viewport_size()
     if Engine.GetViewportSize == nil then
         return 1280.0, 720.0
@@ -76,20 +34,18 @@ local function get_viewport_size()
     return size.Width or 1280.0, size.Height or 720.0
 end
 
-local function estimate_dialogue_bounds(entry)
-    local viewportWidth, viewportHeight = get_viewport_size()
-    local fontSize = (entry.size or story.default_size or 24) * DIALOGUE_FONT_SCALE
-    local textUnits = utf8_visual_units((entry.speaker or "") .. ": " .. (entry.text or ""))
-    local textWidth = textUnits * fontSize
-    local maxBoxWidth = viewportWidth * 0.68
-    local width = clamp(textWidth + 32.0, 220.0, maxBoxWidth)
-    local textContentWidth = math.max(1.0, width - 32.0)
-    local lineCount = math.max(1, math.ceil(textWidth / textContentWidth))
-    local lineHeight = fontSize + 5.0
-    local height = 14.0 + lineHeight * lineCount
+local function get_dialogue_font_size(entry)
+    if entry ~= nil and entry.size ~= nil then
+        return entry.size
+    end
+    if story ~= nil and story.default_size ~= nil then
+        return story.default_size
+    end
+    return DIALOGUE_DEFAULT_FONT_SIZE
+end
 
-    height = clamp(height, 31.0, viewportHeight * 0.18)
-    return width, height, fontSize, lineHeight
+local function estimate_dialogue_bounds(entry)
+    return DIALOGUE_BOX_WIDTH, DIALOGUE_BOX_HEIGHT, get_dialogue_font_size(entry), DIALOGUE_LINE_HEIGHT
 end
 
 local function get_dialogue_text(entry)
@@ -140,10 +96,15 @@ local function apply_entry(entry)
     cutsceneWidget:SetProperty("dialogue-box", "width", px(width))
     cutsceneWidget:SetProperty("dialogue-box", "height", px(height))
     cutsceneWidget:SetProperty("dialogue-box", "opacity", "0.0")
+    cutsceneWidget:SetProperty("dialogue-line", "left", px(DIALOGUE_TEXT_LEFT))
+    cutsceneWidget:SetProperty("dialogue-line", "top", "0px")
+    cutsceneWidget:SetProperty("dialogue-line", "width", px(width - DIALOGUE_TEXT_LEFT * 2.0))
+    cutsceneWidget:SetProperty("dialogue-line", "height", px(height))
     cutsceneWidget:SetProperty("dialogue-line", "font-family", entry.font or story.default_font or "Pretendard")
     cutsceneWidget:SetProperty("dialogue-line", "font-size", px(fontSize))
     cutsceneWidget:SetProperty("dialogue-line", "font-weight", tostring(entry.weight or story.default_weight or 400))
     cutsceneWidget:SetProperty("dialogue-line", "line-height", px(lineHeight))
+    cutsceneWidget:SetProperty("dialogue-line", "text-align", "left")
 
     cutsceneWidget:SetProperty("skip-ring", "right", "54px")
     cutsceneWidget:SetProperty("skip-ring", "bottom", px(bottom + 6.0))

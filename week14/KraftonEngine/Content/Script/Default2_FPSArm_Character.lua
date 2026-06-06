@@ -4,6 +4,7 @@ local weaponHudWidget = nil
 local debugWidget = nil
 local movement = nil
 local DamagePostProcess = require("DamagePostProcess")
+local InGamePause = require("InGamePause")
 
 local SHOOT_ANIM_PATH  = "Content/Data/FPSArm/Test1/Test1_Armature_Armature_Arms_FPS_Anim_OneShot.uasset"
 local RELOAD_ANIM_PATH = "Content/Data/FPSArm/Test1/Test1_Armature_Armature_Arms_FPS_Anim_Reload_Fast.uasset"
@@ -50,7 +51,6 @@ local debugActiveTab = "player"
 local debugWindowX = 40.0
 local debugWindowY = 48.0
 local debugDragging = false
-local debugMouseOver = false
 local debugDragOffsetX = 0.0
 local debugDragOffsetY = 0.0
 local baseMaxWalkSpeed = nil
@@ -213,18 +213,8 @@ local function bind_debug_events()
         update_debug_values()
     end)
 
-    debugWidget:bind_event("debug-window", "mouseover", function()
-        debugMouseOver = true
-    end)
-    debugWidget:bind_event("debug-window", "mouseout", function()
-        if not debugDragging then
-            debugMouseOver = false
-        end
-    end)
-
     debugWidget:bind_event("debug-titlebar", "mousedown", function(event)
         debugDragging = true
-        debugMouseOver = true
         debugDragOffsetX = event.mouse_x - debugWindowX
         debugDragOffsetY = event.mouse_y - debugWindowY
     end)
@@ -238,11 +228,6 @@ local function bind_debug_events()
         if not debugDragging then return end
         set_debug_window_position(event.mouse_x - debugDragOffsetX, event.mouse_y - debugDragOffsetY)
     end)
-end
-
-local function is_debug_input_capturing()
-    if debugWidget == nil or not debugWidget:IsInViewport() then return false end
-    return debugDragging or debugMouseOver
 end
 
 local function ensure_debug_widget()
@@ -266,7 +251,6 @@ local function toggle_debug_widget()
         debugWidget:RemoveFromParent()
         debugWidget:SetWantsMouse(false)
         debugDragging = false
-        debugMouseOver = false
     else
         debugWidget:AddToViewportZ(DEBUG_Z_ORDER)
         debugWidget:SetWantsMouse(true)
@@ -482,9 +466,13 @@ function BeginPlay()
     DamagePostProcess.Initialize()
     DamagePostProcess.Reset()
     DamagePostProcess.SetHealthRatio(get_health_ratio())
+    InGamePause.Initialize()
 
     _G.ApplyPlayerDamage = apply_player_damage
     _G.GetPlayerHealthRatio = get_health_ratio
+    Engine.SetOnEscape(function()
+        InGamePause.Toggle()
+    end)
 
     weaponHudWidget = UI.CreateWidget("Content/UI/HUD/WeaponHUD.rml")
     if weaponHudWidget ~= nil then
@@ -500,6 +488,8 @@ function EndPlay()
     end
     weaponHudWidget = nil
     DamagePostProcess.Shutdown()
+    InGamePause.Shutdown()
+    Engine.SetOnEscape(function() end)
     if _G.ApplyPlayerDamage == apply_player_damage then
         _G.ApplyPlayerDamage = nil
     end
@@ -551,13 +541,14 @@ function Tick(dt)
     end
 
     DamagePostProcess.Tick(dt)
+    InGamePause.Tick()
     apply_debug_speed_multiplier()
     if debugWidget ~= nil and debugWidget:IsInViewport() then
         update_debug_values()
     end
     update_crosshair()
 
-    if is_debug_input_capturing() then
+    if InGamePause.IsOpen() then
         return
     end
 

@@ -7,6 +7,7 @@
 #include "Engine/Input/InputSystem.h"
 #include "Engine/Profiling/Time/PlatformTime.h"
 #include "Engine/Platform/WindowsWindow.h"
+#include "Lua/LuaScriptManager.h"
 
 #include "Render/Types/MinimalViewInfo.h"
 #include "Viewport/Viewport.h"
@@ -283,6 +284,11 @@ void FEditorViewportClient::Tick(float DeltaTime)
 		{
 			InputSystem& Input = InputSystem::Get();
 			const FInputSystemSnapshot InputSnapshot = Input.MakeSnapshot();
+			if (InputSnapshot.WasPressed(VK_PAUSE))
+			{
+				FLuaScriptManager::FireOnEscapePressed();
+				return;
+			}
 			if (InputSnapshot.WasPressed(VK_ESCAPE))
 			{
 				EditorEngine->RequestEndPlayMap();
