@@ -22,7 +22,42 @@ local SPREAD_DECAY_PER_SEC  = 1.15
 local MAX_SPREAD            = 1.0
 local MAX_SPREAD_ANGLE      = 0.075
 
-local MAX_HITS_FOR_FULL_RED = 8
+-- Hard-coded recoil spray. vertical climb, left bias, then a rightward sweep. Values are camera kick in degrees per shot.
+local RECOIL_ADS_MULTIPLIER          = 0.72
+local RECOIL_STRENGTH_MULTIPLIER     = 5.0
+local RECOIL_RECOVERY_DELAY          = 0.03
+local RECOIL_RECOVERY_SPEED_FIRING   = 9.0
+local RECOIL_RECOVERY_SPEED_RELEASED = 50.0
+local RECOIL_PATTERN_RESET_DELAY     = 0.35
+local RECOIL_PATTERN = {
+    { pitch = -0.34, yaw = -0.02 },
+    { pitch = -0.42, yaw =  0.04 },
+    { pitch = -0.50, yaw =  0.09 },
+    { pitch = -0.58, yaw =  0.05 },
+    { pitch = -0.63, yaw = -0.04 },
+    { pitch = -0.67, yaw = -0.14 },
+    { pitch = -0.66, yaw = -0.24 },
+    { pitch = -0.62, yaw = -0.32 },
+    { pitch = -0.56, yaw = -0.38 },
+    { pitch = -0.50, yaw = -0.34 },
+    { pitch = -0.46, yaw = -0.22 },
+    { pitch = -0.43, yaw = -0.06 },
+    { pitch = -0.41, yaw =  0.12 },
+    { pitch = -0.40, yaw =  0.29 },
+    { pitch = -0.38, yaw =  0.44 },
+    { pitch = -0.36, yaw =  0.54 },
+    { pitch = -0.34, yaw =  0.48 },
+    { pitch = -0.32, yaw =  0.36 },
+    { pitch = -0.30, yaw =  0.22 },
+    { pitch = -0.28, yaw =  0.08 },
+    { pitch = -0.26, yaw = -0.02 },
+    { pitch = -0.24, yaw = -0.08 },
+    { pitch = -0.22, yaw = -0.06 },
+    { pitch = -0.20, yaw =  0.03 },
+}
+
+local MAX_HITS_FOR_FULL_RED = 20
+local TARGET_RESPAWN_DELAY = 3.0
 local MAX_HEALTH = 100.0
 
 local fireCooldown = 0.0
@@ -33,7 +68,13 @@ local reloadAudioTrack = 1
 local reloadAudioSteps = nil
 local reloadAudioNextIndex = 1
 local hitCounts    = {}
+local targetRespawnTimers = {}
 local weaponSpread = 0.0
+local recoilPatternIndex = 1
+local recoilRemainingPitch = 0.0
+local recoilRemainingYaw = 0.0
+local recoilRecoverDelay = 0.0
+local recoilPatternResetTimer = 0.0
 local currentHealth = MAX_HEALTH
 local baseMaxWalkSpeed = nil
 local baseSprintSpeedMultiplier = nil
@@ -43,6 +84,84 @@ local function clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
     if value > maxValue then return maxValue end
     return value
+end
+
+local function add_weapon_recoil()
+    if camera == nil then return end
+
+    local step = RECOIL_PATTERN[recoilPatternIndex] or RECOIL_PATTERN[#RECOIL_PATTERN]
+    local scale = RECOIL_STRENGTH_MULTIPLIER
+    if Input.GetKey(Key.MouseRight) then
+        scale = scale * RECOIL_ADS_MULTIPLIER
+    end
+
+    local deltaRotation = Vector.new(
+        0.0,
+        step.pitch * scale,
+        step.yaw * scale)
+
+    if type(camera.AddLocalRotation) == "function" then
+        camera:AddLocalRotation(deltaRotation)
+    elseif type(camera.GetRotation) == "function" and type(camera.SetRotation) == "function" then
+        local rotation = camera:GetRotation()
+        camera:SetRotation(Vector.new(
+            rotation.X,
+            rotation.Y + deltaRotation.Y,
+            rotation.Z + deltaRotation.Z))
+    end
+
+    recoilRemainingPitch = recoilRemainingPitch + deltaRotation.Y
+    recoilRemainingYaw = recoilRemainingYaw + deltaRotation.Z
+    recoilRecoverDelay = RECOIL_RECOVERY_DELAY
+    recoilPatternResetTimer = RECOIL_PATTERN_RESET_DELAY
+    recoilPatternIndex = recoilPatternIndex + 1
+end
+
+local function recover_recoil_axis(value, maxStep)
+    if value > maxStep then return value - maxStep, -maxStep end
+    if value < -maxStep then return value + maxStep, maxStep end
+    return 0.0, -value
+end
+
+local function update_weapon_recoil(dt)
+    if camera == nil or dt == nil or dt <= 0.0 then return end
+
+    if recoilPatternResetTimer > 0.0 then
+        recoilPatternResetTimer = recoilPatternResetTimer - dt
+        if recoilPatternResetTimer <= 0.0 then
+            recoilPatternIndex = 1
+        end
+    end
+
+    if recoilRecoverDelay > 0.0 then
+        recoilRecoverDelay = recoilRecoverDelay - dt
+        return
+    end
+
+    if math.abs(recoilRemainingPitch) <= 0.0001 and math.abs(recoilRemainingYaw) <= 0.0001 then
+        recoilRemainingPitch = 0.0
+        recoilRemainingYaw = 0.0
+        return
+    end
+
+    local isFiring = Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0
+    local recoverySpeed = isFiring and RECOIL_RECOVERY_SPEED_FIRING or RECOIL_RECOVERY_SPEED_RELEASED
+    local maxStep = recoverySpeed * dt
+    local pitchDelta
+    local yawDelta
+    recoilRemainingPitch, pitchDelta = recover_recoil_axis(recoilRemainingPitch, maxStep)
+    recoilRemainingYaw, yawDelta = recover_recoil_axis(recoilRemainingYaw, maxStep)
+
+    local deltaRotation = Vector.new(0.0, pitchDelta, yawDelta)
+    if type(camera.AddLocalRotation) == "function" then
+        camera:AddLocalRotation(deltaRotation)
+    elseif type(camera.GetRotation) == "function" and type(camera.SetRotation) == "function" then
+        local rotation = camera:GetRotation()
+        camera:SetRotation(Vector.new(
+            rotation.X,
+            rotation.Y + deltaRotation.Y,
+            rotation.Z + deltaRotation.Z))
+    end
 end
 
 local function get_health_ratio()
@@ -191,8 +310,13 @@ local function lerp_red(t)
     return r, g, b
 end
 
+-- 임시 디버그용 UI: 추후 적 로직 제대로 작성되면 삭제
 local function register_hit(hitActor, hitLoc)
     local id = hitActor.UUID
+    if targetRespawnTimers[id] ~= nil then
+        return
+    end
+
     local n  = (hitCounts[id] or 0) + 1
     hitCounts[id] = n
     local r, g, b = lerp_red(n / MAX_HITS_FOR_FULL_RED)
@@ -200,10 +324,26 @@ local function register_hit(hitActor, hitLoc)
 
     if n == MAX_HITS_FOR_FULL_RED then
         WeaponHud.TriggerKillMarker()
+        targetRespawnTimers[id] = TARGET_RESPAWN_DELAY
     elseif n < MAX_HITS_FOR_FULL_RED then
         WeaponHud.TriggerHitMarker()
     else
         return
+    end
+end
+
+-- 임시 디버그용 UI: 추후 적 로직 제대로 작성되면 삭제
+local function update_target_respawns(dt)
+    if dt == nil or dt <= 0.0 then return end
+
+    for id, remaining in pairs(targetRespawnTimers) do
+        remaining = remaining - dt
+        if remaining <= 0.0 then
+            targetRespawnTimers[id] = nil
+            hitCounts[id] = nil
+        else
+            targetRespawnTimers[id] = remaining
+        end
     end
 end
 
@@ -284,6 +424,8 @@ local function try_shoot()
         register_hit(hit.HitActor, hit.WorldHitLocation)
     end
 
+    add_weapon_recoil()
+
     if not Input.GetKey(Key.MouseRight) then
         weaponSpread = weaponSpread + SPREAD_PER_SHOT
         if weaponSpread > MAX_SPREAD then weaponSpread = MAX_SPREAD end
@@ -307,6 +449,11 @@ function BeginPlay()
     isReloading = false
     reset_reload_audio()
     fireCooldown = 0.0
+    recoilPatternIndex = 1
+    recoilRemainingPitch = 0.0
+    recoilRemainingYaw = 0.0
+    recoilRecoverDelay = 0.0
+    recoilPatternResetTimer = 0.0
     local requests = get_anim_requests()
     if requests ~= nil then
         requests.shoot = false
@@ -367,6 +514,11 @@ function EndPlay()
         movement:SetWallRunMaxSpeed(baseWallRunMaxSpeed)
     end
     GameAudio.Shutdown()
+    recoilPatternIndex = 1
+    recoilRemainingPitch = 0.0
+    recoilRemainingYaw = 0.0
+    recoilRecoverDelay = 0.0
+    recoilPatternResetTimer = 0.0
     movement = nil
 end
 
@@ -376,6 +528,8 @@ function Tick(dt)
     if Input.GetKeyDown(Key.F10) then
         InGameDebug.Toggle()
     end
+
+    update_weapon_recoil(dt)
 
     if fireCooldown > 0 then
         fireCooldown = fireCooldown - dt
@@ -389,6 +543,9 @@ function Tick(dt)
     if Input.GetKey(Key.MouseRight) then
         weaponSpread = 0.0
     end
+
+    update_target_respawns(dt)
+
     GameAudio.UpdateWeaponFireState(
         Input.GetKey(Key.MouseRight),
         Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0)

@@ -127,7 +127,7 @@ TArray<ULuaAnimInstance*>    FLuaScriptManager::RegisteredAnimInstances;
 FSubscriptionID FLuaScriptManager::WatchSub = 0;
 float FLuaScriptManager::RuntimeGamma = 2.4f;
 float FLuaScriptManager::RuntimeSaturation = 1.0f;
-float FLuaScriptManager::RuntimeMouseSensitivity = 0.2f;
+float FLuaScriptManager::RuntimeMouseSensitivity = 1.0f;
 
 void FLuaScriptManager::SetOnEscapePressed(sol::protected_function Callback)
 {
@@ -161,7 +161,7 @@ float FLuaScriptManager::GetRuntimeMouseSensitivity()
 
 void FLuaScriptManager::SetRuntimeMouseSensitivity(float InSensitivity)
 {
-	RuntimeMouseSensitivity = std::clamp(InSensitivity, 0.01f, 10.0f);
+	RuntimeMouseSensitivity = std::clamp(InSensitivity, 0.05f, 15.0f);
 }
 
 void FLuaScriptManager::RegisterComponent(ULuaScriptComponent* Component)
@@ -1473,6 +1473,13 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	{
 		Component.SetRelativeRotation(Rotation);
 	},
+		"AddLocalRotation", [](USceneComponent& Component, const FVector& DeltaRotation)
+	{
+		// Lua uses Vector(X=Roll, Y=Pitch, Z=Yaw) in degrees. Convert only the
+		// per-shot delta to a quat, then compose it inside the component.
+		// This avoids the GetRotation -> Euler add -> SetRotation accumulation path.
+		Component.AddLocalRotation(FRotator(DeltaRotation));
+	},
 
 		// 부모 기준 상대 위치 — 동일한 메시를 4개 깐 바퀴 같은 케이스에서 앞/뒤 구분 등
 		// 위치 기반 필터링에 쓰인다. 월드 위치는 위 "Location" 프로퍼티 참고.
@@ -1491,7 +1498,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@return Vector\nfunction SceneComponent:GetLocation() end")
 		.Method("---@param location Vector\nfunction SceneComponent:SetLocation(location) end")
 		.Method("---@return Vector\nfunction SceneComponent:GetRotation() end")
-		.Method("---@param rotation Vector\nfunction SceneComponent:SetRotation(rotation) end");
+		.Method("---@param rotation Vector\nfunction SceneComponent:SetRotation(rotation) end")
+		.Method("---@param deltaRotation Vector # Vector(X=Roll, Y=Pitch, Z=Yaw), degrees; internally composed as quaternion.\nfunction SceneComponent:AddLocalRotation(deltaRotation) end");
 
 	Lua.new_usertype<UPrimitiveComponent>("PrimitiveComponent",
 		sol::base_classes, sol::bases<USceneComponent>(),

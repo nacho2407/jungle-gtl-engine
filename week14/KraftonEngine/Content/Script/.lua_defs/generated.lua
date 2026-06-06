@@ -186,6 +186,9 @@ function SceneComponent:GetRotation() end
 ---@param rotation Vector
 function SceneComponent:SetRotation(rotation) end
 
+---@param deltaRotation Vector # Vector(X=Roll, Y=Pitch, Z=Yaw), degrees; internally composed as quaternion.
+function SceneComponent:AddLocalRotation(deltaRotation) end
+
 ---@param NewLocation Vector
 function SceneComponent:SetRelativeLocation(NewLocation) end
 

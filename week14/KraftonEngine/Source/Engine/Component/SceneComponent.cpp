@@ -287,7 +287,7 @@ void USceneComponent::AddLocalRotation(const FQuat& DeltaQuat)
 {
 	// Quat 합성으로 누적 — Euler 라운드트립이 없어 짐벌락에 안전.
 	// 곱 순서: 로컬 축 기준 회전이므로 Current * Delta.
-	RelativeTransform.SetRotation(RelativeTransform.Rotation * DeltaQuat);
+	RelativeTransform.SetRotation((RelativeTransform.Rotation * DeltaQuat).GetNormalized());
 	bCachedEulerDirty = true;
 	MarkTransformDirty();
 	NotifyOctreeTransformChanged(this);
