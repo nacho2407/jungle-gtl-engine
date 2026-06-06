@@ -3,6 +3,7 @@
 #include "Editor/UI/Util/EditorTextureManager.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Platform/Paths.h"
+#include "Editor/Settings/EditorSettings.h"
 #include "Settings/EditorViewportSettings.h"
 #include "Settings/GizmoToolSettings.h"
 
@@ -720,6 +721,32 @@ void FViewportToolbar::RenderViewMode(const FToolbarRenderState& State)
 		ImGui::RadioButton("Light Culling", &CurrentMode, static_cast<int32>(EViewMode::LightCulling));
 
 		RenderOptions.ViewMode = static_cast<EViewMode>(CurrentMode);
+
+		ImGui::Separator();
+		ImGui::Text("Background");
+
+		// 렌더 타깃 초기화 색상은 alpha 의미가 없으므로 RGB만 편집하고 alpha는 불투명으로 유지
+		FLinearColor& ViewportBackgroundColor = FEditorSettings::Get().ViewportBackgroundColor;
+		float BackgroundColor[3] =
+		{
+			ViewportBackgroundColor.R,
+			ViewportBackgroundColor.G,
+			ViewportBackgroundColor.B
+		};
+
+		ImGui::SetNextItemWidth(170.0f);
+		if (ImGui::ColorEdit3("Color", BackgroundColor, ImGuiColorEditFlags_Float))
+		{
+			ViewportBackgroundColor.R = BackgroundColor[0];
+			ViewportBackgroundColor.G = BackgroundColor[1];
+			ViewportBackgroundColor.B = BackgroundColor[2];
+			ViewportBackgroundColor.A = 1.0f;
+		}
+
+		if (ImGui::SmallButton("Reset Background"))
+		{
+			ViewportBackgroundColor = FEditorSettings::GetDefaultViewportBackgroundColor();
+		}
 
 		if (State.Context.OnRenderViewModeExtras)
 		{

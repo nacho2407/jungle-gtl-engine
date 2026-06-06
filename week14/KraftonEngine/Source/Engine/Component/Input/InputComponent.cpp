@@ -3,6 +3,7 @@
 #include "Core/Logging/Log.h"
 #include "Input/InputSystem.h"
 #include "Object/Reflection/ObjectFactory.h"
+#include "Viewport/GameViewportClient.h"
 
 void UInputComponent::AddAxisMapping(const FString& Name, int InputCode, float Scale)
 {
@@ -60,7 +61,7 @@ void UInputComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	const InputSystem& In = InputSystem::Get();
+	const FInputSystemSnapshot InputSnapshot = UGameViewportClient::MakeCurrentGameInputSnapshot();
 
 	// Axis mapping 합산 — 키/버튼은 0 또는 1, 게임패드 축은 정규화된 아날로그 값
 	for (const FAxisBinding& B : AxisBindings)
@@ -70,7 +71,7 @@ void UInputComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 		{
 			if (M.Name == B.Name)
 			{
-				Value += In.GetAxisValue(M.InputCode) * M.Scale;
+				Value += InputSnapshot.GetAxisValue(M.InputCode) * M.Scale;
 			}
 		}
 		if (B.Callback) B.Callback(Value);
@@ -83,8 +84,8 @@ void UInputComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 		{
 			if (M.Name != B.Name) continue;
 			const bool bFired = (B.Event == EInputEvent::Pressed)
-				? In.GetKeyDown(M.InputCode)
-				: In.GetKeyUp(M.InputCode);
+				? InputSnapshot.WasPressed(M.InputCode)
+				: InputSnapshot.WasReleased(M.InputCode);
 			if (bFired && B.Callback)
 			{
 				B.Callback();

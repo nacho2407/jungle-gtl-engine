@@ -573,6 +573,109 @@ void UEditorEngine::RequestEndPlayMap()
 	bRequestEndPlayMapQueued = true;
 }
 
+void UEditorEngine::TogglePlayInEditorShortcut()
+{
+	if (IsPlayingInEditor())
+	{
+		RequestEndPlayMap();
+		return;
+	}
+
+	FRequestPlaySessionParams Params;
+	RequestPlaySession(Params);
+}
+
+bool UEditorEngine::ConsumePlayInEditorShortcut(bool bF5Down)
+{
+	if (!bF5Down)
+	{
+		// F5를 완전히 뗀 뒤에만 다음 Play/Stop 토글 입력을 허용
+		bPIEPlayShortcutConsumedWhileHeld = false;
+		return false;
+	}
+
+	if (bPIEPlayShortcutConsumedWhileHeld)
+	{
+		// PIE 시작/종료 과정에서 InputSystem key state가 reset되어도 hold 중 재토글 금지
+		return true;
+	}
+
+	bPIEPlayShortcutConsumedWhileHeld = true;
+	TogglePlayInEditorShortcut();
+	return true;
+}
+
+bool UEditorEngine::TogglePIEInputCapture()
+{
+	if (!IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	UGameViewportClient* PIEViewportClient = GetGameViewportClient();
+	if (!PIEViewportClient)
+	{
+		return false;
+	}
+
+	const bool bEnableInputCapture = !PIEViewportClient->IsPossessed();
+	SyncGameViewportPIEControlState(bEnableInputCapture);
+	InputSystem::Get().ResetTransientState();
+	return true;
+}
+
+FLevelEditorViewportClient* UEditorEngine::GetPIEGameViewportClient() const
+{
+	if (!IsPlayingInEditor())
+	{
+		return nullptr;
+	}
+
+	const UGameViewportClient* PIEViewportClient = GetGameViewportClient();
+	const FViewport* PIEViewport = PIEViewportClient ? PIEViewportClient->GetViewport() : nullptr;
+	if (!PIEViewport)
+	{
+		return nullptr;
+	}
+
+	for (FLevelEditorViewportClient* ViewportClient : ViewportLayout.GetLevelViewportClients())
+	{
+		if (!ViewportClient || !ViewportLayout.ShouldRenderViewportClient(ViewportClient))
+		{
+			continue;
+		}
+
+		if (ViewportClient->GetViewport() == PIEViewport)
+		{
+			return ViewportClient;
+		}
+	}
+
+	return nullptr;
+}
+
+bool UEditorEngine::IsPIEGameViewport(const FViewport* Viewport) const
+{
+	if (!IsPlayingInEditor() || !Viewport)
+	{
+		return false;
+	}
+
+	const UGameViewportClient* PIEViewportClient = GetGameViewportClient();
+	return PIEViewportClient && PIEViewportClient->GetViewport() == Viewport;
+}
+
+bool UEditorEngine::IsPIEInputCaptured() const
+{
+	if (!IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	const UGameViewportClient* PIEViewportClient = GetGameViewportClient();
+	return PIEViewportClient && PIEViewportClient->IsPossessed();
+}
+
 void UEditorEngine::RequestTransitionToScene(const FString& /*InScenePath*/)
 {
 	// PIE 중이면 세션 종료(에디터 복귀)로 매핑. PIE 가 아닌 상태(에디터 직접)에서 호출되면
@@ -846,6 +949,40 @@ bool UEditorEngine::EnterPIEEjectedMode()
 	return true;
 }
 
+FLevelEditorViewportClient* UEditorEngine::ResolvePIEGameViewportClient() const
+{
+	// 정상 경로에서는 PIE 시작 시 GameViewportClient에 바인딩된 뷰포트를 계속 사용합니다.
+	if (FLevelEditorViewportClient* PinnedViewportClient = GetPIEGameViewportClient())
+	{
+		return PinnedViewportClient;
+	}
+
+	// 레이아웃 변경 등으로 기존 PIE 뷰포트가 사라진 경우에만 현재 활성 뷰포트로 복구합니다.
+	if (FLevelEditorViewportClient* ActiveViewportClient = ViewportLayout.GetActiveViewport())
+	{
+		if (ViewportLayout.ShouldRenderViewportClient(ActiveViewportClient) && ActiveViewportClient->GetViewport())
+		{
+			return ActiveViewportClient;
+		}
+	}
+
+	// 활성 뷰포트도 유효하지 않으면 보이는 첫 레벨 뷰포트를 마지막 fallback으로 사용합니다.
+	for (FLevelEditorViewportClient* ViewportClient : ViewportLayout.GetLevelViewportClients())
+	{
+		if (!ViewportClient || !ViewportLayout.ShouldRenderViewportClient(ViewportClient))
+		{
+			continue;
+		}
+
+		if (ViewportClient->GetViewport())
+		{
+			return ViewportClient;
+		}
+	}
+
+	return nullptr;
+}
+
 void UEditorEngine::SyncGameViewportPIEControlState(bool bPossessedMode)
 {
 	UGameViewportClient* PIEViewportClient = GetGameViewportClient();
@@ -865,10 +1002,10 @@ void UEditorEngine::SyncGameViewportPIEControlState(bool bPossessedMode)
 		PIEViewportClient->SetOwnerWindow(Window->GetHWND());
 	}
 
-	if (FLevelEditorViewportClient* ActiveVC = ViewportLayout.GetActiveViewport())
+	if (FLevelEditorViewportClient* PIEViewportClientOwner = ResolvePIEGameViewportClient())
 	{
-		PIEViewportClient->SetViewport(ActiveVC->GetViewport());
-		PIEViewportClient->SetCursorClipRect(ActiveVC->GetViewportScreenRect());
+		PIEViewportClient->SetViewport(PIEViewportClientOwner->GetViewport());
+		PIEViewportClient->SetCursorClipRect(PIEViewportClientOwner->GetViewportScreenRect());
 		return;
 	}
 }

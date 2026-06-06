@@ -294,23 +294,27 @@ void FEditorViewportClient::Tick(float DeltaTime)
 				EditorEngine->RequestEndPlayMap();
 				return;
 			}
+			if (EditorEngine->ConsumePlayInEditorShortcut(InputSnapshot.IsDown(VK_F5)))
+			{
+				return;
+			}
 			if (InputSnapshot.WasPressed(VK_F8))
 			{
-				EditorEngine->TogglePIEControlMode();
+				EditorEngine->TogglePIEInputCapture();
+				return;
 			}
 
-			// possess / eject 양쪽에서 ProcessInput 호출 — eject 모드 (bInputPossessed=false)
-			// 진입 시 ProcessInput 의 내부 분기가 SetCursorCaptured(false) 로 시스템 커서를
-			// 다시 보여준다. 이 호출을 possess 모드에만 한정하면 eject 후에도 마지막 capture
-			// 상태 (커서 숨김) 가 유지돼 에디터 조작이 안 됨.
+			// PIE 입력 캡처 on/off 양쪽에서 ProcessInput 호출. 입력 해제 상태(bInputPossessed=false)
+			// 에서는 ProcessInput 내부가 game snapshot을 비우고 시스템 커서를 보이게 유지합니다.
 			if (UGameViewportClient* GameViewportClient = EditorEngine->GetGameViewportClient())
 			{
-				GameViewportClient->SetViewport(Viewport);
 				GameViewportClient->ProcessInput(InputSnapshot, DeltaTime);
 			}
 
-			// possess 모드일 땐 게임이 입력을 가져가니 에디터 카메라 조작은 skip.
-			if (EditorEngine->IsPIEPossessedMode())
+			// 게임 입력 캡처 중에는 active viewport가 바뀌어도 에디터 조작을 막습니다.
+			// 캡처 해제 상태에서는 원래 PIE 게임 뷰포트는 계속 게임 카메라 전용으로 두고,
+			// 다른 뷰포트에서만 에디터 카메라/기즈모 조작을 허용합니다.
+			if (EditorEngine->IsPIEInputCaptured() || EditorEngine->IsPIEGameViewport(Viewport))
 			{
 				return;
 			}

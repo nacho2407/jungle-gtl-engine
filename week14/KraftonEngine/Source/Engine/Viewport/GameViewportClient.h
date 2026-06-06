@@ -50,6 +50,20 @@ public:
 	// 비활성/비포커스 시 snapshot 클리어 + raw mouse 해제 + 커서 풀어줌.
 	void ProcessInput(const FInputSystemSnapshot& Snapshot, float DeltaTime);
 
+	/**
+	* @brief 현재 possession 상태를 반영한 게임 입력 스냅샷을 생성합니다.
+	*
+	* @return possession이 켜져 있고 창 포커스가 있으면 현재 입력 스냅샷, 아니면 빈 스냅샷
+	*/
+	FInputSystemSnapshot MakePossessedInputSnapshot() const;
+
+	/**
+	* @brief 현재 엔진의 GameViewportClient 기준 게임 입력 스냅샷을 생성합니다.
+	*
+	* @return GameViewportClient가 있으면 possession 가드가 적용된 스냅샷, 없으면 전역 입력 스냅샷
+	*/
+	static FInputSystemSnapshot MakeCurrentGameInputSnapshot();
+
 	const FInputSystemSnapshot& GetGameInputSnapshot() const { return GameInputSnapshot; }
 
 private:

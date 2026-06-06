@@ -21,6 +21,7 @@ namespace Key
 
 	// Slot Render Options
 	constexpr const char* ViewMode = "ViewMode";
+	constexpr const char* BackgroundColor = "BackgroundColor";
 	constexpr const char* bStaticMesh = "bStaticMesh";
 	constexpr const char* bSkeletalMesh = "bSkeletalMesh";
 	constexpr const char* bGrid = "bGrid";
@@ -157,6 +158,40 @@ bool TryLoadSkinningMode(json::JSON Obj, ESkinningMode& OutMode)
 	}
 
 	return false;
+}
+
+/**
+* @brief 뷰포트 배경색 설정을 JSON 배열로 저장합니다.
+*/
+json::JSON SaveBackgroundColor(const FLinearColor& Color)
+{
+	using namespace json;
+
+	return Array(Color.R, Color.G, Color.B, Color.A);
+}
+
+/**
+* @brief JSON 객체에서 뷰포트 배경색 설정을 읽습니다.
+*/
+bool TryLoadBackgroundColor(json::JSON Obj, FLinearColor& OutColor)
+{
+	if (!Obj.hasKey(Key::BackgroundColor))
+	{
+		return false;
+	}
+
+	json::JSON Color = Obj[Key::BackgroundColor];
+	if (Color.length() < 3)
+	{
+		return false;
+	}
+
+	// 이전 버전의 per-viewport 배경색도 같은 배열 포맷이므로 그대로 공용 설정으로 승격
+	OutColor.R = static_cast<float>(Color[0].ToFloat());
+	OutColor.G = static_cast<float>(Color[1].ToFloat());
+	OutColor.B = static_cast<float>(Color[2].ToFloat());
+	OutColor.A = Color.length() >= 4 ? static_cast<float>(Color[3].ToFloat()) : 1.0f;
+	return true;
 }
 
 json::JSON SaveRenderOptions(const FViewportRenderOptions& Opts)
@@ -365,6 +400,8 @@ void FEditorSettings::SaveToFile(const FString& Path) const
 	JSON LookAt = Array(InitLookAt.X, InitLookAt.Y, InitLookAt.Z);
 	Viewport[Key::InitLookAt] = LookAt;
 
+	Viewport[Key::BackgroundColor] = SaveBackgroundColor(ViewportBackgroundColor);
+
 	Root[Key::Viewport] = Viewport;
 
 	// Paths
@@ -460,6 +497,7 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 	JSON Root = JSON::Load(Content);
 	ESkinningMode LoadedSkinningMode = SkinningModeRuntime::Get();
 	bool bLoadedSkinningMode = TryLoadSkinningMode(Root, LoadedSkinningMode);
+	bool bLoadedViewportBackgroundColor = false;
 
 	// Viewport
 	if (Root.hasKey(Key::Viewport))
@@ -467,6 +505,7 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		JSON Viewport = Root[Key::Viewport];
 
 		LoadCameraControls(Viewport, LevelViewportCameraControls);
+		bLoadedViewportBackgroundColor = TryLoadBackgroundColor(Viewport, ViewportBackgroundColor);
 
 		if (Viewport.hasKey(Key::InitViewPos))
 		{
@@ -512,6 +551,11 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 			if (!bLoadedSkinningMode && SlotsArr.length() > 0)
 			{
 				bLoadedSkinningMode = TryLoadSkinningMode(SlotsArr[0], LoadedSkinningMode);
+			}
+			if (!bLoadedViewportBackgroundColor && SlotsArr.length() > 0)
+			{
+				// 이전 버전 설정 파일의 첫 번째 뷰포트 배경색을 공용 배경색으로 승격
+				bLoadedViewportBackgroundColor = TryLoadBackgroundColor(SlotsArr[0], ViewportBackgroundColor);
 			}
 
 			for (int32 i = 0; i < static_cast<int32>(SlotsArr.length()) && i < 4; ++i)
@@ -592,6 +636,11 @@ void FEditorSettings::LoadFromFile(const FString& Path)
 		if (!bLoadedSkinningMode)
 		{
 			bLoadedSkinningMode = TryLoadSkinningMode(MeshEditorViewportObj, LoadedSkinningMode);
+		}
+		if (!bLoadedViewportBackgroundColor)
+		{
+			// level viewport 저장값이 없는 이전 설정 파일에서는 mesh editor 저장값을 마지막 fallback으로 사용
+			bLoadedViewportBackgroundColor = TryLoadBackgroundColor(MeshEditorViewportObj, ViewportBackgroundColor);
 		}
 		LoadRenderOptions(MeshEditorViewportObj, MeshEditorViewportSettings.RenderOptions);
 		LoadCameraControls(MeshEditorViewportObj, MeshEditorViewportSettings.CameraControls);

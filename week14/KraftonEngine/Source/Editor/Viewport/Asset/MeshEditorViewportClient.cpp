@@ -29,6 +29,9 @@ void FMeshEditorViewportClient::Initialize(ID3D11Device* Device, uint32 Width, u
 	Viewport->Initialize(Device, Width, Height);
 	Viewport->SetClient(this);
 
+	// 초기 render target 크기와 카메라 projection aspect 동기화
+	NotifyViewportResized(static_cast<int32>(Width), static_cast<int32>(Height));
+
 	bIsRenderable = true;
 }
 
@@ -118,7 +121,7 @@ bool FMeshEditorViewportClient::IsGizmoHolding() const
 
 void FMeshEditorViewportClient::NotifyViewportResized(int32 NewWidth, int32 NewHeight)
 {
-	if (Viewport)
+	if (Viewport && NewHeight > 0)
 	{
 		ViewTransform.AspectRatio = static_cast<float>(NewWidth) / static_cast<float>(NewHeight);
 	}

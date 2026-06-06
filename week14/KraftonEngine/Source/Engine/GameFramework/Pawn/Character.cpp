@@ -9,6 +9,7 @@
 #include "Math/Rotator.h"
 #include "Mesh/MeshManager.h"
 #include "Runtime/Engine.h"
+#include "Viewport/GameViewportClient.h"
 
 #include <algorithm>
 void ACharacter::InitDefaultComponents(const FString& SkeletalMeshFileName)
@@ -106,9 +107,9 @@ void ACharacter::Tick(float DeltaTime)
 
 	if (bAutoInputMouseLook)
 	{
-		const InputSystem& In = InputSystem::Get();
-		const int DX = In.MouseDeltaX();
-		const int DY = In.MouseDeltaY();
+		const FInputSystemSnapshot InputSnapshot = UGameViewportClient::MakeCurrentGameInputSnapshot();
+		const int DX = InputSnapshot.MouseDeltaX;
+		const int DY = InputSnapshot.MouseDeltaY;
 		if (DX != 0 || DY != 0)
 		{
 			// APawn::ControlRotation 누적. SpringArm 이 bUsePawnControlRotation 통해 이걸 사용.

@@ -83,6 +83,16 @@ public:
 	void OnDoubleLeftClicked(ContentBrowserContext& Context) override;
 };
 
+class PrefabElement final : public ContentBrowserElement
+{
+public:
+	virtual const char* GetDragItemType() override { return "PrefabContentItem"; }
+
+protected:
+	const char* GetTypeLabel() const override { return "Prefab"; }
+	uint32 GetAccentColor() const override { return IM_COL32(110, 210, 180, 255); }
+};
+
 class ObjectElement : public ContentBrowserElement
 {
 public:
