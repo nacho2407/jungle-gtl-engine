@@ -335,21 +335,21 @@ void FUIEditorWidget::RenderInspector()
 		MarkDirty();
 	}
 
-	const char* HorizontalAnchorLabels[] = { "Left", "Right" };
-	int HorizontalAnchorIndex = Element.HorizontalAnchor == "right" ? 1 : 0;
-	if (ImGui::Combo("Horizontal Anchor", &HorizontalAnchorIndex, HorizontalAnchorLabels, IM_ARRAYSIZE(HorizontalAnchorLabels)))
+	const char* PivotLabels[] = { "Left Top", "Left Bottom", "Right Top", "Right Bottom" };
+	int PivotIndex = 0;
+	if (Element.HorizontalAnchor == "right")
 	{
-		Element.HorizontalAnchor = HorizontalAnchorIndex == 1 ? "right" : "left";
-		Element.bXDirty = true;
-		Element.bStyleDirty = true;
-		MarkDirty();
+		PivotIndex = Element.VerticalAnchor == "bottom" ? 3 : 2;
 	}
-
-	const char* VerticalAnchorLabels[] = { "Top", "Bottom" };
-	int VerticalAnchorIndex = Element.VerticalAnchor == "bottom" ? 1 : 0;
-	if (ImGui::Combo("Vertical Anchor", &VerticalAnchorIndex, VerticalAnchorLabels, IM_ARRAYSIZE(VerticalAnchorLabels)))
+	else
 	{
-		Element.VerticalAnchor = VerticalAnchorIndex == 1 ? "bottom" : "top";
+		PivotIndex = Element.VerticalAnchor == "bottom" ? 1 : 0;
+	}
+	if (ImGui::Combo("Pivot", &PivotIndex, PivotLabels, IM_ARRAYSIZE(PivotLabels)))
+	{
+		Element.HorizontalAnchor = PivotIndex >= 2 ? "right" : "left";
+		Element.VerticalAnchor = (PivotIndex == 1 || PivotIndex == 3) ? "bottom" : "top";
+		Element.bXDirty = true;
 		Element.bYDirty = true;
 		Element.bStyleDirty = true;
 		MarkDirty();
@@ -361,15 +361,13 @@ void FUIEditorWidget::RenderInspector()
 	const float SizeMax = Element.bUsePercentLayout ? 100.0f : 4096.0f;
 	const char* ValueFormat = Element.bUsePercentLayout ? "%.2f" : "%.1f";
 
-	const char* XLabel = Element.HorizontalAnchor == "right" ? "X Offset From Right" : "X Offset From Left";
-	const char* YLabel = Element.VerticalAnchor == "bottom" ? "Y Offset From Bottom" : "Y Offset From Top";
-	if (ImGui::DragFloat(XLabel, &Element.X, PositionSpeed, 0.0f, PositionMax, ValueFormat))
+	if (ImGui::DragFloat("Offset X", &Element.X, PositionSpeed, 0.0f, PositionMax, ValueFormat))
 	{
 		Element.bXDirty = true;
 		Element.bStyleDirty = true;
 		MarkDirty();
 	}
-	if (ImGui::DragFloat(YLabel, &Element.Y, PositionSpeed, 0.0f, PositionMax, ValueFormat))
+	if (ImGui::DragFloat("Offset Y", &Element.Y, PositionSpeed, 0.0f, PositionMax, ValueFormat))
 	{
 		Element.bYDirty = true;
 		Element.bStyleDirty = true;
