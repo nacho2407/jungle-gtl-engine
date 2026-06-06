@@ -16,7 +16,6 @@
 #include "Core/Logging/Log.h"
 #include "Core/Types/PropertyTypes.h"
 #include "GameFramework/AActor.h"
-#include "Input/InputSystem.h"
 #include "Lua/LuaScriptManager.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
@@ -230,6 +229,14 @@ void ULuaAnimInstance::InstallBindings()
 			if (!Owner) return 0.0f;
 			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
 			return Move ? Move->GetSpeed() : 0.0f;
+		});
+
+	Anim.set_function("get_owner_uuid",
+		[this]() -> uint32
+		{
+			if (!OwningComponent) return 0;
+			AActor* Owner = OwningComponent->GetOwner();
+			return Owner ? Owner->GetUUID() : 0;
 		});
 
 	// Owner 의 movement mode — "Walking" / "Falling" / "" (movement 없음).
@@ -455,6 +462,8 @@ void ULuaAnimInstance::InstallBindings()
 		[]() -> bool { return UGameViewportClient::MakeCurrentGameInputSnapshot().WasPressed(VK_RBUTTON); });
 	Anim.set_function("is_key_pressed",
 		[](int VK) -> bool { return UGameViewportClient::MakeCurrentGameInputSnapshot().WasPressed(VK); });
+	Anim.set_function("is_key_down",
+		[](int VK) -> bool { return UGameViewportClient::MakeCurrentGameInputSnapshot().IsDown(VK); });
 
 	// ── AnimGraph build API (Phase 1.6b) — sub-state-machine / 임의 트리 표현 ──
 	// 노드는 UAnimInstance::MakeNode 가 OwnedNodes 에 push 후 raw 반환 — lifetime 은 C++ 가 관리.

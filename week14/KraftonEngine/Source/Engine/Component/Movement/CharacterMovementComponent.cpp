@@ -450,6 +450,130 @@ bool UCharacterMovementComponent::FindFloor(FHitResult& OutFloorHit) const
 	return false;
 }
 
+void UCharacterMovementComponent::SetCrouching(bool bEnable)
+{
+	bWantsCrouch = bEnable;
+}
+
+void UCharacterMovementComponent::UpdateCrouchState(float DeltaTime)
+{
+	UCapsuleComponent* Capsule = Cast<UCapsuleComponent>(GetUpdatedComponent());
+	if (!Capsule) return;
+
+	const float CurrentHalfHeight = Capsule->GetUnscaledCapsuleHalfHeight();
+	const float Radius = Capsule->GetUnscaledCapsuleRadius();
+
+	if (!bIsCrouched)
+	{
+		StandingCapsuleHalfHeight = (std::max)(CurrentHalfHeight, Radius);
+	}
+
+	const float StandingHalfHeight = StandingCapsuleHalfHeight > 0.0f
+		? (std::max)(StandingCapsuleHalfHeight, Radius)
+		: (std::max)(CurrentHalfHeight, Radius);
+	const float TargetCrouchedHalfHeight = FMath::Clamp(CrouchedHalfHeight, Radius, StandingHalfHeight);
+
+	if (bWantsCrouch)
+	{
+		bIsCrouched = true;
+	}
+	else if (!bIsCrouched)
+	{
+		return;
+	}
+	else if (!CanStandUp(Capsule, StandingHalfHeight))
+	{
+		return;
+	}
+
+	const float TargetHalfHeight = bWantsCrouch ? TargetCrouchedHalfHeight : StandingHalfHeight;
+	const float HalfHeightDelta = TargetHalfHeight - CurrentHalfHeight;
+	if (std::fabs(HalfHeightDelta) <= FMath::Epsilon)
+	{
+		if (!bWantsCrouch)
+		{
+			bIsCrouched = false;
+		}
+		return;
+	}
+
+	const float BlendSpeed = (std::max)(0.0f, CrouchBlendSpeed);
+	const float MaxStep = BlendSpeed > FMath::Epsilon ? BlendSpeed * DeltaTime : std::fabs(HalfHeightDelta);
+	const float NewHalfHeight = std::fabs(HalfHeightDelta) <= MaxStep
+		? TargetHalfHeight
+		: CurrentHalfHeight + (HalfHeightDelta > 0.0f ? MaxStep : -MaxStep);
+
+	ApplyCapsuleHalfHeight(Capsule, NewHalfHeight);
+
+	if (!bWantsCrouch && std::fabs(NewHalfHeight - StandingHalfHeight) <= FMath::Epsilon)
+	{
+		bIsCrouched = false;
+	}
+}
+
+bool UCharacterMovementComponent::CanStandUp(const UCapsuleComponent* Capsule, float StandingHalfHeight) const
+{
+	UWorld* World = GetWorld();
+	if (!World || !Capsule) return false;
+
+	const float CurrentHalfHeight = Capsule->GetScaledCapsuleHalfHeight();
+	const float Radius = Capsule->GetScaledCapsuleRadius();
+	const float StandingScaledHalfHeight = StandingHalfHeight * Capsule->GetWorldScale().Z;
+	if (StandingScaledHalfHeight <= CurrentHalfHeight + FMath::Epsilon)
+	{
+		return true;
+	}
+
+	const FVector Center = Capsule->GetWorldLocation();
+	const float CurrentTopSphereOffset = (std::max)(0.0f, CurrentHalfHeight - Radius);
+	const float StandingTopSphereOffset = (std::max)(0.0f, StandingScaledHalfHeight - Radius);
+	const float CenterRaise = StandingScaledHalfHeight - CurrentHalfHeight;
+
+	const FVector Start = Center + FVector::UpVector * CurrentTopSphereOffset;
+	const FVector End = Center + FVector::UpVector * (CenterRaise + StandingTopSphereOffset);
+	const FVector Delta = End - Start;
+	const float Distance = Delta.Length();
+	if (Distance <= FMath::Epsilon)
+	{
+		return true;
+	}
+
+	FHitResult Hit;
+	return !World->PhysicsSweepSphere(
+		Start,
+		Delta * (1.0f / Distance),
+		Distance + ControllerContactOffset,
+		Radius,
+		Hit,
+		ECollisionChannel::Pawn,
+		GetOwner());
+}
+
+void UCharacterMovementComponent::ApplyCapsuleHalfHeight(UCapsuleComponent* Capsule, float NewHalfHeight)
+{
+	if (!Capsule) return;
+
+	const float CurrentHalfHeight = Capsule->GetUnscaledCapsuleHalfHeight();
+	if (std::fabs(CurrentHalfHeight - NewHalfHeight) <= FMath::Epsilon)
+	{
+		return;
+	}
+
+	const float ScaleZ = Capsule->GetWorldScale().Z;
+	const float WorldHalfHeightDelta = (CurrentHalfHeight - NewHalfHeight) * ScaleZ;
+	const FVector NewCenter = Capsule->GetWorldLocation() - FVector::UpVector * WorldHalfHeightDelta;
+
+	Capsule->SetCapsuleSize(Capsule->GetUnscaledCapsuleRadius(), NewHalfHeight);
+	Capsule->SetWorldLocation(NewCenter);
+
+	if (FBodyInstance* Body = Capsule->GetBodyInstance())
+	{
+		Body->SyncToPhysics();
+	}
+
+	ReleaseController();
+}
+
 FControllerMoveResult UCharacterMovementComponent::MoveController(
 	const FVector& Delta,
 	float DeltaTime)
@@ -875,6 +999,7 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	if (DeltaTime <= 0.0f) return;
 
 	++WallRunDiagnosticsFrameCounter;
+	UpdateCrouchState(DeltaTime);
 
 	// Wall-jump 재진입 쿨다운 타이머 감쇠. 0 이하가 되면 TryStartWallRun 의 게이트는 자동 통과.
 	if (WallJumpReattachTimer > 0.0f)

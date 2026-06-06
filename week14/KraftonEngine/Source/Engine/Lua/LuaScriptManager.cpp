@@ -452,6 +452,7 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 	FLuaDocRegistry::Get().Type("AnimNode");
 	FLuaDocRegistry::Get().Type("AnimLib")
 		.Method("---@return number\nfunction Anim.get_owner_speed() end")
+		.Method("---@return integer\nfunction Anim.get_owner_uuid() end")
 		.Method("---@return string\nfunction Anim.get_owner_movement_mode() end")
 		.Method("---@return boolean\nfunction Anim.is_owner_falling() end")
 		.Method("---@return boolean\nfunction Anim.is_owner_wall_running() end")
@@ -463,6 +464,7 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 		.Method("---@return boolean\nfunction Anim.is_left_mouse_down() end")
 		.Method("---@return boolean\nfunction Anim.is_right_mouse_pressed() end")
 		.Method("---@param key integer\n---@return boolean\nfunction Anim.is_key_pressed(key) end")
+		.Method("---@param key integer\n---@return boolean\nfunction Anim.is_key_down(key) end")
 		.Method("---@param name? string\n---@return AnimNode\nfunction Anim.create_state_machine(name) end")
 		.Method("---@param path string\n---@param rate number\n---@param loop boolean\n---@return AnimNode\nfunction Anim.create_sequence_player(path, rate, loop) end")
 		.Method("---@param stateMachine AnimNode\n---@param name string\n---@param subGraph AnimNode\nfunction Anim.sm_add_state(stateMachine, name, subGraph) end")
@@ -648,6 +650,12 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Key["Space"] = VK_SPACE;
 	Key["Enter"] = VK_RETURN;
 	Key["Ctrl"] = VK_CONTROL;
+	Key["Control"] = VK_CONTROL;
+	Key["LeftCtrl"] = VK_LCONTROL;
+	Key["RightCtrl"] = VK_RCONTROL;
+	Key["Shift"] = VK_SHIFT;
+	Key["LeftShift"] = VK_LSHIFT;
+	Key["RightShift"] = VK_RSHIFT;
 	Key["Escape"] = VK_ESCAPE;
 	Key["F1"] = VK_F1;
 	Key["F2"] = VK_F2;
