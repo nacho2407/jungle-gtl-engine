@@ -1206,19 +1206,54 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 		}
 	}
 
-	if (root.hasKey(SceneKeys::EditorOutliner))
+	TArray<AActor*> LoadedActors = World->GetActors();
+	for (AActor* Actor : LoadedActors)
 	{
-		DeserializeEditorOutliner(root[SceneKeys::EditorOutliner], World, LoadContextState);
+		if (Actor)
+		{
+			World->RemoveActorToOctree(Actor);
+		}
 	}
 
-	for (AActor* Actor : World->GetActors())
+	// JSON scene loading recreates actors/components from serialized data, but it is not
+	// a UObject duplicate path. Run the same post-load fix-up phase so actor subclasses
+	// rebuild cached component pointers before gameplay tick/input starts.
+	for (AActor* Actor : LoadedActors)
 	{
 		if (!Actor)
 		{
 			continue;
 		}
 
-		World->RemoveActorToOctree(Actor);
+		for (UActorComponent* Component : Actor->GetComponents())
+		{
+			if (Component)
+			{
+				Component->PostDuplicate();
+			}
+		}
+	}
+
+	for (AActor* Actor : LoadedActors)
+	{
+		if (Actor)
+		{
+			Actor->PostDuplicate();
+		}
+	}
+
+	if (root.hasKey(SceneKeys::EditorOutliner))
+	{
+		DeserializeEditorOutliner(root[SceneKeys::EditorOutliner], World, LoadContextState);
+	}
+
+	for (AActor* Actor : LoadedActors)
+	{
+		if (!Actor)
+		{
+			continue;
+		}
+
 		World->InsertActorToOctree(Actor);
 	}
 
