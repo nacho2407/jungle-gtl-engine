@@ -171,6 +171,15 @@ APawn* FGameplayRuntime::SpawnDefaultPawn()
 		return nullptr;
 	}
 
+	AActor* Start = FindPlayerStart();
+	if (!Start)
+	{
+		const FString& RequiredTag = FProjectSettings::Get().Game.GameplayPreset.DefaultPlayerStartTag;
+		UE_LOG("[GameplayRuntime] Skip default Pawn spawn: no PlayerStart found. RequiredTag='%s'.",
+			RequiredTag.c_str());
+		return nullptr;
+	}
+
 	const auto& Preset = FProjectSettings::Get().Game.GameplayPreset;
 	UClass* PawnClass = ResolveClass(
 		Preset.DefaultPawnClassName,
@@ -204,11 +213,8 @@ APawn* FGameplayRuntime::SpawnDefaultPawn()
 		Character->InitDefaultComponents(Preset.DefaultPawnMeshPath);
 	}
 
-	if (AActor* Start = FindPlayerStart())
-	{
-		Pawn->SetActorLocation(Start->GetActorLocation());
-		Pawn->SetActorRotation(Start->GetActorRotation());
-	}
+	Pawn->SetActorLocation(Start->GetActorLocation());
+	Pawn->SetActorRotation(Start->GetActorRotation());
 
 	Pawn->SetAutoPossessPlayer(true);
 	World->AddActor(Pawn);

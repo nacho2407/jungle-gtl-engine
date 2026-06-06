@@ -52,10 +52,10 @@
 
 namespace
 {
-FString NormalizeLuaModuleScriptFile(const FString& ModuleOrScriptFile)
+TArray<FString> BuildLuaModuleScriptFileCandidates(const FString& ModuleOrScriptFile)
 {
-	FString Result = ModuleOrScriptFile;
-	for (char& Ch : Result)
+	FString Normalized = ModuleOrScriptFile;
+	for (char& Ch : Normalized)
 	{
 		if (Ch == '\\')
 		{
@@ -63,21 +63,39 @@ FString NormalizeLuaModuleScriptFile(const FString& ModuleOrScriptFile)
 		}
 	}
 
-	constexpr const char* LuaExt = ".lua";
-	const bool bHasLuaExtension = Result.size() >= 4 && Result.substr(Result.size() - 4) == LuaExt;
-	if (!bHasLuaExtension)
+	TArray<FString> Candidates;
+	auto AddCandidate = [&Candidates](const FString& Candidate)
 	{
-		for (char& Ch : Result)
+		if (std::find(Candidates.begin(), Candidates.end(), Candidate) == Candidates.end())
 		{
-			if (Ch == '.')
-			{
-				Ch = '/';
-			}
+			Candidates.push_back(Candidate);
 		}
-		Result += LuaExt;
+	};
+
+	constexpr const char* LuaExt = ".lua";
+	const bool bHasLuaExtension = Normalized.size() >= 4 && Normalized.substr(Normalized.size() - 4) == LuaExt;
+	if (bHasLuaExtension)
+	{
+		AddCandidate(Normalized);
+		return Candidates;
 	}
 
-	return Result;
+	// 경로 구분자가 이미 있는 모듈명은 파일명 안의 점을 보존하는 후보를 먼저 사용합니다.
+	// 예: Dialogue/Prologue.dialogue -> Dialogue/Prologue.dialogue.lua
+	AddCandidate(Normalized + LuaExt);
+
+	// Lua 관례형 dotted module도 기존처럼 하위 경로로 변환해서 지원합니다.
+	// 예: Game.FractureDirector -> Game/FractureDirector.lua
+	FString DottedModulePath = Normalized;
+	for (char& Ch : DottedModulePath)
+	{
+		if (Ch == '.')
+		{
+			Ch = '/';
+		}
+	}
+	AddCandidate(DottedModulePath + LuaExt);
+	return Candidates;
 }
 
 sol::object RequireLuaModule(sol::state& LuaState, const FString& ModuleName)
@@ -419,12 +437,29 @@ void FLuaScriptManager::Initialize()
 	ModuleLoaders[2] = [](sol::this_state ts, const std::string& ModName) -> sol::object
 	{
 		sol::state_view L(ts);
-		const FString ScriptFile = NormalizeLuaModuleScriptFile(ModName);
-		const std::wstring WidePath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ScriptFile));
+		const TArray<FString> CandidateScriptFiles = BuildLuaModuleScriptFileCandidates(ModName);
+		FString ScriptFile;
+		std::wstring WidePath;
 		std::error_code EC;
-		if (!std::filesystem::exists(WidePath, EC))
+		FString SearchMessage;
+		for (const FString& CandidateScriptFile : CandidateScriptFiles)
 		{
-			return sol::make_object(L, std::string("\n\tno file '") + FPaths::ToUtf8(WidePath) + "'");
+			const std::wstring CandidateWidePath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(CandidateScriptFile));
+			if (std::filesystem::exists(CandidateWidePath, EC))
+			{
+				ScriptFile = CandidateScriptFile;
+				WidePath = CandidateWidePath;
+				break;
+			}
+
+			SearchMessage += "\n\tno file '";
+			SearchMessage += FPaths::ToUtf8(CandidateWidePath);
+			SearchMessage += "'";
+		}
+
+		if (ScriptFile.empty())
+		{
+			return sol::make_object(L, SearchMessage);
 		}
 
 		FString Content;
