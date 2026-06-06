@@ -231,6 +231,14 @@ void ULuaAnimInstance::InstallBindings()
 			return Move ? Move->GetSpeed() : 0.0f;
 		});
 
+	Anim.set_function("get_owner_uuid",
+		[this]() -> uint32
+		{
+			if (!OwningComponent) return 0;
+			AActor* Owner = OwningComponent->GetOwner();
+			return Owner ? Owner->GetUUID() : 0;
+		});
+
 	// Owner 의 movement mode — "Walking" / "Falling" / "" (movement 없음).
 	Anim.set_function("get_owner_movement_mode",
 		[this]() -> std::string
@@ -454,6 +462,8 @@ void ULuaAnimInstance::InstallBindings()
 		[]() -> bool { return InputSystem::Get().GetKeyDown(VK_RBUTTON); });
 	Anim.set_function("is_key_pressed",
 		[](int VK) -> bool { return InputSystem::Get().GetKeyDown(VK); });
+	Anim.set_function("is_key_down",
+		[](int VK) -> bool { return InputSystem::Get().GetKey(VK); });
 
 	// ── AnimGraph build API (Phase 1.6b) — sub-state-machine / 임의 트리 표현 ──
 	// 노드는 UAnimInstance::MakeNode 가 OwnedNodes 에 push 후 raw 반환 — lifetime 은 C++ 가 관리.

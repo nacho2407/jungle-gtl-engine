@@ -513,6 +513,9 @@ AnimLib = {}
 ---@return number
 function Anim.get_owner_speed() end
 
+---@return integer
+function Anim.get_owner_uuid() end
+
 ---@return string
 function Anim.get_owner_movement_mode() end
 
@@ -553,6 +556,10 @@ function Anim.is_right_mouse_pressed() end
 ---@param key integer
 ---@return boolean
 function Anim.is_key_pressed(key) end
+
+---@param key integer
+---@return boolean
+function Anim.is_key_down(key) end
 
 ---@param name? string
 ---@return AnimNode

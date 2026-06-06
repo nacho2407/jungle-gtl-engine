@@ -3846,16 +3846,20 @@
             "Properties" : {
               "AngularDamping" : 0.010000,
               "AnimInstance" : {
-                "ClassName" : "None"
+                "ClassName" : "ULuaAnimInstance",
+                "Properties" : {
+                  "RootMotionMode" : 0,
+                  "ScriptFile" : "Anim/fps_arm_character.lua"
+                }
               },
-              "AnimInstanceClass" : "None",
+              "AnimInstanceClass" : "ULuaAnimInstance",
               "AnimationData" : {
                 "AnimToPlayPath" : "None",
                 "PlayRate" : 1.000000,
                 "bLooping" : true,
                 "bPlaying" : true
               },
-              "AnimationMode" : 0,
+              "AnimationMode" : 2,
               "CachedEditRotator" : [0.000000, 0.000000, 0.000000],
               "CollisionEnabled" : 0,
               "CollisionPreset" : 0,

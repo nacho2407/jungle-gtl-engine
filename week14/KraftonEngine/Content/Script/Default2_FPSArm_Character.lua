@@ -2,9 +2,6 @@ local arms   = nil
 local camera = nil
 local weaponHudWidget = nil
 
-local SHOOT_ANIM_PATH  = "Content/Data/FPSArm/Test1/Test1_Armature_Armature_Arms_FPS_Anim_OneShot.uasset"
-local RELOAD_ANIM_PATH = "Content/Data/FPSArm/Test1/Test1_Armature_Armature_Arms_FPS_Anim_Reload_Fast.uasset"
-
 -- 본 기반 머즐은 Arm_R 이 어깨 관절이라 카메라랑 거의 같은 위치 → 의미 없음.
 -- 대부분 FPS 는 카메라에서 forward offset 으로 머즐을 근사함.
 local MUZZLE_FWD_OFFSET = 0.4   -- 카메라 앞 0.4m 지점을 머즐로 간주
@@ -21,6 +18,28 @@ local reloadTimer  = 0.0
 local currentAmmo  = MAGAZINE_SIZE
 local isReloading  = false
 local hitCounts    = {}
+
+local function get_anim_requests()
+    if obj == nil then return nil end
+
+    _G.FPSArmAnimRequests = _G.FPSArmAnimRequests or {}
+
+    local ownerId = obj.UUID
+    local requests = _G.FPSArmAnimRequests[ownerId]
+    if requests == nil then
+        requests = {}
+        _G.FPSArmAnimRequests[ownerId] = requests
+    end
+
+    return requests
+end
+
+local function request_arm_animation(name)
+    local requests = get_anim_requests()
+    if requests == nil then return end
+
+    requests[name] = true
+end
 
 local function update_weapon_hud()
     if weaponHudWidget == nil then return end
@@ -41,7 +60,7 @@ local function start_reload()
 
     isReloading = true
     reloadTimer = RELOAD_DURATION
-    arms:PlayAnimationByPath(RELOAD_ANIM_PATH, false)
+    request_arm_animation("reload")
 end
 
 local function lerp_red(t)
@@ -72,7 +91,7 @@ local function try_shoot()
     currentAmmo = currentAmmo - 1
     update_weapon_hud()
 
-    arms:PlayAnimationByPath(SHOOT_ANIM_PATH, false)
+    request_arm_animation("shoot")
 
     local camPos = camera:GetWorldLocation()
     local camFwd = camera:GetForwardVector()
@@ -126,6 +145,11 @@ function BeginPlay()
     reloadTimer = 0.0
     isReloading = false
     fireCooldown = 0.0
+    local requests = get_anim_requests()
+    if requests ~= nil then
+        requests.shoot = false
+        requests.reload = false
+    end
 
     weaponHudWidget = UI.CreateWidget("Content/UI/HUD/WeaponHUD.rml")
     if weaponHudWidget ~= nil then
@@ -135,6 +159,10 @@ function BeginPlay()
 end
 
 function EndPlay()
+    if obj ~= nil and _G.FPSArmAnimRequests ~= nil then
+        _G.FPSArmAnimRequests[obj.UUID] = nil
+    end
+
     if weaponHudWidget ~= nil and weaponHudWidget:IsInViewport() then
         weaponHudWidget:RemoveFromParent()
     end

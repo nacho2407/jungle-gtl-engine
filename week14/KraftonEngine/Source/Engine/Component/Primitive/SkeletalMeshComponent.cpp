@@ -794,6 +794,15 @@ void USkeletalMeshComponent::PostEditProperty(const char* PropertyName)
         // 클래스 슬롯이 바뀌면 Custom 모드에서 인스턴스 재생성 필요. (ours — Phase 6)
         if (AnimationMode == EAnimationMode::AnimationCustom) InitializeAnimation();
     }
+    else if (std::strcmp(PropertyName, "AnimInstance") == 0)
+    {
+        if (AnimationMode == EAnimationMode::AnimationCustom && AnimInstance)
+        {
+            AnimInstance->SetOuter(this);
+            AnimInstance->SetOwningComponent(this);
+            AnimInstance->NativeInitializeAnimation();
+        }
+    }
     else if (std::strcmp(PropertyName, "AnimationData") == 0)
     {
         LoadAnimationFromPath();

@@ -104,9 +104,9 @@ public:
 
 	const FVector& GetVelocity() const { return Velocity; }
 	float          GetSpeed()    const { return Velocity.Length(); }
-	float          GetMaxWalkSpeed() const { return bWantsSprint ? MaxWalkSpeed * SprintSpeedMultiplier : MaxWalkSpeed; }
+	float          GetMaxWalkSpeed() const { return (bWantsSprint && IsWalking()) ? MaxWalkSpeed * SprintSpeedMultiplier : MaxWalkSpeed; }
 	void           SetSprinting(bool bEnable) { bWantsSprint = bEnable; }
-	bool           IsSprinting() const { return bWantsSprint; }
+	bool           IsSprinting() const { return bWantsSprint && IsWalking(); }
 
 	EMovementMode  GetMovementMode() const { return MovementMode; }
 	bool           IsWalking() const { return MovementMode == EMovementMode::Walking; }
