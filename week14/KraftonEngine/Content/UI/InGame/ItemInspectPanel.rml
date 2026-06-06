@@ -1,0 +1,27 @@
+<rml>
+<head>
+    <title>Item Inspect Panel</title>
+    <link type="text/rcss" href="ItemInspectPanel.rcss"/>
+</head>
+<body>
+    <div id="item-inspect-screen">
+        <div id="item-interact-hint">
+            <span id="item-interact-key">E</span>
+            <span id="item-interact-text">조사하기</span>
+        </div>
+        <div id="item-inspect-card">
+            <div id="item-inspect-accent"></div>
+            <div id="item-inspect-image-frame">
+                <img id="item-inspect-image" src="../Item/IonCoreSample.png"/>
+            </div>
+            <div id="item-inspect-copy">
+                <div id="item-inspect-title">ITEM</div>
+                <div id="item-inspect-subtitle">UNKNOWN</div>
+                <div id="item-inspect-separator"></div>
+                <div id="item-inspect-description"></div>
+                <div id="item-inspect-footer">E CLOSE</div>
+            </div>
+        </div>
+    </div>
+</body>
+</rml>

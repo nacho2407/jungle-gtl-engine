@@ -216,11 +216,11 @@ void UWorld::WarmupPickingData() const
 	BuildWorldPrimitivePickingBVHNow();
 }
 
-bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const
+bool UWorld::RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor, const AActor* IgnoreActor) const
 {
 	//혹시라도 BVH 트리가 업데이트 되지 않았다면 업데이트
 	WorldPrimitivePickingBVH.EnsureBuilt(GetActors());
-	return WorldPrimitivePickingBVH.Raycast(Ray, OutHitResult, OutActor);
+	return WorldPrimitivePickingBVH.Raycast(Ray, OutHitResult, OutActor, IgnoreActor);
 }
 
 bool UWorld::PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,

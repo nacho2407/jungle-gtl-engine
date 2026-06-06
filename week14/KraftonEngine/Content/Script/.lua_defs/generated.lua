@@ -180,6 +180,12 @@ function SceneComponent:GetUpVector() end
 ---@return Vector
 function SceneComponent:GetRightVector() end
 
+---@class PrimitiveComponent: SceneComponent
+PrimitiveComponent = {}
+
+---@param enabled boolean
+function PrimitiveComponent:SetOutline(enabled) end
+
 ---@class StaticMeshComponent: PrimitiveComponent
 ---@field MeshPath string
 StaticMeshComponent = {}
@@ -289,8 +295,14 @@ function Actor:GetPrimitiveComponent() end
 ---@return SkeletalMeshComponent?
 function Actor:GetSkeletalMesh() end
 
+---@return StaticMeshComponent?
+function Actor:GetStaticMesh() end
+
 ---@return ParticleSystemComponent?
 function Actor:GetParticleSystem() end
+
+---@param enabled boolean
+function Actor:SetOutline(enabled) end
 
 ---@param name string
 ---@return PrimitiveComponent?
@@ -421,6 +433,13 @@ function World.RaycastSkeletalMesh(start, dir, maxDist, ignoreActor) end
 ---@param ignoreActor? Actor
 ---@return HitResult?
 function World.RaycastWorldStatic(start, dir, maxDist, ignoreActor) end
+
+---@param start Vector
+---@param dir Vector
+---@param maxDist number
+---@param ignoreActor? Actor
+---@return HitResult?
+function World.RaycastPrimitive(start, dir, maxDist, ignoreActor) end
 
 ---@class DebugLib
 DebugLib = {}
