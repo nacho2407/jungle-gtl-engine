@@ -1,24 +1,426 @@
 {
+  "player.walk.step": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Movement/Walk/Walk1.wav",
+      "Movement/Walk/Walk2.wav",
+      "Movement/Walk/Walk3.wav",
+      "Movement/Walk/Walk4.wav",
+      "Movement/Walk/Walk5.wav"
+    ],
+    "volumeMin": 0.40,
+    "volumeMax": 0.52,
+    "pitchMin": 0.96,
+    "pitchMax": 1.04,
+    "cooldown": 0.05,
+    "maxInstances": 3
+  },
+  "player.run.step": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Movement/Run/Run1.wav",
+      "Movement/Run/Run2.wav",
+      "Movement/Run/Run3.wav",
+      "Movement/Run/Run4.wav",
+      "Movement/Run/Run5.wav",
+      "Movement/Run/Run6.wav",
+      "Movement/Run/Run7.wav",
+      "Movement/Run/Run8.wav"
+    ],
+    "volumeMin": 0.45,
+    "volumeMax": 0.62,
+    "pitchMin": 0.97,
+    "pitchMax": 1.03,
+    "cooldown": 0.05,
+    "maxInstances": 4
+  },
   "player.footstep.default": {
     "bus": "SFX",
     "spatial": true,
     "clips": [
-      "Footstep_01.wav",
-      "Footstep_02.wav",
-      "Footstep_03.wav",
-      "Footstep_04.wav",
-      "Footstep_05.wav",
-      "Footstep_06.wav"
+      "Movement/Walk/Walk1.wav",
+      "Movement/Walk/Walk2.wav",
+      "Movement/Walk/Walk3.wav",
+      "Movement/Walk/Walk4.wav",
+      "Movement/Walk/Walk5.wav"
     ],
-    "volumeMin": 0.75,
-    "volumeMax": 0.95,
+    "volumeMin": 0.38,
+    "volumeMax": 0.52,
     "pitchMin": 0.96,
     "pitchMax": 1.04,
     "minDistance": 120.0,
     "maxDistance": 1800.0,
     "attenuation": "inverse",
-    "cooldown": 0.08,
+    "cooldown": 0.05,
     "maxInstances": 4
+  },
+  "player.jump": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Movement/Jump/Jump1.wav",
+      "Movement/Jump/Jump2.wav",
+      "Movement/Jump/Jump3.wav",
+      "Movement/Jump/Jump4.wav",
+      "Movement/Jump/Jump5.wav"
+    ],
+    "volumeMin": 0.62,
+    "volumeMax": 0.78,
+    "pitchMin": 0.98,
+    "pitchMax": 1.03,
+    "cooldown": 0.04,
+    "maxInstances": 2
+  },
+  "player.jump.jet": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Movement/Jump/Jumpjet.wav"],
+    "volumeMin": 0.26,
+    "volumeMax": 0.44,
+    "pitchMin": 0.98,
+    "pitchMax": 1.02,
+    "cooldown": 0.04,
+    "maxInstances": 1
+  },
+  "player.double_jump": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Movement/Jump/DoubleJump.wav"],
+    "volumeMin": 0.68,
+    "volumeMax": 0.82,
+    "pitchMin": 0.98,
+    "pitchMax": 1.02,
+    "cooldown": 0.05,
+    "maxInstances": 2
+  },
+  "player.land": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Movement/Jump/Land1.wav",
+      "Movement/Jump/Land2.wav",
+      "Movement/Jump/Land3.wav"
+    ],
+    "volumeMin": 0.52,
+    "volumeMax": 0.68,
+    "pitchMin": 0.97,
+    "pitchMax": 1.03,
+    "cooldown": 0.06,
+    "maxInstances": 3
+  },
+  "player.land.heavy": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Movement/Jump/LandHeavy1.wav",
+      "Movement/Jump/LandHeavy2.wav",
+      "Movement/Jump/LandHeavy3.wav"
+    ],
+    "volumeMin": 0.70,
+    "volumeMax": 0.88,
+    "pitchMin": 0.96,
+    "pitchMax": 1.02,
+    "cooldown": 0.08,
+    "maxInstances": 2
+  },
+  "player.slide.start": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Movement/Slide/SlideStart1.wav",
+      "Movement/Slide/SlideStart2.wav",
+      "Movement/Slide/SlideStart3.wav"
+    ],
+    "volumeMin": 0.52,
+    "volumeMax": 0.68,
+    "pitchMin": 0.98,
+    "pitchMax": 1.03,
+    "cooldown": 0.08,
+    "maxInstances": 2
+  },
+  "player.slide.rub": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Movement/Slide/SlideLoop1.wav",
+      "Movement/Slide/SlideLoop2.wav",
+      "Movement/Slide/SlideLoop3.wav"
+    ],
+    "volumeMin": 0.24,
+    "volumeMax": 0.34,
+    "pitchMin": 0.97,
+    "pitchMax": 1.03,
+    "cooldown": 0.10,
+    "maxInstances": 2
+  },
+  "player.slide.end": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Movement/Slide/SlideEnd1.wav",
+      "Movement/Slide/SlideEnd2.wav",
+      "Movement/Slide/SlideEnd3.wav"
+    ],
+    "volumeMin": 0.42,
+    "volumeMax": 0.58,
+    "pitchMin": 0.98,
+    "pitchMax": 1.03,
+    "cooldown": 0.08,
+    "maxInstances": 2
+  },
+  "player.wallrun.step": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Movement/WallRun/WallRunStep1.wav",
+      "Movement/WallRun/WallRunStep2.wav",
+      "Movement/WallRun/WallRunStep3.wav",
+      "Movement/WallRun/WallRunStep4.wav",
+      "Movement/WallRun/WallRunStep5.wav"
+    ],
+    "volumeMin": 0.28,
+    "volumeMax": 0.40,
+    "pitchMin": 0.97,
+    "pitchMax": 1.04,
+    "cooldown": 0.08,
+    "maxInstances": 3
+  },
+  "weapon.reload.mag_pull.1": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/ReloadMagPull1.wav"],
+    "volumeMin": 0.72,
+    "volumeMax": 0.82,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.mag_pull.2": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/ReloadMagPull2.wav"],
+    "volumeMin": 0.72,
+    "volumeMax": 0.82,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.mag_grab.1": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/ReloadMagGrab1.wav"],
+    "volumeMin": 0.70,
+    "volumeMax": 0.80,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.mag_grab.2": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/ReloadMagGrab2.wav"],
+    "volumeMin": 0.70,
+    "volumeMax": 0.80,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.mag_insert.1": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/ReloadMagInsert1.wav"],
+    "volumeMin": 0.76,
+    "volumeMax": 0.86,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.mag_insert.2": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/ReloadMagInsert2.wav"],
+    "volumeMin": 0.76,
+    "volumeMax": 0.86,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.hand_rest.1": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/ReloadHandRest1.wav"],
+    "volumeMin": 0.62,
+    "volumeMax": 0.72,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.hand_rest.2": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/ReloadHandRest2.wav"],
+    "volumeMin": 0.62,
+    "volumeMax": 0.72,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.empty_mag_pull.1": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadMagPull1.wav"],
+    "volumeMin": 0.72,
+    "volumeMax": 0.82,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.empty_mag_pull.2": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadMagPull2.wav"],
+    "volumeMin": 0.72,
+    "volumeMax": 0.82,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.empty_mag_grab.1": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadMagGrab1.wav"],
+    "volumeMin": 0.70,
+    "volumeMax": 0.80,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.empty_mag_grab.2": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadMagGrab2.wav"],
+    "volumeMin": 0.70,
+    "volumeMax": 0.80,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.empty_mag_insert.1": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadMagInsert1.wav"],
+    "volumeMin": 0.76,
+    "volumeMax": 0.86,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.empty_mag_insert.2": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadMagInsert2.wav"],
+    "volumeMin": 0.76,
+    "volumeMax": 0.86,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.bolt_back.1": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadBoltBack1.wav"],
+    "volumeMin": 0.76,
+    "volumeMax": 0.86,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.bolt_back.2": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadBoltBack2.wav"],
+    "volumeMin": 0.76,
+    "volumeMax": 0.86,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.bolt_forward.1": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadBoltForward1.wav"],
+    "volumeMin": 0.78,
+    "volumeMax": 0.88,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.bolt_forward.2": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadBoltForward2.wav"],
+    "volumeMin": 0.78,
+    "volumeMax": 0.88,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.empty_hand_rest.1": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadHandRest1.wav"],
+    "volumeMin": 0.62,
+    "volumeMax": 0.72,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.reload.empty_hand_rest.2": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": ["Weapon/Reload/EmptyReloadHandRest2.wav"],
+    "volumeMin": 0.62,
+    "volumeMax": 0.72,
+    "pitchMin": 1.0,
+    "pitchMax": 1.0,
+    "cooldown": 0.0,
+    "maxInstances": 2
+  },
+  "weapon.fire": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Weapon/Fire/FireLoop1.wav",
+      "Weapon/Fire/FireLoop2.wav",
+      "Weapon/Fire/FireLoop3.wav"
+    ],
+    "volumeMin": 0.78,
+    "volumeMax": 0.92,
+    "pitchMin": 0.98,
+    "pitchMax": 1.02,
+    "cooldown": 0.02,
+    "maxInstances": 6
   },
   "ui.hover": {
     "bus": "UI",

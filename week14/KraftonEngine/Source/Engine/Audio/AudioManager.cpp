@@ -612,6 +612,48 @@ bool FAudioManager::PlayEventAt(const FString& EventName, const FVector& Positio
 	return true;
 }
 
+void FAudioManager::StopEvent(const FString& EventName)
+{
+	if (!Impl->bInitialized || EventName.empty())
+	{
+		return;
+	}
+
+	for (auto It = Impl->TransientSounds.begin(); It != Impl->TransientSounds.end();)
+	{
+		if (It->EventName != EventName)
+		{
+			++It;
+			continue;
+		}
+
+		if (It->Sound)
+		{
+			ma_sound_stop(It->Sound);
+			ma_sound_uninit(It->Sound);
+			delete It->Sound;
+		}
+		It = Impl->TransientSounds.erase(It);
+	}
+}
+
+void FAudioManager::FadeOutEvent(const FString& EventName, float FadeMilliseconds)
+{
+	if (!Impl->bInitialized || EventName.empty())
+	{
+		return;
+	}
+
+	const float ClampedFade = std::max(0.0f, FadeMilliseconds);
+	for (FTransientSound& Entry : Impl->TransientSounds)
+	{
+		if (Entry.EventName == EventName && Entry.Sound && ma_sound_is_playing(Entry.Sound))
+		{
+			ma_sound_stop_with_fade_in_milliseconds(Entry.Sound, static_cast<ma_uint64>(ClampedFade));
+		}
+	}
+}
+
 void FAudioManager::SetListenerTransform(const FVector& Position, const FVector& Forward, const FVector& Up)
 {
 	Impl->ListenerPosition = Position;
@@ -631,6 +673,7 @@ void FAudioManager::SetListenerTransform(const FVector& Position, const FVector&
 void FAudioManager::LoadDefaultAudios()
 {
 	LoadAudio("CityBgm", "city_bgm.mp3", true);
+	LoadAudio("WindBgm", "Environment/Winds.mp3", true);
 	LoadAudio("Phase_EscapePolice", "phase_escapepolice.wav", true);
 	LoadAudio("Phase_Meteor", "phase_meteor.mp3", true);
 	LoadAudio("Click", "pop.mp3");
@@ -645,7 +688,8 @@ void FAudioManager::LoadDefaultAudios()
 	LoadAudio("MeteorBoom", "meteor_boom.mp3");
 	LoadAudio("MeteorFall", "meteor_fall.mp3");
 	LoadAudio("Whoosh", "whoosh.mp3");
-	LoadAudio("WallRunRub", "WallRunRub.mp3", true);
+	LoadAudio("SlideLoop", "Movement/Slide/SlideLoop1.wav", true);
+	LoadAudio("WallRunRub", "Movement/WallRun/WallRunRub1.wav", true);
 }
 
 void FAudioManager::LoadSoundEvents()
@@ -732,7 +776,7 @@ void FAudioManager::CleanupTransientSounds()
 	for (auto It = Impl->TransientSounds.begin(); It != Impl->TransientSounds.end();)
 	{
 		ma_sound* Sound = It->Sound;
-		if (!Sound || ma_sound_at_end(Sound))
+		if (!Sound || ma_sound_at_end(Sound) || !ma_sound_is_playing(Sound))
 		{
 			if (Sound)
 			{

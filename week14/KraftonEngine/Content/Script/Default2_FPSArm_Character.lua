@@ -6,6 +6,7 @@ local InGamePause = require("InGamePause")
 local WeaponHud = require("HUD/WeaponHud")
 local InGameDebug = require("DebugUI/InGameDebug")
 local ItemInspectSystem = require("Items/ItemInspectSystem")
+local GameAudio = require("Game.GameAudio")
 
 -- 본 기반 머즐은 Arm_R 이 어깨 관절이라 카메라랑 거의 같은 위치 → 의미 없음.
 -- 대부분 FPS 는 카메라에서 forward offset 으로 머즐을 근사함.
@@ -28,6 +29,9 @@ local fireCooldown = 0.0
 local reloadTimer  = 0.0
 local currentAmmo  = MAGAZINE_SIZE
 local isReloading  = false
+local reloadAudioTrack = 1
+local reloadAudioSteps = nil
+local reloadAudioNextIndex = 1
 local hitCounts    = {}
 local weaponSpread = 0.0
 local currentHealth = MAX_HEALTH
@@ -114,6 +118,47 @@ local function update_weapon_hud()
     WeaponHud.SetAmmo(currentAmmo, MAGAZINE_SIZE)
 end
 
+local RELOAD_AUDIO_NORMAL = {
+    { time = 0.000, event = "weapon.reload.mag_pull." },
+    { time = 0.300, event = "weapon.reload.mag_grab." },
+    { time = 0.583, event = "weapon.reload.mag_insert." },
+    { time = 0.733, event = "weapon.reload.hand_rest." },
+}
+
+local RELOAD_AUDIO_EMPTY = {
+    { time = 0.150, event = "weapon.reload.empty_mag_pull." },
+    { time = 0.350, event = "weapon.reload.empty_mag_grab." },
+    { time = 0.633, event = "weapon.reload.empty_mag_insert." },
+    { time = 0.850, event = "weapon.reload.bolt_back." },
+    { time = 0.917, event = "weapon.reload.bolt_forward." },
+    { time = 1.067, event = "weapon.reload.empty_hand_rest." },
+}
+
+local function reset_reload_audio()
+    reloadAudioTrack = 1
+    reloadAudioSteps = nil
+    reloadAudioNextIndex = 1
+end
+
+local function play_reload_audio_until(elapsed)
+    if reloadAudioSteps == nil then return end
+
+    while reloadAudioNextIndex <= #reloadAudioSteps do
+        local step = reloadAudioSteps[reloadAudioNextIndex]
+        if elapsed < step.time then return end
+
+        GameAudio.PlayEvent(step.event .. tostring(reloadAudioTrack))
+        reloadAudioNextIndex = reloadAudioNextIndex + 1
+    end
+end
+
+local function start_reload_audio(emptyReload)
+    reloadAudioTrack = math.random(1, 2)
+    reloadAudioSteps = emptyReload and RELOAD_AUDIO_EMPTY or RELOAD_AUDIO_NORMAL
+    reloadAudioNextIndex = 1
+    play_reload_audio_until(0.0)
+end
+
 local function is_target_actor(actor)
     return actor ~= nil and actor:GetSkeletalMesh() ~= nil
 end
@@ -122,14 +167,18 @@ local function finish_reload()
     currentAmmo = MAGAZINE_SIZE
     reloadTimer = 0.0
     isReloading = false
+    reset_reload_audio()
     update_weapon_hud()
 end
 
 local function start_reload()
     if arms == nil or isReloading or currentAmmo >= MAGAZINE_SIZE then return end
 
+    GameAudio.StopWeaponFireLoop()
+    local emptyReload = currentAmmo <= 0
     isReloading = true
     reloadTimer = RELOAD_DURATION
+    start_reload_audio(emptyReload)
     request_arm_animation("reload")
 end
 
@@ -174,8 +223,12 @@ end
 
 local function try_shoot()
     if camera == nil or arms == nil then return end
-    if isReloading then return end
+    if isReloading then
+        GameAudio.StopWeaponFireLoop()
+        return
+    end
     if currentAmmo <= 0 then
+        GameAudio.StopWeaponFireLoop()
         start_reload()
         return
     end
@@ -184,6 +237,7 @@ local function try_shoot()
     update_weapon_hud()
 
     request_arm_animation("shoot")
+    GameAudio.NotifyShotFired(Input.GetKey(Key.MouseRight))
 
     local camPos = camera:GetWorldLocation()
     local camFwd = camera.Forward
@@ -245,10 +299,13 @@ function BeginPlay()
     baseSprintSpeedMultiplier = nil
     baseWallRunMaxSpeed = nil
     cache_movement_defaults()
+    GameAudio.Initialize()
+    GameAudio.PlayEnvironmentWind(0.35)
     currentAmmo = MAGAZINE_SIZE
     currentHealth = MAX_HEALTH
     reloadTimer = 0.0
     isReloading = false
+    reset_reload_audio()
     fireCooldown = 0.0
     local requests = get_anim_requests()
     if requests ~= nil then
@@ -309,6 +366,7 @@ function EndPlay()
         movement:SetSprintSpeedMultiplier(baseSprintSpeedMultiplier)
         movement:SetWallRunMaxSpeed(baseWallRunMaxSpeed)
     end
+    GameAudio.Shutdown()
     movement = nil
 end
 
@@ -331,9 +389,13 @@ function Tick(dt)
     if Input.GetKey(Key.MouseRight) then
         weaponSpread = 0.0
     end
+    GameAudio.UpdateWeaponFireState(
+        Input.GetKey(Key.MouseRight),
+        Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0)
 
     if isReloading then
         reloadTimer = reloadTimer - dt
+        play_reload_audio_until(RELOAD_DURATION - reloadTimer)
         if reloadTimer <= 0 then
             finish_reload()
         end
@@ -345,13 +407,23 @@ function Tick(dt)
     InGameDebug.Tick()
 
     if InGamePause.IsOpen() then
+        GameAudio.StopWeaponFireLoop()
+        GameAudio.UpdateSlideState(false)
+        GameAudio.UpdateWallRunState(false)
+        GameAudio.StopFallingAudio()
         return
     end
 
     ItemInspectSystem.Tick(camera, obj)
     if ItemInspectSystem.IsOpen() then
+        GameAudio.StopWeaponFireLoop()
+        GameAudio.UpdateSlideState(false)
+        GameAudio.UpdateWallRunState(false)
+        GameAudio.StopFallingAudio()
         return
     end
+
+    GameAudio.UpdateMovement(movement, dt)
 
     if Input.GetKeyDown(Key.R) then
         start_reload()
@@ -360,6 +432,9 @@ function Tick(dt)
     if Input.GetKey(Key.MouseLeft) and fireCooldown <= 0 then
         try_shoot()
         fireCooldown = FIRE_INTERVAL
+        GameAudio.UpdateWeaponFireState(
+            Input.GetKey(Key.MouseRight),
+            Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0)
     end
 
 end

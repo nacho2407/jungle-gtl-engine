@@ -35,7 +35,7 @@ return {
 폐기된 VANTUS 장비 부품과 이온산 합금을 재조합해 설계한 총기다. 정확도보다 내구성과 부품 교체 용이성에 초점을 맞춘 설계 철학이 반영되어 있다.
 총기 측면에 새긴 거친 각인이 눈에 띈다 — 'ION WILL REMAIN'.]]
         },
-        Ion_core_sample = {
+        ion_core_sample = {
             name = "이온 코어 광석 샘플",
             subtitle = "Ion Core Ore Sample",
             image = "../Item/IonCoreSample.png",

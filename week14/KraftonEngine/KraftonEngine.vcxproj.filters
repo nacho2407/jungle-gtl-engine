@@ -34,6 +34,9 @@
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{879fdc11-4e44-c448-2bbf-5fd281dc244f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Build">
+      <UniqueIdentifier>{99f90e79-3e47-54fe-5a2f-a1e1dc6a70c6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\PIE">
       <UniqueIdentifier>{1485fbd8-4084-14c8-cd14-33798c9651d4}</UniqueIdentifier>
     </Filter>
@@ -763,6 +766,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp">
       <Filter>Source\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Build\EditorGameBuilder.cpp">
+      <Filter>Source\Editor\Build</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp">
       <Filter>Source\Editor\Selection</Filter>
@@ -1936,6 +1942,9 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h">
       <Filter>Source\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Build\EditorGameBuilder.h">
+      <Filter>Source\Editor\Build</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\PIE\PIETypes.h">
       <Filter>Source\Editor\PIE</Filter>

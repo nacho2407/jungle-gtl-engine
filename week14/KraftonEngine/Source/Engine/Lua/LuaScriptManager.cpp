@@ -1179,6 +1179,14 @@ Engine.IsPaused = Game.IsPaused
 	{
 		return FAudioManager::Get().PlayEventAt(EventName, FVector(X, Y, Z));
 	});
+	AudioManager.set_function("StopEvent", [](const FString& EventName)
+	{
+		FAudioManager::Get().StopEvent(EventName);
+	});
+	AudioManager.set_function("FadeOutEvent", [](const FString& EventName, sol::optional<float> FadeMilliseconds)
+	{
+		FAudioManager::Get().FadeOutEvent(EventName, FadeMilliseconds.value_or(120.0f));
+	});
 	AudioManager.set_function("SetBusVolume", [](const FString& BusName, float Volume)
 	{
 		FAudioManager::Get().SetBusVolume(BusName, Volume);
@@ -1312,6 +1320,38 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param input Vector\nfunction FloatingPawnMovementComponent:SetLookInput(input) end");
 
 	Lua.new_usertype<UCharacterMovementComponent>("CharacterMovementComponent",
+		"GetVelocity", [](UCharacterMovementComponent& Component)
+		{
+			return Component.GetVelocity();
+		},
+		"GetSpeed", [](UCharacterMovementComponent& Component)
+		{
+			return Component.GetSpeed();
+		},
+		"IsWalking", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsWalking();
+		},
+		"IsFalling", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsFalling();
+		},
+		"IsWallRunning", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsWallRunning();
+		},
+		"IsSprinting", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsSprinting();
+		},
+		"IsCrouching", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsCrouching();
+		},
+		"GetMovementModeName", [](UCharacterMovementComponent& Component)
+		{
+			return FString(Component.GetMovementModeName());
+		},
 		"GetMaxWalkSpeed", [](UCharacterMovementComponent& Component)
 		{
 			return Component.MaxWalkSpeed;
@@ -1338,6 +1378,14 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		});
 
 	FLuaDocRegistry::Get().Type("CharacterMovementComponent")
+		.Method("---@return Vector\nfunction CharacterMovementComponent:GetVelocity() end")
+		.Method("---@return number\nfunction CharacterMovementComponent:GetSpeed() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsWalking() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsFalling() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsWallRunning() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsSprinting() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsCrouching() end")
+		.Method("---@return string\nfunction CharacterMovementComponent:GetMovementModeName() end")
 		.Method("---@return number\nfunction CharacterMovementComponent:GetMaxWalkSpeed() end")
 		.Method("---@param value number\nfunction CharacterMovementComponent:SetMaxWalkSpeed(value) end")
 		.Method("---@return number\nfunction CharacterMovementComponent:GetSprintSpeedMultiplier() end")

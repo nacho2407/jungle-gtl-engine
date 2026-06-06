@@ -30,6 +30,8 @@ public:
 	float GetBusVolume(const FString& BusName) const;
 	bool PlayEvent(const FString& EventName);
 	bool PlayEventAt(const FString& EventName, const FVector& Position);
+	void StopEvent(const FString& EventName);
+	void FadeOutEvent(const FString& EventName, float FadeMilliseconds = 120.0f);
 	void SetListenerTransform(const FVector& Position, const FVector& Forward, const FVector& Up);
 
 private:

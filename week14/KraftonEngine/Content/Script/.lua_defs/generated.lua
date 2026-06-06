@@ -105,6 +105,30 @@ function FloatingPawnMovementComponent:SetLookInput(input) end
 ---@class CharacterMovementComponent
 CharacterMovementComponent = {}
 
+---@return Vector
+function CharacterMovementComponent:GetVelocity() end
+
+---@return number
+function CharacterMovementComponent:GetSpeed() end
+
+---@return boolean
+function CharacterMovementComponent:IsWalking() end
+
+---@return boolean
+function CharacterMovementComponent:IsFalling() end
+
+---@return boolean
+function CharacterMovementComponent:IsWallRunning() end
+
+---@return boolean
+function CharacterMovementComponent:IsSprinting() end
+
+---@return boolean
+function CharacterMovementComponent:IsCrouching() end
+
+---@return string
+function CharacterMovementComponent:GetMovementModeName() end
+
 ---@return number
 function CharacterMovementComponent:GetMaxWalkSpeed() end
 

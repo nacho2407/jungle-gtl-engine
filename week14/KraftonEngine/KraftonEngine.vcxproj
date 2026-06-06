@@ -437,6 +437,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
+    <ClCompile Include="Source\Editor\Build\EditorGameBuilder.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\Slate\SSplitter.cpp" />
@@ -830,6 +831,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
+    <ClInclude Include="Source\Editor\Build\EditorGameBuilder.h" />
     <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />

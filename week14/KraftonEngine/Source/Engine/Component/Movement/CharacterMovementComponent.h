@@ -156,6 +156,7 @@ protected:
 		Disabled,
 		NoUpdatedComponent,
 		NoController,
+		Fatigued,
 		NoWall,
 		LowSpeed,
 		BadNormal,
@@ -180,6 +181,9 @@ protected:
 	float       GetWallRunInputAlong(const FVector& Input, const FVector& RunDirection) const;
 	void        UpdateSprintFootstepAudio(float DeltaTime);
 	void        ResetSprintFootstepAudio();
+	void        UpdateSlideAudio(float DeltaTime);
+	void        StopSlideAudio();
+	void        PlayLandingAudio(float DownSpeed);
 
 	FVector       AccumulatedInput = FVector(0.0f, 0.0f, 0.0f);
 	FVector       Velocity         = FVector(0.0f, 0.0f, 0.0f);
@@ -196,6 +200,7 @@ protected:
 	// Timer 가 양수인 동안 normal 이 LastWallJumpNormal 과 가까운 벽 후보는 TryStartWallRun 에서 거절.
 	FVector       LastWallJumpNormal = FVector::ZeroVector;
 	float         WallJumpReattachTimer = 0.0f;
+	float         WallRunFatigueTimer = 0.0f;
 
 	EWallRunStatus LastWallRunStatus = EWallRunStatus::NotFalling;
 	FHitResult     LastWallRunStatusHit;
@@ -224,6 +229,10 @@ protected:
 	bool          bAppliedRootMotionYawThisFrame = false;
 
 	float         SprintFootstepDistance = 0.0f;
+	float         SlideStepDistance = 0.0f;
+	float         WallRunStepDistance = 0.0f;
+	float         WallRunStepTimer = 0.0f;
+	bool          bSlideAudioActive = false;
 
 	// 평면 속도 기준 yaw 를 RotationYawRate * dt 로 lerp. TickComponent 끝에서 적용.
 	void  PhysOrientToMovement(float DeltaTime);
@@ -245,6 +254,7 @@ public:
 	float MaxWalkSpeed = 8.0f;     // m/s — 기존 6.0f 기준 1.5배
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Sprint Speed Multiplier", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float SprintSpeedMultiplier = 1.5f;
+	bool bEnableBuiltInMovementAudio = false;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Acceleration", Min = 0.0f, Max = 200.0f, Speed = 0.5f)
 	float MaxAcceleration = 20.0f;    // m/s^2
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Braking Friction", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
@@ -304,6 +314,8 @@ public:
 	float WallStickAcceleration = 4.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Wall Run Time", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
 	float MaxWallRunTime = 1.5f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Fatigue Duration", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
+	float WallRunFatigueDuration = 2.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Legacy Screen Status Text")
 	bool bShowWallRunStatusText = false;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Log Wall Run Diagnostics")
