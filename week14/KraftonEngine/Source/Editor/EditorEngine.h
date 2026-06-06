@@ -198,6 +198,20 @@ public:
 	bool TogglePIEControlMode();
 
 	/**
+	 * @brief PIE 게임 뷰포트의 에디터 내부 전체화면 표시를 토글합니다
+	 *
+	 * @return 토글 처리 여부
+	 */
+	bool TogglePIEViewportFullscreen();
+
+	/**
+	 * @brief PIE 게임 뷰포트가 에디터 내부 전체화면으로 표시 중인지 확인합니다
+	 *
+	 * @return 전체화면 표시 여부
+	 */
+	bool IsPIEViewportFullscreen() const { return IsPlayingInEditor() && bPIEViewportFullscreen; }
+
+	/**
 	 * @brief 현재 고정된 PIE 게임 뷰포트 client를 반환합니다.
 	 *
 	 * @return 현재 PIE 게임 뷰포트 client. PIE가 아니거나 뷰포트가 유효하지 않으면 nullptr
@@ -262,6 +276,8 @@ private:
 	bool bPendingPIESceneTransition = false;
 	FString PendingPIEScenePath;
 	EPIEControlMode PIEControlMode = EPIEControlMode::Possessed;
+	// PIE 게임 뷰포트의 에디터 내부 전체화면 표시 여부
+	bool bPIEViewportFullscreen = false;
 	/**
 	 * @brief F5 키 hold 중 PIE 토글 재실행 차단 latch
 	 */

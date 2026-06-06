@@ -298,6 +298,12 @@ void FEditorViewportClient::Tick(float DeltaTime)
 			{
 				return;
 			}
+			if (InputSnapshot.WasPressed(VK_F1))
+			{
+				// PIE 전용 전체화면 단축키 처리
+				EditorEngine->TogglePIEViewportFullscreen();
+				return;
+			}
 			if (InputSnapshot.WasPressed(VK_F8))
 			{
 				EditorEngine->TogglePIEInputCapture();

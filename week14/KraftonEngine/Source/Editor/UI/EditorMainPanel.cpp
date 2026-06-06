@@ -262,6 +262,13 @@ void FEditorMainPanel::Render(float DeltaTime)
 		SCOPE_STAT_CAT("EditorEngine->RenderViewportUI", "5_UI");
 		EditorEngine->RenderViewportUI(DeltaTime);
 
+		if (EditorEngine->IsPIEViewportFullscreen())
+		{
+			ImGui::Render();
+			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+			return;
+		}
+
 		if (FLevelEditorViewportClient* ActiveViewport = EditorEngine->GetActiveViewport())
 		{
 			EditorEngine->GetOverlayStatSystem().RenderImGui(*EditorEngine, ActiveViewport->GetViewportScreenRect());
@@ -505,6 +512,7 @@ void FEditorMainPanel::RenderShortcutOverlay()
 	ImGui::TextUnformatted("Delete : Delete Selected Actor / Component");
 	ImGui::TextUnformatted("` : Focus console input / open console drawer");
 	ImGui::TextUnformatted("F5 : Play / Stop PIE");
+	ImGui::TextUnformatted("F1 : Toggle PIE Fullscreen");
 	ImGui::TextUnformatted("F8 : Release / Capture PIE Input");
 	ImGui::TextUnformatted("F : Focus on selection");
 	ImGui::TextUnformatted("Ctrl + LMB : Multi Picking (Toggle)");

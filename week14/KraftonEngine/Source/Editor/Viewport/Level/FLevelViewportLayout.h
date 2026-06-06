@@ -143,6 +143,10 @@ private:
 	bool ConfigureCollapseToSlot(SSplitter* Node, SWindow* TargetWindow, bool bAnimate);
 	bool SubtreeContainsWindow(SWindow* Node, SWindow* TargetWindow) const;
 	void RenderSharedViewportToolbar(float ToolbarLeft, float ToolbarTop, float ToolbarWidth);
+	/**
+	 * @brief PIE 게임 뷰포트를 에디터 내부 전체화면으로 렌더링합니다
+	 */
+	void RenderPIEFullscreenViewport();
 	void RenderViewportSlotToolbar(int32 SlotIndex);
 	void RenderPlacedCameraMenu(FLevelEditorViewportClient* TargetViewportClient);
 	void HandleViewportContextMenuInput(const FPoint& MousePos);

@@ -643,6 +643,28 @@ bool UEditorEngine::TogglePIEInputCapture()
 	return true;
 }
 
+bool UEditorEngine::TogglePIEViewportFullscreen()
+{
+	if (!IsPlayingInEditor())
+	{
+		bPIEViewportFullscreen = false;
+		return false;
+	}
+
+	bPIEViewportFullscreen = !bPIEViewportFullscreen;
+	if (!bPIEViewportFullscreen)
+	{
+		// 전체화면에서 돌아오는 즉시 PIE 입력 clip rect를 원래 게임 뷰포트로 복원합니다.
+		if (const UGameViewportClient* PIEViewportClient = GetGameViewportClient())
+		{
+			SyncGameViewportPIEControlState(PIEViewportClient->IsPossessed());
+		}
+	}
+
+	InputSystem::Get().ResetTransientState();
+	return true;
+}
+
 FLevelEditorViewportClient* UEditorEngine::GetPIEGameViewportClient() const
 {
 	if (!IsPlayingInEditor())
@@ -919,6 +941,7 @@ void UEditorEngine::EndPlayMap()
 
 	PlayInEditorSessionInfo.reset();
 	PIEControlMode = EPIEControlMode::Possessed;
+	bPIEViewportFullscreen = false;
 	InputSystem::Get().ResetCaptureStateForPIEEnd();
 }
 
