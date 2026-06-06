@@ -104,9 +104,11 @@ public:
 
 	const FVector& GetVelocity() const { return Velocity; }
 	float          GetSpeed()    const { return Velocity.Length(); }
-	float          GetMaxWalkSpeed() const { return (bWantsSprint && IsWalking()) ? MaxWalkSpeed * SprintSpeedMultiplier : MaxWalkSpeed; }
+	float          GetMaxWalkSpeed() const { return (bWantsSprint && IsWalking() && !IsCrouching()) ? MaxWalkSpeed * SprintSpeedMultiplier : MaxWalkSpeed; }
 	void           SetSprinting(bool bEnable) { bWantsSprint = bEnable; }
-	bool           IsSprinting() const { return bWantsSprint && IsWalking(); }
+	bool           IsSprinting() const { return bWantsSprint && IsWalking() && !IsCrouching(); }
+	void           SetCrouching(bool bEnable);
+	bool           IsCrouching() const { return bWantsCrouch || bIsCrouched; }
 
 	EMovementMode  GetMovementMode() const { return MovementMode; }
 	bool           IsWalking() const { return MovementMode == EMovementMode::Walking; }
@@ -130,6 +132,9 @@ protected:
 	void  TickWallRunning(float DeltaTime, const FVector& RootMotionWorldXY, const FVector& Input);
 	bool  FindFloor(FHitResult& OutFloorHit) const;
 	bool  IsWalkableFloorHit(const FHitResult& Hit) const;
+	void  UpdateCrouchState(float DeltaTime);
+	bool  CanStandUp(const class UCapsuleComponent* Capsule, float StandingHalfHeight) const;
+	void  ApplyCapsuleHalfHeight(class UCapsuleComponent* Capsule, float NewHalfHeight);
 
 	// 벽타기 진입/유지에 필요한 벽 후보 검사.
 	bool  FindWallRunSurface(FHitResult& OutHit, bool& bOutRightSide) const;
@@ -197,6 +202,9 @@ protected:
 
 	// Jump() 가 set, TickWalking/TickFalling 이 consume. edge-triggered 라 동일 프레임 다중 호출도 1회 점프.
 	bool          bWantsJump       = false;
+	bool          bWantsCrouch     = false;
+	bool          bIsCrouched      = false;
+	float         StandingCapsuleHalfHeight = 0.0f;
 
 	// 남은 점프 횟수. 착지 시 MaxJumpCount 로 reset, 점프 1회 사용 시 1 감소.
 	// 첫 frame 은 Falling 으로 시작하므로 0 — 초기 낙하 중 공짜 점프 방지.
@@ -247,6 +255,10 @@ public:
 	int32 MaxJumpCount = 2;         // 지상 점프 1회 + 공중 점프 (MaxJumpCount - 1) 회.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Falling Slide Speed", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
 	float MaxFallingSlideSpeed = 4.0f;  // m/s — Falling 중 걸을 수 없는 슬로프에 닿아 있을 때 Z 속도 누적 상한.
+	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Crouched Half Height", Min = 0.01f, Max = 10000.0f, Speed = 0.1f)
+	float CrouchedHalfHeight = 1.8f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Crouch Blend Speed", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
+	float CrouchBlendSpeed = 6.0f;
 
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Out Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
 	float WallJumpOutVelocity = 8.0f;     // m/s — 벽 normal 방향 푸시.

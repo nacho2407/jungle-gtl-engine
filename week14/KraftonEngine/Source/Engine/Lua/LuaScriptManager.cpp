@@ -662,6 +662,10 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Key["E"] = static_cast<int32>('E');
 	Key["R"] = static_cast<int32>('R');
 	Key["Space"] = VK_SPACE;
+	Key["Ctrl"] = VK_CONTROL;
+	Key["Control"] = VK_CONTROL;
+	Key["LeftCtrl"] = VK_LCONTROL;
+	Key["RightCtrl"] = VK_RCONTROL;
 	Key["Shift"] = VK_SHIFT;
 	Key["LeftShift"] = VK_LSHIFT;
 	Key["RightShift"] = VK_RSHIFT;
