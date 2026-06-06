@@ -730,8 +730,28 @@ bool FMaterialEditorWidget::SaveMaterialJson()
 		CachedJson = json::JSON();
 	}
 
+	const std::filesystem::path ProjectRoot = FPaths::RootDir();
+	const FString RelativeMaterialPath = FPaths::ToUtf8(
+		MaterialPath.lexically_relative(ProjectRoot).generic_wstring());
+	CachedJson[MatKeys::PathFileName] = RelativeMaterialPath.c_str();
+
 	if (UMaterial* BaseMaterial = Cast<UMaterial>(Material))
 	{
+		if (CachedJson[MatKeys::ShaderPath].ToString().empty())
+		{
+			CachedJson[MatKeys::ShaderPath] = "Shaders/Geometry/UberLit.hlsl";
+		}
+
+		if (!CachedJson.hasKey(MatKeys::Parameters) || CachedJson[MatKeys::Parameters].JSONType() != json::JSON::Class::Object)
+		{
+			CachedJson[MatKeys::Parameters] = json::JSON::Make(json::JSON::Class::Object);
+		}
+
+		if (!CachedJson.hasKey(MatKeys::Textures) || CachedJson[MatKeys::Textures].JSONType() != json::JSON::Class::Object)
+		{
+			CachedJson[MatKeys::Textures] = json::JSON::Make(json::JSON::Class::Object);
+		}
+
 		const FEnum* ShadowEnum = FEnum::FindEnumByName("EMaterialShadowMode");
 		if (ShadowEnum && ShadowEnum->GetNames())
 		{

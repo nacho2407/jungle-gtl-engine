@@ -87,6 +87,28 @@ namespace
 			UE_LOG("[RmlUi] Failed to load font: %s", Path.c_str());
 		}
 	}
+
+	bool IsPointInsideElementBox(Rml::Element* Element, int MouseX, int MouseY)
+	{
+		if (!Element)
+		{
+			return false;
+		}
+
+		const float Left = Element->GetAbsoluteLeft();
+		const float Top = Element->GetAbsoluteTop();
+		const float Width = Element->GetOffsetWidth();
+		const float Height = Element->GetOffsetHeight();
+		if (Width <= 0.0f || Height <= 0.0f)
+		{
+			return false;
+		}
+
+		return static_cast<float>(MouseX) >= Left
+			&& static_cast<float>(MouseX) < Left + Width
+			&& static_cast<float>(MouseY) >= Top
+			&& static_cast<float>(MouseY) < Top + Height;
+	}
 }
 
 double FRmlSystemInterface::GetElapsedTime()
@@ -112,7 +134,9 @@ void FRmlSystemInterface::JoinPath(Rml::String& TranslatedPath, const Rml::Strin
 bool FRmlSystemInterface::LogMessage(Rml::Log::Type Type, const Rml::String& Message)
 {
 	UE_LOG("[RmlUi] %s", Message.c_str());
-	return Type != Rml::Log::LT_ASSERT;
+	// RmlUi returns false from LogMessage as a request to break into the debugger.
+	// In PIE, malformed/experimental UI should be reported without stopping the whole editor.
+	return true;
 }
 
 // FRmlFileInterfaceWide — 모든 RmlUi 파일 열기를 wide API 로 우회. 한글 경로의 디렉토리
@@ -679,6 +703,10 @@ void UUIManager::RemoveFromViewportImmediate(UUserWidget* Widget)
 	{
 		Widget->MarkRemovedFromViewport();
 	}
+	if (ViewportWidgets.empty())
+	{
+		InputSystem::Get().SetGuiMouseCapture(false);
+	}
 }
 
 bool UUIManager::ReloadDocument(UUserWidget* Widget)
@@ -741,6 +769,8 @@ int32 UUIManager::ReloadDocumentsByPath(const FString& DocumentPath)
 
 void UUIManager::ClearViewport()
 {
+	InputSystem::Get().SetGuiMouseCapture(false);
+
 	// 위젯을 viewport 에서만 떼고 UObject 자체는 유지. UUIManager 는 widgets 의 owner —
 	// 같은 Lua VM 안의 widgets[] 테이블이 그대로 살아있고, PIE 재시작 / TransitionToScene
 	// 후 UIManager.Init re-entry 경로가 동일 위젯을 재사용한다 (위젯 destroy 시 Lua 측
@@ -832,6 +862,7 @@ void UUIManager::Render(const FPassContext& Ctx)
 
 	if (!RmlContext || !RenderInterface || ViewportWidgets.empty() || Ctx.Frame.ViewportWidth <= 0.0f || Ctx.Frame.ViewportHeight <= 0.0f)
 	{
+		InputSystem::Get().SetGuiMouseCapture(false);
 		return;
 	}
 
@@ -877,8 +908,11 @@ void UUIManager::ProcessInput(const FFrameContext& Frame)
 		MouseY = MousePos.y;
 	}
 
+	Input.SetGuiMouseCapture(false);
+
 	bDispatchingRmlEvents = true;
 	RmlContext->ProcessMouseMove(MouseX, MouseY, KeyModifierState);
+	Input.SetGuiMouseCapture(IsMouseInsideMouseCaptureArea(MouseX, MouseY));
 	if (Input.GetKeyDown(VK_LBUTTON))
 	{
 		RmlContext->ProcessMouseButtonDown(0, KeyModifierState);
@@ -888,6 +922,32 @@ void UUIManager::ProcessInput(const FFrameContext& Frame)
 		RmlContext->ProcessMouseButtonUp(0, KeyModifierState);
 	}
 	bDispatchingRmlEvents = false;
+}
+
+bool UUIManager::IsMouseInsideMouseCaptureArea(int MouseX, int MouseY) const
+{
+	for (auto It = ViewportWidgets.rbegin(); It != ViewportWidgets.rend(); ++It)
+	{
+		const UUserWidget* Widget = *It;
+		if (!Widget || !Widget->IsInViewport() || !Widget->WantsMouse())
+		{
+			continue;
+		}
+
+		Rml::ElementDocument* Document = Widget->GetDocument();
+		if (!Document)
+		{
+			continue;
+		}
+
+		Rml::Element* DebugWindow = Document->GetElementById("debug-window");
+		if (IsPointInsideElementBox(DebugWindow, MouseX, MouseY))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void UUIManager::FlushDeferredViewportRemovals()

@@ -61,6 +61,10 @@ void UInputComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
 	const InputSystem& In = InputSystem::Get();
+	if (In.IsGuiUsingMouse())
+	{
+		return;
+	}
 
 	// Axis mapping 합산 — 키/버튼은 0 또는 1, 게임패드 축은 정규화된 아날로그 값
 	for (const FAxisBinding& B : AxisBindings)

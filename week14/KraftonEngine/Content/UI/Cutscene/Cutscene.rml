@@ -10,9 +10,35 @@
         <div id="letterbox-bottom" class="letterbox-bar"></div>
         <div id="dialogue-layer" class="dialogue-layer">
             <div id="dialogue-box" class="dialogue-box cutscene-dialogue-box">
-                <div id="dialogue-speaker" class="dialogue-speaker"></div>
                 <div id="dialogue-line" class="dialogue-text cutscene-dialogue-text"></div>
             </div>
+        </div>
+        <div id="skip-ring" class="skip-ring">
+            <img id="skip-ring-frame-00" class="skip-ring-frame" src="SkipRing/SkipRing_00.png"/>
+            <img id="skip-ring-frame-01" class="skip-ring-frame" src="SkipRing/SkipRing_01.png"/>
+            <img id="skip-ring-frame-02" class="skip-ring-frame" src="SkipRing/SkipRing_02.png"/>
+            <img id="skip-ring-frame-03" class="skip-ring-frame" src="SkipRing/SkipRing_03.png"/>
+            <img id="skip-ring-frame-04" class="skip-ring-frame" src="SkipRing/SkipRing_04.png"/>
+            <img id="skip-ring-frame-05" class="skip-ring-frame" src="SkipRing/SkipRing_05.png"/>
+            <img id="skip-ring-frame-06" class="skip-ring-frame" src="SkipRing/SkipRing_06.png"/>
+            <img id="skip-ring-frame-07" class="skip-ring-frame" src="SkipRing/SkipRing_07.png"/>
+            <img id="skip-ring-frame-08" class="skip-ring-frame" src="SkipRing/SkipRing_08.png"/>
+            <img id="skip-ring-frame-09" class="skip-ring-frame" src="SkipRing/SkipRing_09.png"/>
+            <img id="skip-ring-frame-10" class="skip-ring-frame" src="SkipRing/SkipRing_10.png"/>
+            <img id="skip-ring-frame-11" class="skip-ring-frame" src="SkipRing/SkipRing_11.png"/>
+            <img id="skip-ring-frame-12" class="skip-ring-frame" src="SkipRing/SkipRing_12.png"/>
+            <img id="skip-ring-frame-13" class="skip-ring-frame" src="SkipRing/SkipRing_13.png"/>
+            <img id="skip-ring-frame-14" class="skip-ring-frame" src="SkipRing/SkipRing_14.png"/>
+            <img id="skip-ring-frame-15" class="skip-ring-frame" src="SkipRing/SkipRing_15.png"/>
+            <img id="skip-ring-frame-16" class="skip-ring-frame" src="SkipRing/SkipRing_16.png"/>
+            <img id="skip-ring-frame-17" class="skip-ring-frame" src="SkipRing/SkipRing_17.png"/>
+            <img id="skip-ring-frame-18" class="skip-ring-frame" src="SkipRing/SkipRing_18.png"/>
+            <img id="skip-ring-frame-19" class="skip-ring-frame" src="SkipRing/SkipRing_19.png"/>
+            <img id="skip-ring-frame-20" class="skip-ring-frame" src="SkipRing/SkipRing_20.png"/>
+            <img id="skip-ring-frame-21" class="skip-ring-frame" src="SkipRing/SkipRing_21.png"/>
+            <img id="skip-ring-frame-22" class="skip-ring-frame" src="SkipRing/SkipRing_22.png"/>
+            <img id="skip-ring-frame-23" class="skip-ring-frame" src="SkipRing/SkipRing_23.png"/>
+            <img id="skip-ring-frame-24" class="skip-ring-frame" src="SkipRing/SkipRing_24.png"/>
         </div>
     </div>
 </body>

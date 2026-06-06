@@ -117,6 +117,7 @@ private:
 	bool LoadDocument(UUserWidget* Widget);
 	void CloseDocument(UUserWidget* Widget);
 	void ProcessInput(const FFrameContext& Frame);
+	bool IsMouseInsideMouseCaptureArea(int MouseX, int MouseY) const;
 	void RemoveFromViewportImmediate(UUserWidget* Widget);
 	void FlushDeferredViewportRemovals();
 

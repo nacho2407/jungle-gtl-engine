@@ -3,6 +3,7 @@ return {
     scene = "Prologue",
     default_font = "Pretendard",
     default_size = 24,
+    default_weight = 400,
     default_duration = 3.4,
     default_fade_in = 0.3,
     entries = {
@@ -72,7 +73,7 @@ return {
         },
         {
             speaker = "DRAKE",
-            text = "깔끔하게 끝내. 블레이드.",
+            text = "깔끔하게 끝내. 케인.",
             image = "",
             font = "Pretendard",
             size = 24,

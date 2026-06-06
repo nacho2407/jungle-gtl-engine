@@ -102,6 +102,27 @@ function FloatingPawnMovementComponent:SetMoveInput(input) end
 ---@param input Vector
 function FloatingPawnMovementComponent:SetLookInput(input) end
 
+---@class CharacterMovementComponent
+CharacterMovementComponent = {}
+
+---@return number
+function CharacterMovementComponent:GetMaxWalkSpeed() end
+
+---@param value number
+function CharacterMovementComponent:SetMaxWalkSpeed(value) end
+
+---@return number
+function CharacterMovementComponent:GetSprintSpeedMultiplier() end
+
+---@param value number
+function CharacterMovementComponent:SetSprintSpeedMultiplier(value) end
+
+---@return number
+function CharacterMovementComponent:GetWallRunMaxSpeed() end
+
+---@param value number
+function CharacterMovementComponent:SetWallRunMaxSpeed(value) end
+
 ---@class VehicleMovementComponent4W
 VehicleMovementComponent4W = {}
 
@@ -240,6 +261,9 @@ function Actor:IsValid() end
 
 ---@return FloatingPawnMovementComponent?
 function Actor:GetFloatingPawnMovement() end
+
+---@return CharacterMovementComponent?
+function Actor:GetCharacterMovement() end
 
 ---@return VehicleMovementComponent4W?
 function Actor:GetVehicleMovement() end

@@ -1,0 +1,65 @@
+<rml>
+<head>
+	<link type="text/rcss" href="InGameDebug.rcss"/>
+</head>
+<body>
+	<div id="debug-window" class="debug-window">
+		<div id="debug-titlebar" class="debug-titlebar">
+			<div id="debug-title" class="debug-title">IN-GAME DEBUG</div>
+			<div id="debug-close" class="debug-close">X</div>
+		</div>
+		<div id="debug-tabs" class="debug-tabs">
+			<div id="debug-tab-player" class="debug-tab debug-tab-active">Player</div>
+			<div id="debug-tab-world" class="debug-tab debug-tab-world">World</div>
+			<div id="debug-tab-ai" class="debug-tab debug-tab-ai">AI</div>
+			<div id="debug-tab-render" class="debug-tab debug-tab-render">Render</div>
+			<div id="debug-tab-audio" class="debug-tab debug-tab-audio">Audio</div>
+		</div>
+		<div id="debug-separator" class="debug-separator"></div>
+
+		<div id="debug-panel-player" class="debug-panel">
+			<div class="debug-row debug-row-speed">
+				<div class="debug-label">Move Speed Multiplier</div>
+				<div id="debug-speed-minus" class="debug-small-button debug-button-minus">-</div>
+				<div id="debug-speed-value" class="debug-value">1.00x</div>
+				<div id="debug-speed-plus" class="debug-small-button debug-button-plus">+</div>
+			</div>
+			<div class="debug-row debug-row-god">
+				<div class="debug-label">Invincible</div>
+				<div id="debug-invincible-toggle" class="debug-toggle-button">OFF</div>
+			</div>
+			<div class="debug-row debug-row-damage">
+				<div class="debug-label">Damage Amount</div>
+				<div id="debug-damage-minus" class="debug-small-button debug-button-minus">-</div>
+				<div id="debug-damage-value" class="debug-value">10</div>
+				<div id="debug-damage-plus" class="debug-small-button debug-button-plus">+</div>
+			</div>
+			<div class="debug-row debug-row-health">
+				<div class="debug-label">Health</div>
+				<div id="debug-health-minus" class="debug-small-button debug-button-minus">-</div>
+				<div id="debug-health-value" class="debug-value">100</div>
+				<div id="debug-health-plus" class="debug-small-button debug-button-plus">+</div>
+			</div>
+			<div id="debug-apply-damage" class="debug-action-button">Apply Hit</div>
+			
+		</div>
+
+		<div id="debug-panel-world" class="debug-panel debug-panel-hidden">
+			<div class="debug-placeholder-title">World</div>
+			<div class="debug-placeholder-line">Time scale, checkpoint, spawn tools placeholder.</div>
+		</div>
+		<div id="debug-panel-ai" class="debug-panel debug-panel-hidden">
+			<div class="debug-placeholder-title">AI</div>
+			<div class="debug-placeholder-line">Perception, aggression, navigation placeholder.</div>
+		</div>
+		<div id="debug-panel-render" class="debug-panel debug-panel-hidden">
+			<div class="debug-placeholder-title">Render</div>
+			<div class="debug-placeholder-line">Post process, overlays, debug view placeholder.</div>
+		</div>
+		<div id="debug-panel-audio" class="debug-panel debug-panel-hidden">
+			<div class="debug-placeholder-title">Audio</div>
+			<div class="debug-placeholder-line">Mute groups, event triggers, mixer placeholder.</div>
+		</div>
+	</div>
+</body>
+</rml>
