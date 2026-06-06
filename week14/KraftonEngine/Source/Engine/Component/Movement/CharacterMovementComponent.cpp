@@ -1196,6 +1196,7 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	// 매 Tick 회전 적용 상태 reset — 이번 frame 에 root motion 이 yaw 를 적용했는지를
 	// 외부 (Character::Tick) 가 query 할 수 있어야 yaw 충돌 회피 가능.
 	bAppliedRootMotionYawThisFrame = false;
+	bAirJumpConsumedThisFrame = false;
 
 	FVector Input;
 	ConsumeInputVector(Input);
@@ -1437,6 +1438,7 @@ void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& Ro
 	{
 		bWantsJump = false;
 		--JumpsRemaining;
+		bAirJumpConsumedThisFrame = true;
 		Velocity.Z = JumpZVelocity;
 		if (bEnableBuiltInMovementAudio)
 		{

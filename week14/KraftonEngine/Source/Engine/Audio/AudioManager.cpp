@@ -170,6 +170,7 @@ struct FAudioManager::FImpl
 	FLoadedSound BGMPlayback;
 	TMap<FString, FLoadedSound> LoadedSounds;
 	TMap<FString, FLoadedSound> LoopSounds;
+	TArray<FLoadedSound> FadingLoopSounds;
 	TMap<FString, FSoundEventDef> SoundEvents;
 	TMap<FString, double> LastEventPlayTime;
 	TArray<FTransientSound> TransientSounds;
@@ -287,6 +288,16 @@ void FAudioManager::Shutdown()
 		}
 	}
 	Impl->TransientSounds.clear();
+
+	for (FLoadedSound& Entry : Impl->FadingLoopSounds)
+	{
+		if (Entry.Sound)
+		{
+			ma_sound_uninit(Entry.Sound);
+			delete Entry.Sound;
+		}
+	}
+	Impl->FadingLoopSounds.clear();
 
 	for (auto& Pair : Impl->LoadedSounds)
 	{
@@ -483,6 +494,35 @@ void FAudioManager::StopLoop(const FString& LoopName)
 	Impl->LoopSounds.erase(It);
 }
 
+void FAudioManager::FadeOutLoop(const FString& LoopName, float FadeMilliseconds)
+{
+	auto It = Impl->LoopSounds.find(LoopName);
+	if (It == Impl->LoopSounds.end())
+	{
+		return;
+	}
+
+	FLoadedSound Entry = It->second;
+	Impl->LoopSounds.erase(It);
+
+	if (!Entry.Sound)
+	{
+		return;
+	}
+
+	const float ClampedFade = std::max(0.0f, FadeMilliseconds);
+	if (ClampedFade <= 0.0f || !ma_sound_is_playing(Entry.Sound))
+	{
+		ma_sound_stop(Entry.Sound);
+		ma_sound_uninit(Entry.Sound);
+		delete Entry.Sound;
+		return;
+	}
+
+	ma_sound_stop_with_fade_in_milliseconds(Entry.Sound, static_cast<ma_uint64>(ClampedFade));
+	Impl->FadingLoopSounds.push_back(Entry);
+}
+
 void FAudioManager::StopAllLoops()
 {
 	for (auto& Pair : Impl->LoopSounds)
@@ -495,6 +535,17 @@ void FAudioManager::StopAllLoops()
 		}
 	}
 	Impl->LoopSounds.clear();
+
+	for (FLoadedSound& Entry : Impl->FadingLoopSounds)
+	{
+		if (Entry.Sound)
+		{
+			ma_sound_stop(Entry.Sound);
+			ma_sound_uninit(Entry.Sound);
+			delete Entry.Sound;
+		}
+	}
+	Impl->FadingLoopSounds.clear();
 }
 
 void FAudioManager::SetLoopVolume(const FString& LoopName, float Volume)
@@ -805,6 +856,24 @@ void FAudioManager::UpdateListenerFromWorld()
 
 void FAudioManager::CleanupTransientSounds()
 {
+	for (auto It = Impl->FadingLoopSounds.begin(); It != Impl->FadingLoopSounds.end();)
+	{
+		ma_sound* Sound = It->Sound;
+		if (!Sound || ma_sound_at_end(Sound) || !ma_sound_is_playing(Sound))
+		{
+			if (Sound)
+			{
+				ma_sound_uninit(Sound);
+				delete Sound;
+			}
+			It = Impl->FadingLoopSounds.erase(It);
+		}
+		else
+		{
+			++It;
+		}
+	}
+
 	for (auto It = Impl->TransientSounds.begin(); It != Impl->TransientSounds.end();)
 	{
 		ma_sound* Sound = It->Sound;

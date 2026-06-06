@@ -1167,6 +1167,10 @@ Engine.IsPaused = Game.IsPaused
 	{
 		FAudioManager::Get().StopLoop(LoopName);
 	});
+	AudioManager.set_function("FadeOutLoop", [](const FString& LoopName, sol::optional<float> FadeMilliseconds)
+	{
+		FAudioManager::Get().FadeOutLoop(LoopName, FadeMilliseconds.value_or(200.0f));
+	});
 	AudioManager.set_function("StopAllLoops", []()
 	{
 		FAudioManager::Get().StopAllLoops();
@@ -1352,6 +1356,10 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		{
 			return Component.IsWallRunning();
 		},
+		"WasAirJumpConsumedThisFrame", [](UCharacterMovementComponent& Component)
+		{
+			return Component.WasAirJumpConsumedThisFrame();
+		},
 		"IsSprinting", [](UCharacterMovementComponent& Component)
 		{
 			return Component.IsSprinting();
@@ -1395,6 +1403,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@return boolean\nfunction CharacterMovementComponent:IsWalking() end")
 		.Method("---@return boolean\nfunction CharacterMovementComponent:IsFalling() end")
 		.Method("---@return boolean\nfunction CharacterMovementComponent:IsWallRunning() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:WasAirJumpConsumedThisFrame() end")
 		.Method("---@return boolean\nfunction CharacterMovementComponent:IsSprinting() end")
 		.Method("---@return boolean\nfunction CharacterMovementComponent:IsCrouching() end")
 		.Method("---@return string\nfunction CharacterMovementComponent:GetMovementModeName() end")

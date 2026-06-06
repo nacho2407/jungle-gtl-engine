@@ -64,6 +64,14 @@ local function stop_loop(loopName)
     end
 end
 
+local function fade_out_loop(loopName, fadeMilliseconds)
+    if can_audio() and AudioManager.FadeOutLoop ~= nil then
+        AudioManager.FadeOutLoop(loopName, fadeMilliseconds or 200.0)
+        return true
+    end
+    return false
+end
+
 local function set_loop_state(loopName, key, shouldPlay, volume, pitch)
     if not can_audio() then return false end
 
@@ -170,17 +178,18 @@ function GameAudio.StartWeaponFireLoop()
     return weaponFireLoopPlaying
 end
 
-function GameAudio.StopWeaponFireLoop(playTail)
-    local wasFiring = weaponFireLoopPlaying or weaponFireFallbackShotPlaying
+function GameAudio.StopWeaponFireLoop(fadeOut)
+    if fadeOut ~= false and weaponFireLoopPlaying then
+        if not fade_out_loop("PlayerWeaponFireLoop", 200.0) then
+            set_loop_state("PlayerWeaponFireLoop", weaponFireLoopKey or "", false)
+        end
+    else
+        set_loop_state("PlayerWeaponFireLoop", weaponFireLoopKey or "", false)
+    end
 
-    set_loop_state("PlayerWeaponFireLoop", weaponFireLoopKey or "", false)
     weaponFireLoopPlaying = false
     weaponFireLoopKey = nil
     weaponFireFallbackShotPlaying = false
-
-    if wasFiring and playTail ~= false then
-        play_one_shot("weapon.fire.tail")
-    end
 end
 
 function GameAudio.StartSlideLoop()
@@ -275,11 +284,12 @@ function GameAudio.UpdateMovement(movement, dt)
     local isCrouching = movement.IsCrouching ~= nil and movement:IsCrouching()
     local isSliding = isWalking and isCrouching and speed >= SLIDE_MIN_SPEED
 
-    if Input ~= nil and Input.GetKeyDown ~= nil and Key ~= nil and Input.GetKeyDown(Key.Space) then
-        if isFalling then
-            play_one_shot("player.double_jump")
-            GameAudio.PlayDoubleJumpJet()
-        elseif isWalking or isWallRunning then
+    local didAirJump = movement.WasAirJumpConsumedThisFrame ~= nil and movement:WasAirJumpConsumedThisFrame()
+    if didAirJump then
+        play_one_shot("player.double_jump")
+        GameAudio.PlayDoubleJumpJet()
+    elseif Input ~= nil and Input.GetKeyDown ~= nil and Key ~= nil and Input.GetKeyDown(Key.Space) then
+        if isWalking or isWallRunning then
             play_one_shot("player.jump")
         end
     end
@@ -322,6 +332,7 @@ function GameAudio.UpdateMovement(movement, dt)
             movementState.wallrunDistance = 0.0
             movementState.wallrunStepTimer = 0.0
             movementState.wallrunTime = 0.0
+            play_one_shot("player.land")
         end
 
         movementState.wallrunTime = movementState.wallrunTime + dt

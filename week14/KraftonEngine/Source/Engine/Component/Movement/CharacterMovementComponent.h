@@ -101,6 +101,7 @@ public:
 	// ACharacter::Tick 이 control yaw 를 capsule 에 덮어쓰기 전에 query 해서 충돌 회피
 	// (root motion 회전이 활성 중인 frame 은 control yaw 가 덮으면 회전이 토글되어 끊김).
 	bool HasYawDrivenByRootMotion() const { return bAppliedRootMotionYawThisFrame; }
+	bool WasAirJumpConsumedThisFrame() const { return bAirJumpConsumedThisFrame; }
 
 	const FVector& GetVelocity() const { return Velocity; }
 	float          GetSpeed()    const { return Velocity.Length(); }
@@ -227,6 +228,7 @@ protected:
 	// 직전 TickComponent 에서 root motion yaw 가 실제 적용됐는지 (외부 query 용 — Character 의 yaw 가드).
 	// 매 Tick 시작에 reset 후 yaw 적용 시 true.
 	bool          bAppliedRootMotionYawThisFrame = false;
+	bool          bAirJumpConsumedThisFrame = false;
 
 	float         SprintFootstepDistance = 0.0f;
 	float         SlideStepDistance = 0.0f;

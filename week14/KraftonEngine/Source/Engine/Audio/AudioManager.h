@@ -22,6 +22,7 @@ public:
 	void StopBGM();
 	bool PlayLoop(const FString& Key, const FString& LoopName, float Volume = 1.0f, float Pitch = 1.0f);
 	void StopLoop(const FString& LoopName);
+	void FadeOutLoop(const FString& LoopName, float FadeMilliseconds = 200.0f);
 	void StopAllLoops();
 	bool SetLoopState(const FString& LoopName, const FString& Key, bool bShouldPlay, float Volume = 1.0f, float Pitch = 1.0f);
 	void SetLoopVolume(const FString& LoopName, float Volume);
