@@ -399,7 +399,7 @@ void FEditorMainPanel::RenderMainMenuBar()
 		ImGui::Checkbox("Editor Debug", &Settings.UI.bEditorDebug);
 		ImGui::Checkbox("Shadow Map Debug", &Settings.UI.bShadowMapDebug);
 		ImGui::Checkbox("Animation Debug", &Settings.UI.bAnimationDebug);
-		ImGui::Checkbox("Wall Run Debug", &Settings.UI.bWallRunDebug);
+		ImGui::Checkbox("Character Movement Debug", &Settings.UI.bWallRunDebug);
 		ImGui::Checkbox("IMGUI_Setting", &Settings.UI.bImGUISettings);
 		ImGui::EndPopup();
 	}
@@ -689,7 +689,7 @@ void FEditorMainPanel::RenderWallRunDebugWindow()
 	FEditorSettings& Settings = FEditorSettings::Get();
 
 	ImGui::SetNextWindowSize(ImVec2(460.0f, 360.0f), ImGuiCond_FirstUseEver);
-	if (!ImGui::Begin("Wall Run Debug", &Settings.UI.bWallRunDebug))
+	if (!ImGui::Begin("Character Movement Debug", &Settings.UI.bWallRunDebug))
 	{
 		ImGui::End();
 		return;
@@ -706,6 +706,9 @@ void FEditorMainPanel::RenderWallRunDebugWindow()
 	}
 
 	FWallRunDebugSnapshot Snapshot = Movement->GetWallRunDebugSnapshot();
+	const bool bIsSliding = Movement->IsSliding();
+	const bool bIsSprinting = Movement->IsSprinting();
+	const bool bIsCrouching = Movement->IsCrouching();
 
 	ImGui::Text("Target: %s", TargetActor ? TargetActor->GetName().c_str() : "(none)");
 	ImGui::Text("Mode: %s", Snapshot.MovementModeName);
@@ -713,6 +716,22 @@ void FEditorMainPanel::RenderWallRunDebugWindow()
 	ImGui::TextColored(GetWallRunStatusColor(Snapshot.StatusName), "Status: %s", Snapshot.StatusName);
 	ImGui::Separator();
 
+	ImGui::TextColored(
+		bIsSliding ? ImVec4(0.20f, 1.0f, 0.42f, 1.0f) : ImVec4(0.65f, 0.65f, 0.65f, 1.0f),
+		"Slide: %s",
+		bIsSliding ? "ACTIVE" : "IDLE");
+	ImGui::SameLine();
+	ImGui::Text("Sprint: %s", BoolText(bIsSprinting));
+	ImGui::SameLine();
+	ImGui::Text("Crouch: %s", BoolText(bIsCrouching));
+	ImGui::Text("Slide Speed: %.2f / %.2f   Max Time: %.2f",
+		Snapshot.PlanarSpeed,
+		Movement->SlideEndSpeed,
+		Movement->MaxSlideTime);
+
+	ImGui::Checkbox("Enable Slide", &Movement->bEnableSlide);
+
+	ImGui::Separator();
 	ImGui::Checkbox("Enable Wall Run", &Movement->bEnableWallRun);
 	ImGui::Checkbox("Draw Distance Ring", &Movement->bDrawWallRunDistanceDebug);
 	ImGui::Checkbox("UE_LOG Diagnostics", &Movement->bLogWallRunDiagnostics);
@@ -755,6 +774,10 @@ void FEditorMainPanel::RenderWallRunDebugWindow()
 
 	if (ImGui::CollapsingHeader("Runtime Flags"))
 	{
+		ImGui::Text("SlideEnabled: %s", BoolText(Movement->bEnableSlide));
+		ImGui::Text("IsSliding: %s", BoolText(bIsSliding));
+		ImGui::Text("IsSprinting: %s", BoolText(bIsSprinting));
+		ImGui::Text("IsCrouching: %s", BoolText(bIsCrouching));
 		ImGui::Text("WallRunEnabled: %s", BoolText(Snapshot.bWallRunEnabled));
 		ImGui::Text("IsWallRunning: %s", BoolText(Snapshot.bIsWallRunning));
 		ImGui::Text("DrawDistanceDebug: %s", BoolText(Snapshot.bDrawDistanceDebug));

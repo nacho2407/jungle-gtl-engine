@@ -452,6 +452,30 @@ bool UCharacterMovementComponent::FindFloor(FHitResult& OutFloorHit) const
 
 void UCharacterMovementComponent::SetCrouching(bool bEnable)
 {
+	if (bEnable && bIgnoreCrouchInputUntilRelease)
+	{
+		bWasCrouchInputDown = true;
+		bWantsCrouch = false;
+		return;
+	}
+
+	if (bEnable && !bWasCrouchInputDown)
+	{
+		bSlideQueued = true;
+		SlideQueueTimer = (std::max)(0.0f, SlideQueueGraceTime);
+	}
+	else if (!bEnable)
+	{
+		if (bIsSliding)
+		{
+			EndSlide(false);
+		}
+		bSlideQueued = false;
+		SlideQueueTimer = 0.0f;
+		bIgnoreCrouchInputUntilRelease = false;
+	}
+
+	bWasCrouchInputDown = bEnable;
 	bWantsCrouch = bEnable;
 }
 
@@ -473,7 +497,9 @@ void UCharacterMovementComponent::UpdateCrouchState(float DeltaTime)
 		: (std::max)(CurrentHalfHeight, Radius);
 	const float TargetCrouchedHalfHeight = FMath::Clamp(CrouchedHalfHeight, Radius, StandingHalfHeight);
 
-	if (bWantsCrouch)
+	const bool bShouldCrouch = bWantsCrouch || bIsSliding;
+
+	if (bShouldCrouch)
 	{
 		bIsCrouched = true;
 	}
@@ -486,11 +512,11 @@ void UCharacterMovementComponent::UpdateCrouchState(float DeltaTime)
 		return;
 	}
 
-	const float TargetHalfHeight = bWantsCrouch ? TargetCrouchedHalfHeight : StandingHalfHeight;
+	const float TargetHalfHeight = bShouldCrouch ? TargetCrouchedHalfHeight : StandingHalfHeight;
 	const float HalfHeightDelta = TargetHalfHeight - CurrentHalfHeight;
 	if (std::fabs(HalfHeightDelta) <= FMath::Epsilon)
 	{
-		if (!bWantsCrouch)
+		if (!bShouldCrouch)
 		{
 			bIsCrouched = false;
 		}
@@ -505,7 +531,7 @@ void UCharacterMovementComponent::UpdateCrouchState(float DeltaTime)
 
 	ApplyCapsuleHalfHeight(Capsule, NewHalfHeight);
 
-	if (!bWantsCrouch && std::fabs(NewHalfHeight - StandingHalfHeight) <= FMath::Epsilon)
+	if (!bShouldCrouch && std::fabs(NewHalfHeight - StandingHalfHeight) <= FMath::Epsilon)
 	{
 		bIsCrouched = false;
 	}
@@ -661,6 +687,10 @@ bool UCharacterMovementComponent::ConsumePendingRootMotion(FTransform& OutLocalD
 void UCharacterMovementComponent::SetMovementMode(EMovementMode NewMode)
 {
 	if (MovementMode == NewMode) return;
+	if (bIsSliding && NewMode != EMovementMode::Walking)
+	{
+		EndSlide(false);
+	}
 	MovementMode = NewMode;
 	// 추후 OnMovementModeChanged delegate 위치.
 }
@@ -970,6 +1000,11 @@ void UCharacterMovementComponent::Jump()
 	// Walking: 항상 1회. Falling: JumpsRemaining 이 남아 있을 때만 (더블/멀티 점프).
 	// WallRunning: 항상 1회 — TickWallRunning 가 wall-jump 임펄스로 변환해 소비.
 	// edge-triggered — bWantsJump 만 set, 실제 적용은 Tick 분기에서 consume.
+	if (bIsSliding)
+	{
+		EndSlide(false);
+	}
+
 	if (MovementMode == EMovementMode::Walking)
 	{
 		bWantsJump = true;
@@ -1030,7 +1065,27 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	Input.Z = 0.0f;   // XY 평면만 — Z 는 mode 가 결정.
 
 	// 1) Input 처리 — XY velocity 갱신 (양 mode 공통).
-	ApplyInputToVelocity(Input, DeltaTime);
+	if (bSlideQueued)
+	{
+		if (!TryStartSlide(Input))
+		{
+			SlideQueueTimer -= DeltaTime;
+			if (SlideQueueTimer <= 0.0f)
+			{
+				bSlideQueued = false;
+				SlideQueueTimer = 0.0f;
+			}
+		}
+	}
+
+	if (bIsSliding)
+	{
+		UpdateSlideVelocity(DeltaTime);
+	}
+	else
+	{
+		ApplyInputToVelocity(Input, DeltaTime);
+	}
 
 	// 1.5) Owner Character 의 Mesh AnimInstance 가 누적해둔 root motion 을 가져와 자기 buffer 로 push.
 	//      Mesh tick (TG_PrePhysics) 이 이미 끝나 PendingRootMotion 이 채워진 상태.
@@ -1153,8 +1208,168 @@ void UCharacterMovementComponent::PhysOrientToMovement(float DeltaTime)
 	Updated->SetRelativeRotation(R);
 }
 
+float UCharacterMovementComponent::GetPlanarSpeed() const
+{
+	const FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
+	return PlanarVelocity.Length();
+}
+
+FVector UCharacterMovementComponent::ComputeSlideDirection(const FVector& Input) const
+{
+	FVector PlanarInput(Input.X, Input.Y, 0.0f);
+	if (!PlanarInput.IsNearlyZero())
+	{
+		PlanarInput.Normalize();
+		return PlanarInput;
+	}
+
+	FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
+	if (!PlanarVelocity.IsNearlyZero())
+	{
+		PlanarVelocity.Normalize();
+		return PlanarVelocity;
+	}
+
+	if (USceneComponent* Updated = GetUpdatedComponent())
+	{
+		FVector Forward = Updated->GetForwardVector();
+		Forward.Z = 0.0f;
+		if (!Forward.IsNearlyZero())
+		{
+			Forward.Normalize();
+			return Forward;
+		}
+	}
+
+	return FVector::ZeroVector;
+}
+
+bool UCharacterMovementComponent::TryStartSlide(const FVector& Input)
+{
+	if (!bEnableSlide || bIsSliding || MovementMode != EMovementMode::Walking)
+	{
+		return false;
+	}
+
+	if (!bWantsSprint || GetPlanarSpeed() < SlideMinStartSpeed)
+	{
+		return false;
+	}
+
+	const FVector Direction = ComputeSlideDirection(Input);
+	if (Direction.IsNearlyZero())
+	{
+		return false;
+	}
+
+	StartSlide(Direction);
+	return true;
+}
+
+void UCharacterMovementComponent::StartSlide(const FVector& InSlideDirection)
+{
+	FVector Direction(InSlideDirection.X, InSlideDirection.Y, 0.0f);
+	if (Direction.IsNearlyZero())
+	{
+		return;
+	}
+	Direction.Normalize();
+
+	bIsSliding = true;
+	bSlideQueued = false;
+	SlideQueueTimer = 0.0f;
+	SlideElapsedTime = 0.0f;
+	SlideDirection = Direction;
+
+	bool bApplyImpulse = true;
+	FHitResult FloorHit;
+	if (FindFloor(FloorHit) && FloorHit.bHit)
+	{
+		const FVector FloorNormal = GetHitNormal(FloorHit);
+		if (!FloorNormal.IsNearlyZero() && Direction.Dot(FloorNormal.Normalized()) < -0.05f)
+		{
+			bApplyImpulse = false;
+		}
+	}
+
+	if (bApplyImpulse)
+	{
+		Velocity.X += Direction.X * SlideImpulseSpeed;
+		Velocity.Y += Direction.Y * SlideImpulseSpeed;
+	}
+}
+
+void UCharacterMovementComponent::UpdateSlideVelocity(float DeltaTime)
+{
+	if (!bIsSliding)
+	{
+		return;
+	}
+
+	if (MovementMode != EMovementMode::Walking)
+	{
+		EndSlide(false);
+		return;
+	}
+
+	SlideElapsedTime += DeltaTime;
+	if (MaxSlideTime > FMath::Epsilon && SlideElapsedTime >= MaxSlideTime)
+	{
+		EndSlide(false, true);
+		return;
+	}
+
+	const float Speed = GetPlanarSpeed();
+	if (Speed <= SlideEndSpeed)
+	{
+		EndSlide(false, true);
+		return;
+	}
+
+	const float Deceleration = (std::max)(0.0f, SlideBrakingFriction);
+	const float NewSpeed = (std::max)(0.0f, Speed - Deceleration * DeltaTime);
+	const FVector Direction = FVector(Velocity.X, Velocity.Y, 0.0f) * (1.0f / Speed);
+
+	Velocity.X = Direction.X * NewSpeed;
+	Velocity.Y = Direction.Y * NewSpeed;
+
+	if (NewSpeed <= SlideEndSpeed)
+	{
+		EndSlide(false, true);
+	}
+}
+
+void UCharacterMovementComponent::EndSlide(bool bKeepCrouchInput, bool bIgnoreHeldCrouchUntilRelease)
+{
+	if (!bIsSliding)
+	{
+		return;
+	}
+
+	bIsSliding = false;
+	bSlideQueued = false;
+	SlideQueueTimer = 0.0f;
+	SlideElapsedTime = 0.0f;
+	SlideDirection = FVector::ZeroVector;
+
+	if (bIgnoreHeldCrouchUntilRelease)
+	{
+		bWantsCrouch = false;
+		bIgnoreCrouchInputUntilRelease = bWasCrouchInputDown;
+	}
+	else if (bKeepCrouchInput)
+	{
+		bWantsCrouch = true;
+	}
+}
+
 void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, float DeltaTime)
 {
+	if (bIsSliding)
+	{
+		return;
+	}
+
 	if (MovementMode == EMovementMode::WallRunning)
 	{
 		// WallRunning input은 벽 접선 방향으로 투영해서 TickWallRunning 에서만 처리한다.

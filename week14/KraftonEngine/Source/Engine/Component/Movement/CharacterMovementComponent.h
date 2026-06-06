@@ -104,11 +104,12 @@ public:
 
 	const FVector& GetVelocity() const { return Velocity; }
 	float          GetSpeed()    const { return Velocity.Length(); }
-	float          GetMaxWalkSpeed() const { return (bWantsSprint && IsWalking() && !IsCrouching()) ? MaxWalkSpeed * SprintSpeedMultiplier : MaxWalkSpeed; }
+	float          GetMaxWalkSpeed() const { return (bWantsSprint && IsWalking() && !IsCrouching() && !IsSliding()) ? MaxWalkSpeed * SprintSpeedMultiplier : MaxWalkSpeed; }
 	void           SetSprinting(bool bEnable) { bWantsSprint = bEnable; }
-	bool           IsSprinting() const { return bWantsSprint && IsWalking() && !IsCrouching(); }
+	bool           IsSprinting() const { return bWantsSprint && IsWalking() && !IsCrouching() && !IsSliding(); }
 	void           SetCrouching(bool bEnable);
-	bool           IsCrouching() const { return bWantsCrouch || bIsCrouched; }
+	bool           IsCrouching() const { return bWantsCrouch || bIsCrouched || bIsSliding; }
+	bool           IsSliding() const { return bIsSliding; }
 
 	EMovementMode  GetMovementMode() const { return MovementMode; }
 	bool           IsWalking() const { return MovementMode == EMovementMode::Walking; }
@@ -123,6 +124,12 @@ public:
 protected:
 	// XY 입력을 velocity 에 반영 + Walking 시 braking. 양 mode 공통 호출.
 	void  ApplyInputToVelocity(const FVector& Input, float DeltaTime);
+	bool  TryStartSlide(const FVector& Input);
+	void  StartSlide(const FVector& SlideDirection);
+	void  UpdateSlideVelocity(float DeltaTime);
+	void  EndSlide(bool bKeepCrouchInput = false, bool bIgnoreHeldCrouchUntilRelease = false);
+	FVector ComputeSlideDirection(const FVector& Input) const;
+	float GetPlanarSpeed() const;
 
 	// Mode 별 Z 처리 + 위치 갱신.
 	// RootMotionWorldXY 는 이번 frame 의 root motion 평면 변위 (world frame, Z=0 보장).
@@ -204,6 +211,13 @@ protected:
 	bool          bWantsJump       = false;
 	bool          bWantsCrouch     = false;
 	bool          bIsCrouched      = false;
+	bool          bWasCrouchInputDown = false;
+	bool          bIgnoreCrouchInputUntilRelease = false;
+	bool          bSlideQueued     = false;
+	bool          bIsSliding       = false;
+	float         SlideQueueTimer  = 0.0f;
+	float         SlideElapsedTime = 0.0f;
+	FVector       SlideDirection   = FVector::ZeroVector;
 	float         StandingCapsuleHalfHeight = 0.0f;
 
 	// 남은 점프 횟수. 착지 시 MaxJumpCount 로 reset, 점프 1회 사용 시 1 감소.
@@ -259,6 +273,20 @@ public:
 	float CrouchedHalfHeight = 1.8f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Crouch Blend Speed", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
 	float CrouchBlendSpeed = 6.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Enable Slide")
+	bool bEnableSlide = true;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide Min Start Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float SlideMinStartSpeed = 7.5f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide End Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float SlideEndSpeed = 3.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide Impulse Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float SlideImpulseSpeed = 6.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide Braking Friction", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float SlideBrakingFriction = 14.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Max Slide Time", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
+	float MaxSlideTime = 1.15f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide Queue Grace Time", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
+	float SlideQueueGraceTime = 0.18f;
 
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Out Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
 	float WallJumpOutVelocity = 8.0f;     // m/s — 벽 normal 방향 푸시.
