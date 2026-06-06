@@ -3,15 +3,19 @@ local HoverDescription = require("HoverDescription")
 
 local PAUSE_MENU_PATH = "Content/UI/InGame/PauseMenu.rml"
 local SETTINGS_PATH = "Content/UI/Title/TitleSettings.rml"
+local QUIT_DIALOG_PATH = "Content/UI/Title/TitleQuitDialog.rml"
 local PAUSE_Z_ORDER = 180
 local SETTINGS_Z_ORDER = 190
+local QUIT_DIALOG_Z_ORDER = 200
 local RESTART_SCENE = "Default.Scene"
 local MAIN_MENU_SCENE = "Title.Scene"
 
 local pauseWidget = nil
 local settingsWidget = nil
+local quitWidget = nil
 local pauseVisible = false
 local settingsVisible = false
+local quitVisible = false
 local activeSettingsSlider = nil
 
 local settingsState = {
@@ -292,9 +296,13 @@ local function close_settings_show_pause()
     set_game_paused(true)
 
     settingsVisible = false
+    quitVisible = false
     activeSettingsSlider = nil
     if settingsWidget ~= nil and settingsWidget:IsInViewport() then
         settingsWidget:RemoveFromParent()
+    end
+    if quitWidget ~= nil and quitWidget:IsInViewport() then
+        quitWidget:RemoveFromParent()
     end
 
     pauseVisible = true
@@ -307,8 +315,12 @@ local function show_settings()
     set_game_paused(true)
 
     pauseVisible = false
+    quitVisible = false
     if pauseWidget ~= nil and pauseWidget:IsInViewport() then
         pauseWidget:RemoveFromParent()
+    end
+    if quitWidget ~= nil and quitWidget:IsInViewport() then
+        quitWidget:RemoveFromParent()
     end
 
     settingsVisible = true
@@ -324,6 +336,7 @@ local function close_all()
 
     pauseVisible = false
     settingsVisible = false
+    quitVisible = false
     activeSettingsSlider = nil
 
     if pauseWidget ~= nil and pauseWidget:IsInViewport() then
@@ -332,12 +345,24 @@ local function close_all()
     if settingsWidget ~= nil and settingsWidget:IsInViewport() then
         settingsWidget:RemoveFromParent()
     end
+    if quitWidget ~= nil and quitWidget:IsInViewport() then
+        quitWidget:RemoveFromParent()
+    end
 end
 
 local function transition_to(scene)
     close_all()
     if Engine ~= nil and Engine.TransitionToScene ~= nil then
         Engine.TransitionToScene(scene)
+    end
+end
+
+local function show_quit_dialog()
+    set_game_paused(true)
+
+    quitVisible = true
+    if quitWidget ~= nil and not quitWidget:IsInViewport() then
+        quitWidget:AddToViewportZ(QUIT_DIALOG_Z_ORDER)
     end
 end
 
@@ -367,6 +392,21 @@ local function bind_pause_menu()
     end)
 
     pauseWidget:bind_click("pause-quit-button", function()
+        show_quit_dialog()
+    end)
+end
+
+local function bind_quit_dialog()
+    if quitWidget == nil then return end
+
+    quitWidget:bind_click("cancel-quit-button", function()
+        quitVisible = false
+        if quitWidget ~= nil and quitWidget:IsInViewport() then
+            quitWidget:RemoveFromParent()
+        end
+    end)
+
+    quitWidget:bind_click("confirm-quit-button", function()
         close_all()
         if Engine ~= nil and Engine.Exit ~= nil then
             Engine.Exit()
@@ -438,10 +478,26 @@ function InGamePause.Initialize()
             apply_settings_to_ui()
         end
     end
+
+    if quitWidget == nil then
+        quitWidget = UI.CreateWidget(QUIT_DIALOG_PATH)
+        if quitWidget ~= nil then
+            quitWidget:SetWantsMouse(true)
+            bind_quit_dialog()
+        end
+    end
 end
 
 function InGamePause.Toggle()
     InGamePause.Initialize()
+
+    if quitVisible then
+        quitVisible = false
+        if quitWidget ~= nil and quitWidget:IsInViewport() then
+            quitWidget:RemoveFromParent()
+        end
+        return
+    end
 
     if settingsVisible then
         close_settings_show_pause()
@@ -461,7 +517,7 @@ function InGamePause.Toggle()
 end
 
 function InGamePause.IsOpen()
-    return pauseVisible or settingsVisible
+    return pauseVisible or settingsVisible or quitVisible
 end
 
 function InGamePause.Tick()
@@ -478,6 +534,7 @@ function InGamePause.Shutdown()
     close_all()
     pauseWidget = nil
     settingsWidget = nil
+    quitWidget = nil
 end
 
 return InGamePause
