@@ -18,11 +18,11 @@ body {
 
 .pause-title {
 	position: absolute;
-	left: 96px;
+	left: 90.00px;
 	top: 58px;
 	width: 680px;
-	height: 72px;
-	font-size: 56px;
+	height: 66.00px;
+	font-size: 54.00px;
 	font-weight: bold;
 	line-height: 72px;
 	color: #ffffff;
@@ -51,7 +51,7 @@ body {
 	position: absolute;
 	left: 0px;
 	top: 0px;
-	width: 390px;
+	width: 270.00px;
 	height: 42px;
 }
 
@@ -68,6 +68,44 @@ body {
 .pause-quit-button {
 	top: 192px;
 	width: 190px;
+}
+
+.pause-menu-separator {
+	left: 900px;
+	top: 150px;
+	height: 365px;
+}
+
+.pause-help-panel {
+	position: absolute;
+	left: 970px;
+	top: 150px;
+	width: 840px;
+	height: 365px;
+}
+
+.pause-help-title {
+	position: absolute;
+	left: 34px;
+	top: 28px;
+	width: 780px;
+	height: 42px;
+}
+
+.pause-help-body {
+	position: absolute;
+	left: 34px;
+	top: 92px;
+	width: 780px;
+	height: 112px;
+}
+
+.pause-help-note {
+	position: absolute;
+	left: 34px;
+	top: 230px;
+	width: 780px;
+	height: 92px;
 }
 
 .pause-button .hover-image-label {

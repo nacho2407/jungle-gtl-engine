@@ -1,0 +1,31 @@
+.hover-description-panel {
+	background-color: #00000099;
+}
+
+.hover-description-title {
+	font-size: 28px;
+	font-weight: bold;
+	line-height: 42px;
+	color: #ffffff;
+}
+
+.hover-description-body {
+	font-size: 24px;
+	font-weight: 500;
+	line-height: 34px;
+	color: #ffffff;
+}
+
+.hover-description-note {
+	font-size: 22px;
+	font-weight: 500;
+	line-height: 32px;
+	color: #b8b8b8;
+}
+
+.hover-description-separator {
+	position: absolute;
+	width: 1px;
+	background-color: #ffffff;
+	opacity: 0.42;
+}

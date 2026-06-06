@@ -23,8 +23,10 @@
 #include <RmlUi/Core/Factory.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <filesystem>
+#include <cmath>
 #include <memory>
 
 namespace
@@ -86,6 +88,16 @@ namespace
 		{
 			UE_LOG("[RmlUi] Failed to load font: %s", Path.c_str());
 		}
+	}
+
+	Rml::String ReplaceFileName(const Rml::String& Source, const Rml::String& FileName)
+	{
+		const size_t Slash = Source.find_last_of("/\\");
+		if (Slash == Rml::String::npos)
+		{
+			return FileName;
+		}
+		return Source.substr(0, Slash + 1) + FileName;
 	}
 
 }
@@ -851,6 +863,7 @@ void UUIManager::Render(const FPassContext& Ctx)
 	});
 
 	ProcessInput(Ctx.Frame);
+	UpdateMenuHoverButtonFrames();
 	FlushDeferredViewportRemovals();
 	if (ViewportWidgets.empty())
 	{
@@ -900,6 +913,75 @@ void UUIManager::ProcessInput(const FFrameContext& Frame)
 		RmlContext->ProcessMouseButtonUp(0, KeyModifierState);
 	}
 	bDispatchingRmlEvents = false;
+}
+
+void UUIManager::UpdateMenuHoverButtonFrames()
+{
+	if (!RmlContext)
+	{
+		return;
+	}
+
+	constexpr double BlinkPeriodSeconds = 0.5;
+	constexpr int32 BlinkFrameCount = 16;
+	static constexpr std::array<const char*, BlinkFrameCount> BlinkFrameFiles = {
+		"HoverCutBoxBlink00.png",
+		"HoverCutBoxBlink01.png",
+		"HoverCutBoxBlink02.png",
+		"HoverCutBoxBlink03.png",
+		"HoverCutBoxBlink04.png",
+		"HoverCutBoxBlink05.png",
+		"HoverCutBoxBlink06.png",
+		"HoverCutBoxBlink07.png",
+		"HoverCutBoxBlink08.png",
+		"HoverCutBoxBlink09.png",
+		"HoverCutBoxBlink10.png",
+		"HoverCutBoxBlink11.png",
+		"HoverCutBoxBlink12.png",
+		"HoverCutBoxBlink13.png",
+		"HoverCutBoxBlink14.png",
+		"HoverCutBoxBlink15.png",
+	};
+
+	const double Now = SystemInterface ? SystemInterface->GetElapsedTime() : 0.0;
+	const double CycleTime = std::fmod(Now, BlinkPeriodSeconds);
+	const int32 FrameIndex = static_cast<int32>((CycleTime / BlinkPeriodSeconds) * BlinkFrameCount) % BlinkFrameCount;
+
+	for (int DocumentIndex = 0; DocumentIndex < RmlContext->GetNumDocuments(); ++DocumentIndex)
+	{
+		Rml::ElementDocument* Document = RmlContext->GetDocument(DocumentIndex);
+		if (!Document)
+		{
+			continue;
+		}
+
+		Rml::ElementList Boxes;
+		Document->GetElementsByClassName(Boxes, "hover-image-box");
+		for (Rml::Element* Box : Boxes)
+		{
+			if (!Box)
+			{
+				continue;
+			}
+
+			const Rml::String CurrentSrc = Box->GetAttribute<Rml::String>("src", "");
+			if (CurrentSrc.empty())
+			{
+				continue;
+			}
+
+			Rml::Element* Button = Box->GetParentNode();
+			const bool bHovered = Button && Button->IsClassSet("hover-image-button") && Button->IsPseudoClassSet("hover");
+			const Rml::String TargetSrc = bHovered
+				? ReplaceFileName(CurrentSrc, BlinkFrameFiles[FrameIndex])
+				: ReplaceFileName(CurrentSrc, "HoverCutBox.png");
+
+			if (CurrentSrc != TargetSrc)
+			{
+				Box->SetAttribute("src", TargetSrc);
+			}
+		}
+	}
 }
 
 void UUIManager::FlushDeferredViewportRemovals()

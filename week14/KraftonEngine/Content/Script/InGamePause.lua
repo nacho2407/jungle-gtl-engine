@@ -1,4 +1,5 @@
 local InGamePause = {}
+local HoverDescription = require("HoverDescription")
 
 local PAUSE_MENU_PATH = "Content/UI/InGame/PauseMenu.rml"
 local SETTINGS_PATH = "Content/UI/Title/TitleSettings.rml"
@@ -43,6 +44,102 @@ local settingSliders = {
 
 local settingsSliderWidth = 220.0
 local settingsHandleWidth = 16.0
+
+local pauseDefaultDescription = {
+    title = "PAUSE MENU",
+    body = "Choose how to continue from the paused game.",
+    note = "Hover a menu item to preview what it does.",
+}
+
+local pauseDescriptions = {
+    {
+        id = "pause-restart-button",
+        title = "RESTART",
+        body = "Restart the current playable scene from the beginning.",
+        note = "Unsaved progress in the current run will be lost.",
+    },
+    {
+        id = "pause-settings-button",
+        title = "SETTINGS",
+        body = "Open gameplay, audio, and control options without leaving the game.",
+        note = "Close returns to the paused menu.",
+    },
+    {
+        id = "pause-main-menu-button",
+        title = "RETURN TO MAIN MENU",
+        body = "Leave the current session and return to the title screen.",
+        note = "Use this when you want to stop the current run.",
+    },
+    {
+        id = "pause-quit-button",
+        title = "QUIT",
+        body = "Exit the game application.",
+        note = "In editor play mode this exits the running play session.",
+    },
+}
+
+local settingsDefaultDescription = {
+    title = "GAME SETTINGS",
+    body = "Adjust visual brightness, audio mix, and mouse feel before returning to play.",
+    note = "Use - and +, drag a slider, or click toggle rows.",
+}
+
+local settingsDescriptions = {
+    {
+        id = "settings-gamma-row",
+        title = "GAMMA",
+        body = "Adjust screen brightness to keep dark scenes readable without washing out highlights.",
+        note = "Range: 1.00 to 3.00.",
+    },
+    {
+        id = "settings-bgm-row",
+        title = "BGM VOLUME",
+        body = "Control background music volume.",
+        note = "This value is prepared for audio mix control.",
+    },
+    {
+        id = "settings-sfx-row",
+        title = "SFX VOLUME",
+        body = "Control weapon, impact, movement, and interface sound effects.",
+        note = "This value is prepared for audio mix control.",
+    },
+    {
+        id = "settings-voice-row",
+        title = "VOICE VOLUME",
+        body = "Control dialogue and voice playback volume.",
+        note = "This value is prepared for story and combat voice lines.",
+    },
+    {
+        id = "settings-mouse-row",
+        title = "MOUSE SENSITIVITY",
+        body = "Adjust camera turn speed for mouse input.",
+        note = "The value is applied to the current engine mouse sensitivity.",
+    },
+    {
+        id = "settings-toggle-zoom-row",
+        title = "ZOOM",
+        body = "Choose whether zoom input should be held or toggled.",
+        note = "GUI only for now.",
+    },
+    {
+        id = "settings-toggle-sprint-row",
+        title = "SPRINT",
+        body = "Choose whether sprint input should be held or toggled.",
+        note = "GUI only for now.",
+    },
+    {
+        id = "settings-back-button",
+        title = "CLOSE",
+        body = "Close settings and return to the paused menu.",
+        note = "Current settings remain applied.",
+    },
+    {
+        id = "settings-restore-button",
+        title = "RESTORE DEFAULTS",
+        body = "Restore settings to the values captured when this settings panel opened.",
+        note = "Gamma and mouse sensitivity are applied immediately.",
+    },
+}
 
 local function set_game_paused(paused)
     if Engine == nil then return end
@@ -241,6 +338,12 @@ end
 local function bind_pause_menu()
     if pauseWidget == nil then return end
 
+    HoverDescription.Bind(
+        pauseWidget,
+        { title = "pause-help-title", body = "pause-help-body", note = "pause-help-note" },
+        pauseDefaultDescription,
+        pauseDescriptions)
+
     pauseWidget:bind_click("pause-restart-button", function()
         transition_to(RESTART_SCENE)
     end)
@@ -263,6 +366,12 @@ end
 
 local function bind_settings_menu()
     if settingsWidget == nil then return end
+
+    HoverDescription.Bind(
+        settingsWidget,
+        { title = "settings-help-title", body = "settings-help-body", note = "settings-help-note" },
+        settingsDefaultDescription,
+        settingsDescriptions)
 
     settingsWidget:bind_click("settings-back-button", function()
         close_settings_show_pause()
