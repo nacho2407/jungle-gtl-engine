@@ -20,6 +20,7 @@
 #include "Object/FName.h"
 #include "Serialization/JsonArchive.h"
 #include "Profiling/Time/PlatformTime.h"
+#include "Core/Logging/Log.h"
 
 #include <algorithm>
 
@@ -744,14 +745,6 @@ json::JSON FSceneSaveManager::SerializeWorld(UWorld* World, const FWorldContext&
 	w[SceneKeys::ContextName] = Ctx.ContextName;
 	w[SceneKeys::ContextHandle] = Ctx.ContextHandle.ToString();
 
-	// ---- WorldSettings (씬 단위 게임 설정) ----
-	{
-		const FWorldSettings& WS = World->GetWorldSettings();
-		JSON WSObj = json::Object();
-		WSObj[SceneKeys::GameMode] = WS.GameModeClassName;
-		w[SceneKeys::WorldSettings] = WSObj;
-	}
-
 	// ---- Actors ----
 	JSON Actors = json::Array();
 	for (AActor* Actor : World->GetActors()) {
@@ -1115,20 +1108,22 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 		? root[SceneKeys::ContextHandle].ToString()
 		: ContextName;
 
-	// WorldSettings — scene 단위 게임 설정. 신규 포맷은 root["WorldSettings"] 객체.
-	// 구버전 호환: root["GameMode"] (top-level) 도 fallback 으로 읽음.
+	// WorldSettings legacy — scene 단위 GameMode override 는 더 이상 사용하지 않는다.
+	// 기존 씬 파일에 남은 값은 로그만 남기고 ProjectSettings.GameplayPreset 을 따른다.
 	FWorldSettings WorldSettings;
 	if (root.hasKey(SceneKeys::WorldSettings))
 	{
 		JSON& WSObj = root[SceneKeys::WorldSettings];
 		if (WSObj.hasKey(SceneKeys::GameMode))
 		{
-			WorldSettings.GameModeClassName = WSObj[SceneKeys::GameMode].ToString();
+			UE_LOG("[SceneLoad] Legacy WorldSettings.GameMode '%s' ignored. GameplayPreset is used instead.",
+				WSObj[SceneKeys::GameMode].ToString().c_str());
 		}
 	}
 	else if (root.hasKey(SceneKeys::GameMode))
 	{
-		WorldSettings.GameModeClassName = root[SceneKeys::GameMode].ToString();
+		UE_LOG("[SceneLoad] Legacy root GameMode '%s' ignored. GameplayPreset is used instead.",
+			root[SceneKeys::GameMode].ToString().c_str());
 	}
 	World->GetWorldSettings() = WorldSettings;
 

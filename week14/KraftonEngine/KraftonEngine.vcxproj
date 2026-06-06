@@ -437,6 +437,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
+    <ClCompile Include="Source\Editor\Build\EditorGameBuilder.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
     <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
     <ClCompile Include="Source\Editor\Slate\SSplitter.cpp" />
@@ -474,6 +475,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Editor\UI\Dialog\PhysicsAssetCreationDialog.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorConsoleWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorControlWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorGameBuildWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorMaterialInspector.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.cpp" />
@@ -482,7 +484,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Editor\UI\Panel\EditorSceneWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorStatWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Panel\EditorViewportWidget.cpp" />
-    <ClCompile Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.cpp" />
     <ClCompile Include="Source\Editor\UI\Toolbar\ViewportToolbar.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorDragSource.cpp" />
     <ClCompile Include="Source\Editor\UI\Util\EditorFileUtils.cpp" />
@@ -620,6 +621,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\GameFramework\Actor\DecalActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\HeightFogActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\PlayerStart.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\SphereActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\StaticMeshActor.cpp" />
@@ -632,10 +634,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameModeBase.cpp" />
-    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameStateBase.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\GameMode\GameplayStatics.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\LuaPlayerController.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\GameMode\PlayerController.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Gameplay\GameplayRuntime.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\AmbientLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\DirectionalLightActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Light\PointLightActor.cpp" />
@@ -828,6 +830,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h" />
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
+    <ClInclude Include="Source\Editor\Build\EditorGameBuilder.h" />
     <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
     <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
     <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
@@ -874,6 +877,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Editor\UI\Dialog\PhysicsAssetCreationDialog.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorConsoleWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorControlWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorGameBuildWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorMaterialInspector.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.h" />
@@ -882,7 +886,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Editor\UI\Panel\EditorSceneWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorStatWidget.h" />
     <ClInclude Include="Source\Editor\UI\Panel\EditorViewportWidget.h" />
-    <ClInclude Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.h" />
     <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorDragSource.h" />
     <ClInclude Include="Source\Editor\UI\Util\EditorFileUtils.h" />
@@ -1032,6 +1035,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Core\Types\ResourceTypes.h" />
     <ClInclude Include="Source\Engine\Debug\DebugDrawQueue.h" />
     <ClInclude Include="Source\Engine\Debug\DrawDebugHelpers.h" />
+    <ClInclude Include="Source\Engine\Editor\SceneOutlinerState.h" />
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveAsset.h" />
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
@@ -1044,6 +1048,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\GameFramework\Actor\DecalActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\HeightFogActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\PlayerStart.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\SphereActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\StaticMeshActor.h" />
@@ -1057,10 +1062,10 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.h" />
-    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameModeBase.h" />
-    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameStateBase.h" />
     <ClInclude Include="Source\Engine\GameFramework\GameMode\GameplayStatics.h" />
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\LuaPlayerController.h" />
     <ClInclude Include="Source\Engine\GameFramework\GameMode\PlayerController.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Gameplay\GameplayRuntime.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\AmbientLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\DirectionalLightActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Light\PointLightActor.h" />

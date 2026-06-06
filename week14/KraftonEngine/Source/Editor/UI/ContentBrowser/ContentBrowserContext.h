@@ -9,11 +9,21 @@
 class ContentBrowserElement;
 class UEditorEngine;
 
+/**
+ * @brief Content Browser 에셋 표시 방식
+ */
+enum class EContentBrowserViewMode
+{
+	Grid,
+	List
+};
+
 struct ContentBrowserContext final
 {
 	std::wstring CurrentPath = FPaths::RootDir();
 	std::wstring PendingRevealPath;
 	ImVec2 ContentSize = ImVec2(50.0f, 50.0f);
+	EContentBrowserViewMode ViewMode = EContentBrowserViewMode::Grid;
 	std::shared_ptr<ContentBrowserElement> SelectedElement;
 
 	UEditorEngine* EditorEngine;

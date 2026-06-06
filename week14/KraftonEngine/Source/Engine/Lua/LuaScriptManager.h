@@ -8,6 +8,8 @@
 
 class ULuaScriptComponent;
 class ULuaAnimInstance;
+class AActor;
+class APawn;
 
 class FLuaScriptManager
 {
@@ -41,6 +43,19 @@ public:
 	// actor 포인터와 dangling 코루틴을 비운다. 안 하면 새 월드의 첫 Tick 에서 옛 코루틴이
 	// Wait(30) 만료 후 재개되며 freed AActor* 를 deref → 크래시.
 	static void FireWorldReset();
+
+	/**
+	 * @brief TriggerVolume overlap을 Lua Game EventBus로 발행합니다
+	 *
+	 * @param EventName Lua event 이름
+	 *
+	 * @param Trigger 이벤트를 발생시킨 trigger actor
+	 *
+	 * @param Pawn overlap 대상 pawn
+	 *
+	 * @param TriggerTag trigger 식별 tag 문자열
+	 */
+	static void EmitGameEvent_Trigger(const FString& EventName, AActor* Trigger, APawn* Pawn, const FString& TriggerTag);
 
 	static void RegisterComponent(ULuaScriptComponent* Component);
 	static void UnregisterComponent(ULuaScriptComponent* Component);

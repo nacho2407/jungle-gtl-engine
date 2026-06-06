@@ -9,7 +9,7 @@ void APlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	// E.2/3: PC 가 PlayerCameraManager 의 owner — UE 패턴.
-	// PC 가 GameMode->StartMatch 에서 spawn 되는 시점엔 다른 액터들이 이미 BeginPlay 완료.
+	// PC 가 GameplayRuntime 에서 spawn 되는 시점엔 다른 액터들이 이미 BeginPlay 완료.
 	// 그 사이에 BeginPlay 한 카메라 컴포넌트들은 PC 가 없어 등록 못 했으므로 여기서 catch up.
 	if (UWorld* World = GetWorld())
 	{
