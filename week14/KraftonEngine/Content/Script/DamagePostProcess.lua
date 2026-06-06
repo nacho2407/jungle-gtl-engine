@@ -4,6 +4,8 @@ local WIDGET_PATH = "Content/UI/PostProcess/DamagePostProcess.rml"
 local Z_ORDER = 70
 
 local LOW_HEALTH_THRESHOLD = 0.50
+local DESATURATION_START_HEALTH = 0.50
+local FULL_DESATURATION_HEALTH = 0.10
 local VIGNETTE_PEAK = 0.85
 local VIGNETTE_IN_SPEED = 12.0
 local VIGNETTE_OUT_SPEED = 2.8
@@ -25,6 +27,26 @@ local function set_opacity(id, value)
 	widget:SetProperty(id, "opacity", string.format("%.3f", clamp(value, 0.0, 1.0)))
 end
 
+local function calculate_saturation(healthRatio)
+	healthRatio = clamp(healthRatio or 1.0, 0.0, 1.0)
+
+	if healthRatio > DESATURATION_START_HEALTH then
+		return 1.0
+	end
+
+	if healthRatio <= FULL_DESATURATION_HEALTH then
+		return 0.0
+	end
+
+	return (healthRatio - FULL_DESATURATION_HEALTH) / (DESATURATION_START_HEALTH - FULL_DESATURATION_HEALTH)
+end
+
+local function set_post_process_saturation(value)
+	if Engine ~= nil and Engine.SetPostProcessSaturation ~= nil then
+		Engine.SetPostProcessSaturation(clamp(value or 1.0, 0.0, 1.0))
+	end
+end
+
 function DamagePostProcess.Initialize()
 	if widget ~= nil then return end
 
@@ -37,6 +59,8 @@ function DamagePostProcess.Initialize()
 end
 
 function DamagePostProcess.Shutdown()
+	set_post_process_saturation(1.0)
+
 	if widget ~= nil and widget:IsInViewport() then
 		widget:RemoveFromParent()
 	end
@@ -50,11 +74,13 @@ function DamagePostProcess.Reset()
 	vignetteIsRed = false
 	set_opacity("damage-vignette-white", 0.0)
 	set_opacity("damage-vignette-red", 0.0)
+	set_post_process_saturation(1.0)
 end
 
 function DamagePostProcess.SetHealthRatio(ratio)
 	DamagePostProcess.Initialize()
 	ratio = clamp(ratio or 0.0, 0.0, 1.0)
+	set_post_process_saturation(calculate_saturation(ratio))
 end
 
 function DamagePostProcess.TriggerHit(healthRatio)

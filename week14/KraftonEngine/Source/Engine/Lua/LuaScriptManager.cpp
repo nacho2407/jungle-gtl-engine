@@ -56,6 +56,7 @@ TArray<ULuaScriptComponent*> FLuaScriptManager::RegisteredComponents;
 TArray<ULuaAnimInstance*>    FLuaScriptManager::RegisteredAnimInstances;
 FSubscriptionID FLuaScriptManager::WatchSub = 0;
 float FLuaScriptManager::RuntimeGamma = 2.4f;
+float FLuaScriptManager::RuntimeSaturation = 1.0f;
 float FLuaScriptManager::RuntimeMouseSensitivity = 0.2f;
 
 void FLuaScriptManager::SetOnEscapePressed(sol::protected_function Callback)
@@ -71,6 +72,16 @@ float FLuaScriptManager::GetRuntimeGamma()
 void FLuaScriptManager::SetRuntimeGamma(float InGamma)
 {
 	RuntimeGamma = std::clamp(InGamma, 1.0f, 3.0f);
+}
+
+float FLuaScriptManager::GetRuntimeSaturation()
+{
+	return RuntimeSaturation;
+}
+
+void FLuaScriptManager::SetRuntimeSaturation(float InSaturation)
+{
+	RuntimeSaturation = std::clamp(InSaturation, 0.0f, 1.0f);
 }
 
 float FLuaScriptManager::GetRuntimeMouseSensitivity()
@@ -611,6 +622,14 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	Engine.set_function("SetGamma", [](float Value)
 	{
 		FLuaScriptManager::SetRuntimeGamma(Value);
+	});
+	Engine.set_function("GetPostProcessSaturation", []()
+	{
+		return FLuaScriptManager::GetRuntimeSaturation();
+	});
+	Engine.set_function("SetPostProcessSaturation", [](float Value)
+	{
+		FLuaScriptManager::SetRuntimeSaturation(Value);
 	});
 	Engine.set_function("GetMouseSensitivity", []()
 	{

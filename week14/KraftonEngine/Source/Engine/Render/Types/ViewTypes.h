@@ -127,6 +127,7 @@ struct FViewportRenderOptions
 
 	// Gamma Correction 전용 설정
 	float Gamma = 2.4f;
+	float Saturation = 1.0f;
 
 	// Light Culling 뷰모드 전용 설정
 	ELightCullingMode LightCullingMode = ELightCullingMode::Cluster;

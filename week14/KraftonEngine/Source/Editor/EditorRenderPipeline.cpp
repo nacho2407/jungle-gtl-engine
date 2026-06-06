@@ -17,6 +17,7 @@
 #include "Component/Light/LightComponentBase.h"
 #include "Physics/PhysicsScene.h"
 #include "Core/ProjectSettings.h"
+#include "Lua/LuaScriptManager.h"
 #include "Math/MathUtils.h"
 
 namespace
@@ -389,6 +390,7 @@ void FEditorRenderPipeline::BuildFrame(FLevelEditorViewportClient* VC, const FMi
 	{
 		// 실제 뷰포트 설정값은 그대로 두고 이번 렌더 프레임 복사본에만 PIE 전용 override 적용
 		ApplyPIEViewportShowFlagOverride(RenderOptions.ShowFlags);
+		RenderOptions.Saturation = FLuaScriptManager::GetRuntimeSaturation();
 	}
 	Frame.SetRenderOptions(RenderOptions);
 	Frame.OcclusionCulling = &GetOcclusionForViewport(VC);

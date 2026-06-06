@@ -5,7 +5,8 @@
 cbuffer GammaCorrectionCB : register(b2)
 {
     float Gamma;
-    float3 _GammaPad;
+    float Saturation;
+    float2 _GammaPad;
 };
 
 PS_Input_UV VS(uint vertexID : SV_VertexID)
@@ -38,6 +39,8 @@ float4 PS(PS_Input_UV input) : SV_TARGET
 
     float exposure = 1.0f; // 나중에 CB로 빼면 좋음
     float3 mapped = ACESFilm(sceneColor.rgb * exposure);
+    float luminance = dot(mapped, float3(0.299f, 0.587f, 0.114f));
+    mapped = lerp(float3(luminance, luminance, luminance), mapped, saturate(Saturation));
 
     return float4(LinearToSRGB(mapped), sceneColor.a);
 }
