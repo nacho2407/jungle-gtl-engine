@@ -230,6 +230,18 @@ void FEditorMainPanel::TickAssetEditors(float DeltaTime)
 	AssetEditorManager.Tick(DeltaTime);
 }
 
+void FEditorMainPanel::CollectAssetEditorPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const
+{
+	if (EditorEngine && EditorEngine->IsPlayingInEditor())
+	{
+		return;
+	}
+
+	AssetEditorManager.CollectPreviewViewportClients(OutClients);
+	FEditorMeshThumbnailManager::Get().CollectPreviewViewports(OutClients);
+	FEditorMaterialThumbnailManager::Get().CollectPreviewViewports(OutClients);
+}
+
 void FEditorMainPanel::Render(float DeltaTime)
 {
 	ImGui_ImplDX11_NewFrame();
