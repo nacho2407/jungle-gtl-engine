@@ -74,6 +74,9 @@ MSBuild_Logs/
 [Rr]eleases/
 ObjView*Debug/
 **/Build/
+!KraftonEngine/Source/Editor/Build/
+!KraftonEngine/Source/Editor/Build/*.h
+!KraftonEngine/Source/Editor/Build/*.cpp
 
 # Per-platform output
 [Dd]ebug/x64/
