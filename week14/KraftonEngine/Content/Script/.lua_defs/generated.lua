@@ -121,6 +121,9 @@ function CharacterMovementComponent:IsFalling() end
 function CharacterMovementComponent:IsWallRunning() end
 
 ---@return boolean
+function CharacterMovementComponent:WasAirJumpConsumedThisFrame() end
+
+---@return boolean
 function CharacterMovementComponent:IsSprinting() end
 
 ---@return boolean

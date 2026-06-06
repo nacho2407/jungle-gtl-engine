@@ -14,7 +14,7 @@ local MUZZLE_FWD_OFFSET = 0.4   -- 카메라 앞 0.4m 지점을 머즐로 간주
 
 local MAX_RANGE        = 200.0
 local FIRE_INTERVAL    = 0.12
-local MAGAZINE_SIZE    = 50
+local MAGAZINE_SIZE    = 30
 local RELOAD_DURATION  = 1.1
 
 local SPREAD_PER_SHOT       = 0.28

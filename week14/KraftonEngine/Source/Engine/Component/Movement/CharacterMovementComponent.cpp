@@ -1340,14 +1340,35 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 	const float InputLen = Input.Length();
 	if (InputLen > 0.0f)
 	{
-		// 입력 방향으로 가속 (XY 만).
+		// 입력 방향으로 가속 (XY 만). Falling 은 기존보다 방향 전환이 약해지도록 70%만 적용.
 		const FVector Direction = Input * (1.0f / InputLen);
-		Velocity.X += Direction.X * MaxAcceleration * DeltaTime;
-		Velocity.Y += Direction.Y * MaxAcceleration * DeltaTime;
+		constexpr float AirControlScale = 0.7f;
+		const float AccelScale = (MovementMode == EMovementMode::Falling) ? AirControlScale : 1.0f;
+		Velocity.X += Direction.X * MaxAcceleration * AccelScale * DeltaTime;
+		Velocity.Y += Direction.Y * MaxAcceleration * AccelScale * DeltaTime;
+
+		if (MovementMode == EMovementMode::Walking)
+		{
+			// 지상 입력 중에는 입력 방향 성분은 보존하고, 반대/횡방향 성분만 빨리 죽인다.
+			// 전역 damping 이나 물리 설정은 건드리지 않아 다른 모드 영향이 작다.
+			FVector V2D(Velocity.X, Velocity.Y, 0.0f);
+			const float AlongSpeed = V2D.Dot(Direction);
+			const FVector Along = Direction * std::max(0.0f, AlongSpeed);
+			FVector Slide = V2D - Along;
+			const float SlideSpeed = Slide.Length();
+			if (SlideSpeed > 0.0f)
+			{
+				const float NewSlideSpeed = std::max(0.0f, SlideSpeed - BrakingFriction * DeltaTime);
+				Slide = Slide * (NewSlideSpeed / SlideSpeed);
+				const FVector NewV2D = Along + Slide;
+				Velocity.X = NewV2D.X;
+				Velocity.Y = NewV2D.Y;
+			}
+		}
 	}
 	else if (MovementMode == EMovementMode::Walking)
 	{
-		// Walking 에선 input 없으면 braking. Falling 중 air control 없음 = 평면 속도 유지.
+		// Walking 에선 input 없으면 braking. Falling 중에는 평면 속도 유지.
 		FVector V2D(Velocity.X, Velocity.Y, 0.0f);
 		const float Speed2D = V2D.Length();
 		if (Speed2D > 0.0f)

@@ -260,7 +260,7 @@ public:
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Acceleration", Min = 0.0f, Max = 200.0f, Speed = 0.5f)
 	float MaxAcceleration = 20.0f;    // m/s^2
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Braking Friction", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float BrakingFriction = 8.0f;     // 입력 없을 때 감속률 (m/s^2). Walking 만 적용.
+	float BrakingFriction = 24.0f;    // Walking 감속률 (m/s^2). 입력 없음 + 입력 반대/횡방향 미끄럼 완화.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Gravity", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float Gravity = 9.8f;     // m/s^2 (positive — 적용 시 Velocity.Z -= Gravity*dt)
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Floor Probe Distance", Min = 0.0f, Max = 5.0f, Speed = 0.01f)

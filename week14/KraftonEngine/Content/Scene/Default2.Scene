@@ -4636,7 +4636,7 @@
           "Name" : "UCharacterMovementComponent_2",
           "ObjectId" : 143,
           "Properties" : {
-            "BrakingFriction" : 8.000000,
+            "BrakingFriction" : 24.000000,
             "ControllerContactOffset" : 0.050000,
             "ControllerMinMoveDistance" : 0.001000,
             "ControllerSyncTeleportDistance" : 1.000000,
