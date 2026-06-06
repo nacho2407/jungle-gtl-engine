@@ -1,4 +1,4 @@
-#include "Buffer.h"
+﻿#include "Buffer.h"
 #include "Engine/Profiling/Stats/MemoryStats.h"
 
 void FMeshBuffer::Release()

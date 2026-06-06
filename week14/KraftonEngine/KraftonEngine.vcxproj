@@ -415,7 +415,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>lua51.lib;xinput.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXCooking_64.lib;PhysXVehicle_static_64.lib;PhysXCharacterKinematic_static_64.lib;NvCloth_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;xinput.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXCooking_64.lib;PhysXPvdSDK_static_64.lib;PhysXVehicle_static_64.lib;PhysXCharacterKinematic_static_64.lib;NvCloth_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
@@ -435,7 +435,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="HighPerformanceGPUHint.cpp" />
     <ClCompile Include="Source\Editor\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
@@ -549,9 +548,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\Collision\Ray\RayUtilsSIMD.cpp" />
     <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.cpp" />
-    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.cpp" />
-    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.cpp" />
     <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
@@ -575,6 +571,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\Component\Movement\PendulumMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.cpp" />
     <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\BillboardComponent.cpp" />
     <ClCompile Include="Source\Engine\Component\Primitive\ClothComponent.cpp" />
@@ -690,12 +689,13 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\Physics\ClothCollisionGeometryUtils.cpp" />
     <ClCompile Include="Source\Engine\Physics\ClothInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\HitboxInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\NvClothSDK.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXConversions.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXSDK.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXVehicle4WInstance.cpp" />
-    <ClCompile Include="Source\Engine\Physics\PhysXVehicleTankInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysXVehicleTankInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicalMaterial.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicalMaterialManager.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsAsset.cpp" />
@@ -708,7 +708,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\Physics\PhysicsQueryFilter.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsScene.cpp" />
     <ClCompile Include="Source\Engine\Physics\PhysicsShape.cpp" />
-    <ClCompile Include="Source\Engine\Physics\HitboxInstance.cpp" />
     <ClCompile Include="Source\Engine\Physics\RagdollInstance.cpp" />
     <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Platform\DirectoryWatcher.cpp" />
@@ -963,9 +962,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Collision\Ray\RayUtilsSIMD.h" />
     <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.h" />
-    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.h" />
-    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.h" />
     <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
     <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
     <ClInclude Include="Source\Engine\Component\ShapeComponent.h" />
@@ -989,6 +985,9 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Component\Movement\PendulumMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h" />
     <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.h" />
     <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\BillboardComponent.h" />
     <ClInclude Include="Source\Engine\Component\Primitive\ClothComponent.h" />
@@ -1140,6 +1139,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Physics\ClothCollisionTypes.h" />
     <ClInclude Include="Source\Engine\Physics\ClothInstance.h" />
     <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h" />
+    <ClInclude Include="Source\Engine\Physics\HitboxInstance.h" />
     <ClInclude Include="Source\Engine\Physics\NvClothInclude.h" />
     <ClInclude Include="Source\Engine\Physics\NvClothSDK.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXConversions.h" />
@@ -1147,8 +1147,8 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Physics\PhysXSDK.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXVehicle4WInstance.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleInstanceBase.h" />
-    <ClInclude Include="Source\Engine\Physics\PhysXVehicleTankInstance.h" />
     <ClInclude Include="Source\Engine\Physics\PhysXVehicleManager.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicleTankInstance.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicalMaterial.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicalMaterialManager.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsAsset.h" />
@@ -1164,7 +1164,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Physics\PhysicsScene.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsShape.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsTypes.h" />
-    <ClInclude Include="Source\Engine\Physics\HitboxInstance.h" />
     <ClInclude Include="Source\Engine\Physics\RagdollInstance.h" />
     <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h" />
     <ClInclude Include="Source\Engine\Platform\CrashDump.h" />
@@ -2300,6 +2299,14 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\CameraDesaturation.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+      <FileType>Document</FileType>
     </FxCompile>
     <FxCompile Include="Shaders\PostProcess\CameraFade.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>

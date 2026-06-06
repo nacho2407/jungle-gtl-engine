@@ -1,0 +1,77 @@
+body {
+	margin: 0px;
+	width: 100%;
+	height: 100%;
+	font-family: Pretendard;
+	color: #ffffff;
+}
+
+#cutscene-root {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+.letterbox-bar {
+	position: absolute;
+	left: 0px;
+	width: 100%;
+	height: 13.5%;
+	background-color: #000000;
+	opacity: 0.96;
+}
+
+#letterbox-top {
+	top: 0px;
+}
+
+#letterbox-bottom {
+	bottom: 0px;
+}
+
+.cutscene-dialogue-box {
+	left: 50%;
+	bottom: 118px;
+	width: 980px;
+	height: 48px;
+	padding: 0px;
+	background-color: #000000F0;
+	opacity: 0.0;
+}
+
+.cutscene-dialogue-text {
+	position: absolute;
+	left: 16px;
+	top: 0px;
+	width: 948px;
+	height: 48px;
+	font-family: Pretendard;
+	font-size: 22px;
+	font-weight: 400;
+	line-height: 48px;
+	color: #ffffff;
+	white-space: nowrap;
+	text-align: left;
+}
+
+.skip-ring {
+	position: absolute;
+	right: 54px;
+	bottom: 112px;
+	width: 64px;
+	height: 64px;
+	opacity: 0.0;
+}
+
+.skip-ring-frame {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 64px;
+	height: 64px;
+	image-fit: contain;
+	opacity: 0.0;
+}

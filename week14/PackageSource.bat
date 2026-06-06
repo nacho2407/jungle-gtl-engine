@@ -15,6 +15,7 @@ if not defined DESKTOP_DIR (
 set "ENGINE_ROOT=%PROJECT_ROOT%\KraftonEngine"
 set "SOURCE_DIR=%ENGINE_ROOT%\Source"
 set "UI_DIR=%ENGINE_ROOT%\Content\UI"
+set "SCRIPT_DIR=%ENGINE_ROOT%\Content\Script"
 
 if not exist "%SOURCE_DIR%\" (
     echo Source directory not found: "%SOURCE_DIR%"
@@ -23,6 +24,11 @@ if not exist "%SOURCE_DIR%\" (
 
 if not exist "%UI_DIR%\" (
     echo UI directory not found: "%UI_DIR%"
+    exit /b 1
+)
+
+if not exist "%SCRIPT_DIR%\" (
+    echo Script directory not found: "%SCRIPT_DIR%"
     exit /b 1
 )
 
@@ -41,6 +47,7 @@ if exist "%STAGING%" (
 
 mkdir "%STAGING_ENGINE%\Source" >nul 2>nul
 mkdir "%STAGING_ENGINE%\Content\UI" >nul 2>nul
+mkdir "%STAGING_ENGINE%\Content\Script" >nul 2>nul
 
 echo Copying Source files...
 robocopy "%SOURCE_DIR%" "%STAGING_ENGINE%\Source" /E /XF *.png *.jpg /NFL /NDL /NJH /NJS /NC /NS /NP >nul
@@ -54,6 +61,14 @@ echo Copying UI files...
 robocopy "%UI_DIR%" "%STAGING_ENGINE%\Content\UI" /E /XF *.png *.jpg /NFL /NDL /NJH /NJS /NC /NS /NP >nul
 if %ERRORLEVEL% GEQ 8 (
     echo Failed to copy UI files.
+    rmdir /s /q "%STAGING%" >nul 2>nul
+    exit /b 1
+)
+
+echo Copying Lua script files...
+robocopy "%SCRIPT_DIR%" "%STAGING_ENGINE%\Content\Script" *.lua /E /NFL /NDL /NJH /NJS /NC /NS /NP >nul
+if %ERRORLEVEL% GEQ 8 (
+    echo Failed to copy Lua script files.
     rmdir /s /q "%STAGING%" >nul 2>nul
     exit /b 1
 )

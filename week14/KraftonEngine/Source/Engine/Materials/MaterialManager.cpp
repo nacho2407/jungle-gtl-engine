@@ -122,8 +122,35 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	}
 
 	// 3. JSON에서 기본 정보 추출
+	bool bMaterialSchemaInjected = false;
+
 	FString PathFileName = JsonData[MatKeys::PathFileName].ToString().c_str();
+	if (PathFileName.empty())
+	{
+		PathFileName = GenericPath;
+		JsonData[MatKeys::PathFileName] = PathFileName.c_str();
+		bMaterialSchemaInjected = true;
+	}
+
 	FString ShaderPath = JsonData[MatKeys::ShaderPath].ToString().c_str();
+	if (ShaderPath.empty())
+	{
+		ShaderPath = DefaultShaderPath;
+		JsonData[MatKeys::ShaderPath] = ShaderPath.c_str();
+		bMaterialSchemaInjected = true;
+	}
+
+	if (!JsonData.hasKey(MatKeys::Parameters) || JsonData[MatKeys::Parameters].JSONType() != json::JSON::Class::Object)
+	{
+		JsonData[MatKeys::Parameters] = json::JSON::Make(json::JSON::Class::Object);
+		bMaterialSchemaInjected = true;
+	}
+	if (!JsonData.hasKey(MatKeys::Textures) || JsonData[MatKeys::Textures].JSONType() != json::JSON::Class::Object)
+	{
+		JsonData[MatKeys::Textures] = json::JSON::Make(json::JSON::Class::Object);
+		bMaterialSchemaInjected = true;
+	}
+
 	FString RenderPassStr = JsonData[MatKeys::RenderPass].ToString().c_str();
 	ERenderPass RenderPass = StringToRenderPass(RenderPassStr);
 
@@ -198,7 +225,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	WriteMaterialBloomSettings(JsonData, Material);
 
 	//최종적으로 material 저장
-	if (bInjected || bPurged || bMaterialSettingsInjected)
+	if (bInjected || bPurged || bMaterialSettingsInjected || bMaterialSchemaInjected)
 	{
 		SaveToJSON(JsonData, GenericPath);
 	}
@@ -304,6 +331,10 @@ bool FMaterialManager::ReloadMaterial(const FString& MatFilePath)
 	}
 
 	FString ShaderPath = JsonData[MatKeys::ShaderPath].ToString().c_str();
+	if (ShaderPath.empty())
+	{
+		ShaderPath = DefaultShaderPath;
+	}
 	FString RenderPassStr = JsonData[MatKeys::RenderPass].ToString().c_str();
 	ERenderPass RenderPass = StringToRenderPass(RenderPassStr);
 

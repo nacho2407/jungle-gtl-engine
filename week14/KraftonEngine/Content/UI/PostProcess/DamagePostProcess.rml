@@ -1,0 +1,12 @@
+<rml>
+<head>
+	<title>Damage Post Process</title>
+	<link type="text/rcss" href="DamagePostProcess.rcss"/>
+</head>
+<body>
+	<div id="damage-postprocess-root" class="damage-postprocess-root">
+		<img id="damage-vignette-white" class="damage-effect-layer" src="Effects/DamageVignetteWhite.png"/>
+		<img id="damage-vignette-red" class="damage-effect-layer" src="Effects/DamageVignetteRed.png"/>
+	</div>
+</body>
+</rml>

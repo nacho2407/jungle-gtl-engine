@@ -4,6 +4,25 @@
     <link type="text/rcss" href="WeaponHUD.rcss"/>
 </head>
 <body>
+    <div id="crosshair-screen" class="crosshair-screen">
+        <div id="crosshair-root" class="crosshair-root">
+            <img id="crosshair-left-white" class="crosshair-part crosshair-left" src="Crosshair/CrosshairLeftWhite.png"/>
+            <img id="crosshair-right-white" class="crosshair-part crosshair-right" src="Crosshair/CrosshairRightWhite.png"/>
+            <img id="crosshair-top-white" class="crosshair-part crosshair-top" src="Crosshair/CrosshairTopWhite.png"/>
+            <img id="crosshair-bottom-white" class="crosshair-part crosshair-bottom" src="Crosshair/CrosshairBottomWhite.png"/>
+            <img id="crosshair-dot-white" class="crosshair-dot" src="Crosshair/CrosshairDotWhite.png"/>
+
+            <img id="crosshair-left-red" class="crosshair-part crosshair-left" src="Crosshair/CrosshairLeftRed.png"/>
+            <img id="crosshair-right-red" class="crosshair-part crosshair-right" src="Crosshair/CrosshairRightRed.png"/>
+            <img id="crosshair-top-red" class="crosshair-part crosshair-top" src="Crosshair/CrosshairTopRed.png"/>
+            <img id="crosshair-bottom-red" class="crosshair-part crosshair-bottom" src="Crosshair/CrosshairBottomRed.png"/>
+            <img id="crosshair-dot-red" class="crosshair-dot" src="Crosshair/CrosshairDotRed.png"/>
+
+            <img id="crosshair-hit-marker" class="crosshair-hit-marker" src="Crosshair/CrosshairHitMarkerWhite.png"/>
+            <img id="crosshair-kill-marker" class="crosshair-kill-marker" src="Crosshair/CrosshairKillMarker.png"/>
+        </div>
+    </div>
+
     <div id="weapon-hud-root">
         <div id="weapon-hud-panel" class="weapon-hud-panel" data-ui-editor="img">
             <img id="weapon-hud-panel-image" class="weapon-hud-panel-image" src="WeaponHudCutPanel.png"/>

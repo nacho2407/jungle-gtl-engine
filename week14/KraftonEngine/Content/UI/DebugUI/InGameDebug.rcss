@@ -1,0 +1,265 @@
+body {
+	margin: 0px;
+	width: 100%;
+	height: 100%;
+	font-family: Pretendard;
+	color: #ffffff;
+}
+
+.debug-window {
+	position: absolute;
+	left: 40px;
+	top: 48px;
+	width: 520px;
+	height: 300px;
+	background-color: #080808E6;
+	border-width: 1px;
+	border-color: #ffffff44;
+}
+
+.debug-titlebar {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 520px;
+	height: 30px;
+	background-color: #171717F2;
+}
+
+.debug-title {
+	position: absolute;
+	left: 10px;
+	top: 0px;
+	width: 420px;
+	height: 30px;
+	font-size: 14px;
+	font-weight: 800;
+	line-height: 30px;
+	color: #ffffff;
+}
+
+.debug-close {
+	position: absolute;
+	left: 486px;
+	top: 4px;
+	width: 22px;
+	height: 22px;
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 22px;
+	text-align: center;
+	color: #bdbdbd;
+	background-color: #ffffff12;
+}
+
+.debug-close:hover {
+	color: #111111;
+	background-color: #f0f0f0;
+}
+
+.debug-tabs {
+	position: absolute;
+	left: 10px;
+	top: 38px;
+	width: 500px;
+	height: 24px;
+}
+
+.debug-tab {
+	position: absolute;
+	top: 0px;
+	width: 64px;
+	height: 22px;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 22px;
+	text-align: center;
+	color: #808080;
+}
+
+.debug-tab:hover {
+	color: #d8d8d8;
+}
+
+.debug-tab-active {
+	color: #ffffff;
+}
+
+.debug-tab-world {
+	left: 70px;
+}
+
+.debug-tab-ai {
+	left: 140px;
+}
+
+.debug-tab-render {
+	left: 210px;
+}
+
+.debug-tab-audio {
+	left: 280px;
+}
+
+.debug-separator {
+	position: absolute;
+	left: 10px;
+	top: 66px;
+	width: 500px;
+	height: 1px;
+	background-color: #ffffff55;
+}
+
+.debug-panel {
+	position: absolute;
+	left: 12px;
+	top: 78px;
+	width: 496px;
+	height: 210px;
+}
+
+.debug-panel-hidden {
+	display: none;
+}
+
+.debug-row {
+	position: absolute;
+	left: 0px;
+	width: 496px;
+	height: 26px;
+	background-color: #ffffff0A;
+}
+
+.debug-row-speed {
+	top: 0px;
+}
+
+.debug-row-god {
+	top: 32px;
+}
+
+.debug-row-damage {
+	top: 64px;
+}
+
+.debug-row-health {
+	top: 96px;
+}
+
+.debug-label {
+	position: absolute;
+	left: 8px;
+	top: 0px;
+	width: 240px;
+	height: 26px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 26px;
+	color: #d7d7d7;
+}
+
+.debug-value {
+	position: absolute;
+	left: 342px;
+	top: 3px;
+	width: 58px;
+	height: 20px;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 20px;
+	text-align: center;
+	color: #ffffff;
+	background-color: #00000066;
+}
+
+.debug-small-button {
+	position: absolute;
+	top: 3px;
+	width: 24px;
+	height: 20px;
+	font-size: 14px;
+	font-weight: 900;
+	line-height: 20px;
+	text-align: center;
+	color: #d8d8d8;
+	background-color: #ffffff1F;
+}
+
+.debug-small-button:hover,
+.debug-toggle-button:hover,
+.debug-action-button:hover {
+	color: #111111;
+	background-color: #e8e8e8;
+}
+
+.debug-button-minus {
+	left: 312px;
+}
+
+.debug-button-plus {
+	left: 406px;
+}
+
+.debug-toggle-button {
+	position: absolute;
+	left: 342px;
+	top: 3px;
+	width: 84px;
+	height: 20px;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 20px;
+	text-align: center;
+	color: #d8d8d8;
+	background-color: #ffffff1F;
+}
+
+.debug-action-button {
+	position: absolute;
+	left: 0px;
+	top: 134px;
+	width: 118px;
+	height: 26px;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 26px;
+	text-align: center;
+	color: #d8d8d8;
+	background-color: #ffffff1F;
+}
+
+.debug-status {
+	position: absolute;
+	left: 134px;
+	top: 134px;
+	width: 360px;
+	height: 26px;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 26px;
+	color: #cfcfcf;
+}
+
+.debug-placeholder-title {
+	position: absolute;
+	left: 0px;
+	top: 10px;
+	width: 470px;
+	height: 24px;
+	font-size: 16px;
+	font-weight: 800;
+	line-height: 24px;
+	color: #ffffff;
+}
+
+.debug-placeholder-line {
+	position: absolute;
+	left: 0px;
+	top: 42px;
+	width: 470px;
+	height: 80px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 18px;
+	color: #9d9d9d;
+}
