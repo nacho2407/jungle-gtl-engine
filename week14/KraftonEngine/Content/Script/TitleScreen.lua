@@ -189,13 +189,13 @@ local function restore_default_settings()
     apply_settings_to_ui()
 end
 
-local function start_default_scene()
+local function start_prologue_scene()
     show_stat_panel(false)
     show_settings_panel(false)
     show_quit_panel(false)
 
     if Engine.TransitionToScene ~= nil then
-        Engine.TransitionToScene("Default.Scene")
+        Engine.TransitionToScene("Prologue.Scene")
     else
         print("[Title] Engine.TransitionToScene is not available")
     end
@@ -426,11 +426,11 @@ local function bind_clicks()
     end)
 
     widget:bind_click("new-game-button", function()
-        start_default_scene()
+        start_prologue_scene()
     end)
 
     widget:bind_click("continue-button", function()
-        start_default_scene()
+        start_prologue_scene()
     end)
 
     widget:bind_click("settings-button", function()

@@ -1,0 +1,13 @@
+{
+        "Parameters" : {
+
+        },
+        "ParentMaterial" : "Content/Material/Auto/Particle/NewMaterial.mat",
+        "PathFileName" : "Content/Material/Auto/Particle/NewMaterial_Inst.matinst",
+        "Textures" : {
+
+        },
+        "bOverrideEmissiveColor" : false,
+        "bOverrideEmissiveIntensity" : false,
+        "bOverrideEnableBloom" : false
+      }

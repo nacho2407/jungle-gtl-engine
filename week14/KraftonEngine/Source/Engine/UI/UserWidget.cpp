@@ -3,6 +3,25 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "UI/UIManager.h"
 
+static FString EscapeRmlText(const FString& Text)
+{
+	FString Escaped;
+	Escaped.reserve(Text.size());
+	for (const char Ch : Text)
+	{
+		switch (Ch)
+		{
+		case '&': Escaped += "&amp;"; break;
+		case '<': Escaped += "&lt;"; break;
+		case '>': Escaped += "&gt;"; break;
+		case '"': Escaped += "&quot;"; break;
+		case '\'': Escaped += "&#39;"; break;
+		default: Escaped += Ch; break;
+		}
+	}
+	return Escaped;
+}
+
 void FWidgetEventListener::ProcessEvent(Rml::Event& Event)
 {
 	if (!Callback.valid())
@@ -182,7 +201,8 @@ void UUserWidget::SetText(const FString& ElementId, const FString& Text)
 		return;
 	}
 
-	Element->SetInnerRML(Text.c_str());
+	const FString EscapedText = EscapeRmlText(Text);
+	Element->SetInnerRML(EscapedText.c_str());
 }
 
 bool UUserWidget::SetProperty(const FString& ElementId, const FString& PropertyName, const FString& Value)

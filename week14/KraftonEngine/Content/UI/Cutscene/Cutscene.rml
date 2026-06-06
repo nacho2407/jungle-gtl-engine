@@ -1,0 +1,19 @@
+<rml>
+<head>
+    <title>Cutscene</title>
+    <link type="text/rcss" href="../Common/DialogueBox.rcss"/>
+    <link type="text/rcss" href="Cutscene.rcss"/>
+</head>
+<body>
+    <div id="cutscene-root">
+        <div id="letterbox-top" class="letterbox-bar"></div>
+        <div id="letterbox-bottom" class="letterbox-bar"></div>
+        <div id="dialogue-layer" class="dialogue-layer">
+            <div id="dialogue-box" class="dialogue-box cutscene-dialogue-box">
+                <div id="dialogue-speaker" class="dialogue-speaker"></div>
+                <div id="dialogue-line" class="dialogue-text cutscene-dialogue-text"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</rml>
