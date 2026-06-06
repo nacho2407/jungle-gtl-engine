@@ -11,6 +11,7 @@
 #include "Collision/Octree/SpatialPartition.h"
 #include "GameFramework/WorldContext.h"
 #include "GameFramework/WorldSettings.h"
+#include "Engine/Editor/SceneOutlinerState.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/LODContext.h"
 #include "Render/Types/MinimalViewInfo.h"
@@ -93,6 +94,10 @@ public:
 	FWorldSettings& GetWorldSettings() { return WorldSettings; }
 	const FWorldSettings& GetWorldSettings() const { return WorldSettings; }
 
+	// 에디터 전용 Scene Manager 그룹 상태. 런타임 actor 계층과 별도로 저장/로드만 수행한다.
+	FSceneOutlinerState& GetEditorOutlinerState() { return EditorOutlinerState; }
+	const FSceneOutlinerState& GetEditorOutlinerState() const { return EditorOutlinerState; }
+
 	// 일시정지 — true 동안 World::Tick 이 PhysicsScene 와 TickManager 호출을 skip 한다.
 	// Render / UI / Input poll 은 영향 받지 않으므로 인트로 / 메뉴 / 모달 띄운 상태에서
 	// 게임 시간만 멈추는 용도. 기본 false (게임 진행).
@@ -136,6 +141,7 @@ private:
 	bool bHasBegunPlay = false;
 	bool bPaused = false;
 	FWorldSettings WorldSettings;
+	FSceneOutlinerState EditorOutlinerState;
 	bool bHasLastFullLODUpdateCameraPos = false;
 	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
 	int32 DeferredPickingBVHUpdateDepth = 0;
