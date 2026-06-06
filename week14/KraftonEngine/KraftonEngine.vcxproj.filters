@@ -508,6 +508,9 @@
     <Filter Include="ThirdParty\SimpleJSON">
       <UniqueIdentifier>{b5b63371-405e-e009-4e4e-e3b5a25ee7bd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\miniaudio">
+      <UniqueIdentifier>{415e9332-d5f3-49b1-b882-e8eb4c0c7ab1}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ThirdParty\fbx">
       <UniqueIdentifier>{4b5ee33e-f32f-8d72-1cef-4e4f43664fdf}</UniqueIdentifier>
     </Filter>
@@ -1050,6 +1053,9 @@
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\AudioManager.cpp">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Audio\Miniaudio.cpp">
       <Filter>Source\Engine\Audio</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\CameraShake\CameraShakeAsset.cpp">
@@ -3319,6 +3325,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\stb_image.h">
       <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\miniaudio\miniaudio.h">
+      <Filter>ThirdParty\miniaudio</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\fbx\include\fbxsdk.h">
       <Filter>ThirdParty\fbx\include</Filter>
