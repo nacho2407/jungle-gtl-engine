@@ -28,12 +28,95 @@
 #include "Asset/AssetRegistry.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
+#include "Materials/MaterialManager.h"
+#include "SimpleJSON/json.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <utility>
+
+static FString GetLowerExtensionForContentBrowser(const std::filesystem::path& Path)
+{
+	FString Extension = FPaths::ToUtf8(Path.extension().wstring());
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
+	return Extension;
+}
+
+static bool IsMaterialInstanceContentPath(const std::filesystem::path& Path)
+{
+	return GetLowerExtensionForContentBrowser(Path) == ".matinst";
+}
+
+static bool IsMaterialJsonContentPath(const std::filesystem::path& Path)
+{
+	const FString Extension = GetLowerExtensionForContentBrowser(Path);
+	return Extension == ".mat" || Extension == ".matinst";
+}
+
+static FString MakeProjectRelativeGenericPathForContentBrowser(const std::filesystem::path& Path)
+{
+	std::filesystem::path NormalizedPath = Path.lexically_normal();
+	const std::filesystem::path ProjectRoot = std::filesystem::path(FPaths::RootDir()).lexically_normal();
+
+	std::filesystem::path RelativePath = NormalizedPath.lexically_relative(ProjectRoot);
+	if (RelativePath.empty() || RelativePath.native().rfind(L"..", 0) == 0)
+	{
+		return FPaths::ToUtf8(NormalizedPath.generic_wstring());
+	}
+
+	return FPaths::ToUtf8(RelativePath.generic_wstring());
+}
+
+static bool RewriteMaterialAssetPathInsideFile(const std::filesystem::path& FilePath, FString* OutError)
+{
+	auto SetError = [&](const FString& Message)
+	{
+		if (OutError)
+		{
+			*OutError = Message;
+		}
+	};
+
+	std::ifstream InFile(FilePath);
+	if (!InFile.is_open())
+	{
+		SetError("Failed to open material file after rename.");
+		return false;
+	}
+
+	std::stringstream Buffer;
+	Buffer << InFile.rdbuf();
+	InFile.close();
+
+	json::JSON JsonData = json::JSON::Load(Buffer.str());
+	if (JsonData.IsNull())
+	{
+		SetError("Failed to parse material JSON after rename.");
+		return false;
+	}
+
+	JsonData[MatKeys::PathFileName] = MakeProjectRelativeGenericPathForContentBrowser(FilePath).c_str();
+
+	std::ofstream OutFile(FilePath, std::ios::trunc);
+	if (!OutFile.is_open())
+	{
+		SetError("Failed to write material file after rename.");
+		return false;
+	}
+
+	OutFile << JsonData.dump(4);
+	if (!OutFile.good())
+	{
+		SetError("Failed to save material file after rename.");
+		return false;
+	}
+
+	return true;
+}
 
 static FString FormatBytes(uint64 Bytes)
 {
@@ -178,16 +261,22 @@ static void OpenContentItemInFileExplorer(const FContentItem& Item)
 		return;
 	}
 
+	const std::filesystem::path FullPath = ResolveProjectPathForContentBrowser(FPaths::ToUtf8(Item.Path.wstring()));
 	std::error_code Ec;
-	const bool bIsDirectory = std::filesystem::is_directory(Item.Path, Ec);
+	const bool bIsDirectory = std::filesystem::is_directory(FullPath, Ec);
 	if (!Ec && bIsDirectory)
 	{
-		ShellExecuteW(nullptr, L"open", Item.Path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		ShellExecuteW(nullptr, L"open", FullPath.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 		return;
 	}
 
-	const std::wstring Parameters = L"/select,\"" + Item.Path.wstring() + L"\"";
-	ShellExecuteW(nullptr, L"open", L"explorer.exe", Parameters.c_str(), nullptr, SW_SHOWNORMAL);
+	const std::filesystem::path FolderPath = FullPath.parent_path();
+	if (FolderPath.empty())
+	{
+		return;
+	}
+
+	ShellExecuteW(nullptr, L"open", FolderPath.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 static bool IsSameOrChildPathForContentBrowser(const std::filesystem::path& Parent, const std::filesystem::path& Child)
@@ -391,11 +480,32 @@ bool ContentBrowserElement::RenameTo(const FString& NewStem, FString* OutError)
 	}
 
 	std::error_code Ec;
-	std::filesystem::rename(ContentItem.Path, NewPath, Ec);
+	const std::filesystem::path OldPath = ContentItem.Path;
+	std::filesystem::rename(OldPath, NewPath, Ec);
 	if (Ec)
 	{
 		SetError(Ec.message().c_str());
 		return false;
+	}
+
+	if (!ContentItem.bIsDirectory && IsMaterialJsonContentPath(NewPath))
+	{
+		FString RewriteError;
+		if (!RewriteMaterialAssetPathInsideFile(NewPath, &RewriteError))
+		{
+			std::error_code RollbackEc;
+			std::filesystem::rename(NewPath, OldPath, RollbackEc);
+			FString FinalError = RewriteError;
+			if (RollbackEc)
+			{
+				FinalError += " Rollback failed: ";
+				FinalError += RollbackEc.message();
+			}
+			SetError(FinalError.c_str());
+			return false;
+		}
+
+		FMaterialManager::Get().ScanMaterialAssets();
 	}
 
 	ContentItem.Path = NewPath;
@@ -1213,17 +1323,6 @@ void MaterialElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	}
 }
 
-static FString GetLowerExtensionForContentBrowser(const std::filesystem::path& Path)
-{
-	FString Extension = FPaths::ToUtf8(Path.extension());
-	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
-	return Extension;
-}
-
-static bool IsMaterialInstanceContentPath(const std::filesystem::path& Path)
-{
-	return GetLowerExtensionForContentBrowser(Path) == ".matinst";
-}
 
 const char* MaterialElement::GetTypeLabel() const
 {
