@@ -26,6 +26,28 @@ namespace
 			return false;
 		}
 	}
+
+	bool ShouldDispatchComponentTick(const AActor* Actor, const UActorComponent* Component, ELevelTick TickType)
+	{
+		if (!Actor || !Component)
+		{
+			return false;
+		}
+
+		switch (TickType)
+		{
+		case LEVELTICK_ViewportsOnly:
+			return Actor->bTickInEditor || Component->ShouldTickInEditor();
+
+		case LEVELTICK_All:
+		case LEVELTICK_TimeOnly:
+		case LEVELTICK_PauseTick:
+			return Actor->bNeedsTick && Actor->HasActorBegunPlay();
+
+		default:
+			return false;
+		}
+	}
 }
 
 void FTickFunction::RegisterTickFunction()
@@ -85,16 +107,20 @@ void FTickManager::GatherTickFunctions(UWorld* World, ELevelTick TickType)
 
 	for (AActor* Actor : World->GetActors())
 	{
-		if (!ShouldDispatchActorTick(Actor, TickType))
+		const bool bDispatchActorTick = ShouldDispatchActorTick(Actor, TickType);
+		if (!Actor || (!bDispatchActorTick && TickType != LEVELTICK_ViewportsOnly))
 		{
 			continue;
 		}
 
-		QueueTickFunction(Actor->PrimaryActorTick);
+		if (bDispatchActorTick)
+		{
+			QueueTickFunction(Actor->PrimaryActorTick);
+		}
 
 		for (UActorComponent* Component : Actor->GetComponents())
 		{
-			if (!Component)
+			if (!ShouldDispatchComponentTick(Actor, Component, TickType))
 			{
 				continue;
 			}

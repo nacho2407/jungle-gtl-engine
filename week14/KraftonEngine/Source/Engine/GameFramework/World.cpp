@@ -76,10 +76,18 @@ UWorld* UWorld::DuplicateAs(EWorldType InWorldType) const
 
 void UWorld::DestroyActor(AActor* Actor)
 {
-	if (!Actor) return;
+	if (!IsValid(Actor)) return;
 
 	Actor->EndPlay();
-	PersistentLevel->RemoveActor(Actor);
+	if (!IsValid(Actor))
+	{
+		return;
+	}
+
+	if (PersistentLevel)
+	{
+		PersistentLevel->RemoveActor(Actor);
+	}
 
 	MarkWorldPrimitivePickingBVHDirty();
 	Partition.RemoveActor(Actor);

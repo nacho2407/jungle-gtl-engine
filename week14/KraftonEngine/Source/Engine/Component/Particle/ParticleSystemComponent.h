@@ -47,6 +47,8 @@ public:
 	UParticleSystem* GetTemplate() const { return ParticleSystem.Get(); }
 
 	void SetEmitterSpawningEnabled(bool bEnabled);
+	void SetParticleScaleMultiplier(float InScale);
+	float GetParticleScaleMultiplier() const { return ParticleScaleMultiplier; }
 	void SetVectorParameter(const FName& ParameterName, const FVector& Value);
 	void SetVectorParameter(const FString& ParameterName, const FVector& Value);
 	bool GetVectorParameter(const FName& ParameterName, FVector& OutValue) const;
@@ -86,6 +88,9 @@ private:
 
 	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Instance Parameters")
 	TArray<FParticleSysParam> InstanceParameters;
+
+	UPROPERTY(Edit, Save, Category="Particle", DisplayName="Particle Scale Multiplier", Min=0.0f, Speed=0.05f)
+	float ParticleScaleMultiplier = 1.0f;
 
 	int32 CurrentLODIndex = 0;
 	int32 PreviewLODIndex = -1;

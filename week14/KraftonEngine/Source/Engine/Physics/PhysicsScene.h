@@ -86,5 +86,6 @@ private:
 	physx::PxControllerManager* ControllerManager = nullptr;
 
 	TArray<FBodyInstance*> Bodies;
+	TArray<physx::PxRigidActor*> BodyActors;
 	TArray<FConstraintInstance*> Constraints;
 };

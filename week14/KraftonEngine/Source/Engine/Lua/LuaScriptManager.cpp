@@ -21,6 +21,7 @@
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Primitive/SkinnedMeshComponent.h"
 #include "Component/Particle/ParticleSystemComponent.h"
+#include "Particles/ParticleSystemManager.h"
 #include "Core/Types/CollisionTypes.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
@@ -1592,6 +1593,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"Activate", &UParticleSystemComponent::Activate,
 		"Deactivate", &UParticleSystemComponent::Deactivate,
 		"ResetSystem", &UParticleSystemComponent::ResetSystem,
+		"SetParticleScaleMultiplier", &UParticleSystemComponent::SetParticleScaleMultiplier,
+		"GetParticleScaleMultiplier", &UParticleSystemComponent::GetParticleScaleMultiplier,
 		"SetEmitterSpawningEnabled", &UParticleSystemComponent::SetEmitterSpawningEnabled);
 
 	FLuaDocRegistry::Get().Type("ParticleSystemComponent", "PrimitiveComponent")
@@ -1599,6 +1602,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("function ParticleSystemComponent:Activate() end")
 		.Method("function ParticleSystemComponent:Deactivate() end")
 		.Method("function ParticleSystemComponent:ResetSystem() end")
+		.Method("---@param scale number\nfunction ParticleSystemComponent:SetParticleScaleMultiplier(scale) end")
+		.Method("---@return number\nfunction ParticleSystemComponent:GetParticleScaleMultiplier() end")
 		.Method("---@param enabled boolean\nfunction ParticleSystemComponent:SetEmitterSpawningEnabled(enabled) end");
 
 	Lua.new_usertype<FHitResult>("HitResult",
@@ -1884,6 +1889,43 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		if (!Cls) return nullptr;
 		return W->SpawnActorByClass(Cls);
 	});
+	World.set_function("SpawnParticleSystem",
+		[](const FString& ParticlePath, const FVector& Location, sol::optional<FVector> Rotation) -> AActor*
+	{
+		if (!GEngine) return nullptr;
+		UWorld* W = GEngine->GetWorld();
+		if (!W) return nullptr;
+
+		UParticleSystem* ParticleSystem = FParticleSystemManager::Get().Load(ParticlePath);
+		if (!ParticleSystem)
+		{
+			UE_LOG("[Lua] World.SpawnParticleSystem failed to load: %s", ParticlePath.c_str());
+			return nullptr;
+		}
+
+		AActor* Actor = W->SpawnActor<AActor>();
+		if (!Actor) return nullptr;
+
+		UParticleSystemComponent* ParticleComponent = Actor->AddComponent<UParticleSystemComponent>();
+		if (!ParticleComponent)
+		{
+			W->DestroyActor(Actor);
+			return nullptr;
+		}
+
+		Actor->SetRootComponent(ParticleComponent);
+		Actor->SetActorLocation(Location);
+		if (Rotation.has_value())
+		{
+			Actor->SetActorRotation(Rotation.value());
+		}
+
+		ParticleComponent->SetTemplate(ParticleSystem);
+		ParticleComponent->ResetSystem();
+		ParticleComponent->SetEmitterSpawningEnabled(true);
+		ParticleComponent->Activate();
+		return Actor;
+	});
 	World.set_function("FindActorByName", [](const FString& ActorName) -> AActor*
 	{
 		if (!GEngine || !GEngine->GetWorld()) return nullptr;
@@ -1971,6 +2013,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 
 	FLuaDocRegistry::Get().Type("WorldLib")
 		.Method("---@param className string\n---@return Actor?\nfunction World.SpawnActor(className) end")
+		.Method("---@param particlePath string\n---@param location Vector\n---@param rotation? Vector\n---@return Actor?\nfunction World.SpawnParticleSystem(particlePath, location, rotation) end")
 		.Method("---@param actorName string\n---@return Actor?\nfunction World.FindActorByName(actorName) end")
 		.Method("---@param className string\n---@return Actor?\nfunction World.FindFirstActorByClass(className) end")
 		.Method("---@param tag string\n---@return Actor?\nfunction World.FindFirstActorByTag(tag) end")

@@ -7,6 +7,7 @@ local CombatEvents = {
 
 CombatEvents.Events = {
     AttackFired = "Combat.AttackFired",
+    AttackImpact = "Combat.AttackImpact",
     AttackHit = "Combat.AttackHit",
     AttackKilled = "Combat.AttackKilled",
     Damaged = "Combat.Damaged",
@@ -173,6 +174,13 @@ function CombatEvents.NotifyAttackFired(attacker, context)
     local receiver = id ~= nil and CombatEvents._attackReceivers[id] or nil
     call(receiver ~= nil and receiver.OnAttackFired or nil, context)
     EventBus.Emit(CombatEvents.Events.AttackFired, context)
+end
+
+function CombatEvents.NotifyAttackImpact(attacker, context)
+    context = CombatEvents.MakeDamageContext(context)
+    context.Instigator = context.Instigator or attacker
+
+    EventBus.Emit(CombatEvents.Events.AttackImpact, context)
 end
 
 function CombatEvents.NotifyAttackResult(attacker, context, result)

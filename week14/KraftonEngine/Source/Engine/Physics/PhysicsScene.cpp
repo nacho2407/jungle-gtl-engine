@@ -226,15 +226,25 @@ void FPhysicsScene::Shutdown()
 
 	while (!Bodies.empty())
 	{
-		FBodyInstance* Body = Bodies.back();
-		if (Body)
+		Bodies.pop_back();
+	}
+
+	while (!BodyActors.empty())
+	{
+		physx::PxRigidActor* Actor = BodyActors.back();
+		BodyActors.pop_back();
+
+		if (!Actor)
 		{
-			DestroyBody(*Body);
+			continue;
 		}
-		else
+
+		Actor->userData = nullptr;
+		if (Scene && Actor->getScene() == Scene)
 		{
-			Bodies.pop_back();
+			Scene->removeActor(*Actor);
 		}
+		Actor->release();
 	}
 
 	if (Scene)
@@ -390,6 +400,7 @@ bool FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& Ou
 
 	Scene->addActor(*Body);
 	Bodies.push_back(&OutInstance);
+	BodyActors.push_back(Body);
 
 	return true;
 }
@@ -465,6 +476,7 @@ bool FPhysicsScene::CreateBodyFromSetup(UPrimitiveComponent* OwnerComp, FBodyIns
 
 	Scene->addActor(*Body);
 	Bodies.push_back(&OutInstance);
+	BodyActors.push_back(Body);
 
 	return true;
 }
@@ -475,13 +487,16 @@ void FPhysicsScene::DestroyBody(FBodyInstance& Instance)
 
 	if (Instance.Body)
 	{
-		if (Scene)
+		physx::PxRigidActor* Body = Instance.Body;
+		BodyActors.erase(std::remove(BodyActors.begin(), BodyActors.end(), Body), BodyActors.end());
+
+		if (Scene && Body->getScene() == Scene)
 		{
-			Scene->removeActor(*Instance.Body);
+			Scene->removeActor(*Body);
 		}
 
-		Instance.Body->userData = nullptr;
-		Instance.Body->release();
+		Body->userData = nullptr;
+		Body->release();
 		Instance.Body = nullptr;
 	}
 

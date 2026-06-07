@@ -49,6 +49,5 @@ void UParticleModuleEventReceiver::ReceiveEvent(FParticleEmitterInstance* Owner,
 		{
 			Particle->Velocity = Event.Velocity;
 		}
-		++Owner->ParticleCounter;
 	}
 }

@@ -372,6 +372,7 @@ namespace
 			|| Cast<UParticleModuleAcceleration>(Module)
 			|| Cast<UParticleModuleColor>(Module)
 			|| Cast<UParticleModuleSize>(Module)
+			|| Cast<UParticleModuleSizeOverLife>(Module)
 			|| Cast<UParticleModuleSubImageIndex>(Module)
 			|| Cast<UParticleModuleTypeDataMesh>(Module)
 			|| Cast<UParticleModuleTypeDataRibbon>(Module)
@@ -1109,6 +1110,7 @@ namespace
 		if (Cast<UParticleModuleAcceleration>(Module)) return "Acceleration";
 		if (Cast<UParticleModuleColor>(Module)) return "Color Over Life";
 		if (Cast<UParticleModuleSize>(Module)) return "Initial Size";
+		if (Cast<UParticleModuleSizeOverLife>(Module)) return "Size Over Life";
 		if (Cast<UParticleModuleSubImageIndex>(Module)) return "Sub Image Index";
 		if (Cast<UParticleModuleBeamSource>(Module)) return "Beam Source";
 		if (Cast<UParticleModuleBeamNoise>(Module)) return "Beam Noise";
@@ -3054,6 +3056,10 @@ void FParticleSystemEditorWidget::RenderEmittersPanel(const ImVec2& Size)
 				{
 					AddModule(UObjectManager::Get().CreateObject<UParticleModuleSize>());
 				}
+				if (ImGui::MenuItem("Size Over Life"))
+				{
+					AddModule(UObjectManager::Get().CreateObject<UParticleModuleSizeOverLife>());
+				}
 				ImGui::EndMenu();
 			}
 
@@ -4020,6 +4026,11 @@ bool FParticleSystemEditorWidget::SelectModuleDistributionCurves(UParticleModule
 	else if (UParticleModuleSize* SizeModule = Cast<UParticleModuleSize>(Module))
 	{
 		bChanged |= AppendDistributionCurve(Module, &SizeModule->StartSize, "StartSize");
+	}
+	else if (UParticleModuleSizeOverLife* SizeOverLifeModule = Cast<UParticleModuleSizeOverLife>(Module))
+	{
+		bChanged |= AppendDistributionCurve(Module, &SizeOverLifeModule->StartSize, "StartSize");
+		bChanged |= AppendDistributionCurve(Module, &SizeOverLifeModule->EndSize, "EndSize");
 	}
 	else if (UParticleModuleSubImageIndex* SubImageModule = Cast<UParticleModuleSubImageIndex>(Module))
 	{

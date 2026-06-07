@@ -1,0 +1,16 @@
+{
+        "EmissiveColor" : [0.168627, 0.792157, 0.529412, 1.000000],
+        "EmissiveIntensity" : 4.000000,
+        "Parameters" : {
+          "SectionColor" : [0.200000, 0.800000, 0.500000, 1.000000]
+        },
+        "ParentMaterial" : "Content/Material/Auto/ Main Green.001.mat",
+        "PathFileName" : "Content/Material/Auto/ Main Green.001_Inst.matinst",
+        "Textures" : {
+
+        },
+        "bEnableBloom" : true,
+        "bOverrideEmissiveColor" : true,
+        "bOverrideEmissiveIntensity" : true,
+        "bOverrideEnableBloom" : true
+      }

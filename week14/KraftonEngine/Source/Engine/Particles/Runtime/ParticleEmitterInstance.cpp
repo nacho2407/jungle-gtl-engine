@@ -8,6 +8,7 @@
 #include "Particles/Module/ParticleModuleTypeDataBase.h"
 
 #include <algorithm>
+#include <cstring>
 
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
@@ -26,7 +27,12 @@ void FParticleEmitterInstance::Init(UParticleEmitter* InTemplate, UParticleSyste
 
 void FParticleEmitterInstance::Tick(float DeltaTime)
 {
-	if (!bActive || !SpriteTemplate)
+	if (!SpriteTemplate)
+	{
+		return;
+	}
+
+	if (!bActive && ActiveParticles <= 0)
 	{
 		return;
 	}
@@ -42,20 +48,33 @@ void FParticleEmitterInstance::Tick(float DeltaTime)
 		const bool bLooping = RequiredModule ? RequiredModule->bLooping : SpriteTemplate->IsLooping();
 		if (bLooping)
 		{
+			bool bLooped = false;
 			while (EmitterTime >= Duration)
 			{
 				EmitterTime -= Duration;
+				bLooped = true;
+			}
+
+			const UParticleModuleSpawn* SpawnModule = GetSpawnModule();
+			if (bLooped && (!SpawnModule || SpawnModule->SpawnType != EParticleSpawnType::Burst || SpawnModule->bRepeatBurstOnLoop))
+			{
+				bSpawnBurstFired = false;
 			}
 		}
 		else
 		{
 			EmitterTime = Duration;
-			bActive = false;
+			bSpawningEnabled = false;
 		}
 	}
 
 	SpawnParticles(DeltaTime);
 	UpdateParticles(DeltaTime);
+
+	if (!bSpawningEnabled && ActiveParticles <= 0)
+	{
+		bActive = false;
+	}
 }
 
 void FParticleEmitterInstance::SetLODLevelIndex(int32 LODLevelIndex)
@@ -77,6 +96,7 @@ void FParticleEmitterInstance::SetLODLevelIndex(int32 LODLevelIndex)
 	{
 		CurrentLODLevelIndex = NewLODLevelIndex;
 		CurrentLODLevel = NewLODLevel;
+		bSpawnBurstFired = false;
 		return;
 	}
 
@@ -101,6 +121,12 @@ void FParticleEmitterInstance::SetLODLevelIndex(int32 LODLevelIndex)
 
 	CurrentLODLevelIndex = NewLODLevelIndex;
 	CurrentLODLevel = NewLODLevel;
+	bSpawnBurstFired = false;
+}
+
+float FParticleEmitterInstance::GetParticleScaleMultiplier() const
+{
+	return Component ? (std::max)(0.0f, Component->GetParticleScaleMultiplier()) : 1.0f;
 }
 
 void FParticleEmitterInstance::Reset()
@@ -115,6 +141,7 @@ void FParticleEmitterInstance::Reset()
 	ParticleCounter = 0;
 	SpawnFraction = 0.0f;
 	EmitterTime = 0.0f;
+	bSpawnBurstFired = false;
 	CollisionEventQueue.clear();
 	bIsEventGenerator = false;
 	bGenerateSpawnEvents = false;
@@ -135,18 +162,45 @@ int32 FParticleEmitterInstance::SpawnParticles(float DeltaTime)
 	}
 
 	const UParticleModuleSpawn* SpawnModule = GetSpawnModule();
+	const EParticleSpawnType SpawnType = SpawnModule ? SpawnModule->SpawnType : EParticleSpawnType::Default;
 	const float EffectiveSpawnRate = SpawnModule
 		? SpawnModule->SpawnRate.GetValue(EmitterTime, 0.5f)
 		: SpawnRate;
-	SpawnFraction += EffectiveSpawnRate * DeltaTime;
-	const int32 SpawnCount = static_cast<int32>(SpawnFraction);
+
+	if (SpawnType == EParticleSpawnType::Default)
+	{
+		SpawnFraction += EffectiveSpawnRate * DeltaTime;
+	}
+
+	int32 BurstSpawnCount = 0;
+	if (SpawnModule && SpawnType == EParticleSpawnType::Burst && !bSpawnBurstFired && SpawnModule->BurstCount > 0 && EmitterTime >= SpawnModule->BurstTime)
+	{
+		BurstSpawnCount = SpawnModule->BurstCount;
+		bSpawnBurstFired = true;
+	}
+
+	const int32 RateSpawnCount = SpawnType == EParticleSpawnType::Default ? static_cast<int32>(SpawnFraction) : 0;
+	const int32 SpawnCount = BurstSpawnCount + RateSpawnCount;
 	if (SpawnCount <= 0)
 	{
 		return 0;
 	}
 
+	const int32 SpawnedBurstCount = SpawnParticleCount(BurstSpawnCount);
+	const int32 SpawnedRateCount = SpawnParticleCount(RateSpawnCount);
+	SpawnFraction -= static_cast<float>(SpawnedRateCount);
+	return SpawnedBurstCount + SpawnedRateCount;
+}
+
+int32 FParticleEmitterInstance::SpawnParticleCount(int32 RequestedSpawnCount)
+{
+	if (RequestedSpawnCount <= 0)
+	{
+		return 0;
+	}
+
 	int32 SpawnedCount = 0;
-	for (int32 Index = 0; Index < SpawnCount; ++Index)
+	for (int32 Index = 0; Index < RequestedSpawnCount; ++Index)
 	{
 		if (!ParticleData || ActiveParticles >= MaxActiveParticles)
 		{
@@ -162,13 +216,26 @@ int32 FParticleEmitterInstance::SpawnParticles(float DeltaTime)
 		*Particle = FBaseParticle();
 		Particle->bAlive = true;
 
+		const uint32 SpawnSerial = static_cast<uint32>(Index);
+		Particle->FrameIndex = ParticleCounter++;
+		Particle->RandomSeed = BuildParticleRandomSeed(Particle->FrameIndex, SpawnSerial);
 		InitializeParticle(*Particle);
-		++ParticleCounter;
 		++SpawnedCount;
 	}
 
-	SpawnFraction -= static_cast<float>(SpawnedCount);
 	return SpawnedCount;
+}
+
+uint32 FParticleEmitterInstance::BuildParticleRandomSeed(uint32 ParticleSerial, uint32 SpawnSerial) const
+{
+	uint32 EmitterTimeBits = 0;
+	std::memcpy(&EmitterTimeBits, &EmitterTime, sizeof(EmitterTimeBits));
+
+	uint32 EmitterSeed = FDistributionSampling::Hash(EmitterTimeBits);
+	EmitterSeed = FDistributionSampling::Hash(EmitterSeed ^ FDistributionSampling::Hash(CurrentLODLevelIndex + 0x27d4eb2du));
+	EmitterSeed = FDistributionSampling::Hash(EmitterSeed ^ FDistributionSampling::Hash(static_cast<uint32>(ActiveParticles)));
+
+	return FDistributionSampling::RandomSeed(EmitterSeed, ParticleSerial, SpawnSerial);
 }
 
 void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle)
@@ -183,6 +250,8 @@ void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle, const
 	Particle.OldPosition = SpawnLocation;
 	Particle.Velocity = DefaultVelocity;
 	Particle.Size = DefaultSize;
+	Particle.InitialSize = DefaultSize;
+	Particle.TargetSize = DefaultSize;
 	Particle.Rotation = 0.0f;
 	Particle.RotationRate = 0.0f;
 	Particle.Color = DefaultColor;
@@ -190,8 +259,11 @@ void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle, const
 	Particle.Age = 0.0f;
 	Particle.RelativeTime = 0.0f;
 	Particle.OneOverMaxLifetime = DefaultLifetime > 0.0f ? 1.0f / DefaultLifetime : 1.0f;
-	Particle.RandomSeed = FDistributionSampling::RandomSeed();
-	Particle.FrameIndex = ParticleCounter;
+	if (Particle.RandomSeed == 0)
+	{
+		Particle.FrameIndex = ParticleCounter++;
+		Particle.RandomSeed = BuildParticleRandomSeed(Particle.FrameIndex, 0);
+	}
 	Particle.bAlive = true;
 
 	RunSpawnModules(Particle, EmitterTime);
@@ -382,6 +454,8 @@ FBaseParticle* FParticleEmitterInstance::SpawnParticle()
 	FBaseParticle& Particle = GetParticleBySlot(ParticleSlot);
 	Particle = FBaseParticle();
 	Particle.bAlive = true;
+	Particle.FrameIndex = ParticleCounter++;
+	Particle.RandomSeed = BuildParticleRandomSeed(Particle.FrameIndex, 0);
 	return &Particle;
 }
 
