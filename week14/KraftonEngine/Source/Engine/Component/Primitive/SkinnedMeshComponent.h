@@ -68,6 +68,12 @@ public:
 	UFUNCTION(Lua)
 	bool GetBoneSocketWorldTransform(const FString& BoneName, const FTransform& LocalOffset, FTransform& OutTransform) const;
 
+	// 본 ↔ 본 페어 부착:
+	// 매 틱마다 이 컴포넌트의 AttachOwnBoneName 본이 AttachTargetActorName 액터의
+	// AttachTargetBoneName 본 위치/방향에 정확히 일치하도록 RelativeTransform을 역산한다.
+	// 본 자체 애니메이션(슬라이드, 매거진 등)은 이 본의 자식 chain에서 그대로 재생된다.
+	void UpdateBoneToBoneAttachment();
+
 	FVector GetBoneLocationByIndex(int32 BoneIndex) const;
 	FRotator GetBoneRotationByIndex(int32 BoneIndex) const;
 	FQuat GetBoneQuatByIndex(int32 BoneIndex) const;
@@ -138,6 +144,28 @@ protected:
 
 	// PhysicsAsset 오버라이드 (per-instance). nullptr면 메시 기본값 사용. 런타임 전용(직렬화는 나중).
 	UPhysicsAsset* PhysicsAssetOverride = nullptr;
+
+	// ── 본 ↔ 본 페어 부착 ──
+	UPROPERTY(Edit, Save, Category="SkinnedMesh|BoneAttach", DisplayName="Attach Bone To Bone")
+	bool bAttachBoneToBone = false;
+
+	UPROPERTY(Edit, Save, Category="SkinnedMesh|BoneAttach", DisplayName="Attach Target Actor")
+	FString AttachTargetActorName = "";
+
+	UPROPERTY(Edit, Save, Category="SkinnedMesh|BoneAttach", DisplayName="Target Bone (Body)")
+	FString AttachTargetBoneName = "";
+
+	UPROPERTY(Edit, Save, Category="SkinnedMesh|BoneAttach", DisplayName="Own Bone (Self)")
+	FString AttachOwnBoneName = "";
+
+	// 진단 로그 throttle 카운터(직렬화 안 함).
+	uint32 BoneAttachLogTickCounter = 0;
+
+public:
+	// 진단용: 타겟 메시의 BoneEdit 상태를 외부에서 살펴볼 수 있게 한다.
+	bool IsUsingBoneEditPose() const { return bUseBoneEditPose; }
+	int32 GetBoneEditLocalMatricesSize() const { return static_cast<int32>(BoneEditLocalMatrices.size()); }
+	int32 GetBoneParentIndex(int32 BoneIndex) const;
 
 	// BoneEditLocalMatrices is the current evaluated pose. BoneEditBaseLocalMatrices is the
 	// edited animation base pose that survives animation evaluation and is not used as skin bind.

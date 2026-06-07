@@ -7,6 +7,8 @@
 #include "Core/Logging/Log.h"
 #include "Render/Types/ViewTypes.h"
 #include "Engine/Profiling/Stats/Stats.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
 
 HIDE_FROM_COMPONENT_LIST(USkinnedMeshComponent)
 
@@ -1400,9 +1402,166 @@ bool USkinnedMeshComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutH
 void USkinnedMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
 	UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	// 본 페어 부착은 자신의 스키닝/스킨매트릭스 계산 전에 RelativeTransform을
+	// 갱신해야 같은 프레임 안에서 일관된다.
+	UpdateBoneToBoneAttachment();
+
 	if (SkinningModeRuntime::Get() == ESkinningMode::CPU || HasActiveMorphTargets())
 	{
 		UpdateCPUSkinning();
+	}
+}
+
+int32 USkinnedMeshComponent::GetBoneParentIndex(int32 BoneIndex) const
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size())) return -1;
+	return Asset->Bones[BoneIndex].ParentIndex;
+}
+
+void USkinnedMeshComponent::UpdateBoneToBoneAttachment()
+{
+	if (!bAttachBoneToBone) return;
+
+	// 진단: 같은 컴포넌트는 ~60프레임(약 1초)에 한 번씩만 찍어서 노이즈 줄임.
+	// counter=1부터 시작하므로 첫 호출도 자동으로 찍힌다.
+	BoneAttachLogTickCounter++;
+	const bool bShouldLog = (BoneAttachLogTickCounter % 60) == 1;
+	// GetName()이 FString을 값으로 반환하므로 임시 객체에서 .c_str() 받으면 댕글링.
+	const FString OwnerStr = GetOwner() ? GetOwner()->GetName() : FString("<no-owner>");
+	const char* Owner = OwnerStr.c_str();
+
+	if (AttachTargetBoneName.empty() || AttachOwnBoneName.empty())
+	{
+		if (bShouldLog)
+		{
+			UE_LOG("[BoneAttach] %s: skip — empty bone names (target='%s' own='%s')",
+				Owner, AttachTargetBoneName.c_str(), AttachOwnBoneName.c_str());
+		}
+		return;
+	}
+
+	// 1. 타겟 액터 → SkinnedMeshComponent 해결.
+	if (AttachTargetActorName.empty())
+	{
+		if (bShouldLog) UE_LOG("[BoneAttach] %s: skip — AttachTargetActorName empty", Owner);
+		return;
+	}
+
+	AActor* TargetActor = nullptr;
+	if (UWorld* World = GetWorld())
+	{
+		for (AActor* Actor : World->GetActors())
+		{
+			if (Actor && Actor->GetName() == AttachTargetActorName)
+			{
+				TargetActor = Actor;
+				break;
+			}
+		}
+	}
+	if (!TargetActor)
+	{
+		if (bShouldLog) UE_LOG("[BoneAttach] %s: target actor '%s' NOT FOUND in world",
+			Owner, AttachTargetActorName.c_str());
+		return;
+	}
+
+	USkinnedMeshComponent* TargetMesh = TargetActor->GetComponentByClass<USkinnedMeshComponent>();
+	if (!TargetMesh)
+	{
+		if (bShouldLog) UE_LOG("[BoneAttach] %s: target '%s' has no SkinnedMeshComponent",
+			Owner, AttachTargetActorName.c_str());
+		return;
+	}
+	if (TargetMesh == this)
+	{
+		if (bShouldLog) UE_LOG("[BoneAttach] %s: self-target rejected", Owner);
+		return;
+	}
+
+	// 2. 타겟 본의 월드 매트릭스.
+	FMatrix TargetBoneWorldMatrix;
+	if (!TargetMesh->GetBoneWorldMatrixByName(AttachTargetBoneName, TargetBoneWorldMatrix))
+	{
+		if (bShouldLog) UE_LOG("[BoneAttach] %s: target bone '%s' NOT FOUND on '%s'",
+			Owner, AttachTargetBoneName.c_str(), AttachTargetActorName.c_str());
+		return;
+	}
+
+	// 진단: 타겟 메시가 정말 애니메이션 포즈를 쓰고 있는지 확인.
+	const int32 TgtBoneIdx       = TargetMesh->FindBoneIndex(AttachTargetBoneName);
+	const int32 TgtBoneParentIdx = TargetMesh->GetBoneParentIndex(TgtBoneIdx);
+	const bool  TgtUsesEditPose  = TargetMesh->IsUsingBoneEditPose();
+	const int32 TgtEditPoseSize  = TargetMesh->GetBoneEditLocalMatricesSize();
+
+	// 3. 내 본의 컴포넌트-로컬 글로벌 매트릭스 (현재 포즈 평가 후).
+	const int32 OwnBoneIndex = FindBoneIndex(AttachOwnBoneName);
+	if (OwnBoneIndex < 0)
+	{
+		if (bShouldLog) UE_LOG("[BoneAttach] %s: own bone '%s' NOT FOUND in my skeleton",
+			Owner, AttachOwnBoneName.c_str());
+		return;
+	}
+
+	TArray<FMatrix> OwnGlobals;
+	BuildBoneEditGlobalMatrices(OwnGlobals);
+	if (OwnBoneIndex >= static_cast<int32>(OwnGlobals.size()))
+	{
+		if (bShouldLog) UE_LOG("[BoneAttach] %s: own bone index %d out of range (size=%zu)",
+			Owner, OwnBoneIndex, OwnGlobals.size());
+		return;
+	}
+
+	const FMatrix OwnBoneLocalGlobal = OwnGlobals[OwnBoneIndex];
+
+	// 4. TRS를 분리해서 계산한다.
+	//    매트릭스 곱셈만 쓰면 결과에 body 측 스케일(예: 0.1)이 베이크돼서
+	//    매 틱 사용자 스케일을 0.1로 덮어쓴다. 그래서 회전/위치만 본 매트릭스에서
+	//    계산하고 스케일은 컴포넌트 기존 RelativeTransform.Scale을 그대로 유지한다.
+	//
+	//    weapon_bone_world_pos = R_c · (UserScale ⊙ OwnLocal.Pos) + T_c
+	//    weapon_bone_world_rot = R_c · OwnLocal.Rot
+	//    → R_c = TargetRot · OwnLocal.Rot⁻¹
+	//      T_c = TargetPos − R_c·(UserScale ⊙ OwnLocal.Pos)
+	const FTransform OwnLocalT   = MatrixToEditorTransform(OwnBoneLocalGlobal);
+	const FTransform TargetWorldT = MatrixToEditorTransform(TargetBoneWorldMatrix);
+	const FTransform PrevRelative = GetRelativeTransform();
+	const FVector UserScale       = PrevRelative.Scale;
+
+	const FQuat NewCompRot = TargetWorldT.Rotation * OwnLocalT.Rotation.Inverse();
+	const FVector ScaledLocalPos(
+		OwnLocalT.Location.X * UserScale.X,
+		OwnLocalT.Location.Y * UserScale.Y,
+		OwnLocalT.Location.Z * UserScale.Z);
+	const FVector RotatedScaledLocalPos = NewCompRot.RotateVector(ScaledLocalPos);
+	const FVector NewCompPos = TargetWorldT.Location - RotatedScaledLocalPos;
+
+	FTransform NewCompWorldT(NewCompPos, NewCompRot, UserScale);
+
+	// 5. 부모 컴포넌트 기준 상대 트랜스폼으로 변환.
+	//    root component이면 그대로, child이면 parent⁻¹ 곱해서 상대 좌표로.
+	FTransform NewRelative = NewCompWorldT;
+	if (USceneComponent* ParentComponent = GetParent())
+	{
+		const FMatrix NewRelMatrix = NewCompWorldT.ToMatrix() * ParentComponent->GetWorldMatrix().GetInverse();
+		NewRelative = MatrixToEditorTransform(NewRelMatrix);
+	}
+
+	SetRelativeTransform(NewRelative);
+
+	if (bShouldLog)
+	{
+		const FVector TargetWorldLoc = TargetBoneWorldMatrix.GetLocation();
+		const FRotator TgtRot        = MatrixToEditorTransform(TargetBoneWorldMatrix).Rotation.ToRotator();
+		UE_LOG(
+			"[BoneAttach] %s tick#%u: tgt='%s'(idx=%d, parent=%d) tgtUsesEditPose=%s editSize=%d tgtWorld=(%.3f,%.3f,%.3f) tgtRot=(p%.2f y%.2f r%.2f)",
+			Owner, BoneAttachLogTickCounter,
+			AttachTargetBoneName.c_str(), TgtBoneIdx, TgtBoneParentIdx,
+			TgtUsesEditPose ? "Y" : "N", TgtEditPoseSize,
+			TargetWorldLoc.X, TargetWorldLoc.Y, TargetWorldLoc.Z,
+			TgtRot.Pitch, TgtRot.Yaw, TgtRot.Roll);
 	}
 }
 
