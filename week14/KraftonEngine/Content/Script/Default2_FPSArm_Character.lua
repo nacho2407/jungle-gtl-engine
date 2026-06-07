@@ -4,6 +4,7 @@ local movement = nil
 local DamagePostProcess = require("DamagePostProcess")
 local InGamePause = require("InGamePause")
 local WeaponHud = require("HUD/WeaponHud")
+local CombatEvents = require("Game.CombatEvents")
 local InGameDebug = require("DebugUI/InGameDebug")
 local ItemInspectSystem = require("Items/ItemInspectSystem")
 local GameAudio = require("Game.GameAudio")
@@ -56,8 +57,7 @@ local RECOIL_PATTERN = {
     { pitch = -0.20, yaw =  0.03 },
 }
 
-local MAX_HITS_FOR_FULL_RED = 20
-local TARGET_RESPAWN_DELAY = 3.0
+local BULLET_DAMAGE = 12.5
 local MAX_HEALTH = 100.0
 
 local fireCooldown = 0.0
@@ -67,8 +67,7 @@ local isReloading  = false
 local reloadAudioTrack = 1
 local reloadAudioSteps = nil
 local reloadAudioNextIndex = 1
-local hitCounts    = {}
-local targetRespawnTimers = {}
+local isDead       = false
 local weaponSpread = 0.0
 local recoilPatternIndex = 1
 local recoilRemainingPitch = 0.0
@@ -169,19 +168,50 @@ local function get_health_ratio()
     return clamp(currentHealth / MAX_HEALTH, 0.0, 1.0)
 end
 
-local function apply_player_damage(amount)
-    amount = amount or 0.0
-    if amount <= 0.0 then return end
-    if InGameDebug.IsInvincible() then return end
+local function make_damage_result(applied, damageApplied, killed)
+    return {
+        bApplied = applied == true,
+        bKilled = killed == true,
+        bCritical = false,
+        DamageApplied = damageApplied or 0.0,
+        RemainingHealth = currentHealth,
+        MaxHealth = MAX_HEALTH,
+        HealthRatio = get_health_ratio(),
+        Victim = obj,
+    }
+end
+
+local function apply_player_damage(contextOrAmount)
+    local amount = 0.0
+    if type(contextOrAmount) == "table" then
+        amount = contextOrAmount.Damage or contextOrAmount.damage or 0.0
+    else
+        amount = contextOrAmount or 0.0
+    end
+
+    if amount <= 0.0 or isDead then
+        return make_damage_result(false, 0.0, false)
+    end
+    if InGameDebug.IsInvincible() then
+        return make_damage_result(false, 0.0, false)
+    end
 
     currentHealth = clamp(currentHealth - amount, 0.0, MAX_HEALTH)
+    local killed = currentHealth <= 0.0
+    if killed then
+        isDead = true
+    end
+
     local ratio = get_health_ratio()
     DamagePostProcess.TriggerHit(ratio)
     DamagePostProcess.SetHealthRatio(ratio)
+
+    return make_damage_result(true, amount, killed)
 end
 
 local function set_player_health(value)
     currentHealth = clamp(value, 0.0, MAX_HEALTH)
+    isDead = currentHealth <= 0.0
     DamagePostProcess.SetHealthRatio(get_health_ratio())
 end
 
@@ -279,7 +309,7 @@ local function start_reload_audio(emptyReload)
 end
 
 local function is_target_actor(actor)
-    return actor ~= nil and actor:GetSkeletalMesh() ~= nil
+    return CombatEvents.IsDamageable(actor)
 end
 
 local function finish_reload()
@@ -302,7 +332,7 @@ local function start_reload()
 end
 
 local function lerp_red(t)
-    if t > 1.0 then t = 1.0 end
+    t = clamp(t or 0.0, 0.0, 1.0)
     -- 옅은 빨강 (255,180,180) → 진한 빨강 (180,0,0)
     local r = math.floor(255 - (255 - 180) * t)
     local g = math.floor(180 * (1 - t))
@@ -310,41 +340,20 @@ local function lerp_red(t)
     return r, g, b
 end
 
--- 임시 디버그용 UI: 추후 적 로직 제대로 작성되면 삭제
-local function register_hit(hitActor, hitLoc)
-    local id = hitActor.UUID
-    if targetRespawnTimers[id] ~= nil then
-        return
+local function on_attack_hit(context, result)
+    local hitLoc = context ~= nil and context.HitLocation or nil
+    if hitLoc ~= nil then
+        local healthRatio = result ~= nil and result.HealthRatio or nil
+        local damageRatio = 1.0 - clamp(healthRatio or 1.0, 0.0, 1.0)
+        local r, g, b = lerp_red(damageRatio)
+        Debug.DrawSphere(hitLoc, 0.08, r, g, b, 9999.0, 10)
     end
 
-    local n  = (hitCounts[id] or 0) + 1
-    hitCounts[id] = n
-    local r, g, b = lerp_red(n / MAX_HITS_FOR_FULL_RED)
-    Debug.DrawSphere(hitLoc, 0.08, r, g, b, 9999.0, 10)
-
-    if n == MAX_HITS_FOR_FULL_RED then
-        WeaponHud.TriggerKillMarker()
-        targetRespawnTimers[id] = TARGET_RESPAWN_DELAY
-    elseif n < MAX_HITS_FOR_FULL_RED then
-        WeaponHud.TriggerHitMarker()
-    else
-        return
-    end
+    WeaponHud.TriggerHitMarker()
 end
 
--- 임시 디버그용 UI: 추후 적 로직 제대로 작성되면 삭제
-local function update_target_respawns(dt)
-    if dt == nil or dt <= 0.0 then return end
-
-    for id, remaining in pairs(targetRespawnTimers) do
-        remaining = remaining - dt
-        if remaining <= 0.0 then
-            targetRespawnTimers[id] = nil
-            hitCounts[id] = nil
-        else
-            targetRespawnTimers[id] = remaining
-        end
-    end
+local function on_attack_killed(context, result)
+    WeaponHud.TriggerKillMarker()
 end
 
 local function get_fire_direction(camFwd)
@@ -382,6 +391,14 @@ local function try_shoot()
     local camPos = camera:GetWorldLocation()
     local camFwd = camera.Forward
     local fireDir = get_fire_direction(camFwd)
+
+    CombatEvents.NotifyAttackFired(obj, {
+        Instigator = obj,
+        DamageCauser = obj,
+        ShotDirection = fireDir,
+        Damage = BULLET_DAMAGE,
+        DamageType = "Bullet",
+    })
 
     -- 카메라 + forward offset 을 머즐로 간주 (시안색 시각화).
     local muzzleWorld = Vector.new(
@@ -421,7 +438,17 @@ local function try_shoot()
     Debug.DrawLine(rayStart, endPos, 0, 255, 0, 1.5)
 
     if hit ~= nil and is_target_actor(hit.HitActor) then
-        register_hit(hit.HitActor, hit.WorldHitLocation)
+        local damageContext = CombatEvents.MakeDamageContext({
+            Instigator = obj,
+            DamageCauser = obj,
+            HitActor = hit.HitActor,
+            HitLocation = hit.WorldHitLocation,
+            HitNormal = hit.WorldNormal or hit.ImpactNormal,
+            ShotDirection = fireDir,
+            Damage = BULLET_DAMAGE,
+            DamageType = "Bullet",
+        })
+        CombatEvents.ApplyDamageAndNotify(obj, hit.HitActor, damageContext)
     end
 
     add_weapon_recoil()
@@ -445,6 +472,7 @@ function BeginPlay()
     GameAudio.PlayEnvironmentWind(0.35)
     currentAmmo = MAGAZINE_SIZE
     currentHealth = MAX_HEALTH
+    isDead = false
     reloadTimer = 0.0
     isReloading = false
     reset_reload_audio()
@@ -473,6 +501,16 @@ function BeginPlay()
         ApplySpeedMultiplier = apply_debug_speed_multiplier,
     })
 
+    obj:AddTag("player")
+    CombatEvents.RegisterDamageable(obj, {
+        ApplyDamage = apply_player_damage,
+        IsDead = function() return isDead end,
+    })
+    CombatEvents.RegisterAttackReceiver(obj, {
+        OnAttackHit = on_attack_hit,
+        OnAttackKilled = on_attack_killed,
+    })
+
     _G.ApplyPlayerDamage = apply_player_damage
     _G.GetPlayerHealthRatio = get_health_ratio
     Engine.SetOnEscape(function()
@@ -495,6 +533,9 @@ function EndPlay()
     if obj ~= nil and _G.FPSArmAnimRequests ~= nil then
         _G.FPSArmAnimRequests[obj.UUID] = nil
     end
+
+    CombatEvents.UnregisterAttackReceiver(obj)
+    CombatEvents.UnregisterDamageable(obj)
 
     WeaponHud.Shutdown()
     ItemInspectSystem.Shutdown()
@@ -543,8 +584,6 @@ function Tick(dt)
     if Input.GetKey(Key.MouseRight) then
         weaponSpread = 0.0
     end
-
-    update_target_respawns(dt)
 
     GameAudio.UpdateWeaponFireState(
         Input.GetKey(Key.MouseRight),

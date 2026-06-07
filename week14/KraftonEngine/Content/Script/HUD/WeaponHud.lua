@@ -1,3 +1,5 @@
+local CombatEvents = require("Game.CombatEvents")
+
 local WeaponHud = {}
 
 local WIDGET_PATH = "Content/UI/HUD/WeaponHUD.rml"
@@ -26,7 +28,7 @@ local function px(value)
 end
 
 local function is_target_actor(actor)
-    return actor ~= nil and actor:GetSkeletalMesh() ~= nil
+    return CombatEvents.IsDamageable(actor)
 end
 
 local function set_crosshair_color(isRed)
