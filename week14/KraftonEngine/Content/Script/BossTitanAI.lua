@@ -23,6 +23,30 @@ local MELEE_KNOCKBACK_DISTANCE = 5.2
 local MELEE_KNOCKBACK_DURATION = 0.22
 local MUZZLE_BONE = "ja_c_propGun"
 local MUZZLE_LOCAL_OFFSET = Vector.new(0.0, 0.0, 0.0)
+local TACTIC_REEVALUATE_INTERVAL = 0.25
+local APPROACH_COMMIT_TIME = 0.75
+local DUEL_COMMIT_TIME = 1.1
+local CLOSE_COMBAT_COMMIT_TIME = 0.6
+local LEAP_MIN_RANGE = 34.0
+local LEAP_MAX_RANGE = 64.0
+local LEAP_MAX_VERTICAL_DELTA = 8.5
+local LEAP_LANDING_OFFSET = 8.0
+local LEAP_WINDUP_TIME = 0.55
+local LEAP_FLIGHT_TIME = 0.78
+local LEAP_LAND_TIME = 0.7
+local LEAP_ARC_HEIGHT = 11.0
+local LEAP_COOLDOWN = 7.5
+local LEAP_LAND_RADIUS = 6.5
+local LEAP_LAND_DAMAGE = 18.0
+local LEAP_KNOCKBACK_DISTANCE = 6.0
+local LEAP_KNOCKBACK_DURATION = 0.28
+
+local TACTIC = {
+    approach = "approach",
+    duel = "duel",
+    closeCombat = "closeCombat",
+    leapEngage = "leapEngage",
+}
 
 local ANIM_ROOT = "Content/Data/Boss/Heavy/Animations/"
 local ANIM = {
@@ -35,6 +59,9 @@ local ANIM = {
     powerShot = ANIM_ROOT .. "htLegion_MP_Stand_PowerShot_deadbolt_titan_torso_d_lod0.uasset",
     melee = ANIM_ROOT .. "at_elite_melee_low_stomp_F_deadbolt_titan_torso_d_lod0.uasset",
     retreat = ANIM_ROOT .. "a_bound_back_deadbolt_titan_torso_d_lod0.uasset",
+    leapStart = ANIM_ROOT .. "a_MP_Jump_start_deadbolt_titan_torso_d_lod0.uasset",
+    leapFloat = ANIM_ROOT .. "a_MP_Jump_float_deadbolt_titan_torso_d_lod0.uasset",
+    leapLand = ANIM_ROOT .. "a_traverse_land_A_deadbolt_titan_torso_d_lod0.uasset",
     phase = ANIM_ROOT .. "a_Legion_gunup_deadbolt_titan_torso_d_lod0.uasset",
     hitReact = ANIM_ROOT .. "at_combat_start_react_deadbolt_titan_torso_d_lod0.uasset",
 }
@@ -55,15 +82,20 @@ local strafeFlipTimer = 0.0
 local strafeSign = 1.0
 local currentAnim = nil
 local homeZ = nil
+local currentTactic = TACTIC.approach
+local tacticCommitTimer = 0.0
+local tacticReevaluateTimer = 0.0
 
 local cooldowns = {
     cannon = 0.0,
     powerShot = 1.4,
     melee = 0.0,
     retreat = 0.0,
+    leap = 2.5,
 }
 
 local activeAttack = nil
+local leapState = nil
 
 local function is_animation_locked()
     return animationLockTimer > 0.0
@@ -71,6 +103,36 @@ end
 
 local function is_retreating()
     return actionTimer > 0.0 and currentAnim == ANIM.retreat
+end
+
+local function is_leaping()
+    return leapState ~= nil
+end
+
+local function tactic_commit_time(name)
+    if name == TACTIC.approach then return APPROACH_COMMIT_TIME end
+    if name == TACTIC.duel then return DUEL_COMMIT_TIME end
+    if name == TACTIC.closeCombat then return CLOSE_COMBAT_COMMIT_TIME end
+    if name == TACTIC.leapEngage then
+        return LEAP_WINDUP_TIME + LEAP_FLIGHT_TIME + LEAP_LAND_TIME
+    end
+    return TACTIC_REEVALUATE_INTERVAL
+end
+
+local function set_tactic(name, commitTime)
+    if name == nil then return end
+
+    local nextCommitTime = commitTime or tactic_commit_time(name)
+    if currentTactic ~= name then
+        currentTactic = name
+        tacticCommitTimer = nextCommitTime
+        tacticReevaluateTimer = TACTIC_REEVALUATE_INTERVAL
+        return
+    end
+
+    currentTactic = name
+    tacticCommitTimer = math.max(tacticCommitTimer, nextCommitTime)
+    tacticReevaluateTimer = TACTIC_REEVALUATE_INTERVAL
 end
 
 local function clamp(value, minValue, maxValue)
@@ -98,6 +160,15 @@ local function normalized_or_zero(v)
         return Vector.new(0.0, 0.0, 0.0)
     end
     return v / length
+end
+
+local function lerp(a, b, alpha)
+    return a + (b - a) * alpha
+end
+
+local function smoothstep(alpha)
+    local t = clamp(alpha, 0.0, 1.0)
+    return t * t * (3.0 - 2.0 * t)
 end
 
 local function random01()
@@ -239,6 +310,7 @@ local function enter_phase(nextPhase)
     actionTimer = phaseLockTimer
     animationLockTimer = phaseLockTimer
     activeAttack = nil
+    leapState = nil
 
     cooldowns.cannon = 0.4
     cooldowns.powerShot = phase >= 3 and 0.7 or 1.2
@@ -268,6 +340,7 @@ local function apply_boss_damage(context)
         isDead = true
         deathTimer = 1.4
         activeAttack = nil
+        leapState = nil
         play_anim(ANIM.hitReact, false, true)
     else
         update_phase_from_health()
@@ -362,6 +435,143 @@ local function update_active_attack(dt)
     end
 end
 
+local function calculate_leap_landing(target)
+    if target == nil then return obj.Location end
+
+    local awayFromTarget = normalized_or_zero(horizontal_delta(target.Location, obj.Location))
+    if awayFromTarget:Length() <= 0.001 then
+        awayFromTarget = Vector.new(-1.0, 0.0, 0.0)
+    end
+
+    local landing = target.Location + awayFromTarget * LEAP_LANDING_OFFSET
+    landing.Z = homeZ or obj.Location.Z
+    return landing
+end
+
+local function apply_leap_landing_hit()
+    local target = find_target()
+    if target == nil or not target:IsValid() then return end
+
+    local dist = horizontal_distance(obj.Location, target.Location)
+    if dist > LEAP_LAND_RADIUS then return end
+    if math.abs(target.Location.Z - obj.Location.Z) > LEAP_MAX_VERTICAL_DELTA then return end
+
+    local hitDir = normalized_or_zero(horizontal_delta(obj.Location, target.Location))
+    local hitLocation = target.Location
+    Debug.DrawSphere(obj.Location, LEAP_LAND_RADIUS, 255, 120, 30, 0.65, 16)
+
+    if CombatEvents.IsDamageable(target) then
+        CombatEvents.ApplyDamageAndNotify(obj, target, {
+            Instigator = obj,
+            DamageCauser = obj,
+            HitActor = target,
+            HitLocation = hitLocation,
+            ShotDirection = hitDir,
+            Damage = LEAP_LAND_DAMAGE + phase * 4.0,
+            DamageType = "leapLand",
+        })
+    end
+
+    local action = target:GetActionComponent()
+    if action ~= nil then
+        action:Knockback(hitDir, LEAP_KNOCKBACK_DISTANCE, LEAP_KNOCKBACK_DURATION)
+    end
+end
+
+local function can_start_leap(bb)
+    if bb == nil then return false end
+    if not bb.canLeap then return false end
+    if activeAttack ~= nil or is_animation_locked() or is_leaping() then return false end
+    return true
+end
+
+local function start_leap_engage(bb)
+    if not can_start_leap(bb) then return false end
+
+    local landing = calculate_leap_landing(bb.target)
+    local totalTime = LEAP_WINDUP_TIME + LEAP_FLIGHT_TIME + LEAP_LAND_TIME
+    leapState = {
+        stage = "windup",
+        elapsed = 0.0,
+        startLocation = obj.Location,
+        landingLocation = landing,
+        didLandHit = false,
+    }
+
+    cooldowns.leap = LEAP_COOLDOWN
+    actionTimer = totalTime
+    animationLockTimer = math.max(animationLockTimer, totalTime)
+    activeAttack = nil
+    set_tactic(TACTIC.leapEngage, totalTime)
+    play_anim(ANIM.leapStart, false, true)
+
+    CombatEvents.NotifyAttackFired(obj, {
+        Instigator = obj,
+        DamageCauser = obj,
+        Damage = LEAP_LAND_DAMAGE + phase * 4.0,
+        DamageType = "leapWindup",
+    })
+
+    return true
+end
+
+local function update_leap(dt)
+    if leapState == nil then return false end
+
+    local target = find_target()
+    if target ~= nil and target:IsValid() then
+        face_target(target)
+    end
+
+    leapState.elapsed = leapState.elapsed + dt
+
+    if leapState.stage == "windup" then
+        if leapState.elapsed >= LEAP_WINDUP_TIME then
+            leapState.stage = "flight"
+            leapState.elapsed = 0.0
+            leapState.startLocation = obj.Location
+            if target ~= nil and target:IsValid() then
+                leapState.landingLocation = calculate_leap_landing(target)
+            end
+            play_anim(ANIM.leapFloat, true, true)
+        end
+        return true
+    end
+
+    if leapState.stage == "flight" then
+        local alpha = clamp(leapState.elapsed / LEAP_FLIGHT_TIME, 0.0, 1.0)
+        local eased = smoothstep(alpha)
+        local nextLocation = lerp(leapState.startLocation, leapState.landingLocation, eased)
+        nextLocation.Z = lerp(leapState.startLocation, leapState.landingLocation, eased).Z + math.sin(alpha * math.pi) * LEAP_ARC_HEIGHT
+        obj.Location = nextLocation
+
+        if leapState.elapsed >= LEAP_FLIGHT_TIME then
+            obj.Location = leapState.landingLocation
+            leapState.stage = "land"
+            leapState.elapsed = 0.0
+            play_anim(ANIM.leapLand, false, true)
+            if not leapState.didLandHit then
+                apply_leap_landing_hit()
+                leapState.didLandHit = true
+            end
+        end
+        return true
+    end
+
+    if leapState.stage == "land" then
+        if leapState.elapsed >= LEAP_LAND_TIME then
+            leapState = nil
+            actionTimer = 0.0
+            animationLockTimer = 0.0
+            set_tactic(TACTIC.closeCombat, CLOSE_COMBAT_COMMIT_TIME)
+        end
+        return true
+    end
+
+    leapState = nil
+    return false
+end
+
 local function apply_pending_phase_if_ready()
     if pendingPhase == nil then return end
     if activeAttack ~= nil or is_animation_locked() then return end
@@ -376,6 +586,8 @@ local function tick_timers(dt)
     animationLockTimer = math.max(0.0, animationLockTimer - dt)
     phaseLockTimer = math.max(0.0, phaseLockTimer - dt)
     strafeFlipTimer = math.max(0.0, strafeFlipTimer - dt)
+    tacticCommitTimer = math.max(0.0, tacticCommitTimer - dt)
+    tacticReevaluateTimer = math.max(0.0, tacticReevaluateTimer - dt)
 
     for key, value in pairs(cooldowns) do
         cooldowns[key] = math.max(0.0, value - dt)
@@ -389,6 +601,12 @@ local function build_blackboard(target)
     local aimDelta = aimLocation - muzzle
     local verticalDelta = target.Location.Z - obj.Location.Z
     local canGroundMelee = dist <= MELEE_RANGE and math.abs(verticalDelta) <= MELEE_MAX_VERTICAL_DELTA
+    local lineOfSight = has_line_of_sight(target)
+    local canLeap = cooldowns.leap <= 0.0
+        and lineOfSight
+        and dist >= LEAP_MIN_RANGE
+        and dist <= LEAP_MAX_RANGE
+        and math.abs(verticalDelta) <= LEAP_MAX_VERTICAL_DELTA
 
     return {
         target = target,
@@ -396,9 +614,13 @@ local function build_blackboard(target)
         aimDistance = aimDelta:Length(),
         verticalDelta = verticalDelta,
         canGroundMelee = canGroundMelee,
+        canLeap = canLeap,
+        isClose = dist <= CLOSE_RETREAT_RANGE or canGroundMelee,
+        isDuelRange = dist > CLOSE_RETREAT_RANGE and dist <= KEEP_RANGE + 8.0,
+        isFar = dist > KEEP_RANGE + 8.0,
         healthRatio = health_ratio(),
         phase = phase,
-        lineOfSight = has_line_of_sight(target),
+        lineOfSight = lineOfSight,
     }
 end
 
@@ -482,7 +704,122 @@ local function run_attack(name)
     return false
 end
 
-local function locomote(bb, dt)
+local function choose_close_combat_action(bb)
+    local meleeScore = score_melee(bb)
+    if meleeScore > -999.0 then
+        return "melee"
+    end
+
+    local retreatScore = score_retreat(bb)
+    if retreatScore > -999.0 then
+        return "retreat"
+    end
+
+    return nil
+end
+
+local function choose_duel_action(bb)
+    local powerScore = score_power_shot(bb)
+    local cannonScore = score_cannon(bb)
+
+    if powerScore <= -999.0 and cannonScore <= -999.0 then
+        return nil
+    end
+
+    if random01() < 0.18 then
+        return nil
+    end
+
+    if powerScore > cannonScore then
+        return "powerShot"
+    end
+    return "cannon"
+end
+
+local function choose_next_tactic(bb)
+    if can_start_leap(bb) then
+        local leapChance = phase >= 3 and 0.68 or 0.42
+        if bb.distance > KEEP_RANGE + 18.0 or random01() < leapChance then
+            return TACTIC.leapEngage
+        end
+    end
+
+    if bb.isClose then
+        return TACTIC.closeCombat
+    end
+
+    if bb.isFar then
+        return TACTIC.approach
+    end
+
+    return TACTIC.duel
+end
+
+local function refresh_tactic(bb)
+    if is_leaping() or activeAttack ~= nil or phaseLockTimer > 0.0 then return end
+
+    if currentTactic == nil then
+        set_tactic(choose_next_tactic(bb))
+        return
+    end
+
+    if bb.isClose and currentTactic ~= TACTIC.closeCombat then
+        set_tactic(TACTIC.closeCombat, CLOSE_COMBAT_COMMIT_TIME)
+        return
+    end
+
+    if bb.isFar and currentTactic == TACTIC.closeCombat then
+        set_tactic(TACTIC.approach, APPROACH_COMMIT_TIME)
+        return
+    end
+
+    if tacticCommitTimer > 0.0 or tacticReevaluateTimer > 0.0 then
+        return
+    end
+
+    local nextTactic = choose_next_tactic(bb)
+    if nextTactic ~= currentTactic then
+        set_tactic(nextTactic)
+    else
+        tacticReevaluateTimer = TACTIC_REEVALUATE_INTERVAL
+    end
+end
+
+local function run_tactic_action(bb)
+    if currentTactic == TACTIC.leapEngage then
+        if start_leap_engage(bb) then
+            return true
+        end
+        set_tactic(TACTIC.approach, APPROACH_COMMIT_TIME)
+        actionTimer = 0.2
+        return true
+    end
+
+    if currentTactic == TACTIC.closeCombat then
+        return run_attack(choose_close_combat_action(bb))
+    end
+
+    if currentTactic == TACTIC.duel then
+        local action = choose_duel_action(bb)
+        if action == nil then
+            actionTimer = 0.25 + random01() * 0.25
+            return true
+        end
+        return run_attack(action)
+    end
+
+    if currentTactic == TACTIC.approach then
+        if can_start_leap(bb) and random01() < (phase >= 3 and 0.55 or 0.35) then
+            return start_leap_engage(bb)
+        end
+        actionTimer = 0.2
+        return true
+    end
+
+    return run_attack(choose_attack(bb))
+end
+
+local function locomote_approach(bb, dt)
     local toTarget = horizontal_delta(obj.Location, bb.target.Location)
     local dirToTarget = normalized_or_zero(toTarget)
 
@@ -491,17 +828,78 @@ local function locomote(bb, dt)
         return
     end
 
-    if bb.distance > KEEP_RANGE then
+    if bb.distance > KEEP_RANGE - 3.0 then
         move_horizontal(dirToTarget, phase >= 3 and 8.5 or 6.0, dt)
         play_anim(bb.distance > 40.0 and ANIM.run or ANIM.walk, true, false)
         return
     end
 
-    if bb.distance < MIN_RANGE then
-        move_horizontal(dirToTarget * -1.0, 5.5 + phase, dt)
+    play_anim(ANIM.idle, true, false)
+end
+
+local function locomote_duel(bb, dt)
+    local toTarget = horizontal_delta(obj.Location, bb.target.Location)
+    local dirToTarget = normalized_or_zero(toTarget)
+
+    if bb.distance > KEEP_RANGE + 8.0 then
+        move_horizontal(dirToTarget, 5.0 + phase, dt)
+        play_anim(ANIM.walk, true, false)
+        return
+    end
+
+    if bb.distance < FIRE_MIN_RANGE then
+        move_horizontal(dirToTarget * -1.0, 4.5 + phase, dt)
         play_anim(ANIM.retreat, false, false)
         return
     end
+
+    if strafeFlipTimer <= 0.0 then
+        strafeSign = random01() < 0.5 and -1.0 or 1.0
+        strafeFlipTimer = 1.0 + random01() * 1.4
+    end
+
+    local side = Vector.new(-dirToTarget.Y, dirToTarget.X, 0.0) * strafeSign
+    move_horizontal(side, 2.8 + phase * 0.8, dt)
+    play_anim(strafeSign > 0.0 and ANIM.strafeRight or ANIM.strafeLeft, true, false)
+end
+
+local function locomote_close_combat(bb, dt)
+    local toTarget = horizontal_delta(obj.Location, bb.target.Location)
+    local dirToTarget = normalized_or_zero(toTarget)
+
+    if bb.distance < MIN_RANGE then
+        move_horizontal(dirToTarget * -1.0, 6.0 + phase, dt)
+        play_anim(ANIM.retreat, false, false)
+        return
+    end
+
+    if bb.distance > MELEE_RANGE and cooldowns.melee <= 0.2 then
+        move_horizontal(dirToTarget, 4.5 + phase, dt)
+        play_anim(ANIM.walk, true, false)
+        return
+    end
+
+    play_anim(ANIM.idle, true, false)
+end
+
+local function locomote(bb, dt)
+    if currentTactic == TACTIC.approach then
+        locomote_approach(bb, dt)
+        return
+    end
+
+    if currentTactic == TACTIC.closeCombat then
+        locomote_close_combat(bb, dt)
+        return
+    end
+
+    if currentTactic == TACTIC.duel then
+        locomote_duel(bb, dt)
+        return
+    end
+
+    local toTarget = horizontal_delta(obj.Location, bb.target.Location)
+    local dirToTarget = normalized_or_zero(toTarget)
 
     if strafeFlipTimer <= 0.0 then
         strafeSign = random01() < 0.5 and -1.0 or 1.0
@@ -526,7 +924,16 @@ function BeginPlay()
     phaseLockTimer = 0.0
     thinkTimer = 0.0
     activeAttack = nil
+    leapState = nil
     currentAnim = nil
+    currentTactic = TACTIC.approach
+    tacticCommitTimer = 0.0
+    tacticReevaluateTimer = 0.0
+    cooldowns.cannon = 0.0
+    cooldowns.powerShot = 1.4
+    cooldowns.melee = 0.0
+    cooldowns.retreat = 0.0
+    cooldowns.leap = 2.5
 
     obj:AddTag("enemy")
     obj:AddTag("boss")
@@ -553,6 +960,10 @@ function Tick(dt)
     end
 
     tick_timers(dt)
+    if update_leap(dt) then
+        return
+    end
+
     update_active_attack(dt)
     apply_pending_phase_if_ready()
 
@@ -570,13 +981,14 @@ function Tick(dt)
 
     thinkTimer = thinkTimer - dt
     local bb = build_blackboard(target)
+    refresh_tactic(bb)
 
     if actionTimer <= 0.0 and thinkTimer <= 0.0 then
         thinkTimer = THINK_INTERVAL
-        run_attack(choose_attack(bb))
+        run_tactic_action(bb)
     end
 
-    if activeAttack == nil and (not is_animation_locked() or is_retreating()) then
+    if activeAttack == nil and not is_leaping() and (not is_animation_locked() or is_retreating()) then
         locomote(bb, dt)
     end
 end
