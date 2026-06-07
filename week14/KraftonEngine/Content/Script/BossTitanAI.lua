@@ -14,7 +14,7 @@ local CANNON_RANGE = 58.0
 local TARGET_HEIGHT = 1.6
 local FALLBACK_MUZZLE_HEIGHT = 7.0
 local MELEE_MAX_VERTICAL_DELTA = 5.5
-local MELEE_ACTION_LOCK = 2.35
+local MELEE_ACTION_LOCK = 3.8
 local MELEE_HIT_DELAY = 0.72
 local POWER_SHOT_ACTION_LOCK = 1.25
 local CANNON_ACTION_LOCK = 0.85
@@ -41,6 +41,14 @@ local LEAP_LAND_DAMAGE = 18.0
 local LEAP_KNOCKBACK_DISTANCE = 6.0
 local LEAP_KNOCKBACK_DURATION = 0.28
 
+local MOVE_IDLE = 0
+local MOVE_WALK = 1
+local MOVE_RUN = 2
+local MOVE_STRAFE_LEFT = 3
+local MOVE_STRAFE_RIGHT = 4
+local MOVE_RETREAT = 5
+local MOVE_LEAP_FLOAT = 6
+
 local TACTIC = {
     approach = "approach",
     duel = "duel",
@@ -64,6 +72,38 @@ local ANIM = {
     leapLand = ANIM_ROOT .. "a_traverse_land_A_deadbolt_titan_torso_d_lod0.uasset",
     phase = ANIM_ROOT .. "a_Legion_gunup_deadbolt_titan_torso_d_lod0.uasset",
     hitReact = ANIM_ROOT .. "at_combat_start_react_deadbolt_titan_torso_d_lod0.uasset",
+}
+
+local MOVE_BY_ANIM_PATH = {
+    [ANIM.idle] = MOVE_IDLE,
+    [ANIM.walk] = MOVE_WALK,
+    [ANIM.run] = MOVE_RUN,
+    [ANIM.strafeLeft] = MOVE_STRAFE_LEFT,
+    [ANIM.strafeRight] = MOVE_STRAFE_RIGHT,
+    [ANIM.retreat] = MOVE_RETREAT,
+    [ANIM.leapFloat] = MOVE_LEAP_FLOAT,
+}
+
+local ACTION_BY_ANIM_PATH = {
+    [ANIM.cannon] = "cannon",
+    [ANIM.powerShot] = "powerShot",
+    [ANIM.melee] = "melee",
+    [ANIM.retreat] = "retreat",
+    [ANIM.leapStart] = "leapStart",
+    [ANIM.leapLand] = "leapLand",
+    [ANIM.phase] = "phase",
+    [ANIM.hitReact] = "hitReact",
+}
+
+local ACTION_DURATIONS = {
+    cannon = CANNON_ACTION_LOCK,
+    powerShot = POWER_SHOT_ACTION_LOCK,
+    melee = MELEE_ACTION_LOCK,
+    retreat = RETREAT_ACTION_LOCK,
+    leapStart = LEAP_WINDUP_TIME,
+    leapLand = LEAP_LAND_TIME,
+    phase = 1.0,
+    hitReact = 1.4,
 }
 
 local targetActor = nil
@@ -194,12 +234,73 @@ local function atan2(y, x)
     return 0.0
 end
 
+local function get_anim_state()
+    if obj == nil then return nil end
+
+    _G.BossTitanAnimState = _G.BossTitanAnimState or {}
+
+    local ownerId = obj.UUID
+    local state = _G.BossTitanAnimState[ownerId]
+    if state == nil then
+        state = {
+            MoveState = MOVE_IDLE,
+            ActionName = nil,
+            ActionDuration = 0.0,
+            ActionSerial = 0,
+        }
+        _G.BossTitanAnimState[ownerId] = state
+    end
+
+    return state
+end
+
+local function reset_anim_state()
+    local state = get_anim_state()
+    if state == nil then return end
+
+    state.MoveState = MOVE_IDLE
+    state.ActionName = nil
+    state.ActionDuration = 0.0
+    state.ActionSerial = 0
+end
+
+local function set_move_anim(moveState)
+    local state = get_anim_state()
+    if state == nil then return end
+
+    state.MoveState = moveState
+end
+
+local function request_action_anim(name, duration)
+    local state = get_anim_state()
+    if state == nil or name == nil then return end
+
+    state.ActionName = name
+    state.ActionDuration = duration or ACTION_DURATIONS[name] or 1.0
+    state.ActionSerial = (state.ActionSerial or 0) + 1
+end
+
 local function play_anim(path, looping, force)
-    if mesh == nil or path == nil then return end
+    if path == nil then return end
     if not force and is_animation_locked() then return end
     if not force and currentAnim == path then return end
 
-    if mesh:PlayAnimationByPath(path, looping == true) then
+    local actionName = ACTION_BY_ANIM_PATH[path]
+    if force and actionName ~= nil then
+        request_action_anim(actionName, ACTION_DURATIONS[actionName])
+        currentAnim = path
+        return
+    end
+
+    local moveState = MOVE_BY_ANIM_PATH[path]
+    if moveState ~= nil then
+        set_move_anim(moveState)
+        currentAnim = path
+        return
+    end
+
+    if actionName ~= nil then
+        request_action_anim(actionName, ACTION_DURATIONS[actionName])
         currentAnim = path
     end
 end
@@ -338,7 +439,7 @@ local function apply_boss_damage(context)
     local killed = currentHealth <= 0.0
     if killed then
         isDead = true
-        deathTimer = 1.4
+        deathTimer = ACTION_DURATIONS.hitReact
         activeAttack = nil
         leapState = nil
         play_anim(ANIM.hitReact, false, true)
@@ -362,7 +463,8 @@ local function start_attack(kind, animPath, duration, hitDelay, range, damage, c
     actionTimer = duration
     animationLockTimer = math.max(animationLockTimer, lockDuration or duration)
     cooldowns[kind] = cooldown
-    play_anim(animPath, false, true)
+    request_action_anim(kind, lockDuration or duration)
+    currentAnim = animPath
 
     CombatEvents.NotifyAttackFired(obj, {
         Instigator = obj,
@@ -697,7 +799,8 @@ local function run_attack(name)
         actionTimer = RETREAT_ACTION_LOCK
         animationLockTimer = math.max(animationLockTimer, RETREAT_ACTION_LOCK)
         activeAttack = nil
-        play_anim(ANIM.retreat, false, true)
+        request_action_anim("retreat", RETREAT_ACTION_LOCK)
+        currentAnim = ANIM.retreat
         return true
     end
 
@@ -929,6 +1032,7 @@ function BeginPlay()
     currentTactic = TACTIC.approach
     tacticCommitTimer = 0.0
     tacticReevaluateTimer = 0.0
+    reset_anim_state()
     cooldowns.cannon = 0.0
     cooldowns.powerShot = 1.4
     cooldowns.melee = 0.0
@@ -947,6 +1051,10 @@ function BeginPlay()
 end
 
 function EndPlay()
+    if obj ~= nil and _G.BossTitanAnimState ~= nil then
+        _G.BossTitanAnimState[obj.UUID] = nil
+    end
+
     CombatEvents.UnregisterDamageable(obj)
 end
 

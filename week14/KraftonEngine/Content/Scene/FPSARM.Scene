@@ -9665,19 +9665,20 @@
         "Properties" : {
           "AngularDamping" : 0.010000,
           "AnimInstance" : {
-            "ClassName" : "UAnimSingleNodeInstance",
+            "ClassName" : "ULuaAnimInstance",
             "Properties" : {
-              "RootMotionMode" : 1
+              "RootMotionMode" : 1,
+              "ScriptFile" : "Anim/boss_titan.lua"
             }
           },
-          "AnimInstanceClass" : "UCharacterAnimInstance",
+          "AnimInstanceClass" : "ULuaAnimInstance",
           "AnimationData" : {
             "AnimToPlayPath" : "Content/Data/Boss/Heavy/Animations/a_WalkCenter_deadbolt_titan_torso_d_lod0.uasset",
             "PlayRate" : 1.000000,
             "bLooping" : true,
             "bPlaying" : true
           },
-          "AnimationMode" : 1,
+          "AnimationMode" : 2,
           "CachedEditRotator" : [-0.000000, 165.131500, 0.000000],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
