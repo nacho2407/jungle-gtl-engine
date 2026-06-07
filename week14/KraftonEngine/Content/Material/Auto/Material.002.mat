@@ -5,7 +5,7 @@
         "EmissiveIntensity" : 0.000000,
         "Origin" : "FbxImport",
         "Parameters" : {
-          "HasNormalMap" : 0.000000,
+          "HasNormalMap" : 1.000000,
           "SectionColor" : [1.000000, 0.933513, 0.962621, 1.000000],
           "_pad" : [0.000000, 0.000000, 0.000000]
         },

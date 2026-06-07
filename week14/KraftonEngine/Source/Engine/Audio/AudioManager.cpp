@@ -386,6 +386,25 @@ bool FAudioManager::PlayAudio(const FString& Key, float Volume)
 	return ma_sound_start(Entry.Sound) == MA_SUCCESS;
 }
 
+bool FAudioManager::StopAudio(const FString& Key)
+{
+	if (!Impl->bInitialized || !Impl->LoadedSounds.contains(Key))
+	{
+		return false;
+	}
+
+	FLoadedSound& Entry = Impl->LoadedSounds[Key];
+	if (!Entry.Sound)
+	{
+		return false;
+	}
+
+	// 대사 스킵처럼 리소스 캐시는 유지하고 현재 재생 상태만 초기화해야 하는 경우의 정지 처리입니다.
+	ma_sound_stop(Entry.Sound);
+	ma_sound_seek_to_pcm_frame(Entry.Sound, 0);
+	return true;
+}
+
 void FAudioManager::PlayBGM(const FString& Key, float Volume)
 {
 	if (!Impl->bInitialized || !Impl->LoadedSounds.contains(Key))

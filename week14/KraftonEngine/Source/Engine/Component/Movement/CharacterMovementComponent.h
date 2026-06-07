@@ -6,6 +6,7 @@
 #include "Core/Types/EngineTypes.h"
 #include "Math/Vector.h"
 #include "Math/Transform.h"
+#include "Object/FName.h"
 
 // UE 의 EMovementMode minimal subset — 후속 단계에서 NavWalking/Swimming 등 확장.
 enum class EMovementMode : uint8
@@ -25,6 +26,8 @@ enum class EMovementMode : uint8
 //   movement uses PhysX Character Controller sweep with Pawn-channel query filtering.
 
 #include "Source/Engine/Component/Movement/CharacterMovementComponent.generated.h"
+
+class AActor;
 
 namespace physx
 {
@@ -145,6 +148,25 @@ protected:
 	bool  SweepWallRunStaticMeshes(const FVector& Start, const FVector& Direction, FHitResult& OutHit) const;
 	bool  SweepWallRunStaticMeshBounds(const FVector& Start, const FVector& Direction, FHitResult& OutHit) const;
 	bool  IsRunnableWall(const FVector& WallNormal) const;
+
+	/**
+	 * @brief Wall Run 후보 actor가 필수 태그 조건을 만족하는지 확인합니다
+	 *
+	 * @param Actor 검사 대상 actor
+	 *
+	 * @return 필수 태그 조건 통과 여부
+	 */
+	bool  IsWallRunAllowedActor(const AActor* Actor) const;
+
+	/**
+	 * @brief Wall Run 후보 hit가 필수 태그 조건을 만족하는지 확인합니다
+	 *
+	 * @param Hit 검사 대상 hit
+	 *
+	 * @return 필수 태그 조건 통과 여부
+	 */
+	bool  IsWallRunAllowedHit(const FHitResult& Hit) const;
+
 	bool  TryStartWallRun(const FVector& Input);
 	void  StartWallRun(const FHitResult& WallHit, bool bRightSide);
 	void  EndWallRun();
@@ -296,6 +318,8 @@ public:
 
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Enable Wall Run")
 	bool bEnableWallRun = true;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Required Tag")
+	FName WallRunRequiredTag = FName::None;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Check Distance", Min = 0.0f, Max = 5.0f, Speed = 0.05f)
 	float WallCheckDistance = 0.35f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Check Sphere Radius", Min = 0.01f, Max = 1.0f, Speed = 0.01f)
