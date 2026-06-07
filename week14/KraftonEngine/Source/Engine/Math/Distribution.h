@@ -96,6 +96,13 @@ namespace FDistributionSampling
 		return Hash((High << 16) | Low);
 	}
 
+	inline uint32 RandomSeed(uint32 EmitterSeed, uint32 ParticleSerial, uint32 SpawnSerial)
+	{
+		uint32 Seed = Hash(EmitterSeed ^ Hash(ParticleSerial + 0x9e3779b9u));
+		Seed = Hash(Seed ^ Hash(SpawnSerial + 0x85ebca6bu));
+		return Seed;
+	}
+
 	inline float RandomUnit()
 	{
 		return static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);

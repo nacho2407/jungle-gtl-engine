@@ -236,6 +236,12 @@ function ParticleSystemComponent:Deactivate() end
 
 function ParticleSystemComponent:ResetSystem() end
 
+---@param scale number
+function ParticleSystemComponent:SetParticleScaleMultiplier(scale) end
+
+---@return number
+function ParticleSystemComponent:GetParticleScaleMultiplier() end
+
 ---@param enabled boolean
 function ParticleSystemComponent:SetEmitterSpawningEnabled(enabled) end
 
@@ -474,6 +480,12 @@ WorldLib = {}
 ---@param className string
 ---@return Actor?
 function World.SpawnActor(className) end
+
+---@param particlePath string
+---@param location Vector
+---@param rotation? Vector
+---@return Actor?
+function World.SpawnParticleSystem(particlePath, location, rotation) end
 
 ---@param actorName string
 ---@return Actor?

@@ -1,19 +1,19 @@
 {
-  "BlendState" : "AlphaBlend",
-  "DepthStencilState" : "DepthReadOnly",
-  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-  "EmissiveIntensity" : 2.000000,
-  "Origin" : "Editor",
-  "Parameters" : {
+        "BlendState" : "AlphaBlend",
+        "DepthStencilState" : "DepthReadOnly",
+        "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+        "EmissiveIntensity" : 0.000000,
+        "Origin" : "Editor",
+        "Parameters" : {
 
-  },
-  "PathFileName" : "Content/Material/Editor/DefaultParticleSprite.mat",
-  "RasterizerState" : "SolidBackCull",
-  "RenderPass" : "AlphaBlend",
-  "ShaderPath" : "Shaders/Geometry/Particle.hlsl",
-  "ShadowMode" : "Opaque",
-  "Textures" : {
-    "DiffuseTexture" : "Content/Texture/white.png"
-  },
-  "bEnableBloom" : true
-}
+        },
+        "PathFileName" : "Content/Material/Editor/DefaultParticleSprite.mat",
+        "RasterizerState" : "SolidBackCull",
+        "RenderPass" : "AlphaBlend",
+        "ShaderPath" : "Shaders/Geometry/Particle.hlsl",
+        "ShadowMode" : "None",
+        "Textures" : {
+          "DiffuseTexture" : "Content/Texture/white.png"
+        },
+        "bEnableBloom" : false
+      }

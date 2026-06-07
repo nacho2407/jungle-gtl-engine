@@ -71,7 +71,7 @@ local function update_crosshair()
     if camera ~= nil then
         local camPos = camera:GetWorldLocation()
         local camFwd = camera.Forward
-        local hit = World.RaycastSkeletalMesh(camPos, camFwd, maxRange, owner)
+        local hit = World.RaycastPrimitive(camPos, camFwd, maxRange, owner)
         isTargeted = hit ~= nil and is_target_actor(hit.HitActor)
     end
     set_crosshair_color(isTargeted)

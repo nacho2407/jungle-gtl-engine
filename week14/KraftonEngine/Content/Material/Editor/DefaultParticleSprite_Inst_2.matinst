@@ -1,16 +1,13 @@
 {
-        "EmissiveColor" : [1.000000, 1.000000, 0.000000, 1.000000],
-        "EmissiveIntensity" : 2.000000,
         "Parameters" : {
 
         },
         "ParentMaterial" : "Content/Material/Editor/DefaultParticleSprite.mat",
         "PathFileName" : "Content/Material/Editor/DefaultParticleSprite_Inst_2.matinst",
         "Textures" : {
-          "DiffuseTexture" : "Content/Texture/toppng.com-vintagesonic1-sonic-ring-gif-301x301.png"
+
         },
-        "bEnableBloom" : true,
-        "bOverrideEmissiveColor" : true,
-        "bOverrideEmissiveIntensity" : true,
-        "bOverrideEnableBloom" : true
+        "bOverrideEmissiveColor" : false,
+        "bOverrideEmissiveIntensity" : false,
+        "bOverrideEnableBloom" : false
       }
