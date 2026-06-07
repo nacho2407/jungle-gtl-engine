@@ -52,12 +52,21 @@ public:
 	void ReloadScript();
 
 private:
+	struct FLuaBoneRotationOffset
+	{
+		FString  BoneName;
+		FRotator Rotation;
+		float    Weight = 1.0f;
+	};
+
 	void ClearGraph();      // ReloadScript 경로 — RootNode + OwnedNodes + lua env 정리.
 	void InstallBindings();
 	void DispatchLuaInit();
 
 	void EnsureLuaMorphWeightStorage();
 	void ApplyLuaMorphOverrides(FPoseContext& Output) const;
+	void ApplyLuaBoneRotationOffsets(FPoseContext& Output);
+	void ClearLuaBoneRotationOffsets();
 
 	sol::environment              Env;
 	sol::protected_function       LuaInit;
@@ -68,4 +77,7 @@ private:
 	TArray<float>                 LuaMorphWeights;
 	TArray<uint8>                 LuaMorphOverrideMask;
 	bool                          bLuaMorphOverrideEnabled = false;
+
+	TArray<FLuaBoneRotationOffset> LuaBoneRotationOffsets;
+	bool                           bLuaBoneRotationOffsetsEnabled = false;
 };

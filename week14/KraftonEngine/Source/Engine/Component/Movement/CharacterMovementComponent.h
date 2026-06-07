@@ -340,11 +340,11 @@ public:
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide Min Start Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float SlideMinStartSpeed = 7.5f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide End Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float SlideEndSpeed = 3.0f;
+	float SlideEndSpeed = 1.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide Impulse Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float SlideImpulseSpeed = 6.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide Braking Friction", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float SlideBrakingFriction = 14.0f;
+	float SlideBrakingFriction = 1.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Max Slide Time", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
 	float MaxSlideTime = 1.15f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide Queue Grace Time", Min = 0.0f, Max = 2.0f, Speed = 0.01f)

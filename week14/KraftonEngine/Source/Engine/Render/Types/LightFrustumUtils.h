@@ -557,7 +557,7 @@ namespace FLightFrustumUtils
 		const FMatrix LightRotationView = FMatrix::LookAtLH(
 			FVector(0.0f, 0.0f, 0.0f),
 			LightDir,
-			Up);
+			LightUp);
 
 		const FVector LightSpaceCenter = LightRotationView.TransformPositionWithW(Center);
 		const float SnappedCenterX = SnapToTexelGrid(LightSpaceCenter.X, TexelSize);
@@ -673,7 +673,7 @@ namespace FLightFrustumUtils
 		Result.View = FMatrix::LookAtLH(
 			WorldEye,
 			WorldEye + LightDir,
-			Up
+			LightUp
 		);
 
 		// ------------------------------------------------------------
