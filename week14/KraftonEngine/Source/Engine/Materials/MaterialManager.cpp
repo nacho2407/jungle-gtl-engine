@@ -9,6 +9,10 @@
 #include "Render/Pipeline/Renderer.h"
 #include "Object/ReferenceCollector.h"
 
+#include <algorithm>
+#include <cctype>
+#include <cwctype>
+
 namespace
 {
 	float ReadJsonNumber(const json::JSON& Value, float DefaultValue)
@@ -63,6 +67,17 @@ namespace
 		JsonData[MatKeys::EmissiveIntensity] = Material->GetEmissiveIntensity();
 		JsonData[MatKeys::bEnableBloom] = Material->IsBloomEnabled();
 	}
+
+	std::filesystem::path ResolveMaterialJsonPath(const FString& FilePath)
+	{
+		std::filesystem::path Path(FPaths::ToWide(FilePath));
+		if (!Path.is_absolute())
+		{
+			Path = std::filesystem::path(FPaths::RootDir()) / Path;
+		}
+
+		return Path.lexically_normal();
+	}
 }
 
 void FMaterialManager::ScanMaterialAssets()
@@ -84,7 +99,8 @@ void FMaterialManager::ScanMaterialAssets()
 
 		const std::filesystem::path& Path = Entry.path();
 
-		const auto Ext = Path.extension();
+		std::wstring Ext = Path.extension().wstring();
+		std::transform(Ext.begin(), Ext.end(), Ext.begin(), ::towlower);
 		if (Ext != L".mat" && Ext != L".matinst") continue;
 		if (Path.stem() == L"None") continue; // Fallback 머티리얼은 목록에서 제외
 
@@ -291,6 +307,7 @@ UMaterialInterface* FMaterialManager::GetOrCreateMaterialInterface(const FString
 	FString GenericPath = FPaths::ToUtf8(Path.generic_wstring());
 
 	FString Extension = FPaths::ToUtf8(Path.extension().wstring());
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
 
 	if (Extension == ".mat")
 	{
@@ -493,6 +510,7 @@ bool FMaterialManager::ReloadMaterialInterface(const FString& AssetPath)
 	std::filesystem::path Path(FPaths::ToWide(AssetPath));
 	FString GenericPath = FPaths::ToUtf8(Path.generic_wstring());
 	FString Extension = FPaths::ToUtf8(Path.extension().wstring());
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
 
 	if (Extension == ".matinst")
 	{
@@ -545,7 +563,7 @@ void FMaterialManager::DestroyTransientMaterial(UMaterial* Material)
 
 json::JSON FMaterialManager::ReadJsonFile(const FString& FilePath) const
 {
-	std::ifstream File(FPaths::ToWide(FilePath).c_str());
+	std::ifstream File(ResolveMaterialJsonPath(FilePath));
 	if (!File.is_open()) return json::JSON(); // Null JSON 반환
 
 	std::stringstream Buffer;
@@ -796,7 +814,7 @@ const char* FMaterialManager::ShadowModeToString(EMaterialShadowMode Mode) const
 
 void FMaterialManager::SaveToJSON(json::JSON& JsonData, const FString& MatFilePath)
 {
-	std::ofstream File(FPaths::ToWide(MatFilePath));
+	std::ofstream File(ResolveMaterialJsonPath(MatFilePath));
 	File << JsonData.dump();
 }
 

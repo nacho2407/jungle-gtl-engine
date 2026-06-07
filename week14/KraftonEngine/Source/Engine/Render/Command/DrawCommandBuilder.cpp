@@ -785,7 +785,7 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 		if (PPShader)
 		{
 			FOutlinePostProcessConstants ppConstants;
-			ppConstants.OutlineColor = FVector4(1.0f, 1.0f, 0.0f, 1.0f);
+			ppConstants.OutlineColor = FVector4(1.0f, 0.42f, 0.0f, 0.90f);
 			ppConstants.OutlineThickness = 3.0f;
 			OutlineCB.Update(Ctx, &ppConstants, sizeof(ppConstants));
 
@@ -928,6 +928,7 @@ void FDrawCommandBuilder::BuildPostProcessCommands(const FFrameContext& Frame, c
 		{
 			FGammaCorrectionConstants GammaData = {};
 			GammaData.Gamma = Frame.RenderOptions.Gamma;
+			GammaData.Saturation = Frame.RenderOptions.Saturation;
 			GammaCorrectionCB.Update(Ctx, &GammaData, sizeof(FGammaCorrectionConstants));
 
 			FDrawCommand& Cmd = DrawCommandList.AddCommand();

@@ -1,5 +1,6 @@
 #include "UI/UIManager.h"
 
+#include "Audio/AudioManager.h"
 #include "Core/Logging/Log.h"
 #include "Input/InputSystem.h"
 #include "Object/Object.h"
@@ -98,6 +99,14 @@ namespace
 			return FileName;
 		}
 		return Source.substr(0, Slash + 1) + FileName;
+	}
+
+	void PlayUiSound(const Rml::String& EventName)
+	{
+		if (!EventName.empty())
+		{
+			FAudioManager::Get().PlayOneShot(EventName.c_str());
+		}
 	}
 
 }
@@ -603,6 +612,7 @@ void UUIManager::Initialize(ID3D11Device* InDevice)
 
 void UUIManager::Shutdown()
 {
+	HoveredMenuButtons.clear();
 	DestroyAllWidgets();
 
 	if (RmlContext)
@@ -761,6 +771,7 @@ int32 UUIManager::ReloadDocumentsByPath(const FString& DocumentPath)
 void UUIManager::ClearViewport()
 {
 	InputSystem::Get().SetGuiMouseCapture(false);
+	HoveredMenuButtons.clear();
 
 	// 위젯을 viewport 에서만 떼고 UObject 자체는 유지. UUIManager 는 widgets 의 owner —
 	// 같은 Lua VM 안의 widgets[] 테이블이 그대로 살아있고, PIE 재시작 / TransitionToScene
@@ -787,6 +798,7 @@ void UUIManager::ClearViewport()
 
 void UUIManager::DestroyAllWidgets()
 {
+	HoveredMenuButtons.clear();
 	ClearViewport();
 
 	for (UUserWidget* Widget : CreatedWidgets)
@@ -841,6 +853,7 @@ void UUIManager::CloseDocument(UUserWidget* Widget)
 		return;
 	}
 
+	HoveredMenuButtons.clear();
 	Widget->ClearEventListeners();
 	Widget->GetDocument()->Close();
 	Widget->ClearDocument();
@@ -946,6 +959,10 @@ void UUIManager::UpdateMenuHoverButtonFrames()
 	const double Now = SystemInterface ? SystemInterface->GetElapsedTime() : 0.0;
 	const double CycleTime = std::fmod(Now, BlinkPeriodSeconds);
 	const int32 FrameIndex = static_cast<int32>((CycleTime / BlinkPeriodSeconds) * BlinkFrameCount) % BlinkFrameCount;
+	const bool bMouseClicked = InputSystem::Get().GetKeyDown(VK_LBUTTON);
+	bool bPlayedHoverSound = false;
+	bool bPlayedClickSound = false;
+	std::unordered_set<Rml::Element*> CurrentHoveredButtons;
 
 	for (int DocumentIndex = 0; DocumentIndex < RmlContext->GetNumDocuments(); ++DocumentIndex)
 	{
@@ -972,6 +989,25 @@ void UUIManager::UpdateMenuHoverButtonFrames()
 
 			Rml::Element* Button = Box->GetParentNode();
 			const bool bHovered = Button && Button->IsClassSet("hover-image-button") && Button->IsPseudoClassSet("hover");
+			if (bHovered)
+			{
+				CurrentHoveredButtons.insert(Button);
+
+				if (!bPlayedHoverSound && HoveredMenuButtons.find(Button) == HoveredMenuButtons.end())
+				{
+					const Rml::String HoverSound = Button->GetAttribute<Rml::String>("data-hover-sound", "ui.hover");
+					PlayUiSound(HoverSound);
+					bPlayedHoverSound = true;
+				}
+
+				if (!bPlayedClickSound && bMouseClicked)
+				{
+					const Rml::String ClickSound = Button->GetAttribute<Rml::String>("data-click-sound", "ui.click");
+					PlayUiSound(ClickSound);
+					bPlayedClickSound = true;
+				}
+			}
+
 			const Rml::String TargetSrc = bHovered
 				? ReplaceFileName(CurrentSrc, BlinkFrameFiles[FrameIndex])
 				: ReplaceFileName(CurrentSrc, "HoverCutBox.png");
@@ -982,6 +1018,8 @@ void UUIManager::UpdateMenuHoverButtonFrames()
 			}
 		}
 	}
+
+	HoveredMenuButtons = std::move(CurrentHoveredButtons);
 }
 
 void UUIManager::FlushDeferredViewportRemovals()

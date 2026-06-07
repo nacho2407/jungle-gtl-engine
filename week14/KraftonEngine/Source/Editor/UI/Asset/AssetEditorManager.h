@@ -40,6 +40,12 @@ public:
 	void RemoveClosedEditors();
 
 private:
+	bool OpenEditorForObjectImmediate(UObject* Object);
+	void ProcessPendingOpenRequests();
+
+private:
 	TArray<std::function<std::unique_ptr<FAssetEditorWidget>()>> EditorFactories;
 	TArray<std::unique_ptr<FAssetEditorWidget>> OpenEditors;
+	TArray<UObject*> PendingOpenObjects;
+	bool bIsDispatchingEditors = false;
 };

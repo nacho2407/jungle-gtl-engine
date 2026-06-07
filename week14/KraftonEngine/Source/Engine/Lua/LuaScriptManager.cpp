@@ -35,7 +35,9 @@
 #include "GameFramework/World.h"
 #include "Debug/DrawDebugHelpers.h"
 #include "Object/Reflection/UClass.h"
+#include "Render/Scene/FScene.h"
 #include "Platform/Paths.h"
+#include "Core/ProjectSettings.h"
 #include "Math/Transform.h"
 #include "Math/Vector.h"
 #include "Platform/WindowsWindow.h"
@@ -49,6 +51,74 @@
 
 #include "Intermediate/Generated/LuaBindings.generated.h"
 
+namespace
+{
+TArray<FString> BuildLuaModuleScriptFileCandidates(const FString& ModuleOrScriptFile)
+{
+	FString Normalized = ModuleOrScriptFile;
+	for (char& Ch : Normalized)
+	{
+		if (Ch == '\\')
+		{
+			Ch = '/';
+		}
+	}
+
+	TArray<FString> Candidates;
+	auto AddCandidate = [&Candidates](const FString& Candidate)
+	{
+		if (std::find(Candidates.begin(), Candidates.end(), Candidate) == Candidates.end())
+		{
+			Candidates.push_back(Candidate);
+		}
+	};
+
+	constexpr const char* LuaExt = ".lua";
+	const bool bHasLuaExtension = Normalized.size() >= 4 && Normalized.substr(Normalized.size() - 4) == LuaExt;
+	if (bHasLuaExtension)
+	{
+		AddCandidate(Normalized);
+		return Candidates;
+	}
+
+	// 경로 구분자가 이미 있는 모듈명은 파일명 안의 점을 보존하는 후보를 먼저 사용합니다.
+	// 예: Dialogue/Prologue.dialogue -> Dialogue/Prologue.dialogue.lua
+	AddCandidate(Normalized + LuaExt);
+
+	// Lua 관례형 dotted module도 기존처럼 하위 경로로 변환해서 지원합니다.
+	// 예: Game.FractureDirector -> Game/FractureDirector.lua
+	FString DottedModulePath = Normalized;
+	for (char& Ch : DottedModulePath)
+	{
+		if (Ch == '.')
+		{
+			Ch = '/';
+		}
+	}
+	AddCandidate(DottedModulePath + LuaExt);
+	return Candidates;
+}
+
+sol::object RequireLuaModule(sol::state& LuaState, const FString& ModuleName)
+{
+	sol::protected_function Require = LuaState["require"];
+	if (!Require.valid())
+	{
+		return sol::make_object(LuaState, sol::lua_nil);
+	}
+
+	sol::protected_function_result Result = Require(ModuleName);
+	if (!Result.valid())
+	{
+		sol::error Error = Result;
+		UE_LOG("[Lua] require('%s') error: %s", ModuleName.c_str(), Error.what());
+		return sol::make_object(LuaState, sol::lua_nil);
+	}
+
+	return Result.get<sol::object>();
+}
+}
+
 std::unique_ptr<sol::state> FLuaScriptManager::Lua;
 sol::protected_function FLuaScriptManager::OnEscapePressedCallback;
 std::mutex FLuaScriptManager::ComponentMutex;
@@ -56,7 +126,8 @@ TArray<ULuaScriptComponent*> FLuaScriptManager::RegisteredComponents;
 TArray<ULuaAnimInstance*>    FLuaScriptManager::RegisteredAnimInstances;
 FSubscriptionID FLuaScriptManager::WatchSub = 0;
 float FLuaScriptManager::RuntimeGamma = 2.4f;
-float FLuaScriptManager::RuntimeMouseSensitivity = 0.2f;
+float FLuaScriptManager::RuntimeSaturation = 1.0f;
+float FLuaScriptManager::RuntimeMouseSensitivity = 1.0f;
 
 void FLuaScriptManager::SetOnEscapePressed(sol::protected_function Callback)
 {
@@ -73,6 +144,16 @@ void FLuaScriptManager::SetRuntimeGamma(float InGamma)
 	RuntimeGamma = std::clamp(InGamma, 1.0f, 3.0f);
 }
 
+float FLuaScriptManager::GetRuntimeSaturation()
+{
+	return RuntimeSaturation;
+}
+
+void FLuaScriptManager::SetRuntimeSaturation(float InSaturation)
+{
+	RuntimeSaturation = std::clamp(InSaturation, 0.0f, 1.0f);
+}
+
 float FLuaScriptManager::GetRuntimeMouseSensitivity()
 {
 	return RuntimeMouseSensitivity;
@@ -80,7 +161,7 @@ float FLuaScriptManager::GetRuntimeMouseSensitivity()
 
 void FLuaScriptManager::SetRuntimeMouseSensitivity(float InSensitivity)
 {
-	RuntimeMouseSensitivity = std::clamp(InSensitivity, 0.01f, 10.0f);
+	RuntimeMouseSensitivity = std::clamp(InSensitivity, 0.05f, 15.0f);
 }
 
 void FLuaScriptManager::RegisterComponent(ULuaScriptComponent* Component)
@@ -126,6 +207,23 @@ FString FLuaScriptManager::GetModuleNameFromPath(const FString& ScriptPath)
 		{
 			Ch = '/';
 		}
+	}
+
+	FString ScriptRoot = FPaths::ToUtf8(FPaths::ScriptDir());
+	for (char& Ch : ScriptRoot)
+	{
+		if (Ch == '\\')
+		{
+			Ch = '/';
+		}
+	}
+	if (!ScriptRoot.empty() && Normalized.rfind(ScriptRoot, 0) == 0)
+	{
+		Normalized.erase(0, ScriptRoot.size());
+	}
+	while (!Normalized.empty() && Normalized.front() == '/')
+	{
+		Normalized.erase(Normalized.begin());
 	}
 
 	constexpr const char* LuaExt = ".lua";
@@ -287,6 +385,52 @@ void FLuaScriptManager::FireWorldReset()
 		T["dirtyCar"]   = sol::nil;
 		T["policeCars"] = Lua->create_table();
 	}
+
+	// 3) Game.LuaEventBus — scene 전환 후 이전 Director 구독이 새 world event를 받지 않도록 정리.
+	if (sol::object Bus = Loaded["Game.LuaEventBus"]; Bus.valid() && Bus.get_type() == sol::type::table)
+	{
+		sol::table BusTable = Bus.as<sol::table>();
+		sol::object ClearObject = BusTable["Clear"];
+		if (ClearObject.valid() && ClearObject.get_type() == sol::type::function)
+		{
+			sol::protected_function Clear = ClearObject.as<sol::protected_function>();
+			sol::protected_function_result Result = Clear();
+			if (!Result.valid())
+			{
+				sol::error Error = Result;
+				UE_LOG("[Lua] Game.LuaEventBus.Clear error: %s", Error.what());
+			}
+		}
+	}
+}
+
+void FLuaScriptManager::EmitGameEvent_Trigger(const FString& EventName, AActor* Trigger, APawn* Pawn, const FString& TriggerTag)
+{
+	if (!Lua)
+	{
+		return;
+	}
+
+	sol::object BusObject = RequireLuaModule(*Lua, "Game.LuaEventBus");
+	if (!BusObject.valid() || BusObject.get_type() != sol::type::table)
+	{
+		return;
+	}
+
+	sol::table Bus = BusObject.as<sol::table>();
+	sol::object EmitObject = Bus["Emit"];
+	if (!EmitObject.valid() || EmitObject.get_type() != sol::type::function)
+	{
+		return;
+	}
+
+	sol::protected_function Emit = EmitObject.as<sol::protected_function>();
+	sol::protected_function_result Result = Emit(EventName, static_cast<AActor*>(Trigger), static_cast<APawn*>(Pawn), TriggerTag);
+	if (!Result.valid())
+	{
+		sol::error Error = Result;
+		UE_LOG("[Lua] Game event '%s' error: %s", EventName.c_str(), Error.what());
+	}
 }
 
 void FLuaScriptManager::Initialize()
@@ -305,15 +449,33 @@ void FLuaScriptManager::Initialize()
 	ModuleLoaders[2] = [](sol::this_state ts, const std::string& ModName) -> sol::object
 	{
 		sol::state_view L(ts);
-		const std::wstring WidePath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ModName + ".lua"));
+		const TArray<FString> CandidateScriptFiles = BuildLuaModuleScriptFileCandidates(ModName);
+		FString ScriptFile;
+		std::wstring WidePath;
 		std::error_code EC;
-		if (!std::filesystem::exists(WidePath, EC))
+		FString SearchMessage;
+		for (const FString& CandidateScriptFile : CandidateScriptFiles)
 		{
-			return sol::make_object(L, std::string("\n\tno file '") + FPaths::ToUtf8(WidePath) + "'");
+			const std::wstring CandidateWidePath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(CandidateScriptFile));
+			if (std::filesystem::exists(CandidateWidePath, EC))
+			{
+				ScriptFile = CandidateScriptFile;
+				WidePath = CandidateWidePath;
+				break;
+			}
+
+			SearchMessage += "\n\tno file '";
+			SearchMessage += FPaths::ToUtf8(CandidateWidePath);
+			SearchMessage += "'";
+		}
+
+		if (ScriptFile.empty())
+		{
+			return sol::make_object(L, SearchMessage);
 		}
 
 		FString Content;
-		if (!ReadScriptFileContent(ModName + ".lua", Content))
+		if (!ReadScriptFileContent(ScriptFile, Content))
 		{
 			return sol::make_object(L, std::string("\n\tcannot read '") + FPaths::ToUtf8(WidePath) + "'");
 		}
@@ -612,6 +774,14 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	{
 		FLuaScriptManager::SetRuntimeGamma(Value);
 	});
+	Engine.set_function("GetPostProcessSaturation", []()
+	{
+		return FLuaScriptManager::GetRuntimeSaturation();
+	});
+	Engine.set_function("SetPostProcessSaturation", [](float Value)
+	{
+		FLuaScriptManager::SetRuntimeSaturation(Value);
+	});
 	Engine.set_function("GetMouseSensitivity", []()
 	{
 		return FLuaScriptManager::GetRuntimeMouseSensitivity();
@@ -638,6 +808,119 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	{
 		FLuaScriptManager::SetOnEscapePressed(std::move(Callback));
 	});
+
+	// Game — gameplay framework 공용 진입점. 실제 게임 규칙은 Lua Director/EventBus가 담당합니다.
+	sol::table Game = Lua.create_named_table("Game");
+	Game.set_function("GetPlayerController", []() -> APlayerController*
+	{
+		return (GEngine && GEngine->GetWorld()) ? GEngine->GetWorld()->GetFirstPlayerController() : nullptr;
+	});
+	Game.set_function("GetPlayerPawn", []() -> APawn*
+	{
+		APlayerController* PC = (GEngine && GEngine->GetWorld()) ? GEngine->GetWorld()->GetFirstPlayerController() : nullptr;
+		return PC ? PC->GetPossessedPawn() : nullptr;
+	});
+	Game.set_function("GetCameraManager", []() -> APlayerCameraManager*
+	{
+		APlayerController* PC = (GEngine && GEngine->GetWorld()) ? GEngine->GetWorld()->GetFirstPlayerController() : nullptr;
+		return PC ? PC->GetPlayerCameraManager() : nullptr;
+	});
+	Game.set_function("GetCurrentSceneName", []() -> FString
+	{
+		if (!GEngine)
+		{
+			return {};
+		}
+
+		const FWorldContext* Context = GEngine->GetWorldContextFromHandle(GEngine->GetActiveWorldHandle());
+		if (Context && !Context->ContextName.empty() && Context->ContextName != "PIE")
+		{
+			return Context->ContextName;
+		}
+		return FProjectSettings::Get().Game.StartLevelName;
+	});
+	Game.set_function("TransitionToScene", [](const FString& ScenePath)
+	{
+		if (GEngine)
+		{
+			GEngine->RequestTransitionToScene(ScenePath);
+		}
+	});
+	Game.set_function("Pause", []()
+	{
+		if (GEngine)
+		{
+			if (UWorld* World = GEngine->GetWorld())
+			{
+				World->SetPaused(true);
+			}
+		}
+	});
+	Game.set_function("Resume", []()
+	{
+		if (GEngine)
+		{
+			if (UWorld* World = GEngine->GetWorld())
+			{
+				World->SetPaused(false);
+			}
+		}
+	});
+	Game.set_function("IsPaused", []()
+	{
+		if (GEngine)
+		{
+			if (UWorld* World = GEngine->GetWorld())
+			{
+				return World->IsPaused();
+			}
+		}
+		return false;
+	});
+	Game.set_function("Log", [](sol::variadic_args Args)
+	{
+		FString Message;
+		for (auto Arg : Args)
+		{
+			if (!Message.empty())
+			{
+				Message += "\t";
+			}
+			Message += Arg.as<FString>();
+		}
+		UE_LOG("[Game] %s", Message.c_str());
+	});
+
+	sol::protected_function_result GameAliasResult = Lua.safe_script(R"(
+Game = Game or {}
+local function __GameEventBus()
+    return require("Game.LuaEventBus")
+end
+function Game.On(...)
+    return __GameEventBus().On(...)
+end
+function Game.Off(...)
+    return __GameEventBus().Off(...)
+end
+function Game.Emit(...)
+    return __GameEventBus().Emit(...)
+end
+function Game.RestartLevel()
+    local sceneName = Game.GetCurrentSceneName()
+    if sceneName ~= nil and sceneName ~= "" then
+        Game.TransitionToScene(sceneName)
+    end
+end
+Engine.TransitionToScene = Game.TransitionToScene
+Engine.PauseGame = Game.Pause
+Engine.ResumeGame = Game.Resume
+Engine.IsPaused = Game.IsPaused
+)");
+	if (!GameAliasResult.valid())
+	{
+		sol::error Error = GameAliasResult;
+		UE_LOG("[Lua] Game namespace bootstrap error: %s", Error.what());
+	}
 
 	sol::table Key = Lua.create_named_table("Key");
 	Key["W"] = static_cast<int32>('W');
@@ -854,7 +1137,15 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	});
 	AudioManager.set_function("Play", [](const FString& SoundName, float Volume)
 	{
-		FAudioManager::Get().PlayAudio(SoundName, Volume);
+		return FAudioManager::Get().PlayAudio(SoundName, Volume);
+	});
+	AudioManager.set_function("PlayOneShot", [](const FString& EventName)
+	{
+		return FAudioManager::Get().PlayOneShot(EventName);
+	});
+	AudioManager.set_function("PlayOneShotAt", [](const FString& EventName, float X, float Y, float Z)
+	{
+		return FAudioManager::Get().PlayOneShotAt(EventName, FVector(X, Y, Z));
 	});
 	AudioManager.set_function("PlayBGM", [](const FString& SoundName, float Volume)
 	{
@@ -866,11 +1157,19 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	});
 	AudioManager.set_function("PlayLoop", [](const FString& SoundName, const FString& LoopName, sol::optional<float> Volume, sol::optional<float> Pitch)
 	{
-		FAudioManager::Get().PlayLoop(SoundName, LoopName, Volume.value_or(1.0f), Pitch.value_or(1.0f));
+		return FAudioManager::Get().PlayLoop(SoundName, LoopName, Volume.value_or(1.0f), Pitch.value_or(1.0f));
+	});
+	AudioManager.set_function("SetLoopState", [](const FString& LoopName, const FString& SoundName, bool bShouldPlay, sol::optional<float> Volume, sol::optional<float> Pitch)
+	{
+		return FAudioManager::Get().SetLoopState(LoopName, SoundName, bShouldPlay, Volume.value_or(1.0f), Pitch.value_or(1.0f));
 	});
 	AudioManager.set_function("StopLoop", [](const FString& LoopName)
 	{
 		FAudioManager::Get().StopLoop(LoopName);
+	});
+	AudioManager.set_function("FadeOutLoop", [](const FString& LoopName, sol::optional<float> FadeMilliseconds)
+	{
+		FAudioManager::Get().FadeOutLoop(LoopName, FadeMilliseconds.value_or(200.0f));
 	});
 	AudioManager.set_function("StopAllLoops", []()
 	{
@@ -887,6 +1186,30 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	AudioManager.set_function("IsLoopPlaying", [](const FString& LoopName)
 	{
 		return FAudioManager::Get().IsLoopPlaying(LoopName);
+	});
+	AudioManager.set_function("PlayEvent", [](const FString& EventName)
+	{
+		return FAudioManager::Get().PlayEvent(EventName);
+	});
+	AudioManager.set_function("PlayEventAt", [](const FString& EventName, float X, float Y, float Z)
+	{
+		return FAudioManager::Get().PlayEventAt(EventName, FVector(X, Y, Z));
+	});
+	AudioManager.set_function("StopEvent", [](const FString& EventName)
+	{
+		FAudioManager::Get().StopEvent(EventName);
+	});
+	AudioManager.set_function("FadeOutEvent", [](const FString& EventName, sol::optional<float> FadeMilliseconds)
+	{
+		FAudioManager::Get().FadeOutEvent(EventName, FadeMilliseconds.value_or(120.0f));
+	});
+	AudioManager.set_function("SetBusVolume", [](const FString& BusName, float Volume)
+	{
+		FAudioManager::Get().SetBusVolume(BusName, Volume);
+	});
+	AudioManager.set_function("GetBusVolume", [](const FString& BusName)
+	{
+		return FAudioManager::Get().GetBusVolume(BusName);
 	});
 
 	Lua.set_function("LoadAudio", [](const FString& SoundName, const FString& Path, sol::optional<bool> bLoop)
@@ -1013,6 +1336,42 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param input Vector\nfunction FloatingPawnMovementComponent:SetLookInput(input) end");
 
 	Lua.new_usertype<UCharacterMovementComponent>("CharacterMovementComponent",
+		"GetVelocity", [](UCharacterMovementComponent& Component)
+		{
+			return Component.GetVelocity();
+		},
+		"GetSpeed", [](UCharacterMovementComponent& Component)
+		{
+			return Component.GetSpeed();
+		},
+		"IsWalking", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsWalking();
+		},
+		"IsFalling", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsFalling();
+		},
+		"IsWallRunning", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsWallRunning();
+		},
+		"WasAirJumpConsumedThisFrame", [](UCharacterMovementComponent& Component)
+		{
+			return Component.WasAirJumpConsumedThisFrame();
+		},
+		"IsSprinting", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsSprinting();
+		},
+		"IsCrouching", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsCrouching();
+		},
+		"GetMovementModeName", [](UCharacterMovementComponent& Component)
+		{
+			return FString(Component.GetMovementModeName());
+		},
 		"GetMaxWalkSpeed", [](UCharacterMovementComponent& Component)
 		{
 			return Component.MaxWalkSpeed;
@@ -1043,6 +1402,15 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		});
 
 	FLuaDocRegistry::Get().Type("CharacterMovementComponent")
+		.Method("---@return Vector\nfunction CharacterMovementComponent:GetVelocity() end")
+		.Method("---@return number\nfunction CharacterMovementComponent:GetSpeed() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsWalking() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsFalling() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsWallRunning() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:WasAirJumpConsumedThisFrame() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsSprinting() end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsCrouching() end")
+		.Method("---@return string\nfunction CharacterMovementComponent:GetMovementModeName() end")
 		.Method("---@return number\nfunction CharacterMovementComponent:GetMaxWalkSpeed() end")
 		.Method("---@param value number\nfunction CharacterMovementComponent:SetMaxWalkSpeed(value) end")
 		.Method("---@return number\nfunction CharacterMovementComponent:GetSprintSpeedMultiplier() end")
@@ -1110,6 +1478,13 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	{
 		Component.SetRelativeRotation(Rotation);
 	},
+		"AddLocalRotation", [](USceneComponent& Component, const FVector& DeltaRotation)
+	{
+		// Lua uses Vector(X=Roll, Y=Pitch, Z=Yaw) in degrees. Convert only the
+		// per-shot delta to a quat, then compose it inside the component.
+		// This avoids the GetRotation -> Euler add -> SetRotation accumulation path.
+		Component.AddLocalRotation(FRotator(DeltaRotation));
+	},
 
 		// 부모 기준 상대 위치 — 동일한 메시를 4개 깐 바퀴 같은 케이스에서 앞/뒤 구분 등
 		// 위치 기반 필터링에 쓰인다. 월드 위치는 위 "Location" 프로퍼티 참고.
@@ -1128,7 +1503,24 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@return Vector\nfunction SceneComponent:GetLocation() end")
 		.Method("---@param location Vector\nfunction SceneComponent:SetLocation(location) end")
 		.Method("---@return Vector\nfunction SceneComponent:GetRotation() end")
-		.Method("---@param rotation Vector\nfunction SceneComponent:SetRotation(rotation) end");
+		.Method("---@param rotation Vector\nfunction SceneComponent:SetRotation(rotation) end")
+		.Method("---@param deltaRotation Vector # Vector(X=Roll, Y=Pitch, Z=Yaw), degrees; internally composed as quaternion.\nfunction SceneComponent:AddLocalRotation(deltaRotation) end");
+
+	Lua.new_usertype<UPrimitiveComponent>("PrimitiveComponent",
+		sol::base_classes, sol::bases<USceneComponent>(),
+		"SetOutline", [](UPrimitiveComponent& Component, bool bEnabled)
+		{
+			AActor* OwnerActor = Component.GetOwner();
+			UWorld* World = OwnerActor ? OwnerActor->GetWorld() : nullptr;
+			if (!World)
+			{
+				return;
+			}
+			World->GetScene().SetProxyOutlineOnly(Component.GetSceneProxy(), bEnabled);
+		});
+
+	FLuaDocRegistry::Get().Type("PrimitiveComponent", "SceneComponent")
+		.Method("---@param enabled boolean\nfunction PrimitiveComponent:SetOutline(enabled) end");
 
 	// 메시 에셋 경로로 컴포넌트 식별 가능하게 노출. 자동 생성된 FName ("UStaticMeshComponent_41")
 	// 은 월드 초기화 순서에 따라 카운터가 달라져 빌드별로 매칭이 깨질 수 있다. 메시 경로는
@@ -1252,9 +1644,30 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("GetSkeletalMesh",
 			"---@return SkeletalMeshComponent?\nfunction Actor:GetSkeletalMesh() end",
 			[](AActor& Actor) -> USkeletalMeshComponent* { return Actor.GetComponentByClass<USkeletalMeshComponent>(); })
+		.Method("GetStaticMesh",
+			"---@return StaticMeshComponent?\nfunction Actor:GetStaticMesh() end",
+			[](AActor& Actor) -> UStaticMeshComponent* { return Actor.GetComponentByClass<UStaticMeshComponent>(); })
 		.Method("GetParticleSystem",
 			"---@return ParticleSystemComponent?\nfunction Actor:GetParticleSystem() end",
 			[](AActor& Actor) -> UParticleSystemComponent* { return Actor.GetComponentByClass<UParticleSystemComponent>(); })
+		.Method("SetOutline",
+			"---@param enabled boolean\nfunction Actor:SetOutline(enabled) end",
+			[](AActor& Actor, bool bEnabled)
+			{
+				UWorld* World = Actor.GetWorld();
+				if (!World)
+				{
+					return;
+				}
+				for (UPrimitiveComponent* PrimitiveComponent : Actor.GetPrimitiveComponents())
+				{
+					if (!PrimitiveComponent)
+					{
+						continue;
+					}
+					World->GetScene().SetProxyOutlineOnly(PrimitiveComponent->GetSceneProxy(), bEnabled);
+				}
+			})
 		.Method("GetPrimitiveComponentByName",
 			"---@param name string\n---@return PrimitiveComponent?\nfunction Actor:GetPrimitiveComponentByName(name) end",
 			[](AActor& Actor, const FString& ComponentName) -> UPrimitiveComponent*
@@ -1287,15 +1700,58 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	Lua.new_usertype<APawn>("Pawn",
 		sol::base_classes, sol::bases<AActor>(),
 		"IsPossessed", &APawn::IsPossessed,
+		"GetController", &APawn::GetController,
 		"SetAutoPossessPlayer", &APawn::SetAutoPossessPlayer,
 		"GetAutoPossessPlayer", &APawn::GetAutoPossessPlayer,
 		"GetInputComponent", &APawn::GetInputComponent);
 
 	FLuaDocRegistry::Get().Type("Pawn", "Actor")
 		.Method("---@return boolean\nfunction Pawn:IsPossessed() end")
+		.Method("---@return PlayerController?\nfunction Pawn:GetController() end")
 		.Method("---@param enabled boolean\nfunction Pawn:SetAutoPossessPlayer(enabled) end")
 		.Method("---@return boolean\nfunction Pawn:GetAutoPossessPlayer() end")
 		.Method("---@return InputComponent?\nfunction Pawn:GetInputComponent() end");
+
+	Lua.new_usertype<APlayerController>("PlayerController",
+		sol::base_classes, sol::bases<AActor>(),
+		"GetPossessedPawn", &APlayerController::GetPossessedPawn,
+		"Possess", &APlayerController::Possess,
+		"UnPossess", &APlayerController::UnPossess,
+		"GetPlayerCameraManager", &APlayerController::GetPlayerCameraManager,
+		"SetViewTargetWithBlend", [](APlayerController& Controller, AActor* ViewTarget, sol::optional<float> BlendTime)
+	{
+		Controller.SetViewTargetWithBlend(ViewTarget, BlendTime.value_or(0.0f));
+	});
+
+	FLuaDocRegistry::Get().Type("PlayerController", "Actor")
+		.Method("---@return Pawn?\nfunction PlayerController:GetPossessedPawn() end")
+		.Method("---@param pawn Pawn\nfunction PlayerController:Possess(pawn) end")
+		.Method("function PlayerController:UnPossess() end")
+		.Method("---@return PlayerCameraManager?\nfunction PlayerController:GetPlayerCameraManager() end")
+		.Method("---@param viewTarget Actor\n---@param blendTime? number\nfunction PlayerController:SetViewTargetWithBlend(viewTarget, blendTime) end");
+
+	Lua.new_usertype<APlayerCameraManager>("PlayerCameraManager",
+		sol::base_classes, sol::bases<AActor>(),
+		"GetActiveCamera", &APlayerCameraManager::GetActiveCamera,
+		"GetPossessedCamera", &APlayerCameraManager::GetPossessedCamera,
+		"GetViewTarget", &APlayerCameraManager::GetViewTarget,
+		"GetPendingViewTarget", &APlayerCameraManager::GetPendingViewTarget,
+		"ToggleActiveCameraForActor", sol::overload(
+			[](APlayerCameraManager& Manager, const FString& ActorName, sol::optional<float> BlendTime)
+	{
+		return Manager.ToggleActiveCameraForActor(ActorName, BlendTime.value_or(0.0f));
+	},
+			[](APlayerCameraManager& Manager, const AActor* Actor, sol::optional<float> BlendTime)
+	{
+		return Manager.ToggleActiveCameraForActor(Actor, BlendTime.value_or(0.0f));
+	}));
+
+	FLuaDocRegistry::Get().Type("PlayerCameraManager", "Actor")
+		.Method("---@return CameraComponent?\nfunction PlayerCameraManager:GetActiveCamera() end")
+		.Method("---@return CameraComponent?\nfunction PlayerCameraManager:GetPossessedCamera() end")
+		.Method("---@return Actor?\nfunction PlayerCameraManager:GetViewTarget() end")
+		.Method("---@return Actor?\nfunction PlayerCameraManager:GetPendingViewTarget() end")
+		.Method("---@param actor string|Actor\n---@param blendTime? number\n---@return boolean\nfunction PlayerCameraManager:ToggleActiveCameraForActor(actor, blendTime) end");
 
 	// UInputComponent — Pawn::GetInputComponent 로 얻어 lua 에서 직접 매핑/binding 추가 가능.
 	// 예 (BeginPlay 안):
@@ -1419,6 +1875,21 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		if (!bHit) return sol::lua_nil;
 		return sol::make_object(FLuaScriptManager::GetState(), Hit);
 	});
+	World.set_function("RaycastPrimitive",
+		[](const FVector& Start, const FVector& Dir, float MaxDist,
+		   sol::optional<AActor*> IgnoreActor) -> sol::object
+	{
+		if (!GEngine || !GEngine->GetWorld()) return sol::lua_nil;
+		FRay Ray;
+		Ray.Origin = Start;
+		Ray.Direction = Dir;
+		FHitResult Hit;
+		AActor* HitActor = nullptr;
+		const bool bHit = GEngine->GetWorld()->RaycastPrimitives(Ray, Hit, HitActor, IgnoreActor.value_or(nullptr));
+		if (!bHit || Hit.Distance > MaxDist) return sol::lua_nil;
+		Hit.HitActor = HitActor;
+		return sol::make_object(FLuaScriptManager::GetState(), Hit);
+	});
 
 	FLuaDocRegistry::Get().Type("WorldLib")
 		.Method("---@param className string\n---@return Actor?\nfunction World.SpawnActor(className) end")
@@ -1427,7 +1898,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param tag string\n---@return Actor?\nfunction World.FindFirstActorByTag(tag) end")
 		.Method("---@param tag string\n---@return Actor[]\nfunction World.FindActorsByTag(tag) end")
 		.Method("---@param start Vector\n---@param dir Vector\n---@param maxDist number\n---@param ignoreActor? Actor\n---@return HitResult?\nfunction World.RaycastSkeletalMesh(start, dir, maxDist, ignoreActor) end")
-		.Method("---@param start Vector\n---@param dir Vector\n---@param maxDist number\n---@param ignoreActor? Actor\n---@return HitResult?\nfunction World.RaycastWorldStatic(start, dir, maxDist, ignoreActor) end");
+		.Method("---@param start Vector\n---@param dir Vector\n---@param maxDist number\n---@param ignoreActor? Actor\n---@return HitResult?\nfunction World.RaycastWorldStatic(start, dir, maxDist, ignoreActor) end")
+		.Method("---@param start Vector\n---@param dir Vector\n---@param maxDist number\n---@param ignoreActor? Actor\n---@return HitResult?\nfunction World.RaycastPrimitive(start, dir, maxDist, ignoreActor) end");
 	FLuaDocRegistry::Get().Global("World", "WorldLib");
 
 	sol::table Debug = Lua.create_named_table("Debug");
@@ -1535,7 +2007,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param boneName string\n---@param localOffset Vector\n---@return Vector\nfunction SkeletalMeshComponent:GetBoneSocketLocation(boneName, localOffset) end")
 		.Method("---@param boneName string\n---@param localOffset Vector\n---@return Vector\nfunction SkeletalMeshComponent:GetBoneSocketRotation(boneName, localOffset) end");
 
-	// 게임 특화 usertype/enum/global(GetGameState 등) 은 Game 모듈의
+	// 게임 특화 usertype/enum/global 은 Game 모듈의
 	// RegisterGameLuaBindings 가 등록한다. 호출 순서는 GameEngine/EditorEngine::Init
 	// 에서 UEngine::Init() 직후.
 }
@@ -1575,6 +2047,8 @@ void FLuaScriptManager::RegisterUIBindings(sol::state& Lua)
 		"set_text", &UUserWidget::SetText,
 		"SetProperty", &UUserWidget::SetProperty,
 		"set_property", &UUserWidget::SetProperty,
+		"SetAttribute", &UUserWidget::SetAttribute,
+		"set_attribute", &UUserWidget::SetAttribute,
 		"SetWantsMouse", &UUserWidget::SetWantsMouse,
 		"WantsMouse", &UUserWidget::WantsMouse);
 

@@ -18,12 +18,13 @@
 #include "Render/Types/POVProvider.h"
 #include "Source/Engine/GameFramework/World.generated.h"
 
+#include <memory>
+
 class UCameraComponent;
 class UPrimitiveComponent;
 class UClothComponent;
-class AGameModeBase;
-class AGameStateBase;
 class APlayerController;
+class FGameplayRuntime;
 class UClass;
 class FPhysicsScene;
 
@@ -31,7 +32,7 @@ UCLASS()
 class UWorld : public UObject {
 public:
 	GENERATED_BODY()
-	UWorld() = default;
+	UWorld();
 	~UWorld() override;
 
 	// --- 월드 타입 ---
@@ -50,7 +51,7 @@ public:
 	// Actor lifecycle
 	template<typename T>
 	T* SpawnActor();
-	// UClass 기반 spawn — 런타임에 클래스가 결정되는 경우(GameMode/GameState 등) 사용.
+	// UClass 기반 spawn — 런타임에 클래스가 결정되는 경우 사용.
 	AActor* SpawnActorByClass(UClass* Class);
 	void DestroyActor(AActor* Actor);
 	void AddActor(AActor* Actor);
@@ -59,7 +60,7 @@ public:
 	void BeginDeferredPickingBVHUpdate();
 	void EndDeferredPickingBVHUpdate();
 	void WarmupPickingData() const;
-	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
+	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor, const AActor* IgnoreActor = nullptr) const;
 
 	const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
 
@@ -90,7 +91,7 @@ public:
 
 	bool HasBegunPlay() const { return bHasBegunPlay; }
 
-	// 씬 단위 게임 설정 (GameMode 등). 에디터 UI 와 SceneSaveManager 가 사용.
+	// 씬 단위 설정. 에디터 UI 와 SceneSaveManager 가 사용.
 	FWorldSettings& GetWorldSettings() { return WorldSettings; }
 	const FWorldSettings& GetWorldSettings() const { return WorldSettings; }
 
@@ -154,9 +155,8 @@ private:
 
 	FSpatialPartition Partition;
 
-	// Game flow — Editor 월드에서는 nullptr로 유지된다.
-	AGameModeBase* GameMode = nullptr;
-	UClass* GameModeClass = nullptr;  // GameEngine 등이 BeginPlay 전에 세팅
+	// Game flow — Editor 월드에서는 runtime을 시작하지 않는다.
+	std::unique_ptr<FGameplayRuntime> GameplayRuntime;
 
 public:
 	// Physics raycast convenience — delegates to IPhysicsScene::Raycast
@@ -187,10 +187,7 @@ public:
 		const AActor* IgnoreActor = nullptr) const;
 
 	// --- Game flow ---
-	// BeginPlay 이전에 호출. WorldType이 Editor면 무시된다.
-	void SetGameModeClass(UClass* InClass) { GameModeClass = InClass; }
-	AGameModeBase* GetGameMode() const { return GameMode; }
-	AGameStateBase* GetGameState() const;
+	FGameplayRuntime* GetGameplayRuntime() const { return GameplayRuntime.get(); }
 	APlayerController* GetFirstPlayerController() const;
 };
 

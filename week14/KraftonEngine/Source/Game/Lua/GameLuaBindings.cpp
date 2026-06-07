@@ -11,7 +11,7 @@
 //
 // Engine 의 FLuaScriptManager 가 등록하는 일반 binding (AActor / APawn / FVector /
 // UWorld / Anim 등) 만으로 동작하지 않는 game-specific usertype (ACarPawn /
-// AGameStateXxx / 전용 enum 등) 이 도입되면 여기에 new_usertype 으로 추가한다.
+// 전용 enum 등) 이 도입되면 여기에 new_usertype 으로 추가한다.
 //
 // 호출 시점: UEngine::Init() 이 FLuaScriptManager::Initialize() 를 끝낸 직후.
 // 등록은 EngineInitHooks 에 자동으로 걸려 GameEngine / EditorEngine 두 엔트리 모두

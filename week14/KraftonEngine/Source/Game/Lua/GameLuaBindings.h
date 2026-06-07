@@ -6,7 +6,7 @@ namespace sol { class state; }
 // Game 모듈 전용 Lua 바인딩 등록.
 //
 // Engine 의 FLuaScriptManager 는 Engine 일반 타입(AActor, APawn, FVector, World 등)
-// 까지만 등록한다. Game-특화 타입(ACarPawn, AGameStateCarGame, ECarGamePhase 등) 과
+// 까지만 등록한다. Game-특화 타입(ACarPawn, EFracturePhase 등) 과
 // AActor 의 game-extension 메서드(AsCarPawn, GetCarMovement 등) 는 이 함수가 등록.
 //
 // 호출 시점: UEngine::Init() 이 FLuaScriptManager::Initialize() 를 끝낸 직후.

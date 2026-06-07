@@ -20,7 +20,7 @@ local settingsState = {
     bgm = 80,
     sfx = 80,
     voice = 80,
-    mouse = 0.20,
+    mouse = 1.00,
     zoom = "Hold",
     sprint = "Toggle",
 }
@@ -30,7 +30,7 @@ local settingsDefaults = {
     bgm = 80,
     sfx = 80,
     voice = 80,
-    mouse = 0.20,
+    mouse = 1.00,
     zoom = "Hold",
     sprint = "Toggle",
 }
@@ -40,7 +40,7 @@ local settingSliders = {
     bgm = { value = "settings-bgm-value", fill = "settings-bgm-fill", handle = "settings-bgm-handle", min = 0, max = 100, step = 0.01, format = "%.2f" },
     sfx = { value = "settings-sfx-value", fill = "settings-sfx-fill", handle = "settings-sfx-handle", min = 0, max = 100, step = 0.01, format = "%.2f" },
     voice = { value = "settings-voice-value", fill = "settings-voice-fill", handle = "settings-voice-handle", min = 0, max = 100, step = 0.01, format = "%.2f" },
-    mouse = { value = "settings-mouse-value", fill = "settings-mouse-fill", handle = "settings-mouse-handle", min = 0.01, max = 3.00, step = 0.01, format = "%.2f" },
+    mouse = { value = "settings-mouse-value", fill = "settings-mouse-fill", handle = "settings-mouse-handle", min = 0.05, max = 15.00, step = 0.05, format = "%.2f" },
 }
 
 local settingsDefaultDescription = {
@@ -60,25 +60,25 @@ local settingsDescriptions = {
         id = "settings-bgm-row",
         title = "BGM VOLUME",
         body = "Control background music volume.",
-        note = "This value is prepared for audio mix control.",
+        note = "This value is applied to the BGM audio bus immediately.",
     },
     {
         id = "settings-sfx-row",
         title = "SFX VOLUME",
         body = "Control weapon, impact, movement, and interface sound effects.",
-        note = "This value is prepared for audio mix control.",
+        note = "This value is applied to the SFX and UI audio buses immediately.",
     },
     {
         id = "settings-voice-row",
         title = "VOICE VOLUME",
         body = "Control dialogue and voice playback volume.",
-        note = "This value is prepared for story and combat voice lines.",
+        note = "This value is applied to the Voice audio bus immediately.",
     },
     {
         id = "settings-mouse-row",
         title = "MOUSE SENSITIVITY",
         body = "Adjust camera turn speed for mouse input.",
-        note = "The value is applied to the current engine mouse sensitivity.",
+        note = "1.00 matches the default mouse sensitivity.",
     },
     {
         id = "settings-toggle-zoom-row",
@@ -139,6 +139,14 @@ local function sync_settings_from_engine()
             settingsDefaults.mouse = settingsState.mouse
         end
     end
+    if AudioManager ~= nil and AudioManager.GetBusVolume ~= nil then
+        settingsState.bgm = clamp(AudioManager.GetBusVolume("BGM") * 100.0, settingSliders.bgm.min, settingSliders.bgm.max)
+        settingsState.sfx = clamp(AudioManager.GetBusVolume("SFX") * 100.0, settingSliders.sfx.min, settingSliders.sfx.max)
+        settingsState.voice = clamp(AudioManager.GetBusVolume("Voice") * 100.0, settingSliders.voice.min, settingSliders.voice.max)
+        settingsDefaults.bgm = settingsState.bgm
+        settingsDefaults.sfx = settingsState.sfx
+        settingsDefaults.voice = settingsState.voice
+    end
 end
 
 local function apply_setting_slider(name)
@@ -170,6 +178,12 @@ local function apply_setting_slider(name)
         Engine.SetGamma(value)
     elseif name == "mouse" and Engine ~= nil and Engine.SetMouseSensitivity ~= nil then
         Engine.SetMouseSensitivity(value)
+    elseif name == "bgm" and AudioManager ~= nil and AudioManager.SetBusVolume ~= nil then
+        AudioManager.SetBusVolume("BGM", value / 100.0)
+    elseif name == "sfx" and AudioManager ~= nil and AudioManager.SetBusVolume ~= nil then
+        AudioManager.SetBusVolume("SFX", value / 100.0)
+    elseif name == "voice" and AudioManager ~= nil and AudioManager.SetBusVolume ~= nil then
+        AudioManager.SetBusVolume("Voice", value / 100.0)
     end
 end
 

@@ -56,6 +56,7 @@ const FDebugPlaceActorOption GDebugPlaceActorOptions[] = {
 	{ "Spot Light", FLevelViewportLayout::EViewportPlaceActorType::SpotLight },
 	{ "Camera", FLevelViewportLayout::EViewportPlaceActorType::Camera },
 	{ "Cine Camera", FLevelViewportLayout::EViewportPlaceActorType::CineCamera },
+	{ "Player Start", FLevelViewportLayout::EViewportPlaceActorType::PlayerStart },
 	{ "Character",     FLevelViewportLayout::EViewportPlaceActorType::Character },
 	{ "Lua Character", FLevelViewportLayout::EViewportPlaceActorType::LuaCharacter },
 };
@@ -200,6 +201,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 	ContentBrowserWidget.Initialize(InEditorEngine, InRenderer.GetFD3DDevice().GetDevice());
 	ShadowMapDebugWidget.Initialize(InEditorEngine);
 	AnimationDebugWidget.Initialize(InEditorEngine);
+	GameBuildWidget.Initialize(InEditorEngine);
 
 	AssetEditorManager.RegisterEditor<FFloatCurveEditorWidget>();
 	AssetEditorManager.RegisterEditor<FCameraShakeEditorWidget>();
@@ -214,6 +216,7 @@ void FEditorMainPanel::Create(FWindowsWindow* InWindow, FRenderer& InRenderer, U
 void FEditorMainPanel::Release()
 {
 	AssetEditorManager.CloseAll();
+	GameBuildWidget.Shutdown();
 	ConsoleWidget.Shutdown();
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
@@ -258,6 +261,13 @@ void FEditorMainPanel::Render(float DeltaTime)
 	{
 		SCOPE_STAT_CAT("EditorEngine->RenderViewportUI", "5_UI");
 		EditorEngine->RenderViewportUI(DeltaTime);
+
+		if (EditorEngine->IsPIEViewportFullscreen())
+		{
+			ImGui::Render();
+			ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+			return;
+		}
 
 		if (FLevelEditorViewportClient* ActiveViewport = EditorEngine->GetActiveViewport())
 		{
@@ -319,7 +329,7 @@ void FEditorMainPanel::Render(float DeltaTime)
 	}
 
 	ProjectSettingsWidget.Render();
-	WorldSettingsWidget.Render();
+	GameBuildWidget.Render(DeltaTime);
 
 	if (!bHideEditorWindows)
 	{
@@ -408,14 +418,18 @@ void FEditorMainPanel::RenderMainMenuBar()
 		bShowWidgetList = false;
 	}
 
+	if (ImGui::BeginMenu("Build"))
+	{
+		if (ImGui::MenuItem("Game Build..."))
+		{
+			GameBuildWidget.Open();
+		}
+		ImGui::EndMenu();
+	}
+
 	if (ImGui::MenuItem("Project Settings"))
 	{
 		ProjectSettingsWidget.bOpen = true;
-	}
-
-	if (ImGui::MenuItem("World Settings"))
-	{
-		WorldSettingsWidget.bOpen = true;
 	}
 
 	if (ImGui::MenuItem("Shortcut"))
@@ -492,6 +506,7 @@ void FEditorMainPanel::RenderShortcutOverlay()
 	ImGui::TextUnformatted("Delete : Delete Selected Actor / Component");
 	ImGui::TextUnformatted("` : Focus console input / open console drawer");
 	ImGui::TextUnformatted("F5 : Play / Stop PIE");
+	ImGui::TextUnformatted("F1 : Toggle PIE Fullscreen");
 	ImGui::TextUnformatted("F8 : Release / Capture PIE Input");
 	ImGui::TextUnformatted("F : Focus on selection");
 	ImGui::TextUnformatted("Ctrl + LMB : Multi Picking (Toggle)");

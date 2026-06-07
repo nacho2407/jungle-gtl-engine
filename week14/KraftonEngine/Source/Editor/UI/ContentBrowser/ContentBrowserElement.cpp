@@ -28,12 +28,95 @@
 #include "Asset/AssetRegistry.h"
 #include "Editor/UI/Dialog/FbxImportOptionsDialog.h"
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
+#include "Materials/MaterialManager.h"
+#include "SimpleJSON/json.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
 #include <filesystem>
+#include <fstream>
+#include <sstream>
 #include <utility>
+
+static FString GetLowerExtensionForContentBrowser(const std::filesystem::path& Path)
+{
+	FString Extension = FPaths::ToUtf8(Path.extension().wstring());
+	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
+	return Extension;
+}
+
+static bool IsMaterialInstanceContentPath(const std::filesystem::path& Path)
+{
+	return GetLowerExtensionForContentBrowser(Path) == ".matinst";
+}
+
+static bool IsMaterialJsonContentPath(const std::filesystem::path& Path)
+{
+	const FString Extension = GetLowerExtensionForContentBrowser(Path);
+	return Extension == ".mat" || Extension == ".matinst";
+}
+
+static FString MakeProjectRelativeGenericPathForContentBrowser(const std::filesystem::path& Path)
+{
+	std::filesystem::path NormalizedPath = Path.lexically_normal();
+	const std::filesystem::path ProjectRoot = std::filesystem::path(FPaths::RootDir()).lexically_normal();
+
+	std::filesystem::path RelativePath = NormalizedPath.lexically_relative(ProjectRoot);
+	if (RelativePath.empty() || RelativePath.native().rfind(L"..", 0) == 0)
+	{
+		return FPaths::ToUtf8(NormalizedPath.generic_wstring());
+	}
+
+	return FPaths::ToUtf8(RelativePath.generic_wstring());
+}
+
+static bool RewriteMaterialAssetPathInsideFile(const std::filesystem::path& FilePath, FString* OutError)
+{
+	auto SetError = [&](const FString& Message)
+	{
+		if (OutError)
+		{
+			*OutError = Message;
+		}
+	};
+
+	std::ifstream InFile(FilePath);
+	if (!InFile.is_open())
+	{
+		SetError("Failed to open material file after rename.");
+		return false;
+	}
+
+	std::stringstream Buffer;
+	Buffer << InFile.rdbuf();
+	InFile.close();
+
+	json::JSON JsonData = json::JSON::Load(Buffer.str());
+	if (JsonData.IsNull())
+	{
+		SetError("Failed to parse material JSON after rename.");
+		return false;
+	}
+
+	JsonData[MatKeys::PathFileName] = MakeProjectRelativeGenericPathForContentBrowser(FilePath).c_str();
+
+	std::ofstream OutFile(FilePath, std::ios::trunc);
+	if (!OutFile.is_open())
+	{
+		SetError("Failed to write material file after rename.");
+		return false;
+	}
+
+	OutFile << JsonData.dump(4);
+	if (!OutFile.good())
+	{
+		SetError("Failed to save material file after rename.");
+		return false;
+	}
+
+	return true;
+}
 
 static FString FormatBytes(uint64 Bytes)
 {
@@ -178,16 +261,22 @@ static void OpenContentItemInFileExplorer(const FContentItem& Item)
 		return;
 	}
 
+	const std::filesystem::path FullPath = ResolveProjectPathForContentBrowser(FPaths::ToUtf8(Item.Path.wstring()));
 	std::error_code Ec;
-	const bool bIsDirectory = std::filesystem::is_directory(Item.Path, Ec);
+	const bool bIsDirectory = std::filesystem::is_directory(FullPath, Ec);
 	if (!Ec && bIsDirectory)
 	{
-		ShellExecuteW(nullptr, L"open", Item.Path.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+		ShellExecuteW(nullptr, L"open", FullPath.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 		return;
 	}
 
-	const std::wstring Parameters = L"/select,\"" + Item.Path.wstring() + L"\"";
-	ShellExecuteW(nullptr, L"open", L"explorer.exe", Parameters.c_str(), nullptr, SW_SHOWNORMAL);
+	const std::filesystem::path FolderPath = FullPath.parent_path();
+	if (FolderPath.empty())
+	{
+		return;
+	}
+
+	ShellExecuteW(nullptr, L"open", FolderPath.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 static bool IsSameOrChildPathForContentBrowser(const std::filesystem::path& Parent, const std::filesystem::path& Child)
@@ -391,11 +480,32 @@ bool ContentBrowserElement::RenameTo(const FString& NewStem, FString* OutError)
 	}
 
 	std::error_code Ec;
-	std::filesystem::rename(ContentItem.Path, NewPath, Ec);
+	const std::filesystem::path OldPath = ContentItem.Path;
+	std::filesystem::rename(OldPath, NewPath, Ec);
 	if (Ec)
 	{
 		SetError(Ec.message().c_str());
 		return false;
+	}
+
+	if (!ContentItem.bIsDirectory && IsMaterialJsonContentPath(NewPath))
+	{
+		FString RewriteError;
+		if (!RewriteMaterialAssetPathInsideFile(NewPath, &RewriteError))
+		{
+			std::error_code RollbackEc;
+			std::filesystem::rename(NewPath, OldPath, RollbackEc);
+			FString FinalError = RewriteError;
+			if (RollbackEc)
+			{
+				FinalError += " Rollback failed: ";
+				FinalError += RollbackEc.message();
+			}
+			SetError(FinalError.c_str());
+			return false;
+		}
+
+		FMaterialManager::Get().ScanMaterialAssets();
 	}
 
 	ContentItem.Path = NewPath;
@@ -639,6 +749,112 @@ void ContentBrowserElement::Render(ContentBrowserContext& Context)
 		OnDrag(Context);
 		ImGui::EndDragDropSource();
 	}
+}
+
+void ContentBrowserElement::RenderListRow(ContentBrowserContext& Context)
+{
+	FString Name = FPaths::ToUtf8(ContentItem.Name);
+	ImGui::PushID(Name.c_str());
+
+	bIsSelected = Context.SelectedElement.get() == this;
+
+	const char* TypeLabel = GetTypeLabel();
+	const bool bHasTypeLabel = TypeLabel && TypeLabel[0] != '\0';
+	const float FontSize = ImGui::GetFontSize();
+	const float RowHeight = FontSize + ImGui::GetStyle().FramePadding.y * 2.0f + 2.0f;
+	const float RowWidth = (std::max)(1.0f, ImGui::GetContentRegionAvail().x);
+	const bool bClicked = ImGui::InvisibleButton("##ElementListRow", ImVec2(RowWidth, RowHeight));
+	const bool bHovered = ImGui::IsItemHovered();
+
+	ImVec2 Min = ImGui::GetItemRectMin();
+	ImVec2 Max = ImGui::GetItemRectMax();
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	const ImU32 RowColor = bIsSelected
+		? IM_COL32(54, 86, 130, 255)
+		: bHovered
+		? IM_COL32(48, 50, 56, 255)
+		: IM_COL32(0, 0, 0, 0);
+
+	if (RowColor != IM_COL32(0, 0, 0, 0))
+	{
+		DrawList->AddRectFilled(Min, Max, RowColor, 3.0f);
+	}
+
+	const uint32 AccentColor = GetAccentColor();
+	const float PaddingX = 8.0f;
+	if (AccentColor != 0)
+	{
+		DrawList->AddRectFilled(
+			ImVec2(Min.x, Min.y + 4.0f),
+			ImVec2(Min.x + 3.0f, Max.y - 4.0f),
+			AccentColor,
+			2.0f);
+	}
+
+	const float TypeWidth = (bHasTypeLabel && RowWidth > 180.0f) ? 112.0f : 0.0f;
+	const float NameMaxWidth = (std::max)(32.0f, RowWidth - TypeWidth - PaddingX * 3.0f);
+	const FString DisplayName = GetDisplayName();
+	const FString ClippedName = EllipsisText(DisplayName, NameMaxWidth);
+	const ImVec2 TextPos(Min.x + PaddingX + 6.0f, Min.y + ImGui::GetStyle().FramePadding.y + 1.0f);
+	DrawList->AddText(TextPos, ImGui::GetColorU32(ImGuiCol_Text), ClippedName.c_str());
+
+	if (TypeWidth > 0.0f)
+	{
+		const ImVec2 TypePos(Max.x - TypeWidth, TextPos.y);
+		DrawList->AddText(TypePos, ImGui::GetColorU32(ImGuiCol_TextDisabled), TypeLabel);
+	}
+
+	if (bHovered && ClippedName != DisplayName)
+	{
+		ImGui::SetTooltip("%s", DisplayName.c_str());
+	}
+
+	if (bClicked)
+	{
+		Context.SelectedElement = shared_from_this();
+		bIsSelected = true;
+		OnLeftClicked(Context);
+	}
+
+	if (ImGui::BeginPopupContextItem())
+	{
+		// 모든 element 공통 메뉴를 리스트 행에서도 카드와 동일하게 제공합니다.
+		if (ImGui::MenuItem("Rename"))
+		{
+			Context.SelectedElement = shared_from_this();
+			Context.bRenameRequested = true;
+		}
+		if (ImGui::MenuItem("Delete"))
+		{
+			Context.SelectedElement = shared_from_this();
+			Context.bDeleteRequested = true;
+		}
+		if (ImGui::MenuItem("Open In File Explorer"))
+		{
+			Context.SelectedElement = shared_from_this();
+			OpenContentItemInFileExplorer(ContentItem);
+		}
+		ImGui::Separator();
+		RenderContextMenu(Context);
+		ImGui::EndPopup();
+	}
+
+	bool bDoubleClicked = ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left);
+	if (bDoubleClicked)
+	{
+		OnDoubleLeftClicked(Context);
+	}
+
+	if (ImGui::BeginDragDropSource())
+	{
+		ImGui::TextUnformatted(DisplayName.c_str());
+		ImGui::SetDragDropPayload(GetDragItemType(), &ContentItem, sizeof(ContentItem));
+		OnDrag(Context);
+		ImGui::EndDragDropSource();
+	}
+
+	ImGui::PopID();
 }
 
 void ContentBrowserElement::RenderDetail()
@@ -1107,17 +1323,6 @@ void MaterialElement::OnDoubleLeftClicked(ContentBrowserContext& Context)
 	}
 }
 
-static FString GetLowerExtensionForContentBrowser(const std::filesystem::path& Path)
-{
-	FString Extension = FPaths::ToUtf8(Path.extension());
-	std::transform(Extension.begin(), Extension.end(), Extension.begin(), ::tolower);
-	return Extension;
-}
-
-static bool IsMaterialInstanceContentPath(const std::filesystem::path& Path)
-{
-	return GetLowerExtensionForContentBrowser(Path) == ".matinst";
-}
 
 const char* MaterialElement::GetTypeLabel() const
 {

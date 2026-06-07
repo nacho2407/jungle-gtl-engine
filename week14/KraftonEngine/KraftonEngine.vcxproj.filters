@@ -34,6 +34,9 @@
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{879fdc11-4e44-c448-2bbf-5fd281dc244f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Build">
+      <UniqueIdentifier>{99f90e79-3e47-54fe-5a2f-a1e1dc6a70c6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\PIE">
       <UniqueIdentifier>{1485fbd8-4084-14c8-cd14-33798c9651d4}</UniqueIdentifier>
     </Filter>
@@ -214,6 +217,9 @@
     <Filter Include="Source\Engine\Debug">
       <UniqueIdentifier>{94a820a1-1cf9-b142-f9b6-735eff25a3ee}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Editor">
+      <UniqueIdentifier>{44bbe43f-5fca-630d-107c-c9e9c26cf3ef}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\FloatCurve">
       <UniqueIdentifier>{de49fb56-b8a9-9a15-719d-7136fdb8ccd8}</UniqueIdentifier>
     </Filter>
@@ -228,6 +234,9 @@
     </Filter>
     <Filter Include="Source\Engine\GameFramework\GameMode">
       <UniqueIdentifier>{5dad4861-14c8-9475-5500-063e7861367c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\GameFramework\Gameplay">
+      <UniqueIdentifier>{abeb927d-b6e1-edc3-add3-b7421cf227a4}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\GameFramework\Light">
       <UniqueIdentifier>{b016779b-d84f-ba95-e8ed-4e352a91130a}</UniqueIdentifier>
@@ -580,6 +589,9 @@
     <Filter Include="ThirdParty\lua\include">
       <UniqueIdentifier>{a1666483-99d9-a14b-123a-fb0f4ff4fd58}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty\miniaudio">
+      <UniqueIdentifier>{675200d3-e8a7-1335-2c7b-2b469a8118b6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="ThirdParty\sol2">
       <UniqueIdentifier>{1b8ce1bd-cdc9-e609-8022-e114e291285f}</UniqueIdentifier>
     </Filter>
@@ -747,9 +759,6 @@
     <FxCompile Include="Shaders\UI\SubUV.hlsl">
       <Filter>Shaders\UI</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\PostProcess\CameraDesaturation.hlsl">
-      <Filter>Shaders\PostProcess</Filter>
-    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Editor\EditorEngine.cpp">
@@ -757,6 +766,9 @@
     </ClCompile>
     <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp">
       <Filter>Source\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Build\EditorGameBuilder.cpp">
+      <Filter>Source\Editor\Build</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp">
       <Filter>Source\Editor\Selection</Filter>
@@ -869,6 +881,9 @@
     <ClCompile Include="Source\Editor\UI\Panel\EditorControlWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\UI\Panel\EditorGameBuildWidget.cpp">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Editor\UI\Panel\EditorMaterialInspector.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
@@ -891,9 +906,6 @@
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Panel\EditorViewportWidget.cpp">
-      <Filter>Source\Editor\UI\Panel</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.cpp">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClCompile>
     <ClCompile Include="Source\Editor\UI\Toolbar\ViewportToolbar.cpp">
@@ -1050,6 +1062,9 @@
       <Filter>Source\Engine\Asset</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\AudioManager.cpp">
+      <Filter>Source\Engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Audio\Miniaudio.cpp">
       <Filter>Source\Engine\Audio</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\CameraShake\CameraShakeAsset.cpp">
@@ -1307,6 +1322,9 @@
     <ClCompile Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.cpp">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\PlayerStart.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.cpp">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
@@ -1343,17 +1361,17 @@
     <ClCompile Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.cpp">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameModeBase.cpp">
-      <Filter>Source\Engine\GameFramework\GameMode</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameStateBase.cpp">
-      <Filter>Source\Engine\GameFramework\GameMode</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\GameMode\GameplayStatics.cpp">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\LuaPlayerController.cpp">
       <Filter>Source\Engine\GameFramework\GameMode</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\GameMode\PlayerController.cpp">
       <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Gameplay\GameplayRuntime.cpp">
+      <Filter>Source\Engine\GameFramework\Gameplay</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Light\AmbientLightActor.cpp">
       <Filter>Source\Engine\GameFramework\Light</Filter>
@@ -1925,6 +1943,9 @@
     <ClInclude Include="Source\Editor\EditorRenderPipeline.h">
       <Filter>Source\Editor</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\Build\EditorGameBuilder.h">
+      <Filter>Source\Editor\Build</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\PIE\PIETypes.h">
       <Filter>Source\Editor\PIE</Filter>
     </ClInclude>
@@ -2063,6 +2084,9 @@
     <ClInclude Include="Source\Editor\UI\Panel\EditorControlWidget.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Editor\UI\Panel\EditorGameBuildWidget.h">
+      <Filter>Source\Editor\UI\Panel</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorMaterialInspector.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
@@ -2085,9 +2109,6 @@
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Panel\EditorViewportWidget.h">
-      <Filter>Source\Editor\UI\Panel</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Panel\EditorWorldSettingsWidget.h">
       <Filter>Source\Editor\UI\Panel</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h">
@@ -2537,6 +2558,9 @@
     <ClInclude Include="Source\Engine\Debug\DrawDebugHelpers.h">
       <Filter>Source\Engine\Debug</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Editor\SceneOutlinerState.h">
+      <Filter>Source\Engine\Editor</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\FloatCurve\FloatCurveAsset.h">
       <Filter>Source\Engine\FloatCurve</Filter>
     </ClInclude>
@@ -2571,6 +2595,9 @@
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\PlayerStart.h">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.h">
@@ -2612,17 +2639,17 @@
     <ClInclude Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.h">
       <Filter>Source\Engine\GameFramework\Camera</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameModeBase.h">
-      <Filter>Source\Engine\GameFramework\GameMode</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameStateBase.h">
-      <Filter>Source\Engine\GameFramework\GameMode</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\GameMode\GameplayStatics.h">
+      <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\LuaPlayerController.h">
       <Filter>Source\Engine\GameFramework\GameMode</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\GameMode\PlayerController.h">
       <Filter>Source\Engine\GameFramework\GameMode</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Gameplay\GameplayRuntime.h">
+      <Filter>Source\Engine\GameFramework\Gameplay</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Light\AmbientLightActor.h">
       <Filter>Source\Engine\GameFramework\Light</Filter>
@@ -4255,6 +4282,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\lua\include\lualib.h">
       <Filter>ThirdParty\lua\include</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\miniaudio\miniaudio.h">
+      <Filter>ThirdParty\miniaudio</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\NvCloth\include\foundation\Px.h">
       <Filter>ThirdParty\NvCloth\include\foundation</Filter>

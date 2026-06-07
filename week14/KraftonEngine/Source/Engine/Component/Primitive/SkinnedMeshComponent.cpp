@@ -1275,7 +1275,7 @@ void USkinnedMeshComponent::PostDuplicate()
 				}
 				else
 				{
-					UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MatPath);
+					UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(MatPath);
 					SetMaterial(i, LoadedMat);
 				}
 			}
@@ -1325,7 +1325,7 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 			}
 			else
 			{
-				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
+				UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(NewMatPath);
 				if (LoadedMat)
 				{
 					SetMaterial(Index, LoadedMat);
@@ -1346,7 +1346,7 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 			}
 			else
 			{
-				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
+				UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(NewMatPath);
 				if (LoadedMat)
 				{
 					SetMaterial(Index, LoadedMat);

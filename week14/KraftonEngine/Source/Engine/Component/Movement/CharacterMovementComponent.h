@@ -101,6 +101,7 @@ public:
 	// ACharacter::Tick 이 control yaw 를 capsule 에 덮어쓰기 전에 query 해서 충돌 회피
 	// (root motion 회전이 활성 중인 frame 은 control yaw 가 덮으면 회전이 토글되어 끊김).
 	bool HasYawDrivenByRootMotion() const { return bAppliedRootMotionYawThisFrame; }
+	bool WasAirJumpConsumedThisFrame() const { return bAirJumpConsumedThisFrame; }
 
 	const FVector& GetVelocity() const { return Velocity; }
 	float          GetSpeed()    const { return Velocity.Length(); }
@@ -165,9 +166,10 @@ protected:
 	bool  SweepWallRunStaticMeshes(const FVector& Start, const FVector& Direction, FHitResult& OutHit) const;
 	bool  SweepWallRunStaticMeshBounds(const FVector& Start, const FVector& Direction, FHitResult& OutHit) const;
 	bool  IsRunnableWall(const FVector& WallNormal) const;
-	bool  TryStartWallRun();
+	bool  TryStartWallRun(const FVector& Input);
 	void  StartWallRun(const FHitResult& WallHit, bool bRightSide);
 	void  EndWallRun();
+	void  BeginWallRunFatigue();
 	void  PerformWallJump();
 	FVector ComputeWallRunDirection(const FVector& WallNormal) const;
 
@@ -177,6 +179,7 @@ protected:
 		Disabled,
 		NoUpdatedComponent,
 		NoController,
+		Fatigued,
 		NoWall,
 		LowSpeed,
 		BadNormal,
@@ -201,6 +204,11 @@ protected:
 	float       GetWallRunInputAlong(const FVector& Input, const FVector& RunDirection) const;
 	// 매 Tick 끝에서 현재 mode + (Falling 한정) 예측 sweep 으로 tilt target 갱신.
 	void        UpdateWallTiltTarget();
+	void        UpdateSprintFootstepAudio(float DeltaTime);
+	void        ResetSprintFootstepAudio();
+	void        UpdateSlideAudio(float DeltaTime);
+	void        StopSlideAudio();
+	void        PlayLandingAudio(float DownSpeed);
 
 	FVector       AccumulatedInput = FVector(0.0f, 0.0f, 0.0f);
 	FVector       Velocity         = FVector(0.0f, 0.0f, 0.0f);
@@ -217,6 +225,8 @@ protected:
 	// Timer 가 양수인 동안 normal 이 LastWallJumpNormal 과 가까운 벽 후보는 TryStartWallRun 에서 거절.
 	FVector       LastWallJumpNormal = FVector::ZeroVector;
 	float         WallJumpReattachTimer = 0.0f;
+	float         WallRunFatigueTimer = 0.0f;
+	float         FatiguedAirJumpInputLockTimer = 0.0f;
 
 	EWallRunStatus LastWallRunStatus = EWallRunStatus::NotFalling;
 	FHitResult     LastWallRunStatusHit;
@@ -256,6 +266,13 @@ protected:
 	// 직전 TickComponent 에서 root motion yaw 가 실제 적용됐는지 (외부 query 용 — Character 의 yaw 가드).
 	// 매 Tick 시작에 reset 후 yaw 적용 시 true.
 	bool          bAppliedRootMotionYawThisFrame = false;
+	bool          bAirJumpConsumedThisFrame = false;
+
+	float         SprintFootstepDistance = 0.0f;
+	float         SlideStepDistance = 0.0f;
+	float         WallRunStepDistance = 0.0f;
+	float         WallRunStepTimer = 0.0f;
+	bool          bSlideAudioActive = false;
 
 	// 평면 속도 기준 yaw 를 RotationYawRate * dt 로 lerp. TickComponent 끝에서 적용.
 	void  PhysOrientToMovement(float DeltaTime);
@@ -277,10 +294,11 @@ public:
 	float MaxWalkSpeed = 8.0f;     // m/s — 기존 6.0f 기준 1.5배
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Sprint Speed Multiplier", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float SprintSpeedMultiplier = 1.5f;
+	bool bEnableBuiltInMovementAudio = false;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Acceleration", Min = 0.0f, Max = 200.0f, Speed = 0.5f)
 	float MaxAcceleration = 20.0f;    // m/s^2
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Braking Friction", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float BrakingFriction = 8.0f;     // 입력 없을 때 감속률 (m/s^2). Walking 만 적용.
+	float BrakingFriction = 24.0f;    // Walking 감속률 (m/s^2). 입력 없음 + 입력 반대/횡방향 미끄럼 완화.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Gravity", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float Gravity = 9.8f;     // m/s^2 (positive — 적용 시 Velocity.Z -= Gravity*dt)
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Floor Probe Distance", Min = 0.0f, Max = 5.0f, Speed = 0.01f)
@@ -350,6 +368,10 @@ public:
 	float WallStickAcceleration = 4.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Wall Run Time", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
 	float MaxWallRunTime = 1.5f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Fatigue Duration", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
+	float WallRunFatigueDuration = 2.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Fatigued Air Jump Input Lock", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
+	float FatiguedAirJumpInputLockDuration = 0.3f;
 
 	// ----- Camera tilt (TitanFall-style "view rolls away from the wall") -----
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Tilt", DisplayName = "Enable Camera Tilt")

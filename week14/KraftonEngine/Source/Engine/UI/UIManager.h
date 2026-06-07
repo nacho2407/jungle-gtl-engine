@@ -13,6 +13,7 @@
 #include <RmlUi/Core.h>
 
 #include <chrono>
+#include <unordered_set>
 
 class APlayerController;
 class UUserWidget;
@@ -135,4 +136,5 @@ private:
 	bool bDispatchingRmlEvents = false;
 	float LastViewportWidth = 0.0f;
 	float LastViewportHeight = 0.0f;
+	std::unordered_set<Rml::Element*> HoveredMenuButtons;
 };

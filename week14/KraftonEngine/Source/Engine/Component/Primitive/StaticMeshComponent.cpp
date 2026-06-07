@@ -672,7 +672,7 @@ void UStaticMeshComponent::PostDuplicate()
 				}
 				else
 				{
-					UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(MatPath);
+					UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(MatPath);
 					OverrideMaterials[i] = LoadedMat;
 				}
 			}
@@ -724,7 +724,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 			}
 			else
 			{
-				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
+				UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(NewMatPath);
 				if (LoadedMat)
 				{
 					SetMaterial(Index, LoadedMat);
@@ -744,7 +744,7 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 			}
 			else
 			{
-				UMaterial* LoadedMat = FMaterialManager::Get().GetOrCreateMaterial(NewMatPath);
+				UMaterialInterface* LoadedMat = FMaterialManager::Get().GetOrCreateMaterialInterface(NewMatPath);
 				if (LoadedMat)
 				{
 					SetMaterial(Index, LoadedMat);

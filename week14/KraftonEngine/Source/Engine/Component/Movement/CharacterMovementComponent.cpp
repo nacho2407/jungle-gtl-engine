@@ -1,5 +1,6 @@
 ﻿#include "CharacterMovementComponent.h"
 
+#include "Audio/AudioManager.h"
 #include "Animation/AnimInstance.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/SceneComponent.h"
@@ -35,6 +36,15 @@
 namespace
 {
 	constexpr float MinWallRunInputAlong = 0.1f;
+	constexpr float SprintFootstepMinSpeed = 1.0f;
+	constexpr float WalkFootstepStrideDistance = 2.1f;
+	constexpr float SprintFootstepStrideDistance = 2.6f;
+	constexpr float SprintFootstepInitialDistanceRatio = 0.45f;
+	constexpr float SlideAudioMinSpeed = 3.0f;
+	constexpr float SlideStepStrideDistance = 2.4f;
+	constexpr float WallRunStepStrideDistance = 2.2f;
+	constexpr float WallRunLoopStartDelay = 0.42f;
+	constexpr float HeavyLandDownSpeed = 9.0f;
 
 	FBoundingBox ExpandBounds(const FBoundingBox& Bounds, float Amount)
 	{
@@ -476,7 +486,21 @@ void UCharacterMovementComponent::SetCrouching(bool bEnable)
 	}
 
 	bWasCrouchInputDown = bEnable;
+
+	if (bWantsCrouch == bEnable)
+	{
+		if (!bEnable)
+		{
+			StopSlideAudio();
+		}
+		return;
+	}
+
 	bWantsCrouch = bEnable;
+	if (!bWantsCrouch)
+	{
+		StopSlideAudio();
+	}
 }
 
 void UCharacterMovementComponent::UpdateCrouchState(float DeltaTime)
@@ -691,8 +715,155 @@ void UCharacterMovementComponent::SetMovementMode(EMovementMode NewMode)
 	{
 		EndSlide(false);
 	}
+	if (MovementMode == EMovementMode::WallRunning && NewMode != EMovementMode::WallRunning)
+	{
+		if (bEnableBuiltInMovementAudio)
+		{
+			FAudioManager::Get().SetLoopState("PlayerWallRunRub", "WallRunRub", false);
+		}
+		WallRunStepDistance = 0.0f;
+	}
+	if (NewMode != EMovementMode::Walking)
+	{
+		StopSlideAudio();
+	}
 	MovementMode = NewMode;
+	if (MovementMode != EMovementMode::Walking)
+	{
+		ResetSprintFootstepAudio();
+	}
 	// 추후 OnMovementModeChanged delegate 위치.
+}
+
+void UCharacterMovementComponent::ResetSprintFootstepAudio()
+{
+	SprintFootstepDistance = 0.0f;
+}
+
+void UCharacterMovementComponent::UpdateSprintFootstepAudio(float DeltaTime)
+{
+	if (DeltaTime <= 0.0f || MovementMode != EMovementMode::Walking || IsCrouching())
+	{
+		ResetSprintFootstepAudio();
+		return;
+	}
+
+	USceneComponent* Updated = GetUpdatedComponent();
+	if (!Updated)
+	{
+		ResetSprintFootstepAudio();
+		return;
+	}
+
+	const FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
+	const float PlanarSpeed = PlanarVelocity.Length();
+	if (PlanarSpeed < SprintFootstepMinSpeed)
+	{
+		ResetSprintFootstepAudio();
+		return;
+	}
+
+	const bool bSprint = IsSprinting();
+	const float StrideDistance = bSprint ? SprintFootstepStrideDistance : WalkFootstepStrideDistance;
+	if (SprintFootstepDistance <= 0.0f)
+	{
+		SprintFootstepDistance = StrideDistance * SprintFootstepInitialDistanceRatio;
+	}
+
+	SprintFootstepDistance += PlanarSpeed * DeltaTime;
+	if (SprintFootstepDistance < StrideDistance)
+	{
+		return;
+	}
+
+	SprintFootstepDistance = std::fmod(SprintFootstepDistance, StrideDistance);
+	if (bEnableBuiltInMovementAudio)
+	{
+		FAudioManager::Get().PlayOneShotAt(bSprint ? "player.run.step" : "player.walk.step", Updated->GetWorldLocation());
+	}
+}
+
+void UCharacterMovementComponent::UpdateSlideAudio(float DeltaTime)
+{
+	if (DeltaTime <= 0.0f || MovementMode != EMovementMode::Walking || !IsCrouching())
+	{
+		StopSlideAudio();
+		return;
+	}
+
+	USceneComponent* Updated = GetUpdatedComponent();
+	if (!Updated)
+	{
+		StopSlideAudio();
+		return;
+	}
+
+	const FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
+	const float PlanarSpeed = PlanarVelocity.Length();
+	if (PlanarSpeed < SlideAudioMinSpeed)
+	{
+		StopSlideAudio();
+		return;
+	}
+
+	if (!bSlideAudioActive)
+	{
+		bSlideAudioActive = true;
+		SlideStepDistance = 0.0f;
+		if (bEnableBuiltInMovementAudio)
+		{
+			FAudioManager::Get().PlayOneShotAt("player.slide.start", Updated->GetWorldLocation());
+		}
+	}
+
+	if (bEnableBuiltInMovementAudio)
+	{
+		FAudioManager::Get().SetLoopState("PlayerSlideLoop", "SlideLoop", true, 0.50f, 1.0f);
+	}
+
+	SlideStepDistance += PlanarSpeed * DeltaTime;
+	if (SlideStepDistance >= SlideStepStrideDistance)
+	{
+		SlideStepDistance = std::fmod(SlideStepDistance, SlideStepStrideDistance);
+		if (bEnableBuiltInMovementAudio)
+		{
+			FAudioManager::Get().PlayOneShotAt("player.slide.rub", Updated->GetWorldLocation());
+		}
+	}
+}
+
+void UCharacterMovementComponent::StopSlideAudio()
+{
+	if (!bSlideAudioActive)
+	{
+		return;
+	}
+
+	bSlideAudioActive = false;
+	SlideStepDistance = 0.0f;
+	if (bEnableBuiltInMovementAudio)
+	{
+		FAudioManager::Get().SetLoopState("PlayerSlideLoop", "SlideLoop", false);
+		FAudioManager::Get().PlayOneShot("player.slide.end");
+	}
+}
+
+void UCharacterMovementComponent::PlayLandingAudio(float DownSpeed)
+{
+	if (!bEnableBuiltInMovementAudio)
+	{
+		return;
+	}
+
+	FAudioManager::Get().StopEvent("player.jump.jet");
+	if (DownSpeed >= HeavyLandDownSpeed)
+	{
+		FAudioManager::Get().PlayOneShot("player.land.heavy");
+	}
+	else
+	{
+		FAudioManager::Get().PlayOneShot("player.land");
+	}
 }
 
 const char* UCharacterMovementComponent::GetMovementModeName() const
@@ -722,6 +893,8 @@ const char* UCharacterMovementComponent::GetWallRunStatusName(EWallRunStatus Sta
 		return "NO_UPDATED_COMPONENT";
 	case EWallRunStatus::NoController:
 		return "NO_CONTROLLER";
+	case EWallRunStatus::Fatigued:
+		return "FATIGUED";
 	case EWallRunStatus::NoWall:
 		return "NO_WALL";
 	case EWallRunStatus::LowSpeed:
@@ -1098,6 +1271,10 @@ void UCharacterMovementComponent::Jump()
 	}
 	else if (MovementMode == EMovementMode::Falling && JumpsRemaining > 0)
 	{
+		if (FatiguedAirJumpInputLockTimer > 0.0f)
+		{
+			return;
+		}
 		bWantsJump = true;
 	}
 	else if (MovementMode == EMovementMode::WallRunning)
@@ -1132,6 +1309,14 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 			LastWallJumpNormal = FVector::ZeroVector;
 		}
 	}
+	if (WallRunFatigueTimer > 0.0f)
+	{
+		WallRunFatigueTimer = std::max(0.0f, WallRunFatigueTimer - DeltaTime);
+	}
+	if (FatiguedAirJumpInputLockTimer > 0.0f)
+	{
+		FatiguedAirJumpInputLockTimer = std::max(0.0f, FatiguedAirJumpInputLockTimer - DeltaTime);
+	}
 
 	if (!EnsureController())
 	{
@@ -1146,6 +1331,7 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	// 매 Tick 회전 적용 상태 reset — 이번 frame 에 root motion 이 yaw 를 적용했는지를
 	// 외부 (Character::Tick) 가 query 할 수 있어야 yaw 충돌 회피 가능.
 	bAppliedRootMotionYawThisFrame = false;
+	bAirJumpConsumedThisFrame = false;
 
 	FVector Input;
 	ConsumeInputVector(Input);
@@ -1212,7 +1398,7 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	//    이 검사를 Falling 이동보다 앞에 두면 벽에 닿은 frame 부터 바로 벽타기 이동식이 적용된다.
 	if (MovementMode == EMovementMode::Falling)
 	{
-		TryStartWallRun();
+		TryStartWallRun(Input);
 	}
 
 	// 4) Mode 별 Z 처리 + 위치 적용 (input velocity + root motion XY 합산).
@@ -1228,6 +1414,9 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	{
 		TickFalling(DeltaTime, RootMotionWorldXY);
 	}
+
+	UpdateSprintFootstepAudio(DeltaTime);
+	UpdateSlideAudio(DeltaTime);
 
 	// 5) Root motion yaw 적용. yaw 만 추출 — root motion 의 pitch/roll 은 캐릭터 capsule
 	//    회전에 일반적으로 의미 없음 (UE 도 yaw 만 적용).
@@ -1469,14 +1658,35 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 	const float InputLen = Input.Length();
 	if (InputLen > 0.0f)
 	{
-		// 입력 방향으로 가속 (XY 만).
+		// 입력 방향으로 가속 (XY 만). Falling 은 기존보다 방향 전환이 약해지도록 70%만 적용.
 		const FVector Direction = Input * (1.0f / InputLen);
-		Velocity.X += Direction.X * MaxAcceleration * DeltaTime;
-		Velocity.Y += Direction.Y * MaxAcceleration * DeltaTime;
+		constexpr float AirControlScale = 0.7f;
+		const float AccelScale = (MovementMode == EMovementMode::Falling) ? AirControlScale : 1.0f;
+		Velocity.X += Direction.X * MaxAcceleration * AccelScale * DeltaTime;
+		Velocity.Y += Direction.Y * MaxAcceleration * AccelScale * DeltaTime;
+
+		if (MovementMode == EMovementMode::Walking)
+		{
+			// 지상 입력 중에는 입력 방향 성분은 보존하고, 반대/횡방향 성분만 빨리 죽인다.
+			// 전역 damping 이나 물리 설정은 건드리지 않아 다른 모드 영향이 작다.
+			FVector V2D(Velocity.X, Velocity.Y, 0.0f);
+			const float AlongSpeed = V2D.Dot(Direction);
+			const FVector Along = Direction * std::max(0.0f, AlongSpeed);
+			FVector Slide = V2D - Along;
+			const float SlideSpeed = Slide.Length();
+			if (SlideSpeed > 0.0f)
+			{
+				const float NewSlideSpeed = std::max(0.0f, SlideSpeed - BrakingFriction * DeltaTime);
+				Slide = Slide * (NewSlideSpeed / SlideSpeed);
+				const FVector NewV2D = Along + Slide;
+				Velocity.X = NewV2D.X;
+				Velocity.Y = NewV2D.Y;
+			}
+		}
 	}
 	else if (MovementMode == EMovementMode::Walking)
 	{
-		// Walking 에선 input 없으면 braking. Falling 중 air control 없음 = 평면 속도 유지.
+		// Walking 에선 input 없으면 braking. Falling 중에는 평면 속도 유지.
 		FVector V2D(Velocity.X, Velocity.Y, 0.0f);
 		const float Speed2D = V2D.Length();
 		if (Speed2D > 0.0f)
@@ -1510,6 +1720,10 @@ void UCharacterMovementComponent::TickWalking(float DeltaTime, const FVector& Ro
 		bWantsJump = false;
 		GroundMissFrames = 0;
 		Velocity.Z = JumpZVelocity;
+		if (bEnableBuiltInMovementAudio)
+		{
+			FAudioManager::Get().PlayOneShot("player.jump");
+		}
 		// 지상 점프 1회 소비 — 남은 공중 점프 수는 MaxJumpCount - 1.
 		JumpsRemaining = MaxJumpCount - 1;
 		SetMovementMode(EMovementMode::Falling);
@@ -1559,11 +1773,22 @@ void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& Ro
 	USceneComponent* Updated = GetUpdatedComponent();
 
 	// 공중 점프 소비 — gravity 전에 Z 를 박아야 같은 frame 에 즉시 상승 시작.
+	if (bWantsJump && FatiguedAirJumpInputLockTimer > 0.0f)
+	{
+		bWantsJump = false;
+	}
 	if (bWantsJump && JumpsRemaining > 0)
 	{
 		bWantsJump = false;
 		--JumpsRemaining;
+		bAirJumpConsumedThisFrame = true;
 		Velocity.Z = JumpZVelocity;
+		if (bEnableBuiltInMovementAudio)
+		{
+			FAudioManager::Get().PlayOneShot("player.double_jump");
+			FAudioManager::Get().PlayOneShot("player.jump.jet");
+			FAudioManager::Get().FadeOutEvent("player.jump.jet", 420.0f);
+		}
 	}
 
 	// Gravity — Z 만. (양수 Gravity → -Z 가속)
@@ -1580,11 +1805,13 @@ void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& Ro
 
 	if (Velocity.Z <= 0.0f && bHasWalkableFloor)
 	{
+		const float LandingDownSpeed = std::max(0.0f, -Velocity.Z);
 		GroundMissFrames = 0;
 		Velocity.Z = 0.0f;
 		// 착지 — 점프 카운트 완전 회복.
 		JumpsRemaining = MaxJumpCount;
 		SetMovementMode(EMovementMode::Walking);
+		PlayLandingAudio(LandingDownSpeed);
 	}
 	else if (Result.bHitDown && !bHasWalkableFloor)
 	{
@@ -1758,16 +1985,22 @@ bool UCharacterMovementComponent::SweepWallRunDirection(const FVector& Direction
 		SweepDirection,
 		MeshTraceHit);
 
+	// Bounds hit 는 실제 삼각형/충돌 표면이 아니라 StaticMeshComponent 의 전체 AABB 이다.
+	// 큰 레벨 메시나 복합 프롭의 빈 공간에서도 수평 normal 을 가진 "가짜 벽"이 만들어져
+	// 허공에서 벽타기 시작 -> 즉시 ENDED_NO_WALL 로 끝나는 원인이 된다.
+	// 따라서 벽타기 후보로는 사용하지 않고, diagnostics 로그에서만 관찰한다.
 	FHitResult BoundsHit;
-	const bool bBoundsHit = SweepWallRunStaticMeshBounds(
-		Start,
-		SweepDirection,
-		BoundsHit);
+	bool bBoundsHit = false;
 
 	FHitResult ObjectRayHit;
 	bool bObjectRayHit = false;
 	if (bEmitDiagnostics)
 	{
+		bBoundsHit = SweepWallRunStaticMeshBounds(
+			Start,
+			SweepDirection,
+			BoundsHit);
+
 		bObjectRayHit = World->PhysicsRaycastByObjectTypes(
 			Start,
 			SweepDirection,
@@ -1814,7 +2047,6 @@ bool UCharacterMovementComponent::SweepWallRunDirection(const FVector& Direction
 	ConsiderHit(bPhysXHit, PhysXHit, "PhysX");
 	ConsiderHit(bShapeHit, ShapeHit, "Shape");
 	ConsiderHit(bMeshTraceHit, MeshTraceHit, "MeshTrace");
-	ConsiderHit(bBoundsHit, BoundsHit, "Bounds");
 
 	if (bEmitDiagnostics)
 	{
@@ -2109,7 +2341,7 @@ FVector UCharacterMovementComponent::ComputeWallRunDirection(const FVector& Wall
 	return Direction;
 }
 
-bool UCharacterMovementComponent::TryStartWallRun()
+bool UCharacterMovementComponent::TryStartWallRun(const FVector& Input)
 {
 	if (!bEnableWallRun)
 	{
@@ -2119,6 +2351,11 @@ bool UCharacterMovementComponent::TryStartWallRun()
 	if (MovementMode != EMovementMode::Falling)
 	{
 		SetWallRunStatus(EWallRunStatus::NotFalling);
+		return false;
+	}
+	if (WallRunFatigueTimer > 0.0f)
+	{
+		SetWallRunStatus(EWallRunStatus::Fatigued);
 		return false;
 	}
 
@@ -2169,7 +2406,7 @@ bool UCharacterMovementComponent::TryStartWallRun()
 		if (ShouldEmitWallRunDiagnostics())
 		{
 			UE_LOG(
-				"[WallRunStart] reject=LowAlongSpeed total=%.2f along=%.2f min=%.2f normal=(%.2f,%.2f,%.2f) runDir=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
+				"[WallRun] reject=LowAlongSpeed total=%.2f along=%.2f min=%.2f normal=(%.2f,%.2f,%.2f) runDir=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
 				PlanarVelocity.Length(),
 				AlongWallSpeed,
 				MinWallRunStartSpeed,
@@ -2183,6 +2420,33 @@ bool UCharacterMovementComponent::TryStartWallRun()
 				GetHitActorName(WallHit).c_str(),
 				GetHitComponentName(WallHit).c_str());
 		}
+		SetWallRunStatus(EWallRunStatus::BadDirection, &WallHit);
+		return false;
+	}
+
+	// 시작 단계에서도 입력 의도를 검사한다. 입력이 벽 진행 방향이 아니면
+	// Falling -> Active -> EndedBadDirection 루프가 매 프레임 반복되어 벽에 붙어 보일 수 있다.
+	const float InputAlongWall = GetWallRunInputAlong(Input, RunDirection);
+	if (std::fabs(InputAlongWall) < MinWallRunInputAlong)
+	{
+		if (ShouldEmitWallRunDiagnostics())
+		{
+			UE_LOG(
+				"[WallRunStart] reject=NoAlongInput input=(%.2f,%.2f,%.2f) runDir=(%.2f,%.2f,%.2f) normal=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
+				Input.X,
+				Input.Y,
+				Input.Z,
+				RunDirection.X,
+				RunDirection.Y,
+				RunDirection.Z,
+				WallNormal.X,
+				WallNormal.Y,
+				WallNormal.Z,
+				WallHit.Distance,
+				GetHitActorName(WallHit).c_str(),
+				GetHitComponentName(WallHit).c_str());
+		}
+
 		SetWallRunStatus(EWallRunStatus::BadDirection, &WallHit);
 		return false;
 	}
@@ -2229,11 +2493,21 @@ void UCharacterMovementComponent::StartWallRun(const FHitResult& WallHit, bool b
 	}
 
 	SetMovementMode(EMovementMode::WallRunning);
+	WallRunStepDistance = 0.0f;
+	if (bEnableBuiltInMovementAudio)
+	{
+		FAudioManager::Get().StopEvent("player.jump.jet");
+	}
 	SetWallRunStatus(EWallRunStatus::Active, &WallHit);
 }
 
 void UCharacterMovementComponent::EndWallRun()
 {
+	if (bEnableBuiltInMovementAudio)
+	{
+		FAudioManager::Get().SetLoopState("PlayerWallRunRub", "WallRunRub", false);
+	}
+
 	WallRunNormal = FVector::ZeroVector;
 	WallRunDirection = FVector::ZeroVector;
 	WallRunElapsedTime = 0.0f;
@@ -2243,6 +2517,13 @@ void UCharacterMovementComponent::EndWallRun()
 	{
 		SetMovementMode(EMovementMode::Falling);
 	}
+}
+
+void UCharacterMovementComponent::BeginWallRunFatigue()
+{
+	WallRunFatigueTimer = std::max(0.0f, WallRunFatigueDuration);
+	FatiguedAirJumpInputLockTimer = std::max(0.0f, FatiguedAirJumpInputLockDuration);
+	JumpsRemaining = std::max(JumpsRemaining, MaxJumpCount - 1);
 }
 
 void UCharacterMovementComponent::PerformWallJump()
@@ -2284,6 +2565,21 @@ void UCharacterMovementComponent::PerformWallJump()
 void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector& RootMotionWorldXY, const FVector& Input)
 {
 	WallRunElapsedTime += DeltaTime;
+	if (bEnableBuiltInMovementAudio && WallRunElapsedTime >= WallRunLoopStartDelay)
+	{
+		FAudioManager::Get().SetLoopState("PlayerWallRunRub", "WallRunRub", true, 0.48f, 1.0f);
+	}
+
+	const FVector WallPlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
+	WallRunStepDistance += WallPlanarVelocity.Length() * DeltaTime;
+	if (WallRunStepDistance >= WallRunStepStrideDistance)
+	{
+		WallRunStepDistance = std::fmod(WallRunStepDistance, WallRunStepStrideDistance);
+		if (bEnableBuiltInMovementAudio)
+		{
+			FAudioManager::Get().PlayOneShot("player.wallrun.step");
+		}
+	}
 
 	// 점프 의도가 있으면 wall-jump 임펄스로 변환하고 즉시 Falling 으로 — 이번 frame 의
 	// gravity/벽 sweep 은 건너뛴다. 같은 frame 안 mode 전환이므로 다음 frame TickFalling 이 받음.
@@ -2297,6 +2593,7 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 	if (MaxWallRunTime > 0.0f && WallRunElapsedTime > MaxWallRunTime)
 	{
 		SetWallRunStatus(EWallRunStatus::EndedTimeLimit);
+		BeginWallRunFatigue();
 		EndWallRun();
 		return;
 	}
@@ -2405,6 +2702,7 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 	const FControllerMoveResult Result = MoveController(Offset, DeltaTime);
 	if (Velocity.Z <= 0.0f && Result.bHasWalkableFloor)
 	{
+		const float LandingDownSpeed = std::max(0.0f, -Velocity.Z);
 		SetWallRunStatus(EWallRunStatus::Landed);
 		WallRunNormal = FVector::ZeroVector;
 		WallRunDirection = FVector::ZeroVector;
@@ -2413,6 +2711,7 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 		Velocity.Z = 0.0f;
 		JumpsRemaining = MaxJumpCount;
 		SetMovementMode(EMovementMode::Walking);
+		PlayLandingAudio(LandingDownSpeed);
 	}
 }
 
@@ -2452,6 +2751,8 @@ void UCharacterMovementComponent::Serialize(FArchive& Ar)
 	Ar << MaxWallRunSlideSpeed;
 	Ar << WallStickAcceleration;
 	Ar << MaxWallRunTime;
+	Ar << WallRunFatigueDuration;
+	Ar << FatiguedAirJumpInputLockDuration;
 	Ar << bShowWallRunStatusText;
 	Ar << bLogWallRunDiagnostics;
 	Ar << WallRunDiagnosticsInterval;

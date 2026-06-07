@@ -7,7 +7,9 @@
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
 #include "Mesh/Static/StaticMesh.h"
+#include "Mesh/Static/StaticMeshAsset.h"
 #include "Mesh/MeshManager.h"
+#include "Object/Object.h"
 #include "Texture/Texture2D.h"
 #include "Runtime/Engine.h"
 #include "Settings/EditorSettings.h"
@@ -18,7 +20,206 @@
 
 #include <ImGui/imgui.h>
 
+#include <cmath>
+#include <memory>
+#include <utility>
+
 static uint32 GNextMaterialEditorInstanceId = 0;
+
+namespace
+{
+	constexpr uint32 PreviewSphereSlices = 32;
+	constexpr uint32 PreviewSphereStacks = 16;
+	constexpr float PreviewSphereRadius = 0.5f;
+
+	FNormalVertex MakePreviewSphereVertex(float X, float Y, float Z, float U, float V)
+	{
+		FVector Normal(X, Y, Z);
+		Normal.Normalize();
+
+		FVector Tangent(-Y, X, 0.0f);
+		if (Tangent.IsNearlyZero())
+		{
+			Tangent = FVector(1.0f, 0.0f, 0.0f);
+		}
+		else
+		{
+			Tangent.Normalize();
+		}
+
+		FNormalVertex Out{};
+		Out.pos = FVector(X, Y, Z);
+		Out.normal = Normal;
+		Out.color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+		Out.tex = FVector2(U, V);
+		Out.tangent = FVector4(Tangent.X, Tangent.Y, Tangent.Z, 1.0f);
+		return Out;
+	}
+
+	UStaticMesh* CreateTransientMaterialPreviewSphere(ID3D11Device* Device)
+	{
+		if (!Device)
+		{
+			return nullptr;
+		}
+
+		std::unique_ptr<FStaticMesh> MeshAsset = std::make_unique<FStaticMesh>();
+		MeshAsset->PathFileName = "__Transient/Editor/MaterialPreviewSphere";
+		MeshAsset->Vertices.reserve((PreviewSphereSlices + 1) * (PreviewSphereStacks + 1));
+		MeshAsset->Indices.reserve(PreviewSphereSlices * PreviewSphereStacks * 6);
+
+		constexpr float Pi = 3.14159265358979323846f;
+		for (uint32 Stack = 0; Stack <= PreviewSphereStacks; ++Stack)
+		{
+			const float V = static_cast<float>(Stack) / static_cast<float>(PreviewSphereStacks);
+			const float Phi = Pi * V;
+			const float SinPhi = std::sin(Phi);
+			const float CosPhi = std::cos(Phi);
+
+			for (uint32 Slice = 0; Slice <= PreviewSphereSlices; ++Slice)
+			{
+				const float U = static_cast<float>(Slice) / static_cast<float>(PreviewSphereSlices);
+				const float Theta = 2.0f * Pi * U;
+				const float X = PreviewSphereRadius * SinPhi * std::cos(Theta);
+				const float Y = PreviewSphereRadius * SinPhi * std::sin(Theta);
+				const float Z = PreviewSphereRadius * CosPhi;
+				MeshAsset->Vertices.push_back(MakePreviewSphereVertex(X, Y, Z, U, V));
+			}
+		}
+
+		for (uint32 Stack = 0; Stack < PreviewSphereStacks; ++Stack)
+		{
+			for (uint32 Slice = 0; Slice < PreviewSphereSlices; ++Slice)
+			{
+				const uint32 First = Stack * (PreviewSphereSlices + 1) + Slice;
+				const uint32 Second = First + PreviewSphereSlices + 1;
+
+				MeshAsset->Indices.push_back(First);
+				MeshAsset->Indices.push_back(Second);
+				MeshAsset->Indices.push_back(First + 1);
+
+				MeshAsset->Indices.push_back(Second);
+				MeshAsset->Indices.push_back(Second + 1);
+				MeshAsset->Indices.push_back(First + 1);
+			}
+		}
+
+		FStaticMeshSection Section{};
+		Section.MaterialIndex = 0;
+		Section.MaterialSlotName = "Preview";
+		Section.FirstIndex = 0;
+		Section.NumTriangles = static_cast<uint32>(MeshAsset->Indices.size() / 3);
+		MeshAsset->Sections.push_back(Section);
+		MeshAsset->CacheBounds();
+
+		TArray<FStaticMaterial> Materials;
+		FStaticMaterial Slot;
+		Slot.MaterialSlotName = "Preview";
+		Materials.push_back(Slot);
+
+		UStaticMesh* Mesh = UObjectManager::Get().CreateObject<UStaticMesh>();
+		if (!Mesh)
+		{
+			return nullptr;
+		}
+
+		Mesh->SetStaticMaterials(std::move(Materials));
+		Mesh->SetStaticMeshAsset(MeshAsset.release());
+		Mesh->SetAssetPathFileName("__Transient/Editor/MaterialPreviewSphere");
+		Mesh->InitResources(Device);
+		return Mesh;
+	}
+
+	UStaticMesh* LoadMaterialPreviewSphereMesh(ID3D11Device* Device)
+	{
+		static const char* CandidatePaths[] = {
+			"Content/Data/BasicShape/Sphere_StaticMesh.uasset",
+			"Content/Data/BasicShape/Sphere.OBJ",
+			"Content/Data/BasicShape/Sphere.obj",
+			"Content/Data/BasicShape/sphere.obj",
+		};
+
+		for (const char* Path : CandidatePaths)
+		{
+			if (UStaticMesh* Mesh = FMeshManager::LoadStaticMesh(Path, Device))
+			{
+				return Mesh;
+			}
+		}
+
+		UE_LOG("MaterialEditor preview sphere asset missing. Using transient procedural sphere fallback.");
+		return CreateTransientMaterialPreviewSphere(Device);
+	}
+
+	void EnsureJsonObject(json::JSON& JsonData, const char* Key)
+	{
+		if (!JsonData.hasKey(Key) || JsonData[Key].JSONType() != json::JSON::Class::Object)
+		{
+			JsonData[Key] = json::JSON::Make(json::JSON::Class::Object);
+		}
+	}
+
+	void WriteMaterialInstanceOverridesToJson(UMaterialInstance* Instance, json::JSON& JsonData)
+	{
+		if (!Instance)
+		{
+			return;
+		}
+
+		if (UMaterial* Parent = Instance->GetParent())
+		{
+			JsonData[MatKeys::ParentMaterial] = Parent->GetAssetPathFileName().c_str();
+		}
+
+		EnsureJsonObject(JsonData, MatKeys::Parameters);
+		EnsureJsonObject(JsonData, MatKeys::Textures);
+
+		for (const auto& Pair : Instance->GetScalarOverrides())
+		{
+			JsonData[MatKeys::Parameters][Pair.first] = Pair.second;
+		}
+
+		for (const auto& Pair : Instance->GetVector3Overrides())
+		{
+			const FVector& Value = Pair.second;
+			JsonData[MatKeys::Parameters][Pair.first] = json::Array(Value.X, Value.Y, Value.Z);
+		}
+
+		for (const auto& Pair : Instance->GetVector4Overrides())
+		{
+			const FVector4& Value = Pair.second;
+			JsonData[MatKeys::Parameters][Pair.first] = json::Array(Value.X, Value.Y, Value.Z, Value.W);
+		}
+
+		for (const auto& Pair : Instance->GetMatrixOverrides())
+		{
+			const FMatrix& Value = Pair.second;
+			json::JSON MatrixArray = json::Array();
+			for (int32 Index = 0; Index < 16; ++Index)
+			{
+				MatrixArray.append(Value.Data[Index]);
+			}
+			JsonData[MatKeys::Parameters][Pair.first] = MatrixArray;
+		}
+
+		for (const auto& Pair : Instance->GetTextureOverrides())
+		{
+			JsonData[MatKeys::Textures][Pair.first] = Pair.second ? Pair.second->GetSourcePath().c_str() : "";
+		}
+
+		const FVector4 EmissiveColor = Instance->GetEmissiveColor();
+		JsonData[MatKeys::bOverrideEmissiveColor] = Instance->HasEmissiveColorOverride();
+		JsonData[MatKeys::EmissiveColor] = json::Array(
+			EmissiveColor.X,
+			EmissiveColor.Y,
+			EmissiveColor.Z,
+			EmissiveColor.W);
+		JsonData[MatKeys::bOverrideEmissiveIntensity] = Instance->HasEmissiveIntensityOverride();
+		JsonData[MatKeys::EmissiveIntensity] = Instance->GetEmissiveIntensity();
+		JsonData[MatKeys::bOverrideEnableBloom] = Instance->HasBloomEnabledOverride();
+		JsonData[MatKeys::bEnableBloom] = Instance->IsBloomEnabled();
+	}
+}
 
 FMaterialEditorWidget::FMaterialEditorWidget()
 	: InstanceId(GNextMaterialEditorInstanceId++)
@@ -82,12 +283,15 @@ void FMaterialEditorWidget::Open(UObject* Object)
 	UStaticMeshComponent* Comp = Actor->AddComponent<UStaticMeshComponent>();
 	ID3D11Device* Device = GEngine->GetRenderer().GetFD3DDevice().GetDevice();
 
-	UStaticMesh* SphereMesh = FMeshManager::LoadStaticMesh("Content/Data/BasicShape/Sphere.OBJ", Device);
+	UStaticMesh* SphereMesh = LoadMaterialPreviewSphereMesh(Device);
 	Comp->SetStaticMesh(SphereMesh);
 	Comp->SetMaterial(0, Material);
+	Comp->SetNeverCullForRendering(true);
 
 	Actor->SetRootComponent(Comp);
 	Actor->SetActorLocation(FVector::ZeroVector);
+	WorldContext.World->UpdateActorInOctree(Actor);
+	WorldContext.World->GetPartition().FlushPrimitive();
 
 	PreviewMeshComponent = Comp;
 
@@ -99,9 +303,12 @@ void FMaterialEditorWidget::Open(UObject* Object)
 	LightComp->SetShadowBias(0.0f);
 	LightComp->PushToScene();
 
-	ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
-
-	ViewportClient.Initialize(Device, static_cast<uint32>(ViewportSize.x), static_cast<uint32>(ViewportSize.y));
+	// Open() can be called from Content Browser or a deferred open queue, not from
+	// this editor window. Do not use ImGui::GetContentRegionAvail() here: it may
+	// read another window's remaining space or return 0, producing an empty preview RT.
+	constexpr uint32 InitialPreviewWidth = 512;
+	constexpr uint32 InitialPreviewHeight = 512;
+	ViewportClient.Initialize(Device, InitialPreviewWidth, InitialPreviewHeight);
 	ViewportClient.SetPreviewWorld(WorldContext.World);
 	ViewportClient.SetPreviewActor(Actor);
 	ViewportClient.SetPreviewMeshComponent(Comp);
@@ -777,6 +984,10 @@ bool FMaterialEditorWidget::SaveMaterialJson()
 			EmissiveColor.W);
 		CachedJson[MatKeys::EmissiveIntensity] = BaseMaterial->GetEmissiveIntensity();
 		CachedJson[MatKeys::bEnableBloom] = BaseMaterial->IsBloomEnabled();
+	}
+	else if (UMaterialInstance* Instance = Cast<UMaterialInstance>(Material))
+	{
+		WriteMaterialInstanceOverridesToJson(Instance, CachedJson);
 	}
 
 	std::ofstream File(MaterialPath);

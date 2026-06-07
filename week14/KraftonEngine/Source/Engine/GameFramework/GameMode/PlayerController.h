@@ -11,7 +11,7 @@ class APlayerCameraManager;
 // APlayerController — 플레이어의 의도(Possess/입력)를 Pawn에 전달
 //
 // Pawn은 "조종 가능한 액터"이고, PlayerController는 "조종자".
-// World당 (지금은) 1개만 spawn되며 GameMode가 spawn/관리.
+// World당 (지금은) 1개만 spawn되며 GameplayRuntime이 spawn/관리.
 // ============================================================
 UCLASS()
 class APlayerController : public AActor

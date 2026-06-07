@@ -1,10 +1,13 @@
 local arms   = nil
 local camera = nil
-local weaponHudWidget = nil
-local debugWidget = nil
 local movement = nil
 local DamagePostProcess = require("DamagePostProcess")
 local InGamePause = require("InGamePause")
+local WeaponHud = require("HUD/WeaponHud")
+local CombatEvents = require("Game.CombatEvents")
+local InGameDebug = require("DebugUI/InGameDebug")
+local ItemInspectSystem = require("Items/ItemInspectSystem")
+local GameAudio = require("Game.GameAudio")
 
 -- 본 기반 머즐은 Arm_R 이 어깨 관절이라 카메라랑 거의 같은 위치 → 의미 없음.
 -- 대부분 FPS 는 카메라에서 forward offset 으로 머즐을 근사함.
@@ -12,57 +15,69 @@ local MUZZLE_FWD_OFFSET = 0.4   -- 카메라 앞 0.4m 지점을 머즐로 간주
 
 local MAX_RANGE        = 200.0
 local FIRE_INTERVAL    = 0.12
-local MAGAZINE_SIZE    = 50
+local MAGAZINE_SIZE    = 30
 local RELOAD_DURATION  = 1.1
 
 local SPREAD_PER_SHOT       = 0.28
 local SPREAD_DECAY_PER_SEC  = 1.15
 local MAX_SPREAD            = 1.0
 local MAX_SPREAD_ANGLE      = 0.075
-local CROSSHAIR_BASE_LEFT   = 16
-local CROSSHAIR_BASE_RIGHT  = 80
-local CROSSHAIR_BASE_TOP    = 16
-local CROSSHAIR_BASE_BOTTOM = 80
-local CROSSHAIR_SPREAD_PX   = 34
-local HIT_MARKER_DURATION   = 0.12
-local KILL_MARKER_DURATION  = 0.22
 
-local MAX_HITS_FOR_FULL_RED = 8
+-- Hard-coded recoil spray. vertical climb, left bias, then a rightward sweep. Values are camera kick in degrees per shot.
+local RECOIL_ADS_MULTIPLIER          = 0.72
+local RECOIL_STRENGTH_MULTIPLIER     = 5.0
+local RECOIL_RECOVERY_DELAY          = 0.03
+local RECOIL_RECOVERY_SPEED_FIRING   = 9.0
+local RECOIL_RECOVERY_SPEED_RELEASED = 50.0
+local RECOIL_PATTERN_RESET_DELAY     = 0.35
+local RECOIL_PATTERN = {
+    { pitch = -0.34, yaw = -0.02 },
+    { pitch = -0.42, yaw =  0.04 },
+    { pitch = -0.50, yaw =  0.09 },
+    { pitch = -0.58, yaw =  0.05 },
+    { pitch = -0.63, yaw = -0.04 },
+    { pitch = -0.67, yaw = -0.14 },
+    { pitch = -0.66, yaw = -0.24 },
+    { pitch = -0.62, yaw = -0.32 },
+    { pitch = -0.56, yaw = -0.38 },
+    { pitch = -0.50, yaw = -0.34 },
+    { pitch = -0.46, yaw = -0.22 },
+    { pitch = -0.43, yaw = -0.06 },
+    { pitch = -0.41, yaw =  0.12 },
+    { pitch = -0.40, yaw =  0.29 },
+    { pitch = -0.38, yaw =  0.44 },
+    { pitch = -0.36, yaw =  0.54 },
+    { pitch = -0.34, yaw =  0.48 },
+    { pitch = -0.32, yaw =  0.36 },
+    { pitch = -0.30, yaw =  0.22 },
+    { pitch = -0.28, yaw =  0.08 },
+    { pitch = -0.26, yaw = -0.02 },
+    { pitch = -0.24, yaw = -0.08 },
+    { pitch = -0.22, yaw = -0.06 },
+    { pitch = -0.20, yaw =  0.03 },
+}
+
+local BULLET_DAMAGE = 12.5
 local MAX_HEALTH = 100.0
-local DEBUG_Z_ORDER = 220
-local DEBUG_SPEED_STEP = 0.25
-local DEBUG_DAMAGE_STEP = 5.0
-local DEBUG_HEALTH_STEP = 5.0
 
 local fireCooldown = 0.0
 local reloadTimer  = 0.0
 local currentAmmo  = MAGAZINE_SIZE
 local isReloading  = false
-local hitCounts    = {}
+local reloadAudioTrack = 1
+local reloadAudioSteps = nil
+local reloadAudioNextIndex = 1
+local isDead       = false
 local weaponSpread = 0.0
-local hitMarkerTimer = 0.0
-local killMarkerTimer = 0.0
+local recoilPatternIndex = 1
+local recoilRemainingPitch = 0.0
+local recoilRemainingYaw = 0.0
+local recoilRecoverDelay = 0.0
+local recoilPatternResetTimer = 0.0
 local currentHealth = MAX_HEALTH
-local isInvincible = false
-local debugSpeedMultiplier = 1.0
-local debugDamageAmount = 10.0
-local debugActiveTab = "player"
-local debugWindowX = 40.0
-local debugWindowY = 48.0
-local debugDragging = false
-local debugDragOffsetX = 0.0
-local debugDragOffsetY = 0.0
 local baseMaxWalkSpeed = nil
 local baseSprintSpeedMultiplier = nil
 local baseWallRunMaxSpeed = nil
-
-local function px(value)
-    return string.format("%.2fpx", value)
-end
-
-local function format_number(value, decimals)
-    return string.format("%." .. tostring(decimals) .. "f", value)
-end
 
 local function clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
@@ -70,24 +85,133 @@ local function clamp(value, minValue, maxValue)
     return value
 end
 
+local function add_weapon_recoil()
+    if camera == nil then return end
+
+    local step = RECOIL_PATTERN[recoilPatternIndex] or RECOIL_PATTERN[#RECOIL_PATTERN]
+    local scale = RECOIL_STRENGTH_MULTIPLIER
+    if Input.GetKey(Key.MouseRight) then
+        scale = scale * RECOIL_ADS_MULTIPLIER
+    end
+
+    local deltaRotation = Vector.new(
+        0.0,
+        step.pitch * scale,
+        step.yaw * scale)
+
+    if type(camera.AddLocalRotation) == "function" then
+        camera:AddLocalRotation(deltaRotation)
+    elseif type(camera.GetRotation) == "function" and type(camera.SetRotation) == "function" then
+        local rotation = camera:GetRotation()
+        camera:SetRotation(Vector.new(
+            rotation.X,
+            rotation.Y + deltaRotation.Y,
+            rotation.Z + deltaRotation.Z))
+    end
+
+    recoilRemainingPitch = recoilRemainingPitch + deltaRotation.Y
+    recoilRemainingYaw = recoilRemainingYaw + deltaRotation.Z
+    recoilRecoverDelay = RECOIL_RECOVERY_DELAY
+    recoilPatternResetTimer = RECOIL_PATTERN_RESET_DELAY
+    recoilPatternIndex = recoilPatternIndex + 1
+end
+
+local function recover_recoil_axis(value, maxStep)
+    if value > maxStep then return value - maxStep, -maxStep end
+    if value < -maxStep then return value + maxStep, maxStep end
+    return 0.0, -value
+end
+
+local function update_weapon_recoil(dt)
+    if camera == nil or dt == nil or dt <= 0.0 then return end
+
+    if recoilPatternResetTimer > 0.0 then
+        recoilPatternResetTimer = recoilPatternResetTimer - dt
+        if recoilPatternResetTimer <= 0.0 then
+            recoilPatternIndex = 1
+        end
+    end
+
+    if recoilRecoverDelay > 0.0 then
+        recoilRecoverDelay = recoilRecoverDelay - dt
+        return
+    end
+
+    if math.abs(recoilRemainingPitch) <= 0.0001 and math.abs(recoilRemainingYaw) <= 0.0001 then
+        recoilRemainingPitch = 0.0
+        recoilRemainingYaw = 0.0
+        return
+    end
+
+    local isFiring = Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0
+    local recoverySpeed = isFiring and RECOIL_RECOVERY_SPEED_FIRING or RECOIL_RECOVERY_SPEED_RELEASED
+    local maxStep = recoverySpeed * dt
+    local pitchDelta
+    local yawDelta
+    recoilRemainingPitch, pitchDelta = recover_recoil_axis(recoilRemainingPitch, maxStep)
+    recoilRemainingYaw, yawDelta = recover_recoil_axis(recoilRemainingYaw, maxStep)
+
+    local deltaRotation = Vector.new(0.0, pitchDelta, yawDelta)
+    if type(camera.AddLocalRotation) == "function" then
+        camera:AddLocalRotation(deltaRotation)
+    elseif type(camera.GetRotation) == "function" and type(camera.SetRotation) == "function" then
+        local rotation = camera:GetRotation()
+        camera:SetRotation(Vector.new(
+            rotation.X,
+            rotation.Y + deltaRotation.Y,
+            rotation.Z + deltaRotation.Z))
+    end
+end
+
 local function get_health_ratio()
     if MAX_HEALTH <= 0.0 then return 0.0 end
     return clamp(currentHealth / MAX_HEALTH, 0.0, 1.0)
 end
 
-local function apply_player_damage(amount)
-    amount = amount or 0.0
-    if amount <= 0.0 then return end
-    if isInvincible then return end
+local function make_damage_result(applied, damageApplied, killed)
+    return {
+        bApplied = applied == true,
+        bKilled = killed == true,
+        bCritical = false,
+        DamageApplied = damageApplied or 0.0,
+        RemainingHealth = currentHealth,
+        MaxHealth = MAX_HEALTH,
+        HealthRatio = get_health_ratio(),
+        Victim = obj,
+    }
+end
+
+local function apply_player_damage(contextOrAmount)
+    local amount = 0.0
+    if type(contextOrAmount) == "table" then
+        amount = contextOrAmount.Damage or contextOrAmount.damage or 0.0
+    else
+        amount = contextOrAmount or 0.0
+    end
+
+    if amount <= 0.0 or isDead then
+        return make_damage_result(false, 0.0, false)
+    end
+    if InGameDebug.IsInvincible() then
+        return make_damage_result(false, 0.0, false)
+    end
 
     currentHealth = clamp(currentHealth - amount, 0.0, MAX_HEALTH)
+    local killed = currentHealth <= 0.0
+    if killed then
+        isDead = true
+    end
+
     local ratio = get_health_ratio()
     DamagePostProcess.TriggerHit(ratio)
     DamagePostProcess.SetHealthRatio(ratio)
+
+    return make_damage_result(true, amount, killed)
 end
 
 local function set_player_health(value)
     currentHealth = clamp(value, 0.0, MAX_HEALTH)
+    isDead = currentHealth <= 0.0
     DamagePostProcess.SetHealthRatio(get_health_ratio())
 end
 
@@ -107,156 +231,14 @@ local function cache_movement_defaults()
     end
 end
 
-local function apply_debug_speed_multiplier()
+local function apply_debug_speed_multiplier(multiplier)
     cache_movement_defaults()
     if movement == nil or baseMaxWalkSpeed == nil then return end
 
-    movement:SetMaxWalkSpeed(baseMaxWalkSpeed * debugSpeedMultiplier)
+    multiplier = multiplier or 1.0
+    movement:SetMaxWalkSpeed(baseMaxWalkSpeed * multiplier)
     movement:SetSprintSpeedMultiplier(baseSprintSpeedMultiplier)
-    movement:SetWallRunMaxSpeed(baseWallRunMaxSpeed * debugSpeedMultiplier)
-end
-
-local function set_debug_text(id, text)
-    if debugWidget == nil then return end
-    debugWidget:SetText(id, text)
-end
-
-local function set_debug_property(id, property, value)
-    if debugWidget == nil then return end
-    debugWidget:SetProperty(id, property, value)
-end
-
-local function update_debug_values()
-    if debugWidget == nil then return end
-
-    set_debug_text("debug-speed-value", format_number(debugSpeedMultiplier, 2) .. "x")
-    set_debug_text("debug-invincible-toggle", isInvincible and "ON" or "OFF")
-    set_debug_text("debug-damage-value", tostring(math.floor(debugDamageAmount + 0.5)))
-    set_debug_text("debug-health-value", tostring(math.floor(currentHealth + 0.5)))
-    set_debug_text("debug-health-label", "Health " .. tostring(math.floor(get_health_ratio() * 100.0 + 0.5)) .. "%")
-    set_debug_property("debug-invincible-toggle", "color", isInvincible and "#111111" or "#d8d8d8")
-    set_debug_property("debug-invincible-toggle", "background-color", isInvincible and "#ffffff" or "#ffffff1F")
-end
-
-local function update_debug_tab_visuals()
-    if debugWidget == nil then return end
-
-    local tabs = { "player", "world", "ai", "render", "audio" }
-    for _, tab in ipairs(tabs) do
-        local selected = tab == debugActiveTab
-        set_debug_property("debug-tab-" .. tab, "color", selected and "#ffffff" or "#808080")
-        set_debug_property("debug-panel-" .. tab, "display", selected and "block" or "none")
-    end
-end
-
-local function set_debug_tab(tab)
-    debugActiveTab = tab
-    update_debug_tab_visuals()
-end
-
-local function set_debug_window_position(x, y)
-    debugWindowX = clamp(x, 0.0, 1600.0)
-    debugWindowY = clamp(y, 0.0, 900.0)
-    set_debug_property("debug-window", "left", px(debugWindowX))
-    set_debug_property("debug-window", "top", px(debugWindowY))
-end
-
-local function bind_debug_events()
-    if debugWidget == nil then return end
-
-    debugWidget:bind_click("debug-close", function()
-        if debugWidget ~= nil and debugWidget:IsInViewport() then
-            debugWidget:RemoveFromParent()
-            debugWidget:SetWantsMouse(false)
-        end
-    end)
-
-    debugWidget:bind_click("debug-tab-player", function() set_debug_tab("player") end)
-    debugWidget:bind_click("debug-tab-world", function() set_debug_tab("world") end)
-    debugWidget:bind_click("debug-tab-ai", function() set_debug_tab("ai") end)
-    debugWidget:bind_click("debug-tab-render", function() set_debug_tab("render") end)
-    debugWidget:bind_click("debug-tab-audio", function() set_debug_tab("audio") end)
-
-    debugWidget:bind_click("debug-speed-minus", function()
-        debugSpeedMultiplier = clamp(debugSpeedMultiplier - DEBUG_SPEED_STEP, 0.25, 8.0)
-        apply_debug_speed_multiplier()
-        update_debug_values()
-    end)
-    debugWidget:bind_click("debug-speed-plus", function()
-        debugSpeedMultiplier = clamp(debugSpeedMultiplier + DEBUG_SPEED_STEP, 0.25, 8.0)
-        apply_debug_speed_multiplier()
-        update_debug_values()
-    end)
-    debugWidget:bind_click("debug-invincible-toggle", function()
-        isInvincible = not isInvincible
-        update_debug_values()
-    end)
-    debugWidget:bind_click("debug-damage-minus", function()
-        debugDamageAmount = clamp(debugDamageAmount - DEBUG_DAMAGE_STEP, 0.0, 100.0)
-        update_debug_values()
-    end)
-    debugWidget:bind_click("debug-damage-plus", function()
-        debugDamageAmount = clamp(debugDamageAmount + DEBUG_DAMAGE_STEP, 0.0, 100.0)
-        update_debug_values()
-    end)
-    debugWidget:bind_click("debug-apply-damage", function()
-        apply_player_damage(debugDamageAmount)
-        update_debug_values()
-    end)
-    debugWidget:bind_click("debug-health-minus", function()
-        set_player_health(currentHealth - DEBUG_HEALTH_STEP)
-        update_debug_values()
-    end)
-    debugWidget:bind_click("debug-health-plus", function()
-        set_player_health(currentHealth + DEBUG_HEALTH_STEP)
-        update_debug_values()
-    end)
-
-    debugWidget:bind_event("debug-titlebar", "mousedown", function(event)
-        debugDragging = true
-        debugDragOffsetX = event.mouse_x - debugWindowX
-        debugDragOffsetY = event.mouse_y - debugWindowY
-    end)
-    debugWidget:bind_event("debug-titlebar", "mouseup", function()
-        debugDragging = false
-    end)
-    debugWidget:bind_event("debug-window", "mouseup", function()
-        debugDragging = false
-    end)
-    debugWidget:bind_event("debug-window", "mousemove", function(event)
-        if not debugDragging then return end
-        set_debug_window_position(event.mouse_x - debugDragOffsetX, event.mouse_y - debugDragOffsetY)
-    end)
-end
-
-local function ensure_debug_widget()
-    if debugWidget ~= nil then return end
-
-    debugWidget = UI.CreateWidget("Content/UI/DebugUI/InGameDebug.rml")
-    if debugWidget == nil then return end
-
-    debugWidget:SetWantsMouse(false)
-    bind_debug_events()
-    update_debug_values()
-    update_debug_tab_visuals()
-    set_debug_window_position(debugWindowX, debugWindowY)
-end
-
-local function toggle_debug_widget()
-    ensure_debug_widget()
-    if debugWidget == nil then return end
-
-    if debugWidget:IsInViewport() then
-        debugWidget:RemoveFromParent()
-        debugWidget:SetWantsMouse(false)
-        debugDragging = false
-    else
-        debugWidget:AddToViewportZ(DEBUG_Z_ORDER)
-        debugWidget:SetWantsMouse(true)
-        update_debug_values()
-        update_debug_tab_visuals()
-        set_debug_window_position(debugWindowX, debugWindowY)
-    end
+    movement:SetWallRunMaxSpeed(baseWallRunMaxSpeed * multiplier)
 end
 
 local function get_anim_requests()
@@ -291,106 +273,75 @@ local function is_player_crouching()
 end
 
 local function update_weapon_hud()
-    if weaponHudWidget == nil then return end
+    WeaponHud.SetAmmo(currentAmmo, MAGAZINE_SIZE)
+end
 
-    weaponHudWidget:SetText("weapon-hud-current-ammo", tostring(currentAmmo))
-    weaponHudWidget:SetText("weapon-hud-magazine-ammo", tostring(MAGAZINE_SIZE))
+local RELOAD_AUDIO_NORMAL = {
+    { time = 0.000, event = "weapon.reload.mag_pull." },
+    { time = 0.300, event = "weapon.reload.mag_grab." },
+    { time = 0.583, event = "weapon.reload.mag_insert." },
+    { time = 0.733, event = "weapon.reload.hand_rest." },
+}
+
+local RELOAD_AUDIO_EMPTY = {
+    { time = 0.150, event = "weapon.reload.empty_mag_pull." },
+    { time = 0.350, event = "weapon.reload.empty_mag_grab." },
+    { time = 0.633, event = "weapon.reload.empty_mag_insert." },
+    { time = 0.850, event = "weapon.reload.bolt_back." },
+    { time = 0.917, event = "weapon.reload.bolt_forward." },
+    { time = 1.067, event = "weapon.reload.empty_hand_rest." },
+}
+
+local function reset_reload_audio()
+    reloadAudioTrack = 1
+    reloadAudioSteps = nil
+    reloadAudioNextIndex = 1
+end
+
+local function play_reload_audio_until(elapsed)
+    if reloadAudioSteps == nil then return end
+
+    while reloadAudioNextIndex <= #reloadAudioSteps do
+        local step = reloadAudioSteps[reloadAudioNextIndex]
+        if elapsed < step.time then return end
+
+        GameAudio.PlayEvent(step.event .. tostring(reloadAudioTrack))
+        reloadAudioNextIndex = reloadAudioNextIndex + 1
+    end
+end
+
+local function start_reload_audio(emptyReload)
+    reloadAudioTrack = math.random(1, 2)
+    reloadAudioSteps = emptyReload and RELOAD_AUDIO_EMPTY or RELOAD_AUDIO_NORMAL
+    reloadAudioNextIndex = 1
+    play_reload_audio_until(0.0)
 end
 
 local function is_target_actor(actor)
-    return actor ~= nil and actor:GetSkeletalMesh() ~= nil
-end
-
-local function set_crosshair_color(isRed)
-    if weaponHudWidget == nil then return end
-
-    local whiteOpacity = isRed and "0.0" or "0.9"
-    local redOpacity   = isRed and "0.9" or "0.0"
-
-    weaponHudWidget:SetProperty("crosshair-left-white", "opacity", whiteOpacity)
-    weaponHudWidget:SetProperty("crosshair-right-white", "opacity", whiteOpacity)
-    weaponHudWidget:SetProperty("crosshair-top-white", "opacity", whiteOpacity)
-    weaponHudWidget:SetProperty("crosshair-bottom-white", "opacity", whiteOpacity)
-    weaponHudWidget:SetProperty("crosshair-dot-white", "opacity", whiteOpacity)
-
-    weaponHudWidget:SetProperty("crosshair-left-red", "opacity", redOpacity)
-    weaponHudWidget:SetProperty("crosshair-right-red", "opacity", redOpacity)
-    weaponHudWidget:SetProperty("crosshair-top-red", "opacity", redOpacity)
-    weaponHudWidget:SetProperty("crosshair-bottom-red", "opacity", redOpacity)
-    weaponHudWidget:SetProperty("crosshair-dot-red", "opacity", redOpacity)
-end
-
-local function set_crosshair_part_position(idWhite, idRed, prop, value)
-    if weaponHudWidget == nil then return end
-
-    local valuePx = px(value)
-    weaponHudWidget:SetProperty(idWhite, prop, valuePx)
-    weaponHudWidget:SetProperty(idRed, prop, valuePx)
-end
-
-local function update_crosshair()
-    if weaponHudWidget == nil then return end
-
-    local spreadOffset = weaponSpread * CROSSHAIR_SPREAD_PX
-    set_crosshair_part_position("crosshair-left-white", "crosshair-left-red", "left", CROSSHAIR_BASE_LEFT - spreadOffset)
-    set_crosshair_part_position("crosshair-right-white", "crosshair-right-red", "left", CROSSHAIR_BASE_RIGHT + spreadOffset)
-    set_crosshair_part_position("crosshair-top-white", "crosshair-top-red", "top", CROSSHAIR_BASE_TOP - spreadOffset)
-    set_crosshair_part_position("crosshair-bottom-white", "crosshair-bottom-red", "top", CROSSHAIR_BASE_BOTTOM + spreadOffset)
-
-    local isTargeted = false
-    if camera ~= nil then
-        local camPos = camera:GetWorldLocation()
-        local camFwd = camera.Forward
-        local hit = World.RaycastSkeletalMesh(camPos, camFwd, MAX_RANGE, obj)
-        isTargeted = hit ~= nil and is_target_actor(hit.HitActor)
-    end
-    set_crosshair_color(isTargeted)
-
-    local hitOpacity = 0.0
-    if hitMarkerTimer > 0.0 then
-        hitOpacity = hitMarkerTimer / HIT_MARKER_DURATION
-        if hitOpacity > 1.0 then hitOpacity = 1.0 end
-        hitOpacity = hitOpacity * 0.9
-    end
-
-    local killOpacity = 0.0
-    if killMarkerTimer > 0.0 then
-        killOpacity = killMarkerTimer / KILL_MARKER_DURATION
-        if killOpacity > 1.0 then killOpacity = 1.0 end
-        killOpacity = killOpacity * 0.9
-    end
-    weaponHudWidget:SetProperty("crosshair-hit-marker", "opacity", string.format("%.2f", hitOpacity))
-    weaponHudWidget:SetProperty("crosshair-kill-marker", "opacity", string.format("%.2f", killOpacity))
-end
-
-local function trigger_hit_marker()
-    hitMarkerTimer = HIT_MARKER_DURATION
-    update_crosshair()
-end
-
-local function trigger_kill_marker()
-    hitMarkerTimer = 0.0
-    killMarkerTimer = KILL_MARKER_DURATION
-    update_crosshair()
+    return CombatEvents.IsDamageable(actor)
 end
 
 local function finish_reload()
     currentAmmo = MAGAZINE_SIZE
     reloadTimer = 0.0
     isReloading = false
+    reset_reload_audio()
     update_weapon_hud()
 end
 
 local function start_reload()
     if arms == nil or isReloading or currentAmmo >= MAGAZINE_SIZE then return end
 
+    GameAudio.StopWeaponFireLoop()
+    local emptyReload = currentAmmo <= 0
     isReloading = true
     reloadTimer = RELOAD_DURATION
+    start_reload_audio(emptyReload)
     request_arm_animation(is_player_crouching() and "reload_crouch" or "reload")
 end
 
 local function lerp_red(t)
-    if t > 1.0 then t = 1.0 end
+    t = clamp(t or 0.0, 0.0, 1.0)
     -- 옅은 빨강 (255,180,180) → 진한 빨강 (180,0,0)
     local r = math.floor(255 - (255 - 180) * t)
     local g = math.floor(180 * (1 - t))
@@ -398,20 +349,20 @@ local function lerp_red(t)
     return r, g, b
 end
 
-local function register_hit(hitActor, hitLoc)
-    local id = hitActor.UUID
-    local n  = (hitCounts[id] or 0) + 1
-    hitCounts[id] = n
-    local r, g, b = lerp_red(n / MAX_HITS_FOR_FULL_RED)
-    Debug.DrawSphere(hitLoc, 0.08, r, g, b, 9999.0, 10)
-
-    if n == MAX_HITS_FOR_FULL_RED then
-        trigger_kill_marker()
-    elseif n < MAX_HITS_FOR_FULL_RED then
-        trigger_hit_marker()
-    else
-        return
+local function on_attack_hit(context, result)
+    local hitLoc = context ~= nil and context.HitLocation or nil
+    if hitLoc ~= nil then
+        local healthRatio = result ~= nil and result.HealthRatio or nil
+        local damageRatio = 1.0 - clamp(healthRatio or 1.0, 0.0, 1.0)
+        local r, g, b = lerp_red(damageRatio)
+        Debug.DrawSphere(hitLoc, 0.08, r, g, b, 9999.0, 10)
     end
+
+    WeaponHud.TriggerHitMarker()
+end
+
+local function on_attack_killed(context, result)
+    WeaponHud.TriggerKillMarker()
 end
 
 local function get_fire_direction(camFwd)
@@ -430,8 +381,12 @@ end
 
 local function try_shoot()
     if camera == nil or arms == nil then return end
-    if isReloading then return end
+    if isReloading then
+        GameAudio.StopWeaponFireLoop()
+        return
+    end
     if currentAmmo <= 0 then
+        GameAudio.StopWeaponFireLoop()
         start_reload()
         return
     end
@@ -440,10 +395,19 @@ local function try_shoot()
     update_weapon_hud()
 
     request_arm_animation("shoot")
+    GameAudio.NotifyShotFired(Input.GetKey(Key.MouseRight))
 
     local camPos = camera:GetWorldLocation()
     local camFwd = camera.Forward
     local fireDir = get_fire_direction(camFwd)
+
+    CombatEvents.NotifyAttackFired(obj, {
+        Instigator = obj,
+        DamageCauser = obj,
+        ShotDirection = fireDir,
+        Damage = BULLET_DAMAGE,
+        DamageType = "Bullet",
+    })
 
     -- 카메라 + forward offset 을 머즐로 간주 (시안색 시각화).
     local muzzleWorld = Vector.new(
@@ -483,13 +447,25 @@ local function try_shoot()
     Debug.DrawLine(rayStart, endPos, 0, 255, 0, 1.5)
 
     if hit ~= nil and is_target_actor(hit.HitActor) then
-        register_hit(hit.HitActor, hit.WorldHitLocation)
+        local damageContext = CombatEvents.MakeDamageContext({
+            Instigator = obj,
+            DamageCauser = obj,
+            HitActor = hit.HitActor,
+            HitLocation = hit.WorldHitLocation,
+            HitNormal = hit.WorldNormal or hit.ImpactNormal,
+            ShotDirection = fireDir,
+            Damage = BULLET_DAMAGE,
+            DamageType = "Bullet",
+        })
+        CombatEvents.ApplyDamageAndNotify(obj, hit.HitActor, damageContext)
     end
+
+    add_weapon_recoil()
 
     if not Input.GetKey(Key.MouseRight) then
         weaponSpread = weaponSpread + SPREAD_PER_SHOT
         if weaponSpread > MAX_SPREAD then weaponSpread = MAX_SPREAD end
-        update_crosshair()
+        WeaponHud.SetSpread(weaponSpread)
     end
 end
 
@@ -501,14 +477,20 @@ function BeginPlay()
     baseSprintSpeedMultiplier = nil
     baseWallRunMaxSpeed = nil
     cache_movement_defaults()
+    GameAudio.Initialize()
+    GameAudio.PlayEnvironmentWind(0.35)
     currentAmmo = MAGAZINE_SIZE
     currentHealth = MAX_HEALTH
-    isInvincible = false
-    debugSpeedMultiplier = 1.0
-    debugDamageAmount = 10.0
+    isDead = false
     reloadTimer = 0.0
     isReloading = false
+    reset_reload_audio()
     fireCooldown = 0.0
+    recoilPatternIndex = 1
+    recoilRemainingPitch = 0.0
+    recoilRemainingYaw = 0.0
+    recoilRecoverDelay = 0.0
+    recoilPatternResetTimer = 0.0
     local requests = get_anim_requests()
     if requests ~= nil then
         requests.shoot = false
@@ -516,12 +498,28 @@ function BeginPlay()
         requests.reload_crouch = false
     end
     weaponSpread = 0.0
-    hitMarkerTimer = 0.0
-    killMarkerTimer = 0.0
     DamagePostProcess.Initialize()
     DamagePostProcess.Reset()
     DamagePostProcess.SetHealthRatio(get_health_ratio())
     InGamePause.Initialize()
+    InGameDebug.Initialize({
+        ZOrder = 220,
+        GetHealth = function() return currentHealth end,
+        SetHealth = set_player_health,
+        GetHealthRatio = get_health_ratio,
+        ApplyDamage = apply_player_damage,
+        ApplySpeedMultiplier = apply_debug_speed_multiplier,
+    })
+
+    obj:AddTag("player")
+    CombatEvents.RegisterDamageable(obj, {
+        ApplyDamage = apply_player_damage,
+        IsDead = function() return isDead end,
+    })
+    CombatEvents.RegisterAttackReceiver(obj, {
+        OnAttackHit = on_attack_hit,
+        OnAttackKilled = on_attack_killed,
+    })
 
     _G.ApplyPlayerDamage = apply_player_damage
     _G.GetPlayerHealthRatio = get_health_ratio
@@ -529,12 +527,16 @@ function BeginPlay()
         InGamePause.Toggle()
     end)
 
-    weaponHudWidget = UI.CreateWidget("Content/UI/HUD/WeaponHUD.rml")
-    if weaponHudWidget ~= nil then
-        weaponHudWidget:AddToViewportZ(80)
-        update_weapon_hud()
-        update_crosshair()
-    end
+    WeaponHud.Initialize({
+        camera = camera,
+        owner = obj,
+        maxRange = MAX_RANGE,
+        currentAmmo = currentAmmo,
+        magazineSize = MAGAZINE_SIZE,
+        weaponSpread = weaponSpread,
+        zOrder = 80,
+    })
+    ItemInspectSystem.Initialize()
 end
 
 function EndPlay()
@@ -542,12 +544,14 @@ function EndPlay()
         _G.FPSArmAnimRequests[obj.UUID] = nil
     end
 
-    if weaponHudWidget ~= nil and weaponHudWidget:IsInViewport() then
-        weaponHudWidget:RemoveFromParent()
-    end
-    weaponHudWidget = nil
+    CombatEvents.UnregisterAttackReceiver(obj)
+    CombatEvents.UnregisterDamageable(obj)
+
+    WeaponHud.Shutdown()
+    ItemInspectSystem.Shutdown()
     DamagePostProcess.Shutdown()
     InGamePause.Shutdown()
+    InGameDebug.Shutdown()
     Engine.SetOnEscape(function() end)
     if _G.ApplyPlayerDamage == apply_player_damage then
         _G.ApplyPlayerDamage = nil
@@ -555,15 +559,17 @@ function EndPlay()
     if _G.GetPlayerHealthRatio == get_health_ratio then
         _G.GetPlayerHealthRatio = nil
     end
-    if debugWidget ~= nil and debugWidget:IsInViewport() then
-        debugWidget:RemoveFromParent()
-    end
-    debugWidget = nil
     if movement ~= nil and baseMaxWalkSpeed ~= nil then
         movement:SetMaxWalkSpeed(baseMaxWalkSpeed)
         movement:SetSprintSpeedMultiplier(baseSprintSpeedMultiplier)
         movement:SetWallRunMaxSpeed(baseWallRunMaxSpeed)
     end
+    GameAudio.Shutdown()
+    recoilPatternIndex = 1
+    recoilRemainingPitch = 0.0
+    recoilRemainingYaw = 0.0
+    recoilRecoverDelay = 0.0
+    recoilPatternResetTimer = 0.0
     movement = nil
 end
 
@@ -571,8 +577,10 @@ function Tick(dt)
     if arms == nil then return end
 
     if Input.GetKeyDown(Key.F10) then
-        toggle_debug_widget()
+        InGameDebug.Toggle()
     end
+
+    update_weapon_recoil(dt)
 
     if fireCooldown > 0 then
         fireCooldown = fireCooldown - dt
@@ -587,18 +595,13 @@ function Tick(dt)
         weaponSpread = 0.0
     end
 
-    if hitMarkerTimer > 0.0 then
-        hitMarkerTimer = hitMarkerTimer - dt
-        if hitMarkerTimer < 0.0 then hitMarkerTimer = 0.0 end
-    end
-
-    if killMarkerTimer > 0.0 then
-        killMarkerTimer = killMarkerTimer - dt
-        if killMarkerTimer < 0.0 then killMarkerTimer = 0.0 end
-    end
+    GameAudio.UpdateWeaponFireState(
+        Input.GetKey(Key.MouseRight),
+        Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0)
 
     if isReloading then
         reloadTimer = reloadTimer - dt
+        play_reload_audio_until(RELOAD_DURATION - reloadTimer)
         if reloadTimer <= 0 then
             finish_reload()
         end
@@ -606,15 +609,27 @@ function Tick(dt)
 
     DamagePostProcess.Tick(dt)
     InGamePause.Tick()
-    apply_debug_speed_multiplier()
-    if debugWidget ~= nil and debugWidget:IsInViewport() then
-        update_debug_values()
-    end
-    update_crosshair()
+    WeaponHud.Tick(dt, weaponSpread)
+    InGameDebug.Tick()
 
     if InGamePause.IsOpen() then
+        GameAudio.StopWeaponFireLoop()
+        GameAudio.UpdateSlideState(false)
+        GameAudio.UpdateWallRunState(false)
+        GameAudio.StopFallingAudio()
         return
     end
+
+    ItemInspectSystem.Tick(camera, obj)
+    if ItemInspectSystem.IsOpen() then
+        GameAudio.StopWeaponFireLoop()
+        GameAudio.UpdateSlideState(false)
+        GameAudio.UpdateWallRunState(false)
+        GameAudio.StopFallingAudio()
+        return
+    end
+
+    GameAudio.UpdateMovement(movement, dt)
 
     if Input.GetKeyDown(Key.R) then
         start_reload()
@@ -623,6 +638,9 @@ function Tick(dt)
     if Input.GetKey(Key.MouseLeft) and fireCooldown <= 0 then
         try_shoot()
         fireCooldown = FIRE_INTERVAL
+        GameAudio.UpdateWeaponFireState(
+            Input.GetKey(Key.MouseRight),
+            Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0)
     end
 
 end

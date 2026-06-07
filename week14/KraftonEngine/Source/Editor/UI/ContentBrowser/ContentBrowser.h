@@ -29,6 +29,9 @@ private:
 	void DrawContents();
 	void RenderFbxImportOptionsPopup();
 	void RenderPhysicsAssetCreationPopup();
+	void RenderCreateMaterialPopup();
+	void BeginCreateMaterialPopup();
+	bool IsValidAssetName(const FString& Name, FString* OutError = nullptr) const;
 
 	TArray<FContentItem> ReadDirectory(std::wstring Path);
 	FDirNode BuildDirectoryTree(const std::filesystem::path& DirPath);
@@ -39,4 +42,8 @@ private:
 	FDirNode RootNode;
 	TArray<std::shared_ptr<ContentBrowserElement>> CachedBrowserElements;
 	TMap<FString, std::wstring> IconFileMap;
+
+	bool bCreateMaterialPopupRequested = false;
+	char CreateMaterialNameBuffer[256] = {};
+	FString CreateMaterialError;
 };

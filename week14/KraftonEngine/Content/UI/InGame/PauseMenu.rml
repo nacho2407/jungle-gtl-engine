@@ -13,7 +13,7 @@
         <div id="pause-left-actions" class="pause-left-actions">
             <div id="pause-resume-button" class="hover-image-button pause-button">
                 <img id="pause-resume-box" class="hover-image-box pause-button-frame" src="../Common/HoverCutBox.png" data-ui-editor="img"/>
-                <div id="pause-resume-label" class="hover-image-label" data-ui-editor="text">RESUME</div>
+                <div id="pause-resume-label" class="hover-image-label" data-ui-editor="text">Resume</div>
             </div>
             <div id="pause-restart-button" class="hover-image-button pause-button pause-restart-button">
                 <img id="pause-restart-box" class="hover-image-box pause-button-frame" src="../Common/HoverCutBox.png" data-ui-editor="img"/>
@@ -21,7 +21,7 @@
             </div>
             <div id="pause-settings-button" class="hover-image-button pause-button pause-settings-button">
                 <img id="pause-settings-box" class="hover-image-box pause-button-frame" src="../Common/HoverCutBox.png" data-ui-editor="img"/>
-                <div id="pause-settings-label" class="hover-image-label" data-ui-editor="text">SETTINGS</div>
+                <div id="pause-settings-label" class="hover-image-label" data-ui-editor="text">Settings</div>
             </div>
             <div id="pause-main-menu-button" class="hover-image-button pause-button pause-main-menu-button">
                 <img id="pause-main-menu-box" class="hover-image-box pause-button-frame" src="../Common/HoverCutBox.png" data-ui-editor="img"/>

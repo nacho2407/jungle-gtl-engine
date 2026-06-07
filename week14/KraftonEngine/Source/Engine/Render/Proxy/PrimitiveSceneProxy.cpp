@@ -15,6 +15,8 @@ FPrimitiveSceneProxy::FPrimitiveSceneProxy(UPrimitiveComponent* InComponent)
 {
 	if (!Owner->SupportsOutline())
 		ProxyFlags &= ~EPrimitiveProxyFlags::SupportsOutline;
+	if (Owner->IsNeverCullForRendering())
+		ProxyFlags |= EPrimitiveProxyFlags::NeverCull;
 }
 
 FPrimitiveSceneProxy::~FPrimitiveSceneProxy() noexcept

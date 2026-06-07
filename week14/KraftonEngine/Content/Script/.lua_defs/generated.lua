@@ -105,6 +105,33 @@ function FloatingPawnMovementComponent:SetLookInput(input) end
 ---@class CharacterMovementComponent
 CharacterMovementComponent = {}
 
+---@return Vector
+function CharacterMovementComponent:GetVelocity() end
+
+---@return number
+function CharacterMovementComponent:GetSpeed() end
+
+---@return boolean
+function CharacterMovementComponent:IsWalking() end
+
+---@return boolean
+function CharacterMovementComponent:IsFalling() end
+
+---@return boolean
+function CharacterMovementComponent:IsWallRunning() end
+
+---@return boolean
+function CharacterMovementComponent:WasAirJumpConsumedThisFrame() end
+
+---@return boolean
+function CharacterMovementComponent:IsSprinting() end
+
+---@return boolean
+function CharacterMovementComponent:IsCrouching() end
+
+---@return string
+function CharacterMovementComponent:GetMovementModeName() end
+
 ---@return number
 function CharacterMovementComponent:GetMaxWalkSpeed() end
 
@@ -162,6 +189,9 @@ function SceneComponent:GetRotation() end
 ---@param rotation Vector
 function SceneComponent:SetRotation(rotation) end
 
+---@param deltaRotation Vector # Vector(X=Roll, Y=Pitch, Z=Yaw), degrees; internally composed as quaternion.
+function SceneComponent:AddLocalRotation(deltaRotation) end
+
 ---@param NewLocation Vector
 function SceneComponent:SetRelativeLocation(NewLocation) end
 
@@ -182,6 +212,12 @@ function SceneComponent:GetUpVector() end
 
 ---@return Vector
 function SceneComponent:GetRightVector() end
+
+---@class PrimitiveComponent: SceneComponent
+PrimitiveComponent = {}
+
+---@param enabled boolean
+function PrimitiveComponent:SetOutline(enabled) end
 
 ---@class StaticMeshComponent: PrimitiveComponent
 ---@field MeshPath string
@@ -292,8 +328,14 @@ function Actor:GetPrimitiveComponent() end
 ---@return SkeletalMeshComponent?
 function Actor:GetSkeletalMesh() end
 
+---@return StaticMeshComponent?
+function Actor:GetStaticMesh() end
+
 ---@return ParticleSystemComponent?
 function Actor:GetParticleSystem() end
+
+---@param enabled boolean
+function Actor:SetOutline(enabled) end
 
 ---@param name string
 ---@return PrimitiveComponent?
@@ -352,6 +394,9 @@ Pawn = {}
 ---@return boolean
 function Pawn:IsPossessed() end
 
+---@return PlayerController?
+function Pawn:GetController() end
+
 ---@param enabled boolean
 function Pawn:SetAutoPossessPlayer(enabled) end
 
@@ -360,6 +405,44 @@ function Pawn:GetAutoPossessPlayer() end
 
 ---@return InputComponent?
 function Pawn:GetInputComponent() end
+
+---@class PlayerController: Actor
+PlayerController = {}
+
+---@return Pawn?
+function PlayerController:GetPossessedPawn() end
+
+---@param pawn Pawn
+function PlayerController:Possess(pawn) end
+
+function PlayerController:UnPossess() end
+
+---@return PlayerCameraManager?
+function PlayerController:GetPlayerCameraManager() end
+
+---@param viewTarget Actor
+---@param blendTime? number
+function PlayerController:SetViewTargetWithBlend(viewTarget, blendTime) end
+
+---@class PlayerCameraManager: Actor
+PlayerCameraManager = {}
+
+---@return CameraComponent?
+function PlayerCameraManager:GetActiveCamera() end
+
+---@return CameraComponent?
+function PlayerCameraManager:GetPossessedCamera() end
+
+---@return Actor?
+function PlayerCameraManager:GetViewTarget() end
+
+---@return Actor?
+function PlayerCameraManager:GetPendingViewTarget() end
+
+---@param actor string|Actor
+---@param blendTime? number
+---@return boolean
+function PlayerCameraManager:ToggleActiveCameraForActor(actor, blendTime) end
 
 ---@class InputComponent
 InputComponent = {}
@@ -424,6 +507,13 @@ function World.RaycastSkeletalMesh(start, dir, maxDist, ignoreActor) end
 ---@param ignoreActor? Actor
 ---@return HitResult?
 function World.RaycastWorldStatic(start, dir, maxDist, ignoreActor) end
+
+---@param start Vector
+---@param dir Vector
+---@param maxDist number
+---@param ignoreActor? Actor
+---@return HitResult?
+function World.RaycastPrimitive(start, dir, maxDist, ignoreActor) end
 
 ---@class DebugLib
 DebugLib = {}

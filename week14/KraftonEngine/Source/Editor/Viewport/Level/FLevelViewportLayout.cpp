@@ -12,6 +12,7 @@
 #include "Engine/Input/InputSystem.h"
 #include "GameFramework/Actor/DecalActor.h"
 #include "GameFramework/Actor/HeightFogActor.h"
+#include "GameFramework/Actor/PlayerStart.h"
 #include "GameFramework/Actor/TriggerVolumeBase.h"
 #include "GameFramework/Light/AmbientLightActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
@@ -25,6 +26,7 @@
 #include "GameFramework/World.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Viewport/Viewport.h"
+#include "Viewport/GameViewportClient.h"
 #include "Slate/SSplitter.h"
 #include "Slate/SlateApplication.h"
 #include "Math/MathUtils.h"
@@ -917,10 +919,106 @@ void FLevelViewportLayout::ToggleViewportSplit(int32 SourceSlotIndex)
 
 // ─── Viewport UI 렌더링 ─────────────────────────────────────
 
+void FLevelViewportLayout::RenderPIEFullscreenViewport()
+{
+	if (!Editor || !Editor->IsPIEViewportFullscreen())
+	{
+		return;
+	}
+
+	FLevelEditorViewportClient* PIEViewportClient = Editor->GetPIEGameViewportClient();
+	if (!PIEViewportClient)
+	{
+		PIEViewportClient = ActiveViewportClient;
+	}
+	if (!PIEViewportClient)
+	{
+		return;
+	}
+
+	const ImGuiViewport* MainViewport = ImGui::GetMainViewport();
+	if (!MainViewport)
+	{
+		return;
+	}
+
+	// 메인 메뉴바를 제외한 작업 영역만 PIE 전체화면 렌더링 영역으로 사용
+	ImGui::SetNextWindowPos(MainViewport->WorkPos);
+	ImGui::SetNextWindowSize(MainViewport->WorkSize);
+	ImGui::SetNextWindowViewport(MainViewport->ID);
+
+	const ImGuiWindowFlags WindowFlags =
+		ImGuiWindowFlags_NoDecoration |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoDocking |
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::Begin("##PIEFullscreenViewport", nullptr, WindowFlags);
+
+	const ImVec2 ContentPos = ImGui::GetCursorScreenPos();
+	const ImVec2 ContentSize = ImGui::GetContentRegionAvail();
+	if (ContentSize.x > 1.0f && ContentSize.y > 1.0f)
+	{
+		// ImGui 작업 영역 전체를 PIE 게임 뷰포트 렌더링 영역으로 사용
+		FRect FullscreenRect = {
+			ContentPos.x,
+			ContentPos.y,
+			ContentSize.x,
+			ContentSize.y
+		};
+
+		// 기존 SWindow layout rect를 전체화면 rect로 교체하여 입력 좌표와 렌더링 크기 동기화
+		for (int32 SlotIndex = 0; SlotIndex < ActiveSlotCount; ++SlotIndex)
+		{
+			if (SlotIndex < static_cast<int32>(LevelViewportClients.size()) &&
+				LevelViewportClients[SlotIndex] == PIEViewportClient &&
+				ViewportWindows[SlotIndex])
+			{
+				ViewportWindows[SlotIndex]->SetRect(FullscreenRect);
+				break;
+			}
+		}
+
+		// PIE viewport client의 layout 정보 갱신 후 동일 경로로 viewport image 렌더링
+		SetActiveViewport(PIEViewportClient);
+		PIEViewportClient->UpdateLayoutRect();
+		PIEViewportClient->RenderViewportImage(true);
+
+		// 게임 입력 라우팅과 cursor clip rect도 전체화면 영역으로 확장
+		if (UGameViewportClient* GameViewportClient = Editor->GetGameViewportClient())
+		{
+			GameViewportClient->SetViewport(PIEViewportClient->GetViewport());
+			GameViewportClient->SetCursorClipRect(FullscreenRect);
+		}
+
+		// 전체화면 창 hover 상태를 기존 viewport hover 처리와 동일하게 전달
+		if (ImGui::IsWindowHovered())
+		{
+			bMouseOverViewport = true;
+			FSlateApplication::Get().SetViewportImGuiHovered(PIEViewportClient, true);
+		}
+	}
+
+	ImGui::End();
+	ImGui::PopStyleVar(3);
+}
+
 void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
 {
 	bMouseOverViewport = false;
 	UpdateLayoutTransition(DeltaTime);
+
+	if (Editor && Editor->IsPIEViewportFullscreen())
+	{
+		RenderPIEFullscreenViewport();
+		return;
+	}
 
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 	ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_None);
@@ -1940,6 +2038,7 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 		PlaceActorMenuItem("Sphere Collider", EViewportPlaceActorType::SphereCollider);
 		PlaceActorMenuItem("Capsule Collider", EViewportPlaceActorType::CapsuleCollider);
 		PlaceActorMenuItem("Trigger Volume", EViewportPlaceActorType::TriggerVolume);
+		PlaceActorMenuItem("Player Start", EViewportPlaceActorType::PlayerStart);
 		PlaceActorMenuItem("Skeletal Mesh Actor", EViewportPlaceActorType::SkeletalMesh);
 		PlaceActorMenuItem("Character",           EViewportPlaceActorType::Character);
 		PlaceActorMenuItem("Lua Character",       EViewportPlaceActorType::LuaCharacter);
@@ -2238,6 +2337,17 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 		{
 			Actor->InitDefaultComponents();
 			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::PlayerStart:
+	{
+		APlayerStart* Actor = World->SpawnActor<APlayerStart>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+			SpawnLocation.Z += 1.0f;
 		}
 		break;
 	}

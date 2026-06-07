@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <cctype>
 #include <filesystem>
 
 namespace
@@ -96,6 +97,23 @@ namespace
 
 		return PIt == P.end();
 	}
+
+	FString TrimAssetName(const FString& Name)
+	{
+		size_t Begin = 0;
+		while (Begin < Name.size() && std::isspace(static_cast<unsigned char>(Name[Begin])))
+		{
+			++Begin;
+		}
+
+		size_t End = Name.size();
+		while (End > Begin && std::isspace(static_cast<unsigned char>(Name[End - 1])))
+		{
+			--End;
+		}
+
+		return Name.substr(Begin, End - Begin);
+	}
 }
 
 namespace
@@ -116,6 +134,7 @@ void FEditorContentBrowserWidget::Initialize(UEditorEngine* InEditor, ID3D11Devi
 	IconFileMap[".Scene"] = L"World_64x.png";
 	IconFileMap[".obj"] = L"obj.png";
 	IconFileMap[".mat"] = L"Sphere_64x.png";
+	IconFileMap[".matinst"] = L"Sphere_64x.png";
 	IconFileMap[".shake"] = L"StartMerge_42x.png";
 	IconFileMap[".fbx"] = L"fbx.png";
 	IconFileMap[".uasset"] = L"icon_MatEd_Mesh_40x.png";
@@ -284,24 +303,37 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 		ImGui::EndPopup();
 	}
 
-	ImGui::SameLine();
 	std::wstring PathText = BrowserContext.CurrentPath;
 	if (BrowserContext.SelectedElement)
+	{
 		PathText += L"/" + BrowserContext.SelectedElement->GetFileName();
+	}
 
+	ImGui::TextUnformatted("View");
 	ImGui::SameLine();
+	if (ImGui::RadioButton("Grid", BrowserContext.ViewMode == EContentBrowserViewMode::Grid))
+	{
+		BrowserContext.ViewMode = EContentBrowserViewMode::Grid;
+	}
+	ImGui::SameLine();
+	if (ImGui::RadioButton("List", BrowserContext.ViewMode == EContentBrowserViewMode::List))
+	{
+		BrowserContext.ViewMode = EContentBrowserViewMode::List;
+	}
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", FPaths::ToUtf8(PathText).c_str());
+
 	int Size = static_cast<int>(BrowserContext.ContentSize.x);
 	BrowserContext.ContentSize = ImVec2(static_cast<float>(Size), static_cast<float>(Size));
 
-	if (!ImGui::BeginTable("ContentBrowserLayout", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
+	if (!ImGui::BeginTable("ContentBrowserLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
 	{
 		ImGui::End();
 		return;
 	}
 
 	ImGui::TableSetupColumn("Directory", ImGuiTableColumnFlags_WidthFixed, 250.0f);
-	ImGui::TableSetupColumn("Content", ImGuiTableColumnFlags_WidthStretch);
-	ImGui::TableSetupColumn("Details", ImGuiTableColumnFlags_WidthFixed, 260.0f);
+	ImGui::TableSetupColumn("Browser", ImGuiTableColumnFlags_WidthStretch);
 
 	ImGui::TableNextColumn();
 	{
@@ -313,13 +345,22 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 
 	ImGui::TableNextColumn();
 	{
-		ImGui::BeginChild("ContentArea", ImVec2(0, 0), true);
+		const float AvailableHeight = ImGui::GetContentRegionAvail().y;
+		const float SpacingY = ImGui::GetStyle().ItemSpacing.y;
+		const float MinContentHeight = 80.0f;
+		const float MinDetailsHeight = 64.0f;
+		float DetailsHeight = (std::min)(180.0f, (std::max)(96.0f, AvailableHeight * 0.28f));
+		float ContentHeight = AvailableHeight - DetailsHeight - SpacingY;
+		if (ContentHeight < MinContentHeight)
+		{
+			// 창 높이가 작을 때도 content와 detail이 모두 남도록 비율 기반으로 축소합니다.
+			ContentHeight = (std::max)(40.0f, AvailableHeight - MinDetailsHeight - SpacingY);
+		}
+
+		ImGui::BeginChild("ContentArea", ImVec2(0, ContentHeight), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 		DrawContents();
 		ImGui::EndChild();
-	}
 
-	ImGui::TableNextColumn();
-	{
 		ImGui::BeginChild("DetailsPanel", ImVec2(0, 0), true);
 
 		if (BrowserContext.SelectedElement)
@@ -338,6 +379,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 
 	RenderFbxImportOptionsPopup();
 	RenderPhysicsAssetCreationPopup();
+	RenderCreateMaterialPopup();
 	
 	ImGui::End();
 }
@@ -420,6 +462,124 @@ void FEditorContentBrowserWidget::RenderPhysicsAssetCreationPopup()
 	{
 		BrowserContext.PhysicsAssetDialog.Error = "Failed to create physics asset. See the engine log for details.";
 	}
+}
+
+
+void FEditorContentBrowserWidget::BeginCreateMaterialPopup()
+{
+	strncpy_s(CreateMaterialNameBuffer, sizeof(CreateMaterialNameBuffer), "NewMaterial", _TRUNCATE);
+	CreateMaterialError.clear();
+	bCreateMaterialPopupRequested = true;
+}
+
+bool FEditorContentBrowserWidget::IsValidAssetName(const FString& Name, FString* OutError) const
+{
+	auto SetError = [&](const char* Message)
+	{
+		if (OutError)
+		{
+			*OutError = Message;
+		}
+	};
+
+	if (TrimAssetName(Name).empty())
+	{
+		SetError("Name cannot be empty.");
+		return false;
+	}
+
+	static const char* InvalidChars = "\\/:*?\"<>|";
+	if (Name.find_first_of(InvalidChars) != FString::npos)
+	{
+		SetError("Name contains invalid character (\\/:*?\"<>|).");
+		return false;
+	}
+
+	return true;
+}
+
+void FEditorContentBrowserWidget::RenderCreateMaterialPopup()
+{
+	if (bCreateMaterialPopupRequested)
+	{
+		ImGui::OpenPopup("##CreateMaterialAsset");
+		bCreateMaterialPopupRequested = false;
+	}
+
+	if (!ImGui::BeginPopupModal("##CreateMaterialAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		return;
+	}
+
+	ImGui::TextUnformatted("Create Material");
+	ImGui::Separator();
+	if (ImGui::IsWindowAppearing())
+	{
+		ImGui::SetKeyboardFocusHere();
+	}
+
+	ImGui::SetNextItemWidth(320.0f);
+	const bool bSubmit = ImGui::InputText(
+		"##CreateMaterialName",
+		CreateMaterialNameBuffer,
+		sizeof(CreateMaterialNameBuffer),
+		ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+
+	if (!CreateMaterialError.empty())
+	{
+		ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", CreateMaterialError.c_str());
+	}
+
+	const bool bCreate = bSubmit || ImGui::Button("Create");
+	ImGui::SameLine();
+	const bool bCancel = ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape);
+
+	if (bCreate)
+	{
+		const FString AssetName = TrimAssetName(CreateMaterialNameBuffer);
+		FString Error;
+		if (!IsValidAssetName(AssetName, &Error))
+		{
+			CreateMaterialError = Error;
+		}
+		else
+		{
+			const std::filesystem::path ExactTargetPath =
+				std::filesystem::path(BrowserContext.CurrentPath) / (FPaths::ToWide(AssetName) + L".mat");
+			if (std::filesystem::exists(ExactTargetPath))
+			{
+				CreateMaterialError = "A material with that name already exists in this directory.";
+			}
+			else
+			{
+				FString CreatedPath;
+				if (FAssetFactory::CreateMaterial(FPaths::ToUtf8(BrowserContext.CurrentPath), AssetName, CreatedPath))
+				{
+					FMaterialManager::Get().ScanMaterialAssets();
+					Refresh();
+					if (BrowserContext.EditorEngine)
+					{
+						if (UMaterialInterface* Material = FMaterialManager::Get().GetOrCreateMaterialInterface(CreatedPath))
+						{
+							BrowserContext.EditorEngine->OpenAssetEditorForObject(Material);
+						}
+					}
+					ImGui::CloseCurrentPopup();
+				}
+				else
+				{
+					CreateMaterialError = "Failed to create material.";
+				}
+			}
+		}
+	}
+
+	if (bCancel)
+	{
+		ImGui::CloseCurrentPopup();
+	}
+
+	ImGui::EndPopup();
 }
 
 void FEditorContentBrowserWidget::Refresh()
@@ -626,38 +786,51 @@ void FEditorContentBrowserWidget::DrawContents()
 {
 	int ElementCount = static_cast<int>(CachedBrowserElements.size());
 
-	const float ContentWidth = ImGui::GetContentRegionAvail().x;
-	const float ItemWidth = BrowserContext.ContentSize.x;
-	const float ItemHeight = BrowserContext.ContentSize.y;
-
-	int ColumnCount = static_cast<int>(ContentWidth / ItemWidth);
-	if (ColumnCount < 1)
+	if (BrowserContext.ViewMode == EContentBrowserViewMode::List)
 	{
-		ColumnCount = 1;
+		for (int i = 0; i < ElementCount; ++i)
+		{
+			CachedBrowserElements[i]->RenderListRow(BrowserContext);
+		}
 	}
-
-	float GapSize = 0.0f;
-	if (ColumnCount > 1)
+	else
 	{
-		GapSize = (ContentWidth - ItemWidth * ColumnCount) / (ColumnCount);
+		const float ContentWidth = ImGui::GetContentRegionAvail().x;
+		const float ItemWidth = BrowserContext.ContentSize.x;
+		const float ItemHeight = BrowserContext.ContentSize.y;
+		const ImVec2 ItemSpacing = ImGui::GetStyle().ItemSpacing;
+		const float SpacingX = ItemSpacing.x;
+		const float SpacingY = ItemSpacing.y;
+
+		// 세로 스크롤바와 무관하게 고정 간격 기준으로 열 수를 계산합니다.
+		int ColumnCount = static_cast<int>((ContentWidth + SpacingX) / (ItemWidth + SpacingX));
+		if (ColumnCount < 1)
+		{
+			ColumnCount = 1;
+		}
+
+		ImVec2 StartPos = ImGui::GetCursorPos();
+		const float GridWidth = ColumnCount * ItemWidth + (ColumnCount - 1) * SpacingX;
+		const float LeftPadding = (std::max)(0.0f, (ContentWidth - GridWidth) * 0.5f);
+
+		for (int i = 0; i < ElementCount; ++i)
+		{
+			int Column = i % ColumnCount;
+			int Row = i / ColumnCount;
+
+			float X = StartPos.x + LeftPadding + Column * (ItemWidth + SpacingX);
+			float Y = StartPos.y + Row * (ItemHeight + SpacingY);
+
+			ImGui::SetCursorPos(ImVec2(X, Y));
+			CachedBrowserElements[i]->Render(BrowserContext);
+		}
+
+		int RowCount = (ElementCount + ColumnCount - 1) / ColumnCount;
+		const float ContentHeight = RowCount > 0
+			? RowCount * ItemHeight + (RowCount - 1) * SpacingY
+			: 0.0f;
+		ImGui::SetCursorPos(ImVec2(StartPos.x, StartPos.y + ContentHeight));
 	}
-
-	ImVec2 StartPos = ImGui::GetCursorPos();
-
-	for (int i = 0; i < ElementCount; ++i)
-	{
-		int Column = i % ColumnCount;
-		int Row = i / ColumnCount;
-
-		float X = StartPos.x + Column * (ItemWidth + GapSize);
-		float Y = StartPos.y + Row * (ItemHeight + GapSize * 2.f);
-
-		ImGui::SetCursorPos(ImVec2(X, Y));
-		CachedBrowserElements[i]->Render(BrowserContext);
-	}
-
-	int RowCount = (ElementCount + ColumnCount - 1) / ColumnCount;
-	ImGui::SetCursorPos(ImVec2(StartPos.x, StartPos.y + RowCount * ItemHeight));
 
 	if (ImGui::BeginPopupContextWindow("##ContentBrowserBackgroundContext", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
 	{
@@ -725,19 +898,7 @@ void FEditorContentBrowserWidget::DrawContents()
 			}
 			if (ImGui::MenuItem("Material"))
 			{
-				FString CreatedPath;
-				if (FAssetFactory::CreateMaterial(FPaths::ToUtf8(BrowserContext.CurrentPath), "NewMaterial", CreatedPath))
-				{
-					FMaterialManager::Get().ScanMaterialAssets();
-					Refresh();
-					if (BrowserContext.EditorEngine)
-					{
-						if (UMaterialInterface* Material = FMaterialManager::Get().GetOrCreateMaterialInterface(CreatedPath))
-						{
-							BrowserContext.EditorEngine->OpenAssetEditorForObject(Material);
-						}
-					}
-				}
+				BeginCreateMaterialPopup();
 			}
 			if (ImGui::MenuItem("Physical Material"))
 			{

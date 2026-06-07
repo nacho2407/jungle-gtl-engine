@@ -88,6 +88,7 @@ public:
 	void ClearEventListeners();
 	void SetText(const FString& ElementId, const FString& Text);
 	bool SetProperty(const FString& ElementId, const FString& PropertyName, const FString& Value);
+	bool SetAttribute(const FString& ElementId, const FString& AttributeName, const FString& Value);
 
 	APlayerController* GetOwningPlayer() const { return OwningPlayer; }
 	const FString& GetDocumentPath() const { return DocumentPath; }

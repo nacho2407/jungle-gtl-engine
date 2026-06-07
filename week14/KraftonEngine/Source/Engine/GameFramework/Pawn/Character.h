@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Pawn/Pawn.h"
 
@@ -46,13 +46,13 @@ public:
 	// 게임에선 보통 false 로 끄고 자식이 자기 매핑/binding 추가. 데모 편의용 기본 true.
 	bool bAutoInputWASD = true;
 
-	// 자동 mouse look — Tick 안에서 mouse delta X/Y * MouseSensitivity 로 APawn::ControlRotation 누적.
+	// 자동 mouse look — Tick 안에서 mouse delta X/Y * 기준 감도 * MouseSensitivity 로 APawn::ControlRotation 누적.
 	// capsule 자체 회전은 안 함 — SpringArm 의 bUsePawnControlRotation 가 ControlRotation 사용해
 	// 카메라만 회전. WASD 도 ControlRotation.Yaw 기준 forward/right 로 이동.
 	bool  bAutoInputMouseLook = true;
-	float MouseSensitivity    = 0.2f;   // deg / pixel — yaw/pitch 공통
-	float MinCameraPitch      = -80.0f; // 위 한도 (마이너스 = 위)
-	float MaxCameraPitch      =  60.0f; // 아래 한도
+	float MouseSensitivity    = 1.0f;   // 기준 감도 배율 — yaw/pitch 공통
+	float MinCameraPitch      = -85.0f; // 위 한도 (마이너스 = 위)
+	float MaxCameraPitch      =  85.0f; // 아래 한도
 
 protected:
 	// InputComponent 가 부착된 후 호출 — WASD axis mapping + AddMovementInput binding 등록.

@@ -17,6 +17,8 @@
 
 namespace
 {
+	constexpr float BaseMouseSensitivityDegreesPerPixel = 0.2f;
+
 	bool IsCrouchKeyDown(const InputSystem& Input)
 	{
 		return Input.GetKey(VK_CONTROL) || Input.GetKey(VK_LCONTROL) || Input.GetKey(VK_RCONTROL);
@@ -132,7 +134,8 @@ void ACharacter::Tick(float DeltaTime)
 			// APawn::ControlRotation 누적. SpringArm 이 bUsePawnControlRotation 통해 이걸 사용.
 			// capsule 회전은 옵션 (bUseControllerRotationYaw 등) — 아래 ApplyControllerRotationToRoot 가 처리.
 			FRotator Rot = GetControlRotation();
-			const float EffectiveMouseSensitivity = FLuaScriptManager::GetRuntimeMouseSensitivity();
+			const float EffectiveMouseSensitivity =
+				BaseMouseSensitivityDegreesPerPixel * MouseSensitivity * FLuaScriptManager::GetRuntimeMouseSensitivity();
 			Rot.Yaw   += static_cast<float>(DX) * EffectiveMouseSensitivity;
 			Rot.Pitch += static_cast<float>(DY) * EffectiveMouseSensitivity;
 			Rot.Pitch  = std::clamp(Rot.Pitch, MinCameraPitch, MaxCameraPitch);

@@ -25,11 +25,22 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 	};
 
 	// --- Game ---
+	struct FGameplayPreset
+	{
+		FString DirectorModule = "Game.FractureDirector";
+		FString PlayerControllerClassName = "ALuaPlayerController";
+		FString DefaultPawnClassName = "ALuaCharacter";
+		FString DefaultPawnScript = "Player/KainCharacter.lua";
+		FString DefaultPawnMeshPath = "Content/Data/Samba Dancing (10).fbx";
+		FString DefaultPlayerStartTag = "Default";
+		bool bUsePlacedAutoPossessPawn = true;
+		bool bSpawnDefaultPawnIfMissing = true;
+	};
+
 	struct FGameOption
 	{
 		FString StartLevelName;     // Scene 파일 이름 (확장자 제외)
-		FString GameModeClassName;  // ""면 GameEngine이 코드로 지정한 디폴트 사용.
-		                            // 잘못된 이름이거나 AGameModeBase 파생이 아니면 디폴트 fallback.
+		FGameplayPreset GameplayPreset;
 	};
 
 	struct FPhysicsOption

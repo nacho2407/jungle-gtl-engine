@@ -10,9 +10,12 @@
     "_pad" : [0.000000, 0.000000, 0.000000]
   },
   "PathFileName" : "Content/Material/Auto/Material.008 - Copy.mat",
-  "RasterizerState" : "",
+  "RasterizerState" : "SolidBackCull",
   "RenderPass" : "AlphaBlend",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "ShadowMode" : "Opaque",
+  "Textures" : {
+
+  },
   "bEnableBloom" : false
 }

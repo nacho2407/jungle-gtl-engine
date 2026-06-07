@@ -19,7 +19,7 @@ public:
 	//트리가 무효화된 경우에만 재빌드를 수행합니다.
 	void EnsureBuilt(const TArray<AActor*>& Actors);
 	//트리를 순회해 가장 가까운 primitive hit 결과를 찾습니다.
-	bool Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor) const;
+	bool Raycast(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor, const AActor* IgnoreActor = nullptr) const;
 
 private:
 	struct FLeaf

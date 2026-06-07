@@ -1,0 +1,141 @@
+body {
+    margin: 0px;
+    width: 100%;
+    height: 100%;
+    font-family: Pretendard;
+    color: #ffffff;
+}
+
+#item-inspect-screen {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+#item-interact-hint {
+    position: absolute;
+    left: 50%;
+    bottom: 210px;
+    width: 220px;
+    height: 48px;
+    margin-left: -110px;
+    display: none;
+    text-align: center;
+}
+
+#item-interact-key {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+    border: 1px #ff9f2f;
+    background-color: #000000d8;
+    color: #ff9f2f;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 40px;
+    text-align: center;
+}
+
+#item-interact-text {
+    display: inline-block;
+    height: 40px;
+    color: #ffffff;
+    font-size: 21px;
+    font-weight: 500;
+    line-height: 40px;
+    text-shadow: 0px 2px 3px #000000;
+}
+
+#item-inspect-card {
+    position: absolute;
+    left: 50%;
+    bottom: 74px;
+    width: 760px;
+    min-height: 218px;
+    margin-left: -380px;
+    display: none;
+    background-color: #000000f0;
+    border: 1px #ff9f2f;
+}
+
+#item-inspect-accent {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: 5px;
+    height: 100%;
+    background-color: #ff9f2f;
+}
+
+#item-inspect-image-frame {
+    position: absolute;
+    left: 28px;
+    top: 28px;
+    width: 150px;
+    height: 150px;
+    border: 1px #ffffff66;
+    background-color: #121212;
+}
+
+#item-inspect-image {
+    position: absolute;
+    left: 13px;
+    top: 13px;
+    width: 124px;
+    height: 124px;
+}
+
+#item-inspect-copy {
+    position: relative;
+    margin-left: 208px;
+    margin-top: 26px;
+    margin-right: 30px;
+    margin-bottom: 22px;
+}
+
+#item-inspect-title {
+    width: 510px;
+    color: #ffb45a;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 34px;
+}
+
+#item-inspect-subtitle {
+    margin-top: 2px;
+    width: 510px;
+    color: #ffffffbf;
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 24px;
+}
+
+#item-inspect-separator {
+    margin-top: 13px;
+    width: 510px;
+    height: 1px;
+    background-color: #ffffff55;
+}
+
+#item-inspect-description {
+    margin-top: 14px;
+    width: 510px;
+    color: #f4f4f4;
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 26px;
+}
+
+#item-inspect-footer {
+    margin-top: 14px;
+    width: 510px;
+    color: #ff9f2f;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: right;
+}

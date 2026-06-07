@@ -707,7 +707,10 @@ FConstantBuffer* UMaterialInstance::GetGPUBufferBySlot(uint32 InSlot) const
 		}
 	}
 
-	return nullptr;
+	// MaterialInstance는 부모의 shader/render state를 공유한다.
+	// 인스턴스 CB가 아직 준비되지 않은 경우에는 부모 CB로 fallback해야
+	// .matinst preview가 빈 draw로 빠지지 않는다. Override CB가 있으면 위 경로가 우선된다.
+	return Parent ? Parent->GetGPUBufferBySlot(InSlot) : nullptr;
 }
 
 ID3D11ShaderResourceView* UMaterialInstance::GetSRV(EMaterialTextureSlot Slot) const
