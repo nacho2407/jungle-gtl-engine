@@ -9,6 +9,8 @@
 
 class UMaterialInterface;
 class FPrimitiveSceneProxy;
+class USkinnedMeshComponent;
+class AActor;
 
 namespace json { class JSON; }
 
@@ -47,12 +49,73 @@ public:
 
 	const FString& GetStaticMeshPath() const { return StaticMeshPath.ToString(); }
 
+protected:
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
+
 private:
 	void CacheLocalBounds();
+	void UpdateBoneAttachment();
+	USkinnedMeshComponent* ResolveAttachMeshComponent();
+	AActor* ResolveAttachTargetActor();
+	bool TryGetSocketOffsetMatrix(
+		FString& OutBoneName,
+		FMatrix& OutSocketToObjectMatrix,
+		FMatrix* OutObjectWorldMatrixAtExport = nullptr,
+		bool* bOutHasObjectWorldMatrixAtExport = nullptr,
+		bool* bOutIsSocketLocalMeshSpace = nullptr);
+	FMatrix BuildAttachLocalMatrix(USkinnedMeshComponent* TargetMeshComponent, const FString& EffectiveBoneName);
+	void InvalidateAttachSocketCache();
+	void CaptureAttachOffsetFromCurrentTransform();
 
 	TObjectPtr<UStaticMesh> StaticMesh;
 	UPROPERTY(Edit, Save, Category="Mesh", DisplayName="Static Mesh", AssetType="StaticMesh")
 	FSoftObjectPtr StaticMeshPath = "None";
+
+	UPROPERTY(Edit, Save, Category="StaticMesh|Attach", DisplayName="Attach To Mesh Bone")
+	bool bAttachToOwnerMeshBone = false;
+
+	UPROPERTY(Edit, Save, Category="StaticMesh|Attach", DisplayName="Attach Target Actor")
+	FString AttachTargetActorName = "";
+
+	UPROPERTY(Edit, Save, Category="StaticMesh|Attach", DisplayName="Socket Offset JSON")
+	FString AttachSocketOffsetPath = "";
+
+	UPROPERTY(Edit, Save, Category="StaticMesh|Attach", DisplayName="Socket Object Name")
+	FString AttachSocketObjectName = "";
+
+	UPROPERTY(Edit, Save, Category="StaticMesh|Attach", DisplayName="Use Baked Bind Pose Correction")
+	bool bUseBakedBindPoseCorrection = false;
+
+	UPROPERTY(Edit, Save, Category="StaticMesh|Attach", DisplayName="Edit Attach Offset")
+	bool bEditAttachOffset = false;
+
+	UPROPERTY(Edit, Category="StaticMesh|Attach", DisplayName="Capture Current Attach Offset")
+	bool bCaptureCurrentAttachOffset = false;
+
+	UPROPERTY(Edit, Save, Category="StaticMesh|Attach", DisplayName="Attach Bone")
+	FString AttachBoneName = "";
+
+	UPROPERTY(Edit, Save, Category="StaticMesh|Attach", DisplayName="Attach Offset Location", Type=Vec3, Speed=0.01f)
+	FVector AttachOffsetLocation = FVector::ZeroVector;
+
+	UPROPERTY(Edit, Save, Category="StaticMesh|Attach", DisplayName="Attach Offset Rotation", Type=Rotator, Speed=0.1f)
+	FRotator AttachOffsetRotation = FRotator::ZeroRotator;
+
+	UPROPERTY(Edit, Save, Category="StaticMesh|Attach", DisplayName="Attach Offset Scale", Type=Vec3, Speed=0.01f)
+	FVector AttachOffsetScale = FVector(1.0f, 1.0f, 1.0f);
+
+	USkinnedMeshComponent* AttachMeshComponent = nullptr;
+	AActor* AttachTargetActor = nullptr;
+	bool bSocketOffsetCacheResolved = false;
+	bool bCachedSocketOffsetValid = false;
+	FString CachedAttachSocketOffsetPath = "";
+	FString CachedAttachSocketObjectName = "";
+	FString CachedSocketTargetBoneName = "";
+	FMatrix CachedSocketToObjectMatrix = FMatrix::Identity;
+	FMatrix CachedObjectWorldMatrixAtExport = FMatrix::Identity;
+	bool bCachedHasObjectWorldMatrixAtExport = false;
+	bool bCachedIsSocketLocalMeshSpace = false;
+
 	TArray<UMaterialInterface*> OverrideMaterials;
 	UPROPERTY(Edit, Save, EditFixedSize, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
