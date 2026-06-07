@@ -430,7 +430,7 @@ local function start_prologue_scene()
     stop_title_bgm()
 
     if Engine.TransitionToScene ~= nil then
-        Engine.TransitionToScene("Prologue.Scene")
+        Engine.TransitionToScene("FL_Level1.Scene")
     else
         print("[Title] Engine.TransitionToScene is not available")
     end

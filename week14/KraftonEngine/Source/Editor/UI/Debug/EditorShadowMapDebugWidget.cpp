@@ -321,10 +321,30 @@ void EditorShadowMapDebugWidget::Render(float DeltaTime)
 		}
 
 		ImGui::Text("Resolution: %u x %u", SR.CSM.Resolution, SR.CSM.Resolution);
-		ImGui::Text("C%d range: %.3f - %.3f",
+		if (CSMCascadeIndex < 0 || CSMCascadeIndex >= (int32)MAX_SHADOW_CASCADES)
+		{
+			CSMCascadeIndex = 0;
+		}
+
+		ImGui::Text("C%d camera range: %.3f - %.3f",
 			CSMCascadeIndex,
 			SR.CSM.DebugCascadeNear.Data[CSMCascadeIndex],
 			SR.CSM.DebugCascadeFar.Data[CSMCascadeIndex]);
+		ImGui::Text("Receiver light Z: %.3f - %.3f",
+			SR.CSM.DebugCascadeReceiverMinZ.Data[CSMCascadeIndex],
+			SR.CSM.DebugCascadeReceiverMaxZ.Data[CSMCascadeIndex]);
+		ImGui::Text("Shadow light Z: %.3f - %.3f",
+			SR.CSM.DebugCascadeLightMinZ.Data[CSMCascadeIndex],
+			SR.CSM.DebugCascadeLightMaxZ.Data[CSMCascadeIndex]);
+		ImGui::Text("Casters: candidate %u / included %u / drawn %u",
+			SR.CSM.DebugCascadeCandidateCasterCount[CSMCascadeIndex],
+			SR.CSM.DebugCascadeIncludedCasterCount[CSMCascadeIndex],
+			SR.CSM.DebugCascadeDrawCasterCount[CSMCascadeIndex]);
+
+		if (SR.CSM.DebugCascadeIncludedCasterCount[CSMCascadeIndex] == 0)
+		{
+			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "No caster bounds overlap this cascade projection.");
+		}
 
 		// Cascade 선택 버튼
 		for (int32 i = 0; i < (int32)MAX_SHADOW_CASCADES; ++i)

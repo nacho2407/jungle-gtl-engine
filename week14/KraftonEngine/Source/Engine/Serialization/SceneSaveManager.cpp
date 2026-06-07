@@ -72,6 +72,7 @@ namespace SceneKeys
 	static constexpr const char* EditorOutliner = "EditorOutliner";
 	static constexpr const char* Groups = "Groups";
 	static constexpr const char* GroupId = "GroupId";
+	static constexpr const char* ParentGroupId = "ParentGroupId";
 	static constexpr const char* ActorObjectIds = "ActorObjectIds";
 	static constexpr const char* Expanded = "Expanded";
 	static constexpr const char* Origin = "Origin";
@@ -864,11 +865,18 @@ json::JSON FSceneSaveManager::SerializeEditorOutliner(UWorld* World, FSceneSaveC
 
 		if (ActorObjectIds.size() == 0)
 		{
-			continue;
+			if (!OutlinerState.HasChildGroups(Group.GroupId))
+			{
+				continue;
+			}
 		}
 
 		JSON GroupJSON = json::Object();
 		GroupJSON[SceneKeys::GroupId] = static_cast<int>(Group.GroupId);
+		if (OutlinerState.FindGroup(Group.ParentGroupId))
+		{
+			GroupJSON[SceneKeys::ParentGroupId] = static_cast<int>(Group.ParentGroupId);
+		}
 		GroupJSON[SceneKeys::Name] = Group.Name;
 		GroupJSON[SceneKeys::Expanded] = Group.bExpanded;
 		GroupJSON[SceneKeys::ActorObjectIds] = ActorObjectIds;
@@ -900,9 +908,34 @@ json::JSON FSceneSaveManager::SerializePrefabOutliner(
 	}
 
 	JSON Groups = json::Array();
+	TSet<uint32> IncludedGroupIds;
+	for (const FSceneOutlinerGroup& SourceGroup : OutlinerState.Groups)
+	{
+		for (uint32 ActorUUID : SourceGroup.ActorUUIDs)
+		{
+			if (std::find(SelectedActorUUIDs.begin(), SelectedActorUUIDs.end(), ActorUUID) == SelectedActorUUIDs.end())
+			{
+				continue;
+			}
+
+			const FSceneOutlinerGroup* CurrentGroup = &SourceGroup;
+			while (CurrentGroup)
+			{
+				IncludedGroupIds.insert(CurrentGroup->GroupId);
+				CurrentGroup = OutlinerState.FindGroup(CurrentGroup->ParentGroupId);
+			}
+			break;
+		}
+	}
+
 	for (const FSceneOutlinerGroup& SourceGroup : OutlinerState.Groups)
 	{
 		JSON ActorObjectIds = json::Array();
+		if (IncludedGroupIds.find(SourceGroup.GroupId) == IncludedGroupIds.end())
+		{
+			continue;
+		}
+
 		for (uint32 ActorUUID : SourceGroup.ActorUUIDs)
 		{
 			if (std::find(SelectedActorUUIDs.begin(), SelectedActorUUIDs.end(), ActorUUID) == SelectedActorUUIDs.end())
@@ -920,10 +953,29 @@ json::JSON FSceneSaveManager::SerializePrefabOutliner(
 
 		if (ActorObjectIds.size() == 0)
 		{
-			continue;
+			TArray<uint32> ChildGroupIds;
+			OutlinerState.CollectChildGroupIds(SourceGroup.GroupId, ChildGroupIds);
+			bool bHasIncludedChildGroup = false;
+			for (uint32 ChildGroupId : ChildGroupIds)
+			{
+				if (IncludedGroupIds.find(ChildGroupId) != IncludedGroupIds.end())
+				{
+					bHasIncludedChildGroup = true;
+					break;
+				}
+			}
+			if (!bHasIncludedChildGroup)
+			{
+				continue;
+			}
 		}
 
 		JSON GroupJSON = json::Object();
+		GroupJSON[SceneKeys::GroupId] = static_cast<int>(SourceGroup.GroupId);
+		if (IncludedGroupIds.find(SourceGroup.ParentGroupId) != IncludedGroupIds.end())
+		{
+			GroupJSON[SceneKeys::ParentGroupId] = static_cast<int>(SourceGroup.ParentGroupId);
+		}
 		GroupJSON[SceneKeys::Name] = SourceGroup.Name;
 		GroupJSON[SceneKeys::Expanded] = SourceGroup.bExpanded;
 		GroupJSON[SceneKeys::ActorObjectIds] = ActorObjectIds;
@@ -1281,6 +1333,9 @@ void FSceneSaveManager::DeserializeEditorOutliner(json::JSON& Node, UWorld* Worl
 		Group.GroupId = GroupJSON.hasKey(SceneKeys::GroupId)
 			? static_cast<uint32>(GroupJSON[SceneKeys::GroupId].ToInt())
 			: OutlinerState.NextGroupId++;
+		Group.ParentGroupId = GroupJSON.hasKey(SceneKeys::ParentGroupId)
+			? static_cast<uint32>(GroupJSON[SceneKeys::ParentGroupId].ToInt())
+			: 0;
 		Group.Name = GroupJSON.hasKey(SceneKeys::Name)
 			? GroupJSON[SceneKeys::Name].ToString()
 			: FSceneOutlinerState::MakeDefaultGroupName(Group.GroupId);
@@ -1301,13 +1356,18 @@ void FSceneSaveManager::DeserializeEditorOutliner(json::JSON& Node, UWorld* Worl
 			}
 		}
 
-		if (!Group.ActorUUIDs.empty())
-		{
-			MaxGroupId = (std::max)(MaxGroupId, Group.GroupId);
-			OutlinerState.Groups.push_back(std::move(Group));
-		}
+		MaxGroupId = (std::max)(MaxGroupId, Group.GroupId);
+		OutlinerState.Groups.push_back(std::move(Group));
 	}
 
+	for (FSceneOutlinerGroup& Group : OutlinerState.Groups)
+	{
+		if (Group.ParentGroupId == Group.GroupId || !OutlinerState.FindGroup(Group.ParentGroupId))
+		{
+			Group.ParentGroupId = 0;
+		}
+	}
+	OutlinerState.RemoveEmptyGroups();
 	OutlinerState.NextGroupId = (std::max)(OutlinerState.NextGroupId, MaxGroupId + 1);
 }
 
@@ -1321,6 +1381,9 @@ void FSceneSaveManager::DeserializePrefabOutliner(
 	{
 		return;
 	}
+
+	TMap<uint32, uint32> SourceGroupIdToNewGroupId;
+	TArray<std::pair<uint32, uint32>> PendingParentLinks;
 
 	for (auto& GroupJSON : Node[SceneKeys::Groups].ArrayRange())
 	{
@@ -1337,22 +1400,48 @@ void FSceneSaveManager::DeserializePrefabOutliner(
 			}
 		}
 
-		if (ActorUUIDs.empty())
-		{
-			continue;
-		}
-
 		const FString GroupName = GroupJSON.hasKey(SceneKeys::Name)
 			? GroupJSON[SceneKeys::Name].ToString()
 			: FString();
-		const uint32 NewGroupId = OutlinerState.CreateGroup(GroupName, ActorUUIDs);
+		const uint32 NewGroupId = OutlinerState.CreateEmptyGroup(GroupName);
 		if (FSceneOutlinerGroup* NewGroup = OutlinerState.FindGroup(NewGroupId))
 		{
+			NewGroup->ActorUUIDs = std::move(ActorUUIDs);
 			NewGroup->bExpanded = GroupJSON.hasKey(SceneKeys::Expanded)
 				? GroupJSON[SceneKeys::Expanded].ToBool()
 				: true;
 		}
+
+		if (GroupJSON.hasKey(SceneKeys::GroupId))
+		{
+			const uint32 SourceGroupId = static_cast<uint32>(GroupJSON[SceneKeys::GroupId].ToInt());
+			SourceGroupIdToNewGroupId[SourceGroupId] = NewGroupId;
+
+			const uint32 SourceParentGroupId = GroupJSON.hasKey(SceneKeys::ParentGroupId)
+				? static_cast<uint32>(GroupJSON[SceneKeys::ParentGroupId].ToInt())
+				: 0;
+			if (SourceParentGroupId != 0)
+			{
+				PendingParentLinks.push_back({ SourceGroupId, SourceParentGroupId });
+			}
+		}
 	}
+
+	for (const auto& Link : PendingParentLinks)
+	{
+		auto ChildIt = SourceGroupIdToNewGroupId.find(Link.first);
+		auto ParentIt = SourceGroupIdToNewGroupId.find(Link.second);
+		if (ChildIt == SourceGroupIdToNewGroupId.end() || ParentIt == SourceGroupIdToNewGroupId.end())
+		{
+			continue;
+		}
+
+		if (FSceneOutlinerGroup* ChildGroup = OutlinerState.FindGroup(ChildIt->second))
+		{
+			ChildGroup->ParentGroupId = ParentIt->second;
+		}
+	}
+	OutlinerState.RemoveEmptyGroups();
 }
 
 AActor* FSceneSaveManager::DeserializeActorForEditorUndo(UWorld* World, json::JSON ActorJSON)

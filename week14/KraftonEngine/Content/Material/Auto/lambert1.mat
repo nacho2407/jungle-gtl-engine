@@ -1,0 +1,21 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "DepthReadOnly",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 1.000000,
+  "Origin" : "FbxImport",
+  "Parameters" : {
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "_pad" : [0.000000, 0.000000, 0.000000]
+  },
+  "PathFileName" : "Content/Material/Auto/lambert1.mat",
+  "RasterizerState" : "SolidNoCull",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "ShadowMode" : "None",
+  "Textures" : {
+    "DiffuseTexture" : "Content/Texture/Auto/Untitled/deur_test_lambert1_BaseMap.png"
+  },
+  "bEnableBloom" : false
+}

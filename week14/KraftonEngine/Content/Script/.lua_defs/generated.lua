@@ -310,6 +310,17 @@ function Actor:GetFloatingPawnMovement() end
 ---@return CharacterMovementComponent?
 function Actor:GetCharacterMovement() end
 
+---@return boolean
+function Actor:GetCharacterAutoInputWASD() end
+
+---@return boolean
+function Actor:GetCharacterAutoInputMouseLook() end
+
+---@param wasd boolean
+---@param mouseLook boolean
+---@return boolean
+function Actor:SetCharacterAutoInput(wasd, mouseLook) end
+
 ---@return VehicleMovementComponent4W?
 function Actor:GetVehicleMovement() end
 

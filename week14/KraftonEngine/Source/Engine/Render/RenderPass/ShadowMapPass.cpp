@@ -25,6 +25,57 @@
 
 REGISTER_RENDER_PASS(FShadowMapPass)
 
+namespace
+{
+	/** @brief Directional CSM에 사용할 shadow caster 후보 여부를 판단한다 */
+	bool IsDirectionalCSMCasterProxy(const FPrimitiveSceneProxy* Proxy)
+	{
+		if (!Proxy || !Proxy->IsVisible()) return false;
+		if (!Proxy->CastsShadow()) return false;
+		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) return false;
+		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly)) return false;
+		return Proxy->GetCachedBounds().IsValid();
+	}
+
+	/** @brief Directional CSM projection 계산에 사용할 caster bounds를 수집한다 */
+	TArray<FBoundingBox> CollectDirectionalCSMCasterBounds(const FScene& Scene)
+	{
+		TArray<FBoundingBox> Bounds;
+		const TArray<FPrimitiveSceneProxy*>& Proxies = Scene.GetAllProxies();
+		Bounds.reserve(Proxies.size());
+
+		for (const FPrimitiveSceneProxy* Proxy : Proxies)
+		{
+			if (!IsDirectionalCSMCasterProxy(Proxy))
+			{
+				continue;
+			}
+
+			Bounds.push_back(Proxy->GetCachedBounds());
+		}
+
+		return Bounds;
+	}
+
+	/** @brief CSM 디버그 값을 기본값으로 초기화한다 */
+	void ResetCSMDebugData(FShadowMapResources::FCSMResources& CSM)
+	{
+		CSM.DebugCascadeNear = FVector4(0, 0, 0, 0);
+		CSM.DebugCascadeFar = FVector4(0, 0, 0, 0);
+		CSM.DebugCascadeReceiverMinZ = FVector4(0, 0, 0, 0);
+		CSM.DebugCascadeReceiverMaxZ = FVector4(0, 0, 0, 0);
+		CSM.DebugCascadeLightMinZ = FVector4(0, 0, 0, 0);
+		CSM.DebugCascadeLightMaxZ = FVector4(0, 0, 0, 0);
+
+		for (int32 CascadeIndex = 0; CascadeIndex < (int32)MAX_SHADOW_CASCADES; ++CascadeIndex)
+		{
+			CSM.DebugCascadeCandidateCasterCount[CascadeIndex] = 0;
+			CSM.DebugCascadeIncludedCasterCount[CascadeIndex] = 0;
+			CSM.DebugCascadeDrawCasterCount[CascadeIndex] = 0;
+		}
+	}
+}
+
 // ============================================================
 // 생성 / 소멸
 // ============================================================
@@ -129,6 +180,7 @@ void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources
 	ShadowCBCache.ShadowFilterMode = static_cast<uint32>(CurrentFilterMode);
 	ShadowCBCache.CSMBlendRange    = FShadowSettings::kDefaultCSMBlendRange;
 	ShadowCBCache.CSMBlendEnabled  = FShadowSettings::kDefaultCSMBlendEnabled ? 1u : 0u;
+	ShadowCBCache.CSMFadeOutEnabled = FProjectSettings::Get().Shadow.bDirectionalShadowFadeOut ? 1u : 0u;
 }
 
 // ============================================================
@@ -434,15 +486,23 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		PointLightAtlas.Init(static_cast<float>(ProjShadow.PointAtlasResolution), 64.f);
 	}
 
-	// ── CSM (Directional) — Directional Light가 있을 때만 생성, 없으면 해제 ──
+	// ── CSM (Directional) — Directional shadow를 실제로 사용할 때만 생성, 없으면 해제 ──
 	if (Env.HasGlobalDirectionalLight())
 	{
 		const FGlobalDirectionalLightParams& DirectionalParams = Env.GetGlobalDirectionalLightParams();
-		const float ScaledResolution = static_cast<float>(ProjShadow.CSMResolution) * DirectionalParams.ShadowResolutionScale;
-		uint32 Resolution = static_cast<uint32>((std::max)(64.0f, (std::min)(ScaledResolution, 8192.0f)));
-		
-		Res.EnsureCSM(Dev, Resolution);
-		if (bVSM) Res.EnsureCSM_VSM(Dev, Resolution);
+		if (DirectionalParams.bVisible && DirectionalParams.bCastShadows)
+		{
+			const uint32 BaseResolution = FShadowSettings::Get().GetResolution().value_or(ProjShadow.CSMResolution);
+			const float ScaledResolution = static_cast<float>(BaseResolution) * DirectionalParams.ShadowResolutionScale;
+			uint32 Resolution = static_cast<uint32>((std::max)(64.0f, (std::min)(ScaledResolution, 8192.0f)));
+
+			Res.EnsureCSM(Dev, Resolution);
+			if (bVSM) Res.EnsureCSM_VSM(Dev, Resolution);
+		}
+		else if (Res.CSM.IsValid())
+		{
+			Res.CSM.Release();
+		}
 	}
 	else if (Res.CSM.IsValid())
 	{
@@ -653,7 +713,7 @@ void FShadowMapPass::UpdateShadowCB(const FPassContext& Ctx)
 // DrawShadowCasters — 공용 프록시 순회 + depth-only 렌더링
 // ============================================================
 
-void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, FSystemResources& Resources, const FConvexVolume& LightFrustum, bool bUseGpuSkinning, FSpatialPartition* Partition)
+void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, FSystemResources& Resources, const FConvexVolume& LightFrustum, bool bUseGpuSkinning, FSpatialPartition* Partition, bool bUseLightFrustumCull)
 {
 	FShader* StaticShadowShader = FShaderManager::Get().GetOrCreateShadowDepthPermutation(
 		EShadowDepthDefines::EVertexFactory::StaticMesh);
@@ -692,7 +752,7 @@ void FShadowMapPass::DrawShadowCasters(ID3D11DeviceContext* DC, FScene& Scene, F
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) continue;
 		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly)) continue;
 
-		if (!Partition && !LightFrustum.IntersectAABB(Proxy->GetCachedBounds())) continue;
+		if (bUseLightFrustumCull && !Partition && !LightFrustum.IntersectAABB(Proxy->GetCachedBounds())) continue;
 
 		const bool bSkeletal = Proxy->HasProxyFlag(EPrimitiveProxyFlags::SkeletalMesh);
 		const bool bGpuSkinned = bSkeletal && bUseGpuSkinning;
@@ -942,30 +1002,44 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	if (!Res.CSM.IsValid()) return;
 
 	const FSceneEnvironment& Env = Ctx.Scene->GetEnvironment();
-	if (!Env.HasGlobalDirectionalLight()) return;
+	if (!Env.HasGlobalDirectionalLight())
+	{
+		ResetCSMDebugData(Res.CSM);
+		return;
+	}
 
 	constexpr int32 NumCascades = MAX_SHADOW_CASCADES;
+	ResetCSMDebugData(Res.CSM);
 
 	FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
+	if (!DirectionalParams.bVisible || !DirectionalParams.bCastShadows)
+	{
+		// Directional light가 비활성/그림자 비활성인 경우 CSM 샘플링 자체를 끄는 기본값 유지
+		return;
+	}
 
 	// b5 Bias/SlopeBias/Sharpen: FShadowSettings override > per-light 값
 	const auto& Settings = FShadowSettings::Get();
-	ShadowCBCache.ShadowBias       = Settings.GetBias().value_or(DirectionalParams.ShadowBias);
+	ShadowCBCache.ShadowBias       = (std::max)(0.0f, Settings.GetBias().value_or(DirectionalParams.ShadowBias));
 	ShadowCBCache.ShadowSlopeBias  = Settings.GetSlopeBias().value_or(DirectionalParams.ShadowSlopeBias);
-	ShadowCBCache.ShadowNormalBias = DirectionalParams.ShadowNormalBias;
+	ShadowCBCache.ShadowNormalBias = (std::max)(0.0f, DirectionalParams.ShadowNormalBias);
 	ShadowCBCache.ShadowSharpen    = Settings.GetSharpen().value_or(DirectionalParams.ShadowSharpen);
 	ShadowCBCache.CSMBlendRange    = (std::max)(0.0f, Settings.GetEffectiveCSMBlendRange());
 	ShadowCBCache.CSMBlendEnabled  = Settings.GetEffectiveCSMBlendEnabled() ? 1u : 0u;
+	ShadowCBCache.CSMFadeOutEnabled = FProjectSettings::Get().Shadow.bDirectionalShadowFadeOut ? 1u : 0u;
 
-	FMatrix CameraView = Ctx.Frame.View;
-	FMatrix CameraProj = Ctx.Frame.Proj;
+	const bool bUseStableShadowCamera = Ctx.Frame.bHasStableShadowCamera;
+	FMatrix CameraView = bUseStableShadowCamera ? Ctx.Frame.StableShadowView : Ctx.Frame.View;
+	FMatrix CameraProj = bUseStableShadowCamera ? Ctx.Frame.StableShadowProj : Ctx.Frame.Proj;
 
-	const float CameraNearZ = Ctx.Frame.NearClip;
-	const float CameraFarZ = Ctx.Frame.FarClip;
+	// 화면용 카메라에는 shake가 들어가도, CSM cascade는 modifier 적용 전 카메라로 안정화합니다.
+	const float CameraNearZ = bUseStableShadowCamera ? Ctx.Frame.StableShadowNearClip : Ctx.Frame.NearClip;
+	const float CameraFarZ = bUseStableShadowCamera ? Ctx.Frame.StableShadowFarClip : Ctx.Frame.FarClip;
 
-	//해당 범위까지 directional light에 대한 shadow가 그려지며, 이 구간을 4개의 cascade로 분할함
-	const float ShadowDistance = FShadowSettings::Get().GetEffectiveCSMDistance();
-	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
+	// 해당 범위까지 directional light shadow를 적용하며, 0이면 카메라 FarClip까지 사용
+	const float ShadowFarZ = Settings.ResolveCSMDistance(
+		CameraFarZ,
+		FProjectSettings::Get().Shadow.DirectionalShadowDistance);
 	const float CascadeLambda = FShadowSettings::Get().GetEffectiveCSMCascadeLambda();
 
 	//view frustum을 분할합니다.
@@ -989,6 +1063,10 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	Res.CSM.DebugCascadeFar = ShadowCBCache.CascadeSplits;
 
 	ID3D11DeviceContext* DC = Ctx.Device.GetDeviceContext();
+	const bool bUseGpuSkinning = SkinningModeRuntime::Get() == ESkinningMode::GPU;
+	const TArray<FBoundingBox> DirectionalCasterBounds = CollectDirectionalCSMCasterBounds(*Ctx.Scene);
+	const FBoundingBox* CasterBoundsData = DirectionalCasterBounds.empty() ? nullptr : DirectionalCasterBounds.data();
+	const uint32 CasterBoundsCount = static_cast<uint32>(DirectionalCasterBounds.size());
 
 	for(int32 i = 0; i < NumCascades; ++i)
 	{
@@ -1007,7 +1085,9 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 				DirectionalParams, CameraView, CameraProj,
 				CameraNearZ, CameraFarZ,
 				RenderNearZ, RenderFarZ,
-				static_cast<float>(Res.CSM.Resolution));
+				Res.CSM.Resolution,
+				CasterBoundsData,
+				CasterBoundsCount);
 
 		FConvexVolume LightFrustum;
 		LightFrustum.UpdateFromMatrix(DirectionalVP.ViewProj);
@@ -1034,10 +1114,19 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 		ShadowVP.MaxDepth = 1.0f;
 
 		DC->RSSetViewports(1, &ShadowVP);
-		DrawShadowCasters(Ctx, LightFrustum);
+		// Partition은 쓰지 않되, 전체 프록시를 light frustum AABB로 한 번 더 걸러냅니다.
+		// DepthClipEnable=TRUE와 같이 적용해야 cascade near/far 밖 caster가 depth map에 쓰이는 현상을 막을 수 있습니다.
+		DrawShadowCasters(DC, *Ctx.Scene, Ctx.Resources, LightFrustum, bUseGpuSkinning, nullptr, true);
 		SHADOW_STATS_ADD_CASTER(DirectionalLight, LastDrawCasterCount);
 
 		ShadowCBCache.CSMViewProj[i] = DirectionalVP.ViewProj;
+		Res.CSM.DebugCascadeReceiverMinZ.Data[i] = DirectionalVP.DebugReceiverMinZ;
+		Res.CSM.DebugCascadeReceiverMaxZ.Data[i] = DirectionalVP.DebugReceiverMaxZ;
+		Res.CSM.DebugCascadeLightMinZ.Data[i] = DirectionalVP.DebugFinalMinZ;
+		Res.CSM.DebugCascadeLightMaxZ.Data[i] = DirectionalVP.DebugFinalMaxZ;
+		Res.CSM.DebugCascadeCandidateCasterCount[i] = DirectionalVP.DebugCandidateCasterCount;
+		Res.CSM.DebugCascadeIncludedCasterCount[i] = DirectionalVP.DebugIncludedCasterCount;
+		Res.CSM.DebugCascadeDrawCasterCount[i] = LastDrawCasterCount;
 	}
 	ShadowCBCache.NumCSMCascades = NumCascades;
 	SHADOW_STATS_ADD_SHADOW_LIGHT(DirectionalLight);

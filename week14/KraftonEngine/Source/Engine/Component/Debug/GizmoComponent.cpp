@@ -10,6 +10,7 @@
 #include "Collision/Ray/RayUtils.h"
 #include "Render/Proxy/GizmoSceneProxy.h"
 #include "Render/Scene/FScene.h"
+#include <algorithm>
 #include <cfloat>
 
 HIDE_FROM_COMPONENT_LIST(UGizmoComponent)
@@ -63,6 +64,12 @@ UGizmoComponent::UGizmoComponent()
 {
 	MeshData = &FMeshBufferManager::Get().GetMeshData(EMeshShape::TransGizmo);
 	LocalExtents = FVector(1.5f, 1.5f, 1.5f);
+}
+
+void UGizmoComponent::SetSelectedGroups(UWorld* InWorld, const TArray<uint32>* InSelectedGroupIds)
+{
+	SelectionWorld = InWorld;
+	SelectedGroupIds = InSelectedGroupIds;
 }
 
 void UGizmoComponent::SetHolding(bool bHold)
@@ -406,6 +413,11 @@ bool UGizmoComponent::ScaleSelectedActorTargets(const FVector& Delta)
 		return false;
 	}
 
+	if (SelectedGroupIds && !SelectedGroupIds->empty())
+	{
+		return ScaleSelectedGroupTargets(Delta);
+	}
+
 	// 다중 선택 scale도 translate와 동일하게 각 actor의 기존 scale에 delta만 더합니다.
 	for (AActor* Actor : *AllSelectedActors)
 	{
@@ -421,6 +433,56 @@ bool UGizmoComponent::ScaleSelectedActorTargets(const FVector& Delta)
 	}
 
 	return true;
+}
+
+bool UGizmoComponent::ScaleSelectedGroupTargets(const FVector& Delta)
+{
+	if (!AllSelectedActors || !SelectedGroupIds || SelectedGroupIds->empty())
+	{
+		return false;
+	}
+
+	float AxisDelta = 0.0f;
+	if (SelectedAxis == 0) AxisDelta = Delta.X;
+	else if (SelectedAxis == 1) AxisDelta = Delta.Y;
+	else if (SelectedAxis == 2) AxisDelta = Delta.Z;
+	else return false;
+
+	const float AxisScaleFactor = (std::max)(0.001f, 1.0f + AxisDelta);
+	FVector AxisVector = GetVectorForAxis(SelectedAxis);
+	if (AxisVector.LengthSquared() <= FMath::Epsilon * FMath::Epsilon)
+	{
+		return false;
+	}
+	AxisVector.Normalize();
+
+	// 그룹 pivot은 저장하지 않고, 현재 선택 actor들의 위치 평균을 매 프레임 기준으로 사용합니다.
+	const FVector PivotLocation = GetTargetPivotLocation();
+	bool bAppliedAnyActor = false;
+	for (AActor* Actor : *AllSelectedActors)
+	{
+		if (!Actor || !Actor->GetRootComponent() || (SelectionWorld && Actor->GetWorld() != SelectionWorld))
+		{
+			continue;
+		}
+
+		USceneComponent* RootComponent = Actor->GetRootComponent();
+		const FVector OffsetFromPivot = Actor->GetActorLocation() - PivotLocation;
+		const FVector AxisOffset = AxisVector * OffsetFromPivot.Dot(AxisVector);
+		const FVector PerpendicularOffset = OffsetFromPivot - AxisOffset;
+		const FVector NewLocation = PivotLocation + PerpendicularOffset + AxisOffset * AxisScaleFactor;
+
+		FVector NewScale = RootComponent->GetRelativeScale() + Delta;
+		if (NewScale.X < 0.001f) NewScale.X = 0.001f;
+		if (NewScale.Y < 0.001f) NewScale.Y = 0.001f;
+		if (NewScale.Z < 0.001f) NewScale.Z = 0.001f;
+
+		Actor->SetActorLocation(NewLocation);
+		Actor->SetActorScale(NewScale);
+		bAppliedAnyActor = true;
+	}
+
+	return bAppliedAnyActor;
 }
 
 void UGizmoComponent::TranslateTarget(float DragAmount)
@@ -872,6 +934,8 @@ void UGizmoComponent::Deactivate()
 	Target = nullptr;
 	ComponentTarget.SetComponent(nullptr);
 	AllSelectedActors = nullptr;
+	SelectedGroupIds = nullptr;
+	SelectionWorld = nullptr;
 	SetVisibility(false);
 	SelectedAxis = -1;
 }
