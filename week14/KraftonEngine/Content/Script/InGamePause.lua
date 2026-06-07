@@ -17,6 +17,7 @@ local pauseVisible = false
 local settingsVisible = false
 local quitVisible = false
 local activeSettingsSlider = nil
+local activeSettingsValueEdit = nil
 
 local settingsState = {
     gamma = 2.40,
@@ -40,9 +41,9 @@ local settingsDefaults = {
 
 local settingSliders = {
     gamma = { value = "settings-gamma-value", fill = "settings-gamma-fill", handle = "settings-gamma-handle", min = 1.00, max = 3.00, step = 0.01, format = "%.2f" },
-    bgm = { value = "settings-bgm-value", fill = "settings-bgm-fill", handle = "settings-bgm-handle", min = 0, max = 100, step = 0.01, format = "%.2f" },
-    sfx = { value = "settings-sfx-value", fill = "settings-sfx-fill", handle = "settings-sfx-handle", min = 0, max = 100, step = 0.01, format = "%.2f" },
-    voice = { value = "settings-voice-value", fill = "settings-voice-fill", handle = "settings-voice-handle", min = 0, max = 100, step = 0.01, format = "%.2f" },
+    bgm = { value = "settings-bgm-value", fill = "settings-bgm-fill", handle = "settings-bgm-handle", min = 0, max = 100, step = 1.0, format = "%.0f", integer = true },
+    sfx = { value = "settings-sfx-value", fill = "settings-sfx-fill", handle = "settings-sfx-handle", min = 0, max = 100, step = 1.0, format = "%.0f", integer = true },
+    voice = { value = "settings-voice-value", fill = "settings-voice-fill", handle = "settings-voice-handle", min = 0, max = 100, step = 1.0, format = "%.0f", integer = true },
     mouse = { value = "settings-mouse-value", fill = "settings-mouse-fill", handle = "settings-mouse-handle", min = 0.05, max = 15.00, step = 0.05, format = "%.2f" },
 }
 
@@ -179,6 +180,14 @@ local function round_to_step(value, step)
     return math.floor((value / step) + 0.5) * step
 end
 
+local function format_setting_value(name, value)
+    local config = settingSliders[name]
+    if config == nil then
+        return tostring(value)
+    end
+    return string.format(config.format, value)
+end
+
 local function sync_settings_from_engine()
     if Engine == nil then return end
 
@@ -217,7 +226,9 @@ local function apply_setting_slider(name)
     local fillWidth = settingsSliderWidth * ratio
     local handleLeft = clamp(fillWidth - settingsHandleWidth * 0.5, 0.0, settingsSliderWidth - settingsHandleWidth)
 
-    settingsWidget:SetText(config.value, string.format(config.format, value))
+    if activeSettingsValueEdit == nil or activeSettingsValueEdit.name ~= name then
+        settingsWidget:SetText(config.value, format_setting_value(name, value))
+    end
     settingsWidget:set_property(config.fill, "width", px(fillWidth))
     settingsWidget:set_property(config.handle, "left", px(handleLeft))
 
@@ -251,8 +262,21 @@ local function adjust_setting(name, direction)
     local config = settingSliders[name]
     if config == nil then return end
 
-    settingsState[name] = clamp(settingsState[name] + config.step * direction, config.min, config.max)
-    settingsState[name] = round_to_step(settingsState[name], config.step)
+    activeSettingsValueEdit = nil
+    local value = settingsState[name]
+    if config.integer then
+        if direction > 0 then
+            local ceiled = math.ceil(value)
+            value = (math.abs(value - ceiled) < 0.0001) and (ceiled + 1.0) or ceiled
+        else
+            local floored = math.floor(value)
+            value = (math.abs(value - floored) < 0.0001) and (floored - 1.0) or floored
+        end
+    else
+        value = round_to_step(value + config.step * direction, config.step)
+    end
+
+    settingsState[name] = clamp(value, config.min, config.max)
     apply_setting_slider(name)
 end
 
@@ -278,12 +302,105 @@ local function update_active_settings_slider(mouseX)
 end
 
 local function begin_settings_slider_drag(name, event)
+    activeSettingsValueEdit = nil
     activeSettingsSlider = {
         name = name,
         left = event.element_left or 0.0,
         width = event.element_width or settingsSliderWidth,
     }
     update_active_settings_slider(event.mouse_x or Input.GetMouseClientX())
+end
+
+local function commit_settings_value_edit()
+    if activeSettingsValueEdit == nil then return end
+
+    local edit = activeSettingsValueEdit
+    activeSettingsValueEdit = nil
+    local config = settingSliders[edit.name]
+    if config == nil then return end
+
+    local value = tonumber(edit.buffer)
+    if value ~= nil then
+        settingsState[edit.name] = clamp(round_to_step(value, config.step), config.min, config.max)
+    end
+    apply_setting_slider(edit.name)
+end
+
+local function cancel_settings_value_edit()
+    if activeSettingsValueEdit == nil then return end
+
+    local name = activeSettingsValueEdit.name
+    activeSettingsValueEdit = nil
+    apply_setting_slider(name)
+end
+
+local function begin_settings_value_edit(name)
+    local config = settingSliders[name]
+    if config == nil then return end
+
+    activeSettingsSlider = nil
+    activeSettingsValueEdit = {
+        name = name,
+        buffer = format_setting_value(name, settingsState[name]),
+        replaceOnInput = true
+    }
+    settingsWidget:SetText(config.value, activeSettingsValueEdit.buffer .. "_")
+end
+
+local function append_settings_value_edit_char(ch)
+    if activeSettingsValueEdit == nil then return end
+
+    local edit = activeSettingsValueEdit
+    local config = settingSliders[edit.name]
+    if edit.replaceOnInput then
+        edit.buffer = ""
+        edit.replaceOnInput = false
+    end
+    if ch == "." and (config == nil or config.integer or string.find(edit.buffer, ".", 1, true) ~= nil) then
+        return
+    end
+    if string.len(edit.buffer) >= 8 then
+        return
+    end
+
+    edit.buffer = edit.buffer .. ch
+    settingsWidget:SetText(config.value, edit.buffer .. "_")
+end
+
+local function backspace_settings_value_edit()
+    if activeSettingsValueEdit == nil then return end
+
+    local edit = activeSettingsValueEdit
+    local config = settingSliders[edit.name]
+    edit.replaceOnInput = false
+    local len = string.len(edit.buffer)
+    if len > 0 then
+        edit.buffer = string.sub(edit.buffer, 1, len - 1)
+    end
+    settingsWidget:SetText(config.value, edit.buffer .. "_")
+end
+
+local function update_settings_value_edit()
+    if activeSettingsValueEdit == nil then return end
+
+    for i = 0, 9 do
+        if Input.GetKeyDown(48 + i) or Input.GetKeyDown(96 + i) then
+            append_settings_value_edit_char(tostring(i))
+        end
+    end
+
+    if Input.GetKeyDown(190) or Input.GetKeyDown(110) then
+        append_settings_value_edit_char(".")
+    end
+    if Input.GetKeyDown(8) then
+        backspace_settings_value_edit()
+    end
+    if Input.GetKeyDown(Key.Enter) then
+        commit_settings_value_edit()
+    end
+    if Input.GetKeyDown(Key.Escape) then
+        cancel_settings_value_edit()
+    end
 end
 
 local function toggle_setting(name)
@@ -312,6 +429,7 @@ local function close_settings_show_pause()
     settingsVisible = false
     quitVisible = false
     activeSettingsSlider = nil
+    activeSettingsValueEdit = nil
     if settingsWidget ~= nil and settingsWidget:IsInViewport() then
         settingsWidget:RemoveFromParent()
     end
@@ -352,6 +470,7 @@ local function close_all()
     settingsVisible = false
     quitVisible = false
     activeSettingsSlider = nil
+    activeSettingsValueEdit = nil
 
     if pauseWidget ~= nil and pauseWidget:IsInViewport() then
         pauseWidget:RemoveFromParent()
@@ -461,6 +580,11 @@ local function bind_settings_menu()
     settingsWidget:bind_event("settings-sfx-slider", "mousedown", function(event) begin_settings_slider_drag("sfx", event) end)
     settingsWidget:bind_event("settings-voice-slider", "mousedown", function(event) begin_settings_slider_drag("voice", event) end)
     settingsWidget:bind_event("settings-mouse-slider", "mousedown", function(event) begin_settings_slider_drag("mouse", event) end)
+    settingsWidget:bind_click("settings-gamma-value", function() begin_settings_value_edit("gamma") end)
+    settingsWidget:bind_click("settings-bgm-value", function() begin_settings_value_edit("bgm") end)
+    settingsWidget:bind_click("settings-sfx-value", function() begin_settings_value_edit("sfx") end)
+    settingsWidget:bind_click("settings-voice-value", function() begin_settings_value_edit("voice") end)
+    settingsWidget:bind_click("settings-mouse-value", function() begin_settings_value_edit("mouse") end)
     settingsWidget:bind_event("settings-screen", "mousemove", function(event)
         if activeSettingsSlider ~= nil then
             update_active_settings_slider(event.mouse_x or Input.GetMouseClientX())
@@ -535,6 +659,7 @@ function InGamePause.IsOpen()
 end
 
 function InGamePause.Tick()
+    update_settings_value_edit()
     if activeSettingsSlider ~= nil then
         if Input.GetKey(1) then
             update_active_settings_slider(Input.GetMouseClientX())

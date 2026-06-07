@@ -1,16 +1,16 @@
 {
         "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-        "EmissiveIntensity" : 0.000000,
+        "EmissiveIntensity" : 1.000000,
         "Parameters" : {
 
         },
         "ParentMaterial" : "Content/Material/Editor/DefaultParticleSprite.mat",
         "PathFileName" : "Content/Material/Editor/DefaultParticleSprite_Inst_8.matinst",
         "Textures" : {
-          "DiffuseTexture" : "Content/Texture/kenney_particlePack/smoke_08.png"
+          "DiffuseTexture" : "Content/Texture/kenney_particlePack/smoke_05.png"
         },
-        "bEnableBloom" : false,
-        "bOverrideEmissiveColor" : false,
-        "bOverrideEmissiveIntensity" : false,
-        "bOverrideEnableBloom" : false
+        "bEnableBloom" : true,
+        "bOverrideEmissiveColor" : true,
+        "bOverrideEmissiveIntensity" : true,
+        "bOverrideEnableBloom" : true
       }
