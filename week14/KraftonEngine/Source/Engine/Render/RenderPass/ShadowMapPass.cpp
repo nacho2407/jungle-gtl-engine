@@ -129,6 +129,7 @@ void FShadowMapPass::SetupShadowRenderState(FD3DDevice& Device, FSystemResources
 	ShadowCBCache.ShadowFilterMode = static_cast<uint32>(CurrentFilterMode);
 	ShadowCBCache.CSMBlendRange    = FShadowSettings::kDefaultCSMBlendRange;
 	ShadowCBCache.CSMBlendEnabled  = FShadowSettings::kDefaultCSMBlendEnabled ? 1u : 0u;
+	ShadowCBCache.CSMFadeOutEnabled = FProjectSettings::Get().Shadow.bDirectionalShadowFadeOut ? 1u : 0u;
 }
 
 // ============================================================
@@ -434,15 +435,22 @@ void FShadowMapPass::EnsureResources(const FPassContext& Ctx)
 		PointLightAtlas.Init(static_cast<float>(ProjShadow.PointAtlasResolution), 64.f);
 	}
 
-	// ── CSM (Directional) — Directional Light가 있을 때만 생성, 없으면 해제 ──
+	// ── CSM (Directional) — Directional shadow를 실제로 사용할 때만 생성, 없으면 해제 ──
 	if (Env.HasGlobalDirectionalLight())
 	{
 		const FGlobalDirectionalLightParams& DirectionalParams = Env.GetGlobalDirectionalLightParams();
-		const float ScaledResolution = static_cast<float>(ProjShadow.CSMResolution) * DirectionalParams.ShadowResolutionScale;
-		uint32 Resolution = static_cast<uint32>((std::max)(64.0f, (std::min)(ScaledResolution, 8192.0f)));
-		
-		Res.EnsureCSM(Dev, Resolution);
-		if (bVSM) Res.EnsureCSM_VSM(Dev, Resolution);
+		if (DirectionalParams.bVisible && DirectionalParams.bCastShadows)
+		{
+			const float ScaledResolution = static_cast<float>(ProjShadow.CSMResolution) * DirectionalParams.ShadowResolutionScale;
+			uint32 Resolution = static_cast<uint32>((std::max)(64.0f, (std::min)(ScaledResolution, 8192.0f)));
+
+			Res.EnsureCSM(Dev, Resolution);
+			if (bVSM) Res.EnsureCSM_VSM(Dev, Resolution);
+		}
+		else if (Res.CSM.IsValid())
+		{
+			Res.CSM.Release();
+		}
 	}
 	else if (Res.CSM.IsValid())
 	{
@@ -947,15 +955,23 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	constexpr int32 NumCascades = MAX_SHADOW_CASCADES;
 
 	FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
+	if (!DirectionalParams.bVisible || !DirectionalParams.bCastShadows)
+	{
+		// Directional light가 비활성/그림자 비활성인 경우 CSM 샘플링 자체를 끄는 기본값 유지
+		Res.CSM.DebugCascadeNear = FVector4(0, 0, 0, 0);
+		Res.CSM.DebugCascadeFar = FVector4(0, 0, 0, 0);
+		return;
+	}
 
 	// b5 Bias/SlopeBias/Sharpen: FShadowSettings override > per-light 값
 	const auto& Settings = FShadowSettings::Get();
-	ShadowCBCache.ShadowBias       = Settings.GetBias().value_or(DirectionalParams.ShadowBias);
+	ShadowCBCache.ShadowBias       = (std::max)(0.0f, Settings.GetBias().value_or(DirectionalParams.ShadowBias));
 	ShadowCBCache.ShadowSlopeBias  = Settings.GetSlopeBias().value_or(DirectionalParams.ShadowSlopeBias);
-	ShadowCBCache.ShadowNormalBias = DirectionalParams.ShadowNormalBias;
+	ShadowCBCache.ShadowNormalBias = (std::max)(0.0f, DirectionalParams.ShadowNormalBias);
 	ShadowCBCache.ShadowSharpen    = Settings.GetSharpen().value_or(DirectionalParams.ShadowSharpen);
 	ShadowCBCache.CSMBlendRange    = (std::max)(0.0f, Settings.GetEffectiveCSMBlendRange());
 	ShadowCBCache.CSMBlendEnabled  = Settings.GetEffectiveCSMBlendEnabled() ? 1u : 0u;
+	ShadowCBCache.CSMFadeOutEnabled = FProjectSettings::Get().Shadow.bDirectionalShadowFadeOut ? 1u : 0u;
 
 	FMatrix CameraView = Ctx.Frame.View;
 	FMatrix CameraProj = Ctx.Frame.Proj;
@@ -963,9 +979,10 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 	const float CameraNearZ = Ctx.Frame.NearClip;
 	const float CameraFarZ = Ctx.Frame.FarClip;
 
-	//해당 범위까지 directional light에 대한 shadow가 그려지며, 이 구간을 4개의 cascade로 분할함
-	const float ShadowDistance = FShadowSettings::Get().GetEffectiveCSMDistance();
-	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
+	// 해당 범위까지 directional light shadow를 적용하며, 0이면 카메라 FarClip까지 사용
+	const float ShadowFarZ = Settings.ResolveCSMDistance(
+		CameraFarZ,
+		FProjectSettings::Get().Shadow.DirectionalShadowDistance);
 	const float CascadeLambda = FShadowSettings::Get().GetEffectiveCSMCascadeLambda();
 
 	//view frustum을 분할합니다.

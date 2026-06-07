@@ -198,10 +198,11 @@ struct FShadowCBData
 	uint32   CSMResolution;                      //   4B | offset 300
 	float    CSMBlendRange;                      //   4B | offset 304
 	uint32   CSMBlendEnabled;                    //   4B | offset 308
-	uint32   SpotAtlasResolution;                //   4B | offset 312
+	uint32   CSMFadeOutEnabled;                  //   4B
 
-	uint32   PointAtlasResolution;               //   4B | offset 316
-	float    _Pad[3];                            //  12B → 합계 336B (16B 정렬 OK)
+	uint32   SpotAtlasResolution;                //   4B
+	uint32   PointAtlasResolution;               //   4B
+	float    _Pad[2];                            //   8B → 합계 336B (16B 정렬 OK)
 };
 static_assert(sizeof(FShadowCBData) % 16 == 0, "FShadowCBData must be 16-byte aligned");
 

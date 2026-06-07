@@ -3,6 +3,7 @@
 #include "GameFramework/AActor.h"
 #include "Profiling/Stats/Stats.h"
 #include "Debug/DrawDebugHelpers.h"
+#include "Core/ProjectSettings.h"
 #include "Render/Types/LightFrustumUtils.h"
 #include "Render/Types/ShadowSettings.h"
 #include <algorithm>
@@ -358,88 +359,92 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 
 		constexpr int32 NumCascades = MAX_SHADOW_CASCADES;
 		const FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
-
-		const float CameraNearZ = Frame.NearClip;
-		const float CameraFarZ = Frame.FarClip;
-		const float ShadowDistance = FShadowSettings::Get().GetEffectiveCSMDistance();
-		const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
-		const float Lambda = FShadowSettings::Get().GetEffectiveCSMCascadeLambda();
-
-		FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];
-		FLightFrustumUtils::ComputeCascadeRanges(
-			CameraNearZ,
-			ShadowFarZ,
-			NumCascades,
-			Lambda,
-			CascadeRanges
-		);
-
-		for (int32 CascadeIndex = 0; CascadeIndex < NumCascades; ++CascadeIndex)
+		if (DirectionalParams.bVisible && DirectionalParams.bCastShadows)
 		{
-			const FColor& Color = CascadeColors[CascadeIndex];
-			const FColor ReceiverColor = DimColor(Color);
-			const float CascadeNearZ = CascadeRanges[CascadeIndex].NearZ;
-			const float CascadeFarZ = CascadeRanges[CascadeIndex].FarZ;
-
-			// Camera frustum의 cascade slice를 world-space 8개 코너로 계산하여 와이어박스 그리기
-			FVector CascadeCorners[8];
-			FLightFrustumUtils::ComputeCascadeWorldCorners(
-				Frame.View,
-				Frame.Proj,
-				CameraNearZ,
+			const float CameraNearZ = Frame.NearClip;
+			const float CameraFarZ = Frame.FarClip;
+			const FShadowSettings& ShadowSettings = FShadowSettings::Get();
+			const float ShadowFarZ = ShadowSettings.ResolveCSMDistance(
 				CameraFarZ,
-				CascadeNearZ,
-				CascadeFarZ,
-				CascadeCorners
+				FProjectSettings::Get().Shadow.DirectionalShadowDistance);
+			const float Lambda = ShadowSettings.GetEffectiveCSMCascadeLambda();
+
+			FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];
+			FLightFrustumUtils::ComputeCascadeRanges(
+				CameraNearZ,
+				ShadowFarZ,
+				NumCascades,
+				Lambda,
+				CascadeRanges
 			);
 
-			DrawDebugBox(
-				World,
-				CascadeCorners[0], CascadeCorners[1], CascadeCorners[2], CascadeCorners[3],
-				CascadeCorners[4], CascadeCorners[5], CascadeCorners[6], CascadeCorners[7],
-				ReceiverColor,
-				0.0f
-			);
+			for (int32 CascadeIndex = 0; CascadeIndex < NumCascades; ++CascadeIndex)
+			{
+				const FColor& Color = CascadeColors[CascadeIndex];
+				const FColor ReceiverColor = DimColor(Color);
+				const float CascadeNearZ = CascadeRanges[CascadeIndex].NearZ;
+				const float CascadeFarZ = CascadeRanges[CascadeIndex].FarZ;
 
-			// 같은 slice를 light-space ortho frustum으로 변환한 뒤 와이어프레임으로 그리기
-			const FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP =
-				FLightFrustumUtils::BuildDirectionalLightCascadeViewProj(
-					DirectionalParams,
+				// Camera frustum의 cascade slice를 world-space 8개 코너로 계산하여 와이어박스 그리기
+				FVector CascadeCorners[8];
+				FLightFrustumUtils::ComputeCascadeWorldCorners(
 					Frame.View,
 					Frame.Proj,
 					CameraNearZ,
 					CameraFarZ,
 					CascadeNearZ,
-					CascadeFarZ
+					CascadeFarZ,
+					CascadeCorners
 				);
 
-			FVector ShadowBoxCorners[8];
-			float MinZ = FLT_MAX;
-			float MaxZ = -FLT_MAX;
+				DrawDebugBox(
+					World,
+					CascadeCorners[0], CascadeCorners[1], CascadeCorners[2], CascadeCorners[3],
+					CascadeCorners[4], CascadeCorners[5], CascadeCorners[6], CascadeCorners[7],
+					ReceiverColor,
+					0.0f
+				);
 
-			for (int32 i = 0; i < 8; ++i)
-			{
-				const FVector LS = DirectionalVP.View.TransformPositionWithW(CascadeCorners[i]);
-				MinZ = (std::min)(MinZ, LS.Z);
-				MaxZ = (std::max)(MaxZ, LS.Z);
+				// 같은 slice를 light-space ortho frustum으로 변환한 뒤 와이어프레임으로 그리기
+				const FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP =
+					FLightFrustumUtils::BuildDirectionalLightCascadeViewProj(
+						DirectionalParams,
+						Frame.View,
+						Frame.Proj,
+						CameraNearZ,
+						CameraFarZ,
+						CascadeNearZ,
+						CascadeFarZ
+					);
+
+				FVector ShadowBoxCorners[8];
+				float MinZ = FLT_MAX;
+				float MaxZ = -FLT_MAX;
+
+				for (int32 i = 0; i < 8; ++i)
+				{
+					const FVector LS = DirectionalVP.View.TransformPositionWithW(CascadeCorners[i]);
+					MinZ = (std::min)(MinZ, LS.Z);
+					MaxZ = (std::max)(MaxZ, LS.Z);
+				}
+
+				FLightFrustumUtils::ComputeOrthoWorldCorners(
+					DirectionalVP.View,
+					DirectionalVP.OrthoWidth,
+					DirectionalVP.OrthoHeight,
+					MinZ,
+					MaxZ,
+					ShadowBoxCorners
+				);
+
+				DrawDebugBox(
+					World,
+					ShadowBoxCorners[0], ShadowBoxCorners[1], ShadowBoxCorners[2], ShadowBoxCorners[3],
+					ShadowBoxCorners[4], ShadowBoxCorners[5], ShadowBoxCorners[6], ShadowBoxCorners[7],
+					Color,
+					0.0f
+				);
 			}
-
-			FLightFrustumUtils::ComputeOrthoWorldCorners(
-				DirectionalVP.View,
-				DirectionalVP.OrthoWidth,
-				DirectionalVP.OrthoHeight,
-				MinZ,
-				MaxZ,
-				ShadowBoxCorners
-			);
-
-			DrawDebugBox(
-				World,
-				ShadowBoxCorners[0], ShadowBoxCorners[1], ShadowBoxCorners[2], ShadowBoxCorners[3],
-				ShadowBoxCorners[4], ShadowBoxCorners[5], ShadowBoxCorners[6], ShadowBoxCorners[7],
-				Color,
-				0.0f
-			);
 		}
 	}
 

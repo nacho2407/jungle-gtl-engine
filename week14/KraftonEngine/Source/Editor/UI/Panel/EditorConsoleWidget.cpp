@@ -5,6 +5,7 @@
 #include "Editor/Subsystem/OverlayStatSystem.h"
 #include "Object/Object.h"
 #include "Object/GarbageCollectionTest.h"
+#include "Core/ProjectSettings.h"
 #include "Render/Types/ShadowSettings.h"
 #include "Render/Types/LightFrustumUtils.h"
 #include "Render/Types/RenderConstants.h"
@@ -1119,8 +1120,9 @@ void FEditorConsoleWidget::PrintCSMCascadeRanges()
 
 	const float CameraNearZ = POV.NearClip;
 	const float CameraFarZ = POV.FarClip;
-	const float ShadowDistance = Settings.GetEffectiveCSMDistance();
-	const float ShadowFarZ = (CameraFarZ < ShadowDistance) ? CameraFarZ : ShadowDistance;
+	const float ShadowFarZ = Settings.ResolveCSMDistance(
+		CameraFarZ,
+		FProjectSettings::Get().Shadow.DirectionalShadowDistance);
 	const float Lambda = Settings.GetEffectiveCSMCascadeLambda();
 
 	FLightFrustumUtils::FCascadeRange CascadeRanges[MAX_SHADOW_CASCADES];
@@ -1182,9 +1184,17 @@ void FEditorConsoleWidget::HandleCSMDistance(const TArray<FString>& Args)
 	{
 		auto Cur = Settings.GetCSMShadowDistance();
 		if (Cur.has_value())
+		{
 			AddLog("csm distance: %.3f\n", Cur.value());
+		}
+		else if (FProjectSettings::Get().Shadow.DirectionalShadowDistance > 0.0f)
+		{
+			AddLog("csm distance: project (%.3f)\n", FProjectSettings::Get().Shadow.DirectionalShadowDistance);
+		}
 		else
-			AddLog("csm distance: default (%.3f)\n", FShadowSettings::kDefaultDirectionalShadowDistance);
+		{
+			AddLog("csm distance: project (camera far clip)\n");
+		}
 		AddLog("Usage: csm distance <distance>|reset\n");
 		return;
 	}

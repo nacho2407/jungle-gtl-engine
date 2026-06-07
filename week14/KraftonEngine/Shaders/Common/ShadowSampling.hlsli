@@ -164,7 +164,7 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth, float3 N)
     }
     
     //마지막 cascade의 경우 fade out 효과 적용
-    if (NumCSMCascades > 1 && cascade == NumCSMCascades - 1)
+    if (CSMFadeOutEnabled != 0 && NumCSMCascades > 1 && cascade == NumCSMCascades - 1)
     {
         float lastSplit = CascadeSplits[NumCSMCascades - 1];
         float prevSplit = CascadeSplits[NumCSMCascades - 2];

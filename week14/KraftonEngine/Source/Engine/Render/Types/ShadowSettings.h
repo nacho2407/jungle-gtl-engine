@@ -109,6 +109,15 @@ public:
 	float             GetEffectiveSlopeBias() const { return ShadowSlopeBias.value_or(kDefaultSlopeBias); }
 	EShadowFilterMode GetEffectiveFilterMode() const { return FilterMode.value_or(kDefaultFilterMode); }
 	uint32            GetEffectiveFilterModeU32() const { return static_cast<uint32>(GetEffectiveFilterMode()); }
+	float             ResolveCSMDistance(float CameraFarZ, float ProjectShadowDistance) const
+	{
+		const float Distance = DirectionalShadowDistance.value_or(ProjectShadowDistance);
+		if (Distance <= 0.0f)
+		{
+			return CameraFarZ;
+		}
+		return (CameraFarZ < Distance) ? CameraFarZ : Distance;
+	}
 
 private:
 	std::optional<uint32> Resolution;
