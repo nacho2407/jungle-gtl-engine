@@ -661,6 +661,15 @@ function Anim.is_montage_playing(slotName) end
 ---@param slotName? string
 function Anim.jump_to_section(sectionName, slotName) end
 
+---@param boneName string
+---@param pitch number
+---@param yaw number
+---@param roll number
+---@param weight? number
+function Anim.set_bone_rotation_offset(boneName, pitch, yaw, roll, weight) end
+
+function Anim.clear_bone_rotation_offsets() end
+
 ---@return boolean
 function Anim.is_left_mouse_pressed() end
 
