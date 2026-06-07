@@ -334,6 +334,12 @@ public:
 	bool HasEmissiveIntensityOverride() const { return bOverrideEmissiveIntensity; }
 	bool HasBloomEnabledOverride() const { return bOverrideBloomEnabled; }
 
+	const TMap<FString, float>& GetScalarOverrides() const { return ScalarOverrides; }
+	const TMap<FString, FVector>& GetVector3Overrides() const { return Vector3Overrides; }
+	const TMap<FString, FVector4>& GetVector4Overrides() const { return Vector4Overrides; }
+	const TMap<FString, FMatrix>& GetMatrixOverrides() const { return MatrixOverrides; }
+	const TMap<FString, UTexture2D*>& GetTextureOverrides() const { return TextureOverrides; }
+
 	void SetEmissiveColorOverride(bool bOverride, const FVector4& InColor);
 	void SetEmissiveIntensityOverride(bool bOverride, float InIntensity);
 	void SetBloomEnabledOverride(bool bOverride, bool bInEnableBloom);
