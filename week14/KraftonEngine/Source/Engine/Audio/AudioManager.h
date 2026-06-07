@@ -16,6 +16,14 @@ public:
 
 	bool LoadAudio(const FString& Key, const FString& Path, bool bLoop = false);
 	bool PlayAudio(const FString& Key, float Volume = 1.0f);
+	/**
+	 * @brief 로드된 일반 오디오 재생을 즉시 멈추고 시작 위치로 되돌립니다
+	 *
+	 * @param Key 정지할 로드 오디오 키
+	 *
+	 * @return 정지할 오디오를 찾았으면 true, 없거나 오디오 시스템이 준비되지 않았으면 false
+	 */
+	bool StopAudio(const FString& Key);
 	bool PlayOneShot(const FString& EventName);
 	bool PlayOneShotAt(const FString& EventName, const FVector& Position);
 	void PlayBGM(const FString& Key, float Volume = 1.0f);

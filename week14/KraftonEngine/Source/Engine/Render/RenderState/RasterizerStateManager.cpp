@@ -7,6 +7,12 @@ void FRasterizerStateManager::Create(ID3D11Device* InDevice)
 	D3D11_RASTERIZER_DESC Desc = {};
 	Desc.FillMode = D3D11_FILL_SOLID;
 	Desc.CullMode = D3D11_CULL_BACK;
+	// 반드시 켜야 합니다. Desc를 0으로 초기화하면 DepthClipEnable도 FALSE가 되어
+	// shadow camera의 near/far 밖에 있는 caster가 CSM depth map에 새어 들어갈 수 있습니다.
+	Desc.DepthClipEnable = TRUE;
+	Desc.ScissorEnable = FALSE;
+	Desc.MultisampleEnable = FALSE;
+	Desc.AntialiasedLineEnable = FALSE;
 	InDevice->CreateRasterizerState(&Desc, &BackCull);
 
 	Desc.CullMode = D3D11_CULL_FRONT;

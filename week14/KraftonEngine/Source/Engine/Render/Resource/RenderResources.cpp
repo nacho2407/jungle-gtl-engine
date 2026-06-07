@@ -143,6 +143,8 @@ void FShadowMapResources::FCSMResources::Release()
 	ReleaseCOM(Texture);
 	Resolution = 0;
 	FailedResolution = 0;
+	DebugCascadeNear = FVector4(0, 0, 0, 0);
+	DebugCascadeFar = FVector4(0, 0, 0, 0);
 }
 
 void FShadowMapResources::FCSMResources::ReleaseVSM()

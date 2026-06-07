@@ -187,6 +187,18 @@ void UStaticMeshComponent::CacheLocalBounds()
 	bHasValidBounds = Asset->bBoundsValid;
 }
 
+bool UStaticMeshComponent::GetCachedLocalBounds(FVector& OutCenter, FVector& OutExtent) const
+{
+	if (!bHasValidBounds)
+	{
+		return false;
+	}
+
+	OutCenter = CachedLocalCenter;
+	OutExtent = CachedLocalExtent;
+	return true;
+}
+
 void UStaticMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
 {
 	UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -690,6 +702,12 @@ void UStaticMeshComponent::PostEditProperty(const char* PropertyName)
 	UPrimitiveComponent::PostEditProperty(PropertyName);
 
 	if (!PropertyName) return;
+
+	if (strcmp(PropertyName, "bUseBoundingBoxCollider") == 0 || strcmp(PropertyName, "Use Bounding Box Collider") == 0)
+	{
+		// Static Mesh 물리 shape 종류 변경에 따른 body 재생성
+		RecreatePhysicsState();
+	}
 
 	if (strcmp(PropertyName, "StaticMeshPath") == 0 || strcmp(PropertyName, "Static Mesh") == 0)
 	{

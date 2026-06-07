@@ -163,6 +163,17 @@ void EditorProjectSettingsWidget::Render()
 			};
 
 			bSettingsChanged |= ResCombo("CSM Resolution", PS.Shadow.CSMResolution);
+
+			if (ImGui::InputFloat("Directional Shadow Distance", &PS.Shadow.DirectionalShadowDistance, 10.0f, 100.0f, "%.3f"))
+			{
+				PS.Shadow.DirectionalShadowDistance = (std::max)(0.0f, PS.Shadow.DirectionalShadowDistance);
+				bSettingsChanged = true;
+			}
+			if (ImGui::Checkbox("Directional Shadow Fade Out", &PS.Shadow.bDirectionalShadowFadeOut))
+			{
+				bSettingsChanged = true;
+			}
+
 			bSettingsChanged |= ResCombo("Spot Atlas Resolution", PS.Shadow.SpotAtlasResolution);
 			bSettingsChanged |= ResCombo("Point Atlas Resolution", PS.Shadow.PointAtlasResolution);
 

@@ -152,6 +152,15 @@ public:
 	// false 반환 시 ActiveCamera 가 없거나 아직 한 번도 갱신되지 않은 상태.
 	bool GetCameraCachePOV(FMinimalViewInfo& OutPOV) const;
 
+	/**
+	 * @brief 카메라 modifier 적용 전 POV 반환
+	 *
+	 * @param OutPOV modifier 적용 전 카메라 POV 출력값
+	 *
+	 * @return 유효한 modifier 적용 전 POV 보유 여부
+	 */
+	bool GetUnmodifiedCameraCachePOV(FMinimalViewInfo& OutPOV) const;
+
 private:
 	float ApplyBlendFunction(float Alpha, FViewTargetTransitionParams BlendParams) const;
 	FMinimalViewInfo LerpPOV(const FMinimalViewInfo& From, const FMinimalViewInfo& To, float Alpha) const;
@@ -209,4 +218,8 @@ private:
 	// ActiveCamera 가 한 번도 없었으면 bCameraCacheValid=false → caller 가 fallback 처리.
 	FMinimalViewInfo CameraCachePOV;
 	bool bCameraCacheValid = false;
+
+	// modifier 적용 전 POV cache — shadow 같은 안정적인 렌더 기준이 화면 shake에 끌려가지 않게 사용.
+	FMinimalViewInfo UnmodifiedCameraCachePOV;
+	bool bUnmodifiedCameraCacheValid = false;
 };

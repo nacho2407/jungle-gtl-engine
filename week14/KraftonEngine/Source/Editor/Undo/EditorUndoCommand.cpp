@@ -223,7 +223,7 @@ void ApplyEditorSelection(UEditorEngine* EditorEngine, const FEditorSelectionSna
 
 	// Undo/Redo 적용 후 selection과 gizmo target을 UUID 기준으로 다시 바인딩합니다.
 	FSelectionManager& SelectionManager = EditorEngine->GetSelectionManager();
-	SelectionManager.RestoreSelectionByUUIDs(Selection.ActorUUIDs, Selection.ComponentUUID);
+	SelectionManager.RestoreSelectionByUUIDs(Selection.ActorUUIDs, Selection.ComponentUUID, Selection.GroupIds);
 
 	if (UGizmoComponent* Gizmo = EditorEngine->GetGizmo())
 	{
@@ -643,9 +643,20 @@ FEditorSelectionSnapshot CaptureEditorSelection(const FSelectionManager* Selecti
 		return Snapshot;
 	}
 
-	for (AActor* Actor : SelectionManager->GetSelectedActors())
+	for (uint32 ActorUUID : SelectionManager->GetDirectSelectedActorUUIDs())
 	{
-		AddUniqueActorUUID(Snapshot.ActorUUIDs, Actor);
+		if (ActorUUID != 0 && std::find(Snapshot.ActorUUIDs.begin(), Snapshot.ActorUUIDs.end(), ActorUUID) == Snapshot.ActorUUIDs.end())
+		{
+			Snapshot.ActorUUIDs.push_back(ActorUUID);
+		}
+	}
+
+	for (uint32 GroupId : SelectionManager->GetSelectedGroupIds())
+	{
+		if (GroupId != 0 && std::find(Snapshot.GroupIds.begin(), Snapshot.GroupIds.end(), GroupId) == Snapshot.GroupIds.end())
+		{
+			Snapshot.GroupIds.push_back(GroupId);
+		}
 	}
 
 	if (USceneComponent* Component = SelectionManager->GetSelectedComponent())

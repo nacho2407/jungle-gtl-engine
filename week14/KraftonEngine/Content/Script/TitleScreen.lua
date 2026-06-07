@@ -274,7 +274,7 @@ local function start_prologue_scene()
     show_quit_panel(false)
 
     if Engine.TransitionToScene ~= nil then
-        Engine.TransitionToScene("Prologue.Scene")
+        Engine.TransitionToScene("FL_Level1.Scene")
     else
         print("[Title] Engine.TransitionToScene is not available")
     end

@@ -35,6 +35,23 @@ void FFrameContext::SetCameraInfo(const UCameraComponent* Camera)
 	SetCameraInfo(POV);
 }
 
+void FFrameContext::SetStableShadowCameraInfo(const FMinimalViewInfo& POV)
+{
+	// 화면용 POV에는 camera shake가 들어갈 수 있으므로, directional shadow는 별도 안정 POV를 사용합니다.
+	StableShadowView = POV.CalculateViewMatrix();
+	StableShadowProj = POV.CalculateProjectionMatrix();
+	StableShadowNearClip = POV.NearClip;
+	StableShadowFarClip = POV.FarClip;
+	bHasStableShadowCamera = true;
+}
+
+void FFrameContext::ClearStableShadowCameraInfo()
+{
+	bHasStableShadowCamera = false;
+	StableShadowNearClip = 0.1f;
+	StableShadowFarClip = 10000.0f;
+}
+
 void FFrameContext::SetViewportInfo(const FViewport* VP)
 {
 	ViewportWidth    = static_cast<float>(VP->GetWidth());

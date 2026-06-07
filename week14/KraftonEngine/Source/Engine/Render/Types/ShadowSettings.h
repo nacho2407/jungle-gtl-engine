@@ -89,8 +89,8 @@ public:
 	static constexpr float  kDefaultCSMSplitLambda = 0.85f;
 	static constexpr float  kDefaultDirectionalShadowDistance = 300.0f;
 	static constexpr float  kDefaultDirectionalShadowCasterDistance = 500.0f;
-	static constexpr bool   kDefaultCSMBlendEnabled = false;
-	static constexpr float  kDefaultCSMBlendRange = 3.0f;
+	static constexpr bool   kDefaultCSMBlendEnabled = true;
+	static constexpr float  kDefaultCSMBlendRange = 5.0f;
 
 	// 기본값 상수
 	static constexpr float  kDefaultBias = 0.005f;
@@ -109,6 +109,16 @@ public:
 	float             GetEffectiveSlopeBias() const { return ShadowSlopeBias.value_or(kDefaultSlopeBias); }
 	EShadowFilterMode GetEffectiveFilterMode() const { return FilterMode.value_or(kDefaultFilterMode); }
 	uint32            GetEffectiveFilterModeU32() const { return static_cast<uint32>(GetEffectiveFilterMode()); }
+	float             ResolveCSMDistance(float CameraFarZ, float ProjectShadowDistance) const
+	{
+		const float Distance = DirectionalShadowDistance.value_or(ProjectShadowDistance);
+		// 0이면 FarClip 전체(예: 4096/10000)를 CSM으로 덮게 되어 마지막 cascade가 지나치게 커집니다.
+		// 기본 런타임 값(300)으로 제한하고, 정말 멀리 쓰고 싶을 때만 명시적인 양수 값을 넣습니다.
+		if (Distance <= 0.0f)
+			return (CameraFarZ < kDefaultDirectionalShadowDistance) ? CameraFarZ : kDefaultDirectionalShadowDistance;
+
+		return (CameraFarZ < Distance) ? CameraFarZ : Distance;
+	}
 
 private:
 	std::optional<uint32> Resolution;

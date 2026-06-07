@@ -76,7 +76,7 @@ float SampleShadowVSM(Texture2DArray shadowMap, float3 uvw, float fragDepth, flo
 }
 
 // ── Cascade 선택 ────────────────────────────────────────────────
-// viewDepth = abs(mul(worldPos, View).z)  (카메라 뷰 공간 깊이)
+// viewDepth = 카메라 뷰 공간 깊이
 uint SelectCascade(float viewDepth)
 {
     // CascadeSplits.xyzw = [split0, split1, split2, split3]
@@ -130,9 +130,47 @@ bool SampleDirectionalCascade(float3 biasedPos, uint cascade, out float shadowFa
     return true;
 }
 
+bool SampleDirectionalCascadeWithFallback(float3 biasedPos, uint preferredCascade, out float shadowFactor, out uint sampledCascade)
+{
+    // 선택된 cascade가 현재 픽셀을 덮지 못하면 곧바로 lit 처리하지 않고 인접 cascade를 재시도합니다.
+    shadowFactor = 1.0f;
+    sampledCascade = preferredCascade;
+
+    if (SampleDirectionalCascade(biasedPos, preferredCascade, shadowFactor))
+    {
+        sampledCascade = preferredCascade;
+        return true;
+    }
+
+    for (uint offset = 1; offset < NumCSMCascades; ++offset)
+    {
+        uint candidateCascade = preferredCascade + offset;
+        if (candidateCascade < NumCSMCascades)
+        {
+            if (SampleDirectionalCascade(biasedPos, candidateCascade, shadowFactor))
+            {
+                sampledCascade = candidateCascade;
+                return true;
+            }
+        }
+
+        if (preferredCascade >= offset)
+        {
+            candidateCascade = preferredCascade - offset;
+            if (SampleDirectionalCascade(biasedPos, candidateCascade, shadowFactor))
+            {
+                sampledCascade = candidateCascade;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 // ── Directional Light Shadow Factor (통합) ──────────────────────
 // worldPos:  월드 좌표
-// viewDepth: 카메라 뷰 공간 깊이 (abs(viewPos.z))
+// viewDepth: 카메라 뷰 공간 깊이
 float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth, float3 N)
 {
     if (NumCSMCascades == 0)
@@ -145,9 +183,12 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth, float3 N)
     float3 biasedPos = worldPos + N * ShadowNormalBias;
 
     float shadowFactor = 1.0f;
-    SampleDirectionalCascade(biasedPos, cascade, shadowFactor);
+    uint sampledCascade = cascade;
+    bool hasShadowSample = SampleDirectionalCascadeWithFallback(biasedPos, cascade, shadowFactor, sampledCascade);
+    if (!hasShadowSample)
+        return 1.0f;
 
-    if (CSMBlendEnabled != 0 && CSMBlendRange > 0.0f && cascade + 1 < NumCSMCascades)
+    if (CSMBlendEnabled != 0 && CSMBlendRange > 0.0f && sampledCascade == cascade && cascade + 1 < NumCSMCascades)
     {
         float splitDepth = CascadeSplits[cascade];
         float blendStart = splitDepth - CSMBlendRange;
@@ -163,17 +204,21 @@ float CalcDirectionalShadowFactor(float3 worldPos, float viewDepth, float3 N)
         }
     }
     
-    //마지막 cascade의 경우 fade out 효과 적용
-    if (NumCSMCascades > 1 && cascade == NumCSMCascades - 1)
+    // 마지막 cascade의 경우 fade out 효과 적용
+    if (CSMFadeOutEnabled != 0 && NumCSMCascades > 1 && sampledCascade == NumCSMCascades - 1)
     {
         float lastSplit = CascadeSplits[NumCSMCascades - 1];
         float prevSplit = CascadeSplits[NumCSMCascades - 2];
-        float fadeStart = lerp(prevSplit, lastSplit, 0.5f);
 
-        if (viewDepth > fadeStart)
+        if (lastSplit > prevSplit)
         {
-            float fadeT = saturate((viewDepth - fadeStart) / (lastSplit - fadeStart));
-            shadowFactor = lerp(shadowFactor, 1.0f, fadeT);
+            float fadeStart = lerp(prevSplit, lastSplit, 0.5f);
+
+            if (viewDepth > fadeStart)
+            {
+                float fadeT = saturate((viewDepth - fadeStart) / (lastSplit - fadeStart));
+                shadowFactor = lerp(shadowFactor, 1.0f, fadeT);
+            }
         }
     }
 

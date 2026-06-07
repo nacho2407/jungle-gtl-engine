@@ -27,6 +27,7 @@
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/Pawn/Character.h"
 #include "GameFramework/Pawn/Pawn.h"
 #include "GameFramework/GameMode/PlayerController.h"
 #include "GameFramework/Camera/PlayerCameraManager.h"
@@ -821,6 +822,39 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		APlayerController* PC = (GEngine && GEngine->GetWorld()) ? GEngine->GetWorld()->GetFirstPlayerController() : nullptr;
 		return PC ? PC->GetPossessedPawn() : nullptr;
 	});
+	Game.set_function("PossessPawnByName", [](const FString& PawnName) -> bool
+	{
+		if (!GEngine || !GEngine->GetWorld())
+		{
+			return false;
+		}
+
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		if (!PC)
+		{
+			return false;
+		}
+
+		for (AActor* Actor : GEngine->GetWorld()->GetActors())
+		{
+			if (!Actor || Actor->GetFName().ToString() != PawnName)
+			{
+				continue;
+			}
+
+			// Lua의 World.FindActorByName은 Actor로 반환되므로, Pawn 전환은 C++에서 안전하게 캐스팅합니다.
+			APawn* Pawn = Cast<APawn>(Actor);
+			if (!Pawn)
+			{
+				return false;
+			}
+
+			PC->Possess(Pawn);
+			return true;
+		}
+
+		return false;
+	});
 	Game.set_function("GetCameraManager", []() -> APlayerCameraManager*
 	{
 		APlayerController* PC = (GEngine && GEngine->GetWorld()) ? GEngine->GetWorld()->GetFirstPlayerController() : nullptr;
@@ -1130,6 +1164,17 @@ Engine.IsPaused = Game.IsPaused
 			Manager->StartCameraShakeAsset(AssetPath, Scale.value_or(1.0f));
 		}
 	});
+	CameraManager.set_function("StopAllCameraShakes", [](sol::optional<bool> bImmediately)
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (Manager)
+		{
+			// 컷씬 스킵/카메라 전환 시 남아 있는 흔들림을 즉시 정리하기 위한 Lua 진입점입니다.
+			Manager->StopAllCameraShakes(bImmediately.value_or(true));
+		}
+	});
 
 	sol::table AudioManager = Lua.create_named_table("AudioManager");
 	AudioManager.set_function("Load", [](const FString& SoundName, const FString& Path, sol::optional<bool> bLoop)
@@ -1139,6 +1184,10 @@ Engine.IsPaused = Game.IsPaused
 	AudioManager.set_function("Play", [](const FString& SoundName, float Volume)
 	{
 		return FAudioManager::Get().PlayAudio(SoundName, Volume);
+	});
+	AudioManager.set_function("Stop", [](const FString& SoundName)
+	{
+		return FAudioManager::Get().StopAudio(SoundName);
 	});
 	AudioManager.set_function("PlayOneShot", [](const FString& EventName)
 	{
@@ -1625,6 +1674,35 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("GetCharacterMovement",
 			"---@return CharacterMovementComponent?\nfunction Actor:GetCharacterMovement() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UCharacterMovementComponent>(); })
+		.Method("GetCharacterAutoInputWASD",
+			"---@return boolean\nfunction Actor:GetCharacterAutoInputWASD() end",
+			[](AActor& Actor)
+			{
+				ACharacter* Character = Cast<ACharacter>(&Actor);
+				return Character ? Character->bAutoInputWASD : false;
+			})
+		.Method("GetCharacterAutoInputMouseLook",
+			"---@return boolean\nfunction Actor:GetCharacterAutoInputMouseLook() end",
+			[](AActor& Actor)
+			{
+				ACharacter* Character = Cast<ACharacter>(&Actor);
+				return Character ? Character->bAutoInputMouseLook : false;
+			})
+		.Method("SetCharacterAutoInput",
+			"---@param wasd boolean\n---@param mouseLook boolean\n---@return boolean\nfunction Actor:SetCharacterAutoInput(wasd, mouseLook) end",
+			[](AActor& Actor, bool bWASD, bool bMouseLook)
+			{
+				ACharacter* Character = Cast<ACharacter>(&Actor);
+				if (!Character)
+				{
+					return false;
+				}
+
+				// 컷씬 중 배경 Pawn이 입력을 소비하지 않도록 자동 입력 처리만 임시로 전환합니다.
+				Character->bAutoInputWASD = bWASD;
+				Character->bAutoInputMouseLook = bMouseLook;
+				return true;
+			})
 		.Method("GetVehicleMovement",
 			"---@return VehicleMovementComponent4W?\nfunction Actor:GetVehicleMovement() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UVehicleMovementComponent4W>(); })

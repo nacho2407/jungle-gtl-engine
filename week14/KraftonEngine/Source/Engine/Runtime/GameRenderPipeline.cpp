@@ -191,6 +191,18 @@ void FGameRenderPipeline::BuildFrame(FViewport* VP, const FMinimalViewInfo& POV,
 	ApplyLetterboxAspect(RenderPOV, Frame.CameraLetterbox, Frame.ViewportWidth, Frame.ViewportHeight);
 	Frame.SetCameraInfo(RenderPOV);
 
+	FMinimalViewInfo StableShadowPOV;
+	if (CamManager && CamManager->GetUnmodifiedCameraCachePOV(StableShadowPOV))
+	{
+		// 화면 카메라는 shake가 적용되지만, directional shadow CSM은 안정 POV 기준으로 계산합니다.
+		ApplyLetterboxAspect(StableShadowPOV, Frame.CameraLetterbox, Frame.ViewportWidth, Frame.ViewportHeight);
+		Frame.SetStableShadowCameraInfo(StableShadowPOV);
+	}
+	else
+	{
+		Frame.ClearStableShadowCameraInfo();
+	}
+
 	UpdateFrameCursorFromInput(Frame);
 }
 
