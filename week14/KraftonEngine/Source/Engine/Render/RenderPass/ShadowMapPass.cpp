@@ -1006,7 +1006,8 @@ void FShadowMapPass::RenderDirectionalShadows(const FPassContext& Ctx, FShadowMa
 			= FLightFrustumUtils::BuildDirectionalLightCascadeViewProj(
 				DirectionalParams, CameraView, CameraProj,
 				CameraNearZ, CameraFarZ,
-				RenderNearZ, RenderFarZ);
+				RenderNearZ, RenderFarZ,
+				static_cast<float>(Res.CSM.Resolution));
 
 		FConvexVolume LightFrustum;
 		LightFrustum.UpdateFromMatrix(DirectionalVP.ViewProj);
