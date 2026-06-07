@@ -18,7 +18,7 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 	{
 		bool bEnabled = true;
 		uint32 CSMResolution       = 2048;	// Directional Light CSM cascade 해상도
-		float DirectionalShadowDistance = 0.0f;	// 0이면 카메라 FarClip까지 CSM 적용
+		float DirectionalShadowDistance = 300.0f;	// CSM 적용 거리. 너무 크게 잡으면 cascade가 카메라 회전에 심하게 흔들립니다.
 		bool bDirectionalShadowFadeOut = false;	// 마지막 cascade 거리 fade-out 사용 여부
 		uint32 SpotAtlasResolution = 4096;	// Spot Light Atlas page 해상도
 		uint32 PointAtlasResolution = 4096;	// Point Light Atlas page 해상도

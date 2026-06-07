@@ -5,6 +5,7 @@
 class UCapsuleComponent;
 class USkeletalMeshComponent;
 class UCharacterMovementComponent;
+class UCameraComponent;
 
 // UE 의 ACharacter 패턴 — Capsule(Root) → SkeletalMesh + CharacterMovement 의 표준 구성.
 //
@@ -63,4 +64,10 @@ protected:
 	UCapsuleComponent*           CapsuleComponent  = nullptr;
 	USkeletalMeshComponent*      Mesh              = nullptr;
 	UCharacterMovementComponent* CharacterMovement = nullptr;
+
+	// View tilt 적용 대상. 첫 Tick 에 GetComponentByClass 로 lazy lookup. 자식 (예: LuaCharacter) 이
+	// 카메라를 들고 있어도 같은 트리에서 찾힌다. 없으면 그냥 no-op.
+	UCameraComponent*            CachedCameraForTilt = nullptr;
+	// CMC->GetDesiredCameraRollDeg() 를 critically damped lerp 로 따라가는 현재 값.
+	float                        CurrentCameraTiltDeg = 0.0f;
 };

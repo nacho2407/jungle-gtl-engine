@@ -36,6 +36,19 @@
 Texture2D DiffuseTexture : register(t0);
 Texture2D NormalTexture : register(t1);
 
+float3 DecodeTangentNormal(float3 encodedNormal)
+{
+    float2 xy = encodedNormal.xy * 2.0f - 1.0f;
+
+    if (encodedNormal.z <= 0.001f)
+    {
+        float z = sqrt(saturate(1.0f - dot(xy, xy)));
+        return normalize(float3(xy, z));
+    }
+
+    return normalize(encodedNormal * 2.0f - 1.0f);
+}
+
 // ── Per-Object Material (b2) — 기존 StaticMesh 와 레이아웃 동일 (호환성) ──
 cbuffer PerShader1 : register(b2)
 {
@@ -95,7 +108,7 @@ UberVS_Output VS_StaticMesh(VS_Input_PNCTT input)
         float3 B = normalize(cross(N, T) * input.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
 
-        float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+        float3 tangentNormal = DecodeTangentNormal(NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz);
 
         N = normalize(mul(tangentNormal, TBN));
     }
@@ -141,7 +154,7 @@ UberVS_Output VS_InstancedStaticMesh(VS_Input_PNCTT_Instanced input)
     {
         float3 B = normalize(cross(N, T) * output.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
-        float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+        float3 tangentNormal = DecodeTangentNormal(NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz);
         N = normalize(mul(tangentNormal, TBN));
     }
 
@@ -192,7 +205,7 @@ UberVS_Output VS_SkeletalMesh(VS_Input_PNCTTBB input)
         float3 B = normalize(cross(N, T) * output.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
 
-        float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+        float3 tangentNormal = DecodeTangentNormal(NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz);
 
         N = normalize(mul(tangentNormal, TBN));
     }
@@ -262,7 +275,7 @@ return output;
         float3 B = normalize(cross(N, T) * input.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
 
-        float3 tangentNormal = NormalTexture.Sample(LinearWrapSampler, input.texcoord).xyz * 2.0f - 1.0f;
+        float3 tangentNormal = DecodeTangentNormal(NormalTexture.Sample(LinearWrapSampler, input.texcoord).xyz);
         N = normalize(mul(tangentNormal, TBN));
     }
 #endif

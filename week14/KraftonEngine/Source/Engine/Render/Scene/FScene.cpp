@@ -8,6 +8,38 @@
 #include "Render/Types/ShadowSettings.h"
 #include <algorithm>
 
+namespace
+{
+	/** @brief Directional CSM 디버그 frustum에 사용할 shadow caster 후보 여부를 판단한다 */
+	bool IsDirectionalCSMDebugCasterProxy(const FPrimitiveSceneProxy* Proxy)
+	{
+		if (!Proxy || !Proxy->IsVisible()) return false;
+		if (!Proxy->CastsShadow()) return false;
+		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::NeverCull)) return false;
+		if (Proxy->HasProxyFlag(EPrimitiveProxyFlags::EditorOnly)) return false;
+		return Proxy->GetCachedBounds().IsValid();
+	}
+
+	/** @brief Directional CSM 디버그 frustum 계산에 사용할 caster bounds를 수집한다 */
+	TArray<FBoundingBox> CollectDirectionalCSMDebugCasterBounds(const TArray<FPrimitiveSceneProxy*>& Proxies)
+	{
+		TArray<FBoundingBox> Bounds;
+		Bounds.reserve(Proxies.size());
+
+		for (const FPrimitiveSceneProxy* Proxy : Proxies)
+		{
+			if (!IsDirectionalCSMDebugCasterProxy(Proxy))
+			{
+				continue;
+			}
+
+			Bounds.push_back(Proxy->GetCachedBounds());
+		}
+
+		return Bounds;
+	}
+}
+
 void FScene::EnqueueDirtyProxy(TArray<FPrimitiveSceneProxy*>& DirtyList, FPrimitiveSceneProxy* Proxy)
 {
 	if (!Proxy || Proxy->bQueuedForDirtyUpdate)
@@ -361,13 +393,24 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 		const FGlobalDirectionalLightParams DirectionalParams = Env.GetGlobalDirectionalLightParams();
 		if (DirectionalParams.bVisible && DirectionalParams.bCastShadows)
 		{
-			const float CameraNearZ = Frame.NearClip;
-			const float CameraFarZ = Frame.FarClip;
 			const FShadowSettings& ShadowSettings = FShadowSettings::Get();
+			const bool bUseStableShadowCamera = Frame.bHasStableShadowCamera;
+			const FMatrix& CameraView = bUseStableShadowCamera ? Frame.StableShadowView : Frame.View;
+			const FMatrix& CameraProj = bUseStableShadowCamera ? Frame.StableShadowProj : Frame.Proj;
+			const float CameraNearZ = bUseStableShadowCamera ? Frame.StableShadowNearClip : Frame.NearClip;
+			const float CameraFarZ = bUseStableShadowCamera ? Frame.StableShadowFarClip : Frame.FarClip;
 			const float ShadowFarZ = ShadowSettings.ResolveCSMDistance(
 				CameraFarZ,
 				FProjectSettings::Get().Shadow.DirectionalShadowDistance);
 			const float Lambda = ShadowSettings.GetEffectiveCSMCascadeLambda();
+			const uint32 BaseCSMResolution = ShadowSettings.GetResolution().value_or(FProjectSettings::Get().Shadow.CSMResolution);
+			const float ScaledCSMResolution = static_cast<float>(BaseCSMResolution) * DirectionalParams.ShadowResolutionScale;
+			const uint32 CSMResolution = static_cast<uint32>((std::max)(64.0f, (std::min)(ScaledCSMResolution, 8192.0f)));
+			const bool bBlendEnabled = ShadowSettings.GetEffectiveCSMBlendEnabled()
+				&& ShadowSettings.GetEffectiveCSMBlendRange() > 0.0f;
+			const TArray<FBoundingBox> DirectionalCasterBounds = CollectDirectionalCSMDebugCasterBounds(Proxies);
+			const FBoundingBox* CasterBoundsData = DirectionalCasterBounds.empty() ? nullptr : DirectionalCasterBounds.data();
+			const uint32 CasterBoundsCount = static_cast<uint32>(DirectionalCasterBounds.size());
 
 			FLightFrustumUtils::FCascadeRange CascadeRanges[NumCascades];
 			FLightFrustumUtils::ComputeCascadeRanges(
@@ -384,12 +427,18 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 				const FColor ReceiverColor = DimColor(Color);
 				const float CascadeNearZ = CascadeRanges[CascadeIndex].NearZ;
 				const float CascadeFarZ = CascadeRanges[CascadeIndex].FarZ;
+				const float RenderNearZ = bBlendEnabled
+					? (std::max)(CameraNearZ, CascadeNearZ - ShadowSettings.GetEffectiveCSMBlendRange())
+					: CascadeNearZ;
+				const float RenderFarZ = bBlendEnabled
+					? (std::min)(ShadowFarZ, CascadeFarZ + ShadowSettings.GetEffectiveCSMBlendRange())
+					: CascadeFarZ;
 
 				// Camera frustum의 cascade slice를 world-space 8개 코너로 계산하여 와이어박스 그리기
 				FVector CascadeCorners[8];
 				FLightFrustumUtils::ComputeCascadeWorldCorners(
-					Frame.View,
-					Frame.Proj,
+					CameraView,
+					CameraProj,
 					CameraNearZ,
 					CameraFarZ,
 					CascadeNearZ,
@@ -409,31 +458,24 @@ void FScene::SubmitShadowFrustumDebug(UWorld* World, const FFrameContext& Frame)
 				const FLightFrustumUtils::FDirectionalLightViewProj DirectionalVP =
 					FLightFrustumUtils::BuildDirectionalLightCascadeViewProj(
 						DirectionalParams,
-						Frame.View,
-						Frame.Proj,
+						CameraView,
+						CameraProj,
 						CameraNearZ,
 						CameraFarZ,
-						CascadeNearZ,
-						CascadeFarZ
+						RenderNearZ,
+						RenderFarZ,
+						CSMResolution,
+						CasterBoundsData,
+						CasterBoundsCount
 					);
 
 				FVector ShadowBoxCorners[8];
-				float MinZ = FLT_MAX;
-				float MaxZ = -FLT_MAX;
-
-				for (int32 i = 0; i < 8; ++i)
-				{
-					const FVector LS = DirectionalVP.View.TransformPositionWithW(CascadeCorners[i]);
-					MinZ = (std::min)(MinZ, LS.Z);
-					MaxZ = (std::max)(MaxZ, LS.Z);
-				}
-
 				FLightFrustumUtils::ComputeOrthoWorldCorners(
 					DirectionalVP.View,
 					DirectionalVP.OrthoWidth,
 					DirectionalVP.OrthoHeight,
-					MinZ,
-					MaxZ,
+					DirectionalVP.NearZ,
+					DirectionalVP.FarZ,
 					ShadowBoxCorners
 				);
 

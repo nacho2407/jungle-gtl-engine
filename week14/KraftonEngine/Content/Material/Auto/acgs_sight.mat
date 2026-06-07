@@ -1,0 +1,22 @@
+{
+        "BlendState" : "Opaque",
+        "DepthStencilState" : "Default",
+        "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+        "EmissiveIntensity" : 0.000000,
+        "Origin" : "FbxImport",
+        "Parameters" : {
+          "HasNormalMap" : 1.000000,
+          "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "_pad" : [0.000000, 0.000000, 0.000000]
+        },
+        "PathFileName" : "Content/Material/Auto/acgs_sight.mat",
+        "RasterizerState" : "SolidNoCull",
+        "RenderPass" : "Opaque",
+        "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+        "ShadowMode" : "Opaque",
+        "Textures" : {
+          "DiffuseTexture" : "Content/Texture/Auto/SK_rspn101_jack/acgs_sight_col.png",
+          "NormalTexture" : "Content/Texture/Auto/SK_rspn101_jack/acgs_sight_nm.png"
+        },
+        "bEnableBloom" : false
+      }

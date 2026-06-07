@@ -60,6 +60,13 @@
         "ObjectId" : 6,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -79,9 +86,11 @@
           },
           "StaticMeshPath" : "Content/Data/terrain/terrain_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -90,6 +99,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -614,6 +624,45 @@
               "bTickEnable" : true
             },
             "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_264",
+            "ObjectId" : 22,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/AmbientLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
           }],
         "ClassName" : "UAmbientLightComponent",
         "Name" : "UAmbientLightComponent_0",
@@ -642,10 +691,10 @@
       "ClassName" : "ADirectionalLightActor",
       "Name" : "directional_light",
       "NonSceneComponents" : [],
-      "ObjectId" : 22,
+      "ObjectId" : 23,
       "Properties" : {
         "PendingActorLocation" : [0.000000, 0.000000, 300.000000],
-        "PendingActorRotation" : [45.000202, -44.999981, -0.000076],
+        "PendingActorRotation" : [45.000195, -44.999981, -0.000076],
         "PendingActorScale" : [1.000000, 1.000000, 1.000000],
         "PendingActorVisible" : true,
         "PendingTagsString" : "",
@@ -656,45 +705,6 @@
             "Children" : [],
             "ClassName" : "UBillboardComponent",
             "Name" : "UBillboardComponent_355",
-            "ObjectId" : 24,
-            "Properties" : {
-              "AngularDamping" : 0.010000,
-              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
-              "CollisionEnabled" : 0,
-              "CollisionPreset" : 0,
-              "LinearDamping" : 0.010000,
-              "Mass" : 1.000000,
-              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
-              "ObjectType" : 0,
-              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
-              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
-              "ResponseContainer" : {
-                "Responses[0]" : 2,
-                "Responses[1]" : 2,
-                "Responses[2]" : 2,
-                "Responses[3]" : 2,
-                "Responses[4]" : 2,
-                "Responses[5]" : 2
-              },
-              "TranslucentSortPriority" : 0,
-              "bAutoActivate" : true,
-              "bCastShadow" : true,
-              "bCastShadowAsTwoSided" : false,
-              "bEditorOnly" : true,
-              "bEnableGravity" : true,
-              "bGenerateOverlapEvents" : false,
-              "bHiddenInComponentTree" : true,
-              "bIsActive" : true,
-              "bIsBillboard" : true,
-              "bIsVisible" : true,
-              "bSimulatePhysics" : false,
-              "bTickEnable" : true
-            },
-            "bHiddenInComponentTree" : true
-          }, {
-            "Children" : [],
-            "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_172",
             "ObjectId" : 25,
             "Properties" : {
               "AngularDamping" : 0.010000,
@@ -733,7 +743,7 @@
           }, {
             "Children" : [],
             "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_943",
+            "Name" : "UBillboardComponent_172",
             "ObjectId" : 26,
             "Properties" : {
               "AngularDamping" : 0.010000,
@@ -772,7 +782,7 @@
           }, {
             "Children" : [],
             "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_179",
+            "Name" : "UBillboardComponent_943",
             "ObjectId" : 27,
             "Properties" : {
               "AngularDamping" : 0.010000,
@@ -811,7 +821,7 @@
           }, {
             "Children" : [],
             "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_620",
+            "Name" : "UBillboardComponent_179",
             "ObjectId" : 28,
             "Properties" : {
               "AngularDamping" : 0.010000,
@@ -850,7 +860,7 @@
           }, {
             "Children" : [],
             "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_191",
+            "Name" : "UBillboardComponent_620",
             "ObjectId" : 29,
             "Properties" : {
               "AngularDamping" : 0.010000,
@@ -889,7 +899,7 @@
           }, {
             "Children" : [],
             "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_194",
+            "Name" : "UBillboardComponent_191",
             "ObjectId" : 30,
             "Properties" : {
               "AngularDamping" : 0.010000,
@@ -928,7 +938,7 @@
           }, {
             "Children" : [],
             "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_195",
+            "Name" : "UBillboardComponent_194",
             "ObjectId" : 31,
             "Properties" : {
               "AngularDamping" : 0.010000,
@@ -967,7 +977,7 @@
           }, {
             "Children" : [],
             "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_198",
+            "Name" : "UBillboardComponent_195",
             "ObjectId" : 32,
             "Properties" : {
               "AngularDamping" : 0.010000,
@@ -1006,7 +1016,7 @@
           }, {
             "Children" : [],
             "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_200",
+            "Name" : "UBillboardComponent_198",
             "ObjectId" : 33,
             "Properties" : {
               "AngularDamping" : 0.010000,
@@ -1045,7 +1055,7 @@
           }, {
             "Children" : [],
             "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_1047",
+            "Name" : "UBillboardComponent_200",
             "ObjectId" : 34,
             "Properties" : {
               "AngularDamping" : 0.010000,
@@ -1084,7 +1094,7 @@
           }, {
             "Children" : [],
             "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_203",
+            "Name" : "UBillboardComponent_1047",
             "ObjectId" : 35,
             "Properties" : {
               "AngularDamping" : 0.010000,
@@ -1123,8 +1133,86 @@
           }, {
             "Children" : [],
             "ClassName" : "UBillboardComponent",
-            "Name" : "UBillboardComponent_536",
+            "Name" : "UBillboardComponent_203",
             "ObjectId" : 36,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_536",
+            "ObjectId" : 37,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/DirectionalLight.mat",
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : true,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : true,
+              "bIsActive" : true,
+              "bIsBillboard" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true
+            },
+            "bHiddenInComponentTree" : true
+          }, {
+            "Children" : [],
+            "ClassName" : "UBillboardComponent",
+            "Name" : "UBillboardComponent_278",
+            "ObjectId" : 38,
             "Properties" : {
               "AngularDamping" : 0.010000,
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -1162,9 +1250,9 @@
           }],
         "ClassName" : "UDirectionalLightComponent",
         "Name" : "UDirectionalLightComponent_20",
-        "ObjectId" : 23,
+        "ObjectId" : 24,
         "Properties" : {
-          "CachedEditRotator" : [45.000202, -44.999981, -0.000076],
+          "CachedEditRotator" : [45.000195, -44.999981, -0.000076],
           "Intensity" : 0.500000,
           "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
           "RelativeTransform.Location" : [0.000000, 0.000000, 300.000000],
@@ -1187,7 +1275,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "terrain-collider",
       "NonSceneComponents" : [],
-      "ObjectId" : 37,
+      "ObjectId" : 39,
       "Properties" : {
         "PendingActorLocation" : [-3.775810, -61.232353, -2.586185],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -1200,7 +1288,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_0",
-        "ObjectId" : 38,
+        "ObjectId" : 40,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -1240,7 +1328,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "skysphere",
       "NonSceneComponents" : [],
-      "ObjectId" : 39,
+      "ObjectId" : 41,
       "Properties" : {
         "PendingActorLocation" : [0.000000, 0.000000, 0.000000],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -1253,9 +1341,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_56",
-        "ObjectId" : 40,
+        "ObjectId" : 42,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -1275,9 +1370,11 @@
           },
           "StaticMeshPath" : "Content/Data/skysphere/skysphere_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : false,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -1286,6 +1383,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -1293,7 +1391,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "building-mesh",
       "NonSceneComponents" : [],
-      "ObjectId" : 41,
+      "ObjectId" : 43,
       "Properties" : {
         "PendingActorLocation" : [13.641365, -1072.305664, 0.000000],
         "PendingActorRotation" : [-0.000000, 37.493828, 0.000000],
@@ -1306,9 +1404,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_64",
-        "ObjectId" : 42,
+        "ObjectId" : 44,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 37.493828, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -1328,9 +1433,11 @@
           },
           "StaticMeshPath" : "Content/Data/sci-fi-building/sci-fi-building_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -1339,6 +1446,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -1346,7 +1454,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "terrain-byuk-collider-r",
       "NonSceneComponents" : [],
-      "ObjectId" : 43,
+      "ObjectId" : 45,
       "Properties" : {
         "PendingActorLocation" : [50.535999, 0.921139, 49.459999],
         "PendingActorRotation" : [89.980209, -0.000000, 0.000000],
@@ -1359,7 +1467,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_12",
-        "ObjectId" : 44,
+        "ObjectId" : 46,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -1399,7 +1507,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "terrain-byuk-collider-l",
       "NonSceneComponents" : [],
-      "ObjectId" : 45,
+      "ObjectId" : 47,
       "Properties" : {
         "PendingActorLocation" : [-59.886002, 1.021139, 50.056000],
         "PendingActorRotation" : [89.980209, -0.000000, 0.000000],
@@ -1412,7 +1520,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_12",
-        "ObjectId" : 46,
+        "ObjectId" : 48,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -1452,7 +1560,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "building-collider-momtong",
       "NonSceneComponents" : [],
-      "ObjectId" : 47,
+      "ObjectId" : 49,
       "Properties" : {
         "PendingActorLocation" : [-6.602905, -970.958679, 93.578346],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -1465,7 +1573,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_18",
-        "ObjectId" : 48,
+        "ObjectId" : 50,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -1505,7 +1613,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "building-collider-badak",
       "NonSceneComponents" : [],
-      "ObjectId" : 49,
+      "ObjectId" : 51,
       "Properties" : {
         "PendingActorLocation" : [0.488934, -933.936462, 3.091490],
         "PendingActorRotation" : [-1.213035, 0.000000, 0.000000],
@@ -1518,7 +1626,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_18",
-        "ObjectId" : 50,
+        "ObjectId" : 52,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -1558,7 +1666,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "big-door-mesh",
       "NonSceneComponents" : [],
-      "ObjectId" : 51,
+      "ObjectId" : 53,
       "Properties" : {
         "PendingActorLocation" : [0.000000, 745.722290, 71.538055],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -1571,9 +1679,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_86",
-        "ObjectId" : 52,
+        "ObjectId" : 54,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -1593,9 +1708,11 @@
           },
           "StaticMeshPath" : "Content/Data/sci-fi-door/sci-fi-door_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -1604,6 +1721,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -1611,7 +1729,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "big-door-collider",
       "NonSceneComponents" : [],
-      "ObjectId" : 53,
+      "ObjectId" : 55,
       "Properties" : {
         "PendingActorLocation" : [0.540867, 728.600098, 89.983826],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -1624,7 +1742,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_30",
-        "ObjectId" : 54,
+        "ObjectId" : 56,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -1664,7 +1782,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "tent-mesh",
       "NonSceneComponents" : [],
-      "ObjectId" : 55,
+      "ObjectId" : 57,
       "Properties" : {
         "PendingActorLocation" : [-27.712873, 324.910126, -4.473618],
         "PendingActorRotation" : [0.000000, -21.267267, 0.000000],
@@ -1677,9 +1795,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_133",
-        "ObjectId" : 56,
+        "ObjectId" : 58,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [0.000000, -21.267267, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -1699,9 +1824,11 @@
           },
           "StaticMeshPath" : "Content/Data/tent/tent_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -1710,6 +1837,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -1717,7 +1845,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "tent-collider",
       "NonSceneComponents" : [],
-      "ObjectId" : 57,
+      "ObjectId" : 59,
       "Properties" : {
         "PendingActorLocation" : [-32.762402, 327.435760, 5.655082],
         "PendingActorRotation" : [0.000000, -21.902626, 0.000000],
@@ -1730,7 +1858,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_78",
-        "ObjectId" : 58,
+        "ObjectId" : 60,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -1770,7 +1898,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "tent-collider_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 59,
+      "ObjectId" : 61,
       "Properties" : {
         "PendingActorLocation" : [-32.662403, 220.681992, 5.755082],
         "PendingActorRotation" : [-0.000000, 20.289162, 0.000000],
@@ -1783,7 +1911,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_78",
-        "ObjectId" : 60,
+        "ObjectId" : 62,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -1823,7 +1951,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "tent-mesh_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 61,
+      "ObjectId" : 63,
       "Properties" : {
         "PendingActorLocation" : [-27.512873, 221.999863, -4.273618],
         "PendingActorRotation" : [-0.000000, 20.924534, 0.000000],
@@ -1836,9 +1964,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_133",
-        "ObjectId" : 62,
+        "ObjectId" : 64,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 20.924534, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -1858,9 +1993,11 @@
           },
           "StaticMeshPath" : "Content/Data/tent/tent_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -1869,6 +2006,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -1876,7 +2014,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "tent-collider_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 63,
+      "ObjectId" : 65,
       "Properties" : {
         "PendingActorLocation" : [26.585634, -324.767212, 7.457382],
         "PendingActorRotation" : [-0.000000, 150.427658, 0.000000],
@@ -1889,7 +2027,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_78",
-        "ObjectId" : 64,
+        "ObjectId" : 66,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -1929,7 +2067,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "tent-mesh_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 65,
+      "ObjectId" : 67,
       "Properties" : {
         "PendingActorLocation" : [22.467413, -326.596741, -1.845481],
         "PendingActorRotation" : [-0.000000, 151.062897, 0.000000],
@@ -1942,9 +2080,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_133",
-        "ObjectId" : 66,
+        "ObjectId" : 68,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 151.062897, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -1964,9 +2109,11 @@
           },
           "StaticMeshPath" : "Content/Data/tent/tent_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -1975,6 +2122,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -1982,7 +2130,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "tent-collider_3",
       "NonSceneComponents" : [],
-      "ObjectId" : 67,
+      "ObjectId" : 69,
       "Properties" : {
         "PendingActorLocation" : [20.880833, -216.190399, 9.381798],
         "PendingActorRotation" : [-0.000000, -144.778137, 0.000000],
@@ -1995,7 +2143,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_78",
-        "ObjectId" : 68,
+        "ObjectId" : 70,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -2035,7 +2183,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "tent-mesh_3",
       "NonSceneComponents" : [],
-      "ObjectId" : 69,
+      "ObjectId" : 71,
       "Properties" : {
         "PendingActorLocation" : [19.545000, -217.761780, -0.342190],
         "PendingActorRotation" : [-0.000000, -144.142685, 0.000000],
@@ -2048,9 +2196,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_133",
-        "ObjectId" : 70,
+        "ObjectId" : 72,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, -144.142685, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -2070,9 +2225,11 @@
           },
           "StaticMeshPath" : "Content/Data/tent/tent_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -2081,6 +2238,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -2088,7 +2246,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "landing-pod-mesh",
       "NonSceneComponents" : [],
-      "ObjectId" : 71,
+      "ObjectId" : 73,
       "Properties" : {
         "PendingActorLocation" : [-22.498846, 679.007690, 1500.000000],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -2103,7 +2261,7 @@
                 "Children" : [],
                 "ClassName" : "UBillboardComponent",
                 "Name" : "UBillboardComponent_234",
-                "ObjectId" : 74,
+                "ObjectId" : 76,
                 "Properties" : {
                   "AngularDamping" : 0.010000,
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -2141,7 +2299,7 @@
                 "Children" : [],
                 "ClassName" : "UBillboardComponent",
                 "Name" : "UBillboardComponent_1049",
-                "ObjectId" : 75,
+                "ObjectId" : 77,
                 "Properties" : {
                   "AngularDamping" : 0.010000,
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -2180,7 +2338,7 @@
                 "Children" : [],
                 "ClassName" : "UBillboardComponent",
                 "Name" : "UBillboardComponent_206",
-                "ObjectId" : 76,
+                "ObjectId" : 78,
                 "Properties" : {
                   "AngularDamping" : 0.010000,
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -2219,7 +2377,46 @@
                 "Children" : [],
                 "ClassName" : "UBillboardComponent",
                 "Name" : "UBillboardComponent_540",
-                "ObjectId" : 77,
+                "ObjectId" : 79,
+                "Properties" : {
+                  "AngularDamping" : 0.010000,
+                  "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                  "CollisionEnabled" : 0,
+                  "CollisionPreset" : 0,
+                  "LinearDamping" : 0.010000,
+                  "Mass" : 1.000000,
+                  "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                  "ObjectType" : 0,
+                  "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                  "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                  "ResponseContainer" : {
+                    "Responses[0]" : 2,
+                    "Responses[1]" : 2,
+                    "Responses[2]" : 2,
+                    "Responses[3]" : 2,
+                    "Responses[4]" : 2,
+                    "Responses[5]" : 2
+                  },
+                  "TranslucentSortPriority" : 0,
+                  "bAutoActivate" : true,
+                  "bCastShadow" : true,
+                  "bCastShadowAsTwoSided" : false,
+                  "bEditorOnly" : true,
+                  "bEnableGravity" : true,
+                  "bGenerateOverlapEvents" : false,
+                  "bHiddenInComponentTree" : true,
+                  "bIsActive" : true,
+                  "bIsBillboard" : true,
+                  "bIsVisible" : true,
+                  "bSimulatePhysics" : false,
+                  "bTickEnable" : true
+                },
+                "bHiddenInComponentTree" : true
+              }, {
+                "Children" : [],
+                "ClassName" : "UBillboardComponent",
+                "Name" : "UBillboardComponent_283",
+                "ObjectId" : 80,
                 "Properties" : {
                   "AngularDamping" : 0.010000,
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -2257,7 +2454,7 @@
               }],
             "ClassName" : "UCameraComponent",
             "Name" : "UCameraComponent_2",
-            "ObjectId" : 73,
+            "ObjectId" : 75,
             "Properties" : {
               "CachedEditRotator" : [0.000000, 179.999985, 0.000000],
               "CameraState.FOV" : 1.047198,
@@ -2285,9 +2482,16 @@
           }],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_97",
-        "ObjectId" : 72,
+        "ObjectId" : 74,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -2307,9 +2511,11 @@
           },
           "StaticMeshPath" : "Content/Data/space-lander/space-lander_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -2318,6 +2524,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -2325,7 +2532,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "terrain-mesh_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 78,
+      "ObjectId" : 81,
       "Properties" : {
         "PendingActorLocation" : [112.599998, -489.790009, 0.100000],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -2338,9 +2545,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_36",
-        "ObjectId" : 79,
+        "ObjectId" : 82,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -2360,9 +2574,11 @@
           },
           "StaticMeshPath" : "Content/Data/terrain/terrain_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -2371,6 +2587,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -2380,7 +2597,7 @@
       "NonSceneComponents" : [{
           "ClassName" : "UCharacterMovementComponent",
           "Name" : "UCharacterMovementComponent_2",
-          "ObjectId" : 121,
+          "ObjectId" : 125,
           "Properties" : {
             "BrakingFriction" : 48.000000,
             "ControllerContactOffset" : 0.050000,
@@ -2396,16 +2613,23 @@
             "MaxAcceleration" : 48.000000,
             "MaxFallingSlideSpeed" : 9.000000,
             "MaxJumpCount" : 2,
+            "MaxSlideTime" : 1.150000,
             "MaxStepHeight" : 0.400000,
             "MaxWalkSpeed" : 24.000000,
+            "MaxWallRunCameraTiltDeg" : 19.000000,
             "MaxWallRunSlideSpeed" : 2.000000,
             "MaxWallRunTime" : 1.500000,
             "MinWallRunStartSpeed" : 3.000000,
             "RotationYawRate" : 540.000000,
             "RunnableWallUpDot" : 0.200000,
+            "SlideBrakingFriction" : 14.000000,
+            "SlideEndSpeed" : 3.000000,
+            "SlideImpulseSpeed" : 6.000000,
+            "SlideMinStartSpeed" : 7.500000,
+            "SlideQueueGraceTime" : 0.180000,
             "SprintSpeedMultiplier" : 3.000000,
             "UpdatedComponent" : {
-              "ObjectId" : 81
+              "ObjectId" : 84
             },
             "WalkableSlopeAngle" : 45.000000,
             "WallCheckDistance" : 0.350000,
@@ -2423,12 +2647,19 @@
             "WallRunMinSpeed" : 8.000000,
             "WallRunRequiredTag" : "WallRunnable",
             "WallStickAcceleration" : 4.000000,
+            "WallTiltAnticipationDistanceScale" : 1.800000,
+            "WallTiltAnticipationIntensity" : 0.450000,
+            "WallTiltAttachResponseHz" : 7.000000,
+            "WallTiltReleaseResponseHz" : 6.000000,
             "bAutoActivate" : true,
             "bAutoRegisterUpdatedComponent" : false,
             "bDrawWallRunDistanceDebug" : false,
             "bEditorOnly" : false,
+            "bEnableSlide" : true,
             "bEnableWallRun" : true,
+            "bEnableWallRunCameraTilt" : true,
             "bHiddenInComponentTree" : false,
+            "bInvertWallRunCameraTiltSign" : false,
             "bIsActive" : true,
             "bLogWallRunDiagnostics" : true,
             "bOrientRotationToMovement" : false,
@@ -2438,7 +2669,7 @@
         }, {
           "ClassName" : "ULuaScriptComponent",
           "Name" : "ULuaScriptComponent_6",
-          "ObjectId" : 122,
+          "ObjectId" : 126,
           "Properties" : {
             "ScriptFile" : "Default2_FPSArm_Character.lua",
             "bAutoActivate" : true,
@@ -2448,7 +2679,7 @@
             "bTickEnable" : true
           }
         }],
-      "ObjectId" : 80,
+      "ObjectId" : 83,
       "Properties" : {
         "PendingActorLocation" : [-0.544388, 714.585815, 3.298199],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -2466,7 +2697,7 @@
             "Children" : [],
             "ClassName" : "USkeletalMeshComponent",
             "Name" : "USkeletalMeshComponent_5",
-            "ObjectId" : 82,
+            "ObjectId" : 85,
             "Properties" : {
               "AngularDamping" : 0.010000,
               "AnimInstance" : {
@@ -2525,123 +2756,6 @@
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
                     "Name" : "UBillboardComponent_203",
-                    "ObjectId" : 85,
-                    "Properties" : {
-                      "AngularDamping" : 0.010000,
-                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
-                      "CollisionEnabled" : 0,
-                      "CollisionPreset" : 0,
-                      "LinearDamping" : 0.010000,
-                      "Mass" : 1.000000,
-                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
-                      "ObjectType" : 0,
-                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
-                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
-                      "ResponseContainer" : {
-                        "Responses[0]" : 2,
-                        "Responses[1]" : 2,
-                        "Responses[2]" : 2,
-                        "Responses[3]" : 2,
-                        "Responses[4]" : 2,
-                        "Responses[5]" : 2
-                      },
-                      "TranslucentSortPriority" : 0,
-                      "bAutoActivate" : true,
-                      "bCastShadow" : true,
-                      "bCastShadowAsTwoSided" : false,
-                      "bEditorOnly" : true,
-                      "bEnableGravity" : true,
-                      "bGenerateOverlapEvents" : false,
-                      "bHiddenInComponentTree" : true,
-                      "bIsActive" : true,
-                      "bIsBillboard" : true,
-                      "bIsVisible" : true,
-                      "bSimulatePhysics" : false,
-                      "bTickEnable" : true
-                    },
-                    "bHiddenInComponentTree" : true
-                  }, {
-                    "Children" : [],
-                    "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_205",
-                    "ObjectId" : 86,
-                    "Properties" : {
-                      "AngularDamping" : 0.010000,
-                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
-                      "CollisionEnabled" : 0,
-                      "CollisionPreset" : 0,
-                      "LinearDamping" : 0.010000,
-                      "Mass" : 1.000000,
-                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
-                      "ObjectType" : 0,
-                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
-                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
-                      "ResponseContainer" : {
-                        "Responses[0]" : 2,
-                        "Responses[1]" : 2,
-                        "Responses[2]" : 2,
-                        "Responses[3]" : 2,
-                        "Responses[4]" : 2,
-                        "Responses[5]" : 2
-                      },
-                      "TranslucentSortPriority" : 0,
-                      "bAutoActivate" : true,
-                      "bCastShadow" : true,
-                      "bCastShadowAsTwoSided" : false,
-                      "bEditorOnly" : true,
-                      "bEnableGravity" : true,
-                      "bGenerateOverlapEvents" : false,
-                      "bHiddenInComponentTree" : true,
-                      "bIsActive" : true,
-                      "bIsBillboard" : true,
-                      "bIsVisible" : true,
-                      "bSimulatePhysics" : false,
-                      "bTickEnable" : true
-                    },
-                    "bHiddenInComponentTree" : true
-                  }, {
-                    "Children" : [],
-                    "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_207",
-                    "ObjectId" : 87,
-                    "Properties" : {
-                      "AngularDamping" : 0.010000,
-                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
-                      "CollisionEnabled" : 0,
-                      "CollisionPreset" : 0,
-                      "LinearDamping" : 0.010000,
-                      "Mass" : 1.000000,
-                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
-                      "ObjectType" : 0,
-                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
-                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
-                      "ResponseContainer" : {
-                        "Responses[0]" : 2,
-                        "Responses[1]" : 2,
-                        "Responses[2]" : 2,
-                        "Responses[3]" : 2,
-                        "Responses[4]" : 2,
-                        "Responses[5]" : 2
-                      },
-                      "TranslucentSortPriority" : 0,
-                      "bAutoActivate" : true,
-                      "bCastShadow" : true,
-                      "bCastShadowAsTwoSided" : false,
-                      "bEditorOnly" : true,
-                      "bEnableGravity" : true,
-                      "bGenerateOverlapEvents" : false,
-                      "bHiddenInComponentTree" : true,
-                      "bIsActive" : true,
-                      "bIsBillboard" : true,
-                      "bIsVisible" : true,
-                      "bSimulatePhysics" : false,
-                      "bTickEnable" : true
-                    },
-                    "bHiddenInComponentTree" : true
-                  }, {
-                    "Children" : [],
-                    "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_85",
                     "ObjectId" : 88,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -2680,7 +2794,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_87",
+                    "Name" : "UBillboardComponent_205",
                     "ObjectId" : 89,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -2719,7 +2833,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_89",
+                    "Name" : "UBillboardComponent_207",
                     "ObjectId" : 90,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -2758,7 +2872,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_91",
+                    "Name" : "UBillboardComponent_85",
                     "ObjectId" : 91,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -2797,7 +2911,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_93",
+                    "Name" : "UBillboardComponent_87",
                     "ObjectId" : 92,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -2836,7 +2950,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_95",
+                    "Name" : "UBillboardComponent_89",
                     "ObjectId" : 93,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -2875,7 +2989,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_97",
+                    "Name" : "UBillboardComponent_91",
                     "ObjectId" : 94,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -2914,7 +3028,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_99",
+                    "Name" : "UBillboardComponent_93",
                     "ObjectId" : 95,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -2953,7 +3067,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_101",
+                    "Name" : "UBillboardComponent_95",
                     "ObjectId" : 96,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -2992,7 +3106,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_103",
+                    "Name" : "UBillboardComponent_97",
                     "ObjectId" : 97,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3031,7 +3145,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_105",
+                    "Name" : "UBillboardComponent_99",
                     "ObjectId" : 98,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3070,7 +3184,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_107",
+                    "Name" : "UBillboardComponent_101",
                     "ObjectId" : 99,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3109,7 +3223,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_109",
+                    "Name" : "UBillboardComponent_103",
                     "ObjectId" : 100,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3148,7 +3262,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_111",
+                    "Name" : "UBillboardComponent_105",
                     "ObjectId" : 101,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3187,7 +3301,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_113",
+                    "Name" : "UBillboardComponent_107",
                     "ObjectId" : 102,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3226,7 +3340,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_115",
+                    "Name" : "UBillboardComponent_109",
                     "ObjectId" : 103,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3265,7 +3379,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_117",
+                    "Name" : "UBillboardComponent_111",
                     "ObjectId" : 104,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3304,7 +3418,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_119",
+                    "Name" : "UBillboardComponent_113",
                     "ObjectId" : 105,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3343,7 +3457,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_281",
+                    "Name" : "UBillboardComponent_115",
                     "ObjectId" : 106,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3382,7 +3496,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_123",
+                    "Name" : "UBillboardComponent_117",
                     "ObjectId" : 107,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3421,7 +3535,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_125",
+                    "Name" : "UBillboardComponent_119",
                     "ObjectId" : 108,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3460,7 +3574,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_127",
+                    "Name" : "UBillboardComponent_281",
                     "ObjectId" : 109,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3499,7 +3613,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_129",
+                    "Name" : "UBillboardComponent_123",
                     "ObjectId" : 110,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3538,7 +3652,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_562",
+                    "Name" : "UBillboardComponent_125",
                     "ObjectId" : 111,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3577,7 +3691,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_677",
+                    "Name" : "UBillboardComponent_127",
                     "ObjectId" : 112,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3616,7 +3730,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_223",
+                    "Name" : "UBillboardComponent_129",
                     "ObjectId" : 113,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3655,7 +3769,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_224",
+                    "Name" : "UBillboardComponent_562",
                     "ObjectId" : 114,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3694,7 +3808,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_226",
+                    "Name" : "UBillboardComponent_677",
                     "ObjectId" : 115,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3733,7 +3847,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_230",
+                    "Name" : "UBillboardComponent_223",
                     "ObjectId" : 116,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3772,7 +3886,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_233",
+                    "Name" : "UBillboardComponent_224",
                     "ObjectId" : 117,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3811,7 +3925,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_1083",
+                    "Name" : "UBillboardComponent_226",
                     "ObjectId" : 118,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3850,7 +3964,7 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_241",
+                    "Name" : "UBillboardComponent_230",
                     "ObjectId" : 119,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
@@ -3889,8 +4003,164 @@
                   }, {
                     "Children" : [],
                     "ClassName" : "UBillboardComponent",
-                    "Name" : "UBillboardComponent_576",
+                    "Name" : "UBillboardComponent_233",
                     "ObjectId" : 120,
+                    "Properties" : {
+                      "AngularDamping" : 0.010000,
+                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                      "CollisionEnabled" : 0,
+                      "CollisionPreset" : 0,
+                      "LinearDamping" : 0.010000,
+                      "Mass" : 1.000000,
+                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                      "ObjectType" : 0,
+                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                      "ResponseContainer" : {
+                        "Responses[0]" : 2,
+                        "Responses[1]" : 2,
+                        "Responses[2]" : 2,
+                        "Responses[3]" : 2,
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
+                      },
+                      "TranslucentSortPriority" : 0,
+                      "bAutoActivate" : true,
+                      "bCastShadow" : true,
+                      "bCastShadowAsTwoSided" : false,
+                      "bEditorOnly" : true,
+                      "bEnableGravity" : true,
+                      "bGenerateOverlapEvents" : false,
+                      "bHiddenInComponentTree" : true,
+                      "bIsActive" : true,
+                      "bIsBillboard" : true,
+                      "bIsVisible" : true,
+                      "bSimulatePhysics" : false,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }, {
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Name" : "UBillboardComponent_1083",
+                    "ObjectId" : 121,
+                    "Properties" : {
+                      "AngularDamping" : 0.010000,
+                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                      "CollisionEnabled" : 0,
+                      "CollisionPreset" : 0,
+                      "LinearDamping" : 0.010000,
+                      "Mass" : 1.000000,
+                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                      "ObjectType" : 0,
+                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                      "ResponseContainer" : {
+                        "Responses[0]" : 2,
+                        "Responses[1]" : 2,
+                        "Responses[2]" : 2,
+                        "Responses[3]" : 2,
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
+                      },
+                      "TranslucentSortPriority" : 0,
+                      "bAutoActivate" : true,
+                      "bCastShadow" : true,
+                      "bCastShadowAsTwoSided" : false,
+                      "bEditorOnly" : true,
+                      "bEnableGravity" : true,
+                      "bGenerateOverlapEvents" : false,
+                      "bHiddenInComponentTree" : true,
+                      "bIsActive" : true,
+                      "bIsBillboard" : true,
+                      "bIsVisible" : true,
+                      "bSimulatePhysics" : false,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }, {
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Name" : "UBillboardComponent_241",
+                    "ObjectId" : 122,
+                    "Properties" : {
+                      "AngularDamping" : 0.010000,
+                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                      "CollisionEnabled" : 0,
+                      "CollisionPreset" : 0,
+                      "LinearDamping" : 0.010000,
+                      "Mass" : 1.000000,
+                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                      "ObjectType" : 0,
+                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                      "ResponseContainer" : {
+                        "Responses[0]" : 2,
+                        "Responses[1]" : 2,
+                        "Responses[2]" : 2,
+                        "Responses[3]" : 2,
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
+                      },
+                      "TranslucentSortPriority" : 0,
+                      "bAutoActivate" : true,
+                      "bCastShadow" : true,
+                      "bCastShadowAsTwoSided" : false,
+                      "bEditorOnly" : true,
+                      "bEnableGravity" : true,
+                      "bGenerateOverlapEvents" : false,
+                      "bHiddenInComponentTree" : true,
+                      "bIsActive" : true,
+                      "bIsBillboard" : true,
+                      "bIsVisible" : true,
+                      "bSimulatePhysics" : false,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }, {
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Name" : "UBillboardComponent_576",
+                    "ObjectId" : 123,
+                    "Properties" : {
+                      "AngularDamping" : 0.010000,
+                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                      "CollisionEnabled" : 0,
+                      "CollisionPreset" : 0,
+                      "LinearDamping" : 0.010000,
+                      "Mass" : 1.000000,
+                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                      "ObjectType" : 0,
+                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                      "ResponseContainer" : {
+                        "Responses[0]" : 2,
+                        "Responses[1]" : 2,
+                        "Responses[2]" : 2,
+                        "Responses[3]" : 2,
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
+                      },
+                      "TranslucentSortPriority" : 0,
+                      "bAutoActivate" : true,
+                      "bCastShadow" : true,
+                      "bCastShadowAsTwoSided" : false,
+                      "bEditorOnly" : true,
+                      "bEnableGravity" : true,
+                      "bGenerateOverlapEvents" : false,
+                      "bHiddenInComponentTree" : true,
+                      "bIsActive" : true,
+                      "bIsBillboard" : true,
+                      "bIsVisible" : true,
+                      "bSimulatePhysics" : false,
+                      "bTickEnable" : true
+                    },
+                    "bHiddenInComponentTree" : true
+                  }, {
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Name" : "UBillboardComponent_320",
+                    "ObjectId" : 124,
                     "Properties" : {
                       "AngularDamping" : 0.010000,
                       "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -3928,7 +4198,7 @@
                   }],
                 "ClassName" : "UCameraComponent",
                 "Name" : "UCameraComponent_2",
-                "ObjectId" : 84,
+                "ObjectId" : 87,
                 "Properties" : {
                   "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
                   "CameraState.FOV" : 1.832596,
@@ -3956,7 +4226,7 @@
               }],
             "ClassName" : "USpringArmComponent",
             "Name" : "USpringArmComponent_2",
-            "ObjectId" : 83,
+            "ObjectId" : 86,
             "Properties" : {
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
               "CameraLagMaxDistance" : 0.000000,
@@ -3981,7 +4251,7 @@
           }],
         "ClassName" : "UCapsuleComponent",
         "Name" : "UCapsuleComponent_2",
-        "ObjectId" : 81,
+        "ObjectId" : 84,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
@@ -4022,7 +4292,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "landing-pod-collider",
       "NonSceneComponents" : [],
-      "ObjectId" : 123,
+      "ObjectId" : 127,
       "Properties" : {
         "PendingActorLocation" : [-23.608326, 678.621643, 13.375000],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -4035,7 +4305,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_90",
-        "ObjectId" : 124,
+        "ObjectId" : 128,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -4075,7 +4345,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "barricade-mesh",
       "NonSceneComponents" : [],
-      "ObjectId" : 125,
+      "ObjectId" : 129,
       "Properties" : {
         "PendingActorLocation" : [-18.113184, 59.200001, -1.101879],
         "PendingActorRotation" : [-0.000000, 25.033928, 0.000000],
@@ -4088,9 +4358,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_21",
-        "ObjectId" : 126,
+        "ObjectId" : 130,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 25.033928, 0.000000],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
@@ -4110,9 +4387,11 @@
           },
           "StaticMeshPath" : "Content/Data/barricade/barricade_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4121,6 +4400,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4128,7 +4408,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "barricade-mesh_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 127,
+      "ObjectId" : 131,
       "Properties" : {
         "PendingActorLocation" : [13.461155, 59.200001, -0.791666],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -4141,9 +4421,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_21",
-        "ObjectId" : 128,
+        "ObjectId" : 132,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
@@ -4163,9 +4450,11 @@
           },
           "StaticMeshPath" : "Content/Data/barricade/barricade_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4174,6 +4463,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : true
         }
       }
@@ -4181,7 +4471,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "container",
       "NonSceneComponents" : [],
-      "ObjectId" : 129,
+      "ObjectId" : 133,
       "Properties" : {
         "PendingActorLocation" : [28.618107, -2.985481, 2.212183],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -4194,9 +4484,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_49",
-        "ObjectId" : 130,
+        "ObjectId" : 134,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
@@ -4216,9 +4513,11 @@
           },
           "StaticMeshPath" : "Content/Data/container/container_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4227,6 +4526,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : true
         }
       }
@@ -4234,7 +4534,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box",
       "NonSceneComponents" : [],
-      "ObjectId" : 131,
+      "ObjectId" : 135,
       "Properties" : {
         "PendingActorLocation" : [-39.930141, 245.304962, -1.122223],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -4247,9 +4547,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 132,
+        "ObjectId" : 136,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -4269,9 +4576,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4280,6 +4589,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4287,7 +4597,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 133,
+      "ObjectId" : 137,
       "Properties" : {
         "PendingActorLocation" : [-39.830143, 245.404968, 3.932942],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -4300,9 +4610,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 134,
+        "ObjectId" : 138,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -4322,9 +4639,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4333,6 +4652,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4340,7 +4660,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 135,
+      "ObjectId" : 139,
       "Properties" : {
         "PendingActorLocation" : [-39.830143, 303.512482, -1.022223],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -4353,9 +4673,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 136,
+        "ObjectId" : 140,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -4375,9 +4702,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4386,6 +4715,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4393,7 +4723,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_3",
       "NonSceneComponents" : [],
-      "ObjectId" : 137,
+      "ObjectId" : 141,
       "Properties" : {
         "PendingActorLocation" : [-39.630142, 303.712463, 4.132942],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -4406,9 +4736,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 138,
+        "ObjectId" : 142,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -4428,9 +4765,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4439,6 +4778,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4446,7 +4786,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_4",
       "NonSceneComponents" : [],
-      "ObjectId" : 139,
+      "ObjectId" : 143,
       "Properties" : {
         "PendingActorLocation" : [-39.530144, 292.747131, 3.139876],
         "PendingActorRotation" : [-0.000000, 0.000000, 61.982086],
@@ -4459,9 +4799,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 140,
+        "ObjectId" : 144,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 61.982086],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -4481,9 +4828,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4492,6 +4841,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4499,7 +4849,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "container_1-mesh",
       "NonSceneComponents" : [],
-      "ObjectId" : 141,
+      "ObjectId" : 145,
       "Properties" : {
         "PendingActorLocation" : [-23.967062, -2.885481, 2.212000],
         "PendingActorRotation" : [-0.000000, 58.504147, 0.000000],
@@ -4512,9 +4862,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_49",
-        "ObjectId" : 142,
+        "ObjectId" : 146,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 58.504147, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -4534,9 +4891,11 @@
           },
           "StaticMeshPath" : "Content/Data/container/container_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4545,6 +4904,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4552,7 +4912,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "container_1-collider",
       "NonSceneComponents" : [],
-      "ObjectId" : 143,
+      "ObjectId" : 147,
       "Properties" : {
         "PendingActorLocation" : [-23.930037, -3.391949, 8.094886],
         "PendingActorRotation" : [0.000000, -30.818434, 0.000000],
@@ -4565,7 +4925,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_11",
-        "ObjectId" : 144,
+        "ObjectId" : 148,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -4605,7 +4965,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_5",
       "NonSceneComponents" : [],
-      "ObjectId" : 145,
+      "ObjectId" : 149,
       "Properties" : {
         "PendingActorLocation" : [12.125534, -30.293674, 1.358338],
         "PendingActorRotation" : [-0.000000, 89.999977, 0.000000],
@@ -4618,9 +4978,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 146,
+        "ObjectId" : 150,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 89.999977, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -4640,9 +5007,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4651,6 +5020,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4658,7 +5028,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_6",
       "NonSceneComponents" : [],
-      "ObjectId" : 147,
+      "ObjectId" : 151,
       "Properties" : {
         "PendingActorLocation" : [12.225534, -30.766052, 5.836707],
         "PendingActorRotation" : [-0.000000, 89.999977, 0.000000],
@@ -4671,9 +5041,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 148,
+        "ObjectId" : 152,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 89.999977, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -4693,9 +5070,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4704,6 +5083,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4711,10 +5091,10 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_8",
       "NonSceneComponents" : [],
-      "ObjectId" : 149,
+      "ObjectId" : 153,
       "Properties" : {
         "PendingActorLocation" : [-0.870585, -28.798183, 8.541753],
-        "PendingActorRotation" : [-3.033938, 105.117088, -19.627190],
+        "PendingActorRotation" : [-3.033940, 105.117073, -19.627186],
         "PendingActorScale" : [10.000000, 10.000000, 10.000000],
         "PendingActorVisible" : true,
         "PendingTagsString" : "",
@@ -4724,10 +5104,17 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 150,
+        "ObjectId" : 154,
         "Properties" : {
           "AngularDamping" : 0.010000,
-          "CachedEditRotator" : [-3.033938, 105.117088, -19.627190],
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
+          "CachedEditRotator" : [-3.033940, 105.117073, -19.627186],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
           "LinearDamping" : 0.010000,
@@ -4746,9 +5133,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4757,6 +5146,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4764,7 +5154,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_9",
       "NonSceneComponents" : [],
-      "ObjectId" : 151,
+      "ObjectId" : 155,
       "Properties" : {
         "PendingActorLocation" : [-10.076193, -28.798183, 1.558338],
         "PendingActorRotation" : [-0.000000, 36.654510, 0.000000],
@@ -4777,9 +5167,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 152,
+        "ObjectId" : 156,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 36.654510, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -4799,9 +5196,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4810,6 +5209,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4817,7 +5217,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "billboard-mesh",
       "NonSceneComponents" : [],
-      "ObjectId" : 153,
+      "ObjectId" : 157,
       "Properties" : {
         "PendingActorLocation" : [-35.269417, -501.460144, -90.707855],
         "PendingActorRotation" : [-0.000000, 89.108437, 0.000000],
@@ -4830,9 +5230,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_597",
-        "ObjectId" : 154,
+        "ObjectId" : 158,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 89.108437, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -4852,9 +5259,11 @@
           },
           "StaticMeshPath" : "Content/Data/billboard(그 빌보드 아님)/billboard_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4863,6 +5272,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4870,7 +5280,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "billboard-mesh_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 155,
+      "ObjectId" : 159,
       "Properties" : {
         "PendingActorLocation" : [-35.169418, -536.931274, -15.239954],
         "PendingActorRotation" : [-0.000000, -90.835518, 0.000000],
@@ -4883,9 +5293,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_597",
-        "ObjectId" : 156,
+        "ObjectId" : 160,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, -90.835518, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -4905,9 +5322,11 @@
           },
           "StaticMeshPath" : "Content/Data/billboard(그 빌보드 아님)/billboard_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -4916,6 +5335,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -4923,7 +5343,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "billboard-collider",
       "NonSceneComponents" : [],
-      "ObjectId" : 157,
+      "ObjectId" : 161,
       "Properties" : {
         "PendingActorLocation" : [-35.817001, -518.031006, 68.751999],
         "PendingActorRotation" : [-0.000000, 7.523000, 0.000000],
@@ -4936,7 +5356,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_252",
-        "ObjectId" : 158,
+        "ObjectId" : 162,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -4976,7 +5396,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "barricade-mesh_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 159,
+      "ObjectId" : 163,
       "Properties" : {
         "PendingActorLocation" : [-18.013184, -402.428986, -3.846616],
         "PendingActorRotation" : [-0.000000, 25.033928, 0.000000],
@@ -4989,9 +5409,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_21",
-        "ObjectId" : 160,
+        "ObjectId" : 164,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 25.033928, 0.000000],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
@@ -5011,9 +5438,11 @@
           },
           "StaticMeshPath" : "Content/Data/barricade/barricade_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5022,6 +5451,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5029,7 +5459,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "barricade-mesh_3",
       "NonSceneComponents" : [],
-      "ObjectId" : 161,
+      "ObjectId" : 165,
       "Properties" : {
         "PendingActorLocation" : [13.661155, -402.329010, -2.056704],
         "PendingActorRotation" : [-0.000000, 16.979113, 0.000000],
@@ -5042,9 +5472,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_21",
-        "ObjectId" : 162,
+        "ObjectId" : 166,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 16.979113, 0.000000],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
@@ -5064,9 +5501,11 @@
           },
           "StaticMeshPath" : "Content/Data/barricade/barricade_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5075,6 +5514,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : true
         }
       }
@@ -5082,7 +5522,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "container_1-collider_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 163,
+      "ObjectId" : 167,
       "Properties" : {
         "PendingActorLocation" : [11.862400, -548.029175, 8.194886],
         "PendingActorRotation" : [0.000000, -8.721530, 0.000000],
@@ -5095,7 +5535,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_11",
-        "ObjectId" : 164,
+        "ObjectId" : 168,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -5135,7 +5575,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "container_1-mesh_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 165,
+      "ObjectId" : 169,
       "Properties" : {
         "PendingActorLocation" : [11.925373, -547.422729, 2.412000],
         "PendingActorRotation" : [-0.000000, 80.601006, 0.000000],
@@ -5148,9 +5588,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_49",
-        "ObjectId" : 166,
+        "ObjectId" : 170,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 80.601006, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -5170,9 +5617,11 @@
           },
           "StaticMeshPath" : "Content/Data/container/container_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5181,6 +5630,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5188,7 +5638,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "container_1-collider_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 167,
+      "ObjectId" : 171,
       "Properties" : {
         "PendingActorLocation" : [8.094676, -545.841309, 54.707561],
         "PendingActorRotation" : [18.203970, 6.612875, -2.891749],
@@ -5201,7 +5651,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_11",
-        "ObjectId" : 168,
+        "ObjectId" : 172,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -5241,7 +5691,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "container_1-mesh_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 169,
+      "ObjectId" : 173,
       "Properties" : {
         "PendingActorLocation" : [3.950337, -547.222717, 44.526817],
         "PendingActorRotation" : [3.342184, 96.739281, 20.658401],
@@ -5254,9 +5704,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_49",
-        "ObjectId" : 170,
+        "ObjectId" : 174,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [3.342184, 96.739281, 20.658401],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -5276,9 +5733,11 @@
           },
           "StaticMeshPath" : "Content/Data/container/container_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5287,6 +5746,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5294,7 +5754,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_14",
       "NonSceneComponents" : [],
-      "ObjectId" : 171,
+      "ObjectId" : 175,
       "Properties" : {
         "PendingActorLocation" : [-17.070618, -25.901358, 5.549819],
         "PendingActorRotation" : [1.274284, 97.834740, -35.449707],
@@ -5307,9 +5767,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 172,
+        "ObjectId" : 176,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [1.274284, 97.834740, -35.449707],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -5329,9 +5796,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5340,6 +5809,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5347,7 +5817,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "container_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 173,
+      "ObjectId" : 177,
       "Properties" : {
         "PendingActorLocation" : [28.718107, -53.575191, 2.312183],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -5360,9 +5830,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_49",
-        "ObjectId" : 174,
+        "ObjectId" : 178,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
@@ -5382,9 +5859,11 @@
           },
           "StaticMeshPath" : "Content/Data/container/container_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5393,6 +5872,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : true
         }
       }
@@ -5400,7 +5880,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_15",
       "NonSceneComponents" : [],
-      "ObjectId" : 175,
+      "ObjectId" : 179,
       "Properties" : {
         "PendingActorLocation" : [28.148014, -30.666052, 5.936707],
         "PendingActorRotation" : [-0.000000, 89.999977, 0.000000],
@@ -5413,9 +5893,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 176,
+        "ObjectId" : 180,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 89.999977, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -5435,9 +5922,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5446,6 +5935,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5453,7 +5943,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_16",
       "NonSceneComponents" : [],
-      "ObjectId" : 177,
+      "ObjectId" : 181,
       "Properties" : {
         "PendingActorLocation" : [28.148014, -30.093674, 1.558338],
         "PendingActorRotation" : [-0.000000, 89.999977, 0.000000],
@@ -5466,9 +5956,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 178,
+        "ObjectId" : 182,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 89.999977, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -5488,9 +5985,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5499,6 +5998,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5506,7 +6006,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_17",
       "NonSceneComponents" : [],
-      "ObjectId" : 179,
+      "ObjectId" : 183,
       "Properties" : {
         "PendingActorLocation" : [30.123209, -30.566051, 15.374956],
         "PendingActorRotation" : [-0.000000, 106.862289, 0.000000],
@@ -5519,9 +6019,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 180,
+        "ObjectId" : 184,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 106.862289, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -5541,9 +6048,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5552,6 +6061,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5559,7 +6069,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_18",
       "NonSceneComponents" : [],
-      "ObjectId" : 181,
+      "ObjectId" : 185,
       "Properties" : {
         "PendingActorLocation" : [30.223209, -29.893673, 11.096587],
         "PendingActorRotation" : [-0.000000, 106.862289, 0.000000],
@@ -5572,9 +6082,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 182,
+        "ObjectId" : 186,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 106.862289, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -5594,9 +6111,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5605,6 +6124,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5612,10 +6132,10 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_19",
       "NonSceneComponents" : [],
-      "ObjectId" : 183,
+      "ObjectId" : 187,
       "Properties" : {
         "PendingActorLocation" : [-2.778931, -28.698183, 12.744423],
-        "PendingActorRotation" : [-3.033940, 105.117073, -19.627186],
+        "PendingActorRotation" : [-3.033940, 105.117065, -19.627184],
         "PendingActorScale" : [10.000000, 10.000000, 10.000000],
         "PendingActorVisible" : true,
         "PendingTagsString" : "",
@@ -5625,10 +6145,17 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 184,
+        "ObjectId" : 188,
         "Properties" : {
           "AngularDamping" : 0.010000,
-          "CachedEditRotator" : [-3.033940, 105.117073, -19.627186],
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
+          "CachedEditRotator" : [-3.033940, 105.117065, -19.627184],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
           "LinearDamping" : 0.010000,
@@ -5647,9 +6174,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5658,6 +6187,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5665,7 +6195,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_20",
       "NonSceneComponents" : [],
-      "ObjectId" : 185,
+      "ObjectId" : 189,
       "Properties" : {
         "PendingActorLocation" : [-15.144726, -31.904745, 5.649819],
         "PendingActorRotation" : [1.274284, 97.834740, -35.449707],
@@ -5678,9 +6208,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 186,
+        "ObjectId" : 190,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [1.274284, 97.834740, -35.449707],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
@@ -5700,9 +6237,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5711,6 +6250,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5718,7 +6258,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_21",
       "NonSceneComponents" : [],
-      "ObjectId" : 187,
+      "ObjectId" : 191,
       "Properties" : {
         "PendingActorLocation" : [14.176023, -30.466051, 15.474957],
         "PendingActorRotation" : [-0.000000, 106.862289, 0.000000],
@@ -5731,9 +6271,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 188,
+        "ObjectId" : 192,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 106.862289, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -5753,9 +6300,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5764,6 +6313,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5771,7 +6321,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_22",
       "NonSceneComponents" : [],
-      "ObjectId" : 189,
+      "ObjectId" : 193,
       "Properties" : {
         "PendingActorLocation" : [14.376024, -29.693672, 11.296587],
         "PendingActorRotation" : [-0.000000, 106.862289, 0.000000],
@@ -5784,9 +6334,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 190,
+        "ObjectId" : 194,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 106.862289, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -5806,9 +6363,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -5817,6 +6376,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -5824,7 +6384,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "weapon-box-collider",
       "NonSceneComponents" : [],
-      "ObjectId" : 191,
+      "ObjectId" : 195,
       "Properties" : {
         "PendingActorLocation" : [-39.475006, 300.472595, 3.807706],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -5837,7 +6397,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_343",
-        "ObjectId" : 192,
+        "ObjectId" : 196,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -5877,7 +6437,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "weapon-box-collider_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 193,
+      "ObjectId" : 197,
       "Properties" : {
         "PendingActorLocation" : [-39.375008, 245.056442, 1.398017],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -5890,7 +6450,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_343",
-        "ObjectId" : 194,
+        "ObjectId" : 198,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -5930,7 +6490,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "weapon-box-collider_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 195,
+      "ObjectId" : 199,
       "Properties" : {
         "PendingActorLocation" : [32.454056, -298.964844, 4.447360],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -5943,7 +6503,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_343",
-        "ObjectId" : 196,
+        "ObjectId" : 200,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -5983,7 +6543,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "weapon-box-collider_3",
       "NonSceneComponents" : [],
-      "ObjectId" : 197,
+      "ObjectId" : 201,
       "Properties" : {
         "PendingActorLocation" : [32.454060, -243.448669, 6.957048],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -5996,7 +6556,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_343",
-        "ObjectId" : 198,
+        "ObjectId" : 202,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -6036,7 +6596,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_7",
       "NonSceneComponents" : [],
-      "ObjectId" : 199,
+      "ObjectId" : 203,
       "Properties" : {
         "PendingActorLocation" : [32.098923, -298.516357, 2.127120],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6049,9 +6609,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 200,
+        "ObjectId" : 204,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -6071,9 +6638,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -6082,6 +6651,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -6089,7 +6659,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_10",
       "NonSceneComponents" : [],
-      "ObjectId" : 201,
+      "ObjectId" : 205,
       "Properties" : {
         "PendingActorLocation" : [32.298923, -298.316345, 7.282285],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6102,9 +6672,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 202,
+        "ObjectId" : 206,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -6124,9 +6701,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -6135,6 +6714,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -6142,7 +6722,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_11",
       "NonSceneComponents" : [],
-      "ObjectId" : 203,
+      "ObjectId" : 207,
       "Properties" : {
         "PendingActorLocation" : [32.398922, -240.108841, 2.427120],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6155,9 +6735,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 204,
+        "ObjectId" : 208,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -6177,9 +6764,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -6188,6 +6777,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -6195,7 +6785,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_12",
       "NonSceneComponents" : [],
-      "ObjectId" : 205,
+      "ObjectId" : 209,
       "Properties" : {
         "PendingActorLocation" : [32.698921, -239.808853, 7.682284],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6208,9 +6798,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 206,
+        "ObjectId" : 210,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -6230,9 +6827,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -6241,6 +6840,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -6248,7 +6848,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "weapon-box_13",
       "NonSceneComponents" : [],
-      "ObjectId" : 207,
+      "ObjectId" : 211,
       "Properties" : {
         "PendingActorLocation" : [32.898922, -250.674133, 6.789219],
         "PendingActorRotation" : [-0.000000, 0.000000, 61.982086],
@@ -6261,9 +6861,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_25",
-        "ObjectId" : 208,
+        "ObjectId" : 212,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 61.982086],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -6283,9 +6890,11 @@
           },
           "StaticMeshPath" : "Content/Data/weapon-box/weapon-box_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -6294,6 +6903,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -6301,7 +6911,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "weapon-box-collider-for-sliding",
       "NonSceneComponents" : [],
-      "ObjectId" : 209,
+      "ObjectId" : 213,
       "Properties" : {
         "PendingActorLocation" : [23.210329, -29.444937, 33.125446],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6314,7 +6924,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_347",
-        "ObjectId" : 210,
+        "ObjectId" : 214,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -6354,7 +6964,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "weapon-box-collider-for-sliding_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 211,
+      "ObjectId" : 215,
       "Properties" : {
         "PendingActorLocation" : [-3.197670, -29.344936, 40.497791],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6367,7 +6977,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_347",
-        "ObjectId" : 212,
+        "ObjectId" : 216,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -6407,7 +7017,7 @@
       "ClassName" : "ABoxActor",
       "Name" : "weapon-box-collider-for-sliding_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 213,
+      "ObjectId" : 217,
       "Properties" : {
         "PendingActorLocation" : [-14.908318, -29.873714, 7.565583],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6420,7 +7030,7 @@
         "Children" : [],
         "ClassName" : "UBoxComponent",
         "Name" : "UBoxComponent_347",
-        "ObjectId" : 214,
+        "ObjectId" : 218,
         "Properties" : {
           "AngularDamping" : 0.010000,
           "BoxExtent" : [1.000000, 1.000000, 1.000000],
@@ -6460,7 +7070,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "stone-for-pave",
       "NonSceneComponents" : [],
-      "ObjectId" : 215,
+      "ObjectId" : 219,
       "Properties" : {
         "PendingActorLocation" : [-35.546719, -113.243790, -7.701677],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6473,9 +7083,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_805",
-        "ObjectId" : 216,
+        "ObjectId" : 220,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
@@ -6495,9 +7112,11 @@
           },
           "StaticMeshPath" : "Content/Data/stone/stone_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -6506,6 +7125,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -6513,7 +7133,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "desert-rock",
       "NonSceneComponents" : [],
-      "ObjectId" : 217,
+      "ObjectId" : 221,
       "Properties" : {
         "PendingActorLocation" : [-4452.772949, -165.770996, -39.144001],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6526,9 +7146,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_57",
-        "ObjectId" : 218,
+        "ObjectId" : 222,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -6548,9 +7175,11 @@
           },
           "StaticMeshPath" : "Content/Data/desert_rock/desert_rock_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -6559,6 +7188,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -6566,7 +7196,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "desert-rock_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 219,
+      "ObjectId" : 223,
       "Properties" : {
         "PendingActorLocation" : [4456.729980, -164.270569, -39.044003],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6579,9 +7209,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_57",
-        "ObjectId" : 220,
+        "ObjectId" : 224,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -6601,9 +7238,11 @@
           },
           "StaticMeshPath" : "Content/Data/desert_rock/desert_rock_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -6612,6 +7251,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -6619,7 +7259,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "stone-for-pave_1",
       "NonSceneComponents" : [],
-      "ObjectId" : 221,
+      "ObjectId" : 225,
       "Properties" : {
         "PendingActorLocation" : [-4.606539, -113.143791, -10.607456],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6632,9 +7272,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_805",
-        "ObjectId" : 222,
+        "ObjectId" : 226,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
@@ -6654,9 +7301,11 @@
           },
           "StaticMeshPath" : "Content/Data/stone/stone_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -6665,6 +7314,7 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
         }
       }
@@ -6672,7 +7322,7 @@
       "ClassName" : "AStaticMeshActor",
       "Name" : "stone-for-pave_2",
       "NonSceneComponents" : [],
-      "ObjectId" : 223,
+      "ObjectId" : 227,
       "Properties" : {
         "PendingActorLocation" : [-127.832970, -113.143791, 51.291718],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
@@ -6685,9 +7335,16 @@
         "Children" : [],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_805",
-        "ObjectId" : 224,
+        "ObjectId" : 228,
         "Properties" : {
           "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
           "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
@@ -6707,9 +7364,11 @@
           },
           "StaticMeshPath" : "Content/Data/stone/stone_StaticMesh.uasset",
           "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
           "bAutoActivate" : true,
           "bCastShadow" : true,
           "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
           "bEditorOnly" : false,
           "bEnableGravity" : true,
           "bGenerateOverlapEvents" : false,
@@ -6718,7 +7377,104 @@
           "bIsVisible" : true,
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
+          "bUseBakedBindPoseCorrection" : false,
           "bUseBoundingBoxCollider" : false
+        }
+      }
+    }, {
+      "ClassName" : "AActor",
+      "Name" : "prologue-landing-camera",
+      "NonSceneComponents" : [],
+      "ObjectId" : 229,
+      "Properties" : {
+        "PendingActorLocation" : [40.723797, 612.949280, 13.993708],
+        "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
+        "PendingActorScale" : [1.000000, 1.000000, 1.000000],
+        "PendingActorVisible" : true,
+        "PendingTagsString" : "",
+        "bNeedsTick" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [{
+                "Children" : [],
+                "ClassName" : "UBillboardComponent",
+                "Name" : "UBillboardComponent_321",
+                "ObjectId" : 232,
+                "Properties" : {
+                  "AngularDamping" : 0.010000,
+                  "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                  "CollisionEnabled" : 0,
+                  "CollisionPreset" : 0,
+                  "LinearDamping" : 0.010000,
+                  "Mass" : 1.000000,
+                  "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                  "ObjectType" : 0,
+                  "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                  "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                  "ResponseContainer" : {
+                    "Responses[0]" : 2,
+                    "Responses[1]" : 2,
+                    "Responses[2]" : 2,
+                    "Responses[3]" : 2,
+                    "Responses[4]" : 2,
+                    "Responses[5]" : 2
+                  },
+                  "TranslucentSortPriority" : 0,
+                  "bAutoActivate" : true,
+                  "bCastShadow" : true,
+                  "bCastShadowAsTwoSided" : false,
+                  "bEditorOnly" : true,
+                  "bEnableGravity" : true,
+                  "bGenerateOverlapEvents" : false,
+                  "bHiddenInComponentTree" : false,
+                  "bIsActive" : true,
+                  "bIsBillboard" : true,
+                  "bIsVisible" : true,
+                  "bSimulatePhysics" : false,
+                  "bTickEnable" : true
+                }
+              }],
+            "ClassName" : "UCameraComponent",
+            "Name" : "UCameraComponent_5",
+            "ObjectId" : 231,
+            "Properties" : {
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CameraState.FOV" : 1.047198,
+              "CameraState.FarZ" : 10000.000000,
+              "CameraState.NearZ" : 0.100000,
+              "CameraState.OrthoWidth" : 10.000000,
+              "CameraState.bIsOrthogonal" : false,
+              "DepthOfField.FStop" : 4.000000,
+              "DepthOfField.FocusDistance" : 10.000000,
+              "DepthOfField.GatherRingCount" : 6,
+              "DepthOfField.GatherSamplesPerRing" : 20,
+              "DepthOfField.SensorWidth" : 24.576000,
+              "DepthOfField.bEnableBackground" : true,
+              "DepthOfField.bEnableForeground" : true,
+              "DepthOfField.bEnabled" : false,
+              "DepthOfField.bHalfRes" : true,
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "bAutoActivate" : true,
+              "bEditorOnly" : false,
+              "bHiddenInComponentTree" : false,
+              "bIsActive" : true,
+              "bTickEnable" : true
+            }
+          }],
+        "ClassName" : "USceneComponent",
+        "Name" : "USceneComponent_4",
+        "ObjectId" : 230,
+        "Properties" : {
+          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "RelativeTransform.Location" : [40.723797, 612.949280, 13.993708],
+          "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+          "bAutoActivate" : true,
+          "bEditorOnly" : false,
+          "bHiddenInComponentTree" : false,
+          "bIsActive" : true,
+          "bTickEnable" : true
         }
       }
     }],
@@ -6727,98 +7483,98 @@
   "ContextName" : "Prologue",
   "EditorOutliner" : {
     "Groups" : [{
-        "ActorObjectIds" : [22, 7],
+        "ActorObjectIds" : [23, 7],
         "Expanded" : true,
         "GroupId" : 2,
         "Name" : "light"
       }, {
-        "ActorObjectIds" : [41, 47, 49],
+        "ActorObjectIds" : [43, 49, 51],
         "Expanded" : false,
         "GroupId" : 6,
         "Name" : "building"
       }, {
-        "ActorObjectIds" : [53, 51],
+        "ActorObjectIds" : [55, 53],
         "Expanded" : false,
         "GroupId" : 7,
         "Name" : "big-door"
       }, {
-        "ActorObjectIds" : [57, 55],
+        "ActorObjectIds" : [59, 57],
         "Expanded" : false,
         "GroupId" : 9,
         "Name" : "tent"
       }, {
-        "ActorObjectIds" : [59, 61],
+        "ActorObjectIds" : [61, 63],
         "Expanded" : false,
         "GroupId" : 10,
         "Name" : "tent_1"
       }, {
-        "ActorObjectIds" : [67, 69],
+        "ActorObjectIds" : [69, 71],
         "Expanded" : false,
         "GroupId" : 11,
         "Name" : "tent_3"
       }, {
-        "ActorObjectIds" : [63, 65],
+        "ActorObjectIds" : [65, 67],
         "Expanded" : false,
         "GroupId" : 12,
         "Name" : "tent_2"
       }, {
-        "ActorObjectIds" : [5, 37, 43, 45, 78],
+        "ActorObjectIds" : [5, 39, 45, 47, 81],
         "Expanded" : true,
         "GroupId" : 13,
         "Name" : "terrain"
       }, {
-        "ActorObjectIds" : [123, 71],
+        "ActorObjectIds" : [127, 73],
         "Expanded" : false,
         "GroupId" : 15,
         "Name" : "landing-pod"
       }, {
-        "ActorObjectIds" : [143, 141],
+        "ActorObjectIds" : [147, 145],
         "Expanded" : false,
         "GroupId" : 17,
         "Name" : "container_2",
         "ParentGroupId" : 29
       }, {
-        "ActorObjectIds" : [153, 155, 157],
+        "ActorObjectIds" : [157, 159, 161],
         "Expanded" : false,
         "GroupId" : 21,
         "Name" : "billbaord"
       }, {
-        "ActorObjectIds" : [125, 127],
+        "ActorObjectIds" : [129, 131],
         "Expanded" : false,
         "GroupId" : 22,
         "Name" : "barricade"
       }, {
-        "ActorObjectIds" : [159, 161],
+        "ActorObjectIds" : [163, 165],
         "Expanded" : false,
         "GroupId" : 23,
         "Name" : "barridace_1"
       }, {
-        "ActorObjectIds" : [163, 165],
+        "ActorObjectIds" : [167, 169],
         "Expanded" : false,
         "GroupId" : 24,
         "Name" : "container-for-wall-jump_1"
       }, {
-        "ActorObjectIds" : [193, 191, 131, 133, 135, 137, 139],
+        "ActorObjectIds" : [197, 195, 135, 137, 139, 141, 143],
         "Expanded" : false,
         "GroupId" : 25,
         "Name" : "weapon-boxes"
       }, {
-        "ActorObjectIds" : [195, 197, 199, 201, 203, 205, 207],
+        "ActorObjectIds" : [199, 201, 203, 205, 207, 209, 211],
         "Expanded" : false,
         "GroupId" : 26,
         "Name" : "weapon-boxes_1"
       }, {
-        "ActorObjectIds" : [145, 147, 149, 151, 171, 175, 177, 179, 181, 183, 185, 187, 189, 209, 211, 213],
+        "ActorObjectIds" : [149, 151, 153, 155, 175, 179, 181, 183, 185, 187, 189, 191, 193, 213, 215, 217],
         "Expanded" : false,
         "GroupId" : 27,
         "Name" : "weapon-boxes-for-sliding"
       }, {
-        "ActorObjectIds" : [167, 169],
+        "ActorObjectIds" : [171, 173],
         "Expanded" : false,
         "GroupId" : 28,
         "Name" : "container-for-wall-jump"
       }, {
-        "ActorObjectIds" : [129, 173],
+        "ActorObjectIds" : [133, 177],
         "Expanded" : false,
         "GroupId" : 29,
         "Name" : "containers-for-sliding"

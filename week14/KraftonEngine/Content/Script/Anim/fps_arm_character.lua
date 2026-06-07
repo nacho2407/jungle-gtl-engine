@@ -1,8 +1,9 @@
-local IDLE_PATH   = "Content/Data/FPSArm/Test1/Test1_Armature_Armature_Arms_FPS_Anim_Idle.uasset"
-local WALK_PATH   = "Content/Data/FPSArm/Test1/Test1_Armature_Armature_Arms_FPS_Anim_Walk.uasset"
-local RUN_PATH    = "Content/Data/FPSArm/Test1/Test1_Armature_Armature_Arms_FPS_Anim_Run.uasset"
-local SHOOT_PATH  = "Content/Data/FPSArm/Test1/Test1_Armature_Armature_Arms_FPS_Anim_OneShot.uasset"
-local RELOAD_PATH = "Content/Data/FPSArm/Test1/Test1_Armature_Armature_Arms_FPS_Anim_Reload_Fast.uasset"
+local IDLE_PATH   = "Content/Data/FPSArm/TitanArm/animations/idle_anim_autoplay_v_rspn101.uasset"
+local WALK_PATH   = "Content/Data/FPSArm/TitanArm/animations/walk_anim_v_rspn101.uasset"
+local RUN_PATH    = "Content/Data/FPSArm/TitanArm/animations/sprint_seq_v_rspn101.uasset"
+local SHOOT_PATH  = "Content/Data/FPSArm/TitanArm/animations/attack_anim_v_rspn101.uasset"
+local RELOAD_PATH = "Content/Data/FPSArm/TitanArm/animations/reload_empty_seq_v_rspn101.uasset"
+local RELOAD_CROUCH_PATH = "Content/Data/FPSArm/TitanArm/animations/reload_empty_crouch_seq_v_rspn101.uasset"
 
 local KEY_W = (Key and Key.W) or string.byte("W")
 local KEY_SHIFT = (Key and Key.Shift) or 0x10
@@ -36,6 +37,7 @@ end
 
 local function begin_reload(self)
     self.ReloadRequested = false
+    self.ReloadCrouchRequested = false
     self.ShootRequested = false
     self.ActionName = "Reload"
     self.ActionElapsed = 0.0
@@ -72,6 +74,7 @@ function init(self)
     self.ActionElapsed = 0.0
     self.ShootRequested = false
     self.ReloadRequested = false
+    self.ReloadCrouchRequested = false
     self.CurrentShootState = 2
 
     self.Locomotion = Anim.create_blend_list_by_enum(MOVE_IDLE, LOCOMOTION_BLEND_TIME)
@@ -84,6 +87,15 @@ function init(self)
     Anim.sm_add_state(top, "ShootA", Anim.create_sequence_player(SHOOT_PATH, 1.0, false))
     Anim.sm_add_state(top, "ShootB", Anim.create_sequence_player(SHOOT_PATH, 1.0, false))
     Anim.sm_add_state(top, "Reload", Anim.create_sequence_player(RELOAD_PATH, 1.0, false))
+    Anim.sm_add_state(top, "ReloadCrouch", Anim.create_sequence_player(RELOAD_CROUCH_PATH, 1.0, false))
+
+    Anim.sm_add_transition(top, "AnyState", "ReloadCrouch",
+        function()
+            if self.ReloadCrouchRequested then
+                return begin_reload(self)
+            end
+            return false
+        end, RELOAD_BLEND_IN)
 
     Anim.sm_add_transition(top, "AnyState", "Reload",
         function()
@@ -121,6 +133,10 @@ function init(self)
         function() return finish_action(self, "Reload", RELOAD_DURATION) end,
         RELOAD_BLEND_OUT)
 
+    Anim.sm_add_transition(top, "ReloadCrouch", "Locomotion",
+        function() return finish_action(self, "Reload", RELOAD_DURATION) end,
+        RELOAD_BLEND_OUT)
+
     Anim.sm_set_initial_state(top, "Locomotion")
     Anim.set_root_node(Anim.create_slot("DefaultSlot", top))
 end
@@ -148,6 +164,10 @@ function update(self, dt)
 
     if consume_anim_request(self, "reload") then
         self.ReloadRequested = true
+    end
+
+    if consume_anim_request(self, "reload_crouch") then
+        self.ReloadCrouchRequested = true
     end
 
     if consume_anim_request(self, "shoot") then

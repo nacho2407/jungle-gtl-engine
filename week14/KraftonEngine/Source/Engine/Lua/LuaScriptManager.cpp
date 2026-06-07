@@ -1163,6 +1163,17 @@ Engine.IsPaused = Game.IsPaused
 			Manager->StartCameraShakeAsset(AssetPath, Scale.value_or(1.0f));
 		}
 	});
+	CameraManager.set_function("StopAllCameraShakes", [](sol::optional<bool> bImmediately)
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (Manager)
+		{
+			// 컷씬 스킵/카메라 전환 시 남아 있는 흔들림을 즉시 정리하기 위한 Lua 진입점입니다.
+			Manager->StopAllCameraShakes(bImmediately.value_or(true));
+		}
+	});
 
 	sol::table AudioManager = Lua.create_named_table("AudioManager");
 	AudioManager.set_function("Load", [](const FString& SoundName, const FString& Path, sol::optional<bool> bLoop)
@@ -1433,6 +1444,10 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"SetWallRunMaxSpeed", [](UCharacterMovementComponent& Component, float Value)
 		{
 			Component.WallRunMaxSpeed = (std::max)(0.0f, Value);
+		},
+		"IsCrouching", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsCrouching();
 		});
 
 	FLuaDocRegistry::Get().Type("CharacterMovementComponent")
@@ -1450,7 +1465,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@return number\nfunction CharacterMovementComponent:GetSprintSpeedMultiplier() end")
 		.Method("---@param value number\nfunction CharacterMovementComponent:SetSprintSpeedMultiplier(value) end")
 		.Method("---@return number\nfunction CharacterMovementComponent:GetWallRunMaxSpeed() end")
-		.Method("---@param value number\nfunction CharacterMovementComponent:SetWallRunMaxSpeed(value) end");
+		.Method("---@param value number\nfunction CharacterMovementComponent:SetWallRunMaxSpeed(value) end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsCrouching() end");
 
 	Lua.new_usertype<UVehicleMovementComponent4W>("VehicleMovementComponent4W",
 		"SetDriveInput", &UVehicleMovementComponent4W::SetDriveInput);

@@ -462,8 +462,37 @@ bool UCharacterMovementComponent::FindFloor(FHitResult& OutFloorHit) const
 
 void UCharacterMovementComponent::SetCrouching(bool bEnable)
 {
+	if (bEnable && bIgnoreCrouchInputUntilRelease)
+	{
+		bWasCrouchInputDown = true;
+		bWantsCrouch = false;
+		return;
+	}
+
+	if (bEnable && !bWasCrouchInputDown)
+	{
+		bSlideQueued = true;
+		SlideQueueTimer = (std::max)(0.0f, SlideQueueGraceTime);
+	}
+	else if (!bEnable)
+	{
+		if (bIsSliding)
+		{
+			EndSlide(false);
+		}
+		bSlideQueued = false;
+		SlideQueueTimer = 0.0f;
+		bIgnoreCrouchInputUntilRelease = false;
+	}
+
+	bWasCrouchInputDown = bEnable;
+
 	if (bWantsCrouch == bEnable)
 	{
+		if (!bEnable)
+		{
+			StopSlideAudio();
+		}
 		return;
 	}
 
@@ -492,7 +521,9 @@ void UCharacterMovementComponent::UpdateCrouchState(float DeltaTime)
 		: (std::max)(CurrentHalfHeight, Radius);
 	const float TargetCrouchedHalfHeight = FMath::Clamp(CrouchedHalfHeight, Radius, StandingHalfHeight);
 
-	if (bWantsCrouch)
+	const bool bShouldCrouch = bWantsCrouch || bIsSliding;
+
+	if (bShouldCrouch)
 	{
 		bIsCrouched = true;
 	}
@@ -505,11 +536,11 @@ void UCharacterMovementComponent::UpdateCrouchState(float DeltaTime)
 		return;
 	}
 
-	const float TargetHalfHeight = bWantsCrouch ? TargetCrouchedHalfHeight : StandingHalfHeight;
+	const float TargetHalfHeight = bShouldCrouch ? TargetCrouchedHalfHeight : StandingHalfHeight;
 	const float HalfHeightDelta = TargetHalfHeight - CurrentHalfHeight;
 	if (std::fabs(HalfHeightDelta) <= FMath::Epsilon)
 	{
-		if (!bWantsCrouch)
+		if (!bShouldCrouch)
 		{
 			bIsCrouched = false;
 		}
@@ -524,7 +555,7 @@ void UCharacterMovementComponent::UpdateCrouchState(float DeltaTime)
 
 	ApplyCapsuleHalfHeight(Capsule, NewHalfHeight);
 
-	if (!bWantsCrouch && std::fabs(NewHalfHeight - StandingHalfHeight) <= FMath::Epsilon)
+	if (!bShouldCrouch && std::fabs(NewHalfHeight - StandingHalfHeight) <= FMath::Epsilon)
 	{
 		bIsCrouched = false;
 	}
@@ -680,6 +711,10 @@ bool UCharacterMovementComponent::ConsumePendingRootMotion(FTransform& OutLocalD
 void UCharacterMovementComponent::SetMovementMode(EMovementMode NewMode)
 {
 	if (MovementMode == NewMode) return;
+	if (bIsSliding && NewMode != EMovementMode::Walking)
+	{
+		EndSlide(false);
+	}
 	if (MovementMode == EMovementMode::WallRunning && NewMode != EMovementMode::WallRunning)
 	{
 		if (bEnableBuiltInMovementAudio)
@@ -1078,6 +1113,93 @@ float UCharacterMovementComponent::GetWallRunAlongSpeed(const FVector& WallNorma
 	return std::fabs(PlanarVelocity.Dot(RunDirection));
 }
 
+// ─── View tilt (TitanFall-style) ──────────────────────────────────────────────
+// Mode 별 의도:
+//   WallRunning      → Sign = ±1 (벽 측면 기준), Intensity = 1.
+//   Falling          → 후보 벽이 (CapsuleRadius + WallCheckDistance * Scale) 안에 있고
+//                      reattach cooldown 안 걸려 있으면 Anticipation 부분 강도.
+//   Walking / 기타   → 0.
+// FindWallRunSurface 는 const + 부수효과 없음 → Falling 중에만 1회 추가 sweep 비용.
+void UCharacterMovementComponent::UpdateWallTiltTarget()
+{
+	if (!bEnableWallRunCameraTilt)
+	{
+		TargetTiltSign = 0.0f;
+		TargetTiltIntensity = 0.0f;
+		return;
+	}
+
+	if (MovementMode == EMovementMode::WallRunning)
+	{
+		// 엔진 Roll 컨벤션: +Roll = view 상단이 오른쪽 (시계방향).
+		// "벽 반대쪽으로 기울이기" → 벽 오른쪽이면 -Roll (상단 왼쪽으로), 벽 왼쪽이면 +Roll.
+		const float RawSign = bWallRunOnRightSide ? -1.0f : +1.0f;
+		TargetTiltSign = bInvertWallRunCameraTiltSign ? -RawSign : RawSign;
+		TargetTiltIntensity = 1.0f;
+		return;
+	}
+
+	if (MovementMode == EMovementMode::Falling)
+	{
+		// Wall-jump 직후엔 같은 벽으로 미리 기울이지 않음 — TryStartWallRun 의 게이트와 같은 의도.
+		if (WallJumpReattachTimer > 0.0f)
+		{
+			TargetTiltSign = 0.0f;
+			TargetTiltIntensity = 0.0f;
+			return;
+		}
+
+		FHitResult ProbeHit;
+		bool bRightSide = false;
+		if (!FindWallRunSurface(ProbeHit, bRightSide))
+		{
+			TargetTiltSign = 0.0f;
+			TargetTiltIntensity = 0.0f;
+			return;
+		}
+
+		// 거리 게이트 — WallCheckDistance 자체를 넘어서면 hit 도 없음 (FindWallRun 안에서 컷).
+		// 여기선 anticipation 의 거리 → intensity 매핑만:
+		//   d ≤ WallCheckDistance               → Intensity = AnticipationIntensity (full anticipation).
+		//   d ∈ (WallCheckDistance, MaxDist]    → 0 으로 선형 감쇠.
+		const float CapsuleRadius = GetWallRunCapsuleRadius();
+		const float NearDist = CapsuleRadius + WallCheckDistance;
+		const float FarDist  = CapsuleRadius + WallCheckDistance * std::max(1.0f, WallTiltAnticipationDistanceScale);
+		const float D = ProbeHit.Distance;
+
+		float Intensity = 0.0f;
+		if (D <= NearDist)
+		{
+			Intensity = WallTiltAnticipationIntensity;
+		}
+		else if (D < FarDist && FarDist > NearDist)
+		{
+			const float T = 1.0f - (D - NearDist) / (FarDist - NearDist);
+			Intensity = WallTiltAnticipationIntensity * std::clamp(T, 0.0f, 1.0f);
+		}
+
+		// Active 와 동일 부호 규약 — 벽 오른쪽이면 -Roll, 왼쪽이면 +Roll.
+		const float RawSign = bRightSide ? -1.0f : +1.0f;
+		TargetTiltSign = bInvertWallRunCameraTiltSign ? -RawSign : RawSign;
+		TargetTiltIntensity = Intensity;
+		return;
+	}
+
+	TargetTiltSign = 0.0f;
+	TargetTiltIntensity = 0.0f;
+}
+
+float UCharacterMovementComponent::GetDesiredCameraRollDeg() const
+{
+	if (!bEnableWallRunCameraTilt) return 0.0f;
+	return TargetTiltSign * TargetTiltIntensity * MaxWallRunCameraTiltDeg;
+}
+
+float UCharacterMovementComponent::GetCameraTiltResponseHz(bool bIsIncreasing) const
+{
+	return bIsIncreasing ? WallTiltAttachResponseHz : WallTiltReleaseResponseHz;
+}
+
 float UCharacterMovementComponent::GetWallRunInputAlong(const FVector& Input, const FVector& RunDirection) const
 {
 	FVector PlanarInput(Input.X, Input.Y, 0.0f);
@@ -1138,6 +1260,11 @@ void UCharacterMovementComponent::Jump()
 	// Walking: 항상 1회. Falling: JumpsRemaining 이 남아 있을 때만 (더블/멀티 점프).
 	// WallRunning: 항상 1회 — TickWallRunning 가 wall-jump 임펄스로 변환해 소비.
 	// edge-triggered — bWantsJump 만 set, 실제 적용은 Tick 분기에서 consume.
+	if (bIsSliding)
+	{
+		EndSlide(false);
+	}
+
 	if (MovementMode == EMovementMode::Walking)
 	{
 		bWantsJump = true;
@@ -1211,7 +1338,27 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	Input.Z = 0.0f;   // XY 평면만 — Z 는 mode 가 결정.
 
 	// 1) Input 처리 — XY velocity 갱신 (양 mode 공통).
-	ApplyInputToVelocity(Input, DeltaTime);
+	if (bSlideQueued)
+	{
+		if (!TryStartSlide(Input))
+		{
+			SlideQueueTimer -= DeltaTime;
+			if (SlideQueueTimer <= 0.0f)
+			{
+				bSlideQueued = false;
+				SlideQueueTimer = 0.0f;
+			}
+		}
+	}
+
+	if (bIsSliding)
+	{
+		UpdateSlideVelocity(DeltaTime);
+	}
+	else
+	{
+		ApplyInputToVelocity(Input, DeltaTime);
+	}
 
 	// 1.5) Owner Character 의 Mesh AnimInstance 가 누적해둔 root motion 을 가져와 자기 buffer 로 push.
 	//      Mesh tick (TG_PrePhysics) 이 이미 끝나 PendingRootMotion 이 채워진 상태.
@@ -1300,6 +1447,9 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 		SetWallRunStatus(EWallRunStatus::NotFalling);
 	}
 
+	// View tilt target — mode 가 확정된 *후* 갱신해야 Falling/WallRunning 분기가 같은 frame 에 일치.
+	UpdateWallTiltTarget();
+
 	DrawWallRunStatusText();
 	DrawWallRunDistanceDebug();
 }
@@ -1337,8 +1487,168 @@ void UCharacterMovementComponent::PhysOrientToMovement(float DeltaTime)
 	Updated->SetRelativeRotation(R);
 }
 
+float UCharacterMovementComponent::GetPlanarSpeed() const
+{
+	const FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
+	return PlanarVelocity.Length();
+}
+
+FVector UCharacterMovementComponent::ComputeSlideDirection(const FVector& Input) const
+{
+	FVector PlanarInput(Input.X, Input.Y, 0.0f);
+	if (!PlanarInput.IsNearlyZero())
+	{
+		PlanarInput.Normalize();
+		return PlanarInput;
+	}
+
+	FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
+	if (!PlanarVelocity.IsNearlyZero())
+	{
+		PlanarVelocity.Normalize();
+		return PlanarVelocity;
+	}
+
+	if (USceneComponent* Updated = GetUpdatedComponent())
+	{
+		FVector Forward = Updated->GetForwardVector();
+		Forward.Z = 0.0f;
+		if (!Forward.IsNearlyZero())
+		{
+			Forward.Normalize();
+			return Forward;
+		}
+	}
+
+	return FVector::ZeroVector;
+}
+
+bool UCharacterMovementComponent::TryStartSlide(const FVector& Input)
+{
+	if (!bEnableSlide || bIsSliding || MovementMode != EMovementMode::Walking)
+	{
+		return false;
+	}
+
+	if (!bWantsSprint || GetPlanarSpeed() < SlideMinStartSpeed)
+	{
+		return false;
+	}
+
+	const FVector Direction = ComputeSlideDirection(Input);
+	if (Direction.IsNearlyZero())
+	{
+		return false;
+	}
+
+	StartSlide(Direction);
+	return true;
+}
+
+void UCharacterMovementComponent::StartSlide(const FVector& InSlideDirection)
+{
+	FVector Direction(InSlideDirection.X, InSlideDirection.Y, 0.0f);
+	if (Direction.IsNearlyZero())
+	{
+		return;
+	}
+	Direction.Normalize();
+
+	bIsSliding = true;
+	bSlideQueued = false;
+	SlideQueueTimer = 0.0f;
+	SlideElapsedTime = 0.0f;
+	SlideDirection = Direction;
+
+	bool bApplyImpulse = true;
+	FHitResult FloorHit;
+	if (FindFloor(FloorHit) && FloorHit.bHit)
+	{
+		const FVector FloorNormal = GetHitNormal(FloorHit);
+		if (!FloorNormal.IsNearlyZero() && Direction.Dot(FloorNormal.Normalized()) < -0.05f)
+		{
+			bApplyImpulse = false;
+		}
+	}
+
+	if (bApplyImpulse)
+	{
+		Velocity.X += Direction.X * SlideImpulseSpeed;
+		Velocity.Y += Direction.Y * SlideImpulseSpeed;
+	}
+}
+
+void UCharacterMovementComponent::UpdateSlideVelocity(float DeltaTime)
+{
+	if (!bIsSliding)
+	{
+		return;
+	}
+
+	if (MovementMode != EMovementMode::Walking)
+	{
+		EndSlide(false);
+		return;
+	}
+
+	SlideElapsedTime += DeltaTime;
+	if (MaxSlideTime > FMath::Epsilon && SlideElapsedTime >= MaxSlideTime)
+	{
+		EndSlide(false, true);
+		return;
+	}
+
+	const float Speed = GetPlanarSpeed();
+	if (Speed <= SlideEndSpeed)
+	{
+		EndSlide(false, true);
+		return;
+	}
+
+	const float Deceleration = (std::max)(0.0f, SlideBrakingFriction);
+	const float NewSpeed = (std::max)(0.0f, Speed - Deceleration * DeltaTime);
+	const FVector Direction = FVector(Velocity.X, Velocity.Y, 0.0f) * (1.0f / Speed);
+
+	Velocity.X = Direction.X * NewSpeed;
+	Velocity.Y = Direction.Y * NewSpeed;
+
+	if (NewSpeed <= SlideEndSpeed)
+	{
+		EndSlide(false, true);
+	}
+}
+
+void UCharacterMovementComponent::EndSlide(bool bKeepCrouchInput, bool bIgnoreHeldCrouchUntilRelease)
+{
+	if (!bIsSliding)
+	{
+		return;
+	}
+
+	bIsSliding = false;
+	bSlideQueued = false;
+	SlideQueueTimer = 0.0f;
+	SlideElapsedTime = 0.0f;
+	SlideDirection = FVector::ZeroVector;
+
+	if (bIgnoreHeldCrouchUntilRelease)
+	{
+		bWantsCrouch = false;
+		bIgnoreCrouchInputUntilRelease = bWasCrouchInputDown;
+	}
+	else if (bKeepCrouchInput)
+	{
+		bWantsCrouch = true;
+	}
+}
+
 void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, float DeltaTime)
 {
+	if (bIsSliding)
+	{
+		return;
+	}
+
 	if (MovementMode == EMovementMode::WallRunning)
 	{
 		// WallRunning input은 벽 접선 방향으로 투영해서 TickWallRunning 에서만 처리한다.

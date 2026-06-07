@@ -19,6 +19,7 @@ local sceneTime = 0.0
 local cutsceneFinished = false
 local landingPodActor = nil
 local landingStartLocation = nil
+local landingCutsceneCameraActor = nil
 local cutsceneCameraInitialized = false
 local cutsceneCameraWarned = false
 local playerMovement = nil
@@ -35,6 +36,8 @@ local landingDescentEndTime = 39.5
 local landingFinishTime = 41.0
 local postLandingFinishDelayRemaining = 0.0
 local postLandingFinishDelayActive = false
+local landingShakeTimer = 0.0
+local landingShakeStopped = false
 
 local SKIP_HOLD_DURATION = 3.0
 local SKIP_RING_FRAMES = 24
@@ -49,6 +52,7 @@ local DIALOGUE_LINE_HEIGHT = 48.0
 local DIALOGUE_TEXT_LEFT = 16.0
 local DIALOGUE_DEFAULT_FONT_SIZE = 18.0
 local LANDING_POD_ACTOR_NAME = "landing-pod-mesh"
+local LANDING_CUTSCENE_CAMERA_ACTOR_NAME = "prologue-landing-camera"
 local PLAYER_PAWN_NAME = "kain-temp"
 local LANDING_TARGET_Z = -3.119
 local LANDING_COMPRESSED_Z = -3.525
@@ -57,6 +61,11 @@ local LANDING_REBOUND_DURATION = 1.0
 local MIN_LANDING_DESCENT_DURATION = 1.0
 local PLAYER_CAMERA_BLEND_TIME = 0.65
 local CUTSCENE_CAMERA_BLEND_TIME = 0.0
+local LANDING_SHAKE_INTERVAL = 0.20
+local LANDING_SHAKE_LEAD_TIME = 10.0
+local LANDING_SHAKE_FADE_OUT_TIME = 2.0
+local LANDING_SHAKE_START_SCALE = 0.12
+local LANDING_SHAKE_END_SCALE = 0.35
 local PRODUCER_CREDIT_NAMES = {
     "KIM HYOBEOM",
     "JANG MINJUN",
@@ -88,6 +97,25 @@ local function smoothstep(alpha)
     return clamped * clamped * (3.0 - 2.0 * clamped)
 end
 
+local function atan2(y, x)
+    if x > 0.0 then
+        return math.atan(y / x)
+    end
+    if x < 0.0 and y >= 0.0 then
+        return math.atan(y / x) + math.pi
+    end
+    if x < 0.0 and y < 0.0 then
+        return math.atan(y / x) - math.pi
+    end
+    if y > 0.0 then
+        return math.pi * 0.5
+    end
+    if y < 0.0 then
+        return -math.pi * 0.5
+    end
+    return 0.0
+end
+
 local function make_location_with_z(source, z)
     return Vector.new(source.X, source.Y, z)
 end
@@ -112,6 +140,36 @@ local function stop_current_voice()
         AudioManager.Stop(currentVoiceKey)
     end
     currentVoiceKey = nil
+end
+
+local function stop_camera_shakes(immediate)
+    if CameraManager ~= nil and CameraManager.StopAllCameraShakes ~= nil then
+        -- 스킵/전환은 즉시 정리하고, 정상 착륙 종료는 CameraShake 자체 blend-out을 사용합니다.
+        CameraManager.StopAllCameraShakes(immediate ~= false)
+    end
+end
+
+local function reset_landing_camera_shake_state()
+    landingShakeTimer = 0.0
+    landingShakeStopped = false
+end
+
+local function start_landing_wave_shake(scale)
+    if CameraManager ~= nil and CameraManager.StartWaveShake ~= nil then
+        CameraManager.StartWaveShake(scale)
+    end
+end
+
+local function find_landing_cutscene_camera()
+    if landingCutsceneCameraActor ~= nil then
+        return landingCutsceneCameraActor
+    end
+    if World == nil or World.FindActorByName == nil then
+        return nil
+    end
+
+    landingCutsceneCameraActor = World.FindActorByName(LANDING_CUTSCENE_CAMERA_ACTOR_NAME)
+    return landingCutsceneCameraActor
 end
 
 local function get_viewport_size()
@@ -268,6 +326,65 @@ local function update_landing_pod_motion()
     pod.Location = make_location_with_z(landingStartLocation, z)
 end
 
+local function update_landing_camera_look_at()
+    local cameraActor = find_landing_cutscene_camera()
+    local pod = find_landing_pod()
+    if cameraActor == nil or pod == nil then
+        return
+    end
+
+    local from = cameraActor.Location
+    local to = pod.Location
+    local dx = to.X - from.X
+    local dy = to.Y - from.Y
+    local dz = to.Z - from.Z
+    local horizontalDistance = math.sqrt(dx * dx + dy * dy)
+    if horizontalDistance <= 0.001 and math.abs(dz) <= 0.001 then
+        return
+    end
+
+    -- FRotator는 Lua Vector(X=Roll, Y=Pitch, Z=Yaw)로 주고받으므로, 카메라 forward가 pod를 향하도록 변환합니다.
+    local yaw = math.deg(atan2(dy, dx))
+    local pitch = -math.deg(atan2(dz, horizontalDistance))
+    cameraActor.Rotation = Vector.new(0.0, pitch, yaw)
+end
+
+local function update_landing_camera_shake(dt)
+    if cutsceneFinished or landingFinishTime <= 0.0 then
+        return
+    end
+
+    local shakeStartTime = landingFinishTime - LANDING_SHAKE_LEAD_TIME
+    if sceneTime < shakeStartTime then
+        return
+    end
+
+    local shakeEndTime = landingFinishTime + LANDING_SHAKE_FADE_OUT_TIME
+    if sceneTime >= shakeEndTime then
+        if not landingShakeStopped then
+            landingShakeStopped = true
+            stop_camera_shakes(false)
+        end
+        return
+    end
+
+    landingShakeTimer = landingShakeTimer - dt
+    if landingShakeTimer <= 0.0 then
+        -- 착륙 10초 전부터 강해지고, 착륙 직후에는 남은 지연 시간 안에서 자연스럽게 사라집니다.
+        local shakeScale = 0.0
+        if sceneTime < landingFinishTime then
+            local shakeAlpha = clamp((sceneTime - shakeStartTime) / LANDING_SHAKE_LEAD_TIME, 0.0, 1.0)
+            shakeScale = lerp(LANDING_SHAKE_START_SCALE, LANDING_SHAKE_END_SCALE, smoothstep(shakeAlpha))
+        else
+            local fadeAlpha = clamp((sceneTime - landingFinishTime) / LANDING_SHAKE_FADE_OUT_TIME, 0.0, 1.0)
+            shakeScale = lerp(LANDING_SHAKE_END_SCALE, 0.0, smoothstep(fadeAlpha))
+        end
+
+        start_landing_wave_shake(shakeScale)
+        landingShakeTimer = LANDING_SHAKE_INTERVAL
+    end
+end
+
 local function lock_player_movement_for_cutscene()
     if World == nil or World.FindActorByName == nil then
         return
@@ -362,20 +479,31 @@ local function try_initialize_cutscene_camera()
         return
     end
 
+    local cameraActor = find_landing_cutscene_camera()
+    local viewTarget = cameraActor ~= nil and cameraActor or pod
     local camera = nil
-    if pod.GetCamera ~= nil then
+    if cameraActor ~= nil then
+        update_landing_camera_look_at()
+        if cameraActor.GetCamera ~= nil then
+            camera = cameraActor:GetCamera()
+        end
+    elseif pod.GetCamera ~= nil then
         camera = pod:GetCamera()
+        if camera ~= nil and not cutsceneCameraWarned then
+            log_prologue(LANDING_CUTSCENE_CAMERA_ACTOR_NAME .. "를 찾지 못해서 " .. LANDING_POD_ACTOR_NAME .. " 카메라를 사용합니다.")
+            cutsceneCameraWarned = true
+        end
     end
 
     if camera ~= nil and CameraManager ~= nil and CameraManager.PossessCamera ~= nil then
         CameraManager.PossessCamera(camera)
     elseif not cutsceneCameraWarned then
-        log_prologue(LANDING_POD_ACTOR_NAME .. "에 CameraComponent가 없어서 기존 카메라를 유지합니다.")
+        log_prologue(viewTarget.Name .. "에 CameraComponent가 없어서 기존 카메라를 유지합니다.")
         cutsceneCameraWarned = true
     end
 
     if playerController.SetViewTargetWithBlend ~= nil then
-        playerController:SetViewTargetWithBlend(pod, CUTSCENE_CAMERA_BLEND_TIME)
+        playerController:SetViewTargetWithBlend(viewTarget, CUTSCENE_CAMERA_BLEND_TIME)
     end
 
     cutsceneCameraInitialized = true
@@ -394,6 +522,8 @@ local function finish_cutscene_in_current_scene()
     postLandingFinishDelayActive = false
     postLandingFinishDelayRemaining = 0.0
     stop_current_voice()
+    stop_camera_shakes(true)
+    reset_landing_camera_shake_state()
     update_skip_ring(0.0)
     hide_producer_credit()
     remove_cutscene_widget()
@@ -645,6 +775,7 @@ local function play_story(moduleName)
     dialogueStartDelayRemaining = INTRO_DIALOGUE_START_DELAY
     postLandingFinishDelayActive = false
     postLandingFinishDelayRemaining = 0.0
+    reset_landing_camera_shake_state()
 end
 
 local function update_dialogue_start_delay(dt)
@@ -684,6 +815,7 @@ function BeginPlay()
     cutsceneFinished = false
     landingPodActor = nil
     landingStartLocation = nil
+    landingCutsceneCameraActor = nil
     cutsceneCameraInitialized = false
     cutsceneCameraWarned = false
     playerMovement = nil
@@ -701,6 +833,7 @@ function BeginPlay()
     postLandingFinishDelayRemaining = 0.0
     postLandingFinishDelayActive = false
     currentVoiceKey = nil
+    reset_landing_camera_shake_state()
 
     set_weapon_hud_visible(false)
     cutsceneWidget = UI.CreateWidget("Content/UI/Cutscene/Cutscene.rml")
@@ -715,6 +848,8 @@ end
 
 function EndPlay()
     stop_current_voice()
+    stop_camera_shakes(true)
+    reset_landing_camera_shake_state()
     hide_producer_credit()
     remove_cutscene_widget()
     restore_player_movement()
@@ -734,6 +869,7 @@ function EndPlay()
     cutsceneFinished = false
     landingPodActor = nil
     landingStartLocation = nil
+    landingCutsceneCameraActor = nil
     cutsceneCameraInitialized = false
     cutsceneCameraWarned = false
     landingDescentEndTime = 39.5
@@ -750,6 +886,8 @@ function Tick(dt)
         update_landing_pod_motion()
         update_producer_credit()
         try_initialize_cutscene_camera()
+        update_landing_camera_look_at()
+        update_landing_camera_shake(dt)
         lock_player_movement_for_cutscene()
         if cutsceneWidget ~= nil and update_scene_skip(dt) then
             return

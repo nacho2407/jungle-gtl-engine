@@ -37,6 +37,13 @@ struct FFrameContext
 	float FOV = 3.14159265358979f / 3.0f;
 	float AspectRatio = 16.0f / 9.0f;
 
+	// Directional shadow용 안정 카메라 — 화면 shake가 CSM cascade를 흔들지 않게 분리합니다.
+	bool bHasStableShadowCamera = false;
+	FMatrix StableShadowView;
+	FMatrix StableShadowProj;
+	float StableShadowNearClip = 0.1f;
+	float StableShadowFarClip = 10000.0f;
+
 	bool  bIsOrtho     = false;
 	bool  bIsLightView = false;
 	EWorldType WorldType = EWorldType::Editor;
@@ -111,6 +118,19 @@ struct FFrameContext
 	// FMinimalViewInfo 가 카메라 통화. 컴포넌트 오버로드는 통화로 변환 후 위임.
 	void SetCameraInfo(const FMinimalViewInfo& POV);
 	void SetCameraInfo(const UCameraComponent* Camera);
+
+	/**
+	 * @brief Directional shadow용 안정 카메라 정보 설정
+	 *
+	 * @param POV 카메라 modifier 적용 전 POV
+	 */
+	void SetStableShadowCameraInfo(const FMinimalViewInfo& POV);
+
+	/**
+	 * @brief Directional shadow용 안정 카메라 정보 해제
+	 */
+	void ClearStableShadowCameraInfo();
+
 	void SetViewportInfo(const FViewport* VP);
 
 	void SetViewportSize(float InWidth, float InHeight)
@@ -150,5 +170,6 @@ struct FFrameContext
 		AspectRatio             = 16.0f / 9.0f;
 		CameraDepthOfField      = FCameraDepthOfFieldSettings();
 		HiddenEditorOnlyActorForView = nullptr;
+		ClearStableShadowCameraInfo();
 	}
 };
