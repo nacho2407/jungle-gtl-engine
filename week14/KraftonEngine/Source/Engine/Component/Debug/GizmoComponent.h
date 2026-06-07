@@ -11,6 +11,7 @@
 class AActor;
 class FPrimitiveSceneProxy;
 class FScene;
+class UWorld;
 
 enum EGizmoMode
 {
@@ -34,6 +35,7 @@ public:
 
 	void RenderGizmo() {}
 	void SetSelectedActors(const TArray<AActor*>* InSelectedActors) { AllSelectedActors = InSelectedActors; }
+	void SetSelectedGroups(UWorld* InWorld, const TArray<uint32>* InSelectedGroupIds);
 	void SetHolding(bool bHold);
 	inline bool IsHolding() const { return bIsHolding; }
 	inline bool IsHovered() const { return SelectedAxis != -1; }
@@ -104,6 +106,7 @@ private:
 	bool TranslateSelectedActorTargets(const FVector& Delta);
 	bool RotateSelectedActorTargets(const FQuat& DeltaQuat);
 	bool ScaleSelectedActorTargets(const FVector& Delta);
+	bool ScaleSelectedGroupTargets(const FVector& Delta);
 	void TranslateTarget(float DragAmount);
 	void RotateTarget(float DragAmount);
 	void ScaleTarget(float DragAmount);
@@ -132,6 +135,8 @@ private:
 	FComponentGizmoTarget ComponentTarget;
 
 	const TArray<AActor*>* AllSelectedActors = nullptr;
+	const TArray<uint32>* SelectedGroupIds = nullptr;
+	UWorld* SelectionWorld = nullptr;
 	EGizmoMode CurMode = EGizmoMode::Translate;
 	FVector LastIntersectionLocation;
 	FVector AngularDragPivotLocation = FVector::ZeroVector;

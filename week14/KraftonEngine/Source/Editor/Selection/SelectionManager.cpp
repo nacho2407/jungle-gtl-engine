@@ -8,6 +8,27 @@
 #include "Render/Scene/FScene.h"
 #include "Object/ReferenceCollector.h"
 
+namespace
+{
+	bool ContainsUInt(const TArray<uint32>& Values, uint32 Value)
+	{
+		return std::find(Values.begin(), Values.end(), Value) != Values.end();
+	}
+
+	void AddUniqueUInt(TArray<uint32>& Values, uint32 Value)
+	{
+		if (Value != 0 && !ContainsUInt(Values, Value))
+		{
+			Values.push_back(Value);
+		}
+	}
+
+	void RemoveUInt(TArray<uint32>& Values, uint32 Value)
+	{
+		Values.erase(std::remove(Values.begin(), Values.end(), Value), Values.end());
+	}
+}
+
 void FSelectionManager::Init()
 {
 	Gizmo = UObjectManager::Get().CreateObject<UGizmoComponent>();
@@ -17,6 +38,13 @@ void FSelectionManager::Init()
 
 void FSelectionManager::SetWorld(UWorld* InWorld)
 {
+	for (AActor* Prev : SelectedActors)
+	{
+		SetActorProxiesSelected(Prev, false);
+	}
+	SelectedActors.clear();
+	SelectedComponent = nullptr;
+
 	// 기존 Scene에서 Gizmo 프록시 해제
 	if (Gizmo && World)
 		Gizmo->DestroyRenderState();
@@ -30,7 +58,7 @@ void FSelectionManager::SetWorld(UWorld* InWorld)
 		Gizmo->CreateRenderState();
 	}
 
-	SyncGizmo();
+	RebuildSelectionFromState();
 }
 
 void FSelectionManager::Shutdown()
@@ -46,25 +74,20 @@ void FSelectionManager::Shutdown()
 
 void FSelectionManager::Select(AActor* Actor)
 {
-	if (SelectedActors.size() == 1 && SelectedActors.front() == Actor && (!Actor || SelectedComponent == Actor->GetRootComponent()))
+	if (Actor && DirectSelectedActorUUIDs.size() == 1 && DirectSelectedActorUUIDs.front() == Actor->GetUUID()
+		&& SelectedGroupIds.empty() && SelectedActors.size() == 1 && SelectedActors.front() == Actor
+		&& SelectedComponent == Actor->GetRootComponent())
 	{
 		return;
 	}
 
-	// 기존 선택 해제
-	for (AActor* Prev : SelectedActors)
-		SetActorProxiesSelected(Prev, false);
-
-	SelectedActors.clear();
-	SelectedComponent = nullptr;
-
+	DirectSelectedActorUUIDs.clear();
+	SelectedGroupIds.clear();
 	if (Actor)
 	{
-		SelectedActors.push_back(Actor);
-		SetActorProxiesSelected(Actor, true);
-		SelectedComponent = Actor->GetRootComponent();
+		AddUniqueUInt(DirectSelectedActorUUIDs, Actor->GetUUID());
 	}
-	SyncGizmo();
+	RebuildSelectionFromState();
 }
 
 void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>& ActorList)
@@ -103,69 +126,76 @@ void FSelectionManager::SelectRange(AActor* ClickedActor, const TArray<AActor*>&
 	int32 Lo = std::min(AnchorIdx, ClickedIdx);
 	int32 Hi = std::max(AnchorIdx, ClickedIdx);
 
-	// 기존 선택 해제
-	for (AActor* Prev : SelectedActors)
-		SetActorProxiesSelected(Prev, false);
-
-	SelectedActors.clear();
-	SelectedComponent = nullptr;
+	DirectSelectedActorUUIDs.clear();
+	SelectedGroupIds.clear();
 
 	for (int32 i = Lo; i <= Hi; ++i)
 	{
 		if (ActorList[i])
 		{
-			SelectedActors.push_back(ActorList[i]);
-			SetActorProxiesSelected(ActorList[i], true);
+			AddUniqueUInt(DirectSelectedActorUUIDs, ActorList[i]->GetUUID());
 		}
 	}
 
-	if (!SelectedActors.empty())
-	{
-		SelectedComponent = SelectedActors.front()->GetRootComponent();
-	}
-
-	SyncGizmo();
+	RebuildSelectionFromState();
 }
 
 void FSelectionManager::ToggleSelect(AActor* Actor)
 {
 	if (!Actor) return;
 
-	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
-	if (It != SelectedActors.end())
+	const uint32 ActorUUID = Actor->GetUUID();
+	if (ContainsUInt(DirectSelectedActorUUIDs, ActorUUID))
 	{
-		SetActorProxiesSelected(Actor, false);
-		SelectedActors.erase(It);
-		if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
-		{
-			SelectedComponent = SelectedActors.empty() ? nullptr : SelectedActors.front()->GetRootComponent();
-		}
+		RemoveUInt(DirectSelectedActorUUIDs, ActorUUID);
 	}
 	else
 	{
-		SelectedActors.push_back(Actor);
-		SetActorProxiesSelected(Actor, true);
-		if (SelectedActors.size() == 1)
-		{
-			SelectedComponent = Actor->GetRootComponent();
-		}
+		AddUniqueUInt(DirectSelectedActorUUIDs, ActorUUID);
 	}
-	SyncGizmo();
+	RebuildSelectionFromState();
+}
+
+void FSelectionManager::SelectGroup(uint32 GroupId)
+{
+	if (GroupId == 0)
+	{
+		return;
+	}
+
+	DirectSelectedActorUUIDs.clear();
+	SelectedGroupIds.clear();
+	AddUniqueUInt(SelectedGroupIds, GroupId);
+	RebuildSelectionFromState();
+}
+
+void FSelectionManager::ToggleSelectGroup(uint32 GroupId)
+{
+	if (GroupId == 0)
+	{
+		return;
+	}
+
+	if (ContainsUInt(SelectedGroupIds, GroupId))
+	{
+		RemoveUInt(SelectedGroupIds, GroupId);
+	}
+	else
+	{
+		AddUniqueUInt(SelectedGroupIds, GroupId);
+	}
+	RebuildSelectionFromState();
 }
 
 void FSelectionManager::Deselect(AActor* Actor)
 {
-	auto It = std::find(SelectedActors.begin(), SelectedActors.end(), Actor);
-	if (It != SelectedActors.end())
+	if (!Actor)
 	{
-		SetActorProxiesSelected(Actor, false);
-		SelectedActors.erase(It);
-		if (SelectedComponent && SelectedComponent->GetOwner() == Actor)
-		{
-			SelectedComponent = SelectedActors.empty() ? nullptr : SelectedActors.front()->GetRootComponent();
-		}
+		return;
 	}
-	SyncGizmo();
+
+	RemoveUInt(DirectSelectedActorUUIDs, Actor->GetUUID());
+	RebuildSelectionFromState();
 }
 
 int32 FSelectionManager::SelectAllActors()
@@ -175,13 +205,8 @@ int32 FSelectionManager::SelectAllActors()
 		return 0;
 	}
 
-	// 기존 선택 프록시 해제
-	for (AActor* Prev : SelectedActors)
-	{
-		SetActorProxiesSelected(Prev, false);
-	}
-	SelectedActors.clear();
-	SelectedComponent = nullptr;
+	DirectSelectedActorUUIDs.clear();
+	SelectedGroupIds.clear();
 
 	// 현재 editor world에 속한 valid actor만 선택 대상에 포함
 	for (AActor* Actor : World->GetActors())
@@ -191,23 +216,16 @@ int32 FSelectionManager::SelectAllActors()
 			continue;
 		}
 
-		SelectedActors.push_back(Actor);
-		SetActorProxiesSelected(Actor, true);
+		AddUniqueUInt(DirectSelectedActorUUIDs, Actor->GetUUID());
 	}
 
-	// primary selection의 root component를 기즈모 기준으로 사용
-	if (!SelectedActors.empty())
-	{
-		SelectedComponent = SelectedActors.front()->GetRootComponent();
-	}
-
-	SyncGizmo();
+	RebuildSelectionFromState();
 	return static_cast<int32>(SelectedActors.size());
 }
 
 void FSelectionManager::ClearSelection()
 {
-	if (SelectedActors.empty() && SelectedComponent == nullptr)
+	if (SelectedActors.empty() && SelectedComponent == nullptr && DirectSelectedActorUUIDs.empty() && SelectedGroupIds.empty())
 	{
 		return;
 	}
@@ -216,6 +234,8 @@ void FSelectionManager::ClearSelection()
 		SetActorProxiesSelected(Actor, false);
 
 	SelectedActors.clear();
+	DirectSelectedActorUUIDs.clear();
+	SelectedGroupIds.clear();
 	SelectedComponent = nullptr;
 	SyncGizmo();
 }
@@ -240,6 +260,12 @@ uint32 FSelectionManager::GetSelectedComponentUUID() const
 
 void FSelectionManager::RestoreSelectionByUUIDs(const TArray<uint32>& ActorUUIDs, uint32 ComponentUUID)
 {
+	TArray<uint32> EmptyGroupIds;
+	RestoreSelectionByUUIDs(ActorUUIDs, ComponentUUID, EmptyGroupIds);
+}
+
+void FSelectionManager::RestoreSelectionByUUIDs(const TArray<uint32>& ActorUUIDs, uint32 ComponentUUID, const TArray<uint32>& GroupIds)
+{
 	// 기존 선택 프록시를 먼저 해제해 복원 대상과 stale 대상이 섞이지 않도록 합니다.
 	for (AActor* Prev : SelectedActors)
 	{
@@ -247,23 +273,26 @@ void FSelectionManager::RestoreSelectionByUUIDs(const TArray<uint32>& ActorUUIDs
 	}
 	SelectedActors.clear();
 	SelectedComponent = nullptr;
+	DirectSelectedActorUUIDs.clear();
+	SelectedGroupIds.clear();
 
 	for (uint32 ActorUUID : ActorUUIDs)
 	{
-		AActor* Actor = Cast<AActor>(UObjectManager::Get().FindByUUID(ActorUUID));
-		if (!Actor || (World && Actor->GetWorld() != World))
+		if (ActorUUID != 0)
 		{
-			continue;
+			AddUniqueUInt(DirectSelectedActorUUIDs, ActorUUID);
 		}
-
-		if (std::find(SelectedActors.begin(), SelectedActors.end(), Actor) != SelectedActors.end())
-		{
-			continue;
-		}
-
-		SelectedActors.push_back(Actor);
-		SetActorProxiesSelected(Actor, true);
 	}
+
+	for (uint32 GroupId : GroupIds)
+	{
+		if (GroupId != 0)
+		{
+			AddUniqueUInt(SelectedGroupIds, GroupId);
+		}
+	}
+
+	RebuildSelectionFromState();
 
 	if (ComponentUUID != 0)
 	{
@@ -367,13 +396,6 @@ void FSelectionManager::SelectComponent(USceneComponent* Component)
 		}
 	}
 
-	if (SelectedComponent == Target)
-	{
-		return;
-	}
-
-	SelectedComponent = Target;
-
 	if (Target)
 	{
 		AActor* Owner = Target->GetOwner();
@@ -383,12 +405,98 @@ void FSelectionManager::SelectComponent(USceneComponent* Component)
 		}
 	}
 
+	if (SelectedComponent == Target)
+	{
+		return;
+	}
+
+	SelectedComponent = Target;
+	SyncGizmo();
+}
+
+AActor* FSelectionManager::ResolveActorByUUID(uint32 ActorUUID) const
+{
+	if (ActorUUID == 0)
+	{
+		return nullptr;
+	}
+
+	AActor* Actor = Cast<AActor>(UObjectManager::Get().FindByUUID(ActorUUID));
+	return Actor && (!World || Actor->GetWorld() == World) ? Actor : nullptr;
+}
+
+void FSelectionManager::AddSelectedActorIfValid(AActor* Actor)
+{
+	if (!Actor || (World && Actor->GetWorld() != World))
+	{
+		return;
+	}
+
+	if (std::find(SelectedActors.begin(), SelectedActors.end(), Actor) != SelectedActors.end())
+	{
+		return;
+	}
+
+	SelectedActors.push_back(Actor);
+	SetActorProxiesSelected(Actor, true);
+}
+
+void FSelectionManager::RebuildSelectionFromState()
+{
+	for (AActor* Prev : SelectedActors)
+	{
+		SetActorProxiesSelected(Prev, false);
+	}
+	SelectedActors.clear();
+	SelectedComponent = nullptr;
+
+	DirectSelectedActorUUIDs.erase(
+		std::remove_if(
+			DirectSelectedActorUUIDs.begin(),
+			DirectSelectedActorUUIDs.end(),
+			[this](uint32 ActorUUID)
+			{
+				return ResolveActorByUUID(ActorUUID) == nullptr;
+			}),
+		DirectSelectedActorUUIDs.end());
+
+	if (World)
+	{
+		FSceneOutlinerState& OutlinerState = World->GetEditorOutlinerState();
+		SelectedGroupIds.erase(
+			std::remove_if(
+				SelectedGroupIds.begin(),
+				SelectedGroupIds.end(),
+				[&OutlinerState](uint32 GroupId)
+				{
+					return GroupId == 0 || !OutlinerState.FindGroup(GroupId);
+				}),
+			SelectedGroupIds.end());
+
+		for (uint32 ActorUUID : DirectSelectedActorUUIDs)
+		{
+			AddSelectedActorIfValid(ResolveActorByUUID(ActorUUID));
+		}
+
+		TArray<uint32> GroupActorUUIDs = OutlinerState.GetActorUUIDsForGroups(SelectedGroupIds);
+		for (uint32 ActorUUID : GroupActorUUIDs)
+		{
+			AddSelectedActorIfValid(ResolveActorByUUID(ActorUUID));
+		}
+	}
+
+	if (!SelectedActors.empty())
+	{
+		SelectedComponent = SelectedActors.front()->GetRootComponent();
+	}
+
 	SyncGizmo();
 }
 
 void FSelectionManager::SetActorProxiesSelected(AActor* Actor, bool bSelected)
 {
 	if (!Actor || !World) return;
+	if (Actor->GetWorld() != World) return;
 
 	FScene& Scene = World->GetScene();
 	for (UPrimitiveComponent* Prim : Actor->GetPrimitiveComponents())
@@ -414,11 +522,13 @@ void FSelectionManager::SyncGizmo()
 	if (Primary)
 	{
 		Gizmo->SetSelectedActors(&SelectedActors);
+		Gizmo->SetSelectedGroups(World, &SelectedGroupIds);
 		Gizmo->SetTarget(Primary);
 	}
 	else
 	{
 		Gizmo->SetSelectedActors(nullptr);
+		Gizmo->SetSelectedGroups(nullptr, nullptr);
 		Gizmo->Deactivate();
 	}
 }
