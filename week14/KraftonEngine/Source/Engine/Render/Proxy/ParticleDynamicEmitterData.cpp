@@ -114,6 +114,7 @@ namespace
 		OutBottomLeftUV = FVector2(U0, V1);
 		OutBottomRightUV = FVector2(U1, V1);
 	}
+
 }
 
 EParticleRenderType GetEmitterRenderType(const FParticleEmitterInstance* Instance)

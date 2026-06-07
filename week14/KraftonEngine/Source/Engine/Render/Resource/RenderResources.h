@@ -53,6 +53,13 @@ struct FShadowMapResources
 		uint32 Resolution = 2048;
 		FVector4 DebugCascadeNear = {};
 		FVector4 DebugCascadeFar = {};
+		FVector4 DebugCascadeReceiverMinZ = {};
+		FVector4 DebugCascadeReceiverMaxZ = {};
+		FVector4 DebugCascadeLightMinZ = {};
+		FVector4 DebugCascadeLightMaxZ = {};
+		uint32 DebugCascadeCandidateCasterCount[MAX_SHADOW_CASCADES] = {};
+		uint32 DebugCascadeIncludedCasterCount[MAX_SHADOW_CASCADES] = {};
+		uint32 DebugCascadeDrawCasterCount[MAX_SHADOW_CASCADES] = {};
 
 		uint32 FailedResolution = 0;  // 마지막 CreateTexture2D 실패 해상도 (0 = 실패 없음)
 

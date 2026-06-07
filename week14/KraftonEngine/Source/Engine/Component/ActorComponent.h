@@ -45,6 +45,7 @@ public:
 	inline void SetComponentTickEnabled(bool bEnabled) {
 		PrimaryComponentTick.SetTickEnabled(bEnabled);
 	}
+	bool ShouldTickInEditor() const { return bTickInEditor; }
 	virtual void Serialize(FArchive& Ar) override;
 
 	inline bool IsActive() { return bIsActive; }
@@ -70,6 +71,8 @@ protected:
 	bool bTickEnable = true;
 
 private:
+	UPROPERTY(Edit, Save, Category="Component", DisplayName="bTickInEditor")
+	bool bTickInEditor = false;
 	UPROPERTY(Edit, Save, Category="Component", DisplayName="bEditorOnly")
 	bool bEditorOnly = false;
 	UPROPERTY(Edit, Save, Category="Component", DisplayName="bIsActive")

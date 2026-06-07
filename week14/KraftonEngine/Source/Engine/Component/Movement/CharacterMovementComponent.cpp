@@ -2024,6 +2024,7 @@ bool UCharacterMovementComponent::SweepWallRunDirection(const FVector& Direction
 	auto ConsiderHit = [&](bool bHit, const FHitResult& Hit, const char* Source)
 	{
 		if (!bHit) return;
+		if (!IsWallRunAllowedHit(Hit)) return;
 
 		const float CandidateDistance = Hit.Distance;
 		if (CandidateDistance < 0.0f || CandidateDistance > WallCheckDistance) return;
@@ -2134,6 +2135,7 @@ bool UCharacterMovementComponent::SweepWallRunStaticMeshes(const FVector& Start,
 	{
 		if (!Actor) continue;
 		if (Actor == GetOwner()) continue;
+		if (!IsWallRunAllowedActor(Actor)) continue;
 
 		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 		{
@@ -2191,6 +2193,7 @@ bool UCharacterMovementComponent::SweepWallRunStaticMeshBounds(const FVector& St
 	{
 		if (!Actor) continue;
 		if (Actor == GetOwner()) continue;
+		if (!IsWallRunAllowedActor(Actor)) continue;
 
 		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
 		{
@@ -2304,6 +2307,33 @@ bool UCharacterMovementComponent::FindWallRunSurface(FHitResult& OutHit, bool& b
 	OutHit = LeftHit;
 	bOutRightSide = false;
 	return true;
+}
+
+bool UCharacterMovementComponent::IsWallRunAllowedActor(const AActor* Actor) const
+{
+	// 필수 태그가 비어 있으면 기존처럼 모든 runnable wall actor 허용
+	if (!WallRunRequiredTag.IsValid() || WallRunRequiredTag == FName::None)
+	{
+		return true;
+	}
+
+	return Actor && Actor->HasTag(WallRunRequiredTag);
+}
+
+bool UCharacterMovementComponent::IsWallRunAllowedHit(const FHitResult& Hit) const
+{
+	if (!WallRunRequiredTag.IsValid() || WallRunRequiredTag == FName::None)
+	{
+		return true;
+	}
+
+	const AActor* HitActor = Hit.HitActor;
+	if (!HitActor && Hit.HitComponent)
+	{
+		HitActor = Hit.HitComponent->GetOwner();
+	}
+
+	return IsWallRunAllowedActor(HitActor);
 }
 
 bool UCharacterMovementComponent::IsRunnableWall(const FVector& WallNormal) const
@@ -2742,6 +2772,7 @@ void UCharacterMovementComponent::Serialize(FArchive& Ar)
 	Ar << GroundMissToleranceFrames;
 	Ar << ControllerSyncTeleportDistance;
 	Ar << bEnableWallRun;
+	Ar << WallRunRequiredTag;
 	Ar << WallCheckDistance;
 	Ar << WallCheckSphereRadius;
 	Ar << RunnableWallUpDot;

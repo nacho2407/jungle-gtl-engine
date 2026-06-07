@@ -34,7 +34,7 @@ struct FMinimalViewInfo
 	float    OrthoWidth   = 10.0f;                    // ortho projection 폭
 
 	float    NearClip     = 0.1f;
-	float    FarClip      = 1000.0f;
+	float    FarClip      = 10000.0f;
 
 	bool     bIsOrtho     = false;                    // true 면 OrthoWidth 사용, false 면 FOV 사용
 	FCameraDepthOfFieldSettings DepthOfField;

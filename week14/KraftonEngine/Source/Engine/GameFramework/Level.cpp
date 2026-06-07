@@ -63,9 +63,10 @@ void ULevel::Clear()
 }
 
 void ULevel::Tick(float DeltaTime) {
-	for (AActor* Actor : Actors)
+	TArray<AActor*> TickActors = Actors;
+	for (AActor* Actor : TickActors)
 	{
-		if (Actor)
+		if (IsValid(Actor))
 		{
 			Actor->Tick(DeltaTime);
 		}
@@ -97,20 +98,24 @@ void ULevel::BeginPlay()
 
 void ULevel::EndPlay()
 {
-	for (AActor* Actor : Actors)
+	TArray<AActor*> ActorsToEndPlay = Actors;
+	for (AActor* Actor : ActorsToEndPlay)
 	{
-		if (Actor)
+		if (IsValid(Actor))
 		{
 			Actor->EndPlay();
 		}
 	}
 
-	for (AActor* Actor : Actors)
+	TArray<AActor*> ActorsToDestroy = Actors;
+	Actors.clear();
+
+	for (AActor* Actor : ActorsToDestroy)
 	{
-		if (Actor)
+		if (IsValid(Actor))
 		{
+			Actor->SetOuter(nullptr);
 			UObjectManager::Get().DestroyObject(Actor);
 		}
 	}
-	Actors.clear();
 }

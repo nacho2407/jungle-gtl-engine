@@ -8,6 +8,7 @@ local CombatEvents = require("Game.CombatEvents")
 local InGameDebug = require("DebugUI/InGameDebug")
 local ItemInspectSystem = require("Items/ItemInspectSystem")
 local GameAudio = require("Game.GameAudio")
+local HitSpark = require("Game.HitSpark")
 
 -- 본 기반 머즐은 Arm_R 이 어깨 관절이라 카메라랑 거의 같은 위치 → 의미 없음.
 -- 대부분 FPS 는 카메라에서 forward offset 으로 머즐을 근사함.
@@ -424,20 +425,13 @@ local function try_shoot()
         Debug.DrawSphere(rayStart, 0.05, 255, 230, 0, 1.0, 8)
     end
 
-    -- 벽 우선: 카메라 forward 방향으로 WorldStatic 트레이스 → 닿는 곳까지만 SkeletalMesh 트레이스.
-    local effRange = MAX_RANGE
-    local wallHit  = World.RaycastWorldStatic(rayStart, fireDir, MAX_RANGE, obj)
-    if wallHit ~= nil then
-        effRange = wallHit.Distance
-    end
-
-    local hit = World.RaycastSkeletalMesh(rayStart, fireDir, effRange, obj)
+    -- Mesh 종류와 무관하게 가장 먼저 맞은 Primitive를 사용한다.
+    -- DummyEnemy.lua가 CombatEvents damageable로 등록한 Actor면 StaticMesh/SkeletalMesh 모두 피격 처리된다.
+    local hit = World.RaycastPrimitive(rayStart, fireDir, MAX_RANGE, obj)
 
     local endPos
     if hit ~= nil then
         endPos = hit.WorldHitLocation
-    elseif wallHit ~= nil then
-        endPos = wallHit.WorldHitLocation
     else
         endPos = Vector.new(
             rayStart.X + fireDir.X * MAX_RANGE,
@@ -446,7 +440,7 @@ local function try_shoot()
     end
     Debug.DrawLine(rayStart, endPos, 0, 255, 0, 1.5)
 
-    if hit ~= nil and is_target_actor(hit.HitActor) then
+    if hit ~= nil then
         local damageContext = CombatEvents.MakeDamageContext({
             Instigator = obj,
             DamageCauser = obj,
@@ -457,7 +451,11 @@ local function try_shoot()
             Damage = BULLET_DAMAGE,
             DamageType = "Bullet",
         })
-        CombatEvents.ApplyDamageAndNotify(obj, hit.HitActor, damageContext)
+        CombatEvents.NotifyAttackImpact(obj, damageContext)
+
+        if is_target_actor(hit.HitActor) then
+            CombatEvents.ApplyDamageAndNotify(obj, hit.HitActor, damageContext)
+        end
     end
 
     add_weapon_recoil()
@@ -502,6 +500,7 @@ function BeginPlay()
     DamagePostProcess.Reset()
     DamagePostProcess.SetHealthRatio(get_health_ratio())
     InGamePause.Initialize()
+    HitSpark.Initialize()
     InGameDebug.Initialize({
         ZOrder = 220,
         GetHealth = function() return currentHealth end,
@@ -551,6 +550,7 @@ function EndPlay()
     ItemInspectSystem.Shutdown()
     DamagePostProcess.Shutdown()
     InGamePause.Shutdown()
+    HitSpark.Shutdown()
     InGameDebug.Shutdown()
     Engine.SetOnEscape(function() end)
     if _G.ApplyPlayerDamage == apply_player_damage then
@@ -611,6 +611,7 @@ function Tick(dt)
     InGamePause.Tick()
     WeaponHud.Tick(dt, weaponSpread)
     InGameDebug.Tick()
+    HitSpark.Tick(dt)
 
     if InGamePause.IsOpen() then
         GameAudio.StopWeaponFireLoop()

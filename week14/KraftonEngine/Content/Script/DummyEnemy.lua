@@ -1,24 +1,25 @@
 local CombatEvents = require("Game.CombatEvents")
 
-local targetActor = nil
 local beamParticle = nil
 local currentHealth = 100.0
 local isDead = false
 
-local PLAYER_TAG = "player"
 local BEAM_SOURCE_PARAMETER = "BeamSource"
 local BEAM_TARGET_PARAMETER = "BeamEnd"
 
 local MAX_HEALTH = 100.0
 local BEAM_DAMAGE = 15.0
-local FIRE_INTERVAL = 1.0
-local SIGHT_RANGE = 900.0
-local FOV_DOT = 0.55
+local MOVE_INTERVAL = 2.0
+local MOVE_SPEED = 1.0
+local BEAM_ACTIVE_DURATION = 1.0
+local BEAM_RANGE = 500.0
 local SOURCE_HEIGHT = 60.0
-local TARGET_HEIGHT = 60.0
-local MIN_FIRE_DISTANCE = 20.0
 
-local fireTimer = 0.0
+local moveTimer = 0.0
+local beamTimer = 0.0
+local moveDirection = Vector.new(1, 0, 0)
+local currentBeamHitActor = nil
+local currentBeamHitNormal = nil
 
 local function clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
@@ -26,8 +27,24 @@ local function clamp(value, minValue, maxValue)
     return value
 end
 
-local function find_target()
-    targetActor = World.FindFirstActorByTag(PLAYER_TAG)
+local function atan2(y, x)
+    if math.atan2 ~= nil then
+        return math.atan2(y, x)
+    end
+
+    if x > 0.0 then
+        return math.atan(y / x)
+    elseif x < 0.0 and y >= 0.0 then
+        return math.atan(y / x) + math.pi
+    elseif x < 0.0 and y < 0.0 then
+        return math.atan(y / x) - math.pi
+    elseif x == 0.0 and y > 0.0 then
+        return math.pi * 0.5
+    elseif x == 0.0 and y < 0.0 then
+        return -math.pi * 0.5
+    end
+
+    return 0.0
 end
 
 local function find_beam_particle()
@@ -40,12 +57,9 @@ local function get_beam_source_location()
     return obj.Location + Vector.new(0, 0, SOURCE_HEIGHT)
 end
 
-local function get_beam_target_location()
-    if targetActor == nil then
-        return nil
-    end
-
-    return targetActor.Location + Vector.new(0, 0, TARGET_HEIGHT)
+local function get_random_xy_direction()
+    local angle = math.random() * math.pi * 2.0
+    return Vector.new(math.cos(angle), math.sin(angle), 0.0):Normalized()
 end
 
 local function make_damage_result(applied, damageApplied, killed)
@@ -83,46 +97,13 @@ local function apply_enemy_damage(context)
     return result
 end
 
-local function is_target_visible(sourcePos, targetPos)
-    local toTarget = targetPos - sourcePos
-    local distance = toTarget:Length()
-    if distance < MIN_FIRE_DISTANCE or distance > SIGHT_RANGE then
-        return false
-    end
-
-    local dir = toTarget:Normalized()
-    local forward = obj.Forward:Normalized()
-    if forward:Dot(dir) < FOV_DOT then
-        return false
-    end
-
-    local wallHit = World.RaycastWorldStatic(sourcePos, dir, distance, obj)
-    return wallHit == nil
+local function update_facing_from_move_direction()
+    local yawDegrees = atan2(moveDirection.Y, moveDirection.X) * 180.0 / math.pi
+    obj.Rotation = Vector.new(0.0, 0.0, yawDegrees)
 end
 
-local function get_visible_beam_endpoints()
-    if targetActor == nil or not targetActor:IsValid() then
-        find_target()
-    end
-
-    if targetActor == nil then
-        return nil, nil
-    end
-
-    local sourcePos = get_beam_source_location()
-    local targetPos = get_beam_target_location()
-    if targetPos == nil then
-        return nil, nil
-    end
-
-    if not is_target_visible(sourcePos, targetPos) then
-        return nil, nil
-    end
-
-    return sourcePos, targetPos
-end
-
-local function fire_beam_one_shot(sourcePos, targetPos)
+local function stop_beam()
+    beamTimer = 0.0
     if beamParticle == nil then
         find_beam_particle()
     end
@@ -131,23 +112,100 @@ local function fire_beam_one_shot(sourcePos, targetPos)
         return
     end
 
+    beamParticle:SetEmitterSpawningEnabled(false)
+    beamParticle:Deactivate()
+end
+
+local function raycast_beam_target(sourcePos, direction)
+    currentBeamHitActor = nil
+    currentBeamHitNormal = nil
+
+    local hit = World.RaycastPrimitive(sourcePos, direction, BEAM_RANGE, obj)
+    if hit ~= nil then
+        currentBeamHitActor = hit.HitActor
+        currentBeamHitNormal = hit.WorldNormal or hit.ImpactNormal
+        return hit.WorldHitLocation
+    end
+
+    return sourcePos + direction * BEAM_RANGE
+end
+
+local function start_beam()
+    if beamParticle == nil then
+        find_beam_particle()
+    end
+
+    if beamParticle == nil then
+        return
+    end
+
+    local sourcePos = get_beam_source_location()
+    local direction = obj.Forward:Normalized()
+    local targetPos = raycast_beam_target(sourcePos, direction)
+
     beamParticle:SetVectorParameter(BEAM_SOURCE_PARAMETER, sourcePos)
     beamParticle:SetVectorParameter(BEAM_TARGET_PARAMETER, targetPos)
 
-    -- One-shot 재생. 유지형 빔이 아니므로 Tick 중 Source/Target을 계속 갱신하지 않는다.
-    -- 파티클 에셋의 EmitterDuration / bLooping 설정으로 자연 종료시킨다.
     beamParticle:ResetSystem()
     beamParticle:SetEmitterSpawningEnabled(true)
     beamParticle:Activate()
+
+    beamTimer = BEAM_ACTIVE_DURATION
+
+    if currentBeamHitActor ~= nil then
+        local impactContext = CombatEvents.MakeDamageContext({
+            Instigator = obj,
+            DamageCauser = obj,
+            HitActor = currentBeamHitActor,
+            HitLocation = targetPos,
+            HitNormal = currentBeamHitNormal,
+            ShotDirection = direction,
+            Damage = BEAM_DAMAGE,
+            DamageType = "Beam",
+        })
+        CombatEvents.NotifyAttackImpact(obj, impactContext)
+    end
+
+    if currentBeamHitActor ~= nil and CombatEvents.IsDamageable(currentBeamHitActor) then
+        local damageContext = CombatEvents.MakeDamageContext({
+            Instigator = obj,
+            DamageCauser = obj,
+            HitActor = currentBeamHitActor,
+            HitLocation = targetPos,
+            HitNormal = currentBeamHitNormal,
+            ShotDirection = direction,
+            Damage = BEAM_DAMAGE,
+            DamageType = "Beam",
+        })
+
+        CombatEvents.NotifyAttackFired(obj, damageContext)
+        CombatEvents.ApplyDamageAndNotify(obj, currentBeamHitActor, damageContext)
+    end
+end
+
+local function choose_new_move_and_fire()
+    moveDirection = get_random_xy_direction()
+    update_facing_from_move_direction()
+    start_beam()
+    moveTimer = MOVE_INTERVAL
+end
+
+local function update_movement(dt)
+    local delta = moveDirection * (MOVE_SPEED * dt)
+    delta.Z = 0.0
+    obj:AddWorldOffset(delta)
 end
 
 function BeginPlay()
-    find_target()
     find_beam_particle()
 
     currentHealth = MAX_HEALTH
     isDead = false
-    fireTimer = 0.0
+    moveTimer = 0.0
+    beamTimer = 0.0
+    moveDirection = get_random_xy_direction()
+    currentBeamHitActor = nil
+    currentBeamHitNormal = nil
 
     obj:AddTag("enemy")
     CombatEvents.RegisterDamageable(obj, {
@@ -158,13 +216,12 @@ function BeginPlay()
     if beamParticle ~= nil then
         beamParticle:Deactivate()
     end
+    choose_new_move_and_fire()
 end
 
 function EndPlay()
     CombatEvents.UnregisterDamageable(obj)
-    if beamParticle ~= nil then
-        beamParticle:Deactivate()
-    end
+    stop_beam()
 end
 
 function OnOverlap(OtherActor)
@@ -176,31 +233,17 @@ end
 function Tick(dt)
     if isDead then return end
 
-    local sourcePos, targetPos = get_visible_beam_endpoints()
-    if sourcePos == nil or targetPos == nil then
-        fireTimer = 0.0
-        return
+    update_movement(dt)
+
+    moveTimer = moveTimer - dt
+    if moveTimer <= 0.0 then
+        choose_new_move_and_fire()
     end
 
-    fireTimer = fireTimer - dt
-    if fireTimer > 0.0 then
-        return
+    if beamTimer > 0.0 then
+        beamTimer = beamTimer - dt
+        if beamTimer <= 0.0 then
+            stop_beam()
+        end
     end
-
-    local damageContext = CombatEvents.MakeDamageContext({
-        Instigator = obj,
-        DamageCauser = obj,
-        HitActor = targetActor,
-        HitLocation = targetPos,
-        ShotDirection = (targetPos - sourcePos):Normalized(),
-        Damage = BEAM_DAMAGE,
-        DamageType = "Beam",
-    })
-
-    CombatEvents.NotifyAttackFired(obj, damageContext)
-    fire_beam_one_shot(sourcePos, targetPos)
-    if CombatEvents.IsDamageable(targetActor) then
-        CombatEvents.ApplyDamageAndNotify(obj, targetActor, damageContext)
-    end
-    fireTimer = FIRE_INTERVAL
 end

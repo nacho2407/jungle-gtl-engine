@@ -3,10 +3,14 @@
 #include "Math/Matrix.h"
 #include "Math/Vector.h"
 #include "Math/MathUtils.h"
+#include "Core/Types/EngineTypes.h"
 #include "Collision/Math/ConvexVolume.h"
 #include "Render/Types/GlobalLightParams.h"
 #include "Render/Types/FrameContext.h"
 #include "Render/Types/ShadowSettings.h"
+#include <algorithm>
+#include <cfloat>
+#include <cmath>
 #include <numbers>
 
 /*
@@ -24,6 +28,39 @@ namespace FLightFrustumUtils
 		if (fabsf(Direction.Dot(Up)) > 0.99f)
 			Up = FVector(1.0f, 0.0f, 0.0f);
 		return Up;
+	}
+
+	inline void BuildDirectionalLightBasis(const FVector& LightDir, FVector& OutRight, FVector& OutUp)
+	{
+		const FVector UpHint = SafeUpVector(LightDir);
+		OutRight = UpHint.Cross(LightDir).Normalized();
+		OutUp = LightDir.Cross(OutRight).Normalized();
+	}
+
+	inline float SnapToShadowTexel(float Value, float TexelSize)
+	{
+		if (TexelSize <= 0.0f)
+		{
+			return Value;
+		}
+
+		return floorf(Value / TexelSize + 0.5f) * TexelSize;
+	}
+
+	inline FVector SnapCenterToShadowTexel(
+		const FVector& Center,
+		const FVector& LightDir,
+		const FVector& LightRight,
+		const FVector& LightUp,
+		float TexelSize)
+	{
+		const float ForwardDistance = Center.Dot(LightDir);
+		const float RightDistance = Center.Dot(LightRight);
+		const float UpDistance = Center.Dot(LightUp);
+
+		return LightDir * ForwardDistance
+			+ LightRight * SnapToShadowTexel(RightDistance, TexelSize)
+			+ LightUp * SnapToShadowTexel(UpDistance, TexelSize);
 	}
 
 	// ============================================================
@@ -126,6 +163,12 @@ namespace FLightFrustumUtils
 		float OrthoHeight = 0.0f;
 		float NearZ = 0.0f;
 		float FarZ = 0.0f;
+		float DebugReceiverMinZ = 0.0f;
+		float DebugReceiverMaxZ = 0.0f;
+		float DebugFinalMinZ = 0.0f;
+		float DebugFinalMaxZ = 0.0f;
+		uint32 DebugCandidateCasterCount = 0;
+		uint32 DebugIncludedCasterCount = 0;
 	};
 
 	inline void ComputeOrthoWorldCorners(
@@ -267,11 +310,12 @@ namespace FLightFrustumUtils
 	// Directional Light(2) — 카메라 frustum 기반 Cascaded Shadow Map
 	// ============================================================
 
-	// Receiver cascade slice 밖에 있지만 해당 slice에 그림자를 드리우는 caster를
-	// 포함하기 위한 light-direction depth 길이. Ortho width/height는 유지되므로
-	// shadow map의 X/Y texel density는 바뀌지 않는다.
-	// 디폴트 값은 FShadowSettings::DirectionalShadowCasterDistance를 사용한다.
-	inline constexpr float CSMShadowDepthLength = 500.0f;
+	// Stable CSM용 receiver 범위 패딩.
+	// tight-fit AABB 대신 bounding sphere를 사용해서 카메라 회전 중 ortho 크기가 흔들리지 않게 한다.
+	inline constexpr float CSMStableExtentPadding = 1.05f;
+	inline constexpr float CSMStableExtentQuantization = 1.0f / 16.0f;
+	inline constexpr float CSMMinStableOrthoSize = 1.0f;
+	inline constexpr float CSMReceiverDepthPadding = 100.0f;
 
 	struct FCascadeRange
 	{
@@ -348,6 +392,82 @@ namespace FLightFrustumUtils
 		}
 	}
 
+	/** @brief 지정 값을 step 단위로 올림 정렬한다 */
+	inline float RoundUpToStep(float Value, float Step)
+	{
+		if (Step <= 0.0f)
+		{
+			return Value;
+		}
+
+		return std::ceil(Value / Step) * Step;
+	}
+
+	/** @brief 지정 값을 shadow texel grid에 맞춰 반올림한다 */
+	inline float SnapToTexelGrid(float Value, float TexelSize)
+	{
+		if (TexelSize <= 0.000001f)
+		{
+			return Value;
+		}
+
+		return std::floor(Value / TexelSize + 0.5f) * TexelSize;
+	}
+
+	/**
+	 * @brief Light-space AABB 계산 결과
+	 */
+	struct FLightSpaceBounds
+	{
+		float MinX = FLT_MAX;
+		float MinY = FLT_MAX;
+		float MinZ = FLT_MAX;
+		float MaxX = -FLT_MAX;
+		float MaxY = -FLT_MAX;
+		float MaxZ = -FLT_MAX;
+	};
+
+	/** @brief Light-space bounds에 점 하나를 포함시킨다 */
+	inline void IncludeLightSpacePoint(FLightSpaceBounds& Bounds, const FVector& Point)
+	{
+		Bounds.MinX = (std::min)(Bounds.MinX, Point.X);
+		Bounds.MinY = (std::min)(Bounds.MinY, Point.Y);
+		Bounds.MinZ = (std::min)(Bounds.MinZ, Point.Z);
+		Bounds.MaxX = (std::max)(Bounds.MaxX, Point.X);
+		Bounds.MaxY = (std::max)(Bounds.MaxY, Point.Y);
+		Bounds.MaxZ = (std::max)(Bounds.MaxZ, Point.Z);
+	}
+
+	/** @brief 월드 AABB를 light-space AABB로 변환한다 */
+	inline FLightSpaceBounds BuildLightSpaceBounds(const FMatrix& LightRotationView, const FBoundingBox& WorldBounds)
+	{
+		FLightSpaceBounds Result;
+		FVector Corners[8];
+		WorldBounds.GetCorners(Corners);
+
+		for (const FVector& Corner : Corners)
+		{
+			IncludeLightSpacePoint(Result, LightRotationView.TransformPositionWithW(Corner));
+		}
+
+		return Result;
+	}
+
+	/** @brief 두 light-space AABB가 XY 평면에서 겹치는지 확인한다 */
+	inline bool OverlapsLightSpaceXY(
+		const FLightSpaceBounds& Bounds,
+		float MinX,
+		float MinY,
+		float MaxX,
+		float MaxY,
+		float Padding)
+	{
+		return Bounds.MaxX >= MinX - Padding
+			&& Bounds.MinX <= MaxX + Padding
+			&& Bounds.MaxY >= MinY - Padding
+			&& Bounds.MinY <= MaxY + Padding;
+	}
+
 	/**
 	 * @brief Directional Light의 CSM cascade 하나에 대한 Light View/Projection 행렬을 생성한다.
 	 *
@@ -358,6 +478,9 @@ namespace FLightFrustumUtils
 	 * @param CameraFarZ     카메라 전체 far clip 거리.
 	 * @param CascadeNearZ   현재 cascade가 담당하는 near 거리.
 	 * @param CascadeFarZ    현재 cascade가 담당하는 far 거리.
+	 * @param ShadowResolution 현재 cascade shadow map 해상도.
+	 * @param CasterBounds   shadow caster 후보들의 월드 AABB 배열.
+	 * @param CasterBoundsCount shadow caster 후보 개수.
 	 *
 	 * @return 현재 cascade용 directional light View/Projection 정보.
 	 */
@@ -368,7 +491,10 @@ namespace FLightFrustumUtils
 		float CameraNearZ,
 		float CameraFarZ,
 		float CascadeNearZ,
-		float CascadeFarZ)
+		float CascadeFarZ,
+		uint32 ShadowResolution = FShadowSettings::kDefaultCSMResolution,
+		const FBoundingBox* CasterBounds = nullptr,
+		uint32 CasterBoundsCount = 0)
 	{
 		FDirectionalLightViewProj Result;
 
@@ -386,10 +512,11 @@ namespace FLightFrustumUtils
 			WorldCorners);
 
 		// ------------------------------------------------------------
-		// 2. cascade 절두체의 중심점을 구한다.
+		// 2. cascade 절두체의 중심점과 bounding sphere 반지름을 구한다.
 		//
-		// 이 중심점은 directional light의 shadow camera가
-		// 대략 어디를 바라봐야 하는지 정하는 기준점으로 사용된다.
+		// 기존 방식은 light-space AABB의 Width/Height를 매 프레임 그대로 사용했다.
+		// 그러면 카메라가 제자리에서 회전만 해도 AABB 크기가 달라져 shadow projection이 흔들린다.
+		// bounding sphere 기반의 정사각 ortho 영역은 회전에 덜 민감해서 temporal stability가 좋아진다.
 		// ------------------------------------------------------------
 		FVector Center(0, 0, 0);
 		for (int i = 0; i < 8; ++i)
@@ -398,6 +525,18 @@ namespace FLightFrustumUtils
 		}
 		Center = Center * (1.0f / 8.0f);
 
+		float Radius = 0.0f;
+		for (int i = 0; i < 8; ++i)
+		{
+			Radius = (std::max)(Radius, (WorldCorners[i] - Center).Length());
+		}
+
+		const float RawOrthoSize = (std::max)(
+			Radius * 2.0f * CSMStableExtentPadding,
+			CSMMinStableOrthoSize);
+		const float OrthoSize = RoundUpToStep(RawOrthoSize, CSMStableExtentQuantization);
+		const float TexelSize = OrthoSize / static_cast<float>((std::max)(ShadowResolution, 1u));
+
 		// ------------------------------------------------------------
 		// 3. directional light의 방향과 view matrix용 Up 벡터를 구한다.
 		//
@@ -405,24 +544,27 @@ namespace FLightFrustumUtils
 		// LookAt 행렬을 만들 때 forward와 up이 거의 평행하면 행렬이 불안정해지기 때문이다.
 		// ------------------------------------------------------------
 		FVector LightDir = Light.Direction.Normalized();
-		FVector Up = SafeUpVector(LightDir);
+		FVector LightRight;
+		FVector LightUp;
+		BuildDirectionalLightBasis(LightDir, LightRight, LightUp);
 
 		// ------------------------------------------------------------
-		// 4. 임시 light view matrix를 만든다.
+		// 4. translation 없는 light rotation view를 만든다.
 		//
-		// 여기서는 cascade 중심점에서 LightDir의 반대 방향으로 100만큼 떨어진 곳에
-		// 가상의 light camera를 놓고, Center를 바라보게 한다.
-		//
-		// LookAtLH(Eye, Target, Up)이므로,
-		// Eye    = Center - LightDir * 100
-		// Target = Center
-		// 이면 view의 +Z 방향이 LightDir과 같아진다.
+		// texel snapping은 월드 기준 light-space grid에 맞춰야 의미가 있다.
+		// Center를 Eye로 삼은 임시 view를 쓰면 중심이 항상 0이 되므로 snapping 효과가 사라진다.
 		// ------------------------------------------------------------
-		Result.View = FMatrix::LookAtLH(Center - LightDir * 100.0f, Center, Up);
+		const FMatrix LightRotationView = FMatrix::LookAtLH(
+			FVector(0.0f, 0.0f, 0.0f),
+			LightDir,
+			Up);
 
-		// 5. light space에서 cascade 코너들을 감싸는 AABB를 구하기 위한 초기값.
-		float MinX = FLT_MAX, MinY = FLT_MAX, MinZ = FLT_MAX;
-		float MaxX = -FLT_MAX, MaxY = -FLT_MAX, MaxZ = -FLT_MAX;
+		const FVector LightSpaceCenter = LightRotationView.TransformPositionWithW(Center);
+		const float SnappedCenterX = SnapToTexelGrid(LightSpaceCenter.X, TexelSize);
+		const float SnappedCenterY = SnapToTexelGrid(LightSpaceCenter.Y, TexelSize);
+
+		// 5. light direction 기준 receiver depth 범위를 계산하기 위한 초기값.
+		FLightSpaceBounds ReceiverBounds;
 
 		// ------------------------------------------------------------
 		// 6. 월드 공간의 cascade 코너 8개를 light space로 변환한다.
@@ -432,104 +574,123 @@ namespace FLightFrustumUtils
 		// - LS.Y : 빛 기준 위/아래 방향 위치
 		// - LS.Z : 빛이 바라보는 방향으로의 깊이
 		//
-		// 이 8개 점의 min/max를 구하면,
-		// 현재 cascade 절두체를 빛의 시점에서 감싸는 박스를 얻을 수 있다.
+		// X/Y는 bounding sphere와 texel snapping으로 처리하므로,
+		// 여기서는 receiver depth를 안정적으로 포함하기 위한 Z 범위만 사용한다.
 		// ------------------------------------------------------------
 		for (int i = 0; i < 8; ++i)
 		{
-			FVector LS = Result.View.TransformPositionWithW(WorldCorners[i]);
-
-			MinX = (std::min)(MinX, LS.X);
-			MaxX = (std::max)(MaxX, LS.X);
-			MinY = (std::min)(MinY, LS.Y);
-			MaxY = (std::max)(MaxY, LS.Y);
-			MinZ = (std::min)(MinZ, LS.Z);
-			MaxZ = (std::max)(MaxZ, LS.Z);
+			FVector LS = LightRotationView.TransformPositionWithW(WorldCorners[i]);
+			IncludeLightSpacePoint(ReceiverBounds, LS);
 		}
 
 		// ------------------------------------------------------------
-		// 7. light space에서 cascade를 감싸는 orthographic 영역의 크기를 구한다.
+		// 7. receiver와 같은 XY 투영 영역에 있는 caster bounds를 depth 범위에 포함한다.
 		//
-		// Width, Height는 shadow map을 찍을 orthographic projection의 가로/세로 크기다.
-		//
-		// 가까운 cascade는 보통 Width/Height가 작고,
-		// 먼 cascade는 더 넓은 영역을 포함하므로 Width/Height가 커진다.
-		// shadow map 해상도가 같다면 먼 cascade일수록 texel 하나가 담당하는 월드 공간이 커진다.
+		// Directional shadow에서는 light-space XY가 같아야 receiver 위로 투영된다.
+		// 따라서 전체 씬 bounds를 무작정 포함하지 않고, 현재 cascade ortho 영역과 XY가 겹치는
+		// shadow caster만 Z 범위에 추가해서 불필요한 depth precision 손실을 줄인다.
 		// ------------------------------------------------------------
-		float Width = MaxX - MinX;
-		float Height = MaxY - MinY;
+		const float HalfOrthoSize = OrthoSize * 0.5f;
+		const float ProjectionMinX = SnappedCenterX - HalfOrthoSize;
+		const float ProjectionMaxX = SnappedCenterX + HalfOrthoSize;
+		const float ProjectionMinY = SnappedCenterY - HalfOrthoSize;
+		const float ProjectionMaxY = SnappedCenterY + HalfOrthoSize;
+		const float XYOverlapPadding = (std::max)(TexelSize * 2.0f, 1.0f);
+
+		float FinalMinZ = ReceiverBounds.MinZ;
+		float FinalMaxZ = ReceiverBounds.MaxZ;
+
+		for (uint32 BoundsIndex = 0; BoundsIndex < CasterBoundsCount; ++BoundsIndex)
+		{
+			const FBoundingBox& WorldBounds = CasterBounds[BoundsIndex];
+			if (!WorldBounds.IsValid())
+			{
+				continue;
+			}
+
+			++Result.DebugCandidateCasterCount;
+
+			const FLightSpaceBounds CasterLSBounds = BuildLightSpaceBounds(LightRotationView, WorldBounds);
+			if (!OverlapsLightSpaceXY(
+				CasterLSBounds,
+				ProjectionMinX,
+				ProjectionMinY,
+				ProjectionMaxX,
+				ProjectionMaxY,
+				XYOverlapPadding))
+			{
+				continue;
+			}
+
+			FinalMinZ = (std::min)(FinalMinZ, CasterLSBounds.MinZ);
+			FinalMaxZ = (std::max)(FinalMaxZ, CasterLSBounds.MaxZ);
+			++Result.DebugIncludedCasterCount;
+		}
 
 		// ------------------------------------------------------------
-		// 8. light space에서 cascade 박스의 XY 중심을 구한다.
+		// 8. 최종 light depth 범위를 계산한다.
 		//
-		// 이 중심을 기준으로 shadow camera를 다시 정렬하면,
-		// orthographic projection의 중앙에 cascade 영역이 오게 된다.
+		// 기존 구현은 receiver 중심을 기준으로 depth range를 대칭 배치했다.
+		// 그러면 caster가 receiver보다 빛 쪽으로 멀리 떨어진 경우, 카메라 회전만으로
+		// caster 전체가 shadow camera near/far 밖으로 밀려 CSM slice가 비어버릴 수 있다.
+		// 여기서는 실제 caster bounds를 포함한 뒤, 추가로 caster distance만큼 빛 쪽 여유를 둔다.
 		// ------------------------------------------------------------
-		float CenterX = (MinX + MaxX) * 0.5f;
-		float CenterY = (MinY + MaxY) * 0.5f;
+		const float ReceiverMinZ = ReceiverBounds.MinZ;
+		const float ReceiverMaxZ = ReceiverBounds.MaxZ;
+		const float CasterDistance = (std::max)(0.0f, FShadowSettings::Get().GetEffectiveCSMCasterDistance());
+
+		FinalMinZ = (std::min)(FinalMinZ, ReceiverMinZ - CasterDistance);
+		FinalMaxZ = (std::max)(FinalMaxZ, ReceiverMaxZ + CSMReceiverDepthPadding);
+
+		const float PaddedMinZ = FinalMinZ - CSMReceiverDepthPadding;
+		const float PaddedMaxZ = FinalMaxZ + CSMReceiverDepthPadding;
+		const float PaddedDepthRange = (std::max)(PaddedMaxZ - PaddedMinZ, 1.0f);
+
+		Result.DebugReceiverMinZ = ReceiverMinZ;
+		Result.DebugReceiverMaxZ = ReceiverMaxZ;
+		Result.DebugFinalMinZ = PaddedMinZ;
+		Result.DebugFinalMaxZ = PaddedMaxZ;
 
 		// ------------------------------------------------------------
-		// 9. Z 방향 깊이 범위를 고정 크기로 잡는다.
+		// 9. light space에서 최종 shadow camera 위치를 정한다.
 		//
-		// MinZ ~ MaxZ만 딱 쓰면 cascade 절두체 자체는 감쌀 수 있지만,
-		// 그림자를 드리우는 caster가 cascade 바깥쪽, 특히 빛 방향 앞쪽에 있을 수 있다.
-		//
-		// 그래서 CSMShadowDepthLength라는 고정된 깊이 범위를 사용해서
-		// receiver 주변의 충분한 앞뒤 공간을 shadow map에 포함시키려는 것이다.
-		//
-		// ReceiverCenterZ는 현재 cascade receiver 영역의 중심 깊이다.
-		// PaddedMinZ는 고정 깊이 범위의 시작점이다.
+		// X/Y는 shadow texel grid에 스냅된 중심을 사용한다.
+		// Z는 caster/receiver를 모두 포함한 최소 Z에서 시작시켜
+		// NearZ=0, FarZ=PaddedDepthRange 형태의 ortho projection과 맞춘다.
 		// ------------------------------------------------------------
-		const float ReceiverCenterZ = (MinZ + MaxZ) * 0.5f;
-		const float PaddedDepthRange = FShadowSettings::Get().GetEffectiveCSMCasterDistance();
-		const float PaddedMinZ = ReceiverCenterZ - PaddedDepthRange * 0.5f;
-
-		// 10. 현재 임시 light view의 역행렬을 구한다.
-		FMatrix InvLightView = Result.View.GetInverseFast();
+		const FMatrix InvLightRotationView = LightRotationView.GetInverseFast();
+		const FVector LightSpaceEye(SnappedCenterX, SnappedCenterY, PaddedMinZ);
+		const FVector WorldEye = InvLightRotationView.TransformPositionWithW(LightSpaceEye);
 
 		// ------------------------------------------------------------
-		// 11. 최종 shadow camera의 월드 공간 위치를 계산한다.
+		// 10. 최종 light view matrix를 만든다.
 		//
-		// LSCenter는 light space에서의 최종 shadow camera 위치다.
-		//
-		// X, Y는 cascade 박스의 중심에 맞춘다.
-		// Z는 PaddedMinZ로 둔다.
-		//
-		// 즉, 최종 light camera를
-		// "cascade를 XY 중앙에 두고, Z 방향으로는 충분히 앞쪽에서 시작하는 위치"에 놓는다.
-		// ------------------------------------------------------------
-		FVector LSCenter(CenterX, CenterY, PaddedMinZ);
-		FVector WSCenter = InvLightView.TransformPositionWithW(LSCenter);
-
-		// ------------------------------------------------------------
-		// 12. 최종 light view matrix를 다시 만든다.
-		//
-		// Target = WSCenter + LightDir 이므로,
-		// 최종 shadow camera는 LightDir 방향을 바라본다.
+		// Target = WorldEye + LightDir 이므로,
+		// shadow camera는 directional light 방향과 같은 +Z 방향을 바라본다.
 		//
 		// 이 view matrix가 실제 shadow map을 렌더링할 때 사용되는 light view다.
 		// ------------------------------------------------------------
 		Result.View = FMatrix::LookAtLH(
-			WSCenter,
-			WSCenter + LightDir,
+			WorldEye,
+			WorldEye + LightDir,
 			Up
 		);
 
 		// ------------------------------------------------------------
-		// 13. orthographic projection 파라미터를 저장한다.
+		// 11. orthographic projection 파라미터를 저장한다.
 		//
-		// 여기서는 light camera의 위치 자체를 PaddedMinZ에 맞췄기 때문에,
+		// light camera의 위치 자체를 PaddedMinZ에 맞췄기 때문에,
 		// NearZ는 0부터 시작하고 FarZ는 PaddedDepthRange가 된다.
 		// ------------------------------------------------------------
-		Result.OrthoWidth = Width;
-		Result.OrthoHeight = Height;
+		Result.OrthoWidth = OrthoSize;
+		Result.OrthoHeight = OrthoSize;
 		Result.NearZ = 0.0f;
 		Result.FarZ = PaddedDepthRange;
 
-		// 14. 최종 orthographic projection matrix를 만든다.
+		// 12. 최종 orthographic projection matrix를 만든다.
 		Result.Proj = FMatrix::OrthoLH(
-			Width,
-			Height,
+			Result.OrthoWidth,
+			Result.OrthoHeight,
 			Result.NearZ,
 			Result.FarZ
 		);

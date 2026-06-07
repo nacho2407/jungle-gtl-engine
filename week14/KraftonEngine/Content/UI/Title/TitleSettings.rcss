@@ -163,6 +163,14 @@ body {
 	line-height: 36px;
 	text-align: right;
 	color: inherit;
+	background-color: transparent;
+	border: 1px transparent;
+}
+
+.settings-value:hover {
+	background-color: #ffffff24;
+	border: 1px #ffffff66;
+	color: #ffffff;
 }
 
 .settings-step-button {

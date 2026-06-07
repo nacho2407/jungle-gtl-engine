@@ -22,9 +22,19 @@ local hitMarkerTimer = 0.0
 local killMarkerTimer = 0.0
 local currentAmmo = 0
 local magazineSize = 0
+local bVisible = true
 
 local function px(value)
     return string.format("%.2fpx", value)
+end
+
+local function apply_visibility()
+    if widget == nil then return end
+
+    -- 컷씬 중에는 HUD 위젯 인스턴스와 탄약 상태는 유지하고, 화면 표시만 끕니다.
+    local display = bVisible and "block" or "none"
+    widget:SetProperty("crosshair-screen", "display", display)
+    widget:SetProperty("weapon-hud-root", "display", display)
 end
 
 local function is_target_actor(actor)
@@ -60,6 +70,7 @@ end
 
 local function update_crosshair()
     if widget == nil then return end
+    if not bVisible then return end
 
     local spreadOffset = weaponSpread * CROSSHAIR_SPREAD_PX
     set_crosshair_part_position("crosshair-left-white", "crosshair-left-red", "left", CROSSHAIR_BASE_LEFT - spreadOffset)
@@ -71,7 +82,7 @@ local function update_crosshair()
     if camera ~= nil then
         local camPos = camera:GetWorldLocation()
         local camFwd = camera.Forward
-        local hit = World.RaycastSkeletalMesh(camPos, camFwd, maxRange, owner)
+        local hit = World.RaycastPrimitive(camPos, camFwd, maxRange, owner)
         isTargeted = hit ~= nil and is_target_actor(hit.HitActor)
     end
     set_crosshair_color(isTargeted)
@@ -112,6 +123,7 @@ function WeaponHud.Initialize(config)
         widget:AddToViewportZ(config.zOrder or DEFAULT_Z_ORDER)
     end
 
+    apply_visibility()
     WeaponHud.SetAmmo(currentAmmo, magazineSize)
     update_crosshair()
 end
@@ -127,6 +139,15 @@ function WeaponHud.Shutdown()
     weaponSpread = 0.0
     hitMarkerTimer = 0.0
     killMarkerTimer = 0.0
+    bVisible = true
+end
+
+function WeaponHud.SetVisible(visible)
+    bVisible = visible ~= false
+    apply_visibility()
+    if bVisible then
+        update_crosshair()
+    end
 end
 
 function WeaponHud.SetAmmo(inCurrentAmmo, inMagazineSize)

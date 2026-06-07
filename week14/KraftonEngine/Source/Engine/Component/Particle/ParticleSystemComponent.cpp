@@ -8,6 +8,8 @@
 #include "Render/Types/MinimalViewInfo.h"
 #include "GameFramework/World.h"
 
+#include <algorithm>
+#include <cmath>
 #include <cstring>
 
 UParticleSystemComponent::~UParticleSystemComponent()
@@ -38,6 +40,18 @@ void UParticleSystemComponent::SetEmitterSpawningEnabled(bool bEnabled)
 			Instance->SetSpawningEnabled(bEnabled);
 		}
 	}
+}
+
+void UParticleSystemComponent::SetParticleScaleMultiplier(float InScale)
+{
+	const float NewScale = (std::max)(0.0f, InScale);
+	if (std::fabs(ParticleScaleMultiplier - NewScale) <= 0.0001f)
+	{
+		return;
+	}
+
+	ParticleScaleMultiplier = NewScale;
+	MarkProxyDirty(EDirtyFlag::Mesh);
 }
 
 void UParticleSystemComponent::SetVectorParameter(const FName& ParameterName, const FVector& Value)
@@ -168,6 +182,11 @@ void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
 		{
 			LoadTemplateFromPath();
 		}
+	}
+	else if (strcmp(PropertyName, "ParticleScaleMultiplier") == 0 || strcmp(PropertyName, "Particle Scale Multiplier") == 0)
+	{
+		ParticleScaleMultiplier = (std::max)(0.0f, ParticleScaleMultiplier);
+		MarkProxyDirty(EDirtyFlag::Mesh);
 	}
 }
 

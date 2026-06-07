@@ -60,10 +60,11 @@ cbuffer ShadowBuffer : register(b5)
     uint     CSMResolution;                    //   4B
     float    CSMBlendRange;                    //   4B
     uint     CSMBlendEnabled;                  //   4B
-    uint     SpotAtlasResolution;              //   4B
+    uint     CSMFadeOutEnabled;                //   4B
 
+    uint     SpotAtlasResolution;              //   4B
     uint     PointAtlasResolution;             //   4B
-    float    _SBPad[3];                        //  12B → 합계 336B
+    float    _SBPad[2];                        //   8B → 합계 336B
 };
 
 // ── Shadow 텍스처 바인딩 ──

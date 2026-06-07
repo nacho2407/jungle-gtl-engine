@@ -29,6 +29,7 @@ struct FParticleEmitterInstance
 
 	UParticleEmitter* GetTemplate() const { return SpriteTemplate; }
 	UParticleSystemComponent* GetComponent() const { return Component; }
+	float GetParticleScaleMultiplier() const;
 	UParticleLODLevel* GetCurrentLODLevel() const { return CurrentLODLevel; }
 	UParticleModuleRequired* GetRequiredModule() const;
 
@@ -116,6 +117,8 @@ struct FParticleEmitterInstance
 
 protected:
 	virtual int32 SpawnParticles(float DeltaTime);
+	int32 SpawnParticleCount(int32 RequestedSpawnCount);
+	uint32 BuildParticleRandomSeed(uint32 ParticleSerial, uint32 SpawnSerial) const;
 	virtual void InitializeParticle(FBaseParticle& Particle);
 	void InitializeParticle(FBaseParticle& Particle, const FVector& SpawnLocation);
 	virtual void UpdateParticles(float DeltaTime);
@@ -150,4 +153,5 @@ protected:
 	float EmitterTime = 0.0f;
 	bool bActive = true;
 	bool bSpawningEnabled = true;
+	bool bSpawnBurstFired = false;
 };

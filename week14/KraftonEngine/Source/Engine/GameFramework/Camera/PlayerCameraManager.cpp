@@ -505,6 +505,16 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
 	//     실패(둘 다 없음) 시 캐시 무효 표시 후 fade/shake timer 만 진행.
 	FMinimalViewInfo NewPOV;
 	const bool bHasBasePOV = GetCameraView(NewPOV);
+	if (bHasBasePOV)
+	{
+		// Camera shake 같은 modifier가 들어가기 전 POV를 따로 보관해 shadow 기준으로 사용합니다.
+		UnmodifiedCameraCachePOV = NewPOV;
+		bUnmodifiedCameraCacheValid = true;
+	}
+	else
+	{
+		bUnmodifiedCameraCacheValid = false;
+	}
 
 	// (3) Modifier list 적용 — 기본 ShakeModifier + 추후 게임이 추가할 효과들.
 	//     Priority 오름차순으로 ModifyCamera 호출 → POV in-place 변형. shake 의 PlaySpace
@@ -544,6 +554,13 @@ bool APlayerCameraManager::GetCameraCachePOV(FMinimalViewInfo& OutPOV) const
 {
 	if (!bCameraCacheValid) return false;
 	OutPOV = CameraCachePOV;
+	return true;
+}
+
+bool APlayerCameraManager::GetUnmodifiedCameraCachePOV(FMinimalViewInfo& OutPOV) const
+{
+	if (!bUnmodifiedCameraCacheValid) return false;
+	OutPOV = UnmodifiedCameraCachePOV;
 	return true;
 }
 

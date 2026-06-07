@@ -18,6 +18,7 @@ class UEditorEngine;
 struct FEditorSelectionSnapshot
 {
 	TArray<uint32> ActorUUIDs;
+	TArray<uint32> GroupIds;
 	uint32 ComponentUUID = 0;
 };
 

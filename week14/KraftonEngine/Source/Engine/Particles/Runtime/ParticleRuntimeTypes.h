@@ -13,10 +13,14 @@ struct FBaseParticle
 	FVector Velocity;
 
 	FVector Size;
+	FVector InitialSize;
+	FVector TargetSize;
 	float Rotation = 0.0f;
 	float RotationRate = 0.0f;
 
 	FVector4 Color = { 1, 1, 1, 1 };
+	FVector4 InitialColor = { 1, 1, 1, 1 };
+	FVector4 TargetColor = { 1, 1, 1, 1 };
 	float SubImageIndex = 0.0f;
 
 	float RelativeTime = 0.0f;

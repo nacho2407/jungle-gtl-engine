@@ -32,7 +32,7 @@ struct FPerspectiveCameraData
 	FVector Rotation = FVector(0, 0, 0); // Euler (Roll, Pitch, Yaw) in degrees
 	float   FOV      = 3.14159265f / 3.0f;
 	float   NearClip = 0.1f;
-	float   FarClip  = 1000.0f;
+	float   FarClip  = 10000.0f;
 	bool    bValid   = false;
 };
 

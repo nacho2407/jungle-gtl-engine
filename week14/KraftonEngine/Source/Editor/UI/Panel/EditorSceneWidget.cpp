@@ -63,6 +63,11 @@ void FEditorSceneWidget::RenderActorOutliner()
 	FSceneOutlinerState& OutlinerState = World->GetEditorOutlinerState();
 	for (FSceneOutlinerGroup& Group : OutlinerState.Groups)
 	{
+		if (Group.ParentGroupId == Group.GroupId || !OutlinerState.FindGroup(Group.ParentGroupId))
+		{
+			Group.ParentGroupId = 0;
+		}
+
 		Group.ActorUUIDs.erase(
 			std::remove_if(
 				Group.ActorUUIDs.begin(),
@@ -94,7 +99,10 @@ void FEditorSceneWidget::RenderActorOutliner()
 
 	for (FSceneOutlinerGroup& Group : OutlinerState.Groups)
 	{
-		RenderGroupRow(Group, Actors);
+		if (OutlinerState.IsTopLevelGroup(Group))
+		{
+			RenderGroupRow(Group, Actors);
+		}
 	}
 
 	for (int32 ActorIndex : ValidActorIndices)
@@ -161,15 +169,16 @@ void FEditorSceneWidget::RenderActorRow(AActor* Actor, const TArray<AActor*>& Ac
 void FEditorSceneWidget::RenderGroupRow(FSceneOutlinerGroup& Group, const TArray<AActor*>& Actors)
 {
 	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
-	bool bAllSelected = !Group.ActorUUIDs.empty();
-	for (uint32 ActorUUID : Group.ActorUUIDs)
+	UWorld* World = EditorEngine->GetWorld();
+	if (!World)
 	{
-		AActor* Actor = ResolveActorByUUID(ActorUUID);
-		bAllSelected = bAllSelected && Actor && Selection.IsSelected(Actor);
+		return;
 	}
+	FSceneOutlinerState& OutlinerState = World->GetEditorOutlinerState();
+	const bool bGroupSelected = Selection.IsGroupSelected(Group.GroupId);
 
 	ImGuiTreeNodeFlags Flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-	if (bAllSelected)
+	if (bGroupSelected)
 	{
 		Flags |= ImGuiTreeNodeFlags_Selected;
 	}
@@ -184,14 +193,14 @@ void FEditorSceneWidget::RenderGroupRow(FSceneOutlinerGroup& Group, const TArray
 
 	if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
 	{
-		// 그룹 클릭은 하위 actor 전체를 선택하는 에디터 전용 동작입니다.
-		Selection.ClearSelection();
-		for (uint32 ActorUUID : Group.ActorUUIDs)
+		// 그룹 클릭은 actor 선택과 별도로 그룹 선택 컨텍스트를 기록합니다.
+		if (ImGui::GetIO().KeyCtrl)
 		{
-			if (AActor* Actor = ResolveActorByUUID(ActorUUID))
-			{
-				Selection.ToggleSelect(Actor);
-			}
+			Selection.ToggleSelectGroup(Group.GroupId);
+		}
+		else
+		{
+			Selection.SelectGroup(Group.GroupId);
 		}
 	}
 
@@ -208,6 +217,7 @@ void FEditorSceneWidget::RenderGroupRow(FSceneOutlinerGroup& Group, const TArray
 			if (UWorld* World = EditorEngine->GetWorld())
 			{
 				World->GetEditorOutlinerState().RemoveGroup(Group.GroupId);
+				Selection.ClearSelection();
 			}
 			ImGui::EndPopup();
 			ImGui::PopID();
@@ -220,7 +230,9 @@ void FEditorSceneWidget::RenderGroupRow(FSceneOutlinerGroup& Group, const TArray
 		if (ImGui::MenuItem("Create Prefab From Group"))
 		{
 			Selection.ClearSelection();
-			for (uint32 ActorUUID : Group.ActorUUIDs)
+			TArray<uint32> ActorUUIDs;
+			OutlinerState.CollectActorUUIDsRecursive(Group.GroupId, ActorUUIDs);
+			for (uint32 ActorUUID : ActorUUIDs)
 			{
 				if (AActor* Actor = ResolveActorByUUID(ActorUUID))
 				{
@@ -234,6 +246,16 @@ void FEditorSceneWidget::RenderGroupRow(FSceneOutlinerGroup& Group, const TArray
 
 	if (bOpen)
 	{
+		TArray<uint32> ChildGroupIds;
+		OutlinerState.CollectChildGroupIds(Group.GroupId, ChildGroupIds);
+		for (uint32 ChildGroupId : ChildGroupIds)
+		{
+			if (FSceneOutlinerGroup* ChildGroup = OutlinerState.FindGroup(ChildGroupId))
+			{
+				RenderGroupRow(*ChildGroup, Actors);
+			}
+		}
+
 		for (uint32 ActorUUID : Group.ActorUUIDs)
 		{
 			if (AActor* Actor = ResolveActorByUUID(ActorUUID))
@@ -334,13 +356,30 @@ void FEditorSceneWidget::GroupSelectedActors()
 		return;
 	}
 
-	TArray<uint32> ActorUUIDs = EditorEngine->GetSelectionManager().GetSelectedActorUUIDs();
-	if (ActorUUIDs.empty())
+	FSelectionManager& Selection = EditorEngine->GetSelectionManager();
+	TArray<uint32> ActorUUIDs = Selection.GetDirectSelectedActorUUIDs();
+	FSceneOutlinerState& OutlinerState = World->GetEditorOutlinerState();
+	TArray<uint32> GroupIds = OutlinerState.MakeRootGroupSelection(Selection.GetSelectedGroupIds());
+	TArray<uint32> GroupActorUUIDs = OutlinerState.GetActorUUIDsForGroups(GroupIds);
+	ActorUUIDs.erase(
+		std::remove_if(
+			ActorUUIDs.begin(),
+			ActorUUIDs.end(),
+			[&GroupActorUUIDs](uint32 ActorUUID)
+			{
+				return std::find(GroupActorUUIDs.begin(), GroupActorUUIDs.end(), ActorUUID) != GroupActorUUIDs.end();
+			}),
+		ActorUUIDs.end());
+	if (ActorUUIDs.empty() && GroupIds.empty())
 	{
 		return;
 	}
 
-	World->GetEditorOutlinerState().CreateGroup("", ActorUUIDs);
+	const uint32 NewGroupId = OutlinerState.CreateGroup("", ActorUUIDs, GroupIds);
+	if (NewGroupId != 0)
+	{
+		Selection.SelectGroup(NewGroupId);
+	}
 }
 
 void FEditorSceneWidget::CreatePrefabFromSelectedActors()

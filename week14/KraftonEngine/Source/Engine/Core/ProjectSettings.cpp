@@ -10,6 +10,8 @@ namespace PSKey
 	constexpr const char* Shadow = "Shadow";
 	constexpr const char* bShadows = "bShadows";
 	constexpr const char* CSMResolution = "CSMResolution";
+	constexpr const char* DirectionalShadowDistance = "DirectionalShadowDistance";
+	constexpr const char* bDirectionalShadowFadeOut = "bDirectionalShadowFadeOut";
 	constexpr const char* SpotAtlasResolution = "SpotAtlasResolution";
 	constexpr const char* PointAtlasResolution = "PointAtlasResolution";
 	constexpr const char* MaxSpotAtlasPages = "MaxSpotAtlasPages";
@@ -50,6 +52,8 @@ void FProjectSettings::SaveToFile(const FString& Path) const
 	JSON ShadowObj = Object();
 	ShadowObj[PSKey::bShadows] = Shadow.bEnabled;
 	ShadowObj[PSKey::CSMResolution] = static_cast<int>(Shadow.CSMResolution);
+	ShadowObj[PSKey::DirectionalShadowDistance] = Shadow.DirectionalShadowDistance;
+	ShadowObj[PSKey::bDirectionalShadowFadeOut] = Shadow.bDirectionalShadowFadeOut;
 	ShadowObj[PSKey::SpotAtlasResolution] = static_cast<int>(Shadow.SpotAtlasResolution);
 	ShadowObj[PSKey::PointAtlasResolution] = static_cast<int>(Shadow.PointAtlasResolution);
 	ShadowObj[PSKey::MaxSpotAtlasPages] = static_cast<int>(Shadow.MaxSpotAtlasPages);
@@ -174,6 +178,13 @@ void FProjectSettings::LoadFromFile(const FString& Path)
 			int v = S[PSKey::CSMResolution].ToInt();
 			Shadow.CSMResolution = static_cast<uint32>((std::max)(64, (std::min)(v, 8192)));
 		}
+		if (S.hasKey(PSKey::DirectionalShadowDistance))
+		{
+			float v = static_cast<float>(S[PSKey::DirectionalShadowDistance].ToFloat());
+			Shadow.DirectionalShadowDistance = (std::max)(0.0f, v);
+		}
+		if (S.hasKey(PSKey::bDirectionalShadowFadeOut))
+			Shadow.bDirectionalShadowFadeOut = S[PSKey::bDirectionalShadowFadeOut].ToBool();
 		if (S.hasKey(PSKey::SpotAtlasResolution))
 		{
 			int v = S[PSKey::SpotAtlasResolution].ToInt();

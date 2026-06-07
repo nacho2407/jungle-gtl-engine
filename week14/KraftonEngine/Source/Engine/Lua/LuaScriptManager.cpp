@@ -21,11 +21,13 @@
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Primitive/SkinnedMeshComponent.h"
 #include "Component/Particle/ParticleSystemComponent.h"
+#include "Particles/ParticleSystemManager.h"
 #include "Core/Types/CollisionTypes.h"
 #include "Runtime/Engine.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
+#include "GameFramework/Pawn/Character.h"
 #include "GameFramework/Pawn/Pawn.h"
 #include "GameFramework/GameMode/PlayerController.h"
 #include "GameFramework/Camera/PlayerCameraManager.h"
@@ -822,6 +824,39 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		APlayerController* PC = (GEngine && GEngine->GetWorld()) ? GEngine->GetWorld()->GetFirstPlayerController() : nullptr;
 		return PC ? PC->GetPossessedPawn() : nullptr;
 	});
+	Game.set_function("PossessPawnByName", [](const FString& PawnName) -> bool
+	{
+		if (!GEngine || !GEngine->GetWorld())
+		{
+			return false;
+		}
+
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		if (!PC)
+		{
+			return false;
+		}
+
+		for (AActor* Actor : GEngine->GetWorld()->GetActors())
+		{
+			if (!Actor || Actor->GetFName().ToString() != PawnName)
+			{
+				continue;
+			}
+
+			// Lua의 World.FindActorByName은 Actor로 반환되므로, Pawn 전환은 C++에서 안전하게 캐스팅합니다.
+			APawn* Pawn = Cast<APawn>(Actor);
+			if (!Pawn)
+			{
+				return false;
+			}
+
+			PC->Possess(Pawn);
+			return true;
+		}
+
+		return false;
+	});
 	Game.set_function("GetCameraManager", []() -> APlayerCameraManager*
 	{
 		APlayerController* PC = (GEngine && GEngine->GetWorld()) ? GEngine->GetWorld()->GetFirstPlayerController() : nullptr;
@@ -1131,6 +1166,17 @@ Engine.IsPaused = Game.IsPaused
 			Manager->StartCameraShakeAsset(AssetPath, Scale.value_or(1.0f));
 		}
 	});
+	CameraManager.set_function("StopAllCameraShakes", [](sol::optional<bool> bImmediately)
+	{
+		if (!GEngine || !GEngine->GetWorld()) return;
+		APlayerController* PC = GEngine->GetWorld()->GetFirstPlayerController();
+		APlayerCameraManager* Manager = PC ? PC->GetPlayerCameraManager() : nullptr;
+		if (Manager)
+		{
+			// 컷씬 스킵/카메라 전환 시 남아 있는 흔들림을 즉시 정리하기 위한 Lua 진입점입니다.
+			Manager->StopAllCameraShakes(bImmediately.value_or(true));
+		}
+	});
 
 	sol::table AudioManager = Lua.create_named_table("AudioManager");
 	AudioManager.set_function("Load", [](const FString& SoundName, const FString& Path, sol::optional<bool> bLoop)
@@ -1140,6 +1186,10 @@ Engine.IsPaused = Game.IsPaused
 	AudioManager.set_function("Play", [](const FString& SoundName, float Volume)
 	{
 		return FAudioManager::Get().PlayAudio(SoundName, Volume);
+	});
+	AudioManager.set_function("Stop", [](const FString& SoundName)
+	{
+		return FAudioManager::Get().StopAudio(SoundName);
 	});
 	AudioManager.set_function("PlayOneShot", [](const FString& EventName)
 	{
@@ -1545,6 +1595,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"Activate", &UParticleSystemComponent::Activate,
 		"Deactivate", &UParticleSystemComponent::Deactivate,
 		"ResetSystem", &UParticleSystemComponent::ResetSystem,
+		"SetParticleScaleMultiplier", &UParticleSystemComponent::SetParticleScaleMultiplier,
+		"GetParticleScaleMultiplier", &UParticleSystemComponent::GetParticleScaleMultiplier,
 		"SetEmitterSpawningEnabled", &UParticleSystemComponent::SetEmitterSpawningEnabled);
 
 	FLuaDocRegistry::Get().Type("ParticleSystemComponent", "PrimitiveComponent")
@@ -1552,6 +1604,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("function ParticleSystemComponent:Activate() end")
 		.Method("function ParticleSystemComponent:Deactivate() end")
 		.Method("function ParticleSystemComponent:ResetSystem() end")
+		.Method("---@param scale number\nfunction ParticleSystemComponent:SetParticleScaleMultiplier(scale) end")
+		.Method("---@return number\nfunction ParticleSystemComponent:GetParticleScaleMultiplier() end")
 		.Method("---@param enabled boolean\nfunction ParticleSystemComponent:SetEmitterSpawningEnabled(enabled) end");
 
 	Lua.new_usertype<FHitResult>("HitResult",
@@ -1622,6 +1676,35 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("GetCharacterMovement",
 			"---@return CharacterMovementComponent?\nfunction Actor:GetCharacterMovement() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UCharacterMovementComponent>(); })
+		.Method("GetCharacterAutoInputWASD",
+			"---@return boolean\nfunction Actor:GetCharacterAutoInputWASD() end",
+			[](AActor& Actor)
+			{
+				ACharacter* Character = Cast<ACharacter>(&Actor);
+				return Character ? Character->bAutoInputWASD : false;
+			})
+		.Method("GetCharacterAutoInputMouseLook",
+			"---@return boolean\nfunction Actor:GetCharacterAutoInputMouseLook() end",
+			[](AActor& Actor)
+			{
+				ACharacter* Character = Cast<ACharacter>(&Actor);
+				return Character ? Character->bAutoInputMouseLook : false;
+			})
+		.Method("SetCharacterAutoInput",
+			"---@param wasd boolean\n---@param mouseLook boolean\n---@return boolean\nfunction Actor:SetCharacterAutoInput(wasd, mouseLook) end",
+			[](AActor& Actor, bool bWASD, bool bMouseLook)
+			{
+				ACharacter* Character = Cast<ACharacter>(&Actor);
+				if (!Character)
+				{
+					return false;
+				}
+
+				// 컷씬 중 배경 Pawn이 입력을 소비하지 않도록 자동 입력 처리만 임시로 전환합니다.
+				Character->bAutoInputWASD = bWASD;
+				Character->bAutoInputMouseLook = bMouseLook;
+				return true;
+			})
 		.Method("GetVehicleMovement",
 			"---@return VehicleMovementComponent4W?\nfunction Actor:GetVehicleMovement() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UVehicleMovementComponent4W>(); })
@@ -1808,6 +1891,43 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		if (!Cls) return nullptr;
 		return W->SpawnActorByClass(Cls);
 	});
+	World.set_function("SpawnParticleSystem",
+		[](const FString& ParticlePath, const FVector& Location, sol::optional<FVector> Rotation) -> AActor*
+	{
+		if (!GEngine) return nullptr;
+		UWorld* W = GEngine->GetWorld();
+		if (!W) return nullptr;
+
+		UParticleSystem* ParticleSystem = FParticleSystemManager::Get().Load(ParticlePath);
+		if (!ParticleSystem)
+		{
+			UE_LOG("[Lua] World.SpawnParticleSystem failed to load: %s", ParticlePath.c_str());
+			return nullptr;
+		}
+
+		AActor* Actor = W->SpawnActor<AActor>();
+		if (!Actor) return nullptr;
+
+		UParticleSystemComponent* ParticleComponent = Actor->AddComponent<UParticleSystemComponent>();
+		if (!ParticleComponent)
+		{
+			W->DestroyActor(Actor);
+			return nullptr;
+		}
+
+		Actor->SetRootComponent(ParticleComponent);
+		Actor->SetActorLocation(Location);
+		if (Rotation.has_value())
+		{
+			Actor->SetActorRotation(Rotation.value());
+		}
+
+		ParticleComponent->SetTemplate(ParticleSystem);
+		ParticleComponent->ResetSystem();
+		ParticleComponent->SetEmitterSpawningEnabled(true);
+		ParticleComponent->Activate();
+		return Actor;
+	});
 	World.set_function("FindActorByName", [](const FString& ActorName) -> AActor*
 	{
 		if (!GEngine || !GEngine->GetWorld()) return nullptr;
@@ -1895,6 +2015,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 
 	FLuaDocRegistry::Get().Type("WorldLib")
 		.Method("---@param className string\n---@return Actor?\nfunction World.SpawnActor(className) end")
+		.Method("---@param particlePath string\n---@param location Vector\n---@param rotation? Vector\n---@return Actor?\nfunction World.SpawnParticleSystem(particlePath, location, rotation) end")
 		.Method("---@param actorName string\n---@return Actor?\nfunction World.FindActorByName(actorName) end")
 		.Method("---@param className string\n---@return Actor?\nfunction World.FindFirstActorByClass(className) end")
 		.Method("---@param tag string\n---@return Actor?\nfunction World.FindFirstActorByTag(tag) end")

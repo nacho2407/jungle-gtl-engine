@@ -1,0 +1,24 @@
+{
+        "BlendState" : "Opaque",
+        "DepthStencilState" : "Default",
+        "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+        "EmissiveIntensity" : 0.000000,
+        "Parameters" : {
+          "HasNormalMap" : 0.000000,
+          "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "_pad" : [0.000000, 0.000000, 0.000000]
+        },
+        "ParentMaterial" : "Content/Material/Auto/BasicShapeMaterial.mat",
+        "PathFileName" : "Content/Material/Auto/BasicShapeMaterial_Inst.matinst",
+        "RasterizerState" : "SolidBackCull",
+        "RenderPass" : "Opaque",
+        "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+        "ShadowMode" : "Opaque",
+        "Textures" : {
+          "DiffuseTexture" : "Content/Data/Mesher/Dry_Cracked_Mud_xccibi1_1K_BaseColor.png"
+        },
+        "bEnableBloom" : false,
+        "bOverrideEmissiveColor" : false,
+        "bOverrideEmissiveIntensity" : false,
+        "bOverrideEnableBloom" : false
+      }

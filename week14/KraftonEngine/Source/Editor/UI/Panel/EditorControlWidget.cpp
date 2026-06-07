@@ -48,6 +48,26 @@ void FEditorControlWidget::Render(float DeltaTime)
 		bChanged = true;
 	}
 
+	// 카메라 근거리 클리핑 거리 조절값
+	float NearClip = VT.NearClip;
+	if (ImGui::DragFloat("Near Clip", &NearClip, 0.01f, 0.01f, 1000.0f, "%.3f"))
+	{
+		VT.NearClip = Clamp(NearClip, 0.01f, 1000.0f);
+		if (VT.FarClip <= VT.NearClip)
+		{
+			VT.FarClip = VT.NearClip + 1.0f;
+		}
+		bChanged = true;
+	}
+
+	// 카메라 원거리 클리핑 거리 조절값
+	float FarClip = VT.FarClip;
+	if (ImGui::DragFloat("Far Clip", &FarClip, 10.0f, 1.0f, 100000.0f, "%.1f"))
+	{
+		VT.FarClip = Clamp(FarClip, VT.NearClip + 1.0f, 100000.0f);
+		bChanged = true;
+	}
+
 	float CameraLocation[3] = { VT.ViewLocation.X, VT.ViewLocation.Y, VT.ViewLocation.Z };
 	if (ImGui::DragFloat3("Camera Location", CameraLocation, 0.1f))
 	{

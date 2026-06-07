@@ -13,6 +13,10 @@
                 <div id="dialogue-line" class="dialogue-text cutscene-dialogue-text" data-ui-editor="text">DRAKE: Dialogue preview text.</div>
             </div>
         </div>
+        <div id="producer-credit" class="producer-credit">
+            <div id="producer-credit-role" class="producer-credit-role" data-ui-editor="text">PRODUCER</div>
+            <div id="producer-credit-name" class="producer-credit-name" data-ui-editor="text">KIM HYOBEOM</div>
+        </div>
         <div id="skip-ring" class="skip-ring">
             <img id="skip-ring-frame-00" class="skip-ring-frame" src="SkipRing/SkipRing_00.png"/>
             <img id="skip-ring-frame-01" class="skip-ring-frame" src="SkipRing/SkipRing_01.png"/>
