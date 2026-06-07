@@ -33,7 +33,7 @@ struct FFrameContext
 	FVector CameraRight;
 	FVector CameraUp;
 	float NearClip = 0.1f;
-	float FarClip = 1000.0f;
+	float FarClip = 10000.0f;
 	float FOV = 3.14159265358979f / 3.0f;
 	float AspectRatio = 16.0f / 9.0f;
 

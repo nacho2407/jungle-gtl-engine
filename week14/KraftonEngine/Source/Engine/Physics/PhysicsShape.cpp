@@ -232,6 +232,41 @@ void FPhysicsShapeFactory::CreateShapesForStaticMeshComponent(physx::PxPhysics& 
 {
 	if (!Component) return;
 
+	if (Component->ShouldUseBoundingBoxCollider())
+	{
+		FVector LocalCenter;
+		FVector LocalExtent;
+		if (Component->GetCachedLocalBounds(LocalCenter, LocalExtent))
+		{
+			// Static Mesh 로컬 bounds에 컴포넌트 스케일을 적용한 box collider
+			const FVector Scale = Component->GetWorldScale();
+			const FVector AbsScale(std::abs(Scale.X), std::abs(Scale.Y), std::abs(Scale.Z));
+			const FVector ScaledExtent(
+				LocalExtent.X * AbsScale.X,
+				LocalExtent.Y * AbsScale.Y,
+				LocalExtent.Z * AbsScale.Z);
+
+			if (ScaledExtent.X > 0.0f && ScaledExtent.Y > 0.0f && ScaledExtent.Z > 0.0f)
+			{
+				physx::PxShape* Shape = Physics.createShape(
+					physx::PxBoxGeometry(ScaledExtent.X, ScaledExtent.Y, ScaledExtent.Z), Material);
+				if (Shape)
+				{
+					// Static Mesh bounds 중심이 원점이 아닌 asset도 올바르게 감싸기 위한 local pose
+					const FVector ScaledCenter(
+						LocalCenter.X * AbsScale.X,
+						LocalCenter.Y * AbsScale.Y,
+						LocalCenter.Z * AbsScale.Z);
+
+					Shape->setLocalPose(physx::PxTransform(ToPxVec3(ScaledCenter)));
+					ApplyShapeFlags(*Shape, Component, bTrigger);
+					OutShapes.push_back(Shape);
+					return;
+				}
+			}
+		}
+	}
+
 	UStaticMesh* StaticMesh = Component->GetStaticMesh();
 	if (!StaticMesh) return;
 

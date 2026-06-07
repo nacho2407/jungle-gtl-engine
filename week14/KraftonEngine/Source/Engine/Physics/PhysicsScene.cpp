@@ -329,14 +329,17 @@ bool FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& Ou
 
 	if (UStaticMeshComponent* StaticMeshComp = Cast<UStaticMeshComponent>(OwnerComp))
 	{
-		UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
-		UBodySetup* BodySetup = StaticMesh ? StaticMesh->GetBodySetup() : nullptr;
+		if (!StaticMeshComp->ShouldUseBoundingBoxCollider())
+		{
+			UStaticMesh* StaticMesh = StaticMeshComp->GetStaticMesh();
+			UBodySetup* BodySetup = StaticMesh ? StaticMesh->GetBodySetup() : nullptr;
 
-		if (!BodySetup) return false;
+			if (!BodySetup) return false;
 
-		return CreateBodyFromSetup(OwnerComp, OutInstance, *BodySetup, OwnerComp->GetWorldLocation(), OwnerComp->GetWorldRotation().ToQuaternion(),
-			OwnerComp->GetCollisionObjectType(), OwnerComp->GetCollisionEnabled(), OwnerComp->GetWorldScale(),
-			OwnerComp->GetGenerateOverlapEvents(), OwnerComp->IsSimulatingPhysics());
+			return CreateBodyFromSetup(OwnerComp, OutInstance, *BodySetup, OwnerComp->GetWorldLocation(), OwnerComp->GetWorldRotation().ToQuaternion(),
+				OwnerComp->GetCollisionObjectType(), OwnerComp->GetCollisionEnabled(), OwnerComp->GetWorldScale(),
+				OwnerComp->GetGenerateOverlapEvents(), OwnerComp->IsSimulatingPhysics());
+		}
 	}
 
 	physx::PxPhysics* Physics = FPhysXSDK::Get().GetPhysics();

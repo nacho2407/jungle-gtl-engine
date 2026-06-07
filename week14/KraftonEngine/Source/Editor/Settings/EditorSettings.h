@@ -39,7 +39,7 @@ public:
 	FRotator PerspCamRotation;
 	float PerspCamFOV = 60.0f;
 	float PerspCamNearClip = 0.1f;
-	float PerspCamFarClip = 1000.0f;
+	float PerspCamFarClip = 10000.0f;
 
 	FViewportCameraControlSettings LevelViewportCameraControls;
 	FEditorViewportSettings LevelViewportSettings[4];

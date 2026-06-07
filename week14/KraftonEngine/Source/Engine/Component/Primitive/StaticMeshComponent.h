@@ -47,6 +47,24 @@ public:
 
 	const FString& GetStaticMeshPath() const { return StaticMeshPath.ToString(); }
 
+	/**
+	 * @brief Static Mesh의 물리 충돌을 bounds box collider로 대체할지 여부를 반환합니다
+	 *
+	 * @return bounds box collider 사용 여부
+	 */
+	bool ShouldUseBoundingBoxCollider() const { return bUseBoundingBoxCollider; }
+
+	/**
+	 * @brief 캐시된 Static Mesh 로컬 bounds를 반환합니다
+	 *
+	 * @param OutCenter Static Mesh 로컬 bounds 중심
+	 *
+	 * @param OutExtent Static Mesh 로컬 bounds 반치수
+	 *
+	 * @return 유효한 bounds 보유 여부
+	 */
+	bool GetCachedLocalBounds(FVector& OutCenter, FVector& OutExtent) const;
+
 private:
 	void CacheLocalBounds();
 
@@ -56,6 +74,10 @@ private:
 	TArray<UMaterialInterface*> OverrideMaterials;
 	UPROPERTY(Edit, Save, EditFixedSize, Category="Materials", DisplayName="Materials", AssetType="Material")
 	TArray<FSoftObjectPtr> MaterialSlots;
+
+	// Static Mesh 물리 충돌을 렌더 bounds 기준 박스 collider로 대체하는 옵션
+	UPROPERTY(Edit, Save, Category="Collision", DisplayName="Use Bounding Box Collider")
+	bool bUseBoundingBoxCollider = false;
 
 	FVector CachedLocalCenter = { 0, 0, 0 };
 	FVector CachedLocalExtent = { 0.5f, 0.5f, 0.5f };

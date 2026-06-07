@@ -28,7 +28,7 @@ struct FViewportCameraTransform
 	float    FOV          = 3.14159265358979f / 3.0f; // perspective vertical FOV (radians)
 	float    AspectRatio  = 16.0f / 9.0f;
 	float    NearClip     = 0.1f;
-	float    FarClip      = 1000.0f;
+	float    FarClip      = 10000.0f;
 	bool     bIsOrtho     = false;
 
 	// ─── Mutation ─────────────────────────────────────────────
