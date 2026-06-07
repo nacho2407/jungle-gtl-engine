@@ -118,6 +118,20 @@ public:
 	const char*    GetMovementModeName() const;
 	FWallRunDebugSnapshot GetWallRunDebugSnapshot() const;
 
+	// View tilt 채널 — Camera 의 local Roll 에 그대로 박을 deg 값.
+	// CMC 는 "어디로 얼마나 기울어야 하는가" 의 *target* 만 publish.
+	// 부호 규약: 엔진 +Roll = view 상단이 오른쪽으로 기우는 시계방향.
+	//   TitanFall 의 "tilt away from the wall" → 벽 오른쪽이면 -Roll, 벽 왼쪽이면 +Roll.
+	//   Sign := (bWallRunOnRightSide ? -1 : +1) * (bInvertWallRunCameraTiltSign ? -1 : +1)
+	// 실제 frame-to-frame 보간 (critically damped lerp) 은 Character::Tick 가 담당.
+	// Anticipation: Falling 중 후보 벽이 WallTiltAnticipationDistance 안에 있으면
+	//   부분 강도 (Intensity = WallTiltAnticipationIntensity) 로 미리 기울임.
+	// Active: WallRunning 중엔 Intensity = 1.0.
+	float GetDesiredCameraRollDeg() const;
+	// Tilt 증가 (target > current) vs 감소 (target → 0) 시 다른 response 속도.
+	float GetCameraTiltResponseHz(bool bIsIncreasing) const;
+	bool  IsCameraTiltEnabled() const { return bEnableWallRunCameraTilt; }
+
 	// UMovementComponent:
 	void Serialize(FArchive& Ar) override;
 
@@ -185,6 +199,8 @@ protected:
 	FVector     GetWallRunSweepStart(const FVector& Direction) const;
 	float       GetWallRunAlongSpeed(const FVector& WallNormal) const;
 	float       GetWallRunInputAlong(const FVector& Input, const FVector& RunDirection) const;
+	// 매 Tick 끝에서 현재 mode + (Falling 한정) 예측 sweep 으로 tilt target 갱신.
+	void        UpdateWallTiltTarget();
 
 	FVector       AccumulatedInput = FVector(0.0f, 0.0f, 0.0f);
 	FVector       Velocity         = FVector(0.0f, 0.0f, 0.0f);
@@ -206,6 +222,12 @@ protected:
 	FHitResult     LastWallRunStatusHit;
 	bool           bLastWallRunStatusHasHit = false;
 	mutable int32  WallRunDiagnosticsFrameCounter = 0;
+
+	// View tilt target — UpdateWallTiltTarget 가 매 frame 갱신, GetDesiredCameraRollDeg 가 합성해 반환.
+	// Sign: +1 = 좌측으로 기울임 (벽이 오른쪽), -1 = 우측으로 기울임 (벽이 왼쪽), 0 = 중립.
+	// Intensity: [0..1]. Falling 예측 시 AnticipationIntensity, Active 시 1.0.
+	float TargetTiltSign      = 0.0f;
+	float TargetTiltIntensity = 0.0f;
 
 	// Jump() 가 set, TickWalking/TickFalling 이 consume. edge-triggered 라 동일 프레임 다중 호출도 1회 점프.
 	bool          bWantsJump       = false;
@@ -328,6 +350,26 @@ public:
 	float WallStickAcceleration = 4.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Wall Run Time", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
 	float MaxWallRunTime = 1.5f;
+
+	// ----- Camera tilt (TitanFall-style "view rolls away from the wall") -----
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Tilt", DisplayName = "Enable Camera Tilt")
+	bool  bEnableWallRunCameraTilt = true;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Tilt", DisplayName = "Max Tilt (deg)", Min = 0.0f, Max = 45.0f, Speed = 0.5f)
+	float MaxWallRunCameraTiltDeg = 19.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Tilt", DisplayName = "Anticipation Distance Scale", Min = 1.0f, Max = 5.0f, Speed = 0.05f)
+	// Falling 중 후보 벽이 (CapsuleRadius + WallCheckDistance * Scale) 안에 있으면 미리 기울이기 시작.
+	float WallTiltAnticipationDistanceScale = 1.8f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Tilt", DisplayName = "Anticipation Intensity", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
+	float WallTiltAnticipationIntensity = 0.45f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Tilt", DisplayName = "Attach Response Hz", Min = 0.0f, Max = 40.0f, Speed = 0.5f)
+	// Critically damped 1st-order: alpha = 1 - exp(-dt * Hz). 클수록 빨리 따라감.
+	// 7.0 ≈ time-to-95% ~0.43s — 어깨가 자연스럽게 기우는 체감.
+	float WallTiltAttachResponseHz = 7.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Tilt", DisplayName = "Release Response Hz", Min = 0.0f, Max = 40.0f, Speed = 0.5f)
+	float WallTiltReleaseResponseHz = 6.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Tilt", DisplayName = "Invert Sign")
+	// 좌표계/스프링암 합성 때문에 뒤집혀 보이면 toggle.
+	bool  bInvertWallRunCameraTiltSign = false;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Legacy Screen Status Text")
 	bool bShowWallRunStatusText = false;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Log Wall Run Diagnostics")

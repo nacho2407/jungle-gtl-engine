@@ -940,6 +940,93 @@ float UCharacterMovementComponent::GetWallRunAlongSpeed(const FVector& WallNorma
 	return std::fabs(PlanarVelocity.Dot(RunDirection));
 }
 
+// ─── View tilt (TitanFall-style) ──────────────────────────────────────────────
+// Mode 별 의도:
+//   WallRunning      → Sign = ±1 (벽 측면 기준), Intensity = 1.
+//   Falling          → 후보 벽이 (CapsuleRadius + WallCheckDistance * Scale) 안에 있고
+//                      reattach cooldown 안 걸려 있으면 Anticipation 부분 강도.
+//   Walking / 기타   → 0.
+// FindWallRunSurface 는 const + 부수효과 없음 → Falling 중에만 1회 추가 sweep 비용.
+void UCharacterMovementComponent::UpdateWallTiltTarget()
+{
+	if (!bEnableWallRunCameraTilt)
+	{
+		TargetTiltSign = 0.0f;
+		TargetTiltIntensity = 0.0f;
+		return;
+	}
+
+	if (MovementMode == EMovementMode::WallRunning)
+	{
+		// 엔진 Roll 컨벤션: +Roll = view 상단이 오른쪽 (시계방향).
+		// "벽 반대쪽으로 기울이기" → 벽 오른쪽이면 -Roll (상단 왼쪽으로), 벽 왼쪽이면 +Roll.
+		const float RawSign = bWallRunOnRightSide ? -1.0f : +1.0f;
+		TargetTiltSign = bInvertWallRunCameraTiltSign ? -RawSign : RawSign;
+		TargetTiltIntensity = 1.0f;
+		return;
+	}
+
+	if (MovementMode == EMovementMode::Falling)
+	{
+		// Wall-jump 직후엔 같은 벽으로 미리 기울이지 않음 — TryStartWallRun 의 게이트와 같은 의도.
+		if (WallJumpReattachTimer > 0.0f)
+		{
+			TargetTiltSign = 0.0f;
+			TargetTiltIntensity = 0.0f;
+			return;
+		}
+
+		FHitResult ProbeHit;
+		bool bRightSide = false;
+		if (!FindWallRunSurface(ProbeHit, bRightSide))
+		{
+			TargetTiltSign = 0.0f;
+			TargetTiltIntensity = 0.0f;
+			return;
+		}
+
+		// 거리 게이트 — WallCheckDistance 자체를 넘어서면 hit 도 없음 (FindWallRun 안에서 컷).
+		// 여기선 anticipation 의 거리 → intensity 매핑만:
+		//   d ≤ WallCheckDistance               → Intensity = AnticipationIntensity (full anticipation).
+		//   d ∈ (WallCheckDistance, MaxDist]    → 0 으로 선형 감쇠.
+		const float CapsuleRadius = GetWallRunCapsuleRadius();
+		const float NearDist = CapsuleRadius + WallCheckDistance;
+		const float FarDist  = CapsuleRadius + WallCheckDistance * std::max(1.0f, WallTiltAnticipationDistanceScale);
+		const float D = ProbeHit.Distance;
+
+		float Intensity = 0.0f;
+		if (D <= NearDist)
+		{
+			Intensity = WallTiltAnticipationIntensity;
+		}
+		else if (D < FarDist && FarDist > NearDist)
+		{
+			const float T = 1.0f - (D - NearDist) / (FarDist - NearDist);
+			Intensity = WallTiltAnticipationIntensity * std::clamp(T, 0.0f, 1.0f);
+		}
+
+		// Active 와 동일 부호 규약 — 벽 오른쪽이면 -Roll, 왼쪽이면 +Roll.
+		const float RawSign = bRightSide ? -1.0f : +1.0f;
+		TargetTiltSign = bInvertWallRunCameraTiltSign ? -RawSign : RawSign;
+		TargetTiltIntensity = Intensity;
+		return;
+	}
+
+	TargetTiltSign = 0.0f;
+	TargetTiltIntensity = 0.0f;
+}
+
+float UCharacterMovementComponent::GetDesiredCameraRollDeg() const
+{
+	if (!bEnableWallRunCameraTilt) return 0.0f;
+	return TargetTiltSign * TargetTiltIntensity * MaxWallRunCameraTiltDeg;
+}
+
+float UCharacterMovementComponent::GetCameraTiltResponseHz(bool bIsIncreasing) const
+{
+	return bIsIncreasing ? WallTiltAttachResponseHz : WallTiltReleaseResponseHz;
+}
+
 float UCharacterMovementComponent::GetWallRunInputAlong(const FVector& Input, const FVector& RunDirection) const
 {
 	FVector PlanarInput(Input.X, Input.Y, 0.0f);
@@ -1170,6 +1257,9 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	{
 		SetWallRunStatus(EWallRunStatus::NotFalling);
 	}
+
+	// View tilt target — mode 가 확정된 *후* 갱신해야 Falling/WallRunning 분기가 같은 frame 에 일치.
+	UpdateWallTiltTarget();
 
 	DrawWallRunStatusText();
 	DrawWallRunDistanceDebug();

@@ -1,5 +1,6 @@
 #include "GameFramework/Pawn/Character.h"
 
+#include "Component/Camera/CameraComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
 #include "Component/Input/InputComponent.h"
 #include "Component/Movement/CharacterMovementComponent.h"
@@ -12,6 +13,7 @@
 #include "Viewport/GameViewportClient.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace
 {
@@ -50,6 +52,8 @@ void ACharacter::PostDuplicate()
 	CapsuleComponent  = Cast<UCapsuleComponent>(GetRootComponent());
 	Mesh              = GetComponentByClass<USkeletalMeshComponent>();
 	CharacterMovement = GetComponentByClass<UCharacterMovementComponent>();
+	CachedCameraForTilt  = nullptr; // 다음 Tick 에 lazy 재탐색.
+	CurrentCameraTiltDeg = 0.0f;
 }
 
 void ACharacter::AddMovementInput(const FVector& WorldDirection, float ScaleValue)
@@ -167,5 +171,42 @@ void ACharacter::Tick(float DeltaTime)
 			bChanged = true;
 		}
 		if (bChanged) CapsuleComponent->SetRelativeRotation(R);
+	}
+
+	// ── View tilt (TitanFall-style wall-run roll) ─────────────────────────────
+	// CMC 가 "원하는 Roll deg" 만 내놓고, 여기서 critically damped 1st-order lerp 로 따라간다.
+	// Camera 는 SpringArm 의 자식이라 local Roll 만 더해도 Yaw/Pitch (look 입력) 와 안 섞임.
+	// ControlRotation.Roll 은 손대지 말 것 — Pawn look 수학과 hit-scan 방향이 깨짐.
+	if (CharacterMovement && CharacterMovement->IsCameraTiltEnabled())
+	{
+		if (!CachedCameraForTilt)
+		{
+			CachedCameraForTilt = GetComponentByClass<UCameraComponent>();
+		}
+		if (CachedCameraForTilt)
+		{
+			const float TargetDeg = CharacterMovement->GetDesiredCameraRollDeg();
+			const bool  bIncreasing = std::fabs(TargetDeg) > std::fabs(CurrentCameraTiltDeg);
+			const float Hz = CharacterMovement->GetCameraTiltResponseHz(bIncreasing);
+			// alpha = 1 - exp(-dt * Hz) — frame-rate independent critically damped lerp.
+			const float Alpha = (Hz > 0.0f) ? (1.0f - std::exp(-DeltaTime * Hz)) : 1.0f;
+			CurrentCameraTiltDeg += (TargetDeg - CurrentCameraTiltDeg) * Alpha;
+
+			FRotator CamRot = CachedCameraForTilt->GetRelativeRotation();
+			CamRot.Roll = CurrentCameraTiltDeg;
+			CachedCameraForTilt->SetRelativeRotation(CamRot);
+		}
+	}
+	else
+	{
+		// Disable 시 부드럽게 0 으로 복귀 후 손 뗌.
+		if (CachedCameraForTilt && std::fabs(CurrentCameraTiltDeg) > 0.01f)
+		{
+			const float Alpha = 1.0f - std::exp(-DeltaTime * 9.0f);
+			CurrentCameraTiltDeg += (0.0f - CurrentCameraTiltDeg) * Alpha;
+			FRotator CamRot = CachedCameraForTilt->GetRelativeRotation();
+			CamRot.Roll = CurrentCameraTiltDeg;
+			CachedCameraForTilt->SetRelativeRotation(CamRot);
+		}
 	}
 }
