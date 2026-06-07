@@ -182,6 +182,8 @@ namespace FAssetRegistry
             *OutReport = Report;
         }
 
-        return Report.IsCompatible(false);
+        // Anim tracks carry bone names, and pose extraction remaps by name when indices differ.
+        // Matching skeleton structure is therefore safe enough for runtime playback.
+        return Report.IsCompatible(true);
     }
 }

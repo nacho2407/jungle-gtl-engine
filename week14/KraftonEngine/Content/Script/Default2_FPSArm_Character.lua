@@ -264,6 +264,15 @@ local function request_arm_animation(name)
     requests[name] = true
 end
 
+local function is_player_crouching()
+    cache_movement_defaults()
+    if movement ~= nil and type(movement.IsCrouching) == "function" then
+        return movement:IsCrouching()
+    end
+
+    return Input.GetKey(Key.Ctrl) or Input.GetKey(Key.LeftCtrl) or Input.GetKey(Key.RightCtrl)
+end
+
 local function update_weapon_hud()
     WeaponHud.SetAmmo(currentAmmo, MAGAZINE_SIZE)
 end
@@ -329,7 +338,7 @@ local function start_reload()
     isReloading = true
     reloadTimer = RELOAD_DURATION
     start_reload_audio(emptyReload)
-    request_arm_animation("reload")
+    request_arm_animation(is_player_crouching() and "reload_crouch" or "reload")
 end
 
 local function lerp_red(t)
@@ -484,6 +493,7 @@ function BeginPlay()
     if requests ~= nil then
         requests.shoot = false
         requests.reload = false
+        requests.reload_crouch = false
     end
     weaponSpread = 0.0
     DamagePostProcess.Initialize()

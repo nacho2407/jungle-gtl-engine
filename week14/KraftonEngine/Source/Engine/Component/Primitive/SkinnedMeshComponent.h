@@ -63,6 +63,7 @@ public:
 	// 디버그 드로우/물리용: TRS 분해 없이 본 월드 행렬을 그대로 반환(스케일/시어 보존).
 	bool GetBoneWorldMatrixByIndex(int32 BoneIndex, FMatrix& OutMatrix) const;
 	bool GetBoneWorldMatrixByName(const FString& BoneName, FMatrix& OutMatrix) const;
+	bool GetReferenceBoneGlobalMatrixByName(const FString& BoneName, FMatrix& OutMatrix) const;
 
 	UFUNCTION(Lua)
 	bool GetBoneSocketWorldTransform(const FString& BoneName, const FTransform& LocalOffset, FTransform& OutTransform) const;

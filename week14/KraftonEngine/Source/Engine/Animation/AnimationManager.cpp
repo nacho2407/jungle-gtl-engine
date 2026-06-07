@@ -420,17 +420,33 @@ bool FAnimationManager::SaveImportedAnimationsForSkeleton(
         }
 
         FString AnimPath;
-        if (!DestinationDirectory.empty())
         {
-            std::filesystem::path Dir(FPaths::ToWide(FPaths::MakeProjectRelative(DestinationDirectory)));
             std::filesystem::path SourceRel(FPaths::ToWide(FPaths::MakeProjectRelative(SourceFbxPath)));
+            std::filesystem::path Dir;
+
+            if (!DestinationDirectory.empty())
+            {
+                Dir = std::filesystem::path(FPaths::ToWide(FPaths::MakeProjectRelative(DestinationDirectory)));
+            }
+            else
+            {
+                Dir = SourceRel.parent_path();
+            }
+
+            if (Dir.empty())
+            {
+                std::filesystem::path SkeletonRel = std::filesystem::path(FPaths::ToWide(FPaths::MakeProjectRelative(TargetSkeletonPath))).lexically_normal();
+                Dir = SkeletonRel.parent_path();
+            }
+
             FString               SafeAnimName  = SanitizeAssetName(Sequence->GetName());
             std::filesystem::path AssetPath     = Dir / (SourceRel.stem().wstring() + L"_" + FPaths::ToWide(SafeAnimName) + L".uasset");
             std::filesystem::path FullAssetPath = std::filesystem::path(FPaths::RootDir()) / AssetPath;
             FPaths::CreateDir(FullAssetPath.parent_path().wstring());
             AnimPath = FPaths::ToUtf8(AssetPath.generic_wstring());
         }
-        else
+
+        if (AnimPath.empty())
         {
             AnimPath = GetAnimationPathForSkeleton(SourceFbxPath, Sequence->GetName(), TargetSkeletonPath);
         }

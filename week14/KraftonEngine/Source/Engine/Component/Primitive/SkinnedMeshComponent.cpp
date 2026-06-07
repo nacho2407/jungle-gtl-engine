@@ -380,6 +380,16 @@ bool USkinnedMeshComponent::GetBoneWorldMatrixByName(const FString& BoneName, FM
 	return GetBoneWorldMatrixByIndex(BoneIndex, OutMatrix);
 }
 
+bool USkinnedMeshComponent::GetReferenceBoneGlobalMatrixByName(const FString& BoneName, FMatrix& OutMatrix) const
+{
+	FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+	const int32 BoneIndex = FindBoneIndex(BoneName);
+	if (!Asset || BoneIndex < 0 || BoneIndex >= static_cast<int32>(Asset->Bones.size())) return false;
+
+	OutMatrix = Asset->Bones[BoneIndex].GetReferenceGlobalPose();
+	return true;
+}
+
 bool USkinnedMeshComponent::GetBoneSocketWorldTransform(const FString& BoneName, const FTransform& LocalOffset, FTransform& OutTransform) const
 {
 	int32 BoneIndex = FindBoneIndex(BoneName);
