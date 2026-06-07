@@ -1594,16 +1594,16 @@ void UCharacterMovementComponent::UpdateSlideVelocity(float DeltaTime)
 	}
 
 	SlideElapsedTime += DeltaTime;
-	if (MaxSlideTime > FMath::Epsilon && SlideElapsedTime >= MaxSlideTime)
+	if (!bWantsCrouch && MaxSlideTime > FMath::Epsilon && SlideElapsedTime >= MaxSlideTime)
 	{
-		EndSlide(false, true);
+		EndSlide(false);
 		return;
 	}
 
 	const float Speed = GetPlanarSpeed();
 	if (Speed <= SlideEndSpeed)
 	{
-		EndSlide(false, true);
+		EndSlide(bWantsCrouch);
 		return;
 	}
 
@@ -1616,7 +1616,7 @@ void UCharacterMovementComponent::UpdateSlideVelocity(float DeltaTime)
 
 	if (NewSpeed <= SlideEndSpeed)
 	{
-		EndSlide(false, true);
+		EndSlide(bWantsCrouch);
 	}
 }
 

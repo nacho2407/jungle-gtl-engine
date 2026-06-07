@@ -40,6 +40,8 @@ local LEAP_LAND_RADIUS = 6.5
 local LEAP_LAND_DAMAGE = 18.0
 local LEAP_KNOCKBACK_DISTANCE = 6.0
 local LEAP_KNOCKBACK_DURATION = 0.28
+local AIM_PITCH_MIN = -35.0
+local AIM_PITCH_MAX = 40.0
 
 local MOVE_IDLE = 0
 local MOVE_WALK = 1
@@ -247,6 +249,8 @@ local function get_anim_state()
             ActionName = nil,
             ActionDuration = 0.0,
             ActionSerial = 0,
+            AimPitch = 0.0,
+            AimWeight = 0.0,
         }
         _G.BossTitanAnimState[ownerId] = state
     end
@@ -262,6 +266,8 @@ local function reset_anim_state()
     state.ActionName = nil
     state.ActionDuration = 0.0
     state.ActionSerial = 0
+    state.AimPitch = 0.0
+    state.AimWeight = 0.0
 end
 
 local function set_move_anim(moveState)
@@ -278,6 +284,14 @@ local function request_action_anim(name, duration)
     state.ActionName = name
     state.ActionDuration = duration or ACTION_DURATIONS[name] or 1.0
     state.ActionSerial = (state.ActionSerial or 0) + 1
+end
+
+local function set_aim_anim(pitch, weight)
+    local state = get_anim_state()
+    if state == nil then return end
+
+    state.AimPitch = clamp(pitch or 0.0, AIM_PITCH_MIN, AIM_PITCH_MAX)
+    state.AimWeight = clamp(weight or 0.0, 0.0, 1.0)
 end
 
 local function play_anim(path, looping, force)
@@ -345,6 +359,32 @@ local function get_target_aim_location(target)
     end
 
     return target.Location + Vector.new(0.0, 0.0, TARGET_HEIGHT)
+end
+
+local function update_anim_aim(target)
+    if target == nil or not target:IsValid() then
+        set_aim_anim(0.0, 0.0)
+        return
+    end
+
+    local source = get_muzzle_location()
+    local aimLocation = get_target_aim_location(target)
+    local aimDelta = aimLocation - source
+    local flatDistance = math.sqrt(aimDelta.X * aimDelta.X + aimDelta.Y * aimDelta.Y)
+    if flatDistance <= 0.001 then
+        set_aim_anim(0.0, 0.0)
+        return
+    end
+
+    local pitch = -math.deg(atan2(aimDelta.Z, flatDistance))
+    local weight = 1.0
+    if is_leaping() then
+        weight = 0.0
+    elseif activeAttack ~= nil and activeAttack.kind == "melee" then
+        weight = 0.25
+    end
+
+    set_aim_anim(pitch, weight)
 end
 
 local function has_line_of_sight(target)
@@ -442,6 +482,7 @@ local function apply_boss_damage(context)
         deathTimer = ACTION_DURATIONS.hitReact
         activeAttack = nil
         leapState = nil
+        set_aim_anim(0.0, 0.0)
         play_anim(ANIM.hitReact, false, true)
     else
         update_phase_from_health()
@@ -1068,6 +1109,9 @@ function Tick(dt)
     end
 
     tick_timers(dt)
+    local target = find_target()
+    update_anim_aim(target)
+
     if update_leap(dt) then
         return
     end
@@ -1075,7 +1119,6 @@ function Tick(dt)
     update_active_attack(dt)
     apply_pending_phase_if_ready()
 
-    local target = find_target()
     if target == nil then
         play_anim(ANIM.idle, true, false)
         return

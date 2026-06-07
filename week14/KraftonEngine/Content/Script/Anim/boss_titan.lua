@@ -33,6 +33,15 @@ local MELEE_BLEND_OUT = 0.22
 local LEAP_BLEND_IN = 0.08
 local LEAP_BLEND_OUT = 0.18
 local HIT_REACT_BLEND_IN = 0.06
+local AIM_RESPONSE = 8.0
+local AIM_WEIGHT_RESPONSE = 10.0
+
+local AIM_BONES = {
+    { name = "def_c_spineA", share = 0.20 },
+    { name = "def_c_spineB", share = 0.35 },
+    { name = "def_c_spineC", share = 0.30 },
+    { name = "def_c_neckA", share = 0.15 },
+}
 
 local ACTION_DURATIONS = {
     cannon = 0.85,
@@ -44,6 +53,16 @@ local ACTION_DURATIONS = {
     phase = 1.0,
     hitReact = 1.4,
 }
+
+local function clamp(value, minValue, maxValue)
+    if value < minValue then return minValue end
+    if value > maxValue then return maxValue end
+    return value
+end
+
+local function lerp(a, b, alpha)
+    return a + (b - a) * alpha
+end
 
 local function clamp_move_state(value)
     if value == nil then return MOVE_IDLE end
@@ -86,6 +105,20 @@ local function finish_action(self, name)
     return false
 end
 
+local function apply_aim_offsets(self)
+    if self.AimWeight <= 0.001 then return end
+    if type(Anim.set_bone_rotation_offset) ~= "function" then return end
+
+    for _, bone in ipairs(AIM_BONES) do
+        Anim.set_bone_rotation_offset(
+            bone.name,
+            self.AimPitch * bone.share,
+            0.0,
+            0.0,
+            self.AimWeight)
+    end
+end
+
 function init(self)
     self.OwnerUUID = Anim.get_owner_uuid()
     self.MoveState = MOVE_IDLE
@@ -93,6 +126,8 @@ function init(self)
     self.ActionElapsed = 0.0
     self.ActionDuration = 0.0
     self.LastActionSerial = 0
+    self.AimPitch = 0.0
+    self.AimWeight = 0.0
 
     self.Locomotion = Anim.create_blend_list_by_enum(MOVE_IDLE, LOCOMOTION_BLEND_TIME)
     Anim.blend_list_add_pose(self.Locomotion, Anim.create_sequence_player(IDLE_PATH, 1.0, true))
@@ -183,12 +218,20 @@ function init(self)
 end
 
 function update(self, dt)
+    local targetAimPitch = 0.0
+    local targetAimWeight = 0.0
     local external = get_external_state(self)
     if external ~= nil then
         self.MoveState = clamp_move_state(external.MoveState)
+        targetAimPitch = external.AimPitch or 0.0
+        targetAimWeight = external.AimWeight or 0.0
     end
 
+    self.AimPitch = lerp(self.AimPitch, targetAimPitch, clamp(dt * AIM_RESPONSE, 0.0, 1.0))
+    self.AimWeight = lerp(self.AimWeight, targetAimWeight, clamp(dt * AIM_WEIGHT_RESPONSE, 0.0, 1.0))
+
     Anim.blend_list_set_active(self.Locomotion, self.MoveState)
+    apply_aim_offsets(self)
 
     if self.ActionName ~= nil then
         self.ActionElapsed = self.ActionElapsed + dt
