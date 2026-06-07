@@ -324,7 +324,7 @@ public:
 	void FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceContext* Ctx) override;
 	ID3D11ShaderResourceView* GetSRV(EMaterialTextureSlot Slot) const override;
 
-	EMaterialShadowMode GetShadowMode()  const override { return Parent->GetShadowMode(); }
+	EMaterialShadowMode GetShadowMode()  const override { return Parent ? Parent->GetShadowMode() : EMaterialShadowMode::Opaque; }
 	FVector4 GetEmissiveColor() const override;
 	float GetEmissiveIntensity() const override;
 	bool IsBloomEnabled() const override;
@@ -333,6 +333,12 @@ public:
 	bool HasEmissiveColorOverride() const { return bOverrideEmissiveColor; }
 	bool HasEmissiveIntensityOverride() const { return bOverrideEmissiveIntensity; }
 	bool HasBloomEnabledOverride() const { return bOverrideBloomEnabled; }
+
+	const TMap<FString, float>& GetScalarOverrides() const { return ScalarOverrides; }
+	const TMap<FString, FVector>& GetVector3Overrides() const { return Vector3Overrides; }
+	const TMap<FString, FVector4>& GetVector4Overrides() const { return Vector4Overrides; }
+	const TMap<FString, FMatrix>& GetMatrixOverrides() const { return MatrixOverrides; }
+	const TMap<FString, UTexture2D*>& GetTextureOverrides() const { return TextureOverrides; }
 
 	void SetEmissiveColorOverride(bool bOverride, const FVector4& InColor);
 	void SetEmissiveIntensityOverride(bool bOverride, float InIntensity);

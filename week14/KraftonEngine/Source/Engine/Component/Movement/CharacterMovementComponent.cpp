@@ -1144,6 +1144,10 @@ void UCharacterMovementComponent::Jump()
 	}
 	else if (MovementMode == EMovementMode::Falling && JumpsRemaining > 0)
 	{
+		if (FatiguedAirJumpInputLockTimer > 0.0f)
+		{
+			return;
+		}
 		bWantsJump = true;
 	}
 	else if (MovementMode == EMovementMode::WallRunning)
@@ -1181,6 +1185,10 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	if (WallRunFatigueTimer > 0.0f)
 	{
 		WallRunFatigueTimer = std::max(0.0f, WallRunFatigueTimer - DeltaTime);
+	}
+	if (FatiguedAirJumpInputLockTimer > 0.0f)
+	{
+		FatiguedAirJumpInputLockTimer = std::max(0.0f, FatiguedAirJumpInputLockTimer - DeltaTime);
 	}
 
 	if (!EnsureController())
@@ -1243,7 +1251,7 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	//    이 검사를 Falling 이동보다 앞에 두면 벽에 닿은 frame 부터 바로 벽타기 이동식이 적용된다.
 	if (MovementMode == EMovementMode::Falling)
 	{
-		TryStartWallRun();
+		TryStartWallRun(Input);
 	}
 
 	// 4) Mode 별 Z 처리 + 위치 적용 (input velocity + root motion XY 합산).
@@ -1455,6 +1463,10 @@ void UCharacterMovementComponent::TickFalling(float DeltaTime, const FVector& Ro
 	USceneComponent* Updated = GetUpdatedComponent();
 
 	// 공중 점프 소비 — gravity 전에 Z 를 박아야 같은 frame 에 즉시 상승 시작.
+	if (bWantsJump && FatiguedAirJumpInputLockTimer > 0.0f)
+	{
+		bWantsJump = false;
+	}
 	if (bWantsJump && JumpsRemaining > 0)
 	{
 		bWantsJump = false;
@@ -2019,7 +2031,7 @@ FVector UCharacterMovementComponent::ComputeWallRunDirection(const FVector& Wall
 	return Direction;
 }
 
-bool UCharacterMovementComponent::TryStartWallRun()
+bool UCharacterMovementComponent::TryStartWallRun(const FVector& Input)
 {
 	if (!bEnableWallRun)
 	{
@@ -2102,6 +2114,33 @@ bool UCharacterMovementComponent::TryStartWallRun()
 		return false;
 	}
 
+	// 시작 단계에서도 입력 의도를 검사한다. 입력이 벽 진행 방향이 아니면
+	// Falling -> Active -> EndedBadDirection 루프가 매 프레임 반복되어 벽에 붙어 보일 수 있다.
+	const float InputAlongWall = GetWallRunInputAlong(Input, RunDirection);
+	if (std::fabs(InputAlongWall) < MinWallRunInputAlong)
+	{
+		if (ShouldEmitWallRunDiagnostics())
+		{
+			UE_LOG(
+				"[WallRunStart] reject=NoAlongInput input=(%.2f,%.2f,%.2f) runDir=(%.2f,%.2f,%.2f) normal=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
+				Input.X,
+				Input.Y,
+				Input.Z,
+				RunDirection.X,
+				RunDirection.Y,
+				RunDirection.Z,
+				WallNormal.X,
+				WallNormal.Y,
+				WallNormal.Z,
+				WallHit.Distance,
+				GetHitActorName(WallHit).c_str(),
+				GetHitComponentName(WallHit).c_str());
+		}
+
+		SetWallRunStatus(EWallRunStatus::BadDirection, &WallHit);
+		return false;
+	}
+
 	StartWallRun(WallHit, bRightSide);
 	return true;
 }
@@ -2168,6 +2207,13 @@ void UCharacterMovementComponent::EndWallRun()
 	{
 		SetMovementMode(EMovementMode::Falling);
 	}
+}
+
+void UCharacterMovementComponent::BeginWallRunFatigue()
+{
+	WallRunFatigueTimer = std::max(0.0f, WallRunFatigueDuration);
+	FatiguedAirJumpInputLockTimer = std::max(0.0f, FatiguedAirJumpInputLockDuration);
+	JumpsRemaining = std::max(JumpsRemaining, MaxJumpCount - 1);
 }
 
 void UCharacterMovementComponent::PerformWallJump()
@@ -2237,7 +2283,7 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 	if (MaxWallRunTime > 0.0f && WallRunElapsedTime > MaxWallRunTime)
 	{
 		SetWallRunStatus(EWallRunStatus::EndedTimeLimit);
-		WallRunFatigueTimer = std::max(0.0f, WallRunFatigueDuration);
+		BeginWallRunFatigue();
 		EndWallRun();
 		return;
 	}
@@ -2396,6 +2442,7 @@ void UCharacterMovementComponent::Serialize(FArchive& Ar)
 	Ar << WallStickAcceleration;
 	Ar << MaxWallRunTime;
 	Ar << WallRunFatigueDuration;
+	Ar << FatiguedAirJumpInputLockDuration;
 	Ar << bShowWallRunStatusText;
 	Ar << bLogWallRunDiagnostics;
 	Ar << WallRunDiagnosticsInterval;

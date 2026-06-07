@@ -150,6 +150,75 @@ namespace
 		UE_LOG("MaterialEditor preview sphere asset missing. Using transient procedural sphere fallback.");
 		return CreateTransientMaterialPreviewSphere(Device);
 	}
+
+	void EnsureJsonObject(json::JSON& JsonData, const char* Key)
+	{
+		if (!JsonData.hasKey(Key) || JsonData[Key].JSONType() != json::JSON::Class::Object)
+		{
+			JsonData[Key] = json::JSON::Make(json::JSON::Class::Object);
+		}
+	}
+
+	void WriteMaterialInstanceOverridesToJson(UMaterialInstance* Instance, json::JSON& JsonData)
+	{
+		if (!Instance)
+		{
+			return;
+		}
+
+		if (UMaterial* Parent = Instance->GetParent())
+		{
+			JsonData[MatKeys::ParentMaterial] = Parent->GetAssetPathFileName().c_str();
+		}
+
+		EnsureJsonObject(JsonData, MatKeys::Parameters);
+		EnsureJsonObject(JsonData, MatKeys::Textures);
+
+		for (const auto& Pair : Instance->GetScalarOverrides())
+		{
+			JsonData[MatKeys::Parameters][Pair.first] = Pair.second;
+		}
+
+		for (const auto& Pair : Instance->GetVector3Overrides())
+		{
+			const FVector& Value = Pair.second;
+			JsonData[MatKeys::Parameters][Pair.first] = json::Array(Value.X, Value.Y, Value.Z);
+		}
+
+		for (const auto& Pair : Instance->GetVector4Overrides())
+		{
+			const FVector4& Value = Pair.second;
+			JsonData[MatKeys::Parameters][Pair.first] = json::Array(Value.X, Value.Y, Value.Z, Value.W);
+		}
+
+		for (const auto& Pair : Instance->GetMatrixOverrides())
+		{
+			const FMatrix& Value = Pair.second;
+			json::JSON MatrixArray = json::Array();
+			for (int32 Index = 0; Index < 16; ++Index)
+			{
+				MatrixArray.append(Value.Data[Index]);
+			}
+			JsonData[MatKeys::Parameters][Pair.first] = MatrixArray;
+		}
+
+		for (const auto& Pair : Instance->GetTextureOverrides())
+		{
+			JsonData[MatKeys::Textures][Pair.first] = Pair.second ? Pair.second->GetSourcePath().c_str() : "";
+		}
+
+		const FVector4 EmissiveColor = Instance->GetEmissiveColor();
+		JsonData[MatKeys::bOverrideEmissiveColor] = Instance->HasEmissiveColorOverride();
+		JsonData[MatKeys::EmissiveColor] = json::Array(
+			EmissiveColor.X,
+			EmissiveColor.Y,
+			EmissiveColor.Z,
+			EmissiveColor.W);
+		JsonData[MatKeys::bOverrideEmissiveIntensity] = Instance->HasEmissiveIntensityOverride();
+		JsonData[MatKeys::EmissiveIntensity] = Instance->GetEmissiveIntensity();
+		JsonData[MatKeys::bOverrideEnableBloom] = Instance->HasBloomEnabledOverride();
+		JsonData[MatKeys::bEnableBloom] = Instance->IsBloomEnabled();
+	}
 }
 
 FMaterialEditorWidget::FMaterialEditorWidget()
@@ -915,6 +984,10 @@ bool FMaterialEditorWidget::SaveMaterialJson()
 			EmissiveColor.W);
 		CachedJson[MatKeys::EmissiveIntensity] = BaseMaterial->GetEmissiveIntensity();
 		CachedJson[MatKeys::bEnableBloom] = BaseMaterial->IsBloomEnabled();
+	}
+	else if (UMaterialInstance* Instance = Cast<UMaterialInstance>(Material))
+	{
+		WriteMaterialInstanceOverridesToJson(Instance, CachedJson);
 	}
 
 	std::ofstream File(MaterialPath);

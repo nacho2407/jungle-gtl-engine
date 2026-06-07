@@ -145,9 +145,10 @@ protected:
 	bool  SweepWallRunStaticMeshes(const FVector& Start, const FVector& Direction, FHitResult& OutHit) const;
 	bool  SweepWallRunStaticMeshBounds(const FVector& Start, const FVector& Direction, FHitResult& OutHit) const;
 	bool  IsRunnableWall(const FVector& WallNormal) const;
-	bool  TryStartWallRun();
+	bool  TryStartWallRun(const FVector& Input);
 	void  StartWallRun(const FHitResult& WallHit, bool bRightSide);
 	void  EndWallRun();
+	void  BeginWallRunFatigue();
 	void  PerformWallJump();
 	FVector ComputeWallRunDirection(const FVector& WallNormal) const;
 
@@ -202,6 +203,7 @@ protected:
 	FVector       LastWallJumpNormal = FVector::ZeroVector;
 	float         WallJumpReattachTimer = 0.0f;
 	float         WallRunFatigueTimer = 0.0f;
+	float         FatiguedAirJumpInputLockTimer = 0.0f;
 
 	EWallRunStatus LastWallRunStatus = EWallRunStatus::NotFalling;
 	FHitResult     LastWallRunStatusHit;
@@ -318,6 +320,8 @@ public:
 	float MaxWallRunTime = 1.5f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Fatigue Duration", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
 	float WallRunFatigueDuration = 2.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Fatigued Air Jump Input Lock", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
+	float FatiguedAirJumpInputLockDuration = 0.3f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Legacy Screen Status Text")
 	bool bShowWallRunStatusText = false;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Diagnostics", DisplayName = "Log Wall Run Diagnostics")

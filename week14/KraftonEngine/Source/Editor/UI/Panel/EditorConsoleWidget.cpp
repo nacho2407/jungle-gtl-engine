@@ -157,6 +157,37 @@ namespace
 		}
 		return Result;
 	}
+
+	void RenderConsoleLogItem(const char* Item)
+	{
+		ImVec4 Color;
+		bool bHasColor = false;
+		if (strncmp(Item, "[ERROR]", 7) == 0)
+		{
+			Color = ImVec4(1, 0.4f, 0.4f, 1);
+			bHasColor = true;
+		}
+		else if (strncmp(Item, "[WARN]", 6) == 0)
+		{
+			Color = ImVec4(1, 0.8f, 0.2f, 1);
+			bHasColor = true;
+		}
+		else if (strncmp(Item, "#", 1) == 0)
+		{
+			Color = ImVec4(1, 0.8f, 0.6f, 1);
+			bHasColor = true;
+		}
+
+		if (bHasColor)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Text, Color);
+		}
+		ImGui::TextUnformatted(Item);
+		if (bHasColor)
+		{
+			ImGui::PopStyleColor();
+		}
+	}
 }
 
 // ============================================================
@@ -346,31 +377,39 @@ void FEditorConsoleWidget::RenderDrawerToolbar()
 void FEditorConsoleWidget::RenderLogContents(float Height)
 {
 	if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, Height), false, ImGuiWindowFlags_HorizontalScrollbar)) {
-		for (int32 i = 0; i < ConsoleDevice.GetMessageCount(); ++i) {
-			char* Item = ConsoleDevice.GetMessageAt(i);
-			if (!Filter.PassFilter(Item)) continue;
+		const int32 MessageCount = ConsoleDevice.GetMessageCount();
+		ImGuiListClipper Clipper;
 
-			ImVec4 Color;
-			bool bHasColor = false;
-			if (strncmp(Item, "[ERROR]", 7) == 0) {
-				Color = ImVec4(1, 0.4f, 0.4f, 1);
-				bHasColor = true;
-			}
-			else if (strncmp(Item, "[WARN]", 6) == 0) {
-				Color = ImVec4(1, 0.8f, 0.2f, 1);
-				bHasColor = true;
-			}
-			else if (strncmp(Item, "#", 1) == 0) {
-				Color = ImVec4(1, 0.8f, 0.6f, 1);
-				bHasColor = true;
+		if (Filter.IsActive())
+		{
+			TArray<int32> FilteredIndices;
+			FilteredIndices.reserve(MessageCount);
+			for (int32 i = 0; i < MessageCount; ++i)
+			{
+				if (ConsoleDevice.PassFilter(Filter, i))
+				{
+					FilteredIndices.push_back(i);
+				}
 			}
 
-			if (bHasColor) {
-				ImGui::PushStyleColor(ImGuiCol_Text, Color);
+			Clipper.Begin(static_cast<int>(FilteredIndices.size()));
+			while (Clipper.Step())
+			{
+				for (int32 i = Clipper.DisplayStart; i < Clipper.DisplayEnd; ++i)
+				{
+					RenderConsoleLogItem(ConsoleDevice.GetMessageAt(FilteredIndices[i]));
+				}
 			}
-			ImGui::TextUnformatted(Item);
-			if (bHasColor) {
-				ImGui::PopStyleColor();
+		}
+		else
+		{
+			Clipper.Begin(MessageCount);
+			while (Clipper.Step())
+			{
+				for (int32 i = Clipper.DisplayStart; i < Clipper.DisplayEnd; ++i)
+				{
+					RenderConsoleLogItem(ConsoleDevice.GetMessageAt(i));
+				}
 			}
 		}
 

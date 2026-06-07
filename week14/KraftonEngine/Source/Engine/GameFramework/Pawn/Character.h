@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "GameFramework/Pawn/Pawn.h"
 
@@ -50,8 +50,8 @@ public:
 	// 카메라만 회전. WASD 도 ControlRotation.Yaw 기준 forward/right 로 이동.
 	bool  bAutoInputMouseLook = true;
 	float MouseSensitivity    = 1.0f;   // 기준 감도 배율 — yaw/pitch 공통
-	float MinCameraPitch      = -80.0f; // 위 한도 (마이너스 = 위)
-	float MaxCameraPitch      =  60.0f; // 아래 한도
+	float MinCameraPitch      = -85.0f; // 위 한도 (마이너스 = 위)
+	float MaxCameraPitch      =  85.0f; // 아래 한도
 
 protected:
 	// InputComponent 가 부착된 후 호출 — WASD axis mapping + AddMovementInput binding 등록.

@@ -25,6 +25,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <cctype>
 #include <filesystem>
 
 namespace
@@ -95,6 +96,23 @@ namespace
 		}
 
 		return PIt == P.end();
+	}
+
+	FString TrimAssetName(const FString& Name)
+	{
+		size_t Begin = 0;
+		while (Begin < Name.size() && std::isspace(static_cast<unsigned char>(Name[Begin])))
+		{
+			++Begin;
+		}
+
+		size_t End = Name.size();
+		while (End > Begin && std::isspace(static_cast<unsigned char>(Name[End - 1])))
+		{
+			--End;
+		}
+
+		return Name.substr(Begin, End - Begin);
 	}
 }
 
@@ -361,6 +379,7 @@ void FEditorContentBrowserWidget::Render(float DeltaTime)
 
 	RenderFbxImportOptionsPopup();
 	RenderPhysicsAssetCreationPopup();
+	RenderCreateMaterialPopup();
 	
 	ImGui::End();
 }
@@ -443,6 +462,124 @@ void FEditorContentBrowserWidget::RenderPhysicsAssetCreationPopup()
 	{
 		BrowserContext.PhysicsAssetDialog.Error = "Failed to create physics asset. See the engine log for details.";
 	}
+}
+
+
+void FEditorContentBrowserWidget::BeginCreateMaterialPopup()
+{
+	strncpy_s(CreateMaterialNameBuffer, sizeof(CreateMaterialNameBuffer), "NewMaterial", _TRUNCATE);
+	CreateMaterialError.clear();
+	bCreateMaterialPopupRequested = true;
+}
+
+bool FEditorContentBrowserWidget::IsValidAssetName(const FString& Name, FString* OutError) const
+{
+	auto SetError = [&](const char* Message)
+	{
+		if (OutError)
+		{
+			*OutError = Message;
+		}
+	};
+
+	if (TrimAssetName(Name).empty())
+	{
+		SetError("Name cannot be empty.");
+		return false;
+	}
+
+	static const char* InvalidChars = "\\/:*?\"<>|";
+	if (Name.find_first_of(InvalidChars) != FString::npos)
+	{
+		SetError("Name contains invalid character (\\/:*?\"<>|).");
+		return false;
+	}
+
+	return true;
+}
+
+void FEditorContentBrowserWidget::RenderCreateMaterialPopup()
+{
+	if (bCreateMaterialPopupRequested)
+	{
+		ImGui::OpenPopup("##CreateMaterialAsset");
+		bCreateMaterialPopupRequested = false;
+	}
+
+	if (!ImGui::BeginPopupModal("##CreateMaterialAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		return;
+	}
+
+	ImGui::TextUnformatted("Create Material");
+	ImGui::Separator();
+	if (ImGui::IsWindowAppearing())
+	{
+		ImGui::SetKeyboardFocusHere();
+	}
+
+	ImGui::SetNextItemWidth(320.0f);
+	const bool bSubmit = ImGui::InputText(
+		"##CreateMaterialName",
+		CreateMaterialNameBuffer,
+		sizeof(CreateMaterialNameBuffer),
+		ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+
+	if (!CreateMaterialError.empty())
+	{
+		ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", CreateMaterialError.c_str());
+	}
+
+	const bool bCreate = bSubmit || ImGui::Button("Create");
+	ImGui::SameLine();
+	const bool bCancel = ImGui::Button("Cancel") || ImGui::IsKeyPressed(ImGuiKey_Escape);
+
+	if (bCreate)
+	{
+		const FString AssetName = TrimAssetName(CreateMaterialNameBuffer);
+		FString Error;
+		if (!IsValidAssetName(AssetName, &Error))
+		{
+			CreateMaterialError = Error;
+		}
+		else
+		{
+			const std::filesystem::path ExactTargetPath =
+				std::filesystem::path(BrowserContext.CurrentPath) / (FPaths::ToWide(AssetName) + L".mat");
+			if (std::filesystem::exists(ExactTargetPath))
+			{
+				CreateMaterialError = "A material with that name already exists in this directory.";
+			}
+			else
+			{
+				FString CreatedPath;
+				if (FAssetFactory::CreateMaterial(FPaths::ToUtf8(BrowserContext.CurrentPath), AssetName, CreatedPath))
+				{
+					FMaterialManager::Get().ScanMaterialAssets();
+					Refresh();
+					if (BrowserContext.EditorEngine)
+					{
+						if (UMaterialInterface* Material = FMaterialManager::Get().GetOrCreateMaterialInterface(CreatedPath))
+						{
+							BrowserContext.EditorEngine->OpenAssetEditorForObject(Material);
+						}
+					}
+					ImGui::CloseCurrentPopup();
+				}
+				else
+				{
+					CreateMaterialError = "Failed to create material.";
+				}
+			}
+		}
+	}
+
+	if (bCancel)
+	{
+		ImGui::CloseCurrentPopup();
+	}
+
+	ImGui::EndPopup();
 }
 
 void FEditorContentBrowserWidget::Refresh()
@@ -761,19 +898,7 @@ void FEditorContentBrowserWidget::DrawContents()
 			}
 			if (ImGui::MenuItem("Material"))
 			{
-				FString CreatedPath;
-				if (FAssetFactory::CreateMaterial(FPaths::ToUtf8(BrowserContext.CurrentPath), "NewMaterial", CreatedPath))
-				{
-					FMaterialManager::Get().ScanMaterialAssets();
-					Refresh();
-					if (BrowserContext.EditorEngine)
-					{
-						if (UMaterialInterface* Material = FMaterialManager::Get().GetOrCreateMaterialInterface(CreatedPath))
-						{
-							BrowserContext.EditorEngine->OpenAssetEditorForObject(Material);
-						}
-					}
-				}
+				BeginCreateMaterialPopup();
 			}
 			if (ImGui::MenuItem("Physical Material"))
 			{

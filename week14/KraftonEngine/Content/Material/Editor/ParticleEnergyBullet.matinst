@@ -1,11 +1,11 @@
 {
-        "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-        "EmissiveIntensity" : 9.000000,
+        "EmissiveColor" : [0.137255, 0.917647, 0.654902, 1.000000],
+        "EmissiveIntensity" : 38.849998,
         "Parameters" : {
-          "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+
         },
         "ParentMaterial" : "Content/Material/Editor/DefaultParticleSprite.mat",
-        "PathFileName" : "Content/Material/Auto/00_EnergyBullet.matinst",
+        "PathFileName" : "Content/Material/Editor/ParticleEnergyBullet.matinst",
         "Textures" : {
           "DiffuseTexture" : "Content/Texture/Beam_SoftCore_512x64.png"
         },

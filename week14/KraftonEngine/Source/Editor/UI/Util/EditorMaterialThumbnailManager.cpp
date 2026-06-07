@@ -179,9 +179,12 @@ void FEditorMaterialThumbnailManager::BuildPreviewScene(FMaterialThumbnailEntry&
 	UStaticMeshComponent* Comp = Entry.PreviewActor->AddComponent<UStaticMeshComponent>();
 	Comp->SetStaticMesh(SphereMesh);
 	Comp->SetMaterial(0, Material);
+	Comp->SetNeverCullForRendering(true);
 	Entry.PreviewActor->SetRootComponent(Comp);
 	Entry.PreviewActor->SetActorLocation(FVector::ZeroVector);
 	Entry.PreviewMeshComponent = Comp;
+	Entry.PreviewWorld->UpdateActorInOctree(Entry.PreviewActor);
+	Entry.PreviewWorld->GetPartition().FlushPrimitive();
 
 	ADirectionalLightActor* LightActor = Entry.PreviewWorld->SpawnActor<ADirectionalLightActor>();
 	if (LightActor)
