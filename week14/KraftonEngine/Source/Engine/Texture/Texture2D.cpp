@@ -2,6 +2,7 @@
 #include "Object/Reflection/ObjectFactory.h"
 #include "Core/Logging/Log.h"
 #include "Platform/Paths.h"
+#include "DDSTextureLoader.h"
 #include "WICTextureLoader.h"
 #include "stb_image.h"
 
@@ -108,13 +109,23 @@ UTexture2D* UTexture2D::LoadFromCached(const FString& FilePath, ETextureColorSpa
 
 namespace
 {
-	// .tga 같이 WIC 가 native 로 못 까는 확장자를 구분.
-	bool IsStbHandledExtension(const FString& FilePath)
+	std::wstring GetLowerExtension(const FString& FilePath)
 	{
 		std::wstring Ext = std::filesystem::path(FPaths::ToWide(FilePath)).extension().wstring();
 		std::transform(Ext.begin(), Ext.end(), Ext.begin(),
 			[](wchar_t c) { return static_cast<wchar_t>(std::towlower(c)); });
-		return Ext == L".tga";
+		return Ext;
+	}
+
+	// .tga 같이 WIC 가 native 로 못 까는 확장자를 구분.
+	bool IsStbHandledExtension(const FString& FilePath)
+	{
+		return GetLowerExtension(FilePath) == L".tga";
+	}
+
+	bool IsDdsHandledExtension(const FString& FilePath)
+	{
+		return GetLowerExtension(FilePath) == L".dds";
 	}
 }
 
@@ -127,20 +138,40 @@ bool UTexture2D::LoadInternal(const FString& FilePath, ID3D11Device* Device, ETe
 
 	std::wstring WidePath = FPaths::ToWide(FilePath);
 
-	const auto LoadFlags = (InColorSpace == ETextureColorSpace::SRGB)
-		? DirectX::WIC_LOADER_FORCE_SRGB
-		: DirectX::WIC_LOADER_IGNORE_SRGB;
-
 	ID3D11Resource* Resource = nullptr;
-	HRESULT hr = DirectX::CreateWICTextureFromFileEx(
-		Device, WidePath.c_str(),
-		0,                                    // maxsize
-		D3D11_USAGE_DEFAULT,                  // usage
-		D3D11_BIND_SHADER_RESOURCE,           // bindFlags
-		0,                                    // cpuAccessFlags
-		0,                                    // miscFlags
-		LoadFlags,
-		&Resource, &SRV);
+	HRESULT hr = S_OK;
+	if (IsDdsHandledExtension(FilePath))
+	{
+		const auto LoadFlags = (InColorSpace == ETextureColorSpace::SRGB)
+			? DirectX::DDS_LOADER_FORCE_SRGB
+			: DirectX::DDS_LOADER_IGNORE_SRGB;
+
+		hr = DirectX::CreateDDSTextureFromFileEx(
+			Device, WidePath.c_str(),
+			0,                                    // maxsize
+			D3D11_USAGE_DEFAULT,                  // usage
+			D3D11_BIND_SHADER_RESOURCE,           // bindFlags
+			0,                                    // cpuAccessFlags
+			0,                                    // miscFlags
+			LoadFlags,
+			&Resource, &SRV);
+	}
+	else
+	{
+		const auto LoadFlags = (InColorSpace == ETextureColorSpace::SRGB)
+			? DirectX::WIC_LOADER_FORCE_SRGB
+			: DirectX::WIC_LOADER_IGNORE_SRGB;
+
+		hr = DirectX::CreateWICTextureFromFileEx(
+			Device, WidePath.c_str(),
+			0,                                    // maxsize
+			D3D11_USAGE_DEFAULT,                  // usage
+			D3D11_BIND_SHADER_RESOURCE,           // bindFlags
+			0,                                    // cpuAccessFlags
+			0,                                    // miscFlags
+			LoadFlags,
+			&Resource, &SRV);
+	}
 
 	if (FAILED(hr))
 	{

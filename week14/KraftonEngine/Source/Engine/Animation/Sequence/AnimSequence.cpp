@@ -863,7 +863,7 @@ bool UAnimSequence::IsCompatibleWith(const USkeleton* InSkeleton) const
         nullptr,
         InSkeleton);
 
-    return Report.IsCompatible(false);
+    return Report.IsCompatible(true);
 }
 
 bool UAnimSequence::IsCompatibleWith(const USkeletalMesh* InSkeletalMesh) const
@@ -880,7 +880,7 @@ bool UAnimSequence::IsCompatibleWith(const USkeletalMesh* InSkeletalMesh) const
         nullptr,
         MeshSkeleton);
 
-    return Report.IsCompatible(false);
+    return Report.IsCompatible(true);
 }
 
 const FBoneAnimationTrack* UAnimSequence::FindBoneTrackByIndex(int32 BoneIndex) const

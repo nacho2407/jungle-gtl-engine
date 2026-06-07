@@ -150,6 +150,9 @@ function CharacterMovementComponent:GetWallRunMaxSpeed() end
 ---@param value number
 function CharacterMovementComponent:SetWallRunMaxSpeed(value) end
 
+---@return boolean
+function CharacterMovementComponent:IsCrouching() end
+
 ---@class VehicleMovementComponent4W
 VehicleMovementComponent4W = {}
 

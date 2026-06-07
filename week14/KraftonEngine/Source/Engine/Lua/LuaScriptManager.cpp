@@ -1395,6 +1395,10 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"SetWallRunMaxSpeed", [](UCharacterMovementComponent& Component, float Value)
 		{
 			Component.WallRunMaxSpeed = (std::max)(0.0f, Value);
+		},
+		"IsCrouching", [](UCharacterMovementComponent& Component)
+		{
+			return Component.IsCrouching();
 		});
 
 	FLuaDocRegistry::Get().Type("CharacterMovementComponent")
@@ -1412,7 +1416,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@return number\nfunction CharacterMovementComponent:GetSprintSpeedMultiplier() end")
 		.Method("---@param value number\nfunction CharacterMovementComponent:SetSprintSpeedMultiplier(value) end")
 		.Method("---@return number\nfunction CharacterMovementComponent:GetWallRunMaxSpeed() end")
-		.Method("---@param value number\nfunction CharacterMovementComponent:SetWallRunMaxSpeed(value) end");
+		.Method("---@param value number\nfunction CharacterMovementComponent:SetWallRunMaxSpeed(value) end")
+		.Method("---@return boolean\nfunction CharacterMovementComponent:IsCrouching() end");
 
 	Lua.new_usertype<UVehicleMovementComponent4W>("VehicleMovementComponent4W",
 		"SetDriveInput", &UVehicleMovementComponent4W::SetDriveInput);
