@@ -34,11 +34,11 @@ local objectiveGroups = {
         startDialogue = "TutorialLevel1_System_MobilityCheck",
         completeDialogue = nil,
         items = {
-            { id = "move_w", key = "W", text = "앞으로 이동" },
-            { id = "move_a", key = "A", text = "왼쪽으로 이동" },
-            { id = "move_s", key = "S", text = "뒤로 이동" },
-            { id = "move_d", key = "D", text = "오른쪽으로 이동" },
-            { id = "sprint", key = "Shift", text = "달리기" },
+            { id = "move_w", key = "W", padKey = "LS", text = "앞으로 이동" },
+            { id = "move_a", key = "A", padKey = "LS", text = "왼쪽으로 이동" },
+            { id = "move_s", key = "S", padKey = "LS", text = "뒤로 이동" },
+            { id = "move_d", key = "D", padKey = "LS", text = "오른쪽으로 이동" },
+            { id = "sprint", key = "Shift", padKey = "L3", text = "달리기" },
         },
     },
     {
@@ -46,8 +46,8 @@ local objectiveGroups = {
         startDialogue = "TutorialLevel1_System_JumpCheck",
         completeDialogue = nil,
         items = {
-            { id = "jump", key = "Space", text = "점프" },
-            { id = "double_jump", key = "Space", text = "공중 추진" },
+            { id = "jump", key = "Space", padKey = "A", text = "점프" },
+            { id = "double_jump", key = "Space", padKey = "A", text = "공중 추진" },
         },
     },
     {
@@ -55,8 +55,8 @@ local objectiveGroups = {
         startDialogue = "TutorialLevel1_System_SlideCheck",
         completeDialogue = nil,
         items = {
-            { id = "crouch", key = "Ctrl", text = "저자세 이동" },
-            { id = "slide", key = "Ctrl", text = "가속 중 슬라이딩" },
+            { id = "crouch", key = "Ctrl", padKey = "B", text = "저자세 이동" },
+            { id = "slide", key = "Ctrl", padKey = "B", text = "가속 중 슬라이딩" },
         },
     },
     {
@@ -64,8 +64,8 @@ local objectiveGroups = {
         startDialogue = "TutorialLevel1_System_WeaponCheck",
         completeDialogue = "TutorialLevel1_System_EnemyContact",
         items = {
-            { id = "fire", key = "LMB", text = "사격" },
-            { id = "zoom", key = "RMB", text = "조준 확대" },
+            { id = "fire", key = "LMB", padKey = "RT", text = "사격" },
+            { id = "zoom", key = "RMB", padKey = "LT", text = "조준 확대" },
         },
     },
     {
@@ -73,7 +73,7 @@ local objectiveGroups = {
         startDialogue = "TutorialLevel1_System_ReloadCheck",
         completeDialogue = nil,
         items = {
-            { id = "reload", key = "R", text = "재장전" },
+            { id = "reload", key = "R", padKey = "X", text = "재장전" },
         },
     },
     {
@@ -81,8 +81,8 @@ local objectiveGroups = {
         startDialogue = "TutorialLevel1_System_WallRunCheck",
         completeDialogue = "TutorialLevel1_System_TrainingComplete",
         items = {
-            { id = "wallrun", key = "이동", text = "수직면 기동" },
-            { id = "walljump", key = "Space", text = "수직면 이탈" },
+            { id = "wallrun", key = "이동", padKey = "LS", text = "수직면 기동" },
+            { id = "walljump", key = "Space", padKey = "A", text = "수직면 이탈" },
         },
     },
 }
@@ -303,6 +303,7 @@ local function set_step_visual(index, item, status)
     end
 
     overlayWidget:SetText(base .. "-key", item.key or "")
+    overlayWidget:SetText(base .. "-pad-key", item.padKey or "")
     overlayWidget:SetText(base .. "-text", item.text or "")
     if status == "done" then
         overlayWidget:SetProperty(base, "opacity", "0.44")

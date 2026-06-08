@@ -19,6 +19,7 @@
         </div>
         <div id="cutscene-skip-prompt" class="cutscene-skip-prompt">
             <div id="cutscene-skip-key" class="cutscene-skip-key" data-ui-editor="text">Ctrl</div>
+            <div id="cutscene-skip-pad-key" class="cutscene-skip-pad-key" data-ui-editor="text">B</div>
             <div id="cutscene-skip-label" class="cutscene-skip-label" data-ui-editor="text">SKIP</div>
         </div>
         <div id="skip-ring" class="skip-ring">
