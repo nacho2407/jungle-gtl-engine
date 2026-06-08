@@ -184,6 +184,8 @@
     "volumeMax": 0.40,
     "pitchMin": 0.97,
     "pitchMax": 1.04,
+    "attenuation": "exponential",
+    "rolloff": 1.8,
     "cooldown": 0.08,
     "maxInstances": 3
   },
@@ -200,6 +202,8 @@
     "volumeMax": 0.76,
     "pitchMin": 0.97,
     "pitchMax": 1.03,
+    "attenuation": "exponential",
+    "rolloff": 1.8,
     "cooldown": 0.08,
     "maxInstances": 2
   },
@@ -623,6 +627,26 @@
     "attenuation": "exponential",
     "cooldown": 0.03,
     "maxInstances": 6
+  },
+  "trap.electric.player_hit": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Traps/Electric/ElectricTrapLoop1.wav",
+      "Traps/Electric/ElectricTrapLoop2.wav",
+      "Traps/Electric/ElectricTrapLoop3.wav",
+      "Traps/Electric/ElectricTrapLoop4.wav"
+    ],
+    "volumeMin": 1.18,
+    "volumeMax": 1.36,
+    "pitchMin": 0.94,
+    "pitchMax": 1.06,
+    "minDistance": 2.0,
+    "maxDistance": 120.0,
+    "attenuation": "exponential",
+    "rolloff": 2.6,
+    "cooldown": 0.12,
+    "maxInstances": 2
   },
   "tutorial.objective.appear": {
     "bus": "UI",

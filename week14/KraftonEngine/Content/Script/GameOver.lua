@@ -5,6 +5,7 @@ local GAME_OVER_Z_ORDER = 230
 local TITLE_SCENE = "Title.Scene"
 local GAME_OVER_AUDIO_KEY = "GameOverBGM"
 local GAME_OVER_AUDIO_PATH = "GameOver.wav"
+local LEVEL1_SCENE_NAME = "FL_Level1"
 
 local widget = nil
 local visible = false
@@ -63,6 +64,31 @@ local function transition_to(scene)
     end
 end
 
+local function normalize_scene_name(scene)
+    if scene == nil then return "" end
+
+    local name = tostring(scene)
+    name = string.gsub(name, "\\", "/")
+    name = string.match(name, "([^/]+)$") or name
+    name = string.gsub(name, "%.Scene$", "")
+    return string.lower(name)
+end
+
+local function mark_level1_intro_skip_for_retry()
+    if Game == nil or Game.GetCurrentSceneName == nil then
+        return
+    end
+
+    -- GameOver Retry는 "현재 레벨 재시작"이므로, Level 1에서는 이미 본 착륙 인트로를 1회 스킵합니다.
+    local currentScene = normalize_scene_name(Game.GetCurrentSceneName())
+    if currentScene ~= normalize_scene_name(LEVEL1_SCENE_NAME) then
+        return
+    end
+
+    Game.SkipLevel1IntroOnNextStart = true
+    Game.SkipLevel1IntroSceneName = LEVEL1_SCENE_NAME
+end
+
 local function retry()
     if ScoreManager ~= nil and ScoreManager.AddRetry ~= nil then
         ScoreManager.AddRetry(1)
@@ -77,6 +103,7 @@ local function retry()
     end
 
     if Game ~= nil and Game.RestartLevel ~= nil then
+        mark_level1_intro_skip_for_retry()
         Game.RestartLevel()
     elseif Engine ~= nil and Engine.TransitionToScene ~= nil then
         Engine.TransitionToScene("Default.Scene")

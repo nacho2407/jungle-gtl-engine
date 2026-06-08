@@ -6,6 +6,8 @@ local STORY_MODULE = "Dialogue/TutorialLevel1.dialogue"
 local VOICE_MODULE = "Dialogue/Generated/TutorialLevel1.voices"
 local OVERLAY_Z_ORDER = 105
 local GAMEPAD_AXIS_DEADZONE = 0.25
+local WEAPON_KILL_GOAL = 2
+local SHUTDOWN_DIALOGUE_HIDE_DELAY = 5.0
 
 local overlayWidget = nil
 local movement = nil
@@ -27,6 +29,13 @@ local completionHideTimer = 0.0
 local objectivesStarted = false
 local refresh_overlay = nil
 local enemyKillDialoguePlayed = false
+local moveStartDialoguePlayed = false
+local weaponKillCount = 0
+local weaponKillTrackingActive = false
+local weaponKillMessagePlayed = false
+local weaponKillCompletionPending = false
+local weaponObjectivesCompleted = false
+local pendingDialogueHideTimer = 0.0
 
 local objectiveGroups = {
     {
@@ -249,6 +258,21 @@ local function enqueue_dialogue(id)
     table.insert(dialogueQueue, id)
 end
 
+local function start_completion_countdown()
+    completionHideTimer = 4.0
+    weaponKillCompletionPending = false
+end
+
+local function request_weapon_completion_countdown()
+    if activeDialogue == nil and #dialogueQueue == 0 then
+        start_completion_countdown()
+        return
+    end
+
+    -- 남은 안내 대사가 화면에서 사라진 뒤 튜토리얼 패널 종료 타이머를 시작합니다.
+    weaponKillCompletionPending = true
+end
+
 local function show_objectives()
     objectivesStarted = true
     if overlayWidget ~= nil then
@@ -258,7 +282,13 @@ local function show_objectives()
     play_event("tutorial.objective.appear")
     local group = objectiveGroups[currentStepIndex]
     if group ~= nil and group.startDialogue ~= nil then
-        enqueue_dialogue(group.startDialogue)
+        -- 이동 안내 대사는 튜토리얼 재초기화와 트리거 재진입이 있어도 첫 1회만 재생합니다.
+        if group.id ~= "move" or not moveStartDialoguePlayed then
+            enqueue_dialogue(group.startDialogue)
+            if group.id == "move" then
+                moveStartDialoguePlayed = true
+            end
+        end
     end
     refresh_overlay()
 end
@@ -289,6 +319,8 @@ local function update_dialogue(dt)
             show_dialogue(nextDialogue)
         elseif not objectivesStarted then
             show_objectives()
+        elseif weaponKillCompletionPending and weaponObjectivesCompleted and weaponKillMessagePlayed then
+            start_completion_countdown()
         end
     end
 end
@@ -382,7 +414,14 @@ local function advance_if_needed()
             enqueue_dialogue(nextGroup.startDialogue)
         end
     else
-        completionHideTimer = 4.0
+        if group.id == "weapon" and weaponKillTrackingActive then
+            weaponObjectivesCompleted = true
+            if weaponKillMessagePlayed then
+                request_weapon_completion_countdown()
+            end
+        else
+            completionHideTimer = 4.0
+        end
     end
     refresh_overlay()
 end
@@ -489,6 +528,12 @@ function TutorialSystem.Initialize(config)
     completionHideTimer = 0.0
     objectivesStarted = false
     enemyKillDialoguePlayed = false
+    weaponKillCount = 0
+    weaponKillTrackingActive = objectiveGroups[currentStepIndex] ~= nil and objectiveGroups[currentStepIndex].id == "weapon"
+    weaponKillMessagePlayed = false
+    weaponKillCompletionPending = false
+    weaponObjectivesCompleted = false
+    pendingDialogueHideTimer = 0.0
     activeDialogue = nil
     dialogueTimer = 0.0
     dialogueDuration = 0.0
@@ -542,6 +587,12 @@ function TutorialSystem.Shutdown()
     continueToNextGroup = true
     objectivesStarted = false
     enemyKillDialoguePlayed = false
+    weaponKillCount = 0
+    weaponKillTrackingActive = false
+    weaponKillMessagePlayed = false
+    weaponKillCompletionPending = false
+    weaponObjectivesCompleted = false
+    pendingDialogueHideTimer = SHUTDOWN_DIALOGUE_HIDE_DELAY
     initialized = false
 end
 
@@ -550,8 +601,18 @@ function TutorialSystem.IsRunning()
 end
 
 function TutorialSystem.Tick(dt)
-    if not initialized then return end
     dt = dt or 0.0
+
+    if not initialized then
+        if pendingDialogueHideTimer > 0.0 then
+            pendingDialogueHideTimer = pendingDialogueHideTimer - dt
+            if pendingDialogueHideTimer <= 0.0 then
+                pendingDialogueHideTimer = 0.0
+                hide_dialogue()
+            end
+        end
+        return
+    end
 
     update_dialogue(dt)
     if completionHideTimer > 0.0 then
@@ -567,9 +628,19 @@ function TutorialSystem.Tick(dt)
 end
 
 function TutorialSystem.NotifyEnemyKilled()
-    if initialized and objectivesStarted and not enemyKillDialoguePlayed then
-        enemyKillDialoguePlayed = true
+    if not initialized or not objectivesStarted or not weaponKillTrackingActive or weaponKillMessagePlayed then
+        return
+    end
+
+    weaponKillCount = weaponKillCount + 1
+    if weaponKillCount >= WEAPON_KILL_GOAL then
+        weaponKillMessagePlayed = true
+        weaponKillCompletionPending = true
         enqueue_dialogue("TutorialLevel1_System_BioSignalLost")
+
+        if weaponObjectivesCompleted then
+            request_weapon_completion_countdown()
+        end
     end
 end
 

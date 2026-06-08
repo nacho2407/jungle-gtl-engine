@@ -28,6 +28,7 @@
 #include "Particles/ParticleSystemManager.h"
 #include "Core/Types/CollisionTypes.h"
 #include "Runtime/Engine.h"
+#include "Profiling/Time/Timer.h"
 #include "Viewport/GameViewportClient.h"
 #include "Input/InputSystem.h"
 #include "GameFramework/AActor.h"
@@ -960,6 +961,10 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		APlayerController* PC = (GEngine && GEngine->GetWorld()) ? GEngine->GetWorld()->GetFirstPlayerController() : nullptr;
 		return PC ? PC->GetPossessedPawn() : nullptr;
 	});
+	Game.set_function("GetTimeSeconds", []() -> double
+	{
+		return (GEngine && GEngine->GetTimer()) ? GEngine->GetTimer()->GetTotalTime() : 0.0;
+	});
 	Game.set_function("SetInputPossessed", [](bool bPossessed)
 	{
 		if (GEngine)
@@ -1021,17 +1026,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	});
 	Game.set_function("GetCurrentSceneName", []() -> FString
 	{
-		if (!GEngine)
-		{
-			return {};
-		}
-
-		const FWorldContext* Context = GEngine->GetWorldContextFromHandle(GEngine->GetActiveWorldHandle());
-		if (Context && !Context->ContextName.empty() && Context->ContextName != "PIE")
-		{
-			return Context->ContextName;
-		}
-		return FProjectSettings::Get().Game.StartLevelName;
+		return GEngine ? GEngine->GetCurrentGameplaySceneName() : FString{};
 	});
 	Game.set_function("TransitionToScene", [](const FString& ScenePath)
 	{
@@ -1368,6 +1363,18 @@ Engine.IsPaused = Game.IsPaused
 	{
 		return FAudioManager::Get().PlayLoop(SoundName, LoopName, Volume.value_or(1.0f), Pitch.value_or(1.0f));
 	});
+	AudioManager.set_function("PlayLoopAt", [](const FString& SoundName, const FString& LoopName, float X, float Y, float Z, sol::optional<float> Volume, sol::optional<float> Pitch, sol::optional<float> MinDistance, sol::optional<float> MaxDistance, sol::optional<float> Rolloff)
+	{
+		return FAudioManager::Get().PlayLoopAt(
+			SoundName,
+			LoopName,
+			FVector(X, Y, Z),
+			Volume.value_or(1.0f),
+			Pitch.value_or(1.0f),
+			MinDistance.value_or(4.0f),
+			MaxDistance.value_or(120.0f),
+			Rolloff.value_or(1.0f));
+	});
 	AudioManager.set_function("SetLoopState", [](const FString& LoopName, const FString& SoundName, bool bShouldPlay, sol::optional<float> Volume, sol::optional<float> Pitch)
 	{
 		return FAudioManager::Get().SetLoopState(LoopName, SoundName, bShouldPlay, Volume.value_or(1.0f), Pitch.value_or(1.0f));
@@ -1391,6 +1398,10 @@ Engine.IsPaused = Game.IsPaused
 	AudioManager.set_function("SetLoopPitch", [](const FString& LoopName, float Pitch)
 	{
 		FAudioManager::Get().SetLoopPitch(LoopName, Pitch);
+	});
+	AudioManager.set_function("SetLoopPosition", [](const FString& LoopName, float X, float Y, float Z)
+	{
+		FAudioManager::Get().SetLoopPosition(LoopName, FVector(X, Y, Z));
 	});
 	AudioManager.set_function("IsLoopPlaying", [](const FString& LoopName)
 	{
@@ -1653,6 +1664,10 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		{
 			return Component.GetVelocity();
 		},
+		"SetVelocity", [](UCharacterMovementComponent& Component, const FVector& Value)
+		{
+			Component.SetVelocity(Value);
+		},
 		"GetSpeed", [](UCharacterMovementComponent& Component)
 		{
 			return Component.GetSpeed();
@@ -1701,6 +1716,14 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		{
 			Component.SprintSpeedMultiplier = (std::max)(0.0f, Value);
 		},
+		"GetAirBrakingFrictionScale", [](UCharacterMovementComponent& Component)
+		{
+			return Component.AirBrakingFrictionScale;
+		},
+		"SetAirBrakingFrictionScale", [](UCharacterMovementComponent& Component, float Value)
+		{
+			Component.AirBrakingFrictionScale = (std::max)(0.0f, Value);
+		},
 		"GetWallRunMaxSpeed", [](UCharacterMovementComponent& Component)
 		{
 			return Component.WallRunMaxSpeed;
@@ -1716,6 +1739,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 
 	FLuaDocRegistry::Get().Type("CharacterMovementComponent")
 		.Method("---@return Vector\nfunction CharacterMovementComponent:GetVelocity() end")
+		.Method("---@param velocity Vector\nfunction CharacterMovementComponent:SetVelocity(velocity) end")
 		.Method("---@return number\nfunction CharacterMovementComponent:GetSpeed() end")
 		.Method("---@return boolean\nfunction CharacterMovementComponent:IsWalking() end")
 		.Method("---@return boolean\nfunction CharacterMovementComponent:IsFalling() end")
@@ -1728,6 +1752,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param value number\nfunction CharacterMovementComponent:SetMaxWalkSpeed(value) end")
 		.Method("---@return number\nfunction CharacterMovementComponent:GetSprintSpeedMultiplier() end")
 		.Method("---@param value number\nfunction CharacterMovementComponent:SetSprintSpeedMultiplier(value) end")
+		.Method("---@return number\nfunction CharacterMovementComponent:GetAirBrakingFrictionScale() end")
+		.Method("---@param value number\nfunction CharacterMovementComponent:SetAirBrakingFrictionScale(value) end")
 		.Method("---@return number\nfunction CharacterMovementComponent:GetWallRunMaxSpeed() end")
 		.Method("---@param value number\nfunction CharacterMovementComponent:SetWallRunMaxSpeed(value) end")
 		.Method("---@return boolean\nfunction CharacterMovementComponent:IsCrouching() end");
