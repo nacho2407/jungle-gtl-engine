@@ -975,6 +975,16 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 			}
 		}
 	});
+	Game.set_function("SetMouseCaptureWhileInputBlocked", [](bool bCapture)
+	{
+		if (GEngine)
+		{
+			if (UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient())
+			{
+				GameViewportClient->SetMouseCaptureWhileInputBlocked(bCapture);
+			}
+		}
+	});
 	Game.set_function("IsInputPossessed", []()
 	{
 		if (GEngine)
@@ -982,6 +992,17 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 			if (UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient())
 			{
 				return GameViewportClient->IsPossessed();
+			}
+		}
+		return false;
+	});
+	Game.set_function("IsMouseCaptureWhileInputBlocked", []()
+	{
+		if (GEngine)
+		{
+			if (UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient())
+			{
+				return GameViewportClient->ShouldCaptureMouseWhileInputBlocked();
 			}
 		}
 		return false;

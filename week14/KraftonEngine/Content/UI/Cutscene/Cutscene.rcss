@@ -106,16 +106,16 @@ body {
 	position: absolute;
 	right: 24.00px;
 	bottom: 24.00px;
-	width: 166px;
+	width: 178px;
 	height: 28px;
 	opacity: 0.82;
 }
 
-.cutscene-skip-key {
+.cutscene-skip-keyboard {
 	position: absolute;
 	left: 0px;
 	top: 0px;
-	width: 88px;
+	width: 58px;
 	height: 28px;
 	background-color: #ffffff;
 	color: #000000;
@@ -127,11 +127,43 @@ body {
 	white-space: nowrap;
 }
 
+.cutscene-skip-separator {
+	position: absolute;
+	left: 66px;
+	top: 0px;
+	width: 14px;
+	height: 28px;
+	color: #ffffff;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.cutscene-skip-gamepad {
+	position: absolute;
+	left: 86px;
+	top: 0px;
+	width: 28px;
+	height: 28px;
+	background-color: #ffffff;
+	color: #000000;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+	border-radius: 14px;
+}
+
 .cutscene-skip-label {
 	position: absolute;
-	left: 100px;
+	left: 126px;
 	top: 0px;
-	width: 66px;
+	width: 52px;
 	height: 28px;
 	color: #ffffff;
 	font-family: Pretendard;

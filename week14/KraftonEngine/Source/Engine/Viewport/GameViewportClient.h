@@ -39,6 +39,20 @@ public:
 	void SetInputPossessed(bool bPossessed);
 	bool IsPossessed() const { return bInputPossessed; }
 
+	/**
+	 * @brief 입력 차단 중 마우스 캡처 유지 여부를 설정합니다
+	 *
+	 * @param bCapture 입력 possession이 꺼진 동안에도 raw mouse와 cursor capture를 유지할지 여부
+	 */
+	void SetMouseCaptureWhileInputBlocked(bool bCapture);
+
+	/**
+	 * @brief 입력 차단 중 마우스 캡처 유지 여부
+	 *
+	 * @return 입력 차단 중 마우스 캡처 유지 플래그
+	 */
+	bool ShouldCaptureMouseWhileInputBlocked() const { return bCaptureMouseWhileInputBlocked; }
+
 	// 게임 세션 진입/종료 — viewport attach + 입력 상태 리셋. PIE start/stop 또는
 	// standalone 게임 시작/종료에서 호출.
 	void BeginGameSession(FViewport* InViewport);
@@ -67,6 +81,7 @@ public:
 	const FInputSystemSnapshot& GetGameInputSnapshot() const { return GameInputSnapshot; }
 
 private:
+	void ApplyBlockedInputMousePolicy();
 	void SetCursorCaptured(bool bCaptured);
 	void ApplyCursorClip();
 
@@ -78,6 +93,7 @@ private:
 	RECT CursorClipClientRect = {};
 	bool bHasCursorClipRect = false;
 	bool bInputPossessed = false;
+	bool bCaptureMouseWhileInputBlocked = false;
 	bool bCursorCaptured = false;
 
 	FInputSystemSnapshot GameInputSnapshot{};

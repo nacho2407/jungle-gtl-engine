@@ -325,18 +325,6 @@ local function update_dialogue(dt)
     end
 end
 
-local function format_key_label(item)
-    if item == nil then return "" end
-
-    local key = item.key or ""
-    local padKey = item.padKey or ""
-    if key ~= "" and padKey ~= "" then
-        return key .. " / " .. padKey
-    end
-    if key ~= "" then return key end
-    return padKey
-end
-
 local function set_step_visual(index, item, status)
     if overlayWidget == nil then return end
 
@@ -346,7 +334,16 @@ local function set_step_visual(index, item, status)
         return
     end
 
-    overlayWidget:SetText(base .. "-key", format_key_label(item))
+    local key = item.key or ""
+    local padKey = item.padKey or ""
+    local hasKey = key ~= ""
+    local hasPadKey = padKey ~= ""
+    overlayWidget:SetText(base .. "-key", key)
+    overlayWidget:SetProperty(base .. "-key", "display", hasKey and "block" or "none")
+    overlayWidget:SetText(base .. "-separator", "/")
+    overlayWidget:SetProperty(base .. "-separator", "display", (hasKey and hasPadKey) and "block" or "none")
+    overlayWidget:SetText(base .. "-pad", padKey)
+    overlayWidget:SetProperty(base .. "-pad", "display", hasPadKey and "block" or "none")
     overlayWidget:SetText(base .. "-text", item.text or "")
     if status == "done" then
         overlayWidget:SetProperty(base, "opacity", "0.44")

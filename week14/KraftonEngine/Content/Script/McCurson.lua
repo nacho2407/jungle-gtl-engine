@@ -273,6 +273,9 @@ local function restore_player_after_cutscene()
     if Game ~= nil and Game.SetInputPossessed ~= nil then
         Game.SetInputPossessed(true)
     end
+    if Game ~= nil and Game.SetMouseCaptureWhileInputBlocked ~= nil then
+        Game.SetMouseCaptureWhileInputBlocked(false)
+    end
     if bMovementLocked and lockedMovement ~= nil then
         if savedMaxWalkSpeed ~= nil then lockedMovement:SetMaxWalkSpeed(savedMaxWalkSpeed) end
         if savedSprintSpeedMultiplier ~= nil then lockedMovement:SetSprintSpeedMultiplier(savedSprintSpeedMultiplier) end
@@ -309,6 +312,9 @@ local function lock_player_for_cutscene()
     if not CUTSCENE_LOCK_INPUT then return end
 
     if Game ~= nil and Game.SetInputPossessed ~= nil then
+        if Game.SetMouseCaptureWhileInputBlocked ~= nil then
+            Game.SetMouseCaptureWhileInputBlocked(true)
+        end
         Game.SetInputPossessed(false)
     end
 

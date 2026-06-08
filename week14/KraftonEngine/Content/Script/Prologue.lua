@@ -470,6 +470,9 @@ end
 
 local function lock_player_movement_for_cutscene()
     if not playerInputPossessionLocked and Game ~= nil and Game.SetInputPossessed ~= nil then
+        if Game.SetMouseCaptureWhileInputBlocked ~= nil then
+            Game.SetMouseCaptureWhileInputBlocked(true)
+        end
         Game.SetInputPossessed(false)
         playerInputPossessionLocked = true
     end
@@ -525,6 +528,9 @@ local function restore_player_movement()
         -- BeginPlay 시점에는 GameViewport input possession이 아직 false일 수 있습니다.
         -- 컷씬 종료는 실제 플레이 복귀 지점이므로 저장된 초기값에 의존하지 않고 명시적으로 켭니다.
         Game.SetInputPossessed(true)
+    end
+    if Game ~= nil and Game.SetMouseCaptureWhileInputBlocked ~= nil then
+        Game.SetMouseCaptureWhileInputBlocked(false)
     end
     playerInputPossessionLocked = false
 
@@ -842,9 +848,6 @@ local function apply_entry(entry)
     cutsceneWidget:SetProperty("dialogue-line", "font-weight", tostring(entry.weight or story.default_weight or 400))
     cutsceneWidget:SetProperty("dialogue-line", "line-height", px(lineHeight))
     cutsceneWidget:SetProperty("dialogue-line", "text-align", "left")
-
-    cutsceneWidget:SetProperty("skip-ring", "right", "54px")
-    cutsceneWidget:SetProperty("skip-ring", "bottom", px(bottom + 6.0))
 end
 
 local function hide_dialogue_box()
@@ -898,11 +901,7 @@ local function show_next_entry()
 end
 
 local function should_advance_dialogue()
-    if get_cutscene_key_down(get_key("MouseLeft")) then return true end
-    if get_cutscene_key_down(get_key("Space")) then return true end
-    if get_cutscene_key_down(get_key("Enter")) then return true end
-    if get_cutscene_key_down(get_key("GamepadA")) then return true end
-    if get_cutscene_key_down(get_key("GamepadStart")) then return true end
+    -- 인트로 컷씬 중에는 일반 대사 넘김 입력을 막고, update_scene_skip()의 raw skip 입력만 허용합니다.
     return false
 end
 
