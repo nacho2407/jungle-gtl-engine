@@ -418,6 +418,10 @@ local function lock_player_movement_for_cutscene()
         playerInputPossessionLocked = true
     end
 
+    if playerInputPossessionLocked then
+        return
+    end
+
     if World == nil or World.FindActorByName == nil then
         return
     end
@@ -461,7 +465,7 @@ local function lock_player_movement_for_cutscene()
 end
 
 local function restore_player_movement()
-    if playerInputPossessionLocked and Game ~= nil and Game.SetInputPossessed ~= nil then
+    if Game ~= nil and Game.SetInputPossessed ~= nil then
         -- BeginPlay 시점에는 GameViewport input possession이 아직 false일 수 있습니다.
         -- 컷씬 종료는 실제 플레이 복귀 지점이므로 저장된 초기값에 의존하지 않고 명시적으로 켭니다.
         Game.SetInputPossessed(true)

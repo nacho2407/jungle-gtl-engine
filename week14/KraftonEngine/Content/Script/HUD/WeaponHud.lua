@@ -16,6 +16,7 @@ local KILL_MARKER_DURATION  = 0.22
 local widget = nil
 local camera = nil
 local owner = nil
+local movement = nil
 local maxRange = 200.0
 local weaponSpread = 0.0
 local hitMarkerTimer = 0.0
@@ -37,6 +38,17 @@ local function update_score()
 
     local snapshot = ScoreManager.GetSnapshot()
     widget:SetText("score-hud-value", string.format("%06d", snapshot.score or 0))
+end
+
+local function update_speed()
+    if widget == nil then return end
+
+    local speed = 0.0
+    if movement ~= nil and movement.GetSpeed ~= nil then
+        speed = movement:GetSpeed() or 0.0
+    end
+
+    widget:SetText("speed-hud-value", string.format("%03d", math.floor(speed + 0.5)))
 end
 
 local function apply_visibility()
@@ -119,6 +131,7 @@ function WeaponHud.Initialize(config)
     config = config or {}
     camera = config.camera
     owner = config.owner
+    movement = config.movement
     maxRange = config.maxRange or maxRange
     magazineSize = config.magazineSize or magazineSize
     currentAmmo = config.currentAmmo or currentAmmo
@@ -137,6 +150,7 @@ function WeaponHud.Initialize(config)
     apply_visibility()
     WeaponHud.SetAmmo(currentAmmo, magazineSize)
     update_score()
+    update_speed()
     update_crosshair()
 end
 
@@ -148,6 +162,7 @@ function WeaponHud.Shutdown()
     widget = nil
     camera = nil
     owner = nil
+    movement = nil
     weaponSpread = 0.0
     hitMarkerTimer = 0.0
     killMarkerTimer = 0.0
@@ -211,6 +226,7 @@ function WeaponHud.Tick(dt, spread)
     end
 
     update_score()
+    update_speed()
     update_crosshair()
 end
 

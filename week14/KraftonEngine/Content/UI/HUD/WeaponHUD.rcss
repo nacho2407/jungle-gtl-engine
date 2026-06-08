@@ -47,6 +47,40 @@ body {
 	color: #ffffff;
 }
 
+.speed-hud-panel {
+	position: absolute;
+	right: 42px;
+	top: 106px;
+	width: 224px;
+	height: 50px;
+}
+
+.speed-hud-label {
+	position: absolute;
+	right: 0px;
+	top: 0px;
+	width: 78px;
+	height: 16px;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 16px;
+	text-align: right;
+	color: #ffffff;
+}
+
+.speed-hud-value {
+	position: absolute;
+	right: 0px;
+	top: 16px;
+	width: 106px;
+	height: 30px;
+	font-size: 26px;
+	font-weight: 700;
+	line-height: 30px;
+	text-align: right;
+	color: #ffffff;
+}
+
 .crosshair-screen {
 	position: absolute;
 	left: 0px;

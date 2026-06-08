@@ -1152,6 +1152,7 @@ function BeginPlay()
     WeaponHud.Initialize({
         camera = camera,
         owner = obj,
+        movement = movement,
         maxRange = MAX_RANGE,
         currentAmmo = currentAmmo,
         magazineSize = MAGAZINE_SIZE,
