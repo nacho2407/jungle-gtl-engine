@@ -4,7 +4,8 @@ return {
         vantus_master_key = {
             name = "마스터 카드 키",
             subtitle = "VANTUS Master Clearance Key",
-            image = "../Item/IonCoreSample.png",
+            image = "../Item/VantusMasterKey.png",
+            pickup = true,
             description = [[VANTUS 최고 등급의 접근 권한이 내장된 금속 인증 카드.
 
 긁힌 자국과 열 자국이 선명하다. 누군가 태워 없애려다 포기한 것처럼 보인다. 이것을 쥔 자는 VANTUS의 모든 문을 열 수 있다. 이 카드 하나로 제국이 무너졌다.]]

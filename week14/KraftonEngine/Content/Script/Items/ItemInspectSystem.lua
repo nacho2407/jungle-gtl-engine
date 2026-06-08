@@ -1,6 +1,6 @@
 local ItemDatabase = require("Items/ItemDatabase")
 
-local INSPECT_RANGE = 5.0
+local INSPECT_RANGE = 45.0
 local PANEL_PATH = "Content/UI/InGame/ItemInspectPanel.rml"
 local PANEL_Z_ORDER = 95
 
