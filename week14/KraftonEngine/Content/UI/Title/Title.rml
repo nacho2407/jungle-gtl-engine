@@ -15,26 +15,26 @@
             <div id="start-game-group" class="menu-node" style="position: absolute; left: 55.80px; top: 162.00px; width: 540.00px; height: 140.00px;">
                 <div id="start-game-label" class="menu-primary" data-ui-editor="text" style="position: absolute; left: -36.00px; top: -30.00px; width: 390.00px; height: 72.00px; font-size: 60.00px; font-weight: bold; color: #FAFAFA;">START GAME</div>
                 <div id="new-game-button" class="hover-image-button" style="position: absolute; left: -20.00px; top: 40.00px; width: 146.00px; height: 26.00px;">
-                    <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
-                    <div class="hover-image-label menu-child">NEW GAME</div>
+                    <img id="new-game-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                    <div id="new-game-label" class="hover-image-label menu-child">NEW GAME</div>
                 </div>
                 <div id="continue-button" class="hover-image-button" style="position: absolute; left: 140.00px; top: 40.00px; width: 140.00px; height: 26.00px;">
-                    <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
-                    <div class="hover-image-label menu-child">CONTINUE</div>
+                    <img id="continue-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                    <div id="continue-label" class="hover-image-label menu-child">CONTINUE</div>
                 </div>
             </div>
 
             <div id="settings-button" class="hover-image-button" style="position: absolute; left: 10.00px; top: 250.00px; width: 190.00px; height: 40.00px;">
-                <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
-                <div class="hover-image-label menu-primary">SETTINGS</div>
+                <img id="settings-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="settings-label" class="hover-image-label menu-primary">SETTINGS</div>
             </div>
             <div id="credits-button" class="hover-image-button" style="position: absolute; left: 8.00px; top: 305.00px; width: 170.00px; height: 40.00px;">
-                <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
-                <div class="hover-image-label menu-primary">CREDITS</div>
+                <img id="credits-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="credits-label" class="hover-image-label menu-primary">CREDITS</div>
             </div>
             <div id="quit-button" class="hover-image-button quit-link" style="position: absolute; left: 10.00px; top: 340.00px; width: 66.00px; height: 26.00px;">
-                <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
-                <div class="hover-image-label menu-primary">QUIT</div>
+                <img id="quit-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="quit-label" class="hover-image-label menu-primary">QUIT</div>
             </div>
         </div>
 
