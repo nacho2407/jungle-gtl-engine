@@ -1135,7 +1135,6 @@ void UEditorEngine::ProcessPendingPIESceneTransition()
 	{
 		PIEViewportClient->EndGameSession();
 	}
-	UUIManager::Get().ClearViewport();
 
 	SetActiveWorld(PreviousActiveWorldHandle);
 	SelectionManager.ClearSelection();

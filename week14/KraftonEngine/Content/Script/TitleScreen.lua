@@ -1,4 +1,5 @@
 local HoverDescription = require("HoverDescription")
+local LoadingScreen = require("LoadingScreen")
 
 local widget = nil
 local quitWidget = nil
@@ -112,6 +113,8 @@ local activeSettingsSlider = nil
 local activeSettingsValueEdit = nil
 local titleBgmKey = "TitleIntroBGM"
 local titleBgmLoaded = false
+local loadingToGame = false
+local loadingTransitionRequested = false
 
 local function px(value)
     return string.format("%.2fpx", value)
@@ -424,11 +427,21 @@ local function stop_title_bgm()
 end
 
 local function start_prologue_scene()
+    if loadingToGame then
+        return
+    end
+
+    loadingToGame = true
+    loadingTransitionRequested = false
     show_stat_panel(false)
     show_settings_panel(false)
     show_quit_panel(false)
+    show_credits_panel(false)
     stop_title_bgm()
+    LoadingScreen.Show({ duration = 1.0, zOrder = 240, keepVisibleOnComplete = true })
+end
 
+local function transition_to_game_scene()
     if Engine.TransitionToScene ~= nil then
         Engine.TransitionToScene("FL_Level1.Scene")
     else
@@ -751,6 +764,9 @@ function BeginPlay()
 end
 
 function EndPlay()
+    if not loadingToGame then
+        LoadingScreen.Hide()
+    end
     stop_title_bgm()
 
     if quitWidget ~= nil and quitWidget:IsInViewport() then
@@ -777,9 +793,19 @@ function EndPlay()
         widget:RemoveFromParent()
     end
     widget = nil
+    loadingToGame = false
+    loadingTransitionRequested = false
 end
 
 function Tick(dt)
+    if loadingToGame then
+        if LoadingScreen.Tick(dt or 0.0) and not loadingTransitionRequested then
+            loadingTransitionRequested = true
+            transition_to_game_scene()
+        end
+        return
+    end
+
     update_title_background(false)
     update_settings_value_edit()
     if activeSettingsSlider ~= nil then

@@ -24,6 +24,8 @@ local killMarkerTimer = 0.0
 local currentAmmo = 0
 local magazineSize = 0
 local bVisible = true
+local bDialogueVisible = false
+local dialogueOpacity = 0.0
 
 local function px(value)
     return string.format("%.2fpx", value)
@@ -59,6 +61,13 @@ local function apply_visibility()
     local display = bVisible and "block" or "none"
     widget:SetProperty("crosshair-screen", "display", display)
     widget:SetProperty("weapon-hud-root", "display", display)
+end
+
+local function apply_dialogue_visibility()
+    if widget == nil then return end
+
+    widget:SetProperty("hud-dialogue-box", "display", bDialogueVisible and "block" or "none")
+    widget:SetProperty("hud-dialogue-box", "opacity", string.format("%.2f", dialogueOpacity))
 end
 
 local function is_target_actor(actor)
@@ -149,6 +158,7 @@ function WeaponHud.Initialize(config)
     end
 
     apply_visibility()
+    apply_dialogue_visibility()
     WeaponHud.SetAmmo(currentAmmo, magazineSize)
     update_score()
     update_speed()
@@ -168,6 +178,8 @@ function WeaponHud.Shutdown()
     hitMarkerTimer = 0.0
     killMarkerTimer = 0.0
     bVisible = true
+    bDialogueVisible = false
+    dialogueOpacity = 0.0
 end
 
 function WeaponHud.SetVisible(visible)
@@ -198,6 +210,50 @@ end
 function WeaponHud.SetSpread(spread)
     weaponSpread = spread or 0.0
     update_crosshair()
+end
+
+function WeaponHud.ShowDialogue(text, config)
+    config = config or {}
+
+    if widget == nil then return end
+
+    local width = config.width or 980.0
+    local height = config.height or 48.0
+    local fontSize = config.fontSize or 22.0
+    local lineHeight = config.lineHeight or height
+    local opacity = config.opacity or 0.0
+
+    bDialogueVisible = true
+    dialogueOpacity = opacity
+
+    widget:SetText("hud-dialogue-line", text or "")
+    widget:SetProperty("hud-dialogue-box", "display", "block")
+    widget:SetProperty("hud-dialogue-box", "left", px(config.left or 24.0))
+    widget:SetProperty("hud-dialogue-box", "bottom", px(config.bottom or 28.0))
+    widget:SetProperty("hud-dialogue-box", "width", px(width))
+    widget:SetProperty("hud-dialogue-box", "height", px(height))
+    widget:SetProperty("hud-dialogue-box", "opacity", string.format("%.2f", dialogueOpacity))
+    widget:SetProperty("hud-dialogue-line", "left", px(config.textLeft or 16.0))
+    widget:SetProperty("hud-dialogue-line", "top", "0px")
+    widget:SetProperty("hud-dialogue-line", "width", px(width - (config.textLeft or 16.0) * 2.0))
+    widget:SetProperty("hud-dialogue-line", "height", px(height))
+    widget:SetProperty("hud-dialogue-line", "font-family", config.font or "Pretendard")
+    widget:SetProperty("hud-dialogue-line", "font-size", px(fontSize))
+    widget:SetProperty("hud-dialogue-line", "font-weight", tostring(config.weight or 700))
+    widget:SetProperty("hud-dialogue-line", "line-height", px(lineHeight))
+end
+
+function WeaponHud.SetDialogueOpacity(opacity)
+    dialogueOpacity = opacity or 0.0
+    apply_dialogue_visibility()
+end
+
+function WeaponHud.HideDialogue()
+    bDialogueVisible = false
+    dialogueOpacity = 0.0
+    if widget == nil then return end
+    widget:SetText("hud-dialogue-line", "")
+    apply_dialogue_visibility()
 end
 
 function WeaponHud.TriggerHitMarker()

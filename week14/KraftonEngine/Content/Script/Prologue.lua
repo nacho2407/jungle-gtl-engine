@@ -1,4 +1,5 @@
 local WeaponHud = require("HUD/WeaponHud")
+local LoadingScreen = require("LoadingScreen")
 
 local story = nil
 local cutsceneWidget = nil
@@ -854,6 +855,7 @@ local function update_post_landing_finish_delay(dt)
 end
 
 function BeginPlay()
+    LoadingScreen.Hide()
     sceneTime = 0.0
     cutsceneFinished = false
     landingPodActor = nil
@@ -882,6 +884,7 @@ function BeginPlay()
     set_weapon_hud_visible(false)
     cutsceneWidget = UI.CreateWidget("Content/UI/Cutscene/Cutscene.rml")
     if cutsceneWidget ~= nil then
+        cutsceneWidget:SetWantsMouse(false)
         cutsceneWidget:AddToViewportZ(120)
         update_skip_ring(0.0)
         hide_producer_credit()

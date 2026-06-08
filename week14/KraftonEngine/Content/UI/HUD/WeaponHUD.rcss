@@ -220,3 +220,32 @@ body {
 	text-align: left;
 	color: #7B7B7BE6;
 }
+
+.hud-dialogue-box {
+	position: absolute;
+	left: 24px;
+	bottom: 28px;
+	width: 980px;
+	height: 48px;
+	background-color: #000000F0;
+	border-width: 0px;
+	opacity: 0.0;
+	display: none;
+	pointer-events: none;
+}
+
+.hud-dialogue-line {
+	position: absolute;
+	left: 16px;
+	top: 0px;
+	width: 948px;
+	height: 48px;
+	font-family: Pretendard;
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 48px;
+	color: #ffffff;
+	white-space: nowrap;
+	text-align: left;
+	pointer-events: none;
+}

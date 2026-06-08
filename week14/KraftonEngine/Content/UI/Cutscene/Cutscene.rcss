@@ -15,6 +15,10 @@ body {
 	pointer-events: none;
 }
 
+#cutscene-root .dialogue-layer {
+	display: block;
+}
+
 .letterbox-bar {
 	position: absolute;
 	left: 0px;
