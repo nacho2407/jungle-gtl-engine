@@ -96,8 +96,8 @@ body {
 
 .cutscene-skip-prompt {
 	position: absolute;
-	right: 54px;
-	bottom: 76px;
+	right: 24.00px;
+	bottom: 24.00px;
 	width: 132px;
 	height: 28px;
 	opacity: 0.82;
@@ -137,7 +137,7 @@ body {
 .skip-ring {
 	position: absolute;
 	right: 54px;
-	bottom: 112px;
+	bottom: 60.00px;
 	width: 64px;
 	height: 64px;
 	opacity: 0.0;
