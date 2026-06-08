@@ -101,6 +101,7 @@ bool FRayUtils::RaycastTriangles(
 	bool bHit = false;
 	float closestT = FLT_MAX;
 	int hitFaceIndex = -1;
+	FVector hitLocalNormal = FVector::ZeroVector;
 
 	const uint8* basePtr = static_cast<const uint8*>(PositionData);
 
@@ -117,6 +118,7 @@ bool FRayUtils::RaycastTriangles(
 			{
 				closestT = t;
 				hitFaceIndex = static_cast<int>(i);
+				hitLocalNormal = (v1 - v0).Cross(v2 - v0);
 				bHit = true;
 			}
 		}
@@ -129,6 +131,21 @@ bool FRayUtils::RaycastTriangles(
 		FVector localHitPoint = localOrigin + localDir * closestT;
 		FVector worldHitPoint = WorldMatrix.TransformPositionWithW(localHitPoint);
 		OutHitResult.Distance = FVector::Distance(WorldRay.Origin, worldHitPoint);
+		OutHitResult.WorldHitLocation = worldHitPoint;
+
+		hitLocalNormal.Normalize();
+		FVector worldNormal = WorldMatrix.TransformVector(hitLocalNormal);
+		worldNormal.Normalize();
+		if (worldNormal.IsNearlyZero())
+		{
+			worldNormal = WorldRay.Direction * -1.0f;
+		}
+		else if (worldNormal.Dot(WorldRay.Direction) > 0.0f)
+		{
+			worldNormal *= -1.0f;
+		}
+		OutHitResult.WorldNormal = worldNormal;
+		OutHitResult.ImpactNormal = worldNormal;
 	}
 
 	return bHit;
