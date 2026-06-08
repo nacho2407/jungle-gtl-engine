@@ -17,6 +17,7 @@ local currentVoiceDuration = 0.0
 local currentVoiceKey = nil
 local sceneTime = 0.0
 local cutsceneFinished = false
+local introSkipFinishPending = false
 local landingPodActor = nil
 local landingStartLocation = nil
 local landingCutsceneCameraActor = nil
@@ -56,6 +57,7 @@ local DIALOGUE_DEFAULT_FONT_SIZE = 18.0
 local LANDING_POD_ACTOR_NAME = "landing-pod-mesh"
 local LANDING_CUTSCENE_CAMERA_ACTOR_NAME = "prologue-landing-camera"
 local PLAYER_PAWN_NAME = "kain-temp"
+local LEVEL1_SCENE_NAME = "FL_Level1"
 local LANDING_START_Z = 1500.0
 local LANDING_TARGET_Z = -3.119
 local LANDING_COMPRESSED_Z = -3.525
@@ -145,6 +147,35 @@ local function log_prologue(message)
     else
         print("[Prologue] " .. message)
     end
+end
+
+local function normalize_scene_name(scene)
+    if scene == nil then return "" end
+
+    local name = tostring(scene)
+    name = string.gsub(name, "\\", "/")
+    name = string.match(name, "([^/]+)$") or name
+    name = string.gsub(name, "%.Scene$", "")
+    return string.lower(name)
+end
+
+local function consume_level1_intro_skip_request()
+    if Game == nil or Game.SkipLevel1IntroOnNextStart ~= true then
+        return false
+    end
+
+    -- 1회성 retry 플래그는 씬 시작 시점에 반드시 소비해서 이후 정상 진입에 영향을 남기지 않습니다.
+    Game.SkipLevel1IntroOnNextStart = nil
+    local targetScene = normalize_scene_name(Game.SkipLevel1IntroSceneName or LEVEL1_SCENE_NAME)
+    Game.SkipLevel1IntroSceneName = nil
+
+    local currentScene = ""
+    if Game.GetCurrentSceneName ~= nil then
+        currentScene = normalize_scene_name(Game.GetCurrentSceneName())
+    end
+
+    local level1Scene = normalize_scene_name(LEVEL1_SCENE_NAME)
+    return targetScene == level1Scene and (currentScene == "" or currentScene == level1Scene)
 end
 
 local function set_weapon_hud_visible(visible)
@@ -628,6 +659,39 @@ local function finish_cutscene_in_current_scene()
     end
 end
 
+local function is_player_restore_ready()
+    if Game == nil or Game.GetPlayerController == nil then
+        return false
+    end
+    if Game.GetPlayerController() == nil then
+        return false
+    end
+    if World == nil or World.FindActorByName == nil then
+        return false
+    end
+    return World.FindActorByName(PLAYER_PAWN_NAME) ~= nil
+end
+
+local function try_finish_pending_intro_skip()
+    if not introSkipFinishPending then
+        return false
+    end
+
+    find_landing_pod()
+    set_landing_pod_z(LANDING_TARGET_Z)
+    set_weapon_hud_visible(true)
+
+    if not is_player_restore_ready() then
+        return true
+    end
+
+    -- 컷씬 실행 없이 완료 경로만 재사용하기 위해, 완료 직전에 상태를 다시 열어 둡니다.
+    introSkipFinishPending = false
+    cutsceneFinished = false
+    finish_cutscene_in_current_scene()
+    return true
+end
+
 local function is_waiting_for_voice_end()
     return currentVoiceDuration > 0.0 and entryTime < currentVoiceDuration + VOICE_END_PADDING
 end
@@ -879,8 +943,21 @@ local function update_post_landing_finish_delay(dt)
 end
 
 function BeginPlay()
+    story = nil
+    currentIndex = 0
+    entryTime = 0.0
+    entryDuration = 0.0
+    activeEntry = nil
+    skipHoldTime = 0.0
+    voiceManifest = nil
+    voiceEntries = nil
+    voiceEntriesById = nil
+    loadedVoiceKeys = {}
+    pendingAdvance = false
+    currentVoiceDuration = 0.0
     sceneTime = 0.0
     cutsceneFinished = false
+    introSkipFinishPending = false
     landingPodActor = nil
     landingStartLocation = nil
     landingCutsceneCameraActor = nil
@@ -903,6 +980,14 @@ function BeginPlay()
     postLandingFinishDelayActive = false
     currentVoiceKey = nil
     reset_landing_camera_shake_state()
+
+    if consume_level1_intro_skip_request() then
+        -- retry 진입은 컷씬 UI/카메라/입력 잠금 없이 착륙 완료 상태로 바로 복구합니다.
+        introSkipFinishPending = true
+        cutsceneFinished = true
+        try_finish_pending_intro_skip()
+        return
+    end
 
     set_weapon_hud_visible(false)
     cutsceneWidget = UI.CreateWidget("Content/UI/Cutscene/Cutscene.rml")
@@ -939,6 +1024,7 @@ function EndPlay()
     postLandingFinishDelayRemaining = 0.0
     postLandingFinishDelayActive = false
     cutsceneFinished = false
+    introSkipFinishPending = false
     landingPodActor = nil
     landingStartLocation = nil
     landingCutsceneCameraActor = nil
@@ -951,6 +1037,10 @@ end
 function Tick(dt)
     if dt == nil then
         dt = 0.0
+    end
+
+    if try_finish_pending_intro_skip() then
+        return
     end
 
     if not cutsceneFinished then
