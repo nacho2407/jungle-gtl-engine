@@ -69,10 +69,26 @@ local LANDING_SHAKE_LEAD_TIME = 10.0
 local LANDING_SHAKE_FADE_OUT_TIME = 2.0
 local LANDING_SHAKE_START_SCALE = 0.12
 local LANDING_SHAKE_END_SCALE = 0.35
-local PRODUCER_CREDIT_NAMES = {
-    "KIM HYOBEOM",
-    "JANG MINJUN",
-    "JEON HYEONGIL",
+local PRODUCER_CREDITS = {
+    {
+        role = "PRESENTS",
+        lines = {
+            "KRAFTON JUNGLE",
+            "GAME TECH LAB 3RD",
+        },
+    },
+    {
+        role = "PRODUCER",
+        lines = { "KIM HYOBEOM" },
+    },
+    {
+        role = "PRODUCER",
+        lines = { "JANG MINJUN" },
+    },
+    {
+        role = "PRODUCER",
+        lines = { "JEON HYEONGIL" },
+    },
 }
 
 local function px(value)
@@ -259,7 +275,7 @@ local function update_producer_credit()
         return
     end
 
-    local creditCount = #PRODUCER_CREDIT_NAMES
+    local creditCount = #PRODUCER_CREDITS
     local creditEndTime = math.min(
         landingFinishTime,
         PRODUCER_CREDIT_START_TIME + creditCount * PRODUCER_CREDIT_DISPLAY_DURATION)
@@ -290,9 +306,12 @@ local function update_producer_credit()
         end
     end
 
-    -- 제작자 크레딧은 정해진 표시 구간 동안 한 명씩 순차적으로 노출합니다.
-    cutsceneWidget:SetText("producer-credit-name", PRODUCER_CREDIT_NAMES[creditIndex])
-    cutsceneWidget:SetText("producer-credit-role", "PRODUCER")
+    -- 크레딧 항목은 소속 소개와 제작자 이름을 같은 표시 규칙으로 순차 노출합니다.
+    local credit = PRODUCER_CREDITS[creditIndex] or {}
+    local lines = credit.lines or {}
+    cutsceneWidget:SetText("producer-credit-role", credit.role or "PRODUCER")
+    cutsceneWidget:SetText("producer-credit-name", lines[1] or "")
+    cutsceneWidget:SetText("producer-credit-name-line2", lines[2] or "")
     cutsceneWidget:SetProperty("producer-credit", "opacity", string.format("%.2f", clamp(alpha, 0.0, 1.0)))
 end
 
