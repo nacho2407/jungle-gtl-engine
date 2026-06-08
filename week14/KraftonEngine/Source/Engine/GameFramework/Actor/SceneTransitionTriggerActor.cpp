@@ -10,9 +10,6 @@
 #include "Lua/LuaScriptManager.h"
 #include "Math/Matrix.h"
 #include "Runtime/Engine.h"
-#include "Runtime/GameEngine.h"
-#include "UI/UIManager.h"
-#include "UI/UserWidget.h"
 
 #include <algorithm>
 #include <cmath>
@@ -34,10 +31,10 @@ void ASceneTransitionTriggerActor::PostDuplicate()
 {
 	Super::PostDuplicate();
 	BoxComponent = Cast<UBoxComponent>(GetRootComponent());
-	LoadingScreenWidget = nullptr;
 	bCountingDown = false;
 	bConsumed = false;
 	bFadeOutStarted = false;
+	bLoadingScreenShown = false;
 	ElapsedSinceEnter = 0.0f;
 	MissingRequirementDialogueTimer = 0.0f;
 }
@@ -103,13 +100,13 @@ void ASceneTransitionTriggerActor::Tick(float DeltaTime)
 			}
 			bCountingDown = true;
 			ElapsedSinceEnter = 0.0f;
-			// fade-out 은 아직 시작 안 함 — TransitionDelay 가 지나야 시작.
+			// 트리거 진입 즉시 fade-out 을 시작해 전환 입력에 바로 반응합니다.
+			BeginFadeOut(PC->GetPlayerCameraManager());
 		}
 		return;
 	}
 
-	// Fade-out 이 시작되기 전까지는 box 이탈 시 카운트 취소.
-	// fade-out 시작 후엔 이미 시각적으로 commit 됐으므로 그대로 진행.
+	// fade-out 시작 후엔 이미 시각적으로 commit 됐으므로 박스 이탈과 무관하게 그대로 진행.
 	if (!bInside && !bFadeOutStarted)
 	{
 		bCountingDown = false;
@@ -119,14 +116,13 @@ void ASceneTransitionTriggerActor::Tick(float DeltaTime)
 
 	ElapsedSinceEnter += DeltaTime;
 
-	// 타임라인: [0, TransitionDelay) 대기 → [TransitionDelay, TransitionDelay+FadeOutDuration) fade-out
-	//          → 그 끝에서 transition + 새 scene fade-in.
-	if (!bFadeOutStarted && ElapsedSinceEnter >= TransitionDelay)
+	// 타임라인: trigger 즉시 fade-out → loading screen 최소 표시 → transition + 새 scene fade-in.
+	if (!bLoadingScreenShown && ElapsedSinceEnter >= FadeOutDuration)
 	{
-		BeginFadeOut(PC->GetPlayerCameraManager());
+		ShowLoadingScreen();
 	}
 
-	const float TotalTimeToFire = TransitionDelay + FadeOutDuration;
+	const float TotalTimeToFire = FadeOutDuration + LoadingScreenDuration;
 	if (ElapsedSinceEnter >= TotalTimeToFire)
 	{
 		FireTransition();
@@ -138,7 +134,6 @@ void ASceneTransitionTriggerActor::BeginFadeOut(APlayerCameraManager* CamMgr)
 	// fade duration 이 0 이어도 이후 transition 까지의 '진행 중' 상태를 유지하기 위해
 	// bFadeOutStarted 는 켠다 — 이 플래그 이후엔 박스 이탈 시 cancel 되지 않는다.
 	bFadeOutStarted = true;
-	ShowLoadingScreen();
 	if (!CamMgr || FadeOutDuration <= 0.0f) return;
 
 	// alpha 0 → 1. bHoldWhenFinished=true 라 fade 가 transition 전 짧게 끝나도 검은 화면 유지.
@@ -148,19 +143,11 @@ void ASceneTransitionTriggerActor::BeginFadeOut(APlayerCameraManager* CamMgr)
 
 void ASceneTransitionTriggerActor::ShowLoadingScreen()
 {
-	if (LoadingScreenWidget && LoadingScreenWidget->IsInViewport())
+	bLoadingScreenShown = true;
+	if (GEngine)
 	{
-		return;
+		GEngine->ShowTransitionLoadingScreen();
 	}
-
-	LoadingScreenWidget = UUIManager::Get().CreateWidget(nullptr, "Content/UI/Common/LoadingScreen.rml");
-	if (!LoadingScreenWidget)
-	{
-		return;
-	}
-
-	LoadingScreenWidget->SetWantsMouse(false);
-	LoadingScreenWidget->AddToViewport(240);
 }
 
 bool ASceneTransitionTriggerActor::IsPawnInsideBox(const APawn* Pawn) const
@@ -346,18 +333,15 @@ void ASceneTransitionTriggerActor::FireTransition()
 		return;
 	}
 
-	UE_LOG("[SceneTransitionTrigger] %s -> %s (delay %.2fs, fadeOut %.2fs, fadeIn %.2fs)",
+	UE_LOG("[SceneTransitionTrigger] %s -> %s (fadeOut %.2fs, loading %.2fs, fadeIn %.2fs)",
 		GetFName().ToString().c_str(), TargetScene.c_str(),
-		TransitionDelay, FadeOutDuration, FadeInDuration);
+		FadeOutDuration, LoadingScreenDuration, FadeInDuration);
 
 	// 새 scene 의 PlayerCameraManager 가 만들어진 직후 적용될 fade-in 예약.
 	// (현재 PC/CamMgr 는 이 호출 뒤 world destroy 와 함께 사라지므로 엔진 측 상태로 보관해야 한다.)
 	if (FadeInDuration > 0.0f)
 	{
-		if (UGameEngine* GameEngine = Cast<UGameEngine>(GEngine))
-		{
-			GameEngine->SetPendingFadeIn(FadeInDuration, FLinearColor::Black());
-		}
+		GEngine->SetPendingFadeIn(FadeInDuration, FLinearColor::Black());
 	}
 
 	GEngine->RequestTransitionToScene(TargetScene);
@@ -367,5 +351,6 @@ void ASceneTransitionTriggerActor::FireTransition()
 		bConsumed = true;
 	}
 	bCountingDown = false;
+	bLoadingScreenShown = false;
 	ElapsedSinceEnter = 0.0f;
 }

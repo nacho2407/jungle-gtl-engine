@@ -5,10 +5,9 @@
 #include "Source/Engine/GameFramework/Actor/SceneTransitionTriggerActor.generated.h"
 class UBoxComponent;
 class APawn;
-class UUserWidget;
 
 /**
- * @brief 박스 안으로 possessed pawn이 들어오면 일정 지연 뒤 다른 Scene으로 전환하는 트리거
+ * @brief 박스 안으로 possessed pawn이 들어오면 fade-out과 loading screen 후 다른 Scene으로 전환하는 트리거
  *
  * @details PhysX overlap 대신 매 Tick 마다 BoxComponent의 local space에서 OBB 포함
  *          여부를 직접 검사한다. Level1 -> Level2, Level2 -> Level3 등 게이트 전이용.
@@ -39,18 +38,18 @@ private:
 	void HideMissingRequirementDialogue();
 
 	UBoxComponent* BoxComponent = nullptr;
-	UUserWidget* LoadingScreenWidget = nullptr;
 
 	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Target Scene")
 	FString TargetScene = "";  // "FL_Level2" / "Content/Scene/FL_Level2.Scene" 모두 허용
 
-	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Transition Delay", Min=0.0f, Speed=0.1f)
+	// 이전 scene 직렬화 호환용 값. 현재 전환은 트리거 진입 즉시 fade-out 을 시작합니다.
+	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Legacy Transition Delay", Min=0.0f, Speed=0.1f)
 	float TransitionDelay = 3.0f;
 
 	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Trigger Once")
 	bool bTriggerOnce = true;
 
-	// Fade-out 길이. 0 이면 fade 연출 생략. 보통 TransitionDelay 이하로 설정.
+	// Fade-out 길이. 0 이면 fade-out 연출 없이 바로 loading screen 단계로 넘어갑니다.
 	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Fade Out Duration", Min=0.0f, Speed=0.1f)
 	float FadeOutDuration = 1.5f;
 
@@ -67,9 +66,14 @@ private:
 	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Missing Dialogue Duration", Min=0.0f, Speed=0.1f)
 	float MissingRequirementDialogueDuration = 3.0f;
 
+	// fade-out 완료 후 scene load 전에 loading screen 을 최소로 보여줄 시간.
+	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Loading Screen Duration", Min=0.0f, Speed=0.1f)
+	float LoadingScreenDuration = 0.75f;
+
 	bool bCountingDown = false;
 	bool bConsumed = false;
 	bool bFadeOutStarted = false;
+	bool bLoadingScreenShown = false;
 	float ElapsedSinceEnter = 0.0f;
 	float MissingRequirementDialogueTimer = 0.0f;
 };

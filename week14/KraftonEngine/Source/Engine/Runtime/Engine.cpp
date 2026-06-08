@@ -21,6 +21,9 @@
 #include "UI/UIManager.h"
 #include "Audio/AudioManager.h"
 #include "Object/ReferenceCollector.h"
+#include "GameFramework/Camera/PlayerCameraManager.h"
+#include "GameFramework/GameMode/PlayerController.h"
+#include "UI/UserWidget.h"
 #include "Viewport/GameViewportClient.h"
 #include "Physics/PhysXSDK.h"
 #include "Physics/NvClothSDK.h"
@@ -146,10 +149,54 @@ void UEngine::RequestExit()
 	PostQuitMessage(0);
 }
 
+FString UEngine::GetCurrentGameplaySceneName() const
+{
+	return {};
+}
+
+void UEngine::SetPendingFadeIn(float Duration, FLinearColor Color)
+{
+	bHasPendingFadeIn = true;
+	PendingFadeInDuration = Duration;
+	PendingFadeInColor = Color;
+}
+
+void UEngine::ShowTransitionLoadingScreen()
+{
+	if (TransitionLoadingWidget && TransitionLoadingWidget->IsInViewport())
+	{
+		return;
+	}
+
+	if (!TransitionLoadingWidget)
+	{
+		TransitionLoadingWidget = UUIManager::Get().CreateWidget(nullptr, "Content/UI/Common/LoadingScreen.rml");
+	}
+	if (!TransitionLoadingWidget)
+	{
+		return;
+	}
+
+	// 기존 타이틀 로딩창과 같은 RML을 사용하되, 전환 중에는 입력을 빼앗지 않는 overlay 로만 둡니다.
+	TransitionLoadingWidget->SetWantsMouse(false);
+	TransitionLoadingWidget->AddToViewport(240);
+	TransitionLoadingWidget->SetText("loading-status", "LOADING");
+}
+
+void UEngine::HideTransitionLoadingScreen()
+{
+	if (TransitionLoadingWidget && TransitionLoadingWidget->IsInViewport())
+	{
+		TransitionLoadingWidget->RemoveFromParent();
+	}
+	TransitionLoadingWidget = nullptr;
+}
+
 void UEngine::AddReferencedObjects(FReferenceCollector& Collector)
 {
 	UObject::AddReferencedObjects(Collector);
 	Collector.AddReferencedObject(GameViewportClient);
+	Collector.AddReferencedObject(TransitionLoadingWidget);
 
 	for (FWorldContext& Context : WorldList)
 	{
@@ -219,6 +266,20 @@ void UEngine::WorldTick(float DeltaTime)
 		// 월드 단위 업데이트 (FlushPrimitive / VisibleProxies / DebugDraw /s TickManager)
 		World->Tick(DeltaTime, TickType);
 	}
+}
+
+void UEngine::ApplyPendingFadeIn()
+{
+	if (!bHasPendingFadeIn) return;
+	bHasPendingFadeIn = false;
+
+	UWorld* World = GetWorld();
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	APlayerCameraManager* CamMgr = PC ? PC->GetPlayerCameraManager() : nullptr;
+	if (!CamMgr || PendingFadeInDuration <= 0.0f) return;
+
+	// alpha 1 → 0. bHoldWhenFinished=false 라 끝나면 fade off → 최종 알파 0 으로 자연 종료.
+	CamMgr->StartCameraFade(1.0f, 0.0f, PendingFadeInDuration, PendingFadeInColor, /*bShouldFadeAudio=*/false, /*bHoldWhenFinished=*/false);
 }
 
 UWorld* UEngine::GetWorld() const

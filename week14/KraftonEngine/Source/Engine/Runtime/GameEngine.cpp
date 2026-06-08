@@ -16,7 +16,18 @@
 #include "GameFramework/GameMode/PlayerController.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Logging/Log.h"
-#include "UI/UIManager.h"
+
+namespace
+{
+/**
+ * @brief scene 파일 경로에서 확장자를 제외한 파일 이름을 추출합니다
+ */
+FString GetSceneStemFromPath(const FString& InPath)
+{
+	const std::filesystem::path Path(FPaths::ToWide(InPath));
+	return FPaths::ToUtf8(Path.stem().wstring());
+}
+}
 
 void UGameEngine::Init(FWindowsWindow* InWindow)
 {
@@ -158,25 +169,9 @@ void UGameEngine::RequestTransitionToScene(const FString& InScenePath)
 	bPendingSceneTransition = true;
 }
 
-void UGameEngine::SetPendingFadeIn(float Duration, FLinearColor Color)
+FString UGameEngine::GetCurrentGameplaySceneName() const
 {
-	bHasPendingFadeIn = true;
-	PendingFadeInDuration = Duration;
-	PendingFadeInColor = Color;
-}
-
-void UGameEngine::ApplyPendingFadeIn()
-{
-	if (!bHasPendingFadeIn) return;
-	bHasPendingFadeIn = false;
-
-	UWorld* World = GetWorld();
-	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
-	APlayerCameraManager* CamMgr = PC ? PC->GetPlayerCameraManager() : nullptr;
-	if (!CamMgr || PendingFadeInDuration <= 0.0f) return;
-
-	// alpha 1 → 0. bHoldWhenFinished=false 라 끝나면 fade off → 최종 알파 0 으로 자연 종료.
-	CamMgr->StartCameraFade(1.0f, 0.0f, PendingFadeInDuration, PendingFadeInColor, /*bShouldFadeAudio=*/false, /*bHoldWhenFinished=*/false);
+	return CurrentGameplaySceneName;
 }
 
 void UGameEngine::ProcessPendingTransition()
@@ -205,6 +200,7 @@ void UGameEngine::ProcessPendingTransition()
 	if (!LoadSceneFromPath(FilePath))
 	{
 		UE_LOG("[GameEngine] TransitionToScene failed: %s", FilePath.c_str());
+		HideTransitionLoadingScreen();
 		return;
 	}
 
@@ -221,6 +217,9 @@ void UGameEngine::ProcessPendingTransition()
 			Ctx->World->BeginPlay();
 		}
 	}
+
+	// loading overlay 는 새 world BeginPlay 까지만 유지하고, 이후 fade-in 화면을 노출합니다.
+	HideTransitionLoadingScreen();
 
 	// 트리거 등이 destroy 직전에 예약해 둔 fade-in을 새 PlayerCameraManager에 적용.
 	// BeginPlay 가 PlayerController/CameraManager spawn 을 끝낸 직후라야 valid.
@@ -255,10 +254,12 @@ bool UGameEngine::LoadSceneFromPath(const FString& InScenePath)
 
 	LoadContext.WorldType = EWorldType::Game;
 	LoadContext.World->SetWorldType(EWorldType::Game);
+	LoadContext.ContextName = GetSceneStemFromPath(InScenePath);
 
 	WorldList.push_back(LoadContext);
 	SetActiveWorld(LoadContext.ContextHandle);
 
+	CurrentGameplaySceneName = LoadContext.ContextName;
 
 	return true;
 }

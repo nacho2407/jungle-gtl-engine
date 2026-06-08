@@ -66,6 +66,8 @@ local RECOIL_PATTERN = {
 
 local BULLET_DAMAGE = 15
 local MAX_HEALTH = 100.0
+local HEALTH_REGEN_DELAY = 3.0
+local HEALTH_REGEN_PER_SECOND = 15.0
 local PLAYER_BULLET_IMPACT_AUDIO_EVENT = "player.bullet_impact"
 
 local fireCooldown = 0.0
@@ -84,6 +86,7 @@ local recoilRemainingYaw = 0.0
 local recoilRecoverDelay = 0.0
 local recoilPatternResetTimer = 0.0
 local currentHealth = MAX_HEALTH
+local healthRegenDelayRemaining = 0.0
 local baseMaxWalkSpeed = nil
 local baseSprintSpeedMultiplier = nil
 local baseWallRunMaxSpeed = nil
@@ -409,6 +412,7 @@ local function apply_player_damage(contextOrAmount)
     play_player_impact_audio(contextOrAmount)
 
     currentHealth = clamp(currentHealth - amount, 0.0, MAX_HEALTH)
+    healthRegenDelayRemaining = HEALTH_REGEN_DELAY
     local killed = currentHealth <= 0.0
     if killed then
         isDead = true
@@ -428,6 +432,29 @@ local function set_player_health(value)
     DamagePostProcess.SetHealthRatio(get_health_ratio())
     if isDead then
         handle_player_death()
+    end
+end
+
+local function update_player_health_regen(dt)
+    if isDead or currentHealth >= MAX_HEALTH then
+        healthRegenDelayRemaining = 0.0
+        return
+    end
+
+    -- 마지막 피격 이후 일정 시간 동안은 자동 회복을 시작하지 않습니다.
+    if healthRegenDelayRemaining > 0.0 then
+        healthRegenDelayRemaining = healthRegenDelayRemaining - dt
+        if healthRegenDelayRemaining > 0.0 then
+            return
+        end
+        healthRegenDelayRemaining = 0.0
+    end
+
+    -- HP 회복량을 체력 비율에 즉시 반영해 저체력 흑백 효과도 함께 완화합니다.
+    local previousHealth = currentHealth
+    currentHealth = clamp(currentHealth + HEALTH_REGEN_PER_SECOND * dt, 0.0, MAX_HEALTH)
+    if currentHealth ~= previousHealth then
+        DamagePostProcess.SetHealthRatio(get_health_ratio())
     end
 end
 
@@ -1098,6 +1125,7 @@ function BeginPlay()
     GameAudio.PlayEnvironmentWind(0.35)
     currentAmmo = MAGAZINE_SIZE
     currentHealth = MAX_HEALTH
+    healthRegenDelayRemaining = 0.0
     isDead = false
     deathHandled = false
     reloadTimer = 0.0
@@ -1297,6 +1325,8 @@ function Tick(dt)
         stop_player_action_audio()
         return
     end
+
+    update_player_health_regen(dt)
 
     GameAudio.UpdateMovement(movement, dt)
 

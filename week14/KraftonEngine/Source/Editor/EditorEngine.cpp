@@ -735,6 +735,36 @@ void UEditorEngine::RequestExit()
 	UEngine::RequestExit();
 }
 
+FString UEditorEngine::GetCurrentGameplaySceneName() const
+{
+	// PIE 중 TransitionToScene으로 교체된 world는 실제 로드 파일 stem을 ContextName에 저장합니다.
+	if (IsPlayingInEditor())
+	{
+		const FWorldContext* ActiveContext = GetWorldContextFromHandle(GetActiveWorldHandle());
+		if (ActiveContext && !ActiveContext->ContextName.empty() && ActiveContext->ContextName != "PIE")
+		{
+			return ActiveContext->ContextName;
+		}
+
+		// 최초 PIE는 에디터 world 복제라 ContextName이 "PIE"입니다.
+		// 이때는 에디터가 현재 열고 있던 scene 파일 경로가 재시작 대상입니다.
+		if (!CurrentLevelFilePath.empty())
+		{
+			return GetFileStem(CurrentLevelFilePath);
+		}
+
+		return {};
+	}
+
+	if (!CurrentLevelFilePath.empty())
+	{
+		return GetFileStem(CurrentLevelFilePath);
+	}
+
+	const FWorldContext* ActiveContext = GetWorldContextFromHandle(GetActiveWorldHandle());
+	return ActiveContext ? ActiveContext->ContextName : FString{};
+}
+
 void UEditorEngine::StartQueuedPlaySessionRequest()
 {
 	if (!PlaySessionRequest.has_value())
@@ -1125,6 +1155,7 @@ void UEditorEngine::ProcessPendingPIESceneTransition()
 	if (!std::filesystem::exists(std::filesystem::path(FPaths::ToWide(FilePath))))
 	{
 		UE_LOG("[EditorEngine] PIE TransitionToScene failed. Scene file not found: %s", FilePath.c_str());
+		HideTransitionLoadingScreen();
 		return;
 	}
 
@@ -1154,6 +1185,7 @@ void UEditorEngine::ProcessPendingPIESceneTransition()
 	if (!LoadContext.World)
 	{
 		UE_LOG("[EditorEngine] PIE TransitionToScene failed to load: %s", FilePath.c_str());
+		HideTransitionLoadingScreen();
 		EndPlayMap();
 		return;
 	}
@@ -1200,6 +1232,10 @@ void UEditorEngine::ProcessPendingPIESceneTransition()
 	InputSystem::Get().ResetTransientState();
 
 	PIEWorld->BeginPlay();
+
+	// loading overlay 는 새 PIE world BeginPlay 까지만 유지하고, 이후 fade-in 화면을 노출합니다.
+	HideTransitionLoadingScreen();
+	ApplyPendingFadeIn();
 
 	if (FTimer* Timer = GetTimer())
 	{

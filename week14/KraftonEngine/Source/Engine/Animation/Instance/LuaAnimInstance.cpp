@@ -631,6 +631,37 @@ void ULuaAnimInstance::InstallBindings()
 			return P;
 		});
 
+	Anim.set_function("is_sequence_player_valid",
+		[](FAnimNode_SequencePlayer* Player) -> bool
+		{
+			return Player && Player->Sequence;
+		});
+
+	Anim.set_function("get_sequence_player_time",
+		[](FAnimNode_SequencePlayer* Player) -> float
+		{
+			return Player ? Player->LocalTime : -1.0f;
+		});
+
+	Anim.set_function("get_sequence_player_length",
+		[](FAnimNode_SequencePlayer* Player) -> float
+		{
+			return (Player && Player->Sequence) ? Player->Sequence->GetPlayLength() : -1.0f;
+		});
+
+	Anim.set_function("get_sequence_player_play_rate",
+		[](FAnimNode_SequencePlayer* Player) -> float
+		{
+			return Player ? Player->PlayRate : 0.0f;
+		});
+
+	Anim.set_function("get_sequence_player_path",
+		[](FAnimNode_SequencePlayer* Player) -> std::string
+		{
+			const UAnimSequence* Sequence = Player ? Cast<UAnimSequence>(Player->Sequence) : nullptr;
+			return Sequence ? Sequence->GetAssetPathFileName() : std::string("None");
+		});
+
 	// SM 에 state 추가 — SubGraphOverride 로 임의 노드를 state 의 sub-graph 로 박음.
 	Anim.set_function("set_sequence_force_root_lock",
 		[](std::string Path, bool bEnable)
@@ -652,6 +683,25 @@ void ULuaAnimInstance::InstallBindings()
 			{
 				Sequence->SetEnableRootMotion(false);
 			}
+			return true;
+		});
+
+	Anim.set_function("set_sequence_enable_root_motion",
+		[](std::string Path, bool bEnable)
+		{
+			if (Path.empty() || Path == "None")
+			{
+				return false;
+			}
+
+			UAnimSequence* Sequence = FAnimationManager::Get().LoadAnimation(Path);
+			if (!Sequence)
+			{
+				UE_LOG("[LuaAnim] set_sequence_enable_root_motion - anim load failed: %s", Path.c_str());
+				return false;
+			}
+
+			Sequence->SetEnableRootMotion(bEnable);
 			return true;
 		});
 

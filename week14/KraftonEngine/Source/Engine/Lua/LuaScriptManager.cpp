@@ -120,6 +120,50 @@ FString NormalizeScriptFilePath(FString ScriptFile)
 	return ScriptFile;
 }
 
+std::filesystem::path ResolveLuaDebugLogPath(const FString& FileName)
+{
+	std::filesystem::path Relative(FPaths::ToWide(FileName.empty() ? FString("lua_log.txt") : FileName));
+	if (Relative.is_absolute())
+	{
+		Relative = Relative.filename();
+	}
+
+	Relative = Relative.lexically_normal();
+	if (Relative.empty() || Relative.native().find(L"..") != std::wstring::npos)
+	{
+		Relative = L"lua_log.txt";
+	}
+
+	return (std::filesystem::path(FPaths::LogDir()) / Relative).lexically_normal();
+}
+
+bool WriteLuaDebugTextFile(const FString& FileName, const FString& Text, bool bAppend)
+{
+	const std::filesystem::path LogPath = ResolveLuaDebugLogPath(FileName);
+	std::error_code Error;
+	std::filesystem::create_directories(LogPath.parent_path(), Error);
+	if (Error)
+	{
+		UE_LOG("[Lua] DebugFile failed to create directory: %s", FPaths::ToUtf8(LogPath.parent_path().wstring()).c_str());
+		return false;
+	}
+
+	std::ofstream File(LogPath, std::ios::binary | std::ios::out | (bAppend ? std::ios::app : std::ios::trunc));
+	if (!File.is_open())
+	{
+		UE_LOG("[Lua] DebugFile failed to open: %s", FPaths::ToUtf8(LogPath.wstring()).c_str());
+		return false;
+	}
+
+	File << Text;
+	const bool bOk = File.good();
+	if (!bOk)
+	{
+		UE_LOG("[Lua] DebugFile failed to write: %s", FPaths::ToUtf8(LogPath.wstring()).c_str());
+	}
+	return bOk;
+}
+
 bool HasPathSeparator(const FString& Path)
 {
 	return Path.find('/') != FString::npos || Path.find('\\') != FString::npos;
@@ -702,7 +746,13 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 		.Method("---@param key integer\n---@return boolean\nfunction Anim.is_key_down(key) end")
 		.Method("---@param name? string\n---@return AnimNode\nfunction Anim.create_state_machine(name) end")
 		.Method("---@param path string\n---@param rate number\n---@param loop boolean\n---@return AnimNode\nfunction Anim.create_sequence_player(path, rate, loop) end")
+		.Method("---@param player AnimNode\n---@return boolean\nfunction Anim.is_sequence_player_valid(player) end")
+		.Method("---@param player AnimNode\n---@return number\nfunction Anim.get_sequence_player_time(player) end")
+		.Method("---@param player AnimNode\n---@return number\nfunction Anim.get_sequence_player_length(player) end")
+		.Method("---@param player AnimNode\n---@return number\nfunction Anim.get_sequence_player_play_rate(player) end")
+		.Method("---@param player AnimNode\n---@return string\nfunction Anim.get_sequence_player_path(player) end")
 		.Method("---@param path string\n---@param enable boolean\n---@return boolean\nfunction Anim.set_sequence_force_root_lock(path, enable) end")
+		.Method("---@param path string\n---@param enable boolean\n---@return boolean\nfunction Anim.set_sequence_enable_root_motion(path, enable) end")
 		.Method("---@param stateMachine AnimNode\n---@param name string\n---@param subGraph AnimNode\nfunction Anim.sm_add_state(stateMachine, name, subGraph) end")
 		.Method("---@param stateMachine AnimNode\n---@param from string\n---@param to string\n---@param condition fun(): boolean\n---@param blendTime number\nfunction Anim.sm_add_transition(stateMachine, from, to, condition, blendTime) end")
 		.Method("---@param stateMachine AnimNode\n---@param name string\nfunction Anim.sm_set_initial_state(stateMachine, name) end")
@@ -759,6 +809,20 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		}
 
 		UE_LOG("[Lua] %s", Message.c_str());
+	});
+
+	sol::table DebugFile = Lua.create_named_table("DebugFile");
+	DebugFile.set_function("WriteText", [](const FString& FileName, const FString& Text)
+	{
+		return WriteLuaDebugTextFile(FileName, Text, false);
+	});
+	DebugFile.set_function("AppendText", [](const FString& FileName, const FString& Text)
+	{
+		return WriteLuaDebugTextFile(FileName, Text, true);
+	});
+	DebugFile.set_function("GetLogPath", [](const FString& FileName)
+	{
+		return FPaths::ToUtf8(ResolveLuaDebugLogPath(FileName).wstring());
 	});
 
 	sol::table Input = Lua.create_named_table("Input");
@@ -962,17 +1026,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	});
 	Game.set_function("GetCurrentSceneName", []() -> FString
 	{
-		if (!GEngine)
-		{
-			return {};
-		}
-
-		const FWorldContext* Context = GEngine->GetWorldContextFromHandle(GEngine->GetActiveWorldHandle());
-		if (Context && !Context->ContextName.empty() && Context->ContextName != "PIE")
-		{
-			return Context->ContextName;
-		}
-		return FProjectSettings::Get().Game.StartLevelName;
+		return GEngine ? GEngine->GetCurrentGameplaySceneName() : FString{};
 	});
 	Game.set_function("TransitionToScene", [](const FString& ScenePath)
 	{
