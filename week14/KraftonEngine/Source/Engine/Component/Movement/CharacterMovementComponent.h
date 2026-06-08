@@ -288,6 +288,10 @@ protected:
 	bool          bIsSliding       = false;
 	float         SlideQueueTimer  = 0.0f;
 	float         SlideElapsedTime = 0.0f;
+	float         SlideTravelDistance = 0.0f;
+	float         SlideStopDurationAccumulator = 0.0f;
+	float         SlideStopStartSpeed = 0.0f;
+	bool          bIsSlideStopping = false;
 	FVector       SlideDirection   = FVector::ZeroVector;
 	float         StandingCapsuleHalfHeight = 0.0f;
 
@@ -366,6 +370,10 @@ public:
 	float SlideImpulseSpeed = 6.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide Braking Friction", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float SlideBrakingFriction = 1.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Max Slide Distance", Min = 0.0f, Max = 1000.0f, Speed = 0.1f)
+	float MaxSlideDistance = 12.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide Stop Duration", Min = 0.0f, Max = 5.0f, Speed = 0.05f)
+	float SlideStopDuration = 1.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Max Slide Time", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
 	float MaxSlideTime = 1.15f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|Slide", DisplayName = "Slide Queue Grace Time", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
