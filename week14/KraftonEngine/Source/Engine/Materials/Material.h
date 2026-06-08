@@ -57,6 +57,7 @@ public:
 	virtual FVector4 GetEmissiveColor() const { return FVector4(1.0f, 1.0f, 1.0f, 1.0f); }
 	virtual float GetEmissiveIntensity() const { return 0.0f; }
 	virtual bool IsBloomEnabled() const { return false; }
+	virtual bool IsTwoSidedLighting() const { return false; }
 	virtual const FString& GetAssetPathFileName() const
 	{
 		static const FString EmptyString;
@@ -101,6 +102,9 @@ protected:
 
 	UPROPERTY(Edit, Save, Category="Material", DisplayName="Rasterizer State", Enum=ERasterizerState)
 	ERasterizerState RasterizerState = ERasterizerState::SolidBackCull;
+
+	UPROPERTY(Edit, Save, Category="Material", DisplayName="Two Sided Lighting")
+	bool bTwoSidedLighting = false;
 
 	TMap<FString, std::unique_ptr<FMaterialConstantBuffer>> ConstantBufferMap; // 인스턴스 고유
 	TMap<FString, UTexture2D*> TextureParameters;  //텍스처는 슬롯 이름으로 관리
@@ -171,6 +175,8 @@ public:
 	void SetEmissiveColor(const FVector4& InColor) { EmissiveColor = InColor; bMaterialBloomCBDirty = true; }
 	void SetEmissiveIntensity(float InIntensity) { EmissiveIntensity = InIntensity; bMaterialBloomCBDirty = true; }
 	void SetBloomEnabled(bool bInEnableBloom) { bEnableBloom = bInEnableBloom; bMaterialBloomCBDirty = true; }
+	bool IsTwoSidedLighting() const override { return bTwoSidedLighting; }
+	void SetTwoSidedLighting(bool bInTwoSidedLighting);
 	void PostEditProperty(const char* PropertyName) override;
 
 	bool CastsShadow() const override { return ShadowMode != EMaterialShadowMode::None; }
@@ -181,7 +187,8 @@ public:
 	ERenderPass GetRenderPass() const override { return RenderPass; }
 	EBlendState GetBlendState() const override { return BlendState; }
 	EDepthStencilState GetDepthStencilState() const override { return DepthStencilState; }
-	ERasterizerState GetRasterizerState() const override { return RasterizerState; }
+	ERasterizerState GetRasterizerState() const override;
+	ERasterizerState GetAuthoredRasterizerState() const { return RasterizerState; }
 
 	// Per-shader CB 오버라이드 — transient Material에서 Gizmo/SubUV/Decal 등이 사용
 	template<typename T>
@@ -275,6 +282,8 @@ public:
 	}
 
 private:
+	void SyncTwoSidedLightingParameter();
+
 	// Template/CB 없는 경량 머티리얼 생성 — SRV만 래핑할 때 사용
 	// FMaterialManager::CreateTransientMaterial을 통해 생성/관리해야 한다.
 	static UMaterial* CreateTransient(ERenderPass InPass, EBlendState InBlend,
@@ -328,6 +337,7 @@ public:
 	FVector4 GetEmissiveColor() const override;
 	float GetEmissiveIntensity() const override;
 	bool IsBloomEnabled() const override;
+	bool IsTwoSidedLighting() const override;
 	bool CastsShadow() const override { return GetShadowMode() != EMaterialShadowMode::None; }
 
 	bool HasEmissiveColorOverride() const { return bOverrideEmissiveColor; }

@@ -15,17 +15,23 @@ float3 CalcAmbient(float3 lightColor, float intensity)
     return lightColor * intensity;
 }
 
-float3 CalcDirectionalDiffuse(float3 lightColor, float3 lightDir, float intensity, float3 N)
+float CalcTwoSidedNdot(float3 N, float3 L, float twoSidedLighting)
 {
-    float NdotL = saturate(dot(N, -lightDir));
+    float ndotl = dot(N, L);
+    return twoSidedLighting > 0.5f ? abs(ndotl) : saturate(ndotl);
+}
+
+float3 CalcDirectionalDiffuse(float3 lightColor, float3 lightDir, float intensity, float3 N, float twoSidedLighting)
+{
+    float NdotL = CalcTwoSidedNdot(N, -lightDir, twoSidedLighting);
     return lightColor * intensity * NdotL;
 }
 
 float3 CalcDirectionalSpecular(float3 lightColor, float3 lightDir, float intensity,
-                               float3 N, float3 V, float shininess)
+                               float3 N, float3 V, float shininess, float twoSidedLighting)
 {
     float3 H = normalize(-lightDir + V);
-    float NdotH = saturate(dot(N, H));
+    float NdotH = CalcTwoSidedNdot(N, H, twoSidedLighting);
     return lightColor * intensity * pow(NdotH, max(shininess, 1.0f));
 }
 
@@ -94,14 +100,14 @@ float4 ComputeCullingHeatmap(float4 screenPos, float3 worldPos)
     return float4(GetHeatmapColor(ratio), 1.0f);
 }
 
-float3 CalcLightDiffuse(FLightInfo light, float3 worldPos, float3 N)
+float3 CalcLightDiffuse(FLightInfo light, float3 worldPos, float3 N, float twoSidedLighting)
 {
     float3 L = light.Position - worldPos;
     float dist = length(L);
     L = normalize(L);
 
     float atten = CalcAttenuation(dist, light.AttenuationRadius, light.FalloffExponent);
-    float NdotL = saturate(dot(N, L));
+    float NdotL = CalcTwoSidedNdot(N, L, twoSidedLighting);
 
     float spotFactor = 1.0f;
     if (light.LightType == LIGHT_TYPE_SPOT)
@@ -122,7 +128,7 @@ float3 CalcLightDiffuse(FLightInfo light, float3 worldPos, float3 N)
     return light.Color.rgb * light.Intensity * NdotL * atten * spotFactor * shadow;
 }
 
-float3 CalcLightSpecular(FLightInfo light, float3 worldPos, float3 N, float3 V, float shininess)
+float3 CalcLightSpecular(FLightInfo light, float3 worldPos, float3 N, float3 V, float shininess, float twoSidedLighting)
 {
     float3 L = normalize(light.Position - worldPos);
     float dist = length(light.Position - worldPos);
@@ -145,11 +151,11 @@ float3 CalcLightSpecular(FLightInfo light, float3 worldPos, float3 N, float3 V, 
     }
 
     float3 H = normalize(L + V);
-    float NdotH = saturate(dot(N, H));
+    float NdotH = CalcTwoSidedNdot(N, H, twoSidedLighting);
     return light.Color.rgb * light.Intensity * pow(NdotH, max(shininess, 1.0f)) * atten * spotFactor * shadow;
 }
 
-void AccumulatePointSpotDiffuse(float3 worldPos, float3 N, float4 screenPos, inout float3 result)
+void AccumulatePointSpotDiffuse(float3 worldPos, float3 N, float4 screenPos, inout float3 result, float twoSidedLighting)
 {
     if (LightCullingMode == LIGHT_CULLING_TILE && NumTilesX > 0 && NumTilesY > 0)
     {
@@ -158,7 +164,7 @@ void AccumulatePointSpotDiffuse(float3 worldPos, float3 N, float4 screenPos, ino
         uint2 gridData = TileLightGrid[tileIdx];
         for (uint t = 0; t < gridData.y; ++t)
         {
-            result += CalcLightDiffuse(AllLights[TileLightIndices[gridData.x + t]], worldPos, N);
+            result += CalcLightDiffuse(AllLights[TileLightIndices[gridData.x + t]], worldPos, N, twoSidedLighting);
         }
     }
     else if (LightCullingMode == LIGHT_CULLING_CLUSTER)
@@ -167,19 +173,19 @@ void AccumulatePointSpotDiffuse(float3 worldPos, float3 N, float4 screenPos, ino
         uint2 gridData = g_ClusterLightGrid[clusterIdx];
         for (uint t = 0; t < gridData.y; ++t)
         {
-            result += CalcLightDiffuse(AllLights[g_ClusterLightIndices[gridData.x + t]], worldPos, N);
+            result += CalcLightDiffuse(AllLights[g_ClusterLightIndices[gridData.x + t]], worldPos, N, twoSidedLighting);
         }
     }
     else
     {
         for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
         {
-            result += CalcLightDiffuse(AllLights[i], worldPos, N);
+            result += CalcLightDiffuse(AllLights[i], worldPos, N, twoSidedLighting);
         }
     }
 }
 
-void AccumulatePointSpotSpecular(float3 worldPos, float3 N, float3 V, float shininess, float4 screenPos, inout float3 result)
+void AccumulatePointSpotSpecular(float3 worldPos, float3 N, float3 V, float shininess, float4 screenPos, inout float3 result, float twoSidedLighting)
 {
     if (LightCullingMode == LIGHT_CULLING_TILE && NumTilesX > 0 && NumTilesY > 0)
     {
@@ -188,7 +194,7 @@ void AccumulatePointSpotSpecular(float3 worldPos, float3 N, float3 V, float shin
         uint2 gridData = TileLightGrid[tileIdx];
         for (uint t = 0; t < gridData.y; ++t)
         {
-            result += CalcLightSpecular(AllLights[TileLightIndices[gridData.x + t]], worldPos, N, V, shininess);
+            result += CalcLightSpecular(AllLights[TileLightIndices[gridData.x + t]], worldPos, N, V, shininess, twoSidedLighting);
         }
     }
     else if (LightCullingMode == LIGHT_CULLING_CLUSTER)
@@ -197,14 +203,14 @@ void AccumulatePointSpotSpecular(float3 worldPos, float3 N, float3 V, float shin
         uint2 gridData = g_ClusterLightGrid[clusterIdx];
         for (uint t = 0; t < gridData.y; ++t)
         {
-            result += CalcLightSpecular(AllLights[g_ClusterLightIndices[gridData.x + t]], worldPos, N, V, shininess);
+            result += CalcLightSpecular(AllLights[g_ClusterLightIndices[gridData.x + t]], worldPos, N, V, shininess, twoSidedLighting);
         }
     }
     else
     {
         for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
         {
-            result += CalcLightSpecular(AllLights[i], worldPos, N, V, shininess);
+            result += CalcLightSpecular(AllLights[i], worldPos, N, V, shininess, twoSidedLighting);
         }
     }
 }
@@ -215,42 +221,52 @@ float CalcDirectionalShadow(float3 worldPos, float3 N)
     return CalcDirectionalShadowFactor(worldPos, viewDepth, N);
 }
 
-float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos)
+float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos, float twoSidedLighting)
 {
     float3 result = float3(0, 0, 0);
     result += CalcAmbient(AmbientLight.Color.rgb, AmbientLight.Intensity);
 
     float3 dirDiffuse = CalcDirectionalDiffuse(DirectionalLight.Color.rgb, DirectionalLight.Direction,
-                                               DirectionalLight.Intensity, N);
+                                               DirectionalLight.Intensity, N, twoSidedLighting);
     float viewDepth = ComputeCameraViewDepth(worldPos);
     dirDiffuse *= CalcDirectionalShadowFactor(worldPos, viewDepth, N);
     result += dirDiffuse;
 
-    AccumulatePointSpotDiffuse(worldPos, N, screenPos, result);
+    AccumulatePointSpotDiffuse(worldPos, N, screenPos, result, twoSidedLighting);
+    return result;
+}
+
+float3 AccumulateDiffuse(float3 worldPos, float3 N, float4 screenPos)
+{
+    return AccumulateDiffuse(worldPos, N, screenPos, 0.0f);
+}
+
+float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess, float4 screenPos, float twoSidedLighting)
+{
+    float3 result = float3(0, 0, 0);
+
+    float3 dirSpec = CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
+                                             DirectionalLight.Intensity, N, V, shininess, twoSidedLighting);
+    float viewDepth = ComputeCameraViewDepth(worldPos);
+    dirSpec *= CalcDirectionalShadowFactor(worldPos, viewDepth, N);
+    result += dirSpec;
+
+    AccumulatePointSpotSpecular(worldPos, N, V, shininess, screenPos, result, twoSidedLighting);
     return result;
 }
 
 float3 AccumulateSpecular(float3 worldPos, float3 N, float3 V, float shininess, float4 screenPos)
 {
-    float3 result = float3(0, 0, 0);
-
-    float3 dirSpec = CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
-                                             DirectionalLight.Intensity, N, V, shininess);
-    float viewDepth = ComputeCameraViewDepth(worldPos);
-    dirSpec *= CalcDirectionalShadowFactor(worldPos, viewDepth, N);
-    result += dirSpec;
-
-    AccumulatePointSpotSpecular(worldPos, N, V, shininess, screenPos, result);
-    return result;
+    return AccumulateSpecular(worldPos, N, V, shininess, screenPos, 0.0f);
 }
 
 // ── Vertex Shader 전용 (Culling 우회) ──
-float3 AccumulateDiffuseVS(float3 worldPos, float3 N)
+float3 AccumulateDiffuseVS(float3 worldPos, float3 N, float twoSidedLighting)
 {
     float3 result = CalcAmbient(AmbientLight.Color.rgb, AmbientLight.Intensity);
 
     float3 dirDiffuse = CalcDirectionalDiffuse(DirectionalLight.Color.rgb, DirectionalLight.Direction,
-                                     DirectionalLight.Intensity, N);
+                                     DirectionalLight.Intensity, N, twoSidedLighting);
     float viewDepth = ComputeCameraViewDepth(worldPos);
     dirDiffuse *= CalcDirectionalShadowFactor(worldPos, viewDepth, N);
     result += dirDiffuse;
@@ -260,24 +276,34 @@ float3 AccumulateDiffuseVS(float3 worldPos, float3 N)
     // 전체 라이트 순회로 해결(임시로 VS는 정점 수가 적으므로 성능을 일부 포기하고 버그를 해결.)
     for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
     {
-        result += CalcLightDiffuse(AllLights[i], worldPos, N);
+        result += CalcLightDiffuse(AllLights[i], worldPos, N, twoSidedLighting);
     }
     return result;
 }
 
-float3 AccumulateSpecularVS(float3 worldPos, float3 N, float3 V, float shininess)
+float3 AccumulateDiffuseVS(float3 worldPos, float3 N)
+{
+    return AccumulateDiffuseVS(worldPos, N, 0.0f);
+}
+
+float3 AccumulateSpecularVS(float3 worldPos, float3 N, float3 V, float shininess, float twoSidedLighting)
 {
     float3 dirSpec = CalcDirectionalSpecular(DirectionalLight.Color.rgb, DirectionalLight.Direction,
-                                      DirectionalLight.Intensity, N, V, shininess);
+                                      DirectionalLight.Intensity, N, V, shininess, twoSidedLighting);
     float viewDepth = ComputeCameraViewDepth(worldPos);
     dirSpec *= CalcDirectionalShadowFactor(worldPos, viewDepth, N);
     float3 result = dirSpec;
 
     for (uint i = 0; i < NumActivePointLights + NumActiveSpotLights; ++i)
     {
-        result += CalcLightSpecular(AllLights[i], worldPos, N, V, shininess);
+        result += CalcLightSpecular(AllLights[i], worldPos, N, V, shininess, twoSidedLighting);
     }
     return result;
+}
+
+float3 AccumulateSpecularVS(float3 worldPos, float3 N, float3 V, float shininess)
+{
+    return AccumulateSpecularVS(worldPos, N, V, shininess, 0.0f);
 }
 
 #endif // FORWARD_LIGHTING_HLSLI

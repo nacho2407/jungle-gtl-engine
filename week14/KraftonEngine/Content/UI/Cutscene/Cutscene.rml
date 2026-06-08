@@ -17,6 +17,10 @@
             <div id="producer-credit-role" class="producer-credit-role" data-ui-editor="text">PRODUCER</div>
             <div id="producer-credit-name" class="producer-credit-name" data-ui-editor="text">KIM HYOBEOM</div>
         </div>
+        <div id="cutscene-skip-prompt" class="cutscene-skip-prompt">
+            <div id="cutscene-skip-key" class="cutscene-skip-key" data-ui-editor="text">Ctrl</div>
+            <div id="cutscene-skip-label" class="cutscene-skip-label" data-ui-editor="text">SKIP</div>
+        </div>
         <div id="skip-ring" class="skip-ring">
             <img id="skip-ring-frame-00" class="skip-ring-frame" src="SkipRing/SkipRing_00.png"/>
             <img id="skip-ring-frame-01" class="skip-ring-frame" src="SkipRing/SkipRing_01.png"/>

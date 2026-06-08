@@ -3,7 +3,7 @@ body {
 	width: 100%;
 	height: 100%;
 	font-family: Pretendard;
-	color: #ffffff;
+	color: #ffffffE6;
 }
 
 #weapon-hud-root {
@@ -13,6 +13,72 @@ body {
 	width: 100%;
 	height: 100%;
  right: 20.00px; bottom: 20.00px;}
+
+.score-hud-panel {
+	position: absolute;
+	right: 42px;
+	top: 32px;
+	width: 224px;
+	height: 58px;
+}
+
+.score-hud-label {
+	position: absolute;
+	left: 176.00px;
+	top: 66.00px;
+	width: 78px;
+	height: 18px;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 18px;
+	color: #ffffffE6;
+}
+
+.score-hud-value {
+	position: absolute;
+	right: 0.00px;
+	top: 29.00px;
+	width: 106.00px;
+	height: 32px;
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 32px;
+	text-align: right;
+	color: #ffffffE6;
+}
+
+.speed-hud-panel {
+	position: absolute;
+	right: 42px;
+	top: 106px;
+	width: 224px;
+	height: 58px;
+}
+
+.speed-hud-label {
+	position: absolute;
+	left: 176.00px;
+	top: 66.00px;
+	width: 78px;
+	height: 18px;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 18px;
+	color: #ffffffE6;
+}
+
+.speed-hud-value {
+	position: absolute;
+	right: 0.00px;
+	top: 29.00px;
+	width: 146.00px;
+	height: 32px;
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 32px;
+	text-align: right;
+	color: #ffffffE6;
+}
 
 .crosshair-screen {
 	position: absolute;
@@ -139,7 +205,7 @@ body {
 	font-weight: bold;
 	line-height: 42px;
 	text-align: right;
-	color: #FFFFFF;
+	color: #FFFFFFE6;
  bottom: auto;}
 
 .weapon-hud-magazine-ammo {
@@ -152,5 +218,5 @@ body {
 	font-weight: bold;
 	line-height: 32px;
 	text-align: left;
-	color: #7B7B7B;
+	color: #7B7B7BE6;
 }

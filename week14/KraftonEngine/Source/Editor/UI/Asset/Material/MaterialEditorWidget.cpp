@@ -691,6 +691,7 @@ void FMaterialEditorWidget::RenderShaderParameters(UMaterialInterface* Material)
 	for (const auto& [ParamName, Info] : Layout)
 	{
 		if (!Info) continue;
+		if (ParamName == MatKeys::TwoSidedLighting) continue;
 
 		ImGui::PushID(ParamName.c_str());
 		ImGui::TextUnformatted(ParamName.c_str());
@@ -974,7 +975,8 @@ bool FMaterialEditorWidget::SaveMaterialJson()
 		CachedJson[MatKeys::RenderPass] = ToString(RenderPassMap, BaseMaterial->GetRenderPass());
 		CachedJson[MatKeys::BlendState] = ToString(BlendStateMap, BaseMaterial->GetBlendState());
 		CachedJson[MatKeys::DepthStencilState] = ToString(DepthStencilStateMap, BaseMaterial->GetDepthStencilState());
-		CachedJson[MatKeys::RasterizerState] = ToString(RasterizerStateMap, BaseMaterial->GetRasterizerState());
+		CachedJson[MatKeys::RasterizerState] = ToString(RasterizerStateMap, BaseMaterial->GetAuthoredRasterizerState());
+		CachedJson[MatKeys::TwoSidedLighting] = BaseMaterial->IsTwoSidedLighting();
 
 		const FVector4 EmissiveColor = BaseMaterial->GetEmissiveColor();
 		CachedJson[MatKeys::EmissiveColor] = json::Array(

@@ -81,6 +81,10 @@ local function show_panel(itemId)
     widget:SetText("item-inspect-description", data.description or "")
     widget:SetAttribute("item-inspect-image", "src", data.image or ItemDatabase.default_image or "../Item/IonCoreSample.png")
 
+    if ScoreManager ~= nil and ScoreManager.AddItemInspected ~= nil then
+        ScoreManager.AddItemInspected(1)
+    end
+
     panelOpen = true
     set_display("item-interact-hint", "none")
     set_display("item-inspect-card", "block")

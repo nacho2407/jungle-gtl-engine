@@ -104,6 +104,8 @@ void FEditorMaterialInspector::RenderShaderParameter()
 
 	for (const auto& [ParamName, Info] : Layout)
 	{
+		if (ParamName == MatKeys::TwoSidedLighting) continue;
+
 		ImGui::Text(ParamName.c_str());
 		
 		switch (Info->Size)

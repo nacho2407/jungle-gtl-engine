@@ -1,0 +1,125 @@
+body {
+	margin: 0px;
+	width: 100%;
+	height: 100%;
+	font-family: Pretendard;
+	color: #ffffff;
+}
+
+.tutorial-root {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+.tutorial-panel {
+	position: absolute;
+	left: 36px;
+	top: 58px;
+	width: 420px;
+	height: 248px;
+	display: none;
+	background-color: #050505D8;
+	border: 1px #E6E6E652;
+	padding: 0px;
+}
+
+.tutorial-header {
+	position: absolute;
+	left: 16px;
+	top: 10px;
+	width: 386px;
+	height: 24px;
+	font-size: 17px;
+	font-weight: 800;
+	line-height: 24px;
+	color: #ffffff;
+	letter-spacing: 0px;
+	text-shadow: 0px 2px 4px #000000;
+}
+
+.tutorial-rule {
+	position: absolute;
+	left: 16px;
+	top: 38px;
+	width: 388px;
+	height: 1px;
+	background-color: #ffffff;
+	opacity: 0.28;
+}
+
+.tutorial-step {
+	position: absolute;
+	left: 16px;
+	top: 52px;
+	width: 388px;
+	height: 31px;
+	opacity: 1.0;
+}
+
+.tutorial-step-2 {
+	top: 86px;
+}
+
+.tutorial-step-3 {
+	top: 120px;
+}
+
+.tutorial-step-4 {
+	top: 154px;
+}
+
+.tutorial-step-5 {
+	top: 188px;
+}
+
+.tutorial-step-6 {
+	top: 222px;
+}
+
+.tutorial-key {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 48px;
+	height: 29px;
+	font-size: 15px;
+	font-weight: 800;
+	line-height: 29px;
+	text-align: center;
+	color: #F4F4F4;
+	background-color: #050505E8;
+	border: 1px #E6E6E6B8;
+}
+
+.tutorial-text {
+	position: absolute;
+	left: 61px;
+	top: 0px;
+	width: 276px;
+	height: 31px;
+	font-size: 20px;
+	font-weight: 700;
+	line-height: 31px;
+	color: #f2f2f2;
+	white-space: nowrap;
+	text-shadow: 0px 2px 4px #000000;
+}
+
+.tutorial-check {
+	position: absolute;
+	right: 0px;
+	top: 3px;
+	width: 23px;
+	height: 23px;
+	font-size: 20px;
+	font-weight: 900;
+	line-height: 23px;
+	text-align: center;
+	color: #f0c936;
+	border: 1px #d4d4d4;
+	background-color: #00000066;
+}

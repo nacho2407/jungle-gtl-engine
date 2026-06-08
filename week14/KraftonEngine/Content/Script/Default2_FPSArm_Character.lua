@@ -2,6 +2,7 @@ local arms   = nil
 local camera = nil
 local movement = nil
 local DamagePostProcess = require("DamagePostProcess")
+local GameOver = require("GameOver")
 local InGamePause = require("InGamePause")
 local WeaponHud = require("HUD/WeaponHud")
 local CombatEvents = require("Game.CombatEvents")
@@ -9,6 +10,8 @@ local InGameDebug = require("DebugUI/InGameDebug")
 local ItemInspectSystem = require("Items/ItemInspectSystem")
 local GameAudio = require("Game.GameAudio")
 local HitSpark = require("Game.HitSpark")
+local ImpactAudio = require("Game.ImpactAudio")
+local TutorialSystem = require("Tutorial.TutorialSystem")
 
 -- 본 기반 머즐은 Arm_R 이 어깨 관절이라 카메라랑 거의 같은 위치 → 의미 없음.
 -- 대부분 FPS 는 카메라에서 forward offset 으로 머즐을 근사함.
@@ -63,6 +66,7 @@ local RECOIL_PATTERN = {
 
 local BULLET_DAMAGE = 12.5
 local MAX_HEALTH = 100.0
+local PLAYER_BULLET_IMPACT_AUDIO_EVENT = "player.bullet_impact"
 
 local fireCooldown = 0.0
 local reloadTimer  = 0.0
@@ -72,6 +76,7 @@ local reloadAudioTrack = 1
 local reloadAudioSteps = nil
 local reloadAudioNextIndex = 1
 local isDead       = false
+local deathHandled = false
 local weaponSpread = 0.0
 local recoilPatternIndex = 1
 local recoilRemainingPitch = 0.0
@@ -349,6 +354,43 @@ local function make_damage_result(applied, damageApplied, killed)
     }
 end
 
+local function stop_player_action_audio()
+    if GameAudio == nil then return end
+    GameAudio.StopWeaponFireLoop()
+    GameAudio.UpdateSlideState(false)
+    GameAudio.UpdateWallRunState(false)
+    GameAudio.StopFallingAudio()
+end
+
+local function handle_player_death()
+    if deathHandled then return end
+    deathHandled = true
+    stop_player_action_audio()
+    GameOver.Show()
+end
+
+local function play_player_impact_audio(context)
+    if AudioManager == nil then
+        return
+    end
+
+    local location = nil
+    if type(context) == "table" then
+        location = context.HitLocation or context.hitLocation
+    end
+    if location == nil then
+        location = obj.Location
+    end
+
+    if AudioManager.PlayEventAt ~= nil then
+        AudioManager.PlayEventAt(PLAYER_BULLET_IMPACT_AUDIO_EVENT, location.X or 0.0, location.Y or 0.0, location.Z or 0.0)
+    elseif AudioManager.PlayOneShotAt ~= nil then
+        AudioManager.PlayOneShotAt(PLAYER_BULLET_IMPACT_AUDIO_EVENT, location.X or 0.0, location.Y or 0.0, location.Z or 0.0)
+    elseif AudioManager.PlayEvent ~= nil then
+        AudioManager.PlayEvent(PLAYER_BULLET_IMPACT_AUDIO_EVENT)
+    end
+end
+
 local function apply_player_damage(contextOrAmount)
     local amount = 0.0
     if type(contextOrAmount) == "table" then
@@ -364,10 +406,13 @@ local function apply_player_damage(contextOrAmount)
         return make_damage_result(false, 0.0, false)
     end
 
+    play_player_impact_audio(contextOrAmount)
+
     currentHealth = clamp(currentHealth - amount, 0.0, MAX_HEALTH)
     local killed = currentHealth <= 0.0
     if killed then
         isDead = true
+        handle_player_death()
     end
 
     local ratio = get_health_ratio()
@@ -381,6 +426,9 @@ local function set_player_health(value)
     currentHealth = clamp(value, 0.0, MAX_HEALTH)
     isDead = currentHealth <= 0.0
     DamagePostProcess.SetHealthRatio(get_health_ratio())
+    if isDead then
+        handle_player_death()
+    end
 end
 
 local function cache_arms_base_transform()
@@ -911,6 +959,7 @@ end
 
 local function on_attack_killed(context, result)
     WeaponHud.TriggerKillMarker()
+    TutorialSystem.NotifyEnemyKilled()
 end
 
 local function get_fire_direction(camFwd)
@@ -1017,6 +1066,10 @@ local function try_shoot()
 end
 
 function BeginPlay()
+    if ScoreManager ~= nil and ScoreManager.StartRun ~= nil then
+        ScoreManager.StartRun()
+    end
+
     arms   = obj:GetSkeletalMesh()
     camera = obj:GetCamera()
     reset_weapon_bone_edit_pose("begin")
@@ -1046,6 +1099,7 @@ function BeginPlay()
     currentAmmo = MAGAZINE_SIZE
     currentHealth = MAX_HEALTH
     isDead = false
+    deathHandled = false
     reloadTimer = 0.0
     isReloading = false
     reset_reload_audio()
@@ -1065,8 +1119,10 @@ function BeginPlay()
     DamagePostProcess.Initialize()
     DamagePostProcess.Reset()
     DamagePostProcess.SetHealthRatio(get_health_ratio())
+    GameOver.Initialize()
     InGamePause.Initialize()
     HitSpark.Initialize()
+    ImpactAudio.Initialize()
     InGameDebug.Initialize({
         ZOrder = 220,
         GetHealth = function() return currentHealth end,
@@ -1089,12 +1145,14 @@ function BeginPlay()
     _G.ApplyPlayerDamage = apply_player_damage
     _G.GetPlayerHealthRatio = get_health_ratio
     Engine.SetOnEscape(function()
+        if GameOver.IsOpen() then return end
         InGamePause.Toggle()
     end)
 
     WeaponHud.Initialize({
         camera = camera,
         owner = obj,
+        movement = movement,
         maxRange = MAX_RANGE,
         currentAmmo = currentAmmo,
         magazineSize = MAGAZINE_SIZE,
@@ -1114,10 +1172,13 @@ function EndPlay()
 
     WeaponHud.Shutdown()
     ItemInspectSystem.Shutdown()
+    GameOver.Shutdown()
     DamagePostProcess.Shutdown()
     InGamePause.Shutdown()
     HitSpark.Shutdown()
+    ImpactAudio.Shutdown()
     InGameDebug.Shutdown()
+    TutorialSystem.Shutdown()
     Engine.SetOnEscape(function() end)
     if _G.ApplyPlayerDamage == apply_player_damage then
         _G.ApplyPlayerDamage = nil
@@ -1155,6 +1216,7 @@ function EndPlay()
     recoilRemainingYaw = 0.0
     recoilRecoverDelay = 0.0
     recoilPatternResetTimer = 0.0
+    deathHandled = false
     movement = nil
 end
 
@@ -1198,21 +1260,21 @@ function Tick(dt)
     WeaponHud.Tick(dt, weaponSpread)
     InGameDebug.Tick()
     HitSpark.Tick(dt)
+    TutorialSystem.Tick(dt)
+
+    if GameOver.IsOpen() then
+        stop_player_action_audio()
+        return
+    end
 
     if InGamePause.IsOpen() then
-        GameAudio.StopWeaponFireLoop()
-        GameAudio.UpdateSlideState(false)
-        GameAudio.UpdateWallRunState(false)
-        GameAudio.StopFallingAudio()
+        stop_player_action_audio()
         return
     end
 
     local itemInspectInputConsumed = ItemInspectSystem.Tick(camera, obj) == true
     if ItemInspectSystem.IsOpen() then
-        GameAudio.StopWeaponFireLoop()
-        GameAudio.UpdateSlideState(false)
-        GameAudio.UpdateWallRunState(false)
-        GameAudio.StopFallingAudio()
+        stop_player_action_audio()
         return
     end
 

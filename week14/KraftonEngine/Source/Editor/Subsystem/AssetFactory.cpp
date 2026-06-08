@@ -187,13 +187,16 @@ bool FAssetFactory::CreateMaterial(const FString& DirectoryPath, const FString& 
 	JsonData[MatKeys::DepthStencilState] = "Default";
 	JsonData[MatKeys::RasterizerState] = "SolidBackCull";
 	JsonData[MatKeys::ShadowMode] = "Opaque";
+	JsonData[MatKeys::TwoSidedLighting] = false;
 	JsonData[MatKeys::EmissiveColor] = json::Array(1.0f, 1.0f, 1.0f, 1.0f);
 	JsonData[MatKeys::EmissiveIntensity] = 0.0f;
 	JsonData[MatKeys::bEnableBloom] = false;
 	JsonData[MatKeys::Parameters] = json::JSON::Make(json::JSON::Class::Object);
 	JsonData[MatKeys::Parameters]["HasNormalMap"] = 0.0f;
+	JsonData[MatKeys::Parameters]["TwoSidedLighting"] = 0.0f;
 	JsonData[MatKeys::Parameters]["SectionColor"] = json::Array(1.0f, 1.0f, 1.0f, 1.0f);
-	JsonData[MatKeys::Parameters]["_pad"] = json::Array(0.0f, 0.0f, 0.0f);
+	JsonData[MatKeys::Parameters]["_pad0"] = 0.0f;
+	JsonData[MatKeys::Parameters]["_pad1"] = 0.0f;
 	JsonData[MatKeys::Textures] = json::JSON::Make(json::JSON::Class::Object);
 	JsonData[MatKeys::Textures]["DiffuseTexture"] = "";
 

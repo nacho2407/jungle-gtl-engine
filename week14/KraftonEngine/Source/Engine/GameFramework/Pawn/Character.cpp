@@ -5,6 +5,7 @@
 #include "Component/Input/InputComponent.h"
 #include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/Primitive/SkeletalMeshComponent.h"
+#include "Core/Types/CollisionTypes.h"
 #include "Input/InputSystem.h"
 #include "Lua/LuaScriptManager.h"
 #include "Math/Rotator.h"
@@ -40,6 +41,7 @@ void ACharacter::InitDefaultComponents(const FString& SkeletalMeshFileName)
 {
 	// 1) Capsule — Root. CharacterMovement 의 UpdatedComponent 가 이걸 가리킴.
 	CapsuleComponent = AddComponent<UCapsuleComponent>();
+	CapsuleComponent->SetCollisionPreset(ECollisionPreset::Pawn);
 	SetRootComponent(CapsuleComponent);
 
 	// 2) SkeletalMesh — Capsule 의 자식.
