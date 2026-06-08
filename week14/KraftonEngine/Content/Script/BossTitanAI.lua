@@ -254,6 +254,7 @@ local currentTactic = TACTIC.openingWalk
 local tacticCommitTimer = 0.0
 local tacticReevaluateTimer = 0.0
 local openingWalkActive = true
+local introCutsceneLastActionSerial = 0
 
 local cooldowns = {
     cannon = 0.0,
@@ -491,6 +492,109 @@ local function play_anim(path, looping, force)
         request_action_anim(actionName, ACTION_DURATIONS[actionName])
         currentAnim = path
     end
+end
+
+local function get_intro_cutscene_control()
+    if _G.Level3BossIntroCutsceneActive ~= true then
+        return nil
+    end
+
+    -- Level 3 인트로에서 스폰한 보스만 컷씬 제어 대상이 되도록 UUID를 우선 확인합니다.
+    local expectedUuid = _G.Level3BossIntroBossUUID
+    if expectedUuid ~= nil and obj ~= nil and expectedUuid ~= obj.UUID then
+        return nil
+    end
+
+    local control = _G.Level3BossIntroBossControl
+    if control ~= nil and control.BossUUID ~= nil and obj ~= nil and control.BossUUID ~= obj.UUID then
+        return nil
+    end
+
+    return control or {}
+end
+
+local function apply_intro_cutscene_control()
+    local control = get_intro_cutscene_control()
+    if control == nil then
+        return false
+    end
+
+    -- 컷씬 중에는 전투 판단, 공격 판정, 점프 이동을 모두 멈추고 외부 연출 상태만 반영합니다.
+    activeAttack = nil
+    leapState = nil
+    actionTimer = 0.0
+    animationLockTimer = 0.0
+    phaseLockTimer = 0.0
+    thinkTimer = 0.0
+    openingWalkActive = false
+    currentTactic = TACTIC.duel
+
+    if control.ForcedLocation ~= nil then
+        -- 컷씬 스크립트의 actor handle 대신 보스 AI 자신의 obj.Location을 직접 고정합니다.
+        obj.Location = control.ForcedLocation
+        homeZ = control.ForcedLocation.Z
+    end
+
+    set_aim_anim(control.AimPitch or 0.0, control.AimWeight or 0.0)
+    set_move_anim(control.MoveState or MOVE_IDLE)
+
+    local actionName = control.ActionName
+    local actionSerial = control.ActionSerial or 0
+    if actionName ~= nil and actionSerial ~= 0 and actionSerial ~= introCutsceneLastActionSerial then
+        local state = get_anim_state()
+        if state ~= nil then
+            state.ActionName = actionName
+            state.ActionDuration = control.ActionDuration or ACTION_DURATIONS[actionName] or 1.0
+            state.ActionSerial = actionSerial
+        end
+
+        introCutsceneLastActionSerial = actionSerial
+        if actionName == "leapStart" then
+            currentAnim = ANIM.leapStart
+        elseif actionName == "leapLand" then
+            currentAnim = ANIM.leapLand
+        end
+    end
+
+    return true
+end
+
+local function consume_intro_cutscene_release()
+    local release = _G.Level3BossIntroBossRelease
+    if release == nil then
+        return false
+    end
+
+    if release.BossUUID ~= nil and obj ~= nil and release.BossUUID ~= obj.UUID then
+        return false
+    end
+
+    -- 컷씬 종료 직후 첫 전투 프레임의 기준 위치와 전투 상태를 지상 착지 상태로 확정합니다.
+    if release.ForcedLocation ~= nil then
+        obj.Location = release.ForcedLocation
+        homeZ = release.ForcedLocation.Z
+    end
+
+    activeAttack = nil
+    leapState = nil
+    actionTimer = 0.0
+    animationLockTimer = 0.0
+    phaseLockTimer = 0.0
+    thinkTimer = 0.0
+    openingWalkActive = false
+    currentTactic = TACTIC.duel
+    targetActor = nil
+    clear_action_anim(nil)
+    set_move_anim(MOVE_IDLE)
+    set_aim_anim(0.0, 0.0)
+
+    _G.Level3BossIntroBossRelease = nil
+    if obj ~= nil and _G.Level3BossIntroBossUUID == obj.UUID then
+        _G.Level3BossIntroBossUUID = nil
+        _G.Level3BossIntroBossControl = nil
+    end
+
+    return true
 end
 
 local function find_target()
@@ -1505,12 +1609,19 @@ function BeginPlay()
     openingWalkActive = true
     tacticCommitTimer = 0.0
     tacticReevaluateTimer = 0.0
+    introCutsceneLastActionSerial = 0
     reset_anim_state()
     cooldowns.cannon = 0.0
     cooldowns.powerShot = 1.4
     cooldowns.melee = 0.0
     cooldowns.retreat = 0.0
     cooldowns.leap = 2.5
+
+    if _G.Level3BossIntroCutsceneActive == true then
+        -- 인트로 컷씬 중 스폰된 보스는 기존 오프닝 접근 루틴 없이 바로 전투 상태로 전환될 준비만 해둡니다.
+        openingWalkActive = false
+        currentTactic = TACTIC.duel
+    end
 
     obj:AddTag("enemy")
     obj:AddTag("boss")
@@ -1533,6 +1644,14 @@ function EndPlay()
         _G.BossTitanAnimState[obj.UUID] = nil
     end
 
+    if obj ~= nil and _G.Level3BossIntroBossUUID == obj.UUID then
+        _G.Level3BossIntroBossUUID = nil
+        _G.Level3BossIntroBossControl = nil
+    end
+    if obj ~= nil and _G.Level3BossIntroBossRelease ~= nil and _G.Level3BossIntroBossRelease.BossUUID == obj.UUID then
+        _G.Level3BossIntroBossRelease = nil
+    end
+
     unregister_boss_damageable()
     damageableCallbacks = nil
     debug_close_log()
@@ -1543,6 +1662,12 @@ function Tick(dt)
         update_death_fall(dt)
         set_move_anim(MOVE_IDLE)
         set_aim_anim(0.0, 0.0)
+        return
+    end
+
+    consume_intro_cutscene_release()
+
+    if apply_intro_cutscene_control() then
         return
     end
 

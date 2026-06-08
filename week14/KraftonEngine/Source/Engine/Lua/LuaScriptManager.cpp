@@ -45,6 +45,7 @@
 #include "Render/Scene/FScene.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Platform/Paths.h"
+#include "Serialization/SceneSaveManager.h"
 #include "Core/ProjectSettings.h"
 #include "Math/Transform.h"
 #include "Math/Vector.h"
@@ -167,6 +168,59 @@ bool WriteLuaDebugTextFile(const FString& FileName, const FString& Text, bool bA
 bool HasPathSeparator(const FString& Path)
 {
 	return Path.find('/') != FString::npos || Path.find('\\') != FString::npos;
+}
+
+FString NormalizeContentPath(FString Path)
+{
+	for (char& Ch : Path)
+	{
+		if (Ch == '\\')
+		{
+			Ch = '/';
+		}
+	}
+	return Path;
+}
+
+std::filesystem::path ResolveLuaPrefabWidePath(const FString& PrefabPath)
+{
+	FString Normalized = NormalizeContentPath(PrefabPath);
+	if (Normalized.empty())
+	{
+		return {};
+	}
+
+	constexpr const char* PrefabExt = ".prefab";
+	if (Normalized.size() < 7 || Normalized.substr(Normalized.size() - 7) != PrefabExt)
+	{
+		Normalized += PrefabExt;
+	}
+
+	std::filesystem::path RawPath(FPaths::ToWide(Normalized));
+	if (RawPath.is_absolute())
+	{
+		return RawPath.lexically_normal();
+	}
+
+	// Lua 쪽에서는 Content/Prefab/Name.prefab, Prefab/Name.prefab, Name.prefab 모두 허용합니다.
+	std::vector<std::filesystem::path> Candidates;
+	const std::filesystem::path Root(FPaths::RootDir());
+	const std::filesystem::path ContentRoot(FPaths::AssetDir());
+	Candidates.push_back((Root / RawPath).lexically_normal());
+	Candidates.push_back((ContentRoot / RawPath).lexically_normal());
+	Candidates.push_back((ContentRoot / L"Prefab" / RawPath).lexically_normal());
+
+	std::error_code Error;
+	for (const std::filesystem::path& Candidate : Candidates)
+	{
+		if (std::filesystem::exists(Candidate, Error))
+		{
+			return Candidate;
+		}
+		Error.clear();
+	}
+
+	return Candidates.front();
 }
 
 std::wstring ResolveLuaScriptWidePath(const FString& ScriptFile)
@@ -2169,6 +2223,32 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 				Character->bAutoInputMouseLook = bMouseLook;
 				return true;
 			})
+		.Method("GetControlRotation",
+			"---@return Vector?\nfunction Actor:GetControlRotation() end",
+			[&Lua](AActor& Actor) -> sol::object
+			{
+				APawn* Pawn = Cast<APawn>(&Actor);
+				if (!Pawn)
+				{
+					return sol::make_object(Lua, sol::lua_nil);
+				}
+
+				return sol::make_object(Lua, Pawn->GetControlRotation().ToVector());
+			})
+		.Method("SetControlRotation",
+			"---@param rotation Vector\n---@return boolean\nfunction Actor:SetControlRotation(rotation) end",
+			[](AActor& Actor, const FVector& Rotation)
+			{
+				APawn* Pawn = Cast<APawn>(&Actor);
+				if (!Pawn)
+				{
+					return false;
+				}
+
+				// FPS 카메라와 이동 기준은 Actor 회전이 아니라 Pawn ControlRotation을 따릅니다.
+				Pawn->SetControlRotation(FRotator(Rotation));
+				return true;
+			})
 		.Method("GetVehicleMovement",
 			"---@return VehicleMovementComponent4W?\nfunction Actor:GetVehicleMovement() end",
 			[](AActor& Actor) { return Actor.GetComponentByClass<UVehicleMovementComponent4W>(); })
@@ -2398,6 +2478,47 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		ParticleComponent->Activate();
 		return Actor;
 	});
+	World.set_function("SpawnPrefab", [](const FString& PrefabPath, const FVector& Location) -> sol::table
+	{
+		sol::table Result = FLuaScriptManager::GetState().create_table();
+		if (!GEngine)
+		{
+			return Result;
+		}
+
+		UWorld* W = GEngine->GetWorld();
+		if (!W)
+		{
+			return Result;
+		}
+
+		const std::filesystem::path ResolvedPath = ResolveLuaPrefabWidePath(PrefabPath);
+		std::error_code Error;
+		if (ResolvedPath.empty() || !std::filesystem::exists(ResolvedPath, Error))
+		{
+			UE_LOG("[Lua] World.SpawnPrefab failed to resolve: %s", PrefabPath.c_str());
+			return Result;
+		}
+
+		TArray<AActor*> CreatedActors;
+		if (!FSceneSaveManager::InstantiatePrefabFromJSON(
+			FPaths::ToUtf8(ResolvedPath.wstring()),
+			W,
+			Location,
+			CreatedActors,
+			W->GetEditorOutlinerState()))
+		{
+			UE_LOG("[Lua] World.SpawnPrefab failed to instantiate: %s", FPaths::ToUtf8(ResolvedPath.wstring()).c_str());
+			return Result;
+		}
+
+		int Index = 1;
+		for (AActor* Actor : CreatedActors)
+		{
+			Result[Index++] = Actor;
+		}
+		return Result;
+	});
 	World.set_function("FindActorByName", [](const FString& ActorName) -> AActor*
 	{
 		if (!GEngine || !GEngine->GetWorld()) return nullptr;
@@ -2486,6 +2607,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 	FLuaDocRegistry::Get().Type("WorldLib")
 		.Method("---@param className string\n---@return Actor?\nfunction World.SpawnActor(className) end")
 		.Method("---@param particlePath string\n---@param location Vector\n---@param rotation? Vector\n---@return Actor?\nfunction World.SpawnParticleSystem(particlePath, location, rotation) end")
+		.Method("---@param prefabPath string\n---@param location Vector\n---@return Actor[]\nfunction World.SpawnPrefab(prefabPath, location) end")
 		.Method("---@param actorName string\n---@return Actor?\nfunction World.FindActorByName(actorName) end")
 		.Method("---@param className string\n---@return Actor?\nfunction World.FindFirstActorByClass(className) end")
 		.Method("---@param tag string\n---@return Actor?\nfunction World.FindFirstActorByTag(tag) end")
