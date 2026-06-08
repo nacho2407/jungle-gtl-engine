@@ -35,6 +35,12 @@ namespace
 			|| Input.IsDown(VK_RSHIFT)
 			|| Input.IsDown(InputCodes::GamepadLeftThumb);
 	}
+
+	float ApplyGamepadLookResponse(float Value)
+	{
+		const float AbsValue = std::fabs(Value);
+		return Value >= 0.0f ? AbsValue * AbsValue : -AbsValue * AbsValue;
+	}
 }
 
 void ACharacter::InitDefaultComponents(const FString& SkeletalMeshFileName)
@@ -145,8 +151,8 @@ void ACharacter::Tick(float DeltaTime)
 		const FInputSystemSnapshot InputSnapshot = UGameViewportClient::MakeCurrentGameInputSnapshot();
 		const int DX = InputSnapshot.MouseDeltaX;
 		const int DY = InputSnapshot.MouseDeltaY;
-		const float GamepadLookX = InputSnapshot.GetAxisValue(InputCodes::GamepadRightX);
-		const float GamepadLookY = InputSnapshot.GetAxisValue(InputCodes::GamepadRightY);
+		const float GamepadLookX = ApplyGamepadLookResponse(InputSnapshot.GetAxisValue(InputCodes::GamepadRightX));
+		const float GamepadLookY = ApplyGamepadLookResponse(InputSnapshot.GetAxisValue(InputCodes::GamepadRightY));
 		if (DX != 0 || DY != 0 || GamepadLookX != 0.0f || GamepadLookY != 0.0f)
 		{
 			// APawn::ControlRotation 누적. SpringArm 이 bUsePawnControlRotation 통해 이걸 사용.
@@ -156,8 +162,8 @@ void ACharacter::Tick(float DeltaTime)
 			const float EffectiveMouseSensitivity = BaseMouseSensitivityDegreesPerPixel * RuntimeSensitivity;
 			Rot.Yaw   += static_cast<float>(DX) * EffectiveMouseSensitivity;
 			Rot.Pitch += static_cast<float>(DY) * EffectiveMouseSensitivity;
-			Rot.Yaw += GamepadLookX * GamepadLookYawSpeedDegreesPerSecond * RuntimeSensitivity * DeltaTime;
-			Rot.Pitch -= GamepadLookY * GamepadLookPitchSpeedDegreesPerSecond * RuntimeSensitivity * DeltaTime;
+			Rot.Yaw += GamepadLookX * GamepadLookYawSpeedDegreesPerSecond * GamepadLookSensitivity * DeltaTime;
+			Rot.Pitch -= GamepadLookY * GamepadLookPitchSpeedDegreesPerSecond * GamepadLookSensitivity * DeltaTime;
 			Rot.Pitch  = std::clamp(Rot.Pitch, MinCameraPitch, MaxCameraPitch);
 			SetControlRotation(Rot);
 		}

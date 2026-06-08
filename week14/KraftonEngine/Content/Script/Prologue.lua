@@ -180,6 +180,11 @@ local function get_cutscene_key(key)
     return false
 end
 
+local function get_key(keyName)
+    if Key == nil then return nil end
+    return Key[keyName]
+end
+
 local function find_landing_cutscene_camera()
     if landingCutsceneCameraActor ~= nil then
         return landingCutsceneCameraActor
@@ -780,16 +785,17 @@ local function show_next_entry()
 end
 
 local function should_advance_dialogue()
-    if get_cutscene_key_down(Key.MouseLeft) then return true end
-    if get_cutscene_key_down(Key.Space) then return true end
-    if Key.Enter ~= nil and get_cutscene_key_down(Key.Enter) then return true end
+    if get_cutscene_key_down(get_key("MouseLeft")) then return true end
+    if get_cutscene_key_down(get_key("Space")) then return true end
+    if get_cutscene_key_down(get_key("Enter")) then return true end
+    if get_cutscene_key_down(get_key("GamepadA")) then return true end
+    if get_cutscene_key_down(get_key("GamepadStart")) then return true end
     return false
 end
 
 local function update_scene_skip(dt)
-    if Key.Ctrl == nil then return false end
-
-    if get_cutscene_key(Key.Ctrl) then
+    local skipHeld = get_cutscene_key(get_key("Ctrl")) or get_cutscene_key(get_key("GamepadB"))
+    if skipHeld then
         skipHoldTime = skipHoldTime + dt
         local progress = clamp(skipHoldTime / SKIP_HOLD_DURATION, 0.0, 1.0)
         update_skip_ring(progress)
@@ -882,6 +888,7 @@ function BeginPlay()
     set_weapon_hud_visible(false)
     cutsceneWidget = UI.CreateWidget("Content/UI/Cutscene/Cutscene.rml")
     if cutsceneWidget ~= nil then
+        cutsceneWidget:SetWantsMouse(false)
         cutsceneWidget:AddToViewportZ(120)
         update_skip_ring(0.0)
         hide_producer_credit()

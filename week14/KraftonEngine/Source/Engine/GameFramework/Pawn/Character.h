@@ -51,8 +51,9 @@ public:
 	// 카메라만 회전. WASD 도 ControlRotation.Yaw 기준 forward/right 로 이동.
 	bool  bAutoInputMouseLook = true;
 	float MouseSensitivity    = 1.0f;   // 기준 감도 배율 — yaw/pitch 공통
-	float GamepadLookYawSpeedDegreesPerSecond = 180.0f;
-	float GamepadLookPitchSpeedDegreesPerSecond = 150.0f;
+	float GamepadLookSensitivity = 0.5f; // 패드 전용 감도. 마우스 런타임 감도와 분리.
+	float GamepadLookYawSpeedDegreesPerSecond = 90.0f;
+	float GamepadLookPitchSpeedDegreesPerSecond = 75.0f;
 	float MinCameraPitch      = -85.0f; // 위 한도 (마이너스 = 위)
 	float MaxCameraPitch      =  85.0f; // 아래 한도
 

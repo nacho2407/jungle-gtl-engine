@@ -1,14 +1,13 @@
 local TutorialSystem = {}
+local WeaponHud = require("HUD/WeaponHud")
 
 local OVERLAY_PATH = "Content/UI/Tutorial/TutorialOverlay.rml"
-local DIALOGUE_PATH = "Content/UI/Common/DialogueBox.rml"
 local STORY_MODULE = "Dialogue/TutorialLevel1.dialogue"
 local VOICE_MODULE = "Dialogue/Generated/TutorialLevel1.voices"
 local OVERLAY_Z_ORDER = 105
-local DIALOGUE_Z_ORDER = 106
+local GAMEPAD_AXIS_DEADZONE = 0.25
 
 local overlayWidget = nil
-local dialogueWidget = nil
 local movement = nil
 local owner = nil
 local initialized = false
@@ -109,6 +108,49 @@ local function clamp(value, minValue, maxValue)
     return value
 end
 
+local function is_key_down(key)
+    return Input ~= nil
+        and Input.GetKey ~= nil
+        and key ~= nil
+        and Input.GetKey(key)
+end
+
+local function is_key_pressed(key)
+    return Input ~= nil
+        and Input.GetKeyDown ~= nil
+        and key ~= nil
+        and Input.GetKeyDown(key)
+end
+
+local function get_key(keyName)
+    if Key == nil then
+        return nil
+    end
+    return Key[keyName]
+end
+
+local function get_axis(axisCode)
+    if Input == nil or Input.GetGamepadAxis == nil or axisCode == nil then
+        return 0.0
+    end
+    return Input.GetGamepadAxis(-1, axisCode)
+end
+
+local function get_gamepad_axis(axisName)
+    if Axis == nil then
+        return 0.0
+    end
+    return get_axis(Axis[axisName])
+end
+
+local function is_crouch_input_down(isCrouching)
+    return isCrouching
+        or is_key_down(get_key("Ctrl"))
+        or is_key_down(get_key("LeftCtrl"))
+        or is_key_down(get_key("RightCtrl"))
+        or is_key_down(get_key("GamepadB"))
+end
+
 local function play_event(name)
     if AudioManager == nil then return end
     if AudioManager.PlayOneShot ~= nil then
@@ -164,8 +206,13 @@ local function play_voice(entry)
     return voiceEntry
 end
 
+local function hide_dialogue()
+    if WeaponHud ~= nil and WeaponHud.HideDialogue ~= nil then
+        WeaponHud.HideDialogue()
+    end
+end
+
 local function show_dialogue(id)
-    if dialogueWidget == nil then return end
     local entry = find_dialogue_entry(id)
     if entry == nil then return end
 
@@ -175,22 +222,17 @@ local function show_dialogue(id)
     local width = clamp(42.0 + string.len(text) * fontSize * 0.52, 520.0, 1280.0)
     local height = clamp(lineHeight, 46.0, 68.0)
 
-    dialogueWidget:SetText("dialogue-line", text)
-    dialogueWidget:SetProperty("dialogue-layer", "display", "block")
-    dialogueWidget:SetProperty("dialogue-box", "display", "block")
-    dialogueWidget:SetProperty("dialogue-box", "left", px(24.0))
-    dialogueWidget:SetProperty("dialogue-box", "bottom", px(28.0))
-    dialogueWidget:SetProperty("dialogue-box", "width", px(width))
-    dialogueWidget:SetProperty("dialogue-box", "height", px(height))
-    dialogueWidget:SetProperty("dialogue-box", "opacity", "0.0")
-    dialogueWidget:SetProperty("dialogue-line", "left", "16px")
-    dialogueWidget:SetProperty("dialogue-line", "top", "0px")
-    dialogueWidget:SetProperty("dialogue-line", "width", px(width - 32.0))
-    dialogueWidget:SetProperty("dialogue-line", "height", px(height))
-    dialogueWidget:SetProperty("dialogue-line", "font-family", entry.font or dialogueStory.default_font or "Pretendard")
-    dialogueWidget:SetProperty("dialogue-line", "font-size", px(fontSize))
-    dialogueWidget:SetProperty("dialogue-line", "font-weight", tostring(entry.weight or dialogueStory.default_weight or 700))
-    dialogueWidget:SetProperty("dialogue-line", "line-height", px(height))
+    if WeaponHud ~= nil and WeaponHud.ShowDialogue ~= nil then
+        WeaponHud.ShowDialogue(text, {
+            width = width,
+            height = height,
+            font = entry.font or dialogueStory.default_font or "Pretendard",
+            fontSize = fontSize,
+            weight = entry.weight or dialogueStory.default_weight or 700,
+            lineHeight = height,
+            opacity = 0.0,
+        })
+    end
 
     local voiceEntry = play_voice(entry)
     activeDialogue = entry
@@ -222,7 +264,7 @@ local function show_objectives()
 end
 
 local function update_dialogue(dt)
-    if dialogueWidget == nil or activeDialogue == nil then return end
+    if activeDialogue == nil then return end
 
     dialogueTimer = dialogueTimer + dt
     local fadeIn = activeDialogue.fade_in or dialogueStory.default_fade_in or 0.18
@@ -234,12 +276,12 @@ local function update_dialogue(dt)
         alpha = (dialogueDuration - dialogueTimer) / fadeOut
     end
     alpha = clamp(alpha, 0.0, 1.0)
-    dialogueWidget:SetProperty("dialogue-box", "opacity", string.format("%.2f", alpha))
+    if WeaponHud ~= nil and WeaponHud.SetDialogueOpacity ~= nil then
+        WeaponHud.SetDialogueOpacity(alpha)
+    end
 
     if dialogueTimer >= dialogueDuration then
-        dialogueWidget:SetProperty("dialogue-box", "opacity", "0.0")
-        dialogueWidget:SetProperty("dialogue-box", "display", "none")
-        dialogueWidget:SetText("dialogue-line", "")
+        hide_dialogue()
         stop_current_voice()
         activeDialogue = nil
         if #dialogueQueue > 0 then
@@ -365,37 +407,40 @@ local function update_current_step()
         if movement.WasAirJumpConsumedThisFrame ~= nil then didAirJump = movement:WasAirJumpConsumedThisFrame() end
     end
 
+    local gamepadLeftX = get_gamepad_axis("GamepadLeftX")
+    local gamepadLeftY = get_gamepad_axis("GamepadLeftY")
+
     if group.id == "move" then
-        if Input.GetKey(Key.W) and speed > 0.25 then mark_item(group, "move_w") end
-        if Input.GetKey(Key.A) and speed > 0.25 then mark_item(group, "move_a") end
-        if Input.GetKey(Key.S) and speed > 0.25 then mark_item(group, "move_s") end
-        if Input.GetKey(Key.D) and speed > 0.25 then mark_item(group, "move_d") end
-        if isSprinting or (Input.GetKey(Key.Shift) and speed > 0.5) then
+        if (is_key_down(get_key("W")) or gamepadLeftY > GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_w") end
+        if (is_key_down(get_key("A")) or gamepadLeftX < -GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_a") end
+        if (is_key_down(get_key("S")) or gamepadLeftY < -GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_s") end
+        if (is_key_down(get_key("D")) or gamepadLeftX > GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_d") end
+        if isSprinting or ((is_key_down(get_key("Shift")) or is_key_down(get_key("GamepadLeftThumb"))) and speed > 0.5) then
             mark_item(group, "sprint")
         end
     elseif group.id == "jump" then
-        if Input.GetKeyDown(Key.Space) then
+        if is_key_pressed(get_key("Space")) or is_key_pressed(get_key("GamepadA")) then
             mark_item(group, "jump")
         end
         if didAirJump then
             mark_item(group, "double_jump")
         end
     elseif group.id == "slide" then
-        if isCrouching or Input.GetKey(Key.Ctrl) or Input.GetKey(Key.LeftCtrl) or Input.GetKey(Key.RightCtrl) then
+        if is_crouch_input_down(isCrouching) then
             mark_item(group, "crouch")
         end
         if isWalking and isCrouching and speed >= 3.0 then
             mark_item(group, "slide")
         end
     elseif group.id == "weapon" then
-        if Input.GetKeyDown(Key.MouseLeft) then
+        if is_key_pressed(get_key("MouseLeft")) or is_key_pressed(get_key("GamepadRightTrigger")) then
             mark_item(group, "fire")
         end
-        if Input.GetKey(Key.MouseRight) then
+        if is_key_down(get_key("MouseRight")) or is_key_down(get_key("GamepadLeftTrigger")) then
             mark_item(group, "zoom")
         end
     elseif group.id == "reload" then
-        if Input.GetKeyDown(Key.R) then
+        if is_key_pressed(get_key("R")) or is_key_pressed(get_key("GamepadX")) then
             mark_item(group, "reload")
         end
     elseif group.id == "wallrun" then
@@ -403,7 +448,7 @@ local function update_current_step()
             hasSeenWallRun = true
             mark_item(group, "wallrun")
         end
-        if hasSeenWallRun and Input.GetKeyDown(Key.Space) then
+        if hasSeenWallRun and (is_key_pressed(get_key("Space")) or is_key_pressed(get_key("GamepadA"))) then
             mark_item(group, "walljump")
         end
     end
@@ -464,16 +509,11 @@ function TutorialSystem.Initialize(config)
 
     overlayWidget = UI.CreateWidget(OVERLAY_PATH)
     if overlayWidget ~= nil then
+        overlayWidget:SetWantsMouse(false)
         overlayWidget:AddToViewportZ(config.overlayZOrder or OVERLAY_Z_ORDER)
     end
 
-    dialogueWidget = UI.CreateWidget(DIALOGUE_PATH)
-    if dialogueWidget ~= nil then
-        dialogueWidget:AddToViewportZ(config.dialogueZOrder or DIALOGUE_Z_ORDER)
-        dialogueWidget:SetText("dialogue-line", "")
-        dialogueWidget:SetProperty("dialogue-box", "opacity", "0.0")
-        dialogueWidget:SetProperty("dialogue-box", "display", "none")
-    end
+    hide_dialogue()
 
     refresh_overlay()
     if config.playIntro ~= false then
@@ -488,11 +528,7 @@ function TutorialSystem.Shutdown()
     if overlayWidget ~= nil and overlayWidget:IsInViewport() then
         overlayWidget:RemoveFromParent()
     end
-    if dialogueWidget ~= nil and dialogueWidget:IsInViewport() then
-        dialogueWidget:RemoveFromParent()
-    end
     overlayWidget = nil
-    dialogueWidget = nil
     movement = nil
     owner = nil
     activeDialogue = nil

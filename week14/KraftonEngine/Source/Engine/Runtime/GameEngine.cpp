@@ -193,10 +193,6 @@ void UGameEngine::ProcessPendingTransition()
 	// Lua 에서 "Map" 같은 이름만 넘겨도 동작하도록 SceneDir/Map.Scene 으로 풀어준다.
 	const FString FilePath = ResolveSceneFilePath(ScenePath);
 
-	// 씬 전환 시 이전 씬의 RmlUi 위젯이 viewport 에 남아 있으면 WantsMouse 상태가
-	// 다음 게임 씬까지 이어져 raw mouse / cursor capture 를 계속 풀어버린다.
-	UUIManager::Get().ClearViewport();
-
 	// 기존 active world 파괴 — EndPlay → 액터/컴포넌트 destruct → PhysicsScene unique_ptr 해제.
 	const FName OldHandle = GetActiveWorldHandle();
 	DestroyWorldContext(OldHandle);

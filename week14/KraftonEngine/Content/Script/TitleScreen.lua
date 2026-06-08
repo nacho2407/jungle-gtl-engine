@@ -1,4 +1,5 @@
 local HoverDescription = require("HoverDescription")
+local LoadingScreen = require("LoadingScreen")
 
 local widget = nil
 local quitWidget = nil
@@ -112,6 +113,23 @@ local activeSettingsSlider = nil
 local activeSettingsValueEdit = nil
 local titleBgmKey = "TitleIntroBGM"
 local titleBgmLoaded = false
+local KEY_LEFT = 37
+local KEY_UP = 38
+local KEY_RIGHT = 39
+local KEY_DOWN = 40
+local NAV_AXIS_THRESHOLD = 0.55
+local selectedMainMenuIndex = 1
+local selectedQuitDialogIndex = 1
+local mainMenuItems = nil
+local quitDialogItems = nil
+local menuNavAxisHeld = {
+    up = false,
+    down = false,
+    left = false,
+    right = false,
+}
+local loadingToGame = false
+local loadingTransitionRequested = false
 
 local function px(value)
     return string.format("%.2fpx", value)
@@ -125,6 +143,50 @@ local function clamp(value, minValue, maxValue)
         return maxValue
     end
     return value
+end
+
+local function get_key(keyName)
+    if Key == nil then
+        return nil
+    end
+    return Key[keyName]
+end
+
+local function is_input_pressed(key)
+    return Input ~= nil
+        and Input.GetKeyDown ~= nil
+        and key ~= nil
+        and Input.GetKeyDown(key)
+end
+
+local function is_key_pressed(keyCode)
+    return is_input_pressed(keyCode)
+end
+
+local function get_gamepad_axis(axisName)
+    if Input == nil or Input.GetGamepadAxis == nil or Axis == nil then
+        return 0.0
+    end
+
+    local axisCode = Axis[axisName]
+    if axisCode == nil then
+        return 0.0
+    end
+
+    return Input.GetGamepadAxis(-1, axisCode)
+end
+
+local function consume_axis_press(name, down)
+    local wasHeld = menuNavAxisHeld[name] == true
+    menuNavAxisHeld[name] = down == true
+    return down == true and not wasHeld
+end
+
+local function reset_menu_axis_state()
+    menuNavAxisHeld.up = false
+    menuNavAxisHeld.down = false
+    menuNavAxisHeld.left = false
+    menuNavAxisHeld.right = false
 end
 
 local function round_to_step(value, step)
@@ -424,15 +486,137 @@ local function stop_title_bgm()
 end
 
 local function start_prologue_scene()
+    if loadingToGame then
+        return
+    end
+
+    loadingToGame = true
+    loadingTransitionRequested = false
     show_stat_panel(false)
     show_settings_panel(false)
     show_quit_panel(false)
+    show_credits_panel(false)
     stop_title_bgm()
+    LoadingScreen.Show({ duration = 1.0, zOrder = 240, keepVisibleOnComplete = true })
+end
 
+local function transition_to_game_scene()
     if Engine.TransitionToScene ~= nil then
         Engine.TransitionToScene("FL_Level1.Scene")
     else
         print("[Title] Engine.TransitionToScene is not available")
+    end
+end
+
+local function set_button_selected(targetWidget, item, selected)
+    if targetWidget == nil or item == nil then
+        return
+    end
+
+    targetWidget:set_property(item.box, "opacity", selected and "1.0" or "0.0")
+    targetWidget:set_property(item.label, "color", selected and "#111111" or "#858585E6")
+end
+
+local function refresh_main_menu_selection()
+    if widget == nil or mainMenuItems == nil then
+        return
+    end
+
+    for index, item in ipairs(mainMenuItems) do
+        set_button_selected(widget, item, index == selectedMainMenuIndex)
+    end
+end
+
+local function set_main_menu_selection(index)
+    if mainMenuItems == nil or #mainMenuItems == 0 then
+        return
+    end
+
+    if index < 1 then
+        index = #mainMenuItems
+    elseif index > #mainMenuItems then
+        index = 1
+    end
+
+    selectedMainMenuIndex = index
+    refresh_main_menu_selection()
+end
+
+local function move_main_menu_selection(direction)
+    if mainMenuItems == nil then
+        return
+    end
+
+    if direction == "left" or direction == "right" then
+        if selectedMainMenuIndex == 1 then
+            set_main_menu_selection(2)
+        elseif selectedMainMenuIndex == 2 then
+            set_main_menu_selection(1)
+        end
+        return
+    end
+
+    if direction == "down" then
+        if selectedMainMenuIndex == 1 or selectedMainMenuIndex == 2 then
+            set_main_menu_selection(3)
+        else
+            set_main_menu_selection(selectedMainMenuIndex + 1)
+        end
+    elseif direction == "up" then
+        if selectedMainMenuIndex == 1 or selectedMainMenuIndex == 2 then
+            set_main_menu_selection(#mainMenuItems)
+        elseif selectedMainMenuIndex == 3 then
+            set_main_menu_selection(1)
+        else
+            set_main_menu_selection(selectedMainMenuIndex - 1)
+        end
+    end
+end
+
+local function execute_main_menu_selection()
+    if mainMenuItems == nil then
+        return
+    end
+
+    local item = mainMenuItems[selectedMainMenuIndex]
+    if item ~= nil and item.action ~= nil then
+        item.action()
+    end
+end
+
+local function refresh_quit_dialog_selection()
+    if quitWidget == nil or quitDialogItems == nil then
+        return
+    end
+
+    for index, item in ipairs(quitDialogItems) do
+        set_button_selected(quitWidget, item, index == selectedQuitDialogIndex)
+    end
+end
+
+local function set_quit_dialog_selection(index)
+    if quitDialogItems == nil or #quitDialogItems == 0 then
+        return
+    end
+
+    if index < 1 then
+        index = #quitDialogItems
+    elseif index > #quitDialogItems then
+        index = 1
+    end
+
+    selectedQuitDialogIndex = index
+    refresh_quit_dialog_selection()
+end
+
+local function execute_quit_dialog_selection()
+    if quitDialogItems == nil then
+        return
+    end
+
+    local item = quitDialogItems[selectedQuitDialogIndex]
+    if item ~= nil and item.action ~= nil then
+        item.action()
     end
 end
 
@@ -510,6 +694,7 @@ show_quit_panel = function(visible)
         if quitWidget ~= nil and not quitWidget:IsInViewport() then
             quitWidget:AddToViewportZ(200)
         end
+        set_quit_dialog_selection(1)
     elseif quitWidget ~= nil and quitWidget:IsInViewport() then
         quitWidget:RemoveFromParent()
     end
@@ -552,13 +737,15 @@ show_credits_panel = function(visible)
 end
 
 local function bind_quit_dialog_clicks()
-    quitWidget:bind_click("cancel-quit-button", function()
-        show_quit_panel(false)
-    end)
-
-    quitWidget:bind_click("confirm-quit-button", function()
-        Engine.Exit()
-    end)
+    for index, item in ipairs(quitDialogItems) do
+        quitWidget:bind_click(item.id, function()
+            set_quit_dialog_selection(index)
+            execute_quit_dialog_selection()
+        end)
+        quitWidget:bind_event(item.id, "mouseover", function()
+            set_quit_dialog_selection(index)
+        end)
+    end
 end
 
 local function bind_stat_dialog_clicks()
@@ -677,30 +864,140 @@ local function bind_credits_dialog_clicks()
     end)
 end
 
+local function initialize_navigation_items()
+    mainMenuItems = {
+        { id = "new-game-button", box = "new-game-box", label = "new-game-label", action = start_prologue_scene },
+        { id = "continue-button", box = "continue-box", label = "continue-label", action = start_prologue_scene },
+        { id = "settings-button", box = "settings-box", label = "settings-label", action = function() show_settings_panel(true) end },
+        { id = "credits-button", box = "credits-box", label = "credits-label", action = function() show_credits_panel(true) end },
+        { id = "quit-button", box = "quit-box", label = "quit-label", action = function() show_quit_panel(true) end },
+    }
+
+    quitDialogItems = {
+        { id = "cancel-quit-button", box = "cancel-quit-box", label = "cancel-quit-label", action = function() show_quit_panel(false) end },
+        { id = "confirm-quit-button", box = "confirm-quit-box", label = "confirm-quit-label", action = function() Engine.Exit() end },
+    }
+end
+
 local function bind_clicks()
     widget:bind_click("stat-button", function()
         show_stat_panel(not statVisible)
     end)
 
-    widget:bind_click("quit-button", function()
-        show_quit_panel(true)
-    end)
+    for index, item in ipairs(mainMenuItems) do
+        widget:bind_click(item.id, function()
+            set_main_menu_selection(index)
+            execute_main_menu_selection()
+        end)
+        widget:bind_event(item.id, "mouseover", function()
+            set_main_menu_selection(index)
+        end)
+    end
+end
 
-    widget:bind_click("new-game-button", function()
-        start_prologue_scene()
-    end)
+local function is_nav_up_pressed()
+    return is_key_pressed(KEY_UP)
+        or is_input_pressed(get_key("GamepadDPadUp"))
+        or consume_axis_press("up", get_gamepad_axis("GamepadLeftY") > NAV_AXIS_THRESHOLD)
+end
 
-    widget:bind_click("continue-button", function()
-        start_prologue_scene()
-    end)
+local function is_nav_down_pressed()
+    return is_key_pressed(KEY_DOWN)
+        or is_input_pressed(get_key("GamepadDPadDown"))
+        or consume_axis_press("down", get_gamepad_axis("GamepadLeftY") < -NAV_AXIS_THRESHOLD)
+end
 
-    widget:bind_click("settings-button", function()
-        show_settings_panel(true)
-    end)
+local function is_nav_left_pressed()
+    return is_key_pressed(KEY_LEFT)
+        or is_input_pressed(get_key("GamepadDPadLeft"))
+        or consume_axis_press("left", get_gamepad_axis("GamepadLeftX") < -NAV_AXIS_THRESHOLD)
+end
 
-    widget:bind_click("credits-button", function()
-        show_credits_panel(true)
-    end)
+local function is_nav_right_pressed()
+    return is_key_pressed(KEY_RIGHT)
+        or is_input_pressed(get_key("GamepadDPadRight"))
+        or consume_axis_press("right", get_gamepad_axis("GamepadLeftX") > NAV_AXIS_THRESHOLD)
+end
+
+local function is_accept_pressed()
+    return is_input_pressed(get_key("Enter"))
+        or is_input_pressed(get_key("GamepadA"))
+end
+
+local function is_back_pressed()
+    return is_input_pressed(get_key("GamepadB"))
+end
+
+local function update_quit_dialog_navigation()
+    local moved = false
+    if is_nav_up_pressed() or is_nav_left_pressed() then
+        set_quit_dialog_selection(selectedQuitDialogIndex - 1)
+        moved = true
+    elseif is_nav_down_pressed() or is_nav_right_pressed() then
+        set_quit_dialog_selection(selectedQuitDialogIndex + 1)
+        moved = true
+    end
+
+    if moved then
+        return
+    end
+
+    if is_accept_pressed() then
+        execute_quit_dialog_selection()
+    elseif is_back_pressed() then
+        show_quit_panel(false)
+    end
+end
+
+local function update_main_menu_navigation()
+    if is_nav_up_pressed() then
+        move_main_menu_selection("up")
+    elseif is_nav_down_pressed() then
+        move_main_menu_selection("down")
+    elseif is_nav_left_pressed() then
+        move_main_menu_selection("left")
+    elseif is_nav_right_pressed() then
+        move_main_menu_selection("right")
+    elseif is_accept_pressed() then
+        execute_main_menu_selection()
+    end
+end
+
+local function update_title_navigation()
+    if activeSettingsValueEdit ~= nil then
+        return
+    end
+
+    if quitVisible then
+        update_quit_dialog_navigation()
+        return
+    end
+
+    if settingsVisible then
+        if is_back_pressed() then
+            show_settings_panel(false)
+        end
+        reset_menu_axis_state()
+        return
+    end
+
+    if creditsVisible then
+        if is_back_pressed() then
+            show_credits_panel(false)
+        end
+        reset_menu_axis_state()
+        return
+    end
+
+    if statVisible then
+        if is_back_pressed() then
+            show_stat_panel(false)
+        end
+        reset_menu_axis_state()
+        return
+    end
+
+    update_main_menu_navigation()
 end
 
 function BeginPlay()
@@ -708,8 +1005,10 @@ function BeginPlay()
 
     widget = UI.CreateWidget("Content/UI/Title/Title.rml")
     widget:SetWantsMouse(true)
+    initialize_navigation_items()
     bind_clicks()
     widget:AddToViewportZ(100)
+    set_main_menu_selection(1)
     update_title_background(true)
 
     quitWidget = UI.CreateWidget("Content/UI/Title/TitleQuitDialog.rml")
@@ -751,6 +1050,7 @@ function BeginPlay()
 end
 
 function EndPlay()
+    LoadingScreen.Hide()
     stop_title_bgm()
 
     if quitWidget ~= nil and quitWidget:IsInViewport() then
@@ -777,11 +1077,22 @@ function EndPlay()
         widget:RemoveFromParent()
     end
     widget = nil
+    loadingToGame = false
+    loadingTransitionRequested = false
 end
 
 function Tick(dt)
+    if loadingToGame then
+        if LoadingScreen.Tick(dt or 0.0) and not loadingTransitionRequested then
+            loadingTransitionRequested = true
+            transition_to_game_scene()
+        end
+        return
+    end
+
     update_title_background(false)
     update_settings_value_edit()
+    update_title_navigation()
     if activeSettingsSlider ~= nil then
         if Input.GetKey(1) then
             update_active_settings_slider(Input.GetMouseClientX())
