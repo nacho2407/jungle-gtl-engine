@@ -26,6 +26,7 @@ local magazineSize = 0
 local bVisible = true
 local bDialogueVisible = false
 local dialogueOpacity = 0.0
+local scoreWarningLogged = false
 
 local function px(value)
     return string.format("%.2fpx", value)
@@ -49,11 +50,23 @@ end
 local function update_score()
     if widget == nil then return end
     if ScoreManager == nil or ScoreManager.GetSnapshot == nil then
+        if not scoreWarningLogged and Game ~= nil and Game.Log ~= nil then
+            Game.Log("[WeaponHud]", "ScoreManager.GetSnapshot is not available")
+            scoreWarningLogged = true
+        end
         widget:SetText("score-hud-value", "000000")
         return
     end
 
     local snapshot = ScoreManager.GetSnapshot()
+    if snapshot == nil or snapshot.score == nil then
+        if not scoreWarningLogged and Game ~= nil and Game.Log ~= nil then
+            Game.Log("[WeaponHud]", "Score snapshot has no score value")
+            scoreWarningLogged = true
+        end
+        widget:SetText("score-hud-value", "000000")
+        return
+    end
     widget:SetText("score-hud-value", string.format("%06d", snapshot.score or 0))
 end
 
@@ -195,6 +208,7 @@ function WeaponHud.Shutdown()
     bVisible = true
     bDialogueVisible = false
     dialogueOpacity = 0.0
+    scoreWarningLogged = false
 end
 
 function WeaponHud.SetVisible(visible)

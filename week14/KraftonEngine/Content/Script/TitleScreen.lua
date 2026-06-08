@@ -496,6 +496,10 @@ local function start_prologue_scene()
     show_settings_panel(false)
     show_quit_panel(false)
     show_credits_panel(false)
+    if ScoreManager ~= nil and ScoreManager.ResetRun ~= nil then
+        -- 타이틀에서 새 게임을 시작하면 이전 플레이의 점수 누적을 모두 초기화합니다.
+        ScoreManager.ResetRun()
+    end
     stop_title_bgm()
     LoadingScreen.Show({ duration = 1.0, zOrder = 240, keepVisibleOnComplete = true })
 end
