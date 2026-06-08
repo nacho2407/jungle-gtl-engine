@@ -226,6 +226,7 @@ local targetActor = nil
 local mesh = nil
 local currentHealth = MAX_HEALTH
 local isDead = false
+local damageableCallbacks = nil
 
 local phase = 1
 local pendingPhase = nil
@@ -577,6 +578,16 @@ local function make_damage_result(applied, amount, killed)
     }
 end
 
+local function register_boss_damageable()
+    if damageableCallbacks ~= nil then
+        CombatEvents.RegisterDamageable(obj, damageableCallbacks)
+    end
+end
+
+local function unregister_boss_damageable()
+    CombatEvents.UnregisterDamageable(obj)
+end
+
 local function begin_phase_transition_stage(stageName, duration)
     phaseTransitionStage = stageName
     phaseTransitionTimer = duration
@@ -600,6 +611,7 @@ local function start_phase_two_transition()
     pendingPhase = nil
     openingWalkActive = false
     currentTactic = TACTIC.duel
+    unregister_boss_damageable()
     begin_phase_transition_stage("phaseCrouchDown", PHASE_TWO_TRANSITION_ANIM_DURATION)
     debug_log("[BossTitanAI] Phase 1 depleted. Starting crouch transition to Phase 2.")
     return true
@@ -641,6 +653,7 @@ local function update_phase_two_transition(dt)
         cooldowns.powerShot = 1.2
         cooldowns.melee = 0.5
         clear_action_anim("phaseStandUp")
+        register_boss_damageable()
         debug_log("[BossTitanAI] Phase 2 started after crouch transition.")
         return true
     end
@@ -699,7 +712,7 @@ local function apply_boss_damage(context)
         set_aim_anim(0.0, 0.0)
         request_action_anim("hitReact", DEFEATED_POSE_HOLD_DURATION)
         currentAnim = ANIM.hitReact
-        CombatEvents.UnregisterDamageable(obj)
+        unregister_boss_damageable()
         debug_log("[BossTitanAI] Titan boss defeated. Waiting for ending transition.")
     else
         update_phase_from_health()
@@ -1350,10 +1363,11 @@ function BeginPlay()
 
     obj:AddTag("enemy")
     obj:AddTag("boss")
-    CombatEvents.RegisterDamageable(obj, {
+    damageableCallbacks = {
         ApplyDamage = apply_boss_damage,
         IsDead = function() return isDead end,
-    })
+    }
+    register_boss_damageable()
 
     debug_open_log()
     _G.BossDebugLog = debug_log
@@ -1368,7 +1382,8 @@ function EndPlay()
         _G.BossTitanAnimState[obj.UUID] = nil
     end
 
-    CombatEvents.UnregisterDamageable(obj)
+    unregister_boss_damageable()
+    damageableCallbacks = nil
     debug_close_log()
 end
 
