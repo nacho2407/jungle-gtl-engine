@@ -15,5 +15,6 @@
   "Textures" : {
     "DiffuseTexture" : "Content/Editor/ToolIcons/Camera.png"
   },
+  "TwoSidedLighting" : false,
   "bEnableBloom" : false
 }

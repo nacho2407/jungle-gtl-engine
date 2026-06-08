@@ -15,5 +15,6 @@
   "Textures" : {
     "DiffuseTexture" : "Content/Editor/Icons/S_DirectionalLight_256x.png"
   },
+  "TwoSidedLighting" : false,
   "bEnableBloom" : false
 }

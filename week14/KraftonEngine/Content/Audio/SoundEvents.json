@@ -438,6 +438,47 @@
     "cooldown": 0.02,
     "maxInstances": 6
   },
+  "enemy.human.walk.step": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Enemy/Human/EnemyWalk1.wav",
+      "Enemy/Human/EnemyWalk2.wav",
+      "Enemy/Human/EnemyWalk3.wav",
+      "Enemy/Human/EnemyWalk4.wav",
+      "Enemy/Human/EnemyWalk5.wav",
+      "Enemy/Human/EnemyWalk6.wav",
+      "Enemy/Human/EnemyWalk7.wav",
+      "Enemy/Human/EnemyWalk8.wav"
+    ],
+    "volumeMin": 0.34,
+    "volumeMax": 0.48,
+    "pitchMin": 0.96,
+    "pitchMax": 1.04,
+    "minDistance": 5.0,
+    "maxDistance": 160.0,
+    "attenuation": "exponential",
+    "cooldown": 0.12,
+    "maxInstances": 4
+  },
+  "enemy.human.weapon.fire": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Weapon/Fire/FireLoop1.wav",
+      "Weapon/Fire/FireLoop2.wav",
+      "Weapon/Fire/FireLoop3.wav"
+    ],
+    "volumeMin": 0.62,
+    "volumeMax": 0.78,
+    "pitchMin": 0.98,
+    "pitchMax": 1.03,
+    "minDistance": 8.0,
+    "maxDistance": 220.0,
+    "attenuation": "exponential",
+    "cooldown": 0.08,
+    "maxInstances": 5
+  },
   "world.default.bullet_impact": {
     "bus": "SFX",
     "spatial": true,

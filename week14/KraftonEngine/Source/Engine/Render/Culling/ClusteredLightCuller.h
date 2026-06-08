@@ -20,7 +20,7 @@ class FClusteredLightCuller
 public:
 	void Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InContext);
 	void Release();
-	void DispatchViewSpaceAABB();
+	bool DispatchViewSpaceAABB();
 	void DispatchLightCullingCS(ID3D11ShaderResourceView* LightInfos);
 	bool IsInitialized() const { return bIsInitialized; }
 

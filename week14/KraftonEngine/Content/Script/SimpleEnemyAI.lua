@@ -18,6 +18,11 @@ local HIT_REACT_DURATION = 0.45
 local CHASE_SPEED = 4.6
 local CHASE_START_RANGE = 34.0
 local CHASE_STOP_RANGE = 25.0
+local FOOTSTEP_INTERVAL = 0.42
+
+local AUDIO_WALK_STEP = "enemy.human.walk.step"
+local AUDIO_FIRE = "enemy.human.weapon.fire"
+local AUDIO_DEATH = "enemy.human.death"
 
 local STATE_IDLE = 0
 local STATE_ALERT = 1
@@ -29,6 +34,7 @@ local isDead = false
 local thinkTimer = 0.0
 local fireTimer = 0.0
 local hitReactTimer = 0.0
+local footstepTimer = 0.0
 local alerted = false
 local isMoving = false
 
@@ -68,6 +74,24 @@ local function is_valid_actor(actor)
         return actor:IsValid()
     end
     return true
+end
+
+local function play_event_at(eventName, location)
+    if eventName == nil or AudioManager == nil then
+        return false
+    end
+
+    location = location or obj.Location
+    if AudioManager.PlayEventAt ~= nil then
+        return AudioManager.PlayEventAt(eventName, location.X or 0.0, location.Y or 0.0, location.Z or 0.0)
+    end
+    if AudioManager.PlayOneShotAt ~= nil then
+        return AudioManager.PlayOneShotAt(eventName, location.X or 0.0, location.Y or 0.0, location.Z or 0.0)
+    end
+    if AudioManager.PlayEvent ~= nil then
+        return AudioManager.PlayEvent(eventName)
+    end
+    return false
 end
 
 local function horizontal(v)
@@ -184,6 +208,12 @@ local function update_chase(target, dt)
 
     obj:AddWorldOffset(dir * step)
     isMoving = true
+
+    footstepTimer = footstepTimer - dt
+    if footstepTimer <= 0.0 then
+        play_event_at(AUDIO_WALK_STEP, obj.Location)
+        footstepTimer = FOOTSTEP_INTERVAL
+    end
 end
 
 local function can_see_target(target)
@@ -255,6 +285,7 @@ local function apply_enemy_damage(context)
 
     local result = make_damage_result(true, amount, killed)
     if killed then
+        play_event_at(AUDIO_DEATH, obj.Location)
         clear_anim_state()
         obj:Destroy()
     end
@@ -317,6 +348,7 @@ local function fire_at(target)
 
     CombatEvents.NotifyAttackFired(obj, fireContext)
     request_anim_action("fire", FIRE_ACTION_DURATION)
+    play_event_at(AUDIO_FIRE, source)
 
     if hit ~= nil then
         CombatEvents.NotifyAttackImpact(obj, fireContext)
@@ -333,6 +365,7 @@ function BeginPlay()
     thinkTimer = 0.0
     fireTimer = random_range(0.25, 0.65)
     hitReactTimer = 0.0
+    footstepTimer = 0.0
     alerted = false
     isMoving = false
     targetActor = nil

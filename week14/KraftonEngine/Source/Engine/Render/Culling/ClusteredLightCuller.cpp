@@ -38,7 +38,8 @@ void FClusteredLightCuller::Initialize(ID3D11Device* InDevice, ID3D11DeviceConte
 	ID3D11ShaderResourceView* NullSRV = nullptr;
 	InitializeBuffer<uint32>(gGlobalCounter, 1, NullSRV, gGlobalCounterUAV, false, true);
 
-	bIsInitialized = (ViewSpaceAABBCS != nullptr && ViewSpaceAABBCS->IsValid());
+	bIsInitialized = (ViewSpaceAABBCS != nullptr && ViewSpaceAABBCS->IsValid()
+		&& LightCullingCS != nullptr && LightCullingCS->IsValid());
 }
 
 void FClusteredLightCuller::Release()
@@ -61,11 +62,11 @@ void FClusteredLightCuller::Release()
 	bIsInitialized = false;
 }
 
-void FClusteredLightCuller::DispatchViewSpaceAABB()
+bool FClusteredLightCuller::DispatchViewSpaceAABB()
 {
 	if (!ViewSpaceAABBCS || !ViewSpaceAABBCS->IsValid())
 	{
-		return;
+		return false;
 	}
 
 	ViewSpaceAABBCS->Bind(Context);
@@ -76,11 +77,13 @@ void FClusteredLightCuller::DispatchViewSpaceAABB()
 		(State.ClusterZ + ClusterCullingThreadGroupSizeZ - 1) / ClusterCullingThreadGroupSizeZ);
 	ID3D11UnorderedAccessView* NullUAV = nullptr;
 	Context->CSSetUnorderedAccessViews(ELightCullingUAVSlot::ClusterAABB, 1, &NullUAV, nullptr);
+	Context->CSSetShader(nullptr, nullptr, 0);
+	return true;
 }
 
 void FClusteredLightCuller::DispatchLightCullingCS(ID3D11ShaderResourceView* LightInfos)
 {
-	if (!LightCullingCS || !LightCullingCS->IsValid())
+	if (!bIsInitialized || !LightCullingCS || !LightCullingCS->IsValid())
 	{
 		return;
 	}
