@@ -25,7 +25,10 @@ local MAX_SPREAD            = 1.0
 local MAX_SPREAD_ANGLE      = 0.075
 
 -- Hard-coded recoil spray. vertical climb, left bias, then a rightward sweep. Values are camera kick in degrees per shot.
-local RECOIL_ADS_MULTIPLIER          = 0.72
+local RECOIL_ADS_MULTIPLIER          = 0.5
+local RECOIL_ADS_YAW_MULTIPLIER      = 0.0
+local RECOIL_ADS_CLEAR_YAW_ON_ENTER  = true
+local ADS_SUPPRESS_SHOOT_ANIMATION   = true
 local RECOIL_STRENGTH_MULTIPLIER     = 5.0
 local RECOIL_RECOVERY_DELAY          = 0.03
 local RECOIL_RECOVERY_SPEED_FIRING   = 9.0
@@ -88,9 +91,131 @@ local SLIDE_LOC_OFFSET_RIGHT =  0.04  -- 오른쪽으로 살짝
 local SLIDE_LOC_OFFSET_DOWN  = -0.50  -- 아래로 살짝
 local SLIDE_BLEND_HZ         =  14.0  -- 클수록 빨리 자세 잡힘
 
+-- ADS (Aim-Down-Sights). 한 점만 맞추면 총이 옆에 남는다.
+-- 뒤쪽 sight 를 카메라 앞에 두고, muzzle 을 화면 중앙 광축에 맞춰서 "총구-조준경" 라인을 만든다.
+local ADS_REAR_SIGHT_BONE   = "def_c_sightRear"
+local ADS_FRONT_SIGHT_BONE  = "def_c_sightFront"
+local ADS_MUZZLE_BONE       = "muzzle_flash"
+local ADS_VIEW_FALLBACK_BONE = "jx_c_pov"
+local ADS_BLEND_HZ          = 18.0      -- 클수록 빨리 조준 자세 잡힘
+local ADS_DOF_FOCUS_DISTANCE = 1.35     -- 머즐/가늠쇠 근처에 초점
+local ADS_DOF_FSTOP         = 1.6       -- 작을수록 주변 흐림 강함
+local ADS_FOV_SCALE         = 0.76      -- 조준 시 FOV 줄여 줌
+local ADS_WEAPON_SCALE      = 1.0      -- 조준 시 총 반경 감소
+
+-- 카메라 로컬 좌표계 기준 목표점.
+-- rear sight 는 카메라 바로 앞, muzzle 은 더 앞의 화면 중앙에 둔다.
+local ADS_REAR_TARGET_FWD   = -0.1
+local ADS_REAR_TARGET_RIGHT = 0.0
+local ADS_REAR_TARGET_UP    = -0.5
+local ADS_MUZZLE_TARGET_FWD = 2.20
+local ADS_MUZZLE_TARGET_RIGHT = 0.0
+local ADS_MUZZLE_TARGET_UP  = 0.0
+
+-- World-space rear placement gets us close; viewport-space correction finishes the center alignment.
+local ADS_MUZZLE_CENTER_WEIGHT = 0.0
+local ADS_SCREEN_CENTER_WEIGHT = 0.85
+local ADS_SCREEN_MAX_RIGHT     = 0.45
+local ADS_SCREEN_MAX_UP        = 0.20
+local ADS_SCREEN_CORRECTION_PASSES = 2
+local ADS_MAX_ALIGN_ROT_DEG = 5.0
+
+-- ADS 동안 팔에 추가로 적용할 로컬 회전(도). SlideTilt 와 같은 X=Roll/Y=Pitch/Z=Yaw 규약.
+local ADS_TILT_ROLL_DEG     =  8.0
+local ADS_TILT_PITCH_DEG    =  0.0
+local ADS_TILT_YAW_DEG      =  0.0
+local ADS_LEVEL_ROLL_DEG    =  0.0
+
+-- ADS 블렌드가 이 임계값을 넘으면 화면 중앙 HUD 크로스헤어(< ^ > v 화살표) 와
+-- 총 메시의 v_cro (def_c_cro 본에 매달린 인게임 가늠점 메시) 를 숨긴다.
+-- 본 스케일을 0 으로 만들어 def_c_cro 와 그 자식 메시 섹션이 화면에서 사라지게 한다.
+local ADS_HIDE_CROSSHAIR_AT = 0.35
+local ADS_HIDE_VCRO_BONE    = "def_c_cro"
+local ADS_HIDE_HUD_CROSSHAIR = false
+-- SetBoneScale 은 내부 BoneEditPose 를 켜므로, ADS 해제 때 ResetBoneEditPose 로 반드시 정리한다.
+local ADS_HIDE_WEAPON_CRO_BONE = true
+local ADS_DEBUG_LOG = true
+
+local crosshairHidden = false
+local vcroHidden       = false
+local lastAimDown      = false
+local lastAdsSettledState = "hip"
+local adsDebugTimer    = 0.0
+
 local armsBaseLoc   = nil
 local armsBaseRot   = nil
+local armsBaseScale = nil
 local slideBlend    = 0.0
+local adsBlend      = 0.0
+local dofBaseEnabled       = nil
+local dofBaseFocusDistance = nil
+local dofBaseFStop         = nil
+local fovBase              = nil
+
+local function vec_copy(v)
+    if v == nil then return nil end
+    return Vector.new(v.X, v.Y, v.Z)
+end
+
+local function vec_add(a, b)
+    return Vector.new(a.X + b.X, a.Y + b.Y, a.Z + b.Z)
+end
+
+local function vec_sub(a, b)
+    return Vector.new(a.X - b.X, a.Y - b.Y, a.Z - b.Z)
+end
+
+local function vec_mul(v, s)
+    return Vector.new(v.X * s, v.Y * s, v.Z * s)
+end
+
+local function vec_dot(a, b)
+    return a.X * b.X + a.Y * b.Y + a.Z * b.Z
+end
+
+local function clamp_abs(value, maxAbs)
+    if value < -maxAbs then return -maxAbs end
+    if value > maxAbs then return maxAbs end
+    return value
+end
+
+local function vec_text(v)
+    if v == nil then return "nil" end
+    return string.format("(%.3f, %.3f, %.3f)", v.X or 0.0, v.Y or 0.0, v.Z or 0.0)
+end
+
+local function debug_ads_state(label)
+    if not ADS_DEBUG_LOG then return end
+
+    local aimNow = false
+    if Key ~= nil and Input ~= nil then
+        if Key.MouseRight ~= nil then aimNow = aimNow or Input.GetKey(Key.MouseRight) == true end
+        if Key.GamepadLeftTrigger ~= nil then aimNow = aimNow or Input.GetKey(Key.GamepadLeftTrigger) == true end
+    end
+
+    local armsRel = (arms ~= nil) and arms.RelativeLocation or nil
+    local armsRot = (arms ~= nil and type(arms.GetRotation) == "function") and arms:GetRotation() or nil
+    local armsScale = (arms ~= nil and type(arms.GetRelativeScale) == "function") and arms:GetRelativeScale() or nil
+    local camLoc = (camera ~= nil and type(camera.GetWorldLocation) == "function") and camera:GetWorldLocation() or nil
+    local camRot = (camera ~= nil and type(camera.GetRotation) == "function") and camera:GetRotation() or nil
+    local fov = (camera ~= nil and type(camera.GetFOV) == "function") and camera:GetFOV() or -1.0
+
+    print(string.format(
+        "ADS %s aim=%s blend=%.3f armsRel=%s baseRel=%s armsRot=%s baseRot=%s armsScale=%s baseScale=%s camLoc=%s camRot=%s fov=%.3f baseFov=%.3f",
+        label,
+        tostring(aimNow),
+        adsBlend or 0.0,
+        vec_text(armsRel),
+        vec_text(armsBaseLoc),
+        vec_text(armsRot),
+        vec_text(armsBaseRot),
+        vec_text(armsScale),
+        vec_text(armsBaseScale),
+        vec_text(camLoc),
+        vec_text(camRot),
+        fov,
+        fovBase or -1.0))
+end
 
 local function clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
@@ -129,15 +254,18 @@ local function add_weapon_recoil()
     if camera == nil then return end
 
     local step = RECOIL_PATTERN[recoilPatternIndex] or RECOIL_PATTERN[#RECOIL_PATTERN]
-    local scale = RECOIL_STRENGTH_MULTIPLIER
-    if is_aim_down() then
-        scale = scale * RECOIL_ADS_MULTIPLIER
+    local aimNow = is_aim_down()
+    local pitchScale = RECOIL_STRENGTH_MULTIPLIER
+    local yawScale = RECOIL_STRENGTH_MULTIPLIER
+    if aimNow then
+        pitchScale = pitchScale * RECOIL_ADS_MULTIPLIER
+        yawScale = yawScale * RECOIL_ADS_YAW_MULTIPLIER
     end
 
     local deltaRotation = Vector.new(
         0.0,
-        step.pitch * scale,
-        step.yaw * scale)
+        step.pitch * pitchScale,
+        step.yaw * yawScale)
 
     if type(camera.AddLocalRotation) == "function" then
         camera:AddLocalRotation(deltaRotation)
@@ -257,8 +385,21 @@ end
 
 local function cache_arms_base_transform()
     if arms == nil or armsBaseLoc ~= nil then return end
-    armsBaseLoc = arms.RelativeLocation
-    armsBaseRot = arms:GetRotation()
+    armsBaseLoc = vec_copy(arms.RelativeLocation)
+    armsBaseRot = vec_copy(arms:GetRotation())
+    if type(arms.GetRelativeScale) == "function" then
+        armsBaseScale = vec_copy(arms:GetRelativeScale())
+    else
+        armsBaseScale = Vector.new(1.0, 1.0, 1.0)
+    end
+    debug_ads_state("cache-base")
+end
+
+local function reset_weapon_bone_edit_pose(reason)
+    if arms == nil or type(arms.ResetBoneEditPose) ~= "function" then return end
+    arms:ResetBoneEditPose()
+    vcroHidden = false
+    debug_ads_state("reset-bone-edit-" .. (reason or "unknown"))
 end
 
 local function damp_toward(current, target, hz, dt)
@@ -272,34 +413,354 @@ local function get_arm_anim_flags()
     return _G.FPSArmAnimFlags and _G.FPSArmAnimFlags[obj.UUID]
 end
 
-local function update_slide_arm_tilt(dt)
+local function get_ads_bone_world_location(boneName)
+    if boneName == nil or boneName == "" then return nil end
+    local boneWorld = arms:GetBoneSocketLocation(boneName, Vector.new(0.0, 0.0, 0.0))
+    if boneWorld == nil then return nil end
+
+    -- GetBoneSocketLocation 은 본을 못 찾으면 ZeroVector 를 돌려준다. 카메라에서 너무 먼 값은 실패로 본다.
+    local camPos = camera:GetWorldLocation()
+    local camDX = boneWorld.X - camPos.X
+    local camDY = boneWorld.Y - camPos.Y
+    local camDZ = boneWorld.Z - camPos.Z
+    if camDX*camDX + camDY*camDY + camDZ*camDZ > 10000.0 then return nil end
+
+    return boneWorld
+end
+
+local function make_camera_space_point(offsetFwd, offsetRight, offsetUp)
+    local camPos = camera:GetWorldLocation()
+    local fwd   = camera.Forward
+    local right = camera.Right
+    local up    = camera.Up
+
+    return Vector.new(
+        camPos.X + fwd.X * offsetFwd + right.X * offsetRight + up.X * offsetUp,
+        camPos.Y + fwd.Y * offsetFwd + right.Y * offsetRight + up.Y * offsetUp,
+        camPos.Z + fwd.Z * offsetFwd + right.Z * offsetRight + up.Z * offsetUp)
+end
+
+local function get_ads_rear_world()
+    return get_ads_bone_world_location(ADS_REAR_SIGHT_BONE)
+        or get_ads_bone_world_location(ADS_VIEW_FALLBACK_BONE)
+        or get_ads_bone_world_location(ADS_FRONT_SIGHT_BONE)
+end
+
+local function get_ads_muzzle_world()
+    return get_ads_bone_world_location(ADS_MUZZLE_BONE)
+        or get_ads_bone_world_location(ADS_FRONT_SIGHT_BONE)
+end
+
+local function project_ads_world(world)
+    if camera == nil or world == nil then return nil end
+    if type(camera.ProjectWorldToScreen) ~= "function" then return nil end
+    return camera:ProjectWorldToScreen(world)
+end
+
+local function screen_text(name, world)
+    local screen = project_ads_world(world)
+    if screen == nil then
+        return name .. "=no-project"
+    end
+
+    return string.format(
+        "%s=(valid=%s x=%.1f y=%.1f ndc=(%.2f,%.2f,%.2f) depth=%.2f)",
+        name,
+        tostring(screen.Valid == true),
+        screen.X or 0.0,
+        screen.Y or 0.0,
+        screen.NdcX or 0.0,
+        screen.NdcY or 0.0,
+        screen.NdcZ or 0.0,
+        screen.Depth or 0.0)
+end
+
+local function debug_ads_projection(label)
+    if not ADS_DEBUG_LOG or camera == nil then return end
+
+    local rearWorld = get_ads_rear_world()
+    local frontWorld = get_ads_bone_world_location(ADS_FRONT_SIGHT_BONE)
+    local muzzleWorld = get_ads_muzzle_world()
+    local muzzleScreen = project_ads_world(muzzleWorld)
+
+    local viewportWidth = 0.0
+    local viewportHeight = 0.0
+    if muzzleScreen ~= nil then
+        viewportWidth = muzzleScreen.ViewportWidth or 0.0
+        viewportHeight = muzzleScreen.ViewportHeight or 0.0
+    elseif Engine ~= nil and type(Engine.GetViewportSize) == "function" then
+        local viewport = Engine.GetViewportSize()
+        viewportWidth = viewport.Width or 0.0
+        viewportHeight = viewport.Height or 0.0
+    end
+
+    local errX = 0.0
+    local errY = 0.0
+    if muzzleScreen ~= nil then
+        errX = viewportWidth * 0.5 - (muzzleScreen.X or 0.0)
+        errY = viewportHeight * 0.5 - (muzzleScreen.Y or 0.0)
+    end
+
+    print(string.format(
+        "ADS-PROJ %s viewport=(%.0f, %.0f) muzzleErrPx=(%.1f, %.1f) %s %s %s",
+        label,
+        viewportWidth,
+        viewportHeight,
+        errX,
+        errY,
+        screen_text("rear", rearWorld),
+        screen_text("front", frontWorld),
+        screen_text("muzzle", muzzleWorld)))
+end
+
+local function compute_ads_rotation_correction()
+    if arms == nil or camera == nil then return nil end
+    if type(arms.GetBoneSocketLocation) ~= "function" then return nil end
+
+    local rearWorld = get_ads_rear_world()
+    local muzzleWorld = get_ads_muzzle_world()
+    if rearWorld == nil or muzzleWorld == nil then return nil end
+
+    local sightLine = vec_sub(muzzleWorld, rearWorld)
+    local lineFwd = vec_dot(sightLine, camera.Forward)
+    if math.abs(lineFwd) < 0.001 then return nil end
+
+    local lineRight = vec_dot(sightLine, camera.Right)
+    local lineUp = vec_dot(sightLine, camera.Up)
+    local yawDeg = math.deg(math.atan(lineRight / lineFwd))
+    local pitchDeg = -math.deg(math.atan(lineUp / lineFwd))
+
+    return Vector.new(
+        0.0,
+        clamp_abs(pitchDeg, ADS_MAX_ALIGN_ROT_DEG),
+        clamp_abs(yawDeg, ADS_MAX_ALIGN_ROT_DEG))
+end
+
+-- ADS 위치 보정. rear sight 를 카메라 앞쪽으로 가져오고, muzzle 은 화면 중앙 right/up 오차만 추가로 줄인다.
+local function compute_ads_screen_delta()
+    if camera == nil then return nil end
+
+    local muzzleWorld = get_ads_muzzle_world()
+    local screen = project_ads_world(muzzleWorld)
+    if screen == nil or screen.Valid ~= true then return nil end
+
+    local viewportWidth = screen.ViewportWidth or 0.0
+    local viewportHeight = screen.ViewportHeight or 0.0
+    if viewportWidth <= 0.0 or viewportHeight <= 0.0 then return nil end
+
+    local fov = (type(camera.GetFOV) == "function") and camera:GetFOV() or 1.0
+    local depth = screen.Depth or ADS_MUZZLE_TARGET_FWD
+    if depth < 0.25 then depth = 0.25 end
+
+    local errX = viewportWidth * 0.5 - (screen.X or 0.0)
+    local errY = viewportHeight * 0.5 - (screen.Y or 0.0)
+    local unitsPerPixelY = 2.0 * math.tan(fov * 0.5) * depth / viewportHeight
+    local unitsPerPixelX = unitsPerPixelY * (viewportWidth / viewportHeight)
+
+    return Vector.new(
+        0.0,
+        clamp_abs(errX * unitsPerPixelX * ADS_SCREEN_CENTER_WEIGHT, ADS_SCREEN_MAX_RIGHT),
+        clamp_abs(-errY * unitsPerPixelY * ADS_SCREEN_CENTER_WEIGHT, ADS_SCREEN_MAX_UP))
+end
+
+local function compute_ads_world_delta()
+    if arms == nil or camera == nil then return nil end
+    if type(arms.GetBoneSocketLocation) ~= "function" then return nil end
+
+    local rearWorld = get_ads_rear_world()
+    if rearWorld == nil then return nil end
+
+    local rearTarget = make_camera_space_point(
+        ADS_REAR_TARGET_FWD,
+        ADS_REAR_TARGET_RIGHT,
+        ADS_REAR_TARGET_UP)
+    local delta = vec_sub(rearTarget, rearWorld)
+
+    local muzzleWorld = get_ads_muzzle_world()
+    if muzzleWorld ~= nil then
+        local muzzleTarget = make_camera_space_point(
+            ADS_MUZZLE_TARGET_FWD,
+            ADS_MUZZLE_TARGET_RIGHT,
+            ADS_MUZZLE_TARGET_UP)
+        local muzzleDelta = vec_sub(muzzleTarget, muzzleWorld)
+        local rightFix = vec_mul(camera.Right, vec_dot(muzzleDelta, camera.Right) * ADS_MUZZLE_CENTER_WEIGHT)
+        local upFix = vec_mul(camera.Up, vec_dot(muzzleDelta, camera.Up) * ADS_MUZZLE_CENTER_WEIGHT)
+        delta = vec_add(delta, vec_add(rightFix, upFix))
+    end
+
+    return delta
+end
+
+local function update_ads_post_fx(blend)
+    if camera == nil then return end
+
+    local shouldHideCrosshair = ADS_HIDE_HUD_CROSSHAIR and blend >= ADS_HIDE_CROSSHAIR_AT
+    if shouldHideCrosshair ~= crosshairHidden then
+        crosshairHidden = shouldHideCrosshair
+        if type(WeaponHud.SetCrosshairVisible) == "function" then
+            WeaponHud.SetCrosshairVisible(not shouldHideCrosshair)
+        end
+    end
+
+    if ADS_HIDE_WEAPON_CRO_BONE and arms ~= nil and type(arms.SetBoneScale) == "function" then
+        local shouldHideVCro = blend >= ADS_HIDE_CROSSHAIR_AT
+        if shouldHideVCro ~= vcroHidden then
+            vcroHidden = shouldHideVCro
+            local scale = shouldHideVCro and Vector.new(0.0, 0.0, 0.0) or Vector.new(1.0, 1.0, 1.0)
+            arms:SetBoneScale(ADS_HIDE_VCRO_BONE, scale)
+            if not shouldHideVCro then
+                reset_weapon_bone_edit_pose("vcro-show")
+            end
+        end
+    end
+
+    if fovBase ~= nil and type(camera.SetFOV) == "function" then
+        local scale = 1.0 + (ADS_FOV_SCALE - 1.0) * blend
+        camera:SetFOV(fovBase * scale)
+    end
+
+    if type(camera.SetDOFEnabled) ~= "function" then return end
+    if dofBaseEnabled == nil then return end
+
+    if blend <= 0.0001 then
+        camera:SetDOFEnabled(dofBaseEnabled)
+        if dofBaseFocusDistance ~= nil then camera:SetDOFFocusDistance(dofBaseFocusDistance) end
+        if dofBaseFStop ~= nil then camera:SetDOFFStop(dofBaseFStop) end
+        return
+    end
+
+    camera:SetDOFEnabled(true)
+    local focus = (dofBaseFocusDistance or 10.0) + (ADS_DOF_FOCUS_DISTANCE - (dofBaseFocusDistance or 10.0)) * blend
+    local fstop = (dofBaseFStop or 4.0) + (ADS_DOF_FSTOP - (dofBaseFStop or 4.0)) * blend
+    camera:SetDOFFocusDistance(focus)
+    camera:SetDOFFStop(fstop)
+end
+
+local function update_arm_transforms(dt)
     if arms == nil then return end
-    local flags = get_arm_anim_flags()
-    if flags == nil or flags.needsSlideTilt ~= true then return end
 
     cache_arms_base_transform()
     if armsBaseLoc == nil or armsBaseRot == nil then return end
 
+    local flags = get_arm_anim_flags()
     -- movement:IsSliding() 는 lua 에 노출 안 돼 있어 AnimInstance 가 매 프레임 채워주는 플래그를 읽는다.
-    local target = (flags.isSliding == true) and 1.0 or 0.0
-    slideBlend = damp_toward(slideBlend, target, SLIDE_BLEND_HZ, dt)
+    local slideTarget = (flags ~= nil and flags.needsSlideTilt == true and flags.isSliding == true) and 1.0 or 0.0
+    slideBlend = damp_toward(slideBlend, slideTarget, SLIDE_BLEND_HZ, dt)
 
-    if slideBlend < 0.0001 and target == 0.0 then
-        arms:SetRelativeLocation(armsBaseLoc)
-        arms:SetRotation(armsBaseRot)
-        slideBlend = 0.0
-        return
+    -- 슬라이딩 중에는 조준 자세를 잡지 않는다.
+    local aimNow = is_aim_down()
+    if aimNow ~= lastAimDown then
+        lastAimDown = aimNow
+        lastAdsSettledState = "moving"
+        adsDebugTimer = 0.0
+        if aimNow and RECOIL_ADS_CLEAR_YAW_ON_ENTER then
+            recoilRemainingYaw = 0.0
+        end
+        debug_ads_state(aimNow and "aim-down" or "aim-up")
+        if not aimNow then
+            reset_weapon_bone_edit_pose("aim-up")
+        end
     end
 
-    arms:SetRotation(Vector.new(
-        armsBaseRot.X + SLIDE_TILT_ROLL_DEG  * slideBlend,
-        armsBaseRot.Y + SLIDE_TILT_PITCH_DEG * slideBlend,
-        armsBaseRot.Z))
+    local adsTarget = (aimNow and slideTarget <= 0.0) and 1.0 or 0.0
+    adsBlend = damp_toward(adsBlend, adsTarget, ADS_BLEND_HZ, dt)
+    -- damp_toward 는 지수적 접근이라 정확히 0/1 에 안 닿는다. 작은 잔존값이 다음 프레임의
+    -- SetLocation 으로 누적될 수 있어 임계값 아래는 스냅해서 베이스로 깔끔히 돌아오게.
+    if adsTarget <= 0.0 and adsBlend < 0.001 then adsBlend = 0.0 end
+    if adsTarget >= 1.0 and adsBlend > 0.999 then adsBlend = 1.0 end
 
-    arms:SetRelativeLocation(Vector.new(
-        armsBaseLoc.X,
-        armsBaseLoc.Y + SLIDE_LOC_OFFSET_RIGHT * slideBlend,
-        armsBaseLoc.Z + SLIDE_LOC_OFFSET_DOWN  * slideBlend))
+    local locX = armsBaseLoc.X
+    local locY = armsBaseLoc.Y + SLIDE_LOC_OFFSET_RIGHT * slideBlend
+    local locZ = armsBaseLoc.Z + SLIDE_LOC_OFFSET_DOWN  * slideBlend
+    local scaleBlend = 1.0 + (ADS_WEAPON_SCALE - 1.0) * adsBlend
+    local scaleX = armsBaseScale.X * scaleBlend
+    local scaleY = armsBaseScale.Y * scaleBlend
+    local scaleZ = armsBaseScale.Z * scaleBlend
+    local adsRollOffset = (ADS_LEVEL_ROLL_DEG - armsBaseRot.X) + ADS_TILT_ROLL_DEG
+    local rotX = armsBaseRot.X + SLIDE_TILT_ROLL_DEG  * slideBlend + adsRollOffset * adsBlend
+    local rotY = armsBaseRot.Y + SLIDE_TILT_PITCH_DEG * slideBlend + ADS_TILT_PITCH_DEG * adsBlend
+    local rotZ = armsBaseRot.Z + ADS_TILT_YAW_DEG * adsBlend
+    local finalLocX = locX
+    local finalLocY = locY
+    local finalLocZ = locZ
+
+    -- 1) 슬라이드/베이스 relative transform 을 먼저 반영한다.
+    --    이 상태가 매 프레임의 깨끗한 출발점이다.
+    arms:SetRelativeLocation(Vector.new(locX, locY, locZ))
+    if type(arms.SetRelativeScale) == "function" then
+        arms:SetRelativeScale(Vector.new(scaleX, scaleY, scaleZ))
+    end
+    arms:SetRotation(Vector.new(rotX, rotY, rotZ))
+
+    -- 2) rear sight -> muzzle 라인이 카메라 forward 와 일치하도록 회전을 보정한다.
+    --    위치 보정보다 먼저 해야 muzzle 중앙 정렬이 덜 밀린다.
+    if adsBlend > 0.0 then
+        local rotFix = compute_ads_rotation_correction()
+        if rotFix ~= nil then
+            rotX = armsBaseRot.X + SLIDE_TILT_ROLL_DEG  * slideBlend + (adsRollOffset + rotFix.X) * adsBlend
+            rotY = armsBaseRot.Y + SLIDE_TILT_PITCH_DEG * slideBlend + (ADS_TILT_PITCH_DEG + rotFix.Y) * adsBlend
+            rotZ = armsBaseRot.Z + (ADS_TILT_YAW_DEG + rotFix.Z) * adsBlend
+            arms:SetRotation(Vector.new(rotX, rotY, rotZ))
+        end
+    end
+
+    -- 3) ADS 위치 보정.
+    --    SetLocation(world) 을 쓰면 GetLocation 캐시 문제로 매 프레임 delta 가 누적되어
+    --    총이 카메라쪽으로 빨려들어가는 버그가 있었음. 대신 월드 delta 를 카메라(=캐릭터 캡슐)
+    --    의 축으로 투영해서 relative location 에만 더한다. 캡슐의 forward/right/up = 카메라
+    --    의 forward/right/up 이므로 축 일치.
+    if adsBlend > 0.0 then
+        local worldDelta = compute_ads_world_delta()
+        if worldDelta ~= nil and camera ~= nil then
+            local fwd   = camera.Forward
+            local right = camera.Right
+            local up    = camera.Up
+            local dFwd   = worldDelta.X * fwd.X   + worldDelta.Y * fwd.Y   + worldDelta.Z * fwd.Z
+            local dRight = worldDelta.X * right.X + worldDelta.Y * right.Y + worldDelta.Z * right.Z
+            local dUp    = worldDelta.X * up.X    + worldDelta.Y * up.Y    + worldDelta.Z * up.Z
+            finalLocX = locX + dFwd   * adsBlend
+            finalLocY = locY + dRight * adsBlend
+            finalLocZ = locZ + dUp    * adsBlend
+            arms:SetRelativeLocation(Vector.new(
+                finalLocX,
+                finalLocY,
+                finalLocZ))
+        end
+    end
+
+    -- 4) Viewport-space muzzle centering. This is intentionally after the world/bone solve,
+    -- because the player judges ADS by pixels, not by raw world coordinates.
+    if adsBlend > 0.0 then
+        for _ = 1, ADS_SCREEN_CORRECTION_PASSES do
+            local screenDelta = compute_ads_screen_delta()
+            if screenDelta ~= nil then
+                finalLocX = finalLocX + screenDelta.X * adsBlend
+                finalLocY = finalLocY + screenDelta.Y * adsBlend
+                finalLocZ = finalLocZ + screenDelta.Z * adsBlend
+                arms:SetRelativeLocation(Vector.new(finalLocX, finalLocY, finalLocZ))
+            end
+        end
+    end
+
+    update_ads_post_fx(adsBlend)
+
+    if ADS_DEBUG_LOG and adsBlend > 0.0 then
+        adsDebugTimer = adsDebugTimer + dt
+        if adsDebugTimer >= 0.25 then
+            adsDebugTimer = 0.0
+            debug_ads_projection("tracking")
+        end
+    end
+
+    if adsBlend <= 0.0 and lastAdsSettledState ~= "hip" then
+        lastAdsSettledState = "hip"
+        debug_ads_state("settled-hip")
+        debug_ads_projection("settled-hip")
+    elseif adsBlend >= 1.0 and lastAdsSettledState ~= "ads" then
+        lastAdsSettledState = "ads"
+        debug_ads_state("settled-ads")
+        debug_ads_projection("settled-ads")
+    end
 end
 
 local function cache_movement_defaults()
@@ -481,7 +942,9 @@ local function try_shoot()
     currentAmmo = currentAmmo - 1
     update_weapon_hud()
 
-    request_arm_animation("shoot")
+    if not (is_aim_down() and ADS_SUPPRESS_SHOOT_ANIMATION) then
+        request_arm_animation("shoot")
+    end
     GameAudio.NotifyShotFired(is_aim_down())
 
     local camPos = camera:GetWorldLocation()
@@ -556,13 +1019,26 @@ end
 function BeginPlay()
     arms   = obj:GetSkeletalMesh()
     camera = obj:GetCamera()
+    reset_weapon_bone_edit_pose("begin")
     movement = nil
     baseMaxWalkSpeed = nil
     baseSprintSpeedMultiplier = nil
     baseWallRunMaxSpeed = nil
     armsBaseLoc = nil
     armsBaseRot = nil
+    armsBaseScale = nil
     slideBlend = 0.0
+    adsBlend = 0.0
+    if camera ~= nil then
+        if type(camera.GetFOV) == "function" then
+            fovBase = camera:GetFOV()
+        end
+        if type(camera.GetDOFEnabled) == "function" then
+            dofBaseEnabled = camera:GetDOFEnabled()
+            dofBaseFocusDistance = camera:GetDOFFocusDistance()
+            dofBaseFStop = camera:GetDOFFStop()
+        end
+    end
     cache_movement_defaults()
     cache_arms_base_transform()
     GameAudio.Initialize()
@@ -654,6 +1130,25 @@ function EndPlay()
         movement:SetSprintSpeedMultiplier(baseSprintSpeedMultiplier)
         movement:SetWallRunMaxSpeed(baseWallRunMaxSpeed)
     end
+    if camera ~= nil then
+        if fovBase ~= nil and type(camera.SetFOV) == "function" then
+            camera:SetFOV(fovBase)
+        end
+        if dofBaseEnabled ~= nil and type(camera.SetDOFEnabled) == "function" then
+            camera:SetDOFEnabled(dofBaseEnabled)
+            if dofBaseFocusDistance ~= nil then camera:SetDOFFocusDistance(dofBaseFocusDistance) end
+            if dofBaseFStop ~= nil then camera:SetDOFFStop(dofBaseFStop) end
+        end
+    end
+    if arms ~= nil and armsBaseScale ~= nil and type(arms.SetRelativeScale) == "function" then
+        arms:SetRelativeScale(armsBaseScale)
+    end
+    reset_weapon_bone_edit_pose("end")
+    fovBase = nil
+    dofBaseEnabled = nil
+    dofBaseFocusDistance = nil
+    dofBaseFStop = nil
+    adsBlend = 0.0
     GameAudio.Shutdown()
     recoilPatternIndex = 1
     recoilRemainingPitch = 0.0
@@ -671,7 +1166,7 @@ function Tick(dt)
     end
 
     update_weapon_recoil(dt)
-    update_slide_arm_tilt(dt)
+    update_arm_transforms(dt)
 
     if fireCooldown > 0 then
         fireCooldown = fireCooldown - dt
