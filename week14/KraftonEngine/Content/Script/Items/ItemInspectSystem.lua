@@ -9,6 +9,7 @@ local M = {}
 local widget = nil
 local focusedActor = nil
 local focusedItemId = nil
+local focusedEntry = nil
 local activeActor = nil
 local activeItemId = nil
 local panelOpen = false
@@ -29,19 +30,33 @@ local function set_actor_outline(actor, enabled)
     actor:SetOutline(enabled)
 end
 
+local function get_interact_text(entry)
+    if entry ~= nil and entry.interact_text ~= nil and entry.interact_text ~= "" then
+        return entry.interact_text
+    end
+    return "INSPECT"
+end
+
+local function apply_interact_text(entry)
+    if widget == nil then return end
+    widget:SetText("item-interact-text", get_interact_text(entry))
+end
+
 local function clear_focus()
     if focusedActor ~= nil then
         set_actor_outline(focusedActor, false)
     end
     focusedActor = nil
     focusedItemId = nil
+    focusedEntry = nil
     if not panelOpen then
         set_display("item-interact-hint", "none")
     end
 end
 
-local function set_focus(actor, itemId)
-    if focusedActor == actor and focusedItemId == itemId then
+local function set_focus(actor, entry)
+    local itemId = entry ~= nil and entry.item_id or nil
+    if focusedActor == actor and focusedItemId == itemId and focusedEntry == entry then
         return
     end
 
@@ -51,12 +66,14 @@ local function set_focus(actor, itemId)
 
     focusedActor = actor
     focusedItemId = itemId
+    focusedEntry = entry
 
     if focusedActor ~= nil then
         set_actor_outline(focusedActor, true)
     end
 
     if not panelOpen then
+        apply_interact_text(focusedEntry)
         set_display("item-interact-hint", focusedActor ~= nil and "block" or "none")
     end
 end
@@ -101,6 +118,7 @@ local function close_panel()
     activeActor = nil
     activeItemId = nil
     set_display("item-inspect-card", "none")
+    apply_interact_text(focusedEntry)
     set_display("item-interact-hint", focusedActor ~= nil and "block" or "none")
 end
 
@@ -127,6 +145,7 @@ local function pickup_active_item()
     end
     focusedActor = nil
     focusedItemId = nil
+    focusedEntry = nil
     set_display("item-interact-hint", "none")
 end
 
@@ -139,6 +158,35 @@ local function get_registry_entry(actor)
     if actor == nil or actor.UUID == nil then return nil end
     if _G.InspectableItems == nil then return nil end
     return _G.InspectableItems[actor.UUID]
+end
+
+local function has_custom_interaction(entry)
+    return entry ~= nil and type(entry.on_interact) == "function"
+end
+
+local function trigger_custom_interaction()
+    local actor = focusedActor
+    local entry = focusedEntry
+    if not has_custom_interaction(entry) then
+        return false
+    end
+
+    -- 상호작용 콜백은 조사 패널을 열지 않는 트리거 액터용 확장 지점입니다.
+    local ok, result = pcall(entry.on_interact, actor, entry)
+    if not ok then
+        if Game ~= nil and Game.Log ~= nil then
+            Game.Log("[ItemInspectSystem]", "on_interact failed: " .. tostring(result))
+        end
+        return true
+    end
+
+    if actor ~= nil and get_registry_entry(actor) == nil then
+        clear_focus()
+    else
+        apply_interact_text(focusedEntry)
+    end
+
+    return result ~= false
 end
 
 local function trace_interactable(camPos, camFwd, owner)
@@ -170,12 +218,12 @@ local function update_focus(camera, owner)
     end
 
     local entry = get_registry_entry(hit.HitActor)
-    if entry == nil or get_item_data(entry.item_id) == nil then
+    if entry == nil or (not has_custom_interaction(entry) and get_item_data(entry.item_id) == nil) then
         clear_focus()
         return
     end
 
-    set_focus(hit.HitActor, entry.item_id)
+    set_focus(hit.HitActor, entry)
 end
 
 function M.Initialize()
@@ -192,6 +240,7 @@ function M.Shutdown()
     activeActor = nil
     activeItemId = nil
     pickupCallback = nil
+    focusedEntry = nil
 
     if widget ~= nil and widget:IsInViewport() then
         widget:RemoveFromParent()
@@ -213,6 +262,8 @@ function M.Tick(camera, owner)
             else
                 close_panel()
             end
+            return true
+        elseif trigger_custom_interaction() then
             return true
         elseif focusedItemId ~= nil then
             show_panel(focusedItemId)

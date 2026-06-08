@@ -410,6 +410,13 @@ function Actor:GetCharacterAutoInputMouseLook() end
 ---@return boolean
 function Actor:SetCharacterAutoInput(wasd, mouseLook) end
 
+---@return Vector?
+function Actor:GetControlRotation() end
+
+---@param rotation Vector
+---@return boolean
+function Actor:SetControlRotation(rotation) end
+
 ---@return VehicleMovementComponent4W?
 function Actor:GetVehicleMovement() end
 
@@ -600,6 +607,11 @@ function World.SpawnPrefab(prefabPath, location) end
 ---@param rotation? Vector
 ---@return Actor?
 function World.SpawnParticleSystem(particlePath, location, rotation) end
+
+---@param prefabPath string
+---@param location Vector
+---@return Actor[]
+function World.SpawnPrefab(prefabPath, location) end
 
 ---@param actorName string
 ---@return Actor?

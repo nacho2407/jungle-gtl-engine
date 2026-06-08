@@ -668,7 +668,9 @@ bool FSceneSaveManager::InstantiatePrefabFromJSON(
 			continue;
 		}
 
+		// 런타임 프리팹 스폰에서는 모든 직렬화 값과 배치 오프셋이 적용된 뒤 BeginPlay가 호출되어야 합니다.
 		Actor->AddActorWorldOffset(PlacementOffset);
+		World->AddActor(Actor);
 		World->RemoveActorToOctree(Actor);
 		World->InsertActorToOctree(Actor);
 	}

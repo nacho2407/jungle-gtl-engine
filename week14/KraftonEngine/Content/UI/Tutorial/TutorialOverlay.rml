@@ -11,31 +11,43 @@
 
             <div id="tutorial-step-1" class="tutorial-step">
                 <div id="tutorial-step-1-key" class="tutorial-key" data-ui-editor="text">1</div>
+                <div id="tutorial-step-1-separator" class="tutorial-key-separator" data-ui-editor="text">/</div>
+                <div id="tutorial-step-1-pad" class="tutorial-pad-key" data-ui-editor="text">A</div>
                 <div id="tutorial-step-1-text" class="tutorial-text" data-ui-editor="text">WASD 이동 / Shift 달리기</div>
                 <div id="tutorial-step-1-check" class="tutorial-check" data-ui-editor="text"></div>
             </div>
             <div id="tutorial-step-2" class="tutorial-step tutorial-step-2">
                 <div id="tutorial-step-2-key" class="tutorial-key" data-ui-editor="text">2</div>
+                <div id="tutorial-step-2-separator" class="tutorial-key-separator" data-ui-editor="text">/</div>
+                <div id="tutorial-step-2-pad" class="tutorial-pad-key" data-ui-editor="text">A</div>
                 <div id="tutorial-step-2-text" class="tutorial-text" data-ui-editor="text">Space 점프 / 이단 점프</div>
                 <div id="tutorial-step-2-check" class="tutorial-check" data-ui-editor="text"></div>
             </div>
             <div id="tutorial-step-3" class="tutorial-step tutorial-step-3">
                 <div id="tutorial-step-3-key" class="tutorial-key" data-ui-editor="text">3</div>
+                <div id="tutorial-step-3-separator" class="tutorial-key-separator" data-ui-editor="text">/</div>
+                <div id="tutorial-step-3-pad" class="tutorial-pad-key" data-ui-editor="text">A</div>
                 <div id="tutorial-step-3-text" class="tutorial-text" data-ui-editor="text">Ctrl 앉기 / 슬라이딩</div>
                 <div id="tutorial-step-3-check" class="tutorial-check" data-ui-editor="text"></div>
             </div>
             <div id="tutorial-step-4" class="tutorial-step tutorial-step-4">
                 <div id="tutorial-step-4-key" class="tutorial-key" data-ui-editor="text">4</div>
+                <div id="tutorial-step-4-separator" class="tutorial-key-separator" data-ui-editor="text">/</div>
+                <div id="tutorial-step-4-pad" class="tutorial-pad-key" data-ui-editor="text">A</div>
                 <div id="tutorial-step-4-text" class="tutorial-text" data-ui-editor="text">좌클릭 사격 / 우클릭 줌</div>
                 <div id="tutorial-step-4-check" class="tutorial-check" data-ui-editor="text"></div>
             </div>
             <div id="tutorial-step-5" class="tutorial-step tutorial-step-5">
                 <div id="tutorial-step-5-key" class="tutorial-key" data-ui-editor="text">5</div>
+                <div id="tutorial-step-5-separator" class="tutorial-key-separator" data-ui-editor="text">/</div>
+                <div id="tutorial-step-5-pad" class="tutorial-pad-key" data-ui-editor="text">A</div>
                 <div id="tutorial-step-5-text" class="tutorial-text" data-ui-editor="text">R 재장전</div>
                 <div id="tutorial-step-5-check" class="tutorial-check" data-ui-editor="text"></div>
             </div>
             <div id="tutorial-step-6" class="tutorial-step tutorial-step-6">
                 <div id="tutorial-step-6-key" class="tutorial-key" data-ui-editor="text">6</div>
+                <div id="tutorial-step-6-separator" class="tutorial-key-separator" data-ui-editor="text">/</div>
+                <div id="tutorial-step-6-pad" class="tutorial-pad-key" data-ui-editor="text">A</div>
                 <div id="tutorial-step-6-text" class="tutorial-text" data-ui-editor="text">벽 타기 / 벽 점프</div>
                 <div id="tutorial-step-6-check" class="tutorial-check" data-ui-editor="text"></div>
             </div>
