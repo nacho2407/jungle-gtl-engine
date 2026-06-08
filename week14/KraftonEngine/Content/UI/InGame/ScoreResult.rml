@@ -1,0 +1,47 @@
+<rml>
+<head>
+    <title>Score Result</title>
+    <link type="text/rcss" href="ScoreResult.rcss"/>
+</head>
+<body>
+    <div id="score-result-screen">
+        <div id="score-result-panel">
+            <div id="score-result-title">MISSION RESULT</div>
+            <div id="score-result-separator"></div>
+
+            <div id="score-result-score-label">SCORE</div>
+            <div id="score-result-score">000000</div>
+
+            <div id="score-result-grid">
+                <div class="score-result-row" id="score-result-row-time">
+                    <div class="score-result-name">PLAY TIME</div>
+                    <div class="score-result-value" id="score-result-time">00:00</div>
+                </div>
+                <div class="score-result-row" id="score-result-row-kills">
+                    <div class="score-result-name">ENEMY KILLS</div>
+                    <div class="score-result-value" id="score-result-kills">0</div>
+                </div>
+                <div class="score-result-row" id="score-result-row-retry">
+                    <div class="score-result-name">RETRY</div>
+                    <div class="score-result-value" id="score-result-retry">0</div>
+                </div>
+                <div class="score-result-row" id="score-result-row-deaths">
+                    <div class="score-result-name">DEATHS</div>
+                    <div class="score-result-value" id="score-result-deaths">0</div>
+                </div>
+                <div class="score-result-row" id="score-result-row-accuracy">
+                    <div class="score-result-name">ACCURACY</div>
+                    <div class="score-result-value" id="score-result-accuracy">0%</div>
+                </div>
+                <div class="score-result-row" id="score-result-row-damage">
+                    <div class="score-result-name">DAMAGE DEALT</div>
+                    <div class="score-result-value" id="score-result-damage">0</div>
+                </div>
+            </div>
+
+            <div id="score-result-save-path">Saves/scores.json</div>
+            <div id="score-result-continue-button">CONTINUE</div>
+        </div>
+    </div>
+</body>
+</rml>
