@@ -31,12 +31,41 @@ local function actor_id(actor)
     return actor.UUID
 end
 
+local function same_actor(a, b)
+    if not is_valid_actor(a) or not is_valid_actor(b) then
+        return false
+    end
+
+    if a == b then
+        return true
+    end
+
+    local aId = actor_id(a)
+    local bId = actor_id(b)
+    return aId ~= nil and bId ~= nil and aId == bId
+end
+
 local function is_player_actor(actor)
     if not is_valid_actor(actor) or Game == nil or Game.GetPlayerPawn == nil then
         return false
     end
 
-    return actor == Game.GetPlayerPawn()
+    return same_actor(actor, Game.GetPlayerPawn())
+end
+
+local function is_player_attack(attacker, context)
+    if is_player_actor(attacker) then
+        return true
+    end
+
+    context = context or {}
+    if is_player_actor(context.Instigator) then
+        return true
+    end
+    if is_player_actor(context.DamageCauser) then
+        return true
+    end
+    return false
 end
 
 local function add_score(methodName, ...)
@@ -48,6 +77,19 @@ local function add_score(methodName, ...)
     if method ~= nil then
         method(...)
     end
+end
+
+local function log_enemy_kill_score()
+    if Game == nil or Game.Log == nil or ScoreManager == nil or ScoreManager.GetSnapshot == nil then
+        return
+    end
+
+    local snapshot = ScoreManager.GetSnapshot()
+    Game.Log(
+        "[Score]",
+        "EnemyKill score updated",
+        "enemyKills=" .. tostring(snapshot.enemyKills or 0),
+        "score=" .. tostring(snapshot.score or 0))
 end
 
 local function call(callback, ...)
@@ -223,7 +265,7 @@ function CombatEvents.NotifyAttackResult(attacker, context, result)
     local id = actor_id(attacker)
     local receiver = id ~= nil and CombatEvents._attackReceivers[id] or nil
     call(receiver ~= nil and receiver.OnAttackHit or nil, context, result)
-    if is_player_actor(attacker) then
+    if is_player_attack(attacker, context) then
         add_score("AddShotHit", 1)
         add_score("AddDamageDealt", result.DamageApplied)
     end
@@ -231,8 +273,9 @@ function CombatEvents.NotifyAttackResult(attacker, context, result)
 
     if result.bKilled then
         call(receiver ~= nil and receiver.OnAttackKilled or nil, context, result)
-        if is_player_actor(attacker) then
+        if is_player_attack(attacker, context) then
             add_score("AddEnemyKill", 1)
+            log_enemy_kill_score()
         end
         EventBus.Emit(CombatEvents.Events.AttackKilled, context, result)
     end
