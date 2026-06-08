@@ -903,6 +903,8 @@ const char* UCharacterMovementComponent::GetWallRunStatusName(EWallRunStatus Sta
 		return "NO_CONTROLLER";
 	case EWallRunStatus::Fatigued:
 		return "FATIGUED";
+	case EWallRunStatus::Cooldown:
+		return "COOLDOWN";
 	case EWallRunStatus::NoWall:
 		return "NO_WALL";
 	case EWallRunStatus::LowSpeed:
@@ -1059,6 +1061,7 @@ void UCharacterMovementComponent::ApplyTitanfallWallRunDefaults()
 	WallRunDistanceCorrectionStrength = 12.0f;
 	MaxWallRunStickSpeed = 6.0f;
 	MaxWallRunTime = 1.8f;
+	WallRunCooldownDuration = 2.0f;
 	WallRunFatigueDuration = 0.35f;
 	FatiguedAirJumpInputLockDuration = 0.10f;
 
@@ -1362,6 +1365,10 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime, ELevelTick Tick
 	if (WallRunFatigueTimer > 0.0f)
 	{
 		WallRunFatigueTimer = std::max(0.0f, WallRunFatigueTimer - DeltaTime);
+	}
+	if (WallRunCooldownTimer > 0.0f)
+	{
+		WallRunCooldownTimer = std::max(0.0f, WallRunCooldownTimer - DeltaTime);
 	}
 	if (FatiguedAirJumpInputLockTimer > 0.0f)
 	{
@@ -1739,13 +1746,26 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 	}
 	else if (MovementMode == EMovementMode::Walking)
 	{
-		// Walking 에선 input 없으면 braking. Falling 중에는 평면 속도 유지.
+		// Walking 에선 input 없으면 braking.
 		FVector V2D(Velocity.X, Velocity.Y, 0.0f);
 		const float Speed2D = V2D.Length();
 		if (Speed2D > 0.0f)
 		{
 			const float NewSpeed = std::max(0.0f, Speed2D - BrakingFriction * DeltaTime);
 			const FVector Dir    = V2D * (1.0f / Speed2D);
+			Velocity.X = Dir.X * NewSpeed;
+			Velocity.Y = Dir.Y * NewSpeed;
+		}
+	}
+	else if (MovementMode == EMovementMode::Falling)
+	{
+		FVector V2D(Velocity.X, Velocity.Y, 0.0f);
+		const float Speed2D = V2D.Length();
+		const float AirBraking = BrakingFriction * std::max(0.0f, AirBrakingFrictionScale);
+		if (Speed2D > 0.0f && AirBraking > 0.0f)
+		{
+			const float NewSpeed = std::max(0.0f, Speed2D - AirBraking * DeltaTime);
+			const FVector Dir = V2D * (1.0f / Speed2D);
 			Velocity.X = Dir.X * NewSpeed;
 			Velocity.Y = Dir.Y * NewSpeed;
 		}
@@ -2452,6 +2472,11 @@ bool UCharacterMovementComponent::TryStartWallRun(const FVector& Input)
 		SetWallRunStatus(EWallRunStatus::Fatigued);
 		return false;
 	}
+	if (WallRunCooldownTimer > 0.0f)
+	{
+		SetWallRunStatus(EWallRunStatus::Cooldown);
+		return false;
+	}
 
 	FHitResult WallHit;
 	bool bRightSide = false;
@@ -2568,6 +2593,7 @@ void UCharacterMovementComponent::StartWallRun(const FHitResult& WallHit, bool b
 	}
 
 	WallRunElapsedTime = 0.0f;
+	WallRunCooldownTimer = 0.0f;
 	bWallRunOnRightSide = bRightSide;
 	WallRunLostWallGraceTimer = std::max(0.0f, WallRunLostWallGraceTime);
 	WallRunInputGraceTimer = std::max(0.0f, WallRunInputGraceTime);
@@ -2623,6 +2649,7 @@ void UCharacterMovementComponent::EndWallRun()
 
 	if (MovementMode == EMovementMode::WallRunning)
 	{
+		WallRunCooldownTimer = std::max(0.0f, WallRunCooldownDuration);
 		SetMovementMode(EMovementMode::Falling);
 	}
 }
@@ -2932,9 +2959,11 @@ void UCharacterMovementComponent::Serialize(FArchive& Ar)
 	Ar << MaxWallRunSlideSpeed;
 	Ar << WallStickAcceleration;
 	Ar << MaxWallRunTime;
+	Ar << WallRunCooldownDuration;
 	Ar << WallRunFatigueDuration;
 	Ar << FatiguedAirJumpInputLockDuration;
 	Ar << bShowWallRunStatusText;
 	Ar << bLogWallRunDiagnostics;
 	Ar << WallRunDiagnosticsInterval;
+	Ar << AirBrakingFrictionScale;
 }

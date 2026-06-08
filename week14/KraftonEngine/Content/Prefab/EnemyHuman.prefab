@@ -1,7 +1,7 @@
 {
   "Actors" : [{
       "ClassName" : "ASkeletalMeshActor",
-      "Name" : "ASkeletalMeshActor_40",
+      "Name" : "ASkeletalMeshActor_60",
       "NonSceneComponents" : [{
           "ClassName" : "ULuaScriptComponent",
           "Name" : "ULuaScriptComponent_SimpleEnemyAI",
@@ -18,9 +18,9 @@
         }],
       "ObjectId" : 1,
       "Properties" : {
-        "PendingActorLocation" : [87.730881, 35.716385, -7.808683],
-        "PendingActorRotation" : [-0.000000, 99.448433, 0.000000],
-        "PendingActorScale" : [7.000000, 7.000000, 7.000000],
+        "PendingActorLocation" : [733.730530, -640.231812, -19.258495],
+        "PendingActorRotation" : [0.083157, 154.373749, -0.648970],
+        "PendingActorScale" : [10.000000, 10.000000, 10.000000],
         "PendingActorVisible" : true,
         "PendingTagsString" : "",
         "bNeedsTick" : true
@@ -50,7 +50,7 @@
           "AttachOwnBoneName" : "",
           "AttachTargetActorName" : "",
           "AttachTargetBoneName" : "",
-          "CachedEditRotator" : [0.000000, 99.448425, 0.000000],
+          "CachedEditRotator" : [0.083157, 154.373749, -0.648970],
           "CollisionEnabled" : 3,
           "CollisionPreset" : 0,
           "LinearDamping" : 0.010000,
@@ -61,8 +61,8 @@
           "RagdollFaceDownGetUpAnimationPath" : "Content/Data/hirasawa-yui/Getting Up_mixamo_com.uasset",
           "RagdollFaceUpGetUpAnimationPath" : "Content/Data/hirasawa-yui/Standing Up_mixamo_com.uasset",
           "RagdollRecoveryBlendDuration" : 0.350000,
-          "RelativeTransform.Location" : [87.730881, 35.716385, -7.808683],
-          "RelativeTransform.Scale" : [7.000000, 7.000000, 7.000000],
+          "RelativeTransform.Location" : [733.730530, -640.231812, -19.258495],
+          "RelativeTransform.Scale" : [10.000000, 10.000000, 10.000000],
           "ResponseContainer" : {
             "Responses[0]" : 2,
             "Responses[1]" : 2,
@@ -90,6 +90,6 @@
       }
     }],
   "ClassName" : "Prefab",
-  "Origin" : [87.730881, 35.716385, -7.808683],
+  "Origin" : [733.730530, -640.231812, -19.258495],
   "Version" : 1
 }

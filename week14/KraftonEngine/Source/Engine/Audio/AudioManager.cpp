@@ -36,6 +36,7 @@ namespace
 		float PitchMax = 1.0f;
 		float MinDistance = 100.0f;
 		float MaxDistance = 3000.0f;
+		float Rolloff = 1.0f;
 		ma_attenuation_model Attenuation = ma_attenuation_model_inverse;
 		float Cooldown = 0.0f;
 		int32 MaxInstances = 0;
@@ -480,6 +481,50 @@ bool FAudioManager::PlayLoop(const FString& Key, const FString& LoopName, float 
 	return true;
 }
 
+bool FAudioManager::PlayLoopAt(const FString& Key, const FString& LoopName, const FVector& Position, float Volume, float Pitch, float MinDistance, float MaxDistance, float Rolloff)
+{
+	if (!Impl->bInitialized || LoopName.empty() || !Impl->LoadedSounds.contains(Key))
+	{
+		return false;
+	}
+
+	if (Impl->LoopSounds.contains(LoopName))
+	{
+		SetLoopVolume(LoopName, Volume);
+		SetLoopPitch(LoopName, Pitch);
+		SetLoopPosition(LoopName, Position);
+		return true;
+	}
+
+	const FLoadedSound& Source = Impl->LoadedSounds[Key];
+	const std::wstring FullPath = FPaths::Combine(FPaths::AudioDir(), FPaths::ToWide(Source.Path));
+	ma_sound* Sound = new ma_sound();
+	if (ma_sound_init_from_file_w(&Impl->Engine, FullPath.c_str(), MA_SOUND_FLAG_LOOPING, &Impl->SFXGroup, nullptr, Sound) != MA_SUCCESS)
+	{
+		delete Sound;
+		return false;
+	}
+
+	const float ClampedMinDistance = std::max(0.0f, MinDistance);
+	const float ClampedMaxDistance = std::max(ClampedMinDistance, MaxDistance);
+	ma_sound_set_looping(Sound, MA_TRUE);
+	ma_sound_set_volume(Sound, Clamp01(Volume));
+	ma_sound_set_pitch(Sound, std::clamp(Pitch, 0.1f, 3.0f));
+	ma_sound_set_position(Sound, Position.X, Position.Y, Position.Z);
+	ma_sound_set_min_distance(Sound, ClampedMinDistance);
+	ma_sound_set_max_distance(Sound, ClampedMaxDistance);
+	ma_sound_set_attenuation_model(Sound, ma_attenuation_model_exponential);
+	ma_sound_set_rolloff(Sound, std::max(0.0f, Rolloff));
+	if (ma_sound_start(Sound) != MA_SUCCESS)
+	{
+		ma_sound_uninit(Sound);
+		delete Sound;
+		return false;
+	}
+	Impl->LoopSounds[LoopName] = FLoadedSound{ Source.Path, true, Sound };
+	return true;
+}
+
 bool FAudioManager::SetLoopState(const FString& LoopName, const FString& Key, bool bShouldPlay, float Volume, float Pitch)
 {
 	if (LoopName.empty())
@@ -582,6 +627,15 @@ void FAudioManager::SetLoopPitch(const FString& LoopName, float Pitch)
 	if (It != Impl->LoopSounds.end() && It->second.Sound)
 	{
 		ma_sound_set_pitch(It->second.Sound, std::clamp(Pitch, 0.1f, 3.0f));
+	}
+}
+
+void FAudioManager::SetLoopPosition(const FString& LoopName, const FVector& Position)
+{
+	auto It = Impl->LoopSounds.find(LoopName);
+	if (It != Impl->LoopSounds.end() && It->second.Sound)
+	{
+		ma_sound_set_position(It->second.Sound, Position.X, Position.Y, Position.Z);
 	}
 }
 
@@ -700,6 +754,7 @@ bool FAudioManager::PlayEventAt(const FString& EventName, const FVector& Positio
 		ma_sound_set_min_distance(Sound, std::max(0.0f, Event.MinDistance));
 		ma_sound_set_max_distance(Sound, std::max(Event.MinDistance, Event.MaxDistance));
 		ma_sound_set_attenuation_model(Sound, Event.Attenuation);
+		ma_sound_set_rolloff(Sound, std::max(0.0f, Event.Rolloff));
 	}
 
 	if (ma_sound_start(Sound) != MA_SUCCESS)
@@ -831,6 +886,7 @@ void FAudioManager::LoadSoundEvents()
 		Def.PitchMax = ReadFloat(Object, "pitchMax", Def.PitchMin);
 		Def.MinDistance = ReadFloat(Object, "minDistance", 100.0f);
 		Def.MaxDistance = ReadFloat(Object, "maxDistance", 3000.0f);
+		Def.Rolloff = ReadFloat(Object, "rolloff", 1.0f);
 		Def.Attenuation = ParseAttenuation(ReadString(Object, "attenuation", "inverse"));
 		Def.Cooldown = std::max(0.0f, ReadFloat(Object, "cooldown", 0.0f));
 		Def.MaxInstances = std::max(0, ReadInt(Object, "maxInstances", 0));
