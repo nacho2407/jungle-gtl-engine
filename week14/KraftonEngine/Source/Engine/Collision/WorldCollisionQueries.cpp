@@ -127,6 +127,7 @@ bool FWorldCollisionQueries::SphereSweepShapeComponents(const UWorld& World, con
 			UShapeComponent* Shape = Cast<UShapeComponent>(Comp);
 			if (!Shape) continue;
 			if (IgnoreActor && Comp->GetOwner() == IgnoreActor) continue;
+			if (!Comp->IsQueryCollisionEnabled()) continue;
 			if (Comp->GetCollisionResponseToChannel(TraceChannel) != ECollisionResponse::Block) continue;
 
 			FHitResult CandidateHit;

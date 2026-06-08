@@ -2,6 +2,8 @@
 
 #include "Engine/Runtime/ActorPlacementRegistry.h"
 #include "Engine/Runtime/EngineInitHooks.h"
+#include "GameFramework/Actor/CurvedWallRunColliderActor.h"
+#include "GameFramework/World.h"
 
 // ============================================================
 // 게임-특화 액터를 Editor 의 "Place Actor" 메뉴에 등록 — 현재는 비어 있음.
@@ -12,6 +14,20 @@
 // ============================================================
 void RegisterGameActorPlacements()
 {
+	FActorPlacementRegistry::Get().RegisterEntry(
+		"Curved Wall-Run Collider",
+		[](UWorld* World, const FVector& Location) -> AActor*
+		{
+			if (!World) return nullptr;
+
+			ACurvedWallRunColliderActor* Actor = World->SpawnActor<ACurvedWallRunColliderActor>();
+			if (!Actor) return nullptr;
+
+			// 에디터 배치 직후에도 곡선 query component와 WallRunnable 태그가 준비된 상태.
+			Actor->InitDefaultComponents();
+			Actor->SetActorLocation(Location);
+			return Actor;
+		});
 }
 
 // 자기-등록 — Editor / Game 측이 함수명을 모르고도 FEngineInitHooks::RunAll() 로 호출됨.

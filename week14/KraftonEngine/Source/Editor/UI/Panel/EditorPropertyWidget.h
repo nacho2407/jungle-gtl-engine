@@ -41,6 +41,13 @@ public:
 	 */
 	bool DeleteSelectedComponentWithUndo();
 
+	/**
+	 * @brief 선택된 non-root component를 undo 기록과 함께 복제합니다.
+	 *
+	 * @return component 복제 실행 여부
+	 */
+	bool DuplicateSelectedComponentWithUndo();
+
 private:
 	void RenameActor(AActor* PrimaryActor);
 	void RenameComponent(AActor* OwnerActor, UActorComponent* Component);
