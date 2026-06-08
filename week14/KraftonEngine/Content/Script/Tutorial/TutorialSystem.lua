@@ -1,15 +1,13 @@
 local TutorialSystem = {}
+local WeaponHud = require("HUD/WeaponHud")
 
 local OVERLAY_PATH = "Content/UI/Tutorial/TutorialOverlay.rml"
-local DIALOGUE_PATH = "Content/UI/Common/DialogueBox.rml"
 local STORY_MODULE = "Dialogue/TutorialLevel1.dialogue"
 local VOICE_MODULE = "Dialogue/Generated/TutorialLevel1.voices"
 local OVERLAY_Z_ORDER = 105
-local DIALOGUE_Z_ORDER = 106
 local GAMEPAD_AXIS_DEADZONE = 0.25
 
 local overlayWidget = nil
-local dialogueWidget = nil
 local movement = nil
 local owner = nil
 local initialized = false
@@ -208,8 +206,13 @@ local function play_voice(entry)
     return voiceEntry
 end
 
+local function hide_dialogue()
+    if WeaponHud ~= nil and WeaponHud.HideDialogue ~= nil then
+        WeaponHud.HideDialogue()
+    end
+end
+
 local function show_dialogue(id)
-    if dialogueWidget == nil then return end
     local entry = find_dialogue_entry(id)
     if entry == nil then return end
 
@@ -219,22 +222,17 @@ local function show_dialogue(id)
     local width = clamp(42.0 + string.len(text) * fontSize * 0.52, 520.0, 1280.0)
     local height = clamp(lineHeight, 46.0, 68.0)
 
-    dialogueWidget:SetText("dialogue-line", text)
-    dialogueWidget:SetProperty("dialogue-layer", "display", "block")
-    dialogueWidget:SetProperty("dialogue-box", "display", "block")
-    dialogueWidget:SetProperty("dialogue-box", "left", px(24.0))
-    dialogueWidget:SetProperty("dialogue-box", "bottom", px(28.0))
-    dialogueWidget:SetProperty("dialogue-box", "width", px(width))
-    dialogueWidget:SetProperty("dialogue-box", "height", px(height))
-    dialogueWidget:SetProperty("dialogue-box", "opacity", "0.0")
-    dialogueWidget:SetProperty("dialogue-line", "left", "16px")
-    dialogueWidget:SetProperty("dialogue-line", "top", "0px")
-    dialogueWidget:SetProperty("dialogue-line", "width", px(width - 32.0))
-    dialogueWidget:SetProperty("dialogue-line", "height", px(height))
-    dialogueWidget:SetProperty("dialogue-line", "font-family", entry.font or dialogueStory.default_font or "Pretendard")
-    dialogueWidget:SetProperty("dialogue-line", "font-size", px(fontSize))
-    dialogueWidget:SetProperty("dialogue-line", "font-weight", tostring(entry.weight or dialogueStory.default_weight or 700))
-    dialogueWidget:SetProperty("dialogue-line", "line-height", px(height))
+    if WeaponHud ~= nil and WeaponHud.ShowDialogue ~= nil then
+        WeaponHud.ShowDialogue(text, {
+            width = width,
+            height = height,
+            font = entry.font or dialogueStory.default_font or "Pretendard",
+            fontSize = fontSize,
+            weight = entry.weight or dialogueStory.default_weight or 700,
+            lineHeight = height,
+            opacity = 0.0,
+        })
+    end
 
     local voiceEntry = play_voice(entry)
     activeDialogue = entry
@@ -266,7 +264,7 @@ local function show_objectives()
 end
 
 local function update_dialogue(dt)
-    if dialogueWidget == nil or activeDialogue == nil then return end
+    if activeDialogue == nil then return end
 
     dialogueTimer = dialogueTimer + dt
     local fadeIn = activeDialogue.fade_in or dialogueStory.default_fade_in or 0.18
@@ -278,12 +276,12 @@ local function update_dialogue(dt)
         alpha = (dialogueDuration - dialogueTimer) / fadeOut
     end
     alpha = clamp(alpha, 0.0, 1.0)
-    dialogueWidget:SetProperty("dialogue-box", "opacity", string.format("%.2f", alpha))
+    if WeaponHud ~= nil and WeaponHud.SetDialogueOpacity ~= nil then
+        WeaponHud.SetDialogueOpacity(alpha)
+    end
 
     if dialogueTimer >= dialogueDuration then
-        dialogueWidget:SetProperty("dialogue-box", "opacity", "0.0")
-        dialogueWidget:SetProperty("dialogue-box", "display", "none")
-        dialogueWidget:SetText("dialogue-line", "")
+        hide_dialogue()
         stop_current_voice()
         activeDialogue = nil
         if #dialogueQueue > 0 then
@@ -511,16 +509,11 @@ function TutorialSystem.Initialize(config)
 
     overlayWidget = UI.CreateWidget(OVERLAY_PATH)
     if overlayWidget ~= nil then
+        overlayWidget:SetWantsMouse(false)
         overlayWidget:AddToViewportZ(config.overlayZOrder or OVERLAY_Z_ORDER)
     end
 
-    dialogueWidget = UI.CreateWidget(DIALOGUE_PATH)
-    if dialogueWidget ~= nil then
-        dialogueWidget:AddToViewportZ(config.dialogueZOrder or DIALOGUE_Z_ORDER)
-        dialogueWidget:SetText("dialogue-line", "")
-        dialogueWidget:SetProperty("dialogue-box", "opacity", "0.0")
-        dialogueWidget:SetProperty("dialogue-box", "display", "none")
-    end
+    hide_dialogue()
 
     refresh_overlay()
     if config.playIntro ~= false then
@@ -535,11 +528,7 @@ function TutorialSystem.Shutdown()
     if overlayWidget ~= nil and overlayWidget:IsInViewport() then
         overlayWidget:RemoveFromParent()
     end
-    if dialogueWidget ~= nil and dialogueWidget:IsInViewport() then
-        dialogueWidget:RemoveFromParent()
-    end
     overlayWidget = nil
-    dialogueWidget = nil
     movement = nil
     owner = nil
     activeDialogue = nil

@@ -888,6 +888,7 @@ function BeginPlay()
     set_weapon_hud_visible(false)
     cutsceneWidget = UI.CreateWidget("Content/UI/Cutscene/Cutscene.rml")
     if cutsceneWidget ~= nil then
+        cutsceneWidget:SetWantsMouse(false)
         cutsceneWidget:AddToViewportZ(120)
         update_skip_ring(0.0)
         hide_producer_credit()

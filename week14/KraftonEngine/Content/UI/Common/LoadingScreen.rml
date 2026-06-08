@@ -1,0 +1,19 @@
+<rml>
+<head>
+    <title>Loading Screen</title>
+    <link type="text/rcss" href="LoadingScreen.rcss"/>
+</head>
+<body>
+    <div id="loading-root" class="loading-root">
+        <div id="loading-vignette-top" class="loading-vignette top"></div>
+        <div id="loading-vignette-bottom" class="loading-vignette bottom"></div>
+        <div id="loading-content" class="loading-content">
+            <div id="loading-status" class="loading-status" data-ui-editor="text">LOADING</div>
+            <div id="loading-title" class="loading-title" data-ui-editor="text">[ VANTUS ]</div>
+            <div id="loading-rule" class="loading-rule"></div>
+            <div id="loading-tip" class="loading-tip" data-ui-editor="text">VANTUS Corporation의 공식 업종은 '행성 자원 개발 및 식민지 인프라 구축'이다.</div>
+        </div>
+        <div id="loading-corner" class="loading-corner" data-ui-editor="text">FRACTURE LINE</div>
+    </div>
+</body>
+</rml>
