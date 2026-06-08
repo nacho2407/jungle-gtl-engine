@@ -767,6 +767,11 @@ function Anim.create_state_machine(name) end
 ---@return AnimNode
 function Anim.create_sequence_player(path, rate, loop) end
 
+---@param path string
+---@param enable boolean
+---@return boolean
+function Anim.set_sequence_force_root_lock(path, enable) end
+
 ---@param stateMachine AnimNode
 ---@param name string
 ---@param subGraph AnimNode

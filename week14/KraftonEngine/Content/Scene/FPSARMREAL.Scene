@@ -12520,7 +12520,20 @@
     }, {
       "ClassName" : "ASkeletalMeshActor",
       "Name" : "ASkeletalMeshActor_40",
-      "NonSceneComponents" : [],
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Name" : "ULuaScriptComponent_SimpleEnemyAI",
+          "ObjectId" : 327,
+          "Properties" : {
+            "ScriptFile" : "SimpleEnemyAI.lua",
+            "bAutoActivate" : true,
+            "bEditorOnly" : false,
+            "bHiddenInComponentTree" : false,
+            "bIsActive" : true,
+            "bTickEnable" : true,
+            "bTickInEditor" : false
+          }
+        }],
       "ObjectId" : 325,
       "Properties" : {
         "PendingActorLocation" : [87.730881, 35.716385, -7.808683],
@@ -12538,16 +12551,13 @@
         "Properties" : {
           "AngularDamping" : 0.010000,
           "AnimInstance" : {
-            "ClassName" : "UCharacterAnimInstance",
+            "ClassName" : "ULuaAnimInstance",
             "Properties" : {
-              "AutoPeriodSec" : 6.000000,
-              "AutoSpeedAmp" : 15.000000,
-              "RootMotionMode" : 1,
-              "SpeedThreshold" : 10.000000,
-              "bAutoDriveSpeed" : true
+              "RootMotionMode" : 0,
+              "ScriptFile" : "Anim/simple_enemy_robodude.lua"
             }
           },
-          "AnimInstanceClass" : "UCharacterAnimInstance",
+          "AnimInstanceClass" : "ULuaAnimInstance",
           "AnimationData" : {
             "AnimToPlayPath" : "None",
             "PlayRate" : 1.000000,
