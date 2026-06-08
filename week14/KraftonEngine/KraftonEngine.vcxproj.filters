@@ -148,6 +148,9 @@
     <Filter Include="Source\Engine\Audio">
       <UniqueIdentifier>{60f7fb11-d80b-bf66-98c3-689d6f8326ab}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Engine\Score">
+      <UniqueIdentifier>{7a6f61da-3c8c-4bd8-9c74-891d3d21b978}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\CameraShake">
       <UniqueIdentifier>{6402e8a9-52cd-5e58-13d2-0638ee5aff09}</UniqueIdentifier>
     </Filter>
@@ -1066,6 +1069,9 @@
     </ClCompile>
     <ClCompile Include="Source\Engine\Audio\Miniaudio.cpp">
       <Filter>Source\Engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Score\ScoreManager.cpp">
+      <Filter>Source\Engine\Score</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\CameraShake\CameraShakeAsset.cpp">
       <Filter>Source\Engine\CameraShake</Filter>
@@ -2305,6 +2311,9 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Audio\AudioManager.h">
       <Filter>Source\Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Score\ScoreManager.h">
+      <Filter>Source\Engine\Score</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\CameraShake\CameraShakeAsset.h">
       <Filter>Source\Engine\CameraShake</Filter>

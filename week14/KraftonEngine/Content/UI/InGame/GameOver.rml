@@ -1,0 +1,29 @@
+<rml>
+<head>
+    <title>Game Over</title>
+    <link type="text/rcss" href="../Common/MenuHoverButton.rcss"/>
+    <link type="text/rcss" href="../Common/FullWidthContentBox.rcss"/>
+    <link type="text/rcss" href="GameOver.rcss"/>
+</head>
+<body>
+    <div id="game-over-screen">
+        <div id="game-over-panel" class="full-width-content-box full-width-content-box-screen-center game-over-panel">
+            <div id="game-over-content" class="full-width-content-box-content">
+                <div id="game-over-title" data-ui-editor="text">GAME OVER</div>
+                <div id="game-over-subtitle" data-ui-editor="text">Pilot vitals lost</div>
+
+                <div id="game-over-options">
+                    <div id="game-over-retry-button" class="hover-image-button game-over-button">
+                        <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                        <div id="game-over-retry-label" class="hover-image-label" data-ui-editor="text">Retry</div>
+                    </div>
+                    <div id="game-over-title-button" class="hover-image-button game-over-button">
+                        <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                        <div id="game-over-title-label" class="hover-image-label" data-ui-editor="text">Return to Title</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</rml>

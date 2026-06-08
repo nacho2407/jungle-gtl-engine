@@ -296,6 +296,19 @@ function SkinnedMeshComponent:GetBoneSocketWorldTransform(BoneName, LocalOffset)
 ---@field Right Vector
 Actor = {}
 
+---@param tag string
+---@return boolean
+function Actor:HasTag(tag) end
+
+---@param tag string
+function Actor:AddTag(tag) end
+
+---@param tag string
+function Actor:RemoveTag(tag) end
+
+---@return string[]
+function Actor:GetTags() end
+
 ---@param offset Vector
 function Actor:AddWorldOffset(offset) end
 

@@ -102,6 +102,69 @@ TArray<FString> BuildLuaModuleScriptFileCandidates(const FString& ModuleOrScript
 	return Candidates;
 }
 
+FString NormalizeScriptFilePath(FString ScriptFile)
+{
+	for (char& Ch : ScriptFile)
+	{
+		if (Ch == '\\')
+		{
+			Ch = '/';
+		}
+	}
+	return ScriptFile;
+}
+
+bool HasPathSeparator(const FString& Path)
+{
+	return Path.find('/') != FString::npos || Path.find('\\') != FString::npos;
+}
+
+std::wstring ResolveLuaScriptWidePath(const FString& ScriptFile)
+{
+	const FString NormalizedScriptFile = NormalizeScriptFilePath(ScriptFile);
+	const std::wstring ScriptRoot = FPaths::ScriptDir();
+	std::error_code Error;
+
+	const std::wstring DirectPath = FPaths::Combine(ScriptRoot, FPaths::ToWide(NormalizedScriptFile));
+	if (std::filesystem::exists(DirectPath, Error) || HasPathSeparator(NormalizedScriptFile))
+	{
+		return DirectPath;
+	}
+
+	Error.clear();
+	const std::wstring TargetFileName = FPaths::ToWide(NormalizedScriptFile);
+	std::vector<std::filesystem::path> Matches;
+	for (std::filesystem::recursive_directory_iterator It(ScriptRoot, std::filesystem::directory_options::skip_permission_denied, Error), End;
+		!Error && It != End;
+		It.increment(Error))
+	{
+		if (Error)
+		{
+			break;
+		}
+
+		const std::filesystem::directory_entry& Entry = *It;
+		if (!Entry.is_regular_file(Error))
+		{
+			Error.clear();
+			continue;
+		}
+
+		if (Entry.path().filename().wstring() == TargetFileName)
+		{
+			Matches.push_back(Entry.path());
+		}
+	}
+
+	if (!Matches.empty())
+	{
+		std::sort(Matches.begin(), Matches.end());
+		return Matches.front().wstring();
+	}
+
+	return DirectPath;
+}
+
 sol::object RequireLuaModule(sol::state& LuaState, const FString& ModuleName)
 {
 	sol::protected_function Require = LuaState["require"];
@@ -537,13 +600,12 @@ void FLuaScriptManager::Shutdown()
 
 FString FLuaScriptManager::ResolveScriptPath(const FString& ScriptFile)
 {
-	std::wstring FullPath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ScriptFile));
-	return FPaths::ToUtf8(FullPath);
+	return FPaths::ToUtf8(ResolveLuaScriptWidePath(ScriptFile));
 }
 
 bool FLuaScriptManager::ReadScriptFileContent(const FString& ScriptFile, FString& OutContent)
 {
-	const std::wstring WidePath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ScriptFile));
+	const std::wstring WidePath = ResolveLuaScriptWidePath(ScriptFile);
 	std::ifstream File(WidePath.c_str(), std::ios::binary);
 	if (!File.is_open())
 	{
