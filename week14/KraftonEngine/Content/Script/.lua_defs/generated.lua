@@ -334,6 +334,14 @@ function CameraComponent:ProjectWorldToScreen(worldLocation) end
 ---@class SkinnedMeshComponent: PrimitiveComponent
 SkinnedMeshComponent = {}
 
+---@param name string
+---@param r number
+---@param g number
+---@param b number
+---@param a number
+---@return boolean
+function SkinnedMeshComponent:SetMaterialVector4Parameter(name, r, g, b, a) end
+
 ---@param BoneName string
 ---@return integer
 function SkinnedMeshComponent:FindBoneIndex(BoneName) end

@@ -56,7 +56,14 @@ local LEAP_KNOCKBACK_DISTANCE = 6.0
 local LEAP_KNOCKBACK_DURATION = 0.28
 local AIM_PITCH_MIN = -35.0
 local AIM_PITCH_MAX = 40.0
-local DEFEATED_POSE_HOLD_DURATION = 1000000000.0
+local DEATH_FALLBACK_ANIM_DURATION = 1.4
+local DEATH_FALL_DURATION = 0.75
+local DEATH_FALL_PITCH_DEGREES = 82.0
+local DEATH_FALL_FORWARD_DISTANCE = 0.0
+local DEATH_FALL_GROUND_CLEARANCE = 0.25
+local DEATH_FALL_SHAKE_SCALE = 0.45
+local DEATH_SLOMO_DURATION = 2.2
+local DEATH_SLOMO_TIME_DILATION = 0.15
 
 local MOVE_IDLE = 0
 local MOVE_WALK = 1
@@ -258,6 +265,7 @@ local cooldowns = {
 
 local activeAttack = nil
 local leapState = nil
+local deathFallState = nil
 
 local function apply_boss_phase_visual(targetPhase)
     if mesh == nil or mesh.SetMaterialVector4Parameter == nil then
@@ -492,6 +500,126 @@ local function find_target()
 
     targetActor = World.FindFirstActorByTag(PLAYER_TAG)
     return targetActor
+end
+
+local function get_action_component(actor)
+    if actor ~= nil and type(actor.GetActionComponent) == "function" then
+        return actor:GetActionComponent()
+    end
+
+    return nil
+end
+
+local function get_death_slomo_action_component()
+    local ownerAction = get_action_component(obj)
+    if ownerAction ~= nil then
+        return ownerAction
+    end
+
+    local target = find_target()
+    local targetAction = get_action_component(target)
+    if targetAction ~= nil then
+        return targetAction
+    end
+
+    if Game ~= nil and Game.GetPlayerPawn ~= nil then
+        return get_action_component(Game.GetPlayerPawn())
+    end
+
+    return nil
+end
+
+local function start_death_slomo()
+    local action = get_death_slomo_action_component()
+    if action == nil then
+        debug_log("[BossTitanAI] Death slomo skipped: ActionComponent not found.")
+        return false
+    end
+
+    local ok, err = pcall(function()
+        action:Slomo(DEATH_SLOMO_DURATION, DEATH_SLOMO_TIME_DILATION)
+    end)
+
+    if not ok then
+        debug_log("[BossTitanAI] Death slomo failed: " .. tostring(err))
+        return false
+    end
+
+    return true
+end
+
+local function yaw_to_forward(yawDegrees)
+    local yawRadians = math.rad(yawDegrees or 0.0)
+    return Vector.new(math.cos(yawRadians), math.sin(yawRadians), 0.0)
+end
+
+local function play_death_fall_camera_shake()
+    if CameraManager == nil or CameraManager.StartWaveShake == nil then
+        return
+    end
+
+    CameraManager.StartWaveShake(DEATH_FALL_SHAKE_SCALE)
+end
+
+local function start_death_fall()
+    local startRotation = obj.Rotation
+    local startLocation = obj.Location
+    local fallForward = yaw_to_forward(startRotation.Z)
+
+    deathFallState = {
+        elapsed = 0.0,
+        duration = DEATH_FALL_DURATION,
+        startLocation = startLocation,
+        targetLocation = Vector.new(
+            startLocation.X + fallForward.X * DEATH_FALL_FORWARD_DISTANCE,
+            startLocation.Y + fallForward.Y * DEATH_FALL_FORWARD_DISTANCE,
+            (homeZ or startLocation.Z) + DEATH_FALL_GROUND_CLEARANCE),
+        startRotation = startRotation,
+        targetRotation = Vector.new(
+            startRotation.X,
+            startRotation.Y + DEATH_FALL_PITCH_DEGREES,
+            startRotation.Z),
+    }
+
+    return true
+end
+
+local function update_death_fall(dt)
+    if deathFallState == nil then
+        return
+    end
+
+    deathFallState.elapsed = math.min(deathFallState.elapsed + dt, deathFallState.duration)
+    local alpha = 1.0
+    if deathFallState.duration > 0.0 then
+        alpha = smoothstep(deathFallState.elapsed / deathFallState.duration)
+    end
+
+    obj.Location = lerp(deathFallState.startLocation, deathFallState.targetLocation, alpha)
+    obj.Rotation = lerp(deathFallState.startRotation, deathFallState.targetRotation, alpha)
+
+    if deathFallState.elapsed >= deathFallState.duration then
+        obj.Location = deathFallState.targetLocation
+        obj.Rotation = deathFallState.targetRotation
+        play_death_fall_camera_shake()
+        deathFallState = nil
+    end
+end
+
+local function start_death_sequence()
+    activeAttack = nil
+    leapState = nil
+    openingWalkActive = false
+    actionTimer = 0.0
+    animationLockTimer = 0.0
+    phaseLockTimer = 0.0
+    set_move_anim(MOVE_IDLE)
+    set_aim_anim(0.0, 0.0)
+    request_action_anim("hitReact", DEATH_FALLBACK_ANIM_DURATION)
+    currentAnim = ANIM.hitReact
+
+    start_death_slomo()
+    start_death_fall()
 end
 
 local function get_muzzle_location()
@@ -732,17 +860,9 @@ local function apply_boss_damage(context)
     local killed = currentHealth <= 0.0
     if killed then
         isDead = true
-        activeAttack = nil
-        leapState = nil
-        actionTimer = 0.0
-        animationLockTimer = 0.0
-        phaseLockTimer = 0.0
-        set_move_anim(MOVE_IDLE)
-        set_aim_anim(0.0, 0.0)
-        request_action_anim("hitReact", DEFEATED_POSE_HOLD_DURATION)
-        currentAnim = ANIM.hitReact
+        start_death_sequence()
         unregister_boss_damageable()
-        debug_log("[BossTitanAI] Titan boss defeated. Waiting for ending transition.")
+        debug_log("[BossTitanAI] Titan boss defeated. Death slomo and fall started.")
     else
         update_phase_from_health()
     end
@@ -1379,6 +1499,7 @@ function BeginPlay()
     thinkTimer = 0.0
     activeAttack = nil
     leapState = nil
+    deathFallState = nil
     currentAnim = nil
     currentTactic = TACTIC.openingWalk
     openingWalkActive = true
@@ -1419,7 +1540,7 @@ end
 
 function Tick(dt)
     if isDead then
-        hold_action_anim("hitReact", DEFEATED_POSE_HOLD_DURATION)
+        update_death_fall(dt)
         set_move_anim(MOVE_IDLE)
         set_aim_anim(0.0, 0.0)
         return
