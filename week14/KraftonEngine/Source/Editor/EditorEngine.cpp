@@ -1125,6 +1125,7 @@ void UEditorEngine::ProcessPendingPIESceneTransition()
 	if (!std::filesystem::exists(std::filesystem::path(FPaths::ToWide(FilePath))))
 	{
 		UE_LOG("[EditorEngine] PIE TransitionToScene failed. Scene file not found: %s", FilePath.c_str());
+		HideTransitionLoadingScreen();
 		return;
 	}
 
@@ -1154,6 +1155,7 @@ void UEditorEngine::ProcessPendingPIESceneTransition()
 	if (!LoadContext.World)
 	{
 		UE_LOG("[EditorEngine] PIE TransitionToScene failed to load: %s", FilePath.c_str());
+		HideTransitionLoadingScreen();
 		EndPlayMap();
 		return;
 	}
@@ -1200,6 +1202,10 @@ void UEditorEngine::ProcessPendingPIESceneTransition()
 	InputSystem::Get().ResetTransientState();
 
 	PIEWorld->BeginPlay();
+
+	// loading overlay 는 새 PIE world BeginPlay 까지만 유지하고, 이후 fade-in 화면을 노출합니다.
+	HideTransitionLoadingScreen();
+	ApplyPendingFadeIn();
 
 	if (FTimer* Timer = GetTimer())
 	{

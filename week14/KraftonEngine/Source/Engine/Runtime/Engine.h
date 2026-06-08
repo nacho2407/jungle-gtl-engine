@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Object/Object.h"
+#include "Core/Types/EngineTypes.h"
 #include "GameFramework/World.h"
 #include "GameFramework/WorldContext.h"
 #include "Render/Pipeline/Renderer.h"
@@ -13,6 +14,7 @@ class FWindowsWindow;
 class FTimer;
 class UCameraComponent;
 class UGameViewportClient;
+class UUserWidget;
 
 UCLASS()
 class UEngine : public UObject
@@ -36,6 +38,14 @@ public:
 	// 기본은 no-op — 서브클래스(UGameEngine / UEditorEngine) 에서 적절히 override.
 	virtual void RequestTransitionToScene(const FString& /*InScenePath*/) {}
 	virtual void RequestExit();
+
+	// 다음 scene transition 직후 새 PlayerCameraManager 의 fade 를 alpha 1 → 0 으로 시작하도록 예약.
+	// Standalone과 PIE가 같은 transition trigger 코드를 사용할 수 있도록 엔진 공통 상태로 보관합니다.
+	void SetPendingFadeIn(float Duration, FLinearColor Color = FLinearColor::Black());
+
+	// scene 전환 중 기존 LoadingScreen RML을 world 파괴와 무관한 엔진 소유 overlay 로 표시합니다.
+	void ShowTransitionLoadingScreen();
+	void HideTransitionLoadingScreen();
 
 	// World context management
 	FWorldContext& CreateWorldContext(EWorldType Type, const FName& Handle, const FString& Name = "");
@@ -72,6 +82,7 @@ protected:
 	void SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline);
 	IRenderPipeline* GetRenderPipeline() const { return RenderPipeline.get(); }
 	void WorldTick(float DeltaTime);
+	void ApplyPendingFadeIn();
 
 protected:
 	FWindowsWindow* Window = nullptr;
@@ -84,6 +95,12 @@ protected:
 	UGameViewportClient* GameViewportClient = nullptr;
 
 	FRenderer Renderer;
+
+	bool bHasPendingFadeIn = false;
+	float PendingFadeInDuration = 0.0f;
+	FLinearColor PendingFadeInColor = FLinearColor::Black();
+
+	UUserWidget* TransitionLoadingWidget = nullptr;
 
 private:
 	std::unique_ptr<IRenderPipeline> RenderPipeline;

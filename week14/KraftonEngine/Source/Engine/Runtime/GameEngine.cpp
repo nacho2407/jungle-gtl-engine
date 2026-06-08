@@ -16,7 +16,6 @@
 #include "GameFramework/GameMode/PlayerController.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Logging/Log.h"
-#include "UI/UIManager.h"
 
 void UGameEngine::Init(FWindowsWindow* InWindow)
 {
@@ -158,27 +157,6 @@ void UGameEngine::RequestTransitionToScene(const FString& InScenePath)
 	bPendingSceneTransition = true;
 }
 
-void UGameEngine::SetPendingFadeIn(float Duration, FLinearColor Color)
-{
-	bHasPendingFadeIn = true;
-	PendingFadeInDuration = Duration;
-	PendingFadeInColor = Color;
-}
-
-void UGameEngine::ApplyPendingFadeIn()
-{
-	if (!bHasPendingFadeIn) return;
-	bHasPendingFadeIn = false;
-
-	UWorld* World = GetWorld();
-	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
-	APlayerCameraManager* CamMgr = PC ? PC->GetPlayerCameraManager() : nullptr;
-	if (!CamMgr || PendingFadeInDuration <= 0.0f) return;
-
-	// alpha 1 → 0. bHoldWhenFinished=false 라 끝나면 fade off → 최종 알파 0 으로 자연 종료.
-	CamMgr->StartCameraFade(1.0f, 0.0f, PendingFadeInDuration, PendingFadeInColor, /*bShouldFadeAudio=*/false, /*bHoldWhenFinished=*/false);
-}
-
 void UGameEngine::ProcessPendingTransition()
 {
 	if (!bPendingSceneTransition)
@@ -205,6 +183,7 @@ void UGameEngine::ProcessPendingTransition()
 	if (!LoadSceneFromPath(FilePath))
 	{
 		UE_LOG("[GameEngine] TransitionToScene failed: %s", FilePath.c_str());
+		HideTransitionLoadingScreen();
 		return;
 	}
 
@@ -221,6 +200,9 @@ void UGameEngine::ProcessPendingTransition()
 			Ctx->World->BeginPlay();
 		}
 	}
+
+	// loading overlay 는 새 world BeginPlay 까지만 유지하고, 이후 fade-in 화면을 노출합니다.
+	HideTransitionLoadingScreen();
 
 	// 트리거 등이 destroy 직전에 예약해 둔 fade-in을 새 PlayerCameraManager에 적용.
 	// BeginPlay 가 PlayerController/CameraManager spawn 을 끝낸 직후라야 valid.
