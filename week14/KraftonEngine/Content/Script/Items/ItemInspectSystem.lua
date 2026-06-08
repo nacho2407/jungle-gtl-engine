@@ -92,6 +92,11 @@ local function close_panel()
     set_display("item-interact-hint", focusedActor ~= nil and "block" or "none")
 end
 
+local function is_interact_pressed()
+    return Input.GetKeyDown(Key.E)
+        or (Key.GamepadX ~= nil and Input.GetKeyDown(Key.GamepadX))
+end
+
 local function get_registry_entry(actor)
     if actor == nil or actor.UUID == nil then return nil end
     if _G.InspectableItems == nil then return nil end
@@ -137,17 +142,21 @@ end
 
 function M.Tick(camera, owner)
     ensure_widget()
-    if widget == nil then return end
+    if widget == nil then return false end
 
     update_focus(camera, owner)
 
-    if Input.GetKeyDown(Key.E) then
+    if is_interact_pressed() then
         if panelOpen then
             close_panel()
+            return true
         elseif focusedItemId ~= nil then
             show_panel(focusedItemId)
+            return true
         end
     end
+
+    return false
 end
 
 function M.IsOpen()

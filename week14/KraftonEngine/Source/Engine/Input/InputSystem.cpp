@@ -1,10 +1,23 @@
 #include "Engine/Input/InputSystem.h"
+#include "Core/Logging/Log.h"
+
+#ifndef DIRECTINPUT_VERSION
+#define DIRECTINPUT_VERSION 0x0800
+#endif
+
+#include <algorithm>
 #include <cmath>
+#include <dinput.h>
 #include <Xinput.h>
 
 namespace
 {
     constexpr float GAMEPAD_AXIS_DOWN_THRESHOLD = 0.0001f;
+    constexpr float DIRECT_INPUT_AXIS_DEAD_ZONE = 0.18f;
+    constexpr int DIRECT_INPUT_RETRY_FRAME_COUNT = 120;
+    constexpr BYTE DIRECT_INPUT_BUTTON_DOWN = 0x80;
+    constexpr LONG DIRECT_INPUT_AXIS_MIN = -32768;
+    constexpr LONG DIRECT_INPUT_AXIS_MAX = 32767;
 
     const WORD GGamepadButtonMasks[InputCodes::GamepadButtonCount] =
     {
@@ -32,6 +45,11 @@ namespace
     bool IsValidGamepadIndex(int GamepadIndex)
     {
         return GamepadIndex >= 0 && GamepadIndex < InputCodes::MaxGamepads;
+    }
+
+    int ResolveGamepadIndex(int GamepadIndex, int PrimaryGamepadIndex)
+    {
+        return GamepadIndex < 0 ? PrimaryGamepadIndex : GamepadIndex;
     }
 
     /**
@@ -75,6 +93,94 @@ namespace
 
         return static_cast<float>(Value - XINPUT_GAMEPAD_TRIGGER_THRESHOLD)
             / static_cast<float>(255 - XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
+    }
+
+    bool IsDirectInputButtonDown(const DIJOYSTATE2& State, int ButtonIndex)
+    {
+        return ButtonIndex >= 0
+            && ButtonIndex < 128
+            && (State.rgbButtons[ButtonIndex] & DIRECT_INPUT_BUTTON_DOWN) != 0;
+    }
+
+    float NormalizeDirectInputAxis(LONG Value, bool bInvert)
+    {
+        float Normalized = Value < 0
+            ? static_cast<float>(Value) / static_cast<float>(-DIRECT_INPUT_AXIS_MIN)
+            : static_cast<float>(Value) / static_cast<float>(DIRECT_INPUT_AXIS_MAX);
+
+        Normalized = std::clamp(Normalized, -1.0f, 1.0f);
+        if (bInvert)
+        {
+            Normalized = -Normalized;
+        }
+
+        const float AbsValue = std::fabs(Normalized);
+        if (AbsValue <= DIRECT_INPUT_AXIS_DEAD_ZONE)
+        {
+            return 0.0f;
+        }
+
+        const float Sign = Normalized >= 0.0f ? 1.0f : -1.0f;
+        return Sign * ((AbsValue - DIRECT_INPUT_AXIS_DEAD_ZONE) / (1.0f - DIRECT_INPUT_AXIS_DEAD_ZONE));
+    }
+
+    float PickLargerMagnitude(float A, float B)
+    {
+        return std::fabs(A) >= std::fabs(B) ? A : B;
+    }
+
+    BOOL CALLBACK EnumDirectInputAxesCallback(const DIDEVICEOBJECTINSTANCEW* Object, void* Context)
+    {
+        IDirectInputDevice8W* Device = static_cast<IDirectInputDevice8W*>(Context);
+        if (!Device)
+        {
+            return DIENUM_CONTINUE;
+        }
+
+        DIPROPRANGE Range{};
+        Range.diph.dwSize = sizeof(DIPROPRANGE);
+        Range.diph.dwHeaderSize = sizeof(DIPROPHEADER);
+        Range.diph.dwHow = DIPH_BYID;
+        Range.diph.dwObj = Object->dwType;
+        Range.lMin = DIRECT_INPUT_AXIS_MIN;
+        Range.lMax = DIRECT_INPUT_AXIS_MAX;
+        Device->SetProperty(DIPROP_RANGE, &Range.diph);
+        return DIENUM_CONTINUE;
+    }
+}
+
+struct FDirectInputRuntimeState
+{
+    IDirectInput8W* Interface = nullptr;
+    IDirectInputDevice8W* Device = nullptr;
+    GUID DeviceInstanceGuid = {};
+    bool bLoggedDevice = false;
+};
+
+namespace
+{
+    BOOL CALLBACK EnumDirectInputDevicesCallback(const DIDEVICEINSTANCEW* Instance, void* Context)
+    {
+        FDirectInputRuntimeState* RuntimeState = static_cast<FDirectInputRuntimeState*>(Context);
+        if (!RuntimeState || !RuntimeState->Interface || RuntimeState->Device)
+        {
+            return DIENUM_STOP;
+        }
+
+        IDirectInputDevice8W* Device = nullptr;
+        const HRESULT Result = RuntimeState->Interface->CreateDevice(
+            Instance->guidInstance,
+            &Device,
+            nullptr);
+
+        if (FAILED(Result) || !Device)
+        {
+            return DIENUM_CONTINUE;
+        }
+
+        RuntimeState->Device = Device;
+        RuntimeState->DeviceInstanceGuid = Instance->guidInstance;
+        return DIENUM_STOP;
     }
 }
 
@@ -155,13 +261,14 @@ float FInputSystemSnapshot::GetAxisValue(int InputCode) const
 
 float FInputSystemSnapshot::GetGamepadAxisValue(int GamepadIndex, int AxisCode) const
 {
+    const int ResolvedGamepadIndex = ResolveGamepadIndex(GamepadIndex, PrimaryGamepadIndex);
     const int AxisIndex = InputCodes::GetGamepadAxisIndex(AxisCode);
-    if (!IsValidGamepadIndex(GamepadIndex) || AxisIndex < 0 || !Gamepads[GamepadIndex].bConnected)
+    if (!IsValidGamepadIndex(ResolvedGamepadIndex) || AxisIndex < 0 || !Gamepads[ResolvedGamepadIndex].bConnected)
     {
         return 0.0f;
     }
 
-    return Gamepads[GamepadIndex].AxisValues[AxisIndex];
+    return Gamepads[ResolvedGamepadIndex].AxisValues[AxisIndex];
 }
 
 bool FInputSystemSnapshot::IsGamepadConnected(int GamepadIndex) const
@@ -249,19 +356,127 @@ float InputSystem::GetAxisValue(int InputCode) const
 
 float InputSystem::GetGamepadAxisValue(int GamepadIndex, int AxisCode) const
 {
+    const int ResolvedGamepadIndex = ResolveGamepadIndex(GamepadIndex, PrimaryGamepadIndex);
     const int AxisIndex = InputCodes::GetGamepadAxisIndex(AxisCode);
-    if (!IsValidGamepadIndex(GamepadIndex) || AxisIndex < 0 || !Gamepads[GamepadIndex].bConnected)
+    if (!IsValidGamepadIndex(ResolvedGamepadIndex) || AxisIndex < 0 || !Gamepads[ResolvedGamepadIndex].bConnected)
     {
         return 0.0f;
     }
 
-    return Gamepads[GamepadIndex].AxisValues[AxisIndex];
+    return Gamepads[ResolvedGamepadIndex].AxisValues[AxisIndex];
 }
 
 bool InputSystem::IsGamepadConnected(int GamepadIndex) const
 {
     const int ResolvedGamepadIndex = GamepadIndex < 0 ? PrimaryGamepadIndex : GamepadIndex;
     return IsValidGamepadIndex(ResolvedGamepadIndex) && Gamepads[ResolvedGamepadIndex].bConnected;
+}
+
+InputSystem::~InputSystem()
+{
+    ReleaseDirectInputGamepad();
+    if (DirectInputState)
+    {
+        if (DirectInputState->Interface)
+        {
+            DirectInputState->Interface->Release();
+            DirectInputState->Interface = nullptr;
+        }
+
+        delete DirectInputState;
+        DirectInputState = nullptr;
+    }
+}
+
+bool InputSystem::EnsureDirectInputGamepad()
+{
+    if (DirectInputState && DirectInputState->Device)
+    {
+        return true;
+    }
+
+    if (DirectInputRetryFramesRemaining > 0)
+    {
+        --DirectInputRetryFramesRemaining;
+        return false;
+    }
+
+    if (!DirectInputState)
+    {
+        DirectInputState = new FDirectInputRuntimeState();
+    }
+
+    if (!DirectInputState->Interface)
+    {
+        const HRESULT Result = DirectInput8Create(
+            GetModuleHandleW(nullptr),
+            DIRECTINPUT_VERSION,
+            IID_IDirectInput8W,
+            reinterpret_cast<void**>(&DirectInputState->Interface),
+            nullptr);
+
+        if (FAILED(Result) || !DirectInputState->Interface)
+        {
+            DirectInputRetryFramesRemaining = DIRECT_INPUT_RETRY_FRAME_COUNT;
+            return false;
+        }
+    }
+
+    DirectInputState->Interface->EnumDevices(
+        DI8DEVCLASS_GAMECTRL,
+        EnumDirectInputDevicesCallback,
+        DirectInputState,
+        DIEDFL_ATTACHEDONLY);
+
+    if (!DirectInputState->Device)
+    {
+        DirectInputRetryFramesRemaining = DIRECT_INPUT_RETRY_FRAME_COUNT;
+        return false;
+    }
+
+    HRESULT Result = DirectInputState->Device->SetDataFormat(&c_dfDIJoystick2);
+    if (FAILED(Result))
+    {
+        ReleaseDirectInputGamepad();
+        DirectInputRetryFramesRemaining = DIRECT_INPUT_RETRY_FRAME_COUNT;
+        return false;
+    }
+
+    if (OwnerHWnd)
+    {
+        Result = DirectInputState->Device->SetCooperativeLevel(
+            OwnerHWnd,
+            DISCL_BACKGROUND | DISCL_NONEXCLUSIVE);
+
+        if (FAILED(Result))
+        {
+            UE_LOG("[Input] DirectInput SetCooperativeLevel failed: 0x%08X", static_cast<unsigned>(Result));
+        }
+    }
+
+    DirectInputState->Device->EnumObjects(EnumDirectInputAxesCallback, DirectInputState->Device, DIDFT_AXIS);
+    DirectInputState->Device->Acquire();
+
+    if (!DirectInputState->bLoggedDevice)
+    {
+        UE_LOG("[Input] DirectInput gamepad fallback active.");
+        DirectInputState->bLoggedDevice = true;
+    }
+
+    return true;
+}
+
+void InputSystem::ReleaseDirectInputGamepad()
+{
+    if (!DirectInputState || !DirectInputState->Device)
+    {
+        return;
+    }
+
+    DirectInputState->Device->Unacquire();
+    DirectInputState->Device->Release();
+    DirectInputState->Device = nullptr;
+    DirectInputState->bLoggedDevice = false;
 }
 
 void InputSystem::Tick()
@@ -430,6 +645,103 @@ void InputSystem::ResetCaptureStateForPIEEnd()
     UpdateCurrentSnapshot();
 }
 
+void InputSystem::PollDirectInputGamepad(int& FirstConnectedGamepad)
+{
+    if (FirstConnectedGamepad >= 0 || !EnsureDirectInputGamepad())
+    {
+        return;
+    }
+
+    DIJOYSTATE2 State{};
+    HRESULT Result = DirectInputState->Device->Poll();
+    if (FAILED(Result))
+    {
+        DirectInputState->Device->Acquire();
+    }
+
+    Result = DirectInputState->Device->GetDeviceState(sizeof(DIJOYSTATE2), &State);
+    if (FAILED(Result))
+    {
+        DirectInputState->Device->Acquire();
+        Result = DirectInputState->Device->GetDeviceState(sizeof(DIJOYSTATE2), &State);
+    }
+
+    if (FAILED(Result))
+    {
+        ReleaseDirectInputGamepad();
+        DirectInputRetryFramesRemaining = DIRECT_INPUT_RETRY_FRAME_COUNT;
+        return;
+    }
+
+    FGamepadRuntimeState& Gamepad = Gamepads[0];
+    Gamepad.bConnected = true;
+    FirstConnectedGamepad = 0;
+
+    for (int ButtonIndex = 0; ButtonIndex < InputCodes::GamepadButtonCount; ++ButtonIndex)
+    {
+        Gamepad.ButtonDown[ButtonIndex] = false;
+    }
+    for (int AxisIndex = 0; AxisIndex < InputCodes::GamepadAxisCount; ++AxisIndex)
+    {
+        Gamepad.AxisValues[AxisIndex] = 0.0f;
+    }
+
+    const auto SetButton = [&Gamepad](int InputCode, bool bDown)
+    {
+        const int ButtonIndex = InputCodes::GetGamepadButtonIndex(InputCode);
+        if (ButtonIndex >= 0)
+        {
+            Gamepad.ButtonDown[ButtonIndex] = bDown;
+        }
+    };
+
+    const auto SetAxis = [&Gamepad](int InputCode, float Value)
+    {
+        const int AxisIndex = InputCodes::GetGamepadAxisIndex(InputCode);
+        if (AxisIndex >= 0)
+        {
+            Gamepad.AxisValues[AxisIndex] = Value;
+        }
+    };
+
+    SetButton(InputCodes::GamepadX, IsDirectInputButtonDown(State, 0));
+    SetButton(InputCodes::GamepadA, IsDirectInputButtonDown(State, 1));
+    SetButton(InputCodes::GamepadB, IsDirectInputButtonDown(State, 2));
+    SetButton(InputCodes::GamepadY, IsDirectInputButtonDown(State, 3));
+    SetButton(InputCodes::GamepadLeftShoulder, IsDirectInputButtonDown(State, 4));
+    SetButton(InputCodes::GamepadRightShoulder, IsDirectInputButtonDown(State, 5));
+    SetButton(InputCodes::GamepadLeftTrigger, IsDirectInputButtonDown(State, 6));
+    SetButton(InputCodes::GamepadRightTrigger, IsDirectInputButtonDown(State, 7));
+    SetButton(InputCodes::GamepadBack, IsDirectInputButtonDown(State, 8));
+    SetButton(InputCodes::GamepadStart, IsDirectInputButtonDown(State, 9));
+    SetButton(InputCodes::GamepadLeftThumb, IsDirectInputButtonDown(State, 10));
+    SetButton(InputCodes::GamepadRightThumb, IsDirectInputButtonDown(State, 11));
+
+    const DWORD Pov = State.rgdwPOV[0];
+    if (Pov != 0xFFFFFFFFu)
+    {
+        SetButton(InputCodes::GamepadDPadUp, Pov >= 31500 || Pov <= 4500);
+        SetButton(InputCodes::GamepadDPadRight, Pov >= 4500 && Pov <= 13500);
+        SetButton(InputCodes::GamepadDPadDown, Pov >= 13500 && Pov <= 22500);
+        SetButton(InputCodes::GamepadDPadLeft, Pov >= 22500 && Pov <= 31500);
+    }
+
+    SetAxis(InputCodes::GamepadLeftX, NormalizeDirectInputAxis(State.lX, false));
+    SetAxis(InputCodes::GamepadLeftY, NormalizeDirectInputAxis(State.lY, true));
+    SetAxis(
+        InputCodes::GamepadRightX,
+        PickLargerMagnitude(
+            NormalizeDirectInputAxis(State.lZ, false),
+            NormalizeDirectInputAxis(State.lRx, false)));
+    SetAxis(
+        InputCodes::GamepadRightY,
+        PickLargerMagnitude(
+            NormalizeDirectInputAxis(State.lRz, true),
+            NormalizeDirectInputAxis(State.lRy, true)));
+    SetAxis(InputCodes::GamepadLeftTriggerAxis, IsDirectInputButtonDown(State, 6) ? 1.0f : 0.0f);
+    SetAxis(InputCodes::GamepadRightTriggerAxis, IsDirectInputButtonDown(State, 7) ? 1.0f : 0.0f);
+}
+
 void InputSystem::UpdateCurrentSnapshot()
 {
     FInputSystemSnapshot Snapshot{};
@@ -564,6 +876,7 @@ void InputSystem::PollGamepads()
             NormalizeTriggerAxis(XGamepad.bRightTrigger);
     }
 
+    PollDirectInputGamepad(FirstConnectedGamepad);
     PrimaryGamepadIndex = FirstConnectedGamepad >= 0 ? FirstConnectedGamepad : 0;
 }
 

@@ -5,6 +5,7 @@
 #include "Component/ActorComponent.h"
 #include "Component/Primitive/BillboardComponent.h"
 #include "Component/MeshComponent.h"
+#include "Component/Movement/CharacterMovementComponent.h"
 #include "Component/Movement/MovementComponent.h"
 #include "Component/Debug/GizmoComponent.h"
 #include "Component/PrimitiveComponent.h"
@@ -87,6 +88,89 @@ namespace
 			| ImGuiTableFlags_PadOuterX
 			| ImGuiTableFlags_RowBg
 			| ImGuiTableFlags_Resizable;
+	}
+
+	void DrawReadOnlyDetailsRow(const char* Label, const char* Value)
+	{
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextDisabled("%s", Label ? Label : "");
+
+		ImGui::TableSetColumnIndex(1);
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextUnformatted(Value ? Value : "");
+	}
+
+	void DrawCharacterMovementRuntimeDebug(UCharacterMovementComponent* Movement)
+	{
+		if (!Movement)
+		{
+			return;
+		}
+
+		if (!ImGui::CollapsingHeader("Live Movement", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			return;
+		}
+
+		const FWallRunDebugSnapshot Snapshot = Movement->GetWallRunDebugSnapshot();
+		const float SpeedKmh = Snapshot.Speed * 3.6f;
+		const float PlanarSpeedKmh = Snapshot.PlanarSpeed * 3.6f;
+
+		char Buffer[192];
+		const float NameColumnWidth = GetDetailsPropertyNameColumnWidth();
+		if (ImGui::BeginTable("##CharacterMovementRuntimeDebug", 2, GetDetailsPropertyTableFlags()))
+		{
+			ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, NameColumnWidth);
+			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
+
+			ImGui::PushStyleColor(ImGuiCol_TableRowBg, ImVec4(0.13f, 0.13f, 0.13f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_TableRowBgAlt, ImVec4(0.145f, 0.145f, 0.145f, 1.0f));
+
+			DrawReadOnlyDetailsRow("Mode", Snapshot.MovementModeName);
+			DrawReadOnlyDetailsRow("Wall Run Status", Snapshot.StatusName);
+
+			std::snprintf(Buffer, sizeof(Buffer), "%.2f m/s  |  %.1f km/h", Snapshot.Speed, SpeedKmh);
+			DrawReadOnlyDetailsRow("Speed", Buffer);
+
+			std::snprintf(Buffer, sizeof(Buffer), "%.2f m/s  |  %.1f km/h", Snapshot.PlanarSpeed, PlanarSpeedKmh);
+			DrawReadOnlyDetailsRow("Planar Speed", Buffer);
+
+			std::snprintf(Buffer, sizeof(Buffer), "%.2f m/s", Snapshot.Velocity.Z);
+			DrawReadOnlyDetailsRow("Vertical Speed", Buffer);
+
+			std::snprintf(Buffer, sizeof(Buffer), "(%.2f, %.2f, %.2f)", Snapshot.Velocity.X, Snapshot.Velocity.Y, Snapshot.Velocity.Z);
+			DrawReadOnlyDetailsRow("Velocity", Buffer);
+
+			std::snprintf(Buffer, sizeof(Buffer), "%.2f m/s  |  %.1f km/h", Movement->GetMaxWalkSpeed(), Movement->GetMaxWalkSpeed() * 3.6f);
+			DrawReadOnlyDetailsRow("Current Max Walk", Buffer);
+
+			std::snprintf(
+				Buffer,
+				sizeof(Buffer),
+				"Sprint:%s  Crouch:%s  Slide:%s  Wall:%s",
+				Movement->IsSprinting() ? "On" : "Off",
+				Movement->IsCrouching() ? "On" : "Off",
+				Movement->IsSliding() ? "On" : "Off",
+				Movement->IsWallRunning() ? "On" : "Off");
+			DrawReadOnlyDetailsRow("Flags", Buffer);
+
+			std::snprintf(Buffer, sizeof(Buffer), "%.2f / %.2f sec", Snapshot.WallRunElapsedTime, Snapshot.MaxWallRunTime);
+			DrawReadOnlyDetailsRow("Wall Run Time", Buffer);
+
+			std::snprintf(Buffer, sizeof(Buffer), "%.2f m/s", Snapshot.AlongWallSpeed);
+			DrawReadOnlyDetailsRow("Along Wall Speed", Buffer);
+
+			std::snprintf(Buffer, sizeof(Buffer), "(%.2f, %.2f, %.2f)", Snapshot.WallNormal.X, Snapshot.WallNormal.Y, Snapshot.WallNormal.Z);
+			DrawReadOnlyDetailsRow("Wall Normal", Buffer);
+
+			std::snprintf(Buffer, sizeof(Buffer), "(%.2f, %.2f, %.2f)", Snapshot.WallDirection.X, Snapshot.WallDirection.Y, Snapshot.WallDirection.Z);
+			DrawReadOnlyDetailsRow("Wall Direction", Buffer);
+
+			ImGui::EndTable();
+			ImGui::PopStyleColor(2);
+		}
 	}
 
 	bool ShouldHideInComponentTree(const UActorComponent* Component, bool bShowEditorOnlyComponents)
@@ -1899,6 +1983,12 @@ void FEditorPropertyWidget::RenderComponentProperties(AActor* Actor, const TArra
 	}
 
 	ImGui::Separator();
+
+	if (UCharacterMovementComponent* CharacterMovement = Cast<UCharacterMovementComponent>(SelectedComponent))
+	{
+		DrawCharacterMovementRuntimeDebug(CharacterMovement);
+		ImGui::Separator();
+	}
 
 	// reflected property 기반 자동 위젯 렌더링
 	TArray<FPropertyValue> Props;

@@ -80,10 +80,49 @@ local baseMaxWalkSpeed = nil
 local baseSprintSpeedMultiplier = nil
 local baseWallRunMaxSpeed = nil
 
+-- 슬라이드 전용 애니가 없어서 SkeletalMesh 의 relative transform 으로 총구를 옆으로 기울임.
+-- 값은 카메라 기준 (X=Roll/Y=Pitch/Z=Yaw, 위치는 Right/Up 추정) 이며 게임에서 보고 튜닝.
+local SLIDE_TILT_ROLL_DEG    =  40.0  -- 양수: 총을 오른쪽으로 굴림
+local SLIDE_TILT_PITCH_DEG   = -12.0   -- 약간 아래로 숙임
+local SLIDE_LOC_OFFSET_RIGHT =  0.04  -- 오른쪽으로 살짝
+local SLIDE_LOC_OFFSET_DOWN  = -0.50  -- 아래로 살짝
+local SLIDE_BLEND_HZ         =  14.0  -- 클수록 빨리 자세 잡힘
+
+local armsBaseLoc   = nil
+local armsBaseRot   = nil
+local slideBlend    = 0.0
+
 local function clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
     if value > maxValue then return maxValue end
     return value
+end
+
+local function is_input_down(key)
+    return key ~= nil and Input.GetKey(key)
+end
+
+local function is_input_pressed(key)
+    return key ~= nil and Input.GetKeyDown(key)
+end
+
+local function is_fire_down()
+    return is_input_down(Key.MouseLeft) or is_input_down(Key.GamepadRightTrigger)
+end
+
+local function is_aim_down()
+    return is_input_down(Key.MouseRight) or is_input_down(Key.GamepadLeftTrigger)
+end
+
+local function is_reload_pressed()
+    return is_input_pressed(Key.R) or is_input_pressed(Key.GamepadX)
+end
+
+local function is_crouch_input_down()
+    return is_input_down(Key.Ctrl)
+        or is_input_down(Key.LeftCtrl)
+        or is_input_down(Key.RightCtrl)
+        or is_input_down(Key.GamepadB)
 end
 
 local function add_weapon_recoil()
@@ -91,7 +130,7 @@ local function add_weapon_recoil()
 
     local step = RECOIL_PATTERN[recoilPatternIndex] or RECOIL_PATTERN[#RECOIL_PATTERN]
     local scale = RECOIL_STRENGTH_MULTIPLIER
-    if Input.GetKey(Key.MouseRight) then
+    if is_aim_down() then
         scale = scale * RECOIL_ADS_MULTIPLIER
     end
 
@@ -144,7 +183,7 @@ local function update_weapon_recoil(dt)
         return
     end
 
-    local isFiring = Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0
+    local isFiring = is_fire_down() and not isReloading and currentAmmo > 0
     local recoverySpeed = isFiring and RECOIL_RECOVERY_SPEED_FIRING or RECOIL_RECOVERY_SPEED_RELEASED
     local maxStep = recoverySpeed * dt
     local pitchDelta
@@ -216,6 +255,53 @@ local function set_player_health(value)
     DamagePostProcess.SetHealthRatio(get_health_ratio())
 end
 
+local function cache_arms_base_transform()
+    if arms == nil or armsBaseLoc ~= nil then return end
+    armsBaseLoc = arms.RelativeLocation
+    armsBaseRot = arms:GetRotation()
+end
+
+local function damp_toward(current, target, hz, dt)
+    if dt == nil or dt <= 0.0 then return current end
+    local k = 1.0 - math.exp(-hz * dt)
+    return current + (target - current) * k
+end
+
+local function get_arm_anim_flags()
+    if obj == nil then return nil end
+    return _G.FPSArmAnimFlags and _G.FPSArmAnimFlags[obj.UUID]
+end
+
+local function update_slide_arm_tilt(dt)
+    if arms == nil then return end
+    local flags = get_arm_anim_flags()
+    if flags == nil or flags.needsSlideTilt ~= true then return end
+
+    cache_arms_base_transform()
+    if armsBaseLoc == nil or armsBaseRot == nil then return end
+
+    -- movement:IsSliding() 는 lua 에 노출 안 돼 있어 AnimInstance 가 매 프레임 채워주는 플래그를 읽는다.
+    local target = (flags.isSliding == true) and 1.0 or 0.0
+    slideBlend = damp_toward(slideBlend, target, SLIDE_BLEND_HZ, dt)
+
+    if slideBlend < 0.0001 and target == 0.0 then
+        arms:SetRelativeLocation(armsBaseLoc)
+        arms:SetRotation(armsBaseRot)
+        slideBlend = 0.0
+        return
+    end
+
+    arms:SetRotation(Vector.new(
+        armsBaseRot.X + SLIDE_TILT_ROLL_DEG  * slideBlend,
+        armsBaseRot.Y + SLIDE_TILT_PITCH_DEG * slideBlend,
+        armsBaseRot.Z))
+
+    arms:SetRelativeLocation(Vector.new(
+        armsBaseLoc.X,
+        armsBaseLoc.Y + SLIDE_LOC_OFFSET_RIGHT * slideBlend,
+        armsBaseLoc.Z + SLIDE_LOC_OFFSET_DOWN  * slideBlend))
+end
+
 local function cache_movement_defaults()
     if obj == nil or type(obj.GetCharacterMovement) ~= "function" then
         movement = nil
@@ -270,7 +356,7 @@ local function is_player_crouching()
         return movement:IsCrouching()
     end
 
-    return Input.GetKey(Key.Ctrl) or Input.GetKey(Key.LeftCtrl) or Input.GetKey(Key.RightCtrl)
+    return is_crouch_input_down()
 end
 
 local function update_weapon_hud()
@@ -367,7 +453,7 @@ local function on_attack_killed(context, result)
 end
 
 local function get_fire_direction(camFwd)
-    if Input.GetKey(Key.MouseRight) or weaponSpread <= 0.0 then
+    if is_aim_down() or weaponSpread <= 0.0 then
         return camFwd
     end
 
@@ -396,7 +482,7 @@ local function try_shoot()
     update_weapon_hud()
 
     request_arm_animation("shoot")
-    GameAudio.NotifyShotFired(Input.GetKey(Key.MouseRight))
+    GameAudio.NotifyShotFired(is_aim_down())
 
     local camPos = camera:GetWorldLocation()
     local camFwd = camera.Forward
@@ -460,7 +546,7 @@ local function try_shoot()
 
     add_weapon_recoil()
 
-    if not Input.GetKey(Key.MouseRight) then
+    if not is_aim_down() then
         weaponSpread = weaponSpread + SPREAD_PER_SHOT
         if weaponSpread > MAX_SPREAD then weaponSpread = MAX_SPREAD end
         WeaponHud.SetSpread(weaponSpread)
@@ -474,7 +560,11 @@ function BeginPlay()
     baseMaxWalkSpeed = nil
     baseSprintSpeedMultiplier = nil
     baseWallRunMaxSpeed = nil
+    armsBaseLoc = nil
+    armsBaseRot = nil
+    slideBlend = 0.0
     cache_movement_defaults()
+    cache_arms_base_transform()
     GameAudio.Initialize()
     GameAudio.PlayEnvironmentWind(0.35)
     currentAmmo = MAGAZINE_SIZE
@@ -581,6 +671,7 @@ function Tick(dt)
     end
 
     update_weapon_recoil(dt)
+    update_slide_arm_tilt(dt)
 
     if fireCooldown > 0 then
         fireCooldown = fireCooldown - dt
@@ -591,13 +682,13 @@ function Tick(dt)
         if weaponSpread < 0.0 then weaponSpread = 0.0 end
     end
 
-    if Input.GetKey(Key.MouseRight) then
+    if is_aim_down() then
         weaponSpread = 0.0
     end
 
     GameAudio.UpdateWeaponFireState(
-        Input.GetKey(Key.MouseRight),
-        Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0)
+        is_aim_down(),
+        is_fire_down() and not isReloading and currentAmmo > 0)
 
     if isReloading then
         reloadTimer = reloadTimer - dt
@@ -621,7 +712,7 @@ function Tick(dt)
         return
     end
 
-    ItemInspectSystem.Tick(camera, obj)
+    local itemInspectInputConsumed = ItemInspectSystem.Tick(camera, obj) == true
     if ItemInspectSystem.IsOpen() then
         GameAudio.StopWeaponFireLoop()
         GameAudio.UpdateSlideState(false)
@@ -632,16 +723,16 @@ function Tick(dt)
 
     GameAudio.UpdateMovement(movement, dt)
 
-    if Input.GetKeyDown(Key.R) then
+    if not itemInspectInputConsumed and is_reload_pressed() then
         start_reload()
     end
 
-    if Input.GetKey(Key.MouseLeft) and fireCooldown <= 0 then
+    if is_fire_down() and fireCooldown <= 0 then
         try_shoot()
         fireCooldown = FIRE_INTERVAL
         GameAudio.UpdateWeaponFireState(
-            Input.GetKey(Key.MouseRight),
-            Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0)
+            is_aim_down(),
+            is_fire_down() and not isReloading and currentAmmo > 0)
     end
 
 end

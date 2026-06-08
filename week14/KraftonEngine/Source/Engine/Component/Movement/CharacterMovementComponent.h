@@ -62,6 +62,11 @@ struct FWallRunDebugSnapshot
 	float MaxWallRunTime = 0.0f;
 	float HitDistance = -1.0f;
 	float HitUpDot = 0.0f;
+	float WallRunLostWallGraceRemaining = 0.0f;
+	float WallRunInputGraceRemaining = 0.0f;
+	float LastWallRunInputAlong = 0.0f;
+	float LastWallRunDistanceError = 0.0f;
+	float WallRunEffectiveGravityScale = 0.0f;
 
 	bool bWallRunEnabled = false;
 	bool bIsWallRunning = false;
@@ -121,6 +126,7 @@ public:
 	bool           IsWallRunning() const { return MovementMode == EMovementMode::WallRunning; }
 	const char*    GetMovementModeName() const;
 	FWallRunDebugSnapshot GetWallRunDebugSnapshot() const;
+	void           ApplyTitanfallWallRunDefaults();
 
 	// View tilt 채널 — Camera 의 local Roll 에 그대로 박을 deg 값.
 	// CMC 는 "어디로 얼마나 기울어야 하는가" 의 *target* 만 publish.
@@ -207,6 +213,8 @@ protected:
 		BadNormal,
 		BadDirection,
 		Active,
+		GraceNoWall,
+		GraceNoInput,
 		EndedTimeLimit,
 		EndedNoWall,
 		EndedBadNormal,
@@ -242,6 +250,12 @@ protected:
 	FVector       WallRunDirection  = FVector::ZeroVector;
 	float         WallRunElapsedTime = 0.0f;
 	bool          bWallRunOnRightSide = false;
+	float         WallRunLostWallGraceTimer = 0.0f;
+	float         WallRunInputGraceTimer = 0.0f;
+	float         LastWallRunInputAlong = 0.0f;
+	float         LastWallRunHitDistance = -1.0f;
+	float         LastWallRunDistanceError = 0.0f;
+	float         WallRunEntryForwardSpeed = 0.0f;
 
 	// Wall-jump 직후 같은 벽에 즉시 재부착되는 핑퐁을 막기 위한 상태.
 	// Timer 가 양수인 동안 normal 이 LastWallJumpNormal 과 가까운 벽 후보는 TryStartWallRun 에서 거절.
@@ -319,6 +333,8 @@ public:
 	bool bEnableBuiltInMovementAudio = false;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Max Acceleration", Min = 0.0f, Max = 200.0f, Speed = 0.5f)
 	float MaxAcceleration = 20.0f;    // m/s^2
+	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Air Control Scale", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
+	float AirControlScale = 0.7f;     // Falling 중 MaxAcceleration에 곱하는 비율.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Braking Friction", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float BrakingFriction = 24.0f;    // Walking 감속률 (m/s^2). 입력 없음 + 입력 반대/횡방향 미끄럼 완화.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Gravity", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
@@ -351,13 +367,17 @@ public:
 	float SlideQueueGraceTime = 0.18f;
 
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Out Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
-	float WallJumpOutVelocity = 8.0f;     // m/s — 벽 normal 방향 푸시.
+	float WallJumpOutVelocity = 9.0f;     // m/s — 벽 normal 방향 푸시.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Up Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
-	float WallJumpUpVelocity = 7.5f;      // m/s — 위쪽 임펄스.
+	float WallJumpUpVelocity = 8.0f;      // m/s — 위쪽 임펄스.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Forward Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
-	float WallJumpForwardVelocity = 3.0f; // m/s — 벽 진행 방향 보너스 (모멘텀 보존).
+	float WallJumpForwardVelocity = 1.5f; // m/s — 보존된 진행 속도 위에 더하는 보너스.
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Forward Carry Multiplier", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
+	float WallJumpForwardCarryMultiplier = 0.95f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Min Forward Carry", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
+	float WallJumpMinForwardCarrySpeed = 11.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Reattach Cooldown", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
-	float WallJumpReattachCooldown = 0.25f; // s — 같은 벽 즉시 재진입 방지.
+	float WallJumpReattachCooldown = 0.18f; // s — 같은 벽 즉시 재진입 방지.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Reattach Normal Dot", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
 	float WallJumpReattachNormalDot = 0.9f; // 마지막 wall-jump normal 과 |dot| 이 이 값 이상이면 "같은 벽" 으로 보고 쿨다운 동안 거절.
 
@@ -377,25 +397,39 @@ public:
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Runnable Wall Up Dot", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
 	float RunnableWallUpDot = 0.2f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Min Wall Run Start Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float MinWallRunStartSpeed = 3.0f;
+	float MinWallRunStartSpeed = 2.5f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Min Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float WallRunMinSpeed = 8.0f;
+	float WallRunMinSpeed = 12.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Max Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float WallRunMaxSpeed = 18.0f;
+	float WallRunMaxSpeed = 21.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Acceleration", Min = 0.0f, Max = 200.0f, Speed = 0.5f)
-	float WallRunAcceleration = 15.0f;
+	float WallRunAcceleration = 28.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Attach Up Velocity", Min = 0.0f, Max = 20.0f, Speed = 0.1f)
+	float WallRunAttachUpVelocity = 1.4f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Initial Gravity Scale", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
+	float WallRunInitialGravityScale = 0.04f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Gravity Scale", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
-	float WallRunGravityScale = 0.25f;
+	float WallRunGravityScale = 0.18f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Gravity Ramp Time", Min = 0.0f, Max = 5.0f, Speed = 0.05f)
+	float WallRunGravityRampTime = 0.45f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Wall Run Slide Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
-	float MaxWallRunSlideSpeed = 2.0f;
+	float MaxWallRunSlideSpeed = 3.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Stick Acceleration", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float WallStickAcceleration = 4.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Lost Grace Time", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
+	float WallRunLostWallGraceTime = 0.14f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Input Grace Time", Min = 0.0f, Max = 1.0f, Speed = 0.01f)
+	float WallRunInputGraceTime = 0.20f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Distance Correction Strength", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float WallRunDistanceCorrectionStrength = 12.0f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Stick Speed", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
+	float MaxWallRunStickSpeed = 6.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Wall Run Time", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
-	float MaxWallRunTime = 1.5f;
+	float MaxWallRunTime = 1.8f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Fatigue Duration", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
-	float WallRunFatigueDuration = 2.0f;
+	float WallRunFatigueDuration = 0.35f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Fatigued Air Jump Input Lock", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
-	float FatiguedAirJumpInputLockDuration = 0.3f;
+	float FatiguedAirJumpInputLockDuration = 0.10f;
 
 	// ----- Camera tilt (TitanFall-style "view rolls away from the wall") -----
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|Tilt", DisplayName = "Enable Camera Tilt")

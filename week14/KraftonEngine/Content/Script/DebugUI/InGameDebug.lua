@@ -34,6 +34,30 @@ local function format_number(value, decimals)
     return string.format("%." .. tostring(decimals) .. "f", value)
 end
 
+local function get_gamepad_axis(axisCode)
+    if Input == nil or Input.GetGamepadAxis == nil or axisCode == nil then
+        return 0.0
+    end
+    return Input.GetGamepadAxis(-1, axisCode)
+end
+
+local function is_gamepad_button_down(buttonCode)
+    return Input ~= nil
+        and Input.GetKey ~= nil
+        and buttonCode ~= nil
+        and Input.GetKey(buttonCode)
+end
+
+local function format_button(label, buttonCode)
+    return is_gamepad_button_down(buttonCode) and ("[" .. label .. "]") or label
+end
+
+local function is_gamepad_connected()
+    return Input ~= nil
+        and Input.IsGamepadConnected ~= nil
+        and Input.IsGamepadConnected()
+end
+
 local function get_health()
     if callbacks.GetHealth ~= nil then
         return callbacks.GetHealth()
@@ -76,6 +100,44 @@ local function set_property(id, property, value)
     widget:SetProperty(id, property, value)
 end
 
+local function update_input_values()
+    if widget == nil then return end
+
+    local connected = is_gamepad_connected()
+    local leftX = get_gamepad_axis(Axis ~= nil and Axis.GamepadLeftX or nil)
+    local leftY = get_gamepad_axis(Axis ~= nil and Axis.GamepadLeftY or nil)
+    local rightX = get_gamepad_axis(Axis ~= nil and Axis.GamepadRightX or nil)
+    local rightY = get_gamepad_axis(Axis ~= nil and Axis.GamepadRightY or nil)
+    local leftTrigger = get_gamepad_axis(Axis ~= nil and Axis.GamepadLeftTrigger or nil)
+    local rightTrigger = get_gamepad_axis(Axis ~= nil and Axis.GamepadRightTrigger or nil)
+
+    set_text("debug-gamepad-connected", connected and "Gamepad ON" or "Gamepad OFF")
+    set_property("debug-gamepad-connected", "color", connected and "#ffffff" or "#9d9d9d")
+    set_text("debug-gamepad-left", "LS " .. format_number(leftX, 2) .. " " .. format_number(leftY, 2))
+    set_text("debug-gamepad-right", "RS " .. format_number(rightX, 2) .. " " .. format_number(rightY, 2))
+    set_text("debug-gamepad-triggers", "LT " .. format_number(leftTrigger, 2) .. " RT " .. format_number(rightTrigger, 2))
+    set_text(
+        "debug-gamepad-buttons",
+        format_button("A", Key ~= nil and Key.GamepadA or nil) .. " " ..
+        format_button("B", Key ~= nil and Key.GamepadB or nil) .. " " ..
+        format_button("X", Key ~= nil and Key.GamepadX or nil) .. " " ..
+        format_button("Y", Key ~= nil and Key.GamepadY or nil) .. " " ..
+        format_button("LB", Key ~= nil and Key.GamepadLeftShoulder or nil) .. " " ..
+        format_button("RB", Key ~= nil and Key.GamepadRightShoulder or nil) .. " " ..
+        format_button("LT", Key ~= nil and Key.GamepadLeftTrigger or nil) .. " " ..
+        format_button("RT", Key ~= nil and Key.GamepadRightTrigger or nil))
+    set_text(
+        "debug-gamepad-menu",
+        format_button("L3", Key ~= nil and Key.GamepadLeftThumb or nil) .. " " ..
+        format_button("R3", Key ~= nil and Key.GamepadRightThumb or nil) .. " " ..
+        format_button("Back", Key ~= nil and Key.GamepadBack or nil) .. " " ..
+        format_button("Start", Key ~= nil and Key.GamepadStart or nil) .. " " ..
+        format_button("Up", Key ~= nil and Key.GamepadDPadUp or nil) .. " " ..
+        format_button("Down", Key ~= nil and Key.GamepadDPadDown or nil) .. " " ..
+        format_button("Left", Key ~= nil and Key.GamepadDPadLeft or nil) .. " " ..
+        format_button("Right", Key ~= nil and Key.GamepadDPadRight or nil))
+end
+
 local function update_values()
     if widget == nil then return end
 
@@ -86,12 +148,13 @@ local function update_values()
     set_text("debug-health-label", "Health " .. tostring(math.floor(get_health_ratio() * 100.0 + 0.5)) .. "%")
     set_property("debug-invincible-toggle", "color", isInvincible and "#111111" or "#d8d8d8")
     set_property("debug-invincible-toggle", "background-color", isInvincible and "#ffffff" or "#ffffff1F")
+    update_input_values()
 end
 
 local function update_tab_visuals()
     if widget == nil then return end
 
-    local tabs = { "player", "world", "ai", "render", "audio" }
+    local tabs = { "player", "world", "ai", "render", "audio", "input" }
     for _, tab in ipairs(tabs) do
         local selected = tab == activeTab
         set_property("debug-tab-" .. tab, "color", selected and "#ffffff" or "#808080")
@@ -131,6 +194,7 @@ local function bind_events()
     widget:bind_click("debug-tab-ai", function() set_tab("ai") end)
     widget:bind_click("debug-tab-render", function() set_tab("render") end)
     widget:bind_click("debug-tab-audio", function() set_tab("audio") end)
+    widget:bind_click("debug-tab-input", function() set_tab("input") end)
 
     widget:bind_click("debug-speed-minus", function()
         speedMultiplier = clamp(speedMultiplier - SPEED_STEP, 0.25, 8.0)

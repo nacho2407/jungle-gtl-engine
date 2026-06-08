@@ -211,6 +211,8 @@ struct FInputSystemSnapshot
     bool IsGamepadConnected(int GamepadIndex = -1) const;
 };
 
+struct FDirectInputRuntimeState;
+
 class InputSystem : public TSingleton<InputSystem>
 {
 	friend class TSingleton<InputSystem>;
@@ -302,6 +304,8 @@ private:
     bool PrevStates[256] = { false };
     FGamepadRuntimeState Gamepads[InputCodes::MaxGamepads] = {};
     int PrimaryGamepadIndex = 0;
+    FDirectInputRuntimeState* DirectInputState = nullptr;
+    int DirectInputRetryFramesRemaining = 0;
 
     // Mouse members
     POINT MousePos = { 0, 0 };
@@ -347,7 +351,12 @@ private:
         bool& bCandidate, bool& bDragging, bool& bJustStarted,
         const POINT& MouseDownPos, POINT& DragStartPos);
     void PollGamepads();
+    void PollDirectInputGamepad(int& FirstConnectedGamepad);
+    bool EnsureDirectInputGamepad();
+    void ReleaseDirectInputGamepad();
     void ResetGamepadInputState();
     void UpdateCurrentSnapshot();
     void ResetDragState();
+
+    ~InputSystem();
 };
