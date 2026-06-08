@@ -4,6 +4,8 @@ local PLAYER_TAG = "player"
 
 local MAX_HEALTH = 650.0
 local PHASE_TWO_HEALTH_RATIO = 0.5
+local PHASE_TWO_TRANSITION_ANIM_DURATION = 1.0
+local PHASE_TWO_CROUCH_HOLD_DURATION = 2.0
 local THINK_INTERVAL = 0.12
 local SIGHT_RANGE = 80.0
 local OPENING_WALK_END_RANGE = 64.0
@@ -84,6 +86,7 @@ local ANIM = {
     leapFloat = ANIM_ROOT .. "a_MP_Jump_float_deadbolt_titan_torso_d_lod0.uasset",
     leapLand = ANIM_ROOT .. "a_traverse_land_A_deadbolt_titan_torso_d_lod0.uasset",
     phase = ANIM_ROOT .. "a_Legion_gunup_deadbolt_titan_torso_d_lod0.uasset",
+    crouchStand = ANIM_ROOT .. "a_crouch_2_stand_deadbolt_titan_torso_d_lod0.uasset",
     hitReact = ANIM_ROOT .. "at_combat_start_react_deadbolt_titan_torso_d_lod0.uasset",
 }
 
@@ -116,6 +119,9 @@ local ACTION_DURATIONS = {
     leapStart = LEAP_WINDUP_TIME,
     leapLand = LEAP_LAND_TIME,
     phase = 1.0,
+    phaseCrouchDown = PHASE_TWO_TRANSITION_ANIM_DURATION,
+    phaseCrouchHold = PHASE_TWO_CROUCH_HOLD_DURATION,
+    phaseStandUp = PHASE_TWO_TRANSITION_ANIM_DURATION,
     hitReact = 1.4,
 }
 
@@ -209,6 +215,7 @@ local ANIM_NAMES = {
     [ANIM_ROOT .. "a_MP_Jump_start_deadbolt_titan_torso_d_lod0.uasset"] = "leapStart",
     [ANIM_ROOT .. "a_traverse_land_A_deadbolt_titan_torso_d_lod0.uasset"] = "leapLand",
     [ANIM_ROOT .. "a_Fire_auto_deadbolt_titan_torso_d_lod0.uasset"] = "cannon",
+    [ANIM_ROOT .. "a_crouch_2_stand_deadbolt_titan_torso_d_lod0.uasset"] = "crouchStand",
     [ANIM_ROOT .. "htLegion_MP_Stand_PowerShot_deadbolt_titan_torso_d_lod0.uasset"] = "powerShot",
     [ANIM_ROOT .. "at_elite_melee_low_stomp_F_deadbolt_titan_torso_d_lod0.uasset"] = "melee",
     [ANIM_ROOT .. "a_Legion_gunup_deadbolt_titan_torso_d_lod0.uasset"] = "phase",
@@ -222,6 +229,8 @@ local isDead = false
 
 local phase = 1
 local pendingPhase = nil
+local phaseTransitionStage = nil
+local phaseTransitionTimer = 0.0
 local thinkTimer = 0.0
 local actionTimer = 0.0
 local animationLockTimer = 0.0
@@ -568,6 +577,79 @@ local function make_damage_result(applied, amount, killed)
     }
 end
 
+local function begin_phase_transition_stage(stageName, duration)
+    phaseTransitionStage = stageName
+    phaseTransitionTimer = duration
+
+    activeAttack = nil
+    leapState = nil
+    actionTimer = duration
+    animationLockTimer = duration
+    phaseLockTimer = duration
+    set_move_anim(MOVE_IDLE)
+    set_aim_anim(0.0, 0.0)
+    request_action_anim(stageName, duration)
+    currentAnim = ANIM.crouchStand
+end
+
+local function start_phase_two_transition()
+    if isDead or phase >= 2 or phaseTransitionStage ~= nil then
+        return false
+    end
+
+    pendingPhase = nil
+    openingWalkActive = false
+    currentTactic = TACTIC.duel
+    begin_phase_transition_stage("phaseCrouchDown", PHASE_TWO_TRANSITION_ANIM_DURATION)
+    debug_log("[BossTitanAI] Phase 1 depleted. Starting crouch transition to Phase 2.")
+    return true
+end
+
+local function update_phase_two_transition(dt)
+    if phaseTransitionStage == nil then
+        return false
+    end
+
+    phaseTransitionTimer = phaseTransitionTimer - dt
+    set_move_anim(MOVE_IDLE)
+    set_aim_anim(0.0, 0.0)
+
+    if phaseTransitionTimer > 0.0 then
+        return true
+    end
+
+    if phaseTransitionStage == "phaseCrouchDown" then
+        begin_phase_transition_stage("phaseCrouchHold", PHASE_TWO_CROUCH_HOLD_DURATION)
+        return true
+    end
+
+    if phaseTransitionStage == "phaseCrouchHold" then
+        begin_phase_transition_stage("phaseStandUp", PHASE_TWO_TRANSITION_ANIM_DURATION)
+        return true
+    end
+
+    if phaseTransitionStage == "phaseStandUp" then
+        phaseTransitionStage = nil
+        phaseTransitionTimer = 0.0
+        phase = 2
+        pendingPhase = nil
+        actionTimer = 0.0
+        animationLockTimer = 0.0
+        phaseLockTimer = 0.0
+        thinkTimer = 0.0
+        cooldowns.cannon = 0.4
+        cooldowns.powerShot = 1.2
+        cooldowns.melee = 0.5
+        clear_action_anim("phaseStandUp")
+        debug_log("[BossTitanAI] Phase 2 started after crouch transition.")
+        return true
+    end
+
+    phaseTransitionStage = nil
+    phaseTransitionTimer = 0.0
+    return false
+end
+
 local function enter_phase(nextPhase)
     if nextPhase <= phase then return end
 
@@ -593,14 +675,14 @@ end
 
 local function update_phase_from_health()
     local ratio = health_ratio()
-    if ratio <= PHASE_TWO_HEALTH_RATIO then
-        enter_phase(2)
+    if phase == 1 and ratio <= PHASE_TWO_HEALTH_RATIO then
+        start_phase_two_transition()
     end
 end
 
 local function apply_boss_damage(context)
     local amount = context ~= nil and (context.Damage or context.damage) or 0.0
-    if amount <= 0.0 or isDead then
+    if amount <= 0.0 or isDead or phaseTransitionStage ~= nil then
         return make_damage_result(false, 0.0, false)
     end
 
@@ -1246,6 +1328,8 @@ function BeginPlay()
     isDead = false
     phase = 1
     pendingPhase = nil
+    phaseTransitionStage = nil
+    phaseTransitionTimer = 0.0
     actionTimer = 0.0
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
@@ -1299,6 +1383,10 @@ function Tick(dt)
     tick_timers(dt)
     debugSessionTime = debugSessionTime + dt
     debugLogTimer = debugLogTimer - dt
+
+    if update_phase_two_transition(dt) then
+        return
+    end
 
     local target = find_target()
     update_anim_aim(target)
