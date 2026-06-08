@@ -5,12 +5,18 @@ local PLAYER_TAG = "player"
 local MAX_HEALTH = 650.0
 local THINK_INTERVAL = 0.12
 local SIGHT_RANGE = 80.0
+local OPENING_WALK_END_RANGE = 64.0
+local OPENING_WALK_SPEED = 2.6
+local OPENING_WALK_ACTION_DURATION = 999.0
 local KEEP_RANGE = 28.0
 local MIN_RANGE = 9.0
 local FIRE_MIN_RANGE = 14.0
 local CLOSE_RETREAT_RANGE = 12.0
 local MELEE_RANGE = 10.5
 local CANNON_RANGE = 58.0
+local APPROACH_RUN_SPEED = 5.2
+local APPROACH_RUN_SPEED_PHASE3 = 7.4
+local APPROACH_RUN_DISTANCE = 40.0
 local TARGET_HEIGHT = 1.6
 local FALLBACK_MUZZLE_HEIGHT = 7.0
 local MELEE_MAX_VERTICAL_DELTA = 5.5
@@ -32,7 +38,7 @@ local LEAP_MAX_RANGE = 64.0
 local LEAP_MAX_VERTICAL_DELTA = 8.5
 local LEAP_LANDING_OFFSET = 8.0
 local LEAP_WINDUP_TIME = 0.55
-local LEAP_FLIGHT_TIME = 0.78
+local LEAP_FLIGHT_TIME = 0.92
 local LEAP_LAND_TIME = 0.7
 local LEAP_ARC_HEIGHT = 11.0
 local LEAP_COOLDOWN = 7.5
@@ -55,6 +61,7 @@ local MOVE_RETREAT = 5
 local MOVE_LEAP_FLOAT = 6
 
 local TACTIC = {
+    openingWalk = "openingWalk",
     approach = "approach",
     duel = "duel",
     closeCombat = "closeCombat",
@@ -64,8 +71,8 @@ local TACTIC = {
 local ANIM_ROOT = "Content/Data/Boss/Heavy/Animations/"
 local ANIM = {
     idle = ANIM_ROOT .. "a_IDLE_combat_deadbolt_titan_torso_d_lod0.uasset",
-    walk = ANIM_ROOT .. "a_WalkCenter_deadbolt_titan_torso_d_lod0.uasset",
-    run = ANIM_ROOT .. "a_combat_run_F_deadbolt_titan_torso_d_lod0.uasset",
+    walk = ANIM_ROOT .. "a_WalkN_deadbolt_titan_torso_d_lod0.uasset",
+    run = ANIM_ROOT .. "a_Run_deadbolt_titan_torso_d_lod0.uasset",
     strafeLeft = ANIM_ROOT .. "a_combat_walk_L_deadbolt_titan_torso_d_lod0.uasset",
     strafeRight = ANIM_ROOT .. "a_combat_walk_R_deadbolt_titan_torso_d_lod0.uasset",
     cannon = ANIM_ROOT .. "a_Fire_auto_deadbolt_titan_torso_d_lod0.uasset",
@@ -111,6 +118,102 @@ local ACTION_DURATIONS = {
     hitReact = 1.4,
 }
 
+local DEBUG_LOG_INTERVAL = 0.4
+local debugLogTimer = 0.0
+local DEBUG_LOG_PATH = "boss_log.txt"
+local debugStartTime = 0.0
+local debugSessionTime = 0.0
+local debugLogWriteFailed = false
+
+local function debug_buffer_preopen(line)
+    if _G.BossLogPreOpenLines == nil then
+        _G.BossLogPreOpenLines = {}
+    end
+    table.insert(_G.BossLogPreOpenLines, line)
+    _G.BossLogPreOpened = true
+end
+
+local function debug_open_log()
+    _G.BossLogPath = DEBUG_LOG_PATH
+    if _G.BossLogSessionOpen ~= true then
+        if DebugFile ~= nil and DebugFile.WriteText ~= nil then
+            local text = "=== Boss log session start ===\n"
+            local preOpenLines = _G.BossLogPreOpenLines
+            if preOpenLines ~= nil then
+                for i = 1, #preOpenLines do
+                    text = text .. preOpenLines[i] .. "\n"
+                end
+            end
+
+            if DebugFile.WriteText(DEBUG_LOG_PATH, text) then
+                _G.BossLogSessionOpen = true
+                _G.BossLogPreOpened = false
+                _G.BossLogPreOpenLines = nil
+                debugLogWriteFailed = false
+                if DebugFile.GetLogPath ~= nil then
+                    print("[BossLog] writing to " .. DebugFile.GetLogPath(DEBUG_LOG_PATH))
+                end
+            else
+                print("[BossLog] failed to open " .. DEBUG_LOG_PATH)
+            end
+        else
+            print("[BossLog] DebugFile API is not available.")
+        end
+    end
+end
+
+local function debug_close_log()
+    if _G.BossLogSessionOpen == true and DebugFile ~= nil and DebugFile.AppendText ~= nil then
+        DebugFile.AppendText(DEBUG_LOG_PATH, "=== Boss log session end ===\n")
+    end
+    _G.BossLogSessionOpen = false
+    _G.BossLogPreOpened = false
+    _G.BossLogPreOpenLines = nil
+    _G.BossDebugLog = nil
+end
+
+local function debug_log(line)
+    print(line)
+    if DebugFile ~= nil and DebugFile.AppendText ~= nil then
+        if _G.BossLogSessionOpen ~= true then
+            debug_buffer_preopen(line)
+            return
+        end
+        if not DebugFile.AppendText(DEBUG_LOG_PATH, line .. "\n") and not debugLogWriteFailed then
+            debugLogWriteFailed = true
+            print("[BossLog] append failed: " .. DEBUG_LOG_PATH)
+        end
+    end
+end
+_G.BossDebugLog = debug_log
+
+local MOVE_NAMES = {
+    [MOVE_IDLE] = "IDLE",
+    [MOVE_WALK] = "WALK",
+    [MOVE_RUN] = "RUN",
+    [MOVE_STRAFE_LEFT] = "STRAFE_L",
+    [MOVE_STRAFE_RIGHT] = "STRAFE_R",
+    [MOVE_RETREAT] = "RETREAT",
+    [MOVE_LEAP_FLOAT] = "LEAP_FLOAT",
+}
+
+local ANIM_NAMES = {
+    [ANIM_ROOT .. "a_IDLE_combat_deadbolt_titan_torso_d_lod0.uasset"] = "idle",
+    [ANIM_ROOT .. "a_WalkN_deadbolt_titan_torso_d_lod0.uasset"] = "walk",
+    [ANIM_ROOT .. "a_Run_deadbolt_titan_torso_d_lod0.uasset"] = "run",
+    [ANIM_ROOT .. "a_combat_walk_L_deadbolt_titan_torso_d_lod0.uasset"] = "strafeL",
+    [ANIM_ROOT .. "a_combat_walk_R_deadbolt_titan_torso_d_lod0.uasset"] = "strafeR",
+    [ANIM_ROOT .. "a_bound_back_deadbolt_titan_torso_d_lod0.uasset"] = "retreat",
+    [ANIM_ROOT .. "a_MP_Jump_float_deadbolt_titan_torso_d_lod0.uasset"] = "leapFloat",
+    [ANIM_ROOT .. "a_MP_Jump_start_deadbolt_titan_torso_d_lod0.uasset"] = "leapStart",
+    [ANIM_ROOT .. "a_traverse_land_A_deadbolt_titan_torso_d_lod0.uasset"] = "leapLand",
+    [ANIM_ROOT .. "a_Fire_auto_deadbolt_titan_torso_d_lod0.uasset"] = "cannon",
+    [ANIM_ROOT .. "htLegion_MP_Stand_PowerShot_deadbolt_titan_torso_d_lod0.uasset"] = "powerShot",
+    [ANIM_ROOT .. "at_elite_melee_low_stomp_F_deadbolt_titan_torso_d_lod0.uasset"] = "melee",
+    [ANIM_ROOT .. "a_Legion_gunup_deadbolt_titan_torso_d_lod0.uasset"] = "phase",
+    [ANIM_ROOT .. "at_combat_start_react_deadbolt_titan_torso_d_lod0.uasset"] = "hitReact",
+}
+
 local targetActor = nil
 local mesh = nil
 local currentHealth = MAX_HEALTH
@@ -127,9 +230,10 @@ local strafeFlipTimer = 0.0
 local strafeSign = 1.0
 local currentAnim = nil
 local homeZ = nil
-local currentTactic = TACTIC.approach
+local currentTactic = TACTIC.openingWalk
 local tacticCommitTimer = 0.0
 local tacticReevaluateTimer = 0.0
+local openingWalkActive = true
 
 local cooldowns = {
     cannon = 0.0,
@@ -289,6 +393,26 @@ local function request_action_anim(name, duration)
     state.ActionSerial = (state.ActionSerial or 0) + 1
 end
 
+local function hold_action_anim(name, duration)
+    local state = get_anim_state()
+    if state == nil or name == nil then return end
+
+    if state.ActionName ~= name then
+        state.ActionSerial = (state.ActionSerial or 0) + 1
+    end
+    state.ActionName = name
+    state.ActionDuration = duration or ACTION_DURATIONS[name] or 1.0
+end
+
+local function clear_action_anim(name)
+    local state = get_anim_state()
+    if state == nil then return end
+    if name ~= nil and state.ActionName ~= name then return end
+
+    state.ActionName = nil
+    state.ActionDuration = 0.0
+end
+
 local function set_aim_anim(pitch, weight)
     local state = get_anim_state()
     if state == nil then return end
@@ -299,8 +423,6 @@ end
 
 local function play_anim(path, looping, force)
     if path == nil then return end
-    if not force and is_animation_locked() then return end
-    if not force and currentAnim == path then return end
 
     local actionName = ACTION_BY_ANIM_PATH[path]
     if force and actionName ~= nil then
@@ -309,12 +431,16 @@ local function play_anim(path, looping, force)
         return
     end
 
+    if not force and is_animation_locked() then return end
+
     local moveState = MOVE_BY_ANIM_PATH[path]
     if moveState ~= nil then
         set_move_anim(moveState)
         currentAnim = path
         return
     end
+
+    if not force and currentAnim == path then return end
 
     if actionName ~= nil then
         request_action_anim(actionName, ACTION_DURATIONS[actionName])
@@ -787,6 +913,27 @@ local function build_blackboard(target)
     }
 end
 
+local function update_opening_walk(bb, dt)
+    if not openingWalkActive then return false end
+
+    currentTactic = TACTIC.openingWalk
+    if bb.distance <= OPENING_WALK_END_RANGE then
+        openingWalkActive = false
+        clear_action_anim("openingWalk")
+        set_tactic(TACTIC.approach, APPROACH_COMMIT_TIME)
+        debug_log(string.format("[%.2f][BossAI] opening_walk_end dist=%.1f", debugSessionTime, bb.distance))
+        return false
+    end
+
+    local toTarget = horizontal_delta(obj.Location, bb.target.Location)
+    local dirToTarget = normalized_or_zero(toTarget)
+    move_horizontal(dirToTarget, OPENING_WALK_SPEED, dt)
+    set_move_anim(MOVE_WALK)
+    hold_action_anim("openingWalk", OPENING_WALK_ACTION_DURATION)
+    currentAnim = ANIM.walk
+    return true
+end
+
 local function score_cannon(bb)
     if cooldowns.cannon > 0.0 or not bb.lineOfSight then return -1000.0 end
     if bb.canGroundMelee then return -1000.0 end
@@ -992,9 +1139,17 @@ local function locomote_approach(bb, dt)
         return
     end
 
+    if currentTactic == TACTIC.leapEngage then
+        local approachSpeed = phase >= 3 and APPROACH_RUN_SPEED_PHASE3 or APPROACH_RUN_SPEED
+        move_horizontal(dirToTarget, approachSpeed, dt)
+        play_anim(bb.distance > APPROACH_RUN_DISTANCE and ANIM.run or ANIM.walk, true, false)
+        return
+    end
+
     if bb.distance > KEEP_RANGE - 3.0 then
-        move_horizontal(dirToTarget, phase >= 3 and 8.5 or 6.0, dt)
-        play_anim(bb.distance > 40.0 and ANIM.run or ANIM.walk, true, false)
+        local approachSpeed = phase >= 3 and APPROACH_RUN_SPEED_PHASE3 or APPROACH_RUN_SPEED
+        move_horizontal(dirToTarget, approachSpeed, dt)
+        play_anim(bb.distance > APPROACH_RUN_DISTANCE and ANIM.run or ANIM.walk, true, false)
         return
     end
 
@@ -1052,6 +1207,11 @@ local function locomote(bb, dt)
         return
     end
 
+    if currentTactic == TACTIC.leapEngage then
+        locomote_approach(bb, dt)
+        return
+    end
+
     if currentTactic == TACTIC.closeCombat then
         locomote_close_combat(bb, dt)
         return
@@ -1090,7 +1250,8 @@ function BeginPlay()
     activeAttack = nil
     leapState = nil
     currentAnim = nil
-    currentTactic = TACTIC.approach
+    currentTactic = TACTIC.openingWalk
+    openingWalkActive = true
     tacticCommitTimer = 0.0
     tacticReevaluateTimer = 0.0
     reset_anim_state()
@@ -1107,8 +1268,12 @@ function BeginPlay()
         IsDead = function() return isDead end,
     })
 
+    debug_open_log()
+    _G.BossDebugLog = debug_log
+    debugSessionTime = 0.0
+
     play_anim(ANIM.idle, true, true)
-    print("[BossTitanAI] Titan boss online.")
+    debug_log("[BossTitanAI] Titan boss online.")
 end
 
 function EndPlay()
@@ -1117,6 +1282,7 @@ function EndPlay()
     end
 
     CombatEvents.UnregisterDamageable(obj)
+    debug_close_log()
 end
 
 function Tick(dt)
@@ -1129,6 +1295,9 @@ function Tick(dt)
     end
 
     tick_timers(dt)
+    debugSessionTime = debugSessionTime + dt
+    debugLogTimer = debugLogTimer - dt
+
     local target = find_target()
     update_anim_aim(target)
 
@@ -1152,14 +1321,42 @@ function Tick(dt)
 
     thinkTimer = thinkTimer - dt
     local bb = build_blackboard(target)
-    refresh_tactic(bb)
+    local openingWalkHandled = update_opening_walk(bb, dt)
 
-    if actionTimer <= 0.0 and thinkTimer <= 0.0 then
-        thinkTimer = THINK_INTERVAL
-        run_tactic_action(bb)
+    if not openingWalkHandled then
+        refresh_tactic(bb)
+
+        if actionTimer <= 0.0 and thinkTimer <= 0.0 then
+            thinkTimer = THINK_INTERVAL
+            run_tactic_action(bb)
+        end
+
+        if activeAttack == nil and not is_leaping() and (not is_animation_locked() or is_retreating()) then
+            locomote(bb, dt)
+        end
     end
 
-    if activeAttack == nil and not is_leaping() and (not is_animation_locked() or is_retreating()) then
-        locomote(bb, dt)
+    if debugLogTimer <= 0.0 then
+        debugLogTimer = DEBUG_LOG_INTERVAL
+        local state = get_anim_state()
+        local moveName = state and MOVE_NAMES[state.MoveState] or "?"
+        local actionName = state and state.ActionName or "nil"
+        local actionSerial = state and state.ActionSerial or 0
+        local animName = ANIM_NAMES[currentAnim] or (currentAnim and "?" or "nil")
+        local leapStage = leapState and leapState.stage or "nil"
+        debug_log(string.format(
+            "[%.2f][BossAI] tac=%s dist=%.1f anim=%s move=%s act=%s ser=%d lock=%.2f actT=%.2f leap=%s open=%s loc=(%.1f,%.1f,%.1f)",
+            debugSessionTime,
+            tostring(currentTactic),
+            bb.distance,
+            animName,
+            moveName,
+            tostring(actionName),
+            actionSerial,
+            animationLockTimer,
+            actionTimer,
+            leapStage,
+            tostring(openingWalkActive),
+            obj.Location.X, obj.Location.Y, obj.Location.Z))
     end
 end
