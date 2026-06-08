@@ -2056,9 +2056,11 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param worldLocation Vector\n---@return table # { Valid:boolean, InFront:boolean, X:number, Y:number, NdcX:number, NdcY:number, NdcZ:number, Depth:number, ViewportWidth:number, ViewportHeight:number }\nfunction CameraComponent:ProjectWorldToScreen(worldLocation) end");
 
 	Lua.new_usertype<USkinnedMeshComponent>("SkinnedMeshComponent",
-		sol::base_classes, sol::bases<UPrimitiveComponent, USceneComponent>());
+		sol::base_classes, sol::bases<UPrimitiveComponent, USceneComponent>(),
+		"SetMaterialVector4Parameter", &USkinnedMeshComponent::SetMaterialVector4Parameter);
 
-	FLuaDocRegistry::Get().Type("SkinnedMeshComponent", "PrimitiveComponent");
+	FLuaDocRegistry::Get().Type("SkinnedMeshComponent", "PrimitiveComponent")
+		.Method("---@param name string\n---@param r number\n---@param g number\n---@param b number\n---@param a number\n---@return boolean\nfunction SkinnedMeshComponent:SetMaterialVector4Parameter(name, r, g, b, a) end");
 
 	auto Actor = FLuaDocRegistry::Get().BindType<AActor>(Lua, "Actor");
 	Actor

@@ -9,6 +9,9 @@
 #include "Engine/Profiling/Stats/Stats.h"
 #include "GameFramework/AActor.h"
 #include "GameFramework/World.h"
+#include "Materials/Material.h"
+#include "Object/ReferenceCollector.h"
+#include "Physics/PhysicsAsset.h"
 
 HIDE_FROM_COMPONENT_LIST(USkinnedMeshComponent)
 
@@ -64,6 +67,72 @@ namespace
 			SafeScaleDivide(Numerator.X, Denominator.X),
 			SafeScaleDivide(Numerator.Y, Denominator.Y),
 			SafeScaleDivide(Numerator.Z, Denominator.Z));
+	}
+
+	UMaterialInstanceDynamic* CreateDynamicMaterialOverride(UMaterialInterface* SourceMaterial)
+	{
+		if (!SourceMaterial)
+		{
+			return nullptr;
+		}
+
+		if (UMaterialInstanceDynamic* DynamicMaterial = Cast<UMaterialInstanceDynamic>(SourceMaterial))
+		{
+			return DynamicMaterial;
+		}
+
+		if (UMaterial* BaseMaterial = Cast<UMaterial>(SourceMaterial))
+		{
+			return UMaterialInstanceDynamic::Create(BaseMaterial);
+		}
+
+		UMaterialInstance* SourceInstance = Cast<UMaterialInstance>(SourceMaterial);
+		if (!SourceInstance || !SourceInstance->GetParent())
+		{
+			return nullptr;
+		}
+
+		UMaterialInstanceDynamic* DynamicMaterial = UMaterialInstanceDynamic::Create(SourceInstance->GetParent());
+		if (!DynamicMaterial)
+		{
+			return nullptr;
+		}
+
+		for (const auto& Pair : SourceInstance->GetScalarOverrides())
+		{
+			DynamicMaterial->SetScalarParameter(Pair.first, Pair.second);
+		}
+		for (const auto& Pair : SourceInstance->GetVector3Overrides())
+		{
+			DynamicMaterial->SetVector3Parameter(Pair.first, Pair.second);
+		}
+		for (const auto& Pair : SourceInstance->GetVector4Overrides())
+		{
+			DynamicMaterial->SetVector4Parameter(Pair.first, Pair.second);
+		}
+		for (const auto& Pair : SourceInstance->GetMatrixOverrides())
+		{
+			DynamicMaterial->SetMatrixParameter(Pair.first, Pair.second);
+		}
+		for (const auto& Pair : SourceInstance->GetTextureOverrides())
+		{
+			DynamicMaterial->SetTextureParameter(Pair.first, Pair.second);
+		}
+
+		if (SourceInstance->HasEmissiveColorOverride())
+		{
+			DynamicMaterial->SetEmissiveColorOverride(true, SourceInstance->GetEmissiveColor());
+		}
+		if (SourceInstance->HasEmissiveIntensityOverride())
+		{
+			DynamicMaterial->SetEmissiveIntensityOverride(true, SourceInstance->GetEmissiveIntensity());
+		}
+		if (SourceInstance->HasBloomEnabledOverride())
+		{
+			DynamicMaterial->SetBloomEnabledOverride(true, SourceInstance->IsBloomEnabled());
+		}
+
+		return DynamicMaterial;
 	}
 
 	inline void AccumulateAffineTransformedVector(
@@ -1251,6 +1320,41 @@ UMaterialInterface* USkinnedMeshComponent::GetMaterial(int32 ElementIndex) const
 	return nullptr;
 }
 
+bool USkinnedMeshComponent::SetMaterialVector4Parameter(const FString& ParamName, float X, float Y, float Z, float W)
+{
+	const FVector4 Value(X, Y, Z, W);
+	bool bApplied = false;
+
+	for (int32 i = 0; i < static_cast<int32>(OverrideMaterials.size()); ++i)
+	{
+		UMaterialInterface* Material = OverrideMaterials[i];
+		if (!Material)
+		{
+			continue;
+		}
+
+		UMaterialInstanceDynamic* DynamicMaterial = CreateDynamicMaterialOverride(Material);
+		if (!DynamicMaterial)
+		{
+			continue;
+		}
+
+		if (DynamicMaterial != Material)
+		{
+			SetMaterial(i, DynamicMaterial);
+		}
+
+		bApplied = DynamicMaterial->SetVector4Parameter(ParamName, Value) || bApplied;
+	}
+
+	if (bApplied)
+	{
+		MarkProxyDirty(EDirtyFlag::Material);
+	}
+
+	return bApplied;
+}
+
 // Duplicate/load 섹션: 저장된 path를 실제 asset pointer로 복원하되 dirty 처리는 SetSkeletalMesh에 위임한다.
 void USkinnedMeshComponent::PostDuplicate()
 {
@@ -1287,6 +1391,19 @@ void USkinnedMeshComponent::PostDuplicate()
 	else 
 	{
 		SetSkeletalMesh(nullptr);
+	}
+}
+
+void USkinnedMeshComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UMeshComponent::AddReferencedObjects(Collector);
+
+	Collector.AddReferencedObject(SkeletalMesh.Get());
+	Collector.AddReferencedObject(PhysicsAssetOverride);
+
+	for (UMaterialInterface* Material : OverrideMaterials)
+	{
+		Collector.AddReferencedObject(Material);
 	}
 }
 

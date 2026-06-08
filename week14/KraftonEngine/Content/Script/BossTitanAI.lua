@@ -6,6 +6,9 @@ local MAX_HEALTH = 650.0
 local PHASE_TWO_HEALTH_RATIO = 0.5
 local PHASE_TWO_TRANSITION_ANIM_DURATION = 1.0
 local PHASE_TWO_CROUCH_HOLD_DURATION = 2.0
+local BOSS_SECTION_COLOR_PARAM = "SectionColor"
+local BOSS_PHASE_ONE_COLOR = { 1.0, 1.0, 1.0, 1.0 }
+local BOSS_PHASE_TWO_COLOR = { 1.0, 0.08, 0.04, 1.0 }
 local THINK_INTERVAL = 0.12
 local SIGHT_RANGE = 80.0
 local OPENING_WALK_END_RANGE = 64.0
@@ -255,6 +258,30 @@ local cooldowns = {
 
 local activeAttack = nil
 local leapState = nil
+
+local function apply_boss_phase_visual(targetPhase)
+    if mesh == nil or mesh.SetMaterialVector4Parameter == nil then
+        return false
+    end
+
+    local color = BOSS_PHASE_ONE_COLOR
+    if targetPhase >= 2 then
+        color = BOSS_PHASE_TWO_COLOR
+    end
+
+    local applied = mesh:SetMaterialVector4Parameter(
+        BOSS_SECTION_COLOR_PARAM,
+        color[1],
+        color[2],
+        color[3],
+        color[4])
+
+    if not applied then
+        debug_log("[BossTitanAI] Boss material color parameter was not applied.")
+    end
+
+    return applied
+end
 
 local function is_animation_locked()
     return animationLockTimer > 0.0
@@ -652,6 +679,7 @@ local function update_phase_two_transition(dt)
         cooldowns.cannon = 0.4
         cooldowns.powerShot = 1.2
         cooldowns.melee = 0.5
+        apply_boss_phase_visual(phase)
         clear_action_anim("phaseStandUp")
         register_boss_damageable()
         debug_log("[BossTitanAI] Phase 2 started after crouch transition.")
@@ -673,6 +701,7 @@ local function enter_phase(nextPhase)
 
     phase = nextPhase
     pendingPhase = nil
+    apply_boss_phase_visual(phase)
     phaseLockTimer = 1.0
     actionTimer = phaseLockTimer
     animationLockTimer = phaseLockTimer
@@ -1336,6 +1365,7 @@ end
 
 function BeginPlay()
     mesh = obj:GetSkeletalMesh()
+    apply_boss_phase_visual(1)
     homeZ = obj.Location.Z
     currentHealth = MAX_HEALTH
     isDead = false
