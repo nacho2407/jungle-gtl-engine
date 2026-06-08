@@ -29,6 +29,7 @@ public:
 private:
 	bool IsPawnInsideBox(const APawn* Pawn) const;
 	void FireTransition();
+	void BeginFadeOut(class APlayerCameraManager* CamMgr);
 
 	UBoxComponent* BoxComponent = nullptr;
 
@@ -41,7 +42,16 @@ private:
 	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Trigger Once")
 	bool bTriggerOnce = true;
 
+	// Fade-out 길이. 0 이면 fade 연출 생략. 보통 TransitionDelay 이하로 설정.
+	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Fade Out Duration", Min=0.0f, Speed=0.1f)
+	float FadeOutDuration = 1.5f;
+
+	// 새 scene 로드 직후 적용되는 fade-in 길이. 0 이면 fade-in 없이 바로 보임.
+	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Fade In Duration", Min=0.0f, Speed=0.1f)
+	float FadeInDuration = 1.0f;
+
 	bool bCountingDown = false;
 	bool bConsumed = false;
+	bool bFadeOutStarted = false;
 	float ElapsedSinceEnter = 0.0f;
 };
