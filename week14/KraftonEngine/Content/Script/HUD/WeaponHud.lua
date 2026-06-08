@@ -24,8 +24,10 @@ local killMarkerTimer = 0.0
 local currentAmmo = 0
 local magazineSize = 0
 local bVisible = true
+local bLetterboxVisible = false
 local bDialogueVisible = false
 local dialogueOpacity = 0.0
+local scoreWarningLogged = false
 
 local function px(value)
     return string.format("%.2fpx", value)
@@ -49,11 +51,23 @@ end
 local function update_score()
     if widget == nil then return end
     if ScoreManager == nil or ScoreManager.GetSnapshot == nil then
+        if not scoreWarningLogged and Game ~= nil and Game.Log ~= nil then
+            Game.Log("[WeaponHud]", "ScoreManager.GetSnapshot is not available")
+            scoreWarningLogged = true
+        end
         widget:SetText("score-hud-value", "000000")
         return
     end
 
     local snapshot = ScoreManager.GetSnapshot()
+    if snapshot == nil or snapshot.score == nil then
+        if not scoreWarningLogged and Game ~= nil and Game.Log ~= nil then
+            Game.Log("[WeaponHud]", "Score snapshot has no score value")
+            scoreWarningLogged = true
+        end
+        widget:SetText("score-hud-value", "000000")
+        return
+    end
     widget:SetText("score-hud-value", string.format("%06d", snapshot.score or 0))
 end
 
@@ -83,6 +97,12 @@ local function apply_dialogue_visibility()
 
     widget:SetProperty("hud-dialogue-box", "display", bDialogueVisible and "block" or "none")
     widget:SetProperty("hud-dialogue-box", "opacity", string.format("%.2f", dialogueOpacity))
+end
+
+local function apply_letterbox_visibility()
+    if widget == nil then return end
+
+    widget:SetProperty("hud-letterbox-layer", "display", bLetterboxVisible and "block" or "none")
 end
 
 local function is_target_actor(actor)
@@ -173,6 +193,7 @@ function WeaponHud.Initialize(config)
     end
 
     apply_visibility()
+    apply_letterbox_visibility()
     apply_dialogue_visibility()
     WeaponHud.SetAmmo(currentAmmo, magazineSize)
     update_score()
@@ -193,8 +214,10 @@ function WeaponHud.Shutdown()
     hitMarkerTimer = 0.0
     killMarkerTimer = 0.0
     bVisible = true
+    bLetterboxVisible = false
     bDialogueVisible = false
     dialogueOpacity = 0.0
+    scoreWarningLogged = false
 end
 
 function WeaponHud.SetVisible(visible)
@@ -211,6 +234,16 @@ function WeaponHud.SetCrosshairVisible(visible)
     if widget == nil then return end
     if not bVisible then return end
     widget:SetProperty("crosshair-screen", "display", (visible ~= false) and "block" or "none")
+end
+
+function WeaponHud.ShowLetterbox()
+    bLetterboxVisible = true
+    apply_letterbox_visibility()
+end
+
+function WeaponHud.HideLetterbox()
+    bLetterboxVisible = false
+    apply_letterbox_visibility()
 end
 
 function WeaponHud.SetAmmo(inCurrentAmmo, inMagazineSize)

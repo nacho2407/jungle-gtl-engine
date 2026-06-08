@@ -1,4 +1,5 @@
 local WeaponHud = require("HUD/WeaponHud")
+local TutorialSystem = require("Tutorial.TutorialSystem")
 
 local story = nil
 local cutsceneWidget = nil
@@ -672,6 +673,34 @@ local function is_player_restore_ready()
     return World.FindActorByName(PLAYER_PAWN_NAME) ~= nil
 end
 
+local function start_retry_tutorial_intro()
+    if TutorialSystem == nil or TutorialSystem.Initialize == nil then
+        return
+    end
+    if TutorialSystem.IsRunning ~= nil and TutorialSystem.IsRunning() then
+        return
+    end
+    if World == nil or World.FindActorByName == nil then
+        return
+    end
+
+    local playerActor = World.FindActorByName(PLAYER_PAWN_NAME)
+    if playerActor == nil or playerActor.GetCharacterMovement == nil then
+        return
+    end
+
+    -- retry로 컷씬을 건너뛰면 시작 트리거 overlap이 새로 발생하지 않을 수 있어 첫 안내를 직접 시작합니다.
+    TutorialSystem.Initialize({
+        owner = playerActor,
+        movement = playerActor:GetCharacterMovement(),
+        startGroupId = "move",
+        continueToNextGroup = true,
+        playIntro = true,
+        overlayZOrder = 104,
+        dialogueZOrder = 106,
+    })
+end
+
 local function try_finish_pending_intro_skip()
     if not introSkipFinishPending then
         return false
@@ -689,6 +718,7 @@ local function try_finish_pending_intro_skip()
     introSkipFinishPending = false
     cutsceneFinished = false
     finish_cutscene_in_current_scene()
+    start_retry_tutorial_intro()
     return true
 end
 

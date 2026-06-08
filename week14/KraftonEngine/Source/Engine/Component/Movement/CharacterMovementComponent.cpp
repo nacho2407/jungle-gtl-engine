@@ -1615,6 +1615,10 @@ void UCharacterMovementComponent::StartSlide(const FVector& InSlideDirection)
 	bSlideQueued = false;
 	SlideQueueTimer = 0.0f;
 	SlideElapsedTime = 0.0f;
+	SlideTravelDistance = 0.0f;
+	SlideStopDurationAccumulator = 0.0f;
+	SlideStopStartSpeed = 0.0f;
+	bIsSlideStopping = false;
 	SlideDirection = Direction;
 
 	bool bApplyImpulse = true;
@@ -1656,23 +1660,58 @@ void UCharacterMovementComponent::UpdateSlideVelocity(float DeltaTime)
 	}
 
 	const float Speed = GetPlanarSpeed();
-	if (Speed <= SlideEndSpeed)
+	if (Speed <= FMath::Epsilon)
 	{
 		EndSlide(bWantsCrouch);
 		return;
 	}
 
+	const FVector Direction = FVector(Velocity.X, Velocity.Y, 0.0f) * (1.0f / Speed);
+
+	SlideTravelDistance += Speed * DeltaTime;
+	const bool bDistanceLimitEnabled = MaxSlideDistance > FMath::Epsilon;
+	const bool bOverDistance = bDistanceLimitEnabled && SlideTravelDistance >= MaxSlideDistance;
+	const bool bBelowEndSpeed = Speed <= SlideEndSpeed;
+
+	if (bDistanceLimitEnabled && bOverDistance)
+	{
+		bIsSlideStopping = true;
+		SlideStopDurationAccumulator = 0.0f;
+		SlideStopStartSpeed = Speed;
+	}
+	else if (bBelowEndSpeed)
+	{
+		bIsSlideStopping = true;
+		SlideStopDurationAccumulator = 0.0f;
+		SlideStopStartSpeed = Speed;
+	}
+
+	if (bIsSlideStopping)
+	{
+		if (SlideStopDuration <= FMath::Epsilon)
+		{
+			EndSlide(bWantsCrouch);
+			return;
+		}
+
+		SlideStopDurationAccumulator += DeltaTime;
+		const float Alpha = FMath::Clamp(SlideStopDurationAccumulator / SlideStopDuration, 0.0f, 1.0f);
+		const float NewSpeed = FMath::Lerp(SlideStopStartSpeed, 0.0f, Alpha);
+		Velocity.X = Direction.X * NewSpeed;
+		Velocity.Y = Direction.Y * NewSpeed;
+
+		if (Alpha >= 1.0f || NewSpeed <= FMath::Epsilon)
+		{
+			EndSlide(bWantsCrouch);
+		}
+		return;
+	}
+
 	const float Deceleration = (std::max)(0.0f, SlideBrakingFriction);
 	const float NewSpeed = (std::max)(0.0f, Speed - Deceleration * DeltaTime);
-	const FVector Direction = FVector(Velocity.X, Velocity.Y, 0.0f) * (1.0f / Speed);
 
 	Velocity.X = Direction.X * NewSpeed;
 	Velocity.Y = Direction.Y * NewSpeed;
-
-	if (NewSpeed <= SlideEndSpeed)
-	{
-		EndSlide(bWantsCrouch);
-	}
 }
 
 void UCharacterMovementComponent::EndSlide(bool bKeepCrouchInput, bool bIgnoreHeldCrouchUntilRelease)
@@ -1686,6 +1725,10 @@ void UCharacterMovementComponent::EndSlide(bool bKeepCrouchInput, bool bIgnoreHe
 	bSlideQueued = false;
 	SlideQueueTimer = 0.0f;
 	SlideElapsedTime = 0.0f;
+	SlideTravelDistance = 0.0f;
+	SlideStopDurationAccumulator = 0.0f;
+	SlideStopStartSpeed = 0.0f;
+	bIsSlideStopping = false;
 	SlideDirection = FVector::ZeroVector;
 
 	if (bIgnoreHeldCrouchUntilRelease)

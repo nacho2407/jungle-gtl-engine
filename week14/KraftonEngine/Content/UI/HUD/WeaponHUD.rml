@@ -47,5 +47,10 @@
         </div>
     </div>
 
+    <div id="hud-letterbox-layer" class="hud-letterbox-layer">
+        <div id="hud-letterbox-top" class="hud-letterbox-bar"></div>
+        <div id="hud-letterbox-bottom" class="hud-letterbox-bar"></div>
+    </div>
+
 </body>
 </rml>

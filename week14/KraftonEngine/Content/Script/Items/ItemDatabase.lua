@@ -17,6 +17,15 @@ return {
 
 "자원 수집 완료 후 LANCER 시스템을 통한 소각 및 지표면 청소 작전을 승인함" 작성일은 케인이 이온에 강하하기 사흘 전. 맨 아래엔 드레이크의 서명이 있다. 제임스 매커슨은 이것을 손에 쥔 채 쓰러졌다.]]
         },
+        ssd_drive = {
+            name = "SSD 드라이브",
+            subtitle = "Recovered Solid State Drive",
+            image = "../Item/SSDDrive.png",
+            pickup = true,
+            description = [[VANTUS 장비에서 분리된 소형 저장 장치.
+
+외장은 심하게 긁혔지만 연결 단자는 살아 있다. 내부에는 작전 로그나 접근 키가 남아 있을 가능성이 높다.]]
+        },
         ashborne_comm_log = {
             name = "Ashborne 내부 통신 로그 파편",
             subtitle = "Damaged Receiver Fragment",

@@ -7,9 +7,11 @@
 #include "GameFramework/GameMode/PlayerController.h"
 #include "GameFramework/Pawn/Pawn.h"
 #include "GameFramework/World.h"
+#include "Lua/LuaScriptManager.h"
 #include "Math/Matrix.h"
 #include "Runtime/Engine.h"
 
+#include <algorithm>
 #include <cmath>
 
 void ASceneTransitionTriggerActor::InitDefaultComponents()
@@ -34,6 +36,7 @@ void ASceneTransitionTriggerActor::PostDuplicate()
 	bFadeOutStarted = false;
 	bLoadingScreenShown = false;
 	ElapsedSinceEnter = 0.0f;
+	MissingRequirementDialogueTimer = 0.0f;
 }
 
 void ASceneTransitionTriggerActor::BeginPlay()
@@ -66,6 +69,16 @@ void ASceneTransitionTriggerActor::Tick(float DeltaTime)
 		return;
 	}
 
+	if (MissingRequirementDialogueTimer > 0.0f)
+	{
+		MissingRequirementDialogueTimer -= DeltaTime;
+		if (MissingRequirementDialogueTimer <= 0.0f)
+		{
+			MissingRequirementDialogueTimer = 0.0f;
+			HideMissingRequirementDialogue();
+		}
+	}
+
 	UWorld* World = GetWorld();
 	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
 	APawn* Pawn = PC ? PC->GetPossessedPawn() : nullptr;
@@ -80,6 +93,11 @@ void ASceneTransitionTriggerActor::Tick(float DeltaTime)
 	{
 		if (bInside)
 		{
+			if (!HasRequiredPickedUpItem())
+			{
+				ShowMissingRequirementDialogue();
+				return;
+			}
 			bCountingDown = true;
 			ElapsedSinceEnter = 0.0f;
 			// 트리거 진입 즉시 fade-out 을 시작해 전환 입력에 바로 반응합니다.
@@ -149,6 +167,152 @@ bool ASceneTransitionTriggerActor::IsPawnInsideBox(const APawn* Pawn) const
 	return std::abs(LocalPawn.X) <= Extent.X
 		&& std::abs(LocalPawn.Y) <= Extent.Y
 		&& std::abs(LocalPawn.Z) <= Extent.Z;
+}
+
+FString ASceneTransitionTriggerActor::GetEffectiveRequiredPickedUpItemId() const
+{
+	if (!RequiredPickedUpItemId.empty())
+	{
+		return RequiredPickedUpItemId;
+	}
+
+	if (TargetScene == "FL_Level3" || TargetScene == "FL_Level3.Scene" || TargetScene == "Content/Scene/FL_Level3.Scene")
+	{
+		return "ssd_drive";
+	}
+
+	return "";
+}
+
+FString ASceneTransitionTriggerActor::GetEffectiveMissingRequirementDialogue() const
+{
+	if (!MissingRequirementDialogue.empty())
+	{
+		return MissingRequirementDialogue;
+	}
+
+	if (TargetScene == "FL_Level3" || TargetScene == "FL_Level3.Scene" || TargetScene == "Content/Scene/FL_Level3.Scene")
+	{
+		return "완벽하게 임무를 수행하기 위해서는 맥커슨을 처치해야 한다.";
+	}
+
+	return "";
+}
+
+bool ASceneTransitionTriggerActor::HasRequiredPickedUpItem() const
+{
+	const FString RequiredItemId = GetEffectiveRequiredPickedUpItemId();
+	if (RequiredItemId.empty())
+	{
+		return true;
+	}
+
+	sol::state& Lua = FLuaScriptManager::GetState();
+	sol::table Globals = Lua.globals();
+	sol::object PickedUpItemsObject = Globals["PickedUpItems"];
+	if (!PickedUpItemsObject.valid() || PickedUpItemsObject.get_type() != sol::type::table)
+	{
+		return false;
+	}
+
+	sol::table PickedUpItems = PickedUpItemsObject.as<sol::table>();
+	sol::object PickedUpObject = PickedUpItems[RequiredItemId.c_str()];
+	return PickedUpObject.valid()
+		&& PickedUpObject.get_type() == sol::type::boolean
+		&& PickedUpObject.as<bool>();
+}
+
+void ASceneTransitionTriggerActor::ShowMissingRequirementDialogue()
+{
+	const FString DialogueText = GetEffectiveMissingRequirementDialogue();
+	if (DialogueText.empty() || MissingRequirementDialogueTimer > 0.0f)
+	{
+		return;
+	}
+
+	sol::state& Lua = FLuaScriptManager::GetState();
+	sol::protected_function Require = Lua["require"];
+	if (!Require.valid())
+	{
+		return;
+	}
+
+	sol::protected_function_result RequireResult = Require("HUD/WeaponHud");
+	if (!RequireResult.valid())
+	{
+		sol::error Error = RequireResult;
+		UE_LOG("[SceneTransitionTrigger] WeaponHUD require failed: %s", Error.what());
+		return;
+	}
+
+	sol::object ModuleObject = RequireResult.get<sol::object>();
+	if (!ModuleObject.valid() || ModuleObject.get_type() != sol::type::table)
+	{
+		return;
+	}
+
+	sol::table WeaponHud = ModuleObject.as<sol::table>();
+	sol::object ShowObject = WeaponHud["ShowDialogue"];
+	if (!ShowObject.valid() || ShowObject.get_type() != sol::type::function)
+	{
+		return;
+	}
+
+	sol::table Config = Lua.create_table();
+	Config["width"] = 1120.0f;
+	Config["height"] = 54.0f;
+	Config["fontSize"] = 21.0f;
+	Config["lineHeight"] = 54.0f;
+	Config["opacity"] = 1.0f;
+	Config["weight"] = 700;
+
+	sol::protected_function ShowDialogue = ShowObject.as<sol::protected_function>();
+	sol::protected_function_result ShowResult = ShowDialogue(DialogueText, Config);
+	if (!ShowResult.valid())
+	{
+		sol::error Error = ShowResult;
+		UE_LOG("[SceneTransitionTrigger] WeaponHUD ShowDialogue failed: %s", Error.what());
+		return;
+	}
+
+	MissingRequirementDialogueTimer = (std::max)(0.1f, MissingRequirementDialogueDuration);
+}
+
+void ASceneTransitionTriggerActor::HideMissingRequirementDialogue()
+{
+	sol::state& Lua = FLuaScriptManager::GetState();
+	sol::protected_function Require = Lua["require"];
+	if (!Require.valid())
+	{
+		return;
+	}
+
+	sol::protected_function_result RequireResult = Require("HUD/WeaponHud");
+	if (!RequireResult.valid())
+	{
+		return;
+	}
+
+	sol::object ModuleObject = RequireResult.get<sol::object>();
+	if (!ModuleObject.valid() || ModuleObject.get_type() != sol::type::table)
+	{
+		return;
+	}
+
+	sol::table WeaponHud = ModuleObject.as<sol::table>();
+	sol::object HideObject = WeaponHud["HideDialogue"];
+	if (!HideObject.valid() || HideObject.get_type() != sol::type::function)
+	{
+		return;
+	}
+
+	sol::protected_function HideDialogue = HideObject.as<sol::protected_function>();
+	sol::protected_function_result HideResult = HideDialogue();
+	if (!HideResult.valid())
+	{
+		sol::error Error = HideResult;
+		UE_LOG("[SceneTransitionTrigger] WeaponHUD HideDialogue failed: %s", Error.what());
+	}
 }
 
 void ASceneTransitionTriggerActor::FireTransition()
