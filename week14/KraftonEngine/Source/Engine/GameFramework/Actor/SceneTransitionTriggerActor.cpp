@@ -10,6 +10,8 @@
 #include "Math/Matrix.h"
 #include "Runtime/Engine.h"
 #include "Runtime/GameEngine.h"
+#include "UI/UIManager.h"
+#include "UI/UserWidget.h"
 
 #include <cmath>
 
@@ -30,6 +32,7 @@ void ASceneTransitionTriggerActor::PostDuplicate()
 {
 	Super::PostDuplicate();
 	BoxComponent = Cast<UBoxComponent>(GetRootComponent());
+	LoadingScreenWidget = nullptr;
 	bCountingDown = false;
 	bConsumed = false;
 	bFadeOutStarted = false;
@@ -117,11 +120,29 @@ void ASceneTransitionTriggerActor::BeginFadeOut(APlayerCameraManager* CamMgr)
 	// fade duration 이 0 이어도 이후 transition 까지의 '진행 중' 상태를 유지하기 위해
 	// bFadeOutStarted 는 켠다 — 이 플래그 이후엔 박스 이탈 시 cancel 되지 않는다.
 	bFadeOutStarted = true;
+	ShowLoadingScreen();
 	if (!CamMgr || FadeOutDuration <= 0.0f) return;
 
 	// alpha 0 → 1. bHoldWhenFinished=true 라 fade 가 transition 전 짧게 끝나도 검은 화면 유지.
 	CamMgr->StartCameraFade(0.0f, 1.0f, FadeOutDuration, FLinearColor::Black(),
 		/*bShouldFadeAudio=*/false, /*bHoldWhenFinished=*/true);
+}
+
+void ASceneTransitionTriggerActor::ShowLoadingScreen()
+{
+	if (LoadingScreenWidget && LoadingScreenWidget->IsInViewport())
+	{
+		return;
+	}
+
+	LoadingScreenWidget = UUIManager::Get().CreateWidget(nullptr, "Content/UI/Common/LoadingScreen.rml");
+	if (!LoadingScreenWidget)
+	{
+		return;
+	}
+
+	LoadingScreenWidget->SetWantsMouse(false);
+	LoadingScreenWidget->AddToViewport(240);
 }
 
 bool ASceneTransitionTriggerActor::IsPawnInsideBox(const APawn* Pawn) const

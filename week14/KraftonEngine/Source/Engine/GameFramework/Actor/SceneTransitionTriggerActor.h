@@ -5,6 +5,7 @@
 #include "Source/Engine/GameFramework/Actor/SceneTransitionTriggerActor.generated.h"
 class UBoxComponent;
 class APawn;
+class UUserWidget;
 
 /**
  * @brief 박스 안으로 possessed pawn이 들어오면 일정 지연 뒤 다른 Scene으로 전환하는 트리거
@@ -30,8 +31,10 @@ private:
 	bool IsPawnInsideBox(const APawn* Pawn) const;
 	void FireTransition();
 	void BeginFadeOut(class APlayerCameraManager* CamMgr);
+	void ShowLoadingScreen();
 
 	UBoxComponent* BoxComponent = nullptr;
+	UUserWidget* LoadingScreenWidget = nullptr;
 
 	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Target Scene")
 	FString TargetScene = "";  // "FL_Level2" / "Content/Scene/FL_Level2.Scene" 모두 허용

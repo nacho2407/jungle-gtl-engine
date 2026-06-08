@@ -131,7 +131,8 @@ public:
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
 		const float ScaleMultiplier = Owner ? Owner->GetParticleScaleMultiplier() : 1.0f;
-		Particle.Position += StartLocation.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "StartLocation")) * ScaleMultiplier;
+		const FVector LocalOffset = StartLocation.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "StartLocation")) * ScaleMultiplier;
+		Particle.Position = Owner ? Owner->TransformLocalOffsetToWorld(Particle.Position, LocalOffset) : Particle.Position + LocalOffset;
 		Particle.OldPosition = Particle.Position;
 	}
 
@@ -157,7 +158,8 @@ public:
 	void Spawn(FParticleEmitterInstance* Owner, int32 Offset, float SpawnTime, FBaseParticle& Particle) override
 	{
 		const float ScaleMultiplier = Owner ? Owner->GetParticleScaleMultiplier() : 1.0f;
-		Particle.Velocity = StartVelocity.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "StartVelocity")) * ScaleMultiplier;
+		const FVector LocalVelocity = StartVelocity.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "StartVelocity")) * ScaleMultiplier;
+		Particle.Velocity = Owner ? Owner->RotateLocalVectorToWorld(LocalVelocity) : LocalVelocity;
 	}
 };
 

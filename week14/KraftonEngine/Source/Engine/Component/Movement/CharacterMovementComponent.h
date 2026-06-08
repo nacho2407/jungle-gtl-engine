@@ -112,6 +112,7 @@ public:
 	bool WasAirJumpConsumedThisFrame() const { return bAirJumpConsumedThisFrame; }
 
 	const FVector& GetVelocity() const { return Velocity; }
+	void           SetVelocity(const FVector& NewVelocity) { Velocity = NewVelocity; }
 	float          GetSpeed()    const { return Velocity.Length(); }
 	float          GetMaxWalkSpeed() const { return (bWantsSprint && IsWalking() && !IsCrouching() && !IsSliding()) ? MaxWalkSpeed * SprintSpeedMultiplier : MaxWalkSpeed; }
 	void           SetSprinting(bool bEnable) { bWantsSprint = bEnable; }
@@ -208,6 +209,7 @@ protected:
 		NoUpdatedComponent,
 		NoController,
 		Fatigued,
+		Cooldown,
 		NoWall,
 		LowSpeed,
 		BadNormal,
@@ -262,6 +264,7 @@ protected:
 	FVector       LastWallJumpNormal = FVector::ZeroVector;
 	float         WallJumpReattachTimer = 0.0f;
 	float         WallRunFatigueTimer = 0.0f;
+	float         WallRunCooldownTimer = 0.0f;
 	float         FatiguedAirJumpInputLockTimer = 0.0f;
 
 	EWallRunStatus LastWallRunStatus = EWallRunStatus::NotFalling;
@@ -335,6 +338,8 @@ public:
 	float MaxAcceleration = 20.0f;    // m/s^2
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Air Control Scale", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
 	float AirControlScale = 0.7f;     // Falling 중 MaxAcceleration에 곱하는 비율.
+	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Air Braking Friction Scale", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
+	float AirBrakingFrictionScale = 0.125f; // Falling 중 입력이 없을 때 BrakingFriction에 곱하는 감속 비율.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Braking Friction", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
 	float BrakingFriction = 24.0f;    // Walking 감속률 (m/s^2). 입력 없음 + 입력 반대/횡방향 미끄럼 완화.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement", DisplayName = "Gravity", Min = 0.0f, Max = 100.0f, Speed = 0.1f)
@@ -426,6 +431,8 @@ public:
 	float MaxWallRunStickSpeed = 6.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Max Wall Run Time", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
 	float MaxWallRunTime = 1.8f;
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Cooldown", Min = 0.0f, Max = 2.0f, Speed = 0.01f)
+	float WallRunCooldownDuration = 2.0f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Wall Run Fatigue Duration", Min = 0.0f, Max = 10.0f, Speed = 0.1f)
 	float WallRunFatigueDuration = 0.35f;
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun", DisplayName = "Fatigued Air Jump Input Lock", Min = 0.0f, Max = 2.0f, Speed = 0.01f)

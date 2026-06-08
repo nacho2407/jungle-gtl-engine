@@ -397,7 +397,7 @@ public:
 		FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(reinterpret_cast<uint8*>(&Particle) + Offset);
 		const float ScaleMultiplier = Owner->GetParticleScaleMultiplier();
 		Payload->SourcePoint = Particle.Position;
-		Payload->TargetPoint = Particle.Position + FVector(100.0f * ScaleMultiplier, 0.0f, 0.0f);
+		Payload->TargetPoint = Owner->TransformLocalOffsetToWorld(Particle.Position, FVector(100.0f * ScaleMultiplier, 0.0f, 0.0f));
 		Payload->SourceTangent = FVector::ZeroVector;
 		Payload->TargetTangent = FVector::ZeroVector;
 		Payload->SourceStrength = 0.0f;
@@ -406,7 +406,7 @@ public:
 		if (BeamMethod == EBeamMethod::Distance)
 		{
 			const float EvaluatedDistance = Distance.GetValue(SpawnTime, FDistributionSampling::RandomUnit(Particle.RandomSeed, "BeamDistance")) * ScaleMultiplier;
-			const FVector Direction = Particle.Velocity.LengthSquared() > 0.0001f ? Particle.Velocity.Normalized() : FVector(1.0f, 0.0f, 0.0f);
+			const FVector Direction = Particle.Velocity.LengthSquared() > 0.0001f ? Particle.Velocity.Normalized() : Owner->RotateLocalVectorToWorld(FVector(1.0f, 0.0f, 0.0f));
 			Payload->TargetPoint = Payload->SourcePoint + Direction * EvaluatedDistance;
 			Payload->bAllowTargetModule = false;
 		}
@@ -482,7 +482,8 @@ public:
 		ApplySourcePoint(Owner, *Payload, Particle, SpawnTime);
 
 		const float ScaleMultiplier = Owner->GetParticleScaleMultiplier();
-		Payload->SourceTangent = SourceTangent.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamSourceTangent")) * ScaleMultiplier;
+		const FVector LocalTangent = SourceTangent.GetValue(SpawnTime, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamSourceTangent")) * ScaleMultiplier;
+		Payload->SourceTangent = Owner->RotateLocalVectorToWorld(LocalTangent);
 		Payload->SourceStrength = 1.0f;
 		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
 	}
@@ -505,7 +506,8 @@ public:
 			FBeamParticlePayload* Payload = reinterpret_cast<FBeamParticlePayload*>(ParticleBase + CurrentOffset);
 		ApplySourcePoint(&Context.Owner, *Payload, *Particle, Particle->RelativeTime);
 		const float ScaleMultiplier = Context.Owner.GetParticleScaleMultiplier();
-		Payload->SourceTangent = SourceTangent.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnitVector(Particle->RandomSeed, "BeamSourceTangent")) * ScaleMultiplier;
+		const FVector LocalTangent = SourceTangent.GetValue(Particle->RelativeTime, FDistributionSampling::RandomUnitVector(Particle->RandomSeed, "BeamSourceTangent")) * ScaleMultiplier;
+		Payload->SourceTangent = Context.Owner.RotateLocalVectorToWorld(LocalTangent);
 		Payload->BeamDistance = FVector::Distance(Payload->SourcePoint, Payload->TargetPoint);
 		END_UPDATE_LOOP
 	}
@@ -526,7 +528,8 @@ public:
 		}
 
 		const float ScaleMultiplier = Owner ? Owner->GetParticleScaleMultiplier() : 1.0f;
-		Payload.SourcePoint = Particle.Position + SourcePoint.GetValue(Time, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamSourcePoint")) * ScaleMultiplier;
+		const FVector LocalSourceOffset = SourcePoint.GetValue(Time, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamSourcePoint")) * ScaleMultiplier;
+		Payload.SourcePoint = Owner ? Owner->TransformLocalOffsetToWorld(Particle.Position, LocalSourceOffset) : Particle.Position + LocalSourceOffset;
 	}
 };
 
@@ -692,6 +695,7 @@ public:
 		}
 
 		const float ScaleMultiplier = Owner ? Owner->GetParticleScaleMultiplier() : 1.0f;
-		Payload.TargetPoint = Payload.SourcePoint + TargetPoint.GetValue(Time, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamTargetPoint")) * ScaleMultiplier;
+		const FVector LocalTargetOffset = TargetPoint.GetValue(Time, FDistributionSampling::RandomUnitVector(Particle.RandomSeed, "BeamTargetPoint")) * ScaleMultiplier;
+		Payload.TargetPoint = Owner ? Owner->TransformLocalOffsetToWorld(Payload.SourcePoint, LocalTargetOffset) : Payload.SourcePoint + LocalTargetOffset;
 	}
 };

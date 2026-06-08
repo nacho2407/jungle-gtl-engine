@@ -108,6 +108,9 @@ CharacterMovementComponent = {}
 ---@return Vector
 function CharacterMovementComponent:GetVelocity() end
 
+---@param velocity Vector
+function CharacterMovementComponent:SetVelocity(velocity) end
+
 ---@return number
 function CharacterMovementComponent:GetSpeed() end
 
@@ -143,6 +146,12 @@ function CharacterMovementComponent:GetSprintSpeedMultiplier() end
 
 ---@param value number
 function CharacterMovementComponent:SetSprintSpeedMultiplier(value) end
+
+---@return number
+function CharacterMovementComponent:GetAirBrakingFrictionScale() end
+
+---@param value number
+function CharacterMovementComponent:SetAirBrakingFrictionScale(value) end
 
 ---@return number
 function CharacterMovementComponent:GetWallRunMaxSpeed() end

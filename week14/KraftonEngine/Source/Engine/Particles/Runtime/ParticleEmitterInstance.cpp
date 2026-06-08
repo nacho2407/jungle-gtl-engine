@@ -10,6 +10,20 @@
 #include <algorithm>
 #include <cstring>
 
+namespace
+{
+	FVector GetSafeNormalizedParticleAxis(const FVector& Axis, const FVector& Fallback)
+	{
+		const float Length = Axis.Length();
+		if (Length <= 1.0e-6f)
+		{
+			return Fallback;
+		}
+
+		return Axis / Length;
+	}
+}
+
 FParticleEmitterInstance::~FParticleEmitterInstance()
 {
 	ReleaseParticleData();
@@ -127,6 +141,32 @@ void FParticleEmitterInstance::SetLODLevelIndex(int32 LODLevelIndex)
 float FParticleEmitterInstance::GetParticleScaleMultiplier() const
 {
 	return Component ? (std::max)(0.0f, Component->GetParticleScaleMultiplier()) : 1.0f;
+}
+
+FVector FParticleEmitterInstance::RotateLocalVectorToWorld(const FVector& LocalVector) const
+{
+	if (!Component)
+	{
+		return LocalVector;
+	}
+
+	const FMatrix& WorldMatrix = Component->GetWorldMatrix();
+	const FVector XAxis = GetSafeNormalizedParticleAxis(
+		FVector(WorldMatrix.M[0][0], WorldMatrix.M[0][1], WorldMatrix.M[0][2]),
+		FVector(1.0f, 0.0f, 0.0f));
+	const FVector YAxis = GetSafeNormalizedParticleAxis(
+		FVector(WorldMatrix.M[1][0], WorldMatrix.M[1][1], WorldMatrix.M[1][2]),
+		FVector(0.0f, 1.0f, 0.0f));
+	const FVector ZAxis = GetSafeNormalizedParticleAxis(
+		FVector(WorldMatrix.M[2][0], WorldMatrix.M[2][1], WorldMatrix.M[2][2]),
+		FVector(0.0f, 0.0f, 1.0f));
+
+	return XAxis * LocalVector.X + YAxis * LocalVector.Y + ZAxis * LocalVector.Z;
+}
+
+FVector FParticleEmitterInstance::TransformLocalOffsetToWorld(const FVector& WorldOrigin, const FVector& LocalOffset) const
+{
+	return WorldOrigin + RotateLocalVectorToWorld(LocalOffset);
 }
 
 void FParticleEmitterInstance::Reset()
@@ -248,7 +288,7 @@ void FParticleEmitterInstance::InitializeParticle(FBaseParticle& Particle, const
 {
 	Particle.Position = SpawnLocation;
 	Particle.OldPosition = SpawnLocation;
-	Particle.Velocity = DefaultVelocity;
+	Particle.Velocity = RotateLocalVectorToWorld(DefaultVelocity);
 	Particle.Size = DefaultSize;
 	Particle.InitialSize = DefaultSize;
 	Particle.TargetSize = DefaultSize;

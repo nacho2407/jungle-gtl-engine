@@ -29,12 +29,14 @@ public:
 	void PlayBGM(const FString& Key, float Volume = 1.0f);
 	void StopBGM();
 	bool PlayLoop(const FString& Key, const FString& LoopName, float Volume = 1.0f, float Pitch = 1.0f);
+	bool PlayLoopAt(const FString& Key, const FString& LoopName, const FVector& Position, float Volume = 1.0f, float Pitch = 1.0f, float MinDistance = 4.0f, float MaxDistance = 120.0f, float Rolloff = 1.0f);
 	void StopLoop(const FString& LoopName);
 	void FadeOutLoop(const FString& LoopName, float FadeMilliseconds = 200.0f);
 	void StopAllLoops();
 	bool SetLoopState(const FString& LoopName, const FString& Key, bool bShouldPlay, float Volume = 1.0f, float Pitch = 1.0f);
 	void SetLoopVolume(const FString& LoopName, float Volume);
 	void SetLoopPitch(const FString& LoopName, float Pitch);
+	void SetLoopPosition(const FString& LoopName, const FVector& Position);
 	bool IsLoopPlaying(const FString& LoopName);
 
 	void SetMasterVolume(float Volume);

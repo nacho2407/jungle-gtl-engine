@@ -30,6 +30,8 @@ struct FParticleEmitterInstance
 	UParticleEmitter* GetTemplate() const { return SpriteTemplate; }
 	UParticleSystemComponent* GetComponent() const { return Component; }
 	float GetParticleScaleMultiplier() const;
+	FVector RotateLocalVectorToWorld(const FVector& LocalVector) const;
+	FVector TransformLocalOffsetToWorld(const FVector& WorldOrigin, const FVector& LocalOffset) const;
 	UParticleLODLevel* GetCurrentLODLevel() const { return CurrentLODLevel; }
 	UParticleModuleRequired* GetRequiredModule() const;
 
