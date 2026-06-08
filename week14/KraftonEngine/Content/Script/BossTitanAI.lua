@@ -3,6 +3,12 @@ local CombatEvents = require("Game.CombatEvents")
 local PLAYER_TAG = "player"
 
 local MAX_HEALTH = 650.0
+local PHASE_TWO_HEALTH_RATIO = 0.5
+local PHASE_TWO_TRANSITION_ANIM_DURATION = 1.0
+local PHASE_TWO_CROUCH_HOLD_DURATION = 2.0
+local BOSS_SECTION_COLOR_PARAM = "SectionColor"
+local BOSS_PHASE_ONE_COLOR = { 1.0, 1.0, 1.0, 1.0 }
+local BOSS_PHASE_TWO_COLOR = { 1.0, 0.08, 0.04, 1.0 }
 local THINK_INTERVAL = 0.12
 local SIGHT_RANGE = 80.0
 local OPENING_WALK_END_RANGE = 64.0
@@ -15,7 +21,6 @@ local CLOSE_RETREAT_RANGE = 12.0
 local MELEE_RANGE = 10.5
 local CANNON_RANGE = 58.0
 local APPROACH_RUN_SPEED = 5.2
-local APPROACH_RUN_SPEED_PHASE3 = 7.4
 local APPROACH_RUN_DISTANCE = 40.0
 local TARGET_HEIGHT = 1.6
 local FALLBACK_MUZZLE_HEIGHT = 7.0
@@ -51,6 +56,14 @@ local LEAP_KNOCKBACK_DISTANCE = 6.0
 local LEAP_KNOCKBACK_DURATION = 0.28
 local AIM_PITCH_MIN = -35.0
 local AIM_PITCH_MAX = 40.0
+local DEATH_FALLBACK_ANIM_DURATION = 1.4
+local DEATH_FALL_DURATION = 0.75
+local DEATH_FALL_PITCH_DEGREES = 82.0
+local DEATH_FALL_FORWARD_DISTANCE = 0.0
+local DEATH_FALL_GROUND_CLEARANCE = 0.25
+local DEATH_FALL_SHAKE_SCALE = 0.45
+local DEATH_SLOMO_DURATION = 2.2
+local DEATH_SLOMO_TIME_DILATION = 0.15
 
 local MOVE_IDLE = 0
 local MOVE_WALK = 1
@@ -83,6 +96,7 @@ local ANIM = {
     leapFloat = ANIM_ROOT .. "a_MP_Jump_float_deadbolt_titan_torso_d_lod0.uasset",
     leapLand = ANIM_ROOT .. "a_traverse_land_A_deadbolt_titan_torso_d_lod0.uasset",
     phase = ANIM_ROOT .. "a_Legion_gunup_deadbolt_titan_torso_d_lod0.uasset",
+    crouchStand = ANIM_ROOT .. "a_crouch_2_stand_deadbolt_titan_torso_d_lod0.uasset",
     hitReact = ANIM_ROOT .. "at_combat_start_react_deadbolt_titan_torso_d_lod0.uasset",
 }
 
@@ -115,6 +129,9 @@ local ACTION_DURATIONS = {
     leapStart = LEAP_WINDUP_TIME,
     leapLand = LEAP_LAND_TIME,
     phase = 1.0,
+    phaseCrouchDown = PHASE_TWO_TRANSITION_ANIM_DURATION,
+    phaseCrouchHold = PHASE_TWO_CROUCH_HOLD_DURATION,
+    phaseStandUp = PHASE_TWO_TRANSITION_ANIM_DURATION,
     hitReact = 1.4,
 }
 
@@ -208,6 +225,7 @@ local ANIM_NAMES = {
     [ANIM_ROOT .. "a_MP_Jump_start_deadbolt_titan_torso_d_lod0.uasset"] = "leapStart",
     [ANIM_ROOT .. "a_traverse_land_A_deadbolt_titan_torso_d_lod0.uasset"] = "leapLand",
     [ANIM_ROOT .. "a_Fire_auto_deadbolt_titan_torso_d_lod0.uasset"] = "cannon",
+    [ANIM_ROOT .. "a_crouch_2_stand_deadbolt_titan_torso_d_lod0.uasset"] = "crouchStand",
     [ANIM_ROOT .. "htLegion_MP_Stand_PowerShot_deadbolt_titan_torso_d_lod0.uasset"] = "powerShot",
     [ANIM_ROOT .. "at_elite_melee_low_stomp_F_deadbolt_titan_torso_d_lod0.uasset"] = "melee",
     [ANIM_ROOT .. "a_Legion_gunup_deadbolt_titan_torso_d_lod0.uasset"] = "phase",
@@ -218,10 +236,12 @@ local targetActor = nil
 local mesh = nil
 local currentHealth = MAX_HEALTH
 local isDead = false
-local deathTimer = 0.0
+local damageableCallbacks = nil
 
 local phase = 1
 local pendingPhase = nil
+local phaseTransitionStage = nil
+local phaseTransitionTimer = 0.0
 local thinkTimer = 0.0
 local actionTimer = 0.0
 local animationLockTimer = 0.0
@@ -245,6 +265,31 @@ local cooldowns = {
 
 local activeAttack = nil
 local leapState = nil
+local deathFallState = nil
+
+local function apply_boss_phase_visual(targetPhase)
+    if mesh == nil or mesh.SetMaterialVector4Parameter == nil then
+        return false
+    end
+
+    local color = BOSS_PHASE_ONE_COLOR
+    if targetPhase >= 2 then
+        color = BOSS_PHASE_TWO_COLOR
+    end
+
+    local applied = mesh:SetMaterialVector4Parameter(
+        BOSS_SECTION_COLOR_PARAM,
+        color[1],
+        color[2],
+        color[3],
+        color[4])
+
+    if not applied then
+        debug_log("[BossTitanAI] Boss material color parameter was not applied.")
+    end
+
+    return applied
+end
 
 local function is_animation_locked()
     return animationLockTimer > 0.0
@@ -457,6 +502,126 @@ local function find_target()
     return targetActor
 end
 
+local function get_action_component(actor)
+    if actor ~= nil and type(actor.GetActionComponent) == "function" then
+        return actor:GetActionComponent()
+    end
+
+    return nil
+end
+
+local function get_death_slomo_action_component()
+    local ownerAction = get_action_component(obj)
+    if ownerAction ~= nil then
+        return ownerAction
+    end
+
+    local target = find_target()
+    local targetAction = get_action_component(target)
+    if targetAction ~= nil then
+        return targetAction
+    end
+
+    if Game ~= nil and Game.GetPlayerPawn ~= nil then
+        return get_action_component(Game.GetPlayerPawn())
+    end
+
+    return nil
+end
+
+local function start_death_slomo()
+    local action = get_death_slomo_action_component()
+    if action == nil then
+        debug_log("[BossTitanAI] Death slomo skipped: ActionComponent not found.")
+        return false
+    end
+
+    local ok, err = pcall(function()
+        action:Slomo(DEATH_SLOMO_DURATION, DEATH_SLOMO_TIME_DILATION)
+    end)
+
+    if not ok then
+        debug_log("[BossTitanAI] Death slomo failed: " .. tostring(err))
+        return false
+    end
+
+    return true
+end
+
+local function yaw_to_forward(yawDegrees)
+    local yawRadians = math.rad(yawDegrees or 0.0)
+    return Vector.new(math.cos(yawRadians), math.sin(yawRadians), 0.0)
+end
+
+local function play_death_fall_camera_shake()
+    if CameraManager == nil or CameraManager.StartWaveShake == nil then
+        return
+    end
+
+    CameraManager.StartWaveShake(DEATH_FALL_SHAKE_SCALE)
+end
+
+local function start_death_fall()
+    local startRotation = obj.Rotation
+    local startLocation = obj.Location
+    local fallForward = yaw_to_forward(startRotation.Z)
+
+    deathFallState = {
+        elapsed = 0.0,
+        duration = DEATH_FALL_DURATION,
+        startLocation = startLocation,
+        targetLocation = Vector.new(
+            startLocation.X + fallForward.X * DEATH_FALL_FORWARD_DISTANCE,
+            startLocation.Y + fallForward.Y * DEATH_FALL_FORWARD_DISTANCE,
+            (homeZ or startLocation.Z) + DEATH_FALL_GROUND_CLEARANCE),
+        startRotation = startRotation,
+        targetRotation = Vector.new(
+            startRotation.X,
+            startRotation.Y + DEATH_FALL_PITCH_DEGREES,
+            startRotation.Z),
+    }
+
+    return true
+end
+
+local function update_death_fall(dt)
+    if deathFallState == nil then
+        return
+    end
+
+    deathFallState.elapsed = math.min(deathFallState.elapsed + dt, deathFallState.duration)
+    local alpha = 1.0
+    if deathFallState.duration > 0.0 then
+        alpha = smoothstep(deathFallState.elapsed / deathFallState.duration)
+    end
+
+    obj.Location = lerp(deathFallState.startLocation, deathFallState.targetLocation, alpha)
+    obj.Rotation = lerp(deathFallState.startRotation, deathFallState.targetRotation, alpha)
+
+    if deathFallState.elapsed >= deathFallState.duration then
+        obj.Location = deathFallState.targetLocation
+        obj.Rotation = deathFallState.targetRotation
+        play_death_fall_camera_shake()
+        deathFallState = nil
+    end
+end
+
+local function start_death_sequence()
+    activeAttack = nil
+    leapState = nil
+    openingWalkActive = false
+    actionTimer = 0.0
+    animationLockTimer = 0.0
+    phaseLockTimer = 0.0
+    set_move_anim(MOVE_IDLE)
+    set_aim_anim(0.0, 0.0)
+    request_action_anim("hitReact", DEATH_FALLBACK_ANIM_DURATION)
+    currentAnim = ANIM.hitReact
+
+    start_death_slomo()
+    start_death_fall()
+end
+
 local function get_muzzle_location()
     if mesh ~= nil then
         local muzzle = mesh:GetBoneSocketLocation(MUZZLE_BONE, MUZZLE_LOCAL_OFFSET)
@@ -557,6 +722,8 @@ local function make_damage_result(applied, amount, killed)
     return {
         bApplied = applied == true,
         bKilled = killed == true,
+        bBoss = true,
+        boss = true,
         bCritical = false,
         DamageApplied = amount or 0.0,
         RemainingHealth = currentHealth,
@@ -564,6 +731,92 @@ local function make_damage_result(applied, amount, killed)
         HealthRatio = health_ratio(),
         Victim = obj,
     }
+end
+
+local function register_boss_damageable()
+    if damageableCallbacks ~= nil then
+        CombatEvents.RegisterDamageable(obj, damageableCallbacks)
+    end
+end
+
+local function unregister_boss_damageable()
+    CombatEvents.UnregisterDamageable(obj)
+end
+
+local function begin_phase_transition_stage(stageName, duration)
+    phaseTransitionStage = stageName
+    phaseTransitionTimer = duration
+
+    activeAttack = nil
+    leapState = nil
+    actionTimer = duration
+    animationLockTimer = duration
+    phaseLockTimer = duration
+    set_move_anim(MOVE_IDLE)
+    set_aim_anim(0.0, 0.0)
+    request_action_anim(stageName, duration)
+    currentAnim = ANIM.crouchStand
+end
+
+local function start_phase_two_transition()
+    if isDead or phase >= 2 or phaseTransitionStage ~= nil then
+        return false
+    end
+
+    pendingPhase = nil
+    openingWalkActive = false
+    currentTactic = TACTIC.duel
+    unregister_boss_damageable()
+    begin_phase_transition_stage("phaseCrouchDown", PHASE_TWO_TRANSITION_ANIM_DURATION)
+    debug_log("[BossTitanAI] Phase 1 depleted. Starting crouch transition to Phase 2.")
+    return true
+end
+
+local function update_phase_two_transition(dt)
+    if phaseTransitionStage == nil then
+        return false
+    end
+
+    phaseTransitionTimer = phaseTransitionTimer - dt
+    set_move_anim(MOVE_IDLE)
+    set_aim_anim(0.0, 0.0)
+
+    if phaseTransitionTimer > 0.0 then
+        return true
+    end
+
+    if phaseTransitionStage == "phaseCrouchDown" then
+        begin_phase_transition_stage("phaseCrouchHold", PHASE_TWO_CROUCH_HOLD_DURATION)
+        return true
+    end
+
+    if phaseTransitionStage == "phaseCrouchHold" then
+        begin_phase_transition_stage("phaseStandUp", PHASE_TWO_TRANSITION_ANIM_DURATION)
+        return true
+    end
+
+    if phaseTransitionStage == "phaseStandUp" then
+        phaseTransitionStage = nil
+        phaseTransitionTimer = 0.0
+        phase = 2
+        pendingPhase = nil
+        actionTimer = 0.0
+        animationLockTimer = 0.0
+        phaseLockTimer = 0.0
+        thinkTimer = 0.0
+        cooldowns.cannon = 0.4
+        cooldowns.powerShot = 1.2
+        cooldowns.melee = 0.5
+        apply_boss_phase_visual(phase)
+        clear_action_anim("phaseStandUp")
+        register_boss_damageable()
+        debug_log("[BossTitanAI] Phase 2 started after crouch transition.")
+        return true
+    end
+
+    phaseTransitionStage = nil
+    phaseTransitionTimer = 0.0
+    return false
 end
 
 local function enter_phase(nextPhase)
@@ -576,6 +829,7 @@ local function enter_phase(nextPhase)
 
     phase = nextPhase
     pendingPhase = nil
+    apply_boss_phase_visual(phase)
     phaseLockTimer = 1.0
     actionTimer = phaseLockTimer
     animationLockTimer = phaseLockTimer
@@ -583,7 +837,7 @@ local function enter_phase(nextPhase)
     leapState = nil
 
     cooldowns.cannon = 0.4
-    cooldowns.powerShot = phase >= 3 and 0.7 or 1.2
+    cooldowns.powerShot = 1.2
     cooldowns.melee = 0.5
 
     play_anim(ANIM.phase, false, true)
@@ -591,16 +845,14 @@ end
 
 local function update_phase_from_health()
     local ratio = health_ratio()
-    if ratio <= 0.35 then
-        enter_phase(3)
-    elseif ratio <= 0.65 then
-        enter_phase(2)
+    if phase == 1 and ratio <= PHASE_TWO_HEALTH_RATIO then
+        start_phase_two_transition()
     end
 end
 
 local function apply_boss_damage(context)
     local amount = context ~= nil and (context.Damage or context.damage) or 0.0
-    if amount <= 0.0 or isDead then
+    if amount <= 0.0 or isDead or phaseTransitionStage ~= nil then
         return make_damage_result(false, 0.0, false)
     end
 
@@ -608,11 +860,9 @@ local function apply_boss_damage(context)
     local killed = currentHealth <= 0.0
     if killed then
         isDead = true
-        deathTimer = ACTION_DURATIONS.hitReact
-        activeAttack = nil
-        leapState = nil
-        set_aim_anim(0.0, 0.0)
-        play_anim(ANIM.hitReact, false, true)
+        start_death_sequence()
+        unregister_boss_damageable()
+        debug_log("[BossTitanAI] Titan boss defeated. Death slomo and fall started.")
     else
         update_phase_from_health()
     end
@@ -993,12 +1243,12 @@ local function run_attack(name)
     end
 
     if name == "powerShot" then
-        start_attack("powerShot", ANIM.powerShot, POWER_SHOT_ACTION_LOCK, 0.55, CANNON_RANGE, 24.0 + phase * 9.0, phase >= 3 and 2.0 or 2.8, POWER_SHOT_ACTION_LOCK)
+        start_attack("powerShot", ANIM.powerShot, POWER_SHOT_ACTION_LOCK, 0.55, CANNON_RANGE, 24.0 + phase * 9.0, 2.8, POWER_SHOT_ACTION_LOCK)
         return true
     end
 
     if name == "cannon" then
-        start_attack("cannon", ANIM.cannon, CANNON_ACTION_LOCK, 0.22, CANNON_RANGE, 11.0 + phase * 4.0, phase >= 3 and 0.55 or 0.85, CANNON_ACTION_LOCK)
+        start_attack("cannon", ANIM.cannon, CANNON_ACTION_LOCK, 0.22, CANNON_RANGE, 11.0 + phase * 4.0, 0.85, CANNON_ACTION_LOCK)
         return true
     end
 
@@ -1049,7 +1299,7 @@ end
 
 local function choose_next_tactic(bb)
     if can_start_leap(bb) then
-        local leapChance = phase >= 3 and 0.68 or 0.42
+        local leapChance = 0.42
         if bb.distance > KEEP_RANGE + 18.0 or random01() < leapChance then
             return TACTIC.leapEngage
         end
@@ -1120,7 +1370,7 @@ local function run_tactic_action(bb)
     end
 
     if currentTactic == TACTIC.approach then
-        if can_start_leap(bb) and random01() < (phase >= 3 and 0.55 or 0.35) then
+        if can_start_leap(bb) and random01() < 0.35 then
             return start_leap_engage(bb)
         end
         actionTimer = 0.2
@@ -1140,15 +1390,13 @@ local function locomote_approach(bb, dt)
     end
 
     if currentTactic == TACTIC.leapEngage then
-        local approachSpeed = phase >= 3 and APPROACH_RUN_SPEED_PHASE3 or APPROACH_RUN_SPEED
-        move_horizontal(dirToTarget, approachSpeed, dt)
+        move_horizontal(dirToTarget, APPROACH_RUN_SPEED, dt)
         play_anim(bb.distance > APPROACH_RUN_DISTANCE and ANIM.run or ANIM.walk, true, false)
         return
     end
 
     if bb.distance > KEEP_RANGE - 3.0 then
-        local approachSpeed = phase >= 3 and APPROACH_RUN_SPEED_PHASE3 or APPROACH_RUN_SPEED
-        move_horizontal(dirToTarget, approachSpeed, dt)
+        move_horizontal(dirToTarget, APPROACH_RUN_SPEED, dt)
         play_anim(bb.distance > APPROACH_RUN_DISTANCE and ANIM.run or ANIM.walk, true, false)
         return
     end
@@ -1237,18 +1485,21 @@ end
 
 function BeginPlay()
     mesh = obj:GetSkeletalMesh()
+    apply_boss_phase_visual(1)
     homeZ = obj.Location.Z
     currentHealth = MAX_HEALTH
     isDead = false
-    deathTimer = 0.0
     phase = 1
     pendingPhase = nil
+    phaseTransitionStage = nil
+    phaseTransitionTimer = 0.0
     actionTimer = 0.0
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
     thinkTimer = 0.0
     activeAttack = nil
     leapState = nil
+    deathFallState = nil
     currentAnim = nil
     currentTactic = TACTIC.openingWalk
     openingWalkActive = true
@@ -1263,10 +1514,11 @@ function BeginPlay()
 
     obj:AddTag("enemy")
     obj:AddTag("boss")
-    CombatEvents.RegisterDamageable(obj, {
+    damageableCallbacks = {
         ApplyDamage = apply_boss_damage,
         IsDead = function() return isDead end,
-    })
+    }
+    register_boss_damageable()
 
     debug_open_log()
     _G.BossDebugLog = debug_log
@@ -1281,22 +1533,26 @@ function EndPlay()
         _G.BossTitanAnimState[obj.UUID] = nil
     end
 
-    CombatEvents.UnregisterDamageable(obj)
+    unregister_boss_damageable()
+    damageableCallbacks = nil
     debug_close_log()
 end
 
 function Tick(dt)
     if isDead then
-        deathTimer = deathTimer - dt
-        if deathTimer <= 0.0 then
-            obj:Destroy()
-        end
+        update_death_fall(dt)
+        set_move_anim(MOVE_IDLE)
+        set_aim_anim(0.0, 0.0)
         return
     end
 
     tick_timers(dt)
     debugSessionTime = debugSessionTime + dt
     debugLogTimer = debugLogTimer - dt
+
+    if update_phase_two_transition(dt) then
+        return
+    end
 
     local target = find_target()
     update_anim_aim(target)

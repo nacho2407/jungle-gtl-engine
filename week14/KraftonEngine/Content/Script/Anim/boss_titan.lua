@@ -14,6 +14,7 @@ local MELEE_PATH = ANIM_ROOT .. "at_elite_melee_low_stomp_F_deadbolt_titan_torso
 local LEAP_START_PATH = ANIM_ROOT .. "a_MP_Jump_start_deadbolt_titan_torso_d_lod0.uasset"
 local LEAP_LAND_PATH = ANIM_ROOT .. "a_traverse_land_A_deadbolt_titan_torso_d_lod0.uasset"
 local PHASE_PATH = ANIM_ROOT .. "a_Legion_gunup_deadbolt_titan_torso_d_lod0.uasset"
+local CROUCH_STAND_PATH = ANIM_ROOT .. "a_crouch_2_stand_deadbolt_titan_torso_d_lod0.uasset"
 local HIT_REACT_PATH = ANIM_ROOT .. "at_combat_start_react_deadbolt_titan_torso_d_lod0.uasset"
 
 local MOVE_IDLE = 0
@@ -33,6 +34,8 @@ local MELEE_BLEND_OUT = 0.22
 local LEAP_BLEND_IN = 0.08
 local LEAP_BLEND_OUT = 0.18
 local HIT_REACT_BLEND_IN = 0.06
+local PHASE_TRANSITION_BLEND_IN = 0.18
+local PHASE_TRANSITION_BLEND_OUT = 0.18
 local WALK_PLAY_RATE = 1.0
 local RUN_PLAY_RATE = 1.12
 local AIM_RESPONSE = 8.0
@@ -87,6 +90,9 @@ local ACTION_DURATIONS = {
     leapStart = 0.55,
     leapLand = 0.7,
     phase = 1.0,
+    phaseCrouchDown = 1.0,
+    phaseCrouchHold = 2.0,
+    phaseStandUp = 1.0,
     hitReact = 1.4,
 }
 
@@ -152,6 +158,22 @@ local function finish_action(self, name)
         return true
     end
     return false
+end
+
+local function finish_phase_transition_action(self, name)
+    if self.ActionName ~= name or self.ActionElapsed < self.ActionDuration then
+        return false
+    end
+
+    local external = get_external_state(self)
+    if external ~= nil and external.ActionName == name then
+        return false
+    end
+
+    self.ActionName = nil
+    self.ActionElapsed = 0.0
+    self.ActionDuration = 0.0
+    return true
 end
 
 local function finish_sustained_action(self, name)
@@ -220,6 +242,7 @@ function init(self)
     force_root_lock(STRAFE_RIGHT_PATH)
     force_root_lock(RETREAT_PATH)
     force_root_lock(LEAP_FLOAT_PATH)
+    force_root_lock(CROUCH_STAND_PATH)
 
     self.IdlePlayer = Anim.create_sequence_player(IDLE_PATH, 1.0, true)
     self.WalkPlayer = Anim.create_sequence_player(WALK_PATH, WALK_PLAY_RATE, true)
@@ -249,6 +272,9 @@ function init(self)
     Anim.sm_add_state(top, "LeapStart", Anim.create_sequence_player(LEAP_START_PATH, 1.0, false))
     Anim.sm_add_state(top, "LeapLand", Anim.create_sequence_player(LEAP_LAND_PATH, 1.0, false))
     Anim.sm_add_state(top, "Phase", Anim.create_sequence_player(PHASE_PATH, 1.0, false))
+    Anim.sm_add_state(top, "PhaseCrouchDown", Anim.create_sequence_player(CROUCH_STAND_PATH, -1.0, false))
+    Anim.sm_add_state(top, "PhaseCrouchHold", Anim.create_sequence_player(CROUCH_STAND_PATH, 0.0, false))
+    Anim.sm_add_state(top, "PhaseStandUp", Anim.create_sequence_player(CROUCH_STAND_PATH, 1.0, false))
     Anim.sm_add_state(top, "HitReact", Anim.create_sequence_player(HIT_REACT_PATH, 1.0, false))
 
     Anim.sm_add_transition(top, "AnyState", "HitReact",
@@ -262,6 +288,18 @@ function init(self)
     Anim.sm_add_transition(top, "AnyState", "Phase",
         function() return begin_action(self, "phase") end,
         DEFAULT_ACTION_BLEND_IN)
+
+    Anim.sm_add_transition(top, "AnyState", "PhaseCrouchDown",
+        function() return begin_action(self, "phaseCrouchDown") end,
+        PHASE_TRANSITION_BLEND_IN)
+
+    Anim.sm_add_transition(top, "AnyState", "PhaseCrouchHold",
+        function() return begin_action(self, "phaseCrouchHold") end,
+        PHASE_TRANSITION_BLEND_IN)
+
+    Anim.sm_add_transition(top, "AnyState", "PhaseStandUp",
+        function() return begin_action(self, "phaseStandUp") end,
+        PHASE_TRANSITION_BLEND_IN)
 
     Anim.sm_add_transition(top, "AnyState", "LeapStart",
         function() return begin_action(self, "leapStart") end,
@@ -298,6 +336,26 @@ function init(self)
     Anim.sm_add_transition(top, "Phase", "Locomotion",
         function() return finish_action(self, "phase") end,
         DEFAULT_ACTION_BLEND_OUT)
+
+    Anim.sm_add_transition(top, "PhaseCrouchDown", "PhaseCrouchHold",
+        function() return begin_action(self, "phaseCrouchHold") end,
+        PHASE_TRANSITION_BLEND_OUT)
+
+    Anim.sm_add_transition(top, "PhaseCrouchHold", "PhaseStandUp",
+        function() return begin_action(self, "phaseStandUp") end,
+        PHASE_TRANSITION_BLEND_OUT)
+
+    Anim.sm_add_transition(top, "PhaseCrouchDown", "Locomotion",
+        function() return finish_phase_transition_action(self, "phaseCrouchDown") end,
+        PHASE_TRANSITION_BLEND_OUT)
+
+    Anim.sm_add_transition(top, "PhaseCrouchHold", "Locomotion",
+        function() return finish_phase_transition_action(self, "phaseCrouchHold") end,
+        PHASE_TRANSITION_BLEND_OUT)
+
+    Anim.sm_add_transition(top, "PhaseStandUp", "Locomotion",
+        function() return finish_phase_transition_action(self, "phaseStandUp") end,
+        PHASE_TRANSITION_BLEND_OUT)
 
     Anim.sm_add_transition(top, "LeapStart", "Locomotion",
         function() return finish_action(self, "leapStart") end,

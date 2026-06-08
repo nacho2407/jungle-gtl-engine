@@ -12,7 +12,7 @@
 void FAnimNode_SequencePlayer::OnBecomeRelevant(const FAnimationInitializeContext& /*Context*/)
 {
 	// State 진입 / 노드 처음 활성될 때 LocalTime reset. 기존 UAnimState::OnEnter 동작 그대로.
-	LocalTime = 0.0f;
+	LocalTime = (PlayRate < 0.0f && Sequence) ? Sequence->GetPlayLength() : 0.0f;
 }
 
 void FAnimNode_SequencePlayer::Update(const FAnimationUpdateContext& Context)
