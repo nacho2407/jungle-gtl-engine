@@ -220,6 +220,30 @@ function SceneComponent:GetUpVector() end
 ---@return Vector
 function SceneComponent:GetRightVector() end
 
+---@class LightComponentBase: SceneComponent
+LightComponentBase = {}
+
+---@return number
+function LightComponentBase:GetIntensity() end
+
+---@param value number
+function LightComponentBase:SetIntensity(value) end
+
+---@class PointLightComponent: LightComponentBase
+PointLightComponent = {}
+
+---@return number
+function PointLightComponent:GetAttenuationRadius() end
+
+---@param value number
+function PointLightComponent:SetAttenuationRadius(value) end
+
+---@class SpotLightComponent: PointLightComponent
+SpotLightComponent = {}
+
+---@return number
+function SpotLightComponent:GetOuterConeAngle() end
+
 ---@class PrimitiveComponent: SceneComponent
 PrimitiveComponent = {}
 
@@ -385,6 +409,12 @@ function Actor:GetStaticMesh() end
 
 ---@return ParticleSystemComponent?
 function Actor:GetParticleSystem() end
+
+---@return PointLightComponent?
+function Actor:GetPointLight() end
+
+---@return SpotLightComponent?
+function Actor:GetSpotLight() end
 
 ---@param enabled boolean
 function Actor:SetOutline(enabled) end
