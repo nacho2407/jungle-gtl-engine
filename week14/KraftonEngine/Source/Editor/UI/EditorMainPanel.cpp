@@ -97,6 +97,10 @@ ImVec4 GetWallRunStatusColor(const char* Status)
 	{
 		return ImVec4(0.20f, 1.0f, 0.42f, 1.0f);
 	}
+	if (std::strncmp(Status, "GRACE_", 6) == 0)
+	{
+		return ImVec4(0.25f, 0.68f, 1.0f, 1.0f);
+	}
 	if (std::strncmp(Status, "NO_", 3) == 0 ||
 		std::strncmp(Status, "BAD_", 4) == 0 ||
 		std::strncmp(Status, "ENDED_", 6) == 0)
@@ -748,6 +752,10 @@ void FEditorMainPanel::RenderWallRunDebugWindow()
 
 	ImGui::Separator();
 	ImGui::Checkbox("Enable Wall Run", &Movement->bEnableWallRun);
+	if (ImGui::Button("Apply TF2 WallRun Profile"))
+	{
+		Movement->ApplyTitanfallWallRunDefaults();
+	}
 	ImGui::Checkbox("Draw Distance Ring", &Movement->bDrawWallRunDistanceDebug);
 	ImGui::Checkbox("UE_LOG Diagnostics", &Movement->bLogWallRunDiagnostics);
 	ImGui::Checkbox("Legacy Screen Text", &Movement->bShowWallRunStatusText);
@@ -765,6 +773,18 @@ void FEditorMainPanel::RenderWallRunDebugWindow()
 		Snapshot.WallRunElapsedTime,
 		Snapshot.MaxWallRunTime,
 		Snapshot.bOnRightSide ? "Right" : "Left");
+	ImGui::Text("Grace Wall: %.2f / %.2f   Input: %.2f / %.2f",
+		Snapshot.WallRunLostWallGraceRemaining,
+		Movement->WallRunLostWallGraceTime,
+		Snapshot.WallRunInputGraceRemaining,
+		Movement->WallRunInputGraceTime);
+	ImGui::Text("Last Input Along: %.2f   Distance Error: %.2f",
+		Snapshot.LastWallRunInputAlong,
+		Snapshot.LastWallRunDistanceError);
+	ImGui::Text("Gravity Scale: %.2f   Jump Carry: %.2f + %.2f",
+		Snapshot.WallRunEffectiveGravityScale,
+		Movement->WallJumpMinForwardCarrySpeed,
+		Movement->WallJumpForwardVelocity);
 
 	if (Snapshot.bHasHit)
 	{

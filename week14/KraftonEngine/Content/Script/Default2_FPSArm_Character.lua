@@ -80,6 +80,18 @@ local baseMaxWalkSpeed = nil
 local baseSprintSpeedMultiplier = nil
 local baseWallRunMaxSpeed = nil
 
+-- 슬라이드 전용 애니가 없어서 SkeletalMesh 의 relative transform 으로 총구를 옆으로 기울임.
+-- 값은 카메라 기준 (X=Roll/Y=Pitch/Z=Yaw, 위치는 Right/Up 추정) 이며 게임에서 보고 튜닝.
+local SLIDE_TILT_ROLL_DEG    =  40.0  -- 양수: 총을 오른쪽으로 굴림
+local SLIDE_TILT_PITCH_DEG   = -12.0   -- 약간 아래로 숙임
+local SLIDE_LOC_OFFSET_RIGHT =  0.04  -- 오른쪽으로 살짝
+local SLIDE_LOC_OFFSET_DOWN  = -0.50  -- 아래로 살짝
+local SLIDE_BLEND_HZ         =  14.0  -- 클수록 빨리 자세 잡힘
+
+local armsBaseLoc   = nil
+local armsBaseRot   = nil
+local slideBlend    = 0.0
+
 local function clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
     if value > maxValue then return maxValue end
@@ -241,6 +253,53 @@ local function set_player_health(value)
     currentHealth = clamp(value, 0.0, MAX_HEALTH)
     isDead = currentHealth <= 0.0
     DamagePostProcess.SetHealthRatio(get_health_ratio())
+end
+
+local function cache_arms_base_transform()
+    if arms == nil or armsBaseLoc ~= nil then return end
+    armsBaseLoc = arms.RelativeLocation
+    armsBaseRot = arms:GetRotation()
+end
+
+local function damp_toward(current, target, hz, dt)
+    if dt == nil or dt <= 0.0 then return current end
+    local k = 1.0 - math.exp(-hz * dt)
+    return current + (target - current) * k
+end
+
+local function get_arm_anim_flags()
+    if obj == nil then return nil end
+    return _G.FPSArmAnimFlags and _G.FPSArmAnimFlags[obj.UUID]
+end
+
+local function update_slide_arm_tilt(dt)
+    if arms == nil then return end
+    local flags = get_arm_anim_flags()
+    if flags == nil or flags.needsSlideTilt ~= true then return end
+
+    cache_arms_base_transform()
+    if armsBaseLoc == nil or armsBaseRot == nil then return end
+
+    -- movement:IsSliding() 는 lua 에 노출 안 돼 있어 AnimInstance 가 매 프레임 채워주는 플래그를 읽는다.
+    local target = (flags.isSliding == true) and 1.0 or 0.0
+    slideBlend = damp_toward(slideBlend, target, SLIDE_BLEND_HZ, dt)
+
+    if slideBlend < 0.0001 and target == 0.0 then
+        arms:SetRelativeLocation(armsBaseLoc)
+        arms:SetRotation(armsBaseRot)
+        slideBlend = 0.0
+        return
+    end
+
+    arms:SetRotation(Vector.new(
+        armsBaseRot.X + SLIDE_TILT_ROLL_DEG  * slideBlend,
+        armsBaseRot.Y + SLIDE_TILT_PITCH_DEG * slideBlend,
+        armsBaseRot.Z))
+
+    arms:SetRelativeLocation(Vector.new(
+        armsBaseLoc.X,
+        armsBaseLoc.Y + SLIDE_LOC_OFFSET_RIGHT * slideBlend,
+        armsBaseLoc.Z + SLIDE_LOC_OFFSET_DOWN  * slideBlend))
 end
 
 local function cache_movement_defaults()
@@ -501,7 +560,11 @@ function BeginPlay()
     baseMaxWalkSpeed = nil
     baseSprintSpeedMultiplier = nil
     baseWallRunMaxSpeed = nil
+    armsBaseLoc = nil
+    armsBaseRot = nil
+    slideBlend = 0.0
     cache_movement_defaults()
+    cache_arms_base_transform()
     GameAudio.Initialize()
     GameAudio.PlayEnvironmentWind(0.35)
     currentAmmo = MAGAZINE_SIZE
@@ -608,6 +671,7 @@ function Tick(dt)
     end
 
     update_weapon_recoil(dt)
+    update_slide_arm_tilt(dt)
 
     if fireCooldown > 0 then
         fireCooldown = fireCooldown - dt
