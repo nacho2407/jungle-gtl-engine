@@ -513,9 +513,7 @@ int32 UEditorEngine::DuplicateSelectedActorsWithUndo()
 	}
 
 	const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&SelectionManager);
-	const FVector DuplicateOffsetStep(0.1f, 0.1f, 0.1f);
 	TArray<AActor*> NewSelection;
-	int32 DuplicateIndex = 0;
 	for (AActor* Src : ToDuplicate)
 	{
 		if (!Src)
@@ -531,11 +529,9 @@ int32 UEditorEngine::DuplicateSelectedActorsWithUndo()
 			continue;
 		}
 
-		// 복제 직후 고유 이름과 약간의 위치 offset을 부여해 원본과 겹치지 않게 합니다.
+		// 복제 직후 고유 이름만 부여하고 transform은 원본과 동일하게 유지합니다.
 		Dup->SetFName(FName(DuplicateName));
-		Dup->AddActorWorldOffset(DuplicateOffsetStep * static_cast<float>(DuplicateIndex + 1));
 		NewSelection.push_back(Dup);
-		++DuplicateIndex;
 	}
 
 	if (NewSelection.empty())
