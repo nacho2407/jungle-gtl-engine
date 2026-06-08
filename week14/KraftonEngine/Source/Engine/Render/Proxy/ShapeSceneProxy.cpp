@@ -3,6 +3,7 @@
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/SphereComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
+#include "Component/Shape/CurvedWallRunColliderComponent.h"
 #include "GameFramework/AActor.h"
 #include "Math/MathUtils.h"
 #include "Math/Quat.h"
@@ -116,6 +117,63 @@ namespace
 		AddWireHalfCircle(Lines, BotCenter, AxisX, AxisZ, Radius, HalfSegments, FMath::Pi);
 		AddWireHalfCircle(Lines, BotCenter, AxisY, AxisZ, Radius, HalfSegments, FMath::Pi);
 	}
+
+	void BuildCurvedWallLines(TArray<FWireLine>& Lines, const UCurvedWallRunColliderComponent* Curve,
+		const FVector& AxisX, const FVector& AxisY, const FVector& AxisZ)
+	{
+		if (!Curve) return;
+
+		const FVector Center = Curve->GetWorldLocation();
+		const float Radius = Curve->GetScaledRadius();
+		const float HalfHeight = Curve->GetScaledHalfHeight();
+		const float HalfThickness = Curve->GetScaledThickness() * 0.5f;
+		const float ArcRadians = Curve->GetArcAngleRadians();
+		const int32 Segments = (std::max)(Curve->GetSafeSegmentCount(), 4);
+
+		auto PointAt = [&](float Angle, float RadiusOffset, float Height)
+		{
+			const float SampleRadius = (std::max)(0.0f, Radius + RadiusOffset);
+			return Center
+				+ (AxisX * std::cos(Angle) + AxisY * std::sin(Angle)) * SampleRadius
+				+ AxisZ * Height;
+		};
+
+		for (float RadiusOffset : { -HalfThickness, HalfThickness })
+		{
+			FVector PrevTop = PointAt(-ArcRadians * 0.5f, RadiusOffset, HalfHeight);
+			FVector PrevBottom = PointAt(-ArcRadians * 0.5f, RadiusOffset, -HalfHeight);
+			for (int32 Index = 1; Index <= Segments; ++Index)
+			{
+				const float Alpha = static_cast<float>(Index) / static_cast<float>(Segments);
+				const float Angle = -ArcRadians * 0.5f + ArcRadians * Alpha;
+				const FVector NextTop = PointAt(Angle, RadiusOffset, HalfHeight);
+				const FVector NextBottom = PointAt(Angle, RadiusOffset, -HalfHeight);
+
+				Lines.push_back({ PrevTop, NextTop });
+				Lines.push_back({ PrevBottom, NextBottom });
+				PrevTop = NextTop;
+				PrevBottom = NextBottom;
+			}
+		}
+
+		const float StartAngle = -ArcRadians * 0.5f;
+		const float EndAngle = ArcRadians * 0.5f;
+		for (float Angle : { StartAngle, EndAngle })
+		{
+			Lines.push_back({ PointAt(Angle, -HalfThickness, HalfHeight), PointAt(Angle, HalfThickness, HalfHeight) });
+			Lines.push_back({ PointAt(Angle, -HalfThickness, -HalfHeight), PointAt(Angle, HalfThickness, -HalfHeight) });
+			Lines.push_back({ PointAt(Angle, -HalfThickness, -HalfHeight), PointAt(Angle, -HalfThickness, HalfHeight) });
+			Lines.push_back({ PointAt(Angle, HalfThickness, -HalfHeight), PointAt(Angle, HalfThickness, HalfHeight) });
+		}
+
+		const int32 VerticalStep = (std::max)(1, Segments / 4);
+		for (int32 Index = 0; Index <= Segments; Index += VerticalStep)
+		{
+			const float Alpha = static_cast<float>(Index) / static_cast<float>(Segments);
+			const float Angle = -ArcRadians * 0.5f + ArcRadians * Alpha;
+			Lines.push_back({ PointAt(Angle, 0.0f, -HalfHeight), PointAt(Angle, 0.0f, HalfHeight) });
+		}
+	}
 }
 
 // ============================================================
@@ -187,5 +245,9 @@ void FShapeSceneProxy::RebuildLines()
 			Capsule->GetScaledCapsuleRadius(),
 			Capsule->GetScaledCapsuleHalfHeight(),
 			AxisX, AxisY, AxisZ);
+	}
+	else if (const UCurvedWallRunColliderComponent* Curve = Cast<UCurvedWallRunColliderComponent>(OwnerComp))
+	{
+		BuildCurvedWallLines(CachedLines, Curve, AxisX, AxisY, AxisZ);
 	}
 }
