@@ -1680,7 +1680,7 @@ Engine.IsPaused = Game.IsPaused
 			return static_cast<int32>(A["score"].ToInt()) > static_cast<int32>(B["score"].ToInt());
 		});
 
-		const int32 CountLimit = (std::max)(0, MaxCount.value_or(8));
+		const int32 CountLimit = (std::max)(0, MaxCount.value_or(7));
 		int32 LuaIndex = 1;
 		for (json::JSON Score : Scores)
 		{

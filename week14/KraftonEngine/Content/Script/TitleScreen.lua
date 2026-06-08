@@ -155,10 +155,10 @@ local function populate_scoreboard()
 
     local scores = {}
     if ScoreManager ~= nil and ScoreManager.GetSavedScores ~= nil then
-        scores = ScoreManager.GetSavedScores(8) or {}
+        scores = ScoreManager.GetSavedScores(7) or {}
     end
 
-    for index = 1, 8 do
+    for index = 1, 7 do
         local row = scores[index]
         if row ~= nil then
             set_scoreboard_text(scoreboard_id("scoreboard-name", index), row.finishedAt or row.endingId or "MISSION CLEAR")

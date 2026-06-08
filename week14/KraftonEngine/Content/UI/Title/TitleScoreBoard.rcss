@@ -115,7 +115,7 @@
 	left: 0px;
 	top: 58px;
 	width: 764px;
-	height: 344px;
+	height: 288px;
 }
 
 .scoreboard-footer-separator {

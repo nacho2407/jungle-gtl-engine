@@ -77,8 +77,14 @@ local DRAKE_COMBAT_HEALTH_MARKERS = { 0.90, 0.75, 0.50, 0.25 }
 local DRAKE_COMBAT_EXCLUDED_DIALOGUE_IDS = {
     DrakeCombat_Drake_ThatIsWhy = true,
 }
+local BOSS_BGM_KEY = "BossMusic"
+local BOSS_BGM_PATH = "Music/Boss.mp3"
+local BOSS_BGM_LOOP_NAME = "BossMusicLoop"
+local BOSS_BGM_VOLUME = 0.74
+local BOSS_BGM_FADE_OUT_MS = 5000.0
 local CARD_KEY_PREFAB_PATH = "Content/Prefab/CardKey.prefab"
 local CARD_KEY_SPAWN_OFFSET = Vector.new(2.0, 0.0, 1.0)
+local CARD_KEY_ITEM_ID = "vantus_master_key"
 
 local MOVE_IDLE = 0
 local MOVE_WALK = 1
@@ -294,6 +300,8 @@ local activeDrakeCombatDialogue = nil
 local activeDrakeCombatDialogueTimer = 0.0
 local activeDrakeCombatDialogueDuration = 0.0
 local bSpawnedCardKey = false
+local bBossMusicLoaded = false
+local bBossMusicPlaying = false
 
 local function apply_boss_phase_visual(targetPhase)
     if mesh == nil or mesh.SetMaterialVector4Parameter == nil then
@@ -885,6 +893,44 @@ local function play_death_fall_camera_shake()
     CameraManager.StartWaveShake(DEATH_FALL_SHAKE_SCALE)
 end
 
+local function start_boss_music()
+    if AudioManager == nil or AudioManager.Load == nil or AudioManager.PlayLoop == nil then
+        return false
+    end
+
+    if not bBossMusicLoaded then
+        bBossMusicLoaded = AudioManager.Load(BOSS_BGM_KEY, BOSS_BGM_PATH, true) == true
+        if not bBossMusicLoaded then
+            debug_log("[BossTitanAI] Boss music load failed: " .. BOSS_BGM_PATH)
+            return false
+        end
+    end
+
+    bBossMusicPlaying = AudioManager.PlayLoop(BOSS_BGM_KEY, BOSS_BGM_LOOP_NAME, BOSS_BGM_VOLUME, 1.0) == true
+    return bBossMusicPlaying
+end
+
+local function fade_out_boss_music()
+    if not bBossMusicPlaying or AudioManager == nil then
+        return
+    end
+
+    if AudioManager.FadeOutLoop ~= nil then
+        AudioManager.FadeOutLoop(BOSS_BGM_LOOP_NAME, BOSS_BGM_FADE_OUT_MS)
+    elseif AudioManager.StopLoop ~= nil then
+        AudioManager.StopLoop(BOSS_BGM_LOOP_NAME)
+    end
+
+    bBossMusicPlaying = false
+end
+
+local function stop_boss_music()
+    if AudioManager ~= nil and AudioManager.StopLoop ~= nil then
+        AudioManager.StopLoop(BOSS_BGM_LOOP_NAME)
+    end
+    bBossMusicPlaying = false
+end
+
 local function start_death_fall()
     local startRotation = obj.Rotation
     local startLocation = obj.Location
@@ -908,8 +954,35 @@ local function start_death_fall()
     return true
 end
 
+local function get_first_spawned_actor(spawnResult)
+    if spawnResult == nil then
+        return nil
+    end
+    if spawnResult.UUID ~= nil then
+        return spawnResult
+    end
+    return spawnResult[1]
+end
+
+local function register_card_key_actor(cardKey)
+    if cardKey == nil or cardKey.UUID == nil then
+        return
+    end
+
+    _G.ItemActorIds = _G.ItemActorIds or {}
+    _G.ItemActorIds[cardKey.UUID] = CARD_KEY_ITEM_ID
+
+    _G.InspectableItems = _G.InspectableItems or {}
+    _G.InspectableItems[cardKey.UUID] = {
+        actor = cardKey,
+        item_id = CARD_KEY_ITEM_ID,
+    }
+end
+
 local function spawn_card_key_reward()
-    if bSpawnedCardKey then
+    if bSpawnedCardKey
+        or (_G.Level3CardKeySpawned == true)
+        or (_G.PickedUpItems ~= nil and _G.PickedUpItems[CARD_KEY_ITEM_ID] == true) then
         return
     end
     bSpawnedCardKey = true
@@ -920,16 +993,14 @@ local function spawn_card_key_reward()
     end
 
     local spawnLocation = obj.Location + CARD_KEY_SPAWN_OFFSET
-    local cardKey = World.SpawnPrefab(CARD_KEY_PREFAB_PATH, spawnLocation)
+    local cardKey = get_first_spawned_actor(World.SpawnPrefab(CARD_KEY_PREFAB_PATH, spawnLocation))
     if cardKey == nil then
         debug_log("[BossTitanAI] Card key prefab spawn failed: " .. CARD_KEY_PREFAB_PATH)
         return
     end
 
-    _G.ItemActorIds = _G.ItemActorIds or {}
-    if cardKey.UUID ~= nil then
-        _G.ItemActorIds[cardKey.UUID] = "vantus_master_key"
-    end
+    _G.Level3CardKeySpawned = true
+    register_card_key_actor(cardKey)
     debug_log(string.format(
         "[BossTitanAI] Spawned card key reward at (%.2f, %.2f, %.2f).",
         spawnLocation.X,
@@ -961,6 +1032,8 @@ local function update_death_fall(dt)
 end
 
 local function start_death_sequence()
+    _G.Level3BossDefeated = true
+    fade_out_boss_music()
     activeAttack = nil
     leapState = nil
     openingWalkActive = false
@@ -1860,6 +1933,7 @@ function BeginPlay()
     leapState = nil
     deathFallState = nil
     bSpawnedCardKey = false
+    bBossMusicPlaying = false
     currentAnim = nil
     currentTactic = TACTIC.openingWalk
     openingWalkActive = true
@@ -1872,6 +1946,10 @@ function BeginPlay()
     cooldowns.melee = 0.0
     cooldowns.retreat = 0.0
     cooldowns.leap = 2.5
+    _G.Level3BossDefeated = false
+    if _G.PickedUpItems == nil or _G.PickedUpItems[CARD_KEY_ITEM_ID] ~= true then
+        _G.Level3CardKeySpawned = false
+    end
 
     if _G.Level3BossIntroCutsceneActive == true then
         -- 인트로 컷씬 중 스폰된 보스는 기존 오프닝 접근 루틴 없이 바로 전투 상태로 전환될 준비만 해둡니다.
@@ -1892,6 +1970,7 @@ function BeginPlay()
     debugSessionTime = 0.0
 
     play_anim(ANIM.idle, true, true)
+    start_boss_music()
     debug_log("[BossTitanAI] Titan boss online.")
 end
 
@@ -1911,6 +1990,7 @@ function EndPlay()
 
     unregister_boss_damageable()
     damageableCallbacks = nil
+    stop_boss_music()
     debug_close_log()
 end
 

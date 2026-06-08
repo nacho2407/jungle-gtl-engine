@@ -29,6 +29,9 @@ local BOSS_LEAP_START_ACTION = "leapStart"
 local BOSS_LEAP_START_DURATION = 0.55
 local BOSS_LEAP_LAND_ACTION = "leapLand"
 local BOSS_LEAP_LAND_DURATION = 0.7
+local POST_COMBAT_INTERACT_TEXT = "INSERT KEY"
+local POST_COMBAT_LOCKED_TEXT = "KEY REQUIRED"
+local ENDING_MODULE = "Ending"
 
 local story = nil
 local voiceEntries = {}
@@ -54,6 +57,8 @@ local bossControlSerial = 0
 local bossImpactPlayed = false
 local revealStage = "none"
 local revealTimer = 0.0
+local postCombatInteractionRegistered = false
+local postCombatInteractionHasKey = false
 
 local playerActorForCamera = nil
 local cameraComponent = nil
@@ -541,6 +546,7 @@ local function unregister_interaction()
     if obj ~= nil and obj.UUID ~= nil and _G.InspectableItems ~= nil then
         _G.InspectableItems[obj.UUID] = nil
     end
+    postCombatInteractionRegistered = false
 end
 
 local function restore_player_after_cutscene()
@@ -815,6 +821,51 @@ local function register_interaction()
     }
 end
 
+local function has_vantus_master_key()
+    return _G.PlayerHasVantusMasterKey == true
+        or (_G.PickedUpItems ~= nil and _G.PickedUpItems.vantus_master_key == true)
+end
+
+local function start_post_combat_ending()
+    if not has_vantus_master_key() then
+        return true
+    end
+
+    unregister_interaction()
+
+    local ok, ending = pcall(require, ENDING_MODULE)
+    if not ok or ending == nil or ending.Start == nil then
+        print("[Level3BossIntro] Ending module unavailable: " .. tostring(ending))
+        return true
+    end
+
+    ending.Start()
+    return true
+end
+
+local function register_post_combat_interaction()
+    if obj == nil or obj.UUID == nil then
+        return
+    end
+
+    local hasKey = has_vantus_master_key()
+    if postCombatInteractionRegistered and postCombatInteractionHasKey == hasKey then
+        return
+    end
+
+    postCombatInteractionRegistered = true
+    postCombatInteractionHasKey = hasKey
+
+    _G.InspectableItems = _G.InspectableItems or {}
+    _G.InspectableItems[obj.UUID] = {
+        actor = obj,
+        interact_text = hasKey and POST_COMBAT_INTERACT_TEXT or POST_COMBAT_LOCKED_TEXT,
+        on_interact = function()
+            return start_post_combat_ending()
+        end,
+    }
+end
+
 local function update_skip(dt)
     if is_skip_held() then
         skipHoldTime = skipHoldTime + dt
@@ -858,6 +909,8 @@ function BeginPlay()
     bossImpactPlayed = false
     revealStage = "none"
     revealTimer = 0.0
+    postCombatInteractionRegistered = false
+    postCombatInteractionHasKey = false
     playerActorForCamera = nil
     cameraComponent = nil
     playerStartControlRotation = nil
@@ -910,6 +963,9 @@ function Tick(dt)
     end
 
     if not cutsceneActive then
+        if cutsceneStarted and _G.Level3BossDefeated == true then
+            register_post_combat_interaction()
+        end
         return
     end
 

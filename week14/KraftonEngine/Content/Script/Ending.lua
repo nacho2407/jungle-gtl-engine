@@ -52,6 +52,11 @@ local ENDING_CREDITS = {
     { role = "SPECIAL THANKS", lines = { "KRAFTON JUNGLE", "GAME TECH LAB" } },
 }
 
+local function has_vantus_master_key()
+    return _G.PlayerHasVantusMasterKey == true
+        or (_G.PickedUpItems ~= nil and _G.PickedUpItems.vantus_master_key == true)
+end
+
 local function px(value)
     return string.format("%.2fpx", value)
 end
@@ -379,6 +384,9 @@ end
 
 local function start_ending()
     if cutsceneStarted then return end
+    if not has_vantus_master_key() then
+        return
+    end
 
     cutsceneStarted = true
     cutsceneFinished = false

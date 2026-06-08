@@ -21,7 +21,7 @@
                 </div>
                 <div id="scoreboard-separator-01" class="score-separator" style="position: absolute; left: 0.00px; top: 44.00px; width: 764.00px; height: 1.00px;"></div>
 
-                <div id="scoreboard-rows-group" class="scoreboard-rows-group" style="position: absolute; left: 0.00px; top: 58.00px; width: 764.00px; height: 344.00px;">
+                <div id="scoreboard-rows-group" class="scoreboard-rows-group" style="position: absolute; left: 0.00px; top: 58.00px; width: 764.00px; height: 288.00px;">
                     <div id="scoreboard-row-01" class="score-row" style="position: absolute; left: 0.00px; top: 0.00px; width: 764.00px; height: 36.00px;">
                         <div id="scoreboard-name-01" class="score-cell score-name" data-ui-editor="text">Empty Slot</div>
                         <div id="scoreboard-score-01" class="score-cell score-score" data-ui-editor="text">000000</div>
@@ -56,11 +56,6 @@
                         <div id="scoreboard-name-07" class="score-cell score-name" data-ui-editor="text">Empty Slot</div>
                         <div id="scoreboard-score-07" class="score-cell score-score" data-ui-editor="text">000000</div>
                         <div id="scoreboard-time-07" class="score-cell score-time" data-ui-editor="text">--:--</div>
-                    </div>
-                    <div id="scoreboard-row-08" class="score-row" style="position: absolute; left: 0.00px; top: 294.00px; width: 764.00px; height: 36.00px;">
-                        <div id="scoreboard-name-08" class="score-cell score-name" data-ui-editor="text">Empty Slot</div>
-                        <div id="scoreboard-score-08" class="score-cell score-score" data-ui-editor="text">000000</div>
-                        <div id="scoreboard-time-08" class="score-cell score-time" data-ui-editor="text">--:--</div>
                     </div>
                 </div>
             </div>

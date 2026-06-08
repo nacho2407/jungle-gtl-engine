@@ -14,6 +14,8 @@
 
 namespace
 {
+	constexpr int32 MaxSavedScores = 7;
+
 	double NowSeconds()
 	{
 		using Clock = std::chrono::steady_clock;
@@ -94,6 +96,31 @@ namespace
 		Object["custom"] = Custom;
 
 		return Object;
+	}
+
+	json::JSON SortAndLimitScores(json::JSON& Scores)
+	{
+		std::vector<json::JSON> SortedScores;
+		for (auto& Score : Scores.ArrayRange())
+		{
+			if (Score.JSONType() == json::JSON::Class::Object)
+			{
+				SortedScores.push_back(Score);
+			}
+		}
+
+		std::sort(SortedScores.begin(), SortedScores.end(), [](json::JSON A, json::JSON B)
+		{
+			return static_cast<int32>(A["score"].ToInt()) > static_cast<int32>(B["score"].ToInt());
+		});
+
+		json::JSON LimitedScores = json::JSON::Make(json::JSON::Class::Array);
+		for (int32 Index = 0; Index < static_cast<int32>(SortedScores.size()) && Index < MaxSavedScores; ++Index)
+		{
+			LimitedScores.append(SortedScores[Index]);
+		}
+
+		return LimitedScores;
 	}
 }
 
@@ -260,6 +287,7 @@ bool FScoreManager::SaveFinalScore(const FString& EndingId)
 	}
 
 	Root["scores"].append(SnapshotToJson(Snapshot, CustomStats));
+	Root["scores"] = SortAndLimitScores(Root["scores"]);
 
 	std::ofstream File(SavePath, std::ios::binary | std::ios::trunc);
 	if (!File.is_open())
