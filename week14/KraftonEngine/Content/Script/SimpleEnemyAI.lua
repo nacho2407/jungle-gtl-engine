@@ -2,6 +2,12 @@ local CombatEvents = require("Game.CombatEvents")
 
 local PLAYER_TAG = "player"
 
+-- Base tuning was done against a scale-7 robodude. At BeginPlay the actor's
+-- actual scale is read and distance/speed constants are rescaled accordingly,
+-- so the AI works the same on a scale-12 robodude (e.g. FL_Level1.Scene) as
+-- on the scale-7 ones (Default.Scene / FPSARMREAL.Scene).
+local SCALE_REFERENCE = 7.0
+
 local MAX_HEALTH = 60.0
 local THINK_INTERVAL = 0.16
 local SIGHT_RANGE = 260.0
@@ -22,6 +28,8 @@ local CHASE_START_RANGE = 34.0
 local CHASE_STOP_RANGE = 25.0
 local FOOTSTEP_INTERVAL = 0.42
 
+local scaleMultiplier = 1.0
+
 local AUDIO_WALK_STEP = "enemy.human.walk.step"
 local AUDIO_FIRE = "enemy.human.weapon.fire"
 local AUDIO_DEATH = "enemy.human.death"
@@ -39,6 +47,8 @@ local hitReactTimer = 0.0
 local footstepTimer = 0.0
 local alerted = false
 local isMoving = false
+local debugTimer = 0.0
+local DEBUG_INTERVAL = 1.0
 
 local function clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
@@ -160,7 +170,7 @@ local function clear_anim_state()
 end
 
 local function get_eye_location()
-    return obj.Location + Vector.new(0.0, 0.0, EYE_HEIGHT)
+    return obj.Location + Vector.new(0.0, 0.0, EYE_HEIGHT * scaleMultiplier)
 end
 
 local function get_target_location(target)
@@ -190,11 +200,12 @@ local function update_chase(target, dt)
 
     local flatDelta = horizontal(target.Location - obj.Location)
     local distance = flatDelta:Length()
-    if distance <= CHASE_STOP_RANGE then
+    local stopRange = CHASE_STOP_RANGE * scaleMultiplier
+    if distance <= stopRange then
         return
     end
 
-    if distance < CHASE_START_RANGE and not wasMoving then
+    if distance < CHASE_START_RANGE * scaleMultiplier and not wasMoving then
         return
     end
 
@@ -203,7 +214,7 @@ local function update_chase(target, dt)
         return
     end
 
-    local step = math.min(CHASE_SPEED * dt, math.max(distance - CHASE_STOP_RANGE, 0.0))
+    local step = math.min(CHASE_SPEED * scaleMultiplier * dt, math.max(distance - stopRange, 0.0))
     if step <= 0.0 then
         return
     end
@@ -225,7 +236,7 @@ local function can_see_target(target)
     local targetPos = get_target_location(target)
     local toTarget = targetPos - source
     local distance = toTarget:Length()
-    if distance <= 0.001 or distance > SIGHT_RANGE then
+    if distance <= 0.001 or distance > SIGHT_RANGE * scaleMultiplier then
         return false
     end
 
@@ -270,7 +281,17 @@ local function should_alert_to_target(target)
     if not is_valid_actor(target) then return false end
 
     local distance = horizontal_distance_to(target)
-    if distance <= PROXIMITY_ALERT_RANGE and has_clear_static_line_to_target(target, PROXIMITY_ALERT_RANGE) then
+    local proximityRange = PROXIMITY_ALERT_RANGE * scaleMultiplier
+
+    -- 매우 가까운 거리(파이어 레인지 절반 이내)에선 라인오브사이트/FOV 무시.
+    -- scale-12 robodude처럼 자체 충돌체가 두꺼운 경우 raycast가 가짜로 막히고,
+    -- 코앞에서는 FOV dot 자체가 의미 없어지므로 무조건 경계 상태로 진입한다.
+    local closeRange = FIRE_RANGE * scaleMultiplier * 0.5
+    if distance <= closeRange then
+        return true
+    end
+
+    if distance <= proximityRange and has_clear_static_line_to_target(target, proximityRange) then
         return true
     end
 
@@ -278,7 +299,8 @@ local function should_alert_to_target(target)
         return true
     end
 
-    if alerted and distance <= FORGET_RANGE and has_clear_static_line_to_target(target, FORGET_RANGE) then
+    local forgetRange = FORGET_RANGE * scaleMultiplier
+    if alerted and distance <= forgetRange and has_clear_static_line_to_target(target, forgetRange) then
         return true
     end
 
@@ -375,12 +397,13 @@ local function fire_at(target)
     if aimDelta:Length() <= 0.001 then return end
 
     local fireDir = make_inaccurate_direction(aimDelta)
-    local hit = World.RaycastPrimitive(source, fireDir, FIRE_RANGE, obj)
-    local hitLocation = source + fireDir * FIRE_RANGE
+    local fireRange = FIRE_RANGE * scaleMultiplier
+    local hit = World.RaycastPrimitive(source, fireDir, fireRange, obj)
+    local hitLocation = source + fireDir * fireRange
     local hitNormal = nil
     local hitActor = nil
     local targetHitLocation = get_target_location(target)
-    local bDirectTargetHit = has_clear_static_line_to_target(target, FIRE_RANGE)
+    local bDirectTargetHit = has_clear_static_line_to_target(target, fireRange)
 
     if hit ~= nil then
         hitLocation = hit.WorldHitLocation
@@ -437,6 +460,14 @@ function BeginPlay()
     isMoving = false
     targetActor = nil
 
+    local actorScale = obj.Scale
+    local s = math.max(actorScale.X, actorScale.Y, actorScale.Z)
+    if s > 0.0 then
+        scaleMultiplier = s / SCALE_REFERENCE
+    else
+        scaleMultiplier = 1.0
+    end
+
     obj:AddTag("enemy")
     CombatEvents.RegisterDamageable(obj, {
         ApplyDamage = apply_enemy_damage,
@@ -482,8 +513,22 @@ function Tick(dt)
     update_chase(targetActor, dt)
     update_anim_state()
 
-    if alerted and horizontal_distance_to(targetActor) <= FIRE_RANGE and hitReactTimer <= 0.0 and fireTimer <= 0.0 then
+    if alerted and horizontal_distance_to(targetActor) <= FIRE_RANGE * scaleMultiplier and hitReactTimer <= 0.0 and fireTimer <= 0.0 then
         fire_at(targetActor)
         fireTimer = random_range(FIRE_INTERVAL_MIN, FIRE_INTERVAL_MAX)
+    end
+
+    debugTimer = debugTimer - dt
+    if debugTimer <= 0.0 then
+        debugTimer = DEBUG_INTERVAL
+        local hasTarget = is_valid_actor(targetActor)
+        local dist = hasTarget and horizontal_distance_to(targetActor) or -1.0
+        print(string.format(
+            "[SimpleEnemyAI] target=%s dist=%.2f alerted=%s fireRange=%.2f scale=%.2f",
+            hasTarget and "yes" or "NO",
+            dist,
+            tostring(alerted),
+            FIRE_RANGE * scaleMultiplier,
+            scaleMultiplier))
     end
 end
