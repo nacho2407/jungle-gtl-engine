@@ -44,7 +44,9 @@
 #include "Object/Reflection/UClass.h"
 #include "Render/Scene/FScene.h"
 #include "Render/Types/MinimalViewInfo.h"
+#include "Serialization/SceneSaveManager.h"
 #include "Platform/Paths.h"
+#include "SimpleJSON/json.hpp"
 #include "Core/ProjectSettings.h"
 #include "Math/Transform.h"
 #include "Math/Vector.h"
@@ -120,6 +122,24 @@ FString NormalizeScriptFilePath(FString ScriptFile)
 	return ScriptFile;
 }
 
+std::filesystem::path ResolveLuaAssetPath(const FString& AssetPath)
+{
+	FString Normalized = NormalizeScriptFilePath(AssetPath);
+	std::filesystem::path Path(FPaths::ToWide(Normalized));
+	if (Path.is_absolute())
+	{
+		return Path.lexically_normal();
+	}
+
+	constexpr const char* ContentPrefix = "Content/";
+	if (Normalized.rfind(ContentPrefix, 0) == 0)
+	{
+		return (std::filesystem::path(FPaths::RootDir()) / FPaths::ToWide(Normalized)).lexically_normal();
+	}
+
+	return (std::filesystem::path(FPaths::AssetDir()) / FPaths::ToWide(Normalized)).lexically_normal();
+}
+
 std::filesystem::path ResolveLuaDebugLogPath(const FString& FileName)
 {
 	std::filesystem::path Relative(FPaths::ToWide(FileName.empty() ? FString("lua_log.txt") : FileName));
@@ -162,6 +182,20 @@ bool WriteLuaDebugTextFile(const FString& FileName, const FString& Text, bool bA
 		UE_LOG("[Lua] DebugFile failed to write: %s", FPaths::ToUtf8(LogPath.wstring()).c_str());
 	}
 	return bOk;
+}
+
+bool ReadLuaTextFile(const std::wstring& Path, FString& OutText)
+{
+	std::ifstream File(Path, std::ios::binary);
+	if (!File.is_open())
+	{
+		return false;
+	}
+
+	std::ostringstream Buffer;
+	Buffer << File.rdbuf();
+	OutText = Buffer.str();
+	return true;
 }
 
 bool HasPathSeparator(const FString& Path)
@@ -1540,6 +1574,62 @@ Engine.IsPaused = Game.IsPaused
 	{
 		return FScoreManager::Get().GetSaveFilePath();
 	});
+	ScoreManager.set_function("GetSavedScores", [&Lua](sol::optional<int32> MaxCount)
+	{
+		sol::table Result = Lua.create_table();
+		const std::wstring SavePath = FPaths::Combine(FPaths::SaveDir(), L"scores.json");
+		FString Text;
+		if (!ReadLuaTextFile(SavePath, Text))
+		{
+			return Result;
+		}
+
+		json::JSON Root = json::JSON::Load(Text);
+		if (Root.JSONType() != json::JSON::Class::Object
+			|| !Root.hasKey("scores")
+			|| Root["scores"].JSONType() != json::JSON::Class::Array)
+		{
+			return Result;
+		}
+
+		std::vector<json::JSON> Scores;
+		for (auto& Score : Root["scores"].ArrayRange())
+		{
+			if (Score.JSONType() == json::JSON::Class::Object)
+			{
+				Scores.push_back(Score);
+			}
+		}
+
+		std::sort(Scores.begin(), Scores.end(), [](json::JSON A, json::JSON B)
+		{
+			return static_cast<int32>(A["score"].ToInt()) > static_cast<int32>(B["score"].ToInt());
+		});
+
+		const int32 CountLimit = (std::max)(0, MaxCount.value_or(8));
+		int32 LuaIndex = 1;
+		for (json::JSON Score : Scores)
+		{
+			if (CountLimit > 0 && LuaIndex > CountLimit)
+			{
+				break;
+			}
+
+			sol::table Row = Lua.create_table();
+			Row["runId"] = Score["runId"].ToString();
+			Row["startedAt"] = Score["startedAt"].ToString();
+			Row["finishedAt"] = Score["finishedAt"].ToString();
+			Row["endingId"] = Score["endingId"].ToString();
+			Row["playTimeSeconds"] = static_cast<float>(Score["playTimeSeconds"].ToFloat());
+			Row["enemyKills"] = static_cast<int32>(Score["enemyKills"].ToInt());
+			Row["retryCount"] = static_cast<int32>(Score["retryCount"].ToInt());
+			Row["deathCount"] = static_cast<int32>(Score["deathCount"].ToInt());
+			Row["score"] = static_cast<int32>(Score["score"].ToInt());
+			Result[LuaIndex++] = Row;
+		}
+
+		return Result;
+	});
 }
 
 void FLuaScriptManager::RegisterMathBindings(sol::state& Lua)
@@ -2340,6 +2430,27 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		if (!Cls) return nullptr;
 		return W->SpawnActorByClass(Cls);
 	});
+	World.set_function("SpawnPrefab", [](const FString& PrefabPath, const FVector& Location) -> AActor*
+	{
+		if (!GEngine) return nullptr;
+		UWorld* W = GEngine->GetWorld();
+		if (!W) return nullptr;
+
+		const std::filesystem::path FullPath = ResolveLuaAssetPath(PrefabPath);
+		TArray<AActor*> CreatedActors;
+		if (!FSceneSaveManager::InstantiatePrefabFromJSON(
+			FPaths::ToUtf8(FullPath.wstring()),
+			W,
+			Location,
+			CreatedActors,
+			W->GetEditorOutlinerState()))
+		{
+			UE_LOG("[Lua] World.SpawnPrefab failed: %s", FPaths::ToUtf8(FullPath.wstring()).c_str());
+			return nullptr;
+		}
+
+		return CreatedActors.empty() ? nullptr : CreatedActors.front();
+	});
 	World.set_function("SpawnParticleSystem",
 		[](const FString& ParticlePath, const FVector& Location, sol::optional<FVector> Rotation) -> AActor*
 	{
@@ -2464,6 +2575,7 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 
 	FLuaDocRegistry::Get().Type("WorldLib")
 		.Method("---@param className string\n---@return Actor?\nfunction World.SpawnActor(className) end")
+		.Method("---@param prefabPath string\n---@param location Vector\n---@return Actor?\nfunction World.SpawnPrefab(prefabPath, location) end")
 		.Method("---@param particlePath string\n---@param location Vector\n---@param rotation? Vector\n---@return Actor?\nfunction World.SpawnParticleSystem(particlePath, location, rotation) end")
 		.Method("---@param actorName string\n---@return Actor?\nfunction World.FindActorByName(actorName) end")
 		.Method("---@param className string\n---@return Actor?\nfunction World.FindFirstActorByClass(className) end")

@@ -18,6 +18,7 @@
             <div id="producer-credit-name" class="producer-credit-name" data-ui-editor="text">KRAFTON JUNGLE</div>
             <div id="producer-credit-name-line2" class="producer-credit-name producer-credit-name-line2" data-ui-editor="text">GAME TECH LAB 3RD</div>
         </div>
+        <div id="ending-fade-overlay" class="ending-fade-overlay"></div>
         <div id="cutscene-skip-prompt" class="cutscene-skip-prompt">
             <div id="cutscene-skip-key" class="cutscene-skip-key" data-ui-editor="text">Ctrl / B</div>
             <div id="cutscene-skip-label" class="cutscene-skip-label" data-ui-editor="text">SKIP</div>

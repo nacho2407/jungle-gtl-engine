@@ -80,15 +80,13 @@ body {
     left: 36px;
     top: 184px;
     width: 648px;
-    height: 222px;
+    height: 148px;
 }
 
 #score-result-row-time-group,
 #score-result-row-kills-group,
 #score-result-row-retry-group,
-#score-result-row-deaths-group,
-#score-result-row-accuracy-group,
-#score-result-row-damage-group {
+#score-result-row-deaths-group {
     position: absolute;
     left: 0px;
     width: 648px;
@@ -109,14 +107,6 @@ body {
 
 #score-result-row-deaths-group {
     top: 114px;
-}
-
-#score-result-row-accuracy-group {
-    top: 152px;
-}
-
-#score-result-row-damage-group {
-    top: 190px;
 }
 
 .score-result-row {

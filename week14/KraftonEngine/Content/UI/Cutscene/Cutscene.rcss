@@ -102,6 +102,17 @@ body {
 	top: 72px;
 }
 
+.ending-fade-overlay {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	background-color: #000000;
+	opacity: 0.0;
+	display: none;
+}
+
 .cutscene-skip-prompt {
 	position: absolute;
 	right: 24.00px;

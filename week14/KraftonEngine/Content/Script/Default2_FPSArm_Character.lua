@@ -78,6 +78,12 @@ local reloadAudioTrack = 1
 local reloadAudioSteps = nil
 local reloadAudioNextIndex = 1
 local isDead       = false
+local hasVantusMasterKey = false
+
+local function set_vantus_master_key_owned(owned)
+    hasVantusMasterKey = owned == true
+    _G.PlayerHasVantusMasterKey = hasVantusMasterKey
+end
 local deathHandled = false
 local weaponSpread = 0.0
 local recoilPatternIndex = 1
@@ -1188,6 +1194,12 @@ function BeginPlay()
         zOrder = 80,
     })
     ItemInspectSystem.Initialize()
+    set_vantus_master_key_owned(_G.PickedUpItems ~= nil and _G.PickedUpItems.vantus_master_key == true)
+    ItemInspectSystem.SetPickupCallback(function(itemId)
+        if itemId == "vantus_master_key" then
+            set_vantus_master_key_owned(true)
+        end
+    end)
 end
 
 function EndPlay()

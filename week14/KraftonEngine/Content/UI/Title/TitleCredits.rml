@@ -17,9 +17,9 @@
                 <div id="credits-development-label" class="credits-section-label" data-ui-editor="text">Development</div>
                 <div id="credits-team-name" class="credits-team-name" data-ui-editor="text">Needs More Sleep</div>
 
-                <div id="credits-member-01" class="credits-member" data-ui-editor="text">전현길 | UI/UX Programming, Sound Design, Scenario &amp; Cinematics</div>
-                <div id="credits-member-02" class="credits-member" data-ui-editor="text">장민준 | Engine &amp; Editor Enhancement, Level Design, Enemy AI</div>
-                <div id="credits-member-03" class="credits-member" data-ui-editor="text">김효범 | Character Control &amp; Action Programming, Asset Management</div>
+                <div id="credits-member-01" class="credits-member" data-ui-editor="text">JEON HYEONGIL | Developer</div>
+                <div id="credits-member-02" class="credits-member" data-ui-editor="text">JANG MINJOON | Developer</div>
+                <div id="credits-member-03" class="credits-member" data-ui-editor="text">KIM HYOBEOM | Developer</div>
 
                 <div id="credits-special-label" class="credits-section-label credits-special-label" data-ui-editor="text">Special Thanks</div>
                 <div id="credits-special-name" class="credits-special-name" data-ui-editor="text">Krafton Jungle Game Tech Lab</div>

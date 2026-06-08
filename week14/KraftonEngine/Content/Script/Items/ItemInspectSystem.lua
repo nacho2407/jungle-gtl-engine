@@ -12,6 +12,7 @@ local focusedItemId = nil
 local activeActor = nil
 local activeItemId = nil
 local panelOpen = false
+local pickupCallback = nil
 
 local function get_item_data(itemId)
     if itemId == nil then return nil end
@@ -114,6 +115,9 @@ local function pickup_active_item()
     if itemId ~= nil then
         _G.PickedUpItems = _G.PickedUpItems or {}
         _G.PickedUpItems[itemId] = true
+        if pickupCallback ~= nil then
+            pickupCallback(itemId, actor)
+        end
     end
     if actor ~= nil and type(actor.SetOutline) == "function" then
         actor:SetOutline(false)
@@ -178,11 +182,16 @@ function M.Initialize()
     ensure_widget()
 end
 
+function M.SetPickupCallback(callback)
+    pickupCallback = callback
+end
+
 function M.Shutdown()
     clear_focus()
     panelOpen = false
     activeActor = nil
     activeItemId = nil
+    pickupCallback = nil
 
     if widget ~= nil and widget:IsInViewport() then
         widget:RemoveFromParent()

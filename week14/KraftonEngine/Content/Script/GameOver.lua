@@ -90,10 +90,6 @@ local function mark_level1_intro_skip_for_retry()
 end
 
 local function retry()
-    if ScoreManager ~= nil and ScoreManager.ResetRun ~= nil then
-        -- Retry는 새 시도로 간주하므로 점수와 처치 누적을 0점부터 다시 시작합니다.
-        ScoreManager.ResetRun()
-    end
     if ScoreManager ~= nil and ScoreManager.AddRetry ~= nil then
         ScoreManager.AddRetry(1)
     end

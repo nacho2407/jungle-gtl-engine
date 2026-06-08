@@ -140,6 +140,11 @@ bool UWorld::GetActivePOV(FMinimalViewInfo& OutPOV) const
 
 void UWorld::AddActor(AActor* Actor)
 {
+	AddActor(Actor, true);
+}
+
+void UWorld::AddActor(AActor* Actor, bool bRunBeginPlay)
+{
 	if (!Actor)
 	{
 		return;
@@ -151,7 +156,7 @@ void UWorld::AddActor(AActor* Actor)
 	MarkWorldPrimitivePickingBVHDirty();
 
 	// PIE 중 Duplicate(Ctrl+D)나 SpawnActor로 들어온 액터에도 BeginPlay를 보장.
-	if (bHasBegunPlay && !Actor->HasActorBegunPlay())
+	if (bRunBeginPlay && bHasBegunPlay && !Actor->HasActorBegunPlay())
 	{
 		Actor->BeginPlay();
 	}

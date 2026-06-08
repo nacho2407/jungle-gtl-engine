@@ -590,6 +590,11 @@ WorldLib = {}
 ---@return Actor?
 function World.SpawnActor(className) end
 
+---@param prefabPath string
+---@param location Vector
+---@return Actor?
+function World.SpawnPrefab(prefabPath, location) end
+
 ---@param particlePath string
 ---@param location Vector
 ---@param rotation? Vector

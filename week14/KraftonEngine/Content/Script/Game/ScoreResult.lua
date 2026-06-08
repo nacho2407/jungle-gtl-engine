@@ -57,8 +57,6 @@ local function fill(snapshot, savePath)
     set_text("score-result-kills", snapshot.enemyKills or 0)
     set_text("score-result-retry", snapshot.retryCount or 0)
     set_text("score-result-deaths", snapshot.deathCount or 0)
-    set_text("score-result-accuracy", string.format("%d%%", math.floor((snapshot.accuracy or 0.0) * 100.0 + 0.5)))
-    set_text("score-result-damage", math.floor(snapshot.damageDealt or 0))
     set_text("score-result-save-path", savePath or "Saves/scores.json")
 end
 

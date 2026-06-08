@@ -297,8 +297,10 @@ float FScoreManager::GetCurrentPlayTimeSeconds() const
 
 int32 FScoreManager::CalculateScore(const FScoreSnapshot& Snapshot) const
 {
-	// 현재 점수 정책은 잡몹 처치만 반영합니다.
-	// 보스전/시간/피해량/아이템 점수는 해당 콘텐츠가 준비된 뒤 별도로 합산합니다.
-	const int32 Score = Snapshot.EnemyKills * 1000;
+	const int32 TimeScore = (std::max)(0, 100000 - static_cast<int32>(Snapshot.PlayTimeSeconds) * 100);
+	const int32 KillScore = (std::max)(0, Snapshot.EnemyKills * 1000);
+	const int32 RetryScore = (std::max)(0, 100000 - Snapshot.RetryCount * 10000);
+	const int32 DeathScore = (std::max)(0, 100000 - Snapshot.DeathCount * 10000);
+	const int32 Score = TimeScore + KillScore + RetryScore + DeathScore;
 	return (std::max)(0, Score);
 }

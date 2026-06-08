@@ -131,6 +131,47 @@ local menuNavAxisHeld = {
 local loadingToGame = false
 local loadingTransitionRequested = false
 
+local function format_score_time(seconds)
+    seconds = math.max(0, math.floor(seconds or 0))
+    local minutes = math.floor(seconds / 60)
+    local remain = seconds % 60
+    return string.format("%02d:%02d", minutes, remain)
+end
+
+local function scoreboard_id(prefix, index)
+    return string.format("%s-%02d", prefix, index)
+end
+
+local function set_scoreboard_text(id, text)
+    if statWidget ~= nil then
+        statWidget:SetText(id, tostring(text or ""))
+    end
+end
+
+local function populate_scoreboard()
+    if statWidget == nil then
+        return
+    end
+
+    local scores = {}
+    if ScoreManager ~= nil and ScoreManager.GetSavedScores ~= nil then
+        scores = ScoreManager.GetSavedScores(8) or {}
+    end
+
+    for index = 1, 8 do
+        local row = scores[index]
+        if row ~= nil then
+            set_scoreboard_text(scoreboard_id("scoreboard-name", index), row.finishedAt or row.endingId or "MISSION CLEAR")
+            set_scoreboard_text(scoreboard_id("scoreboard-score", index), string.format("%06d", row.score or 0))
+            set_scoreboard_text(scoreboard_id("scoreboard-time", index), format_score_time(row.playTimeSeconds))
+        else
+            set_scoreboard_text(scoreboard_id("scoreboard-name", index), "Empty Slot")
+            set_scoreboard_text(scoreboard_id("scoreboard-score", index), "000000")
+            set_scoreboard_text(scoreboard_id("scoreboard-time", index), "--:--")
+        end
+    end
+end
+
 local function px(value)
     return string.format("%.2fpx", value)
 end
@@ -673,6 +714,7 @@ show_stat_panel = function(visible)
         show_settings_panel(false)
         show_credits_panel(false)
         if statWidget ~= nil and not statWidget:IsInViewport() then
+            populate_scoreboard()
             statWidget:AddToViewportZ(150)
         end
     elseif statWidget ~= nil and statWidget:IsInViewport() then

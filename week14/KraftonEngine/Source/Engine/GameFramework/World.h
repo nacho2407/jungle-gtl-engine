@@ -55,6 +55,7 @@ public:
 	AActor* SpawnActorByClass(UClass* Class);
 	void DestroyActor(AActor* Actor);
 	void AddActor(AActor* Actor);
+	void AddActor(AActor* Actor, bool bRunBeginPlay);
 	void MarkWorldPrimitivePickingBVHDirty();
 	void BuildWorldPrimitivePickingBVHNow() const;
 	void BeginDeferredPickingBVHUpdate();

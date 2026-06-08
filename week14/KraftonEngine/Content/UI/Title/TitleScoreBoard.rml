@@ -58,9 +58,9 @@
                         <div id="scoreboard-time-07" class="score-cell score-time" data-ui-editor="text">--:--</div>
                     </div>
                     <div id="scoreboard-row-08" class="score-row" style="position: absolute; left: 0.00px; top: 294.00px; width: 764.00px; height: 36.00px;">
-                        
-                        
-                        
+                        <div id="scoreboard-name-08" class="score-cell score-name" data-ui-editor="text">Empty Slot</div>
+                        <div id="scoreboard-score-08" class="score-cell score-score" data-ui-editor="text">000000</div>
+                        <div id="scoreboard-time-08" class="score-cell score-time" data-ui-editor="text">--:--</div>
                     </div>
                 </div>
             </div>

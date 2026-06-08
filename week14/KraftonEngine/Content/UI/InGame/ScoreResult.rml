@@ -38,18 +38,6 @@
                         <div class="score-result-value" id="score-result-deaths">0</div>
                     </div>
                 </div>
-                <div id="score-result-row-accuracy-group">
-                    <div class="score-result-row" id="score-result-row-accuracy">
-                        <div class="score-result-name">ACCURACY</div>
-                        <div class="score-result-value" id="score-result-accuracy">0%</div>
-                    </div>
-                </div>
-                <div id="score-result-row-damage-group">
-                    <div class="score-result-row" id="score-result-row-damage">
-                        <div class="score-result-name">DAMAGE DEALT</div>
-                        <div class="score-result-value" id="score-result-damage">0</div>
-                    </div>
-                </div>
             </div>
 
             <div id="score-result-save-path">Saves/scores.json</div>

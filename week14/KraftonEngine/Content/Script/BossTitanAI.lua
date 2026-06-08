@@ -1,4 +1,5 @@
 local CombatEvents = require("Game.CombatEvents")
+local WeaponHud = require("HUD/WeaponHud")
 
 local PLAYER_TAG = "player"
 
@@ -64,6 +65,20 @@ local DEATH_FALL_GROUND_CLEARANCE = 0.25
 local DEATH_FALL_SHAKE_SCALE = 0.45
 local DEATH_SLOMO_DURATION = 2.2
 local DEATH_SLOMO_TIME_DILATION = 0.15
+
+local DRAKE_COMBAT_DIALOGUE_MODULE = "Dialogue/DrakeCombat.dialogue"
+local DRAKE_COMBAT_VOICE_MODULE = "Dialogue/Generated/DrakeCombat.voices"
+local DRAKE_COMBAT_DIALOGUE_WIDTH = 1120.0
+local DRAKE_COMBAT_DIALOGUE_HEIGHT = 54.0
+local DRAKE_COMBAT_DIALOGUE_LINE_HEIGHT = 54.0
+local DRAKE_COMBAT_DIALOGUE_FADE_OUT = 0.25
+local DRAKE_COMBAT_DIALOGUE_HOLD_PADDING = 0.35
+local DRAKE_COMBAT_HEALTH_MARKERS = { 0.90, 0.75, 0.50, 0.25 }
+local DRAKE_COMBAT_EXCLUDED_DIALOGUE_IDS = {
+    DrakeCombat_Drake_ThatIsWhy = true,
+}
+local CARD_KEY_PREFAB_PATH = "Content/Prefab/CardKey.prefab"
+local CARD_KEY_SPAWN_OFFSET = Vector.new(2.0, 0.0, 1.0)
 
 local MOVE_IDLE = 0
 local MOVE_WALK = 1
@@ -267,6 +282,18 @@ local activeAttack = nil
 local leapState = nil
 local deathFallState = nil
 
+local drakeCombatStory = nil
+local drakeCombatVoiceManifest = nil
+local drakeCombatDialogueEntries = {}
+local drakeCombatPlayedDialogueIds = {}
+local drakeCombatPlayedHealthMarkers = {}
+local drakeCombatLoadedVoiceKeys = {}
+local drakeCombatDialogueQueue = {}
+local activeDrakeCombatDialogue = nil
+local activeDrakeCombatDialogueTimer = 0.0
+local activeDrakeCombatDialogueDuration = 0.0
+local bSpawnedCardKey = false
+
 local function apply_boss_phase_visual(targetPhase)
     if mesh == nil or mesh.SetMaterialVector4Parameter == nil then
         return false
@@ -367,6 +394,199 @@ end
 
 local function random01()
     return math.random()
+end
+
+local function load_drake_combat_dialogue_assets()
+    if drakeCombatStory ~= nil then
+        return
+    end
+
+    local okStory, story = pcall(require, DRAKE_COMBAT_DIALOGUE_MODULE)
+    if not okStory or story == nil then
+        debug_log("[BossTitanAI] Failed to load Drake combat dialogue: " .. tostring(story))
+        drakeCombatStory = { entries = {} }
+        drakeCombatDialogueEntries = {}
+        return
+    end
+
+    drakeCombatStory = story
+    drakeCombatDialogueEntries = {}
+    if story.entries ~= nil then
+        for _, entry in ipairs(story.entries) do
+            if entry ~= nil
+                and entry.id ~= nil
+                and entry.text ~= nil
+                and DRAKE_COMBAT_EXCLUDED_DIALOGUE_IDS[entry.id] ~= true
+                and (entry.speaker == nil or entry.speaker == "DRAKE") then
+                table.insert(drakeCombatDialogueEntries, entry)
+            end
+        end
+    end
+
+    local okVoice, voiceManifest = pcall(require, DRAKE_COMBAT_VOICE_MODULE)
+    if okVoice and voiceManifest ~= nil then
+        drakeCombatVoiceManifest = voiceManifest
+    else
+        drakeCombatVoiceManifest = nil
+        debug_log("[BossTitanAI] Drake combat voice manifest unavailable: " .. tostring(voiceManifest))
+    end
+end
+
+local function reset_drake_combat_dialogue_state()
+    drakeCombatPlayedDialogueIds = {}
+    drakeCombatPlayedHealthMarkers = {}
+    drakeCombatDialogueQueue = {}
+    activeDrakeCombatDialogue = nil
+    activeDrakeCombatDialogueTimer = 0.0
+    activeDrakeCombatDialogueDuration = 0.0
+
+    if WeaponHud ~= nil and WeaponHud.HideDialogue ~= nil then
+        WeaponHud.HideDialogue()
+    end
+end
+
+local function get_drake_combat_dialogue_text(entry)
+    if entry == nil then return "" end
+    local speaker = entry.speaker or "DRAKE"
+    local text = entry.text or ""
+    if speaker == "" then
+        return text
+    end
+    return speaker .. ": " .. text
+end
+
+local function play_drake_combat_voice(entry)
+    if entry == nil or AudioManager == nil or AudioManager.Load == nil or AudioManager.Play == nil then
+        return nil
+    end
+    if drakeCombatVoiceManifest == nil or drakeCombatVoiceManifest.by_id == nil then
+        return nil
+    end
+
+    local voiceEntry = drakeCombatVoiceManifest.by_id[entry.id]
+    if voiceEntry == nil or voiceEntry.key == nil or voiceEntry.path == nil then
+        return nil
+    end
+
+    if drakeCombatLoadedVoiceKeys[voiceEntry.key] ~= true then
+        if not AudioManager.Load(voiceEntry.key, voiceEntry.path, false) then
+            debug_log("[BossTitanAI] Failed to load Drake combat voice: " .. tostring(voiceEntry.path))
+            return nil
+        end
+        drakeCombatLoadedVoiceKeys[voiceEntry.key] = true
+    end
+
+    AudioManager.Play(voiceEntry.key, voiceEntry.volume or 1.0)
+    return voiceEntry
+end
+
+local function show_drake_combat_dialogue(entry)
+    if entry == nil then return end
+
+    local defaultFont = drakeCombatStory and drakeCombatStory.default_font or "Pretendard"
+    local defaultSize = drakeCombatStory and drakeCombatStory.default_size or 22
+    local defaultWeight = drakeCombatStory and drakeCombatStory.default_weight or 700
+    local defaultDuration = drakeCombatStory and drakeCombatStory.default_duration or 3.4
+
+    if WeaponHud ~= nil and WeaponHud.ShowDialogue ~= nil then
+        WeaponHud.ShowDialogue(get_drake_combat_dialogue_text(entry), {
+            width = DRAKE_COMBAT_DIALOGUE_WIDTH,
+            height = DRAKE_COMBAT_DIALOGUE_HEIGHT,
+            fontSize = entry.size or defaultSize,
+            lineHeight = DRAKE_COMBAT_DIALOGUE_LINE_HEIGHT,
+            font = entry.font or defaultFont,
+            weight = entry.weight or defaultWeight,
+            opacity = 0.0,
+        })
+    end
+
+    local voiceEntry = play_drake_combat_voice(entry)
+    activeDrakeCombatDialogue = entry
+    activeDrakeCombatDialogueTimer = 0.0
+    activeDrakeCombatDialogueDuration =
+        (voiceEntry and voiceEntry.duration or entry.duration or defaultDuration) + DRAKE_COMBAT_DIALOGUE_HOLD_PADDING
+end
+
+local function enqueue_drake_combat_dialogue(entry)
+    if entry == nil then return end
+    if activeDrakeCombatDialogue == nil then
+        show_drake_combat_dialogue(entry)
+    else
+        table.insert(drakeCombatDialogueQueue, entry)
+    end
+end
+
+local function pick_unplayed_drake_combat_dialogue()
+    load_drake_combat_dialogue_assets()
+
+    local candidates = {}
+    for _, entry in ipairs(drakeCombatDialogueEntries) do
+        if entry.id ~= nil and drakeCombatPlayedDialogueIds[entry.id] ~= true then
+            table.insert(candidates, entry)
+        end
+    end
+
+    if #candidates <= 0 then
+        return nil
+    end
+
+    local index = math.random(1, #candidates)
+    local entry = candidates[index]
+    drakeCombatPlayedDialogueIds[entry.id] = true
+    return entry
+end
+
+local function trigger_random_drake_combat_dialogue()
+    local entry = pick_unplayed_drake_combat_dialogue()
+    if entry ~= nil then
+        enqueue_drake_combat_dialogue(entry)
+    end
+end
+
+local function check_drake_combat_health_dialogue(previousRatio, nextRatio)
+    for _, marker in ipairs(DRAKE_COMBAT_HEALTH_MARKERS) do
+        if drakeCombatPlayedHealthMarkers[marker] ~= true and previousRatio > marker and nextRatio <= marker then
+            drakeCombatPlayedHealthMarkers[marker] = true
+            trigger_random_drake_combat_dialogue()
+        end
+    end
+end
+
+local function update_drake_combat_dialogue(dt)
+    if activeDrakeCombatDialogue == nil then
+        if #drakeCombatDialogueQueue > 0 then
+            local nextEntry = table.remove(drakeCombatDialogueQueue, 1)
+            show_drake_combat_dialogue(nextEntry)
+        end
+        return
+    end
+
+    activeDrakeCombatDialogueTimer = activeDrakeCombatDialogueTimer + dt
+
+    local defaultFadeIn = drakeCombatStory and drakeCombatStory.default_fade_in or 0.3
+    local fadeIn = activeDrakeCombatDialogue.fade_in or defaultFadeIn
+    local fadeOut = activeDrakeCombatDialogue.fade_out or DRAKE_COMBAT_DIALOGUE_FADE_OUT
+    local remaining = activeDrakeCombatDialogueDuration - activeDrakeCombatDialogueTimer
+    local alpha = 1.0
+
+    if fadeIn > 0.0 and activeDrakeCombatDialogueTimer < fadeIn then
+        alpha = activeDrakeCombatDialogueTimer / fadeIn
+    elseif fadeOut > 0.0 and remaining < fadeOut then
+        alpha = math.max(0.0, remaining / fadeOut)
+    end
+
+    if WeaponHud ~= nil and WeaponHud.SetDialogueOpacity ~= nil then
+        WeaponHud.SetDialogueOpacity(alpha)
+    end
+
+    if activeDrakeCombatDialogueTimer >= activeDrakeCombatDialogueDuration then
+        if WeaponHud ~= nil and WeaponHud.HideDialogue ~= nil then
+            WeaponHud.HideDialogue()
+        end
+        activeDrakeCombatDialogue = nil
+        activeDrakeCombatDialogueTimer = 0.0
+        activeDrakeCombatDialogueDuration = 0.0
+    end
 end
 
 local function atan2(y, x)
@@ -584,6 +804,35 @@ local function start_death_fall()
     return true
 end
 
+local function spawn_card_key_reward()
+    if bSpawnedCardKey then
+        return
+    end
+    bSpawnedCardKey = true
+
+    if World == nil or World.SpawnPrefab == nil then
+        debug_log("[BossTitanAI] Card key spawn skipped: World.SpawnPrefab unavailable.")
+        return
+    end
+
+    local spawnLocation = obj.Location + CARD_KEY_SPAWN_OFFSET
+    local cardKey = World.SpawnPrefab(CARD_KEY_PREFAB_PATH, spawnLocation)
+    if cardKey == nil then
+        debug_log("[BossTitanAI] Card key prefab spawn failed: " .. CARD_KEY_PREFAB_PATH)
+        return
+    end
+
+    _G.ItemActorIds = _G.ItemActorIds or {}
+    if cardKey.UUID ~= nil then
+        _G.ItemActorIds[cardKey.UUID] = "vantus_master_key"
+    end
+    debug_log(string.format(
+        "[BossTitanAI] Spawned card key reward at (%.2f, %.2f, %.2f).",
+        spawnLocation.X,
+        spawnLocation.Y,
+        spawnLocation.Z))
+end
+
 local function update_death_fall(dt)
     if deathFallState == nil then
         return
@@ -603,6 +852,7 @@ local function update_death_fall(dt)
         obj.Rotation = deathFallState.targetRotation
         play_death_fall_camera_shake()
         deathFallState = nil
+        spawn_card_key_reward()
     end
 end
 
@@ -856,7 +1106,10 @@ local function apply_boss_damage(context)
         return make_damage_result(false, 0.0, false)
     end
 
+    local previousRatio = health_ratio()
     currentHealth = clamp(currentHealth - amount, 0.0, MAX_HEALTH)
+    check_drake_combat_health_dialogue(previousRatio, health_ratio())
+
     local killed = currentHealth <= 0.0
     if killed then
         isDead = true
@@ -1485,6 +1738,8 @@ end
 
 function BeginPlay()
     mesh = obj:GetSkeletalMesh()
+    load_drake_combat_dialogue_assets()
+    reset_drake_combat_dialogue_state()
     apply_boss_phase_visual(1)
     homeZ = obj.Location.Z
     currentHealth = MAX_HEALTH
@@ -1500,6 +1755,7 @@ function BeginPlay()
     activeAttack = nil
     leapState = nil
     deathFallState = nil
+    bSpawnedCardKey = false
     currentAnim = nil
     currentTactic = TACTIC.openingWalk
     openingWalkActive = true
@@ -1533,12 +1789,15 @@ function EndPlay()
         _G.BossTitanAnimState[obj.UUID] = nil
     end
 
+    reset_drake_combat_dialogue_state()
     unregister_boss_damageable()
     damageableCallbacks = nil
     debug_close_log()
 end
 
 function Tick(dt)
+    update_drake_combat_dialogue(dt)
+
     if isDead then
         update_death_fall(dt)
         set_move_anim(MOVE_IDLE)

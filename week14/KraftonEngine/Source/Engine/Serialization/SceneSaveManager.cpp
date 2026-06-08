@@ -598,7 +598,7 @@ bool FSceneSaveManager::InstantiatePrefabFromJSON(
 		}
 
 		LoadContextState.RegisterLoadedObject(ActorJSON, Actor);
-		World->AddActor(Actor);
+		World->AddActor(Actor, false);
 		OutCreatedActors.push_back(Actor);
 
 		if (ActorJSON.hasKey(SceneKeys::Name))
@@ -679,6 +679,17 @@ bool FSceneSaveManager::InstantiatePrefabFromJSON(
 	if (Root.hasKey(SceneKeys::EditorOutliner))
 	{
 		DeserializePrefabOutliner(Root[SceneKeys::EditorOutliner], LoadContextState, OutlinerState);
+	}
+
+	if (World->HasBegunPlay())
+	{
+		for (AActor* Actor : OutCreatedActors)
+		{
+			if (Actor && !Actor->HasActorBegunPlay())
+			{
+				Actor->BeginPlay();
+			}
+		}
 	}
 
 	return !OutCreatedActors.empty();
