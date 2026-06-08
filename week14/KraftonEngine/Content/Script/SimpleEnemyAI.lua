@@ -379,6 +379,8 @@ local function fire_at(target)
     local hitLocation = source + fireDir * FIRE_RANGE
     local hitNormal = nil
     local hitActor = nil
+    local targetHitLocation = get_target_location(target)
+    local bDirectTargetHit = has_clear_static_line_to_target(target, FIRE_RANGE)
 
     if hit ~= nil then
         hitLocation = hit.WorldHitLocation
@@ -405,8 +407,22 @@ local function fire_at(target)
         CombatEvents.NotifyAttackImpact(obj, fireContext)
     end
 
-    if hitActor == target and CombatEvents.IsDamageable(hitActor) then
-        CombatEvents.ApplyDamageAndNotify(obj, hitActor, fireContext)
+    if CombatEvents.IsDamageable(target) and (hitActor == target or bDirectTargetHit) then
+        local damageContext = fireContext
+        if hitActor ~= target then
+            damageContext = CombatEvents.MakeDamageContext({
+                Instigator = obj,
+                DamageCauser = obj,
+                HitActor = target,
+                HitLocation = targetHitLocation,
+                HitNormal = nil,
+                ShotDirection = fireDir,
+                Damage = FIRE_DAMAGE,
+                DamageType = "EnemyBullet",
+            })
+            CombatEvents.NotifyAttackImpact(obj, damageContext)
+        end
+        CombatEvents.ApplyDamageAndNotify(obj, target, damageContext)
     end
 end
 

@@ -5,7 +5,7 @@
       "NonSceneComponents" : [{
           "ClassName" : "UCharacterMovementComponent",
           "Name" : "UCharacterMovementComponent_2",
-          "ObjectId" : 54,
+          "ObjectId" : 56,
           "Properties" : {
             "AirControlScale" : 0.700000,
             "BrakingFriction" : 25.000000,
@@ -88,7 +88,7 @@
         }, {
           "ClassName" : "ULuaScriptComponent",
           "Name" : "ULuaScriptComponent_6",
-          "ObjectId" : 55,
+          "ObjectId" : 57,
           "Properties" : {
             "ScriptFile" : "Default2_FPSArm_Character.lua",
             "bAutoActivate" : true,
@@ -101,7 +101,7 @@
         }, {
           "ClassName" : "UActionComponent",
           "Name" : "UActionComponent_BossHitReact",
-          "ObjectId" : 56,
+          "ObjectId" : 58,
           "Properties" : {
             "bAutoActivate" : true,
             "bEditorOnly" : false,
@@ -113,11 +113,11 @@
         }],
       "ObjectId" : 1,
       "Properties" : {
-        "PendingActorLocation" : [6.579721, 584.886414, 3.308534],
+        "PendingActorLocation" : [27.667458, 5.929504, -4.121586],
         "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
         "PendingActorScale" : [1.000000, 1.000000, 1.000000],
         "PendingActorVisible" : true,
-        "PendingTagsString" : "",
+        "PendingTagsString" : "player",
         "bAutoPossessPlayer" : true,
         "bNeedsTick" : true,
         "bUseControllerRotationPitch" : true,
@@ -2109,6 +2109,86 @@
                       "bTickInEditor" : false
                     },
                     "bHiddenInComponentTree" : true
+                  }, {
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Name" : "UBillboardComponent_256",
+                    "ObjectId" : 54,
+                    "Properties" : {
+                      "AngularDamping" : 0.010000,
+                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                      "CollisionEnabled" : 0,
+                      "CollisionPreset" : 0,
+                      "LinearDamping" : 0.010000,
+                      "Mass" : 1.000000,
+                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                      "ObjectType" : 0,
+                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                      "ResponseContainer" : {
+                        "Responses[0]" : 2,
+                        "Responses[1]" : 2,
+                        "Responses[2]" : 2,
+                        "Responses[3]" : 2,
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
+                      },
+                      "TranslucentSortPriority" : 0,
+                      "bAutoActivate" : true,
+                      "bCastShadow" : true,
+                      "bCastShadowAsTwoSided" : false,
+                      "bEditorOnly" : true,
+                      "bEnableGravity" : true,
+                      "bGenerateOverlapEvents" : false,
+                      "bHiddenInComponentTree" : true,
+                      "bIsActive" : true,
+                      "bIsBillboard" : true,
+                      "bIsVisible" : true,
+                      "bSimulatePhysics" : false,
+                      "bTickEnable" : true,
+                      "bTickInEditor" : false
+                    },
+                    "bHiddenInComponentTree" : true
+                  }, {
+                    "Children" : [],
+                    "ClassName" : "UBillboardComponent",
+                    "Name" : "UBillboardComponent_226",
+                    "ObjectId" : 55,
+                    "Properties" : {
+                      "AngularDamping" : 0.010000,
+                      "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+                      "CollisionEnabled" : 0,
+                      "CollisionPreset" : 0,
+                      "LinearDamping" : 0.010000,
+                      "Mass" : 1.000000,
+                      "MaterialSlot" : "Content/Material/Editor/Camera.mat",
+                      "ObjectType" : 0,
+                      "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+                      "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+                      "ResponseContainer" : {
+                        "Responses[0]" : 2,
+                        "Responses[1]" : 2,
+                        "Responses[2]" : 2,
+                        "Responses[3]" : 2,
+                        "Responses[4]" : 2,
+                        "Responses[5]" : 2
+                      },
+                      "TranslucentSortPriority" : 0,
+                      "bAutoActivate" : true,
+                      "bCastShadow" : true,
+                      "bCastShadowAsTwoSided" : false,
+                      "bEditorOnly" : true,
+                      "bEnableGravity" : true,
+                      "bGenerateOverlapEvents" : false,
+                      "bHiddenInComponentTree" : true,
+                      "bIsActive" : true,
+                      "bIsBillboard" : true,
+                      "bIsVisible" : true,
+                      "bSimulatePhysics" : false,
+                      "bTickEnable" : true,
+                      "bTickInEditor" : false
+                    },
+                    "bHiddenInComponentTree" : true
                   }],
                 "ClassName" : "UCameraComponent",
                 "Name" : "UCameraComponent_2",
@@ -2178,7 +2258,7 @@
           "LinearDamping" : 0.010000,
           "Mass" : 1.000000,
           "ObjectType" : 2,
-          "RelativeTransform.Location" : [6.579721, 584.886414, 3.308534],
+          "RelativeTransform.Location" : [27.667458, 5.929504, -4.121586],
           "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
           "ResponseContainer" : {
             "Responses[0]" : 2,
@@ -2207,6 +2287,6 @@
       }
     }],
   "ClassName" : "Prefab",
-  "Origin" : [6.579721, 584.886414, 3.308534],
+  "Origin" : [27.667458, 5.929504, -4.121586],
   "Version" : 1
 }
