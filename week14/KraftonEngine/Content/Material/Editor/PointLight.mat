@@ -5,7 +5,7 @@
   "EmissiveIntensity" : 0.000000,
   "Origin" : "Editor",
   "Parameters" : {
-
+    "HasNormalMap" : 0.000000
   },
   "PathFileName" : "Content/Material/Editor/PointLight.mat",
   "RasterizerState" : "SolidBackCull",

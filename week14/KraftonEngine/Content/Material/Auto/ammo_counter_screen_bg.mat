@@ -1,21 +1,24 @@
 {
-        "BlendState" : "Opaque",
-        "DepthStencilState" : "Default",
-        "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-        "EmissiveIntensity" : 0.000000,
-        "Origin" : "FbxImport",
-        "Parameters" : {
-          "HasNormalMap" : 0.000000,
-          "SectionColor" : [0.997557, 0.413877, 0.853095, 1.000000],
-          "_pad" : [0.000000, 0.000000, 0.000000]
-        },
-        "PathFileName" : "Content/Material/Auto/ammo_counter_screen_bg.mat",
-        "RasterizerState" : "SolidNoCull",
-        "RenderPass" : "Opaque",
-        "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
-        "ShadowMode" : "Opaque",
-        "Textures" : {
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
+  "Origin" : "FbxImport",
+  "Parameters" : {
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [0.997557, 0.413877, 0.853095, 1.000000],
+    "TwoSidedLighting" : 0.000000,
+    "_pad0" : 0.000000,
+    "_pad1" : 0.000000
+  },
+  "PathFileName" : "Content/Material/Auto/ammo_counter_screen_bg.mat",
+  "RasterizerState" : "SolidNoCull",
+  "RenderPass" : "Opaque",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "ShadowMode" : "Opaque",
+  "Textures" : {
 
-        },
-        "bEnableBloom" : false
-      }
+  },
+  "TwoSidedLighting" : false,
+  "bEnableBloom" : false
+}
