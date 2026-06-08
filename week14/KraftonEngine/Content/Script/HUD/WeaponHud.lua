@@ -150,6 +150,14 @@ function WeaponHud.SetVisible(visible)
     end
 end
 
+-- 크로스헤어(가운데 십자/도트)만 따로 끄고 켠다. 탄약 카운터 등 weapon-hud-root 는 유지.
+-- ADS 같이 조준경으로 보는 동안 v_cro 가 시야를 가리는 걸 피하려고 사용.
+function WeaponHud.SetCrosshairVisible(visible)
+    if widget == nil then return end
+    if not bVisible then return end
+    widget:SetProperty("crosshair-screen", "display", (visible ~= false) and "block" or "none")
+end
+
 function WeaponHud.SetAmmo(inCurrentAmmo, inMagazineSize)
     currentAmmo = inCurrentAmmo or currentAmmo
     magazineSize = inMagazineSize or magazineSize

@@ -172,6 +172,7 @@ function VehicleMovementComponent4W:SetDriveInput(Throttle, Brake, Steer, bRever
 ---@field Location Vector
 ---@field Rotation Vector
 ---@field RelativeLocation Vector
+---@field RelativeScale Vector
 ---@field Forward Vector
 ---@field Right Vector
 ---@field Up Vector
@@ -188,6 +189,12 @@ function SceneComponent:GetRotation() end
 
 ---@param rotation Vector
 function SceneComponent:SetRotation(rotation) end
+
+---@return Vector
+function SceneComponent:GetRelativeScale() end
+
+---@param scale Vector
+function SceneComponent:SetRelativeScale(scale) end
 
 ---@param deltaRotation Vector # Vector(X=Roll, Y=Pitch, Z=Yaw), degrees; internally composed as quaternion.
 function SceneComponent:AddLocalRotation(deltaRotation) end
@@ -262,6 +269,34 @@ HitResult = {}
 
 ---@class CameraComponent: SceneComponent
 CameraComponent = {}
+
+---@return number
+function CameraComponent:GetFOV() end
+
+---@param fov number # radians
+function CameraComponent:SetFOV(fov) end
+
+---@param enabled boolean
+function CameraComponent:SetDOFEnabled(enabled) end
+
+---@return boolean
+function CameraComponent:GetDOFEnabled() end
+
+---@param distance number
+function CameraComponent:SetDOFFocusDistance(distance) end
+
+---@return number
+function CameraComponent:GetDOFFocusDistance() end
+
+---@param fstop number
+function CameraComponent:SetDOFFStop(fstop) end
+
+---@return number
+function CameraComponent:GetDOFFStop() end
+
+---@param worldLocation Vector
+---@return table # { Valid:boolean, InFront:boolean, X:number, Y:number, NdcX:number, NdcY:number, NdcZ:number, Depth:number, ViewportWidth:number, ViewportHeight:number }
+function CameraComponent:ProjectWorldToScreen(worldLocation) end
 
 ---@class SkinnedMeshComponent: PrimitiveComponent
 SkinnedMeshComponent = {}
@@ -588,6 +623,18 @@ function SkeletalMeshComponent:GetBoneSocketLocation(boneName, localOffset) end
 ---@return Vector
 function SkeletalMeshComponent:GetBoneSocketRotation(boneName, localOffset) end
 
+---@param boneName string
+---@param scale Vector
+---@return boolean
+function SkeletalMeshComponent:SetBoneScale(boneName, scale) end
+
+---@return nil
+function SkeletalMeshComponent:ResetBoneEditPose() end
+
+---@param boneName string
+---@return Vector
+function SkeletalMeshComponent:GetBoneScale(boneName) end
+
 ---@class VehicleMovementComponentTank
 VehicleMovementComponentTank = {}
 
@@ -719,6 +766,11 @@ function Anim.create_state_machine(name) end
 ---@param loop boolean
 ---@return AnimNode
 function Anim.create_sequence_player(path, rate, loop) end
+
+---@param path string
+---@param enable boolean
+---@return boolean
+function Anim.set_sequence_force_root_lock(path, enable) end
 
 ---@param stateMachine AnimNode
 ---@param name string
