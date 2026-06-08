@@ -1,5 +1,8 @@
 local EventBus = require("Game.LuaEventBus")
 local State = require("Game.FractureState")
+local GameOver = require("GameOver")
+
+local DEATH_ZONE_TAG = "DeathZone"
 
 local Director = {
     _subscriptions = {},
@@ -26,13 +29,32 @@ local function clear_subscriptions()
     Director._subscriptions = {}
 end
 
+local function add_death_score()
+    if ScoreManager ~= nil and ScoreManager.AddDeath ~= nil then
+        ScoreManager.AddDeath(1)
+    end
+end
+
+local function trigger_game_over_by_death_zone()
+    -- 게임 오버 UI가 이미 열린 상태에서 트리거가 반복 호출될 때의 중복 사망 집계 방지
+    if GameOver.IsOpen ~= nil and GameOver.IsOpen() then
+        return
+    end
+
+    -- HP 기반 사망과 동일한 점수 통계 경로 사용
+    add_death_score()
+    GameOver.Show()
+end
+
 function Director.Init(context)
     Director._context = context
     State.Reset()
 
     subscribe(Events.TriggerEnter, function(trigger, pawn, tag)
         Game.Log("TriggerEnter", tostring(tag))
-        if tag == "Goal" then
+        if tag == DEATH_ZONE_TAG then
+            trigger_game_over_by_death_zone()
+        elseif tag == "Goal" then
             State.AddScore(1)
         elseif tag == "Restart" then
             Game.RestartLevel()
