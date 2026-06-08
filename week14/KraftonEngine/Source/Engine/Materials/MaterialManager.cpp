@@ -653,6 +653,8 @@ void FMaterialManager::ApplyTextures(UMaterialInterface* Material, json::JSON& J
 {
 	if (!Material || !JsonData.hasKey(MatKeys::Textures)) return;
 
+	bool bHasValidNormalTexture = false;
+
 	for (auto& Pair : JsonData[MatKeys::Textures].ObjectRange())
 	{
 		FString SlotName = Pair.first.c_str();
@@ -675,6 +677,20 @@ void FMaterialManager::ApplyTextures(UMaterialInterface* Material, json::JSON& J
 		}
 
 		Material->SetTextureParameter(SlotName, Texture);
+
+		if (SlotName == "NormalTexture" && Texture && Texture->GetSRV())
+		{
+			bHasValidNormalTexture = true;
+		}
+	}
+
+	if (!bHasValidNormalTexture)
+	{
+		Material->SetScalarParameter("HasNormalMap", 0.0f);
+		if (JsonData.hasKey(MatKeys::Parameters) && JsonData[MatKeys::Parameters].JSONType() == json::JSON::Class::Object)
+		{
+			JsonData[MatKeys::Parameters]["HasNormalMap"] = 0.0f;
+		}
 	}
 }
 

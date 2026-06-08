@@ -245,11 +245,6 @@ void UMaterial::SetTwoSidedLighting(bool bInTwoSidedLighting)
 
 ERasterizerState UMaterial::GetRasterizerState() const
 {
-	if (bTwoSidedLighting && RasterizerState == ERasterizerState::SolidBackCull)
-	{
-		return ERasterizerState::SolidNoCull;
-	}
-
 	return RasterizerState;
 }
 
