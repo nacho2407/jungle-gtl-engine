@@ -14,6 +14,40 @@ body {
 	height: 100%;
  right: 20.00px; bottom: 20.00px;}
 
+.score-hud-panel {
+	position: absolute;
+	right: 42px;
+	top: 32px;
+	width: 224px;
+	height: 58px;
+	background-color: #000000C8;
+}
+
+.score-hud-label {
+	position: absolute;
+	left: 14px;
+	top: 7px;
+	width: 78px;
+	height: 18px;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 18px;
+	color: #36b9ff;
+}
+
+.score-hud-value {
+	position: absolute;
+	right: 14px;
+	top: 18px;
+	width: 182px;
+	height: 32px;
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 32px;
+	text-align: right;
+	color: #ffffff;
+}
+
 .crosshair-screen {
 	position: absolute;
 	left: 0px;
