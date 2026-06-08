@@ -48,7 +48,7 @@ local function update_speed()
         speed = movement:GetSpeed() or 0.0
     end
 
-    widget:SetText("speed-hud-value", string.format("%03d", math.floor(speed + 0.5)))
+    widget:SetText("speed-hud-value", string.format("%02d m/s", math.floor(speed + 0.5)))
 end
 
 local function apply_visibility()

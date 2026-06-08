@@ -31,7 +31,7 @@
 
         <div id="speed-hud-panel" class="speed-hud-panel">
             <div id="speed-hud-label" class="speed-hud-label" data-ui-editor="text">SPEED</div>
-            <div id="speed-hud-value" class="speed-hud-value" data-ui-editor="text">000</div>
+            <div id="speed-hud-value" class="speed-hud-value" data-ui-editor="text">00 m/s</div>
         </div>
 
         <div id="weapon-hud-panel" class="weapon-hud-panel" data-ui-editor="img">
