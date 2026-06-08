@@ -2529,6 +2529,7 @@ void UCharacterMovementComponent::StartWallRun(const FHitResult& WallHit, bool b
 	if (bEnableBuiltInMovementAudio)
 	{
 		FAudioManager::Get().StopEvent("player.jump.jet");
+		FAudioManager::Get().PlayOneShot("player.wallrun.impact");
 	}
 	SetWallRunStatus(EWallRunStatus::Active, &WallHit);
 }

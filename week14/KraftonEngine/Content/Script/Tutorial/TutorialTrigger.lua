@@ -52,17 +52,29 @@ end
 
 local function is_player_actor(actor)
     if actor == nil then return false end
-    if type(actor.GetCharacterMovement) ~= "function" then return false end
 
-    local movement = actor:GetCharacterMovement()
+    local ok, movement = pcall(function()
+        return actor:GetCharacterMovement()
+    end)
+    if not ok then return false end
     if movement == nil then return false end
 
-    if type(actor.HasTag) == "function" and actor:HasTag("player") then
+    local hasPlayerTag = false
+    local tagOk, tagResult = pcall(function()
+        return actor:HasTag("player")
+    end)
+    if tagOk then
+        hasPlayerTag = tagResult == true
+    end
+    if hasPlayerTag then
         return true
     end
 
-    if type(actor.IsPossessed) == "function" then
+    local possessedOk, possessed = pcall(function()
         return actor:IsPossessed()
+    end)
+    if possessedOk then
+        return possessed == true
     end
 
     return false
@@ -77,11 +89,14 @@ end
 
 function OnOverlap(OtherActor)
     if triggered then return end
-    if TutorialSystem.IsRunning ~= nil and TutorialSystem.IsRunning() then return end
     if not is_player_actor(OtherActor) then return end
 
     local mode = resolve_tutorial_mode()
     local isFullSequence = mode == "__full"
+    if TutorialSystem.IsRunning ~= nil and TutorialSystem.IsRunning() then
+        TutorialSystem.Shutdown()
+    end
+
     triggered = true
     TutorialSystem.Initialize({
         owner = OtherActor,

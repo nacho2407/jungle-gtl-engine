@@ -684,8 +684,6 @@ local function apply_entry(entry)
 
     cutsceneWidget:SetProperty("skip-ring", "right", "54px")
     cutsceneWidget:SetProperty("skip-ring", "bottom", px(bottom + 6.0))
-    cutsceneWidget:SetProperty("cutscene-skip-prompt", "right", "54px")
-    cutsceneWidget:SetProperty("cutscene-skip-prompt", "bottom", px(bottom - 30.0))
 end
 
 local function hide_dialogue_box()

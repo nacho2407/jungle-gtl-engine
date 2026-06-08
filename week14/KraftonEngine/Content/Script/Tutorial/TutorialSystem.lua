@@ -177,6 +177,8 @@ local function show_dialogue(id)
     local height = clamp(lineHeight, 46.0, 68.0)
 
     dialogueWidget:SetText("dialogue-line", text)
+    dialogueWidget:SetProperty("dialogue-layer", "display", "block")
+    dialogueWidget:SetProperty("dialogue-box", "display", "block")
     dialogueWidget:SetProperty("dialogue-box", "left", px(24.0))
     dialogueWidget:SetProperty("dialogue-box", "bottom", px(28.0))
     dialogueWidget:SetProperty("dialogue-box", "width", px(width))
@@ -237,6 +239,7 @@ local function update_dialogue(dt)
 
     if dialogueTimer >= dialogueDuration then
         dialogueWidget:SetProperty("dialogue-box", "opacity", "0.0")
+        dialogueWidget:SetProperty("dialogue-box", "display", "none")
         dialogueWidget:SetText("dialogue-line", "")
         stop_current_voice()
         activeDialogue = nil
@@ -458,6 +461,9 @@ function TutorialSystem.Initialize(config)
     dialogueWidget = UI.CreateWidget(DIALOGUE_PATH)
     if dialogueWidget ~= nil then
         dialogueWidget:AddToViewportZ(config.dialogueZOrder or DIALOGUE_Z_ORDER)
+        dialogueWidget:SetText("dialogue-line", "")
+        dialogueWidget:SetProperty("dialogue-box", "opacity", "0.0")
+        dialogueWidget:SetProperty("dialogue-box", "display", "none")
     end
 
     refresh_overlay()

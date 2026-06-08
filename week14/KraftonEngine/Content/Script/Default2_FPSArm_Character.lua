@@ -10,6 +10,7 @@ local InGameDebug = require("DebugUI/InGameDebug")
 local ItemInspectSystem = require("Items/ItemInspectSystem")
 local GameAudio = require("Game.GameAudio")
 local HitSpark = require("Game.HitSpark")
+local ImpactAudio = require("Game.ImpactAudio")
 local TutorialSystem = require("Tutorial.TutorialSystem")
 
 -- 본 기반 머즐은 Arm_R 이 어깨 관절이라 카메라랑 거의 같은 위치 → 의미 없음.
@@ -62,6 +63,7 @@ local RECOIL_PATTERN = {
 
 local BULLET_DAMAGE = 12.5
 local MAX_HEALTH = 100.0
+local PLAYER_BULLET_IMPACT_AUDIO_EVENT = "player.bullet_impact"
 
 local fireCooldown = 0.0
 local reloadTimer  = 0.0
@@ -200,6 +202,28 @@ local function handle_player_death()
     GameOver.Show()
 end
 
+local function play_player_impact_audio(context)
+    if AudioManager == nil then
+        return
+    end
+
+    local location = nil
+    if type(context) == "table" then
+        location = context.HitLocation or context.hitLocation
+    end
+    if location == nil then
+        location = obj.Location
+    end
+
+    if AudioManager.PlayEventAt ~= nil then
+        AudioManager.PlayEventAt(PLAYER_BULLET_IMPACT_AUDIO_EVENT, location.X or 0.0, location.Y or 0.0, location.Z or 0.0)
+    elseif AudioManager.PlayOneShotAt ~= nil then
+        AudioManager.PlayOneShotAt(PLAYER_BULLET_IMPACT_AUDIO_EVENT, location.X or 0.0, location.Y or 0.0, location.Z or 0.0)
+    elseif AudioManager.PlayEvent ~= nil then
+        AudioManager.PlayEvent(PLAYER_BULLET_IMPACT_AUDIO_EVENT)
+    end
+end
+
 local function apply_player_damage(contextOrAmount)
     local amount = 0.0
     if type(contextOrAmount) == "table" then
@@ -214,6 +238,8 @@ local function apply_player_damage(contextOrAmount)
     if InGameDebug.IsInvincible() then
         return make_damage_result(false, 0.0, false)
     end
+
+    play_player_impact_audio(contextOrAmount)
 
     currentHealth = clamp(currentHealth - amount, 0.0, MAX_HEALTH)
     local killed = currentHealth <= 0.0
@@ -530,6 +556,7 @@ function BeginPlay()
     GameOver.Initialize()
     InGamePause.Initialize()
     HitSpark.Initialize()
+    ImpactAudio.Initialize()
     InGameDebug.Initialize({
         ZOrder = 220,
         GetHealth = function() return currentHealth end,
@@ -582,6 +609,7 @@ function EndPlay()
     DamagePostProcess.Shutdown()
     InGamePause.Shutdown()
     HitSpark.Shutdown()
+    ImpactAudio.Shutdown()
     InGameDebug.Shutdown()
     TutorialSystem.Shutdown()
     Engine.SetOnEscape(function() end)
