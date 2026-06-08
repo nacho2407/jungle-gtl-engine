@@ -3,6 +3,7 @@ local CombatEvents = require("Game.CombatEvents")
 local PLAYER_TAG = "player"
 
 local MAX_HEALTH = 650.0
+local PHASE_TWO_HEALTH_RATIO = 0.5
 local THINK_INTERVAL = 0.12
 local SIGHT_RANGE = 80.0
 local OPENING_WALK_END_RANGE = 64.0
@@ -15,7 +16,6 @@ local CLOSE_RETREAT_RANGE = 12.0
 local MELEE_RANGE = 10.5
 local CANNON_RANGE = 58.0
 local APPROACH_RUN_SPEED = 5.2
-local APPROACH_RUN_SPEED_PHASE3 = 7.4
 local APPROACH_RUN_DISTANCE = 40.0
 local TARGET_HEIGHT = 1.6
 local FALLBACK_MUZZLE_HEIGHT = 7.0
@@ -51,6 +51,7 @@ local LEAP_KNOCKBACK_DISTANCE = 6.0
 local LEAP_KNOCKBACK_DURATION = 0.28
 local AIM_PITCH_MIN = -35.0
 local AIM_PITCH_MAX = 40.0
+local DEFEATED_POSE_HOLD_DURATION = 1000000000.0
 
 local MOVE_IDLE = 0
 local MOVE_WALK = 1
@@ -218,7 +219,6 @@ local targetActor = nil
 local mesh = nil
 local currentHealth = MAX_HEALTH
 local isDead = false
-local deathTimer = 0.0
 
 local phase = 1
 local pendingPhase = nil
@@ -557,6 +557,8 @@ local function make_damage_result(applied, amount, killed)
     return {
         bApplied = applied == true,
         bKilled = killed == true,
+        bBoss = true,
+        boss = true,
         bCritical = false,
         DamageApplied = amount or 0.0,
         RemainingHealth = currentHealth,
@@ -583,7 +585,7 @@ local function enter_phase(nextPhase)
     leapState = nil
 
     cooldowns.cannon = 0.4
-    cooldowns.powerShot = phase >= 3 and 0.7 or 1.2
+    cooldowns.powerShot = 1.2
     cooldowns.melee = 0.5
 
     play_anim(ANIM.phase, false, true)
@@ -591,9 +593,7 @@ end
 
 local function update_phase_from_health()
     local ratio = health_ratio()
-    if ratio <= 0.35 then
-        enter_phase(3)
-    elseif ratio <= 0.65 then
+    if ratio <= PHASE_TWO_HEALTH_RATIO then
         enter_phase(2)
     end
 end
@@ -608,11 +608,17 @@ local function apply_boss_damage(context)
     local killed = currentHealth <= 0.0
     if killed then
         isDead = true
-        deathTimer = ACTION_DURATIONS.hitReact
         activeAttack = nil
         leapState = nil
+        actionTimer = 0.0
+        animationLockTimer = 0.0
+        phaseLockTimer = 0.0
+        set_move_anim(MOVE_IDLE)
         set_aim_anim(0.0, 0.0)
-        play_anim(ANIM.hitReact, false, true)
+        request_action_anim("hitReact", DEFEATED_POSE_HOLD_DURATION)
+        currentAnim = ANIM.hitReact
+        CombatEvents.UnregisterDamageable(obj)
+        debug_log("[BossTitanAI] Titan boss defeated. Waiting for ending transition.")
     else
         update_phase_from_health()
     end
@@ -993,12 +999,12 @@ local function run_attack(name)
     end
 
     if name == "powerShot" then
-        start_attack("powerShot", ANIM.powerShot, POWER_SHOT_ACTION_LOCK, 0.55, CANNON_RANGE, 24.0 + phase * 9.0, phase >= 3 and 2.0 or 2.8, POWER_SHOT_ACTION_LOCK)
+        start_attack("powerShot", ANIM.powerShot, POWER_SHOT_ACTION_LOCK, 0.55, CANNON_RANGE, 24.0 + phase * 9.0, 2.8, POWER_SHOT_ACTION_LOCK)
         return true
     end
 
     if name == "cannon" then
-        start_attack("cannon", ANIM.cannon, CANNON_ACTION_LOCK, 0.22, CANNON_RANGE, 11.0 + phase * 4.0, phase >= 3 and 0.55 or 0.85, CANNON_ACTION_LOCK)
+        start_attack("cannon", ANIM.cannon, CANNON_ACTION_LOCK, 0.22, CANNON_RANGE, 11.0 + phase * 4.0, 0.85, CANNON_ACTION_LOCK)
         return true
     end
 
@@ -1049,7 +1055,7 @@ end
 
 local function choose_next_tactic(bb)
     if can_start_leap(bb) then
-        local leapChance = phase >= 3 and 0.68 or 0.42
+        local leapChance = 0.42
         if bb.distance > KEEP_RANGE + 18.0 or random01() < leapChance then
             return TACTIC.leapEngage
         end
@@ -1120,7 +1126,7 @@ local function run_tactic_action(bb)
     end
 
     if currentTactic == TACTIC.approach then
-        if can_start_leap(bb) and random01() < (phase >= 3 and 0.55 or 0.35) then
+        if can_start_leap(bb) and random01() < 0.35 then
             return start_leap_engage(bb)
         end
         actionTimer = 0.2
@@ -1140,15 +1146,13 @@ local function locomote_approach(bb, dt)
     end
 
     if currentTactic == TACTIC.leapEngage then
-        local approachSpeed = phase >= 3 and APPROACH_RUN_SPEED_PHASE3 or APPROACH_RUN_SPEED
-        move_horizontal(dirToTarget, approachSpeed, dt)
+        move_horizontal(dirToTarget, APPROACH_RUN_SPEED, dt)
         play_anim(bb.distance > APPROACH_RUN_DISTANCE and ANIM.run or ANIM.walk, true, false)
         return
     end
 
     if bb.distance > KEEP_RANGE - 3.0 then
-        local approachSpeed = phase >= 3 and APPROACH_RUN_SPEED_PHASE3 or APPROACH_RUN_SPEED
-        move_horizontal(dirToTarget, approachSpeed, dt)
+        move_horizontal(dirToTarget, APPROACH_RUN_SPEED, dt)
         play_anim(bb.distance > APPROACH_RUN_DISTANCE and ANIM.run or ANIM.walk, true, false)
         return
     end
@@ -1240,7 +1244,6 @@ function BeginPlay()
     homeZ = obj.Location.Z
     currentHealth = MAX_HEALTH
     isDead = false
-    deathTimer = 0.0
     phase = 1
     pendingPhase = nil
     actionTimer = 0.0
@@ -1287,10 +1290,9 @@ end
 
 function Tick(dt)
     if isDead then
-        deathTimer = deathTimer - dt
-        if deathTimer <= 0.0 then
-            obj:Destroy()
-        end
+        hold_action_anim("hitReact", DEFEATED_POSE_HOLD_DURATION)
+        set_move_anim(MOVE_IDLE)
+        set_aim_anim(0.0, 0.0)
         return
     end
 

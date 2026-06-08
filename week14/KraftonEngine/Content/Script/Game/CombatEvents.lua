@@ -39,6 +39,24 @@ local function is_player_actor(actor)
     return actor == Game.GetPlayerPawn()
 end
 
+local function actor_has_tag(actor, tag)
+    return is_valid_actor(actor)
+        and type(actor.HasTag) == "function"
+        and actor:HasTag(tag)
+end
+
+local function is_boss_result(result)
+    if result == nil then
+        return false
+    end
+
+    if result.bBoss == true or result.boss == true or result.IsBoss == true or result.isBoss == true then
+        return true
+    end
+
+    return actor_has_tag(result.Victim or result.victim, "boss")
+end
+
 local function add_score(methodName, ...)
     if ScoreManager == nil then
         return
@@ -232,7 +250,11 @@ function CombatEvents.NotifyAttackResult(attacker, context, result)
     if result.bKilled then
         call(receiver ~= nil and receiver.OnAttackKilled or nil, context, result)
         if is_player_actor(attacker) then
-            add_score("AddEnemyKill", 1)
+            if is_boss_result(result) then
+                add_score("AddBossKill", 1)
+            else
+                add_score("AddEnemyKill", 1)
+            end
         end
         EventBus.Emit(CombatEvents.Events.AttackKilled, context, result)
     end
