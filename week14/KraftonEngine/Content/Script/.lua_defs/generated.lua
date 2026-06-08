@@ -819,10 +819,35 @@ function Anim.create_state_machine(name) end
 ---@return AnimNode
 function Anim.create_sequence_player(path, rate, loop) end
 
+---@param player AnimNode
+---@return boolean
+function Anim.is_sequence_player_valid(player) end
+
+---@param player AnimNode
+---@return number
+function Anim.get_sequence_player_time(player) end
+
+---@param player AnimNode
+---@return number
+function Anim.get_sequence_player_length(player) end
+
+---@param player AnimNode
+---@return number
+function Anim.get_sequence_player_play_rate(player) end
+
+---@param player AnimNode
+---@return string
+function Anim.get_sequence_player_path(player) end
+
 ---@param path string
 ---@param enable boolean
 ---@return boolean
 function Anim.set_sequence_force_root_lock(path, enable) end
+
+---@param path string
+---@param enable boolean
+---@return boolean
+function Anim.set_sequence_enable_root_motion(path, enable) end
 
 ---@param stateMachine AnimNode
 ---@param name string

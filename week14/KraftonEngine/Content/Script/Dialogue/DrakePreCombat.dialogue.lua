@@ -132,6 +132,15 @@ return {
             image = "",
             font = "Pretendard",
             duration = 3.0
+        },
+        {
+            id = "DrakePreCombat_McCurson_Welcome",
+            speaker = "MCCURSON",
+            text = "어서 와라, 케인. 결국 여기까지 왔군.",
+            text_en = "Welcome, Kain. So you finally made it here.",
+            image = "",
+            font = "Pretendard",
+            duration = 3.0
         }
     }
 }

@@ -9,6 +9,8 @@ local M = {}
 local widget = nil
 local focusedActor = nil
 local focusedItemId = nil
+local activeActor = nil
+local activeItemId = nil
 local panelOpen = false
 
 local function get_item_data(itemId)
@@ -76,9 +78,12 @@ local function show_panel(itemId)
     local data = get_item_data(itemId)
     if data == nil then return end
 
+    activeActor = focusedActor
+    activeItemId = itemId
     widget:SetText("item-inspect-title", data.name or itemId)
     widget:SetText("item-inspect-subtitle", data.subtitle or "")
     widget:SetText("item-inspect-description", data.description or "")
+    widget:SetText("item-inspect-footer", data.pickup == true and "E PICK UP" or "E CLOSE")
     widget:SetAttribute("item-inspect-image", "src", data.image or ItemDatabase.default_image or "../Item/IonCoreSample.png")
 
     if ScoreManager ~= nil and ScoreManager.AddItemInspected ~= nil then
@@ -92,8 +97,33 @@ end
 
 local function close_panel()
     panelOpen = false
+    activeActor = nil
+    activeItemId = nil
     set_display("item-inspect-card", "none")
     set_display("item-interact-hint", focusedActor ~= nil and "block" or "none")
+end
+
+local function pickup_active_item()
+    local actor = activeActor
+    local itemId = activeItemId
+
+    close_panel()
+    if actor ~= nil and actor.UUID ~= nil and _G.InspectableItems ~= nil then
+        _G.InspectableItems[actor.UUID] = nil
+    end
+    if itemId ~= nil then
+        _G.PickedUpItems = _G.PickedUpItems or {}
+        _G.PickedUpItems[itemId] = true
+    end
+    if actor ~= nil and type(actor.SetOutline) == "function" then
+        actor:SetOutline(false)
+    end
+    if actor ~= nil and type(actor.Destroy) == "function" then
+        actor:Destroy()
+    end
+    focusedActor = nil
+    focusedItemId = nil
+    set_display("item-interact-hint", "none")
 end
 
 local function is_interact_pressed()
@@ -107,6 +137,20 @@ local function get_registry_entry(actor)
     return _G.InspectableItems[actor.UUID]
 end
 
+local function trace_interactable(camPos, camFwd, owner)
+    if World.RaycastWorldStatic ~= nil then
+        local hit = World.RaycastWorldStatic(camPos, camFwd, INSPECT_RANGE, owner)
+        if hit ~= nil
+            and hit.HitActor ~= nil
+            and hit.HitActor ~= owner
+            and get_registry_entry(hit.HitActor) ~= nil then
+            return hit
+        end
+    end
+
+    return World.RaycastPrimitive(camPos, camFwd, INSPECT_RANGE, owner)
+end
+
 local function update_focus(camera, owner)
     if camera == nil then
         clear_focus()
@@ -115,7 +159,7 @@ local function update_focus(camera, owner)
 
     local camPos = camera:GetWorldLocation()
     local camFwd = camera.Forward
-    local hit = World.RaycastPrimitive(camPos, camFwd, INSPECT_RANGE, owner)
+    local hit = trace_interactable(camPos, camFwd, owner)
     if hit == nil or hit.HitActor == nil or hit.HitActor == owner then
         clear_focus()
         return
@@ -137,6 +181,8 @@ end
 function M.Shutdown()
     clear_focus()
     panelOpen = false
+    activeActor = nil
+    activeItemId = nil
 
     if widget ~= nil and widget:IsInViewport() then
         widget:RemoveFromParent()
@@ -152,7 +198,12 @@ function M.Tick(camera, owner)
 
     if is_interact_pressed() then
         if panelOpen then
-            close_panel()
+            local data = get_item_data(activeItemId)
+            if data ~= nil and data.pickup == true then
+                pickup_active_item()
+            else
+                close_panel()
+            end
             return true
         elseif focusedItemId ~= nil then
             show_panel(focusedItemId)

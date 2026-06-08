@@ -24,6 +24,7 @@ local killMarkerTimer = 0.0
 local currentAmmo = 0
 local magazineSize = 0
 local bVisible = true
+local bLetterboxVisible = false
 local bDialogueVisible = false
 local dialogueOpacity = 0.0
 local scoreWarningLogged = false
@@ -96,6 +97,12 @@ local function apply_dialogue_visibility()
 
     widget:SetProperty("hud-dialogue-box", "display", bDialogueVisible and "block" or "none")
     widget:SetProperty("hud-dialogue-box", "opacity", string.format("%.2f", dialogueOpacity))
+end
+
+local function apply_letterbox_visibility()
+    if widget == nil then return end
+
+    widget:SetProperty("hud-letterbox-layer", "display", bLetterboxVisible and "block" or "none")
 end
 
 local function is_target_actor(actor)
@@ -186,6 +193,7 @@ function WeaponHud.Initialize(config)
     end
 
     apply_visibility()
+    apply_letterbox_visibility()
     apply_dialogue_visibility()
     WeaponHud.SetAmmo(currentAmmo, magazineSize)
     update_score()
@@ -206,6 +214,7 @@ function WeaponHud.Shutdown()
     hitMarkerTimer = 0.0
     killMarkerTimer = 0.0
     bVisible = true
+    bLetterboxVisible = false
     bDialogueVisible = false
     dialogueOpacity = 0.0
     scoreWarningLogged = false
@@ -225,6 +234,16 @@ function WeaponHud.SetCrosshairVisible(visible)
     if widget == nil then return end
     if not bVisible then return end
     widget:SetProperty("crosshair-screen", "display", (visible ~= false) and "block" or "none")
+end
+
+function WeaponHud.ShowLetterbox()
+    bLetterboxVisible = true
+    apply_letterbox_visibility()
+end
+
+function WeaponHud.HideLetterbox()
+    bLetterboxVisible = false
+    apply_letterbox_visibility()
 end
 
 function WeaponHud.SetAmmo(inCurrentAmmo, inMagazineSize)

@@ -1,21 +1,24 @@
 {
-  "BlendState" : "",
-  "DepthStencilState" : "",
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
   "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
   "EmissiveIntensity" : 0.000000,
   "Origin" : "ObjImport",
   "Parameters" : {
     "HasNormalMap" : 0.000000,
     "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-    "_pad" : [0.000000, 0.000000, 0.000000]
+    "TwoSidedLighting" : 0.000000,
+    "_pad0" : 0.000000,
+    "_pad1" : 0.000000
   },
   "PathFileName" : "Content/Material/Auto/material_0.mat",
-  "RasterizerState" : "",
+  "RasterizerState" : "SolidBackCull",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "ShadowMode" : "Opaque",
   "Textures" : {
     "DiffuseTexture" : "Content/Data/Map/de_dust2-cs-map/source/de_dust2/de_dust2_material_0.tga"
   },
+  "TwoSidedLighting" : false,
   "bEnableBloom" : false
 }

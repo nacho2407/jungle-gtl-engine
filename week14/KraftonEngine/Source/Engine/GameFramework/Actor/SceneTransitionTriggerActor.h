@@ -28,9 +28,14 @@ public:
 
 private:
 	bool IsPawnInsideBox(const APawn* Pawn) const;
+	FString GetEffectiveRequiredPickedUpItemId() const;
+	FString GetEffectiveMissingRequirementDialogue() const;
+	bool HasRequiredPickedUpItem() const;
 	void FireTransition();
 	void BeginFadeOut(class APlayerCameraManager* CamMgr);
 	void ShowLoadingScreen();
+	void ShowMissingRequirementDialogue();
+	void HideMissingRequirementDialogue();
 
 	UBoxComponent* BoxComponent = nullptr;
 
@@ -52,6 +57,15 @@ private:
 	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Fade In Duration", Min=0.0f, Speed=0.1f)
 	float FadeInDuration = 1.0f;
 
+	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Required Picked Up Item")
+	FString RequiredPickedUpItemId = "";
+
+	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Missing Requirement Dialogue")
+	FString MissingRequirementDialogue = "";
+
+	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Missing Dialogue Duration", Min=0.0f, Speed=0.1f)
+	float MissingRequirementDialogueDuration = 3.0f;
+
 	// fade-out 완료 후 scene load 전에 loading screen 을 최소로 보여줄 시간.
 	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Loading Screen Duration", Min=0.0f, Speed=0.1f)
 	float LoadingScreenDuration = 0.75f;
@@ -61,4 +75,5 @@ private:
 	bool bFadeOutStarted = false;
 	bool bLoadingScreenShown = false;
 	float ElapsedSinceEnter = 0.0f;
+	float MissingRequirementDialogueTimer = 0.0f;
 };
