@@ -3,5 +3,5 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR lpCmdLine, int nShowCmd)
 {
-	return Launch(hInstance, nShowCmd);
+	return Launch(hInstance, lpCmdLine, nShowCmd);
 }

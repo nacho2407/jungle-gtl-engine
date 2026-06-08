@@ -17,6 +17,7 @@
 #include "Core/Types/PropertyTypes.h"
 #include "GameFramework/AActor.h"
 #include "Lua/LuaScriptManager.h"
+#include "Math/MathUtils.h"
 #include "Mesh/Skeletal/SkeletalMesh.h"
 #include "Mesh/Skeletal/SkeletalMeshAsset.h"
 #include "Object/Object.h"
@@ -130,7 +131,62 @@ void ULuaAnimInstance::HandleAnimNotify(const FAnimNotifyEvent& Notify)
 
 void ULuaAnimInstance::PostEvaluatePose(FPoseContext& Output)
 {
+	ApplyLuaBoneRotationOffsets(Output);
 	ApplyLuaMorphOverrides(Output);
+	ClearLuaBoneRotationOffsets();
+}
+
+void ULuaAnimInstance::ApplyLuaBoneRotationOffsets(FPoseContext& Output)
+{
+	if (!bLuaBoneRotationOffsetsEnabled || LuaBoneRotationOffsets.empty() || !Output.IsValid())
+	{
+		return;
+	}
+
+	USkeletalMesh* Mesh = Output.SkeletalMesh;
+	FSkeletalMesh* Asset = Mesh ? Mesh->GetSkeletalMeshAsset() : nullptr;
+	if (!Asset || Asset->Bones.empty())
+	{
+		return;
+	}
+
+	for (const FLuaBoneRotationOffset& Offset : LuaBoneRotationOffsets)
+	{
+		if (Offset.BoneName.empty() || Offset.Weight <= 0.0f)
+		{
+			continue;
+		}
+
+		int32 BoneIndex = -1;
+		for (int32 Index = 0; Index < static_cast<int32>(Asset->Bones.size()); ++Index)
+		{
+			if (Asset->Bones[Index].Name == Offset.BoneName)
+			{
+				BoneIndex = Index;
+				break;
+			}
+		}
+
+		if (BoneIndex < 0 || BoneIndex >= Output.GetNumBones())
+		{
+			continue;
+		}
+
+		const FRotator WeightedRotation = Offset.Rotation * FMath::Clamp(Offset.Weight, 0.0f, 1.0f);
+		if (WeightedRotation.IsNearlyZero())
+		{
+			continue;
+		}
+
+		const FQuat DeltaRotation = WeightedRotation.ToQuaternion();
+		Output.Pose[BoneIndex].Rotation = (Output.Pose[BoneIndex].Rotation * DeltaRotation).GetNormalized();
+	}
+}
+
+void ULuaAnimInstance::ClearLuaBoneRotationOffsets()
+{
+	LuaBoneRotationOffsets.clear();
+	bLuaBoneRotationOffsetsEnabled = false;
 }
 
 void ULuaAnimInstance::EnsureLuaMorphWeightStorage()
@@ -196,6 +252,7 @@ void ULuaAnimInstance::ClearGraph()
 	LuaMorphWeights.clear();
 	LuaMorphOverrideMask.clear();
 	bLuaMorphOverrideEnabled = false;
+	ClearLuaBoneRotationOffsets();
 }
 
 void ULuaAnimInstance::DispatchLuaInit()
@@ -273,6 +330,36 @@ void ULuaAnimInstance::InstallBindings()
 			return Move ? Move->IsWallRunning() : false;
 		});
 
+	Anim.set_function("is_owner_wall_running_on_right_side",
+		[this]() -> bool
+		{
+			if (!OwningComponent) return false;
+			AActor* Owner = OwningComponent->GetOwner();
+			if (!Owner) return false;
+			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
+			return Move ? Move->GetWallRunDebugSnapshot().bOnRightSide : false;
+		});
+
+	Anim.set_function("is_owner_crouching",
+		[this]() -> bool
+		{
+			if (!OwningComponent) return false;
+			AActor* Owner = OwningComponent->GetOwner();
+			if (!Owner) return false;
+			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
+			return Move ? Move->IsCrouching() : false;
+		});
+
+	Anim.set_function("is_owner_sliding",
+		[this]() -> bool
+		{
+			if (!OwningComponent) return false;
+			AActor* Owner = OwningComponent->GetOwner();
+			if (!Owner) return false;
+			UCharacterMovementComponent* Move = Owner->GetComponentByClass<UCharacterMovementComponent>();
+			return Move ? Move->IsSliding() : false;
+		});
+
 	// Slot 인자는 sol::object — None/missing 이면 FName::None (→ 내부에서 DefaultMontageSlot resolve).
 	// play_montage / stop_montage / is_montage_playing / jump_to_section 모두 공통 사용.
 	auto ResolveSlot = [](const sol::object& SlotObj) -> FName
@@ -341,6 +428,55 @@ void ULuaAnimInstance::InstallBindings()
 	// Anim.set_morph_weight("Smile", 1.0)
 	// Anim.clear_morph_weight("Smile")
 	// Anim.clear_morph_weights()
+	Anim.set_function("set_bone_rotation_offset",
+		[this](std::string BoneName, float Pitch, float Yaw, float Roll, sol::object Weight)
+		{
+			if (BoneName.empty())
+			{
+				return;
+			}
+
+			if (!std::isfinite(Pitch)) Pitch = 0.0f;
+			if (!std::isfinite(Yaw))   Yaw = 0.0f;
+			if (!std::isfinite(Roll))  Roll = 0.0f;
+
+			float SafeWeight = 1.0f;
+			if (Weight.is<float>())
+			{
+				SafeWeight = Weight.as<float>();
+			}
+			if (!std::isfinite(SafeWeight))
+			{
+				SafeWeight = 0.0f;
+			}
+			SafeWeight = FMath::Clamp(SafeWeight, 0.0f, 1.0f);
+
+			const FString TargetBoneName = FString(BoneName);
+			for (FLuaBoneRotationOffset& Offset : LuaBoneRotationOffsets)
+			{
+				if (Offset.BoneName == TargetBoneName)
+				{
+					Offset.Rotation = FRotator(Pitch, Yaw, Roll);
+					Offset.Weight = SafeWeight;
+					bLuaBoneRotationOffsetsEnabled = true;
+					return;
+				}
+			}
+
+			FLuaBoneRotationOffset Offset;
+			Offset.BoneName = TargetBoneName;
+			Offset.Rotation = FRotator(Pitch, Yaw, Roll);
+			Offset.Weight = SafeWeight;
+			LuaBoneRotationOffsets.push_back(Offset);
+			bLuaBoneRotationOffsetsEnabled = true;
+		});
+
+	Anim.set_function("clear_bone_rotation_offsets",
+		[this]()
+		{
+			ClearLuaBoneRotationOffsets();
+		});
+
 	Anim.set_function("set_morph_weight",
 		[this](std::string Name, float Weight)
 		{

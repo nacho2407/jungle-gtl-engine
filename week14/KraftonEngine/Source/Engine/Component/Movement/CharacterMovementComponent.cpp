@@ -965,23 +965,25 @@ void UCharacterMovementComponent::LogWallRunStatus(EWallRunStatus Status, const 
 	const FString ActorName = GetHitActorName(LogHit);
 	const FString ComponentName = GetHitComponentName(LogHit);
 
-	UE_LOG(
-		"[WallRunStatus] status=%s mode=%s speed=%.2f planar=%.2f minStart=%.2f check=%.2f radius=%.2f hit=%s dist=%.2f normal=(%.2f,%.2f,%.2f) upDot=%.2f actor=%s comp=%s",
-		GetWallRunStatusName(Status),
-		GetMovementModeName(),
-		Velocity.Length(),
-		PlanarSpeed,
-		MinWallRunStartSpeed,
-		WallCheckDistance,
-		WallCheckSphereRadius,
-		BoolText(bHasHit),
-		HitDistanceOrMiss(bHasHit, LogHit),
-		Normal.X,
-		Normal.Y,
-		Normal.Z,
-		UpDot,
-		ActorName.c_str(),
-		ComponentName.c_str());
+	// [WallRunStatus] 로그는 본 페어 부착 디버깅 동안 노이즈가 심해서 잠시 주석 처리.
+	// UE_LOG(
+	// 	"[WallRunStatus] status=%s mode=%s speed=%.2f planar=%.2f minStart=%.2f check=%.2f radius=%.2f hit=%s dist=%.2f normal=(%.2f,%.2f,%.2f) upDot=%.2f actor=%s comp=%s",
+	// 	GetWallRunStatusName(Status),
+	// 	GetMovementModeName(),
+	// 	Velocity.Length(),
+	// 	PlanarSpeed,
+	// 	MinWallRunStartSpeed,
+	// 	WallCheckDistance,
+	// 	WallCheckSphereRadius,
+	// 	BoolText(bHasHit),
+	// 	HitDistanceOrMiss(bHasHit, LogHit),
+	// 	Normal.X,
+	// 	Normal.Y,
+	// 	Normal.Z,
+	// 	UpDot,
+	// 	ActorName.c_str(),
+	// 	ComponentName.c_str());
+	(void)Status; (void)Hit; (void)PlanarSpeed; (void)bHasHit; (void)Normal; (void)UpDot; (void)ActorName; (void)ComponentName;
 }
 
 FWallRunDebugSnapshot UCharacterMovementComponent::GetWallRunDebugSnapshot() const
@@ -1592,16 +1594,16 @@ void UCharacterMovementComponent::UpdateSlideVelocity(float DeltaTime)
 	}
 
 	SlideElapsedTime += DeltaTime;
-	if (MaxSlideTime > FMath::Epsilon && SlideElapsedTime >= MaxSlideTime)
+	if (!bWantsCrouch && MaxSlideTime > FMath::Epsilon && SlideElapsedTime >= MaxSlideTime)
 	{
-		EndSlide(false, true);
+		EndSlide(false);
 		return;
 	}
 
 	const float Speed = GetPlanarSpeed();
 	if (Speed <= SlideEndSpeed)
 	{
-		EndSlide(false, true);
+		EndSlide(bWantsCrouch);
 		return;
 	}
 
@@ -1614,7 +1616,7 @@ void UCharacterMovementComponent::UpdateSlideVelocity(float DeltaTime)
 
 	if (NewSpeed <= SlideEndSpeed)
 	{
-		EndSlide(false, true);
+		EndSlide(bWantsCrouch);
 	}
 }
 

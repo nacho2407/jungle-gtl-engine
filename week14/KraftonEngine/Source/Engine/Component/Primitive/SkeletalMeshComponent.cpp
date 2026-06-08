@@ -632,21 +632,21 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 		PHYSICS_STATS_RECORD_RAGDOLL_ACTIVE(Ragdoll->GetBodyCount(), Ragdoll->GetConstraintCount());
 
 		FollowRagdollAnchor();
-		
+
 		TArray<FTransform> PhysicsLocalPose;
 		if (Ragdoll->BuildLocalPoseFromBodies(this, PhysicsLocalPose))
 		{
 			if (bHasAnimPose)
 			{
 				USkeletalMesh* Mesh = GetSkeletalMesh();
-				
+
 				FPoseContext PhysicsPose;
 				PhysicsPose.SkeletalMesh = Mesh;
 				PhysicsPose.Pose = PhysicsLocalPose;
 
 				TArray<float> BoneWeights;
 				BoneWeights.assign(PhysicsPose.Pose.size(), PhysicsBlendWeight);
-				
+
 				FPoseContext FinalPose;
 				FAnimationRuntime::BlendTwoPosesPerBone(
 					AnimPose,
@@ -660,14 +660,18 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 			{
 				SetBoneLocalTransforms(PhysicsLocalPose);
 			}
-			
+
+			// 본 포즈 갱신 직후에 본 ↔ 본 페어 부착 실행. 부모 tick(UMeshComponent)이
+			// 렌더 프록시에 월드 매트릭스를 sync 하기 전이라 같은 프레임에 반영된다.
+			UpdateBoneToBoneAttachment();
 			UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 			return;
 		}
 	}
-	
+
 	if (bHasAnimPose && ApplyRagdollRecoveryBlend(DeltaTime, AnimPose))
 	{
+		UpdateBoneToBoneAttachment();
 		UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 		return;
 	}
@@ -675,10 +679,13 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 	if (bHasAnimPose)
 	{
 		ApplyPoseToMesh(AnimPose);
+		UpdateBoneToBoneAttachment();
 		UMeshComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
 		return;
 	}
 
+	// fallback 경로는 Super(USkinnedMeshComponent::TickComponent)가 이미
+	// UpdateBoneToBoneAttachment을 호출한다.
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
