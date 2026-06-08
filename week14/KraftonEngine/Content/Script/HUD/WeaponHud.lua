@@ -49,7 +49,7 @@ local function update_speed()
     end
     speed = speed * 0.5
 
-    widget:SetText("speed-hud-value", string.format("%04.1f m/s", speed))
+    widget:SetText("speed-hud-value", string.format("%.1f m/s", speed))
 end
 
 local function apply_visibility()

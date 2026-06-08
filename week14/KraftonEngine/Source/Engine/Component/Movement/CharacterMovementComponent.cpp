@@ -43,6 +43,7 @@ namespace
 	constexpr float SprintFootstepInitialDistanceRatio = 0.45f;
 	constexpr float SlideAudioMinSpeed = 3.0f;
 	constexpr float SlideStepStrideDistance = 2.4f;
+	constexpr float SlideJumpCarryMaxSpeed = 32.0f;
 	constexpr float WallRunStepStrideDistance = 2.2f;
 	constexpr float WallRunLoopStartDelay = 0.42f;
 	constexpr float HeavyLandDownSpeed = 9.0f;
@@ -1755,6 +1756,10 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 	FVector V2D(Velocity.X, Velocity.Y, 0.0f);
 	const float Speed2D = V2D.Length();
 	float CurrentMaxWalkSpeed = GetMaxWalkSpeed();
+	if (MovementMode == EMovementMode::Walking && bWantsJump)
+	{
+		CurrentMaxWalkSpeed = std::max(CurrentMaxWalkSpeed, std::min(PreInputSpeed2D, SlideJumpCarryMaxSpeed));
+	}
 	if (MovementMode == EMovementMode::Falling)
 	{
 		const bool bUseSprintAirLimit = bWantsSprint && !IsCrouching() && !IsSliding();

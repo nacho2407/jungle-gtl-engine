@@ -4,11 +4,13 @@ local PLAYER_TAG = "player"
 
 local MAX_HEALTH = 60.0
 local THINK_INTERVAL = 0.16
-local SIGHT_RANGE = 55.0
+local SIGHT_RANGE = 260.0
+local PROXIMITY_ALERT_RANGE = 140.0
+local FORGET_RANGE = 340.0
 local SIGHT_HALF_FOV_DOT = 0.35
 local EYE_HEIGHT = 5.2
 local TARGET_HEIGHT = 1.4
-local FIRE_RANGE = 62.0
+local FIRE_RANGE = 120.0
 local FIRE_INTERVAL_MIN = 0.85
 local FIRE_INTERVAL_MAX = 1.35
 local FIRE_DAMAGE = 3.0
@@ -245,12 +247,55 @@ local function can_see_target(target)
     return staticHit == nil
 end
 
+local function has_clear_static_line_to_target(target, maxRange)
+    if not is_valid_actor(target) then return false end
+
+    local source = get_eye_location()
+    local targetPos = get_target_location(target)
+    local toTarget = targetPos - source
+    local distance = toTarget:Length()
+    if distance <= 0.001 or distance > maxRange then
+        return false
+    end
+
+    local staticHit = nil
+    if World.RaycastWorldStatic ~= nil then
+        staticHit = World.RaycastWorldStatic(source, toTarget:Normalized(), distance, obj)
+    end
+
+    return staticHit == nil
+end
+
+local function should_alert_to_target(target)
+    if not is_valid_actor(target) then return false end
+
+    local distance = horizontal_distance_to(target)
+    if distance <= PROXIMITY_ALERT_RANGE and has_clear_static_line_to_target(target, PROXIMITY_ALERT_RANGE) then
+        return true
+    end
+
+    if can_see_target(target) then
+        return true
+    end
+
+    if alerted and distance <= FORGET_RANGE and has_clear_static_line_to_target(target, FORGET_RANGE) then
+        return true
+    end
+
+    return false
+end
+
 local function find_target()
     if is_valid_actor(targetActor) then
         return targetActor
     end
 
-    targetActor = World.FindFirstActorByTag(PLAYER_TAG)
+    if Game ~= nil and Game.GetPlayerPawn ~= nil then
+        targetActor = Game.GetPlayerPawn()
+    end
+    if not is_valid_actor(targetActor) and World.FindFirstActorByTag ~= nil then
+        targetActor = World.FindFirstActorByTag(PLAYER_TAG)
+    end
     return targetActor
 end
 
@@ -271,6 +316,12 @@ local function apply_enemy_damage(context)
     local amount = context ~= nil and (context.Damage or context.damage) or 0.0
     if amount <= 0.0 or isDead then
         return make_damage_result(false, 0.0, false)
+    end
+
+    local attacker = context ~= nil and (context.Instigator or context.instigator or context.DamageCauser or context.damageCauser) or nil
+    if is_valid_actor(attacker) then
+        targetActor = attacker
+        alerted = true
     end
 
     currentHealth = clamp(currentHealth - amount, 0.0, MAX_HEALTH)
@@ -405,7 +456,7 @@ function Tick(dt)
     if thinkTimer <= 0.0 then
         thinkTimer = THINK_INTERVAL
         local target = find_target()
-        alerted = can_see_target(target)
+        alerted = should_alert_to_target(target)
 
         if alerted and target ~= nil then
             face_target(target)
