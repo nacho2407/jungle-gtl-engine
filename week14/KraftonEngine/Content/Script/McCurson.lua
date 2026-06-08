@@ -32,11 +32,15 @@ local savedWallRunMaxSpeed = nil
 local bMovementLocked = false
 
 local dialogueSequence = {
-    "DrakePreCombat_McCurson_Welcome",
-    "DrakePreCombat_McCurson_DidYouKnow",
-    "DrakePreCombat_McCurson_LancerPlan",
-    "DrakePreCombat_McCurson_WeKnew",
-    "DrakePreCombat_McCurson_DriveHint",
+    "DrakePreCombat_System_DriveAutoPlay",
+    "DrakePreCombat_System_LancerDocConfirmed",
+    "DrakePreCombat_System_LancerAccessDenied",
+    "DrakePreCombat_Drake_Cleanup",
+    "DrakePreCombat_Kain_Refuse",
+    "DrakePreCombat_Drake_RepeatThat",
+    "DrakePreCombat_Kain_RefuseAgain",
+    "DrakePreCombat_Drake_Acknowledged",
+    "DrakePreCombat_Drake_StayPut",
 }
 
 local function clamp(value, minValue, maxValue)
@@ -269,6 +273,9 @@ local function restore_player_after_cutscene()
     if Game ~= nil and Game.SetInputPossessed ~= nil then
         Game.SetInputPossessed(true)
     end
+    if Game ~= nil and Game.SetMouseCaptureWhileInputBlocked ~= nil then
+        Game.SetMouseCaptureWhileInputBlocked(false)
+    end
     if bMovementLocked and lockedMovement ~= nil then
         if savedMaxWalkSpeed ~= nil then lockedMovement:SetMaxWalkSpeed(savedMaxWalkSpeed) end
         if savedSprintSpeedMultiplier ~= nil then lockedMovement:SetSprintSpeedMultiplier(savedSprintSpeedMultiplier) end
@@ -305,6 +312,9 @@ local function lock_player_for_cutscene()
     if not CUTSCENE_LOCK_INPUT then return end
 
     if Game ~= nil and Game.SetInputPossessed ~= nil then
+        if Game.SetMouseCaptureWhileInputBlocked ~= nil then
+            Game.SetMouseCaptureWhileInputBlocked(true)
+        end
         Game.SetInputPossessed(false)
     end
 

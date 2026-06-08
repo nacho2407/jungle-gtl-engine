@@ -334,8 +334,16 @@ local function set_step_visual(index, item, status)
         return
     end
 
-    overlayWidget:SetText(base .. "-key", item.key or "")
-    overlayWidget:SetText(base .. "-pad-key", item.padKey or "")
+    local key = item.key or ""
+    local padKey = item.padKey or ""
+    local hasKey = key ~= ""
+    local hasPadKey = padKey ~= ""
+    overlayWidget:SetText(base .. "-key", key)
+    overlayWidget:SetProperty(base .. "-key", "display", hasKey and "block" or "none")
+    overlayWidget:SetText(base .. "-separator", "/")
+    overlayWidget:SetProperty(base .. "-separator", "display", (hasKey and hasPadKey) and "block" or "none")
+    overlayWidget:SetText(base .. "-pad", padKey)
+    overlayWidget:SetProperty(base .. "-pad", "display", hasPadKey and "block" or "none")
     overlayWidget:SetText(base .. "-text", item.text or "")
     if status == "done" then
         overlayWidget:SetProperty(base, "opacity", "0.44")

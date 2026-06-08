@@ -17,6 +17,7 @@ void UGameViewportClient::BeginGameSession(FViewport* InViewport)
 
 void UGameViewportClient::EndGameSession()
 {
+	bCaptureMouseWhileInputBlocked = false;
 	SetInputPossessed(false);
 	ResetInputState();
 	bHasCursorClipRect = false;
@@ -40,12 +41,10 @@ void UGameViewportClient::ProcessInput(const FInputSystemSnapshot& Snapshot, flo
 		return;
 	}
 
-	// possess off — 게임 입력 라우팅이 꺼진 상태. 커서는 풀어준다 (메뉴 진입 직후 등).
+	// possess off — 게임 입력 라우팅은 끊고, 컷씬 옵션에 따라 마우스 캡처만 별도로 유지합니다.
 	if (!bInputPossessed)
 	{
-		ClearGameInputSnapshot();
-		InputSystem::Get().SetUseRawMouse(false);
-		SetCursorCaptured(false);
+		ApplyBlockedInputMousePolicy();
 		return;
 	}
 
@@ -112,10 +111,40 @@ void UGameViewportClient::SetInputPossessed(bool bPossessed)
 	// (ProcessInput 호출이 멈춘 뒤에도 이전 값이 남아있는 케이스 방지.)
 	if (!bPossessed)
 	{
-		ClearGameInputSnapshot();
-		InputSystem::Get().SetUseRawMouse(false);
-		SetCursorCaptured(false);
+		ApplyBlockedInputMousePolicy();
 	}
+}
+
+void UGameViewportClient::SetMouseCaptureWhileInputBlocked(bool bCapture)
+{
+	if (bCaptureMouseWhileInputBlocked == bCapture)
+	{
+		return;
+	}
+
+	bCaptureMouseWhileInputBlocked = bCapture;
+
+	if (!bInputPossessed)
+	{
+		ApplyBlockedInputMousePolicy();
+	}
+}
+
+void UGameViewportClient::ApplyBlockedInputMousePolicy()
+{
+	// gameplay Lua 입력 스냅샷은 항상 비워서 입력 차단 의미를 유지합니다.
+	ClearGameInputSnapshot();
+
+	// 컷씬처럼 UI가 마우스를 요구하지 않는 입력 차단 상태에서는 화면 포커스감을 유지합니다.
+	if (bCaptureMouseWhileInputBlocked && !UUIManager::Get().AnyViewportWidgetWantsMouse())
+	{
+		InputSystem::Get().SetUseRawMouse(true);
+		SetCursorCaptured(true);
+		return;
+	}
+
+	InputSystem::Get().SetUseRawMouse(false);
+	SetCursorCaptured(false);
 }
 
 void UGameViewportClient::SetCursorClipRect(const FRect& InViewportScreenRect)

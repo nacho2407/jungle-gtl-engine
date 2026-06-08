@@ -33,6 +33,101 @@ body {
 	bottom: 0px;
 }
 
+.hud-cutscene-skip-prompt {
+	position: absolute;
+	right: 24.00px;
+	bottom: 24.00px;
+	width: 178px;
+	height: 28px;
+	opacity: 0.82;
+	display: none;
+	pointer-events: none;
+}
+
+.hud-cutscene-skip-keyboard {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 58px;
+	height: 28px;
+	background-color: #ffffff;
+	color: #000000;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.hud-cutscene-skip-separator {
+	position: absolute;
+	left: 66px;
+	top: 0px;
+	width: 14px;
+	height: 28px;
+	color: #ffffff;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.hud-cutscene-skip-gamepad {
+	position: absolute;
+	left: 86px;
+	top: 0px;
+	width: 28px;
+	height: 28px;
+	background-color: #ffffff;
+	color: #000000;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+	border-radius: 14px;
+}
+
+.hud-cutscene-skip-label {
+	position: absolute;
+	left: 126px;
+	top: 0px;
+	width: 52px;
+	height: 28px;
+	color: #ffffff;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: left;
+	white-space: nowrap;
+}
+
+.hud-skip-ring {
+	position: absolute;
+	right: 54px;
+	bottom: 60.00px;
+	width: 64px;
+	height: 64px;
+	opacity: 0.0;
+	display: none;
+	pointer-events: none;
+}
+
+.hud-skip-ring-frame {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 64px;
+	height: 64px;
+	image-fit: contain;
+	opacity: 0.0;
+}
+
 #weapon-hud-root {
 	position: absolute;
 	left: auto;

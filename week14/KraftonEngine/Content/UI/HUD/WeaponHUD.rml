@@ -52,5 +52,39 @@
         <div id="hud-letterbox-bottom" class="hud-letterbox-bar"></div>
     </div>
 
+    <div id="hud-cutscene-skip-prompt" class="hud-cutscene-skip-prompt">
+        <div id="hud-cutscene-skip-keyboard" class="hud-cutscene-skip-keyboard" data-ui-editor="text">Ctrl</div>
+        <div id="hud-cutscene-skip-separator" class="hud-cutscene-skip-separator" data-ui-editor="text">/</div>
+        <div id="hud-cutscene-skip-gamepad" class="hud-cutscene-skip-gamepad" data-ui-editor="text">B</div>
+        <div id="hud-cutscene-skip-label" class="hud-cutscene-skip-label" data-ui-editor="text">SKIP</div>
+    </div>
+    <div id="hud-skip-ring" class="hud-skip-ring">
+        <img id="hud-skip-ring-frame-00" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_00.png"/>
+        <img id="hud-skip-ring-frame-01" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_01.png"/>
+        <img id="hud-skip-ring-frame-02" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_02.png"/>
+        <img id="hud-skip-ring-frame-03" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_03.png"/>
+        <img id="hud-skip-ring-frame-04" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_04.png"/>
+        <img id="hud-skip-ring-frame-05" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_05.png"/>
+        <img id="hud-skip-ring-frame-06" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_06.png"/>
+        <img id="hud-skip-ring-frame-07" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_07.png"/>
+        <img id="hud-skip-ring-frame-08" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_08.png"/>
+        <img id="hud-skip-ring-frame-09" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_09.png"/>
+        <img id="hud-skip-ring-frame-10" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_10.png"/>
+        <img id="hud-skip-ring-frame-11" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_11.png"/>
+        <img id="hud-skip-ring-frame-12" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_12.png"/>
+        <img id="hud-skip-ring-frame-13" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_13.png"/>
+        <img id="hud-skip-ring-frame-14" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_14.png"/>
+        <img id="hud-skip-ring-frame-15" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_15.png"/>
+        <img id="hud-skip-ring-frame-16" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_16.png"/>
+        <img id="hud-skip-ring-frame-17" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_17.png"/>
+        <img id="hud-skip-ring-frame-18" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_18.png"/>
+        <img id="hud-skip-ring-frame-19" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_19.png"/>
+        <img id="hud-skip-ring-frame-20" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_20.png"/>
+        <img id="hud-skip-ring-frame-21" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_21.png"/>
+        <img id="hud-skip-ring-frame-22" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_22.png"/>
+        <img id="hud-skip-ring-frame-23" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_23.png"/>
+        <img id="hud-skip-ring-frame-24" class="hud-skip-ring-frame" src="../Cutscene/SkipRing/SkipRing_24.png"/>
+    </div>
+
 </body>
 </rml>

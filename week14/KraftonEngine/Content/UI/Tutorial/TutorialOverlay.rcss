@@ -84,21 +84,34 @@ body {
 	position: absolute;
 	left: 0px;
 	top: 0px;
-	width: 48px;
+	width: 58px;
 	height: 29px;
-	font-size: 15px;
+	font-size: 14px;
 	font-weight: 800;
 	line-height: 29px;
 	text-align: center;
 	color: #F4F4F4;
 	background-color: #050505E8;
 	border: 1px #E6E6E6B8;
-	border-radius: 0px;
+}
+
+.tutorial-key-separator {
+	position: absolute;
+	left: 66px;
+	top: 0px;
+	width: 16px;
+	height: 29px;
+	font-size: 17px;
+	font-weight: 800;
+	line-height: 29px;
+	text-align: center;
+	color: #E6E6E6D8;
+	text-shadow: 0px 2px 4px #000000;
 }
 
 .tutorial-pad-key {
 	position: absolute;
-	left: 62px;
+	left: 88px;
 	top: 0px;
 	width: 29px;
 	height: 29px;
@@ -107,16 +120,16 @@ body {
 	line-height: 29px;
 	text-align: center;
 	color: #F4F4F4;
-	background-color: #151515E8;
-	border: 1px #E6E6E688;
-	border-radius: 14px;
+	background-color: #050505E8;
+	border: 1px #E6E6E6B8;
+	border-radius: 15px;
 }
 
 .tutorial-text {
 	position: absolute;
-	left: 111px;
+	left: 130px;
 	top: 0px;
-	width: 243px;
+	width: 224px;
 	height: 31px;
 	font-size: 20px;
 	font-weight: 700;

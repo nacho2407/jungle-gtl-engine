@@ -12,6 +12,9 @@ local CROSSHAIR_BASE_BOTTOM = 80
 local CROSSHAIR_SPREAD_PX   = 34
 local HIT_MARKER_DURATION   = 0.12
 local KILL_MARKER_DURATION  = 0.22
+local LETTERBOX_HEIGHT_RATIO = 0.135
+local LETTERBOX_ANIM_DURATION = 0.35
+local SKIP_RING_FRAME_COUNT = 25
 
 local widget = nil
 local camera = nil
@@ -25,12 +28,21 @@ local currentAmmo = 0
 local magazineSize = 0
 local bVisible = true
 local bLetterboxVisible = false
+local letterboxProgress = 0.0
 local bDialogueVisible = false
 local dialogueOpacity = 0.0
+local bSkipPromptVisible = false
+local skipProgress = 0.0
 local scoreWarningLogged = false
 
 local function px(value)
     return string.format("%.2fpx", value)
+end
+
+local function clamp01(value)
+    if value < 0.0 then return 0.0 end
+    if value > 1.0 then return 1.0 end
+    return value
 end
 
 local function get_viewport_size()
@@ -99,10 +111,58 @@ local function apply_dialogue_visibility()
     widget:SetProperty("hud-dialogue-box", "opacity", string.format("%.2f", dialogueOpacity))
 end
 
+local function apply_skip_prompt_visibility()
+    if widget == nil then return end
+
+    local display = bSkipPromptVisible and "block" or "none"
+    widget:SetProperty("hud-cutscene-skip-prompt", "display", display)
+    widget:SetProperty("hud-skip-ring", "display", display)
+end
+
+local function apply_skip_ring_progress()
+    if widget == nil then return end
+
+    local clamped = clamp01(skipProgress or 0.0)
+    widget:SetProperty("hud-skip-ring", "opacity", clamped > 0.001 and "1.0" or "0.0")
+
+    local visibleIndex = math.floor(clamped * (SKIP_RING_FRAME_COUNT - 1) + 0.5)
+    for index = 0, SKIP_RING_FRAME_COUNT - 1 do
+        local id = string.format("hud-skip-ring-frame-%02d", index)
+        widget:SetProperty(id, "opacity", index == visibleIndex and "1.0" or "0.0")
+    end
+end
+
 local function apply_letterbox_visibility()
     if widget == nil then return end
 
-    widget:SetProperty("hud-letterbox-layer", "display", bLetterboxVisible and "block" or "none")
+    -- 레터박스는 display를 유지한 상태에서 위/아래 바의 위치만 보간합니다.
+    local shouldDisplay = bLetterboxVisible or letterboxProgress > 0.001
+    local _, viewportHeight = get_viewport_size()
+    local barHeight = viewportHeight * LETTERBOX_HEIGHT_RATIO
+    local offset = -barHeight * (1.0 - letterboxProgress)
+
+    widget:SetProperty("hud-letterbox-layer", "display", shouldDisplay and "block" or "none")
+    widget:SetProperty("hud-letterbox-top", "top", px(offset))
+    widget:SetProperty("hud-letterbox-bottom", "bottom", px(offset))
+end
+
+local function update_letterbox(dt)
+    local target = bLetterboxVisible and 1.0 or 0.0
+    if math.abs(letterboxProgress - target) <= 0.001 then
+        letterboxProgress = target
+        apply_letterbox_visibility()
+        return
+    end
+
+    local duration = LETTERBOX_ANIM_DURATION
+    local step = duration > 0.0 and ((dt or 0.0) / duration) or 1.0
+    if target > letterboxProgress then
+        letterboxProgress = clamp01(letterboxProgress + step)
+    else
+        letterboxProgress = clamp01(letterboxProgress - step)
+    end
+
+    apply_letterbox_visibility()
 end
 
 local function is_target_actor(actor)
@@ -195,6 +255,8 @@ function WeaponHud.Initialize(config)
     apply_visibility()
     apply_letterbox_visibility()
     apply_dialogue_visibility()
+    apply_skip_prompt_visibility()
+    apply_skip_ring_progress()
     WeaponHud.SetAmmo(currentAmmo, magazineSize)
     update_score()
     update_speed()
@@ -215,8 +277,11 @@ function WeaponHud.Shutdown()
     killMarkerTimer = 0.0
     bVisible = true
     bLetterboxVisible = false
+    letterboxProgress = 0.0
     bDialogueVisible = false
     dialogueOpacity = 0.0
+    bSkipPromptVisible = false
+    skipProgress = 0.0
     scoreWarningLogged = false
 end
 
@@ -236,13 +301,19 @@ function WeaponHud.SetCrosshairVisible(visible)
     widget:SetProperty("crosshair-screen", "display", (visible ~= false) and "block" or "none")
 end
 
-function WeaponHud.ShowLetterbox()
+function WeaponHud.ShowLetterbox(config)
     bLetterboxVisible = true
+    if config ~= nil and config.instant == true then
+        letterboxProgress = 1.0
+    end
     apply_letterbox_visibility()
 end
 
-function WeaponHud.HideLetterbox()
+function WeaponHud.HideLetterbox(config)
     bLetterboxVisible = false
+    if config ~= nil and config.instant == true then
+        letterboxProgress = 0.0
+    end
     apply_letterbox_visibility()
 end
 
@@ -307,6 +378,43 @@ function WeaponHud.HideDialogue()
     apply_dialogue_visibility()
 end
 
+function WeaponHud.ShowSkipPrompt(config)
+    config = config or {}
+    bSkipPromptVisible = true
+
+    if widget ~= nil then
+        local keyboardText = config.keyboardText
+        local gamepadText = config.gamepadText
+        if (keyboardText == nil or gamepadText == nil) and config.keyText ~= nil then
+            -- 기존 호출부의 "Ctrl / B" 형식도 키보드 사각형과 패드 원형으로 나누어 표시합니다.
+            keyboardText, gamepadText = string.match(config.keyText, "^%s*(.-)%s*/%s*(.-)%s*$")
+            keyboardText = keyboardText or config.keyText
+        end
+
+        widget:SetText("hud-cutscene-skip-keyboard", keyboardText or "Ctrl")
+        widget:SetText("hud-cutscene-skip-separator", "/")
+        widget:SetText("hud-cutscene-skip-gamepad", gamepadText or "B")
+    end
+    if widget ~= nil and config.label ~= nil then
+        widget:SetText("hud-cutscene-skip-label", config.label)
+    end
+
+    apply_skip_prompt_visibility()
+    apply_skip_ring_progress()
+end
+
+function WeaponHud.HideSkipPrompt()
+    bSkipPromptVisible = false
+    skipProgress = 0.0
+    apply_skip_prompt_visibility()
+    apply_skip_ring_progress()
+end
+
+function WeaponHud.SetSkipProgress(progress)
+    skipProgress = clamp01(progress or 0.0)
+    apply_skip_ring_progress()
+end
+
 function WeaponHud.TriggerHitMarker()
     hitMarkerTimer = HIT_MARKER_DURATION
     update_crosshair()
@@ -319,9 +427,13 @@ function WeaponHud.TriggerKillMarker()
 end
 
 function WeaponHud.Tick(dt, spread)
+    dt = dt or 0.0
+
     if spread ~= nil then
         weaponSpread = spread
     end
+
+    update_letterbox(dt)
 
     if hitMarkerTimer > 0.0 then
         hitMarkerTimer = hitMarkerTimer - dt
