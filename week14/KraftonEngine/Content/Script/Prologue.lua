@@ -30,6 +30,7 @@ local playerMovementLocked = false
 local playerAutoInputWASD = nil
 local playerAutoInputMouseLook = nil
 local playerAutoInputLocked = false
+local playerInputPossessionLocked = false
 local dialogueStartDelayRemaining = 0.0
 local dialogueStarted = false
 local landingDescentEndTime = 39.5
@@ -55,6 +56,7 @@ local DIALOGUE_DEFAULT_FONT_SIZE = 18.0
 local LANDING_POD_ACTOR_NAME = "landing-pod-mesh"
 local LANDING_CUTSCENE_CAMERA_ACTOR_NAME = "prologue-landing-camera"
 local PLAYER_PAWN_NAME = "kain-temp"
+local LANDING_START_Z = 1500.0
 local LANDING_TARGET_Z = -3.119
 local LANDING_COMPRESSED_Z = -3.525
 local DIALOGUE_END_BEFORE_LANDING_FINISH = 10.0
@@ -156,9 +158,26 @@ local function reset_landing_camera_shake_state()
 end
 
 local function start_landing_wave_shake(scale)
+    if cutsceneFinished then
+        return
+    end
     if CameraManager ~= nil and CameraManager.StartWaveShake ~= nil then
         CameraManager.StartWaveShake(scale)
     end
+end
+
+local function get_cutscene_key_down(key)
+    if Input == nil or key == nil then return false end
+    if Input.GetRawKeyDown ~= nil then return Input.GetRawKeyDown(key) end
+    if Input.GetKeyDown ~= nil then return Input.GetKeyDown(key) end
+    return false
+end
+
+local function get_cutscene_key(key)
+    if Input == nil or key == nil then return false end
+    if Input.GetRawKey ~= nil then return Input.GetRawKey(key) end
+    if Input.GetKey ~= nil then return Input.GetKey(key) end
+    return false
 end
 
 local function find_landing_cutscene_camera()
@@ -304,6 +323,16 @@ local function set_landing_pod_z(z)
     pod.Location = make_location_with_z(landingStartLocation, z)
 end
 
+local function prepare_landing_pod_for_intro()
+    local pod = find_landing_pod()
+    if pod == nil or landingStartLocation == nil then
+        return
+    end
+
+    landingStartLocation = make_location_with_z(landingStartLocation, LANDING_START_Z)
+    set_landing_pod_z(LANDING_START_Z)
+end
+
 local function update_landing_pod_motion()
     local pod = find_landing_pod()
     if pod == nil or landingStartLocation == nil then
@@ -384,6 +413,11 @@ local function update_landing_camera_shake(dt)
 end
 
 local function lock_player_movement_for_cutscene()
+    if not playerInputPossessionLocked and Game ~= nil and Game.SetInputPossessed ~= nil then
+        Game.SetInputPossessed(false)
+        playerInputPossessionLocked = true
+    end
+
     if World == nil or World.FindActorByName == nil then
         return
     end
@@ -427,6 +461,13 @@ local function lock_player_movement_for_cutscene()
 end
 
 local function restore_player_movement()
+    if playerInputPossessionLocked and Game ~= nil and Game.SetInputPossessed ~= nil then
+        -- BeginPlay 시점에는 GameViewport input possession이 아직 false일 수 있습니다.
+        -- 컷씬 종료는 실제 플레이 복귀 지점이므로 저장된 초기값에 의존하지 않고 명시적으로 켭니다.
+        Game.SetInputPossessed(true)
+    end
+    playerInputPossessionLocked = false
+
     if playerAutoInputLocked and World ~= nil and World.FindActorByName ~= nil then
         local playerActor = World.FindActorByName(PLAYER_PAWN_NAME)
         if playerActor ~= nil and playerActor.SetCharacterAutoInput ~= nil then
@@ -735,16 +776,16 @@ local function show_next_entry()
 end
 
 local function should_advance_dialogue()
-    if Input.GetKeyDown(Key.MouseLeft) then return true end
-    if Input.GetKeyDown(Key.Space) then return true end
-    if Key.Enter ~= nil and Input.GetKeyDown(Key.Enter) then return true end
+    if get_cutscene_key_down(Key.MouseLeft) then return true end
+    if get_cutscene_key_down(Key.Space) then return true end
+    if Key.Enter ~= nil and get_cutscene_key_down(Key.Enter) then return true end
     return false
 end
 
 local function update_scene_skip(dt)
     if Key.Ctrl == nil then return false end
 
-    if Input.GetKey(Key.Ctrl) then
+    if get_cutscene_key(Key.Ctrl) then
         skipHoldTime = skipHoldTime + dt
         local progress = clamp(skipHoldTime / SKIP_HOLD_DURATION, 0.0, 1.0)
         update_skip_ring(progress)
@@ -824,6 +865,7 @@ function BeginPlay()
     playerAutoInputWASD = nil
     playerAutoInputMouseLook = nil
     playerAutoInputLocked = false
+    playerInputPossessionLocked = false
     dialogueStartDelayRemaining = 0.0
     dialogueStarted = false
     landingDescentEndTime = 39.5
@@ -841,6 +883,8 @@ function BeginPlay()
         hide_producer_credit()
     end
     find_landing_pod()
+    prepare_landing_pod_for_intro()
+    lock_player_movement_for_cutscene()
     play_story("Dialogue/Prologue.dialogue")
 end
 
@@ -885,11 +929,11 @@ function Tick(dt)
         update_producer_credit()
         try_initialize_cutscene_camera()
         update_landing_camera_look_at()
-        update_landing_camera_shake(dt)
         lock_player_movement_for_cutscene()
         if cutsceneWidget ~= nil and update_scene_skip(dt) then
             return
         end
+        update_landing_camera_shake(dt)
         update_dialogue_start_delay(dt)
         update_post_landing_finish_delay(dt)
     end

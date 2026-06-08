@@ -762,6 +762,9 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		Input.set_function("GetKeyDown", [](int VK) { return GetLuaInputSnapshot().WasPressed(VK); });
 		Input.set_function("GetKey", [](int VK) { return GetLuaInputSnapshot().IsDown(VK); });
 		Input.set_function("GetKeyUp", [](int VK) { return GetLuaInputSnapshot().WasReleased(VK); });
+		Input.set_function("GetRawKeyDown", [](int VK) { return InputSystem::Get().GetKeyDown(VK); });
+		Input.set_function("GetRawKey", [](int VK) { return InputSystem::Get().GetKey(VK); });
+		Input.set_function("GetRawKeyUp", [](int VK) { return InputSystem::Get().GetKeyUp(VK); });
 		Input.set_function("GetAxis", [](int InputCode) { return GetLuaInputSnapshot().GetAxisValue(InputCode); });
 		Input.set_function("GetGamepadAxis", [](int GamepadIndex, int AxisCode)
 		{
@@ -889,6 +892,27 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	{
 		APlayerController* PC = (GEngine && GEngine->GetWorld()) ? GEngine->GetWorld()->GetFirstPlayerController() : nullptr;
 		return PC ? PC->GetPossessedPawn() : nullptr;
+	});
+	Game.set_function("SetInputPossessed", [](bool bPossessed)
+	{
+		if (GEngine)
+		{
+			if (UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient())
+			{
+				GameViewportClient->SetInputPossessed(bPossessed);
+			}
+		}
+	});
+	Game.set_function("IsInputPossessed", []()
+	{
+		if (GEngine)
+		{
+			if (UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient())
+			{
+				return GameViewportClient->IsPossessed();
+			}
+		}
+		return false;
 	});
 	Game.set_function("PossessPawnByName", [](const FString& PawnName) -> bool
 	{

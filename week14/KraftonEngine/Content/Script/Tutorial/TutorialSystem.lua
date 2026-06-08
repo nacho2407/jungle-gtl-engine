@@ -14,6 +14,7 @@ local owner = nil
 local initialized = false
 local currentStepIndex = 1
 local dialogueStory = nil
+local dialogueEntriesById = {}
 local voiceEntriesById = nil
 local loadedVoiceKeys = {}
 local currentVoiceKey = nil
@@ -118,20 +119,18 @@ local function play_event(name)
 end
 
 local function find_dialogue_entry(id)
-    if dialogueStory == nil or dialogueStory.entries == nil then return nil end
-    for _, entry in ipairs(dialogueStory.entries) do
-        if entry.id == id then
-            return entry
-        end
-    end
-    return nil
+    if id == nil then return nil end
+    return dialogueEntriesById[id]
 end
 
 local function get_dialogue_text(entry)
     if entry == nil then return "" end
-    local speaker = entry.speaker or "SYSTEM"
+    local speaker = entry.speaker or ""
     local text = entry.text or entry.text_en or ""
-    return "[" .. speaker .. "] " .. text
+    if speaker == "" then
+        return text
+    end
+    return speaker .. ": " .. text
 end
 
 local function get_voice_entry(entry)
@@ -415,6 +414,15 @@ end
 
 local function load_dialogue_assets()
     dialogueStory = require(STORY_MODULE)
+    dialogueEntriesById = {}
+    if dialogueStory ~= nil and dialogueStory.entries ~= nil then
+        for _, entry in ipairs(dialogueStory.entries) do
+            if entry.id ~= nil then
+                dialogueEntriesById[entry.id] = entry
+            end
+        end
+    end
+
     local ok, voices = pcall(require, VOICE_MODULE)
     if ok and voices ~= nil then
         voiceEntriesById = voices.by_id or {}
@@ -441,6 +449,7 @@ function TutorialSystem.Initialize(config)
     dialogueQueue = {}
     loadedVoiceKeys = {}
     currentVoiceKey = nil
+    dialogueEntriesById = {}
 
     for _, group in ipairs(objectiveGroups) do
         group.completed = false
@@ -487,6 +496,11 @@ function TutorialSystem.Shutdown()
     movement = nil
     owner = nil
     activeDialogue = nil
+    dialogueStory = nil
+    dialogueEntriesById = {}
+    voiceEntriesById = nil
+    loadedVoiceKeys = {}
+    currentVoiceKey = nil
     dialogueQueue = {}
     continueToNextGroup = true
     objectivesStarted = false

@@ -36,7 +36,7 @@ return {
         },
         {
             id = "DrakePostCombat_System_Verifying",
-            speaker = "SYSTEM",
+            speaker = "SYSTEM", 
             text = "접근 권한 확인 중...",
             text_en = "Verifying authorization...",
             image = "",

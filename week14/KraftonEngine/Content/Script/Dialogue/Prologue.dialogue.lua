@@ -100,8 +100,8 @@ return {
         {
             id = "Prologue_System_ReentryCountdown",
             speaker = "SYSTEM",
-            text = "대기권 진입 10초 전.",
-            text_en = "Atmospheric entry in ten seconds.",
+            text = "착륙 직전입니다. 충격에 대비하십시오.",
+            text_en = "Final approach. Brace for impact.",
             image = "",
             font = "Pretendard",
             duration = 2.6
