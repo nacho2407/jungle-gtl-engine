@@ -86,12 +86,39 @@ local function clamp(value, minValue, maxValue)
     return value
 end
 
+local function is_input_down(key)
+    return key ~= nil and Input.GetKey(key)
+end
+
+local function is_input_pressed(key)
+    return key ~= nil and Input.GetKeyDown(key)
+end
+
+local function is_fire_down()
+    return is_input_down(Key.MouseLeft) or is_input_down(Key.GamepadRightTrigger)
+end
+
+local function is_aim_down()
+    return is_input_down(Key.MouseRight) or is_input_down(Key.GamepadLeftTrigger)
+end
+
+local function is_reload_pressed()
+    return is_input_pressed(Key.R) or is_input_pressed(Key.GamepadX)
+end
+
+local function is_crouch_input_down()
+    return is_input_down(Key.Ctrl)
+        or is_input_down(Key.LeftCtrl)
+        or is_input_down(Key.RightCtrl)
+        or is_input_down(Key.GamepadB)
+end
+
 local function add_weapon_recoil()
     if camera == nil then return end
 
     local step = RECOIL_PATTERN[recoilPatternIndex] or RECOIL_PATTERN[#RECOIL_PATTERN]
     local scale = RECOIL_STRENGTH_MULTIPLIER
-    if Input.GetKey(Key.MouseRight) then
+    if is_aim_down() then
         scale = scale * RECOIL_ADS_MULTIPLIER
     end
 
@@ -144,7 +171,7 @@ local function update_weapon_recoil(dt)
         return
     end
 
-    local isFiring = Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0
+    local isFiring = is_fire_down() and not isReloading and currentAmmo > 0
     local recoverySpeed = isFiring and RECOIL_RECOVERY_SPEED_FIRING or RECOIL_RECOVERY_SPEED_RELEASED
     local maxStep = recoverySpeed * dt
     local pitchDelta
@@ -270,7 +297,7 @@ local function is_player_crouching()
         return movement:IsCrouching()
     end
 
-    return Input.GetKey(Key.Ctrl) or Input.GetKey(Key.LeftCtrl) or Input.GetKey(Key.RightCtrl)
+    return is_crouch_input_down()
 end
 
 local function update_weapon_hud()
@@ -367,7 +394,7 @@ local function on_attack_killed(context, result)
 end
 
 local function get_fire_direction(camFwd)
-    if Input.GetKey(Key.MouseRight) or weaponSpread <= 0.0 then
+    if is_aim_down() or weaponSpread <= 0.0 then
         return camFwd
     end
 
@@ -396,7 +423,7 @@ local function try_shoot()
     update_weapon_hud()
 
     request_arm_animation("shoot")
-    GameAudio.NotifyShotFired(Input.GetKey(Key.MouseRight))
+    GameAudio.NotifyShotFired(is_aim_down())
 
     local camPos = camera:GetWorldLocation()
     local camFwd = camera.Forward
@@ -460,7 +487,7 @@ local function try_shoot()
 
     add_weapon_recoil()
 
-    if not Input.GetKey(Key.MouseRight) then
+    if not is_aim_down() then
         weaponSpread = weaponSpread + SPREAD_PER_SHOT
         if weaponSpread > MAX_SPREAD then weaponSpread = MAX_SPREAD end
         WeaponHud.SetSpread(weaponSpread)
@@ -591,13 +618,13 @@ function Tick(dt)
         if weaponSpread < 0.0 then weaponSpread = 0.0 end
     end
 
-    if Input.GetKey(Key.MouseRight) then
+    if is_aim_down() then
         weaponSpread = 0.0
     end
 
     GameAudio.UpdateWeaponFireState(
-        Input.GetKey(Key.MouseRight),
-        Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0)
+        is_aim_down(),
+        is_fire_down() and not isReloading and currentAmmo > 0)
 
     if isReloading then
         reloadTimer = reloadTimer - dt
@@ -621,7 +648,7 @@ function Tick(dt)
         return
     end
 
-    ItemInspectSystem.Tick(camera, obj)
+    local itemInspectInputConsumed = ItemInspectSystem.Tick(camera, obj) == true
     if ItemInspectSystem.IsOpen() then
         GameAudio.StopWeaponFireLoop()
         GameAudio.UpdateSlideState(false)
@@ -632,16 +659,16 @@ function Tick(dt)
 
     GameAudio.UpdateMovement(movement, dt)
 
-    if Input.GetKeyDown(Key.R) then
+    if not itemInspectInputConsumed and is_reload_pressed() then
         start_reload()
     end
 
-    if Input.GetKey(Key.MouseLeft) and fireCooldown <= 0 then
+    if is_fire_down() and fireCooldown <= 0 then
         try_shoot()
         fireCooldown = FIRE_INTERVAL
         GameAudio.UpdateWeaponFireState(
-            Input.GetKey(Key.MouseRight),
-            Input.GetKey(Key.MouseLeft) and not isReloading and currentAmmo > 0)
+            is_aim_down(),
+            is_fire_down() and not isReloading and currentAmmo > 0)
     end
 
 end

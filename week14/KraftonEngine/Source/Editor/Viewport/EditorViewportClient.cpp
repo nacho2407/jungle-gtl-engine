@@ -284,7 +284,8 @@ void FEditorViewportClient::Tick(float DeltaTime)
 		{
 			InputSystem& Input = InputSystem::Get();
 			const FInputSystemSnapshot InputSnapshot = Input.MakeSnapshot();
-			if (InputSnapshot.WasPressed(VK_PAUSE))
+			if (InputSnapshot.WasPressed(VK_PAUSE)
+				|| InputSnapshot.WasPressed(InputCodes::GamepadStart))
 			{
 				FLuaScriptManager::FireOnEscapePressed();
 				return;
