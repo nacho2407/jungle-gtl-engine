@@ -36,8 +36,11 @@ local LEAP_FLIGHT_TIME = 0.78
 local LEAP_LAND_TIME = 0.7
 local LEAP_ARC_HEIGHT = 11.0
 local LEAP_COOLDOWN = 7.5
-local LEAP_LAND_RADIUS = 6.5
-local LEAP_LAND_DAMAGE = 18.0
+local LEAP_LAND_DAMAGE_RADIUS = 10.5
+local LEAP_LAND_SHAKE_RADIUS = 28.0
+local LEAP_LAND_SHAKE_MAX_VERTICAL_DELTA = 12.0
+local LEAP_LAND_DAMAGE = 22.0
+local LEAP_LAND_SHAKE_SCALE = 1.35
 local LEAP_KNOCKBACK_DISTANCE = 6.0
 local LEAP_KNOCKBACK_DURATION = 0.28
 local AIM_PITCH_MIN = -35.0
@@ -591,17 +594,34 @@ local function calculate_leap_landing(target)
     return landing
 end
 
+local function play_leap_landing_camera_shake(distance)
+    if CameraManager == nil or CameraManager.StartWaveShake == nil then
+        return
+    end
+
+    local falloff = 1.0 - clamp(distance / LEAP_LAND_SHAKE_RADIUS, 0.0, 1.0)
+    local scale = LEAP_LAND_SHAKE_SCALE * (0.25 + falloff * 0.75)
+    CameraManager.StartWaveShake(scale)
+end
+
 local function apply_leap_landing_hit()
     local target = find_target()
     if target == nil or not target:IsValid() then return end
 
     local dist = horizontal_distance(obj.Location, target.Location)
-    if dist > LEAP_LAND_RADIUS then return end
-    if math.abs(target.Location.Z - obj.Location.Z) > LEAP_MAX_VERTICAL_DELTA then return end
+    local verticalDelta = math.abs(target.Location.Z - obj.Location.Z)
+
+    if dist <= LEAP_LAND_SHAKE_RADIUS and verticalDelta <= LEAP_LAND_SHAKE_MAX_VERTICAL_DELTA then
+        play_leap_landing_camera_shake(dist)
+    end
+
+    if dist > LEAP_LAND_DAMAGE_RADIUS then return end
+    if verticalDelta > LEAP_MAX_VERTICAL_DELTA then return end
 
     local hitDir = normalized_or_zero(horizontal_delta(obj.Location, target.Location))
     local hitLocation = target.Location
-    Debug.DrawSphere(obj.Location, LEAP_LAND_RADIUS, 255, 120, 30, 0.65, 16)
+    Debug.DrawSphere(obj.Location, LEAP_LAND_DAMAGE_RADIUS, 255, 120, 30, 0.65, 16)
+    Debug.DrawSphere(obj.Location, LEAP_LAND_SHAKE_RADIUS, 255, 180, 60, 0.35, 24)
 
     if CombatEvents.IsDamageable(target) then
         CombatEvents.ApplyDamageAndNotify(obj, target, {
