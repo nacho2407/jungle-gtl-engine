@@ -1,6 +1,7 @@
 <rml>
 <head>
     <title>Score Result</title>
+    <link type="text/rcss" href="../Common/MenuHoverButton.rcss"/>
     <link type="text/rcss" href="ScoreResult.rcss"/>
 </head>
 <body>
@@ -13,37 +14,37 @@
             <div id="score-result-score">000000</div>
 
             <div id="score-result-grid">
-                <div id="score-result-row-time-group" class="score-result-row-group">
+                <div id="score-result-row-time-group">
                     <div class="score-result-row" id="score-result-row-time">
                         <div class="score-result-name">PLAY TIME</div>
                         <div class="score-result-value" id="score-result-time">00:00</div>
                     </div>
                 </div>
-                <div id="score-result-row-kills-group" class="score-result-row-group">
+                <div id="score-result-row-kills-group">
                     <div class="score-result-row" id="score-result-row-kills">
                         <div class="score-result-name">ENEMY KILLS</div>
                         <div class="score-result-value" id="score-result-kills">0</div>
                     </div>
                 </div>
-                <div id="score-result-row-retry-group" class="score-result-row-group">
+                <div id="score-result-row-retry-group">
                     <div class="score-result-row" id="score-result-row-retry">
                         <div class="score-result-name">RETRY</div>
                         <div class="score-result-value" id="score-result-retry">0</div>
                     </div>
                 </div>
-                <div id="score-result-row-deaths-group" class="score-result-row-group">
+                <div id="score-result-row-deaths-group">
                     <div class="score-result-row" id="score-result-row-deaths">
                         <div class="score-result-name">DEATHS</div>
                         <div class="score-result-value" id="score-result-deaths">0</div>
                     </div>
                 </div>
-                <div id="score-result-row-accuracy-group" class="score-result-row-group">
+                <div id="score-result-row-accuracy-group">
                     <div class="score-result-row" id="score-result-row-accuracy">
                         <div class="score-result-name">ACCURACY</div>
                         <div class="score-result-value" id="score-result-accuracy">0%</div>
                     </div>
                 </div>
-                <div id="score-result-row-damage-group" class="score-result-row-group">
+                <div id="score-result-row-damage-group">
                     <div class="score-result-row" id="score-result-row-damage">
                         <div class="score-result-name">DAMAGE DEALT</div>
                         <div class="score-result-value" id="score-result-damage">0</div>
@@ -52,7 +53,10 @@
             </div>
 
             <div id="score-result-save-path">Saves/scores.json</div>
-            <div id="score-result-continue-button">CONTINUE</div>
+            <div id="score-result-continue-button" class="hover-image-button">
+                <img id="score-result-continue-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="score-result-continue-label" class="hover-image-label">CONTINUE</div>
+            </div>
         </div>
     </div>
 </body>

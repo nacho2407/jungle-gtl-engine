@@ -83,11 +83,40 @@ body {
     height: 222px;
 }
 
-.score-result-row-group {
-    position: relative;
+#score-result-row-time-group,
+#score-result-row-kills-group,
+#score-result-row-retry-group,
+#score-result-row-deaths-group,
+#score-result-row-accuracy-group,
+#score-result-row-damage-group {
+    position: absolute;
+    left: 0px;
     width: 648px;
     height: 34px;
-    margin-bottom: 4px;
+}
+
+#score-result-row-time-group {
+    top: 0px;
+}
+
+#score-result-row-kills-group {
+    top: 38px;
+}
+
+#score-result-row-retry-group {
+    top: 76px;
+}
+
+#score-result-row-deaths-group {
+    top: 114px;
+}
+
+#score-result-row-accuracy-group {
+    top: 152px;
+}
+
+#score-result-row-damage-group {
+    top: 190px;
 }
 
 .score-result-row {
@@ -142,14 +171,15 @@ body {
     bottom: 28px;
     width: 172px;
     height: 36px;
+}
+
+#score-result-continue-label {
+    left: 12px;
+    top: 0px;
+    width: 160px;
+    height: 36px;
     font-size: 20px;
     font-weight: 700;
     line-height: 36px;
-    text-align: center;
-    color: #ffffff;
-    border: 1px #ffffff;
-}
-
-#score-result-continue-button:hover {
-    background-color: #ffffff22;
+    color: #858585;
 }

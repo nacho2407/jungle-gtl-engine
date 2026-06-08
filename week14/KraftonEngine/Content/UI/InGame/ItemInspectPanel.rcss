@@ -66,21 +66,21 @@ body {
 }
 
 #item-inspect-top-line {
-    position: absolute;
-    left: 0px;
-    top: 0px;
-    width: 820px;
-    height: 2px;
-    background-color: #F0A040;
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 820px;
+	height: 2px;
+	display: none;
 }
 
 #item-inspect-accent {
-    position: absolute;
-    left: 0px;
-    top: 2px;
-    width: 7px;
-    height: 252px;
-    background-color: #F0A040;
+	position: absolute;
+	left: 0px;
+	top: 2px;
+	width: 7px;
+	height: 252px;
+	display: none;
 }
 
 #item-inspect-image-frame {
