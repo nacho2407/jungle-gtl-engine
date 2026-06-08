@@ -13,6 +13,7 @@
 #include "GameFramework/Actor/DecalActor.h"
 #include "GameFramework/Actor/HeightFogActor.h"
 #include "GameFramework/Actor/PlayerStart.h"
+#include "GameFramework/Actor/SceneTransitionTriggerActor.h"
 #include "GameFramework/Actor/TriggerVolumeBase.h"
 #include "GameFramework/Light/AmbientLightActor.h"
 #include "GameFramework/Light/DirectionalLightActor.h"
@@ -2038,6 +2039,7 @@ void FLevelViewportLayout::RenderViewportPlaceActorPopup()
 		PlaceActorMenuItem("Sphere Collider", EViewportPlaceActorType::SphereCollider);
 		PlaceActorMenuItem("Capsule Collider", EViewportPlaceActorType::CapsuleCollider);
 		PlaceActorMenuItem("Trigger Volume", EViewportPlaceActorType::TriggerVolume);
+		PlaceActorMenuItem("Scene Transition Trigger", EViewportPlaceActorType::SceneTransitionTrigger);
 		PlaceActorMenuItem("Player Start", EViewportPlaceActorType::PlayerStart);
 		PlaceActorMenuItem("Skeletal Mesh Actor", EViewportPlaceActorType::SkeletalMesh);
 		PlaceActorMenuItem("Character",           EViewportPlaceActorType::Character);
@@ -2333,6 +2335,16 @@ AActor* FLevelViewportLayout::SpawnActorFromViewportMenu(EViewportPlaceActorType
 	case EViewportPlaceActorType::TriggerVolume:
 	{
 		ATriggerVolumeBase* Actor = World->SpawnActor<ATriggerVolumeBase>();
+		if (Actor)
+		{
+			Actor->InitDefaultComponents();
+			SpawnedActor = Actor;
+		}
+		break;
+	}
+	case EViewportPlaceActorType::SceneTransitionTrigger:
+	{
+		ASceneTransitionTriggerActor* Actor = World->SpawnActor<ASceneTransitionTriggerActor>();
 		if (Actor)
 		{
 			Actor->InitDefaultComponents();
