@@ -64,7 +64,7 @@ local RECOIL_PATTERN = {
     { pitch = -0.20, yaw =  0.03 },
 }
 
-local BULLET_DAMAGE = 12.5
+local BULLET_DAMAGE = 15
 local MAX_HEALTH = 100.0
 local PLAYER_BULLET_IMPACT_AUDIO_EVENT = "player.bullet_impact"
 

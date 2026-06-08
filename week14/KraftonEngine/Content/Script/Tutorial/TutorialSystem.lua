@@ -5,6 +5,7 @@ local OVERLAY_PATH = "Content/UI/Tutorial/TutorialOverlay.rml"
 local STORY_MODULE = "Dialogue/TutorialLevel1.dialogue"
 local VOICE_MODULE = "Dialogue/Generated/TutorialLevel1.voices"
 local OVERLAY_Z_ORDER = 105
+local GAMEPAD_AXIS_DEADZONE = 0.25
 
 local overlayWidget = nil
 local movement = nil
@@ -105,6 +106,49 @@ local function clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
     if value > maxValue then return maxValue end
     return value
+end
+
+local function is_key_down(key)
+    return Input ~= nil
+        and Input.GetKey ~= nil
+        and key ~= nil
+        and Input.GetKey(key)
+end
+
+local function is_key_pressed(key)
+    return Input ~= nil
+        and Input.GetKeyDown ~= nil
+        and key ~= nil
+        and Input.GetKeyDown(key)
+end
+
+local function get_key(keyName)
+    if Key == nil then
+        return nil
+    end
+    return Key[keyName]
+end
+
+local function get_axis(axisCode)
+    if Input == nil or Input.GetGamepadAxis == nil or axisCode == nil then
+        return 0.0
+    end
+    return Input.GetGamepadAxis(-1, axisCode)
+end
+
+local function get_gamepad_axis(axisName)
+    if Axis == nil then
+        return 0.0
+    end
+    return get_axis(Axis[axisName])
+end
+
+local function is_crouch_input_down(isCrouching)
+    return isCrouching
+        or is_key_down(get_key("Ctrl"))
+        or is_key_down(get_key("LeftCtrl"))
+        or is_key_down(get_key("RightCtrl"))
+        or is_key_down(get_key("GamepadB"))
 end
 
 local function play_event(name)
@@ -363,37 +407,40 @@ local function update_current_step()
         if movement.WasAirJumpConsumedThisFrame ~= nil then didAirJump = movement:WasAirJumpConsumedThisFrame() end
     end
 
+    local gamepadLeftX = get_gamepad_axis("GamepadLeftX")
+    local gamepadLeftY = get_gamepad_axis("GamepadLeftY")
+
     if group.id == "move" then
-        if Input.GetKey(Key.W) and speed > 0.25 then mark_item(group, "move_w") end
-        if Input.GetKey(Key.A) and speed > 0.25 then mark_item(group, "move_a") end
-        if Input.GetKey(Key.S) and speed > 0.25 then mark_item(group, "move_s") end
-        if Input.GetKey(Key.D) and speed > 0.25 then mark_item(group, "move_d") end
-        if isSprinting or (Input.GetKey(Key.Shift) and speed > 0.5) then
+        if (is_key_down(get_key("W")) or gamepadLeftY > GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_w") end
+        if (is_key_down(get_key("A")) or gamepadLeftX < -GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_a") end
+        if (is_key_down(get_key("S")) or gamepadLeftY < -GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_s") end
+        if (is_key_down(get_key("D")) or gamepadLeftX > GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_d") end
+        if isSprinting or ((is_key_down(get_key("Shift")) or is_key_down(get_key("GamepadLeftThumb"))) and speed > 0.5) then
             mark_item(group, "sprint")
         end
     elseif group.id == "jump" then
-        if Input.GetKeyDown(Key.Space) then
+        if is_key_pressed(get_key("Space")) or is_key_pressed(get_key("GamepadA")) then
             mark_item(group, "jump")
         end
         if didAirJump then
             mark_item(group, "double_jump")
         end
     elseif group.id == "slide" then
-        if isCrouching or Input.GetKey(Key.Ctrl) or Input.GetKey(Key.LeftCtrl) or Input.GetKey(Key.RightCtrl) then
+        if is_crouch_input_down(isCrouching) then
             mark_item(group, "crouch")
         end
         if isWalking and isCrouching and speed >= 3.0 then
             mark_item(group, "slide")
         end
     elseif group.id == "weapon" then
-        if Input.GetKeyDown(Key.MouseLeft) then
+        if is_key_pressed(get_key("MouseLeft")) or is_key_pressed(get_key("GamepadRightTrigger")) then
             mark_item(group, "fire")
         end
-        if Input.GetKey(Key.MouseRight) then
+        if is_key_down(get_key("MouseRight")) or is_key_down(get_key("GamepadLeftTrigger")) then
             mark_item(group, "zoom")
         end
     elseif group.id == "reload" then
-        if Input.GetKeyDown(Key.R) then
+        if is_key_pressed(get_key("R")) or is_key_pressed(get_key("GamepadX")) then
             mark_item(group, "reload")
         end
     elseif group.id == "wallrun" then
@@ -401,7 +448,7 @@ local function update_current_step()
             hasSeenWallRun = true
             mark_item(group, "wallrun")
         end
-        if hasSeenWallRun and Input.GetKeyDown(Key.Space) then
+        if hasSeenWallRun and (is_key_pressed(get_key("Space")) or is_key_pressed(get_key("GamepadA"))) then
             mark_item(group, "walljump")
         end
     end

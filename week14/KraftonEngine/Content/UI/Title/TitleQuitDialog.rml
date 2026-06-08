@@ -17,11 +17,11 @@
 
                     <div id="quit-options" class="dialogue-layer quit-button-axis">
                         <div id="cancel-quit-button" class="hover-image-button quit-confirm-option">
-                            <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                            <img id="cancel-quit-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
                             <div id="cancel-quit-label" class="hover-image-label" style="position: absolute; width: 100.00%; left: 0.00%; top: 0.00%; height: 40.00%; text-align: center;">CANCEL</div>
                         </div>
                         <div id="confirm-quit-button" class="hover-image-button quit-confirm-option">
-                            <img class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                            <img id="confirm-quit-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
                             <div id="confirm-quit-label" class="hover-image-label" style="position: absolute; top: 0.00%; width: 100.00%; text-align: center; left: 0.00%; height: 40.00%;">QUIT ANYWAY</div>
                         </div>
                     </div>

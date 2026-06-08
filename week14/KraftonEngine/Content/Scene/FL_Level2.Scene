@@ -4766,7 +4766,7 @@
           "CollisionPreset" : 0,
           "LinearDamping" : 0.010000,
           "Mass" : 1.000000,
-          "MaterialSlots" : ["Content/Material/Auto/Ceiling.mat", "Content/Material/Auto/LightBulb.mat", "Content/Material/Auto/CeilingLight.mat", "Content/Material/Auto/ChairBase.mat", "Content/Material/Auto/ChairSides.mat", "Content/Material/Auto/Cushion.mat", "Content/Material/Auto/ChairBase.009.mat", "Content/Material/Auto/ChairSides.009.mat", "Content/Material/Auto/Cushion.009.mat", "Content/Material/Auto/ChairBase.010.mat", "Content/Material/Auto/ChairSides.010.mat", "Content/Material/Auto/Cushion.010.mat", "Content/Material/Auto/ChairBase.011.mat", "Content/Material/Auto/ChairSides.011.mat", "Content/Material/Auto/Cushion.011.mat", "Content/Material/Auto/ChairBase.001.mat", "Content/Material/Auto/ChairSides.001.mat", "Content/Material/Auto/Cushion.001.mat", "Content/Material/Auto/ChairBase.002.mat", "Content/Material/Auto/ChairSides.002.mat", "Content/Material/Auto/Cushion.002.mat", "Content/Material/Auto/ChairBase.003.mat", "Content/Material/Auto/ChairSides.003.mat", "Content/Material/Auto/Cushion.003.mat", "Content/Material/Auto/ChairBase.004.mat", "Content/Material/Auto/ChairSides.004.mat", "Content/Material/Auto/Cushion.004.mat", "Content/Material/Auto/ChairBase.005.mat", "Content/Material/Auto/ChairSides.005.mat", "Content/Material/Auto/Cushion.005.mat", "Content/Material/Auto/ChairBase.006.mat", "Content/Material/Auto/ChairSides.006.mat", "Content/Material/Auto/Cushion.006.mat", "Content/Material/Auto/ChairBase.007.mat", "Content/Material/Auto/ChairSides.007.mat", "Content/Material/Auto/Cushion.007.mat", "Content/Material/Auto/ChairBase.008.mat", "Content/Material/Auto/ChairSides.008.mat", "Content/Material/Auto/Cushion.008.mat", "Content/Material/Auto/Steps1.mat", "Content/Material/Auto/Steps2.mat", "Content/Material/Auto/Floor.mat", "Content/Material/Auto/TableTop.mat", "Content/Material/Auto/TableRim.mat", "Content/Material/Auto/TableLeg1.mat", "Content/Material/Auto/TableLeg2.mat", "Content/Material/Auto/Wall.mat", "Content/Material/Auto/Wall.001.mat", "Content/Material/Auto/LightBase.mat", "Content/Material/Auto/LightBulb.001.mat", "Content/Material/Auto/Pillar.mat", "Content/Material/Auto/PillarLight.mat", "Content/Material/Auto/WallP2.mat", "Content/Material/Auto/WallP1.mat", "Content/Material/Auto/WallP1.001.mat", "Content/Material/Auto/WallP2.001.mat", "Content/Material/Auto/WallP1.002.mat", "Content/Material/Auto/Pillar.001.mat", "Content/Material/Auto/PillarLight.001.mat", "Content/Material/Auto/WallP2.002.mat"],
+          "MaterialSlots" : ["Content/Material/Auto/DarkGrey10.mat", "Content/Material/Auto/LightBulb.mat", "Content/Material/Auto/CeilingLight.mat", "Content/Material/Auto/ChairBase.mat", "Content/Material/Auto/ChairSides.mat", "Content/Material/Auto/Cushion.mat", "Content/Material/Auto/ChairBase.009.mat", "Content/Material/Auto/ChairSides.009.mat", "Content/Material/Auto/Cushion.009.mat", "Content/Material/Auto/ChairBase.010.mat", "Content/Material/Auto/ChairSides.010.mat", "Content/Material/Auto/Cushion.010.mat", "Content/Material/Auto/ChairBase.011.mat", "Content/Material/Auto/ChairSides.011.mat", "Content/Material/Auto/Cushion.011.mat", "Content/Material/Auto/ChairBase.001.mat", "Content/Material/Auto/ChairSides.001.mat", "Content/Material/Auto/Cushion.001.mat", "Content/Material/Auto/ChairBase.002.mat", "Content/Material/Auto/ChairSides.002.mat", "Content/Material/Auto/Cushion.002.mat", "Content/Material/Auto/ChairBase.003.mat", "Content/Material/Auto/ChairSides.003.mat", "Content/Material/Auto/Cushion.003.mat", "Content/Material/Auto/ChairBase.004.mat", "Content/Material/Auto/ChairSides.004.mat", "Content/Material/Auto/Cushion.004.mat", "Content/Material/Auto/ChairBase.005.mat", "Content/Material/Auto/ChairSides.005.mat", "Content/Material/Auto/Cushion.005.mat", "Content/Material/Auto/ChairBase.006.mat", "Content/Material/Auto/ChairSides.006.mat", "Content/Material/Auto/Cushion.006.mat", "Content/Material/Auto/ChairBase.007.mat", "Content/Material/Auto/ChairSides.007.mat", "Content/Material/Auto/Cushion.007.mat", "Content/Material/Auto/ChairBase.008.mat", "Content/Material/Auto/ChairSides.008.mat", "Content/Material/Auto/Cushion.008.mat", "Content/Material/Auto/Steps1.mat", "Content/Material/Auto/Steps2.mat", "Content/Material/Auto/Floor.mat", "Content/Material/Auto/TableTop.mat", "Content/Material/Auto/TableRim.mat", "Content/Material/Auto/TableLeg1.mat", "Content/Material/Auto/TableLeg2.mat", "Content/Material/Auto/Wall.mat", "Content/Material/Auto/Wall.001.mat", "Content/Material/Auto/LightBase.mat", "Content/Material/Auto/LightBulb.001.mat", "Content/Material/Auto/Pillar.mat", "Content/Material/Auto/PillarLight.mat", "Content/Material/Auto/WallP2.mat", "Content/Material/Auto/t_h_legion_nose_art_v12.mat", "Content/Material/Auto/t_h_legion_nose_art_v12.mat", "Content/Material/Auto/WallP2.001.mat", "Content/Material/Auto/t_h_legion_nose_art_v12.mat", "Content/Material/Auto/Pillar.001.mat", "Content/Material/Auto/PillarLight.001.mat", "Content/Material/Auto/WallP2.002.mat"],
           "ObjectType" : 0,
           "RelativeTransform.Location" : [395.676178, -659.700500, -27.210764],
           "RelativeTransform.Scale" : [10.000000, 10.000000, 10.000000],
@@ -5500,6 +5500,86 @@
               "bTickEnable" : true,
               "bTickInEditor" : false
             }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBoxComponent",
+            "Name" : "UBoxComponent_1086_Copy_Copy_Copy_Copy_Copy2",
+            "ObjectId" : 148,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "BoxExtent" : [1.000000, 1.000000, 1.000000],
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 3,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [-0.377401, -4.369192, 2.509690],
+              "RelativeTransform.Scale" : [1.928567, 0.100000, 2.035492],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : false,
+              "bCastShadowAsTwoSided" : false,
+              "bDrawOnlyIfSelected" : false,
+              "bEditorOnly" : false,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : false,
+              "bIsActive" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBoxComponent",
+            "Name" : "UBoxComponent_1086_Copy_Copy_Copy_Copy_Copy2_Copy",
+            "ObjectId" : 149,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "BoxExtent" : [1.000000, 1.000000, 1.000000],
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 3,
+              "CollisionPreset" : 0,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "ObjectType" : 0,
+              "RelativeTransform.Location" : [-5.655311, -4.369192, 2.509690],
+              "RelativeTransform.Scale" : [1.928567, 0.100000, 2.035492],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : false,
+              "bCastShadowAsTwoSided" : false,
+              "bDrawOnlyIfSelected" : false,
+              "bEditorOnly" : false,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : false,
+              "bIsActive" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
           }],
         "ClassName" : "UStaticMeshComponent",
         "Name" : "UStaticMeshComponent_595",
@@ -5513,12 +5593,12 @@
           "AttachSocketObjectName" : "",
           "AttachSocketOffsetPath" : "",
           "AttachTargetActorName" : "",
-          "CachedEditRotator" : [0.000000, -43.323002, 0.000000],
+          "CachedEditRotator" : [0.000000, -43.322998, 0.000000],
           "CollisionEnabled" : 0,
           "CollisionPreset" : 0,
           "LinearDamping" : 0.010000,
           "Mass" : 1.000000,
-          "MaterialSlots" : ["Content/Material/Auto/Ceiling.mat", "Content/Material/Auto/LightBulb.mat", "Content/Material/Auto/CeilingLight.mat", "Content/Material/Auto/ChairBase.mat", "Content/Material/Auto/ChairSides.mat", "Content/Material/Auto/Cushion.mat", "Content/Material/Auto/ChairBase.009.mat", "Content/Material/Auto/ChairSides.009.mat", "Content/Material/Auto/Cushion.009.mat", "Content/Material/Auto/ChairBase.010.mat", "Content/Material/Auto/ChairSides.010.mat", "Content/Material/Auto/Cushion.010.mat", "Content/Material/Auto/ChairBase.011.mat", "Content/Material/Auto/ChairSides.011.mat", "Content/Material/Auto/Cushion.011.mat", "Content/Material/Auto/ChairBase.001.mat", "Content/Material/Auto/ChairSides.001.mat", "Content/Material/Auto/Cushion.001.mat", "Content/Material/Auto/ChairBase.002.mat", "Content/Material/Auto/ChairSides.002.mat", "Content/Material/Auto/Cushion.002.mat", "Content/Material/Auto/ChairBase.003.mat", "Content/Material/Auto/ChairSides.003.mat", "Content/Material/Auto/Cushion.003.mat", "Content/Material/Auto/ChairBase.004.mat", "Content/Material/Auto/ChairSides.004.mat", "Content/Material/Auto/Cushion.004.mat", "Content/Material/Auto/ChairBase.005.mat", "Content/Material/Auto/ChairSides.005.mat", "Content/Material/Auto/Cushion.005.mat", "Content/Material/Auto/ChairBase.006.mat", "Content/Material/Auto/ChairSides.006.mat", "Content/Material/Auto/Cushion.006.mat", "Content/Material/Auto/ChairBase.007.mat", "Content/Material/Auto/ChairSides.007.mat", "Content/Material/Auto/Cushion.007.mat", "Content/Material/Auto/ChairBase.008.mat", "Content/Material/Auto/ChairSides.008.mat", "Content/Material/Auto/Cushion.008.mat", "Content/Material/Auto/Steps1.mat", "Content/Material/Auto/Steps2.mat", "Content/Material/Auto/Floor.mat", "Content/Material/Auto/TableTop.mat", "Content/Material/Auto/TableRim.mat", "Content/Material/Auto/TableLeg1.mat", "Content/Material/Auto/TableLeg2.mat", "Content/Material/Auto/Wall.mat", "Content/Material/Auto/Wall.001.mat", "Content/Material/Auto/LightBase.mat", "Content/Material/Auto/LightBulb.001.mat", "Content/Material/Auto/Pillar.mat", "Content/Material/Auto/PillarLight.mat", "Content/Material/Auto/WallP2.mat", "Content/Material/Auto/WallP1.mat", "Content/Material/Auto/WallP1.001.mat", "Content/Material/Auto/WallP2.001.mat", "Content/Material/Auto/WallP1.002.mat", "Content/Material/Auto/Pillar.001.mat", "Content/Material/Auto/PillarLight.001.mat", "Content/Material/Auto/WallP2.002.mat"],
+          "MaterialSlots" : ["Content/Material/Auto/Mat.1.mat", "Content/Material/Auto/LightBulb.mat", "Content/Material/Auto/CeilingLight.mat", "Content/Material/Auto/ChairBase.mat", "Content/Material/Auto/ChairSides.mat", "Content/Material/Auto/Cushion.mat", "Content/Material/Auto/ChairBase.009.mat", "Content/Material/Auto/ChairSides.009.mat", "Content/Material/Auto/Cushion.009.mat", "Content/Material/Auto/ChairBase.010.mat", "Content/Material/Auto/ChairSides.010.mat", "Content/Material/Auto/Cushion.010.mat", "Content/Material/Auto/ChairBase.011.mat", "Content/Material/Auto/ChairSides.011.mat", "Content/Material/Auto/Cushion.011.mat", "Content/Material/Auto/ChairBase.001.mat", "Content/Material/Auto/ChairSides.001.mat", "Content/Material/Auto/Cushion.001.mat", "Content/Material/Auto/ChairBase.002.mat", "Content/Material/Auto/ChairSides.002.mat", "Content/Material/Auto/Cushion.002.mat", "Content/Material/Auto/ChairBase.003.mat", "Content/Material/Auto/ChairSides.003.mat", "Content/Material/Auto/Cushion.003.mat", "Content/Material/Auto/ChairBase.004.mat", "Content/Material/Auto/ChairSides.004.mat", "Content/Material/Auto/Cushion.004.mat", "Content/Material/Auto/ChairBase.005.mat", "Content/Material/Auto/ChairSides.005.mat", "Content/Material/Auto/Cushion.005.mat", "Content/Material/Auto/ChairBase.006.mat", "Content/Material/Auto/ChairSides.006.mat", "Content/Material/Auto/Cushion.006.mat", "Content/Material/Auto/ChairBase.007.mat", "Content/Material/Auto/ChairSides.007.mat", "Content/Material/Auto/Cushion.007.mat", "Content/Material/Auto/ChairBase.008.mat", "Content/Material/Auto/ChairSides.008.mat", "Content/Material/Auto/Cushion.008.mat", "Content/Material/Auto/Steps1.mat", "Content/Material/Auto/Steps2.mat", "Content/Material/Auto/Floor.mat", "Content/Material/Auto/TableTop.mat", "Content/Material/Auto/TableRim.mat", "Content/Material/Auto/TableLeg1.mat", "Content/Material/Auto/TableLeg2.mat", "Content/Material/Auto/Texture_1.mat", "Content/Material/Auto/Wall.001.mat", "Content/Material/Auto/LightBase.mat", "Content/Material/Auto/LightBulb.001.mat", "Content/Material/Auto/Pillar.mat", "Content/Material/Auto/PillarLight.mat", "Content/Material/Auto/WallP2.mat", "Content/Material/Auto/t_h_legion_nose_art_v12.mat", "Content/Material/Auto/t_h_legion_nose_art_v12.mat", "Content/Material/Auto/WallP2.001.mat", "Content/Material/Auto/t_h_legion_nose_art_v12.mat", "Content/Material/Auto/Pillar.001.mat", "Content/Material/Auto/PillarLight.001.mat", "Content/Material/Auto/WallP2.002.mat"],
           "ObjectType" : 0,
           "RelativeTransform.Location" : [723.999268, -659.656128, -27.793314],
           "RelativeTransform.Scale" : [10.000000, 10.000000, 10.000000],
@@ -14758,15 +14838,15 @@
             "ObjectId" : 410,
             "Properties" : {
               "AngularDamping" : 0.010000,
-              "BoxExtent" : [1.000000, 1.000000, 1.000000],
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
-              "CollisionEnabled" : 3,
+              "CollisionEnabled" : 0,
               "CollisionPreset" : 0,
               "LinearDamping" : 0.010000,
               "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/SpotLight.mat",
               "ObjectType" : 0,
               "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
-              "RelativeTransform.Scale" : [0.300000, 0.800000, 0.300000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
               "ResponseContainer" : {
                 "Responses[0]" : 2,
                 "Responses[1]" : 2,
@@ -14775,17 +14855,16 @@
                 "Responses[4]" : 2,
                 "Responses[5]" : 2
               },
-              "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
-              "bCastShadow" : false,
+              "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
-              "bDrawOnlyIfSelected" : false,
-              "bEditorOnly" : false,
+              "bEditorOnly" : true,
               "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
-              "bHiddenInComponentTree" : false,
+              "bHiddenInComponentTree" : true,
               "bIsActive" : true,
+              "bIsBillboard" : true,
               "bIsVisible" : true,
               "bSimulatePhysics" : false,
               "bTickEnable" : true,
@@ -14837,8 +14916,7 @@
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
           "bTickInEditor" : false,
-          "bUseBakedBindPoseCorrection" : false,
-          "bUseBoundingBoxCollider" : false
+          "bVisible" : true
         }
       }
     }, {
@@ -14862,15 +14940,15 @@
             "ObjectId" : 413,
             "Properties" : {
               "AngularDamping" : 0.010000,
-              "BoxExtent" : [1.000000, 1.000000, 1.000000],
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
-              "CollisionEnabled" : 3,
+              "CollisionEnabled" : 0,
               "CollisionPreset" : 0,
               "LinearDamping" : 0.010000,
               "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/SpotLight.mat",
               "ObjectType" : 0,
               "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
-              "RelativeTransform.Scale" : [0.300000, 0.800000, 0.300000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
               "ResponseContainer" : {
                 "Responses[0]" : 2,
                 "Responses[1]" : 2,
@@ -14879,17 +14957,16 @@
                 "Responses[4]" : 2,
                 "Responses[5]" : 2
               },
-              "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
-              "bCastShadow" : false,
+              "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
-              "bDrawOnlyIfSelected" : false,
-              "bEditorOnly" : false,
+              "bEditorOnly" : true,
               "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
-              "bHiddenInComponentTree" : false,
+              "bHiddenInComponentTree" : true,
               "bIsActive" : true,
+              "bIsBillboard" : true,
               "bIsVisible" : true,
               "bSimulatePhysics" : false,
               "bTickEnable" : true,
@@ -14941,8 +15018,7 @@
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
           "bTickInEditor" : false,
-          "bUseBakedBindPoseCorrection" : false,
-          "bUseBoundingBoxCollider" : false
+          "bVisible" : true
         }
       }
     }, {
@@ -14966,15 +15042,15 @@
             "ObjectId" : 416,
             "Properties" : {
               "AngularDamping" : 0.010000,
-              "BoxExtent" : [1.000000, 1.000000, 1.000000],
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
-              "CollisionEnabled" : 3,
+              "CollisionEnabled" : 0,
               "CollisionPreset" : 0,
               "LinearDamping" : 0.010000,
               "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/SpotLight.mat",
               "ObjectType" : 0,
               "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
-              "RelativeTransform.Scale" : [0.300000, 0.800000, 0.300000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
               "ResponseContainer" : {
                 "Responses[0]" : 2,
                 "Responses[1]" : 2,
@@ -14983,17 +15059,16 @@
                 "Responses[4]" : 2,
                 "Responses[5]" : 2
               },
-              "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
-              "bCastShadow" : false,
+              "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
-              "bDrawOnlyIfSelected" : false,
-              "bEditorOnly" : false,
+              "bEditorOnly" : true,
               "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
-              "bHiddenInComponentTree" : false,
+              "bHiddenInComponentTree" : true,
               "bIsActive" : true,
+              "bIsBillboard" : true,
               "bIsVisible" : true,
               "bSimulatePhysics" : false,
               "bTickEnable" : true,
@@ -15045,8 +15120,7 @@
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
           "bTickInEditor" : false,
-          "bUseBakedBindPoseCorrection" : false,
-          "bUseBoundingBoxCollider" : false
+          "bVisible" : true
         }
       }
     }, {
@@ -15070,15 +15144,15 @@
             "ObjectId" : 419,
             "Properties" : {
               "AngularDamping" : 0.010000,
-              "BoxExtent" : [1.000000, 1.000000, 1.000000],
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
-              "CollisionEnabled" : 3,
+              "CollisionEnabled" : 0,
               "CollisionPreset" : 0,
               "LinearDamping" : 0.010000,
               "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/SpotLight.mat",
               "ObjectType" : 0,
               "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
-              "RelativeTransform.Scale" : [0.300000, 0.800000, 0.300000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
               "ResponseContainer" : {
                 "Responses[0]" : 2,
                 "Responses[1]" : 2,
@@ -15087,17 +15161,16 @@
                 "Responses[4]" : 2,
                 "Responses[5]" : 2
               },
-              "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
-              "bCastShadow" : false,
+              "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
-              "bDrawOnlyIfSelected" : false,
-              "bEditorOnly" : false,
+              "bEditorOnly" : true,
               "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
-              "bHiddenInComponentTree" : false,
+              "bHiddenInComponentTree" : true,
               "bIsActive" : true,
+              "bIsBillboard" : true,
               "bIsVisible" : true,
               "bSimulatePhysics" : false,
               "bTickEnable" : true,
@@ -15149,8 +15222,7 @@
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
           "bTickInEditor" : false,
-          "bUseBakedBindPoseCorrection" : false,
-          "bUseBoundingBoxCollider" : false
+          "bVisible" : true
         }
       }
     }, {
@@ -15174,15 +15246,15 @@
             "ObjectId" : 422,
             "Properties" : {
               "AngularDamping" : 0.010000,
-              "BoxExtent" : [1.000000, 1.000000, 1.000000],
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
-              "CollisionEnabled" : 3,
+              "CollisionEnabled" : 0,
               "CollisionPreset" : 0,
               "LinearDamping" : 0.010000,
               "Mass" : 1.000000,
+              "MaterialSlot" : "Content/Material/Editor/SpotLight.mat",
               "ObjectType" : 0,
               "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
-              "RelativeTransform.Scale" : [0.300000, 0.800000, 0.300000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
               "ResponseContainer" : {
                 "Responses[0]" : 2,
                 "Responses[1]" : 2,
@@ -15191,17 +15263,16 @@
                 "Responses[4]" : 2,
                 "Responses[5]" : 2
               },
-              "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
               "TranslucentSortPriority" : 0,
               "bAutoActivate" : true,
-              "bCastShadow" : false,
+              "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
-              "bDrawOnlyIfSelected" : false,
-              "bEditorOnly" : false,
+              "bEditorOnly" : true,
               "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
-              "bHiddenInComponentTree" : false,
+              "bHiddenInComponentTree" : true,
               "bIsActive" : true,
+              "bIsBillboard" : true,
               "bIsVisible" : true,
               "bSimulatePhysics" : false,
               "bTickEnable" : true,
@@ -15253,8 +15324,7 @@
           "bSimulatePhysics" : false,
           "bTickEnable" : true,
           "bTickInEditor" : false,
-          "bUseBakedBindPoseCorrection" : false,
-          "bUseBoundingBoxCollider" : false
+          "bVisible" : true
         }
       }
     }, {
@@ -15267,8 +15337,12 @@
         "PendingActorRotation" : [-0.000002, 42.898743, 47.041786],
         "PendingActorScale" : [5.000000, 5.000000, 5.000000],
         "PendingActorVisible" : true,
-        "PendingTagsString" : "",
-        "bNeedsTick" : true
+        "PendingTagsString" : "player",
+        "bAutoPossessPlayer" : true,
+        "bNeedsTick" : true,
+        "bUseControllerRotationPitch" : true,
+        "bUseControllerRotationRoll" : false,
+        "bUseControllerRotationYaw" : true
       },
       "RootComponent" : {
         "Children" : [{
@@ -15278,15 +15352,37 @@
             "ObjectId" : 425,
             "Properties" : {
               "AngularDamping" : 0.010000,
-              "BoxExtent" : [1.000000, 1.000000, 1.000000],
+              "AnimInstance" : {
+                "ClassName" : "ULuaAnimInstance",
+                "Properties" : {
+                  "RootMotionMode" : 0,
+                  "ScriptFile" : "Anim/fps_arm_titan.lua"
+                }
+              },
+              "AnimInstanceClass" : "ULuaAnimInstance",
+              "AnimationData" : {
+                "AnimToPlayPath" : "None",
+                "PlayRate" : 1.000000,
+                "bLooping" : true,
+                "bPlaying" : true
+              },
+              "AnimationMode" : 2,
+              "AttachOwnBoneName" : "",
+              "AttachTargetActorName" : "",
+              "AttachTargetBoneName" : "",
               "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
-              "CollisionEnabled" : 3,
+              "CollisionEnabled" : 0,
               "CollisionPreset" : 0,
               "LinearDamping" : 0.010000,
               "Mass" : 1.000000,
+              "MaterialSlots" : ["Content/Material/Auto/hero_mil_jack_gauntlet_skn_01.mat", "Content/Material/Auto/hero_mil_jack_gauntlet_skn_01_v1.mat", "Content/Material/Auto/hero_mil_jack_gear_skn_01.mat", "Content/Material/Auto/hero_mil_jack_body_skn_01.mat", "Content/Material/Auto/hero_mil_jack_fringe_skn_01.mat", "Content/Material/Auto/aquarium_interior_glass_01.mat", "Content/Material/Auto/acgs_sight.mat", "Content/Material/Auto/charge_rifle_optic.mat", "Content/Material/Auto/rifle_scope_lens.mat", "Content/Material/Auto/hcog2_optic.mat", "Content/Material/Auto/pro_screen.mat", "Content/Material/Auto/r101.mat", "Content/Material/Auto/ammo_counter_screen_bg.mat"],
               "ObjectType" : 0,
-              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
-              "RelativeTransform.Scale" : [0.300000, 0.800000, 0.300000],
+              "PhysicsBlendWeight" : 1.000000,
+              "RagdollFaceDownGetUpAnimationPath" : "Content/Data/hirasawa-yui/Getting Up_mixamo_com.uasset",
+              "RagdollFaceUpGetUpAnimationPath" : "Content/Data/hirasawa-yui/Standing Up_mixamo_com.uasset",
+              "RagdollRecoveryBlendDuration" : 0.350000,
+              "RelativeTransform.Location" : [-0.100000, 0.000000, 2.513751],
+              "RelativeTransform.Scale" : [0.100000, 0.100000, 0.100000],
               "ResponseContainer" : {
                 "Responses[0]" : 2,
                 "Responses[1]" : 2,
@@ -15295,12 +15391,12 @@
                 "Responses[4]" : 2,
                 "Responses[5]" : 2
               },
-              "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
-              "TranslucentSortPriority" : 0,
+              "SkeletalMeshPath" : "Content/Data/FPSArm/TitanArm/SK_rspn101_jack_SkeletalMesh.uasset",
+              "TranslucentSortPriority" : 1000,
+              "bAttachBoneToBone" : false,
               "bAutoActivate" : true,
-              "bCastShadow" : false,
+              "bCastShadow" : true,
               "bCastShadowAsTwoSided" : false,
-              "bDrawOnlyIfSelected" : false,
               "bEditorOnly" : false,
               "bEnableGravity" : true,
               "bGenerateOverlapEvents" : false,
