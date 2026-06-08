@@ -764,9 +764,7 @@ function BeginPlay()
 end
 
 function EndPlay()
-    if not loadingToGame then
-        LoadingScreen.Hide()
-    end
+    LoadingScreen.Hide()
     stop_title_bgm()
 
     if quitWidget ~= nil and quitWidget:IsInViewport() then

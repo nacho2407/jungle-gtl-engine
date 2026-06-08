@@ -180,8 +180,6 @@ local function show_dialogue(id)
 
     if WeaponHud ~= nil and WeaponHud.ShowDialogue ~= nil then
         WeaponHud.ShowDialogue(text, {
-            left = 24.0,
-            bottom = 28.0,
             width = width,
             height = height,
             font = entry.font or dialogueStory.default_font or "Pretendard",

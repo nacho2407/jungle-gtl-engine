@@ -223,11 +223,11 @@ body {
 
 .hud-dialogue-box {
 	position: absolute;
-	left: 24px;
-	bottom: 28px;
+	left: 470px;
+	bottom: 164px;
 	width: 980px;
 	height: 48px;
-	background-color: #000000F0;
+	background-color: #000000A8;
 	border-width: 0px;
 	opacity: 0.0;
 	display: none;
@@ -244,7 +244,7 @@ body {
 	font-size: 22px;
 	font-weight: 700;
 	line-height: 48px;
-	color: #ffffff;
+	color: #FFFFFFE6;
 	white-space: nowrap;
 	text-align: left;
 	pointer-events: none;

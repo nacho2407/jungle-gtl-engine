@@ -1,5 +1,4 @@
 local WeaponHud = require("HUD/WeaponHud")
-local LoadingScreen = require("LoadingScreen")
 
 local story = nil
 local cutsceneWidget = nil
@@ -855,7 +854,6 @@ local function update_post_landing_finish_delay(dt)
 end
 
 function BeginPlay()
-    LoadingScreen.Hide()
     sceneTime = 0.0
     cutsceneFinished = false
     landingPodActor = nil

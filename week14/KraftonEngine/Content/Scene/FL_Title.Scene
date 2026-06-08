@@ -12,7 +12,8 @@
             "bEditorOnly" : false,
             "bHiddenInComponentTree" : false,
             "bIsActive" : true,
-            "bTickEnable" : true
+            "bTickEnable" : true,
+            "bTickInEditor" : false
           }
         }],
       "ObjectId" : 2,
@@ -37,14 +38,15 @@
           "bEditorOnly" : false,
           "bHiddenInComponentTree" : false,
           "bIsActive" : true,
-          "bTickEnable" : true
+          "bTickEnable" : true,
+          "bTickInEditor" : false
         }
       }
     }],
   "ClassName" : "UWorld",
   "ContextHandle" : "Title",
   "ContextName" : "Title",
-  "Name" : "Title",
+  "Name" : "FL_Title",
   "ObjectId" : 1,
   "PerspectiveCamera" : {
     "FOV" : 1.047198,
@@ -54,8 +56,5 @@
     "Rotation" : [0.000000, 0.000000, 0.000000]
   },
   "Version" : 2,
-  "WorldSettings" : {
-    "GameMode" : ""
-  },
   "WorldType" : "Editor"
 }

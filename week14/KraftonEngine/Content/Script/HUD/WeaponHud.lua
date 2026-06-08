@@ -31,6 +31,21 @@ local function px(value)
     return string.format("%.2fpx", value)
 end
 
+local function get_viewport_size()
+    if Engine ~= nil and Engine.GetViewportSize ~= nil then
+        local size = Engine.GetViewportSize()
+        if size ~= nil then
+            local width = size.Width or 0.0
+            local height = size.Height or 0.0
+            if width > 0.0 and height > 0.0 then
+                return width, height
+            end
+        end
+    end
+
+    return 1920.0, 1080.0
+end
+
 local function update_score()
     if widget == nil then return end
     if ScoreManager == nil or ScoreManager.GetSnapshot == nil then
@@ -222,14 +237,17 @@ function WeaponHud.ShowDialogue(text, config)
     local fontSize = config.fontSize or 22.0
     local lineHeight = config.lineHeight or height
     local opacity = config.opacity or 0.0
+    local viewportWidth, viewportHeight = get_viewport_size()
+    local left = config.left or ((viewportWidth - width) * 0.5)
+    local bottom = config.bottom or (viewportHeight * 0.135 + 18.0)
 
     bDialogueVisible = true
     dialogueOpacity = opacity
 
     widget:SetText("hud-dialogue-line", text or "")
     widget:SetProperty("hud-dialogue-box", "display", "block")
-    widget:SetProperty("hud-dialogue-box", "left", px(config.left or 24.0))
-    widget:SetProperty("hud-dialogue-box", "bottom", px(config.bottom or 28.0))
+    widget:SetProperty("hud-dialogue-box", "left", px(left))
+    widget:SetProperty("hud-dialogue-box", "bottom", px(bottom))
     widget:SetProperty("hud-dialogue-box", "width", px(width))
     widget:SetProperty("hud-dialogue-box", "height", px(height))
     widget:SetProperty("hud-dialogue-box", "opacity", string.format("%.2f", dialogueOpacity))
