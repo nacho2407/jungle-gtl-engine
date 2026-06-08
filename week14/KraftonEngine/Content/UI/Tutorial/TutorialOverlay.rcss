@@ -84,7 +84,7 @@ body {
 	position: absolute;
 	left: 0px;
 	top: 0px;
-	width: 98px;
+	width: 48px;
 	height: 29px;
 	font-size: 15px;
 	font-weight: 800;
@@ -93,6 +93,23 @@ body {
 	color: #F4F4F4;
 	background-color: #050505E8;
 	border: 1px #E6E6E6B8;
+	border-radius: 0px;
+}
+
+.tutorial-pad-key {
+	position: absolute;
+	left: 62px;
+	top: 0px;
+	width: 29px;
+	height: 29px;
+	font-size: 13px;
+	font-weight: 800;
+	line-height: 29px;
+	text-align: center;
+	color: #F4F4F4;
+	background-color: #151515E8;
+	border: 1px #E6E6E688;
+	border-radius: 14px;
 }
 
 .tutorial-text {

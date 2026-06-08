@@ -115,7 +115,7 @@ body {
 	position: absolute;
 	left: 0px;
 	top: 0px;
-	width: 88px;
+	width: 54px;
 	height: 28px;
 	background-color: #ffffff;
 	color: #000000;
@@ -125,6 +125,24 @@ body {
 	line-height: 28px;
 	text-align: center;
 	white-space: nowrap;
+	border-radius: 0px;
+}
+
+.cutscene-skip-pad-key {
+	position: absolute;
+	left: 60px;
+	top: 0px;
+	width: 28px;
+	height: 28px;
+	background-color: #ffffff;
+	color: #000000;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+	border-radius: 14px;
 }
 
 .cutscene-skip-label {
