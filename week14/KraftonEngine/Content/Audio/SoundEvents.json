@@ -422,6 +422,28 @@
     "cooldown": 0.02,
     "maxInstances": 6
   },
+  "tutorial.objective.appear": {
+    "bus": "UI",
+    "spatial": false,
+    "clips": ["UI/TutorialObjectiveAppear.wav"],
+    "volumeMin": 0.54,
+    "volumeMax": 0.64,
+    "pitchMin": 0.98,
+    "pitchMax": 1.02,
+    "cooldown": 0.12,
+    "maxInstances": 2
+  },
+  "tutorial.objective.complete": {
+    "bus": "UI",
+    "spatial": false,
+    "clips": ["UI/TutorialObjectiveComplete.wav"],
+    "volumeMin": 0.72,
+    "volumeMax": 0.84,
+    "pitchMin": 0.98,
+    "pitchMax": 1.02,
+    "cooldown": 0.08,
+    "maxInstances": 2
+  },
   "ui.hover": {
     "bus": "UI",
     "spatial": false,
