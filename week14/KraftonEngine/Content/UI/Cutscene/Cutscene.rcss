@@ -94,10 +94,50 @@ body {
 	white-space: nowrap;
 }
 
+.cutscene-skip-prompt {
+	position: absolute;
+	right: 24.00px;
+	bottom: 24.00px;
+	width: 132px;
+	height: 28px;
+	opacity: 0.82;
+}
+
+.cutscene-skip-key {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 54px;
+	height: 28px;
+	background-color: #ffffff;
+	color: #000000;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.cutscene-skip-label {
+	position: absolute;
+	left: 66px;
+	top: 0px;
+	width: 66px;
+	height: 28px;
+	color: #ffffff;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: left;
+	white-space: nowrap;
+}
+
 .skip-ring {
 	position: absolute;
 	right: 54px;
-	bottom: 112px;
+	bottom: 60.00px;
 	width: 64px;
 	height: 64px;
 	opacity: 0.0;

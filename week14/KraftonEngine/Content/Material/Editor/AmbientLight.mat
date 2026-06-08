@@ -5,7 +5,7 @@
   "EmissiveIntensity" : 0.000000,
   "Origin" : "Editor",
   "Parameters" : {
-
+    "HasNormalMap" : 0.000000
   },
   "PathFileName" : "Content/Material/Editor/AmbientLight.mat",
   "RasterizerState" : "SolidBackCull",
@@ -15,5 +15,6 @@
   "Textures" : {
     "DiffuseTexture" : "Content/Editor/Icons/S_AmbientLight_256x.png"
   },
+  "TwoSidedLighting" : false,
   "bEnableBloom" : false
 }

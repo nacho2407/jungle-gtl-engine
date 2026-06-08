@@ -37,6 +37,7 @@ void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTempl
 	RasterizerState = InRaster;
 
 	ConstantBufferMap = std::move(InBuffers);
+	SyncTwoSidedLightingParameter();
 }
 
 const TMap<FString, FMaterialParameterInfo*>& UMaterial::GetParameterInfo() const
@@ -236,9 +237,27 @@ void UMaterial::Bind(ID3D11DeviceContext* Context)
 {
 }
 
+void UMaterial::SetTwoSidedLighting(bool bInTwoSidedLighting)
+{
+	bTwoSidedLighting = bInTwoSidedLighting;
+	SyncTwoSidedLightingParameter();
+}
+
+ERasterizerState UMaterial::GetRasterizerState() const
+{
+	return RasterizerState;
+}
+
+void UMaterial::SyncTwoSidedLightingParameter()
+{
+	const float Value = bTwoSidedLighting ? 1.0f : 0.0f;
+	SetScalarParameter("TwoSidedLighting", Value);
+}
+
 void UMaterial::PostEditProperty(const char* PropertyName)
 {
 	UObject::PostEditProperty(PropertyName);
+	SyncTwoSidedLightingParameter();
 	bMaterialBloomCBDirty = true;
 }
 
@@ -690,6 +709,11 @@ EDepthStencilState UMaterialInstance::GetDepthStencilState() const
 ERasterizerState UMaterialInstance::GetRasterizerState() const
 {
 	return Parent ? Parent->GetRasterizerState() : ERasterizerState::SolidBackCull;
+}
+
+bool UMaterialInstance::IsTwoSidedLighting() const
+{
+	return Parent ? Parent->IsTwoSidedLighting() : false;
 }
 
 FConstantBuffer* UMaterialInstance::GetGPUBufferBySlot(uint32 InSlot) const

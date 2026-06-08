@@ -24,6 +24,16 @@
     </div>
 
     <div id="weapon-hud-root">
+        <div id="score-hud-panel" class="score-hud-panel">
+            <div id="score-hud-label" class="score-hud-label" data-ui-editor="text">SCORE</div>
+            <div id="score-hud-value" class="score-hud-value" data-ui-editor="text">000000</div>
+        </div>
+
+        <div id="speed-hud-panel" class="speed-hud-panel">
+            <div id="speed-hud-label" class="speed-hud-label" data-ui-editor="text">SPEED</div>
+            <div id="speed-hud-value" class="speed-hud-value" data-ui-editor="text">0.0 m/s</div>
+        </div>
+
         <div id="weapon-hud-panel" class="weapon-hud-panel" data-ui-editor="img">
             <img id="weapon-hud-panel-image" class="weapon-hud-panel-image" src="WeaponHudCutPanel.png"/>
             <img id="weapon-hud-rifle-image" class="weapon-hud-rifle-image" src="WeaponHudRifle.png" data-ui-editor="img"/>

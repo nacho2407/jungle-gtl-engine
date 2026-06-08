@@ -4,6 +4,7 @@
 #include "Core/Logging/Log.h"
 #include "Core/Logging/Notification.h"
 #include "Audio/AudioManager.h"
+#include "Score/ScoreManager.h"
 #include "Animation/AnimationManager.h"
 #include "Animation/Sequence/AnimSequence.h"
 #include "Component/Input/ActionComponent.h"
@@ -104,6 +105,69 @@ TArray<FString> BuildLuaModuleScriptFileCandidates(const FString& ModuleOrScript
 	}
 	AddCandidate(DottedModulePath + LuaExt);
 	return Candidates;
+}
+
+FString NormalizeScriptFilePath(FString ScriptFile)
+{
+	for (char& Ch : ScriptFile)
+	{
+		if (Ch == '\\')
+		{
+			Ch = '/';
+		}
+	}
+	return ScriptFile;
+}
+
+bool HasPathSeparator(const FString& Path)
+{
+	return Path.find('/') != FString::npos || Path.find('\\') != FString::npos;
+}
+
+std::wstring ResolveLuaScriptWidePath(const FString& ScriptFile)
+{
+	const FString NormalizedScriptFile = NormalizeScriptFilePath(ScriptFile);
+	const std::wstring ScriptRoot = FPaths::ScriptDir();
+	std::error_code Error;
+
+	const std::wstring DirectPath = FPaths::Combine(ScriptRoot, FPaths::ToWide(NormalizedScriptFile));
+	if (std::filesystem::exists(DirectPath, Error) || HasPathSeparator(NormalizedScriptFile))
+	{
+		return DirectPath;
+	}
+
+	Error.clear();
+	const std::wstring TargetFileName = FPaths::ToWide(NormalizedScriptFile);
+	std::vector<std::filesystem::path> Matches;
+	for (std::filesystem::recursive_directory_iterator It(ScriptRoot, std::filesystem::directory_options::skip_permission_denied, Error), End;
+		!Error && It != End;
+		It.increment(Error))
+	{
+		if (Error)
+		{
+			break;
+		}
+
+		const std::filesystem::directory_entry& Entry = *It;
+		if (!Entry.is_regular_file(Error))
+		{
+			Error.clear();
+			continue;
+		}
+
+		if (Entry.path().filename().wstring() == TargetFileName)
+		{
+			Matches.push_back(Entry.path());
+		}
+	}
+
+	if (!Matches.empty())
+	{
+		std::sort(Matches.begin(), Matches.end());
+		return Matches.front().wstring();
+	}
+
+	return DirectPath;
 }
 
 sol::object RequireLuaModule(sol::state& LuaState, const FString& ModuleName)
@@ -541,13 +605,12 @@ void FLuaScriptManager::Shutdown()
 
 FString FLuaScriptManager::ResolveScriptPath(const FString& ScriptFile)
 {
-	std::wstring FullPath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ScriptFile));
-	return FPaths::ToUtf8(FullPath);
+	return FPaths::ToUtf8(ResolveLuaScriptWidePath(ScriptFile));
 }
 
 bool FLuaScriptManager::ReadScriptFileContent(const FString& ScriptFile, FString& OutContent)
 {
-	const std::wstring WidePath = FPaths::Combine(FPaths::ScriptDir(), FPaths::ToWide(ScriptFile));
+	const std::wstring WidePath = ResolveLuaScriptWidePath(ScriptFile);
 	std::ifstream File(WidePath.c_str(), std::ios::binary);
 	if (!File.is_open())
 	{
@@ -702,6 +765,9 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 		Input.set_function("GetKeyDown", [](int VK) { return GetLuaInputSnapshot().WasPressed(VK); });
 		Input.set_function("GetKey", [](int VK) { return GetLuaInputSnapshot().IsDown(VK); });
 		Input.set_function("GetKeyUp", [](int VK) { return GetLuaInputSnapshot().WasReleased(VK); });
+		Input.set_function("GetRawKeyDown", [](int VK) { return InputSystem::Get().GetKeyDown(VK); });
+		Input.set_function("GetRawKey", [](int VK) { return InputSystem::Get().GetKey(VK); });
+		Input.set_function("GetRawKeyUp", [](int VK) { return InputSystem::Get().GetKeyUp(VK); });
 		Input.set_function("GetAxis", [](int InputCode) { return GetLuaInputSnapshot().GetAxisValue(InputCode); });
 		Input.set_function("GetGamepadAxis", [](int GamepadIndex, int AxisCode)
 		{
@@ -829,6 +895,27 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	{
 		APlayerController* PC = (GEngine && GEngine->GetWorld()) ? GEngine->GetWorld()->GetFirstPlayerController() : nullptr;
 		return PC ? PC->GetPossessedPawn() : nullptr;
+	});
+	Game.set_function("SetInputPossessed", [](bool bPossessed)
+	{
+		if (GEngine)
+		{
+			if (UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient())
+			{
+				GameViewportClient->SetInputPossessed(bPossessed);
+			}
+		}
+	});
+	Game.set_function("IsInputPossessed", []()
+	{
+		if (GEngine)
+		{
+			if (UGameViewportClient* GameViewportClient = GEngine->GetGameViewportClient())
+			{
+				return GameViewportClient->IsPossessed();
+			}
+		}
+		return false;
 	});
 	Game.set_function("PossessPawnByName", [](const FString& PawnName) -> bool
 	{
@@ -1273,6 +1360,110 @@ Engine.IsPaused = Game.IsPaused
 	Lua.set_function("LoadAudio", [](const FString& SoundName, const FString& Path, sol::optional<bool> bLoop)
 	{
 		return FAudioManager::Get().LoadAudio(SoundName, Path, bLoop.value_or(false));
+	});
+
+	sol::table ScoreManager = Lua.create_named_table("ScoreManager");
+	ScoreManager.set_function("StartRun", [](sol::optional<FString> RunId)
+	{
+		FScoreManager::Get().StartRun(RunId.value_or(""));
+	});
+	ScoreManager.set_function("ResetRun", []()
+	{
+		FScoreManager::Get().ResetRun();
+	});
+	ScoreManager.set_function("GetSnapshot", [&Lua]()
+	{
+		const FScoreSnapshot Snapshot = FScoreManager::Get().GetSnapshot();
+		sol::table Table = Lua.create_table();
+		Table["runId"] = Snapshot.RunId;
+		Table["startedAt"] = Snapshot.StartedAt;
+		Table["finishedAt"] = Snapshot.FinishedAt;
+		Table["endingId"] = Snapshot.EndingId;
+		Table["playTimeSeconds"] = Snapshot.PlayTimeSeconds;
+		Table["enemyKills"] = Snapshot.EnemyKills;
+		Table["bossKills"] = Snapshot.BossKills;
+		Table["retryCount"] = Snapshot.RetryCount;
+		Table["deathCount"] = Snapshot.DeathCount;
+		Table["shotsFired"] = Snapshot.ShotsFired;
+		Table["shotsHit"] = Snapshot.ShotsHit;
+		Table["damageDealt"] = Snapshot.DamageDealt;
+		Table["damageTaken"] = Snapshot.DamageTaken;
+		Table["itemsInspected"] = Snapshot.ItemsInspected;
+		Table["secretsFound"] = Snapshot.SecretsFound;
+		Table["checkpointsReached"] = Snapshot.CheckpointsReached;
+		Table["score"] = Snapshot.Score;
+		Table["accuracy"] = Snapshot.ShotsFired > 0
+			? static_cast<float>(Snapshot.ShotsHit) / static_cast<float>(Snapshot.ShotsFired)
+			: 0.0f;
+		return Table;
+	});
+	ScoreManager.set_function("AddEnemyKill", [](sol::optional<int32> Count)
+	{
+		FScoreManager::Get().AddEnemyKill(Count.value_or(1));
+	});
+	ScoreManager.set_function("AddBossKill", [](sol::optional<int32> Count)
+	{
+		FScoreManager::Get().AddBossKill(Count.value_or(1));
+	});
+	ScoreManager.set_function("AddRetry", [](sol::optional<int32> Count)
+	{
+		FScoreManager::Get().AddRetry(Count.value_or(1));
+	});
+	ScoreManager.set_function("AddDeath", [](sol::optional<int32> Count)
+	{
+		FScoreManager::Get().AddDeath(Count.value_or(1));
+	});
+	ScoreManager.set_function("AddShotFired", [](sol::optional<int32> Count)
+	{
+		FScoreManager::Get().AddShotFired(Count.value_or(1));
+	});
+	ScoreManager.set_function("AddShotHit", [](sol::optional<int32> Count)
+	{
+		FScoreManager::Get().AddShotHit(Count.value_or(1));
+	});
+	ScoreManager.set_function("AddDamageDealt", [](float Amount)
+	{
+		FScoreManager::Get().AddDamageDealt(Amount);
+	});
+	ScoreManager.set_function("AddDamageTaken", [](float Amount)
+	{
+		FScoreManager::Get().AddDamageTaken(Amount);
+	});
+	ScoreManager.set_function("AddItemInspected", [](sol::optional<int32> Count)
+	{
+		FScoreManager::Get().AddItemInspected(Count.value_or(1));
+	});
+	ScoreManager.set_function("AddSecretFound", [](sol::optional<int32> Count)
+	{
+		FScoreManager::Get().AddSecretFound(Count.value_or(1));
+	});
+	ScoreManager.set_function("AddCheckpointReached", [](sol::optional<int32> Count)
+	{
+		FScoreManager::Get().AddCheckpointReached(Count.value_or(1));
+	});
+	ScoreManager.set_function("SetCustomStat", [](const FString& Name, float Value)
+	{
+		FScoreManager::Get().SetCustomStat(Name, Value);
+	});
+	ScoreManager.set_function("AddCustomStat", [](const FString& Name, float Delta)
+	{
+		FScoreManager::Get().AddCustomStat(Name, Delta);
+	});
+	ScoreManager.set_function("GetCustomStat", [](const FString& Name)
+	{
+		return FScoreManager::Get().GetCustomStat(Name);
+	});
+	ScoreManager.set_function("SaveFinalScore", [](sol::optional<FString> EndingId)
+	{
+		return FScoreManager::Get().SaveFinalScore(EndingId.value_or("Ending"));
+	});
+	ScoreManager.set_function("FinishRun", [](sol::optional<FString> EndingId)
+	{
+		return FScoreManager::Get().FinishRun(EndingId.value_or("Ending"));
+	});
+	ScoreManager.set_function("GetSaveFilePath", []()
+	{
+		return FScoreManager::Get().GetSaveFilePath();
 	});
 }
 
@@ -1794,6 +1985,27 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 			[](AActor& Actor, const FVector& Scale) { Actor.SetActorScale(Scale); })
 		.ReadonlyProperty("Forward", "Vector", [](AActor& Actor) { return Actor.GetActorForward(); })
 		.ReadonlyProperty("Right", "Vector", [](AActor& Actor) { return Actor.GetActorRight(); })
+		.Method("HasTag",
+			"---@param tag string\n---@return boolean\nfunction Actor:HasTag(tag) end",
+			[](AActor& Actor, const FString& Tag) { return Actor.HasTag(FName(Tag)); })
+		.Method("AddTag",
+			"---@param tag string\nfunction Actor:AddTag(tag) end",
+			[](AActor& Actor, const FString& Tag) { Actor.AddTag(FName(Tag)); })
+		.Method("RemoveTag",
+			"---@param tag string\nfunction Actor:RemoveTag(tag) end",
+			[](AActor& Actor, const FString& Tag) { Actor.RemoveTag(FName(Tag)); })
+		.Method("GetTags",
+			"---@return string[]\nfunction Actor:GetTags() end",
+			[&Lua](AActor& Actor) -> sol::table
+			{
+				sol::table Result = Lua.create_table();
+				int Index = 1;
+				for (const FName& Tag : Actor.GetTags())
+				{
+					Result[Index++] = Tag.ToString();
+				}
+				return Result;
+			})
 		.Method("AddWorldOffset",
 			"---@param offset Vector\nfunction Actor:AddWorldOffset(offset) end",
 			[](AActor& Actor, const FVector& Offset) { Actor.AddActorWorldOffset(Offset); })

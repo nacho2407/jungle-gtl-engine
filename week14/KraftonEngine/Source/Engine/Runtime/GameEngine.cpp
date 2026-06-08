@@ -12,6 +12,8 @@
 #include "Viewport/GameViewportClient.h"
 #include "Serialization/SceneSaveManager.h"
 #include "GameFramework/World.h"
+#include "GameFramework/Camera/PlayerCameraManager.h"
+#include "GameFramework/GameMode/PlayerController.h"
 #include "Core/ProjectSettings.h"
 #include "Core/Logging/Log.h"
 #include "UI/UIManager.h"
@@ -156,6 +158,27 @@ void UGameEngine::RequestTransitionToScene(const FString& InScenePath)
 	bPendingSceneTransition = true;
 }
 
+void UGameEngine::SetPendingFadeIn(float Duration, FLinearColor Color)
+{
+	bHasPendingFadeIn = true;
+	PendingFadeInDuration = Duration;
+	PendingFadeInColor = Color;
+}
+
+void UGameEngine::ApplyPendingFadeIn()
+{
+	if (!bHasPendingFadeIn) return;
+	bHasPendingFadeIn = false;
+
+	UWorld* World = GetWorld();
+	APlayerController* PC = World ? World->GetFirstPlayerController() : nullptr;
+	APlayerCameraManager* CamMgr = PC ? PC->GetPlayerCameraManager() : nullptr;
+	if (!CamMgr || PendingFadeInDuration <= 0.0f) return;
+
+	// alpha 1 → 0. bHoldWhenFinished=false 라 끝나면 fade off → 최종 알파 0 으로 자연 종료.
+	CamMgr->StartCameraFade(1.0f, 0.0f, PendingFadeInDuration, PendingFadeInColor, /*bShouldFadeAudio=*/false, /*bHoldWhenFinished=*/false);
+}
+
 void UGameEngine::ProcessPendingTransition()
 {
 	if (!bPendingSceneTransition)
@@ -202,6 +225,10 @@ void UGameEngine::ProcessPendingTransition()
 			Ctx->World->BeginPlay();
 		}
 	}
+
+	// 트리거 등이 destroy 직전에 예약해 둔 fade-in을 새 PlayerCameraManager에 적용.
+	// BeginPlay 가 PlayerController/CameraManager spawn 을 끝낸 직후라야 valid.
+	ApplyPendingFadeIn();
 
 	// Timer 리셋 — destroy + load + BeginPlay 가 한 frame 안에서 통째로 일어나면 다음
 	// Tick 의 dt 가 그 로드 시간만큼 부풀어 PhysX 가 거대한 step (예: 2~3 초) 을 한 번에

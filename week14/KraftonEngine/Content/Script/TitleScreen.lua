@@ -337,7 +337,7 @@ local function begin_settings_value_edit(name)
         buffer = format_setting_value(name, settingsState[name]),
         replaceOnInput = true
     }
-    settingsWidget:SetText(config.value, activeSettingsValueEdit.buffer .. "_")
+    settingsWidget:SetText(config.value, activeSettingsValueEdit.buffer)
 end
 
 local function append_settings_value_edit_char(ch)
@@ -361,7 +361,7 @@ local function append_settings_value_edit_char(ch)
     end
 
     edit.buffer = edit.buffer .. ch
-    settingsWidget:SetText(settingSliders[edit.name].value, edit.buffer .. "_")
+    settingsWidget:SetText(settingSliders[edit.name].value, edit.buffer)
 end
 
 local function backspace_settings_value_edit()
@@ -375,7 +375,7 @@ local function backspace_settings_value_edit()
     if len > 0 then
         edit.buffer = string.sub(edit.buffer, 1, len - 1)
     end
-    settingsWidget:SetText(settingSliders[edit.name].value, edit.buffer .. "_")
+    settingsWidget:SetText(settingSliders[edit.name].value, edit.buffer)
 end
 
 local function update_settings_value_edit()

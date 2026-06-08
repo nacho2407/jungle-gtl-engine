@@ -15,5 +15,6 @@
   "Textures" : {
     "DiffuseTexture" : "Content/Editor/Icons/PointLight_64x.png"
   },
+  "TwoSidedLighting" : false,
   "bEnableBloom" : false
 }

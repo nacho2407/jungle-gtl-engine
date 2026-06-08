@@ -1,4 +1,4 @@
-#include "UI/UIManager.h"
+﻿#include "UI/UIManager.h"
 
 #include "Audio/AudioManager.h"
 #include "Core/Logging/Log.h"
@@ -773,6 +773,14 @@ void UUIManager::ClearViewport()
 	InputSystem::Get().SetGuiMouseCapture(false);
 	HoveredMenuButtons.clear();
 
+	if (bDispatchingRmlEvents)
+	{
+		bClearViewportAfterRmlDispatch = true;
+		return;
+	}
+
+	bClearViewportAfterRmlDispatch = false;
+
 	// 위젯을 viewport 에서만 떼고 UObject 자체는 유지. UUIManager 는 widgets 의 owner —
 	// 같은 Lua VM 안의 widgets[] 테이블이 그대로 살아있고, PIE 재시작 / TransitionToScene
 	// 후 UIManager.Init re-entry 경로가 동일 위젯을 재사용한다 (위젯 destroy 시 Lua 측
@@ -926,6 +934,11 @@ void UUIManager::ProcessInput(const FFrameContext& Frame)
 		RmlContext->ProcessMouseButtonUp(0, KeyModifierState);
 	}
 	bDispatchingRmlEvents = false;
+
+	if (bClearViewportAfterRmlDispatch)
+	{
+		ClearViewport();
+	}
 }
 
 void UUIManager::UpdateMenuHoverButtonFrames()

@@ -16,6 +16,7 @@ namespace MatKeys
 	static constexpr const char* BlendState = "BlendState";
 	static constexpr const char* DepthStencilState = "DepthStencilState";
 	static constexpr const char* RasterizerState = "RasterizerState";
+	static constexpr const char* TwoSidedLighting = "TwoSidedLighting";
 	static constexpr const char* ParentMaterial = "ParentMaterial";
 	static constexpr const char* Parameters = "Parameters";
 	static constexpr const char* Textures = "Textures";

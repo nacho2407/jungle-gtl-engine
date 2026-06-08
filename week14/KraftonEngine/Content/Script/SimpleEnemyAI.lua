@@ -2,22 +2,29 @@ local CombatEvents = require("Game.CombatEvents")
 
 local PLAYER_TAG = "player"
 
-local MAX_HEALTH = 120.0
+local MAX_HEALTH = 60.0
 local THINK_INTERVAL = 0.16
-local SIGHT_RANGE = 55.0
+local SIGHT_RANGE = 260.0
+local PROXIMITY_ALERT_RANGE = 140.0
+local FORGET_RANGE = 340.0
 local SIGHT_HALF_FOV_DOT = 0.35
 local EYE_HEIGHT = 5.2
 local TARGET_HEIGHT = 1.4
-local FIRE_RANGE = 62.0
+local FIRE_RANGE = 120.0
 local FIRE_INTERVAL_MIN = 0.85
 local FIRE_INTERVAL_MAX = 1.35
-local FIRE_DAMAGE = 8.0
+local FIRE_DAMAGE = 3.0
 local INACCURACY_DEGREES = 7.5
 local FIRE_ACTION_DURATION = 0.55
 local HIT_REACT_DURATION = 0.45
 local CHASE_SPEED = 4.6
 local CHASE_START_RANGE = 34.0
 local CHASE_STOP_RANGE = 25.0
+local FOOTSTEP_INTERVAL = 0.42
+
+local AUDIO_WALK_STEP = "enemy.human.walk.step"
+local AUDIO_FIRE = "enemy.human.weapon.fire"
+local AUDIO_DEATH = "enemy.human.death"
 
 local STATE_IDLE = 0
 local STATE_ALERT = 1
@@ -29,6 +36,7 @@ local isDead = false
 local thinkTimer = 0.0
 local fireTimer = 0.0
 local hitReactTimer = 0.0
+local footstepTimer = 0.0
 local alerted = false
 local isMoving = false
 
@@ -68,6 +76,24 @@ local function is_valid_actor(actor)
         return actor:IsValid()
     end
     return true
+end
+
+local function play_event_at(eventName, location)
+    if eventName == nil or AudioManager == nil then
+        return false
+    end
+
+    location = location or obj.Location
+    if AudioManager.PlayEventAt ~= nil then
+        return AudioManager.PlayEventAt(eventName, location.X or 0.0, location.Y or 0.0, location.Z or 0.0)
+    end
+    if AudioManager.PlayOneShotAt ~= nil then
+        return AudioManager.PlayOneShotAt(eventName, location.X or 0.0, location.Y or 0.0, location.Z or 0.0)
+    end
+    if AudioManager.PlayEvent ~= nil then
+        return AudioManager.PlayEvent(eventName)
+    end
+    return false
 end
 
 local function horizontal(v)
@@ -184,6 +210,12 @@ local function update_chase(target, dt)
 
     obj:AddWorldOffset(dir * step)
     isMoving = true
+
+    footstepTimer = footstepTimer - dt
+    if footstepTimer <= 0.0 then
+        play_event_at(AUDIO_WALK_STEP, obj.Location)
+        footstepTimer = FOOTSTEP_INTERVAL
+    end
 end
 
 local function can_see_target(target)
@@ -215,12 +247,55 @@ local function can_see_target(target)
     return staticHit == nil
 end
 
+local function has_clear_static_line_to_target(target, maxRange)
+    if not is_valid_actor(target) then return false end
+
+    local source = get_eye_location()
+    local targetPos = get_target_location(target)
+    local toTarget = targetPos - source
+    local distance = toTarget:Length()
+    if distance <= 0.001 or distance > maxRange then
+        return false
+    end
+
+    local staticHit = nil
+    if World.RaycastWorldStatic ~= nil then
+        staticHit = World.RaycastWorldStatic(source, toTarget:Normalized(), distance, obj)
+    end
+
+    return staticHit == nil
+end
+
+local function should_alert_to_target(target)
+    if not is_valid_actor(target) then return false end
+
+    local distance = horizontal_distance_to(target)
+    if distance <= PROXIMITY_ALERT_RANGE and has_clear_static_line_to_target(target, PROXIMITY_ALERT_RANGE) then
+        return true
+    end
+
+    if can_see_target(target) then
+        return true
+    end
+
+    if alerted and distance <= FORGET_RANGE and has_clear_static_line_to_target(target, FORGET_RANGE) then
+        return true
+    end
+
+    return false
+end
+
 local function find_target()
     if is_valid_actor(targetActor) then
         return targetActor
     end
 
-    targetActor = World.FindFirstActorByTag(PLAYER_TAG)
+    if Game ~= nil and Game.GetPlayerPawn ~= nil then
+        targetActor = Game.GetPlayerPawn()
+    end
+    if not is_valid_actor(targetActor) and World.FindFirstActorByTag ~= nil then
+        targetActor = World.FindFirstActorByTag(PLAYER_TAG)
+    end
     return targetActor
 end
 
@@ -243,6 +318,12 @@ local function apply_enemy_damage(context)
         return make_damage_result(false, 0.0, false)
     end
 
+    local attacker = context ~= nil and (context.Instigator or context.instigator or context.DamageCauser or context.damageCauser) or nil
+    if is_valid_actor(attacker) then
+        targetActor = attacker
+        alerted = true
+    end
+
     currentHealth = clamp(currentHealth - amount, 0.0, MAX_HEALTH)
     local killed = currentHealth <= 0.0
     hitReactTimer = HIT_REACT_DURATION
@@ -255,6 +336,7 @@ local function apply_enemy_damage(context)
 
     local result = make_damage_result(true, amount, killed)
     if killed then
+        play_event_at(AUDIO_DEATH, obj.Location)
         clear_anim_state()
         obj:Destroy()
     end
@@ -317,6 +399,7 @@ local function fire_at(target)
 
     CombatEvents.NotifyAttackFired(obj, fireContext)
     request_anim_action("fire", FIRE_ACTION_DURATION)
+    play_event_at(AUDIO_FIRE, source)
 
     if hit ~= nil then
         CombatEvents.NotifyAttackImpact(obj, fireContext)
@@ -333,6 +416,7 @@ function BeginPlay()
     thinkTimer = 0.0
     fireTimer = random_range(0.25, 0.65)
     hitReactTimer = 0.0
+    footstepTimer = 0.0
     alerted = false
     isMoving = false
     targetActor = nil
@@ -372,7 +456,7 @@ function Tick(dt)
     if thinkTimer <= 0.0 then
         thinkTimer = THINK_INTERVAL
         local target = find_target()
-        alerted = can_see_target(target)
+        alerted = should_alert_to_target(target)
 
         if alerted and target ~= nil then
             face_target(target)

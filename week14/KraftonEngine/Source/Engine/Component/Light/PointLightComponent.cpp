@@ -29,7 +29,7 @@ namespace
 
 UPointLightComponent::UPointLightComponent()
 {
-	bCastShadows = true;
+	bCastShadows = false;
 }
 
 void UPointLightComponent::ContributeSelectedVisuals(FScene& Scene) const

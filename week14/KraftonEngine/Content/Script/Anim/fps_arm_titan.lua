@@ -17,6 +17,7 @@ local KEY_GAMEPAD_LEFT_TRIGGER = Key and Key.GamepadLeftTrigger
 local MOVE_IDLE = 0
 local MOVE_WALK = 1
 local MOVE_SPRINT = 2
+local MOVE_ADS_FROZEN = 3
 
 local LOCOMOTION_BLEND_TIME = 0.18
 local MOVING_SPEED_THRESHOLD = 20.0
@@ -87,7 +88,10 @@ local function add_locomotion_pose(self, path, looping)
     Anim.blend_list_add_pose(self.Locomotion, Anim.create_sequence_player(path, 1.0, looping))
 end
 
-local function select_locomotion_state(moving, sprinting)
+local function select_locomotion_state(moving, sprinting, ads)
+    if ads then
+        return MOVE_ADS_FROZEN
+    end
     if sprinting then
         return MOVE_SPRINT
     end
@@ -123,6 +127,7 @@ function init(self)
     add_locomotion_pose(self, IDLE_PATH, true)
     add_locomotion_pose(self, WALK_PATH, true)
     add_locomotion_pose(self, SPRINT_PATH, true)
+    Anim.blend_list_add_pose(self.Locomotion, Anim.create_sequence_player(IDLE_PATH, 0.0, false))
 
     local top = Anim.create_state_machine("FPSArmTitanTop")
     Anim.sm_add_state(top, "Locomotion", self.Locomotion)
@@ -190,13 +195,15 @@ function update(self, dt)
     local forward_down = Anim.is_key_down(KEY_W)
     local sprint_down = Anim.is_key_down(KEY_SHIFT)
         or (KEY_GAMEPAD_LEFT_THUMB ~= nil and Anim.is_key_down(KEY_GAMEPAD_LEFT_THUMB))
+    local ads = Anim.is_key_down(KEY_MOUSE_RIGHT)
+        or (KEY_GAMEPAD_LEFT_TRIGGER ~= nil and Anim.is_key_down(KEY_GAMEPAD_LEFT_TRIGGER))
     local crouching = Anim.is_owner_crouching()
     local sliding = Anim.is_owner_sliding()
     local grounded = not Anim.is_owner_falling()
     local moving = forward_down or self.Speed > MOVING_SPEED_THRESHOLD
     local sprinting = grounded and moving and sprint_down and not crouching and not sliding
 
-    self.MoveState = select_locomotion_state(moving, sprinting)
+    self.MoveState = select_locomotion_state(moving, sprinting, ads)
     Anim.blend_list_set_active(self.Locomotion, self.MoveState)
 
     if self.ActionName ~= nil then

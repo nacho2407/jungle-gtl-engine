@@ -1,19 +1,20 @@
 {
-        "BlendState" : "AlphaBlend",
-        "DepthStencilState" : "DepthReadOnly",
-        "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-        "EmissiveIntensity" : 2.000000,
-        "Origin" : "Editor",
-        "Parameters" : {
-
-        },
-        "PathFileName" : "Content/Material/Editor/DefaultEnergyBeam.mat",
-        "RasterizerState" : "SolidBackCull",
-        "RenderPass" : "AlphaBlend",
-        "ShaderPath" : "Shaders/Geometry/Particle.hlsl",
-        "ShadowMode" : "None",
-        "Textures" : {
-          "DiffuseTexture" : "Content/Texture/white.png"
-        },
-        "bEnableBloom" : true
-      }
+  "BlendState" : "AlphaBlend",
+  "DepthStencilState" : "DepthReadOnly",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 2.000000,
+  "Origin" : "Editor",
+  "Parameters" : {
+    "HasNormalMap" : 0.000000
+  },
+  "PathFileName" : "Content/Material/Editor/DefaultEnergyBeam.mat",
+  "RasterizerState" : "SolidBackCull",
+  "RenderPass" : "AlphaBlend",
+  "ShaderPath" : "Shaders/Geometry/Particle.hlsl",
+  "ShadowMode" : "None",
+  "Textures" : {
+    "DiffuseTexture" : "Content/Texture/white.png"
+  },
+  "TwoSidedLighting" : false,
+  "bEnableBloom" : true
+}

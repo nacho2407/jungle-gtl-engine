@@ -30,6 +30,26 @@ namespace
 		return WorldToCloth.TransformPositionWithW(FVector(WorldPoint.x, WorldPoint.y, WorldPoint.z));
 	}
 
+	bool ShouldCreateKinematicOverlapBody(const UPrimitiveComponent* Component)
+	{
+		// CharacterMovement moves the player through a PhysX CCT. The capsule
+		// component still owns a regular PhysX body so normal trigger volumes can
+		// observe it, but non-simulating primitives used to be created as rigid
+		// statics. PhysX does not report trigger pairs for static-vs-static shapes,
+		// so Tutorial Trigger boxes never received OnOverlap when the player walked
+		// through them.
+		//
+		// Keep static world/query triggers static. Only the non-simulating Pawn body
+		// needs to be a kinematic dynamic actor so static trigger volumes can emit
+		// eNOTIFY_TOUCH_FOUND/eNOTIFY_TOUCH_LOST without letting physics drive the
+		// character.
+		return Component &&
+			!Component->IsSimulatingPhysics() &&
+			Component->GetGenerateOverlapEvents() &&
+			Component->GetCollisionEnabled() == ECollisionEnabled::QueryAndPhysics &&
+			Component->GetCollisionObjectType() == ECollisionChannel::Pawn;
+	}
+
 	void AppendSphereClothCollision(
 		const physx::PxSphereGeometry& Sphere,
 		const physx::PxTransform& ShapeWorldPose,
@@ -359,10 +379,16 @@ bool FPhysicsScene::CreateBody(UPrimitiveComponent* OwnerComp, FBodyInstance& Ou
 
 	physx::PxRigidActor* Body = nullptr;
 
-	if (OwnerComp->IsSimulatingPhysics())
+	const bool bKinematicOverlapBody = ShouldCreateKinematicOverlapBody(OwnerComp);
+	if (OwnerComp->IsSimulatingPhysics() || bKinematicOverlapBody)
 	{
-		Body = Physics->createRigidDynamic(ToPxTransform(OwnerComp->GetWorldLocation(), OwnerComp->GetWorldRotation().ToQuaternion()));
-		OutInstance.Mode = EBodyInstanceMode::Dynamic;
+		physx::PxRigidDynamic* DynamicBody = Physics->createRigidDynamic(ToPxTransform(OwnerComp->GetWorldLocation(), OwnerComp->GetWorldRotation().ToQuaternion()));
+		if (DynamicBody && bKinematicOverlapBody)
+		{
+			DynamicBody->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
+		}
+		Body = DynamicBody;
+		OutInstance.Mode = bKinematicOverlapBody ? EBodyInstanceMode::Kinematic : EBodyInstanceMode::Dynamic;
 	}
 	else
 	{

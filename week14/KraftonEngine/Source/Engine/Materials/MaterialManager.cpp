@@ -184,11 +184,13 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	const bool bHadEmissiveColor = JsonData.hasKey(MatKeys::EmissiveColor);
 	const bool bHadEmissiveIntensity = JsonData.hasKey(MatKeys::EmissiveIntensity);
 	const bool bHadEnableBloom = JsonData.hasKey(MatKeys::bEnableBloom);
-	const bool bMaterialSettingsInjected = !bHadEmissiveColor || !bHadEmissiveIntensity || !bHadEnableBloom;
+	const bool bHadTwoSidedLighting = JsonData.hasKey(MatKeys::TwoSidedLighting);
+	const bool bMaterialSettingsInjected = !bHadEmissiveColor || !bHadEmissiveIntensity || !bHadEnableBloom || !bHadTwoSidedLighting;
 
 	FVector4 EmissiveColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	float EmissiveIntensity = 0.0f;
 	bool bEnableBloom = false;
+	bool bTwoSidedLighting = false;
 	if (bHadEmissiveColor)
 	{
 		EmissiveColor = ReadJsonVector4(JsonData[MatKeys::EmissiveColor], EmissiveColor);
@@ -200,6 +202,10 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	if (bHadEnableBloom)
 	{
 		bEnableBloom = ReadJsonBool(JsonData[MatKeys::bEnableBloom], bEnableBloom);
+	}
+	if (bHadTwoSidedLighting)
+	{
+		bTwoSidedLighting = ReadJsonBool(JsonData[MatKeys::TwoSidedLighting], bTwoSidedLighting);
 	}
 
 	// 4. 템플릿 확보 (없으면 리플렉션을 통해 생성됨)
@@ -216,10 +222,12 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	Material->SetEmissiveColor(EmissiveColor);
 	Material->SetEmissiveIntensity(EmissiveIntensity);
 	Material->SetBloomEnabled(bEnableBloom);
+	Material->SetTwoSidedLighting(bTwoSidedLighting);
 	MaterialCache.emplace(GenericPath, Material);
 
 	//템플릿을 통해 material에 넣기
 	bool bInjected = InjectDefaultParameters(JsonData, Template, Material);
+	JsonData[MatKeys::Parameters][MatKeys::TwoSidedLighting] = Material->IsTwoSidedLighting() ? 1.0f : 0.0f;
 
 	// 이전 셰이더의 찌꺼기 파라미터 정리
 	bool bPurged = PurgeStaleParameters(JsonData, Template);
@@ -237,6 +245,7 @@ UMaterial* FMaterialManager::GetOrCreateMaterial(const FString& MatFilePath)
 	JsonData[MatKeys::DepthStencilState] = ToString(DepthStencilStateMap, DepthState);
 	JsonData[MatKeys::RasterizerState] = ToString(RasterizerStateMap, RasterState);
 	JsonData[MatKeys::ShadowMode] = ShadowModeToString(ShadowMode);
+	JsonData[MatKeys::TwoSidedLighting] = Material->IsTwoSidedLighting();
 
 	WriteMaterialBloomSettings(JsonData, Material);
 
@@ -369,6 +378,7 @@ bool FMaterialManager::ReloadMaterial(const FString& MatFilePath)
 	FVector4 EmissiveColor = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 	float EmissiveIntensity = 0.0f;
 	bool bEnableBloom = false;
+	bool bTwoSidedLighting = false;
 	if (JsonData.hasKey(MatKeys::EmissiveColor))
 	{
 		EmissiveColor = ReadJsonVector4(JsonData[MatKeys::EmissiveColor], EmissiveColor);
@@ -380,6 +390,10 @@ bool FMaterialManager::ReloadMaterial(const FString& MatFilePath)
 	if (JsonData.hasKey(MatKeys::bEnableBloom))
 	{
 		bEnableBloom = ReadJsonBool(JsonData[MatKeys::bEnableBloom], bEnableBloom);
+	}
+	if (JsonData.hasKey(MatKeys::TwoSidedLighting))
+	{
+		bTwoSidedLighting = ReadJsonBool(JsonData[MatKeys::TwoSidedLighting], bTwoSidedLighting);
 	}
 
 	FMaterialTemplate* Template = GetOrCreateTemplate(ShaderPath);
@@ -414,10 +428,13 @@ bool FMaterialManager::ReloadMaterial(const FString& MatFilePath)
 	Material->EmissiveColor = EmissiveColor;
 	Material->EmissiveIntensity = EmissiveIntensity;
 	Material->bEnableBloom = bEnableBloom;
+	Material->bTwoSidedLighting = bTwoSidedLighting;
 	Material->bMaterialBloomCBDirty = true;
 	Material->ConstantBufferMap = CreateConstantBuffers(Template);
+	Material->SyncTwoSidedLightingParameter();
 
 	InjectDefaultParameters(JsonData, Template, Material);
+	JsonData[MatKeys::Parameters][MatKeys::TwoSidedLighting] = Material->IsTwoSidedLighting() ? 1.0f : 0.0f;
 	PurgeStaleParameters(JsonData, Template);
 	ApplyParameters(Material, JsonData);
 	ApplyTextures(Material, JsonData);
@@ -636,6 +653,8 @@ void FMaterialManager::ApplyTextures(UMaterialInterface* Material, json::JSON& J
 {
 	if (!Material || !JsonData.hasKey(MatKeys::Textures)) return;
 
+	bool bHasValidNormalTexture = false;
+
 	for (auto& Pair : JsonData[MatKeys::Textures].ObjectRange())
 	{
 		FString SlotName = Pair.first.c_str();
@@ -658,6 +677,20 @@ void FMaterialManager::ApplyTextures(UMaterialInterface* Material, json::JSON& J
 		}
 
 		Material->SetTextureParameter(SlotName, Texture);
+
+		if (SlotName == "NormalTexture" && Texture && Texture->GetSRV())
+		{
+			bHasValidNormalTexture = true;
+		}
+	}
+
+	if (!bHasValidNormalTexture)
+	{
+		Material->SetScalarParameter("HasNormalMap", 0.0f);
+		if (JsonData.hasKey(MatKeys::Parameters) && JsonData[MatKeys::Parameters].JSONType() == json::JSON::Class::Object)
+		{
+			JsonData[MatKeys::Parameters]["HasNormalMap"] = 0.0f;
+		}
 	}
 }
 
@@ -843,6 +876,12 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 		if (ParamName == "HasNormalMap")
 		{
 			JsonData[MatKeys::Parameters][ParamName] = 0.0f;
+			continue;
+		}
+
+		if (ParamName == "TwoSidedLighting")
+		{
+			JsonData[MatKeys::Parameters][ParamName] = Material && Material->IsTwoSidedLighting() ? 1.0f : 0.0f;
 			continue;
 		}
 

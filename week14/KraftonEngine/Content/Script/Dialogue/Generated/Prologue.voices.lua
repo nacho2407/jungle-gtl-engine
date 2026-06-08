@@ -87,7 +87,7 @@ return {
             key = "Dialogue:Prologue:Prologue_System_ReentryCountdown",
             path = "Dialogues/Prologue/0011_Prologue_System_ReentryCountdown_SYSTEM.mp3",
             volume = 0.900,
-            duration = 2.403
+            duration = 3.056
         },
     },
     entries = {
@@ -188,7 +188,7 @@ return {
             key = "Dialogue:Prologue:Prologue_System_ReentryCountdown",
             path = "Dialogues/Prologue/0011_Prologue_System_ReentryCountdown_SYSTEM.mp3",
             volume = 0.900,
-            duration = 2.403
+            duration = 3.056
         },
     }
 }
