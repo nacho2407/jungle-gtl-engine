@@ -1235,6 +1235,9 @@
     <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp">
       <Filter>Source\Engine\Component\Shape</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Engine\Component\Shape\CurvedWallRunColliderComponent.cpp">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Engine\Component\Shape\SphereComponent.cpp">
       <Filter>Source\Engine\Component\Shape</Filter>
     </ClCompile>
@@ -1317,6 +1320,9 @@
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Actor\CapsuleActor.cpp">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\GameFramework\Actor\CurvedWallRunColliderActor.cpp">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\Actor\DecalActor.cpp">
@@ -2480,6 +2486,9 @@
     <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h">
       <Filter>Source\Engine\Component\Shape</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Component\Shape\CurvedWallRunColliderComponent.h">
+      <Filter>Source\Engine\Component\Shape</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Component\Shape\SphereComponent.h">
       <Filter>Source\Engine\Component\Shape</Filter>
     </ClInclude>
@@ -2595,6 +2604,9 @@
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Actor\CapsuleActor.h">
+      <Filter>Source\Engine\GameFramework\Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\GameFramework\Actor\CurvedWallRunColliderActor.h">
       <Filter>Source\Engine\GameFramework\Actor</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\Actor\DecalActor.h">

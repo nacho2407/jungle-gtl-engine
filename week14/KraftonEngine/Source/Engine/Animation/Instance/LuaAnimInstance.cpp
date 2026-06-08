@@ -632,6 +632,29 @@ void ULuaAnimInstance::InstallBindings()
 		});
 
 	// SM 에 state 추가 — SubGraphOverride 로 임의 노드를 state 의 sub-graph 로 박음.
+	Anim.set_function("set_sequence_force_root_lock",
+		[](std::string Path, bool bEnable)
+		{
+			if (Path.empty() || Path == "None")
+			{
+				return false;
+			}
+
+			UAnimSequence* Sequence = FAnimationManager::Get().LoadAnimation(Path);
+			if (!Sequence)
+			{
+				UE_LOG("[LuaAnim] set_sequence_force_root_lock - anim load failed: %s", Path.c_str());
+				return false;
+			}
+
+			Sequence->SetForceRootLock(bEnable);
+			if (bEnable)
+			{
+				Sequence->SetEnableRootMotion(false);
+			}
+			return true;
+		});
+
 	Anim.set_function("sm_add_state",
 		[this](FAnimNode_StateMachine* SM, std::string Name, FAnimNode_Base* SubGraph)
 		{

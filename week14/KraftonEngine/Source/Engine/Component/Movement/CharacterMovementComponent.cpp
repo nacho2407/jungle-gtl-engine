@@ -36,6 +36,7 @@
 namespace
 {
 	constexpr float MinWallRunInputAlong = 0.1f;
+	constexpr float WallRunOppositeInputReject = -0.65f;
 	constexpr float SprintFootstepMinSpeed = 1.0f;
 	constexpr float WalkFootstepStrideDistance = 2.1f;
 	constexpr float SprintFootstepStrideDistance = 2.6f;
@@ -722,6 +723,12 @@ void UCharacterMovementComponent::SetMovementMode(EMovementMode NewMode)
 			FAudioManager::Get().SetLoopState("PlayerWallRunRub", "WallRunRub", false);
 		}
 		WallRunStepDistance = 0.0f;
+		WallRunLostWallGraceTimer = 0.0f;
+		WallRunInputGraceTimer = 0.0f;
+		LastWallRunInputAlong = 0.0f;
+		LastWallRunHitDistance = -1.0f;
+		LastWallRunDistanceError = 0.0f;
+		WallRunEntryForwardSpeed = 0.0f;
 	}
 	if (NewMode != EMovementMode::Walking)
 	{
@@ -905,6 +912,10 @@ const char* UCharacterMovementComponent::GetWallRunStatusName(EWallRunStatus Sta
 		return "BAD_DIRECTION";
 	case EWallRunStatus::Active:
 		return "ACTIVE";
+	case EWallRunStatus::GraceNoWall:
+		return "GRACE_NO_WALL";
+	case EWallRunStatus::GraceNoInput:
+		return "GRACE_NO_INPUT";
 	case EWallRunStatus::EndedTimeLimit:
 		return "ENDED_TIME_LIMIT";
 	case EWallRunStatus::EndedNoWall:
@@ -1010,6 +1021,14 @@ FWallRunDebugSnapshot UCharacterMovementComponent::GetWallRunDebugSnapshot() con
 	Snapshot.MaxWallRunTime = MaxWallRunTime;
 	Snapshot.HitDistance = HitDistanceOrMiss(bHasHit, LastWallRunStatusHit);
 	Snapshot.HitUpDot = UpDot;
+	Snapshot.WallRunLostWallGraceRemaining = WallRunLostWallGraceTimer;
+	Snapshot.WallRunInputGraceRemaining = WallRunInputGraceTimer;
+	Snapshot.LastWallRunInputAlong = LastWallRunInputAlong;
+	Snapshot.LastWallRunDistanceError = LastWallRunDistanceError;
+	const float GravityRampAlpha = WallRunGravityRampTime > FMath::Epsilon
+		? std::clamp(WallRunElapsedTime / WallRunGravityRampTime, 0.0f, 1.0f)
+		: 1.0f;
+	Snapshot.WallRunEffectiveGravityScale = FMath::Lerp(WallRunInitialGravityScale, WallRunGravityScale, GravityRampAlpha);
 	Snapshot.bWallRunEnabled = bEnableWallRun;
 	Snapshot.bIsWallRunning = MovementMode == EMovementMode::WallRunning;
 	Snapshot.bHasHit = bHasHit;
@@ -1020,6 +1039,34 @@ FWallRunDebugSnapshot UCharacterMovementComponent::GetWallRunDebugSnapshot() con
 	Snapshot.HitActorName = GetHitActorName(LastWallRunStatusHit);
 	Snapshot.HitComponentName = GetHitComponentName(LastWallRunStatusHit);
 	return Snapshot;
+}
+
+void UCharacterMovementComponent::ApplyTitanfallWallRunDefaults()
+{
+	MinWallRunStartSpeed = 2.5f;
+	WallRunMinSpeed = 12.0f;
+	WallRunMaxSpeed = 21.0f;
+	WallRunAcceleration = 28.0f;
+	WallRunAttachUpVelocity = 1.4f;
+	WallRunInitialGravityScale = 0.04f;
+	WallRunGravityScale = 0.18f;
+	WallRunGravityRampTime = 0.45f;
+	MaxWallRunSlideSpeed = 3.0f;
+	WallStickAcceleration = 4.0f;
+	WallRunLostWallGraceTime = 0.14f;
+	WallRunInputGraceTime = 0.20f;
+	WallRunDistanceCorrectionStrength = 12.0f;
+	MaxWallRunStickSpeed = 6.0f;
+	MaxWallRunTime = 1.8f;
+	WallRunFatigueDuration = 0.35f;
+	FatiguedAirJumpInputLockDuration = 0.10f;
+
+	WallJumpOutVelocity = 9.0f;
+	WallJumpUpVelocity = 8.0f;
+	WallJumpForwardVelocity = 1.5f;
+	WallJumpForwardCarryMultiplier = 0.95f;
+	WallJumpMinForwardCarrySpeed = 11.0f;
+	WallJumpReattachCooldown = 0.18f;
 }
 
 void UCharacterMovementComponent::DrawWallRunStatusText() const
@@ -1657,13 +1704,16 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 		return;
 	}
 
+	// 공중 이동 상한 계산용 입력 전 속도. 점프/벽타기에서 넘어온 모멘텀은 클램프로 자르지 않는다.
+	const FVector PreInputV2D(Velocity.X, Velocity.Y, 0.0f);
+	const float PreInputSpeed2D = PreInputV2D.Length();
+
 	const float InputLen = Input.Length();
 	if (InputLen > 0.0f)
 	{
-		// 입력 방향으로 가속 (XY 만). Falling 은 기존보다 방향 전환이 약해지도록 70%만 적용.
+		// 입력 방향으로 가속 (XY 만). Falling 은 AirControlScale로 방향 전환 강도를 튜닝한다.
 		const FVector Direction = Input * (1.0f / InputLen);
-		constexpr float AirControlScale = 0.7f;
-		const float AccelScale = (MovementMode == EMovementMode::Falling) ? AirControlScale : 1.0f;
+		const float AccelScale = (MovementMode == EMovementMode::Falling) ? std::max(0.0f, AirControlScale) : 1.0f;
 		Velocity.X += Direction.X * MaxAcceleration * AccelScale * DeltaTime;
 		Velocity.Y += Direction.Y * MaxAcceleration * AccelScale * DeltaTime;
 
@@ -1701,9 +1751,16 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 	}
 
 	// MaxWalkSpeed 클램프 (평면 속도만).
+	// Falling 중에는 입력 전 속도를 상한 후보에 포함해 스프린트 점프/벽타기 이탈 속도를 보존한다.
 	FVector V2D(Velocity.X, Velocity.Y, 0.0f);
 	const float Speed2D = V2D.Length();
-	const float CurrentMaxWalkSpeed = GetMaxWalkSpeed();
+	float CurrentMaxWalkSpeed = GetMaxWalkSpeed();
+	if (MovementMode == EMovementMode::Falling)
+	{
+		const bool bUseSprintAirLimit = bWantsSprint && !IsCrouching() && !IsSliding();
+		const float AirInputMaxSpeed = bUseSprintAirLimit ? MaxWalkSpeed * std::max(1.0f, SprintSpeedMultiplier) : MaxWalkSpeed;
+		CurrentMaxWalkSpeed = std::max(AirInputMaxSpeed, PreInputSpeed2D);
+	}
 	if (Speed2D > CurrentMaxWalkSpeed)
 	{
 		const FVector Dir = V2D * (1.0f / Speed2D);
@@ -2456,18 +2513,19 @@ bool UCharacterMovementComponent::TryStartWallRun(const FVector& Input)
 		return false;
 	}
 
-	// 시작 단계에서도 입력 의도를 검사한다. 입력이 벽 진행 방향이 아니면
-	// Falling -> Active -> EndedBadDirection 루프가 매 프레임 반복되어 벽에 붙어 보일 수 있다.
+	// TF2식 진입은 "입력이 접선과 정확히 같아야 함"보다 "이미 그 방향으로 날아가고 있음"을 더 믿는다.
+	// 그래서 입력이 완전히 없거나 조금 어긋난 경우는 허용하고, 명확히 반대로 누르는 경우만 막는다.
 	const float InputAlongWall = GetWallRunInputAlong(Input, RunDirection);
-	if (std::fabs(InputAlongWall) < MinWallRunInputAlong)
+	if (InputAlongWall < WallRunOppositeInputReject)
 	{
 		if (ShouldEmitWallRunDiagnostics())
 		{
 			UE_LOG(
-				"[WallRunStart] reject=NoAlongInput input=(%.2f,%.2f,%.2f) runDir=(%.2f,%.2f,%.2f) normal=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
+				"[WallRunStart] reject=OppositeInput input=(%.2f,%.2f,%.2f) inputAlong=%.2f runDir=(%.2f,%.2f,%.2f) normal=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
 				Input.X,
 				Input.Y,
 				Input.Z,
+				InputAlongWall,
 				RunDirection.X,
 				RunDirection.Y,
 				RunDirection.Z,
@@ -2506,6 +2564,11 @@ void UCharacterMovementComponent::StartWallRun(const FHitResult& WallHit, bool b
 
 	WallRunElapsedTime = 0.0f;
 	bWallRunOnRightSide = bRightSide;
+	WallRunLostWallGraceTimer = std::max(0.0f, WallRunLostWallGraceTime);
+	WallRunInputGraceTimer = std::max(0.0f, WallRunInputGraceTime);
+	LastWallRunInputAlong = 1.0f;
+	LastWallRunHitDistance = WallHit.Distance;
+	LastWallRunDistanceError = WallHit.Distance - WallCheckSphereRadius;
 
 	// 벽 안쪽으로 파고드는 속도 제거 — CCT 가 벽과 싸우지 않고 표면 접선 속도만 유지하도록 정리.
 	Velocity = Velocity - WallRunNormal * Velocity.Dot(WallRunNormal);
@@ -2514,14 +2577,15 @@ void UCharacterMovementComponent::StartWallRun(const FHitResult& WallHit, bool b
 	const float ExistingForwardSpeed = std::fabs(PlanarVelocity.Dot(WallRunDirection));
 	const float MinRunSpeed = (std::min)(WallRunMinSpeed, WallRunMaxSpeed);
 	const float StartSpeed = FMath::Clamp((std::max)(ExistingForwardSpeed, MinRunSpeed), 0.0f, WallRunMaxSpeed);
+	WallRunEntryForwardSpeed = StartSpeed;
 
 	Velocity.X = WallRunDirection.X * StartSpeed;
 	Velocity.Y = WallRunDirection.Y * StartSpeed;
 
-	// 진입 직후에는 아래로 꺼지는 느낌을 줄여 벽을 믿고 달릴 수 있게 한다.
-	if (Velocity.Z < 0.0f)
+	// TF2식 attach 감각: 벽에 닿는 순간 아래로 꺼지지 않고 살짝 떠오르며 속도가 이어진다.
+	if (Velocity.Z < WallRunAttachUpVelocity)
 	{
-		Velocity.Z = 0.0f;
+		Velocity.Z = WallRunAttachUpVelocity;
 	}
 
 	SetMovementMode(EMovementMode::WallRunning);
@@ -2545,6 +2609,12 @@ void UCharacterMovementComponent::EndWallRun()
 	WallRunDirection = FVector::ZeroVector;
 	WallRunElapsedTime = 0.0f;
 	bWallRunOnRightSide = false;
+	WallRunLostWallGraceTimer = 0.0f;
+	WallRunInputGraceTimer = 0.0f;
+	LastWallRunInputAlong = 0.0f;
+	LastWallRunHitDistance = -1.0f;
+	LastWallRunDistanceError = 0.0f;
+	WallRunEntryForwardSpeed = 0.0f;
 
 	if (MovementMode == EMovementMode::WallRunning)
 	{
@@ -2565,11 +2635,20 @@ void UCharacterMovementComponent::PerformWallJump()
 	const FVector JumpNormal    = !WallRunNormal.IsNearlyZero()    ? WallRunNormal.Normalized()    : FVector::UpVector;
 	const FVector JumpDirection = !WallRunDirection.IsNearlyZero() ? WallRunDirection.Normalized() : FVector::ZeroVector;
 
-	// 세 성분 합성: 벽에서 밀려나기 + 위 + 진행 방향 보너스.
+	const FVector PlanarVelocity(Velocity.X, Velocity.Y, 0.0f);
+	const float CurrentForwardSpeed = JumpDirection.IsNearlyZero()
+		? 0.0f
+		: std::max(0.0f, PlanarVelocity.Dot(JumpDirection));
+	const float CarrySourceSpeed = std::max(WallRunEntryForwardSpeed, CurrentForwardSpeed);
+	const float ForwardCarrySpeed = std::max(
+		WallJumpMinForwardCarrySpeed,
+		CarrySourceSpeed * WallJumpForwardCarryMultiplier);
+
+	// 세 성분 합성: 벽에서 밀려나기 + 위 + 진행 속도 보존.
 	const FVector NewVelocity =
 		JumpNormal    * WallJumpOutVelocity +
 		FVector::UpVector * WallJumpUpVelocity +
-		JumpDirection * WallJumpForwardVelocity;
+		JumpDirection * (ForwardCarrySpeed + WallJumpForwardVelocity);
 
 	Velocity = NewVelocity;
 
@@ -2583,9 +2662,10 @@ void UCharacterMovementComponent::PerformWallJump()
 	if (bLogWallRunDiagnostics && ShouldEmitWallRunDiagnostics())
 	{
 		UE_LOG(
-			"[WallJump] outV=%.2f upV=%.2f fwdV=%.2f normal=(%.2f,%.2f,%.2f) dir=(%.2f,%.2f,%.2f) jumpsRemaining=%d",
+			"[WallJump] outV=%.2f upV=%.2f carry=%.2f bonus=%.2f normal=(%.2f,%.2f,%.2f) dir=(%.2f,%.2f,%.2f) jumpsRemaining=%d",
 			WallJumpOutVelocity,
 			WallJumpUpVelocity,
+			ForwardCarrySpeed,
 			WallJumpForwardVelocity,
 			JumpNormal.X, JumpNormal.Y, JumpNormal.Z,
 			JumpDirection.X, JumpDirection.Y, JumpDirection.Z,
@@ -2642,62 +2722,110 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 	}
 	if (!bHasWall)
 	{
-		SetWallRunStatus(EWallRunStatus::EndedNoWall);
-		EndWallRun();
-		return;
-	}
-
-	const FVector RawNormal = !WallHit.WorldNormal.IsNearlyZero() ? WallHit.WorldNormal : WallHit.ImpactNormal;
-	if (!IsRunnableWall(RawNormal))
-	{
-		SetWallRunStatus(EWallRunStatus::EndedBadNormal, &WallHit);
-		EndWallRun();
-		return;
-	}
-
-	WallRunNormal = RawNormal.Normalized();
-	WallRunDirection = ComputeWallRunDirection(WallRunNormal);
-	bWallRunOnRightSide = bRightSide;
-	if (WallRunDirection.IsNearlyZero())
-	{
-		SetWallRunStatus(EWallRunStatus::EndedBadDirection, &WallHit);
-		EndWallRun();
-		return;
-	}
-
-	float InputAlongWall = GetWallRunInputAlong(Input, WallRunDirection);
-	if (std::fabs(InputAlongWall) < MinWallRunInputAlong)
-	{
-		if (ShouldEmitWallRunDiagnostics())
+		WallRunLostWallGraceTimer = std::max(0.0f, WallRunLostWallGraceTimer - DeltaTime);
+		LastWallRunHitDistance = -1.0f;
+		LastWallRunDistanceError = 0.0f;
+		if (WallRunLostWallGraceTimer <= 0.0f || WallRunNormal.IsNearlyZero() || WallRunDirection.IsNearlyZero())
 		{
-			UE_LOG(
-				"[WallRunInput] reject=NoAlongInput input=(%.2f,%.2f,%.2f) runDir=(%.2f,%.2f,%.2f) normal=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
-				Input.X,
-				Input.Y,
-				Input.Z,
-				WallRunDirection.X,
-				WallRunDirection.Y,
-				WallRunDirection.Z,
-				WallRunNormal.X,
-				WallRunNormal.Y,
-				WallRunNormal.Z,
-				WallHit.Distance,
-				GetHitActorName(WallHit).c_str(),
-				GetHitComponentName(WallHit).c_str());
+			SetWallRunStatus(EWallRunStatus::EndedNoWall);
+			EndWallRun();
+			return;
+		}
+	}
+	else
+	{
+		WallRunLostWallGraceTimer = std::max(0.0f, WallRunLostWallGraceTime);
+		LastWallRunHitDistance = WallHit.Distance;
+		LastWallRunDistanceError = WallHit.Distance - WallCheckSphereRadius;
+
+		const FVector RawNormal = !WallHit.WorldNormal.IsNearlyZero() ? WallHit.WorldNormal : WallHit.ImpactNormal;
+		if (!IsRunnableWall(RawNormal))
+		{
+			SetWallRunStatus(EWallRunStatus::EndedBadNormal, &WallHit);
+			EndWallRun();
+			return;
 		}
 
-		SetWallRunStatus(EWallRunStatus::EndedBadDirection, &WallHit);
-		EndWallRun();
-		return;
+		WallRunNormal = RawNormal.Normalized();
+		FVector NewRunDirection = ComputeWallRunDirection(WallRunNormal);
+		if (!WallRunDirection.IsNearlyZero() && NewRunDirection.Dot(WallRunDirection) < 0.0f)
+		{
+			NewRunDirection = NewRunDirection * -1.0f;
+		}
+		WallRunDirection = NewRunDirection;
+		bWallRunOnRightSide = bRightSide;
+		if (WallRunDirection.IsNearlyZero())
+		{
+			SetWallRunStatus(EWallRunStatus::EndedBadDirection, &WallHit);
+			EndWallRun();
+			return;
+		}
 	}
 
-	if (InputAlongWall < 0.0f)
+	const float RawInputAlongWall = GetWallRunInputAlong(Input, WallRunDirection);
+	float InputAlongWall = RawInputAlongWall;
+	if (RawInputAlongWall < WallRunOppositeInputReject)
 	{
-		WallRunDirection = WallRunDirection * -1.0f;
-		InputAlongWall = -InputAlongWall;
+		WallRunInputGraceTimer = std::max(0.0f, WallRunInputGraceTimer - DeltaTime * 2.0f);
+		if (WallRunInputGraceTimer <= 0.0f)
+		{
+			SetWallRunStatus(EWallRunStatus::EndedBadDirection, bHasWall ? &WallHit : nullptr);
+			EndWallRun();
+			return;
+		}
+
+		InputAlongWall = 0.0f;
+		LastWallRunInputAlong = RawInputAlongWall;
+	}
+	else if (std::fabs(RawInputAlongWall) < MinWallRunInputAlong)
+	{
+		WallRunInputGraceTimer = std::max(0.0f, WallRunInputGraceTimer - DeltaTime);
+		if (WallRunInputGraceTimer <= 0.0f)
+		{
+			if (ShouldEmitWallRunDiagnostics())
+			{
+				UE_LOG(
+					"[WallRunInput] reject=NoAlongInput input=(%.2f,%.2f,%.2f) runDir=(%.2f,%.2f,%.2f) normal=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
+					Input.X,
+					Input.Y,
+					Input.Z,
+					WallRunDirection.X,
+					WallRunDirection.Y,
+					WallRunDirection.Z,
+					WallRunNormal.X,
+					WallRunNormal.Y,
+					WallRunNormal.Z,
+					WallHit.Distance,
+					GetHitActorName(WallHit).c_str(),
+					GetHitComponentName(WallHit).c_str());
+			}
+
+			SetWallRunStatus(EWallRunStatus::EndedBadDirection, bHasWall ? &WallHit : nullptr);
+			EndWallRun();
+			return;
+		}
+
+		InputAlongWall = 0.0f;
+	}
+	else
+	{
+		WallRunInputGraceTimer = std::max(0.0f, WallRunInputGraceTime);
+		LastWallRunInputAlong = RawInputAlongWall;
+		InputAlongWall = std::max(0.0f, RawInputAlongWall);
 	}
 
-	SetWallRunStatus(EWallRunStatus::Active, &WallHit);
+	if (!bHasWall)
+	{
+		SetWallRunStatus(EWallRunStatus::GraceNoWall);
+	}
+	else if (InputAlongWall <= 0.0f)
+	{
+		SetWallRunStatus(EWallRunStatus::GraceNoInput, &WallHit);
+	}
+	else
+	{
+		SetWallRunStatus(EWallRunStatus::Active, &WallHit);
+	}
 
 	// 벽 normal 방향 성분 제거 후, 입력이 실린 벽 접선 방향으로만 속도를 갱신한다.
 	Velocity = Velocity - WallRunNormal * Velocity.Dot(WallRunNormal);
@@ -2718,14 +2846,22 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 	Velocity.Y = WallRunDirection.Y * NewForwardSpeed;
 
 	// 벽타기 중력 — 일반 낙하보다 약하게 적용하고, 하강 속도는 제한해 바로 떨어지는 느낌을 줄인다.
-	Velocity.Z -= Gravity * WallRunGravityScale * DeltaTime;
+	const float GravityRampAlpha = WallRunGravityRampTime > FMath::Epsilon
+		? std::clamp(WallRunElapsedTime / WallRunGravityRampTime, 0.0f, 1.0f)
+		: 1.0f;
+	const float EffectiveGravityScale = FMath::Lerp(WallRunInitialGravityScale, WallRunGravityScale, GravityRampAlpha);
+	Velocity.Z -= Gravity * EffectiveGravityScale * DeltaTime;
 	if (Velocity.Z < -MaxWallRunSlideSpeed)
 	{
 		Velocity.Z = -MaxWallRunSlideSpeed;
 	}
 
-	// 약한 벽 부착 속도 — 너무 강하면 자석처럼 느껴지므로 작은 보정만 이동 delta 에 섞는다.
-	const FVector StickVelocity = WallRunNormal * -WallStickAcceleration;
+	// W14 Blueprint 의 CorrectWallRunLocation 과 같은 역할:
+	// trace hit distance 가 목표보다 멀면 벽 쪽으로 조금 더 붙이고, 너무 가까우면 보정을 줄인다.
+	const float MaxStickSpeed = std::max(0.0f, MaxWallRunStickSpeed);
+	const float DistanceCorrection = bHasWall ? LastWallRunDistanceError * WallRunDistanceCorrectionStrength : 0.0f;
+	const float StickSpeed = FMath::Clamp(WallStickAcceleration + DistanceCorrection, -MaxStickSpeed, MaxStickSpeed);
+	const FVector StickVelocity = WallRunNormal * -StickSpeed;
 
 	const FVector Offset(
 		Velocity.X * DeltaTime + RootMotionWorldXY.X + StickVelocity.X * DeltaTime,
@@ -2741,6 +2877,12 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 		WallRunDirection = FVector::ZeroVector;
 		WallRunElapsedTime = 0.0f;
 		bWallRunOnRightSide = false;
+		WallRunLostWallGraceTimer = 0.0f;
+		WallRunInputGraceTimer = 0.0f;
+		LastWallRunInputAlong = 0.0f;
+		LastWallRunHitDistance = -1.0f;
+		LastWallRunDistanceError = 0.0f;
+		WallRunEntryForwardSpeed = 0.0f;
 		Velocity.Z = 0.0f;
 		JumpsRemaining = MaxJumpCount;
 		SetMovementMode(EMovementMode::Walking);

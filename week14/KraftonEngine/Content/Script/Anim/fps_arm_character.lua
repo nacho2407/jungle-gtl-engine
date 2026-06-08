@@ -32,6 +32,8 @@ local RELOAD_CROUCH_PATH = ANIM_DIR .. "a_RifleReload_Crouch_w_imc_grunt_rifle_h
 local KEY_W = (Key and Key.W) or string.byte("W")
 local KEY_SHIFT = (Key and Key.Shift) or 0x10
 local KEY_MOUSE_RIGHT = (Key and Key.MouseRight) or 0x02
+local KEY_GAMEPAD_LEFT_THUMB = Key and Key.GamepadLeftThumb
+local KEY_GAMEPAD_LEFT_TRIGGER = Key and Key.GamepadLeftTrigger
 
 local MOVE_IDLE = 0
 local MOVE_WALK = 1
@@ -299,7 +301,9 @@ function update(self, dt)
 
     local forward_down = Anim.is_key_down(KEY_W)
     local sprint_down = Anim.is_key_down(KEY_SHIFT)
+        or (KEY_GAMEPAD_LEFT_THUMB ~= nil and Anim.is_key_down(KEY_GAMEPAD_LEFT_THUMB))
     local ads = Anim.is_key_down(KEY_MOUSE_RIGHT)
+        or (KEY_GAMEPAD_LEFT_TRIGGER ~= nil and Anim.is_key_down(KEY_GAMEPAD_LEFT_TRIGGER))
     local grounded = not Anim.is_owner_falling()
     local crouching = Anim.is_owner_crouching()
     local sliding = Anim.is_owner_sliding()

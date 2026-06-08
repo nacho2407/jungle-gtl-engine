@@ -20,9 +20,20 @@ namespace
 {
 	constexpr float BaseMouseSensitivityDegreesPerPixel = 0.2f;
 
-	bool IsCrouchKeyDown(const InputSystem& Input)
+	bool IsCrouchInputDown(const FInputSystemSnapshot& Input)
 	{
-		return Input.GetKey(VK_CONTROL) || Input.GetKey(VK_LCONTROL) || Input.GetKey(VK_RCONTROL);
+		return Input.IsDown(VK_CONTROL)
+			|| Input.IsDown(VK_LCONTROL)
+			|| Input.IsDown(VK_RCONTROL)
+			|| Input.IsDown(InputCodes::GamepadB);
+	}
+
+	bool IsSprintInputDown(const FInputSystemSnapshot& Input)
+	{
+		return Input.IsDown(VK_SHIFT)
+			|| Input.IsDown(VK_LSHIFT)
+			|| Input.IsDown(VK_RSHIFT)
+			|| Input.IsDown(InputCodes::GamepadLeftThumb);
 	}
 }
 
@@ -64,9 +75,9 @@ void ACharacter::AddMovementInput(const FVector& WorldDirection, float ScaleValu
 {
 	if (CharacterMovement)
 	{
-		const InputSystem& Input = InputSystem::Get();
-		CharacterMovement->SetCrouching(IsCrouchKeyDown(Input));
-		CharacterMovement->SetSprinting(Input.GetKey(VK_SHIFT));
+		const FInputSystemSnapshot InputSnapshot = UGameViewportClient::MakeCurrentGameInputSnapshot();
+		CharacterMovement->SetCrouching(IsCrouchInputDown(InputSnapshot));
+		CharacterMovement->SetSprinting(IsSprintInputDown(InputSnapshot));
 		CharacterMovement->AddInputVector(WorldDirection, ScaleValue);
 	}
 }
@@ -89,8 +100,10 @@ void ACharacter::SetupInputComponent()
 	// 변경 → forward/right vector 가 자동 회전 → WASD 가 "카메라 보는 방향" 으로 이동.
 	InputComponent->AddAxisMapping("MoveForward", 'W',  1.0f);
 	InputComponent->AddAxisMapping("MoveForward", 'S', -1.0f);
+	InputComponent->AddAxisMapping("MoveForward", InputCodes::GamepadLeftY, 1.0f);
 	InputComponent->AddAxisMapping("MoveRight",   'D',  1.0f);
 	InputComponent->AddAxisMapping("MoveRight",   'A', -1.0f);
+	InputComponent->AddAxisMapping("MoveRight",   InputCodes::GamepadLeftX, 1.0f);
 
 	// WASD 의 forward/right 는 ControlRotation.Yaw 기준 — capsule rotation 과 무관.
 	// "카메라가 보는 방향" (yaw 만, pitch 무시) 으로 이동.
@@ -109,6 +122,7 @@ void ACharacter::SetupInputComponent()
 
 	// Space = Jump (VK_SPACE = 0x20). Walking 중에만 effective (CharacterMovement::Jump 가 guard).
 	InputComponent->AddActionMapping("Jump", 0x20);
+	InputComponent->AddActionMapping("Jump", InputCodes::GamepadA);
 	InputComponent->BindAction("Jump", EInputEvent::Pressed, [this]()
 	{
 		Jump();
@@ -121,9 +135,9 @@ void ACharacter::Tick(float DeltaTime)
 
 	if (CharacterMovement)
 	{
-		const InputSystem& Input = InputSystem::Get();
-		CharacterMovement->SetCrouching(IsCrouchKeyDown(Input));
-		CharacterMovement->SetSprinting(Input.GetKey(VK_SHIFT));
+		const FInputSystemSnapshot InputSnapshot = UGameViewportClient::MakeCurrentGameInputSnapshot();
+		CharacterMovement->SetCrouching(IsCrouchInputDown(InputSnapshot));
+		CharacterMovement->SetSprinting(IsSprintInputDown(InputSnapshot));
 	}
 
 	if (bAutoInputMouseLook)
@@ -131,15 +145,19 @@ void ACharacter::Tick(float DeltaTime)
 		const FInputSystemSnapshot InputSnapshot = UGameViewportClient::MakeCurrentGameInputSnapshot();
 		const int DX = InputSnapshot.MouseDeltaX;
 		const int DY = InputSnapshot.MouseDeltaY;
-		if (DX != 0 || DY != 0)
+		const float GamepadLookX = InputSnapshot.GetAxisValue(InputCodes::GamepadRightX);
+		const float GamepadLookY = InputSnapshot.GetAxisValue(InputCodes::GamepadRightY);
+		if (DX != 0 || DY != 0 || GamepadLookX != 0.0f || GamepadLookY != 0.0f)
 		{
 			// APawn::ControlRotation 누적. SpringArm 이 bUsePawnControlRotation 통해 이걸 사용.
 			// capsule 회전은 옵션 (bUseControllerRotationYaw 등) — 아래 ApplyControllerRotationToRoot 가 처리.
 			FRotator Rot = GetControlRotation();
-			const float EffectiveMouseSensitivity =
-				BaseMouseSensitivityDegreesPerPixel * MouseSensitivity * FLuaScriptManager::GetRuntimeMouseSensitivity();
+			const float RuntimeSensitivity = MouseSensitivity * FLuaScriptManager::GetRuntimeMouseSensitivity();
+			const float EffectiveMouseSensitivity = BaseMouseSensitivityDegreesPerPixel * RuntimeSensitivity;
 			Rot.Yaw   += static_cast<float>(DX) * EffectiveMouseSensitivity;
 			Rot.Pitch += static_cast<float>(DY) * EffectiveMouseSensitivity;
+			Rot.Yaw += GamepadLookX * GamepadLookYawSpeedDegreesPerSecond * RuntimeSensitivity * DeltaTime;
+			Rot.Pitch -= GamepadLookY * GamepadLookPitchSpeedDegreesPerSecond * RuntimeSensitivity * DeltaTime;
 			Rot.Pitch  = std::clamp(Rot.Pitch, MinCameraPitch, MaxCameraPitch);
 			SetControlRotation(Rot);
 		}

@@ -101,6 +101,10 @@ body {
 	left: 280px;
 }
 
+.debug-tab-input {
+	left: 350px;
+}
+
 .debug-separator {
 	position: absolute;
 	left: 10px;
@@ -262,4 +266,49 @@ body {
 	font-weight: 600;
 	line-height: 18px;
 	color: #9d9d9d;
+}
+
+.debug-input-status {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 496px;
+	height: 28px;
+	font-size: 14px;
+	font-weight: 800;
+	line-height: 28px;
+	color: #ffffff;
+	background-color: #ffffff12;
+}
+
+.debug-input-line {
+	position: absolute;
+	left: 0px;
+	width: 496px;
+	height: 24px;
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 24px;
+	color: #d7d7d7;
+	background-color: #ffffff0A;
+}
+
+.debug-input-line-1 {
+	top: 36px;
+}
+
+.debug-input-line-2 {
+	top: 64px;
+}
+
+.debug-input-line-3 {
+	top: 92px;
+}
+
+.debug-input-line-4 {
+	top: 120px;
+}
+
+.debug-input-line-5 {
+	top: 148px;
 }

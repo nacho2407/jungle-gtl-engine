@@ -39,6 +39,7 @@
 #include "Debug/DrawDebugHelpers.h"
 #include "Object/Reflection/UClass.h"
 #include "Render/Scene/FScene.h"
+#include "Render/Types/MinimalViewInfo.h"
 #include "Platform/Paths.h"
 #include "Core/ProjectSettings.h"
 #include "Math/Transform.h"
@@ -47,6 +48,7 @@
 #include "UI/UIManager.h"
 #include "UI/UserWidget.h"
 #include <algorithm>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -696,6 +698,7 @@ void FLuaScriptManager::RegisterBindings(sol::state& Lua)
 		.Method("---@param key integer\n---@return boolean\nfunction Anim.is_key_down(key) end")
 		.Method("---@param name? string\n---@return AnimNode\nfunction Anim.create_state_machine(name) end")
 		.Method("---@param path string\n---@param rate number\n---@param loop boolean\n---@return AnimNode\nfunction Anim.create_sequence_player(path, rate, loop) end")
+		.Method("---@param path string\n---@param enable boolean\n---@return boolean\nfunction Anim.set_sequence_force_root_lock(path, enable) end")
 		.Method("---@param stateMachine AnimNode\n---@param name string\n---@param subGraph AnimNode\nfunction Anim.sm_add_state(stateMachine, name, subGraph) end")
 		.Method("---@param stateMachine AnimNode\n---@param from string\n---@param to string\n---@param condition fun(): boolean\n---@param blendTime number\nfunction Anim.sm_add_transition(stateMachine, from, to, condition, blendTime) end")
 		.Method("---@param stateMachine AnimNode\n---@param name string\nfunction Anim.sm_set_initial_state(stateMachine, name) end")
@@ -1710,12 +1713,26 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		"RelativeLocation", sol::property(
 		[](USceneComponent& Component) { return Component.GetRelativeLocation(); },
 		[](USceneComponent& Component, const FVector& V) { Component.SetRelativeLocation(V); }
-		));
+		),
+		"RelativeScale", sol::property(
+		[](USceneComponent& Component) { return Component.GetRelativeScale(); },
+		[](USceneComponent& Component, const FVector& V) { Component.SetRelativeScale(V); }
+		),
+		"GetRelativeScale", [](USceneComponent& Component)
+	{
+		return Component.GetRelativeScale();
+	},
+		"SetRelativeScale", [](USceneComponent& Component, const FVector& Scale)
+	{
+		Component.SetRelativeScale(Scale);
+	}
+	);
 
 	FLuaDocRegistry::Get().Type("SceneComponent")
 		.Property("Location", "Vector")
 		.Property("Rotation", "Vector")
 		.Property("RelativeLocation", "Vector")
+		.Property("RelativeScale", "Vector")
 		.Property("Forward", "Vector")
 		.Property("Right", "Vector")
 		.Property("Up", "Vector")
@@ -1723,6 +1740,8 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param location Vector\nfunction SceneComponent:SetLocation(location) end")
 		.Method("---@return Vector\nfunction SceneComponent:GetRotation() end")
 		.Method("---@param rotation Vector\nfunction SceneComponent:SetRotation(rotation) end")
+		.Method("---@return Vector\nfunction SceneComponent:GetRelativeScale() end")
+		.Method("---@param scale Vector\nfunction SceneComponent:SetRelativeScale(scale) end")
 		.Method("---@param deltaRotation Vector # Vector(X=Roll, Y=Pitch, Z=Yaw), degrees; internally composed as quaternion.\nfunction SceneComponent:AddLocalRotation(deltaRotation) end");
 
 	Lua.new_usertype<UPrimitiveComponent>("PrimitiveComponent",
@@ -1798,9 +1817,101 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Property("bHit", "boolean");
 
 	Lua.new_usertype<UCameraComponent>("CameraComponent",
-		sol::base_classes, sol::bases<USceneComponent>());
+		sol::base_classes, sol::bases<USceneComponent>(),
 
-	FLuaDocRegistry::Get().Type("CameraComponent", "SceneComponent");
+		"GetFOV", [](UCameraComponent& C) { return C.GetFOV(); },
+		"SetFOV", [](UCameraComponent& C, float InFOV) { C.SetFOV(InFOV); },
+
+		"SetDOFEnabled", [](UCameraComponent& C, bool bEnabled)
+		{
+			C.GetMutableDepthOfFieldSettings().bEnabled = bEnabled;
+		},
+		"GetDOFEnabled", [](UCameraComponent& C)
+		{
+			return C.GetDepthOfFieldSettings().bEnabled;
+		},
+		"SetDOFFocusDistance", [](UCameraComponent& C, float Distance)
+		{
+			C.GetMutableDepthOfFieldSettings().FocusDistance = Distance;
+		},
+		"GetDOFFocusDistance", [](UCameraComponent& C)
+		{
+			return C.GetDepthOfFieldSettings().FocusDistance;
+		},
+		"SetDOFFStop", [](UCameraComponent& C, float FStop)
+		{
+			C.GetMutableDepthOfFieldSettings().FStop = FStop;
+		},
+		"GetDOFFStop", [](UCameraComponent& C)
+		{
+			return C.GetDepthOfFieldSettings().FStop;
+		},
+		"ProjectWorldToScreen", [](UCameraComponent& C, const FVector& WorldLocation) -> sol::table
+		{
+			sol::table Result = FLuaScriptManager::GetState().create_table();
+			Result["Valid"] = false;
+			Result["InFront"] = false;
+			Result["X"] = 0.0f;
+			Result["Y"] = 0.0f;
+			Result["NdcX"] = 0.0f;
+			Result["NdcY"] = 0.0f;
+			Result["NdcZ"] = 0.0f;
+			Result["Depth"] = 0.0f;
+			Result["ViewportWidth"] = 0.0f;
+			Result["ViewportHeight"] = 0.0f;
+
+			float ViewportWidth = UUIManager::Get().GetViewportWidth();
+			float ViewportHeight = UUIManager::Get().GetViewportHeight();
+			if ((ViewportWidth <= 0.0f || ViewportHeight <= 0.0f) && GEngine)
+			{
+				if (FWindowsWindow* Window = GEngine->GetWindow())
+				{
+					ViewportWidth = static_cast<float>(Window->GetWidth());
+					ViewportHeight = static_cast<float>(Window->GetHeight());
+				}
+			}
+
+			Result["ViewportWidth"] = ViewportWidth;
+			Result["ViewportHeight"] = ViewportHeight;
+			if (ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
+			{
+				return Result;
+			}
+
+			FMinimalViewInfo POV;
+			C.GetCameraView(0.0f, POV);
+
+			const FVector ToPoint = WorldLocation - POV.Location;
+			const float Depth = ToPoint.Dot(POV.Rotation.GetForwardVector());
+			const FVector Ndc = POV.CalculateViewProjectionMatrix().TransformPositionWithW(WorldLocation);
+
+			const bool bFinite =
+				std::isfinite(Ndc.X) && std::isfinite(Ndc.Y) && std::isfinite(Ndc.Z) &&
+				std::isfinite(Depth);
+			const bool bInFront = Depth > POV.NearClip;
+
+			Result["Valid"] = bFinite && bInFront;
+			Result["InFront"] = bInFront;
+			Result["NdcX"] = Ndc.X;
+			Result["NdcY"] = Ndc.Y;
+			Result["NdcZ"] = Ndc.Z;
+			Result["Depth"] = Depth;
+			Result["X"] = (Ndc.X * 0.5f + 0.5f) * ViewportWidth;
+			Result["Y"] = (1.0f - (Ndc.Y * 0.5f + 0.5f)) * ViewportHeight;
+			return Result;
+		}
+	);
+
+	FLuaDocRegistry::Get().Type("CameraComponent", "SceneComponent")
+		.Method("---@return number\nfunction CameraComponent:GetFOV() end")
+		.Method("---@param fov number # radians\nfunction CameraComponent:SetFOV(fov) end")
+		.Method("---@param enabled boolean\nfunction CameraComponent:SetDOFEnabled(enabled) end")
+		.Method("---@return boolean\nfunction CameraComponent:GetDOFEnabled() end")
+		.Method("---@param distance number\nfunction CameraComponent:SetDOFFocusDistance(distance) end")
+		.Method("---@return number\nfunction CameraComponent:GetDOFFocusDistance() end")
+		.Method("---@param fstop number\nfunction CameraComponent:SetDOFFStop(fstop) end")
+		.Method("---@return number\nfunction CameraComponent:GetDOFFStop() end")
+		.Method("---@param worldLocation Vector\n---@return table # { Valid:boolean, InFront:boolean, X:number, Y:number, NdcX:number, NdcY:number, NdcZ:number, Depth:number, ViewportWidth:number, ViewportHeight:number }\nfunction CameraComponent:ProjectWorldToScreen(worldLocation) end");
 
 	Lua.new_usertype<USkinnedMeshComponent>("SkinnedMeshComponent",
 		sol::base_classes, sol::bases<UPrimitiveComponent, USceneComponent>());
@@ -2306,6 +2417,28 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		}
 
 		return FVector::ZeroVector;
+	},
+
+		// 본 스케일 조작 — Vector(0,0,0) 로 설정하면 해당 본과 자식 메시 섹션이 사라지는 효과.
+		// ADS 시 시야를 가리는 v_cro 같은 인게임 메시 파츠를 임시로 숨길 때 쓴다.
+		"SetBoneScale", [](USkeletalMeshComponent& C, const FString& BoneName, const FVector& Scale)
+	{
+		const int32 BoneIndex = C.FindBoneIndex(BoneName);
+		if (BoneIndex < 0) return false;
+		C.SetBoneScaleByIndex(BoneIndex, Scale);
+		return true;
+	},
+
+		"ResetBoneEditPose", [](USkeletalMeshComponent& C)
+	{
+		C.ResetBoneEditPose();
+	},
+
+		"GetBoneScale", [](USkeletalMeshComponent& C, const FString& BoneName)
+	{
+		const int32 BoneIndex = C.FindBoneIndex(BoneName);
+		if (BoneIndex < 0) return FVector::OneVector;
+		return C.GetBoneScaleByIndex(BoneIndex);
 	}
 	);
 
@@ -2316,7 +2449,10 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param weight number\nfunction SkeletalMeshComponent:SetPhysicsBlendWeight(weight) end")
 		.Method("---@return number\nfunction SkeletalMeshComponent:GetPhysicsBlendWeight() end")
 		.Method("---@param boneName string\n---@param localOffset Vector\n---@return Vector\nfunction SkeletalMeshComponent:GetBoneSocketLocation(boneName, localOffset) end")
-		.Method("---@param boneName string\n---@param localOffset Vector\n---@return Vector\nfunction SkeletalMeshComponent:GetBoneSocketRotation(boneName, localOffset) end");
+		.Method("---@param boneName string\n---@param localOffset Vector\n---@return Vector\nfunction SkeletalMeshComponent:GetBoneSocketRotation(boneName, localOffset) end")
+		.Method("---@param boneName string\n---@param scale Vector\n---@return boolean\nfunction SkeletalMeshComponent:SetBoneScale(boneName, scale) end")
+		.Method("---@return nil\nfunction SkeletalMeshComponent:ResetBoneEditPose() end")
+		.Method("---@param boneName string\n---@return Vector\nfunction SkeletalMeshComponent:GetBoneScale(boneName) end");
 
 	// 게임 특화 usertype/enum/global 은 Game 모듈의
 	// RegisterGameLuaBindings 가 등록한다. 호출 순서는 GameEngine/EditorEngine::Init
