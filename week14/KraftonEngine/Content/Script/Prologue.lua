@@ -44,6 +44,7 @@ local SKIP_RING_FRAMES = 24
 local INTRO_DIALOGUE_START_DELAY = 5.0
 local POST_LANDING_FINISH_DELAY = 3.0
 local PRODUCER_CREDIT_START_TIME = 10.0
+local PRODUCER_CREDIT_DISPLAY_DURATION = 5.0
 local PRODUCER_CREDIT_MAX_FADE_DURATION = 1.2
 local VOICE_END_PADDING = 0.25
 local DIALOGUE_BOX_WIDTH = 980.0
@@ -235,24 +236,21 @@ local function update_producer_credit()
     end
 
     local creditCount = #PRODUCER_CREDIT_NAMES
-    local creditEndTime = landingFinishTime
+    local creditEndTime = math.min(
+        landingFinishTime,
+        PRODUCER_CREDIT_START_TIME + creditCount * PRODUCER_CREDIT_DISPLAY_DURATION)
     if creditCount <= 0 or sceneTime < PRODUCER_CREDIT_START_TIME or sceneTime >= creditEndTime then
         hide_producer_credit()
         return
     end
 
-    local totalDuration = creditEndTime - PRODUCER_CREDIT_START_TIME
-    if totalDuration <= 0.0 then
-        hide_producer_credit()
-        return
-    end
-
-    local segmentDuration = totalDuration / creditCount
+    local segmentDuration = PRODUCER_CREDIT_DISPLAY_DURATION
     if segmentDuration <= 0.0 then
         hide_producer_credit()
         return
     end
 
+    -- 첫 노출 시각은 유지하고, 각 제작자 이름만 고정 시간으로 짧게 노출합니다.
     local localTime = sceneTime - PRODUCER_CREDIT_START_TIME
     local creditIndex = math.floor(localTime / segmentDuration) + 1
     creditIndex = clamp(creditIndex, 1, creditCount)
@@ -268,7 +266,7 @@ local function update_producer_credit()
         end
     end
 
-    -- 제작자 크레딧은 착륙 완료 전까지 한 명씩 순차적으로 노출합니다.
+    -- 제작자 크레딧은 정해진 표시 구간 동안 한 명씩 순차적으로 노출합니다.
     cutsceneWidget:SetText("producer-credit-name", PRODUCER_CREDIT_NAMES[creditIndex])
     cutsceneWidget:SetText("producer-credit-role", "PRODUCER")
     cutsceneWidget:SetProperty("producer-credit", "opacity", string.format("%.2f", clamp(alpha, 0.0, 1.0)))
