@@ -1230,6 +1230,26 @@ function Tick(dt)
     update_weapon_recoil(dt)
     update_arm_transforms(dt)
 
+    cache_movement_defaults()
+    if movement ~= nil and baseSprintSpeedMultiplier ~= nil then
+        local adsNow = is_aim_down()
+        if adsNow then
+            movement:SetSprintSpeedMultiplier(1.0)
+        else
+            movement:SetSprintSpeedMultiplier(baseSprintSpeedMultiplier)
+        end
+        if adsNow ~= _lastAdsForSprint then
+            _lastAdsForSprint = adsNow
+            print(string.format(
+                "[ADS-sprint] ads=%s base_mult=%.3f current_mult=%.3f max_walk=%.3f is_sprinting=%s",
+                tostring(adsNow),
+                baseSprintSpeedMultiplier,
+                movement:GetSprintSpeedMultiplier(),
+                movement:GetMaxWalkSpeed(),
+                tostring(movement:IsSprinting())))
+        end
+    end
+
     if fireCooldown > 0 then
         fireCooldown = fireCooldown - dt
     end
