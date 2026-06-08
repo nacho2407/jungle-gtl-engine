@@ -1,0 +1,70 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "AStaticMeshActor_26",
+      "NonSceneComponents" : [],
+      "ObjectId" : 1,
+      "Properties" : {
+        "PendingActorLocation" : [91.025345, 34.783993, -9.142647],
+        "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
+        "PendingActorScale" : [4.000000, 4.000000, 4.000000],
+        "PendingActorVisible" : true,
+        "PendingTagsString" : "",
+        "bNeedsTick" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Name" : "UStaticMeshComponent_29",
+        "ObjectId" : 2,
+        "Properties" : {
+          "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
+          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "CollisionEnabled" : 0,
+          "CollisionPreset" : 0,
+          "LinearDamping" : 0.010000,
+          "Mass" : 1.000000,
+          "MaterialSlots" : ["Content/Material/Auto/storm_fleet_officer_lasky_shoulder.mat", "Content/Material/Auto/storm_fleet_officer_lasky_holster_shoulder_arm.001.mat", "Content/Material/Auto/storm_fleet_officer_default_body.mat", "Content/Material/Auto/storm_fleet_officer_default_hand.mat", "Content/Material/Auto/storm_fleet_officer_default_pouch.mat", "Content/Material/Auto/storm_fleet_officer_default_rank.mat", "Content/Material/Auto/storm_fleet_officer_lasky_holster_shoulder_arm.mat", "Content/Material/Auto/lasky_hair.mat", "Content/Material/Auto/lasky_eyes.mat", "Content/Material/Auto/lasky_skin.mat"],
+          "ObjectType" : 0,
+          "RelativeTransform.Location" : [91.025345, 34.783993, -9.142647],
+          "RelativeTransform.Scale" : [4.000000, 4.000000, 4.000000],
+          "ResponseContainer" : {
+            "Responses[0]" : 2,
+            "Responses[1]" : 2,
+            "Responses[2]" : 2,
+            "Responses[3]" : 2,
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
+          },
+          "StaticMeshPath" : "Content/Data/Boss/General3_StaticMesh.uasset",
+          "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
+          "bAutoActivate" : true,
+          "bCastShadow" : true,
+          "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
+          "bEditorOnly" : false,
+          "bEnableGravity" : true,
+          "bGenerateOverlapEvents" : false,
+          "bHiddenInComponentTree" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnable" : true,
+          "bTickInEditor" : false,
+          "bUseBakedBindPoseCorrection" : false,
+          "bUseBoundingBoxCollider" : false
+        }
+      }
+    }],
+  "ClassName" : "Prefab",
+  "Origin" : [91.025345, 34.783993, -9.142647],
+  "Version" : 1
+}

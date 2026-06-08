@@ -1,0 +1,95 @@
+{
+  "Actors" : [{
+      "ClassName" : "ASkeletalMeshActor",
+      "Name" : "ASkeletalMeshActor_40",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Name" : "ULuaScriptComponent_SimpleEnemyAI",
+          "ObjectId" : 3,
+          "Properties" : {
+            "ScriptFile" : "SimpleEnemyAI.lua",
+            "bAutoActivate" : true,
+            "bEditorOnly" : false,
+            "bHiddenInComponentTree" : false,
+            "bIsActive" : true,
+            "bTickEnable" : true,
+            "bTickInEditor" : false
+          }
+        }],
+      "ObjectId" : 1,
+      "Properties" : {
+        "PendingActorLocation" : [87.730881, 35.716385, -7.808683],
+        "PendingActorRotation" : [-0.000000, 99.448433, 0.000000],
+        "PendingActorScale" : [7.000000, 7.000000, 7.000000],
+        "PendingActorVisible" : true,
+        "PendingTagsString" : "",
+        "bNeedsTick" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "USkeletalMeshComponent",
+        "Name" : "USkeletalMeshComponent_59",
+        "ObjectId" : 2,
+        "Properties" : {
+          "AngularDamping" : 0.010000,
+          "AnimInstance" : {
+            "ClassName" : "ULuaAnimInstance",
+            "Properties" : {
+              "RootMotionMode" : 0,
+              "ScriptFile" : "Anim/simple_enemy_robodude.lua"
+            }
+          },
+          "AnimInstanceClass" : "ULuaAnimInstance",
+          "AnimationData" : {
+            "AnimToPlayPath" : "None",
+            "PlayRate" : 1.000000,
+            "bLooping" : true,
+            "bPlaying" : true
+          },
+          "AnimationMode" : 2,
+          "AttachOwnBoneName" : "",
+          "AttachTargetActorName" : "",
+          "AttachTargetBoneName" : "",
+          "CachedEditRotator" : [0.000000, 99.448425, 0.000000],
+          "CollisionEnabled" : 3,
+          "CollisionPreset" : 0,
+          "LinearDamping" : 0.010000,
+          "Mass" : 1.000000,
+          "MaterialSlots" : ["Content/Material/Auto/Head.mat", "Content/Material/Auto/GUN.mat", "Content/Material/Auto/Body.mat", "Content/Material/Auto/Secondary.mat", "Content/Material/Auto/Glow.mat"],
+          "ObjectType" : 5,
+          "PhysicsBlendWeight" : 1.000000,
+          "RagdollFaceDownGetUpAnimationPath" : "Content/Data/hirasawa-yui/Getting Up_mixamo_com.uasset",
+          "RagdollFaceUpGetUpAnimationPath" : "Content/Data/hirasawa-yui/Standing Up_mixamo_com.uasset",
+          "RagdollRecoveryBlendDuration" : 0.350000,
+          "RelativeTransform.Location" : [87.730881, 35.716385, -7.808683],
+          "RelativeTransform.Scale" : [7.000000, 7.000000, 7.000000],
+          "ResponseContainer" : {
+            "Responses[0]" : 2,
+            "Responses[1]" : 2,
+            "Responses[2]" : 2,
+            "Responses[3]" : 2,
+            "Responses[4]" : 1,
+            "Responses[5]" : 2
+          },
+          "SkeletalMeshPath" : "Content/Data/Enemy/Robodude_SkeletalMesh.uasset",
+          "TranslucentSortPriority" : 0,
+          "bAttachBoneToBone" : false,
+          "bAutoActivate" : true,
+          "bCastShadow" : true,
+          "bCastShadowAsTwoSided" : false,
+          "bEditorOnly" : false,
+          "bEnableGravity" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInComponentTree" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      }
+    }],
+  "ClassName" : "Prefab",
+  "Origin" : [87.730881, 35.716385, -7.808683],
+  "Version" : 1
+}
