@@ -250,6 +250,7 @@ bool FWorldPrimitivePickingBVH::Raycast(const FRay& Ray, FHitResult& OutHitResul
 				{
 					OutHitResult = CandidateHit;
 					OutActor = Leaf.Owner;
+					OutHitResult.HitActor = Leaf.Owner;
 				}
 			}
 			continue;

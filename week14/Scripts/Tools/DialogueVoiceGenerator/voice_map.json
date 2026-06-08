@@ -71,6 +71,22 @@
       "use_speaker_boost": true,
       "postprocess_filter_complex": "[0:a]highpass=f=240,lowpass=f=3400,aecho=0.55:0.28:18:0.16,acompressor=threshold=-20dB:ratio=3.5:attack=3:release=70[voice];anoisesrc=color=pink:amplitude=0.002:r=44100[noise];[voice][noise]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.90",
       "volume": 0.9
+    },
+    "MCCURSON": {
+      "enabled": true,
+      "provider": "elevenlabs",
+      "voice": "",
+      "rate": "-4%",
+      "pitch": "+0Hz",
+      "voice_id": "dhwafD61uVd8h85wAZSE",
+      "model_id": "eleven_v3",
+      "stability": 0.60,
+      "similarity_boost": 0.75,
+      "style": 0.30,
+      "speed": 0.95,
+      "use_speaker_boost": true,
+      "postprocess_filter": "highpass=f=75,lowpass=f=7400,acompressor=threshold=-19dB:ratio=2.0:attack=6:release=100,alimiter=limit=0.95",
+      "volume": 1.0
     }
   }
 }

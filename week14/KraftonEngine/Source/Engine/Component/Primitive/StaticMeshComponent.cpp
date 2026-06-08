@@ -24,6 +24,50 @@ namespace
 {
 	constexpr float StaticMeshAttachMatrixDecomposeTolerance = 1.0e-6f;
 
+	FVector ComputeStaticMeshWorldNormal(
+		const FStaticMesh& Asset,
+		int32 FaceIndex,
+		const FMatrix& WorldMatrix,
+		const FVector& RayDirection)
+	{
+		if (FaceIndex < 0 || FaceIndex + 2 >= static_cast<int32>(Asset.Indices.size()))
+		{
+			return RayDirection * -1.0f;
+		}
+
+		const uint32 Index0 = Asset.Indices[FaceIndex];
+		const uint32 Index1 = Asset.Indices[FaceIndex + 1];
+		const uint32 Index2 = Asset.Indices[FaceIndex + 2];
+		if (Index0 >= Asset.Vertices.size() || Index1 >= Asset.Vertices.size() || Index2 >= Asset.Vertices.size())
+		{
+			return RayDirection * -1.0f;
+		}
+
+		const FVector& V0 = Asset.Vertices[Index0].pos;
+		const FVector& V1 = Asset.Vertices[Index1].pos;
+		const FVector& V2 = Asset.Vertices[Index2].pos;
+
+		FVector LocalNormal = (V1 - V0).Cross(V2 - V0);
+		LocalNormal.Normalize();
+		if (LocalNormal.IsNearlyZero())
+		{
+			return RayDirection * -1.0f;
+		}
+
+		FVector WorldNormal = WorldMatrix.TransformVector(LocalNormal);
+		WorldNormal.Normalize();
+		if (WorldNormal.IsNearlyZero())
+		{
+			return RayDirection * -1.0f;
+		}
+
+		if (WorldNormal.Dot(RayDirection) > 0.0f)
+		{
+			WorldNormal *= -1.0f;
+		}
+		return WorldNormal;
+	}
+
 	FTransform MatrixToStaticMeshAttachTransform(const FMatrix& Matrix)
 	{
 		FTransform Result;
@@ -613,6 +657,8 @@ bool UStaticMeshComponent::LineTraceStaticMeshFast(
 	FHitResult& OutHitResult)
 {
 	if (!StaticMesh) return false;
+	FStaticMesh* Asset = StaticMesh->GetStaticMeshAsset();
+	if (!Asset) return false;
 
 	FVector LocalOrigin = WorldInverse.TransformPositionWithW(Ray.Origin);
 	FVector LocalDirection = WorldInverse.TransformVector(Ray.Direction);
@@ -624,6 +670,9 @@ bool UStaticMeshComponent::LineTraceStaticMeshFast(
 		const FVector LocalHitPoint = LocalOrigin + LocalDirection * OutHitResult.Distance;
 		const FVector WorldHitPoint = WorldMatrix.TransformPositionWithW(LocalHitPoint);
 		OutHitResult.Distance = FVector::Distance(Ray.Origin, WorldHitPoint);
+		OutHitResult.WorldHitLocation = WorldHitPoint;
+		OutHitResult.WorldNormal = ComputeStaticMeshWorldNormal(*Asset, OutHitResult.FaceIndex, WorldMatrix, Ray.Direction);
+		OutHitResult.ImpactNormal = OutHitResult.WorldNormal;
 		OutHitResult.HitComponent = this;
 		return true;
 	}

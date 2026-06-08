@@ -1704,6 +1704,10 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 		return;
 	}
 
+	// 공중 이동 상한 계산용 입력 전 속도. 점프/벽타기에서 넘어온 모멘텀은 클램프로 자르지 않는다.
+	const FVector PreInputV2D(Velocity.X, Velocity.Y, 0.0f);
+	const float PreInputSpeed2D = PreInputV2D.Length();
+
 	const float InputLen = Input.Length();
 	if (InputLen > 0.0f)
 	{
@@ -1747,9 +1751,16 @@ void UCharacterMovementComponent::ApplyInputToVelocity(const FVector& Input, flo
 	}
 
 	// MaxWalkSpeed 클램프 (평면 속도만).
+	// Falling 중에는 입력 전 속도를 상한 후보에 포함해 스프린트 점프/벽타기 이탈 속도를 보존한다.
 	FVector V2D(Velocity.X, Velocity.Y, 0.0f);
 	const float Speed2D = V2D.Length();
-	const float CurrentMaxWalkSpeed = GetMaxWalkSpeed();
+	float CurrentMaxWalkSpeed = GetMaxWalkSpeed();
+	if (MovementMode == EMovementMode::Falling)
+	{
+		const bool bUseSprintAirLimit = bWantsSprint && !IsCrouching() && !IsSliding();
+		const float AirInputMaxSpeed = bUseSprintAirLimit ? MaxWalkSpeed * std::max(1.0f, SprintSpeedMultiplier) : MaxWalkSpeed;
+		CurrentMaxWalkSpeed = std::max(AirInputMaxSpeed, PreInputSpeed2D);
+	}
 	if (Speed2D > CurrentMaxWalkSpeed)
 	{
 		const FVector Dir = V2D * (1.0f / Speed2D);
