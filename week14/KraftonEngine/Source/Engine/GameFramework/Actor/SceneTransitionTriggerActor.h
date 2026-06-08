@@ -29,9 +29,14 @@ public:
 
 private:
 	bool IsPawnInsideBox(const APawn* Pawn) const;
+	FString GetEffectiveRequiredPickedUpItemId() const;
+	FString GetEffectiveMissingRequirementDialogue() const;
+	bool HasRequiredPickedUpItem() const;
 	void FireTransition();
 	void BeginFadeOut(class APlayerCameraManager* CamMgr);
 	void ShowLoadingScreen();
+	void ShowMissingRequirementDialogue();
+	void HideMissingRequirementDialogue();
 
 	UBoxComponent* BoxComponent = nullptr;
 	UUserWidget* LoadingScreenWidget = nullptr;
@@ -53,8 +58,18 @@ private:
 	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Fade In Duration", Min=0.0f, Speed=0.1f)
 	float FadeInDuration = 1.0f;
 
+	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Required Picked Up Item")
+	FString RequiredPickedUpItemId = "";
+
+	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Missing Requirement Dialogue")
+	FString MissingRequirementDialogue = "";
+
+	UPROPERTY(Edit, Save, Category="SceneTransition", DisplayName="Missing Dialogue Duration", Min=0.0f, Speed=0.1f)
+	float MissingRequirementDialogueDuration = 3.0f;
+
 	bool bCountingDown = false;
 	bool bConsumed = false;
 	bool bFadeOutStarted = false;
 	float ElapsedSinceEnter = 0.0f;
+	float MissingRequirementDialogueTimer = 0.0f;
 };

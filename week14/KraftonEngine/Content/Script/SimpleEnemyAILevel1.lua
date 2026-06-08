@@ -1,4 +1,5 @@
 local CombatEvents = require("Game.CombatEvents")
+local EnergyBullet = require("Game.EnergyBullet")
 
 -- 플레이어 탐색 fallback에 사용할 actor tag
 local PLAYER_TAG = "player"
@@ -97,6 +98,7 @@ local footstepTimer = 0.0
 local alerted = false
 local isMoving = false
 local debugTimer = 0.0
+local activeEnergyBullets = {}
 
 -- AI 상태 디버그 로그 출력 간격
 local DEBUG_INTERVAL = 1.0
@@ -430,6 +432,7 @@ local function apply_enemy_damage(context)
     local result = make_damage_result(true, amount, killed)
     if killed then
         play_event_at(AUDIO_DEATH, obj.Location)
+        EnergyBullet.DestroyActive(activeEnergyBullets)
         clear_anim_state()
         obj:Destroy()
     end
@@ -496,6 +499,7 @@ local function fire_at(target)
     CombatEvents.NotifyAttackFired(obj, fireContext)
     request_anim_action("fire", FIRE_ACTION_DURATION)
     play_event_at(AUDIO_FIRE, source)
+    EnergyBullet.PlayInto(activeEnergyBullets, source, hitLocation)
 
     if hit ~= nil then
         CombatEvents.NotifyAttackImpact(obj, fireContext)
@@ -521,6 +525,8 @@ local function fire_at(target)
 end
 
 function BeginPlay()
+    EnergyBullet.DestroyActive(activeEnergyBullets)
+
     currentHealth = MAX_HEALTH
     isDead = false
     thinkTimer = 0.0
@@ -551,6 +557,7 @@ end
 
 function EndPlay()
     CombatEvents.UnregisterDamageable(obj)
+    EnergyBullet.DestroyActive(activeEnergyBullets)
     clear_anim_state()
 end
 
@@ -562,6 +569,8 @@ end
 
 function Tick(dt)
     if isDead then return end
+
+    EnergyBullet.TickActive(activeEnergyBullets, dt)
 
     if fireTimer > 0.0 then
         fireTimer = fireTimer - dt

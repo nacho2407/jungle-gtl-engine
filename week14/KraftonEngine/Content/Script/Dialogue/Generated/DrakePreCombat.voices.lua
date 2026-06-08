@@ -113,6 +113,14 @@ return {
             volume = 1.000,
             duration = 3.422
         },
+        ["DrakePreCombat_McCurson_Welcome"] = {
+            index = 15,
+            speaker = "MCCURSON",
+            key = "Dialogue:DrakePreCombat:DrakePreCombat_McCurson_Welcome",
+            path = "Dialogues/DrakePreCombat/0015_DrakePreCombat_McCurson_Welcome_MCCURSON.mp3",
+            volume = 1.000,
+            duration = 3.422
+        },
     },
     entries = {
         {
@@ -238,6 +246,15 @@ return {
             speaker = "DRAKE",
             key = "Dialogue:DrakePreCombat:DrakePreCombat_Drake_StayPut",
             path = "Dialogues/DrakePreCombat/0014_DrakePreCombat_Drake_StayPut_DRAKE.mp3",
+            volume = 1.000,
+            duration = 3.422
+        },
+        {
+            id = "DrakePreCombat_McCurson_Welcome",
+            index = 15,
+            speaker = "MCCURSON",
+            key = "Dialogue:DrakePreCombat:DrakePreCombat_McCurson_Welcome",
+            path = "Dialogues/DrakePreCombat/0015_DrakePreCombat_McCurson_Welcome_MCCURSON.mp3",
             volume = 1.000,
             duration = 3.422
         },
