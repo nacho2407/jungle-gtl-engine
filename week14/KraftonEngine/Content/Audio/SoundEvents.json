@@ -187,6 +187,22 @@
     "cooldown": 0.08,
     "maxInstances": 3
   },
+  "player.wallrun.impact": {
+    "bus": "SFX",
+    "spatial": false,
+    "clips": [
+      "Movement/WallRun/WallRunImpact1.wav",
+      "Movement/WallRun/WallRunImpact2.wav",
+      "Movement/WallRun/WallRunImpact3.wav",
+      "Movement/WallRun/WallRunImpact4.wav"
+    ],
+    "volumeMin": 0.58,
+    "volumeMax": 0.76,
+    "pitchMin": 0.97,
+    "pitchMax": 1.03,
+    "cooldown": 0.08,
+    "maxInstances": 2
+  },
   "weapon.reload.mag_pull.1": {
     "bus": "SFX",
     "spatial": false,
@@ -421,6 +437,214 @@
     "pitchMax": 1.02,
     "cooldown": 0.02,
     "maxInstances": 6
+  },
+  "enemy.human.walk.step": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Enemy/Human/EnemyWalk1.wav",
+      "Enemy/Human/EnemyWalk2.wav",
+      "Enemy/Human/EnemyWalk3.wav",
+      "Enemy/Human/EnemyWalk4.wav",
+      "Enemy/Human/EnemyWalk5.wav",
+      "Enemy/Human/EnemyWalk6.wav",
+      "Enemy/Human/EnemyWalk7.wav",
+      "Enemy/Human/EnemyWalk8.wav"
+    ],
+    "volumeMin": 0.34,
+    "volumeMax": 0.48,
+    "pitchMin": 0.96,
+    "pitchMax": 1.04,
+    "minDistance": 5.0,
+    "maxDistance": 160.0,
+    "attenuation": "exponential",
+    "cooldown": 0.12,
+    "maxInstances": 4
+  },
+  "enemy.human.weapon.fire": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Weapon/Fire/FireLoop1.wav",
+      "Weapon/Fire/FireLoop2.wav",
+      "Weapon/Fire/FireLoop3.wav"
+    ],
+    "volumeMin": 0.62,
+    "volumeMax": 0.78,
+    "pitchMin": 0.98,
+    "pitchMax": 1.03,
+    "minDistance": 8.0,
+    "maxDistance": 220.0,
+    "attenuation": "exponential",
+    "cooldown": 0.08,
+    "maxInstances": 5
+  },
+  "world.default.bullet_impact": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "World/DefaultBulletImpact1.wav",
+      "World/DefaultBulletImpact2.wav",
+      "World/DefaultBulletImpact3.wav",
+      "World/DefaultBulletImpact4.wav"
+    ],
+    "volumeMin": 0.58,
+    "volumeMax": 0.76,
+    "pitchMin": 0.97,
+    "pitchMax": 1.04,
+    "minDistance": 6.0,
+    "maxDistance": 200.0,
+    "attenuation": "exponential",
+    "cooldown": 0.03,
+    "maxInstances": 6
+  },
+  "player.bullet_impact": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Player/PlayerBulletImpact1.wav",
+      "Player/PlayerBulletImpact2.wav",
+      "Player/PlayerBulletImpact3.wav",
+      "Player/PlayerBulletImpact4.wav",
+      "Player/PlayerBulletImpact5.wav",
+      "Player/PlayerBulletImpact6.wav",
+      "Player/PlayerBulletImpact7.wav",
+      "Player/PlayerBulletImpact8.wav",
+      "Player/PlayerBulletImpact9.wav",
+      "Player/PlayerBulletImpact10.wav"
+    ],
+    "volumeMin": 0.62,
+    "volumeMax": 0.82,
+    "pitchMin": 0.97,
+    "pitchMax": 1.04,
+    "minDistance": 4.0,
+    "maxDistance": 200.0,
+    "attenuation": "exponential",
+    "cooldown": 0.03,
+    "maxInstances": 6
+  },
+  "enemy.drone.bullet_impact": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Enemy/Drone/AIDroneBulletImpact1.wav",
+      "Enemy/Drone/AIDroneBulletImpact2.wav",
+      "Enemy/Drone/AIDroneBulletImpact3.wav",
+      "Enemy/Drone/AIDroneBulletImpact4.wav",
+      "Enemy/Drone/AIDroneBulletImpact5.wav"
+    ],
+    "volumeMin": 0.62,
+    "volumeMax": 0.82,
+    "pitchMin": 0.97,
+    "pitchMax": 1.03,
+    "minDistance": 6.0,
+    "maxDistance": 200.0,
+    "attenuation": "exponential",
+    "cooldown": 0.03,
+    "maxInstances": 5
+  },
+  "enemy.human.bullet_impact": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Enemy/Human/EnemyHumanBulletImpact1.wav",
+      "Enemy/Human/EnemyHumanBulletImpact2.wav",
+      "Enemy/Human/EnemyHumanBulletImpact3.wav",
+      "Enemy/Human/EnemyHumanBulletImpact4.wav",
+      "Enemy/Human/EnemyHumanBulletImpact5.wav",
+      "Enemy/Human/EnemyHumanBulletImpact6.wav",
+      "Enemy/Human/EnemyHumanBulletImpact7.wav",
+      "Enemy/Human/EnemyHumanBulletImpact8.wav",
+      "Enemy/Human/EnemyHumanBulletImpact9.wav"
+    ],
+    "volumeMin": 0.58,
+    "volumeMax": 0.78,
+    "pitchMin": 0.97,
+    "pitchMax": 1.04,
+    "minDistance": 6.0,
+    "maxDistance": 200.0,
+    "attenuation": "exponential",
+    "cooldown": 0.03,
+    "maxInstances": 6
+  },
+  "enemy.human.death": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Enemy/Human/EnemyHumanDeath1.wav",
+      "Enemy/Human/EnemyHumanDeath2.wav",
+      "Enemy/Human/EnemyHumanDeath3.wav",
+      "Enemy/Human/EnemyHumanDeath4.wav"
+    ],
+    "volumeMin": 0.68,
+    "volumeMax": 0.86,
+    "pitchMin": 0.97,
+    "pitchMax": 1.03,
+    "minDistance": 8.0,
+    "maxDistance": 200.0,
+    "attenuation": "exponential",
+    "cooldown": 0.05,
+    "maxInstances": 4
+  },
+  "boss.low_health.bullet_impact": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Boss/BossLowHealthBulletImpact1.wav",
+      "Boss/BossLowHealthBulletImpact2.wav",
+      "Boss/BossLowHealthBulletImpact3.wav",
+      "Boss/BossLowHealthBulletImpact4.wav",
+      "Boss/BossLowHealthBulletImpact5.wav"
+    ],
+    "volumeMin": 0.72,
+    "volumeMax": 0.90,
+    "pitchMin": 0.96,
+    "pitchMax": 1.02,
+    "minDistance": 8.0,
+    "maxDistance": 200.0,
+    "attenuation": "exponential",
+    "cooldown": 0.03,
+    "maxInstances": 5
+  },
+  "boss.high_health.bullet_impact": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Boss/BossHighHealthBulletImpact1.wav",
+      "Boss/BossHighHealthBulletImpact2.wav",
+      "Boss/BossHighHealthBulletImpact3.wav"
+    ],
+    "volumeMin": 0.68,
+    "volumeMax": 0.84,
+    "pitchMin": 0.97,
+    "pitchMax": 1.04,
+    "minDistance": 8.0,
+    "maxDistance": 200.0,
+    "attenuation": "exponential",
+    "cooldown": 0.03,
+    "maxInstances": 6
+  },
+  "tutorial.objective.appear": {
+    "bus": "UI",
+    "spatial": false,
+    "clips": ["UI/TutorialObjectiveAppear.wav"],
+    "volumeMin": 0.54,
+    "volumeMax": 0.64,
+    "pitchMin": 0.98,
+    "pitchMax": 1.02,
+    "cooldown": 0.12,
+    "maxInstances": 2
+  },
+  "tutorial.objective.complete": {
+    "bus": "UI",
+    "spatial": false,
+    "clips": ["UI/TutorialObjectiveComplete.wav"],
+    "volumeMin": 0.72,
+    "volumeMax": 0.84,
+    "pitchMin": 0.98,
+    "pitchMax": 1.02,
+    "cooldown": 0.08,
+    "maxInstances": 2
   },
   "ui.hover": {
     "bus": "UI",

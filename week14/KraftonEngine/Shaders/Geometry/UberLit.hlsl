@@ -54,7 +54,9 @@ cbuffer PerShader1 : register(b2)
 {
     float4 SectionColor;
     float HasNormalMap;
-    float3 _pad;
+    float TwoSidedLighting;
+    float _pad0;
+    float _pad1;
 };
 
 
@@ -114,8 +116,8 @@ UberVS_Output VS_StaticMesh(VS_Input_PNCTT input)
     }
 
     float3 V = normalize(CameraWorldPos - output.worldPos);
-    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N);
-    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess);
+    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N, TwoSidedLighting);
+    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess, TwoSidedLighting);
 
 #endif
 
@@ -159,8 +161,8 @@ UberVS_Output VS_InstancedStaticMesh(VS_Input_PNCTT_Instanced input)
     }
 
     float3 V = normalize(CameraWorldPos - output.worldPos);
-    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N);
-    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess);
+    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N, TwoSidedLighting);
+    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess, TwoSidedLighting);
 #endif
     
     return output;
@@ -211,8 +213,8 @@ UberVS_Output VS_SkeletalMesh(VS_Input_PNCTTBB input)
     }
 
     float3 V = normalize(CameraWorldPos - output.worldPos);
-    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N);
-    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess);
+    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N, TwoSidedLighting);
+    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess, TwoSidedLighting);
 
 #endif
 
@@ -241,7 +243,8 @@ UberPS_Output PS(UberVS_Output input, bool isFrontFace : SV_IsFrontFace)
         texColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
     float4 baseColor = texColor * input.color;
-    float faceSign = isFrontFace ? 1.0f : -1.0f;
+    float twoSidedLighting = TwoSidedLighting > 0.5f ? 1.0f : 0.0f;
+    float faceSign = (twoSidedLighting > 0.5f && !isFrontFace) ? -1.0f : 1.0f;
 
 #if defined(WEIGHT_BONE_HEATMAP) && WEIGHT_BONE_HEATMAP
 float Heat = saturate(input.selectedBoneWeight);
@@ -301,16 +304,16 @@ return output;
     }
     else
     {
-        diffuse = AccumulateDiffuse(input.worldPos, N, input.position);
-        specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess, input.position);
+        diffuse = AccumulateDiffuse(input.worldPos, N, input.position, twoSidedLighting);
+        specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess, input.position, twoSidedLighting);
     }
 
 #elif defined(LIGHTING_MODEL_LAMBERT) && LIGHTING_MODEL_LAMBERT
-    diffuse = AccumulateDiffuse(input.worldPos, N, input.position);
+    diffuse = AccumulateDiffuse(input.worldPos, N, input.position, twoSidedLighting);
 
 #elif defined(LIGHTING_MODEL_PHONG) && LIGHTING_MODEL_PHONG
-    diffuse = AccumulateDiffuse(input.worldPos, N, input.position);
-    specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess, input.position);
+    diffuse = AccumulateDiffuse(input.worldPos, N, input.position, twoSidedLighting);
+    specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess, input.position, twoSidedLighting);
 
 #endif
 

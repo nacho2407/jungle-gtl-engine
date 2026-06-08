@@ -1,0 +1,99 @@
+body {
+	margin: 0px;
+	width: 100%;
+	height: 100%;
+	font-family: Pretendard;
+	color: #ffffff;
+}
+
+#game-over-screen {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	background-color: #000000D8;
+	overflow: visible;
+}
+
+.game-over-panel {
+	top: 50%;
+	margin-top: -160px;
+	height: 320px;
+	background-color: #050505F9;
+}
+
+#game-over-content {
+	width: 760px;
+	height: 240px;
+}
+
+#game-over-title {
+	position: absolute;
+	left: 0px;
+	top: 44px;
+	width: 100%;
+	height: 42px;
+	text-align: center;
+	font-size: 60.00px;
+	font-weight: 700;
+	line-height: 42px;
+	color: #FFFFFF;
+	letter-spacing: 0px;
+	white-space: nowrap;
+}
+
+#game-over-subtitle {
+	position: absolute;
+	left: 0px;
+	top: 108.00px;
+	width: 100%;
+	height: 28px;
+	text-align: center;
+	font-size: 22.00px;
+	font-weight: 400;
+	line-height: 28px;
+	color: #b7b7b7;
+	letter-spacing: 0px;
+	white-space: nowrap;
+}
+
+#game-over-options {
+	position: absolute;
+	left: 0px;
+	top: 150px;
+	width: 100%;
+	height: 92px;
+}
+
+.game-over-button {
+	position: absolute;
+	left: 50%;
+	margin-left: -150px;
+	width: 300px;
+	height: 28px;
+}
+
+#game-over-retry-button {
+	top: 58.00px;
+}
+
+#game-over-title-button {
+	top: 96.00px;
+}
+
+.game-over-button .hover-image-label {
+	left: 0px;
+	width: 100%;
+	height: 28px;
+	text-align: center;
+	font-size: 22px;
+	font-weight: 400;
+	line-height: 28px;
+	color: #b0b0b0;
+	letter-spacing: 0px;
+}
+
+.game-over-button:hover .hover-image-label {
+	color: #111111;
+}

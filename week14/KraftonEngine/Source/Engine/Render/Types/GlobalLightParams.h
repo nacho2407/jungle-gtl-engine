@@ -39,12 +39,12 @@ struct FPointLightParams : public LightBaseParams
 	float AttenuationRadius;
 	float LightFalloffExponent;
 	float ShadowResolutionScale = 1;
-	uint32 LightType;
+	uint32 LightType = ELightType::Point;
 	ECubeMapOrientation CubeMapOrientation = ECubeMapOrientation::CMO_Unknown;
 
 	virtual FLightInfo ToLightInfo() const
 	{
-		FLightInfo Info;
+		FLightInfo Info = {};
 		Info.Position = Position;
 		Info.AttenuationRadius = AttenuationRadius;
 
@@ -73,6 +73,7 @@ struct FSpotLightParams : public FPointLightParams
 	virtual FLightInfo ToLightInfo() const override
 	{
 		FLightInfo Info = FPointLightParams::ToLightInfo();
+		Info.LightType = ELightType::Spot;
 		Info.Direction = Direction;
 		Info.InnerConeCos = InnerConeCos;
 		Info.OuterConeCos = OuterConeCos;

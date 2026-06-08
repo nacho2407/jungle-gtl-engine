@@ -134,6 +134,7 @@ private:
 	Rml::Context* RmlContext = nullptr;
 	bool bRmlInitialized = false;
 	bool bDispatchingRmlEvents = false;
+	bool bClearViewportAfterRmlDispatch = false;
 	float LastViewportWidth = 0.0f;
 	float LastViewportHeight = 0.0f;
 	std::unordered_set<Rml::Element*> HoveredMenuButtons;

@@ -1042,6 +1042,15 @@ void FSystemResources::DispatchClusterCulling(FD3DDevice& Device)
 	UnbindTileCullingBuffers(Device);
 	UnbindClusterCullingResources(Device);
 
+	// Cluster light culling depends on a per-frame view-space AABB for each
+	// cluster. Without rebuilding this buffer, the light list is generated from
+	// stale or uninitialized cluster bounds, which can make point lights affect
+	// only an arbitrary half/side of the screen like a spot light.
+	if (!ClusteredLightCuller.DispatchViewSpaceAABB())
+	{
+		return;
+	}
+
 	ClusteredLightCuller.DispatchLightCullingCS(ForwardLights.LightBufferSRV);
 
 	BindClusterCullingResources(Device);

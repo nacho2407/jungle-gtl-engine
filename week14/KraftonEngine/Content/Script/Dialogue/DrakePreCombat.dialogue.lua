@@ -127,7 +127,7 @@ return {
         {
             id = "DrakePreCombat_Drake_StayPut",
             speaker = "DRAKE",
-            text = "유감이야, 케인. 진짜로.",
+            text = "이렇게 돼서 유감이야, 케인. 진짜로.",
             text_en = "I'm sorry it came to this, Kain. I mean that.",
             image = "",
             font = "Pretendard",

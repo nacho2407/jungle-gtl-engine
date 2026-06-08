@@ -208,6 +208,7 @@ function BeginPlay()
     currentBeamHitNormal = nil
 
     obj:AddTag("enemy")
+    obj:AddTag("drone")
     CombatEvents.RegisterDamageable(obj, {
         ApplyDamage = apply_enemy_damage,
         IsDead = function() return isDead end,
