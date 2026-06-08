@@ -627,6 +627,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClCompile Include="Source\Engine\GameFramework\Actor\PlayerStart.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\SphereActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\SceneTransitionTriggerActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\StaticMeshActor.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\Camera\CameraActor.cpp" />
@@ -1056,6 +1057,7 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\GameFramework\Actor\PlayerStart.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\SphereActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\SceneTransitionTriggerActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\StaticMeshActor.h" />
     <ClInclude Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.h" />
     <ClInclude Include="Source\Engine\GameFramework\Camera\CameraActor.h" />

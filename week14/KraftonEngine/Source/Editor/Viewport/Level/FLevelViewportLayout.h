@@ -90,6 +90,7 @@ public:
 		SphereCollider,
 		CapsuleCollider,
 		TriggerVolume,
+		SceneTransitionTrigger,
 		PlayerStart,
 		SkeletalMesh,
 		Character,
