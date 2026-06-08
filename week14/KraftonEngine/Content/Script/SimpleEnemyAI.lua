@@ -2,7 +2,7 @@ local CombatEvents = require("Game.CombatEvents")
 
 local PLAYER_TAG = "player"
 
-local MAX_HEALTH = 120.0
+local MAX_HEALTH = 60.0
 local THINK_INTERVAL = 0.16
 local SIGHT_RANGE = 55.0
 local SIGHT_HALF_FOV_DOT = 0.35
@@ -11,7 +11,7 @@ local TARGET_HEIGHT = 1.4
 local FIRE_RANGE = 62.0
 local FIRE_INTERVAL_MIN = 0.85
 local FIRE_INTERVAL_MAX = 1.35
-local FIRE_DAMAGE = 8.0
+local FIRE_DAMAGE = 3.0
 local INACCURACY_DEGREES = 7.5
 local FIRE_ACTION_DURATION = 0.55
 local HIT_REACT_DURATION = 0.45
