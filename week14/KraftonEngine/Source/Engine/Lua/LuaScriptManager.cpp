@@ -22,6 +22,9 @@
 #include "Component/Primitive/SkeletalMeshComponent.h"
 #include "Component/Primitive/SkinnedMeshComponent.h"
 #include "Component/Particle/ParticleSystemComponent.h"
+#include "Component/Light/LightComponentBase.h"
+#include "Component/Light/PointLightComponent.h"
+#include "Component/Light/SpotLightComponent.h"
 #include "Particles/ParticleSystemManager.h"
 #include "Core/Types/CollisionTypes.h"
 #include "Runtime/Engine.h"
@@ -1768,6 +1771,31 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("---@param scale Vector\nfunction SceneComponent:SetRelativeScale(scale) end")
 		.Method("---@param deltaRotation Vector # Vector(X=Roll, Y=Pitch, Z=Yaw), degrees; internally composed as quaternion.\nfunction SceneComponent:AddLocalRotation(deltaRotation) end");
 
+	Lua.new_usertype<ULightComponentBase>("LightComponentBase",
+		sol::base_classes, sol::bases<USceneComponent>(),
+		"GetIntensity", &ULightComponentBase::GetIntensity,
+		"SetIntensity", &ULightComponentBase::SetIntensity);
+
+	FLuaDocRegistry::Get().Type("LightComponentBase", "SceneComponent")
+		.Method("---@return number\nfunction LightComponentBase:GetIntensity() end")
+		.Method("---@param value number\nfunction LightComponentBase:SetIntensity(value) end");
+
+	Lua.new_usertype<UPointLightComponent>("PointLightComponent",
+		sol::base_classes, sol::bases<ULightComponentBase, USceneComponent>(),
+		"GetAttenuationRadius", &UPointLightComponent::GetAttenuationRadius,
+		"SetAttenuationRadius", &UPointLightComponent::SetAttenuationRadius);
+
+	FLuaDocRegistry::Get().Type("PointLightComponent", "LightComponentBase")
+		.Method("---@return number\nfunction PointLightComponent:GetAttenuationRadius() end")
+		.Method("---@param value number\nfunction PointLightComponent:SetAttenuationRadius(value) end");
+
+	Lua.new_usertype<USpotLightComponent>("SpotLightComponent",
+		sol::base_classes, sol::bases<UPointLightComponent, ULightComponentBase, USceneComponent>(),
+		"GetOuterConeAngle", &USpotLightComponent::GetOuterConeAngle);
+
+	FLuaDocRegistry::Get().Type("SpotLightComponent", "PointLightComponent")
+		.Method("---@return number\nfunction SpotLightComponent:GetOuterConeAngle() end");
+
 	Lua.new_usertype<UPrimitiveComponent>("PrimitiveComponent",
 		sol::base_classes, sol::bases<USceneComponent>(),
 		"SetOutline", [](UPrimitiveComponent& Component, bool bEnabled)
@@ -2058,6 +2086,12 @@ void FLuaScriptManager::RegisterActorBindings(sol::state& Lua)
 		.Method("GetParticleSystem",
 			"---@return ParticleSystemComponent?\nfunction Actor:GetParticleSystem() end",
 			[](AActor& Actor) -> UParticleSystemComponent* { return Actor.GetComponentByClass<UParticleSystemComponent>(); })
+		.Method("GetPointLight",
+			"---@return PointLightComponent?\nfunction Actor:GetPointLight() end",
+			[](AActor& Actor) -> UPointLightComponent* { return Actor.GetComponentByClass<UPointLightComponent>(); })
+		.Method("GetSpotLight",
+			"---@return SpotLightComponent?\nfunction Actor:GetSpotLight() end",
+			[](AActor& Actor) -> USpotLightComponent* { return Actor.GetComponentByClass<USpotLightComponent>(); })
 		.Method("SetOutline",
 			"---@param enabled boolean\nfunction Actor:SetOutline(enabled) end",
 			[](AActor& Actor, bool bEnabled)
