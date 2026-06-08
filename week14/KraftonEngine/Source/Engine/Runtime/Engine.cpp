@@ -149,6 +149,11 @@ void UEngine::RequestExit()
 	PostQuitMessage(0);
 }
 
+FString UEngine::GetCurrentGameplaySceneName() const
+{
+	return {};
+}
+
 void UEngine::SetPendingFadeIn(float Duration, FLinearColor Color)
 {
 	bHasPendingFadeIn = true;

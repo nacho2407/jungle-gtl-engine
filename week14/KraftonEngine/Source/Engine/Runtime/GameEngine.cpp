@@ -17,6 +17,18 @@
 #include "Core/ProjectSettings.h"
 #include "Core/Logging/Log.h"
 
+namespace
+{
+/**
+ * @brief scene 파일 경로에서 확장자를 제외한 파일 이름을 추출합니다
+ */
+FString GetSceneStemFromPath(const FString& InPath)
+{
+	const std::filesystem::path Path(FPaths::ToWide(InPath));
+	return FPaths::ToUtf8(Path.stem().wstring());
+}
+}
+
 void UGameEngine::Init(FWindowsWindow* InWindow)
 {
 	UEngine::Init(InWindow);
@@ -157,6 +169,11 @@ void UGameEngine::RequestTransitionToScene(const FString& InScenePath)
 	bPendingSceneTransition = true;
 }
 
+FString UGameEngine::GetCurrentGameplaySceneName() const
+{
+	return CurrentGameplaySceneName;
+}
+
 void UGameEngine::ProcessPendingTransition()
 {
 	if (!bPendingSceneTransition)
@@ -237,10 +254,12 @@ bool UGameEngine::LoadSceneFromPath(const FString& InScenePath)
 
 	LoadContext.WorldType = EWorldType::Game;
 	LoadContext.World->SetWorldType(EWorldType::Game);
+	LoadContext.ContextName = GetSceneStemFromPath(InScenePath);
 
 	WorldList.push_back(LoadContext);
 	SetActiveWorld(LoadContext.ContextHandle);
 
+	CurrentGameplaySceneName = LoadContext.ContextName;
 
 	return true;
 }

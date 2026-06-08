@@ -7,7 +7,6 @@ local QUIT_DIALOG_PATH = "Content/UI/Title/TitleQuitDialog.rml"
 local PAUSE_Z_ORDER = 180
 local SETTINGS_Z_ORDER = 190
 local QUIT_DIALOG_Z_ORDER = 200
-local RESTART_SCENE = "Default.Scene"
 local MAIN_MENU_SCENE = "Title.Scene"
 
 local pauseWidget = nil
@@ -513,7 +512,10 @@ local function bind_pause_menu()
     end)
 
     pauseWidget:bind_click("pause-restart-button", function()
-        transition_to(RESTART_SCENE)
+        close_all()
+        if Game ~= nil and Game.RestartLevel ~= nil then
+            Game.RestartLevel()
+        end
     end)
 
     pauseWidget:bind_click("pause-settings-button", function()

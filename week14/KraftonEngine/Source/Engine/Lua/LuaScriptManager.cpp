@@ -962,17 +962,7 @@ void FLuaScriptManager::RegisterCoreBindings(sol::state& Lua)
 	});
 	Game.set_function("GetCurrentSceneName", []() -> FString
 	{
-		if (!GEngine)
-		{
-			return {};
-		}
-
-		const FWorldContext* Context = GEngine->GetWorldContextFromHandle(GEngine->GetActiveWorldHandle());
-		if (Context && !Context->ContextName.empty() && Context->ContextName != "PIE")
-		{
-			return Context->ContextName;
-		}
-		return FProjectSettings::Get().Game.StartLevelName;
+		return GEngine ? GEngine->GetCurrentGameplaySceneName() : FString{};
 	});
 	Game.set_function("TransitionToScene", [](const FString& ScenePath)
 	{

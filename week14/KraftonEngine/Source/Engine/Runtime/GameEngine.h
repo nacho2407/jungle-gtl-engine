@@ -27,6 +27,13 @@ public:
 	// "Go To Intro" / 매치 재시작 등 동적 상태 전체 리셋이 필요한 경우 사용.
 	void RequestTransitionToScene(const FString& InScenePath) override;
 
+	/**
+	 * @brief 현재 standalone 게임플레이 scene 이름 반환
+	 *
+	 * @return 마지막으로 로드에 성공한 scene 파일명 stem
+	 */
+	FString GetCurrentGameplaySceneName() const override;
+
 private:
 	void LoadStartLevel();
 	bool LoadSceneFromPath(const FString& FilePath);
@@ -42,4 +49,5 @@ private:
 
 	bool bPendingSceneTransition = false;
 	FString PendingScenePath;
+	FString CurrentGameplaySceneName;
 };

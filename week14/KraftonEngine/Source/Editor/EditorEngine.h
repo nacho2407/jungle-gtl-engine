@@ -242,6 +242,13 @@ public:
 	void RequestTransitionToScene(const FString& InScenePath) override;
 	void RequestExit() override;
 
+	/**
+	 * @brief 현재 PIE 또는 에디터에서 재시작 대상으로 사용할 scene 이름 반환
+	 *
+	 * @return 현재 플레이 중인 scene 파일명 stem. 재시작 가능한 scene이 없으면 빈 문자열
+	 */
+	FString GetCurrentGameplaySceneName() const override;
+
 	//GC
 	void AddReferencedObjects(FReferenceCollector& Collector) override;
 

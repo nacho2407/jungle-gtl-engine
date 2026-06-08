@@ -39,6 +39,13 @@ public:
 	virtual void RequestTransitionToScene(const FString& /*InScenePath*/) {}
 	virtual void RequestExit();
 
+	/**
+	 * @brief 현재 게임플레이에서 재시작 대상으로 사용할 scene 이름 반환
+	 *
+	 * @return 현재 게임플레이 scene 이름. 재시작 가능한 scene이 없으면 빈 문자열
+	 */
+	virtual FString GetCurrentGameplaySceneName() const;
+
 	// 다음 scene transition 직후 새 PlayerCameraManager 의 fade 를 alpha 1 → 0 으로 시작하도록 예약.
 	// Standalone과 PIE가 같은 transition trigger 코드를 사용할 수 있도록 엔진 공통 상태로 보관합니다.
 	void SetPendingFadeIn(float Duration, FLinearColor Color = FLinearColor::Black());
