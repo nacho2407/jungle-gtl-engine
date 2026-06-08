@@ -503,7 +503,7 @@ void FEditorMainPanel::RenderShortcutOverlay()
 	ImGui::TextUnformatted("Ctrl+S : Save Scene");
 	ImGui::TextUnformatted("Ctrl+Shift+S : Save Scene As");
 	ImGui::TextUnformatted("Ctrl+A : Select All Actors");
-	ImGui::TextUnformatted("Ctrl+D : Duplicate Selected Actors");
+	ImGui::TextUnformatted("Ctrl+D : Duplicate Selected Actor / Component");
 	ImGui::TextUnformatted("Ctrl+Z : Undo");
 	ImGui::TextUnformatted("Ctrl+Y / Ctrl+Shift+Z : Redo");
 	ImGui::Separator();
@@ -1157,7 +1157,10 @@ void FEditorMainPanel::HandleGlobalShortcuts(float DeltaTime)
 	{
 		// 복제도 전역 단축키에서 처리해 마우스가 UI 패널 위에 있어도 동작하게 합니다.
 		PropertyWidget.FlushPendingDetailsUndoTransaction();
-		EditorEngine->DuplicateSelectedActorsWithUndo();
+		if (!PropertyWidget.DuplicateSelectedComponentWithUndo())
+		{
+			EditorEngine->DuplicateSelectedActorsWithUndo();
+		}
 		ResetGlobalShortcutRepeat();
 	}
 	else if (!EditorEngine->IsPlayingInEditor() && Input.GetKeyDown('A'))

@@ -3,6 +3,7 @@
 #include "Component/Shape/BoxComponent.h"
 #include "Component/Shape/SphereComponent.h"
 #include "Component/Shape/CapsuleComponent.h"
+#include "Component/Shape/CurvedWallRunColliderComponent.h"
 #include "Math/Quat.h"
 
 #include <algorithm>
@@ -437,6 +438,90 @@ namespace
 		return true;
 	}
 
+	FOrientedBox MakeCurvedWallPanelBox(const UCurvedWallRunColliderComponent* Curve, int32 SegmentIndex)
+	{
+		const int32 SegmentCount = Curve->GetSafeSegmentCount();
+		const float ArcRadians = Curve->GetArcAngleRadians();
+		const float SegmentAngle = ArcRadians / static_cast<float>(SegmentCount);
+		const float Alpha = (static_cast<float>(SegmentIndex) + 0.5f) / static_cast<float>(SegmentCount);
+		const float Angle = -ArcRadians * 0.5f + ArcRadians * Alpha;
+		const float CosAngle = std::cos(Angle);
+		const float SinAngle = std::sin(Angle);
+
+		const FVector AxisX = SafeNormal(Curve->GetForwardVector(), FVector::XAxisVector);
+		const FVector AxisY = SafeNormal(Curve->GetRightVector(), FVector::YAxisVector);
+		const FVector AxisZ = SafeNormal(Curve->GetUpVector(), FVector::ZAxisVector);
+		const FVector Radial = SafeNormal(AxisX * CosAngle + AxisY * SinAngle, AxisX);
+		const FVector Tangent = SafeNormal(AxisX * -SinAngle + AxisY * CosAngle, AxisY);
+		const float Radius = Curve->GetScaledRadius();
+		const float HalfLength = (std::max)(0.05f, Radius * std::tan(SegmentAngle * 0.5f) * 1.05f);
+
+		FOrientedBox Result;
+		Result.Center = Curve->GetWorldLocation() + Radial * Radius;
+		Result.Axis[0] = Tangent;
+		Result.Axis[1] = Radial;
+		Result.Axis[2] = AxisZ;
+		Result.Extent = FVector(HalfLength, Curve->GetScaledThickness() * 0.5f, Curve->GetScaledHalfHeight());
+		return Result;
+	}
+
+	FVector MakeCurvedWallNormal(const UCurvedWallRunColliderComponent* Curve, const FVector& HitLocation, const FVector& Dir)
+	{
+		const FVector AxisX = SafeNormal(Curve->GetForwardVector(), FVector::XAxisVector);
+		const FVector AxisY = SafeNormal(Curve->GetRightVector(), FVector::YAxisVector);
+		const FVector FromCenter = HitLocation - Curve->GetWorldLocation();
+		FVector Normal = AxisX * FromCenter.Dot(AxisX) + AxisY * FromCenter.Dot(AxisY);
+		Normal = SafeNormal(Normal, AxisX);
+
+		// sweep 방향과 같은 쪽을 보는 normal이면 반전해서 항상 접근 방향을 마주보게 한다.
+		if (Normal.Dot(Dir) > 0.0f)
+		{
+			Normal *= -1.0f;
+		}
+
+		return Normal;
+	}
+
+	bool RayCurvedWall(const FVector& Start, const FVector& Dir, float MaxDist, float Radius,
+		const UCurvedWallRunColliderComponent* Curve, float& OutDistance, FVector& OutNormal)
+	{
+		if (!Curve) return false;
+
+		bool bFound = false;
+		float BestDistance = MaxDist;
+		FVector BestNormal = FVector::ZeroVector;
+
+		const int32 SegmentCount = Curve->GetSafeSegmentCount();
+		for (int32 SegmentIndex = 0; SegmentIndex < SegmentCount; ++SegmentIndex)
+		{
+			float CandidateDistance = MaxDist;
+			FVector CandidateNormal = FVector::ZeroVector;
+			const FOrientedBox PanelBox = MakeCurvedWallPanelBox(Curve, SegmentIndex);
+			if (!RayExpandedOrientedBox(Start, Dir, MaxDist, PanelBox, Radius, CandidateDistance, CandidateNormal))
+			{
+				continue;
+			}
+			if (CandidateDistance >= BestDistance)
+			{
+				continue;
+			}
+
+			const FVector HitLocation = Start + Dir * CandidateDistance;
+			BestDistance = CandidateDistance;
+			BestNormal = MakeCurvedWallNormal(Curve, HitLocation, Dir);
+			bFound = true;
+		}
+
+		if (!bFound)
+		{
+			return false;
+		}
+
+		OutDistance = BestDistance;
+		OutNormal = BestNormal;
+		return true;
+	}
+
 	bool RayVerticalCapsuleLocal(const FVector& LocalStart, const FVector& LocalDir, float MaxDist,
 		float SegmentHalfLength, float Radius, float& OutDistance, FVector& OutLocalNormal)
 	{
@@ -634,6 +719,10 @@ bool FCollisionMath::SweepSphereShapeComponent(
 		{
 			HitNormal = SafeNormal(AxisX * LocalNormal.X + AxisY * LocalNormal.Y + AxisZ * LocalNormal.Z);
 		}
+	}
+	else if (UCurvedWallRunColliderComponent* Curve = Cast<UCurvedWallRunColliderComponent>(Shape))
+	{
+		bHit = RayCurvedWall(Start, Dir, MaxDist, Radius, Curve, HitDistance, HitNormal);
 	}
 
 	if (!bHit)

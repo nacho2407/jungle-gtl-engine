@@ -37,6 +37,7 @@
 #include "Editor/UI/Asset/Mesh/MeshEditorWidget.h"
 #include "Platform/Paths.h"
 #include "Engine/Serialization/SceneSaveManager.h"
+#include "Serialization/DuplicateArchive.h"
 #include "Serialization/MemoryArchive.h"
 
 #include <Windows.h>
@@ -405,6 +406,27 @@ namespace
 		}
 
 		return false;
+	}
+
+	FString MakeUniqueDuplicateComponentName(const AActor* OwnerActor, const UActorComponent* SourceComponent)
+	{
+		FString BaseName = SourceComponent ? SourceComponent->GetFName().ToString() : FString();
+		if (BaseName.empty() && SourceComponent && SourceComponent->GetClass())
+		{
+			BaseName = SourceComponent->GetClass()->GetName();
+		}
+		if (BaseName.empty())
+		{
+			BaseName = "Component";
+		}
+
+		FString Candidate = BaseName + "_Copy";
+		int32 Suffix = 2;
+		while (IsComponentNameInUse(OwnerActor, nullptr, Candidate))
+		{
+			Candidate = BaseName + "_Copy" + std::to_string(Suffix++);
+		}
+		return Candidate;
 	}
 
 	void QueueDeferredPostEditChange(TArray<FDeferredPostEditChange>& OutChanges, const FPropertyValue& Prop)
@@ -1388,6 +1410,103 @@ bool FEditorPropertyWidget::DeleteSelectedComponentWithUndo()
 		std::move(BeforeActorJSON),
 		SelectionBefore,
 		DebugName);
+	return true;
+}
+
+bool FEditorPropertyWidget::DuplicateSelectedComponentWithUndo()
+{
+	if (!EditorEngine || EditorEngine->IsPlayingInEditor())
+	{
+		return false;
+	}
+
+	FSelectionManager& SelectionManager = EditorEngine->GetSelectionManager();
+	AActor* Actor = SelectionManager.GetPrimarySelection();
+	if (!Actor)
+	{
+		return false;
+	}
+
+	// 뷰포트에서 SceneComponent를 선택한 뒤 바로 Ctrl+D를 눌러도 Details 선택과 맞춰 줍니다.
+	if (USceneComponent* SelectionComponent = SelectionManager.GetSelectedComponent())
+	{
+		if (SelectionComponent != Actor->GetRootComponent()
+			&& DoesActorOwnComponent(Actor, SelectionComponent))
+		{
+			SelectedComponent = SelectionComponent;
+			bActorSelected = false;
+			LastSelectedActor = Actor;
+		}
+	}
+
+	UActorComponent* ComponentToDuplicate = SelectedComponent;
+	if (!ComponentToDuplicate
+		|| ComponentToDuplicate == Actor->GetRootComponent()
+		|| !DoesActorOwnComponent(Actor, ComponentToDuplicate))
+	{
+		SyncSelectedComponentAfterStructureChange(Actor);
+		return false;
+	}
+
+	// 복제 전 진행 중인 속성 트랜잭션을 먼저 닫아 undo 순서를 보존합니다.
+	CommitActiveDetailsPropertyUndo();
+	const FEditorSelectionSnapshot SelectionBefore = CaptureEditorSelection(&SelectionManager);
+	json::JSON BeforeActorJSON = FSceneSaveManager::SerializeActorForEditorUndo(Actor);
+
+	// 선택된 component 1개만 복제합니다. 자식 SceneComponent는 함께 복제하지 않습니다.
+	FDuplicateArchiveContext DuplicateContext;
+	UActorComponent* DuplicatedComponent = Cast<UActorComponent>(
+		ComponentToDuplicate->DuplicateWithArchiveContext(Actor, DuplicateContext));
+	if (!DuplicatedComponent)
+	{
+		return false;
+	}
+
+	DuplicatedComponent->SetFName(FName(MakeUniqueDuplicateComponentName(Actor, ComponentToDuplicate)));
+	DuplicatedComponent->SetOwner(Actor);
+
+	if (USceneComponent* DuplicatedSceneComponent = Cast<USceneComponent>(DuplicatedComponent))
+	{
+		USceneComponent* SourceSceneComponent = Cast<USceneComponent>(ComponentToDuplicate);
+		USceneComponent* AttachParent = SourceSceneComponent ? SourceSceneComponent->GetParent() : nullptr;
+		if (!DoesActorOwnComponent(Actor, AttachParent))
+		{
+			AttachParent = Actor->GetRootComponent();
+		}
+
+		// Register 전에 부모를 연결해 최초 render state 생성 시 월드 트랜스폼이 맞도록 합니다.
+		if (AttachParent)
+		{
+			DuplicatedSceneComponent->AttachToComponent(AttachParent);
+		}
+	}
+
+	Actor->RegisterComponent(DuplicatedComponent);
+	DuplicateContext.ResolveObjectReferenceFixups();
+	DuplicatedComponent->PostDuplicate();
+
+	if (USceneComponent* DuplicatedSceneComponent = Cast<USceneComponent>(DuplicatedComponent))
+	{
+		SelectionManager.SelectComponent(DuplicatedSceneComponent);
+	}
+	else
+	{
+		SelectionManager.Select(Actor);
+	}
+
+	SelectedComponent = DuplicatedComponent;
+	bActorSelected = false;
+	LastSelectedActor = Actor;
+	LastRenameComponent = nullptr;
+	ComponentRenameWarning.clear();
+	CopyObjectNameToBuffer(SelectedComponent, ComponentRenameBuffer, sizeof(ComponentRenameBuffer));
+	LastObservedComponentName = SelectedComponent->GetFName();
+
+	RecordActorStructureUndoChange(
+		Actor,
+		std::move(BeforeActorJSON),
+		SelectionBefore,
+		MakeComponentStructureDebugName("Duplicate Component", DuplicatedComponent));
 	return true;
 }
 
