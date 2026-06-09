@@ -38,7 +38,6 @@ body {
 	line-height: 24px;
 	color: #ffffff;
 	letter-spacing: 0px;
-	text-shadow: 0px 2px 4px #000000;
 }
 
 .tutorial-rule {
@@ -106,7 +105,6 @@ body {
 	line-height: 29px;
 	text-align: center;
 	color: #E6E6E6D8;
-	text-shadow: 0px 2px 4px #000000;
 }
 
 .tutorial-pad-key {
@@ -136,7 +134,6 @@ body {
 	line-height: 31px;
 	color: #f2f2f2;
 	white-space: nowrap;
-	text-shadow: 0px 2px 4px #000000;
 }
 
 .tutorial-check {

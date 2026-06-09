@@ -124,7 +124,6 @@ body {
 	top: 0px;
 	width: 64px;
 	height: 64px;
-	image-fit: contain;
 	opacity: 0.0;
 }
 

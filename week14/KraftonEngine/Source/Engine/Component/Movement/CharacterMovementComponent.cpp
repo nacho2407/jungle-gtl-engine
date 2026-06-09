@@ -978,25 +978,6 @@ void UCharacterMovementComponent::LogWallRunStatus(EWallRunStatus Status, const 
 	const float UpDot = Normal.IsNearlyZero() ? 0.0f : Normal.Normalized().Dot(FVector::UpVector);
 	const FString ActorName = GetHitActorName(LogHit);
 	const FString ComponentName = GetHitComponentName(LogHit);
-
-	// [WallRunStatus] 로그는 본 페어 부착 디버깅 동안 노이즈가 심해서 잠시 주석 처리.
-	// UE_LOG(
-	// 	"[WallRunStatus] status=%s mode=%s speed=%.2f planar=%.2f minStart=%.2f check=%.2f radius=%.2f hit=%s dist=%.2f normal=(%.2f,%.2f,%.2f) upDot=%.2f actor=%s comp=%s",
-	// 	GetWallRunStatusName(Status),
-	// 	GetMovementModeName(),
-	// 	Velocity.Length(),
-	// 	PlanarSpeed,
-	// 	MinWallRunStartSpeed,
-	// 	WallCheckDistance,
-	// 	WallCheckSphereRadius,
-	// 	BoolText(bHasHit),
-	// 	HitDistanceOrMiss(bHasHit, LogHit),
-	// 	Normal.X,
-	// 	Normal.Y,
-	// 	Normal.Z,
-	// 	UpDot,
-	// 	ActorName.c_str(),
-	// 	ComponentName.c_str());
 	(void)Status; (void)Hit; (void)PlanarSpeed; (void)bHasHit; (void)Normal; (void)UpDot; (void)ActorName; (void)ComponentName;
 }
 
@@ -2186,42 +2167,6 @@ bool UCharacterMovementComponent::SweepWallRunDirection(const FVector& Direction
 		const FString SelectedComponent = GetHitComponentName(SelectedHit);
 		const FString ObjectActor = GetHitActorName(ObjectRayHit);
 		const FString ObjectComponent = GetHitComponentName(ObjectRayHit);
-
-		UE_LOG(
-			"[WallRunProbe] selected=%s runnable=%s source=%s start=(%.2f,%.2f,%.2f) dir=(%.2f,%.2f,%.2f) check=%.2f radius=%.2f d=%.2f normal=(%.2f,%.2f,%.2f) upDot=%.2f actor=%s comp=%s",
-			BoolText(bSelected),
-			BoolText(bFoundRunnable),
-			bFoundRunnable ? BestRunnableSource : BestSource,
-			Start.X,
-			Start.Y,
-			Start.Z,
-			SweepDirection.X,
-			SweepDirection.Y,
-			SweepDirection.Z,
-			WallCheckDistance,
-			WallCheckSphereRadius,
-			HitDistanceOrMiss(bSelected, SelectedHit),
-			SelectedNormal.X,
-			SelectedNormal.Y,
-			SelectedNormal.Z,
-			SelectedUpDot,
-			SelectedActor.c_str(),
-			SelectedComponent.c_str());
-
-		UE_LOG(
-			"[WallRunProbeSources] phys=%s/%.2f shape=%s/%.2f mesh=%s/%.2f bounds=%s/%.2f objectRay=%s/%.2f objectActor=%s objectComp=%s",
-			BoolText(bPhysXHit),
-			HitDistanceOrMiss(bPhysXHit, PhysXHit),
-			BoolText(bShapeHit),
-			HitDistanceOrMiss(bShapeHit, ShapeHit),
-			BoolText(bMeshTraceHit),
-			HitDistanceOrMiss(bMeshTraceHit, MeshTraceHit),
-			BoolText(bBoundsHit),
-			HitDistanceOrMiss(bBoundsHit, BoundsHit),
-			BoolText(bObjectRayHit),
-			HitDistanceOrMiss(bObjectRayHit, ObjectRayHit),
-			ObjectActor.c_str(),
-			ObjectComponent.c_str());
 	}
 
 	if (bFoundRunnable)
@@ -2383,23 +2328,6 @@ bool UCharacterMovementComponent::FindWallRunSurface(FHitResult& OutHit, bool& b
 		const FVector LeftNormal = bHasLeftWall ? GetHitNormal(LeftHit) : FVector::ZeroVector;
 		const FString RightActor = GetHitActorName(RightHit);
 		const FString LeftActor = GetHitActorName(LeftHit);
-
-		UE_LOG(
-			"[WallRunFind] right=%s runnable=%s d=%.2f n=(%.2f,%.2f,%.2f) actor=%s | left=%s runnable=%s d=%.2f n=(%.2f,%.2f,%.2f) actor=%s",
-			BoolText(bHasRightWall),
-			BoolText(bRightRunnable),
-			HitDistanceOrMiss(bHasRightWall, RightHit),
-			RightNormal.X,
-			RightNormal.Y,
-			RightNormal.Z,
-			RightActor.c_str(),
-			BoolText(bHasLeftWall),
-			BoolText(bLeftRunnable),
-			HitDistanceOrMiss(bHasLeftWall, LeftHit),
-			LeftNormal.X,
-			LeftNormal.Y,
-			LeftNormal.Z,
-			LeftActor.c_str());
 	}
 
 	if (!bHasRightWall && !bHasLeftWall)
@@ -2565,23 +2493,6 @@ bool UCharacterMovementComponent::TryStartWallRun(const FVector& Input)
 	const float AlongWallSpeed = std::fabs(PlanarVelocity.Dot(RunDirection));
 	if (AlongWallSpeed < MinWallRunStartSpeed)
 	{
-		if (ShouldEmitWallRunDiagnostics())
-		{
-			UE_LOG(
-				"[WallRun] reject=LowAlongSpeed total=%.2f along=%.2f min=%.2f normal=(%.2f,%.2f,%.2f) runDir=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
-				PlanarVelocity.Length(),
-				AlongWallSpeed,
-				MinWallRunStartSpeed,
-				WallNormal.X,
-				WallNormal.Y,
-				WallNormal.Z,
-				RunDirection.X,
-				RunDirection.Y,
-				RunDirection.Z,
-				WallHit.Distance,
-				GetHitActorName(WallHit).c_str(),
-				GetHitComponentName(WallHit).c_str());
-		}
 		SetWallRunStatus(EWallRunStatus::BadDirection, &WallHit);
 		return false;
 	}
@@ -2591,25 +2502,6 @@ bool UCharacterMovementComponent::TryStartWallRun(const FVector& Input)
 	const float InputAlongWall = GetWallRunInputAlong(Input, RunDirection);
 	if (InputAlongWall < WallRunOppositeInputReject)
 	{
-		if (ShouldEmitWallRunDiagnostics())
-		{
-			UE_LOG(
-				"[WallRunStart] reject=OppositeInput input=(%.2f,%.2f,%.2f) inputAlong=%.2f runDir=(%.2f,%.2f,%.2f) normal=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
-				Input.X,
-				Input.Y,
-				Input.Z,
-				InputAlongWall,
-				RunDirection.X,
-				RunDirection.Y,
-				RunDirection.Z,
-				WallNormal.X,
-				WallNormal.Y,
-				WallNormal.Z,
-				WallHit.Distance,
-				GetHitActorName(WallHit).c_str(),
-				GetHitComponentName(WallHit).c_str());
-		}
-
 		SetWallRunStatus(EWallRunStatus::BadDirection, &WallHit);
 		return false;
 	}
@@ -2857,24 +2749,6 @@ void UCharacterMovementComponent::TickWallRunning(float DeltaTime, const FVector
 		WallRunInputGraceTimer = std::max(0.0f, WallRunInputGraceTimer - DeltaTime);
 		if (WallRunInputGraceTimer <= 0.0f)
 		{
-			if (ShouldEmitWallRunDiagnostics())
-			{
-				UE_LOG(
-					"[WallRunInput] reject=NoAlongInput input=(%.2f,%.2f,%.2f) runDir=(%.2f,%.2f,%.2f) normal=(%.2f,%.2f,%.2f) hitD=%.2f actor=%s comp=%s",
-					Input.X,
-					Input.Y,
-					Input.Z,
-					WallRunDirection.X,
-					WallRunDirection.Y,
-					WallRunDirection.Z,
-					WallRunNormal.X,
-					WallRunNormal.Y,
-					WallRunNormal.Z,
-					WallHit.Distance,
-					GetHitActorName(WallHit).c_str(),
-					GetHitComponentName(WallHit).c_str());
-			}
-
 			SetWallRunStatus(EWallRunStatus::EndedBadDirection, bHasWall ? &WallHit : nullptr);
 			EndWallRun();
 			return;

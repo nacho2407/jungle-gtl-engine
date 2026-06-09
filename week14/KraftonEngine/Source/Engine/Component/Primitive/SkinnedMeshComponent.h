@@ -33,7 +33,7 @@ public:
 	void SetPhysicsAssetOverride(UPhysicsAsset* InAsset) { PhysicsAssetOverride = InAsset; }
 	UPhysicsAsset* GetPhysicsAsset();
 
-	// Bounds 섹션: SkeletalMesh는 local asset bounds 대신 실제 skinned vertex 기준으로 culling bounds를 만든다.
+	// Bounds 섹션: CPU skinning이 만든 component-local bounds를 world matrix로 빠르게 변환한다.
 	void UpdateWorldAABB() const override;
 
 	// Material 섹션: editor slot 경로와 runtime override 포인터를 같이 유지한다.
@@ -184,4 +184,8 @@ public:
 	// SceneProxy는 이 결과와 revision만 보고 dynamic vertex buffer를 갱신한다.
 	TArray<FVertexPNCTT> SkinnedVertices;
 	uint64 SkinnedRevision = 0;
+
+	FVector CachedSkinnedLocalCenter = FVector(0.0f, 0.0f, 0.0f);
+	FVector CachedSkinnedLocalExtent = FVector(0.5f, 0.5f, 0.5f);
+	bool bHasValidSkinnedLocalBounds = false;
 };

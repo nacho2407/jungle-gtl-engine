@@ -295,40 +295,52 @@ UPhysicsAsset* USkinnedMeshComponent::GetPhysicsAsset()
 	return SkeletalMesh ? SkeletalMesh->GetPhysicsAsset() : nullptr;
 }
 
-// Bounds 섹션: SkeletalMesh culling은 asset local bounds가 아니라 실제 CPU-skinned vertices를 기준으로 한다.
 void USkinnedMeshComponent::UpdateWorldAABB() const
 {
-	// 아직 skinning 결과가 없으면 primitive 기본 bounds로 fallback해 빈 mesh/로드 실패 경로를 안전하게 둔다.
-	if (SkinnedVertices.empty())
+	FVector LocalCenter = CachedSkinnedLocalCenter;
+	FVector LocalExtent = CachedSkinnedLocalExtent;
+	bool bHasLocalBounds = bHasValidSkinnedLocalBounds;
+
+	if (!bHasLocalBounds)
+	{
+		FSkeletalMesh* Asset = SkeletalMesh ? SkeletalMesh->GetSkeletalMeshAsset() : nullptr;
+		if (Asset)
+		{
+			if (!Asset->bBoundsValid)
+			{
+				Asset->CacheBounds();
+			}
+
+			if (Asset->bBoundsValid)
+			{
+				LocalCenter = Asset->BoundsCenter;
+				LocalExtent = Asset->BoundsExtent;
+				bHasLocalBounds = true;
+			}
+		}
+	}
+
+	if (!bHasLocalBounds)
 	{
 		UPrimitiveComponent::UpdateWorldAABB();
 		return;
 	}
 
 	const FMatrix& WorldMatrix = CachedWorldMatrix;
+	const FVector WorldCenter = WorldMatrix.TransformPositionWithW(LocalCenter);
 
-	// 이미 component local로 skinning된 vertex를 world matrix로 변환해 octree/query bounds를 만든다.
-	FVector WorldMin = WorldMatrix.TransformPositionWithW(SkinnedVertices[0].Position);
-	FVector WorldMax = WorldMin;
+	const float Ex = std::abs(WorldMatrix.M[0][0]) * LocalExtent.X
+		+ std::abs(WorldMatrix.M[1][0]) * LocalExtent.Y
+		+ std::abs(WorldMatrix.M[2][0]) * LocalExtent.Z;
+	const float Ey = std::abs(WorldMatrix.M[0][1]) * LocalExtent.X
+		+ std::abs(WorldMatrix.M[1][1]) * LocalExtent.Y
+		+ std::abs(WorldMatrix.M[2][1]) * LocalExtent.Z;
+	const float Ez = std::abs(WorldMatrix.M[0][2]) * LocalExtent.X
+		+ std::abs(WorldMatrix.M[1][2]) * LocalExtent.Y
+		+ std::abs(WorldMatrix.M[2][2]) * LocalExtent.Z;
 
-	for (const FVertexPNCTT& Vertex : SkinnedVertices)
-	{
-		const FVector WorldPos = WorldMatrix.TransformPositionWithW(Vertex.Position);
-
-		WorldMin.X = std::min(WorldMin.X, WorldPos.X);
-		WorldMin.Y = std::min(WorldMin.Y, WorldPos.Y);
-		WorldMin.Z = std::min(WorldMin.Z, WorldPos.Z);
-
-		WorldMax.X = std::max(WorldMax.X, WorldPos.X);
-		WorldMax.Y = std::max(WorldMax.Y, WorldPos.Y);
-		WorldMax.Z = std::max(WorldMax.Z, WorldPos.Z);
-	}
-
-	FVector Center = (WorldMin + WorldMax) * 0.5f;
-	FVector Extent = (WorldMax - WorldMin) * 0.5f;
-
-	WorldAABBMinLocation = Center - Extent;
-	WorldAABBMaxLocation = Center + Extent;
+	WorldAABBMinLocation = WorldCenter - FVector(Ex, Ey, Ez);
+	WorldAABBMaxLocation = WorldCenter + FVector(Ex, Ey, Ez);
 	bWorldAABBDirty = false;
 	bHasValidWorldAABB = true;
 }
@@ -1119,11 +1131,13 @@ void USkinnedMeshComponent::InitSkinningCache()
 	if (!Mesh || !Mesh->GetSkeletalMeshAsset())
 	{
 		SkinnedVertices.clear();
+		bHasValidSkinnedLocalBounds = false;
 		return;
 	}
 
 	FSkeletalMesh* Asset = Mesh->GetSkeletalMeshAsset();
 	SkinnedVertices.resize(Asset->Vertices.size());
+	bHasValidSkinnedLocalBounds = false;
 }
 
 // CPU skinning은 현재 renderer가 DynamicVertexBuffer에 올릴 FVertexPNCTT 배열을 만드는 단일 경로다.
@@ -1133,6 +1147,7 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 	if (!Mesh || !Mesh->GetSkeletalMeshAsset())
 	{
 		SkinnedVertices.clear();
+		bHasValidSkinnedLocalBounds = false;
 		++SkinnedRevision;
 		return;
 	}
@@ -1141,6 +1156,7 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 	if (Asset->Vertices.empty())
 	{
 		SkinnedVertices.clear();
+		bHasValidSkinnedLocalBounds = false;
 		++SkinnedRevision;
 		return;
 	}
@@ -1155,6 +1171,7 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 
 	if (SkinMatrices.empty())
 	{
+		bHasValidSkinnedLocalBounds = false;
 		++SkinnedRevision;
 		return;
 	}
@@ -1174,6 +1191,27 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 	const bool bUseMorphedVertexData =
 		MorphedPositions.size() == Asset->Vertices.size() &&
 		MorphedNormals.size() == Asset->Vertices.size();
+
+	bool bBoundsInitialized = false;
+	FVector LocalMin = FVector::ZeroVector;
+	FVector LocalMax = FVector::ZeroVector;
+	auto IncludeSkinnedBounds = [&](const FVector& Position)
+		{
+			if (!bBoundsInitialized)
+			{
+				LocalMin = Position;
+				LocalMax = Position;
+				bBoundsInitialized = true;
+				return;
+			}
+
+			LocalMin.X = std::min(LocalMin.X, Position.X);
+			LocalMin.Y = std::min(LocalMin.Y, Position.Y);
+			LocalMin.Z = std::min(LocalMin.Z, Position.Z);
+			LocalMax.X = std::max(LocalMax.X, Position.X);
+			LocalMax.Y = std::max(LocalMax.Y, Position.Y);
+			LocalMax.Z = std::max(LocalMax.Z, Position.Z);
+		};
 
 	auto SkinVertexRange = [&](uint32 VertexStart, uint32 VertexEnd)
 		{
@@ -1228,6 +1266,7 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 				Dst.Color = Src.Color;
 				Dst.UV = Src.UV;
 				Dst.Tangent = FVector4(SkinnedTangent, Src.Tangent.W);
+				IncludeSkinnedBounds(Dst.Position);
 			}
 		};
 
@@ -1254,6 +1293,17 @@ void USkinnedMeshComponent::UpdateCPUSkinning()
 	else
 	{
 		RunVertexSkinning();
+	}
+
+	if (bBoundsInitialized)
+	{
+		CachedSkinnedLocalCenter = (LocalMin + LocalMax) * 0.5f;
+		CachedSkinnedLocalExtent = (LocalMax - LocalMin) * 0.5f;
+		bHasValidSkinnedLocalBounds = true;
+	}
+	else
+	{
+		bHasValidSkinnedLocalBounds = false;
 	}
 
 	// SceneProxy는 revision 차이만 보고 dynamic vertex buffer upload 여부를 결정한다.

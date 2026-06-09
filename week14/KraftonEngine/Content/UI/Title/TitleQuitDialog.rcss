@@ -40,7 +40,6 @@ body {
 	top: 30.00%;
 	width: 100.00%;
 	height: 100.00%;
-	image-fit: contain;
 }
 
 #quit-choice-axis {

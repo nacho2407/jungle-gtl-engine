@@ -1,5 +1,13 @@
 local WeaponHud = require("HUD/WeaponHud")
 
+local CombatEvents = nil
+do
+    local ok, module = pcall(require, "Game.CombatEvents")
+    if ok then
+        CombatEvents = module
+    end
+end
+
 local STORY_MODULE = "Dialogue/DrakePreCombat.dialogue"
 local VOICE_MODULE = "Dialogue/Generated/DrakePreCombat.voices"
 
@@ -61,6 +69,7 @@ local cutscenePhase = "idle"
 
 local bossGunActor = nil
 local bossBodyActor = nil
+local bossDamageAliasActors = {}
 local bossSpawned = false
 local pendingBossRelease = nil
 local pendingBossReleaseTimer = 0.0
@@ -73,6 +82,7 @@ local revealStage = "none"
 local revealTimer = 0.0
 local postCombatInteractionRegistered = false
 local postCombatInteractionHasKey = false
+local activeEndingModule = nil
 
 local playerActorForCamera = nil
 local cameraComponent = nil
@@ -92,6 +102,7 @@ local savedAutoInputMouseLook = nil
 
 local start_cutscene = nil
 local begin_cutscene_close = nil
+local register_post_combat_interaction = nil
 
 local function clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
@@ -173,6 +184,75 @@ local function is_valid_actor(actor)
         return actor:IsValid()
     end
     return true
+end
+
+local function add_actor_tag_safe(actor, tag)
+    if is_valid_actor(actor) and type(actor.AddTag) == "function" then
+        actor:AddTag(tag)
+    end
+end
+
+local function add_boss_damage_alias_actor(actor)
+    if not is_valid_actor(actor) or actor == bossBodyActor then
+        return
+    end
+
+    for _, existing in ipairs(bossDamageAliasActors) do
+        if existing == actor then
+            return
+        end
+    end
+
+    table.insert(bossDamageAliasActors, actor)
+end
+
+local function register_boss_damage_aliases()
+    if not is_valid_actor(bossBodyActor) then
+        return
+    end
+
+    add_actor_tag_safe(bossBodyActor, "enemy")
+    add_actor_tag_safe(bossBodyActor, "boss")
+    _G.Level3BossDamageActor = bossBodyActor
+
+    add_boss_damage_alias_actor(bossGunActor)
+
+    for _, aliasActor in ipairs(bossDamageAliasActors) do
+        if is_valid_actor(aliasActor) then
+            add_actor_tag_safe(aliasActor, "enemy")
+            add_actor_tag_safe(aliasActor, "boss")
+
+            if aliasActor == bossGunActor then
+                _G.Level3BossGunActor = bossGunActor
+            end
+
+            if CombatEvents ~= nil and type(CombatEvents.RegisterDamageableAlias) == "function" then
+                CombatEvents.RegisterDamageableAlias(aliasActor, bossBodyActor)
+            end
+        end
+    end
+end
+
+local function unregister_boss_damage_aliases()
+    if CombatEvents ~= nil and type(CombatEvents.UnregisterDamageableAlias) == "function" then
+        for _, aliasActor in ipairs(bossDamageAliasActors) do
+            if is_valid_actor(aliasActor) then
+                CombatEvents.UnregisterDamageableAlias(aliasActor)
+            end
+        end
+        if is_valid_actor(bossGunActor) then
+            CombatEvents.UnregisterDamageableAlias(bossGunActor)
+        end
+    end
+
+    bossDamageAliasActors = {}
+
+    if _G.Level3BossGunActor == bossGunActor then
+        _G.Level3BossGunActor = nil
+    end
+    if _G.Level3BossDamageActor == bossBodyActor then
+        _G.Level3BossDamageActor = nil
+    end
 end
 
 local function get_actor_location(actor)
@@ -593,12 +673,29 @@ local function spawn_boss_if_needed()
     end
 
     -- 총 프리팹을 먼저 스폰하면 바디가 뒤이어 생성된 뒤 기존 본 부착 로직이 안전하게 따라붙습니다.
-    bossGunActor = spawn_prefab_actor(BOSS_GUN_PREFAB, BOSS_SPAWN_LOCATION)
-    bossBodyActor = select_boss_body_actor(spawn_prefab_actors(BOSS_BODY_PREFAB, BOSS_SPAWN_LOCATION))
+    unregister_boss_damage_aliases()
+    bossDamageAliasActors = {}
+
+    local gunActors = spawn_prefab_actors(BOSS_GUN_PREFAB, BOSS_SPAWN_LOCATION)
+    bossGunActor = get_first_spawned_actor(gunActors)
+    if gunActors ~= nil then
+        for _, actor in pairs(gunActors) do
+            add_boss_damage_alias_actor(actor)
+        end
+    end
+
+    local bodyActors = spawn_prefab_actors(BOSS_BODY_PREFAB, BOSS_SPAWN_LOCATION)
+    bossBodyActor = select_boss_body_actor(bodyActors)
     bossSpawned = is_valid_actor(bossBodyActor)
+    if bodyActors ~= nil then
+        for _, actor in pairs(bodyActors) do
+            add_boss_damage_alias_actor(actor)
+        end
+    end
 
     if bossSpawned then
         set_actor_location(bossBodyActor, BOSS_SPAWN_LOCATION)
+        register_boss_damage_aliases()
         _G.Level3BossIntroBossUUID = bossBodyActor.UUID
         publish_boss_control(BOSS_MOVE_IDLE, BOSS_LEAP_START_ACTION, BOSS_LEAP_START_DURATION, BOSS_SPAWN_LOCATION)
     else
@@ -693,6 +790,7 @@ local function settle_boss_for_combat()
     if is_valid_actor(bossBodyActor) then
         set_actor_location(bossBodyActor, BOSS_LAND_LOCATION)
         set_actor_location(bossGunActor, BOSS_LAND_LOCATION)
+        register_boss_damage_aliases()
         publish_boss_control(BOSS_MOVE_IDLE, nil, nil, BOSS_LAND_LOCATION)
         if not bossImpactPlayed then
             spawn_boss_impact_particles(BOSS_LAND_LOCATION)
@@ -1007,14 +1105,26 @@ local function start_post_combat_ending()
     local ok, ending = pcall(require, ENDING_MODULE)
     if not ok or ending == nil or ending.Start == nil then
         print("[Level3BossIntro] Ending module unavailable: " .. tostring(ending))
+        register_post_combat_interaction()
         return true
     end
 
-    ending.Start()
+    local started, result = pcall(ending.Start)
+    if not started or result == false then
+        print("[Level3BossIntro] Ending start failed: " .. tostring(result))
+        if ending.Shutdown ~= nil then
+            pcall(ending.Shutdown)
+        end
+        activeEndingModule = nil
+        register_post_combat_interaction()
+        return true
+    end
+
+    activeEndingModule = ending
     return true
 end
 
-local function register_post_combat_interaction()
+register_post_combat_interaction = function()
     if obj == nil or obj.UUID == nil then
         return
     end
@@ -1073,8 +1183,10 @@ function BeginPlay()
     cutsceneClosing = false
     closeTimer = 0.0
     cutscenePhase = "idle"
+    unregister_boss_damage_aliases()
     bossGunActor = nil
     bossBodyActor = nil
+    bossDamageAliasActors = {}
     bossSpawned = false
     pendingBossRelease = nil
     pendingBossReleaseTimer = 0.0
@@ -1087,6 +1199,7 @@ function BeginPlay()
     revealTimer = 0.0
     postCombatInteractionRegistered = false
     postCombatInteractionHasKey = false
+    activeEndingModule = nil
     playerActorForCamera = nil
     cameraComponent = nil
     playerStartControlRotation = nil
@@ -1106,6 +1219,8 @@ function BeginPlay()
     set_boss_cutscene_active(false)
     _G.Level3BossIntroBossRelease = nil
     _G.Level3BossIntroBossReleaseConsumedUUID = nil
+    _G.Level3BossGunActor = nil
+    _G.Level3BossDamageActor = nil
     register_interaction()
 end
 
@@ -1123,20 +1238,45 @@ function EndPlay()
 
     restore_player_after_cutscene()
     set_boss_cutscene_active(false)
+    unregister_boss_damage_aliases()
     pendingBossRelease = nil
     pendingBossReleaseTimer = 0.0
     _G.Level3BossIntroBossRelease = nil
     _G.Level3BossIntroBossReleaseConsumedUUID = nil
+    _G.Level3BossGunActor = nil
+    _G.Level3BossDamageActor = nil
     destroy_impact_particles()
     activeEntry = nil
     cutsceneActive = false
     cutsceneClosing = false
     cutscenePhase = "idle"
+    activeEndingModule = nil
 end
 
 function Tick(dt)
     dt = dt or 0.0
     update_impact_particles(dt)
+
+    if activeEndingModule ~= nil then
+        local shouldUpdate = activeEndingModule.IsRunning == nil or activeEndingModule.IsRunning()
+        if shouldUpdate and activeEndingModule.Update ~= nil then
+            local ok, err = pcall(activeEndingModule.Update, dt)
+            if not ok then
+                print("[Level3BossIntro] Ending update failed: " .. tostring(err))
+                if activeEndingModule.Shutdown ~= nil then
+                    pcall(activeEndingModule.Shutdown)
+                end
+                activeEndingModule = nil
+                register_post_combat_interaction()
+            end
+        elseif not shouldUpdate then
+            activeEndingModule = nil
+        end
+
+        if activeEndingModule ~= nil then
+            return
+        end
+    end
 
     if cutsceneClosing then
         update_pending_boss_release(dt)

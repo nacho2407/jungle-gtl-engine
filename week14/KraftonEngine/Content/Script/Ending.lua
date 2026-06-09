@@ -383,9 +383,26 @@ local function show_next_entry()
 end
 
 local function start_ending()
-    if cutsceneStarted then return end
+    if cutsceneStarted then return true end
     if not has_vantus_master_key() then
-        return
+        return false
+    end
+
+    local ok, err = pcall(load_story)
+    if not ok then
+        print("[Ending] Failed to load post-combat story: " .. tostring(err))
+        return false
+    end
+
+    if UI == nil or UI.CreateWidget == nil then
+        print("[Ending] UI.CreateWidget is unavailable.")
+        return false
+    end
+
+    cutsceneWidget = UI.CreateWidget(CUTSCENE_WIDGET_PATH)
+    if cutsceneWidget == nil then
+        print("[Ending] Failed to create cutscene widget: " .. CUTSCENE_WIDGET_PATH)
+        return false
     end
 
     cutsceneStarted = true
@@ -401,21 +418,18 @@ local function start_ending()
     currentVoiceKey = nil
     currentVoiceDuration = 0.0
 
-    load_story()
     lock_player_for_ending()
     set_weapon_hud_visible(false)
 
-    cutsceneWidget = UI.CreateWidget(CUTSCENE_WIDGET_PATH)
-    if cutsceneWidget ~= nil then
-        cutsceneWidget:SetWantsMouse(false)
-        cutsceneWidget:AddToViewportZ(CUTSCENE_Z_ORDER)
-        cutsceneWidget:SetProperty("cutscene-skip-prompt", "display", "none")
-        cutsceneWidget:SetProperty("skip-ring", "display", "none")
-        cutsceneWidget:SetProperty("ending-fade-overlay", "display", "none")
-        cutsceneWidget:SetProperty("ending-fade-overlay", "opacity", "0.0")
-    end
+    cutsceneWidget:SetWantsMouse(false)
+    cutsceneWidget:AddToViewportZ(CUTSCENE_Z_ORDER)
+    cutsceneWidget:SetProperty("cutscene-skip-prompt", "display", "none")
+    cutsceneWidget:SetProperty("skip-ring", "display", "none")
+    cutsceneWidget:SetProperty("ending-fade-overlay", "display", "none")
+    cutsceneWidget:SetProperty("ending-fade-overlay", "opacity", "0.0")
 
     show_next_entry()
+    return true
 end
 
 function BeginPlay()
@@ -446,7 +460,7 @@ function OnHit(OtherActor, HitComponent, OtherComp, NormalImpulse, HitResult)
     OnOverlap(OtherActor)
 end
 
-function Tick(dt)
+local function update_ending(dt)
     dt = dt or 0.0
     if not cutsceneStarted or cutsceneFinished then
         return
@@ -486,10 +500,19 @@ function Tick(dt)
     end
 end
 
+function Tick(dt)
+    update_ending(dt)
+end
+
 function StartEndingCutscene()
     start_ending()
 end
 
 return {
     Start = start_ending,
+    Update = update_ending,
+    Shutdown = EndPlay,
+    IsRunning = function()
+        return cutsceneStarted and not cutsceneFinished
+    end,
 }

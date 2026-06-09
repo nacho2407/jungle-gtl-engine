@@ -11,7 +11,7 @@ local ENEMY_CLEAR_RADIUS = 35.0
 local EYE_HEIGHT = 1.65
 local DIALOGUE_END_PADDING = 0.35
 local CUTSCENE_LOCK_INPUT = true
-local ENABLE_PRECOMBAT_DIALOGUE = false
+local ENABLE_PRECOMBAT_DIALOGUE = true
 
 local currentHealth = MAX_HEALTH
 local cutsceneStarted = false

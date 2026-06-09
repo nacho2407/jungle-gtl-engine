@@ -239,18 +239,12 @@ function init(self)
     self.RunLoopTimer = 0.0
     self.RunLoopIndex = 0
 
-    debug_log(string.format("[BossAnim] init OwnerUUID=%s WALK=%s RUN=%s",
-        tostring(self.OwnerUUID), WALK_PATH, RUN_PATH))
-    debug_log(string.format("[BossAnim] external_state_present=%s",
-        tostring(get_external_state(self) ~= nil)))
-
     use_ai_driven_locomotion(WALK_PATH)
     use_ai_driven_locomotion(RUN_PATH)
     use_ai_driven_locomotion(STRAFE_LEFT_PATH)
     use_ai_driven_locomotion(STRAFE_RIGHT_PATH)
     use_ai_driven_locomotion(RETREAT_PATH)
     use_ai_driven_locomotion(LEAP_FLOAT_PATH)
-    debug_log(string.format("[BossAnim] locomotion_root_lock=false root_motion=false run_rate=%.2f", RUN_PLAY_RATE))
     force_root_lock(CROUCH_STAND_PATH)
 
     self.IdlePlayer = Anim.create_sequence_player(IDLE_PATH, 1.0, true)
@@ -456,18 +450,5 @@ function update(self, dt)
             runLength = Anim.get_sequence_player_length(self.RunPlayerA)
             openingWalkLength = Anim.get_sequence_player_length(self.OpeningWalkPlayer)
         end
-
-        debug_log(string.format(
-            "[%.2f][BossAnim] move=%s(%d) ext_move=%s ext_act=%s act=%s elapsed=%.2f/%.2f aim(p=%.1f w=%.2f) openWalkT=%.2f/%.2f walkT=%.2f/%.2f runT=%.2f/%.2f runLoop=%d %.2f/%.2f",
-            self.DebugSessionTime,
-            moveName, self.MoveState,
-            extMove, extAction,
-            tostring(self.ActionName),
-            self.ActionElapsed, self.ActionDuration,
-            self.AimPitch, self.AimWeight,
-            openingWalkTime, openingWalkLength,
-            walkTime, walkLength,
-            runTime, runLength,
-            self.RunLoopIndex, self.RunLoopTimer, RUN_LOOP_WINDOW))
     end
 end

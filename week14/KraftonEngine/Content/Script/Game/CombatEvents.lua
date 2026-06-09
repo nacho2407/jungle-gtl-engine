@@ -2,6 +2,7 @@ local EventBus = require("Game.LuaEventBus")
 
 local CombatEvents = {
     _damageables = {},
+    _damageableAliases = {},
     _attackReceivers = {},
 }
 
@@ -117,6 +118,31 @@ local function call(callback, ...)
     return nil
 end
 
+local function resolve_damageable_actor(actor)
+    local id = actor_id(actor)
+    if id == nil then
+        return nil, nil, nil
+    end
+
+    local entry = CombatEvents._damageables[id]
+    if entry ~= nil then
+        return actor, id, entry
+    end
+
+    local targetId = CombatEvents._damageableAliases[id]
+    if targetId == nil then
+        return nil, nil, nil
+    end
+
+    entry = CombatEvents._damageables[targetId]
+    if entry == nil or not is_valid_actor(entry.Actor) then
+        CombatEvents._damageableAliases[id] = nil
+        return nil, nil, nil
+    end
+
+    return entry.Actor, targetId, entry
+end
+
 local function normalize_result(result, targetActor)
     result = result or {}
 
@@ -190,16 +216,46 @@ function CombatEvents.RegisterDamageable(actor, callbacks)
     return true
 end
 
+function CombatEvents.RegisterDamageableAlias(aliasActor, targetActor)
+    local aliasId = actor_id(aliasActor)
+    local targetId = actor_id(targetActor)
+    if aliasId == nil or targetId == nil or aliasId == targetId then
+        return false
+    end
+
+    CombatEvents._damageableAliases[aliasId] = targetId
+    return true
+end
+
+function CombatEvents.UnregisterDamageableAlias(aliasActor)
+    local aliasId = actor_id(aliasActor)
+    if aliasId ~= nil then
+        CombatEvents._damageableAliases[aliasId] = nil
+    end
+end
+
 function CombatEvents.UnregisterDamageable(actor)
     local id = actor_id(actor)
     if id ~= nil then
         CombatEvents._damageables[id] = nil
+        CombatEvents._damageableAliases[id] = nil
+
+        for aliasId, targetId in pairs(CombatEvents._damageableAliases) do
+            if targetId == id then
+                CombatEvents._damageableAliases[aliasId] = nil
+            end
+        end
     end
 end
 
+function CombatEvents.ResolveDamageableActor(actor)
+    local resolvedActor = resolve_damageable_actor(actor)
+    return resolvedActor
+end
+
 function CombatEvents.IsDamageable(actor)
-    local id = actor_id(actor)
-    return id ~= nil and CombatEvents._damageables[id] ~= nil
+    local _, _, entry = resolve_damageable_actor(actor)
+    return entry ~= nil
 end
 
 function CombatEvents.RegisterAttackReceiver(actor, callbacks)
@@ -226,24 +282,24 @@ function CombatEvents.UnregisterAttackReceiver(actor)
 end
 
 function CombatEvents.ApplyDamage(targetActor, context)
-    local id = actor_id(targetActor)
-    local entry = id ~= nil and CombatEvents._damageables[id] or nil
+    local resolvedActor, _, entry = resolve_damageable_actor(targetActor)
     context = CombatEvents.MakeDamageContext(context)
     context.HitActor = context.HitActor or targetActor
+    context.DamageTarget = resolvedActor or targetActor
 
     if entry == nil or entry.ApplyDamage == nil then
-        return normalize_result({ bApplied = false, Victim = targetActor }, targetActor)
+        return normalize_result({ bApplied = false, Victim = resolvedActor or targetActor }, resolvedActor or targetActor)
     end
 
-    local result = normalize_result(entry.ApplyDamage(context), targetActor)
+    local result = normalize_result(entry.ApplyDamage(context), resolvedActor)
     if result.bApplied then
-        if is_player_actor(targetActor) then
+        if is_player_actor(resolvedActor) then
             add_score("AddDamageTaken", result.DamageApplied)
         end
         EventBus.Emit(CombatEvents.Events.Damaged, context, result)
     end
     if result.bKilled then
-        if is_player_actor(targetActor) then
+        if is_player_actor(resolvedActor) then
             add_score("AddDeath", 1)
         end
         EventBus.Emit(CombatEvents.Events.Death, context, result)

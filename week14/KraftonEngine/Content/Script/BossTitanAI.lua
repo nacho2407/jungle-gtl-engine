@@ -2,92 +2,93 @@ local CombatEvents = require("Game.CombatEvents")
 local WeaponHud = require("HUD/WeaponHud")
 local BossAnimDefs = require("Anim.boss_titan_defs")
 
-local PLAYER_TAG = "player"
+PLAYER_TAG = "player"
 
-local MAX_HEALTH = 650.0
-local PHASE_TWO_HEALTH_RATIO = 0.5
-local PHASE_TWO_TRANSITION_ANIM_DURATION = 1.0
-local PHASE_TWO_CROUCH_HOLD_DURATION = 2.0
-local BOSS_SECTION_COLOR_PARAM = "SectionColor"
-local BOSS_PHASE_ONE_COLOR = { 1.0, 1.0, 1.0, 1.0 }
-local BOSS_PHASE_TWO_COLOR = { 1.0, 0.08, 0.04, 1.0 }
-local THINK_INTERVAL = 0.12
-local SIGHT_RANGE = 80.0
-local OPENING_WALK_END_RANGE = 64.0
-local OPENING_WALK_SPEED = 2.6
-local OPENING_WALK_ACTION_DURATION = 999.0
-local KEEP_RANGE = 28.0
-local MIN_RANGE = 9.0
-local FIRE_MIN_RANGE = 14.0
-local CLOSE_RETREAT_RANGE = 12.0
-local MELEE_RANGE = 14.0
-local CANNON_RANGE = 82.0
-local APPROACH_RUN_SPEED = 5.2
-local APPROACH_RUN_DISTANCE = 40.0
-local TARGET_HEIGHT = 1.6
-local FALLBACK_MUZZLE_HEIGHT = 7.0
-local MELEE_MAX_VERTICAL_DELTA = 8.5
-local ATTACK_LOS_FALLBACK_RANGE = 60.0
-local MELEE_ACTION_LOCK = 3.8
-local MELEE_HIT_DELAY = 0.72
-local POWER_SHOT_ACTION_LOCK = 1.25
-local CANNON_ACTION_LOCK = 0.85
-local RETREAT_ACTION_LOCK = 0.55
-local MELEE_KNOCKBACK_DISTANCE = 5.2
-local MELEE_KNOCKBACK_DURATION = 0.22
-local MUZZLE_BONE = "ja_c_propGun"
-local MUZZLE_LOCAL_OFFSET = Vector.new(0.0, 0.0, 0.0)
-local TACTIC_REEVALUATE_INTERVAL = 0.25
-local APPROACH_COMMIT_TIME = 0.75
-local DUEL_COMMIT_TIME = 1.1
-local CLOSE_COMBAT_COMMIT_TIME = 0.6
-local LEAP_MIN_RANGE = 28.0
-local LEAP_MAX_RANGE = 95.0
-local LEAP_MAX_VERTICAL_DELTA = 8.5
-local LEAP_START_MAX_VERTICAL_DELTA = 32.0
-local LEAP_LANDING_OFFSET = 8.0
-local LEAP_WINDUP_TIME = 0.55
-local LEAP_FLIGHT_TIME = 0.92
-local LEAP_LAND_TIME = 0.7
-local LEAP_ARC_HEIGHT = 11.0
-local LEAP_COOLDOWN = 7.5
-local LEAP_LAND_DAMAGE_RADIUS = 10.5
-local LEAP_LAND_SHAKE_RADIUS = 28.0
-local LEAP_LAND_SHAKE_MAX_VERTICAL_DELTA = 12.0
-local LEAP_LAND_DAMAGE = 22.0
-local LEAP_LAND_SHAKE_SCALE = 1.35
-local LEAP_KNOCKBACK_DISTANCE = 6.0
-local LEAP_KNOCKBACK_DURATION = 0.28
-local AIM_PITCH_MIN = -35.0
-local AIM_PITCH_MAX = 40.0
-local DEATH_FALLBACK_ANIM_DURATION = 1.4
-local DEATH_FALL_DURATION = 0.75
-local DEATH_FALL_PITCH_DEGREES = 82.0
-local DEATH_FALL_FORWARD_DISTANCE = 0.0
-local DEATH_FALL_GROUND_CLEARANCE = 0.25
-local DEATH_FALL_SHAKE_SCALE = 0.45
-local DEATH_SLOMO_DURATION = 2.2
-local DEATH_SLOMO_TIME_DILATION = 0.15
+MAX_HEALTH = 650.0
+PHASE_TWO_HEALTH_RATIO = 0.5
+PHASE_TWO_TRANSITION_ANIM_DURATION = 1.0
+PHASE_TWO_CROUCH_HOLD_DURATION = 2.0
+BOSS_SECTION_COLOR_PARAM = "SectionColor"
+BOSS_PHASE_ONE_COLOR = { 1.0, 1.0, 1.0, 1.0 }
+BOSS_PHASE_TWO_COLOR = { 1.0, 0.08, 0.04, 1.0 }
+THINK_INTERVAL = 0.12
+LOS_CHECK_INTERVAL = 0.15
+SIGHT_RANGE = 80.0
+OPENING_WALK_END_RANGE = 64.0
+OPENING_WALK_SPEED = 2.6
+OPENING_WALK_ACTION_DURATION = 999.0
+KEEP_RANGE = 28.0
+MIN_RANGE = 9.0
+FIRE_MIN_RANGE = 14.0
+CLOSE_RETREAT_RANGE = 12.0
+MELEE_RANGE = 14.0
+CANNON_RANGE = 82.0
+APPROACH_RUN_SPEED = 5.2
+APPROACH_RUN_DISTANCE = 40.0
+TARGET_HEIGHT = 1.6
+FALLBACK_MUZZLE_HEIGHT = 7.0
+MELEE_MAX_VERTICAL_DELTA = 8.5
+ATTACK_LOS_FALLBACK_RANGE = 60.0
+MELEE_ACTION_LOCK = 3.8
+MELEE_HIT_DELAY = 0.72
+POWER_SHOT_ACTION_LOCK = 1.25
+CANNON_ACTION_LOCK = 0.85
+RETREAT_ACTION_LOCK = 0.55
+MELEE_KNOCKBACK_DISTANCE = 5.2
+MELEE_KNOCKBACK_DURATION = 0.22
+MUZZLE_BONE = "ja_c_propGun"
+MUZZLE_LOCAL_OFFSET = Vector.new(0.0, 0.0, 0.0)
+TACTIC_REEVALUATE_INTERVAL = 0.25
+APPROACH_COMMIT_TIME = 0.75
+DUEL_COMMIT_TIME = 1.1
+CLOSE_COMBAT_COMMIT_TIME = 0.6
+LEAP_MIN_RANGE = 28.0
+LEAP_MAX_RANGE = 95.0
+LEAP_MAX_VERTICAL_DELTA = 8.5
+LEAP_START_MAX_VERTICAL_DELTA = 32.0
+LEAP_LANDING_OFFSET = 8.0
+LEAP_WINDUP_TIME = 0.55
+LEAP_FLIGHT_TIME = 0.92
+LEAP_LAND_TIME = 0.7
+LEAP_ARC_HEIGHT = 11.0
+LEAP_COOLDOWN = 7.5
+LEAP_LAND_DAMAGE_RADIUS = 10.5
+LEAP_LAND_SHAKE_RADIUS = 28.0
+LEAP_LAND_SHAKE_MAX_VERTICAL_DELTA = 12.0
+LEAP_LAND_DAMAGE = 22.0
+LEAP_LAND_SHAKE_SCALE = 1.35
+LEAP_KNOCKBACK_DISTANCE = 6.0
+LEAP_KNOCKBACK_DURATION = 0.28
+AIM_PITCH_MIN = -35.0
+AIM_PITCH_MAX = 40.0
+DEATH_FALLBACK_ANIM_DURATION = 1.4
+DEATH_FALL_DURATION = 0.75
+DEATH_FALL_PITCH_DEGREES = 82.0
+DEATH_FALL_FORWARD_DISTANCE = 0.0
+DEATH_FALL_GROUND_CLEARANCE = 0.25
+DEATH_FALL_SHAKE_SCALE = 0.45
+DEATH_SLOMO_DURATION = 2.2
+DEATH_SLOMO_TIME_DILATION = 0.15
 
-local DRAKE_COMBAT_DIALOGUE_MODULE = "Dialogue/DrakeCombat.dialogue"
-local DRAKE_COMBAT_VOICE_MODULE = "Dialogue/Generated/DrakeCombat.voices"
-local DRAKE_COMBAT_DIALOGUE_WIDTH = 1120.0
-local DRAKE_COMBAT_DIALOGUE_HEIGHT = 54.0
-local DRAKE_COMBAT_DIALOGUE_LINE_HEIGHT = 54.0
-local DRAKE_COMBAT_DIALOGUE_FADE_OUT = 0.25
-local DRAKE_COMBAT_DIALOGUE_HOLD_PADDING = 0.35
-local DRAKE_COMBAT_HEALTH_MARKERS = { 0.90, 0.75, 0.50, 0.25 }
-local DRAKE_COMBAT_EXCLUDED_DIALOGUE_IDS = {
+DRAKE_COMBAT_DIALOGUE_MODULE = "Dialogue/DrakeCombat.dialogue"
+DRAKE_COMBAT_VOICE_MODULE = "Dialogue/Generated/DrakeCombat.voices"
+DRAKE_COMBAT_DIALOGUE_WIDTH = 1120.0
+DRAKE_COMBAT_DIALOGUE_HEIGHT = 54.0
+DRAKE_COMBAT_DIALOGUE_LINE_HEIGHT = 54.0
+DRAKE_COMBAT_DIALOGUE_FADE_OUT = 0.25
+DRAKE_COMBAT_DIALOGUE_HOLD_PADDING = 0.35
+DRAKE_COMBAT_HEALTH_MARKERS = { 0.90, 0.75, 0.50, 0.25 }
+DRAKE_COMBAT_EXCLUDED_DIALOGUE_IDS = {
     DrakeCombat_Drake_ThatIsWhy = true,
 }
-local BOSS_BGM_KEY = "BossMusic"
-local BOSS_BGM_PATH = "Music/Boss.mp3"
-local BOSS_BGM_LOOP_NAME = "BossMusicLoop"
-local BOSS_BGM_VOLUME = 0.74
-local BOSS_BGM_FADE_OUT_MS = 5000.0
-local CARD_KEY_PREFAB_PATH = "Content/Prefab/CardKey.prefab"
-local CARD_KEY_SPAWN_OFFSET = Vector.new(2.0, 0.0, 1.0)
-local CARD_KEY_ITEM_ID = "vantus_master_key"
+BOSS_BGM_KEY = "BossMusic"
+BOSS_BGM_PATH = "Music/Boss.mp3"
+BOSS_BGM_LOOP_NAME = "BossMusicLoop"
+BOSS_BGM_VOLUME = 0.74
+BOSS_BGM_FADE_OUT_MS = 5000.0
+CARD_KEY_PREFAB_PATH = "Content/Prefab/CardKey.prefab"
+CARD_KEY_SPAWN_OFFSET = Vector.new(2.0, 0.0, 1.0)
+CARD_KEY_ITEM_ID = "vantus_master_key"
 
 local MOVE = BossAnimDefs.MOVE
 local MOVE_IDLE = MOVE.IDLE
@@ -111,9 +112,9 @@ local MOVE_BY_ANIM_PATH = BossAnimDefs.MOVE_BY_ANIM_PATH
 local ACTION_BY_ANIM_PATH = BossAnimDefs.ACTION_BY_ANIM_PATH
 local ACTION_DURATIONS = BossAnimDefs.ACTION_DURATIONS
 
-local DEBUG_LOG_INTERVAL = 0.4
+DEBUG_LOG_INTERVAL = 0.4
 local debugLogTimer = 0.0
-local DEBUG_LOG_PATH = "boss_log.txt"
+DEBUG_LOG_PATH = "boss_log.txt"
 local debugStartTime = 0.0
 local debugSessionTime = 0.0
 local debugLogWriteFailed = false
@@ -185,6 +186,11 @@ local ANIM_NAMES = BossAnimDefs.ANIM_NAMES
 
 local targetActor = nil
 local mesh = nil
+local frameMuzzleLocation = nil
+local lineOfSightTimer = 0.0
+local lineOfSightTargetUUID = nil
+local lineOfSightResult = false
+local blackboard = {}
 local currentHealth = MAX_HEALTH
 local isDead = false
 local damageableCallbacks = nil
@@ -211,7 +217,7 @@ local introCutsceneLastActionSerial = 0
 local introCutsceneMissingControlLogged = false
 local introCutsceneControlLogTimer = 0.0
 local introCutsceneControlTimer = 0.0
-local INTRO_CUTSCENE_CONTROL_FAILSAFE_SECONDS = 8.0
+INTRO_CUTSCENE_CONTROL_FAILSAFE_SECONDS = 8.0
 
 local cooldowns = {
     cannon = 0.0,
@@ -320,6 +326,16 @@ local function horizontal_distance(a, b)
     return horizontal_delta(a, b):Length()
 end
 
+local function vector_length_sq(v)
+    return v.X * v.X + v.Y * v.Y + v.Z * v.Z
+end
+
+local function horizontal_distance_sq(a, b)
+    local dx = b.X - a.X
+    local dy = b.Y - a.Y
+    return dx * dx + dy * dy
+end
+
 local function normalized_or_zero(v)
     local length = v:Length()
     if length <= 0.0001 then
@@ -352,25 +368,6 @@ local function is_player_actor(actor)
         end
     end
     return type(actor.HasTag) == "function" and actor:HasTag(PLAYER_TAG)
-end
-
-local function trigger_player_attack_marker(context, killed)
-    if context == nil then
-        return
-    end
-
-    local attacker = context.Instigator or context.instigator or context.DamageCauser or context.damageCauser
-    if not is_player_actor(attacker) then
-        return
-    end
-
-    if killed then
-        if WeaponHud ~= nil and type(WeaponHud.TriggerKillMarker) == "function" then
-            WeaponHud.TriggerKillMarker()
-        end
-    elseif WeaponHud ~= nil and type(WeaponHud.TriggerHitMarker) == "function" then
-        WeaponHud.TriggerHitMarker()
-    end
 end
 
 local function load_drake_combat_dialogue_assets()
@@ -719,7 +716,7 @@ local function get_intro_cutscene_control()
     return control
 end
 
-local function force_exit_stale_intro_cutscene_control(control)
+function BossTitanAI_ForceExitStaleIntroCutsceneControl(control)
     debug_log(string.format(
         "[BossTitanAI] Forcing stale cutscene control exit. move=%s action=%s serial=%s elapsed=%.2f",
         tostring(control and control.MoveState),
@@ -761,7 +758,7 @@ local function apply_intro_cutscene_control(dt)
     dt = dt or 0.0
     introCutsceneControlTimer = introCutsceneControlTimer + dt
     if introCutsceneControlTimer >= INTRO_CUTSCENE_CONTROL_FAILSAFE_SECONDS then
-        force_exit_stale_intro_cutscene_control(control)
+        BossTitanAI_ForceExitStaleIntroCutsceneControl(control)
         return false
     end
 
@@ -948,7 +945,7 @@ local function start_boss_music()
     return bBossMusicPlaying
 end
 
-local function safe_start_boss_music()
+function BossTitanAI_SafeStartBossMusic()
     local ok, result = pcall(start_boss_music)
     if not ok then
         debug_log("[BossTitanAI] Boss music start failed with error: " .. tostring(result))
@@ -972,7 +969,7 @@ local function fade_out_boss_music()
     bBossMusicPlaying = false
 end
 
-local function safe_fade_out_boss_music()
+function BossTitanAI_SafeFadeOutBossMusic()
     local ok, err = pcall(fade_out_boss_music)
     if not ok then
         debug_log("[BossTitanAI] Boss music fade-out failed with error: " .. tostring(err))
@@ -1064,7 +1061,7 @@ local function spawn_card_key_reward()
         spawnLocation.Z))
 end
 
-local function safe_spawn_card_key_reward()
+function BossTitanAI_SafeSpawnCardKeyReward()
     local ok, err = pcall(spawn_card_key_reward)
     if not ok then
         debug_log("[BossTitanAI] Card key reward spawn failed with error: " .. tostring(err))
@@ -1090,13 +1087,13 @@ local function update_death_fall(dt)
         obj.Rotation = deathFallState.targetRotation
         play_death_fall_camera_shake()
         deathFallState = nil
-        safe_spawn_card_key_reward()
+        BossTitanAI_SafeSpawnCardKeyReward()
     end
 end
 
 local function start_death_sequence()
     _G.Level3BossDefeated = true
-    safe_fade_out_boss_music()
+    BossTitanAI_SafeFadeOutBossMusic()
     activeAttack = nil
     leapState = nil
     openingWalkActive = false
@@ -1113,14 +1110,20 @@ local function start_death_sequence()
 end
 
 local function get_muzzle_location()
+    if frameMuzzleLocation ~= nil then
+        return frameMuzzleLocation
+    end
+
     if mesh ~= nil then
         local muzzle = mesh:GetBoneSocketLocation(MUZZLE_BONE, MUZZLE_LOCAL_OFFSET)
         if muzzle ~= nil and muzzle:Length() > 0.001 then
+            frameMuzzleLocation = muzzle
             return muzzle
         end
     end
 
-    return obj.Location + Vector.new(0.0, 0.0, FALLBACK_MUZZLE_HEIGHT)
+    frameMuzzleLocation = obj.Location + Vector.new(0.0, 0.0, FALLBACK_MUZZLE_HEIGHT)
+    return frameMuzzleLocation
 end
 
 local function get_target_aim_location(target)
@@ -1171,19 +1174,32 @@ local function update_anim_aim(target)
     set_aim_anim(pitch, weight)
 end
 
-local function has_line_of_sight(target)
+local function has_line_of_sight(target, source, targetPos, forceRefresh)
     if target == nil then return false end
 
-    local source = get_muzzle_location()
-    local targetPos = get_target_aim_location(target)
+    local targetUUID = target.UUID
+    if not forceRefresh
+        and lineOfSightTimer > 0.0
+        and lineOfSightTargetUUID == targetUUID then
+        return lineOfSightResult
+    end
+
+    source = source or get_muzzle_location()
+    targetPos = targetPos or get_target_aim_location(target)
     local toTarget = targetPos - source
     local distance = toTarget:Length()
     if distance <= 0.001 or distance > SIGHT_RANGE then
+        lineOfSightTargetUUID = targetUUID
+        lineOfSightResult = false
+        lineOfSightTimer = LOS_CHECK_INTERVAL
         return false
     end
 
     local hit = World.RaycastWorldStatic(source, toTarget:Normalized(), distance, obj)
-    return hit == nil
+    lineOfSightTargetUUID = targetUUID
+    lineOfSightResult = hit == nil
+    lineOfSightTimer = LOS_CHECK_INTERVAL
+    return lineOfSightResult
 end
 
 local function can_use_attack_los_fallback(distance, verticalDelta)
@@ -1239,18 +1255,46 @@ register_boss_damageable = function()
         bBossDamageableRegistered = CombatEvents.RegisterDamageable(obj, damageableCallbacks) == true
         if not bBossDamageableRegistered then
             debug_log("[BossTitanAI] Failed to register boss damageable. uuid=" .. tostring(obj and obj.UUID))
+        elseif CombatEvents ~= nil and type(CombatEvents.RegisterDamageableAlias) == "function" then
+            _G.Level3BossDamageActor = obj
+
+            local gunActor = _G.Level3BossGunActor
+            local gunActorValid = gunActor ~= nil
+            if gunActorValid and type(gunActor.IsValid) == "function" then
+                gunActorValid = gunActor:IsValid()
+            end
+            if gunActorValid then
+                CombatEvents.RegisterDamageableAlias(gunActor, obj)
+                if type(gunActor.AddTag) == "function" then
+                    gunActor:AddTag("enemy")
+                    gunActor:AddTag("boss")
+                end
+            end
         end
     end
 end
 
 local function unregister_boss_damageable()
     if bBossDamageableRegistered then
+        if CombatEvents ~= nil and type(CombatEvents.UnregisterDamageableAlias) == "function" then
+            local gunActor = _G.Level3BossGunActor
+            local gunActorValid = gunActor ~= nil
+            if gunActorValid and type(gunActor.IsValid) == "function" then
+                gunActorValid = gunActor:IsValid()
+            end
+            if gunActorValid then
+                CombatEvents.UnregisterDamageableAlias(gunActor)
+            end
+        end
+        if _G.Level3BossDamageActor == obj then
+            _G.Level3BossDamageActor = nil
+        end
         CombatEvents.UnregisterDamageable(obj)
         bBossDamageableRegistered = false
     end
 end
 
-local function ensure_boss_damageable_registered(reason)
+function BossTitanAI_EnsureBossDamageableRegistered(reason)
     if bBossDamageableRegistered or damageableCallbacks == nil then
         return
     end
@@ -1388,7 +1432,6 @@ local function apply_boss_damage(context)
         update_phase_from_health()
     end
 
-    trigger_player_attack_marker(context, killed)
     return make_damage_result(true, amount, killed)
 end
 
@@ -1432,7 +1475,7 @@ local function apply_active_attack_hit()
         if dist > activeAttack.range then return end
     else
         if aimDistance > activeAttack.range then return end
-        if not has_line_of_sight(target)
+        if not has_line_of_sight(target, source, targetPos, true)
             and not can_use_attack_los_fallback(dist, target.Location.Z - obj.Location.Z) then
             return
         end
@@ -1668,7 +1711,7 @@ local function build_blackboard(target)
     local aimDelta = aimLocation - muzzle
     local verticalDelta = target.Location.Z - obj.Location.Z
     local canGroundMelee = dist <= MELEE_RANGE and math.abs(verticalDelta) <= MELEE_MAX_VERTICAL_DELTA
-    local lineOfSight = has_line_of_sight(target)
+    local lineOfSight = has_line_of_sight(target, muzzle, aimLocation, false)
     local attackLineOfSight = lineOfSight or can_use_attack_los_fallback(dist, verticalDelta)
     local leapLineOfSight = lineOfSight or can_use_leap_los_fallback(dist, verticalDelta)
     local canLeap = cooldowns.leap <= 0.0
@@ -1677,22 +1720,22 @@ local function build_blackboard(target)
         and dist <= LEAP_MAX_RANGE
         and math.abs(verticalDelta) <= LEAP_START_MAX_VERTICAL_DELTA
 
-    return {
-        target = target,
-        distance = dist,
-        aimDistance = aimDelta:Length(),
-        verticalDelta = verticalDelta,
-        canGroundMelee = canGroundMelee,
-        canLeap = canLeap,
-        isClose = dist <= CLOSE_RETREAT_RANGE or canGroundMelee,
-        isDuelRange = dist > CLOSE_RETREAT_RANGE and dist <= KEEP_RANGE + 8.0,
-        isFar = dist > KEEP_RANGE + 8.0,
-        healthRatio = health_ratio(),
-        phase = phase,
-        lineOfSight = lineOfSight,
-        attackLineOfSight = attackLineOfSight,
-        leapLineOfSight = leapLineOfSight,
-    }
+    blackboard.target = target
+    blackboard.distance = dist
+    blackboard.aimDistance = aimDelta:Length()
+    blackboard.verticalDelta = verticalDelta
+    blackboard.canGroundMelee = canGroundMelee
+    blackboard.canLeap = canLeap
+    blackboard.isClose = dist <= CLOSE_RETREAT_RANGE or canGroundMelee
+    blackboard.isDuelRange = dist > CLOSE_RETREAT_RANGE and dist <= KEEP_RANGE + 8.0
+    blackboard.isFar = dist > KEEP_RANGE + 8.0
+    blackboard.healthRatio = health_ratio()
+    blackboard.phase = phase
+    blackboard.lineOfSight = lineOfSight
+    blackboard.attackLineOfSight = attackLineOfSight
+    blackboard.leapLineOfSight = leapLineOfSight
+
+    return blackboard
 end
 
 local function update_opening_walk(bb, dt)
@@ -2078,7 +2121,7 @@ function BeginPlay()
     debugSessionTime = 0.0
 
     play_anim(ANIM.idle, true, true)
-    safe_start_boss_music()
+    BossTitanAI_SafeStartBossMusic()
     debug_log("[BossTitanAI] Titan boss online.")
 end
 
@@ -2114,7 +2157,7 @@ function Tick(dt)
 
     consume_intro_cutscene_release()
 
-    ensure_boss_damageable_registered("tick")
+    BossTitanAI_EnsureBossDamageableRegistered("tick")
 
     if apply_intro_cutscene_control(dt) then
         return

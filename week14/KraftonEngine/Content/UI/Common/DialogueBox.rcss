@@ -33,7 +33,6 @@
 	color: #FFFFFFE6;
 	white-space: nowrap;
 	text-align: left;
-	text-shadow: none;
 	pointer-events: none;
 }
 
