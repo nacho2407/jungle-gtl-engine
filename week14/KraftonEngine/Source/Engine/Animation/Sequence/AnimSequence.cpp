@@ -1,4 +1,4 @@
-#include "AnimSequence.h"
+﻿#include "AnimSequence.h"
 
 #include "Animation/Sequence/AnimDataModel.h"
 #include "Animation/Notify/AnimNotify_LogMessage.h"
@@ -661,7 +661,7 @@ void UAnimSequence::GetBonePose(FPoseContext& Output, const FAnimExtractContext&
 
     if (!IsCompatibleWith(Output.SkeletalMesh))
     {
-        UE_LOG("Animation pose rejected: skeleton mismatch. Anim=%s SkeletonPath=%s", GetName().c_str(), TargetSkeleton.SkeletonPath.c_str());
+        // UE_LOG("Animation pose rejected: skeleton mismatch. Anim=%s SkeletonPath=%s", GetName().c_str(), TargetSkeleton.SkeletonPath.c_str());
         Output.ResetToRefPose();
         return;
     }

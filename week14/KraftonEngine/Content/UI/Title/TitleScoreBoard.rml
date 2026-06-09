@@ -15,7 +15,7 @@
 
             <div id="scoreboard-content" class="popup-content scoreboard-content">
                 <div id="scoreboard-header-row" class="score-row score-header" style="position: absolute; left: 0.00px; top: 0.00px; width: 764.00px; height: 34.00px;">
-                    <div id="scoreboard-header-name" class="score-cell score-name" data-ui-editor="text">Name</div>
+                    <div id="scoreboard-header-name" class="score-cell score-name" data-ui-editor="text">ID</div>
                     <div id="scoreboard-header-score" class="score-cell score-score" data-ui-editor="text">Score</div>
                     <div id="scoreboard-header-time" class="score-cell score-time" data-ui-editor="text">Time</div>
                 </div>

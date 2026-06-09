@@ -33,15 +33,11 @@ local savedWallRunMaxSpeed = nil
 local bMovementLocked = false
 
 local dialogueSequence = {
-    "DrakePreCombat_System_DriveAutoPlay",
-    "DrakePreCombat_System_LancerDocConfirmed",
-    "DrakePreCombat_System_LancerAccessDenied",
-    "DrakePreCombat_Drake_Cleanup",
-    "DrakePreCombat_Kain_Refuse",
-    "DrakePreCombat_Drake_RepeatThat",
-    "DrakePreCombat_Kain_RefuseAgain",
-    "DrakePreCombat_Drake_Acknowledged",
-    "DrakePreCombat_Drake_StayPut",
+    "DrakePreCombat_McCurson_Welcome",
+    "DrakePreCombat_McCurson_DidYouKnow",
+    "DrakePreCombat_McCurson_LancerPlan",
+    "DrakePreCombat_McCurson_WeKnew",
+    "DrakePreCombat_McCurson_DriveHint",
 }
 
 local function clamp(value, minValue, maxValue)

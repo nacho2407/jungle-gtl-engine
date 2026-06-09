@@ -75,10 +75,7 @@ local LANDING_SHAKE_END_SCALE = 0.35
 local PRODUCER_CREDITS = {
     {
         role = "PRESENTS",
-        lines = {
-            "KRAFTON JUNGLE",
-            "GAME TECH LAB 3RD",
-        },
+        lines = { "KRAFTON JUNGLE" },
     },
     {
         role = "PRODUCER",
@@ -87,7 +84,7 @@ local PRODUCER_CREDITS = {
     {
         role = "PRODUCER",
         lines = { "JANG MINJUN" },
-    },
+    }, 
     {
         role = "PRODUCER",
         lines = { "JEON HYEONGIL" },

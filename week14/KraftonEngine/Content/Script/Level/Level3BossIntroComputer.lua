@@ -21,6 +21,19 @@ local LETTERBOX_CLOSE_DELAY = 0.35
 local SKIP_HOLD_DURATION = 3.0
 local ACKNOWLEDGED_ENTRY_ID = "DrakePreCombat_Drake_Acknowledged"
 local STAY_PUT_ENTRY_ID = "DrakePreCombat_Drake_StayPut"
+
+local dialogueSequence = {
+    "DrakePreCombat_System_DriveAutoPlay",
+    "DrakePreCombat_System_LancerDocConfirmed",
+    "DrakePreCombat_System_LancerAccessDenied",
+    "DrakePreCombat_Drake_Cleanup",
+    "DrakePreCombat_Kain_Refuse",
+    "DrakePreCombat_Drake_RepeatThat",
+    "DrakePreCombat_Kain_RefuseAgain",
+    "DrakePreCombat_Drake_Acknowledged",
+    "DrakePreCombat_Drake_StayPut",
+}
+
 local BOSS_GUN_PREFAB = "Content/Prefab/EnemyBossGun.prefab"
 local BOSS_BODY_PREFAB = "Content/Prefab/EnemyBossBody.prefab"
 local BOSS_SPAWN_LOCATION = Vector.new(0.0, 0.0, 100.0)
@@ -51,6 +64,7 @@ local POST_COMBAT_LOCKED_TEXT = "KEY REQUIRED"
 local ENDING_MODULE = "Ending"
 
 local story = nil
+local storyEntriesById = {}
 local voiceEntries = {}
 local voiceEntriesById = {}
 local loadedVoiceKeys = {}
@@ -424,6 +438,16 @@ end
 
 local function load_dialogue_assets()
     story = require(STORY_MODULE)
+
+    storyEntriesById = {}
+    if story ~= nil and story.entries ~= nil then
+        for _, entry in ipairs(story.entries) do
+            if entry ~= nil and entry.id ~= nil then
+                storyEntriesById[entry.id] = entry
+            end
+        end
+    end
+
     voiceEntries = {}
     voiceEntriesById = {}
 
@@ -434,14 +458,18 @@ local function load_dialogue_assets()
     end
 end
 
-local function get_voice_entry(entry, index)
-    if entry ~= nil and entry.id ~= nil and voiceEntriesById ~= nil then
-        local byIdEntry = voiceEntriesById[entry.id]
-        if byIdEntry ~= nil then
-            return byIdEntry
-        end
+local function get_story_entry_by_id(entryId)
+    if entryId == nil or storyEntriesById == nil then
+        return nil
     end
-    return voiceEntries ~= nil and voiceEntries[index] or nil
+    return storyEntriesById[entryId]
+end
+
+local function get_voice_entry(entry)
+    if entry ~= nil and entry.id ~= nil and voiceEntriesById ~= nil then
+        return voiceEntriesById[entry.id]
+    end
+    return nil
 end
 
 local function stop_current_voice()
@@ -451,12 +479,12 @@ local function stop_current_voice()
     activeVoiceKey = nil
 end
 
-local function play_voice(entry, index)
+local function play_voice(entry)
     if AudioManager == nil or AudioManager.Load == nil or AudioManager.Play == nil then
         return nil
     end
 
-    local voiceEntry = get_voice_entry(entry, index)
+    local voiceEntry = get_voice_entry(entry)
     if voiceEntry == nil or voiceEntry.key == nil or voiceEntry.path == nil then
         return nil
     end
@@ -474,7 +502,7 @@ local function play_voice(entry, index)
     return voiceEntry
 end
 
-local function show_dialogue_entry(entry, index)
+local function show_dialogue_entry(entry)
     if entry == nil then return end
 
     local text = get_dialogue_text(entry)
@@ -495,25 +523,12 @@ local function show_dialogue_entry(entry, index)
         })
     end
 
-    local voiceEntry = play_voice(entry, index)
+    local voiceEntry = play_voice(entry)
     activeEntry = entry
     entryTimer = 0.0
     entryDuration = voiceEntry ~= nil and voiceEntry.duration ~= nil and voiceEntry.duration > 0.0
         and (voiceEntry.duration + VOICE_END_PADDING)
         or (entry.duration or (story ~= nil and story.default_duration) or DEFAULT_ENTRY_DURATION)
-end
-
-local function find_entry_index(entryId)
-    if story == nil or story.entries == nil or entryId == nil then
-        return nil
-    end
-
-    for index, entry in ipairs(story.entries) do
-        if entry ~= nil and entry.id == entryId then
-            return index
-        end
-    end
-    return nil
 end
 
 local function get_first_spawned_actor(actors)
@@ -914,15 +929,14 @@ local function hide_skip_ui()
 end
 
 local function show_final_entry()
-    local finalIndex = find_entry_index(STAY_PUT_ENTRY_ID)
-    if finalIndex == nil then
+    local finalEntry = get_story_entry_by_id(STAY_PUT_ENTRY_ID)
+    if finalEntry == nil then
         begin_cutscene_close({ forceBossReady = true })
         return
     end
 
     cutscenePhase = "final_dialogue"
-    currentIndex = finalIndex
-    show_dialogue_entry(story.entries[finalIndex], finalIndex)
+    show_dialogue_entry(finalEntry)
 end
 
 local function begin_boss_reveal()
@@ -1034,12 +1048,20 @@ local function show_next_entry()
     stop_current_voice()
     currentIndex = currentIndex + 1
 
-    if story == nil or story.entries == nil or currentIndex > #story.entries then
+    local nextId = dialogueSequence[currentIndex]
+    if nextId == nil then
         begin_cutscene_close({ forceBossReady = bossSpawned })
         return
     end
 
-    show_dialogue_entry(story.entries[currentIndex], currentIndex)
+    local entry = get_story_entry_by_id(nextId)
+    if entry == nil then
+        print("[Level3BossIntro] Missing dialogue entry: " .. tostring(nextId))
+        show_next_entry()
+        return
+    end
+
+    show_dialogue_entry(entry)
 end
 
 start_cutscene = function()
@@ -1169,6 +1191,7 @@ end
 
 function BeginPlay()
     story = nil
+    storyEntriesById = {}
     voiceEntries = {}
     voiceEntriesById = {}
     loadedVoiceKeys = {}

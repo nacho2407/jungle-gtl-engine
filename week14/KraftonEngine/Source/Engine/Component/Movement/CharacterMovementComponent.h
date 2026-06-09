@@ -381,7 +381,7 @@ public:
 
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Out Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
 	float WallJumpOutVelocity = 9.0f;     // m/s — 벽 normal 방향 푸시.
-	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Up Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
+	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun WallJump", DisplayName = "Wall Jump Up Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
 	float WallJumpUpVelocity = 8.0f;      // m/s — 위쪽 임펄스.
 	UPROPERTY(Edit, Save, Category = "CharacterMovement|WallRun|WallJump", DisplayName = "Wall Jump Forward Velocity", Min = 0.0f, Max = 50.0f, Speed = 0.1f)
 	float WallJumpForwardVelocity = 1.5f; // m/s — 보존된 진행 속도 위에 더하는 보너스.

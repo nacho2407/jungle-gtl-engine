@@ -6,6 +6,7 @@
 struct FScoreSnapshot
 {
 	FString RunId;
+	FString PlayerId;
 	FString StartedAt;
 	FString FinishedAt;
 	FString EndingId;
@@ -49,8 +50,8 @@ public:
 	void AddCustomStat(const FString& Name, float Delta);
 	float GetCustomStat(const FString& Name) const;
 
-	bool SaveFinalScore(const FString& EndingId = "Ending");
-	bool FinishRun(const FString& EndingId = "Ending");
+	bool SaveFinalScore(const FString& EndingId = "Ending", const FString& PlayerId = "");
+	bool FinishRun(const FString& EndingId = "Ending", const FString& PlayerId = "");
 
 	FString GetSaveFilePath() const;
 

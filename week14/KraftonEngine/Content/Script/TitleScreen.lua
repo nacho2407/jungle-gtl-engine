@@ -161,7 +161,11 @@ local function populate_scoreboard()
     for index = 1, 7 do
         local row = scores[index]
         if row ~= nil then
-            set_scoreboard_text(scoreboard_id("scoreboard-name", index), row.finishedAt or row.endingId or "MISSION CLEAR")
+            local playerName = row.playerId
+            if playerName == nil or playerName == "" then
+                playerName = row.finishedAt or row.endingId or "MISSION CLEAR"
+            end
+            set_scoreboard_text(scoreboard_id("scoreboard-name", index), playerName)
             set_scoreboard_text(scoreboard_id("scoreboard-score", index), string.format("%06d", row.score or 0))
             set_scoreboard_text(scoreboard_id("scoreboard-time", index), format_score_time(row.playTimeSeconds))
         else

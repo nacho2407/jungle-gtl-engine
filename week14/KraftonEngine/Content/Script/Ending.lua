@@ -345,6 +345,12 @@ local function show_score_result()
     end
 end
 
+local function update_score_result(dt)
+    if scoreShown and ScoreResult ~= nil and ScoreResult.Update ~= nil then
+        ScoreResult.Update(dt or 0.0)
+    end
+end
+
 local function begin_fade_out()
     if fadeOutActive then return end
     fadeOutActive = true
@@ -462,6 +468,10 @@ end
 
 local function update_ending(dt)
     dt = dt or 0.0
+    if scoreShown then
+        update_score_result(dt)
+        return
+    end
     if not cutsceneStarted or cutsceneFinished then
         return
     end
@@ -513,6 +523,7 @@ return {
     Update = update_ending,
     Shutdown = EndPlay,
     IsRunning = function()
-        return cutsceneStarted and not cutsceneFinished
+        local scoreOpen = ScoreResult ~= nil and ScoreResult.IsOpen ~= nil and ScoreResult.IsOpen()
+        return cutsceneStarted and (not cutsceneFinished or scoreOpen)
     end,
 }

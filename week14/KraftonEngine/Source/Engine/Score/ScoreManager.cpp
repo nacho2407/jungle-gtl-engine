@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <cctype>
 #include <ctime>
 #include <filesystem>
 #include <fstream>
@@ -48,6 +49,41 @@ namespace
 		return Stream.str();
 	}
 
+
+	FString NormalizePlayerId(const FString& PlayerId)
+	{
+		FString Trimmed = PlayerId;
+		const auto IsSpace = [](unsigned char Ch)
+		{
+			return std::isspace(Ch) != 0;
+		};
+
+		while (!Trimmed.empty() && IsSpace(static_cast<unsigned char>(Trimmed.front())))
+		{
+			Trimmed.erase(Trimmed.begin());
+		}
+		while (!Trimmed.empty() && IsSpace(static_cast<unsigned char>(Trimmed.back())))
+		{
+			Trimmed.pop_back();
+		}
+
+		FString Sanitized;
+		Sanitized.reserve(16);
+		for (unsigned char Ch : Trimmed)
+		{
+			if (std::isalnum(Ch) || Ch == '_' || Ch == '-')
+			{
+				Sanitized.push_back(static_cast<char>(Ch));
+			}
+			if (Sanitized.size() >= 16)
+			{
+				break;
+			}
+		}
+
+		return Sanitized.empty() ? FString("PLAYER") : Sanitized;
+	}
+
 	bool ReadTextFile(const std::wstring& Path, FString& OutText)
 	{
 		std::ifstream File(Path, std::ios::binary);
@@ -66,6 +102,7 @@ namespace
 	{
 		json::JSON Object;
 		Object["runId"] = Snapshot.RunId;
+		Object["playerId"] = Snapshot.PlayerId;
 		Object["startedAt"] = Snapshot.StartedAt;
 		Object["finishedAt"] = Snapshot.FinishedAt;
 		Object["endingId"] = Snapshot.EndingId;
@@ -260,9 +297,10 @@ float FScoreManager::GetCustomStat(const FString& Name) const
 	return It != CustomStats.end() ? It->second : 0.0f;
 }
 
-bool FScoreManager::SaveFinalScore(const FString& EndingId)
+bool FScoreManager::SaveFinalScore(const FString& EndingId, const FString& PlayerId)
 {
 	FScoreSnapshot Snapshot = GetSnapshot();
+	Snapshot.PlayerId = NormalizePlayerId(PlayerId);
 	Snapshot.EndingId = EndingId;
 	Snapshot.FinishedAt = MakeTimestamp();
 
@@ -301,9 +339,9 @@ bool FScoreManager::SaveFinalScore(const FString& EndingId)
 	return true;
 }
 
-bool FScoreManager::FinishRun(const FString& EndingId)
+bool FScoreManager::FinishRun(const FString& EndingId, const FString& PlayerId)
 {
-	const bool bSaved = SaveFinalScore(EndingId);
+	const bool bSaved = SaveFinalScore(EndingId, PlayerId);
 	ResetRun();
 	return bSaved;
 }

@@ -26,6 +26,12 @@
                         <div class="score-result-value" id="score-result-kills">0</div>
                     </div>
                 </div>
+                <div id="score-result-row-boss-kills-group">
+                    <div class="score-result-row" id="score-result-row-boss-kills">
+                        <div class="score-result-name">BOSS KILLS</div>
+                        <div class="score-result-value" id="score-result-boss-kills">0</div>
+                    </div>
+                </div>
                 <div id="score-result-row-retry-group">
                     <div class="score-result-row" id="score-result-row-retry">
                         <div class="score-result-name">RETRY</div>
@@ -40,10 +46,20 @@
                 </div>
             </div>
 
+            <div id="score-result-id-label">PILOT ID</div>
+            <div id="score-result-player-id-box">
+                <div id="score-result-player-id">TYPE ID_</div>
+            </div>
+            <div id="score-result-save-status">ENTER ID AND SAVE</div>
             <div id="score-result-save-path">Saves/scores.json</div>
-            <div id="score-result-continue-button" class="hover-image-button">
-                <img id="score-result-continue-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
-                <div id="score-result-continue-label" class="hover-image-label">CONTINUE</div>
+
+            <div id="score-result-save-button" class="hover-image-button">
+                <img id="score-result-save-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="score-result-save-label" class="hover-image-label">SAVE SCORE</div>
+            </div>
+            <div id="score-result-title-button" class="hover-image-button">
+                <img id="score-result-title-box" class="hover-image-box" src="../Common/HoverCutBox.png"/>
+                <div id="score-result-title-label" class="hover-image-label">TITLE MENU</div>
             </div>
         </div>
     </div>

@@ -8,6 +8,51 @@ return {
     default_fade_in = 0.3,
     entries = {
         {
+            id = "DrakePreCombat_Drake_Confirmed",
+            speaker = "DRAKE",
+            text = "매커슨 제거 확인. 모듈 상태 보고해.",
+            text_en = "McCurson neutralized, confirmed. Report on the module.",
+            image = "",
+            font = "Pretendard",
+            duration = 3.2
+        },
+        {
+            id = "DrakePreCombat_McCurson_DidYouKnow",
+            speaker = "MCCURSON",
+            text = "반투스가 뭘 하는지는 알아?",
+            text_en = "Did you actually know what VANTUS does.",
+            image = "",
+            font = "Pretendard",
+            duration = 3.4
+        },
+        {
+            id = "DrakePreCombat_McCurson_LancerPlan",
+            speaker = "MCCURSON",
+            text = "자원을 다 뽑아내고 나면, LANCER가 흔적을 지우는 거지. 언제나 그게 계획이었어.",
+            text_en = "When they've taken everything, it doesn't end there. LANCER erases what's left. That was always the plan.",
+            image = "",
+            font = "Pretendard",
+            duration = 5.2
+        },
+        {
+            id = "DrakePreCombat_McCurson_WeKnew",
+            speaker = "MCCURSON",
+            text = "우리는 알고 있었어. 너는 몰랐겠지만.",
+            text_en = "We knew. You didn't.",
+            image = "",
+            font = "Pretendard",
+            duration = 3.0
+        },
+        {
+            id = "DrakePreCombat_McCurson_DriveHint",
+            speaker = "MCCURSON",
+            text = "...드라이브 안에 전부 있어. 누가 명령했고, 누가 서명했는지. 전부 다.",
+            text_en = "...The drive has everything. Who gave the order. Who signed off. All of it.",
+            image = "",
+            font = "Pretendard",
+            duration = 3.6
+        },
+        {
             id = "DrakePreCombat_System_DriveAutoPlay",
             speaker = "SYSTEM",
             text = "데이터 드라이브 자동 재생 중...",
@@ -41,7 +86,7 @@ return {
             text_en = "Kain. If you found the drive, destroy it and extract.",
             image = "",
             font = "Pretendard",
-            duration = 3.4
+            duration = 5.0
         },
         {
             id = "DrakePreCombat_Kain_Refuse",
@@ -84,6 +129,15 @@ return {
             speaker = "DRAKE",
             text = "이렇게 돼서 유감이야, 케인. 진짜로.",
             text_en = "I'm sorry it came to this, Kain. I mean that.",
+            image = "",
+            font = "Pretendard",
+            duration = 3.0
+        },
+        {
+            id = "DrakePreCombat_McCurson_Welcome",
+            speaker = "MCCURSON",
+            text = "어서 와라, 케인. 결국 여기까지 왔군.",
+            text_en = "Welcome, Kain. So you finally made it here.",
             image = "",
             font = "Pretendard",
             duration = 3.0

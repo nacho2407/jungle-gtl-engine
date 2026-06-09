@@ -12,7 +12,7 @@ body {
     top: 0px;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.78);
+    background-color: #000000F9;
 }
 
 #score-result-panel {
@@ -20,11 +20,11 @@ body {
     left: 50%;
     top: 50%;
     width: 720px;
-    height: 520px;
+    height: 620px;
     margin-left: -360px;
-    margin-top: -260px;
+    margin-top: -310px;
     background-color: #000000F9;
-    border: 1px #ffffff;
+    border: 0px;
 }
 
 #score-result-title {
@@ -80,11 +80,12 @@ body {
     left: 36px;
     top: 184px;
     width: 648px;
-    height: 148px;
+    height: 185px;
 }
 
 #score-result-row-time-group,
 #score-result-row-kills-group,
+#score-result-row-boss-kills-group,
 #score-result-row-retry-group,
 #score-result-row-deaths-group {
     position: absolute;
@@ -101,12 +102,16 @@ body {
     top: 38px;
 }
 
-#score-result-row-retry-group {
+#score-result-row-boss-kills-group {
     top: 76px;
 }
 
-#score-result-row-deaths-group {
+#score-result-row-retry-group {
     top: 114px;
+}
+
+#score-result-row-deaths-group {
+    top: 152px;
 }
 
 .score-result-row {
@@ -143,11 +148,59 @@ body {
     color: #ffffff;
 }
 
+#score-result-id-label {
+    position: absolute;
+    left: 36px;
+    top: 386px;
+    width: 180px;
+    height: 26px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 26px;
+    color: #ffffff;
+    opacity: 0.76;
+}
+
+#score-result-player-id-box {
+    position: absolute;
+    left: 36px;
+    top: 418px;
+    width: 648px;
+    height: 42px;
+    background-color: #00000099;
+    border: 0px;
+}
+
+#score-result-player-id {
+    position: absolute;
+    left: 14px;
+    top: 0px;
+    width: 620px;
+    height: 42px;
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 42px;
+    color: #ffffff;
+}
+
+#score-result-save-status {
+    position: absolute;
+    left: 36px;
+    top: 468px;
+    width: 648px;
+    height: 28px;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 28px;
+    color: #ffffff;
+    opacity: 0.74;
+}
+
 #score-result-save-path {
     position: absolute;
     left: 36px;
     bottom: 32px;
-    width: 420px;
+    width: 300px;
     height: 26px;
     font-size: 16px;
     line-height: 26px;
@@ -155,7 +208,15 @@ body {
     opacity: 0.62;
 }
 
-#score-result-continue-button {
+#score-result-save-button {
+    position: absolute;
+    right: 224px;
+    bottom: 28px;
+    width: 172px;
+    height: 36px;
+}
+
+#score-result-title-button {
     position: absolute;
     right: 36px;
     bottom: 28px;
@@ -163,7 +224,8 @@ body {
     height: 36px;
 }
 
-#score-result-continue-label {
+#score-result-save-label,
+#score-result-title-label {
     left: 12px;
     top: 0px;
     width: 160px;

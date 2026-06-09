@@ -1,4 +1,4 @@
-﻿#include "LuaScriptManager.h"
+#include "LuaScriptManager.h"
 
 #include "Lua/LuaDocRegistry.h"
 #include "Core/Logging/Log.h"
@@ -1559,6 +1559,7 @@ Engine.IsPaused = Game.IsPaused
 		const FScoreSnapshot Snapshot = FScoreManager::Get().GetSnapshot();
 		sol::table Table = Lua.create_table();
 		Table["runId"] = Snapshot.RunId;
+		Table["playerId"] = Snapshot.PlayerId;
 		Table["startedAt"] = Snapshot.StartedAt;
 		Table["finishedAt"] = Snapshot.FinishedAt;
 		Table["endingId"] = Snapshot.EndingId;
@@ -1636,13 +1637,21 @@ Engine.IsPaused = Game.IsPaused
 	{
 		return FScoreManager::Get().GetCustomStat(Name);
 	});
-	ScoreManager.set_function("SaveFinalScore", [](sol::optional<FString> EndingId)
+	ScoreManager.set_function("SaveFinalScore", [](sol::optional<FString> EndingId, sol::optional<FString> PlayerId)
 	{
-		return FScoreManager::Get().SaveFinalScore(EndingId.value_or("Ending"));
+		return FScoreManager::Get().SaveFinalScore(EndingId.value_or("Ending"), PlayerId.value_or(""));
 	});
-	ScoreManager.set_function("FinishRun", [](sol::optional<FString> EndingId)
+	ScoreManager.set_function("SaveFinalScoreWithPlayerId", [](const FString& PlayerId, sol::optional<FString> EndingId)
 	{
-		return FScoreManager::Get().FinishRun(EndingId.value_or("Ending"));
+		return FScoreManager::Get().SaveFinalScore(EndingId.value_or("Ending"), PlayerId);
+	});
+	ScoreManager.set_function("FinishRun", [](sol::optional<FString> EndingId, sol::optional<FString> PlayerId)
+	{
+		return FScoreManager::Get().FinishRun(EndingId.value_or("Ending"), PlayerId.value_or(""));
+	});
+	ScoreManager.set_function("FinishRunWithPlayerId", [](const FString& PlayerId, sol::optional<FString> EndingId)
+	{
+		return FScoreManager::Get().FinishRun(EndingId.value_or("Ending"), PlayerId);
 	});
 	ScoreManager.set_function("GetSaveFilePath", []()
 	{
@@ -1691,11 +1700,13 @@ Engine.IsPaused = Game.IsPaused
 
 			sol::table Row = Lua.create_table();
 			Row["runId"] = Score["runId"].ToString();
+			Row["playerId"] = Score.hasKey("playerId") ? Score["playerId"].ToString() : FString("");
 			Row["startedAt"] = Score["startedAt"].ToString();
 			Row["finishedAt"] = Score["finishedAt"].ToString();
 			Row["endingId"] = Score["endingId"].ToString();
 			Row["playTimeSeconds"] = static_cast<float>(Score["playTimeSeconds"].ToFloat());
 			Row["enemyKills"] = static_cast<int32>(Score["enemyKills"].ToInt());
+			Row["bossKills"] = Score.hasKey("bossKills") ? static_cast<int32>(Score["bossKills"].ToInt()) : 0;
 			Row["retryCount"] = static_cast<int32>(Score["retryCount"].ToInt());
 			Row["deathCount"] = static_cast<int32>(Score["deathCount"].ToInt());
 			Row["score"] = static_cast<int32>(Score["score"].ToInt());
