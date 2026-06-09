@@ -63,6 +63,7 @@ public:
 	GENERATED_BODY()
 	~UPrimitiveComponent() override;
 
+	void PostDuplicate() override;
 	void BeginPlay() override;
 	void EndPlay() override;
 
@@ -98,6 +99,7 @@ public:
 	const FBodyInstance* GetBodyInstance() const;
 
 	void ApplyPhysicsSettingsToBody();
+	void SyncPhysicsTransformToComponent();
 
 	//Collision
 	virtual void UpdateWorldAABB() const;

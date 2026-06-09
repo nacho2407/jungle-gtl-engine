@@ -603,12 +603,5 @@ function Tick(dt)
         debugTimer = DEBUG_INTERVAL
         local hasTarget = is_valid_actor(targetActor)
         local dist = hasTarget and horizontal_distance_to(targetActor) or -1.0
-        print(string.format(
-            "[SimpleEnemyAI] target=%s dist=%.2f alerted=%s fireRange=%.2f scale=%.2f",
-            hasTarget and "yes" or "NO",
-            dist,
-            tostring(alerted),
-            FIRE_RANGE * scaleMultiplier,
-            scaleMultiplier))
     end
 end

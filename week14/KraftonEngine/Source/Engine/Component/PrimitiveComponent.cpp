@@ -43,6 +43,16 @@ UPrimitiveComponent::~UPrimitiveComponent()
 	DestroyRenderState();
 }
 
+void UPrimitiveComponent::PostDuplicate()
+{
+	// Scene JSON load and duplicate paths restore properties after components have already
+	// been registered. Collision/shape properties may have recreated a PhysX body while
+	// later properties such as BoxExtent, transform scale, or response filters were still
+	// stale. Rebuild once after the whole serialized component state is restored.
+	MarkWorldBoundsDirty();
+	RecreatePhysicsState();
+}
+
 void UPrimitiveComponent::BeginPlay()
 {
 	USceneComponent::BeginPlay();
@@ -289,6 +299,24 @@ void UPrimitiveComponent::ApplyPhysicsSettingsToBody()
 	BodyInstance.SetAngularDamping(AngularDamping);
 }
 
+void UPrimitiveComponent::SyncPhysicsTransformToComponent()
+{
+	if (!BodyInstance.IsValidBody()) return;
+
+	// Simulated dynamic bodies are authoritative from PhysX. Static, kinematic, and
+	// query-only trigger bodies must follow component transforms, especially after
+	// scene load fix-up, actor placement offsets, or runtime moved trigger volumes.
+	if (bSimulatePhysics && BodyInstance.IsDynamic())
+	{
+		return;
+	}
+
+	BodyInstance.SetBodyTransform(FTransform(
+		GetWorldLocation(),
+		GetWorldRotation().ToQuaternion(),
+		GetWorldScale()));
+}
+
 void UPrimitiveComponent::UpdateWorldAABB() const
 {
 	FVector LExt = LocalExtents;
@@ -415,6 +443,7 @@ void UPrimitiveComponent::OnTransformDirty()
 	// (basis 동일 + translation만 바뀐 경우 UpdateWorldMatrix가 이전 AABB를 평행이동만 적용)
 	bWorldAABBDirty = true;
 	MarkRenderTransformDirty();
+	SyncPhysicsTransformToComponent();
 }
 
 void UPrimitiveComponent::EnsureWorldAABBUpdated() const

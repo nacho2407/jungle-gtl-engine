@@ -9,6 +9,7 @@
 #include "GameFramework/AActor.h"
 #include "Component/SceneComponent.h"
 #include "Component/ActorComponent.h"
+#include "Component/PrimitiveComponent.h"
 #include "Render/Types/MinimalViewInfo.h"
 #include "Component/Primitive/DecalComponent.h"
 #include "Component/Primitive/HeightFogComponent.h"
@@ -46,6 +47,33 @@ static FVector ReadVec3(json::JSON& Arr)
 		++i;
 	}
 	return out;
+}
+
+
+static void FinalizeLoadedPrimitiveStates(const TArray<AActor*>& Actors)
+{
+	for (AActor* Actor : Actors)
+	{
+		if (!Actor)
+		{
+			continue;
+		}
+
+		for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
+		{
+			if (!Primitive)
+			{
+				continue;
+			}
+
+			// Property deserialization calls PostEditProperty per field. That can create a
+			// body before later serialized fields (BoxExtent, transform scale, collision
+			// responses, GenerateOverlapEvents) have been restored. One final rebuild
+			// makes the runtime/GameBuild path match the editor-fixed state.
+			Primitive->MarkWorldBoundsDirty();
+			Primitive->RecreatePhysicsState();
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -677,7 +705,16 @@ bool FSceneSaveManager::InstantiatePrefabFromJSON(
 
 		Actor->PostDuplicate();
 		Actor->AddActorWorldOffset(PlacementOffset);
-		World->AddActor(Actor, false);
+	}
+
+	FinalizeLoadedPrimitiveStates(OutCreatedActors);
+
+	for (AActor* Actor : OutCreatedActors)
+	{
+		if (Actor)
+		{
+			World->AddActor(Actor, false);
+		}
 	}
 
 	World->EndDeferredPickingBVHUpdate();
@@ -1306,6 +1343,8 @@ void FSceneSaveManager::LoadSceneFromJSON(const string& filepath, FWorldContext&
 			Actor->PostDuplicate();
 		}
 	}
+
+	FinalizeLoadedPrimitiveStates(LoadedActors);
 
 	if (root.hasKey(SceneKeys::EditorOutliner))
 	{
