@@ -22,7 +22,9 @@ local CAMERA_TURN_DURATION = 0.85
 local BOSS_DROP_DELAY = 0.15
 local BOSS_DROP_DURATION = 0.45
 local BOSS_IMPACT_HOLD_DURATION = 0.7
-local BOSS_IMPACT_SHAKE_SCALE = 1.45
+local BOSS_IMPACT_SHAKE_SCALE = 1.9
+local BOSS_IMPACT_SHAKE_INTERVAL = 0.12
+local BOSS_IMPACT_SHAKE_PULSES = 2
 local BOSS_MOVE_IDLE = 0
 local BOSS_MOVE_LEAP_FLOAT = 6
 local BOSS_LEAP_START_ACTION = "leapStart"
@@ -52,6 +54,8 @@ local bossBodyActor = nil
 local bossSpawned = false
 local bossControlSerial = 0
 local bossImpactPlayed = false
+local bossImpactShakePulses = 0
+local bossImpactShakeTimer = 0.0
 local revealStage = "none"
 local revealTimer = 0.0
 
@@ -466,6 +470,10 @@ local function publish_boss_control(moveState, actionName, actionDuration, force
         control.ActionName = actionName
         control.ActionDuration = actionDuration
         control.ActionSerial = bossControlSerial
+    else
+        control.ActionName = nil
+        control.ActionDuration = 0.0
+        control.ActionSerial = 0
     end
 
     _G.Level3BossIntroBossUUID = bossBodyActor.UUID
@@ -494,34 +502,47 @@ local function spawn_boss_if_needed()
 end
 
 local function play_impact_shake()
-    if bossImpactPlayed then
-        return
-    end
-    bossImpactPlayed = true
-
-    if CameraManager ~= nil and CameraManager.StartSequenceShake ~= nil then
-        CameraManager.StartSequenceShake(BOSS_IMPACT_SHAKE_SCALE)
-    elseif CameraManager ~= nil and CameraManager.StartWaveShake ~= nil then
+    if CameraManager ~= nil and CameraManager.StartWaveShake ~= nil then
         CameraManager.StartWaveShake(BOSS_IMPACT_SHAKE_SCALE)
     end
 end
 
+local function start_impact_shake_pulses()
+    if bossImpactPlayed then
+        return
+    end
+
+    bossImpactPlayed = true
+    bossImpactShakePulses = BOSS_IMPACT_SHAKE_PULSES
+    bossImpactShakeTimer = 0.0
+end
+
+local function update_impact_shake(dt)
+    if bossImpactShakePulses <= 0 then
+        return
+    end
+
+    bossImpactShakeTimer = bossImpactShakeTimer - dt
+    if bossImpactShakeTimer > 0.0 then
+        return
+    end
+
+    play_impact_shake()
+    bossImpactShakePulses = bossImpactShakePulses - 1
+    bossImpactShakeTimer = BOSS_IMPACT_SHAKE_INTERVAL
+end
+
 local function release_boss_for_combat()
+    local release = nil
     if is_valid_actor(bossBodyActor) then
-        _G.Level3BossIntroBossRelease = {
+        release = {
             BossUUID = bossBodyActor.UUID,
             ForcedLocation = BOSS_LAND_LOCATION,
         }
     end
 
     set_boss_cutscene_active(false)
-
-    if is_valid_actor(bossBodyActor) then
-        _G.Level3BossIntroBossRelease = {
-            BossUUID = bossBodyActor.UUID,
-            ForcedLocation = BOSS_LAND_LOCATION,
-        }
-    end
+    _G.Level3BossIntroBossRelease = release
 end
 
 local function settle_boss_for_combat()
@@ -674,6 +695,8 @@ local function begin_boss_reveal()
     revealStage = "turn"
     revealTimer = 0.0
     bossImpactPlayed = false
+    bossImpactShakePulses = 0
+    bossImpactShakeTimer = 0.0
 
     set_boss_cutscene_active(true)
     spawn_boss_if_needed()
@@ -714,7 +737,8 @@ local function update_boss_reveal(dt)
 
         if revealTimer >= BOSS_DROP_DURATION then
             set_actor_location(bossBodyActor, BOSS_LAND_LOCATION)
-            play_impact_shake()
+            start_impact_shake_pulses()
+            update_impact_shake(0.0)
             publish_boss_control(BOSS_MOVE_IDLE, BOSS_LEAP_LAND_ACTION, BOSS_LEAP_LAND_DURATION, BOSS_LAND_LOCATION)
             revealStage = "impact"
             revealTimer = 0.0
@@ -724,6 +748,7 @@ local function update_boss_reveal(dt)
 
     if revealStage == "impact" then
         revealTimer = revealTimer + dt
+        update_impact_shake(dt)
         update_camera_to_boss(nil)
 
         if revealTimer >= BOSS_IMPACT_HOLD_DURATION then
