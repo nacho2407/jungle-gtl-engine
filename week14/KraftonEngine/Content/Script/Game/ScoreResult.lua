@@ -2,7 +2,7 @@ local ScoreResult = {}
 
 local WIDGET_PATH = "Content/UI/InGame/ScoreResult.rml"
 local Z_ORDER = 240
-local DEFAULT_NEXT_SCENE = "Title.Scene"
+local DEFAULT_NEXT_SCENE = "FL_Title.Scene"
 local DEFAULT_PLAYER_ID = "PLAYER"
 local MAX_PLAYER_ID_LENGTH = 16
 local CARET_BLINK_INTERVAL = 0.45
@@ -119,19 +119,41 @@ local function save_score()
     return ok
 end
 
+local function request_scene_transition(scene)
+    scene = scene or DEFAULT_NEXT_SCENE
+
+    if Engine ~= nil and Engine.TransitionToScene ~= nil then
+        Engine.TransitionToScene(scene)
+        return true
+    end
+
+    if Game ~= nil and Game.TransitionToScene ~= nil then
+        Game.TransitionToScene(scene)
+        return true
+    end
+
+    print("[ScoreResult] TransitionToScene is not available: " .. tostring(scene))
+    return false
+end
+
 local function close_and_return_title()
     if not hasSavedScore then
-        save_score()
+        local ok, err = pcall(function()
+            save_score()
+        end)
+
+        if not ok then
+            print("[ScoreResult] save_score failed before title transition: " .. tostring(err))
+        end
     end
 
     visible = false
+
     if widget ~= nil and widget:IsInViewport() then
         widget:RemoveFromParent()
     end
 
-    if Engine ~= nil and Engine.TransitionToScene ~= nil then
-        Engine.TransitionToScene(nextScene)
-    end
+    request_scene_transition(nextScene or DEFAULT_NEXT_SCENE)
 end
 
 local function bind()

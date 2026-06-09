@@ -32,7 +32,7 @@ class FProjectSettings : public TSingleton<FProjectSettings>
 		FString DirectorModule = "Game.FractureDirector";
 		FString PlayerControllerClassName = "ALuaPlayerController";
 		FString DefaultPawnClassName = "ALuaCharacter";
-		FString DefaultPawnScript = "Player/KainCharacter.lua";
+		FString DefaultPawnScript = "Player/Default2_FPSArm_Character.lua";
 		FString DefaultPawnMeshPath = "Content/Data/Samba Dancing (10).fbx";
 		FString DefaultPlayerStartTag = "Default";
 		bool bUsePlacedAutoPossessPawn = true;
