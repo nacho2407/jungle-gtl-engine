@@ -258,6 +258,7 @@ local mesh = nil
 local currentHealth = MAX_HEALTH
 local isDead = false
 local damageableCallbacks = nil
+local register_boss_damageable = nil
 
 local phase = 1
 local pendingPhase = nil
@@ -403,6 +404,38 @@ end
 
 local function random01()
     return math.random()
+end
+
+local function is_player_actor(actor)
+    if actor == nil then
+        return false
+    end
+    if Game ~= nil and Game.GetPlayerPawn ~= nil then
+        local player = Game.GetPlayerPawn()
+        if player ~= nil and actor.UUID ~= nil and player.UUID ~= nil and actor.UUID == player.UUID then
+            return true
+        end
+    end
+    return type(actor.HasTag) == "function" and actor:HasTag(PLAYER_TAG)
+end
+
+local function trigger_player_attack_marker(context, killed)
+    if context == nil then
+        return
+    end
+
+    local attacker = context.Instigator or context.instigator or context.DamageCauser or context.damageCauser
+    if not is_player_actor(attacker) then
+        return
+    end
+
+    if killed then
+        if WeaponHud ~= nil and type(WeaponHud.TriggerKillMarker) == "function" then
+            WeaponHud.TriggerKillMarker()
+        end
+    elseif WeaponHud ~= nil and type(WeaponHud.TriggerHitMarker) == "function" then
+        WeaponHud.TriggerHitMarker()
+    end
 end
 
 local function load_drake_combat_dialogue_assets()
@@ -750,6 +783,8 @@ local function apply_intro_cutscene_control()
     -- 컷씬 중에는 전투 판단, 공격 판정, 점프 이동을 모두 멈추고 외부 연출 상태만 반영합니다.
     activeAttack = nil
     leapState = nil
+    phaseTransitionStage = nil
+    phaseTransitionTimer = 0.0
     actionTimer = 0.0
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
@@ -815,6 +850,8 @@ local function consume_intro_cutscene_release()
     clear_action_anim(nil)
     set_move_anim(MOVE_IDLE)
     set_aim_anim(0.0, 0.0)
+    register_boss_damageable()
+    debug_log("[BossTitanAI] Intro release consumed. Boss damageable registered for combat.")
 
     _G.Level3BossIntroBossRelease = nil
     if obj ~= nil and _G.Level3BossIntroBossUUID == obj.UUID then
@@ -1160,7 +1197,7 @@ local function make_damage_result(applied, amount, killed)
     }
 end
 
-local function register_boss_damageable()
+register_boss_damageable = function()
     if damageableCallbacks ~= nil then
         CombatEvents.RegisterDamageable(obj, damageableCallbacks)
     end
@@ -1297,6 +1334,7 @@ local function apply_boss_damage(context)
         update_phase_from_health()
     end
 
+    trigger_player_attack_marker(context, killed)
     return make_damage_result(true, amount, killed)
 end
 

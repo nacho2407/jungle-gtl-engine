@@ -29,6 +29,12 @@ local BOSS_LEAP_START_ACTION = "leapStart"
 local BOSS_LEAP_START_DURATION = 0.55
 local BOSS_LEAP_LAND_ACTION = "leapLand"
 local BOSS_LEAP_LAND_DURATION = 0.7
+local BOSS_IMPACT_PARTICLE_SPAWN_DURATION = 3.0
+local BOSS_IMPACT_PARTICLE_LIFETIME = 8.0
+local BOSS_IMPACT_PARTICLES = {
+    "Content/Particle/SmokeDirtBlack.uasset",
+    "Content/Particle/SmokeDirt.uasset",
+}
 local POST_COMBAT_INTERACT_TEXT = "INSERT KEY"
 local POST_COMBAT_LOCKED_TEXT = "KEY REQUIRED"
 local ENDING_MODULE = "Ending"
@@ -55,6 +61,7 @@ local bossBodyActor = nil
 local bossSpawned = false
 local bossControlSerial = 0
 local bossImpactPlayed = false
+local bossImpactParticles = {}
 local revealStage = "none"
 local revealTimer = 0.0
 local postCombatInteractionRegistered = false
@@ -439,6 +446,64 @@ local function spawn_prefab_actor(prefabPath, location)
     return get_first_spawned_actor(actors)
 end
 
+local function destroy_impact_particles()
+    for _, entry in ipairs(bossImpactParticles) do
+        if is_valid_actor(entry.Actor) and type(entry.Actor.Destroy) == "function" then
+            entry.Actor:Destroy()
+        end
+    end
+    bossImpactParticles = {}
+end
+
+local function update_impact_particles(dt)
+    for index = #bossImpactParticles, 1, -1 do
+        local entry = bossImpactParticles[index]
+        if not is_valid_actor(entry.Actor) then
+            table.remove(bossImpactParticles, index)
+        else
+            if not entry.Deactivated then
+                entry.SpawnRemaining = entry.SpawnRemaining - dt
+                if entry.SpawnRemaining <= 0.0 then
+                    local particle = type(entry.Actor.GetParticleSystem) == "function" and entry.Actor:GetParticleSystem() or nil
+                    if particle ~= nil and type(particle.Deactivate) == "function" then
+                        particle:Deactivate()
+                    end
+                    entry.Deactivated = true
+                end
+            end
+
+            entry.Remaining = entry.Remaining - dt
+            if entry.Remaining <= 0.0 then
+                if type(entry.Actor.Destroy) == "function" then
+                    entry.Actor:Destroy()
+                end
+                table.remove(bossImpactParticles, index)
+            end
+        end
+    end
+end
+
+local function spawn_boss_impact_particles(location)
+    if bossImpactPlayed or location == nil or World == nil or World.SpawnParticleSystem == nil then
+        return
+    end
+
+    destroy_impact_particles()
+
+    for _, particlePath in ipairs(BOSS_IMPACT_PARTICLES) do
+        local particleActor = World.SpawnParticleSystem(particlePath, location)
+        if is_valid_actor(particleActor) then
+            particleActor:AddTag("runtime-boss-impact-smoke")
+            bossImpactParticles[#bossImpactParticles + 1] = {
+                Actor = particleActor,
+                SpawnRemaining = BOSS_IMPACT_PARTICLE_SPAWN_DURATION,
+                Remaining = BOSS_IMPACT_PARTICLE_LIFETIME,
+                Deactivated = false,
+            }
+        end
+    end
+end
+
 local function set_boss_cutscene_active(active)
     if active then
         _G.Level3BossIntroCutsceneActive = true
@@ -502,6 +567,7 @@ local function play_impact_shake()
     if bossImpactPlayed then
         return
     end
+    spawn_boss_impact_particles(BOSS_LAND_LOCATION)
     bossImpactPlayed = true
 
     if CameraManager ~= nil and CameraManager.StartSequenceShake ~= nil then
@@ -538,6 +604,7 @@ local function settle_boss_for_combat()
         set_actor_location(bossBodyActor, BOSS_LAND_LOCATION)
         set_actor_location(bossGunActor, BOSS_LAND_LOCATION)
         publish_boss_control(BOSS_MOVE_IDLE, nil, nil, BOSS_LAND_LOCATION)
+        play_impact_shake()
         update_camera_to_boss(nil)
     end
 end
@@ -751,6 +818,7 @@ begin_cutscene_close = function(options)
 
     if forceBossReady then
         settle_boss_for_combat()
+        release_boss_for_combat()
     else
         set_boss_cutscene_active(false)
     end
@@ -907,6 +975,7 @@ function BeginPlay()
     bossSpawned = false
     bossControlSerial = 0
     bossImpactPlayed = false
+    bossImpactParticles = {}
     revealStage = "none"
     revealTimer = 0.0
     postCombatInteractionRegistered = false
@@ -945,6 +1014,7 @@ function EndPlay()
 
     restore_player_after_cutscene()
     set_boss_cutscene_active(false)
+    destroy_impact_particles()
     activeEntry = nil
     cutsceneActive = false
     cutsceneClosing = false
@@ -953,6 +1023,7 @@ end
 
 function Tick(dt)
     dt = dt or 0.0
+    update_impact_particles(dt)
 
     if cutsceneClosing then
         closeTimer = closeTimer - dt
