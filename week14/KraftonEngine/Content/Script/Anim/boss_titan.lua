@@ -99,11 +99,32 @@ end
 
 local function get_external_state(self)
     local allStates = rawget(_G, "BossTitanAnimState")
-    if allStates == nil or self.OwnerUUID == nil then
+    if allStates == nil then
         return nil
     end
 
-    return allStates[self.OwnerUUID]
+    if (self.OwnerUUID == nil or self.OwnerUUID == 0) and type(Anim.get_owner_uuid) == "function" then
+        self.OwnerUUID = Anim.get_owner_uuid()
+    end
+
+    if self.OwnerUUID ~= nil and self.OwnerUUID ~= 0 then
+        local state = allStates[self.OwnerUUID]
+        if state ~= nil then
+            return state
+        end
+    end
+
+    local fallback = nil
+    local count = 0
+    for _, state in pairs(allStates) do
+        fallback = state
+        count = count + 1
+        if count > 1 then
+            return nil
+        end
+    end
+
+    return fallback
 end
 
 local function begin_action(self, name)

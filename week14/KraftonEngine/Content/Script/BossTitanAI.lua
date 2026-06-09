@@ -209,6 +209,9 @@ local tacticReevaluateTimer = 0.0
 local openingWalkActive = true
 local introCutsceneLastActionSerial = 0
 local introCutsceneMissingControlLogged = false
+local introCutsceneControlLogTimer = 0.0
+local introCutsceneControlTimer = 0.0
+local INTRO_CUTSCENE_CONTROL_FAILSAFE_SECONDS = 8.0
 
 local cooldowns = {
     cannon = 0.0,
@@ -716,10 +719,62 @@ local function get_intro_cutscene_control()
     return control
 end
 
-local function apply_intro_cutscene_control()
+local function force_exit_stale_intro_cutscene_control(control)
+    debug_log(string.format(
+        "[BossTitanAI] Forcing stale cutscene control exit. move=%s action=%s serial=%s elapsed=%.2f",
+        tostring(control and control.MoveState),
+        tostring(control and control.ActionName),
+        tostring(control and control.ActionSerial),
+        introCutsceneControlTimer))
+
+    _G.Level3BossIntroCutsceneActive = false
+    if obj ~= nil and _G.Level3BossIntroBossUUID == obj.UUID then
+        _G.Level3BossIntroBossUUID = nil
+        _G.Level3BossIntroBossControl = nil
+    end
+
+    activeAttack = nil
+    leapState = nil
+    actionTimer = 0.0
+    animationLockTimer = 0.0
+    phaseLockTimer = 0.0
+    thinkTimer = 0.0
+    openingWalkActive = false
+    currentTactic = TACTIC.duel
+    targetActor = nil
+    clear_action_anim(nil)
+    set_move_anim(MOVE_IDLE)
+    set_aim_anim(0.0, 0.0)
+    register_boss_damageable()
+    introCutsceneControlTimer = 0.0
+    introCutsceneControlLogTimer = 0.0
+end
+
+local function apply_intro_cutscene_control(dt)
     local control = get_intro_cutscene_control()
     if control == nil then
+        introCutsceneControlLogTimer = 0.0
+        introCutsceneControlTimer = 0.0
         return false
+    end
+
+    dt = dt or 0.0
+    introCutsceneControlTimer = introCutsceneControlTimer + dt
+    if introCutsceneControlTimer >= INTRO_CUTSCENE_CONTROL_FAILSAFE_SECONDS then
+        force_exit_stale_intro_cutscene_control(control)
+        return false
+    end
+
+    introCutsceneControlLogTimer = introCutsceneControlLogTimer - dt
+    if introCutsceneControlLogTimer <= 0.0 then
+        introCutsceneControlLogTimer = 0.8
+        debug_log(string.format(
+            "[BossTitanAI] Cutscene control active. move=%s action=%s serial=%s forced=%s damageable=%s",
+            tostring(control.MoveState),
+            tostring(control.ActionName),
+            tostring(control.ActionSerial),
+            tostring(control.ForcedLocation ~= nil),
+            tostring(bBossDamageableRegistered)))
     end
 
     -- 컷씬 중에는 전투 판단, 공격 판정, 점프 이동을 모두 멈추고 외부 연출 상태만 반영합니다.
@@ -795,11 +850,15 @@ local function consume_intro_cutscene_release()
     register_boss_damageable()
     debug_log("[BossTitanAI] Intro release consumed. Boss damageable registered for combat.")
 
+    _G.Level3BossIntroBossReleaseConsumedUUID = obj ~= nil and obj.UUID or release.BossUUID
     _G.Level3BossIntroBossRelease = nil
     if obj ~= nil and _G.Level3BossIntroBossUUID == obj.UUID then
         _G.Level3BossIntroBossUUID = nil
         _G.Level3BossIntroBossControl = nil
     end
+    _G.Level3BossIntroCutsceneActive = false
+    introCutsceneControlTimer = 0.0
+    introCutsceneControlLogTimer = 0.0
 
     return true
 end
@@ -889,6 +948,16 @@ local function start_boss_music()
     return bBossMusicPlaying
 end
 
+local function safe_start_boss_music()
+    local ok, result = pcall(start_boss_music)
+    if not ok then
+        debug_log("[BossTitanAI] Boss music start failed with error: " .. tostring(result))
+        bBossMusicPlaying = false
+        return false
+    end
+    return result == true
+end
+
 local function fade_out_boss_music()
     if not bBossMusicPlaying or AudioManager == nil then
         return
@@ -901,6 +970,14 @@ local function fade_out_boss_music()
     end
 
     bBossMusicPlaying = false
+end
+
+local function safe_fade_out_boss_music()
+    local ok, err = pcall(fade_out_boss_music)
+    if not ok then
+        debug_log("[BossTitanAI] Boss music fade-out failed with error: " .. tostring(err))
+        bBossMusicPlaying = false
+    end
 end
 
 local function stop_boss_music()
@@ -987,6 +1064,13 @@ local function spawn_card_key_reward()
         spawnLocation.Z))
 end
 
+local function safe_spawn_card_key_reward()
+    local ok, err = pcall(spawn_card_key_reward)
+    if not ok then
+        debug_log("[BossTitanAI] Card key reward spawn failed with error: " .. tostring(err))
+    end
+end
+
 local function update_death_fall(dt)
     if deathFallState == nil then
         return
@@ -1006,13 +1090,13 @@ local function update_death_fall(dt)
         obj.Rotation = deathFallState.targetRotation
         play_death_fall_camera_shake()
         deathFallState = nil
-        spawn_card_key_reward()
+        safe_spawn_card_key_reward()
     end
 end
 
 local function start_death_sequence()
     _G.Level3BossDefeated = true
-    fade_out_boss_music()
+    safe_fade_out_boss_music()
     activeAttack = nil
     leapState = nil
     openingWalkActive = false
@@ -1152,8 +1236,10 @@ end
 
 register_boss_damageable = function()
     if not bBossDamageableRegistered and damageableCallbacks ~= nil then
-        CombatEvents.RegisterDamageable(obj, damageableCallbacks)
-        bBossDamageableRegistered = true
+        bBossDamageableRegistered = CombatEvents.RegisterDamageable(obj, damageableCallbacks) == true
+        if not bBossDamageableRegistered then
+            debug_log("[BossTitanAI] Failed to register boss damageable. uuid=" .. tostring(obj and obj.UUID))
+        end
     end
 end
 
@@ -1161,6 +1247,17 @@ local function unregister_boss_damageable()
     if bBossDamageableRegistered then
         CombatEvents.UnregisterDamageable(obj)
         bBossDamageableRegistered = false
+    end
+end
+
+local function ensure_boss_damageable_registered(reason)
+    if bBossDamageableRegistered or damageableCallbacks == nil then
+        return
+    end
+
+    register_boss_damageable()
+    if bBossDamageableRegistered then
+        debug_log("[BossTitanAI] Boss damageable registered by fail-safe: " .. tostring(reason))
     end
 end
 
@@ -1940,6 +2037,8 @@ function BeginPlay()
     leapState = nil
     deathFallState = nil
     introCutsceneMissingControlLogged = false
+    introCutsceneControlLogTimer = 0.0
+    introCutsceneControlTimer = 0.0
     bBossDamageableRegistered = false
     bSpawnedCardKey = false
     bBossMusicPlaying = false
@@ -1972,16 +2071,14 @@ function BeginPlay()
         ApplyDamage = apply_boss_damage,
         IsDead = function() return isDead end,
     }
-    if _G.Level3BossIntroCutsceneActive ~= true then
-        register_boss_damageable()
-    end
+    register_boss_damageable()
 
     debug_open_log()
     _G.BossDebugLog = debug_log
     debugSessionTime = 0.0
 
     play_anim(ANIM.idle, true, true)
-    start_boss_music()
+    safe_start_boss_music()
     debug_log("[BossTitanAI] Titan boss online.")
 end
 
@@ -2017,7 +2114,9 @@ function Tick(dt)
 
     consume_intro_cutscene_release()
 
-    if apply_intro_cutscene_control() then
+    ensure_boss_damageable_registered("tick")
+
+    if apply_intro_cutscene_control(dt) then
         return
     end
 

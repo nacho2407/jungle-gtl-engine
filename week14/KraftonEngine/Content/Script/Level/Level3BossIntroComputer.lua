@@ -33,6 +33,7 @@ local BOSS_LEAP_LAND_ACTION = "leapLand"
 local BOSS_LEAP_LAND_DURATION = 0.7
 local BOSS_IMPACT_PARTICLE_SPAWN_DURATION = 3.0
 local BOSS_IMPACT_PARTICLE_LIFETIME = 8.0
+local BOSS_RELEASE_REPUBLISH_DURATION = 2.0
 local BOSS_IMPACT_PARTICLES = {
     "Content/Particle/SmokeDirtBlack.uasset",
     "Content/Particle/SmokeDirt.uasset",
@@ -61,6 +62,8 @@ local cutscenePhase = "idle"
 local bossGunActor = nil
 local bossBodyActor = nil
 local bossSpawned = false
+local pendingBossRelease = nil
+local pendingBossReleaseTimer = 0.0
 local bossControlSerial = 0
 local bossImpactPlayed = false
 local bossImpactParticles = {}
@@ -440,13 +443,48 @@ local function get_first_spawned_actor(actors)
     return actors[1]
 end
 
-local function spawn_prefab_actor(prefabPath, location)
+local function spawn_prefab_actors(prefabPath, location)
     if World == nil or World.SpawnPrefab == nil then
         print("[Level3BossIntro] World.SpawnPrefab is not available.")
         return nil
     end
 
-    local actors = World.SpawnPrefab(prefabPath, location)
+    return World.SpawnPrefab(prefabPath, location)
+end
+
+local function spawn_prefab_actor(prefabPath, location)
+    return get_first_spawned_actor(spawn_prefab_actors(prefabPath, location))
+end
+
+local function actor_has_tag(actor, tag)
+    return is_valid_actor(actor)
+        and type(actor.HasTag) == "function"
+        and actor:HasTag(tag)
+end
+
+local function actor_has_skeletal_mesh(actor)
+    return is_valid_actor(actor)
+        and type(actor.GetSkeletalMesh) == "function"
+        and actor:GetSkeletalMesh() ~= nil
+end
+
+local function select_boss_body_actor(actors)
+    if actors == nil then
+        return nil
+    end
+
+    for _, actor in ipairs(actors) do
+        if actor_has_tag(actor, "boss") then
+            return actor
+        end
+    end
+
+    for _, actor in ipairs(actors) do
+        if actor_has_skeletal_mesh(actor) then
+            return actor
+        end
+    end
+
     return get_first_spawned_actor(actors)
 end
 
@@ -517,7 +555,6 @@ local function set_boss_cutscene_active(active)
     _G.Level3BossIntroCutsceneActive = false
     _G.Level3BossIntroBossUUID = nil
     _G.Level3BossIntroBossControl = nil
-    _G.Level3BossIntroBossRelease = nil
 end
 
 local function publish_boss_control(moveState, actionName, actionDuration, forcedLocation)
@@ -557,7 +594,7 @@ local function spawn_boss_if_needed()
 
     -- 총 프리팹을 먼저 스폰하면 바디가 뒤이어 생성된 뒤 기존 본 부착 로직이 안전하게 따라붙습니다.
     bossGunActor = spawn_prefab_actor(BOSS_GUN_PREFAB, BOSS_SPAWN_LOCATION)
-    bossBodyActor = spawn_prefab_actor(BOSS_BODY_PREFAB, BOSS_SPAWN_LOCATION)
+    bossBodyActor = select_boss_body_actor(spawn_prefab_actors(BOSS_BODY_PREFAB, BOSS_SPAWN_LOCATION))
     bossSpawned = is_valid_actor(bossBodyActor)
 
     if bossSpawned then
@@ -615,7 +652,37 @@ local function release_boss_for_combat()
     end
 
     set_boss_cutscene_active(false)
-    _G.Level3BossIntroBossRelease = release
+    pendingBossRelease = release
+    pendingBossReleaseTimer = BOSS_RELEASE_REPUBLISH_DURATION
+    _G.Level3BossIntroBossRelease = pendingBossRelease
+end
+
+local function update_pending_boss_release(dt)
+    if pendingBossRelease == nil then
+        return
+    end
+
+    if _G.Level3BossIntroBossReleaseConsumedUUID ~= nil
+        and pendingBossRelease.BossUUID ~= nil
+        and _G.Level3BossIntroBossReleaseConsumedUUID == pendingBossRelease.BossUUID then
+        pendingBossRelease = nil
+        pendingBossReleaseTimer = 0.0
+        _G.Level3BossIntroBossReleaseConsumedUUID = nil
+        return
+    end
+
+    pendingBossReleaseTimer = pendingBossReleaseTimer - (dt or 0.0)
+    if pendingBossReleaseTimer <= 0.0 then
+        pendingBossRelease = nil
+        if _G.Level3BossIntroBossRelease ~= nil then
+            _G.Level3BossIntroBossRelease = nil
+        end
+        return
+    end
+
+    if _G.Level3BossIntroBossRelease == nil then
+        _G.Level3BossIntroBossRelease = pendingBossRelease
+    end
 end
 
 local function settle_boss_for_combat()
@@ -852,6 +919,9 @@ begin_cutscene_close = function(options)
         release_boss_for_combat()
     else
         set_boss_cutscene_active(false)
+        pendingBossRelease = nil
+        pendingBossReleaseTimer = 0.0
+        _G.Level3BossIntroBossRelease = nil
     end
 
     if WeaponHud ~= nil and WeaponHud.HideDialogue ~= nil then
@@ -1006,6 +1076,8 @@ function BeginPlay()
     bossGunActor = nil
     bossBodyActor = nil
     bossSpawned = false
+    pendingBossRelease = nil
+    pendingBossReleaseTimer = 0.0
     bossControlSerial = 0
     bossImpactPlayed = false
     bossImpactParticles = {}
@@ -1032,6 +1104,8 @@ function BeginPlay()
 
     load_dialogue_assets()
     set_boss_cutscene_active(false)
+    _G.Level3BossIntroBossRelease = nil
+    _G.Level3BossIntroBossReleaseConsumedUUID = nil
     register_interaction()
 end
 
@@ -1049,6 +1123,10 @@ function EndPlay()
 
     restore_player_after_cutscene()
     set_boss_cutscene_active(false)
+    pendingBossRelease = nil
+    pendingBossReleaseTimer = 0.0
+    _G.Level3BossIntroBossRelease = nil
+    _G.Level3BossIntroBossReleaseConsumedUUID = nil
     destroy_impact_particles()
     activeEntry = nil
     cutsceneActive = false
@@ -1061,6 +1139,8 @@ function Tick(dt)
     update_impact_particles(dt)
 
     if cutsceneClosing then
+        update_pending_boss_release(dt)
+
         closeTimer = closeTimer - dt
         if closeTimer <= 0.0 then
             complete_cutscene_close()
@@ -1069,7 +1149,10 @@ function Tick(dt)
     end
 
     if not cutsceneActive then
+        update_pending_boss_release(dt)
+
         if cutsceneStarted and _G.Level3BossDefeated == true then
+            pendingBossRelease = nil
             register_post_combat_interaction()
         end
         return
