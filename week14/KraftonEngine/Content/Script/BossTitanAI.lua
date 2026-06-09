@@ -1,4 +1,5 @@
 local CombatEvents = require("Game.CombatEvents")
+local BossAnimDefs = require("Anim.boss_titan_defs")
 
 local PLAYER_TAG = "player"
 
@@ -18,13 +19,14 @@ local KEEP_RANGE = 28.0
 local MIN_RANGE = 9.0
 local FIRE_MIN_RANGE = 14.0
 local CLOSE_RETREAT_RANGE = 12.0
-local MELEE_RANGE = 10.5
-local CANNON_RANGE = 58.0
+local MELEE_RANGE = 14.0
+local CANNON_RANGE = 72.0
 local APPROACH_RUN_SPEED = 5.2
 local APPROACH_RUN_DISTANCE = 40.0
 local TARGET_HEIGHT = 1.6
 local FALLBACK_MUZZLE_HEIGHT = 7.0
-local MELEE_MAX_VERTICAL_DELTA = 5.5
+local MELEE_MAX_VERTICAL_DELTA = 8.5
+local ATTACK_LOS_FALLBACK_RANGE = 52.0
 local MELEE_ACTION_LOCK = 3.8
 local MELEE_HIT_DELAY = 0.72
 local POWER_SHOT_ACTION_LOCK = 1.25
@@ -38,9 +40,10 @@ local TACTIC_REEVALUATE_INTERVAL = 0.25
 local APPROACH_COMMIT_TIME = 0.75
 local DUEL_COMMIT_TIME = 1.1
 local CLOSE_COMBAT_COMMIT_TIME = 0.6
-local LEAP_MIN_RANGE = 34.0
-local LEAP_MAX_RANGE = 64.0
+local LEAP_MIN_RANGE = 28.0
+local LEAP_MAX_RANGE = 95.0
 local LEAP_MAX_VERTICAL_DELTA = 8.5
+local LEAP_START_MAX_VERTICAL_DELTA = 32.0
 local LEAP_LANDING_OFFSET = 8.0
 local LEAP_WINDUP_TIME = 0.55
 local LEAP_FLIGHT_TIME = 0.92
@@ -65,13 +68,14 @@ local DEATH_FALL_SHAKE_SCALE = 0.45
 local DEATH_SLOMO_DURATION = 2.2
 local DEATH_SLOMO_TIME_DILATION = 0.15
 
-local MOVE_IDLE = 0
-local MOVE_WALK = 1
-local MOVE_RUN = 2
-local MOVE_STRAFE_LEFT = 3
-local MOVE_STRAFE_RIGHT = 4
-local MOVE_RETREAT = 5
-local MOVE_LEAP_FLOAT = 6
+local MOVE = BossAnimDefs.MOVE
+local MOVE_IDLE = MOVE.IDLE
+local MOVE_WALK = MOVE.WALK
+local MOVE_RUN = MOVE.RUN
+local MOVE_STRAFE_LEFT = MOVE.STRAFE_LEFT
+local MOVE_STRAFE_RIGHT = MOVE.STRAFE_RIGHT
+local MOVE_RETREAT = MOVE.RETREAT
+local MOVE_LEAP_FLOAT = MOVE.LEAP_FLOAT
 
 local TACTIC = {
     openingWalk = "openingWalk",
@@ -81,59 +85,10 @@ local TACTIC = {
     leapEngage = "leapEngage",
 }
 
-local ANIM_ROOT = "Content/Data/Boss/Heavy/Animations/"
-local ANIM = {
-    idle = ANIM_ROOT .. "a_IDLE_combat_deadbolt_titan_torso_d_lod0.uasset",
-    walk = ANIM_ROOT .. "a_WalkN_deadbolt_titan_torso_d_lod0.uasset",
-    run = ANIM_ROOT .. "a_Run_deadbolt_titan_torso_d_lod0.uasset",
-    strafeLeft = ANIM_ROOT .. "a_combat_walk_L_deadbolt_titan_torso_d_lod0.uasset",
-    strafeRight = ANIM_ROOT .. "a_combat_walk_R_deadbolt_titan_torso_d_lod0.uasset",
-    cannon = ANIM_ROOT .. "a_Fire_auto_deadbolt_titan_torso_d_lod0.uasset",
-    powerShot = ANIM_ROOT .. "htLegion_MP_Stand_PowerShot_deadbolt_titan_torso_d_lod0.uasset",
-    melee = ANIM_ROOT .. "at_elite_melee_low_stomp_F_deadbolt_titan_torso_d_lod0.uasset",
-    retreat = ANIM_ROOT .. "a_bound_back_deadbolt_titan_torso_d_lod0.uasset",
-    leapStart = ANIM_ROOT .. "a_MP_Jump_start_deadbolt_titan_torso_d_lod0.uasset",
-    leapFloat = ANIM_ROOT .. "a_MP_Jump_float_deadbolt_titan_torso_d_lod0.uasset",
-    leapLand = ANIM_ROOT .. "a_traverse_land_A_deadbolt_titan_torso_d_lod0.uasset",
-    phase = ANIM_ROOT .. "a_Legion_gunup_deadbolt_titan_torso_d_lod0.uasset",
-    crouchStand = ANIM_ROOT .. "a_crouch_2_stand_deadbolt_titan_torso_d_lod0.uasset",
-    hitReact = ANIM_ROOT .. "at_combat_start_react_deadbolt_titan_torso_d_lod0.uasset",
-}
-
-local MOVE_BY_ANIM_PATH = {
-    [ANIM.idle] = MOVE_IDLE,
-    [ANIM.walk] = MOVE_WALK,
-    [ANIM.run] = MOVE_RUN,
-    [ANIM.strafeLeft] = MOVE_STRAFE_LEFT,
-    [ANIM.strafeRight] = MOVE_STRAFE_RIGHT,
-    [ANIM.retreat] = MOVE_RETREAT,
-    [ANIM.leapFloat] = MOVE_LEAP_FLOAT,
-}
-
-local ACTION_BY_ANIM_PATH = {
-    [ANIM.cannon] = "cannon",
-    [ANIM.powerShot] = "powerShot",
-    [ANIM.melee] = "melee",
-    [ANIM.retreat] = "retreat",
-    [ANIM.leapStart] = "leapStart",
-    [ANIM.leapLand] = "leapLand",
-    [ANIM.phase] = "phase",
-    [ANIM.hitReact] = "hitReact",
-}
-
-local ACTION_DURATIONS = {
-    cannon = CANNON_ACTION_LOCK,
-    powerShot = POWER_SHOT_ACTION_LOCK,
-    melee = MELEE_ACTION_LOCK,
-    retreat = RETREAT_ACTION_LOCK,
-    leapStart = LEAP_WINDUP_TIME,
-    leapLand = LEAP_LAND_TIME,
-    phase = 1.0,
-    phaseCrouchDown = PHASE_TWO_TRANSITION_ANIM_DURATION,
-    phaseCrouchHold = PHASE_TWO_CROUCH_HOLD_DURATION,
-    phaseStandUp = PHASE_TWO_TRANSITION_ANIM_DURATION,
-    hitReact = 1.4,
-}
+local ANIM = BossAnimDefs.ANIM
+local MOVE_BY_ANIM_PATH = BossAnimDefs.MOVE_BY_ANIM_PATH
+local ACTION_BY_ANIM_PATH = BossAnimDefs.ACTION_BY_ANIM_PATH
+local ACTION_DURATIONS = BossAnimDefs.ACTION_DURATIONS
 
 local DEBUG_LOG_INTERVAL = 0.4
 local debugLogTimer = 0.0
@@ -204,33 +159,8 @@ local function debug_log(line)
 end
 _G.BossDebugLog = debug_log
 
-local MOVE_NAMES = {
-    [MOVE_IDLE] = "IDLE",
-    [MOVE_WALK] = "WALK",
-    [MOVE_RUN] = "RUN",
-    [MOVE_STRAFE_LEFT] = "STRAFE_L",
-    [MOVE_STRAFE_RIGHT] = "STRAFE_R",
-    [MOVE_RETREAT] = "RETREAT",
-    [MOVE_LEAP_FLOAT] = "LEAP_FLOAT",
-}
-
-local ANIM_NAMES = {
-    [ANIM_ROOT .. "a_IDLE_combat_deadbolt_titan_torso_d_lod0.uasset"] = "idle",
-    [ANIM_ROOT .. "a_WalkN_deadbolt_titan_torso_d_lod0.uasset"] = "walk",
-    [ANIM_ROOT .. "a_Run_deadbolt_titan_torso_d_lod0.uasset"] = "run",
-    [ANIM_ROOT .. "a_combat_walk_L_deadbolt_titan_torso_d_lod0.uasset"] = "strafeL",
-    [ANIM_ROOT .. "a_combat_walk_R_deadbolt_titan_torso_d_lod0.uasset"] = "strafeR",
-    [ANIM_ROOT .. "a_bound_back_deadbolt_titan_torso_d_lod0.uasset"] = "retreat",
-    [ANIM_ROOT .. "a_MP_Jump_float_deadbolt_titan_torso_d_lod0.uasset"] = "leapFloat",
-    [ANIM_ROOT .. "a_MP_Jump_start_deadbolt_titan_torso_d_lod0.uasset"] = "leapStart",
-    [ANIM_ROOT .. "a_traverse_land_A_deadbolt_titan_torso_d_lod0.uasset"] = "leapLand",
-    [ANIM_ROOT .. "a_Fire_auto_deadbolt_titan_torso_d_lod0.uasset"] = "cannon",
-    [ANIM_ROOT .. "a_crouch_2_stand_deadbolt_titan_torso_d_lod0.uasset"] = "crouchStand",
-    [ANIM_ROOT .. "htLegion_MP_Stand_PowerShot_deadbolt_titan_torso_d_lod0.uasset"] = "powerShot",
-    [ANIM_ROOT .. "at_elite_melee_low_stomp_F_deadbolt_titan_torso_d_lod0.uasset"] = "melee",
-    [ANIM_ROOT .. "a_Legion_gunup_deadbolt_titan_torso_d_lod0.uasset"] = "phase",
-    [ANIM_ROOT .. "at_combat_start_react_deadbolt_titan_torso_d_lod0.uasset"] = "hitReact",
-}
+local MOVE_NAMES = BossAnimDefs.MOVE_NAMES
+local ANIM_NAMES = BossAnimDefs.ANIM_NAMES
 
 local targetActor = nil
 local mesh = nil
@@ -800,6 +730,17 @@ local function has_line_of_sight(target)
     return hit == nil
 end
 
+local function can_use_attack_los_fallback(distance, verticalDelta)
+    return distance <= ATTACK_LOS_FALLBACK_RANGE
+        and math.abs(verticalDelta) <= LEAP_MAX_VERTICAL_DELTA
+end
+
+local function can_use_leap_los_fallback(distance, verticalDelta)
+    return distance >= LEAP_MIN_RANGE
+        and distance <= LEAP_MAX_RANGE
+        and math.abs(verticalDelta) <= LEAP_START_MAX_VERTICAL_DELTA
+end
+
 local function face_target(target)
     if target == nil then return end
 
@@ -987,6 +928,7 @@ local function start_attack(kind, animPath, duration, hitDelay, range, damage, c
     actionTimer = duration
     animationLockTimer = math.max(animationLockTimer, lockDuration or duration)
     cooldowns[kind] = cooldown
+    set_move_anim(MOVE_IDLE)
     request_action_anim(kind, lockDuration or duration)
     currentAnim = animPath
 
@@ -1013,7 +955,10 @@ local function apply_active_attack_hit()
         if dist > activeAttack.range then return end
     else
         if aimDistance > activeAttack.range then return end
-        if not has_line_of_sight(target) then return end
+        if not has_line_of_sight(target)
+            and not can_use_attack_los_fallback(dist, target.Location.Z - obj.Location.Z) then
+            return
+        end
     end
 
     local shotDir = normalized_or_zero(aimDelta)
@@ -1057,6 +1002,7 @@ local function update_active_attack(dt)
     end
 
     if actionTimer <= 0.0 then
+        clear_action_anim(activeAttack.kind)
         activeAttack = nil
     end
 end
@@ -1206,6 +1152,7 @@ local function update_leap(dt)
             leapState = nil
             actionTimer = 0.0
             animationLockTimer = 0.0
+            clear_action_anim("leapLand")
             set_tactic(TACTIC.closeCombat, CLOSE_COMBAT_COMMIT_TIME)
         end
         return true
@@ -1245,11 +1192,13 @@ local function build_blackboard(target)
     local verticalDelta = target.Location.Z - obj.Location.Z
     local canGroundMelee = dist <= MELEE_RANGE and math.abs(verticalDelta) <= MELEE_MAX_VERTICAL_DELTA
     local lineOfSight = has_line_of_sight(target)
+    local attackLineOfSight = lineOfSight or can_use_attack_los_fallback(dist, verticalDelta)
+    local leapLineOfSight = lineOfSight or can_use_leap_los_fallback(dist, verticalDelta)
     local canLeap = cooldowns.leap <= 0.0
-        and lineOfSight
+        and leapLineOfSight
         and dist >= LEAP_MIN_RANGE
         and dist <= LEAP_MAX_RANGE
-        and math.abs(verticalDelta) <= LEAP_MAX_VERTICAL_DELTA
+        and math.abs(verticalDelta) <= LEAP_START_MAX_VERTICAL_DELTA
 
     return {
         target = target,
@@ -1264,6 +1213,8 @@ local function build_blackboard(target)
         healthRatio = health_ratio(),
         phase = phase,
         lineOfSight = lineOfSight,
+        attackLineOfSight = attackLineOfSight,
+        leapLineOfSight = leapLineOfSight,
     }
 end
 
@@ -1289,22 +1240,24 @@ local function update_opening_walk(bb, dt)
 end
 
 local function score_cannon(bb)
-    if cooldowns.cannon > 0.0 or not bb.lineOfSight then return -1000.0 end
+    if cooldowns.cannon > 0.0 or not bb.attackLineOfSight then return -1000.0 end
     if bb.canGroundMelee then return -1000.0 end
     if bb.distance < FIRE_MIN_RANGE and math.abs(bb.verticalDelta) <= MELEE_MAX_VERTICAL_DELTA then return -1000.0 end
     if bb.aimDistance > CANNON_RANGE then return -1000.0 end
 
     local rangeFit = 1.0 - math.abs(bb.distance - KEEP_RANGE) / KEEP_RANGE
-    return 4.0 + rangeFit * 3.0 + phase * 0.7 + random01()
+    local losPenalty = bb.lineOfSight and 0.0 or -1.2
+    return 4.0 + rangeFit * 3.0 + phase * 0.7 + losPenalty + random01()
 end
 
 local function score_power_shot(bb)
-    if cooldowns.powerShot > 0.0 or phase < 2 or not bb.lineOfSight then return -1000.0 end
+    if cooldowns.powerShot > 0.0 or phase < 2 or not bb.attackLineOfSight then return -1000.0 end
     if bb.canGroundMelee then return -1000.0 end
     if bb.distance < 18.0 and math.abs(bb.verticalDelta) <= MELEE_MAX_VERTICAL_DELTA then return -1000.0 end
     if bb.aimDistance > CANNON_RANGE then return -1000.0 end
 
-    return 5.0 + phase * 1.4 + (1.0 - bb.healthRatio) * 2.0 + random01()
+    local losPenalty = bb.lineOfSight and 0.0 or -1.5
+    return 5.0 + phase * 1.4 + (1.0 - bb.healthRatio) * 2.0 + losPenalty + random01()
 end
 
 local function score_melee(bb)
@@ -1726,10 +1679,17 @@ function Tick(dt)
         local animName = ANIM_NAMES[currentAnim] or (currentAnim and "?" or "nil")
         local leapStage = leapState and leapState.stage or "nil"
         debug_log(string.format(
-            "[%.2f][BossAI] tac=%s dist=%.1f anim=%s move=%s act=%s ser=%d lock=%.2f actT=%.2f leap=%s open=%s loc=(%.1f,%.1f,%.1f)",
+            "[%.2f][BossAI] tac=%s dist=%.1f aim=%.1f z=%.1f los=%s atkLos=%s leapLos=%s canLeap=%s melee=%s anim=%s move=%s act=%s ser=%d lock=%.2f actT=%.2f leap=%s open=%s loc=(%.1f,%.1f,%.1f)",
             debugSessionTime,
             tostring(currentTactic),
             bb.distance,
+            bb.aimDistance,
+            bb.verticalDelta,
+            tostring(bb.lineOfSight),
+            tostring(bb.attackLineOfSight),
+            tostring(bb.leapLineOfSight),
+            tostring(bb.canLeap),
+            tostring(bb.canGroundMelee),
             animName,
             moveName,
             tostring(actionName),
