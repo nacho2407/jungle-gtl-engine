@@ -312,3 +312,29 @@ body {
 .debug-input-line-5 {
 	top: 148px;
 }
+
+.debug-row-render-fps {
+	top: 0px;
+}
+
+.debug-row-render-frame-ms {
+	top: 32px;
+}
+
+.debug-render-value {
+	position: absolute;
+	left: 312px;
+	top: 3px;
+	width: 114px;
+	height: 20px;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 20px;
+	text-align: center;
+	color: #ffffff;
+	background-color: #00000066;
+}
+
+.debug-render-note {
+	top: 76px;
+}

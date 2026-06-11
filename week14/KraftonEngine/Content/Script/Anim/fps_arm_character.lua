@@ -86,6 +86,14 @@ local function consume_anim_request(self, name)
     return true
 end
 
+local function get_owner_ads_flag(self, input_ads)
+    local all_flags = rawget(_G, "FPSArmAimDown")
+    if all_flags ~= nil and all_flags[self.OwnerUUID] ~= nil then
+        return all_flags[self.OwnerUUID] == true
+    end
+    return input_ads == true
+end
+
 local function begin_reload(self, crouched)
     self.ReloadRequested = false
     self.ReloadCrouchRequested = false
@@ -173,13 +181,6 @@ local function select_shoot_variant(crouching, sliding, ads)
 end
 
 local function select_locomotion_state(self, moving, sprinting, grounded, crouching, sliding, ads)
-    if Anim.is_owner_wall_running() then
-        if Anim.is_owner_wall_running_on_right_side() then
-            return MOVE_WALLRUN_RIGHT
-        end
-        return MOVE_WALLRUN_LEFT
-    end
-
     if sliding then
         return MOVE_SLIDE
     end
@@ -207,10 +208,14 @@ local function select_locomotion_state(self, moving, sprinting, grounded, crouch
     end
 
     if ads then
-        if sprinting then
-            return MOVE_ADS_RUN
+        return MOVE_ADS_IDLE
+    end
+
+    if Anim.is_owner_wall_running() then
+        if Anim.is_owner_wall_running_on_right_side() then
+            return MOVE_WALLRUN_RIGHT
         end
-        return moving and MOVE_ADS_WALK or MOVE_ADS_IDLE
+        return MOVE_WALLRUN_LEFT
     end
 
     if sprinting then
@@ -304,11 +309,12 @@ function update(self, dt)
         or (KEY_GAMEPAD_LEFT_THUMB ~= nil and Anim.is_key_down(KEY_GAMEPAD_LEFT_THUMB))
     local ads = Anim.is_key_down(KEY_MOUSE_RIGHT)
         or (KEY_GAMEPAD_LEFT_TRIGGER ~= nil and Anim.is_key_down(KEY_GAMEPAD_LEFT_TRIGGER))
+    ads = get_owner_ads_flag(self, ads)
     local grounded = not Anim.is_owner_falling()
     local crouching = Anim.is_owner_crouching()
     local sliding = Anim.is_owner_sliding()
     local moving = forward_down or self.Speed > MOVING_SPEED_THRESHOLD
-    local sprinting = grounded and moving and sprint_down and not crouching and not sliding
+    local sprinting = grounded and moving and sprint_down and not ads and not crouching and not sliding
 
     if not grounded then
         if not self.WasFalling then

@@ -90,12 +90,32 @@ local function fill(snapshot, inSavePath)
     display_player_id()
 end
 
+local function normalize_scene_name(scene)
+    scene = scene or DEFAULT_NEXT_SCENE
+    if scene == "Title.Scene" then
+        return DEFAULT_NEXT_SCENE
+    end
+    return scene
+end
+
+local function refresh_current_snapshot()
+    if ScoreManager == nil or ScoreManager.GetSnapshot == nil then
+        currentSnapshot = currentSnapshot or {}
+        return currentSnapshot
+    end
+
+    currentSnapshot = ScoreManager.GetSnapshot() or {}
+    return currentSnapshot
+end
+
 local function save_score()
     if hasSavedScore then
         set_status(saveSucceeded and "SAVED" or "SAVE FAILED")
         return saveSucceeded
     end
 
+    refresh_current_snapshot()
+    fill(currentSnapshot, savePath)
     playerId = sanitize_player_id(playerId)
 
     local ok = false
@@ -120,7 +140,7 @@ local function save_score()
 end
 
 local function request_scene_transition(scene)
-    scene = scene or DEFAULT_NEXT_SCENE
+    scene = normalize_scene_name(scene)
 
     if Engine ~= nil and Engine.TransitionToScene ~= nil then
         Engine.TransitionToScene(scene)
@@ -257,8 +277,8 @@ function ScoreResult.Show(inEndingId, sceneAfterClose)
     end
 
     endingId = inEndingId or "Ending"
-    nextScene = sceneAfterClose or DEFAULT_NEXT_SCENE
-    currentSnapshot = ScoreManager.GetSnapshot ~= nil and ScoreManager.GetSnapshot() or {}
+    nextScene = normalize_scene_name(sceneAfterClose)
+    currentSnapshot = refresh_current_snapshot()
     savePath = ScoreManager.GetSaveFilePath ~= nil and ScoreManager.GetSaveFilePath() or "Saves/scores.json"
     playerId = ""
     hasSavedScore = false

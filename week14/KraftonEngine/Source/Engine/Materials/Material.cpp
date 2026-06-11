@@ -98,6 +98,10 @@ bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 	if (!Template->GetParameterInfo(Name, Info)) {
 		return false;
 	}
+	if (Size > Info.Size)
+	{
+		return false;
+	}
 	auto It = ConstantBufferMap.find(Info.BufferName);
 	if (It == ConstantBufferMap.end()) return false;
 
@@ -115,6 +119,12 @@ bool UMaterial::SetParameter(const FString& Name, const void* Data, uint32 Size)
 bool UMaterial::SetScalarParameter(const FString& ParamName, float Value)
 {
 	return SetParameter(ParamName, &Value, sizeof(float));
+}
+
+bool UMaterial::SetVector2Parameter(const FString& ParamName, const FVector2& Value)
+{
+	float Data[2] = { Value.X, Value.Y };
+	return SetParameter(ParamName, Data, sizeof(Data));
 }
 
 bool UMaterial::SetVector3Parameter(const FString& ParamName, const FVector& Value)
@@ -167,6 +177,24 @@ bool UMaterial::GetScalarParameter(const FString& ParamName, float& OutValue) co
 
 	const uint8* Ptr = It->second->CPUData + Info.Offset;
 	OutValue = *reinterpret_cast<const float*>(Ptr);
+	return true;
+}
+
+bool UMaterial::GetVector2Parameter(const FString& ParamName, FVector2& OutValue) const
+{
+	if (!Template)
+	{
+		return false;
+	}
+
+	FMaterialParameterInfo Info;
+	if (!Template->GetParameterInfo(ParamName, Info)) return false;
+
+	auto It = ConstantBufferMap.find(Info.BufferName);
+	if (It == ConstantBufferMap.end()) return false;
+
+	const uint8* Ptr = It->second->CPUData + Info.Offset;
+	OutValue = *reinterpret_cast<const FVector2*>(Ptr);
 	return true;
 }
 
@@ -492,6 +520,10 @@ bool UMaterialInstance::SetParameter(const FString& Name, const void* Data, uint
 	{
 		return false;
 	}
+	if (Size > Info.Size)
+	{
+		return false;
+	}
 
 	auto It = ConstantBufferMap.find(Info.BufferName);
 	if (It == ConstantBufferMap.end() || !It->second)
@@ -514,6 +546,19 @@ bool UMaterialInstance::SetScalarParameter(const FString& ParamName, float Value
 
 	ScalarOverrides[ParamName] = Value;
 	return SetParameter(ParamName, &Value, sizeof(float));
+}
+
+bool UMaterialInstance::SetVector2Parameter(const FString& ParamName, const FVector2& Value)
+{
+	FVector2 ParentValue;
+	if (!Parent || !Parent->GetVector2Parameter(ParamName, ParentValue))
+	{
+		return false;
+	}
+
+	Vector2Overrides[ParamName] = Value;
+	float Data[2] = { Value.X, Value.Y };
+	return SetParameter(ParamName, Data, sizeof(Data));
 }
 
 bool UMaterialInstance::SetVector3Parameter(const FString& ParamName, const FVector& Value)
@@ -581,6 +626,18 @@ bool UMaterialInstance::GetScalarParameter(const FString& ParamName, float& OutV
 	}
 
 	return Parent ? Parent->GetScalarParameter(ParamName, OutValue) : false;
+}
+
+bool UMaterialInstance::GetVector2Parameter(const FString& ParamName, FVector2& OutValue) const
+{
+	auto It = Vector2Overrides.find(ParamName);
+	if (It != Vector2Overrides.end())
+	{
+		OutValue = It->second;
+		return true;
+	}
+
+	return Parent ? Parent->GetVector2Parameter(ParamName, OutValue) : false;
 }
 
 bool UMaterialInstance::GetVector3Parameter(const FString& ParamName, FVector& OutValue) const
@@ -772,6 +829,11 @@ void UMaterialInstance::FlushDirtyBuffers(ID3D11Device* Device, ID3D11DeviceCont
 		for (const auto& Pair : ScalarOverrides)
 		{
 			SetParameter(Pair.first, &Pair.second, sizeof(float));
+		}
+		for (const auto& Pair : Vector2Overrides)
+		{
+			float Data[2] = { Pair.second.X, Pair.second.Y };
+			SetParameter(Pair.first, Data, sizeof(Data));
 		}
 		for (const auto& Pair : Vector3Overrides)
 		{

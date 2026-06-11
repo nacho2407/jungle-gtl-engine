@@ -11,7 +11,7 @@ REGISTER_RENDER_PASS(FOpaquePass)
 FOpaquePass::FOpaquePass()
 {
 	PassType    = ERenderPass::Opaque;
-	RenderState = { EDepthStencilState::DepthGreaterEqual, EBlendState::Opaque,
+	RenderState = { EDepthStencilState::DepthReadOnly, EBlendState::Opaque,
 	                ERasterizerState::SolidBackCull, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, true };
 }
 

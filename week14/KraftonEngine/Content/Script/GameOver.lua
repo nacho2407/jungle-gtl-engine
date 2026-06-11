@@ -2,7 +2,7 @@ local GameOver = {}
 
 local WIDGET_PATH = "Content/UI/InGame/GameOver.rml"
 local GAME_OVER_Z_ORDER = 230
-local TITLE_SCENE = "Title.Scene"
+local TITLE_SCENE = "FL_Title.Scene"
 local GAME_OVER_AUDIO_KEY = "GameOverBGM"
 local GAME_OVER_AUDIO_PATH = "GameOver.wav"
 local LEVEL1_SCENE_NAME = "FL_Level1"

@@ -19,6 +19,7 @@
 namespace
 {
 	constexpr float BaseMouseSensitivityDegreesPerPixel = 0.2f;
+	constexpr float AimDownWallRunCameraTiltScale = 0.25f;
 
 	bool IsCrouchInputDown(const FInputSystemSnapshot& Input)
 	{
@@ -34,6 +35,12 @@ namespace
 			|| Input.IsDown(VK_LSHIFT)
 			|| Input.IsDown(VK_RSHIFT)
 			|| Input.IsDown(InputCodes::GamepadLeftThumb);
+	}
+
+	bool IsAimInputDown(const FInputSystemSnapshot& Input)
+	{
+		return Input.IsDown(VK_RBUTTON)
+			|| Input.IsDown(InputCodes::GamepadLeftTrigger);
 	}
 
 	float ApplyGamepadLookResponse(float Value)
@@ -83,7 +90,7 @@ void ACharacter::AddMovementInput(const FVector& WorldDirection, float ScaleValu
 	{
 		const FInputSystemSnapshot InputSnapshot = UGameViewportClient::MakeCurrentGameInputSnapshot();
 		CharacterMovement->SetCrouching(IsCrouchInputDown(InputSnapshot));
-		CharacterMovement->SetSprinting(IsSprintInputDown(InputSnapshot));
+		CharacterMovement->SetSprinting(IsSprintInputDown(InputSnapshot) && !IsAimInputDown(InputSnapshot));
 		CharacterMovement->AddInputVector(WorldDirection, ScaleValue);
 	}
 }
@@ -143,7 +150,7 @@ void ACharacter::Tick(float DeltaTime)
 	{
 		const FInputSystemSnapshot InputSnapshot = UGameViewportClient::MakeCurrentGameInputSnapshot();
 		CharacterMovement->SetCrouching(IsCrouchInputDown(InputSnapshot));
-		CharacterMovement->SetSprinting(IsSprintInputDown(InputSnapshot));
+		CharacterMovement->SetSprinting(IsSprintInputDown(InputSnapshot) && !IsAimInputDown(InputSnapshot));
 	}
 
 	if (bAutoInputMouseLook)
@@ -214,7 +221,9 @@ void ACharacter::Tick(float DeltaTime)
 		}
 		if (CachedCameraForTilt)
 		{
-			const float TargetDeg = CharacterMovement->GetDesiredCameraRollDeg();
+			const FInputSystemSnapshot InputSnapshot = UGameViewportClient::MakeCurrentGameInputSnapshot();
+			const float AimTiltScale = IsAimInputDown(InputSnapshot) ? AimDownWallRunCameraTiltScale : 1.0f;
+			const float TargetDeg = CharacterMovement->GetDesiredCameraRollDeg() * AimTiltScale;
 			const bool  bIncreasing = std::fabs(TargetDeg) > std::fabs(CurrentCameraTiltDeg);
 			const float Hz = CharacterMovement->GetCameraTiltResponseHz(bIncreasing);
 			// alpha = 1 - exp(-dt * Hz) — frame-rate independent critically damped lerp.

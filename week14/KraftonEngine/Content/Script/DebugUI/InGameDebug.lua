@@ -5,6 +5,7 @@ local DEFAULT_Z_ORDER = 220
 local SPEED_STEP = 0.25
 local DAMAGE_STEP = 5.0
 local HEALTH_STEP = 5.0
+local FPS_SMOOTHING = 0.12
 
 local widget = nil
 local callbacks = {}
@@ -19,6 +20,9 @@ local windowY = 48.0
 local dragging = false
 local dragOffsetX = 0.0
 local dragOffsetY = 0.0
+local lastFrameTimeSeconds = nil
+local smoothedFps = 0.0
+local smoothedFrameMs = 0.0
 
 local function clamp(value, minValue, maxValue)
     if value < minValue then return minValue end
@@ -100,6 +104,53 @@ local function set_property(id, property, value)
     widget:SetProperty(id, property, value)
 end
 
+
+local function get_time_seconds()
+    if Game ~= nil and Game.GetTimeSeconds ~= nil then
+        return Game.GetTimeSeconds()
+    end
+    return nil
+end
+
+local function update_fps_values()
+    if widget == nil then return end
+
+    local now = get_time_seconds()
+    if now == nil then
+        set_text("debug-render-fps-value", "N/A")
+        set_text("debug-render-frame-ms-value", "N/A")
+        return
+    end
+
+    if lastFrameTimeSeconds == nil then
+        lastFrameTimeSeconds = now
+        set_text("debug-render-fps-value", "-- FPS")
+        set_text("debug-render-frame-ms-value", "-- ms")
+        return
+    end
+
+    local deltaSeconds = now - lastFrameTimeSeconds
+    lastFrameTimeSeconds = now
+
+    if deltaSeconds <= 0.0 then
+        return
+    end
+
+    local instantFps = 1.0 / deltaSeconds
+    local instantFrameMs = deltaSeconds * 1000.0
+
+    if smoothedFps <= 0.0 then
+        smoothedFps = instantFps
+        smoothedFrameMs = instantFrameMs
+    else
+        smoothedFps = smoothedFps + (instantFps - smoothedFps) * FPS_SMOOTHING
+        smoothedFrameMs = smoothedFrameMs + (instantFrameMs - smoothedFrameMs) * FPS_SMOOTHING
+    end
+
+    set_text("debug-render-fps-value", tostring(math.floor(smoothedFps + 0.5)) .. " FPS")
+    set_text("debug-render-frame-ms-value", format_number(smoothedFrameMs, 2) .. " ms")
+end
+
 local function update_input_values()
     if widget == nil then return end
 
@@ -149,6 +200,7 @@ local function update_values()
     set_property("debug-invincible-toggle", "color", isInvincible and "#111111" or "#d8d8d8")
     set_property("debug-invincible-toggle", "background-color", isInvincible and "#ffffff" or "#ffffff1F")
     update_input_values()
+    update_fps_values()
 end
 
 local function update_tab_visuals()
@@ -269,6 +321,9 @@ function InGameDebug.Initialize(config)
     isInvincible = false
     activeTab = "player"
     dragging = false
+    lastFrameTimeSeconds = nil
+    smoothedFps = 0.0
+    smoothedFrameMs = 0.0
     apply_speed_multiplier()
 end
 
@@ -281,6 +336,9 @@ function InGameDebug.Toggle()
     else
         widget:AddToViewportZ(zOrder)
         widget:SetWantsMouse(true)
+        lastFrameTimeSeconds = nil
+        smoothedFps = 0.0
+        smoothedFrameMs = 0.0
         update_values()
         update_tab_visuals()
         set_window_position(windowX, windowY)
@@ -299,6 +357,9 @@ function InGameDebug.Shutdown()
     widget = nil
     callbacks = {}
     dragging = false
+    lastFrameTimeSeconds = nil
+    smoothedFps = 0.0
+    smoothedFrameMs = 0.0
 end
 
 function InGameDebug.IsInvincible()

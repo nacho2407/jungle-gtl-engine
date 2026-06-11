@@ -59,6 +59,14 @@ local function consume_anim_request(self, name)
     return true
 end
 
+local function get_owner_ads_flag(self, input_ads)
+    local all_flags = rawget(_G, "FPSArmAimDown")
+    if all_flags ~= nil and all_flags[self.OwnerUUID] ~= nil then
+        return all_flags[self.OwnerUUID] == true
+    end
+    return input_ads == true
+end
+
 local function begin_reload(self, anim_name)
     self.ReloadRequested = false
     self.ReloadCrouchRequested = false
@@ -117,10 +125,7 @@ local function select_locomotion_state(moving, sprinting, grounded, crouching, s
     end
 
     if ads then
-        if sprinting then
-            return MOVE_ADS_SPRINT
-        end
-        return moving and MOVE_ADS_WALK or MOVE_ADS_IDLE
+        return MOVE_ADS_IDLE
     end
 
     if sprinting then
@@ -235,11 +240,12 @@ function update(self, dt)
         or (KEY_GAMEPAD_LEFT_THUMB ~= nil and Anim.is_key_down(KEY_GAMEPAD_LEFT_THUMB))
     local ads = Anim.is_key_down(KEY_MOUSE_RIGHT)
         or (KEY_GAMEPAD_LEFT_TRIGGER ~= nil and Anim.is_key_down(KEY_GAMEPAD_LEFT_TRIGGER))
+    ads = get_owner_ads_flag(self, ads)
     local crouching = Anim.is_owner_crouching()
     local sliding = Anim.is_owner_sliding()
     local grounded = not Anim.is_owner_falling()
     local moving = forward_down or self.Speed > MOVING_SPEED_THRESHOLD
-    local sprinting = grounded and moving and sprint_down and not crouching and not sliding
+    local sprinting = grounded and moving and sprint_down and not ads and not crouching and not sliding
 
     self.MoveState = select_locomotion_state(moving, sprinting, grounded, crouching, sliding, ads)
     Anim.blend_list_set_active(self.Locomotion, self.MoveState)

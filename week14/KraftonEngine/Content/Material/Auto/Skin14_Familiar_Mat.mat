@@ -1,21 +1,25 @@
 {
-  "BlendState" : "",
-  "DepthStencilState" : "",
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
   "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
   "EmissiveIntensity" : 0.000000,
   "Origin" : "FbxImport",
   "Parameters" : {
     "HasNormalMap" : 0.000000,
     "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-    "_pad" : [0.000000, 0.000000, 0.000000]
+    "TwoSidedLighting" : 0.000000,
+    "UVOffset" : [0.000000, 0.000000],
+    "UVTiling" : [1.000000, 1.000000],
+    "_pad0" : 0.000000
   },
   "PathFileName" : "Content/Material/Auto/Skin14_Familiar_Mat.mat",
-  "RasterizerState" : "",
+  "RasterizerState" : "SolidBackCull",
   "RenderPass" : "Opaque",
   "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
   "ShadowMode" : "Opaque",
   "Textures" : {
     "DiffuseTexture" : "Content/Texture/Auto/Ahri/Skin14_Familiar_Mat.png"
   },
+  "TwoSidedLighting" : false,
   "bEnableBloom" : false
 }

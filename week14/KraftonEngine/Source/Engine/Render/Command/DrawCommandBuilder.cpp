@@ -146,6 +146,35 @@ FShader* FDrawCommandBuilder::SelectEffectiveShader(FShader* ProxyShader, EViewM
 	}
 }
 
+FShader* FDrawCommandBuilder::SelectPreDepthShader(FShader* ProxyShader, bool bUseSkeletalVertexFactory,
+	bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap)
+{
+	if (!CachedUberLitShader)
+	{
+		CachedUberLitShader = FShaderManager::Get().GetOrCreate(EShaderPath::UberLit);
+	}
+
+	// Custom material shaders keep their authored VS path for safety.
+	if (ProxyShader != CachedUberLitShader)
+	{
+		return SelectEffectiveShader(ProxyShader, CollectViewMode, bUseSkeletalVertexFactory,
+			bUseInstancedVertexFactory, bWeightBoneHeatMap, false);
+	}
+
+	const EPreDepthDefines::EVertexFactory VertexFactory =
+		bUseSkeletalVertexFactory ? EPreDepthDefines::EVertexFactory::SkeletalMesh :
+		bUseInstancedVertexFactory ? EPreDepthDefines::EVertexFactory::InstancedStaticMesh :
+		EPreDepthDefines::EVertexFactory::StaticMesh;
+
+	if (FShader* DepthShader = FShaderManager::Get().GetOrCreatePreDepthPermutation(VertexFactory, EShaderErrorMode::Notification))
+	{
+		return DepthShader;
+	}
+
+	return SelectEffectiveShader(ProxyShader, CollectViewMode, bUseSkeletalVertexFactory,
+		bUseInstancedVertexFactory, bWeightBoneHeatMap, false);
+}
+
 // ============================================================
 // ApplyMaterialRenderState — Material 렌더 상태 오버라이드 (Wireframe 우선)
 // ============================================================
@@ -526,7 +555,10 @@ void FDrawCommandBuilder::BuildCommandForSection(FScene& Scene, const FPrimitive
 	FShader* SectionShader = (Section.Material && Section.Material->GetShader())
 		? Section.Material->GetShader()
 		: Proxy.GetShader();
-	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, BuildCtx.bGPUSkinning, false, BuildCtx.bWeightBoneHeatMap, false);
+	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
+	FShader* EffectiveShader = bDepthOnly
+		? SelectPreDepthShader(SectionShader, BuildCtx.bGPUSkinning, BuildCtx.ProxyBuffer.IsInstanced(), BuildCtx.bWeightBoneHeatMap)
+		: SelectEffectiveShader(SectionShader, CollectViewMode, BuildCtx.bGPUSkinning, false, BuildCtx.bWeightBoneHeatMap, false);
 
 	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
 
@@ -553,8 +585,6 @@ void FDrawCommandBuilder::BuildCommandForSection(FScene& Scene, const FPrimitive
 		Cmd.TranslucentSortDepth = ToObject.Dot(CollectCameraForward);
 	}
 
-	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
-
 	if (!bDepthOnly && Section.Material)
 	{
 		UMaterialInterface* Mat = Section.Material;
@@ -571,7 +601,13 @@ void FDrawCommandBuilder::BuildCommandForSection(FScene& Scene, const FPrimitive
 
 		// 섹션별 Material의 RenderPass가 현재 Pass와 일치할 때만 렌더 상태 오버라이드
 		if (Pass == Mat->GetRenderPass())
+		{
 			ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
+			if (Pass == ERenderPass::Opaque)
+			{
+				Cmd.RenderState.DepthStencil = BaseRenderState.DepthStencil;
+			}
+		}
 	}
 
 	Cmd.BuildSortKey();
@@ -590,7 +626,10 @@ void FDrawCommandBuilder::BuildParticleCommandForSection(FScene& Scene, const FP
 		? Section.Material->GetShader()
 		: Proxy.GetShader();
 
-	FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode, false, bInstanced, false, bApplyFog);
+	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
+	FShader* EffectiveShader = bDepthOnly
+		? SelectPreDepthShader(SectionShader, false, bInstanced, false)
+		: SelectEffectiveShader(SectionShader, CollectViewMode, false, bInstanced, false, bApplyFog);
 
 	const FDrawCommandRenderState BaseRenderState = PassRenderStateTable->ToDrawCommandState(Pass, CollectViewMode);
 
@@ -612,8 +651,6 @@ void FDrawCommandBuilder::BuildParticleCommandForSection(FScene& Scene, const FP
 		Cmd.TranslucentSortDepth = ToObject.Dot(CollectCameraForward);
 	}
 
-	const bool bDepthOnly = (Pass == ERenderPass::PreDepth);
-
 	if (!bDepthOnly && Section.Material)
 	{
 		UMaterialInterface* Mat = Section.Material;
@@ -630,7 +667,13 @@ void FDrawCommandBuilder::BuildParticleCommandForSection(FScene& Scene, const FP
 
 		// 섹션별 Material의 RenderPass가 현재 Pass와 일치할 때만 렌더 상태 오버라이드
 		if (Pass == Mat->GetRenderPass())
+		{
 			ApplyMaterialRenderState(Cmd.RenderState, Mat, BaseRenderState);
+			if (Pass == ERenderPass::Opaque)
+			{
+				Cmd.RenderState.DepthStencil = BaseRenderState.DepthStencil;
+			}
+		}
 	}
 
 	if (bApplyFog)

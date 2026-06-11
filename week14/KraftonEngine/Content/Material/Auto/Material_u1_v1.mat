@@ -8,8 +8,9 @@
     "HasNormalMap" : 0.000000,
     "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
     "TwoSidedLighting" : 0.000000,
-    "_pad0" : 0.000000,
-    "_pad1" : 0.000000
+    "UVOffset" : [0.000000, 0.000000],
+    "UVTiling" : [1.000000, 1.000000],
+    "_pad0" : 0.000000
   },
   "PathFileName" : "Content/Material/Auto/Material_u1_v1.mat",
   "RasterizerState" : "SolidBackCull",

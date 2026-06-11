@@ -54,8 +54,15 @@
 			<div class="debug-placeholder-line">Perception, aggression, navigation placeholder.</div>
 		</div>
 		<div id="debug-panel-render" class="debug-panel debug-panel-hidden">
-			<div class="debug-placeholder-title">Render</div>
-			<div class="debug-placeholder-line">Post process, overlays, debug view placeholder.</div>
+			<div class="debug-row debug-row-render-fps">
+				<div class="debug-label">FPS</div>
+				<div id="debug-render-fps-value" class="debug-render-value">-- FPS</div>
+			</div>
+			<div class="debug-row debug-row-render-frame-ms">
+				<div class="debug-label">Frame Time</div>
+				<div id="debug-render-frame-ms-value" class="debug-render-value">-- ms</div>
+			</div>
+			<div class="debug-placeholder-line debug-render-note">Updated only while this F10 debug window is open.</div>
 		</div>
 		<div id="debug-panel-audio" class="debug-panel debug-panel-hidden">
 			<div class="debug-placeholder-title">Audio</div>

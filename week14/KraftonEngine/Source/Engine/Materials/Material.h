@@ -35,12 +35,14 @@ public:
 	GENERATED_BODY()
 
 	virtual bool SetScalarParameter(const FString& ParamName, float Value) { return false; }
+	virtual bool SetVector2Parameter(const FString& ParamName, const FVector2& Value) { return false; }
 	virtual bool SetVector3Parameter(const FString& ParamName, const FVector& Value) { return false; }
 	virtual bool SetVector4Parameter(const FString& ParamName, const FVector4& Value) { return false; }
 	virtual bool SetTextureParameter(const FString& ParamName, UTexture2D* Texture) { return false; }
 	virtual bool SetMatrixParameter(const FString& ParamName, const FMatrix& Value) { return false; }
 
 	virtual bool GetScalarParameter(const FString& ParamName, float& OutValue) const { return false; }
+	virtual bool GetVector2Parameter(const FString& ParamName, FVector2& OutValue) const { return false; }
 	virtual bool GetVector3Parameter(const FString& ParamName, FVector& OutValue) const { return false; }
 	virtual bool GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const { return false; }
 	virtual bool GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const { return false; }
@@ -153,12 +155,14 @@ public:
 	FMaterialTemplate* GetTemplate() const { return Template; }
 
 	bool SetScalarParameter(const FString& ParamName, float Value) override;
+	bool SetVector2Parameter(const FString& ParamName, const FVector2& Value) override;
 	bool SetVector3Parameter(const FString& ParamName, const FVector& Value) override;
 	bool SetVector4Parameter(const FString& ParamName, const FVector4& Value) override;
 	bool SetTextureParameter(const FString& ParamName, UTexture2D* Texture) override;
 	bool SetMatrixParameter(const FString& ParamName, const FMatrix& Value) override;
 
 	bool GetScalarParameter(const FString& ParamName, float& OutValue) const override;
+	bool GetVector2Parameter(const FString& ParamName, FVector2& OutValue) const override;
 	bool GetVector3Parameter(const FString& ParamName, FVector& OutValue) const override;
 	bool GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const override;
 	bool GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const override;
@@ -313,12 +317,14 @@ public:
 	void Serialize(FArchive& Ar) override;
 
 	bool SetScalarParameter(const FString& ParamName, float Value) override;
+	bool SetVector2Parameter(const FString& ParamName, const FVector2& Value) override;
 	bool SetVector3Parameter(const FString& ParamName, const FVector& Value) override;
 	bool SetVector4Parameter(const FString& ParamName, const FVector4& Value) override;
 	bool SetTextureParameter(const FString& ParamName, UTexture2D* Texture) override;
 	bool SetMatrixParameter(const FString& ParamName, const FMatrix& Value) override;
 
 	bool GetScalarParameter(const FString& ParamName, float& OutValue) const override;
+	bool GetVector2Parameter(const FString& ParamName, FVector2& OutValue) const override;
 	bool GetVector3Parameter(const FString& ParamName, FVector& OutValue) const override;
 	bool GetVector4Parameter(const FString& ParamName, FVector4& OutValue) const override;
 	bool GetTextureParameter(const FString& ParamName, UTexture2D*& OutTexture) const override;
@@ -345,6 +351,7 @@ public:
 	bool HasBloomEnabledOverride() const { return bOverrideBloomEnabled; }
 
 	const TMap<FString, float>& GetScalarOverrides() const { return ScalarOverrides; }
+	const TMap<FString, FVector2>& GetVector2Overrides() const { return Vector2Overrides; }
 	const TMap<FString, FVector>& GetVector3Overrides() const { return Vector3Overrides; }
 	const TMap<FString, FVector4>& GetVector4Overrides() const { return Vector4Overrides; }
 	const TMap<FString, FMatrix>& GetMatrixOverrides() const { return MatrixOverrides; }
@@ -364,6 +371,7 @@ protected:
 	FString ParentPathFileName;
 
 	TMap<FString, float> ScalarOverrides;
+	TMap<FString, FVector2> Vector2Overrides;
 	TMap<FString, FVector> Vector3Overrides;
 	TMap<FString, FVector4> Vector4Overrides;
 	TMap<FString, FMatrix> MatrixOverrides;

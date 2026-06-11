@@ -482,6 +482,7 @@ bool FMaterialManager::ReloadMaterialInstance(const FString& MatInstFilePath)
 	}
 	MaterialInstance->ConstantBufferMap.clear();
 	MaterialInstance->ScalarOverrides.clear();
+	MaterialInstance->Vector2Overrides.clear();
 	MaterialInstance->Vector3Overrides.clear();
 	MaterialInstance->Vector4Overrides.clear();
 	MaterialInstance->MatrixOverrides.clear();
@@ -624,7 +625,11 @@ void FMaterialManager::ApplyParameters(UMaterialInterface* Material, json::JSON&
 
 		if (Value.JSONType() == json::JSON::Class::Array)
 		{
-			if (Value.length() == 3)
+			if (Value.length() == 2)
+			{
+				Material->SetVector2Parameter(ParamName, FVector2((float)Value[0].ToFloat(), (float)Value[1].ToFloat()));
+			}
+			else if (Value.length() == 3)
 			{
 				Material->SetVector3Parameter(ParamName, FVector((float)Value[0].ToFloat(), (float)Value[1].ToFloat(), (float)Value[2].ToFloat()));
 			}
@@ -885,6 +890,18 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 			continue;
 		}
 
+		if (ParamName == "UVTiling" || ParamName == "TextureTiling" || ParamName == "BaseColorTiling")
+		{
+			JsonData[MatKeys::Parameters][ParamName] = json::Array(1.0f, 1.0f);
+			continue;
+		}
+
+		if (ParamName == "UVOffset" || ParamName == "TextureOffset" || ParamName == "BaseColorOffset")
+		{
+			JsonData[MatKeys::Parameters][ParamName] = json::Array(0.0f, 0.0f);
+			continue;
+		}
+
 		switch (Info->Size)
 		{
 			case sizeof(float) : // 4바이트 - Scalar
@@ -892,6 +909,13 @@ bool FMaterialManager::InjectDefaultParameters(json::JSON& JsonData, FMaterialTe
 				float Value = 0.f;
 				Material->GetScalarParameter(ParamName, Value);
 				JsonData[MatKeys::Parameters][ParamName] = Value;
+				break;
+			}
+			case sizeof(float) * 2: // 8바이트 - Vector2
+			{
+				FVector2 Value;
+				Material->GetVector2Parameter(ParamName, Value);
+				JsonData[MatKeys::Parameters][ParamName] = json::Array(Value.X, Value.Y);
 				break;
 			}
 			case sizeof(float) * 3: // 12바이트 - Vector3

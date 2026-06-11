@@ -55,8 +55,9 @@ cbuffer PerShader1 : register(b2)
     float4 SectionColor;
     float HasNormalMap;
     float TwoSidedLighting;
-    float _pad0;
-    float _pad1;
+    float2 UVTiling;
+    float2 UVOffset;
+    float2 _pad0;
 };
 
 
@@ -95,7 +96,7 @@ UberVS_Output VS_StaticMesh(VS_Input_PNCTT input)
     output.position = mul(mul(worldPos4, View), Projection);
     output.normal = normalize(mul(input.normal, (float3x3) NormalMatrix));
     output.color = input.color * SectionColor;
-    output.texcoord = input.texcoord;
+    output.texcoord = input.texcoord * UVTiling + UVOffset;
     output.selectedBoneWeight = 0.0f;
 
     float3 T = normalize(mul(input.tangent.xyz, M));
@@ -110,7 +111,7 @@ UberVS_Output VS_StaticMesh(VS_Input_PNCTT input)
         float3 B = normalize(cross(N, T) * input.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
 
-        float3 tangentNormal = DecodeTangentNormal(NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz);
+        float3 tangentNormal = DecodeTangentNormal(NormalTexture.SampleLevel(LinearWrapSampler, output.texcoord, 0).xyz);
 
         N = normalize(mul(tangentNormal, TBN));
     }
@@ -142,7 +143,7 @@ UberVS_Output VS_InstancedStaticMesh(VS_Input_PNCTT_Instanced input)
     
     output.normal = normalize(mul(input.normal, M));
     output.color = input.color * input.instanceColor * SectionColor;
-    output.texcoord = input.texcoord;
+    output.texcoord = input.texcoord * UVTiling + UVOffset;
     output.selectedBoneWeight = 0.0f;
     
     float3 T = normalize(mul(input.tangent.xyz, M));
@@ -156,7 +157,7 @@ UberVS_Output VS_InstancedStaticMesh(VS_Input_PNCTT_Instanced input)
     {
         float3 B = normalize(cross(N, T) * output.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
-        float3 tangentNormal = DecodeTangentNormal(NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz);
+        float3 tangentNormal = DecodeTangentNormal(NormalTexture.SampleLevel(LinearWrapSampler, output.texcoord, 0).xyz);
         N = normalize(mul(tangentNormal, TBN));
     }
 
@@ -192,7 +193,7 @@ UberVS_Output VS_SkeletalMesh(VS_Input_PNCTTBB input)
     output.position = mul(mul(worldPos4, View), Projection);
     output.normal = normalize(mul(WeightedNormal, (float3x3) NormalMatrix));
     output.color = input.color * SectionColor;
-    output.texcoord = input.texcoord;
+    output.texcoord = input.texcoord * UVTiling + UVOffset;
     output.selectedBoneWeight = SelectedWeight;
 
     float3 T = normalize(mul(WeightedTangent, M));
@@ -207,7 +208,7 @@ UberVS_Output VS_SkeletalMesh(VS_Input_PNCTTBB input)
         float3 B = normalize(cross(N, T) * output.tangent.w);
         float3x3 TBN = float3x3(T, B, N);
 
-        float3 tangentNormal = DecodeTangentNormal(NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz);
+        float3 tangentNormal = DecodeTangentNormal(NormalTexture.SampleLevel(LinearWrapSampler, output.texcoord, 0).xyz);
 
         N = normalize(mul(tangentNormal, TBN));
     }
