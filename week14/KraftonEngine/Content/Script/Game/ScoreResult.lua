@@ -291,13 +291,13 @@ function ScoreResult.Show(inEndingId, sceneAfterClose)
     caretTimer = 0.0
     caretVisible = true
 
-    fill(currentSnapshot, savePath)
-    set_status("ENTER ID AND SAVE")
-
     visible = true
     if not widget:IsInViewport() then
         widget:AddToViewportZ(Z_ORDER)
     end
+
+    fill(currentSnapshot, savePath)
+    set_status("ENTER ID AND SAVE")
 
     return visible
 end

@@ -27,7 +27,7 @@ DASH_ATTACK_TIME_MULTIPLIER = 1.15
 DASH_ATTACK_COOLDOWN_MULTIPLIER = 2.4
 DASH_ATTACK_TACTIC_CHANCE = 0.12
 DASH_ATTACK_APPROACH_CHANCE = 0.08
-BOSS_GUN_BURST_DURATION = 2.0
+BOSS_GUN_BURST_DURATION = 1.0
 BOSS_GUN_BURST_SHOTS = 30
 SIGHT_RANGE = 80.0
 OPENING_WALK_END_RANGE = 64.0
@@ -42,7 +42,6 @@ CANNON_RANGE = 82.0
 APPROACH_RUN_SPEED = 5.2
 APPROACH_RUN_DISTANCE = 40.0
 TARGET_HEIGHT = 1.6
-FALLBACK_MUZZLE_HEIGHT = 7.0
 MELEE_MAX_VERTICAL_DELTA = 8.5
 ATTACK_LOS_FALLBACK_RANGE = 60.0
 MELEE_ACTION_LOCK = 3.8
@@ -53,9 +52,10 @@ RETREAT_ACTION_LOCK = 0.55
 MELEE_KNOCKBACK_DISTANCE = 5.2
 MELEE_KNOCKBACK_DURATION = 0.22
 MUZZLE_BONE = "ja_c_propGun"
-MUZZLE_LOCAL_OFFSET = Vector.new(0.0, 0.0, 0.0)
-BOSS_WEAPON_MUZZLE_FORWARD_OFFSET = 1.5
-BOSS_WEAPON_MUZZLE_UP_OFFSET = 0.15
+MUZZLE_LOCAL_X_OFFSET = 17.0
+MUZZLE_LOCAL_Y_OFFSET = -20
+MUZZLE_WORLD_Z_OFFSET = -3.0
+FALLBACK_MUZZLE_FORWARD_OFFSET = 20.0
 TACTIC_REEVALUATE_INTERVAL = 0.25
 APPROACH_COMMIT_TIME = 0.75
 DUEL_COMMIT_TIME = 1.1
@@ -417,14 +417,6 @@ local function same_actor(a, b)
     if a == nil or b == nil then return false end
     if a == b then return true end
     return a.UUID ~= nil and b.UUID ~= nil and a.UUID == b.UUID
-end
-
-local function is_valid_actor(actor)
-    if actor == nil then return false end
-    if type(actor.IsValid) == "function" then
-        return actor:IsValid()
-    end
-    return true
 end
 
 local function is_player_actor(actor)
@@ -1200,38 +1192,35 @@ local function get_muzzle_location()
         return frameMuzzleLocation
     end
 
-    local weaponActor = _G.Level3BossGunActor
-    if is_valid_actor(weaponActor) then
-        local weaponLocation = type(weaponActor.GetActorLocation) == "function"
-            and weaponActor:GetActorLocation()
-            or weaponActor.Location
-        if weaponLocation ~= nil then
-            local forward = weaponActor.Forward
-            if forward == nil or forward:Length() <= 0.001 then
-                forward = obj.Forward
-            end
-            if forward == nil or forward:Length() <= 0.001 then
-                forward = yaw_to_forward(obj.Rotation.Z)
-            else
-                forward = forward:Normalized()
-            end
+    local forward = obj.Forward
+    if forward == nil or forward:Length() <= 0.001 then
+        forward = yaw_to_forward(obj.Rotation.Z)
+    else
+        forward = forward:Normalized()
+    end
 
-            frameMuzzleLocation = weaponLocation
-                + forward * BOSS_WEAPON_MUZZLE_FORWARD_OFFSET
-                + Vector.new(0.0, 0.0, BOSS_WEAPON_MUZZLE_UP_OFFSET)
+    local right = obj.Right
+    if right == nil or right:Length() <= 0.001 then
+        right = Vector.new(-forward.Y, forward.X, 0.0)
+    else
+        right = right:Normalized()
+    end
+
+    local localOffset = forward * MUZZLE_LOCAL_X_OFFSET
+        + right * MUZZLE_LOCAL_Y_OFFSET
+        + Vector.new(0.0, 0.0, MUZZLE_WORLD_Z_OFFSET)
+
+    if mesh ~= nil then
+        local socketLocation = mesh:GetBoneSocketLocation(MUZZLE_BONE, Vector.new(0.0, 0.0, 0.0))
+        if socketLocation ~= nil and socketLocation:Length() > 0.001 then
+            frameMuzzleLocation = socketLocation + localOffset
             return frameMuzzleLocation
         end
     end
 
-    if mesh ~= nil then
-        local muzzle = mesh:GetBoneSocketLocation(MUZZLE_BONE, MUZZLE_LOCAL_OFFSET)
-        if muzzle ~= nil and muzzle:Length() > 0.001 then
-            frameMuzzleLocation = muzzle
-            return muzzle
-        end
-    end
-
-    frameMuzzleLocation = obj.Location + Vector.new(0.0, 0.0, FALLBACK_MUZZLE_HEIGHT)
+    frameMuzzleLocation = obj.Location
+        + forward * FALLBACK_MUZZLE_FORWARD_OFFSET
+        + localOffset
     return frameMuzzleLocation
 end
 
