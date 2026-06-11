@@ -7,7 +7,7 @@ local QUIT_DIALOG_PATH = "Content/UI/Title/TitleQuitDialog.rml"
 local PAUSE_Z_ORDER = 180
 local SETTINGS_Z_ORDER = 190
 local QUIT_DIALOG_Z_ORDER = 200
-local MAIN_MENU_SCENE = "Title.Scene"
+local MAIN_MENU_SCENE = "FL_Title.Scene"
 
 local pauseWidget = nil
 local settingsWidget = nil

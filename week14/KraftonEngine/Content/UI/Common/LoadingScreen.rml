@@ -5,6 +5,7 @@
 </head>
 <body>
     <div id="loading-root" class="loading-root">
+        <div id="loading-black-background" class="loading-black-background"></div>
         <div id="loading-vignette-top" class="loading-vignette top"></div>
         <div id="loading-vignette-bottom" class="loading-vignette bottom"></div>
         <div id="loading-content" class="loading-content">

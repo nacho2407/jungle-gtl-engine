@@ -40,6 +40,11 @@ void FShaderManager::ResetFastShaderPointerCaches()
 	{
 		Shader = nullptr;
 	}
+
+	for (FShader*& Shader : PreDepthPermutationCache)
+	{
+		Shader = nullptr;
+	}
 }
 
 // ============================================================
@@ -74,6 +79,9 @@ void FShaderManager::Initialize(ID3D11Device* InDevice)
 	GetOrCreate(FShaderKey(EShaderPath::DepthOfField, nullptr, "VS", "PS_Gather"), StartupError);
 	GetOrCreate(FShaderKey(EShaderPath::DepthOfField, nullptr, "VS", "PS_Recombine"), StartupError);
 	GetOrCreate(EShaderPath::GammaCorrection, StartupError);
+	GetOrCreatePreDepthPermutation(EPreDepthDefines::EVertexFactory::StaticMesh, StartupError);
+	GetOrCreatePreDepthPermutation(EPreDepthDefines::EVertexFactory::SkeletalMesh, StartupError);
+	GetOrCreatePreDepthPermutation(EPreDepthDefines::EVertexFactory::InstancedStaticMesh, StartupError);
 	GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::StaticMesh, StartupError);
 	GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::SkeletalMesh, StartupError);
 	GetOrCreate(EShaderPath::ShadowMapVis, StartupError);
@@ -135,6 +143,11 @@ FShader* FShaderManager::GetOrCreate(const FShaderKey& Key, EShaderErrorMode Err
 	if (Key.Path == EShaderPath::ShadowDepth && Key.VSEntryPoint == "VS")
 	{
 		return GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory::StaticMesh, ErrorMode);
+	}
+
+	if (Key.Path == EShaderPath::PreDepth && Key.VSEntryPoint == "VS")
+	{
+		return GetOrCreatePreDepthPermutation(EPreDepthDefines::EVertexFactory::StaticMesh, ErrorMode);
 	}
 
 	auto It = ShaderCache.find(Key);
@@ -211,6 +224,32 @@ FShader* FShaderManager::GetOrCreateShadowDepthPermutation(EShadowDepthDefines::
 	if (VFIndex >= 0 && VFIndex < ShadowDepthVertexFactoryCount)
 	{
 		ShadowDepthPermutationCache[VFIndex] = Shader;
+	}
+	return Shader;
+}
+
+FShader* FShaderManager::GetOrCreatePreDepthPermutation(EPreDepthDefines::EVertexFactory VF, EShaderErrorMode ErrorMode)
+{
+	const int32 VFIndex = static_cast<int32>(VF);
+	if (VFIndex >= 0 && VFIndex < PreDepthVertexFactoryCount)
+	{
+		if (FShader* Cached = PreDepthPermutationCache[VFIndex])
+		{
+			return Cached;
+		}
+	}
+
+	const D3D_SHADER_MACRO* Defines =
+		(VF == EPreDepthDefines::EVertexFactory::SkeletalMesh)
+		? EPreDepthDefines::SkeletalMesh :
+		(VF == EPreDepthDefines::EVertexFactory::InstancedStaticMesh)
+		? EPreDepthDefines::InstancedStaticMesh :
+		EPreDepthDefines::StaticMesh;
+	FShader* Shader = PreCompile(EPreDepthDefines::MakePermutationKey(VF), Defines, ErrorMode);
+
+	if (VFIndex >= 0 && VFIndex < PreDepthVertexFactoryCount)
+	{
+		PreDepthPermutationCache[VFIndex] = Shader;
 	}
 	return Shader;
 }

@@ -1,6 +1,7 @@
 local CombatEvents = require("Game.CombatEvents")
 local WeaponHud = require("HUD/WeaponHud")
 local BossAnimDefs = require("Anim.boss_titan_defs")
+local EnergyBullet = require("Game.EnergyBullet")
 
 PLAYER_TAG = "player"
 
@@ -13,6 +14,12 @@ BOSS_PHASE_ONE_COLOR = { 1.0, 1.0, 1.0, 1.0 }
 BOSS_PHASE_TWO_COLOR = { 1.0, 0.08, 0.04, 1.0 }
 THINK_INTERVAL = 0.12
 LOS_CHECK_INTERVAL = 0.15
+ATTACK_SPEED_MULTIPLIER = 5.0
+MOVE_SPEED_MULTIPLIER = 2.0
+TARGET_HISTORY_LOOKBACK = 0.5
+TARGET_HISTORY_RETENTION = 1.25
+BOSS_BASE_SPREAD_DEGREES = 3.0
+BOSS_SPREAD_MULTIPLIER = 2.0
 SIGHT_RANGE = 80.0
 OPENING_WALK_END_RANGE = 64.0
 OPENING_WALK_SPEED = 2.6
@@ -89,6 +96,11 @@ BOSS_BGM_FADE_OUT_MS = 5000.0
 CARD_KEY_PREFAB_PATH = "Content/Prefab/CardKey.prefab"
 CARD_KEY_SPAWN_OFFSET = Vector.new(2.0, 0.0, 1.0)
 CARD_KEY_ITEM_ID = "vantus_master_key"
+BOSS_CANNON_IMPACT_PARTICLE = "Content/Particle/HItSpark.uasset"
+BOSS_POWER_SHOT_IMPACT_PARTICLE = "Content/Particle/ElectricTrap.uasset"
+BOSS_MELEE_PARTICLE = "Content/Particle/HItSpark.uasset"
+BOSS_LEAP_LAND_PARTICLE = "Content/Particle/SmokeDirt.uasset"
+BOSS_RETREAT_PARTICLE = "Content/Particle/SmokeDirtBlack.uasset"
 
 local MOVE = BossAnimDefs.MOVE
 local MOVE_IDLE = MOVE.IDLE
@@ -187,6 +199,9 @@ local ANIM_NAMES = BossAnimDefs.ANIM_NAMES
 local targetActor = nil
 local mesh = nil
 local frameMuzzleLocation = nil
+local targetAimHistory = {}
+local activeEnergyBullets = {}
+local activeBossParticles = {}
 local lineOfSightTimer = 0.0
 local lineOfSightTargetUUID = nil
 local lineOfSightResult = false
@@ -355,6 +370,31 @@ end
 
 local function random01()
     return math.random()
+end
+
+local function random_range(minValue, maxValue)
+    return minValue + (maxValue - minValue) * random01()
+end
+
+local function attack_time(seconds)
+    return (seconds or 0.0) / ATTACK_SPEED_MULTIPLIER
+end
+
+local function attack_cooldown(seconds)
+    return (seconds or 0.0) / ATTACK_SPEED_MULTIPLIER
+end
+
+local function vec_cross(a, b)
+    return Vector.new(
+        a.Y * b.Z - a.Z * b.Y,
+        a.Z * b.X - a.X * b.Z,
+        a.X * b.Y - a.Y * b.X)
+end
+
+local function same_actor(a, b)
+    if a == nil or b == nil then return false end
+    if a == b then return true end
+    return a.UUID ~= nil and b.UUID ~= nil and a.UUID == b.UUID
 end
 
 local function is_player_actor(actor)
@@ -1148,6 +1188,171 @@ local function get_target_aim_location(target)
     return target.Location + Vector.new(0.0, 0.0, TARGET_HEIGHT)
 end
 
+local function update_target_aim_history(target)
+    if target == nil or not target:IsValid() then
+        return
+    end
+
+    local targetUUID = target.UUID or "target"
+    local history = targetAimHistory[targetUUID]
+    if history == nil then
+        history = {}
+        targetAimHistory[targetUUID] = history
+    end
+
+    history[#history + 1] = {
+        Time = debugSessionTime,
+        Location = get_target_aim_location(target),
+    }
+
+    local cutoff = debugSessionTime - TARGET_HISTORY_RETENTION
+    while #history > 1 and history[1].Time < cutoff do
+        table.remove(history, 1)
+    end
+end
+
+local function get_target_aim_location_at(target, lookbackSeconds)
+    if target == nil then return obj.Location end
+
+    local targetUUID = target.UUID or "target"
+    local history = targetAimHistory[targetUUID]
+    if history == nil or #history <= 0 then
+        return get_target_aim_location(target)
+    end
+
+    local desiredTime = debugSessionTime - (lookbackSeconds or 0.0)
+    local best = history[1]
+    for index = #history, 1, -1 do
+        local entry = history[index]
+        if entry.Time <= desiredTime then
+            best = entry
+            break
+        end
+    end
+
+    return best.Location or get_target_aim_location(target)
+end
+
+local function make_spread_target(source, targetPos)
+    local aimDelta = targetPos - source
+    local distance = aimDelta:Length()
+    if distance <= 0.001 then
+        return targetPos
+    end
+
+    local forward = normalized_or_zero(aimDelta)
+    local right = Vector.new(-forward.Y, forward.X, 0.0)
+    if right:Length() <= 0.001 then
+        right = Vector.new(1.0, 0.0, 0.0)
+    else
+        right = normalized_or_zero(right)
+    end
+
+    local up = vec_cross(right, forward)
+    if up:Length() <= 0.001 then
+        up = Vector.new(0.0, 0.0, 1.0)
+    else
+        up = normalized_or_zero(up)
+    end
+
+    local spread = math.tan(BOSS_BASE_SPREAD_DEGREES * BOSS_SPREAD_MULTIPLIER * math.pi / 180.0)
+    local offsetX = random_range(-spread, spread)
+    local offsetY = random_range(-spread, spread)
+    local shotDir = normalized_or_zero(forward + right * offsetX + up * offsetY)
+    if shotDir:Length() <= 0.001 then
+        shotDir = forward
+    end
+
+    return source + shotDir * distance
+end
+
+local function spawn_boss_particle(path, location, scale, lifetime)
+    if path == nil or location == nil or World == nil or World.SpawnParticleSystem == nil then
+        return nil
+    end
+
+    local actor = World.SpawnParticleSystem(path, location)
+    if actor == nil then
+        return nil
+    end
+
+    actor:AddTag("runtime-boss-particle")
+    local particle = type(actor.GetParticleSystem) == "function" and actor:GetParticleSystem() or nil
+    if particle ~= nil then
+        if scale ~= nil and type(particle.SetParticleScaleMultiplier) == "function" then
+            particle:SetParticleScaleMultiplier(scale)
+        end
+        if type(particle.ResetSystem) == "function" then
+            particle:ResetSystem()
+        end
+        if type(particle.SetEmitterSpawningEnabled) == "function" then
+            particle:SetEmitterSpawningEnabled(true)
+        end
+        if type(particle.Activate) == "function" then
+            particle:Activate()
+        end
+    end
+
+    activeBossParticles[#activeBossParticles + 1] = {
+        Actor = actor,
+        Remaining = lifetime or 1.0,
+    }
+    return actor
+end
+
+local function spawn_attack_start_particle(kind, source)
+    if kind == "melee" then
+        spawn_boss_particle(BOSS_MELEE_PARTICLE, source, 1.6, 0.8)
+    elseif kind == "powerShot" then
+        spawn_boss_particle(BOSS_POWER_SHOT_IMPACT_PARTICLE, source, 1.4, 0.9)
+    elseif kind == "cannon" then
+        spawn_boss_particle(BOSS_CANNON_IMPACT_PARTICLE, source, 1.0, 0.55)
+    elseif kind == "retreat" then
+        spawn_boss_particle(BOSS_RETREAT_PARTICLE, source, 1.4, 0.8)
+    end
+end
+
+local function spawn_attack_impact_particle(kind, location)
+    if kind == "melee" then
+        spawn_boss_particle(BOSS_MELEE_PARTICLE, location, 2.0, 0.9)
+    elseif kind == "powerShot" then
+        spawn_boss_particle(BOSS_POWER_SHOT_IMPACT_PARTICLE, location, 2.2, 1.1)
+    elseif kind == "cannon" then
+        spawn_boss_particle(BOSS_CANNON_IMPACT_PARTICLE, location, 1.2, 0.75)
+    elseif kind == "leapLand" then
+        spawn_boss_particle(BOSS_LEAP_LAND_PARTICLE, location, 3.2, 1.4)
+    elseif kind == "retreat" then
+        spawn_boss_particle(BOSS_RETREAT_PARTICLE, location, 1.6, 0.8)
+    end
+end
+
+local function tick_boss_particles(dt)
+    EnergyBullet.TickActive(activeEnergyBullets, dt or 0.0)
+
+    for index = #activeBossParticles, 1, -1 do
+        local entry = activeBossParticles[index]
+        if entry.Actor == nil or (type(entry.Actor.IsValid) == "function" and not entry.Actor:IsValid()) then
+            table.remove(activeBossParticles, index)
+        else
+            entry.Remaining = entry.Remaining - (dt or 0.0)
+            if entry.Remaining <= 0.0 then
+                entry.Actor:Destroy()
+                table.remove(activeBossParticles, index)
+            end
+        end
+    end
+end
+
+local function destroy_boss_particles()
+    EnergyBullet.DestroyActive(activeEnergyBullets)
+    for _, entry in ipairs(activeBossParticles) do
+        if entry.Actor ~= nil and (type(entry.Actor.IsValid) ~= "function" or entry.Actor:IsValid()) then
+            entry.Actor:Destroy()
+        end
+    end
+    activeBossParticles = {}
+end
+
 local function update_anim_aim(target)
     if target == nil or not target:IsValid() then
         set_aim_anim(0.0, 0.0)
@@ -1228,7 +1433,7 @@ local function move_horizontal(direction, speed, dt)
     local dir = normalized_or_zero(direction)
     if dir:Length() <= 0.001 then return end
 
-    local nextLocation = obj.Location + dir * (speed * dt)
+    local nextLocation = obj.Location + dir * (speed * MOVE_SPEED_MULTIPLIER * dt)
     if homeZ ~= nil then
         nextLocation.Z = homeZ
     end
@@ -1366,9 +1571,9 @@ local function update_phase_two_transition(dt)
         animationLockTimer = 0.0
         phaseLockTimer = 0.0
         thinkTimer = 0.0
-        cooldowns.cannon = 0.4
-        cooldowns.powerShot = 1.2
-        cooldowns.melee = 0.5
+        cooldowns.cannon = attack_cooldown(0.4)
+        cooldowns.powerShot = attack_cooldown(1.2)
+        cooldowns.melee = attack_cooldown(0.5)
         apply_boss_phase_visual(phase)
         clear_action_anim("phaseStandUp")
         register_boss_damageable()
@@ -1398,9 +1603,9 @@ local function enter_phase(nextPhase)
     activeAttack = nil
     leapState = nil
 
-    cooldowns.cannon = 0.4
-    cooldowns.powerShot = 1.2
-    cooldowns.melee = 0.5
+    cooldowns.cannon = attack_cooldown(0.4)
+    cooldowns.powerShot = attack_cooldown(1.2)
+    cooldowns.melee = attack_cooldown(0.5)
 
     play_anim(ANIM.phase, false, true)
 end
@@ -1436,21 +1641,25 @@ local function apply_boss_damage(context)
 end
 
 local function start_attack(kind, animPath, duration, hitDelay, range, damage, cooldown, lockDuration)
+    local scaledDuration = attack_time(duration)
+    local scaledHitDelay = attack_time(hitDelay)
+    local scaledLockDuration = attack_time(lockDuration or duration)
     activeAttack = {
         kind = kind,
         elapsed = 0.0,
-        hitDelay = hitDelay,
+        hitDelay = scaledHitDelay,
         range = range,
         damage = damage,
         didHit = false,
     }
 
-    actionTimer = duration
-    animationLockTimer = math.max(animationLockTimer, lockDuration or duration)
-    cooldowns[kind] = cooldown
+    actionTimer = scaledDuration
+    animationLockTimer = math.max(animationLockTimer, scaledLockDuration)
+    cooldowns[kind] = attack_cooldown(cooldown)
     set_move_anim(MOVE_IDLE)
-    request_action_anim(kind, lockDuration or duration)
+    request_action_anim(kind, scaledLockDuration)
     currentAnim = animPath
+    spawn_attack_start_particle(kind, get_muzzle_location())
 
     CombatEvents.NotifyAttackFired(obj, {
         Instigator = obj,
@@ -1468,14 +1677,18 @@ local function apply_active_attack_hit()
 
     local source = get_muzzle_location()
     local targetPos = get_target_aim_location(target)
-    local aimDelta = targetPos - source
+    local shotTargetPos = targetPos
+    if activeAttack.kind ~= "melee" then
+        shotTargetPos = make_spread_target(source, get_target_aim_location_at(target, TARGET_HISTORY_LOOKBACK))
+    end
+    local aimDelta = shotTargetPos - source
     local aimDistance = aimDelta:Length()
     local dist = horizontal_distance(obj.Location, target.Location)
     if activeAttack.kind == "melee" then
         if dist > activeAttack.range then return end
     else
         if aimDistance > activeAttack.range then return end
-        if not has_line_of_sight(target, source, targetPos, true)
+        if not has_line_of_sight(target, source, shotTargetPos, true)
             and not can_use_attack_los_fallback(dist, target.Location.Z - obj.Location.Z) then
             return
         end
@@ -1483,20 +1696,54 @@ local function apply_active_attack_hit()
 
     local shotDir = normalized_or_zero(aimDelta)
     local horizontalHitDir = normalized_or_zero(horizontal_delta(obj.Location, target.Location))
-    local hitLocation = activeAttack.kind == "melee" and target.Location or targetPos
+    local hitLocation = activeAttack.kind == "melee" and target.Location or shotTargetPos
+    local hitNormal = nil
+    local hitActor = nil
+
+    if activeAttack.kind ~= "melee" and World ~= nil and World.RaycastPrimitive ~= nil then
+        local hit = World.RaycastPrimitive(source, shotDir, activeAttack.range, obj)
+        hitLocation = source + shotDir * activeAttack.range
+        if hit ~= nil then
+            hitLocation = hit.WorldHitLocation or hit.ImpactPoint or hitLocation
+            hitNormal = hit.WorldNormal or hit.ImpactNormal
+            hitActor = hit.HitActor
+        end
+
+        EnergyBullet.PlayInto(activeEnergyBullets, source, hitLocation)
+        spawn_attack_impact_particle(activeAttack.kind, hitLocation)
+
+        if hit ~= nil then
+            CombatEvents.NotifyAttackImpact(obj, {
+                Instigator = obj,
+                DamageCauser = obj,
+                HitActor = hitActor,
+                HitLocation = hitLocation,
+                HitNormal = hitNormal,
+                ShotDirection = shotDir,
+                Damage = activeAttack.damage,
+                DamageType = activeAttack.kind,
+            })
+        end
+    end
 
     if activeAttack.kind == "melee" then
         Debug.DrawSphere(hitLocation, 0.45, 255, 80, 30, 0.5, 12)
     else
-        Debug.DrawLine(source, targetPos, 255, 70, 20, 0.5)
+        Debug.DrawLine(source, hitLocation, 255, 70, 20, 0.5)
     end
 
-    if CombatEvents.IsDamageable(target) then
+    if activeAttack.kind == "melee" then
+        spawn_attack_impact_particle(activeAttack.kind, hitLocation)
+    end
+
+    local shouldDamageTarget = activeAttack.kind == "melee" or same_actor(hitActor, target)
+    if shouldDamageTarget and CombatEvents.IsDamageable(target) then
         CombatEvents.ApplyDamageAndNotify(obj, target, {
             Instigator = obj,
             DamageCauser = obj,
             HitActor = target,
             HitLocation = hitLocation,
+            HitNormal = hitNormal,
             ShotDirection = shotDir,
             Damage = activeAttack.damage,
             DamageType = activeAttack.kind,
@@ -1598,16 +1845,22 @@ local function start_leap_engage(bb)
     if not can_start_leap(bb) then return false end
 
     local landing = calculate_leap_landing(bb.target)
-    local totalTime = LEAP_WINDUP_TIME + LEAP_FLIGHT_TIME + LEAP_LAND_TIME
+    local windupTime = attack_time(LEAP_WINDUP_TIME)
+    local flightTime = attack_time(LEAP_FLIGHT_TIME)
+    local landTime = attack_time(LEAP_LAND_TIME)
+    local totalTime = windupTime + flightTime + landTime
     leapState = {
         stage = "windup",
         elapsed = 0.0,
         startLocation = obj.Location,
         landingLocation = landing,
+        windupTime = windupTime,
+        flightTime = flightTime,
+        landTime = landTime,
         didLandHit = false,
     }
 
-    cooldowns.leap = LEAP_COOLDOWN
+    cooldowns.leap = attack_cooldown(LEAP_COOLDOWN)
     actionTimer = totalTime
     animationLockTimer = math.max(animationLockTimer, totalTime)
     activeAttack = nil
@@ -1620,6 +1873,7 @@ local function start_leap_engage(bb)
         Damage = LEAP_LAND_DAMAGE + phase * 4.0,
         DamageType = "leapWindup",
     })
+    spawn_attack_start_particle("powerShot", obj.Location)
 
     return true
 end
@@ -1635,7 +1889,7 @@ local function update_leap(dt)
     leapState.elapsed = leapState.elapsed + dt
 
     if leapState.stage == "windup" then
-        if leapState.elapsed >= LEAP_WINDUP_TIME then
+        if leapState.elapsed >= leapState.windupTime then
             leapState.stage = "flight"
             leapState.elapsed = 0.0
             leapState.startLocation = obj.Location
@@ -1648,17 +1902,18 @@ local function update_leap(dt)
     end
 
     if leapState.stage == "flight" then
-        local alpha = clamp(leapState.elapsed / LEAP_FLIGHT_TIME, 0.0, 1.0)
+        local alpha = clamp(leapState.elapsed / leapState.flightTime, 0.0, 1.0)
         local eased = smoothstep(alpha)
         local nextLocation = lerp(leapState.startLocation, leapState.landingLocation, eased)
         nextLocation.Z = lerp(leapState.startLocation, leapState.landingLocation, eased).Z + math.sin(alpha * math.pi) * LEAP_ARC_HEIGHT
         obj.Location = nextLocation
 
-        if leapState.elapsed >= LEAP_FLIGHT_TIME then
+        if leapState.elapsed >= leapState.flightTime then
             obj.Location = leapState.landingLocation
             leapState.stage = "land"
             leapState.elapsed = 0.0
             play_anim(ANIM.leapLand, false, true)
+            spawn_attack_impact_particle("leapLand", obj.Location)
             if not leapState.didLandHit then
                 apply_leap_landing_hit()
                 leapState.didLandHit = true
@@ -1668,7 +1923,7 @@ local function update_leap(dt)
     end
 
     if leapState.stage == "land" then
-        if leapState.elapsed >= LEAP_LAND_TIME then
+        if leapState.elapsed >= leapState.landTime then
             leapState = nil
             actionTimer = 0.0
             animationLockTimer = 0.0
@@ -1836,6 +2091,7 @@ local function run_attack(name)
         activeAttack = nil
         request_action_anim("retreat", RETREAT_ACTION_LOCK)
         currentAnim = ANIM.retreat
+        spawn_attack_start_particle("retreat", obj.Location)
         return true
     end
 
@@ -2061,6 +2317,7 @@ local function locomote(bb, dt)
 end
 
 function BeginPlay()
+    destroy_boss_particles()
     mesh = obj:GetSkeletalMesh()
     load_drake_combat_dialogue_assets()
     reset_drake_combat_dialogue_state()
@@ -2076,6 +2333,7 @@ function BeginPlay()
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
     thinkTimer = 0.0
+    targetAimHistory = {}
     activeAttack = nil
     leapState = nil
     deathFallState = nil
@@ -2093,10 +2351,10 @@ function BeginPlay()
     introCutsceneLastActionSerial = 0
     reset_anim_state()
     cooldowns.cannon = 0.0
-    cooldowns.powerShot = 1.4
+    cooldowns.powerShot = attack_cooldown(1.4)
     cooldowns.melee = 0.0
     cooldowns.retreat = 0.0
-    cooldowns.leap = 2.5
+    cooldowns.leap = attack_cooldown(2.5)
     _G.Level3BossDefeated = false
     if _G.PickedUpItems == nil or _G.PickedUpItems[CARD_KEY_ITEM_ID] ~= true then
         _G.Level3CardKeySpawned = false
@@ -2141,12 +2399,14 @@ function EndPlay()
 
     unregister_boss_damageable()
     damageableCallbacks = nil
+    destroy_boss_particles()
     stop_boss_music()
     debug_close_log()
 end
 
 function Tick(dt)
     update_drake_combat_dialogue(dt)
+    tick_boss_particles(dt or 0.0)
 
     if isDead then
         update_death_fall(dt)
@@ -2172,6 +2432,7 @@ function Tick(dt)
     end
 
     local target = find_target()
+    update_target_aim_history(target)
     update_anim_aim(target)
 
     if update_leap(dt) then

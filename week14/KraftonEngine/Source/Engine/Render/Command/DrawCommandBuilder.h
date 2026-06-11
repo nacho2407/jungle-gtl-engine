@@ -82,6 +82,7 @@ private:
 	void ApplyMaterialRenderState(FDrawCommandRenderState& OutState, const UMaterialInterface* Mat, const FDrawCommandRenderState& BaseState);
 	FShader* SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode,
 		bool bUseSkeletalVertexFactory, bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap, bool bApplyFog);
+	FShader* SelectPreDepthShader(FShader* ProxyShader, bool bUseSkeletalVertexFactory, bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap);
 
 	FConstantBuffer* GetPerObjectCBForProxy(FScene* Scene, const FPrimitiveSceneProxy& Proxy);
 	void EnsurePerObjectCBPoolCapacity(FScene* Scene, uint32 RequiredCount);

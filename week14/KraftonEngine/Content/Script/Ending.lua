@@ -341,7 +341,7 @@ local function show_score_result()
     remove_cutscene_widget()
     set_weapon_hud_visible(false)
     if ScoreResult ~= nil and ScoreResult.Show ~= nil then
-        ScoreResult.Show("Ending", "Title.Scene")
+        ScoreResult.Show("Ending", "FL_Title.Scene")
     end
 end
 

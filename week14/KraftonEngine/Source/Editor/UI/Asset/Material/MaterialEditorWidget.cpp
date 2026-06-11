@@ -179,6 +179,12 @@ namespace
 			JsonData[MatKeys::Parameters][Pair.first] = Pair.second;
 		}
 
+		for (const auto& Pair : Instance->GetVector2Overrides())
+		{
+			const FVector2& Value = Pair.second;
+			JsonData[MatKeys::Parameters][Pair.first] = json::Array(Value.X, Value.Y);
+		}
+
 		for (const auto& Pair : Instance->GetVector3Overrides())
 		{
 			const FVector& Value = Pair.second;
@@ -710,6 +716,26 @@ void FMaterialEditorWidget::RenderShaderParameters(UMaterialInterface* Material)
 				{
 					Material->SetScalarParameter(ParamName, Param);
 					CachedJson[MatKeys::Parameters][ParamName] = Param;
+				}
+			}
+			break;
+		}
+		case sizeof(float) * 2:
+		{
+			FVector2 Param;
+			if (Material->GetVector2Parameter(ParamName, Param))
+			{
+				float Speed = 0.01f;
+				if (ParamName.find("Tiling") != FString::npos || ParamName.find("Scale") != FString::npos)
+				{
+					Speed = 0.05f;
+				}
+
+				bChanged = ImGui::DragFloat2("##Value", &Param.X, Speed);
+				if (bChanged)
+				{
+					Material->SetVector2Parameter(ParamName, Param);
+					CachedJson[MatKeys::Parameters][ParamName] = json::Array(Param.X, Param.Y);
 				}
 			}
 			break;

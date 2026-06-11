@@ -91,6 +91,7 @@ namespace EShaderPath
 	inline constexpr const char* UberLit = "Shaders/Geometry/UberLit.hlsl";
 	inline constexpr const char* Decal = "Shaders/Geometry/Decal.hlsl";
 	inline constexpr const char* Particle = "Shaders/Geometry/Particle.hlsl";
+	inline constexpr const char* PreDepth = "Shaders/Geometry/PreDepth.hlsl";
 
 	inline constexpr const char* Editor = "Shaders/Editor/Editor.hlsl";
 	inline constexpr const char* Gizmo = "Shaders/Editor/Gizmo.hlsl";
@@ -153,6 +154,42 @@ namespace EShadowDepthDefines
 		return FShaderKey(EShaderPath::ShadowDepth, Defines, VSEntry, EntryPoint::PS);
 	}
 
+}
+
+namespace EPreDepthDefines
+{
+	namespace EntryPoint
+	{
+		inline constexpr const char* StaticMeshVS = "VS_StaticMesh";
+		inline constexpr const char* SkeletalMeshVS = "VS_SkeletalMesh";
+		inline constexpr const char* InstancedStaticMeshVS = "VS_InstancedStaticMesh";
+		inline constexpr const char* PS = "PS";
+	}
+
+	enum class EVertexFactory : uint8
+	{
+		StaticMesh,
+		SkeletalMesh,
+		InstancedStaticMesh,
+		Count,
+	};
+
+	inline const D3D_SHADER_MACRO StaticMesh[] = { {nullptr, nullptr} };
+	inline const D3D_SHADER_MACRO SkeletalMesh[] = { {nullptr, nullptr} };
+	inline const D3D_SHADER_MACRO InstancedStaticMesh[] = { {nullptr, nullptr} };
+
+	inline FShaderKey MakePermutationKey(EVertexFactory VF)
+	{
+		const D3D_SHADER_MACRO* Defines =
+			(VF == EVertexFactory::SkeletalMesh) ? SkeletalMesh :
+			(VF == EVertexFactory::InstancedStaticMesh) ? InstancedStaticMesh :
+			StaticMesh;
+		const char* VSEntry =
+			(VF == EVertexFactory::SkeletalMesh) ? EntryPoint::SkeletalMeshVS :
+			(VF == EVertexFactory::InstancedStaticMesh) ? EntryPoint::InstancedStaticMeshVS :
+			EntryPoint::StaticMeshVS;
+		return FShaderKey(EShaderPath::PreDepth, Defines, VSEntry, EntryPoint::PS);
+	}
 }
 namespace EUberLitDefines
 {
@@ -304,6 +341,7 @@ public:
 	FShader* PreCompile(const FShaderKey& Key, const D3D_SHADER_MACRO* Defines, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	FShader* GetOrCreate(const FString& Path, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification) { return GetOrCreate(FShaderKey(Path), ErrorMode); }
 	FShader* GetOrCreateShadowDepthPermutation(EShadowDepthDefines::EVertexFactory VF, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
+	FShader* GetOrCreatePreDepthPermutation(EPreDepthDefines::EVertexFactory VF, EShaderErrorMode ErrorMode = EShaderErrorMode::Notification);
 	FShader* GetOrCreateUberLitPermutation(EUberLitDefines::ELightingModel LightingModel, EUberLitDefines::EVertexFactory VertexFactory,
 		EShaderErrorMode ErrorMode = EShaderErrorMode::Notification, bool bWeightBoneHeatMap = false, bool bApplyFog = false);
 	FShader* FindOrCreate(const FString& Path);
@@ -323,6 +361,7 @@ private:
 	static constexpr int32 UberLitVertexFactoryCount = static_cast<int32>(EUberLitDefines::EVertexFactory::Count);
 	static constexpr int32 UberLitBoolCount = 2;
 	static constexpr int32 ShadowDepthVertexFactoryCount = static_cast<int32>(EShadowDepthDefines::EVertexFactory::Count);
+	static constexpr int32 PreDepthVertexFactoryCount = static_cast<int32>(EPreDepthDefines::EVertexFactory::Count);
 
 	void ResetFastShaderPointerCaches();
 
@@ -334,6 +373,7 @@ private:
 	// unordered_map + FShaderKey 생성 비용을 피하기 위해 고정 permutation은 포인터 배열로 바로 반환한다.
 	FShader* UberLitPermutationCache[UberLitLightingModelCount][UberLitVertexFactoryCount][UberLitBoolCount][UberLitBoolCount] = {};
 	FShader* ShadowDepthPermutationCache[ShadowDepthVertexFactoryCount] = {};
+	FShader* PreDepthPermutationCache[PreDepthVertexFactoryCount] = {};
 
 	bool bIsInitialized = false;
 

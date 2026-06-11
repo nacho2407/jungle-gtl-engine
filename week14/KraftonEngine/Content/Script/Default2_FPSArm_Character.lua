@@ -33,6 +33,7 @@ local RECOIL_ADS_YAW_MULTIPLIER      = 0.0
 local RECOIL_ADS_CLEAR_YAW_ON_ENTER  = true
 local ADS_SUPPRESS_SHOOT_ANIMATION   = true
 local RECOIL_STRENGTH_MULTIPLIER     = 5.0
+local RECOIL_KICK_APPLY_SPEED        = 35.0
 local RECOIL_RECOVERY_DELAY          = 0.03
 local RECOIL_RECOVERY_SPEED_FIRING   = 9.0
 local RECOIL_RECOVERY_SPEED_RELEASED = 50.0
@@ -87,6 +88,8 @@ end
 local deathHandled = false
 local weaponSpread = 0.0
 local recoilPatternIndex = 1
+local recoilPendingPitch = 0.0
+local recoilPendingYaw = 0.0
 local recoilRemainingPitch = 0.0
 local recoilRemainingYaw = 0.0
 local recoilRecoverDelay = 0.0
@@ -187,6 +190,24 @@ local function vec_dot(a, b)
     return a.X * b.X + a.Y * b.Y + a.Z * b.Z
 end
 
+local function vec_cross(a, b)
+    return Vector.new(
+        a.Y * b.Z - a.Z * b.Y,
+        a.Z * b.X - a.X * b.Z,
+        a.X * b.Y - a.Y * b.X)
+end
+
+local function vec_length_sq(v)
+    return v.X * v.X + v.Y * v.Y + v.Z * v.Z
+end
+
+local function vec_normalize(v)
+    local lenSq = vec_length_sq(v)
+    if lenSq <= 0.000001 then return nil end
+    local invLen = 1.0 / math.sqrt(lenSq)
+    return vec_mul(v, invLen)
+end
+
 local function clamp_abs(value, maxAbs)
     if value < -maxAbs then return -maxAbs end
     if value > maxAbs then return maxAbs end
@@ -281,21 +302,17 @@ local function add_weapon_recoil()
         step.pitch * pitchScale,
         step.yaw * yawScale)
 
-    if type(camera.AddLocalRotation) == "function" then
-        camera:AddLocalRotation(deltaRotation)
-    elseif type(camera.GetRotation) == "function" and type(camera.SetRotation) == "function" then
-        local rotation = camera:GetRotation()
-        camera:SetRotation(Vector.new(
-            rotation.X,
-            rotation.Y + deltaRotation.Y,
-            rotation.Z + deltaRotation.Z))
-    end
-
-    recoilRemainingPitch = recoilRemainingPitch + deltaRotation.Y
-    recoilRemainingYaw = recoilRemainingYaw + deltaRotation.Z
+    recoilPendingPitch = recoilPendingPitch + deltaRotation.Y
+    recoilPendingYaw = recoilPendingYaw + deltaRotation.Z
     recoilRecoverDelay = RECOIL_RECOVERY_DELAY
     recoilPatternResetTimer = RECOIL_PATTERN_RESET_DELAY
     recoilPatternIndex = recoilPatternIndex + 1
+end
+
+local function consume_recoil_axis(value, maxStep)
+    if value > maxStep then return value - maxStep, maxStep end
+    if value < -maxStep then return value + maxStep, -maxStep end
+    return 0.0, value
 end
 
 local function recover_recoil_axis(value, maxStep)
@@ -314,24 +331,41 @@ local function update_weapon_recoil(dt)
         end
     end
 
+    local pendingPitchDelta = 0.0
+    local pendingYawDelta = 0.0
+    if math.abs(recoilPendingPitch) > 0.0001 or math.abs(recoilPendingYaw) > 0.0001 then
+        local maxKickStep = RECOIL_KICK_APPLY_SPEED * dt
+        recoilPendingPitch, pendingPitchDelta = consume_recoil_axis(recoilPendingPitch, maxKickStep)
+        recoilPendingYaw, pendingYawDelta = consume_recoil_axis(recoilPendingYaw, maxKickStep)
+        recoilRemainingPitch = recoilRemainingPitch + pendingPitchDelta
+        recoilRemainingYaw = recoilRemainingYaw + pendingYawDelta
+    else
+        recoilPendingPitch = 0.0
+        recoilPendingYaw = 0.0
+    end
+
     if recoilRecoverDelay > 0.0 then
         recoilRecoverDelay = recoilRecoverDelay - dt
-        return
     end
 
-    if math.abs(recoilRemainingPitch) <= 0.0001 and math.abs(recoilRemainingYaw) <= 0.0001 then
-        recoilRemainingPitch = 0.0
-        recoilRemainingYaw = 0.0
-        return
+    local recoveryPitchDelta = 0.0
+    local recoveryYawDelta = 0.0
+    if recoilRecoverDelay <= 0.0 then
+        if math.abs(recoilRemainingPitch) <= 0.0001 and math.abs(recoilRemainingYaw) <= 0.0001 then
+            recoilRemainingPitch = 0.0
+            recoilRemainingYaw = 0.0
+        else
+            local isFiring = is_fire_down() and not isReloading and currentAmmo > 0
+            local recoverySpeed = isFiring and RECOIL_RECOVERY_SPEED_FIRING or RECOIL_RECOVERY_SPEED_RELEASED
+            local maxStep = recoverySpeed * dt
+            recoilRemainingPitch, recoveryPitchDelta = recover_recoil_axis(recoilRemainingPitch, maxStep)
+            recoilRemainingYaw, recoveryYawDelta = recover_recoil_axis(recoilRemainingYaw, maxStep)
+        end
     end
 
-    local isFiring = is_fire_down() and not isReloading and currentAmmo > 0
-    local recoverySpeed = isFiring and RECOIL_RECOVERY_SPEED_FIRING or RECOIL_RECOVERY_SPEED_RELEASED
-    local maxStep = recoverySpeed * dt
-    local pitchDelta
-    local yawDelta
-    recoilRemainingPitch, pitchDelta = recover_recoil_axis(recoilRemainingPitch, maxStep)
-    recoilRemainingYaw, yawDelta = recover_recoil_axis(recoilRemainingYaw, maxStep)
+    local pitchDelta = pendingPitchDelta + recoveryPitchDelta
+    local yawDelta = pendingYawDelta + recoveryYawDelta
+    if math.abs(pitchDelta) <= 0.0001 and math.abs(yawDelta) <= 0.0001 then return end
 
     local deltaRotation = Vector.new(0.0, pitchDelta, yawDelta)
     if type(camera.AddLocalRotation) == "function" then
@@ -509,11 +543,33 @@ local function get_ads_bone_world_location(boneName)
     return boneWorld
 end
 
+local function get_ads_camera_basis()
+    local fwd = camera.Forward
+    local fallbackRight = camera.Right
+    local fallbackUp = camera.Up
+
+    local forward = vec_normalize(fwd)
+    if forward == nil then
+        return fwd, fallbackRight, fallbackUp
+    end
+
+    local worldUp = Vector.new(0.0, 0.0, 1.0)
+    local right = vec_normalize(vec_cross(worldUp, forward))
+    if right == nil then
+        return fwd, fallbackRight, fallbackUp
+    end
+
+    local up = vec_normalize(vec_cross(forward, right))
+    if up == nil then
+        return fwd, fallbackRight, fallbackUp
+    end
+
+    return forward, right, up
+end
+
 local function make_camera_space_point(offsetFwd, offsetRight, offsetUp)
     local camPos = camera:GetWorldLocation()
-    local fwd   = camera.Forward
-    local right = camera.Right
-    local up    = camera.Up
+    local fwd, right, up = get_ads_camera_basis()
 
     return Vector.new(
         camPos.X + fwd.X * offsetFwd + right.X * offsetRight + up.X * offsetUp,
@@ -603,11 +659,12 @@ local function compute_ads_rotation_correction()
     if rearWorld == nil or muzzleWorld == nil then return nil end
 
     local sightLine = vec_sub(muzzleWorld, rearWorld)
-    local lineFwd = vec_dot(sightLine, camera.Forward)
+    local fwd, right, up = get_ads_camera_basis()
+    local lineFwd = vec_dot(sightLine, fwd)
     if math.abs(lineFwd) < 0.001 then return nil end
 
-    local lineRight = vec_dot(sightLine, camera.Right)
-    local lineUp = vec_dot(sightLine, camera.Up)
+    local lineRight = vec_dot(sightLine, right)
+    local lineUp = vec_dot(sightLine, up)
     local yawDeg = math.deg(math.atan(lineRight / lineFwd))
     local pitchDeg = -math.deg(math.atan(lineUp / lineFwd))
 
@@ -664,8 +721,9 @@ local function compute_ads_world_delta()
             ADS_MUZZLE_TARGET_RIGHT,
             ADS_MUZZLE_TARGET_UP)
         local muzzleDelta = vec_sub(muzzleTarget, muzzleWorld)
-        local rightFix = vec_mul(camera.Right, vec_dot(muzzleDelta, camera.Right) * ADS_MUZZLE_CENTER_WEIGHT)
-        local upFix = vec_mul(camera.Up, vec_dot(muzzleDelta, camera.Up) * ADS_MUZZLE_CENTER_WEIGHT)
+        local _, right, up = get_ads_camera_basis()
+        local rightFix = vec_mul(right, vec_dot(muzzleDelta, right) * ADS_MUZZLE_CENTER_WEIGHT)
+        local upFix = vec_mul(up, vec_dot(muzzleDelta, up) * ADS_MUZZLE_CENTER_WEIGHT)
         delta = vec_add(delta, vec_add(rightFix, upFix))
     end
 
@@ -793,9 +851,7 @@ local function update_arm_transforms(dt)
     if adsBlend > 0.0 then
         local worldDelta = compute_ads_world_delta()
         if worldDelta ~= nil and camera ~= nil then
-            local fwd   = camera.Forward
-            local right = camera.Right
-            local up    = camera.Up
+            local fwd, right, up = get_ads_camera_basis()
             local dFwd   = worldDelta.X * fwd.X   + worldDelta.Y * fwd.Y   + worldDelta.Z * fwd.Z
             local dRight = worldDelta.X * right.X + worldDelta.Y * right.Y + worldDelta.Z * right.Z
             local dUp    = worldDelta.X * up.X    + worldDelta.Y * up.Y    + worldDelta.Z * up.Z
@@ -883,6 +939,13 @@ local function get_anim_requests()
     end
 
     return requests
+end
+
+local function set_arm_ads_flag(value)
+    if obj == nil then return end
+
+    _G.FPSArmAimDown = _G.FPSArmAimDown or {}
+    _G.FPSArmAimDown[obj.UUID] = value == true
 end
 
 local function request_arm_animation(name)
@@ -1139,10 +1202,13 @@ function BeginPlay()
     reset_reload_audio()
     fireCooldown = 0.0
     recoilPatternIndex = 1
+    recoilPendingPitch = 0.0
+    recoilPendingYaw = 0.0
     recoilRemainingPitch = 0.0
     recoilRemainingYaw = 0.0
     recoilRecoverDelay = 0.0
     recoilPatternResetTimer = 0.0
+    set_arm_ads_flag(false)
     local requests = get_anim_requests()
     if requests ~= nil then
         requests.shoot = false
@@ -1206,6 +1272,9 @@ function EndPlay()
     if obj ~= nil and _G.FPSArmAnimRequests ~= nil then
         _G.FPSArmAnimRequests[obj.UUID] = nil
     end
+    if obj ~= nil and _G.FPSArmAimDown ~= nil then
+        _G.FPSArmAimDown[obj.UUID] = nil
+    end
 
     CombatEvents.UnregisterAttackReceiver(obj)
     CombatEvents.UnregisterDamageable(obj)
@@ -1252,6 +1321,8 @@ function EndPlay()
     adsBlend = 0.0
     GameAudio.Shutdown()
     recoilPatternIndex = 1
+    recoilPendingPitch = 0.0
+    recoilPendingYaw = 0.0
     recoilRemainingPitch = 0.0
     recoilRemainingYaw = 0.0
     recoilRecoverDelay = 0.0
@@ -1267,13 +1338,18 @@ function Tick(dt)
         InGameDebug.Toggle()
     end
 
+    local adsNow = is_aim_down()
+    set_arm_ads_flag(adsNow)
+
     update_weapon_recoil(dt)
     update_arm_transforms(dt)
 
     cache_movement_defaults()
     if movement ~= nil and baseSprintSpeedMultiplier ~= nil then
-        local adsNow = is_aim_down()
         if adsNow then
+            if type(movement.SetSprinting) == "function" then
+                movement:SetSprinting(false)
+            end
             movement:SetSprintSpeedMultiplier(1.0)
         else
             movement:SetSprintSpeedMultiplier(baseSprintSpeedMultiplier)

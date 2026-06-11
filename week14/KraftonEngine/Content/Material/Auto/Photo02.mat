@@ -7,7 +7,10 @@
   "Parameters" : {
     "HasNormalMap" : 0.000000,
     "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
-    "_pad" : [0.000000, 0.000000, 0.000000]
+    "TwoSidedLighting" : 0.000000,
+    "UVOffset" : [0.000000, 0.000000],
+    "UVTiling" : [1.000000, 1.000000],
+    "_pad0" : [0.000000, 0.000000]
   },
   "PathFileName" : "Content/Material/Auto/Photo02.mat",
   "RasterizerState" : "SolidBackCull",
@@ -17,5 +20,6 @@
   "Textures" : {
     "DiffuseTexture" : "Content/Texture/Auto/stadium_2/Photo02_baseColor.jpeg"
   },
+  "TwoSidedLighting" : false,
   "bEnableBloom" : false
 }
