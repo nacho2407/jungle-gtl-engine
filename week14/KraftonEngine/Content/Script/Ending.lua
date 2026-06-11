@@ -17,6 +17,7 @@ local DIALOGUE_TEXT_LEFT = 16.0
 local DIALOGUE_DEFAULT_FONT_SIZE = 22.0
 local CREDIT_DISPLAY_DURATION = 4.0
 local CREDIT_FADE_DURATION = 0.75
+local SCORE_RESULT_RETRY_INTERVAL = 0.25
 
 local story = nil
 local cutsceneWidget = nil
@@ -36,6 +37,8 @@ local cutsceneFinished = false
 local fadeOutActive = false
 local fadeOutTimer = 0.0
 local scoreShown = false
+local scoreResultRequested = false
+local scoreResultRetryTimer = 0.0
 
 local lockedMovement = nil
 local savedMaxWalkSpeed = nil
@@ -336,12 +339,31 @@ end
 
 local function show_score_result()
     if scoreShown then return end
-    scoreShown = true
-    stop_current_voice()
-    remove_cutscene_widget()
-    set_weapon_hud_visible(false)
+    if not scoreResultRequested then
+        scoreResultRequested = true
+        stop_current_voice()
+        remove_cutscene_widget()
+        set_weapon_hud_visible(false)
+    end
+
+    local opened = false
     if ScoreResult ~= nil and ScoreResult.Show ~= nil then
-        ScoreResult.Show("Ending", "FL_Title.Scene")
+        local ok, result = pcall(ScoreResult.Show, "Ending", "FL_Title.Scene")
+        if ok then
+            opened = result == true
+                or (ScoreResult.IsOpen ~= nil and ScoreResult.IsOpen() == true)
+        else
+            print("[Ending] ScoreResult.Show failed: " .. tostring(result))
+        end
+    else
+        print("[Ending] ScoreResult module is unavailable.")
+    end
+
+    if opened then
+        scoreShown = true
+        scoreResultRetryTimer = 0.0
+    else
+        scoreResultRetryTimer = SCORE_RESULT_RETRY_INTERVAL
     end
 end
 
@@ -416,6 +438,8 @@ local function start_ending()
     fadeOutActive = false
     fadeOutTimer = 0.0
     scoreShown = false
+    scoreResultRequested = false
+    scoreResultRetryTimer = 0.0
     sceneTime = 0.0
     currentIndex = 0
     activeEntry = nil
@@ -444,6 +468,8 @@ function BeginPlay()
     fadeOutActive = false
     fadeOutTimer = 0.0
     scoreShown = false
+    scoreResultRequested = false
+    scoreResultRetryTimer = 0.0
 end
 
 function EndPlay()
@@ -470,6 +496,13 @@ local function update_ending(dt)
     dt = dt or 0.0
     if scoreShown then
         update_score_result(dt)
+        return
+    end
+    if scoreResultRequested then
+        scoreResultRetryTimer = scoreResultRetryTimer - dt
+        if scoreResultRetryTimer <= 0.0 then
+            show_score_result()
+        end
         return
     end
     if not cutsceneStarted or cutsceneFinished then
@@ -524,6 +557,6 @@ return {
     Shutdown = EndPlay,
     IsRunning = function()
         local scoreOpen = ScoreResult ~= nil and ScoreResult.IsOpen ~= nil and ScoreResult.IsOpen()
-        return cutsceneStarted and (not cutsceneFinished or scoreOpen)
+        return cutsceneStarted and (not cutsceneFinished or scoreOpen or scoreResultRequested)
     end,
 }

@@ -7,6 +7,7 @@ local ImpactAudio = {
 }
 
 local DEFAULT_BULLET_IMPACT_EVENT = "world.default.bullet_impact"
+local PLAYER_BULLET_IMPACT_EVENT = "player.bullet_impact"
 local DRONE_BULLET_IMPACT_EVENT = "enemy.drone.bullet_impact"
 local ENEMY_HUMAN_BULLET_IMPACT_EVENT = "enemy.human.bullet_impact"
 local BOSS_HIGH_HEALTH_BULLET_IMPACT_EVENT = "boss.high_health.bullet_impact"
@@ -18,7 +19,11 @@ local function is_bullet_context(context)
     end
 
     local damageType = context.DamageType or context.damageType
-    return damageType == nil or damageType == "Bullet"
+    return damageType == nil
+        or damageType == "Bullet"
+        or damageType == "EnemyBullet"
+        or damageType == "cannon"
+        or damageType == "powerShot"
 end
 
 local function is_valid_actor(actor)
@@ -33,6 +38,29 @@ end
 
 local function has_tag(actor, tag)
     return is_valid_actor(actor) and type(actor.HasTag) == "function" and actor:HasTag(tag)
+end
+
+local function same_actor(a, b)
+    if not is_valid_actor(a) or not is_valid_actor(b) then
+        return false
+    end
+    if a == b then
+        return true
+    end
+    return a.UUID ~= nil and b.UUID ~= nil and a.UUID == b.UUID
+end
+
+local function is_player_actor(actor)
+    if not is_valid_actor(actor) then
+        return false
+    end
+    if has_tag(actor, "player") then
+        return true
+    end
+    if Game ~= nil and Game.GetPlayerPawn ~= nil then
+        return same_actor(actor, Game.GetPlayerPawn())
+    end
+    return false
 end
 
 local function get_hit_location(context, fallbackActor)
@@ -89,6 +117,11 @@ local function on_attack_impact(context)
     end
 
     local hitActor = context.HitActor or context.hitActor
+    if is_player_actor(hitActor) then
+        play_at(PLAYER_BULLET_IMPACT_EVENT, get_hit_location(context, hitActor))
+        return
+    end
+
     if has_tag(hitActor, "drone") then
         play_at(DRONE_BULLET_IMPACT_EVENT, get_hit_location(context, hitActor))
         return

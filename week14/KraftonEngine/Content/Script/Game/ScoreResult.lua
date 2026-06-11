@@ -270,10 +270,15 @@ local function update_text_input(dt)
 end
 
 function ScoreResult.Show(inEndingId, sceneAfterClose)
-    if visible then return end
+    if visible then return true end
     ensure_widget()
-    if widget == nil or ScoreManager == nil then
-        return
+    if widget == nil then
+        print("[ScoreResult] Failed to create score result widget: " .. WIDGET_PATH)
+        return false
+    end
+    if ScoreManager == nil then
+        print("[ScoreResult] ScoreManager is not available.")
+        return false
     end
 
     endingId = inEndingId or "Ending"
@@ -293,6 +298,8 @@ function ScoreResult.Show(inEndingId, sceneAfterClose)
     if not widget:IsInViewport() then
         widget:AddToViewportZ(Z_ORDER)
     end
+
+    return visible
 end
 
 function ScoreResult.Update(dt)

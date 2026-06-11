@@ -483,6 +483,13 @@ local function fire_at(target)
         hitLocation = hit.WorldHitLocation
         hitNormal = hit.WorldNormal or hit.ImpactNormal
         hitActor = hit.HitActor
+    elseif World.RaycastWorldStatic ~= nil then
+        hit = World.RaycastWorldStatic(source, fireDir, fireRange, obj)
+        if hit ~= nil then
+            hitLocation = hit.WorldHitLocation or hit.ImpactPoint or hitLocation
+            hitNormal = hit.WorldNormal or hit.ImpactNormal
+            hitActor = hit.HitActor
+        end
     end
 
     local fireContext = CombatEvents.MakeDamageContext({

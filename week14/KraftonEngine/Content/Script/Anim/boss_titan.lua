@@ -41,6 +41,7 @@ local PHASE_TRANSITION_BLEND_IN = 0.18
 local PHASE_TRANSITION_BLEND_OUT = 0.18
 local WALK_PLAY_RATE = 1.0
 local RUN_PLAY_RATE = 1.12
+local LEAP_PLAY_RATE = 0.9
 local RUN_LOOP_WINDOW = 1.05
 local RUN_LOOP_BLEND_TIME = 0.04
 local AIM_RESPONSE = 8.0
@@ -254,7 +255,7 @@ function init(self)
     self.StrafeLeftPlayer = Anim.create_sequence_player(STRAFE_LEFT_PATH, 1.0, true)
     self.StrafeRightPlayer = Anim.create_sequence_player(STRAFE_RIGHT_PATH, 1.0, true)
     self.RetreatPlayer = Anim.create_sequence_player(RETREAT_PATH, 1.0, true)
-    self.LeapFloatPlayer = Anim.create_sequence_player(LEAP_FLOAT_PATH, 1.0, true)
+    self.LeapFloatPlayer = Anim.create_sequence_player(LEAP_FLOAT_PATH, LEAP_PLAY_RATE, true)
     self.OpeningWalkPlayer = Anim.create_sequence_player(WALK_PATH, WALK_PLAY_RATE, true)
     self.RunLoopBlend = Anim.create_blend_list_by_enum(0, RUN_LOOP_BLEND_TIME)
     Anim.blend_list_add_pose(self.RunLoopBlend, self.RunPlayerA)
@@ -276,8 +277,8 @@ function init(self)
     Anim.sm_add_state(top, "PowerShot", Anim.create_sequence_player(POWER_SHOT_PATH, 1.0, false))
     Anim.sm_add_state(top, "Melee", Anim.create_sequence_player(MELEE_PATH, 1.0, false))
     Anim.sm_add_state(top, "Retreat", Anim.create_sequence_player(RETREAT_PATH, 1.0, false))
-    Anim.sm_add_state(top, "LeapStart", Anim.create_sequence_player(LEAP_START_PATH, 1.0, false))
-    Anim.sm_add_state(top, "LeapLand", Anim.create_sequence_player(LEAP_LAND_PATH, 1.0, false))
+    Anim.sm_add_state(top, "LeapStart", Anim.create_sequence_player(LEAP_START_PATH, LEAP_PLAY_RATE, false))
+    Anim.sm_add_state(top, "LeapLand", Anim.create_sequence_player(LEAP_LAND_PATH, LEAP_PLAY_RATE, false))
     Anim.sm_add_state(top, "Phase", Anim.create_sequence_player(PHASE_PATH, 1.0, false))
     Anim.sm_add_state(top, "PhaseCrouchDown", Anim.create_sequence_player(CROUCH_STAND_PATH, -1.0, false))
     Anim.sm_add_state(top, "PhaseCrouchHold", Anim.create_sequence_player(CROUCH_STAND_PATH, 0.0, false))

@@ -16,10 +16,19 @@ THINK_INTERVAL = 0.12
 LOS_CHECK_INTERVAL = 0.15
 ATTACK_SPEED_MULTIPLIER = 5.0
 MOVE_SPEED_MULTIPLIER = 2.0
-TARGET_HISTORY_LOOKBACK = 0.5
+BOSS_DAMAGE_MULTIPLIER = 1.5
+TARGET_HISTORY_LOOKBACK = 0.2
 TARGET_HISTORY_RETENTION = 1.25
+TARGET_HISTORY_SAMPLE_INTERVAL = 0.1
+TARGET_HISTORY_RECENT_LOOKBACK = 0.1
 BOSS_BASE_SPREAD_DEGREES = 3.0
 BOSS_SPREAD_MULTIPLIER = 2.0
+DASH_ATTACK_TIME_MULTIPLIER = 1.15
+DASH_ATTACK_COOLDOWN_MULTIPLIER = 2.4
+DASH_ATTACK_TACTIC_CHANCE = 0.12
+DASH_ATTACK_APPROACH_CHANCE = 0.08
+BOSS_GUN_BURST_DURATION = 2.0
+BOSS_GUN_BURST_SHOTS = 30
 SIGHT_RANGE = 80.0
 OPENING_WALK_END_RANGE = 64.0
 OPENING_WALK_SPEED = 2.6
@@ -45,6 +54,8 @@ MELEE_KNOCKBACK_DISTANCE = 5.2
 MELEE_KNOCKBACK_DURATION = 0.22
 MUZZLE_BONE = "ja_c_propGun"
 MUZZLE_LOCAL_OFFSET = Vector.new(0.0, 0.0, 0.0)
+BOSS_WEAPON_MUZZLE_FORWARD_OFFSET = 1.5
+BOSS_WEAPON_MUZZLE_UP_OFFSET = 0.15
 TACTIC_REEVALUATE_INTERVAL = 0.25
 APPROACH_COMMIT_TIME = 0.75
 DUEL_COMMIT_TIME = 1.1
@@ -93,11 +104,10 @@ BOSS_BGM_PATH = "Music/Boss.mp3"
 BOSS_BGM_LOOP_NAME = "BossMusicLoop"
 BOSS_BGM_VOLUME = 0.74
 BOSS_BGM_FADE_OUT_MS = 5000.0
+BOSS_WEAPON_FIRE_EVENT = "boss.weapon.fire"
 CARD_KEY_PREFAB_PATH = "Content/Prefab/CardKey.prefab"
 CARD_KEY_SPAWN_OFFSET = Vector.new(2.0, 0.0, 1.0)
 CARD_KEY_ITEM_ID = "vantus_master_key"
-BOSS_CANNON_IMPACT_PARTICLE = "Content/Particle/HItSpark.uasset"
-BOSS_POWER_SHOT_IMPACT_PARTICLE = "Content/Particle/ElectricTrap.uasset"
 BOSS_MELEE_PARTICLE = "Content/Particle/HItSpark.uasset"
 BOSS_LEAP_LAND_PARTICLE = "Content/Particle/SmokeDirt.uasset"
 BOSS_RETREAT_PARTICLE = "Content/Particle/SmokeDirtBlack.uasset"
@@ -384,6 +394,18 @@ local function attack_cooldown(seconds)
     return (seconds or 0.0) / ATTACK_SPEED_MULTIPLIER
 end
 
+local function dash_attack_time(seconds)
+    return (seconds or 0.0) * DASH_ATTACK_TIME_MULTIPLIER
+end
+
+local function dash_attack_cooldown(seconds)
+    return (seconds or 0.0) * DASH_ATTACK_COOLDOWN_MULTIPLIER
+end
+
+local function boss_attack_damage(amount)
+    return (amount or 0.0) * BOSS_DAMAGE_MULTIPLIER
+end
+
 local function vec_cross(a, b)
     return Vector.new(
         a.Y * b.Z - a.Z * b.Y,
@@ -395,6 +417,14 @@ local function same_actor(a, b)
     if a == nil or b == nil then return false end
     if a == b then return true end
     return a.UUID ~= nil and b.UUID ~= nil and a.UUID == b.UUID
+end
+
+local function is_valid_actor(actor)
+    if actor == nil then return false end
+    if type(actor.IsValid) == "function" then
+        return actor:IsValid()
+    end
+    return true
 end
 
 local function is_player_actor(actor)
@@ -492,6 +522,22 @@ local function play_drake_combat_voice(entry)
 
     AudioManager.Play(voiceEntry.key, voiceEntry.volume or 1.0)
     return voiceEntry
+end
+
+local function play_event_at(eventName, location)
+    if eventName == nil or location == nil or AudioManager == nil then
+        return false
+    end
+    if AudioManager.PlayEventAt ~= nil then
+        return AudioManager.PlayEventAt(eventName, location.X or 0.0, location.Y or 0.0, location.Z or 0.0)
+    end
+    if AudioManager.PlayOneShotAt ~= nil then
+        return AudioManager.PlayOneShotAt(eventName, location.X or 0.0, location.Y or 0.0, location.Z or 0.0)
+    end
+    if AudioManager.PlayEvent ~= nil then
+        return AudioManager.PlayEvent(eventName)
+    end
+    return false
 end
 
 local function show_drake_combat_dialogue(entry)
@@ -1154,6 +1200,29 @@ local function get_muzzle_location()
         return frameMuzzleLocation
     end
 
+    local weaponActor = _G.Level3BossGunActor
+    if is_valid_actor(weaponActor) then
+        local weaponLocation = type(weaponActor.GetActorLocation) == "function"
+            and weaponActor:GetActorLocation()
+            or weaponActor.Location
+        if weaponLocation ~= nil then
+            local forward = weaponActor.Forward
+            if forward == nil or forward:Length() <= 0.001 then
+                forward = obj.Forward
+            end
+            if forward == nil or forward:Length() <= 0.001 then
+                forward = yaw_to_forward(obj.Rotation.Z)
+            else
+                forward = forward:Normalized()
+            end
+
+            frameMuzzleLocation = weaponLocation
+                + forward * BOSS_WEAPON_MUZZLE_FORWARD_OFFSET
+                + Vector.new(0.0, 0.0, BOSS_WEAPON_MUZZLE_UP_OFFSET)
+            return frameMuzzleLocation
+        end
+    end
+
     if mesh ~= nil then
         local muzzle = mesh:GetBoneSocketLocation(MUZZLE_BONE, MUZZLE_LOCAL_OFFSET)
         if muzzle ~= nil and muzzle:Length() > 0.001 then
@@ -1200,6 +1269,12 @@ local function update_target_aim_history(target)
         targetAimHistory[targetUUID] = history
     end
 
+    if history.LastSampleTime ~= nil
+        and debugSessionTime - history.LastSampleTime < TARGET_HISTORY_SAMPLE_INTERVAL then
+        return
+    end
+
+    history.LastSampleTime = debugSessionTime
     history[#history + 1] = {
         Time = debugSessionTime,
         Location = get_target_aim_location(target),
@@ -1231,6 +1306,12 @@ local function get_target_aim_location_at(target, lookbackSeconds)
     end
 
     return best.Location or get_target_aim_location(target)
+end
+
+local function get_random_burst_aim_location(target)
+    local older = get_target_aim_location_at(target, TARGET_HISTORY_LOOKBACK)
+    local newer = get_target_aim_location_at(target, TARGET_HISTORY_RECENT_LOOKBACK)
+    return lerp(older, newer, random01())
 end
 
 local function make_spread_target(source, targetPos)
@@ -1303,10 +1384,6 @@ end
 local function spawn_attack_start_particle(kind, source)
     if kind == "melee" then
         spawn_boss_particle(BOSS_MELEE_PARTICLE, source, 1.6, 0.8)
-    elseif kind == "powerShot" then
-        spawn_boss_particle(BOSS_POWER_SHOT_IMPACT_PARTICLE, source, 1.4, 0.9)
-    elseif kind == "cannon" then
-        spawn_boss_particle(BOSS_CANNON_IMPACT_PARTICLE, source, 1.0, 0.55)
     elseif kind == "retreat" then
         spawn_boss_particle(BOSS_RETREAT_PARTICLE, source, 1.4, 0.8)
     end
@@ -1315,10 +1392,6 @@ end
 local function spawn_attack_impact_particle(kind, location)
     if kind == "melee" then
         spawn_boss_particle(BOSS_MELEE_PARTICLE, location, 2.0, 0.9)
-    elseif kind == "powerShot" then
-        spawn_boss_particle(BOSS_POWER_SHOT_IMPACT_PARTICLE, location, 2.2, 1.1)
-    elseif kind == "cannon" then
-        spawn_boss_particle(BOSS_CANNON_IMPACT_PARTICLE, location, 1.2, 0.75)
     elseif kind == "leapLand" then
         spawn_boss_particle(BOSS_LEAP_LAND_PARTICLE, location, 3.2, 1.4)
     elseif kind == "retreat" then
@@ -1641,16 +1714,24 @@ local function apply_boss_damage(context)
 end
 
 local function start_attack(kind, animPath, duration, hitDelay, range, damage, cooldown, lockDuration)
-    local scaledDuration = attack_time(duration)
-    local scaledHitDelay = attack_time(hitDelay)
-    local scaledLockDuration = attack_time(lockDuration or duration)
+    local isGunBurst = kind == "cannon" or kind == "powerShot"
+    local scaledDuration = isGunBurst and BOSS_GUN_BURST_DURATION or attack_time(duration)
+    local scaledHitDelay = isGunBurst and 0.0 or attack_time(hitDelay)
+    local scaledLockDuration = isGunBurst and BOSS_GUN_BURST_DURATION or attack_time(lockDuration or duration)
+    local scaledDamage = boss_attack_damage(damage)
     activeAttack = {
         kind = kind,
         elapsed = 0.0,
         hitDelay = scaledHitDelay,
         range = range,
-        damage = damage,
+        damage = isGunBurst and (scaledDamage / BOSS_GUN_BURST_SHOTS) or scaledDamage,
         didHit = false,
+        isBurst = isGunBurst,
+        burstDuration = isGunBurst and BOSS_GUN_BURST_DURATION or nil,
+        shotCount = isGunBurst and BOSS_GUN_BURST_SHOTS or 1,
+        shotsFired = 0,
+        shotInterval = isGunBurst and (BOSS_GUN_BURST_DURATION / (BOSS_GUN_BURST_SHOTS - 1)) or nil,
+        nextShotTime = scaledHitDelay,
     }
 
     actionTimer = scaledDuration
@@ -1664,13 +1745,13 @@ local function start_attack(kind, animPath, duration, hitDelay, range, damage, c
     CombatEvents.NotifyAttackFired(obj, {
         Instigator = obj,
         DamageCauser = obj,
-        Damage = damage,
+        Damage = scaledDamage,
         DamageType = kind,
     })
 end
 
-local function apply_active_attack_hit()
-    if activeAttack == nil or activeAttack.didHit then return end
+local function fire_active_attack_shot()
+    if activeAttack == nil then return end
 
     local target = find_target()
     if target == nil or not target:IsValid() then return end
@@ -1679,7 +1760,7 @@ local function apply_active_attack_hit()
     local targetPos = get_target_aim_location(target)
     local shotTargetPos = targetPos
     if activeAttack.kind ~= "melee" then
-        shotTargetPos = make_spread_target(source, get_target_aim_location_at(target, TARGET_HISTORY_LOOKBACK))
+        shotTargetPos = make_spread_target(source, get_random_burst_aim_location(target))
     end
     local aimDelta = shotTargetPos - source
     local aimDistance = aimDelta:Length()
@@ -1701,16 +1782,24 @@ local function apply_active_attack_hit()
     local hitActor = nil
 
     if activeAttack.kind ~= "melee" and World ~= nil and World.RaycastPrimitive ~= nil then
+        play_event_at(BOSS_WEAPON_FIRE_EVENT, source)
+
         local hit = World.RaycastPrimitive(source, shotDir, activeAttack.range, obj)
         hitLocation = source + shotDir * activeAttack.range
         if hit ~= nil then
             hitLocation = hit.WorldHitLocation or hit.ImpactPoint or hitLocation
             hitNormal = hit.WorldNormal or hit.ImpactNormal
             hitActor = hit.HitActor
+        elseif World.RaycastWorldStatic ~= nil then
+            hit = World.RaycastWorldStatic(source, shotDir, activeAttack.range, obj)
+            if hit ~= nil then
+                hitLocation = hit.WorldHitLocation or hit.ImpactPoint or hitLocation
+                hitNormal = hit.WorldNormal or hit.ImpactNormal
+                hitActor = hit.HitActor
+            end
         end
 
         EnergyBullet.PlayInto(activeEnergyBullets, source, hitLocation)
-        spawn_attack_impact_particle(activeAttack.kind, hitLocation)
 
         if hit ~= nil then
             CombatEvents.NotifyAttackImpact(obj, {
@@ -1757,18 +1846,34 @@ local function apply_active_attack_hit()
         end
     end
 
-    activeAttack.didHit = true
+    if activeAttack.kind == "melee" then
+        activeAttack.didHit = true
+    end
+end
+
+local function apply_active_attack_hit()
+    if activeAttack == nil or activeAttack.didHit then return end
+    fire_active_attack_shot()
 end
 
 local function update_active_attack(dt)
     if activeAttack == nil then return end
 
     activeAttack.elapsed = activeAttack.elapsed + dt
-    if activeAttack.elapsed >= activeAttack.hitDelay then
+
+    if activeAttack.isBurst then
+        while activeAttack.shotsFired < activeAttack.shotCount
+            and activeAttack.elapsed >= activeAttack.nextShotTime do
+            fire_active_attack_shot()
+            activeAttack.shotsFired = activeAttack.shotsFired + 1
+            activeAttack.nextShotTime = activeAttack.nextShotTime + activeAttack.shotInterval
+        end
+    elseif activeAttack.elapsed >= activeAttack.hitDelay then
         apply_active_attack_hit()
     end
 
-    if actionTimer <= 0.0 then
+    if actionTimer <= 0.0
+        or (activeAttack.isBurst and activeAttack.shotsFired >= activeAttack.shotCount) then
         clear_action_anim(activeAttack.kind)
         activeAttack = nil
     end
@@ -1823,7 +1928,7 @@ local function apply_leap_landing_hit()
             HitActor = target,
             HitLocation = hitLocation,
             ShotDirection = hitDir,
-            Damage = LEAP_LAND_DAMAGE + phase * 4.0,
+            Damage = boss_attack_damage(LEAP_LAND_DAMAGE + phase * 4.0),
             DamageType = "leapLand",
         })
     end
@@ -1845,9 +1950,9 @@ local function start_leap_engage(bb)
     if not can_start_leap(bb) then return false end
 
     local landing = calculate_leap_landing(bb.target)
-    local windupTime = attack_time(LEAP_WINDUP_TIME)
-    local flightTime = attack_time(LEAP_FLIGHT_TIME)
-    local landTime = attack_time(LEAP_LAND_TIME)
+    local windupTime = dash_attack_time(LEAP_WINDUP_TIME)
+    local flightTime = dash_attack_time(LEAP_FLIGHT_TIME)
+    local landTime = dash_attack_time(LEAP_LAND_TIME)
     local totalTime = windupTime + flightTime + landTime
     leapState = {
         stage = "windup",
@@ -1860,21 +1965,20 @@ local function start_leap_engage(bb)
         didLandHit = false,
     }
 
-    cooldowns.leap = attack_cooldown(LEAP_COOLDOWN)
+    cooldowns.leap = dash_attack_cooldown(LEAP_COOLDOWN)
     actionTimer = totalTime
     animationLockTimer = math.max(animationLockTimer, totalTime)
     activeAttack = nil
     set_tactic(TACTIC.leapEngage, totalTime)
-    play_anim(ANIM.leapStart, false, true)
+    request_action_anim("leapStart", windupTime)
+    currentAnim = ANIM.leapStart
 
     CombatEvents.NotifyAttackFired(obj, {
         Instigator = obj,
         DamageCauser = obj,
-        Damage = LEAP_LAND_DAMAGE + phase * 4.0,
+        Damage = boss_attack_damage(LEAP_LAND_DAMAGE + phase * 4.0),
         DamageType = "leapWindup",
     })
-    spawn_attack_start_particle("powerShot", obj.Location)
-
     return true
 end
 
@@ -1896,7 +2000,8 @@ local function update_leap(dt)
             if target ~= nil and target:IsValid() then
                 leapState.landingLocation = calculate_leap_landing(target)
             end
-            play_anim(ANIM.leapFloat, true, true)
+            currentAnim = ANIM.leapFloat
+            set_move_anim(MOVE_LEAP_FLOAT)
         end
         return true
     end
@@ -1912,7 +2017,8 @@ local function update_leap(dt)
             obj.Location = leapState.landingLocation
             leapState.stage = "land"
             leapState.elapsed = 0.0
-            play_anim(ANIM.leapLand, false, true)
+            request_action_anim("leapLand", leapState.landTime)
+            currentAnim = ANIM.leapLand
             spawn_attack_impact_particle("leapLand", obj.Location)
             if not leapState.didLandHit then
                 apply_leap_landing_hit()
@@ -2132,8 +2238,11 @@ end
 
 local function choose_next_tactic(bb)
     if can_start_leap(bb) then
-        local leapChance = 0.42
-        if bb.distance > KEEP_RANGE + 18.0 or random01() < leapChance then
+        local leapChance = DASH_ATTACK_TACTIC_CHANCE
+        if bb.distance > KEEP_RANGE + 18.0 then
+            leapChance = leapChance * 1.5
+        end
+        if random01() < leapChance then
             return TACTIC.leapEngage
         end
     end
@@ -2203,7 +2312,7 @@ local function run_tactic_action(bb)
     end
 
     if currentTactic == TACTIC.approach then
-        if can_start_leap(bb) and random01() < 0.35 then
+        if can_start_leap(bb) and random01() < DASH_ATTACK_APPROACH_CHANCE then
             return start_leap_engage(bb)
         end
         actionTimer = 0.2
@@ -2354,7 +2463,7 @@ function BeginPlay()
     cooldowns.powerShot = attack_cooldown(1.4)
     cooldowns.melee = 0.0
     cooldowns.retreat = 0.0
-    cooldowns.leap = attack_cooldown(2.5)
+    cooldowns.leap = dash_attack_cooldown(2.5)
     _G.Level3BossDefeated = false
     if _G.PickedUpItems == nil or _G.PickedUpItems[CARD_KEY_ITEM_ID] ~= true then
         _G.Level3CardKeySpawned = false
@@ -2405,6 +2514,8 @@ function EndPlay()
 end
 
 function Tick(dt)
+    frameMuzzleLocation = nil
+
     update_drake_combat_dialogue(dt)
     tick_boss_particles(dt or 0.0)
 

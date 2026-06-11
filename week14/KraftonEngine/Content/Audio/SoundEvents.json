@@ -483,6 +483,24 @@
     "cooldown": 0.08,
     "maxInstances": 5
   },
+  "boss.weapon.fire": {
+    "bus": "SFX",
+    "spatial": true,
+    "clips": [
+      "Weapon/Fire/FireLoop1.wav",
+      "Weapon/Fire/FireLoop2.wav",
+      "Weapon/Fire/FireLoop3.wav"
+    ],
+    "volumeMin": 0.92,
+    "volumeMax": 1.12,
+    "pitchMin": 0.94,
+    "pitchMax": 1.02,
+    "minDistance": 10.0,
+    "maxDistance": 260.0,
+    "attenuation": "exponential",
+    "cooldown": 0.04,
+    "maxInstances": 8
+  },
   "world.default.bullet_impact": {
     "bus": "SFX",
     "spatial": true,
