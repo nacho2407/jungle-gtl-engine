@@ -31,6 +31,7 @@ DASH_ATTACK_APPROACH_CHANCE = 0.08
 BOSS_GUN_BURST_DURATION = 3.0
 BOSS_GUN_BURST_SHOTS = 90
 BOSS_GUN_SHOT_DAMAGE = 5.0
+BOSS_MAX_CONSECUTIVE_SHOOTING_ATTACKS = 3
 SIGHT_RANGE = 120.0
 OPENING_WALK_END_RANGE = 64.0
 OPENING_WALK_SPEED = 2.6
@@ -269,6 +270,7 @@ local leapState = nil
 local deathFallState = nil
 BossTitanAI_FarApproachWalkTimer = BossTitanAI_FarApproachWalkTimer or 0.0
 BossTitanAI_ForcePrimaryAction = BossTitanAI_ForcePrimaryAction or false
+BossTitanAI_ConsecutiveShootingAttacks = BossTitanAI_ConsecutiveShootingAttacks or 0
 
 local drakeCombatStory = nil
 local drakeCombatVoiceManifest = nil
@@ -848,6 +850,7 @@ function BossTitanAI_ForceExitStaleIntroCutsceneControl(control)
     activeAttack = nil
     leapState = nil
     BossTitanAI_ForcePrimaryAction = false
+    BossTitanAI_ConsecutiveShootingAttacks = 0
     actionTimer = OPENING_ATTACK_COOLDOWN
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
@@ -894,6 +897,7 @@ local function apply_intro_cutscene_control(dt)
     activeAttack = nil
     leapState = nil
     BossTitanAI_ForcePrimaryAction = false
+    BossTitanAI_ConsecutiveShootingAttacks = 0
     phaseTransitionStage = nil
     phaseTransitionTimer = 0.0
     actionTimer = 0.0
@@ -952,6 +956,7 @@ local function consume_intro_cutscene_release()
     activeAttack = nil
     leapState = nil
     BossTitanAI_ForcePrimaryAction = false
+    BossTitanAI_ConsecutiveShootingAttacks = 0
     actionTimer = OPENING_ATTACK_COOLDOWN
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
@@ -1216,6 +1221,7 @@ local function start_death_sequence()
     leapState = nil
     BossTitanAI_ForcePrimaryAction = false
     openingWalkActive = false
+    BossTitanAI_ConsecutiveShootingAttacks = 0
     actionTimer = 0.0
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
@@ -1646,6 +1652,7 @@ local function begin_phase_transition_stage(stageName, duration)
     activeAttack = nil
     leapState = nil
     BossTitanAI_ForcePrimaryAction = false
+    BossTitanAI_ConsecutiveShootingAttacks = 0
     actionTimer = duration
     animationLockTimer = duration
     phaseLockTimer = duration
@@ -1733,6 +1740,7 @@ local function enter_phase(nextPhase)
     activeAttack = nil
     leapState = nil
     BossTitanAI_ForcePrimaryAction = false
+    BossTitanAI_ConsecutiveShootingAttacks = 0
 
     cooldowns.cannon = attack_cooldown(0.4)
     cooldowns.powerShot = attack_cooldown(1.2)
@@ -2044,6 +2052,7 @@ local function start_leap_engage(bb)
     animationLockTimer = math.max(animationLockTimer, totalTime)
     activeAttack = nil
     BossTitanAI_ForcePrimaryAction = false
+    BossTitanAI_ConsecutiveShootingAttacks = 0
     set_tactic(TACTIC.leapEngage, totalTime)
     request_action_anim("leapStart", windupTime)
     currentAnim = ANIM.leapStart
@@ -2226,7 +2235,15 @@ local function score_retreat(bb)
     return 7.5 + phase + random01()
 end
 
+function BossTitanAI_ShouldBreakShootingPattern()
+    return BossTitanAI_ConsecutiveShootingAttacks >= BOSS_MAX_CONSECUTIVE_SHOOTING_ATTACKS
+end
+
 function BossTitanAI_ChooseShootingAction(bb)
+    if BossTitanAI_ShouldBreakShootingPattern() then
+        return nil
+    end
+
     local powerScore = score_power_shot(bb)
     local cannonScore = score_cannon(bb)
 
@@ -2241,6 +2258,13 @@ function BossTitanAI_ChooseShootingAction(bb)
 end
 
 function BossTitanAI_ChoosePrimaryAction(bb)
+    if BossTitanAI_ShouldBreakShootingPattern() then
+        if can_start_leap(bb) then
+            return "leap"
+        end
+        return nil
+    end
+
     if bb.prefersLeap then
         if can_start_leap(bb) then
             return "leap"
@@ -2276,6 +2300,7 @@ end
 local function run_attack(name)
     if name == "melee" then
         BossTitanAI_ForcePrimaryAction = true
+        BossTitanAI_ConsecutiveShootingAttacks = 0
         start_attack("melee", ANIM.melee, MELEE_ACTION_LOCK, MELEE_HIT_DELAY, MELEE_RANGE + 2.0, 22.0 + phase * 6.0, 1.3, MELEE_ACTION_LOCK)
         return true
     end
@@ -2283,17 +2308,26 @@ local function run_attack(name)
     if name == "powerShot" then
         BossTitanAI_ForcePrimaryAction = false
         start_attack("powerShot", ANIM.powerShot, POWER_SHOT_ACTION_LOCK, 0.55, CANNON_RANGE, 24.0 + phase * 9.0, 2.8, POWER_SHOT_ACTION_LOCK)
+        BossTitanAI_ConsecutiveShootingAttacks = BossTitanAI_ConsecutiveShootingAttacks + 1
+        if BossTitanAI_ShouldBreakShootingPattern() then
+            cooldowns.leap = 0.0
+        end
         return true
     end
 
     if name == "cannon" then
         BossTitanAI_ForcePrimaryAction = false
         start_attack("cannon", ANIM.cannon, CANNON_ACTION_LOCK, 0.22, CANNON_RANGE, 11.0 + phase * 4.0, 0.85, CANNON_ACTION_LOCK)
+        BossTitanAI_ConsecutiveShootingAttacks = BossTitanAI_ConsecutiveShootingAttacks + 1
+        if BossTitanAI_ShouldBreakShootingPattern() then
+            cooldowns.leap = 0.0
+        end
         return true
     end
 
     if name == "retreat" then
         BossTitanAI_ForcePrimaryAction = true
+        BossTitanAI_ConsecutiveShootingAttacks = 0
         cooldowns.retreat = 1.1
         actionTimer = RETREAT_ACTION_LOCK
         animationLockTimer = math.max(animationLockTimer, RETREAT_ACTION_LOCK)
@@ -2594,6 +2628,7 @@ function BeginPlay()
     BossTitanAI_NextWeaponFireSoundTime = 0.0
     BossTitanAI_FarApproachWalkTimer = 0.0
     BossTitanAI_ForcePrimaryAction = false
+    BossTitanAI_ConsecutiveShootingAttacks = 0
     introCutsceneMissingControlLogged = false
     introCutsceneControlLogTimer = 0.0
     introCutsceneControlTimer = 0.0

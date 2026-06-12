@@ -152,12 +152,16 @@ local ADS_HIDE_HUD_CROSSHAIR = false
 -- SetBoneScale 은 내부 BoneEditPose 를 켜므로, ADS 해제 때 ResetBoneEditPose 로 반드시 정리한다.
 local ADS_HIDE_WEAPON_CRO_BONE = true
 local ADS_DEBUG_LOG = true
+local ADS_WALLRUN_SHOT_SETTLE_TIME = 0.18
 
 local crosshairHidden = false
 local vcroHidden       = false
 local lastAimDown      = false
 local lastAdsSettledState = "hip"
 local adsDebugTimer    = 0.0
+local adsCorrectionHoldTimer = 0.0
+local wasWallRunning = false
+local is_player_wall_running = nil
 
 local armsBaseLoc   = nil
 local armsBaseRot   = nil
@@ -782,6 +786,20 @@ local function update_arm_transforms(dt)
     if armsBaseLoc == nil or armsBaseRot == nil then return end
 
     local flags = get_arm_anim_flags()
+    local wallRunning = is_player_wall_running ~= nil and is_player_wall_running() == true
+    if wallRunning ~= wasWallRunning then
+        wasWallRunning = wallRunning
+        if wallRunning then
+            adsCorrectionHoldTimer = math.max(adsCorrectionHoldTimer, ADS_WALLRUN_SHOT_SETTLE_TIME)
+        else
+            adsCorrectionHoldTimer = math.max(adsCorrectionHoldTimer, ADS_WALLRUN_SHOT_SETTLE_TIME * 0.5)
+        end
+    end
+    if adsCorrectionHoldTimer > 0.0 then
+        adsCorrectionHoldTimer = adsCorrectionHoldTimer - dt
+        if adsCorrectionHoldTimer < 0.0 then adsCorrectionHoldTimer = 0.0 end
+    end
+
     -- movement:IsSliding() 는 lua 에 노출 안 돼 있어 AnimInstance 가 매 프레임 채워주는 플래그를 읽는다.
     local slideTarget = (flags ~= nil and flags.needsSlideTilt == true and flags.isSliding == true) and 1.0 or 0.0
     slideBlend = damp_toward(slideBlend, slideTarget, SLIDE_BLEND_HZ, dt)
@@ -831,9 +849,11 @@ local function update_arm_transforms(dt)
     end
     arms:SetRotation(Vector.new(rotX, rotY, rotZ))
 
+    local canUseAdsBoneCorrection = adsBlend > 0.0 and adsCorrectionHoldTimer <= 0.0
+
     -- 2) rear sight -> muzzle 라인이 카메라 forward 와 일치하도록 회전을 보정한다.
     --    위치 보정보다 먼저 해야 muzzle 중앙 정렬이 덜 밀린다.
-    if adsBlend > 0.0 then
+    if canUseAdsBoneCorrection then
         local rotFix = compute_ads_rotation_correction()
         if rotFix ~= nil then
             rotX = armsBaseRot.X + SLIDE_TILT_ROLL_DEG  * slideBlend + (adsRollOffset + rotFix.X) * adsBlend
@@ -848,7 +868,7 @@ local function update_arm_transforms(dt)
     --    총이 카메라쪽으로 빨려들어가는 버그가 있었음. 대신 월드 delta 를 카메라(=캐릭터 캡슐)
     --    의 축으로 투영해서 relative location 에만 더한다. 캡슐의 forward/right/up = 카메라
     --    의 forward/right/up 이므로 축 일치.
-    if adsBlend > 0.0 then
+    if canUseAdsBoneCorrection then
         local worldDelta = compute_ads_world_delta()
         if worldDelta ~= nil and camera ~= nil then
             local fwd, right, up = get_ads_camera_basis()
@@ -867,7 +887,7 @@ local function update_arm_transforms(dt)
 
     -- 4) Viewport-space muzzle centering. This is intentionally after the world/bone solve,
     -- because the player judges ADS by pixels, not by raw world coordinates.
-    if adsBlend > 0.0 then
+    if canUseAdsBoneCorrection then
         for _ = 1, ADS_SCREEN_CORRECTION_PASSES do
             local screenDelta = compute_ads_screen_delta()
             if screenDelta ~= nil then
@@ -881,7 +901,7 @@ local function update_arm_transforms(dt)
 
     update_ads_post_fx(adsBlend)
 
-    if ADS_DEBUG_LOG and adsBlend > 0.0 then
+    if ADS_DEBUG_LOG and canUseAdsBoneCorrection then
         adsDebugTimer = adsDebugTimer + dt
         if adsDebugTimer >= 0.25 then
             adsDebugTimer = 0.0
@@ -914,6 +934,14 @@ local function cache_movement_defaults()
         baseSprintSpeedMultiplier = movement:GetSprintSpeedMultiplier()
         baseWallRunMaxSpeed = movement:GetWallRunMaxSpeed()
     end
+end
+
+is_player_wall_running = function()
+    cache_movement_defaults()
+    if movement ~= nil and type(movement.IsWallRunning) == "function" then
+        return movement:IsWallRunning()
+    end
+    return false
 end
 
 local function apply_debug_speed_multiplier(multiplier)
@@ -1090,6 +1118,9 @@ local function try_shoot()
     if not (is_aim_down() and ADS_SUPPRESS_SHOOT_ANIMATION) then
         request_arm_animation("shoot")
     end
+    if is_player_wall_running ~= nil and is_player_wall_running() then
+        adsCorrectionHoldTimer = math.max(adsCorrectionHoldTimer, ADS_WALLRUN_SHOT_SETTLE_TIME)
+    end
     GameAudio.NotifyShotFired(is_aim_down())
 
     local camPos = camera:GetWorldLocation()
@@ -1178,6 +1209,8 @@ function BeginPlay()
     armsBaseScale = nil
     slideBlend = 0.0
     adsBlend = 0.0
+    adsCorrectionHoldTimer = 0.0
+    wasWallRunning = false
     if camera ~= nil then
         if type(camera.GetFOV) == "function" then
             fovBase = camera:GetFOV()
@@ -1319,6 +1352,8 @@ function EndPlay()
     dofBaseFocusDistance = nil
     dofBaseFStop = nil
     adsBlend = 0.0
+    adsCorrectionHoldTimer = 0.0
+    wasWallRunning = false
     GameAudio.Shutdown()
     recoilPatternIndex = 1
     recoilPendingPitch = 0.0
