@@ -1,4 +1,4 @@
-#include "Engine/Platform/WindowsApplication.h"
+﻿#include "Engine/Platform/WindowsApplication.h"
 #include "Engine/Platform/resource.h"
 
 #include <windowsx.h>
@@ -114,13 +114,36 @@ bool FWindowsApplication::Init(HINSTANCE InHInstance)
 
 	RegisterClassExW(&WndClass);
 
+	DWORD WindowStyle = WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW;
+	int WindowX = CW_USEDEFAULT;
+	int WindowY = CW_USEDEFAULT;
+	int WindowWidth = 1920;
+	int WindowHeight = 1080;
+
+#if WITH_STANDALONE
+	WindowStyle = WS_POPUP | WS_VISIBLE;
+	WindowX = 0;
+	WindowY = 0;
+	WindowWidth = GetSystemMetrics(SM_CXSCREEN);
+	WindowHeight = GetSystemMetrics(SM_CYSCREEN);
+	if (WindowWidth <= 0)
+	{
+		WindowWidth = 1920;
+	}
+
+	if (WindowHeight <= 0)
+	{
+		WindowHeight = 1080;
+	}
+#endif
+
 	HWND HWindow = CreateWindowExW(
 		0,
 		WindowClass,
 		Title,
-		WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-		CW_USEDEFAULT, CW_USEDEFAULT,
-		1920, 1080,
+		WindowStyle,
+		WindowX, WindowY,
+		WindowWidth, WindowHeight,
 		nullptr, nullptr, HInstance, this);
 
 	if (!HWindow)

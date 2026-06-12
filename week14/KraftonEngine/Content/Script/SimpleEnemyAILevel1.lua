@@ -15,10 +15,10 @@ local MAX_HEALTH = 60.0
 local THINK_INTERVAL = 0.16
 
 -- 정면 시야 판정에 사용하는 최대 탐지 거리
-local SIGHT_RANGE = 50.0
+local SIGHT_RANGE = 80.0
 
 -- 시야각과 무관하게 가까운 플레이어를 감지하는 거리
-local PROXIMITY_ALERT_RANGE = 25.0
+local PROXIMITY_ALERT_RANGE = 40.0
 
 -- 이미 경계 상태일 때 target을 잃지 않고 추적하는 최대 거리
 local FORGET_RANGE = 150.0
