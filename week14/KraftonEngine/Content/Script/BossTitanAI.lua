@@ -14,6 +14,7 @@ BOSS_PHASE_ONE_COLOR = { 1.0, 1.0, 1.0, 1.0 }
 BOSS_PHASE_TWO_COLOR = { 1.0, 0.08, 0.04, 1.0 }
 THINK_INTERVAL = 0.12
 LOS_CHECK_INTERVAL = 0.15
+OPENING_ATTACK_COOLDOWN = 2.5
 ATTACK_SPEED_MULTIPLIER = 5.0
 MOVE_SPEED_MULTIPLIER = 2.0
 BOSS_DAMAGE_MULTIPLIER = 1.5
@@ -29,7 +30,7 @@ DASH_ATTACK_TACTIC_CHANCE = 0.12
 DASH_ATTACK_APPROACH_CHANCE = 0.08
 BOSS_GUN_BURST_DURATION = 3.0
 BOSS_GUN_BURST_SHOTS = 90
-BOSS_GUN_SHOT_DAMAGE = 10.0
+BOSS_GUN_SHOT_DAMAGE = 5.0
 SIGHT_RANGE = 120.0
 OPENING_WALK_END_RANGE = 64.0
 OPENING_WALK_SPEED = 2.6
@@ -67,7 +68,7 @@ DUEL_COMMIT_TIME = 1.1
 CLOSE_COMBAT_COMMIT_TIME = 0.6
 LEAP_MIN_RANGE = 28.0
 LEAP_PREFERRED_MIN_RANGE = 80.0
-LEAP_MAX_RANGE = 120.0
+LEAP_MAX_RANGE = 1000.0
 LEAP_MAX_VERTICAL_DELTA = 8.5
 LEAP_START_MAX_VERTICAL_DELTA = 32.0
 LEAP_LANDING_OFFSET = 8.0
@@ -115,6 +116,7 @@ BOSS_BGM_LOOP_NAME = "BossMusicLoop"
 BOSS_BGM_VOLUME = 0.74
 BOSS_BGM_FADE_OUT_MS = 5000.0
 BOSS_WEAPON_FIRE_EVENT = "boss.weapon.fire"
+BOSS_WEAPON_FIRE_SOUND_INTERVAL = 0.18
 CARD_KEY_PREFAB_PATH = "Content/Prefab/CardKey.prefab"
 CARD_KEY_SPAWN_OFFSET = Vector.new(2.0, 0.0, 1.0)
 CARD_KEY_ITEM_ID = "vantus_master_key"
@@ -554,6 +556,19 @@ local function play_event_at(eventName, location)
     return false
 end
 
+BossTitanAI_NextWeaponFireSoundTime = 0.0
+function BossTitanAI_PlayWeaponFireSound(location)
+    if debugSessionTime < BossTitanAI_NextWeaponFireSoundTime then
+        return false
+    end
+
+    BossTitanAI_NextWeaponFireSoundTime = debugSessionTime + BOSS_WEAPON_FIRE_SOUND_INTERVAL
+    if AudioManager ~= nil and AudioManager.StopEvent ~= nil then
+        AudioManager.StopEvent(BOSS_WEAPON_FIRE_EVENT)
+    end
+    return play_event_at(BOSS_WEAPON_FIRE_EVENT, location)
+end
+
 local function show_drake_combat_dialogue(entry)
     if entry == nil then return end
 
@@ -833,7 +848,7 @@ function BossTitanAI_ForceExitStaleIntroCutsceneControl(control)
     activeAttack = nil
     leapState = nil
     BossTitanAI_ForcePrimaryAction = false
-    actionTimer = 0.0
+    actionTimer = OPENING_ATTACK_COOLDOWN
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
     thinkTimer = 0.0
@@ -937,7 +952,7 @@ local function consume_intro_cutscene_release()
     activeAttack = nil
     leapState = nil
     BossTitanAI_ForcePrimaryAction = false
-    actionTimer = 0.0
+    actionTimer = OPENING_ATTACK_COOLDOWN
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
     thinkTimer = 0.0
@@ -1825,7 +1840,7 @@ local function fire_active_attack_shot()
     local hitActor = nil
 
     if activeAttack.kind ~= "melee" and World ~= nil and World.RaycastPrimitive ~= nil then
-        play_event_at(BOSS_WEAPON_FIRE_EVENT, source)
+        BossTitanAI_PlayWeaponFireSound(source)
 
         local traceSource = source + shotDir * BOSS_WEAPON_TRACE_START_OFFSET
         local hit = World.RaycastPrimitive(traceSource, shotDir, activeAttack.range, obj)
@@ -2568,7 +2583,7 @@ function BeginPlay()
     pendingPhase = nil
     phaseTransitionStage = nil
     phaseTransitionTimer = 0.0
-    actionTimer = 0.0
+    actionTimer = OPENING_ATTACK_COOLDOWN
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
     thinkTimer = 0.0
@@ -2576,6 +2591,7 @@ function BeginPlay()
     activeAttack = nil
     leapState = nil
     deathFallState = nil
+    BossTitanAI_NextWeaponFireSoundTime = 0.0
     BossTitanAI_FarApproachWalkTimer = 0.0
     BossTitanAI_ForcePrimaryAction = false
     introCutsceneMissingControlLogged = false
