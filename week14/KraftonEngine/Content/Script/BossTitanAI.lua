@@ -29,26 +29,29 @@ DASH_ATTACK_TACTIC_CHANCE = 0.12
 DASH_ATTACK_APPROACH_CHANCE = 0.08
 BOSS_GUN_BURST_DURATION = 3.0
 BOSS_GUN_BURST_SHOTS = 90
-SIGHT_RANGE = 80.0
+BOSS_GUN_SHOT_DAMAGE = 10.0
+SIGHT_RANGE = 120.0
 OPENING_WALK_END_RANGE = 64.0
 OPENING_WALK_SPEED = 2.6
 OPENING_WALK_ACTION_DURATION = 999.0
 KEEP_RANGE = 28.0
 MIN_RANGE = 9.0
-FIRE_MIN_RANGE = 14.0
+FIRE_MIN_RANGE = 8.0
 CLOSE_RETREAT_RANGE = 12.0
 MELEE_RANGE = 14.0
-CANNON_RANGE = 82.0
+CANNON_RANGE = 120.0
 APPROACH_RUN_SPEED = 5.2
 APPROACH_RUN_DISTANCE = 40.0
+FAR_APPROACH_WALK_DURATION = 0.75
+FAR_APPROACH_WALK_SPEED = 5.5
 TARGET_HEIGHT = 1.6
 MELEE_MAX_VERTICAL_DELTA = 8.5
-ATTACK_LOS_FALLBACK_RANGE = 60.0
-MELEE_ACTION_LOCK = 3.8
+ATTACK_LOS_FALLBACK_RANGE = 100.0
+MELEE_ACTION_LOCK = 4.4
 MELEE_HIT_DELAY = 0.72
 POWER_SHOT_ACTION_LOCK = 1.25
 CANNON_ACTION_LOCK = 0.85
-RETREAT_ACTION_LOCK = 0.18
+RETREAT_ACTION_LOCK = 0.45
 MELEE_KNOCKBACK_DISTANCE = 5.2
 MELEE_KNOCKBACK_DURATION = 0.22
 MUZZLE_BONE = "ja_c_propGun"
@@ -56,12 +59,15 @@ MUZZLE_LOCAL_X_OFFSET = 17.0
 MUZZLE_LOCAL_Y_OFFSET = -20
 MUZZLE_WORLD_Z_OFFSET = -3.0
 FALLBACK_MUZZLE_FORWARD_OFFSET = 20.0
+BOSS_WEAPON_MUZZLE_LOCAL_OFFSET = Vector.new(204.0, 26.0, 186.0)
+BOSS_WEAPON_TRACE_START_OFFSET = 0.75
 TACTIC_REEVALUATE_INTERVAL = 0.25
 APPROACH_COMMIT_TIME = 0.75
 DUEL_COMMIT_TIME = 1.1
 CLOSE_COMBAT_COMMIT_TIME = 0.6
 LEAP_MIN_RANGE = 28.0
-LEAP_MAX_RANGE = 95.0
+LEAP_PREFERRED_MIN_RANGE = 80.0
+LEAP_MAX_RANGE = 120.0
 LEAP_MAX_VERTICAL_DELTA = 8.5
 LEAP_START_MAX_VERTICAL_DELTA = 32.0
 LEAP_LANDING_OFFSET = 8.0
@@ -70,12 +76,16 @@ LEAP_FLIGHT_TIME = 0.55
 LEAP_LAND_TIME = 0.22
 LEAP_ARC_HEIGHT = 11.0
 LEAP_COOLDOWN = 7.5
-LEAP_LAND_DAMAGE_RADIUS = 10.5
+LEAP_LAND_DAMAGE_RADIUS = 21.0
 LEAP_LAND_SHAKE_RADIUS = 28.0
 LEAP_LAND_SHAKE_MAX_VERTICAL_DELTA = 12.0
-LEAP_LAND_DAMAGE = 22.0
+LEAP_LAND_INNER_DAMAGE = 20.0
+LEAP_LAND_MIDDLE_DAMAGE = 10.0
+LEAP_LAND_OUTER_DAMAGE = 5.0
 LEAP_LAND_SHAKE_SCALE = 1.35
-LEAP_KNOCKBACK_DISTANCE = 6.0
+LEAP_KNOCKBACK_INNER_DISTANCE = 12.0
+LEAP_KNOCKBACK_MIDDLE_DISTANCE = 8.0
+LEAP_KNOCKBACK_OUTER_DISTANCE = 4.0
 LEAP_KNOCKBACK_DURATION = 0.28
 AIM_PITCH_MIN = -35.0
 AIM_PITCH_MAX = 40.0
@@ -255,6 +265,8 @@ local cooldowns = {
 local activeAttack = nil
 local leapState = nil
 local deathFallState = nil
+BossTitanAI_FarApproachWalkTimer = BossTitanAI_FarApproachWalkTimer or 0.0
+BossTitanAI_ForcePrimaryAction = BossTitanAI_ForcePrimaryAction or false
 
 local drakeCombatStory = nil
 local drakeCombatVoiceManifest = nil
@@ -417,6 +429,16 @@ local function same_actor(a, b)
     if a == nil or b == nil then return false end
     if a == b then return true end
     return a.UUID ~= nil and b.UUID ~= nil and a.UUID == b.UUID
+end
+
+function BossTitanAI_IsValidActor(actor)
+    if actor == nil then
+        return false
+    end
+    if type(actor.IsValid) == "function" then
+        return actor:IsValid()
+    end
+    return true
 end
 
 local function is_player_actor(actor)
@@ -810,6 +832,7 @@ function BossTitanAI_ForceExitStaleIntroCutsceneControl(control)
 
     activeAttack = nil
     leapState = nil
+    BossTitanAI_ForcePrimaryAction = false
     actionTimer = 0.0
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
@@ -855,6 +878,7 @@ local function apply_intro_cutscene_control(dt)
     -- 컷씬 중에는 전투 판단, 공격 판정, 점프 이동을 모두 멈추고 외부 연출 상태만 반영합니다.
     activeAttack = nil
     leapState = nil
+    BossTitanAI_ForcePrimaryAction = false
     phaseTransitionStage = nil
     phaseTransitionTimer = 0.0
     actionTimer = 0.0
@@ -912,6 +936,7 @@ local function consume_intro_cutscene_release()
 
     activeAttack = nil
     leapState = nil
+    BossTitanAI_ForcePrimaryAction = false
     actionTimer = 0.0
     animationLockTimer = 0.0
     phaseLockTimer = 0.0
@@ -1174,6 +1199,7 @@ local function start_death_sequence()
     BossTitanAI_SafeFadeOutBossMusic()
     activeAttack = nil
     leapState = nil
+    BossTitanAI_ForcePrimaryAction = false
     openingWalkActive = false
     actionTimer = 0.0
     animationLockTimer = 0.0
@@ -1190,6 +1216,32 @@ end
 local function get_muzzle_location()
     if frameMuzzleLocation ~= nil then
         return frameMuzzleLocation
+    end
+
+    local weaponActor = _G.Level3BossGunActor
+    if BossTitanAI_IsValidActor(weaponActor) and type(weaponActor.GetStaticMesh) == "function" then
+        local weaponMesh = weaponActor:GetStaticMesh()
+        if weaponMesh ~= nil then
+            local meshLocation = weaponMesh.Location
+            local forward = weaponMesh.Forward
+            local right = weaponMesh.Right
+            local up = weaponMesh.Up
+            local scale = type(weaponMesh.GetRelativeScale) == "function"
+                and weaponMesh:GetRelativeScale()
+                or weaponMesh.RelativeScale
+                or Vector.new(1.0, 1.0, 1.0)
+
+            if meshLocation ~= nil
+                and forward ~= nil and forward:Length() > 0.001
+                and right ~= nil and right:Length() > 0.001
+                and up ~= nil and up:Length() > 0.001 then
+                frameMuzzleLocation = meshLocation
+                    + forward:Normalized() * (BOSS_WEAPON_MUZZLE_LOCAL_OFFSET.X * scale.X)
+                    + right:Normalized() * (BOSS_WEAPON_MUZZLE_LOCAL_OFFSET.Y * scale.Y)
+                    + up:Normalized() * (BOSS_WEAPON_MUZZLE_LOCAL_OFFSET.Z * scale.Z)
+                return frameMuzzleLocation
+            end
+        end
     end
 
     local forward = obj.Forward
@@ -1578,6 +1630,7 @@ local function begin_phase_transition_stage(stageName, duration)
 
     activeAttack = nil
     leapState = nil
+    BossTitanAI_ForcePrimaryAction = false
     actionTimer = duration
     animationLockTimer = duration
     phaseLockTimer = duration
@@ -1664,6 +1717,7 @@ local function enter_phase(nextPhase)
     animationLockTimer = phaseLockTimer
     activeAttack = nil
     leapState = nil
+    BossTitanAI_ForcePrimaryAction = false
 
     cooldowns.cannon = attack_cooldown(0.4)
     cooldowns.powerShot = attack_cooldown(1.2)
@@ -1713,7 +1767,7 @@ local function start_attack(kind, animPath, duration, hitDelay, range, damage, c
         elapsed = 0.0,
         hitDelay = scaledHitDelay,
         range = range,
-        damage = isGunBurst and (scaledDamage / BOSS_GUN_BURST_SHOTS) or scaledDamage,
+        damage = isGunBurst and BOSS_GUN_SHOT_DAMAGE or scaledDamage,
         didHit = false,
         isBurst = isGunBurst,
         burstDuration = isGunBurst and BOSS_GUN_BURST_DURATION or nil,
@@ -1773,14 +1827,15 @@ local function fire_active_attack_shot()
     if activeAttack.kind ~= "melee" and World ~= nil and World.RaycastPrimitive ~= nil then
         play_event_at(BOSS_WEAPON_FIRE_EVENT, source)
 
-        local hit = World.RaycastPrimitive(source, shotDir, activeAttack.range, obj)
+        local traceSource = source + shotDir * BOSS_WEAPON_TRACE_START_OFFSET
+        local hit = World.RaycastPrimitive(traceSource, shotDir, activeAttack.range, obj)
         hitLocation = source + shotDir * activeAttack.range
         if hit ~= nil then
             hitLocation = hit.WorldHitLocation or hit.ImpactPoint or hitLocation
             hitNormal = hit.WorldNormal or hit.ImpactNormal
             hitActor = hit.HitActor
         elseif World.RaycastWorldStatic ~= nil then
-            hit = World.RaycastWorldStatic(source, shotDir, activeAttack.range, obj)
+            hit = World.RaycastWorldStatic(traceSource, shotDir, activeAttack.range, obj)
             if hit ~= nil then
                 hitLocation = hit.WorldHitLocation or hit.ImpactPoint or hitLocation
                 hitNormal = hit.WorldNormal or hit.ImpactNormal
@@ -1788,7 +1843,7 @@ local function fire_active_attack_shot()
             end
         end
 
-        EnergyBullet.PlayInto(activeEnergyBullets, source, hitLocation)
+        EnergyBullet.PlayInto(activeEnergyBullets, source, hitLocation, get_muzzle_location)
 
         if hit ~= nil then
             CombatEvents.NotifyAttackImpact(obj, {
@@ -1906,9 +1961,24 @@ local function apply_leap_landing_hit()
     if verticalDelta > LEAP_MAX_VERTICAL_DELTA then return end
 
     local hitDir = normalized_or_zero(horizontal_delta(obj.Location, target.Location))
+    if hitDir:Length() <= 0.001 then
+        hitDir = yaw_to_forward(obj.Rotation.Z)
+    end
     local hitLocation = target.Location
     Debug.DrawSphere(obj.Location, LEAP_LAND_DAMAGE_RADIUS, 255, 120, 30, 0.65, 16)
     Debug.DrawSphere(obj.Location, LEAP_LAND_SHAKE_RADIUS, 255, 180, 60, 0.35, 24)
+
+    local damage = LEAP_LAND_OUTER_DAMAGE
+    local knockbackDistance = LEAP_KNOCKBACK_OUTER_DISTANCE
+    local innerRadius = LEAP_LAND_DAMAGE_RADIUS / 3.0
+    local middleRadius = LEAP_LAND_DAMAGE_RADIUS * 2.0 / 3.0
+    if dist <= innerRadius then
+        damage = LEAP_LAND_INNER_DAMAGE
+        knockbackDistance = LEAP_KNOCKBACK_INNER_DISTANCE
+    elseif dist <= middleRadius then
+        damage = LEAP_LAND_MIDDLE_DAMAGE
+        knockbackDistance = LEAP_KNOCKBACK_MIDDLE_DISTANCE
+    end
 
     if CombatEvents.IsDamageable(target) then
         CombatEvents.ApplyDamageAndNotify(obj, target, {
@@ -1917,18 +1987,18 @@ local function apply_leap_landing_hit()
             HitActor = target,
             HitLocation = hitLocation,
             ShotDirection = hitDir,
-            Damage = boss_attack_damage(LEAP_LAND_DAMAGE + phase * 4.0),
+            Damage = damage,
             DamageType = "leapLand",
         })
     end
 
     local action = target:GetActionComponent()
     if action ~= nil then
-        action:Knockback(hitDir, LEAP_KNOCKBACK_DISTANCE, LEAP_KNOCKBACK_DURATION)
+        action:Knockback(hitDir, knockbackDistance, LEAP_KNOCKBACK_DURATION)
     end
 end
 
-local function can_start_leap(bb)
+can_start_leap = function(bb)
     if bb == nil then return false end
     if not bb.canLeap then return false end
     if activeAttack ~= nil or is_animation_locked() or is_leaping() then return false end
@@ -1958,6 +2028,7 @@ local function start_leap_engage(bb)
     actionTimer = totalTime
     animationLockTimer = math.max(animationLockTimer, totalTime)
     activeAttack = nil
+    BossTitanAI_ForcePrimaryAction = false
     set_tactic(TACTIC.leapEngage, totalTime)
     request_action_anim("leapStart", windupTime)
     currentAnim = ANIM.leapStart
@@ -1965,7 +2036,7 @@ local function start_leap_engage(bb)
     CombatEvents.NotifyAttackFired(obj, {
         Instigator = obj,
         DamageCauser = obj,
-        Damage = boss_attack_damage(LEAP_LAND_DAMAGE + phase * 4.0),
+        Damage = LEAP_LAND_INNER_DAMAGE,
         DamageType = "leapWindup",
     })
     return true
@@ -2046,6 +2117,7 @@ local function tick_timers(dt)
     animationLockTimer = math.max(0.0, animationLockTimer - dt)
     phaseLockTimer = math.max(0.0, phaseLockTimer - dt)
     strafeFlipTimer = math.max(0.0, strafeFlipTimer - dt)
+    BossTitanAI_FarApproachWalkTimer = math.max(0.0, BossTitanAI_FarApproachWalkTimer - dt)
     tacticCommitTimer = math.max(0.0, tacticCommitTimer - dt)
     tacticReevaluateTimer = math.max(0.0, tacticReevaluateTimer - dt)
 
@@ -2079,6 +2151,10 @@ local function build_blackboard(target)
     blackboard.isClose = dist <= CLOSE_RETREAT_RANGE or canGroundMelee
     blackboard.isDuelRange = dist > CLOSE_RETREAT_RANGE and dist <= KEEP_RANGE + 8.0
     blackboard.isFar = dist > KEEP_RANGE + 8.0
+    blackboard.prefersLeap = dist >= LEAP_PREFERRED_MIN_RANGE
+    blackboard.prefersShooting = dist < LEAP_PREFERRED_MIN_RANGE
+        and aimDelta:Length() <= CANNON_RANGE
+        and attackLineOfSight
     blackboard.healthRatio = health_ratio()
     blackboard.phase = phase
     blackboard.lineOfSight = lineOfSight
@@ -2092,26 +2168,20 @@ local function update_opening_walk(bb, dt)
     if not openingWalkActive then return false end
 
     currentTactic = TACTIC.openingWalk
-    if bb.distance <= OPENING_WALK_END_RANGE then
-        openingWalkActive = false
-        clear_action_anim("openingWalk")
-        set_tactic(TACTIC.approach, APPROACH_COMMIT_TIME)
-        debug_log(string.format("[%.2f][BossAI] opening_walk_end dist=%.1f", debugSessionTime, bb.distance))
-        return false
+    openingWalkActive = false
+    clear_action_anim("openingWalk")
+    if bb.prefersLeap and can_start_leap(bb) then
+        set_tactic(TACTIC.leapEngage)
+    else
+        set_tactic(TACTIC.duel)
     end
-
-    local toTarget = horizontal_delta(obj.Location, bb.target.Location)
-    local dirToTarget = normalized_or_zero(toTarget)
-    move_horizontal(dirToTarget, OPENING_WALK_SPEED, dt)
-    set_move_anim(MOVE_WALK)
-    hold_action_anim("openingWalk", OPENING_WALK_ACTION_DURATION)
-    currentAnim = ANIM.walk
-    return true
+    debug_log(string.format("[%.2f][BossAI] opening_walk_skip dist=%.1f", debugSessionTime, bb.distance))
+    return false
 end
 
 local function score_cannon(bb)
     if cooldowns.cannon > 0.0 or not bb.attackLineOfSight then return -1000.0 end
-    if bb.canGroundMelee then return -1000.0 end
+    if bb.prefersLeap then return -1000.0 end
     if bb.distance < FIRE_MIN_RANGE and math.abs(bb.verticalDelta) <= MELEE_MAX_VERTICAL_DELTA then return -1000.0 end
     if bb.aimDistance > CANNON_RANGE then return -1000.0 end
 
@@ -2122,8 +2192,8 @@ end
 
 local function score_power_shot(bb)
     if cooldowns.powerShot > 0.0 or phase < 2 or not bb.attackLineOfSight then return -1000.0 end
-    if bb.canGroundMelee then return -1000.0 end
-    if bb.distance < 18.0 and math.abs(bb.verticalDelta) <= MELEE_MAX_VERTICAL_DELTA then return -1000.0 end
+    if bb.prefersLeap then return -1000.0 end
+    if bb.distance < FIRE_MIN_RANGE and math.abs(bb.verticalDelta) <= MELEE_MAX_VERTICAL_DELTA then return -1000.0 end
     if bb.aimDistance > CANNON_RANGE then return -1000.0 end
 
     local losPenalty = bb.lineOfSight and 0.0 or -1.5
@@ -2139,6 +2209,31 @@ local function score_retreat(bb)
     if cooldowns.retreat > 0.0 or bb.distance > CLOSE_RETREAT_RANGE then return -1000.0 end
     if math.abs(bb.verticalDelta) > MELEE_MAX_VERTICAL_DELTA then return -1000.0 end
     return 7.5 + phase + random01()
+end
+
+function BossTitanAI_ChooseShootingAction(bb)
+    local powerScore = score_power_shot(bb)
+    local cannonScore = score_cannon(bb)
+
+    if powerScore <= -999.0 and cannonScore <= -999.0 then
+        return nil
+    end
+
+    if powerScore > cannonScore then
+        return "powerShot"
+    end
+    return "cannon"
+end
+
+function BossTitanAI_ChoosePrimaryAction(bb)
+    if bb.prefersLeap then
+        if can_start_leap(bb) then
+            return "leap"
+        end
+        return nil
+    end
+
+    return BossTitanAI_ChooseShootingAction(bb)
 end
 
 local function choose_attack(bb)
@@ -2165,21 +2260,25 @@ end
 
 local function run_attack(name)
     if name == "melee" then
+        BossTitanAI_ForcePrimaryAction = true
         start_attack("melee", ANIM.melee, MELEE_ACTION_LOCK, MELEE_HIT_DELAY, MELEE_RANGE + 2.0, 22.0 + phase * 6.0, 1.3, MELEE_ACTION_LOCK)
         return true
     end
 
     if name == "powerShot" then
+        BossTitanAI_ForcePrimaryAction = false
         start_attack("powerShot", ANIM.powerShot, POWER_SHOT_ACTION_LOCK, 0.55, CANNON_RANGE, 24.0 + phase * 9.0, 2.8, POWER_SHOT_ACTION_LOCK)
         return true
     end
 
     if name == "cannon" then
+        BossTitanAI_ForcePrimaryAction = false
         start_attack("cannon", ANIM.cannon, CANNON_ACTION_LOCK, 0.22, CANNON_RANGE, 11.0 + phase * 4.0, 0.85, CANNON_ACTION_LOCK)
         return true
     end
 
     if name == "retreat" then
+        BossTitanAI_ForcePrimaryAction = true
         cooldowns.retreat = 1.1
         actionTimer = RETREAT_ACTION_LOCK
         animationLockTimer = math.max(animationLockTimer, RETREAT_ACTION_LOCK)
@@ -2194,6 +2293,15 @@ local function run_attack(name)
 end
 
 local function choose_close_combat_action(bb)
+    local primaryAction = BossTitanAI_ChoosePrimaryAction(bb)
+    if primaryAction ~= nil and primaryAction ~= "leap" then
+        return primaryAction
+    end
+
+    if BossTitanAI_ForcePrimaryAction then
+        return nil
+    end
+
     local meleeScore = score_melee(bb)
     if meleeScore > -999.0 then
         return "melee"
@@ -2208,40 +2316,30 @@ local function choose_close_combat_action(bb)
 end
 
 local function choose_duel_action(bb)
-    local powerScore = score_power_shot(bb)
-    local cannonScore = score_cannon(bb)
+    local action = BossTitanAI_ChooseShootingAction(bb)
 
-    if powerScore <= -999.0 and cannonScore <= -999.0 then
+    if action == nil then
         return nil
     end
 
-    if random01() < 0.18 then
+    if not bb.prefersShooting and random01() < 0.18 then
         return nil
     end
 
-    if powerScore > cannonScore then
-        return "powerShot"
-    end
-    return "cannon"
+    return action
 end
 
 local function choose_next_tactic(bb)
-    if can_start_leap(bb) then
-        local leapChance = DASH_ATTACK_TACTIC_CHANCE
-        if bb.distance > KEEP_RANGE + 18.0 then
-            leapChance = leapChance * 1.5
-        end
-        if random01() < leapChance then
-            return TACTIC.leapEngage
-        end
+    if bb.prefersLeap and can_start_leap(bb) then
+        return TACTIC.leapEngage
+    end
+
+    if bb.prefersShooting or bb.prefersLeap then
+        return TACTIC.duel
     end
 
     if bb.isClose then
         return TACTIC.closeCombat
-    end
-
-    if bb.isFar then
-        return TACTIC.approach
     end
 
     return TACTIC.duel
@@ -2255,13 +2353,23 @@ local function refresh_tactic(bb)
         return
     end
 
+    if bb.prefersLeap and can_start_leap(bb) and currentTactic ~= TACTIC.leapEngage then
+        set_tactic(TACTIC.leapEngage)
+        return
+    end
+
+    if bb.prefersShooting and currentTactic ~= TACTIC.duel then
+        set_tactic(TACTIC.duel, DUEL_COMMIT_TIME)
+        return
+    end
+
     if bb.isClose and currentTactic ~= TACTIC.closeCombat then
         set_tactic(TACTIC.closeCombat, CLOSE_COMBAT_COMMIT_TIME)
         return
     end
 
     if bb.isFar and currentTactic == TACTIC.closeCombat then
-        set_tactic(TACTIC.approach, APPROACH_COMMIT_TIME)
+        set_tactic(choose_next_tactic(bb))
         return
     end
 
@@ -2278,11 +2386,28 @@ local function refresh_tactic(bb)
 end
 
 local function run_tactic_action(bb)
+    if BossTitanAI_ForcePrimaryAction then
+        local primaryAction = BossTitanAI_ChoosePrimaryAction(bb)
+        if primaryAction == "leap" then
+            if start_leap_engage(bb) then
+                return true
+            end
+            actionTimer = 0.18
+            return true
+        end
+        if primaryAction ~= nil then
+            return run_attack(primaryAction)
+        end
+
+        actionTimer = 0.18
+        return true
+    end
+
     if currentTactic == TACTIC.leapEngage then
         if start_leap_engage(bb) then
             return true
         end
-        set_tactic(TACTIC.approach, APPROACH_COMMIT_TIME)
+        set_tactic(TACTIC.duel, DUEL_COMMIT_TIME)
         actionTimer = 0.2
         return true
     end
@@ -2294,6 +2419,8 @@ local function run_tactic_action(bb)
     if currentTactic == TACTIC.duel then
         local action = choose_duel_action(bb)
         if action == nil then
+            BossTitanAI_FarApproachWalkTimer = FAR_APPROACH_WALK_DURATION
+            BossTitanAI_ForcePrimaryAction = true
             actionTimer = 0.25 + random01() * 0.25
             return true
         end
@@ -2301,11 +2428,10 @@ local function run_tactic_action(bb)
     end
 
     if currentTactic == TACTIC.approach then
-        if can_start_leap(bb) and random01() < DASH_ATTACK_APPROACH_CHANCE then
+        if bb.prefersLeap and can_start_leap(bb) then
             return start_leap_engage(bb)
         end
-        actionTimer = 0.2
-        return true
+        return run_attack(choose_duel_action(bb))
     end
 
     return run_attack(choose_attack(bb))
@@ -2339,9 +2465,19 @@ local function locomote_duel(bb, dt)
     local toTarget = horizontal_delta(obj.Location, bb.target.Location)
     local dirToTarget = normalized_or_zero(toTarget)
 
-    if bb.distance > KEEP_RANGE + 8.0 then
-        move_horizontal(dirToTarget, 5.0 + phase, dt)
+    if BossTitanAI_FarApproachWalkTimer > 0.0 then
+        move_horizontal(dirToTarget, FAR_APPROACH_WALK_SPEED, dt)
         play_anim(ANIM.walk, true, false)
+        return
+    end
+
+    if bb.prefersLeap then
+        play_anim(ANIM.idle, true, false)
+        return
+    end
+
+    if bb.distance > KEEP_RANGE + 8.0 then
+        play_anim(ANIM.idle, true, false)
         return
     end
 
@@ -2364,6 +2500,11 @@ end
 local function locomote_close_combat(bb, dt)
     local toTarget = horizontal_delta(obj.Location, bb.target.Location)
     local dirToTarget = normalized_or_zero(toTarget)
+
+    if bb.prefersShooting then
+        play_anim(ANIM.idle, true, false)
+        return
+    end
 
     if bb.distance < MIN_RANGE then
         move_horizontal(dirToTarget * -1.0, 6.0 + phase, dt)
@@ -2435,6 +2576,8 @@ function BeginPlay()
     activeAttack = nil
     leapState = nil
     deathFallState = nil
+    BossTitanAI_FarApproachWalkTimer = 0.0
+    BossTitanAI_ForcePrimaryAction = false
     introCutsceneMissingControlLogged = false
     introCutsceneControlLogTimer = 0.0
     introCutsceneControlTimer = 0.0
@@ -2452,7 +2595,7 @@ function BeginPlay()
     cooldowns.powerShot = attack_cooldown(1.4)
     cooldowns.melee = 0.0
     cooldowns.retreat = 0.0
-    cooldowns.leap = dash_attack_cooldown(2.5)
+    cooldowns.leap = 0.0
     _G.Level3BossDefeated = false
     if _G.PickedUpItems == nil or _G.PickedUpItems[CARD_KEY_ITEM_ID] ~= true then
         _G.Level3CardKeySpawned = false
@@ -2507,6 +2650,7 @@ function Tick(dt)
 
     update_drake_combat_dialogue(dt)
     tick_boss_particles(dt or 0.0)
+    frameMuzzleLocation = nil
 
     if isDead then
         update_death_fall(dt)
