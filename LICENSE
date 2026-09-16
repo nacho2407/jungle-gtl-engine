@@ -1,0 +1,63 @@
+Copyright (c) 2026 장민준(Jang Minjun) 및 각 기여자
+
+이 저장소는 크래프톤 정글 게임테크랩 과정에서 진행한 엔진 제작 실습 프로젝트를 담고 있지만, 크래프톤 또는 크래프톤 정글의 공식 저장소가 아닙니다. 이 저장소의 코드와 자료에 대한 저작권은 온전히 이를 작성한 장민준과 각 기여자에게 귀속되며, 각 기여자는 자신이 작성한 부분에 대한 저작권을 가집니다. 기여자는 git 커밋 기록과 각 주차 README에서 확인하실 수 있습니다.
+
+이 저장소의 코드와 자료 중 장민준이 작성한 부분은 아래 영문 부분에 첨부한 MIT 라이선스로 공개합니다. 장민준이 작성한 부분이란 git 커밋 기록에 작성자가 Jang Minjun(jmj0ok@gmail.com)으로 기록된 변경분을 말합니다. 파일의 이동, 이름 변경, 디렉토리 정리를 위한 커밋은 해당 파일의 원래 작성자를 바꾸지 않으며, 이러한 커밋으로 옮겨진 기존 내용은 원래 작성자의 작성분으로 봅니다. 또한 변경분 안에 포함된 다른 사람의 코드, 서드파티 라이브러리와 SDK, 제3자가 만든 에셋, 크래프톤 정글에서 제공한 코드와 자료(사전 학습 자료 포함)는 제외합니다.
+
+다른 기여자가 작성한 부분에 대해 장민준은 어떠한 권리도 주장하지 않으며, 이용 허락을 부여하지도 않습니다. 해당 부분을 이용하시려면 해당 기여자에게 별도 허락을 받으셔야 합니다.
+
+서드파티 라이브러리와 SDK, 제3자가 만든 에셋(폰트, 이미지, 사운드, 모델 등), 크래프톤 정글에서 제공한 코드와 자료(사전 학습 자료 포함), 릴리즈 실행 파일에 포함된 런타임과 라이브러리는 각 권리자의 조건을 따릅니다. 서드파티 라이브러리 목록은 각 주차 README에서 확인하실 수 있습니다. 주차 README에 별도의 조건이 적혀 있는 경우에는 그 조건이 우선합니다.
+
+릴리즈로 제공하는 실행 파일은 여러 기여자의 코드가 함께 빌드된 결과물이므로 MIT 라이선스가 적용되지 않습니다. README의 빌드 안내와 릴리즈로 제공하는 실행 파일은 결과물을 확인하실 수 있도록 제공하는 것이며, 실행 파일은 재배포하실 수 없습니다.
+
+이 저장소에는 과정에 함께 참여하신 여러 기여자분들의 코드가 포함되어 있습니다. 본인의 기여분이 게시되는 것에 이의가 있으시거나 기여자 표기의 수정을 원하시는 경우 아래 연락처로 알려 주시면, 확인 후 비공개 처리, 삭제, 표기 수정 등의 조치를 하겠습니다.
+
+이 저장소의 내용과 실행 파일은 있는 그대로 제공됩니다. 법이 허용하는 범위에서 저작권자는 어떠한 보증도 하지 않으며, 이용으로 인해 발생한 손해에 대해 책임지지 않습니다.
+
+이용 허락 요청이나 기여자 관련 요청은 장민준(jmj0ok@gmail.com)에게 연락해 주시기 바랍니다.
+
+---
+
+Copyright (c) 2026 Jang Minjun and contributors
+
+This repository contains hands-on engine development projects carried out during the KRAFTON Jungle game tech Lab program, but it is not an official repository of KRAFTON or KRAFTON Jungle. The copyright in the code and materials in this repository belongs entirely to their authors, Jang Minjun and the other contributors, and each contributor retains the copyright in their own contributions. Contributors can be identified through the git commit history and each weekly README.
+
+The portions of the code and materials in this repository authored by Jang Minjun are released under the MIT License included below. These portions consist of the changes recorded in the git commit history with Jang Minjun(jmj0ok@gmail.com) as the author. Commits that move, rename, or reorganize files do not change the original authorship of those files, and any existing content carried over by such commits is treated as authored by its original author. In addition, the following are excluded even if they are contained in those changes: code by other people, third-party libraries and SDKs, third-party assets, and code and materials provided by KRAFTON Jungle(including pre-course learning materials).
+
+Jang Minjun claims no rights in, and grants no license to, the portions authored by other contributors. Any use of those portions requires separate permission from the respective contributors.
+
+Third-party libraries and SDKs, third-party assets(including fonts, images, sounds, and models), code and materials provided by KRAFTON Jungle(including pre-course learning materials), and runtimes and libraries bundled with the release executables are governed by the terms of their respective rights holders. A list of third-party libraries is available in each weekly README. If a weekly README states different terms, those terms apply.
+
+The release executables are built from code written by multiple contributors, so the MIT License does not apply to them. The build instructions in the README files and the release executables are provided so that the results can be examined, and the executables may not be redistributed.
+
+This repository contains code written by multiple contributors who took part in the program. If you are a contributor and object to the publication of your contributions, or would like your attribution corrected, please contact Jang Minjun at the address below. Upon verification, appropriate action will be taken, such as making the relevant content private, removing it, or correcting the attribution.
+
+The contents and executables in this repository are provided "as is," without warranty of any kind, express or implied. To the extent permitted by law, the copyright holders shall not be liable for any damages arising from their use.
+
+For permission requests or contributor-related requests, please contact Jang Minjun(jmj0ok@gmail.com).
+
+In the MIT License below, "the Software" refers only to the portions authored by Jang Minjun as described above.
+
+---
+
+MIT License
+
+Copyright (c) 2026 Jang Minjun
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
