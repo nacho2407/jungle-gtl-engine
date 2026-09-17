@@ -1,0 +1,11 @@
+# Build outputs
+/x64/
+/Debug/
+/Release/
+/week00/
+
+# Dear ImGui runtime layout
+/imgui.ini
+
+# Excluded from this repository because of license issues; kept only for local builds
+/Source/Sphere.h
