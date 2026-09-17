@@ -7,10 +7,10 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_internal.h"
-#include "imgui/imgui_impl_dx11.h"
-#include "imgui/imgui_impl_win32.h"
+#include "../ThirdParty/imgui/imgui.h"
+#include "../ThirdParty/imgui/imgui_internal.h"
+#include "../ThirdParty/imgui/imgui_impl_dx11.h"
+#include "../ThirdParty/imgui/imgui_impl_win32.h"
 
 
 struct FVertexSimple
@@ -241,7 +241,7 @@ public:
         ID3DBlob* vertexshaderCSO;
 
         D3DCompileFromFile(
-            L"ShaderW0.hlsl",
+            L"Shaders/ShaderW0.hlsl",
             nullptr,
             nullptr,
             "mainVS",
@@ -262,7 +262,7 @@ public:
         ID3DBlob* pixelshaderCSO;
 
         D3DCompileFromFile(
-            L"ShaderW0.hlsl",
+            L"Shaders/ShaderW0.hlsl",
             nullptr,
             nullptr,
             "mainPS",
