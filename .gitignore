@@ -1,0 +1,7 @@
+# Visual Studio local state and per-user settings
+.vs/
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+ipch/
