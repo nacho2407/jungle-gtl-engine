@@ -3,7 +3,7 @@
 void UParticlePool::Initialize(int DefaultCapacity, URenderer& renderer)
 {
 	ParticleTexture = new UTexture;
-	ParticleTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Resource/Star.png");
+	ParticleTexture->Initialize(renderer.Device, renderer.DeviceContext, "./Content/Resource/Star.png");
 
 	ParticlePool.Reserve(DefaultCapacity);
 	for (int i = 0; i < DefaultCapacity; ++i)

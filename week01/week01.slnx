@@ -3,5 +3,5 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="jungle-gtl-week01.vcxproj" Id="5d2d55bd-9abc-40a6-9525-a03f09491ac1" />
+  <Project Path="week01.vcxproj" Id="5d2d55bd-9abc-40a6-9525-a03f09491ac1" />
 </Solution>

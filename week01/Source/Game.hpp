@@ -2,12 +2,12 @@
 
 #include <windows.h>
 
-#include "imgui/imgui.h"
-#include "imgui/imgui_internal.h"
-#include "imgui/imgui_impl_dx11.h"
-#include "imgui/imgui_impl_win32.h"
+#include "../ThirdParty/imgui/imgui.h"
+#include "../ThirdParty/imgui/imgui_internal.h"
+#include "../ThirdParty/imgui/imgui_impl_dx11.h"
+#include "../ThirdParty/imgui/imgui_impl_win32.h"
 
-#include "stb_image.h"
+#include "../ThirdParty/stb/stb_image.h"
 
 #include "Constants.h"
 #include "Physics.hpp"
