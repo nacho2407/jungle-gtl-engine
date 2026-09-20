@@ -433,3 +433,17 @@ Week01/
 
 imgui.ini
 highscore_data
+
+# Build outputs of this week (paths relative to this folder)
+/x64/
+/week01/
+
+# Excluded from this repository because of license issues; kept only for local builds
+/Source/Sphere.h
+/ThirdParty/FMOD/
+/Content/Sound/
+/Content/Resource/comic_sans_ms.spritefont
+/Content/Resource/segoe.spritefont
+/Content/Resource/WoodBox.png
+/Content/Resource/Button_BG.png
+/Content/Resource/credits_bg.png
