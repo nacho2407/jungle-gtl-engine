@@ -1,6 +1,6 @@
 #include "UTexture.hpp"
 
-#include "stb_image.h"
+#include "../ThirdParty/stb/stb_image.h"
 
 bool UTexture::Initialize(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext, const char* FileName)
 {

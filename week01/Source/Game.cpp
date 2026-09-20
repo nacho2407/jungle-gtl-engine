@@ -23,42 +23,42 @@ bool Game::Initialize()
 	SoundManager.Initialize();
 
 	//BGM은 mp3파일
-	SoundManager.LoadSound(TEXT("./Sound/BGM/Menu.mp3"), true);
+	SoundManager.LoadSound(TEXT("./Content/Sound/BGM/Menu.mp3"), true);
 
 	//SFX는 wav파일
-	SoundManager.LoadSound(TEXT("./Sound/SFX/Drop.wav"), false);
-	SoundManager.LoadSound(TEXT("./Sound/SFX/Merge.wav"), false);
-	SoundManager.LoadSound(TEXT("./Sound/SFX/Click.wav"), false);
-	SoundManager.LoadSound(TEXT("./Sound/SFX/GameWin.wav"), false);
-	SoundManager.LoadSound(TEXT("./Sound/SFX/GameOver.wav"), false);
+	SoundManager.LoadSound(TEXT("./Content/Sound/SFX/Drop.wav"), false);
+	SoundManager.LoadSound(TEXT("./Content/Sound/SFX/Merge.wav"), false);
+	SoundManager.LoadSound(TEXT("./Content/Sound/SFX/Click.wav"), false);
+	SoundManager.LoadSound(TEXT("./Content/Sound/SFX/GameWin.wav"), false);
+	SoundManager.LoadSound(TEXT("./Content/Sound/SFX/GameOver.wav"), false);
 
-	SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
+	SoundManager.PlayBGM(TEXT("./Content/Sound/BGM/Menu.mp3"));
 
 	//연쇄적인 12개의 충돌을 고려해 100개
 	ParticlePool.Initialize(100, renderer);
 
 	for (int i = 0; i < ARRAYSIZE(FruitNames); i++)
 	{
-		std::string FruitPath = "./Resource/";
+		std::string FruitPath = "./Content/Resource/";
 		FruitPath += FruitNames[i];
 		FruitPath += ".png";
 		FruitTextures.PushBack(new UTexture(renderer.Device, renderer.DeviceContext, FruitPath.c_str()));
 	}
 
-	EmptyTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/preview_empty.png");
-	BubbleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/bubble.png");
-	ButtonBGTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/WoodButton_Normal.png");
-	ButtonBGHoverTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/WoodButton_Hover.png");
-	NextTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/NextText.png");
-	ScoreTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/ScoreText.png");
-	Map1Texture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1.png");
-	Map1RoofTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/Map1_Roof.png");
-	TitleBackgroundTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/title_bg.png");
-	RuleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/rule_bg.png");
-	CreditTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/credits.png");
-	GameOverTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/gameover_bg.png");
-	LeaderBoardBgTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/leaderboard_bg.png");
-	DropCatTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/DropCat.png");
+	EmptyTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/preview_empty.png");
+	BubbleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/bubble.png");
+	ButtonBGTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/WoodButton_Normal.png");
+	ButtonBGHoverTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/WoodButton_Hover.png");
+	NextTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/NextText.png");
+	ScoreTextTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/ScoreText.png");
+	Map1Texture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/Map1.png");
+	Map1RoofTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/Map1_Roof.png");
+	TitleBackgroundTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/title_bg.png");
+	RuleTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/rule_bg.png");
+	CreditTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/credits.png");
+	GameOverTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/gameover_bg.png");
+	LeaderBoardBgTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/leaderboard_bg.png");
+	DropCatTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/DropCat.png");
 
 	ScoreWidget.SetOffset(FVector(0.7, 0.7, 0));
 	ScoreWidget.SetTexture(BubbleTexture);
@@ -84,8 +84,8 @@ bool Game::Initialize()
 	MapRoofWidget.SetAxisScale(FVector(1, 0.1, 0));
 	MapRoofWidget.SetOffset(FVector(0, 0.6, 0));
 
-	LeaderBoardTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/leaderboard.png");
-	RankBgTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Resource/rankbg.png");
+	LeaderBoardTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/leaderboard.png");
+	RankBgTexture = new UTexture(renderer.Device, renderer.DeviceContext, "./Content/Resource/rankbg.png");
 
 	RankBg = new UImageWidget[RANK_NUM];
 	RankNum = new UTextWidget[RANK_NUM];
@@ -699,7 +699,7 @@ void Game::UpdatePlaying()
 
 		FVector spawnPos = FVector(spawnX, 0.9f, 0);
 
-		SoundManager.PlaySFX(TEXT("./Sound/SFX/Drop.wav"), 1.f);
+		SoundManager.PlaySFX(TEXT("./Content/Sound/SFX/Drop.wav"), 1.f);
 		PrimitiveList.PushBack(CreateFruitAt(ft, spawnPos, FruitTextures[ft]));
 
 		// 다음 과일
@@ -795,14 +795,14 @@ void Game::UpdatePlaying()
 
 						//병합된 곳에서 파티클 생성
 						ParticlePool.Aquire(TargetLocation);
-						SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
+						SoundManager.PlaySFX(TEXT("./Content/Sound/SFX/Merge.wav"));
 
 					}
 					else
 					{
 						ScoreManager.AddScore(EFruitType::FT_Watermelon);
 						ParticlePool.Aquire(A->Location);
-						SoundManager.PlaySFX(TEXT("./Sound/SFX/Merge.wav"));
+						SoundManager.PlaySFX(TEXT("./Content/Sound/SFX/Merge.wav"));
 					}
 				}
 			}
@@ -834,7 +834,7 @@ void Game::UpdatePlaying()
 		
 		if (MergeInfo.ResultFruitType == EFruitType::FT_Watermelon)
 		{
-			SoundManager.PlaySFX(TEXT("./Sound/SFX/GameWin.wav"));
+			SoundManager.PlaySFX(TEXT("./Content/Sound/SFX/GameWin.wav"));
 		}
 
 		// 점수 획득
@@ -946,7 +946,7 @@ void Game::UpdatePlaying()
 			NextFruitType = GetRandomFruitType();
 
 			SoundManager.StopAll();
-			SoundManager.PlaySFX(TEXT("./Sound/SFX/GameOver.wav"));
+			SoundManager.PlaySFX(TEXT("./Content/Sound/SFX/GameOver.wav"));
 
 			GameState = GS_GameOver;
 
@@ -969,7 +969,7 @@ void Game::UpdatePlaying()
 	if (ImGui::Button("Give Up"))
 	{
 		SoundManager.StopAll();
-		SoundManager.PlayBGM(TEXT("./Sound/SFX/GameOver.wav"));
+		SoundManager.PlayBGM(TEXT("./Content/Sound/SFX/GameOver.wav"));
 		GameState = GS_GameOver;
 	}
 
@@ -1049,14 +1049,14 @@ void Game::UpdateGameOver()
 			switch (XPadButtonIndex)
 			{
 			case 0:
-				SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
+				SoundManager.PlayBGM(TEXT("./Content/Sound/BGM/Menu.mp3"));
 				GameState = GS_Playing;
 				ScoreManager.UpdateHighScore();
 				ScoreManager.Reset();
 				break;
 
 			case 1:
-				SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
+				SoundManager.PlayBGM(TEXT("./Content/Sound/BGM/Menu.mp3"));
 				GameState = GS_Title;
 				ScoreManager.UpdateHighScore();
 				ScoreManager.Reset();
@@ -1079,14 +1079,14 @@ void Game::UpdateGameOver()
 
 		if (RestartButton.IsPressed(hWnd, InputManager, SoundManager))
 		{
-			SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
+			SoundManager.PlayBGM(TEXT("./Content/Sound/BGM/Menu.mp3"));
 			GameState = GS_Playing;
 			ScoreManager.UpdateHighScore();
 			ScoreManager.Reset();
 		}
 		else if (BackToTitleButton.IsPressed(hWnd, InputManager, SoundManager))
 		{
-			SoundManager.PlayBGM(TEXT("./Sound/BGM/Menu.mp3"));
+			SoundManager.PlayBGM(TEXT("./Content/Sound/BGM/Menu.mp3"));
 			GameState = GS_Title;
 			ScoreManager.UpdateHighScore();
 			ScoreManager.Reset();

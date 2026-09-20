@@ -53,7 +53,7 @@ bool UButtonWidget::IsPressed(HWND hWnd, const UInputManager& InputManager, USou
 {
 	if (IsOnBound(hWnd) && InputManager.IsMouseReleased())
 	{
-		soundManger.PlaySFX(TEXT("./Sound/SFX/Click.wav"));
+		soundManger.PlaySFX(TEXT("./Content/Sound/SFX/Click.wav"));
 		return true;
 	}
 	return false;

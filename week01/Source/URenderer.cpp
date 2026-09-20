@@ -134,7 +134,7 @@ void URenderer::CreateFont()
 	SpriteBatch = std::make_unique<DirectX::SpriteBatch>(DeviceContext);
 	Font = std::make_unique<DirectX::SpriteFont>(
 		Device,
-		L"./Resource/comic_sans_ms.spritefont"
+		L"./Content/Resource/comic_sans_ms.spritefont"
 	);
 }
 
@@ -223,7 +223,7 @@ void URenderer::CreateShader()
 	ID3DBlob* vertexshaderCSO;
 
 	D3DCompileFromFile(
-		L"ShaderW0.hlsl",
+		L"Shaders/ShaderW0.hlsl",
 		nullptr,
 		nullptr,
 		"mainVS",
@@ -244,7 +244,7 @@ void URenderer::CreateShader()
 	ID3DBlob* pixelshaderCSO;
 
 	D3DCompileFromFile(
-		L"ShaderW0.hlsl",
+		L"Shaders/ShaderW0.hlsl",
 		nullptr,
 		nullptr,
 		"mainPS",
