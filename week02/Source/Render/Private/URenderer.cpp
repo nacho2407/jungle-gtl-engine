@@ -77,12 +77,12 @@ bool URenderer::Create(HWND hWindow)
     if (!CreateDepthStencilBuffer(Width, Height)) { Release(); return false; }
     if (!CreateRasterizerStates()) { Release(); return false; }
     if (!CreateDepthStencilStates()) { Release(); return false; }
-    if (!CreateShader(L"Render\\Public\\Shaders\\Default.hlsl")) { Release(); return false; }
+    if (!CreateShader(L"Shaders\\Default.hlsl")) { Release(); return false; }
     if (!CreateConstantBuffer()) { Release(); return false; }
 
     // for Hit Proxy
     if (!CreateHitProxyBuffer(Width, Height)) { Release(); return false; }
-    if (!CreateHitProxyShader(L"Render\\Public\\Shaders\\HitProxy.hlsl")) { Release(); return false; }
+    if (!CreateHitProxyShader(L"Shaders\\HitProxy.hlsl")) { Release(); return false; }
 
     return true;
 }
