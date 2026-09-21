@@ -45,9 +45,6 @@
     <ClInclude Include="Source\Core\Public\Math\FMatrix.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Core\Public\FVertex.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Public\CoreTypes.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -60,9 +57,6 @@
     <ClInclude Include="Source\Engine\Public\Actor\AActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Engine.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Source\GUI\GUI.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -72,19 +66,10 @@
     <ClInclude Include="Source\Engine\Public\Component\UCameraComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Public\Component\UCubeComponent.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Public\Component\UGizmoComponent.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Public\Component\UPrimitiveComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Public\Component\USceneComponent.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Public\Component\UTriangleComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Public\Actor\APrimitiveActor.h">
@@ -114,9 +99,6 @@
     <ClInclude Include="Source\Render\Public\Geometry\Sphere.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Render\Public\Geometry\Axies.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Core\Public\FUObjectFactory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -138,6 +120,9 @@
     <ClInclude Include="Source\Engine\Public\Component\EGizmoAxis.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Public\FRay.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Public\Resource\BuiltInMeshFactory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -157,9 +142,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\Json\json.hpp">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Core\Private\FMemory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Source\Core\Public\FMemory.h">
@@ -249,12 +231,6 @@
     <ClInclude Include="Source\Engine\Public\Component\EGizmoMode.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Public\Resource\FBuiltInMeshes.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Public\Resource\FBuiltInMeshRepository.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Public\World\ESpawnMeshType.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -324,9 +300,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Source\Core\Private\UObjectClusters.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Private\Component\UGizmoComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Private\Resource\BuiltInMeshFactory.cpp">
