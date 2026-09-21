@@ -156,4 +156,10 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="CopyRuntimeFiles" AfterTargets="Build">
+    <ItemGroup>
+      <RuntimeShaders Include="$(ProjectDir)Shaders\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(RuntimeShaders)" DestinationFiles="@(RuntimeShaders->'$(OutDir)Shaders\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
