@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{7d0004a1-98bc-4bb3-a02a-056f887dc085}</ProjectGuid>
+    <RootNamespace>jungle-gtl-week02</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty;$(ProjectDir)GUI\Public;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;$(ProjectDir)GUI\Public\ImGui;$(ProjectDir)Serialization\Public;$(ProjectDir)GUI;$(ProjectDir)Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)ThirdParty;$(ProjectDir)GUI\Public;$(ProjectDir)Render\Public;$(ProjectDir)App;$(ProjectDir)Engine\Public;$(ProjectDir)Core\Public;$(ProjectDir)GUI\Public\ImGui;$(ProjectDir)Serialization\Public;$(ProjectDir)GUI;$(ProjectDir)Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="App\FApplication.h" />
+    <ClInclude Include="App\Panels\FConsolePanel.h" />
+    <ClInclude Include="App\Panels\FControlPanel.h" />
+    <ClInclude Include="App\Panels\FPropertyPanel.h" />
+    <ClInclude Include="App\FInputManager.h" />
+    <ClInclude Include="App\WindowsApplication.h" />
+    <ClInclude Include="Core\Public\FGarbageCollector.h" />
+    <ClInclude Include="Engine\Public\Actor\AAxisActor.h" />
+    <ClInclude Include="Core\Public\FMemory.h" />
+    <ClInclude Include="Core\Public\FUObjectAllocator.h" />
+    <ClInclude Include="Core\Public\CoreDefine.h" />
+    <ClInclude Include="Core\Public\UClassData.h" />
+    <ClInclude Include="Core\Public\UObject.h" />
+    <ClInclude Include="Core\Core.h" />
+    <ClInclude Include="Core\Public\CoreTypes.h" />
+    <ClInclude Include="Core\Public\Math\FMatrix.h" />
+    <ClInclude Include="Core\Public\Math\FVector.h" />
+    <ClInclude Include="Core\Public\FVertex.h" />
+    <ClInclude Include="Engine\Engine.h" />
+    <ClInclude Include="Engine\Public\Actor\AActor.h" />
+    <ClInclude Include="Engine\Public\Actor\ACamera.h" />
+    <ClInclude Include="Engine\Public\Actor\ACube.h" />
+    <ClInclude Include="Engine\Public\Actor\AGridActor.h" />
+    <ClInclude Include="Engine\Public\Actor\APrimitiveActor.h" />
+    <ClInclude Include="Engine\Public\Actor\ASphere.h" />
+    <ClInclude Include="Engine\Public\Actor\ATorus.h" />
+    <ClInclude Include="Engine\Public\Actor\ATriangle.h" />
+    <ClInclude Include="Engine\Public\Component\EGizmoAxis.h" />
+    <ClInclude Include="Engine\Public\Component\EGizmoMode.h" />
+    <ClInclude Include="Engine\Public\Component\UActorComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UCameraComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UCubeComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UGizmoComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UPrimitiveComponent.h" />
+    <ClInclude Include="Engine\Public\Component\USceneComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UStaticMeshComponent.h" />
+    <ClInclude Include="Engine\Public\Component\UTriangleComponent.h" />
+    <ClInclude Include="Engine\Public\Resource\BuiltInMeshFactory.h" />
+    <ClInclude Include="Engine\Public\Resource\FBuiltInMeshes.h" />
+    <ClInclude Include="Engine\Public\Resource\FBuiltInMeshRepository.h" />
+    <ClInclude Include="Engine\Public\Resource\MeshImporter.h" />
+    <ClInclude Include="Engine\Public\Resource\MeshTypes.h" />
+    <ClInclude Include="Engine\Public\Resource\UStaticMesh.h" />
+    <ClInclude Include="Engine\Public\World\ESpawnMeshType.h" />
+    <ClInclude Include="Engine\Public\World\FScene.h" />
+    <ClInclude Include="Engine\Public\World\UWorld.h" />
+    <ClInclude Include="Core\Public\FUObjectFactory.h" />
+    <ClInclude Include="Core\Public\FUObjectArray.h" />
+    <ClInclude Include="GUI\GUI.h" />
+    <ClInclude Include="GUI\Public\FGUIManager.h" />
+    <ClInclude Include="GUI\Public\ImGui\imconfig.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="GUI\Public\ImGui\imgui_internal.h" />
+    <ClInclude Include="GUI\Public\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="GUI\Public\ImGui\imstb_textedit.h" />
+    <ClInclude Include="GUI\Public\ImGui\imstb_truetype.h" />
+    <ClInclude Include="Render\Public\FHitProxy.h" />
+    <ClInclude Include="Render\Public\Geometry\Axies.h" />
+    <ClInclude Include="Render\Public\Geometry\Cube.h" />
+    <ClInclude Include="Render\Public\Geometry\Sphere.h" />
+    <ClInclude Include="Render\Public\Structs.h" />
+    <ClInclude Include="Render\Public\URenderer.h" />
+    <ClInclude Include="Serialization\Public\FJsonConverter.h" />
+    <ClInclude Include="Serialization\Public\FWorldSaveConverter.h" />
+    <ClInclude Include="Serialization\Public\FWorldSaveData.h" />
+    <ClInclude Include="ThirdParty\Json\json.hpp" />
+    <ClInclude Include="Core\Public\UEngineStatics.h" />
+    <ClInclude Include="Core\Public\FUObjectInitializer.h" />
+    <ClInclude Include="Core\Private\FMemory.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="App\FApplication.cpp" />
+    <ClCompile Include="App\FInputManager.cpp" />
+    <ClCompile Include="App\Main.cpp" />
+    <ClCompile Include="App\Panels\FConsolePanel.cpp" />
+    <ClCompile Include="App\Panels\FControlPanel.cpp" />
+    <ClCompile Include="App\Panels\FPropertyPanel.cpp" />
+    <ClCompile Include="App\WindowsApplication.cpp" />
+    <ClCompile Include="Core\Private\FGarbageCollecter.cpp" />
+    <ClCompile Include="Core\Private\Math\FQuat.cpp" />
+    <ClCompile Include="Core\Private\UObject.cpp" />
+    <ClCompile Include="Core\Private\Math\FMatrix.cpp" />
+    <ClCompile Include="Core\Private\Math\FVector.cpp" />
+    <ClCompile Include="Core\Private\Math\FVector4.cpp" />
+    <ClCompile Include="Core\Private\UObjectClusters.cpp" />
+    <ClCompile Include="Core\Public\Math\FQuat.h" />
+    <ClCompile Include="Core\Public\Math\FVector4.h" />
+    <ClCompile Include="Engine\Private\Actor\AActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AAxisActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AGizmoActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ACube.cpp" />
+    <ClCompile Include="Engine\Private\Actor\AGridActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\APrimitiveActor.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ASphere.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ATorus.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ATriangle.cpp" />
+    <ClCompile Include="Engine\Private\Component\UActorComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\UCameraComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\UGizmoComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\UPrimitiveComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\USceneComponent.cpp" />
+    <ClCompile Include="Engine\Private\Component\UStaticMeshComponent.cpp" />
+    <ClCompile Include="Engine\Private\Resource\BuiltInMeshFactory.cpp" />
+    <ClCompile Include="Engine\Private\Resource\MeshImporter.cpp" />
+    <ClCompile Include="Engine\Private\Resource\UStaticMesh.cpp" />
+    <ClCompile Include="Engine\Public\Actor\AGizmoActor.h" />
+    <ClCompile Include="GUI\Private\FGUIManager.cpp" />
+    <ClCompile Include="Engine\Private\Actor\ACamera.cpp" />
+    <ClCompile Include="Render\Private\Geometry\Cube.cpp" />
+    <ClCompile Include="Render\Private\Geometry\Sphere.cpp" />
+    <ClCompile Include="Engine\Public\Component\USphereComponent.h" />
+    <ClCompile Include="Engine\Private\World\FScene.cpp" />
+    <ClCompile Include="Engine\Private\World\UWorld.cpp" />
+    <ClCompile Include="Core\Private\UEngineStatics.cpp" />
+    <ClCompile Include="Core\Private\FUObjectArray.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="GUI\Private\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="Render\Private\URenderer.cpp" />
+    <ClCompile Include="Serialization\Private\FJsonConverter.cpp" />
+    <ClCompile Include="Serialization\Private\FWorldSaveConverter.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Render\Public\Shaders\Default.hlsl">
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Render\Public\Shaders\HitProxy.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
