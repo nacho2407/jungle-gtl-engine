@@ -436,5 +436,12 @@ FodyWeavers.xsd
 
 # End of https://www.toptal.com/developers/gitignore/api/c++,visualstudio
 
-Project_Week2/imgui.ini
-Project_Week2/*.Scene
+# Build outputs of this week (paths relative to this folder)
+/x64/
+
+# Local state files
+/imgui.ini
+/*.Scene
+
+# Excluded from this repository because of license issues; kept only for local builds
+/Source/Render/Private/Geometry/Sphere.cpp
