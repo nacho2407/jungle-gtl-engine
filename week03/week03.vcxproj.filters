@@ -21,450 +21,449 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ImGui\imconfig.h">
+    <ClInclude Include="ThirdParty\ImGui\imconfig.h">
       <Filter>imGui</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\imgui.h">
+    <ClInclude Include="ThirdParty\ImGui\imgui.h">
       <Filter>imGui</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\imgui_impl_dx11.h">
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h">
       <Filter>imGui</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\imgui_impl_win32.h">
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h">
       <Filter>imGui</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\imgui_internal.h">
+    <ClInclude Include="ThirdParty\ImGui\imgui_internal.h">
       <Filter>imGui</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\imstb_rectpack.h">
+    <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h">
       <Filter>imGui</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\imstb_textedit.h">
+    <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h">
       <Filter>imGui</Filter>
     </ClInclude>
-    <ClInclude Include="ImGui\imstb_truetype.h">
+    <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h">
       <Filter>imGui</Filter>
     </ClInclude>
-    <ClInclude Include="Geometry\Sphere.h">
+    <ClInclude Include="Source\Geometry\Sphere.h">
       <Filter>리소스 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineApp\EngineApp.h">
+    <ClInclude Include="Source\EngineApp\EngineApp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineCore\Color.h">
+    <ClInclude Include="Source\EngineCore\Color.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineCore\ObjectFactory.h">
+    <ClInclude Include="Source\EngineCore\ObjectFactory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Math\Vector4.h">
+    <ClInclude Include="Source\Math\Vector4.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="VertexSimple.h">
+    <ClInclude Include="Source\VertexSimple.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineCore\InputManager.h">
+    <ClInclude Include="Source\EngineCore\InputManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Singleton.h">
+    <ClInclude Include="Source\Singleton.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\json.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineCore\Logger.h">
+    <ClInclude Include="Source\EngineCore\Logger.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineCore\ResourceManager.h">
+    <ClInclude Include="Source\EngineCore\ResourceManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Scene.h">
+    <ClInclude Include="Source\Scene.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineCore\Timer.h">
+    <ClInclude Include="Source\EngineCore\Timer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineCore\TimerManager.h">
+    <ClInclude Include="Source\EngineCore\TimerManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineCore\EngineStatics.h">
+    <ClInclude Include="Source\EngineCore\EngineStatics.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineCore\EngineTypes.h">
+    <ClInclude Include="Source\EngineCore\EngineTypes.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\Object.h">
+    <ClInclude Include="Source\Component\Object.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="World.h">
+    <ClInclude Include="Source\World.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Geometry\Triangle.h">
+    <ClInclude Include="Source\Geometry\Triangle.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Math\MathHelper.h">
+    <ClInclude Include="Source\Math\MathHelper.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="PrimitiveFactory.h">
+    <ClInclude Include="Source\PrimitiveFactory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\AxisComponent.h">
+    <ClInclude Include="Source\Component\AxisComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\CameraComponent.h">
+    <ClInclude Include="Source\Component\CameraComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\CubeComponent.h">
+    <ClInclude Include="Source\Component\CubeComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\TextMeshComponent.h">
+    <ClInclude Include="Source\Component\TextMeshComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\PlaneComponent.h">
+    <ClInclude Include="Source\Component\PlaneComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\PrimitiveComponent.h">
+    <ClInclude Include="Source\Component\PrimitiveComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\SceneComponent.h">
+    <ClInclude Include="Source\Component\SceneComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\SphereComponent.h">
+    <ClInclude Include="Source\Component\SphereComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\TriangleComponent.h">
+    <ClInclude Include="Source\Component\TriangleComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Editor.h">
+    <ClInclude Include="Source\Editor\Editor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Gizmo.h">
+    <ClInclude Include="Source\Editor\Gizmo.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\GizmoComponent.h">
+    <ClInclude Include="Source\Component\GizmoComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Gizmo\GizmoControlStrategy.h">
+    <ClInclude Include="Source\Editor\Gizmo\GizmoControlStrategy.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Gizmo\GizmoRotationControlStrategy.h">
+    <ClInclude Include="Source\Editor\Gizmo\GizmoRotationControlStrategy.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Gizmo\GizmoScaleControlStrategy.h">
+    <ClInclude Include="Source\Editor\Gizmo\GizmoScaleControlStrategy.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Gizmo\GizmoTranslationControlStrategy.h">
+    <ClInclude Include="Source\Editor\Gizmo\GizmoTranslationControlStrategy.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\Picker.h">
+    <ClInclude Include="Source\Editor\Picker.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Math\Matrix.h">
+    <ClInclude Include="Source\Math\Matrix.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Math\Quaternion.h">
+    <ClInclude Include="Source\Math\Quaternion.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Math\Vector.h">
+    <ClInclude Include="Source\Math\Vector.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\ConstantBuffer.h">
+    <ClInclude Include="Source\Renderer\ConstantBuffer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Geometry.h">
+    <ClInclude Include="Source\Renderer\Geometry.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Level.h">
+    <ClInclude Include="Source\Renderer\Level.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Material.h">
+    <ClInclude Include="Source\Renderer\Material.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Renderer.h">
+    <ClInclude Include="Source\Renderer\Renderer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\RenderObject.h">
+    <ClInclude Include="Source\Renderer\RenderObject.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="SerializeHelper.h">
+    <ClInclude Include="Source\SerializeHelper.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\fifo_map.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Math\Ray.h">
+    <ClInclude Include="Source\Math\Ray.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Math\Rotator.h">
+    <ClInclude Include="Source\Math\Rotator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="SceneManager.h">
+    <ClInclude Include="Source\SceneManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="EngineCore\Name.h">
+    <ClInclude Include="Source\EngineCore\Name.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\UI\EditorConsole.h">
+    <ClInclude Include="Source\Editor\UI\EditorConsole.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\UI\EditorControlPanel.h">
+    <ClInclude Include="Source\Editor\UI\EditorControlPanel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\UI\EditorPropertyPanel.h">
+    <ClInclude Include="Source\Editor\UI\EditorPropertyPanel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\UI\EditorStatPanel.h">
+    <ClInclude Include="Source\Editor\UI\EditorStatPanel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\UI\EditorToolbar.h">
+    <ClInclude Include="Source\Editor\UI\EditorToolbar.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Editor\UI\EditorSceneManagerPanel.h">
+    <ClInclude Include="Source\Editor\UI\EditorSceneManagerPanel.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Component\GridComp.h">
+    <ClInclude Include="Source\Component\GridComp.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Constants.h">
+    <ClInclude Include="Source\Renderer\Constants.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\GeneralGeometry.h">
+    <ClInclude Include="Source\Renderer\GeneralGeometry.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\TexCoord.h">
+    <ClInclude Include="Source\Renderer\TexCoord.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Text\TextEncoding.h">
+    <ClInclude Include="Source\Text\TextEncoding.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Text\FontTypes.h">
+    <ClInclude Include="Source\Text\FontTypes.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Text\FontAsset.h">
+    <ClInclude Include="Source\Text\FontAsset.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Text\FontConfig.h">
+    <ClInclude Include="Source\Text\FontConfig.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Text\GlyphAtlas.h">
+    <ClInclude Include="Source\Text\GlyphAtlas.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Text\TextLayout.h">
+    <ClInclude Include="Source\Text\TextLayout.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\VertexFont.h">
+    <ClInclude Include="Source\Renderer\VertexFont.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Constants.h">
+    <ClInclude Include="Source\Renderer\Constants.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\GeneralGeometry.h">
+    <ClInclude Include="Source\Renderer\GeneralGeometry.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClCompile Include="MemoryTracker.cpp">
+    <ClCompile Include="Source\MemoryTracker.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui\imgui.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui.cpp">
       <Filter>imGui</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui\imgui_demo.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp">
       <Filter>imGui</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui\imgui_draw.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp">
       <Filter>imGui</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui\imgui_impl_dx11.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_dx11.cpp">
       <Filter>imGui</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui\imgui_impl_win32.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp">
       <Filter>imGui</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui\imgui_tables.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp">
       <Filter>imGui</Filter>
     </ClCompile>
-    <ClCompile Include="ImGui\imgui_widgets.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp">
       <Filter>imGui</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="Source\main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineCore\EngineStatics.cpp">
+    <ClCompile Include="Source\EngineCore\EngineStatics.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\Object.cpp">
+    <ClCompile Include="Source\Component\Object.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineApp\EngineApp.cpp">
+    <ClCompile Include="Source\EngineApp\EngineApp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineCore\ObjectFactory.cpp">
+    <ClCompile Include="Source\EngineCore\ObjectFactory.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Scene.cpp">
+    <ClCompile Include="Source\Scene.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineCore\ResourceManager.cpp">
+    <ClCompile Include="Source\EngineCore\ResourceManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineCore\Color.cpp">
+    <ClCompile Include="Source\EngineCore\Color.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineCore\InputManager.cpp">
+    <ClCompile Include="Source\EngineCore\InputManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="ThirdParty\json.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineCore\Logger.cpp">
+    <ClCompile Include="Source\EngineCore\Logger.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineCore\Timer.cpp">
+    <ClCompile Include="Source\EngineCore\Timer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineCore\TimerManager.cpp">
+    <ClCompile Include="Source\EngineCore\TimerManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="World.cpp">
+    <ClCompile Include="Source\World.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="PrimitiveFactory.cpp">
+    <ClCompile Include="Source\PrimitiveFactory.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\AxisComponent.cpp">
+    <ClCompile Include="Source\Component\AxisComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\CameraComponent.cpp">
+    <ClCompile Include="Source\Component\CameraComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\CubeComponent.cpp">
+    <ClCompile Include="Source\Component\CubeComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\TextMeshComponent.cpp">
+    <ClCompile Include="Source\Component\TextMeshComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\PlaneComponent.cpp">
+    <ClCompile Include="Source\Component\PlaneComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\PrimitiveComponent.cpp">
+    <ClCompile Include="Source\Component\PrimitiveComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\SceneComponent.cpp">
+    <ClCompile Include="Source\Component\SceneComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\SphereComponent.cpp">
+    <ClCompile Include="Source\Component\SphereComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\TriangleComponent.cpp">
+    <ClCompile Include="Source\Component\TriangleComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Editor.cpp">
+    <ClCompile Include="Source\Editor\Editor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Gizmo.cpp">
+    <ClCompile Include="Source\Editor\Gizmo.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\GizmoComponent.cpp">
+    <ClCompile Include="Source\Component\GizmoComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Gizmo\GizmoRotationControlStrategy.cpp">
+    <ClCompile Include="Source\Editor\Gizmo\GizmoRotationControlStrategy.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Gizmo\GizmoScaleControlStrategy.cpp">
+    <ClCompile Include="Source\Editor\Gizmo\GizmoScaleControlStrategy.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Gizmo\GizmoTranslationControlStrategy.cpp">
+    <ClCompile Include="Source\Editor\Gizmo\GizmoTranslationControlStrategy.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\Picker.cpp">
+    <ClCompile Include="Source\Editor\Picker.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Math\Matrix.cpp">
+    <ClCompile Include="Source\Math\Matrix.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Math\Quaternion.cpp">
+    <ClCompile Include="Source\Math\Quaternion.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Math\Vector.cpp">
+    <ClCompile Include="Source\Math\Vector.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Level.cpp">
+    <ClCompile Include="Source\Renderer\Level.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Renderer.cpp">
+    <ClCompile Include="Source\Renderer\Renderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\RenderObject.cpp">
+    <ClCompile Include="Source\Renderer\RenderObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Math\Ray.cpp">
+    <ClCompile Include="Source\Math\Ray.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Math\Rotator.cpp">
+    <ClCompile Include="Source\Math\Rotator.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\UI\EditorConsole.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorConsole.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\UI\EditorControlPanel.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorControlPanel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\UI\EditorPropertyPanel.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorPropertyPanel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\UI\EditorSceneManagerPanel.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorSceneManagerPanel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\UI\EditorStatPanel.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorStatPanel.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Editor\UI\EditorToolbar.cpp">
+    <ClCompile Include="Source\Editor\UI\EditorToolbar.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="EngineCore\Name.cpp">
+    <ClCompile Include="Source\EngineCore\Name.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="SceneManager.cpp">
+    <ClCompile Include="Source\SceneManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Text\TextEncoding.cpp">
+    <ClCompile Include="Source\Text\TextEncoding.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Text\FontAsset.cpp">
+    <ClCompile Include="Source\Text\FontAsset.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\GridComp.cpp">
+    <ClCompile Include="Source\Component\GridComp.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClInclude Include="AABB.h">
+    <ClInclude Include="Source\AABB.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="LineBatcher.h">
+    <ClInclude Include="Source\LineBatcher.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClCompile Include="Text\GlyphAtlas.cpp">
+    <ClCompile Include="Source\Text\GlyphAtlas.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Text\TextLayout.cpp">
+    <ClCompile Include="Source\Text\TextLayout.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClInclude Include="Component\BillboardSubUVComponent.h">
+    <ClInclude Include="Source\Component\BillboardSubUVComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shader\ShaderW0.hlsl" />
-    <FxCompile Include="Shader\ShaderFont.hlsl" />
-    <FxCompile Include="Shader\ShaderTextMesh.hlsl" />
+    <FxCompile Include="Shaders\ShaderW0.hlsl" />
+    <FxCompile Include="Shaders\ShaderFont.hlsl" />
+    <FxCompile Include="Shaders\ShaderTextMesh.hlsl" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="LineBatcher.cpp">
+    <ClCompile Include="Source\LineBatcher.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Component\BillboardSubUVComponent.cpp">
+    <ClCompile Include="Source\Component\BillboardSubUVComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Textures\input.dds" />
   </ItemGroup>
 </Project>

@@ -21,7 +21,7 @@ void UAxisComp::Update(float DeltaTime)
 RenderObject* UAxisComp::CreateRenderObject()
 {
 	RenderObj = UPrimitiveComponent::CreateRenderObject();
-	RenderObj->Material = &ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderLine.hlsl");
+	RenderObj->Material = &ResourceManager::GetInstance()->GetMaterial(L"Shaders/ShaderLine.hlsl");
 	if (RenderObj == nullptr)
 		return nullptr;
 

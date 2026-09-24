@@ -67,7 +67,7 @@ RenderObject* UTextMeshComponent::CreateRenderObject()
 	}
 
 	ResourceManager* ResourceMgr = ResourceManager::GetInstance();
-	RenderObjectInstance->Material = &ResourceMgr->GetMaterial(L"Shader/ShaderTextMesh.hlsl");
+	RenderObjectInstance->Material = &ResourceMgr->GetMaterial(L"Shaders/ShaderTextMesh.hlsl");
 	RenderObjectInstance->ShowFlag = EEngineShowFlags::SF_Primitives;
 	RenderObjectInstance->bDepthEnabled = true;
 	RenderObjectInstance->bDisableCulling = false;

@@ -14,21 +14,21 @@ GizmoRotationControlStrategy::GizmoRotationControlStrategy(UGizmoComponent* cont
 
 	GizmoX = new RenderObject();
 	GizmoX->Geometry = &resourceManager->GetGeometry("GizmoRotation");
-	GizmoX->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
+	GizmoX->Material = &resourceManager->GetMaterial(L"Shaders/ShaderW0.hlsl");
 	GizmoX->bDepthEnabled = false;
 	GizmoX->ShowFlag = EEngineShowFlags::SF_EditorPrimitives;
 	GizmoX->Color = FColor(1.0f, 0.0f, 0.0f, 1.0f);
 
 	GizmoY = new RenderObject();
 	GizmoY->Geometry = &resourceManager->GetGeometry("GizmoRotation");
-	GizmoY->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
+	GizmoY->Material = &resourceManager->GetMaterial(L"Shaders/ShaderW0.hlsl");
 	GizmoY->bDepthEnabled = false;
 	GizmoY->ShowFlag = EEngineShowFlags::SF_EditorPrimitives;
 	GizmoY->Color = FColor(0.0f, 1.0f, 0.0f, 1.0f);
 
 	GizmoZ = new RenderObject();
 	GizmoZ->Geometry = &resourceManager->GetGeometry("GizmoRotation");
-	GizmoZ->Material = &resourceManager->GetMaterial(L"Shader/ShaderW0.hlsl");
+	GizmoZ->Material = &resourceManager->GetMaterial(L"Shaders/ShaderW0.hlsl");
 	GizmoZ->bDepthEnabled = false;
 	GizmoZ->ShowFlag = EEngineShowFlags::SF_EditorPrimitives;
 	GizmoZ->Color = FColor(0.0f, 0.0f, 1.0f, 1.0f);

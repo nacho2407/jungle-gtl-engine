@@ -75,7 +75,7 @@ RenderObject* UPrimitiveComponent::CreateRenderObject()
 	RenderObj = new RenderObject();
 	ResourceManager* RM = ResourceManager::GetInstance();
 	RenderObj->Geometry = this->VResource;
-	RenderObj->Material = &RM->GetMaterial(L"Shader/ShaderW0.hlsl");
+	RenderObj->Material = &RM->GetMaterial(L"Shaders/ShaderW0.hlsl");
 	RenderObj->ShowFlag = EEngineShowFlags::SF_Primitives;
 	RenderObj->OwnerComponent = this;
 	UpdateRenderObject();

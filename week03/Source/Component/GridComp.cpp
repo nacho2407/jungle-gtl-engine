@@ -18,7 +18,7 @@ void UGridComp::Update(float deltaTime)
 RenderObject* UGridComp::CreateRenderObject()
 {
 	RenderObj = UPrimitiveComponent::CreateRenderObject();
-	RenderObj->Material = &ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderLine.hlsl");
+	RenderObj->Material = &ResourceManager::GetInstance()->GetMaterial(L"Shaders/ShaderLine.hlsl");
 	if (RenderObj == nullptr)
 		return nullptr;
 

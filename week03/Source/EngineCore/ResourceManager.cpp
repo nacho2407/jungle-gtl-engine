@@ -1,6 +1,6 @@
 ﻿#include "ResourceManager.h"
 #include "VertexSimple.h"
-#include "ThirdParty/DDSTextureLoader.h"
+#include "ThirdParty/DirectXTK/DDSTextureLoader.h"
 #include <iterator>
 #include "Geometry/Sphere.h"
 #include "Geometry/Triangle.h"
@@ -32,10 +32,10 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 		 D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
 
-	FMaterial& MainShader = CreateMaterial(L"Shader/ShaderW0.hlsl", L"Shader/ShaderW0.hlsl", Renderer->Device.Get(), layout, 2);
+	FMaterial& MainShader = CreateMaterial(L"Shaders/ShaderW0.hlsl", L"Shaders/ShaderW0.hlsl", Renderer->Device.Get(), layout, 2);
 	MainShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
 
-	FMaterial& LineShader = CreateMaterial(L"Shader/ShaderLine.hlsl", L"Shader/ShaderLine.hlsl", Renderer->Device.Get(), layout, 2);
+	FMaterial& LineShader = CreateMaterial(L"Shaders/ShaderLine.hlsl", L"Shaders/ShaderLine.hlsl", Renderer->Device.Get(), layout, 2);
 	LineShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
 
 	D3D11_INPUT_ELEMENT_DESC texturedLayout[] = {
@@ -46,7 +46,7 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28,
  D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
-	FMaterial& SubUVShader = CreateMaterial(L"Shader/ShaderSubUV.hlsl", L"Shader/ShaderSubUV.hlsl", Renderer->Device.Get(), texturedLayout, 3);
+	FMaterial& SubUVShader = CreateMaterial(L"Shaders/ShaderSubUV.hlsl", L"Shaders/ShaderSubUV.hlsl", Renderer->Device.Get(), texturedLayout, 3);
 	SubUVShader.ConstantBuffer.Create(Renderer->Device.Get(), sizeof(FObjectConstant), 1);
 	SubUVShader.SecondaryConstantBuffer.Create(Renderer->Device.Get(), sizeof(FSubUVConstant), 2);
 	SubUVShader.bUsesTexture = true;
@@ -69,12 +69,12 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	Renderer->Device->CreateSamplerState(&samplerDesc, SubUVShader.SamplerState.GetAddressOf());
-	SubUVShader.TextureSRV = LoadDDSTexture(L"SubUVTexture", L"Textures/input.dds");
+	SubUVShader.TextureSRV = LoadDDSTexture(L"SubUVTexture", L"Content/Textures/input.dds");
 
 
 	FMaterial& FontShader = CreateMaterial(
-		L"Shader/ShaderFont.hlsl",
-		L"Shader/ShaderFont.hlsl",
+		L"Shaders/ShaderFont.hlsl",
+		L"Shaders/ShaderFont.hlsl",
 		Renderer->Device.Get(),
 		fontLayout,
 		3
@@ -89,8 +89,8 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 	FontShader.bUsesTexture = true;
 
 	FMaterial& TextMeshShader = CreateMaterial(
-		L"Shader/ShaderTextMesh.hlsl",
-		L"Shader/ShaderTextMesh.hlsl",
+		L"Shaders/ShaderTextMesh.hlsl",
+		L"Shaders/ShaderTextMesh.hlsl",
 		Renderer->Device.Get(),
 		texturedLayout,
 		3
@@ -115,7 +115,7 @@ void ResourceManager::Initialize(URenderer* InRenderer)
 	AddGridMesh(Renderer->Device.Get(), 1000.f, 100.f);
 
 	// Font asset 로딩
-	const bool bFontLoaded = BillboardFont.LoadFromFile("Assets/Fonts/D2CodingSubset.ttf", 32.0f);
+	const bool bFontLoaded = BillboardFont.LoadFromFile("Content/Fonts/JungleCoding.ttf", 32.0f);
 	if (!bFontLoaded)
 	{
 		UE_LOG("[EngineCore/ResourceManager][Error] Failed to load billboard font");
@@ -234,7 +234,7 @@ bool ResourceManager::CreateBillboardFontAtlasTexture(void)
 
 	BillboardFontTexture.Reset();
 
-	FMaterial& FontShader = GetMaterial(L"Shader/ShaderFont.hlsl");
+	FMaterial& FontShader = GetMaterial(L"Shaders/ShaderFont.hlsl");
 	// 지금 GetMaterial은 해당하는 셰이더가 없어도 빈 FMaterial을 만들어서 반환하는데, 나중에 안정성을 위해 추가해야할 듯
 
 	FontShader.TextureSRV.Reset();
@@ -314,7 +314,7 @@ bool ResourceManager::CreateBillboardFontAtlasTexture(void)
 
 	// 셰이더에 연결
 	FontShader.bUsesTexture = true;
-	FMaterial& TextMeshShader = GetMaterial(L"Shader/ShaderTextMesh.hlsl");
+	FMaterial& TextMeshShader = GetMaterial(L"Shaders/ShaderTextMesh.hlsl");
 	TextMeshShader.TextureSRV = FontShader.TextureSRV;
 	TextMeshShader.SamplerState = FontShader.SamplerState;
 	TextMeshShader.bUsesTexture = true;

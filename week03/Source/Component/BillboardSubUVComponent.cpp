@@ -98,7 +98,7 @@ RenderObject* UBillboardSubUVComp::CreateRenderObject()
 	}
 
 	ResourceManager* resourceManager = ResourceManager::GetInstance();
-	renderObject->Material = &resourceManager->GetMaterial(L"Shader/ShaderSubUV.hlsl");
+	renderObject->Material = &resourceManager->GetMaterial(L"Shaders/ShaderSubUV.hlsl");
 	renderObject->ShowFlag = EEngineShowFlags::SF_Primitives;
 	renderObject->bDepthEnabled = true;
 	renderObject->bDisableCulling = true;
