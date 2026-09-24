@@ -22,7 +22,7 @@
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{f0689900-56dd-44fc-8ef7-605ca413b8c2}</ProjectGuid>
-    <RootNamespace>jungle-gtl-week03</RootNamespace>
+    <RootNamespace>week03</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -105,7 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(ProjectDir);$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -122,7 +122,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(ProjectDir);$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -135,162 +135,162 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AABB.h" />
-    <ClInclude Include="Component\AxisComponent.h" />
-    <ClInclude Include="Component\BillboardSubUVComponent.h" />
-    <ClInclude Include="Component\CameraComponent.h" />
-    <ClInclude Include="Component\CubeComponent.h" />
-    <ClInclude Include="Component\TextMeshComponent.h" />
-    <ClInclude Include="Component\PlaneComponent.h" />
-    <ClInclude Include="Component\PrimitiveComponent.h" />
-    <ClInclude Include="Component\SceneComponent.h" />
-    <ClInclude Include="Component\SphereComponent.h" />
-    <ClInclude Include="Component\TriangleComponent.h" />
-    <ClInclude Include="Editor\Editor.h" />
-    <ClInclude Include="Editor\UI\EditorConsole.h" />
-    <ClInclude Include="Editor\UI\EditorControlPanel.h" />
-    <ClInclude Include="Editor\UI\EditorPropertyPanel.h" />
-    <ClInclude Include="Editor\UI\EditorStatPanel.h" />
-    <ClInclude Include="Editor\UI\EditorToolbar.h" />
-    <ClInclude Include="Editor\Gizmo.h" />
-    <ClInclude Include="Component\GizmoComponent.h" />
-    <ClInclude Include="Editor\Gizmo\GizmoControlStrategy.h" />
-    <ClInclude Include="Editor\Gizmo\GizmoRotationControlStrategy.h" />
-    <ClInclude Include="Editor\Gizmo\GizmoScaleControlStrategy.h" />
-    <ClInclude Include="Editor\Gizmo\GizmoTranslationControlStrategy.h" />
-    <ClInclude Include="Component\GridComp.h" />
-    <ClInclude Include="Editor\Picker.h" />
-    <ClInclude Include="Editor\UI\EditorSceneManagerPanel.h" />
-    <ClInclude Include="EngineApp\EngineApp.h" />
-    <ClInclude Include="EngineCore\Color.h" />
-    <ClInclude Include="EngineCore\Name.h" />
-    <ClInclude Include="LineBatcher.h" />
-    <ClInclude Include="Renderer\Constants.h" />
-    <ClInclude Include="Renderer\GeneralGeometry.h" />
-    <ClInclude Include="Renderer\TexCoord.h" />
-    <ClInclude Include="Renderer\VertexFont.h" />
-    <ClInclude Include="SceneManager.h" />
-    <ClInclude Include="Text\FontAsset.h" />
-    <ClInclude Include="Text\FontConfig.h" />
-    <ClInclude Include="Text\FontTypes.h" />
-    <ClInclude Include="Text\GlyphAtlas.h" />
-    <ClInclude Include="Text\TextEncoding.h" />
-    <ClInclude Include="Text\TextLayout.h" />
+    <ClInclude Include="Source\AABB.h" />
+    <ClInclude Include="Source\Component\AxisComponent.h" />
+    <ClInclude Include="Source\Component\BillboardSubUVComponent.h" />
+    <ClInclude Include="Source\Component\CameraComponent.h" />
+    <ClInclude Include="Source\Component\CubeComponent.h" />
+    <ClInclude Include="Source\Component\TextMeshComponent.h" />
+    <ClInclude Include="Source\Component\PlaneComponent.h" />
+    <ClInclude Include="Source\Component\PrimitiveComponent.h" />
+    <ClInclude Include="Source\Component\SceneComponent.h" />
+    <ClInclude Include="Source\Component\SphereComponent.h" />
+    <ClInclude Include="Source\Component\TriangleComponent.h" />
+    <ClInclude Include="Source\Editor\Editor.h" />
+    <ClInclude Include="Source\Editor\UI\EditorConsole.h" />
+    <ClInclude Include="Source\Editor\UI\EditorControlPanel.h" />
+    <ClInclude Include="Source\Editor\UI\EditorPropertyPanel.h" />
+    <ClInclude Include="Source\Editor\UI\EditorStatPanel.h" />
+    <ClInclude Include="Source\Editor\UI\EditorToolbar.h" />
+    <ClInclude Include="Source\Editor\Gizmo.h" />
+    <ClInclude Include="Source\Component\GizmoComponent.h" />
+    <ClInclude Include="Source\Editor\Gizmo\GizmoControlStrategy.h" />
+    <ClInclude Include="Source\Editor\Gizmo\GizmoRotationControlStrategy.h" />
+    <ClInclude Include="Source\Editor\Gizmo\GizmoScaleControlStrategy.h" />
+    <ClInclude Include="Source\Editor\Gizmo\GizmoTranslationControlStrategy.h" />
+    <ClInclude Include="Source\Component\GridComp.h" />
+    <ClInclude Include="Source\Editor\Picker.h" />
+    <ClInclude Include="Source\Editor\UI\EditorSceneManagerPanel.h" />
+    <ClInclude Include="Source\EngineApp\EngineApp.h" />
+    <ClInclude Include="Source\EngineCore\Color.h" />
+    <ClInclude Include="Source\EngineCore\Name.h" />
+    <ClInclude Include="Source\LineBatcher.h" />
+    <ClInclude Include="Source\Renderer\Constants.h" />
+    <ClInclude Include="Source\Renderer\GeneralGeometry.h" />
+    <ClInclude Include="Source\Renderer\TexCoord.h" />
+    <ClInclude Include="Source\Renderer\VertexFont.h" />
+    <ClInclude Include="Source\SceneManager.h" />
+    <ClInclude Include="Source\Text\FontAsset.h" />
+    <ClInclude Include="Source\Text\FontConfig.h" />
+    <ClInclude Include="Source\Text\FontTypes.h" />
+    <ClInclude Include="Source\Text\GlyphAtlas.h" />
+    <ClInclude Include="Source\Text\TextEncoding.h" />
+    <ClInclude Include="Source\Text\TextLayout.h" />
     <ClInclude Include="ThirdParty\fifo_map.hpp" />
-    <ClInclude Include="Math\Matrix.h" />
-    <ClInclude Include="Math\Quaternion.h" />
-    <ClInclude Include="Math\Vector.h" />
-    <ClInclude Include="EngineCore\ObjectFactory.h" />
-    <ClInclude Include="EngineCore\InputManager.h" />
-    <ClInclude Include="Math\Ray.h" />
-    <ClInclude Include="Renderer\ConstantBuffer.h" />
-    <ClInclude Include="Renderer\Geometry.h" />
-    <ClInclude Include="Renderer\Level.h" />
-    <ClInclude Include="Renderer\Material.h" />
-    <ClInclude Include="Renderer\Renderer.h" />
-    <ClInclude Include="Renderer\RenderObject.h" />
-    <ClInclude Include="Math\Rotator.h" />
-    <ClInclude Include="EngineCore\Logger.h" />
-    <ClInclude Include="SerializeHelper.h" />
-    <ClInclude Include="Singleton.h" />
-    <ClInclude Include="Math\MathHelper.h" />
-    <ClInclude Include="PrimitiveFactory.h" />
-    <ClInclude Include="EngineCore\ResourceManager.h" />
-    <ClInclude Include="Scene.h" />
-    <ClInclude Include="VertexSimple.h" />
-    <ClInclude Include="ImGui\imconfig.h" />
-    <ClInclude Include="ImGui\imgui.h" />
-    <ClInclude Include="ImGui\imgui_impl_dx11.h" />
-    <ClInclude Include="ImGui\imgui_impl_win32.h" />
-    <ClInclude Include="ImGui\imgui_internal.h" />
-    <ClInclude Include="ImGui\imstb_rectpack.h" />
-    <ClInclude Include="ImGui\imstb_textedit.h" />
-    <ClInclude Include="ImGui\imstb_truetype.h" />
-    <ClInclude Include="EngineCore\Timer.h" />
-    <ClInclude Include="EngineCore\TimerManager.h" />
-    <ClInclude Include="Geometry\Triangle.h" />
-    <ClInclude Include="Math\Vector4.h" />
+    <ClInclude Include="Source\Math\Matrix.h" />
+    <ClInclude Include="Source\Math\Quaternion.h" />
+    <ClInclude Include="Source\Math\Vector.h" />
+    <ClInclude Include="Source\EngineCore\ObjectFactory.h" />
+    <ClInclude Include="Source\EngineCore\InputManager.h" />
+    <ClInclude Include="Source\Math\Ray.h" />
+    <ClInclude Include="Source\Renderer\ConstantBuffer.h" />
+    <ClInclude Include="Source\Renderer\Geometry.h" />
+    <ClInclude Include="Source\Renderer\Level.h" />
+    <ClInclude Include="Source\Renderer\Material.h" />
+    <ClInclude Include="Source\Renderer\Renderer.h" />
+    <ClInclude Include="Source\Renderer\RenderObject.h" />
+    <ClInclude Include="Source\Math\Rotator.h" />
+    <ClInclude Include="Source\EngineCore\Logger.h" />
+    <ClInclude Include="Source\SerializeHelper.h" />
+    <ClInclude Include="Source\Singleton.h" />
+    <ClInclude Include="Source\Math\MathHelper.h" />
+    <ClInclude Include="Source\PrimitiveFactory.h" />
+    <ClInclude Include="Source\EngineCore\ResourceManager.h" />
+    <ClInclude Include="Source\Scene.h" />
+    <ClInclude Include="Source\VertexSimple.h" />
+    <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_internal.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
+    <ClInclude Include="Source\EngineCore\Timer.h" />
+    <ClInclude Include="Source\EngineCore\TimerManager.h" />
+    <ClInclude Include="Source\Geometry\Triangle.h" />
+    <ClInclude Include="Source\Math\Vector4.h" />
     <ClInclude Include="ThirdParty\json.h" />
-    <ClInclude Include="Geometry\Sphere.h" />
-    <ClInclude Include="EngineCore\EngineStatics.h" />
-    <ClInclude Include="EngineCore\EngineTypes.h" />
-    <ClInclude Include="Component\Object.h" />
-    <ClInclude Include="World.h" />
+    <ClInclude Include="Source\Geometry\Sphere.h" />
+    <ClInclude Include="Source\EngineCore\EngineStatics.h" />
+    <ClInclude Include="Source\EngineCore\EngineTypes.h" />
+    <ClInclude Include="Source\Component\Object.h" />
+    <ClInclude Include="Source\World.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Component\AxisComponent.cpp" />
-    <ClCompile Include="Component\BillboardSubUVComponent.cpp" />
-    <ClCompile Include="Component\CameraComponent.cpp" />
-    <ClCompile Include="Component\CubeComponent.cpp" />
-    <ClCompile Include="Component\TextMeshComponent.cpp" />
-    <ClCompile Include="Component\PlaneComponent.cpp" />
-    <ClCompile Include="Component\PrimitiveComponent.cpp" />
-    <ClCompile Include="Component\SceneComponent.cpp" />
-    <ClCompile Include="Component\SphereComponent.cpp" />
-    <ClCompile Include="Component\TriangleComponent.cpp" />
-    <ClCompile Include="Editor\Editor.cpp" />
-    <ClCompile Include="Editor\UI\EditorConsole.cpp" />
-    <ClCompile Include="Editor\UI\EditorControlPanel.cpp" />
-    <ClCompile Include="Editor\UI\EditorPropertyPanel.cpp" />
-    <ClCompile Include="Editor\UI\EditorSceneManagerPanel.cpp" />
-    <ClCompile Include="Editor\UI\EditorStatPanel.cpp" />
-    <ClCompile Include="Editor\UI\EditorToolbar.cpp" />
-    <ClCompile Include="Editor\Gizmo.cpp" />
-    <ClCompile Include="Component\GizmoComponent.cpp" />
-    <ClCompile Include="Editor\Gizmo\GizmoRotationControlStrategy.cpp" />
-    <ClCompile Include="Editor\Gizmo\GizmoScaleControlStrategy.cpp" />
-    <ClCompile Include="Editor\Gizmo\GizmoTranslationControlStrategy.cpp" />
-    <ClCompile Include="Component\GridComp.cpp" />
-    <ClCompile Include="Editor\Picker.cpp" />
-    <ClCompile Include="EngineApp\EngineApp.cpp" />
-    <ClCompile Include="EngineCore\Color.cpp" />
-    <ClCompile Include="EngineCore\Name.cpp" />
-    <ClCompile Include="LineBatcher.cpp" />
-    <ClCompile Include="Math\Matrix.cpp" />
-    <ClCompile Include="Math\Quaternion.cpp" />
-    <ClCompile Include="Math\Vector.cpp" />
-    <ClCompile Include="EngineCore\ObjectFactory.cpp" />
-    <ClCompile Include="EngineCore\InputManager.cpp" />
-    <ClCompile Include="MemoryTracker.cpp" />
-    <ClCompile Include="SceneManager.cpp" />
-    <ClCompile Include="Text\FontAsset.cpp" />
-    <ClCompile Include="Text\GlyphAtlas.cpp" />
-    <ClCompile Include="Text\TextEncoding.cpp" />
-    <ClCompile Include="Text\TextLayout.cpp" />
+    <ClCompile Include="Source\Component\AxisComponent.cpp" />
+    <ClCompile Include="Source\Component\BillboardSubUVComponent.cpp" />
+    <ClCompile Include="Source\Component\CameraComponent.cpp" />
+    <ClCompile Include="Source\Component\CubeComponent.cpp" />
+    <ClCompile Include="Source\Component\TextMeshComponent.cpp" />
+    <ClCompile Include="Source\Component\PlaneComponent.cpp" />
+    <ClCompile Include="Source\Component\PrimitiveComponent.cpp" />
+    <ClCompile Include="Source\Component\SceneComponent.cpp" />
+    <ClCompile Include="Source\Component\SphereComponent.cpp" />
+    <ClCompile Include="Source\Component\TriangleComponent.cpp" />
+    <ClCompile Include="Source\Editor\Editor.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorConsole.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorControlPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorPropertyPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorSceneManagerPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorStatPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorToolbar.cpp" />
+    <ClCompile Include="Source\Editor\Gizmo.cpp" />
+    <ClCompile Include="Source\Component\GizmoComponent.cpp" />
+    <ClCompile Include="Source\Editor\Gizmo\GizmoRotationControlStrategy.cpp" />
+    <ClCompile Include="Source\Editor\Gizmo\GizmoScaleControlStrategy.cpp" />
+    <ClCompile Include="Source\Editor\Gizmo\GizmoTranslationControlStrategy.cpp" />
+    <ClCompile Include="Source\Component\GridComp.cpp" />
+    <ClCompile Include="Source\Editor\Picker.cpp" />
+    <ClCompile Include="Source\EngineApp\EngineApp.cpp" />
+    <ClCompile Include="Source\EngineCore\Color.cpp" />
+    <ClCompile Include="Source\EngineCore\Name.cpp" />
+    <ClCompile Include="Source\LineBatcher.cpp" />
+    <ClCompile Include="Source\Math\Matrix.cpp" />
+    <ClCompile Include="Source\Math\Quaternion.cpp" />
+    <ClCompile Include="Source\Math\Vector.cpp" />
+    <ClCompile Include="Source\EngineCore\ObjectFactory.cpp" />
+    <ClCompile Include="Source\EngineCore\InputManager.cpp" />
+    <ClCompile Include="Source\MemoryTracker.cpp" />
+    <ClCompile Include="Source\SceneManager.cpp" />
+    <ClCompile Include="Source\Text\FontAsset.cpp" />
+    <ClCompile Include="Source\Text\GlyphAtlas.cpp" />
+    <ClCompile Include="Source\Text\TextEncoding.cpp" />
+    <ClCompile Include="Source\Text\TextLayout.cpp" />
     <ClCompile Include="ThirdParty\json.cpp" />
-    <ClCompile Include="EngineCore\Logger.cpp" />
-    <ClCompile Include="PrimitiveFactory.cpp" />
-    <ClCompile Include="Math\Ray.cpp" />
-    <ClCompile Include="Renderer\Level.cpp" />
-    <ClCompile Include="Renderer\Renderer.cpp" />
-    <ClCompile Include="Renderer\RenderObject.cpp" />
-    <ClCompile Include="EngineCore\ResourceManager.cpp" />
-    <ClCompile Include="Math\Rotator.cpp" />
-    <ClCompile Include="Scene.cpp" />
-    <ClCompile Include="ImGui\imgui.cpp" />
-    <ClCompile Include="ImGui\imgui_demo.cpp" />
-    <ClCompile Include="ImGui\imgui_draw.cpp" />
-    <ClCompile Include="ImGui\imgui_impl_dx11.cpp" />
-    <ClCompile Include="ImGui\imgui_impl_win32.cpp" />
-    <ClCompile Include="ImGui\imgui_tables.cpp" />
-    <ClCompile Include="ImGui\imgui_widgets.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="EngineCore\Timer.cpp" />
-    <ClCompile Include="EngineCore\TimerManager.cpp" />
-    <ClCompile Include="EngineCore\EngineStatics.cpp" />
-    <ClCompile Include="Component\Object.cpp" />
-    <ClCompile Include="World.cpp" />
+    <ClCompile Include="Source\EngineCore\Logger.cpp" />
+    <ClCompile Include="Source\PrimitiveFactory.cpp" />
+    <ClCompile Include="Source\Math\Ray.cpp" />
+    <ClCompile Include="Source\Renderer\Level.cpp" />
+    <ClCompile Include="Source\Renderer\Renderer.cpp" />
+    <ClCompile Include="Source\Renderer\RenderObject.cpp" />
+    <ClCompile Include="Source\EngineCore\ResourceManager.cpp" />
+    <ClCompile Include="Source\Math\Rotator.cpp" />
+    <ClCompile Include="Source\Scene.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\EngineCore\Timer.cpp" />
+    <ClCompile Include="Source\EngineCore\TimerManager.cpp" />
+    <ClCompile Include="Source\EngineCore\EngineStatics.cpp" />
+    <ClCompile Include="Source\Component\Object.cpp" />
+    <ClCompile Include="Source\World.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shader\ShaderFont.hlsl">
+    <FxCompile Include="Shaders\ShaderFont.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shader\ShaderTextMesh.hlsl">
+    <FxCompile Include="Shaders\ShaderTextMesh.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </FxCompile>
-    <FxCompile Include="Shader\ShaderW0.hlsl">
+    <FxCompile Include="Shaders\ShaderW0.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">mainVS</EntryPointName>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">mainVS</EntryPointName>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -298,7 +298,6 @@
     </FxCompile>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Textures\input.dds" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

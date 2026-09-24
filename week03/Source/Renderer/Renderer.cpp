@@ -358,7 +358,7 @@ void URenderer::BatchRenderDebugLine(const TArray<FVertexSimple>& Lines)
 {
 	if (ShowFlagMap[EEngineShowFlags::SF_DebugLines] == false)
 		return;
-	ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderLine.hlsl").Bind(DeviceContext.Get());
+	ResourceManager::GetInstance()->GetMaterial(L"Shaders/ShaderLine.hlsl").Bind(DeviceContext.Get());
 	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 0);
 	//TArray<FVertexSimple> ClippedLines;
 	if (Lines.size() > DynamicBufferMaxVertexCount)
@@ -561,7 +561,7 @@ bool URenderer::PrepareBillboardFontMaterial(FFontAsset* FontAsset, const FColor
 	}
 
 	// 폰트 셰이더와 상수 버퍼를 이번 그룹 색상 기준으로 설정
-	FMaterial& FontMaterial = ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderFont.hlsl");
+	FMaterial& FontMaterial = ResourceManager::GetInstance()->GetMaterial(L"Shaders/ShaderFont.hlsl");
 	if (FontMaterial.VertexShader == nullptr || FontMaterial.PixelShader == nullptr)
 	{
 		return false;
@@ -687,7 +687,7 @@ void URenderer::RenderTextMeshes(const TArray<FLevel*>& Levels)
 		return;
 	}
 
-	FMaterial& TextMeshMaterial = ResourceManager::GetInstance()->GetMaterial(L"Shader/ShaderTextMesh.hlsl");
+	FMaterial& TextMeshMaterial = ResourceManager::GetInstance()->GetMaterial(L"Shaders/ShaderTextMesh.hlsl");
 	if (TextMeshMaterial.VertexShader == nullptr || TextMeshMaterial.PixelShader == nullptr)
 	{
 		return;

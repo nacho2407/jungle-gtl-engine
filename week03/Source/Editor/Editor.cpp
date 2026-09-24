@@ -41,7 +41,7 @@ bool Editor::Initialize(HWND hWnd, ID3D11Device* device, ID3D11DeviceContext* de
 	ImGuiIniPath = iniPath.string();
 	io.IniFilename = ImGuiIniPath.c_str();
 
-	ImFont* DefaultFont = io.Fonts->AddFontFromFileTTF("Assets/Fonts/D2CodingSubset.ttf", 16.0f);
+	ImFont* DefaultFont = io.Fonts->AddFontFromFileTTF("Content/Fonts/JungleCoding.ttf", 16.0f);
 	ImGui_ImplWin32_Init(hWnd);
 	ImGui_ImplDX11_Init(device, deviceContext);
 
