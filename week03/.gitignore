@@ -29,14 +29,26 @@ x86/
 *.sln.docstates
 
 # 외부 라이브러리 설정 (ImGui 등)
-!jungle-gtl-week03/
-!jungle-gtl-week03/ThirdParty/
-!jungle-gtl-week03/ThirdParty/DirectXTK/
-!jungle-gtl-week03/ThirdParty/DirectXTK/Release/
-!jungle-gtl-week03/ThirdParty/DirectXTK/Release/DirectXTK.lib
-!jungle-gtl-week03/ThirdParty/DirectXTK/Debug/
-!jungle-gtl-week03/ThirdParty/DirectXTK/Debug/DirectXTK.lib
+!/ThirdParty/
+!/ThirdParty/DirectXTK/
+!/ThirdParty/DirectXTK/Release/
+!/ThirdParty/DirectXTK/Release/DirectXTK.lib
+!/ThirdParty/DirectXTK/Debug/
+!/ThirdParty/DirectXTK/Debug/DirectXTK.lib
 
 # 기타 OS 임시 파일
 Thumbs.db
 .DS_Store
+
+# Build outputs of this week (paths relative to this folder)
+/x64/
+/week03/
+
+# Local state files
+/imgui.ini
+/editor.ini
+/Scenes/
+
+# Excluded from this repository because of license issues; kept only for local builds
+/Source/Geometry/Sphere.h
+/Content/Textures/
