@@ -166,7 +166,6 @@
     <ClInclude Include="Source\EngineCore\Name.h" />
     <ClInclude Include="Source\LineBatcher.h" />
     <ClInclude Include="Source\Renderer\Constants.h" />
-    <ClInclude Include="Source\Renderer\GeneralGeometry.h" />
     <ClInclude Include="Source\Renderer\TexCoord.h" />
     <ClInclude Include="Source\Renderer\VertexFont.h" />
     <ClInclude Include="Source\SceneManager.h" />
@@ -176,6 +175,7 @@
     <ClInclude Include="Source\Text\GlyphAtlas.h" />
     <ClInclude Include="Source\Text\TextEncoding.h" />
     <ClInclude Include="Source\Text\TextLayout.h" />
+    <ClInclude Include="ThirdParty\DirectXTK\DDSTextureLoader.h" />
     <ClInclude Include="ThirdParty\fifo_map.hpp" />
     <ClInclude Include="Source\Math\Matrix.h" />
     <ClInclude Include="Source\Math\Quaternion.h" />
@@ -282,6 +282,14 @@
     <ClCompile Include="Source\World.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="Shaders\ShaderLine.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\ShaderSubUV.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </FxCompile>
     <FxCompile Include="Shaders\ShaderFont.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>

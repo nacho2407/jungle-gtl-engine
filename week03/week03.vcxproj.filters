@@ -189,6 +189,9 @@
     <ClInclude Include="Source\SerializeHelper.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="ThirdParty\DirectXTK\DDSTextureLoader.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="ThirdParty\fifo_map.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -228,9 +231,6 @@
     <ClInclude Include="Source\Renderer\Constants.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Renderer\GeneralGeometry.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Renderer\TexCoord.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -253,12 +253,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\VertexFont.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Renderer\Constants.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Renderer\GeneralGeometry.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClCompile Include="Source\MemoryTracker.cpp">
@@ -453,6 +447,8 @@
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\ShaderW0.hlsl" />
+    <FxCompile Include="Shaders\ShaderLine.hlsl" />
+    <FxCompile Include="Shaders\ShaderSubUV.hlsl" />
     <FxCompile Include="Shaders\ShaderFont.hlsl" />
     <FxCompile Include="Shaders\ShaderTextMesh.hlsl" />
   </ItemGroup>
