@@ -471,3 +471,32 @@ GEMINI_TODO.md
 
 # Crash Log
 CrashLog.txt
+
+# Build outputs of this week (paths relative to this folder)
+/Editor/Bin/
+/Editor/Build/
+/Engine/Bin/
+/Engine/Build/
+/packages/
+
+# Local state files
+/Editor/imgui.ini
+/Editor/Saved/
+
+# Excluded from this repository because of license issues; kept only for local builds
+/Engine/Resources/Mesh/Sphere.h
+/Editor/Content/Sample obj/Lumine/
+/Editor/Content/Sample obj/laevat/
+/Editor/Content/Sample obj/Wolf/
+/Editor/Content/Sample obj/cottage/
+/Editor/Content/Font/Comic_Sans_MS/
+/Editor/Content/Font/D2Coding_Nerd/
+/Editor/Content/Font/KookMinChejo/
+/Editor/Content/Font/NEXON_Lv1/
+/Editor/Content/Font/PUBG_HeadLiner/
+/Editor/Content/Font/SuperMario_256/
+/Editor/Content/Font/Ubuntu/
+/Editor/Content/Texture/Character/
+/Editor/Content/Texture/Panel/
+/Editor/Content/Texture/Effect/
+/Editor/Content/Scenes/Leviathan.Scene
