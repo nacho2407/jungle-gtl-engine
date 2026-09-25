@@ -1,0 +1,268 @@
+#include <cfloat>
+
+#include "Renderer/Submitter/AABBSubmitter.h"
+
+#include "Renderer/D3D11/D3D11LineBatchRenderer.h"
+#include "Renderer/RenderAsset/FontResource.h"
+#include "Renderer/SceneView.h"
+#include "Renderer/Text/TextLayout.h"
+
+namespace
+{
+    void ExpandLocal(FVector& InOutMin, FVector& InOutMax, const FVector& InPoint)
+    {
+        if (InPoint.X < InOutMin.X)
+            InOutMin.X = InPoint.X;
+        if (InPoint.Y < InOutMin.Y)
+            InOutMin.Y = InPoint.Y;
+        if (InPoint.Z < InOutMin.Z)
+            InOutMin.Z = InPoint.Z;
+        if (InPoint.X > InOutMax.X)
+            InOutMax.X = InPoint.X;
+        if (InPoint.Y > InOutMax.Y)
+            InOutMax.Y = InPoint.Y;
+        if (InPoint.Z > InOutMax.Z)
+            InOutMax.Z = InPoint.Z;
+    }
+
+    FVector MakeHalfExtent(EBasicMeshType InMeshType)
+    {
+        switch (InMeshType)
+        {
+        case EBasicMeshType::Quad:
+            return FVector(0.5f, 0.05f, 0.5f);
+        case EBasicMeshType::Ring:
+            return FVector(0.5f, 0.5f, 0.05f);
+        case EBasicMeshType::Triangle:
+            return FVector(0.5f, 0.05f, 0.5f);
+        default:
+            return FVector(0.5f, 0.5f, 0.5f);
+        }
+    }
+
+    void AddQuadBounds(FVector& InOutMin, FVector& InOutMax, const FVector& InOrigin,
+                       const FVector& InRight, const FVector& InUp)
+    {
+        const FVector P0 = InOrigin - InRight - InUp;
+        const FVector P1 = InOrigin + InRight - InUp;
+        const FVector P2 = InOrigin + InRight + InUp;
+        const FVector P3 = InOrigin - InRight + InUp;
+
+        ExpandLocal(InOutMin, InOutMax, P0);
+        ExpandLocal(InOutMin, InOutMax, P1);
+        ExpandLocal(InOutMin, InOutMax, P2);
+        ExpandLocal(InOutMin, InOutMax, P3);
+    }
+
+    bool BuildSpriteQuadWorldBounds(const FSceneView& InSceneView, const FSpriteRenderItem& InItem,
+                                    FVector& OutMin, FVector& OutMax)
+    {
+        const FMatrix& PlacementWorld = InItem.Placement.World;
+        const FVector SpriteOrigin = PlacementWorld.GetOrigin() + InItem.Placement.WorldOffset;
+
+        FVector RightAxis;
+        FVector UpAxis;
+
+        if (InItem.Placement.IsBillboard())
+        {
+            const FMatrix CameraWorld = InSceneView.GetViewMatrix().GetInverse();
+            RightAxis = CameraWorld.GetRightVector();
+            UpAxis = CameraWorld.GetUpVector();
+
+            const FVector WorldScale = PlacementWorld.GetScaleVector();
+            RightAxis = RightAxis * WorldScale.X;
+            UpAxis = UpAxis * WorldScale.Z;
+        }
+        else
+        {
+            const FVector WorldScale = PlacementWorld.GetScaleVector();
+            RightAxis = PlacementWorld.GetForwardVector().GetSafeNormal() * WorldScale.X;
+            UpAxis = PlacementWorld.GetUpVector().GetSafeNormal() * WorldScale.Z;
+        }
+
+        OutMin = FVector(FLT_MAX, FLT_MAX, FLT_MAX);
+        OutMax = FVector(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+        AddQuadBounds(OutMin, OutMax, SpriteOrigin, RightAxis, UpAxis);
+        return true;
+    }
+} // namespace
+
+void FAABBSubmitter::Submit(FD3D11LineBatchRenderer& InLineRenderer,
+                            const FSceneRenderData&  InSceneRenderData) const
+{
+    if (InSceneRenderData.SceneView == nullptr)
+    {
+        return;
+    }
+
+    for (const FPrimitiveRenderItem& Item : InSceneRenderData.Primitives)
+    {
+        SubmitPrimitiveBounds(InLineRenderer, Item);
+    }
+    for (const FStaticMeshRenderItem& Item : InSceneRenderData.StaticMeshes)
+    {
+        SubmitStaticMeshBounds(InLineRenderer, Item);
+    }
+    for (const FSpriteRenderItem& Item : InSceneRenderData.Sprites)
+    {
+        SubmitSpriteBounds(InLineRenderer, *InSceneRenderData.SceneView, Item);
+    }
+    for (const FTextRenderItem& Item : InSceneRenderData.Texts)
+    {
+        SubmitTextBounds(InLineRenderer, *InSceneRenderData.SceneView, Item);
+    }
+}
+
+FColor FAABBSubmitter::ResolveBoundsColor(const FRenderItemState& InState)
+{
+    if (InState.IsSelected())
+    {
+        return SelectedBoundsColor;
+    }
+
+    if (InState.IsHovered())
+    {
+        return HoveredBoundsColor;
+    }
+
+    return DefaultBoundsColor;
+}
+
+void FAABBSubmitter::ExpandBounds(FVector& InOutMin, FVector& InOutMax, const FVector& InPoint)
+{
+    if (InPoint.X < InOutMin.X)
+        InOutMin.X = InPoint.X;
+    if (InPoint.Y < InOutMin.Y)
+        InOutMin.Y = InPoint.Y;
+    if (InPoint.Z < InOutMin.Z)
+        InOutMin.Z = InPoint.Z;
+    if (InPoint.X > InOutMax.X)
+        InOutMax.X = InPoint.X;
+    if (InPoint.Y > InOutMax.Y)
+        InOutMax.Y = InPoint.Y;
+    if (InPoint.Z > InOutMax.Z)
+        InOutMax.Z = InPoint.Z;
+}
+
+void FAABBSubmitter::SubmitBox(FD3D11LineBatchRenderer& InLineRenderer, const FVector& InMin,
+                               const FVector& InMax, const FColor& InColor)
+{
+    const FVector P000(InMin.X, InMin.Y, InMin.Z);
+    const FVector P100(InMax.X, InMin.Y, InMin.Z);
+    const FVector P010(InMin.X, InMax.Y, InMin.Z);
+    const FVector P110(InMax.X, InMax.Y, InMin.Z);
+    const FVector P001(InMin.X, InMin.Y, InMax.Z);
+    const FVector P101(InMax.X, InMin.Y, InMax.Z);
+    const FVector P011(InMin.X, InMax.Y, InMax.Z);
+    const FVector P111(InMax.X, InMax.Y, InMax.Z);
+
+    InLineRenderer.AddLine(P000, P100, InColor);
+    InLineRenderer.AddLine(P100, P110, InColor);
+    InLineRenderer.AddLine(P110, P010, InColor);
+    InLineRenderer.AddLine(P010, P000, InColor);
+
+    InLineRenderer.AddLine(P001, P101, InColor);
+    InLineRenderer.AddLine(P101, P111, InColor);
+    InLineRenderer.AddLine(P111, P011, InColor);
+    InLineRenderer.AddLine(P011, P001, InColor);
+
+    InLineRenderer.AddLine(P000, P001, InColor);
+    InLineRenderer.AddLine(P100, P101, InColor);
+    InLineRenderer.AddLine(P110, P111, InColor);
+    InLineRenderer.AddLine(P010, P011, InColor);
+}
+
+void FAABBSubmitter::SubmitWorldAABB(FD3D11LineBatchRenderer& InLineRenderer,
+                                     const Geometry::FAABB&   InWorldAABB,
+                                     const FRenderItemState&  InState)
+{
+    if (!InState.IsVisible() || !InState.bShowBounds)
+    {
+        return;
+    }
+
+    SubmitBox(InLineRenderer, InWorldAABB.Min, InWorldAABB.Max, ResolveBoundsColor(InState));
+}
+
+void FAABBSubmitter::SubmitPrimitiveBounds(FD3D11LineBatchRenderer&    InLineRenderer,
+                                           const FPrimitiveRenderItem& InItem)
+{
+    if (!InItem.State.IsVisible() || !InItem.State.bShowBounds)
+    {
+        return;
+    }
+
+    if (InItem.bHasWorldAABB)
+    {
+        SubmitBox(InLineRenderer, InItem.WorldAABB.Min, InItem.WorldAABB.Max,
+                  ResolveBoundsColor(InItem.State));
+        return;
+    }
+
+    // fallback: WorldAABB 없음
+    const FVector Origin = InItem.World.GetOrigin();
+    const FVector Right = InItem.World.GetScaledAxis(EAxis::Y) * MakeHalfExtent(InItem.MeshType).X;
+    const FVector Up = InItem.World.GetScaledAxis(EAxis::Z) * MakeHalfExtent(InItem.MeshType).Z;
+    const FVector Forward =
+        InItem.World.GetScaledAxis(EAxis::X) * MakeHalfExtent(InItem.MeshType).Y;
+
+    FVector Min(FLT_MAX, FLT_MAX, FLT_MAX);
+    FVector Max(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+
+    const FVector Signs[8] = {
+        Right + Up + Forward,  Right + Up - Forward,  Right - Up + Forward,  Right - Up - Forward,
+        -Right + Up + Forward, -Right + Up - Forward, -Right - Up + Forward, -Right - Up - Forward,
+    };
+
+    for (const FVector& CornerOffset : Signs)
+    {
+        ExpandBounds(Min, Max, Origin + CornerOffset);
+    }
+
+    SubmitBox(InLineRenderer, Min, Max, ResolveBoundsColor(InItem.State));
+}
+
+void FAABBSubmitter::SubmitStaticMeshBounds(FD3D11LineBatchRenderer&     InLineRenderer,
+                                            const FStaticMeshRenderItem& InItem)
+{
+    SubmitWorldAABB(InLineRenderer, InItem.WorldAABB, InItem.State);
+}
+
+void FAABBSubmitter::SubmitSpriteBounds(FD3D11LineBatchRenderer& InLineRenderer,
+                                        const FSceneView& InSceneView,
+                                        const FSpriteRenderItem& InItem)
+{
+    if (!InItem.State.IsVisible() || !InItem.State.bShowBounds)
+    {
+        return;
+    }
+
+    FVector Min;
+    FVector Max;
+    if (!BuildSpriteQuadWorldBounds(InSceneView, InItem, Min, Max))
+    {
+        return;
+    }
+
+    SubmitBox(InLineRenderer, Min, Max, ResolveBoundsColor(InItem.State));
+}
+
+void FAABBSubmitter::SubmitTextBounds(FD3D11LineBatchRenderer& InLineRenderer,
+                                      const FSceneView& InSceneView, const FTextRenderItem& InItem)
+{
+    if (!InItem.State.IsVisible() || !InItem.State.bShowBounds || InItem.Text.empty() ||
+        InItem.bExcludeFromOutline)
+    {
+        return;
+    }
+
+    const FTextWorldGeometry WorldGeometry =
+        BuildTextWorldGeometry(InItem, InSceneView.GetViewMatrix());
+    if (!WorldGeometry.bHasWorldAABB)
+    {
+        return;
+    }
+
+    SubmitBox(InLineRenderer, WorldGeometry.WorldAABB.Min, WorldGeometry.WorldAABB.Max,
+              ResolveBoundsColor(InItem.State));
+}
