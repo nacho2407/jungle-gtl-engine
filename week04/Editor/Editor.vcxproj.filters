@@ -1,0 +1,383 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{eda2fbce-2e37-c3c8-8f8c-35f2a4ff4e59}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Camera">
+      <UniqueIdentifier>{087cc9f2-fe91-1e32-64d2-002ce2f7881b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Chrome">
+      <UniqueIdentifier>{c8396112-0f9f-0d0f-bab3-3305c1d83c32}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Content">
+      <UniqueIdentifier>{41fe48f8-3b76-36c5-fcab-2d90d58c193e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor">
+      <UniqueIdentifier>{68b5e2a9-3ba4-999f-3e91-8d1308eb9a6e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Gizmo">
+      <UniqueIdentifier>{2997c27c-11e9-54ee-4b0c-5a71dc20396c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Input">
+      <UniqueIdentifier>{6a2850c9-e58a-f648-6b89-623ded1d763f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Importer">
+      <UniqueIdentifier>{d4f3b2a1-7c0d-4e83-9b57-1f2c3a4b5c6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Launch">
+      <UniqueIdentifier>{90ac0f15-c775-3ba7-f780-7222e93b8ddd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Menu">
+      <UniqueIdentifier>{68f5eb1f-e996-8b0b-1591-ae95c1941b0a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Panel">
+      <UniqueIdentifier>{110cb42a-bc8d-dcb7-321e-1bd33a00b562}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ThirdParty">
+      <UniqueIdentifier>{5726d692-7686-5f00-2fce-2f6dc385fdc4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport">
+      <UniqueIdentifier>{76033aac-1e00-3e72-af05-fad596f6ac30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Editor\Logging">
+      <UniqueIdentifier>{9eea2180-fcc8-2cbc-e827-723988501a5f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ThirdParty\ImGui">
+      <UniqueIdentifier>{32e4b986-b3a8-5f87-38d0-7d76493d7618}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Gizmo">
+      <UniqueIdentifier>{a4a5fb1b-42c4-c447-1a35-66493bab83fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Global">
+      <UniqueIdentifier>{adcfa627-4b20-d1e6-fae1-1b2b3dcc0103}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Interaction">
+      <UniqueIdentifier>{272e7142-94bf-a8cb-262e-e0148bdeb16a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Navigation">
+      <UniqueIdentifier>{8f405a6f-69cc-5924-64a5-aeb8f417b3cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\RenderSetting">
+      <UniqueIdentifier>{811fb41f-c966-1264-d519-6c49918c512e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Selection">
+      <UniqueIdentifier>{c02bdf14-d23c-3f72-e5f4-7a918dc1b5dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewer">
+      <UniqueIdentifier>{b4c7e2d1-9f3a-4b8e-a5c6-2d7e8f9a0b1c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Viewport\Window">
+      <UniqueIdentifier>{d3f2a1b0-8c7e-4f5d-9e6a-1b2c3d4e5f60}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Camera\ViewportCamera.cpp">
+      <Filter>Source\Camera</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewer\ObjViewerEngineLoop.cpp">
+      <Filter>Source\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewer\OrbitalCameraController.cpp">
+      <Filter>Source\Viewer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Chrome\EditorChrome.cpp">
+      <Filter>Source\Chrome</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Content\EditorContentIndex.cpp">
+      <Filter>Source\Content</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Editor.cpp">
+      <Filter>Source\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\EditorContext.cpp">
+      <Filter>Source\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\EditorSettings.cpp">
+      <Filter>Source\Editor</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp">
+      <Filter>Source\Editor\Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\EditorGlobalContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\GizmoInputContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\NavigationInputContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\SelectionInputContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Input\ViewportOverlayInputContext.cpp">
+      <Filter>Source\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Importer\EditorAssetImporter.cpp">
+      <Filter>Source\Importer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Launch\EditorEngineLoop.cpp">
+      <Filter>Source\Launch</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Launch\Launch.cpp">
+      <Filter>Source\Launch</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\ConsolePanel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\ContentBrowserPanel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\ControlPanel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\OutlinerPanel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\Panel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\PanelManager.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\PropertiesPanel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Panel\ShortcutsPanel.cpp">
+      <Filter>Source\Panel</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui.cpp">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_demo.cpp">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_draw.cpp">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_dx11.cpp">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_win32.cpp">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_tables.cpp">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_widgets.cpp">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\EditorViewport.cpp">
+      <Filter>Source\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\EditorViewportClient.cpp">
+      <Filter>Source\Viewport</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Window\EditorViewportPanel.cpp">
+      <Filter>Source\Viewport\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Gizmo\ViewportGizmoController.cpp">
+      <Filter>Source\Viewport\Gizmo</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Global\EditorGlobalController.cpp">
+      <Filter>Source\Viewport\Global</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Interaction\ViewportInteractionState.cpp">
+      <Filter>Source\Viewport\Interaction</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Navigation\ViewportNavigationController.cpp">
+      <Filter>Source\Viewport\Navigation</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\RenderSetting\ViewportRenderSetting.cpp">
+      <Filter>Source\Viewport\RenderSetting</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp">
+      <Filter>Source\Viewport\Selection</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewport\Window\WindowOverlayManager.cpp">
+      <Filter>Source\Viewport\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Viewer\ViewerImGui.cpp">
+      <Filter>Source\Viewer</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Camera\ViewportCamera.h">
+      <Filter>Source\Camera</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewer\ObjViewerEngineLoop.h">
+      <Filter>Source\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewer\OrbitalCameraController.h">
+      <Filter>Source\Viewer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Chrome\EditorChrome.h">
+      <Filter>Source\Chrome</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Content\ContentBrowserDragDrop.h">
+      <Filter>Source\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Content\EditorContentIndex.h">
+      <Filter>Source\Content</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Editor.h">
+      <Filter>Source\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\EditorContext.h">
+      <Filter>Source\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\EditorSettings.h">
+      <Filter>Source\Editor</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Logging\EditorLogBuffer.h">
+      <Filter>Source\Editor\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Logging\EditorLogEntry.h">
+      <Filter>Source\Editor\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Gizmo\EditorGizmoTypes.h">
+      <Filter>Source\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Gizmo\GizmoDrawDataBuilder.h">
+      <Filter>Source\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\ContextModeTypes.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\EditorGlobalContext.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\GizmoInputContext.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\NavigationInputContext.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\SelectionInputContext.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Input\ViewportOverlayInputContext.h">
+      <Filter>Source\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Importer\EditorAssetImporter.h">
+      <Filter>Source\Importer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Launch\EditorEngineLoop.h">
+      <Filter>Source\Launch</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Launch\Launch.h">
+      <Filter>Source\Launch</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Menu\EditorMenuRegistry.h">
+      <Filter>Source\Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\ConsolePanel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\ContentBrowserPanel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\ControlPanel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\OutlinerPanel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\Panel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\PanelManager.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\PropertiesPanel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Panel\ShortcutsPanel.h">
+      <Filter>Source\Panel</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\ImGui\imconfig.h">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui.h">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_dx11.h">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_win32.h">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_internal.h">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_rectpack.h">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_textedit.h">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_truetype.h">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\EditorViewport.h">
+      <Filter>Source\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\EditorViewportClient.h">
+      <Filter>Source\Viewport</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Window\EditorViewportPanel.h">
+      <Filter>Source\Viewport\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Gizmo\ViewportGizmoController.h">
+      <Filter>Source\Viewport\Gizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Global\EditorGlobalController.h">
+      <Filter>Source\Viewport\Global</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Interaction\ViewportInteractionState.h">
+      <Filter>Source\Viewport\Interaction</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Navigation\ViewportNavigationController.h">
+      <Filter>Source\Viewport\Navigation</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\RenderSetting\ViewportRenderSetting.h">
+      <Filter>Source\Viewport\RenderSetting</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h">
+      <Filter>Source\Viewport\Selection</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewport\Window\WindowOverlayManager.h">
+      <Filter>Source\Viewport\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Viewer\ViewerImGui.h">
+      <Filter>Source\Viewer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Source\ThirdParty\ImGui\imgui.natvis">
+      <Filter>Source\ThirdParty\ImGui</Filter>
+    </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Content\Shader\SelectionMaskMesh.hlsl" />
+    <FxCompile Include="Content\Shader\SelectionMaskSprite.hlsl" />
+    <FxCompile Include="Content\Shader\SelectionOutlinePostProcess.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderFont.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderInstancedMesh.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderLine.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderMesh.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderObjectId.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderPicking.hlsl" />
+    <FxCompile Include="Content\Shader\ShaderSprite.hlsl" />
+    <FxCompile Include="Content\Shader\StaticMeshShader.hlsl" />
+  </ItemGroup>
+</Project>

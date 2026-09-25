@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="OBJViewerDebug|x64">
+      <Configuration>OBJViewerDebug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{910d7c84-af56-42a5-8fd5-77fab20d77c6}</ProjectGuid>
+    <RootNamespace>Editor</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>Build\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>Build\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>Build\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NOMINMAX;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(ProjectDir);$(ProjectDir)Source\ThirdParty\imgui;$(ProjectDir)..\Engine\Source;$(ProjectDir)..\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(OutDir)" mkdir "$(OutDir)"
+if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.dll" copy /Y "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.dll" "$(OutDir)"
+if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" "$(OutDir)"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NOMINMAX;_DEBUG;_WINDOWS;%(PreprocessorDefinitions); IS_OBJ_VIEWER=1</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(ProjectDir);$(ProjectDir)Source\ThirdParty\imgui;$(ProjectDir)..\Engine\Source;$(ProjectDir)..\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(OutDir)" mkdir "$(OutDir)"
+if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.dll" copy /Y "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.dll" "$(OutDir)"
+if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" "$(OutDir)"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NOMINMAX;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(ProjectDir);$(ProjectDir)Source\ThirdParty\imgui;$(ProjectDir)..\Engine\Source;$(ProjectDir)..\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>if not exist "$(OutDir)" mkdir "$(OutDir)"
+if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.dll" copy /Y "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.dll" "$(OutDir)"
+if exist "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" copy /Y "$(ProjectDir)..\Engine\Bin\$(Configuration)\Engine.pdb" "$(OutDir)"</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Camera\ViewportCamera.cpp" />
+    <ClCompile Include="Source\Chrome\EditorChrome.cpp" />
+    <ClCompile Include="Source\Content\EditorContentIndex.cpp" />
+    <ClCompile Include="Source\Editor\Editor.cpp" />
+    <ClCompile Include="Source\Editor\EditorContext.cpp" />
+    <ClCompile Include="Source\Editor\EditorSettings.cpp" />
+    <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp" />
+    <ClCompile Include="Source\Input\EditorGlobalContext.cpp" />
+    <ClCompile Include="Source\Input\GizmoInputContext.cpp" />
+    <ClCompile Include="Source\Input\NavigationInputContext.cpp" />
+    <ClCompile Include="Source\Input\SelectionInputContext.cpp" />
+    <ClCompile Include="Source\Input\ViewportOverlayInputContext.cpp" />
+    <ClCompile Include="Source\Importer\EditorAssetImporter.cpp" />
+    <ClCompile Include="Source\Launch\EditorEngineLoop.cpp" />
+    <ClCompile Include="Source\Viewer\ObjViewerEngineLoop.cpp" />
+    <ClCompile Include="Source\Viewer\OrbitalCameraController.cpp" />
+    <ClCompile Include="Source\Launch\Launch.cpp" />
+    <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\Panel\ConsolePanel.cpp" />
+    <ClCompile Include="Source\Panel\ContentBrowserPanel.cpp" />
+    <ClCompile Include="Source\Panel\ControlPanel.cpp" />
+    <ClCompile Include="Source\Panel\OutlinerPanel.cpp" />
+    <ClCompile Include="Source\Panel\Panel.cpp" />
+    <ClCompile Include="Source\Panel\PanelManager.cpp" />
+    <ClCompile Include="Source\Panel\PropertiesPanel.cpp" />
+    <ClCompile Include="Source\Panel\ShortcutsPanel.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="Source\ThirdParty\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="Source\Viewport\EditorViewport.cpp" />
+    <ClCompile Include="Source\Viewport\EditorViewportClient.cpp" />
+    <ClCompile Include="Source\Viewport\Window\EditorViewportPanel.cpp" />
+    <ClCompile Include="Source\Viewport\Gizmo\ViewportGizmoController.cpp" />
+    <ClCompile Include="Source\Viewport\Global\EditorGlobalController.cpp" />
+    <ClCompile Include="Source\Viewport\Interaction\ViewportInteractionState.cpp" />
+    <ClCompile Include="Source\Viewport\Navigation\ViewportNavigationController.cpp" />
+    <ClCompile Include="Source\Viewport\RenderSetting\ViewportRenderSetting.cpp" />
+    <ClCompile Include="Source\Viewport\Selection\ViewportSelectionController.cpp" />
+    <ClCompile Include="Source\Viewport\Window\WindowOverlayManager.cpp" />
+    <ClCompile Include="Source\Viewer\ViewerImGui.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Camera\ViewportCamera.h" />
+    <ClInclude Include="Source\Chrome\EditorChrome.h" />
+    <ClInclude Include="Source\Content\ContentBrowserDragDrop.h" />
+    <ClInclude Include="Source\Content\EditorContentIndex.h" />
+    <ClInclude Include="Source\Editor\Editor.h" />
+    <ClInclude Include="Source\Editor\EditorContext.h" />
+    <ClInclude Include="Source\Editor\EditorSettings.h" />
+    <ClInclude Include="Source\Editor\Logging\EditorLogBuffer.h" />
+    <ClInclude Include="Source\Editor\Logging\EditorLogEntry.h" />
+    <ClInclude Include="Source\Gizmo\EditorGizmoTypes.h" />
+    <ClInclude Include="Source\Gizmo\GizmoDrawDataBuilder.h" />
+    <ClInclude Include="Source\Input\ContextModeTypes.h" />
+    <ClInclude Include="Source\Input\EditorGlobalContext.h" />
+    <ClInclude Include="Source\Input\GizmoInputContext.h" />
+    <ClInclude Include="Source\Input\NavigationInputContext.h" />
+    <ClInclude Include="Source\Input\SelectionInputContext.h" />
+    <ClInclude Include="Source\Input\ViewportOverlayInputContext.h" />
+    <ClInclude Include="Source\Importer\EditorAssetImporter.h" />
+    <ClInclude Include="Source\Launch\EditorEngineLoop.h" />
+    <ClInclude Include="Source\Viewer\ObjViewerEngineLoop.h" />
+    <ClInclude Include="Source\Viewer\OrbitalCameraController.h" />
+    <ClInclude Include="Source\Launch\Launch.h" />
+    <ClInclude Include="Source\Menu\EditorMenuRegistry.h" />
+    <ClInclude Include="Source\Panel\ConsolePanel.h" />
+    <ClInclude Include="Source\Panel\ContentBrowserPanel.h" />
+    <ClInclude Include="Source\Panel\ControlPanel.h" />
+    <ClInclude Include="Source\Panel\OutlinerPanel.h" />
+    <ClInclude Include="Source\Panel\Panel.h" />
+    <ClInclude Include="Source\Panel\PanelManager.h" />
+    <ClInclude Include="Source\Panel\PropertiesPanel.h" />
+    <ClInclude Include="Source\Panel\ShortcutsPanel.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imconfig.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imgui_internal.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_textedit.h" />
+    <ClInclude Include="Source\ThirdParty\ImGui\imstb_truetype.h" />
+    <ClInclude Include="Source\Viewport\EditorViewport.h" />
+    <ClInclude Include="Source\Viewport\EditorViewportClient.h" />
+    <ClInclude Include="Source\Viewport\Window\EditorViewportPanel.h" />
+    <ClInclude Include="Source\Viewport\Gizmo\ViewportGizmoController.h" />
+    <ClInclude Include="Source\Viewport\Global\EditorGlobalController.h" />
+    <ClInclude Include="Source\Viewport\Interaction\ViewportInteractionState.h" />
+    <ClInclude Include="Source\Viewport\Navigation\ViewportNavigationController.h" />
+    <ClInclude Include="Source\Viewport\RenderSetting\ViewportRenderSetting.h" />
+    <ClInclude Include="Source\Viewport\Selection\ViewportSelectionController.h" />
+    <ClInclude Include="Source\Viewport\Window\WindowOverlayManager.h" />
+    <ClInclude Include="Source\Viewer\ViewerImGui.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Source\ThirdParty\ImGui\imgui.natstepfilter" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="Source\ThirdParty\ImGui\imgui.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Engine\Engine.vcxproj">
+      <Project>{F44237E2-379F-4018-A189-153730228C6B}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Content\Shader\SelectionMaskMesh.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Content\Shader\SelectionMaskSprite.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Content\Shader\SelectionOutlinePostProcess.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Content\Shader\ShaderFont.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Content\Shader\ShaderInstancedMesh.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Content\Shader\ShaderLine.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Content\Shader\ShaderMesh.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Content\Shader\ShaderObjectId.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Content\Shader\ShaderPicking.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Content\Shader\ShaderSprite.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Content\Shader\StaticMeshShader.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='OBJViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

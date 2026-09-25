@@ -1,0 +1,177 @@
+{
+  "PerspectiveCamera": {
+    "Location": [
+      4.5445237159729,
+      -7.79056024551392,
+      4.24129247665405
+    ],
+    "Rotation": [
+      -0.0918117240071297,
+      0.0927778407931328,
+      0.697378635406494,
+      0.704716980457306
+    ],
+    "FOV": 1.57079601287842,
+    "NearClip": 0.100000001490116,
+    "FarClip": 2000
+  },
+  "schema": "JungleScene",
+  "version": 2,
+  "actors": [
+    {
+      "type": "AStaticMeshActor",
+      "uuid": 2,
+      "name": "StaticMeshActor 1",
+      "pickable": true,
+      "components": [
+        {
+          "type": "class Engine::Component::USceneComponent",
+          "is_root": true,
+          "uuid": 3,
+          "name": "DefaultSceneRoot",
+          "transform": {
+            "location": [
+              0,
+              0,
+              0
+            ],
+            "rotation_quat": [
+              0.0416005849838257,
+              -0.0131165971979499,
+              0.300419270992279,
+              0.952809393405914
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {}
+        },
+        {
+          "type": "UStaticMeshComponent",
+          "is_root": false,
+          "uuid": 5,
+          "name": "StaticMeshComponent",
+          "parent_uuid": 3,
+          "transform": {
+            "location": [
+              0,
+              0,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              9.99999974737875e-05,
+              9.99999974737875e-05,
+              9.99999974737875e-05
+            ]
+          },
+          "properties": {
+            "StaticMeshMaterialSlot_0": null,
+            "color": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "boundingbox": false,
+            "StaticMeshMaterialSlot_1": null,
+            "ObjStaticMeshAsset": "/Game/Sample obj/laevat/laevat.uasset",
+            "StaticMeshMaterialSlot_2": null,
+            "StaticMeshMaterialSlot_3": null,
+            "StaticMeshMaterialSlot_4": null,
+            "StaticMeshMaterialSlot_5": null
+          }
+        }
+      ]
+    },
+    {
+      "type": "AStaticMeshActor",
+      "uuid": 42,
+      "name": "StaticMeshActor 2",
+      "pickable": true,
+      "components": [
+        {
+          "type": "class Engine::Component::USceneComponent",
+          "is_root": true,
+          "uuid": 43,
+          "name": "DefaultSceneRoot",
+          "transform": {
+            "location": [
+              6.34202003479004,
+              0.939692616462708,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0.5735764503479,
+              0.819152057170868
+            ],
+            "scale": [
+              4.68499994277954,
+              4.68499994277954,
+              4.68499994277954
+            ]
+          },
+          "properties": {}
+        },
+        {
+          "type": "UStaticMeshComponent",
+          "is_root": false,
+          "uuid": 45,
+          "name": "StaticMeshComponent",
+          "parent_uuid": 43,
+          "transform": {
+            "location": [
+              0,
+              0,
+              0
+            ],
+            "rotation_quat": [
+              0,
+              0,
+              0,
+              1
+            ],
+            "scale": [
+              1,
+              1,
+              1
+            ]
+          },
+          "properties": {
+            "StaticMeshMaterialSlot_0": null,
+            "color": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "boundingbox": false,
+            "StaticMeshMaterialSlot_12": null,
+            "StaticMeshMaterialSlot_1": null,
+            "ObjStaticMeshAsset": "/Game/Sample obj/Lumine/LumineModel.uasset",
+            "StaticMeshMaterialSlot_11": null,
+            "StaticMeshMaterialSlot_2": null,
+            "StaticMeshMaterialSlot_10": null,
+            "StaticMeshMaterialSlot_3": null,
+            "StaticMeshMaterialSlot_4": null,
+            "StaticMeshMaterialSlot_5": null,
+            "StaticMeshMaterialSlot_6": null,
+            "StaticMeshMaterialSlot_7": null,
+            "StaticMeshMaterialSlot_8": null,
+            "StaticMeshMaterialSlot_9": null
+          }
+        }
+      ]
+    }
+  ]
+}
