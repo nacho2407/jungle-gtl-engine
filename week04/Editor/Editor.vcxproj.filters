@@ -1,6 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{5ca7039f-b903-4f9c-9772-5c38f44b1b13}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source">
       <UniqueIdentifier>{eda2fbce-2e37-c3c8-8f8c-35f2a4ff4e59}</UniqueIdentifier>
     </Filter>
@@ -171,9 +174,6 @@
     <ClCompile Include="Source\ThirdParty\ImGui\imgui_widgets.cpp">
       <Filter>Source\ThirdParty\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Viewport\EditorViewport.cpp">
-      <Filter>Source\Viewport</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Viewport\EditorViewportClient.cpp">
       <Filter>Source\Viewport</Filter>
     </ClCompile>
@@ -240,9 +240,6 @@
       <Filter>Source\Editor\Logging</Filter>
     </ClInclude>
     <ClInclude Include="Source\Gizmo\EditorGizmoTypes.h">
-      <Filter>Source\Gizmo</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Gizmo\GizmoDrawDataBuilder.h">
       <Filter>Source\Gizmo</Filter>
     </ClInclude>
     <ClInclude Include="Source\Input\ContextModeTypes.h">
@@ -379,5 +376,10 @@
     <FxCompile Include="Content\Shader\ShaderPicking.hlsl" />
     <FxCompile Include="Content\Shader\ShaderSprite.hlsl" />
     <FxCompile Include="Content\Shader\StaticMeshShader.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources\Editor.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

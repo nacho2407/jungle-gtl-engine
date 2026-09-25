@@ -67,6 +67,9 @@
     <Filter Include="Source\Core\Misc">
       <UniqueIdentifier>{822fce81-821e-1b1b-adaf-11c91675259f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Core\Serialization">
+      <UniqueIdentifier>{4014a446-9ea3-48f5-9653-e5acade2c983}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Engine\Component">
       <UniqueIdentifier>{009757f7-27d2-e9f2-4fdf-fa550fbfb1ff}</UniqueIdentifier>
     </Filter>
@@ -416,9 +419,6 @@
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h">
       <Filter>Source\ApplicationCore\GenericPlatform</Filter>
     </ClInclude>
-    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplicationMessageHandler.h">
-      <Filter>Source\ApplicationCore\GenericPlatform</Filter>
-    </ClInclude>
     <ClInclude Include="Source\ApplicationCore\Input\InputContext.h">
       <Filter>Source\ApplicationCore\Input</Filter>
     </ClInclude>
@@ -463,6 +463,15 @@
     </ClInclude>
     <ClInclude Include="Source\Asset\AssetManager.h">
       <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Asset\UAssetBinary.h">
+      <Filter>Source\Asset</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Serialization\Archive.h">
+      <Filter>Source\Core\Serialization</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Core\Serialization\WindowsBinArchive.h">
+      <Filter>Source\Core\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="Source\Asset\FontAsset.h">
       <Filter>Source\Asset</Filter>
@@ -789,9 +798,6 @@
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h">
-      <Filter>Source\Renderer\Types</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h">
       <Filter>Source\Renderer\Types</Filter>
     </ClInclude>
     <ClInclude Include="Source\Renderer\Types\MeshPassParams.h">

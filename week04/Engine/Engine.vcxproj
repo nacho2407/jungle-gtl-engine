@@ -29,7 +29,6 @@
     <ClInclude Include="Resources\Mesh\Triangle.h" />
     <ClInclude Include="Resources\Mesh\VertexSimple.h" />
     <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplication.h" />
-    <ClInclude Include="Source\ApplicationCore\GenericPlatform\IApplicationMessageHandler.h" />
     <ClInclude Include="Source\ApplicationCore\Input\InputContext.h" />
     <ClInclude Include="Source\ApplicationCore\Input\InputRouter.h" />
     <ClInclude Include="Source\ApplicationCore\Input\InputState.h" />
@@ -45,6 +44,9 @@
     <ClInclude Include="Source\Asset\AssetLoader\SubUVAtlasLoader.h" />
     <ClInclude Include="Source\Asset\AssetLoader\TextureLoader.h" />
     <ClInclude Include="Source\Asset\AssetManager.h" />
+    <ClInclude Include="Source\Asset\UAssetBinary.h" />
+    <ClInclude Include="Source\Core\Serialization\Archive.h" />
+    <ClInclude Include="Source\Core\Serialization\WindowsBinArchive.h" />
     <ClInclude Include="Source\Asset\FontAsset.h" />
     <ClInclude Include="Source\Asset\Material.h" />
     <ClInclude Include="Source\Asset\MaterialInstance.h" />
@@ -159,7 +161,6 @@
     <ClInclude Include="Source\Renderer\Types\AxisColors.h" />
     <ClInclude Include="Source\Renderer\Types\BasicMeshType.h" />
     <ClInclude Include="Source\Renderer\Types\EditorShowFlags.h" />
-    <ClInclude Include="Source\Renderer\Types\MeshInstanceData.h" />
     <ClInclude Include="Source\Renderer\Types\MeshPassParams.h" />
     <ClInclude Include="Source\Renderer\Types\ObjectIdRenderItem.h" />
     <ClInclude Include="Source\Renderer\Types\PickId.h" />
