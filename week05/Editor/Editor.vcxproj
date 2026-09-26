@@ -272,4 +272,16 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
+  <Target Name="CopyRuntimeFiles" AfterTargets="Build">
+    <ItemGroup>
+      <RuntimeShaders Include="$(ProjectDir)..\Engine\Shaders\**\*" />
+      <RuntimeAssets Include="$(ProjectDir)..\Assets\**\*" />
+      <RuntimeContent Include="$(ProjectDir)..\Content\**\*" Exclude="$(ProjectDir)..\Content\Shaders\**\*" />
+      <RuntimeIcons Include="$(ProjectDir)Icon\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(RuntimeShaders)" DestinationFiles="@(RuntimeShaders->'$(OutDir)Engine\Shaders\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(RuntimeAssets)" DestinationFiles="@(RuntimeAssets->'$(OutDir)Assets\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(RuntimeContent)" DestinationFiles="@(RuntimeContent->'$(OutDir)Content\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(RuntimeIcons)" DestinationFiles="@(RuntimeIcons->'$(OutDir)Editor\Icon\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
