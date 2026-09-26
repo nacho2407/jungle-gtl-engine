@@ -1,0 +1,29 @@
+{
+  "Materials": [
+    "Assets/Materials/M_BlueColor.json",
+    "Assets/Materials/M_Water.json",
+    "Assets/Materials/M_Gizmos.json",
+    "Assets/Materials/M_GreenColor.json",
+    "Assets/Materials/M_Wireframe.json",
+    "Assets/Materials/M_RedColor.json",
+    "Assets/Materials/M_Sky.json",
+    "Assets/Materials/M_TintYellow.json"
+  ],
+  "NextUUID": 150020,
+  "PerspectiveCamera": {
+    "FOV": 60.0,
+    "FarClip": 10000.0,
+    "Location": [
+      -33.516517639160156,
+      -1.6776325702667236,
+      11.801977157592773
+    ],
+    "NearClip": 0.0010000000474974513,
+    "Rotation": [
+      -19.399993896484375,
+      3.0000152587890625,
+      0.0
+    ]
+  },
+  "Primitives": null
+}

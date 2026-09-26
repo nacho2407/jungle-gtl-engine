@@ -1,0 +1,192 @@
+{
+  "Camera": {
+    "Position": [
+      -4.775275707244873,
+      -1.5376695394515991,
+      -0.021895894780755043
+    ],
+    "Rotation": [
+      22.399829864501953,
+      24.200035095214844
+    ]
+  },
+  "Materials": [
+    "Assets/Materials/M_BlueColor.json",
+    "Assets/Materials/M_Gizmos.json",
+    "Assets/Materials/M_GreenColor.json",
+    "Assets/Materials/M_Wireframe.json",
+    "Assets/Materials/M_RedColor.json",
+    "Assets/Materials/M_Sky.json",
+    "Assets/Materials/M_TintYellow.json"
+  ],
+  "NextUUID": 64,
+  "Primitives": {
+    "0": {
+      "Billboard": true,
+      "Class": "AObjActor",
+      "ComponentUUIDs": [
+        28,
+        29,
+        30
+      ],
+      "Location": [
+        -1.3404059410095215,
+        -1.9881067276000977,
+        0.860440731048584
+      ],
+      "Material": "M_Default",
+      "PrimitiveFileName": "\\Assets\\Meshes\\Cat.obj",
+      "Rotation": [
+        -90.0,
+        43.8102912902832,
+        -179.99996948242188
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 27
+    },
+    "1": {
+      "Billboard": true,
+      "Class": "AObjActor",
+      "ComponentUUIDs": [
+        32,
+        33,
+        34
+      ],
+      "Location": [
+        -2.276475429534912,
+        0.9281089305877686,
+        0.8624770641326904
+      ],
+      "PrimitiveFileName": "\\Assets\\Meshes\\GamingCat.obj",
+      "Rotation": [
+        90.00000762939453,
+        -54.537872314453125,
+        5.88642342336243e-06
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 31
+    },
+    "2": {
+      "Billboard": true,
+      "Class": "ASkySphereActor",
+      "ComponentUUIDs": [
+        36,
+        37
+      ],
+      "Location": [
+        -4.775275707244873,
+        -1.5376695394515991,
+        -0.021895894780755043
+      ],
+      "Material": "M_Sky",
+      "PrimitiveFileName": "",
+      "Rotation": [
+        -0.0,
+        0.0,
+        -0.0
+      ],
+      "Scale": [
+        2000.0,
+        2000.0,
+        2000.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 35
+    },
+    "3": {
+      "Billboard": true,
+      "Class": "APlaneActor",
+      "ComponentUUIDs": [
+        39,
+        40,
+        41
+      ],
+      "Location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "PrimitiveFileName": "",
+      "Rotation": [
+        -0.0,
+        0.0,
+        -0.0
+      ],
+      "Scale": [
+        10.0,
+        10.0,
+        1.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 38
+    },
+    "4": {
+      "Billboard": true,
+      "Class": "AObjActor",
+      "ComponentUUIDs": [
+        62,
+        63,
+        64
+      ],
+      "Location": [
+        -1.0709037780761719,
+        0.0,
+        -0.009999999776482582
+      ],
+      "Material": "M_Default",
+      "PrimitiveFileName": "\\Assets\\Meshes\\lowpoly city.obj",
+      "Rotation": [
+        -90.00140380859375,
+        -88.6259765625,
+        179.99856567382813
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 61
+    }
+  }
+}
