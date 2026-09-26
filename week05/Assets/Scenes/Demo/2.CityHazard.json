@@ -1,0 +1,193 @@
+{
+  "Camera": {
+    "Position": [
+      -0.08178333193063736,
+      2.48905611038208,
+      0.1673363596200943
+    ],
+    "Rotation": [
+      -437.4042663574219,
+      25.400056838989258
+    ]
+  },
+  "Materials": [
+    "Assets/Materials/M_BlueColor.json",
+    "Assets/Materials/M_Gizmos.json",
+    "Assets/Materials/M_GreenColor.json",
+    "Assets/Materials/M_Wireframe.json",
+    "Assets/Materials/M_RedColor.json",
+    "Assets/Materials/M_Sky.json",
+    "Assets/Materials/M_TintYellow.json"
+  ],
+  "NextUUID": 8178,
+  "Primitives": {
+    "0": {
+      "Billboard": true,
+      "Class": "AObjActor",
+      "ComponentUUIDs": [
+        28,
+        29,
+        30
+      ],
+      "Location": [
+        -3.3254313468933105,
+        -16.18061065673828,
+        3.7871546745300293
+      ],
+      "Material": "M_Default",
+      "PrimitiveFileName": "\\Assets\\Meshes\\Cat.obj",
+      "Rotation": [
+        -98.55673217773438,
+        73.32017517089844,
+        122.22241973876953
+      ],
+      "Scale": [
+        10.0,
+        10.0,
+        10.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 27
+    },
+    "1": {
+      "Billboard": true,
+      "Class": "ASkySphereActor",
+      "ComponentUUIDs": [
+        36,
+        37
+      ],
+      "Location": [
+        -0.08178333193063736,
+        2.48905611038208,
+        0.1673363596200943
+      ],
+      "Material": "M_Sky",
+      "PrimitiveFileName": "",
+      "Rotation": [
+        -0.0,
+        0.0,
+        -0.0
+      ],
+      "Scale": [
+        2000.0,
+        2000.0,
+        2000.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 35
+    },
+    "2": {
+      "Billboard": true,
+      "Class": "APlaneActor",
+      "ComponentUUIDs": [
+        39,
+        40,
+        41
+      ],
+      "Location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "PrimitiveFileName": "",
+      "Rotation": [
+        -0.0,
+        0.0,
+        -0.0
+      ],
+      "Scale": [
+        10.0,
+        10.0,
+        1.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 38
+    },
+    "3": {
+      "Billboard": true,
+      "Class": "AObjActor",
+      "ComponentUUIDs": [
+        62,
+        63,
+        64
+      ],
+      "Location": [
+        -0.45620131492614746,
+        0.0,
+        -0.11800099164247513
+      ],
+      "Material": "M_Default",
+      "PrimitiveFileName": "\\Assets\\Meshes\\lowpoly city.obj",
+      "Rotation": [
+        90.00010681152344,
+        64.71514129638672,
+        -0.0001220703125
+      ],
+      "Scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 61
+    },
+    "4": {
+      "Billboard": true,
+      "Class": "AObjActor",
+      "ComponentUUIDs": [
+        8176,
+        8177,
+        8178
+      ],
+      "Location": [
+        1.4540026187896729,
+        -0.2760127782821655,
+        -0.4463387727737427
+      ],
+      "Material": "M_Default",
+      "PrimitiveFileName": "\\Assets\\Meshes\\Godzilla.obj",
+      "Rotation": [
+        90.00001525878906,
+        0.0,
+        -0.0
+      ],
+      "Scale": [
+        0.07000000029802322,
+        0.07000000029802322,
+        0.07000000029802322
+      ],
+      "Text": "Text",
+      "TextColor": [
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "UUID": 8175
+    }
+  }
+}

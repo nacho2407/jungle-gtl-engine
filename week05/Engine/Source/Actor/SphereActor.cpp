@@ -1,0 +1,28 @@
+#include "SphereActor.h"
+
+#include "Asset/ObjManager.h"
+#include "Component/StaticMeshComponent.h"
+#include "Core/Paths.h"
+#include "Object/ObjectFactory.h"
+#include "Object/Class.h"
+
+IMPLEMENT_RTTI(ASphereActor, AActor)
+
+void ASphereActor::PostSpawnInitialize()
+{
+	UStaticMesh* SphereMesh = nullptr;
+	SphereMesh = FObjManager::LoadModelStaticMeshAsset(FPaths::FromPath(FPaths::MeshDir() / "PrimitiveSphere.Model"));
+
+	SphereMeshComponent = FObjectFactory::ConstructObject<UStaticMeshComponent>(this, "StaticMeshComponent");
+	SphereMeshComponent->SetStaticMesh(SphereMesh);
+
+	AddOwnedComponent(SphereMeshComponent);
+
+	AActor::PostSpawnInitialize();
+}
+
+void ASphereActor::FixupDuplicatedReferences(UObject* DuplicatedObject, const FDuplicateContext& Context) const
+{
+	AActor::FixupDuplicatedReferences(DuplicatedObject, Context);
+	static_cast<ASphereActor*>(DuplicatedObject)->SphereMeshComponent = Context.FindDuplicate(SphereMeshComponent);
+}

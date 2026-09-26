@@ -1,0 +1,110 @@
+#include "PreviewViewportClient.h"
+#include "Core/ShowFlags.h"
+
+#include "UI/EditorUI.h"
+#include "EditorEngine.h"
+#include "Renderer/Renderer.h"
+#include "Renderer/RenderCommand.h"
+#include "Component/CameraComponent.h"
+#include "Math/Frustum.h"
+#include "World/World.h"
+#include "imgui.h"
+#include <algorithm>
+
+FPreviewViewportClient::FPreviewViewportClient(FEditorUI& InEditorUI, FString InPreviewContextName)
+	: EditorUI(InEditorUI)
+	, PreviewContextName(std::move(InPreviewContextName))
+{
+}
+
+void FPreviewViewportClient::Attach(FEngine* Engine, FRenderer* Renderer)
+{
+	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
+	if (!EditorEngine || !Renderer)
+	{
+		return;
+	}
+
+	EditorUI.Initialize(EditorEngine);
+	EditorUI.InitializeRendererResources(Renderer);
+}
+
+void FPreviewViewportClient::Detach(FEngine* Engine, FRenderer* Renderer)
+{
+	EditorUI.ShutdownRendererResources(Renderer);
+}
+
+void FPreviewViewportClient::Tick(FEngine* Engine, float DeltaTime)
+{
+	if (!Engine)
+	{
+		return;
+	}
+
+	FSlateApplication* Slate = EditorUI.GetEngine()->GetSlateApplication();
+	if (!Slate || Slate->GetFocusedViewportId() == INVALID_VIEWPORT_ID)
+	{
+		return;
+	}
+
+	if (ImGui::GetCurrentContext())
+	{
+		const ImGuiIO& IO = ImGui::GetIO();
+		if (IO.WantCaptureKeyboard || IO.WantCaptureMouse)
+		{
+			return;
+		}
+	}
+
+	IViewportClient::Tick(Engine, DeltaTime);
+}
+
+void FPreviewViewportClient::Render(FEngine* Engine, FRenderer* Renderer)
+{
+	if (!Engine || !Renderer)
+	{
+		return;
+	}
+
+	UWorld* ActiveWorld = ResolveWorld(Engine);
+
+	if (ActiveWorld)
+	{
+		UCameraComponent* ActiveCamera = ActiveWorld->GetActiveCameraComponent();
+		if (ActiveCamera)
+		{
+			FSceneRenderPacket ScenePacket;
+			FGameFrameRequest FrameRequest;
+			FrameRequest.SceneView.ViewMatrix = ActiveCamera->GetViewMatrix();
+			FrameRequest.SceneView.ProjectionMatrix = ActiveCamera->GetProjectionMatrix();
+
+			FFrustum Frustum;
+			Frustum.ExtractFromVP(FrameRequest.SceneView.ViewMatrix * FrameRequest.SceneView.ProjectionMatrix);
+
+			FrameRequest.SceneView.CameraPosition = FrameRequest.SceneView.ViewMatrix.GetInverse().GetTranslation();
+			FrameRequest.SceneView.TotalTimeSeconds = Engine ? static_cast<float>(Engine->GetTimer().GetTotalTime()) : 0.0f;
+			BuildSceneRenderPacket(Engine, ActiveWorld, Frustum, FShowFlags{}, ScenePacket);
+			FrameRequest.ScenePacket = std::move(ScenePacket);
+			Renderer->RenderGameFrame(FrameRequest);
+		}
+	}
+
+	EditorUI.Render();
+}
+
+ULevel* FPreviewViewportClient::ResolveScene(FEngine* Engine) const
+{
+	FEditorEngine* EditorEngine = static_cast<FEditorEngine*>(Engine);
+	if (!EditorEngine)
+	{
+		return nullptr;
+	}
+
+	if (ULevel* PreviewScene = EditorEngine->GetPreviewScene(PreviewContextName))
+	{
+		return PreviewScene;
+	}
+
+	return EditorEngine->GetActiveScene();
+}
+

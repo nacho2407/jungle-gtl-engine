@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{A1F6E6B7-42A3-4476-98A9-842A7310BFA5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty">
+      <UniqueIdentifier>{31E53D0F-C64D-47A2-8E27-F2B0CF25E70D}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Editor\ThirdParty\imgui\imgui.cpp">
+      <Filter>ThirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Editor\ThirdParty\imgui\imgui_draw.cpp">
+      <Filter>ThirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Editor\ThirdParty\imgui\imgui_impl_dx11.cpp">
+      <Filter>ThirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Editor\ThirdParty\imgui\imgui_impl_win32.cpp">
+      <Filter>ThirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Editor\ThirdParty\imgui\imgui_tables.cpp">
+      <Filter>ThirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Editor\ThirdParty\imgui\imgui_widgets.cpp">
+      <Filter>ThirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ObjViewerDetailsWindow.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ObjViewerGlobals.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ObjViewerEngine.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ObjViewerShell.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ObjViewerViewportClient.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\ObjViewerViewportSurface.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Editor\ThirdParty\imgui\imgui.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Editor\ThirdParty\imgui\imgui_impl_dx11.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Editor\ThirdParty\imgui\imgui_impl_win32.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ObjViewerDetailsWindow.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ObjViewerEngine.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ObjViewerGlobals.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ObjViewerShell.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ObjViewerViewportClient.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\ObjViewerViewportSurface.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
