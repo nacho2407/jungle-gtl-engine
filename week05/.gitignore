@@ -493,3 +493,7 @@ imgui_editor.ini
 /Assets/Scenes/Demo/
 /Editor/Icon/
 /Editor/Resource/Viewport/Toolbar/
+
+# Projects excluded from this repository; kept only locally
+/Client/
+/ObjViewer/
