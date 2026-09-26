@@ -221,7 +221,6 @@
     <ClInclude Include="Source\Slate\Widget\Button.h" />
     <ClInclude Include="Source\Slate\Widget\Dropdown.h" />
     <ClInclude Include="Source\Slate\Widget\HorizontalBox.h" />
-    <ClInclude Include="Source\Slate\Widget\Image.h" />
     <ClInclude Include="Source\Slate\Widget\Overlay.h" />
     <ClInclude Include="Source\Slate\Widget\Painter.h" />
     <ClInclude Include="Source\Slate\Widget\Panel.h" />

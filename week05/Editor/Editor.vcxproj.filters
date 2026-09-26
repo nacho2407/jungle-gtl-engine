@@ -240,9 +240,6 @@
     <ClInclude Include="Source\Slate\Widget\HorizontalBox.h">
       <Filter>Source\Slate\Widget</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Slate\Widget\Image.h">
-      <Filter>Source\Slate\Widget</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Slate\Widget\Overlay.h">
       <Filter>Source\Slate\Widget</Filter>
     </ClInclude>
