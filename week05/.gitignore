@@ -448,3 +448,48 @@ Doxyfile
 
 # Mesh files
 !Assets/**/*.obj
+
+# Build outputs and local state
+/Editor/Bin/
+/Editor/Build/
+/Engine/Bin/
+/Engine/Build/
+/packages/
+/Content/Shaders/
+/Editor.ini
+imgui_editor.ini
+
+# Excluded from this repository because of license issues; kept only for local builds
+/Assets/Meshes/Pikachu.Model
+/Assets/Meshes/Squirtle.Model
+/Assets/Meshes/Creeper.Model
+/Assets/Meshes/zombie.Model
+/Assets/Meshes/chopper.Model
+/Assets/Meshes/Data/
+/Assets/Materials/Pikachu.mtl
+/Assets/Materials/Squirtle.mtl
+/Assets/Materials/Creeper.mtl
+/Assets/Materials/zombie.geo.mtl
+/Assets/Materials/chopper.mtl
+/Assets/Materials/apple_mid.mtl
+/Assets/Materials/bitten_apple_mid.mtl
+/Assets/Textures/PikachuDh.png
+/Assets/Textures/PikachuEyeDh.png
+/Assets/Textures/PikachuHohoDh.png
+/Assets/Textures/PikachuMouthDh.png
+/Assets/Textures/PikachuSpecularDh.png
+/Assets/Textures/pm0007_00_Body1.png
+/Assets/Textures/pm0007_00_Eye1.png
+/Assets/Textures/creeper.png
+/Assets/Textures/zombie.png
+/Assets/Textures/ec135.bmp
+/Assets/Textures/ec1351.bmp
+/Assets/Textures/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg
+/Assets/Textures/Bitten_Apple_tgyociqpa_Mid_2K_BaseColor.jpg
+/Assets/Textures/Water_Diffuse.png
+/Assets/Textures/FolderIcon.png
+/Assets/Textures/FileIcon.png
+/Assets/Scenes/Pikka.json
+/Assets/Scenes/Demo/
+/Editor/Icon/
+/Editor/Resource/Viewport/Toolbar/
