@@ -570,7 +570,7 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp">
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\Engine\GameFramework\SpotlightActor.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -1051,6 +1051,6 @@
     <ClInclude Include="Source\Engine\GameFramework\SpotlightActor.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="jungle-gtl-week06.rc" />
+    <ResourceCompile Include="week06.rc" />
   </ItemGroup>
 </Project>
