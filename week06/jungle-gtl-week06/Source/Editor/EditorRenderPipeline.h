@@ -1,0 +1,35 @@
+﻿#pragma once
+#include "Render/Pipeline/IRenderPipeline.h"
+#include "Render/Pipeline/RenderCollector.h"
+#include "Render/Pipeline/RenderBus.h"
+#include "Render/Culling/GPUOcclusionCulling.h"
+
+class UEditorEngine;
+class FViewport;
+class UCameraComponent;
+class FLevelEditorViewportClient;
+
+class FEditorRenderPipeline : public IRenderPipeline
+{
+public:
+	FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer);
+	~FEditorRenderPipeline() override;
+
+	void Execute(float DeltaTime, FRenderer& Renderer) override;
+	void OnSceneCleared() override;
+
+#if STATS
+	FGPUOcclusionCulling& GetGPUOcclusion() { return GPUOcclusion; }
+	const FGPUOcclusionCulling& GetGPUOcclusion() const { return GPUOcclusion; }
+#endif
+
+private:
+	// 단일 뷰포트 렌더 단위 — ViewportClient의 렌더 옵션을 사용
+	void RenderViewport(FLevelEditorViewportClient* VC, FRenderer& Renderer);
+
+private:
+	UEditorEngine* Editor = nullptr;
+	FRenderCollector Collector;
+	FRenderBus Bus;
+	FGPUOcclusionCulling GPUOcclusion;
+};

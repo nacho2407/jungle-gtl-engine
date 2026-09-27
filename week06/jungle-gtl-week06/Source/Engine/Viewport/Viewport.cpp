@@ -1,0 +1,227 @@
+﻿#include "Viewport/Viewport.h"
+
+FViewport::~FViewport()
+{
+	ReleaseResources();
+}
+
+bool FViewport::Initialize(ID3D11Device* InDevice, uint32 InWidth, uint32 InHeight)
+{
+	Device = InDevice;
+	Width = InWidth;
+	Height = InHeight;
+
+	return CreateResources();
+}
+
+void FViewport::Release()
+{
+	ReleaseResources();
+	Device = nullptr;
+	Width = 0;
+	Height = 0;
+}
+
+void FViewport::Resize(uint32 InWidth, uint32 InHeight)
+{
+	if (InWidth == 0 || InHeight == 0) return;
+	if (InWidth == Width && InHeight == Height) return;
+
+	Width = InWidth;
+	Height = InHeight;
+
+	ReleaseResources();
+	CreateResources();
+}
+
+void FViewport::RequestResize(uint32 InWidth, uint32 InHeight)
+{
+	if (InWidth == 0 || InHeight == 0) return;
+	if (InWidth == Width && InHeight == Height)
+	{
+		bPendingResize = false;
+		return;
+	}
+
+	PendingWidth = InWidth;
+	PendingHeight = InHeight;
+	bPendingResize = true;
+}
+
+bool FViewport::ApplyPendingResize()
+{
+	if (!bPendingResize) return false;
+
+	bPendingResize = false;
+	Resize(PendingWidth, PendingHeight);
+	return true;
+}
+
+void FViewport::BeginRender(ID3D11DeviceContext* Ctx, const float ClearColor[4])
+{
+	if (!RTV) return;
+	if (!NormalRTV) return;
+	if (!AlbedoRTV) return;
+	if (!PostProcessRTV) return;
+
+	const float DefaultColor[4] = { 0.25f, 0.25f, 0.25f, 1.0f };
+	const float* Color = ClearColor ? ClearColor : DefaultColor;
+	D3D11_VIEWPORT VPRect = GetViewportRect();
+
+	Ctx->ClearRenderTargetView(NormalRTV, Color);
+	Ctx->ClearRenderTargetView(AlbedoRTV, Color);
+	Ctx->ClearRenderTargetView(PostProcessRTV, Color);
+	Ctx->ClearRenderTargetView(RTV, Color);
+	Ctx->ClearRenderTargetView(AlbedoRTV, Color);
+	Ctx->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+	Ctx->OMSetRenderTargets(1, &RTV, DSV);
+	Ctx->RSSetViewports(1, &VPRect);
+
+}
+
+bool FViewport::CreateResources()
+{
+	if (!Device || Width == 0 || Height == 0) return false;
+
+	// ── 렌더 타깃 텍스처 ──
+	D3D11_TEXTURE2D_DESC TexDesc = {};
+	TexDesc.Width = Width;
+	TexDesc.Height = Height;
+	TexDesc.MipLevels = 1;
+	TexDesc.ArraySize = 1;
+	TexDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	TexDesc.SampleDesc.Count = 1;
+	TexDesc.Usage = D3D11_USAGE_DEFAULT;
+	TexDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	HRESULT hr = Device->CreateTexture2D(&TexDesc, nullptr, &RTTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateRenderTargetView(RTTexture, nullptr, &RTV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(RTTexture, nullptr, &SRV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateTexture2D(&TexDesc, nullptr, &PostProcessTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateRenderTargetView(PostProcessTexture, nullptr, &PostProcessRTV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(PostProcessTexture, nullptr, &PostProcessSRV);
+	if (FAILED(hr)) return false;
+
+	// ── Normal 렌더 타깃 텍스처 ──
+	D3D11_TEXTURE2D_DESC NormalDesc = {};
+	NormalDesc.Width = Width;
+	NormalDesc.Height = Height;
+	NormalDesc.MipLevels = 1;
+	NormalDesc.ArraySize = 1;
+	NormalDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	NormalDesc.SampleDesc.Count = 1;
+	NormalDesc.Usage = D3D11_USAGE_DEFAULT;
+	NormalDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = Device->CreateTexture2D(&NormalDesc, nullptr, &NormalTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateRenderTargetView(NormalTexture, nullptr, &NormalRTV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(NormalTexture, nullptr, &NormalSRV);
+	if (FAILED(hr)) return false;
+
+	// ── 뎁스/스텐실 (TYPELESS → DSV + StencilSRV) ──
+	D3D11_TEXTURE2D_DESC DepthDesc = {};
+	DepthDesc.Width = Width;
+	DepthDesc.Height = Height;
+	DepthDesc.MipLevels = 1;
+	DepthDesc.ArraySize = 1;
+	DepthDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
+	DepthDesc.SampleDesc.Count = 1;
+	DepthDesc.Usage = D3D11_USAGE_DEFAULT;
+	DepthDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = Device->CreateTexture2D(&DepthDesc, nullptr, &DepthTexture);
+	if (FAILED(hr)) return false;
+
+	// DSV: D24_UNORM_S8_UINT 로 해석 (기존과 동일한 뎁스/스텐실 동작)
+	D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc = {};
+	DSVDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DSVDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	DSVDesc.Texture2D.MipSlice = 0;
+
+	hr = Device->CreateDepthStencilView(DepthTexture, &DSVDesc, &DSV);
+	if (FAILED(hr)) return false;
+
+	// DepthSRV: 뎁스 24비트 읽기 (Hi-Z / GPU Occlusion용)
+	D3D11_SHADER_RESOURCE_VIEW_DESC DepthSRVDesc = {};
+	DepthSRVDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
+	DepthSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	DepthSRVDesc.Texture2D.MipLevels = 1;
+	DepthSRVDesc.Texture2D.MostDetailedMip = 0;
+
+	hr = Device->CreateShaderResourceView(DepthTexture, &DepthSRVDesc, &DepthSRV);
+	if (FAILED(hr)) return false;
+
+	// StencilSRV: 스텐실 8비트만 읽기 (PostProcess edge detection용)
+	D3D11_SHADER_RESOURCE_VIEW_DESC StencilSRVDesc = {};
+	StencilSRVDesc.Format = DXGI_FORMAT_X24_TYPELESS_G8_UINT;
+	StencilSRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	StencilSRVDesc.Texture2D.MipLevels = 1;
+	StencilSRVDesc.Texture2D.MostDetailedMip = 0;
+
+	hr = Device->CreateShaderResourceView(DepthTexture, &StencilSRVDesc, &StencilSRV);
+	if (FAILED(hr)) return false;
+
+	// ── Albedo 렌더 타깃 텍스처 (파이어볼 Tint/색조용 재료) ──
+	D3D11_TEXTURE2D_DESC AlbedoDesc = {};
+	AlbedoDesc.Width = Width;
+	AlbedoDesc.Height = Height;
+	AlbedoDesc.MipLevels = 1;
+	AlbedoDesc.ArraySize = 1;
+	AlbedoDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; // 일반 색상 포맷
+	AlbedoDesc.SampleDesc.Count = 1;
+	AlbedoDesc.Usage = D3D11_USAGE_DEFAULT;
+	AlbedoDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+
+	hr = Device->CreateTexture2D(&AlbedoDesc, nullptr, &AlbedoTexture);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateRenderTargetView(AlbedoTexture, nullptr, &AlbedoRTV);
+	if (FAILED(hr)) return false;
+
+	hr = Device->CreateShaderResourceView(AlbedoTexture, nullptr, &AlbedoSRV);
+	if (FAILED(hr)) return false;
+
+	// ── 뷰포트 렉트 ──
+	ViewportRect.TopLeftX = 0.0f;
+	ViewportRect.TopLeftY = 0.0f;
+	ViewportRect.Width = static_cast<float>(Width);
+	ViewportRect.Height = static_cast<float>(Height);
+	ViewportRect.MinDepth = 0.0f;
+	ViewportRect.MaxDepth = 1.0f;
+
+	return true;
+}
+
+void FViewport::ReleaseResources()
+{
+	if (StencilSRV) { StencilSRV->Release(); StencilSRV = nullptr; }
+	if (DepthSRV) { DepthSRV->Release(); DepthSRV = nullptr; }
+	if (DSV) { DSV->Release(); DSV = nullptr; }
+	if (DepthTexture) { DepthTexture->Release(); DepthTexture = nullptr; }
+	if (PostProcessSRV) { PostProcessSRV->Release(); PostProcessSRV = nullptr; }
+	if (PostProcessRTV) { PostProcessRTV->Release(); PostProcessRTV = nullptr; }
+	if (PostProcessTexture) { PostProcessTexture->Release(); PostProcessTexture = nullptr; }
+	if (SRV) { SRV->Release(); SRV = nullptr; }
+	if (RTV) { RTV->Release(); RTV = nullptr; }
+	if (RTTexture) { RTTexture->Release(); RTTexture = nullptr; }
+	if (NormalSRV) { NormalSRV->Release(); NormalSRV = nullptr; }
+	if (NormalRTV) { NormalRTV->Release(); NormalRTV = nullptr; }
+	if (NormalTexture) { NormalTexture->Release(); NormalTexture = nullptr; }
+	if (AlbedoSRV) { AlbedoSRV->Release(); AlbedoSRV = nullptr; }
+	if (AlbedoRTV) { AlbedoRTV->Release(); AlbedoRTV = nullptr; }
+	if (AlbedoTexture) { AlbedoTexture->Release(); AlbedoTexture = nullptr; }
+}

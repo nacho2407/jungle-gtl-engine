@@ -1,0 +1,123 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "6",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Outline" : true,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 6",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Decal Receive" : true,
+          "Element 0" : {
+            "Path" : "BasicShapeMaterial",
+            "UVScroll" : false
+          },
+          "Location" : [0.404514, 0.000000, 0.000000],
+          "Outline" : true,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Data/BasicShape/Cube.OBJ",
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }, {
+      "ClassName" : "ASpotlightActor",
+      "NonSceneComponents" : [],
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UDecalComponent",
+            "Properties" : {
+              "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+              "DecalSize" : [1.000000, 1.000000, 1.000000],
+              "Fade In Time" : 0.000000,
+              "Fade Once And Destroy" : false,
+              "Fade Out Time" : 0.000000,
+              "Location" : [0.000000, 0.000000, -1.500000],
+              "Outline" : true,
+              "Rotation" : [90.000000, 0.000000, 0.000000],
+              "Scale" : [3.000000, 1.000000, 1.000000],
+              "Texture" : "spotlight_Light",
+              "Total Lifetime" : 0.000000,
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.100000],
+              "Outline" : false,
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 12",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "UBillboardComponent",
+        "Properties" : {
+          "Height" : 0.500000,
+          "Ignore Owner Scale" : true,
+          "Location" : [-0.017493, 0.000000, 2.613298],
+          "Outline" : false,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Texture" : "spotlight_Spot",
+          "Visible" : true,
+          "Width" : 0.500000,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "Default",
+  "ContextName" : "Default",
+  "Name" : "SpotLightFake",
+  "PerspectiveCamera" : {
+    "FOV" : 1.047198,
+    "FarClip" : 100.000000,
+    "Location" : [-16.712624, 4.045706, 8.099315],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 20.366423, -19.428646]
+  },
+  "Primitives" : {
+    "6" : {
+      "Location" : [0.404514, 0.000000, 0.000000],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}

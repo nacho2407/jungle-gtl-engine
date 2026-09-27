@@ -1,0 +1,276 @@
+﻿#pragma once
+#include "Render/Types/RenderTypes.h"
+#include "Render/Resource/Buffer.h"
+#include "Render/Device/D3DDevice.h"
+#include "Core/EngineTypes.h"
+#include "Core/ResourceTypes.h"
+
+#include "Math/Matrix.h"
+#include "Math/Vector.h"
+
+class FShader;
+class FPrimitiveSceneProxy;
+
+/*
+	GPU Constant Buffer 구조체, Batcher Entry, 섹션별 드로우 정보 등
+	렌더링에 필요한 데이터 타입을 정의합니다.
+*/
+
+// HLSL Common.hlsl과 1:1 대응하는 CB 슬롯 정의
+namespace ECBSlot
+{
+	constexpr uint32 Frame = 0;     // b0: View/Projection/Wireframe
+	constexpr uint32 PerObject = 1; // b1: Model/Color
+	constexpr uint32 Gizmo = 2;     // b2: Gizmo state
+	constexpr uint32 PostProcess = 3; // b3: PostProcess Outline params
+	constexpr uint32 Material = 4;    // b4: Material properties (UVScroll 등)
+	constexpr uint32 Decal = 5;       // b5: Decal properties
+	constexpr uint32 Fog = 6;         // b6: Height fog postprocess params
+	constexpr uint32 Fireball = 7;    // b7: Fireball params
+	constexpr uint32 FXAA = 8;        // b8: FXAA parameters
+}
+
+//PerObject
+struct FPerObjectConstants
+{
+	FMatrix Model;
+	FVector4 Color;
+
+	// 기본 PerObject: WorldMatrix + White
+	static FPerObjectConstants FromWorldMatrix(const FMatrix& WorldMatrix)
+	{
+		return { WorldMatrix, FVector4(1.0f, 1.0f, 1.0f, 1.0f) };
+	}
+};
+
+struct FFrameConstants
+{
+	FMatrix View;
+	FMatrix Projection;
+	float bIsWireframe;
+	FVector WireframeColor;
+	float Time;
+	float _pad[3];
+};
+
+struct FMaterialConstants
+{
+	uint32 bIsUVScroll;
+	float _pad[3];
+	FVector4 SectionColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+};
+
+struct FGizmoConstants
+{
+	FVector4 ColorTint;
+	uint32 bIsInnerGizmo;
+	uint32 bClicking;
+	uint32 SelectedAxis;
+	float HoveredAxisOpacity;
+	uint32 AxisMask;       // 비트 0=X, 1=Y, 2=Z — 1이면 표시, 0이면 숨김. 0x7=전부 표시
+	uint32 _pad[3];
+};
+
+// PostProcess Outline CB (b3) — HLSL OutlinePostProcessCB와 1:1 대응
+struct FOutlinePostProcessConstants
+{
+	FVector4 OutlineColor = FVector4(1.0f, 0.5f, 0.0f, 1.0f);
+	float OutlineThickness = 1.0f;
+	float Padding[3] = {};
+};
+
+struct FAABBConstants
+{
+	FVector Min;
+	float Padding0;
+
+	FVector Max;
+	float Padding1;
+
+	FColor Color;
+};
+
+struct FGridConstants
+{
+	float GridSpacing;
+	int32 GridHalfLineCount;
+	float Padding0[2];
+};
+
+struct FFontConstants
+{
+	FString Text;							// 렌더링할 문자열 (프레임 내 유효)
+	const FFontResource* Font = nullptr;
+	float Scale = 1.0f;
+
+	uint32 bScreenSpace = 0;	// true면 스크린 공간에서 렌더링, false면 월드 공간
+	FVector2 ScreenPosition = FVector2(0.0f, 0.0f);		// 스크린 공간에서의 위치 (bScreenSpace가 true일 때 사용)
+};
+
+struct FSubUVConstants
+{
+	const FParticleResource* Particle = nullptr;
+	uint32 FrameIndex = 0;
+	float Width = 1.0f;
+	float Height = 1.0f;
+};
+
+struct FBillboardConstants
+{
+	const FTextureResource* Texture = nullptr;
+	float Width  = 1.0f;
+	float Height = 1.0f;
+};
+
+struct FFXAAConstants
+{
+	FVector2 RcpFrame = FVector2(0.0f, 0.0f);   // 픽셀 사이즈에 해당하는 프레임 크기 역수(reciprocal)
+	float FXAA_EDGE_THRESHOLD = 1.0f / 8.0f;
+	float FXAA_EDGE_THRESHOLD_MIN = 1.0f / 16.0f;
+
+	float FXAA_SEARCH_THRESHOLD = 1.0f / 4.0f; // 검색 중단 시점 제어
+	float FXAA_SUBPIX_TRIM = 1.0f / 4.0f; // 서브픽셀 앨리어싱 제거 제어
+	float FXAA_SUBPIX_CAP = 3.0f / 4.0f; // 세밀한 디테일이 완전히 제거되지 않도록 보장. 이 설정은 FXAA_SUBPIX_TRIM을 부분적으로 무시합니다.
+	uint32 FXAA_SUBPIX = 1; // 서브픽셀 필터링 켜기/끄기
+
+	uint32 FXAA_SEARCH_STEPS = 8; // 최대 검색 단계 수
+	FVector2 Padding = FVector2(0.0f, 0.0f);
+};
+
+struct FDecalConstants
+{
+	FMatrix WorldToDecal = FMatrix::Identity;
+	FVector DecalHalfExtents = FVector(0.5f, 0.5f, 0.5f);
+	float FadeAlpha = 1.0f;
+	float Padding = 0.0f;
+};
+
+struct FFireballConstants
+{
+	FMatrix FireballInvView = FMatrix::Identity;
+	FMatrix FireballInvProj = FMatrix::Identity;
+	FVector4 Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
+	float Intensity = 1.0f;
+	float Radius = 1.0f;
+	float RadiusFalloff = 1.0f;
+	float Padding[2] = {};
+};
+
+struct FHeightFogPostProcessConstants
+{
+	FMatrix CameraInvView = FMatrix::Identity;
+	FMatrix CameraInvProjection = FMatrix::Identity;
+	FVector4 FogColor = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
+	FVector CameraPosition = FVector(0.0f, 0.0f, 0.0f);
+	float FogDensity = 0.0f;
+	float FogHeight = 0.0f;
+	float FogHeightFalloff = 0.0f;
+	float StartDistance = 0.0f;
+	float FogMaxOpacity = 1.0f;
+	float EndDistance = 0.0f;
+	float FogCutoffDistance = 0.0f;
+	FVector2 Padding = FVector2(0.0f, 0.0f);
+};
+
+static_assert(sizeof(FHeightFogPostProcessConstants) % 16 == 0, "Height fog constant buffer must stay 16-byte aligned.");
+// ============================================================
+// Batcher Entry — 각 Batcher가 필요한 데이터만 담는 경량 구조체
+// ============================================================
+
+struct FFontEntry
+{
+	FPerObjectConstants PerObject;
+	FFontConstants Font;
+};
+
+struct FSubUVEntry
+{
+	FPerObjectConstants PerObject;
+	FSubUVConstants SubUV;
+};
+
+struct FBillboardEntry
+{
+	FPerObjectConstants PerObject;
+	FBillboardConstants Billboard;
+};
+
+struct FDecalDrawEntry
+{
+	const FPrimitiveSceneProxy* ReceiverProxy = nullptr;
+	const FTextureResource* Texture = nullptr;
+	FDecalConstants Decal = {};
+};
+
+struct FAABBEntry
+{
+	FAABBConstants AABB;
+};
+
+struct FGridEntry
+{
+	FGridConstants Grid;
+};
+
+struct FDebugLineEntry
+{
+	FVector Start;
+	FVector End;
+	FColor  Color;
+};
+
+// 스크린 공간 텍스트 — Overlay Stats 등에서 사용
+struct FOverlayStatLine
+{
+	FString Text;
+	FVector2 ScreenPosition = FVector2(0.0f, 0.0f);
+};
+
+// ============================================================
+// 타입별 CB 바인딩 디스크립터 — GPU CB에 업로드할 데이터를 인라인 보관
+// ============================================================
+struct FConstantBufferBinding
+{
+	FConstantBuffer* Buffer = nullptr;	// 업데이트할 CB (nullptr이면 미사용)
+	uint32 Size = 0;					// 업로드할 바이트 수
+	uint32 Slot = 0;					// VS/PS CB 슬롯
+
+	static constexpr size_t kMaxDataSize = 256;
+	alignas(16) uint8 Data[kMaxDataSize] = {};
+
+	// Buffer/Size/Slot
+	template<typename T>
+	T& Bind(FConstantBuffer* InBuffer, uint32 InSlot)
+	{
+		static_assert(sizeof(T) <= kMaxDataSize, "CB data exceeds inline buffer size");
+		Buffer = InBuffer;
+		Size = sizeof(T);
+		Slot = InSlot;
+		return *reinterpret_cast<T*>(Data);
+	}
+
+	template<typename T>
+	T& As()
+	{
+		static_assert(sizeof(T) <= kMaxDataSize, "CB data exceeds inline buffer size");
+		return *reinterpret_cast<T*>(Data);
+	}
+
+	template<typename T>
+	const T& As() const
+	{
+		static_assert(sizeof(T) <= kMaxDataSize, "CB data exceeds inline buffer size");
+		return *reinterpret_cast<const T*>(Data);
+	}
+};
+
+// 섹션별 드로우 정보 — 머티리얼(텍스처)이 다른 구간을 분리 드로우
+struct FMeshSectionDraw
+{
+	ID3D11ShaderResourceView* DiffuseSRV = nullptr;
+	FVector4 DiffuseColor = { 1.0f, 0.0f, 1.0f, 1.0f };		// 기본 마젠타 색
+	uint32 FirstIndex = 0;
+	uint32 IndexCount = 0;
+	bool bIsUVScroll = false;
+};
+
