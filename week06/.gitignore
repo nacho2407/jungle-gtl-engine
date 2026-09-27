@@ -460,3 +460,39 @@ FodyWeavers.xsd
 
 #Rider CMake Project for Showing Dependency diagram
 CMakeLists.txt
+
+# Build outputs and local state
+/Bin/
+/Build/
+/packages/
+/week06/
+/Saves/
+/Asset/MeshCache/
+/Settings/Editor.ini
+imgui.ini
+
+# Excluded from this repository because of license issues; kept only for local builds
+/Asset/Editor/Icons/
+/Asset/Font/
+/Asset/Particle/
+/Asset/Textures/not_prepared.png
+/Asset/Textures/Friedegg.png
+/Asset/Textures/spotlight_Spot.png
+/Asset/Scene/Apple_40x40x40.Scene
+/Asset/Scene/Default _Half.Scene
+/Asset/Scene/testScene.Scene
+/Asset/Scene/Default_Light.Scene
+/Data/Lumine/
+/Data/IronMan/
+/Data/Pikachu/
+/Data/Pan/
+/Data/FinalBaseMesh/
+/Data/Traffic/
+/Data/Egg/
+/Data/TeaPot/
+/Data/apple_mid.obj
+/Data/apple_mid.mtl
+/Data/bitten_apple_mid.obj
+/Data/bitten_apple_mid.mtl
+/Data/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg
+/Data/Bitten_Apple_tgyociqpa_Mid_2K_BaseColor.jpg
