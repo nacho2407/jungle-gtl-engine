@@ -1,0 +1,243 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "9152",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 6",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Decal Receive" : true,
+          "Element 0" : {
+            "Path" : "10262_12_Frying_Pan",
+            "UVScroll" : false
+          },
+          "Location" : [0.000000, -6.648563, 0.000000],
+          "Outline" : true,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Static Mesh" : "Data/Pan/10262_12_Frying_Pan_max2011_v2_it2.obj",
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }, {
+      "ClassName" : "AEggActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "UProjectileMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Direction" : [1.000000, 0.000000, -1.000000],
+            "Gravity Scale" : 9.800000,
+            "Initial Speed" : 10.000000,
+            "Max Speed" : 100.000000,
+            "bTickEnable" : true,
+            "bTickInEditor" : false
+          }
+        }],
+      "PrimitiveKey" : "9155",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 50",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Decal Receive" : true,
+          "Element 0" : {
+            "Path" : "mat_66990170",
+            "UVScroll" : false
+          },
+          "Location" : [-15.904524, 0.000000, 25.463003],
+          "Outline" : true,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Static Mesh" : "Data/Egg/egg.OBJ",
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }, {
+      "ClassName" : "AEggActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "UProjectileMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Direction" : [1.000000, 0.000000, -1.000000],
+            "Gravity Scale" : 9.800000,
+            "Initial Speed" : 10.000000,
+            "Max Speed" : 100.000000,
+            "bTickEnable" : true,
+            "bTickInEditor" : false
+          }
+        }],
+      "PrimitiveKey" : "9159",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 50",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Decal Receive" : true,
+          "Element 0" : {
+            "Path" : "mat_66990170",
+            "UVScroll" : false
+          },
+          "Location" : [1.268502, -22.831924, 25.463003],
+          "Outline" : true,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Static Mesh" : "Data/Egg/egg.OBJ",
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }, {
+      "ClassName" : "AEggActor",
+      "NonSceneComponents" : [{
+          "ClassName" : "UProjectileMovementComponent",
+          "Properties" : {
+            "Auto Register Updated" : true,
+            "Direction" : [1.000000, 0.000000, -1.000000],
+            "Gravity Scale" : 9.800000,
+            "Initial Speed" : 10.000000,
+            "Max Speed" : 100.000000,
+            "bTickEnable" : true,
+            "bTickInEditor" : false
+          }
+        }],
+      "PrimitiveKey" : "9163",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Outline" : true,
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 50",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Decal Receive" : true,
+          "Element 0" : {
+            "Path" : "mat_66990170",
+            "UVScroll" : false
+          },
+          "Location" : [1.268502, 0.000000, 25.463003],
+          "Outline" : true,
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [30.000000, 30.000000, 30.000000],
+          "Static Mesh" : "Data/Egg/egg.OBJ",
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "Default",
+  "ContextName" : "Default",
+  "Name" : "EggThrow",
+  "PerspectiveCamera" : {
+    "FOV" : 1.570796,
+    "FarClip" : 100.000000,
+    "Location" : [-29.902939, -29.330429, 32.279427],
+    "NearClip" : 0.100000,
+    "Rotation" : [0.000000, 29.549286, 39.901913]
+  },
+  "Primitives" : {
+    "9152" : {
+      "Location" : [0.000000, -6.648563, 0.000000],
+      "ObjStaticMeshAsset" : "Data/Pan/10262_12_Frying_Pan_max2011_v2_it2.obj",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "9155" : {
+      "Location" : [-15.904524, 0.000000, 25.463003],
+      "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [30.000000, 30.000000, 30.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "9159" : {
+      "Location" : [1.268502, -22.831924, 25.463003],
+      "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [30.000000, 30.000000, 30.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "9163" : {
+      "Location" : [1.268502, 0.000000, 25.463003],
+      "ObjStaticMeshAsset" : "Data/Egg/egg.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [30.000000, 30.000000, 30.000000],
+      "Type" : "StaticMeshComp"
+    }
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}

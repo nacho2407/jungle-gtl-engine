@@ -1,0 +1,322 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "243",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 12",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UDecalComponent",
+            "Properties" : {
+              "Color" : [1.000000, 0.000000, 0.000000, 1.000000],
+              "Decal Size" : [1.000000, 1.000000, 1.000000],
+              "Fade In Time" : 1.000000,
+              "Fade Once And Destroy" : false,
+              "Fade Out Time" : 1.000000,
+              "Location" : [-0.700000, -1.000000, 3.880000],
+              "Rotation" : [0.000000, 90.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Texture" : "spotlight_Light",
+              "Total Lifetime" : 2.000000,
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Econolite_signal",
+            "UVScroll" : false
+          },
+          "Element 1" : {
+            "Path" : "wingnut",
+            "UVScroll" : false
+          },
+          "Element 10" : {
+            "Path" : "Material.063",
+            "UVScroll" : false
+          },
+          "Element 11" : {
+            "Path" : "green_lens",
+            "UVScroll" : false
+          },
+          "Element 12" : {
+            "Path" : "wingnut.004",
+            "UVScroll" : false
+          },
+          "Element 13" : {
+            "Path" : "ped_lens",
+            "UVScroll" : false
+          },
+          "Element 14" : {
+            "Path" : "mask.001",
+            "UVScroll" : false
+          },
+          "Element 15" : {
+            "Path" : "Material.017",
+            "UVScroll" : false
+          },
+          "Element 16" : {
+            "Path" : "walk_off",
+            "UVScroll" : false
+          },
+          "Element 17" : {
+            "Path" : "Dont_off",
+            "UVScroll" : false
+          },
+          "Element 2" : {
+            "Path" : "inner_visor",
+            "UVScroll" : false
+          },
+          "Element 3" : {
+            "Path" : "mast_arm_twoguy",
+            "UVScroll" : false
+          },
+          "Element 4" : {
+            "Path" : "bolt",
+            "UVScroll" : false
+          },
+          "Element 5" : {
+            "Path" : "reflector_bowl",
+            "UVScroll" : false
+          },
+          "Element 6" : {
+            "Path" : "red_lens.001",
+            "UVScroll" : false
+          },
+          "Element 7" : {
+            "Path" : "backplate",
+            "UVScroll" : false
+          },
+          "Element 8" : {
+            "Path" : "backplate_screw",
+            "UVScroll" : false
+          },
+          "Element 9" : {
+            "Path" : "Material.067",
+            "UVScroll" : false
+          },
+          "Location" : [0.000000, -3.259349, 0.681477],
+          "Rotation" : [-0.000000, 89.999992, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "246",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 6",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "BasicShapeMaterial",
+            "UVScroll" : false
+          },
+          "Location" : [0.000000, 0.000000, -0.476719],
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [32.668739, 6.540429, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }, {
+      "ClassName" : "AStaticMeshActor",
+      "NonSceneComponents" : [],
+      "PrimitiveKey" : "272",
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UTextRenderComponent",
+            "Properties" : {
+              "Font" : "Default",
+              "Font Size" : 1.000000,
+              "Location" : [0.000000, 0.000000, 1.300000],
+              "Rotation" : [-0.000000, 0.000000, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Text" : "UUID : 12",
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UDecalComponent",
+            "Properties" : {
+              "Color" : [1.000000, 0.000000, 0.000000, 1.000000],
+              "Decal Size" : [1.000000, 1.000000, 1.000000],
+              "Fade In Time" : 1.000000,
+              "Fade Once And Destroy" : false,
+              "Fade Out Time" : 1.000000,
+              "Location" : [-0.700000, -1.000000, 3.880000],
+              "Rotation" : [-0.000000, 89.999992, 0.000000],
+              "Scale" : [1.000000, 1.000000, 1.000000],
+              "Texture" : "spotlight_Light",
+              "Total Lifetime" : 2.000000,
+              "Visible" : true,
+              "bTickEnable" : true,
+              "bTickInEditor" : true
+            }
+          }],
+        "ClassName" : "UStaticMeshComponent",
+        "Properties" : {
+          "Element 0" : {
+            "Path" : "Econolite_signal",
+            "UVScroll" : false
+          },
+          "Element 1" : {
+            "Path" : "wingnut",
+            "UVScroll" : false
+          },
+          "Element 10" : {
+            "Path" : "Material.063",
+            "UVScroll" : false
+          },
+          "Element 11" : {
+            "Path" : "green_lens",
+            "UVScroll" : false
+          },
+          "Element 12" : {
+            "Path" : "wingnut.004",
+            "UVScroll" : false
+          },
+          "Element 13" : {
+            "Path" : "ped_lens",
+            "UVScroll" : false
+          },
+          "Element 14" : {
+            "Path" : "mask.001",
+            "UVScroll" : false
+          },
+          "Element 15" : {
+            "Path" : "Material.017",
+            "UVScroll" : false
+          },
+          "Element 16" : {
+            "Path" : "walk_off",
+            "UVScroll" : false
+          },
+          "Element 17" : {
+            "Path" : "Dont_off",
+            "UVScroll" : false
+          },
+          "Element 2" : {
+            "Path" : "inner_visor",
+            "UVScroll" : false
+          },
+          "Element 3" : {
+            "Path" : "mast_arm_twoguy",
+            "UVScroll" : false
+          },
+          "Element 4" : {
+            "Path" : "bolt",
+            "UVScroll" : false
+          },
+          "Element 5" : {
+            "Path" : "reflector_bowl",
+            "UVScroll" : false
+          },
+          "Element 6" : {
+            "Path" : "red_lens.001",
+            "UVScroll" : false
+          },
+          "Element 7" : {
+            "Path" : "backplate",
+            "UVScroll" : false
+          },
+          "Element 8" : {
+            "Path" : "backplate_screw",
+            "UVScroll" : false
+          },
+          "Element 9" : {
+            "Path" : "Material.067",
+            "UVScroll" : false
+          },
+          "Location" : [0.000000, 2.591083, 0.681477],
+          "Rotation" : [-0.000000, 89.999985, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Visible" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      },
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bVisible" : true
+    }],
+  "ClassName" : "UWorld",
+  "ContextHandle" : "Default",
+  "ContextName" : "Default",
+  "Name" : "Default",
+  "PerspectiveCamera" : {
+    "FOV" : 1.570796,
+    "FarClip" : 100.000000,
+    "Location" : [-9.055987, -1.443652, 5.976181],
+    "NearClip" : 0.100000,
+    "Rotation" : [-0.000000, 20.612791, 5.261505]
+  },
+  "Primitives" : {
+    "243" : {
+      "Location" : [0.000000, -3.259349, 0.681477],
+      "ObjStaticMeshAsset" : "Data/Traffic/Traffic Light 1.obj",
+      "Rotation" : [0.000000, -0.000000, 89.999985],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "246" : {
+      "Location" : [0.000000, 0.000000, -0.476719],
+      "ObjStaticMeshAsset" : "Data/BasicShape/Cube.OBJ",
+      "Rotation" : [0.000000, -0.000000, 0.000000],
+      "Scale" : [32.668739, 6.540429, 1.000000],
+      "Type" : "StaticMeshComp"
+    },
+    "272" : {
+      "Location" : [0.000000, 2.591083, 0.681477],
+      "ObjStaticMeshAsset" : "Data/Traffic/Traffic Light 1.obj",
+      "Rotation" : [0.000000, -0.000000, 89.999985],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "StaticMeshComp"
+    }
+  },
+  "Version" : 2,
+  "WorldType" : "Editor"
+}
