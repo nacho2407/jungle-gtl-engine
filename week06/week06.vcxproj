@@ -731,4 +731,16 @@
     </PropertyGroup>
     <Error Condition="!Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets'))" />
   </Target>
+  <Target Name="CopyRuntimeFiles" AfterTargets="Build">
+    <ItemGroup>
+      <RuntimeShaders Include="$(ProjectDir)Shaders\**\*" />
+      <RuntimeAsset Include="$(ProjectDir)Asset\**\*" Exclude="$(ProjectDir)Asset\MeshCache\**\*" />
+      <RuntimeData Include="$(ProjectDir)Data\**\*" Exclude="$(ProjectDir)Data\**\imgui.ini" />
+      <RuntimeSettings Include="$(ProjectDir)Settings\Resource.ini" />
+    </ItemGroup>
+    <Copy SourceFiles="@(RuntimeShaders)" DestinationFiles="@(RuntimeShaders->'$(OutDir)Shaders\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(RuntimeAsset)" DestinationFiles="@(RuntimeAsset->'$(OutDir)Asset\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(RuntimeData)" DestinationFiles="@(RuntimeData->'$(OutDir)Data\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(RuntimeSettings)" DestinationFolder="$(OutDir)Settings" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
