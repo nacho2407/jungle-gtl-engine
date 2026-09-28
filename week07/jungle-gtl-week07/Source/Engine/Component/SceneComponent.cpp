@@ -1,0 +1,411 @@
+﻿#include "SceneComponent.h"
+#include "Object/ObjectFactory.h"
+
+DEFINE_CLASS(USceneComponent, UActorComponent)
+REGISTER_FACTORY(USceneComponent)
+
+// 소유자와 부모-자식 관계를 초기 상태로 명시적으로 리셋합니다.
+// Actor::Duplicate() 에서 DuplicateSubTree 를 통해 올바른 관계가 복원됩니다.
+void USceneComponent::PostDuplicate(UObject* Original)
+{
+    UActorComponent::PostDuplicate(Original);
+
+    SetOwner(nullptr);
+
+    // 트랜스폼 캐시는 새 부모에 붙을 때 다시 계산되도록 Dirty 플래그를 켭니다.
+    bTransformDirty = true;
+
+    // 부모-자식 관계는 Actor::PostDuplicate() 에서 DuplicateSubTree 를 통해 복원됩니다.
+    ParentComponent = nullptr;
+    ChildComponents.clear();
+}
+
+void USceneComponent::Serialize(FArchive& Ar)
+{
+	UActorComponent::Serialize(Ar);
+
+	if (Ar.IsSaving())
+	{
+		if (GetParent() != nullptr)
+		{
+			uint32 ParentUUID = GetParent()->GetUUID();
+			Ar << "ParentUUID" << ParentUUID;
+		}
+	}
+
+	Ar << "Location" << RelativeLocation;
+	Ar << "Rotation" << RelativeRotation;
+	Ar << "Scale" << RelativeScale3D;
+}
+USceneComponent::USceneComponent()
+{
+	CachedWorldMatrix = FMatrix::Identity;
+	CachedWorldTransform = FTransform::Identity;
+	RelativeRotationQuat = FQuat::Identity;
+	bTransformDirty = true;
+	UpdateWorldMatrix();
+}
+
+USceneComponent::~USceneComponent()
+{
+	if (ParentComponent != nullptr)
+	{
+		ParentComponent->RemoveChild(this);
+		ParentComponent = nullptr;
+	}
+
+	for (auto* Child : ChildComponents)
+	{
+		if (Child)
+		{
+			Child->ParentComponent = nullptr;
+			Child->MarkTransformDirty();
+		}
+	}
+	ChildComponents.clear();
+}
+
+void USceneComponent::AttachToComponent(USceneComponent* InParent)
+{
+	if (InParent == nullptr || InParent == this)
+	{
+		return;
+	}
+
+	SetParent(InParent);
+}
+
+void USceneComponent::SetParent(USceneComponent* NewParent)
+{
+	if (NewParent == ParentComponent || NewParent == this)
+	{
+		return;
+	}
+
+	if (ParentComponent)
+	{
+		ParentComponent->RemoveChild(this);
+	}
+
+	ParentComponent = NewParent;
+
+	if (ParentComponent)
+	{
+		if (!ParentComponent->ContainsChild(this))
+		{
+			ParentComponent->ChildComponents.push_back(this);
+		}
+	}
+
+	MarkTransformDirty();
+}
+
+void USceneComponent::AddChild(USceneComponent* NewChild)
+{
+	if (NewChild == nullptr)
+	{
+		return;
+	}
+
+	NewChild->SetParent(this);
+}
+
+void USceneComponent::RemoveChild(USceneComponent* Child)
+{
+	if (Child == nullptr)
+	{
+		return;
+	}
+
+	auto Iter = std::find(ChildComponents.begin(), ChildComponents.end(), Child);
+	if (Iter != ChildComponents.end())
+	{
+		if ((*Iter)->ParentComponent == this)
+		{
+			(*Iter)->ParentComponent = nullptr;
+			(*Iter)->MarkTransformDirty();
+		}
+
+		ChildComponents.erase(Iter);
+	}
+}
+
+bool USceneComponent::ContainsChild(const USceneComponent* Child) const
+{
+	if (Child == nullptr)
+	{
+		return false;
+	}
+
+	return std::find(ChildComponents.begin(), ChildComponents.end(), Child) != ChildComponents.end();
+}
+
+void USceneComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+	UActorComponent::GetEditableProperties(OutProps);
+	OutProps.push_back({ "Location", EPropertyType::Vec3, &RelativeLocation, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Rotation", EPropertyType::Vec3, &RelativeRotation, 0.0f, 0.0f, 0.1f });
+	OutProps.push_back({ "Scale", EPropertyType::Vec3, &RelativeScale3D, 0.0f, 0.0f, 0.1f });
+}
+
+void USceneComponent::PostEditProperty(const char* PropertyName)
+{
+	UActorComponent::PostEditProperty(PropertyName);
+	// 에디터가 RelativeRotation(Euler)을 직접 수정했을 때 쿼터니언 권위 소스를 동기화합니다.
+	RelativeRotationQuat = FQuat::MakeFromEuler(RelativeRotation);
+	RelativeRotationQuat.Normalize();
+	MarkTransformDirty();
+}
+
+FRotator USceneComponent::GetRelativeRotator() const
+{
+	// 쿼터니언 권위 소스에서 직접 변환 — Euler 왕복 없음
+	FRotator Rot = RelativeRotationQuat.Rotator();
+	Rot.Normalize();
+	return Rot;
+}
+
+FQuat USceneComponent::GetRelativeQuat() const
+{
+	// 권위 있는 쿼터니언을 직접 반환 — 짐벌 락 없음
+	return RelativeRotationQuat;
+}
+
+void USceneComponent::SetRelativeRotationRotator(const FRotator& NewRotation)
+{
+	FRotator Normalized = NewRotation;
+	Normalized.Normalize();
+
+	// 에디터/카메라 용도에서 roll drift 방지
+	if (MathUtil::Abs(Normalized.Roll) < 1e-6f)
+	{
+		Normalized.Roll = 0.0f;
+	}
+
+	RelativeRotationQuat = FQuat(Normalized);
+	RelativeRotationQuat.Normalize();
+	RelativeRotation = RelativeRotationQuat.Euler();
+	MarkTransformDirty();
+}
+
+void USceneComponent::SetRelativeRotationQuat(const FQuat& NewRotationQuat)
+{
+	// 쿼터니언을 권위 소스에 직접 저장 — Euler 왕복 변환 없음
+	RelativeRotationQuat = NewRotationQuat.GetNormalized();
+	RelativeRotation = RelativeRotationQuat.Euler();
+	MarkTransformDirty();
+}
+
+void USceneComponent::SetRelativeLocation(const FVector& NewLocation)
+{
+	RelativeLocation = NewLocation;
+	MarkTransformDirty();
+}
+
+void USceneComponent::SetRelativeRotation(const FVector& NewRotation)
+{
+	// Euler 입력을 쿼터니언 권위 소스에 저장하고 표시용 캐시도 동기화
+	RelativeRotationQuat = FQuat::MakeFromEuler(NewRotation);
+	RelativeRotationQuat.Normalize();
+	RelativeRotation = RelativeRotationQuat.Euler();
+	MarkTransformDirty();
+}
+
+void USceneComponent::SetRelativeScale(const FVector& NewScale)
+{
+	RelativeScale3D = NewScale;
+	MarkTransformDirty();
+}
+
+void USceneComponent::MarkTransformDirty()
+{
+	bTransformDirty = true;
+    OnTransformDirty();
+
+	for (auto* Child : ChildComponents)
+	{
+		if (Child)
+		{
+			Child->MarkTransformDirty();
+		}
+	}
+}
+
+FTransform USceneComponent::GetRelativeTransform() const
+{
+	// 쿼터니언 권위 소스를 직접 사용 — Euler/Rotator 왕복 없음
+	return FTransform(RelativeRotationQuat, RelativeLocation, RelativeScale3D);
+}
+
+FMatrix USceneComponent::GetRelativeMatrix() const
+{
+	return GetRelativeTransform().ToMatrixWithScale();
+}
+
+void USceneComponent::UpdateWorldMatrix() const
+{
+	if (!bTransformDirty)
+	{
+		return;
+	}
+
+	const FTransform RelativeTransform = GetRelativeTransform();
+
+	if (ParentComponent != nullptr)
+	{
+		CachedWorldTransform = RelativeTransform * ParentComponent->GetWorldTransform();
+	}
+	else
+	{
+		CachedWorldTransform = RelativeTransform;
+	}
+
+	CachedWorldMatrix = CachedWorldTransform.ToMatrixWithScale();
+	bTransformDirty = false;
+}
+
+const FMatrix& USceneComponent::GetWorldMatrix() const
+{
+	if (bTransformDirty)
+	{
+		UpdateWorldMatrix();
+	}
+
+	return CachedWorldMatrix;
+}
+
+FTransform USceneComponent::GetWorldTransform() const
+{
+	if (bTransformDirty)
+	{
+		UpdateWorldMatrix();
+	}
+
+	return CachedWorldTransform;
+}
+
+void USceneComponent::SetWorldLocation(FVector NewWorldLocation)
+{
+	if (ParentComponent != nullptr)
+	{
+		const FTransform ParentWorldInverse = ParentComponent->GetWorldTransform().Inverse();
+		const FVector NewRelativeLocation = ParentWorldInverse.TransformPosition(NewWorldLocation);
+		SetRelativeLocation(NewRelativeLocation);
+	}
+	else
+	{
+		SetRelativeLocation(NewWorldLocation);
+	}
+}
+
+FVector USceneComponent::GetWorldLocation() const
+{
+	return GetWorldTransform().GetTranslation();
+}
+
+FVector USceneComponent::GetWorldScale() const
+{
+	return GetWorldTransform().GetScale3D();
+}
+
+FVector USceneComponent::GetForwardVector() const
+{
+	return GetWorldTransform().GetUnitAxis(EAxis::X);
+}
+
+FVector USceneComponent::GetRightVector() const
+{
+	return GetWorldTransform().GetUnitAxis(EAxis::Y);
+}
+
+FVector USceneComponent::GetUpVector() const
+{
+	return GetWorldTransform().GetUnitAxis(EAxis::Z);
+}
+
+void USceneComponent::Move(const FVector& Delta)
+{
+	SetRelativeLocation(RelativeLocation + Delta);
+}
+
+void USceneComponent::MoveLocal(const FVector& Delta)
+{
+	const FQuat LocalQuat = GetRelativeQuat();
+
+	const FVector LocalOffset =
+		LocalQuat.GetAxisX() * Delta.X +
+		LocalQuat.GetAxisY() * Delta.Y +
+		LocalQuat.GetAxisZ() * Delta.Z;
+
+	SetRelativeLocation(RelativeLocation + LocalOffset);
+}
+
+void USceneComponent::AddWorldOffset(const FVector& WorldDelta)
+{
+	if (ParentComponent == nullptr)
+	{
+		SetRelativeLocation(RelativeLocation + WorldDelta);
+		return;
+	}
+
+	const FTransform ParentWorldInverse = ParentComponent->GetWorldTransform().Inverse();
+	const FVector LocalDelta = ParentWorldInverse.TransformVector(WorldDelta);
+	SetRelativeLocation(RelativeLocation + LocalDelta);
+}
+
+void USceneComponent::AddRelativeYaw(float DeltaYawDegrees)
+{
+	if (MathUtil::Abs(DeltaYawDegrees) < 1e-6f)
+	{
+		return;
+	}
+
+	// Yaw는 "부모 기준 Up(Z)" 축으로 회전시키는 게 local 계층에서도 가장 일관적임.
+	// 부모가 없으면 사실상 world up 기준과 동일.
+	const FVector ParentUpAxis = FVector(0.0f, 0.0f, 1.0f);
+
+	FQuat CurrentQuat = GetRelativeQuat();
+	FQuat DeltaQuat(ParentUpAxis, MathUtil::DegreesToRadians(DeltaYawDegrees));
+
+	FQuat ResultQuat = DeltaQuat * CurrentQuat;
+	ResultQuat.Normalize();
+
+	SetRelativeRotationQuat(ResultQuat);
+}
+
+void USceneComponent::AddRelativePitch(float DeltaPitchDegrees)
+{
+	if (MathUtil::Abs(DeltaPitchDegrees) < 1e-6f)
+	{
+		return;
+	}
+
+	// pitch는 현재 local right 축 기준으로 회전
+	FQuat CurrentQuat = GetRelativeQuat();
+	const FVector LocalRightAxis = CurrentQuat.GetAxisY();
+
+	FQuat DeltaQuat(LocalRightAxis, MathUtil::DegreesToRadians(DeltaPitchDegrees));
+	FQuat ResultQuat = DeltaQuat * CurrentQuat;
+	ResultQuat.Normalize();
+
+	FRotator ResultRot = ResultQuat.Rotator();
+	ResultRot.Pitch = MathUtil::Clamp(ResultRot.Pitch, -89.9f, 89.9f);
+	ResultRot.Roll = 0.0f;
+	ResultRot.Normalize();
+
+	SetRelativeRotationRotator(ResultRot);
+}
+
+void USceneComponent::Rotate(float DeltaYaw, float DeltaPitch)
+{
+	// 기존 인터페이스 유지하면서 내부는 quat 기반 처리
+	if (MathUtil::Abs(DeltaYaw) > 1e-6f)
+	{
+		AddRelativeYaw(DeltaYaw);
+	}
+
+	if (MathUtil::Abs(DeltaPitch) > 1e-6f)
+	{
+		AddRelativePitch(DeltaPitch);
+	}
+}

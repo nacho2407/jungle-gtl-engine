@@ -1,0 +1,85 @@
+/* Constant Buffers */
+
+#define TILE_SIZE 16
+#define NUM_SLICE 24
+
+cbuffer FrameBuffer : register(b0)
+{
+    row_major float4x4 View;
+    row_major float4x4 Projection;
+    float3 CameraPosition;
+    float IsOrthographic;
+    float3 WireframeRGB;
+    float bIsWireframe;
+    float2 ViewportSize;
+    float NearZ;
+    float FarZ;
+}
+
+cbuffer PerObjectBuffer : register(b1)
+{
+    row_major float4x4 Model;
+    row_major float4x4 WorldInvTrans;
+    float4 PrimitiveColor; 
+};
+
+#define MAX_FOG_LAYER_COUNT 32
+
+struct FogLayerData
+{
+    float4 FogColor;
+    float FogDensity;
+    float HeightFalloff;
+    float FogHeight;
+    float FogStartDistance;
+    float FogCutoffDistance;
+    float FogMaxOpacity;
+    float2 FogPadding;
+};
+
+cbuffer FogBuffer : register(b9)
+{
+    uint FogLayerCount;
+    float3 FogBufferPadding;
+    FogLayerData FogLayers[MAX_FOG_LAYER_COUNT];
+};
+
+float4 ApplyMVP(float3 pos)
+{
+    float4 world = mul(float4(pos, 1.0f), Model);
+    float4 view = mul(world, View);
+    return mul(view, Projection);
+}
+
+float3x3 Inverse3x3(float3x3 m)
+{
+    float det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+              - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+              + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+
+    float invDet = 1.0 / det;
+
+    float3x3 result;
+    result[0][0] = (m[1][1] * m[2][2] - m[1][2] * m[2][1]) * invDet;
+    result[0][1] = -(m[0][1] * m[2][2] - m[0][2] * m[2][1]) * invDet;
+    result[0][2] = (m[0][1] * m[1][2] - m[0][2] * m[1][1]) * invDet;
+    result[1][0] = -(m[1][0] * m[2][2] - m[1][2] * m[2][0]) * invDet;
+    result[1][1] = (m[0][0] * m[2][2] - m[0][2] * m[2][0]) * invDet;
+    result[1][2] = -(m[0][0] * m[1][2] - m[0][2] * m[1][0]) * invDet;
+    result[2][0] = (m[1][0] * m[2][1] - m[1][1] * m[2][0]) * invDet;
+    result[2][1] = -(m[0][0] * m[2][1] - m[0][1] * m[2][0]) * invDet;
+    result[2][2] = (m[0][0] * m[1][1] - m[0][1] * m[1][0]) * invDet;
+    return result;
+}
+
+float LinearizeDepth(float d)
+{
+    if (IsOrthographic > 0.5f)
+    {
+        return NearZ + d * (FarZ - NearZ);
+    }
+    else
+    {
+        return (NearZ * FarZ) / (FarZ - d * (FarZ - NearZ));
+    }
+}

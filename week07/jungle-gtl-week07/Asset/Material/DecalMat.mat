@@ -1,0 +1,14 @@
+{
+    "Name": "DecalMat",
+    "Shader": "Shaders/ShaderDecal.hlsl",
+    "Params": [
+        { "Name": "InvDecalWorld",
+          "Type": "Matrix4",
+          "Value": [1.0, 1.0, 1.0, 1.0,
+                    0.0, 1.0, 0.0, 0.0,
+                    0.0, 0.0, 1.0, 0.0,
+                    0.0, 0.0, 0.0, 1.0] },
+        { "Name": "DecalColorTint", "Type": "Vector4", "Value": [1.0, 1.0, 1.0, 1.0] },
+        { "Name": "DiffuseMap", "Type": "Texture", "Value": "Asset/Texture/water.png" }
+    ]
+}

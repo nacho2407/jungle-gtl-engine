@@ -1,0 +1,422 @@
+﻿#include "GameFramework/PrimitiveActors.h"
+
+#include "Component/FireballComponent.h"
+#include "Component/DecalComponent.h"
+#include "Component/StaticMeshComponent.h"
+#include "Component/TextRenderComponent.h"
+#include "Component/HeightFogComponent.h"
+
+#include "Component/PostProcess/Light/AmbientLightComponent.h"
+#include "Component/PostProcess/Light/DirectionalLightComponent.h"
+#include "Component/PostProcess/Light/PointLightComponent.h"
+#include "Component/PostProcess/Light/SpotlightComponent.h"
+
+#include "Component/Movement/RotatingMovementComponent.h"
+#include "Core/ResourceManager.h"
+#include <format>
+#include <Component/SubUVComponent.h>
+
+namespace
+{
+	constexpr const char* CubeMeshPath = "Asset/Mesh/Cube.obj";
+	constexpr const char* FireballMeshPath = "Asset/Mesh/Sun/sun.obj";
+	constexpr const char* PlaneMeshPath = "Asset/Mesh/Plane.obj";
+}
+
+DEFINE_CLASS(ACubeActor, AActor)
+REGISTER_FACTORY(ACubeActor)
+
+DEFINE_CLASS(ASphereActor, AActor)
+REGISTER_FACTORY(ASphereActor)
+
+DEFINE_CLASS(APlaneActor, AActor)
+REGISTER_FACTORY(APlaneActor)
+
+DEFINE_CLASS(AAttachTestActor, AActor) 
+REGISTER_FACTORY(AAttachTestActor)
+
+DEFINE_CLASS(ASceneActor, AActor) 
+REGISTER_FACTORY(ASceneActor)
+
+DEFINE_CLASS(AStaticMeshActor, AActor) 
+REGISTER_FACTORY(AStaticMeshActor)
+
+DEFINE_CLASS(ASubUVActor, AActor) 
+REGISTER_FACTORY(ASubUVActor)
+
+DEFINE_CLASS(ATextRenderActor, AActor) 
+REGISTER_FACTORY(ATextRenderActor)
+
+DEFINE_CLASS(ABillboardActor, AActor) 
+REGISTER_FACTORY(ABillboardActor)
+
+DEFINE_CLASS(ADecalActor, AActor)
+REGISTER_FACTORY(ADecalActor)
+
+DEFINE_CLASS(AFireballActor, AActor)
+REGISTER_FACTORY(AFireballActor)
+
+DEFINE_CLASS(ADecalSpotLightActor, AActor)
+REGISTER_FACTORY(ADecalSpotLightActor)
+
+DEFINE_CLASS(ALightActor, AActor)
+REGISTER_FACTORY(ALightActor)
+
+DEFINE_CLASS(AAmbientLightActor, ALightActor)
+REGISTER_FACTORY(AAmbientLightActor)
+DEFINE_CLASS(ADirectionalLightActor, ALightActor)
+REGISTER_FACTORY(ADirectionalLightActor)
+DEFINE_CLASS(APointLightActor, ALightActor)
+REGISTER_FACTORY(APointLightActor)
+DEFINE_CLASS(ASpotlightActor, APointLightActor)
+REGISTER_FACTORY(ASpotlightActor)
+
+void ACubeActor::InitDefaultComponents()
+{
+	auto* Cube = AddComponent<UStaticMeshComponent>();
+	Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
+	SetRootComponent(Cube);
+
+	// Text
+	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+	Text->SetFont(FName("Default"));
+	Text->AttachToComponent(Cube);
+	Text->SetText("UUID: " + std::to_string(GetUUID()));
+	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
+	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+}
+
+void ASphereActor::InitDefaultComponents()
+{
+	auto* Sphere = AddComponent<UStaticMeshComponent>();
+	//Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
+	SetRootComponent(Sphere);
+
+	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+	Text->SetFont(FName("Default"));
+	Text->AttachToComponent(Sphere);
+	Text->SetText("UUID: " + std::to_string(GetUUID()));
+	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
+	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+}
+
+void APlaneActor::InitDefaultComponents()
+{
+	auto* Plane = AddComponent<UStaticMeshComponent>();
+	Plane->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(PlaneMeshPath));
+	SetRootComponent(Plane);
+
+	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+	Text->SetFont(FName("Default"));
+	Text->SetText(std::format("UUID: {}", GetUUID()));
+	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
+	Text->AttachToComponent(Plane);
+	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+}
+
+void AAttachTestActor::InitDefaultComponents()
+{
+	// Root: Cube
+	auto* Cube = AddComponent<UStaticMeshComponent>();
+	Cube->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(CubeMeshPath));
+	SetRootComponent(Cube);
+
+	// Grouping node for spheres
+	auto* Primitives = AddComponent<USceneComponent>();
+	Primitives->AttachToComponent(Cube);
+
+	// 4 Spheres in a square pattern
+	constexpr float Offset = 2.0f;
+	const FVector Positions[4] = {
+		{ -Offset, -Offset, 0.0f },
+		{  Offset, -Offset, 0.0f },
+		{  Offset,  Offset, 0.0f },
+		{ -Offset,  Offset, 0.0f },
+	};
+	for (int i = 0; i < 4; ++i)
+	{
+		auto* Sphere = AddComponent<UStaticMeshComponent>();
+		//Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(SphereMeshPath));
+		Sphere->AttachToComponent(Primitives);
+		Sphere->SetRelativeLocation(Positions[i]);
+	}
+
+	// Text attached directly to Root
+	auto* Text = AddComponent<UTextRenderComponent>();
+	Text->AttachToComponent(Cube);
+	Text->SetText("UUID: " + std::to_string(GetUUID()));
+	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
+	Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.5f));
+}
+
+void ASceneActor::InitDefaultComponents()
+{
+	auto SceneRoot = AddComponent<USceneComponent>();
+	SetRootComponent(SceneRoot);
+}
+
+void AStaticMeshActor::InitDefaultComponents()
+{
+	auto* StaticMesh = AddComponent<UStaticMeshComponent>();;
+	SetRootComponent(StaticMesh);
+
+	// Text attached directly to Root
+	auto* Text = AddComponent<UTextRenderComponent>();
+	Text->AttachToComponent(StaticMesh);
+	Text->SetFont(FName("Default"));
+	Text->SetText("UUID: " + std::to_string(GetUUID()));
+	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
+
+	FVector Extent = StaticMesh->GetWorldAABB().GetExtent();
+	Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Z * 2.0f));
+}
+
+void ASubUVActor::InitDefaultComponents()
+{
+	SetTickInEditor(true); // Editor Tick을 받도록 변경
+
+    auto* SubUV = AddComponent<USubUVComponent>();
+    SetRootComponent(SubUV);
+	SubUV->SetParticle(FName("Explosion"));
+	SubUV->SetSpriteSize(2.0f, 2.0f);
+	SubUV->SetFrameRate(30.f);
+    
+    auto* Text = AddComponent<UTextRenderComponent>();
+    Text->AttachToComponent(SubUV);
+    Text->SetFont(FName("Default"));
+    Text->SetText("UUID: " + std::to_string(GetUUID()));
+	Text->SetTransient(true);
+	Text->SetEditorOnly(true);
+
+    FVector Extent = SubUV->GetWorldAABB().GetExtent();
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 1.4f));
+}
+
+void ATextRenderActor::InitDefaultComponents()
+{
+	UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+	SetRootComponent(Text);
+	Text->SetFont(FName("Default"));
+	Text->SetText("TextRender");
+    
+    auto* TextUUID = AddComponent<UTextRenderComponent>();
+    TextUUID->AttachToComponent(Text);
+    TextUUID->SetFont(FName("Default"));
+    TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+	TextUUID->SetTransient(true);
+	TextUUID->SetEditorOnly(true);
+
+    FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+    TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
+}
+
+void ABillboardActor::InitDefaultComponents()
+{	
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+	SetRootComponent(Billboard);
+	Billboard->SetTextureName(("Asset/Texture/Pawn_64x.png"));
+	//Billboard->SetTextureName();
+
+    auto* TextUUID = AddComponent<UTextRenderComponent>();
+    TextUUID->AttachToComponent(Billboard);
+    TextUUID->SetFont(FName("Default"));
+    TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+	TextUUID->SetTransient(true);
+	TextUUID->SetEditorOnly(true);
+
+    FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+    TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
+}
+
+void ADecalActor::InitDefaultComponents()
+{
+	UDecalComponent* Decal = AddComponent<UDecalComponent>();
+	SetRootComponent(Decal);
+
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+	Billboard->AttachToComponent(Decal);
+	Billboard->SetEditorOnly(true);
+	Billboard->SetTextureName(("Asset/Texture/DecalActor_64.png"));
+
+	auto* TextUUID = AddComponent<UTextRenderComponent>();
+	TextUUID->AttachToComponent(Decal);
+	TextUUID->SetFont(FName("Default"));
+	TextUUID->SetText("UUID: " + std::to_string(GetUUID()));
+	TextUUID->SetTransient(true);
+	TextUUID->SetEditorOnly(true);
+	FVector Extent = TextUUID->GetWorldAABB().GetExtent();
+	TextUUID->SetRelativeLocation(FVector(0.0f, 0.0f, Extent.Y * 0.6f));
+}
+
+void AFireballActor::InitDefaultComponents()
+{
+	// Base for debugging and demonstration. Remove this later
+    auto* Sphere = AddComponent<UStaticMeshComponent>();
+    Sphere->SetStaticMesh(FResourceManager::Get().LoadStaticMesh(FireballMeshPath));
+	Sphere->SetEnableCull(false);
+    SetRootComponent(Sphere);
+
+	// Nametag
+    UTextRenderComponent* Text = AddComponent<UTextRenderComponent>();
+    Text->SetFont(FName("Default"));
+    Text->AttachToComponent(Sphere);
+    Text->SetText("UUID: " + std::to_string(GetUUID()));
+    Text->SetTransient(true);
+    Text->SetEditorOnly(true);
+    Text->SetRelativeLocation(FVector(0.0f, 0.0f, 1.0f));
+
+	// Flare
+    UFireballComponent* Fireball = AddComponent<UFireballComponent>();
+	Fireball->AttachToComponent(Sphere);
+}
+
+void ADecalSpotLightActor::InitDefaultComponents() {
+	UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset/Texture/SpotLight_64x.png"));
+	Billboard->SetEditorOnly(true);
+	SetRootComponent(Billboard);
+
+	UDecalComponent* Decal = AddComponent<UDecalComponent>();
+	Decal->AttachToComponent(Billboard);
+	Decal->SetRelativeLocation(FVector(10, 0, 0));
+	DecalComp = Decal;
+
+	UMaterialInterface* DecalMat = FResourceManager::Get().GetMaterialInterface("DecalMat_SpotLight");
+	if (DecalMat == nullptr)
+	{
+		UMaterial* DecalOriginMat = FResourceManager::Get().GetMaterial("DecalMat");
+		DecalMat = FResourceManager::Get().CreateMaterialInstance(DecalOriginMat->GetFilePath() + "_SpotLight", DecalOriginMat);
+	}
+	Decal->SetMaterial(DecalMat);
+	DecalMat->SetTexture("DiffuseMap", FResourceManager::Get().LoadTexture("Asset/Texture/DecalFakeSpotlight.png"));
+}
+
+void ADecalSpotLightActor::Tick(float DeltaTime)
+{
+	AActor::Tick(DeltaTime);
+
+	if (DecalComp)
+	{
+		DecalComp->SetSize(FVector(Range, Range, Range));
+	}
+}
+
+ULightComponent* ALightActor::GetLight() const
+{
+    if (!LightComp)
+        return nullptr;
+    return LightComp;
+}
+
+void ALightActor::SetLight(ULightComponent* InLight)
+{
+    if (InLight)
+        LightComp = InLight;
+}
+
+void AAmbientLightActor::InitDefaultComponents()
+{
+    UAmbientLightComponent* Ambient = AddComponent<UAmbientLightComponent>();
+	Ambient->Intensity = 0.2f;
+	SetRootComponent(Ambient);
+
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName("Asset/Texture/SkyLight_64x.png");
+    Billboard->AttachToComponent(Ambient);
+	Billboard->SetEditorOnly(true);
+
+    SetLight(Ambient);
+	SetBillboard(Billboard);
+}
+
+void AAmbientLightActor::Tick(float DeltaTime)
+{
+	AActor::Tick(DeltaTime);
+
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
+	}
+}
+
+void ADirectionalLightActor::InitDefaultComponents()
+{
+	SetTickInEditor(true);
+
+	UDirectionalLightComponent* Directional = AddComponent<UDirectionalLightComponent>();
+	SetRootComponent(Directional);
+
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset\\Texture\\DirectionalLight_64x.png"));
+	Billboard->AttachToComponent(Directional);
+	Billboard->SetEditorOnly(true);
+
+    SetLight(Directional);
+	SetBillboard(Billboard);
+}
+
+void ADirectionalLightActor::Tick(float DeltaTime)
+{
+	AActor::Tick(DeltaTime);
+
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
+	}
+}
+
+void APointLightActor::InitDefaultComponents()
+{
+	SetTickInEditor(true);
+
+	UPointLightComponent* Point = AddComponent<UPointLightComponent>();
+	SetRootComponent(Point);
+
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset\\Texture\\PointLight_64x.png"));
+	Billboard->AttachToComponent(Point);
+	Billboard->SetEditorOnly(true);
+
+    SetLight(Point);
+	SetBillboard(Billboard);
+}
+
+void APointLightActor::Tick(float DeltaTime)
+{
+	AActor::Tick(DeltaTime);
+
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
+	}
+}
+
+void ASpotlightActor::InitDefaultComponents() {
+	SetTickInEditor(true);
+
+	USpotlightComponent* Spot = AddComponent<USpotlightComponent>();
+	SetRootComponent(Spot);
+
+    UBillboardComponent* Billboard = AddComponent<UBillboardComponent>();
+    Billboard->SetTextureName(("Asset\\Texture\\SpotLight_64x.png"));
+	Billboard->AttachToComponent(Spot);
+	Billboard->SetEditorOnly(true);
+
+	SetLight(Spot);
+	SetBillboard(Billboard);
+}
+
+void ASpotlightActor::Tick(float DeltaTime) 
+{
+	AActor::Tick(DeltaTime);
+
+	if (BillboardComp)
+	{
+		BillboardComp->SetColor(GetLight()->LightColor);
+	}
+}

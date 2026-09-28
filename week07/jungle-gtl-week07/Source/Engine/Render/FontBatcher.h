@@ -1,0 +1,88 @@
+﻿#pragma once
+
+#include "Core/CoreMinimal.h"
+#include "Core/ResourceTypes.h"
+#include "Render/Common/ComPtr.h"
+#include "Render/Resource/Material.h"
+#include "Render/Resource/VertexTypes.h"
+
+struct ID3D11Device;
+struct ID3D11DeviceContext;
+struct ID3D11Buffer;
+struct ID3D11SamplerState;
+
+// Texture Atlas UV 정보
+struct FCharacterInfo
+{
+    float U;
+    float V;
+    float Width;
+    float Height;
+};
+
+// FFontBatcher — 텍스트를 배치로 모아 1회 드로우콜로 처리
+//
+// 사용 흐름:
+//   1) Create()   — 장치 초기화 (셰이더, 샘플러, Dynamic VB/IB). 텍스처는 로드하지 않습니다.
+//   2) Clear()    — 매 프레임 시작 시 이전 텍스트 제거
+//   3) AddText()  — 문자별 쿼드 누적
+//   4) Flush()    — Dynamic VB/IB 업로드 + DrawIndexed 1회 호출
+//                   SRV는 ResourceManager가 소유하는 FFontResource에서 전달받습니다.
+//   5) Release()  — DX 리소스 해제
+class FFontBatcher
+{
+public:
+    FFontBatcher() = default;
+    ~FFontBatcher() = default;
+
+    // 공유 리소스 초기화 (셰이더, 샘플러, Dynamic VB/IB).
+    // 텍스처는 로드하지 않으며 ResourceManager가 소유합니다.
+    void Create(ID3D11Device* InDevice);
+    void Release();
+
+    void AddText(const FString& Text,
+                 const FMatrix& WorldMatrix,
+                 float Scale = 1.0f);
+
+    // 스크린 좌표 위에 빌보드 텍스트 추가	 (배치에 누적)
+    void AddText2D(const FString& Text,
+                   const FVector2& ScreenPos,
+                   float ViewportWidth,
+                   float ViewportHeight,
+                   float Scale = 1.0f);
+
+    // 이번 프레임 누적 텍스트 초기화
+    void Clear();
+
+	// Dynamic VB 업로드 + 드로우콜 1회
+	// Resource — FontBatcher가 사용할 FontAtlas 리소스 (ResourceManager 소유)
+	void Flush(ID3D11DeviceContext* Context, const FFontResource* Resource, bool bWireframe = false);
+
+    uint32 GetQuadCount() const { return static_cast<uint32>(Vertices.size() / 4); }
+
+private:
+    // CPU 누적 배열
+    TArray<FTextureVertex> Vertices;
+    TArray<uint32> Indices;
+
+    // GPU 버퍼 (Dynamic)
+    TComPtr<ID3D11Buffer> VertexBuffer;
+    TComPtr<ID3D11Buffer> IndexBuffer;
+
+    uint32 MaxVertexCount = 0;
+    uint32 MaxIndexCount = 0;
+
+    // 공유 DX 리소스
+    TComPtr<ID3D11Device> Device;
+    UMaterialInterface* FontMaterial = nullptr;
+
+    // CharInfoMap — Atlas 그리드가 바뀔 때만 재빌드
+    // key: Unicode 코드포인트 (ASCII 33~126, 한글 U+AC00~U+D7A3)
+    TMap<uint32, FCharacterInfo> CharInfoMap;
+    uint32 CachedColumns = 0;
+    uint32 CachedRows = 0;
+
+    void CreateBuffers();
+    void BuildCharInfoMap(uint32 Columns, uint32 Rows);
+    void GetCharUV(uint32 Codepoint, FVector2& OutUVMin, FVector2& OutUVMax) const;
+};
