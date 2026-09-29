@@ -453,13 +453,49 @@ FodyWeavers.xsd
 #Rider CMake Project for Showing Dependency diagram
 CMakeLists.txt
 
-# ignore Build Files
-NipsEngine/Build/
-NipsEngine/Saves/**
+# Build outputs and local state
+/Bin/
+/Build/
+/packages/
+/week07/
+/Saves/
+/Settings/
+/Asset/Mesh/Bin/
+/Asset/Scene/*
+imgui.ini
 
-# Asset 폴더 관련 (그때그때 필요한 파일만 저장하도록 변경)
-!NipsEngine/Asset/Mesh/**
-!NipsEngine/Asset/**/*.meta
+# Meshes tracked in this repository despite the *.obj rule above
+!/Asset/Mesh/cube.obj
+!/Asset/Mesh/buddha.obj
+!/Asset/Mesh/bunny.obj
+!/Asset/Mesh/dragon.obj
+!/Asset/Mesh/Dice/Dice.obj
+!/Asset/Mesh/MultiMaterialCube/MultiMaterialCube.obj
 
-NipsEngine/Asset/Mesh/Bin/**
-NipsEngine/Asset/Scene/**
+# Excluded from this repository because of license issues; kept only for local builds
+/Asset/Font/
+/Asset/Particle/
+/Asset/Mesh/Bitcoin/
+/Asset/Mesh/Lowpoly_tree_sample/
+/Asset/Mesh/Lumine/
+/Asset/Mesh/PUBG_lv3_helmet/
+/Asset/Mesh/Sun/
+/Asset/Mesh/Village/
+/Asset/Mesh/apple_mid/
+/Asset/Mesh/bitten_apple_mid/
+/Asset/Mesh/cottage/
+/Asset/Mesh/MultiMaterialCube/WoodBox.mtl
+/Asset/Mesh/MultiMaterialCube/WoodBox.png
+/Asset/Mesh/sphere.obj
+/Asset/Texture/bump/
+/Asset/Texture/Blood_Stain_sgfjdepc_1K.png
+/Asset/Texture/DecalActor_64.png
+/Asset/Texture/DirectionalLight_64x.png
+/Asset/Texture/Hand_Smear_se0wefxp_1K.png
+/Asset/Texture/High_Velocity_Blood_Spatter_sgeoahup_1K.png
+/Asset/Texture/Pawn_64x.png
+/Asset/Texture/PointLight_64x.png
+/Asset/Texture/SkyLight_64x.png
+/Asset/Texture/SpectatorPawn_64x.png
+/Asset/Texture/SpotLight_64x.png
+/Asset/Texture/water.png
