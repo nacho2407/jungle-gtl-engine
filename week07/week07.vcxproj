@@ -315,8 +315,6 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\TranslucentRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
@@ -387,7 +385,6 @@
     <ClInclude Include="Source\Editor\Viewport\CursorOverlayState.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\FSceneViewport.h" />
-    <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportCamera.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h" />
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
@@ -428,11 +425,9 @@
     <ClInclude Include="Source\Engine\Component\PostProcess\Light\SpotlightComponent.h" />
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
-    <ClInclude Include="Source\Engine\Core\ConsoleHelper.h" />
     <ClInclude Include="Source\Engine\Core\CoreMinimal.h" />
     <ClInclude Include="Source\Engine\Core\CoreTypes.h" />
     <ClInclude Include="Source\Engine\Core\CrashDump.h" />
-    <ClInclude Include="Source\Engine\Core\Debug.h" />
     <ClInclude Include="Source\Engine\Core\EngineTypes.h" />
     <ClInclude Include="Source\Engine\Core\Paths.h" />
     <ClInclude Include="Source\Engine\Core\PlatformTime.h" />
@@ -550,7 +545,6 @@
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
     <ClInclude Include="Source\Engine\Serialization\JsonReader.h" />
     <ClInclude Include="Source\Engine\Serialization\JsonWriter.h" />
-    <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Slate\ISlateViewport.h" />
     <ClInclude Include="Source\Engine\Slate\SSplitter.h" />

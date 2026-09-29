@@ -542,12 +542,6 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.cpp">
-      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp">
-      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
     </ClCompile>
@@ -594,6 +588,9 @@
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\WindowsApplication.cpp">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Runtime\WindowsFileWatcher.cpp">
       <Filter>Source\Engine\Runtime</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Runtime\WindowsPlatformTime.cpp">
@@ -751,9 +748,6 @@
     <ClInclude Include="Source\Editor\Viewport\FSceneViewport.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h">
-      <Filter>Source\Editor\Viewport</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\ViewportCamera.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
@@ -874,9 +868,6 @@
     <ClInclude Include="Source\Engine\Core\Common.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\ConsoleHelper.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Core\CoreMinimal.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -884,9 +875,6 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\CrashDump.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Core\Debug.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\EngineTypes.h">
@@ -1213,6 +1201,9 @@
     <ClInclude Include="Source\Engine\Runtime\WindowsApplication.h">
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Engine\Runtime\WindowsFileWatcher.h">
+      <Filter>Source\Engine\Runtime</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Engine\Runtime\WindowsPlatformTime.h">
       <Filter>Source\Engine\Runtime</Filter>
     </ClInclude>
@@ -1229,9 +1220,6 @@
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\JsonWriter.h">
-      <Filter>Source\Engine\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h">
