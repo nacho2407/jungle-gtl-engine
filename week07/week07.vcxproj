@@ -355,7 +355,7 @@
     <ClCompile Include="Source\Misc\ObjViewer\Settings\ObjViewerSettings.cpp" />
     <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerControlWidget.cpp" />
     <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerMainPanel.cpp" />
-    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWIdget.cpp" />
+    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWidget.cpp" />
     <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerStatWidget.cpp" />
     <ClCompile Include="Source\Misc\ObjViewer\Viewport\ObjViewerViewportClient.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
@@ -570,7 +570,7 @@
     <ClInclude Include="Source\Misc\ObjViewer\Settings\ObjViewerSettings.h" />
     <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerControlWidget.h" />
     <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerMainPanel.h" />
-    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWIdget.h" />
+    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWidget.h" />
     <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerStatWidget.h" />
     <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerWidget.h" />
     <ClInclude Include="Source\Misc\ObjViewer\Viewport\ObjViewerViewportClient.h" />
