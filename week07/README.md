@@ -1,333 +1,266 @@
-# GameTechLab W4_Jungle_Team2
-
-Windows 환경에서 동작하는 `Win32 + DirectX 11 + ImGui` 기반의 3D 에디터/엔진 프로젝트입니다.  
-이번 리포지토리에는 두 가지 실행 형태가 함께 들어 있습니다.
-
-- `Editor` 모드: 씬 편집, 다중 뷰포트, 선택/기즈모, 씬 저장 및 복원
-- `ObjViewer` 모드: `.obj` 메시를 빠르게 검토하기 위한 전용 뷰어
-
-이 문서는 코드와 첨부 발표 자료를 기준으로, 실제 구현이 확인된 기능만 정리한 설명문서입니다.
-
-## 프로젝트 개요
-
-이 프로젝트는 단순 렌더링 데모가 아니라, 다음 요소를 직접 구현한 소형 편집기 엔진에 가깝습니다.
-
-- 커스텀 `UObject` 계층과 RTTI
-- `FName` 기반 이름 관리
-- 월드/액터/컴포넌트 구조
-- DirectX 11 렌더링 파이프라인
-- ImGui 기반 편집 UI
-- OBJ/MTL 로더와 정적 메시 렌더링
-- JSON 씬 저장/복원
-- OBJ 바이너리 베이킹 및 캐시 로딩
-
-## 핵심 기능
-
-### 1. 에디터 모드
-
-에디터 모드는 씬을 직접 배치하고 편집하는 데 초점이 맞춰져 있습니다.
-
-- 4분할 뷰포트 지원
-  - 좌상단 `Perspective`
-  - 우상단 `Top`
-  - 좌하단 `Front`
-  - 우하단 `Right`
-- 스플리터 드래그로 뷰포트 크기 조절
-- 1개 뷰포트 전체화면 모드와 4분할 모드 전환
-- 뷰포트별 호버/포커스 상태 관리
-- 뷰포트 설정 저장
-  - 스플리터 비율
-  - 활성 뷰포트 수
-  - 단일 뷰포트 인덱스
-
-### 2. 카메라와 뷰포트 조작
-
-- Perspective 뷰 카메라 이동 및 회전
-- Orthographic 뷰 지원
-- 직교 뷰에서 팬/줌 조작
-- 마우스 휠 기반 FOV 또는 Ortho Height 조절
-- 포커스된 뷰포트 기준 이동 속도 조절
-- Perspective 카메라 상태 저장/복원
-  - 위치
-  - 회전
-  - FOV
-  - Near/Far Clip
-
-### 3. 씬 편집 기능
-
-- 월드의 액터 목록 표시
-- 선택된 액터/컴포넌트의 속성 편집
-- 프로퍼티 위젯 자동 렌더링
-- 액터 선택
-  - 단일 선택
-  - `Shift` 추가 선택
-  - `Ctrl` 토글 선택
-- 박스 선택
-- 기즈모 기반 편집
-  - Translate
-  - Rotate
-  - Scale
-- 기즈모 월드/로컬 모드 전환
-- 선택 액터 삭제
-
-### 4. 에디터 UI
-
-ImGui 기반으로 아래 패널들이 분리되어 있습니다.
-
-- `Scene Manager`
-  - 액터 아웃라이너
-  - 씬 저장/불러오기
-- `Property`
-  - 선택 오브젝트의 속성 수정
-  - StaticMesh 경로 콤보 선택
-- `Material Editor`
-  - StaticMesh의 섹션별 머티리얼 확인
-  - 슬롯별 머티리얼 교체
-  - 색상/스칼라/텍스처 정보 확인
-- `Console`
-  - stat 명령 처리
-- `Stat Profiler`
-  - CPU/GPU 통계 테이블
-- `Viewport Settings`
-  - Show Flags
-  - Grid 설정
-  - 카메라 이동 속도
-
-### 5. StaticMesh 렌더링
-
-이번 주차에서 가장 큰 변화 중 하나는 OBJ 기반 정적 메시 렌더링입니다.
-
-- `UStaticMesh`와 `UStaticMeshComponent` 추가
-- OBJ를 렌더링용 정적 메시 데이터로 변환
-- 섹션 단위 인덱스 관리
-- 섹션별 머티리얼 슬롯 연결
-- 로컬/월드 AABB 계산
-- 메시 단위 레이캐스트
-- 프로퍼티 창에서 StaticMesh 에셋 지정 가능
-
-### 6. OBJ / MTL 파이프라인
-
-OBJ 로더는 텍스트 파일을 바로 렌더링하지 않고, 중간 데이터를 거쳐 최종 메시로 변환합니다.
-
-- OBJ 파싱 지원 항목
-  - `v`
-  - `vt`
-  - `vn`
-  - `mtllib`
-  - `usemtl`
-  - `f`
-- Raw 데이터에서 Cooked StaticMesh로 변환
-- 머티리얼 이름 기준 슬롯 생성
-- 로컬 바운드 계산
-- 로딩 옵션에 따라 단위 큐브 기준 정규화 가능
+# 💡 크래프톤 정글 게임테크랩 7주차
 
-MTL 파서는 다음 정보를 읽습니다.
+**한국어** | [English](./README_en.md)
 
-- `newmtl`
-- `Ka`
-- `Kd`
-- `Ks`
-- `Ke`
-- `Ns`
-- `d`
-- `illum`
-- `map_Kd`
-- `map_Ka`
-- `map_Ks`
-- `map_bump` / `bump`
-
-텍스처 경로는 파싱 시점에 정규화되고, 렌더링 시 SRV로 연결됩니다.
+***빛이 있으라***
 
-### 7. 다중 재질 처리
+2026.04.16. ~ 2026.04.23.
 
-정적 메시 하나에 여러 재질을 연결할 수 있습니다.
+8팀: 장민준([@nacho2407](https://github.com/nacho2407)), 김형준([@Rocketstein](https://github.com/Rocketstein)), 한영서([@persona6whenrelease](https://github.com/persona6whenrelease)), 국동진([@puter2712git](https://github.com/puter2712git))
 
-- `usemtl` 기준 슬롯 생성
-- 섹션별 `MaterialSlotIndex` 유지
-- 메시 컴포넌트의 override material 배열 보유
-- Material Editor에서 섹션별 머티리얼 교체 가능
-- 머티리얼이 없으면 기본 재질/기본 흰색 텍스처로 대체
+![week07-0.png](./Docs/Media/week07-0.png)
 
-즉, "머티리얼 에디터"라기보다 "섹션별 머티리얼 확인 및 교체 UI"에 가깝습니다.
+![week07-1.gif](./Docs/Media/week07-1.gif)
 
-### 8. 렌더링 파이프라인
+3D 에디터에 **네 종류의 광원**과, 조명 모델을 바꿔 가며 쓰는 **Uber 셰이더**, **노멀 매핑**을 더했습니다. 광원이 많아도 픽셀마다 영향을 주는 광원만 계산하도록 컴퓨트 셰이더로 **Tiled, Clustered 라이트 컬링**을 합니다.
 
-렌더링은 수집과 실행이 분리된 구조입니다.
 
-- `RenderCollector`
-  - 월드, 선택 오브젝트, 그리드, 기즈모 수집
-- `RenderBus`
-  - 패스별 커맨드 정리
-- `Renderer`
-  - 실제 GPU 상태 설정 및 드로우
+## 🎮 주차 소개
 
-에디터 렌더링에서 확인되는 요소는 다음과 같습니다.
+- 앰비언트, 디렉셔널, 포인트, 스포트 네 종류의 **광원 액터**를 놓으면, 메시를 그리는 셰이더에서 바로 광원을 계산하는 Forward Shading으로 장면을 비춥니다. 광원마다 색과 세기를 정하고, 포인트와 스포트 라이트는 감쇠 반경과 감쇠 지수로, 스포트 라이트는 원뿔의 안쪽과 바깥쪽 각도로 비추는 범위를 정합니다
 
-- 일반 오브젝트 렌더링
-- StaticMesh 렌더링
-- Grid 렌더링
-- Billboard Text 렌더링
-- SubUV 렌더링
-- 기즈모 렌더링
-- 선택 마스크 + 포스트프로세스 아웃라인
+- 셰이더 파일 하나에 **Gouraud, Lambert, Blinn-Phong** 조명 모델과 노멀 맵 사용 여부를 매크로로 나눠 두고, 필요한 조합을 셰이더 순열로 컴파일해 씁니다. 뷰포트마다 조명 모델과 뷰 모드를 바꿀 수 있고, 셰이더 파일을 고치면 실행 중에 다시 컴파일합니다
 
-View Mode는 다음을 지원합니다.
+- 깊이 프리패스 뒤 컴퓨트 셰이더가 화면을 16x16 픽셀 타일로 나눠, 타일마다 영향을 주는 포인트, 스포트 라이트만 추립니다. 타일을 깊이 방향으로 더 나누는 Clustered 방식과 컬링 없이 모든 광원을 계산하는 방식도 고를 수 있고, Heatmap 뷰 모드로 타일마다 계산하는 광원 수를 봅니다
 
-- `Lit`
-- `Unlit`
-- `Wireframe`
 
-Show Flags는 다음을 제어합니다.
+## ✨ 구현 결과
 
-- Primitives
-- BillboardText
-- Grid
-- Gizmo
-- Bounding Volume
+- **광원 액터**
 
-### 9. 선택, 피킹, 아웃라인
+  Jungle Control Panel의 Actor 목록에서 `Ambient`, `Directional`, `Point`, `Spotlight`를 골라 광원을 놓고, 속성 창에서 색, 세기, 감쇠 반경, 감쇠 지수, 원뿔 각도를 바꿉니다. 광원 아이콘은 광원의 색으로 칠해집니다
 
-- 마우스 클릭 기반 선택
-- 메시 레이캐스트 기반 피킹
-- 선택 오브젝트 스텐실 마스크 렌더링
-- 후처리 아웃라인 표시
-- 선택 상태에 맞춰 기즈모 자동 동기화
+- **광원 범위 표시**
 
-### 10. 씬 저장 및 복원
+  광원을 선택하고 Viewport Settings 창의 Show에서 `Bounding Volume`을 켜면, 디렉셔널 라이트는 방향 화살표, 포인트 라이트는 감쇠 반경, 스포트 라이트는 안쪽과 바깥쪽 원뿔을 선으로 그립니다
 
-씬은 `.Scene` 확장자의 JSON 파일로 저장됩니다.
-
-저장되는 정보:
-
-- 월드 타입
-- 액터/컴포넌트 계층
-- 컴포넌트 프로퍼티
-- StaticMesh 경로
-- Perspective 카메라 상태
-
-즉, 편집 결과를 다시 열 수 있는 최소 단위의 씬 직렬화가 구현되어 있습니다.
-
-### 11. 리소스 관리와 캐시
-
-리소스 매니저는 에셋 검색, 로딩, 캐시를 담당합니다.
-
-- 메시 경로 스캔
-- 머티리얼 파일 스캔
-- 텍스처 스캔
-- 로드된 StaticMesh 캐시
-- 머티리얼 레지스트리 유지
-
-StaticMesh 로드는 다음 순서로 진행됩니다.
-
-1. 메모리 캐시 확인
-2. 대응하는 바이너리 파일 유효성 검사
-3. 유효하면 바이너리 로드
-4. 실패하면 OBJ 파싱
-5. OBJ 파싱 성공 시 바이너리 저장
-
-### 12. OBJ 바이너리 베이킹
-
-텍스트 OBJ를 매번 다시 파싱하지 않도록 바이너리 캐시를 생성합니다.
-
-- 전용 헤더 사용
-  - Magic Number
-  - Version
-  - Vertex/Index/Section/Slot count
-  - 원본 파일 수정 시간
-- 원본 OBJ 수정 시간이 바뀌면 바이너리 무효화
-- 재로드 시 바이너리 우선 사용
-
-캐시 파일은 `Asset/Mesh/Bin` 아래에 `.bin` 형태로 저장됩니다.
-
-### 13. ObjViewer 모드
-
-프로젝트에는 별도 `ObjViewer` 빌드 구성이 포함되어 있습니다.
-
-- `IS_OBJ_VIEWER=1` 전처리 매크로 사용
-- 전용 엔진 클래스 `UObjViewerEngine`
-- 파일 다이얼로그로 `.obj` 선택 로드
-- 미리보기용 `UStaticMeshComponent` 사용
-- 카메라 리셋 기능
-- 우측 패널에 기본 메시 통계 표시
-
-ObjViewer는 "에디터 전체 기능"이 아니라, 모델 확인에 집중한 별도 실행 모드입니다.
-
-## 엔진 구조
-
-### 객체 시스템
-
-- `UObject` 기반 공통 객체 시스템
-- `DECLARE_CLASS`, `DEFINE_CLASS` 기반 커스텀 RTTI
-- `IsA<T>()`, `Cast<T>()` 지원
-- `UObjectManager`를 통한 생성/파괴 관리
-- UUID와 내부 인덱스 보유
-
-### 이름 시스템
-
-- `FName` 이름 풀 사용
-- Display 이름과 Comparison 이름을 분리 저장
-- 비교 시 소문자 기반 인덱스 비교
-
-즉, 표시용 문자열과 비교용 문자열을 나눠 관리하는 방식입니다.
-
-### 객체 순회
-
-- `TObjectIterator<T>` 구현
-- 글로벌 UObject 배열을 순회하며 타입이 맞는 객체만 반환
-
-## 폴더 개요
-
-```text
-W4_Jungle_Team2/
-├─ W4_Jungle_Team2/
-│  ├─ Source/
-│  │  ├─ Engine/
-│  │  │  ├─ Asset/
-│  │  │  ├─ Component/
-│  │  │  ├─ Core/
-│  │  │  ├─ GameFramework/
-│  │  │  ├─ Math/
-│  │  │  ├─ Object/
-│  │  │  ├─ Render/
-│  │  │  ├─ Runtime/
-│  │  │  ├─ Serialization/
-│  │  │  └─ Slate/
-│  │  ├─ Editor/
-│  │  └─ Misc/ObjViewer/
-│  ├─ Asset/
-│  ├─ Shaders/
-│  ├─ Settings/
-│  └─ Bin/
-└─ W4_Jungle_Team2.sln
+- **조명 모델**
+
+  뷰포트 메뉴의 View에서 `Lit (Gouraud)`, `Lit (Lambert)`, `Lit (Blinn-Phong)`, `Unlit`을 고릅니다. Gouraud는 정점마다, Lambert와 Blinn-Phong은 픽셀마다 조명을 계산하고, Blinn-Phong은 하프 벡터로 구한 반사광을 더합니다
+
+- **노멀 매핑**
+
+  Wavefront OBJ의 재질 파일에 `map_Bump`로 지정한 노멀 맵을 읽고, 메시를 불러올 때 정점마다 탄젠트를 계산해 노멀 맵의 방향을 월드 노멀로 바꿉니다. View의 `Normal` 뷰 모드로 월드 노멀을 색으로 확인합니다
+
+- **라이트 컬링**
+
+  View의 Light Culling에서 `Clustered`, `Tiled`, `None (All Lights)`를 고릅니다. `Heatmap` 뷰 모드는 타일이나 클러스터마다 계산하는 광원 수를 색으로 보여 줍니다
+
+- **셰이더 실행 중 재컴파일**
+
+  `Shaders/` 폴더를 감시하다가 셰이더 파일이 바뀌면 그 셰이더를 다시 컴파일해 바로 반영합니다
+
+
+## 👥 팀원 및 담당 파트
+
+| 팀원 | 담당 파트 및 주요 역할 |
+|------|------------------------|
+| **장민준**([@nacho2407](https://github.com/nacho2407)) | 라이팅과 에디터 버그 수정 - 광원 액터, 셰이더 순열 기반 조명 모델, 포인트와 스포트 라이트, 데칼 조명, 노멀 매핑, 광원 범위 표시, 리소스 경로 정규화, 액터 삭제 시 선택 정리, 재질 저장 경로, 다중 뷰포트 드래그 |
+| **김형준**([@Rocketstein](https://github.com/Rocketstein)) | 라이팅 - 광원 컴포넌트, Uber 셰이더와 조명 모델(Gouraud, Lambert, Blinn-Phong), 노멀 매핑, 깊이 프리패스와 컴퓨트 셰이더 라이트 컬링(Tiled, Clustered), 데칼 데이터 구조화 버퍼 |
+| **한영서**([@persona6whenrelease](https://github.com/persona6whenrelease)) | 라이팅 |
+| **국동진**([@puter2712git](https://github.com/puter2712git)) | 라이팅 - 셰이더 순열과 입력 레이아웃 자동 생성, 셰이더 실행 중 재컴파일, 광원 버퍼와 수집, 라이트 컬링 패스, 광원 범위 표시와 아이콘 색, 뷰 모드(Unlit, Normal, Heatmap), 직렬화, Uber 데칼 셰이더 |
+
+
+## 🧑‍💻 담당 작업 상세
+
+### 라이팅
+
+- **목표**
+
+  네 종류의 광원과 세 가지 조명 모델, 노멀 매핑을 메시를 그리는 셰이더 안에서 바로 계산하는 Forward Shading으로 구현합니다
+
+- **구현 내용**
+
+  앰비언트와 디렉셔널 라이트는 비어 있던 상수 버퍼 슬롯(b3)에, 포인트와 스포트 라이트는 구조화 버퍼 두 개에 담아 넘기고, 액터 목록에 광원 액터를 더했습니다. 조명 모델(Unlit, Lambert, Blinn-Phong, Gouraud)과 노멀 맵 사용 여부를 비트로 묶은 키로 **셰이더 순열**을 고르고, 없는 조합은 기본 순열로 대신합니다. Gouraud는 정점 셰이더에서 알베도를 뺀 조명 값만 구해 픽셀 셰이더에서 텍스처 색에 곱합니다
+
+  포인트 라이트는 반경에 대한 거리 비율에 감쇠 지수를 적용하고, 스포트 라이트는 여기에 안쪽과 바깥쪽 원뿔 사이에서 부드럽게 줄어드는 감쇠를 곱합니다. 같은 조명 함수를 데칼에도 적용했습니다. 스포트 라이트 각도는 0 ~ 180도로 제한하고 바깥쪽 각도가 안쪽보다 작아지지 않게 했으며, 광원의 범위를 선으로 그리고 광원 아이콘을 광원 색으로 칠합니다
+
+  **노멀 매핑**은 Wavefront OBJ를 불러올 때 삼각형마다 탄젠트와 바이탄젠트를 구해 정점에 모으고, 탄젠트 방향의 부호를 함께 저장합니다. 픽셀 셰이더에서 탄젠트를 노멀에 수직이 되도록 다시 맞추고, 모델 행렬의 행렬식 부호로 음수 스케일에서 뒤집히는 좌표계를 보정한 뒤 노멀 맵의 방향을 월드 노멀로 바꿉니다
+
+
+### 에디터 버그 수정
+
+- **목표**
+
+  작업 중 드러난 에디터 버그를 고쳐, 리소스 경로, 액터 삭제, 재질 저장, 다중 뷰포트 조작이 어긋나지 않게 합니다
+
+- **구현 내용**
+
+  리소스 관리자가 메시, 셰이더, 컴퓨트 셰이더, 메시 캐시의 경로를 정규화하고 프로젝트 루트 기준 상대 경로로 다뤄, 경로 표기가 달라도 같은 리소스를 찾게 했습니다. 액터가 파괴되면 월드가 리스너에 알리고, 에디터가 선택 목록과 속성 창에서 그 액터를 지우도록 했습니다. 활성 월드가 바뀌면 리스너도 새 월드로 옮깁니다
+
+  메시와 데칼 컴포넌트가 재질 인스턴스를 저장할 때 이름 대신 정규화한 파일 경로를 저장해, 씬을 다시 불러와도 재질을 찾게 했습니다. 다중 뷰포트에서는 우클릭이나 휠 드래그를 시작한 뷰포트를 기억해 마우스를 놓을 때까지 다른 뷰포트로 조작이 넘어가지 않게 하고, UI에서 시작한 드래그는 뷰포트를 조작하지 않게 했습니다. 빌보드 셰이더가 빨강 채널만 보고 픽셀을 버리던 조건을 알파와 검은 배경 기준으로 바꿔, 빌보드의 빈 부분이 그리드를 가리지 않게 했습니다
+
+- **관련 코드**
+
+  [`Source/Engine/Core/ResourceManager.cpp`](./Source/Engine/Core/ResourceManager.cpp), [`Source/Editor/EditorEngine.cpp`](./Source/Editor/EditorEngine.cpp), [`Source/Engine/GameFramework/World.cpp`](./Source/Engine/GameFramework/World.cpp), [`Source/Engine/Component/MeshComponent.cpp`](./Source/Engine/Component/MeshComponent.cpp), [`Source/Editor/Viewport/ViewportLayout.cpp`](./Source/Editor/Viewport/ViewportLayout.cpp), [`Shaders/ShaderSubUV.hlsl`](./Shaders/ShaderSubUV.hlsl)
+
+
+## 🛠️ 기술 스택
+
+- **Language**: C++20
+
+- **Graphics API**: DirectX 11
+
+- **Build**: Visual Studio 2026, MSBuild
+
+- **Libraries**: Dear ImGui, DirectX Tool Kit for DirectX 11, SimpleJSON
+
+
+## 🖥️ 구조
+
+```mermaid
+flowchart TD
+    A[광원 수집과 광원 버퍼 갱신] --> B[깊이 프리패스]
+    B --> C[컴퓨트 셰이더로 타일, 클러스터마다 광원 컬링]
+    C --> D[타일, 클러스터별 광원 목록 저장]
+    D --> E[뷰 모드에 맞는 셰이더 순열로 메시를 그리며 조명 계산]
 ```
 
-## 실행과 빌드
+- 동작 흐름
 
-### 권장 환경
+    1. 장면의 광원을 모아 앰비언트와 디렉셔널 라이트는 상수 버퍼에, 포인트와 스포트 라이트는 구조화 버퍼에 담습니다
 
-- Windows
-- Visual Studio 2022
-- DirectX 11 지원 환경
+    2. 깊이 프리패스로 불투명 메시의 깊이를 먼저 그립니다
 
-### 솔루션
+    3. 컴퓨트 셰이더가 타일이나 클러스터마다 영향을 주는 광원을 추려 광원 인덱스 목록과 타일별 시작 위치, 개수를 기록합니다
 
-- 솔루션 파일: `W4_Jungle_Team2.sln`
+    4. 불투명 패스가 뷰 모드에 맞는 셰이더 순열로 메시를 그리며, 픽셀이 속한 타일이나 클러스터의 광원만 계산합니다
 
-### 주요 빌드 구성
 
-- `Debug | x64`
-- `Release | x64`
-- `ObjViewer | x64`
+## 📁 디렉토리 구조
 
-`ObjViewer` 구성은 전용 모델 뷰어 모드입니다.
+```
+week07/
+├── week07.sln              // 솔루션
+├── Asset/                  // 재질, 메시, 씬, 텍스처
+├── Docs/                   // README 미디어
+├── Shaders/                // HLSL 셰이더
+├── Source/                 // 진입점
+│   ├── Editor/             // 에디터 엔진, 렌더 파이프라인, 유틸리티
+│   │   ├── Selection/      // 선택 관리
+│   │   ├── Settings/       // 에디터 설정
+│   │   ├── UI/             // 에디터 위젯
+│   │   └── Viewport/       // 뷰포트, 카메라, 레이아웃
+│   ├── Engine/
+│   │   ├── Asset/          // 에셋 로더와 정적 메시
+│   │   ├── Collision/      // 레이 충돌
+│   │   ├── Component/      // 컴포넌트
+│   │   ├── Core/           // 공통 타입, 컨테이너, 로그, 경로
+│   │   ├── GameFramework/  // 액터, 레벨, 월드
+│   │   ├── Geometry/       // AABB, OBB, 프러스텀, 평면
+│   │   ├── Input/          // 입력과 컨트롤러
+│   │   ├── Math/           // 벡터, 행렬, 쿼터니언, 색
+│   │   ├── Object/         // 객체 시스템
+│   │   ├── Render/         // 렌더러와 렌더 패스
+│   │   ├── Runtime/        // 엔진 루프, 창, 뷰포트
+│   │   ├── Serialization/  // JSON 읽기와 쓰기, 씬 저장
+│   │   ├── Slate/          // 스플리터와 뷰포트 위젯
+│   │   └── Spatial/        // BVH와 k-d 트리
+│   └── Misc/
+│       └── ObjViewer/      // OBJ 뷰어
+└── ThirdParty/             // Dear ImGui, SimpleJSON
+```
 
-## 문서 범위에서 제외한 것
 
-아래 항목은 발표자료에 언급되더라도, 이 문서에서는 과장하지 않기 위해 표현을 낮추거나 일반화했습니다.
+## ❓ 빌드 및 실행
 
-- 범용 게임 엔진 수준의 완성도
-- 범용 머티리얼 에디터
-- 모든 OBJ/MTL 조합에 대한 완전 호환
-- 고급 메시 최적화 기능 전반
+### 릴리즈 실행
 
-현재 리포지토리 기준으로는 "에디터 기능을 갖춘 DirectX 11 기반 학습용 3D 엔진/도구 프로젝트"로 보는 것이 가장 정확합니다.
+1. `week07.exe` 실행
+
+- 실행 환경
+
+    - Windows 10 / 11(x64)
+
+    - DirectX 11을 지원하는 GPU
+
+    - Microsoft Visual C++ 재배포 가능 패키지(x64)
+
+- 참고
+
+    - 라이선스 문제로 인해 일부 에셋을 포함하지 못해, 아래 항목이 표시되지 않거나 다르게 표시될 수 있습니다
+
+        - 액터 UUID와 텍스트 렌더 컴포넌트의 글자
+
+        - 광원, 데칼, 빌보드 액터의 아이콘
+
+        - SubUV 파티클
+
+        - 데칼 기본 재질의 텍스처
+
+        - 파이어볼 액터의 메시
+
+
+### 소스 빌드
+
+- 요구 사항
+
+    - Windows 10 / 11(x64)
+
+    - Visual Studio 2026(C++를 사용한 데스크톱 개발)
+
+    - MSVC v143 빌드 도구
+
+    - Windows SDK
+
+1. `week07/week07.sln` 열기
+
+2. 구성을 `Release`, 플랫폼을 `x64`로 선택
+
+3. 빌드 후 실행
+
+- 참고
+
+    - 라이선스 문제로 인해 일부 에셋을 포함하지 못해, 아래 항목이 표시되지 않거나 다르게 표시될 수 있습니다
+
+        - 액터 UUID와 텍스트 렌더 컴포넌트의 글자
+
+        - 광원, 데칼, 빌보드 액터의 아이콘
+
+        - SubUV 파티클
+
+        - 데칼 기본 재질의 텍스처
+
+        - 파이어볼 액터의 메시
+
+
+## ⌨️ 단축키
+
+| 단축키 | 동작 |
+|--------|------|
+| **Space** | 기즈모 모드 순환(이동, 회전, 크기) |
+| **X** | 기즈모 기준 전환(월드, 로컬) |
+| **F** | 선택한 액터 쪽으로 카메라 이동 |
+| **Ctrl + A** | 모든 액터 선택 |
+| **Ctrl + Alt + 드래그** | 박스 선택(Shift를 함께 누르면 기존 선택에 추가) |
+| **Ctrl + D** | 선택한 액터 복제 |
+| **Delete** | 선택한 액터 삭제 |
+| **Ctrl + N / Ctrl + O / Ctrl + S** | 새 씬, 씬 열기, 씬 저장 |
+| **\`** | 콘솔 입력창으로 이동 |
+| **← / → / ↑ / ↓** | 원근 뷰포트에서 카메라 회전 |
+| **Esc** | PIE 종료 |
+| **F4** | PIE 중 마우스 커서 풀기(다시 누르면 다시 잡음) |
+
+
+## 📄 서드파티 라이브러리
+
+| 이름 | 저작자 | 버전 | 라이선스 |
+|------|--------|------|----------|
+| **[Dear ImGui](https://github.com/ocornut/imgui)** | Omar Cornut | 1.92.7 WIP | [MIT License](./ThirdParty/ImGui/LICENSE.txt) |
+| **[DirectX Tool Kit for DirectX 11](https://github.com/microsoft/DirectXTK)** | Microsoft Corporation. | - | MIT License |
+| **[SimpleJSON](https://github.com/nbsdx/SimpleJSON)** | Neil | - | Do What the Fuck You Want to Public License |
+
+
+## 🎨 서드파티 에셋
+
+| 이름 | 저작자 | 라이선스 |
+|------|--------|----------|
+| **[3d-cubes](https://github.com/garykac/3d-cubes)** | Gary Kac | - |
+| **[Dragon](https://graphics.stanford.edu/data/3Dscanrep/)** | Stanford University Computer Graphics Laboratory | - |
+| **[Happy Buddha](https://graphics.stanford.edu/data/3Dscanrep/)** | Stanford University Computer Graphics Laboratory | - |
+| **[Stanford Bunny](https://graphics.stanford.edu/data/3Dscanrep/)** | Stanford University Computer Graphics Laboratory | - |
+
+
+## ⚖️ 라이선스
+
+이 주차의 코드 중 장민준이 작성한 부분은 MIT 라이선스로 공개하며, 다른 기여자가 작성한 부분의 권리는 각 기여자에게 있습니다. 자세한 내용은 [LICENSE](../LICENSE)를 확인해 주세요.
