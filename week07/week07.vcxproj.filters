@@ -659,7 +659,7 @@
     <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerMainPanel.cpp">
       <Filter>Source\Misc\ObjViewer\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWIdget.cpp">
+    <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWidget.cpp">
       <Filter>Source\Misc\ObjViewer\UI</Filter>
     </ClCompile>
     <ClCompile Include="Source\Misc\ObjViewer\UI\ObjViewerStatWidget.cpp">
@@ -1291,7 +1291,7 @@
     <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerMainPanel.h">
       <Filter>Source\Misc\ObjViewer\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWIdget.h">
+    <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerMenuBarWidget.h">
       <Filter>Source\Misc\ObjViewer\UI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Misc\ObjViewer\UI\ObjViewerStatWidget.h">
