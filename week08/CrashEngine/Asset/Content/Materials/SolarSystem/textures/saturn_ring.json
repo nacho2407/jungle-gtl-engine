@@ -1,0 +1,15 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "SpecularPower" : 250.000000,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/SolarSystem/textures/saturn_ring.json",
+  "RasterizerState" : "SolidBackCull",
+  "Textures" : {
+    "DiffuseTexture" : "Asset/Content/Models/SolarSystem/textures/2k_saturn_ring_alpha.png",
+    "NormalTexture" : "Asset/Content/Models/SolarSystem/textures/2k_saturn_ring_normal.png"
+  }
+}

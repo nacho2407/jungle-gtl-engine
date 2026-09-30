@@ -1,0 +1,26 @@
+﻿#pragma once
+
+#include "Render/Execute/Registry/RenderPassTypes.h"
+#include "Render/Execute/Registry/ViewModePassRegistry.h"
+
+class FPrimitiveProxy;
+class FTextRenderSceneProxy;
+class FDrawCommandList;
+struct FRenderPipelineContext;
+
+namespace DrawCommandBuild
+{
+void BuildMeshDrawCommand(const FPrimitiveProxy& Proxy, ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, uint16 UserBits = 0);
+
+void BuildFullscreenDrawCommand(ERenderPass Pass, FRenderPipelineContext& Context, FDrawCommandList& OutList, EViewModePostProcessVariant PostProcessVariant = EViewModePostProcessVariant::None);
+
+void BuildLineDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList);
+
+void BuildOverlayBillboardDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList);
+
+void BuildOverlayTextDrawCommand(FRenderPipelineContext& Context, FDrawCommandList& OutList);
+
+void BuildBatchedWorldTextDrawCommands(FRenderPipelineContext& Context, FDrawCommandList& OutList);
+
+void BuildDecalDrawCommand(const FPrimitiveProxy& Proxy, FRenderPipelineContext& Context, FDrawCommandList& OutList);
+} // namespace DrawCommandBuild

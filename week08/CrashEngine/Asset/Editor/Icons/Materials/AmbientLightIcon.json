@@ -1,0 +1,14 @@
+{
+  "BlendState" : "AlphaBlend",
+  "DepthStencilState" : "NoDepth",
+  "Parameters" : {
+    "SectionColor" : [0.000000, 0.000000, 0.000000, 0.000000],
+    "SpecularPower" : 0.000000,
+    "SpecularStrength" : 0.000000
+  },
+  "PathFileName" : "Asset/Editor/Icons/Materials/AmbientLightIcon.json",
+  "RasterizerState" : "SolidNoCull",
+  "Textures" : {
+    "DiffuseTexture" : "Asset/Editor/Icons/SkyLightComponent_64x.png"
+  }
+}

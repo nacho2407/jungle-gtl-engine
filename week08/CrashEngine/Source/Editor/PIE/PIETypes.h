@@ -1,0 +1,55 @@
+﻿// 에디터 영역에서 공유되는 타입과 인터페이스를 정의합니다.
+#pragma once
+
+#include "Component/CameraComponent.h"
+#include "Core/EngineTypes.h"
+#include "Math/Rotator.h"
+#include "Math/Vector.h"
+#include "Object/FName.h"
+
+class FLevelEditorViewportClient;
+
+// PIE 세션 실행 위치. 현재는 InProcess만 사용.
+enum class EPIESessionDestination : uint8
+{
+    InProcess,
+    // NewProcess, Launcher 등은 UE에 존재하지만 우리는 InProcess만 지원.
+};
+
+// PIE 시작 모드. Simulate는 에디터 카메라 유지, Play는 게임 카메라로 전환.
+enum class EPIEPlayMode : uint8
+{
+    PlayInViewport,
+    Simulate,
+};
+
+// RequestPlaySession에 넘기는 파라미터. UE의 FRequestPlaySessionParams 대응.
+struct FRequestPlaySessionParams
+{
+    EPIESessionDestination SessionDestination = EPIESessionDestination::InProcess;
+    EPIEPlayMode PlayMode = EPIEPlayMode::PlayInViewport;
+    FLevelEditorViewportClient* DestinationViewportClient = nullptr;
+};
+
+// FPIEViewportCameraSnapshot는 카메라와 화면 출력에 필요한 상태를 다룹니다.
+struct FPIEViewportCameraSnapshot
+{
+    // 현재는 활성 에디터 뷰포트 카메라의 임시 백업.
+    // 추후 PIE 시작 위치를 별도 에디터 오브젝트로 지정해도 동일한 스냅샷 구조를 재사용할 수 있다.
+    FVector Location;
+    FRotator Rotation;
+    FCameraState CameraState;
+    bool bValid = false;
+};
+
+// 활성 PIE 세션 상태. UE의 FPlayInEditorSessionInfo 대응 (최소 버전).
+struct FPlayInEditorSessionInfo
+{
+    FRequestPlaySessionParams OriginalRequestParams;
+    double PIEStartTime = 0.0;
+    // PIE 시작 직전 활성 월드 핸들 — EndPlayMap에서 원복에 사용.
+    FName PreviousActiveWorldHandle;
+    FPIEViewportCameraSnapshot SavedViewportCamera;
+    FLevelEditorViewportClient* DestinationViewportClient = nullptr;
+    bool bIsPaused = false;
+};
