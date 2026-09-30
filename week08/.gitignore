@@ -467,3 +467,45 @@ CMakeLists.txt
 
 # Caching
 *.cso
+
+# Build outputs and local state
+/Bin/
+/Build/
+/packages/
+/week08/
+/Saved/
+/Asset/**/Cache/
+/Settings/Editor.ini
+imgui.ini
+
+# Tracked source folder despite the [Dd]ebug/ rule above
+!/Source/Engine/Render/Scene/Debug/
+
+# Excluded from this repository because of license issues; kept only for local builds
+/Asset/Content/Font/FontAtlas.dds
+/Asset/Content/Textures/brick_diff-512.png
+/Asset/Content/Textures/brick_nor-512.png
+/Asset/Content/Textures/brick_spec-512.png
+/Asset/Content/Textures/fakelight.png
+/Asset/Editor/Icons/DirectionalLight_64x.png
+/Asset/Editor/Icons/Pawn_64x.png
+/Asset/Editor/Icons/PointLight_64x.png
+/Asset/Editor/Icons/S_DecalActorIcon.png
+/Asset/Editor/Icons/S_ExpoHeightFog.png
+/Asset/Editor/Icons/SkyLightComponent_64x.png
+/Asset/Editor/Icons/SpotLight_64x.png
+/Asset/Editor/Icons/ViewportLayout_FourPanes2x2.png
+/Asset/Editor/Icons/ViewportLayout_FourPanesBottom.png
+/Asset/Editor/Icons/ViewportLayout_FourPanesLeft.png
+/Asset/Editor/Icons/ViewportLayout_FourPanesRight.png
+/Asset/Editor/Icons/ViewportLayout_FourPanesTop.png
+/Asset/Editor/Icons/ViewportLayout_OnePane.png
+/Asset/Editor/Icons/ViewportLayout_ThreePanesBottom.png
+/Asset/Editor/Icons/ViewportLayout_ThreePanesLeft.png
+/Asset/Editor/Icons/ViewportLayout_ThreePanesRight.png
+/Asset/Editor/Icons/ViewportLayout_ThreePanesTop.png
+/Asset/Editor/Icons/ViewportLayout_TwoPanesHoriz.png
+/Asset/Editor/Icons/ViewportLayout_TwoPanesVert.png
+/Asset/Editor/Icons/generic_stop_16x.png
+/Asset/Editor/Icons/icon_pause_40x.png
+/Asset/Editor/Icons/icon_playInSelectedViewport_16x.png
