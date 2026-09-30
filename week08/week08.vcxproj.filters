@@ -67,6 +67,9 @@
     <Filter Include="Source\Editor">
       <UniqueIdentifier>{42df3a8d-bb22-e89a-3284-92b6ffa9424b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Editor\Logging">
+      <UniqueIdentifier>{a7aafc7a-ccbd-4db2-86af-26655cc71a55}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Source\Editor\PIE">
       <UniqueIdentifier>{3fb7a3d8-b9cb-b13d-a373-7e1d66bc01de}</UniqueIdentifier>
     </Filter>
@@ -102,6 +105,9 @@
     </Filter>
     <Filter Include="Source\Engine\Core">
       <UniqueIdentifier>{9bb28b55-bfc6-d321-69c1-370d4d2acc79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Engine\Core\Logging">
+      <UniqueIdentifier>{bfc1a8d2-2399-4441-b301-2031bb085f94}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source\Engine\GameFramework">
       <UniqueIdentifier>{350afe18-dbbc-9b5c-a905-9539a3e4bbf2}</UniqueIdentifier>
@@ -327,6 +333,9 @@
     <FxCompile Include="Shaders\Passes\Scene\Shared\ShadowMomentBlurPass.hlsl">
       <Filter>Shaders\Passes\Scene\Shared</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\Passes\Scene\Shared\ShadowDepthPreviewPass.hlsl">
+      <Filter>Shaders\Passes\Scene\Shared</Filter>
+    </FxCompile>
     <FxCompile Include="Shaders\Passes\Visibility\ClusterBinningPassCS.hlsl">
       <Filter>Shaders\Passes\Visibility</Filter>
     </FxCompile>
@@ -405,9 +414,6 @@
     <FxCompile Include="Shaders\Render\Scene\Material\MaterialTypes.hlsli">
       <Filter>Shaders\Render\Scene\Material</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Render\Scene\Material\StaticMeshMaterial.hlsli">
-      <Filter>Shaders\Render\Scene\Material</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\Render\Scene\Shared\FullscreenPassTypes.hlsli">
       <Filter>Shaders\Render\Scene\Shared</Filter>
     </FxCompile>
@@ -444,13 +450,7 @@
     <FxCompile Include="Shaders\Surface\SurfaceTypes.hlsli">
       <Filter>Shaders\Surface</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders\Utils\Color.hlsli">
-      <Filter>Shaders\Utils</Filter>
-    </FxCompile>
     <FxCompile Include="Shaders\Utils\Functions.hlsl">
-      <Filter>Shaders\Utils</Filter>
-    </FxCompile>
-    <FxCompile Include="Shaders\Utils\Math.hlsli">
       <Filter>Shaders\Utils</Filter>
     </FxCompile>
   </ItemGroup>
@@ -609,6 +609,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Core\TickFunction.cpp">
+      <Filter>Source\Engine\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Engine\Core\CoreGlobals.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\GameFramework\AActor.cpp">
@@ -1056,6 +1059,9 @@
     <ClCompile Include="Source\Editor\Input\EditorViewportTool.cpp">
       <Filter>Source\Editor\Input</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Editor\Logging\EditorLogBuffer.cpp">
+      <Filter>Source\Editor\Logging</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Editor\EditorEngine.h">
@@ -1226,9 +1232,6 @@
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Core\Common.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Core\CoreTypes.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
@@ -1248,6 +1251,9 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\TickFunction.h">
+      <Filter>Source\Engine\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\CoreGlobals.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\GameFramework\AActor.h">
@@ -1363,9 +1369,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Object\UUIDGenerator.h">
       <Filter>Source\Engine\Object</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h">
-      <Filter>Source\Engine\Platform</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Platform\CrashDump.h">
       <Filter>Source\Engine\Platform</Filter>
@@ -1556,8 +1559,11 @@
     <ClInclude Include="Source\Engine\Render\Resources\Shadows\ShadowFilterSettings.h">
       <Filter>Source\Engine\Render\Resources\Shadows</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Resources\State\RenderStateNames.h">
-      <Filter>Source\Engine\Render\Resources\State</Filter>
+    <ClInclude Include="Source\Engine\Render\Resources\Shadows\ShadowResolutionSettings.h">
+      <Filter>Source\Engine\Render\Resources\Shadows</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Render\Resources\Shadows\ShadowMapSettings.h">
+      <Filter>Source\Engine\Render\Resources\Shadows</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Resources\State\RenderStateTypes.h">
       <Filter>Source\Engine\Render\Resources\State</Filter>
@@ -1691,9 +1697,6 @@
     <ClInclude Include="Source\Engine\Render\Scene\Proxies\Primitive\TextRenderSceneProxy.h">
       <Filter>Source\Engine\Render\Scene\Proxies\Primitive</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasBuddyAllocator2D.h">
-      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h">
       <Filter>Source\Engine\Render\Submission\Atlas</Filter>
     </ClInclude>
@@ -1727,12 +1730,6 @@
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\Allocator\BuddyAllocator2D.h">
       <Filter>Source\Engine\Render\Submission\Atlas\Allocator</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\AtlasPageBase.h">
-      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasPage.h">
-      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\LightShadowAllocationRegistry.h">
       <Filter>Source\Engine\Render\Submission\Atlas</Filter>
     </ClInclude>
@@ -1743,9 +1740,6 @@
       <Filter>Source\Engine\Render\Submission\Atlas</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasLayoutUtils.h">
-      <Filter>Source\Engine\Render\Submission\Atlas</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Render\Submission\Atlas\ShadowAtlasTypes.h">
       <Filter>Source\Engine\Render\Submission\Atlas</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Render\Submission\Command\BuildDrawCommand.h">
@@ -1885,6 +1879,18 @@
     </ClInclude>
     <ClInclude Include="Source\Editor\Input\EditorViewportTool.h">
       <Filter>Source\Editor\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Logging\EditorLogBuffer.h">
+      <Filter>Source\Editor\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Editor\Logging\EditorLogEntry.h">
+      <Filter>Source\Editor\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Logging\LogMacros.h">
+      <Filter>Source\Engine\Core\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Engine\Core\Logging\LogOutputDevice.h">
+      <Filter>Source\Engine\Core\Logging</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
