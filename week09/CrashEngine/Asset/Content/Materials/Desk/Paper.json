@@ -1,0 +1,14 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "SpecularPower" : 110.103294,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/Desk/Paper.json",
+  "RasterizerState" : "SolidBackCull",
+  "Textures" : {
+    "DiffuseTexture" : "Asset/Content/Models/Desk/PaperTEX.png"
+  }
+}

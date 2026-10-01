@@ -1,0 +1,14 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "SpecularPower" : 676.880127,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/Desk/Cell_screen.json",
+  "RasterizerState" : "SolidBackCull",
+  "Textures" : {
+    "DiffuseTexture" : "Asset/Content/Models/Desk/GR_PaleteColors.jpg"
+  }
+}

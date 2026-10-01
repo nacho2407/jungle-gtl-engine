@@ -1,0 +1,11 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [1.000000, 0.679542, 0.000000, 1.000000],
+    "SpecularPower" : 901.558899,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/ai_gold.json",
+  "RasterizerState" : "SolidBackCull"
+}

@@ -1,0 +1,11 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [0.272000, 0.236597, 0.041888, 1.000000],
+    "SpecularPower" : 159.999985,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/T_D_yellow.json",
+  "RasterizerState" : "SolidBackCull"
+}

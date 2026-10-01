@@ -1,0 +1,11 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [0.930981, 0.930981, 0.930981, 1.000000],
+    "SpecularPower" : 998.001038,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/ai_glass.json",
+  "RasterizerState" : "SolidBackCull"
+}

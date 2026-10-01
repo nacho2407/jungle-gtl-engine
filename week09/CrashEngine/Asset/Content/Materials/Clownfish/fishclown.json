@@ -1,0 +1,14 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+    "SpecularPower" : 20.000006,
+    "SpecularStrength" : 1.000000
+  },
+  "PathFileName" : "Asset/Content/Materials/Clownfish/fishclown.json",
+  "RasterizerState" : "SolidBackCull",
+  "Textures" : {
+    "DiffuseTexture" : "Asset/Content/Models/Clownfish/clownfish.png"
+  }
+}

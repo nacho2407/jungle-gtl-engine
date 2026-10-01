@@ -1,0 +1,259 @@
+﻿// 렌더 영역의 세부 동작을 구현합니다.
+#include "Render/Submission/Collect/DrawCollector.h"
+
+#include "Collision/BVH/ScenePrimitiveBVH.h"
+#include "Editor/EditorEngine.h"
+#include "Editor/Subsystem/OverlayStatSystem.h"
+#include "Engine/Collision/Octree.h"
+#include "Render/Execute/Context/Scene/SceneView.h"
+#include "Render/Scene/Proxies/Primitive/PrimitiveProxy.h"
+#include "Render/Scene/Scene.h"
+#include "Component/BillboardComponent.h"
+#include "Component/TextRenderComponent.h"
+#include "GameFramework/World.h"
+#include "Component/PrimitiveComponent.h"
+#include "GameFramework/AActor.h"
+
+// ==================== Public API ====================
+
+void FDrawCollector::CollectOverlay(const FCollectOverlayContext& OverlayContext)
+{
+    CollectedSceneData.Primitives.OverlayTexts.clear();
+    CollectedOverlayData.ClearTransientData();
+
+    if (OverlayContext.OverlaySystem && OverlayContext.Editor)
+    {
+        CollectOverlayText(*OverlayContext.OverlaySystem, *OverlayContext.Editor, CollectedSceneData.Primitives);
+    }
+
+    CollectGrid(OverlayContext.GridSpacing, OverlayContext.GridHalfLineCount, CollectedOverlayData);
+
+    if (OverlayContext.Scene)
+    {
+        CollectDebugRender(*OverlayContext.Scene, CollectedOverlayData);
+    }
+
+    if (OverlayContext.World && OverlayContext.SceneView)
+    {
+        CollectEditorHelpers(const_cast<UWorld*>(OverlayContext.World), *OverlayContext.SceneView, CollectedOverlayData);
+    }
+
+    if (OverlayContext.Octree)
+    {
+        CollectOctreeDebug(OverlayContext.Octree, CollectedOverlayData);
+    }
+
+    if (OverlayContext.ScenePrimitiveBVH)
+    {
+        CollectScenePrimitiveBVHDebug(*OverlayContext.ScenePrimitiveBVH, CollectedOverlayData);
+    }
+
+    if (OverlayContext.WorldBoundsProxies)
+    {
+        CollectWorldBoundsDebug(*OverlayContext.WorldBoundsProxies, CollectedOverlayData);
+    }
+}
+
+void FDrawCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount)
+{
+    CollectGrid(GridSpacing, GridHalfLineCount, CollectedOverlayData);
+}
+
+void FDrawCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor)
+{
+    CollectOverlayText(OverlaySystem, Editor, CollectedSceneData.Primitives);
+}
+
+void FDrawCollector::CollectDebugRender(const FScene& Scene)
+{
+    CollectDebugRender(Scene, CollectedOverlayData);
+}
+
+void FDrawCollector::CollectOctreeDebug(const FOctree* Node, uint32 Depth)
+{
+    CollectOctreeDebug(Node, CollectedOverlayData, Depth);
+}
+
+void FDrawCollector::CollectScenePrimitiveBVHDebug(const FScenePrimitiveBVH& BVH)
+{
+    CollectScenePrimitiveBVHDebug(BVH, CollectedOverlayData);
+}
+
+void FDrawCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveProxy*>& Proxies)
+{
+    CollectWorldBoundsDebug(Proxies, CollectedOverlayData);
+}
+
+
+// ==================== Overlay Helpers ====================
+
+void FDrawCollector::CollectEditorHelpers(UWorld* World, const FSceneView& SceneView, FCollectedOverlayData& OverlayData)
+{
+    OverlayData.EditorHelpers.Billboards.clear();
+    OverlayData.EditorHelpers.Texts.clear();
+
+    if (!World || World->GetWorldType() != EWorldType::Editor || !SceneView.ShowFlags.bPrimitives)
+    {
+        return;
+    }
+
+    for (AActor* Actor : World->GetActors())
+    {
+        if (!Actor || !Actor->IsVisible())
+        {
+            continue;
+        }
+
+        for (UPrimitiveComponent* Primitive : Actor->GetPrimitiveComponents())
+        {
+            if (!Primitive || !Primitive->IsEditorHelper() || !Primitive->ShouldRenderInCurrentWorld())
+            {
+                continue;
+            }
+
+            FPrimitiveProxy* Proxy = Primitive->GetSceneProxy();
+            if (!Proxy)
+            {
+                continue;
+            }
+
+            if (Proxy->bPerViewportUpdate)
+            {
+                Proxy->UpdatePerViewport(SceneView);
+            }
+
+            if (!Proxy->bVisible)
+            {
+                continue;
+            }
+
+            if (Primitive->IsA<UBillboardComponent>())
+            {
+                OverlayData.EditorHelpers.Billboards.push_back(Proxy);
+            }
+            else if (Primitive->IsA<UTextRenderComponent>())
+            {
+                OverlayData.EditorHelpers.Texts.push_back(Proxy);
+            }
+        }
+    }
+}
+
+void FDrawCollector::CollectOverlayText(const FOverlayStatSystem& OverlaySystem, const UEditorEngine& Editor, FCollectedPrimitives& OutPrimitives)
+{
+    TArray<FOverlayStatLine> Lines;
+    OverlaySystem.BuildLines(Editor, Lines);
+
+    const float Scale = OverlaySystem.GetLayout().TextScale;
+    for (const FOverlayStatLine& Line : Lines)
+    {
+        FString OverlayText = Line.Label;
+        if (!Line.Value.empty())
+        {
+            OverlayText += " : ";
+            OverlayText += Line.Value;
+        }
+
+        if (!OverlayText.empty())
+        {
+            OutPrimitives.OverlayTexts.push_back({ OverlayText, Line.ScreenPosition, Scale });
+        }
+    }
+}
+
+void FDrawCollector::CollectGrid(float GridSpacing, int32 GridHalfLineCount, FCollectedOverlayData& OverlayData)
+{
+    OverlayData.Guides.Grid.Spacing       = GridSpacing;
+    OverlayData.Guides.Grid.HalfLineCount = GridHalfLineCount;
+    OverlayData.Guides.Grid.bEnabled      = (GridSpacing > 0.0f && GridHalfLineCount > 0);
+}
+
+void FDrawCollector::CollectDebugRender(const FScene& Scene, FCollectedOverlayData& OverlayData)
+{
+    for (const FDebugLineItem& Item : Scene.GetDebugPrimitiveQueue().GetOneFrameLines())
+    {
+        OverlayData.Debug.Lines.push_back({ Item.Start, Item.End, Item.Color });
+    }
+
+    const TArray<FDebugLineItem>& Items = Scene.GetDebugPrimitiveQueue().GetPersistentLines();
+    for (const FDebugLineItem& Item : Items)
+    {
+        OverlayData.Debug.Lines.push_back({ Item.Start, Item.End, Item.Color });
+    }
+}
+
+void FDrawCollector::CollectOctreeDebug(const FOctree* Node, FCollectedOverlayData& OverlayData, uint32 Depth)
+{
+    (void)Depth;
+    if (!Node)
+    {
+        return;
+    }
+
+    const FVector Min = Node->GetCellBounds().Min;
+    const FVector Max = Node->GetCellBounds().Max;
+    OverlayData.Debug.AABBs.push_back({ Min, Max, FColor(0, 255, 255) });
+
+    const FVector Corners[8] = {
+        { Min.X, Min.Y, Min.Z },
+        { Max.X, Min.Y, Min.Z },
+        { Max.X, Max.Y, Min.Z },
+        { Min.X, Max.Y, Min.Z },
+        { Min.X, Min.Y, Max.Z },
+        { Max.X, Min.Y, Max.Z },
+        { Max.X, Max.Y, Max.Z },
+        { Min.X, Max.Y, Max.Z },
+    };
+
+    static const int32 EdgePairs[12][2] = {
+        { 0, 1 },
+        { 1, 2 },
+        { 2, 3 },
+        { 3, 0 },
+        { 4, 5 },
+        { 5, 6 },
+        { 6, 7 },
+        { 7, 4 },
+        { 0, 4 },
+        { 1, 5 },
+        { 2, 6 },
+        { 3, 7 },
+    };
+
+    for (const auto& Edge : EdgePairs)
+    {
+        OverlayData.Debug.Lines.push_back({ Corners[Edge[0]], Corners[Edge[1]], FColor(0, 255, 255) });
+    }
+
+    for (const FOctree* Child : Node->GetChildren())
+    {
+        CollectOctreeDebug(Child, OverlayData, Depth + 1);
+    }
+}
+
+void FDrawCollector::CollectScenePrimitiveBVHDebug(const FScenePrimitiveBVH& BVH, FCollectedOverlayData& OverlayData)
+{
+    const TArray<FScenePrimitiveBVH::FNode>& Nodes = BVH.GetNodes();
+    for (const FScenePrimitiveBVH::FNode& Node : Nodes)
+    {
+        if (!Node.Bounds.IsValid())
+        {
+            continue;
+        }
+
+        OverlayData.Debug.AABBs.push_back({ Node.Bounds.Min, Node.Bounds.Max, FColor(0, 255, 0) });
+    }
+}
+
+void FDrawCollector::CollectWorldBoundsDebug(const TArray<FPrimitiveProxy*>& Proxies, FCollectedOverlayData& OverlayData)
+{
+    for (FPrimitiveProxy* Proxy : Proxies)
+    {
+        if (!Proxy || !Proxy->CachedBounds.IsValid() || !Proxy->bShowAABB || Proxy->bNeverCull || !Proxy->CachedBounds.IsValid())
+        {
+            continue;
+        }
+
+        OverlayData.Debug.AABBs.push_back({ Proxy->CachedBounds.Min, Proxy->CachedBounds.Max, FColor(255, 0, 255) });
+    }
+}

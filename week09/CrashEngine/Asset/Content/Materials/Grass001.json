@@ -1,0 +1,20 @@
+{
+    "BlendState": "Opaque",
+    "DepthStencilState": "Default",
+    "Parameters": {
+        "SectionColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "SpecularPower": 16.0,
+        "SpecularStrength": 0.2
+    },
+    "PathFileName": "Asset/Content/Materials/Grass001.json",
+    "RasterizerState": "SolidBackCull",
+    "Textures": {
+        "DiffuseTexture": "Asset/Content/Textures/Grass001/Grass001_Color.jpg",
+        "NormalTexture": "Asset/Content/Textures/Grass001/Grass001_NormalDX.jpg"
+    }
+}

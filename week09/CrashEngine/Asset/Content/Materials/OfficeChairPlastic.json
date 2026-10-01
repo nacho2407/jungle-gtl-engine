@@ -1,0 +1,11 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [0.031063, 0.031063, 0.031063, 1.000000],
+    "SpecularPower" : 32.000000,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/OfficeChairPlastic.json",
+  "RasterizerState" : "SolidBackCull"
+}

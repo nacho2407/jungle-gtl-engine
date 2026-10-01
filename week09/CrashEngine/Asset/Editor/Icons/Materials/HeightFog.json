@@ -1,0 +1,9 @@
+{
+    "PathFileName":  "Asset/Editor/Icons/Materials/HeightFog.json",
+    "Textures":  {
+                     "DiffuseTexture":  "Asset/Editor/Icons/S_ExpoHeightFog.png"
+                 },
+    "BlendState":  "AlphaBlend",
+    "DepthStencilState":  "NoDepth",
+    "RasterizerState":  "SolidNoCull"
+}

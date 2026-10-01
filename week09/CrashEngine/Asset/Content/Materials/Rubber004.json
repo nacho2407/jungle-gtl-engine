@@ -1,0 +1,20 @@
+{
+    "BlendState": "Opaque",
+    "DepthStencilState": "Default",
+    "Parameters": {
+        "SectionColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "SpecularPower": 18.0,
+        "SpecularStrength": 0.25
+    },
+    "PathFileName": "Asset/Content/Materials/Rubber004.json",
+    "RasterizerState": "SolidBackCull",
+    "Textures": {
+        "DiffuseTexture": "Asset/Content/Textures/Rubber004/Rubber004_Color.jpg",
+        "NormalTexture": "Asset/Content/Textures/Rubber004/Rubber004_NormalDX.jpg"
+    }
+}

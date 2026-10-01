@@ -1,0 +1,415 @@
+﻿// 런타임 영역의 세부 동작을 구현합니다.
+#include "Render/Execute/Context/Scene/ViewTypes.h"
+#include "Engine/Runtime/Engine.h"
+
+#include "Core/Logging/LogMacros.h"
+#include "Platform/Paths.h"
+#include "Profiling/Stats.h"
+#include "Engine/Input/InputSystem.h"
+#include "Engine/Runtime/WindowsWindow.h"
+#include "Resource/ResourceManager.h"
+#include "Render/Resources/Buffers/MeshBufferManager.h"
+#include "Mesh/ObjManager.h"
+#include "Texture/Texture2D.h"
+#include "UI/RmlUiManager.h"
+#include "CameraManage/APlayerCameraManager.h"
+#include "GameFramework/World.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/PlayerController.h"
+#include "Core/TickFunction.h"
+#include "Core/CoroutineScheduler/LuaCoroutineScheduler.h"
+#include "Core/Sound/SoundManager.h"
+#include "Core/Watcher/DirectoryWatcher.h"
+#include "LuaScript/LuaActionLibrary.h"
+#include "LuaScript/LuaRuntime.h"
+#include "LuaScript/LuaScriptManager.h"
+#include "Viewport/GameViewportClient.h"
+#include "Viewport/Viewport.h"
+#include "Render/Execute/Context/ViewMode/ViewModeSurfaces.h"
+#include "Render/Execute/Passes/Scene/ShadowMapPass.h"
+#include "Render/Execute/Registry/ViewModePassRegistry.h"
+
+DEFINE_CLASS(UEngine, UObject)
+
+UEngine* GEngine = nullptr;
+
+namespace
+{
+ELevelTick ToLevelTickType(EWorldType WorldType)
+{
+    switch (WorldType)
+    {
+    case EWorldType::Editor:
+        return ELevelTick::LEVELTICK_ViewportsOnly;
+    case EWorldType::PIE:
+    case EWorldType::Game:
+        return ELevelTick::LEVELTICK_All;
+    default:
+        return ELevelTick::LEVELTICK_TimeOnly;
+    }
+}
+} // namespace
+
+UEngine::UEngine() = default;
+UEngine::~UEngine() = default;
+
+void UEngine::Init(FWindowsWindow* InWindow)
+{
+    UE_LOG(Engine, Info, "Initializing runtime engine.");
+    Window = InWindow;
+
+    FNamePool::Get();
+    FObjectFactory::Get();
+
+    Renderer.Create(Window->GetHWND());
+    UE_LOG(Engine, Debug, "Renderer created.");
+    RmlUiManager = std::make_unique<FRmlUiManager>();
+    RmlUiManager->Initialize(Window, Renderer);
+
+    ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
+    FMeshBufferManager::Get().Initialize(Device);
+    FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()), Device);
+    FSoundManager::Get().Init();
+
+    FLuaRuntime::Get().Initialize();
+
+    std::wstring ScriptsDirWide = FPaths::Combine(FPaths::ContentDir(), L"Scripts");
+    FPaths::CreateDir(ScriptsDirWide); // 혹시 Scripts 폴더가 없을 경우 DirectoryWatcher 초기화와 CreateScript가 실패하는 상황을 줄이기
+    FDirectoryWatcher::Get().Init(FPaths::ToUtf8(ScriptsDirWide));
+    FLuaScriptManager::Get().Init();
+
+    UE_LOG(Engine, Info, "Runtime engine initialization completed.");
+}
+
+void UEngine::Shutdown()
+{
+    UE_LOG(Engine, Info, "Shutting down runtime engine.");
+
+    FLuaScriptManager::Get().Release();
+    FDirectoryWatcher::Get().Release();
+    // coroutinescheduler가 luaruntime보다 먼저 clear되어야 함.
+    FLuaCoroutineScheduler::Get().Clear();
+    FLuaRuntime::Get().Shutdown();
+
+    FSoundManager::Get().Release();
+    FResourceManager::Get().ReleaseGPUResources();
+    UTexture2D::ReleaseAllGPU();
+    FObjManager::ReleaseAllGPU();
+    FMeshBufferManager::Get().Release();
+    if (RmlUiManager)
+    {
+        RmlUiManager->Shutdown();
+        RmlUiManager.reset();
+    }
+    Renderer.Release();
+}
+
+void UEngine::BeginPlay()
+{
+    FWorldContext* Context = GetWorldContextFromHandle(ActiveWorldHandle);
+    if (Context && Context->World)
+    {
+        if (Context->WorldType == EWorldType::Game || Context->WorldType == EWorldType::PIE)
+        {
+            Context->World->BeginPlay();
+        }
+    }
+}
+
+void UEngine::Tick(float DeltaTime)
+{
+    FDirectoryWatcher::Get().Tick();
+    FSoundManager::Get().Tick();
+    InputSystem::Get().Tick(Window->IsForeground());
+    if (RmlUiManager)
+    {
+        RmlUiManager->Update();
+    }
+    WorldTick(DeltaTime);
+    if (LuaActionLibrary::ProcessPendingSceneLoad())
+    {
+        OnRenderSceneCleared();
+    }
+    Render(DeltaTime);
+}
+
+void UEngine::Render(float DeltaTime)
+{
+    SCOPE_STAT_CAT("UEngine::Render", "2_Render");
+
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
+    {
+        static_cast<FShadowMapPass*>(Pass)->BeginShadowFrame();
+    }
+
+    RenderTargets.Reset();
+    FViewport* Viewport = GameViewportClient ? GameViewportClient->GetViewport() : nullptr;
+    ID3D11DeviceContext* DeviceContext = Renderer.GetFD3DDevice().GetDeviceContext();
+
+    UWorld* World = GetWorld();
+    UCameraComponent* Camera = World ? World->GetActiveCamera() : nullptr;
+    FScene* Scene = nullptr;
+    if (Camera)
+    {
+        FShowFlags ShowFlags;
+        EViewMode ViewMode = EViewMode::Lit_Phong;
+
+        APlayerController* PlayerController = World ? World->GetFirstPlayerController() : nullptr;
+        APlayerCameraManager* CameraManager = PlayerController ? PlayerController->GetCameraManager() : nullptr;
+        if (PlayerController && PlayerController->GetPossessedActor() && CameraManager)
+        {
+            SceneView.SetCameraInfo(CameraManager->GetCameraViewInfoCache());
+        }
+        else
+        {
+            FCameraViewInfo CameraViewInfo;
+            CameraViewInfo.Location = Camera->GetWorldLocation();
+            CameraViewInfo.Rotation = Camera->GetWorldMatrix().ToRotator();
+            CameraViewInfo.CameraState = Camera->GetCameraState();
+            CameraViewInfo.ScreenEffects = CameraManager ? CameraManager->GetCameraViewInfoCache().ScreenEffects : FCameraScreenEffectInfo{};
+            SceneView.SetCameraInfo(CameraViewInfo);
+        }
+        SceneView.SetRenderSettings(ViewMode, ShowFlags);
+        if (Viewport && DeviceContext)
+        {
+            if (Viewport->ApplyPendingResize())
+            {
+                Camera->OnResize(static_cast<int32>(Viewport->GetWidth()), static_cast<int32>(Viewport->GetHeight()));
+            }
+
+            Viewport->SetViewportAsRenderState(DeviceContext);
+            RenderTargets.SetFromViewport(Viewport);
+            SceneView.SetViewportInfo(Viewport);
+        }
+        else
+        {
+            Renderer.ReleaseViewModeSurfaces();
+        }
+
+        Scene = &World->GetScene();
+
+        Renderer.PrepareCollect(SceneView, Scene->GetPrimitiveProxyCount());
+
+        FRenderCollectContext CollectContext = {};
+        CollectContext.SceneView = &SceneView;
+        CollectContext.Scene = Scene;
+        CollectContext.Renderer = &Renderer;
+        CollectContext.ViewModePassRegistry = Renderer.GetViewModePassRegistry();
+        CollectContext.ActiveViewMode = SceneView.ViewMode;
+
+        Renderer.CollectWorld(World, CollectContext);
+        Renderer.CollectDebugRender(*Scene);
+
+    }
+    else
+    {
+        Renderer.ReleaseViewModeSurfaces();
+        Renderer.PrepareCollect(SceneView);
+    }
+
+    {
+        FRenderPipelineContext PipelineContext = Renderer.CreatePipelineContext(SceneView, &RenderTargets, Scene);
+        if (Viewport && Renderer.GetViewModePassRegistry() &&
+            Renderer.GetViewModePassRegistry()->HasConfig(SceneView.ViewMode))
+        {
+            PipelineContext.ViewMode.Surfaces =
+                Renderer.AcquireViewModeSurfaces(Viewport, Viewport->GetWidth(), Viewport->GetHeight());
+        }
+        Renderer.BuildDrawCommands(PipelineContext);
+
+        Renderer.BeginFrame(SceneView, &RenderTargets);
+        Renderer.RunRootPipeline(ERenderPipelineType::DefaultRootPipeline, PipelineContext);
+        Renderer.ExecutePresentPass(PipelineContext);
+        RenderRmlUi();
+        Renderer.EndFrame();
+    }
+
+    if (FRenderPass* Pass = Renderer.GetPassRegistry().FindPass(ERenderPassNodeType::ShadowMapPass))
+    {
+        static_cast<FShadowMapPass*>(Pass)->EndShadowFrame();
+    }
+}
+
+void UEngine::OnWindowResized(uint32 Width, uint32 Height)
+{
+    if (Width == 0 || Height == 0)
+    {
+        return;
+    }
+
+    UE_LOG(Engine, Debug, "Window resized to %ux%u.", Width, Height);
+    Renderer.GetFD3DDevice().OnResizeViewport(Width, Height);
+    if (RmlUiManager)
+    {
+        RmlUiManager->OnWindowResized(Width, Height);
+    }
+}
+
+bool UEngine::HandleWindowMessage(void* WindowHandle, unsigned int Message, std::uintptr_t WParam, std::intptr_t LParam)
+{
+    return RmlUiManager && RmlUiManager->HandleWindowMessage(static_cast<HWND__*>(WindowHandle), Message, WParam, LParam);
+}
+
+void UEngine::RenderRmlUi()
+{
+    if (!RmlUiManager)
+    {
+        return;
+    }
+
+    FD3DDevice& D3DDevice = Renderer.GetFD3DDevice();
+    ID3D11DeviceContext* DeviceContext = D3DDevice.GetDeviceContext();
+    ID3D11RenderTargetView* FrameBufferRTV = D3DDevice.GetFrameBufferRTV();
+    if (!DeviceContext || !FrameBufferRTV)
+    {
+        return;
+    }
+
+    ID3D11ShaderResourceView* NullSRVs[16] = {};
+    DeviceContext->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+    DeviceContext->VSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+
+    const D3D11_VIEWPORT& Viewport = D3DDevice.GetViewport();
+    DeviceContext->RSSetViewports(1, &Viewport);
+    DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
+
+    RmlUiManager->SetViewportOffset(0.0f, 0.0f);
+    RmlUiManager->OnWindowResized(static_cast<uint32>(Viewport.Width), static_cast<uint32>(Viewport.Height));
+    RmlUiManager->Update();
+    RmlUiManager->Render();
+}
+
+void UEngine::RenderRmlUiToViewport(FViewport* Viewport, float InputOffsetX, float InputOffsetY)
+{
+    if (!RmlUiManager || !Viewport)
+    {
+        return;
+    }
+
+    ID3D11DeviceContext* DeviceContext = Renderer.GetFD3DDevice().GetDeviceContext();
+    ID3D11RenderTargetView* RenderTarget = Viewport->GetRTV();
+    if (!DeviceContext || !RenderTarget || Viewport->GetWidth() == 0 || Viewport->GetHeight() == 0)
+    {
+        return;
+    }
+
+    ID3D11ShaderResourceView* NullSRVs[16] = {};
+    DeviceContext->PSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+    DeviceContext->VSSetShaderResources(0, ARRAYSIZE(NullSRVs), NullSRVs);
+
+    const D3D11_VIEWPORT& ViewportRect = Viewport->GetViewportRect();
+    DeviceContext->RSSetViewports(1, &ViewportRect);
+    DeviceContext->OMSetRenderTargets(1, &RenderTarget, nullptr);
+
+    RmlUiManager->SetViewportOffset(InputOffsetX, InputOffsetY);
+    RmlUiManager->OnWindowResized(Viewport->GetWidth(), Viewport->GetHeight());
+    RmlUiManager->Update();
+    RmlUiManager->Render();
+}
+
+void UEngine::WorldTick(float DeltaTime)
+{
+    SCOPE_STAT_CAT("UEngine::WorldTick", "1_WorldTick");
+
+    bool bHasPIEWorld = false;
+    for (const FWorldContext& Ctx : WorldList)
+    {
+        if (Ctx.WorldType == EWorldType::PIE && Ctx.World)
+        {
+            bHasPIEWorld = true;
+            break;
+        }
+    }
+
+    for (FWorldContext& Ctx : WorldList)
+    {
+        UWorld* World = Ctx.World;
+        if (!World)
+            continue;
+
+        if (bHasPIEWorld && Ctx.WorldType == EWorldType::Editor)
+        {
+            continue;
+        }
+
+        const ELevelTick TickType = ToLevelTickType(Ctx.WorldType);
+
+        World->Tick(DeltaTime, TickType);
+    }
+}
+
+UWorld* UEngine::GetWorld() const
+{
+    const FWorldContext* Context = GetWorldContextFromHandle(ActiveWorldHandle);
+    return Context ? Context->World : nullptr;
+}
+
+FWorldContext& UEngine::CreateWorldContext(EWorldType Type, const FName& Handle, const FString& Name)
+{
+    FWorldContext Context;
+    Context.WorldType = Type;
+    Context.ContextHandle = Handle;
+    Context.ContextName = Name.empty() ? Handle.ToString() : Name;
+    Context.World = UObjectManager::Get().CreateObject<UWorld>();
+    if (Context.World)
+    {
+        Context.World->SetWorldType(Type);
+    }
+    WorldList.push_back(Context);
+    return WorldList.back();
+}
+
+void UEngine::DestroyWorldContext(const FName& Handle)
+{
+    for (auto it = WorldList.begin(); it != WorldList.end(); ++it)
+    {
+        if (it->ContextHandle == Handle)
+        {
+            it->World->EndPlay();
+            UObjectManager::Get().DestroyObject(it->World);
+            WorldList.erase(it);
+            return;
+        }
+    }
+}
+
+FWorldContext* UEngine::GetWorldContextFromHandle(const FName& Handle)
+{
+    for (FWorldContext& Ctx : WorldList)
+    {
+        if (Ctx.ContextHandle == Handle)
+        {
+            return &Ctx;
+        }
+    }
+    return nullptr;
+}
+
+const FWorldContext* UEngine::GetWorldContextFromHandle(const FName& Handle) const
+{
+    for (const FWorldContext& Ctx : WorldList)
+    {
+        if (Ctx.ContextHandle == Handle)
+        {
+            return &Ctx;
+        }
+    }
+    return nullptr;
+}
+
+FWorldContext* UEngine::GetWorldContextFromWorld(const UWorld* World)
+{
+    for (FWorldContext& Ctx : WorldList)
+    {
+        if (Ctx.World == World)
+        {
+            return &Ctx;
+        }
+    }
+    return nullptr;
+}
+
+void UEngine::SetActiveWorld(const FName& Handle)
+{
+    ActiveWorldHandle = Handle;
+}
