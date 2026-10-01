@@ -1069,7 +1069,7 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp">
       <Filter>ThirdParty\ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Source\Editor\Input\EditorViewportCommandTool.cpp">
       <Filter>Source\Editor\Input</Filter>
     </ClCompile>
@@ -2253,7 +2253,7 @@
     <ClInclude Include="Source\Engine\CameraManage\CameraTransitionUtils.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="CrashEngine.rc" />
+    <ResourceCompile Include="week09.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
