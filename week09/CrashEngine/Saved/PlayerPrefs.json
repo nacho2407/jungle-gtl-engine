@@ -1,0 +1,20 @@
+{
+  "values" : {
+    "LastDocumentCount" : {
+      "type" : "number",
+      "value" : 0.000000
+    },
+    "LastHP" : {
+      "type" : "number",
+      "value" : 0.000000
+    },
+    "LastScore" : {
+      "type" : "number",
+      "value" : 0.000000
+    },
+    "LastTimer" : {
+      "type" : "number",
+      "value" : 114.001060
+    }
+  }
+}

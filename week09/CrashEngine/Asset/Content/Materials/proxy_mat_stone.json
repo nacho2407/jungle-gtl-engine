@@ -1,0 +1,11 @@
+{
+  "BlendState" : "Opaque",
+  "DepthStencilState" : "Default",
+  "Parameters" : {
+    "SectionColor" : [0.800000, 0.800000, 0.800000, 1.000000],
+    "SpecularPower" : 20.104717,
+    "SpecularStrength" : 0.500000
+  },
+  "PathFileName" : "Asset/Content/Materials/proxy_mat_stone.json",
+  "RasterizerState" : "SolidBackCull"
+}

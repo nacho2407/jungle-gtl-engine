@@ -1,0 +1,20 @@
+{
+    "BlendState": "Opaque",
+    "DepthStencilState": "Default",
+    "Parameters": {
+        "SectionColor": [
+            1.0,
+            1.0,
+            1.0,
+            1.0
+        ],
+        "SpecularPower": 24.0,
+        "SpecularStrength": 0.35
+    },
+    "PathFileName": "Asset/Content/Materials/Fabric061.json",
+    "RasterizerState": "SolidBackCull",
+    "Textures": {
+        "DiffuseTexture": "Asset/Content/Textures/Fabric061/Fabric061_Color.jpg",
+        "NormalTexture": "Asset/Content/Textures/Fabric061/Fabric061_NormalDX.jpg"
+    }
+}

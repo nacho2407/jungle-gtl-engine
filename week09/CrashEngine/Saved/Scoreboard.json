@@ -1,0 +1,584 @@
+{
+  "scores" : [{
+      "documentCount" : 2,
+      "hp" : 18.000000,
+      "name" : "PLAYER",
+      "score" : 11980.000000,
+      "timer" : 82.212170,
+      "timestamp" : "2026-05-06 17:56:38"
+    }, {
+      "documentCount" : 2,
+      "hp" : 5.000000,
+      "name" : "PLAYER",
+      "score" : 11008.000000,
+      "timer" : 100.350668,
+      "timestamp" : "2026-05-06 22:50:51"
+    }, {
+      "documentCount" : 2,
+      "hp" : 13.000000,
+      "name" : "PLAYER",
+      "score" : 10712.000000,
+      "timer" : 107.073995,
+      "timestamp" : "2026-05-06 15:10:26"
+    }, {
+      "documentCount" : 1,
+      "hp" : 11.000000,
+      "name" : "PLAYER",
+      "score" : 10111.000000,
+      "timer" : 58.899800,
+      "timestamp" : "2026-05-06 22:48:07"
+    }, {
+      "documentCount" : 2,
+      "hp" : 15.000000,
+      "name" : "PLAYER",
+      "score" : 6926.000000,
+      "timer" : 74.981043,
+      "timestamp" : "2026-05-05 02:13:55"
+    }, {
+      "documentCount" : 2,
+      "hp" : 91.117854,
+      "name" : "Player",
+      "score" : 182.235709,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:25:57"
+    }, {
+      "documentCount" : 1,
+      "hp" : 100.000000,
+      "name" : "Player",
+      "score" : 100.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 21:00:05"
+    }, {
+      "documentCount" : 1,
+      "hp" : 100.000000,
+      "name" : "Player",
+      "score" : 100.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 21:19:33"
+    }, {
+      "documentCount" : 1,
+      "hp" : 83.093971,
+      "name" : "Player",
+      "score" : 83.093971,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 21:48:12"
+    }, {
+      "documentCount" : 1,
+      "hp" : 34.000000,
+      "name" : "WHAT THE H",
+      "score" : 83.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 21:48:30"
+    }, {
+      "documentCount" : 1,
+      "hp" : 44.436596,
+      "name" : "Player",
+      "score" : 44.436596,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 21:53:28"
+    }, {
+      "documentCount" : 1,
+      "hp" : 34.000000,
+      "name" : "PLAYER",
+      "score" : 44.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 21:53:30"
+    }, {
+      "documentCount" : 1,
+      "hp" : 34.000000,
+      "name" : "PLAYERS",
+      "score" : 34.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 18:01:55"
+    }, {
+      "documentCount" : 2,
+      "hp" : 8.822013,
+      "name" : "Player",
+      "score" : 17.644025,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-05 00:10:06"
+    }, {
+      "documentCount" : 1,
+      "hp" : 15.078794,
+      "name" : "Player",
+      "score" : 15.078794,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:41:34"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 15.000000,
+      "timer" : 93.106815,
+      "timestamp" : "2026-05-04 23:41:41"
+    }, {
+      "documentCount" : 0,
+      "hp" : 85.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 1.523182,
+      "timestamp" : "2026-05-04 18:01:44"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 20:06:24"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 20:06:39"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 20:08:56"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 20:09:08"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 20:37:54"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 20:39:13"
+    }, {
+      "documentCount" : 0,
+      "hp" : 84.797115,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 20:47:23"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 21:56:16"
+    }, {
+      "documentCount" : 1,
+      "hp" : 34.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 21:56:17"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 21:58:14"
+    }, {
+      "documentCount" : 1,
+      "hp" : 34.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 21:58:16"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:05:09"
+    }, {
+      "documentCount" : 1,
+      "hp" : 34.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 22:05:13"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:08:22"
+    }, {
+      "documentCount" : 1,
+      "hp" : 34.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 22:08:25"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:10:02"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:10:59"
+    }, {
+      "documentCount" : 1,
+      "hp" : 34.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 6.647885,
+      "timestamp" : "2026-05-04 22:11:01"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:14:36"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 93.106815,
+      "timestamp" : "2026-05-04 22:14:38"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:15:19"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 93.106815,
+      "timestamp" : "2026-05-04 22:15:20"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:16:01"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:29:15"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 93.106815,
+      "timestamp" : "2026-05-04 22:29:17"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:30:08"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 93.106815,
+      "timestamp" : "2026-05-04 22:30:30"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:31:35"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 93.106815,
+      "timestamp" : "2026-05-04 22:31:36"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 22:32:16"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:18:09"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:24:38"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:37:36"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:39:47"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:46:03"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:46:27"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:56:13"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:56:59"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-04 23:57:38"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-05 00:03:36"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-05 00:04:27"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-05 00:04:56"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "Player",
+      "score" : 0.000000,
+      "timer" : 0.000000,
+      "timestamp" : "2026-05-05 00:13:15"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 93.106815,
+      "timestamp" : "2026-05-05 00:13:21"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYERA",
+      "score" : 0.000000,
+      "timer" : 40.020291,
+      "timestamp" : "2026-05-05 02:10:26"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYERA",
+      "score" : 0.000000,
+      "timer" : 50.002457,
+      "timestamp" : "2026-05-05 02:12:35"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYERW",
+      "score" : 0.000000,
+      "timer" : 65.640339,
+      "timestamp" : "2026-05-05 02:54:32"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 99.242590,
+      "timestamp" : "2026-05-05 02:56:13"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 100.000177,
+      "timestamp" : "2026-05-05 02:57:57"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 90.000659,
+      "timestamp" : "2026-05-05 03:11:53"
+    }, {
+      "documentCount" : 1,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 56.684711,
+      "timestamp" : "2026-05-05 03:14:58"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 80.001581,
+      "timestamp" : "2026-05-05 03:19:22"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYERW",
+      "score" : 0.000000,
+      "timer" : 53.493333,
+      "timestamp" : "2026-05-05 03:20:17"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 60.015909,
+      "timestamp" : "2026-05-05 03:23:18"
+    }, {
+      "documentCount" : 2,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 70.001489,
+      "timestamp" : "2026-05-05 03:24:30"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 49.349178,
+      "timestamp" : "2026-05-05 03:58:15"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 40.003835,
+      "timestamp" : "2026-05-05 04:15:05"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 30.000245,
+      "timestamp" : "2026-05-05 05:14:13"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 50.295146,
+      "timestamp" : "2026-05-05 05:21:12"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 50.139070,
+      "timestamp" : "2026-05-05 05:42:32"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYERD",
+      "score" : 0.000000,
+      "timer" : 70.000545,
+      "timestamp" : "2026-05-05 05:43:44"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYERW",
+      "score" : 0.000000,
+      "timer" : 64.296405,
+      "timestamp" : "2026-05-06 15:49:22"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 35.019899,
+      "timestamp" : "2026-05-06 20:09:43"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 48.404379,
+      "timestamp" : "2026-05-06 20:45:58"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 33.522292,
+      "timestamp" : "2026-05-06 22:28:04"
+    }, {
+      "documentCount" : 0,
+      "hp" : 0.000000,
+      "name" : "PLAYER",
+      "score" : 0.000000,
+      "timer" : 20.003096,
+      "timestamp" : "2026-05-07 00:04:36"
+    }]
+}

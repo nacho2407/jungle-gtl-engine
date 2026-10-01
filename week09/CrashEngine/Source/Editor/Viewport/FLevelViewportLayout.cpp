@@ -1,0 +1,1270 @@
+﻿// 에디터 영역의 세부 동작을 구현합니다.
+#include "Editor/Viewport/FLevelViewportLayout.h"
+
+#include "Editor/EditorEngine.h"
+#include "Editor/UI/EditorContentBrowserPanel.h"
+#include "Editor/Viewport/LevelEditorViewportClient.h"
+#include "Editor/Settings/EditorSettings.h"
+#include "Editor/Selection/SelectionManager.h"
+#include "Engine/Runtime/WindowsWindow.h"
+#include "Render/Renderer.h"
+#include "Viewport/Viewport.h"
+#include "UI/SSplitter.h"
+#include "Math/MathUtils.h"
+#include "Platform/Paths.h"
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_internal.h"
+#include "WICTextureLoader.h"
+#include "Component/CameraComponent.h"
+#include "Component/GizmoComponent.h"
+#include "GameFramework/StaticMeshActor.h"
+#include "GameFramework/AActor.h"
+#include <cfloat>
+#include <algorithm>
+#include <cctype>
+#include <filesystem>
+
+// ─── 레이아웃별 슬롯 수 ─────────────────────────────────────
+
+int32 FLevelViewportLayout::GetSlotCount(EViewportLayout Layout)
+{
+    switch (Layout)
+    {
+    case EViewportLayout::OnePane:
+        return 1;
+    case EViewportLayout::TwoPanesHoriz:
+    case EViewportLayout::TwoPanesVert:
+        return 2;
+    case EViewportLayout::ThreePanesLeft:
+    case EViewportLayout::ThreePanesRight:
+    case EViewportLayout::ThreePanesTop:
+    case EViewportLayout::ThreePanesBottom:
+        return 3;
+    default:
+        return 4;
+    }
+}
+
+// ─── 아이콘 파일명 매핑 ──────────────────────────────────────
+
+static const wchar_t* GetLayoutIconFileName(EViewportLayout Layout)
+{
+    switch (Layout)
+    {
+    case EViewportLayout::OnePane:
+        return L"ViewportLayout_OnePane.png";
+    case EViewportLayout::TwoPanesHoriz:
+        return L"ViewportLayout_TwoPanesHoriz.png";
+    case EViewportLayout::TwoPanesVert:
+        return L"ViewportLayout_TwoPanesVert.png";
+    case EViewportLayout::ThreePanesLeft:
+        return L"ViewportLayout_ThreePanesLeft.png";
+    case EViewportLayout::ThreePanesRight:
+        return L"ViewportLayout_ThreePanesRight.png";
+    case EViewportLayout::ThreePanesTop:
+        return L"ViewportLayout_ThreePanesTop.png";
+    case EViewportLayout::ThreePanesBottom:
+        return L"ViewportLayout_ThreePanesBottom.png";
+    case EViewportLayout::FourPanes2x2:
+        return L"ViewportLayout_FourPanes2x2.png";
+    case EViewportLayout::FourPanesLeft:
+        return L"ViewportLayout_FourPanesLeft.png";
+    case EViewportLayout::FourPanesRight:
+        return L"ViewportLayout_FourPanesRight.png";
+    case EViewportLayout::FourPanesTop:
+        return L"ViewportLayout_FourPanesTop.png";
+    case EViewportLayout::FourPanesBottom:
+        return L"ViewportLayout_FourPanesBottom.png";
+    default:
+        return L"";
+    }
+}
+
+std::wstring ResolveEditorIconPath(const std::wstring& FileName)
+{
+    const std::filesystem::path RootCandidate = std::filesystem::path(FPaths::RootDir()) / L"Asset/Editor/Icons" / FileName;
+    if (std::filesystem::exists(RootCandidate))
+    {
+        return RootCandidate.wstring();
+    }
+
+    WCHAR Buffer[MAX_PATH] = {};
+    GetModuleFileNameW(nullptr, Buffer, MAX_PATH);
+    const std::filesystem::path ExeDir = std::filesystem::path(Buffer).parent_path();
+    const std::filesystem::path ExeCandidate = ExeDir / L"Asset/Editor/Icons" / FileName;
+    if (std::filesystem::exists(ExeCandidate))
+    {
+        return ExeCandidate.wstring();
+    }
+
+    return (std::filesystem::current_path() / L"Asset/Editor/Icons" / FileName).wstring();
+}
+
+void PushViewportContextPopupStyle()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.0f, 12.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8.0f, 8.0f));
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 6.0f));
+}
+
+void PopViewportContextPopupStyle()
+{
+    ImGui::PopStyleVar(3);
+}
+
+FString ToLowerCopy(FString Value)
+{
+    std::transform(Value.begin(), Value.end(), Value.begin(), [](unsigned char Ch)
+    {
+        return static_cast<char>(std::tolower(Ch));
+    });
+    return Value;
+}
+
+bool IsObjContentPayload(const FContentBrowserDragPayload& Payload)
+{
+    if (Payload.Type != EContentBrowserAssetType::Model)
+    {
+        return false;
+    }
+
+    const FString Path = Payload.Path;
+    return ToLowerCopy(FPaths::FromPath(FPaths::ToPath(Path).extension())) == ".obj";
+}
+
+AStaticMeshActor* SpawnStaticMeshActorFromContentPayload(
+    UEditorEngine* Editor,
+    FSelectionManager* SelectionManager,
+    const FContentBrowserDragPayload& Payload)
+{
+    if (!Editor || !IsObjContentPayload(Payload))
+    {
+        return nullptr;
+    }
+
+    UWorld* World = Editor->GetWorld();
+    if (!World)
+    {
+        return nullptr;
+    }
+
+    const FString MeshPath = FPaths::ContentRelativePath(Payload.Path);
+    AStaticMeshActor* Actor = World->SpawnActor<AStaticMeshActor>();
+    if (!Actor)
+    {
+        return nullptr;
+    }
+
+    Actor->InitDefaultComponents(MeshPath);
+    Actor->SetActorLocation(FVector(0.0f, 0.0f, 0.0f));
+    World->UpdateActorInOctree(Actor);
+    World->MarkEditorPickingAndScenePrimitiveBVHsDirty();
+
+    if (SelectionManager)
+    {
+        SelectionManager->Select(Actor);
+    }
+
+    return Actor;
+}
+
+void RenderContentAssetDropTargetForViewport(
+    UEditorEngine* Editor,
+    FSelectionManager* SelectionManager,
+    FLevelViewportLayout* Layout,
+    int32 SlotIndex,
+    const FRect& Rect)
+{
+    const ImRect DropRect(
+        ImVec2(Rect.X, Rect.Y),
+        ImVec2(Rect.X + Rect.Width, Rect.Y + Rect.Height));
+
+    ImGui::PushID(SlotIndex);
+    if (ImGui::BeginDragDropTargetCustom(DropRect, ImGui::GetID("ViewportContentDropTarget")))
+    {
+        if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload(ContentBrowserPayloadName))
+        {
+            if (Payload->Data && Payload->DataSize == sizeof(FContentBrowserDragPayload))
+            {
+                const FContentBrowserDragPayload* ContentPayload = static_cast<const FContentBrowserDragPayload*>(Payload->Data);
+                if (SpawnStaticMeshActorFromContentPayload(Editor, SelectionManager, *ContentPayload))
+                {
+                    if (Layout && SlotIndex >= 0)
+                    {
+                        const TArray<FLevelEditorViewportClient*>& Clients = Layout->GetLevelViewportClients();
+                        if (SlotIndex < static_cast<int32>(Clients.size()))
+                        {
+                            Layout->SetActiveViewport(Clients[SlotIndex]);
+                        }
+                    }
+                }
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+    ImGui::PopID();
+}
+
+// ─── 아이콘 로드/해제 ────────────────────────────────────────
+
+void FLevelViewportLayout::LoadLayoutIcons(ID3D11Device* Device)
+{
+    if (!Device)
+        return;
+
+    for (int32 i = 0; i < static_cast<int32>(EViewportLayout::MAX); ++i)
+    {
+        std::wstring Path = ResolveEditorIconPath(GetLayoutIconFileName(static_cast<EViewportLayout>(i)));
+        DirectX::CreateWICTextureFromFile(
+            Device, Path.c_str(),
+            nullptr, &LayoutIcons[i]);
+    }
+}
+
+void FLevelViewportLayout::ReleaseLayoutIcons()
+{
+    for (int32 i = 0; i < static_cast<int32>(EViewportLayout::MAX); ++i)
+    {
+        if (LayoutIcons[i])
+        {
+            LayoutIcons[i]->Release();
+            LayoutIcons[i] = nullptr;
+        }
+    }
+}
+
+// ─── Initialize / Release ────────────────────────────────────
+
+void FLevelViewportLayout::Initialize(UEditorEngine* InEditor, FWindowsWindow* InWindow, FRenderer& InRenderer,
+                                      FSelectionManager* InSelectionManager)
+{
+    Editor = InEditor;
+    Window = InWindow;
+    RendererPtr = &InRenderer;
+    SelectionManager = InSelectionManager;
+
+    // 아이콘 로드
+    LoadLayoutIcons(InRenderer.GetFD3DDevice().GetDevice());
+
+    // Play/Stop 툴바 초기화
+    Toolbar.Initialize(InEditor, InRenderer.GetFD3DDevice().GetDevice());
+
+    // LevelViewportClient 생성 (단일 뷰포트)
+    auto* LevelVC = new FLevelEditorViewportClient();
+    LevelVC->SetOverlayStatSystem(&Editor->GetOverlayStatSystem());
+    LevelVC->SetSettings(&FEditorSettings::Get());
+    LevelVC->Initialize(Window);
+    LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
+    LevelVC->SetGizmo(SelectionManager->GetGizmo());
+    LevelVC->SetSelectionManager(SelectionManager);
+
+    auto* VP = new FViewport();
+    VP->Initialize(InRenderer.GetFD3DDevice().GetDevice(),
+                   static_cast<uint32>(Window->GetWidth()),
+                   static_cast<uint32>(Window->GetHeight()));
+    VP->SetClient(LevelVC);
+    LevelVC->SetViewport(VP);
+
+    LevelVC->CreateCamera();
+    LevelVC->ResetCamera();
+
+    AllViewportClients.push_back(LevelVC);
+    LevelViewportClients.push_back(LevelVC);
+    SetActiveViewport(LevelVC);
+
+    ViewportWindows[0] = new SWindow();
+    LevelVC->SetLayoutWindow(ViewportWindows[0]);
+    ActiveSlotCount = 1;
+    CurrentLayout = EViewportLayout::OnePane;
+}
+
+void FLevelViewportLayout::Release()
+{
+    SSplitter::DestroyTree(RootSplitter);
+    RootSplitter = nullptr;
+    DraggingSplitter = nullptr;
+
+    for (int32 i = 0; i < MaxViewportSlots; ++i)
+    {
+        delete ViewportWindows[i];
+        ViewportWindows[i] = nullptr;
+    }
+
+    ActiveViewportClient = nullptr;
+    for (FEditorViewportClient* VC : AllViewportClients)
+    {
+        if (FViewport* VP = VC->GetViewport())
+        {
+            VP->Release();
+            delete VP;
+        }
+        delete VC;
+    }
+    AllViewportClients.clear();
+    LevelViewportClients.clear();
+
+    ReleaseLayoutIcons();
+    Toolbar.Release();
+}
+
+// ─── 활성 뷰포트 ────────────────────────────────────────────
+
+void FLevelViewportLayout::SetActiveViewport(FLevelEditorViewportClient* InClient)
+{
+    if (ActiveViewportClient)
+    {
+        ActiveViewportClient->SetActive(false);
+    }
+    ActiveViewportClient = InClient;
+    if (ActiveViewportClient)
+    {
+        ActiveViewportClient->SetActive(true);
+        UWorld* World = Editor->GetWorld();
+        if (World && ActiveViewportClient->GetCamera())
+        {
+            World->SetActiveCamera(ActiveViewportClient->GetCamera());
+        }
+    }
+}
+
+void FLevelViewportLayout::SyncActiveViewportFromKeyTargetViewport(FViewport* KeyTargetViewport)
+{
+    if (!KeyTargetViewport)
+    {
+        return;
+    }
+
+    for (FLevelEditorViewportClient* Client : LevelViewportClients)
+    {
+        if (!Client || Client->GetViewport() != KeyTargetViewport)
+        {
+            continue;
+        }
+
+        if (Client != ActiveViewportClient)
+        {
+            SetActiveViewport(Client);
+        }
+        return;
+    }
+}
+
+void FLevelViewportLayout::ResetViewport(UWorld* InWorld)
+{
+    for (FLevelEditorViewportClient* VC : LevelViewportClients)
+    {
+        VC->CreateCamera();
+        VC->ResetCamera();
+
+        // 카메라 재생성 후 현재 뷰포트 크기로 AspectRatio 동기화
+        if (FViewport* VP = VC->GetViewport())
+        {
+            UCameraComponent* Cam = VC->GetCamera();
+            if (Cam && VP->GetWidth() > 0 && VP->GetHeight() > 0)
+            {
+                Cam->OnResize(static_cast<int32>(VP->GetWidth()), static_cast<int32>(VP->GetHeight()));
+            }
+        }
+
+        // 기존 뷰포트 타입(Ortho 방향 등)을 새 카메라에 재적용
+        VC->SetViewportType(VC->GetRenderOptions().ViewportType);
+    }
+    if (ActiveViewportClient && InWorld)
+        InWorld->SetActiveCamera(ActiveViewportClient->GetCamera());
+}
+
+void FLevelViewportLayout::DestroyAllCameras()
+{
+    for (FEditorViewportClient* VC : AllViewportClients)
+    {
+        VC->DestroyCamera();
+    }
+}
+
+void FLevelViewportLayout::DisableWorldAxisForPIE()
+{
+    if (bHasSavedWorldAxisVisibility)
+    {
+        for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+        {
+            FViewportRenderOptions& Opts = LevelViewportClients[i]->GetRenderOptions();
+            Opts.ShowFlags.bGrid = false;
+            Opts.ShowFlags.bWorldAxis = false;
+            Opts.ShowFlags.bSceneBVH = false;
+            Opts.ShowFlags.bSceneOctree = false;
+            Opts.ShowFlags.bWorldBound = false;
+        }
+        return;
+    }
+
+    for (int32 i = 0; i < MaxViewportSlots; ++i)
+    {
+        SavedGridVisibility[i] = false;
+        SavedWorldAxisVisibility[i] = false;
+        SavedSceneBVHVisibility[i] = false;
+        SavedSceneOctreeVisibility[i] = false;
+        SavedWorldBoundVisibility[i] = false;
+    }
+
+    for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+    {
+        FViewportRenderOptions& Opts = LevelViewportClients[i]->GetRenderOptions();
+        SavedGridVisibility[i] = Opts.ShowFlags.bGrid;
+        SavedWorldAxisVisibility[i] = Opts.ShowFlags.bWorldAxis;
+        SavedSceneBVHVisibility[i] = Opts.ShowFlags.bSceneBVH;
+        SavedSceneOctreeVisibility[i] = Opts.ShowFlags.bSceneOctree;
+        SavedWorldBoundVisibility[i] = Opts.ShowFlags.bWorldBound;
+        Opts.ShowFlags.bGrid = false;
+        Opts.ShowFlags.bWorldAxis = false;
+        Opts.ShowFlags.bSceneBVH = false;
+        Opts.ShowFlags.bSceneOctree = false;
+        Opts.ShowFlags.bWorldBound = false;
+    }
+
+    bHasSavedWorldAxisVisibility = true;
+}
+
+void FLevelViewportLayout::RestoreWorldAxisAfterPIE()
+{
+    if (!bHasSavedWorldAxisVisibility)
+    {
+        return;
+    }
+
+    for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+    {
+        FViewportRenderOptions& Opts = LevelViewportClients[i]->GetRenderOptions();
+        Opts.ShowFlags.bGrid = SavedGridVisibility[i];
+        Opts.ShowFlags.bWorldAxis = SavedWorldAxisVisibility[i];
+        Opts.ShowFlags.bSceneBVH = SavedSceneBVHVisibility[i];
+        Opts.ShowFlags.bSceneOctree = SavedSceneOctreeVisibility[i];
+        Opts.ShowFlags.bWorldBound = SavedWorldBoundVisibility[i];
+    }
+
+    bHasSavedWorldAxisVisibility = false;
+}
+
+void FLevelViewportLayout::ResetAllViewportInputStates()
+{
+    for (FEditorViewportClient* Client : AllViewportClients)
+    {
+        if (Client)
+        {
+            Client->ResetInputState();
+        }
+    }
+}
+
+// ─── 뷰포트 슬롯 관리 ───────────────────────────────────────
+
+void FLevelViewportLayout::EnsureViewportSlots(int32 RequiredCount)
+{
+    // 현재 슬롯보다 더 필요하면 추가 생성
+    while (static_cast<int32>(LevelViewportClients.size()) < RequiredCount)
+    {
+        int32 Idx = static_cast<int32>(LevelViewportClients.size());
+
+        auto* LevelVC = new FLevelEditorViewportClient();
+        LevelVC->SetOverlayStatSystem(&Editor->GetOverlayStatSystem());
+        LevelVC->SetSettings(&FEditorSettings::Get());
+        LevelVC->Initialize(Window);
+        LevelVC->SetViewportSize(Window->GetWidth(), Window->GetHeight());
+        LevelVC->SetGizmo(SelectionManager->GetGizmo());
+        LevelVC->SetSelectionManager(SelectionManager);
+
+        auto* VP = new FViewport();
+        VP->Initialize(RendererPtr->GetFD3DDevice().GetDevice(),
+                       static_cast<uint32>(Window->GetWidth()),
+                       static_cast<uint32>(Window->GetHeight()));
+        VP->SetClient(LevelVC);
+        LevelVC->SetViewport(VP);
+
+        LevelVC->CreateCamera();
+        LevelVC->ResetCamera();
+
+        AllViewportClients.push_back(LevelVC);
+        LevelViewportClients.push_back(LevelVC);
+
+        ViewportWindows[Idx] = new SWindow();
+        LevelVC->SetLayoutWindow(ViewportWindows[Idx]);
+    }
+}
+
+void FLevelViewportLayout::ShrinkViewportSlots(int32 RequiredCount)
+{
+    while (static_cast<int32>(LevelViewportClients.size()) > RequiredCount)
+    {
+        FLevelEditorViewportClient* VC = LevelViewportClients.back();
+        int32 Idx = static_cast<int32>(LevelViewportClients.size()) - 1;
+        LevelViewportClients.pop_back();
+
+        if (VC)
+        {
+            VC->ResetInputState();
+        }
+
+        for (auto It = AllViewportClients.begin(); It != AllViewportClients.end(); ++It)
+        {
+            if (*It == VC)
+            {
+                AllViewportClients.erase(It);
+                break;
+            }
+        }
+
+        if (ActiveViewportClient == VC)
+        {
+            Editor->SetActiveViewport(LevelViewportClients.empty() ? nullptr : LevelViewportClients[0]);
+        }
+
+        if (FViewport* VP = VC->GetViewport())
+        {
+            VP->Release();
+            delete VP;
+        }
+        VC->DestroyCamera();
+        delete VC;
+
+        delete ViewportWindows[Idx];
+        ViewportWindows[Idx] = nullptr;
+    }
+}
+
+// ─── SSplitter 트리 빌드 ─────────────────────────────────────
+
+SSplitter* FLevelViewportLayout::BuildSplitterTree(EViewportLayout Layout)
+{
+    SWindow** W = ViewportWindows;
+
+    switch (Layout)
+    {
+    case EViewportLayout::OnePane:
+        return nullptr; // 트리 불필요
+
+    case EViewportLayout::TwoPanesHoriz:
+    {
+        // H → [0] | [1]
+        auto* Root = new SSplitterH();
+        Root->SetSideLT(W[0]);
+        Root->SetSideRB(W[1]);
+        return Root;
+    }
+    case EViewportLayout::TwoPanesVert:
+    {
+        // V → [0] / [1]
+        auto* Root = new SSplitterV();
+        Root->SetSideLT(W[0]);
+        Root->SetSideRB(W[1]);
+        return Root;
+    }
+    case EViewportLayout::ThreePanesLeft:
+    {
+        // H → [0] | V([1]/[2])
+        auto* RightV = new SSplitterV();
+        RightV->SetSideLT(W[1]);
+        RightV->SetSideRB(W[2]);
+        auto* Root = new SSplitterH();
+        Root->SetSideLT(W[0]);
+        Root->SetSideRB(RightV);
+        return Root;
+    }
+    case EViewportLayout::ThreePanesRight:
+    {
+        // H → V([0]/[1]) | [2]
+        auto* LeftV = new SSplitterV();
+        LeftV->SetSideLT(W[0]);
+        LeftV->SetSideRB(W[1]);
+        auto* Root = new SSplitterH();
+        Root->SetSideLT(LeftV);
+        Root->SetSideRB(W[2]);
+        return Root;
+    }
+    case EViewportLayout::ThreePanesTop:
+    {
+        // V → [0] / H([1]|[2])
+        auto* BottomH = new SSplitterH();
+        BottomH->SetSideLT(W[1]);
+        BottomH->SetSideRB(W[2]);
+        auto* Root = new SSplitterV();
+        Root->SetSideLT(W[0]);
+        Root->SetSideRB(BottomH);
+        return Root;
+    }
+    case EViewportLayout::ThreePanesBottom:
+    {
+        // V → H([0]|[1]) / [2]
+        auto* TopH = new SSplitterH();
+        TopH->SetSideLT(W[0]);
+        TopH->SetSideRB(W[1]);
+        auto* Root = new SSplitterV();
+        Root->SetSideLT(TopH);
+        Root->SetSideRB(W[2]);
+        return Root;
+    }
+    case EViewportLayout::FourPanes2x2:
+    {
+        // H → V([0]/[2]) | V([1]/[3])
+        auto* LeftV = new SSplitterV();
+        LeftV->SetSideLT(W[0]);
+        LeftV->SetSideRB(W[2]);
+        auto* RightV = new SSplitterV();
+        RightV->SetSideLT(W[1]);
+        RightV->SetSideRB(W[3]);
+        auto* Root = new SSplitterH();
+        Root->SetSideLT(LeftV);
+        Root->SetSideRB(RightV);
+        return Root;
+    }
+    case EViewportLayout::FourPanesLeft:
+    {
+        // H → [0] | V([1] / V([2]/[3]))
+        auto* InnerV = new SSplitterV();
+        InnerV->SetSideLT(W[2]);
+        InnerV->SetSideRB(W[3]);
+        auto* RightV = new SSplitterV();
+        RightV->SetRatio(0.333f);
+        RightV->SetSideLT(W[1]);
+        RightV->SetSideRB(InnerV);
+        auto* Root = new SSplitterH();
+        Root->SetSideLT(W[0]);
+        Root->SetSideRB(RightV);
+        return Root;
+    }
+    case EViewportLayout::FourPanesRight:
+    {
+        // H → V([0] / V([1]/[2])) | [3]
+        auto* InnerV = new SSplitterV();
+        InnerV->SetSideLT(W[1]);
+        InnerV->SetSideRB(W[2]);
+        auto* LeftV = new SSplitterV();
+        LeftV->SetRatio(0.333f);
+        LeftV->SetSideLT(W[0]);
+        LeftV->SetSideRB(InnerV);
+        auto* Root = new SSplitterH();
+        Root->SetSideLT(LeftV);
+        Root->SetSideRB(W[3]);
+        return Root;
+    }
+    case EViewportLayout::FourPanesTop:
+    {
+        // V → [0] / H([1] | H([2]|[3]))
+        auto* InnerH = new SSplitterH();
+        InnerH->SetSideLT(W[2]);
+        InnerH->SetSideRB(W[3]);
+        auto* BottomH = new SSplitterH();
+        BottomH->SetRatio(0.333f);
+        BottomH->SetSideLT(W[1]);
+        BottomH->SetSideRB(InnerH);
+        auto* Root = new SSplitterV();
+        Root->SetSideLT(W[0]);
+        Root->SetSideRB(BottomH);
+        return Root;
+    }
+    case EViewportLayout::FourPanesBottom:
+    {
+        // V → H([0] | H([1]|[2])) / [3]
+        auto* InnerH = new SSplitterH();
+        InnerH->SetSideLT(W[1]);
+        InnerH->SetSideRB(W[2]);
+        auto* TopH = new SSplitterH();
+        TopH->SetRatio(0.333f);
+        TopH->SetSideLT(W[0]);
+        TopH->SetSideRB(InnerH);
+        auto* Root = new SSplitterV();
+        Root->SetSideLT(TopH);
+        Root->SetSideRB(W[3]);
+        return Root;
+    }
+    default:
+        return nullptr;
+    }
+}
+
+// ─── 레이아웃 전환 ──────────────────────────────────────────
+
+void FLevelViewportLayout::SetLayout(EViewportLayout NewLayout)
+{
+    if (NewLayout == CurrentLayout)
+        return;
+
+    ResetAllViewportInputStates();
+
+    bool bWasOnePane = (CurrentLayout == EViewportLayout::OnePane);
+
+    // 기존 트리 해제
+    SSplitter::DestroyTree(RootSplitter);
+    RootSplitter = nullptr;
+    DraggingSplitter = nullptr;
+
+    int32 RequiredSlots = GetSlotCount(NewLayout);
+    int32 OldSlotCount = static_cast<int32>(LevelViewportClients.size());
+
+    // 슬롯 수 조정
+    if (RequiredSlots > OldSlotCount)
+        EnsureViewportSlots(RequiredSlots);
+    else if (RequiredSlots < OldSlotCount)
+        ShrinkViewportSlots(RequiredSlots);
+
+    // 분할 전환 시 새로 추가된 슬롯에 Top, Front, Right 순으로 기본 설정
+    if (NewLayout != EViewportLayout::OnePane)
+    {
+        constexpr ELevelViewportType DefaultTypes[] = {
+            ELevelViewportType::Top,
+            ELevelViewportType::Front,
+            ELevelViewportType::Right
+        };
+        // 기존 슬롯(또는 슬롯 0)은 유지, 새로 생긴 슬롯에만 적용
+        int32 StartIdx = bWasOnePane ? 1 : OldSlotCount;
+        for (int32 i = StartIdx; i < RequiredSlots && (i - 1) < 3; ++i)
+        {
+            LevelViewportClients[i]->SetViewportType(DefaultTypes[i - 1]);
+        }
+    }
+
+    // 새 트리 빌드
+    RootSplitter = BuildSplitterTree(NewLayout);
+    ActiveSlotCount = RequiredSlots;
+    CurrentLayout = NewLayout;
+
+    if (Editor)
+    {
+        Editor->ResetViewportInputRouting();
+    }
+}
+
+void FLevelViewportLayout::ToggleViewportSplit()
+{
+    if (CurrentLayout == EViewportLayout::OnePane)
+        SetLayout(EViewportLayout::FourPanes2x2);
+    else
+        SetLayout(EViewportLayout::OnePane);
+}
+
+// ─── Viewport UI 렌더링 ─────────────────────────────────────
+
+void FLevelViewportLayout::RenderViewportUI(float DeltaTime)
+{
+    (void)DeltaTime;
+    bMouseOverViewport = false;
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+    ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_None);
+
+    ImVec2 ContentPos = ImGui::GetCursorScreenPos();
+    ImVec2 ContentSize = ImGui::GetContentRegionAvail();
+
+    if (ContentSize.x > 0 && ContentSize.y > 0)
+    {
+        const float ViewportWidth = ContentSize.x;
+        const float ViewportHeight = ContentSize.y;
+
+        if (ViewportWidth <= 0.0f || ViewportHeight <= 0.0f)
+        {
+            ImGui::End();
+            ImGui::PopStyleVar();
+            return;
+        }
+
+        FRect ContentRect = {
+            ContentPos.x,
+            ContentPos.y,
+            ViewportWidth,
+            ViewportHeight
+        };
+
+        // SSplitter 레이아웃 계산
+        if (RootSplitter)
+        {
+            RootSplitter->ComputeLayout(ContentRect);
+        }
+        else if (ViewportWindows[0])
+        {
+            ViewportWindows[0]->SetRect(ContentRect);
+        }
+
+        // 각 ViewportClient에 Rect 반영 + 이미지 렌더
+        for (int32 i = 0; i < ActiveSlotCount; ++i)
+        {
+            if (i < static_cast<int32>(LevelViewportClients.size()))
+            {
+                FLevelEditorViewportClient* VC = LevelViewportClients[i];
+                VC->SetPaneToolbarHeight(Toolbar.GetDesiredHeight());
+                VC->UpdateLayoutRect();
+                VC->RenderViewportImage();
+            }
+        }
+
+        // 각 뷰포트 패인 상단에 툴바 오버레이 렌더
+        for (int32 i = 0; i < ActiveSlotCount; ++i)
+        {
+            if (i < static_cast<int32>(LevelViewportClients.size()))
+            {
+                Toolbar.RenderPaneToolbar(this, i, LevelViewportClients[i]);
+            }
+        }
+
+
+        // 각 뷰포트 테두리는 툴바까지 포함해서 가장 마지막에 렌더
+        for (int32 i = 0; i < ActiveSlotCount; ++i)
+        {
+            if (i < static_cast<int32>(LevelViewportClients.size()))
+            {
+                LevelViewportClients[i]->RenderViewportBorder();
+            }
+        }
+
+        for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+        {
+            if (ViewportWindows[i])
+            {
+                RenderContentAssetDropTargetForViewport(Editor, SelectionManager, this, i, ViewportWindows[i]->GetRect());
+            }
+        }
+
+        // 분할 바 렌더
+        if (RootSplitter)
+        {
+            TArray<SSplitter*> AllSplitters;
+            SSplitter::CollectSplitters(RootSplitter, AllSplitters);
+
+            ImDrawList* DrawList = ImGui::GetWindowDrawList();
+            ImU32 BarColor = IM_COL32(80, 80, 80, 255);
+
+            for (SSplitter* S : AllSplitters)
+            {
+                const FRect& Bar = S->GetSplitBarRect();
+                DrawList->AddRectFilled(
+                    ImVec2(Bar.X, Bar.Y),
+                    ImVec2(Bar.X + Bar.Width, Bar.Y + Bar.Height),
+                    BarColor);
+            }
+        }
+
+        // 입력 처리
+        if (ImGui::IsWindowHovered())
+        {
+            ImVec2 MousePos = ImGui::GetIO().MousePos;
+            FPoint MP = { MousePos.x, MousePos.y };
+
+            for (int32 i = 0; i < ActiveSlotCount; ++i)
+            {
+                if (ViewportWindows[i] && ViewportWindows[i]->IsHover(MP))
+                {
+                    bMouseOverViewport = true;
+                    break;
+                }
+            }
+
+            if (RootSplitter)
+            {
+                if (ImGui::IsMouseClicked(0))
+                {
+                    DraggingSplitter = SSplitter::FindSplitterAtBar(RootSplitter, MP);
+                }
+
+                if (ImGui::IsMouseReleased(0))
+                {
+                    DraggingSplitter = nullptr;
+                }
+
+                if (DraggingSplitter)
+                {
+                    const FRect& DR = DraggingSplitter->GetRect();
+                    if (DraggingSplitter->GetOrientation() == ESplitOrientation::Horizontal)
+                    {
+                        float NewRatio = (MousePos.x - DR.X) / DR.Width;
+                        DraggingSplitter->SetRatio(Clamp(NewRatio, 0.15f, 0.85f));
+                        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+                    }
+                    else
+                    {
+                        float NewRatio = (MousePos.y - DR.Y) / DR.Height;
+                        DraggingSplitter->SetRatio(Clamp(NewRatio, 0.15f, 0.85f));
+                        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+                    }
+                }
+                else
+                {
+                    SSplitter* Hovered = SSplitter::FindSplitterAtBar(RootSplitter, MP);
+                    if (Hovered)
+                    {
+                        if (Hovered->GetOrientation() == ESplitOrientation::Horizontal)
+                            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+                        else
+                            ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeNS);
+                    }
+                }
+            }
+
+        }
+
+        for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+        {
+            FLevelEditorViewportClient* ViewportClient = LevelViewportClients[i];
+            if (!ViewportClient)
+            {
+                continue;
+            }
+
+            FEditorViewportContextMenuRequest ContextMenuRequest{};
+            if (ViewportClient->ConsumeContextMenuRequest(ContextMenuRequest))
+            {
+                PendingPilotContextViewport = ViewportClient;
+                PendingPilotContextActor = ContextMenuRequest.HitActor;
+                ImGui::OpenPopup("ViewportPilotContextMenu");
+                break;
+            }
+        }
+
+        PushViewportContextPopupStyle();
+        const bool bPilotPopupOpened = ImGui::BeginPopup("ViewportPilotContextMenu");
+        PopViewportContextPopupStyle();
+        if (bPilotPopupOpened)
+        {
+            if (PendingPilotContextActor && PendingPilotContextViewport)
+            {
+                FString PilotActorLabel = "Pilot \"" + PendingPilotContextViewport->GetActorDisplayName(PendingPilotContextActor) + "\"";
+                if (ImGui::Selectable(PilotActorLabel.c_str(), false))
+                {
+                    PendingPilotContextViewport->PilotSelectedActor(PendingPilotContextActor);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            const bool bCanStopPiloting = PendingPilotContextViewport && PendingPilotContextViewport->IsPilotingActor();
+            if (bCanStopPiloting)
+            {
+                if (PendingPilotContextActor)
+                {
+                    ImGui::Separator();
+                }
+
+                if (ImGui::Selectable("Stop Piloting Actor", false))
+                {
+                    PendingPilotContextViewport->StopPilotingActor();
+                    ImGui::CloseCurrentPopup();
+                }
+            }
+
+            ImGui::EndPopup();
+        }
+        else
+        {
+            PendingPilotContextActor = nullptr;
+            PendingPilotContextViewport = nullptr;
+        }
+
+        // Stat 오버레이는 중앙 카드, Pilot 오버레이는 좌상단 소형 배지로 분리합니다.
+        const FOverlayStatSystem& OverlaySystem = Editor->GetOverlayStatSystem();
+        TArray<FOverlayStatLine> StatLines;
+        OverlaySystem.BuildLines(*Editor, StatLines);
+
+        FRect OverlayAnchorRect = ContentRect;
+        for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+        {
+            if (LevelViewportClients[i] == ActiveViewportClient && ViewportWindows[i])
+            {
+                OverlayAnchorRect = ViewportWindows[i]->GetRect();
+                break;
+            }
+        }
+
+        ImDrawList* OverlayDrawList = ImGui::GetWindowDrawList();
+        ImFont* OverlayFont = ImGui::GetFont();
+
+        if (!StatLines.empty())
+        {
+            const float StatPadding = 14.0f;
+            const float StatBottomPadding = 22.0f;
+            const float StatTextScale = OverlaySystem.GetLayout().TextScale * 0.92f;
+            const float StatFontSize = ImGui::GetFontSize() * StatTextScale;
+            const float StatLineHeight = 22.0f;
+            const float SectionLineHeight = 28.0f;
+            const float HeaderHeight = 20.0f;
+            const float TitleHeight = 22.0f;
+            const float ColumnGap = 18.0f;
+            const float MinBoxWidth = 360.0f;
+            const float MaxBoxWidth = 520.0f;
+            const FString StatTitle = OverlaySystem.GetDisplayTitle();
+
+            float LabelWidth = 0.0f;
+            float ValueWidth = 0.0f;
+            for (const FOverlayStatLine& Line : StatLines)
+            {
+                if (Line.bIsSectionHeader)
+                {
+                    continue;
+                }
+
+                ImVec2 LabelSize = OverlayFont->CalcTextSizeA(StatFontSize, FLT_MAX, 0.0f, Line.Label.c_str());
+                LabelWidth = (LabelWidth > LabelSize.x) ? LabelWidth : LabelSize.x;
+
+                if (!Line.Value.empty())
+                {
+                    ImVec2 ValueSize = OverlayFont->CalcTextSizeA(StatFontSize, FLT_MAX, 0.0f, Line.Value.c_str());
+                    ValueWidth = (ValueWidth > ValueSize.x) ? ValueWidth : ValueSize.x;
+                }
+            }
+
+            float BoxWidth = LabelWidth + ValueWidth + ColumnGap + StatPadding * 2.0f;
+            const float MaxAllowedWidth = (std::min)(MaxBoxWidth, OverlayAnchorRect.Width - 24.0f);
+            BoxWidth = (std::max)(MinBoxWidth, (std::min)(BoxWidth, MaxAllowedWidth));
+            float StatLinesHeight = 0.0f;
+            for (const FOverlayStatLine& Line : StatLines)
+            {
+                StatLinesHeight += Line.bIsSectionHeader ? SectionLineHeight : StatLineHeight;
+            }
+
+            const float StatHeight = StatPadding + StatBottomPadding + TitleHeight + HeaderHeight + StatLinesHeight;
+            const ImVec2 BoxMin(
+                OverlayAnchorRect.X + 12.0f,
+                OverlayAnchorRect.Y + Toolbar.GetDesiredHeight() + 12.0f);
+            const ImVec2 BoxMax(BoxMin.x + BoxWidth, BoxMin.y + StatHeight);
+            const float LabelColumnX = BoxMin.x + StatPadding;
+            const float ValueColumnX = BoxMax.x - StatPadding - ValueWidth;
+
+            OverlayDrawList->AddRectFilled(
+                BoxMin,
+                BoxMax,
+                IM_COL32(14, 14, 14, 228),
+                8.0f);
+            OverlayDrawList->AddRect(
+                BoxMin,
+                BoxMax,
+                IM_COL32(255, 255, 255, 28),
+                8.0f);
+
+            ImVec2 TextPos(BoxMin.x + StatPadding, BoxMin.y + StatPadding);
+            OverlayDrawList->AddText(OverlayFont, StatFontSize + 1.0f, TextPos, IM_COL32(248, 248, 248, 255), StatTitle.c_str());
+
+            const float DividerY = TextPos.y + TitleHeight;
+            OverlayDrawList->AddLine(
+                ImVec2(BoxMin.x + StatPadding, DividerY),
+                ImVec2(BoxMax.x - StatPadding, DividerY),
+                IM_COL32(255, 255, 255, 34),
+                1.0f);
+
+            const float HeaderY = DividerY + 7.0f;
+            OverlayDrawList->AddText(OverlayFont, StatFontSize - 0.5f, ImVec2(LabelColumnX, HeaderY), IM_COL32(170, 170, 170, 255), "Metric");
+            OverlayDrawList->AddText(OverlayFont, StatFontSize - 0.5f, ImVec2(ValueColumnX, HeaderY), IM_COL32(170, 170, 170, 255), "Value");
+
+            const float HeaderDividerY = HeaderY + HeaderHeight;
+            OverlayDrawList->AddLine(
+                ImVec2(BoxMin.x + StatPadding, HeaderDividerY),
+                ImVec2(BoxMax.x - StatPadding, HeaderDividerY),
+                IM_COL32(255, 255, 255, 26),
+                1.0f);
+
+            TextPos = ImVec2(BoxMin.x + StatPadding, HeaderDividerY + 7.0f);
+            for (const FOverlayStatLine& Line : StatLines)
+            {
+                if (Line.bIsSectionHeader)
+                {
+                    const float SectionTextX = LabelColumnX + 10.0f;
+                    const float SectionTextY = TextPos.y + 5.0f;
+                    OverlayDrawList->AddText(OverlayFont, StatFontSize - 0.5f, ImVec2(SectionTextX, SectionTextY), IM_COL32(150, 170, 190, 255), Line.Label.c_str());
+                    const ImVec2 SectionSize = OverlayFont->CalcTextSizeA(StatFontSize - 0.5f, FLT_MAX, 0.0f, Line.Label.c_str());
+                    const float SectionLineY = TextPos.y + SectionLineHeight * 0.55f;
+                    OverlayDrawList->AddLine(
+                        ImVec2(SectionTextX + SectionSize.x + 12.0f, SectionLineY),
+                        ImVec2(BoxMax.x - StatPadding, SectionLineY),
+                        IM_COL32(255, 255, 255, 22),
+                        1.0f);
+                    OverlayDrawList->AddLine(
+                        ImVec2(BoxMin.x + StatPadding, TextPos.y + SectionLineHeight - 3.0f),
+                        ImVec2(BoxMax.x - StatPadding, TextPos.y + SectionLineHeight - 3.0f),
+                        IM_COL32(255, 255, 255, 12),
+                        1.0f);
+                    TextPos.y += SectionLineHeight;
+                }
+                else
+                {
+                    OverlayDrawList->AddText(OverlayFont, StatFontSize, ImVec2(LabelColumnX, TextPos.y), IM_COL32(210, 210, 210, 255), Line.Label.c_str());
+                    OverlayDrawList->AddText(OverlayFont, StatFontSize, ImVec2(ValueColumnX, TextPos.y), IM_COL32(248, 248, 248, 255), Line.Value.c_str());
+                    OverlayDrawList->AddLine(
+                        ImVec2(BoxMin.x + StatPadding, TextPos.y + StatLineHeight - 2.0f),
+                        ImVec2(BoxMax.x - StatPadding, TextPos.y + StatLineHeight - 2.0f),
+                        IM_COL32(255, 255, 255, 10),
+                        1.0f);
+                    TextPos.y += StatLineHeight;
+                }
+            }
+        }
+
+        if (ActiveViewportClient && ActiveViewportClient->IsPilotingActor())
+        {
+            TArray<FString> PilotLines;
+
+            const FString PilotOverlayText = ActiveViewportClient->GetPilotOverlayText();
+            if (!PilotOverlayText.empty())
+            {
+                PilotLines.push_back(PilotOverlayText);
+            }
+
+            const FString PilotHintText = ActiveViewportClient->GetPilotHintText();
+            if (!PilotHintText.empty())
+            {
+                PilotLines.push_back(PilotHintText);
+            }
+
+            if (!PilotLines.empty())
+            {
+                const float PilotPadding = 10.0f;
+                const float PilotFontSize = ImGui::GetFontSize() * 0.95f;
+                const float PilotLineHeight = ImGui::GetTextLineHeightWithSpacing() * 0.95f;
+                const float MaxPilotTextWidth = OverlayAnchorRect.Width * 0.45f;
+                float PilotWidth = 0.0f;
+
+                for (const FString& Line : PilotLines)
+                {
+                    ImVec2 TextSize = OverlayFont->CalcTextSizeA(PilotFontSize, MaxPilotTextWidth, 0.0f, Line.c_str());
+                    PilotWidth = (PilotWidth > TextSize.x) ? PilotWidth : TextSize.x;
+                }
+
+                const float PilotHeight = PilotPadding * 2.0f + static_cast<float>(PilotLines.size()) * PilotLineHeight;
+                const ImVec2 PilotMin(
+                    OverlayAnchorRect.X + 12.0f,
+                    OverlayAnchorRect.Y + Toolbar.GetDesiredHeight() + 12.0f);
+
+                OverlayDrawList->AddRectFilled(
+                    PilotMin,
+                    ImVec2(PilotMin.x + PilotWidth + PilotPadding * 2.0f, PilotMin.y + PilotHeight),
+                    IM_COL32(0, 0, 0, 140),
+                    6.0f);
+
+                ImVec2 PilotTextPos(PilotMin.x + PilotPadding, PilotMin.y + PilotPadding - 1.0f);
+                for (const FString& Line : PilotLines)
+                {
+                    OverlayDrawList->AddText(OverlayFont, PilotFontSize, PilotTextPos, IM_COL32(255, 255, 255, 255), Line.c_str());
+                    PilotTextPos.y += PilotLineHeight;
+                }
+            }
+        }
+    }
+
+    ImGui::End();
+    ImGui::PopStyleVar();
+}
+
+
+const FRect& FLevelViewportLayout::GetViewportPaneRect(int32 SlotIndex) const
+{
+    static FRect EmptyRect;
+    if (SlotIndex < 0 || SlotIndex >= MaxViewportSlots || !ViewportWindows[SlotIndex])
+    {
+        return EmptyRect;
+    }
+    return ViewportWindows[SlotIndex]->GetRect();
+}
+
+// ─── FEditorSettings ↔ 뷰포트 상태 동기화 ──────────────────
+
+void FLevelViewportLayout::SaveToSettings()
+{
+    FEditorSettings& S = FEditorSettings::Get();
+
+    S.LayoutType = static_cast<int32>(CurrentLayout);
+
+    // 뷰포트별 렌더 옵션 저장
+    for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+    {
+        S.SlotOptions[i] = LevelViewportClients[i]->GetRenderOptions();
+    }
+
+    // Splitter 비율 저장
+    if (RootSplitter)
+    {
+        TArray<SSplitter*> AllSplitters;
+        SSplitter::CollectSplitters(RootSplitter, AllSplitters);
+        S.SplitterCount = static_cast<int32>(AllSplitters.size());
+        if (S.SplitterCount > 3)
+            S.SplitterCount = 3;
+        for (int32 i = 0; i < S.SplitterCount; ++i)
+        {
+            S.SplitterRatios[i] = AllSplitters[i]->GetRatio();
+        }
+    }
+    else
+    {
+        S.SplitterCount = 0;
+    }
+
+    // Perspective 카메라 (slot 0) 저장
+    if (!LevelViewportClients.empty())
+    {
+        UCameraComponent* Cam = LevelViewportClients[0]->GetCamera();
+        if (Cam)
+        {
+            S.PerspCamLocation = Cam->GetWorldLocation();
+            S.PerspCamRotation = Cam->GetRelativeRotation();
+            const FCameraState& CS = Cam->GetCameraState();
+            S.PerspCamFOV = CS.FOV * (180.0f / 3.14159265358979f); // rad → deg
+            S.PerspCamNearClip = CS.NearZ;
+            S.PerspCamFarClip = CS.FarZ;
+        }
+    }
+}
+
+void FLevelViewportLayout::LoadFromSettings()
+{
+    const FEditorSettings& S = FEditorSettings::Get();
+
+    // 레이아웃 전환 (슬롯 생성 + 트리 빌드)
+    EViewportLayout NewLayout = static_cast<EViewportLayout>(S.LayoutType);
+    if (NewLayout >= EViewportLayout::MAX)
+        NewLayout = EViewportLayout::OnePane;
+
+    // OnePane이 아니면 레이아웃 적용 (Initialize에서 이미 OnePane으로 생성됨)
+    if (NewLayout != EViewportLayout::OnePane)
+    {
+        // SetLayout 내부 bWasOnePane 분기를 피하기 위해 직접 전환
+        SSplitter::DestroyTree(RootSplitter);
+        RootSplitter = nullptr;
+        DraggingSplitter = nullptr;
+
+        int32 RequiredSlots = GetSlotCount(NewLayout);
+        EnsureViewportSlots(RequiredSlots);
+
+        RootSplitter = BuildSplitterTree(NewLayout);
+        ActiveSlotCount = RequiredSlots;
+        CurrentLayout = NewLayout;
+    }
+
+    // 뷰포트별 렌더 옵션 적용
+    for (int32 i = 0; i < ActiveSlotCount && i < static_cast<int32>(LevelViewportClients.size()); ++i)
+    {
+        FLevelEditorViewportClient* VC = LevelViewportClients[i];
+        VC->GetRenderOptions() = S.SlotOptions[i];
+
+        // ViewportType에 따라 카메라 ortho/방향 설정
+        VC->SetViewportType(S.SlotOptions[i].ViewportType);
+    }
+
+    // Splitter 비율 복원
+    if (RootSplitter)
+    {
+        TArray<SSplitter*> AllSplitters;
+        SSplitter::CollectSplitters(RootSplitter, AllSplitters);
+        for (int32 i = 0; i < S.SplitterCount && i < static_cast<int32>(AllSplitters.size()); ++i)
+        {
+            AllSplitters[i]->SetRatio(S.SplitterRatios[i]);
+        }
+    }
+
+    // Perspective 카메라 (slot 0) 복원
+    if (!LevelViewportClients.empty())
+    {
+        UCameraComponent* Cam = LevelViewportClients[0]->GetCamera();
+        if (Cam)
+        {
+            Cam->SetRelativeLocation(S.PerspCamLocation);
+            Cam->SetRelativeRotation(S.PerspCamRotation);
+
+            FCameraState CS = Cam->GetCameraState();
+            CS.FOV = S.PerspCamFOV * (3.14159265358979f / 180.0f); // deg → rad
+            CS.NearZ = S.PerspCamNearClip;
+            CS.FarZ = S.PerspCamFarClip;
+            Cam->SetCameraState(CS);
+        }
+    }
+}

@@ -1,0 +1,13 @@
+{
+  "Type" : "LetterBox",
+  "Version" : 1,
+  "LetterBox" : {
+    "Duration" : 0.300000,
+    "FromAmount" : 0.000000,
+    "ToAmount" : 0.150000,
+    "AmountCurve" : [
+      { "Time" : 0.000000, "Value" : 0.000000 },
+      { "Time" : 1.000000, "Value" : 1.000000 }
+    ]
+  }
+}

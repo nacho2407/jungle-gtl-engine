@@ -1,0 +1,656 @@
+﻿#include "LuaScriptComponent.h"
+
+#include <cstring>
+#include <fstream>
+#include <filesystem>
+#include <utility>
+
+#include "GameFramework/World.h"
+#include "Core/Logging/LogMacros.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/WorldContext.h"
+#include "Input/InputSystem.h"
+#include "LuaScript/LuaInputProxy.h"
+#include "LuaScript/LuaRuntime.h"
+#include "Object/ObjectFactory.h"
+#include "Platform/Paths.h"
+#include "Serialization/Archive.h"
+
+IMPLEMENT_COMPONENT_CLASS(ULuaScriptComponent, UActorComponent, EEditorComponentCategory::Scripts)
+
+namespace
+{
+std::filesystem::path ResolveLuaScriptFullPath(const FString& ScriptPath)
+{
+    if (ScriptPath.empty() || ScriptPath == "None")
+    {
+        return {};
+    }
+
+    const std::filesystem::path RawPath = FPaths::ToPath(ScriptPath);
+    if (RawPath.is_absolute())
+    {
+        return RawPath.lexically_normal();
+    }
+
+    // ScriptPath에 파일 이름만 저장됨을 가정
+    if (!RawPath.has_parent_path())
+    {
+        return (std::filesystem::path(FPaths::ContentDir()) / L"Scripts" / FPaths::ToWide(ScriptPath)).lexically_normal();
+    }
+
+    // 상대 경로가 직접 들어온 경우도 방어적으로 지원
+    return (std::filesystem::path(FPaths::RootDir()) / RawPath).lexically_normal();
+}
+
+/**
+ * @brief Lua environment 안에서 특정 이름의 함수를 찾아서 가져오는 함수
+ */
+sol::protected_function GetOptionalLuaFunction(sol::environment& Env, const char* FunctionName, FString& LastError)
+{
+    sol::object Candidate = Env[FunctionName];
+    if (Candidate.get_type() == sol::type::nil)
+    {
+        return sol::protected_function();
+    }
+
+    if (Candidate.get_type() != sol::type::function)
+    {
+        LastError = FString("Lua global '") + FunctionName + "' exists but is not a function.";
+        UE_LOG(Lua, Warning, "%s", LastError.c_str());
+        return sol::protected_function();
+    }
+
+    return Candidate.as<sol::protected_function>();
+}
+
+template <typename... TArgs>
+bool CallLuaFunction(const char* FunctionName, sol::protected_function& Function, FString& OutLastError, TArgs&&... Args)
+{
+    if (!Function.valid())
+    {
+        return true;
+    }
+
+    sol::protected_function_result Result = Function(std::forward<TArgs>(Args)...);
+    if (!Result.valid())
+    {
+        sol::error Error = Result;
+        OutLastError = FString("Lua function '") + FunctionName + "' failed: " + Error.what();
+        UE_LOG(Lua, Error, "%s", OutLastError.c_str());
+        return false;
+    }
+
+    return true;
+}
+
+bool IsMouseButtonVK(int32 VK)
+{
+    return VK == VK_LBUTTON
+		|| VK == VK_RBUTTON
+		|| VK == VK_MBUTTON
+		|| VK == VK_XBUTTON1
+		|| VK == VK_XBUTTON2;
+}
+
+bool ReadTextFile(const std::filesystem::path& Path, std::string& OutText)
+{
+    std::ifstream File(Path, std::ios::binary);
+    if (!File)
+    {
+        return false;
+    }
+
+    OutText.assign(
+        std::istreambuf_iterator<char>(File),
+        std::istreambuf_iterator<char>());
+    return true;
+}
+} // namespace
+
+void ULuaScriptComponent::BeginPlay()
+{
+    UActorComponent::BeginPlay();
+    if (!GetWorld() || GetWorld()->GetWorldType() == EWorldType::Editor)
+    {
+        return;
+    }
+    if (!HasScript())
+    {
+        return;
+    }
+
+    if (!bScriptLoaded)
+    {
+        if (!LoadScript())
+        {
+            return;
+        }
+    }
+
+    CallLuaFunction("BeginPlay", BeginPlayFunc, LastError);
+}
+
+void ULuaScriptComponent::EndPlay()
+{
+    if (bScriptLoaded)
+    {
+        CallLuaFunction("EndPlay", EndPlayFunc, LastError);
+    }
+
+    ClearScriptRuntime();
+
+    UActorComponent::EndPlay();
+}
+
+void ULuaScriptComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction)
+{
+    UActorComponent::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+    (void)TickType;
+    (void)ThisTickFunction;
+
+    if (!bScriptLoaded)
+    {
+        return;
+    }
+
+	DispatchInputEvents();
+
+    CallLuaFunction("Tick", TickFunc, LastError, DeltaTime);
+}
+
+void ULuaScriptComponent::SetScriptPath(const FString& ScriptPath)
+{
+    if (LuaScriptPath == ScriptPath)
+    {
+        return;
+    }
+
+    LuaScriptPath = ScriptPath.empty() ? FString("None") : ScriptPath;
+    LastError.clear();
+    ClearScriptRuntime();
+}
+
+void ULuaScriptComponent::StartCoroutine(const FString& FunctionName, sol::variadic_args Args)
+{
+    if (!bScriptLoaded) return;
+
+    sol::state& Lua = FLuaRuntime::Get().GetState();
+    sol::object Candidate = Env[FunctionName.c_str()];
+
+    if (Candidate.get_type() != sol::type::function) return;
+
+    sol::thread CoroutineThread = sol::thread::create(Lua.lua_state());
+
+    sol::coroutine Co(CoroutineThread.state(), Candidate);
+
+    sol::protected_function_result Result = Co(Args);
+
+    if (!Result.valid())
+    {
+        sol::error Error = Result;
+        UE_LOG(Lua, Error, "Coroutine '%s' failed: %s", FunctionName.c_str(), Error.what());
+    }
+}
+
+bool ULuaScriptComponent::CallFunction(const FString& FunctionName, sol::variadic_args Args)
+{
+    if (FunctionName.empty())
+    {
+        SetLastError("Lua CallFunction failed: function name is empty.");
+        return false;
+    }
+
+    if (!bScriptLoaded && !LoadScript())
+    {
+        return false;
+    }
+
+    sol::object Candidate = Env[FunctionName.c_str()];
+    if (Candidate.get_type() == sol::type::nil)
+    {
+        SetLastError(FString("Lua CallFunction failed: function was not found: ") + FunctionName);
+        return false;
+    }
+
+    if (Candidate.get_type() != sol::type::function)
+    {
+        SetLastError(FString("Lua CallFunction failed: global is not a function: ") + FunctionName);
+        return false;
+    }
+
+    sol::protected_function Function = Candidate.as<sol::protected_function>();
+    return CallLuaFunction(FunctionName.c_str(), Function, LastError, Args);
+}
+
+void ULuaScriptComponent::ClearScript()
+{
+    LuaScriptPath = "None";
+    LastError.clear();
+    ClearScriptRuntime();
+}
+
+bool ULuaScriptComponent::LoadScript()
+{
+    LastError.clear();
+    ClearScriptRuntime();
+
+    if (!HasScript())
+    {
+        SetLastError("ScriptPath is empty or None.");
+        return false;
+    }
+
+    AActor* OwnerActor = GetOwner();
+    if (!OwnerActor)
+    {
+        OwnerActor = GetTypedOuter<AActor>();
+    }
+
+    if (!OwnerActor)
+    {
+        SetLastError("ULuaScriptComponent has no valid owner actor.");
+        return false;
+    }
+
+    const std::filesystem::path FullPath = ResolveLuaScriptFullPath(LuaScriptPath);
+    if (FullPath.empty() || !std::filesystem::exists(FullPath))
+    {
+        SetLastError(FString("Lua script file does not exist: ") + FPaths::FromPath(FullPath));
+        return false;
+    }
+
+    sol::state& Lua = FLuaRuntime::Get().GetState();
+
+    Env = sol::environment(Lua, sol::create, Lua.globals());
+
+    ObjProxy.SetActor(OwnerActor);
+    Env["obj"] = &ObjProxy;
+
+    Env["StartCoroutine"] = [this](const std::string& Name, sol::variadic_args Args)
+        {
+            this->StartCoroutine(FString(Name.c_str()), Args);
+        };
+	WorldProxy.SetWorld(OwnerActor->GetWorld());
+
+    sol::table WorldTable = Lua.create_table();
+    WorldTable.set_function("IsValid", [this]()
+                            { return WorldProxy.IsValid(); });
+    WorldTable.set_function("SpawnActor", [this](const FString& ActorClassName)
+                            { return WorldProxy.SpawnActor(ActorClassName); });
+    WorldTable.set_function("DestroyActor", [this](const FLuaGameObjectProxy& ActorProxy)
+                            { return WorldProxy.DestroyActor(ActorProxy); });
+    WorldTable.set_function("GetActiveCameraForward", [this]()
+                            { return WorldProxy.GetActiveCameraForward(); });
+    WorldTable.set_function("GetActiveCameraRight", [this]()
+                            { return WorldProxy.GetActiveCameraRight(); });
+    WorldTable.set_function("GetActiveCameraUp", [this]()
+                            { return WorldProxy.GetActiveCameraUp(); });
+    WorldTable.set_function("GetMouseWorldPointOnPlane", [this](float PlaneZ)
+                            { return WorldProxy.GetMouseWorldPointOnPlane(PlaneZ); });
+    WorldTable.set_function("PlayCameraShake",[this](float Duration, float LocationAmplitude, float RotationAmplitude,float Frequency)
+        {WorldProxy.PlayCameraShake(Duration, LocationAmplitude, RotationAmplitude, Frequency); });
+    WorldTable.set_function("PlayCameraFade", [this](float FromAmount, float ToAmount, float Duration, float R, float G, float B, float A)
+        { WorldProxy.PlayCameraFade(FromAmount, ToAmount, Duration, R, G, B, A); });
+    WorldTable.set_function("PlayCameraLetterBox", [this](float FromAmount, float ToAmount, float Duration)
+        { WorldProxy.PlayCameraLetterBox(FromAmount, ToAmount, Duration); });
+    WorldTable.set_function("PlayCameraGammaCorrection", [this](float FromGamma, float ToGamma, float Duration)
+        { WorldProxy.PlayCameraGammaCorrection(FromGamma, ToGamma, Duration); });
+    WorldTable.set_function("PlayCameraVignette", [this](float FromIntensity, float ToIntensity, float Duration, float Radius, float Softness)
+        { WorldProxy.PlayCameraVignette(FromIntensity, ToIntensity, Duration, Radius, Softness); });
+    WorldTable.set_function("PlayCameraEffectAsset", [this](const FString& AssetPath)
+        { return WorldProxy.PlayCameraEffectAsset(AssetPath); });
+    WorldTable.set_function("FindPlayer",[this]()
+        { return WorldProxy.FindPlayer(); });
+    WorldTable.set_function("FindActorByTag", [this](const FString& Tag)
+        { return WorldProxy.FindActorByTag(Tag); });
+    WorldTable.set_function("FindActorsByTag", [this](const FString& Tag)
+        { return sol::as_table(WorldProxy.FindActorsByTag(Tag)); });
+    WorldTable.set_function("SetCameraView", [this](const FVector& CamLoc,const FVector& TargetLoc,float Fov)
+        { return WorldProxy.SetCameraView(CamLoc,TargetLoc,Fov); });
+    WorldTable.set_function("GetActiveCameraLocation", [this]()
+        { return WorldProxy.GetActiveCameraLocation(); });
+    WorldTable.set_function("SetCameraViewWithBlend", [this](const FVector& CamLoc, const FVector& TargetLoc, float Fov, float Duration, const FString& BlendType)
+        { return WorldProxy.SetCameraViewWithBlend(CamLoc, TargetLoc, Fov, Duration, BlendType); });
+    WorldTable.set_function("SetCameraViewImmediate", [this](const FVector& CamLoc, const FVector& TargetLoc, float Fov)
+        { return WorldProxy.SetCameraViewImmediate(CamLoc, TargetLoc, Fov); });
+    WorldTable.set_function("SetCameraTransitionToTarget", [this](const FLuaGameObjectProxy* ActorProxy, float Duration, const FString& BlendType)
+        { return ActorProxy ? WorldProxy.SetCameraTransitionToTarget(*ActorProxy, Duration, BlendType) : false; });
+    WorldTable.set_function("MoveActorWithBlock", [this](const FLuaGameObjectProxy* ActorProxy, const FVector& Delta, const FString& BlockingTag)
+        { return ActorProxy ? WorldProxy.MoveActorWithBlock(*ActorProxy, Delta, BlockingTag) : false; });
+    WorldTable.set_function("RequestHitStop", [this](float Duration)
+        { return WorldProxy.RequestHitStop(Duration); });
+    WorldTable.set_function("RequestSlomo", [this](float InTimeScale, float Duration)
+        { return WorldProxy.RequestSlomo(InTimeScale, Duration); });
+    WorldTable.set_function("GetUnscaledDeltatime", [this]()
+        { return WorldProxy.GetUnscaledDeltatime(); });
+    WorldTable.set_function("GetTimeScale", [this]()
+        { return WorldProxy.GetTimeScale(); });
+
+    Env["World"] = WorldTable;
+
+    const FString FullPathUtf8 = FPaths::FromPath(FullPath);
+
+    std::string ScriptSource;
+    if (!ReadTextFile(FullPath, ScriptSource))
+    {
+        SetLastError(FString("Failed to read Lua script: ") + FullPathUtf8);
+        return false;
+    }
+
+    sol::load_result Loaded = Lua.load(ScriptSource, FullPathUtf8);
+    if (!Loaded.valid())
+    {
+        sol::error Error = Loaded;
+        SetLastError(FString("Failed to load Lua script: ") + Error.what());
+        return false;
+    }
+
+	// Lua.load()가 성공하면 파일 전체가 하나의 익명 함수 chunk처럼 로드됨
+    sol::protected_function Script = Loaded;
+    sol::set_environment(Env, Script);
+
+	// 파일 실제 실행이 이 시점에서 이루어지면서 파일 내 함수 정의 등이 수행됨
+    sol::protected_function_result Result = Script();
+    if (!Result.valid())
+    {
+        sol::error Error = Result;
+        SetLastError(FString("Failed to execute Lua script: ") + Error.what());
+        return false;
+    }
+
+    CacheScriptFunctions();
+    BindNativeDelegates();
+
+    bScriptLoaded = true;
+
+    UE_LOG(Lua, Info, "Loaded Lua script: %s", FullPathUtf8.c_str());
+    return true;
+}
+
+bool ULuaScriptComponent::ReloadScript()
+{
+    if (!HasScript())
+    {
+        ClearScriptRuntime();
+        return false;
+    }
+
+    if (LoadScript())
+    {
+        return true;
+    }
+
+    return false;
+}
+
+void ULuaScriptComponent::Serialize(FArchive& Ar)
+{
+    UActorComponent::Serialize(Ar);
+
+    Ar << LuaScriptPath;
+}
+
+void ULuaScriptComponent::PostDuplicate()
+{
+    UActorComponent::PostDuplicate();
+
+    LastError.clear();
+    ClearScriptRuntime();
+
+    // 복제 직후 에디터에서 ScriptPath만 복사해두고, 실제 Lua 실행은 BeginPlay 또는 Reload 버튼에서 수행
+}
+
+void ULuaScriptComponent::GetEditableProperties(TArray<FPropertyDescriptor>& OutProps)
+{
+    UActorComponent::GetEditableProperties(OutProps);
+
+    FPropertyDescriptor ScriptProp;
+    ScriptProp.Name = "Script File";
+    ScriptProp.Type = EPropertyType::LuaScriptRef;
+    ScriptProp.ValuePtr = &LuaScriptPath;
+    OutProps.push_back(ScriptProp);
+}
+
+void ULuaScriptComponent::PostEditProperty(const char* PropertyName)
+{
+    UActorComponent::PostEditProperty(PropertyName);
+
+    if (std::strcmp(PropertyName, "Script File") == 0)
+    {
+        if (!HasScript())
+        {
+            ClearScript();
+        }
+        else
+        {
+            ReloadScript();
+        }
+    }
+}
+
+void ULuaScriptComponent::ClearScriptRuntime()
+{
+    UnbindNativeDelegates();
+
+    BeginPlayFunc = sol::protected_function();
+    TickFunc = sol::protected_function();
+    EndPlayFunc = sol::protected_function();
+
+	OnKeyPressedFunc = sol::protected_function();
+    OnKeyReleasedFunc = sol::protected_function();
+
+	OnMouseButtonPressedFunc = sol::protected_function();
+    OnMouseButtonReleasedFunc = sol::protected_function();
+
+    OnGamepadButtonPressedFunc = sol::protected_function();
+    OnGamepadButtonReleasedFunc = sol::protected_function();
+
+    OnOverlapBeginFunc = sol::protected_function();
+    OnOverlapEndFunc = sol::protected_function();
+    OnTakeDamageFunc = sol::protected_function();
+
+    Env = sol::environment();
+    ObjProxy.SetActor(nullptr);
+    WorldProxy.SetWorld(nullptr);
+
+    bScriptLoaded = false;
+}
+
+void ULuaScriptComponent::BindNativeDelegates()
+{
+    AActor* OwnerActor = GetOwner();
+    if (!OwnerActor)
+    {
+        OwnerActor = GetTypedOuter<AActor>();
+    }
+
+    if (!OwnerActor)
+    {
+        return;
+    }
+
+    if (OnOverlapBeginFunc.valid() && OnOverlapBeginHandle == 0)
+    {
+        OnOverlapBeginHandle = OwnerActor->OnOverlapBegin.Add(
+            [this](AActor* OtherActor)
+            {
+                FLuaGameObjectProxy OtherProxy(OtherActor);
+                CallLuaFunction("OnOverlapBegin", OnOverlapBeginFunc, LastError, OtherProxy);
+            });
+    }
+
+    if (OnOverlapEndFunc.valid() && OnOverlapEndHandle == 0)
+    {
+        OnOverlapEndHandle = OwnerActor->OnOverlapEnd.Add(
+            [this](AActor* OtherActor)
+            {
+                FLuaGameObjectProxy OtherProxy(OtherActor);
+                CallLuaFunction("OnOverlapEnd", OnOverlapEndFunc, LastError, OtherProxy);
+            });
+    }
+
+    if (OnTakeDamageFunc.valid() && OnTakeDamageHandle == 0)
+    {
+        OnTakeDamageHandle = OwnerActor->OnTakeDamage.Add(
+            [this](float Damage, AActor* Instigator)
+            {
+                FLuaGameObjectProxy InstigatorProxy(Instigator);
+                CallLuaFunction("OnTakeDamage", OnTakeDamageFunc, LastError, Damage, InstigatorProxy);
+            });
+    }
+}
+
+void ULuaScriptComponent::UnbindNativeDelegates()
+{
+    AActor* OwnerActor = GetOwner();
+    if (!OwnerActor)
+    {
+        OwnerActor = GetTypedOuter<AActor>();
+    }
+
+    if (!OwnerActor)
+    {
+        OnOverlapBeginHandle = 0;
+        OnOverlapEndHandle = 0;
+        OnTakeDamageHandle = 0;
+        return;
+    }
+
+    if (OnOverlapBeginHandle != 0)
+    {
+        OwnerActor->OnOverlapBegin.Remove(OnOverlapBeginHandle);
+        OnOverlapBeginHandle = 0;
+    }
+
+    if (OnOverlapEndHandle != 0)
+    {
+        OwnerActor->OnOverlapEnd.Remove(OnOverlapEndHandle);
+        OnOverlapEndHandle = 0;
+    }
+
+    if (OnTakeDamageHandle != 0)
+    {
+        OwnerActor->OnTakeDamage.Remove(OnTakeDamageHandle);
+        OnTakeDamageHandle = 0;
+    }
+}
+
+void ULuaScriptComponent::CacheScriptFunctions()
+{
+    BeginPlayFunc = GetOptionalLuaFunction(Env, "BeginPlay", LastError);
+    TickFunc = GetOptionalLuaFunction(Env, "Tick", LastError);
+    EndPlayFunc = GetOptionalLuaFunction(Env, "EndPlay", LastError);
+
+	OnKeyPressedFunc = GetOptionalLuaFunction(Env, "OnKeyPressed", LastError);
+    OnKeyReleasedFunc = GetOptionalLuaFunction(Env, "OnKeyReleased", LastError);
+
+	OnMouseButtonPressedFunc = GetOptionalLuaFunction(Env, "OnMouseButtonPressed", LastError);
+    OnMouseButtonReleasedFunc = GetOptionalLuaFunction(Env, "OnMouseButtonReleased", LastError);
+
+    OnGamepadButtonPressedFunc = GetOptionalLuaFunction(Env, "OnGamepadButtonPressed", LastError);
+    OnGamepadButtonReleasedFunc = GetOptionalLuaFunction(Env, "OnGamepadButtonReleased", LastError);
+
+    OnOverlapBeginFunc = GetOptionalLuaFunction(Env, "OnOverlapBegin", LastError);
+    OnOverlapEndFunc = GetOptionalLuaFunction(Env, "OnOverlapEnd", LastError);
+    OnTakeDamageFunc = GetOptionalLuaFunction(Env, "OnTakeDamage", LastError);
+}
+
+void ULuaScriptComponent::SetLastError(const FString& InError)
+{
+    LastError = InError;
+    UE_LOG(Lua, Error, "%s", LastError.c_str());
+}
+
+void ULuaScriptComponent::DispatchInputEvents()
+{
+    const FInputSnapshot& Input = InputSystem::Get().GetSnapshot();
+    DispatchVirtualKeyEvents(Input);
+    DispatchGamepadEvents(Input);
+}
+
+void ULuaScriptComponent::DispatchVirtualKeyEvents(const FInputSnapshot& Input)
+{
+    for (int32 VK = 0; VK < 256; ++VK)
+    {
+        if (!Input.KeyPressed[VK] && !Input.KeyReleased[VK])
+        {
+            continue;
+        }
+
+        if (IsMouseButtonVK(VK))
+        {
+            DispatchMouseButtonEvent(Input, VK);
+        }
+        else
+        {
+            DispatchKeyboardEvent(Input, VK);
+        }
+    }
+}
+
+void ULuaScriptComponent::DispatchKeyboardEvent(const FInputSnapshot& Input, int32 VK)
+{
+    const FString KeyName = LuaKeyNameFromVK(VK);
+    if (KeyName.empty() || KeyName == "Unknown")
+    {
+        return;
+    }
+
+    if (Input.KeyPressed[VK])
+    {
+        CallLuaFunction("OnKeyPressed", OnKeyPressedFunc, LastError, KeyName);
+    }
+
+    if (Input.KeyReleased[VK])
+    {
+        CallLuaFunction("OnKeyReleased", OnKeyReleasedFunc, LastError, KeyName);
+    }
+}
+
+void ULuaScriptComponent::DispatchMouseButtonEvent(const FInputSnapshot& Input, int32 VK)
+{
+    const FString ButtonName = LuaMouseButtonNameFromVK(VK);
+    if (ButtonName.empty() || ButtonName == "Unknown")
+    {
+        return;
+    }
+
+    if (Input.KeyPressed[VK])
+    {
+        CallLuaFunction("OnMouseButtonPressed", OnMouseButtonPressedFunc, LastError, ButtonName);
+    }
+
+    if (Input.KeyReleased[VK])
+    {
+        CallLuaFunction("OnMouseButtonReleased", OnMouseButtonReleasedFunc, LastError, ButtonName);
+    }
+}
+
+void ULuaScriptComponent::DispatchGamepadEvents(const FInputSnapshot& Input)
+{
+    for (int32 ControllerId = 0; ControllerId < MaxGamepadCount; ++ControllerId)
+    {
+        const FGamepadSnapshot& Pad = Input.Gamepads[ControllerId];
+        if (!Pad.bConnected)
+        {
+            continue;
+        }
+
+        for (int32 ButtonIndex = 0; ButtonIndex < static_cast<int32>(EGamepadButton::Count); ButtonIndex++)
+        {
+            const FString ButtonName = LuaGamepadButtonNameFromIndex(ButtonIndex);
+
+            if (Pad.ButtonPressed[ButtonIndex])
+            {
+                CallLuaFunction("OnGamepadButtonPressed", OnGamepadButtonPressedFunc, LastError, ButtonName, ControllerId);
+            }
+
+            if (Pad.ButtonReleased[ButtonIndex])
+            {
+                CallLuaFunction("OnGamepadButtonReleased", OnGamepadButtonReleasedFunc, LastError, ButtonName, ControllerId);
+            }
+        }
+    }
+}

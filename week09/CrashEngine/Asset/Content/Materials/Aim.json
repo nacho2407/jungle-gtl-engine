@@ -1,0 +1,14 @@
+{
+  "PathFileName": "Asset/Content/Materials/Aim.json",
+  "BlendState": "AlphaBlend",
+  "DepthStencilState": "NoDepth",
+  "RasterizerState": "SolidNoCull",
+  "Parameters": {
+    "SectionColor": [1.0, 1.0, 1.0, 1.0],
+    "SpecularPower": 1.0,
+    "SpecularStrength": 0.0
+  },
+  "Textures": {
+    "DiffuseTexture": "Asset/Editor/Icons/Aim.png"
+  }
+}
