@@ -1,0 +1,375 @@
+#pragma once
+
+#include "PrimitiveActors.generated.h"
+
+#include "AActor.h"
+#include "GameFramework/Pawn.h"
+#include "Core/Delegates/Delegate.h"
+#include "Core/CollisionTypes.h"
+
+class UTextRenderComponent;
+class UDecalComponent;
+class ULightComponent;
+class UBillboardComponent;
+class UHeightFogComponent;
+class UBoxComponent;
+class UProjectileMovementComponent;
+class UProceduralMeshComponent;
+class UStaticMesh;
+class USkeletalMeshComponent;
+
+
+UCLASS()
+class ASceneActor : public AActor
+{
+    GENERATED_BODY_ASceneActor()
+public:
+	DECLARE_CLASS(ASceneActor, AActor)
+	ASceneActor() = default;
+
+	void InitDefaultComponents();
+
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+    void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+    void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+};
+
+UCLASS()
+class APlayerStart : public AActor
+{
+    GENERATED_BODY_APlayerStart()
+public:
+	DECLARE_CLASS(APlayerStart, AActor)
+	APlayerStart() = default;
+
+	void InitDefaultComponents() override;
+};
+
+UCLASS()
+class AFogActor : public AActor
+{
+    GENERATED_BODY_AFogActor()
+public:
+	DECLARE_CLASS(AFogActor, AActor)
+	AFogActor() = default;
+
+	void InitDefaultComponents();
+
+	UHeightFogComponent* GetFogComponent() const { return FogComp; }
+
+private:
+	UHeightFogComponent* FogComp = nullptr;
+	UBillboardComponent* BillboardComp = nullptr;
+};
+
+UCLASS()
+class AStaticMeshActor : public AActor
+{
+    GENERATED_BODY_AStaticMeshActor()
+public:
+	DECLARE_CLASS(AStaticMeshActor, AActor)
+	AStaticMeshActor() = default;
+
+	void InitDefaultComponents();
+};
+
+UCLASS()
+class ASkeletalMeshActor : public AActor
+{
+    GENERATED_BODY_ASkeletalMeshActor()
+public:
+	DECLARE_CLASS(ASkeletalMeshActor, AActor)
+	ASkeletalMeshActor() = default;
+
+	void InitDefaultComponents();
+
+	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComp; }
+
+private:
+    USkeletalMeshComponent* SkeletalMeshComp = nullptr;
+};
+
+UCLASS()
+class ASubUVActor : public AActor
+{
+    GENERATED_BODY_ASubUVActor()
+public:
+    DECLARE_CLASS(ASubUVActor, AActor)
+    ASubUVActor() = default;
+
+    void InitDefaultComponents();
+};
+
+UCLASS()
+class ATextRenderActor : public AActor
+{
+    GENERATED_BODY_ATextRenderActor()
+public:
+    DECLARE_CLASS(ATextRenderActor, AActor)
+    ATextRenderActor() = default;
+
+    void InitDefaultComponents();
+};
+
+UCLASS()
+class ABillboardActor : public AActor
+{
+    GENERATED_BODY_ABillboardActor()
+public:
+    DECLARE_CLASS(ABillboardActor, AActor)
+	ABillboardActor() = default;
+
+    void InitDefaultComponents();
+};
+
+UCLASS()
+class ADecalActor : public AActor
+{
+    GENERATED_BODY_ADecalActor()
+public:
+	DECLARE_CLASS(ADecalActor, AActor)
+	ADecalActor() = default;
+
+	void InitDefaultComponents();
+};
+
+UCLASS()
+class AFireballActor : public AActor {
+    GENERATED_BODY_AFireballActor()
+public:
+    DECLARE_CLASS(AFireballActor, AActor)
+	AFireballActor() = default;
+	
+	void InitDefaultComponents();
+};
+
+UCLASS()
+class ADecalSpotLightActor : public AActor {
+    GENERATED_BODY_ADecalSpotLightActor()
+public:
+	DECLARE_CLASS(ADecalSpotLightActor, AActor)
+	ADecalSpotLightActor() = default;
+
+	void InitDefaultComponents();
+
+	void Tick(float DeltaTime) override;
+
+	const float GetRange() const { return Range; }
+	void SetRange(float InRange) { Range = InRange; }
+
+	const float GetAngle() const { return Angle; }
+	void SetAngle(float InAngle) { Angle = InAngle; }
+
+private:
+	UDecalComponent* DecalComp = nullptr;
+
+	float Range = 10.0f;
+	float Angle = 30.0f;
+};
+
+UCLASS()
+class ALightActor : public AActor
+{
+    GENERATED_BODY_ALightActor()
+public:
+    DECLARE_CLASS(ALightActor, AActor)
+    ALightActor() = default;
+
+    ULightComponent* GetLight() const;
+    void SetLight(ULightComponent* InLight);
+
+	UBillboardComponent* GetBillboard() const { return BillboardComp; }
+	void SetBillboard(UBillboardComponent* InBillboard) { BillboardComp = InBillboard; }
+
+protected:
+    ULightComponent* LightComp = nullptr;
+	UBillboardComponent* BillboardComp = nullptr;
+};
+
+UCLASS()
+class AAmbientLightActor : public ALightActor
+{
+    GENERATED_BODY_AAmbientLightActor()
+public:
+    DECLARE_CLASS(AAmbientLightActor, ALightActor)
+    void InitDefaultComponents() override;
+    void Tick(float DeltaTime) override;
+};
+
+UCLASS()
+class ADirectionalLightActor : public ALightActor
+{
+    GENERATED_BODY_ADirectionalLightActor()
+public:
+    DECLARE_CLASS(ADirectionalLightActor, ALightActor)
+    void InitDefaultComponents() override;
+    void Tick(float DeltaTime) override;
+};
+
+UCLASS()
+class APointLightActor : public ALightActor
+{
+    GENERATED_BODY_APointLightActor()
+public:
+    DECLARE_CLASS(APointLightActor, ALightActor)
+    virtual void InitDefaultComponents() override;
+    virtual void Tick(float DeltaTime) override;
+};
+
+UCLASS()
+class ASpotlightActor : public APointLightActor 
+{
+    GENERATED_BODY_ASpotlightActor()
+public:
+	DECLARE_CLASS(ASpotlightActor, APointLightActor)
+	void InitDefaultComponents() override;
+	void Tick(float DeltaTime) override;
+};
+
+UCLASS()
+class ABullet : public AActor
+{
+    GENERATED_BODY_ABullet()
+public:
+    DECLARE_CLASS(ABullet, AActor)
+    void InitDefaultComponents() override;
+    void Tick(float DeltaTime) override;
+
+	void SetProjectileVelocity(FVector NewVelocity);
+
+private:
+    UProjectileMovementComponent* ProjectileComp = nullptr;
+};
+
+UCLASS()
+class ABladeSlash : public AActor
+{
+    GENERATED_BODY_ABladeSlash()
+public:
+    DECLARE_CLASS(ABladeSlash, AActor)
+    void InitDefaultComponents() override;
+    void Tick(float DeltaTime) override;
+};
+
+UCLASS()
+class ADestructibleActor : public AActor
+{
+    GENERATED_BODY_ADestructibleActor()
+public:
+    DECLARE_CLASS(ADestructibleActor, AActor)
+
+	// 데이터를 입력으로 받아 초기화
+	void InitDestructibleActor(UStaticMesh* StaticMesh);
+    void InitDestructibleActor(UProceduralMeshComponent* InProcMeshComp);
+
+	// 따로 StaticMesh 지정 안할 시 임의의 StaticMesh 로 초기화
+    void InitDefaultComponents() override;
+    void Tick(float DeltaTime) override;
+
+	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+    void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+    void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+
+	void PostDuplicate(UObject* Original) override;
+
+	uint32 GetSliceCount() const { return SliceCount; }
+    void SetSliceCount(uint32 NewSliceCount) { SliceCount = NewSliceCount; }
+
+private:
+	UProceduralMeshComponent* ProcMeshComp = nullptr;
+    UBoxComponent* BoxComponent = nullptr;
+	// 물리 시뮬레이션 흉내용
+    UProjectileMovementComponent* ProjMoveComp = nullptr;
+	// 현재까지 잘려진 횟수
+	UPROPERTY(EditAnywhere)
+	uint32 SliceCount = 0;
+};
+
+UCLASS()
+class ABoundsBoxActor : public AActor
+{
+    GENERATED_BODY_ABoundsBoxActor()
+public:
+    DECLARE_CLASS(ABoundsBoxActor, AActor)
+    void InitDefaultComponents() override;
+
+	void Tick(float DeltaTime) override;
+
+    void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
+    void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+    void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
+
+    void PostDuplicate(UObject* Original) override;
+private:
+    UBoxComponent* BoxComponent = nullptr;
+};
+
+class AMainSceneDestructibleActor;
+
+UCLASS()
+class UMainSceneDestructibleComponent : public UActorComponent
+{
+    GENERATED_BODY_UMainSceneDestructibleComponent()
+public:
+    DECLARE_CLASS(UMainSceneDestructibleComponent, UActorComponent)
+
+    void BeginPlay() override;
+    void Serialize(FArchive& Ar) override;
+    void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override;
+
+protected:
+    void TickComponent(float DeltaTime) override;
+
+private:
+    float GetRealDeltaTime(float DeltaTime) const;
+    bool StartSlice();
+
+    UPROPERTY(EditAnywhere)
+    bool bAutoStart = true;
+    UPROPERTY(EditAnywhere)
+    float SliceDuration = 1.0f;
+    UPROPERTY(EditAnywhere)
+    float SliceSpeed = 1.2f;
+    UPROPERTY(EditAnywhere)
+    float PatrolAmplitude = 0.18f;
+    UPROPERTY(EditAnywhere)
+    float PatrolSpeed = 1.15f;
+    UPROPERTY(EditAnywhere)
+    int32 SliceCount = 5;
+    UPROPERTY(EditAnywhere)
+    float PresentationTrigger = 0.0f;
+    bool bPresentationTriggerConsumed = false;
+
+    bool bSlicePending = false;
+    bool bSliced = false;
+    float Elapsed = 0.0f;
+    float PatrolElapsed = 0.0f;
+    TArray<AMainSceneDestructibleActor*> Fragments;
+    TArray<FVector> FragmentStartLocations;
+    TArray<FVector> FragmentTargetLocations;
+};
+
+UCLASS()
+class AMainSceneDestructibleActor : public AActor
+{
+    GENERATED_BODY_AMainSceneDestructibleActor()
+public:
+    DECLARE_CLASS(AMainSceneDestructibleActor, AActor)
+
+    void InitDefaultComponents() override;
+    void PostComponentRegistered(UActorComponent* Comp) override;
+    void PostDuplicate(UObject* Original) override;
+
+    TArray<AMainSceneDestructibleActor*> SliceForMainScene(const FVector& PlanePointWorld, const FVector& PlaneNormalWorld, float SeparateSpeed);
+    void StopPresentationMotion();
+
+private:
+    void InitFromStaticMesh(UStaticMesh* StaticMesh, bool bAddPresentationComponent);
+    void InitFromProceduralMesh(UProceduralMeshComponent* InProcMeshComp, bool bAddPresentationComponent);
+    void RebindComponents();
+
+    UProceduralMeshComponent* ProcMeshComp = nullptr;
+    UBoxComponent* BoxComponent = nullptr;
+    UProjectileMovementComponent* ProjMoveComp = nullptr;
+    UMainSceneDestructibleComponent* PresentationComponent = nullptr;
+};

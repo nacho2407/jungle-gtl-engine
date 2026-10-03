@@ -1,0 +1,45 @@
+﻿#pragma once
+#include "Object/Object.h"
+#include "ReflectionSystem/ReflectionUtils.h"
+#include "GameFramework/AActor.h"
+
+#include "Level.generated.h"
+
+UCLASS()
+class ULevel : public UObject
+{
+    GENERATED_BODY_ULevel()
+public:
+	DECLARE_CLASS(ULevel, UObject)
+
+	ULevel() = default;
+	virtual ~ULevel() override;
+
+	virtual void PostDuplicate(UObject* Original) override;
+
+	// 프로퍼티 시스템 — UObject 에서 상속
+	void GetEditableProperties(TArray<FPropertyDescriptor>& OutProps) override
+	{
+		ReflectionUtils::AppendGeneratedPropertiesRecursive(this, GetStaticClass(), OutProps);
+	}
+	void PostEditProperty(const char* PropertyName) override {}
+
+	void AddActor(AActor* Actor);
+	void RemoveActor(AActor* Actor);
+
+	const TArray<AActor*>& GetActors() const { return Actors; }
+
+	void BeginPlay();
+	void TickEditor(float DeltaTime);   // bTickInEditor == true 인 액터만 틱
+	void TickGame(float DeltaTime);     // 활성화된 모든 액터를 틱 (PIE / Game)
+	void EndPlay(EEndPlayReason::Type EndPlayReason);
+private:
+	void FlushPendingActorMutations();
+	bool ContainsActor(const TArray<AActor*>& ActorList, AActor* Actor) const;
+
+	TArray<AActor*> Actors;
+    TArray<AActor*> PendingAddActors;
+	TArray<AActor*> PendingRemoveActors;
+	bool bIteratingActors = false;
+};
+
