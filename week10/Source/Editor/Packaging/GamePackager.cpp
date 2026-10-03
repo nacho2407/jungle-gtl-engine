@@ -24,7 +24,7 @@
 
 namespace
 {
-    constexpr const wchar_t* GSolutionFileName = L"JSEngine.sln";
+    constexpr const wchar_t* GSolutionFileName = L"week10.sln";
 
     void EmitBuildLog(const FString& Message);
     void EmitBuildLogWidePath(const char* Prefix, const std::filesystem::path& Path);
@@ -1938,7 +1938,7 @@ bool FGamePackager::RunMSBuild(const FGameBuildSettings& Settings, FString& OutM
     const std::filesystem::path SolutionPath = SolutionRoot / GSolutionFileName;
     if (!std::filesystem::exists(SolutionPath))
     {
-        OutMessage = "JSEngine.sln not found";
+        OutMessage = "week10.sln not found";
         EmitBuildLog(OutMessage);
         EmitBuildLogWidePath("FPaths::RootDir = ", std::filesystem::path(FPaths::RootDir()));
         EmitBuildLogWidePath("Current path    = ", std::filesystem::current_path());
