@@ -1,0 +1,370 @@
+﻿#include "Runtime/Script/API/LuaEngineAPIBindings.h"
+
+#include "Engine/Runtime/Engine.h"
+#include "Component/CameraComponent.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/World.h"
+#include "Serialization/PrefabManager.h"
+
+namespace
+{
+    UWorld* GetEngineAPIWorld()
+    {
+        return GEngine ? GEngine->GetWorld() : nullptr;
+    }
+
+    sol::table ActorsToLuaTable(sol::this_state State, const TArray<AActor*>& Actors)
+    {
+        sol::state_view Lua(State);
+        sol::table Result = Lua.create_table();
+
+        int32 Index = 1;
+        for (AActor* Actor : Actors)
+        {
+            if (Actor)
+            {
+                Result[Index++] = Actor;
+            }
+        }
+
+        return Result;
+    }
+
+    bool LuaTagsTableContainsActorTags(const sol::table& TagsTable, AActor* Actor)
+    {
+        if (!Actor)
+        {
+            return false;
+        }
+
+        bool bHasAnyTag = false;
+        for (const auto& Pair : TagsTable)
+        {
+            sol::object Value = Pair.second;
+            if (Value.valid() && Value.is<FString>())
+            {
+                bHasAnyTag = true;
+                if (!Actor->HasTag(Value.as<FString>()))
+                {
+                    return false;
+                }
+            }
+        }
+        return bHasAnyTag;
+    }
+
+    bool ActorMatchesTypeName(const AActor* Actor, const FString& TypeName)
+    {
+        if (!Actor || TypeName.empty())
+        {
+            return false;
+        }
+
+        for (const FTypeInfo* Type = Actor->GetTypeInfo(); Type != nullptr; Type = Type->Parent)
+        {
+            if (Type->name && TypeName == Type->name)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+namespace FLuaEngineAPI
+{
+    void BindWorld(sol::state& Lua, sol::table& API)
+    {
+        sol::table World = Lua.create_table();
+
+        World["FindActorByName"] = [](const FString& Name) -> AActor*
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (!ActiveWorld)
+            {
+                return nullptr;
+            }
+
+            for (AActor* Actor : ActiveWorld->GetActors())
+            {
+                if (Actor && Actor->GetName() == Name)
+                {
+                    return Actor;
+                }
+            }
+            return nullptr;
+        };
+
+        World["FindActorsByName"] = [](sol::this_state State, const FString& Name)
+        {
+            TArray<AActor*> Matches;
+
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (ActiveWorld)
+            {
+                for (AActor* Actor : ActiveWorld->GetActors())
+                {
+                    if (Actor && Actor->GetName() == Name)
+                    {
+                        Matches.push_back(Actor);
+                    }
+                }
+            }
+
+            return ActorsToLuaTable(State, Matches);
+        };
+
+        World["FindActorsByTag"] = [](sol::this_state State, const FString& Tag)
+        {
+            TArray<AActor*> Matches;
+
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (ActiveWorld)
+            {
+                for (AActor* Actor : ActiveWorld->GetActors())
+                {
+                    if (Actor && Actor->HasTag(Tag))
+                    {
+                        Matches.push_back(Actor);
+                    }
+                }
+            }
+
+            return ActorsToLuaTable(State, Matches);
+        };
+
+        World["FindActorsByTags"] = [](sol::this_state State, sol::table Tags)
+        {
+            TArray<AActor*> Matches;
+
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (ActiveWorld)
+            {
+                for (AActor* Actor : ActiveWorld->GetActors())
+                {
+                    if (LuaTagsTableContainsActorTags(Tags, Actor))
+                    {
+                        Matches.push_back(Actor);
+                    }
+                }
+            }
+
+            return ActorsToLuaTable(State, Matches);
+        };
+
+        World["GetAllActors"] = [](sol::this_state State)
+        {
+            TArray<AActor*> Matches;
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (ActiveWorld)
+            {
+                Matches = ActiveWorld->GetActors();
+            }
+            return ActorsToLuaTable(State, Matches);
+        };
+
+        World["FindActorByTag"] = [](const FString& Tag) -> AActor*
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (!ActiveWorld)
+            {
+                return nullptr;
+            }
+
+            for (AActor* Actor : ActiveWorld->GetActors())
+            {
+                if (Actor && Actor->HasTag(Tag))
+                {
+                    return Actor;
+                }
+            }
+            return nullptr;
+        };
+
+        World["FindActorsByType"] = [](sol::this_state State, const FString& TypeName)
+        {
+            TArray<AActor*> Matches;
+
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (ActiveWorld)
+            {
+                for (AActor* Actor : ActiveWorld->GetActors())
+                {
+                    if (ActorMatchesTypeName(Actor, TypeName))
+                    {
+                        Matches.push_back(Actor);
+                    }
+                }
+            }
+
+            return ActorsToLuaTable(State, Matches);
+        };
+
+        World["GetActorCount"] = []() -> int32
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld ? static_cast<int32>(ActiveWorld->GetActors().size()) : 0;
+        };
+
+        World["IsValidActor"] = [](AActor* Actor) -> bool
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (!ActiveWorld || !Actor)
+            {
+                return false;
+            }
+
+            for (AActor* WorldActor : ActiveWorld->GetActors())
+            {
+                if (WorldActor == Actor)
+                {
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        World["GetPlayerController"] = []() -> APlayerController*
+        {
+            return GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+        };
+
+        World["GetPossessedActor"] = []() -> AActor*
+        {
+            APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+            return PlayerController ? PlayerController->GetPossessedActor() : nullptr;
+        };
+
+        World["GetViewTargetActor"] = []() -> AActor*
+        {
+            APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+            return PlayerController ? PlayerController->GetViewTargetActor() : nullptr;
+        };
+
+        World["GetViewTargetCamera"] = []() -> UCameraComponent*
+        {
+            APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+            return PlayerController ? PlayerController->GetViewTargetCamera() : nullptr;
+        };
+
+		World["SetViewTargetCameraLocation"] = [](const FVector& NewLocation)
+        {
+            APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+
+			if (PlayerController)
+			{
+                PlayerController->GetViewTargetCamera()->SetRelativeLocation(NewLocation);
+			}
+        };
+
+		World["AddViewTargetCameraLocation"] = [](const FVector& Delta)
+        {
+            APlayerController* PC = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+
+            if (PC)
+            {
+                auto cam = PC->GetViewTargetCamera();
+                cam->SetRelativeLocation(cam->GetRelativeLocation() + Delta);
+            }
+        };
+
+		World["GetViewTargetCameraLocation"] = []() -> FVector
+        {
+            APlayerController* PlayerController = GEngine ? GEngine->GetPrimaryPlayerController() : nullptr;
+
+			return PlayerController ? PlayerController->GetViewTargetCamera()->GetRelativeLocation() : FVector::ZeroVector;
+        };
+
+        World["SpawnActor"] = [](const FString& TypeName) -> AActor*
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (!ActiveWorld)
+            {
+                return nullptr;
+            }
+
+            AActor* Actor = ActiveWorld->SpawnActorByTypeName(TypeName);
+            if (Actor)
+            {
+                ActiveWorld->SyncSpatialIndex();
+            }
+            return Actor;
+        };
+
+        World["SpawnActorFromPrefab"] = [](const FString& RelativePath) -> AActor*
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (!ActiveWorld)
+            {
+                return nullptr;
+            }
+
+            return FPrefabManager::SpawnActorFromPrefab(ActiveWorld, RelativePath);
+        };
+
+        World["DestroyActor"] = [](AActor* Actor)
+        {
+            if (Actor)
+            {
+                Actor->MarkPendingKill();
+            }
+        };
+
+		World["SetTimeScale"] = [](float NewTimeScale) {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            if (ActiveWorld)
+            {
+                ActiveWorld->SetGlobalTimeScale(NewTimeScale);
+            }
+        };
+
+        World["GetTimeScale"] = []() -> float
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld ? ActiveWorld->GetGlobalTimeScale() : 1.0f;
+        };
+
+        World["GetDeltaTime"] = []() -> float
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld ? ActiveWorld->GetDeltaTime() : 0.0f;
+        };
+
+        World["GetUnscaledDeltaTime"] = []() -> float
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld ? ActiveWorld->GetUnscaledDeltaTime() : 0.0f;
+        };
+
+        World["GetGameTime"] = []() -> double
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld ? ActiveWorld->GetGameTime() : 0.0;
+        };
+
+        World["GetRealTime"] = []() -> double
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld ? ActiveWorld->GetRealTime() : 0.0;
+        };
+        World["GetTimeScale"] = []() -> float
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            return ActiveWorld->GetGlobalTimeScale();
+        };
+
+		World["ActivateSandervistan"] = []() {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            ActiveWorld->ActivateSandervistan();
+        };
+
+        World["DeactivateSandervistan"] = []()
+        {
+            UWorld* ActiveWorld = GetEngineAPIWorld();
+            ActiveWorld->DeactivateSandervistan();
+        };
+
+        API["World"] = World;
+    }
+}

@@ -1,0 +1,46 @@
+{
+  "Actor" : {
+    "ClassName" : "ASceneActor",
+    "Components" : [{
+        "ClassName" : "USceneComponent",
+        "Editor Only" : false,
+        "Enable Tick" : true,
+        "Location" : [0.000000, 3.852106, 0.000000],
+        "ObjectName" : "USceneComponent_9",
+        "Rotation" : [0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : [],
+        "Type" : "USceneComponent",
+        "UUID" : 801
+      }, {
+        "ClassName" : "UBillboardComponent",
+        "Editor Only" : true,
+        "Enable Cull" : true,
+        "Enable Tick" : true,
+        "GenerateOverlapEvents" : false,
+        "Height" : 1.000000,
+        "Location" : [0.000000, 0.000000, 0.000000],
+        "ObjectName" : "UBillboardComponent_12",
+        "ParentUUID" : 801,
+        "Particle" : "Asset/Texture/EmptyActor.png",
+        "PlayRate" : 30.000000,
+        "Rotation" : [0.000000, 0.000000, 0.000000],
+        "Scale" : [1.000000, 1.000000, 1.000000],
+        "Tags" : [],
+        "Type" : "UBillboardComponent",
+        "UUID" : 802,
+        "Visible" : true,
+        "Width" : 1.000000,
+        "bLoop" : true
+      }],
+    "EditorOnly" : false,
+    "Name" : "SpawnPoint",
+    "RootComponent" : 801,
+    "Tags" : ["SpawnPoint"],
+    "UUID" : 800,
+    "Visible" : true
+  },
+  "ClassName" : "JSPrefab",
+  "SourceActorName" : "SpawnPoint",
+  "Version" : 1
+}
