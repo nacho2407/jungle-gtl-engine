@@ -452,29 +452,62 @@ FodyWeavers.xsd
 #Rider CMake Project for Showing Dependency diagram
 CMakeLists.txt
 
-# ignore Build Files
-JSEngine/Build/
-JSEngine/DerivedData/
-JSEngine/Saves/**
-Builds/
+# Build outputs and local state
+/Bin/
+/Build/
+/Builds/
+/Intermediate/
+/DerivedData/
+/packages/
+/week10/
+/Saves/
+/Settings/
+/Asset/Mesh/Bin/
+/Asset/SkeletalMesh/Bin/
+/Asset/Scene/*
+imgui.ini
 
-# Asset 폴더 관련 (그때그때 필요한 파일만 저장하도록 변경)
-!JSEngine/Asset/Mesh/**
-!JSEngine/Asset/**/*.meta
+# Static libraries built by BuildTools/Scripts on the first build
+/ThirdParty/RmlUi/Lib/
+/ThirdParty/SoLoud/Lib/
 
-JSEngine/Asset/Mesh/Bin/**
-JSEngine/Asset/Scene/**
+# Files tracked in this repository despite the *.obj and *.meta rules above
+!/Asset/**/*.meta
+!/Asset/Mesh/PreviewSphere.obj
+!/Asset/Mesh/Dice/Dice.obj
+!/Asset/Mesh/Dice/Dice_centered.obj
+!/Asset/Mesh/MultiMaterialCube/MultiMaterialCube.obj
 
-# FBX SDK runtime libs - re-include (gitignore의 [Dd]ebug/, [Rr]elease/ 패턴으로 인해 무시되는 것을 복구)
-!JSEngine/ThirdParty/FBX/lib/**
-!JSEngine/ThirdParty/RmlUi/Lib/**/
-!JSEngine/ThirdParty/RmlUi/Lib/**/*.lib
-JSEngine/ThirdParty/RmlUi/Lib/**/*.manifest
-!JSEngine/ThirdParty/SoLoud/Lib/**/
-!JSEngine/ThirdParty/SoLoud/Lib/**/*.lib
-JSEngine/ThirdParty/SoLoud/Lib/**/*.manifest
-
-# Week9 Game Scene
-!JSEngine/Asset/Scene/MapScene.Scene
-!JSEngine/Asset/Scene/Intro.Scene
-!JSEngine/Asset/Scene/Main.Scene
+# Excluded from this repository because of license issues; kept only for local builds
+/ThirdParty/FBX/
+/Asset/Font/
+/Asset/Particle/
+/Asset/SkeletalMesh/FurinaFBX/
+/Asset/SkeletalMesh/SimpleCharacter.fbx
+/Asset/Mesh/Bandage/
+/Asset/Mesh/Bitcoin/
+/Asset/Mesh/Lowpoly_tree_sample/
+/Asset/Mesh/Lumine/
+/Asset/Mesh/Painkiller/
+/Asset/Mesh/SkyDome/
+/Asset/Mesh/Sun/
+/Asset/Mesh/Village/
+/Asset/Mesh/apple_mid/
+/Asset/Mesh/bitten_apple_mid/
+/Asset/Mesh/cottage/
+/Asset/Mesh/cyberpunk_katana/
+/Asset/Mesh/MultiMaterialCube/WoodBox.meta
+/Asset/Mesh/MultiMaterialCube/WoodBox.mtl
+/Asset/Mesh/MultiMaterialCube/WoodBox.png
+/Asset/Mesh/sphere.obj
+/Asset/Texture/Decal/
+/Asset/Texture/Blood_Stain_sgfjdepc_1K.meta
+/Asset/Texture/Blood_Stain_sgfjdepc_1K.png
+/Asset/Texture/Hand_Smear_se0wefxp_1K.meta
+/Asset/Texture/Hand_Smear_se0wefxp_1K.png
+/Asset/Texture/High_Velocity_Blood_Spatter_sgeoahup_1K.meta
+/Asset/Texture/High_Velocity_Blood_Spatter_sgeoahup_1K.png
+/Asset/Texture/water.meta
+/Asset/Texture/water.png
+/Resources/Editor/Icons/
+/Resources/Editor/ToolIcons/
