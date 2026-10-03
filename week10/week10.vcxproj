@@ -684,7 +684,6 @@
     <ClCompile Include="Source\Engine\Core\AssetPathPolicy.cpp" />
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Core\CurveResourceCache.cpp" />
-    <ClCompile Include="Source\Engine\Core\Delegates\Delegate.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\Guid.cpp" />
     <ClCompile Include="Source\Engine\Core\FbxMaterialLoadService.cpp" />
@@ -779,8 +778,6 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\VSMConversionRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.cpp" />
     <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
@@ -924,6 +921,7 @@
     <ClInclude Include="Source\Editor\UI\EditorPlayStreamWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorActorSequenceDetails.h" />
     <ClInclude Include="Source\Editor\UI\EditorActorSequenceEditModel.h" />
+    <ClInclude Include="Source\Editor\UI\EditorActorSequenceTimeUtils.h" />
     <ClInclude Include="Source\Editor\UI\EditorActorSequencerWidget.h" />
     <ClInclude Include="Source\Editor\UI\EditorCommandContext.h" />
     <ClInclude Include="Source\Editor\UI\EditorTabManager.h" />
@@ -942,7 +940,6 @@
     <ClInclude Include="Source\Editor\Viewport\EditorPickingService.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorTransformInteraction.h" />
     <ClInclude Include="Source\Editor\Viewport\FSceneViewport.h" />
-    <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportLayout.h" />
     <ClInclude Include="Source\Engine\Camera\ViewportCamera.h" />
     <ClInclude Include="Source\Engine\Asset\BinarySerializer.h" />
@@ -971,6 +968,7 @@
     <ClInclude Include="Source\Engine\Component\DecalComponent.h" />
     <ClInclude Include="Source\Engine\Component\FireballComponent.h" />
     <ClInclude Include="Source\Engine\Component\GizmoComponent.h" />
+    <ClInclude Include="Source\Engine\Component\TransformProxy.h" />
     <ClInclude Include="Source\Engine\Component\HeightFogComponent.h" />
     <ClInclude Include="Source\Engine\Component\LineBatchComponent.h" />
     <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
@@ -1000,7 +998,6 @@
     <ClInclude Include="Source\Engine\Core\AssetPathPolicy.h" />
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
-    <ClInclude Include="Source\Engine\Core\ConsoleHelper.h" />
     <ClInclude Include="Source\Engine\Core\CoreMinimal.h" />
     <ClInclude Include="Source\Engine\Core\CoreTypes.h" />
     <ClInclude Include="Source\Engine\Core\CrashDump.h" />
@@ -1172,7 +1169,6 @@
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
     <ClInclude Include="Source\Engine\Serialization\JsonReader.h" />
     <ClInclude Include="Source\Engine\Serialization\JsonWriter.h" />
-    <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h" />
     <ClInclude Include="Source\Engine\Serialization\PrefabManager.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
     <ClInclude Include="Source\Engine\Slate\ISlateViewport.h" />
