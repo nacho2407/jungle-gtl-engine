@@ -1,0 +1,14 @@
+{
+        "AnimStackName" : "CHARACTER|spike_attack",
+        "AssetPath" : "Asset/AnimSequence/spike_CHARACTER_spike_attack.animsequence",
+        "Notifies" : [{
+            "ActionType" : 0,
+            "Duration" : 0.000000,
+            "EventId" : "Footstep",
+            "NotifyName" : "Footstep",
+            "Payload" : "",
+            "TriggerTime" : 0.066341
+          }],
+        "SourceFbxPath" : "Asset/SkeletalMesh/spike/spike.fbx",
+        "TargetSkeletalMeshPath" : "Asset/SkeletalMesh/spike/spike.fbx"
+      }

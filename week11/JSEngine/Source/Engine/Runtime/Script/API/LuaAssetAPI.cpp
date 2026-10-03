@@ -1,0 +1,146 @@
+#include "Runtime/Script/API/LuaEngineAPIBindings.h"
+
+#include "Animation/AnimSequence.h"
+#include "Asset/AssetQueryService.h"
+#include "Asset/CurveFloatAsset.h"
+#include "Asset/SkeletalMesh.h"
+#include "Asset/StaticMesh.h"
+#include "Core/ResourceManager.h"
+
+namespace
+{
+    sol::table StringsToLuaTable(sol::this_state State, const TArray<FString>& Strings)
+    {
+        sol::state_view Lua(State);
+        sol::table Result = Lua.create_table();
+
+        int32 Index = 1;
+        for (const FString& String : Strings)
+        {
+            Result[Index++] = String;
+        }
+
+        return Result;
+    }
+}
+
+namespace FLuaEngineAPI
+{
+    void BindAsset(sol::state& Lua, sol::table& API)
+    {
+        sol::table Asset = Lua.create_table();
+
+        Asset["NormalizePath"] = [](sol::this_state State, const FString& Path) -> sol::object
+        {
+            FString NormalizedPath;
+            if (!FAssetQueryService::NormalizeAssetPath(Path, NormalizedPath))
+            {
+                return sol::make_object(State, sol::nil);
+            }
+            return sol::make_object(State, NormalizedPath);
+        };
+
+        Asset["Exists"] = [](const FString& Path) -> bool
+        {
+            return FAssetQueryService::Exists(Path);
+        };
+
+        Asset["GetTexturePaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FAssetQueryService::GetTexturePaths());
+        };
+
+        Asset["GetStaticMeshPaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FAssetQueryService::GetStaticMeshPaths());
+        };
+
+        Asset["GetSkeletalMeshPaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FResourceManager::Get().GetSkeletalMeshPaths());
+        };
+
+        Asset["GetMaterialPaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FAssetQueryService::GetMaterialPaths());
+        };
+
+        Asset["GetCurvePaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FAssetQueryService::GetCurvePaths());
+        };
+
+        Asset["LoadCurve"] = [](const FString& Path) -> UCurveFloatAsset*
+        {
+            return FResourceManager::Get().LoadCurve(Path);
+        };
+
+        Asset["LoadStaticMesh"] = [](const FString& Path) -> UStaticMesh*
+        {
+            return FResourceManager::Get().LoadStaticMesh(Path);
+        };
+
+        Asset["LoadSkeletalMesh"] = [](const FString& Path) -> USkeletalMesh*
+        {
+            return FResourceManager::Get().LoadSkeletalMesh(Path);
+        };
+
+        Asset["LoadAnimSequence"] = [](const FString& SourceFbxPath, const FString& TargetSkeletalMeshPath, sol::optional<FString> AnimStackName) -> UAnimSequence*
+        {
+            return FResourceManager::Get().LoadAnimSequence(
+                SourceFbxPath,
+                TargetSkeletalMeshPath,
+                AnimStackName.value_or(FString()));
+        };
+
+        Asset["LoadAnimSequenceByKey"] = [](const FString& Key) -> UAnimSequence*
+        {
+            return FResourceManager::Get().LoadAnimSequenceByKey(Key);
+        };
+
+        Asset["LoadAnimSequenceAsset"] = [](const FString& AssetPath) -> UAnimSequence*
+        {
+            return FResourceManager::Get().LoadAnimSequenceAsset(AssetPath);
+        };
+
+        Asset["SaveAnimSequenceAsset"] = [](
+            const FString& AssetPath,
+            const FString& SourceFbxPath,
+            const FString& TargetSkeletalMeshPath,
+            sol::optional<FString> AnimStackName) -> bool
+        {
+            return FResourceManager::Get().SaveAnimSequenceAsset(
+                AssetPath,
+                SourceFbxPath,
+                TargetSkeletalMeshPath,
+                AnimStackName.value_or(FString()));
+        };
+
+        Asset["ListAnimStacks"] = [](sol::this_state State, const FString& SourceFbxPath)
+        {
+            return StringsToLuaTable(State, FResourceManager::Get().ListAnimStacks(SourceFbxPath));
+        };
+
+        Asset["GetAnimSequencePaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FResourceManager::Get().GetAnimSequencePaths());
+        };
+
+        Asset["GetAnimSequenceAssetPaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FResourceManager::Get().GetAnimSequenceAssetPaths());
+        };
+
+        Asset["GetScenePaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FAssetQueryService::GetScenePaths());
+        };
+
+        Asset["GetSoundPaths"] = [](sol::this_state State)
+        {
+            return StringsToLuaTable(State, FAssetQueryService::GetSoundPaths());
+        };
+
+        API["Asset"] = Asset;
+    }
+}

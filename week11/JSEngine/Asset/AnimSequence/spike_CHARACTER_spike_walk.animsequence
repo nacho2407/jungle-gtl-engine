@@ -1,0 +1,21 @@
+{
+        "AnimStackName" : "CHARACTER|spike_walk",
+        "AssetPath" : "Asset/AnimSequence/spike_CHARACTER_spike_walk_1.animsequence",
+        "Notifies" : [{
+            "ActionType" : 0,
+            "Duration" : 0.000000,
+            "EventId" : "LeftFootstep",
+            "NotifyName" : "LeftFootstep",
+            "Payload" : "",
+            "TriggerTime" : 0.220000
+          }, {
+            "ActionType" : 0,
+            "Duration" : 0.000000,
+            "EventId" : "RightFootstep",
+            "NotifyName" : "RightFootstep",
+            "Payload" : "",
+            "TriggerTime" : 0.648000
+          }],
+        "SourceFbxPath" : "Asset/SkeletalMesh/spike/spike.fbx",
+        "TargetSkeletalMeshPath" : "Asset/SkeletalMesh/spike/spike.fbx"
+      }

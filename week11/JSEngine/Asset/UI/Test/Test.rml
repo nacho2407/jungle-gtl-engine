@@ -1,0 +1,28 @@
+<rml>
+<head>
+	<title>Runtime UI Preview Test</title>
+	<link type="text/rcss" href="Asset/UI/Test/Test.rcss"/>
+</head>
+<body>
+	<div id="screen">
+		<div id="panel">
+			<div class="eyebrow">JSEngine Runtime UI</div>
+			<div class="title">RML Preview Test</div>
+			<div class="subtitle">This document lives under Asset/UI/Test and is loaded by the editor preview tab.</div>
+
+			<div class="row">
+				<div class="stat">
+					<div class="stat-label">Path</div>
+					<div class="stat-value">Asset/UI/Test/Test.rml</div>
+				</div>
+				<div class="stat">
+					<div class="stat-label">Input</div>
+					<div class="stat-value">Click the button</div>
+				</div>
+			</div>
+
+			<button id="PreviewTestButton" data-action="RuntimeUIPreview.TestButton">Send Action Event</button>
+		</div>
+	</div>
+</body>
+</rml>
