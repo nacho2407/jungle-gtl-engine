@@ -1242,4 +1242,14 @@
     </PropertyGroup>
     <Error Condition="!Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets'))" />
   </Target>
+  <Target Name="CopyRuntimeFiles" AfterTargets="Build">
+    <ItemGroup>
+      <RuntimeShaders Include="$(ProjectDir)Shaders\**\*" />
+      <RuntimeAsset Include="$(ProjectDir)Asset\**\*" Exclude="$(ProjectDir)Asset\Mesh\Bin\**\*;$(ProjectDir)Asset\SkeletalMesh\Bin\**\*" />
+      <RuntimeResources Include="$(ProjectDir)Resources\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(RuntimeShaders)" DestinationFiles="@(RuntimeShaders->'$(OutDir)Shaders\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(RuntimeAsset)" DestinationFiles="@(RuntimeAsset->'$(OutDir)Asset\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(RuntimeResources)" DestinationFiles="@(RuntimeResources->'$(OutDir)Resources\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
