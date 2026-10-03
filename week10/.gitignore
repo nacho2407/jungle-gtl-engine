@@ -478,6 +478,13 @@ imgui.ini
 !/Asset/Mesh/Dice/Dice_centered.obj
 !/Asset/Mesh/MultiMaterialCube/MultiMaterialCube.obj
 
+# Materials written at run time when a mesh is imported
+/Asset/Material/Auto/*
+!/Asset/Material/Auto/Dice_Mat_*
+!/Asset/Material/Auto/MultiMaterialCube_Mat_*
+!/Asset/Material/Auto/Slide_Mat_*
+!/Asset/Material/Auto/cube_Mat_*
+
 # Excluded from this repository because of license issues; kept only for local builds
 /ThirdParty/FBX/
 /Asset/Font/
