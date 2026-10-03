@@ -1,333 +1,279 @@
-# GameTechLab W4_Jungle_Team2
-
-Windows 환경에서 동작하는 `Win32 + DirectX 11 + ImGui` 기반의 3D 에디터/엔진 프로젝트입니다.  
-이번 리포지토리에는 두 가지 실행 형태가 함께 들어 있습니다.
-
-- `Editor` 모드: 씬 편집, 다중 뷰포트, 선택/기즈모, 씬 저장 및 복원
-- `ObjViewer` 모드: `.obj` 메시를 빠르게 검토하기 위한 전용 뷰어
-
-이 문서는 코드와 첨부 발표 자료를 기준으로, 실제 구현이 확인된 기능만 정리한 설명문서입니다.
-
-## 프로젝트 개요
-
-이 프로젝트는 단순 렌더링 데모가 아니라, 다음 요소를 직접 구현한 소형 편집기 엔진에 가깝습니다.
-
-- 커스텀 `UObject` 계층과 RTTI
-- `FName` 기반 이름 관리
-- 월드/액터/컴포넌트 구조
-- DirectX 11 렌더링 파이프라인
-- ImGui 기반 편집 UI
-- OBJ/MTL 로더와 정적 메시 렌더링
-- JSON 씬 저장/복원
-- OBJ 바이너리 베이킹 및 캐시 로딩
-
-## 핵심 기능
-
-### 1. 에디터 모드
-
-에디터 모드는 씬을 직접 배치하고 편집하는 데 초점이 맞춰져 있습니다.
-
-- 4분할 뷰포트 지원
-  - 좌상단 `Perspective`
-  - 우상단 `Top`
-  - 좌하단 `Front`
-  - 우하단 `Right`
-- 스플리터 드래그로 뷰포트 크기 조절
-- 1개 뷰포트 전체화면 모드와 4분할 모드 전환
-- 뷰포트별 호버/포커스 상태 관리
-- 뷰포트 설정 저장
-  - 스플리터 비율
-  - 활성 뷰포트 수
-  - 단일 뷰포트 인덱스
-
-### 2. 카메라와 뷰포트 조작
-
-- Perspective 뷰 카메라 이동 및 회전
-- Orthographic 뷰 지원
-- 직교 뷰에서 팬/줌 조작
-- 마우스 휠 기반 FOV 또는 Ortho Height 조절
-- 포커스된 뷰포트 기준 이동 속도 조절
-- Perspective 카메라 상태 저장/복원
-  - 위치
-  - 회전
-  - FOV
-  - Near/Far Clip
-
-### 3. 씬 편집 기능
-
-- 월드의 액터 목록 표시
-- 선택된 액터/컴포넌트의 속성 편집
-- 프로퍼티 위젯 자동 렌더링
-- 액터 선택
-  - 단일 선택
-  - `Shift` 추가 선택
-  - `Ctrl` 토글 선택
-- 박스 선택
-- 기즈모 기반 편집
-  - Translate
-  - Rotate
-  - Scale
-- 기즈모 월드/로컬 모드 전환
-- 선택 액터 삭제
-
-### 4. 에디터 UI
-
-ImGui 기반으로 아래 패널들이 분리되어 있습니다.
-
-- `Scene Manager`
-  - 액터 아웃라이너
-  - 씬 저장/불러오기
-- `Property`
-  - 선택 오브젝트의 속성 수정
-  - StaticMesh 경로 콤보 선택
-- `Material Editor`
-  - StaticMesh의 섹션별 머티리얼 확인
-  - 슬롯별 머티리얼 교체
-  - 색상/스칼라/텍스처 정보 확인
-- `Console`
-  - stat 명령 처리
-- `Stat Profiler`
-  - CPU/GPU 통계 테이블
-- `Viewport Settings`
-  - Show Flags
-  - Grid 설정
-  - 카메라 이동 속도
-
-### 5. StaticMesh 렌더링
-
-이번 주차에서 가장 큰 변화 중 하나는 OBJ 기반 정적 메시 렌더링입니다.
-
-- `UStaticMesh`와 `UStaticMeshComponent` 추가
-- OBJ를 렌더링용 정적 메시 데이터로 변환
-- 섹션 단위 인덱스 관리
-- 섹션별 머티리얼 슬롯 연결
-- 로컬/월드 AABB 계산
-- 메시 단위 레이캐스트
-- 프로퍼티 창에서 StaticMesh 에셋 지정 가능
-
-### 6. OBJ / MTL 파이프라인
-
-OBJ 로더는 텍스트 파일을 바로 렌더링하지 않고, 중간 데이터를 거쳐 최종 메시로 변환합니다.
-
-- OBJ 파싱 지원 항목
-  - `v`
-  - `vt`
-  - `vn`
-  - `mtllib`
-  - `usemtl`
-  - `f`
-- Raw 데이터에서 Cooked StaticMesh로 변환
-- 머티리얼 이름 기준 슬롯 생성
-- 로컬 바운드 계산
-- 로딩 옵션에 따라 단위 큐브 기준 정규화 가능
+# 🦴 크래프톤 정글 게임테크랩 10주차
 
-MTL 파서는 다음 정보를 읽습니다.
+**한국어** | [English](./README_en.md)
 
-- `newmtl`
-- `Ka`
-- `Kd`
-- `Ks`
-- `Ke`
-- `Ns`
-- `d`
-- `illum`
-- `map_Kd`
-- `map_Ka`
-- `map_Ks`
-- `map_bump` / `bump`
-
-텍스처 경로는 파싱 시점에 정규화되고, 렌더링 시 SRV로 연결됩니다.
+***무게 그 이상의 의미***
 
-### 7. 다중 재질 처리
+2026.05.07. ~ 2026.05.14.
 
-정적 메시 하나에 여러 재질을 연결할 수 있습니다.
+1팀: 장민준([@nacho2407](https://github.com/nacho2407)), 심우진([@shimwoojin](https://github.com/shimwoojin)), 김지수([@jskim-research](https://github.com/jskim-research)), 양현석([@yanggogi1423](https://github.com/yanggogi1423))
 
-- `usemtl` 기준 슬롯 생성
-- 섹션별 `MaterialSlotIndex` 유지
-- 메시 컴포넌트의 override material 배열 보유
-- Material Editor에서 섹션별 머티리얼 교체 가능
-- 머티리얼이 없으면 기본 재질/기본 흰색 텍스처로 대체
+![week10-0.png](./Docs/Media/week10-0.png)
 
-즉, "머티리얼 에디터"라기보다 "섹션별 머티리얼 확인 및 교체 UI"에 가깝습니다.
+![week10-1.gif](./Docs/Media/week10-1.gif)
 
-### 8. 렌더링 파이프라인
+3D 에디터에 **스켈레탈 메시**를 더했습니다. FBX SDK로 FBX 파일에서 메시와 본 계층, 스킨 가중치를 읽어 들이고, **CPU 스키닝**으로 본의 자세에 맞춰 정점을 변형해 그립니다. 에디터 안의 **스켈레탈 메시 뷰어**에서 본 계층을 살펴보고 본을 기즈모로 움직입니다.
 
-렌더링은 수집과 실행이 분리된 구조입니다.
 
-- `RenderCollector`
-  - 월드, 선택 오브젝트, 그리드, 기즈모 수집
-- `RenderBus`
-  - 패스별 커맨드 정리
-- `Renderer`
-  - 실제 GPU 상태 설정 및 드로우
+## 🎮 주차 소개
 
-에디터 렌더링에서 확인되는 요소는 다음과 같습니다.
+- **FBX 임포터**를 만들어 FBX 파일의 정적 메시와 스켈레탈 메시를 엔진의 메시 에셋으로 읽어 들입니다. 스켈레탈 메시는 스킨 클러스터에서 본과 바인드 포즈, 정점별 가중치를 읽고, 재질과 텍스처도 함께 뽑아 냅니다. 한 번 읽은 메시는 바이너리 캐시로 저장해 다음부터는 FBX를 다시 해석하지 않습니다
 
-- 일반 오브젝트 렌더링
-- StaticMesh 렌더링
-- Grid 렌더링
-- Billboard Text 렌더링
-- SubUV 렌더링
-- 기즈모 렌더링
-- 선택 마스크 + 포스트프로세스 아웃라인
+- 스켈레탈 메시 컴포넌트가 본의 현재 자세로 **스키닝 행렬**을 만들고, 정점마다 최대 4개 본의 가중치로 위치와 노멀, 탄젠트를 섞는 **CPU 스키닝**을 합니다. 변형한 정점은 동적 정점 버퍼에 올려 기존 메시 렌더 경로로 그립니다
 
-View Mode는 다음을 지원합니다.
+- 에디터 안에서 메시마다 **스켈레탈 메시 뷰어** 탭을 열어 본 계층 트리를 보고, 본을 골라 기즈모로 움직이고, 소켓을 달아 다른 컴포넌트를 본에 붙입니다
 
-- `Lit`
-- `Unlit`
-- `Wireframe`
 
-Show Flags는 다음을 제어합니다.
+## ✨ 구현 결과
 
-- Primitives
-- BillboardText
-- Grid
-- Gizmo
-- Bounding Volume
+- **FBX 메시 배치**
 
-### 9. 선택, 피킹, 아웃라인
+  Content Browser의 FBX 파일을 뷰포트로 끌어다 놓으면 내용에 따라 정적 메시 액터나 스켈레탈 메시 액터를 배치합니다. 액터 배치 메뉴의 `Skeletal Mesh`로도 스켈레탈 메시 액터를 만들 수 있습니다
 
-- 마우스 클릭 기반 선택
-- 메시 레이캐스트 기반 피킹
-- 선택 오브젝트 스텐실 마스크 렌더링
-- 후처리 아웃라인 표시
-- 선택 상태에 맞춰 기즈모 자동 동기화
+- **Reference Pose 렌더링**
 
-### 10. 씬 저장 및 복원
+  스켈레탈 메시는 바인드 포즈 그대로 CPU 스키닝을 거쳐 그려집니다. 재질과 조명, 선택 외곽선, 피킹이 정적 메시와 같이 동작합니다
 
-씬은 `.Scene` 확장자의 JSON 파일로 저장됩니다.
-
-저장되는 정보:
-
-- 월드 타입
-- 액터/컴포넌트 계층
-- 컴포넌트 프로퍼티
-- StaticMesh 경로
-- Perspective 카메라 상태
-
-즉, 편집 결과를 다시 열 수 있는 최소 단위의 씬 직렬화가 구현되어 있습니다.
-
-### 11. 리소스 관리와 캐시
-
-리소스 매니저는 에셋 검색, 로딩, 캐시를 담당합니다.
-
-- 메시 경로 스캔
-- 머티리얼 파일 스캔
-- 텍스처 스캔
-- 로드된 StaticMesh 캐시
-- 머티리얼 레지스트리 유지
-
-StaticMesh 로드는 다음 순서로 진행됩니다.
-
-1. 메모리 캐시 확인
-2. 대응하는 바이너리 파일 유효성 검사
-3. 유효하면 바이너리 로드
-4. 실패하면 OBJ 파싱
-5. OBJ 파싱 성공 시 바이너리 저장
-
-### 12. OBJ 바이너리 베이킹
-
-텍스트 OBJ를 매번 다시 파싱하지 않도록 바이너리 캐시를 생성합니다.
-
-- 전용 헤더 사용
-  - Magic Number
-  - Version
-  - Vertex/Index/Section/Slot count
-  - 원본 파일 수정 시간
-- 원본 OBJ 수정 시간이 바뀌면 바이너리 무효화
-- 재로드 시 바이너리 우선 사용
-
-캐시 파일은 `Asset/Mesh/Bin` 아래에 `.bin` 형태로 저장됩니다.
-
-### 13. ObjViewer 모드
-
-프로젝트에는 별도 `ObjViewer` 빌드 구성이 포함되어 있습니다.
-
-- `IS_OBJ_VIEWER=1` 전처리 매크로 사용
-- 전용 엔진 클래스 `UObjViewerEngine`
-- 파일 다이얼로그로 `.obj` 선택 로드
-- 미리보기용 `UStaticMeshComponent` 사용
-- 카메라 리셋 기능
-- 우측 패널에 기본 메시 통계 표시
-
-ObjViewer는 "에디터 전체 기능"이 아니라, 모델 확인에 집중한 별도 실행 모드입니다.
-
-## 엔진 구조
-
-### 객체 시스템
-
-- `UObject` 기반 공통 객체 시스템
-- `DECLARE_CLASS`, `DEFINE_CLASS` 기반 커스텀 RTTI
-- `IsA<T>()`, `Cast<T>()` 지원
-- `UObjectManager`를 통한 생성/파괴 관리
-- UUID와 내부 인덱스 보유
-
-### 이름 시스템
-
-- `FName` 이름 풀 사용
-- Display 이름과 Comparison 이름을 분리 저장
-- 비교 시 소문자 기반 인덱스 비교
-
-즉, 표시용 문자열과 비교용 문자열을 나눠 관리하는 방식입니다.
-
-### 객체 순회
-
-- `TObjectIterator<T>` 구현
-- 글로벌 UObject 배열을 순회하며 타입이 맞는 객체만 반환
-
-## 폴더 개요
-
-```text
-W4_Jungle_Team2/
-├─ W4_Jungle_Team2/
-│  ├─ Source/
-│  │  ├─ Engine/
-│  │  │  ├─ Asset/
-│  │  │  ├─ Component/
-│  │  │  ├─ Core/
-│  │  │  ├─ GameFramework/
-│  │  │  ├─ Math/
-│  │  │  ├─ Object/
-│  │  │  ├─ Render/
-│  │  │  ├─ Runtime/
-│  │  │  ├─ Serialization/
-│  │  │  └─ Slate/
-│  │  ├─ Editor/
-│  │  └─ Misc/ObjViewer/
-│  ├─ Asset/
-│  ├─ Shaders/
-│  ├─ Settings/
-│  └─ Bin/
-└─ W4_Jungle_Team2.sln
+- **스켈레탈 메시 쇼 플래그**
+
+  뷰포트 툴바의 설정 메뉴에 있는 `Show` 항목에서 `Skeletal Mesh`를 꺼 스켈레탈 메시를 숨깁니다
+
+- **스켈레탈 메시 뷰어**
+
+  Content Browser에서 FBX 파일을 더블 클릭하면 그 메시의 뷰어 탭이 열립니다. 메시마다 탭이 따로 열려 여러 메시를 함께 볼 수 있고, 탭을 떼어 별도 창으로 둘 수 있습니다. 뷰어의 `Show`에서 `Skeletal Mesh`를 끄거나, `Bones`로 본을 선으로 표시하고 `Selected Bone Only`로 선택한 본만 표시합니다
+
+- **본 계층 트리와 본 기즈모**
+
+  뷰어의 `Skeleton` 패널이 본 계층을 트리로 보여 줍니다. 본을 고르면 뷰포트의 그 본 위치에 기즈모가 나타나 본을 움직일 수 있고, `Details` 패널에서 본의 로컬 트랜스폼을 값으로 고칩니다
+
+- **소켓**
+
+  뷰어에서 본을 우클릭해 `Add Socket`으로 소켓을 만들고 이름과 트랜스폼을 고칩니다. `Add Preview Mesh...`로 소켓에 미리보기 메시를 붙여 위치를 확인하고, 레벨에서는 컴포넌트를 소켓에 붙여 본을 따라 움직이게 합니다
+
+- **본 포즈 디버그**
+
+  레벨에서 스켈레탈 메시 컴포넌트를 선택하면 Details 창의 `Bone Pose Debug`에서 `Edit Bone Pose`를 켜고 본을 골라 `Location Offset`, `Rotation Offset`, `Scale Offset`으로 바인드 포즈에서 벗어난 자세를 만들어 봅니다. `Reset Bone`과 `Reset Pose`로 되돌립니다
+
+- **바이너리 캐시**
+
+  읽어 들인 메시는 `Asset/Mesh/Bin/`과 `Asset/SkeletalMesh/Bin/`에 바이너리로 저장하고, 원본 FBX가 바뀌지 않았으면 캐시를 읽습니다
+
+
+## 👥 팀원 및 담당 파트
+
+| 팀원 | 담당 파트 및 주요 역할 |
+|------|------------------------|
+| **장민준**([@nacho2407](https://github.com/nacho2407)) | 스켈레탈 메시 컴포넌트와 CPU 스키닝 - 스킨드 메시와 스켈레탈 메시 컴포넌트, FBX 스켈레탈 메시 임포트, CPU 스키닝, 스켈레탈 메시 렌더 경로, 쇼 플래그, 액터 배치와 선택, 본 포즈 디버그 |
+| **심우진**([@shimwoojin](https://github.com/shimwoojin)) | FBX 임포트와 소켓 - FBX 정적 메시 임포트와 좌표계 정책, FBX 재질과 텍스처 추출, 스켈레탈 메시 바이너리 직렬화와 캐시, 소켓과 소켓 편집 UI, 본 와이어 표시 |
+| **김지수**([@jskim-research](https://github.com/jskim-research)) | 스켈레탈 메시 뷰어 - FBX SDK 도입, 뷰어 창과 뷰포트, 뷰어 카메라, 본 계층 트리, 본 기즈모 조작, 여러 뷰어 동시 열기, 선택 관리 구조 정리 |
+| **양현석**([@yanggogi1423](https://github.com/yanggogi1423)) | 에디터와 렌더링 구조 - 셰이더 구조 재구성, 재질 셰이더 타입, 에디터 탭 UI와 위젯 분리, 본 피킹, 액터 시퀀서, 입력 시스템과 Pawn, 게임 모드 설정 UI, 게임 패키징 |
+
+
+## 🧑‍💻 담당 작업 상세
+
+### FBX 스켈레탈 메시 임포트
+
+- **목표**
+
+  FBX 파일에서 스켈레탈 메시를 그리는 데 필요한 정점, 본 계층, 바인드 포즈, 정점별 본 가중치를 읽어 엔진의 스켈레탈 메시 에셋으로 만듭니다
+
+- **구현 내용**
+
+  씬을 삼각형으로 바꾼 뒤 메시 노드를 두 번 돕니다. 첫 번째 순회에서는 스킨 디포머가 있는 메시를 처리합니다. 스킨 클러스터가 가리키는 노드를 본으로 등록하고, 클러스터의 링크 행렬을 본의 전역 바인드 변환으로 삼아 그 역행렬을 **역 바인드 포즈**로 저장합니다. 본의 부모는 노드 계층에서 찾고, 로컬 바인드 변환은 부모의 전역 바인드 변환의 역행렬을 곱해 구합니다
+
+  클러스터마다 컨트롤 포인트의 가중치를 모은 뒤, 폴리곤의 꼭짓점을 정점으로 풀어내면서 가중치가 큰 순서로 최대 4개 본만 남기고 합이 1이 되도록 정규화합니다. 정점 위치와 노멀은 메시의 바인드 시점 변환을 미리 곱해 본과 같은 공간에 두었습니다. 재질마다 섹션을 나누고 마지막에 탄젠트와 로컬 바운드를 계산합니다
+
+  두 번째 순회에서는 스킨 디포머 없이 본 아래에 붙어 있는 메시를 처리합니다. 이런 메시는 가장 가까운 조상 본 하나에 가중치 1로 묶어, 스키닝 경로 하나로 함께 그려지게 했습니다
+
+- **관련 코드**
+
+  [`Source/Engine/Asset/FbxImporter.cpp`](./Source/Engine/Asset/FbxImporter.cpp), [`Source/Engine/Asset/FbxImporter.h`](./Source/Engine/Asset/FbxImporter.h), [`Source/Engine/Asset/SkeletalMesh.cpp`](./Source/Engine/Asset/SkeletalMesh.cpp), [`Source/Engine/Core/ResourceManager.cpp`](./Source/Engine/Core/ResourceManager.cpp)
+
+
+### 스켈레탈 메시 컴포넌트와 CPU 스키닝
+
+- **목표**
+
+  본의 자세가 바뀌면 그에 맞춰 메시가 변형되도록, 스켈레탈 메시를 다루는 컴포넌트와 CPU에서 정점을 변형하는 스키닝을 만듭니다
+
+- **구현 내용**
+
+  메시 컴포넌트를 상속한 `USkinnedMeshComponent`가 본별 로컬 포즈, 전역 포즈, 스키닝 행렬과 스키닝한 정점을 갖고, `USkeletalMeshComponent`가 이를 상속합니다. 메시를 지정하면 바인드 포즈로 자세를 초기화합니다
+
+  스키닝은 세 단계입니다. 먼저 로컬 포즈에서 **전역 포즈**를 구합니다. FBX의 본 배열은 부모가 자식보다 앞에 온다는 보장이 없어, 부모 쪽으로 재귀하며 이미 계산한 본은 건너뜁니다. 다음으로 본마다 `역 바인드 포즈 * 현재 전역 포즈`로 **스키닝 행렬**을 만듭니다. 마지막으로 정점마다 유효한 본 가중치의 합으로 다시 정규화한 뒤, 본별 스키닝 행렬로 변환한 위치, 노멀, 탄젠트를 가중치만큼 더합니다. 섞인 노멀과 탄젠트는 다시 정규화하고, 길이가 0이 되면 원래 값을 씁니다
+
+  자세가 바뀔 때만 다시 계산하도록 더티 플래그를 두었습니다. 스키닝이 끝나면 바운드와 렌더 상태를 더티로 표시하고, 월드 바운드는 스키닝한 정점으로 다시 구해 컬링과 피킹이 변형된 모양을 따르게 했습니다
+
+- **한계와 개선 방향**
+
+  모든 정점을 매 갱신마다 CPU에서 변형하고 정점 버퍼 전체를 다시 올리므로, 정점이 많은 메시나 여러 캐릭터에서는 비용이 큽니다. 이 비용은 본 행렬을 셰이더에 넘겨 정점 셰이더에서 정점을 변형하는 GPU 스키닝으로 줄일 수 있을 것으로 보입니다
+
+- **관련 코드**
+
+  [`Source/Engine/Component/SkinnedMeshComponent.cpp`](./Source/Engine/Component/SkinnedMeshComponent.cpp), [`Source/Engine/Component/SkinnedMeshComponent.h`](./Source/Engine/Component/SkinnedMeshComponent.h), [`Source/Engine/Component/SkeletalMeshComponent.cpp`](./Source/Engine/Component/SkeletalMeshComponent.cpp)
+
+
+### 스켈레탈 메시 렌더 경로와 에디터 지원
+
+- **목표**
+
+  스키닝한 정점을 기존 렌더러로 그리고, 에디터에서 스켈레탈 메시를 정적 메시처럼 배치하고 선택하고 살펴볼 수 있게 합니다
+
+- **구현 내용**
+
+  드로우 커맨드를 만들 때 컴포넌트의 스키닝을 최신으로 맞추고, 렌더 상태가 더티일 때만 컴포넌트별 **동적 정점 버퍼**에 스키닝한 정점을 다시 올립니다. 인덱스와 섹션은 에셋의 것을 그대로 쓰므로 재질 섹션별 드로우는 정적 메시와 같습니다
+
+  에디터에는 스켈레탈 메시 쇼 플래그, 액터 배치 메뉴와 Content Browser에서의 배치, 스키닝한 정점에 대한 레이 판정으로 하는 선택을 더했습니다. Details 창의 본 포즈 디버그는 고른 본의 로컬 포즈에 위치, 회전, 크기 오프셋을 곱해 스키닝 결과를 바로 확인하는 도구입니다
+
+- **관련 코드**
+
+  [`Source/Engine/Render/Scene/PrimitiveDrawCommandBuilder.cpp`](./Source/Engine/Render/Scene/PrimitiveDrawCommandBuilder.cpp), [`Source/Engine/Render/Resource/MeshBufferManager.cpp`](./Source/Engine/Render/Resource/MeshBufferManager.cpp), [`Source/Engine/Render/Resource/Buffer.cpp`](./Source/Engine/Render/Resource/Buffer.cpp), [`Source/Editor/UI/EditorPropertyWidget.cpp`](./Source/Editor/UI/EditorPropertyWidget.cpp), [`Source/Engine/GameFramework/PrimitiveActors.cpp`](./Source/Engine/GameFramework/PrimitiveActors.cpp)
+
+
+## 🛠️ 기술 스택
+
+- **Language**: C++20
+
+- **Graphics API**: DirectX 11
+
+- **Build**: Visual Studio 2026, MSBuild
+
+- **Libraries**: Autodesk FBX SDK, Dear ImGui, DirectX Tool Kit for DirectX 11, LuaJIT, RmlUi, SimpleJSON, sol2, SoLoud
+
+
+## 🖥️ 구조
+
+```mermaid
+flowchart TD
+    A[FBX 파일] --> B[FBX 임포터가 정점, 본, 바인드 포즈, 가중치 추출]
+    B --> C[스켈레탈 메시 에셋과 바이너리 캐시]
+    C --> D[스켈레탈 메시 컴포넌트가 전역 포즈와 스키닝 행렬 계산]
+    D --> E[CPU 스키닝으로 정점 변형]
+    E --> F[동적 정점 버퍼에 올려 렌더]
 ```
 
-## 실행과 빌드
+- 동작 흐름
 
-### 권장 환경
+    1. FBX 임포터가 FBX SDK로 씬을 읽어 정점, 본 계층, 바인드 포즈, 정점별 본 가중치를 뽑습니다. 바이너리 캐시가 있고 원본이 바뀌지 않았으면 캐시를 읽습니다
 
-- Windows
-- Visual Studio 2022
-- DirectX 11 지원 환경
+    2. 스켈레탈 메시 에셋이 정점, 인덱스, 재질 섹션, 본, 소켓을 갖습니다
 
-### 솔루션
+    3. 스켈레탈 메시 컴포넌트가 본의 로컬 포즈에서 전역 포즈를 구하고, 역 바인드 포즈와 곱해 스키닝 행렬을 만듭니다
 
-- 솔루션 파일: `W4_Jungle_Team2.sln`
+    4. 정점마다 최대 4개 본의 스키닝 행렬을 가중치로 섞어 위치, 노멀, 탄젠트를 변형합니다
 
-### 주요 빌드 구성
+    5. 변형한 정점을 동적 정점 버퍼에 올리고, 재질 섹션별로 드로우 커맨드를 만들어 그립니다
 
-- `Debug | x64`
-- `Release | x64`
-- `ObjViewer | x64`
 
-`ObjViewer` 구성은 전용 모델 뷰어 모드입니다.
+## 📁 디렉토리 구조
 
-## 문서 범위에서 제외한 것
+```
+week10/
+├── week10.sln              // 솔루션
+├── Asset/                  // 재질, 메시, 프리팹, 커브, 텍스처, UI 문서
+├── BuildTools/             // RmlUi, SoLoud 정적 라이브러리 빌드 스크립트
+├── Docs/                   // README 미디어
+├── LuaDefinitions/         // Lua 편집기용 엔진 API 정의
+├── Resources/              // 프로그램 아이콘
+├── Shaders/                // HLSL 셰이더
+├── Source/                 // 진입점
+│   ├── Editor/             // 에디터 엔진과 렌더 파이프라인
+│   │   ├── Asset/          // 에셋 서비스
+│   │   ├── Command/        // 에디터 명령
+│   │   ├── Input/          // 뷰포트 입력 매핑과 월드 컨트롤러
+│   │   ├── Notification/   // 알림
+│   │   ├── PIE/            // PIE 세션
+│   │   ├── Packaging/      // 게임 패키징
+│   │   ├── Scene/          // 씬 서비스
+│   │   ├── Selection/      // 선택 관리
+│   │   ├── Settings/       // 에디터와 프로젝트 설정
+│   │   ├── UI/             // 에디터 위젯, 뷰어 창, 액터 시퀀서
+│   │   ├── Undo/           // 실행 취소
+│   │   ├── Viewer/         // 메시 뷰어
+│   │   └── Viewport/       // 뷰포트 클라이언트와 내비게이션
+│   ├── Engine/
+│   │   ├── Animation/      // 액터 시퀀스와 타임라인
+│   │   ├── Asset/          // FBX 임포터, Wavefront OBJ 로더, 메시 에셋, 바이너리 직렬화
+│   │   ├── Audio/          // 오디오 시스템
+│   │   ├── Camera/         // 카메라 매니저와 카메라 셰이크
+│   │   ├── Collision/      // 충돌과 레이 판정
+│   │   ├── Component/      // 컴포넌트
+│   │   ├── Core/           // 공통 타입, 리소스 관리, 경로
+│   │   ├── GameFramework/  // 액터, 월드, 게임 모드
+│   │   ├── Geometry/       // 기하 타입
+│   │   ├── Input/          // 입력 시스템
+│   │   ├── Math/           // 수학
+│   │   ├── Object/         // UObject, 이름
+│   │   ├── Render/         // 렌더러와 GPU 리소스
+│   │   ├── Runtime/        // 엔진 루프, 창, Lua 스크립트
+│   │   ├── Serialization/  // 씬과 프리팹 저장
+│   │   ├── Slate/          // 창과 스플리터
+│   │   ├── Spatial/        // BVH, KD 트리
+│   │   └── UI/             // RmlUi 런타임 UI
+│   ├── Launch/             // 실행 모드 선택
+│   └── Misc/               // OBJ 뷰어
+└── ThirdParty/             // Dear ImGui, LuaJIT, RmlUi, SimpleJSON, sol2, SoLoud
+```
 
-아래 항목은 발표자료에 언급되더라도, 이 문서에서는 과장하지 않기 위해 표현을 낮추거나 일반화했습니다.
 
-- 범용 게임 엔진 수준의 완성도
-- 범용 머티리얼 에디터
-- 모든 OBJ/MTL 조합에 대한 완전 호환
-- 고급 메시 최적화 기능 전반
+## ❓ 빌드 및 실행
 
-현재 리포지토리 기준으로는 "에디터 기능을 갖춘 DirectX 11 기반 학습용 3D 엔진/도구 프로젝트"로 보는 것이 가장 정확합니다.
+### 릴리즈 실행
+
+일부 에셋과 라이브러리의 라이선스 문제로 인해 이 주차의 실행 파일은 제공하지 않습니다.
+
+
+### 소스 빌드
+
+일부 에셋과 라이브러리를 라이선스 문제로 저장소에 포함하지 못해, 이 주차는 저장소만으로 빌드할 수 없습니다.
+
+
+## ⌨️ 단축키
+
+| 단축키 | 동작 |
+|--------|------|
+| **Q / W / E / R, 1 / 2 / 3 / 4** | 편집 모드 전환(선택, 이동, 회전, 크기) |
+| **Tab** | 편집 모드 순환 |
+| **Space** | 기즈모 모드 순환(이동, 회전, 크기) |
+| **X** | 기즈모 기준 전환(월드, 로컬) |
+| **F** | 선택한 액터 쪽으로 카메라 이동 |
+| **Ctrl + A** | 모든 액터 선택 |
+| **Ctrl + Alt + 드래그** | 박스 선택(Shift를 함께 누르면 기존 선택에 추가) |
+| **Ctrl + D** | 선택한 액터 복제 |
+| **Delete** | 선택한 액터 삭제 |
+| **F2** | 선택한 액터 이름 바꾸기 |
+| **Ctrl + Z / Ctrl + Shift + Z** | 실행 취소, 다시 실행 |
+| **Ctrl + N / Ctrl + O / Ctrl + S / Ctrl + Shift + S** | 새 씬, 씬 열기, 씬 저장, 다른 이름으로 저장 |
+| **Ctrl + Space** | Content Browser 열기와 닫기 |
+| **\`** | 콘솔 입력창으로 이동, 콘솔 창 열기, 닫기 순환 |
+| **Esc** | PIE 종료 |
+| **F8** | PIE 중 빙의와 해제 전환 |
+| **Shift + F1** | PIE 중 마우스 커서 풀기 |
+
+
+## 📄 서드파티 라이브러리
+
+| 이름 | 저작자 | 버전 | 라이선스 |
+|------|--------|------|----------|
+| **[Autodesk FBX SDK](https://aps.autodesk.com/developer/overview/fbx-sdk)** | Autodesk, Inc. | 2020.3.9 | Autodesk License and Services Agreement |
+| **[Dear ImGui](https://github.com/ocornut/imgui)** | Omar Cornut | 1.92.7 WIP | [MIT License](./ThirdParty/ImGui/LICENSE.txt) |
+| **[DirectX Tool Kit for DirectX 11](https://github.com/microsoft/DirectXTK)** | Microsoft Corporation. | - | MIT License |
+| **[LuaJIT](https://luajit.org)** | Mike Pall | 2.1 | [MIT License](./ThirdParty/luajit/COPYRIGHT) |
+| **[RmlUi](https://github.com/mikke89/RmlUi)** | The RmlUi Team, and contributors | - | [MIT License](./ThirdParty/RmlUi/LICENSE.txt) |
+| **[SimpleJSON](https://github.com/nbsdx/SimpleJSON)** | Neil | - | Do What the Fuck You Want to Public License |
+| **[sol2](https://github.com/ThePhD/sol2)** | Rapptz, ThePhD, and contributors | 3.5.0 | [MIT License](./ThirdParty/sol/LICENSE.txt) |
+| **[SoLoud](https://github.com/jarikomppa/soloud)** | Jari Komppa | 202002 | [zlib License](./ThirdParty/SoLoud/LICENSE) |
+
+
+## 🎨 서드파티 에셋
+
+| 이름 | 저작자 | 라이선스 |
+|------|--------|----------|
+| **[3d-cubes](https://github.com/garykac/3d-cubes)** | Gary Kac | - |
+| **[Abandoned children's slide](https://sketchfab.com/3d-models/abandoned-childrens-slide-11de2b21ec264c0a814ac024c45ab425)** | sergeilihandristov | [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/) |
+| **[logo.js](https://github.com/voodootikigod/logo.js)** | Christopher Williams | [MIT License](./Resources/Editor/Branding/logo.js-LICENSE) |
+
+
+## ⚖️ 라이선스
+
+이 주차의 코드 중 장민준이 작성한 부분은 MIT 라이선스로 공개하며, 다른 기여자가 작성한 부분의 권리는 각 기여자에게 있습니다. 자세한 내용은 [LICENSE](../LICENSE)를 확인해 주세요.
