@@ -1,333 +1,313 @@
-# GameTechLab W4_Jungle_Team2
-
-Windows 환경에서 동작하는 `Win32 + DirectX 11 + ImGui` 기반의 3D 에디터/엔진 프로젝트입니다.  
-이번 리포지토리에는 두 가지 실행 형태가 함께 들어 있습니다.
-
-- `Editor` 모드: 씬 편집, 다중 뷰포트, 선택/기즈모, 씬 저장 및 복원
-- `ObjViewer` 모드: `.obj` 메시를 빠르게 검토하기 위한 전용 뷰어
-
-이 문서는 코드와 첨부 발표 자료를 기준으로, 실제 구현이 확인된 기능만 정리한 설명문서입니다.
-
-## 프로젝트 개요
-
-이 프로젝트는 단순 렌더링 데모가 아니라, 다음 요소를 직접 구현한 소형 편집기 엔진에 가깝습니다.
-
-- 커스텀 `UObject` 계층과 RTTI
-- `FName` 기반 이름 관리
-- 월드/액터/컴포넌트 구조
-- DirectX 11 렌더링 파이프라인
-- ImGui 기반 편집 UI
-- OBJ/MTL 로더와 정적 메시 렌더링
-- JSON 씬 저장/복원
-- OBJ 바이너리 베이킹 및 캐시 로딩
-
-## 핵심 기능
-
-### 1. 에디터 모드
-
-에디터 모드는 씬을 직접 배치하고 편집하는 데 초점이 맞춰져 있습니다.
-
-- 4분할 뷰포트 지원
-  - 좌상단 `Perspective`
-  - 우상단 `Top`
-  - 좌하단 `Front`
-  - 우하단 `Right`
-- 스플리터 드래그로 뷰포트 크기 조절
-- 1개 뷰포트 전체화면 모드와 4분할 모드 전환
-- 뷰포트별 호버/포커스 상태 관리
-- 뷰포트 설정 저장
-  - 스플리터 비율
-  - 활성 뷰포트 수
-  - 단일 뷰포트 인덱스
-
-### 2. 카메라와 뷰포트 조작
-
-- Perspective 뷰 카메라 이동 및 회전
-- Orthographic 뷰 지원
-- 직교 뷰에서 팬/줌 조작
-- 마우스 휠 기반 FOV 또는 Ortho Height 조절
-- 포커스된 뷰포트 기준 이동 속도 조절
-- Perspective 카메라 상태 저장/복원
-  - 위치
-  - 회전
-  - FOV
-  - Near/Far Clip
-
-### 3. 씬 편집 기능
-
-- 월드의 액터 목록 표시
-- 선택된 액터/컴포넌트의 속성 편집
-- 프로퍼티 위젯 자동 렌더링
-- 액터 선택
-  - 단일 선택
-  - `Shift` 추가 선택
-  - `Ctrl` 토글 선택
-- 박스 선택
-- 기즈모 기반 편집
-  - Translate
-  - Rotate
-  - Scale
-- 기즈모 월드/로컬 모드 전환
-- 선택 액터 삭제
-
-### 4. 에디터 UI
-
-ImGui 기반으로 아래 패널들이 분리되어 있습니다.
-
-- `Scene Manager`
-  - 액터 아웃라이너
-  - 씬 저장/불러오기
-- `Property`
-  - 선택 오브젝트의 속성 수정
-  - StaticMesh 경로 콤보 선택
-- `Material Editor`
-  - StaticMesh의 섹션별 머티리얼 확인
-  - 슬롯별 머티리얼 교체
-  - 색상/스칼라/텍스처 정보 확인
-- `Console`
-  - stat 명령 처리
-- `Stat Profiler`
-  - CPU/GPU 통계 테이블
-- `Viewport Settings`
-  - Show Flags
-  - Grid 설정
-  - 카메라 이동 속도
-
-### 5. StaticMesh 렌더링
-
-이번 주차에서 가장 큰 변화 중 하나는 OBJ 기반 정적 메시 렌더링입니다.
-
-- `UStaticMesh`와 `UStaticMeshComponent` 추가
-- OBJ를 렌더링용 정적 메시 데이터로 변환
-- 섹션 단위 인덱스 관리
-- 섹션별 머티리얼 슬롯 연결
-- 로컬/월드 AABB 계산
-- 메시 단위 레이캐스트
-- 프로퍼티 창에서 StaticMesh 에셋 지정 가능
-
-### 6. OBJ / MTL 파이프라인
-
-OBJ 로더는 텍스트 파일을 바로 렌더링하지 않고, 중간 데이터를 거쳐 최종 메시로 변환합니다.
-
-- OBJ 파싱 지원 항목
-  - `v`
-  - `vt`
-  - `vn`
-  - `mtllib`
-  - `usemtl`
-  - `f`
-- Raw 데이터에서 Cooked StaticMesh로 변환
-- 머티리얼 이름 기준 슬롯 생성
-- 로컬 바운드 계산
-- 로딩 옵션에 따라 단위 큐브 기준 정규화 가능
+# 🏃 크래프톤 정글 게임테크랩 11주차
 
-MTL 파서는 다음 정보를 읽습니다.
+**한국어** | [English](./README_en.md)
 
-- `newmtl`
-- `Ka`
-- `Kd`
-- `Ks`
-- `Ke`
-- `Ns`
-- `d`
-- `illum`
-- `map_Kd`
-- `map_Ka`
-- `map_Ks`
-- `map_bump` / `bump`
-
-텍스처 경로는 파싱 시점에 정규화되고, 렌더링 시 SRV로 연결됩니다.
+***뛰어!***
 
-### 7. 다중 재질 처리
+2026.05.14. ~ 2026.05.21.
 
-정적 메시 하나에 여러 재질을 연결할 수 있습니다.
+5팀: 장민준([@nacho2407](https://github.com/nacho2407)), 김기홍([@lin-ion](https://github.com/lin-ion)), 조상현([@HaXXOrBunny](https://github.com/HaXXOrBunny)), 권현수([@kwonhyeonsoo-goo](https://github.com/kwonhyeonsoo-goo))
 
-- `usemtl` 기준 슬롯 생성
-- 섹션별 `MaterialSlotIndex` 유지
-- 메시 컴포넌트의 override material 배열 보유
-- Material Editor에서 섹션별 머티리얼 교체 가능
-- 머티리얼이 없으면 기본 재질/기본 흰색 텍스처로 대체
+![week11-0.png](./Docs/Media/week11-0.png)
 
-즉, "머티리얼 에디터"라기보다 "섹션별 머티리얼 확인 및 교체 UI"에 가깝습니다.
+![week11-1.png](./Docs/Media/week11-1.png)
 
-### 8. 렌더링 파이프라인
+![week11-2.gif](./Docs/Media/week11-2.gif)
 
-렌더링은 수집과 실행이 분리된 구조입니다.
+3D 에디터의 스켈레탈 메시에 **본 애니메이션**을 더했습니다. FBX 파일의 애니메이션을 **애니메이션 시퀀스**로 읽어 재생하고, **애니메이션 상태 머신**으로 조건에 따라 상태를 전환하며 자세를 블렌딩합니다. 정점 변형은 정점 셰이더에서 하는 **GPU 스키닝**으로 옮겼습니다.
 
-- `RenderCollector`
-  - 월드, 선택 오브젝트, 그리드, 기즈모 수집
-- `RenderBus`
-  - 패스별 커맨드 정리
-- `Renderer`
-  - 실제 GPU 상태 설정 및 드로우
 
-에디터 렌더링에서 확인되는 요소는 다음과 같습니다.
+## 🎮 주차 소개
 
-- 일반 오브젝트 렌더링
-- StaticMesh 렌더링
-- Grid 렌더링
-- Billboard Text 렌더링
-- SubUV 렌더링
-- 기즈모 렌더링
-- 선택 마스크 + 포스트프로세스 아웃라인
+- FBX 파일의 애니메이션 스택을 본별 키 트랙을 가진 **애니메이션 시퀀스**로 읽어 들이고, 스켈레탈 메시 컴포넌트의 **애니메이션 인스턴스**가 매 프레임 시각을 진행시켜 본의 자세를 만듭니다. 시퀀스에는 정해진 시각에 이벤트를 알리는 **노티파이**를 달 수 있습니다
 
-View Mode는 다음을 지원합니다.
+- **애니메이션 상태 머신**이 상태마다 애니메이션을 하나씩 두고, 변수와 트리거, Lua 함수로 쓴 조건에 따라 상태를 전환합니다. 전환하는 동안에는 두 상태의 자세를 블렌딩하며, 상태 머신은 노드 그래프 편집기에서 만듭니다
 
-- `Lit`
-- `Unlit`
-- `Wireframe`
+- 스켈레탈 메시 뷰어에 **애니메이션 모드**를 더해 타임라인으로 애니메이션을 재생하고 노티파이를 편집합니다
 
-Show Flags는 다음을 제어합니다.
+- 본 행렬을 셰이더로 넘겨 정점 셰이더에서 정점을 변형하는 **GPU 스키닝**을 더하고, 콘솔 명령으로 CPU 스키닝과 바꿔 가며 비교합니다. 헤더의 매크로를 읽어 타입 정보를 만드는 **리플렉션**과 크래시 덤프 확인 메뉴도 더했습니다
 
-- Primitives
-- BillboardText
-- Grid
-- Gizmo
-- Bounding Volume
 
-### 9. 선택, 피킹, 아웃라인
+## ✨ 구현 결과
 
-- 마우스 클릭 기반 선택
-- 메시 레이캐스트 기반 피킹
-- 선택 오브젝트 스텐실 마스크 렌더링
-- 후처리 아웃라인 표시
-- 선택 상태에 맞춰 기즈모 자동 동기화
+- **애니메이션 뷰어**
 
-### 10. 씬 저장 및 복원
+  Content Browser에서 FBX 파일을 더블 클릭해 연 뷰어의 툴바에서 `Mode`를 `Animation`으로 바꾸면 타임라인이 나타납니다. `Animation List`에서 FBX의 애니메이션 스택을 고르고, 재생, 역재생, 일시 정지, 정지, 처음과 끝으로 이동, 이전과 다음 프레임 버튼과 스크러버로 재생을 제어합니다. `Loop Playback`과 `Play Rate`로 반복 여부와 재생 속도를 바꿉니다
 
-씬은 `.Scene` 확장자의 JSON 파일로 저장됩니다.
-
-저장되는 정보:
-
-- 월드 타입
-- 액터/컴포넌트 계층
-- 컴포넌트 프로퍼티
-- StaticMesh 경로
-- Perspective 카메라 상태
-
-즉, 편집 결과를 다시 열 수 있는 최소 단위의 씬 직렬화가 구현되어 있습니다.
-
-### 11. 리소스 관리와 캐시
-
-리소스 매니저는 에셋 검색, 로딩, 캐시를 담당합니다.
-
-- 메시 경로 스캔
-- 머티리얼 파일 스캔
-- 텍스처 스캔
-- 로드된 StaticMesh 캐시
-- 머티리얼 레지스트리 유지
-
-StaticMesh 로드는 다음 순서로 진행됩니다.
-
-1. 메모리 캐시 확인
-2. 대응하는 바이너리 파일 유효성 검사
-3. 유효하면 바이너리 로드
-4. 실패하면 OBJ 파싱
-5. OBJ 파싱 성공 시 바이너리 저장
-
-### 12. OBJ 바이너리 베이킹
-
-텍스트 OBJ를 매번 다시 파싱하지 않도록 바이너리 캐시를 생성합니다.
-
-- 전용 헤더 사용
-  - Magic Number
-  - Version
-  - Vertex/Index/Section/Slot count
-  - 원본 파일 수정 시간
-- 원본 OBJ 수정 시간이 바뀌면 바이너리 무효화
-- 재로드 시 바이너리 우선 사용
-
-캐시 파일은 `Asset/Mesh/Bin` 아래에 `.bin` 형태로 저장됩니다.
-
-### 13. ObjViewer 모드
-
-프로젝트에는 별도 `ObjViewer` 빌드 구성이 포함되어 있습니다.
-
-- `IS_OBJ_VIEWER=1` 전처리 매크로 사용
-- 전용 엔진 클래스 `UObjViewerEngine`
-- 파일 다이얼로그로 `.obj` 선택 로드
-- 미리보기용 `UStaticMeshComponent` 사용
-- 카메라 리셋 기능
-- 우측 패널에 기본 메시 통계 표시
-
-ObjViewer는 "에디터 전체 기능"이 아니라, 모델 확인에 집중한 별도 실행 모드입니다.
-
-## 엔진 구조
-
-### 객체 시스템
-
-- `UObject` 기반 공통 객체 시스템
-- `DECLARE_CLASS`, `DEFINE_CLASS` 기반 커스텀 RTTI
-- `IsA<T>()`, `Cast<T>()` 지원
-- `UObjectManager`를 통한 생성/파괴 관리
-- UUID와 내부 인덱스 보유
-
-### 이름 시스템
-
-- `FName` 이름 풀 사용
-- Display 이름과 Comparison 이름을 분리 저장
-- 비교 시 소문자 기반 인덱스 비교
-
-즉, 표시용 문자열과 비교용 문자열을 나눠 관리하는 방식입니다.
-
-### 객체 순회
-
-- `TObjectIterator<T>` 구현
-- 글로벌 UObject 배열을 순회하며 타입이 맞는 객체만 반환
-
-## 폴더 개요
-
-```text
-W4_Jungle_Team2/
-├─ W4_Jungle_Team2/
-│  ├─ Source/
-│  │  ├─ Engine/
-│  │  │  ├─ Asset/
-│  │  │  ├─ Component/
-│  │  │  ├─ Core/
-│  │  │  ├─ GameFramework/
-│  │  │  ├─ Math/
-│  │  │  ├─ Object/
-│  │  │  ├─ Render/
-│  │  │  ├─ Runtime/
-│  │  │  ├─ Serialization/
-│  │  │  └─ Slate/
-│  │  ├─ Editor/
-│  │  └─ Misc/ObjViewer/
-│  ├─ Asset/
-│  ├─ Shaders/
-│  ├─ Settings/
-│  └─ Bin/
-└─ W4_Jungle_Team2.sln
+- **애니메이션 노티파이**
+
+  뷰어의 스크러버를 우클릭해 `Add Notify Event`로 그 시각에 노티파이를 더하고, `Notify Detail`에서 이름, 시각, 길이, 이벤트 ID, 페이로드를 고칩니다. 재생 중에 그 시각을 지나면 컴포넌트의 델리게이트와 Lua 스크립트의 `OnAnimNotify` 함수로 전달됩니다
+
+- **애니메이션 시퀀스 에셋**
+
+  뷰어의 `Save AnimSequence Asset`으로 고른 애니메이션 스택을 `.animsequence` 에셋으로 저장합니다. 레벨에서 스켈레탈 메시 컴포넌트를 선택하고 Details 창의 `AnimSequenceAsset`에 에셋을 끌어다 놓거나 목록에서 골라 재생합니다. 읽어 들인 시퀀스는 바이너리 캐시로 저장해 다음부터는 FBX를 다시 해석하지 않습니다
+
+- **애니메이션 상태 머신**
+
+  Content Browser를 우클릭해 `Create`의 `Animation State Machine`으로 `.animsm` 에셋을 만들고, 더블 클릭해 편집기 탭을 엽니다. `Add State`로 상태를 더해 FBX와 애니메이션 스택, 반복 여부, 재생 속도를 정하고, 상태의 출력 핀을 다른 상태의 입력 핀으로 끌어 전환을 만듭니다. 전환을 고르면 `Inspector`에서 조건과 `Blend Time`, `Priority`, 인터럽트 여부를 고치고, `Validate`로 에셋을 검사합니다
+
+- **애니메이션 블렌딩**
+
+  상태 머신이 상태를 전환할 때 전환의 `Blend Time` 동안 두 상태의 자세를 본별로 섞어 자연스럽게 이어지게 합니다
+
+- **Lua 연동**
+
+  Lua 스크립트에서 `SetAnimStateMachine`으로 스켈레탈 메시에 상태 머신을 지정하고, `SetAnimVariableFloat`, `SetAnimVariableBool`, `SetAnimTrigger`로 변수와 트리거를 바꿔 상태 전환을 일으킵니다. 전환 조건을 Lua 함수로 쓸 수도 있습니다
+
+- **GPU 스키닝**
+
+  콘솔에서 `skinning gpu`, `skinning cpu`로 스키닝 방식을 바꾸고, `stat skinning`으로 자세 갱신과 CPU 스키닝에 걸린 시간, 스켈레탈 메시와 정점 수, 상수 버퍼 갱신량을 뷰포트에 표시해 비교합니다
+
+- **본 가중치 히트맵**
+
+  뷰어의 뷰 모드를 `Heatmap`으로 바꾸면 선택한 본이 각 정점에 주는 가중치를 색으로 표시합니다
+
+- **크래시 덤프**
+
+  콘솔 명령 `causecrash`로 일부러 크래시를 일으켜 미니덤프를 남기고, 메뉴의 `Help`에 있는 `Crash Reports`에서 가장 최근의 덤프와 로그, 덤프 폴더를 엽니다
+
+- **리플렉션**
+
+  헤더에 `UCLASS`, `UPROPERTY`, `UFUNCTION` 같은 매크로를 적어 두면 빌드 전에 도구가 헤더를 읽어 타입 정보 코드를 만듭니다. Details 창의 속성 UI와 Lua 바인딩이 이 정보를 씁니다
+
+
+## 👥 팀원 및 담당 파트
+
+| 팀원 | 담당 파트 및 주요 역할 |
+|------|------------------------|
+| **장민준**([@nacho2407](https://github.com/nacho2407)) | 애니메이션 런타임과 상태 머신 - 애니메이션 인스턴스와 단일 노드 재생, 노티파이 전달, 루트 모션, 포즈 블렌딩, 애니메이션 상태 머신과 노드 그래프 편집기, 상태 머신 Lua 바인딩, 데모 프리팹과 Lua 스크립트 |
+| **김기홍**([@lin-ion](https://github.com/lin-ion)) | GPU 스키닝 - GPU 스키닝과 패스별 적용, 스키닝 전환 명령과 Stat, 본 가중치 히트맵, `causecrash` 명령, 셰이더 진입점 이름 정리, 기즈모와 다중 선택 버그 수정 |
+| **조상현**([@HaXXOrBunny](https://github.com/HaXXOrBunny)) | FBX 애니메이션 임포트 - 레퍼런스 스켈레톤, FBX 애니메이션 시퀀스 임포터, 시퀀스 바이너리 캐시, `.animsequence` 에셋, 섹션별 본 팔레트 |
+| **권현수**([@kwonhyeonsoo-goo](https://github.com/kwonhyeonsoo-goo)) | 리플렉션과 애니메이션 뷰어 - 프로퍼티 파서와 리플렉션 매크로, 리플렉션 기반 속성 UI와 Lua 바인딩, 뷰어 타임라인과 재생 컨트롤, 노티파이 편집 UI, 크래시 덤프 메뉴, 발자국 데칼 |
+
+
+## 🧑‍💻 담당 작업 상세
+
+### 애니메이션 인스턴스와 단일 노드 재생
+
+- **목표**
+
+  애니메이션 시퀀스의 키 데이터를 매 프레임 본의 자세로 바꿔 스키닝으로 넘기는 런타임 경로를 만듭니다
+
+- **구현 내용**
+
+  스켈레탈 메시 컴포넌트가 애니메이션 모드(`None`, `SingleNode`, `AnimInstance`)에 맞는 `UAnimInstance`를 소유합니다. 매 틱마다 인스턴스의 `NativeUpdateAnimation`으로 시각을 진행시키고, `EvaluateAnimation`으로 본별 로컬 포즈를 받아 컴포넌트의 로컬 포즈에 넣은 뒤 포즈를 더티로 표시합니다. 그 뒤의 전역 포즈와 스키닝 행렬 계산은 기존 스키닝 경로가 맡으므로, 애니메이션은 로컬 포즈를 만드는 일만 합니다
+
+  `UAnimSingleNodeInstance`는 시퀀스 하나를 재생합니다. 시각은 재생 속도를 곱해 진행하며 음수 속도로 역재생합니다. 반복 재생이면 길이를 넘어간 시각을 반대쪽 끝으로 감고, 아니면 양 끝에서 멈춥니다. 뷰어의 스크러버처럼 시각을 직접 옮기는 경우를 위해, 틱을 기다리지 않고 현재 시각의 자세를 바로 다시 계산하는 경로를 따로 두었습니다
+
+  인스턴스는 이름으로 찾는 실수, 불리언, 트리거 변수를 갖습니다. 게임 코드와 Lua 스크립트가 이 변수를 바꾸고, 상태 머신이 이 변수로 전환 조건을 평가합니다
+
+- **관련 코드**
+
+  [`Source/Engine/Animation/AnimInstance.cpp`](./Source/Engine/Animation/AnimInstance.cpp), [`Source/Engine/Animation/AnimSingleNodeInstance.cpp`](./Source/Engine/Animation/AnimSingleNodeInstance.cpp), [`Source/Engine/Animation/AnimationTypes.h`](./Source/Engine/Animation/AnimationTypes.h), [`Source/Engine/Component/SkeletalMeshComponent.cpp`](./Source/Engine/Component/SkeletalMeshComponent.cpp)
+
+
+### 노티파이와 루트 모션
+
+- **목표**
+
+  애니메이션의 정해진 시각에 게임 코드로 이벤트를 알리고, 루트 본의 움직임을 액터의 이동으로 바꿉니다
+
+- **구현 내용**
+
+  노티파이는 이름, 시각, 길이, 이벤트 ID, 페이로드를 갖습니다. 매 갱신마다 이전 시각과 현재 시각 사이의 구간에 든 노티파이를 찾으며, 반복 재생으로 시각이 끝에서 처음으로 넘어간 프레임에는 구간을 둘로 나눠 검사합니다. 길이가 없는 노티파이는 `Instant`로, 길이가 있는 노티파이는 `Begin`, `Tick`, `End` 단계로 알립니다. 컴포넌트는 받은 노티파이를 `OnAnimNotify` 델리게이트로 내보내고, 스크립트 컴포넌트가 이를 Lua의 `OnAnimNotify` 함수로 넘깁니다
+
+  상태 머신이 전환 중일 때는 두 상태의 노티파이가 함께 걸릴 수 있으므로, 블렌딩 가중치가 기준값 이상인 상태의 노티파이만 알리게 했습니다
+
+  루트 모션은 `Ignore`, `ExtractOnly`, `ApplyToOwner` 세 모드를 둡니다. 이전 프레임의 루트 본 변환의 역변환에 현재 변환을 곱해 프레임 사이의 변화량을 구하고, 탐색이나 반복, 상태 전환으로 시각이 이어지지 않는 프레임에는 변화량을 내지 않고 기준만 다시 잡습니다. `ApplyToOwner`에서는 변화량을 소유 액터에 적용하고 루트 본을 바인드 포즈로 되돌려, 메시가 액터 이동과 본 이동으로 두 번 움직이지 않게 했습니다
+
+- **관련 코드**
+
+  [`Source/Engine/Animation/AnimationRuntime.cpp`](./Source/Engine/Animation/AnimationRuntime.cpp), [`Source/Engine/Animation/AnimInstance.cpp`](./Source/Engine/Animation/AnimInstance.cpp), [`Source/Engine/Animation/AnimationTypes.h`](./Source/Engine/Animation/AnimationTypes.h), [`Source/Engine/Runtime/Script/ScriptComponent.cpp`](./Source/Engine/Runtime/Script/ScriptComponent.cpp)
+
+
+### 애니메이션 상태 머신
+
+- **목표**
+
+  여러 애니메이션을 상태로 묶고, 게임 상황에 따라 상태를 전환하면서 자세가 끊기지 않게 이어 줍니다
+
+- **구현 내용**
+
+  상태 머신은 json 형식의 `.animsm` 에셋입니다. 상태는 FBX 경로와 애니메이션 스택, 반복 여부, 재생 속도를 갖고, 전환은 출발과 도착 상태, 조건, 블렌드 시간, 우선순위, 인터럽트 허용 여부를 갖습니다. 로더는 편집기가 다루는 초안과 런타임에서 쓰는 에셋을 구분해, 런타임에서는 진입 상태와 상태의 애니메이션 참조, 전환이 가리키는 상태, 조건 값을 검증한 뒤에만 씁니다
+
+  `UAnimStateMachineInstance`는 매 갱신마다 현재 상태에서 나가는 전환 중 조건이 참이고 우선순위가 가장 높은 것을 고르고, 없으면 어느 상태에서나 출발할 수 있는 Any 전환을 검사합니다. 조건은 불리언과 실수 변수 비교, 트리거, Lua 함수 가운데 하나이며, Lua 함수 조건은 소유 액터의 스크립트 컴포넌트에 있는 함수를 불러 결과를 받습니다
+
+  전환 중에는 두 상태의 시각을 모두 진행시키고, 본마다 위치와 크기는 선형 보간, 회전은 구면 선형 보간으로 섞습니다. 전환 도중에도, 진행 중인 전환이 인터럽트를 허용하고 우선순위가 더 높은 Any 전환이나 도착 상태에서 나가는 전환의 조건이 참이 되면 **인터럽트**합니다. 이때 진행 중이던 전환의 블렌딩된 자세를 스냅샷으로 잡아 두고, 그 자세에서 새 상태로 블렌딩을 시작해 자세가 튀지 않게 했습니다
+
+  스켈레탈 메시 컴포넌트에 상태 머신 지정과 변수, 트리거 접근 함수를 두고 Lua에 바인딩해, 스크립트에서 입력에 따라 상태 머신을 구동합니다
+
+- **관련 코드**
+
+  [`Source/Engine/Animation/AnimStateMachineInstance.cpp`](./Source/Engine/Animation/AnimStateMachineInstance.cpp), [`Source/Engine/Animation/AnimStateMachineTypes.h`](./Source/Engine/Animation/AnimStateMachineTypes.h), [`Source/Engine/Animation/AnimationRuntime.cpp`](./Source/Engine/Animation/AnimationRuntime.cpp), [`Source/Engine/Asset/AnimStateMachineLoader.cpp`](./Source/Engine/Asset/AnimStateMachineLoader.cpp), [`Source/Engine/Runtime/Script/ScriptManagerComponentBindings.cpp`](./Source/Engine/Runtime/Script/ScriptManagerComponentBindings.cpp)
+
+
+### 상태 머신 노드 그래프 편집기
+
+- **목표**
+
+  json 파일을 직접 고치지 않고 상태와 전환을 그래프로 보면서 상태 머신을 만들고 고칩니다
+
+- **구현 내용**
+
+  imgui-node-editor로 상태를 노드로, 전환을 링크로 그립니다. 상태 노드 안에서 FBX와 애니메이션 스택, 반복 여부, 재생 속도를 고르고 진입 상태로 지정합니다. 출력 핀을 다른 상태의 입력 핀으로 끌면 전환이 생기고, Any State 노드에서 끌면 Any 전환이 됩니다. 전환 링크를 고르면 `Inspector`에서 조건의 종류와 변수, 비교 연산, 값, 블렌드 시간, 우선순위, 인터럽트 허용 여부를 고칩니다
+
+  편집기는 Content Browser에서 `.animsm` 에셋을 더블 클릭해 열고, 새로 만들기와 불러오기, 저장, 다른 이름으로 저장, 검사를 지원합니다. 노드 위치도 에셋에 함께 저장해 다시 열었을 때 배치가 유지됩니다
+
+- **관련 코드**
+
+  [`Source/Editor/UI/EditorAnimStateMachineWidget.cpp`](./Source/Editor/UI/EditorAnimStateMachineWidget.cpp), [`Source/Editor/UI/EditorAnimStateMachineWidget.h`](./Source/Editor/UI/EditorAnimStateMachineWidget.h), [`Source/Editor/UI/EditorContentBrowserWidget.cpp`](./Source/Editor/UI/EditorContentBrowserWidget.cpp)
+
+
+## 🛠️ 기술 스택
+
+- **Language**: C++20
+
+- **Graphics API**: DirectX 11
+
+- **Build**: Visual Studio 2026, MSBuild
+
+- **Libraries**: Autodesk FBX SDK, Dear ImGui, DirectX Tool Kit for DirectX 11, imgui-node-editor, LuaJIT, RmlUi, SimpleJSON, sol2, SoLoud
+
+
+## 🖥️ 구조
+
+```mermaid
+flowchart TD
+    A[FBX 파일] --> B[FBX 애니메이션 임포터가 본별 키 트랙 추출]
+    B --> C[애니메이션 시퀀스와 바이너리 캐시]
+    C --> D[애니메이션 인스턴스가 시각 진행과 자세 평가]
+    E[애니메이션 상태 머신 에셋] --> D
+    D --> F[스켈레탈 메시 컴포넌트가 로컬 포즈 적용과 노티파이 전달]
+    F --> G[본 행렬을 셰이더로 넘겨 GPU 스키닝]
 ```
 
-## 실행과 빌드
+- 동작 흐름
 
-### 권장 환경
+    1. FBX 애니메이션 임포터가 애니메이션 스택마다 본별 위치, 회전, 크기 키를 읽어 애니메이션 시퀀스를 만듭니다. 바이너리 캐시가 있으면 캐시를 읽습니다
 
-- Windows
-- Visual Studio 2022
-- DirectX 11 지원 환경
+    2. 스켈레탈 메시 컴포넌트가 애니메이션 모드에 맞는 애니메이션 인스턴스를 만들고 매 프레임 갱신합니다
 
-### 솔루션
+    3. 단일 노드 인스턴스는 시퀀스 하나의 시각을 진행시키고, 상태 머신 인스턴스는 조건을 평가해 상태를 전환하며 전환 중에는 두 상태의 자세를 블렌딩합니다
 
-- 솔루션 파일: `W4_Jungle_Team2.sln`
+    4. 인스턴스가 지나간 구간의 노티파이를 모아 컴포넌트로 넘기고, 컴포넌트가 델리게이트와 Lua 스크립트로 전달합니다
 
-### 주요 빌드 구성
+    5. 평가한 로컬 포즈로 전역 포즈와 스키닝 행렬을 만들고, 본 행렬을 셰이더로 넘겨 정점 셰이더에서 정점을 변형합니다
 
-- `Debug | x64`
-- `Release | x64`
-- `ObjViewer | x64`
 
-`ObjViewer` 구성은 전용 모델 뷰어 모드입니다.
+## 📁 디렉토리 구조
 
-## 문서 범위에서 제외한 것
+```
+week11/
+├── week11.sln                  // 솔루션
+├── Asset/                      // 재질, 메시, 프리팹, 씬, 커브, 텍스처, 애니메이션 시퀀스, 상태 머신, UI 문서
+├── BuildTools/                 // RmlUi, SoLoud 정적 라이브러리 빌드 스크립트
+├── Docs/                       // README 미디어
+├── LuaDefinitions/             // Lua 편집기용 엔진 API 정의
+├── LuaScript/                  // Lua 스크립트
+├── Resources/                  // 프로그램 아이콘
+├── Shaders/                    // HLSL 셰이더
+├── Source/                     // 진입점
+│   ├── Editor/                 // 에디터 엔진과 렌더 파이프라인
+│   │   ├── Asset/              // 에셋 서비스
+│   │   ├── Command/            // 에디터 명령
+│   │   ├── Input/              // 뷰포트 입력 매핑과 월드 컨트롤러
+│   │   ├── Notification/       // 알림
+│   │   ├── PIE/                // PIE 세션
+│   │   ├── Packaging/          // 게임 패키징
+│   │   ├── Scene/              // 씬 서비스
+│   │   ├── Selection/          // 선택 관리
+│   │   ├── Settings/           // 에디터와 프로젝트 설정
+│   │   ├── UI/                 // 에디터 위젯, 뷰어 창, 상태 머신 편집기, 액터 시퀀서
+│   │   ├── Undo/               // 실행 취소
+│   │   ├── Viewer/             // 메시와 애니메이션 뷰어
+│   │   └── Viewport/           // 뷰포트 클라이언트와 내비게이션
+│   ├── Engine/
+│   │   ├── Animation/          // 애니메이션 시퀀스, 애니메이션 인스턴스, 상태 머신, 액터 시퀀스
+│   │   ├── Asset/              // FBX 임포터, 애니메이션 임포터와 로더, Wavefront OBJ 로더, 메시 에셋, 바이너리 직렬화
+│   │   ├── Audio/              // 오디오 시스템
+│   │   ├── Camera/             // 카메라 매니저와 카메라 셰이크
+│   │   ├── Collision/          // 충돌과 레이 판정
+│   │   ├── Component/          // 컴포넌트
+│   │   ├── Core/               // 공통 타입, 리소스 관리, 경로, 크래시 덤프
+│   │   ├── GameFramework/      // 액터, 월드, 게임 모드
+│   │   ├── Geometry/           // 기하 타입
+│   │   ├── Input/              // 입력 시스템
+│   │   ├── Math/               // 수학
+│   │   ├── Object/             // UObject, 이름
+│   │   ├── ReflectionSystem/   // 리플렉션 타입 정보와 프로퍼티
+│   │   ├── Render/             // 렌더러와 GPU 리소스
+│   │   ├── Runtime/            // 엔진 루프, 창, Lua 스크립트
+│   │   ├── Serialization/      // 씬과 프리팹 저장
+│   │   ├── Slate/              // 창과 스플리터
+│   │   ├── Spatial/            // BVH, KD 트리
+│   │   └── UI/                 // RmlUi 런타임 UI
+│   ├── Launch/                 // 실행 모드 선택
+│   └── Misc/                   // OBJ 뷰어
+├── ThirdParty/                 // Dear ImGui, imgui-node-editor, LuaJIT, RmlUi, SimpleJSON, sol2, SoLoud
+└── Tools/                      // 리플렉션 코드 생성 도구
+```
 
-아래 항목은 발표자료에 언급되더라도, 이 문서에서는 과장하지 않기 위해 표현을 낮추거나 일반화했습니다.
 
-- 범용 게임 엔진 수준의 완성도
-- 범용 머티리얼 에디터
-- 모든 OBJ/MTL 조합에 대한 완전 호환
-- 고급 메시 최적화 기능 전반
+## ❓ 빌드 및 실행
 
-현재 리포지토리 기준으로는 "에디터 기능을 갖춘 DirectX 11 기반 학습용 3D 엔진/도구 프로젝트"로 보는 것이 가장 정확합니다.
+### 릴리즈 실행
+
+일부 에셋과 라이브러리의 라이선스 문제로 인해 이 주차의 실행 파일은 제공하지 않습니다.
+
+
+### 소스 빌드
+
+일부 에셋과 라이브러리를 라이선스 문제로 저장소에 포함하지 못해, 이 주차는 저장소만으로 빌드할 수 없습니다.
+
+
+## ⌨️ 단축키
+
+| 단축키 | 동작 |
+|--------|------|
+| **Q / W / E / R, 1 / 2 / 3 / 4** | 편집 모드 전환(선택, 이동, 회전, 크기) |
+| **Tab** | 편집 모드 순환 |
+| **Space** | 기즈모 모드 순환(이동, 회전, 크기) |
+| **X** | 기즈모 기준 전환(월드, 로컬) |
+| **F** | 선택한 액터 쪽으로 카메라 이동 |
+| **Ctrl + A** | 모든 액터 선택 |
+| **Ctrl + Alt + 드래그** | 박스 선택(Shift를 함께 누르면 기존 선택에 추가) |
+| **Ctrl + D** | 선택한 액터 복제 |
+| **Delete** | 선택한 액터 삭제 |
+| **F2** | 선택한 액터 이름 바꾸기 |
+| **Ctrl + Z / Ctrl + Shift + Z** | 실행 취소, 다시 실행 |
+| **Ctrl + N / Ctrl + O / Ctrl + S / Ctrl + Shift + S** | 새 씬, 씬 열기, 씬 저장, 다른 이름으로 저장 |
+| **Ctrl + Space** | Content Browser 열기와 닫기 |
+| **\`** | 콘솔 입력창으로 이동, 콘솔 창 열기, 닫기 순환 |
+| **Esc** | PIE 종료 |
+| **F8** | PIE 중 빙의와 해제 전환 |
+| **Shift + F1** | PIE 중 마우스 커서 풀기 |
+
+
+## 📄 서드파티 라이브러리
+
+| 이름 | 저작자 | 버전 | 라이선스 |
+|------|--------|------|----------|
+| **[Autodesk FBX SDK](https://aps.autodesk.com/developer/overview/fbx-sdk)** | Autodesk, Inc. | 2020.3.9 | Autodesk License and Services Agreement |
+| **[Dear ImGui](https://github.com/ocornut/imgui)** | Omar Cornut | 1.92.7 WIP | [MIT License](./ThirdParty/ImGui/LICENSE.txt) |
+| **[DirectX Tool Kit for DirectX 11](https://github.com/microsoft/DirectXTK)** | Microsoft Corporation. | - | MIT License |
+| **[imgui-node-editor](https://github.com/thedmd/imgui-node-editor)** | Michał Cichoń | 0.9.3 | [MIT License](./ThirdParty/imgui-node-editor/LICENSE) |
+| **[LuaJIT](https://luajit.org)** | Mike Pall | 2.1 | [MIT License](./ThirdParty/luajit/COPYRIGHT) |
+| **[RmlUi](https://github.com/mikke89/RmlUi)** | The RmlUi Team, and contributors | - | [MIT License](./ThirdParty/RmlUi/LICENSE.txt) |
+| **[SimpleJSON](https://github.com/nbsdx/SimpleJSON)** | Neil | - | Do What the Fuck You Want to Public License |
+| **[sol2](https://github.com/ThePhD/sol2)** | Rapptz, ThePhD, and contributors | 3.5.0 | [MIT License](./ThirdParty/sol/LICENSE.txt) |
+| **[SoLoud](https://github.com/jarikomppa/soloud)** | Jari Komppa | 202002 | [zlib License](./ThirdParty/SoLoud/LICENSE) |
+
+
+## 🎨 서드파티 에셋
+
+| 이름 | 저작자 | 라이선스 |
+|------|--------|----------|
+| **[3d-cubes](https://github.com/garykac/3d-cubes)** | Gary Kac | - |
+| **[Abandoned children's slide](https://sketchfab.com/3d-models/abandoned-childrens-slide-11de2b21ec264c0a814ac024c45ab425)** | sergeilihandristov | [Creative Commons Attribution 4.0 International](https://creativecommons.org/licenses/by/4.0/) |
+| **[logo.js](https://github.com/voodootikigod/logo.js)** | Christopher Williams | [MIT License](./Resources/Editor/Branding/logo.js-LICENSE) |
+
+
+## ⚖️ 라이선스
+
+이 주차의 코드 중 장민준이 작성한 부분은 MIT 라이선스로 공개하며, 다른 기여자가 작성한 부분의 권리는 각 기여자에게 있습니다. 자세한 내용은 [LICENSE](../LICENSE)를 확인해 주세요.
