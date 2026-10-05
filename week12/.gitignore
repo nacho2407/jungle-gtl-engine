@@ -478,6 +478,12 @@ imgui.ini
 # Files tracked in this repository despite the *.obj rule above
 !/Asset/Mesh/Cube/Cube.obj
 
+# Materials written at run time when a mesh is imported
+/Asset/Material/Auto/*
+!/Asset/Material/Auto/Dice_Mat_*
+!/Asset/Material/Auto/MultiMaterialCube_Mat_*
+!/Asset/Material/Auto/cube_Mat_*
+
 # Excluded from this repository because of license issues; kept only for local builds
 /ThirdParty/FBX/
 /Asset/Animation/
