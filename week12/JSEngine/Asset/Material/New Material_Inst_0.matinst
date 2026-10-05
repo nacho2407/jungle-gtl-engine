@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Material/New Material_Inst_0.matinst",
+        "OverridedParams" : [{
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Texture/kenney_particlePack/Rotated/trace_06_rotated.png"
+          }],
+        "Parent" : "Asset/Material/New Material.mat"
+      }

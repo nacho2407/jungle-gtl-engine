@@ -1,0 +1,173 @@
+﻿#include "DecalComponent.h"
+
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
+#include "Core/Paths.h"
+#include "Core/ResourceManager.h"
+#include "Core/Logging/Log.h"
+#include "Render/Scene/Scene.h"
+
+
+// Decal Box가 화면 밖으로 나가도 컬링되지 않도록 합니다.
+UDecalComponent::UDecalComponent()
+{
+	Materials.resize(1);
+
+	UMaterial* Mat = Cast<UMaterial>(FResourceManager::Get().GetMaterialInterface("Asset/Material/DecalMat.mat"));
+	if (Mat == nullptr)
+	{
+		Mat = FResourceManager::Get().GetMaterial("DefaultWhite");
+		UE_LOG_WARNING("[DecalComponent] DecalMat is missing. Falling back to DefaultWhite.");
+	}
+	SetMaterial(0, Mat);
+
+	if (Mat)
+	{
+		Mat->DepthStencilType = EDepthStencilType::Default;
+		Mat->BlendType = EBlendType::AlphaBlend;
+		Mat->RasterizerType = ERasterizerType::SolidBackCull;
+		Mat->SamplerType = ESamplerType::EST_Linear;
+	}
+
+	bEnableCull = false;
+}
+
+void UDecalComponent::Serialize(FArchive& Ar)
+{
+	UPrimitiveComponent::Serialize(Ar);
+	if (Materials.empty())
+	{
+		Materials.resize(1);
+	}
+}
+
+void UDecalComponent::BeginPlay()
+{
+	UPrimitiveComponent::BeginPlay();
+
+	LifeTime = 0.0f;
+}
+
+void UDecalComponent::SetMaterial(int32 SlotIndex, UMaterialInterface* InMaterial)
+{
+	if (SlotIndex != 0)
+	{
+		return;
+	}
+
+	Materials[0] = InMaterial;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Material);
+}
+
+void UDecalComponent::SetSize(const FVector& InSize)
+{
+	DecalSize = InSize;
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::Decal);
+}
+
+void UDecalComponent::PostEditProperty(const char* PropertyName)
+{
+	UPrimitiveComponent::PostEditProperty(PropertyName);
+
+	if (std::strcmp(PropertyName, "Materials") == 0)
+	{
+		for (int32 i = 0; i < static_cast<int32>(Materials.size()); ++i)
+		{
+			if (Materials[i] == nullptr)
+			{
+				SetMaterial(i, FResourceManager::Get().GetMaterialInterface("Asset/Material/DecalMat.mat"));
+				continue;
+			}
+			SetMaterial(i, Materials[i]);
+		}
+	}
+}
+
+void UDecalComponent::UpdateWorldAABB() const
+{
+	// 월드 공간에서의 AABB 계산
+	FVector WorldLocation = GetWorldLocation();
+	FVector HalfSize = DecalSize * 0.5f;
+	WorldAABB.Min = WorldLocation - HalfSize;
+	WorldAABB.Max = WorldLocation + HalfSize;
+}
+
+bool UDecalComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
+{
+	return false;
+}
+
+FMatrix UDecalComponent::GetDecalMatrix() const
+{
+	FMatrix WorldMatrix = FMatrix::MakeScaleMatrix(DecalSize) * GetWorldMatrix();
+	return WorldMatrix;
+}
+
+void UDecalComponent::TickComponent(float DeltaTime)
+{
+	UPrimitiveComponent::TickComponent(DeltaTime);
+
+	LifeTime += DeltaTime;
+
+	if (FadeInStartDelay + FadeInDuration > 0 && LifeTime < FadeInStartDelay + FadeInDuration)
+	{
+		TickFadeIn();
+	}
+	else if (FadeStartDelay + FadeDuration > 0 && LifeTime >= FadeInStartDelay + FadeInDuration)
+	{
+		TickFadeOut();
+	}
+}
+
+void UDecalComponent::TickFadeIn()
+{
+	float FadeInTime = LifeTime - FadeInStartDelay;
+	if (FadeInTime < 0.0f)
+	{
+		DecalColor.A = 0.0f;
+		return;
+	}
+	
+	if (FadeInDuration <= 0.0f)
+	{
+		DecalColor.A = 1.0f;
+		return;
+	}
+
+	float Alpha = FadeInTime / FadeInDuration;
+
+	DecalColor.A = MathUtil::Clamp(Alpha, 0.0f, 1.0f);
+}
+
+void UDecalComponent::TickFadeOut()
+{
+	float FadeOutLifeTime = LifeTime - FadeInStartDelay - FadeInDuration;
+
+	float FadeOutTime = FadeOutLifeTime - FadeStartDelay;
+	if (FadeOutTime < 0.0f) return;
+
+	float Alpha = 1.0f - (FadeOutTime / FadeDuration);
+	DecalColor.A = MathUtil::Clamp(Alpha, 0.0f, 1.0f);
+
+	if (FadeOutLifeTime >= FadeStartDelay + FadeDuration)
+	{
+		SetActive(false);
+		if (bDestroyOwnerAfterFade && GetOwner())
+		{
+			GetOwner()->GetFocusedWorld()->DestroyActor(GetOwner());
+		}
+	}
+}
+
+void UDecalComponent::SetFadeIn(float InStartDelay, float InDuration)
+{
+	FadeInStartDelay = InStartDelay;
+	FadeInDuration = InDuration;
+}
+
+void UDecalComponent::SetFadeOut(float InStartDelay, float InDuration, bool bInDestroyOwnerAfterFade)
+{
+	FadeStartDelay = InStartDelay;
+	FadeDuration = InDuration;
+	bDestroyOwnerAfterFade = bInDestroyOwnerAfterFade;
+}

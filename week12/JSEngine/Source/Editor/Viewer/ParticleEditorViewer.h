@@ -1,0 +1,233 @@
+﻿#pragma once
+
+#include "Editor/Viewer/EditorViewer.h"
+#include "Editor/Viewport/Viewer/ParticleViewerViewportClient.h"
+
+#include "Particle/ParticleAsset.h"
+#include "Particle/ParticleSystemComponent.h"
+
+class AActor;
+class AParticleSystemActor;
+class UParticleSystem;
+class UParticleSystemComponent;
+class UParticleEmitter;
+class UParticleLODLevel;
+class UParticleModule;
+class UParticleModuleRequired;
+class UParticleModuleSpawn;
+class UParticleModuleTypeDataBase;
+class UWorld;
+
+enum class EParticleEditorSelectionType : uint8
+{
+	None,
+	ParticleSystem,
+	Emitter,
+	LODLevel,
+	RequiredModule,
+	SpawnModule,
+	TypeDataModule,
+	Module,
+};
+
+// ParticleSystem 에디터 뷰어. ParticleSystem Asset을 로드하여 시뮬레이션, Emitter/LOD/Module 선택 및 편집 기능 제공
+// Simulation, Toolbar, Viewport, Details, Emitter Panels 등 UI에서 호출되는 실제 조작 지원
+class FParticleEditorViewer : public FEditorViewer
+{
+public:
+	bool ChangeTarget(const FString& InFileName) override;
+
+	void Tick(float DeltaTime) override;
+	void Shutdown() override;
+
+	// Client & Preview ──────────────────────────────────────────────────────────────
+	FParticleViewerViewportClient& GetClient() override { return Client; }
+	const FParticleViewerViewportClient& GetClient() const override { return Client; }
+
+	UParticleSystem* GetParticleSystem() const { return ParticleSystem; }
+	UParticleSystemComponent* GetPreviewComponent() const { return PreviewComponent; }
+
+	// Tab Info  ─────────────────────────────────────────────────────────────────────
+	EEditorTabKind GetTabKind() const override;
+	const char* GetViewerLabel() const override;
+
+	// Selection Controls (Emitter, LOD, Module) ─────────────────────────────────────
+	int32 GetSelectedEmitterIndex() const { return SelectedEmitterIndex; }
+	int32 GetSelectedLODIndex() const { return SelectedLODIndex; }
+	int32 GetSelectedModuleIndex() const { return SelectedModuleIndex; }
+
+	void SelectParticleSystem();
+	void SelectEmitter(int32 EmitterIndex);
+	void SelectLOD(int32 LODIndex);
+	void SelectModule(int32 ModuleIndex);
+	void SelectRequiredModule();
+	void SelectSpawnModule();
+	void SelectTypeDataModule();
+	void SelectEmitterModule(int32 EmitterIndex, int32 LODIndex, int32 ModuleIndex);
+
+	// Getter of Selected Items ──────────────────────────────────────────────────────
+	UParticleEmitter* GetSelectedEmitter() const;
+	UParticleLODLevel* GetSelectedLODLevel() const;
+	UParticleModule* GetSelectedModule() const;
+	UParticleModuleRequired* GetSelectedRequiredModule() const;
+	UParticleModuleSpawn* GetSelectedSpawnModule() const;
+	UParticleModuleTypeDataBase* GetSelectedTypeDataModule() const;
+
+	UObject* GetSelectedObject() const;
+	EParticleEditorSelectionType GetSelectionType() const { return SelectionType; }
+
+	// Simulation Controls ──────────────────────────────────────────────────────────
+	void RestartSimulation();
+	void RestartLevel();
+	void SetPlaying(bool bInPlaying) { bPlaying = bInPlaying; }
+	bool IsPlaying() const { return bPlaying; }
+	float GetSimulationTime() const { return SimulationTime; }
+
+	void SetLooping(bool bInLooping) { bLooping = bInLooping; }
+	bool IsLooping() const { return bLooping; }
+
+	void SetRealtime(bool bInRealtime);
+	bool IsRealtime() const { return Client.IsRealtime(); }
+
+	// View Mode & Display Options ─────────────────────────────────────────────────
+	void SetShowGrid(bool bInShowGrid) { Client.SetShowGrid(bInShowGrid); }
+	bool IsShowGrid() const { return Client.IsShowGrid(); }
+
+	void SetShowAxis(bool bInShowAxis) { Client.SetShowAxis(bInShowAxis); }
+	bool IsShowAxis() const { return Client.IsShowAxis(); }
+
+	void SetShowBounds(bool bInShowBounds) { Client.SetShowBounds(bInShowBounds); }
+	bool IsShowBounds() const { return Client.IsShowBounds(); }
+
+	void SetBackgroundColor(const FColor& InColor) { Client.SetBackgroundColor(InColor); }
+	const FColor& GetBackgroundColor() const { return Client.GetBackgroundColor(); }
+
+	void SetViewMode(EViewMode InViewMode);
+	EViewMode GetViewMode() const;
+
+	// Emitter Controls ────────────────────────────────────────────────────────────
+	void AddEmitter();
+	void DuplicateEmitter(int32 EmitterIndex);
+	void DeleteSelectedEmitter();
+	void DeleteSelection();
+	void MoveEmitter(int32 FromIndex, int32 ToIndex);
+	void MoveEmittersToIndex(const TArray<int32>& EmitterIndices, int32 ToIndex);
+	void CopyEmittersToIndex(const TArray<int32>& EmitterIndices, int32 ToIndex);
+
+	void AddModule(UClass* ModuleClass);
+	void DeleteSelectedModule();
+	void MoveModule(int32 FromIndex, int32 ToIndex);
+	void MoveModules(int32 SourceEmitterIndex, int32 SourceLODIndex, const TArray<int32>& ModuleIndices, int32 ToIndex);
+	void MoveModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex);
+	void MoveModulesToEmitter(int32 SourceEmitterIndex, int32 SourceLODIndex, const TArray<int32>& ModuleIndices, int32 TargetEmitterIndex);
+	void CopyModuleToEmitter(int32 ModuleIndex, int32 TargetEmitterIndex);
+	void CopyModulesToEmitter(int32 SourceEmitterIndex, int32 SourceLODIndex, const TArray<int32>& ModuleIndices, int32 TargetEmitterIndex);
+
+	/**
+	 * @brief 지정된 LOD에서 module topology 편집을 시작할 수 있는지 확인합니다.
+	 *
+	 * @param LODIndex 검사 대상 LOD index
+	 *
+	 * @return topology 편집 가능 여부
+	 *
+	 * @details Cascade-style LOD에서는 module add / delete / reorder를 LOD 0에서만 시작할 수 있습니다.
+	 */
+	bool CanEditLODTopology(int32 LODIndex) const;
+
+	/**
+	 * @brief 현재 선택된 LOD에서 module topology 편집을 시작할 수 있는지 확인합니다.
+	 *
+	 * @return topology 편집 가능 여부
+	 */
+	bool CanEditSelectedLODTopology() const;
+
+	// Toolbar Actions ────────────────────────────────────────────────────────────
+	bool Save();
+	bool SaveAs(const FString& InFileName);
+
+	void FindInContentBrowser();
+
+	bool Undo();
+	bool Redo();
+	bool CanUndo() const { return !UndoSnapshots.empty(); }
+	bool CanRedo() const { return !RedoSnapshots.empty(); }
+	void CaptureUndoSnapshot(const char* Reason = nullptr);
+	void DiscardUnsavedChanges();
+
+	void AddLOD();
+	void RemoveLOD(int32 LODIndex);
+	void SetHighestLOD();
+	void SetLowestLOD();
+	void SelectLowerLOD();
+	void SelectUpperLOD();
+
+	void MarkDirty() { bDirty = true; }
+	bool IsDirty() const { return bDirty; }
+
+private:
+	// State Clear
+	void ClearParticlePreview();
+	void ClearParticleSelection();
+	bool CreatePreviewComponent();
+
+	// Load & Create Asset
+	bool LoadParticleSystemAsset(const FString& InFileName);
+	void EnsureDefaultParticleSystem();
+	UParticleLODLevel* CreateDefaultLODLevel(int32 Level);
+
+	/**
+	 * @brief LOD 0의 module topology를 복제한 새 LOD level을 생성합니다.
+	 *
+	 * @param Emitter 기준으로 사용할 particle emitter
+	 *
+	 * @param Level 생성할 LOD level index
+	 *
+	 * @return 생성된 LOD level 또는 실패 시 nullptr
+	 */
+	UParticleLODLevel* CreateLODFromLOD0Topology(UParticleEmitter* Emitter, int32 Level);
+
+	/**
+	 * @brief emitter runtime cache를 갱신하고 preview simulation을 재시작합니다.
+	 *
+	 * @param Emitter cache를 갱신할 particle emitter
+	 */
+	void RefreshEmitterAfterTopologyEdit(UParticleEmitter* Emitter);
+	const UParticleLODLevel* FindTrailPreviewLOD() const;
+	void UpdateTrailPreviewMotion(float DeltaTime);
+
+	bool CaptureParticleSnapshot(FString& OutSnapshot) const;
+	bool RestoreParticleSnapshot(const FString& Snapshot);
+	void RefreshSavedSnapshot();
+	void ClearUndoHistory();
+	void CacheAllEmitters();
+
+private:
+	FParticleViewerViewportClient Client;
+	UParticleSystem* ParticleSystem = nullptr;
+
+	UParticleSystemComponent* PreviewComponent = nullptr;
+	UWorld* PreviewWorld = nullptr;
+	AParticleSystemActor* PreviewActor = nullptr;
+
+	bool bOwnsParticleSystem = false; // 뷰어가 생성한 ParticleSystem인지, Asset을 참조한 것인지 구분
+
+	// Selection State
+	EParticleEditorSelectionType SelectionType = EParticleEditorSelectionType::None;
+	int32 SelectedEmitterIndex = -1;
+	int32 SelectedLODIndex = -1;
+	int32 SelectedModuleIndex = -1;
+
+	// Simulation & View Options
+	bool bPlaying = true;
+	bool bLooping = true;
+	bool bDirty = false;
+	float SimulationTime = 0.0f;
+	float TrailPreviewTime = 0.0f;
+
+	// Undo & Redo
+	bool bRestoringParticleSnapshot = false;
+	FString SavedSnapshot;
+	TArray<FString> UndoSnapshots;
+	TArray<FString> RedoSnapshots;
+	static constexpr int32 MaxParticleUndoSnapshots = 50;
+};

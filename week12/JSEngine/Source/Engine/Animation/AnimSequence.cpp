@@ -1,0 +1,342 @@
+﻿#include "Animation/AnimSequence.h"
+#include "Animation/AnimNotify.h"
+#include "Core/Reflection/ReflectionRegistry.h"
+#include "Geometry/Transform.h"
+#include "Object/Class.h"
+#include "Object/Object.h"
+
+#include <algorithm>
+#include <cmath>
+
+namespace
+{
+	UAnimNotify* CreateAnimNotifyObject(const FString& NotifyClassName)
+	{
+		if (NotifyClassName.empty())
+		{
+			return nullptr;
+		}
+
+		UClass* Class = FReflectionRegistry::Get().FindClass(NotifyClassName);
+		if (!Class || !Class->IsChildOf(UAnimNotify::StaticClass()) || Class->HasAnyClassFlags(CF_Abstract))
+		{
+			return nullptr;
+		}
+
+		return Cast<UAnimNotify>(NewObject(Class));
+	}
+
+	void DestroyAnimNotifyObject(FAnimNotifyStateEvent& Notify)
+	{
+		if (!Notify.NotifyObject)
+		{
+			return;
+		}
+
+		UObjectManager::Get().DestroyObject(Notify.NotifyObject);
+		Notify.NotifyObject = nullptr;
+	}
+}
+
+const TArray<FBoneAnimationTrack>& UAnimDataModel::GetBoneAnimationTracks() const
+{
+	return BoneAnimationTracks;
+}
+
+TArray<FBoneAnimationTrack>& UAnimDataModel::GetMutableBoneAnimationTracks()
+{
+	return BoneAnimationTracks;
+}
+
+UAnimSequenceBase::~UAnimSequenceBase()
+{
+	ClearNotifies();
+	SetDataModel(nullptr);
+}
+
+void UAnimSequenceBase::SetDataModel(UAnimDataModel* InDataModel)
+{
+	if (DataModel == InDataModel)
+	{
+		return;
+	}
+
+	if (DataModel)
+	{
+		UObjectManager::Get().DestroyObject(DataModel);
+	}
+
+	DataModel = InDataModel;
+}
+
+const TArray<FBoneAnimationTrack>& UAnimSequenceBase::GetBoneAnimationTracks() const
+{
+	static const TArray<FBoneAnimationTrack> EmptyTracks = {};
+	return DataModel ? DataModel->GetBoneAnimationTracks() : EmptyTracks;
+}
+
+void UAnimSequenceBase::AddNotify(float InTriggerTime, const FName& InNotifyName, float InDuration, const FString& InNotifyClassName)
+{
+	FAnimNotifyStateEvent NewNotify;
+
+	const float Length = std::max(0.0f, GetPlayLength());
+	NewNotify.TriggerTime = std::clamp(InTriggerTime, 0.0f, Length);
+	NewNotify.Duration = std::clamp(InDuration, 0.0f, std::max(0.0f, Length - NewNotify.TriggerTime));
+	NewNotify.NotifyName = InNotifyName;
+	NewNotify.NotifyClassName = InNotifyClassName;
+	NewNotify.NotifyObject = CreateAnimNotifyObject(NewNotify.NotifyClassName);
+
+	Notifies.push_back(NewNotify);
+
+	std::ranges::sort(Notifies,
+			[](const FAnimNotifyStateEvent& A, const FAnimNotifyStateEvent& B) { return A.TriggerTime < B.TriggerTime; });
+}
+
+void UAnimSequenceBase::ClearNotifies()
+{
+	for (FAnimNotifyStateEvent& Notify : Notifies)
+	{
+		DestroyAnimNotifyObject(Notify);
+	}
+
+	Notifies.clear();
+}
+
+bool UAnimSequenceBase::RemoveNotifyAt(int32 NotifyIndex)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	DestroyAnimNotifyObject(Notifies[NotifyIndex]);
+	Notifies.erase(Notifies.begin() + NotifyIndex);
+	return true;
+}
+
+bool UAnimSequenceBase::SetNotifyName(int32 NotifyIndex, const FName& InNotifyName)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	if (!InNotifyName.IsValid())
+	{
+		return false;
+	}
+
+	Notifies[NotifyIndex].NotifyName = InNotifyName;
+	return true;
+}
+
+bool UAnimSequenceBase::SetNotifyClassName(int32 NotifyIndex, const FString& InNotifyClassName)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	FAnimNotifyStateEvent& Notify = Notifies[NotifyIndex];
+	DestroyAnimNotifyObject(Notify);
+	Notify.NotifyClassName = InNotifyClassName;
+	Notify.NotifyObject = CreateAnimNotifyObject(InNotifyClassName);
+	return true;
+}
+
+bool UAnimSequenceBase::SetNotifyTriggerTime(int32 NotifyIndex, float InTriggerTime)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	const float Length = std::max(0.0f, GetPlayLength());
+	FAnimNotifyStateEvent& Notify = Notifies[NotifyIndex];
+	Notify.TriggerTime = std::clamp(InTriggerTime, 0.0f, Length);
+	Notify.Duration = std::clamp(Notify.Duration, 0.0f, std::max(0.0f, Length - Notify.TriggerTime));
+	return true;
+}
+
+bool UAnimSequenceBase::SetNotifyDuration(int32 NotifyIndex, float InDuration)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	const float Length = std::max(0.0f, GetPlayLength());
+	FAnimNotifyStateEvent& Notify = Notifies[NotifyIndex];
+	Notify.Duration = std::clamp(InDuration, 0.0f, std::max(0.0f, Length - Notify.TriggerTime));
+	return true;
+}
+
+bool UAnimSequenceBase::SetNotifyTimeRange(int32 NotifyIndex, float InTriggerTime, float InDuration)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	const float Length = std::max(0.0f, GetPlayLength());
+	FAnimNotifyStateEvent& Notify = Notifies[NotifyIndex];
+	Notify.TriggerTime = std::clamp(InTriggerTime, 0.0f, Length);
+	Notify.Duration = std::clamp(InDuration, 0.0f, std::max(0.0f, Length - Notify.TriggerTime));
+	return true;
+}
+
+bool UAnimSequenceBase::MoveNotifyAt(int32 NotifyIndex, float InTriggerTime, int32* OutNewIndex)
+{
+	if (NotifyIndex < 0 || NotifyIndex >= static_cast<int32>(Notifies.size()))
+	{
+		return false;
+	}
+
+	const float Length = std::max(0.0f, GetPlayLength());
+	FAnimNotifyStateEvent MovedNotify = Notifies[NotifyIndex];
+	MovedNotify.TriggerTime = std::clamp(InTriggerTime, 0.0f, Length);
+	MovedNotify.Duration = std::clamp(MovedNotify.Duration, 0.0f, std::max(0.0f, Length - MovedNotify.TriggerTime));
+
+	Notifies.erase(Notifies.begin() + NotifyIndex);
+	const auto InsertIt = std::lower_bound(
+		Notifies.begin(),
+		Notifies.end(),
+		MovedNotify.TriggerTime,
+		[](const FAnimNotifyStateEvent& Notify, float TriggerTime)
+		{
+			return Notify.TriggerTime < TriggerTime;
+		});
+
+	const int32 NewIndex = static_cast<int32>(InsertIt - Notifies.begin());
+	Notifies.insert(InsertIt, MovedNotify);
+	if (OutNewIndex)
+	{
+		*OutNewIndex = NewIndex;
+	}
+
+	return true;
+}
+
+namespace
+{
+	int32 GetTrackKeyCount(const FRawAnimSequenceTrack& Track)
+	{
+		return static_cast<int32>(std::max({
+			Track.PosKeys.size(),
+			Track.RotKeys.size(),
+			Track.ScaleKeys.size()}));
+	}
+
+	FVector3f SampleVectorKey(const TArray<FVector3f>& Keys, int32 KeyIndex, int32 NextKeyIndex, float Alpha, const FVector3f& DefaultValue)
+	{
+		if (Keys.empty())
+		{
+			return DefaultValue;
+		}
+
+		const int32 LastIndex = static_cast<int32>(Keys.size()) - 1;
+		const FVector3f& Start = Keys[std::clamp(KeyIndex, 0, LastIndex)];
+		const FVector3f& End = Keys[std::clamp(NextKeyIndex, 0, LastIndex)];
+		return Start + (End - Start) * Alpha;
+	}
+
+	FQuat4f SampleQuatKey(const TArray<FQuat4f>& Keys, int32 KeyIndex, int32 NextKeyIndex, float Alpha, const FQuat4f& DefaultValue)
+	{
+		if (Keys.empty())
+		{
+			return DefaultValue;
+		}
+
+		const int32 LastIndex = static_cast<int32>(Keys.size()) - 1;
+		const FQuat4f& Start = Keys[std::clamp(KeyIndex, 0, LastIndex)];
+		const FQuat4f& End = Keys[std::clamp(NextKeyIndex, 0, LastIndex)];
+		return FQuat4f::Slerp(Start, End, Alpha).GetNormalized();
+	}
+}
+
+float UAnimSequence::GetPlayLength() const
+{
+	return DataModel ? DataModel->GetPlayLength() : 0.0f;
+}
+
+//3-2. Evaluate Phase(Tick Component의 USkeletalMeshComponent::ApplyAnimationPose로 이어짐)
+//진행된 시간에 맞춰 두 샘플링된 키 프레임 사이를 Interpolation, pos 계산
+bool UAnimSequence::GetAnimationPose(float Time, FPoseContext& OutPose) const
+{
+	if (!DataModel)
+	{
+		return false;
+	}
+
+	const TArray<FBoneAnimationTrack>& Tracks = DataModel->GetBoneAnimationTracks();
+	if (Tracks.empty())
+	{
+		return false;
+	}
+
+	if (OutPose.LocalPose.empty() && !OutPose.BindPose.empty())
+	{
+		OutPose.LocalPose = OutPose.BindPose;
+	}
+
+	if (OutPose.LocalPose.empty())
+	{
+		return false;
+	}
+
+	int32 KeyCount = DataModel->GetNumberOfKeys();
+	if (KeyCount <= 0)
+	{
+		for (const FBoneAnimationTrack& Track : Tracks)
+		{
+			KeyCount = std::max(KeyCount, GetTrackKeyCount(Track.InternalTrack));
+		}
+	}
+
+	if (KeyCount <= 0)
+	{
+		return true;
+	}
+
+	const float Length = std::max(0.0f, DataModel->GetPlayLength());
+	const float ClampedTime = Length > 0.0f ? std::clamp(Time, 0.0f, Length) : 0.0f;
+	const float KeyPosition = (Length > 0.0f && KeyCount > 1)
+		? (ClampedTime / Length) * static_cast<float>(KeyCount - 1)
+		: 0.0f;
+
+	const int32 KeyIndex = std::clamp(static_cast<int32>(std::floor(KeyPosition)), 0, KeyCount - 1);
+	const int32 NextKeyIndex = std::clamp(KeyIndex + 1, 0, KeyCount - 1);
+	const float Alpha = std::clamp(KeyPosition - static_cast<float>(KeyIndex), 0.0f, 1.0f);
+
+	const int32 PoseCount = static_cast<int32>(OutPose.LocalPose.size());
+	const int32 TrackCount = static_cast<int32>(Tracks.size());
+	for (int32 TrackIndex = 0; TrackIndex < TrackCount; ++TrackIndex)
+	{
+		int32 BoneIndex = TrackIndex;
+		if (TrackIndex < static_cast<int32>(OutPose.TrackToBoneMap.size()))
+		{
+			BoneIndex = OutPose.TrackToBoneMap[TrackIndex];
+		}
+
+		if (BoneIndex < 0 || BoneIndex >= PoseCount)
+		{
+			continue;
+		}
+
+		const FRawAnimSequenceTrack& RawTrack = Tracks[TrackIndex].InternalTrack;
+
+		FTransform BindTransform;
+		if (OutPose.BindPose.size() == OutPose.LocalPose.size())
+		{
+			BindTransform = FTransform(OutPose.BindPose[BoneIndex]);
+		}
+
+		const FVector3f Translation = SampleVectorKey(RawTrack.PosKeys, KeyIndex, NextKeyIndex, Alpha, BindTransform.GetTranslation());
+		const FQuat4f Rotation = SampleQuatKey(RawTrack.RotKeys, KeyIndex, NextKeyIndex, Alpha, BindTransform.GetRotation());
+		const FVector3f Scale = SampleVectorKey(RawTrack.ScaleKeys, KeyIndex, NextKeyIndex, Alpha, BindTransform.GetScale3D());
+
+		OutPose.LocalPose[BoneIndex] = FTransform(Rotation, Translation, Scale).ToMatrixWithScale();
+	}
+
+	return true;
+}

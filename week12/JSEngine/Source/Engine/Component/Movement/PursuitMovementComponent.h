@@ -1,0 +1,62 @@
+﻿#pragma once
+#include "MovementComponent.h"
+
+class FViewportCamera;
+
+// Not intended for complex, non-ghost actors
+UCLASS(SpawnableComponent, DisplayName = "PursuitMovement Component", Category = "Movement")
+class UPursuitMovementComponent : public UMovementComponent {
+public:
+	GENERATED_BODY(UPursuitMovementComponent, UMovementComponent);
+
+	// Overrides
+	void				BeginPlay() override;
+	void				TickComponent(float DeltaTime) override;
+	void				PostDuplicate(UObject* Original) override;
+	float				GetMaxSpeed() const override { return 0; };
+
+
+	// Direction / Rotation
+	bool				IsFacingTargetDir() const { return bFaceTargetDir; }
+	void				ShouldFaceTargetDir(bool InBool) { bFaceTargetDir = InBool; }
+
+
+	// Pursuit Logic
+	void				SetPursuitTarget(FViewportCamera* InTarget);	// Change this to USceneComponent later on
+	void				ClearTarget();
+	bool				IsInPursuit() const;
+
+	// TODO: Pursuit Forfeit/Resume logic
+
+private:
+	void UpdateTargetLoc();
+	void UpdateLerp(float DeltaTime);
+	void FaceTargetDir(float DeltaTime);
+
+private:
+	FViewportCamera* Target = nullptr;
+
+	FVector CurrentPoint;
+	FVector TargetPoint;
+
+	float Elapsed					= 0.f;
+
+	UPROPERTY(DisplayName = "Pursuit Interval", Min = 0.01f, Max = 5.0f, Speed = 0.01f)
+	float UpdateLerpInterval		= 2.0f;
+
+	UPROPERTY(DisplayName = "Detection Radius", Min = 0.01f, Max = 4096.0f, Speed = 0.01f)
+	float DetectionRadius			= 20.f;
+
+	UPROPERTY(DisplayName = "Pursuit Speed", Min = 0.01f, Max = 100.0f, Speed = 0.01f)
+	float PursuitSpeed				= 1.f;
+
+	float TargetPitch				= 0.f;
+	float TargetYaw					= 0.f;
+
+	bool bIsActive					= true;
+
+	UPROPERTY(DisplayName = "Orient To Target", LuaReadWrite, LuaName = FacingTargetDirection)
+	bool bFaceTargetDir				= true;
+
+	bool bAutoTargetPerspCamera		= true;		// If no target is set, default to the primary perspective camera on BeginPlay
+};

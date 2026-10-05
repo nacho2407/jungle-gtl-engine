@@ -1,0 +1,51 @@
+﻿#pragma once
+
+#include "Core/CoreTypes.h"
+#include "Render/Common/RenderTypes.h"
+
+#include "Render/Resource/Buffer.h"
+
+#include "Render/Mesh/MeshManager.h"
+#include <cstdint>
+class UProceduralMeshComponent;
+
+class UStaticMesh;
+class USkeletalMesh;
+struct FBoneMatrixConstants;
+
+/*
+	Mesh Manager에서 넘겨 받은 MeshData를 바탕으로 MeshBuffer를 생성하고 소유합니다.
+*/
+
+class FMeshBufferManager
+{
+private:
+	// 최대 LOD 레벨을 양쪽에서 저장하고 있습니다... 
+	// MAX_LOD를 수정하실 필요가 있다면 FStaticMeshSimplifier를 찾아 함께 수정해주세요.
+	static constexpr int32 MAX_LOD = 5;
+
+	ID3D11Device* Device = nullptr;
+	TMap<EPrimitiveType, FMeshBuffer> MeshBufferMap;
+	TMap<const UStaticMesh*, FMeshBuffer> StaticMeshBufferMap[MAX_LOD];
+    TMap<uint32, FMeshBuffer> ProcMeshBufferMap;
+	TMap<uint32, FMeshBuffer> CPUSkeletalMeshBufferMap;
+	TMap<uint32, const USkeletalMesh*> CPUSkeletalMeshSourceMap;
+	TMap<const USkeletalMesh*, FMeshBuffer> GPUSkeletalMeshBufferMap;
+	TMap<uint32, FConstantBuffer> GPUSkeletalBoneMatrixBufferMap;
+
+public:
+
+private:
+
+public:
+	void Create(ID3D11Device* InDevice);
+	void Release();
+
+    FMeshBuffer& GetMeshBuffer(EPrimitiveType InPrimitiveType);
+    FMeshBuffer* GetStaticMeshBuffer(const UStaticMesh* StaticMeshAsset, int32 LODLevel = 0);
+    // Key by component UUID and accept raw section data to avoid header coupling with ProceduralMeshComponent.
+    FMeshBuffer* GetProcMeshBuffer(uint32 ProcMeshCompUUID, const TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices);
+	FMeshBuffer* GetCPUSkeletalMeshBuffer(uint32 SkeletalMeshCompUUID, const USkeletalMesh* SkeletalMeshAsset, const TArray<FSkeletalMeshVertex>& Vertices, const TArray<uint32>& Indices, bool bNeedsUpload);
+	FMeshBuffer* GetGPUSkeletalMeshBuffer(const USkeletalMesh* SkeletalMeshAsset);
+	FConstantBuffer* GetGPUSkeletalBoneMatrixBuffer(uint32 SkeletalMeshCompUUID, const FBoneMatrixConstants& Constants, bool bNeedsUpload);
+};

@@ -1,0 +1,13 @@
+{
+        "Name" : "Asset/SubUV/New Material_Inst_0.matinst",
+        "OverridedParams" : [{
+            "Name" : "bHasDiffuseMap",
+            "Type" : "Bool",
+            "Value" : true
+          }, {
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/Texture/imsad.png"
+          }],
+        "Parent" : "Asset/SubUV/New Material.mat"
+      }

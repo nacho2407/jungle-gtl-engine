@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Material/Auto/Effect.matinst",
+        "OverridedParams" : [{
+            "Name" : "DiffuseMap",
+            "Type" : "Texture",
+            "Value" : "Asset/SubUV/Effect.dds"
+          }],
+        "Parent" : "Asset/Material/AdditiveParticle.mat"
+      }

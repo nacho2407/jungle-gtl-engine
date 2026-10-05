@@ -1,0 +1,165 @@
+﻿#pragma once
+
+#include <functional>
+
+#include "Object/Object.h"
+#include "GameFramework/AActor.h"
+#include "Level.h"
+#include "Render/Scene/Scene.h"
+#include "Spatial/WorldSpatialIndex.h"
+#include "Core/CollisionTypes.h"
+
+class UCameraComponent;
+class FViewportCamera;
+class AParticleEventManager;
+
+struct FWorldGameModeSettings
+{
+	bool bOverrideGameMode = false;
+	FString GameModeClass = "AGameModeBase";
+	FString PlayerControllerClass = "APlayerController";
+	FString DefaultPawnClass = "ADefaultPawn";
+	FString DefaultPawnPrefabPath;
+};
+
+UCLASS()
+class UWorld : public UObject {
+	GENERATED_BODY(UWorld, UObject)
+
+public:
+	using FActorDestroyedListener = std::function<void(AActor*)>;
+
+	UWorld();
+	~UWorld() override;
+
+	virtual void PostDuplicate(UObject* Original) override;
+
+	void PostEditProperty(const char* PropertyName) override {}
+
+	// Actor lifecycle
+	template<typename T>
+	T* SpawnActor()
+	{
+		// create and register an actor
+		T* Actor = UObjectManager::Get().CreateObject<T>();
+		Actor->SetWorld(this);
+		PersistentLevel->AddActor(Actor);
+		if (bHasBegunPlay)
+		{
+			Actor->BeginPlay();
+		}
+		SpatialIndex.FlushDirtyBounds();
+		return Actor;
+	}
+
+	AActor* SpawnActorByTypeName(const FString& TypeName);
+
+	void DestroyActor(AActor* Actor);
+
+	const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
+
+	ULevel* GetPersistentLevel() const { return PersistentLevel; }
+
+	void BeginPlay();      // Triggers BeginPlay on all actors
+	void Tick(float DeltaTime);  // Drives the game loop every frame
+	void EndPlay(EEndPlayReason::Type EndPlayReason); // Cleanup before world is destroyed
+	AParticleEventManager* GetOrCreateParticleEventManager();
+
+	/** @brief Rebuild the world BVH and bounds snapshot from all current primitives. */
+	void RebuildSpatialIndex();
+
+	/** @brief Flush pending bounds and visibility dirties into the world BVH. */
+	void SyncSpatialIndex();
+
+	/**
+	 * @brief ShapeComponent만 대상으로 line query의 가장 빠른 hit 검색
+	 * @note mesh 또는 triangle collision 경로 미사용
+	 */
+	bool LineTraceSingleShapeTarget(
+		FHitResult& OutHit,
+		const FVector& StartWS,
+		const FVector& EndWS,
+		const FCollisionQueryParams& Params);
+
+	/**
+	 * @brief ShapeComponent만 대상으로 sphere sweep의 가장 빠른 hit 검색
+	 * @param CollisionShape 이동하는 query sphere 형상
+	 * @note mesh 또는 triangle collision 경로 미사용
+	 */
+	bool SweepSingleShapeTarget(
+		FHitResult& OutHit,
+		const FVector& StartWS,
+		const FVector& EndWS,
+		const FCollisionShape& CollisionShape,
+		const FCollisionQueryParams& Params);
+
+	bool HasBegunPlay() const { return bHasBegunPlay; }
+
+	// Active Camera — EditorViewportClient 또는 PlayerController가 세팅
+	void SetActiveCamera(FViewportCamera* InCamera) { ActiveCamera = InCamera; }
+	FViewportCamera* GetActiveCamera() const { return ActiveCamera; }
+
+	/** @brief Access the world-level primitive AABB/BVH manager. */
+	FWorldSpatialIndex& GetSpatialIndex() { return SpatialIndex; }
+
+	/** @brief Access the world-level primitive AABB/BVH manager. */
+	const FWorldSpatialIndex& GetSpatialIndex() const { return SpatialIndex; }
+
+	/** @brief Access the render-side facade for this world. */
+	FScene& GetScene() { return Scene; }
+
+	/** @brief Access the render-side facade for this world. */
+	const FScene& GetScene() const { return Scene; }
+
+	EWorldType GetWorldType() const { return WorldType; }
+	void SetWorldType(EWorldType InWorldType) { WorldType = InWorldType; }
+
+	FWorldGameModeSettings& GetGameModeSettings() { return GameModeSettings; }
+	const FWorldGameModeSettings& GetGameModeSettings() const { return GameModeSettings; }
+	void SetGameModeSettings(const FWorldGameModeSettings& InSettings) { GameModeSettings = InSettings; }
+
+	// Actor 삭제 시 하위 시스템들이 들고 있는 Actor의 raw pointer가 위험해지는 것을 방지하기 위한 리스너 시스템
+	int32 AddActorDestroyedListener(FActorDestroyedListener Listener);
+	void RemoveActorDestroyedListener(int32 ListenerId);
+	void NotifyActorDestroyed(AActor* Actor);
+
+	// Component Overlap 체크
+	void UpdateOverlaps();
+	void CheckPendingKill();
+
+	void SetGlobalTimeScale(float NewTimeScale);
+	float GetGlobalTimeScale() const { return GlobalTimeScale; }
+	float GetDeltaTime() const { return LastDeltaTime; }
+	float GetUnscaledDeltaTime() const { return LastUnscaledDeltaTime; }
+	double GetGameTime() const { return GameTimeSeconds; }
+	double GetRealTime() const { return RealTimeSeconds; }
+
+	void ActivateSandervistan() { bActivateSandervistan = true; }
+	void DeactivateSandervistan() { bActivateSandervistan = false; }
+	bool IsSandervistanActivated() const { return bActivateSandervistan; }
+
+private:
+	EWorldType WorldType = EWorldType::Editor;
+	FWorldGameModeSettings GameModeSettings;
+	ULevel* PersistentLevel = nullptr;
+	FViewportCamera* ActiveCamera = nullptr;
+	// Non-owning cache. The manager is spawned as a level actor and owned by PersistentLevel.
+	AParticleEventManager* ParticleEventManager = nullptr;
+	FScene Scene;
+	FWorldSpatialIndex SpatialIndex;
+	TArray<UPrimitiveComponent*> SimpleShapeQueryCandidates;
+	FWorldSpatialIndex::FPrimitiveInflatedSegmentQueryScratch SimpleShapeQueryScratch;
+	bool bHasBegunPlay = false;
+
+	int32 NextActorDestroyedListenerId = 1;
+	TMap<int32, FActorDestroyedListener> ActorDestroyedListeners;
+
+	float GlobalTimeScale = 1;
+	float LastDeltaTime = 0.0f;
+	float LastUnscaledDeltaTime = 0.0f;
+	double GameTimeSeconds = 0.0;
+	double RealTimeSeconds = 0.0;
+
+	// 게임잼을 위한 임시용 변수
+	bool bActivateSandervistan = false;
+};

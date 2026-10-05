@@ -1,0 +1,26 @@
+﻿#pragma once
+
+#include "Core/Containers/String.h"
+#include "Core/CoreTypes.h"
+
+class FAssetPathPolicy
+{
+public:
+	static bool FileExists(const FString& Path);
+	static bool IsCurveAssetPath(const FString& Path);
+	static bool IsSequenceAssetPath(const FString& Path);
+	static bool IsAnimSequenceAssetPath(const FString& Path);
+	static bool IsParticleSystemAssetPath(const FString& Path);
+	static bool IsSerializedMaterialAssetPath(const FString& Path);
+
+	static FString MakeParticleSystemAssetPath(const FString& NameOrSourcePath);
+	static FString MakeImportedAnimSequenceAssetPath(const FString& SourcePath, const FString& StackName);
+	static FString MakeCookedStaticMeshBinaryPath(const FString& SourcePath);
+	static FString MakeSiblingStaticMeshBinaryPath(const FString& SourcePath);
+	static FString MakeStaticMeshCacheBinaryPath(const FString& SourcePath);
+	static FString MakeImportedStaticMeshAssetPath(const FString& SourcePath);
+	static FString MakeWritableStaticMeshCacheBinaryPath(const FString& SourcePath);
+
+	static FString MakeImportedSkeletalMeshAssetPath(const FString& SourcePath);
+	static FString MakeWritableSkeletalMeshCacheBinaryPath(const FString& SourcePath);
+};
