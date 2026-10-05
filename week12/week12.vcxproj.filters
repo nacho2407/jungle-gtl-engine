@@ -759,9 +759,6 @@
     <ClCompile Include="Source\Engine\Core\CurveResourceCache.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Engine\Core\Delegates\Delegate.cpp">
-      <Filter>Source\Engine\Core\Delegates</Filter>
-    </ClCompile>
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp">
       <Filter>Source\Engine\Core</Filter>
     </ClCompile>
@@ -1024,12 +1021,6 @@
       <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.cpp">
-      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.cpp">
-      <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp">
       <Filter>Source\Engine\Render\Renderer\RenderTarget</Filter>
     </ClCompile>
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp">
@@ -1459,12 +1450,6 @@
     <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorCurvePanel.h">
       <Filter>Source\Editor\UI\Viewer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorDetailsPanel.h">
-      <Filter>Source\Editor\UI\Viewer</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorEmitterPanel.h">
-      <Filter>Source\Editor\UI\Viewer</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorInternal.h">
       <Filter>Source\Editor\UI\Viewer</Filter>
     </ClInclude>
@@ -1517,9 +1502,6 @@
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\FSceneViewport.h">
-      <Filter>Source\Editor\Viewport</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\Viewer\ParticleViewerViewportClient.h">
@@ -1784,9 +1766,6 @@
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Common.h">
-      <Filter>Source\Engine\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Core\ConsoleHelper.h">
       <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Containers\Array.h">
@@ -2375,9 +2354,6 @@
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\JsonWriter.h">
-      <Filter>Source\Engine\Serialization</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h">
       <Filter>Source\Engine\Serialization</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Serialization\ObjectGraphSerializer.h">

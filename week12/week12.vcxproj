@@ -783,7 +783,6 @@
     <ClCompile Include="Source\Engine\Core\CrashDump.cpp" />
     <ClCompile Include="Source\Engine\Core\CrashTest.cpp" />
     <ClCompile Include="Source\Engine\Core\CurveResourceCache.cpp" />
-    <ClCompile Include="Source\Engine\Core\Delegates\Delegate.cpp" />
     <ClCompile Include="Source\Engine\Core\EngineTypes.cpp" />
     <ClCompile Include="Source\Engine\Core\FbxMaterialLoadService.cpp" />
     <ClCompile Include="Source\Engine\Core\Guid.cpp" />
@@ -872,8 +871,6 @@
     <ClCompile Include="Source\Engine\Render\Renderer\RenderFlow\ViewModeMeshRenderPass.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilFactory.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\DepthStencilResource.cpp" />
-    <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTarget.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetBuilder.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\RenderTarget\RenderTargetFactory.cpp" />
     <ClCompile Include="Source\Engine\Render\Renderer\Renderer.cpp" />
@@ -1045,8 +1042,6 @@
     <ClInclude Include="Source\Editor\UI\Viewer\AnimationEditorViewerWidget.h" />
     <ClInclude Include="Source\Editor\UI\Viewer\EditorViewerWidget.h" />
     <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorCurvePanel.h" />
-    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorDetailsPanel.h" />
-    <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorEmitterPanel.h" />
     <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorInternal.h" />
     <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorToolbar.h" />
     <ClInclude Include="Source\Editor\UI\Viewer\ParticleEditorViewerWidget.h" />
@@ -1065,7 +1060,6 @@
     <ClInclude Include="Source\Editor\Viewport\EditorViewportNavigationController.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportPIEController.h" />
     <ClInclude Include="Source\Editor\Viewport\FSceneViewport.h" />
-    <ClInclude Include="Source\Editor\Viewport\SEditorViewport.h" />
     <ClInclude Include="Source\Editor\Viewport\Viewer\ParticleViewerViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\Viewer\SkeletalMeshViewerViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\Viewer\ViewerViewportClient.h" />
@@ -1154,7 +1148,6 @@
     <ClInclude Include="Source\Engine\Core\AtlasResourceCache.h" />
     <ClInclude Include="Source\Engine\Core\CollisionTypes.h" />
     <ClInclude Include="Source\Engine\Core\Common.h" />
-    <ClInclude Include="Source\Engine\Core\ConsoleHelper.h" />
     <ClInclude Include="Source\Engine\Core\Containers\Array.h" />
     <ClInclude Include="Source\Engine\Core\Containers\LinkedList.h" />
     <ClInclude Include="Source\Engine\Core\Containers\Map.h" />
@@ -1351,7 +1344,6 @@
     <ClInclude Include="Source\Engine\Serialization\Archive.h" />
     <ClInclude Include="Source\Engine\Serialization\JsonReader.h" />
     <ClInclude Include="Source\Engine\Serialization\JsonWriter.h" />
-    <ClInclude Include="Source\Engine\Serialization\MemoryWriter.h" />
     <ClInclude Include="Source\Engine\Serialization\ObjectGraphSerializer.h" />
     <ClInclude Include="Source\Engine\Serialization\PrefabManager.h" />
     <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
