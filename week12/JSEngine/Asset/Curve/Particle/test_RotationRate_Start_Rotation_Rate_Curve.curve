@@ -1,0 +1,11 @@
+{
+        "ArriveTangents" : [0.000000],
+        "AssetPath" : "Assets/Curves/Particle/test_RotationRate_Start_Rotation_Rate_Curve.curve",
+        "InterpModes" : [2],
+        "LeaveTangents" : [0.000000],
+        "ObjectName" : "UCurveFloatAsset_0",
+        "TangentModes" : [0],
+        "Times" : [0.000000],
+        "Type" : "UCurveFloatAsset",
+        "Values" : [60.000000]
+      }

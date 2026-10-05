@@ -1,0 +1,718 @@
+#include "Editor/UI/EditorMainPanel.h"
+
+#include "Editor/EditorEngine.h"
+#include "Editor/UI/EditorChromeConstants.h"
+#include "Editor/Viewer/EditorViewer.h"
+#include "Editor/Viewer/ParticleEditorViewer.h"
+#include "Editor/Viewport/EditorViewportClient.h"
+
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_internal.h"
+
+#include <algorithm>
+
+namespace
+{
+	constexpr float HomeTabWidth = 76.0f;
+	constexpr float HomeIconSize = 48.0f; // 36.0f
+	constexpr float HomeCircleRadius = 0.0f; // 25.0f
+	constexpr float MaxDocumentTabWidth = 180.0f;
+	constexpr float MinDocumentTabWidth = 48.0f;
+	constexpr float TabStripRightPadding = 8.0f;
+
+	struct FEditorTabVisual
+	{
+		ImVec4 AccentColor;
+		const char* Tooltip = "";
+	};
+
+	FEditorTabVisual GetTabVisual(EEditorTabKind Kind)
+	{
+		switch (Kind)
+		{
+		case EEditorTabKind::LevelEditor:
+			return { ImVec4(0.96f, 0.67f, 0.16f, 1.0f), "Level Scene" };
+		case EEditorTabKind::StaticMeshViewer:
+			return { ImVec4(0.22f, 0.78f, 0.45f, 1.0f), "Static Mesh Viewer" };
+		case EEditorTabKind::SkeletalMeshViewer:
+			return { ImVec4(0.18f, 0.70f, 0.95f, 1.0f), "Skeletal Mesh Viewer" };
+		case EEditorTabKind::AnimSequenceViewer:
+			return { ImVec4(0.95f, 0.48f, 0.20f, 1.0f), "Animation Sequence Viewer" };
+		case EEditorTabKind::ParticleViewer:
+			return { ImVec4(0.72f, 0.42f, 0.95f, 1.0f), "Particle Viewer" };
+		case EEditorTabKind::MaterialEditor:
+			return { ImVec4(0.19f, 0.72f, 0.24f, 1.0f), "Material Editor" };
+		case EEditorTabKind::CurveEditor:
+			return { ImVec4(0.72f, 0.42f, 0.95f, 1.0f), "Curve Editor" };
+		case EEditorTabKind::ActorSequencer:
+			return { ImVec4(0.36f, 0.52f, 0.94f, 1.0f), "Actor Sequencer" };
+		case EEditorTabKind::RuntimeUIPreview:
+			return { ImVec4(0.86f, 0.58f, 0.22f, 1.0f), "Runtime UI Preview" };
+		default:
+			return { ImVec4(0.58f, 0.62f, 0.70f, 1.0f), "Editor Tab" };
+		}
+	}
+
+	const char* GetTabKindDebugName(EEditorTabKind Kind)
+	{
+		switch (Kind)
+		{
+		case EEditorTabKind::LevelEditor:
+			return "Level";
+		case EEditorTabKind::StaticMeshViewer:
+			return "StaticMesh";
+		case EEditorTabKind::SkeletalMeshViewer:
+			return "SkeletalMesh";
+		case EEditorTabKind::AnimSequenceViewer:
+			return "AnimSequence";
+		case EEditorTabKind::MaterialEditor:
+			return "Material";
+		case EEditorTabKind::CurveEditor:
+			return "Curve";
+		case EEditorTabKind::ActorSequencer:
+			return "Sequencer";
+		case EEditorTabKind::RuntimeUIPreview:
+			return "RuntimeUI";
+		default:
+			return "Tab";
+		}
+	}
+
+	FString MakeLevelEditorTabLabel(UEditorEngine* EditorEngine)
+	{
+		if (!EditorEngine)
+		{
+			return "Untitled";
+		}
+
+		FString Label = EditorEngine->GetSceneService().GetSceneName();
+		if (Label.empty())
+		{
+			Label = "Untitled";
+		}
+		if (EditorEngine->GetSceneService().IsDirty())
+		{
+			Label += "*";
+		}
+		return Label;
+	}
+
+	void DrawMainHomeIcon(
+		ImDrawList* DrawList,
+		ID3D11ShaderResourceView* HomeIcon,
+		const ImVec2& Min,
+		const ImVec2& Max,
+		bool bHovered)
+	{
+		if (!DrawList)
+		{
+			return;
+		}
+
+		const ImVec2 Center((Min.x + Max.x) * 0.5f, (Min.y + Max.y) * 0.5f);
+		DrawList->AddRectFilled(
+			Min,
+			Max,
+			ImGui::GetColorU32(bHovered ? ImVec4(0.095f, 0.102f, 0.125f, 1.0f) : ImVec4(0.055f, 0.060f, 0.072f, 1.0f)));
+		if (HomeCircleRadius > 0.0f)
+		{
+			DrawList->AddCircleFilled(
+				Center,
+				HomeCircleRadius,
+				ImGui::GetColorU32(bHovered ? ImVec4(0.13f, 0.14f, 0.17f, 1.0f) : ImVec4(0.075f, 0.080f, 0.095f, 1.0f)),
+				64);
+		}
+		if (HomeIcon)
+		{
+			const ImVec2 IconMin(Center.x - HomeIconSize * 0.5f, Center.y - HomeIconSize * 0.5f);
+			const ImVec2 IconMax(IconMin.x + HomeIconSize, IconMin.y + HomeIconSize);
+			DrawList->AddImage(reinterpret_cast<ImTextureID>(HomeIcon), IconMin, IconMax);
+		}
+		else
+		{
+			const ImU32 HomeColor = ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f));
+			DrawList->AddText(ImVec2(Center.x - 7.0f, Center.y - 7.0f), HomeColor, "JS");
+		}
+		if (HomeCircleRadius > 0.0f)
+		{
+			DrawList->AddCircle(
+				Center,
+				HomeCircleRadius,
+				ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f)),
+				64,
+				1.8f);
+		}
+	}
+
+	void DrawUnsavedWarningIcon(ImDrawList* DrawList, const ImVec2& Center, float Size)
+	{
+		if (!DrawList)
+		{
+			return;
+		}
+
+		const float HalfWidth = Size * 0.50f;
+		const float HalfHeight = Size * 0.44f;
+		const ImVec2 Top(Center.x, Center.y - HalfHeight);
+		const ImVec2 Left(Center.x - HalfWidth, Center.y + HalfHeight);
+		const ImVec2 Right(Center.x + HalfWidth, Center.y + HalfHeight);
+		DrawList->AddTriangleFilled(Top, Left, Right, IM_COL32(255, 205, 28, 255));
+		DrawList->AddTriangle(Top, Left, Right, IM_COL32(190, 132, 0, 255), 1.2f);
+
+		const ImU32 MarkColor = IM_COL32(18, 18, 18, 255);
+		const float StemTop = Center.y - Size * 0.20f;
+		const float StemBottom = Center.y + Size * 0.12f;
+		DrawList->AddLine(ImVec2(Center.x, StemTop), ImVec2(Center.x, StemBottom), MarkColor, 2.2f);
+		DrawList->AddCircleFilled(ImVec2(Center.x, Center.y + Size * 0.26f), Size * 0.045f, MarkColor, 10);
+	}
+
+}
+
+void FEditorMainPanel::RenderEditorTabStrip()
+{
+	ImGuiViewport* MainViewport = ImGui::GetMainViewport();
+	if (!MainViewport)
+	{
+		return;
+	}
+
+	constexpr float TabStripHeight = FEditorChromeMetrics::TabStripHeight;
+	const ImVec2 TabStripPos(
+		MainViewport->WorkPos.x,
+		MainViewport->WorkPos.y + FEditorChromeMetrics::ApplicationTitleBarHeight);
+	const ImVec2 TabStripSize(MainViewport->WorkSize.x, TabStripHeight);
+
+	ImGui::SetNextWindowPos(TabStripPos, ImGuiCond_Always);
+	ImGui::SetNextWindowSize(TabStripSize, ImGuiCond_Always);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.065f, 0.070f, 0.085f, 1.0f));
+
+	constexpr ImGuiWindowFlags Flags =
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoResize |
+		ImGuiWindowFlags_NoMove |
+		ImGuiWindowFlags_NoScrollbar |
+		ImGuiWindowFlags_NoScrollWithMouse |
+		ImGuiWindowFlags_NoSavedSettings |
+		ImGuiWindowFlags_NoDocking;
+
+	if (ImGui::Begin("##EditorDocumentTabStrip", nullptr, Flags))
+	{
+		if (EditorEngine)
+		{
+			for (const auto& Viewer : EditorEngine->GetViewers())
+			{
+				FParticleEditorViewer* ParticleViewer = Viewer && Viewer->GetTabKind() == EEditorTabKind::ParticleViewer
+					? static_cast<FParticleEditorViewer*>(Viewer.get())
+					: nullptr;
+				if (ParticleViewer)
+				{
+					EditorTabs.SetTabDirty(MakeEditorViewerTabId(ParticleViewer->GetFileName(), ParticleViewer), ParticleViewer->IsDirty());
+				}
+			}
+		}
+
+		const FEditorTabEntry* ActiveTab = EditorTabs.GetActiveTab();
+		const TArray<FEditorTabEntry>& Tabs = EditorTabs.GetTabs();
+		FEditorTabId PendingCloseTabId;
+		bool bHasPendingClose = false;
+		FEditorTabId PendingDetachTabId;
+		bool bHasPendingDetach = false;
+		bool bPendingDetachValue = false;
+		FEditorTabId PendingMoveFromId;
+		FEditorTabId PendingMoveToId;
+		bool bHasPendingMove = false;
+		static FEditorTabId DraggingDetachTabId;
+		static FEditorTabId DraggingTabId;
+		static bool bDraggingTab = false;
+		static bool bDraggingTabStarted = false;
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+		int32 VisibleDocumentTabCount = 0;
+		for (const FEditorTabEntry& Tab : Tabs)
+		{
+			if (!Tab.bDetached)
+			{
+				++VisibleDocumentTabCount;
+			}
+		}
+		const float AvailableDocumentTabWidth = std::max(0.0f, TabStripSize.x - HomeTabWidth - TabStripRightPadding);
+		const float DocumentTabWidth = VisibleDocumentTabCount > 0
+			? std::clamp(AvailableDocumentTabWidth / static_cast<float>(VisibleDocumentTabCount), MinDocumentTabWidth, MaxDocumentTabWidth)
+			: MaxDocumentTabWidth;
+
+		ImGui::PushID("HomeTab");
+		const ImVec2 HomeMin = ImGui::GetCursorScreenPos();
+		const ImVec2 HomeMax(HomeMin.x + HomeTabWidth, HomeMin.y + TabStripHeight);
+		ImGui::InvisibleButton("##Home", ImVec2(HomeTabWidth, TabStripHeight));
+		const bool bHomeHovered = ImGui::IsItemHovered();
+		const ImVec2 HomeIconMin(MainViewport->WorkPos.x, MainViewport->WorkPos.y);
+		const ImVec2 HomeIconMax(
+			HomeIconMin.x + HomeTabWidth,
+			TabStripPos.y + TabStripHeight);
+		DrawList->PushClipRect(
+			MainViewport->WorkPos,
+			ImVec2(MainViewport->WorkPos.x + MainViewport->WorkSize.x, MainViewport->WorkPos.y + MainViewport->WorkSize.y),
+			false);
+		DrawMainHomeIcon(
+			DrawList,
+			IconResources.HomeIcon,
+			HomeIconMin,
+			HomeIconMax,
+			bHomeHovered || ImGui::IsMouseHoveringRect(HomeIconMin, HomeIconMax));
+		DrawList->PopClipRect();
+		if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !Tabs.empty())
+		{
+			ActivateEditorTab(Tabs[0].Id);
+		}
+		if (bHomeHovered)
+		{
+			ImGui::SetTooltip("Level");
+		}
+		ImGui::PopID();
+		ImGui::SameLine(0.0f, 0.0f);
+
+		for (int32 Index = 0; Index < static_cast<int32>(Tabs.size()); ++Index)
+		{
+			const FEditorTabEntry& Tab = Tabs[Index];
+			if (Tab.bDetached)
+			{
+				continue;
+			}
+
+			const bool bActive = ActiveTab && ActiveTab->Id.Matches(Tab.Id);
+
+			FString Label = Tab.Label;
+			if (Tab.Id.Kind == EEditorTabKind::LevelEditor)
+			{
+				Label = MakeLevelEditorTabLabel(EditorEngine);
+			}
+			if (Tab.bDirty)
+			{
+				Label += "*";
+			}
+			const FEditorTabVisual Visual = GetTabVisual(Tab.Id.Kind);
+			const float TabWidth = DocumentTabWidth;
+			const float TabHeight = TabStripHeight;
+
+			ImGui::PushID(Index);
+			const ImVec2 TabMin = ImGui::GetCursorScreenPos();
+			const ImVec2 TabMax(TabMin.x + TabWidth, TabMin.y + TabHeight);
+			ImGui::InvisibleButton("##EditorTab", ImVec2(TabWidth, TabHeight));
+			const bool bHovered = ImGui::IsItemHovered();
+
+			const float CloseSize = 16.0f;
+			const ImVec2 CloseMin(TabMax.x - CloseSize - 7.0f, TabMin.y + (TabHeight - CloseSize) * 0.5f);
+			const ImVec2 CloseMax(CloseMin.x + CloseSize, CloseMin.y + CloseSize);
+			const bool bCloseHovered =
+				Tab.bCanClose && ImGui::IsMouseHoveringRect(CloseMin, CloseMax);
+
+			if (Tab.bCanClose && !bCloseHovered && ImGui::IsItemActivated())
+			{
+				DraggingTabId = Tab.Id;
+				bDraggingTab = true;
+				bDraggingTabStarted = false;
+				DraggingDetachTabId = Tab.Id;
+			}
+			if (bDraggingTab &&
+				Tab.Id.Matches(DraggingTabId) &&
+				ImGui::IsMouseDragging(ImGuiMouseButton_Left, 4.0f))
+			{
+				bDraggingTabStarted = true;
+			}
+
+			const ImVec2 MousePos = ImGui::GetIO().MousePos;
+			if (bDraggingTabStarted &&
+				Index > 0 &&
+				!Tab.Id.Matches(DraggingTabId) &&
+				MousePos.x >= TabMin.x &&
+				MousePos.x <= TabMax.x &&
+				MousePos.y >= TabStripPos.y - 8.0f &&
+				MousePos.y <= TabStripPos.y + TabStripHeight + 8.0f)
+			{
+				PendingMoveFromId = DraggingTabId;
+				PendingMoveToId = Tab.Id;
+				bHasPendingMove = true;
+			}
+
+			const ImU32 TabBg = ImGui::GetColorU32(
+				bActive
+					? ImVec4(0.115f, 0.125f, 0.150f, 1.0f)
+					: (bHovered ? ImVec4(0.095f, 0.102f, 0.125f, 1.0f) : ImVec4(0.075f, 0.080f, 0.098f, 1.0f)));
+			const ImU32 BorderColor = ImGui::GetColorU32(ImVec4(0.035f, 0.038f, 0.046f, 1.0f));
+			DrawList->AddRectFilled(TabMin, TabMax, TabBg, 0.0f);
+			DrawList->AddRect(TabMin, TabMax, BorderColor);
+
+			const ImVec2 IconCenter(TabMin.x + 17.0f, TabMin.y + TabHeight * 0.5f);
+			DrawList->AddCircleFilled(IconCenter, 5.0f, ImGui::GetColorU32(Visual.AccentColor), 12);
+			if (Tab.Id.Kind == EEditorTabKind::LevelEditor)
+			{
+				DrawList->AddTriangleFilled(
+					ImVec2(IconCenter.x, IconCenter.y - 6.0f),
+					ImVec2(IconCenter.x - 6.0f, IconCenter.y + 5.0f),
+					ImVec2(IconCenter.x + 6.0f, IconCenter.y + 5.0f),
+					ImGui::GetColorU32(Visual.AccentColor));
+			}
+
+			const bool bTabClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left) && !bCloseHovered;
+			if (bTabClicked)
+			{
+				ActivateEditorTab(Tab.Id);
+			}
+
+			const ImU32 TextColor = ImGui::GetColorU32(bActive ? ImVec4(0.88f, 0.91f, 0.96f, 1.0f) : ImVec4(0.58f, 0.62f, 0.70f, 1.0f));
+			const ImVec2 TextMin(TabMin.x + 32.0f, TabMin.y + (TabHeight - ImGui::GetTextLineHeight()) * 0.5f);
+			const ImVec2 TextMax(
+				Tab.bCanClose ? CloseMin.x - 5.0f : TabMax.x - 10.0f,
+				TabMax.y - 5.0f);
+			if (TextMax.x > TextMin.x + 6.0f)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Text, TextColor);
+				ImGui::RenderTextEllipsis(
+					DrawList,
+					TextMin,
+					TextMax,
+					TextMax.x,
+					Label.c_str(),
+					nullptr,
+					nullptr);
+				ImGui::PopStyleColor();
+			}
+
+			if (Tab.bCanClose)
+			{
+				const ImU32 CloseColor = ImGui::GetColorU32(
+					bCloseHovered ? ImVec4(0.94f, 0.96f, 1.0f, 1.0f) : ImVec4(0.50f, 0.54f, 0.62f, 1.0f));
+				if (bCloseHovered)
+				{
+					DrawList->AddRectFilled(CloseMin, CloseMax, ImGui::GetColorU32(ImVec4(0.23f, 0.25f, 0.31f, 1.0f)), 3.0f);
+				}
+				DrawList->AddLine(ImVec2(CloseMin.x + 4.0f, CloseMin.y + 4.0f), ImVec2(CloseMax.x - 4.0f, CloseMax.y - 4.0f), CloseColor, 1.5f);
+				DrawList->AddLine(ImVec2(CloseMax.x - 4.0f, CloseMin.y + 4.0f), ImVec2(CloseMin.x + 4.0f, CloseMax.y - 4.0f), CloseColor, 1.5f);
+
+				if (bCloseHovered && ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+				{
+					PendingCloseTabId = Tab.Id;
+					bHasPendingClose = true;
+				}
+			}
+
+			if (bHovered)
+			{
+				ImGui::SetTooltip(
+					"%s\n%s",
+					Label.c_str(),
+					Visual.Tooltip ? Visual.Tooltip : GetTabKindDebugName(Tab.Id.Kind));
+			}
+
+			if (Tab.bCanClose && ImGui::BeginPopupContextItem("##TabContext"))
+			{
+				const bool bCanDetach = FindViewerWidgetForTab(Tab.Id) != nullptr;
+				if (bCanDetach && ImGui::MenuItem(Tab.bDetached ? "Dock Tab" : "Detach Tab"))
+				{
+					PendingDetachTabId = Tab.Id;
+					bHasPendingDetach = true;
+					bPendingDetachValue = !Tab.bDetached;
+				}
+				if (ImGui::MenuItem("Close"))
+				{
+					PendingCloseTabId = Tab.Id;
+					bHasPendingClose = true;
+				}
+				ImGui::EndPopup();
+			}
+
+			if (bActive)
+			{
+				DrawList->AddLine(
+					ImVec2(TabMin.x, TabMax.y - 1.0f),
+					ImVec2(TabMax.x, TabMax.y - 1.0f),
+					ImGui::GetColorU32(Visual.AccentColor),
+					2.0f);
+			}
+
+			ImGui::PopID();
+			ImGui::SameLine(0.0f, 0.0f);
+		}
+
+		if (bHasPendingClose)
+		{
+			RequestCloseEditorTab(PendingCloseTabId);
+		}
+		if (bHasPendingDetach)
+		{
+			RequestDetachEditorTab(PendingDetachTabId, bPendingDetachValue);
+		}
+		if (bHasPendingMove)
+		{
+			EditorTabs.MoveTab(PendingMoveFromId, PendingMoveToId);
+		}
+		else if (bDraggingTab &&
+			bDraggingTabStarted &&
+			ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+		{
+			const ImVec2 MousePos = ImGui::GetIO().MousePos;
+			const bool bReleasedOutsideStrip =
+				MousePos.y < TabStripPos.y - 8.0f ||
+				MousePos.y > TabStripPos.y + TabStripHeight + 8.0f;
+			if (bReleasedOutsideStrip)
+			{
+				RequestDetachEditorTab(DraggingDetachTabId, true);
+			}
+			bDraggingTabStarted = false;
+		}
+		else if (!ImGui::IsMouseDown(ImGuiMouseButton_Left))
+		{
+			bDraggingTab = false;
+			bDraggingTabStarted = false;
+		}
+
+		RenderPendingParticleClosePrompt();
+	}
+
+	ImGui::End();
+	ImGui::PopStyleColor();
+	ImGui::PopStyleVar(3);
+}
+
+void FEditorMainPanel::RenderPendingParticleClosePrompt()
+{
+	if (bHasPendingParticleClosePrompt)
+	{
+		ImGui::OpenPopup("Unsaved Changes##UnsavedParticleChanges");
+	}
+
+	// [수정] 팝업 창을 화면 정중앙에 배치
+	ImVec2 Center = ImGui::GetMainViewport()->GetCenter();
+	ImGui::SetNextWindowPos(Center, ImGuiCond_Appearing, ImVec2(0.5f, 0.0f));
+
+	constexpr ImGuiWindowFlags PromptFlags =
+		ImGuiWindowFlags_AlwaysAutoResize |
+		ImGuiWindowFlags_NoTitleBar |
+		ImGuiWindowFlags_NoSavedSettings;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.5f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.18f, 0.20f, 0.25f, 1.0f));
+
+	if (ImGui::BeginPopupModal("Unsaved Changes##UnsavedParticleChanges", nullptr, PromptFlags))
+	{
+		const float PromptWidth = 420.0f;
+		const ImVec2 HeaderStart = ImGui::GetCursorScreenPos();
+		const float HeaderHeight = 42.0f;
+		ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+		DrawList->AddRectFilled(
+			HeaderStart,
+			ImVec2(HeaderStart.x + PromptWidth, HeaderStart.y + HeaderHeight),
+			ImGui::GetColorU32(ImVec4(0.075f, 0.080f, 0.098f, 1.0f)),
+			8.0f,
+			ImDrawFlags_RoundCornersTop);
+
+		const char* HeaderText = "Unsaved Changes";
+		const ImVec2 HeaderTextSize = ImGui::CalcTextSize(HeaderText);
+		DrawList->AddText(
+			ImVec2(HeaderStart.x + 14.0f, HeaderStart.y + (HeaderHeight - HeaderTextSize.y) * 0.5f),
+			ImGui::GetColorU32(ImVec4(0.92f, 0.94f, 0.98f, 1.0f)),
+			HeaderText);
+		ImGui::Dummy(ImVec2(PromptWidth, HeaderHeight));
+
+		ImGui::Spacing();
+		const ImVec2 BodyStart = ImGui::GetCursorScreenPos();
+
+		DrawUnsavedWarningIcon(DrawList, ImVec2(BodyStart.x + 36.0f, BodyStart.y + 35.0f), 30.0f);
+
+		ImGui::SetCursorScreenPos(ImVec2(BodyStart.x + 66.0f, BodyStart.y + 12.0f));
+		ImGui::BeginGroup();
+		ImGui::TextWrapped("Save changes to this particle system before closing?");
+		ImGui::Spacing();
+		ImGui::TextDisabled("If you don't save, your changes will be lost.");
+		ImGui::EndGroup();
+
+		ImGui::Dummy(ImVec2(PromptWidth, 24.0f));
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		const char* SaveLabel = "Save";
+		const char* DontSaveLabel = "Don't Save";
+		const char* CancelLabel = "Cancel";
+
+		const float ButtonPaddingX = 24.0f;
+		const float ButtonHeight = 0.0f;
+		const float ButtonSpacing = 8.0f;
+		const float SaveWidth = ImGui::CalcTextSize(SaveLabel).x + ButtonPaddingX;
+		const float DontSaveWidth = ImGui::CalcTextSize(DontSaveLabel).x + ButtonPaddingX;
+		const float CancelWidth = ImGui::CalcTextSize(CancelLabel).x + ButtonPaddingX;
+		const float TotalButtonWidth = SaveWidth + DontSaveWidth + CancelWidth + ButtonSpacing * 2.0f;
+
+		const float RightPadding = 12.0f;
+		ImGui::SetCursorPosX(std::max(ImGui::GetCursorPosX(), ImGui::GetCursorPosX() + PromptWidth - TotalButtonWidth - RightPadding));
+
+		if (ImGui::Button(SaveLabel, ImVec2(SaveWidth, ButtonHeight)))
+		{
+			if (FParticleEditorViewer* ParticleViewer = FindParticleViewerForTab(PendingParticleCloseTabId))
+			{
+				if (ParticleViewer->Save())
+				{
+					bBypassParticleClosePrompt = true;
+					RequestCloseEditorTab(PendingParticleCloseTabId);
+					bBypassParticleClosePrompt = false;
+					bHasPendingParticleClosePrompt = false;
+					ImGui::CloseCurrentPopup();
+				}
+			}
+		}
+		ImGui::SameLine(0.0f, ButtonSpacing);
+		if (ImGui::Button(DontSaveLabel, ImVec2(DontSaveWidth, ButtonHeight)))
+		{
+			if (FParticleEditorViewer* ParticleViewer = FindParticleViewerForTab(PendingParticleCloseTabId))
+			{
+				ParticleViewer->DiscardUnsavedChanges();
+			}
+
+			bBypassParticleClosePrompt = true;
+			RequestCloseEditorTab(PendingParticleCloseTabId);
+			bBypassParticleClosePrompt = false;
+			bHasPendingParticleClosePrompt = false;
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine(0.0f, ButtonSpacing);
+		if (ImGui::Button(CancelLabel, ImVec2(CancelWidth, ButtonHeight)))
+		{
+			bHasPendingParticleClosePrompt = false;
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::Dummy(ImVec2(PromptWidth, 6.0f));
+
+		ImGui::EndPopup();
+	}
+
+	ImGui::PopStyleColor();
+	ImGui::PopStyleVar(2);
+}
+
+void FEditorMainPanel::ActivateEditorTab(const FEditorTabId& TabId)
+{
+	if (!EditorTabs.SetActiveTab(TabId))
+	{
+		return;
+	}
+
+	if (EditorEngine)
+	{
+		if (TabId.Kind == EEditorTabKind::LevelEditor)
+		{
+			FEditorViewportLayout& Layout = EditorEngine->GetViewportLayout();
+			const int32 FocusedIndex = Layout.GetLastFocusedViewportIndex();
+			if (FEditorViewportClient* Client = Layout.GetViewportClient(FocusedIndex))
+			{
+				EditorEngine->FocusViewportInput(Client->GetViewport());
+			}
+		}
+		else if (FEditorViewerWidget* ViewerWidget = FindViewerWidgetForTab(TabId))
+		{
+			if (FEditorViewer* Viewer = ViewerWidget->GetViewer())
+			{
+				EditorEngine->FocusViewportInput(&Viewer->GetViewport());
+			}
+		}
+	}
+
+	ImGui::SetWindowFocus("Viewport");
+}
+
+bool FEditorMainPanel::RequestCloseEditorTab(const FEditorTabId& TabId)
+{
+	if (TabId.Kind == EEditorTabKind::LevelEditor)
+	{
+		return false;
+	}
+
+	if (TabId.Kind == EEditorTabKind::ParticleViewer && !bBypassParticleClosePrompt)
+	{
+		if (FParticleEditorViewer* ParticleViewer = FindParticleViewerForTab(TabId))
+		{
+			if (ParticleViewer->IsDirty())
+			{
+				PendingParticleCloseTabId = TabId;
+				bHasPendingParticleClosePrompt = true;
+				return false;
+			}
+		}
+	}
+
+	if ((TabId.Kind == EEditorTabKind::SkeletalMeshViewer ||
+		TabId.Kind == EEditorTabKind::AnimSequenceViewer ||
+		TabId.Kind == EEditorTabKind::ParticleViewer) && EditorEngine)
+	{
+		for (auto& Viewer : EditorEngine->GetViewers())
+		{
+			if (Viewer && Viewer->GetFileName() == TabId.PayloadId)
+			{
+				EditorEngine->RemoveViewer(Viewer.get());
+				return true;
+			}
+		}
+	}
+
+	return EditorTabs.CloseTab(TabId);
+}
+
+FParticleEditorViewer* FEditorMainPanel::FindParticleViewerForTab(const FEditorTabId& TabId) const
+{
+	if (TabId.Kind != EEditorTabKind::ParticleViewer || !EditorEngine)
+	{
+		return nullptr;
+	}
+
+	for (const auto& Viewer : EditorEngine->GetViewers())
+	{
+		if (Viewer && Viewer->GetTabKind() == EEditorTabKind::ParticleViewer && Viewer->GetFileName() == TabId.PayloadId)
+		{
+			return static_cast<FParticleEditorViewer*>(Viewer.get());
+		}
+	}
+
+	return nullptr;
+}
+
+void FEditorMainPanel::RequestDetachEditorTab(const FEditorTabId& TabId, bool bDetached)
+{
+	const FEditorTabEntry* ActiveBefore = EditorTabs.GetActiveTab();
+	const bool bWasActive = ActiveBefore && ActiveBefore->Id.Matches(TabId);
+
+	FEditorViewerWidget* ViewerWidget = FindViewerWidgetForTab(TabId);
+	if (!ViewerWidget)
+	{
+		return;
+	}
+
+	if (!EditorTabs.SetTabDetached(TabId, bDetached))
+	{
+		return;
+	}
+
+	if (ViewerWidget)
+	{
+		ViewerWidget->SetOpen(true);
+		if (bDetached)
+		{
+			ImGui::SetWindowFocus(ViewerWidget->GetWindowName().c_str());
+			if (bWasActive)
+			{
+				const TArray<FEditorTabEntry>& Tabs = EditorTabs.GetTabs();
+				if (!Tabs.empty())
+				{
+					ActivateEditorTab(Tabs[0].Id);
+				}
+			}
+		}
+		else
+		{
+			ActivateEditorTab(TabId);
+		}
+	}
+}
+

@@ -1,0 +1,14 @@
+﻿#pragma once
+#pragma once
+
+#include "Core/CoreMinimal.h"
+
+class IAssetLoader
+{
+public:
+	virtual ~IAssetLoader() = default;
+
+	//	지원하는 확장자 여부 반환
+	virtual bool SupportsExtension(const FString& Extesion) const = 0;
+
+};

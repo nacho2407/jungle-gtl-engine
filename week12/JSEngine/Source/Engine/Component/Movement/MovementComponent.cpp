@@ -1,0 +1,97 @@
+﻿#include "MovementComponent.h"
+
+#include "Component/SceneComponent.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/World.h"
+#include "Spatial/WorldSpatialIndex.h"
+#include "Engine/Geometry/Ray.h"
+#include "Math/Utils.h"
+
+// 또, 추상 클래스이므로 별도의 복사 함수를 구현하지 않고 자식 클래스에서 복사를 수행합니다.
+
+void UMovementComponent::SetUpdatedComponent(USceneComponent* InComponent)
+{
+	UpdatedComponent = InComponent;
+}
+
+// UpdatedComponent를 Delta만큼 이동시킵니다.
+void UMovementComponent::MoveUpdatedComponent(const FVector& Delta)
+{
+	if (UpdatedComponent == nullptr)
+	{
+		return;
+	}
+
+	FVector ConstrainedDelta = bConstrainToPlane ? ConstrainDirectionToPlane(Delta) : Delta;
+
+	if (ConstrainedDelta.IsNearlyZero())
+	{
+		return;
+	}
+
+	UpdatedComponent->AddWorldOffset(ConstrainedDelta);
+}
+
+void UMovementComponent::AddInputVector(const FVector& WorldDirection, float Scale)
+{
+	PendingInputVector += WorldDirection * Scale;
+}
+
+FVector UMovementComponent::ConsumeInputVector()
+{
+	const FVector Consumed = PendingInputVector;
+	PendingInputVector     = FVector::ZeroVector;
+	return Consumed;
+}
+
+bool UMovementComponent::IsExceedingMaxSpeed(float MaxSpeed) const
+{
+	if (MaxSpeed < 0.0f)
+	{
+		return false;
+	}
+
+	return Velocity.SizeSquared() > MaxSpeed * MaxSpeed;
+}
+
+// 평면에 투영된 법선벡터를 반환한다.
+FVector UMovementComponent::ConstrainDirectionToPlane(const FVector& Direction) const
+{
+	if (!bConstrainToPlane)
+	{
+		return Direction;
+	}
+
+	// 방향벡터를 평면의 정규화된 법선벡터에 내적한다.
+	const FVector Normal = PlaneConstraintNormal.GetSafeNormal();
+	const float Dot = FVector::DotProduct(Direction, Normal);
+	return Direction - Normal * Dot;
+}
+
+// 원점 기준 평면에 투영된 점의 위치벡터를 반환한다.
+FVector UMovementComponent::ConstrainLocationToPlane(const FVector& Location) const
+{
+	if (!bConstrainToPlane)
+	{
+		return Location;
+	}
+ 
+	const FVector Normal = PlaneConstraintNormal.GetSafeNormal();
+	const float Dot = FVector::DotProduct(Location, Normal);
+	return Location - Normal * Dot;
+}
+
+void UMovementComponent::OnRegister()
+{
+	UActorComponent::OnRegister();
+	if (UpdatedComponent == nullptr && GetOwner())
+	{
+		UpdatedComponent = GetOwner()->GetRootComponent();
+	}
+}
+
+void UMovementComponent::OnUnregister()
+{
+	UActorComponent::OnUnregister();
+	UpdatedComponent = nullptr;
+}

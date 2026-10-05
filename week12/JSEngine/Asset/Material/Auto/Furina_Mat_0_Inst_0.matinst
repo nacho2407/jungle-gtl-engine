@@ -1,0 +1,24 @@
+{
+        "BlendMode" : "Translucent",
+        "BlendState" : {
+          "AlphaOp" : "Add",
+          "BlendEnable" : true,
+          "ColorOp" : "Add",
+          "DestAlpha" : "Zero",
+          "DestColor" : "InvSrcAlpha",
+          "SrcAlpha" : "One",
+          "SrcColor" : "SrcAlpha",
+          "WriteMask" : 15
+        },
+        "Name" : "Asset/Material/Auto/Furina_Mat_0_Inst_0.matinst",
+        "OverridedParams" : [{
+            "Name" : "Opacity",
+            "Type" : "Float",
+            "Value" : 1.000000
+          }, {
+            "Name" : "bHasDiffuseMap",
+            "Type" : "Bool",
+            "Value" : true
+          }],
+        "Parent" : "Asset/Material/Auto/Furina_Mat_0.mat"
+      }

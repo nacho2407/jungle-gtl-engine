@@ -1,0 +1,18 @@
+#pragma once
+
+#include "Core/CoreMinimal.h"
+#include "Render/Resource/MaterialShaderTypes.h"
+
+class FResourceManager;
+struct ID3D11Device;
+
+class FMaterialLoadService
+{
+public:
+	explicit FMaterialLoadService(FResourceManager& InResourceManager);
+
+	bool Load(const FString& MtlFilePath, EMaterialShaderType ShaderType, ID3D11Device* Device);
+
+private:
+	FResourceManager& ResourceManager;
+};

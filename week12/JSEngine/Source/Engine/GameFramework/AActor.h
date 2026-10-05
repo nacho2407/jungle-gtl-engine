@@ -1,0 +1,211 @@
+﻿#pragma once
+#include "Object/Class.h"
+#include "Object/Object.h"
+#include "Component/SceneComponent.h"
+#include "Engine/GameFramework/WorldContext.h"
+#include "Component/ShapeComponent.h"
+#include "Component/Movement/ProjectileMovementComponent.h"
+#include "Engine/Core/Reflection/ReflectionMacros.h"
+#include <type_traits>
+
+struct FAnimNotifyStateEvent;
+class USkeletalMeshComponent;
+class UWorld;
+class UPrimitiveComponent;
+
+UCLASS()
+class AActor : public UObject {
+public:
+	GENERATED_BODY(AActor, UObject)
+	AActor() = default;
+	~AActor() override;
+
+	virtual void PostDuplicate(UObject* Original) override;
+
+	virtual void Serialize(FArchive& Ar) override;
+
+	virtual void InitDefaultComponents() {}
+
+	FString MakeUniqueComponentName(const UActorComponent* TargetComponent, const FString& RequestedName, bool bAlwaysAppendNumber) const;
+
+	// 컴포넌트 생성 + Owner 설정 + 등록만 수행. Attach는 별도로 호출할 것.
+	template<typename T>
+	T* AddComponent() {
+		static_assert(std::is_base_of_v<UActorComponent, T>,
+			"AddComponent<T>: T must derive from UActorComponent");
+
+		T* Comp = UObjectManager::Get().CreateObject<T>();
+
+		bPrimitiveCacheDirty = true;
+
+		Comp->SetOwner(this);
+		Comp->SetFName(FName(MakeUniqueComponentName(Comp, T::StaticClass()->GetName(), true)));
+		OwnedComponents.push_back(Comp);
+		bPrimitiveCacheDirty = true;
+		NotifyComponentRegistered(Comp);
+		return Comp;
+	}
+
+	// Tick 관련
+	virtual void BeginPlay();
+	virtual void Tick(float DeltaTime);
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason);
+
+	bool IsActive() const { return bIsActive ; }
+	void SetActive(bool bEnabled) { bIsActive = bEnabled; }
+
+	bool ShouldTickInEditor() const { return bTickInEditor; }
+	void SetTickInEditor(bool bEnabled)  { bTickInEditor = bEnabled; }
+
+	// UClass 기반 런타임 컴포넌트 생성
+	UActorComponent* AddComponentByClass(UClass* Class);
+	void RemoveComponent(UActorComponent* Component);
+	void RegisterComponent(UActorComponent* Comp);
+
+	void SetRootComponent(USceneComponent* Comp);
+	USceneComponent* GetRootComponent() const { return RootComponent; }
+
+	const TArray<UActorComponent*>& GetComponents() const { return OwnedComponents; }
+
+	// 순차 탐색 후 가장 처음으로 일치하는 Component 반환
+	template<typename T>
+	T* FindComponent()
+	{
+		for (UActorComponent* Component : OwnedComponents)
+		{
+			if (Component->IsA<T>())
+				return Cast<T>(Component);
+		}
+
+		return nullptr;
+	}
+
+	// Transform — Location
+	UFUNCTION(LuaCallable, BlueprintPure, Category = "Actor")
+	FVector GetActorLocation() const;
+	UFUNCTION(LuaCallable, BlueprintCallable, Category = "Actor")
+	void SetActorLocation(const FVector& Location);
+	void AddActorWorldOffset(const FVector& Delta)
+	{
+		if (RootComponent) RootComponent->AddWorldOffset(Delta);
+	}
+
+	// Transform — Rotation
+	FVector GetActorRotation() const
+	{
+		return RootComponent ? RootComponent->GetRelativeRotation() : FVector(0, 0, 0);
+	}
+	void SetActorRotation(const FVector& NewRotation)
+	{
+		if (RootComponent) RootComponent->SetRelativeRotation(NewRotation);
+	}
+	void SetActorRotationQuat(const FQuat& Q)
+	{
+		if (RootComponent) RootComponent->SetRelativeRotationQuat(Q);
+	}
+	FQuat GetActorRotationQuat() const
+	{
+		return RootComponent ? RootComponent->GetRelativeQuat() : FQuat::Identity;
+	}
+
+	// Transform — Scale
+	FVector GetActorScale() const
+	{
+		return RootComponent ? RootComponent->GetRelativeScale() : FVector(1, 1, 1);
+	}
+	void SetActorScale(const FVector& NewScale)
+	{
+		if (RootComponent) RootComponent->SetRelativeScale(NewScale);
+	}
+
+	// Direction
+	FVector GetActorForward() const
+	{
+		if (RootComponent)
+			return RootComponent->GetForwardVector();
+		return FVector(0, 0, 1);
+	}
+
+	FVector GetActorRight() const
+	{
+		if (RootComponent)
+			return RootComponent->GetRightVector();
+		return FVector(0, 1, 0);
+	}
+
+	FVector GetActorUp() const
+	{
+		if (RootComponent)
+			return RootComponent->GetUpVector();
+		return FVector(0, 0, 1);
+	}
+
+	void SetWorld(UWorld* World);
+	UWorld* GetFocusedWorld() const { return OwningWorld; }
+
+	bool IsVisible() const { return bVisible; }
+	void SetVisible(bool Visible);
+
+	void AddTag(const FString& Tag);
+	void RemoveTag(const FString& Tag);
+	bool HasTag(const FString& Tag) const;
+	void ClearTags();
+	const TArray<FString>& GetTags() const { return Tags; }
+	FString GetTagsText() const;
+	void SetTagsFromText(const FString& InTagsText);
+
+	void PostEditProperty(const char* PropertyName) override;
+
+	const TArray<UPrimitiveComponent*>& GetPrimitiveComponents() const;
+
+	bool IsOverlappingActor(const AActor* Other) const;
+
+	virtual void PostComponentRegistered(UActorComponent* Comp);
+	virtual void PostComponentUnregistered(UActorComponent* Comp);
+
+	virtual void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	virtual void OnEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	virtual void OnAnimNotify(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify);
+	virtual void OnAnimNotifyBegin(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify);
+	virtual void OnAnimNotifyTick(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify, float DeltaTime);
+	virtual void OnAnimNotifyEnd(USkeletalMeshComponent* MeshComponent, const FAnimNotifyStateEvent& Notify);
+
+	void MarkPendingKill() { bPendingKill = true; }
+	bool IsPendingKill() const { return bPendingKill; }
+
+protected:
+	void NotifyComponentRegistered(UActorComponent* Component);
+	void NotifyComponentUnregistered(UActorComponent* Component);
+	void MarkPrimitiveComponentsDirty();
+
+	USceneComponent* RootComponent = nullptr;
+	UWorld* OwningWorld = nullptr;
+
+	FVector PendingActorLocation = FVector(0, 0, 0);
+	FVector PendingActorRotation = FVector(0, 0, 0);
+	FVector PendingActorScale = FVector(1, 1, 1);
+
+	UPROPERTY(DisplayName = "Visible", LuaReadWrite, LuaName = Visible)
+	bool bVisible = true;
+
+	UPROPERTY(DisplayName = "Active", LuaReadWrite, LuaName = Active)
+	bool bIsActive = true;
+
+	UPROPERTY(DisplayName = "Tick in Editor", LuaReadWrite, LuaName = TickInEditor)
+	bool bTickInEditor = false;
+
+	TArray<UActorComponent*> OwnedComponents;
+	TArray<FString> Tags;
+
+	// 렌더링용 캐시
+	mutable TArray<UPrimitiveComponent*> PrimitiveCache;
+	mutable bool bPrimitiveCacheDirty = true;
+
+	uint64 OnComponentBeginOverlapHandleId = 0;
+	uint64 OnComponentEndOverlapHandleId = 0;
+	uint64 OnComponentHitHandleId = 0;
+
+	bool bPendingKill = false;
+};

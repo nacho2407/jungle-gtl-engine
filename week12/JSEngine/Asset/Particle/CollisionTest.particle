@@ -1,0 +1,208 @@
+{
+        "AssetType" : "UParticleSystem",
+        "Format" : "JSEngine.ObjectGraph",
+        "Objects" : [{
+            "Id" : 1,
+            "ObjectName" : "UParticleSystem_0",
+            "Properties" : {
+              "Emitters" : [2],
+              "LODDistances" : [0.000000]
+            },
+            "Type" : "UParticleSystem"
+          }, {
+            "Id" : 2,
+            "ObjectName" : "UParticleEmitter_7",
+            "Properties" : {
+              "LODLevels" : [3]
+            },
+            "Type" : "UParticleEmitter"
+          }, {
+            "Id" : 3,
+            "ObjectName" : "UParticleLODLevel_7",
+            "Properties" : {
+              "Level" : 0,
+              "Modules" : [6, 7, 8, 9, 10],
+              "RequiredModule" : 4,
+              "SpawnModule" : 5,
+              "TypeDataModule" : 11,
+              "bEnabled" : true,
+              "bSolo" : false
+            },
+            "Type" : "UParticleLODLevel"
+          }, {
+            "Id" : 4,
+            "ObjectName" : "UParticleModuleRequired_7",
+            "Properties" : {
+              "BoundsScale" : 1.000000,
+              "CoordinateSpace" : 0,
+              "EmitterDuration" : 5.000000,
+              "FixedBoundsMax" : {
+                "X" : 100.000000,
+                "Y" : 100.000000,
+                "Z" : 100.000000
+              },
+              "FixedBoundsMin" : {
+                "X" : -100.000000,
+                "Y" : -100.000000,
+                "Z" : -100.000000
+              },
+              "Material" : "",
+              "MaxEmitterLoops" : 1,
+              "MaxParticles" : 100,
+              "RandomSeed" : 1,
+              "SortMode" : 1,
+              "bEmitterLoops" : true,
+              "bEnabled" : true,
+              "bInfiniteEmitterLoops" : true,
+              "bResetSeedOnEmitterLoop" : true,
+              "bUseFixedBounds" : false,
+              "bUseSeededRandom" : false
+            },
+            "Type" : "UParticleModuleRequired"
+          }, {
+            "Id" : 5,
+            "ObjectName" : "UParticleModuleSpawn_7",
+            "Properties" : {
+              "BurstList" : [],
+              "RateScale" : 1.000000,
+              "SpawnRate" : 2.000000,
+              "bEnabled" : true,
+              "bProcessBurst" : false,
+              "bProcessSpawnRate" : true
+            },
+            "Type" : "UParticleModuleSpawn"
+          }, {
+            "Id" : 6,
+            "ObjectName" : "UParticleModuleLifetime_6",
+            "Properties" : {
+              "Lifetime" : {
+                "Constant" : 5.000000,
+                "Curve" : "",
+                "Max" : 1.000000,
+                "MaxCurve" : "",
+                "Min" : 1.000000,
+                "MinCurve" : "",
+                "Mode" : 0
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleLifetime"
+          }, {
+            "Id" : 7,
+            "ObjectName" : "UParticleModuleLocation_4",
+            "Properties" : {
+              "StartLocation" : {
+                "Constant" : {
+                  "X" : 0.000000,
+                  "Y" : 0.000000,
+                  "Z" : 5.000000
+                },
+                "Curve" : "",
+                "Max" : {
+                  "X" : 0.000000,
+                  "Y" : 0.000000,
+                  "Z" : 0.000000
+                },
+                "MaxCurve" : "",
+                "Min" : {
+                  "X" : 0.000000,
+                  "Y" : 0.000000,
+                  "Z" : 0.000000
+                },
+                "MinCurve" : "",
+                "Mode" : 0,
+                "VectorMode" : 0
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleLocation"
+          }, {
+            "Id" : 8,
+            "ObjectName" : "UParticleModuleVelocity_4",
+            "Properties" : {
+              "StartVelocity" : {
+                "Constant" : {
+                  "X" : 0.000000,
+                  "Y" : -5.000000,
+                  "Z" : -5.000000
+                },
+                "Curve" : "",
+                "Max" : {
+                  "X" : 0.000000,
+                  "Y" : 0.000000,
+                  "Z" : 0.000000
+                },
+                "MaxCurve" : "",
+                "Min" : {
+                  "X" : 0.000000,
+                  "Y" : 0.000000,
+                  "Z" : 0.000000
+                },
+                "MinCurve" : "",
+                "Mode" : 0,
+                "VectorMode" : 0
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleVelocity"
+          }, {
+            "Id" : 9,
+            "ObjectName" : "UParticleModuleCollision_1",
+            "Properties" : {
+              "CollisionCompletionOption" : 2,
+              "CollisionPushOut" : 0.100000,
+              "CollisionRadius" : 0.000000,
+              "DampingFactor" : {
+                "X" : 2.000000,
+                "Y" : 2.000000,
+                "Z" : 2.000000
+              },
+              "DelayAmount" : 0.000000,
+              "MaxCollisions" : 2,
+              "ParticleRadiusScale" : 0.500000,
+              "bEnabled" : true,
+              "bIgnoreSourceActor" : true,
+              "bUseParticleRadius" : true
+            },
+            "Type" : "UParticleModuleCollision"
+          }, {
+            "Id" : 10,
+            "ObjectName" : "UParticleModuleMeshRotation_0",
+            "Properties" : {
+              "StartRotation" : {
+                "Constant" : {
+                  "X" : 30.000000,
+                  "Y" : 30.000000,
+                  "Z" : 30.000000
+                },
+                "Curve" : "",
+                "Max" : {
+                  "X" : 0.000000,
+                  "Y" : 0.000000,
+                  "Z" : 0.000000
+                },
+                "MaxCurve" : "",
+                "Min" : {
+                  "X" : 0.000000,
+                  "Y" : 0.000000,
+                  "Z" : 0.000000
+                },
+                "MinCurve" : "",
+                "Mode" : 0,
+                "VectorMode" : 1
+              },
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleMeshRotation"
+          }, {
+            "Id" : 11,
+            "ObjectName" : "UParticleModuleTypeDataMesh_0",
+            "Properties" : {
+              "MeshAssetPath" : "Asset/Mesh/Dice/Dice.obj",
+              "bEnabled" : true
+            },
+            "Type" : "UParticleModuleTypeDataMesh"
+          }],
+        "RootObjectId" : 1,
+        "Version" : 2
+      }

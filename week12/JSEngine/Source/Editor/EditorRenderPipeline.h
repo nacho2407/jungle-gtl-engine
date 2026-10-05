@@ -1,0 +1,46 @@
+﻿#pragma once
+#include "Render/Renderer/IRenderPipeline.h"
+#include "Render/Scene/RenderCollector.h"
+#include "Render/Scene/RenderBus.h"
+
+class UEditorEngine;
+class UMaterialInterface;
+class UStaticMesh;
+struct ID3D11ShaderResourceView;
+
+class FEditorRenderPipeline : public IRenderPipeline
+{
+public:
+	FEditorRenderPipeline(UEditorEngine* InEditor, FRenderer& InRenderer);
+	~FEditorRenderPipeline() override;
+
+	void Execute(float DeltaTime, FRenderer& Renderer) override;	
+	void Render3DWorld(FRenderer& Renderer);
+	void Render2DOverlay(float DeltaTime, FRenderer& Renderer);
+	const FRenderCollector::FCullingStats& GetViewportCullingStats(int32 ViewportIndex) const;
+	const FRenderCollector::FDecalStats& GetViewportDecalStats(int32 ViewportIndex) const;
+    const FRenderCollector::FLightStats& GetViewportLightStats(int32 ViewportIndex) const;
+	const FRenderCollector::FParticleStats& GetViewportParticleStats(int32 ViewportIndex) const;
+	ID3D11ShaderResourceView* RenderMaterialPreview(FRenderer& Renderer, UStaticMesh* Mesh, UMaterialInterface* Material,
+	                                                uint32 Width, uint32 Height, float YawRad, float PitchRad,
+	                                                float Distance);
+
+private:
+	/*
+	 * 단일 뷰포트 렌더 헬퍼.
+	 * SetSubViewport → 씬 수집 → PrepareBatchers → Render 순으로 실행합니다.
+	 * Execute 루프에서 4번 호출됩니다.
+	 */
+	void RenderViewport(FRenderer& Renderer, int32 ViewportIndex);
+
+	// 기존 Viewport Render 동작 유지, Viewer 에 대한 로직만 추가
+	void RenderViewerViewport(FRenderer& Renderer);
+
+	UEditorEngine* Editor = nullptr;
+	FRenderCollector Collector;
+	FRenderBus Bus;
+	TArray<FRenderCollector::FCullingStats> ViewportCullingStats;
+	TArray<FRenderCollector::FDecalStats> ViewportDecalStats;
+	TArray<FRenderCollector::FLightStats> ViewportLightStats;
+	TArray<FRenderCollector::FParticleStats> ViewportParticleStats;
+};

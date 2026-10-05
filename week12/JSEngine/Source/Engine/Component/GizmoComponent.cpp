@@ -1,0 +1,787 @@
+﻿#include "GizmoComponent.h"
+#include "GameFramework/AActor.h"
+#include "Component/SceneComponent.h"
+#include "Object/Object.h"
+#include "Render/Mesh/MeshManager.h"
+#include "Core/ResourceManager.h"
+#include "TransformProxy.h"
+#include "Engine/Input/InputSystem.h"
+
+
+#include <cfloat>
+#include <cmath>
+
+UGizmoComponent::UGizmoComponent()
+{
+	GizmoMeshData = &FEditorMeshLibrary::GetTranslationGizmo();
+
+	// Gizmo 전용 Material 생성
+	Material = FResourceManager::Get().GetOrCreateMaterial("GizmoMaterial", EMaterialShaderType::EditorGizmo);
+}
+
+const FMeshData* UGizmoComponent::GetActiveMeshData() const
+{
+	return GizmoMeshData;
+}
+
+void UGizmoComponent::SetHolding(bool bHold)
+{
+	if (bIsHolding == bHold)
+	{
+		return;
+	}
+
+	if (bHold)
+	{
+		PendingSnapDelta = 0.0f;
+
+		// 드래그 시작 시 마우스 고정 및 숨김
+		if (CurMode != EGizmoMode::Translate)
+		{
+			POINT MousePos = InputSystem::Get().GetMousePos();
+			InputSystem::Get().LockMouse(true, (float)MousePos.x, (float)MousePos.y, 0, 0);
+			InputSystem::Get().SetCursorVisibility(false);
+		}
+	}
+	else
+	{
+		// 드래그 종료 시 마우스 고정 해제 및 표시
+		if (CurMode != EGizmoMode::Translate)
+		{
+			InputSystem::Get().LockMouse(false);
+			InputSystem::Get().SetCursorVisibility(true);
+		}
+	}
+
+	bIsHolding = bHold;
+}
+
+void UGizmoComponent::UpdateWorldAABB() const
+{
+	WorldAABB.Reset();
+
+	const FMatrix& WorldMatrix = GetWorldMatrix();
+
+	const float NewEx = std::abs(WorldMatrix.M[0][0]) * LocalExtents.X +
+		std::abs(WorldMatrix.M[1][0]) * LocalExtents.Y +
+		std::abs(WorldMatrix.M[2][0]) * LocalExtents.Z;
+
+	const float NewEy = std::abs(WorldMatrix.M[0][1]) * LocalExtents.X +
+		std::abs(WorldMatrix.M[1][1]) * LocalExtents.Y +
+		std::abs(WorldMatrix.M[2][1]) * LocalExtents.Z;
+
+	const float NewEz = std::abs(WorldMatrix.M[0][2]) * LocalExtents.X +
+		std::abs(WorldMatrix.M[1][2]) * LocalExtents.Y +
+		std::abs(WorldMatrix.M[2][2]) * LocalExtents.Z;
+
+	const FVector WorldCenter = GetWorldLocation();
+	WorldAABB.Expand(WorldCenter - FVector(NewEx, NewEy, NewEz));
+	WorldAABB.Expand(WorldCenter + FVector(NewEx, NewEy, NewEz));
+}
+
+bool UGizmoComponent::IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT)
+{
+	FVector AxisStart = GetWorldLocation();
+	FVector RayOrigin = Ray.Origin;
+	FVector RayDirection = Ray.Direction;
+
+	FVector AxisVector = AxisEnd - AxisStart;
+	FVector DiffOrigin = RayOrigin - AxisStart;
+
+	float RayDirDotRayDir = RayDirection.X * RayDirection.X + RayDirection.Y * RayDirection.Y + RayDirection.Z * RayDirection.Z;
+	float RayDirDotAxis = RayDirection.X * AxisVector.X + RayDirection.Y * AxisVector.Y + RayDirection.Z * AxisVector.Z;
+	float AxisDotAxis = AxisVector.X * AxisVector.X + AxisVector.Y * AxisVector.Y + AxisVector.Z * AxisVector.Z;
+	float RayDirDotDiff = RayDirection.X * DiffOrigin.X + RayDirection.Y * DiffOrigin.Y + RayDirection.Z * DiffOrigin.Z;
+	float AxisDotDiff = AxisVector.X * DiffOrigin.X + AxisVector.Y * DiffOrigin.Y + AxisVector.Z * DiffOrigin.Z;
+
+	float Denominator = (RayDirDotRayDir * AxisDotAxis) - (RayDirDotAxis * RayDirDotAxis);
+
+	float RayT;
+	float AxisS;
+
+	if (Denominator < 1e-6f)
+	{
+		RayT = 0.0f;
+		AxisS = (AxisDotAxis > 0.0f) ? (AxisDotDiff / AxisDotAxis) : 0.0f;
+	}
+	else
+	{
+		RayT = (RayDirDotAxis * AxisDotDiff - AxisDotAxis * RayDirDotDiff) / Denominator;
+		AxisS = (RayDirDotRayDir * AxisDotDiff - RayDirDotAxis * RayDirDotDiff) / Denominator;
+	}
+
+	if (RayT < 0.0f) RayT = 0.0f;
+
+	if (AxisS < 0.0f) AxisS = 0.0f;
+	else if (AxisS > 1.0f) AxisS = 1.0f;
+
+	FVector ClosestPointOnRay = RayOrigin + (RayDirection * RayT);
+	FVector ClosestPointOnAxis = AxisStart + (AxisVector * AxisS);
+
+	FVector DistanceVector = ClosestPointOnRay - ClosestPointOnAxis;
+	float DistanceSquared = (DistanceVector.X * DistanceVector.X) +
+		(DistanceVector.Y * DistanceVector.Y) +
+		(DistanceVector.Z * DistanceVector.Z);
+
+	float ClickThresholdSquared = Radius * Radius;
+
+	if (DistanceSquared < ClickThresholdSquared)
+	{
+		OutRayT = RayT;
+		return true;
+	}
+
+	return false;
+}
+
+void UGizmoComponent::HandleDrag(float DragAmount)
+{
+	DragAmount = QuantizeDragAmount(DragAmount);
+	if (std::abs(DragAmount) < 1e-6f)
+	{
+		return;
+	}
+
+	switch (CurMode)
+	{
+	case EGizmoMode::Translate:
+		TranslateTarget(DragAmount);
+		break;
+	case EGizmoMode::Rotate:
+		RotateTarget(DragAmount);
+		break;
+	case EGizmoMode::Scale:
+		ScaleTarget(DragAmount);
+		break;
+	default:
+		break;
+	}
+
+	UpdateGizmoTransform();
+}
+
+void UGizmoComponent::SetTranslateSnap(bool bEnabled, float Step)
+{
+	bTranslateSnapEnabled = bEnabled;
+	if (Step > 0.0f)
+	{
+		TranslateSnapStep = Step;
+	}
+}
+
+void UGizmoComponent::SetRotateSnap(bool bEnabled, float DegreesStep)
+{
+	bRotateSnapEnabled = bEnabled;
+	if (DegreesStep > 0.0f)
+	{
+		RotateSnapStepDegrees = DegreesStep;
+	}
+}
+
+void UGizmoComponent::SetScaleSnap(bool bEnabled, float Step)
+{
+	bScaleSnapEnabled = bEnabled;
+	if (Step > 0.0f)
+	{
+		ScaleSnapStep = Step;
+	}
+}
+
+float UGizmoComponent::QuantizeDragAmount(float DragAmount)
+{
+	float Step = 0.0f;
+	switch (CurMode)
+	{
+	case EGizmoMode::Translate:
+		if (!bTranslateSnapEnabled)
+		{
+			return DragAmount;
+		}
+		Step = TranslateSnapStep;
+		break;
+	case EGizmoMode::Rotate:
+		if (!bRotateSnapEnabled)
+		{
+			return DragAmount;
+		}
+		Step = RotateSnapStepDegrees * MathUtil::DEG_TO_RAD;
+		break;
+	case EGizmoMode::Scale:
+		if (!bScaleSnapEnabled)
+		{
+			return DragAmount;
+		}
+		Step = ScaleSnapStep;
+		break;
+	default:
+		return DragAmount;
+	}
+
+	if (Step <= 1e-6f)
+	{
+		return DragAmount;
+	}
+
+	PendingSnapDelta += DragAmount;
+	const float StepsFloat = PendingSnapDelta / Step;
+	const float StepsWhole = (StepsFloat >= 0.0f) ? std::floor(StepsFloat) : std::ceil(StepsFloat);
+	if (std::abs(StepsWhole) < 1e-6f)
+	{
+		return 0.0f;
+	}
+
+	const float SnappedDelta = StepsWhole * Step;
+	PendingSnapDelta -= SnappedDelta;
+	return SnappedDelta;
+}
+
+float UGizmoComponent::QuantizeRotationAngleFromStart(float AngleRadians) const
+{
+	if (!bRotateSnapEnabled)
+	{
+		return AngleRadians;
+	}
+
+	const float Step = RotateSnapStepDegrees * MathUtil::DEG_TO_RAD;
+	if (Step <= 1e-6f)
+	{
+		return AngleRadians;
+	}
+
+	return std::round(AngleRadians / Step) * Step;
+}
+
+USceneComponent* UGizmoComponent::GetTargetSceneComponent() const
+{
+	return nullptr;
+}
+
+FVector UGizmoComponent::GetTargetLocation() const
+{
+	if (Proxy)
+	{
+		return Proxy->GetTransform().GetOrigin();
+	}
+	return FVector::ZeroVector;
+}
+
+FVector UGizmoComponent::GetTargetRotation() const
+{
+	if (Proxy)
+	{
+		return Proxy->GetTransform().GetEuler();
+	}
+	return FVector::ZeroVector;
+}
+
+FVector UGizmoComponent::GetTargetScale() const
+{
+	if (Proxy)
+	{
+		return Proxy->GetTransform().GetScaleVector();
+	}
+	return FVector::OneVector;
+}
+
+bool UGizmoComponent::IsTargetActorAlive() const
+{
+	return Proxy != nullptr;
+}
+
+bool UGizmoComponent::IsTargetComponentAlive() const
+{
+	return Proxy != nullptr;
+}
+
+bool UGizmoComponent::HasTarget() const
+{
+	return Proxy != nullptr;
+}
+
+void UGizmoComponent::TranslateTarget(float DragAmount)
+{
+	if (!Proxy)
+	{
+		return;
+	}
+
+	FVector ConstrainedDelta = GetVectorForAxis(SelectedAxis) * DragAmount;
+	AddWorldOffset(ConstrainedDelta);
+
+	FMatrix M = Proxy->GetTransform();
+	M.SetOrigin(M.GetOrigin() + ConstrainedDelta);
+	Proxy->SetTransform(M);
+}
+
+void UGizmoComponent::RotateTarget(float DragAmount)
+{
+	if (!Proxy)
+	{
+		return;
+	}
+
+	FMatrix M = InitialRotationDragTransform;
+	FVector Translation, Scale;
+	FMatrix RotationMat;
+	M.Decompose(Translation, RotationMat, Scale);
+
+	FQuat InitialQuat = FQuat(RotationMat);
+	FQuat DeltaQuat(DraggingRotationAxis, DragAmount);
+	FQuat NewQuat = InitialQuat * DeltaQuat;
+	NewQuat.Normalize();
+
+	Proxy->SetTransform(FMatrix::MakeTRS(Translation, NewQuat.ToMatrix(), Scale));
+}
+
+void UGizmoComponent::ScaleTarget(float DragAmount)
+{
+	if (!Proxy)
+	{
+		return;
+	}
+
+	FMatrix M = Proxy->GetTransform();
+	FVector Translation, Scale;
+	FMatrix RotationMat;
+	M.Decompose(Translation, RotationMat, Scale);
+
+	float ScaleDelta = DragAmount * ScaleSensitivity;
+	switch (SelectedAxis)
+	{
+	case 0:
+		Scale.X += ScaleDelta;
+		break;
+	case 1:
+		Scale.Y += ScaleDelta;
+		break;
+	case 2:
+		Scale.Z += ScaleDelta;
+		break;
+	}
+	Scale.X = std::max(0.001f, Scale.X);
+	Scale.Y = std::max(0.001f, Scale.Y);
+	Scale.Z = std::max(0.001f, Scale.Z);
+
+	Proxy->SetTransform(FMatrix::MakeTRS(Translation, RotationMat, Scale));
+}
+
+void UGizmoComponent::SetTargetLocation(FVector NewLocation)
+{
+	if (Proxy)
+	{
+		FMatrix M = Proxy->GetTransform();
+		M.SetOrigin(NewLocation);
+		Proxy->SetTransform(M);
+		UpdateGizmoTransform();
+	}
+}
+
+void UGizmoComponent::SetTargetRotation(FVector NewRotation)
+{
+	if (Proxy)
+	{
+		FVector Translation, Scale;
+		FMatrix Rotation;
+		Proxy->GetTransform().Decompose(Translation, Rotation, Scale);
+		
+		FMatrix NewRotMatrix = FMatrix::MakeRotationEuler(NewRotation);
+		FMatrix M = FMatrix::MakeTRS(Translation, NewRotMatrix, Scale);
+		Proxy->SetTransform(M);
+		UpdateGizmoTransform();
+	}
+}
+
+void UGizmoComponent::SetTargetScale(FVector NewScale)
+{
+	if (Proxy)
+	{
+		FVector SafeScale = NewScale;
+		if (SafeScale.X < 0.001f) SafeScale.X = 0.001f;
+		if (SafeScale.Y < 0.001f) SafeScale.Y = 0.001f;
+		if (SafeScale.Z < 0.001f) SafeScale.Z = 0.001f;
+
+		FVector Translation, dummyScale;
+		FMatrix Rotation;
+		Proxy->GetTransform().Decompose(Translation, Rotation, dummyScale);
+		
+		FMatrix M = FMatrix::MakeTRS(Translation, Rotation, SafeScale);
+		Proxy->SetTransform(M);
+		UpdateGizmoTransform();
+	}
+}
+
+bool UGizmoComponent::HitTestMesh(const FRay& Ray, FHitResult& OutHitResult)
+{
+	OutHitResult = {};
+
+	const FMeshData* MeshData = GetActiveMeshData();
+	if (!MeshData || MeshData->Indices.empty())
+	{
+		return false;
+	}
+
+	const FMatrix InvWorld = GetWorldMatrix().GetInverse();
+	FVector LocalOrigin = InvWorld.TransformPosition(Ray.Origin);
+	FVector LocalDirection = InvWorld.TransformVector(Ray.Direction);
+	LocalDirection.NormalizeSafe();
+
+	bool bHit = false;
+	float ClosestT = FLT_MAX;
+
+	for (size_t i = 0; i + 2 < MeshData->Indices.size(); i += 3)
+	{
+		const FVector& V0 = MeshData->Vertices[MeshData->Indices[i]].Position;
+		const FVector& V1 = MeshData->Vertices[MeshData->Indices[i + 1]].Position;
+		const FVector& V2 = MeshData->Vertices[MeshData->Indices[i + 2]].Position;
+
+		float HitT = 0.0f;
+		if (IntersectTriangle(LocalOrigin, LocalDirection, V0, V1, V2, HitT) && HitT < ClosestT)
+		{
+			ClosestT = HitT;
+			bHit = true;
+			OutHitResult.FaceIndex = static_cast<int32>(i);
+		}
+	}
+
+	OutHitResult.bHit = bHit;
+	if (!bHit)
+	{
+		return false;
+	}
+
+	const FVector LocalHitPoint = LocalOrigin + (LocalDirection * ClosestT);
+	const FVector WorldHitPoint = GetWorldMatrix().TransformPosition(LocalHitPoint);
+	OutHitResult.Distance = FVector::Distance(Ray.Origin, WorldHitPoint);
+	OutHitResult.Location = WorldHitPoint;
+	OutHitResult.HitComponent = this;
+
+	return OutHitResult.bHit;
+}
+
+bool UGizmoComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
+{
+	if (!HitTestMesh(Ray, OutHitResult))
+	{
+		UpdateHoveredAxis(-1);
+		return false;
+	}
+
+	UpdateHoveredAxis(OutHitResult.FaceIndex);
+	return true;
+}
+
+
+FVector UGizmoComponent::GetVectorForAxis(int32 Axis)
+{
+	switch (Axis)
+	{
+	case 0:
+		return GetForwardVector();
+	case 1:
+		return GetRightVector();
+	case 2:
+		return GetUpVector();
+	default:
+		return FVector(0.f, 0.f, 0.f);
+	}
+}
+
+void UGizmoComponent::SetProxy(std::shared_ptr<ITransformProxy> InProxy)
+{
+	DragEnd();
+
+	if (!InProxy)
+	{
+		Deactivate();
+		return;
+	}
+
+	Proxy = InProxy;
+	AllSelectedActors = nullptr;
+
+	SetWorldLocation(Proxy->GetTransform().GetOrigin());
+	UpdateGizmoTransform();
+	SetVisibility(true);
+}
+
+void UGizmoComponent::UpdateLinearDrag(const FRay& Ray)
+{
+	FVector AxisVector = GetVectorForAxis(SelectedAxis);
+
+	FVector ViewDir = (GetWorldLocation() - Ray.Origin);
+	ViewDir.NormalizeSafe();
+
+	// 고정된 뷰 벡터와 축을 외적하여 마우스를 아무리 움직여도 뒤집히지 않는 고정 평면을 만든다.
+	FVector PlaneNormal = AxisVector.CrossProduct(ViewDir);
+
+	// 시선과 기즈모 축이 완벽하게 일직선이 되어 외적 결과가 영벡터가 되는 특수 경우 예외 처리
+	if (PlaneNormal.SizeSquared() < 1e-6f)
+	{
+		PlaneNormal = AxisVector.CrossProduct(FVector::UpVector);
+	}
+	PlaneNormal.NormalizeSafe();
+
+	FVector ProjectDir = PlaneNormal.CrossProduct(AxisVector);
+
+	float Denom = Ray.Direction.DotProduct(ProjectDir);
+	if (std::abs(Denom) < 1e-6f) return;
+
+	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).DotProduct(ProjectDir) / Denom;
+	FVector CurrentIntersectionLocation = Ray.Origin + (Ray.Direction * DistanceToPlane);
+
+	if (bIsFirstFrameOfDrag)
+	{
+		LastIntersectionLocation = CurrentIntersectionLocation;
+		bIsFirstFrameOfDrag = false;
+		return;
+	}
+
+	FVector FullDelta = CurrentIntersectionLocation - LastIntersectionLocation;
+
+	float DragAmount = FullDelta.DotProduct(AxisVector);
+
+	HandleDrag(DragAmount);
+
+	LastIntersectionLocation = CurrentIntersectionLocation;
+}
+
+float UGizmoComponent::ComputeRotationAngleOnPlane(const FVector& WorldPoint) const
+{
+	FVector CenterToPoint = WorldPoint - GetWorldLocation();
+	if (CenterToPoint.SizeSquared() < 1e-8f)
+	{
+		return InteractionCurAngle;
+	}
+
+	CenterToPoint.NormalizeSafe();
+	const float X = CenterToPoint.DotProduct(RotationPlaneX);
+	const float Y = CenterToPoint.DotProduct(RotationPlaneY);
+	return std::atan2(Y, X);
+}
+
+void UGizmoComponent::UpdateAngularDrag(const FRay& Ray)
+{
+	FVector AxisVector = GetVectorForAxis(SelectedAxis);
+	AxisVector.NormalizeSafe();
+	if (AxisVector.SizeSquared() < 1e-6f)
+	{
+		return;
+	}
+
+	FVector PlaneNormal = AxisVector;
+
+	float Denom = Ray.Direction.DotProduct(PlaneNormal);
+	if (std::abs(Denom) < 1e-6f)
+	{
+		return;
+	}
+
+	float DistanceToPlane = (GetWorldLocation() - Ray.Origin).DotProduct(PlaneNormal) / Denom;
+	FVector CurrentIntersectionLocation = Ray.Origin + (Ray.Direction * DistanceToPlane);
+
+	if (bIsFirstFrameOfDrag)
+	{
+		FVector CenterToStart = CurrentIntersectionLocation - GetWorldLocation();
+		if (CenterToStart.SizeSquared() < 1e-8f)
+		{
+			return;
+		}
+
+		CenterToStart.NormalizeSafe();
+
+		DraggingRotationAxis = AxisVector;
+		RotationPlaneX = CenterToStart;
+		RotationPlaneY = DraggingRotationAxis.CrossProduct(RotationPlaneX);
+		if (RotationPlaneY.SizeSquared() < 1e-8f)
+		{
+			return;
+		}
+		RotationPlaneY.NormalizeSafe();
+
+		InitialRotationDragTransform = Proxy->GetTransform();
+		InteractionStartAngle = 0.0f;
+		InteractionCurAngle = 0.0f;
+		LastIntersectionLocation = CurrentIntersectionLocation;
+		bIsFirstFrameOfDrag = false;
+		return;
+	}
+
+	InteractionCurAngle = ComputeRotationAngleOnPlane(CurrentIntersectionLocation);
+	float DeltaAngle = InteractionCurAngle - InteractionStartAngle;
+	DeltaAngle = QuantizeRotationAngleFromStart(DeltaAngle);
+
+	RotateTarget(DeltaAngle);
+	UpdateGizmoTransform();
+
+	LastIntersectionLocation = CurrentIntersectionLocation;
+}
+
+void UGizmoComponent::UpdateHoveredAxis(int Index)
+{
+	if (IsHolding() || IsPressedOnHandle())
+	{
+		return;
+	}
+
+	// 조작 중이 아닐 때만 마우스 Raycast 결과에 따라 축을 갱신합니다.
+	if (Index < 0)
+	{
+		SelectedAxis = -1;
+	}
+	else
+	{
+		const FMeshData* MeshData = GetActiveMeshData();
+		if (!MeshData)
+		{
+			SelectedAxis = -1;
+			return;
+		}
+
+		uint32 VertexIndex = MeshData->Indices[Index];
+		SelectedAxis = MeshData->Vertices[VertexIndex].SubID;
+	}
+}
+
+void UGizmoComponent::UpdateDrag(const FRay& Ray)
+{
+	if (IsHolding() == false || IsActive() == false)
+	{
+		return;
+	}
+
+	if (SelectedAxis == -1 || !HasTarget())
+	{
+		if (!HasTarget())
+		{
+			Deactivate();
+		}
+		return;
+	}
+
+	if (bIsFirstFrameOfDrag)
+	{
+		DraggingRotationAxis = GetVectorForAxis(SelectedAxis);
+		DraggingRotationAxis.NormalizeSafe();
+	}
+
+	if (CurMode == EGizmoMode::Rotate)
+	{
+		UpdateAngularDrag(Ray);
+	}
+
+	else
+	{
+		UpdateLinearDrag(Ray);
+	}
+}
+
+void UGizmoComponent::DragEnd()
+{
+	bIsFirstFrameOfDrag = true;
+	SetHolding(false);
+	SetPressedOnHandle(false);
+	SelectedAxis = -1;
+	PendingSnapDelta = 0.0f;
+	InteractionStartAngle = 0.0f;
+	InteractionCurAngle = 0.0f;
+}
+
+void UGizmoComponent::SetNextMode()
+{
+	EGizmoMode NextMode = static_cast<EGizmoMode>((static_cast<int>(CurMode) + 1) % EGizmoMode::End);
+	UpdateGizmoMode(NextMode);
+}
+
+void UGizmoComponent::UpdateGizmoMode(EGizmoMode NewMode)
+{
+	CurMode = NewMode;
+	UpdateGizmoTransform();
+}
+
+void UGizmoComponent::UpdateGizmoTransform()
+{
+	if (!Proxy)
+	{
+		Deactivate();
+		return;
+	}
+
+	SetWorldLocation(Proxy->GetTransform().GetOrigin());
+
+	FMatrix M = Proxy->GetTransform();
+	FVector T, S;
+	FMatrix R;
+	M.Decompose(T, R, S);
+	FQuat TargetQuat = FQuat(R);
+	TargetQuat.Normalize();
+
+	SetWorldLocation(M.GetOrigin());
+
+	switch (CurMode)
+	{
+	case EGizmoMode::Scale:
+		SetRelativeRotationQuat(TargetQuat);
+		GizmoMeshData = &FEditorMeshLibrary::Get().GetScaleGizmo();
+		break;
+
+	case EGizmoMode::Rotate:
+		SetRelativeRotationQuat(bIsWorldSpace ? FQuat::Identity : TargetQuat);
+		GizmoMeshData = &FEditorMeshLibrary::Get().GetRotationGizmo();
+		break;
+
+	case EGizmoMode::Translate:
+		SetRelativeRotationQuat(bIsWorldSpace ? FQuat::Identity : TargetQuat);
+		GizmoMeshData = &FEditorMeshLibrary::Get().GetTranslationGizmo();
+		break;
+	}
+}
+
+void UGizmoComponent::ApplyScreenSpaceScaling(const FVector& CameraLocation)
+{
+	float Distance = FVector::Distance(CameraLocation, GetWorldLocation());
+
+	float NewScale = Distance * 0.17f;
+
+	if (NewScale < 0.01f) NewScale = 0.01f;
+
+	SetRelativeScale(FVector(NewScale, NewScale, NewScale));
+}
+
+void UGizmoComponent::ApplyScreenSpaceScalingOrtho(float OrthoHeight)
+{
+	float NewScale = OrthoHeight * 0.15f;
+	if (NewScale < 0.01f) NewScale = 0.01f;
+	SetRelativeScale(FVector(NewScale, NewScale, NewScale));
+}
+
+void UGizmoComponent::SetWorldSpace(bool bWorldSpace)
+{
+	bIsWorldSpace = bWorldSpace;
+	UpdateGizmoTransform();
+}
+
+
+void UGizmoComponent::Deactivate()
+{
+	DragEnd();
+	Proxy = nullptr;
+	AllSelectedActors = nullptr;
+	SetVisibility(false);
+}
+
+EPrimitiveType UGizmoComponent::GetPrimitiveType() const
+{
+	EPrimitiveType CurPrimitiveType = EPrimitiveType::EPT_TransGizmo;
+	switch (CurMode)
+	{
+	case EGizmoMode::Translate:
+		break;
+	case EGizmoMode::Rotate:
+		CurPrimitiveType = EPrimitiveType::EPT_RotGizmo;
+		break;
+	case EGizmoMode::Scale:
+		CurPrimitiveType = EPrimitiveType::EPT_ScaleGizmo;
+		break;
+	}
+	return CurPrimitiveType;
+}

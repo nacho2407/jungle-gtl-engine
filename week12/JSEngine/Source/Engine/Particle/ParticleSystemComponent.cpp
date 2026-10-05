@@ -1,0 +1,1033 @@
+﻿#include "Particle/ParticleSystemComponent.h"
+
+#include "Camera/ViewportCamera.h"
+#include "Core/Paths.h"
+#include "Core/ResourceManager.h"
+#include "GameFramework/World.h"
+#include "Particle/ParticleEmitterInstanceOwner.h"
+#include "Particle/ParticleBeamPath.h"
+#include "Particle/ParticleMeshBounds.h"
+#include "Particle/ParticleAsset.h"
+#include "Particle/ParticleEmitterInstance.h"
+#include "Core/Logging/Stats.h"
+#include "Render/Scene/Scene.h"
+#include "Component/SceneComponent.h"
+#include "GameFramework/AActor.h"
+#include <algorithm>
+#include <cstring>
+#include <memory>
+#include <unordered_set>
+
+namespace
+{
+	bool IsLiveObject(const UObject* Object)
+	{
+		return Object != nullptr && UObjectManager::Get().ContainsObject(Object);
+	}
+
+	bool IsSoloParticleInstance(const FParticleEmitterInstance* Instance)
+	{
+		return Instance != nullptr &&
+			IsLiveObject(Instance->CurrentLODLevel) &&
+			Instance->CurrentLODLevel->bSolo;
+	}
+
+	bool AreEmitterInstancesOutOfSync(
+		const UParticleSystem* ParticleSystem,
+		const TArray<FParticleEmitterInstance*>& EmitterInstances)
+	{
+		if (ParticleSystem == nullptr)
+		{
+			return !EmitterInstances.empty();
+		}
+
+		int32 ExpectedInstanceIndex = 0;
+		for (UParticleEmitter* EmitterTemplate : ParticleSystem->Emitters)
+		{
+			if (!IsLiveObject(EmitterTemplate))
+			{
+				continue;
+			}
+
+			if (ExpectedInstanceIndex >= static_cast<int32>(EmitterInstances.size()))
+			{
+				return true;
+			}
+
+			const FParticleEmitterInstance* Instance = EmitterInstances[static_cast<size_t>(ExpectedInstanceIndex)];
+			if (Instance == nullptr ||
+				!IsLiveObject(Instance->SpriteTemplate) ||
+				Instance->SpriteTemplate != EmitterTemplate)
+			{
+				return true;
+			}
+
+			++ExpectedInstanceIndex;
+		}
+
+		return ExpectedInstanceIndex != static_cast<int32>(EmitterInstances.size());
+	}
+
+	enum class EParticleInstanceParameterDiagnostic : uint32
+	{
+		MissingParameter = 1,
+		TypeMismatch,
+		ActorResolveFailed,
+		ComponentResolveFailed,
+		UnsupportedMethod,
+	};
+
+	/**
+	 * @brief Particle instance parameter warning 1회 출력
+	 */
+	void LogParticleInstanceParameterWarningOnce(
+		const UParticleSystemComponent* Component,
+		const FString& Name,
+		EParticleBeamEndpointMethod Method,
+		EParticleInstanceParameterDiagnostic Diagnostic,
+		const char* Message)
+	{
+		// tick마다 반복되는 endpoint resolve warning 중복 방지 key
+		static std::unordered_set<uint64> LoggedWarnings;
+		const uint64 ComponentKey = Component != nullptr
+			? static_cast<uint64>(Component->GetUUID())
+			: 0ull;
+		const uint64 NameKey = static_cast<uint64>(std::hash<FString>{}(Name));
+		const uint64 Key =
+			(ComponentKey << 32) ^
+			(NameKey & 0x00000000ffffffffull) ^
+			(static_cast<uint64>(static_cast<uint32>(Method)) << 24) ^
+			static_cast<uint64>(Diagnostic);
+
+		if (LoggedWarnings.insert(Key).second)
+		{
+			UE_LOG_WARNING("%s", Message);
+		}
+	}
+
+	/**
+	 * @brief Particle instance parameter type 일치 여부
+	 */
+	bool DoesParticleParameterTypeMatch(
+		EParticleInstanceParameterType ParameterType,
+		EParticleBeamEndpointMethod Method)
+	{
+		// Beam endpoint method별 기대 parameter type
+		switch (Method)
+		{
+		case EParticleBeamEndpointMethod::UserSet:
+			return ParameterType == EParticleInstanceParameterType::Vector;
+		case EParticleBeamEndpointMethod::Actor:
+			return ParameterType == EParticleInstanceParameterType::Actor;
+		case EParticleBeamEndpointMethod::Component:
+			return ParameterType == EParticleInstanceParameterType::Component;
+		case EParticleBeamEndpointMethod::Default:
+		default:
+			return false;
+		}
+	}
+
+	UParticleLODLevel* GetLODLevel(UParticleEmitter* EmitterTemplate, int32 LODIndex)
+	{
+		// template / index 방어
+		if (!IsLiveObject(EmitterTemplate) ||
+			LODIndex < 0 ||
+			LODIndex >= static_cast<int32>(EmitterTemplate->LODLevels.size()))
+		{
+			return nullptr;
+		}
+
+		// live LOD만 반환
+		UParticleLODLevel* LODLevel = EmitterTemplate->LODLevels[static_cast<size_t>(LODIndex)];
+		return IsLiveObject(LODLevel) ? LODLevel : nullptr;
+	}
+
+	UParticleModuleTypeDataBase* GetLiveTypeData(UParticleLODLevel* LODLevel)
+	{
+		// null TypeData 허용
+		return IsLiveObject(LODLevel) && IsLiveObject(LODLevel->TypeDataModule)
+			? LODLevel->TypeDataModule
+			: nullptr;
+	}
+
+	const FDynamicMeshEmitterData* FindMeshRenderDataForEmitter(
+		const TArray<FDynamicEmitterDataBase*>& RenderData,
+		int32 EmitterIndex)
+	{
+		for (const FDynamicEmitterDataBase* EmitterData : RenderData)
+		{
+			if (EmitterData != nullptr &&
+				EmitterData->EmitterIndex == EmitterIndex &&
+				EmitterData->GetEmitterType() == EDynamicEmitterType::Mesh)
+			{
+				return static_cast<const FDynamicMeshEmitterData*>(EmitterData);
+			}
+		}
+		return nullptr;
+	}
+
+	const FDynamicBeamEmitterData* FindBeamRenderDataForEmitter(
+		const TArray<FDynamicEmitterDataBase*>& RenderData,
+		int32 EmitterIndex)
+	{
+		for (const FDynamicEmitterDataBase* EmitterData : RenderData)
+		{
+			if (EmitterData != nullptr &&
+				EmitterData->EmitterIndex == EmitterIndex &&
+				EmitterData->GetEmitterType() == EDynamicEmitterType::Beam)
+			{
+				return static_cast<const FDynamicBeamEmitterData*>(EmitterData);
+			}
+		}
+		return nullptr;
+	}
+
+
+	const FDynamicRibbonEmitterData* FindRibbonRenderDataForEmitter(
+		const TArray<FDynamicEmitterDataBase*>& RenderData,
+		int32 EmitterIndex)
+	{
+		for (const FDynamicEmitterDataBase* EmitterData : RenderData)
+		{
+			if (EmitterData != nullptr &&
+				EmitterData->EmitterIndex == EmitterIndex &&
+				EmitterData->GetEmitterType() == EDynamicEmitterType::Ribbon)
+			{
+				return static_cast<const FDynamicRibbonEmitterData*>(EmitterData);
+			}
+		}
+		return nullptr;
+	}
+
+	FVector GetRibbonWorldPoint(
+		const FDynamicRibbonEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld,
+		const FRibbonRenderPoint& Point)
+	{
+		return ReplayData.CoordinateSpace == EParticleCoordinateSpace::Local
+			? ComponentToWorld.TransformPosition(Point.Position)
+			: Point.Position;
+	}
+
+	FBoundingBox BuildRibbonWorldBounds(
+		const FDynamicRibbonEmitterReplayDataBase& ReplayData,
+		const FMatrix& ComponentToWorld)
+	{
+		FBoundingBox Bounds;
+		for (const FRibbonRenderPoint& Point : ReplayData.RenderPoints)
+		{
+			const FVector WorldPoint = GetRibbonWorldPoint(ReplayData, ComponentToWorld, Point);
+			const float HalfWidth = std::max(Point.Width, 0.1f) * 0.5f;
+			const FVector Extent(HalfWidth, HalfWidth, HalfWidth);
+			Bounds.Expand(WorldPoint - Extent);
+			Bounds.Expand(WorldPoint + Extent);
+		}
+		return Bounds;
+	}
+}
+
+class UParticleSystemComponent::FInstanceOwner : public IParticleEmitterInstanceOwner
+{
+public:
+	explicit FInstanceOwner(UParticleSystemComponent* InComponent)
+		: Component(InComponent)
+	{
+	}
+
+	UWorld* GetWorld() const override
+	{
+		return Component != nullptr ? Component->GetWorld() : nullptr;
+	}
+
+	FVector GetWorldLocation() const override
+	{
+		return Component != nullptr ? Component->GetWorldLocation() : FVector::ZeroVector;
+	}
+
+	FMatrix GetComponentToWorld() const override
+	{
+		return Component != nullptr ? Component->GetWorldMatrix() : FMatrix::Identity;
+	}
+
+	const FParticleInstanceParameter* FindInstanceParameter(const FString& Name) const override
+	{
+		return Component != nullptr ? Component->FindInstanceParameter(Name) : nullptr;
+	}
+
+	bool ResolveParticleInstanceParameterWorldPoint(
+		const FString& Name,
+		EParticleBeamEndpointMethod Method,
+		FVector& OutWorldPoint) const override
+	{
+		return Component != nullptr &&
+			Component->ResolveParticleInstanceParameterWorldPoint(Name, Method, OutWorldPoint);
+	}
+
+	AActor* GetSourceActor() const override
+	{
+		return Component != nullptr ? Component->GetOwner() : nullptr;
+	}
+
+	bool ParticleLineCheck(
+		FHitResult& Hit,
+		AActor* SourceActor,
+		const FVector& EndWS,
+		const FVector& StartWS,
+		const FCollisionShape& CollisionShape) override
+	{
+		return Component != nullptr &&
+			Component->ParticleLineCheck(Hit, SourceActor, EndWS, StartWS, CollisionShape);
+	}
+
+	void AddParticleEvent(const FParticleEventPayload& Event) override
+	{
+		if (Component != nullptr)
+		{
+			Component->ReportParticleEvent(Event);
+		}
+	}
+
+private:
+	UParticleSystemComponent* Component = nullptr;
+};
+
+UParticleSystemComponent::UParticleSystemComponent()
+{
+	InstanceOwner = std::make_unique<FInstanceOwner>(this);
+}
+
+UParticleSystemComponent::~UParticleSystemComponent()
+{
+	ReleaseRenderData();
+	ReleaseEmitterInstances();
+}
+
+void UParticleSystemComponent::SetTemplate(UParticleSystem* InTemplate)
+{
+	if (ResolvedTemplate == InTemplate)
+	{
+		return;
+	}
+
+	ResolvedTemplate = InTemplate;
+	Template.SetPath(InTemplate ? InTemplate->GetAssetPath() : FString());
+	ReleaseRenderData();
+	ReleaseEmitterInstances();
+	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
+}
+
+void UParticleSystemComponent::SetTemplateAsset(const TSoftObjectPtr<UParticleSystem>& InTemplate)
+{
+	Template = InTemplate;
+	ResolvedTemplate = nullptr;
+	ReleaseRenderData();
+	ReleaseEmitterInstances();
+	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
+}
+
+void UParticleSystemComponent::SetTemplatePath(const FString& InPath)
+{
+	Template.SetPath(FPaths::Normalize(InPath));
+	ResolvedTemplate = nullptr;
+	ReleaseRenderData();
+	ReleaseEmitterInstances();
+	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
+}
+
+UParticleSystem* UParticleSystemComponent::GetTemplate()
+{
+	if (ResolvedTemplate)
+	{
+		return ResolvedTemplate;
+	}
+
+	const FString Path = FPaths::Normalize(Template.GetPath());
+	if (Path.empty())
+	{
+		return nullptr;
+	}
+
+	ResolvedTemplate = FResourceManager::Get().LoadParticleSystem(Path);
+	return ResolvedTemplate;
+}
+
+const UParticleSystem* UParticleSystemComponent::GetTemplate() const
+{
+	return const_cast<UParticleSystemComponent*>(this)->GetTemplate();
+}
+
+void UParticleSystemComponent::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+	if (Ar.IsLoading())
+	{
+		ResolvedTemplate = nullptr;
+		ReleaseRenderData();
+		ReleaseEmitterInstances();
+		CreateEmitterInstances();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
+	}
+}
+
+void UParticleSystemComponent::PostEditProperty(const char* PropertyName)
+{
+	Super::PostEditProperty(PropertyName);
+	if (PropertyName && FString(PropertyName) == "Template")
+	{
+		ResolvedTemplate = nullptr;
+		ReleaseRenderData();
+		ReleaseEmitterInstances();
+		CreateEmitterInstances();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
+	}
+}
+
+const FParticleInstanceParameter* UParticleSystemComponent::FindInstanceParameter(const FString& Name) const
+{
+	// 이름이 비어 있으면 endpoint binding 대상으로 취급하지 않음
+	if (Name.empty())
+	{
+		return nullptr;
+	}
+
+	// PSC instance parameter exact match 조회
+	for (const FParticleInstanceParameter& Parameter : InstanceParameters)
+	{
+		if (Parameter.Name == Name)
+		{
+			return &Parameter;
+		}
+	}
+
+	return nullptr;
+}
+
+bool UParticleSystemComponent::ResolveParticleInstanceParameterWorldPoint(
+	const FString& Name,
+	EParticleBeamEndpointMethod Method,
+	FVector& OutWorldPoint) const
+{
+	// Default method는 caller가 module fallback point를 직접 사용
+	if (Method == EParticleBeamEndpointMethod::Default)
+	{
+		LogParticleInstanceParameterWarningOnce(
+			this,
+			Name,
+			Method,
+			EParticleInstanceParameterDiagnostic::UnsupportedMethod,
+			"[Particle] Default Beam endpoint method does not use PSC Instance Parameters.");
+		return false;
+	}
+
+	// 이름 기반 parameter 조회
+	const FParticleInstanceParameter* Parameter = FindInstanceParameter(Name);
+	if (Parameter == nullptr)
+	{
+		LogParticleInstanceParameterWarningOnce(
+			this,
+			Name,
+			Method,
+			EParticleInstanceParameterDiagnostic::MissingParameter,
+			"[Particle] Beam endpoint parameter was not found on ParticleSystemComponent.");
+		return false;
+	}
+
+	// endpoint method와 parameter type 계약 확인
+	if (!DoesParticleParameterTypeMatch(Parameter->Type, Method))
+	{
+		LogParticleInstanceParameterWarningOnce(
+			this,
+			Name,
+			Method,
+			EParticleInstanceParameterDiagnostic::TypeMismatch,
+			"[Particle] Beam endpoint parameter type does not match endpoint method.");
+		return false;
+	}
+
+	// Vector parameter는 world space 위치로 직접 사용
+	if (Method == EParticleBeamEndpointMethod::UserSet)
+	{
+		OutWorldPoint = Parameter->VectorValue;
+		return true;
+	}
+
+	// Actor parameter는 UUID로 live actor resolve 후 actor world location 사용
+	if (Method == EParticleBeamEndpointMethod::Actor)
+	{
+		UObject* Object = Parameter->ActorUUID > 0
+			? UObjectManager::Get().FindByUUID(static_cast<uint32>(Parameter->ActorUUID))
+			: nullptr;
+		AActor* Actor = Cast<AActor>(Object);
+		if (Actor == nullptr)
+		{
+			LogParticleInstanceParameterWarningOnce(
+				this,
+				Name,
+				Method,
+				EParticleInstanceParameterDiagnostic::ActorResolveFailed,
+				"[Particle] Beam endpoint actor UUID could not be resolved.");
+			return false;
+		}
+
+		OutWorldPoint = Actor->GetActorLocation();
+		return true;
+	}
+
+	// Component parameter는 UUID로 live scene component resolve 후 component world location 사용
+	if (Method == EParticleBeamEndpointMethod::Component)
+	{
+		UObject* Object = Parameter->ComponentUUID > 0
+			? UObjectManager::Get().FindByUUID(static_cast<uint32>(Parameter->ComponentUUID))
+			: nullptr;
+		USceneComponent* SceneComponent = Cast<USceneComponent>(Object);
+		if (SceneComponent == nullptr)
+		{
+			LogParticleInstanceParameterWarningOnce(
+				this,
+				Name,
+				Method,
+				EParticleInstanceParameterDiagnostic::ComponentResolveFailed,
+				"[Particle] Beam endpoint component UUID could not be resolved.");
+			return false;
+		}
+
+		OutWorldPoint = SceneComponent->GetWorldLocation();
+		return true;
+	}
+
+	// enum 확장 대비 fallback
+	LogParticleInstanceParameterWarningOnce(
+		this,
+		Name,
+		Method,
+		EParticleInstanceParameterDiagnostic::UnsupportedMethod,
+		"[Particle] Beam endpoint parameter method is unsupported.");
+	return false;
+}
+
+UWorld* UParticleSystemComponent::GetWorld() const
+{
+	return GetOwner() != nullptr ? GetOwner()->GetFocusedWorld() : nullptr;
+}
+
+bool UParticleSystemComponent::ParticleLineCheck(
+	FHitResult& Hit,
+	AActor* SourceActor,
+	const FVector& EndWS,
+	const FVector& StartWS,
+	const FCollisionShape& CollisionShape)
+{
+	UWorld* World = GetWorld();
+	if (World == nullptr)
+	{
+		Hit.Reset();
+		return false;
+	}
+
+	FCollisionQueryParams Params;
+	Params.IgnoredActor = SourceActor;
+	Params.IgnoredComponent = this;
+	Params.bFindInitialOverlaps = true;
+
+	return CollisionShape.IsNearlyZero()
+		? World->LineTraceSingleShapeTarget(Hit, StartWS, EndWS, Params)
+		: World->SweepSingleShapeTarget(Hit, StartWS, EndWS, CollisionShape, Params);
+}
+
+void UParticleSystemComponent::TickComponent(float DeltaTime)
+{
+	SCOPE_STAT("Particle.TotalTick");
+	ParticleEvents.clear();
+
+    // 파티클 에디터에서 emitter 삭제 시 간헐적으로 발생하는 크래시 방지
+    // TODO: 전역 오브젝트 리스트 순회하는 방법 대신 다른 파티클 시스템에서 댕글링 포인터 생기는 거 방지하는 방법 찾아보기
+	UParticleSystem* ParticleSystem = GetTemplate();
+	if (AreEmitterInstancesOutOfSync(ParticleSystem, EmitterInstances))
+	{
+		ReleaseRenderData();
+		ReleaseEmitterInstances();
+		CreateEmitterInstances();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
+	}
+
+	UpdateLODLevel();
+
+	bool bHasSoloEmitter = false;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (IsSoloParticleInstance(Instance))
+		{
+			bHasSoloEmitter = true;
+			break;
+		}
+	}
+
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance != nullptr)
+		{
+			if (bHasSoloEmitter && !IsSoloParticleInstance(Instance))
+			{
+				continue;
+			}
+			Instance->Tick(DeltaTime);
+		}
+	}
+
+	ProcessParticleEventReceivers(bHasSoloEmitter);
+
+	// Render Data 수집
+	UpdateLastParticleFrameStats();
+	PackRenderData();
+	NotifySpatialIndexDirty();
+}
+
+void UParticleSystemComponent::ReportParticleEvent(const FParticleEventPayload& Event)
+{
+	ParticleEvents.push_back(Event);
+}
+
+void UParticleSystemComponent::UpdateLastParticleFrameStats()
+{
+	LastParticleFrameStats = {};
+
+	bool bHasSoloEmitter = false;
+	for (const FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (IsSoloParticleInstance(Instance))
+		{
+			bHasSoloEmitter = true;
+			break;
+		}
+	}
+
+	for (const FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance == nullptr || Instance->CurrentRuntimeCache == nullptr)
+		{
+			continue;
+		}
+		if (bHasSoloEmitter && !IsSoloParticleInstance(Instance))
+		{
+			continue;
+		}
+
+		const int32 SpawnedCount = Instance->GetLastFrameSpawnedCount();
+		const int32 KilledCount = Instance->GetLastFrameKilledCount();
+		const UParticleModuleTypeDataBase* TypeDataModule = Instance->CurrentRuntimeCache->TypeDataModule;
+
+		if (Cast<UParticleModuleTypeDataTrailBase>(TypeDataModule) != nullptr)
+		{
+			LastParticleFrameStats.TrailParticleSpawned += SpawnedCount;
+			LastParticleFrameStats.TrailParticleKilled += KilledCount;
+		}
+		else if (Cast<UParticleModuleTypeDataMesh>(TypeDataModule) != nullptr)
+		{
+			LastParticleFrameStats.MeshParticleSpawned += SpawnedCount;
+			LastParticleFrameStats.MeshParticleKilled += KilledCount;
+		}
+		else if (Cast<UParticleModuleTypeDataBeam>(TypeDataModule) != nullptr)
+		{
+			LastParticleFrameStats.BeamParticleSpawned += SpawnedCount;
+			LastParticleFrameStats.BeamParticleKilled += KilledCount;
+		}
+		else
+		{
+			LastParticleFrameStats.SpriteParticleSpawned += SpawnedCount;
+			LastParticleFrameStats.SpriteParticleKilled += KilledCount;
+		}
+	}
+}
+
+void UParticleSystemComponent::ProcessParticleEventReceivers(bool bHasSoloEmitter)
+{
+	if (ParticleEvents.empty())
+	{
+		return;
+	}
+
+	// Receiver 실행 전 snapshot만 이번 tick 입력으로 사용
+	const TArray<FParticleEventPayload> EventSnapshot = ParticleEvents;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (Instance == nullptr || (bHasSoloEmitter && !IsSoloParticleInstance(Instance)))
+		{
+			continue;
+		}
+
+		Instance->ProcessParticleEvents(EventSnapshot);
+	}
+}
+
+void UParticleSystemComponent::PackRenderData()
+{
+	ReleaseRenderData();
+
+	bool bHasSoloEmitter = false;
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (IsSoloParticleInstance(Instance))
+		{
+			bHasSoloEmitter = true;
+			break;
+		}
+	}
+
+	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
+	{
+		FParticleEmitterInstance* Instance = EmitterInstances[EmitterIndex];
+		if (Instance == nullptr || !IsLiveObject(Instance->CurrentLODLevel))
+		{
+			continue;
+		}
+		// solo 상태가 아닌 emitter의 render 차단
+		if (bHasSoloEmitter && !Instance->CurrentLODLevel->bSolo)
+		{
+			continue;
+		}
+
+		// LOD 비활성 상태의 기존 live particle render 허용
+		// bEnabled=false LOD는 emitter tick에서 spawn/update만 멈추고 age/kill은 계속 진행되므로,
+		// render snapshot은 계속 만들어야 기존 particle이 수명에 따라 자연스럽게 사라짐
+		UParticleModuleTypeDataBase* TypeDataModule = Instance->CurrentLODLevel->TypeDataModule;
+		if (!IsLiveObject(TypeDataModule) || !TypeDataModule->bEnabled)
+		{
+			continue;
+		}
+
+		FDynamicEmitterDataBase* RenderData = TypeDataModule->GetDynamicRenderData(Instance);
+		if (RenderData != nullptr)
+		{
+			RenderData->EmitterIndex = EmitterIndex;
+			EmitterRenderData.push_back(RenderData);
+		}
+	}
+}
+
+const FDynamicEmitterDataBase* UParticleSystemComponent::GetEmitterRenderDataSnapshot(int32 SnapshotIndex) const
+{
+	if (SnapshotIndex < 0 || SnapshotIndex >= static_cast<int32>(EmitterRenderData.size()))
+	{
+		return nullptr;
+	}
+
+	return EmitterRenderData[SnapshotIndex];
+}
+
+void UParticleSystemComponent::UpdateWorldAABB() const
+{
+	WorldAABB.Reset();
+
+	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
+	{
+		const FParticleEmitterInstance* Instance = EmitterInstances[EmitterIndex];
+		if (!Instance || !IsLiveObject(Instance->CurrentLODLevel))
+		{
+			continue;
+		}
+
+		// LOD 비활성 상태의 기존 live particle bounds 유지
+		// render는 허용되므로 spatial bounds도 함께 유지하여 자연 소멸 중인 particle이 잘리지 않도록 함
+		const UParticleModuleRequired* RequiredModule = Instance->CurrentRuntimeCache != nullptr
+			? Instance->CurrentRuntimeCache->RequiredModule
+			: nullptr;
+		if (RequiredModule == nullptr || !RequiredModule->bUseFixedBounds)
+		{
+			const FDynamicBeamEmitterData* BeamEmitterData = FindBeamRenderDataForEmitter(EmitterRenderData, EmitterIndex);
+			if (BeamEmitterData != nullptr)
+			{
+				// render와 동일한 최종 Beam path 기준 spatial bounds
+				const float HalfWidth = std::max(BeamEmitterData->ReplayData.BeamWidth, 0.1f) * 0.5f;
+				const FBoundingBox BeamBounds = ParticleBeamPath::BuildBeamWorldBounds(
+					BeamEmitterData->ReplayData,
+					BeamEmitterData->ComponentToWorld,
+					HalfWidth);
+				if (BeamBounds.IsValid())
+				{
+					WorldAABB.Merge(BeamBounds);
+					continue;
+				}
+			}
+
+			const FDynamicRibbonEmitterData* RibbonEmitterData = FindRibbonRenderDataForEmitter(EmitterRenderData, EmitterIndex);
+			if (RibbonEmitterData != nullptr)
+			{
+				const FBoundingBox RibbonBounds = BuildRibbonWorldBounds(
+					RibbonEmitterData->ReplayData,
+					RibbonEmitterData->ComponentToWorld);
+				if (RibbonBounds.IsValid())
+				{
+					WorldAABB.Merge(RibbonBounds);
+					continue;
+				}
+			}
+
+			const FDynamicMeshEmitterData* MeshEmitterData = FindMeshRenderDataForEmitter(EmitterRenderData, EmitterIndex);
+			const FStaticMesh* MeshData = MeshEmitterData != nullptr && MeshEmitterData->Mesh != nullptr
+				? MeshEmitterData->Mesh->GetMeshData(0)
+				: nullptr;
+			if (MeshData != nullptr)
+			{
+				// Conservative visibility/framing bound only; exact picking/raycast remains unsupported for mesh particles.
+				const FBoundingBox MeshParticleBounds = ParticleMeshBounds::BuildConservativeWorldBounds(
+					MeshEmitterData->GetSource(),
+					MeshEmitterData->ComponentToWorld,
+					MeshData->LocalBounds);
+				if (MeshParticleBounds.IsValid())
+				{
+					WorldAABB.Merge(MeshParticleBounds);
+					continue;
+				}
+			}
+		}
+
+		FVector Min;
+		FVector Max;
+		Instance->CalculateWorldBounds(Min, Max);
+		const FAABB EmitterBounds(Min, Max);
+
+		if (EmitterBounds.IsValid())
+		{
+			WorldAABB.Merge(EmitterBounds);
+		}
+	}
+
+	if (!WorldAABB.IsValid())
+	{
+		const FVector Center = GetWorldLocation();
+		const FVector Extent(1.0f, 1.0f, 1.0f);
+		WorldAABB.Expand(Center - Extent);
+		WorldAABB.Expand(Center + Extent);
+	}
+}
+
+bool UParticleSystemComponent::RaycastMesh(const FRay& Ray, FHitResult& OutHitResult)
+{
+	(void)Ray;
+	(void)OutHitResult;
+	// TODO: 모든 emitter 타입의 picking snapshot 계약이 정해지면 PSC 단위 raycast를 구현한다.
+	return false;
+}
+
+void UParticleSystemComponent::ResetParticles()
+{
+	ReleaseRenderData();
+	ReleaseEmitterInstances();
+	CreateEmitterInstances();
+	UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
+}
+
+void UParticleSystemComponent::ReleaseEmitterInstances()
+{
+	ParticleEvents.clear();
+
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		delete Instance;
+	}
+	EmitterInstances.clear();
+}
+
+void UParticleSystemComponent::ReleaseRenderData()
+{
+	for (FDynamicEmitterDataBase* RenderData : EmitterRenderData)
+	{
+		delete RenderData;
+	}
+	EmitterRenderData.clear();
+}
+
+int32 UParticleSystemComponent::SelectLODLevelIndex(const UParticleEmitter* EmitterTemplate, int32 CurrentLODIndex) const
+{
+	const UParticleSystem* ParticleSystem = GetTemplate();
+	if (ParticleSystem == nullptr || EmitterTemplate == nullptr || EmitterTemplate->LODLevels.size() <= 1)
+	{
+		return 0;
+	}
+
+	// 현재 World에 활성화된 Camera 정보를 가져온다
+	const UWorld* World = GetWorld();
+	const FViewportCamera* ActiveCamera = World != nullptr ? World->GetActiveCamera() : nullptr;
+	if (ActiveCamera == nullptr)
+	{
+		return 0;
+	}
+
+	// ParticleSystem Asset의 LOD가 3이라고 하더라도, 특정 Emitter의 LOD가 1이라면 1을 적용.	
+	const int32 ThresholdCount = std::min(
+		static_cast<int32>(EmitterTemplate->LODLevels.size()),
+		static_cast<int32>(ParticleSystem->LODDistances.size()));
+	if (ThresholdCount <= 1)
+	{
+		return 0;
+	}
+
+	const float Distance = FVector::Distance(GetWorldLocation(), ActiveCamera->GetLocation());
+	float PreviousThreshold = ParticleSystem->LODDistances[0];
+	int32 SelectedIndex = 0;
+
+	// 순수 거리 기준 LOD 후보 계산
+	// EmitterTemplate과 ParticleSystem의 LODDistance 중 더 작은 LOD count를 사용
+	for (int32 LODIndex = 1; LODIndex < ThresholdCount; ++LODIndex)
+	{
+		const float Threshold = ParticleSystem->LODDistances[LODIndex];
+		if (Threshold < 0.0f || Threshold < PreviousThreshold)
+		{
+			// 잘못된 LOD 거리 데이터 이후의 전환은 사용하지 않음.
+			break;
+		}
+
+		if (Distance < Threshold)
+		{
+			break;
+		}
+
+		SelectedIndex = LODIndex;
+		PreviousThreshold = Threshold;
+	}
+
+	// hysteresis 비활성 또는 LOD 일시적 유지가 불필요한 상태 처리
+	const int32 ClampedCurrentLODIndex = std::clamp(CurrentLODIndex, 0, ThresholdCount - 1);
+	const float HysteresisDistance = std::max(ParticleSystem->LODHysteresisDistance, 0.0f);
+	if (HysteresisDistance <= 0.0f || SelectedIndex == ClampedCurrentLODIndex)
+	{
+		return SelectedIndex;
+	}
+
+	// 더 먼 LOD로 내려가는 경우
+	// 현재 LOD의 다음 threshold를 hysteresis만큼 지나야 전환 허용
+	if (SelectedIndex > ClampedCurrentLODIndex)
+	{
+		const int32 NextLODIndex = ClampedCurrentLODIndex + 1;
+		if (NextLODIndex < ThresholdCount)
+		{
+			const float SwitchOutDistance = ParticleSystem->LODDistances[NextLODIndex] + HysteresisDistance;
+			if (Distance < SwitchOutDistance)
+			{
+				return ClampedCurrentLODIndex;
+			}
+		}
+	}
+
+	// 더 가까운 LOD로 올라가는 경우
+	// 현재 LOD의 시작 threshold보다 hysteresis만큼 안쪽으로 들어와야 전환 허용
+	if (SelectedIndex < ClampedCurrentLODIndex)
+	{
+		const float CurrentLODStartDistance = ParticleSystem->LODDistances[ClampedCurrentLODIndex];
+		const float SwitchInDistance = std::max(0.0f, CurrentLODStartDistance - HysteresisDistance);
+		if (Distance >= SwitchInDistance)
+		{
+			return ClampedCurrentLODIndex;
+		}
+	}
+
+	return SelectedIndex;
+}
+
+void UParticleSystemComponent::UpdateLODLevel()
+{
+	for (int32 EmitterIndex = 0; EmitterIndex < static_cast<int32>(EmitterInstances.size()); ++EmitterIndex)
+	{
+		FParticleEmitterInstance* Instance = EmitterInstances[static_cast<size_t>(EmitterIndex)];
+		if (Instance == nullptr || Instance->SpriteTemplate == nullptr)
+		{
+			continue;
+		}
+
+		// 거리 기반 LOD 선택
+		int32 NewLODIndex = SelectLODLevelIndex(Instance->SpriteTemplate, Instance->CurrentLODLevelIndex);
+		if (NewLODIndex != 0 && !Instance->SpriteTemplate->ValidateLODTopology(false))
+		{
+			// invalid topology fallback
+			NewLODIndex = 0;
+		}
+
+		if (Instance->CurrentLODLevelIndex == NewLODIndex)
+		{
+			continue;
+		}
+
+		// Cascade-style LOD 전환
+		if (!Instance->SetCurrentLODIndex(NewLODIndex))
+		{
+			UE_LOG_WARNING("[Particle] LOD switch failed. Falling back to LOD 0.");
+			Instance->SetCurrentLODIndex(0);
+		}
+
+		ReleaseRenderData();
+		UPrimitiveComponent::MarkRenderStateDirty(ESceneProxyDirtyFlag::ParticleTemplate);
+	}
+}
+
+void UParticleSystemComponent::CreateEmitterInstances()
+{
+	UParticleSystem* ParticleSystem = GetTemplate();
+	if (ParticleSystem == nullptr)
+	{
+		return;
+	}
+
+	for (UParticleEmitter* EmitterTemplate : ParticleSystem->Emitters)
+	{
+		// 유효한 emitter asset만 instance화
+		if (!IsLiveObject(EmitterTemplate))
+		{
+			continue;
+		}
+
+		// 현재 거리 기준 LOD 선택
+		const int32 LODIndex = SelectLODLevelIndex(EmitterTemplate, 0);
+		if (FParticleEmitterInstance* Instance = CreateEmitterInstanceForLOD(EmitterTemplate, LODIndex))
+		{
+			Instance->SetEmitterIndex(static_cast<int32>(EmitterInstances.size()));
+			EmitterInstances.push_back(Instance);
+		}
+	}
+}
+
+FParticleEmitterInstance* UParticleSystemComponent::CreateEmitterInstanceForLOD(
+	UParticleEmitter* EmitterTemplate,
+	int32 LODIndex)
+{
+	// template 방어
+	if (!IsLiveObject(EmitterTemplate))
+	{
+		return nullptr;
+	}
+
+	// runtime cache 최신화
+	EmitterTemplate->CacheEmitterModuleInfo();
+
+	if (LODIndex != 0 && !EmitterTemplate->ValidateLODTopology(false))
+	{
+		// invalid topology fallback
+		LODIndex = 0;
+	}
+
+	// LOD / TypeData 조회
+	UParticleLODLevel* LODLevel = GetLODLevel(EmitterTemplate, LODIndex);
+	UParticleModuleTypeDataBase* TypeData = GetLiveTypeData(LODLevel);
+
+	if (TypeData == nullptr)
+	{
+		UE_LOG_WARNING("[Particle] Emitter has no TypeDataModule. Falling back to base particle emitter instance.");
+	}
+
+	// TypeData factory 또는 base instance
+	FParticleEmitterInstance* Instance = TypeData != nullptr
+		? TypeData->CreateInstance(EmitterTemplate, *InstanceOwner)
+		: new FParticleEmitterInstance(*InstanceOwner);
+
+	// LOD 기준 초기화
+	if (Instance != nullptr && Instance->Init(EmitterTemplate, LODIndex))
+	{
+		return Instance;
+	}
+
+	// init 실패 정리
+	delete Instance;
+	return nullptr;
+}

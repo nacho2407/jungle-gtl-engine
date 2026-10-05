@@ -1,0 +1,9 @@
+{
+        "Name" : "Asset/Material/TestMaterial_Inst_1.matinst",
+        "OverridedParams" : [{
+            "Name" : "Opacity",
+            "Type" : "Float",
+            "Value" : 0.130000
+          }],
+        "Parent" : "Asset/Material/TestMaterial.mat"
+      }

@@ -1,0 +1,142 @@
+﻿#pragma once
+
+#include "PrimitiveComponent.h"
+#include "Core/CoreMinimal.h"
+#include "Render/Resource/Material.h"
+#include <memory>
+
+class ITransformProxy;
+class USceneComponent;
+struct FMeshData;
+
+UCLASS()
+class UGizmoComponent : public UPrimitiveComponent
+{
+private:
+	enum EGizmoMode
+	{
+		Translate,
+		Rotate,
+		Scale,
+		End
+	};
+
+	std::shared_ptr<ITransformProxy> Proxy;
+	const TArray<AActor*>* AllSelectedActors = nullptr;
+	EGizmoMode CurMode = EGizmoMode::Translate;
+	FVector LastIntersectionLocation;
+	FVector RotationPlaneX;
+	FVector RotationPlaneY;
+	float InteractionStartAngle = 0.0f;
+	float InteractionCurAngle = 0.0f;
+	FMatrix InitialRotationDragTransform;
+	const float AxisLength = 1.0f;
+	float Radius = 0.1f;
+	const float ScaleSensitivity = 1.0f;
+	int32 SelectedAxis = -1;
+	FVector DraggingRotationAxis;
+	bool bIsFirstFrameOfDrag = true;
+	bool bIsHolding = false;
+	bool bIsWorldSpace = true;
+	bool bPressedOnHandle = false;
+	bool bTranslateSnapEnabled = false;
+	bool bRotateSnapEnabled = false;
+	bool bScaleSnapEnabled = false;
+	float TranslateSnapStep = 1.0f;
+	float RotateSnapStepDegrees = 10.0f;
+	float ScaleSnapStep = 0.1f;
+	float PendingSnapDelta = 0.0f;
+
+	bool IntersectRayAxis(const FRay& Ray, FVector AxisEnd, float& OutRayT);
+	const FMeshData* GetActiveMeshData() const;
+
+	//Control Target Method
+	void HandleDrag(float DragAmount);
+	void TranslateTarget(float DragAmount);
+	void RotateTarget(float DragAmount);
+	void ScaleTarget(float DragAmount);
+
+	void UpdateLinearDrag(const FRay& Ray);
+	void UpdateAngularDrag(const FRay& Ray);
+	float ComputeRotationAngleOnPlane(const FVector& WorldPoint) const;
+	float QuantizeDragAmount(float DragAmount);
+	float QuantizeRotationAngleFromStart(float AngleRadians) const;
+	USceneComponent* GetTargetSceneComponent() const;
+	FVector GetTargetLocation() const;
+	FVector GetTargetRotation() const;
+	FVector GetTargetScale() const;
+	bool IsTargetActorAlive() const;
+	bool IsTargetComponentAlive() const;
+
+public:
+	GENERATED_BODY(UGizmoComponent, UPrimitiveComponent)
+	UGizmoComponent();
+
+	// 기즈모 컴포넌트는 복제를 지원하지 않습니다.
+	UObject* Duplicate(const FDuplicateContext* Context = nullptr) override { (void)Context; return nullptr; }
+
+	void UpdateWorldAABB() const override;
+	bool RaycastMesh(const FRay& Ray, FHitResult& OutHitResult) override;
+	bool HitTestMesh(const FRay& Ray, FHitResult& OutHitResult);
+
+	FVector GetVectorForAxis(int32 Axis);
+	void RenderGizmo() {}
+	void SetProxy(std::shared_ptr<ITransformProxy> InProxy);
+	inline std::shared_ptr<ITransformProxy> GetProxy() const { return Proxy; }
+	void SetSelectedActors(const TArray<AActor*>* InSelectedActors) { AllSelectedActors = InSelectedActors; }
+	void SetHolding(bool bHold);
+	inline bool IsHolding() const { return bIsHolding; }
+	inline bool IsHovered() const { return SelectedAxis != -1; }
+	bool HasTarget() const;
+	inline int32 GetSelectedAxis() const { return SelectedAxis; }
+
+	inline void SetPressedOnHandle(bool bPressed) { bPressedOnHandle = bPressed; }
+	inline bool IsPressedOnHandle() const { return bPressedOnHandle; }
+
+	void UpdateHoveredAxis(int Index);
+	void UpdateDrag(const FRay& Ray);
+	void DragEnd();
+
+	void SetTargetLocation(FVector NewLocation);
+	void SetTargetRotation(FVector NewRotation);
+	void SetTargetScale(FVector NewScale);
+
+	void SetTranslateSnap(bool bEnabled, float Step);
+	void SetRotateSnap(bool bEnabled, float DegreesStep);
+	void SetScaleSnap(bool bEnabled, float Step);
+
+	void SetNextMode();
+	void UpdateGizmoMode(EGizmoMode NewMode);
+	inline void SetTranslateMode() { UpdateGizmoMode(EGizmoMode::Translate); }
+	inline void SetRotateMode() { UpdateGizmoMode(EGizmoMode::Rotate); }
+	inline void SetScaleMode() { UpdateGizmoMode(EGizmoMode::Scale); }
+	void UpdateGizmoTransform();
+	void ApplyScreenSpaceScaling(const FVector& CameraLocation);
+	// 직교 뷰 전용: OrthoHeight 기반으로 기즈모 스케일 설정
+	void ApplyScreenSpaceScalingOrtho(float OrthoHeight);
+	void SetWorldSpace(bool bWorldSpace);
+	bool IsWorldSpace() const { return bIsWorldSpace; }
+
+
+	//UActorComponent Override
+	void Deactivate() override;
+
+	EPrimitiveType GetPrimitiveType() const override;
+
+	UMaterialInterface* GetMaterial() { return Material; }
+
+	void SetVirtualMouseX(float InVirtualMouseX) { VirtualMouseX = InVirtualMouseX; }
+	void SetVirtualMouseY(float InVirtualMouseY) { VirtualMouseY = InVirtualMouseY; }
+	float GetVirtualMouseX() const { return VirtualMouseX; }
+	float GetVirtualMouseY() const { return VirtualMouseY; }
+
+private:
+	const FMeshData* GizmoMeshData = nullptr;
+	UMaterialInterface* Material = nullptr;
+	
+	FVector LocalExtents = FVector(1.5f, 1.5f, 1.5f);
+
+	// Rotation, Scale 드래그 도중에 실제 마우스 좌표는 유지하고 가상으로 바꾸기 위한 좌표
+	float VirtualMouseX = 0.0f;
+	float VirtualMouseY = 0.0f;
+};
