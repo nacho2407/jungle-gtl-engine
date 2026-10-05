@@ -34,9 +34,9 @@ TYPE_MAP = {
 
 # 스크립트 위치를 기준으로 Root와 Source 경로를 계산합니다.
 ROOT = Path(__file__).resolve().parent.parent
-SOURCE_DIR = ROOT / 'JSEngine' / 'Source'
+SOURCE_DIR = ROOT / 'Source'
 ENGINE_SOURCE_DIR = SOURCE_DIR / 'Engine'
-REFLECTION_OUTPUT_DIR = ROOT / 'JSEngine' / 'Intermediate' / 'Reflection'
+REFLECTION_OUTPUT_DIR = ROOT / 'Intermediate' / 'Reflection'
 
 ALL_CLASS_INFOS = []
 GENERATED_LUA_BINDING_CLASSES = []

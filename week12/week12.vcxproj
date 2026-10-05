@@ -34,7 +34,7 @@
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{55068e81-c0a0-49f9-ab7b-54aea968722b}</ProjectGuid>
-    <RootNamespace>Week2</RootNamespace>
+    <RootNamespace>week12</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -334,7 +334,7 @@
     </Link>
   </ItemDefinitionGroup>
   <Target Name="RestoreNuGetPackages" BeforeTargets="PrepareForBuild" Condition="!Exists('$(ProjectDir)packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets')">
-    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$ErrorActionPreference='Stop'; $toolsDir = Join-Path '$(MSBuildProjectDirectory)' 'Build\NuGet'; $nuget = Join-Path $toolsDir 'nuget.exe'; if (!(Test-Path $nuget)) { New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null; Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile $nuget }; &amp; $nuget restore '$(MSBuildProjectDirectory)\packages.config' -PackagesDirectory '$(MSBuildProjectDirectory)\packages' -ConfigFile '$(MSBuildProjectDirectory)\..\nuget.config'&quot;" />
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -Command &quot;$ErrorActionPreference='Stop'; $toolsDir = Join-Path '$(MSBuildProjectDirectory)' 'Build\NuGet'; $nuget = Join-Path $toolsDir 'nuget.exe'; if (!(Test-Path $nuget)) { New-Item -ItemType Directory -Force -Path $toolsDir | Out-Null; Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile $nuget }; &amp; $nuget restore '$(MSBuildProjectDirectory)\packages.config' -PackagesDirectory '$(MSBuildProjectDirectory)\packages' -ConfigFile '$(MSBuildProjectDirectory)\nuget.config'&quot;" />
   </Target>
   <Target Name="BuildRmlUiStaticLibrary" BeforeTargets="ClCompile">
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\BuildTools\Scripts\BuildRmlUiLib.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(ThirdPartyBinaryConfiguration)&quot; -Platform &quot;$(Platform)&quot;" />
@@ -343,7 +343,7 @@
     <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\BuildTools\Scripts\BuildSoLoudLib.ps1&quot; -ProjectDir &quot;$(MSBuildProjectDirectory)&quot; -Configuration &quot;$(ThirdPartyBinaryConfiguration)&quot; -Platform &quot;$(Platform)&quot;" />
   </Target>
   <Target Name="GenerateReflectionCode" BeforeTargets="ClCompile">
-    <Exec Command="&quot;$(MSBuildProjectDirectory)\..\Scripts\python\python.exe&quot; &quot;$(MSBuildProjectDirectory)\..\Scripts\GenerateReflection.py&quot;" />
+    <Exec Command="&quot;$(MSBuildProjectDirectory)\Scripts\python\python.exe&quot; &quot;$(MSBuildProjectDirectory)\Scripts\GenerateReflection.py&quot;" />
     <ItemGroup>
       <ClCompile Include="$(MSBuildProjectDirectory)\Intermediate\Reflection\**\*.gen.cpp" />
     </ItemGroup>
@@ -987,8 +987,8 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="pch.cpp">
+    <ClCompile Include="Source\main.cpp" />
+    <ClCompile Include="Source\pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
@@ -1392,7 +1392,7 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
     <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
     <ClInclude Include="ThirdParty\luajit\src\lua.h" />
-    <ClInclude Include="pch.h" />
+    <ClInclude Include="Source\pch.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\Atmosphere\HeightFogPixelShader.hlsl" />
