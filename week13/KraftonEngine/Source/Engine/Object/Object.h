@@ -1,0 +1,284 @@
+#pragma once
+
+#include "Profiling/Stats/MemoryStats.h"
+#include "Object/FName.h"
+#include "Core/Singleton.h"
+#include "Core/Types/PropertyTypes.h"
+#include "Object/Reflection/UClass.h"
+#include "Object/Reflection/ObjectMacros.h"
+
+#include "Source/Engine/Object/Object.generated.h"
+
+class FArchive;
+class FDuplicateArchiveContext;
+
+// Forward — IsValid 의 실제 정의는 GUObjectSet 선언 뒤. UObject::GetTypedOuter 가
+// non-dependent name lookup 으로 IsValid 를 찾을 수 있게 미리 알려둠.
+class UObject;
+inline bool IsValid(const UObject* Object);
+inline bool IsAliveObject(const UObject* Object);
+
+template<typename T>
+T* Cast(UObject* Obj);
+
+template<typename T>
+const T* Cast(const UObject* Obj);
+
+enum EObjectFlags : uint32
+{
+    RF_None          = 0,
+    RF_RootSet       = 1 << 0,
+    RF_PendingKill   = 1 << 1,
+    RF_Unreachable   = 1 << 2,
+    RF_Marked        = 1 << 3,
+    RF_BeginDestroy  = 1 << 4,
+    RF_FinishDestroy = 1 << 5,
+    RF_Garbage       = 1 << 6,
+};
+
+class FReferenceCollector;
+
+UCLASS()
+class UObject
+{
+public:
+	GENERATED_BODY()
+
+	UObject();
+	virtual ~UObject();
+
+	uint32 GetUUID() const { return UUID; }
+	uint32 GetInternalIndex() const { return InternalIndex; }
+	void SetUUID(uint32 InUUID) { UUID = InUUID; }
+	void SetInternalIndex(uint32 InIndex) { InternalIndex = InIndex; }
+
+	// Outer — 객체의 논리적 스코프 (소유 의미 아님). 직렬화 제외.
+	UObject* GetOuter() const { return Outer; }
+	void SetOuter(UObject* InOuter) { Outer = InOuter; }
+
+	// Outer 체인을 따라 첫 번째 T를 찾는다 (UE의 GetTypedOuter<T>와 동일 시맨틱).
+	// PendingKill 처리 도중 World 가 actor 보다 먼저 delete 되면 component 의
+	// DestroyRenderState 가 Owner->GetWorld → GetTypedOuter<UWorld> 경로를 타다가
+	// freed Outer 를 deref 해 crash 났음. 매 iteration 에서 IsValid 로 살아있는 UObject
+	// 만 따라가도록 가드.
+	template<typename T>
+	T* GetTypedOuter() const
+	{
+		for (UObject* O = Outer; IsValid(O); O = O->Outer)
+		{
+			if (T* Hit = Cast<T>(O))
+			{
+				return Hit;
+			}
+		}
+		return nullptr;
+	}
+
+	template<typename T>
+	T* GetTypedOuterEvenIfPendingKill() const
+	{
+		for (UObject* O = Outer; IsAliveObject(O); O = O->Outer)
+		{
+			if (O->IsA<T>())
+			{
+				return static_cast<T*>(O);
+			}
+		}
+		return nullptr;
+	}
+
+	virtual UObject* Duplicate(UObject* NewOuter = nullptr) const;
+	UObject* DuplicateWithArchiveContext(UObject* NewOuter, FDuplicateArchiveContext& DuplicateContext) const;
+	virtual void Serialize(FArchive& Ar);
+	void SerializeProperties(FArchive& Ar, uint32 RequiredFlags);
+	virtual void PostDuplicate() {}
+
+	virtual void GetEditableProperties(TArray<FPropertyValue>& OutProps);
+	virtual void PreGetEditableProperties() {}
+	virtual bool ShouldExposeProperty(const FProperty& Property) const;
+	virtual void PostEditChangeProperty(const FPropertyChangedEvent& Event);
+	virtual void PostEditProperty(const char* PropertyName);
+
+	static void* operator new(size_t Size)
+	{
+		void* Ptr = std::malloc(Size);
+		if (Ptr)
+		{
+			MemoryStats::OnAllocated(static_cast<uint32>(Size));
+		}
+		return Ptr;
+	}
+
+	static void operator delete(void* Ptr, size_t Size)
+	{
+		if (Ptr)
+		{
+			MemoryStats::OnDeallocated(static_cast<uint32>(Size));
+			std::free(Ptr);
+		}
+	}
+
+	// FName
+	FName GetFName() const { return ObjectName; }
+	FString GetName() const { return ObjectName.ToString(); }
+	void SetFName(const FName& InName) { ObjectName = InName; }
+
+	// RTTI
+	virtual UClass* GetClass() const { return StaticClass(); }
+
+	template<typename T>
+	bool IsA() const { return GetClass()->IsA(T::StaticClass()); }
+
+	static UClass StaticClassInstance;
+	static UClass* StaticClass() { return &StaticClassInstance; }
+
+    uint32 GetObjectFlags() const { return ObjectFlags; }
+
+    bool HasAnyFlags(uint32 Flags) const { return (ObjectFlags & Flags) != 0; }
+
+    bool HasAllFlags(uint32 Flags) const { return (ObjectFlags & Flags) == Flags; }
+
+    void SetFlags(uint32 Flags) { ObjectFlags |= Flags; }
+
+    void ClearFlags(uint32 Flags) { ObjectFlags &= ~Flags; }
+
+    bool IsRooted() const { return HasAnyFlags(RF_RootSet); }
+    bool IsPendingKill() const { return HasAnyFlags(RF_PendingKill); }
+    bool IsGarbage() const { return HasAnyFlags(RF_Garbage); }
+
+    void AddToRoot() { SetFlags(RF_RootSet); }
+    void RemoveFromRoot() { ClearFlags(RF_RootSet); }
+    void MarkPendingKill() { SetFlags(RF_PendingKill); }
+
+    virtual void AddReferencedObjects(FReferenceCollector& Collector);
+    virtual void BeginDestroy();
+    virtual bool IsReadyForFinishDestroy() const { return true; }
+    virtual void FinishDestroy();
+
+    uint32       GetSerialNumber() const { return SerialNumber; }
+    virtual bool ProcessEvent(
+        const FFunction* Function,
+        void*            ParametersStorage  = nullptr,
+        void*            ReturnValueStorage = nullptr
+        );
+
+protected:
+	FName ObjectName;
+
+private:
+    uint32   UUID;
+    uint32   InternalIndex;
+    UObject* Outer        = nullptr;
+    uint32   ObjectFlags  = RF_None;
+    uint32   SerialNumber = 0;
+};
+
+extern TArray<UObject*> GUObjectArray;
+// 살아있는 UObject 포인터를 O(1) 로 조회하기 위한 set. UObject ctor/dtor 가 자동 유지.
+// dangling pointer 도 hash 만 계산하므로(deref 없음) 안전.
+extern TSet<UObject*> GUObjectSet;
+
+// 포인터가 현재 살아있는 UObject 를 가리키는지 확인. dangling/freed 포인터가 들어와도
+// 해시 테이블 조회만 하므로 deref 안 함 — 안전.
+inline UObject* GetAliveObjectFromAddress(const void* ObjectAddress)
+{
+    if (!ObjectAddress)
+    {
+        return nullptr;
+    }
+
+    // This intentionally does not dereference ObjectAddress before checking the
+    // global live-object set. It is used by weak/object-handle wrappers where T
+    // may be only forward declared at the assignment site. Engine UObjects use
+    // single UObject inheritance, so the UObject subobject address is the object
+    // address used by GUObjectSet.
+    UObject* Candidate = reinterpret_cast<UObject*>(const_cast<void*>(ObjectAddress));
+    return GUObjectSet.find(Candidate) != GUObjectSet.end() ? Candidate : nullptr;
+}
+
+inline bool IsAliveObject(const UObject* Object)
+{
+    return GetAliveObjectFromAddress(Object) != nullptr;
+}
+
+inline bool IsValid(const UObject* Object)
+{
+    UObject* LiveObject = GetAliveObjectFromAddress(Object);
+    return LiveObject && !LiveObject->HasAnyFlags(RF_PendingKill | RF_Garbage);
+}
+
+class UObjectManager : public TSingleton<UObjectManager>
+{
+	friend class TSingleton<UObjectManager>;
+
+public:
+	template<typename T>
+	T* CreateObject(UObject* InOuter = nullptr)
+	{
+		static_assert(std::is_base_of<UObject, T>::value, "T must derive from UObject");
+		T* Obj = new T();
+		Obj->SetOuter(InOuter);
+
+		const char* ClassName = T::StaticClass()->GetName();
+		uint32& Counter = NameCounters[ClassName];
+		FString Name = FString(ClassName) + "_" + std::to_string(Counter++);
+		Obj->SetFName(FName(Name));
+
+		return Obj;
+	}
+
+	// UObject destruction is deferred to GC. This function only removes the object
+	// from normal reachability by marking it pending kill; BeginDestroy / FinishDestroy
+	// / delete are owned exclusively by FGarbageCollector.
+	void DestroyObject(UObject* Obj)
+	{
+        if (!IsAliveObject(Obj) || Obj->IsRooted())
+        {
+            return;
+        }
+
+        if (Obj->HasAnyFlags(RF_PendingKill | RF_Garbage))
+        {
+            return;
+        }
+
+        Obj->MarkPendingKill();
+    }
+
+    // Kept for API compatibility only. UObject memory is still reclaimed by GC;
+    // callers that need synchronous reclamation must request a GC pass after this.
+    void DestroyObjectImmediate(UObject* Obj)
+    {
+        DestroyObject(Obj);
+    }
+
+private:
+	TMap<FString, uint32> NameCounters;
+
+public:
+	UObject* FindByUUID(uint32 InUUID)
+	{
+		for (auto* Obj : GUObjectArray)
+			if (Obj && Obj->GetUUID() == InUUID)
+				return Obj;
+		return nullptr;
+	}
+
+	UObject* FindByIndex(uint32 Index)
+	{
+		if (Index >= GUObjectArray.size()) return nullptr;
+		return GUObjectArray[Index];
+	}
+};
+
+template<typename T>
+T* Cast(UObject* Obj)
+{
+    return (IsValid(Obj) && Obj->IsA<T>()) ? static_cast<T*>(Obj) : nullptr;
+}
+
+template<typename T>
+const T* Cast(const UObject* Obj)
+{
+    return (IsValid(Obj) && Obj->IsA<T>()) ? static_cast<const T*>(Obj) : nullptr;
+}

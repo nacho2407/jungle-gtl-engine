@@ -1,0 +1,41 @@
+#pragma once
+#include "Editor/UI/Panel/EditorPanelWidget.h"
+#include "ContentItem.h"
+#include <d3d11.h>
+#include <memory>
+#include "ContentBrowserContext.h"
+#include "ContentBrowserElement.h"
+
+class FEditorContentBrowserWidget final : public FEditorPanelWidget
+{
+	struct FDirNode
+	{
+		FContentItem Self;
+		TArray<FDirNode> Children;
+	};
+
+public:
+	void Initialize(UEditorEngine* InEditor, ID3D11Device* InDevice);
+	void Render(const FEditorPanelContext& Context) override;
+	void Refresh();
+	void SaveToSettings() const;
+	void SetIconSize(float Size);
+	float GetIconSize() const { return BrowserContext.ContentSize.x; }
+
+private:
+	void LoadFromSettings();
+	void RefreshContent();
+	void DrawDirNode(const FDirNode& InNode);
+	void DrawContents();
+	void RenderFbxImportOptionsPopup();
+
+	TArray<FContentItem> ReadDirectory(std::wstring Path);
+	FDirNode BuildDirectoryTree(const std::filesystem::path& DirPath);
+
+private:
+	ContentBrowserContext BrowserContext;
+
+	FDirNode RootNode;
+	TArray<std::shared_ptr<ContentBrowserElement>> CachedBrowserElements;
+	TMap<FString, std::wstring> IconFileMap;
+};

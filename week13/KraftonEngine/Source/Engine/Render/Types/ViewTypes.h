@@ -1,0 +1,132 @@
+#pragma once
+
+#include "Core/Types/CoreTypes.h"
+
+enum class EViewMode : int32
+{
+	Lit_Phong = 0,
+	Unlit,
+	Lit_Gouraud,
+	Lit_Lambert,
+	Wireframe,
+	SceneDepth,
+	WorldNormal,
+	LightCulling,
+	Count
+};
+
+enum class ELightCullingMode : uint32
+{
+	Off = 0,
+	Tile = 1,
+	Cluster = 2
+};
+
+enum class ESkinningMode : uint32
+{
+	CPU = 0,
+	GPU = 1,
+};
+
+namespace SkinningModeRuntime
+{
+	inline ESkinningMode Current = ESkinningMode::GPU;
+
+	inline ESkinningMode Get()
+	{
+		return Current;
+	}
+
+	inline void Set(ESkinningMode InMode)
+	{
+		Current = InMode;
+	}
+}
+
+struct FShowFlags
+{
+	bool bStaticMesh = true;
+	bool bSkeletalMesh = true;
+	bool bGrid = true;
+	bool bWorldAxis = true;
+	bool bGizmo = true;
+	bool bBillboardText = true;
+	bool bBoundingVolume = false;
+	bool bDebugDraw = true;
+	bool bOctree = false;
+	bool bFog = true;
+	bool bDepthOfField = false;
+	bool bDOFBokeh = false;
+	bool bFXAA = false;
+	bool bGammaCorrection = true;
+	bool bViewLightCulling = false;
+	bool bVisualize25DCulling = false;
+	bool bShowShadowFrustum = false;
+	bool bCollision = true;
+	bool bShowCollisionShape = false;	// PIE/Game에서 콘솔로 콜리전 shape 와이어프레임 강제 표시
+	bool bPhysicsBody = false;
+	bool bDebugPhysicsAsset = false;
+	bool bDebugCloth = false;
+	bool bParticle = true;
+};
+
+// 뷰포트 카메라 프리셋 (Perspective / 6방향 Orthographic)
+enum class ELevelViewportType : uint8
+{
+	Perspective,
+	Top,		// +Z → -Z
+	Bottom,		// -Z → +Z
+	Left,		// -Y → +Y
+	Right,		// +Y → -Y
+	Front,		// +X → -X
+	Back,		// -X → +X
+	FreeOrthographic	// 자유 각도 Orthographic
+};
+
+// 뷰포트별 렌더 옵션 — 각 뷰포트 클라이언트가 독립적으로 소유
+struct FViewportRenderOptions
+{
+	EViewMode ViewMode = EViewMode::Lit_Phong;
+	FShowFlags ShowFlags;
+
+	float GridSpacing = 1.0f;
+	int32 GridHalfLineCount = 100;
+
+	float CameraMoveSensitivity = 1.0f;
+	float CameraRotateSensitivity = 1.0f;
+	ELevelViewportType ViewportType = ELevelViewportType::Perspective;
+
+	// Scene Depth 전용 설정
+	int32 SceneDepthVisMode = 0;
+	float Exponent = 128.0f;
+	float Range = 1000.0f;
+
+	// FXAA 전용 설정
+	float EdgeThreshold = 0.125f;
+	float EdgeThresholdMin = 0.0625f;
+
+	// Tone Mapping / Gamma Correction settings
+	float Gamma = 2.4f;
+	float Exposure = 1.0f;
+
+	// Depth of Field settings
+	float DOFAperture = 4.0f; // F-Stop
+	float DOFFocalDistance = 10.0f;
+	float DOFMaxCoCRadius = 8.0f;
+	int32 DOFApertureBladeCount = 6;
+	float DOFBokehThreshold = 2.0f;
+	float DOFBokehIntensity = 1.0f;
+	float DOFBokehRadiusScale = 1.0f;
+
+	// Light Culling 뷰모드 전용 설정
+	ELightCullingMode LightCullingMode = ELightCullingMode::Cluster;
+	float HeatMapMax = 20.0f;
+	bool Enable25DCulling = true;
+
+	// Mesh editor bone weight visualization
+	bool bWeightBoneHeatMap = false;
+	int32 WeightBoneHeatMapBoneIndex = -1;
+
+	// 프리뷰 RT clear color (RGBA, 0..1). 에디터 프리뷰 파이프라인이 이 값을 클리어에 사용.
+	float BackgroundColor[4] = { 0.12f, 0.12f, 0.13f, 1.0f };
+};

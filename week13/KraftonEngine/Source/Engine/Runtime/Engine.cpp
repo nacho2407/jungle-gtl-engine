@@ -1,0 +1,309 @@
+#include "Engine/Runtime/Engine.h"
+
+#include "Platform/Paths.h"
+#include "Core/Logging/Log.h"
+#include "Core/Logging/Notification.h"
+#include "Engine/Platform/DirectoryWatcher.h"
+#include "Profiling/Stats/ClothStats.h"
+#include "Profiling/Stats/Stats.h"
+#include "Profiling/StartupProfiler.h"
+#include "Engine/Input/InputSystem.h"
+#include "Engine/Platform/WindowsWindow.h"
+#include "Resource/ResourceManager.h"
+#include "Render/Pipeline/DefaultRenderPipeline.h"
+#include "Render/Resource/MeshBufferManager.h"
+#include "Mesh/MeshManager.h"
+#include "Texture/Texture2D.h"
+#include "GameFramework/World.h"
+#include "GameFramework/AActor.h"
+#include "Core/TickFunction.h"
+#include "Lua/LuaScriptManager.h"
+#include "UI/UIManager.h"
+#include "Audio/AudioManager.h"
+#include  "Object/GarbageCollection.h"
+#include "Viewport/GameViewportClient.h"
+#include "Materials/MaterialManager.h"
+#include "Animation/AnimationManager.h"
+#include "Animation/Skeleton/SkeletonManager.h"
+#include "Animation/Graph/AnimGraphManager.h"
+#include "Particles/ParticleSystemManager.h"
+#include "CameraShake/CameraShakeManager.h"
+#include "FloatCurve/FloatCurveManager.h"
+#include "LuaBlueprint/LuaBlueprintManager.h"
+
+UEngine* GEngine = nullptr;
+
+namespace
+{
+	ELevelTick ToLevelTickType(EWorldType WorldType)
+	{
+		switch (WorldType)
+		{
+		case EWorldType::Editor:
+		case EWorldType::EditorPreview:
+			return ELevelTick::LEVELTICK_ViewportsOnly;
+		case EWorldType::PIE:
+		case EWorldType::Game:
+			return ELevelTick::LEVELTICK_All;
+		default:
+			return ELevelTick::LEVELTICK_TimeOnly;
+		}
+	}
+}
+
+void UEngine::Init(FWindowsWindow* InWindow)
+{
+	Window = InWindow;
+
+	// 싱글턴 초기화 순서 보장
+	FNamePool::Get();
+	FObjectFactory::Get();
+	FLogManager::Get().Initialize();
+
+	InputSystem::Get().SetOwnerWindow(Window->GetHWND());
+
+	{
+		SCOPE_STARTUP_STAT("Renderer::Create");
+		Renderer.Create(Window->GetHWND());
+	}
+
+	ID3D11Device* Device = Renderer.GetFD3DDevice().GetDevice();
+	ID3D11DeviceContext* DeviceContext = Renderer.GetFD3DDevice().GetDeviceContext();
+
+	{
+		SCOPE_STARTUP_STAT("ClothContext::Init");
+		ClothContext.Initialize(Device, DeviceContext);
+	}
+
+	{
+		SCOPE_STARTUP_STAT("MeshBufferManager::Init");
+		FMeshBufferManager::Get().Initialize(Device);
+	}
+
+	{
+		SCOPE_STARTUP_STAT("ResourceManager::LoadFromFile");
+		FResourceManager::Get().LoadFromFile(FPaths::ToUtf8(FPaths::ResourceFilePath()), Device);
+	}
+
+	{
+		SCOPE_STARTUP_STAT("RenderPipeline::Create");
+		SetRenderPipeline(std::make_unique<FDefaultRenderPipeline>(this, Renderer));
+	}
+
+	UUIManager::Get().Initialize(Device);
+
+	FDirectoryWatcher::Get().Initialize();
+	FLuaScriptManager::Initialize();
+	FAudioManager::Get().Initialize();
+}
+
+void UEngine::Shutdown()
+{
+	while (!WorldList.empty())
+	{
+		DestroyWorldContext(WorldList.back().ContextHandle);
+	}
+
+	ClothContext.Shutdown();
+
+	// UI 가 Lua callback (FWidgetClickEventListener::Callback 의 sol::protected_function 등)
+	// 을 보유하므로, 위젯 destroy 시점에 lua_State 가 살아있어야 deref 가 안전.
+	// 따라서 UIManager → GC(잔여 UObject sol ref 정리) → LuaScriptManager 순서.
+	UUIManager::Get().Shutdown();
+	FGarbageCollector::Get().CollectGarbage();
+	FLuaScriptManager::Shutdown();
+	FAudioManager::Get().Shutdown();
+	FDirectoryWatcher::Get().Shutdown();
+	FLogManager::Get().Shutdown();
+	RenderPipeline.reset();
+	FResourceManager::Get().ReleaseGPUResources();
+	UTexture2D::ReleaseAllGPU();
+	FMeshManager::ReleaseAllGPU();
+	FMaterialManager::Get().Release();
+
+	FAnimationManager::Get().ClearCache();
+	FSkeletonManager::Get().ClearCache();
+	FAnimGraphManager::Get().ClearCache();
+	FLuaBlueprintManager::Get().ClearCache();
+	FParticleSystemManager::Get().ClearCache();
+	FCameraShakeManager::Get().ClearCache();
+	FFloatCurveManager::Get().ClearCache();
+	FGarbageCollector::Get().CollectGarbage();
+
+	FMeshBufferManager::Get().Release();
+	Renderer.Release();
+}
+
+void UEngine::BeginPlay()
+{
+	FWorldContext* Context = GetWorldContextFromHandle(ActiveWorldHandle);
+	if (Context && Context->World)
+	{
+		if (Context->WorldType == EWorldType::Game || Context->WorldType == EWorldType::PIE)
+		{
+			Context->World->BeginPlay();
+		}
+	}
+}
+
+void UEngine::Tick(float DeltaTime)
+{
+	FDirectoryWatcher::Get().ProcessChanges();
+	FNotificationManager::Get().Tick(DeltaTime);
+	InputSystem::Get().Tick();
+	FAudioManager::Get().Tick();
+	CLOTH_STATS_RESET_SIMULATION();
+	CLOTH_STATS_RESET_RENDER();
+	WorldTick(DeltaTime);
+    FGarbageCollector::Get().CollectGarbage();
+	Render(DeltaTime);
+}
+
+void UEngine::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UObject::AddReferencedObjects(Collector);
+
+    for (FWorldContext& Ctx : WorldList)
+    {
+        Collector.AddReferencedObject(Ctx.World, "UEngine.WorldList.World");
+    }
+
+    Collector.AddReferencedObject(GameViewportClient, "UEngine.GameViewportClient");
+
+    UUIManager::Get().AddReferencedObjects(Collector);
+}
+
+void UEngine::Render(float DeltaTime)
+{
+	if (RenderPipeline)
+	{
+		SCOPE_STAT_CAT("UEngine::Render", "2_Render");
+		RenderPipeline->Execute(DeltaTime, Renderer);
+	}
+}
+
+void UEngine::SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline)
+{
+	RenderPipeline = std::move(InPipeline);
+}
+
+void UEngine::OnWindowResized(uint32 Width, uint32 Height)
+{
+	if (Width == 0 || Height == 0)
+	{
+		return;
+	}
+
+	Renderer.GetFD3DDevice().OnResizeViewport(Width, Height);
+	Renderer.ResetRenderStateCache();
+}
+
+void UEngine::WorldTick(float DeltaTime)
+{
+	SCOPE_STAT_CAT("UEngine::WorldTick", "1_WorldTick");
+
+	// PIE 활성 시 Editor 월드는 sleep (UE 동작과 동일).
+	// culling/octree/visibility 갱신을 건너뛰어 50k+ 환경에서 비용 2배를 방지.
+	bool bHasPIEWorld = false;
+	for (const FWorldContext& Ctx : WorldList)
+	{
+		if (Ctx.WorldType == EWorldType::PIE && Ctx.World)
+		{
+			bHasPIEWorld = true;
+			break;
+		}
+	}
+
+	// 월드 타입별 Tick 라우팅:
+	// - Editor: bTickInEditor 액터만 TickManager 대상
+	// - PIE/Game: BeginPlay 이후 bNeedsTick 액터만 TickManager 대상
+	// - 기타:   시간 갱신만 유지
+	for (FWorldContext& Ctx : WorldList)
+	{
+		UWorld* World = Ctx.World;
+		if (!World) continue;
+
+		// PIE 활성 시 Editor 월드는 완전히 skip
+		if (bHasPIEWorld && Ctx.WorldType == EWorldType::Editor)
+		{
+			continue;
+		}
+
+		const ELevelTick TickType = ToLevelTickType(Ctx.WorldType);
+
+		// 월드 단위 업데이트 (FlushPrimitive / VisibleProxies / DebugDraw /s TickManager)
+		World->Tick(DeltaTime, TickType);
+	}
+}
+
+UWorld* UEngine::GetWorld() const
+{
+	const FWorldContext* Context = GetWorldContextFromHandle(ActiveWorldHandle);
+	return Context ? Context->World : nullptr;
+}
+
+FWorldContext& UEngine::CreateWorldContext(EWorldType Type, const FName& Handle, const FString& Name)
+{
+	FWorldContext Context;
+	Context.WorldType = Type;
+	Context.ContextHandle = Handle;
+	Context.ContextName = Name.empty() ? Handle.ToString() : Name;
+	Context.World = UObjectManager::Get().CreateObject<UWorld>();
+	WorldList.push_back(Context);
+	return WorldList.back();
+}
+
+void UEngine::DestroyWorldContext(const FName& Handle)
+{
+	for (auto it = WorldList.begin(); it != WorldList.end(); ++it)
+	{
+		if (it->ContextHandle == Handle)
+		{
+			it->World->RouteWorldDestroyed();
+			UObjectManager::Get().DestroyObject(it->World);
+			WorldList.erase(it);
+			return;
+		}
+	}
+}
+
+FWorldContext* UEngine::GetWorldContextFromHandle(const FName& Handle)
+{
+	for (FWorldContext& Ctx : WorldList)
+	{
+		if (Ctx.ContextHandle == Handle)
+		{
+			return &Ctx;
+		}
+	}
+	return nullptr;
+}
+
+const FWorldContext* UEngine::GetWorldContextFromHandle(const FName& Handle) const
+{
+	for (const FWorldContext& Ctx : WorldList)
+	{
+		if (Ctx.ContextHandle == Handle)
+		{
+			return &Ctx;
+		}
+	}
+	return nullptr;
+}
+
+FWorldContext* UEngine::GetWorldContextFromWorld(const UWorld* World)
+{
+	for (FWorldContext& Ctx : WorldList)
+	{
+		if (Ctx.World == World)
+		{
+			return &Ctx;
+		}
+	}
+	return nullptr;
+}
+
+void UEngine::SetActiveWorld(const FName& Handle)
+{
+	ActiveWorldHandle = Handle;
+}

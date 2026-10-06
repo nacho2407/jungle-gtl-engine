@@ -1,0 +1,61 @@
+﻿#pragma once
+
+#include <string>
+#include <Windows.h>
+
+// 엔진 전역 경로를 관리합니다.
+// 모든 경로는 실행 파일 기준 상대 경로이며, 한글 경로를 위해 wstring 기반입니다.
+class FPaths
+{
+public:
+	// 프로젝트 루트 (실행 파일이 있는 디렉터리)
+	static std::wstring RootDir();
+
+	// 주요 디렉터리
+	static std::wstring ShaderDir();      // Shaders/
+	static std::wstring AssetDir();       // Content/  (legacy 이름 — UE 의 ContentDir 와 의미 동일)
+	static std::wstring AudioDir();       // Content/Audio/
+	static std::wstring SceneDir();       // Content/Scene/
+	static std::wstring ScriptDir();	  // Content/Script/
+	static std::wstring DataDir();        // Content/Data/
+	static std::wstring SaveDir();        // Saves/
+	static std::wstring DumpDir();        // Saves/Dump/
+	static std::wstring LogDir();         // Saves/Logs/
+	static std::wstring ShaderCacheDir(); // Saves/ShaderCache/
+	static std::wstring SettingsDir();    // Settings/
+
+	// 주요 파일 경로
+	static std::wstring SettingsFilePath();         // Settings/Editor.ini
+	static std::wstring ResourceFilePath();         // Settings/Resource.ini
+	static std::wstring ProjectSettingsFilePath();  // Settings/ProjectSettings.ini
+
+	// 경로 결합: FPaths::Combine(L"Content/Scene", L"Default.Scene")
+	static std::wstring Combine(const std::wstring& Base, const std::wstring& Child);
+
+	template<typename... Rest>
+	static std::wstring Combine(const std::wstring& Base, const std::wstring& Child, const Rest&... More)
+	{
+		std::wstring Result = Combine(Base, Child);
+		if constexpr (sizeof...(More) == 0)
+		{
+			return Result;
+		}
+		else
+		{
+			return Combine(Result, More...);
+		}
+	}
+
+	// 디렉터리가 없으면 재귀적으로 생성
+	static void CreateDir(const std::wstring& Path);
+
+	// 변환 유틸리티 (한글 경로 지원)
+	static std::wstring ToWide(const std::string& Utf8Str);
+	static std::string ToUtf8(const std::wstring& WideStr);
+
+	static std::string ResolveAssetPath(const std::string& BaseFilePath, const std::string& TargetPath);
+
+	// 절대 경로면 프로젝트 루트 기준 상대 경로(forward slash)로 변환.
+	// 이미 상대 경로이거나 다른 드라이브 등으로 변환 불가하면 입력을 그대로 반환.
+	static std::string MakeProjectRelative(const std::string& Path);
+};

@@ -1,0 +1,548 @@
+#include "SceneComponent.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include <GameFramework/World.h>
+
+#include "Object/GarbageCollection.h"
+#include <algorithm>
+#include "Serialization/Archive.h"
+
+HIDE_FROM_COMPONENT_LIST(USceneComponent)
+
+static void NotifyOctreeTransformChanged(USceneComponent* Comp)
+{
+    if (!IsValid(Comp)) return;
+
+    AActor* OwnerActor = Comp->GetOwner();
+    if (!IsValid(OwnerActor)) return;
+
+    UWorld* World = OwnerActor->GetWorld();
+    if (!World) return;
+	
+    World->UpdateActorInOctree(OwnerActor);
+}
+
+void USceneComponent::AttachToComponent(USceneComponent* InParent)
+{
+	if (!IsValid(InParent) || InParent == this)
+	{
+		return;
+	}
+	SetParent(InParent);
+}
+
+void USceneComponent::PreGetEditableProperties()
+{
+	UActorComponent::PreGetEditableProperties();
+	if (bCachedEulerDirty)
+	{
+		CachedEditRotator = RelativeTransform.GetRotator();
+		bCachedEulerDirty = false;
+	}
+}
+
+void USceneComponent::PostEditProperty(const char* PropertyName)
+{
+	bool bApplyChangeToPartition = (strcmp(PropertyName, "RelativeTransform.Location") == 0
+								|| strcmp(PropertyName, "RelativeTransform.Scale") == 0
+								|| strcmp(PropertyName, "CachedEditRotator") == 0
+								|| strcmp(PropertyName, "Location") == 0
+								|| strcmp(PropertyName, "Rotation") == 0
+								|| strcmp(PropertyName, "Scale") == 0);
+
+	if (strcmp(PropertyName, "CachedEditRotator") == 0 || strcmp(PropertyName, "Rotation") == 0)
+	{
+		ApplyCachedEditRotator();
+	}
+	else
+	{
+		MarkTransformDirty();
+	}
+
+	if (bApplyChangeToPartition)
+	{
+		NotifyOctreeTransformChanged(this);
+	}
+}
+
+void USceneComponent::Serialize(FArchive& Ar)
+{
+	if (Ar.IsSaving())
+	{
+		CachedEditRotator = RelativeTransform.GetRotator();
+		bCachedEulerDirty = false;
+	}
+
+	UActorComponent::Serialize(Ar);
+	// ParentComponent / ChildComponents 는 직렬화 제외 — 복제 단계에서 명시적으로 재구성.
+
+	if (Ar.IsLoading())
+	{
+		RelativeTransform.SetRotation(CachedEditRotator);
+		bTransformDirty = true;
+		bCachedEulerDirty = false;
+		bInverseWorldDirty = true;
+	}
+}
+
+USceneComponent::USceneComponent()
+{
+	CachedWorldMatrix = FMatrix::Identity;
+
+	bTransformDirty = true;
+	UpdateWorldMatrix();
+}
+
+USceneComponent::~USceneComponent()
+{
+    ParentComponent.Reset();
+    ChildComponents.clear();
+}
+
+TArray<USceneComponent*> USceneComponent::GetChildren() const
+{
+	TArray<USceneComponent*> Result;
+	Result.reserve(ChildComponents.size());
+	for (USceneComponent* Child : ChildComponents)
+	{
+		if (IsValid(Child))
+		{
+			Result.push_back(Child);
+		}
+	}
+	return Result;
+}
+
+void USceneComponent::SetParent(USceneComponent* NewParent)
+{
+	if (ParentComponent == NewParent || NewParent == this)
+	{
+		return;
+	}
+
+	if (IsValid(NewParent))
+	{
+		for (USceneComponent* Ancestor = NewParent; IsValid(Ancestor); Ancestor = Ancestor->GetParent())
+		{
+			if (Ancestor == this)
+			{
+				return;
+			}
+		}
+	}
+	else
+	{
+		NewParent = nullptr;
+	}
+	
+	if (USceneComponent* OldParent = ParentComponent.Get())
+	{
+		OldParent->RemoveChild(this);
+	}
+
+	ParentComponent = NewParent;
+	if (USceneComponent* Parent = ParentComponent.Get())
+	{
+		if (!Parent->ContainsChild(this))
+		{
+			Parent->ChildComponents.push_back(this);
+		}
+	}
+
+	// 부모 변경 시 자신 및 하위 자식의 월드 행렬을 갱신하도록 dirty 마킹
+	MarkTransformDirty();
+}
+
+void USceneComponent::AddChild(USceneComponent* NewChild)
+{
+	if (!IsValid(NewChild))
+	{
+		return;
+	}
+
+	NewChild->SetParent(this);
+}
+
+void USceneComponent::RemoveChild(USceneComponent* Child)
+{
+	if (!Child)
+	{
+		return;
+	}
+
+	auto iter = std::find(ChildComponents.begin(), ChildComponents.end(), Child);
+
+	if (iter != ChildComponents.end())
+	{
+		USceneComponent* ExistingChild = iter->GetRaw();
+		if (IsAliveObject(ExistingChild) && ExistingChild->ParentComponent == this)
+		{
+			ExistingChild->ParentComponent.Reset();
+		}
+
+		ChildComponents.erase(iter);
+	}
+}
+
+bool USceneComponent::ContainsChild(const USceneComponent* Child) const
+{
+	if (!IsValid(Child))
+	{
+		return false;
+	}
+
+	return std::find(ChildComponents.begin(),
+		ChildComponents.end(), Child) != ChildComponents.end();
+}
+
+void USceneComponent::UpdateWorldMatrix() const
+{
+	if (bTransformDirty == false)
+	{
+		return;
+	}
+
+	FMatrix RelativeMatrix = GetRelativeMatrix();
+
+	if (USceneComponent* Parent = ParentComponent.Get())
+	{
+		if (bAbsoluteScale)
+		{
+			// 에디터 아이콘 빌보드는 부모 스케일과 분리해 화면상 크기 변화를 막는다.
+			FMatrix ParentWorldNoScale = Parent->GetWorldMatrix();
+			ParentWorldNoScale.RemoveScaling();
+			CachedWorldMatrix = RelativeMatrix * ParentWorldNoScale;
+		}
+		else
+		{
+			CachedWorldMatrix = RelativeMatrix * Parent->GetWorldMatrix();
+		}
+	}
+	else
+	{
+		CachedWorldMatrix = RelativeMatrix;
+	}
+
+	bTransformDirty = false;
+}
+
+void USceneComponent::AddWorldOffset(const FVector& WorldDelta)
+{
+	if (USceneComponent* Parent = ParentComponent.Get())
+	{
+		const FMatrix& parentWorldMatrix = Parent->GetWorldMatrix();
+
+		FMatrix parentWorldInverseMatrix = parentWorldMatrix.GetInverse();
+
+		FVector localDelta = parentWorldInverseMatrix.TransformVector(WorldDelta);
+
+		Move(localDelta);
+	}
+	else
+	{
+		Move(WorldDelta);
+	}
+}
+
+void USceneComponent::SetRelativeLocation(const FVector& NewLocation)
+{
+	RelativeTransform.Location = NewLocation;
+	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
+}
+
+void USceneComponent::SetRelativeRotation(const FRotator& NewRotation)
+{
+	CachedEditRotator = NewRotation.GetClamped();
+	bCachedEulerDirty = false;
+	RelativeTransform.SetRotation(NewRotation);
+	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
+}
+
+void USceneComponent::SetRelativeRotation(const FQuat& NewRotation)
+{
+	bCachedEulerDirty = true;
+	RelativeTransform.SetRotation(NewRotation);
+	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
+}
+
+void USceneComponent::SetRelativeRotation(const FVector& EulerRotation)
+{
+	FRotator Rot(EulerRotation);
+	CachedEditRotator = Rot;
+	bCachedEulerDirty = false;
+	RelativeTransform.SetRotation(Rot);
+	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
+}
+
+
+void USceneComponent::AddLocalRotation(const FQuat& DeltaQuat)
+{
+	// Quat 합성으로 누적 — Euler 라운드트립이 없어 짐벌락에 안전.
+	// 곱 순서: 로컬 축 기준 회전이므로 Current * Delta.
+	RelativeTransform.SetRotation(RelativeTransform.Rotation * DeltaQuat);
+	bCachedEulerDirty = true;
+	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
+}
+
+void USceneComponent::AddLocalRotation(const FRotator& DeltaRotator)
+{
+	AddLocalRotation(DeltaRotator.ToQuaternion());
+}
+
+void USceneComponent::SetRelativeScale(const FVector& NewScale)
+{
+	RelativeTransform.Scale = NewScale;
+	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
+}
+
+void USceneComponent::SetRelativeTransform(const FTransform& NewTransform)
+{
+	RelativeTransform = NewTransform;
+	MarkTransformDirty();
+	NotifyOctreeTransformChanged(this);
+}
+
+
+void USceneComponent::MarkTransformDirty()
+{
+	if (bTransformDirty && bInverseWorldDirty)
+	{
+		return; // 이미 dirty면 자식 재귀/부수효과를 다시 하지 않음
+	}
+
+	bTransformDirty = true;
+	bInverseWorldDirty = true;
+	OnTransformDirty();
+	for (USceneComponent* Child : ChildComponents)
+	{
+		if (IsValid(Child))
+		{
+			Child->MarkTransformDirty();
+		}
+	}
+}
+
+void USceneComponent::OnTransformDirty()
+{
+}
+
+FRotator& USceneComponent::GetCachedEditRotator()
+{
+	if (bCachedEulerDirty)
+	{
+		CachedEditRotator = RelativeTransform.GetRotator();
+		bCachedEulerDirty = false;
+	}
+	return CachedEditRotator;
+}
+
+void USceneComponent::SetRelativeRotationWithEulerHint(const FQuat& NewQuat, const FRotator& EulerHint)
+{
+	CachedEditRotator = EulerHint.GetClamped();
+	bCachedEulerDirty = false;
+	RelativeTransform.SetRotation(NewQuat);
+	MarkTransformDirty();
+    NotifyOctreeTransformChanged(this);
+}
+
+void USceneComponent::ApplyCachedEditRotator()
+{
+	CachedEditRotator = CachedEditRotator.GetClamped();
+	CachedEditRotator.Pitch = Clamp(CachedEditRotator.Pitch, -89.9f, 89.9f);
+	bCachedEulerDirty = false;
+	RelativeTransform.SetRotation(CachedEditRotator);
+	MarkTransformDirty();
+    NotifyOctreeTransformChanged(this);
+}
+
+const FMatrix& USceneComponent::GetWorldMatrix() const
+{
+	if (bTransformDirty == true)
+	{
+		UpdateWorldMatrix();
+	}
+
+	return CachedWorldMatrix;
+}
+
+const FMatrix& USceneComponent::GetWorldInverseMatrix() const
+{
+	GetWorldMatrix();
+
+	if (bInverseWorldDirty == true)
+	{
+		CachedInverseWorldMatrix = CachedWorldMatrix.GetInverse();
+		bInverseWorldDirty = false;
+	}
+	return CachedInverseWorldMatrix;
+}
+
+void USceneComponent::SetWorldLocation(FVector NewWorldLocation)
+{
+	if (USceneComponent* Parent = ParentComponent.Get())
+	{
+		const FMatrix& parentWorldInverseMatrix = Parent->GetWorldMatrix().GetInverse();
+
+		FVector newRelativeLocation = NewWorldLocation * parentWorldInverseMatrix;
+
+		SetRelativeLocation(newRelativeLocation);
+	}
+	else
+	{
+		SetRelativeLocation(NewWorldLocation);
+	}
+}
+
+FVector USceneComponent::GetWorldLocation() const
+{
+	const FMatrix& WorldMatrix = GetWorldMatrix();
+	return FVector(WorldMatrix.M[3][0], WorldMatrix.M[3][1], WorldMatrix.M[3][2]);
+}
+
+FRotator USceneComponent::GetWorldRotation() const
+{
+	FQuat WorldQuat = RelativeTransform.Rotation.GetNormalized();
+
+	const USceneComponent* CurrentParent = ParentComponent.Get();
+	while (IsValid(CurrentParent))
+	{
+		WorldQuat = (WorldQuat * CurrentParent->RelativeTransform.Rotation).GetNormalized();
+		CurrentParent = CurrentParent->ParentComponent.Get();
+	}
+
+	return WorldQuat.ToRotator();
+}
+
+FVector USceneComponent::GetWorldScale() const
+{
+	const FMatrix& WorldMatrix = GetWorldMatrix();
+
+	float ScaleX = FVector(WorldMatrix.M[0][0], WorldMatrix.M[0][1], WorldMatrix.M[0][2]).Length();
+	float ScaleY = FVector(WorldMatrix.M[1][0], WorldMatrix.M[1][1], WorldMatrix.M[1][2]).Length();
+	float ScaleZ = FVector(WorldMatrix.M[2][0], WorldMatrix.M[2][1], WorldMatrix.M[2][2]).Length();
+
+	return FVector(ScaleX, ScaleY, ScaleZ);
+}
+
+FVector USceneComponent::GetForwardVector() const
+{
+	const FMatrix& Matrix = GetWorldMatrix();
+	FVector Forward(Matrix.M[0][0], Matrix.M[0][1], Matrix.M[0][2]);
+	Forward.Normalize();
+	return Forward;
+}
+
+FVector USceneComponent::GetRightVector() const
+{
+	const FMatrix& Matrix = GetWorldMatrix();
+	FVector Right(Matrix.M[1][0], Matrix.M[1][1], Matrix.M[1][2]);
+	Right.Normalize();
+	return Right;
+}
+
+FVector USceneComponent::GetUpVector() const
+{
+	const FMatrix& Matrix = GetWorldMatrix();
+	FVector Up(Matrix.M[2][0], Matrix.M[2][1], Matrix.M[2][2]);
+	Up.Normalize();
+	return Up;
+}
+
+void USceneComponent::Move(const FVector& Delta)
+{
+	SetRelativeLocation(RelativeTransform.Location + Delta);
+}
+
+void USceneComponent::MoveLocal(const FVector& Delta)
+{
+	FVector Forward = GetForwardVector();
+	FVector Right = GetRightVector();
+	FVector Up = GetUpVector();
+
+	SetRelativeLocation(RelativeTransform.Location
+		+ Forward * Delta.X
+		+ Right * Delta.Y
+		+ Up * Delta.Z);
+}
+
+void USceneComponent::Rotate(float DeltaYaw, float DeltaPitch)
+{
+	FRotator Rot = GetCachedEditRotator();
+	Rot.Yaw += DeltaYaw;
+	Rot.Pitch += DeltaPitch;
+	Rot.Pitch = Clamp(Rot.Pitch, -89.9f, 89.9f);
+	Rot.Roll = 0.0f;
+
+	SetRelativeRotationWithEulerHint(Rot.ToQuaternion(), Rot);
+}
+
+void USceneComponent::AddReferencedObjects(FReferenceCollector& Collector)
+{
+    UActorComponent::AddReferencedObjects(Collector);
+
+    Collector.AddReferencedObjects(ChildComponents, "USceneComponent.ChildComponents");
+}
+
+void USceneComponent::RouteComponentDestroyed()
+{
+    if (bComponentDestroyRouted)
+    {
+        return;
+    }
+
+    TArray<USceneComponent*> Children;
+    Children.reserve(ChildComponents.size());
+    for (USceneComponent* Child : ChildComponents)
+    {
+        if (IsAliveObject(Child))
+        {
+            Children.push_back(Child);
+        }
+    }
+
+    // Notify the owner while the scene subtree is still intact so
+    // AActor::OnComponentBeingDestroyed can remove the whole subtree from
+    // OwnedComponents and clear dependent movement component references.
+    UActorComponent::RouteComponentDestroyed();
+
+    if (USceneComponent* Parent = ParentComponent.GetEvenIfPendingKill())
+    {
+        Parent->RemoveChild(this);
+    }
+    ParentComponent.Reset();
+    ChildComponents.clear();
+
+    for (USceneComponent* Child : Children)
+    {
+        if (!IsAliveObject(Child))
+        {
+            continue;
+        }
+
+        Child->ParentComponent.Reset();
+        Child->RouteComponentDestroyed();
+        Child->MarkPendingKill();
+    }
+}
+
+
+void USceneComponent::BeginDestroy()
+{
+    if (HasAnyFlags(RF_BeginDestroy))
+    {
+        return;
+    }
+
+    RouteComponentDestroyed();
+    UActorComponent::BeginDestroy();
+}
+
+FMatrix USceneComponent::GetRelativeMatrix() const
+{
+	return RelativeTransform.ToMatrix();
+}

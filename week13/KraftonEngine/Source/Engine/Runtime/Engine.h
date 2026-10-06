@@ -1,0 +1,107 @@
+#pragma once
+
+#include "Object/Object.h"
+#include "GameFramework/World.h"
+#include "GameFramework/WorldContext.h"
+#include "Render/Pipeline/Renderer.h"
+#include "Render/Pipeline/IRenderPipeline.h"
+#include "Cloth/NvClothContext.h"
+
+#include "Source/Engine/Runtime/Engine.generated.h"
+#include <memory>
+
+class FWindowsWindow;
+class FTimer;
+class UCameraComponent;
+class UGameViewportClient;
+
+UCLASS()
+class UEngine : public UObject
+{
+public:
+	GENERATED_BODY()
+	UEngine() = default;
+	~UEngine() override = default;
+
+	// Lifecycle
+	virtual void Init(FWindowsWindow* InWindow);
+	virtual void Shutdown();
+	virtual void BeginPlay();
+	virtual void Tick(float DeltaTime);
+
+	virtual void OnWindowResized(uint32 Width, uint32 Height);
+
+	// Lua / GameMode 어디서든 안전하게 호출 가능한 scene 전환 요청. 게임 빌드는 active world
+	// 를 다음 Tick 끝에 destroy 하고 새 scene 을 로드한다. 에디터(PIE) 빌드는 PIE 세션을 종료해
+	// 에디터 화면으로 복귀하는 것으로 매핑한다 (PIE 안에서의 scene 교체 의미가 모호하므로).
+	// 기본은 no-op — 서브클래스(UGameEngine / UEditorEngine) 에서 적절히 override.
+	virtual void RequestTransitionToScene(const FString& /*InScenePath*/) {}
+
+	// World context management
+	FWorldContext& CreateWorldContext(EWorldType Type, const FName& Handle, const FString& Name = "");
+	void DestroyWorldContext(const FName& Handle);
+
+	// World context lookup
+	FWorldContext* GetWorldContextFromHandle(const FName& Handle);
+	const FWorldContext* GetWorldContextFromHandle(const FName& Handle) const;
+	FWorldContext* GetWorldContextFromWorld(const UWorld* World);
+
+	// Active world
+	void SetActiveWorld(const FName& Handle);
+	FName GetActiveWorldHandle() const { return ActiveWorldHandle; }
+
+	// Accessors
+	FWindowsWindow* GetWindow() const { return Window; }
+	UWorld* GetWorld() const;
+	const TArray<FWorldContext>& GetWorldList() const { return WorldList; }
+	TArray<FWorldContext>& GetWorldList() { return WorldList; }
+
+	void SetTimer(FTimer* InTimer) { Timer = InTimer; }
+	FTimer* GetTimer() const { return Timer; }
+
+	FRenderer& GetRenderer() { return Renderer; }
+
+	/**
+	 * @brief 엔진이 소유한 Cloth backend context를 반환합니다
+	 *
+	 * @return 엔진이 소유한 Cloth backend context
+	 */
+	FNvClothContext& GetClothContext() { return ClothContext; }
+
+	/**
+	 * @brief 엔진이 소유한 Cloth backend context를 반환합니다
+	 *
+	 * @return 엔진이 소유한 Cloth backend context
+	 */
+	const FNvClothContext& GetClothContext() const { return ClothContext; }
+
+	// Game Viewport Client — PIE/Standalone 용
+	void SetGameViewportClient(UGameViewportClient* InClient) { GameViewportClient = InClient; }
+	UGameViewportClient* GetGameViewportClient() const { return GameViewportClient; }
+
+    void AddReferencedObjects(FReferenceCollector& Collector) override;
+
+protected:
+	void Render(float DeltaTime);
+	void SetRenderPipeline(std::unique_ptr<IRenderPipeline> InPipeline);
+	IRenderPipeline* GetRenderPipeline() const { return RenderPipeline.get(); }
+	void WorldTick(float DeltaTime);
+
+protected:
+	FWindowsWindow* Window = nullptr;
+
+	FName ActiveWorldHandle;
+	TArray<FWorldContext> WorldList;
+
+	FTimer* Timer = nullptr;
+
+	UGameViewportClient* GameViewportClient = nullptr;
+
+	FRenderer Renderer;
+	FNvClothContext ClothContext;
+
+private:
+	std::unique_ptr<IRenderPipeline> RenderPipeline;
+};
+
+extern UEngine* GEngine;
