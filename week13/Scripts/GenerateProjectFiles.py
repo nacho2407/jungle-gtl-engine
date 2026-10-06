@@ -1,0 +1,676 @@
+"""
+GenerateProjectFiles.py — Auto-generate .vcxproj, .vcxproj.filters
+for KraftonEngine from the on-disk folder structure.
+
+Usage:
+    python Scripts/GenerateProjectFiles.py
+"""
+
+import hashlib
+import os
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+# ──────────────────────────────────────────────
+# Constants
+# ──────────────────────────────────────────────
+ROOT = Path(__file__).resolve().parent.parent
+
+PROJECT_NAME = "KraftonEngine"
+PROJECT_DIR = ROOT / PROJECT_NAME
+PROJECT_GUID = "{55068e81-c0a0-49f9-ab7b-54aea968722b}"
+ROOT_NAMESPACE = "Week2"
+
+SOLUTION_GUID = "{4EBC5DD2-CECA-4722-9D19-87C7CB5F481B}"
+VS_PROJECT_TYPE = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
+
+CONFIGURATIONS = [
+    ("Debug", "Win32"),
+    ("Release", "Win32"),
+    ("Debug", "x64"),
+    ("Release", "x64"),
+    ("Game", "Win32"),
+    ("Game", "x64"),
+    ("ObjViewDebug", "x64"),
+    ("Demo", "x64"),
+]
+
+# Per-configuration overrides (base is derived from the name)
+#   "release_like"  : True = Release optimizations, False = Debug
+#   "extra_defines" : additional preprocessor definitions
+#   "subsystem"     : override link subsystem (default: per-platform)
+CONFIG_PROPS = {
+    "Game": {
+        "release_like": True,
+        "extra_defines": ["WITH_EDITOR=0", "WITH_STANDALONE=1", "STATS=0"],
+    },
+    "ObjViewDebug": {
+        "release_like": True,
+        "extra_defines": ["IS_OBJ_VIEWER=1"],
+    },
+    "Demo": {
+        "release_like": True,
+        "extra_defines": ["STATS=0"],
+    },
+}
+
+# Directories to recursively scan for source files
+SCAN_DIRS = ["Source", "ThirdParty"]
+
+# Directories to scan for shader files
+SHADER_DIRS = ["Shaders"]
+
+# File extensions to include
+SOURCE_EXTS = {".cpp", ".c", ".cc", ".cxx"}
+HEADER_EXTS = {".h", ".hpp", ".hxx", ".inl"}
+SHADER_EXTS = {".hlsl", ".hlsli"}
+NATVIS_EXTS = {".natvis"}
+NONE_EXTS = {".natstepfilter", ".config"}
+
+RC_EXTS = {".rc"}
+
+# Root-level files to include (relative to project dir)
+ROOT_FILES = ["main.cpp"]
+
+# Generated-only sources to include in ClCompile even though they live outside
+# SCAN_DIRS. Created by GenerateHeaders.py during PreBuildEvent. Reflection.generated.cpp
+# is a TU hub that #includes the per-type *.generated.cpp files, so this single entry
+# is enough to pull all reflection code into the link.
+EXTRA_CL_COMPILE_FILES = ["Intermediate\\Generated\\Reflection.generated.cpp"]
+
+# Include paths (relative to project dir)
+INCLUDE_PATHS = [
+    "Intermediate\\Generated",
+    "Source\\Engine",
+    "Source",
+    "ThirdParty",
+    "ThirdParty\\ImGui",
+    "ThirdParty\\imgui-node-editor",
+    "ThirdParty\\RmlUi\\Include",
+    "Source\\Editor",
+    "Source\\ObjViewer",
+    "Source\\Game",
+    "ThirdParty\\lua\\include",
+    "ThirdParty\\sol2\\include",
+    "ThirdParty\\fmod\\include",
+    "ThirdParty\\fbx\\include",
+    # PhysX(NuGet) — vcpkg.targets 가 조건부 Import 라 첫 clone 직후 IntelliSense 파싱 시점엔
+    # Exists()=false 로 include 경로가 안 잡힘. 직접 박아 restore 타이밍과 무관하게 잡히게 함.
+    "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\include",
+    ".",
+]
+
+# RmlUi config
+RMLUI_DEBUG_DIR = "ThirdParty\\RmlUi\\Debug"
+RMLUI_RELEASE_DIR = "ThirdParty\\RmlUi\\Release"
+RMLUI_DEPENDENCIES = ["rmlui.lib", "rmlui_debugger.lib"]
+
+# FMOD config — Debug 빌드는 fmodL_vc.lib + fmodL.dll(logging),
+# Release-like 빌드는 fmod_vc.lib + fmod.dll
+FMOD_LIB_DIR = "ThirdParty\\fmod\\lib"
+FMOD_DEBUG_LIB = "fmodL_vc.lib"
+FMOD_RELEASE_LIB = "fmod_vc.lib"
+FMOD_DEBUG_DLL = "fmodL.dll"
+FMOD_RELEASE_DLL = "fmod.dll"
+
+# PhysX (NuGet, 4.1.2) — vcpkg auto applocal-deps가 일부 환경에서 동작하지 않아
+# PostBuildEvent 에서 명시적으로 *.dll 을 OutDir 로 복사한다.
+# Debug 구성은 debug\\bin, 그 외(Release/Game/ObjViewDebug/Demo)는 release bin 사용.
+# (Include 경로는 INCLUDE_PATHS 에 직접 추가됨 — 위 주석 참고.)
+PHYSX_DEBUG_BIN   = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\debug\\bin"
+PHYSX_RELEASE_BIN = "packages\\NVIDIA.PhysX.4.1.2\\installed\\x64-windows\\bin"
+
+# Reflection — UCLASS/UPROPERTY 매크로 → *.generated.h/.cpp 자동 생성.
+# 빌드 시작 직전(PreBuildEvent)과 ClCompile 직전(GenerateReflectionHeaders target)
+# 두 위치에 모두 박는다 — VS IDE / msbuild 호출 경로 모두 커버.
+GENERATE_HEADERS_TOOL = "..\\Scripts\\GenerateHeaders.py"
+
+# Lua (LuaJIT, 5.1 ABI) — lua51.dll 은 .gitignore 의 **/[Bb]in/* 에 걸려 있어
+# 팀원이 직접 ThirdParty\\lua\\bin\\lua51.dll 위치에 배치해야 한다 (LuaJIT 배포본).
+LUA_LIB_DIR = "ThirdParty\\lua\\lib"
+LUA_BIN_DIR = "ThirdParty\\lua\\bin"
+LUA_LIB     = "lua51.lib"
+LUA_DLL     = "lua51.dll"
+
+# FBX SDK — 동적 링크. libfbxsdk.lib(import lib) + libfbxsdk.dll 를 사용하고,
+# Debug/Release 디렉터리가 분리되어 있어 구성별로 경로를 선택한다.
+FBX_DEBUG_LIB_DIR   = "ThirdParty\\fbx\\lib\\x64\\debug"
+FBX_RELEASE_LIB_DIR = "ThirdParty\\fbx\\lib\\x64\\release"
+FBX_LIB             = "libfbxsdk.lib"
+FBX_DLL             = "libfbxsdk.dll"
+
+# Additional linker settings
+ADDITIONAL_LIB_DIRS = [
+    f"$(ProjectDir){LUA_LIB_DIR}",
+]
+ADDITIONAL_DEPENDENCIES = [
+    LUA_LIB,
+]
+
+# NuGet packages (id, version) — restored via packages.config
+NUGET_PACKAGES = [
+    ("directxtk_desktop_win10", "2025.10.28.2"),
+    ("NVIDIA.PhysX", "4.1.2"),
+]
+
+NS = "http://schemas.microsoft.com/developer/msbuild/2003"
+
+
+# ──────────────────────────────────────────────
+# Helpers
+# ──────────────────────────────────────────────
+def scan_files(project_dir: Path) -> dict[str, list[str]]:
+    """Scan directories and collect files grouped by type."""
+    result = {"ClCompile": [], "ClInclude": [], "FxCompile": [], "ResourceCompile": [], "Natvis": [], "None": []}
+
+    # Scan source/header directories
+    for scan_dir in SCAN_DIRS:
+        full_dir = project_dir / scan_dir
+        if not full_dir.exists():
+            continue
+        for dirpath, _, filenames in os.walk(full_dir):
+            for fname in sorted(filenames):
+                full = Path(dirpath) / fname
+                rel = full.relative_to(project_dir)
+                rel_str = str(rel).replace("/", "\\")
+                ext = full.suffix.lower()
+
+                if ext in SOURCE_EXTS:
+                    result["ClCompile"].append(rel_str)
+                elif ext in HEADER_EXTS:
+                    result["ClInclude"].append(rel_str)
+                elif ext in NATVIS_EXTS:
+                    result["Natvis"].append(rel_str)
+                elif ext in NONE_EXTS:
+                    result["None"].append(rel_str)
+
+    # Scan shader directories
+    for shader_dir in SHADER_DIRS:
+        full_dir = project_dir / shader_dir
+        if not full_dir.exists():
+            continue
+        for dirpath, _, filenames in os.walk(full_dir):
+            for fname in sorted(filenames):
+                full = Path(dirpath) / fname
+                rel = full.relative_to(project_dir)
+                rel_str = str(rel).replace("/", "\\")
+                ext = full.suffix.lower()
+
+                if ext in SHADER_EXTS:
+                    result["FxCompile"].append(rel_str)
+
+    # Add root-level files
+    for root_file in ROOT_FILES:
+        full = project_dir / root_file
+        if full.exists():
+            result["ClCompile"].append(root_file.replace("/", "\\"))
+
+    # Generated-only sources — exist after the first build's PreBuildEvent,
+    # so we add them unconditionally rather than gating on Path.exists().
+    for extra in EXTRA_CL_COMPILE_FILES:
+        result["ClCompile"].append(extra)
+
+    # Add root-level .rc files
+    for f in sorted(project_dir.glob("*.rc")):
+        rel_str = f.name
+        result["ResourceCompile"].append(rel_str)
+
+    return result
+
+
+def get_filter(rel_path: str) -> str:
+    """Return the filter (directory portion) from a relative path."""
+    parts = rel_path.replace("/", "\\").rsplit("\\", 1)
+    return parts[0] if len(parts) > 1 else ""
+
+
+def collect_all_filters(files: dict[str, list[str]]) -> set[str]:
+    """Collect all unique filter paths including parent paths."""
+    filters = set()
+    for file_list in files.values():
+        for f in file_list:
+            filt = get_filter(f)
+            if filt:
+                parts = filt.split("\\")
+                for i in range(1, len(parts) + 1):
+                    filters.add("\\".join(parts[:i]))
+    return filters
+
+
+# ──────────────────────────────────────────────
+# XML Generation
+# ──────────────────────────────────────────────
+def indent_xml(elem, level=0):
+    """Add indentation to XML tree."""
+    i = "\n" + "  " * level
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for child in elem:
+            indent_xml(child, level + 1)
+        if not child.tail or not child.tail.strip():
+            child.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+    if level == 0:
+        elem.tail = "\n"
+
+
+def write_xml(root_elem, filepath: Path, bom=False):
+    """Write XML tree to file with proper declaration."""
+    indent_xml(root_elem)
+    tree = ET.ElementTree(root_elem)
+    with open(filepath, "w", encoding="utf-8", newline="\r\n") as f:
+        if bom:
+            f.write("\ufeff")
+        f.write('<?xml version="1.0" encoding="utf-8"?>\n')
+        tree.write(f, encoding="unicode", xml_declaration=False)
+
+
+# ──────────────────────────────────────────────
+# .vcxproj
+# ──────────────────────────────────────────────
+def generate_vcxproj(files: dict[str, list[str]]):
+    proj = ET.Element("Project", DefaultTargets="Build", xmlns=NS)
+
+    # ProjectConfigurations
+    ig = ET.SubElement(proj, "ItemGroup", Label="ProjectConfigurations")
+    for cfg, plat in CONFIGURATIONS:
+        pc = ET.SubElement(ig, "ProjectConfiguration", Include=f"{cfg}|{plat}")
+        ET.SubElement(pc, "Configuration").text = cfg
+        ET.SubElement(pc, "Platform").text = plat
+
+    # Globals
+    pg = ET.SubElement(proj, "PropertyGroup", Label="Globals")
+    ET.SubElement(pg, "VCProjectVersion").text = "17.0"
+    ET.SubElement(pg, "Keyword").text = "Win32Proj"
+    ET.SubElement(pg, "ProjectGuid").text = PROJECT_GUID
+    ET.SubElement(pg, "RootNamespace").text = ROOT_NAMESPACE
+    ET.SubElement(pg, "WindowsTargetPlatformVersion").text = "10.0"
+
+    ET.SubElement(proj, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.Default.props")
+
+    # Configuration properties
+    for cfg, plat in CONFIGURATIONS:
+        props = CONFIG_PROPS.get(cfg, {})
+        cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
+        pg = ET.SubElement(proj, "PropertyGroup", Condition=cond, Label="Configuration")
+        is_release = props.get("release_like", cfg == "Release")
+        ET.SubElement(pg, "ConfigurationType").text = "Application"
+        ET.SubElement(pg, "UseDebugLibraries").text = "false" if is_release else "true"
+        ET.SubElement(pg, "PlatformToolset").text = "v143"
+        if is_release:
+            ET.SubElement(pg, "WholeProgramOptimization").text = "true"
+        ET.SubElement(pg, "CharacterSet").text = "Unicode"
+
+    ET.SubElement(proj, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.props")
+    ET.SubElement(proj, "ImportGroup", Label="ExtensionSettings")
+    ET.SubElement(proj, "ImportGroup", Label="Shared")
+
+    # PropertySheets
+    for cfg, plat in CONFIGURATIONS:
+        cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
+        ig = ET.SubElement(proj, "ImportGroup", Label="PropertySheets", Condition=cond)
+        ET.SubElement(ig, "Import",
+                      Project="$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props",
+                      Condition="exists('$(UserRootDir)\\Microsoft.Cpp.$(Platform).user.props')",
+                      Label="LocalAppDataPlatform")
+
+    ET.SubElement(proj, "PropertyGroup", Label="UserMacros")
+
+    # OutDir, IntDir, IncludePath, LibraryPath, WorkingDirectory for all configurations
+    include_path_value = ";".join(INCLUDE_PATHS) + ";$(IncludePath)"
+    for cfg, plat in CONFIGURATIONS:
+        cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
+        is_x64 = plat == "x64"
+        rmlui_dir = RMLUI_DEBUG_DIR if cfg == "Debug" else RMLUI_RELEASE_DIR
+        library_paths = [rmlui_dir] if is_x64 else []
+        if is_x64:
+            library_paths.append(FMOD_LIB_DIR)
+            library_paths.append(FBX_DEBUG_LIB_DIR if cfg == "Debug" else FBX_RELEASE_LIB_DIR)
+        library_path_value = ";".join(library_paths) + ";$(LibraryPath)" if library_paths else "$(LibraryPath)"
+        pg = ET.SubElement(proj, "PropertyGroup", Condition=cond)
+        ET.SubElement(pg, "OutDir").text = f"$(ProjectDir)Bin\\$(Configuration)\\"
+        ET.SubElement(pg, "IntDir").text = f"$(ProjectDir)Build\\$(Configuration)\\"
+        ET.SubElement(pg, "IncludePath").text = include_path_value
+        ET.SubElement(pg, "LibraryPath").text = library_path_value
+        ET.SubElement(pg, "LocalDebuggerWorkingDirectory").text = "$(ProjectDir)"
+
+    # ItemDefinitionGroups
+    for cfg, plat in CONFIGURATIONS:
+        props = CONFIG_PROPS.get(cfg, {})
+        cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
+        idg = ET.SubElement(proj, "ItemDefinitionGroup", Condition=cond)
+        cl = ET.SubElement(idg, "ClCompile")
+        ET.SubElement(cl, "WarningLevel").text = "Level3"
+
+        is_release = props.get("release_like", cfg == "Release")
+        is_win32 = plat == "Win32"
+        is_x64 = plat == "x64"
+
+        if is_release:
+            ET.SubElement(cl, "FunctionLevelLinking").text = "true"
+            ET.SubElement(cl, "IntrinsicFunctions").text = "true"
+
+        ET.SubElement(cl, "SDLCheck").text = "true"
+
+        base_defs = []
+        if is_win32:
+            base_defs.append("WIN32")
+        base_defs.append("NDEBUG" if is_release else "_DEBUG")
+        base_defs.append("_CONSOLE")
+        # FBX SDK 동적 링크 — 정의되어야 헤더가 __declspec(dllimport)로 심볼을 선언한다.
+        # 미정의 시 static 멤버(FbxSurfaceMaterial::sDiffuse 등)가 LNK2001로 실패한다.
+        if is_x64:
+            base_defs.append("FBXSDK_SHARED")
+        extra_defs = props.get("extra_defines", [])
+        # WITH_EDITOR defaults to 1 unless explicitly overridden in extra_defines
+        if not any(d.startswith("WITH_EDITOR=") for d in extra_defs):
+            base_defs.append("WITH_EDITOR=1")
+        base_defs.extend(extra_defs)
+        base_defs.append("%(PreprocessorDefinitions)")
+        ET.SubElement(cl, "PreprocessorDefinitions").text = ";".join(base_defs)
+        ET.SubElement(cl, "AdditionalIncludeDirectories").text = (
+            ";".join(INCLUDE_PATHS) + ";%(AdditionalIncludeDirectories)"
+        )
+
+        ET.SubElement(cl, "ConformanceMode").text = "true"
+        # /bigobj — sol2 binding이 누적되며 LuaScriptManager.cpp가 섹션 한도를 넘어 필수화됨.
+        # 전역 적용으로 단일 파일 한정 옵션 관리 비용 회피.
+        ET.SubElement(cl, "AdditionalOptions").text = "/utf-8 /bigobj %(AdditionalOptions)"
+        ET.SubElement(cl, "ExceptionHandling").text = "Async"
+        ET.SubElement(cl, "MultiProcessorCompilation").text = "true"
+
+        if is_x64:
+            ET.SubElement(cl, "LanguageStandard").text = "stdcpp20"
+
+        link = ET.SubElement(idg, "Link")
+        subsystem = props.get("subsystem", "Windows" if is_x64 else "Console")
+        ET.SubElement(link, "SubSystem").text = subsystem
+        ET.SubElement(link, "GenerateDebugInformation").text = "true"
+        if ADDITIONAL_LIB_DIRS:
+            ET.SubElement(link, "AdditionalLibraryDirectories").text = (
+                ";".join(ADDITIONAL_LIB_DIRS) + ";%(AdditionalLibraryDirectories)"
+            )
+        all_deps = list(ADDITIONAL_DEPENDENCIES)
+        if is_x64:
+            all_deps.extend(RMLUI_DEPENDENCIES)
+            # fmod: Debug면 logging 버전(fmodL_vc.lib), 그 외 release 버전(fmod_vc.lib)
+            all_deps.append(FMOD_DEBUG_LIB if cfg == "Debug" else FMOD_RELEASE_LIB)
+            all_deps.append(FBX_LIB)
+        if all_deps:
+            ET.SubElement(link, "AdditionalDependencies").text = (
+                ";".join(all_deps) + ";%(AdditionalDependencies)"
+            )
+
+        if is_x64:
+            rmlui_dir = RMLUI_DEBUG_DIR if cfg == "Debug" else RMLUI_RELEASE_DIR
+            fmod_dll = FMOD_DEBUG_DLL if cfg == "Debug" else FMOD_RELEASE_DLL
+            physx_bin = PHYSX_DEBUG_BIN if cfg == "Debug" else PHYSX_RELEASE_BIN
+            fbx_lib_dir = FBX_DEBUG_LIB_DIR if cfg == "Debug" else FBX_RELEASE_LIB_DIR
+            post_build = ET.SubElement(idg, "PostBuildEvent")
+            ET.SubElement(post_build, "Command").text = (
+                f'xcopy /Y "$(ProjectDir){rmlui_dir}\\*.dll" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){FMOD_LIB_DIR}\\{fmod_dll}" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){physx_bin}\\*.dll" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){LUA_BIN_DIR}\\{LUA_DLL}" "$(OutDir)"\n'
+                f'xcopy /Y "$(ProjectDir){fbx_lib_dir}\\{FBX_DLL}" "$(OutDir)"'
+            )
+
+        # Reflection codegen — UCLASS/UPROPERTY 매크로가 박힌 헤더로부터
+        # *.generated.h/.cpp 를 생성. 모든 구성에서 동일하게 1회 실행.
+        pre_build = ET.SubElement(idg, "PreBuildEvent")
+        ET.SubElement(pre_build, "Command").text = (
+            f'"$(ProjectDir)..\\Scripts\\python\\python.exe" '
+            f'"$(ProjectDir){GENERATE_HEADERS_TOOL}" --root "$(ProjectDir)."'
+        )
+
+    # ClCompile items
+    ig = ET.SubElement(proj, "ItemGroup")
+    for f in files["ClCompile"]:
+        ET.SubElement(ig, "ClCompile", Include=f)
+
+    # ClInclude items
+    ig = ET.SubElement(proj, "ItemGroup")
+    for f in files["ClInclude"]:
+        ET.SubElement(ig, "ClInclude", Include=f)
+
+    # FxCompile items (shaders)
+    if files["FxCompile"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["FxCompile"]:
+            elem = ET.SubElement(ig, "FxCompile", Include=f)
+            # Exclude shaders from build (compiled at runtime)
+            for cfg, plat in CONFIGURATIONS:
+                if plat == "x64":
+                    cond = f"'$(Configuration)|$(Platform)'=='{cfg}|{plat}'"
+                    ET.SubElement(elem, "ExcludedFromBuild", Condition=cond).text = "true"
+
+    # ResourceCompile items (.rc)
+    if files["ResourceCompile"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["ResourceCompile"]:
+            ET.SubElement(ig, "ResourceCompile", Include=f)
+
+    # Natvis items
+    if files["Natvis"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["Natvis"]:
+            ET.SubElement(ig, "Natvis", Include=f)
+
+    # None items
+    if files["None"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["None"]:
+            ET.SubElement(ig, "None", Include=f)
+
+    ET.SubElement(proj, "Import", Project="$(VCTargetsPath)\\Microsoft.Cpp.targets")
+
+    # NuGet package imports
+    if NUGET_PACKAGES:
+        ext_targets = ET.SubElement(proj, "ImportGroup", Label="ExtensionTargets")
+        for pkg_id, pkg_ver in NUGET_PACKAGES:
+            targets_path = f"packages\\{pkg_id}.{pkg_ver}\\build\\native\\{pkg_id}.targets"
+            ET.SubElement(ext_targets, "Import",
+                          Project=targets_path,
+                          Condition=f"Exists('{targets_path}')")
+    else:
+        ET.SubElement(proj, "ImportGroup", Label="ExtensionTargets")
+
+    # Reflection codegen — ClCompile 직전 한 번 더 보장.
+    # PreBuildEvent 만으로는 IDE 의 IntelliSense 파싱 시점이나 incremental build 에서
+    # 누락될 수 있어 BeforeTargets="ClCompile" 타깃을 별도로 둔다.
+    # $(PythonExe) 가 비어 있으면 repo-local Python을 사용한다.
+    pg = ET.SubElement(proj, "PropertyGroup")
+    ET.SubElement(pg, "PythonExe", Condition="'$(PythonExe)'==''").text = (
+        "$(MSBuildProjectDirectory)\\..\\Scripts\\python\\python.exe"
+    )
+    refl = ET.SubElement(proj, "Target",
+                         Name="GenerateReflectionHeaders",
+                         BeforeTargets="ClCompile")
+    ET.SubElement(refl, "Exec",
+                  Command=(
+                      f'"$(PythonExe)" "$(MSBuildProjectDirectory)\\{GENERATE_HEADERS_TOOL}"'
+                      f' --root "$(MSBuildProjectDirectory)"'
+                  ),
+                  WorkingDirectory="$(MSBuildProjectDirectory)")
+
+    # NuGet sanity-check target
+    if NUGET_PACKAGES:
+        ensure = ET.SubElement(proj, "Target",
+                               Name="EnsureNuGetPackageBuildImports",
+                               BeforeTargets="PrepareForBuild")
+        pg = ET.SubElement(ensure, "PropertyGroup")
+        ET.SubElement(pg, "ErrorText").text = (
+            "This project references NuGet package(s) that are missing on this computer. "
+            "Use NuGet Package Restore to download them.  For more information, see "
+            "http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}."
+        )
+        for pkg_id, pkg_ver in NUGET_PACKAGES:
+            targets_path = f"packages\\{pkg_id}.{pkg_ver}\\build\\native\\{pkg_id}.targets"
+            ET.SubElement(ensure, "Error",
+                          Condition=f"!Exists('{targets_path}')",
+                          Text=f"$([System.String]::Format('$(ErrorText)', '{targets_path}'))")
+
+    write_xml(proj, PROJECT_DIR / f"{PROJECT_NAME}.vcxproj")
+
+
+# ──────────────────────────────────────────────
+# .vcxproj.filters
+# ──────────────────────────────────────────────
+def generate_filters(files: dict[str, list[str]]):
+    proj = ET.Element("Project", ToolsVersion="4.0", xmlns=NS)
+
+    # Collect all filter paths
+    all_filters = collect_all_filters(files)
+
+    if all_filters:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for filt in sorted(all_filters):
+            f_elem = ET.SubElement(ig, "Filter", Include=filt)
+            h = hashlib.md5(f"{PROJECT_NAME}:{filt}".encode()).hexdigest()
+            uid = f"{{{h[:8]}-{h[8:12]}-{h[12:16]}-{h[16:20]}-{h[20:32]}}}"
+            ET.SubElement(f_elem, "UniqueIdentifier").text = uid
+
+    # FxCompile items with filters
+    if files["FxCompile"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["FxCompile"]:
+            filt = get_filter(f)
+            elem = ET.SubElement(ig, "FxCompile", Include=f)
+            if filt:
+                ET.SubElement(elem, "Filter").text = filt
+
+    # ClCompile items with filters
+    if files["ClCompile"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["ClCompile"]:
+            filt = get_filter(f)
+            elem = ET.SubElement(ig, "ClCompile", Include=f)
+            if filt:
+                ET.SubElement(elem, "Filter").text = filt
+
+    # ClInclude items with filters
+    if files["ClInclude"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["ClInclude"]:
+            filt = get_filter(f)
+            elem = ET.SubElement(ig, "ClInclude", Include=f)
+            if filt:
+                ET.SubElement(elem, "Filter").text = filt
+
+    # ResourceCompile items with filters
+    if files["ResourceCompile"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["ResourceCompile"]:
+            filt = get_filter(f)
+            elem = ET.SubElement(ig, "ResourceCompile", Include=f)
+            if filt:
+                ET.SubElement(elem, "Filter").text = filt
+
+    # None items with filters
+    if files["None"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["None"]:
+            filt = get_filter(f)
+            elem = ET.SubElement(ig, "None", Include=f)
+            if filt:
+                ET.SubElement(elem, "Filter").text = filt
+
+    # Natvis items with filters
+    if files["Natvis"]:
+        ig = ET.SubElement(proj, "ItemGroup")
+        for f in files["Natvis"]:
+            filt = get_filter(f)
+            elem = ET.SubElement(ig, "Natvis", Include=f)
+            if filt:
+                ET.SubElement(elem, "Filter").text = filt
+
+    write_xml(proj, PROJECT_DIR / f"{PROJECT_NAME}.vcxproj.filters", bom=True)
+
+
+# ──────────────────────────────────────────────
+# .sln
+# ──────────────────────────────────────────────
+def generate_sln():
+    lines = []
+    lines.append("")
+    lines.append("Microsoft Visual Studio Solution File, Format Version 12.00")
+    lines.append("# Visual Studio Version 17")
+    lines.append("VisualStudioVersion = 17.14.37012.4 d17.14")
+    lines.append("MinimumVisualStudioVersion = 10.0.40219.1")
+
+    guid_upper = PROJECT_GUID.upper()
+    lines.append(
+        f'Project("{VS_PROJECT_TYPE}") = "{PROJECT_NAME}", '
+        f'"{PROJECT_NAME}\\{PROJECT_NAME}.vcxproj", "{guid_upper}"'
+    )
+    lines.append("EndProject")
+
+    lines.append("Global")
+
+    # SolutionConfigurationPlatforms
+    lines.append("\tGlobalSection(SolutionConfigurationPlatforms) = preSolution")
+    for cfg, plat in CONFIGURATIONS:
+        sln_plat = "x86" if plat == "Win32" else plat
+        lines.append(f"\t\t{cfg}|{sln_plat} = {cfg}|{sln_plat}")
+    lines.append("\tEndGlobalSection")
+
+    # ProjectConfigurationPlatforms
+    lines.append("\tGlobalSection(ProjectConfigurationPlatforms) = postSolution")
+    for cfg, plat in CONFIGURATIONS:
+        sln_plat = "x86" if plat == "Win32" else plat
+        lines.append(f"\t\t{guid_upper}.{cfg}|{sln_plat}.ActiveCfg = {cfg}|{plat}")
+        lines.append(f"\t\t{guid_upper}.{cfg}|{sln_plat}.Build.0 = {cfg}|{plat}")
+    lines.append("\tEndGlobalSection")
+
+    lines.append("\tGlobalSection(SolutionProperties) = preSolution")
+    lines.append("\t\tHideSolutionNode = FALSE")
+    lines.append("\tEndGlobalSection")
+
+    lines.append("\tGlobalSection(ExtensibilityGlobals) = postSolution")
+    lines.append(f"\t\tSolutionGuid = {SOLUTION_GUID}")
+    lines.append("\tEndGlobalSection")
+
+    lines.append("EndGlobal")
+    lines.append("")
+
+    sln_path = ROOT / f"{PROJECT_NAME}.sln"
+    with open(sln_path, "w", encoding="utf-8-sig", newline="\r\n") as f:
+        f.write("\n".join(lines))
+
+
+# ──────────────────────────────────────────────
+# Main
+# ──────────────────────────────────────────────
+def main():
+    print(f"Scanning project files in {PROJECT_DIR}...")
+
+    files = scan_files(PROJECT_DIR)
+
+    print(f"  ClCompile:  {len(files['ClCompile'])} files")
+    print(f"  ClInclude:  {len(files['ClInclude'])} files")
+    print(f"  FxCompile:  {len(files['FxCompile'])} files")
+    print(f"  RC:         {len(files['ResourceCompile'])} files")
+    print(f"  Natvis:     {len(files['Natvis'])} files")
+    print(f"  None:       {len(files['None'])} files")
+
+    print("Generating project files...")
+
+    generate_vcxproj(files)
+    print(f"  {PROJECT_NAME}.vcxproj")
+
+    generate_filters(files)
+    print(f"  {PROJECT_NAME}.vcxproj.filters")
+
+    generate_sln()
+    print(f"  {PROJECT_NAME}.sln")
+
+    print("Done!")
+
+
+if __name__ == "__main__":
+    main()

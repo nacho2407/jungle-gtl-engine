@@ -1,0 +1,168 @@
+# Claude Code
+CLAUDE.md
+DEVLOG.md
+.claude/
+
+
+# Codex agent files
+.codex/
+AGENTS.md
+
+
+# ============================================================
+# Visual Studio — user/cache
+# ============================================================
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.vs/
+
+# Visual C++ cache files
+ipch/
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+*.[Cc]ache
+!?*.[Cc]ache/
+
+# ============================================================
+# C++ build artifacts
+# ============================================================
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+!**/Data/**/*.obj
+*.idb
+*.iobj
+*.pch
+*.pdb
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+!Directory.Build.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*.log
+*.tlog
+*.binlog
+MSBuild_Logs/
+
+# ============================================================
+# Per-config build output (Visual Studio default folders)
+# Source/ 와 ThirdParty/ 하위는 동명 디렉터리(Source/Editor/Debug 류)가 있을 수 있으니 예외.
+# ============================================================
+[Dd]ebug/
+!**/Source/**/[Dd]ebug/
+!**/ThirdParty/**/[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+!**/Source/**/[Rr]elease/
+!**/ThirdParty/**/[Rr]elease/
+[Rr]eleases/
+ObjView*Debug/
+**/Build/
+
+# Per-platform output
+[Dd]ebug/x64/
+[Rr]elease/x64/
+bin/x64/
+obj/x64/
+[Dd]ebug/x86/
+[Rr]elease/x86/
+bin/x86/
+obj/x86/
+[Ww][Ii][Nn]32/
+
+# Bin/ 안의 산출물 (Bin 폴더 자체는 유지)
+# ThirdParty 하위 bin/ 은 외부 라이브러리 배포본(예: lua51.dll) 이므로 예외.
+**/[Bb]in/*
+!**/ThirdParty/**/[Bb]in/*
+
+# ============================================================
+# 패키징 산출물 (root 의 *Build/ 폴더, 그리고 Game/)
+# Source/Game/ 같은 추적 대상과 겹치지 않도록 root-only(/) 로 잡는다.
+# ============================================================
+/GameBuild/
+/ReleaseBuild/
+/Game/
+
+# ============================================================
+# Engine 런타임 산출물
+# ============================================================
+Saves/
+Intermediate/
+
+# ============================================================
+# 메시 캐시 (.bin, .mbin) — 런타임 재생성됨
+# ============================================================
+*.bin
+*.statbin
+*.sketbin
+*.mbin
+
+# ============================================================
+# NuGet (PhysX 등) — packages/ 캐시는 복원되니 추적 안 함
+# ============================================================
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# ============================================================
+# IDE
+# ============================================================
+# JetBrains Rider
+.idea/
+*.sln.DotSettings.user
+*.sln.iml
+.idea_modules/
+# Rider 가 자동 생성하는 CMakeLists (의존성 다이어그램용)
+CMakeLists.txt
+
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+.history/
+
+# ============================================================
+# NVIDIA Nsight
+# ============================================================
+*.nvuser
+
+# ============================================================
+# Python (Scripts/GenerateProjectFiles.py 등)
+# ============================================================
+**/__pycache__/
+*.pyc
+
+# ============================================================
+# OS / 편집기 백업
+# ============================================================
+~$*
+*~
+
+# ============================================================
+# 환경설정
+# ============================================================
+*.env

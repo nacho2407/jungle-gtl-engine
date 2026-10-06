@@ -1,0 +1,320 @@
+// =============================================================================
+// UberLit.hlsl — Uber Shader for Forward Shading
+// =============================================================================
+// Preprocessor Definitions (C++ 에서 D3D_SHADER_MACRO 로 전달):
+//   LIGHTING_MODEL_GOURAUD  1  — 정점 단계 라이팅 (Gouraud Shading)
+//   LIGHTING_MODEL_LAMBERT  1  — 픽셀 단계 Diffuse only (Lambert)
+//   LIGHTING_MODEL_PHONG    1  — 픽셀 단계 Diffuse + Specular (Blinn-Phong)
+//
+// 아무 라이팅 모델 매크로도 없으면 기본값 = Blinn-Phong
+//   LIGHTING_MODEL_UNLIT   1  — 라이팅 없음 (Albedo + Wireframe)
+// =============================================================================
+
+#include "Common/Functions.hlsli"
+#include "Common/VertexLayouts.hlsli"
+#include "Common/SystemSamplers.hlsli"
+#include "Common/Skinning.hlsli"
+#include "Common/Fog.hlsli"
+
+#if !defined(LIGHTING_MODEL_UNLIT)
+#include "Common/ForwardLighting.hlsli"
+#endif
+
+// ── 기본값 설정 ──
+#if !defined(LIGHTING_MODEL_GOURAUD) && !defined(LIGHTING_MODEL_LAMBERT) && !defined(LIGHTING_MODEL_PHONG) && !defined(LIGHTING_MODEL_UNLIT)
+#define LIGHTING_MODEL_PHONG 1
+#endif
+
+// =============================================================================
+// 텍스처
+// =============================================================================
+Texture2D DiffuseTexture : register(t0);
+Texture2D NormalTexture : register(t1);
+
+// ── Per-Object Material (b2) — 기존 StaticMesh 와 레이아웃 동일 (호환성) ──
+cbuffer PerShader1 : register(b2)
+{
+    float4 SectionColor;
+    float HasNormalMap;
+    float AlphaCutoff;
+    float2 _pad;
+};
+
+cbuffer WheelDeformationBuffer : register(b8)
+{
+    float4 WheelContactNormalAndDepth;
+    float WheelRadius;
+    float3 WheelDeformationPad;
+};
+
+
+// 머티리얼 확장 파라미터 — 팀원 A CB 시스템 완성 후 b2 확장 예정
+static const float4 g_DefaultEmissive = float4(0, 0, 0, 0);
+static const float g_DefaultShininess = 32.0f;
+
+// =============================================================================
+// VS ↔ PS 인터페이스
+// =============================================================================
+struct UberVS_Output
+{
+    float4 position : SV_POSITION;
+    float3 normal : NORMAL;
+    float4 color : COLOR0;
+    float2 texcoord : TEXCOORD0;
+    float3 worldPos : TEXCOORD1;
+    float4 tangent : TANGENT;
+    float selectedBoneWeight : TEXCOORD4;
+#if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
+    float3 litDiffuse  : TEXCOORD2;
+    float3 litSpecular : TEXCOORD3;
+#endif
+};
+
+// =============================================================================
+// Vertex Shader
+// =============================================================================
+UberVS_Output VS_StaticMesh(VS_Input_PNCTT input)
+{
+    UberVS_Output output;
+    
+    float3x3 M = (float3x3) Model;
+
+    float4 worldPos4 = mul(float4(input.position, 1.0f), Model);
+    output.worldPos = worldPos4.xyz;
+    output.position = mul(mul(worldPos4, View), Projection);
+    output.normal = normalize(mul(input.normal, (float3x3) NormalMatrix));
+    output.color = input.color * SectionColor;
+    output.texcoord = input.texcoord;
+    output.selectedBoneWeight = 0.0f;
+
+    float3 T = normalize(mul(input.tangent.xyz, M));
+    T = normalize(T - output.normal * dot(output.normal, T));
+    output.tangent = float4(T, input.tangent.w);
+
+#if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
+    float3 N =  output.normal;
+
+    if (HasNormalMap > 0.5f)
+    {
+        float3 B = normalize(cross(N, T) * input.tangent.w);
+        float3x3 TBN = float3x3(T, B, N);
+
+        float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+
+        N = normalize(mul(tangentNormal, TBN));
+    }
+
+    float3 V = normalize(CameraWorldPos - output.worldPos);
+    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N);
+    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess);
+
+#endif
+
+    return output;
+}
+
+UberVS_Output VS_WheelMesh(VS_Input_PNCTT input)
+{
+    UberVS_Output output;
+
+    float3x3 M = (float3x3) Model;
+    float4 worldPos4 = mul(float4(input.position, 1.0f), Model);
+
+    float deformationDepth = max(WheelContactNormalAndDepth.w, 0.0f);
+    if (deformationDepth > 0.00001f && WheelRadius > 0.00001f)
+    {
+        float3 contactNormal = normalize(WheelContactNormalAndDepth.xyz);
+        float3 wheelCenter = mul(float4(0.0f, 0.0f, 0.0f, 1.0f), Model).xyz;
+        float distanceFromCenter = dot(worldPos4.xyz - wheelCenter, contactNormal);
+        float tireBottom = -WheelRadius;
+        float flattenStart = tireBottom + deformationDepth;
+        float flattenAlpha = saturate((flattenStart - distanceFromCenter) / deformationDepth);
+        worldPos4.xyz += contactNormal * ((tireBottom - distanceFromCenter) * flattenAlpha);
+    }
+
+    output.worldPos = worldPos4.xyz;
+    output.position = mul(mul(worldPos4, View), Projection);
+    output.normal = normalize(mul(input.normal, (float3x3) NormalMatrix));
+    output.color = input.color * SectionColor;
+    output.texcoord = input.texcoord;
+    output.selectedBoneWeight = 0.0f;
+
+    float3 T = normalize(mul(input.tangent.xyz, M));
+    T = normalize(T - output.normal * dot(output.normal, T));
+    output.tangent = float4(T, input.tangent.w);
+
+#if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
+    float3 N = output.normal;
+
+    if (HasNormalMap > 0.5f)
+    {
+        float3 B = normalize(cross(N, T) * input.tangent.w);
+        float3x3 TBN = float3x3(T, B, N);
+        float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+        N = normalize(mul(tangentNormal, TBN));
+    }
+
+    float3 V = normalize(CameraWorldPos - output.worldPos);
+    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N);
+    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess);
+#endif
+
+    return output;
+}
+
+// GPU Skinning
+UberVS_Output VS_SkeletalMesh(VS_Input_PNCTTBB input)
+{
+    UberVS_Output output;
+    
+    FSkinningResult skinned = ApplyLinearBlendSkinning(
+    input.position,
+    input.normal,
+    input.tangent.xyz,
+    input.boneIndices,
+    input.boneWeights);
+
+    float4 WeightedPosition = skinned.position;
+    float3 WeightedNormal = skinned.normal;
+    float3 WeightedTangent = skinned.tangent;
+    float SelectedWeight = GetBoneInfluenceWeight(input.boneIndices, input.boneWeights, SelectedBoneIndex);
+    
+    float3x3 M = (float3x3) Model;
+    
+    float4 worldPos4 = mul(WeightedPosition, Model);
+    output.worldPos = worldPos4.xyz;
+    output.position = mul(mul(worldPos4, View), Projection);
+    output.normal = normalize(mul(WeightedNormal, (float3x3) NormalMatrix));
+    output.color = input.color * SectionColor;
+    output.texcoord = input.texcoord;
+    output.selectedBoneWeight = SelectedWeight;
+
+    float3 T = normalize(mul(WeightedTangent, M));
+    T = normalize(T - output.normal * dot(output.normal, T));
+    output.tangent = float4(T, input.tangent.w);
+
+#if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
+    float3 N =  output.normal;
+
+    if (HasNormalMap > 0.5f)
+    {
+        float3 B = normalize(cross(N, T) * output.tangent.w);
+        float3x3 TBN = float3x3(T, B, N);
+
+        float3 tangentNormal = NormalTexture.SampleLevel(LinearWrapSampler, input.texcoord, 0).xyz * 2.0f - 1.0f;
+
+        N = normalize(mul(tangentNormal, TBN));
+    }
+
+    float3 V = normalize(CameraWorldPos - output.worldPos);
+    output.litDiffuse = AccumulateDiffuseVS(output.worldPos, N);
+    output.litSpecular = AccumulateSpecularVS(output.worldPos, N, V, g_DefaultShininess);
+
+#endif
+
+    return output;
+}
+
+// =============================================================================
+// MRT 출력 구조체
+// =============================================================================
+struct UberPS_Output
+{
+    float4 Color : SV_TARGET0; // 최종 색상 (기존 프레임 버퍼)
+    float4 Normal : SV_TARGET1; // World Normal (GBuffer Normal RT)
+    float4 Culling : SV_TARGET2; // Tile Culling Heatmap
+};
+
+// =============================================================================
+// Pixel Shader
+// =============================================================================
+UberPS_Output PS(UberVS_Output input, bool bIsFrontFace : SV_IsFrontFace)
+{
+    UberPS_Output output;
+
+    float4 texColor = DiffuseTexture.Sample(LinearWrapSampler, input.texcoord);
+    clip(texColor.a - AlphaCutoff);
+    float4 baseColor = (texColor.a < 0.001f)
+        ? input.color           // 텍스처 없음: SectionColor(=input.color)만 사용
+        : texColor * input.color; // 텍스처 있음: 텍스처 색상 × SectionColor
+
+#if defined(WEIGHT_BONE_HEATMAP) && WEIGHT_BONE_HEATMAP
+float Heat = saturate(input.selectedBoneWeight);
+
+float t0 = smoothstep(0.0f, 0.05f, Heat);   // 마젠타 ->  파랑
+float t1 = smoothstep(0.05f, 0.2f, Heat);   // 파랑   ->  시안
+float t2 = smoothstep(0.2f, 0.35f, Heat);   // 시안   ->  초록
+float t3 = smoothstep(0.35f, 0.5f, Heat);   // 초록   ->  노랑
+float t4 = smoothstep(0.5f, 1.0f, Heat);    // 노랑   ->  빨강
+
+float3 HeatColor = lerp(float3(1.0f, 0.0f, 1.0f),  float3(0.0f, 0.0f, 1.0f),  t0);
+HeatColor = lerp(HeatColor, float3(0.0f, 1.0f, 1.0f),  t1);
+HeatColor = lerp(HeatColor, float3(0.0f, 0.9f, 0.15f), t2);
+HeatColor = lerp(HeatColor, float3(1.0f, 1.0f, 0.0f),  t3);
+HeatColor = lerp(HeatColor, float3(1.0f, 0.05f, 0.0f), t4);
+
+output.Color = float4(HeatColor, 1.f);
+output.Normal = float4(normalize(input.normal), 1.0f);
+output.Culling = float4(0, 0, 0, 0);
+return output;
+#endif
+
+    float3 N = normalize(input.normal);
+
+#if !defined(LIGHTING_MODEL_GOURAUD)
+    if (HasNormalMap >= 0.5)
+    {
+        float3 T = normalize(input.tangent.xyz);
+        T = normalize(T - N * dot(N, T));
+
+        float3 B = normalize(cross(N, T) * input.tangent.w);
+        float3x3 TBN = float3x3(T, B, N);
+
+        float3 tangentNormal = NormalTexture.Sample(LinearWrapSampler, input.texcoord).xyz * 2.0f - 1.0f;
+        N = normalize(mul(tangentNormal, TBN));
+    }
+#endif
+
+    // no-cull 양면 렌더링에서 뒷면은 조명 기준 normal을 반대로 사용
+    if (!bIsFrontFace)
+    {
+        N = -N;
+    }
+
+    float3 V = normalize(CameraWorldPos - input.worldPos);
+
+#if defined(LIGHTING_MODEL_UNLIT) && LIGHTING_MODEL_UNLIT
+    // Unlit: 라이팅 없이 Albedo만 출력
+    float3 finalColor = ApplyWireframe(baseColor.rgb);
+    output.Culling = float4(0, 0, 0, 0);
+
+#else
+    float3 diffuse = float3(0, 0, 0);
+    float3 specular = float3(0, 0, 0);
+
+#if defined(LIGHTING_MODEL_GOURAUD) && LIGHTING_MODEL_GOURAUD
+    // Gouraud: VS에서 정점 단위로 계산 → PS에서 보간된 값 사용
+    diffuse  = input.litDiffuse;
+    specular = input.litSpecular;
+
+#elif defined(LIGHTING_MODEL_LAMBERT) && LIGHTING_MODEL_LAMBERT
+    diffuse = AccumulateDiffuse(input.worldPos, N, input.position);
+
+#elif defined(LIGHTING_MODEL_PHONG) && LIGHTING_MODEL_PHONG
+    diffuse = AccumulateDiffuse(input.worldPos, N, input.position);
+    specular = AccumulateSpecular(input.worldPos, N, V, g_DefaultShininess, input.position);
+
+#endif
+
+    output.Culling = ComputeCullingHeatmap(input.position, input.worldPos);
+    // Diffuse에만 albedo를 곱하고, Specular는 빛 색상 그대로 더한다
+    // (비금속 표면: specular 반사 = 빛의 색, 물체 색이 아님)
+    float3 finalColor = baseColor.rgb * diffuse + specular + g_DefaultEmissive.rgb;
+    finalColor = ApplyWireframe(finalColor);
+#endif
+
+    output.Color = ApplyFogTranslucent(float4(finalColor, baseColor.a), input.worldPos, CameraWorldPos);
+    output.Normal = float4(N, 1.0f); // alpha=1: 유효한 노말 마킹
+
+    return output;
+}

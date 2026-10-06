@@ -1,0 +1,123 @@
+#include "AssetEditorManager.h"
+
+#include "Editor/UI/Asset/AssetEditorWidget.h"
+#include "Viewport/EditorPreviewViewportClient.h"
+
+FAssetEditorManager::~FAssetEditorManager() = default;
+
+void FAssetEditorManager::Tick(float DeltaTime)
+{
+	for (const auto& Editor : OpenEditors)
+	{
+		if (Editor->IsOpen())
+		{
+			Editor->Tick(DeltaTime);
+		}
+	}
+
+	RemoveClosedEditors();
+}
+
+void FAssetEditorManager::Render(const FEditorPanelContext& Context)
+{
+	for (const auto& Editor : OpenEditors)
+	{
+		Editor->Render(Context);
+	}
+}
+
+void FAssetEditorManager::CloseAll()
+{
+	for (const auto& Editor : OpenEditors)
+	{
+		if (Editor && Editor->IsOpen())
+		{
+			Editor->Close();
+		}
+	}
+	OpenEditors.clear();
+}
+
+bool FAssetEditorManager::OpenEditorForObject(UObject* Object)
+{
+	RemoveClosedEditors();
+
+	for (const auto& Editor : OpenEditors)
+	{
+		if (Editor && Editor->IsEditingObject(Object))
+		{
+			Editor->OnReuseForObject(Object);
+			Editor->RequestFocus();
+			return true;
+		}
+	}
+
+	for (const auto& Editor : OpenEditors)
+	{
+		if (Editor->CanEdit(Object) && !Editor->AllowsMultipleInstances())
+		{
+			Editor->Initialize(EditorEngine);
+			Editor->Open(Object);
+			return true;
+		}
+	}
+
+	for (const auto& Factory : EditorFactories)
+	{
+		auto Editor = Factory();
+		if (!Editor || !Editor->CanEdit(Object)) continue;
+
+		Editor->Initialize(EditorEngine);
+		Editor->Open(Object);
+		OpenEditors.push_back(std::move(Editor));
+		return true;
+	}
+
+	return false;
+}
+
+void FAssetEditorManager::CollectPreviewViewportClients(TArray<IEditorPreviewViewportClient*>& OutClients) const
+{
+	for (const auto& Editor : OpenEditors)
+	{
+		Editor->CollectPreviewViewports(OutClients);
+	}
+}
+
+bool FAssetEditorManager::IsMouseOverAnyEditorViewport() const
+{
+	TArray<IEditorPreviewViewportClient*> PreviewViewportClients;
+	CollectPreviewViewportClients(PreviewViewportClients);
+
+	for (IEditorPreviewViewportClient* Client : PreviewViewportClients)
+	{
+		if (Client && Client->IsMouseOverViewport())
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+void FAssetEditorManager::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	for (const auto& Editor : OpenEditors)
+	{
+		if (Editor && Editor->IsOpen())
+		{
+			Editor->AddReferencedObjects(Collector);
+		}
+	}
+}
+
+void FAssetEditorManager::RemoveClosedEditors()
+{
+	OpenEditors.erase(std::remove_if(OpenEditors.begin(), OpenEditors.end(),
+		[](const std::unique_ptr<FAssetEditorWidget>& Editor)
+		{
+			return !Editor || !Editor->IsOpen();
+		}),
+	OpenEditors.end());
+}
