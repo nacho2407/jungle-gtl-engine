@@ -2036,7 +2036,7 @@
     <ClCompile Include="ThirdParty\imgui-node-editor\imgui_node_editor_api.cpp">
       <Filter>ThirdParty\imgui-node-editor</Filter>
     </ClCompile>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Source\main.cpp" />
     <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp">
       <Filter>Intermediate\Generated</Filter>
     </ClCompile>
@@ -5787,7 +5787,7 @@
     <ClInclude Include="Source\Engine\Component\Physics\PhysicalAnimationComponent.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="KraftonEngine.rc" />
+    <ResourceCompile Include="week13.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
