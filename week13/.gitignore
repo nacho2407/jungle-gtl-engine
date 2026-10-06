@@ -166,3 +166,56 @@ CMakeLists.txt
 # 환경설정
 # ============================================================
 *.env
+
+# ============================================================
+# jungle-gtl-engine week13: build outputs and local state
+# ============================================================
+/Bin/
+/Build/
+/Intermediate/
+/Saves/
+/packages/
+/week13/
+/imgui.ini
+/Settings/Editor.ini
+/Settings/imgui.ini
+/Content/Scene/*
+!/Content/Scene/Default.Scene
+
+# Materials written at run time when a mesh is imported
+/Content/Material/Auto/*
+!/Content/Material/Auto/BasicShapeMaterial.mat
+!/Content/Material/Auto/BasicShapeMaterial_Emitter0.mat
+!/Content/Material/Auto/M_CubeGrid.mat
+!/Content/Material/Auto/Material.007.mat
+!/Content/Material/Auto/Material.008.mat
+!/Content/Material/Auto/Material.009.mat
+!/Content/Material/Auto/RedBeam.mat
+
+# Excluded from this repository because of license issues; kept only for local builds
+/ThirdParty/fbx/
+/ThirdParty/fmod/
+/Content/Editor/Icons/
+/Content/Editor/ToolIcons/
+/Content/Font/FontAtlas.dds
+/Content/Particle/BubleParticle.png
+/Content/Particle/Effect.dds
+/Content/Particle/Explosion.dds
+/Content/Particle/T_Fire_B.PNG
+/Content/Particle/T_Fire_F.PNG
+/Content/Particle/Water.jpeg
+/Content/Audio/
+/Content/Data/Car/
+/Content/Data/FinalBaseMesh/
+/Content/Data/HumanFallFlat/
+/Content/Data/Map/
+/Content/Data/Ninza/
+/Content/Data/RacingMap/
+/Content/Data/Samba Dancing/
+/Content/Data/hirasawa-yui/
+/Content/Data/skull-coin/
+/Content/Texture/Auto/Ahri/
+/Content/Texture/Auto/Galio/
+/Content/Texture/Auto/Samba Dancing (10)/
+/Content/Texture/Auto/Yeoul/
+/Content/Texture/Auto/yui/
