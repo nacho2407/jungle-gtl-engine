@@ -2526,4 +2526,14 @@ xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
     </PropertyGroup>
     <Error Condition="!Exists('packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2026.5.8.1\build\native\directxtk_desktop_win10.targets'))" />
   </Target>
+  <Target Name="CopyRuntimeFiles" AfterTargets="Build">
+    <ItemGroup>
+      <RuntimeShaders Include="$(ProjectDir)Shaders\**\*" />
+      <RuntimeContent Include="$(ProjectDir)Content\**\*" />
+      <RuntimeSettings Include="$(ProjectDir)Settings\Resource.ini;$(ProjectDir)Settings\ProjectSettings.ini;$(ProjectDir)Settings\ImGuiStyle.ini" />
+    </ItemGroup>
+    <Copy SourceFiles="@(RuntimeShaders)" DestinationFiles="@(RuntimeShaders->'$(OutDir)Shaders\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(RuntimeContent)" DestinationFiles="@(RuntimeContent->'$(OutDir)Content\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(RuntimeSettings)" DestinationFolder="$(OutDir)Settings" SkipUnchangedFiles="true" />
+  </Target>
 </Project>
