@@ -1,0 +1,41 @@
+#pragma once
+
+#include "MovementComponent.h"
+#include "Math/Quat.h"
+#include "Math/Rotator.h"
+#include "Math/Vector.h"
+
+#include "Source/Engine/Component/Movement/RotatingMovementComponent.generated.h"
+// 런타임 동안 UpdatedComponent를 일정 각속도로 회전시키는 이동 컴포넌트
+UCLASS()
+class URotatingMovementComponent : public UMovementComponent
+{
+public:
+	GENERATED_BODY()
+	URotatingMovementComponent() = default;
+	~URotatingMovementComponent() override = default;
+
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
+	void SetRotationRate(const FRotator& InRate) { RotationRate = InRate; }
+	FRotator GetRotationRate() const { return RotationRate; }
+
+	void SetRotationInLocalSpace(bool bInLocal) { bRotationInLocalSpace = bInLocal; }
+	bool IsRotationInLocalSpace() const { return bRotationInLocalSpace; }
+
+	void SetPivotTranslation(const FVector& InPivot) { PivotTranslation = InPivot; }
+	FVector GetPivotTranslation() const { return PivotTranslation; }
+
+private:
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Rotation Rate", Type=Rotator, Min=0.0f, Max=0.0f, Speed=0.1f)
+	FRotator RotationRate = FRotator(0.0f, 90.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Rotation In Local Space")
+	bool bRotationInLocalSpace = false;
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Pivot Translation", Type=Vec3, Min=0.0f, Max=0.0f, Speed=0.1f)
+	FVector PivotTranslation = FVector(0.0f, 0.0f, 0.0f);
+
+	// World-space 공전 모드에서 고정 pivot을 유지하기 위한 런타임 캐시
+	USceneComponent* CachedWorldPivotComponent = nullptr;
+	FVector CachedWorldPivotTranslation = FVector(0.0f, 0.0f, 0.0f);
+	FVector CachedWorldPivotLocation = FVector(0.0f, 0.0f, 0.0f);
+	bool bWorldPivotInitialized = false;
+};

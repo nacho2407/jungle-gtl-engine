@@ -1,0 +1,129 @@
+{
+  "Actors" : [{
+      "ClassName" : "AActor",
+      "Name" : "ElectricTrap",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Name" : "ULuaScriptComponent_10",
+          "ObjectId" : 5,
+          "Properties" : {
+            "ScriptFile" : "ElectricTrap.lua",
+            "bAutoActivate" : true,
+            "bEditorOnly" : false,
+            "bHiddenInComponentTree" : false,
+            "bIsActive" : true,
+            "bTickEnable" : true,
+            "bTickInEditor" : false
+          }
+        }],
+      "ObjectId" : 1,
+      "Properties" : {
+        "PendingActorLocation" : [40.800880, 21.830338, -9.333282],
+        "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
+        "PendingActorScale" : [1.000000, 1.000000, 1.000000],
+        "PendingActorVisible" : true,
+        "PendingTagsString" : "",
+        "bNeedsTick" : true
+      },
+      "RootComponent" : {
+        "Children" : [{
+            "Children" : [],
+            "ClassName" : "UParticleSystemComponent",
+            "Name" : "UParticleSystemComponent_5",
+            "ObjectId" : 3,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 0,
+              "CollisionPreset" : 0,
+              "InstanceParameters" : [],
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "ObjectType" : 0,
+              "ParticleScaleMultiplier" : 1.000000,
+              "ParticleSystemPath" : "Content/Particle/ElectricTrap.uasset",
+              "RelativeTransform.Location" : [0.000000, 0.000000, 0.000000],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 2,
+                "Responses[1]" : 2,
+                "Responses[2]" : 2,
+                "Responses[3]" : 2,
+                "Responses[4]" : 2,
+                "Responses[5]" : 2
+              },
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : true,
+              "bCastShadowAsTwoSided" : false,
+              "bEditorOnly" : false,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : false,
+              "bHiddenInComponentTree" : false,
+              "bIsActive" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true,
+              "bTickInEditor" : true
+            }
+          }, {
+            "Children" : [],
+            "ClassName" : "UBoxComponent",
+            "Name" : "UBoxComponent_0",
+            "ObjectId" : 4,
+            "Properties" : {
+              "AngularDamping" : 0.010000,
+              "BoxExtent" : [50.000000, 1.000000, 0.800000],
+              "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+              "CollisionEnabled" : 1,
+              "CollisionPreset" : 7,
+              "LinearDamping" : 0.010000,
+              "Mass" : 1.000000,
+              "ObjectType" : 4,
+              "RelativeTransform.Location" : [49.242035, 0.000000, 0.832717],
+              "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+              "ResponseContainer" : {
+                "Responses[0]" : 1,
+                "Responses[1]" : 1,
+                "Responses[2]" : 1,
+                "Responses[3]" : 1,
+                "Responses[4]" : 1,
+                "Responses[5]" : 1
+              },
+              "ShapeColor" : [0.000000, 1.000000, 0.000000, 1.000000],
+              "TranslucentSortPriority" : 0,
+              "bAutoActivate" : true,
+              "bCastShadow" : false,
+              "bCastShadowAsTwoSided" : false,
+              "bDrawOnlyIfSelected" : false,
+              "bEditorOnly" : false,
+              "bEnableGravity" : true,
+              "bGenerateOverlapEvents" : true,
+              "bHiddenInComponentTree" : false,
+              "bIsActive" : true,
+              "bIsVisible" : true,
+              "bSimulatePhysics" : false,
+              "bTickEnable" : true,
+              "bTickInEditor" : false
+            }
+          }],
+        "ClassName" : "USceneComponent",
+        "Name" : "USceneComponent_0",
+        "ObjectId" : 2,
+        "Properties" : {
+          "CachedEditRotator" : [-0.000000, 0.000000, 0.000000],
+          "RelativeTransform.Location" : [40.800880, 21.830338, -9.333282],
+          "RelativeTransform.Scale" : [1.000000, 1.000000, 1.000000],
+          "bAutoActivate" : true,
+          "bEditorOnly" : false,
+          "bHiddenInComponentTree" : false,
+          "bIsActive" : true,
+          "bTickEnable" : true,
+          "bTickInEditor" : false
+        }
+      }
+    }],
+  "ClassName" : "Prefab",
+  "Origin" : [40.800880, 21.830338, -9.333282],
+  "Version" : 1
+}

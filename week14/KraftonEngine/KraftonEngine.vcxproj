@@ -1,0 +1,2461 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Game|Win32">
+      <Configuration>Game</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Game|x64">
+      <Configuration>Game</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ObjViewDebug|x64">
+      <Configuration>ObjViewDebug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Demo|x64">
+      <Configuration>Demo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{55068e81-c0a0-49f9-ab7b-54aea968722b}</ProjectGuid>
+    <RootNamespace>Week2</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <PythonExe Condition="'$(PythonExe)'==''">$(MSBuildProjectDirectory)\..\Scripts\python\python.exe</PythonExe>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Debug;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\debug;ThirdParty\PhysX\lib\debug;ThirdParty\NvCloth\lib\debug;$(LibraryPath)</LibraryPath>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;ThirdParty\PhysX\lib\release;ThirdParty\NvCloth\lib\release;$(LibraryPath)</LibraryPath>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;ThirdParty\PhysX\lib\release;ThirdParty\NvCloth\lib\release;$(LibraryPath)</LibraryPath>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;ThirdParty\PhysX\lib\release;ThirdParty\NvCloth\lib\release;$(LibraryPath)</LibraryPath>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
+    <OutDir>$(ProjectDir)Bin\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)Build\$(Configuration)\</IntDir>
+    <IncludePath>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;$(IncludePath)</IncludePath>
+    <LibraryPath>ThirdParty\RmlUi\Release;ThirdParty\fmod\lib;ThirdParty\fbx\lib\x64\release;ThirdParty\PhysX\lib\release;ThirdParty\NvCloth\lib\release;$(LibraryPath)</LibraryPath>
+    <LocalDebuggerWorkingDirectory>$(ProjectDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;xinput.lib;dinput8.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;xinput.lib;dinput8.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;xinput.lib;dinput8.lib;dxguid.lib;rmlui.lib;rmlui_debugger.lib;fmodL_vc.lib;libfbxsdk.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXCooking_64.lib;PhysXPvdSDK_static_64.lib;PhysXVehicle_static_64.lib;PhysXCharacterKinematic_static_64.lib;NvClothDEBUG_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Debug\*.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmodL.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\debug\libfbxsdk.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\debug\PhysX_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\debug\PhysXCommon_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\debug\PhysXFoundation_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\debug\PhysXCooking_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\debug\NvClothDEBUG_x64.dll" "$(OutDir)"
+</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;xinput.lib;dinput8.lib;dxguid.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXCooking_64.lib;PhysXPvdSDK_static_64.lib;PhysXVehicle_static_64.lib;PhysXCharacterKinematic_static_64.lib;NvCloth_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysX_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCommon_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXFoundation_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir)"
+</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;WITH_EDITOR=0;WITH_STANDALONE=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;xinput.lib;dinput8.lib;dxguid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Game|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=0;WITH_STANDALONE=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;xinput.lib;dinput8.lib;dxguid.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXCooking_64.lib;PhysXPvdSDK_static_64.lib;PhysXVehicle_static_64.lib;PhysXCharacterKinematic_static_64.lib;NvCloth_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysX_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCommon_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXFoundation_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir)"
+</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;IS_OBJ_VIEWER=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;xinput.lib;dinput8.lib;dxguid.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXCooking_64.lib;PhysXPvdSDK_static_64.lib;PhysXVehicle_static_64.lib;PhysXCharacterKinematic_static_64.lib;NvCloth_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysX_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCommon_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXFoundation_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir)"
+</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;FBXSDK_SHARED;WITH_EDITOR=1;STATS=0;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>Intermediate\Generated;Source\Engine;Source;ThirdParty;ThirdParty\ImGui;ThirdParty\imgui-node-editor;ThirdParty\RmlUi\Include;Source\Editor;Source\ObjViewer;Source\Game;ThirdParty\lua\include;ThirdParty\sol2\include;ThirdParty\fmod\include;ThirdParty\fbx\include;ThirdParty\PhysX\include;ThirdParty\PhysX\include\PhysX;ThirdParty\PhysX\include\PxShared;ThirdParty\NvCloth\include;.;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>Async</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(ProjectDir)ThirdParty\lua\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>lua51.lib;xinput.lib;dinput8.lib;dxguid.lib;rmlui.lib;rmlui_debugger.lib;fmod_vc.lib;libfbxsdk.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXCooking_64.lib;PhysXPvdSDK_static_64.lib;PhysXVehicle_static_64.lib;PhysXCharacterKinematic_static_64.lib;NvCloth_x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PostBuildEvent>
+      <Command>xcopy /Y "$(ProjectDir)ThirdParty\RmlUi\Release\*.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fmod\lib\fmod.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\lua\bin\lua51.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\fbx\lib\x64\release\libfbxsdk.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysX_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCommon_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXFoundation_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\PhysX\lib\release\PhysXCooking_64.dll" "$(OutDir)"
+xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir)"
+</Command>
+    </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateHeaders.py" --root "$(ProjectDir)."
+"$(PythonExe)" "$(ProjectDir)..\Scripts\GenerateLuaBindings.py" --root "$(ProjectDir)."</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Editor\EditorEngine.cpp" />
+    <ClCompile Include="Source\Editor\EditorRenderPipeline.cpp" />
+    <ClCompile Include="Source\Editor\Build\EditorGameBuilder.cpp" />
+    <ClCompile Include="Source\Editor\Selection\SelectionManager.cpp" />
+    <ClCompile Include="Source\Editor\Settings\EditorSettings.cpp" />
+    <ClCompile Include="Source\Editor\Slate\SSplitter.cpp" />
+    <ClCompile Include="Source\Editor\Slate\SWindow.cpp" />
+    <ClCompile Include="Source\Editor\Slate\SlateApplication.cpp" />
+    <ClCompile Include="Source\Editor\Subsystem\AssetFactory.cpp" />
+    <ClCompile Include="Source\Editor\Subsystem\OverlayStatSystem.cpp" />
+    <ClCompile Include="Source\Editor\Subsystem\PhysicsAssetEditingLibrary.cpp" />
+    <ClCompile Include="Source\Editor\Subsystem\PhysicsAssetGenerator.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorMainPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\EditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\AssetEditorManager.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\AssetEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimGraphEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimMontagePropertyPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimSequencePropertyPanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimationTimelinePanel.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Animation\AnimationTransportBar.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\Physics\PhysicsAssetEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\UI\UIEditorDocument.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\UI\UIEditorSerializer.cpp" />
+    <ClCompile Include="Source\Editor\UI\Asset\UI\UIEditorWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowser.cpp" />
+    <ClCompile Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.cpp" />
+    <ClCompile Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Debug\EditorAnimationDebugWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Debug\EditorShadowMapDebugWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Dialog\FbxImportOptionsDialog.cpp" />
+    <ClCompile Include="Source\Editor\UI\Dialog\PhysicsAssetCreationDialog.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorConsoleWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorControlWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorGameBuildWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorMaterialInspector.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyRenderer.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorPropertyWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorSceneWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorStatWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Panel\EditorViewportWidget.cpp" />
+    <ClCompile Include="Source\Editor\UI\Toolbar\ViewportToolbar.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorDragSource.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorFileUtils.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\EditorTextureManager.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\ImGuiSetting.cpp" />
+    <ClCompile Include="Source\Editor\UI\Util\NotificationToast.cpp" />
+    <ClCompile Include="Source\Editor\Undo\EditorUndoCommand.cpp" />
+    <ClCompile Include="Source\Editor\Undo\EditorUndoManager.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\EditorViewportClient.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\ViewportCameraTransform.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\Asset\PhysicsAssetEditorViewportClient.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.cpp" />
+    <ClCompile Include="Source\Editor\Viewport\Level\FLevelViewportLayout.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimationManager.cpp" />
+    <ClCompile Include="Source\Engine\Animation\AnimationRuntime.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphAsset.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphCompiler.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Graph\AnimGraphManager.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\AnimSingleNodeInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\CharacterAnimGraphInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\CharacterAnimInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Instance\LuaAnimInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Montage\AnimMontage.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Montage\AnimMontageInstance.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_BlendListByEnum.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_LayeredBlendPerBone.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_Root.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_Slot.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotify.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotifyEvent.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotifyState.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotifyState_AttackHitWindow.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotifyState_LogDuration.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotify_LogMessage.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Notify\AnimNotify_PlaySound.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Sequence\AnimDataModel.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Sequence\AnimSequence.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Sequence\AnimSequenceBase.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Skeleton\Skeleton.cpp" />
+    <ClCompile Include="Source\Engine\Animation\Skeleton\SkeletonManager.cpp" />
+    <ClCompile Include="Source\Engine\Animation\StateMachine\AnimState.cpp" />
+    <ClCompile Include="Source\Engine\Asset\AssetPackage.cpp" />
+    <ClCompile Include="Source\Engine\Asset\AssetRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Audio\AudioManager.cpp" />
+    <ClCompile Include="Source\Engine\Audio\Miniaudio.cpp" />
+    <ClCompile Include="Source\Engine\Score\ScoreManager.cpp" />
+    <ClCompile Include="Source\Engine\CameraShake\CameraShakeAsset.cpp" />
+    <ClCompile Include="Source\Engine\CameraShake\CameraShakeManager.cpp" />
+    <ClCompile Include="Source\Engine\Collision\WorldCollisionQueries.cpp" />
+    <ClCompile Include="Source\Engine\Collision\BVH\MeshTriangleBVH.cpp" />
+    <ClCompile Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Math\CollisionMath.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Math\ConvexVolume.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Octree\Octree.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Octree\SpatialPartition.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Ray\RayUtils.cpp" />
+    <ClCompile Include="Source\Engine\Collision\Ray\RayUtilsSIMD.cpp" />
+    <ClCompile Include="Source\Engine\Component\ActorComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\MeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\PrimitiveComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\SceneComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\ShapeComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Camera\CameraComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Camera\CineCameraComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Camera\SpringArmComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Debug\BoneDebugComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Debug\GizmoComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Debug\TemporaryBoneAnimatorComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Input\ActionComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Input\InputComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\AmbientLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\DirectionalLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\LightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\LightComponentBase.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\PointLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Light\SpotLightComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\CharacterMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\FloatingPawnMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\MovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\PendulumMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\ProjectileMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\RotatingMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.cpp" />
+    <ClCompile Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.cpp" />
+    <ClCompile Include="Source\Engine\Component\Particle\ParticleSystemComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\BillboardComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\ClothComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\DecalComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\HeightFogComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\StaticMeshComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\SubUVComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Primitive\TextRenderComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Ragdoll\RagdollHitReactionComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Script\LuaScriptComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Shape\BoxComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Shape\CapsuleComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Shape\CurvedWallRunColliderComponent.cpp" />
+    <ClCompile Include="Source\Engine\Component\Shape\SphereComponent.cpp" />
+    <ClCompile Include="Source\Engine\Core\ProjectSettings.cpp" />
+    <ClCompile Include="Source\Engine\Core\TickFunction.cpp" />
+    <ClCompile Include="Source\Engine\Core\Logging\Log.cpp" />
+    <ClCompile Include="Source\Engine\Core\Logging\Notification.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\ArrayProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\BoolProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\ClassProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\EnumProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\GenericProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\NameProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\NumericProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\ObjectProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\ObjectPropertyBase.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\SoftObjectProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\StringProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Property\StructProperty.cpp" />
+    <ClCompile Include="Source\Engine\Core\Types\EngineTypes.cpp" />
+    <ClCompile Include="Source\Engine\Core\Types\PropertyTypes.cpp" />
+    <ClCompile Include="Source\Engine\Debug\DebugDrawQueue.cpp" />
+    <ClCompile Include="Source\Engine\Debug\DrawDebugHelpers.cpp" />
+    <ClCompile Include="Source\Engine\FloatCurve\FloatCurveAsset.cpp" />
+    <ClCompile Include="Source\Engine\FloatCurve\FloatCurveManager.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\AActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Level.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\World.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\BoxActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\CapsuleActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\CurvedWallRunColliderActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\DecalActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\HeightFogActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\PlayerStart.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\SphereActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\SceneTransitionTriggerActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\StaticMeshActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraModifier.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeBase.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\CineCameraActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\GameplayStatics.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\LuaPlayerController.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\GameMode\PlayerController.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Gameplay\GameplayRuntime.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Light\AmbientLightActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Light\DirectionalLightActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Light\PointLightActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Light\SpotLightActor.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Pawn\Character.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Pawn\LuaCharacter.cpp" />
+    <ClCompile Include="Source\Engine\GameFramework\Pawn\Pawn.cpp" />
+    <ClCompile Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.cpp" />
+    <ClCompile Include="Source\Engine\Gizmo\ComponentGizmoTarget.cpp" />
+    <ClCompile Include="Source\Engine\Input\InputSystem.cpp" />
+    <ClCompile Include="Source\Engine\Lua\LuaDocRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Lua\LuaScriptManager.cpp" />
+    <ClCompile Include="Source\Engine\Materials\Material.cpp" />
+    <ClCompile Include="Source\Engine\Materials\MaterialCore.cpp" />
+    <ClCompile Include="Source\Engine\Materials\MaterialManager.cpp" />
+    <ClCompile Include="Source\Engine\Math\FloatCurve.cpp" />
+    <ClCompile Include="Source\Engine\Math\Matrix.cpp" />
+    <ClCompile Include="Source\Engine\Math\Quat.cpp" />
+    <ClCompile Include="Source\Engine\Math\Rotator.cpp" />
+    <ClCompile Include="Source\Engine\Math\Transform.cpp" />
+    <ClCompile Include="Source\Engine\Math\Vector.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\MeshManager.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\MeshSimplifier.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\FbxImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\ObjImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxAnimationImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxMaterialImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxSceneLoader.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxSceneQuery.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxSkeletalMeshImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxSkeletonImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxSkinWeightImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxStaticMeshImporter.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxTangentBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Importer\Fbx\FbxTransformUtils.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Skeletal\SkeletalMesh.cpp" />
+    <ClCompile Include="Source\Engine\Mesh\Static\StaticMesh.cpp" />
+    <ClCompile Include="Source\Engine\Object\FName.cpp" />
+    <ClCompile Include="Source\Engine\Object\GarbageCollectionTest.cpp" />
+    <ClCompile Include="Source\Engine\Object\GarbageCollector.cpp" />
+    <ClCompile Include="Source\Engine\Object\Object.cpp" />
+    <ClCompile Include="Source\Engine\Object\ReferenceCollector.cpp" />
+    <ClCompile Include="Source\Engine\Object\UUIDGenerator.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleSystem.cpp" />
+    <ClCompile Include="Source\Engine\Particles\ParticleSystemManager.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleCollision.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Module\ParticleModuleEvent.cpp" />
+    <ClCompile Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\BodyInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\BodySetup.cpp" />
+    <ClCompile Include="Source\Engine\Physics\ClothCollisionGeometryUtils.cpp" />
+    <ClCompile Include="Source\Engine\Physics\ClothInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\ConstraintInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\HitboxInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\NvClothSDK.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysXConversions.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysXSDK.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysXVehicle4WInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysXVehicleManager.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysXVehicleTankInstance.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicalMaterial.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicalMaterialManager.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsAsset.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsAssetDebugDraw.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsAssetManager.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsConstraintTemplate.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsEventCallback.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsFilterData.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsFilterShader.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsQueryFilter.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsScene.cpp" />
+    <ClCompile Include="Source\Engine\Physics\PhysicsShape.cpp" />
+    <ClCompile Include="Source\Engine\Physics\RagdollInstance.cpp" />
+    <ClCompile Include="Source\Engine\Platform\CrashDump.cpp" />
+    <ClCompile Include="Source\Engine\Platform\DirectoryWatcher.cpp" />
+    <ClCompile Include="Source\Engine\Platform\Paths.cpp" />
+    <ClCompile Include="Source\Engine\Platform\WindowsApplication.cpp" />
+    <ClCompile Include="Source\Engine\Platform\WindowsWindow.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\GPUProfiler.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\StartupProfiler.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\Stats\MemoryStats.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\Stats\PhysicsStats.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\Stats\ShadowStats.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\Stats\Stats.cpp" />
+    <ClCompile Include="Source\Engine\Profiling\Time\Timer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Command\DrawCommandBuilder.cpp" />
+    <ClCompile Include="Source\Engine\Render\Command\DrawCommandList.cpp" />
+    <ClCompile Include="Source\Engine\Render\Culling\ClusteredLightCuller.cpp" />
+    <ClCompile Include="Source\Engine\Render\Culling\GPUOcclusionCulling.cpp" />
+    <ClCompile Include="Source\Engine\Render\Culling\TileBasedLightCulling.cpp" />
+    <ClCompile Include="Source\Engine\Render\Device\D3DDevice.cpp" />
+    <ClCompile Include="Source\Engine\Render\Geometry\FontGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Geometry\LineGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Geometry\MeshParticleGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipeline\RenderCollector.cpp" />
+    <ClCompile Include="Source\Engine\Render\Pipeline\Renderer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\BillboardSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\ClothSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\DecalSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\GizmoSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\ShapeSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\SubUVSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\AdditiveDecalPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\AlphaBlendPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\BloomPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\DecalPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\DepthOfFieldPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\EditorLinesPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\FXAAPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\FogPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\GizmoInnerPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\GizmoOuterPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\LightCullingPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\OpaquePass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\OverlayFontPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\PassRenderStateTable.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\PostProcessPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\PreDepthPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassBase.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassPipeline.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\RenderPassRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\SelectionMaskPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\ShadowMapPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderPass\UIPass.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderState\BlendStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderState\DepthStencilStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderState\RasterizerStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\RenderState\SamplerStateManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\Buffer.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\MeshBufferManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Resource\RenderResources.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\FScene.cpp" />
+    <ClCompile Include="Source\Engine\Render\Scene\SceneEnvironment.cpp" />
+    <ClCompile Include="Source\Engine\Render\Shader\Shader.cpp" />
+    <ClCompile Include="Source\Engine\Render\Shader\ShaderCache.cpp" />
+    <ClCompile Include="Source\Engine\Render\Shader\ShaderManager.cpp" />
+    <ClCompile Include="Source\Engine\Render\Shadow\AtlasQuadTreeBase.cpp" />
+    <ClCompile Include="Source\Engine\Render\Shadow\AtlasQuadTreePoint.cpp" />
+    <ClCompile Include="Source\Engine\Render\Shadow\ShadowAtlasQuadTree.cpp" />
+    <ClCompile Include="Source\Engine\Render\Types\FrameContext.cpp" />
+    <ClCompile Include="Source\Engine\Render\Types\MinimalViewInfo.cpp" />
+    <ClCompile Include="Source\Engine\Resource\ResourceManager.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\ActorPlacementRegistry.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Engine.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\EngineInitHooks.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\EngineLoop.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\GameEngine.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\GameRenderPipeline.cpp" />
+    <ClCompile Include="Source\Engine\Runtime\Launch.cpp" />
+    <ClCompile Include="Source\Engine\Serialization\SceneSaveManager.cpp" />
+    <ClCompile Include="Source\Engine\Texture\Texture2D.cpp" />
+    <ClCompile Include="Source\Engine\Texture\stb_image_impl.cpp" />
+    <ClCompile Include="Source\Engine\UI\UIManager.cpp" />
+    <ClCompile Include="Source\Engine\UI\UserWidget.cpp" />
+    <ClCompile Include="Source\Engine\Viewport\GameViewportClient.cpp" />
+    <ClCompile Include="Source\Engine\Viewport\Viewport.cpp" />
+    <ClCompile Include="Source\Engine\Viewport\ViewportClient.cpp" />
+    <ClCompile Include="Source\Game\GameActorPlacements.cpp" />
+    <ClCompile Include="Source\Game\Lua\GameLuaBindings.cpp" />
+    <ClCompile Include="Source\ObjViewer\ObjViewerEngine.cpp" />
+    <ClCompile Include="Source\ObjViewer\ObjViewerPanel.cpp" />
+    <ClCompile Include="Source\ObjViewer\ObjViewerRenderPipeline.cpp" />
+    <ClCompile Include="Source\ObjViewer\ObjViewerViewportClient.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="ThirdParty\imgui-node-editor\crude_json.cpp" />
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_canvas.cpp" />
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_node_editor.cpp" />
+    <ClCompile Include="ThirdParty\imgui-node-editor\imgui_node_editor_api.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Intermediate\Generated\Reflection.generated.cpp" />
+    <ClCompile Include="Intermediate\Generated\LuaBindings.generated.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Editor\EditorEngine.h" />
+    <ClInclude Include="Source\Editor\EditorRenderPipeline.h" />
+    <ClInclude Include="Source\Editor\Build\EditorGameBuilder.h" />
+    <ClInclude Include="Source\Editor\PIE\PIETypes.h" />
+    <ClInclude Include="Source\Editor\Selection\SelectionManager.h" />
+    <ClInclude Include="Source\Editor\Settings\EditorSettings.h" />
+    <ClInclude Include="Source\Editor\Settings\EditorViewportSettings.h" />
+    <ClInclude Include="Source\Editor\Settings\GizmoToolSettings.h" />
+    <ClInclude Include="Source\Editor\Settings\ViewportCameraControlSettings.h" />
+    <ClInclude Include="Source\Editor\Slate\SSplitter.h" />
+    <ClInclude Include="Source\Editor\Slate\SWidget.h" />
+    <ClInclude Include="Source\Editor\Slate\SWindow.h" />
+    <ClInclude Include="Source\Editor\Slate\SlateApplication.h" />
+    <ClInclude Include="Source\Editor\Subsystem\AssetFactory.h" />
+    <ClInclude Include="Source\Editor\Subsystem\OverlayStatSystem.h" />
+    <ClInclude Include="Source\Editor\Subsystem\PhysicsAssetEditingLibrary.h" />
+    <ClInclude Include="Source\Editor\Subsystem\PhysicsAssetGenerator.h" />
+    <ClInclude Include="Source\Editor\UI\EditorMainPanel.h" />
+    <ClInclude Include="Source\Editor\UI\EditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\AssetEditorManager.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\AssetEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimGraphEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimMontagePropertyPanel.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimSequencePropertyPanel.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimationTimelinePanel.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\AnimationTransportBar.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Animation\MorphCurveEditObject.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\CameraShake\CameraShakeEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Curve\FloatCurveEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Material\MaterialEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Mesh\MeshEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Mesh\StaticMeshEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Particle\ParticleSystemEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Physics\PhysicsAssetEditorTypes.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\Physics\PhysicsAssetEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\UI\UIEditorDocument.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\UI\UIEditorSerializer.h" />
+    <ClInclude Include="Source\Editor\UI\Asset\UI\UIEditorWidget.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowser.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserContext.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentBrowserElement.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\ContentItem.h" />
+    <ClInclude Include="Source\Editor\UI\ContentBrowser\EditorPrefabWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Debug\EditorAnimationDebugWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Debug\EditorShadowMapDebugWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Dialog\FbxImportOptionsDialog.h" />
+    <ClInclude Include="Source\Editor\UI\Dialog\PhysicsAssetCreationDialog.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorConsoleWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorControlWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorGameBuildWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorMaterialInspector.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPlayToolbarWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorProjectSettingsWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyRenderer.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorPropertyWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorSceneWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorStatWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Panel\EditorViewportWidget.h" />
+    <ClInclude Include="Source\Editor\UI\Toolbar\ViewportToolbar.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorDragSource.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorFileUtils.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorMaterialThumbnailManager.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorMeshThumbnailManager.h" />
+    <ClInclude Include="Source\Editor\UI\Util\EditorTextureManager.h" />
+    <ClInclude Include="Source\Editor\UI\Util\ImGuiSetting.h" />
+    <ClInclude Include="Source\Editor\UI\Util\NotificationToast.h" />
+    <ClInclude Include="Source\Editor\Undo\EditorUndoCommand.h" />
+    <ClInclude Include="Source\Editor\Undo\EditorUndoManager.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorPreviewViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
+    <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h" />
+    <ClInclude Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Asset\PhysicsAssetEditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Asset\StaticMeshEditorViewportClient.h" />
+    <ClInclude Include="Source\Editor\Viewport\Level\FLevelViewportLayout.h" />
+    <ClInclude Include="Source\Editor\Viewport\Level\LevelEditorViewportClient.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimExtractContext.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimationManager.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimationMode.h" />
+    <ClInclude Include="Source\Engine\Animation\AnimationRuntime.h" />
+    <ClInclude Include="Source\Engine\Animation\PoseContext.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphAsset.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphCompiler.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphManager.h" />
+    <ClInclude Include="Source\Engine\Animation\Graph\AnimGraphTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\AnimSingleNodeInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\CharacterAnimGraphInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\CharacterAnimInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Instance\LuaAnimInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Montage\AnimMontage.h" />
+    <ClInclude Include="Source\Engine\Animation\Montage\AnimMontageInstance.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNodeContexts.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Base.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_BlendListByEnum.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_LayeredBlendPerBone.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_RefPose.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Root.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_SequencePlayer.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_Slot.h" />
+    <ClInclude Include="Source\Engine\Animation\Nodes\AnimNode_StateMachine.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotify.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotifyEvent.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotifyState.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotifyState_AttackHitWindow.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotifyState_LogDuration.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotify_LogMessage.h" />
+    <ClInclude Include="Source\Engine\Animation\Notify\AnimNotify_PlaySound.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\AnimDataModel.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\AnimSequence.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\AnimSequenceBase.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\BoneAnimationTrack.h" />
+    <ClInclude Include="Source\Engine\Animation\Sequence\RawAnimSequenceTrack.h" />
+    <ClInclude Include="Source\Engine\Animation\Skeleton\Skeleton.h" />
+    <ClInclude Include="Source\Engine\Animation\Skeleton\SkeletonManager.h" />
+    <ClInclude Include="Source\Engine\Animation\Skeleton\SkeletonTypes.h" />
+    <ClInclude Include="Source\Engine\Animation\StateMachine\AnimState.h" />
+    <ClInclude Include="Source\Engine\Asset\AssetPackage.h" />
+    <ClInclude Include="Source\Engine\Asset\AssetRegistry.h" />
+    <ClInclude Include="Source\Engine\Audio\AudioManager.h" />
+    <ClInclude Include="Source\Engine\Score\ScoreManager.h" />
+    <ClInclude Include="Source\Engine\CameraShake\CameraShakeAsset.h" />
+    <ClInclude Include="Source\Engine\CameraShake\CameraShakeManager.h" />
+    <ClInclude Include="Source\Engine\Collision\WorldCollisionQueries.h" />
+    <ClInclude Include="Source\Engine\Collision\BVH\MeshTriangleBVH.h" />
+    <ClInclude Include="Source\Engine\Collision\BVH\WorldPrimitivePickingBVH.h" />
+    <ClInclude Include="Source\Engine\Collision\Math\CollisionMath.h" />
+    <ClInclude Include="Source\Engine\Collision\Math\ConvexVolume.h" />
+    <ClInclude Include="Source\Engine\Collision\Math\OBB.h" />
+    <ClInclude Include="Source\Engine\Collision\Octree\Octree.h" />
+    <ClInclude Include="Source\Engine\Collision\Octree\SpatialPartition.h" />
+    <ClInclude Include="Source\Engine\Collision\Ray\RayUtils.h" />
+    <ClInclude Include="Source\Engine\Collision\Ray\RayUtilsSIMD.h" />
+    <ClInclude Include="Source\Engine\Component\ActorComponent.h" />
+    <ClInclude Include="Source\Engine\Component\MeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\PrimitiveComponent.h" />
+    <ClInclude Include="Source\Engine\Component\SceneComponent.h" />
+    <ClInclude Include="Source\Engine\Component\ShapeComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Camera\CameraComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Camera\CineCameraComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Camera\SpringArmComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Debug\BoneDebugComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Debug\GizmoComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Debug\TemporaryBoneAnimatorComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Input\ActionComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Input\InputComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\AmbientLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\DirectionalLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\LightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\LightComponentBase.h" />
+    <ClInclude Include="Source\Engine\Component\Light\PointLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Light\SpotLightComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\CharacterMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\FloatingPawnMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\MovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\PendulumMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\ProjectileMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\RotatingMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\PhysXVehicleMovementComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponent4W.h" />
+    <ClInclude Include="Source\Engine\Component\Movement\PhysX\VehicleMovementComponentTank.h" />
+    <ClInclude Include="Source\Engine\Component\Particle\ParticleSystemComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\BillboardComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\ClothComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\CylindricalBillboardComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\DecalComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\HeightFogComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\SkeletalMeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\SkinnedMeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\StaticMeshComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\SubUVComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Primitive\TextRenderComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Ragdoll\RagdollHitReactionComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Script\LuaScriptComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Shape\BoxComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Shape\CurvedWallRunColliderComponent.h" />
+    <ClInclude Include="Source\Engine\Component\Shape\SphereComponent.h" />
+    <ClInclude Include="Source\Engine\Core\Common.h" />
+    <ClInclude Include="Source\Engine\Core\Delegate.h" />
+    <ClInclude Include="Source\Engine\Core\ProjectSettings.h" />
+    <ClInclude Include="Source\Engine\Core\Singleton.h" />
+    <ClInclude Include="Source\Engine\Core\TickFunction.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\Log.h" />
+    <ClInclude Include="Source\Engine\Core\Logging\Notification.h" />
+    <ClInclude Include="Source\Engine\Core\Property\ArrayProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\BoolProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\ClassProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\EnumProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\GenericProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\NameProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\NumericProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\ObjectProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\ObjectPropertyBase.h" />
+    <ClInclude Include="Source\Engine\Core\Property\SoftObjectProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\StringProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Property\StructProperty.h" />
+    <ClInclude Include="Source\Engine\Core\Types\ClassTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\CollisionTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\CoreTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\EngineTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\PropertyTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\RayTypes.h" />
+    <ClInclude Include="Source\Engine\Core\Types\ResourceTypes.h" />
+    <ClInclude Include="Source\Engine\Debug\DebugDrawQueue.h" />
+    <ClInclude Include="Source\Engine\Debug\DrawDebugHelpers.h" />
+    <ClInclude Include="Source\Engine\Editor\SceneOutlinerState.h" />
+    <ClInclude Include="Source\Engine\FloatCurve\FloatCurveAsset.h" />
+    <ClInclude Include="Source\Engine\FloatCurve\FloatCurveManager.h" />
+    <ClInclude Include="Source\Engine\GameFramework\AActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Level.h" />
+    <ClInclude Include="Source\Engine\GameFramework\World.h" />
+    <ClInclude Include="Source\Engine\GameFramework\WorldContext.h" />
+    <ClInclude Include="Source\Engine\GameFramework\WorldSettings.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\BoxActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\CapsuleActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\CurvedWallRunColliderActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\DecalActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\HeightFogActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\PawnStaticMesh.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\PlayerStart.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\SkeletalMeshActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\SphereActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\SceneTransitionTriggerActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\StaticMeshActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Actor\TriggerVolumeBase.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraModifier.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraShakeBase.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraShakeCameraModifier.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CameraTypes.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\CineCameraActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\PlayerCameraManager.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\SequenceCameraShake.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Camera\WaveOscillatorCameraShake.h" />
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\GameplayStatics.h" />
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\LuaPlayerController.h" />
+    <ClInclude Include="Source\Engine\GameFramework\GameMode\PlayerController.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Gameplay\GameplayRuntime.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Light\AmbientLightActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Light\DirectionalLightActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Light\PointLightActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Light\SpotLightActor.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Pawn\Character.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Pawn\LuaCharacter.h" />
+    <ClInclude Include="Source\Engine\GameFramework\Pawn\Pawn.h" />
+    <ClInclude Include="Source\Engine\Gizmo\BoneTransformGizmoTarget.h" />
+    <ClInclude Include="Source\Engine\Gizmo\ComponentGizmoTarget.h" />
+    <ClInclude Include="Source\Engine\Gizmo\GizmoTransformTarget.h" />
+    <ClInclude Include="Source\Engine\Input\InputSystem.h" />
+    <ClInclude Include="Source\Engine\Lua\LuaDocRegistry.h" />
+    <ClInclude Include="Source\Engine\Lua\LuaScriptManager.h" />
+    <ClInclude Include="Source\Engine\Materials\Material.h" />
+    <ClInclude Include="Source\Engine\Materials\MaterialCore.h" />
+    <ClInclude Include="Source\Engine\Materials\MaterialManager.h" />
+    <ClInclude Include="Source\Engine\Math\Distribution.h" />
+    <ClInclude Include="Source\Engine\Math\FloatCurve.h" />
+    <ClInclude Include="Source\Engine\Math\MathUtils.h" />
+    <ClInclude Include="Source\Engine\Math\Matrix.h" />
+    <ClInclude Include="Source\Engine\Math\Quat.h" />
+    <ClInclude Include="Source\Engine\Math\Rotator.h" />
+    <ClInclude Include="Source\Engine\Math\Transform.h" />
+    <ClInclude Include="Source\Engine\Math\Vector.h" />
+    <ClInclude Include="Source\Engine\Mesh\MeshBinary.h" />
+    <ClInclude Include="Source\Engine\Mesh\MeshManager.h" />
+    <ClInclude Include="Source\Engine\Mesh\MeshSimplifier.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\FbxImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\MeshImportOptions.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\ObjImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxAnimationImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxImportContext.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxImportTypes.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxMaterialImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxSceneLoader.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxSceneQuery.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxSkeletalMeshImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxSkeletonImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxSkinWeightImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxStaticMeshImporter.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxTangentBuilder.h" />
+    <ClInclude Include="Source\Engine\Mesh\Importer\Fbx\FbxTransformUtils.h" />
+    <ClInclude Include="Source\Engine\Mesh\Skeletal\SkeletalMesh.h" />
+    <ClInclude Include="Source\Engine\Mesh\Skeletal\SkeletalMeshAsset.h" />
+    <ClInclude Include="Source\Engine\Mesh\Static\StaticMesh.h" />
+    <ClInclude Include="Source\Engine\Mesh\Static\StaticMeshAsset.h" />
+    <ClInclude Include="Source\Engine\Object\FName.h" />
+    <ClInclude Include="Source\Engine\Object\GarbageCollectionTest.h" />
+    <ClInclude Include="Source\Engine\Object\GarbageCollector.h" />
+    <ClInclude Include="Source\Engine\Object\Object.h" />
+    <ClInclude Include="Source\Engine\Object\ObjectIterator.h" />
+    <ClInclude Include="Source\Engine\Object\ReferenceCollector.h" />
+    <ClInclude Include="Source\Engine\Object\UUIDGenerator.h" />
+    <ClInclude Include="Source\Engine\Object\Ptr\ObjectPtr.h" />
+    <ClInclude Include="Source\Engine\Object\Ptr\SoftObjectPtr.h" />
+    <ClInclude Include="Source\Engine\Object\Ptr\SubclassOf.h" />
+    <ClInclude Include="Source\Engine\Object\Ptr\WeakObjectPtr.h" />
+    <ClInclude Include="Source\Engine\Object\Reflection\ObjectFactory.h" />
+    <ClInclude Include="Source\Engine\Object\Reflection\ObjectMacros.h" />
+    <ClInclude Include="Source\Engine\Object\Reflection\UClass.h" />
+    <ClInclude Include="Source\Engine\Object\Reflection\UStruct.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleHelper.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleSystem.h" />
+    <ClInclude Include="Source\Engine\Particles\ParticleSystemManager.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModule.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleCollision.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleEvent.h" />
+    <ClInclude Include="Source\Engine\Particles\Module\ParticleModuleTypeDataBase.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleCollisionEvent.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleEmitterInstance.h" />
+    <ClInclude Include="Source\Engine\Particles\Runtime\ParticleRuntimeTypes.h" />
+    <ClInclude Include="Source\Engine\Physics\BodyInstance.h" />
+    <ClInclude Include="Source\Engine\Physics\BodySetup.h" />
+    <ClInclude Include="Source\Engine\Physics\BodySetupCore.h" />
+    <ClInclude Include="Source\Engine\Physics\ClothCollisionGeometryUtils.h" />
+    <ClInclude Include="Source\Engine\Physics\ClothCollisionTypes.h" />
+    <ClInclude Include="Source\Engine\Physics\ClothInstance.h" />
+    <ClInclude Include="Source\Engine\Physics\ConstraintInstance.h" />
+    <ClInclude Include="Source\Engine\Physics\HitboxInstance.h" />
+    <ClInclude Include="Source\Engine\Physics\NvClothInclude.h" />
+    <ClInclude Include="Source\Engine\Physics\NvClothSDK.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXConversions.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXInclude.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXSDK.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicle4WInstance.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicleInstanceBase.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicleManager.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysXVehicleTankInstance.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicalMaterial.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicalMaterialManager.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsAsset.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsAssetDebugDraw.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsAssetEditTypes.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsAssetManager.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsConstraintTemplate.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsEventCallback.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsFilterData.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsFilterShader.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsGeometry.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsQueryFilter.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsScene.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsShape.h" />
+    <ClInclude Include="Source\Engine\Physics\PhysicsTypes.h" />
+    <ClInclude Include="Source\Engine\Physics\RagdollInstance.h" />
+    <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h" />
+    <ClInclude Include="Source\Engine\Platform\CrashDump.h" />
+    <ClInclude Include="Source\Engine\Platform\DirectoryWatcher.h" />
+    <ClInclude Include="Source\Engine\Platform\Paths.h" />
+    <ClInclude Include="Source\Engine\Platform\WindowsApplication.h" />
+    <ClInclude Include="Source\Engine\Platform\WindowsWindow.h" />
+    <ClInclude Include="Source\Engine\Platform\resource.h" />
+    <ClInclude Include="Source\Engine\Profiling\GPUProfiler.h" />
+    <ClInclude Include="Source\Engine\Profiling\StartupProfiler.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\MemoryStats.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\ParticleStats.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\PhysicsStats.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\ShadowStats.h" />
+    <ClInclude Include="Source\Engine\Profiling\Stats\Stats.h" />
+    <ClInclude Include="Source\Engine\Profiling\Time\PlatformTime.h" />
+    <ClInclude Include="Source\Engine\Profiling\Time\Timer.h" />
+    <ClInclude Include="Source\Engine\Render\Command\DrawCommand.h" />
+    <ClInclude Include="Source\Engine\Render\Command\DrawCommandBuilder.h" />
+    <ClInclude Include="Source\Engine\Render\Command\DrawCommandList.h" />
+    <ClInclude Include="Source\Engine\Render\Culling\ClusteredLightCuller.h" />
+    <ClInclude Include="Source\Engine\Render\Culling\GPUOcclusionCulling.h" />
+    <ClInclude Include="Source\Engine\Render\Culling\TileBasedLightCulling.h" />
+    <ClInclude Include="Source\Engine\Render\Device\D3DDevice.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\FontGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\LineGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\MeshParticleGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Geometry\SpriteParticleGeometry.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\DefaultRenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\IRenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\RenderCollector.h" />
+    <ClInclude Include="Source\Engine\Render\Pipeline\Renderer.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\BillboardSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\BoneDebugSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\ClothSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\CylindricalBillboardSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\DecalSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\DirtyFlag.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\GizmoSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\ParticleDynamicEmitterData.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\ParticleSystemSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\PrimitiveSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\ShapeSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\SkeletalMeshSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\StaticMeshSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\SubUVSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\Proxy\TextRenderSceneProxy.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\AdditiveDecalPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\AlphaBlendPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\BloomPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\DecalPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\DepthOfFieldPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\EditorLinesPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\FXAAPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\FogPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\GammaCorrectionPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\GizmoInnerPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\GizmoOuterPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\LightCullingPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\OpaquePass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\OverlayFontPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\PassRenderStateTable.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\PostProcessPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\PreDepthPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassBase.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassPipeline.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\RenderPassRegistry.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\SelectionMaskPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\ShadowMapPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderPass\UIPass.h" />
+    <ClInclude Include="Source\Engine\Render\RenderState\BlendStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\RenderState\DepthStencilStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\RenderState\RasterizerStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\RenderState\SamplerStateManager.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\Buffer.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\MeshBufferManager.h" />
+    <ClInclude Include="Source\Engine\Render\Resource\RenderResources.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\FScene.h" />
+    <ClInclude Include="Source\Engine\Render\Scene\SceneEnvironment.h" />
+    <ClInclude Include="Source\Engine\Render\Shader\Shader.h" />
+    <ClInclude Include="Source\Engine\Render\Shader\ShaderCache.h" />
+    <ClInclude Include="Source\Engine\Render\Shader\ShaderInclude.h" />
+    <ClInclude Include="Source\Engine\Render\Shader\ShaderManager.h" />
+    <ClInclude Include="Source\Engine\Render\Shadow\AtlasQuadTreeBase.h" />
+    <ClInclude Include="Source\Engine\Render\Shadow\AtlasQuadTreePoint.h" />
+    <ClInclude Include="Source\Engine\Render\Shadow\ShadowAtlasQuadTree.h" />
+    <ClInclude Include="Source\Engine\Render\Types\FogParams.h" />
+    <ClInclude Include="Source\Engine\Render\Types\ForwardLightData.h" />
+    <ClInclude Include="Source\Engine\Render\Types\FrameContext.h" />
+    <ClInclude Include="Source\Engine\Render\Types\GlobalLightParams.h" />
+    <ClInclude Include="Source\Engine\Render\Types\LODContext.h" />
+    <ClInclude Include="Source\Engine\Render\Types\LightFrustumUtils.h" />
+    <ClInclude Include="Source\Engine\Render\Types\MaterialTextureSlot.h" />
+    <ClInclude Include="Source\Engine\Render\Types\MinimalViewInfo.h" />
+    <ClInclude Include="Source\Engine\Render\Types\POVProvider.h" />
+    <ClInclude Include="Source\Engine\Render\Types\RenderConstants.h" />
+    <ClInclude Include="Source\Engine\Render\Types\RenderStateTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Types\RenderTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Types\ShadowSettings.h" />
+    <ClInclude Include="Source\Engine\Render\Types\VertexTypes.h" />
+    <ClInclude Include="Source\Engine\Render\Types\ViewTypes.h" />
+    <ClInclude Include="Source\Engine\Resource\ResourceManager.h" />
+    <ClInclude Include="Source\Engine\Runtime\ActorPlacementRegistry.h" />
+    <ClInclude Include="Source\Engine\Runtime\Engine.h" />
+    <ClInclude Include="Source\Engine\Runtime\EngineInitHooks.h" />
+    <ClInclude Include="Source\Engine\Runtime\EngineLoop.h" />
+    <ClInclude Include="Source\Engine\Runtime\GameEngine.h" />
+    <ClInclude Include="Source\Engine\Runtime\GameRenderPipeline.h" />
+    <ClInclude Include="Source\Engine\Runtime\Launch.h" />
+    <ClInclude Include="Source\Engine\Serialization\Archive.h" />
+    <ClInclude Include="Source\Engine\Serialization\DuplicateArchive.h" />
+    <ClInclude Include="Source\Engine\Serialization\GCArchive.h" />
+    <ClInclude Include="Source\Engine\Serialization\JsonArchive.h" />
+    <ClInclude Include="Source\Engine\Serialization\MemoryArchive.h" />
+    <ClInclude Include="Source\Engine\Serialization\SceneSaveManager.h" />
+    <ClInclude Include="Source\Engine\Serialization\WindowsArchive.h" />
+    <ClInclude Include="Source\Engine\Texture\Texture2D.h" />
+    <ClInclude Include="Source\Engine\UI\UIManager.h" />
+    <ClInclude Include="Source\Engine\UI\UserWidget.h" />
+    <ClInclude Include="Source\Engine\Viewport\GameViewportClient.h" />
+    <ClInclude Include="Source\Engine\Viewport\Viewport.h" />
+    <ClInclude Include="Source\Engine\Viewport\ViewportClient.h" />
+    <ClInclude Include="Source\Game\GameActorPlacements.h" />
+    <ClInclude Include="Source\Game\Lua\GameLuaBindings.h" />
+    <ClInclude Include="Source\ObjViewer\ObjViewerEngine.h" />
+    <ClInclude Include="Source\ObjViewer\ObjViewerPanel.h" />
+    <ClInclude Include="Source\ObjViewer\ObjViewerRenderPipeline.h" />
+    <ClInclude Include="Source\ObjViewer\ObjViewerViewportClient.h" />
+    <ClInclude Include="ThirdParty\stb_image.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_def.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_nsbegin.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_nsend.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fbxsdk_version.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxclassid.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxconnectionpoint.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxdatatypes.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxemitter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxevent.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxeventhandler.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxlistener.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxloadingstrategy.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxmanager.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxmodule.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxobject.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxperipheral.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxplugin.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxplugincontainer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxproperty.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxpropertydef.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxpropertyhandle.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxpropertypage.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxpropertytypes.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxquery.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxqueryevent.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxscopedloadingdirectory.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxscopedloadingfilename.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxstream.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxsymbol.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxsystemunit.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\fbxxref.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxalloc.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxarch.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxdebug.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxnew.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxstdcompliant.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\arch\fbxtypes.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxarray.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxbitset.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxcharptrset.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxcontainerallocators.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxdynamicarray.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxfile.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxfolder.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxhashmap.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxintrusivelist.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxmap.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxmemorypool.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxmultimap.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxpair.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxredblacktree.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxset.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxstatus.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxstring.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxstringlist.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxtime.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxtimecode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\base\fbxutils.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxaffinematrix.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxdualquaternion.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxmath.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxmatrix.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxquaternion.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxtransforms.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxvector2.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\math\fbxvector4.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\sync\fbxatomic.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\sync\fbxclock.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\sync\fbxsync.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\core\sync\fbxthread.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxbase64coder.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxcallbacks.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxexporter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxexternaldocreflistener.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxfiletokens.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxglobalcamerasettings.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxgloballightsettings.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxglobalsettings.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxgobo.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbximporter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxiobase.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxiopluginregistry.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxiosettings.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxiosettingspath.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxprogress.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxreader.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxstatistics.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxstatisticsfbx.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbxwriter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladaanimationelement.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladaelement.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladaiostream.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladanamespace.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladatokens.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxcolladautils.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxreadercollada14.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\collada\fbxwritercollada14.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxio.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxreaderfbx5.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxreaderfbx6.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxreaderfbx7.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxwriterfbx5.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxwriterfbx6.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\fileio\fbx\fbxwriterfbx7.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxaudio.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxaudiolayer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxaxissystem.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxcollection.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxcollectionexclusive.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxcontainer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxcontainertemplate.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxdisplaylayer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxdocument.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxdocumentinfo.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxenvironment.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxgroupname.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxlibrary.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxmediaclip.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxobjectfilter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxobjectmetadata.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxobjectscontainer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxpose.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxreference.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxscene.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxselectionnode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxselectionset.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxtakeinfo.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxthumbnail.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\fbxvideo.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimcurve.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimcurvebase.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimcurvefilters.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimcurvenode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimevalclassic.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimevalstate.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimevaluator.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimlayer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimstack.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\animation\fbxanimutilities.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxcharacter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxcharacternodename.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxcharacterpose.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraint.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintaim.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintcustom.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintparent.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintposition.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintrotation.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintscale.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintsinglechainik.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxconstraintutils.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxcontrolset.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\constraint\fbxhik2fbxcharacter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxblendshape.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxblendshapechannel.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcache.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcachedeffect.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcamera.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcamerastereo.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcameraswitcher.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxcluster.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxdeformer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxgenericnode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxgeometry.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxgeometrybase.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxgeometryweightedmap.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxlayer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxlayercontainer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxlight.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxlimitsutilities.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxline.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxlodgroup.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxmarker.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxmesh.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnodeattribute.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnull.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnurbs.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnurbscurve.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxnurbssurface.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxopticalreference.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxpatch.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxproceduralgeometry.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxshape.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxskeleton.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxskin.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxsubdeformer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxsubdiv.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxtrimnurbssurface.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxvertexcachedeformer.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\geometry\fbxweightedmapping.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxbindingoperator.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxbindingsentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxbindingtable.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxbindingtablebase.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxbindingtableentry.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxconstantentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxfiletexture.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbximplementation.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbximplementationfilter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbximplementationutils.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxlayeredtexture.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxlayerentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxoperatorentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxproceduraltexture.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxpropertyentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxsemanticentryview.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxshadingconventions.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxsurfacelambert.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxsurfacematerial.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxsurfacematerialutils.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxsurfacephong.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\scene\shading\fbxtexture.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxclonemanager.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxdeformationsevaluator.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxembeddedfilesaccumulator.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxgeometryconverter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxmanipulators.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxmaterialconverter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxnamehandler.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxprocessor.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxprocessorshaderdependency.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxprocessorxref.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxprocessorxrefuserlib.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategy.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategybase.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategyfbx5.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategyfbx6.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategyfbx7.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrenamingstrategyutilities.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxrootnodeutility.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxscenecheckutility.h" />
+    <ClInclude Include="ThirdParty\fbx\include\fbxsdk\utils\fbxusernotification.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\HTMLparser.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\HTMLtree.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\SAX.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\SAX2.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\c14n.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\catalog.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\chvalid.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\debugXML.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\dict.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\encoding.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\entities.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\globals.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\hash.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\list.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\nanoftp.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\nanohttp.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\parser.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\parserInternals.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\pattern.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\relaxng.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\schemasInternals.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\schematron.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\threads.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\tree.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\uri.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\valid.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xinclude.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xlink.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlIO.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlautomata.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlerror.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlexports.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlmemory.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlmodule.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlreader.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlregexp.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlsave.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlschemas.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlschemastypes.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlstring.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlunicode.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlversion.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xmlwriter.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xpath.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xpathInternals.h" />
+    <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xpointer.h" />
+    <ClInclude Include="ThirdParty\fmod\include\fmod.h" />
+    <ClInclude Include="ThirdParty\fmod\include\fmod.hpp" />
+    <ClInclude Include="ThirdParty\fmod\include\fmod_codec.h" />
+    <ClInclude Include="ThirdParty\fmod\include\fmod_common.h" />
+    <ClInclude Include="ThirdParty\fmod\include\fmod_dsp.h" />
+    <ClInclude Include="ThirdParty\fmod\include\fmod_dsp_effects.h" />
+    <ClInclude Include="ThirdParty\fmod\include\fmod_errors.h" />
+    <ClInclude Include="ThirdParty\fmod\include\fmod_output.h" />
+    <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_internal.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\crude_json.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_bezier_math.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_bezier_math.inl" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_canvas.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_extra_math.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_extra_math.inl" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor_internal.h" />
+    <ClInclude Include="ThirdParty\imgui-node-editor\imgui_node_editor_internal.inl" />
+    <ClInclude Include="ThirdParty\lua\include\lauxlib.h" />
+    <ClInclude Include="ThirdParty\lua\include\lua.h" />
+    <ClInclude Include="ThirdParty\lua\include\lua.hpp" />
+    <ClInclude Include="ThirdParty\lua\include\luaconf.h" />
+    <ClInclude Include="ThirdParty\lua\include\luajit.h" />
+    <ClInclude Include="ThirdParty\lua\include\lualib.h" />
+    <ClInclude Include="ThirdParty\miniaudio\miniaudio.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\Px.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxAllocatorCallback.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxBitAndData.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxBounds3.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxErrorCallback.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxErrors.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxFlags.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxIO.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxIntrinsics.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxMat33.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxMat44.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxMath.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxMemory.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxPlane.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxPreprocessor.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxProfiler.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxQuat.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxSharedAssert.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxSimpleTypes.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxStrideIterator.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxTransform.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxUnionCast.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxVec2.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxVec3.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\PxVec4.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\unix\PxUnixIntrinsics.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\foundation\windows\PxWindowsIntrinsics.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\Allocator.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\Callbacks.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\Cloth.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\DxContextManagerCallback.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\Fabric.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\Factory.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\PhaseConfig.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\Range.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\Solver.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\Ps.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsAlignedMalloc.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsAllocator.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsArray.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsAtomic.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsBasicTemplates.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsBitUtils.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsHash.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsHashInternals.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsHashMap.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsIntrinsics.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsMathUtils.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\PsUserAllocated.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\unix\PsUnixIntrinsics.h" />
+    <ClInclude Include="ThirdParty\NvCloth\include\NvCloth\ps\windows\PsWindowsIntrinsics.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxActor.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxAggregate.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxArticulation.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxArticulationBase.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxArticulationJoint.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxArticulationJointReducedCoordinate.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxArticulationLink.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxArticulationReducedCoordinate.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxBatchQuery.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxBatchQueryDesc.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxBroadPhase.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxClient.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxConfig.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxConstraint.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxConstraintDesc.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxContact.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxContactModifyCallback.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxDeletionListener.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxFiltering.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxForceMode.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxFoundation.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxImmediateMode.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxLockedData.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxMaterial.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxPhysXConfig.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxPhysics.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxPhysicsAPI.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxPhysicsSerialization.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxPhysicsVersion.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxPruningStructure.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxQueryFiltering.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxQueryReport.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxRigidActor.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxRigidBody.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxRigidDynamic.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxRigidStatic.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxScene.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxSceneDesc.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxSceneLock.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxShape.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxSimulationEventCallback.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxSimulationStatistics.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\PxVisualizationParameter.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\characterkinematic\PxBoxController.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\characterkinematic\PxCapsuleController.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\characterkinematic\PxController.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\characterkinematic\PxControllerBehavior.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\characterkinematic\PxControllerManager.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\characterkinematic\PxControllerObstacles.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\characterkinematic\PxExtended.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\collision\PxCollisionDefs.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxBase.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxCollection.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxCoreUtilityTypes.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxMetaData.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxMetaDataFlags.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxPhysXCommonConfig.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxPhysicsInsertionCallback.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxProfileZone.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxRenderBuffer.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxSerialFramework.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxSerializer.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxStringTable.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxTolerancesScale.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\PxTypeInfo.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\common\windows\PxWindowsDelayLoadHook.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\cooking\PxBVH33MidphaseDesc.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\cooking\PxBVH34MidphaseDesc.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\cooking\PxBVHStructureDesc.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\cooking\PxConvexMeshDesc.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\cooking\PxCooking.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\cooking\PxMidphaseDesc.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\cooking\PxTriangleMeshDesc.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\cooking\Pxc.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\cudamanager\PxCudaContextManager.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\cudamanager\PxCudaMemoryManager.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxBinaryConverter.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxBroadPhaseExt.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxCollectionExt.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxConstraintExt.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxContactJoint.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxConvexMeshExt.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxD6Joint.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxD6JointCreate.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxDefaultAllocator.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxDefaultCpuDispatcher.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxDefaultErrorCallback.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxDefaultSimulationFilterShader.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxDefaultStreams.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxDistanceJoint.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxExtensionsAPI.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxFixedJoint.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxJoint.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxJointLimit.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxMassProperties.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxPrismaticJoint.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxRaycastCCD.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxRepXSerializer.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxRepXSimpleType.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxRevoluteJoint.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxRigidActorExt.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxRigidBodyExt.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxSceneQueryExt.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxSerialization.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxShapeExt.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxSimpleFactory.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxSmoothNormals.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxSphericalJoint.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxStringTableExt.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\extensions\PxTriangleMeshExt.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\filebuf\PxFileBuf.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\foundation\PxAssert.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\foundation\PxFoundationConfig.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\foundation\PxMathUtils.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxBVHStructure.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxBoxGeometry.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxCapsuleGeometry.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxConvexMesh.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxConvexMeshGeometry.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxGeometry.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxGeometryHelpers.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxGeometryQuery.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxHeightField.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxHeightFieldDesc.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxHeightFieldFlag.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxHeightFieldGeometry.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxHeightFieldSample.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxMeshQuery.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxMeshScale.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxPlaneGeometry.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxSimpleTriangleMesh.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxSphereGeometry.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxTriangle.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxTriangleMesh.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geometry\PxTriangleMeshGeometry.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geomutils\GuContactBuffer.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\geomutils\GuContactPoint.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\gpu\PxGpu.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\pvd\PxPvd.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\pvd\PxPvdSceneClient.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\pvd\PxPvdTransport.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\solver\PxSolverDefs.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\task\PxCpuDispatcher.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\task\PxTask.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\task\PxTaskDefine.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\task\PxTaskManager.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleComponents.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleDrive.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleDrive4W.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleDriveNW.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleDriveTank.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleNoDrive.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleSDK.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleShaders.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleTireFriction.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleUpdate.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleUtil.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleUtilControl.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleUtilSetup.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleUtilTelemetry.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PhysX\vehicle\PxVehicleWheels.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\Px.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxAllocatorCallback.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxBitAndData.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxBounds3.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxErrorCallback.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxErrors.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxFlags.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxIO.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxIntrinsics.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxMat33.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxMat44.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxMath.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxMemory.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxPlane.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxPreprocessor.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxProfiler.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxQuat.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxSharedAssert.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxSimpleTypes.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxStrideIterator.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxTransform.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxUnionCast.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxVec2.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxVec3.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\PxVec4.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\unix\PxUnixIntrinsics.h" />
+    <ClInclude Include="ThirdParty\PhysX\include\PxShared\foundation\windows\PxWindowsIntrinsics.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Debugger.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Config\Config.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Animation.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\BaseXMLParser.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Box.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\CallbackTexture.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Colour.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Colour.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\CompiledFilterShader.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ComputedValues.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Context.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ContextInstancer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ConvolutionFilter.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Core.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataModelHandle.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataStructHandle.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataTypeRegister.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataTypes.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DataVariable.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Debug.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\DecorationTypes.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Decorator.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Dictionary.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EffectSpecification.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Element.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Element.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementDocument.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementInstancer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementScroll.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementText.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ElementUtilities.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Event.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EventInstancer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EventListener.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\EventListenerInstancer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Factory.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FileInterface.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Filter.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontEffect.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontEffectInstancer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontEngineInterface.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontGlyph.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\FontMetrics.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Geometry.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Header.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ID.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Input.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Log.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Math.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Matrix4.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Matrix4.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Mesh.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\MeshUtilities.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\NumericValue.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ObserverPtr.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Platform.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Plugin.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Profiling.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertiesIteratorView.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Property.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyDefinition.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyDictionary.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyIdSet.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertyParser.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\PropertySpecification.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Rectangle.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderBox.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderInterface.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderInterfaceCompatibility.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\RenderManager.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ScriptInterface.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\ScrollTypes.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Span.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Spritesheet.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StableVector.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Stream.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StreamMemory.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StringUtilities.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheet.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheetContainer.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheetSpecification.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleSheetTypes.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\StyleTypes.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\SystemInterface.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TextInputContext.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TextInputHandler.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TextShapingContext.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Texture.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Traits.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Transform.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TransformPrimitive.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Tween.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TypeConverter.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\TypeConverter.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Types.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\URL.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\UniqueRenderResource.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Unit.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Utilities.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Variant.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Variant.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector2.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector2.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector3.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector3.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector4.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vector4.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Vertex.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\XMLNodeHandler.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\XMLParser.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Containers\robin_hood.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Containers\itlib\flat_map.hpp" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Containers\itlib\flat_set.hpp" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementForm.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControl.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControlInput.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControlSelect.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementFormControlTextArea.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementProgress.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Core\Elements\ElementTabSet.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Debugger\Debugger.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Debugger\Header.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lottie\ElementLottie.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Header.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\IncludeLua.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Interpreter.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Lua.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\LuaType.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\LuaType.inl" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\Lua\Utilities.h" />
+    <ClInclude Include="ThirdParty\RmlUi\Include\RmlUi\SVG\ElementSVG.h" />
+    <ClInclude Include="ThirdParty\SimpleJSON\json.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\abort.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\as_args.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\as_returns.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\assert.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\base_traits.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\bind_traits.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\bytecode.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\call.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\compatibility.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\config.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\coroutine.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\debug.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\demangle.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\deprecate.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\dump_handler.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\ebco.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\environment.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\epilogue.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\error.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\error_handler.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\forward.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\forward_as.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\forward_detail.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\function.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\function_result.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\function_types.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\function_types_core.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\function_types_overloaded.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\function_types_stateful.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\function_types_stateless.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\function_types_templated.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\in_place.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\inheritance.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\load_result.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\lua_table.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\lua_value.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\make_reference.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\metatable.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\object.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\object_base.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\optional.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\optional_implementation.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\overload.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\packaged_coroutine.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\pairs_iterator.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\pointer_like.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\policies.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\prologue.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\property.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\protect.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\protected_function.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\protected_function_result.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\protected_handler.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\proxy_base.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\raii.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\reference.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\resolve.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\sol.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_check.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_check_get.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_check_get_qualified.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_check_get_unqualified.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_check_qualified.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_check_unqualified.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_core.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_field.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_get.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_get_qualified.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_get_unqualified.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_guard.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_iterator.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_pop.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_probe.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_proxy.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_proxy_base.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_push.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack_reference.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\state.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\state_handling.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\state_view.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\string_view.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\table.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\table_core.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\table_iterator.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\table_proxy.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\thread.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\tie.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\traits.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\trampoline.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\tuple.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\types.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\unicode.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\unique_usertype_traits.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\unreachable.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\unsafe_function.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\unsafe_function_result.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\userdata.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\usertype.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\usertype_container.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\usertype_container_launch.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\usertype_core.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\usertype_proxy.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\usertype_storage.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\usertype_traits.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\variadic_args.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\variadic_results.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\version.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\wrapper.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\compatibility\compat-5.3.c.h" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\compatibility\compat-5.3.h" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\compatibility\compat-5.4.h" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\compatibility\lua_version.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\detail\build_version.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\stack\detail\pairs.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\utility\is_integer.hpp" />
+    <ClInclude Include="ThirdParty\sol2\include\sol\utility\to_string.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Shaders\Common\ConstantBuffers.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\Fog.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\ForwardLightData.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\ForwardLighting.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\Functions.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\MaterialBloom.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\ShadowSampling.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\Skinning.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\SystemResources.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\SystemSamplers.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Common\VertexLayouts.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Editor\Editor.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Editor\Gizmo.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Geometry\Decal.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Geometry\Particle.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Geometry\Primitive.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Geometry\UberLit.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting\ClusterConstructCS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting\ClusterHeatMap.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting\HiZGenerate.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting\LightCullingCS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting\OcclusionTest.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting\ShadowDepth.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting\TileLightCulling.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\Lighting\VSMBlur.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\Blit.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\BloomBlur.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\BloomComposite.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\BloomExtract.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\CameraFade.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\CameraLetterbox.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\CameraVignette.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\DepthOfField.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\FXAA.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\GammaCorrection.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\HeightFog.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\LightCulling.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\NormalView.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\Outline.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\SceneDepth.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\SceneNormal.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\ShadowMapVis.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\UI\Billboard.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\UI\Font.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\UI\OverlayFont.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\UI\RmlUi.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Shaders\UI\SubUV.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Game|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewDebug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Demo|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="KraftonEngine.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets" Condition="Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" />
+  </ImportGroup>
+  <Target Name="GenerateReflectionHeaders" BeforeTargets="ClCompile">
+    <Exec Command="&quot;$(PythonExe)&quot; &quot;$(MSBuildProjectDirectory)\..\Scripts\GenerateHeaders.py&quot; --root &quot;$(MSBuildProjectDirectory)&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" />
+  </Target>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\directxtk_desktop_win10.2025.10.28.2\build\native\directxtk_desktop_win10.targets'))" />
+  </Target>
+</Project>

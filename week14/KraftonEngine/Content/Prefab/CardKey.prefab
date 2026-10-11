@@ -1,0 +1,102 @@
+{
+  "Actors" : [{
+      "ClassName" : "AStaticMeshActor",
+      "Name" : "Item_vantus_master_key",
+      "NonSceneComponents" : [{
+          "ClassName" : "ULuaScriptComponent",
+          "Name" : "ULuaScriptComponent_12",
+          "ObjectId" : 3,
+          "Properties" : {
+            "ScriptFile" : "InspectableItem.lua",
+            "bAutoActivate" : true,
+            "bEditorOnly" : false,
+            "bHiddenInComponentTree" : false,
+            "bIsActive" : true,
+            "bTickEnable" : true,
+            "bTickInEditor" : false
+          }
+        }, {
+          "ClassName" : "URotatingMovementComponent",
+          "Name" : "URotatingMovementComponent_0",
+          "ObjectId" : 4,
+          "Properties" : {
+            "PivotTranslation" : [0.000000, 0.000000, 0.000000],
+            "RotationRate" : [0.000000, 90.000000, 0.000000],
+            "UpdatedComponent" : {
+              "ObjectId" : 2
+            },
+            "bAutoActivate" : true,
+            "bAutoRegisterUpdatedComponent" : false,
+            "bEditorOnly" : false,
+            "bHiddenInComponentTree" : false,
+            "bIsActive" : true,
+            "bRotationInLocalSpace" : true,
+            "bTickEnable" : true,
+            "bTickInEditor" : true
+          }
+        }],
+      "ObjectId" : 1,
+      "Properties" : {
+        "PendingActorLocation" : [8.900686, 7.109259, -5.535451],
+        "PendingActorRotation" : [-0.000000, 0.000000, 0.000000],
+        "PendingActorScale" : [0.050000, 0.050000, 0.050000],
+        "PendingActorVisible" : true,
+        "PendingTagsString" : "",
+        "bNeedsTick" : true
+      },
+      "RootComponent" : {
+        "Children" : [],
+        "ClassName" : "UStaticMeshComponent",
+        "Name" : "UStaticMeshComponent_13",
+        "ObjectId" : 2,
+        "Properties" : {
+          "AngularDamping" : 0.010000,
+          "AttachBoneName" : "",
+          "AttachOffsetLocation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetRotation" : [0.000000, 0.000000, 0.000000],
+          "AttachOffsetScale" : [1.000000, 1.000000, 1.000000],
+          "AttachSocketObjectName" : "",
+          "AttachSocketOffsetPath" : "",
+          "AttachTargetActorName" : "",
+          "CachedEditRotator" : [-0.000000, 111.624771, -0.000000],
+          "CollisionEnabled" : 1,
+          "CollisionPreset" : 0,
+          "LinearDamping" : 0.010000,
+          "Mass" : 1.000000,
+          "MaterialSlots" : ["Content/Material/Auto/Material.005.mat", "Content/Material/Auto/Material.004.mat"],
+          "ObjectType" : 0,
+          "RelativeTransform.Location" : [8.900686, 7.109259, -5.535451],
+          "RelativeTransform.Scale" : [0.050000, 0.050000, 0.050000],
+          "ResponseContainer" : {
+            "Responses[0]" : 2,
+            "Responses[1]" : 2,
+            "Responses[2]" : 2,
+            "Responses[3]" : 2,
+            "Responses[4]" : 2,
+            "Responses[5]" : 2
+          },
+          "StaticMeshPath" : "Content/Data/CardKey/CardKey_StaticMesh.uasset",
+          "TranslucentSortPriority" : 0,
+          "bAttachToOwnerMeshBone" : false,
+          "bAutoActivate" : true,
+          "bCastShadow" : true,
+          "bCastShadowAsTwoSided" : false,
+          "bEditAttachOffset" : false,
+          "bEditorOnly" : false,
+          "bEnableGravity" : true,
+          "bGenerateOverlapEvents" : false,
+          "bHiddenInComponentTree" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnable" : true,
+          "bTickInEditor" : true,
+          "bUseBakedBindPoseCorrection" : false,
+          "bUseBoundingBoxCollider" : true
+        }
+      }
+    }],
+  "ClassName" : "Prefab",
+  "Origin" : [8.900686, 7.109259, -5.535451],
+  "Version" : 1
+}

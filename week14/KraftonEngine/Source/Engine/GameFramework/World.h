@@ -1,0 +1,202 @@
+﻿#pragma once
+#include "Object/Object.h"
+#include "Core/Types/RayTypes.h"
+#include "Core/Types/CollisionTypes.h"
+#include "Collision/BVH/WorldPrimitivePickingBVH.h"
+#include "GameFramework/AActor.h"
+#include "GameFramework/Camera/PlayerCameraManager.h"
+#include "GameFramework/Level.h"
+#include "Component/Camera/CameraComponent.h"
+#include "Collision/Octree/Octree.h"
+#include "Collision/Octree/SpatialPartition.h"
+#include "GameFramework/WorldContext.h"
+#include "GameFramework/WorldSettings.h"
+#include "Engine/Editor/SceneOutlinerState.h"
+#include "Render/Scene/FScene.h"
+#include "Render/Types/LODContext.h"
+#include "Render/Types/MinimalViewInfo.h"
+#include "Render/Types/POVProvider.h"
+#include "Source/Engine/GameFramework/World.generated.h"
+
+#include <memory>
+
+class UCameraComponent;
+class UPrimitiveComponent;
+class UClothComponent;
+class APlayerController;
+class FGameplayRuntime;
+class UClass;
+class FPhysicsScene;
+
+UCLASS()
+class UWorld : public UObject {
+public:
+	GENERATED_BODY()
+	UWorld();
+	~UWorld() override;
+
+	// --- 월드 타입 ---
+	EWorldType GetWorldType() const { return WorldType; }
+	void SetWorldType(EWorldType InType) { WorldType = InType; }
+
+	// 월드 복제 — 자체 Actor 리스트를 순회하며 각 Actor를 새 World로 Duplicate.
+	// UObject::Duplicate는 Serialize 왕복만 수행하므로 UWorld처럼 컨테이너 기반 상태가 있는
+	// 타입은 별도 오버라이드가 필요하다.
+	UObject* Duplicate(UObject* NewOuter = nullptr) const override;
+
+	// 지정된 WorldType으로 복제 — Actor 복제 전에 WorldType이 설정되므로
+	// EditorOnly 컴포넌트의 CreateRenderState()에서 올바르게 판별 가능.
+	UWorld* DuplicateAs(EWorldType InWorldType) const;
+
+	// Actor lifecycle
+	template<typename T>
+	T* SpawnActor();
+	// UClass 기반 spawn — 런타임에 클래스가 결정되는 경우 사용.
+	AActor* SpawnActorByClass(UClass* Class);
+	void DestroyActor(AActor* Actor);
+	void AddActor(AActor* Actor);
+	void AddActor(AActor* Actor, bool bRunBeginPlay);
+	void MarkWorldPrimitivePickingBVHDirty();
+	void BuildWorldPrimitivePickingBVHNow() const;
+	void BeginDeferredPickingBVHUpdate();
+	void EndDeferredPickingBVHUpdate();
+	void WarmupPickingData() const;
+	bool RaycastPrimitives(const FRay& Ray, FHitResult& OutHitResult, AActor*& OutActor, const AActor* IgnoreActor = nullptr) const;
+
+	const TArray<AActor*>& GetActors() const { return PersistentLevel->GetActors(); }
+
+	// LOD 컨텍스트를 FFrameContext에 전달 (Collect 단계에서 LOD 인라인 갱신용)
+	FLODUpdateContext PrepareLODContext();
+
+	void InitWorld();      // Set up the world before gameplay begins
+	void BeginPlay();      // Triggers BeginPlay on all actors
+	void Tick(float DeltaTime, ELevelTick TickType);  // Drives the game loop every frame
+	void EndPlay();        // Cleanup before world is destroyed
+
+	// GC
+	void AddReferencedObjects(FReferenceCollector& Collector) override;
+
+	// Cloth
+	void RegisterClothComponent(UClothComponent* ClothComp);
+	void UnregisterClothComponent(UClothComponent* ClothComp);
+private:
+	// PlayerCameraManager 갱신 — Slomo / HitStop 등 TimeDilation 의 영향을 받지 않도록
+	// FTimer 의 raw delta 를 직접 사용한다. Tick 의 paused / 정상 흐름 양쪽에서 호출.
+	void TickPlayerCamera() const;
+
+	void SyncPhysXVehicleComponentsPostPhysics();
+
+	void TickClothComponentsFixed(float FixedDeltaTime);
+
+public:
+
+	bool HasBegunPlay() const { return bHasBegunPlay; }
+
+	// 씬 단위 설정. 에디터 UI 와 SceneSaveManager 가 사용.
+	FWorldSettings& GetWorldSettings() { return WorldSettings; }
+	const FWorldSettings& GetWorldSettings() const { return WorldSettings; }
+
+	// 에디터 전용 Scene Manager 그룹 상태. 런타임 actor 계층과 별도로 저장/로드만 수행한다.
+	FSceneOutlinerState& GetEditorOutlinerState() { return EditorOutlinerState; }
+	const FSceneOutlinerState& GetEditorOutlinerState() const { return EditorOutlinerState; }
+
+	// 일시정지 — true 동안 World::Tick 이 PhysicsScene 와 TickManager 호출을 skip 한다.
+	// Render / UI / Input poll 은 영향 받지 않으므로 인트로 / 메뉴 / 모달 띄운 상태에서
+	// 게임 시간만 멈추는 용도. 기본 false (게임 진행).
+	void SetPaused(bool bInPaused) { bPaused = bInPaused; }
+	bool IsPaused() const { return bPaused; }
+
+	// Active POV — Editor viewport / PIE-Game 의 PC->PlayerCameraManager 통합.
+	// PIE/Game 우선 (PC->PlayerCameraManager->GetActiveCamera->GetCameraView),
+	// fallback 으로 Editor 가 등록한 IPOVProvider 에서 pull. true 반환 시 OutPOV 유효.
+	bool GetActivePOV(FMinimalViewInfo& OutPOV) const;
+
+	// Editor viewport client 가 LOD/render 의 POV 공급자로 자기 자신을 등록.
+	// 등록 후엔 매 GetActivePOV 호출 시 provider->GetCameraView 가 호출된다 (pull 모델).
+	// Provider 의 lifetime 은 호출자(EditorEngine) 가 책임. unregister 는 nullptr 전달.
+	void SetEditorPOVProvider(IPOVProvider* InProvider) { EditorPOVProvider = InProvider; }
+
+	// FScene — 렌더 프록시 관리자
+	FScene& GetScene() { return Scene; }
+	const FScene& GetScene() const { return Scene; }
+
+	FPhysicsScene* GetPhysicsScene() const { return PhysicsScene; }
+	
+	FSpatialPartition& GetPartition() { return Partition; }
+	const FOctree* GetOctree() const { return Partition.GetOctree(); }
+	void InsertActorToOctree(AActor* actor);
+	void RemoveActorToOctree(AActor* actor);
+	void UpdateActorInOctree(AActor* actor);
+
+private:
+	//TArray<AActor*> Actors;
+	ULevel* PersistentLevel;
+
+	FPhysicsScene* PhysicsScene = nullptr;
+
+	TArray<UClothComponent*> ClothComponents;
+
+	// CameraManager 는 PC 가 owner. Editor 모드에서는 active viewport 가 IPOVProvider 로
+	// 자기 POV 를 노출하면 World 가 pull. 직접 POV cache 는 보유하지 않는다.
+	IPOVProvider* EditorPOVProvider = nullptr;
+	EWorldType WorldType = EWorldType::Editor;
+	bool bHasBegunPlay = false;
+	bool bPaused = false;
+	FWorldSettings WorldSettings;
+	FSceneOutlinerState EditorOutlinerState;
+	bool bHasLastFullLODUpdateCameraPos = false;
+	mutable FWorldPrimitivePickingBVH WorldPrimitivePickingBVH;
+	int32 DeferredPickingBVHUpdateDepth = 0;
+	bool bDeferredPickingBVHDirty = false;
+	uint32 VisibleProxyBuildFrame = 0;
+	FVector LastFullLODUpdateCameraForward = FVector(1, 0, 0);
+	FVector LastFullLODUpdateCameraPos = FVector(0, 0, 0);
+	FScene Scene;
+	FTickManager TickManager;
+
+	FSpatialPartition Partition;
+
+	// Game flow — Editor 월드에서는 runtime을 시작하지 않는다.
+	std::unique_ptr<FGameplayRuntime> GameplayRuntime;
+
+public:
+	// Physics raycast convenience — delegates to IPhysicsScene::Raycast
+	bool PhysicsRaycast(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const;
+	bool PhysicsSweepSphere(const FVector& Start, const FVector& Dir, float MaxDist, float Radius, FHitResult& OutHit,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const;
+	
+	bool PhysicsOverlapSphere(const FVector& Center, float Radius, TArray<FOverlapResult>& OutOverlaps,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const;
+	bool PhysicsOverlapBox(const FVector& Center, const FVector& HalfExtent, TArray<FOverlapResult>& OutOverlaps,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const;
+
+	// ObjectType 기반 raycast convenience — delegates to IPhysicsScene::RaycastByObjectTypes.
+	// 채널-응답 시맨틱이 아니라 "이 ObjectType 의 shape 만" 잡고 싶을 때 (예: 바닥은 WorldStatic 만).
+	// ObjectTypeMask 는 ObjectTypeBit(ECollisionChannel::WorldStatic) 처럼 헬퍼로 조합.
+	bool PhysicsRaycastByObjectTypes(const FVector& Start, const FVector& Dir, float MaxDist, FHitResult& OutHit,
+		uint32 ObjectTypeMask,
+		const AActor* IgnoreActor = nullptr) const;
+
+	bool PhysicsSphereSweepShapeComponents(const FVector& Start, const FVector& Dir, float MaxDist, float Radius,
+		FHitResult& OutHit,
+		ECollisionChannel TraceChannel = ECollisionChannel::WorldStatic,
+		const AActor* IgnoreActor = nullptr) const;
+
+	// --- Game flow ---
+	FGameplayRuntime* GetGameplayRuntime() const { return GameplayRuntime.get(); }
+	APlayerController* GetFirstPlayerController() const;
+};
+
+template<typename T>
+inline T* UWorld::SpawnActor()
+{
+	// create and register an actor
+	T* Actor = UObjectManager::Get().CreateObject<T>(PersistentLevel);
+	AddActor(Actor); // BeginPlay 트리거는 AddActor 내부에서 bHasBegunPlay 가드로 처리
+	return Actor;
+}

@@ -1,0 +1,198 @@
+﻿#include "Physics/BodyInstance.h"
+#include "Physics/PhysXConversions.h"
+#include "Physics/PhysicsFilterData.h"
+
+#include "Component/PrimitiveComponent.h"
+
+bool FBodyInstance::IsDynamic() const
+{
+	return Body && Body->is<physx::PxRigidDynamic>() != nullptr;
+}
+
+void FBodyInstance::SetGravityEnabled(bool bEnabled)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		Dynamic->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, !bEnabled);
+	}
+}
+
+void FBodyInstance::SetKinematic(bool bEnable)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		Dynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, bEnable);
+		Mode = bEnable ? EBodyInstanceMode::Kinematic : EBodyInstanceMode::Dynamic;
+	}
+}
+
+void FBodyInstance::SetMass(float InMass)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		Dynamic->setMass(std::max(InMass, 0.001f));
+	}
+}
+
+float FBodyInstance::GetMass() const
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		return Dynamic->getMass();
+	}
+
+	return 0.0f;
+}
+
+void FBodyInstance::SetLinearDamping(float InDamping)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		Dynamic->setLinearDamping(std::max(InDamping, 0.0f));
+	}
+}
+
+void FBodyInstance::SetAngularDamping(float InDamping)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		Dynamic->setAngularDamping(std::max(InDamping, 0.0f));
+	}
+}
+
+FTransform FBodyInstance::GetBodyTransform() const
+{
+	if (!Body) return FTransform();
+
+	return FromPxTransform(Body->getGlobalPose());
+}
+
+void FBodyInstance::SetBodyTransform(const FTransform& Transform)
+{
+	if (!Body) return;
+
+	const physx::PxTransform Pose = ToPxTransform(Transform.Location, Transform.Rotation);
+
+	if (physx::PxRigidDynamic* Dynamic = Body->is<physx::PxRigidDynamic>())
+	{
+		if (Mode == EBodyInstanceMode::Kinematic)
+		{
+			Dynamic->setKinematicTarget(Pose);
+		}
+		else
+		{
+			Dynamic->setGlobalPose(Pose);
+		}
+		return;
+	}
+
+	Body->setGlobalPose(Pose);
+}
+
+void FBodyInstance::AddForce(const FVector& Force)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		if (Mode == EBodyInstanceMode::Dynamic)
+		{
+			Dynamic->addForce(ToPxVec3(Force), physx::PxForceMode::eFORCE);
+		}
+	}
+}
+
+void FBodyInstance::AddImpulse(const FVector& Impulse)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		if (Mode == EBodyInstanceMode::Dynamic)
+		{
+			Dynamic->addForce(ToPxVec3(Impulse), physx::PxForceMode::eIMPULSE);
+		}
+	}
+}
+
+void FBodyInstance::SetLinearVelocity(const FVector& Velocity)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		if (Mode == EBodyInstanceMode::Dynamic)
+		{
+			Dynamic->setLinearVelocity(ToPxVec3(Velocity));
+		}
+	}
+}
+
+void FBodyInstance::SetAngularVelocity(const FVector& AngularVelocity)
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		if (Mode == EBodyInstanceMode::Dynamic)
+		{
+			Dynamic->setAngularVelocity(ToPxVec3(AngularVelocity));
+		}
+	}
+}
+
+FVector FBodyInstance::GetLinearVelocity() const
+{
+	if (physx::PxRigidDynamic* Dynamic = Body ? Body->is<physx::PxRigidDynamic>() : nullptr)
+	{
+		return FromPxVec3(Dynamic->getLinearVelocity());
+	}
+
+	return FVector::ZeroVector;
+}
+
+AActor* FBodyInstance::GetOwnerActor() const
+{
+	return OwnerComponent ? OwnerComponent->GetOwner() : nullptr;
+}
+
+void FBodyInstance::SyncFromPhysics()
+{
+	if (!bSyncOwnerFromPhysics) return;
+	if (!OwnerComponent || !Body) return;
+	if (Mode != EBodyInstanceMode::Dynamic) return;
+
+	physx::PxRigidDynamic* DynamicBody = Body->is<physx::PxRigidDynamic>();
+	if (!DynamicBody) return;
+
+	const FTransform Transform = FromPxTransform(DynamicBody->getGlobalPose());
+
+	OwnerComponent->SetWorldLocation(Transform.Location);
+	OwnerComponent->SetRelativeRotation(Transform.Rotation);
+}
+
+void FBodyInstance::SyncToPhysics()
+{
+	if (!OwnerComponent || !Body) return;
+
+	FTransform Transform(OwnerComponent->GetWorldLocation(),
+		OwnerComponent->GetWorldRotation().ToQuaternion(), OwnerComponent->GetWorldScale());
+
+	SetBodyTransform(Transform);
+}
+
+void FBodyInstance::UpdateFilterData()
+{
+	if (!Body || !OwnerComponent) return;
+
+	const physx::PxFilterData FilterData = MakeFilterData(*OwnerComponent);
+
+	const physx::PxU32 ShapeCount = Body->getNbShapes();
+	if (ShapeCount == 0) return;
+
+	TArray<physx::PxShape*> Shapes;
+	Shapes.resize(ShapeCount);
+
+	const physx::PxU32 WrittenCount = Body->getShapes(Shapes.data(), ShapeCount);
+
+	for (physx::PxU32 Index = 0; Index < WrittenCount; ++Index)
+	{
+		physx::PxShape* Shape = Shapes[Index];
+		if (!Shape) continue;
+
+		Shape->setSimulationFilterData(FilterData);
+		Shape->setQueryFilterData(FilterData);
+	}
+}

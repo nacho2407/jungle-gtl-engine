@@ -1,0 +1,372 @@
+body {
+	margin: 0px;
+	width: 100%;
+	height: 100%;
+	font-family: Pretendard;
+	color: #ffffffE6;
+}
+
+.hud-letterbox-layer {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	display: none;
+	pointer-events: none;
+}
+
+.hud-letterbox-bar {
+	position: absolute;
+	left: 0px;
+	width: 100%;
+	height: 13.5%;
+	background-color: #000000;
+	opacity: 0.96;
+}
+
+#hud-letterbox-top {
+	top: 0px;
+}
+
+#hud-letterbox-bottom {
+	bottom: 0px;
+}
+
+.hud-cutscene-skip-prompt {
+	position: absolute;
+	right: 24.00px;
+	bottom: 24.00px;
+	width: 178px;
+	height: 28px;
+	opacity: 0.82;
+	display: none;
+	pointer-events: none;
+}
+
+.hud-cutscene-skip-keyboard {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 58px;
+	height: 28px;
+	background-color: #ffffff;
+	color: #000000;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.hud-cutscene-skip-separator {
+	position: absolute;
+	left: 66px;
+	top: 0px;
+	width: 14px;
+	height: 28px;
+	color: #ffffff;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.hud-cutscene-skip-gamepad {
+	position: absolute;
+	left: 86px;
+	top: 0px;
+	width: 28px;
+	height: 28px;
+	background-color: #ffffff;
+	color: #000000;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+	border-radius: 14px;
+}
+
+.hud-cutscene-skip-label {
+	position: absolute;
+	left: 126px;
+	top: 0px;
+	width: 52px;
+	height: 28px;
+	color: #ffffff;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: left;
+	white-space: nowrap;
+}
+
+.hud-skip-ring {
+	position: absolute;
+	right: 54px;
+	bottom: 60.00px;
+	width: 64px;
+	height: 64px;
+	opacity: 0.0;
+	display: none;
+	pointer-events: none;
+}
+
+.hud-skip-ring-frame {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 64px;
+	height: 64px;
+	opacity: 0.0;
+}
+
+#weapon-hud-root {
+	position: absolute;
+	left: auto;
+	top: auto;
+	width: 100%;
+	height: 100%;
+ right: 20.00px; bottom: 20.00px;}
+
+.score-hud-panel {
+	position: absolute;
+	right: 42px;
+	top: 32px;
+	width: 224px;
+	height: 58px;
+}
+
+.score-hud-label {
+	position: absolute;
+	left: 176.00px;
+	top: 66.00px;
+	width: 78px;
+	height: 18px;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 18px;
+	color: #ffffffE6;
+}
+
+.score-hud-value {
+	position: absolute;
+	right: 0.00px;
+	top: 29.00px;
+	width: 106.00px;
+	height: 32px;
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 32px;
+	text-align: right;
+	color: #ffffffE6;
+}
+
+.speed-hud-panel {
+	position: absolute;
+	right: 42px;
+	top: 106px;
+	width: 224px;
+	height: 58px;
+}
+
+.speed-hud-label {
+	position: absolute;
+	left: 176.00px;
+	top: 66.00px;
+	width: 78px;
+	height: 18px;
+	font-size: 14px;
+	font-weight: 700;
+	line-height: 18px;
+	color: #ffffffE6;
+}
+
+.speed-hud-value {
+	position: absolute;
+	right: 0.00px;
+	top: 29.00px;
+	width: 146.00px;
+	height: 32px;
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 32px;
+	text-align: right;
+	color: #ffffffE6;
+}
+
+.crosshair-screen {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+}
+
+.crosshair-root {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	width: 128px;
+	height: 128px;
+	margin-left: -64px;
+	margin-top: -64px;
+}
+
+.crosshair-part {
+	position: absolute;
+	width: 32px;
+	height: 32px;
+	opacity: 0.9;
+}
+
+.crosshair-dot {
+	position: absolute;
+	left: 56px;
+	top: 56px;
+	width: 16px;
+	height: 16px;
+	opacity: 0.9;
+}
+
+.crosshair-left {
+	left: 16px;
+	top: 48px;
+}
+
+.crosshair-right {
+	left: 80px;
+	top: 48px;
+}
+
+.crosshair-top {
+	left: 48px;
+	top: 16px;
+}
+
+.crosshair-bottom {
+	left: 48px;
+	top: 80px;
+}
+
+#crosshair-left-red,
+#crosshair-right-red,
+#crosshair-top-red,
+#crosshair-bottom-red,
+#crosshair-dot-red {
+	opacity: 0.0;
+}
+
+.crosshair-hit-marker {
+	position: absolute;
+	left: 32px;
+	top: 32px;
+	width: 64px;
+	height: 64px;
+	opacity: 0.0;
+}
+
+.crosshair-kill-marker {
+	position: absolute;
+	left: 16px;
+	top: 16px;
+	width: 96px;
+	height: 96px;
+	opacity: 0.0;
+}
+
+.weapon-hud-panel {
+	position: absolute;
+	right: 48px;
+	bottom: 42px;
+	width: 100.00%;
+	height: 84.00%;
+ left: 76.00%; top: 85.60%;}
+
+.weapon-hud-panel-image {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 300px;
+	height: 84px;
+	opacity: 0.85;
+}
+
+.weapon-hud-rifle-image {
+	position: absolute;
+	left: 18.00px;
+	top: 18.00px;
+	width: 140.00px;
+	height: 45.00px;
+	opacity: 0.9;
+}
+
+.weapon-hud-separator {
+	position: absolute;
+	left: 219.00px;
+	top: 25.00px;
+	width: 16px;
+	height: 36px;
+	opacity: 0.65;
+}
+
+.weapon-hud-current-ammo {
+	position: absolute;
+	left: 170.00px;
+	top: 20.00px;
+	width: 46px;
+	height: 42px;
+	font-size: 37.00px;
+	font-weight: bold;
+	line-height: 42px;
+	text-align: right;
+	color: #FFFFFFE6;
+ bottom: auto;}
+
+.weapon-hud-magazine-ammo {
+	position: absolute;
+	left: 237.00px;
+	top: 32.00px;
+	width: 61.00px;
+	height: 32px;
+	font-size: 24px;
+	font-weight: bold;
+	line-height: 32px;
+	text-align: left;
+	color: #7B7B7BE6;
+}
+
+.hud-dialogue-box {
+	position: absolute;
+	left: 470px;
+	bottom: 164px;
+	width: 980px;
+	height: 48px;
+	background-color: #000000A8;
+	border-width: 0px;
+	opacity: 0.0;
+	display: none;
+	pointer-events: none;
+}
+
+.hud-dialogue-line {
+	position: absolute;
+	left: 16px;
+	top: 0px;
+	width: 948px;
+	height: 48px;
+	font-family: Pretendard;
+	font-size: 22px;
+	font-weight: 700;
+	line-height: 48px;
+	color: #FFFFFFE6;
+	white-space: nowrap;
+	text-align: left;
+	pointer-events: none;
+}

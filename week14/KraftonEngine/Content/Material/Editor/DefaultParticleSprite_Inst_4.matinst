@@ -1,0 +1,16 @@
+{
+        "EmissiveColor" : [0.189873, 0.153821, 0.153821, 1.000000],
+        "EmissiveIntensity" : 12.200000,
+        "Parameters" : {
+
+        },
+        "ParentMaterial" : "Content/Material/Editor/DefaultParticleSprite.mat",
+        "PathFileName" : "Content/Material/Editor/DefaultParticleSprite_Inst_4.matinst",
+        "Textures" : {
+
+        },
+        "bEnableBloom" : true,
+        "bOverrideEmissiveColor" : true,
+        "bOverrideEmissiveIntensity" : true,
+        "bOverrideEnableBloom" : true
+      }

@@ -1,0 +1,24 @@
+{
+  "BlendState" : "AlphaBlend",
+  "DepthStencilState" : "DepthReadOnly",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
+  "Origin" : "FbxImport",
+  "Parameters" : {
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [0.800000, 0.800000, 0.800000, 0.253846],
+    "TwoSidedLighting" : 0.000000,
+    "_pad0" : 0.000000,
+    "_pad1" : 0.000000
+  },
+  "PathFileName" : "Content/Material/Auto/Material.008.mat",
+  "RasterizerState" : "SolidBackCull",
+  "RenderPass" : "AlphaBlend",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "ShadowMode" : "Opaque",
+  "Textures" : {
+
+  },
+  "TwoSidedLighting" : false,
+  "bEnableBloom" : false
+}

@@ -1,0 +1,373 @@
+local InGameDebug = {}
+
+local WIDGET_PATH = "Content/UI/DebugUI/InGameDebug.rml"
+local DEFAULT_Z_ORDER = 220
+local SPEED_STEP = 0.25
+local DAMAGE_STEP = 5.0
+local HEALTH_STEP = 5.0
+local FPS_SMOOTHING = 0.12
+
+local widget = nil
+local callbacks = {}
+local zOrder = DEFAULT_Z_ORDER
+
+local speedMultiplier = 1.0
+local damageAmount = 10.0
+local isInvincible = false
+local activeTab = "player"
+local windowX = 40.0
+local windowY = 48.0
+local dragging = false
+local dragOffsetX = 0.0
+local dragOffsetY = 0.0
+local lastFrameTimeSeconds = nil
+local smoothedFps = 0.0
+local smoothedFrameMs = 0.0
+
+local function clamp(value, minValue, maxValue)
+    if value < minValue then return minValue end
+    if value > maxValue then return maxValue end
+    return value
+end
+
+local function px(value)
+    return string.format("%.2fpx", value)
+end
+
+local function format_number(value, decimals)
+    return string.format("%." .. tostring(decimals) .. "f", value)
+end
+
+local function get_gamepad_axis(axisCode)
+    if Input == nil or Input.GetGamepadAxis == nil or axisCode == nil then
+        return 0.0
+    end
+    return Input.GetGamepadAxis(-1, axisCode)
+end
+
+local function is_gamepad_button_down(buttonCode)
+    return Input ~= nil
+        and Input.GetKey ~= nil
+        and buttonCode ~= nil
+        and Input.GetKey(buttonCode)
+end
+
+local function format_button(label, buttonCode)
+    return is_gamepad_button_down(buttonCode) and ("[" .. label .. "]") or label
+end
+
+local function is_gamepad_connected()
+    return Input ~= nil
+        and Input.IsGamepadConnected ~= nil
+        and Input.IsGamepadConnected()
+end
+
+local function get_health()
+    if callbacks.GetHealth ~= nil then
+        return callbacks.GetHealth()
+    end
+    return 0.0
+end
+
+local function get_health_ratio()
+    if callbacks.GetHealthRatio ~= nil then
+        return callbacks.GetHealthRatio()
+    end
+    return 0.0
+end
+
+local function set_health(value)
+    if callbacks.SetHealth ~= nil then
+        callbacks.SetHealth(value)
+    end
+end
+
+local function apply_damage(amount)
+    if callbacks.ApplyDamage ~= nil then
+        callbacks.ApplyDamage(amount)
+    end
+end
+
+local function apply_speed_multiplier()
+    if callbacks.ApplySpeedMultiplier ~= nil then
+        callbacks.ApplySpeedMultiplier(speedMultiplier)
+    end
+end
+
+local function set_text(id, text)
+    if widget == nil then return end
+    widget:SetText(id, text)
+end
+
+local function set_property(id, property, value)
+    if widget == nil then return end
+    widget:SetProperty(id, property, value)
+end
+
+
+local function get_time_seconds()
+    if Game ~= nil and Game.GetTimeSeconds ~= nil then
+        return Game.GetTimeSeconds()
+    end
+    return nil
+end
+
+local function update_fps_values()
+    if widget == nil then return end
+
+    local now = get_time_seconds()
+    if now == nil then
+        set_text("debug-render-fps-value", "N/A")
+        set_text("debug-render-frame-ms-value", "N/A")
+        return
+    end
+
+    if lastFrameTimeSeconds == nil then
+        lastFrameTimeSeconds = now
+        set_text("debug-render-fps-value", "-- FPS")
+        set_text("debug-render-frame-ms-value", "-- ms")
+        return
+    end
+
+    local deltaSeconds = now - lastFrameTimeSeconds
+    lastFrameTimeSeconds = now
+
+    if deltaSeconds <= 0.0 then
+        return
+    end
+
+    local instantFps = 1.0 / deltaSeconds
+    local instantFrameMs = deltaSeconds * 1000.0
+
+    if smoothedFps <= 0.0 then
+        smoothedFps = instantFps
+        smoothedFrameMs = instantFrameMs
+    else
+        smoothedFps = smoothedFps + (instantFps - smoothedFps) * FPS_SMOOTHING
+        smoothedFrameMs = smoothedFrameMs + (instantFrameMs - smoothedFrameMs) * FPS_SMOOTHING
+    end
+
+    set_text("debug-render-fps-value", tostring(math.floor(smoothedFps + 0.5)) .. " FPS")
+    set_text("debug-render-frame-ms-value", format_number(smoothedFrameMs, 2) .. " ms")
+end
+
+local function update_input_values()
+    if widget == nil then return end
+
+    local connected = is_gamepad_connected()
+    local leftX = get_gamepad_axis(Axis ~= nil and Axis.GamepadLeftX or nil)
+    local leftY = get_gamepad_axis(Axis ~= nil and Axis.GamepadLeftY or nil)
+    local rightX = get_gamepad_axis(Axis ~= nil and Axis.GamepadRightX or nil)
+    local rightY = get_gamepad_axis(Axis ~= nil and Axis.GamepadRightY or nil)
+    local leftTrigger = get_gamepad_axis(Axis ~= nil and Axis.GamepadLeftTrigger or nil)
+    local rightTrigger = get_gamepad_axis(Axis ~= nil and Axis.GamepadRightTrigger or nil)
+
+    set_text("debug-gamepad-connected", connected and "Gamepad ON" or "Gamepad OFF")
+    set_property("debug-gamepad-connected", "color", connected and "#ffffff" or "#9d9d9d")
+    set_text("debug-gamepad-left", "LS " .. format_number(leftX, 2) .. " " .. format_number(leftY, 2))
+    set_text("debug-gamepad-right", "RS " .. format_number(rightX, 2) .. " " .. format_number(rightY, 2))
+    set_text("debug-gamepad-triggers", "LT " .. format_number(leftTrigger, 2) .. " RT " .. format_number(rightTrigger, 2))
+    set_text(
+        "debug-gamepad-buttons",
+        format_button("A", Key ~= nil and Key.GamepadA or nil) .. " " ..
+        format_button("B", Key ~= nil and Key.GamepadB or nil) .. " " ..
+        format_button("X", Key ~= nil and Key.GamepadX or nil) .. " " ..
+        format_button("Y", Key ~= nil and Key.GamepadY or nil) .. " " ..
+        format_button("LB", Key ~= nil and Key.GamepadLeftShoulder or nil) .. " " ..
+        format_button("RB", Key ~= nil and Key.GamepadRightShoulder or nil) .. " " ..
+        format_button("LT", Key ~= nil and Key.GamepadLeftTrigger or nil) .. " " ..
+        format_button("RT", Key ~= nil and Key.GamepadRightTrigger or nil))
+    set_text(
+        "debug-gamepad-menu",
+        format_button("L3", Key ~= nil and Key.GamepadLeftThumb or nil) .. " " ..
+        format_button("R3", Key ~= nil and Key.GamepadRightThumb or nil) .. " " ..
+        format_button("Back", Key ~= nil and Key.GamepadBack or nil) .. " " ..
+        format_button("Start", Key ~= nil and Key.GamepadStart or nil) .. " " ..
+        format_button("Up", Key ~= nil and Key.GamepadDPadUp or nil) .. " " ..
+        format_button("Down", Key ~= nil and Key.GamepadDPadDown or nil) .. " " ..
+        format_button("Left", Key ~= nil and Key.GamepadDPadLeft or nil) .. " " ..
+        format_button("Right", Key ~= nil and Key.GamepadDPadRight or nil))
+end
+
+local function update_values()
+    if widget == nil then return end
+
+    set_text("debug-speed-value", format_number(speedMultiplier, 2) .. "x")
+    set_text("debug-invincible-toggle", isInvincible and "ON" or "OFF")
+    set_text("debug-damage-value", tostring(math.floor(damageAmount + 0.5)))
+    set_text("debug-health-value", tostring(math.floor(get_health() + 0.5)))
+    set_text("debug-health-label", "Health " .. tostring(math.floor(get_health_ratio() * 100.0 + 0.5)) .. "%")
+    set_property("debug-invincible-toggle", "color", isInvincible and "#111111" or "#d8d8d8")
+    set_property("debug-invincible-toggle", "background-color", isInvincible and "#ffffff" or "#ffffff1F")
+    update_input_values()
+    update_fps_values()
+end
+
+local function update_tab_visuals()
+    if widget == nil then return end
+
+    local tabs = { "player", "world", "ai", "render", "audio", "input" }
+    for _, tab in ipairs(tabs) do
+        local selected = tab == activeTab
+        set_property("debug-tab-" .. tab, "color", selected and "#ffffff" or "#808080")
+        set_property("debug-panel-" .. tab, "display", selected and "block" or "none")
+    end
+end
+
+local function set_tab(tab)
+    activeTab = tab
+    update_tab_visuals()
+end
+
+local function set_window_position(x, y)
+    windowX = clamp(x, 0.0, 1600.0)
+    windowY = clamp(y, 0.0, 900.0)
+    set_property("debug-window", "left", px(windowX))
+    set_property("debug-window", "top", px(windowY))
+end
+
+local function close()
+    if widget ~= nil and widget:IsInViewport() then
+        widget:RemoveFromParent()
+        widget:SetWantsMouse(false)
+        dragging = false
+    end
+end
+
+local function bind_events()
+    if widget == nil then return end
+
+    widget:bind_click("debug-close", function()
+        close()
+    end)
+
+    widget:bind_click("debug-tab-player", function() set_tab("player") end)
+    widget:bind_click("debug-tab-world", function() set_tab("world") end)
+    widget:bind_click("debug-tab-ai", function() set_tab("ai") end)
+    widget:bind_click("debug-tab-render", function() set_tab("render") end)
+    widget:bind_click("debug-tab-audio", function() set_tab("audio") end)
+    widget:bind_click("debug-tab-input", function() set_tab("input") end)
+
+    widget:bind_click("debug-speed-minus", function()
+        speedMultiplier = clamp(speedMultiplier - SPEED_STEP, 0.25, 8.0)
+        apply_speed_multiplier()
+        update_values()
+    end)
+    widget:bind_click("debug-speed-plus", function()
+        speedMultiplier = clamp(speedMultiplier + SPEED_STEP, 0.25, 8.0)
+        apply_speed_multiplier()
+        update_values()
+    end)
+    widget:bind_click("debug-invincible-toggle", function()
+        isInvincible = not isInvincible
+        update_values()
+    end)
+    widget:bind_click("debug-damage-minus", function()
+        damageAmount = clamp(damageAmount - DAMAGE_STEP, 0.0, 100.0)
+        update_values()
+    end)
+    widget:bind_click("debug-damage-plus", function()
+        damageAmount = clamp(damageAmount + DAMAGE_STEP, 0.0, 100.0)
+        update_values()
+    end)
+    widget:bind_click("debug-apply-damage", function()
+        apply_damage(damageAmount)
+        update_values()
+    end)
+    widget:bind_click("debug-health-minus", function()
+        set_health(get_health() - HEALTH_STEP)
+        update_values()
+    end)
+    widget:bind_click("debug-health-plus", function()
+        set_health(get_health() + HEALTH_STEP)
+        update_values()
+    end)
+
+    widget:bind_event("debug-titlebar", "mousedown", function(event)
+        dragging = true
+        dragOffsetX = event.mouse_x - windowX
+        dragOffsetY = event.mouse_y - windowY
+    end)
+    widget:bind_event("debug-titlebar", "mouseup", function()
+        dragging = false
+    end)
+    widget:bind_event("debug-window", "mouseup", function()
+        dragging = false
+    end)
+    widget:bind_event("debug-window", "mousemove", function(event)
+        if not dragging then return end
+        set_window_position(event.mouse_x - dragOffsetX, event.mouse_y - dragOffsetY)
+    end)
+end
+
+local function ensure_widget()
+    if widget ~= nil then return end
+
+    widget = UI.CreateWidget(WIDGET_PATH)
+    if widget == nil then return end
+
+    widget:SetWantsMouse(false)
+    bind_events()
+    update_values()
+    update_tab_visuals()
+    set_window_position(windowX, windowY)
+end
+
+function InGameDebug.Initialize(config)
+    callbacks = config or {}
+    zOrder = callbacks.ZOrder or DEFAULT_Z_ORDER
+    speedMultiplier = 1.0
+    damageAmount = 10.0
+    isInvincible = false
+    activeTab = "player"
+    dragging = false
+    lastFrameTimeSeconds = nil
+    smoothedFps = 0.0
+    smoothedFrameMs = 0.0
+    apply_speed_multiplier()
+end
+
+function InGameDebug.Toggle()
+    ensure_widget()
+    if widget == nil then return end
+
+    if widget:IsInViewport() then
+        close()
+    else
+        widget:AddToViewportZ(zOrder)
+        widget:SetWantsMouse(true)
+        lastFrameTimeSeconds = nil
+        smoothedFps = 0.0
+        smoothedFrameMs = 0.0
+        update_values()
+        update_tab_visuals()
+        set_window_position(windowX, windowY)
+    end
+end
+
+function InGameDebug.Tick()
+    apply_speed_multiplier()
+    if widget ~= nil and widget:IsInViewport() then
+        update_values()
+    end
+end
+
+function InGameDebug.Shutdown()
+    close()
+    widget = nil
+    callbacks = {}
+    dragging = false
+    lastFrameTimeSeconds = nil
+    smoothedFps = 0.0
+    smoothedFrameMs = 0.0
+end
+
+function InGameDebug.IsInvincible()
+    return isInvincible
+end
+
+function InGameDebug.GetSpeedMultiplier()
+    return speedMultiplier
+end
+
+return InGameDebug

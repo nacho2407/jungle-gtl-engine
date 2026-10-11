@@ -1,0 +1,131 @@
+﻿#pragma once
+
+#include "Render/Command/DrawCommandList.h"
+#include "Render/Types/FrameContext.h"
+#include "Render/Geometry/LineGeometry.h"
+#include "Render/Geometry/FontGeometry.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
+
+class FPassRenderStateTable;
+class FTextRenderSceneProxy;
+class FSkeletalMeshSceneProxy;
+class FParticleSystemSceneProxy;
+class FScene;
+class UMaterialInterface;
+struct FCollectOutput;
+
+struct FProxyCommandBuildContext
+{
+	FDrawCommandBuffer ProxyBuffer;
+	FConstantBuffer* PerObjCB = nullptr;
+	const FSkeletalMeshSceneProxy* SkeletalProxy = nullptr;
+
+	bool bSkeletal = false;
+	bool bGPUSkinning = false;
+	bool bWeightBoneHeatMap = false;
+};
+
+/*
+	FDrawCommandBuilder — Collect 페이즈에서 Proxy/Scene 데이터를 FDrawCommand로 변환합니다.
+	FRenderer에서 커맨드 빌드 책임을 분리하여, Renderer는 GPU 제출에만 집중합니다.
+*/
+class FDrawCommandBuilder
+{
+public:
+	void Create(ID3D11Device* InDevice, ID3D11DeviceContext* InContext, const FPassRenderStateTable* InPassRenderStateTable);
+	void Release();
+
+	// Collect 시작 — 커맨드 리스트 + 동적 지오메트리 초기화
+	void BeginCollect(const FFrameContext& Frame);
+
+	// Proxy → FDrawCommand 변환
+	void BuildCommandForProxy(FScene& Scene, const FPrimitiveSceneProxy& Proxy, ERenderPass Pass);
+	void BuildDecalCommandForReceiver(FScene& Scene, const FPrimitiveSceneProxy& ReceiverProxy, const FPrimitiveSceneProxy& DecalProxy);
+
+	// Font proxy → FontGeometry 배칭
+	void AddWorldText(const FTextRenderSceneProxy* TextProxy, const FFrameContext& Frame);
+
+	// FCollectOutput → 프록시 커맨드 + 동적 커맨드 일괄 생성
+	void BuildCommands(const FFrameContext& Frame, FScene* Scene, const FCollectOutput& Output);
+
+	// 결과 접근
+	FDrawCommandList& GetCommandList() { return DrawCommandList; }
+	bool HasSelectionMaskCommands() const { return bHasSelectionMaskCommands; }
+
+private:
+	// BuildCommands 서브 메서드
+	void BuildProxyCommands(const FFrameContext& Frame, FScene& Scene, const FCollectOutput& Output);
+	void BuildDecalCommands(FScene& Scene, FPrimitiveSceneProxy* Proxy, const FFrameContext& Frame, const FCollectOutput& Output);
+	void BuildMeshCommands(FScene& Scene, const FPrimitiveSceneProxy* Proxy);
+	void BuildParticleCommands(FScene& Scene, const FParticleSystemSceneProxy* Proxy);
+	void BuildSelectionCommands(FPrimitiveSceneProxy* Proxy, bool bShowBoundingVolume, FScene& Scene);
+
+	bool PrepareProxyCommandBuildContext(FScene& Scene, const FPrimitiveSceneProxy& Proxy, FProxyCommandBuildContext& OutBuildCtx);
+	void BuildCommandForSection(FScene& Scene, const FPrimitiveSceneProxy& Proxy, const FMeshSectionDraw& Section,
+		ERenderPass Pass, const FProxyCommandBuildContext& BuildCtx);
+	void BuildParticleCommandForSection(FScene& Scene, const FParticleSystemSceneProxy& Proxy, const FDrawCommandBuffer& Buffer,
+		const FMeshSectionDraw& Section, ERenderPass Pass, FConstantBuffer* PerObjCB);
+
+	// Scene 경량 데이터 → 동적 지오메트리 → FDrawCommand
+	void BuildDynamicCommands(const FFrameContext& Frame, const FScene* Scene);
+
+	void PrepareDynamicGeometry(const FFrameContext& Frame, const FScene* Scene);
+	void BuildDynamicDrawCommands(const FFrameContext& Frame, const FScene* Scene);
+
+	// BuildDynamicDrawCommands 서브 메서드
+	void BuildEditorLineCommands(EViewMode ViewMode);
+	void BuildPostProcessCommands(const FFrameContext& Frame, const FScene* Scene);
+	void BuildFontCommands(EViewMode ViewMode);
+
+	// 공통 헬퍼
+	void EmitLineCommand(FLineGeometry& Lines, FShader* Shader, const FDrawCommandRenderState& RS);
+	void ApplyMaterialRenderState(FDrawCommandRenderState& OutState, const UMaterialInterface* Mat, const FDrawCommandRenderState& BaseState);
+	FShader* SelectEffectiveShader(FShader* ProxyShader, EViewMode ViewMode,
+		bool bUseSkeletalVertexFactory, bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap, bool bApplyFog);
+	FShader* SelectPreDepthShader(FShader* ProxyShader, bool bUseSkeletalVertexFactory, bool bUseInstancedVertexFactory, bool bWeightBoneHeatMap);
+
+	FConstantBuffer* GetPerObjectCBForProxy(FScene* Scene, const FPrimitiveSceneProxy& Proxy);
+	void EnsurePerObjectCBPoolCapacity(FScene* Scene, uint32 RequiredCount);
+
+	// 커맨드 버퍼
+	FDrawCommandList DrawCommandList;
+
+	// Collect 페이즈 상태
+	const FPassRenderStateTable* PassRenderStateTable = nullptr;
+	EViewMode CollectViewMode = EViewMode::Lit_Phong;
+	bool bCollectWeightBoneHeatMap = false;
+	int32 CollectWeightBoneHeatMapBoneIndex = -1;
+
+	bool bHasSelectionMaskCommands = false;
+
+	// 동적 지오메트리
+	FLineGeometry  EditorLines;
+	FLineGeometry  GridLines;
+	FLineGeometry  DebugBoneLines;
+	FFontGeometry  FontGeometry;
+
+	// PerObject CB 풀
+	TMap<FScene*, TArray<FConstantBuffer>> PerSceneObjectCBPool;
+
+	// PostProcess CBs (Fog, Outline, SceneDepth, FXAA)
+	FConstantBuffer FogCB;
+	FConstantBuffer OutlineCB;
+	FConstantBuffer SceneDepthCB;
+	FConstantBuffer FXAACB;
+	FConstantBuffer GammaCorrectionCB;
+	FConstantBuffer CameraFadeCB;
+	FConstantBuffer CameraVignetteCB;
+	FConstantBuffer CameraLetterboxCB;
+	FConstantBuffer BoneHeatMapCB;
+
+	// D3D 디바이스 캐시 (Create 시 설정, 변하지 않음)
+	ID3D11Device*        CachedDevice  = nullptr;
+	ID3D11DeviceContext* CachedContext = nullptr;
+
+	// SelectEffectiveShader는 섹션마다 호출되므로 기본 UberLit 포인터 비교도 캐시한다.
+	FShader* CachedUberLitShader = nullptr;
+
+	// 프레임마다 Camera 정보 캐시
+	FVector CollectCameraPosition;
+	FVector CollectCameraForward;
+};
