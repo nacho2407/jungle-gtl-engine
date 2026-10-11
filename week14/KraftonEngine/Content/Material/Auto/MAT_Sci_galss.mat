@@ -1,0 +1,25 @@
+{
+  "BlendState" : "AlphaBlend",
+  "DepthStencilState" : "DepthReadOnly",
+  "EmissiveColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+  "EmissiveIntensity" : 0.000000,
+  "Origin" : "FbxImport",
+  "Parameters" : {
+    "HasNormalMap" : 0.000000,
+    "SectionColor" : [0.310247, 0.541999, 0.800000, 0.346457],
+    "TwoSidedLighting" : 0.000000,
+    "UVOffset" : [0.000000, 0.000000],
+    "UVTiling" : [1.000000, 1.000000],
+    "_pad0" : 0.000000
+  },
+  "PathFileName" : "Content/Material/Auto/MAT_Sci_galss.mat",
+  "RasterizerState" : "SolidBackCull",
+  "RenderPass" : "AlphaBlend",
+  "ShaderPath" : "Shaders/Geometry/UberLit.hlsl",
+  "ShadowMode" : "Opaque",
+  "Textures" : {
+
+  },
+  "TwoSidedLighting" : false,
+  "bEnableBloom" : false
+}

@@ -1,0 +1,839 @@
+﻿#include "ViewportToolbar.h"
+#include "Component/Debug/GizmoComponent.h"
+#include "Editor/UI/Util/EditorTextureManager.h"
+#include "Render/Pipeline/Renderer.h"
+#include "Platform/Paths.h"
+#include "Editor/Settings/EditorSettings.h"
+#include "Settings/EditorViewportSettings.h"
+#include "Settings/GizmoToolSettings.h"
+
+#include <algorithm>
+#include <array>
+#include <imgui.h>
+
+#pragma region Toolbar Icon Helper
+static const FString& GetToolbarIconPath(EToolbarIcon Icon)
+{
+	static std::array<FString, static_cast<size_t>(EToolbarIcon::Count)> CachedPaths;
+
+	const size_t IconIndex = static_cast<size_t>(Icon);
+	if (IconIndex < CachedPaths.size() && !CachedPaths[IconIndex].empty())
+	{
+		return CachedPaths[IconIndex];
+	}
+
+	const wchar_t* FileName = L"";
+	switch (Icon)
+	{
+	case EToolbarIcon::Menu: FileName = L"Menu.png"; break;
+	case EToolbarIcon::Setting: FileName = L"Setting.png"; break;
+	case EToolbarIcon::AddActor: FileName = L"Add_Actor.png"; break;
+	case EToolbarIcon::Translate: FileName = L"Translate.png"; break;
+	case EToolbarIcon::Rotate: FileName = L"Rotate.png"; break;
+	case EToolbarIcon::Scale: FileName = L"Scale.png"; break;
+	case EToolbarIcon::WorldSpace: FileName = L"WorldSpace.png"; break;
+	case EToolbarIcon::LocalSpace: FileName = L"LocalSpace.png"; break;
+	case EToolbarIcon::TranslateSnap: FileName = L"Translate_Snap.png"; break;
+	case EToolbarIcon::RotateSnap: FileName = L"Rotate_Snap.png"; break;
+	case EToolbarIcon::ScaleSnap: FileName = L"Scale_Snap.png"; break;
+	case EToolbarIcon::ShowFlag: FileName = L"Show_Flag.png"; break;
+	case EToolbarIcon::Camera: FileName = L"Camera.png"; break;
+	default: break;
+	}
+
+	static const FString EmptyPath;
+	if (IconIndex >= CachedPaths.size() || FileName[0] == L'\0')
+	{
+		return EmptyPath;
+	}
+
+	CachedPaths[IconIndex] = FPaths::ToUtf8(FPaths::Combine(FPaths::AssetDir(), L"Editor/ToolIcons/", FileName));
+	return CachedPaths[IconIndex];
+}
+
+static ID3D11ShaderResourceView* GetToolbarIconSRV(EToolbarIcon Icon)
+{
+	static std::array<ID3D11ShaderResourceView*, static_cast<size_t>(EToolbarIcon::Count)> CachedSRVs = {};
+
+	const size_t IconIndex = static_cast<size_t>(Icon);
+	if (IconIndex >= CachedSRVs.size())
+	{
+		return nullptr;
+	}
+
+	if (!CachedSRVs[IconIndex])
+	{
+		CachedSRVs[IconIndex] = FEditorTextureManager::Get().GetOrLoadIcon(GetToolbarIconPath(Icon));
+	}
+	return CachedSRVs[IconIndex];
+}
+
+static ImVec2 GetToolbarIconRenderSize(EToolbarIcon Icon, float FallbackSize, float MaxIconSize)
+{
+	struct FCachedIconSize
+	{
+		bool bInitialized = false;
+		ImVec2 Size = ImVec2(0.0f, 0.0f);
+	};
+
+	static std::array<FCachedIconSize, static_cast<size_t>(EToolbarIcon::Count)> CachedSizes;
+	const size_t IconIndex = static_cast<size_t>(Icon);
+	if (IconIndex < CachedSizes.size() && CachedSizes[IconIndex].bInitialized)
+	{
+		return CachedSizes[IconIndex].Size;
+	}
+
+	ImVec2 IconSize(FallbackSize, FallbackSize);
+	ID3D11ShaderResourceView* IconSRV = GetToolbarIconSRV(Icon);
+	if (!IconSRV)
+	{
+		return IconSize;
+	}
+
+	ID3D11Resource* Resource = nullptr;
+	IconSRV->GetResource(&Resource);
+	if (!Resource)
+	{
+		return IconSize;
+	}
+
+	D3D11_RESOURCE_DIMENSION Dimension = D3D11_RESOURCE_DIMENSION_UNKNOWN;
+	Resource->GetType(&Dimension);
+	if (Dimension == D3D11_RESOURCE_DIMENSION_TEXTURE2D)
+	{
+		ID3D11Texture2D* Texture2D = static_cast<ID3D11Texture2D*>(Resource);
+		D3D11_TEXTURE2D_DESC Desc = {};
+		Texture2D->GetDesc(&Desc);
+		IconSize = ImVec2(static_cast<float>(Desc.Width), static_cast<float>(Desc.Height));
+	}
+	Resource->Release();
+
+	if (IconSize.x > MaxIconSize || IconSize.y > MaxIconSize)
+	{
+		const float Scale = (IconSize.x > IconSize.y) ? (MaxIconSize / IconSize.x) : (MaxIconSize / IconSize.y);
+		IconSize.x *= Scale;
+		IconSize.y *= Scale;
+	}
+
+	if (IconIndex < CachedSizes.size())
+	{
+		CachedSizes[IconIndex].bInitialized = true;
+		CachedSizes[IconIndex].Size = IconSize;
+	}
+
+	return IconSize;
+}
+
+static bool DrawToolbarIconButton(const char* Id, EToolbarIcon Icon, const char* FallbackLabel, float FallbackSize, float MaxIconSize)
+{
+	ID3D11ShaderResourceView* IconSRV = GetToolbarIconSRV(Icon);
+	if (!IconSRV)
+	{
+		return ImGui::Button(FallbackLabel);
+	}
+
+	const ImVec2 IconSize = GetToolbarIconRenderSize(Icon, FallbackSize, MaxIconSize);
+	return ImGui::ImageButton(Id, reinterpret_cast<ImTextureID>(IconSRV), IconSize);
+}
+
+static bool DrawWindowVisibilityIconButton(const char* Id, const char* Tooltip, bool bShowVariant, float IconSize)
+{
+	const ImVec2 ButtonSize(IconSize + 8.0f, IconSize + 8.0f);
+	const bool bClicked = ImGui::InvisibleButton(Id, ButtonSize);
+	const bool bHovered = ImGui::IsItemHovered();
+	const bool bActive = ImGui::IsItemActive();
+
+	const ImVec2 Min = ImGui::GetItemRectMin();
+	const ImVec2 Max = ImGui::GetItemRectMax();
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	const ImU32 BgColor = ImGui::GetColorU32(bActive ? ImGuiCol_ButtonActive : (bHovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button));
+	DrawList->AddRectFilled(Min, Max, BgColor, 3.0f);
+
+	const ImU32 MainColor = IM_COL32(225, 232, 242, 255);
+	const ImU32 MutedColor = IM_COL32(125, 137, 154, 255);
+	const ImU32 AccentColor = bShowVariant ? IM_COL32(102, 188, 255, 255) : IM_COL32(255, 118, 118, 255);
+
+	const float X = Min.x + 4.0f;
+	const float Y = Min.y + 5.0f;
+	const ImVec2 BackMin(X + 2.0f, Y + 1.0f);
+	const ImVec2 BackMax(X + IconSize - 2.0f, Y + IconSize - 5.0f);
+	const ImVec2 FrontMin(X + 5.0f, Y + 4.0f);
+	const ImVec2 FrontMax(X + IconSize + 1.0f, Y + IconSize - 1.0f);
+
+	DrawList->AddRect(BackMin, BackMax, MutedColor, 1.0f, 0, 1.4f);
+	DrawList->AddRect(FrontMin, FrontMax, MainColor, 1.0f, 0, 1.4f);
+	DrawList->AddLine(ImVec2(FrontMin.x + 1.0f, FrontMin.y + 4.0f), ImVec2(FrontMax.x - 1.0f, FrontMin.y + 4.0f), MutedColor, 1.0f);
+
+	if (bShowVariant)
+	{
+		DrawList->AddLine(ImVec2(FrontMin.x + 5.0f, FrontMax.y - 5.0f), ImVec2(FrontMin.x + 8.0f, FrontMax.y - 2.0f), AccentColor, 1.8f);
+		DrawList->AddLine(ImVec2(FrontMin.x + 8.0f, FrontMax.y - 2.0f), ImVec2(FrontMax.x - 3.0f, FrontMin.y + 3.0f), AccentColor, 1.8f);
+	}
+	else
+	{
+		DrawList->AddLine(ImVec2(FrontMin.x + 3.0f, FrontMin.y + 3.0f), ImVec2(FrontMax.x - 3.0f, FrontMax.y - 3.0f), AccentColor, 1.8f);
+		DrawList->AddLine(ImVec2(FrontMax.x - 3.0f, FrontMin.y + 3.0f), ImVec2(FrontMin.x + 3.0f, FrontMax.y - 3.0f), AccentColor, 1.8f);
+	}
+
+	if (bHovered && Tooltip)
+	{
+		ImGui::SetTooltip("%s", Tooltip);
+	}
+
+	return bClicked;
+}
+#pragma endregion
+
+#pragma region LeftRight Section Helper
+
+static float CalcRightToolbarWidth(const FViewportToolbarContext& Context)
+{
+	constexpr float IconButtonWidth = 24.0f;
+	constexpr float TextButtonMinWidth = 90.0f;
+	constexpr float ButtonSpacing = 4.0f;
+	constexpr float GroupSpacing = 12.0f;
+
+	float Width = 0.0f;
+	
+	auto AddGroup = [&](float ItemWidth)
+	{
+		if (Width > 0.0f)
+		{
+			Width += GroupSpacing;
+		}
+		Width += ItemWidth;
+	};
+
+	if (Context.bShowViewportType)
+	{
+		float ViewportTypeWidth = TextButtonMinWidth;
+		if (!Context.ViewportTypeLabelOverride.empty())
+		{
+			ViewportTypeWidth = (std::max)(120.0f, ImGui::CalcTextSize(Context.ViewportTypeLabelOverride.c_str()).x + 20.0f);
+		}
+		AddGroup(ViewportTypeWidth);
+	}
+
+	if (Context.bShowCameraControls)
+	{
+		AddGroup(IconButtonWidth);
+	}
+
+	if (Context.bShowViewMode)
+	{
+		AddGroup(TextButtonMinWidth);
+	}
+
+	if (Context.bShowShowFlags)
+	{
+		AddGroup(IconButtonWidth);
+	}
+
+	if (Context.bShowLayoutControls)
+	{
+		AddGroup(IconButtonWidth * 2 + ButtonSpacing);
+	}
+
+	return Width;
+}
+
+static void SameLineIfNeeded(bool& bHasItem, float Spacing)
+{
+	if (bHasItem)
+	{
+		ImGui::SameLine(0, Spacing);
+	}
+	bHasItem = true;
+}
+
+#pragma endregion
+
+void FViewportToolbar::Render(const FViewportToolbarContext& Context)
+{
+	if (!Context.Settings) return;
+
+	FToolbarRenderState RenderState(Context);
+
+	ImGui::PushID(static_cast<int32>(Context.ToolbarLeft));
+	ImGui::PushID(static_cast<int32>(Context.ToolbarTop));
+
+	BeginToolbar(RenderState);
+
+	RenderLeftToolbarSection(RenderState);
+
+	const float RightWidth = CalcRightToolbarWidth(Context);
+	const float RightX = Context.ToolbarLeft + Context.ToolbarWidth - RightWidth - 8.0f;
+
+	ImGui::SetCursorScreenPos(ImVec2(RightX, Context.ToolbarTop + 6.0f));
+
+	RenderRightToolbarSection(RenderState);
+
+	EndToolbar(RenderState);
+
+	ImGui::PopID();
+	ImGui::PopID();
+
+	if (Context.OnSettingsChanged)
+	{
+		Context.OnSettingsChanged();
+	}
+}
+
+void FViewportToolbar::BeginToolbar(const FToolbarRenderState& State)
+{
+	constexpr float ToolbarHeight = 28.0f;
+	constexpr float IconSize = 16.0f;
+	constexpr float ButtonPadding = (ToolbarHeight - IconSize) * 0.5f;
+	constexpr float PlayStopButtonWidth = 24.0f;
+
+	const float PlayStopOffset = State.Context.bReservePlayStopSpace ? (PlayStopButtonWidth * 2.0f) + ButtonPadding : 0.0f;
+
+	ImGui::SetCursorScreenPos(ImVec2(
+		State.Context.ToolbarLeft + ButtonPadding + PlayStopOffset,
+		State.Context.ToolbarTop + ButtonPadding));
+
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 1.0f, 1.0f, 0.15f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(1.0f, 1.0f, 1.0f, 0.3f));
+}
+
+void FViewportToolbar::EndToolbar(const FToolbarRenderState& State)
+{
+	ImGui::PopStyleColor(3);
+}
+
+void FViewportToolbar::RenderLeftToolbarSection(const FToolbarRenderState& State)
+{
+	if (State.Context.bShowAddActor)
+	{
+		RenderAddActor(State);
+	}
+
+	if (State.Context.bShowWindowVisibilityControls)
+	{
+		RenderWindowVisibilityControls(State);
+	}
+
+	if (State.Context.bShowGizmoControls)
+	{
+		RenderGizmoControls(State);
+	}
+}
+
+void FViewportToolbar::RenderRightToolbarSection(const FToolbarRenderState& State)
+{
+	bool bHasItem = false;
+
+	if (State.Context.bShowViewportType)
+	{
+		SameLineIfNeeded(bHasItem, State.GroupSpacing);
+		RenderViewportType(State);
+	}
+
+	if (State.Context.bShowCameraControls)
+	{
+		SameLineIfNeeded(bHasItem, State.GroupSpacing);
+		RenderCameraControls(State);
+	}
+
+	if (State.Context.bShowViewMode)
+	{
+		SameLineIfNeeded(bHasItem, State.GroupSpacing);
+		RenderViewMode(State);
+	}
+
+	if (State.Context.bShowShowFlags)
+	{
+		SameLineIfNeeded(bHasItem, State.GroupSpacing);
+		RenderShowFlags(State);
+	}
+
+	if (State.Context.bShowLayoutControls)
+	{
+		SameLineIfNeeded(bHasItem, State.GroupSpacing);
+		RenderLayoutControls(State);
+	}
+}
+
+void FViewportToolbar::RenderLayoutControls(const FToolbarRenderState& State)
+{
+	if (DrawToolbarIconButton("##Layout", EToolbarIcon::Menu, "Layout",
+		State.FallbackIconSize, State.MaxIconSize))
+	{
+		ImGui::OpenPopup("##LayoutPopup");
+	}
+
+	if (ImGui::BeginPopup("##LayoutPopup"))
+	{
+		constexpr int32 Columns = 4;
+		constexpr float IconSize = 32.0f;
+		const int32 LayoutCount = State.Context.LayoutIconCount;
+		for (int32 LayoutIndex = 0; LayoutIndex < LayoutCount; ++LayoutIndex)
+		{
+			ImGui::PushID(LayoutIndex);
+
+			const bool bSelected = LayoutIndex == State.Context.CurrentLayoutIndex;
+			if (bSelected)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+			}
+
+			bool bClicked = false;
+			ID3D11ShaderResourceView* LayoutIcon =
+				State.Context.LayoutIcons ? State.Context.LayoutIcons[LayoutIndex] : nullptr;
+			if (LayoutIcon)
+			{
+				bClicked = ImGui::ImageButton("##LayoutIcon",
+					reinterpret_cast<ImTextureID>(LayoutIcon),
+					ImVec2(IconSize, IconSize));
+			}
+			else
+			{
+				char FallbackLabel[8];
+				snprintf(FallbackLabel, sizeof(FallbackLabel), "%d", LayoutIndex);
+				bClicked = ImGui::Button(FallbackLabel, ImVec2(IconSize + 8.0f, IconSize + 8.0f));
+			}
+
+			if (bSelected)
+			{
+				ImGui::PopStyleColor();
+			}
+
+			if (bClicked)
+			{
+				if (State.Context.OnLayoutSelected)
+				{
+					State.Context.OnLayoutSelected(LayoutIndex);
+				}
+				ImGui::CloseCurrentPopup();
+			}
+
+			if ((LayoutIndex + 1) % Columns != 0 && LayoutIndex + 1 < LayoutCount)
+			{
+				ImGui::SameLine();
+			}
+
+			ImGui::PopID();
+		}
+		ImGui::EndPopup();
+	}
+
+	ImGui::SameLine(0.0f, State.ButtonSpacing);
+
+	bool bToggleClicked = false;
+	ID3D11ShaderResourceView* ToggleIcon = nullptr;
+	if (State.Context.LayoutIcons &&
+		State.Context.ToggleLayoutIndex >= 0 &&
+		State.Context.ToggleLayoutIndex < State.Context.LayoutIconCount)
+	{
+		ToggleIcon = State.Context.LayoutIcons[State.Context.ToggleLayoutIndex];
+	}
+
+	if (ToggleIcon)
+	{
+		bToggleClicked = ImGui::ImageButton("##ToggleLayout",
+			reinterpret_cast<ImTextureID>(ToggleIcon),
+			ImVec2(State.MaxIconSize, State.MaxIconSize));
+	}
+	else
+	{
+		bToggleClicked = DrawToolbarIconButton("##ToggleLayout", EToolbarIcon::Menu, "Toggle",
+			State.FallbackIconSize, State.MaxIconSize);
+	}
+
+	if (bToggleClicked)
+	{
+		if (State.Context.OnToggleLayout)
+		{
+			State.Context.OnToggleLayout();
+		}
+	}
+}
+
+void FViewportToolbar::RenderAddActor(const FToolbarRenderState& State)
+{
+	if (DrawToolbarIconButton("###SharedAddActorIcon", EToolbarIcon::AddActor, "Add Actor",
+		State.FallbackIconSize, State.MaxIconSize))
+	{
+		if (State.Context.OnAddActorClicked)
+		{
+			State.Context.OnAddActorClicked();
+		}
+	}
+
+	ImGui::SameLine(0, State.GroupSpacing);
+}
+
+void FViewportToolbar::RenderWindowVisibilityControls(const FToolbarRenderState& State)
+{
+	const bool bHidden = State.Context.bEditorWindowsHidden;
+	const char* Tooltip = bHidden ? "Show Windows" : "Hide Windows";
+	if (DrawWindowVisibilityIconButton("###ToggleEditorWindowsIcon", Tooltip, bHidden, State.MaxIconSize))
+	{
+		if (State.Context.OnToggleWindowsClicked)
+		{
+			State.Context.OnToggleWindowsClicked();
+		}
+	}
+
+	ImGui::SameLine(0, State.GroupSpacing);
+}
+
+void FViewportToolbar::RenderViewportType(const FToolbarRenderState& State)
+{
+	FViewportRenderOptions& RenderOptions = State.RenderOptions();
+
+	static const char* ViewportTypeNames[] = {
+		"Perspective",
+		"Top",
+		"Bottom",
+		"Left",
+		"Right",
+		"Front",
+		"Back",
+		"Free Orthographic"
+	};
+
+	constexpr int32 ViewportTypeCount = sizeof(ViewportTypeNames) / sizeof(ViewportTypeNames[0]);
+	int32 CurrentTypeIndex = static_cast<int32>(RenderOptions.ViewportType);
+	if (CurrentTypeIndex < 0 || CurrentTypeIndex >= ViewportTypeCount)
+	{
+		CurrentTypeIndex = 0;
+	}
+
+	const char* ButtonLabel = State.Context.ViewportTypeLabelOverride.empty()
+		? ViewportTypeNames[CurrentTypeIndex]
+		: State.Context.ViewportTypeLabelOverride.c_str();
+	const float ButtonWidth = State.Context.ViewportTypeLabelOverride.empty()
+		? 90.0f
+		: (std::max)(120.0f, ImGui::CalcTextSize(ButtonLabel).x + 20.0f);
+
+	ImGui::SetNextItemWidth(ButtonWidth);
+	if (ImGui::Button(ButtonLabel, ImVec2(ButtonWidth, 0.0f)))
+	{
+		ImGui::OpenPopup("##ViewportTypePopup");
+	}
+
+	if (ImGui::BeginPopup("##ViewportTypePopup"))
+	{
+		if (State.Context.OnStopPiloting)
+		{
+			if (ImGui::MenuItem("Stop Piloting"))
+			{
+				State.Context.OnStopPiloting();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::Separator();
+		}
+
+		for (int32 TypeIndex = 0; TypeIndex < ViewportTypeCount; ++TypeIndex)
+		{
+			const bool bSelected = TypeIndex == CurrentTypeIndex;
+			if (ImGui::Selectable(ViewportTypeNames[TypeIndex], bSelected))
+			{
+				const ELevelViewportType NewType = static_cast<ELevelViewportType>(TypeIndex);
+				if (State.Context.OnViewportTypeSelected)
+				{
+					State.Context.OnViewportTypeSelected(NewType);
+				}
+				else
+				{
+					RenderOptions.ViewportType = NewType;
+				}
+				ImGui::CloseCurrentPopup();
+			}
+		}
+
+		if (State.Context.OnRenderPlacedCameraMenu)
+		{
+			ImGui::Separator();
+			if (ImGui::BeginMenu("Placed Cameras"))
+			{
+				State.Context.OnRenderPlacedCameraMenu();
+				ImGui::EndMenu();
+			}
+		}
+		ImGui::EndPopup();
+	}
+}
+
+void FViewportToolbar::RenderGizmoControls(const FToolbarRenderState& State)
+{
+	UGizmoComponent* Gizmo = State.Context.Gizmo;
+	if (!Gizmo) return;
+
+	auto DrawGizmoIcon = [&](const char* Id, EToolbarIcon Icon, EGizmoMode TargetMode, const char* FallbackLabel) -> bool
+	{
+		const bool bSelected = (Gizmo->GetMode() == TargetMode);
+		if (bSelected)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+		}
+		const bool bClicked = DrawToolbarIconButton(Id, Icon, FallbackLabel, State.FallbackIconSize, State.MaxIconSize);
+		if (bSelected)
+		{
+			ImGui::PopStyleColor();
+		}
+		return bClicked;
+	};
+
+	if (DrawGizmoIcon("###TranslateIcon", EToolbarIcon::Translate, EGizmoMode::Translate, "Translate"))
+	{
+		Gizmo->SetTranslateMode();
+	}
+
+	ImGui::SameLine(0, State.ButtonSpacing);
+	if (DrawGizmoIcon("###RotateIcon", EToolbarIcon::Rotate, EGizmoMode::Rotate, "Rotate"))
+	{
+		Gizmo->SetRotateMode();
+	}
+
+	ImGui::SameLine(0, State.ButtonSpacing);
+	if (DrawGizmoIcon("###ScaleIcon", EToolbarIcon::Scale, EGizmoMode::Scale, "Scale"))
+	{
+		Gizmo->SetScaleMode();
+	}
+
+	ImGui::SameLine(0, State.GroupSpacing);
+
+	RenderCoordSystemButton(State);
+	RenderSnapControls(State);
+}
+
+void FViewportToolbar::RenderCoordSystemButton(const FToolbarRenderState& State)
+{
+	FGizmoToolSettings& Settings = State.GizmoSettings();
+
+	const bool bWorldCoord = Settings.CoordSystem == EEditorCoordSystem::World;
+	if (bWorldCoord)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+	}
+
+	if (DrawToolbarIconButton("###WorldSpaceIcon",
+		bWorldCoord ? EToolbarIcon::WorldSpace : EToolbarIcon::LocalSpace,
+		bWorldCoord ? "World" : "Local",
+		State.FallbackIconSize,
+		State.MaxIconSize))
+	{
+		if (State.Context.OnCoordSystemToggled)
+		{
+			State.Context.OnCoordSystemToggled();
+		}
+	}
+
+	if (bWorldCoord)
+	{
+		ImGui::PopStyleColor();
+	}
+}
+
+void FViewportToolbar::RenderSnapControls(const FToolbarRenderState& State)
+{
+	FGizmoToolSettings& Settings = State.GizmoSettings();
+
+	auto DrawSnapControl = [&](const char* Id, EToolbarIcon Icon, const char* FallbackLabel, bool& bEnabled, float& Value, float MinValue)
+	{
+		ImGui::SameLine(0.0f, 6.0f);
+		ImGui::PushID(Id);
+		const bool bWasEnabled = bEnabled;
+		if (bWasEnabled)
+		{
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.38f, 0.58f, 0.88f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.22f, 0.42f, 0.72f, 1.0f));
+		}
+		if (DrawToolbarIconButton("##SnapToggle", Icon, FallbackLabel, State.FallbackIconSize, State.MaxIconSize))
+		{
+			bEnabled = !bEnabled;
+		}
+		if (bWasEnabled)
+		{
+			ImGui::PopStyleColor(3);
+		}
+		ImGui::SameLine(0.0f, 2.0f);
+		ImGui::SetNextItemWidth(48.0f);
+		if (ImGui::InputFloat("##Value", &Value, 0.0f, 0.0f, "%.2f") && Value < MinValue)
+		{
+			Value = MinValue;
+		}
+		ImGui::PopID();
+	};
+
+	DrawSnapControl("TranslateSnap", EToolbarIcon::TranslateSnap, "T", Settings.bEnableTranslationSnap, Settings.TranslationSnapSize, 0.001f);
+	DrawSnapControl("RotateSnap", EToolbarIcon::RotateSnap, "R", Settings.bEnableRotationSnap, Settings.RotationSnapSize, 0.001f);
+	DrawSnapControl("ScaleSnap", EToolbarIcon::ScaleSnap, "S", Settings.bEnableScaleSnap, Settings.ScaleSnapSize, 0.001f);
+}
+
+void FViewportToolbar::RenderCameraControls(const FToolbarRenderState& State)
+{
+	if (DrawToolbarIconButton("##CameraSettings", EToolbarIcon::Camera, "Camera",
+		State.FallbackIconSize, State.MaxIconSize))
+	{
+		ImGui::OpenPopup("##CameraPopup");
+	}
+
+	State.CameraSettings().MoveSpeed;
+	ImGui::SameLine(0.0f, 2.0f);
+	ImGui::SetNextItemWidth(48.0f);
+	ImGui::Text("%.3f", State.CameraSettings().MoveSpeed);
+
+	if (ImGui::BeginPopup("##CameraPopup"))
+	{
+		auto& Camera = State.CameraSettings();
+
+		ImGui::Text("Camera");
+		ImGui::SetNextItemWidth(140.0f);
+		ImGui::SliderFloat("Move", &Camera.MoveSpeed, 0.1f, 100.0f, "%.1f");
+
+		ImGui::SetNextItemWidth(140.0f);
+		ImGui::SliderFloat("Rotation", &Camera.RotationSpeed, 1.0f, 360.0f, "%.1f");
+
+		ImGui::SetNextItemWidth(140.0f);
+		ImGui::SliderFloat("Zoom", &Camera.ZoomSpeed, 10.0f, 1000.0f, "%.1f");
+
+		ImGui::EndPopup();
+	}
+}
+
+void FViewportToolbar::RenderViewMode(const FToolbarRenderState& State)
+{
+	FViewportRenderOptions& RenderOptions = State.RenderOptions();
+
+	if (DrawToolbarIconButton("##ViewMode", EToolbarIcon::Setting, "View Mode",
+		State.FallbackIconSize, State.MaxIconSize))
+	{
+		ImGui::OpenPopup("##ViewModePopup");
+	}
+
+	if (ImGui::BeginPopup("##ViewModePopup"))
+	{
+		int32 CurrentMode = static_cast<int32>(RenderOptions.ViewMode);
+
+		ImGui::RadioButton("Unlit", &CurrentMode, static_cast<int32>(EViewMode::Unlit));
+		ImGui::RadioButton("Phong", &CurrentMode, static_cast<int32>(EViewMode::Lit_Phong));
+		ImGui::RadioButton("Gouraud", &CurrentMode, static_cast<int32>(EViewMode::Lit_Gouraud));
+		ImGui::RadioButton("Lambert", &CurrentMode, static_cast<int32>(EViewMode::Lit_Lambert));
+		ImGui::RadioButton("Wireframe", &CurrentMode, static_cast<int32>(EViewMode::Wireframe));
+		ImGui::RadioButton("Scene Depth", &CurrentMode, static_cast<int32>(EViewMode::SceneDepth));
+		ImGui::RadioButton("World Normal", &CurrentMode, static_cast<int32>(EViewMode::WorldNormal));
+		ImGui::RadioButton("Light Culling", &CurrentMode, static_cast<int32>(EViewMode::LightCulling));
+
+		RenderOptions.ViewMode = static_cast<EViewMode>(CurrentMode);
+
+		ImGui::Separator();
+		ImGui::Text("Background");
+
+		// 렌더 타깃 초기화 색상은 alpha 의미가 없으므로 RGB만 편집하고 alpha는 불투명으로 유지
+		FLinearColor& ViewportBackgroundColor = FEditorSettings::Get().ViewportBackgroundColor;
+		float BackgroundColor[3] =
+		{
+			ViewportBackgroundColor.R,
+			ViewportBackgroundColor.G,
+			ViewportBackgroundColor.B
+		};
+
+		ImGui::SetNextItemWidth(170.0f);
+		if (ImGui::ColorEdit3("Color", BackgroundColor, ImGuiColorEditFlags_Float))
+		{
+			ViewportBackgroundColor.R = BackgroundColor[0];
+			ViewportBackgroundColor.G = BackgroundColor[1];
+			ViewportBackgroundColor.B = BackgroundColor[2];
+			ViewportBackgroundColor.A = 1.0f;
+		}
+
+		if (ImGui::SmallButton("Reset Background"))
+		{
+			ViewportBackgroundColor = FEditorSettings::GetDefaultViewportBackgroundColor();
+		}
+
+		if (State.Context.OnRenderViewModeExtras)
+		{
+			ImGui::Separator();
+			State.Context.OnRenderViewModeExtras();
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
+void FViewportToolbar::RenderShowFlags(const FToolbarRenderState& State)
+{
+	FViewportRenderOptions& RenderOptions = State.RenderOptions();
+
+	if (DrawToolbarIconButton("##ShowFlags", EToolbarIcon::ShowFlag, "Show Flags",
+		State.FallbackIconSize, State.MaxIconSize))
+	{
+		ImGui::OpenPopup("##ShowFlagsPopup");
+	}
+
+	if (ImGui::BeginPopup("##ShowFlagsPopup"))
+	{
+		ImGui::Text("Show Flags");
+
+		ImGui::Checkbox("StaticMesh", &RenderOptions.ShowFlags.bStaticMesh);
+		ImGui::Checkbox("SkeletalMesh", &RenderOptions.ShowFlags.bSkeletalMesh);
+		ImGui::Checkbox("Grid", &RenderOptions.ShowFlags.bGrid);
+		ImGui::Checkbox("World Axis", &RenderOptions.ShowFlags.bWorldAxis);
+		ImGui::Checkbox("Gizmo", &RenderOptions.ShowFlags.bGizmo);
+		ImGui::Checkbox("Billboard Text", &RenderOptions.ShowFlags.bBillboardText);
+		ImGui::Checkbox("Bounding Volume", &RenderOptions.ShowFlags.bBoundingVolume);
+		ImGui::Checkbox("Debug Draw", &RenderOptions.ShowFlags.bDebugDraw);
+		ImGui::Checkbox("Octree", &RenderOptions.ShowFlags.bOctree);
+		ImGui::Checkbox("Fog", &RenderOptions.ShowFlags.bFog);
+		ImGui::Checkbox("FXAA", &RenderOptions.ShowFlags.bFXAA);
+		ImGui::Checkbox("Bloom", &RenderOptions.ShowFlags.bBloom);
+		ImGui::Checkbox("Depth Of Field", &RenderOptions.ShowFlags.bDepthOfField);
+		ImGui::Checkbox("Gamma Correction", &RenderOptions.ShowFlags.bGammaCorrection);
+		if (RenderOptions.ShowFlags.bGammaCorrection)
+		{
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::SliderFloat("Gamma", &RenderOptions.Gamma, 1.0f, 3.0f, "%.2f");
+		}
+		ImGui::Checkbox("View Light Culling", &RenderOptions.ShowFlags.bViewLightCulling);
+		ImGui::Checkbox("Visualize 2.5D Culling", &RenderOptions.ShowFlags.bVisualize25DCulling);
+		ImGui::Checkbox("Show Shadow Frustum", &RenderOptions.ShowFlags.bShowShadowFrustum);
+		ImGui::Checkbox("Collision", &RenderOptions.ShowFlags.bCollision);
+		ImGui::Checkbox("Show Collision Shape", &RenderOptions.ShowFlags.bShowCollisionShape);
+		ImGui::Checkbox("Particle", &RenderOptions.ShowFlags.bParticle);
+
+		if (State.Context.bShowPhysicsAssetShowFlags)
+		{
+			ImGui::Separator();
+			ImGui::Text("Physics Asset");
+			ImGui::Checkbox("Physics Bodies", &RenderOptions.ShowFlags.bPhysicsAssetBodies);
+			ImGui::Checkbox("Physics Constraints", &RenderOptions.ShowFlags.bPhysicsAssetConstraints);
+			ImGui::Checkbox("Physics Skeleton", &RenderOptions.ShowFlags.bPhysicsAssetSkeleton);
+		}
+
+		if (RenderOptions.ShowFlags.bDepthOfField)
+		{
+			ImGui::Separator();
+			ImGui::Text("Depth Of Field");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::DragFloat("Focus Distance", &RenderOptions.DofFocusDistance, 0.1f, 0.01f, 10000.0f, "%.2f");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::DragFloat("F-Stop", &RenderOptions.DofFStop, 0.05f, 0.1f, 32.0f, "%.2f");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::DragFloat("Sensor Width", &RenderOptions.DofSensorWidth, 0.1f, 0.1f, 1000.0f, "%.2f");
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::SliderInt("Gather Rings", &RenderOptions.DofGatherRingCount, 1, 10);
+			ImGui::SetNextItemWidth(150.0f);
+			ImGui::SliderInt("Samples / Ring", &RenderOptions.DofGatherSamplesPerRing, 4, 32);
+			ImGui::Checkbox("Foreground", &RenderOptions.bDofForegroundEnabled);
+			ImGui::Checkbox("Background", &RenderOptions.bDofBackgroundEnabled);
+			ImGui::Checkbox("Half Res", &RenderOptions.bDofHalfRes);
+
+			const char* DebugNames[] = { "Final", "CoC", "Foreground", "Background" };
+			int32 DebugView = static_cast<int32>(RenderOptions.DofDebugView);
+			ImGui::SetNextItemWidth(150.0f);
+			if (ImGui::Combo("Debug", &DebugView, DebugNames, IM_ARRAYSIZE(DebugNames)))
+			{
+				RenderOptions.DofDebugView = static_cast<EDepthOfFieldDebugView>(DebugView);
+			}
+		}
+
+		ImGui::EndPopup();
+	}
+}

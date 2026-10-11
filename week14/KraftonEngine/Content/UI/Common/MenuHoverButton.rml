@@ -1,0 +1,15 @@
+<rml>
+<head>
+	<link type="text/rcss" href="MenuHoverButton.rcss"/>
+</head>
+<body>
+	<div id="menu-hover-button"
+		class="hover-image-button"
+		data-hover-sound="ui.hover"
+		data-click-sound="ui.click"
+		style="left: 0px; top: 0px; width: 360px; height: 56px;">
+		<img class="hover-image-box" src="HoverCutBox.png"/>
+		<div class="hover-image-label">BUTTON</div>
+	</div>
+</body>
+</rml>

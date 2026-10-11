@@ -1,0 +1,33 @@
+.full-width-content-box {
+	position: absolute;
+	left: 0px;
+	width: 100%;
+	height: auto;
+	padding-top: 40px;
+	padding-bottom: 40px;
+	background-color: #000000F9;
+	overflow: visible;
+}
+
+.full-width-content-box-screen-center {
+	top: 50%;
+	margin-top: -160px;
+	height: 320px;
+	padding-top: 0px;
+	padding-bottom: 0px;
+}
+
+.full-width-content-box-content {
+	position: relative;
+	margin-left: auto;
+	margin-right: auto;
+	width: auto;
+	height: auto;
+	text-align: center;
+	overflow: visible;
+}
+
+.full-width-content-box .hover-image-label {
+	left: 0px;
+	text-align: center;
+}

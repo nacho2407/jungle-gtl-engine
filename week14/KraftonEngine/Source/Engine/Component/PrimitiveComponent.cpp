@@ -1,0 +1,729 @@
+﻿#include "PrimitiveComponent.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include "Serialization/Archive.h"
+#include "Core/Types/RayTypes.h"
+#include "Collision/Ray/RayUtils.h"
+#include "Collision/Octree/SpatialPartition.h"
+#include "Render/Resource/MeshBufferManager.h"
+#include "Core/Types/CollisionTypes.h"
+#include "Render/Scene/FScene.h"
+#include "Render/Proxy/PrimitiveSceneProxy.h"
+#include "GameFramework/World.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include "Physics/PhysicsScene.h"
+#include "Physics/BodyInstance.h"
+
+#include <cmath>
+#include <cstring>
+
+namespace
+{
+	bool HasSameTransformBasis(const FMatrix& A, const FMatrix& B)
+	{
+		for (int Row = 0; Row < 3; ++Row)
+		{
+			for (int Col = 0; Col < 3; ++Col)
+			{
+				if (A.M[Row][Col] != B.M[Row][Col])
+				{
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
+}
+
+HIDE_FROM_COMPONENT_LIST(UPrimitiveComponent)
+
+UPrimitiveComponent::~UPrimitiveComponent()
+{
+	DestroyPhysicsState();
+	DestroyRenderState();
+}
+
+void UPrimitiveComponent::PostDuplicate()
+{
+	// Scene JSON load and duplicate paths restore properties after components have already
+	// been registered. Collision/shape properties may have recreated a PhysX body while
+	// later properties such as BoxExtent, transform scale, or response filters were still
+	// stale. Rebuild once after the whole serialized component state is restored.
+	MarkWorldBoundsDirty();
+	RecreatePhysicsState();
+}
+
+void UPrimitiveComponent::BeginPlay()
+{
+	USceneComponent::BeginPlay();
+	CreatePhysicsState();
+}
+
+void UPrimitiveComponent::EndPlay()
+{
+	// World->DestroyActor → Actor::EndPlay → 컴포넌트 EndPlay 흐름. PhysX와 RenderState
+	// (SceneProxy/Octree/PickingBVH)를 안전하게 정리하지 않으면 다음 frame에 stale 포인터를
+	// 참조해 crash. dtor에도 같은 호출이 있지만 (raw 포인터라 OwnedComponents의 컴포넌트들이
+	// 자동 delete되지 않아) dtor가 안 불릴 수 있어 EndPlay에서 명시적으로 보장한다.
+	// 이중 호출은 mapping/proxy 부재로 noop.
+	if (Owner)
+	{
+		if (UWorld* World = Owner->GetWorld())
+		{
+			// SpatialPartition에서도 즉시 제거. World::DestroyActor가 Partition.RemoveActor를
+			// 호출하지만, 그 시점에 OctreeNode 캐시가 이미 stale일 수 있는 경로(스폰 폭주 시
+			// RebuildRootBounds 등)가 있어 EndPlay에서 한 번 더 보장한다. 중복 제거는 noop.
+			World->GetPartition().RemoveSinglePrimitive(this);
+		}
+	}
+	// 캐시는 어떤 경로로도 다음 frame까지 살아있으면 안 된다 (FOctree node가 TryMerge로
+	// 사라지면 dangling). RemoveSinglePrimitive 후에도 명시적으로 한 번 더 클리어.
+	ClearOctreeLocation();
+
+	DestroyRenderState();
+	DestroyPhysicsState();
+
+	USceneComponent::EndPlay();
+}
+
+void UPrimitiveComponent::MarkProxyDirty(EDirtyFlag Flag) const
+{
+	if (!SceneProxy || !Owner || !Owner->GetWorld()) return;
+	Owner->GetWorld()->GetScene().MarkProxyDirty(SceneProxy, Flag);
+}
+
+void UPrimitiveComponent::SetVisibility(bool bNewVisible)
+{
+	if (bIsVisible == bNewVisible) return;
+	bIsVisible = bNewVisible;
+	MarkRenderVisibilityDirty();
+}
+
+void UPrimitiveComponent::SetCastShadow(bool bNewCastShadow)
+{
+	if (bCastShadow == bNewCastShadow) return;
+	bCastShadow = bNewCastShadow;
+	MarkRenderVisibilityDirty();
+}
+
+void UPrimitiveComponent::SetCastShadowAsTwoSided(bool bNewCastShadowAsTwoSided)
+{
+	if (bCastShadowAsTwoSided == bNewCastShadowAsTwoSided) return;
+	bCastShadowAsTwoSided = bNewCastShadowAsTwoSided;
+	MarkRenderVisibilityDirty();
+}
+
+// ============================================================
+// MarkRenderTransformDirty / MarkRenderVisibilityDirty
+//   프록시 dirty + Octree(액터 단위 dirty) + PickingBVH dirty
+//   호출자가 외워야 했던 시퀀스를 단일 진입점으로 통합.
+// ============================================================
+void UPrimitiveComponent::MarkRenderTransformDirty()
+{
+	MarkProxyDirty(EDirtyFlag::Transform);
+
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor) return;
+	UWorld* World = OwnerActor->GetWorld();
+	if (!World) return;
+
+	World->UpdateActorInOctree(OwnerActor);
+	World->MarkWorldPrimitivePickingBVHDirty();
+}
+
+void UPrimitiveComponent::MarkRenderVisibilityDirty()
+{
+	MarkProxyDirty(EDirtyFlag::Visibility);
+
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor) return;
+	UWorld* World = OwnerActor->GetWorld();
+	if (!World) return;
+
+	// 가시성 변화는 Octree 포함 여부도 좌우하므로 액터 dirty로 반영한다.
+	World->UpdateActorInOctree(OwnerActor);
+	World->MarkWorldPrimitivePickingBVHDirty();
+}
+
+void UPrimitiveComponent::PostEditProperty(const char* PropertyName)
+{
+	// 베이스 클래스의 transform 등 공통 프로퍼티 처리 보장
+	USceneComponent::PostEditProperty(PropertyName);
+
+	if (strcmp(PropertyName, "RelativeTransform.Scale") == 0 || strcmp(PropertyName, "Scale") == 0)
+	{
+		MarkWorldBoundsDirty();
+	}
+	else if (strcmp(PropertyName, "bIsVisible") == 0 || strcmp(PropertyName, "Visible") == 0)
+	{
+		// Property Editor가 bIsVisible을 직접 수정한 경우 dirty 시퀀스만 전파한다.
+		MarkRenderVisibilityDirty();
+	}
+	else if (strcmp(PropertyName, "bCastShadow") == 0 || strcmp(PropertyName, "Cast Shadow") == 0)
+	{
+		MarkRenderVisibilityDirty();
+	}
+	else if (strcmp(PropertyName, "bCastShadowAsTwoSided") == 0 || strcmp(PropertyName, "Two Sided Shadow") == 0)
+	{
+		MarkRenderVisibilityDirty();
+	}
+	else if (strcmp(PropertyName, "TranslucentSortPriority") == 0 || strcmp(PropertyName, "Translucent Sort Priority") == 0)
+	{
+		MarkRenderVisibilityDirty();
+	}
+	else if (strcmp(PropertyName, "CollisionEnabled") == 0 || strcmp(PropertyName, "Collision Enabled") == 0)
+	{
+		CollisionPreset = ECollisionPreset::Custom;
+		RecreatePhysicsState();
+	}
+	else if (strcmp(PropertyName, "bSimulatePhysics") == 0 || strcmp(PropertyName, "Simulate Physics") == 0)
+	{
+		RecreatePhysicsState();
+	}
+	else if (strcmp(PropertyName, "bEnableGravity") == 0 || strcmp(PropertyName, "Enable Gravity") == 0)
+	{
+		if (BodyInstance.IsValidBody()) BodyInstance.SetGravityEnabled(bEnableGravity);
+	}
+	else if (strcmp(PropertyName, "Mass") == 0)
+	{
+		if (BodyInstance.IsValidBody()) BodyInstance.SetMass(Mass);
+	}
+	else if (strcmp(PropertyName, "LinearDamping") == 0 || strcmp(PropertyName, "Linear Damping") == 0)
+	{
+		if (BodyInstance.IsValidBody()) BodyInstance.SetLinearDamping(LinearDamping);
+	}
+	else if (strcmp(PropertyName, "AngularDamping") == 0 || strcmp(PropertyName, "Angular Damping") == 0)
+	{
+		if (BodyInstance.IsValidBody()) BodyInstance.SetAngularDamping(AngularDamping);
+	}
+	else if (strcmp(PropertyName, "bGenerateOverlapEvents") == 0 || strcmp(PropertyName, "Generate Overlap Events") == 0)
+	{
+		RecreatePhysicsState();
+	}
+	else if (strncmp(PropertyName, "Responses", 9) == 0 ||
+		strcmp(PropertyName, "Collision Responses") == 0 ||
+		strcmp(PropertyName, "WorldStatic") == 0 ||
+		strcmp(PropertyName, "WorldDynamic") == 0 ||
+		strcmp(PropertyName, "Pawn") == 0 ||
+		strcmp(PropertyName, "Projectile") == 0 ||
+		strcmp(PropertyName, "Trigger") == 0 ||
+		strcmp(PropertyName, "SkeletalMesh") == 0)
+	{
+		if (BodyInstance.IsValidBody())
+		{
+			CollisionPreset = ECollisionPreset::Custom;
+			BodyInstance.UpdateFilterData();
+		}
+	}
+	else if (strcmp(PropertyName, "CollisionPreset") == 0 || strcmp(PropertyName, "Collision Preset") == 0)
+	{
+		SetCollisionPreset(CollisionPreset);
+	}
+}
+
+FBoundingBox UPrimitiveComponent::GetWorldBoundingBox() const
+{
+	EnsureWorldAABBUpdated();
+	return FBoundingBox(WorldAABBMinLocation, WorldAABBMaxLocation);
+}
+
+void UPrimitiveComponent::MarkWorldBoundsDirty()
+{
+	// Local bounds(shape) 자체가 바뀐 경우용 진입점.
+	// fast-path(이전 AABB를 translation만으로 재사용)는 shape가 동일하다는 가정에 의존하므로
+	// 여기서는 반드시 무력화해야 한다. 안 그러면 mesh 교체 후에도 stale AABB가 캐시된다.
+	bWorldAABBDirty = true;
+	bHasValidWorldAABB = false;
+	MarkRenderTransformDirty();
+}
+
+void UPrimitiveComponent::CreatePhysicsState()
+{
+	if (BodyInstance.IsValidBody() || !Owner) return;
+
+	UWorld* World = Owner->GetWorld();
+	if (!World || !World->GetPhysicsScene()) return;
+	if (CollisionEnabled == ECollisionEnabled::NoCollision) return;
+
+	World->GetPhysicsScene()->CreateBody(this, BodyInstance);
+
+	if (BodyInstance.IsValidBody())
+	{
+		ApplyPhysicsSettingsToBody();
+	}
+}
+
+void UPrimitiveComponent::DestroyPhysicsState()
+{
+	if (!BodyInstance.IsValidBody() || !Owner) return;
+	
+	if (UWorld* World = Owner->GetWorld())
+	{
+		if (FPhysicsScene* Scene = World->GetPhysicsScene())
+		{
+			Scene->DestroyBody(BodyInstance);
+		}
+	}
+}
+
+void UPrimitiveComponent::RecreatePhysicsState()
+{
+	if (BodyInstance.IsValidBody())
+	{
+		DestroyPhysicsState();
+	}
+
+	if (CollisionEnabled != ECollisionEnabled::NoCollision)
+	{
+		CreatePhysicsState();
+	}
+}
+
+FBodyInstance* UPrimitiveComponent::GetBodyInstance()
+{
+	return BodyInstance.IsValidBody() ? &BodyInstance : nullptr;
+}
+
+const FBodyInstance* UPrimitiveComponent::GetBodyInstance() const
+{
+	return BodyInstance.IsValidBody() ? &BodyInstance : nullptr;
+}
+
+void UPrimitiveComponent::ApplyPhysicsSettingsToBody()
+{
+	if (!BodyInstance.IsValidBody()) return;
+
+	BodyInstance.SetGravityEnabled(bEnableGravity);
+	BodyInstance.SetMass(Mass);
+	BodyInstance.SetLinearDamping(LinearDamping);
+	BodyInstance.SetAngularDamping(AngularDamping);
+}
+
+void UPrimitiveComponent::SyncPhysicsTransformToComponent()
+{
+	if (!BodyInstance.IsValidBody()) return;
+
+	// Simulated dynamic bodies are authoritative from PhysX. Static, kinematic, and
+	// query-only trigger bodies must follow component transforms, especially after
+	// scene load fix-up, actor placement offsets, or runtime moved trigger volumes.
+	if (bSimulatePhysics && BodyInstance.IsDynamic())
+	{
+		return;
+	}
+
+	BodyInstance.SetBodyTransform(FTransform(
+		GetWorldLocation(),
+		GetWorldRotation().ToQuaternion(),
+		GetWorldScale()));
+}
+
+void UPrimitiveComponent::UpdateWorldAABB() const
+{
+	FVector LExt = LocalExtents;
+
+	FMatrix worldMatrix = GetWorldMatrix();
+
+	float NewEx = std::abs(worldMatrix.M[0][0]) * LExt.X + std::abs(worldMatrix.M[1][0]) * LExt.Y + std::abs(worldMatrix.M[2][0]) * LExt.Z;
+	float NewEy = std::abs(worldMatrix.M[0][1]) * LExt.X + std::abs(worldMatrix.M[1][1]) * LExt.Y + std::abs(worldMatrix.M[2][1]) * LExt.Z;
+	float NewEz = std::abs(worldMatrix.M[0][2]) * LExt.X + std::abs(worldMatrix.M[1][2]) * LExt.Y + std::abs(worldMatrix.M[2][2]) * LExt.Z;
+
+	FVector WorldCenter = GetWorldLocation();
+	WorldAABBMinLocation = WorldCenter - FVector(NewEx, NewEy, NewEz);
+	WorldAABBMaxLocation = WorldCenter + FVector(NewEx, NewEy, NewEz);
+	bWorldAABBDirty = false;
+	bHasValidWorldAABB = true;
+}
+
+/* 현재 쓰이지 않는 코드입니다*/
+// -> 쓰이고 있음
+bool UPrimitiveComponent::LineTraceComponent(const FRay& Ray, FHitResult& OutHitResult)
+{
+	FMeshDataView View = GetMeshDataView();
+	if (!View.IsValid()) return false;
+
+	bool bHit = FRayUtils::RaycastTriangles(
+		Ray, GetWorldMatrix(),
+		GetWorldInverseMatrix(),
+		View.VertexData,
+		View.Stride,
+		View.IndexData,
+		View.IndexCount,
+		OutHitResult);
+
+	if (bHit)
+	{
+		OutHitResult.HitComponent = this;
+	}
+	return bHit;
+}
+
+void UPrimitiveComponent::UpdateWorldMatrix() const
+{
+	const FMatrix PreviousWorldMatrix = CachedWorldMatrix;
+	const FVector PreviousWorldAABBMin = WorldAABBMinLocation;
+	const FVector PreviousWorldAABBMax = WorldAABBMaxLocation;
+	const bool bHadValidWorldAABB = bHasValidWorldAABB;
+
+	USceneComponent::UpdateWorldMatrix();
+
+	if (bWorldAABBDirty)
+	{
+		if (bHadValidWorldAABB && HasSameTransformBasis(PreviousWorldMatrix, CachedWorldMatrix))
+		{
+			const FVector TranslationDelta = CachedWorldMatrix.GetLocation() - PreviousWorldMatrix.GetLocation();
+			WorldAABBMinLocation = PreviousWorldAABBMin + TranslationDelta;
+			WorldAABBMaxLocation = PreviousWorldAABBMax + TranslationDelta;
+			bWorldAABBDirty = false;
+			bHasValidWorldAABB = true;
+		}
+		else
+		{
+			UpdateWorldAABB();
+		}
+	}
+
+	// 프록시가 등록된 경우 Transform dirty 전파 (FScene DirtySet에도 등록)
+	MarkProxyDirty(EDirtyFlag::Transform);
+}
+
+// --- 프록시 팩토리 ---
+FPrimitiveSceneProxy* UPrimitiveComponent::CreateSceneProxy()
+{
+	// 기본 PrimitiveComponent용 프록시
+	return new FPrimitiveSceneProxy(this);
+}
+
+// --- 렌더 상태 관리 (UE RegisterComponent 대응) ---
+void UPrimitiveComponent::CreateRenderState()
+{
+	if (SceneProxy) return; // 이미 등록됨
+
+	// Owner → World → FScene 경로로 접근
+	if (!Owner || !Owner->GetWorld()) return;
+
+	// EditorOnly 컴포넌트는 에디터 월드에서만 프록시 생성
+	if (IsEditorOnly() && Owner->GetWorld()->GetWorldType() != EWorldType::Editor)
+		return;
+
+	FScene& Scene = Owner->GetWorld()->GetScene();
+	SceneProxy = Scene.AddPrimitive(this);
+}
+
+void UPrimitiveComponent::DestroyRenderState()
+{
+	// SceneProxy가 없더라도 Octree에는 등록돼 있을 수 있으므로 partition 정리는 항상 시도한다.
+	if (Owner)
+	{
+		if (UWorld* World = Owner->GetWorld())
+		{
+			World->GetPartition().RemoveSinglePrimitive(this);
+			World->MarkWorldPrimitivePickingBVHDirty();
+
+			if (SceneProxy)
+			{
+				// Scene.RemovePrimitive 가 VisibleProxies 캐시도 일관되게 정리한다.
+				World->GetScene().RemovePrimitive(SceneProxy);
+			}
+		}
+	}
+	SceneProxy = nullptr;
+}
+
+void UPrimitiveComponent::MarkRenderStateDirty()
+{
+	// 프록시 파괴 후 재생성 — 메시 교체 등 큰 변경 시 사용
+	DestroyRenderState();
+	CreateRenderState();
+}
+
+
+void UPrimitiveComponent::OnTransformDirty()
+{
+	// 순수 transform 변경 — local bounds(shape)는 그대로이므로 fast-path를 살린다.
+	// (basis 동일 + translation만 바뀐 경우 UpdateWorldMatrix가 이전 AABB를 평행이동만 적용)
+	bWorldAABBDirty = true;
+	MarkRenderTransformDirty();
+	SyncPhysicsTransformToComponent();
+}
+
+void UPrimitiveComponent::EnsureWorldAABBUpdated() const
+{
+	GetWorldMatrix();
+	if (bWorldAABBDirty)
+	{
+		UpdateWorldAABB();
+	}
+}
+
+// --- Collision Channel / Response ---
+
+void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InEnabled)
+{
+	if (CollisionEnabled == InEnabled) return;
+
+	CollisionPreset = ECollisionPreset::Custom;
+
+	const bool bHadCollision = CollisionEnabled != ECollisionEnabled::NoCollision;
+	const bool bHasCollision = InEnabled != ECollisionEnabled::NoCollision;
+
+	CollisionEnabled = InEnabled;
+
+	if (bHadCollision && !bHasCollision)
+	{
+		DestroyPhysicsState();
+	}
+	else if (!bHadCollision && bHasCollision)
+	{
+		CreatePhysicsState();
+	}
+	else if (bHadCollision && bHasCollision)
+	{
+		RecreatePhysicsState();
+	}
+}
+
+void UPrimitiveComponent::SetRelativeScale(const FVector& NewScale)
+{
+	USceneComponent::SetRelativeScale(NewScale);
+
+	RecreatePhysicsState();
+}
+
+bool UPrimitiveComponent::IsQueryCollisionEnabled() const
+{
+	return CollisionEnabled == ECollisionEnabled::QueryOnly
+		|| CollisionEnabled == ECollisionEnabled::QueryAndPhysics;
+}
+
+void UPrimitiveComponent::SetCollisionObjectType(ECollisionChannel InChannel)
+{
+	if (ObjectType == InChannel) return;
+
+	CollisionPreset = ECollisionPreset::Custom;
+
+	ObjectType = InChannel;
+
+	RecreatePhysicsState();
+}
+
+void UPrimitiveComponent::SetCollisionResponseToChannel(ECollisionChannel Channel, ECollisionResponse Response)
+{
+	if (ResponseContainer.GetResponse(Channel) == Response) return;
+	
+	CollisionPreset = ECollisionPreset::Custom;
+
+	ResponseContainer.SetResponse(Channel, Response);
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.UpdateFilterData();
+	}
+}
+
+void UPrimitiveComponent::SetCollisionResponseToAllChannels(ECollisionResponse Response)
+{
+	CollisionPreset = ECollisionPreset::Custom;
+
+	ResponseContainer.SetAllChannels(Response);
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.UpdateFilterData();
+	}
+}
+
+ECollisionResponse UPrimitiveComponent::GetCollisionResponseToChannel(ECollisionChannel Channel) const
+{
+	return ResponseContainer.GetResponse(Channel);
+}
+
+ECollisionResponse UPrimitiveComponent::GetMinResponse(const UPrimitiveComponent* A, const UPrimitiveComponent* B)
+{
+	// 양쪽의 응답 중 더 제한적인(= 숫자가 작은) 쪽을 채택
+	ECollisionResponse RespAtoB = A->GetCollisionResponseToChannel(B->GetCollisionObjectType());
+	ECollisionResponse RespBtoA = B->GetCollisionResponseToChannel(A->GetCollisionObjectType());
+	return (RespAtoB < RespBtoA) ? RespAtoB : RespBtoA;
+}
+
+void UPrimitiveComponent::SetSimulatePhysics(bool bInSimulatePhysics)
+{
+	if (bSimulatePhysics == bInSimulatePhysics) return;
+
+	CollisionPreset = ECollisionPreset::Custom;
+
+	bSimulatePhysics = bInSimulatePhysics;
+	RecreatePhysicsState();
+}
+
+void UPrimitiveComponent::SetEnableGravity(bool bInEnableGravity)
+{
+	if (bEnableGravity == bInEnableGravity) return;
+	bEnableGravity = bInEnableGravity;
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.SetGravityEnabled(bEnableGravity);
+	}
+}
+
+void UPrimitiveComponent::SetMass(float InMass)
+{
+	Mass = std::max(InMass, 0.001f);
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.SetMass(Mass);
+	}
+}
+
+void UPrimitiveComponent::SetLinearDamping(float InLinearDamping)
+{
+	LinearDamping = std::max(InLinearDamping, 0.0f);
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.SetLinearDamping(LinearDamping);
+	}
+}
+
+void UPrimitiveComponent::SetAngularDamping(float InAngularDamping)
+{
+	AngularDamping = std::max(InAngularDamping, 0.0f);
+
+	if (BodyInstance.IsValidBody())
+	{
+		BodyInstance.SetAngularDamping(AngularDamping);
+	}
+}
+
+// --- Overlap / Hit ---
+void UPrimitiveComponent::SetGenerateOverlapEvents(bool bInGenerateOverlapEvents)
+{
+	if (bGenerateOverlapEvents == bInGenerateOverlapEvents) return;
+
+	CollisionPreset = ECollisionPreset::Custom;
+
+	bGenerateOverlapEvents = bInGenerateOverlapEvents;
+
+	RecreatePhysicsState();
+}
+
+void UPrimitiveComponent::SetCollisionPreset(ECollisionPreset InPreset)
+{
+	CollisionPreset = InPreset;
+
+	switch (InPreset)
+	{
+	case ECollisionPreset::NoCollision:
+		CollisionEnabled = ECollisionEnabled::NoCollision;
+		ObjectType = ECollisionChannel::WorldStatic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Ignore);
+		bGenerateOverlapEvents = false;
+		break;
+
+	case ECollisionPreset::BlockAll:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::WorldStatic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		bGenerateOverlapEvents = false;
+		break;
+
+	case ECollisionPreset::OverlapAll:
+		CollisionEnabled = ECollisionEnabled::QueryOnly;
+		ObjectType = ECollisionChannel::WorldDynamic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Overlap);
+		bGenerateOverlapEvents = true;
+		break;
+
+	case ECollisionPreset::WorldStatic:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::WorldStatic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		bGenerateOverlapEvents = false;
+		bSimulatePhysics = false;
+		break;
+
+	case ECollisionPreset::WorldDynamic:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::WorldDynamic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		bGenerateOverlapEvents = false;
+		break;
+
+	case ECollisionPreset::PhysicsActor:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::WorldDynamic;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		bGenerateOverlapEvents = false;
+		bSimulatePhysics = true;
+		break;
+
+	case ECollisionPreset::Trigger:
+		CollisionEnabled = ECollisionEnabled::QueryOnly;
+		ObjectType = ECollisionChannel::Trigger;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Overlap);
+		bGenerateOverlapEvents = true;
+		bSimulatePhysics = false;
+		break;
+
+	case ECollisionPreset::Pawn:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::Pawn;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		ResponseContainer.SetResponse(ECollisionChannel::Trigger, ECollisionResponse::Overlap);
+		bGenerateOverlapEvents = true;
+		break;
+
+	case ECollisionPreset::SkeletalMesh:
+		CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
+		ObjectType = ECollisionChannel::SkeletalMesh;
+		ResponseContainer.SetAllChannels(ECollisionResponse::Block);
+		ResponseContainer.SetResponse(ECollisionChannel::Trigger, ECollisionResponse::Overlap);
+		bGenerateOverlapEvents = true;
+		break;
+
+	case ECollisionPreset::Custom:
+	default:
+		break;
+	}
+
+	RecreatePhysicsState();
+}
+
+void UPrimitiveComponent::NotifyComponentBeginOverlap(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex,
+	bool bFromSweep,
+	const FHitResult& SweepResult)
+{
+	OnComponentBeginOverlap.Broadcast(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
+}
+
+void UPrimitiveComponent::NotifyComponentEndOverlap(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex)
+{
+	OnComponentEndOverlap.Broadcast(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex);
+}
+
+void UPrimitiveComponent::NotifyComponentHit(
+	UPrimitiveComponent* HitComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	FVector NormalImpulse,
+	const FHitResult& HitResult)
+{
+	OnComponentHit.Broadcast(HitComponent, OtherActor, OtherComp, NormalImpulse, HitResult);
+}
+
+void UPrimitiveComponent::NotifyComponentEndHit(
+	UPrimitiveComponent* HitComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp)
+{
+	OnComponentEndHit.Broadcast(HitComponent, OtherActor, OtherComp);
+}

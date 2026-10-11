@@ -1,0 +1,655 @@
+local TutorialSystem = {}
+local WeaponHud = require("HUD/WeaponHud")
+
+local OVERLAY_PATH = "Content/UI/Tutorial/TutorialOverlay.rml"
+local STORY_MODULE = "Dialogue/TutorialLevel1.dialogue"
+local VOICE_MODULE = "Dialogue/Generated/TutorialLevel1.voices"
+local OVERLAY_Z_ORDER = 105
+local GAMEPAD_AXIS_DEADZONE = 0.25
+local WEAPON_KILL_GOAL = 2
+local SHUTDOWN_DIALOGUE_HIDE_DELAY = 5.0
+
+local overlayWidget = nil
+local movement = nil
+local owner = nil
+local initialized = false
+local currentStepIndex = 1
+local dialogueStory = nil
+local dialogueEntriesById = {}
+local voiceEntriesById = nil
+local loadedVoiceKeys = {}
+local currentVoiceKey = nil
+local activeDialogue = nil
+local dialogueTimer = 0.0
+local dialogueDuration = 0.0
+local dialogueQueue = {}
+local continueToNextGroup = true
+local hasSeenWallRun = false
+local completionHideTimer = 0.0
+local objectivesStarted = false
+local refresh_overlay = nil
+local enemyKillDialoguePlayed = false
+local moveStartDialoguePlayed = false
+local weaponKillCount = 0
+local weaponKillTrackingActive = false
+local weaponKillMessagePlayed = false
+local weaponKillCompletionPending = false
+local weaponObjectivesCompleted = false
+local pendingDialogueHideTimer = 0.0
+
+local objectiveGroups = {
+    {
+        id = "move",
+        startDialogue = "TutorialLevel1_System_MobilityCheck",
+        completeDialogue = nil,
+        items = {
+            { id = "move_w", key = "W", padKey = "LS", text = "앞으로 이동" },
+            { id = "move_a", key = "A", padKey = "LS", text = "왼쪽으로 이동" },
+            { id = "move_s", key = "S", padKey = "LS", text = "뒤로 이동" },
+            { id = "move_d", key = "D", padKey = "LS", text = "오른쪽으로 이동" },
+            { id = "sprint", key = "Shift", padKey = "L3", text = "달리기" },
+        },
+    },
+    {
+        id = "jump",
+        startDialogue = "TutorialLevel1_System_JumpCheck",
+        completeDialogue = nil,
+        items = {
+            { id = "jump", key = "Space", padKey = "A", text = "점프" },
+            { id = "double_jump", key = "Space", padKey = "A", text = "공중 추진" },
+        },
+    },
+    {
+        id = "slide",
+        startDialogue = "TutorialLevel1_System_SlideCheck",
+        completeDialogue = nil,
+        items = {
+            { id = "crouch", key = "Ctrl", padKey = "B", text = "저자세 이동" },
+            { id = "slide", key = "Ctrl", padKey = "B", text = "가속 중 슬라이딩" },
+        },
+    },
+    {
+        id = "weapon",
+        startDialogue = "TutorialLevel1_System_WeaponCheck",
+        completeDialogue = "TutorialLevel1_System_EnemyContact",
+        items = {
+            { id = "fire", key = "LMB", padKey = "RT", text = "사격" },
+            { id = "zoom", key = "RMB", padKey = "LT", text = "조준 확대" },
+        },
+    },
+    {
+        id = "reload",
+        startDialogue = "TutorialLevel1_System_ReloadCheck",
+        completeDialogue = nil,
+        items = {
+            { id = "reload", key = "R", padKey = "X", text = "재장전" },
+        },
+    },
+    {
+        id = "wallrun",
+        startDialogue = "TutorialLevel1_System_WallRunCheck",
+        completeDialogue = "TutorialLevel1_System_TrainingComplete",
+        items = {
+            { id = "wallrun", key = "이동", padKey = "LS", text = "수직면 기동" },
+            { id = "walljump", key = "Space", padKey = "A", text = "수직면 이탈" },
+        },
+    },
+}
+
+local function find_group_index(groupId)
+    if groupId == nil or groupId == "" then return 1 end
+    local lowered = string.lower(groupId)
+    for index, group in ipairs(objectiveGroups) do
+        if string.lower(group.id) == lowered then
+            return index
+        end
+    end
+    return 1
+end
+
+local function px(value)
+    return string.format("%.2fpx", value)
+end
+
+local function clamp(value, minValue, maxValue)
+    if value < minValue then return minValue end
+    if value > maxValue then return maxValue end
+    return value
+end
+
+local function is_key_down(key)
+    return Input ~= nil
+        and Input.GetKey ~= nil
+        and key ~= nil
+        and Input.GetKey(key)
+end
+
+local function is_key_pressed(key)
+    return Input ~= nil
+        and Input.GetKeyDown ~= nil
+        and key ~= nil
+        and Input.GetKeyDown(key)
+end
+
+local function get_key(keyName)
+    if Key == nil then
+        return nil
+    end
+    return Key[keyName]
+end
+
+local function get_axis(axisCode)
+    if Input == nil or Input.GetGamepadAxis == nil or axisCode == nil then
+        return 0.0
+    end
+    return Input.GetGamepadAxis(-1, axisCode)
+end
+
+local function get_gamepad_axis(axisName)
+    if Axis == nil then
+        return 0.0
+    end
+    return get_axis(Axis[axisName])
+end
+
+local function is_crouch_input_down(isCrouching)
+    return isCrouching
+        or is_key_down(get_key("Ctrl"))
+        or is_key_down(get_key("LeftCtrl"))
+        or is_key_down(get_key("RightCtrl"))
+        or is_key_down(get_key("GamepadB"))
+end
+
+local function play_event(name)
+    if AudioManager == nil then return end
+    if AudioManager.PlayOneShot ~= nil then
+        AudioManager.PlayOneShot(name)
+    elseif AudioManager.PlayEvent ~= nil then
+        AudioManager.PlayEvent(name)
+    end
+end
+
+local function find_dialogue_entry(id)
+    if id == nil then return nil end
+    return dialogueEntriesById[id]
+end
+
+local function get_dialogue_text(entry)
+    if entry == nil then return "" end
+    local speaker = entry.speaker or ""
+    local text = entry.text or entry.text_en or ""
+    if speaker == "" then
+        return text
+    end
+    return speaker .. ": " .. text
+end
+
+local function get_voice_entry(entry)
+    if entry == nil or voiceEntriesById == nil then return nil end
+    return voiceEntriesById[entry.id]
+end
+
+local function stop_current_voice()
+    if currentVoiceKey ~= nil and AudioManager ~= nil and AudioManager.Stop ~= nil then
+        AudioManager.Stop(currentVoiceKey)
+    end
+    currentVoiceKey = nil
+end
+
+local function play_voice(entry)
+    local voiceEntry = get_voice_entry(entry)
+    if voiceEntry == nil or voiceEntry.key == nil or voiceEntry.path == nil then return nil end
+    if AudioManager == nil or AudioManager.Load == nil or AudioManager.Play == nil then return nil end
+
+    stop_current_voice()
+
+    if not loadedVoiceKeys[voiceEntry.key] then
+        if not AudioManager.Load(voiceEntry.key, voiceEntry.path, false) then
+            return nil
+        end
+        loadedVoiceKeys[voiceEntry.key] = true
+    end
+
+    AudioManager.Play(voiceEntry.key, voiceEntry.volume or 1.0)
+    currentVoiceKey = voiceEntry.key
+    return voiceEntry
+end
+
+local function hide_dialogue()
+    if WeaponHud ~= nil and WeaponHud.HideDialogue ~= nil then
+        WeaponHud.HideDialogue()
+    end
+end
+
+local function show_dialogue(id)
+    local entry = find_dialogue_entry(id)
+    if entry == nil then return end
+
+    local fontSize = entry.size or dialogueStory.default_size or 22
+    local lineHeight = fontSize + 26
+    local text = get_dialogue_text(entry)
+    local width = clamp(42.0 + string.len(text) * fontSize * 0.52, 520.0, 1280.0)
+    local height = clamp(lineHeight, 46.0, 68.0)
+
+    if WeaponHud ~= nil and WeaponHud.ShowDialogue ~= nil then
+        WeaponHud.ShowDialogue(text, {
+            width = width,
+            height = height,
+            font = entry.font or dialogueStory.default_font or "Pretendard",
+            fontSize = fontSize,
+            weight = entry.weight or dialogueStory.default_weight or 700,
+            lineHeight = height,
+            opacity = 0.0,
+        })
+    end
+
+    local voiceEntry = play_voice(entry)
+    activeDialogue = entry
+    dialogueTimer = 0.0
+    dialogueDuration = (voiceEntry ~= nil and voiceEntry.duration ~= nil) and (voiceEntry.duration + 0.35) or (entry.duration or dialogueStory.default_duration or 3.2)
+end
+
+local function enqueue_dialogue(id)
+    if id == nil then return end
+    if activeDialogue == nil then
+        show_dialogue(id)
+        return
+    end
+    table.insert(dialogueQueue, id)
+end
+
+local function start_completion_countdown()
+    completionHideTimer = 4.0
+    weaponKillCompletionPending = false
+end
+
+local function request_weapon_completion_countdown()
+    if activeDialogue == nil and #dialogueQueue == 0 then
+        start_completion_countdown()
+        return
+    end
+
+    -- 남은 안내 대사가 화면에서 사라진 뒤 튜토리얼 패널 종료 타이머를 시작합니다.
+    weaponKillCompletionPending = true
+end
+
+local function show_objectives()
+    objectivesStarted = true
+    if overlayWidget ~= nil then
+        overlayWidget:SetProperty("tutorial-panel", "display", "block")
+        overlayWidget:SetProperty("tutorial-panel", "opacity", "1.0")
+    end
+    play_event("tutorial.objective.appear")
+    local group = objectiveGroups[currentStepIndex]
+    if group ~= nil and group.startDialogue ~= nil then
+        -- 이동 안내 대사는 튜토리얼 재초기화와 트리거 재진입이 있어도 첫 1회만 재생합니다.
+        if group.id ~= "move" or not moveStartDialoguePlayed then
+            enqueue_dialogue(group.startDialogue)
+            if group.id == "move" then
+                moveStartDialoguePlayed = true
+            end
+        end
+    end
+    refresh_overlay()
+end
+
+local function update_dialogue(dt)
+    if activeDialogue == nil then return end
+
+    dialogueTimer = dialogueTimer + dt
+    local fadeIn = activeDialogue.fade_in or dialogueStory.default_fade_in or 0.18
+    local fadeOut = 0.35
+    local alpha = 1.0
+    if dialogueTimer < fadeIn then
+        alpha = dialogueTimer / fadeIn
+    elseif dialogueTimer > dialogueDuration - fadeOut then
+        alpha = (dialogueDuration - dialogueTimer) / fadeOut
+    end
+    alpha = clamp(alpha, 0.0, 1.0)
+    if WeaponHud ~= nil and WeaponHud.SetDialogueOpacity ~= nil then
+        WeaponHud.SetDialogueOpacity(alpha)
+    end
+
+    if dialogueTimer >= dialogueDuration then
+        hide_dialogue()
+        stop_current_voice()
+        activeDialogue = nil
+        if #dialogueQueue > 0 then
+            local nextDialogue = table.remove(dialogueQueue, 1)
+            show_dialogue(nextDialogue)
+        elseif not objectivesStarted then
+            show_objectives()
+        elseif weaponKillCompletionPending and weaponObjectivesCompleted and weaponKillMessagePlayed then
+            start_completion_countdown()
+        end
+    end
+end
+
+local function set_step_visual(index, item, status)
+    if overlayWidget == nil then return end
+
+    local base = "tutorial-step-" .. tostring(index)
+    overlayWidget:SetProperty(base, "display", item ~= nil and "block" or "none")
+    if item == nil then
+        return
+    end
+
+    local key = item.key or ""
+    local padKey = item.padKey or ""
+    local hasKey = key ~= ""
+    local hasPadKey = padKey ~= ""
+    overlayWidget:SetText(base .. "-key", key)
+    overlayWidget:SetProperty(base .. "-key", "display", hasKey and "block" or "none")
+    overlayWidget:SetText(base .. "-separator", "/")
+    overlayWidget:SetProperty(base .. "-separator", "display", (hasKey and hasPadKey) and "block" or "none")
+    overlayWidget:SetText(base .. "-pad", padKey)
+    overlayWidget:SetProperty(base .. "-pad", "display", hasPadKey and "block" or "none")
+    overlayWidget:SetText(base .. "-text", item.text or "")
+    if status == "done" then
+        overlayWidget:SetProperty(base, "opacity", "0.44")
+        overlayWidget:SetText(base .. "-check", "✓")
+        overlayWidget:SetProperty(base .. "-check", "border", "1px #f0c936")
+    elseif status == "active" then
+        overlayWidget:SetProperty(base, "opacity", "1.0")
+        overlayWidget:SetText(base .. "-check", "")
+        overlayWidget:SetProperty(base .. "-check", "border", "1px #ffffff")
+    else
+        overlayWidget:SetProperty(base, "opacity", "0.58")
+        overlayWidget:SetText(base .. "-check", "")
+        overlayWidget:SetProperty(base .. "-check", "border", "1px #777777")
+    end
+end
+
+refresh_overlay = function()
+    if overlayWidget == nil then return end
+    if not objectivesStarted then
+        overlayWidget:SetProperty("tutorial-panel", "display", "none")
+        return
+    end
+
+    local group = objectiveGroups[currentStepIndex]
+    for i = 1, 6 do
+        local item = group ~= nil and group.items ~= nil and group.items[i] or nil
+        if item == nil then
+            set_step_visual(i, nil, "hidden")
+        elseif item.completed then
+            set_step_visual(i, item, "done")
+        else
+            set_step_visual(i, item, "active")
+        end
+    end
+end
+
+local function is_group_complete(group)
+    if group == nil or group.items == nil then return false end
+    for _, item in ipairs(group.items) do
+        if not item.completed then
+            return false
+        end
+    end
+    return true
+end
+
+local function mark_item(group, itemId)
+    if group == nil or group.items == nil then return end
+    for _, item in ipairs(group.items) do
+        if item.id == itemId then
+            if not item.completed then
+                play_event("tutorial.objective.complete")
+            end
+            item.completed = true
+            return
+        end
+    end
+end
+
+local function advance_if_needed()
+    local group = objectiveGroups[currentStepIndex]
+    if group == nil or group.completed or not is_group_complete(group) then
+        return
+    end
+
+    group.completed = true
+    if group.completeDialogue ~= nil then
+        enqueue_dialogue(group.completeDialogue)
+    end
+
+    local nextGroup = continueToNextGroup and objectiveGroups[currentStepIndex + 1] or nil
+    if nextGroup ~= nil then
+        currentStepIndex = currentStepIndex + 1
+        play_event("tutorial.objective.appear")
+        if nextGroup.startDialogue ~= nil then
+            enqueue_dialogue(nextGroup.startDialogue)
+        end
+    else
+        if group.id == "weapon" and weaponKillTrackingActive then
+            weaponObjectivesCompleted = true
+            if weaponKillMessagePlayed then
+                request_weapon_completion_countdown()
+            end
+        else
+            completionHideTimer = 4.0
+        end
+    end
+    refresh_overlay()
+end
+
+local function update_current_step()
+    if not objectivesStarted then return end
+    local group = objectiveGroups[currentStepIndex]
+    if group == nil then return end
+
+    local speed = 0.0
+    local isSprinting = false
+    local isCrouching = false
+    local isWalking = false
+    local isWallRunning = false
+    local didAirJump = false
+
+    if movement ~= nil then
+        if movement.GetSpeed ~= nil then speed = movement:GetSpeed() end
+        if movement.IsSprinting ~= nil then isSprinting = movement:IsSprinting() end
+        if movement.IsCrouching ~= nil then isCrouching = movement:IsCrouching() end
+        if movement.IsWalking ~= nil then isWalking = movement:IsWalking() end
+        if movement.IsWallRunning ~= nil then isWallRunning = movement:IsWallRunning() end
+        if movement.WasAirJumpConsumedThisFrame ~= nil then didAirJump = movement:WasAirJumpConsumedThisFrame() end
+    end
+
+    local gamepadLeftX = get_gamepad_axis("GamepadLeftX")
+    local gamepadLeftY = get_gamepad_axis("GamepadLeftY")
+
+    if group.id == "move" then
+        if (is_key_down(get_key("W")) or gamepadLeftY > GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_w") end
+        if (is_key_down(get_key("A")) or gamepadLeftX < -GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_a") end
+        if (is_key_down(get_key("S")) or gamepadLeftY < -GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_s") end
+        if (is_key_down(get_key("D")) or gamepadLeftX > GAMEPAD_AXIS_DEADZONE) and speed > 0.25 then mark_item(group, "move_d") end
+        if isSprinting or ((is_key_down(get_key("Shift")) or is_key_down(get_key("GamepadLeftThumb"))) and speed > 0.5) then
+            mark_item(group, "sprint")
+        end
+    elseif group.id == "jump" then
+        if is_key_pressed(get_key("Space")) or is_key_pressed(get_key("GamepadA")) then
+            mark_item(group, "jump")
+        end
+        if didAirJump then
+            mark_item(group, "double_jump")
+        end
+    elseif group.id == "slide" then
+        if is_crouch_input_down(isCrouching) then
+            mark_item(group, "crouch")
+        end
+        if isWalking and isCrouching and speed >= 3.0 then
+            mark_item(group, "slide")
+        end
+    elseif group.id == "weapon" then
+        if is_key_pressed(get_key("MouseLeft")) or is_key_pressed(get_key("GamepadRightTrigger")) then
+            mark_item(group, "fire")
+        end
+        if is_key_down(get_key("MouseRight")) or is_key_down(get_key("GamepadLeftTrigger")) then
+            mark_item(group, "zoom")
+        end
+    elseif group.id == "reload" then
+        if is_key_pressed(get_key("R")) or is_key_pressed(get_key("GamepadX")) then
+            mark_item(group, "reload")
+        end
+    elseif group.id == "wallrun" then
+        if isWallRunning then
+            hasSeenWallRun = true
+            mark_item(group, "wallrun")
+        end
+        if hasSeenWallRun and (is_key_pressed(get_key("Space")) or is_key_pressed(get_key("GamepadA"))) then
+            mark_item(group, "walljump")
+        end
+    end
+
+    refresh_overlay()
+    advance_if_needed()
+end
+
+local function load_dialogue_assets()
+    dialogueStory = require(STORY_MODULE)
+    dialogueEntriesById = {}
+    if dialogueStory ~= nil and dialogueStory.entries ~= nil then
+        for _, entry in ipairs(dialogueStory.entries) do
+            if entry.id ~= nil then
+                dialogueEntriesById[entry.id] = entry
+            end
+        end
+    end
+
+    local ok, voices = pcall(require, VOICE_MODULE)
+    if ok and voices ~= nil then
+        voiceEntriesById = voices.by_id or {}
+    else
+        voiceEntriesById = {}
+    end
+end
+
+function TutorialSystem.Initialize(config)
+    if initialized then return end
+    initialized = true
+    config = config or {}
+    owner = config.owner
+    movement = config.movement
+    currentStepIndex = find_group_index(config.startGroupId)
+    continueToNextGroup = config.continueToNextGroup ~= false
+    hasSeenWallRun = false
+    completionHideTimer = 0.0
+    objectivesStarted = false
+    enemyKillDialoguePlayed = false
+    weaponKillCount = 0
+    weaponKillTrackingActive = objectiveGroups[currentStepIndex] ~= nil and objectiveGroups[currentStepIndex].id == "weapon"
+    weaponKillMessagePlayed = false
+    weaponKillCompletionPending = false
+    weaponObjectivesCompleted = false
+    pendingDialogueHideTimer = 0.0
+    activeDialogue = nil
+    dialogueTimer = 0.0
+    dialogueDuration = 0.0
+    dialogueQueue = {}
+    loadedVoiceKeys = {}
+    currentVoiceKey = nil
+    dialogueEntriesById = {}
+
+    for _, group in ipairs(objectiveGroups) do
+        group.completed = false
+        if group.items ~= nil then
+            for _, item in ipairs(group.items) do
+                item.completed = false
+            end
+        end
+    end
+
+    load_dialogue_assets()
+
+    overlayWidget = UI.CreateWidget(OVERLAY_PATH)
+    if overlayWidget ~= nil then
+        overlayWidget:SetWantsMouse(false)
+        overlayWidget:AddToViewportZ(config.overlayZOrder or OVERLAY_Z_ORDER)
+    end
+
+    hide_dialogue()
+
+    refresh_overlay()
+    if config.playIntro ~= false then
+        enqueue_dialogue("TutorialLevel1_System_LandingProtocol")
+    else
+        show_objectives()
+    end
+end
+
+function TutorialSystem.Shutdown()
+    stop_current_voice()
+    if overlayWidget ~= nil and overlayWidget:IsInViewport() then
+        overlayWidget:RemoveFromParent()
+    end
+    overlayWidget = nil
+    movement = nil
+    owner = nil
+    activeDialogue = nil
+    dialogueStory = nil
+    dialogueEntriesById = {}
+    voiceEntriesById = nil
+    loadedVoiceKeys = {}
+    currentVoiceKey = nil
+    dialogueQueue = {}
+    continueToNextGroup = true
+    objectivesStarted = false
+    enemyKillDialoguePlayed = false
+    weaponKillCount = 0
+    weaponKillTrackingActive = false
+    weaponKillMessagePlayed = false
+    weaponKillCompletionPending = false
+    weaponObjectivesCompleted = false
+    pendingDialogueHideTimer = SHUTDOWN_DIALOGUE_HIDE_DELAY
+    initialized = false
+end
+
+function TutorialSystem.IsRunning()
+    return initialized
+end
+
+function TutorialSystem.Tick(dt)
+    dt = dt or 0.0
+
+    if not initialized then
+        if pendingDialogueHideTimer > 0.0 then
+            pendingDialogueHideTimer = pendingDialogueHideTimer - dt
+            if pendingDialogueHideTimer <= 0.0 then
+                pendingDialogueHideTimer = 0.0
+                hide_dialogue()
+            end
+        end
+        return
+    end
+
+    update_dialogue(dt)
+    if completionHideTimer > 0.0 then
+        completionHideTimer = completionHideTimer - dt
+        if completionHideTimer <= 0.0 and overlayWidget ~= nil then
+            overlayWidget:SetProperty("tutorial-panel", "opacity", "0.0")
+            TutorialSystem.Shutdown()
+        end
+        return
+    end
+
+    update_current_step()
+end
+
+function TutorialSystem.NotifyEnemyKilled()
+    if not initialized or not objectivesStarted or not weaponKillTrackingActive or weaponKillMessagePlayed then
+        return
+    end
+
+    weaponKillCount = weaponKillCount + 1
+    if weaponKillCount >= WEAPON_KILL_GOAL then
+        weaponKillMessagePlayed = true
+        weaponKillCompletionPending = true
+        enqueue_dialogue("TutorialLevel1_System_BioSignalLost")
+
+        if weaponObjectivesCompleted then
+            request_weapon_completion_countdown()
+        end
+    end
+end
+
+return TutorialSystem

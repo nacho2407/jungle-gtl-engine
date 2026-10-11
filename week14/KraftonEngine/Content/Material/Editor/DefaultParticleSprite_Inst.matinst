@@ -1,0 +1,13 @@
+{
+        "Parameters" : {
+
+        },
+        "ParentMaterial" : "Content/Material/Editor/DefaultParticleSprite.mat",
+        "PathFileName" : "Content/Material/Editor/DefaultParticleSprite_Inst.matinst",
+        "Textures" : {
+
+        },
+        "bOverrideEmissiveColor" : false,
+        "bOverrideEmissiveIntensity" : false,
+        "bOverrideEnableBloom" : false
+      }

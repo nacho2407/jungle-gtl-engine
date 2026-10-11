@@ -1,0 +1,46 @@
+{
+  "default_provider": "edge",
+  "default_model_id": "eleven_multilingual_v2",
+  "output_format": "mp3_44100_128",
+  "tts_text_field": "text_en",
+  "stability": 0.50,
+  "similarity_boost": 0.75,
+  "style": 0.20,
+  "speakers": {
+    "DRAKE": {
+      "enabled": true,
+      "provider": "edge",
+      "voice": "en-US-SteffanNeural",
+      "rate": "+0%",
+      "pitch": "-5Hz",
+      "voice_id": "replace_with_drake_voice_id",
+      "model_id": "eleven_multilingual_v2",
+      "stability": 0.50,
+      "similarity_boost": 0.75,
+      "style": 0.20,
+      "speed": 1.00,
+      "use_speaker_boost": true,
+      "volume": 1.0
+    },
+    "KAIN": {
+      "enabled": true,
+      "provider": "edge",
+      "voice": "en-US-EricNeural",
+      "rate": "-13%",
+      "pitch": "-3Hz",
+      "voice_id": "replace_with_kain_voice_id",
+      "speed": 1.00,
+      "volume": 1.0
+    },
+    "SYSTEM": {
+      "enabled": true,
+      "provider": "edge",
+      "voice": "en-US-AvaNeural",
+      "rate": "+10%",
+      "pitch": "+0Hz",
+      "voice_id": "replace_with_system_voice_id",
+      "speed": 1.00,
+      "volume": 0.9
+    }
+  }
+}

@@ -1,0 +1,265 @@
+﻿#include "Engine/Runtime/GameEngine.h"
+
+#include "Engine/Runtime/GameRenderPipeline.h"
+#include "Engine/Runtime/EngineInitHooks.h"
+#include "Engine/Platform/WindowsWindow.h"
+#include "Input/InputSystem.h"
+#include "Lua/LuaScriptManager.h"
+#include "Profiling/Time/Timer.h"
+#include <windows.h>  // VK_ESCAPE, VK_PAUSE
+#include <filesystem>
+#include "Viewport/Viewport.h"
+#include "Viewport/GameViewportClient.h"
+#include "Serialization/SceneSaveManager.h"
+#include "GameFramework/World.h"
+#include "GameFramework/Camera/PlayerCameraManager.h"
+#include "GameFramework/GameMode/PlayerController.h"
+#include "Core/ProjectSettings.h"
+#include "Core/Logging/Log.h"
+
+namespace
+{
+/**
+ * @brief scene 파일 경로에서 확장자를 제외한 파일 이름을 추출합니다
+ */
+FString GetSceneStemFromPath(const FString& InPath)
+{
+	const std::filesystem::path Path(FPaths::ToWide(InPath));
+	return FPaths::ToUtf8(Path.stem().wstring());
+}
+}
+
+void UGameEngine::Init(FWindowsWindow* InWindow)
+{
+	UEngine::Init(InWindow);
+
+	// 모듈 .cpp 들이 static initializer 로 등록해 둔 init 함수들 일괄 실행.
+	// (Lua 바인딩, ActorPlacement 등록 등) — EditorEngine::Init 와 동일 경로.
+	FEngineInitHooks::RunAll();
+
+	StandaloneViewport = new FViewport();
+	StandaloneViewport->Initialize(
+		Renderer.GetFD3DDevice().GetDevice(),
+		static_cast<uint32>(InWindow->GetWidth()),
+		static_cast<uint32>(InWindow->GetHeight()));
+
+	GameViewportClient = UObjectManager::Get().CreateObject<UGameViewportClient>();
+	GameViewportClient->SetOwnerWindow(InWindow->GetHWND());
+
+	FRect ViewportRect{ 0, 0, static_cast<float>(InWindow->GetWidth()), static_cast<float>(InWindow->GetHeight()) };
+	GameViewportClient->SetCursorClipRect(ViewportRect);
+	GameViewportClient->BeginGameSession(StandaloneViewport);
+	GameViewportClient->SetInputPossessed(true);
+
+	LoadStartLevel();
+
+	SetRenderPipeline(std::make_unique<FGameRenderPipeline>(this, Renderer));
+}
+
+void UGameEngine::Shutdown()
+{
+	// 게임 세션 종료 — 커서 캡처/clip / raw mouse / GameInputSnapshot 정리.
+	// 이거 안 부르면 종료 후에도 시스템 커서가 숨김 상태로 남거나 클립 영역이 잔존해
+	// 다른 앱 사용 시 마우스가 안 보이는 증상이 생긴다.
+	if (GameViewportClient)
+	{
+		GameViewportClient->EndGameSession();
+	}
+
+	if (StandaloneViewport)
+	{
+		delete StandaloneViewport;
+		StandaloneViewport = nullptr;
+	}
+
+	UEngine::Shutdown();
+}
+
+void UGameEngine::Tick(float DeltaTime)
+{
+	UEngine::Tick(DeltaTime);
+
+	InputSystem& Input = InputSystem::Get();
+	const FInputSystemSnapshot InputSnapshot = Input.MakeSnapshot();
+
+	if (GameViewportClient)
+	{
+		GameViewportClient->ProcessInput(InputSnapshot, DeltaTime);
+	}
+
+	// ESC / Pause 는 World pause 와 무관하게 동작해야 함 (메뉴 토글 자체가 pause 토글이라
+	// component-tick 에 두면 닫는 키 입력을 못 잡는다). 등록된 Lua 콜백을 직접 호출.
+	if (InputSnapshot.WasPressed(VK_ESCAPE)
+		|| InputSnapshot.WasPressed(VK_PAUSE)
+		|| InputSnapshot.WasPressed(InputCodes::GamepadStart))
+	{
+		FLuaScriptManager::FireOnEscapePressed();
+	}
+
+	// World->Tick / Render 가 모두 끝난 이후에 transition 처리 — Lua callback 안에서
+	// 요청이 들어와도 Tick/Render 흐름이 valid 한 액터/컴포넌트로 진행한 뒤 안전하게 destroy.
+	ProcessPendingTransition();
+}
+
+void UGameEngine::OnWindowResized(uint32 Width, uint32 Height)
+{
+	UEngine::OnWindowResized(Width, Height);
+
+	if (StandaloneViewport)
+	{
+		StandaloneViewport->RequestResize(Width, Height);
+
+		FRect ViewportRect{ 0, 0, static_cast<float>(Width), static_cast<float>(Height) };
+		GameViewportClient->SetCursorClipRect(ViewportRect);
+	}
+}
+
+FString UGameEngine::ResolveSceneFilePath(const FString& InNameOrPath) const
+{
+	// 이미 .Scene 확장자가 붙은 풀 경로면 그대로 사용. 그렇지 않으면 SceneDir 기준 상대로 풀어준다.
+	std::filesystem::path Input(FPaths::ToWide(InNameOrPath));
+	const std::wstring Ext = Input.has_extension() ? Input.extension().wstring() : L"";
+	if (Input.is_absolute() && std::filesystem::exists(Input))
+	{
+		return InNameOrPath;
+	}
+
+	const std::wstring SceneDir = FSceneSaveManager::GetSceneDirectory();
+	std::filesystem::path Resolved = std::filesystem::path(SceneDir) / Input;
+	if (Ext.empty())
+	{
+		Resolved += FSceneSaveManager::SceneExtension;
+	}
+	return FPaths::ToUtf8(Resolved.wstring());
+}
+
+void UGameEngine::LoadStartLevel()
+{
+	FString StartLevel = FProjectSettings::Get().Game.StartLevelName;
+	if (StartLevel.empty())
+	{
+		StartLevel = "Title";
+		UE_LOG("[GameEngine] No StartLevelName set in ProjectSettings. Fallback to %s.Scene",
+			StartLevel.c_str());
+	}
+
+	FString FilePath = ResolveSceneFilePath(StartLevel);
+	if (!std::filesystem::exists(std::filesystem::path(FPaths::ToWide(FilePath))))
+	{
+		UE_LOG("[GameEngine] Start scene file not found: %s", FilePath.c_str());
+
+		if (StartLevel != "Title")
+		{
+			StartLevel = "Title";
+			FilePath = ResolveSceneFilePath(StartLevel);
+			UE_LOG("[GameEngine] Try fallback start scene: %s", FilePath.c_str());
+		}
+	}
+
+	if (!LoadSceneFromPath(FilePath))
+	{
+		UE_LOG("[GameEngine] Failed to load start level: %s (%s)",
+			StartLevel.c_str(), FilePath.c_str());
+	}
+}
+
+void UGameEngine::RequestTransitionToScene(const FString& InScenePath)
+{
+	PendingScenePath = InScenePath;
+	bPendingSceneTransition = true;
+}
+
+FString UGameEngine::GetCurrentGameplaySceneName() const
+{
+	return CurrentGameplaySceneName;
+}
+
+void UGameEngine::ProcessPendingTransition()
+{
+	if (!bPendingSceneTransition)
+	{
+		return;
+	}
+	bPendingSceneTransition = false;
+
+	const FString ScenePath = std::move(PendingScenePath);
+	PendingScenePath.clear();
+
+	// Lua 에서 "Map" 같은 이름만 넘겨도 동작하도록 SceneDir/Map.Scene 으로 풀어준다.
+	const FString FilePath = ResolveSceneFilePath(ScenePath);
+
+	// 기존 active world 파괴 — EndPlay → 액터/컴포넌트 destruct → PhysicsScene unique_ptr 해제.
+	const FName OldHandle = GetActiveWorldHandle();
+	DestroyWorldContext(OldHandle);
+
+	// require 캐시된 lua 모듈 (CoroutineManager / ObjRegistry) 이 보유한 죽은-월드 참조 정리.
+	// 안 하면 옛 actor 의 Wait(N) 코루틴이 새 월드 Tick 에서 만료되며 freed actor 를 deref → 크래시.
+	FLuaScriptManager::FireWorldReset();
+
+	// 새 scene 로드 — World/Level/PhysicsScene 새로 만들고 WorldList push + SetActiveWorld 까지.
+	if (!LoadSceneFromPath(FilePath))
+	{
+		UE_LOG("[GameEngine] TransitionToScene failed: %s", FilePath.c_str());
+		HideTransitionLoadingScreen();
+		return;
+	}
+
+	if (GameViewportClient)
+	{
+		GameViewportClient->SetInputPossessed(true);
+	}
+
+	// BeginPlay — UEngine::BeginPlay 와 동일 흐름.
+	if (FWorldContext* Ctx = GetWorldContextFromHandle(GetActiveWorldHandle()))
+	{
+		if (Ctx->World && (Ctx->WorldType == EWorldType::Game || Ctx->WorldType == EWorldType::PIE))
+		{
+			Ctx->World->BeginPlay();
+		}
+	}
+
+	// loading overlay 는 새 world BeginPlay 까지만 유지하고, 이후 fade-in 화면을 노출합니다.
+	HideTransitionLoadingScreen();
+
+	// 트리거 등이 destroy 직전에 예약해 둔 fade-in을 새 PlayerCameraManager에 적용.
+	// BeginPlay 가 PlayerController/CameraManager spawn 을 끝낸 직후라야 valid.
+	ApplyPendingFadeIn();
+
+	// Timer 리셋 — destroy + load + BeginPlay 가 한 frame 안에서 통째로 일어나면 다음
+	// Tick 의 dt 가 그 로드 시간만큼 부풀어 PhysX 가 거대한 step (예: 2~3 초) 을 한 번에
+	// integrate → tunneling 발생. LastTime 을 지금으로 맞춰 다음 frame 의 dt 를 정상 회귀.
+	if (FTimer* T = GetTimer())
+	{
+		T->Initialize();
+	}
+}
+
+bool UGameEngine::LoadSceneFromPath(const FString& InScenePath)
+{
+	FWorldContext LoadContext;
+	FPerspectiveCameraData CameraData;
+
+	// LoadSceneFromJSON 에 Game 으로 override 전달 — actor deserialize 전에 World 의
+	// WorldType 이 Game 으로 set 되어, EditorOnly billboard 컴포넌트의 SceneProxy 가 안
+	// 만들어진다. (이 override 없으면 default Editor 라 빌보드 프록시가 생기고, 뒤에서
+	// SetWorldType(Game) 해도 이미 만든 프록시는 안 사라짐 — Game 빌드에서 editor 빌보드
+	// 노출되는 버그.)
+	const EWorldType GameType = EWorldType::Game;
+	FSceneSaveManager::LoadSceneFromJSON(InScenePath, LoadContext, CameraData, &GameType);
+
+	if (!LoadContext.World)
+	{
+		return false;
+	}
+
+	LoadContext.WorldType = EWorldType::Game;
+	LoadContext.World->SetWorldType(EWorldType::Game);
+	LoadContext.ContextName = GetSceneStemFromPath(InScenePath);
+
+	WorldList.push_back(LoadContext);
+	SetActiveWorld(LoadContext.ContextHandle);
+
+	CurrentGameplaySceneName = LoadContext.ContextName;
+
+	return true;
+}

@@ -1,0 +1,47 @@
+#pragma once
+
+#include "Component/Movement/MovementComponent.h"
+#include "Core/Types/CollisionTypes.h"
+#include "Core/Types/CoreTypes.h"
+#include "Math/Vector.h"
+
+#include "Source/Engine/Component/Movement/ProjectileMovementComponent.generated.h"
+enum class EProjectileHitBehavior : int32
+{
+	Stop = 0,
+	Bounce = 1,
+	Destroy = 2,
+};
+
+UCLASS()
+class UProjectileMovementComponent : public UMovementComponent
+{
+public:
+	GENERATED_BODY()
+	UProjectileMovementComponent() = default;
+	~UProjectileMovementComponent() override = default;
+
+	void BeginPlay() override;
+	void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction& ThisTickFunction) override;
+	void ContributeSelectedVisuals(FScene& Scene) const override;
+
+	void SetVelocity(const FVector& InVelocity) { Velocity = InVelocity; }
+	const FVector& GetVelocity() const { return Velocity; }
+	void SetInitialSpeed(float InInitialSpeed) { InitialSpeed = InInitialSpeed; }
+	float GetInitialSpeed() const { return InitialSpeed; }
+	float GetMaxSpeed() const { return MaxSpeed; }
+	FVector GetPreviewVelocity() const;
+	void StopSimulating();
+
+protected:
+	FVector ComputeEffectiveVelocity() const;
+	virtual EProjectileHitBehavior GetHitBehavior() const;
+	virtual bool HandleBlockingHit(USceneComponent* UpdatedSceneComponent, const FVector& CurrentLocation, const FVector& MoveDelta, const FHitResult& HitResult);
+
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Velocity", Type=Vec3, Min=0.0f, Max=0.0f, Speed=1.0f)
+	FVector Velocity = FVector(0.0f, 0.0f, 0.0f);
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Initial Speed", Min=0.0f, Max=0.0f, Speed=10.0f)
+	float InitialSpeed = 10.0f;
+	UPROPERTY(Edit, Save, Category="Movement", DisplayName="Max Speed", Min=0.0f, Max=0.0f, Speed=10.0f)
+	float MaxSpeed = 100.0f;
+};

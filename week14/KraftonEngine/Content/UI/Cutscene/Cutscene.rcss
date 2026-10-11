@@ -1,0 +1,204 @@
+body {
+	margin: 0px;
+	width: 100%;
+	height: 100%;
+	font-family: Pretendard;
+	color: #ffffff;
+}
+
+#cutscene-root {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+}
+
+#cutscene-root .dialogue-layer {
+	display: block;
+}
+
+.letterbox-bar {
+	position: absolute;
+	left: 0px;
+	width: 100%;
+	height: 13.5%;
+	background-color: #000000;
+	opacity: 0.96;
+}
+
+#letterbox-top {
+	top: 0px;
+}
+
+#letterbox-bottom {
+	bottom: 0px;
+}
+
+.cutscene-dialogue-box {
+	left: 50%;
+	bottom: 118px;
+	width: 980px;
+	height: 48px;
+	padding: 0px;
+	background-color: #000000A8;
+	opacity: 0.0;
+}
+
+.cutscene-dialogue-text {
+	position: absolute;
+	left: 16px;
+	top: 0px;
+	width: 948px;
+	height: 48px;
+	font-family: Pretendard;
+	font-size: 22px;
+	font-weight: 400;
+	line-height: 48px;
+	color: #FFFFFFE6;
+	white-space: nowrap;
+	text-align: left;
+}
+
+.producer-credit {
+	position: absolute;
+	right: 96px;
+	top: 37%;
+	width: 420px;
+	height: 124px;
+	opacity: 0.0;
+	text-align: left;
+}
+
+.producer-credit-role {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 420px;
+	height: 24px;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 24px;
+	color: #9a9a9a;
+}
+
+.producer-credit-name {
+	position: absolute;
+	left: 0px;
+	top: 28px;
+	width: 420px;
+	height: 44px;
+	font-family: Pretendard;
+	font-size: 34px;
+	font-weight: 800;
+	line-height: 44px;
+	color: #ffffff;
+	white-space: nowrap;
+}
+
+.producer-credit-name-line2 {
+	top: 72px;
+}
+
+.ending-fade-overlay {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 100%;
+	background-color: #000000;
+	opacity: 0.0;
+	display: none;
+}
+
+.cutscene-skip-prompt {
+	position: absolute;
+	right: 24.00px;
+	bottom: 24.00px;
+	width: 178px;
+	height: 28px;
+	opacity: 0.82;
+}
+
+.cutscene-skip-keyboard {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 58px;
+	height: 28px;
+	background-color: #ffffff;
+	color: #000000;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.cutscene-skip-separator {
+	position: absolute;
+	left: 66px;
+	top: 0px;
+	width: 14px;
+	height: 28px;
+	color: #ffffff;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.cutscene-skip-gamepad {
+	position: absolute;
+	left: 86px;
+	top: 0px;
+	width: 28px;
+	height: 28px;
+	background-color: #ffffff;
+	color: #000000;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: center;
+	white-space: nowrap;
+	border-radius: 14px;
+}
+
+.cutscene-skip-label {
+	position: absolute;
+	left: 126px;
+	top: 0px;
+	width: 52px;
+	height: 28px;
+	color: #ffffff;
+	font-family: Pretendard;
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 28px;
+	text-align: left;
+	white-space: nowrap;
+}
+
+.skip-ring {
+	position: absolute;
+	right: 54px;
+	bottom: 60.00px;
+	width: 64px;
+	height: 64px;
+	opacity: 0.0;
+}
+
+.skip-ring-frame {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	width: 64px;
+	height: 64px;
+	opacity: 0.0;
+}

@@ -1,0 +1,121 @@
+#include "GameFramework/Level.h"
+#include "Object/Reflection/ObjectFactory.h"
+#include "Object/ReferenceCollector.h"
+
+#include <GameFramework/World.h>
+
+ULevel::ULevel(UWorld* OwingWorld)
+	: OwingWorld(OwingWorld)
+{
+	Actors.clear();
+}
+
+ULevel::ULevel(const TArray<AActor*>& Actors, UWorld* World)
+	: Actors(Actors)
+{
+	OwingWorld = World;
+}
+
+ULevel::~ULevel()
+{
+	Clear();
+	OwingWorld = nullptr;
+}
+
+void ULevel::AddActor(AActor* Actor)
+{
+	if (!Actor) return;
+
+	auto It = std::find(Actors.begin(), Actors.end(), Actor);
+	if (It != Actors.end())
+	{
+		return;
+	}
+	
+	Actor->SetOuter(this);
+	Actors.push_back(Actor);
+}
+
+void ULevel::RemoveActor(AActor* Actor)
+{
+	if (!Actor) return;
+
+	auto It = std::find(Actors.begin(), Actors.end(), Actor);
+	if (It == Actors.end())
+	{
+		return;
+	}
+
+	Actors.erase(It);
+}
+
+void ULevel::Clear()
+{
+	for (AActor* Actor : Actors)
+	{
+		if (Actor)
+		{
+			Actor->SetOuter(nullptr);
+		}
+	}
+
+	Actors.clear();
+}
+
+void ULevel::Tick(float DeltaTime) {
+	TArray<AActor*> TickActors = Actors;
+	for (AActor* Actor : TickActors)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->Tick(DeltaTime);
+		}
+	}
+}
+
+void ULevel::AddReferencedObjects(FReferenceCollector& Collector)
+{
+	UObject::AddReferencedObjects(Collector);
+
+	for (AActor* Actor : Actors)
+	{
+		Collector.AddReferencedObject(Actor);
+	}
+}
+
+void ULevel::BeginPlay()
+{
+	const size_t InitialCount = Actors.size();
+	for (size_t i = 0; i < InitialCount; ++i)
+	{
+		AActor* Actor = Actors[i];
+		if (Actor && !Actor->HasActorBegunPlay())
+		{
+			Actor->BeginPlay();
+		}
+	}
+}
+
+void ULevel::EndPlay()
+{
+	TArray<AActor*> ActorsToEndPlay = Actors;
+	for (AActor* Actor : ActorsToEndPlay)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->EndPlay();
+		}
+	}
+
+	TArray<AActor*> ActorsToDestroy = Actors;
+	Actors.clear();
+
+	for (AActor* Actor : ActorsToDestroy)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->SetOuter(nullptr);
+			UObjectManager::Get().DestroyObject(Actor);
+		}
+	}
+}
