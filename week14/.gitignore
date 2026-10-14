@@ -74,9 +74,9 @@ MSBuild_Logs/
 [Rr]eleases/
 ObjView*Debug/
 **/Build/
-!KraftonEngine/Source/Editor/Build/
-!KraftonEngine/Source/Editor/Build/*.h
-!KraftonEngine/Source/Editor/Build/*.cpp
+!/Source/Editor/Build/
+!/Source/Editor/Build/*.h
+!/Source/Editor/Build/*.cpp
 
 # Per-platform output
 [Dd]ebug/x64/
@@ -93,8 +93,6 @@ obj/x86/
 # ThirdParty 하위 bin/ 은 외부 라이브러리 배포본(예: lua51.dll) 이므로 예외.
 **/[Bb]in/*
 !**/ThirdParty/**/[Bb]in/*
-!KraftonEngine/ThirdParty/PhysX/lib/**/*.pdb
-!KraftonEngine/ThirdParty/NvCloth/lib/**/*.pdb
 
 # ============================================================
 # 패키징 산출물 (root 의 *Build/ 폴더, 그리고 Game/)
@@ -175,3 +173,185 @@ CMakeLists.txt
 # 환경설정
 # ============================================================
 *.env
+
+# ============================================================
+# jungle-gtl-engine week14: build outputs and local state
+# ============================================================
+/Bin/
+/Build/
+/Intermediate/
+/Saves/
+/packages/
+/week14/
+/imgui.ini
+/Settings/Editor.ini
+/Settings/imgui.ini
+/Content/Scene/*
+!/Content/Scene/FL_Title.Scene
+!/Content/Scene/FL_Level1.Scene
+!/Content/Scene/FL_Level2.Scene
+!/Content/Scene/FL_Level3.Scene
+
+# Materials written at run time when a mesh is imported
+/Content/Material/Auto/*
+!/Content/Material/Auto/1001.mat
+!/Content/Material/Auto/Accent11.mat
+!/Content/Material/Auto/Barricade.mat
+!/Content/Material/Auto/BasicShapeMaterial.mat
+!/Content/Material/Auto/Black.mat
+!/Content/Material/Auto/Ceiling.mat
+!/Content/Material/Auto/CeilingLight.mat
+!/Content/Material/Auto/ChairBase.001.mat
+!/Content/Material/Auto/ChairBase.002.mat
+!/Content/Material/Auto/ChairBase.003.mat
+!/Content/Material/Auto/ChairBase.004.mat
+!/Content/Material/Auto/ChairBase.005.mat
+!/Content/Material/Auto/ChairBase.006.mat
+!/Content/Material/Auto/ChairBase.007.mat
+!/Content/Material/Auto/ChairBase.008.mat
+!/Content/Material/Auto/ChairBase.009.mat
+!/Content/Material/Auto/ChairBase.010.mat
+!/Content/Material/Auto/ChairBase.011.mat
+!/Content/Material/Auto/ChairBase.mat
+!/Content/Material/Auto/ChairSides.001.mat
+!/Content/Material/Auto/ChairSides.002.mat
+!/Content/Material/Auto/ChairSides.003.mat
+!/Content/Material/Auto/ChairSides.004.mat
+!/Content/Material/Auto/ChairSides.005.mat
+!/Content/Material/Auto/ChairSides.006.mat
+!/Content/Material/Auto/ChairSides.007.mat
+!/Content/Material/Auto/ChairSides.008.mat
+!/Content/Material/Auto/ChairSides.009.mat
+!/Content/Material/Auto/ChairSides.010.mat
+!/Content/Material/Auto/ChairSides.011.mat
+!/Content/Material/Auto/ChairSides.mat
+!/Content/Material/Auto/Cushion.001.mat
+!/Content/Material/Auto/Cushion.002.mat
+!/Content/Material/Auto/Cushion.003.mat
+!/Content/Material/Auto/Cushion.004.mat
+!/Content/Material/Auto/Cushion.005.mat
+!/Content/Material/Auto/Cushion.006.mat
+!/Content/Material/Auto/Cushion.007.mat
+!/Content/Material/Auto/Cushion.008.mat
+!/Content/Material/Auto/Cushion.009.mat
+!/Content/Material/Auto/Cushion.010.mat
+!/Content/Material/Auto/Cushion.011.mat
+!/Content/Material/Auto/Cushion.mat
+!/Content/Material/Auto/DarkAccent06.mat
+!/Content/Material/Auto/DarkGrey10.mat
+!/Content/Material/Auto/Floor.mat
+!/Content/Material/Auto/Foregrip.mat
+!/Content/Material/Auto/Glass.mat
+!/Content/Material/Auto/Glow.mat
+!/Content/Material/Auto/Habitat_Pod_Texture.mat
+!/Content/Material/Auto/Landscape of an alien planet by JJ.mat
+!/Content/Material/Auto/Leg_Texture.mat
+!/Content/Material/Auto/LightBase.mat
+!/Content/Material/Auto/LightBulb.001.mat
+!/Content/Material/Auto/LightBulb.mat
+!/Content/Material/Auto/MAT_Building.mat
+!/Content/Material/Auto/MAT_SCIBOXXX.mat
+!/Content/Material/Auto/MAT_SCIDLFDFDF.mat
+!/Content/Material/Auto/MAT_Sci_Box.mat
+!/Content/Material/Auto/MAT_Sci_galss.mat
+!/Content/Material/Auto/MAT_Sci_trim.mat
+!/Content/Material/Auto/MAT_Weapon_Box.mat
+!/Content/Material/Auto/Main30.mat
+!/Content/Material/Auto/Mat.1.mat
+!/Content/Material/Auto/Mat.2.mat
+!/Content/Material/Auto/Mat.3.mat
+!/Content/Material/Auto/Mat.4.mat
+!/Content/Material/Auto/Material.003.mat
+!/Content/Material/Auto/Material.005.mat
+!/Content/Material/Auto/Material.007.mat
+!/Content/Material/Auto/Material.008.mat
+!/Content/Material/Auto/Material.009.mat
+!/Content/Material/Auto/Material.mat
+!/Content/Material/Auto/Material_u1_v1.mat
+!/Content/Material/Auto/Material_u2_v1.mat
+!/Content/Material/Auto/Pillar.001.mat
+!/Content/Material/Auto/Pillar.mat
+!/Content/Material/Auto/PillarLight.001.mat
+!/Content/Material/Auto/PillarLight.mat
+!/Content/Material/Auto/Pmag.mat
+!/Content/Material/Auto/Scope.mat
+!/Content/Material/Auto/Silencer.mat
+!/Content/Material/Auto/Steps1.mat
+!/Content/Material/Auto/Steps2.mat
+!/Content/Material/Auto/TableLeg1.mat
+!/Content/Material/Auto/TableLeg2.mat
+!/Content/Material/Auto/TableRim.mat
+!/Content/Material/Auto/TableTop.mat
+!/Content/Material/Auto/Texture_1.mat
+!/Content/Material/Auto/WLAN_TPLink_PCIE.mat
+!/Content/Material/Auto/Wall.001.mat
+!/Content/Material/Auto/Wall.mat
+!/Content/Material/Auto/WallP1.001.mat
+!/Content/Material/Auto/WallP1.002.mat
+!/Content/Material/Auto/WallP1.mat
+!/Content/Material/Auto/WallP2.001.mat
+!/Content/Material/Auto/WallP2.002.mat
+!/Content/Material/Auto/WallP2.mat
+!/Content/Material/Auto/ammo_counter_screen_bg.mat
+!/Content/Material/Auto/corrugated sides.mat
+!/Content/Material/Auto/frame.mat
+!/Content/Material/Auto/front doors.mat
+!/Content/Material/Auto/tripo_material_64b90b42-9cbf-4e86-a416-97b809937c5f.mat
+
+# Texture copies written at run time when a mesh is imported
+/Content/Texture/Auto/*
+!/Content/Texture/Auto/BBOSS_SKYBOX/
+!/Content/Texture/Auto/MilSciBox/
+!/Content/Texture/Auto/SM_CubeGrid/
+!/Content/Texture/Auto/Test1/
+!/Content/Texture/Auto/barricade/
+!/Content/Texture/Auto/billboard/
+!/Content/Texture/Auto/container/
+!/Content/Texture/Auto/hallway_1/
+!/Content/Texture/Auto/office/
+!/Content/Texture/Auto/sci-fi-building/
+!/Content/Texture/Auto/sci-fi-computer/
+!/Content/Texture/Auto/sci_box/
+!/Content/Texture/Auto/sci_corridor/
+!/Content/Texture/Auto/space-lander/
+!/Content/Texture/Auto/weapon-box/
+!/Content/Texture/Auto/sci_doorrr/
+/Content/Texture/Auto/sci_doorrr/*
+!/Content/Texture/Auto/sci_doorrr/Image_0
+
+# Excluded from this repository because of license issues; kept only for local builds
+/ThirdParty/fbx/
+/Content/Editor/Icons/
+/Content/Editor/ToolIcons/
+/Content/Font/FontAtlas.dds
+/Content/Particle/Effect.dds
+/Content/Particle/Explosion.dds
+/Content/Particle/Water.jpeg
+/Content/Audio/*
+!/Content/Audio/Dialogues/
+!/Content/Audio/SoundEvents.json
+/Content/Data/Arm2/
+/Content/Data/Boss/
+/Content/Data/CardKey/
+/Content/Data/Drone/
+/Content/Data/Enemy/
+/Content/Data/FPSArm/TitanArm/
+/Content/Data/FinalBaseMesh/
+/Content/Data/FirstPerson/
+/Content/Data/General/
+/Content/Data/desert_rock/
+/Content/Data/hirasawa-yui/
+/Content/Data/level2/hallway_2/
+/Content/Data/level2/stadium_1/
+/Content/Data/level2/stadium_2/
+/Content/Data/level3/sci-fi-paenl/
+/Content/Data/level3/stadium_1/
+/Content/Data/skysphere/
+/Content/Data/stone/
+/Content/Data/tent/
+/Content/Data/terrain/terrain.fbm/
+/Content/Texture/explosion_spritesheet.png
+/Content/Texture/pngtree-blue-sci-fi-laser-beam-spotlight-light-effect-elements-png-image_16936381.png
+/Content/Texture/sprite-sheets-shine-ready-games-260nw-1210247917.png
+/Content/Texture/toppng.com-vintagesonic1-sonic-ring-gif-301x301.png
+/Content/UI/Item/VantusMasterKey.png
