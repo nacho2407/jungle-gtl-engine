@@ -2156,9 +2156,6 @@
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h">
-      <Filter>Source\Editor\Viewport</Filter>
-    </ClInclude>
     <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h">
       <Filter>Source\Editor\Viewport</Filter>
     </ClInclude>
@@ -2488,9 +2485,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Component\Shape\SphereComponent.h">
       <Filter>Source\Engine\Component\Shape</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Core\Common.h">
-      <Filter>Source\Engine\Core</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Core\Delegate.h">
       <Filter>Source\Engine\Core</Filter>
@@ -2983,9 +2977,6 @@
     </ClInclude>
     <ClInclude Include="Source\Engine\Physics\RagdollInstance.h">
       <Filter>Source\Engine\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h">
-      <Filter>Source\Engine\Platform</Filter>
     </ClInclude>
     <ClInclude Include="Source\Engine\Platform\CrashDump.h">
       <Filter>Source\Engine\Platform</Filter>

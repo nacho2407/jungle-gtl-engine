@@ -898,7 +898,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Editor\Undo\EditorUndoManager.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorPreviewViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\EditorViewportClient.h" />
-    <ClInclude Include="Source\Editor\Viewport\EditorViewportRenderRequest.h" />
     <ClInclude Include="Source\Editor\Viewport\ViewportCameraTransform.h" />
     <ClInclude Include="Source\Editor\Viewport\Asset\MeshEditorViewportClient.h" />
     <ClInclude Include="Source\Editor\Viewport\Asset\ParticleSystemEditorViewportClient.h" />
@@ -1009,7 +1008,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Component\Shape\CapsuleComponent.h" />
     <ClInclude Include="Source\Engine\Component\Shape\CurvedWallRunColliderComponent.h" />
     <ClInclude Include="Source\Engine\Component\Shape\SphereComponent.h" />
-    <ClInclude Include="Source\Engine\Core\Common.h" />
     <ClInclude Include="Source\Engine\Core\Delegate.h" />
     <ClInclude Include="Source\Engine\Core\ProjectSettings.h" />
     <ClInclude Include="Source\Engine\Core\Singleton.h" />
@@ -1174,7 +1172,6 @@ xcopy /Y "$(ProjectDir)ThirdParty\NvCloth\lib\release\NvCloth_x64.dll" "$(OutDir
     <ClInclude Include="Source\Engine\Physics\PhysicsShape.h" />
     <ClInclude Include="Source\Engine\Physics\PhysicsTypes.h" />
     <ClInclude Include="Source\Engine\Physics\RagdollInstance.h" />
-    <ClInclude Include="Source\Engine\Platform\ConsoleHelper.h" />
     <ClInclude Include="Source\Engine\Platform\CrashDump.h" />
     <ClInclude Include="Source\Engine\Platform\DirectoryWatcher.h" />
     <ClInclude Include="Source\Engine\Platform\Paths.h" />
