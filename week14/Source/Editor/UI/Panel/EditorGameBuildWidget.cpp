@@ -30,7 +30,7 @@ std::filesystem::path GetDefaultSolutionPath()
 {
 	// 현재 엔진 루트 추정값 기준의 기존 fallback solution 위치
 	const std::filesystem::path EngineRoot(FPaths::RootDir());
-	return (EngineRoot.lexically_normal().parent_path() / L"KraftonEngine.sln").lexically_normal();
+	return (EngineRoot.lexically_normal().parent_path() / L"week14.sln").lexically_normal();
 }
 
 std::filesystem::path ResolveInitialSolutionDirectory(const FString& CurrentSolutionPath)
