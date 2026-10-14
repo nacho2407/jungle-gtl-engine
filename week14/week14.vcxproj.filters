@@ -577,12 +577,6 @@
     <Filter Include="ThirdParty\fbx\include\libxml2\libxml">
       <UniqueIdentifier>{fd721f23-1ab1-8d15-96f0-5d5b4e849f40}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ThirdParty\fmod">
-      <UniqueIdentifier>{213e7772-3235-9729-b329-4e68cdec4130}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="ThirdParty\fmod\include">
-      <UniqueIdentifier>{caff592a-3ac4-8555-af6c-51cad0db929a}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ThirdParty\imgui-node-editor">
       <UniqueIdentifier>{ef397d32-e7db-ece8-f331-e86a091bdb1d}</UniqueIdentifier>
     </Filter>
@@ -4216,30 +4210,6 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\fbx\include\libxml2\libxml\xpointer.h">
       <Filter>ThirdParty\fbx\include\libxml2\libxml</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\fmod\include\fmod.h">
-      <Filter>ThirdParty\fmod\include</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\fmod\include\fmod.hpp">
-      <Filter>ThirdParty\fmod\include</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\fmod\include\fmod_codec.h">
-      <Filter>ThirdParty\fmod\include</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\fmod\include\fmod_common.h">
-      <Filter>ThirdParty\fmod\include</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\fmod\include\fmod_dsp.h">
-      <Filter>ThirdParty\fmod\include</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\fmod\include\fmod_dsp_effects.h">
-      <Filter>ThirdParty\fmod\include</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\fmod\include\fmod_errors.h">
-      <Filter>ThirdParty\fmod\include</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\fmod\include\fmod_output.h">
-      <Filter>ThirdParty\fmod\include</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\ImGui\imconfig.h">
       <Filter>ThirdParty\ImGui</Filter>
