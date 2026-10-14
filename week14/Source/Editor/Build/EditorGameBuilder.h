@@ -12,7 +12,7 @@
 struct FEditorGameBuildSettings
 {
 	FString SolutionPath;
-	FString OutputDirectory = "KraftonEngine/Bin/GameBuild";
+	FString OutputDirectory = "Bin/GameBuild";
 	FString Configuration = "Game";
 	FString Platform = "x64";
 

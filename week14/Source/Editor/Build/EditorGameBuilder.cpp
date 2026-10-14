@@ -80,7 +80,7 @@ std::filesystem::path ResolveSolutionPath(const FEditorGameBuildSettings& InSett
 	const std::filesystem::path DefaultSolutionRoot = GetDefaultSolutionRoot();
 	if (InSettings.SolutionPath.empty())
 	{
-		const std::filesystem::path FallbackPath = (DefaultSolutionRoot / L"KraftonEngine.sln").lexically_normal();
+		const std::filesystem::path FallbackPath = (DefaultSolutionRoot / L"week14.sln").lexically_normal();
 		InOutLog += "[Build] Solution path is empty. Using default: " + WidePathToUtf8(FallbackPath) + "\n";
 		return FallbackPath;
 	}
@@ -348,7 +348,7 @@ void FEditorGameBuilder::RunGame() const
 	}
 
 	std::filesystem::path OutputPath(FPaths::ToWide(OutputDirectory));
-	std::filesystem::path ExePath = OutputPath / L"KraftonEngine.exe";
+	std::filesystem::path ExePath = OutputPath / L"week14.exe";
 	if (!std::filesystem::exists(ExePath))
 	{
 		return;
@@ -382,7 +382,7 @@ void FEditorGameBuilder::BuildThreadProc(FEditorGameBuildSettings InSettings)
 	FString LocalLog;
 	const std::filesystem::path SolutionPath = ResolveSolutionPath(InSettings, LocalLog);
 	const std::filesystem::path SolutionRoot = SolutionPath.parent_path().lexically_normal();
-	const std::filesystem::path EngineRoot = (SolutionRoot / L"KraftonEngine").lexically_normal();
+	const std::filesystem::path EngineRoot = SolutionRoot.lexically_normal();
 	const std::filesystem::path OutputDirectory = ResolveDirectoryPath(InSettings.OutputDirectory, SolutionRoot);
 	const std::filesystem::path BuildOutputDirectory =
 		EngineRoot / L"Bin" / FPaths::ToWide(InSettings.Configuration);
@@ -416,7 +416,7 @@ void FEditorGameBuilder::BuildThreadProc(FEditorGameBuildSettings InSettings)
 		return;
 	}
 
-	if (!std::filesystem::exists(EngineRoot) || !std::filesystem::exists(EngineRoot / L"KraftonEngine.vcxproj"))
+	if (!std::filesystem::exists(EngineRoot) || !std::filesystem::exists(EngineRoot / L"week14.vcxproj"))
 	{
 		AppendLog("[Build] Engine root not found next to selected solution.\n");
 		AppendLog("[Build] Expected: " + WidePathToUtf8(EngineRoot) + "\n");
@@ -511,8 +511,8 @@ void FEditorGameBuilder::BuildThreadProc(FEditorGameBuildSettings InSettings)
 	}
 
 	bSuccess = true;
-	const std::filesystem::path ExeSource = BuildOutputDirectory / L"KraftonEngine.exe";
-	bSuccess &= CopySingleFile(ExeSource, OutputDirectory / L"KraftonEngine.exe", LocalLog);
+	const std::filesystem::path ExeSource = BuildOutputDirectory / L"week14.exe";
+	bSuccess &= CopySingleFile(ExeSource, OutputDirectory / L"week14.exe", LocalLog);
 
 	if (InSettings.bPackageDlls && std::filesystem::exists(BuildOutputDirectory))
 	{
